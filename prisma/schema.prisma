@@ -1,0 +1,593 @@
+// =================================================
+// 우나어 — Prisma Schema (DB_SCHEMA_FULL.md 기준)
+// 총 19개 모델 · PostgreSQL · Supabase
+// =================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Grade {
+  SPROUT         // 🌱 새싹
+  REGULAR        // 🌿 단골
+  VETERAN        // 💎 터줏대감
+  WARM_NEIGHBOR  // ☀️ 따뜻한이웃
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  WITHDRAWN
+}
+
+enum FontSize {
+  NORMAL  // 17px
+  LARGE   // 20px
+  XLARGE  // 24px
+}
+
+enum AgreementType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  MARKETING
+}
+
+enum BoardType {
+  JOB       // 내 일 찾기
+  STORY     // 사는이야기
+  HUMOR     // 활력충전소
+  MAGAZINE  // 매거진
+  WEEKLY    // 수다방
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+  DELETED
+}
+
+enum PostSource {
+  USER
+  BOT
+  ADMIN
+}
+
+enum PromotionLevel {
+  NORMAL
+  HOT            // 공감 10+
+  HALL_OF_FAME   // 공감 50+
+}
+
+enum CommentStatus {
+  ACTIVE
+  HIDDEN
+  DELETED
+}
+
+enum ReportReason {
+  PROFANITY
+  POLITICS
+  HATE
+  SPAM
+  ADULT
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}
+
+enum ReportAction {
+  DELETED
+  HIDDEN
+  WARNING
+  SUSPENDED
+  BANNED
+  DISMISSED
+}
+
+enum NotificationType {
+  COMMENT
+  LIKE
+  GRADE_UP
+  SYSTEM
+  CONTENT_HIDDEN
+}
+
+enum AdType {
+  SELF
+  GOOGLE
+  COUPANG
+  EXTERNAL
+}
+
+enum AdSlot {
+  HERO
+  HOME_INLINE
+  SIDEBAR
+  LIST_INLINE
+  POST_BOTTOM
+  MOBILE_STICKY
+  MAGAZINE_CPS
+}
+
+enum BotType {
+  JOB
+  HUMOR
+  STORY
+  THREAD
+}
+
+enum BotStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum BannedWordCategory {
+  PROFANITY
+  POLITICS
+  HATE
+  SPAM
+  ADULT
+}
+
+enum AuditTargetType {
+  USER
+  POST
+  COMMENT
+  REPORT
+  BOARD_CONFIG
+  BANNER
+  AD
+  BOT
+  AGENT
+}
+
+// ─────────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────────
+
+model User {
+  id              String     @id @default(cuid())
+  email           String?    @unique
+  nickname        String     @unique
+  profileImage    String?
+  providerId      String     @unique // 카카오 User ID
+  role            Role       @default(USER)
+  grade           Grade      @default(SPROUT)
+  birthYear       Int?
+  gender          String?
+  regions         String[]
+  interests       String[]
+  fontSize        FontSize   @default(NORMAL)
+
+  // 비정규화 카운트
+  postCount       Int        @default(0)
+  commentCount    Int        @default(0)
+  receivedLikes   Int        @default(0)
+
+  // 상태
+  status          UserStatus @default(ACTIVE)
+  suspendedUntil  DateTime?
+  withdrawnAt     DateTime?
+
+  // 설정
+  marketingOptIn  Boolean    @default(false)
+  nicknameChangedAt DateTime?
+
+  // 타임스탬프
+  lastLoginAt     DateTime   @default(now())
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // 관계
+  posts             Post[]
+  comments          Comment[]
+  likes             Like[]
+  scraps            Scrap[]
+  reportsMade       Report[]       @relation("reporter")
+  notifications     Notification[] @relation("notificationOwner")
+  notificationsSent Notification[] @relation("notificationSender")
+  agreements        Agreement[]
+  blocksInitiated   UserBlock[]    @relation("blocker")
+  blocksReceived    UserBlock[]    @relation("blocked")
+
+  @@index([status])
+  @@index([grade])
+  @@index([createdAt])
+}
+
+model AdminAccount {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String   // bcrypt (saltRounds=12)
+  nickname      String
+  role          Role     @default(ADMIN)
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  auditLogs        AdminAuditLog[]
+  processedReports Report[]        @relation("reportProcessor")
+}
+
+model Agreement {
+  id       String        @id @default(cuid())
+  userId   String
+  type     AgreementType
+  version  String
+  agreedAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, version])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────
+// 콘텐츠
+// ─────────────────────────────────────────────────
+
+model Post {
+  id             String         @id @default(cuid())
+  boardType      BoardType
+  category       String?
+  title          String
+  content        String
+  summary        String?
+  thumbnailUrl   String?
+
+  authorId       String
+  source         PostSource     @default(USER)
+
+  status         PostStatus     @default(PUBLISHED)
+  promotionLevel PromotionLevel @default(NORMAL)
+  isPinned       Boolean        @default(false)
+  pinnedPosition Int?
+
+  // 비정규화 카운트
+  viewCount      Int            @default(0)
+  likeCount      Int            @default(0)
+  commentCount   Int            @default(0)
+  scrapCount     Int            @default(0)
+  reportCount    Int            @default(0)
+
+  // SEO
+  seoTitle       String?
+  seoDescription String?
+
+  publishedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // 관계
+  author        User           @relation(fields: [authorId], references: [id])
+  jobDetail     JobDetail?
+  comments      Comment[]
+  likes         Like[]         @relation("postLikes")
+  scraps        Scrap[]
+  reports       Report[]       @relation("postReports")
+  notifications Notification[] @relation("notificationPost")
+  cpsLinks      CpsLink[]
+
+  @@index([boardType, status, createdAt(sort: Desc)])
+  @@index([boardType, status, promotionLevel, createdAt(sort: Desc)])
+  @@index([authorId])
+  @@index([status, reportCount])
+}
+
+model JobDetail {
+  id         String    @id @default(cuid())
+  postId     String    @unique
+
+  company    String
+  salary     String?
+  workHours  String?
+  workDays   String?
+  location   String
+  region     String
+  jobType    String?
+  applyUrl   String?
+
+  pickPoints Json?     // [{point, icon}]
+  qna        Json?     // [{q, a}]
+  quickTags  String[]
+
+  tier       Int       @default(0)
+  expiresAt  DateTime?
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([region])
+  @@index([expiresAt])
+}
+
+model Comment {
+  id          String        @id @default(cuid())
+  postId      String
+  authorId    String
+  content     String
+  imageUrl    String?
+
+  parentId    String?
+  likeCount   Int           @default(0)
+  reportCount Int           @default(0)
+  isFiltered  Boolean       @default(false)
+
+  status      CommentStatus @default(ACTIVE)
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User      @relation(fields: [authorId], references: [id])
+  parent  Comment?  @relation("replies", fields: [parentId], references: [id])
+  replies Comment[] @relation("replies")
+  likes   Like[]    @relation("commentLikes")
+  reports Report[]  @relation("commentReports")
+
+  @@index([postId, status, createdAt])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+// ─────────────────────────────────────────────────
+// 인터랙션
+// ─────────────────────────────────────────────────
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String?
+  commentId String?
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id])
+  post    Post?    @relation("postLikes", fields: [postId], references: [id], onDelete: Cascade)
+  comment Comment? @relation("commentLikes", fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@index([postId])
+  @@index([commentId])
+}
+
+model Scrap {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model Report {
+  id          String        @id @default(cuid())
+  userId      String
+  postId      String?
+  commentId   String?
+
+  reason      ReportReason
+  description String?
+
+  status      ReportStatus  @default(PENDING)
+  action      ReportAction?
+
+  processedBy String?
+  processedAt DateTime?
+
+  createdAt   DateTime      @default(now())
+
+  reporter  User          @relation("reporter", fields: [userId], references: [id])
+  post      Post?         @relation("postReports", fields: [postId], references: [id], onDelete: Cascade)
+  comment   Comment?      @relation("commentReports", fields: [commentId], references: [id], onDelete: Cascade)
+  processor AdminAccount? @relation("reportProcessor", fields: [processedBy], references: [id])
+
+  @@index([status, createdAt])
+  @@index([postId])
+  @@index([commentId])
+  @@index([userId])
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  type       NotificationType
+  content    String
+  postId     String?
+  fromUserId String?
+  isRead     Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  user     User  @relation("notificationOwner", fields: [userId], references: [id], onDelete: Cascade)
+  fromUser User? @relation("notificationSender", fields: [fromUserId], references: [id])
+  post     Post? @relation("notificationPost", fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model UserBlock {
+  id            String   @id @default(cuid())
+  userId        String
+  blockedUserId String
+  createdAt     DateTime @default(now())
+
+  blocker User @relation("blocker", fields: [userId], references: [id], onDelete: Cascade)
+  blocked User @relation("blocked", fields: [blockedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, blockedUserId])
+}
+
+// ─────────────────────────────────────────────────
+// 운영
+// ─────────────────────────────────────────────────
+
+model Banner {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  linkUrl     String?
+  startDate   DateTime
+  endDate     DateTime
+  priority    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, startDate, endDate])
+}
+
+model AdBanner {
+  id          String   @id @default(cuid())
+  slot        AdSlot
+  adType      AdType
+  title       String?
+  imageUrl    String?
+  htmlCode    String?
+  clickUrl    String?
+
+  startDate   DateTime
+  endDate     DateTime
+  priority    Int      @default(0)
+
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slot, isActive, startDate, endDate])
+  @@index([adType])
+}
+
+model CpsLink {
+  id              String   @id @default(cuid())
+  postId          String
+  productName     String
+  productUrl      String
+  productImageUrl String?
+  rating          Float?
+  createdAt       DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model BoardConfig {
+  id            String    @id @default(cuid())
+  boardType     BoardType @unique
+
+  displayName   String
+  description   String?
+  categories    String[]
+  writeGrade    Grade     @default(SPROUT)
+  isActive      Boolean   @default(true)
+  hotThreshold  Int       @default(10)
+  fameThreshold Int       @default(50)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model BannedWord {
+  id        String             @id @default(cuid())
+  word      String             @unique
+  category  BannedWordCategory
+  isActive  Boolean            @default(true)
+  createdAt DateTime           @default(now())
+
+  @@index([category, isActive])
+}
+
+// ─────────────────────────────────────────────────
+// 로그
+// ─────────────────────────────────────────────────
+
+model BotLog {
+  id                 String    @id @default(cuid())
+  botType            BotType
+  status             BotStatus
+
+  collectedCount     Int       @default(0)
+  filteredCount      Int       @default(0)
+  publishedCount     Int       @default(0)
+  reviewPendingCount Int       @default(0)
+
+  logData            Json?
+
+  executedAt         DateTime  @default(now())
+  nextScheduledAt    DateTime?
+
+  createdAt          DateTime  @default(now())
+
+  @@index([botType, executedAt(sort: Desc)])
+  @@index([status])
+}
+
+model EventLog {
+  id        String   @id @default(cuid())
+  eventName String
+  userId    String?
+  sessionId String?
+  properties Json?
+
+  path      String?
+  referrer  String?
+  userAgent String?
+  ip        String?
+
+  createdAt DateTime @default(now())
+
+  @@index([eventName, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+}
+
+model AdminAuditLog {
+  id         String          @id @default(cuid())
+  adminId    String
+  action     String
+  targetType AuditTargetType
+  targetId   String
+  before     Json?
+  after      Json?
+  note       String?
+
+  createdAt  DateTime        @default(now())
+
+  admin AdminAccount @relation(fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt(sort: Desc)])
+  @@index([targetType, targetId])
+  @@index([createdAt(sort: Desc)])
+}

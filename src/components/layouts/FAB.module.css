@@ -1,0 +1,79 @@
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: var(--z-fab);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  height: 52px;
+  padding: 0 var(--space-lg);
+  background: var(--color-primary);
+  color: #ffffff;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-fab);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: transform 0.2s ease, padding 0.2s ease, box-shadow 0.2s ease;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fab:active {
+  transform: scale(0.95);
+}
+
+.fabIcon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.fabLabel {
+  white-space: nowrap;
+  overflow: hidden;
+  transition: max-width 0.2s ease, opacity 0.2s ease;
+  max-width: 80px;
+  opacity: 1;
+}
+
+/* 스크롤 시 축소 */
+.collapsed .fabLabel {
+  max-width: 0;
+  opacity: 0;
+  padding: 0;
+}
+
+.collapsed {
+  padding: 0 var(--space-md);
+  width: 52px;
+  justify-content: center;
+}
+
+@media (min-width: 1024px) {
+  .fab {
+    bottom: 32px;
+    right: 32px;
+    height: var(--fab-size);
+    /* 데스크탑: 원형 (아이콘만), 호버 → pill 확장 */
+    width: var(--fab-size);
+    padding: 0;
+    justify-content: center;
+  }
+
+  .fabLabel {
+    max-width: 0;
+    opacity: 0;
+  }
+
+  .fab:hover {
+    width: auto;
+    padding: 0 var(--space-lg);
+  }
+
+  .fab:hover .fabLabel {
+    max-width: 80px;
+    opacity: 1;
+    margin-left: var(--space-sm);
+  }
+}
