@@ -8,7 +8,7 @@ export default function IdentitySection() {
         <br />
         우나어에서 만나요
       </p>
-      <Link href="/about" className="inline-flex items-center gap-1.5 text-[15px] text-primary font-semibold no-underline py-2 min-h-[44px]">
+      <Link href="/about" className="inline-flex items-center gap-1.5 text-[15px] text-primary font-semibold no-underline py-2 min-h-[52px]">
         처음이신가요? 우나어 알아보기 →
       </Link>
     </section>

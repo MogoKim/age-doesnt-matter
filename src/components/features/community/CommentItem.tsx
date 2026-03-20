@@ -71,7 +71,7 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
       <div className="flex items-center gap-4">
         <button
           className={cn(
-            'flex items-center gap-1 bg-none border-none text-muted-foreground text-[13px] cursor-pointer min-h-9 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5',
+            'flex items-center gap-1 bg-none border-none text-muted-foreground text-[13px] cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5',
             isLiked && 'text-primary font-bold'
           )}
           onClick={handleLike}
@@ -82,7 +82,7 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
         </button>
         {!isReply && (
           <button
-            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-[13px] cursor-pointer min-h-9 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-[13px] cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
             onClick={() => setShowReplyInput(!showReplyInput)}
             aria-label="답글"
           >

@@ -14,7 +14,7 @@ export default function Chip({ label, active = false, onClick, className }: Chip
     <button
       type="button"
       className={cn(
-        'inline-flex items-center justify-center h-9 px-4 text-xs rounded-full border whitespace-nowrap select-none transition-colors',
+        'inline-flex items-center justify-center min-h-[52px] px-4 text-xs rounded-full border whitespace-nowrap select-none transition-colors lg:min-h-[48px]',
         active
           ? 'border-primary bg-primary/5 text-primary font-medium'
           : 'border-border bg-background text-muted-foreground hover:border-primary',

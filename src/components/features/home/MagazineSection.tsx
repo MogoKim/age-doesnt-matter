@@ -15,7 +15,7 @@ export default function MagazineSection({ posts }: Props) {
           <span className="text-xl">📖</span>
           매거진
         </h2>
-        <Link href="/magazine" className="text-[15px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[44px] min-w-[44px] hover:text-primary">
+        <Link href="/magazine" className="text-[15px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
           전체보기 →
         </Link>
       </div>

@@ -13,12 +13,12 @@ export default function Header({ isLoggedIn = false }: HeaderProps) {
       </Link>
 
       <div className="flex items-center gap-1">
-        <Link href="/search" className="flex items-center justify-center w-12 h-12 rounded-lg text-[22px] text-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background" aria-label="검색">
+        <Link href="/search" className="flex items-center justify-center w-[52px] h-[52px] rounded-lg text-[22px] text-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background" aria-label="검색">
           🔍
         </Link>
         <Link
           href={isLoggedIn ? '/my' : '/login'}
-          className="flex items-center justify-center w-12 h-12 rounded-lg text-[22px] text-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background"
+          className="flex items-center justify-center w-[52px] h-[52px] rounded-lg text-[22px] text-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background"
           aria-label={isLoggedIn ? '마이페이지' : '로그인'}
         >
           👤

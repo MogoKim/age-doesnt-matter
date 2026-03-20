@@ -24,7 +24,7 @@ export default function JobSection({ jobs }: Props) {
           <span className="text-xl">💼</span>
           오늘의 추천 일자리
         </h2>
-        <Link href="/jobs" className="text-[15px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[44px] min-w-[44px] hover:text-primary">
+        <Link href="/jobs" className="text-[15px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
           전체보기 →
         </Link>
       </div>

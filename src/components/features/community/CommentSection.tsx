@@ -20,8 +20,8 @@ export default function CommentSection({ postId, comments }: CommentSectionProps
           💬 댓글 <span className="text-primary font-bold">{totalCount}</span>
         </h3>
         <div className="flex gap-1">
-          <button className="px-3 py-1.5 bg-primary/5 border border-primary rounded-full text-primary text-[13px] font-bold cursor-pointer min-h-9 transition-all">등록순</button>
-          <button className="px-3 py-1.5 bg-none border border-transparent rounded-full text-muted-foreground text-[13px] cursor-pointer min-h-9 transition-all hover:bg-background">공감순</button>
+          <button className="px-3 py-1.5 bg-primary/5 border border-primary rounded-full text-primary text-[13px] font-bold cursor-pointer min-h-[52px] transition-all">등록순</button>
+          <button className="px-3 py-1.5 bg-none border border-transparent rounded-full text-muted-foreground text-[13px] cursor-pointer min-h-[52px] transition-all hover:bg-background">공감순</button>
         </div>
       </div>
 

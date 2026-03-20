@@ -25,7 +25,7 @@ export default function CommunitySection({ posts }: Props) {
           <span className="text-xl">💬</span>
           소통 마당 최신
         </h2>
-        <Link href="/community/stories" className="text-[15px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[44px] min-w-[44px] hover:text-primary">
+        <Link href="/community/stories" className="text-[15px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
           더보기 →
         </Link>
       </div>

@@ -317,7 +317,7 @@ export default function OnboardingForm() {
                 {term.url && (
                   <a
                     href={term.url}
-                    className="text-xs text-muted-foreground underline shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center hover:text-primary"
+                    className="text-xs text-muted-foreground underline shrink-0 min-w-[52px] min-h-[52px] flex items-center justify-center hover:text-primary"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
