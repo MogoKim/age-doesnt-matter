@@ -57,10 +57,22 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user
+      const isOnboarding = nextUrl.pathname === '/onboarding'
       const isProtected = nextUrl.pathname.startsWith('/my')
 
+      // 보호 페이지: 로그인 필요
       if (isProtected && !isLoggedIn) {
         return false // NextAuth가 자동으로 signIn 페이지로 리다이렉트
+      }
+
+      // 온보딩 미완료 유저: /onboarding으로 리다이렉트
+      if (isLoggedIn && auth.user.needsOnboarding && !isOnboarding) {
+        return Response.redirect(new URL('/onboarding', nextUrl))
+      }
+
+      // 온보딩 완료 유저가 /onboarding 접근 시: 홈으로 리다이렉트
+      if (isLoggedIn && !auth.user.needsOnboarding && isOnboarding) {
+        return Response.redirect(new URL('/', nextUrl))
       }
 
       return true
