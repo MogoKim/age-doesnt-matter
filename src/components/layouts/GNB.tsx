@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import styles from './GNB.module.css'
+import { cn } from '@/lib/utils'
 
 const MENU_ITEMS = [
   { label: '베스트', href: '/best' },
@@ -32,21 +32,24 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
   }
 
   return (
-    <nav className={styles.gnb} aria-label="메인 네비게이션">
-      <div className={styles.inner}>
-        <Link href="/" className={styles.logo} aria-label="우나어 홈">
-          <span className={styles.logoIcon}>🟠</span>
+    <nav className="hidden lg:flex sticky top-0 z-[100] h-16 bg-card border-b border-border items-center justify-center" aria-label="메인 네비게이션">
+      <div className="flex items-center w-full max-w-[1200px] px-8 gap-8">
+        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary no-underline shrink-0" aria-label="우나어 홈">
+          <span className="w-9 h-9">🟠</span>
           <span>우나어</span>
         </Link>
 
-        <div className={styles.menu}>
+        <div className="flex items-center gap-8 flex-1">
           {MENU_ITEMS.map((item) => {
             const isActive = pathname.startsWith(item.href)
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`${styles.menuItem} ${isActive ? styles.menuActive : ''}`}
+                className={cn(
+                  'text-sm text-muted-foreground no-underline py-1 relative transition-colors duration-150 whitespace-nowrap hover:text-foreground',
+                  isActive && 'text-primary font-medium after:content-[""] after:absolute after:-bottom-5 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
+                )}
                 aria-current={isActive ? 'page' : undefined}
               >
                 {item.label}
@@ -55,9 +58,9 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
           })}
         </div>
 
-        <form className={styles.searchBox} onSubmit={handleSearch}>
+        <form className="flex items-center w-60 h-10 px-4 bg-background border border-border rounded-lg text-xs text-foreground shrink-0 transition-colors focus-within:border-primary" onSubmit={handleSearch}>
           <input
-            className={styles.searchInput}
+            className="flex-1 border-none bg-transparent outline-none font-[inherit] text-inherit min-h-9 placeholder:text-muted-foreground"
             type="search"
             placeholder="통합검색"
             value={query}
@@ -70,12 +73,12 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
         </form>
 
         {isLoggedIn ? (
-          <Link href="/my" className={styles.profile}>
-            <span className={styles.profileAvatar}>👤</span>
+          <Link href="/my" className="flex items-center gap-2 text-sm text-muted-foreground no-underline shrink-0 whitespace-nowrap hover:text-foreground">
+            <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">👤</span>
             <span>{nickname}</span>
           </Link>
         ) : (
-          <Link href="/login" className={styles.profile}>
+          <Link href="/login" className="flex items-center gap-2 text-sm text-muted-foreground no-underline shrink-0 whitespace-nowrap hover:text-foreground">
             로그인
           </Link>
         )}

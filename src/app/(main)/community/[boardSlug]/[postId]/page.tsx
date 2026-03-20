@@ -6,7 +6,6 @@ import { BOARD_CONFIGS, getMockPostDetail, getMockComments } from '@/components/
 import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
-import styles from '@/components/features/community/Community.module.css'
 
 interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
@@ -35,21 +34,21 @@ export default async function PostDetailPage({ params }: PageProps) {
   const comments = getMockComments(postId)
 
   return (
-    <div className={styles.detailContainer}>
+    <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       {/* 뒤로가기 */}
-      <Link href={`/community/${boardSlug}`} className={styles.backLink}>
+      <Link href={`/community/${boardSlug}`} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5">
         ← {board.displayName}
       </Link>
 
       {/* 게시글 헤더 */}
-      <div className={styles.detailHeader}>
+      <div className="mb-8 pb-6 border-b border-border">
         {post.category && (
-          <span className={styles.detailCategory}>{post.category}</span>
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-bold w-fit mb-2">{post.category}</span>
         )}
-        <h1 className={styles.detailTitle}>{post.title}</h1>
-        <div className={styles.detailMeta}>
+        <h1 className="text-xl font-bold text-foreground m-0 mb-4 leading-[1.4]">{post.title}</h1>
+        <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
           <span>{post.author.gradeEmoji}</span>
-          <span className={styles.detailAuthorBadge}>{post.author.nickname}</span>
+          <span className="font-bold text-foreground">{post.author.nickname}</span>
           <span>·</span>
           <span>{formatTimeAgo(post.createdAt)}</span>
           <span>·</span>
@@ -59,7 +58,7 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 본문 */}
       <div
-        className={styles.detailContent}
+        className="text-sm text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
 
@@ -71,8 +70,8 @@ export default async function PostDetailPage({ params }: PageProps) {
       />
 
       {/* 광고 슬롯 */}
-      <div className={styles.listAdInline} style={{ marginBottom: 'var(--space-xl)' }}>
-        <span className={styles.listAdLabel}>광고</span>
+      <div className="bg-[#F9F5F0] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-xs mb-8">
+        <span className="absolute top-2 left-2 text-[11px] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">광고</span>
         광고 영역
       </div>
 

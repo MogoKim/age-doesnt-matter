@@ -1,7 +1,5 @@
 import Link from 'next/link'
 
-import styles from './HomePage.module.css'
-
 interface EditorsPost {
   id: string
   title: string
@@ -32,30 +30,30 @@ const MOCK_EDITORS: EditorsPost[] = [
 
 export default function EditorsPickSection() {
   return (
-    <section className={styles.editorsSection}>
-      <div className={styles.sectionHeader}>
-        <h2 className={styles.sectionTitle}>
-          <span className={styles.sectionTitleIcon}>⭐</span>
+    <section className="py-6 border-b-8 border-background lg:py-8 lg:border-b-0">
+      <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <span className="text-xl">⭐</span>
           에디터스 픽
         </h2>
       </div>
-      <div className={styles.editorsGrid}>
+      <div className="lg:grid lg:grid-cols-2 lg:gap-4">
         {MOCK_EDITORS.map((post) => (
           <Link
             href={`/community/${post.board}/${post.id}`}
             key={post.id}
-            className={styles.editorsCard}
+            className="mx-4 lg:mx-0 bg-card rounded-xl overflow-hidden border border-border no-underline text-inherit block mb-3 last:mb-0 lg:mb-0 active:opacity-95 lg:hover:shadow-md lg:hover:-translate-y-0.5 lg:hover:transition-all"
           >
             <div
-              className={styles.editorsThumbnail}
+              className="w-full h-40 bg-background"
               role="img"
               aria-label={post.title}
             />
-            <div className={styles.editorsBody}>
-              <span className={styles.editorsBadge}>⭐ PO 추천</span>
-              <h3 className={styles.editorsTitle}>{post.title}</h3>
-              <p className={styles.editorsExcerpt}>{post.excerpt}</p>
-              <div className={styles.editorsFooter}>
+            <div className="p-4">
+              <span className="inline-flex items-center gap-1 h-6 px-2.5 bg-[#FF8C00] text-white rounded-md text-xs font-bold mb-2.5">⭐ PO 추천</span>
+              <h3 className="text-base font-bold text-foreground leading-[1.5] mb-2 break-keep line-clamp-2">{post.title}</h3>
+              <p className="text-[15px] text-muted-foreground leading-relaxed mb-3 line-clamp-2">{post.excerpt}</p>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span>❤️ {post.likeCount}</span>
                 <span>💬 {post.commentCount}</span>
               </div>

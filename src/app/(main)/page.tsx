@@ -1,4 +1,3 @@
-import styles from '@/components/features/home/HomePage.module.css'
 import HeroSlider from '@/components/features/home/HeroSlider'
 import IdentitySection from '@/components/features/home/IdentitySection'
 import JobSection from '@/components/features/home/JobSection'
@@ -11,11 +10,11 @@ import HomeSidebar from '@/components/features/home/HomeSidebar'
 
 export default function HomePage() {
   return (
-    <div className={styles.pageMain}>
+    <div className="pt-[calc(56px+64px)] lg:pt-0">
       <HeroSlider />
       <IdentitySection />
-      <div className={styles.homeLayout}>
-        <div className={styles.homeLayoutInner}>
+      <div className="max-w-[1200px] mx-auto">
+        <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
           <div>
             <JobSection />
             <TrendingSection />

@@ -1,7 +1,6 @@
 import type { CommentItem as CommentItemType } from '@/types/api'
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
-import styles from './Community.module.css'
 
 interface CommentSectionProps {
   comments: CommentItemType[]
@@ -14,14 +13,14 @@ export default function CommentSection({ comments }: CommentSectionProps) {
   )
 
   return (
-    <section className={styles.commentSection}>
-      <div className={styles.commentHeader}>
-        <h3 className={styles.commentTitle}>
-          💬 댓글 <span className={styles.commentCount}>{totalCount}</span>
+    <section className="mb-12">
+      <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-foreground">
+        <h3 className="text-lg font-medium text-foreground m-0">
+          💬 댓글 <span className="text-primary font-bold">{totalCount}</span>
         </h3>
-        <div className={styles.commentSort}>
-          <button className={styles.commentSortBtnActive}>등록순</button>
-          <button className={styles.commentSortBtn}>공감순</button>
+        <div className="flex gap-1">
+          <button className="px-3 py-1.5 bg-primary/5 border border-primary rounded-full text-primary text-[13px] font-bold cursor-pointer min-h-9 transition-all">등록순</button>
+          <button className="px-3 py-1.5 bg-none border border-transparent rounded-full text-muted-foreground text-[13px] cursor-pointer min-h-9 transition-all hover:bg-background">공감순</button>
         </div>
       </div>
 
@@ -32,8 +31,8 @@ export default function CommentSection({ comments }: CommentSectionProps) {
           ))}
         </div>
       ) : (
-        <div className={styles.emptyState}>
-          <p className={styles.emptyStateText}>
+        <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
+          <p className="text-sm text-muted-foreground leading-[1.8]">
             아직 댓글이 없어요. 첫 댓글을 남겨보세요!
           </p>
         </div>

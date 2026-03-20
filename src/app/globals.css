@@ -1,14 +1,11 @@
 /* ===================================================
  * 우나어 — 글로벌 스타일
- * Tailwind CSS + shadcn/ui + 기존 디자인 토큰
+ * Tailwind CSS + shadcn/ui (CSS Variables 디자인 토큰)
  * =================================================== */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* 기존 디자인 토큰 (tokens.css) — Phase 3 전환 완료 시까지 유지 */
-@import '../styles/tokens.css';
 
 /* ── shadcn/ui CSS Variables — 시니어 고대비 컬러 팔레트 ── */
 @layer base {
@@ -72,11 +69,11 @@ html {
 
 body {
   font-family: var(--font-family);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--line-height);
-  color: var(--color-text);
-  background-color: var(--color-bg);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.75;
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
   word-break: keep-all;
   min-height: 100dvh;
 }
@@ -119,6 +116,6 @@ textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: var(--radius-full);
+  background: hsl(var(--border));
+  border-radius: 9999px;
 }

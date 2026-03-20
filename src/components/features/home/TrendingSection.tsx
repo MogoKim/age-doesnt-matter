@@ -1,7 +1,5 @@
 import Link from 'next/link'
 
-import styles from './HomePage.module.css'
-
 interface TrendingPost {
   id: string
   title: string
@@ -56,30 +54,30 @@ const MOCK_TRENDING: TrendingPost[] = [
 
 export default function TrendingSection() {
   return (
-    <section className={styles.trendingSection}>
-      <div className={styles.sectionHeader}>
-        <h2 className={styles.sectionTitle}>
-          <span className={styles.sectionTitleIcon}>🔥</span>
+    <section className="py-6 border-b-8 border-background lg:py-8 lg:border-b-0">
+      <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <span className="text-xl">🔥</span>
           지금 뜨는 이야기
         </h2>
-        <Link href="/best" className={styles.sectionMoreLink}>
+        <Link href="/best" className="text-[15px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[44px] min-w-[44px] hover:text-primary">
           더보기 →
         </Link>
       </div>
-      <ol className={styles.trendingList}>
+      <ol className="list-none m-0 px-4 lg:px-0">
         {MOCK_TRENDING.map((post, index) => (
           <li key={post.id}>
             <Link
               href={`/community/${post.board}/${post.id}`}
-              className={styles.trendingItem}
+              className="flex items-start gap-3 py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0"
             >
-              <span className={styles.trendingRank}>{index + 1}</span>
-              <div className={styles.trendingContent}>
-                <p className={styles.trendingTitle}>{post.title}</p>
-                <div className={styles.trendingMeta}>
+              <span className="text-base font-bold text-primary min-w-[24px] shrink-0 leading-[1.4]">{index + 1}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
+                <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
                   <span>💬 {post.commentCount}</span>
                   <span>❤️ {post.likeCount}</span>
-                  <span className={styles.trendingBoardTag}>{post.boardLabel}</span>
+                  <span className="bg-background px-2 py-0.5 rounded text-xs text-muted-foreground">{post.boardLabel}</span>
                 </div>
               </div>
             </Link>

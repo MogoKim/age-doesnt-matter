@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-
-import styles from './HomePage.module.css'
+import { cn } from '@/lib/utils'
 
 interface HeroSlide {
   id: string
@@ -55,26 +54,37 @@ export default function HeroSlider() {
   }, [])
 
   return (
-    <section className={styles.heroSlider}>
+    <section className="w-full h-[200px] lg:h-[420px] relative overflow-hidden bg-primary/10">
       {SLIDES.map((slide, index) => (
         <div
           key={slide.id}
-          className={`${styles.heroSlide} ${index === current ? styles.heroSlideActive : ''}`}
+          className={cn(
+            'absolute inset-0 opacity-0 transition-opacity duration-500',
+            index === current && 'opacity-100'
+          )}
           style={{ background: slide.bgColor }}
         >
-          <div className={styles.heroOverlay}>
-            <h2 className={styles.heroTitle}>{slide.title}</h2>
-            <Link href={slide.ctaHref} className={styles.heroCta}>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent p-4 flex flex-col justify-end lg:max-w-[1200px] lg:mx-auto lg:left-1/2 lg:right-auto lg:-translate-x-1/2 lg:w-full lg:p-10">
+            <h2 className="text-white text-[22px] lg:text-[40px] font-bold leading-[1.4] [text-shadow:0_2px_8px_rgba(0,0,0,0.4)] mb-3 lg:mb-5 break-keep whitespace-pre-line">
+              {slide.title}
+            </h2>
+            <Link
+              href={slide.ctaHref}
+              className="inline-flex items-center gap-1.5 h-11 lg:h-[52px] px-5 lg:px-7 bg-primary text-white rounded-lg text-base lg:text-lg font-semibold no-underline self-start hover:bg-[#E85D50]"
+            >
               {slide.ctaText} →
             </Link>
           </div>
         </div>
       ))}
-      <div className={styles.heroDots}>
+      <div className="absolute bottom-3 right-4 flex gap-1.5">
         {SLIDES.map((slide, index) => (
           <button
             key={slide.id}
-            className={`${styles.heroDot} ${index === current ? styles.heroDotActive : ''}`}
+            className={cn(
+              'w-2 h-2 rounded-full bg-white/50 transition-all duration-300 border-none p-0 cursor-pointer',
+              index === current && 'bg-white w-5 rounded'
+            )}
             onClick={() => goTo(index)}
             aria-label={`슬라이드 ${index + 1}`}
           />

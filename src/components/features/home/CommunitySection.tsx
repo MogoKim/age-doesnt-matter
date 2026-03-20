@@ -1,7 +1,5 @@
 import Link from 'next/link'
 
-import styles from './HomePage.module.css'
-
 interface CommunityPost {
   id: string
   title: string
@@ -68,29 +66,29 @@ const MOCK_COMMUNITY: CommunityPost[] = [
 
 export default function CommunitySection() {
   return (
-    <section className={styles.communitySection}>
-      <div className={styles.sectionHeader}>
-        <h2 className={styles.sectionTitle}>
-          <span className={styles.sectionTitleIcon}>💬</span>
+    <section className="py-6 lg:py-8">
+      <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <span className="text-xl">💬</span>
           소통 마당 최신
         </h2>
-        <Link href="/community/stories" className={styles.sectionMoreLink}>
+        <Link href="/community/stories" className="text-[15px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[44px] min-w-[44px] hover:text-primary">
           더보기 →
         </Link>
       </div>
-      <ul className={styles.communityList}>
+      <ul className="list-none m-0 px-4 lg:px-0">
         {MOCK_COMMUNITY.map((post) => (
           <li key={post.id}>
             <Link
               href={`/community/${post.board}/${post.id}`}
-              className={styles.communityItem}
+              className="block py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0"
             >
-              <div className={styles.communityItemHeader}>
-                <span className={styles.communityBoardTag}>{post.boardLabel}</span>
-                <span className={styles.communityAuthor}>{post.author}</span>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="bg-background px-2 py-0.5 rounded text-xs text-muted-foreground font-medium">{post.boardLabel}</span>
+                <span className="text-xs text-muted-foreground">{post.author}</span>
               </div>
-              <p className={styles.communityTitle}>{post.title}</p>
-              <div className={styles.communityMeta}>
+              <p className="text-sm text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
+              <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
                 <span>💬 {post.commentCount}</span>
                 <span>❤️ {post.likeCount}</span>
                 <span>{post.timeAgo}</span>

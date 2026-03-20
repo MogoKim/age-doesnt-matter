@@ -5,7 +5,6 @@ import { Suspense } from 'react'
 import { BOARD_CONFIGS, getMockPosts } from '@/components/features/community/mock-data'
 import BoardFilter from '@/components/features/community/BoardFilter'
 import PostCard from '@/components/features/community/PostCard'
-import styles from '@/components/features/community/Community.module.css'
 
 interface PageProps {
   params: Promise<{ boardSlug: string }>
@@ -36,17 +35,16 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
 
   const allPosts = getMockPosts(boardSlug)
 
-  // 카테고리 필터링
   const posts = category
     ? allPosts.filter((p) => p.category === category)
     : allPosts
 
   return (
-    <div className={styles.pageContainer}>
+    <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-12">
       {/* 게시판 헤더 */}
-      <div className={styles.boardHeader}>
-        <h1 className={styles.boardTitle}>{board.displayName}</h1>
-        <p className={styles.boardDescription}>{board.description}</p>
+      <div className="mb-6 p-6 bg-card rounded-2xl border-l-4 border-l-primary shadow-sm">
+        <h1 className="text-xl font-bold text-foreground m-0 mb-1">{board.displayName}</h1>
+        <p className="text-sm text-muted-foreground m-0">{board.description}</p>
       </div>
 
       {/* 카테고리 필터 */}
@@ -59,14 +57,13 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
       {/* 게시글 목록 */}
       {posts.length > 0 ? (
         <>
-          <div className={styles.postList}>
+          <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6">
             {posts.map((post, idx) => (
               <>
                 <PostCard key={post.id} post={post} boardSlug={boardSlug} />
-                {/* 5번째 카드 뒤에 광고 슬롯 */}
                 {idx === 4 && (
-                  <div key="ad-inline" className={styles.listAdInline}>
-                    <span className={styles.listAdLabel}>광고</span>
+                  <div key="ad-inline" className="bg-[#F9F5F0] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-xs">
+                    <span className="absolute top-2 left-2 text-[11px] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">광고</span>
                     광고 영역
                   </div>
                 )}
@@ -75,14 +72,14 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
           </div>
 
           {/* 더보기 버튼 */}
-          <div className={styles.loadMoreWrap}>
-            <button className={styles.loadMoreBtn}>더보기</button>
+          <div className="flex justify-center py-8">
+            <button className="min-h-[52px] px-12 py-3.5 rounded-full border-2 border-border bg-card text-muted-foreground text-xs font-bold cursor-pointer transition-all shadow-sm hover:border-primary hover:text-primary hover:bg-primary/5 hover:shadow-[0_3px_10px_rgba(255,111,97,0.15)] hover:-translate-y-px">더보기</button>
           </div>
         </>
       ) : (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyStateIcon}>📝</div>
-          <p className={styles.emptyStateText}>
+        <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
+          <div className="text-[56px] mb-4">📝</div>
+          <p className="text-sm text-muted-foreground leading-[1.8]">
             아직 작성된 글이 없어요.<br />첫 번째 글을 남겨보세요!
           </p>
         </div>

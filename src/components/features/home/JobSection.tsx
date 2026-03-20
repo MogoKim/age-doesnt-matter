@@ -1,7 +1,5 @@
 import Link from 'next/link'
 
-import styles from './HomePage.module.css'
-
 interface JobCard {
   id: string
   title: string
@@ -58,36 +56,40 @@ const MOCK_JOBS: JobCard[] = [
 
 export default function JobSection() {
   return (
-    <section className={styles.jobSection}>
-      <div className={styles.sectionHeader}>
-        <h2 className={styles.sectionTitle}>
-          <span className={styles.sectionTitleIcon}>💼</span>
+    <section className="py-6 border-b-8 border-background lg:py-8 lg:border-b-0">
+      <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <span className="text-xl">💼</span>
           오늘의 추천 일자리
         </h2>
-        <Link href="/jobs" className={styles.sectionMoreLink}>
+        <Link href="/jobs" className="text-[15px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[44px] min-w-[44px] hover:text-primary">
           전체보기 →
         </Link>
       </div>
-      <div className={styles.jobScrollWrapper}>
+      <div className="overflow-x-auto [-webkit-overflow-scrolling:touch] [scroll-snap-type:x_mandatory] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 flex gap-3 lg:overflow-x-visible lg:[scroll-snap-type:none] lg:px-0 lg:grid lg:grid-cols-4 lg:gap-4">
         {MOCK_JOBS.map((job) => (
-          <Link href={`/jobs/${job.id}`} key={job.id} className={styles.jobCard}>
-            <div className={styles.jobTags}>
+          <Link
+            href={`/jobs/${job.id}`}
+            key={job.id}
+            className="shrink-0 w-[220px] lg:w-auto bg-card rounded-xl p-4 lg:p-5 border border-border [scroll-snap-align:start] lg:[scroll-snap-align:none] cursor-pointer transition-shadow no-underline text-inherit block active:bg-background active:shadow-md lg:hover:shadow-md lg:hover:-translate-y-0.5 lg:hover:transition-all"
+          >
+            <div className="flex gap-1.5 flex-wrap mb-2.5">
               {job.isUrgent && (
-                <span className={`${styles.jobTag} ${styles.jobTagUrgent}`}>긴급</span>
+                <span className="h-[26px] px-2.5 bg-destructive text-white rounded-md text-[13px] font-semibold flex items-center whitespace-nowrap">긴급</span>
               )}
               {job.tags.map((tag) => (
-                <span key={tag} className={styles.jobTag}>
+                <span key={tag} className="h-[26px] px-2.5 bg-primary/10 text-primary rounded-md text-[13px] font-semibold flex items-center whitespace-nowrap">
                   {tag}
                 </span>
               ))}
             </div>
-            <h3 className={styles.jobTitle}>{job.title}</h3>
-            <div className={styles.jobMeta}>
+            <h3 className="text-sm font-bold text-foreground mb-1.5 leading-[1.4] line-clamp-2">{job.title}</h3>
+            <div className="text-[15px] text-muted-foreground mb-2 flex items-center gap-1.5">
               <span>{job.location}</span>
               <span>·</span>
-              <span className={styles.jobSalary}>{job.salary}</span>
+              <span className="text-primary font-bold">{job.salary}</span>
             </div>
-            {job.highlight && <p className={styles.jobHighlight}>{job.highlight}</p>}
+            {job.highlight && <p className="text-xs text-muted-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis">{job.highlight}</p>}
           </Link>
         ))}
       </div>
