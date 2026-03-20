@@ -2,7 +2,8 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
-import { BOARD_CONFIGS, getMockPosts } from '@/components/features/community/mock-data'
+import { getBoardConfig, getAllBoardConfigs } from '@/lib/queries/boards'
+import { getPostsByBoard } from '@/lib/queries/posts'
 import BoardFilter from '@/components/features/community/BoardFilter'
 import PostCard from '@/components/features/community/PostCard'
 
@@ -13,7 +14,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { boardSlug } = await params
-  const board = BOARD_CONFIGS[boardSlug]
+  const board = await getBoardConfig(boardSlug)
   if (!board) return {}
 
   return {
@@ -22,22 +23,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export function generateStaticParams() {
-  return Object.keys(BOARD_CONFIGS).map((slug) => ({ boardSlug: slug }))
+export async function generateStaticParams() {
+  const boards = await getAllBoardConfigs()
+  return boards.map((b) => ({ boardSlug: b.slug }))
 }
 
 export default async function BoardListPage({ params, searchParams }: PageProps) {
   const { boardSlug } = await params
   const { category } = await searchParams
 
-  const board = BOARD_CONFIGS[boardSlug]
+  const board = await getBoardConfig(boardSlug)
   if (!board) notFound()
 
-  const allPosts = getMockPosts(boardSlug)
-
-  const posts = category
-    ? allPosts.filter((p) => p.category === category)
-    : allPosts
+  const { posts } = await getPostsByBoard(board.boardType, { category, limit: 20 })
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-12">
@@ -59,15 +57,15 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
         <>
           <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6">
             {posts.map((post, idx) => (
-              <>
-                <PostCard key={post.id} post={post} boardSlug={boardSlug} />
+              <div key={post.id}>
+                <PostCard post={post} boardSlug={boardSlug} />
                 {idx === 4 && (
-                  <div key="ad-inline" className="bg-[#F9F5F0] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-xs">
+                  <div className="bg-[#F9F5F0] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-xs mt-4">
                     <span className="absolute top-2 left-2 text-[11px] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">광고</span>
                     광고 영역
                   </div>
                 )}
-              </>
+              </div>
             ))}
           </div>
 

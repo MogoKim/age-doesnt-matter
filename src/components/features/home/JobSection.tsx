@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-interface JobCard {
+export interface JobCardData {
   id: string
   title: string
   location: string
@@ -10,51 +10,13 @@ interface JobCard {
   isUrgent?: boolean
 }
 
-const MOCK_JOBS: JobCard[] = [
-  {
-    id: '1',
-    title: '도서관 사서 보조',
-    location: '강남구',
-    salary: '월 200만',
-    tags: ['나이무관', '오전만'],
-    highlight: '초보 환영, 오전만 근무',
-  },
-  {
-    id: '2',
-    title: '아파트 경비원',
-    location: '서초구',
-    salary: '월 220만',
-    tags: ['60대 환영'],
-    highlight: '주 5일, 교대 근무',
-    isUrgent: true,
-  },
-  {
-    id: '3',
-    title: '카페 주방 보조',
-    location: '마포구',
-    salary: '시급 1.2만',
-    tags: ['초보환영', '단기가능'],
-    highlight: '주 3일 가능',
-  },
-  {
-    id: '4',
-    title: '학교 급식 보조',
-    location: '송파구',
-    salary: '월 180만',
-    tags: ['나이무관'],
-    highlight: '방학 중 휴무',
-  },
-  {
-    id: '5',
-    title: '주차장 관리원',
-    location: '강동구',
-    salary: '월 210만',
-    tags: ['60대 환영', '야간없음'],
-    highlight: '주간 근무만',
-  },
-]
+interface Props {
+  jobs: JobCardData[]
+}
 
-export default function JobSection() {
+export default function JobSection({ jobs }: Props) {
+  if (jobs.length === 0) return null
+
   return (
     <section className="py-6 border-b-8 border-background lg:py-8 lg:border-b-0">
       <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
@@ -67,7 +29,7 @@ export default function JobSection() {
         </Link>
       </div>
       <div className="overflow-x-auto [-webkit-overflow-scrolling:touch] [scroll-snap-type:x_mandatory] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 flex gap-3 lg:overflow-x-visible lg:[scroll-snap-type:none] lg:px-0 lg:grid lg:grid-cols-4 lg:gap-4">
-        {MOCK_JOBS.map((job) => (
+        {jobs.map((job) => (
           <Link
             href={`/jobs/${job.id}`}
             key={job.id}

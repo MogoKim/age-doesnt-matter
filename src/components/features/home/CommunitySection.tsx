@@ -1,70 +1,23 @@
 import Link from 'next/link'
+import type { PostSummary } from '@/types/api'
+import { BOARD_TYPE_TO_SLUG } from '@/types/api'
+import { formatTimeAgo } from '@/components/features/community/utils'
 
-interface CommunityPost {
-  id: string
-  title: string
-  board: string
-  boardLabel: string
-  author: string
-  commentCount: number
-  likeCount: number
-  timeAgo: string
+interface Props {
+  posts: PostSummary[]
 }
 
-const MOCK_COMMUNITY: CommunityPost[] = [
-  {
-    id: '1',
-    title: '오늘 날씨 좋아서 산책 다녀왔어요',
-    board: 'stories',
-    boardLabel: '사는이야기',
-    author: '행복한봄날',
-    commentCount: 5,
-    likeCount: 12,
-    timeAgo: '10분 전',
-  },
-  {
-    id: '2',
-    title: '손주 돌잔치 사진 올려봅니다 ㅎㅎ',
-    board: 'stories',
-    boardLabel: '사는이야기',
-    author: '할미꽃',
-    commentCount: 8,
-    likeCount: 21,
-    timeAgo: '25분 전',
-  },
-  {
-    id: '3',
-    title: '요즘 웃긴 동영상 하나 공유할게요',
-    board: 'humor',
-    boardLabel: '활력충전소',
-    author: '웃음가득',
-    commentCount: 14,
-    likeCount: 33,
-    timeAgo: '1시간 전',
-  },
-  {
-    id: '4',
-    title: '퇴직 후 텃밭 가꾸기 시작했는데 질문이요',
-    board: 'stories',
-    boardLabel: '사는이야기',
-    author: '초보농부',
-    commentCount: 7,
-    likeCount: 9,
-    timeAgo: '2시간 전',
-  },
-  {
-    id: '5',
-    title: '50대 후반인데 이직 고민 중입니다',
-    board: 'stories',
-    boardLabel: '사는이야기',
-    author: '새출발',
-    commentCount: 19,
-    likeCount: 27,
-    timeAgo: '3시간 전',
-  },
-]
+const BOARD_LABEL: Record<string, string> = {
+  STORY: '사는이야기',
+  HUMOR: '활력충전소',
+  MAGAZINE: '매거진',
+  WEEKLY: '수다방',
+  JOB: '일자리',
+}
 
-export default function CommunitySection() {
+export default function CommunitySection({ posts }: Props) {
+  if (posts.length === 0) return null
+
   return (
     <section className="py-6 lg:py-8">
       <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
@@ -77,21 +30,21 @@ export default function CommunitySection() {
         </Link>
       </div>
       <ul className="list-none m-0 px-4 lg:px-0">
-        {MOCK_COMMUNITY.map((post) => (
+        {posts.map((post) => (
           <li key={post.id}>
             <Link
-              href={`/community/${post.board}/${post.id}`}
+              href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.id}`}
               className="block py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0"
             >
               <div className="flex items-center gap-2 mb-1">
-                <span className="bg-background px-2 py-0.5 rounded text-xs text-muted-foreground font-medium">{post.boardLabel}</span>
-                <span className="text-xs text-muted-foreground">{post.author}</span>
+                <span className="bg-background px-2 py-0.5 rounded text-xs text-muted-foreground font-medium">{BOARD_LABEL[post.boardType] ?? post.boardType}</span>
+                <span className="text-xs text-muted-foreground">{post.author.nickname}</span>
               </div>
               <p className="text-sm text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
               <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
                 <span>💬 {post.commentCount}</span>
                 <span>❤️ {post.likeCount}</span>
-                <span>{post.timeAgo}</span>
+                <span>{formatTimeAgo(post.createdAt)}</span>
               </div>
             </Link>
           </li>

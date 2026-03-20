@@ -2,23 +2,27 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { BOARD_CONFIGS } from './mock-data'
 import { cn } from '@/lib/utils'
 
-const WRITABLE_BOARDS = ['stories', 'humor'] as const
+interface BoardOption {
+  slug: string
+  displayName: string
+  categories: string[]
+}
 
 interface PostWriteFormProps {
   defaultBoard?: string
+  boards: BoardOption[]
 }
 
-export default function PostWriteForm({ defaultBoard }: PostWriteFormProps) {
+export default function PostWriteForm({ defaultBoard, boards }: PostWriteFormProps) {
   const router = useRouter()
-  const [selectedBoard, setSelectedBoard] = useState(defaultBoard || 'stories')
+  const [selectedBoard, setSelectedBoard] = useState(defaultBoard || boards[0]?.slug || 'stories')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
 
-  const board = BOARD_CONFIGS[selectedBoard]
+  const board = boards.find((b) => b.slug === selectedBoard)
   const categories = board?.categories.filter((c) => c !== '전체') || []
 
   const isTitleValid = title.length >= 2 && title.length <= 40
@@ -48,8 +52,8 @@ export default function PostWriteForm({ defaultBoard }: PostWriteFormProps) {
     <>
       {/* 게시판 선택 */}
       <div className="flex gap-2 mb-6">
-        {WRITABLE_BOARDS.map((slug) => {
-          const b = BOARD_CONFIGS[slug]
+        {boards.map((b) => {
+          const slug = b.slug
           return (
             <button
               key={slug}

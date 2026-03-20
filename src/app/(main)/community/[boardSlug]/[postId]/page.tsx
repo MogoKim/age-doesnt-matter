@@ -2,7 +2,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
-import { BOARD_CONFIGS, getMockPostDetail, getMockComments } from '@/components/features/community/mock-data'
+import { getBoardConfig } from '@/lib/queries/boards'
+import { getPostDetail } from '@/lib/queries/posts'
+import { getCommentsByPostId } from '@/lib/queries/comments'
 import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
@@ -13,7 +15,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { postId } = await params
-  const post = getMockPostDetail(postId)
+  const post = await getPostDetail(postId)
   if (!post) return {}
 
   return {
@@ -25,13 +27,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function PostDetailPage({ params }: PageProps) {
   const { boardSlug, postId } = await params
 
-  const board = BOARD_CONFIGS[boardSlug]
+  const board = await getBoardConfig(boardSlug)
   if (!board) notFound()
 
-  const post = getMockPostDetail(postId)
+  const post = await getPostDetail(postId)
   if (!post) notFound()
 
-  const comments = getMockComments(postId)
+  const comments = await getCommentsByPostId(postId)
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">

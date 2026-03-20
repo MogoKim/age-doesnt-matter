@@ -59,9 +59,26 @@ export const GRADE_ORDER: Record<Grade, number> = {
 
 // ── 게시판 ──
 
-export type BoardType = 'STORIES' | 'HUMOR' | 'MAGAZINE' | 'JOBS'
+export type BoardType = 'JOB' | 'STORY' | 'HUMOR' | 'MAGAZINE' | 'WEEKLY'
 export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'HIDDEN' | 'DELETED'
-export type PromotionLevel = 'NORMAL' | 'HOT' | 'FAME'
+export type PromotionLevel = 'NORMAL' | 'HOT' | 'HALL_OF_FAME'
+
+/** URL slug ↔ Prisma BoardType 변환 */
+export const BOARD_SLUG_MAP: Record<string, BoardType> = {
+  stories: 'STORY',
+  humor: 'HUMOR',
+  magazine: 'MAGAZINE',
+  jobs: 'JOB',
+  weekly: 'WEEKLY',
+}
+
+export const BOARD_TYPE_TO_SLUG: Record<BoardType, string> = {
+  STORY: 'stories',
+  HUMOR: 'humor',
+  MAGAZINE: 'magazine',
+  JOB: 'jobs',
+  WEEKLY: 'weekly',
+}
 
 // ── 리소스 타입 ──
 
