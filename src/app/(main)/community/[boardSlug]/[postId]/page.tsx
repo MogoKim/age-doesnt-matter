@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
+import { auth } from '@/lib/auth'
 import { getBoardConfig } from '@/lib/queries/boards'
 import { getPostDetail } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
@@ -27,13 +28,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function PostDetailPage({ params }: PageProps) {
   const { boardSlug, postId } = await params
 
-  const board = await getBoardConfig(boardSlug)
+  const [board, session] = await Promise.all([
+    getBoardConfig(boardSlug),
+    auth(),
+  ])
   if (!board) notFound()
 
-  const post = await getPostDetail(postId)
+  const userId = session?.user?.id
+  const post = await getPostDetail(postId, userId)
   if (!post) notFound()
 
-  const comments = await getCommentsByPostId(postId)
+  const comments = await getCommentsByPostId(postId, userId)
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
@@ -66,6 +71,7 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 액션 바 */}
       <ActionBar
+        postId={postId}
         likeCount={post.likeCount}
         isLiked={post.isLiked}
         isScrapped={post.isScrapped}
@@ -78,7 +84,7 @@ export default async function PostDetailPage({ params }: PageProps) {
       </div>
 
       {/* 댓글 */}
-      <CommentSection comments={comments} />
+      <CommentSection postId={postId} comments={comments} />
     </div>
   )
 }

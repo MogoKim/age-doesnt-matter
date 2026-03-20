@@ -3,10 +3,11 @@ import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
 
 interface CommentSectionProps {
+  postId: string
   comments: CommentItemType[]
 }
 
-export default function CommentSection({ comments }: CommentSectionProps) {
+export default function CommentSection({ postId, comments }: CommentSectionProps) {
   const totalCount = comments.reduce(
     (sum, c) => sum + 1 + c.replies.length,
     0,
@@ -27,7 +28,7 @@ export default function CommentSection({ comments }: CommentSectionProps) {
       {comments.length > 0 ? (
         <div>
           {comments.map((comment) => (
-            <CommentItemComponent key={comment.id} comment={comment} />
+            <CommentItemComponent key={comment.id} comment={comment} postId={postId} />
           ))}
         </div>
       ) : (
@@ -38,7 +39,7 @@ export default function CommentSection({ comments }: CommentSectionProps) {
         </div>
       )}
 
-      <CommentInput />
+      <CommentInput postId={postId} />
     </section>
   )
 }
