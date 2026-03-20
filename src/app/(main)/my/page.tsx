@@ -57,7 +57,10 @@ export default async function MyPage() {
       {/* 메뉴 목록 */}
       <nav className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
         <MenuItem href="/my/posts" emoji="📝" label="내가 쓴 글" />
-        <MenuItem href="/my/scraps" emoji="📌" label="스크랩한 글" />
+        <MenuItem href="/my/comments" emoji="💬" label="내 댓글" />
+        <MenuItem href="/my/scraps" emoji="📌" label="스크랩" />
+        <MenuItem href="/my/notifications" emoji="🔔" label="알림" />
+        <MenuItem href="/my/settings" emoji="⚙️" label="설정" />
         <div className="border-t border-border">
           <SignOutButton />
         </div>
