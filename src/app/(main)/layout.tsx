@@ -1,9 +1,18 @@
+import { auth } from '@/lib/auth'
 import MainLayout from '@/components/layouts/MainLayout'
 
-export default function MainGroupLayout({
+export default async function MainGroupLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <MainLayout>{children}</MainLayout>
+  const session = await auth()
+  const isLoggedIn = !!session?.user
+  const nickname = session?.user?.nickname
+
+  return (
+    <MainLayout isLoggedIn={isLoggedIn} nickname={nickname}>
+      {children}
+    </MainLayout>
+  )
 }
