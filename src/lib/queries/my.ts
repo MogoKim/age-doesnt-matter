@@ -26,6 +26,7 @@ const postSelect = {
   title: true,
   summary: true,
   thumbnailUrl: true,
+  isPinned: true,
   likeCount: true,
   commentCount: true,
   viewCount: true,
@@ -43,6 +44,7 @@ function toPostSummary(post: {
   title: string
   summary: string | null
   thumbnailUrl: string | null
+  isPinned?: boolean
   likeCount: number
   commentCount: number
   viewCount: number
@@ -62,6 +64,7 @@ function toPostSummary(post: {
     commentCount: post.commentCount,
     viewCount: post.viewCount,
     promotionLevel: post.promotionLevel === 'HALL_OF_FAME' ? 'HALL_OF_FAME' : post.promotionLevel,
+    isPinned: post.isPinned ?? false,
     createdAt: post.createdAt.toISOString(),
   }
 }

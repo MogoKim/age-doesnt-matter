@@ -33,6 +33,7 @@ const postSelect = {
   title: true,
   summary: true,
   thumbnailUrl: true,
+  isPinned: true,
   likeCount: true,
   commentCount: true,
   viewCount: true,
@@ -51,6 +52,7 @@ function toPostSummary(
     title: string
     summary: string | null
     thumbnailUrl: string | null
+    isPinned?: boolean
     likeCount: number
     commentCount: number
     viewCount: number
@@ -71,6 +73,7 @@ function toPostSummary(
     commentCount: post.commentCount,
     viewCount: post.viewCount,
     promotionLevel: toPromotionLevel(post.promotionLevel),
+    isPinned: post.isPinned ?? false,
     createdAt: post.createdAt.toISOString(),
   }
 }
@@ -79,9 +82,10 @@ function toPostSummary(
 
 export async function getPostsByBoard(
   boardType: BoardType,
-  options?: { category?: string; cursor?: string; limit?: number },
+  options?: { category?: string; cursor?: string; limit?: number; sort?: 'latest' | 'likes' },
 ): Promise<{ posts: PostSummary[]; hasMore: boolean }> {
   const limit = options?.limit ?? 20
+  const sort = options?.sort ?? 'latest'
 
   const where = {
     boardType,
@@ -90,10 +94,14 @@ export async function getPostsByBoard(
     ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
   }
 
+  const orderBy = sort === 'likes'
+    ? [{ isPinned: 'desc' as const }, { likeCount: 'desc' as const }, { createdAt: 'desc' as const }]
+    : [{ isPinned: 'desc' as const }, { createdAt: 'desc' as const }]
+
   const rows = await prisma.post.findMany({
     where,
     select: postSelect,
-    orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+    orderBy,
     take: limit + 1,
   })
 

@@ -42,6 +42,45 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
       data: { likeCount: { increment: 1 } },
     }),
   ])
+
+  // 공감 알림 — 글 작성자에게 (본인 제외)
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { authorId: true, likeCount: true },
+  })
+  if (post && post.authorId !== userId) {
+    // 공감 묶음 알림: 5의 배수마다 알림 생성
+    if (post.likeCount % 5 === 0 || post.likeCount === 1) {
+      const content = post.likeCount === 1
+        ? '회원님의 글에 첫 공감이 달렸어요'
+        : `회원님의 글에 ${post.likeCount}명이 공감했어요`
+      await prisma.notification.create({
+        data: {
+          userId: post.authorId,
+          type: 'LIKE',
+          content,
+          postId,
+          fromUserId: userId,
+        },
+      }).catch(() => {})
+    }
+  }
+
+  // HOT 승격 체크
+  if (post && post.likeCount >= 10) {
+    await prisma.post.updateMany({
+      where: { id: postId, promotionLevel: 'NORMAL' },
+      data: { promotionLevel: 'HOT' },
+    }).catch(() => {})
+  }
+  // HALL_OF_FAME 승격 체크
+  if (post && post.likeCount >= 50) {
+    await prisma.post.updateMany({
+      where: { id: postId, promotionLevel: { in: ['NORMAL', 'HOT'] } },
+      data: { promotionLevel: 'HALL_OF_FAME' },
+    }).catch(() => {})
+  }
+
   revalidatePath(`/community`)
   return { toggled: true }
 }

@@ -102,6 +102,7 @@ export interface PostSummary {
   commentCount: number
   viewCount: number
   promotionLevel: PromotionLevel
+  isPinned?: boolean
   createdAt: string
 }
 

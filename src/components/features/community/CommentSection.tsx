@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import type { CommentItem as CommentItemType } from '@/types/api'
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
@@ -7,11 +10,23 @@ interface CommentSectionProps {
   comments: CommentItemType[]
 }
 
+function sortComments(comments: CommentItemType[], sort: 'latest' | 'likes'): CommentItemType[] {
+  const sorted = [...comments]
+  if (sort === 'likes') {
+    sorted.sort((a, b) => b.likeCount - a.likeCount)
+  }
+  return sorted
+}
+
 export default function CommentSection({ postId, comments }: CommentSectionProps) {
+  const [sort, setSort] = useState<'latest' | 'likes'>('latest')
+
   const totalCount = comments.reduce(
     (sum, c) => sum + 1 + c.replies.length,
     0,
   )
+
+  const sorted = sortComments(comments, sort)
 
   return (
     <section className="mb-12">
@@ -20,14 +35,32 @@ export default function CommentSection({ postId, comments }: CommentSectionProps
           💬 댓글 <span className="text-primary font-bold">{totalCount}</span>
         </h3>
         <div className="flex gap-1">
-          <button className="px-3 py-1.5 bg-primary/5 border border-primary rounded-full text-primary text-[13px] font-bold cursor-pointer min-h-[52px] transition-all">등록순</button>
-          <button className="px-3 py-1.5 bg-none border border-transparent rounded-full text-muted-foreground text-[13px] cursor-pointer min-h-[52px] transition-all hover:bg-background">공감순</button>
+          <button
+            className={`px-3 py-1.5 rounded-full text-[13px] font-bold cursor-pointer min-h-[52px] transition-all ${
+              sort === 'latest'
+                ? 'bg-primary/5 border border-primary text-primary'
+                : 'bg-none border border-transparent text-muted-foreground hover:bg-background'
+            }`}
+            onClick={() => setSort('latest')}
+          >
+            등록순
+          </button>
+          <button
+            className={`px-3 py-1.5 rounded-full text-[13px] font-bold cursor-pointer min-h-[52px] transition-all ${
+              sort === 'likes'
+                ? 'bg-primary/5 border border-primary text-primary'
+                : 'bg-none border border-transparent text-muted-foreground hover:bg-background'
+            }`}
+            onClick={() => setSort('likes')}
+          >
+            공감순
+          </button>
         </div>
       </div>
 
-      {comments.length > 0 ? (
+      {sorted.length > 0 ? (
         <div>
-          {comments.map((comment) => (
+          {sorted.map((comment) => (
             <CommentItemComponent key={comment.id} comment={comment} postId={postId} />
           ))}
         </div>

@@ -6,10 +6,12 @@ import { getBoardConfig, getAllBoardConfigs } from '@/lib/queries/boards'
 import { getPostsByBoard } from '@/lib/queries/posts'
 import BoardFilter from '@/components/features/community/BoardFilter'
 import PostCard from '@/components/features/community/PostCard'
+import LoadMoreButton from '@/components/features/community/LoadMoreButton'
+import SortToggle from '@/components/features/community/SortToggle'
 
 interface PageProps {
   params: Promise<{ boardSlug: string }>
-  searchParams: Promise<{ category?: string }>
+  searchParams: Promise<{ category?: string; sort?: string }>
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -30,12 +32,14 @@ export async function generateStaticParams() {
 
 export default async function BoardListPage({ params, searchParams }: PageProps) {
   const { boardSlug } = await params
-  const { category } = await searchParams
+  const { category, sort } = await searchParams
 
   const board = await getBoardConfig(boardSlug)
   if (!board) notFound()
 
-  const { posts } = await getPostsByBoard(board.boardType, { category, limit: 20 })
+  const sortOption = sort === 'likes' ? 'likes' as const : 'latest' as const
+  const { posts, hasMore } = await getPostsByBoard(board.boardType, { category, sort: sortOption, limit: 20 })
+  const lastId = posts.length > 0 ? posts[posts.length - 1].id : undefined
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-12">
@@ -45,12 +49,17 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
         <p className="text-sm text-muted-foreground m-0">{board.description}</p>
       </div>
 
-      {/* 카테고리 필터 */}
-      {board.categories.length > 1 && (
+      {/* 카테고리 필터 + 정렬 */}
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+        {board.categories.length > 1 && (
+          <Suspense fallback={null}>
+            <BoardFilter categories={board.categories} boardSlug={boardSlug} />
+          </Suspense>
+        )}
         <Suspense fallback={null}>
-          <BoardFilter categories={board.categories} boardSlug={boardSlug} />
+          <SortToggle />
         </Suspense>
-      )}
+      </div>
 
       {/* 게시글 목록 */}
       {posts.length > 0 ? (
@@ -69,10 +78,13 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
             ))}
           </div>
 
-          {/* 더보기 버튼 */}
-          <div className="flex justify-center py-8">
-            <button className="min-h-[52px] px-12 py-3.5 rounded-full border-2 border-border bg-card text-muted-foreground text-xs font-bold cursor-pointer transition-all shadow-sm hover:border-primary hover:text-primary hover:bg-primary/5 hover:shadow-[0_3px_10px_rgba(255,111,97,0.15)] hover:-translate-y-px">더보기</button>
-          </div>
+          <LoadMoreButton
+            boardSlug={boardSlug}
+            boardType={board.boardType}
+            category={category}
+            initialHasMore={hasMore}
+            initialLastId={lastId}
+          />
         </>
       ) : (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">

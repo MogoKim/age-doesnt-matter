@@ -18,6 +18,9 @@ export default function PostCard({ post, boardSlug }: PostCardProps) {
       )}
 
       <h3 className="text-sm font-bold text-foreground m-0 line-clamp-2 leading-[1.5]">
+        {post.isPinned && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide mr-1 bg-foreground text-background">공지 </span>
+        )}
         {post.promotionLevel === 'HOT' && (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide mr-1 bg-gradient-to-br from-[#FF6B6B] to-[#FF8E53] text-white">HOT </span>
         )}
