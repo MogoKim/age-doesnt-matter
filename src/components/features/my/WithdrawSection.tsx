@@ -3,9 +3,11 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { withdrawAccount } from '@/lib/actions/account'
+import { useToast } from '@/components/common/Toast'
 
 export default function WithdrawSection() {
   const router = useRouter()
+  const { toast } = useToast()
   const [showConfirm, setShowConfirm] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -15,7 +17,7 @@ export default function WithdrawSection() {
       if (result.success) {
         router.push('/')
       } else {
-        alert(result.error || '오류가 발생했습니다.')
+        toast(result.error || '오류가 발생했습니다.', 'error')
         setShowConfirm(false)
       }
     })

@@ -91,3 +91,29 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   revalidatePath('/')
   redirect(`/community/${slug}/${post.id}`)
 }
+
+export async function deletePost(postId: string): Promise<{ error?: string }> {
+  const session = await auth()
+  if (!session?.user?.id) return { error: '로그인이 필요합니다' }
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { authorId: true, boardType: true, status: true },
+  })
+  if (!post || post.status === 'DELETED') {
+    return { error: '존재하지 않는 게시글입니다' }
+  }
+  if (post.authorId !== session.user.id) {
+    return { error: '본인의 글만 삭제할 수 있습니다' }
+  }
+
+  await prisma.post.update({
+    where: { id: postId },
+    data: { status: 'DELETED' },
+  })
+
+  const slug = BOARD_TYPE_TO_SLUG[post.boardType]
+  revalidatePath(`/community/${slug}`)
+  revalidatePath('/')
+  redirect(`/community/${slug}`)
+}

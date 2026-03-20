@@ -113,3 +113,72 @@ export async function createComment(
   revalidatePath(`/community`)
   return {}
 }
+
+const EDIT_WINDOW_MS = 10 * 60 * 1000 // 10분
+
+export async function editComment(
+  commentId: string,
+  newContent: string,
+): Promise<CommentResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { error: '로그인이 필요합니다' }
+
+  const trimmed = newContent.trim()
+  if (!trimmed) return { error: '댓글 내용을 입력해 주세요' }
+  if (trimmed.length > 500) return { error: '댓글은 500자 이내로 입력해 주세요' }
+
+  const banned = await checkBannedWords(trimmed)
+  if (banned) return { error: '사용할 수 없는 표현이 포함되어 있습니다.' }
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { authorId: true, createdAt: true, status: true },
+  })
+  if (!comment || comment.status !== 'ACTIVE') {
+    return { error: '존재하지 않는 댓글입니다' }
+  }
+  if (comment.authorId !== session.user.id) {
+    return { error: '본인의 댓글만 수정할 수 있습니다' }
+  }
+  if (Date.now() - comment.createdAt.getTime() > EDIT_WINDOW_MS) {
+    return { error: '댓글은 작성 후 10분 이내에만 수정할 수 있습니다' }
+  }
+
+  await prisma.comment.update({
+    where: { id: commentId },
+    data: { content: trimmed },
+  })
+
+  revalidatePath(`/community`)
+  return {}
+}
+
+export async function deleteComment(commentId: string): Promise<CommentResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { error: '로그인이 필요합니다' }
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { authorId: true, postId: true, status: true, _count: { select: { replies: true } } },
+  })
+  if (!comment || comment.status !== 'ACTIVE') {
+    return { error: '존재하지 않는 댓글입니다' }
+  }
+  if (comment.authorId !== session.user.id) {
+    return { error: '본인의 댓글만 삭제할 수 있습니다' }
+  }
+
+  await prisma.$transaction([
+    prisma.comment.update({
+      where: { id: commentId },
+      data: { status: 'DELETED' },
+    }),
+    prisma.post.update({
+      where: { id: comment.postId },
+      data: { commentCount: { decrement: 1 } },
+    }),
+  ])
+
+  revalidatePath(`/community`)
+  return {}
+}

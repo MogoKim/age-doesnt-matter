@@ -5,6 +5,8 @@ import type { CommentItem as CommentItemType } from '@/types/api'
 import { formatTimeAgo } from './utils'
 import { cn } from '@/lib/utils'
 import { toggleCommentLike } from '@/lib/actions/likes'
+import { editComment, deleteComment } from '@/lib/actions/comments'
+import { useToast } from '@/components/common/Toast'
 import CommentInput from './CommentInput'
 
 interface CommentItemProps {
@@ -14,9 +16,12 @@ interface CommentItemProps {
 }
 
 export default function CommentItem({ comment, postId, isReply = false }: CommentItemProps) {
+  const { toast } = useToast()
   const [isLiked, setIsLiked] = useState(comment.isLiked)
   const [likeCount, setLikeCount] = useState(comment.likeCount)
   const [showReplyInput, setShowReplyInput] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState(comment.content)
   const [isPending, startTransition] = useTransition()
 
   function handleLike() {
@@ -29,7 +34,36 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
       if (result.error) {
         setIsLiked(isLiked)
         setLikeCount(likeCount)
-        alert(result.error)
+        toast(result.error, 'error')
+      }
+    })
+  }
+
+  function handleEdit() {
+    if (isPending) return
+    setIsEditing(false)
+
+    startTransition(async () => {
+      const result = await editComment(comment.id, editValue)
+      if (result.error) {
+        toast(result.error, 'error')
+        setIsEditing(true)
+      } else {
+        toast('댓글이 수정되었어요')
+      }
+    })
+  }
+
+  function handleDelete() {
+    if (isPending) return
+    if (!confirm('댓글을 삭제하시겠어요?')) return
+
+    startTransition(async () => {
+      const result = await deleteComment(comment.id)
+      if (result.error) {
+        toast(result.error, 'error')
+      } else {
+        toast('댓글이 삭제되었어요')
       }
     })
   }
@@ -64,9 +98,53 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
           </>
         )}
         <span className="text-xs text-muted-foreground">· {formatTimeAgo(comment.createdAt)}</span>
+        {comment.isOwn && (
+          <div className="ml-auto flex items-center gap-1">
+            {comment.canEdit && (
+              <button
+                className="text-xs text-muted-foreground px-2 py-1 min-h-[36px] hover:text-primary transition-colors"
+                onClick={() => { setIsEditing(!isEditing); setEditValue(comment.content) }}
+              >
+                수정
+              </button>
+            )}
+            <button
+              className="text-xs text-muted-foreground px-2 py-1 min-h-[36px] hover:text-destructive transition-colors"
+              onClick={handleDelete}
+              disabled={isPending}
+            >
+              삭제
+            </button>
+          </div>
+        )}
       </div>
 
-      <p className="text-sm text-foreground m-0 mb-2 break-keep leading-[1.7]">{comment.content}</p>
+      {isEditing ? (
+        <div className="mb-2">
+          <textarea
+            className="w-full min-h-[80px] px-4 py-2.5 border border-border rounded-xl text-sm text-foreground bg-background resize-none outline-none transition-colors focus:border-primary"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+          />
+          <div className="flex justify-end gap-2 mt-2">
+            <button
+              className="px-4 py-2 text-xs font-bold text-muted-foreground min-h-[40px] rounded-lg hover:text-foreground transition-colors"
+              onClick={() => setIsEditing(false)}
+            >
+              취소
+            </button>
+            <button
+              className="px-4 py-2 text-xs font-bold text-white bg-primary rounded-lg min-h-[40px] hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed transition-colors"
+              onClick={handleEdit}
+              disabled={isPending || !editValue.trim()}
+            >
+              {isPending ? '수정 중...' : '수정'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-foreground m-0 mb-2 break-keep leading-[1.7]">{comment.content}</p>
+      )}
 
       <div className="flex items-center gap-4">
         <button

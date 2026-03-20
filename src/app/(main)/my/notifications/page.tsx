@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { getMyNotifications } from '@/lib/queries/my'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import MarkAllReadButton from '@/components/features/my/MarkAllReadButton'
+import NotificationLink from '@/components/features/my/NotificationLink'
 
 export const metadata = { title: '알림' }
 
@@ -39,14 +40,11 @@ export default async function MyNotificationsPage() {
       {notifications.length > 0 ? (
         <div className="space-y-2">
           {notifications.map((notification) => (
-            <Link
+            <NotificationLink
               key={notification.id}
+              notificationId={notification.id}
               href={notification.linkUrl}
-              className={`block p-4 rounded-xl border no-underline transition-colors hover:border-primary/30 ${
-                notification.isRead
-                  ? 'bg-card border-border'
-                  : 'bg-primary/5 border-primary/20'
-              }`}
+              isRead={notification.isRead}
             >
               <div className="flex items-start gap-3">
                 <span className="text-lg shrink-0 mt-0.5">
@@ -64,7 +62,7 @@ export default async function MyNotificationsPage() {
                   <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0 mt-2" />
                 )}
               </div>
-            </Link>
+            </NotificationLink>
           ))}
         </div>
       ) : (

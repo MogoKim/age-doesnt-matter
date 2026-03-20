@@ -67,8 +67,12 @@ export async function getCommentsByPostId(
     likedSet = new Set(likes.map((l) => l.commentId!))
   }
 
+  const EDIT_WINDOW_MS = 10 * 60 * 1000
+
   function toComment(row: typeof rows[number] | typeof rows[number]['replies'][number]): CommentItem {
     const isDeleted = row.status === 'DELETED'
+    const isOwn = !!userId && row.author.id === userId
+    const canEdit = isOwn && !isDeleted && (Date.now() - row.createdAt.getTime() < EDIT_WINDOW_MS)
     return {
       id: row.id,
       content: isDeleted ? '삭제된 댓글입니다.' : row.content,
@@ -76,6 +80,8 @@ export async function getCommentsByPostId(
       likeCount: row.likeCount,
       isLiked: likedSet.has(row.id),
       isDeleted,
+      isOwn: isOwn && !isDeleted,
+      canEdit,
       createdAt: row.createdAt.toISOString(),
       replies: 'replies' in row ? row.replies.map(toComment) : [],
     }

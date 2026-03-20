@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap } from '@/lib/actions/likes'
+import { useToast } from '@/components/common/Toast'
 import ReportModal from './ReportModal'
 
 interface ActionBarProps {
@@ -13,6 +14,7 @@ interface ActionBarProps {
 }
 
 export default function ActionBar({ postId, likeCount, isLiked: initialLiked, isScrapped: initialScrapped }: ActionBarProps) {
+  const { toast } = useToast()
   const [isLiked, setIsLiked] = useState(initialLiked)
   const [likes, setLikes] = useState(likeCount)
   const [isScrapped, setIsScrapped] = useState(initialScrapped)
@@ -29,20 +31,23 @@ export default function ActionBar({ postId, likeCount, isLiked: initialLiked, is
       if (result.error) {
         setIsLiked(isLiked)
         setLikes(likes)
-        alert(result.error)
+        toast(result.error, 'error')
       }
     })
   }
 
   function handleScrap() {
     if (isPending) return
+    const wasScrapped = isScrapped
     setIsScrapped(!isScrapped)
 
     startTransition(async () => {
       const result = await togglePostScrap(postId)
       if (result.error) {
-        setIsScrapped(isScrapped)
-        alert(result.error)
+        setIsScrapped(wasScrapped)
+        toast(result.error, 'error')
+      } else {
+        toast(wasScrapped ? '스크랩을 취소했어요' : '스크랩했어요')
       }
     })
   }
@@ -55,7 +60,7 @@ export default function ActionBar({ postId, likeCount, isLiked: initialLiked, is
       })
     } else {
       navigator.clipboard.writeText(window.location.href)
-      alert('링크가 복사되었어요!')
+      toast('링크가 복사되었어요')
     }
   }
 

@@ -7,6 +7,7 @@ import { getBoardConfig } from '@/lib/queries/boards'
 import { getPostDetail } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
 import ActionBar from '@/components/features/community/ActionBar'
+import PostDeleteButton from '@/components/features/community/PostDeleteButton'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
 
@@ -38,14 +39,18 @@ export default async function PostDetailPage({ params }: PageProps) {
   const post = await getPostDetail(postId, userId)
   if (!post) notFound()
 
+  const isOwnPost = !!userId && post.author.id === userId
   const comments = await getCommentsByPostId(postId, userId)
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       {/* 뒤로가기 */}
-      <Link href={`/community/${boardSlug}`} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5">
-        ← {board.displayName}
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href={`/community/${boardSlug}`} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5">
+          ← {board.displayName}
+        </Link>
+        {isOwnPost && <PostDeleteButton postId={postId} />}
+      </div>
 
       {/* 게시글 헤더 */}
       <div className="mb-8 pb-6 border-b border-border">

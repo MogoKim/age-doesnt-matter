@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { reportPost, reportComment } from '@/lib/actions/reports'
+import { useToast } from '@/components/common/Toast'
 
 type ReportReason = 'PROFANITY' | 'POLITICS' | 'HATE' | 'SPAM' | 'ADULT' | 'OTHER'
 
@@ -21,6 +22,7 @@ interface ReportModalProps {
 }
 
 export default function ReportModal({ targetId, targetType, onClose }: ReportModalProps) {
+  const { toast } = useToast()
   const [reason, setReason] = useState<ReportReason | null>(null)
   const [description, setDescription] = useState('')
   const [error, setError] = useState('')
@@ -39,8 +41,7 @@ export default function ReportModal({ targetId, targetType, onClose }: ReportMod
         setError(result.error)
       } else {
         onClose()
-        // 간단한 토스트 대신 alert 사용
-        alert('신고가 접수되었어요')
+        toast('신고가 접수되었어요')
       }
     })
   }

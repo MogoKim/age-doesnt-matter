@@ -122,6 +122,8 @@ export interface CommentItem {
   likeCount: number
   isLiked: boolean
   isDeleted: boolean
+  isOwn: boolean
+  canEdit: boolean
   createdAt: string
   replies: CommentItem[]
 }
