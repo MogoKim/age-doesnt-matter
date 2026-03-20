@@ -12,12 +12,12 @@
   --color-primary-dark: #CC594E;
   --color-accent: #FF8C00;
 
-  /* ── Colors — Neutral ── */
-  --color-text: #1A1A1A;
-  --color-text-sub: #666666;
-  --color-text-muted: #999999;
-  --color-border: #E0E0E0;
-  --color-bg: #F5F3F0;
+  /* ── Colors — Neutral (Phase 2 고대비 팔레트) ── */
+  --color-text: #111827;
+  --color-text-sub: #4B5563;
+  --color-text-muted: #6B7280;
+  --color-border: #E5E7EB;
+  --color-bg: #F8F9FA;
   --color-surface: #FFFFFF;
 
   /* ── Colors — Semantic ── */
@@ -36,18 +36,20 @@
   --color-ad-bg: #F9F5F0;
 
   /* ── Typography — Font Family ── */
-  --font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-family: var(--font-pretendard), 'Pretendard Variable', 'Pretendard',
+    -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
-  /* ── Typography — Font Size Scale ── */
-  --font-size-xs: 14px;    /* caption */
-  --font-size-sm: 17px;    /* body (최소 본문) */
-  --font-size-base: 18px;  /* button */
-  --font-size-lg: 20px;    /* h3, body-lg */
-  --font-size-xl: 24px;    /* h2, body-xl */
-  --font-size-2xl: 28px;   /* h1 */
-  --font-size-3xl: 32px;   /* hero */
+  /* ── Typography — Font Size Scale (Phase 2 시니어 맞춤) ── */
+  --font-size-xs: 15px;    /* caption/배지 — 최소 15px */
+  --font-size-sm: 16px;    /* 작은 설명글 */
+  --font-size-base: 18px;  /* 본문/버튼 — 절대 기본 */
+  --font-size-lg: 20px;    /* 서브타이틀 */
+  --font-size-xl: 24px;    /* H4 */
+  --font-size-2xl: 28px;   /* H3 */
+  --font-size-3xl: 36px;   /* H2 */
+  --font-size-4xl: 44px;   /* H1 */
 
-  /* ── Typography — Font Weight (Noto Sans KR: 400/500/700만 지원) ── */
+  /* ── Typography — Font Weight (Pretendard: 가변 폰트, 100~900 전체 지원) ── */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-bold: 700;
@@ -118,26 +120,28 @@
 
 /* ── 글자크기 3단계 (접근성) ── */
 
-/* small: 전체적으로 한 단계 작게 */
+/* small: 한 단계 작게 (최소 xs=14px 보장) */
 html[data-font-size="small"] {
   --font-size-xs: 14px;
-  --font-size-sm: 16px;
-  --font-size-base: 17px;
-  --font-size-lg: 19px;
+  --font-size-sm: 15px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
   --font-size-xl: 22px;
   --font-size-2xl: 26px;
-  --font-size-3xl: 30px;
+  --font-size-3xl: 32px;
+  --font-size-4xl: 40px;
 }
 
 /* medium: 기본값 (:root 그대로) */
 
-/* large: 전체적으로 한 단계 크게 */
+/* large: 한 단계 크게 */
 html[data-font-size="large"] {
   --font-size-xs: 16px;
-  --font-size-sm: 19px;
+  --font-size-sm: 18px;
   --font-size-base: 20px;
   --font-size-lg: 22px;
-  --font-size-xl: 26px;
+  --font-size-xl: 28px;
   --font-size-2xl: 32px;
-  --font-size-3xl: 36px;
+  --font-size-3xl: 40px;
+  --font-size-4xl: 48px;
 }

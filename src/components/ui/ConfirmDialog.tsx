@@ -1,7 +1,15 @@
 'use client'
 
-import BottomSheet from './BottomSheet'
-import Button from './Button'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -11,7 +19,7 @@ interface ConfirmDialogProps {
   message?: string
   confirmLabel?: string
   cancelLabel?: string
-  variant?: 'primary' | 'danger'
+  variant?: 'default' | 'destructive'
   isLoading?: boolean
 }
 
@@ -21,40 +29,41 @@ export default function ConfirmDialog({
   onConfirm,
   title,
   message,
-  confirmLabel = '확인',
-  cancelLabel = '취소',
-  variant = 'primary',
+  confirmLabel = '\uD655\uC778',
+  cancelLabel = '\uCDE8\uC18C',
+  variant = 'default',
   isLoading = false,
 }: ConfirmDialogProps) {
   return (
-    <BottomSheet open={open} onClose={onClose}>
-      <h3
-        style={{
-          font: 'var(--font-h3)',
-          marginBottom: message ? 'var(--space-sm)' : 'var(--space-lg)',
-        }}
-      >
-        {title}
-      </h3>
-      {message && (
-        <p
-          style={{
-            font: 'var(--font-body)',
-            color: 'var(--color-text-sub)',
-            marginBottom: 'var(--space-lg)',
-          }}
-        >
-          {message}
-        </p>
-      )}
-      <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-        <Button variant="ghost" onClick={onClose} disabled={isLoading}>
-          {cancelLabel}
-        </Button>
-        <Button variant={variant} onClick={onConfirm} isLoading={isLoading}>
-          {confirmLabel}
-        </Button>
-      </div>
-    </BottomSheet>
+    <AlertDialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <AlertDialogContent className="rounded-2xl max-w-[calc(100%-2rem)] sm:max-w-lg">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-lg">{title}</AlertDialogTitle>
+          {message && (
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              {message}
+            </AlertDialogDescription>
+          )}
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-row gap-2">
+          <AlertDialogCancel
+            disabled={isLoading}
+            className="mt-0 h-[52px] flex-1 text-base lg:h-12"
+          >
+            {cancelLabel}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onConfirm}
+            disabled={isLoading}
+            className={`h-[52px] flex-1 text-base lg:h-12 ${variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}`}
+          >
+            {isLoading && (
+              <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            )}
+            {confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

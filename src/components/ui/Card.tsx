@@ -1,52 +1,76 @@
-import Link from 'next/link'
-import Image from 'next/image'
-import styles from './Card.module.css'
-import type { PostSummary } from '@/types/api'
-import { GRADE_EMOJI } from '@/types/api'
-import { formatRelativeTime } from '@/lib/format'
+import * as React from "react"
 
-interface CardProps {
-  post: PostSummary
-  href: string
-}
+import { cn } from "@/lib/utils"
 
-export default function Card({ post, href }: CardProps) {
-  return (
-    <Link href={href} className={styles.card}>
-      {post.category && <span className={styles.tag}>{post.category}</span>}
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-xl border bg-card text-card-foreground shadow",
+      className
+    )}
+    {...props}
+  />
+))
+Card.displayName = "Card"
 
-      <h3 className={styles.title}>
-        {post.title}
-        {post.promotionLevel === 'HOT' && <span className={styles.hot}>🔥</span>}
-        {post.promotionLevel === 'FAME' && <span className={styles.hot}>👑</span>}
-      </h3>
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    {...props}
+  />
+))
+CardHeader.displayName = "CardHeader"
 
-      {post.preview && <p className={styles.preview}>{post.preview}</p>}
+const CardTitle = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("font-semibold leading-none tracking-tight", className)}
+    {...props}
+  />
+))
+CardTitle.displayName = "CardTitle"
 
-      {post.thumbnailUrl && (
-        <Image
-          src={post.thumbnailUrl}
-          alt=""
-          width={400}
-          height={225}
-          className={styles.thumbnail}
-        />
-      )}
+const CardDescription = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+CardDescription.displayName = "CardDescription"
 
-      <div className={styles.meta}>
-        <span>
-          {GRADE_EMOJI[post.author.grade]}
-          {post.author.nickname}
-        </span>
-        <span>·</span>
-        <span>{formatRelativeTime(post.createdAt)}</span>
-      </div>
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+))
+CardContent.displayName = "CardContent"
 
-      <div className={styles.stats}>
-        <span className={styles.stat}>❤️ {post.likeCount}</span>
-        <span className={styles.stat}>💬 {post.commentCount}</span>
-        <span className={styles.stat}>👁 {post.viewCount}</span>
-      </div>
-    </Link>
-  )
-}
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex items-center p-6 pt-0", className)}
+    {...props}
+  />
+))
+CardFooter.displayName = "CardFooter"
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }

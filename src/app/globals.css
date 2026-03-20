@@ -1,9 +1,59 @@
 /* ===================================================
- * 우나어 — 글로벌 스타일 (리셋 + 베이스)
- * 디자인 토큰은 tokens.css에 정의 (Source of Truth)
+ * 우나어 — 글로벌 스타일
+ * Tailwind CSS + shadcn/ui + 기존 디자인 토큰
  * =================================================== */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 기존 디자인 토큰 (tokens.css) — Phase 3 전환 완료 시까지 유지 */
 @import '../styles/tokens.css';
+
+/* ── shadcn/ui CSS Variables — 시니어 고대비 컬러 팔레트 ── */
+@layer base {
+  :root {
+    /* 배경: #F8F9FA 옅은 웜그레이 — 눈 피로도 감소 */
+    --background: 210 17% 98%;
+    /* 기본 글씨: #111827 차콜 블랙 — 고대비 */
+    --foreground: 222 47% 11%;
+
+    /* 카드/서피스: #FFFFFF 완전 흰색 — 배경과 명확 분리 */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* 메인 코랄: #FF6F61 — 브랜드 컬러 */
+    --primary: 5 100% 69%;
+    --primary-foreground: 0 0% 100%;
+
+    /* 보조: 은은한 뉴트럴 */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    /* 뮤트: 비활성/힌트 텍스트 */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    /* 액센트: 호버/포커스 하이라이트 */
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    /* 에러/삭제: #F44336 계열 */
+    --destructive: 4 90% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* 구분선: #E5E7EB 은은한 보더 */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 5 100% 69%;
+    --radius: 0.75rem;
+
+    --font-family: var(--font-pretendard), 'Pretendard Variable', 'Pretendard',
+      -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+}
 
 /* ── 글로벌 리셋 ── */
 *,

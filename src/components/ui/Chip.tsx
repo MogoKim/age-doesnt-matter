@@ -1,6 +1,6 @@
 'use client'
 
-import styles from './Chip.module.css'
+import { cn } from '@/lib/utils'
 
 interface ChipProps {
   label: string
@@ -13,7 +13,13 @@ export default function Chip({ label, active = false, onClick, className }: Chip
   return (
     <button
       type="button"
-      className={`${styles.chip} ${active ? styles.active : ''} ${className ?? ''}`}
+      className={cn(
+        'inline-flex items-center justify-center h-9 px-4 text-xs rounded-full border whitespace-nowrap select-none transition-colors',
+        active
+          ? 'border-primary bg-primary/5 text-primary font-medium'
+          : 'border-border bg-background text-muted-foreground hover:border-primary',
+        className,
+      )}
       onClick={onClick}
       aria-pressed={active}
     >

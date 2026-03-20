@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react'
-import styles from './Toast.module.css'
+import { cn } from '@/lib/utils'
 
 interface ToastMessage {
   id: number
@@ -27,7 +27,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const idRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const show = useCallback((message: string, icon = '✅', duration = 3000) => {
+  const show = useCallback((message: string, icon = '\u2705', duration = 3000) => {
     if (timerRef.current) clearTimeout(timerRef.current)
 
     const id = ++idRef.current
@@ -51,8 +51,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ show }}>
       {children}
       {toast && (
-        <div className={styles.container}>
-          <div className={`${styles.toast} ${toast.exiting ? styles.exit : ''}`} role="alert">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[300] pointer-events-none">
+          <div
+            className={cn(
+              'flex items-center gap-2 px-6 py-4 bg-card border border-border rounded-xl shadow-md text-sm font-medium text-foreground whitespace-nowrap pointer-events-auto',
+              toast.exiting ? 'animate-out fade-out-0 slide-out-to-top-4' : 'animate-in fade-in-0 slide-in-from-top-4',
+            )}
+            role="alert"
+          >
             <span>{toast.icon}</span>
             <span>{toast.message}</span>
           </div>

@@ -1,27 +1,36 @@
-import type { Grade } from '@/types/api'
-import { GRADE_EMOJI, GRADE_LABEL } from '@/types/api'
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 
-interface BadgeProps {
-  grade: Grade
-  showLabel?: boolean
-  className?: string
-}
+import { cn } from "@/lib/utils"
 
-const GRADE_COLORS: Record<Grade, string> = {
-  SPROUT: 'var(--color-grade-sprout)',
-  REGULAR: 'var(--color-grade-regular)',
-  VETERAN: 'var(--color-grade-veteran)',
-  WARM_NEIGHBOR: 'var(--color-grade-warm-neighbor)',
-}
+const badgeVariants = cva(
+  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
+        outline: "text-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
 
-export default function Badge({ grade, showLabel = false, className }: BadgeProps) {
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {}
+
+function Badge({ className, variant, ...props }: BadgeProps) {
   return (
-    <span
-      className={className}
-      style={{ color: GRADE_COLORS[grade], fontSize: 'var(--font-size-xs)' }}
-    >
-      {GRADE_EMOJI[grade]}
-      {showLabel && ` ${GRADE_LABEL[grade]}`}
-    </span>
+    <div className={cn(badgeVariants({ variant }), className)} {...props} />
   )
 }
+
+export { Badge, badgeVariants }

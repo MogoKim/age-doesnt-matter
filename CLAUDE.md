@@ -10,12 +10,14 @@
 - 프레임워크: Next.js 14 App Router + TypeScript strict
 - DB: Supabase + Prisma (Raw SQL 절대 금지)
 - 인증: NextAuth v5 카카오 전용
-- CSS: CSS Modules + CSS Variables (디자인 토큰만 사용)
+- CSS: Tailwind CSS + shadcn/ui (CSS Variables 디자인 토큰 병행)
+- 폰트: Pretendard Variable (next/font/local)
+- 유틸: cn() — clsx + tailwind-merge (@/lib/utils)
 - 컴포넌트: PascalCase / 파일: kebab-case
 
 ## 시니어 친화 UI 원칙 (절대 준수)
 - 터치 타겟: 최소 52×52px
-- 폰트 최소: 17px (caption만 14px 허용)
+- 폰트 최소: 15px (caption/배지만, 본문 18px 베이스)
 - 브랜드 컬러: --color-primary (#FF6F61)
 - 버튼 높이: 52px (모바일) / 48px (데스크탑)
 - 모달: 모바일=하단 풀스크린 시트 / 데스크탑=중앙 팝업
