@@ -11,12 +11,22 @@ interface BoardOption {
   categories: string[]
 }
 
+const UPLOAD_GRADES = ['REGULAR', 'VETERAN', 'WARM_NEIGHBOR']
+const MAX_IMAGES = 5
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+
+interface ImagePreview {
+  file: File
+  url: string
+}
+
 interface PostWriteFormProps {
   defaultBoard?: string
   boards: BoardOption[]
+  userGrade?: string
 }
 
-export default function PostWriteForm({ defaultBoard, boards }: PostWriteFormProps) {
+export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROUT' }: PostWriteFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
@@ -24,6 +34,9 @@ export default function PostWriteForm({ defaultBoard, boards }: PostWriteFormPro
   const [selectedCategory, setSelectedCategory] = useState('')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [images, setImages] = useState<ImagePreview[]>([])
+
+  const canUploadImages = UPLOAD_GRADES.includes(userGrade)
 
   const board = boards.find((b) => b.slug === selectedBoard)
   const categories = board?.categories.filter((c) => c !== '전체') || []
@@ -53,6 +66,7 @@ export default function PostWriteForm({ defaultBoard, boards }: PostWriteFormPro
     if (selectedCategory) formData.set('category', selectedCategory)
     formData.set('title', title)
     formData.set('content', content)
+    images.forEach((img) => formData.append('images', img.file))
 
     startTransition(async () => {
       const result = await createPost(formData)
@@ -154,10 +168,63 @@ export default function PostWriteForm({ defaultBoard, boards }: PostWriteFormPro
 
       {/* 이미지 첨부 */}
       <div className="mb-6">
-        <button className="flex items-center gap-2 min-h-[52px] p-4 border-2 border-dashed border-border rounded-2xl bg-background text-muted-foreground text-xs font-medium w-full justify-center opacity-50 cursor-not-allowed" disabled>
-          📷 이미지 첨부 (단골 등급부터 가능해요)
-        </button>
-        <p className="text-xs text-muted-foreground mt-1 text-center">최대 5장, 각 5MB 이하</p>
+        {canUploadImages ? (
+          <>
+            <div className="flex flex-wrap gap-3">
+              {images.map((img, idx) => (
+                <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border">
+                  <img src={img.url} alt={`첨부 ${idx + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    className="absolute top-0.5 right-0.5 w-6 h-6 bg-black/60 text-white rounded-full text-xs flex items-center justify-center cursor-pointer"
+                    onClick={() => {
+                      URL.revokeObjectURL(img.url)
+                      setImages((prev) => prev.filter((_, i) => i !== idx))
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {images.length < MAX_IMAGES && (
+                <label className="flex items-center justify-center w-20 h-20 border-2 border-dashed border-border rounded-xl bg-background text-muted-foreground text-2xl cursor-pointer hover:border-primary/30 transition-colors">
+                  +
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || [])
+                      const valid = files.filter((f) => {
+                        if (f.size > MAX_FILE_SIZE) {
+                          setError(`${f.name}은(는) 5MB를 초과합니다.`)
+                          return false
+                        }
+                        if (!f.type.startsWith('image/')) return false
+                        return true
+                      })
+                      const remaining = MAX_IMAGES - images.length
+                      const toAdd = valid.slice(0, remaining).map((file) => ({
+                        file,
+                        url: URL.createObjectURL(file),
+                      }))
+                      setImages((prev) => [...prev, ...toAdd])
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">{images.length}/{MAX_IMAGES}장 (각 5MB 이하)</p>
+          </>
+        ) : (
+          <>
+            <button className="flex items-center gap-2 min-h-[52px] p-4 border-2 border-dashed border-border rounded-2xl bg-background text-muted-foreground text-xs font-medium w-full justify-center opacity-50 cursor-not-allowed" disabled>
+              이미지 첨부 (단골 등급부터 가능해요)
+            </button>
+            <p className="text-xs text-muted-foreground mt-1 text-center">최대 5장, 각 5MB 이하</p>
+          </>
+        )}
       </div>
 
       {/* 하단 액션바 */}

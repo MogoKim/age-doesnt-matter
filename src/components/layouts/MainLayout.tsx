@@ -24,7 +24,7 @@ export default function MainLayout({
 
       <main>{children}</main>
 
-      <FAB />
+      <FAB isLoggedIn={isLoggedIn} />
       <Footer />
     </>
   )

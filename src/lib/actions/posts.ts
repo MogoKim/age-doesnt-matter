@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { BOARD_SLUG_MAP, BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { BoardType } from '@/generated/prisma/client'
+import { checkBannedWords } from '@/lib/banned-words'
 
 interface CreatePostResult {
   error?: string
@@ -38,6 +39,16 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
 
   if (content.length < 10) {
     return { error: '본문은 10자 이상 입력해 주세요' }
+  }
+
+  // 금지어 검사
+  const bannedInTitle = await checkBannedWords(title)
+  if (bannedInTitle) {
+    return { error: `제목에 사용할 수 없는 표현이 포함되어 있습니다.` }
+  }
+  const bannedInContent = await checkBannedWords(content)
+  if (bannedInContent) {
+    return { error: `본문에 사용할 수 없는 표현이 포함되어 있습니다.` }
   }
 
   // 게시판 활성 여부 확인

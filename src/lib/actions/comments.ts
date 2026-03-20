@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { checkBannedWords } from '@/lib/banned-words'
 
 interface CommentResult {
   error?: string
@@ -25,6 +26,12 @@ export async function createComment(
 
   if (trimmed.length > 500) {
     return { error: '댓글은 500자 이내로 입력해 주세요' }
+  }
+
+  // 금지어 검사
+  const banned = await checkBannedWords(trimmed)
+  if (banned) {
+    return { error: '사용할 수 없는 표현이 포함되어 있습니다.' }
   }
 
   // 게시글 존재 확인

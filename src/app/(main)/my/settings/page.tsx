@@ -5,6 +5,7 @@ import { getMySettings } from '@/lib/queries/my'
 import FontSizeSettings from '@/components/features/my/FontSizeSettings'
 import NicknameSettings from '@/components/features/my/NicknameSettings'
 import BlockedUserList from '@/components/features/my/BlockedUserList'
+import WithdrawSection from '@/components/features/my/WithdrawSection'
 
 export const metadata = { title: '설정' }
 
@@ -47,6 +48,11 @@ export default async function MySettingsPage() {
         <section className="bg-card rounded-2xl p-6 border border-border">
           <h2 className="text-base font-bold text-foreground mb-4">차단 관리</h2>
           <BlockedUserList />
+        </section>
+        {/* 회원 탈퇴 */}
+        <section className="bg-card rounded-2xl p-6 border border-border">
+          <h2 className="text-base font-bold text-foreground mb-4">회원 탈퇴</h2>
+          <WithdrawSection />
         </section>
       </div>
     </div>

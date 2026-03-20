@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
 import PostWriteForm from '@/components/features/community/PostWriteForm'
 import { getAllBoardConfigs } from '@/lib/queries/boards'
 
@@ -15,7 +17,11 @@ interface PageProps {
 const WRITABLE_BOARD_TYPES = ['STORY', 'HUMOR']
 
 export default async function WritePage({ searchParams }: PageProps) {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/login')
+
   const { board } = await searchParams
+  const userGrade = session.user.grade ?? 'SEEDLING'
 
   const allBoards = await getAllBoardConfigs()
   const writableBoards = allBoards
@@ -29,7 +35,7 @@ export default async function WritePage({ searchParams }: PageProps) {
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <h1 className="text-xl font-bold text-foreground m-0 mb-6 pb-4 border-b-2 border-foreground">글쓰기</h1>
-      <PostWriteForm defaultBoard={board} boards={writableBoards} />
+      <PostWriteForm defaultBoard={board} boards={writableBoards} userGrade={userGrade} />
     </div>
   )
 }
