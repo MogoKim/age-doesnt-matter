@@ -49,6 +49,9 @@
 
     --font-family: var(--font-pretendard), 'Pretendard Variable', 'Pretendard',
       -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+    /* 시니어 글꼴 크기 — FontSizeProvider가 동적으로 설정 */
+    --font-body: 16px;
   }
 }
 
@@ -69,7 +72,7 @@ html {
 
 body {
   font-family: var(--font-family);
-  font-size: 16px;
+  font-size: var(--font-body, 16px);
   font-weight: 400;
   line-height: 1.75;
   color: hsl(var(--foreground));

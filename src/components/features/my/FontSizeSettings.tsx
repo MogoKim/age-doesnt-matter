@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { updateFontSize } from '@/lib/actions/settings'
 
@@ -15,6 +16,7 @@ interface FontSizeSettingsProps {
 }
 
 export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps) {
+  const router = useRouter()
   const [selected, setSelected] = useState(currentSize)
   const [isPending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
@@ -31,6 +33,7 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
         setMessage(result.error)
       } else {
         setMessage('글자 크기가 변경되었어요')
+        router.refresh()
       }
     })
   }

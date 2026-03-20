@@ -227,6 +227,15 @@ export async function getMyNotifications(
   return { notifications, hasMore }
 }
 
+/** 사용자 글꼴 크기 */
+export async function getUserFontSize(userId: string): Promise<string> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { fontSize: true },
+  })
+  return user?.fontSize ?? 'NORMAL'
+}
+
 /** 읽지 않은 알림 수 */
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   return prisma.notification.count({

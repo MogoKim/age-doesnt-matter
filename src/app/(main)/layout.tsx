@@ -1,5 +1,7 @@
 import { auth } from '@/lib/auth'
+import { getUserFontSize } from '@/lib/queries/my'
 import MainLayout from '@/components/layouts/MainLayout'
+import FontSizeProvider from '@/components/common/FontSizeProvider'
 
 export default async function MainGroupLayout({
   children,
@@ -9,10 +11,15 @@ export default async function MainGroupLayout({
   const session = await auth()
   const isLoggedIn = !!session?.user
   const nickname = session?.user?.nickname
+  const fontSize = session?.user?.id
+    ? await getUserFontSize(session.user.id)
+    : undefined
 
   return (
-    <MainLayout isLoggedIn={isLoggedIn} nickname={nickname}>
-      {children}
-    </MainLayout>
+    <FontSizeProvider fontSize={fontSize}>
+      <MainLayout isLoggedIn={isLoggedIn} nickname={nickname}>
+        {children}
+      </MainLayout>
+    </FontSizeProvider>
   )
 }

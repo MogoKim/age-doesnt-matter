@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { createPost } from '@/lib/actions/posts'
+import { useToast } from '@/components/common/Toast'
 
 interface BoardOption {
   slug: string
@@ -14,6 +15,8 @@ interface BoardOption {
 const UPLOAD_GRADES = ['REGULAR', 'VETERAN', 'WARM_NEIGHBOR']
 const MAX_IMAGES = 5
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const DRAFT_KEY = 'unae_post_draft'
+const AUTOSAVE_INTERVAL = 30_000 // 30초
 
 interface ImagePreview {
   file: File
@@ -26,8 +29,17 @@ interface PostWriteFormProps {
   userGrade?: string
 }
 
+// YouTube URL → 영상 ID 추출
+function extractYouTubeId(text: string): string | null {
+  const match = text.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/
+  )
+  return match?.[1] ?? null
+}
+
 export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROUT' }: PostWriteFormProps) {
   const router = useRouter()
+  const { toast } = useToast()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
   const [selectedBoard, setSelectedBoard] = useState(defaultBoard || boards[0]?.slug || 'stories')
@@ -35,15 +47,69 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [images, setImages] = useState<ImagePreview[]>([])
+  const [showPreview, setShowPreview] = useState(false)
+  const [draftLoaded, setDraftLoaded] = useState(false)
 
   const canUploadImages = UPLOAD_GRADES.includes(userGrade)
-
   const board = boards.find((b) => b.slug === selectedBoard)
   const categories = board?.categories.filter((c) => c !== '전체') || []
 
   const isTitleValid = title.length >= 2 && title.length <= 40
   const isContentValid = content.length >= 10
   const canSubmit = isTitleValid && isContentValid && selectedBoard
+
+  // YouTube 감지
+  const youtubeId = extractYouTubeId(content)
+
+  // 임시저장 복원
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY)
+      if (saved) {
+        const draft = JSON.parse(saved) as { board?: string; category?: string; title?: string; content?: string }
+        if (draft.title || draft.content) {
+          setSelectedBoard(draft.board || selectedBoard)
+          setSelectedCategory(draft.category || '')
+          setTitle(draft.title || '')
+          setContent(draft.content || '')
+          toast('임시저장된 글을 불러왔어요', 'info')
+        }
+      }
+    } catch { /* ignore */ }
+    setDraftLoaded(true)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 자동 임시저장 (30초마다)
+  const saveDraft = useCallback(() => {
+    if (!title && !content) return
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        board: selectedBoard,
+        category: selectedCategory,
+        title,
+        content,
+      }))
+    } catch { /* ignore */ }
+  }, [selectedBoard, selectedCategory, title, content])
+
+  useEffect(() => {
+    if (!draftLoaded) return
+    const timer = setInterval(saveDraft, AUTOSAVE_INTERVAL)
+    return () => clearInterval(timer)
+  }, [saveDraft, draftLoaded])
+
+  // 페이지 이탈 시에도 임시저장
+  useEffect(() => {
+    if (!draftLoaded) return
+    const handleBeforeUnload = () => saveDraft()
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [saveDraft, draftLoaded])
+
+  function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
+  }
 
   function handleBoardChange(slug: string) {
     setSelectedBoard(slug)
@@ -53,6 +119,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
   function handleCancel() {
     if (title || content) {
       if (!confirm('작성 중인 내용이 사라져요. 나가시겠어요?')) return
+      clearDraft()
     }
     router.back()
   }
@@ -72,9 +139,73 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
       const result = await createPost(formData)
       if (result?.error) {
         setError(result.error)
+      } else {
+        clearDraft()
       }
-      // redirect는 Server Action 내부에서 처리
     })
+  }
+
+  // 미리보기 모달
+  if (showPreview) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+        <div className="absolute inset-0 bg-black/50" onClick={() => setShowPreview(false)} />
+        <div className="relative w-full max-w-[720px] bg-card rounded-t-2xl md:rounded-2xl p-6 shadow-xl max-h-[85vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-foreground">미리보기</h2>
+            <button
+              onClick={() => setShowPreview(false)}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors text-xl"
+            >
+              ✕
+            </button>
+          </div>
+
+          {selectedCategory && (
+            <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-bold w-fit mb-2">
+              {selectedCategory}
+            </span>
+          )}
+          <h3 className="text-xl font-bold text-foreground mb-4 leading-[1.4]">
+            {title || '(제목 없음)'}
+          </h3>
+          <div className="text-base text-foreground leading-[1.85] whitespace-pre-wrap mb-4">
+            {content || '(본문 없음)'}
+          </div>
+
+          {youtubeId && (
+            <div className="aspect-video rounded-xl overflow-hidden mb-4">
+              <iframe
+                src={`https://www.youtube.com/embed/${youtubeId}`}
+                className="w-full h-full"
+                allowFullScreen
+                title="YouTube 미리보기"
+              />
+            </div>
+          )}
+
+          {images.length > 0 && (
+            <div className="flex gap-3 flex-wrap mb-4">
+              {images.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img.url}
+                  alt={`첨부 ${idx + 1}`}
+                  className="w-24 h-24 object-cover rounded-xl border border-border"
+                />
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={() => setShowPreview(false)}
+            className="w-full min-h-[52px] bg-primary text-white rounded-xl text-base font-bold transition-opacity hover:opacity-90"
+          >
+            돌아가기
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -166,6 +297,21 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
         </div>
       </div>
 
+      {/* YouTube 감지 알림 */}
+      {youtubeId && (
+        <div className="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
+          <p className="text-sm font-medium text-foreground mb-2">YouTube 영상이 감지되었어요</p>
+          <div className="aspect-video rounded-lg overflow-hidden">
+            <iframe
+              src={`https://www.youtube.com/embed/${youtubeId}`}
+              className="w-full h-full"
+              allowFullScreen
+              title="YouTube 미리보기"
+            />
+          </div>
+        </div>
+      )}
+
       {/* 이미지 첨부 */}
       <div className="mb-6">
         {canUploadImages ? (
@@ -236,6 +382,13 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
           취소
         </button>
         <div className="flex gap-2">
+          <button
+            className="min-h-[52px] lg:min-h-[48px] px-6 py-3.5 border-2 border-border rounded-xl bg-card text-foreground text-sm font-bold cursor-pointer transition-all hover:border-primary hover:text-primary"
+            onClick={() => setShowPreview(true)}
+            disabled={!title && !content}
+          >
+            미리보기
+          </button>
           <button
             className="min-h-[52px] lg:min-h-[48px] px-12 py-3.5 border-none rounded-xl bg-primary text-white text-sm font-bold cursor-pointer transition-all shadow-[0_2px_8px_rgba(255,111,97,0.3)] hover:bg-[#E85D50] hover:shadow-[0_4px_12px_rgba(255,111,97,0.4)] hover:-translate-y-px disabled:bg-border disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0"
             disabled={!canSubmit || isPending}
