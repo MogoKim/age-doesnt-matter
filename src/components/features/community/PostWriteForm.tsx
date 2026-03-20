@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { createPost } from '@/lib/actions/posts'
 
 interface BoardOption {
   slug: string
@@ -17,6 +18,8 @@ interface PostWriteFormProps {
 
 export default function PostWriteForm({ defaultBoard, boards }: PostWriteFormProps) {
   const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState('')
   const [selectedBoard, setSelectedBoard] = useState(defaultBoard || boards[0]?.slug || 'stories')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [title, setTitle] = useState('')
@@ -42,14 +45,32 @@ export default function PostWriteForm({ defaultBoard, boards }: PostWriteFormPro
   }
 
   function handleSubmit() {
-    if (!canSubmit) return
-    // TODO: API 연동
-    alert('글이 등록되었어요!')
-    router.push(`/community/${selectedBoard}`)
+    if (!canSubmit || isPending) return
+    setError('')
+
+    const formData = new FormData()
+    formData.set('boardSlug', selectedBoard)
+    if (selectedCategory) formData.set('category', selectedCategory)
+    formData.set('title', title)
+    formData.set('content', content)
+
+    startTransition(async () => {
+      const result = await createPost(formData)
+      if (result?.error) {
+        setError(result.error)
+      }
+      // redirect는 Server Action 내부에서 처리
+    })
   }
 
   return (
     <>
+      {error && (
+        <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-sm font-medium">
+          {error}
+        </div>
+      )}
+
       {/* 게시판 선택 */}
       <div className="flex gap-2 mb-6">
         {boards.map((b) => {
@@ -150,10 +171,10 @@ export default function PostWriteForm({ defaultBoard, boards }: PostWriteFormPro
         <div className="flex gap-2">
           <button
             className="min-h-[52px] lg:min-h-[48px] px-12 py-3.5 border-none rounded-xl bg-primary text-white text-sm font-bold cursor-pointer transition-all shadow-[0_2px_8px_rgba(255,111,97,0.3)] hover:bg-[#E85D50] hover:shadow-[0_4px_12px_rgba(255,111,97,0.4)] hover:-translate-y-px disabled:bg-border disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0"
-            disabled={!canSubmit}
+            disabled={!canSubmit || isPending}
             onClick={handleSubmit}
           >
-            등록하기
+            {isPending ? '등록 중...' : '등록하기'}
           </button>
         </div>
       </div>
