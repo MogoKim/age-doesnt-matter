@@ -3,7 +3,15 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
-import type { PostStatus, ReportAction, UserStatus, Grade } from '@/generated/prisma/client'
+import type {
+  AdSlot,
+  AdType,
+  BannedWordCategory,
+  Grade,
+  PostStatus,
+  ReportAction,
+  UserStatus,
+} from '@/generated/prisma/client'
 
 async function requireAdmin() {
   const session = await getAdminSession()
@@ -198,4 +206,281 @@ export async function adminProcessReport(
   })
 
   revalidatePath('/admin/reports')
+}
+
+// ─── 히어로 배너 ───
+
+export async function adminCreateBanner(data: {
+  title: string
+  description?: string
+  imageUrl: string
+  linkUrl?: string
+  startDate: string
+  endDate: string
+  priority?: number
+}) {
+  const admin = await requireAdmin()
+
+  const banner = await prisma.banner.create({
+    data: {
+      title: data.title,
+      description: data.description,
+      imageUrl: data.imageUrl,
+      linkUrl: data.linkUrl,
+      startDate: new Date(data.startDate),
+      endDate: new Date(data.endDate),
+      priority: data.priority ?? 0,
+    },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'BANNER_CREATE',
+      targetType: 'BANNER',
+      targetId: banner.id,
+    },
+  })
+
+  revalidatePath('/admin/banners')
+}
+
+export async function adminUpdateBanner(
+  bannerId: string,
+  data: {
+    title?: string
+    description?: string
+    imageUrl?: string
+    linkUrl?: string
+    startDate?: string
+    endDate?: string
+    priority?: number
+    isActive?: boolean
+  }
+) {
+  const admin = await requireAdmin()
+
+  await prisma.banner.update({
+    where: { id: bannerId },
+    data: {
+      ...data,
+      ...(data.startDate && { startDate: new Date(data.startDate) }),
+      ...(data.endDate && { endDate: new Date(data.endDate) }),
+    },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'BANNER_UPDATE',
+      targetType: 'BANNER',
+      targetId: bannerId,
+    },
+  })
+
+  revalidatePath('/admin/banners')
+}
+
+export async function adminDeleteBanner(bannerId: string) {
+  const admin = await requireAdmin()
+
+  await prisma.banner.delete({ where: { id: bannerId } })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'BANNER_DELETE',
+      targetType: 'BANNER',
+      targetId: bannerId,
+    },
+  })
+
+  revalidatePath('/admin/banners')
+}
+
+// ─── 광고 배너 ───
+
+export async function adminCreateAdBanner(data: {
+  slot: AdSlot
+  adType: AdType
+  title?: string
+  imageUrl?: string
+  htmlCode?: string
+  clickUrl?: string
+  startDate: string
+  endDate: string
+  priority?: number
+}) {
+  const admin = await requireAdmin()
+
+  const ad = await prisma.adBanner.create({
+    data: {
+      slot: data.slot,
+      adType: data.adType,
+      title: data.title,
+      imageUrl: data.imageUrl,
+      htmlCode: data.htmlCode,
+      clickUrl: data.clickUrl,
+      startDate: new Date(data.startDate),
+      endDate: new Date(data.endDate),
+      priority: data.priority ?? 0,
+    },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'AD_CREATE',
+      targetType: 'AD',
+      targetId: ad.id,
+    },
+  })
+
+  revalidatePath('/admin/banners')
+}
+
+export async function adminUpdateAdBanner(
+  adId: string,
+  data: {
+    title?: string
+    imageUrl?: string
+    htmlCode?: string
+    clickUrl?: string
+    startDate?: string
+    endDate?: string
+    priority?: number
+    isActive?: boolean
+  }
+) {
+  const admin = await requireAdmin()
+
+  await prisma.adBanner.update({
+    where: { id: adId },
+    data: {
+      ...data,
+      ...(data.startDate && { startDate: new Date(data.startDate) }),
+      ...(data.endDate && { endDate: new Date(data.endDate) }),
+    },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'AD_UPDATE',
+      targetType: 'AD',
+      targetId: adId,
+    },
+  })
+
+  revalidatePath('/admin/banners')
+}
+
+export async function adminDeleteAdBanner(adId: string) {
+  const admin = await requireAdmin()
+
+  await prisma.adBanner.delete({ where: { id: adId } })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'AD_DELETE',
+      targetType: 'AD',
+      targetId: adId,
+    },
+  })
+
+  revalidatePath('/admin/banners')
+}
+
+// ─── 금지어 ───
+
+export async function adminCreateBannedWord(word: string, category: BannedWordCategory) {
+  const admin = await requireAdmin()
+
+  const entry = await prisma.bannedWord.create({
+    data: { word, category },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'BANNED_WORD_CREATE',
+      targetType: 'BOARD_CONFIG',
+      targetId: entry.id,
+      after: { word, category },
+    },
+  })
+
+  revalidatePath('/admin/settings')
+}
+
+export async function adminDeleteBannedWord(wordId: string) {
+  const admin = await requireAdmin()
+
+  await prisma.bannedWord.delete({ where: { id: wordId } })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'BANNED_WORD_DELETE',
+      targetType: 'BOARD_CONFIG',
+      targetId: wordId,
+    },
+  })
+
+  revalidatePath('/admin/settings')
+}
+
+export async function adminToggleBannedWord(wordId: string, isActive: boolean) {
+  const admin = await requireAdmin()
+
+  await prisma.bannedWord.update({
+    where: { id: wordId },
+    data: { isActive },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: isActive ? 'BANNED_WORD_ACTIVATE' : 'BANNED_WORD_DEACTIVATE',
+      targetType: 'BOARD_CONFIG',
+      targetId: wordId,
+    },
+  })
+
+  revalidatePath('/admin/settings')
+}
+
+// ─── 게시판 설정 ───
+
+export async function adminUpdateBoardConfig(
+  configId: string,
+  data: {
+    displayName?: string
+    description?: string
+    categories?: string[]
+    writeGrade?: Grade
+    isActive?: boolean
+    hotThreshold?: number
+    fameThreshold?: number
+  }
+) {
+  const admin = await requireAdmin()
+
+  await prisma.boardConfig.update({
+    where: { id: configId },
+    data,
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'BOARD_CONFIG_UPDATE',
+      targetType: 'BOARD_CONFIG',
+      targetId: configId,
+      after: JSON.parse(JSON.stringify(data)),
+    },
+  })
+
+  revalidatePath('/admin/settings')
 }
