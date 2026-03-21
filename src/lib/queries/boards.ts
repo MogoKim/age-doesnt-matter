@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
 import { BOARD_SLUG_MAP } from '@/types/api'
@@ -35,25 +36,29 @@ export async function getBoardConfig(slug: string): Promise<BoardConfigData | nu
   }
 }
 
-/** 활성 BoardConfig 전체 조회 */
-export async function getAllBoardConfigs(): Promise<BoardConfigData[]> {
-  const configs = await prisma.boardConfig.findMany({
-    where: { isActive: true },
-  })
+/** 활성 BoardConfig 전체 조회 (5분 캐싱) */
+export const getAllBoardConfigs = unstable_cache(
+  async (): Promise<BoardConfigData[]> => {
+    const configs = await prisma.boardConfig.findMany({
+      where: { isActive: true },
+    })
 
-  const slugMap: Record<string, string> = {
-    STORY: 'stories',
-    HUMOR: 'humor',
-    MAGAZINE: 'magazine',
-    JOB: 'jobs',
-    WEEKLY: 'weekly',
-  }
+    const slugMap: Record<string, string> = {
+      STORY: 'stories',
+      HUMOR: 'humor',
+      MAGAZINE: 'magazine',
+      JOB: 'jobs',
+      WEEKLY: 'weekly',
+    }
 
-  return configs.map((c) => ({
-    slug: slugMap[c.boardType] ?? c.boardType.toLowerCase(),
-    boardType: c.boardType,
-    displayName: c.displayName,
-    description: c.description ?? '',
-    categories: c.categories,
-  }))
-}
+    return configs.map((c) => ({
+      slug: slugMap[c.boardType] ?? c.boardType.toLowerCase(),
+      boardType: c.boardType,
+      displayName: c.displayName,
+      description: c.description ?? '',
+      categories: c.categories,
+    }))
+  },
+  ['all-board-configs'],
+  { revalidate: 300 }
+)
