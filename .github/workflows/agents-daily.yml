@@ -1,0 +1,62 @@
+name: Agents — Daily
+on:
+  schedule:
+    # 09:00 KST = 00:00 UTC — CEO 모닝 사이클
+    - cron: "0 0 * * *"
+    # 10:00 KST = 01:00 UTC — CMO 트렌드
+    - cron: "0 1 * * *"
+    # 11:00 KST = 02:00 UTC — CPO UX 분석
+    - cron: "0 2 * * *"
+    # 14:00 KST = 05:00 UTC — COO 콘텐츠
+    - cron: "0 5 * * *"
+    # 22:00 KST = 13:00 UTC — CDO KPI
+    - cron: "0 13 * * *"
+    # 23:00 KST = 14:00 UTC — CFO 비용
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+    inputs:
+      agent:
+        description: "에이전트 (ceo, cmo, cpo, coo, cdo, cfo)"
+        required: true
+      task:
+        description: "태스크"
+        required: true
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+  SITE_URL: ${{ secrets.SITE_URL }}
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: cd agents && npm ci
+      - name: Determine agent and task
+        id: determine
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "agent=${{ github.event.inputs.agent }}" >> $GITHUB_OUTPUT
+            echo "task=${{ github.event.inputs.task }}" >> $GITHUB_OUTPUT
+          else
+            HOUR=$(date -u +%H)
+            case $HOUR in
+              00) echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-cycle" >> $GITHUB_OUTPUT ;;
+              01) echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=trend-analyzer" >> $GITHUB_OUTPUT ;;
+              02) echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=ux-analyzer" >> $GITHUB_OUTPUT ;;
+              05) echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;
+              13) echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=kpi-collector" >> $GITHUB_OUTPUT ;;
+              14) echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=cost-tracker" >> $GITHUB_OUTPUT ;;
+              *) echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
+            esac
+          fi
+      - name: Run agent
+        if: steps.determine.outputs.agent != 'skip'
+        run: cd agents && npx tsx cron/runner.ts ${{ steps.determine.outputs.agent }} ${{ steps.determine.outputs.task }}

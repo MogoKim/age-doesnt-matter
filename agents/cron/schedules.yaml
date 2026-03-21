@@ -1,0 +1,97 @@
+# 에이전트 Cron 스케줄 (KST 기준, GitHub Actions에서 UTC 변환)
+# automation_status: LOCKED 상태에서는 실행하지 않음
+
+schedules:
+  # 매 시간
+  - cron: "0 * * * *"
+    agent: CTO
+    task: health-check
+    handler: "cto/health-check.ts"
+
+  # 매일 09:00 KST (00:00 UTC)
+  - cron: "0 0 * * *"
+    agent: CEO
+    task: morning-cycle
+    handler: "ceo/morning-cycle.ts"
+
+  # 매일 09:00 KST — 시드 콘텐츠
+  - cron: "0 0 * * *"
+    agent: SEED
+    task: "seed-09"
+    handler: "seed/scheduler.ts"
+
+  # 매일 10:00 KST (01:00 UTC)
+  - cron: "0 1 * * *"
+    agent: CMO
+    task: trend-analyzer
+    handler: "cmo/trend-analyzer.ts"
+
+  # 매일 10:00 KST — 시드 콘텐츠
+  - cron: "0 1 * * *"
+    agent: SEED
+    task: "seed-10"
+    handler: "seed/scheduler.ts"
+
+  # 매일 11:00 KST (02:00 UTC)
+  - cron: "0 2 * * *"
+    agent: CPO
+    task: ux-analyzer
+    handler: "cpo/ux-analyzer.ts"
+
+  # 매일 14:00 KST (05:00 UTC) — 에디터스 픽 + 시드
+  - cron: "0 5 * * *"
+    agent: COO
+    task: content-scheduler
+    handler: "coo/content-scheduler.ts"
+  - cron: "0 5 * * *"
+    agent: SEED
+    task: "seed-14"
+    handler: "seed/scheduler.ts"
+
+  # 매일 16:00 KST (07:00 UTC)
+  - cron: "0 7 * * *"
+    agent: SEED
+    task: "seed-16"
+    handler: "seed/scheduler.ts"
+
+  # 매일 19:00 KST (10:00 UTC)
+  - cron: "0 10 * * *"
+    agent: SEED
+    task: "seed-19"
+    handler: "seed/scheduler.ts"
+
+  # 매일 21:00 KST (12:00 UTC)
+  - cron: "0 12 * * *"
+    agent: SEED
+    task: "seed-21"
+    handler: "seed/scheduler.ts"
+
+  # 매일 22:00 KST (13:00 UTC)
+  - cron: "0 13 * * *"
+    agent: CDO
+    task: kpi-collector
+    handler: "cdo/kpi-collector.ts"
+
+  # 매일 23:00 KST (14:00 UTC)
+  - cron: "0 14 * * *"
+    agent: CFO
+    task: cost-tracker
+    handler: "cfo/cost-tracker.ts"
+
+  # 매일 모더레이션 (하루 3회: 09, 15, 21 KST)
+  - cron: "0 0,6,12 * * *"
+    agent: COO
+    task: moderator
+    handler: "coo/moderator.ts"
+
+  # 에러 모니터 (매 시간)
+  - cron: "30 * * * *"
+    agent: CTO
+    task: error-monitor
+    handler: "cto/error-monitor.ts"
+
+  # 이상 감지 (매 시간)
+  - cron: "45 * * * *"
+    agent: CDO
+    task: anomaly-detector
+    handler: "cdo/anomaly-detector.ts"
