@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
-import { getBoardConfig, getAllBoardConfigs } from '@/lib/queries/boards'
+import { getBoardConfig } from '@/lib/queries/boards'
 import { getPostsByBoard } from '@/lib/queries/posts'
 import BoardFilter from '@/components/features/community/BoardFilter'
 import PostCard from '@/components/features/community/PostCard'
