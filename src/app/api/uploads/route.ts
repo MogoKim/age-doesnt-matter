@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { uploadToR2 } from '@/lib/r2'
 import { randomUUID } from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
+import { optimizeImage } from '@/lib/image-optimize'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
@@ -50,11 +51,13 @@ export async function POST(request: Request) {
   const results: { url: string; key: string }[] = []
 
   for (const file of files) {
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
-    const key = `posts/${session.user.id}/${randomUUID()}.${ext}`
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const rawBuffer = Buffer.from(await file.arrayBuffer())
 
-    const result = await uploadToR2(buffer, key, file.type)
+    // 이미지 최적화: WebP 변환 + 리사이즈 + EXIF 제거
+    const optimized = await optimizeImage(rawBuffer)
+    const key = `posts/${session.user.id}/${randomUUID()}.webp`
+
+    const result = await uploadToR2(optimized.buffer, key, optimized.contentType)
     results.push(result)
   }
 
