@@ -15,8 +15,9 @@ import {
   getLatestCommunityPosts,
 } from '@/lib/queries/posts'
 
-// 60초마다 ISR 재검증 — 실시간성과 성능의 균형
+// 동적 렌더링 + 60초 ISR 캐싱
 export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
   const [jobs, trending, editorsPicks, magazine, community] = await Promise.all([
