@@ -3,6 +3,8 @@ import { getMagazineList } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
 
+export const revalidate = 60
+
 export default async function MagazinePage() {
   const { posts } = await getMagazineList({ limit: 20 })
 

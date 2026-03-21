@@ -4,6 +4,8 @@ import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
 
+export const revalidate = 60
+
 export default async function BestPage() {
   const [hotResult, fameResult] = await Promise.all([
     getHotPosts({ limit: 10 }),

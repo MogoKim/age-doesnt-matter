@@ -9,6 +9,8 @@ interface PageProps {
   searchParams: Promise<{ region?: string; tags?: string }>
 }
 
+export const revalidate = 120
+
 export default async function JobsPage({ searchParams }: PageProps) {
   const { region, tags: tagsParam } = await searchParams
   const tags = tagsParam?.split(',').filter(Boolean)

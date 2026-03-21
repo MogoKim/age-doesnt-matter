@@ -15,6 +15,9 @@ import {
   getLatestCommunityPosts,
 } from '@/lib/queries/posts'
 
+// 60초마다 ISR 재검증 — 실시간성과 성능의 균형
+export const revalidate = 60
+
 export default async function HomePage() {
   const [jobs, trending, editorsPicks, magazine, community] = await Promise.all([
     getLatestJobs(5),

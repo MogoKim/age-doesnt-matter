@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { ToastProvider } from '@/components/common/Toast'
+import ServiceWorkerRegister from '@/components/common/ServiceWorkerRegister'
 import './globals.css'
 
 const pretendard = localFont({
@@ -50,6 +51,7 @@ export default function RootLayout({
     <html lang="ko" className={pretendard.variable}>
       <body className={pretendard.className}>
         <ToastProvider>{children}</ToastProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   )

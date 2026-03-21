@@ -6,6 +6,9 @@ import { verifyAdminToken } from '@/lib/admin-auth'
 
 const nextAuth = NextAuth(authConfig)
 
+// 인증이 필요한 경로들
+const PROTECTED_PATHS = ['/my', '/community/write', '/onboarding']
+
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -28,10 +31,22 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // ── 보호된 경로: 로그인 확인 ──
+  if (PROTECTED_PATHS.some((p) => pathname.startsWith(p))) {
+    const sessionToken =
+      request.cookies.get('authjs.session-token')?.value ||
+      request.cookies.get('__Secure-authjs.session-token')?.value
+    if (!sessionToken) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('callbackUrl', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+  }
+
   // ── 일반 라우트: NextAuth 미들웨어 ──
   return nextAuth.auth(request as never) as unknown as ReturnType<typeof NextResponse.next>
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/auth).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|api/auth).*)'],
 }
