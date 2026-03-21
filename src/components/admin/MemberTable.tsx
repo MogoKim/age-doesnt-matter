@@ -131,7 +131,6 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
           </thead>
           <tbody>
             {users.map((user) => {
-              const grade = GRADE_LABELS[user.grade] || GRADE_LABELS.SPROUT
               const status = STATUS_LABELS[user.status] || STATUS_LABELS.ACTIVE
               return (
                 <tr key={user.id} className="border-b border-zinc-100 hover:bg-zinc-50">

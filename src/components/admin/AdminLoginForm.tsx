@@ -1,10 +1,23 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useFormState, useFormStatus } from 'react-dom'
 import { adminLogin } from '@/lib/actions/admin-auth'
 
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="h-11 w-full rounded-lg bg-zinc-900 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50"
+    >
+      {pending ? '로그인 중...' : '로그인'}
+    </button>
+  )
+}
+
 export default function AdminLoginForm() {
-  const [state, formAction, isPending] = useActionState(adminLogin, null)
+  const [state, formAction] = useFormState(adminLogin, null)
 
   return (
     <form action={formAction} className="space-y-4">
@@ -44,13 +57,7 @@ export default function AdminLoginForm() {
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="h-11 w-full rounded-lg bg-zinc-900 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50"
-      >
-        {isPending ? '로그인 중...' : '로그인'}
-      </button>
+      <SubmitButton />
     </form>
   )
 }

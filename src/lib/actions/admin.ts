@@ -24,7 +24,7 @@ async function requireAdmin() {
 export async function adminUpdatePostStatus(postId: string, status: PostStatus) {
   const admin = await requireAdmin()
 
-  const post = await prisma.post.update({
+  await prisma.post.update({
     where: { id: postId },
     data: { status },
   })

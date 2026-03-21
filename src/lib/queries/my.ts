@@ -87,7 +87,6 @@ export async function getMyProfile(userId: string) {
 
   if (!user) return null
 
-  const grade = user.grade as Grade
   return {
     ...toUserSummary(user),
     postCount: user.postCount,

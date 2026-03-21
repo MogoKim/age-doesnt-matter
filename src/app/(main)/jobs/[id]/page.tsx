@@ -7,7 +7,6 @@ import { getJobDetail } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
 import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
-import { formatTimeAgo } from '@/components/features/community/utils'
 
 interface PageProps {
   params: Promise<{ id: string }>
