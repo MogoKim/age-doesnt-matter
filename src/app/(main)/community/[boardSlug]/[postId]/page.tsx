@@ -77,6 +77,8 @@ export default async function PostDetailPage({ params }: PageProps) {
       {/* 액션 바 */}
       <ActionBar
         postId={postId}
+        title={post.title}
+        description={post.preview}
         likeCount={post.likeCount}
         isLiked={post.isLiked}
         isScrapped={post.isScrapped}

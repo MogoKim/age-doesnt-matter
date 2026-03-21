@@ -108,6 +108,8 @@ export default async function JobDetailPage({ params }: PageProps) {
       {/* 액션 바 */}
       <ActionBar
         postId={id}
+        title={job.title}
+        description={job.company ? `${job.company} — ${job.location}` : job.title}
         likeCount={job.likeCount}
         isLiked={job.isLiked}
         isScrapped={job.isScrapped}

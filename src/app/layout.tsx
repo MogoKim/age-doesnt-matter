@@ -26,6 +26,12 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: '우나어',
+  },
 }
 
 export const viewport: Viewport = {

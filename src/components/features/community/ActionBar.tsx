@@ -4,16 +4,19 @@ import { useState, useTransition } from 'react'
 import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap } from '@/lib/actions/likes'
 import { useToast } from '@/components/common/Toast'
+import { shareToKakao, copyShareLink } from '@/lib/kakao-share'
 import ReportModal from './ReportModal'
 
 interface ActionBarProps {
   postId: string
+  title: string
+  description: string
   likeCount: number
   isLiked: boolean
   isScrapped: boolean
 }
 
-export default function ActionBar({ postId, likeCount, isLiked: initialLiked, isScrapped: initialScrapped }: ActionBarProps) {
+export default function ActionBar({ postId, title, description, likeCount, isLiked: initialLiked, isScrapped: initialScrapped }: ActionBarProps) {
   const { toast } = useToast()
   const [isLiked, setIsLiked] = useState(initialLiked)
   const [likes, setLikes] = useState(likeCount)
@@ -52,16 +55,21 @@ export default function ActionBar({ postId, likeCount, isLiked: initialLiked, is
     })
   }
 
-  function handleShare() {
-    if (navigator.share) {
-      navigator.share({
-        title: document.title,
-        url: window.location.href,
-      })
-    } else {
-      navigator.clipboard.writeText(window.location.href)
-      toast('링크가 복사되었어요')
+  const [showShareMenu, setShowShareMenu] = useState(false)
+
+  async function handleKakaoShare() {
+    try {
+      await shareToKakao({ title, description, url: window.location.pathname })
+      setShowShareMenu(false)
+    } catch {
+      toast('공유에 실패했어요', 'error')
     }
+  }
+
+  async function handleCopyLink() {
+    const ok = await copyShareLink(window.location.pathname)
+    toast(ok ? '링크가 복사되었어요' : '링크 복사에 실패했어요', ok ? 'success' : 'error')
+    setShowShareMenu(false)
   }
 
   const btnBase = 'flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-4 py-2 bg-none border-none text-muted-foreground text-xs font-medium cursor-pointer rounded-xl transition-all justify-center hover:text-primary hover:bg-primary/5'
@@ -85,9 +93,32 @@ export default function ActionBar({ postId, likeCount, isLiked: initialLiked, is
         >
           📌 스크랩
         </button>
-        <button className={btnBase} onClick={handleShare} aria-label="공유">
-          🔗 공유
-        </button>
+        <div className="relative">
+          <button className={btnBase} onClick={() => setShowShareMenu(!showShareMenu)} aria-label="공유">
+            🔗 공유
+          </button>
+          {showShareMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowShareMenu(false)} />
+              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg p-1 min-w-[140px]">
+                <button
+                  type="button"
+                  onClick={handleKakaoShare}
+                  className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[44px] text-xs text-foreground font-medium rounded-lg hover:bg-background transition-colors"
+                >
+                  💬 카카오톡
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[44px] text-xs text-foreground font-medium rounded-lg hover:bg-background transition-colors"
+                >
+                  📋 링크 복사
+                </button>
+              </div>
+            </>
+          )}
+        </div>
         <button className={btnBase} onClick={() => setShowReport(true)} aria-label="신고">
           🚨 신고
         </button>

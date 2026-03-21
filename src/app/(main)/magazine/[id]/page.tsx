@@ -71,6 +71,8 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       {/* 액션 바 */}
       <ActionBar
         postId={id}
+        title={post.title}
+        description={post.preview}
         likeCount={post.likeCount}
         isLiked={post.isLiked}
         isScrapped={post.isScrapped}
