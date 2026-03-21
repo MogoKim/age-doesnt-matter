@@ -18,19 +18,19 @@ function optionalEnv(key: string, fallback: string): string {
 export const DATABASE_URL = requireEnv('DATABASE_URL')
 
 /** NextAuth */
-export const AUTH_SECRET = requireEnv('AUTH_SECRET')
-export const AUTH_KAKAO_ID = requireEnv('AUTH_KAKAO_ID')
-export const AUTH_KAKAO_SECRET = requireEnv('AUTH_KAKAO_SECRET')
+export const NEXTAUTH_SECRET = requireEnv('NEXTAUTH_SECRET')
+export const KAKAO_CLIENT_ID = requireEnv('KAKAO_CLIENT_ID')
+export const KAKAO_CLIENT_SECRET = requireEnv('KAKAO_CLIENT_SECRET')
 
 /** Admin JWT */
 export const ADMIN_JWT_SECRET = requireEnv('ADMIN_JWT_SECRET')
 
 /** R2 Storage */
-export const R2_ACCOUNT_ID = requireEnv('R2_ACCOUNT_ID')
-export const R2_ACCESS_KEY_ID = requireEnv('R2_ACCESS_KEY_ID')
-export const R2_SECRET_ACCESS_KEY = requireEnv('R2_SECRET_ACCESS_KEY')
-export const R2_BUCKET_NAME = requireEnv('R2_BUCKET_NAME')
-export const R2_PUBLIC_URL = requireEnv('R2_PUBLIC_URL')
+export const CLOUDFLARE_ACCOUNT_ID = requireEnv('CLOUDFLARE_ACCOUNT_ID')
+export const CLOUDFLARE_R2_ACCESS_KEY = requireEnv('CLOUDFLARE_R2_ACCESS_KEY')
+export const CLOUDFLARE_R2_SECRET_KEY = requireEnv('CLOUDFLARE_R2_SECRET_KEY')
+export const CLOUDFLARE_R2_BUCKET = requireEnv('CLOUDFLARE_R2_BUCKET')
+export const NEXT_PUBLIC_R2_PUBLIC_URL = requireEnv('NEXT_PUBLIC_R2_PUBLIC_URL')
 
 /** Kakao Share */
 export const NEXT_PUBLIC_KAKAO_JS_KEY = optionalEnv('NEXT_PUBLIC_KAKAO_JS_KEY', '')

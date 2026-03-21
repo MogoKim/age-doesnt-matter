@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 
 const ADMIN_COOKIE = 'admin-token'
-const SECRET = new TextEncoder().encode(process.env.AUTH_SECRET || 'fallback-admin-secret-key-change-me')
+const SECRET = new TextEncoder().encode(process.env.ADMIN_JWT_SECRET || 'fallback-admin-secret-key-change-me')
 
 export interface AdminSession {
   adminId: string
