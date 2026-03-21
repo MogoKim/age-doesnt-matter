@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 import { cn } from '@/lib/utils'
+import NotificationBadge from '@/components/common/NotificationBadge'
 
 const MENU_ITEMS = [
   { label: '베스트', href: '/best' },
@@ -73,10 +74,13 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
         </form>
 
         {isLoggedIn ? (
-          <Link href="/my" className="flex items-center gap-2 text-sm text-muted-foreground no-underline shrink-0 whitespace-nowrap hover:text-foreground">
-            <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">👤</span>
-            <span>{nickname}</span>
-          </Link>
+          <div className="flex items-center gap-1 shrink-0">
+            <NotificationBadge />
+            <Link href="/my" className="flex items-center gap-2 text-sm text-muted-foreground no-underline whitespace-nowrap hover:text-foreground">
+              <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">👤</span>
+              <span>{nickname}</span>
+            </Link>
+          </div>
         ) : (
           <Link href="/login" className="flex items-center gap-2 text-sm text-muted-foreground no-underline shrink-0 whitespace-nowrap hover:text-foreground">
             로그인

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import NotificationBadge from '@/components/common/NotificationBadge'
 
 interface HeaderProps {
   isLoggedIn?: boolean
@@ -16,6 +17,7 @@ export default function Header({ isLoggedIn = false }: HeaderProps) {
         <Link href="/search" className="flex items-center justify-center w-[52px] h-[52px] rounded-lg text-[22px] text-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background" aria-label="검색">
           🔍
         </Link>
+        {isLoggedIn && <NotificationBadge />}
         <Link
           href={isLoggedIn ? '/my' : '/login'}
           className="flex items-center justify-center w-[52px] h-[52px] rounded-lg text-[22px] text-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background"
