@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { getDashboardStats, getRecentBotLogs } from '@/lib/queries/admin'
 
+export const dynamic = 'force-dynamic'
+
 const BOT_TYPE_LABELS: Record<string, string> = {
   JOB: '💼 일자리',
   HUMOR: '😄 유머',

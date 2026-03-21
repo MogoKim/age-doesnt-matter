@@ -4,6 +4,7 @@ import { getMemberList } from '@/lib/queries/admin'
 import MemberTable from '@/components/admin/MemberTable'
 
 export const metadata: Metadata = { title: '회원 관리' }
+export const dynamic = 'force-dynamic'
 
 interface Props {
   searchParams: Promise<{

@@ -4,6 +4,7 @@ import { getReportList } from '@/lib/queries/admin'
 import ReportTable from '@/components/admin/ReportTable'
 
 export const metadata: Metadata = { title: '신고 관리' }
+export const dynamic = 'force-dynamic'
 
 interface Props {
   searchParams: Promise<{

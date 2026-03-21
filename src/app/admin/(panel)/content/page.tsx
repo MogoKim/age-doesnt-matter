@@ -4,6 +4,7 @@ import type { BoardType, PostSource, PostStatus } from '@/generated/prisma/clien
 import ContentTable from '@/components/admin/ContentTable'
 
 export const metadata: Metadata = { title: '콘텐츠 관리' }
+export const dynamic = 'force-dynamic'
 
 interface Props {
   searchParams: Promise<{

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 
 export const metadata: Metadata = { title: '데이터 분석' }
+export const dynamic = 'force-dynamic'
 
 export default async function AdminAnalyticsPage() {
   const now = new Date()

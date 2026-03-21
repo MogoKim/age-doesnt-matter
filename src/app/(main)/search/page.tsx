@@ -15,6 +15,8 @@ interface SearchPageProps {
   searchParams: Promise<{ q?: string; tab?: string }>
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams
   const query = params.q?.trim() ?? ''

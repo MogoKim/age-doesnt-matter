@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 const BASE_URL = 'https://age-doesnt-matter.com'
 
 const BOARD_SLUGS = ['stories', 'humor', 'magazine', 'jobs', 'weekly']
