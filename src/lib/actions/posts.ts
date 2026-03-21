@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { BOARD_SLUG_MAP, BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { BoardType } from '@/generated/prisma/client'
 import { checkBannedWords } from '@/lib/banned-words'
+import { plainTextToSafeHtml, stripHtmlTags } from '@/lib/sanitize'
 
 interface CreatePostResult {
   error?: string
@@ -22,6 +23,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   const category = formData.get('category') as string | null
   const title = (formData.get('title') as string)?.trim()
   const content = (formData.get('content') as string)?.trim()
+  const imageUrls = formData.getAll('imageUrls') as string[]
 
   // 유효성 검사
   if (!boardSlug || !title || !content) {
@@ -64,16 +66,27 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     return { error: '유효하지 않은 카테고리입니다' }
   }
 
-  // 게시글 생성
-  const summary = content.replace(/<[^>]*>/g, '').slice(0, 100)
+  // 게시글 생성 — HTML 새니타이즈
+  const safeContent = plainTextToSafeHtml(content)
+  const summary = stripHtmlTags(safeContent).slice(0, 100)
+
+  // 이미지 URL을 본문에 추가
+  let finalContent = safeContent
+  if (imageUrls.length > 0) {
+    const imgTags = imageUrls
+      .map((url) => `<p><img src="${url}" alt="첨부 이미지" /></p>`)
+      .join('')
+    finalContent += imgTags
+  }
 
   const post = await prisma.post.create({
     data: {
       boardType,
       category: category || null,
       title,
-      content: `<p>${content.replace(/\n/g, '</p><p>')}</p>`,
+      content: finalContent,
       summary,
+      thumbnailUrl: imageUrls[0] || null,
       authorId: session.user.id,
       status: 'PUBLISHED',
       publishedAt: new Date(),

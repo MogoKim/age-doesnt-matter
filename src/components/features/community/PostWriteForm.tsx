@@ -128,14 +128,34 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
     if (!canSubmit || isPending) return
     setError('')
 
-    const formData = new FormData()
-    formData.set('boardSlug', selectedBoard)
-    if (selectedCategory) formData.set('category', selectedCategory)
-    formData.set('title', title)
-    formData.set('content', content)
-    images.forEach((img) => formData.append('images', img.file))
-
     startTransition(async () => {
+      // 이미지가 있으면 먼저 업로드
+      let imageUrls: string[] = []
+      if (images.length > 0) {
+        const uploadData = new FormData()
+        images.forEach((img) => uploadData.append('files', img.file))
+
+        const uploadRes = await fetch('/api/uploads', {
+          method: 'POST',
+          body: uploadData,
+        })
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json()
+          setError(err.error || '이미지 업로드에 실패했어요')
+          return
+        }
+        const uploadResult = await uploadRes.json()
+        imageUrls = uploadResult.images.map((img: { url: string }) => img.url)
+      }
+
+      // 게시글 생성
+      const formData = new FormData()
+      formData.set('boardSlug', selectedBoard)
+      if (selectedCategory) formData.set('category', selectedCategory)
+      formData.set('title', title)
+      formData.set('content', content)
+      imageUrls.forEach((url) => formData.append('imageUrls', url))
+
       const result = await createPost(formData)
       if (result?.error) {
         setError(result.error)

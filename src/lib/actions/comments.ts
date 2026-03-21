@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkBannedWords } from '@/lib/banned-words'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 interface CommentResult {
   error?: string
@@ -60,12 +61,14 @@ export async function createComment(
     parentAuthorId = parent.authorId
   }
 
+  const safeContent = sanitizeHtml(trimmed)
+
   await prisma.$transaction([
     prisma.comment.create({
       data: {
         postId,
         authorId: session.user.id,
-        content: trimmed,
+        content: safeContent,
         parentId: parentId || null,
       },
     }),
@@ -146,7 +149,7 @@ export async function editComment(
 
   await prisma.comment.update({
     where: { id: commentId },
-    data: { content: trimmed },
+    data: { content: sanitizeHtml(trimmed) },
   })
 
   revalidatePath(`/community`)
