@@ -1,8 +1,14 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getHotPosts, getHallOfFamePosts } from '@/lib/queries/posts'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
+
+export const metadata: Metadata = {
+  title: '인기글',
+  description: '우나어 커뮤니티에서 가장 인기 있는 글 모음',
+}
 
 export const revalidate = 60
 

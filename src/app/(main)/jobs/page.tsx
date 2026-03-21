@@ -1,5 +1,11 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Suspense } from 'react'
+
+export const metadata: Metadata = {
+  title: '내 일 찾기',
+  description: '50·60대 시니어 맞춤 일자리 정보, 나이 무관 채용공고',
+}
 import { getJobList, type JobCardItem } from '@/lib/queries/posts'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import JobFilterButton from '@/components/features/jobs/JobFilterButton'
