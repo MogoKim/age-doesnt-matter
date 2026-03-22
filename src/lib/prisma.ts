@@ -6,7 +6,9 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL ?? ''
+  // DIRECT_URL: Supabase 직접 연결 (port 5432) — prepared statements 지원
+  // DATABASE_URL: transaction pooler (port 6543) — PgBouncer가 prepared statements 미지원
+  const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? ''
 
   const adapter = new PrismaPg({
     connectionString,
