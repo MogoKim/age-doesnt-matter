@@ -27,12 +27,22 @@ function ensureSsl(url: string): string {
   return url
 }
 
+// 진단용: 실제 사용 중인 연결 호스트
+export let _debugHost = 'not-initialized'
+
 function createPrismaClient() {
   // SESSION_POOL_URL > DATABASE_URL(→ session pooler로 변환) > DIRECT_URL(로컬용)
   const raw = process.env.SESSION_POOL_URL
     ?? (toSessionPooler(process.env.DATABASE_URL ?? '') || process.env.DIRECT_URL || '')
 
   const connectionString = process.env.NODE_ENV === 'production' ? ensureSsl(raw) : raw
+
+  try {
+    const u = new URL(connectionString)
+    _debugHost = `${u.hostname}:${u.port}`
+  } catch {
+    _debugHost = 'parse-error'
+  }
 
   const adapter = new PrismaPg({ connectionString })
 
