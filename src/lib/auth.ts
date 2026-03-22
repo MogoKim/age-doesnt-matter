@@ -6,7 +6,7 @@ import { authConfig } from '@/lib/auth.config'
  * 전체 auth 설정 (서버 전용 — Prisma DB 접근 포함)
  * 미들웨어에서는 auth.config.ts의 경량 버전 사용
  */
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
   ...authConfig,
 
   callbacks: {
@@ -49,7 +49,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
     },
 
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account, profile, trigger, session }) {
+      // 온보딩 완료 등 세션 업데이트 시 토큰 갱신
+      if (trigger === 'update' && session) {
+        const updates = session.user || session
+        if (updates.needsOnboarding !== undefined) token.needsOnboarding = updates.needsOnboarding
+        if (updates.nickname) token.nickname = updates.nickname
+        if (updates.grade) token.grade = updates.grade
+        return token
+      }
+
       try {
         if (account?.provider === 'kakao' && profile) {
           const providerId = String(profile.id)

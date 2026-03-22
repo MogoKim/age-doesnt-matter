@@ -1,6 +1,6 @@
 'use server'
 
-import { auth } from '@/lib/auth'
+import { auth, unstable_update } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 const NICKNAME_REGEX = /^[가-힣a-zA-Z0-9]+$/
@@ -114,6 +114,13 @@ export async function completeOnboarding(
   } catch (error) {
     console.error('[onboarding] transaction error:', error)
     return { error: '가입 처리 중 문제가 발생했습니다. 다시 시도해 주세요.' }
+  }
+
+  // JWT 토큰 갱신 — 미들웨어가 needsOnboarding=false를 인식하도록
+  try {
+    await unstable_update({ user: { needsOnboarding: false, nickname } })
+  } catch (error) {
+    console.error('[onboarding] session update error:', error)
   }
 
   return {}
