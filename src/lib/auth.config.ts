@@ -11,15 +11,15 @@ export const authConfig: NextAuthConfig = {
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   providers: [
     Kakao({
-      clientId: process.env.KAKAO_CLIENT_ID!,
-      clientSecret: process.env.KAKAO_CLIENT_SECRET!,
-      checks: ['state'], // 카카오는 PKCE 미지원 → state 기반 CSRF 보호 사용
+      clientId: process.env.KAKAO_CLIENT_ID ?? '',
+      clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
+      // 카카오는 PKCE 미지원 → state만 사용
+      // 임시로 비활성화하여 state 쿠키 문제인지 확인 (확인 후 ['state'] 복원 예정)
+      checks: ['state'],
       token: {
-        // 카카오 프로바이더의 기본 token이 문자열이라 conform 객체로 덮어씌우면 URL이 사라짐
         url: 'https://kauth.kakao.com/oauth/token',
-        // oauth4webapi v3가 카카오 응답과 호환되지 않는 두 가지 이슈 대응:
-        // 1. Content-Type: "application/json;charset=UTF-8" → "application/json" 정규화
-        // 2. WWW-Authenticate 헤더 제거 (FusionAuth #8745 동일 패턴)
+        // oauth4webapi v3 ↔ 카카오 응답 호환 대응:
+        // Content-Type charset 정규화 + WWW-Authenticate 제거
         conform: async (response: Response) => {
           const contentType = response.headers.get('content-type')
           const hasWwwAuth = response.headers.has('www-authenticate')
@@ -28,17 +28,18 @@ export const authConfig: NextAuthConfig = {
 
           if (!needsContentTypeFix && !hasWwwAuth) return response
 
-          const newHeaders = new Headers()
-          response.headers.forEach((value, key) => {
-            const k = key.toLowerCase()
-            if (k === 'www-authenticate') return
-            if (k === 'content-type' && needsContentTypeFix) {
-              newHeaders.set(key, 'application/json')
-              return
-            }
-            newHeaders.append(key, value)
-          })
-          return new Response(response.body, {
+          // body를 clone하여 stream 소비 문제 방지
+          const body = await response.clone().text()
+
+          const newHeaders = new Headers(response.headers)
+          if (needsContentTypeFix) {
+            newHeaders.set('content-type', 'application/json')
+          }
+          if (hasWwwAuth) {
+            newHeaders.delete('www-authenticate')
+          }
+
+          return new Response(body, {
             status: response.status,
             statusText: response.statusText,
             headers: newHeaders,
