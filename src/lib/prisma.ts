@@ -6,10 +6,14 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// 진단용
-export let _debugHost = 'not-initialized'
-export let _debugUser = 'not-initialized'
-
+/**
+ * Supabase 연결 전략:
+ * - Vercel(production): DATABASE_URL → transaction pooler (port 6543) + SSL
+ * - 로컬(development): DIRECT_URL → direct connection (port 5432)
+ *
+ * pg.Pool을 직접 생성하고 개별 파라미터로 전달하여
+ * URL 파싱 문제를 방지합니다.
+ */
 function parseDbUrl(url: string) {
   const u = new URL(url)
   return {
@@ -27,10 +31,7 @@ function createPrismaClient() {
     : (process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? '')
 
   const parsed = parseDbUrl(raw)
-  _debugHost = `${parsed.host}:${parsed.port}`
-  _debugUser = parsed.user
 
-  // 개별 파라미터로 전달하여 URL 파싱 문제 방지
   const pool = new Pool({
     host: parsed.host,
     port: parsed.port,

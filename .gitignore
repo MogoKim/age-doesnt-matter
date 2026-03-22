@@ -55,3 +55,4 @@ Thumbs.db
 antigravity screenshot.png
 
 /src/generated/prisma
+.env.vercel
