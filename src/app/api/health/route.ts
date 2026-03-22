@@ -32,6 +32,7 @@ export async function GET() {
     dbHost: extractHost(process.env.DATABASE_URL),
     nodeEnv: process.env.NODE_ENV,
     activeHost: _debugHost,
+    codeVersion: 'v7-txn-pooler',
   }
 
   return NextResponse.json(
