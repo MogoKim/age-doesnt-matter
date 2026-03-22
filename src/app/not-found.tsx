@@ -7,7 +7,7 @@ export default function NotFound() {
       <h1 className="text-2xl font-bold text-foreground mb-2">
         페이지를 찾을 수 없어요
       </h1>
-      <p className="text-base text-muted-foreground mb-8 leading-relaxed">
+      <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
         주소가 잘못되었거나, 삭제된 페이지일 수 있어요.
       </p>
       <Link

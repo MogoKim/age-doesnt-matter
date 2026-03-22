@@ -31,6 +31,7 @@ export async function optimizeImage(input: Buffer): Promise<OptimizeResult> {
     : image
 
   const output = await pipeline
+    .withMetadata({ orientation: undefined })
     .webp({ quality: QUALITY })
     .toBuffer({ resolveWithObject: true })
 
@@ -49,6 +50,7 @@ export async function createThumbnail(input: Buffer): Promise<Buffer> {
   return sharp(input)
     .rotate()
     .resize(400, 400, { fit: 'cover', position: 'centre' })
+    .withMetadata({ orientation: undefined })
     .webp({ quality: 70 })
     .toBuffer()
 }

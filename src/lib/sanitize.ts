@@ -7,15 +7,27 @@ import DOMPurify from 'isomorphic-dompurify'
 const ALLOWED_TAGS = [
   'p', 'br', 'b', 'strong', 'i', 'em', 'u', 'del', 's',
   'ul', 'ol', 'li', 'blockquote', 'a', 'h3', 'h4',
+  'img', 'hr', 'div', 'iframe',
 ]
 
-const ALLOWED_ATTR = ['href', 'target', 'rel']
+const ALLOWED_ATTR = [
+  'href', 'target', 'rel',
+  'src', 'alt', 'width', 'height', 'class',
+  'allowfullscreen', 'frameborder', 'allow',
+  'data-youtube-video',
+]
+
+// iframe은 유튜브만 허용
+const ALLOWED_URI_REGEXP = /^https?:\/\/(www\.)?youtube(-nocookie)?\.com\/embed\//
 
 export function sanitizeHtml(dirty: string): string {
   return DOMPurify.sanitize(dirty, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
-    ALLOW_DATA_ATTR: false,
+    ALLOW_DATA_ATTR: true,
+    ADD_TAGS: ['iframe'],
+    ADD_ATTR: ['allowfullscreen', 'frameborder', 'allow'],
+    ALLOWED_URI_REGEXP,
   })
 }
 

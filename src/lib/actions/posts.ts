@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { BOARD_SLUG_MAP, BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { BoardType } from '@/generated/prisma/client'
 import { checkBannedWords } from '@/lib/banned-words'
-import { plainTextToSafeHtml, stripHtmlTags } from '@/lib/sanitize'
+import { sanitizeHtml, stripHtmlTags } from '@/lib/sanitize'
 
 interface CreatePostResult {
   error?: string
@@ -66,15 +66,36 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     return { error: '유효하지 않은 카테고리입니다' }
   }
 
-  // 게시글 생성 — HTML 새니타이즈
-  const safeContent = plainTextToSafeHtml(content)
-  const summary = stripHtmlTags(safeContent).slice(0, 100)
+  // 이미지 URL 검증 — 허용된 호스트만
+  if (imageUrls.length > 0) {
+    const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || ''
+    for (const url of imageUrls) {
+      try {
+        const parsed = new URL(url)
+        const isR2 = r2PublicUrl && url.startsWith(r2PublicUrl)
+        const isCloudflare = /\.r2\.cloudflarestorage\.com$/.test(parsed.hostname)
+          || /^pub-.*\.r2\.dev$/.test(parsed.hostname)
+        if (!isR2 && !isCloudflare) {
+          return { error: '허용되지 않은 이미지 주소입니다' }
+        }
+      } catch {
+        return { error: '올바르지 않은 이미지 주소입니다' }
+      }
+    }
+  }
 
-  // 이미지 URL을 본문에 추가
+  // 게시글 생성 — HTML 새니타이즈 (TipTap HTML 지원)
+  const safeContent = sanitizeHtml(content)
+  const plainText = stripHtmlTags(safeContent)
+  const summary = plainText.length > 100
+    ? plainText.slice(0, 97) + '...'
+    : plainText
+
+  // 이미지 URL을 본문에 추가 (검증 완료된 URL만)
   let finalContent = safeContent
   if (imageUrls.length > 0) {
     const imgTags = imageUrls
-      .map((url) => `<p><img src="${url}" alt="첨부 이미지" /></p>`)
+      .map((url) => `<p><img src="${encodeURI(url)}" alt="첨부 이미지" /></p>`)
       .join('')
     finalContent += imgTags
   }

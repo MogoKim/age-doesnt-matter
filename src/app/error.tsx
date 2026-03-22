@@ -12,7 +12,7 @@ export default function GlobalError({
       <h1 className="text-2xl font-bold text-foreground mb-2">
         문제가 발생했어요
       </h1>
-      <p className="text-base text-muted-foreground mb-8 leading-relaxed">
+      <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
         일시적인 오류가 발생했어요. 다시 시도해 주세요.
       </p>
       <button
@@ -23,7 +23,7 @@ export default function GlobalError({
       </button>
       <a
         href="/api/auth/signout"
-        className="mt-4 text-sm text-muted-foreground underline hover:text-foreground"
+        className="mt-4 text-base text-muted-foreground underline hover:text-foreground"
       >
         로그아웃 후 다시 로그인하기
       </a>

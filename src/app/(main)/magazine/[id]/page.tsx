@@ -8,6 +8,7 @@ import { getCommentsByPostId } from '@/lib/queries/comments'
 import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -65,7 +66,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       {/* 본문 */}
       <div
         className="text-sm text-foreground leading-[1.85] mb-8 break-keep [&_p]:mb-4 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-8 [&_h2]:mb-4 [&_h3]:text-base [&_h3]:font-bold [&_h3]:mt-6 [&_h3]:mb-3"
-        dangerouslySetInnerHTML={{ __html: post.content }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
       />
 
       {/* 액션 바 */}

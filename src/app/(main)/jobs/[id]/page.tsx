@@ -7,6 +7,7 @@ import { getJobDetail } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
 import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -86,7 +87,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       {/* 본문 */}
       <div
         className="text-sm text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4"
-        dangerouslySetInnerHTML={{ __html: job.content }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.content) }}
       />
 
       {/* 지원 버튼 */}

@@ -56,3 +56,4 @@ antigravity screenshot.png
 
 /src/generated/prisma
 .env.vercel
+supabase/.temp/

@@ -2,7 +2,14 @@ import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 
 const ADMIN_COOKIE = 'admin-token'
-const SECRET = new TextEncoder().encode(process.env.ADMIN_JWT_SECRET || 'fallback-admin-secret-key-change-me')
+
+function getSecret(): Uint8Array {
+  const secret = process.env.ADMIN_JWT_SECRET
+  if (!secret) {
+    throw new Error('ADMIN_JWT_SECRET 환경변수가 설정되지 않았습니다')
+  }
+  return new TextEncoder().encode(secret)
+}
 
 export interface AdminSession {
   adminId: string
@@ -17,8 +24,8 @@ export async function createAdminToken(payload: AdminSession): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
-    .sign(SECRET)
+    .setExpirationTime('1d')
+    .sign(getSecret())
 }
 
 /**
@@ -31,7 +38,7 @@ export async function setAdminCookie(token: string) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/admin',
-    maxAge: 7 * 24 * 60 * 60, // 7일
+    maxAge: 24 * 60 * 60, // 1일
   })
 }
 
@@ -52,7 +59,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   if (!token) return null
 
   try {
-    const { payload } = await jwtVerify(token, SECRET)
+    const { payload } = await jwtVerify(token, getSecret())
     return {
       adminId: payload.adminId as string,
       email: payload.email as string,
@@ -68,7 +75,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
  */
 export async function verifyAdminToken(token: string): Promise<AdminSession | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET)
+    const { payload } = await jwtVerify(token, getSecret())
     return {
       adminId: payload.adminId as string,
       email: payload.email as string,
