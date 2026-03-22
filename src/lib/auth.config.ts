@@ -53,7 +53,7 @@ export const authConfig: NextAuthConfig = {
     maxAge: 30 * 24 * 60 * 60, // 30일
   },
 
-  debug: process.env.NODE_ENV === 'development',
+  debug: true, // 임시: Vercel 로그에서 에러 원인 확인용
 
   pages: {
     signIn: '/login',
