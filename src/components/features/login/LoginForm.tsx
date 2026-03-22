@@ -1,5 +1,6 @@
 'use client'
 
+import { signIn } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -7,28 +8,8 @@ export default function LoginForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
 
-  async function handleKakaoLogin() {
-    const res = await fetch('/api/auth/csrf')
-    const { csrfToken } = await res.json()
-
-    const form = document.createElement('form')
-    form.method = 'POST'
-    form.action = '/api/auth/signin/kakao'
-
-    const csrfInput = document.createElement('input')
-    csrfInput.type = 'hidden'
-    csrfInput.name = 'csrfToken'
-    csrfInput.value = csrfToken
-
-    const callbackInput = document.createElement('input')
-    callbackInput.type = 'hidden'
-    callbackInput.name = 'callbackUrl'
-    callbackInput.value = callbackUrl
-
-    form.appendChild(csrfInput)
-    form.appendChild(callbackInput)
-    document.body.appendChild(form)
-    form.submit()
+  function handleKakaoLogin() {
+    signIn('kakao', { callbackUrl })
   }
 
   return (
