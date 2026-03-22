@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import OnboardingForm from '@/components/features/onboarding/OnboardingForm'
 
 export const metadata: Metadata = {
-  title: '\uD504\uB85C\uD544 \uC124\uC815',
-  description: '\uC6B0\uB098\uC5B4\uC5D0\uC11C \uC0AC\uC6A9\uD560 \uB2C9\uB124\uC784\uC744 \uC124\uC815\uD574 \uC8FC\uC138\uC694',
+  title: '프로필 설정',
+  description: '우나어에서 사용할 닉네임을 설정해 주세요',
 }
 
 export default function OnboardingPage() {

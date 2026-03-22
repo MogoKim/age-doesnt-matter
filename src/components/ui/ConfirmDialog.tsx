@@ -29,8 +29,8 @@ export default function ConfirmDialog({
   onConfirm,
   title,
   message,
-  confirmLabel = '\uD655\uC778',
-  cancelLabel = '\uCDE8\uC18C',
+  confirmLabel = '확인',
+  cancelLabel = '취소',
   variant = 'default',
   isLoading = false,
 }: ConfirmDialogProps) {

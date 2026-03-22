@@ -6,6 +6,7 @@ import Kakao from 'next-auth/providers/kakao'
  * Prisma를 import하지 않음 → Edge Runtime에서 동작
  */
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   providers: [
     Kakao({
       clientId: process.env.KAKAO_CLIENT_ID!,

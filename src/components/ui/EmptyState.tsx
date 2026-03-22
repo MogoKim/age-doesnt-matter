@@ -9,7 +9,7 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({
-  icon = '\uD83D\uDCED',
+  icon = '📭',
   message,
   sub,
   children,

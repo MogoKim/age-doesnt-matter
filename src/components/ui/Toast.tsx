@@ -27,7 +27,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const idRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const show = useCallback((message: string, icon = '\u2705', duration = 3000) => {
+  const show = useCallback((message: string, icon = '✅', duration = 3000) => {
     if (timerRef.current) clearTimeout(timerRef.current)
 
     const id = ++idRef.current
