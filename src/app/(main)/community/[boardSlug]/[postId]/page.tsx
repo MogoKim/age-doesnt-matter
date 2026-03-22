@@ -70,7 +70,7 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 본문 */}
       <div
-        className="text-sm text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4"
+        className="text-base text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4 [&_img]:max-w-full [&_img]:rounded-xl [&_img]:my-4 [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
 

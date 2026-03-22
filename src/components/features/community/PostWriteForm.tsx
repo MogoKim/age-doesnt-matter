@@ -1,10 +1,15 @@
 'use client'
 
 import { useState, useTransition, useEffect, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { createPost } from '@/lib/actions/posts'
 import { useToast } from '@/components/common/Toast'
+import type { ImagePreview } from './TipTapEditor'
+
+// TipTap은 SSR 불가 → dynamic import
+const TipTapEditor = dynamic(() => import('./TipTapEditor'), { ssr: false })
 
 interface BoardOption {
   slug: string
@@ -12,29 +17,13 @@ interface BoardOption {
   categories: string[]
 }
 
-const UPLOAD_GRADES = ['REGULAR', 'VETERAN', 'WARM_NEIGHBOR']
-const MAX_IMAGES = 5
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const DRAFT_KEY = 'unae_post_draft'
 const AUTOSAVE_INTERVAL = 30_000 // 30초
-
-interface ImagePreview {
-  file: File
-  url: string
-}
 
 interface PostWriteFormProps {
   defaultBoard?: string
   boards: BoardOption[]
   userGrade?: string
-}
-
-// YouTube URL → 영상 ID 추출
-function extractYouTubeId(text: string): string | null {
-  const match = text.match(
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/
-  )
-  return match?.[1] ?? null
 }
 
 export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROUT' }: PostWriteFormProps) {
@@ -50,16 +39,14 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
   const [showPreview, setShowPreview] = useState(false)
   const [draftLoaded, setDraftLoaded] = useState(false)
 
-  const canUploadImages = UPLOAD_GRADES.includes(userGrade)
   const board = boards.find((b) => b.slug === selectedBoard)
   const categories = board?.categories.filter((c) => c !== '전체') || []
 
   const isTitleValid = title.length >= 2 && title.length <= 40
-  const isContentValid = content.length >= 10
+  // HTML 태그 제거 후 텍스트 길이 검사
+  const plainTextLength = content.replace(/<[^>]*>/g, '').trim().length
+  const isContentValid = plainTextLength >= 10
   const canSubmit = isTitleValid && isContentValid && selectedBoard
-
-  // YouTube 감지
-  const youtubeId = extractYouTubeId(content)
 
   // 임시저장 복원
   useEffect(() => {
@@ -189,20 +176,10 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
           <h3 className="text-xl font-bold text-foreground mb-4 leading-[1.4]">
             {title || '(제목 없음)'}
           </h3>
-          <div className="text-base text-foreground leading-[1.85] whitespace-pre-wrap mb-4">
-            {content || '(본문 없음)'}
-          </div>
-
-          {youtubeId && (
-            <div className="aspect-video rounded-xl overflow-hidden mb-4">
-              <iframe
-                src={`https://www.youtube.com/embed/${youtubeId}`}
-                className="w-full h-full"
-                allowFullScreen
-                title="YouTube 미리보기"
-              />
-            </div>
-          )}
+          <div
+            className="prose prose-lg max-w-none text-base text-foreground leading-[1.85] mb-4 [word-break:keep-all] [&_img]:rounded-xl [&_img]:max-w-full [&_hr]:border-border [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl"
+            dangerouslySetInnerHTML={{ __html: content || '<p>(본문 없음)</p>' }}
+          />
 
           {images.length > 0 && (
             <div className="flex gap-3 flex-wrap mb-4">
@@ -299,100 +276,23 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
         </div>
       </div>
 
-      {/* 본문 입력 */}
+      {/* 본문 입력 (TipTap 에디터) */}
       <div className="mb-6">
         <label className="flex items-center gap-1 text-xs font-bold text-foreground mb-2">
           본문 <span className="text-primary font-bold">*</span>
         </label>
-        <textarea
-          className="w-full min-h-[300px] p-4 border-2 border-border rounded-xl text-sm text-foreground bg-card leading-[1.85] resize-y outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,111,97,0.1)] placeholder:text-muted-foreground"
-          placeholder="내용을 입력해 주세요 (10자 이상)"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
+        <TipTapEditor
+          content={content}
+          onChange={setContent}
+          userGrade={userGrade}
+          onImagesChange={setImages}
         />
         <div className={cn(
           'text-right text-[13px] font-medium text-muted-foreground mt-1',
-          content.length > 0 && content.length < 10 && 'text-destructive font-bold'
+          plainTextLength > 0 && plainTextLength < 10 && 'text-destructive font-bold'
         )}>
-          {content.length}자
+          {plainTextLength}자
         </div>
-      </div>
-
-      {/* YouTube 감지 알림 */}
-      {youtubeId && (
-        <div className="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
-          <p className="text-sm font-medium text-foreground mb-2">YouTube 영상이 감지되었어요</p>
-          <div className="aspect-video rounded-lg overflow-hidden">
-            <iframe
-              src={`https://www.youtube.com/embed/${youtubeId}`}
-              className="w-full h-full"
-              allowFullScreen
-              title="YouTube 미리보기"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* 이미지 첨부 */}
-      <div className="mb-6">
-        {canUploadImages ? (
-          <>
-            <div className="flex flex-wrap gap-3">
-              {images.map((img, idx) => (
-                <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.url} alt={`첨부 ${idx + 1}`} className="w-full h-full object-cover" />
-                  <button
-                    className="absolute top-0.5 right-0.5 w-6 h-6 bg-black/60 text-white rounded-full text-xs flex items-center justify-center cursor-pointer"
-                    onClick={() => {
-                      URL.revokeObjectURL(img.url)
-                      setImages((prev) => prev.filter((_, i) => i !== idx))
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-              {images.length < MAX_IMAGES && (
-                <label className="flex items-center justify-center w-20 h-20 border-2 border-dashed border-border rounded-xl bg-background text-muted-foreground text-2xl cursor-pointer hover:border-primary/30 transition-colors">
-                  +
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || [])
-                      const valid = files.filter((f) => {
-                        if (f.size > MAX_FILE_SIZE) {
-                          setError(`${f.name}은(는) 5MB를 초과합니다.`)
-                          return false
-                        }
-                        if (!f.type.startsWith('image/')) return false
-                        return true
-                      })
-                      const remaining = MAX_IMAGES - images.length
-                      const toAdd = valid.slice(0, remaining).map((file) => ({
-                        file,
-                        url: URL.createObjectURL(file),
-                      }))
-                      setImages((prev) => [...prev, ...toAdd])
-                      e.target.value = ''
-                    }}
-                  />
-                </label>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">{images.length}/{MAX_IMAGES}장 (각 5MB 이하)</p>
-          </>
-        ) : (
-          <>
-            <button className="flex items-center gap-2 min-h-[52px] p-4 border-2 border-dashed border-border rounded-2xl bg-background text-muted-foreground text-xs font-medium w-full justify-center opacity-50 cursor-not-allowed" disabled>
-              이미지 첨부 (단골 등급부터 가능해요)
-            </button>
-            <p className="text-xs text-muted-foreground mt-1 text-center">최대 5장, 각 5MB 이하</p>
-          </>
-        )}
       </div>
 
       {/* 하단 액션바 */}
