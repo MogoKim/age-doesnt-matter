@@ -21,6 +21,12 @@ export default function GlobalError({
       >
         다시 시도하기
       </button>
+      <a
+        href="/api/auth/signout"
+        className="mt-4 text-sm text-muted-foreground underline hover:text-foreground"
+      >
+        로그아웃 후 다시 로그인하기
+      </a>
     </div>
   )
 }

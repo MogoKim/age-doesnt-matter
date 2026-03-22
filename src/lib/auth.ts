@@ -93,6 +93,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.grade = user.grade
           token.nickname = user.nickname
           token.profileImage = user.profileImage
+        } else if (token.userId) {
+          // 기존 세션 갱신: DB에 유저가 실제 존재하는지 확인
+          const user = await prisma.user.findUnique({
+            where: { id: token.userId as string },
+          })
+          if (!user) {
+            // DB에 유저가 없으면 토큰 초기화 → 재로그인 유도
+            token.userId = undefined
+            token.role = undefined
+            token.grade = undefined
+            token.nickname = undefined
+            token.profileImage = undefined
+            token.needsOnboarding = undefined
+          } else {
+            // DB 최신 정보 반영
+            token.role = user.role
+            token.grade = user.grade
+            token.nickname = user.nickname
+            token.profileImage = user.profileImage
+            token.needsOnboarding = user.nickname.startsWith('user_')
+          }
         }
       } catch (error) {
         console.error('[auth] jwt callback error:', error)
