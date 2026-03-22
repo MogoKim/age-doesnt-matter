@@ -20,22 +20,13 @@ function toSessionPooler(url: string): string {
   return url.replace(/:6543\//, ':5432/')
 }
 
-function ensureSsl(url: string): string {
-  if (!url) return url
-  const sep = url.includes('?') ? '&' : '?'
-  if (!url.includes('sslmode=')) return `${url}${sep}sslmode=require`
-  return url
-}
-
 // 진단용: 실제 사용 중인 연결 호스트
 export let _debugHost = 'not-initialized'
 
 function createPrismaClient() {
   // SESSION_POOL_URL > DATABASE_URL(→ session pooler로 변환) > DIRECT_URL(로컬용)
-  const raw = process.env.SESSION_POOL_URL
+  const connectionString = process.env.SESSION_POOL_URL
     ?? (toSessionPooler(process.env.DATABASE_URL ?? '') || process.env.DIRECT_URL || '')
-
-  const connectionString = process.env.NODE_ENV === 'production' ? ensureSsl(raw) : raw
 
   try {
     const u = new URL(connectionString)
@@ -44,7 +35,15 @@ function createPrismaClient() {
     _debugHost = 'parse-error'
   }
 
-  const adapter = new PrismaPg({ connectionString })
+  // Supabase SSL: rejectUnauthorized=false로 self-signed 인증서 허용
+  const ssl = process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: false }
+    : undefined
+
+  const adapter = new PrismaPg({
+    connectionString,
+    ssl,
+  } as Record<string, unknown>)
 
   return new PrismaClient({ adapter })
 }
