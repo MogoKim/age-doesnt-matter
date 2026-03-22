@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { getCommentsByPostId } from '@/lib/queries/comments'
+import { handleApiError } from '@/lib/api-utils'
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl
-  const postId = searchParams.get('postId')
-  const sort = (searchParams.get('sort') ?? 'latest') as 'latest' | 'oldest'
+  try {
+    const { searchParams } = request.nextUrl
+    const postId = searchParams.get('postId')
+    const sort = (searchParams.get('sort') ?? 'latest') as 'latest' | 'oldest'
 
-  if (!postId) {
-    return NextResponse.json({ error: 'postId가 필요합니다' }, { status: 400 })
+    if (!postId) {
+      return NextResponse.json({ error: 'postId가 필요합니다' }, { status: 400 })
+    }
+
+    const session = await auth()
+    const comments = await getCommentsByPostId(postId, session?.user?.id, sort)
+
+    return NextResponse.json({ comments })
+  } catch (error) {
+    return handleApiError(error)
   }
-
-  const session = await auth()
-  const comments = await getCommentsByPostId(postId, session?.user?.id, sort)
-
-  return NextResponse.json({ comments })
 }

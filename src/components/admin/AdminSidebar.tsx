@@ -47,7 +47,7 @@ export default function AdminSidebar({ nickname }: AdminSidebarProps) {
                 <Link
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium no-underline transition-colors',
+                    'flex items-center gap-3 rounded-lg px-3 py-3 text-[15px] font-medium no-underline transition-colors',
                     isActive
                       ? 'bg-zinc-100 text-zinc-900'
                       : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
@@ -64,7 +64,7 @@ export default function AdminSidebar({ nickname }: AdminSidebarProps) {
 
       {/* 하단: 관리자 정보 */}
       <div className="border-t border-zinc-200 px-5 py-3">
-        <p className="text-xs text-zinc-500">로그인: {nickname}</p>
+        <p className="text-[15px] text-zinc-500">로그인: {nickname}</p>
       </div>
     </aside>
   )

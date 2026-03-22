@@ -23,7 +23,7 @@ export default function AdminHeader() {
       <form action={adminLogout}>
         <button
           type="submit"
-          className="rounded-lg px-3 py-1.5 text-sm text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+          className="rounded-lg px-4 py-2 text-[15px] text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
         >
           로그아웃
         </button>

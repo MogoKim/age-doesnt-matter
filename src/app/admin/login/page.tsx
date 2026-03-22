@@ -11,7 +11,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <h1 className="text-xl font-bold text-zinc-900">🛠️ 우나어 어드민</h1>
-          <p className="mt-2 text-sm text-zinc-500">관리자 계정으로 로그인해 주세요</p>
+          <p className="mt-2 text-[15px] text-zinc-500">관리자 계정으로 로그인해 주세요</p>
         </div>
         <AdminLoginForm />
       </div>
