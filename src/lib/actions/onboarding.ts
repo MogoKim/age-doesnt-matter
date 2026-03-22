@@ -62,40 +62,59 @@ export async function completeOnboarding(
     return { error: '필수 약관에 동의해 주세요' }
   }
 
-  const userId = session.user.id
+  // session.user.id가 DB의 실제 유저 ID(cuid)인지 확인
+  let userId = session.user.id
+  const dbUser = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } })
+
+  if (!dbUser) {
+    // JWT에 잘못된 userId가 저장된 경우 (예: 카카오 profile ID)
+    // providerId로 재조회 시도
+    const byProvider = await prisma.user.findUnique({
+      where: { providerId: userId },
+      select: { id: true },
+    })
+    if (!byProvider) {
+      return { error: '세션이 만료되었습니다. 로그아웃 후 다시 로그인해 주세요.' }
+    }
+    userId = byProvider.id
+  }
+
   const version = '1.0'
 
-  await prisma.$transaction([
-    // 닉네임 업데이트
-    prisma.user.update({
-      where: { id: userId },
-      data: {
-        nickname,
-        nicknameChangedAt: new Date(),
-        marketingOptIn: agreedTerms.marketing,
-      },
-    }),
-    // 약관 동의 기록
-    prisma.agreement.upsert({
-      where: { userId_type_version: { userId, type: 'TERMS_OF_SERVICE', version } },
-      create: { userId, type: 'TERMS_OF_SERVICE', version },
-      update: { agreedAt: new Date() },
-    }),
-    prisma.agreement.upsert({
-      where: { userId_type_version: { userId, type: 'PRIVACY_POLICY', version } },
-      create: { userId, type: 'PRIVACY_POLICY', version },
-      update: { agreedAt: new Date() },
-    }),
-    ...(agreedTerms.marketing
-      ? [
-          prisma.agreement.upsert({
-            where: { userId_type_version: { userId, type: 'MARKETING', version } },
-            create: { userId, type: 'MARKETING', version },
-            update: { agreedAt: new Date() },
-          }),
-        ]
-      : []),
-  ])
+  try {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          nickname,
+          nicknameChangedAt: new Date(),
+          marketingOptIn: agreedTerms.marketing,
+        },
+      }),
+      prisma.agreement.upsert({
+        where: { userId_type_version: { userId, type: 'TERMS_OF_SERVICE', version } },
+        create: { userId, type: 'TERMS_OF_SERVICE', version },
+        update: { agreedAt: new Date() },
+      }),
+      prisma.agreement.upsert({
+        where: { userId_type_version: { userId, type: 'PRIVACY_POLICY', version } },
+        create: { userId, type: 'PRIVACY_POLICY', version },
+        update: { agreedAt: new Date() },
+      }),
+      ...(agreedTerms.marketing
+        ? [
+            prisma.agreement.upsert({
+              where: { userId_type_version: { userId, type: 'MARKETING', version } },
+              create: { userId, type: 'MARKETING', version },
+              update: { agreedAt: new Date() },
+            }),
+          ]
+        : []),
+    ])
+  } catch (error) {
+    console.error('[onboarding] transaction error:', error)
+    return { error: '가입 처리 중 문제가 발생했습니다. 다시 시도해 주세요.' }
+  }
 
   return {}
 }
