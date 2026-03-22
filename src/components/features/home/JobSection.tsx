@@ -45,13 +45,13 @@ export default function JobSection({ jobs }: Props) {
                 </span>
               ))}
             </div>
-            <h3 className="text-sm font-bold text-foreground mb-1.5 leading-[1.4] line-clamp-2">{job.title}</h3>
+            <h3 className="text-base font-bold text-foreground mb-1.5 leading-[1.4] line-clamp-2">{job.title}</h3>
             <div className="text-[15px] text-muted-foreground mb-2 flex items-center gap-1.5">
               <span>{job.location}</span>
               <span>·</span>
               <span className="text-primary font-bold">{job.salary}</span>
             </div>
-            {job.highlight && <p className="text-xs text-muted-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis">{job.highlight}</p>}
+            {job.highlight && <p className="text-[15px] text-muted-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis">{job.highlight}</p>}
           </Link>
         ))}
       </div>

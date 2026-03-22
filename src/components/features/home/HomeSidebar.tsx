@@ -24,8 +24,8 @@ export default function HomeSidebar({ posts }: Props) {
           ))}
         </ul>
       </div>
-      <div className="bg-[#F9F5F0] rounded-xl p-4 border border-border relative min-h-[250px] flex items-center justify-center text-muted-foreground text-xs">
-        <span className="absolute top-2 right-3 text-[11px] text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border">광고</span>
+      <div className="bg-[#F9F5F0] rounded-xl p-4 border border-border relative min-h-[250px] flex items-center justify-center text-muted-foreground text-sm" role="complementary" aria-label="광고 영역">
+        <span className="absolute top-2 right-3 text-[13px] text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border">광고</span>
         광고 영역
       </div>
     </aside>

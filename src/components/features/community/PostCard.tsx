@@ -14,10 +14,10 @@ export default function PostCard({ post, boardSlug }: PostCardProps) {
       className="bg-card rounded-2xl p-6 border border-border shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-200 flex flex-col gap-2.5 no-underline text-inherit relative overflow-hidden after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[3px] after:bg-primary after:scale-x-0 after:transition-transform after:duration-300 hover:after:scale-x-100 lg:p-5 lg:hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] lg:hover:-translate-y-[3px] lg:hover:border-primary/20"
     >
       {post.category && (
-        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-bold w-fit tracking-wide">{post.category}</span>
+        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-[15px] font-bold w-fit tracking-wide">{post.category}</span>
       )}
 
-      <h3 className="text-sm font-bold text-foreground m-0 line-clamp-2 leading-[1.5]">
+      <h3 className="text-base font-bold text-foreground m-0 line-clamp-2 leading-[1.5]">
         {post.isPinned && (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide mr-1 bg-foreground text-background">공지 </span>
         )}
@@ -32,14 +32,14 @@ export default function PostCard({ post, boardSlug }: PostCardProps) {
 
       <p className="text-[15px] text-muted-foreground m-0 line-clamp-2 leading-relaxed">{post.preview}</p>
 
-      <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground pt-1">
+      <div className="flex items-center gap-1.5 text-[15px] text-muted-foreground pt-1">
         <span>{post.author.gradeEmoji}</span>
         <span className="font-medium text-muted-foreground">{post.author.nickname}</span>
         <span className="text-border">·</span>
         <span>{formatTimeAgo(post.createdAt)}</span>
       </div>
 
-      <div className="flex items-center gap-4 text-[13px] text-muted-foreground pt-1.5 border-t border-[#f0eeec] mt-0.5">
+      <div className="flex items-center gap-4 text-[15px] text-muted-foreground pt-1.5 border-t border-[#f0eeec] mt-0.5">
         <span className="flex items-center gap-1">
           ❤️ {post.likeCount}
         </span>

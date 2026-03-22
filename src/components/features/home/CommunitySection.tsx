@@ -37,11 +37,11 @@ export default function CommunitySection({ posts }: Props) {
               className="block py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0"
             >
               <div className="flex items-center gap-2 mb-1">
-                <span className="bg-background px-2 py-0.5 rounded text-xs text-muted-foreground font-medium">{BOARD_LABEL[post.boardType] ?? post.boardType}</span>
-                <span className="text-xs text-muted-foreground">{post.author.nickname}</span>
+                <span className="bg-background px-2 py-0.5 rounded text-[15px] text-muted-foreground font-medium">{BOARD_LABEL[post.boardType] ?? post.boardType}</span>
+                <span className="text-[15px] text-muted-foreground">{post.author.nickname}</span>
               </div>
-              <p className="text-sm text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
-              <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+              <p className="text-base text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
+              <div className="flex items-center gap-2.5 text-[15px] text-muted-foreground">
                 <span>💬 {post.commentCount}</span>
                 <span>❤️ {post.likeCount}</span>
                 <span>{formatTimeAgo(post.createdAt)}</span>

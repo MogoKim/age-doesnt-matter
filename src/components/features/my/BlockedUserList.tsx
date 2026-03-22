@@ -47,7 +47,7 @@ export default function BlockedUserList() {
           <button
             onClick={() => handleUnblock(user.id)}
             disabled={isPending}
-            className="min-h-[44px] px-4 py-2 text-xs font-bold text-destructive border border-destructive/30 rounded-lg bg-destructive/5 transition-all hover:bg-destructive/10 disabled:opacity-50"
+            className="min-h-[52px] px-4 py-2 text-[15px] font-bold text-destructive border border-destructive/30 rounded-lg bg-destructive/5 transition-all hover:bg-destructive/10 disabled:opacity-50"
           >
             차단 해제
           </button>

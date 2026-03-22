@@ -48,7 +48,7 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'text-sm text-muted-foreground no-underline py-1 relative transition-colors duration-150 whitespace-nowrap hover:text-foreground',
+                  'text-[15px] text-muted-foreground no-underline py-1 relative transition-colors duration-150 whitespace-nowrap hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary',
                   isActive && 'text-primary font-medium after:content-[""] after:absolute after:-bottom-5 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
                 )}
                 aria-current={isActive ? 'page' : undefined}
@@ -59,9 +59,9 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
           })}
         </div>
 
-        <form className="flex items-center w-60 h-10 px-4 bg-background border border-border rounded-lg text-xs text-foreground shrink-0 transition-colors focus-within:border-primary" onSubmit={handleSearch}>
+        <form className="flex items-center w-60 h-12 px-4 bg-background border border-border rounded-lg text-[15px] text-foreground shrink-0 transition-colors focus-within:border-primary" onSubmit={handleSearch}>
           <input
-            className="flex-1 border-none bg-transparent outline-none font-[inherit] text-inherit min-h-9 placeholder:text-muted-foreground"
+            className="flex-1 border-none bg-transparent outline-none font-[inherit] text-inherit min-h-11 placeholder:text-muted-foreground"
             type="search"
             placeholder="통합검색"
             value={query}

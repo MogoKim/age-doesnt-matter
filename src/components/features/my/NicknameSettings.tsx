@@ -70,7 +70,7 @@ export default function NicknameSettings({ currentNickname, canChange, lastChang
         </p>
       )}
 
-      <p className="text-[13px] text-muted-foreground mt-2 px-1">
+      <p className="text-[15px] text-muted-foreground mt-2 px-1">
         한글, 영문, 숫자 2~12자 · 30일에 1회 변경 가능
       </p>
     </div>

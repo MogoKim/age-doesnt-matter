@@ -72,7 +72,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
     setShowShareMenu(false)
   }
 
-  const btnBase = 'flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-4 py-2 bg-none border-none text-muted-foreground text-xs font-medium cursor-pointer rounded-xl transition-all justify-center hover:text-primary hover:bg-primary/5'
+  const btnBase = 'flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-4 py-2 bg-none border-none text-muted-foreground text-[15px] font-medium cursor-pointer rounded-xl transition-all justify-center hover:text-primary hover:bg-primary/5'
 
   return (
     <>
@@ -104,14 +104,14 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
                 <button
                   type="button"
                   onClick={handleKakaoShare}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[44px] text-xs text-foreground font-medium rounded-lg hover:bg-background transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[52px] text-[15px] text-foreground font-medium rounded-lg hover:bg-background transition-colors"
                 >
                   💬 카카오톡
                 </button>
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[44px] text-xs text-foreground font-medium rounded-lg hover:bg-background transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[52px] text-[15px] text-foreground font-medium rounded-lg hover:bg-background transition-colors"
                 >
                   📋 링크 복사
                 </button>
