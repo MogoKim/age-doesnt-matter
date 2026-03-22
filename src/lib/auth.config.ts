@@ -13,9 +13,10 @@ export const authConfig: NextAuthConfig = {
     Kakao({
       clientId: process.env.KAKAO_CLIENT_ID ?? '',
       clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
-      // 카카오는 PKCE 미지원 → state만 사용
-      // 임시로 비활성화하여 state 쿠키 문제인지 확인 (확인 후 ['state'] 복원 예정)
-      checks: ['state'],
+      // 임시: state 검증 비활성화하여 문제 격리 테스트
+      // 로그인 성공하면 → state 쿠키 문제 확정
+      // 여전히 실패하면 → token exchange/callback 문제 확정
+      checks: [],
       token: {
         url: 'https://kauth.kakao.com/oauth/token',
         // oauth4webapi v3 ↔ 카카오 응답 호환 대응:
