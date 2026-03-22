@@ -6,26 +6,37 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// 진단용: 실제 사용 중인 연결 호스트
+// 진단용
 export let _debugHost = 'not-initialized'
+export let _debugUser = 'not-initialized'
+
+function parseDbUrl(url: string) {
+  const u = new URL(url)
+  return {
+    host: u.hostname,
+    port: parseInt(u.port, 10) || 5432,
+    user: decodeURIComponent(u.username),
+    password: decodeURIComponent(u.password),
+    database: u.pathname.slice(1) || 'postgres',
+  }
+}
 
 function createPrismaClient() {
-  // Vercel: DATABASE_URL(transaction pooler, port 6543) 사용
-  // 로컬: DIRECT_URL(direct connection, port 5432) 우선
-  const connectionString = process.env.NODE_ENV === 'production'
+  const raw = process.env.NODE_ENV === 'production'
     ? (process.env.DATABASE_URL ?? process.env.DIRECT_URL ?? '')
     : (process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? '')
 
-  try {
-    const u = new URL(connectionString)
-    _debugHost = `${u.hostname}:${u.port}`
-  } catch {
-    _debugHost = 'parse-error'
-  }
+  const parsed = parseDbUrl(raw)
+  _debugHost = `${parsed.host}:${parsed.port}`
+  _debugUser = parsed.user
 
-  // pg.Pool을 직접 생성하여 SSL 설정을 확실히 전달
+  // 개별 파라미터로 전달하여 URL 파싱 문제 방지
   const pool = new Pool({
-    connectionString,
+    host: parsed.host,
+    port: parsed.port,
+    user: parsed.user,
+    password: parsed.password,
+    database: parsed.database,
     ssl: process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }
       : undefined,

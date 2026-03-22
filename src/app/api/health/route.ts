@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma, _debugHost } from '@/lib/prisma'
+import { prisma, _debugHost, _debugUser } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +32,8 @@ export async function GET() {
     dbHost: extractHost(process.env.DATABASE_URL),
     nodeEnv: process.env.NODE_ENV,
     activeHost: _debugHost,
-    codeVersion: 'v7-txn-pooler',
+    activeUser: _debugUser,
+    codeVersion: 'v8-explicit-params',
   }
 
   return NextResponse.json(
