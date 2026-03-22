@@ -7,6 +7,7 @@ import Kakao from 'next-auth/providers/kakao'
  */
 export const authConfig: NextAuthConfig = {
   trustHost: true,
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   providers: [
     Kakao({
       clientId: process.env.KAKAO_CLIENT_ID!,
@@ -50,6 +51,8 @@ export const authConfig: NextAuthConfig = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30일
   },
+
+  debug: true,
 
   pages: {
     signIn: '/login',
