@@ -14,23 +14,52 @@ export const authConfig: NextAuthConfig = {
       clientId: process.env.KAKAO_CLIENT_ID ?? '',
       clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
       // 임시: state 검증 비활성화하여 문제 격리 테스트
-      // 로그인 성공하면 → state 쿠키 문제 확정
-      // 여전히 실패하면 → token exchange/callback 문제 확정
       checks: [],
+      // userinfo 엔드포인트도 카카오는 비표준 Content-Type 반환
+      userinfo: {
+        url: 'https://kapi.kakao.com/v2/user/me',
+        conform: async (response: Response) => {
+          console.log('[auth-isolation] userinfo conform called:', {
+            status: response.status,
+            contentType: response.headers.get('content-type'),
+          })
+          const contentType = response.headers.get('content-type')
+          if (contentType?.startsWith('application/json') && contentType !== 'application/json') {
+            const body = await response.clone().text()
+            const newHeaders = new Headers(response.headers)
+            newHeaders.set('content-type', 'application/json')
+            return new Response(body, {
+              status: response.status,
+              statusText: response.statusText,
+              headers: newHeaders,
+            })
+          }
+          return response
+        },
+      },
       token: {
         url: 'https://kauth.kakao.com/oauth/token',
         // oauth4webapi v3 ↔ 카카오 응답 호환 대응:
         // Content-Type charset 정규화 + WWW-Authenticate 제거
         conform: async (response: Response) => {
+          console.log('[auth-isolation] token conform called:', {
+            status: response.status,
+            contentType: response.headers.get('content-type'),
+            hasWwwAuth: response.headers.has('www-authenticate'),
+          })
+
           const contentType = response.headers.get('content-type')
           const hasWwwAuth = response.headers.has('www-authenticate')
           const needsContentTypeFix =
             contentType?.startsWith('application/json') && contentType !== 'application/json'
 
-          if (!needsContentTypeFix && !hasWwwAuth) return response
+          if (!needsContentTypeFix && !hasWwwAuth) {
+            console.log('[auth-isolation] conform: no fix needed')
+            return response
+          }
 
-          // body를 clone하여 stream 소비 문제 방지
           const body = await response.clone().text()
+          console.log('[auth-isolation] conform: fixing response, body length:', body.length)
 
           const newHeaders = new Headers(response.headers)
           if (needsContentTypeFix) {
@@ -59,6 +88,7 @@ export const authConfig: NextAuthConfig = {
 
   pages: {
     signIn: '/login',
+    error: '/auth-error',
   },
 
   callbacks: {
