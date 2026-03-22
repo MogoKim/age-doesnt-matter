@@ -3,8 +3,8 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID!
 const ACCESS_KEY = process.env.CLOUDFLARE_R2_ACCESS_KEY!
 const SECRET_KEY = process.env.CLOUDFLARE_R2_SECRET_KEY!
-const BUCKET = process.env.CLOUDFLARE_BUCKET ?? 'unaeo-uploads'
-const PUBLIC_URL = process.env.NEXT_PUBLIC_PUBLIC_URL ?? `https://${BUCKET}.r2.cloudflarestorage.com`
+const BUCKET = process.env.CLOUDFLARE_R2_BUCKET ?? 'unaeo-uploads'
+const PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? `https://${BUCKET}.r2.cloudflarestorage.com`
 
 const client = new S3Client({
   region: 'auto',
