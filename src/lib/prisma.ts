@@ -24,9 +24,11 @@ function toSessionPooler(url: string): string {
 export let _debugHost = 'not-initialized'
 
 function createPrismaClient() {
-  // SESSION_POOL_URL > DATABASE_URL(→ session pooler로 변환) > DIRECT_URL(로컬용)
-  const connectionString = process.env.SESSION_POOL_URL
-    ?? (toSessionPooler(process.env.DATABASE_URL ?? '') || process.env.DIRECT_URL || '')
+  // Vercel: DATABASE_URL(transaction pooler, port 6543) 사용
+  // 로컬: DIRECT_URL(direct connection, port 5432) 우선
+  const connectionString = process.env.NODE_ENV === 'production'
+    ? (process.env.DATABASE_URL ?? process.env.DIRECT_URL ?? '')
+    : (process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? '')
 
   try {
     const u = new URL(connectionString)
