@@ -122,7 +122,7 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
       {isEditing ? (
         <div className="mb-2">
           <textarea
-            className="w-full min-h-[80px] px-4 py-2.5 border border-border rounded-xl text-sm text-foreground bg-background resize-none outline-none transition-colors focus:border-primary"
+            className="w-full min-h-[80px] px-4 py-2.5 border border-border rounded-xl text-base text-foreground bg-background resize-none outline-none transition-colors focus:border-primary"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
           />

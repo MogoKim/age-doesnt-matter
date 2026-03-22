@@ -32,7 +32,7 @@ export default function IconMenu() {
             <span className="text-[28px] leading-none" aria-hidden="true">
               {item.icon}
             </span>
-            <span className="text-xs leading-none whitespace-nowrap">{item.label}</span>
+            <span className="text-[13px] leading-none whitespace-nowrap">{item.label}</span>
           </Link>
         )
       })}

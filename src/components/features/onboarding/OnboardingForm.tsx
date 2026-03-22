@@ -175,13 +175,13 @@ export default function OnboardingForm() {
         </div>
 
         <div className="mb-6">
-          <label className="block text-xs font-bold text-foreground mb-2" htmlFor="nickname">닉네임</label>
+          <label className="block text-[15px] font-bold text-foreground mb-2" htmlFor="nickname">닉네임</label>
           <div className="relative">
             <input
               id="nickname"
               type="text"
               className={cn(
-                'w-full min-h-[52px] px-4 pr-12 border-2 rounded-xl text-sm font-medium text-foreground bg-card outline-none transition-all placeholder:text-muted-foreground placeholder:font-normal',
+                'w-full min-h-[52px] px-4 pr-12 border-2 rounded-xl text-base font-medium text-foreground bg-card outline-none transition-all placeholder:text-muted-foreground placeholder:font-normal',
                 nicknameStatus === 'valid'
                   ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/10'
                   : nicknameStatus === 'error'
@@ -201,20 +201,20 @@ export default function OnboardingForm() {
               {nicknameStatus === 'checking' && '⏳'}
             </span>
           </div>
-          <div className="text-right text-xs text-muted-foreground mt-1">{nickname.length}/10</div>
+          <div className="text-right text-[15px] text-muted-foreground mt-1">{nickname.length}/10</div>
 
           {nicknameStatus === 'valid' && (
-            <div className="flex items-center gap-1.5 mt-2 text-xs text-green-500 font-medium min-h-6">
+            <div className="flex items-center gap-1.5 mt-2 text-[15px] text-green-500 font-medium min-h-6">
               ✓ 사용 가능한 닉네임이에요
             </div>
           )}
           {nicknameStatus === 'error' && nicknameError && (
-            <div className="flex items-center gap-1.5 mt-2 text-xs text-destructive font-medium min-h-6">
+            <div className="flex items-center gap-1.5 mt-2 text-[15px] text-destructive font-medium min-h-6">
               ✗ {nicknameError}
             </div>
           )}
           {nicknameStatus === 'checking' && (
-            <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground min-h-6">
+            <div className="flex items-center gap-1.5 mt-2 text-[15px] text-muted-foreground min-h-6">
               중복 확인 중...
             </div>
           )}
@@ -222,15 +222,15 @@ export default function OnboardingForm() {
 
         {/* 규칙 안내 */}
         <div className="bg-background rounded-xl p-4 mb-8">
-          <p className="text-xs font-bold text-muted-foreground mb-2">닉네임 규칙</p>
+          <p className="text-[15px] font-bold text-muted-foreground mb-2">닉네임 규칙</p>
           <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
-            <li className={cn('text-xs flex items-center gap-1.5', lengthOk ? 'text-green-500' : 'text-muted-foreground')}>
+            <li className={cn('text-[15px] flex items-center gap-1.5', lengthOk ? 'text-green-500' : 'text-muted-foreground')}>
               {lengthOk ? '✓' : '·'} 2~10자
             </li>
-            <li className={cn('text-xs flex items-center gap-1.5', charOk ? 'text-green-500' : 'text-muted-foreground')}>
+            <li className={cn('text-[15px] flex items-center gap-1.5', charOk ? 'text-green-500' : 'text-muted-foreground')}>
               {charOk ? '✓' : '·'} 한글, 영문, 숫자만 가능
             </li>
-            <li className={cn('text-xs flex items-center gap-1.5', noBanned ? 'text-green-500' : 'text-muted-foreground')}>
+            <li className={cn('text-[15px] flex items-center gap-1.5', noBanned ? 'text-green-500' : 'text-muted-foreground')}>
               {noBanned ? '✓' : '·'} 금지어 미포함
             </li>
           </ul>
@@ -260,7 +260,7 @@ export default function OnboardingForm() {
         </div>
 
         {submitError && (
-          <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-sm font-medium">
+          <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-base font-medium">
             {submitError}
           </div>
         )}
@@ -288,7 +288,7 @@ export default function OnboardingForm() {
             >
               ✓
             </span>
-            <span className="text-sm font-bold text-foreground flex-1">전체 동의</span>
+            <span className="text-base font-bold text-foreground flex-1">전체 동의</span>
           </div>
 
           {/* 개별 약관 */}
@@ -308,16 +308,16 @@ export default function OnboardingForm() {
                 >
                   ✓
                 </span>
-                <span className="flex-1 text-xs text-foreground" onClick={() => toggleTerm(term.id)}>
+                <span className="flex-1 text-[15px] text-foreground" onClick={() => toggleTerm(term.id)}>
                   {term.label}
                 </span>
-                <span className={cn('text-xs', term.required ? 'text-primary font-bold' : 'text-muted-foreground')}>
+                <span className={cn('text-[15px]', term.required ? 'text-primary font-bold' : 'text-muted-foreground')}>
                   {term.required ? '[필수]' : '[선택]'}
                 </span>
                 {term.url && (
                   <a
                     href={term.url}
-                    className="text-xs text-muted-foreground underline shrink-0 min-w-[52px] min-h-[52px] flex items-center justify-center hover:text-primary"
+                    className="text-[15px] text-muted-foreground underline shrink-0 min-w-[52px] min-h-[52px] flex items-center justify-center hover:text-primary"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -353,7 +353,7 @@ export default function OnboardingForm() {
           <strong>{nickname}</strong>님,<br />
           우나어에 오신 것을 환영해요
         </p>
-        <div className="inline-flex items-center gap-2 px-6 py-2 bg-primary/5 rounded-full text-sm font-bold text-primary mb-8">
+        <div className="inline-flex items-center gap-2 px-6 py-2 bg-primary/5 rounded-full text-base font-bold text-primary mb-8">
           🌱 새싹 등급
         </div>
       </div>

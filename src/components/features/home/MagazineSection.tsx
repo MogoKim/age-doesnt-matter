@@ -32,7 +32,7 @@ export default function MagazineSection({ posts }: Props) {
               aria-label={article.title}
             />
             <div className="p-3">
-              <span className="text-xs text-primary font-semibold mb-1 block">{article.category}</span>
+              <span className="text-[15px] text-primary font-semibold mb-1 block">{article.category}</span>
               <h3 className="text-[15px] font-bold text-foreground leading-[1.4] line-clamp-2 break-keep">{article.title}</h3>
             </div>
           </Link>
