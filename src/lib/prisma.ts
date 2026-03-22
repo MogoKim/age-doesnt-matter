@@ -1,3 +1,4 @@
+import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@/generated/prisma/client'
 
@@ -22,15 +23,15 @@ function createPrismaClient() {
     _debugHost = 'parse-error'
   }
 
-  // Supabase SSL: rejectUnauthorized=false로 self-signed 인증서 허용
-  const ssl = process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : undefined
-
-  const adapter = new PrismaPg({
+  // pg.Pool을 직접 생성하여 SSL 설정을 확실히 전달
+  const pool = new Pool({
     connectionString,
-    ssl,
-  } as Record<string, unknown>)
+    ssl: process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : undefined,
+  })
+
+  const adapter = new PrismaPg(pool)
 
   return new PrismaClient({ adapter })
 }
