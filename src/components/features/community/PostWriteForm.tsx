@@ -207,6 +207,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
           {images.length > 0 && (
             <div className="flex gap-3 flex-wrap mb-4">
               {images.map((img, idx) => (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   key={idx}
                   src={img.url}
@@ -339,6 +340,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
             <div className="flex flex-wrap gap-3">
               {images.map((img, idx) => (
                 <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={img.url} alt={`첨부 ${idx + 1}`} className="w-full h-full object-cover" />
                   <button
                     className="absolute top-0.5 right-0.5 w-6 h-6 bg-black/60 text-white rounded-full text-xs flex items-center justify-center cursor-pointer"
