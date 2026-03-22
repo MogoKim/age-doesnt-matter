@@ -1,17 +1,7 @@
-'use client'
-
-import { signIn } from 'next-auth/react'
-import { useSearchParams } from 'next/navigation'
+import { signIn } from '@/lib/auth'
 import Link from 'next/link'
 
-export default function LoginForm() {
-  const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/'
-
-  function handleKakaoLogin() {
-    signIn('kakao', { callbackUrl })
-  }
-
+export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   return (
     <div className="w-full max-w-[420px] bg-card rounded-2xl p-12 px-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-center max-md:max-w-none max-md:rounded-none max-md:min-h-dvh max-md:shadow-none max-md:flex max-md:flex-col max-md:justify-center">
       {/* 로고 */}
@@ -24,15 +14,21 @@ export default function LoginForm() {
         </p>
       </div>
 
-      {/* 카카오 로그인 버튼 */}
-      <button
-        className="flex items-center justify-center gap-2 w-full h-[52px] px-6 border-none rounded-xl bg-[#FEE500] text-[#191919] text-sm font-bold cursor-pointer transition-all shadow-[0_2px_8px_rgba(254,229,0,0.3)] mb-6 hover:bg-[#F5DC00] hover:shadow-[0_4px_14px_rgba(254,229,0,0.4)] hover:-translate-y-0.5 active:translate-y-0"
-        onClick={handleKakaoLogin}
-        type="button"
+      {/* 카카오 로그인 버튼 — 서버 액션 사용 */}
+      <form
+        action={async () => {
+          'use server'
+          await signIn('kakao', { redirectTo: callbackUrl })
+        }}
       >
-        <span className="text-[22px] shrink-0">💬</span>
-        카카오로 시작하기
-      </button>
+        <button
+          type="submit"
+          className="flex items-center justify-center gap-2 w-full h-[52px] px-6 border-none rounded-xl bg-[#FEE500] text-[#191919] text-sm font-bold cursor-pointer transition-all shadow-[0_2px_8px_rgba(254,229,0,0.3)] mb-6 hover:bg-[#F5DC00] hover:shadow-[0_4px_14px_rgba(254,229,0,0.4)] hover:-translate-y-0.5 active:translate-y-0"
+        >
+          <span className="text-[22px] shrink-0">💬</span>
+          카카오로 시작하기
+        </button>
+      </form>
 
       {/* 안내 문구 */}
       <p className="text-xs text-muted-foreground leading-relaxed">
