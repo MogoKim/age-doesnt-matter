@@ -6,7 +6,14 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPrismaClient() {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const connectionString = process.env.DATABASE_URL ?? ''
+
+  const adapter = new PrismaPg({
+    connectionString,
+    // Vercel 등 프로덕션 환경에서 Supabase SSL 필요
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  })
+
   return new PrismaClient({ adapter })
 }
 
