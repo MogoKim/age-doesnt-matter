@@ -1,6 +1,5 @@
 import NextAuth from 'next-auth'
 import { prisma } from '@/lib/prisma'
-import type { Grade, Role } from '@/generated/prisma/client'
 import { authConfig } from '@/lib/auth.config'
 
 /**
@@ -94,16 +93,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token
     },
 
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.userId as string
-        session.user.role = token.role as Role
-        session.user.grade = token.grade as Grade
-        session.user.nickname = token.nickname as string
-        session.user.profileImage = token.profileImage as string | null
-        session.user.needsOnboarding = token.needsOnboarding as boolean
-      }
-      return session
-    },
+    // session 콜백은 authConfig.callbacks에서 상속 (Edge Runtime 호환)
   },
 })

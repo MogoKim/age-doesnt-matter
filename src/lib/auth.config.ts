@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from 'next-auth'
+import type { Grade, Role } from '@/generated/prisma/client'
 import Kakao from 'next-auth/providers/kakao'
 
 /**
@@ -52,13 +53,25 @@ export const authConfig: NextAuthConfig = {
     maxAge: 30 * 24 * 60 * 60, // 30일
   },
 
-  debug: true,
+  debug: process.env.NODE_ENV === 'development',
 
   pages: {
     signIn: '/login',
   },
 
   callbacks: {
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.userId as string
+        session.user.role = token.role as Role
+        session.user.grade = token.grade as Grade
+        session.user.nickname = token.nickname as string
+        session.user.profileImage = token.profileImage as string | null
+        session.user.needsOnboarding = token.needsOnboarding as boolean
+      }
+      return session
+    },
+
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user
       const isOnboarding = nextUrl.pathname === '/onboarding'
