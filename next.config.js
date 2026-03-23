@@ -42,6 +42,7 @@ const nextConfig = {
               "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://pub-*.r2.dev https://k.kakaocdn.net https://t1.kakaocdn.net",
               "font-src 'self'",
               "connect-src 'self' https://kauth.kakao.com https://kapi.kakao.com https://api.telegram.org",
+              "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self' https://kauth.kakao.com",
