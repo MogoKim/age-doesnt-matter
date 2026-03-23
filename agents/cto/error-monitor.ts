@@ -11,6 +11,7 @@ class CTOErrorMonitor extends BaseAgent {
   constructor() {
     super({
       name: 'CTO_ERROR',
+      botType: 'CTO',
       role: 'CTO (에러 모니터링)',
       model: 'light',
       tasks: '에러 이벤트 감지 및 알림',

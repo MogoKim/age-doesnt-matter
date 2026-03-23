@@ -11,6 +11,7 @@ class CDOAnomalyDetector extends BaseAgent {
   constructor() {
     super({
       name: 'CDO_ANOMALY',
+      botType: 'CDO',
       role: 'CDO (이상 감지)',
       model: 'light',
       tasks: 'DAU 급락, 에러 급증 등 이상 징후 실시간 감지',

@@ -14,6 +14,7 @@ class CFOCostTracker extends BaseAgent {
   constructor() {
     super({
       name: 'CFO',
+      botType: 'CFO',
       role: 'CFO (재무총괄)',
       model: 'light',
       tasks: '일일 비용 체크, CPS/광고 수익 집계, 예산 경고',

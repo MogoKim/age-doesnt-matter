@@ -38,7 +38,7 @@ export interface MCPContext {
 export interface AgentLog {
   agent: string
   action: string
-  status: 'SUCCESS' | 'FAILURE' | 'SKIPPED'
+  status: 'SUCCESS' | 'FAILED' | 'PARTIAL'
   details?: string
   costUsd?: number
   durationMs: number
@@ -55,9 +55,13 @@ export interface MeetingAction {
   deadline: string
 }
 
+/** BotType enum (Prisma와 일치) */
+export type AgentBotType = 'CEO' | 'CTO' | 'CMO' | 'CPO' | 'CDO' | 'CFO' | 'COO' | 'SEED'
+
 /** 에이전트 설정 */
 export interface AgentConfig {
   name: string
+  botType: AgentBotType
   role: string
   model: 'heavy' | 'light'
   tasks: string

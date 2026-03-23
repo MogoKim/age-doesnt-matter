@@ -134,6 +134,15 @@ enum BotType {
   HUMOR
   STORY
   THREAD
+  // AI 에이전트 시스템
+  CEO
+  CTO
+  CMO
+  CPO
+  CDO
+  CFO
+  COO
+  SEED
 }
 
 enum BotStatus {
@@ -560,12 +569,18 @@ model BotLog {
   botType            BotType
   status             BotStatus
 
+  // 크롤러 봇 전용 필드
   collectedCount     Int       @default(0)
   filteredCount      Int       @default(0)
   publishedCount     Int       @default(0)
   reviewPendingCount Int       @default(0)
-
   logData            Json?
+
+  // AI 에이전트 전용 필드
+  action             String?   // 실행 액션 (MORNING_CYCLE, KPI_DAILY 등)
+  details            String?   // 실행 상세 (JSON string)
+  itemCount          Int       @default(0)  // 처리 건수
+  executionTimeMs    Int       @default(0)  // 실행 시간 (ms)
 
   executedAt         DateTime  @default(now())
   nextScheduledAt    DateTime?

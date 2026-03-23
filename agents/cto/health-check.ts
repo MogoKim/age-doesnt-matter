@@ -11,6 +11,7 @@ class CTOHealthCheck extends BaseAgent {
   constructor() {
     super({
       name: 'CTO',
+      botType: 'CTO',
       role: 'CTO (기술총괄)',
       model: 'light',
       tasks: '헬스체크: DB 연결, 사이트 응답 시간, 에러 모니터링',

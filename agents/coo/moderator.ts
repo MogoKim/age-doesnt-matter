@@ -11,6 +11,7 @@ class COOModerator extends BaseAgent {
   constructor() {
     super({
       name: 'COO_MODERATE',
+      botType: 'COO',
       role: 'COO (운영총괄 — 모더레이션)',
       model: 'light',
       tasks: '콘텐츠 모더레이션: AI 필터 2차 판단, 신고 처리, 자동 숨김',
@@ -43,7 +44,7 @@ class COOModerator extends BaseAgent {
     const reportedComments = await prisma.comment.findMany({
       where: {
         reportCount: { gte: 3 },
-        status: 'VISIBLE',
+        status: 'ACTIVE',
       },
       select: { id: true, content: true, reportCount: true },
     })
@@ -58,7 +59,7 @@ class COOModerator extends BaseAgent {
 
     // 3. AI 필터에 걸린 콘텐츠 2차 판단
     const filteredComments = await prisma.comment.findMany({
-      where: { isFiltered: true, status: 'VISIBLE' },
+      where: { isFiltered: true, status: 'ACTIVE' },
       select: { id: true, content: true },
       take: 20,
     })

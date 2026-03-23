@@ -2,9 +2,10 @@ import Anthropic from '@anthropic-ai/sdk'
 import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { notifyAdmin, notifyTelegram } from './notifier.js'
+import { notifyAdmin } from './notifier.js'
 import type { AgentResult, AgentConfig, AgentLog } from './types.js'
 import { prisma } from './db.js'
+import type { BotType } from '../../src/generated/prisma/client.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const constitution = readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')
@@ -54,13 +55,13 @@ ${constitution}
     return JSON.stringify(block)
   }
 
-  protected async log(action: string, status: AgentLog['status'], details?: string, costUsd?: number, durationMs = 0): Promise<void> {
+  protected async log(action: string, status: AgentLog['status'], details?: string, _costUsd?: number, durationMs = 0): Promise<void> {
     try {
       await prisma.botLog.create({
         data: {
-          botType: this.config.name,
+          botType: this.config.botType,
           action,
-          status: status === 'SUCCESS' ? 'SUCCESS' : status === 'FAILURE' ? 'FAILURE' : 'SUCCESS',
+          status: status === 'SUCCESS' ? 'SUCCESS' : 'FAILED',
           details,
           itemCount: 0,
           executionTimeMs: durationMs,
@@ -84,7 +85,7 @@ ${constitution}
       const durationMs = Date.now() - start
       const errorMsg = err instanceof Error ? err.message : String(err)
 
-      await this.log('run', 'FAILURE', errorMsg, undefined, durationMs)
+      await this.log('run', 'FAILED', errorMsg, undefined, durationMs)
 
       await notifyAdmin({
         level: 'important',

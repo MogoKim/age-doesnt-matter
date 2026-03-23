@@ -155,9 +155,9 @@ async function main() {
   // 로그 기록
   await prisma.botLog.create({
     data: {
-      botType: 'SEED',
+      botType: 'SEED' as const,
       action: `SCHEDULE_${hour}`,
-      status: errorCount === 0 ? 'SUCCESS' : 'PARTIAL',
+      status: errorCount === 0 ? 'SUCCESS' as const : 'PARTIAL' as const,
       details: JSON.stringify({ hour, success: successCount, errors: errorCount, ugcRatio: ratio }),
       itemCount: successCount,
       executionTimeMs: 0,

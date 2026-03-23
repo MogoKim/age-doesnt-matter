@@ -52,10 +52,8 @@ export async function notifyAdmin(payload: NotifyPayload): Promise<void> {
     await prisma.notification.createMany({
       data: admins.map((admin) => ({
         userId: admin.id,
-        type: 'SYSTEM',
-        title: `[${payload.agent}] ${payload.title}`,
-        body: payload.body,
-        linkUrl: '/admin/agents',
+        type: 'SYSTEM' as const,
+        content: `[${payload.agent}] ${payload.title}\n${payload.body}`,
       })),
     })
   } catch (err) {

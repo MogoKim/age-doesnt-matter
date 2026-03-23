@@ -11,6 +11,7 @@ class CDOKpiCollector extends BaseAgent {
   constructor() {
     super({
       name: 'CDO',
+      botType: 'CDO',
       role: 'CDO (데이터총괄)',
       model: 'light',
       tasks: '데일리 KPI 집계, 위클리 딥다이브, 이상 감지',
@@ -76,9 +77,9 @@ class CDOKpiCollector extends BaseAgent {
     // KPI를 BotLog에 기록 (히스토리 추적용)
     await prisma.botLog.create({
       data: {
-        botType: 'CDO',
+        botType: 'CDO' as const,
         action: 'KPI_DAILY',
-        status: 'SUCCESS',
+        status: 'SUCCESS' as const,
         details: JSON.stringify(kpi),
         itemCount: 0,
         executionTimeMs: 0,

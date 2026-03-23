@@ -20,6 +20,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@prisma/client": "^7.5.0",
+    "@prisma/adapter-pg": "^7.5.0",
+    "pg": "^8.13.0",
     "yaml": "^2.7.0"
   },
   "devDependencies": {

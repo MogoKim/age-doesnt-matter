@@ -1,11 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { readFileSync } from 'fs'
-import { resolve, dirname } from 'path'
-import { fileURLToPath } from 'url'
 import { prisma } from '../core/db.js'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const personas = readFileSync(resolve(__dirname, 'personas.yaml'), 'utf-8')
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 

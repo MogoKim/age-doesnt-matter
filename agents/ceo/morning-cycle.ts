@@ -11,6 +11,7 @@ class CEOMorningCycle extends BaseAgent {
   constructor() {
     super({
       name: 'CEO',
+      botType: 'CEO',
       role: 'CEO (최고경영자)',
       model: 'heavy',
       tasks: '모닝 사이클: 전체 KPI 수집, 문제 감지, 에이전트 소집 및 액션 배정',
@@ -73,9 +74,9 @@ ${kpiSummary}
     // 미팅 기록
     await prisma.botLog.create({
       data: {
-        botType: 'CEO',
+        botType: 'CEO' as const,
         action: 'MORNING_CYCLE',
-        status: 'SUCCESS',
+        status: 'SUCCESS' as const,
         details: JSON.stringify({ kpi: { dau: todayUsers, posts: todayPosts, comments: todayComments, likes: todayLikes }, analysis: parsed }),
         itemCount: parsed.issues.length,
         executionTimeMs: 0,

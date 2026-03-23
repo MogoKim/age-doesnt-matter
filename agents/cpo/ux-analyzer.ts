@@ -11,6 +11,7 @@ class CPOUXAnalyzer extends BaseAgent {
   constructor() {
     super({
       name: 'CPO',
+      botType: 'CPO',
       role: 'CPO (프로덕트총괄)',
       model: 'heavy',
       tasks: 'UX 이슈 발견, 기능 사용률 분석, 등급 전환 분석, 기능 제안',

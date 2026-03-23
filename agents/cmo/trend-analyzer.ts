@@ -11,6 +11,7 @@ class CMOTrendAnalyzer extends BaseAgent {
   constructor() {
     super({
       name: 'CMO',
+      botType: 'CMO',
       role: 'CMO (마케팅총괄)',
       model: 'heavy',
       tasks: '트렌드 분석, 검색어 갭 분석, SEO 점검, 유입 분석',
