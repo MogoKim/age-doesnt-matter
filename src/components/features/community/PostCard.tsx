@@ -17,7 +17,7 @@ export default function PostCard({ post, boardSlug }: PostCardProps) {
         <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-[15px] font-bold w-fit tracking-wide">{post.category}</span>
       )}
 
-      <h3 className="text-base font-bold text-foreground m-0 line-clamp-2 leading-[1.5]">
+      <h2 className="text-base font-bold text-foreground m-0 line-clamp-2 leading-[1.5]">
         {post.isPinned && (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide mr-1 bg-foreground text-background">공지 </span>
         )}
@@ -28,7 +28,7 @@ export default function PostCard({ post, boardSlug }: PostCardProps) {
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide mr-1 bg-gradient-to-br from-[#A855F7] to-[#EC4899] text-white">FAME </span>
         )}
         {post.title}
-      </h3>
+      </h2>
 
       <p className="text-[15px] text-muted-foreground m-0 line-clamp-2 leading-relaxed">{post.preview}</p>
 
@@ -40,14 +40,14 @@ export default function PostCard({ post, boardSlug }: PostCardProps) {
       </div>
 
       <div className="flex items-center gap-4 text-[15px] text-muted-foreground pt-1.5 border-t border-[#f0eeec] mt-0.5">
-        <span className="flex items-center gap-1">
-          ❤️ {post.likeCount}
+        <span className="flex items-center gap-1" aria-label={`좋아요 ${post.likeCount}개`}>
+          <span aria-hidden="true">❤️</span> {post.likeCount}
         </span>
-        <span className="flex items-center gap-1">
-          💬 {post.commentCount}
+        <span className="flex items-center gap-1" aria-label={`댓글 ${post.commentCount}개`}>
+          <span aria-hidden="true">💬</span> {post.commentCount}
         </span>
-        <span className="flex items-center gap-1">
-          👁 {post.viewCount}
+        <span className="flex items-center gap-1" aria-label={`조회 ${post.viewCount}회`}>
+          <span aria-hidden="true">👁</span> {post.viewCount}
         </span>
       </div>
     </Link>

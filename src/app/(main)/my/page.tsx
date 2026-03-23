@@ -55,7 +55,7 @@ export default async function MyPage() {
       </div>
 
       {/* 메뉴 목록 */}
-      <nav className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+      <nav className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden" aria-label="마이페이지 메뉴">
         <MenuItem href="/my/posts" emoji="📝" label="내가 쓴 글" />
         <MenuItem href="/my/comments" emoji="💬" label="내 댓글" />
         <MenuItem href="/my/scraps" emoji="📌" label="스크랩" />

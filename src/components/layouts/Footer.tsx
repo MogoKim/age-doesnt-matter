@@ -10,7 +10,7 @@ const FOOTER_LINKS = [
 export default function Footer() {
   return (
     <footer className="bg-background px-4 py-8 border-t border-border lg:px-8 lg:py-12 lg:flex lg:flex-col lg:items-center">
-      <nav className="flex flex-wrap gap-4 mb-4">
+      <nav className="flex flex-wrap gap-4 mb-4" aria-label="하단 링크">
         {FOOTER_LINKS.map((link) => (
           <Link key={link.href} href={link.href} className="text-[15px] text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary">
             {link.label}
