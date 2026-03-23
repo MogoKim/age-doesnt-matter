@@ -5,8 +5,12 @@ on:
   push:
     branches: [main]
 
+env:
+  DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+
 jobs:
   quality:
+    name: Lint → Typecheck → Test → Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,7 +19,43 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npx prisma generate
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
-      - run: npm run build
+      - name: Build
+        run: npm run build
+        env:
+          AUTH_SECRET: ci-build-secret-not-real
+          AUTH_URL: http://localhost:3000
+
+  e2e:
+    name: E2E + Accessibility (Playwright)
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx playwright install --with-deps chromium
+      - name: Build
+        run: npm run build
+        env:
+          AUTH_SECRET: ci-build-secret-not-real
+          AUTH_URL: http://localhost:3000
+      - name: Run E2E + axe-core accessibility tests
+        run: npx playwright test --project=chromium
+        env:
+          AUTH_SECRET: ci-build-secret-not-real
+          AUTH_URL: http://localhost:3000
+      - name: Upload report on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
