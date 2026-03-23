@@ -93,12 +93,12 @@ function MagazineCard({ post }: { post: PostSummary }) {
       </div>
       <div className="p-3">
         {post.category && (
-          <span className="text-[11px] text-primary font-bold">{post.category}</span>
+          <span className="text-[13px] text-primary font-bold">{post.category}</span>
         )}
         <h3 className="text-sm font-bold text-foreground m-0 line-clamp-2 leading-snug">
           {post.title}
         </h3>
-        <p className="text-[11px] text-muted-foreground mt-1 m-0">
+        <p className="text-[13px] text-muted-foreground mt-1 m-0">
           👁 {post.viewCount} · {formatTimeAgo(post.createdAt)}
         </p>
       </div>

@@ -126,6 +126,109 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   redirect(`/community/${slug}/${post.id}`)
 }
 
+export async function updatePost(postId: string, formData: FormData): Promise<CreatePostResult> {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { error: '로그인이 필요합니다' }
+  }
+
+  // 게시글 소유권 확인
+  const existing = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { authorId: true, boardType: true, status: true },
+  })
+  if (!existing || existing.status === 'DELETED') {
+    return { error: '존재하지 않는 게시글입니다' }
+  }
+  if (existing.authorId !== session.user.id) {
+    return { error: '본인의 글만 수정할 수 있습니다' }
+  }
+
+  const category = formData.get('category') as string | null
+  const title = (formData.get('title') as string)?.trim()
+  const content = (formData.get('content') as string)?.trim()
+  const imageUrls = formData.getAll('imageUrls') as string[]
+
+  if (!title || !content) {
+    return { error: '필수 항목을 모두 입력해 주세요' }
+  }
+  if (title.length < 2 || title.length > 40) {
+    return { error: '제목은 2~40자로 입력해 주세요' }
+  }
+  if (content.length < 10) {
+    return { error: '본문은 10자 이상 입력해 주세요' }
+  }
+
+  // 금지어 검사
+  const bannedInTitle = await checkBannedWords(title)
+  if (bannedInTitle) {
+    return { error: '제목에 사용할 수 없는 표현이 포함되어 있습니다.' }
+  }
+  const bannedInContent = await checkBannedWords(content)
+  if (bannedInContent) {
+    return { error: '본문에 사용할 수 없는 표현이 포함되어 있습니다.' }
+  }
+
+  // 카테고리 유효성 확인
+  if (category) {
+    const boardConfig = await prisma.boardConfig.findUnique({
+      where: { boardType: existing.boardType },
+    })
+    if (boardConfig && !boardConfig.categories.includes(category)) {
+      return { error: '유효하지 않은 카테고리입니다' }
+    }
+  }
+
+  // 이미지 URL 검증
+  if (imageUrls.length > 0) {
+    const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || ''
+    for (const url of imageUrls) {
+      try {
+        const parsed = new URL(url)
+        const isR2 = r2PublicUrl && url.startsWith(r2PublicUrl)
+        const isCloudflare = /\.r2\.cloudflarestorage\.com$/.test(parsed.hostname)
+          || /^pub-.*\.r2\.dev$/.test(parsed.hostname)
+        if (!isR2 && !isCloudflare) {
+          return { error: '허용되지 않은 이미지 주소입니다' }
+        }
+      } catch {
+        return { error: '올바르지 않은 이미지 주소입니다' }
+      }
+    }
+  }
+
+  const safeContent = sanitizeHtml(content)
+  const plainText = stripHtmlTags(safeContent)
+  const summary = plainText.length > 100
+    ? plainText.slice(0, 97) + '...'
+    : plainText
+
+  let finalContent = safeContent
+  if (imageUrls.length > 0) {
+    const imgTags = imageUrls
+      .map((url) => `<p><img src="${encodeURI(url)}" alt="첨부 이미지" /></p>`)
+      .join('')
+    finalContent += imgTags
+  }
+
+  await prisma.post.update({
+    where: { id: postId },
+    data: {
+      category: category || null,
+      title,
+      content: finalContent,
+      summary,
+      thumbnailUrl: imageUrls[0] || null,
+    },
+  })
+
+  const slug = BOARD_TYPE_TO_SLUG[existing.boardType]
+  revalidatePath(`/community/${slug}/${postId}`)
+  revalidatePath(`/community/${slug}`)
+  revalidatePath('/')
+  redirect(`/community/${slug}/${postId}`)
+}
+
 export async function deletePost(postId: string): Promise<{ error?: string }> {
   const session = await auth()
   if (!session?.user?.id) return { error: '로그인이 필요합니다' }

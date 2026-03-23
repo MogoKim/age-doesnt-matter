@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { createPost } from '@/lib/actions/posts'
+import { createPost, updatePost } from '@/lib/actions/posts'
 import { useToast } from '@/components/common/Toast'
 import type { ImagePreview } from './TipTapEditor'
 
@@ -20,21 +20,31 @@ interface BoardOption {
 const DRAFT_KEY = 'unae_post_draft'
 const AUTOSAVE_INTERVAL = 30_000 // 30초
 
+interface EditData {
+  postId: string
+  boardSlug: string
+  category: string
+  title: string
+  content: string
+}
+
 interface PostWriteFormProps {
   defaultBoard?: string
   boards: BoardOption[]
   userGrade?: string
+  editData?: EditData
 }
 
-export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROUT' }: PostWriteFormProps) {
+export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROUT', editData }: PostWriteFormProps) {
+  const isEditMode = !!editData
   const router = useRouter()
   const { toast } = useToast()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
-  const [selectedBoard, setSelectedBoard] = useState(defaultBoard || boards[0]?.slug || 'stories')
-  const [selectedCategory, setSelectedCategory] = useState('')
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
+  const [selectedBoard, setSelectedBoard] = useState(editData?.boardSlug || defaultBoard || boards[0]?.slug || 'stories')
+  const [selectedCategory, setSelectedCategory] = useState(editData?.category || '')
+  const [title, setTitle] = useState(editData?.title || '')
+  const [content, setContent] = useState(editData?.content || '')
   const [images, setImages] = useState<ImagePreview[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const [draftLoaded, setDraftLoaded] = useState(false)
@@ -48,8 +58,12 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
   const isContentValid = plainTextLength >= 10
   const canSubmit = isTitleValid && isContentValid && selectedBoard
 
-  // 임시저장 복원
+  // 임시저장 복원 (수정 모드에서는 스킵)
   useEffect(() => {
+    if (isEditMode) {
+      setDraftLoaded(true)
+      return
+    }
     try {
       const saved = localStorage.getItem(DRAFT_KEY)
       if (saved) {
@@ -135,7 +149,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
         imageUrls = uploadResult.images.map((img: { url: string }) => img.url)
       }
 
-      // 게시글 생성
+      // 게시글 생성 또는 수정
       const formData = new FormData()
       formData.set('boardSlug', selectedBoard)
       if (selectedCategory) formData.set('category', selectedCategory)
@@ -143,7 +157,9 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
       formData.set('content', content)
       imageUrls.forEach((url) => formData.append('imageUrls', url))
 
-      const result = await createPost(formData)
+      const result = isEditMode
+        ? await updatePost(editData.postId, formData)
+        : await createPost(formData)
       if (result?.error) {
         setError(result.error)
       } else {
@@ -162,7 +178,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
             <h2 className="text-lg font-bold text-foreground">미리보기</h2>
             <button
               onClick={() => setShowPreview(false)}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors text-xl"
+              className="min-h-[52px] min-w-[52px] lg:min-h-[44px] lg:min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors text-xl"
             >
               ✕
             </button>
@@ -316,7 +332,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
             disabled={!canSubmit || isPending}
             onClick={handleSubmit}
           >
-            {isPending ? '등록 중...' : '등록하기'}
+            {isPending ? (isEditMode ? '수정 중...' : '등록 중...') : (isEditMode ? '수정하기' : '등록하기')}
           </button>
         </div>
       </div>

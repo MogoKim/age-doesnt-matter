@@ -38,7 +38,7 @@ export default function JobQuickTags() {
         return (
           <button
             key={tag}
-            className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold min-h-[44px] cursor-pointer transition-all border ${
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
               isActive
                 ? 'bg-primary text-white border-primary'
                 : 'bg-card text-muted-foreground border-border hover:border-primary/30'

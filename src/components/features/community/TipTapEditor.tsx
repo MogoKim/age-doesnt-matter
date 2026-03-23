@@ -253,7 +253,7 @@ export default function TipTapEditor({
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
             className={cn(
-              'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-base font-bold transition-colors',
+              'flex items-center justify-center min-h-[52px] min-w-[52px] lg:min-h-[44px] lg:min-w-[44px] rounded-xl text-base font-bold transition-colors',
               editor.isActive('bold')
                 ? 'bg-primary/10 text-primary'
                 : 'text-foreground hover:bg-muted',
@@ -267,7 +267,7 @@ export default function TipTapEditor({
             type="button"
             onClick={() => editor.chain().focus().toggleItalic().run()}
             className={cn(
-              'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-base italic transition-colors',
+              'flex items-center justify-center min-h-[52px] min-w-[52px] lg:min-h-[44px] lg:min-w-[44px] rounded-xl text-base italic transition-colors',
               editor.isActive('italic')
                 ? 'bg-primary/10 text-primary'
                 : 'text-foreground hover:bg-muted',
@@ -280,7 +280,7 @@ export default function TipTapEditor({
           <button
             type="button"
             onClick={() => editor.chain().focus().setHorizontalRule().run()}
-            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            className="flex items-center justify-center min-h-[52px] min-w-[52px] lg:min-h-[44px] lg:min-w-[44px] rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <span className="block w-5 h-0.5 bg-current rounded-full" />
           </button>

@@ -46,7 +46,7 @@ export default function LoginPromptModal({ message, onClose }: LoginPromptModalP
           </Link>
 
           <button
-            className="text-sm text-muted-foreground cursor-pointer min-h-[44px] hover:text-foreground transition-colors"
+            className="text-sm text-muted-foreground cursor-pointer min-h-[52px] lg:min-h-[44px] hover:text-foreground transition-colors"
             onClick={onClose}
           >
             닫기

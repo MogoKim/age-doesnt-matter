@@ -50,7 +50,17 @@ export default async function PostDetailPage({ params }: PageProps) {
         <Link href={`/community/${boardSlug}`} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5">
           ← {board.displayName}
         </Link>
-        {isOwnPost && <PostDeleteButton postId={postId} />}
+        {isOwnPost && (
+          <div className="flex items-center gap-1">
+            <Link
+              href={`/community/${boardSlug}/${postId}/edit`}
+              className="text-xs text-muted-foreground min-h-[52px] px-3 py-1 rounded-lg hover:text-primary transition-colors no-underline flex items-center"
+            >
+              수정
+            </Link>
+            <PostDeleteButton postId={postId} />
+          </div>
+        )}
       </div>
 
       {/* 게시글 헤더 */}
@@ -87,7 +97,7 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 광고 슬롯 */}
       <div className="bg-[#F9F5F0] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-xs mb-8">
-        <span className="absolute top-2 left-2 text-[11px] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">광고</span>
+        <span className="absolute top-2 left-2 text-[13px] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">광고</span>
         광고 영역
       </div>
 

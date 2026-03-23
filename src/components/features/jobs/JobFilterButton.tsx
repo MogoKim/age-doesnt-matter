@@ -14,7 +14,7 @@ function FilterButtonInner() {
   return (
     <>
       <button
-        className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold min-h-[44px] cursor-pointer transition-all border ${
+        className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
           hasFilters
             ? 'bg-primary text-white border-primary'
             : 'bg-card text-muted-foreground border-border hover:border-primary/30'
@@ -30,7 +30,7 @@ function FilterButtonInner() {
 
 export default function JobFilterButton() {
   return (
-    <Suspense fallback={<button className="px-4 py-2 rounded-full text-sm font-bold min-h-[44px] bg-card text-muted-foreground border border-border">필터 ▼</button>}>
+    <Suspense fallback={<button className="px-4 py-2 rounded-full text-sm font-bold min-h-[52px] lg:min-h-[44px] bg-card text-muted-foreground border border-border">필터 ▼</button>}>
       <FilterButtonInner />
     </Suspense>
   )
