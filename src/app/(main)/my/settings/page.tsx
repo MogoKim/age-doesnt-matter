@@ -5,6 +5,7 @@ import { getMySettings } from '@/lib/queries/my'
 import FontSizeSettings from '@/components/features/my/FontSizeSettings'
 import NicknameSettings from '@/components/features/my/NicknameSettings'
 import BlockedUserList from '@/components/features/my/BlockedUserList'
+import PrivacySettings from '@/components/features/my/PrivacySettings'
 import WithdrawSection from '@/components/features/my/WithdrawSection'
 
 export const metadata = { title: '설정' }
@@ -42,6 +43,15 @@ export default async function MySettingsPage() {
         <section className="bg-card rounded-2xl p-6 border border-border">
           <h2 className="text-base font-bold text-foreground mb-4">글자 크기</h2>
           <FontSizeSettings currentSize={settings.fontSize} />
+        </section>
+
+        {/* 정보 공개 설정 */}
+        <section className="bg-card rounded-2xl p-6 border border-border">
+          <h2 className="text-base font-bold text-foreground mb-4">정보 공개 설정</h2>
+          <PrivacySettings
+            isGenderPublic={settings.isGenderPublic}
+            isRegionPublic={settings.isRegionPublic}
+          />
         </section>
 
         {/* 차단 관리 */}

@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { getUserFontSize } from '@/lib/queries/my'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
+import OfflineBanner from '@/components/common/OfflineBanner'
 
 export default async function MainGroupLayout({
   children,
@@ -17,6 +18,7 @@ export default async function MainGroupLayout({
 
   return (
     <FontSizeProvider fontSize={fontSize}>
+      <OfflineBanner />
       <MainLayout isLoggedIn={isLoggedIn} nickname={nickname}>
         {children}
       </MainLayout>

@@ -251,6 +251,8 @@ export async function getMySettings(userId: string) {
       fontSize: true,
       nicknameChangedAt: true,
       marketingOptIn: true,
+      isGenderPublic: true,
+      isRegionPublic: true,
     },
   })
   if (!user) return null
@@ -264,5 +266,7 @@ export async function getMySettings(userId: string) {
     canChangeNickname,
     nicknameChangedAt: user.nicknameChangedAt?.toISOString() ?? null,
     marketingOptIn: user.marketingOptIn,
+    isGenderPublic: user.isGenderPublic,
+    isRegionPublic: user.isRegionPublic,
   }
 }

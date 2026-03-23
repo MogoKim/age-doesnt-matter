@@ -1,7 +1,31 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { auth, signOut } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+
+/** 정보 공개 설정 업데이트 */
+export async function updatePrivacySettings(data: {
+  isGenderPublic: boolean
+  isRegionPublic: boolean
+}): Promise<{ success: boolean; error?: string }> {
+  const session = await auth()
+  if (!session?.user?.id) return { success: false, error: '로그인이 필요합니다.' }
+
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        isGenderPublic: data.isGenderPublic,
+        isRegionPublic: data.isRegionPublic,
+      },
+    })
+    revalidatePath('/my/settings')
+    return { success: true }
+  } catch {
+    return { success: false, error: '설정 저장에 실패했습니다.' }
+  }
+}
 
 export async function withdrawAccount(): Promise<{ success: boolean; error?: string }> {
   const session = await auth()

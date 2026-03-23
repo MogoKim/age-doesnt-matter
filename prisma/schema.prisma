@@ -191,7 +191,9 @@ model User {
   withdrawnAt     DateTime?
 
   // 설정
-  marketingOptIn  Boolean    @default(false)
+  marketingOptIn    Boolean    @default(false)
+  isGenderPublic    Boolean    @default(false)
+  isRegionPublic    Boolean    @default(false)
   nicknameChangedAt DateTime?
 
   // 타임스탬프
