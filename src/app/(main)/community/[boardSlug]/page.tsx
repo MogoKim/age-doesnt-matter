@@ -25,10 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-// 빌드 시 정적 생성 안 함 — 첫 요청 시 동적 렌더링 후 ISR 캐싱
-export async function generateStaticParams() {
-  return []
-}
+export const dynamic = 'force-dynamic'
 
 export default async function BoardListPage({ params, searchParams }: PageProps) {
   const { boardSlug } = await params
