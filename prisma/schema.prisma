@@ -210,6 +210,7 @@ model User {
   agreements        Agreement[]
   blocksInitiated   UserBlock[]    @relation("blocker")
   blocksReceived    UserBlock[]    @relation("blocked")
+  draftPosts        DraftPost[]
 
   @@index([status])
   @@index([grade])
@@ -527,6 +528,25 @@ model BannedWord {
   createdAt DateTime           @default(now())
 
   @@index([category, isActive])
+}
+
+// ─────────────────────────────────────────────────
+// 임시저장
+// ─────────────────────────────────────────────────
+
+model DraftPost {
+  id        String    @id @default(cuid())
+  authorId  String
+  boardSlug String
+  category  String?
+  title     String    @default("")
+  content   String    @default("")
+  updatedAt DateTime  @updatedAt
+  createdAt DateTime  @default(now())
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId, updatedAt(sort: Desc)])
 }
 
 // ─────────────────────────────────────────────────
