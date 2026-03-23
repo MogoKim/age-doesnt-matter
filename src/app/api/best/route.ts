@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getHotPosts, getHallOfFamePosts } from '@/lib/queries/posts'
 import { handleApiError } from '@/lib/api-utils'
+import { checkApiRateLimit } from '@/lib/api-rate-limit'
 
 export async function GET(request: NextRequest) {
+  const rateLimited = checkApiRateLimit(request, 'best', { max: 60 })
+  if (rateLimited) return rateLimited
+
   try {
     const { searchParams } = request.nextUrl
     const type = searchParams.get('type') ?? 'hot' // hot | fame

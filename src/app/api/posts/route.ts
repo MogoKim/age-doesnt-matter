@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPostsByBoard } from '@/lib/queries/posts'
 import { handleApiError } from '@/lib/api-utils'
+import { checkApiRateLimit } from '@/lib/api-rate-limit'
 import type { BoardType } from '@/generated/prisma/client'
 
 const VALID_BOARD_TYPES: BoardType[] = ['JOB', 'STORY', 'HUMOR', 'MAGAZINE', 'WEEKLY']
 
 export async function GET(request: NextRequest) {
+  const rateLimited = checkApiRateLimit(request, 'posts', { max: 60 })
+  if (rateLimited) return rateLimited
+
   try {
     const { searchParams } = request.nextUrl
     const boardType = searchParams.get('boardType') as BoardType | null
