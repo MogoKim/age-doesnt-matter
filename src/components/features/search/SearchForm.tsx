@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { IconSearch } from '@/components/icons'
 
 const STORAGE_KEY = 'una-recent-searches'
 const MAX_RECENT = 10
@@ -87,10 +88,10 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
         />
         <button
           type="submit"
-          className="flex items-center justify-center w-[52px] h-[52px] text-xl shrink-0"
+          className="flex items-center justify-center w-[52px] h-[52px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
           aria-label="검색"
         >
-          🔍
+          <IconSearch size={22} />
         </button>
       </form>
 
