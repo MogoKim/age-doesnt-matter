@@ -25,10 +25,9 @@ export default function SortToggle() {
   const btnBase = 'px-3 py-1.5 rounded-full text-[13px] font-bold cursor-pointer min-h-[52px] lg:min-h-[44px] transition-all'
 
   return (
-    <div className="flex gap-1 mb-4" role="tablist" aria-label="정렬 방식">
+    <div className="flex gap-1 mb-4" role="group" aria-label="정렬 방식">
       <button
-        role="tab"
-        aria-selected={current === 'latest'}
+        aria-pressed={current === 'latest'}
         className={`${btnBase} ${
           current === 'latest'
             ? 'bg-primary/5 border border-primary text-primary'
@@ -39,8 +38,7 @@ export default function SortToggle() {
         최신순
       </button>
       <button
-        role="tab"
-        aria-selected={current === 'likes'}
+        aria-pressed={current === 'likes'}
         className={`${btnBase} ${
           current === 'likes'
             ? 'bg-primary/5 border border-primary text-primary'

@@ -36,7 +36,7 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
     <nav className="hidden lg:flex sticky top-0 z-[100] h-16 bg-card border-b border-border items-center justify-center" aria-label="메인 네비게이션">
       <div className="flex items-center w-full max-w-[1200px] px-8 gap-8">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary no-underline shrink-0" aria-label="우나어 홈">
-          <span className="w-9 h-9">🟠</span>
+          <span className="w-9 h-9" aria-hidden="true">🟠</span>
           <span>우나어</span>
         </Link>
 
@@ -59,7 +59,7 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
           })}
         </div>
 
-        <form className="flex items-center w-60 h-12 px-4 bg-background border border-border rounded-lg text-[15px] text-foreground shrink-0 transition-colors focus-within:border-primary" onSubmit={handleSearch}>
+        <form className="flex items-center w-60 h-12 px-4 bg-background border border-border rounded-lg text-[15px] text-foreground shrink-0 transition-colors focus-within:border-primary" onSubmit={handleSearch} role="search" aria-label="통합검색">
           <input
             className="flex-1 border-none bg-transparent outline-none font-[inherit] text-inherit min-h-11 placeholder:text-muted-foreground"
             type="search"
@@ -69,7 +69,7 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
             aria-label="통합검색"
           />
           <button type="submit" aria-label="검색" style={{ fontSize: 16 }}>
-            🔍
+            <span aria-hidden="true">🔍</span>
           </button>
         </form>
 
@@ -77,7 +77,7 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
           <div className="flex items-center gap-1 shrink-0">
             <NotificationBadge />
             <Link href="/my" className="flex items-center gap-2 text-sm text-muted-foreground no-underline whitespace-nowrap hover:text-foreground">
-              <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">👤</span>
+              <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm" aria-hidden="true">👤</span>
               <span>{nickname}</span>
             </Link>
           </div>
