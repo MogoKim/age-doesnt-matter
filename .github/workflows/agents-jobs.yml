@@ -1,0 +1,51 @@
+name: Agents — Job Scraper
+on:
+  schedule:
+    # 12:00 KST = 03:00 UTC
+    - cron: "0 3 * * *"
+    # 16:00 KST = 07:00 UTC
+    - cron: "0 7 * * *"
+    # 20:00 KST = 11:00 UTC
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+jobs:
+  scrape-jobs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx prisma generate
+
+      # Playwright 브라우저 설치 (Chromium만)
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - run: cd agents && npm ci
+
+      # playwright 의존성 추가 (agents/ 내부)
+      - name: Install playwright for agents
+        run: cd agents && npm install playwright --no-save
+
+      - name: Run job scraper
+        run: cd agents && npx tsx cron/runner.ts coo job-scraper
+
+      # 실패 시 디버깅용 스크린샷 업로드
+      - name: Upload debug artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-scraper-debug-${{ github.run_number }}
+          path: /tmp/scraper_debug_*
+          retention-days: 3

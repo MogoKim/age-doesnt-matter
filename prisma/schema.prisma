@@ -327,6 +327,10 @@ model JobDetail {
   tier       Int       @default(0)
   expiresAt  DateTime?
 
+  // 자동 수집 메타데이터 (중복 방지)
+  sourceUrl  String?   @unique  // 원본 공고 URL
+  sourceId   String?             // 소스 사이트 내부 ID
+
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
@@ -334,6 +338,7 @@ model JobDetail {
 
   @@index([region])
   @@index([expiresAt])
+  @@index([sourceUrl])
 }
 
 model Comment {

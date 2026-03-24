@@ -95,3 +95,22 @@ schedules:
     agent: CDO
     task: anomaly-detector
     handler: "cdo/anomaly-detector.ts"
+
+  # ── 일자리 자동 수집 (하루 3회) ──
+  # 12:00 KST (03:00 UTC)
+  - cron: "0 3 * * *"
+    agent: COO
+    task: job-scraper
+    handler: "coo/job-scraper.ts"
+
+  # 16:00 KST (07:00 UTC)
+  - cron: "0 7 * * *"
+    agent: COO
+    task: job-scraper
+    handler: "coo/job-scraper.ts"
+
+  # 20:00 KST (11:00 UTC)
+  - cron: "0 11 * * *"
+    agent: COO
+    task: job-scraper
+    handler: "coo/job-scraper.ts"
