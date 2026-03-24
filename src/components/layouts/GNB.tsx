@@ -76,7 +76,7 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
             onChange={(e) => setQuery(e.target.value)}
             aria-label="통합검색"
           />
-          <button type="submit" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="검색">
+          <button type="submit" className="icon-hover text-muted-foreground hover:text-primary-text" aria-label="검색">
             <IconSearch size={18} />
           </button>
         </form>

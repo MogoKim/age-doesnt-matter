@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { shareToKakao, copyShareLink } from '@/lib/kakao-share'
 import { useToast } from '@/components/common/Toast'
+import { IconShare, IconKakao, IconCopy } from '@/components/icons'
 
 interface ShareButtonProps {
   title: string
@@ -39,29 +40,31 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-center min-w-[52px] min-h-[52px] text-muted-foreground hover:text-foreground transition-colors lg:min-h-[44px] lg:min-w-[44px]"
+        className="icon-hover flex items-center justify-center min-w-[52px] min-h-[52px] text-muted-foreground hover:text-primary-text hover:bg-primary/5 rounded-xl lg:min-h-[44px] lg:min-w-[44px]"
         aria-label="공유하기"
       >
-        <span className="text-lg">📤</span>
+        <IconShare size={20} />
       </button>
 
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg p-2 min-w-[160px]">
+          <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg p-1 min-w-[160px]">
             <button
               type="button"
               onClick={handleKakaoShare}
-              className="flex items-center gap-3 w-full px-4 py-3 min-h-[52px] text-sm text-foreground font-medium rounded-lg hover:bg-background transition-colors lg:min-h-[44px]"
+              className="action-btn flex items-center gap-2.5 w-full px-4 py-3 min-h-[52px] text-sm text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text lg:min-h-[44px]"
             >
-              💬 카카오톡
+              <IconKakao size={18} />
+              <span>카카오톡</span>
             </button>
             <button
               type="button"
               onClick={handleCopyLink}
-              className="flex items-center gap-3 w-full px-4 py-3 min-h-[52px] text-sm text-foreground font-medium rounded-lg hover:bg-background transition-colors lg:min-h-[44px]"
+              className="action-btn flex items-center gap-2.5 w-full px-4 py-3 min-h-[52px] text-sm text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text lg:min-h-[44px]"
             >
-              🔗 링크 복사
+              <IconCopy size={18} />
+              <span>링크 복사</span>
             </button>
           </div>
         </>

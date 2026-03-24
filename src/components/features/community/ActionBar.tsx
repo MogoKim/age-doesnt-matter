@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap } from '@/lib/actions/likes'
 import { useToast } from '@/components/common/Toast'
 import { shareToKakao, copyShareLink } from '@/lib/kakao-share'
+import { IconHeart, IconBookmark, IconShare, IconFlag, IconKakao, IconCopy } from '@/components/icons'
 import ReportModal from './ReportModal'
 
 interface ActionBarProps {
@@ -23,11 +24,17 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
   const [isScrapped, setIsScrapped] = useState(initialScrapped)
   const [isPending, startTransition] = useTransition()
   const [showReport, setShowReport] = useState(false)
+  const [heartAnimating, setHeartAnimating] = useState(false)
 
   function handleLike() {
     if (isPending) return
-    setIsLiked(!isLiked)
-    setLikes(isLiked ? likes - 1 : likes + 1)
+    const willLike = !isLiked
+    setIsLiked(willLike)
+    setLikes(willLike ? likes + 1 : likes - 1)
+    if (willLike) {
+      setHeartAnimating(true)
+      setTimeout(() => setHeartAnimating(false), 350)
+    }
 
     startTransition(async () => {
       const result = await togglePostLike(postId)
@@ -72,7 +79,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
     setShowShareMenu(false)
   }
 
-  const btnBase = 'flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-4 py-2 bg-none border-none text-muted-foreground text-[15px] font-medium cursor-pointer rounded-xl transition-all justify-center hover:text-primary hover:bg-primary/5'
+  const btnBase = 'action-btn flex items-center gap-2 min-h-[52px] min-w-[52px] px-4 py-2 bg-none border-none text-muted-foreground text-[15px] font-medium cursor-pointer rounded-xl justify-center hover:bg-primary/5 hover:text-primary-text'
 
   return (
     <>
@@ -83,7 +90,10 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
           disabled={isPending}
           aria-label={isLiked ? '공감 취소' : '공감'}
         >
-          {isLiked ? '❤️' : '🤍'} 공감 {likes > 0 && likes}
+          <span className={cn(heartAnimating && 'heart-active')}>
+            <IconHeart size={20} filled={isLiked} />
+          </span>
+          <span>공감{likes > 0 ? ` ${likes}` : ''}</span>
         </button>
         <button
           className={cn(btnBase, isScrapped && 'text-primary font-bold')}
@@ -91,11 +101,13 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
           disabled={isPending}
           aria-label={isScrapped ? '스크랩 취소' : '스크랩'}
         >
-          📌 스크랩
+          <IconBookmark size={20} filled={isScrapped} />
+          <span>스크랩</span>
         </button>
         <div className="relative">
           <button className={btnBase} onClick={() => setShowShareMenu(!showShareMenu)} aria-label="공유">
-            🔗 공유
+            <IconShare size={20} />
+            <span>공유</span>
           </button>
           {showShareMenu && (
             <>
@@ -104,23 +116,26 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
                 <button
                   type="button"
                   onClick={handleKakaoShare}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[52px] text-[15px] text-foreground font-medium rounded-lg hover:bg-background transition-colors"
+                  className="action-btn flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[52px] text-[15px] text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text"
                 >
-                  💬 카카오톡
+                  <IconKakao size={18} />
+                  <span>카카오톡</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[52px] text-[15px] text-foreground font-medium rounded-lg hover:bg-background transition-colors"
+                  className="action-btn flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[52px] text-[15px] text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text"
                 >
-                  📋 링크 복사
+                  <IconCopy size={18} />
+                  <span>링크 복사</span>
                 </button>
               </div>
             </>
           )}
         </div>
         <button className={btnBase} onClick={() => setShowReport(true)} aria-label="신고">
-          🚨 신고
+          <IconFlag size={20} />
+          <span>신고</span>
         </button>
       </div>
 

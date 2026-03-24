@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from './utils'
+import { IconHeart, IconComment, IconEye } from '@/components/icons'
 
 interface PostCardProps {
   post: PostSummary
@@ -40,14 +41,14 @@ export default function PostCard({ post, boardSlug }: PostCardProps) {
       </div>
 
       <div className="flex items-center gap-4 text-[15px] text-muted-foreground pt-1.5 border-t border-[#f0eeec] mt-0.5">
-        <span className="flex items-center gap-1" aria-label={`좋아요 ${post.likeCount}개`}>
-          <span aria-hidden="true">❤️</span> {post.likeCount}
+        <span className="flex items-center gap-1.5" aria-label={`좋아요 ${post.likeCount}개`}>
+          <IconHeart size={16} /> {post.likeCount}
         </span>
-        <span className="flex items-center gap-1" aria-label={`댓글 ${post.commentCount}개`}>
-          <span aria-hidden="true">💬</span> {post.commentCount}
+        <span className="flex items-center gap-1.5" aria-label={`댓글 ${post.commentCount}개`}>
+          <IconComment size={16} /> {post.commentCount}
         </span>
-        <span className="flex items-center gap-1" aria-label={`조회 ${post.viewCount}회`}>
-          <span aria-hidden="true">👁</span> {post.viewCount}
+        <span className="flex items-center gap-1.5" aria-label={`조회 ${post.viewCount}회`}>
+          <IconEye size={16} /> {post.viewCount}
         </span>
       </div>
     </Link>

@@ -5,6 +5,7 @@ import type { CommentItem as CommentItemType } from '@/types/api'
 import { formatTimeAgo } from './utils'
 import { cn } from '@/lib/utils'
 import { toggleCommentLike } from '@/lib/actions/likes'
+import { IconHeart } from '@/components/icons'
 import { editComment, deleteComment } from '@/lib/actions/comments'
 import { useToast } from '@/components/common/Toast'
 import CommentInput from './CommentInput'
@@ -156,7 +157,7 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
           disabled={isPending}
           aria-label="공감"
         >
-          ❤️ {likeCount > 0 && likeCount}
+          <IconHeart size={16} filled={isLiked} /> {likeCount > 0 && likeCount}
         </button>
         {!isReply && (
           <button
