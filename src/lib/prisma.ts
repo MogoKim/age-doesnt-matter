@@ -32,15 +32,19 @@ function createPrismaClient() {
 
   const parsed = parseDbUrl(raw)
 
+  const isProduction = process.env.NODE_ENV === 'production'
+
   const pool = new Pool({
     host: parsed.host,
     port: parsed.port,
     user: parsed.user,
     password: parsed.password,
     database: parsed.database,
-    ssl: process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : undefined,
+    ssl: isProduction ? { rejectUnauthorized: false } : undefined,
+    // 서버리스 환경: 연결 수 최소화 (Supabase 무료 티어 제한 대응)
+    max: isProduction ? 1 : 5,
+    idleTimeoutMillis: isProduction ? 10000 : 30000,
+    connectionTimeoutMillis: 10000,
   })
 
   const adapter = new PrismaPg(pool)
@@ -50,6 +54,5 @@ function createPrismaClient() {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma
-}
+// 서버리스 환경에서도 동일 invocation 내 재사용
+globalForPrisma.prisma = prisma
