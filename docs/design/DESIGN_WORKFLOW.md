@@ -322,3 +322,59 @@ Modal/BottomSheet ←→     <Modal type="sheet">
 | **토큰 제한** | MCP 응답 25,000 토큰 초과 시 실패 가능 — 대규모 파일은 프레임 단위로 요청 |
 | **쓰기 불가** | 공식 MCP는 읽기 전용, Figma에 디자인 생성은 claude-talk-to-figma-mcp 필요 |
 | **코드가 원본** | 디자인 토큰은 항상 코드(tokens.css)가 Source of Truth. Figma는 참조/검증용 |
+
+---
+
+## 8. Google Stitch AI 통합 (2026-03 추가)
+
+### 8-1. Stitch AI란?
+
+Google Labs의 AI 네이티브 디자인 플랫폼. 텍스트 프롬프트로 UI 디자인 + 프로덕션 코드를 생성한다.
+Figma 워크플로우를 **대체하지 않고 보완**한다.
+
+| 용도 | 도구 | 장점 |
+|:---|:---|:---|
+| 빠른 화면 생성 | **Stitch AI** | 프롬프트로 즉시 생성, 디자이너 불필요 |
+| 컴포넌트 검증 | **Figma MCP** | 기존 디자인 자산과 비교 |
+| 코드 구현 | **Claude Code** | Stitch 출력을 React/Tailwind로 변환 |
+
+### 8-2. 워크플로우
+
+```
+[A방향: 코드 → Stitch]
+코드 읽기 → DESIGN.md 참조 → Stitch 프롬프트 → 화면 생성
+→ 디자이너 핸드오프 / 시각 검토
+
+[B방향: Stitch → 코드]
+Stitch에서 디자인 수정 → MCP로 HTML 추출 → 코드 diff 비교
+→ 시니어 제약조건 검증 → React/Tailwind 구현
+```
+
+### 8-3. 핵심 파일
+
+| 파일 | 역할 |
+|:---|:---|
+| `/DESIGN.md` | 디자인 시스템 전체 스펙 (Claude Code가 읽고 Stitch 프롬프트 구성) |
+| `/src/app/dev/components/page.tsx` | 컴포넌트 쇼케이스 (Stitch URL 임포트용) |
+| `/docs/design/STITCH_INTEGRATION.md` | Stitch 설정/사용 상세 가이드 |
+| `/docs/design/stitch-screens/screen-map.json` | Stitch screenId ↔ 라우트 매핑 |
+
+### 8-4. Stitch vs Figma 사용 구분
+
+| 상황 | 사용 도구 |
+|:---|:---|
+| 새 화면 빠르게 프로토타이핑 | Stitch |
+| 기존 디자인 자산 참조/검증 | Figma MCP |
+| 디자이너 핸드오프/협업 | Stitch → Figma 붙여넣기 |
+| 디자인 토큰 관리 | 코드 (Source of Truth) |
+| 디자인 변경 → 코드 반영 | Stitch → Claude Code |
+
+### 8-5. 제약조건 검증
+
+Stitch 출력물을 코드에 반영할 때 반드시 검증:
+- 터치 타겟: 52px (모바일) / 48px (데스크탑)
+- 폰트: 최소 15px, 본문 18px
+- 색상 대비: WCAG AA (4.5:1)
+- 광고 슬롯: "광고" 라벨 필수
+
+> 상세 가이드: `/docs/design/STITCH_INTEGRATION.md`
