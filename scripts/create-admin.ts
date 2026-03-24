@@ -3,7 +3,7 @@
  * Usage: npx tsx scripts/create-admin.ts <email> <nickname> <password>
  */
 import 'dotenv/config'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
 
