@@ -40,7 +40,7 @@ export default async function PostDetailPage({ params }: PageProps) {
   const post = await getPostDetail(postId, userId)
   if (!post) notFound()
 
-  const isOwnPost = !!userId && post.author.id === userId
+  const isOwnPost = !!userId && !!post.author.id && post.author.id === userId
   const comments = await getCommentsByPostId(postId, userId)
 
   return (

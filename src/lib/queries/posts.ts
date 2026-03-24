@@ -5,12 +5,21 @@ import type { PostSummary, PostDetail, UserSummary, Grade } from '@/types/api'
 
 /* ── 헬퍼 ── */
 
+const DELETED_USER: UserSummary = {
+  id: '',
+  nickname: '탈퇴한 회원',
+  grade: 'SEED' as Grade,
+  gradeEmoji: '🌱',
+  profileImage: null,
+}
+
 function toUserSummary(user: {
   id: string
   nickname: string
   grade: string
   profileImage: string | null
-}): UserSummary {
+} | null): UserSummary {
+  if (!user) return DELETED_USER
   const grade = user.grade as Grade
   return {
     id: user.id,
@@ -58,7 +67,7 @@ function toPostSummary(
     viewCount: number
     promotionLevel: PromotionLevel
     createdAt: Date
-    author: { id: string; nickname: string; grade: string; profileImage: string | null }
+    author: { id: string; nickname: string; grade: string; profileImage: string | null } | null
   },
 ): PostSummary {
   return {
