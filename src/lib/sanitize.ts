@@ -1,34 +1,26 @@
-import DOMPurify from 'isomorphic-dompurify'
+import sanitize from 'sanitize-html'
 
 /**
  * HTML 새니타이제이션 — XSS 방지
  * 허용: 기본 서식 태그 + 줄바꿈 + 링크
  */
-const ALLOWED_TAGS = [
-  'p', 'br', 'b', 'strong', 'i', 'em', 'u', 'del', 's',
-  'ul', 'ol', 'li', 'blockquote', 'a', 'h3', 'h4',
-  'img', 'hr', 'div', 'iframe',
-]
-
-const ALLOWED_ATTR = [
-  'href', 'target', 'rel',
-  'src', 'alt', 'width', 'height', 'class',
-  'allowfullscreen', 'frameborder', 'allow',
-  'data-youtube-video',
-]
-
-// iframe은 유튜브만 허용
-const ALLOWED_URI_REGEXP = /^https?:\/\/(www\.)?youtube(-nocookie)?\.com\/embed\//
+const SANITIZE_OPTIONS: sanitize.IOptions = {
+  allowedTags: [
+    'p', 'br', 'b', 'strong', 'i', 'em', 'u', 'del', 's',
+    'ul', 'ol', 'li', 'blockquote', 'a', 'h3', 'h4',
+    'img', 'hr', 'div', 'iframe',
+  ],
+  allowedAttributes: {
+    a: ['href', 'target', 'rel'],
+    img: ['src', 'alt', 'width', 'height', 'class'],
+    iframe: ['src', 'allowfullscreen', 'frameborder', 'allow', 'width', 'height'],
+    div: ['class', 'data-youtube-video'],
+  },
+  allowedIframeHostnames: ['www.youtube.com', 'youtube.com', 'www.youtube-nocookie.com'],
+}
 
 export function sanitizeHtml(dirty: string): string {
-  return DOMPurify.sanitize(dirty, {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR,
-    ALLOW_DATA_ATTR: true,
-    ADD_TAGS: ['iframe'],
-    ADD_ATTR: ['allowfullscreen', 'frameborder', 'allow'],
-    ALLOWED_URI_REGEXP,
-  })
+  return sanitize(dirty, SANITIZE_OPTIONS)
 }
 
 /**
