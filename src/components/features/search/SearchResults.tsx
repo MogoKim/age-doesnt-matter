@@ -3,7 +3,6 @@ import type { SearchResult, SearchTab } from '@/lib/queries/search'
 import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { formatTimeAgo } from '../community/utils'
-import { IconSearch } from '@/components/icons'
 
 interface SearchResultsProps {
   result: SearchResult
@@ -15,9 +14,7 @@ export default function SearchResults({ result, query, tab }: SearchResultsProps
   if (result.totalCount === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
-        <div className="mb-2 text-muted-foreground">
-          <IconSearch size={28} />
-        </div>
+        <p className="text-xl mb-2">🔍</p>
         <p className="text-base text-muted-foreground leading-relaxed">
           검색 결과가 없어요.
           <br />

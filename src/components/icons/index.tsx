@@ -1,153 +1,164 @@
 /**
  * 우나어 커스텀 아이콘 세트
- * 브랜드에 맞는 둥근 라인 스타일 — 따뜻하고 시니어 친화적
+ *
+ * 디자인 원칙:
+ * - 2px 둥근 라인 (round cap/join) — 따뜻하고 부드러운 느낌
+ * - 유기적이고 둥근 형태 — 딱딱한 기하학 피함
+ * - filled prop으로 활성 상태 전환 — outline ↔ filled
+ * - currentColor 상속 — 부모 text-color 자동 적용
  */
 
 interface IconProps {
   size?: number
   className?: string
-  strokeWidth?: number
+  filled?: boolean
 }
 
-const defaults: Required<Pick<IconProps, 'size' | 'strokeWidth'>> = {
-  size: 24,
-  strokeWidth: 1.8,
-}
-
-/** 베스트 — 트로피/왕관 */
-export function IconBest({ size = defaults.size, className, strokeWidth = defaults.strokeWidth }: IconProps) {
+/** 베스트 — 별 */
+export function IconBest({ size = 24, className, filled }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path
-        d="M12 2l2.4 4.8L20 7.6l-4 3.9.9 5.5L12 14.5 7.1 17l.9-5.5-4-3.9 5.6-.8L12 2z"
+        d="M12 3l2.5 5.2 5.7.8-4.1 4 1 5.7L12 15.8l-5.1 2.9 1-5.7-4.1-4 5.7-.8L12 3z"
         stroke="currentColor"
-        strokeWidth={strokeWidth}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
+        fill={filled ? 'currentColor' : 'none'}
       />
     </svg>
   )
 }
 
 /** 내 일 찾기 — 서류가방 */
-export function IconJobs({ size = defaults.size, className, strokeWidth = defaults.strokeWidth }: IconProps) {
+export function IconJobs({ size = 24, className, filled }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <rect x="2" y="7" width="20" height="13" rx="2.5" stroke="currentColor" strokeWidth={strokeWidth} />
-      <path
-        d="M8 7V5.5A2.5 2.5 0 0110.5 3h3A2.5 2.5 0 0116 5.5V7"
+      <rect
+        x="2.5" y="7.5" width="19" height="12" rx="3"
         stroke="currentColor"
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
+        strokeWidth={2}
+        fill={filled ? 'currentColor' : 'none'}
       />
-      <path d="M12 11v3" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" />
-      <path d="M2 13h20" stroke="currentColor" strokeWidth={strokeWidth} />
-    </svg>
-  )
-}
-
-/** 사는 이야기 — 말풍선 */
-export function IconStories({ size = defaults.size, className, strokeWidth = defaults.strokeWidth }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path
-        d="M21 12.5a8 8 0 01-1.2 4.2A8.1 8.1 0 0112 20.5c-1.4 0-2.7-.3-3.9-.9L3 21l1.4-5.1A8 8 0 014 12.5a8.1 8.1 0 013.8-7.8A8 8 0 0112 3.5a8 8 0 018 8 8 8 0 011 1z"
-        stroke="currentColor"
-        strokeWidth={strokeWidth}
+        d="M8.5 7.5V6a2.5 2.5 0 012.5-2.5h2a2.5 2.5 0 012.5 2.5v1.5"
+        stroke={filled ? 'hsl(var(--card))' : 'currentColor'}
+        strokeWidth={2}
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   )
 }
 
-/** 활력 충전소 — 번개 */
-export function IconEnergy({ size = defaults.size, className, strokeWidth = defaults.strokeWidth }: IconProps) {
+/** 사는 이야기 — 둥근 말풍선 */
+export function IconStories({ size = 24, className, filled }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path
-        d="M13 2L4.5 13H12l-1 9 8.5-11H12l1-9z"
+        d="M12 3a9 9 0 00-9 9 8.9 8.9 0 001.4 4.8L3 21l4.2-1.4A9 9 0 1012 3z"
         stroke="currentColor"
-        strokeWidth={strokeWidth}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
+        fill={filled ? 'currentColor' : 'none'}
+      />
+      {!filled && (
+        <>
+          <circle cx="8.5" cy="12" r="1" fill="currentColor" />
+          <circle cx="12" cy="12" r="1" fill="currentColor" />
+          <circle cx="15.5" cy="12" r="1" fill="currentColor" />
+        </>
+      )}
+    </svg>
+  )
+}
+
+/** 활력 충전소 — 부드러운 번개 */
+export function IconEnergy({ size = 24, className, filled }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M13 2.5L5 13.5h6l-1 8 8-11h-6l1-8z"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill={filled ? 'currentColor' : 'none'}
       />
     </svg>
   )
 }
 
 /** 매거진 — 펼친 책 */
-export function IconMagazine({ size = defaults.size, className, strokeWidth = defaults.strokeWidth }: IconProps) {
+export function IconMagazine({ size = 24, className, filled }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path
-        d="M2 4.5C2 4.5 5 3 8.5 3S15 4.5 15 4.5"
+        d="M12 5c-1.5-1.5-4-2-6.5-2S2 4 2 4v15s1.5-1 4-1 4.5.8 6 2c1.5-1.2 3.5-2 6-2s4 1 4 1V4s-1-1-3.5-1S13.5 3.5 12 5z"
         stroke="currentColor"
-        strokeWidth={strokeWidth}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
+        fill={filled ? 'currentColor' : 'none'}
       />
       <path
-        d="M2 4.5v14.5s3-1.5 6.5-1.5S15 19 15 19V4.5"
-        stroke="currentColor"
-        strokeWidth={strokeWidth}
+        d="M12 5v16"
+        stroke={filled ? 'hsl(var(--card))' : 'currentColor'}
+        strokeWidth={2}
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
-      <path
-        d="M15 4.5C15 4.5 16.5 3 19 3s3.5 1.5 3.5 1.5v14.5s-1-1.5-3.5-1.5-4 1.5-4 1.5"
-        stroke="currentColor"
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M15 4.5v14.5" stroke="currentColor" strokeWidth={strokeWidth} />
     </svg>
   )
 }
 
 /** 검색 — 돋보기 */
-export function IconSearch({ size = defaults.size, className, strokeWidth = defaults.strokeWidth }: IconProps) {
+export function IconSearch({ size = 24, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <circle cx="10.5" cy="10.5" r="7" stroke="currentColor" strokeWidth={strokeWidth} />
-      <path d="M15.5 15.5L21 21" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" />
+      <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth={2} />
+      <path d="M15.5 15.5L21 21" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
     </svg>
   )
 }
 
-/** 사용자 — 프로필 */
-export function IconUser({ size = defaults.size, className, strokeWidth = defaults.strokeWidth }: IconProps) {
+/** 사용자 — 사람 프로필 */
+export function IconUser({ size = 24, className, filled }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <circle cx="12" cy="8" r="4.5" stroke="currentColor" strokeWidth={strokeWidth} />
-      <path
-        d="M4 20.5c0-3.6 3.6-6.5 8-6.5s8 2.9 8 6.5"
+      <circle
+        cx="12" cy="8.5" r="4"
         stroke="currentColor"
-        strokeWidth={strokeWidth}
+        strokeWidth={2}
+        fill={filled ? 'currentColor' : 'none'}
+      />
+      <path
+        d="M4.5 21c0-3.3 3.4-6 7.5-6s7.5 2.7 7.5 6"
+        stroke="currentColor"
+        strokeWidth={2}
         strokeLinecap="round"
+        fill={filled ? 'currentColor' : 'none'}
       />
     </svg>
   )
 }
 
 /** 알림 — 벨 */
-export function IconBell({ size = defaults.size, className, strokeWidth = defaults.strokeWidth }: IconProps) {
+export function IconBell({ size = 24, className, filled }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path
-        d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9z"
+        d="M18 8.5a6 6 0 00-12 0c0 6.5-3 8.5-3 8.5h18s-3-2-3-8.5z"
         stroke="currentColor"
-        strokeWidth={strokeWidth}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
+        fill={filled ? 'currentColor' : 'none'}
       />
       <path
-        d="M13.73 21a2 2 0 01-3.46 0"
+        d="M13.7 20a2 2 0 01-3.4 0"
         stroke="currentColor"
-        strokeWidth={strokeWidth}
+        strokeWidth={2}
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   )

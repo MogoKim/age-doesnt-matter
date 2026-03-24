@@ -1,19 +1,12 @@
 import { signIn } from '@/lib/auth'
 import Link from 'next/link'
-import Image from 'next/image'
 
 export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   return (
     <div className="w-full max-w-[420px] bg-card rounded-2xl p-12 px-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-center max-md:max-w-none max-md:rounded-none max-md:min-h-dvh max-md:shadow-none max-md:flex max-md:flex-col max-md:justify-center">
       {/* 로고 */}
       <div className="mb-8">
-        <Image
-          src="/images/logo.png"
-          alt="우리 나이가 어때서"
-          width={80}
-          height={80}
-          className="w-20 h-20 mx-auto mb-4 object-contain"
-        />
+        <span className="text-6xl block mb-4">🟠</span>
         <h1 className="text-2xl font-bold text-foreground mb-1">우리 나이가 어때서</h1>
         <p className="text-base text-muted-foreground leading-relaxed">
           나이 걱정 없이 소통하는<br />

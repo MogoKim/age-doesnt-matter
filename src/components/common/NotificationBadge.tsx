@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { IconBell } from '@/components/icons'
 
 const POLL_INTERVAL = 30_000 // 30초마다 폴링
 
@@ -42,10 +41,10 @@ export default function NotificationBadge() {
   return (
     <Link
       href="/my/notifications"
-      className="relative flex items-center justify-center w-[52px] h-[52px] rounded-lg text-muted-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background hover:text-foreground transition-colors"
+      className="relative flex items-center justify-center w-[52px] h-[52px] rounded-lg text-[22px] text-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background"
       aria-label={count > 0 ? `알림 ${count}개` : '알림'}
     >
-      <IconBell size={22} />
+      🔔
       {count > 0 && (
         <span className="absolute top-2 right-2 min-w-[20px] h-[20px] bg-primary text-white text-[13px] font-bold rounded-full flex items-center justify-center px-1">
           {count > 99 ? '99+' : count}

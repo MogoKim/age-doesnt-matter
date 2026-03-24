@@ -37,16 +37,15 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
   return (
     <nav className="hidden lg:flex sticky top-0 z-[100] h-16 bg-card border-b border-border items-center justify-center" aria-label="메인 네비게이션">
       <div className="flex items-center w-full max-w-[1200px] px-8 gap-8">
-        <Link href="/" className="flex items-center gap-2 no-underline shrink-0" aria-label="우나어 홈">
+        <Link href="/" className="flex items-center no-underline shrink-0" aria-label="우나어 홈">
           <Image
             src="/images/logo.png"
-            alt=""
-            width={36}
-            height={36}
-            className="w-9 h-9 object-contain"
-            aria-hidden="true"
+            alt="우리나이가어때서"
+            width={140}
+            height={40}
+            className="h-9 w-auto object-contain"
+            priority
           />
-          <span className="text-lg font-bold text-primary-text">우나어</span>
         </Link>
 
         <div className="flex items-center gap-8 flex-1">

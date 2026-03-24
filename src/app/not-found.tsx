@@ -5,7 +5,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
       <div className="mb-4 text-muted-foreground">
-        <IconSearch size={56} strokeWidth={1.5} />
+        <IconSearch size={56} />
       </div>
       <h1 className="text-2xl font-bold text-foreground mb-2">
         페이지를 찾을 수 없어요

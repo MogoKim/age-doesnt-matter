@@ -10,16 +10,15 @@ interface HeaderProps {
 export default function Header({ isLoggedIn = false }: HeaderProps) {
   return (
     <header className="sticky top-0 z-[100] h-14 bg-card border-b border-border flex items-center justify-between px-4 lg:hidden">
-      <Link href="/" className="flex items-center gap-2 no-underline" aria-label="우나어 홈">
+      <Link href="/" className="flex items-center no-underline shrink-0" aria-label="우나어 홈">
         <Image
           src="/images/logo.png"
-          alt=""
-          width={32}
-          height={32}
-          className="w-8 h-8 object-contain"
-          aria-hidden="true"
+          alt="우리나이가어때서"
+          width={120}
+          height={36}
+          className="h-8 w-auto object-contain"
+          priority
         />
-        <span className="text-lg font-bold text-primary-text">우나어</span>
       </Link>
 
       <div className="flex items-center gap-1">
