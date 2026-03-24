@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 import { cn } from '@/lib/utils'
 import NotificationBadge from '@/components/common/NotificationBadge'
+import { IconSearch, IconUser } from '@/components/icons'
 
 const MENU_ITEMS = [
   { label: '베스트', href: '/best' },
@@ -35,9 +37,16 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
   return (
     <nav className="hidden lg:flex sticky top-0 z-[100] h-16 bg-card border-b border-border items-center justify-center" aria-label="메인 네비게이션">
       <div className="flex items-center w-full max-w-[1200px] px-8 gap-8">
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary-text no-underline shrink-0" aria-label="우나어 홈">
-          <span className="w-9 h-9" aria-hidden="true">🟠</span>
-          <span>우나어</span>
+        <Link href="/" className="flex items-center gap-2 no-underline shrink-0" aria-label="우나어 홈">
+          <Image
+            src="/images/logo.png"
+            alt=""
+            width={36}
+            height={36}
+            className="w-9 h-9 object-contain"
+            aria-hidden="true"
+          />
+          <span className="text-lg font-bold text-primary-text">우나어</span>
         </Link>
 
         <div className="flex items-center gap-8 flex-1">
@@ -68,8 +77,8 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
             onChange={(e) => setQuery(e.target.value)}
             aria-label="통합검색"
           />
-          <button type="submit" aria-label="검색" style={{ fontSize: 16 }}>
-            <span aria-hidden="true">🔍</span>
+          <button type="submit" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="검색">
+            <IconSearch size={18} />
           </button>
         </form>
 
@@ -77,7 +86,9 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
           <div className="flex items-center gap-1 shrink-0">
             <NotificationBadge />
             <Link href="/my" className="flex items-center gap-2 text-sm text-muted-foreground no-underline whitespace-nowrap hover:text-foreground">
-              <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm" aria-hidden="true">👤</span>
+              <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-muted-foreground">
+                <IconUser size={18} />
+              </span>
               <span>{nickname}</span>
             </Link>
           </div>

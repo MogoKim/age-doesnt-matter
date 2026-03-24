@@ -1,5 +1,7 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import NotificationBadge from '@/components/common/NotificationBadge'
+import { IconSearch, IconUser } from '@/components/icons'
 
 interface HeaderProps {
   isLoggedIn?: boolean
@@ -8,22 +10,29 @@ interface HeaderProps {
 export default function Header({ isLoggedIn = false }: HeaderProps) {
   return (
     <header className="sticky top-0 z-[100] h-14 bg-card border-b border-border flex items-center justify-between px-4 lg:hidden">
-      <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary-text no-underline" aria-label="우나어 홈">
-        <span className="w-8 h-8" aria-hidden="true">🟠</span>
-        <span>우나어</span>
+      <Link href="/" className="flex items-center gap-2 no-underline" aria-label="우나어 홈">
+        <Image
+          src="/images/logo.png"
+          alt=""
+          width={32}
+          height={32}
+          className="w-8 h-8 object-contain"
+          aria-hidden="true"
+        />
+        <span className="text-lg font-bold text-primary-text">우나어</span>
       </Link>
 
       <div className="flex items-center gap-1">
-        <Link href="/search" className="flex items-center justify-center w-[52px] h-[52px] rounded-lg text-[22px] text-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background" aria-label="검색">
-          <span aria-hidden="true">🔍</span>
+        <Link href="/search" className="flex items-center justify-center w-[52px] h-[52px] rounded-lg text-muted-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background hover:text-foreground transition-colors" aria-label="검색">
+          <IconSearch size={22} />
         </Link>
         {isLoggedIn && <NotificationBadge />}
         <Link
           href={isLoggedIn ? '/my' : '/login'}
-          className="flex items-center justify-center w-[52px] h-[52px] rounded-lg text-[22px] text-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background"
+          className="flex items-center justify-center w-[52px] h-[52px] rounded-lg text-muted-foreground [-webkit-tap-highlight-color:transparent] hover:bg-background hover:text-foreground transition-colors"
           aria-label={isLoggedIn ? '마이페이지' : '로그인'}
         >
-          <span aria-hidden="true">👤</span>
+          <IconUser size={22} />
         </Link>
       </div>
     </header>

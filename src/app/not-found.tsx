@@ -1,9 +1,12 @@
 import Link from 'next/link'
+import { IconSearch } from '@/components/icons'
 
 export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
-      <p className="text-6xl mb-4">🔍</p>
+      <div className="mb-4 text-muted-foreground">
+        <IconSearch size={56} strokeWidth={1.5} />
+      </div>
       <h1 className="text-2xl font-bold text-foreground mb-2">
         페이지를 찾을 수 없어요
       </h1>
