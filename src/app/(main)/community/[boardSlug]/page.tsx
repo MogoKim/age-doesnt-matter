@@ -16,12 +16,15 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { boardSlug } = await params
-  const board = await getBoardConfig(boardSlug)
-  if (!board) return {}
-
-  return {
-    title: board.displayName,
-    description: board.description,
+  try {
+    const board = await getBoardConfig(boardSlug)
+    if (!board) return { title: '게시판' }
+    return {
+      title: board.displayName,
+      description: board.description,
+    }
+  } catch {
+    return { title: '게시판' }
   }
 }
 

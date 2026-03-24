@@ -21,9 +21,11 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* 메인 코랄: #FF6F61 — 브랜드 컬러 */
+    /* 메인 코랄: #FF6F61 — 브랜드 컬러 (배경/버튼 fill용) */
     --primary: 5 100% 69%;
     --primary-foreground: 0 0% 100%;
+    /* 접근성 고대비 코랄: #C4453B — 텍스트 전용 (WCAG AA 4.93:1) */
+    --primary-text: 5 55% 50%;
 
     /* 보조: 은은한 뉴트럴 */
     --secondary: 220 14% 96%;

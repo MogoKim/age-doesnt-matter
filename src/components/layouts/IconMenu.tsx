@@ -25,7 +25,7 @@ export default function IconMenu() {
             href={item.href}
             className={cn(
               'flex flex-col items-center justify-center gap-0.5 min-w-[52px] min-h-[52px] p-1 no-underline text-muted-foreground relative [-webkit-tap-highlight-color:transparent] transition-colors duration-150',
-              isActive && 'text-primary after:content-[""] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-6 after:h-0.5 after:bg-primary after:rounded-sm'
+              isActive && 'text-primary-text after:content-[""] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-6 after:h-0.5 after:bg-primary after:rounded-sm'
             )}
             aria-current={isActive ? 'page' : undefined}
           >

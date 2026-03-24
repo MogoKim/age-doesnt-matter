@@ -35,7 +35,7 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
   return (
     <nav className="hidden lg:flex sticky top-0 z-[100] h-16 bg-card border-b border-border items-center justify-center" aria-label="메인 네비게이션">
       <div className="flex items-center w-full max-w-[1200px] px-8 gap-8">
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary no-underline shrink-0" aria-label="우나어 홈">
+        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary-text no-underline shrink-0" aria-label="우나어 홈">
           <span className="w-9 h-9" aria-hidden="true">🟠</span>
           <span>우나어</span>
         </Link>
@@ -49,7 +49,7 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
                 href={item.href}
                 className={cn(
                   'text-[15px] text-muted-foreground no-underline py-1 relative transition-colors duration-150 whitespace-nowrap hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary',
-                  isActive && 'text-primary font-medium after:content-[""] after:absolute after:-bottom-5 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
+                  isActive && 'text-primary-text font-medium after:content-[""] after:absolute after:-bottom-5 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
                 )}
                 aria-current={isActive ? 'page' : undefined}
               >

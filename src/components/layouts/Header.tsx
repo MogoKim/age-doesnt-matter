@@ -8,7 +8,7 @@ interface HeaderProps {
 export default function Header({ isLoggedIn = false }: HeaderProps) {
   return (
     <header className="sticky top-0 z-[100] h-14 bg-card border-b border-border flex items-center justify-between px-4 lg:hidden">
-      <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary no-underline" aria-label="우나어 홈">
+      <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary-text no-underline" aria-label="우나어 홈">
         <span className="w-8 h-8" aria-hidden="true">🟠</span>
         <span>우나어</span>
       </Link>
