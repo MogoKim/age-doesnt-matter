@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import HeroSlider from '@/components/features/home/HeroSlider'
 import IdentitySection from '@/components/features/home/IdentitySection'
 import JobSection from '@/components/features/home/JobSection'
@@ -15,6 +16,11 @@ import {
   getLatestCommunityPosts,
 } from '@/lib/queries/posts'
 
+export const metadata: Metadata = {
+  title: '우리 나이가 어때서 — 5060 세대 커뮤니티',
+  description: '나이 걱정 없이 소통하는 따뜻한 커뮤니티. 일자리 정보, 건강·생활 매거진, 자유로운 소통까지.',
+}
+
 // 동적 렌더링 + 60초 ISR 캐싱
 export const revalidate = 60
 export const dynamic = 'force-dynamic'
@@ -30,6 +36,7 @@ export default async function HomePage() {
 
   return (
     <div className="pt-[calc(56px+64px)] lg:pt-0">
+      <h1 className="sr-only">우리 나이가 어때서 — 5060 세대 커뮤니티</h1>
       <HeroSlider />
       <IdentitySection />
       <div className="max-w-[1200px] mx-auto">

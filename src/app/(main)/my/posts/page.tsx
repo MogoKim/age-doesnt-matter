@@ -21,7 +21,7 @@ export default async function MyPostsPage() {
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <Link
         href="/my"
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-[15px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
       >
         ← 마이페이지
       </Link>
@@ -40,8 +40,9 @@ export default async function MyPostsPage() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-          <p className="text-sm text-muted-foreground leading-[1.8]">
-            아직 작성한 글이 없어요.<br />첫 글을 작성해 보세요!
+          <p className="text-base text-muted-foreground leading-[1.8]">
+            아직 작성한 글이 없어요.<br />
+            일상 이야기, 고민, 유머 등 편하게 나눠보세요!
           </p>
           <Link
             href="/community/write"

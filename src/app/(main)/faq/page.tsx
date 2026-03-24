@@ -24,14 +24,15 @@ const faqs: FaqItem[] = [
   {
     q: '등급은 어떻게 올라가나요?',
     a: (
-      <div className="space-y-1">
+      <div className="space-y-2">
         <p>활동에 따라 자동으로 등급이 올라갑니다.</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>🌱 새싹 — 가입 시 기본 등급</li>
-          <li>🌿 단골 — 게시글 5개 + 댓글 10개 이상</li>
-          <li>🌳 토박이 — 게시글 20개 + 댓글 50개 이상</li>
-          <li>👑 어르신 — 게시글 50개 + 댓글 100개 + 좋아요 200개 이상</li>
+        <ul className="list-disc pl-5 space-y-1.5">
+          <li>🌱 <strong>새싹</strong> — 가입 시 기본 등급</li>
+          <li>🌿 <strong>단골</strong> — 게시글 5개 이상 또는 댓글 20개 이상</li>
+          <li>💎 <strong>터줏대감</strong> — 게시글 20개 이상 + 받은 공감 100개 이상</li>
+          <li>☀️ <strong>따뜻한이웃</strong> — 운영진이 직접 선정하는 특별 등급</li>
         </ul>
+        <p className="text-muted-foreground mt-2">등급이 올라가면 이미지/유튜브 첨부 등 더 많은 기능을 사용할 수 있어요.</p>
       </div>
     ),
   },

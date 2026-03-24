@@ -21,7 +21,7 @@ export default async function MyScrapsPage() {
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <Link
         href="/my"
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-[15px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
       >
         ← 마이페이지
       </Link>
@@ -40,8 +40,9 @@ export default async function MyScrapsPage() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-          <p className="text-sm text-muted-foreground leading-[1.8]">
-            아직 스크랩한 글이 없어요.<br />마음에 드는 글을 스크랩해 보세요!
+          <p className="text-base text-muted-foreground leading-[1.8]">
+            아직 스크랩한 글이 없어요.<br />
+            글 아래 북마크 아이콘을 누르면 스크랩할 수 있어요!
           </p>
         </div>
       )}

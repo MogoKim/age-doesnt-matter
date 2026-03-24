@@ -34,6 +34,12 @@ export default async function MyPage() {
             <p className="text-sm text-muted-foreground">
               {gradeInfo?.emoji} {gradeInfo?.label ?? '새싹'} 등급
             </p>
+            <p className="text-[15px] text-muted-foreground mt-0.5">
+              {profile.grade === 'SPROUT' && '다음 등급: 🌿 단골 (게시글 5개 또는 댓글 20개)'}
+              {profile.grade === 'REGULAR' && '다음 등급: 💎 터줏대감 (게시글 20개 + 받은 공감 100개)'}
+              {profile.grade === 'VETERAN' && '최고 등급까지 한 걸음! ☀️ 따뜻한이웃은 운영진 선정'}
+              {profile.grade === 'WARM_NEIGHBOR' && '최고 등급을 달성했어요! 감사합니다 ☀️'}
+            </p>
           </div>
         </div>
 
@@ -41,15 +47,15 @@ export default async function MyPage() {
         <div className="grid grid-cols-3 gap-4 p-4 bg-background rounded-xl">
           <div className="text-center">
             <p className="text-lg font-bold text-foreground">{profile.postCount}</p>
-            <p className="text-xs text-muted-foreground">작성글</p>
+            <p className="text-[15px] text-muted-foreground">작성글</p>
           </div>
           <div className="text-center">
             <p className="text-lg font-bold text-foreground">{profile.commentCount}</p>
-            <p className="text-xs text-muted-foreground">댓글</p>
+            <p className="text-[15px] text-muted-foreground">댓글</p>
           </div>
           <div className="text-center">
             <p className="text-lg font-bold text-foreground">{profile.receivedLikes}</p>
-            <p className="text-xs text-muted-foreground">받은 공감</p>
+            <p className="text-[15px] text-muted-foreground">받은 공감</p>
           </div>
         </div>
       </div>
@@ -77,7 +83,7 @@ function MenuItem({ href, emoji, label }: { href: string; emoji: string; label: 
     >
       <span className="text-lg">{emoji}</span>
       <span className="flex-1">{label}</span>
-      <span className="text-muted-foreground text-xs">→</span>
+      <span className="text-muted-foreground text-[15px]">→</span>
     </Link>
   )
 }

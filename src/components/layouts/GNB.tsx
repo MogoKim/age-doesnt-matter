@@ -41,9 +41,9 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
           <Image
             src="/images/logo.png"
             alt="우리나이가어때서"
-            width={140}
+            width={180}
             height={40}
-            className="h-9 w-auto object-contain"
+            className="h-10 w-auto object-contain"
             priority
           />
         </Link>

@@ -37,10 +37,10 @@ export default function JobSection({ jobs }: Props) {
           >
             <div className="flex gap-1.5 flex-wrap mb-2.5">
               {job.isUrgent && (
-                <span className="h-[26px] px-2.5 bg-destructive text-white rounded-md text-[13px] font-semibold flex items-center whitespace-nowrap">긴급</span>
+                <span className="h-[26px] px-2.5 bg-destructive text-white rounded-md text-[15px] font-semibold flex items-center whitespace-nowrap">긴급</span>
               )}
               {job.tags.map((tag) => (
-                <span key={tag} className="h-[26px] px-2.5 bg-primary/10 text-primary rounded-md text-[13px] font-semibold flex items-center whitespace-nowrap">
+                <span key={tag} className="h-[26px] px-2.5 bg-primary/10 text-primary rounded-md text-[15px] font-semibold flex items-center whitespace-nowrap">
                   {tag}
                 </span>
               ))}

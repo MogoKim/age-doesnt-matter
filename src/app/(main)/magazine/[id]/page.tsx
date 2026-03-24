@@ -39,7 +39,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       {/* 뒤로가기 */}
       <Link
         href="/magazine"
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-[15px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
       >
         ← 매거진
       </Link>
@@ -47,14 +47,14 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       {/* 헤더 */}
       <div className="mb-8 pb-6 border-b border-border">
         {post.category && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-bold w-fit mb-2">
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-[15px] font-bold w-fit mb-2">
             {post.category}
           </span>
         )}
         <h1 className="text-2xl font-bold text-foreground m-0 mb-4 leading-[1.4]">
           {post.title}
         </h1>
-        <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+        <div className="flex items-center gap-2 text-[15px] text-muted-foreground">
           <span className="font-medium text-foreground">우나어 매거진</span>
           <span>·</span>
           <span>{formatTimeAgo(post.createdAt)}</span>
@@ -80,8 +80,8 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       />
 
       {/* 광고 슬롯 */}
-      <div className="bg-[#F9F5F0] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-xs mb-8">
-        <span className="absolute top-2 left-2 text-[13px] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">
+      <div className="bg-[var(--surface-warm)] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-[15px] mb-8">
+        <span className="absolute top-2 left-2 text-[15px] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">
           광고
         </span>
         광고 영역

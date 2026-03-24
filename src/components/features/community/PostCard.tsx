@@ -20,13 +20,13 @@ export default function PostCard({ post, boardSlug }: PostCardProps) {
 
       <h2 className="text-base font-bold text-foreground m-0 line-clamp-2 leading-[1.5]">
         {post.isPinned && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide mr-1 bg-foreground text-background">공지 </span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[15px] font-bold tracking-wide mr-1 bg-foreground text-background">공지 </span>
         )}
         {post.promotionLevel === 'HOT' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide mr-1 bg-gradient-to-br from-[#FF6B6B] to-[#FF8E53] text-white">HOT </span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[15px] font-bold tracking-wide mr-1 bg-gradient-to-br from-[var(--gradient-hot-from)] to-[var(--gradient-hot-to)] text-white">HOT </span>
         )}
         {post.promotionLevel === 'HALL_OF_FAME' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide mr-1 bg-gradient-to-br from-[#A855F7] to-[#EC4899] text-white">FAME </span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[15px] font-bold tracking-wide mr-1 bg-gradient-to-br from-[var(--gradient-fame-from)] to-[var(--gradient-fame-to)] text-white">FAME </span>
         )}
         {post.title}
       </h2>

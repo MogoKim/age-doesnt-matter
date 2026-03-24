@@ -353,14 +353,27 @@ export default function OnboardingForm() {
           <strong>{nickname}</strong>님,<br />
           우나어에 오신 것을 환영해요
         </p>
-        <div className="inline-flex items-center gap-2 px-6 py-2 bg-primary/5 rounded-full text-base font-bold text-primary mb-8">
+        <div className="inline-flex items-center gap-2 px-6 py-2 bg-primary/5 rounded-full text-base font-bold text-primary mb-4">
           🌱 새싹 등급
+        </div>
+        <div className="bg-background rounded-xl p-5 text-left space-y-2 mb-4">
+          <p className="text-[15px] text-foreground font-medium">🌱 새싹 등급으로 시작해요!</p>
+          <p className="text-[15px] text-muted-foreground leading-relaxed">
+            글쓰기와 댓글 작성이 가능합니다.<br />
+            활동하면 등급이 올라가고, 이미지 첨부 등 더 많은 기능을 쓸 수 있어요.
+          </p>
+          <div className="text-[15px] text-muted-foreground pt-1">
+            <span className="text-primary font-bold">다음 등급 🌿 단골</span> → 게시글 5개 또는 댓글 20개
+          </div>
         </div>
       </div>
 
-      <div className="mt-auto pt-6 flex flex-col gap-2">
+      <div className="mt-auto pt-6 flex flex-col gap-3">
         <Button onClick={handleComplete}>
-          시작하기
+          첫 글 작성하러 가기
+        </Button>
+        <Button variant="ghost" onClick={handleComplete}>
+          먼저 둘러볼게요
         </Button>
       </div>
     </div>

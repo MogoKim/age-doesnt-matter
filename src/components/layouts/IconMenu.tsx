@@ -32,7 +32,7 @@ export default function IconMenu() {
             aria-current={isActive ? 'page' : undefined}
           >
             <Icon size={24} filled={isActive} />
-            <span className="text-[13px] leading-none whitespace-nowrap">{item.label}</span>
+            <span className="text-[15px] leading-none whitespace-nowrap">{item.label}</span>
           </Link>
         )
       })}

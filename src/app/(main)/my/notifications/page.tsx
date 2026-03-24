@@ -27,7 +27,7 @@ export default async function MyNotificationsPage() {
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <Link
         href="/my"
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-[15px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
       >
         ← 마이페이지
       </Link>
@@ -54,7 +54,7 @@ export default async function MyNotificationsPage() {
                   <p className="text-base text-foreground m-0 leading-relaxed">
                     {notification.message}
                   </p>
-                  <p className="text-[13px] text-muted-foreground m-0 mt-1">
+                  <p className="text-[15px] text-muted-foreground m-0 mt-1">
                     {formatTimeAgo(notification.createdAt)}
                   </p>
                 </div>
@@ -68,7 +68,8 @@ export default async function MyNotificationsPage() {
       ) : (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
           <p className="text-base text-muted-foreground leading-relaxed">
-            아직 알림이 없어요.
+            아직 알림이 없어요.<br />
+            글에 댓글이 달리거나 공감을 받으면 알림이 와요.
           </p>
         </div>
       )}

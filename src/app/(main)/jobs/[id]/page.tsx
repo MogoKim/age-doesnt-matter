@@ -38,7 +38,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       {/* 뒤로가기 */}
       <Link
         href="/jobs"
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-[15px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
       >
         ← 내 일 찾기
       </Link>
@@ -49,7 +49,7 @@ export default async function JobDetailPage({ params }: PageProps) {
           {job.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[13px] font-medium"
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[15px] font-medium"
             >
               🏷{tag}
             </span>
@@ -116,8 +116,8 @@ export default async function JobDetailPage({ params }: PageProps) {
       />
 
       {/* 광고 슬롯 */}
-      <div className="bg-[#F9F5F0] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-xs mb-8">
-        <span className="absolute top-2 left-2 text-[13px] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">
+      <div className="bg-[var(--surface-warm)] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-[15px] mb-8">
+        <span className="absolute top-2 left-2 text-[15px] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">
           광고
         </span>
         광고 영역

@@ -49,6 +49,19 @@
     --ring: 5 100% 69%;
     --radius: 0.75rem;
 
+    /* 그래디언트 & 특수 색상 */
+    --gradient-hot-from: #FF6B6B;
+    --gradient-hot-to: #FF8E53;
+    --gradient-fame-from: #A855F7;
+    --gradient-fame-to: #EC4899;
+    --badge-editors: #FF8C00;
+    --surface-warm: #F9F5F0;
+    --kakao-bg: #FEE500;
+    --kakao-text: #191919;
+    --hero-slide-1: #FF6F61;
+    --hero-slide-2: #5B8DEF;
+    --hero-slide-3: #4CAF50;
+
     --font-family: var(--font-pretendard), 'Pretendard Variable', 'Pretendard',
       -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 

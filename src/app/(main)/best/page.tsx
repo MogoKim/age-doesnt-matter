@@ -21,6 +21,7 @@ export default async function BestPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <h1 className="sr-only">인기글 — 우나어 베스트</h1>
       {/* 실시간 인기글 */}
       <section className="px-4 py-6">
         <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
@@ -68,16 +69,16 @@ function BestPostCard({ post }: { post: PostSummary }) {
       className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30"
     >
       <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[13px] font-bold">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[15px] font-bold">
           {boardLabel}
         </span>
         {post.promotionLevel === 'HOT' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-br from-[#FF6B6B] to-[#FF8E53] text-white">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[15px] font-bold bg-gradient-to-br from-[var(--gradient-hot-from)] to-[var(--gradient-hot-to)] text-white">
             🔥 HOT
           </span>
         )}
         {post.promotionLevel === 'HALL_OF_FAME' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-br from-[#A855F7] to-[#EC4899] text-white">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[15px] font-bold bg-gradient-to-br from-[var(--gradient-fame-from)] to-[var(--gradient-fame-to)] text-white">
             👑 FAME
           </span>
         )}
@@ -93,7 +94,7 @@ function BestPostCard({ post }: { post: PostSummary }) {
         </p>
       )}
 
-      <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
+      <div className="flex items-center gap-3 text-[15px] text-muted-foreground">
         <span>{post.author.gradeEmoji} {post.author.nickname}</span>
         <span>❤️ {post.likeCount}</span>
         <span>💬 {post.commentCount}</span>
