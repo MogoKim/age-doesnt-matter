@@ -16,9 +16,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'code parameter missing' }, { status: 400 })
   }
 
-  const appId = process.env.THREADS_APP_ID ?? ''
-  const appSecret = process.env.THREADS_APP_SECRET ?? ''
-  const siteUrl = process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.age-doesnt-matter.com'
+  const appId = (process.env.THREADS_APP_ID ?? '').trim()
+  const appSecret = (process.env.THREADS_APP_SECRET ?? '').trim()
+  const siteUrl = (process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.age-doesnt-matter.com').trim()
   const redirectUri = `${siteUrl}/api/threads/callback`
 
   try {

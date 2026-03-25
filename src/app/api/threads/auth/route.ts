@@ -10,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: 'THREADS_APP_ID not configured' }, { status: 500 })
   }
 
-  const siteUrl = process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.age-doesnt-matter.com'
+  const siteUrl = (process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.age-doesnt-matter.com').trim()
   const redirectUri = `${siteUrl}/api/threads/callback`
 
   const scopes = [
