@@ -42,7 +42,7 @@ async function analyzeTrends(posts: Awaited<ReturnType<typeof getTodayPosts>>): 
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 3000,
+    max_tokens: 2000,
     system: `당신은 5060 시니어 커뮤니티 트렌드 분석가입니다.
 네이버 카페 3곳(우리가남이가, 실버사랑, 5060세대)에서 수집한 게시글을 분석합니다.
 

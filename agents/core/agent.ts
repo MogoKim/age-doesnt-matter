@@ -42,10 +42,10 @@ ${constitution}
 `
   }
 
-  protected async chat(userMessage: string): Promise<string> {
+  protected async chat(userMessage: string, maxTokens?: number): Promise<string> {
     const response = await this.client.messages.create({
       model: this.model,
-      max_tokens: 2048,
+      max_tokens: maxTokens ?? 1024,
       system: this.getSystemPrompt(),
       messages: [{ role: 'user', content: userMessage }],
     })

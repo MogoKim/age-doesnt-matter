@@ -1,0 +1,29 @@
+name: "Agents — Social Poster"
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"  # 15:00 KST
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+  NEXT_PUBLIC_SITE_URL: ${{ secrets.AUTH_URL }}
+
+jobs:
+  social-poster:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx tsx agents/cmo/social-poster.ts

@@ -13,7 +13,7 @@ class CEOMorningCycle extends BaseAgent {
       name: 'CEO',
       botType: 'CEO',
       role: 'CEO (최고경영자)',
-      model: 'heavy',
+      model: 'light',
       tasks: '모닝 사이클: 전체 KPI 수집, 문제 감지, 에이전트 소집 및 액션 배정',
       canWrite: false,
     })
@@ -60,7 +60,7 @@ ${kpiSummary}
   "issues": [{"agent": "CTO|CMO|CPO|COO|CDO|CFO", "issue": "문제 설명", "action": "요청 액션"}],
   "status": "normal|warning|critical"
 }
-`)
+`, 512)
 
     // 3. 결과 파싱 및 알림
     let parsed: { summary: string; issues: Array<{ agent: string; issue: string; action: string }>; status: string }
