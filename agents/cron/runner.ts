@@ -25,11 +25,13 @@ const MONITORING_TASKS = new Set([
 
 const HANDLERS: Record<string, () => Promise<void>> = {
   'ceo:morning-cycle': () => import('../ceo/morning-cycle.js').then(() => {}),
+  'ceo:weekly-report': () => import('../ceo/weekly-report.js').then(() => {}),
   'cto:health-check': () => import('../cto/health-check.js').then(() => {}),
   'cto:error-monitor': () => import('../cto/error-monitor.js').then(() => {}),
   'cmo:trend-analyzer': () => import('../cmo/trend-analyzer.js').then(() => {}),
   'cpo:ux-analyzer': () => import('../cpo/ux-analyzer.js').then(() => {}),
   'cfo:cost-tracker': () => import('../cfo/cost-tracker.js').then(() => {}),
+  'cfo:revenue-tracker': () => import('../cfo/revenue-tracker.js').then(() => {}),
   'coo:moderator': () => import('../coo/moderator.js').then(() => {}),
   'coo:content-scheduler': () => import('../coo/content-scheduler.js').then(() => {}),
   'coo:job-scraper': () => import('../coo/job-scraper.js').then(() => {}),

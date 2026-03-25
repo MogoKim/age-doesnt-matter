@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
+import Script from 'next/script'
 import { ToastProvider } from '@/components/common/Toast'
 import ServiceWorkerRegister from '@/components/common/ServiceWorkerRegister'
 import PageViewTracker from '@/components/common/PageViewTracker'
@@ -50,6 +51,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko" className={pretendard.variable}>
+      <head>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4937127825992215"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
+      </head>
       <body className={pretendard.className}>
         <ToastProvider>{children}</ToastProvider>
         <ServiceWorkerRegister />

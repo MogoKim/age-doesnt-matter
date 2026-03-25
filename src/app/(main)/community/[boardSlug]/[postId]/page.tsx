@@ -11,6 +11,8 @@ import PostDeleteButton from '@/components/features/community/PostDeleteButton'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeHtml } from '@/lib/sanitize'
+import AdSenseUnit from '@/components/ad/AdSenseUnit'
+import CoupangCPS from '@/components/ad/CoupangCPS'
 
 interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
@@ -95,10 +97,10 @@ export default async function PostDetailPage({ params }: PageProps) {
         isScrapped={post.isScrapped}
       />
 
-      {/* 광고 슬롯 */}
-      <div className="bg-[#F9F5F0] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-xs mb-8">
-        <span className="absolute top-2 left-2 text-[13px] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">광고</span>
-        광고 영역
+      {/* 광고 — AdSense 자동 + 쿠팡 CPS */}
+      <div className="mb-8 space-y-4">
+        <AdSenseUnit slotId="auto" format="auto" className="rounded-2xl overflow-hidden" />
+        <CoupangCPS postId={postId} />
       </div>
 
       {/* 댓글 */}

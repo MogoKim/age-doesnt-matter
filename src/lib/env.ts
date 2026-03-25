@@ -45,6 +45,10 @@ export const BOT_API_KEY_HUMOR = optionalEnv('BOT_API_KEY_HUMOR', '')
 export const BOT_API_KEY_STORY = optionalEnv('BOT_API_KEY_STORY', '')
 export const BOT_API_KEY_SEED = optionalEnv('BOT_API_KEY_SEED', '')
 
+/** Coupang Partners CPS (optional) */
+export const COUPANG_ACCESS_KEY = optionalEnv('COUPANG_ACCESS_KEY', '')
+export const COUPANG_SECRET_KEY = optionalEnv('COUPANG_SECRET_KEY', '')
+
 /** App */
 export const NEXT_PUBLIC_APP_URL = optionalEnv('NEXT_PUBLIC_APP_URL', 'https://age-doesnt-matter.com')
 export const NODE_ENV = optionalEnv('NODE_ENV', 'development')
