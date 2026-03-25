@@ -7,7 +7,7 @@
  *   3. Waterfall 필터링 + 쿼터 적용
  *   4. AI 가공 (Claude Haiku — 제목/SEO/Pick포인트/Q&A)
  *   5. Post + JobDetail DB INSERT
- *   6. Telegram 요약 알림
+ *   6. Slack 요약 알림
  *
  * 스케줄: 하루 3회 (12:00, 16:00, 20:00 KST)
  * 1배치: 4-5건 엄선
@@ -15,7 +15,7 @@
 
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
-import { notifyTelegram } from '../core/notifier.js'
+import { notifySlack } from '../core/notifier.js'
 import type { AgentResult } from '../core/types.js'
 import type { RawJob } from './job-types.js'
 import { filterJobs, summarizeFilter } from './job-filter.js'
@@ -129,7 +129,7 @@ class COOJobScraper extends BaseAgent {
     // Step 6: 알림
     const summary = `일자리 자동 수집 완료\n수집: ${rawJobs.length}건 → 신규: ${newJobs.length}건 → 필터: ${filtered.length}건 → 게시: ${publishedCount}건\n${filterSummary}`
 
-    await notifyTelegram({
+    await notifySlack({
       level: publishedCount > 0 ? 'info' : 'important',
       agent: this.config.name,
       title: `일자리 ${publishedCount}건 게시`,

@@ -1,6 +1,6 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
-import { notifyTelegram, notifyAdmin } from '../core/notifier.js'
+import { notifySlack, notifyAdmin } from '../core/notifier.js'
 import type { AgentResult } from '../core/types.js'
 
 /**
@@ -62,7 +62,7 @@ class CDOAnomalyDetector extends BaseAgent {
     }
 
     if (anomalies.length > 0) {
-      await notifyTelegram({
+      await notifySlack({
         level: 'critical',
         agent: 'CDO',
         title: '이상 징후 감지',

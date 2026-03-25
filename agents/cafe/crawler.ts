@@ -5,7 +5,7 @@
  */
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright'
 import { prisma, disconnect } from '../core/db.js'
-import { notifyTelegram } from '../core/notifier.js'
+import { notifySlack } from '../core/notifier.js'
 import { CAFE_CONFIGS, CHROME_USER_DATA_DIR, CHROME_PROFILE, CRAWL_LIMITS } from './config.js'
 import type { RawCafePost, CafeConfig } from './types.js'
 
@@ -265,8 +265,8 @@ async function main() {
     },
   })
 
-  // 텔레그램 알림
-  await notifyTelegram({
+  // Slack 알림
+  await notifySlack({
     level: 'info',
     agent: 'CAFE_CRAWLER',
     title: '카페 크롤링 완료',
@@ -279,7 +279,7 @@ async function main() {
 
 main().catch(async (err) => {
   console.error('[CafeCrawler] 치명적 오류:', err)
-  await notifyTelegram({
+  await notifySlack({
     level: 'critical',
     agent: 'CAFE_CRAWLER',
     title: '카페 크롤링 실패',

@@ -1,6 +1,6 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
-import { notifyAdmin, notifyTelegram } from '../core/notifier.js'
+import { notifyAdmin, notifySlack } from '../core/notifier.js'
 import type { AgentResult } from '../core/types.js'
 
 /**
@@ -54,7 +54,7 @@ class CTOHealthCheck extends BaseAgent {
     const failed = checks.filter((c) => !c.ok)
 
     if (!allOk) {
-      await notifyTelegram({
+      await notifySlack({
         level: 'critical',
         agent: 'CTO',
         title: '헬스체크 실패',

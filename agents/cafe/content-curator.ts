@@ -5,7 +5,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
-import { notifyTelegram } from '../core/notifier.js'
+import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
 import type { CuratedContent, TrendAnalysis } from './types.js'
 
@@ -229,7 +229,7 @@ async function main() {
     },
   })
 
-  await notifyTelegram({
+  await notifySlack({
     level: 'info',
     agent: 'CONTENT_CURATOR',
     title: '트렌드 기반 콘텐츠 게시',

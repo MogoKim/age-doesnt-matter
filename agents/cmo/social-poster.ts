@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
-import { notifyTelegram } from '../core/notifier.js'
+import { notifySlack } from '../core/notifier.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
@@ -177,13 +177,13 @@ async function main() {
     },
   })
 
-  // 텔레그램 미리보기
+  // Slack 미리보기
   if (socialPosts.length > 0) {
     const preview = socialPosts.slice(0, 3).map((p, i) =>
       `${i + 1}. *${p.originalTitle}*\n${p.text}\n${p.hashtags.map(h => `#${h}`).join(' ')}\n${p.url}`,
     ).join('\n\n')
 
-    await notifyTelegram({
+    await notifySlack({
       level: 'info',
       agent: 'CMO_SOCIAL',
       title: `SNS 콘텐츠 ${socialPosts.length}개 생성`,
@@ -197,7 +197,7 @@ async function main() {
 
 main().catch(async (err) => {
   console.error('[SocialPoster] 오류:', err)
-  await notifyTelegram({
+  await notifySlack({
     level: 'critical',
     agent: 'CMO_SOCIAL',
     title: 'SNS 콘텐츠 생성 실패',

@@ -35,9 +35,9 @@ export const NEXT_PUBLIC_R2_PUBLIC_URL = requireEnv('NEXT_PUBLIC_R2_PUBLIC_URL')
 /** Kakao Share */
 export const NEXT_PUBLIC_KAKAO_JS_KEY = optionalEnv('NEXT_PUBLIC_KAKAO_JS_KEY', '')
 
-/** Telegram (운영 알림, optional) */
-export const TELEGRAM_BOT_TOKEN = optionalEnv('TELEGRAM_BOT_TOKEN', '')
-export const TELEGRAM_CHAT_ID = optionalEnv('TELEGRAM_CHAT_ID', '')
+/** Slack (운영 채널, optional) */
+export const SLACK_BOT_TOKEN = optionalEnv('SLACK_BOT_TOKEN', '')
+export const SLACK_SIGNING_SECRET = optionalEnv('SLACK_SIGNING_SECRET', '')
 
 /** Bot API Keys (optional, agent 연동) */
 export const BOT_API_KEY_JOB = optionalEnv('BOT_API_KEY_JOB', '')

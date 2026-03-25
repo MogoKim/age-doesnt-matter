@@ -1,6 +1,6 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
-import { notifyAdmin, notifyTelegram } from '../core/notifier.js'
+import { notifyAdmin, notifySlack } from '../core/notifier.js'
 import type { AgentResult } from '../core/types.js'
 
 /**
@@ -83,9 +83,9 @@ ${kpiSummary}
       },
     })
 
-    // critical이면 텔레그램
+    // critical이면 Slack 긴급 알림
     if (parsed.status === 'critical') {
-      await notifyTelegram({
+      await notifySlack({
         level: 'critical',
         agent: 'CEO',
         title: '모닝 사이클 — 긴급 이슈 감지',

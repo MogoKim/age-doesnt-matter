@@ -5,7 +5,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
-import { notifyTelegram } from '../core/notifier.js'
+import { notifySlack } from '../core/notifier.js'
 import type { TrendAnalysis } from './types.js'
 
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
@@ -149,7 +149,7 @@ async function saveTrend(analysis: TrendAnalysis, totalPosts: number, cafeSummar
   })
 }
 
-/** 매거진 추천 텔레그램 알림 */
+/** 매거진 추천 Slack 알림 */
 async function notifyMagazineTopics(analysis: TrendAnalysis) {
   if (analysis.magazineTopics.length === 0) return
 
@@ -161,7 +161,7 @@ async function notifyMagazineTopics(analysis: TrendAnalysis) {
     .map(t => `• ${t.topic} (${t.count}건, ${t.sentiment})`)
     .join('\n')
 
-  await notifyTelegram({
+  await notifySlack({
     level: 'info',
     agent: 'TREND_ANALYZER',
     title: '오늘의 5060 트렌드 분석',
@@ -227,7 +227,7 @@ async function main() {
 
 main().catch(async (err) => {
   console.error('[TrendAnalyzer] 치명적 오류:', err)
-  await notifyTelegram({
+  await notifySlack({
     level: 'critical',
     agent: 'TREND_ANALYZER',
     title: '트렌드 분석 실패',

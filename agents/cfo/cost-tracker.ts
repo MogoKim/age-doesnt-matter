@@ -1,6 +1,6 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
-import { notifyAdmin, notifyTelegram } from '../core/notifier.js'
+import { notifyAdmin, notifySlack } from '../core/notifier.js'
 import type { AgentResult } from '../core/types.js'
 
 const MONTHLY_BUDGET_USD = 50
@@ -49,7 +49,7 @@ class CFOCostTracker extends BaseAgent {
 
     // 3. 예산 경고
     if (estimatedCost >= WARNING_THRESHOLD_USD) {
-      await notifyTelegram({
+      await notifySlack({
         level: 'critical',
         agent: 'CFO',
         title: `예산 경고: $${estimatedCost.toFixed(2)} / $${MONTHLY_BUDGET_USD}`,
