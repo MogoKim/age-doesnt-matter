@@ -96,7 +96,7 @@ class COOJobScraper extends BaseAgent {
             status: 'PUBLISHED',
             publishedAt: new Date(),
             seoTitle: `${processed.cleanTitle} | 우나어 일자리`,
-            seoDescription: `${processed.subtitle} ${processed.seoKeywords.join(' ')}`,
+            seoDescription: `${processed.subtitle} ${processed.seoKeywords.join(' ')} ${processed.displayTags.join(' ')}`,
             jobDetail: {
               create: {
                 company: job.company,
@@ -109,7 +109,7 @@ class COOJobScraper extends BaseAgent {
                 applyUrl: job.applyUrl,
                 pickPoints: JSON.parse(JSON.stringify(processed.pickPoints)),
                 qna: JSON.parse(JSON.stringify(processed.qna)),
-                quickTags: processed.seoKeywords,
+                quickTags: processed.displayTags,
                 tier: job.tier,
                 sourceUrl: job.sourceUrl,
                 sourceId: job.sourceId,

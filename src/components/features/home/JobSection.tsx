@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { formatSalary } from '@/lib/format'
 
 export interface JobCardData {
   id: string
@@ -39,7 +40,7 @@ export default function JobSection({ jobs }: Props) {
               {job.isUrgent && (
                 <span className="h-[26px] px-2.5 bg-destructive text-white rounded-md text-[15px] font-semibold flex items-center whitespace-nowrap">긴급</span>
               )}
-              {job.tags.map((tag) => (
+              {job.tags.slice(0, 3).map((tag) => (
                 <span key={tag} className="h-[26px] px-2.5 bg-primary/10 text-primary rounded-md text-[15px] font-semibold flex items-center whitespace-nowrap">
                   {tag}
                 </span>
@@ -49,7 +50,7 @@ export default function JobSection({ jobs }: Props) {
             <div className="text-[15px] text-muted-foreground mb-2 flex items-center gap-1.5">
               <span>{job.location}</span>
               <span>·</span>
-              <span className="text-primary font-bold">{job.salary}</span>
+              <span className="text-primary font-bold">{formatSalary(job.salary)}</span>
             </div>
             {job.highlight && <p className="text-[15px] text-muted-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis">{job.highlight}</p>}
           </Link>

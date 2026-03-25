@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 }
 import { getJobList, type JobCardItem } from '@/lib/queries/posts'
 import { formatTimeAgo } from '@/components/features/community/utils'
+import { formatSalary } from '@/lib/format'
 import JobFilterButton from '@/components/features/jobs/JobFilterButton'
 import JobQuickTags from '@/components/features/jobs/JobQuickTags'
 
@@ -92,10 +93,15 @@ function JobCard({ job }: { job: JobCardItem }) {
       href={`/jobs/${job.id}`}
       className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30"
     >
-      {/* 태그 */}
+      {/* 태그 — 최대 3개 */}
       {job.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
-          {job.tags.map((tag) => (
+          {job.isUrgent && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-br from-[#FF6B6B] to-[#FF8E53] text-white">
+              급구
+            </span>
+          )}
+          {job.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
               className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[13px] font-medium"
@@ -108,17 +114,12 @@ function JobCard({ job }: { job: JobCardItem }) {
 
       {/* 제목 */}
       <h3 className="text-base font-bold text-foreground m-0 mb-1">
-        {job.isUrgent && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-br from-[#FF6B6B] to-[#FF8E53] text-white mr-1.5">
-            급구
-          </span>
-        )}
-        [{job.region}] {job.title}
+        {job.title}
       </h3>
 
-      {/* 급여 */}
+      {/* 급여 — 정규화된 형식 */}
       <p className="text-sm text-foreground m-0 mb-1 font-medium">
-        {job.salary || '급여 협의'}
+        {formatSalary(job.salary)}
       </p>
 
       {/* 하이라이트 */}
