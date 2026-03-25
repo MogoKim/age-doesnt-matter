@@ -1,0 +1,54 @@
+name: "Agents — Cafe Trend & Curate"
+
+on:
+  # 로컬 크롤링 후 수동 트리거
+  workflow_dispatch:
+    inputs:
+      step:
+        description: "실행 단계 (analyze / curate / all)"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - analyze
+          - curate
+
+  # 매일 09:00, 13:00, 19:00 KST — 로컬 크롤링 후 30분 뒤 자동 분석
+  schedule:
+    - cron: "0 0 * * *"   # 09:00 KST
+    - cron: "0 4 * * *"   # 13:00 KST
+    - cron: "0 10 * * *"  # 19:00 KST
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+jobs:
+  analyze-and-curate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Trend Analyzer
+        if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'analyze' || github.event_name == 'schedule' }}
+        run: npx tsx agents/cafe/trend-analyzer.ts
+
+      - name: Run Content Curator
+        if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'curate' || github.event_name == 'schedule' }}
+        run: npx tsx agents/cafe/content-curator.ts

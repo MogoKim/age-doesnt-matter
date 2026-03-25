@@ -96,6 +96,33 @@ schedules:
     task: anomaly-detector
     handler: "cdo/anomaly-detector.ts"
 
+  # ── 카페 크롤링 + 트렌드 분석 (하루 3회, 로컬 Mac) ──
+  # 08:30 KST — 아침 크롤링 (로컬 launchd)
+  - cron: "30 23 * * *"  # 08:30 KST = 23:30 UTC (전일)
+    agent: CAFE_CRAWLER
+    task: cafe-pipeline
+    handler: "cafe/run-pipeline.ts"
+    note: "로컬 Mac에서 launchd로 실행 (네이버 로그인 필요)"
+
+  # 09:00 KST — 트렌드 분석 + 큐레이션 (GitHub Actions)
+  - cron: "0 0 * * *"
+    agent: CAFE_CRAWLER
+    task: trend-analysis
+    handler: "cafe/trend-analyzer.ts"
+    note: "크롤링 30분 후 자동 분석 (클라우드)"
+
+  # 12:30 KST — 점심 크롤링 (로컬)
+  - cron: "30 3 * * *"
+    agent: CAFE_CRAWLER
+    task: cafe-pipeline
+    handler: "cafe/run-pipeline.ts"
+
+  # 18:30 KST — 저녁 크롤링 (로컬)
+  - cron: "30 9 * * *"
+    agent: CAFE_CRAWLER
+    task: cafe-pipeline
+    handler: "cafe/run-pipeline.ts"
+
   # ── 일자리 자동 수집 (하루 3회) ──
   # 12:00 KST (03:00 UTC)
   - cron: "0 3 * * *"

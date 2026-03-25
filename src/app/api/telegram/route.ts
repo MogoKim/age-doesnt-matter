@@ -82,6 +82,57 @@ async function handleCost(): Promise<string> {
   return `💰 *이번 달 비용*\n\n${emoji} 예상: *$${totalCost.toFixed(2)}* / $50\n실행: ${logs.length}회\n\n${breakdown}`
 }
 
+async function handleTrend(): Promise<string> {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const trend = await prisma.cafeTrend.findUnique({
+    where: { date_period: { date: today, period: 'daily' } },
+  })
+
+  if (!trend) return '📊 *오늘의 트렌드*\n\n아직 분석 결과가 없어요. 카페 크롤링 먼저 실행해주세요.'
+
+  const hotTopics = trend.hotTopics as { topic: string; count: number; sentiment: string }[]
+  const magazineTopics = trend.magazineTopics as { title: string; reason: string; score: number }[]
+
+  const hotList = hotTopics.slice(0, 5)
+    .map((t, i) => `${i + 1}. ${t.topic} (${t.count}건, ${t.sentiment})`)
+    .join('\n')
+
+  const magazineList = magazineTopics.slice(0, 3)
+    .map((t, i) => `${i + 1}. *${t.title}* (${t.score}/10)\n   └ ${t.reason}`)
+    .join('\n')
+
+  return `📊 *오늘의 5060 트렌드*\n\n🔥 *핫토픽*\n${hotList}\n\n📰 *매거진 주제 추천*\n${magazineList}\n\n수집: ${trend.totalPosts}개 글 분석`
+}
+
+async function handleCafe(): Promise<string> {
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+
+  const [totalToday, byCafe] = await Promise.all([
+    prisma.cafePost.count({ where: { crawledAt: { gte: todayStart } } }),
+    prisma.cafePost.groupBy({
+      by: ['cafeId'],
+      where: { crawledAt: { gte: todayStart } },
+      _count: { id: true },
+    }),
+  ])
+
+  const cafeList = byCafe.map(c => `  ${c.cafeId}: ${c._count.id}개`).join('\n')
+
+  const latestCrawl = await prisma.botLog.findFirst({
+    where: { botType: 'CAFE_CRAWLER' },
+    orderBy: { executedAt: 'desc' },
+    select: { executedAt: true, status: true },
+  })
+  const lastTime = latestCrawl
+    ? latestCrawl.executedAt.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+    : '없음'
+
+  return `☕ *카페 크롤링 현황*\n\n오늘 수집: ${totalToday}개\n${cafeList}\n\n마지막 실행: ${lastTime} (${latestCrawl?.status ?? '-'})`
+}
+
 async function handleJobs(): Promise<string> {
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
@@ -122,12 +173,14 @@ export async function POST(request: Request) {
       case '/agents': response = await handleAgents(); break
       case '/cost': response = await handleCost(); break
       case '/jobs': response = await handleJobs(); break
+      case '/trend': response = await handleTrend(); break
+      case '/cafe': response = await handleCafe(); break
       case '/stop':
         response = '🛑 *자동화 중지*\n\nconstitution.yaml → automation\\_status: LOCKED 로 변경 필요'
         break
       case '/help':
       default:
-        response = '🔧 *명령어*\n\n/status — KPI 요약\n/agents — 에이전트 상태\n/cost — 비용 현황\n/jobs — 일자리 현황\n/stop — 자동화 중지\n/help — 도움말'
+        response = '🔧 *명령어*\n\n/status — KPI 요약\n/agents — 에이전트 상태\n/cost — 비용 현황\n/jobs — 일자리 현황\n/trend — 오늘의 5060 트렌드\n/cafe — 카페 크롤링 현황\n/stop — 자동화 중지\n/help — 도움말'
     }
 
     await sendMessage(chatId, response)

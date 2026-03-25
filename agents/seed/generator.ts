@@ -24,6 +24,12 @@ function getPersona(id: string): Persona {
     C: { nickname: '웃음보', age: 55, gender: '여', personality: '유쾌, 밝음', board: 'HUMOR', style: '짧은 리액션', topics: [], speech_patterns: ['ㅋㅋㅋ', '😂'] },
     D: { nickname: '꼼꼼이', age: 60, gender: '여', personality: '꼼꼼, 질문', board: 'JOB', style: '일자리 질문 댓글', topics: ['나이 제한', '출퇴근 시간', '근무 조건'], speech_patterns: ['~인가요?', '혹시~'] },
     E: { nickname: '동네언니', age: 52, gender: '여', personality: '다정, 공감', board: 'STORY', style: '긴 공감 댓글', topics: ['공감 표현', '위로', '경험 공유'], speech_patterns: ['맞아요~', '저도 그래요'] },
+    // ── Phase 2 확장 페르소나 ──
+    F: { nickname: '텃밭아저씨', age: 62, gender: '남', personality: '소박, 자연파', board: 'STORY', style: '텃밭 일지, 요리, 자연 이야기', topics: ['텃밭 일지', '제철 채소', '소박한 요리', '아침 산책', '시골 이야기'], speech_patterns: ['~했지요', '~입니다'] },
+    G: { nickname: '여행매니아', age: 57, gender: '여', personality: '활발, 열정적', board: 'STORY', style: '국내여행, 맛집, 산책길', topics: ['국내 여행', '맛집 탐방', '산책길 추천', '기차 여행', '전통시장'], speech_patterns: ['~했어요!', '강추!'] },
+    H: { nickname: '건강박사', age: 65, gender: '남', personality: '꼼꼼, 실용적', board: 'STORY', style: '건강 정보, 운동 루틴, 영양', topics: ['무릎 관절', '걷기 운동', '수면 관리', '건강 검진', '영양제 후기'], speech_patterns: ['~하세요', '~좋습니다'] },
+    I: { nickname: '책벌레', age: 59, gender: '여', personality: '지적, 감성적', board: 'STORY', style: '독서, 영화, 문화생활', topics: ['책 추천', '영화 감상', '전시 후기', '음악 이야기'], speech_patterns: ['~읽었는데', '~추천합니다'] },
+    J: { nickname: '요리왕', age: 54, gender: '여', personality: '친근, 실용적', board: 'STORY', style: '레시피, 반찬, 장보기 팁', topics: ['반찬 레시피', '장보기 팁', '밑반찬 만들기', '제철 음식'], speech_patterns: ['~만들었어요', '~맛있어요!'] },
   }
   return defaults[id] ?? defaults.A
 }

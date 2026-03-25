@@ -143,6 +143,7 @@ enum BotType {
   CFO
   COO
   SEED
+  CAFE_CRAWLER
 }
 
 enum BotStatus {
@@ -632,4 +633,60 @@ model AdminAuditLog {
   @@index([adminId, createdAt(sort: Desc)])
   @@index([targetType, targetId])
   @@index([createdAt(sort: Desc)])
+}
+
+// ─────────────────────────────────────────────────
+// 카페 크롤링 & 트렌드
+// ─────────────────────────────────────────────────
+
+/// 네이버 카페에서 수집한 원본 게시글
+model CafePost {
+  id           String   @id @default(cuid())
+  cafeId       String   // wgang, welovesilver, 5060years
+  cafeName     String   // 카페 이름
+  postUrl      String   @unique // 원본 URL (중복 방지)
+  title        String
+  content      String   @db.Text
+  author       String   // 카페 작성자 닉네임
+  category     String?  // 카페 내 카테고리
+  likeCount    Int      @default(0)
+  commentCount Int      @default(0)
+  viewCount    Int      @default(0)
+  postedAt     DateTime // 카페 원본 작성일
+  crawledAt    DateTime @default(now())
+
+  // 분석 결과
+  topics       String[] // AI가 추출한 토픽 태그
+  sentiment    String?  // positive, neutral, negative
+  isUsable     Boolean  @default(false) // 콘텐츠 참고용으로 적합한지
+
+  @@index([cafeId, crawledAt(sort: Desc)])
+  @@index([crawledAt(sort: Desc)])
+  @@index([isUsable, crawledAt(sort: Desc)])
+}
+
+/// 일별 트렌드 분석 결과
+model CafeTrend {
+  id            String   @id @default(cuid())
+  date          DateTime @db.Date // 분석 날짜
+  period        String   @default("daily") // daily, weekly
+
+  // 트렌드 데이터
+  hotTopics     Json     // [{topic, count, sentiment, examples}]
+  keywords      Json     // [{word, frequency}]
+  sentimentMap  Json     // {positive: 40, neutral: 35, negative: 25}
+
+  // 매거진 추천
+  magazineTopics Json    // [{title, reason, score, relatedPosts}]
+
+  // 페르소나 참고
+  personaHints   Json?   // [{type, description, examplePosts}]
+
+  totalPosts    Int      @default(0)
+  cafeSummary   Json?    // 카페별 요약 {wgang: {count, top}, ...}
+
+  createdAt     DateTime @default(now())
+
+  @@unique([date, period])
+  @@index([date(sort: Desc)])
 }

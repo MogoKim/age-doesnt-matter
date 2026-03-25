@@ -14,28 +14,38 @@ type Activity = {
   count?: number
 }
 
-/** 시간대별 활동 스케줄 */
+/** 시간대별 활동 스케줄 (10명 — A~E 기존 + F~J 확장) */
 const SCHEDULE: Record<string, Activity[]> = {
   '09': [
     { personaId: 'A', type: 'post' },
     { personaId: 'A', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'C', type: 'comment', board: 'HUMOR', count: 3 },
+    { personaId: 'F', type: 'post' },           // 텃밭아저씨 아침 글
+    { personaId: 'J', type: 'post' },           // 요리왕 아침 글
   ],
   '10': [
     { personaId: 'B', type: 'post' },
+    { personaId: 'G', type: 'post' },           // 여행매니아 글
   ],
   '14': [
     { personaId: 'D', type: 'comment', board: 'JOB', count: 2 },
     { personaId: 'E', type: 'comment', board: 'STORY', count: 1 },
+    { personaId: 'H', type: 'post' },           // 건강박사 글
+    { personaId: 'J', type: 'comment', board: 'STORY', count: 2 }, // 요리왕 댓글
   ],
   '16': [
     { personaId: 'A', type: 'comment', board: 'STORY', count: 2 },
+    { personaId: 'F', type: 'comment', board: 'STORY', count: 1 }, // 텃밭아저씨 댓글
   ],
   '19': [
     { personaId: 'E', type: 'comment', board: 'STORY', count: 2 },
+    { personaId: 'G', type: 'comment', board: 'STORY', count: 2 }, // 여행매니아 댓글
+    { personaId: 'I', type: 'post' },           // 책벌레 저녁 글
   ],
   '21': [
     { personaId: 'C', type: 'comment', board: 'HUMOR', count: 2 },
+    { personaId: 'H', type: 'comment', board: 'STORY', count: 1 }, // 건강박사 댓글
+    { personaId: 'I', type: 'comment', board: 'STORY', count: 1 }, // 책벌레 댓글
   ],
 }
 
