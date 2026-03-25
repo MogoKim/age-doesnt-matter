@@ -43,12 +43,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     WEEKLY: 'weekly',
   }
 
-  const postPages: MetadataRoute.Sitemap = posts.map((post) => ({
-    url: `${BASE_URL}/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.id}`,
-    lastModified: post.updatedAt,
-    changeFrequency: 'weekly',
-    priority: 0.6,
-  }))
+  const postPages: MetadataRoute.Sitemap = posts.map((post) => {
+    const isJob = post.boardType === 'JOB'
+    const slug = BOARD_TYPE_TO_SLUG[post.boardType]
+    const url = isJob
+      ? `${BASE_URL}/jobs/${post.id}`
+      : `${BASE_URL}/community/${slug}/${post.id}`
+
+    return {
+      url,
+      lastModified: post.updatedAt,
+      changeFrequency: isJob ? 'daily' : 'weekly',
+      priority: isJob ? 0.9 : 0.6,
+    }
+  })
 
   return [...staticPages, ...postPages]
 }

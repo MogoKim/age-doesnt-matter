@@ -78,8 +78,14 @@ JSON으로만 응답:
 
     try {
       const parsed = JSON.parse(response) as { cleanTitle: string; subtitle: string }
-      // 검증: 제목이 원본과 너무 비슷하면 fallback
-      if (parsed.cleanTitle.includes('[동원/') || parsed.cleanTitle.includes('(주)') || parsed.cleanTitle.length > 30) {
+      // 검증: 원본 그대로이거나 불량 패턴이면 fallback
+      const bad = parsed.cleanTitle.includes('(주)') ||
+        parsed.cleanTitle.includes('주식회사') ||
+        /\[.*\/.*\]/.test(parsed.cleanTitle) ||  // [동원/세종] 등 중첩 지역
+        parsed.cleanTitle === job.title ||
+        parsed.cleanTitle.length > 30 ||
+        parsed.cleanTitle.length < 5
+      if (bad) {
         return this.fallbackTitle(job)
       }
       return parsed

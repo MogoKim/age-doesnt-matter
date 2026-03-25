@@ -8,6 +8,7 @@ import { getCommentsByPostId } from '@/lib/queries/comments'
 import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
 import { sanitizeHtml } from '@/lib/sanitize'
+import { formatSalary } from '@/lib/format'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -19,8 +20,63 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!job) return {}
   return {
     title: `${job.title} — ${job.company}`,
-    description: `${job.location} · ${job.salary}`,
+    description: `${job.location} · ${formatSalary(job.salary)}`,
   }
+}
+
+/** JobPosting JSON-LD 구조화 데이터 (Google 검색 리치 스니펫) */
+function JobPostingJsonLd({ job }: { job: NonNullable<Awaited<ReturnType<typeof getJobDetail>>> }) {
+  const salaryText = formatSalary(job.salary)
+
+  // 급여 파싱: "월 280만원" → baseSalary 객체
+  let baseSalary: Record<string, unknown> | undefined
+  const monthlyMatch = salaryText.match(/월\s*(\d+)(?:~(\d+))?만원/)
+  if (monthlyMatch) {
+    const low = parseInt(monthlyMatch[1]) * 10000
+    const high = monthlyMatch[2] ? parseInt(monthlyMatch[2]) * 10000 : low
+    baseSalary = {
+      '@type': 'MonetaryAmount',
+      currency: 'KRW',
+      value: {
+        '@type': 'QuantitativeValue',
+        minValue: low,
+        maxValue: high,
+        unitText: 'MONTH',
+      },
+    }
+  }
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: job.title,
+    description: job.content.replace(/<[^>]+>/g, '').slice(0, 500),
+    datePosted: job.createdAt,
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: job.company || '채용기업',
+    },
+    jobLocation: {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: job.region,
+        addressRegion: job.region,
+        addressCountry: 'KR',
+        streetAddress: job.location,
+      },
+    },
+    ...(baseSalary && { baseSalary }),
+    ...(job.applyUrl && { directApply: true }),
+    employmentType: 'FULL_TIME',
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  )
 }
 
 export default async function JobDetailPage({ params }: PageProps) {
@@ -35,6 +91,9 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
+      {/* JSON-LD 구조화 데이터 */}
+      <JobPostingJsonLd job={job} />
+
       {/* 뒤로가기 */}
       <Link
         href="/jobs"
@@ -59,13 +118,13 @@ export default async function JobDetailPage({ params }: PageProps) {
 
       {/* 제목 */}
       <h1 className="text-xl font-bold text-foreground m-0 mb-6 leading-[1.4]">
-        [{job.region}] {job.title}
+        {job.title}
       </h1>
 
       {/* 정보 카드 */}
       <div className="bg-card rounded-xl border border-border p-5 mb-6 space-y-3">
         <InfoRow icon="📍" label="근무지" value={job.location} />
-        <InfoRow icon="💰" label="급여" value={job.salary || '협의'} />
+        <InfoRow icon="💰" label="급여" value={formatSalary(job.salary)} />
         {job.workHours && <InfoRow icon="⏰" label="근무시간" value={job.workHours} />}
         {job.workDays && <InfoRow icon="📅" label="근무일" value={job.workDays} />}
         <InfoRow icon="🏢" label="회사" value={job.company} />
