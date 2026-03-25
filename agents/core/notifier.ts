@@ -1,7 +1,6 @@
 /**
  * Slack Notifier — 에이전트 알림 시스템
  *
- * Telegram → Slack 전환 (2026-03-25 결정)
  * 13개 채널에 심각도/에이전트별 라우팅
  */
 import { WebClient } from '@slack/web-api'
@@ -127,7 +126,7 @@ export async function sendSlackMessage(
 /**
  * Slack 알림 전송 — 심각도 + 에이전트별 자동 라우팅
  *
- * 기존 notifyTelegram() 대체
+ * 심각도 + 에이전트별 자동 라우팅
  */
 export async function notifySlack(payload: NotifyPayload): Promise<void> {
   if (!slack) {
@@ -172,7 +171,7 @@ export async function notifySlack(payload: NotifyPayload): Promise<void> {
 /**
  * 어드민 대시보드 알림 (DB 저장 + Slack 라우팅)
  *
- * 기존 notifyAdmin() 유지 — 내부적으로 Telegram → Slack 전환
+ * 어드민 대시보드 알림 (DB 저장 + Slack 라우팅)
  */
 export async function notifyAdmin(payload: NotifyPayload): Promise<void> {
   // critical/important는 Slack에도 전송

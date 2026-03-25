@@ -1,6 +1,6 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
-import { notifyAdmin, notifySlack } from '../core/notifier.js'
+import { notifyAdmin, notifySlack, sendSlackMessage } from '../core/notifier.js'
 import type { AgentResult } from '../core/types.js'
 
 /**
@@ -82,6 +82,31 @@ ${kpiSummary}
         executionTimeMs: 0,
       },
     })
+
+    // #일일-브리핑 채널에 리포트 전송
+    const statusEmoji = parsed.status === 'critical' ? ':red_circle:' : parsed.status === 'warning' ? ':large_orange_circle:' : ':large_green_circle:'
+    const issueText = parsed.issues.length > 0
+      ? parsed.issues.map((i) => `  - *${i.agent}*: ${i.issue} → ${i.action}`).join('\n')
+      : '  이슈 없음'
+
+    const dateStr = now.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
+
+    await sendSlackMessage('DAILY_BRIEFING', '', [
+      { type: 'header', text: { type: 'plain_text', text: `CEO 일일 브리핑 — ${dateStr}`, emoji: true } },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*DAU*\n${todayUsers}명 (${dauChange}%)` },
+          { type: 'mrkdwn', text: `*신규 게시글*\n${todayPosts}건` },
+          { type: 'mrkdwn', text: `*댓글*\n${todayComments}건` },
+          { type: 'mrkdwn', text: `*공감*\n${todayLikes}건` },
+        ],
+      },
+      { type: 'section', text: { type: 'mrkdwn', text: `*상태:* ${statusEmoji} ${parsed.status}\n*요약:* ${parsed.summary}` } },
+      { type: 'section', text: { type: 'mrkdwn', text: `*감지된 이슈:*\n${issueText}` } },
+      { type: 'divider' },
+      { type: 'context', elements: [{ type: 'mrkdwn', text: `전체 게시글: ${totalPosts}건 | 자동 생성 by CEO 에이전트` }] },
+    ])
 
     // critical이면 Slack 긴급 알림
     if (parsed.status === 'critical') {

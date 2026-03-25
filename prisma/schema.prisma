@@ -170,6 +170,22 @@ enum AuditTargetType {
   AD
   BOT
   AGENT
+  ADMIN_QUEUE
+}
+
+enum AdminQueueType {
+  CONTENT_PUBLISH   // SNS 콘텐츠 게시 승인
+  AGENT_EVOLUTION   // 에이전트 스킬 진화 제안
+  SCHEMA_CHANGE     // DB 스키마 변경 제안
+  BUDGET_CHANGE     // 예산 한도 변경
+  SYSTEM_ACTION     // 기타 시스템 액션
+}
+
+enum AdminQueueStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
 }
 
 // ─────────────────────────────────────────────────
@@ -633,6 +649,34 @@ model AdminAuditLog {
   @@index([adminId, createdAt(sort: Desc)])
   @@index([targetType, targetId])
   @@index([createdAt(sort: Desc)])
+}
+
+// ─────────────────────────────────────────────────
+// 어드민 승인 큐
+// ─────────────────────────────────────────────────
+
+/// 에이전트가 창업자 승인이 필요한 액션을 제안할 때 사용
+model AdminQueue {
+  id          String           @id @default(cuid())
+  type        AdminQueueType
+  status      AdminQueueStatus @default(PENDING)
+
+  title       String           // 승인 요청 제목
+  description String           // 상세 설명
+  payload     Json?            // 실행에 필요한 데이터 (에이전트별 구조)
+
+  requestedBy String           // 요청한 에이전트 (CEO, CMO 등)
+  resolvedBy  String?          // 처리자 (창업자 Slack user_id 등)
+  resolvedAt  DateTime?
+
+  expiresAt   DateTime?        // 만료 시간 (null이면 무기한)
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([type, status])
+  @@index([requestedBy])
 }
 
 // ─────────────────────────────────────────────────

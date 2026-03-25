@@ -3,7 +3,7 @@ on:
   schedule:
     # 09:00 KST = 00:00 UTC — CEO 모닝 사이클
     - cron: "0 0 * * *"
-    # 10:00 KST = 01:00 UTC — CMO 트렌드
+    # 10:00 KST = 01:00 UTC — CMO 트렌드 (화~일) / CEO 주간 리포트 (월)
     - cron: "0 1 * * *"
     # 11:00 KST = 02:00 UTC — CPO UX 분석
     - cron: "0 2 * * *"
@@ -62,9 +62,16 @@ jobs:
             echo "task=${{ github.event.inputs.task }}" >> $GITHUB_OUTPUT
           else
             HOUR=$(date -u +%H)
+            DOW=$(date -u +%u)  # 1=Monday
             case $HOUR in
               00) echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-cycle" >> $GITHUB_OUTPUT ;;
-              01) echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=trend-analyzer" >> $GITHUB_OUTPUT ;;
+              01)
+                if [ "$DOW" = "1" ]; then
+                  echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=weekly-report" >> $GITHUB_OUTPUT
+                else
+                  echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=trend-analyzer" >> $GITHUB_OUTPUT
+                fi
+                ;;
               02) echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=ux-analyzer" >> $GITHUB_OUTPUT ;;
               05) echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;
               13) echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=kpi-collector" >> $GITHUB_OUTPUT ;;

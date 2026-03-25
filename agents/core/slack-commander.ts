@@ -1,7 +1,6 @@
 /**
  * Slack Commander — 모바일 커맨드 인터페이스
  *
- * Telegram Commander 대체 (2026-03-25)
  * Slack 슬래시 커맨드 + 인터랙티브 버튼으로 시스템 관리
  *
  * 슬래시 커맨드:
@@ -326,26 +325,83 @@ async function handleStop(): Promise<SlackCommandResult> {
 async function handleApprove(text: string): Promise<SlackCommandResult> {
   const id = text.trim()
   if (!id) {
-    return { response_type: 'ephemeral', text: '사용법: /approve [ID]' }
+    const pending = await prisma.adminQueue.findMany({
+      where: { status: 'PENDING' },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    })
+
+    if (pending.length === 0) {
+      return { response_type: 'ephemeral', text: '대기 중인 승인 요청이 없습니다.' }
+    }
+
+    const list = pending.map((q) => {
+      const time = q.createdAt.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+      return `*${q.id.slice(-6)}* | ${q.type} | ${q.title}\n  └ ${q.requestedBy} · ${time}`
+    }).join('\n')
+
+    return {
+      response_type: 'in_channel',
+      text: '📋 대기 중인 승인 요청',
+      blocks: [
+        { type: 'header', text: { type: 'plain_text', text: '📋 대기 중인 승인 요청', emoji: true } },
+        { type: 'section', text: { type: 'mrkdwn', text: list } },
+        { type: 'context', elements: [{ type: 'mrkdwn', text: '`/una-approve [ID 뒤 6자리]` 로 승인' }] },
+      ],
+    }
   }
 
-  // TODO: AdminQueue 모델 추가 후 활성화
+  const item = await prisma.adminQueue.findFirst({
+    where: { id: { endsWith: id }, status: 'PENDING' },
+  })
+
+  if (!item) {
+    return { response_type: 'ephemeral', text: `해당 ID(${id})의 대기 항목을 찾을 수 없습니다.` }
+  }
+
+  await prisma.adminQueue.update({
+    where: { id: item.id },
+    data: { status: 'APPROVED', resolvedAt: new Date(), resolvedBy: 'founder' },
+  })
+
+  await sendSlackMessage('CEO_FOUNDER', `✅ *승인 완료*: ${item.title}\n요청: ${item.requestedBy} | ID: ${item.id.slice(-6)}`)
+
   return {
-    response_type: 'ephemeral',
-    text: `📋 승인 기능은 AdminQueue DB 모델 추가 후 활성화됩니다. (ID: ${id})`,
+    response_type: 'in_channel',
+    text: `✅ 승인 완료: ${item.title}`,
+    blocks: [
+      { type: 'section', text: { type: 'mrkdwn', text: `✅ *승인 완료*\n*제목:* ${item.title}\n*요청:* ${item.requestedBy}\n*유형:* ${item.type}` } },
+    ],
   }
 }
 
 async function handleReject(text: string): Promise<SlackCommandResult> {
   const id = text.trim()
   if (!id) {
-    return { response_type: 'ephemeral', text: '사용법: /reject [ID]' }
+    return { response_type: 'ephemeral', text: '사용법: /una-reject [ID 뒤 6자리]' }
   }
 
-  // TODO: AdminQueue 모델 추가 후 활성화
+  const item = await prisma.adminQueue.findFirst({
+    where: { id: { endsWith: id }, status: 'PENDING' },
+  })
+
+  if (!item) {
+    return { response_type: 'ephemeral', text: `해당 ID(${id})의 대기 항목을 찾을 수 없습니다.` }
+  }
+
+  await prisma.adminQueue.update({
+    where: { id: item.id },
+    data: { status: 'REJECTED', resolvedAt: new Date(), resolvedBy: 'founder' },
+  })
+
+  await sendSlackMessage('CEO_FOUNDER', `❌ *거절됨*: ${item.title}\n요청: ${item.requestedBy} | ID: ${item.id.slice(-6)}`)
+
   return {
-    response_type: 'ephemeral',
-    text: `📋 거절 기능은 AdminQueue DB 모델 추가 후 활성화됩니다. (ID: ${id})`,
+    response_type: 'in_channel',
+    text: `❌ 거절: ${item.title}`,
+    blocks: [
+      { type: 'section', text: { type: 'mrkdwn', text: `❌ *거절됨*\n*제목:* ${item.title}\n*요청:* ${item.requestedBy}\n*유형:* ${item.type}` } },
+    ],
   }
 }
 
