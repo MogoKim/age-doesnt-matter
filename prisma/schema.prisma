@@ -188,6 +188,26 @@ enum AdminQueueStatus {
   EXPIRED
 }
 
+enum SocialPlatform {
+  THREADS
+  X
+}
+
+enum SocialPostStatus {
+  DRAFT
+  QUEUED
+  APPROVED
+  POSTED
+  FAILED
+}
+
+enum ExperimentStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  ANALYZED
+}
+
 // ─────────────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────────────
@@ -733,4 +753,66 @@ model CafeTrend {
 
   @@unique([date, period])
   @@index([date(sort: Desc)])
+}
+
+// ─────────────────────────────────────────────────
+// SNS 마케팅 실험 시스템
+// ─────────────────────────────────────────────────
+
+/// SNS 게시물 추적 (Threads, X)
+model SocialPost {
+  id              String            @id @default(cuid())
+  platform        SocialPlatform
+  experimentId    String?
+  experiment      SocialExperiment? @relation(fields: [experimentId], references: [id])
+
+  contentType     String            // PERSONA, COMMUNITY, JOB_ALERT, MAGAZINE, NOSTALGIA, HUMOR, PRACTICAL
+  tone            String?           // warm, humorous, informational, emotional
+  personaId       String?           // A~J (SEED 페르소나 코드)
+  promotionLevel  String            @default("PURE") // PURE, SOFT, DIRECT
+
+  postText        String            @db.Text
+  hashtags        String[]
+  sourcePostId    String?           // 원본 커뮤니티 글 ID
+  platformPostId  String?           // Threads/X에서 받은 게시물 ID
+  postingSlot     String?           // morning, lunch, afternoon, evening
+  linkUrl         String?           // 우나어 링크 (없으면 순수 콘텐츠)
+
+  metrics         Json?             // { impressions, likes, comments, shares, clicks }
+  metricsUpdatedAt DateTime?
+  status          SocialPostStatus  @default(DRAFT)
+
+  postedAt        DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([platform, createdAt(sort: Desc)])
+  @@index([experimentId])
+  @@index([status])
+}
+
+/// 7일 실험 사이클 — A/B 테스트 추적
+model SocialExperiment {
+  id            String           @id @default(cuid())
+  weekNumber    Int              // ISO 주차
+  startDate     DateTime
+  endDate       DateTime
+
+  hypothesis    String           // "커뮤니티 하이라이트가 페르소나보다 효과적일 것이다"
+  variable      String           // contentType, tone, postingTime, format, persona, promotionLevel
+  controlValue  String           // 통제군 값
+  testValue     String           // 실험군 값
+
+  status        ExperimentStatus @default(PLANNING)
+  results       Json?            // { controlAvg, testAvg, winner, delta }
+  learnings     String?          @db.Text // AI가 생성한 인사이트
+  nextAction    String?          // 다음 주에 무엇을 할지
+
+  posts         SocialPost[]
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([status])
+  @@index([weekNumber])
 }

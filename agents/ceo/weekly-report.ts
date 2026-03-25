@@ -47,7 +47,39 @@ class CEOWeeklyReport extends BaseAgent {
       prisma.post.count({ where: { status: 'PUBLISHED' } }),
     ])
 
-    // 2. 에이전트 성과
+    // 2. SNS 성과
+    const [snsPostCount, snsExperiment] = await Promise.all([
+      prisma.socialPost.count({ where: { status: 'POSTED', postedAt: { gte: weekAgo } } }),
+      prisma.socialExperiment.findFirst({
+        where: { status: { in: ['ACTIVE', 'ANALYZED'] } },
+        orderBy: { createdAt: 'desc' },
+        select: { weekNumber: true, variable: true, hypothesis: true, status: true, learnings: true },
+      }),
+    ])
+
+    // 최신 전략 메모 (social-strategy가 월요일에 생성)
+    const strategyMemo = await prisma.botLog.findFirst({
+      where: { botType: 'CMO', action: 'STRATEGY_MEMO' },
+      orderBy: { executedAt: 'desc' },
+      select: { details: true, executedAt: true },
+    })
+
+    const snsPosts = await prisma.socialPost.findMany({
+      where: { status: 'POSTED', postedAt: { gte: weekAgo }, metricsUpdatedAt: { not: null } },
+      select: { platform: true, metrics: true },
+    })
+
+    let totalEngagement = 0
+    const platformEngagement: Record<string, number> = {}
+    for (const sp of snsPosts) {
+      const m = sp.metrics as Record<string, number> | null
+      if (!m) continue
+      const eng = (m.likes ?? 0) + (m.replies ?? 0) + (m.reposts ?? m.retweets ?? 0)
+      totalEngagement += eng
+      platformEngagement[sp.platform] = (platformEngagement[sp.platform] ?? 0) + eng
+    }
+
+    // 3. 에이전트 성과
     const agentLogs = await prisma.botLog.findMany({
       where: { executedAt: { gte: weekAgo } },
       select: { botType: true, status: true },
@@ -87,7 +119,9 @@ class CEOWeeklyReport extends BaseAgent {
 - 댓글: ${thisWeekComments}건 (전주 ${lastWeekComments}건)
 - 공감: ${thisWeekLikes}건 (전주 ${lastWeekLikes}건)
 - 일자리 수집: ${thisWeekJobs}건
+- SNS 게시: ${snsPostCount}건 (참여 ${totalEngagement})
 - 에이전트 실행: ${agentLogs.length}회
+${snsExperiment ? `- 현재 실험: ${snsExperiment.hypothesis} (${snsExperiment.status})` : ''}
 
 한국어로, 핵심만 간결하게.
 `, 256)
@@ -123,6 +157,32 @@ class CEOWeeklyReport extends BaseAgent {
         type: 'section',
         text: { type: 'mrkdwn', text: `*:briefcase: 일자리 수집*: ${thisWeekJobs}건\n*:busts_in_silhouette: 전체 유저*: ${totalUsers}명\n*:page_facing_up: 전체 게시글*: ${totalPosts}건` },
       },
+      { type: 'divider' },
+      {
+        type: 'section',
+        text: { type: 'mrkdwn', text: `*:mega: SNS 마케팅*` },
+      },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*게시물*\n${snsPostCount}개` },
+          { type: 'mrkdwn', text: `*총 참여*\n${totalEngagement}` },
+          ...Object.entries(platformEngagement).map(([p, e]) => ({ type: 'mrkdwn' as const, text: `*${p}*\n참여 ${e}` })),
+        ],
+      },
+      ...(snsExperiment ? [{
+        type: 'section' as const,
+        text: { type: 'mrkdwn' as const, text: `*실험 Week ${snsExperiment.weekNumber}*: ${snsExperiment.hypothesis}\n상태: ${snsExperiment.status}${snsExperiment.learnings ? `\n인사이트: ${snsExperiment.learnings.slice(0, 200)}` : ''}` },
+      }] : []),
+      ...(strategyMemo?.details ? (() => {
+        const memo = typeof strategyMemo.details === 'string'
+          ? JSON.parse(strategyMemo.details) as { weekNumber?: number; strategy?: string }
+          : strategyMemo.details as { weekNumber?: number; strategy?: string }
+        return memo.strategy ? [{
+          type: 'section' as const,
+          text: { type: 'mrkdwn' as const, text: `*:clipboard: 금주 전략 (Week ${memo.weekNumber ?? '?'})*\n${memo.strategy.slice(0, 300)}${memo.strategy.length > 300 ? '...' : ''}` },
+        }] : []
+      })() : []),
       { type: 'divider' },
       {
         type: 'section',

@@ -38,6 +38,10 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cdo:kpi-collector': () => import('../cdo/kpi-collector.js').then(() => {}),
   'cdo:anomaly-detector': () => import('../cdo/anomaly-detector.js').then(() => {}),
   'seed:scheduler': () => import('../seed/scheduler.js').then(() => {}),
+  'cmo:social-poster': () => import('../cmo/social-poster.js').then(() => {}),
+  'cmo:social-metrics': () => import('../cmo/social-metrics.js').then(() => {}),
+  'cmo:social-reviewer': () => import('../cmo/social-reviewer.js').then(() => {}),
+  'cmo:social-strategy': () => import('../cmo/social-strategy.js').then(() => {}),
 }
 
 function getAutomationStatus(): string {

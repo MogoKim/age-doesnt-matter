@@ -49,6 +49,18 @@ export const BOT_API_KEY_SEED = optionalEnv('BOT_API_KEY_SEED', '')
 export const COUPANG_ACCESS_KEY = optionalEnv('COUPANG_ACCESS_KEY', '')
 export const COUPANG_SECRET_KEY = optionalEnv('COUPANG_SECRET_KEY', '')
 
+/** X (Twitter) API (optional) */
+export const X_CONSUMER_KEY = optionalEnv('X_CONSUMER_KEY', '')
+export const X_CONSUMER_SECRET = optionalEnv('X_CONSUMER_SECRET', '')
+export const X_ACCESS_TOKEN = optionalEnv('X_ACCESS_TOKEN', '')
+export const X_ACCESS_SECRET = optionalEnv('X_ACCESS_SECRET', '')
+export const X_BEARER_TOKEN = optionalEnv('X_BEARER_TOKEN', '')
+
+/** Threads / Meta (optional) */
+export const THREADS_APP_ID = optionalEnv('THREADS_APP_ID', '')
+export const THREADS_APP_SECRET = optionalEnv('THREADS_APP_SECRET', '')
+export const THREADS_ACCESS_TOKEN = optionalEnv('THREADS_ACCESS_TOKEN', '')
+
 /** App */
 export const NEXT_PUBLIC_APP_URL = optionalEnv('NEXT_PUBLIC_APP_URL', 'https://age-doesnt-matter.com')
 export const NODE_ENV = optionalEnv('NODE_ENV', 'development')

@@ -19,14 +19,15 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
-    "@prisma/client": "^7.5.0",
     "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "oauth-1.0a": "^2.2.6",
     "pg": "^8.13.0",
     "yaml": "^2.7.0"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0",
-    "@types/node": "^22.0.0"
+    "typescript": "^5.7.0"
   }
 }
