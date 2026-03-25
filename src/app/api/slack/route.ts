@@ -67,8 +67,7 @@ export async function POST(request: Request) {
       // 3초 제한이 있으므로 빠른 응답 + 비동기 처리가 필요
       // 현재는 직접 응답 (대부분 DB 쿼리만이라 3초 내 가능)
 
-      // 동적 import로 agents 코드 로드 (Next.js 서버에서 agents 접근)
-      const { handleSlashCommand } = await import('../../../../agents/core/slack-commander.js')
+      const { handleSlashCommand } = await import('@/lib/slack-commands')
 
       const result = await handleSlashCommand({
         command,
