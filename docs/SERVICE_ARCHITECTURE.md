@@ -1,6 +1,6 @@
 # 우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서
 
-> **최종 업데이트**: 2026-03-25 (v5 — SNS 바이럴 마케팅 실험 시스템 + Skills 레지스트리)
+> **최종 업데이트**: 2026-03-26 (v6 — GTM + GA4 애널리틱스 기반 구축 + 커뮤니티 활성화 시스템 v3)
 > **문서 관리자**: Claude Code (자동화) + 창업자 (승인)
 > **변경 시**: 이 문서 하단 [문서 업데이트 가이드](#문서-업데이트-가이드) 참고
 
@@ -51,6 +51,7 @@
 | **배포** | Vercel (Hobby Plan) | - |
 | **CI/CD** | GitHub Actions | - |
 | **운영 커뮤니케이션** | Slack (Bot + Webhook) | - |
+| **애널리틱스** | Google Tag Manager + GA4 | - |
 
 ### 2.2 테스팅
 
@@ -68,7 +69,7 @@
 - `X-Frame-Options: DENY`
 - `X-Content-Type-Options: nosniff`
 - `Strict-Transport-Security: max-age=63072000; preload`
-- CSP: Kakao SDK, YouTube, Slack API 허용
+- CSP: Kakao SDK, YouTube, Slack API, Google Analytics, GTM, AdSense 허용
 
 ---
 
@@ -145,6 +146,8 @@
 | `CLOUDFLARE_R2_*` | R2 스토리지 | 이미지 업로드 |
 | `ADMIN_JWT_SECRET` | 어드민 JWT | 어드민 인증 |
 | `BOT_API_KEY_*` | 봇 API 인증 | 봇 엔드포인트 |
+| `NEXT_PUBLIC_GTM_ID` | Google Tag Manager 컨테이너 ID | 클라이언트 (layout.tsx) |
+| `NEXT_PUBLIC_GA4_ID` | Google Analytics 4 측정 ID | GTM에서 참조 |
 
 ---
 
@@ -461,6 +464,8 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 | **Threads API** | `graph.threads.net/*` | 아웃바운드 | SNS 게시 + 메트릭 수집 (OAuth 2.0, 60일 토큰) |
 | **X API v2** | `api.x.com/2/*` | 아웃바운드 | SNS 게시 + 메트릭 수집 (OAuth 1.0a HMAC-SHA1) |
 | **Threads OAuth** | `/api/threads/auth`, `/api/threads/callback` | 인바운드 | Threads 토큰 발급 (1회성) |
+| **Google Tag Manager** | `www.googletagmanager.com` | 아웃바운드 | 태그 관리 (GTM 컨테이너 로드) |
+| **Google Analytics 4** | `www.google-analytics.com`, `analytics.google.com` | 아웃바운드 | 사용자 행동 분석 (GTM 경유) |
 | **50plus.or.kr** | 웹 크롤링 | 아웃바운드 | 일자리 수집 |
 
 ### 7.1 Slack 운영 채널 아키텍처
@@ -785,9 +790,9 @@ Slack Workspace: 우나어-ops
 | **검색** | 3개 | SearchForm, SearchResults, SearchTabs |
 | **마이페이지** | 8개 | NicknameSettings, FontSizeSettings, BlockedUserList, WithdrawSection |
 | **인증** | 3개 | LoginForm, LoginPromptModal, OnboardingForm |
-| **광고** | 3개 | AdSlot, AdClickTracker, CoupangCPS |
+| **광고** | 4개 | AdSlot, AdClickTracker, CoupangCPS, CpsClickTracker |
 | **어드민** | 11개 | MemberTable, ContentTable, ReportTable, BannerManager |
-| **공통** | 7개 | UserAvatar, ShareButton, OfflineBanner, PageViewTracker |
+| **공통** | 9개 | UserAvatar, ShareButton, OfflineBanner, PageViewTracker, GoogleTagManager, GTMEventOnMount |
 
 ---
 
@@ -855,6 +860,8 @@ Slack Workspace: 우나어-ops
 │   │   ├── banned-words.ts         # 금칙어 필터
 │   │   ├── rate-limit.ts           # Rate limiting
 │   │   ├── r2.ts                   # Cloudflare R2
+│   │   ├── gtm.ts                  # GTM dataLayer 유틸 (커스텀 이벤트 15종)
+│   │   ├── track.ts                # 내부 EventLog 트래킹
 │   │   ├── utils.ts                # cn() 유틸
 │   │   ├── errors.ts               # 커스텀 에러 클래스
 │   │   ├── 📁 actions/             # Server Actions (13개)
@@ -960,6 +967,16 @@ Slack Workspace: 우나어-ops
   - Slack 커맨드: /social, /experiment
   - Skills 레지스트리: 검증된 전략 코드화 (승률 기반 가중 선택)
   - Threads OAuth 토큰 발급 플로우 (/api/threads/auth → callback)
+- **GTM + GA4 애널리틱스 기반** (2026-03-26 구축 완료)
+  - GTM 컨테이너 스크립트 (GoogleTagManager.tsx — head + noscript)
+  - dataLayer 유틸리티 (gtm.ts — 15개 커스텀 이벤트 헬퍼)
+  - 이벤트 트래킹 삽입: page_view, post_create, comment_create, like, share, search, job_view, magazine_view, ad_click, cps_click
+  - CSP 헤더에 Google Analytics/GTM/AdSense 도메인 추가
+  - 환경변수: NEXT_PUBLIC_GTM_ID, NEXT_PUBLIC_GA4_ID
+- **커뮤니티 활성화 시스템 v3** (2026-03-26 구축 완료)
+  - 20명 페르소나 (여 14 / 남 6), 매거진 자동생성 (월/수/금), CPS 매칭
+  - SEO 강화 (OG meta, JSON-LD, sitemap 수정)
+  - 홈페이지 "지금 이 순간" 실시간 활동 피드
 
 ### 창업자 대기 작업
 - [ ] 도메인 만기 연장 (2026-04-25)
@@ -969,13 +986,17 @@ Slack Workspace: 우나어-ops
 - [ ] Threads OAuth 토큰 발급 (age-doesnt-matter.com/api/threads/auth 접속)
 - [ ] Google AdSense 승인 신청
 - [ ] 쿠팡 파트너스 가입
+- [ ] GA4 계정/속성 생성 → 측정 ID 발급
+- [ ] GTM 컨테이너 생성 → 컨테이너 ID 발급
+- [ ] Vercel에 NEXT_PUBLIC_GTM_ID, NEXT_PUBLIC_GA4_ID 환경변수 등록
+- [ ] GTM에서 GA4 구성 태그 + 커스텀 이벤트 태그 설정
 
 ### 향후 확장 (Phase 3+)
-- 페르소나 20~30명 확장
 - CEO 자동 의사결정 프레임워크
-- CDO 퍼널 분석기
+- CDO 퍼널 분석기 (GA4 데이터 연동)
 - 카카오톡 채널 / 네이버 밴드 / YouTube Shorts 확장
-- Google Analytics / Search Console MCP 연동
+- GA4 API → 에이전트 보고서 연동 (Search Console MCP 포함)
+- GTM으로 Hotjar/Microsoft Clarity 추가 (코드 수정 불필요)
 
 ---
 
@@ -2048,7 +2069,7 @@ AgentMeeting {
 │  ████████████  에이전트 (7 C-level + SEED + CAFE)   ✅ 완료     │
 │  ████████████  CI/CD (빌드, 린트, 타입체크)          ✅ 완료     │
 │  ████████░░░░  QA (Preview 있으나 체크리스트 없음)    ⚠️ 부분    │
-│  ████░░░░░░░░  모니터링 (헬스체크만, 메트릭 부족)     ⚠️ 부분    │
+│  ████████░░░░  모니터링 (GTM+GA4 구축, 대시보드 미설정) ⚠️ 부분    │
 │  ██░░░░░░░░░░  에이전트 협업 (각자 독립 실행)         ❌ 미구축   │
 │  ░░░░░░░░░░░░  운영 채널 (Slack 채널 분리/구조화)     ❌ 미구축   │
 │  ░░░░░░░░░░░░  KPI 프레임워크 (목표 설정→추적→리포트) ❌ 미구축   │

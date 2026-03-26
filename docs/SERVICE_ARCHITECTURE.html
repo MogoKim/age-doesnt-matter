@@ -404,7 +404,7 @@
 <!-- ═══════════════ HEADER ═══════════════ -->
 <h1>우리 나이가 어때서 (우나어)<br>서비스 아키텍처 종합 문서</h1>
 <div class="subtitle">
-  최종 업데이트: 2026-03-25 (v4 &mdash; Slack 운영 채널 + KPI 프레임워크 + 성장루프/QA/협업 프레임워크)<br>
+  최종 업데이트: 2026-03-26 (v6 &mdash; GTM + GA4 애널리틱스 기반 구축 + 커뮤니티 활성화 시스템 v3)<br>
   문서 관리자: Claude Code (자동화) + 창업자 (승인)
 </div>
 
@@ -453,6 +453,7 @@
   <tr><td>배포</td><td>Vercel (Hobby Plan)</td><td>-</td></tr>
   <tr><td>CI/CD</td><td>GitHub Actions</td><td>-</td></tr>
   <tr><td>알림</td><td>Slack (Bot + Webhook)</td><td>-</td></tr>
+  <tr><td>애널리틱스</td><td>Google Tag Manager + GA4</td><td>-</td></tr>
 </table>
 
 <h3>2.2 테스팅</h3>
@@ -471,7 +472,7 @@
   <li><code>X-Frame-Options: DENY</code></li>
   <li><code>X-Content-Type-Options: nosniff</code></li>
   <li><code>Strict-Transport-Security: max-age=63072000; preload</code></li>
-  <li>CSP: Kakao SDK, YouTube, Slack API 허용</li>
+  <li>CSP: Kakao SDK, YouTube, Slack API, Google Analytics, GTM, AdSense 허용</li>
 </ul>
 
 <!-- ═══════════════ 3. 인프라 ═══════════════ -->
@@ -529,6 +530,8 @@
   <tr><td><code>CLOUDFLARE_R2_*</code></td><td>R2 스토리지</td><td>이미지 업로드</td></tr>
   <tr><td><code>ADMIN_JWT_SECRET</code></td><td>어드민 JWT</td><td>어드민 인증</td></tr>
   <tr><td><code>BOT_API_KEY_*</code></td><td>봇 API 인증</td><td>봇 엔드포인트</td></tr>
+  <tr><td><code>NEXT_PUBLIC_GTM_ID</code></td><td>Google Tag Manager 컨테이너 ID</td><td>클라이언트 (layout.tsx)</td></tr>
+  <tr><td><code>NEXT_PUBLIC_GA4_ID</code></td><td>Google Analytics 4 측정 ID</td><td>GTM에서 참조</td></tr>
 </table>
 
 <!-- ═══════════════ 4. DB ═══════════════ -->
@@ -795,6 +798,8 @@ EXECUTE (매일 09/15/19시)  social-poster.ts
   <tr><td>Threads API</td><td>graph.threads.net/*</td><td>아웃바운드</td><td>SNS 게시 + 메트릭 (OAuth 2.0, 60일 토큰)</td></tr>
   <tr><td>X API v2</td><td>api.x.com/2/*</td><td>아웃바운드</td><td>SNS 게시 + 메트릭 (OAuth 1.0a)</td></tr>
   <tr><td>Threads OAuth</td><td>/api/threads/auth, /callback</td><td>인바운드</td><td>Threads 토큰 발급 (1회성)</td></tr>
+  <tr><td>Google Tag Manager</td><td>www.googletagmanager.com</td><td>아웃바운드</td><td>태그 관리 (GTM 컨테이너 로드)</td></tr>
+  <tr><td>Google Analytics 4</td><td>www.google-analytics.com</td><td>아웃바운드</td><td>사용자 행동 분석 (GTM 경유)</td></tr>
   <tr><td>50plus.or.kr</td><td>웹 크롤링</td><td>아웃바운드</td><td>일자리 수집</td></tr>
 </table>
 
@@ -1120,9 +1125,9 @@ EXECUTE (매일 09/15/19시)  social-poster.ts
   <tr><td>검색</td><td>3개</td><td>SearchForm, SearchResults, SearchTabs</td></tr>
   <tr><td>마이페이지</td><td>8개</td><td>NicknameSettings, FontSizeSettings, BlockedUserList</td></tr>
   <tr><td>인증</td><td>3개</td><td>LoginForm, LoginPromptModal, OnboardingForm</td></tr>
-  <tr><td>광고</td><td>3개</td><td>AdSlot, AdClickTracker, CoupangCPS</td></tr>
+  <tr><td>광고</td><td>4개</td><td>AdSlot, AdClickTracker, CoupangCPS, CpsClickTracker</td></tr>
   <tr><td>어드민</td><td>11개</td><td>MemberTable, ContentTable, ReportTable, BannerManager</td></tr>
-  <tr><td>공통</td><td>7개</td><td>UserAvatar, ShareButton, OfflineBanner, PageViewTracker</td></tr>
+  <tr><td>공통</td><td>9개</td><td>UserAvatar, ShareButton, OfflineBanner, PageViewTracker, GoogleTagManager, GTMEventOnMount</td></tr>
 </table>
 
 <!-- ═══════════════ 12. 폴더 구조 ═══════════════ -->
@@ -1160,6 +1165,7 @@ EXECUTE (매일 09/15/19시)  social-poster.ts
 │   │       └── my/ auth/ login/ onboarding/
 │   ├── lib/                      # 유틸리티
 │   │   ├── prisma.ts auth.ts format.ts sanitize.ts
+│   │   ├── gtm.ts track.ts      # GTM dataLayer + 내부 EventLog 트래킹
 │   │   ├── actions/              # Server Actions (13개)
 │   │   └── queries/              # DB 쿼리 (6개)
 │   ├── types/                    # 타입 정의
@@ -1224,6 +1230,22 @@ EXECUTE (매일 09/15/19시)  social-poster.ts
         <li>Threads OAuth 토큰 발급 플로우</li>
       </ul>
     </li>
+    <li><strong>GTM + GA4 애널리틱스 기반 (2026-03-26)</strong>
+      <ul>
+        <li>GTM 컨테이너 스크립트 (GoogleTagManager.tsx &mdash; head + noscript)</li>
+        <li>dataLayer 유틸리티 (gtm.ts &mdash; 15개 커스텀 이벤트 헬퍼)</li>
+        <li>이벤트 트래킹: page_view, post_create, comment_create, like, share, search, job_view, magazine_view, ad_click, cps_click</li>
+        <li>CSP 헤더에 Google Analytics/GTM/AdSense 도메인 추가</li>
+        <li>환경변수: NEXT_PUBLIC_GTM_ID, NEXT_PUBLIC_GA4_ID</li>
+      </ul>
+    </li>
+    <li><strong>커뮤니티 활성화 시스템 v3 (2026-03-26)</strong>
+      <ul>
+        <li>20명 페르소나 (여 14 / 남 6), 매거진 자동생성 (월/수/금), CPS 매칭</li>
+        <li>SEO 강화 (OG meta, JSON-LD, sitemap 수정)</li>
+        <li>홈페이지 "지금 이 순간" 실시간 활동 피드</li>
+      </ul>
+    </li>
   </ul>
 </div>
 
@@ -1237,6 +1259,10 @@ EXECUTE (매일 09/15/19시)  social-poster.ts
     <li>Threads OAuth 토큰 발급 (age-doesnt-matter.com/api/threads/auth 접속)</li>
     <li>Google AdSense 승인 신청</li>
     <li>쿠팡 파트너스 가입</li>
+    <li>GA4 계정/속성 생성 &rarr; 측정 ID 발급</li>
+    <li>GTM 컨테이너 생성 &rarr; 컨테이너 ID 발급</li>
+    <li>Vercel에 NEXT_PUBLIC_GTM_ID, NEXT_PUBLIC_GA4_ID 환경변수 등록</li>
+    <li>GTM에서 GA4 구성 태그 + 커스텀 이벤트 태그 설정</li>
   </ul>
 </div>
 
@@ -1890,7 +1916,7 @@ CEO: 최종 수정 (Round 3) &rarr; 창업자: <code>/approve</code> ✅ (revisi
   <div style="margin-bottom:8px"><span class="badge badge-partial">부분</span> QA (Preview 있으나 체크리스트 없음)</div>
   <div style="background:linear-gradient(to right, #fef3c7 65%, #e5e5e5 65%);height:20px;border-radius:4px;margin-bottom:4px"></div>
 
-  <div style="margin-bottom:8px"><span class="badge badge-partial">부분</span> 모니터링 (헬스체크만)</div>
+  <div style="margin-bottom:8px"><span class="badge badge-partial">부분</span> 모니터링 (GTM+GA4 구축, 대시보드 미설정)</div>
   <div style="background:linear-gradient(to right, #fef3c7 35%, #e5e5e5 35%);height:20px;border-radius:4px;margin-bottom:4px"></div>
 
   <div style="margin-bottom:8px"><span class="badge badge-missing">미구축</span> 에이전트 협업</div>
