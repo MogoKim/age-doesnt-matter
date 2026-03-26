@@ -3,9 +3,9 @@
 import { useEffect } from 'react'
 
 const FONT_SIZE_MAP: Record<string, string> = {
-  NORMAL: '16px',
-  LARGE: '18px',
-  XLARGE: '21px',
+  NORMAL: '17px',
+  LARGE: '20px',
+  XLARGE: '24px',
 }
 
 interface FontSizeProviderProps {

@@ -14,11 +14,12 @@ export default function Header({ isLoggedIn = false }: HeaderProps) {
         <Image
           src="/images/logo.png"
           alt="우리나이가어때서"
-          width={150}
+          width={36}
           height={36}
-          className="h-9 w-auto object-contain"
+          className="h-9 w-9 rounded-lg object-contain"
           priority
         />
+        <span className="ml-1.5 text-base font-bold text-foreground">우나어</span>
       </Link>
 
       <div className="flex items-center gap-1">

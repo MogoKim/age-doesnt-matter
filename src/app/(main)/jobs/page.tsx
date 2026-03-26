@@ -17,7 +17,6 @@ interface PageProps {
 }
 
 export const revalidate = 120
-export const dynamic = 'force-dynamic'
 
 export default async function JobsPage({ searchParams }: PageProps) {
   const { region, tags: tagsParam } = await searchParams
@@ -101,7 +100,7 @@ function JobCard({ job }: { job: JobCardItem }) {
               급구
             </span>
           )}
-          {job.tags.slice(0, 3).map((tag) => (
+          {job.tags.slice(0, 2).map((tag) => (
             <span
               key={tag}
               className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[13px] font-medium"

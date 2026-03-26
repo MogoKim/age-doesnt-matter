@@ -11,7 +11,6 @@ export const metadata: Metadata = {
 }
 
 export const revalidate = 60
-export const dynamic = 'force-dynamic'
 
 export default async function BestPage() {
   const [hotResult, fameResult] = await Promise.all([

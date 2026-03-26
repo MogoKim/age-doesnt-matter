@@ -21,9 +21,8 @@ export const metadata: Metadata = {
   description: '나이 걱정 없이 소통하는 따뜻한 커뮤니티. 일자리 정보, 건강·생활 매거진, 자유로운 소통까지.',
 }
 
-// 동적 렌더링 + 60초 ISR 캐싱
+// ISR: 60초마다 백그라운드 재생성 (force-dynamic 제거 → 캐시 활성화)
 export const revalidate = 60
-export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
   const [jobs, trending, editorsPicks, magazine, community] = await Promise.all([

@@ -19,7 +19,7 @@ export default function JobSection({ jobs }: Props) {
   if (jobs.length === 0) return null
 
   return (
-    <section className="py-6 border-b-8 border-background lg:py-8 lg:border-b-0">
+    <section className="py-4 border-b-4 border-background lg:py-8 lg:border-b-0">
       <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
           <span className="text-xl">💼</span>
@@ -40,7 +40,7 @@ export default function JobSection({ jobs }: Props) {
               {job.isUrgent && (
                 <span className="h-[26px] px-2.5 bg-destructive text-white rounded-md text-[15px] font-semibold flex items-center whitespace-nowrap">긴급</span>
               )}
-              {job.tags.slice(0, 3).map((tag) => (
+              {job.tags.slice(0, 2).map((tag) => (
                 <span key={tag} className="h-[26px] px-2.5 bg-primary/10 text-primary rounded-md text-[15px] font-semibold flex items-center whitespace-nowrap">
                   {tag}
                 </span>

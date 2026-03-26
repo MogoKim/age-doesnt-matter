@@ -23,8 +23,8 @@ import { JobProcessor, buildJobContent } from './job-processor.js'
 
 const LIST_URL = 'https://50plus.or.kr/externalList.do'
 const BASE_URL = 'https://www.50plus.or.kr'
-const MAX_SCRAPE = 30 // 목록에서 최대 수집 건수
-const BATCH_SIZE = 5  // 최종 게시 목표 건수
+const MAX_SCRAPE = 50 // 목록에서 최대 수집 건수
+const BATCH_SIZE = 8  // 최종 게시 목표 건수
 
 class COOJobScraper extends BaseAgent {
   constructor() {
@@ -213,8 +213,11 @@ class COOJobScraper extends BaseAgent {
           const regionRaw = ddCount >= 2 ? (await ddItems.nth(1).innerText()).trim() : ''
           const company = ddCount >= 3 ? (await ddItems.nth(2).innerText()).trim() : ''
 
-          // 지역 파싱 (첫 단어만)
-          const region = regionRaw.split(' ')[0] || regionRaw
+          // 지역 파싱 (2단어: "경기 수원시", "서울 강남구" 형태)
+          const regionParts = regionRaw.split(' ').filter(Boolean)
+          const region = regionParts.length >= 2
+            ? `${regionParts[0]} ${regionParts[1]}`
+            : regionRaw
 
           // 상세 페이지 크롤링 (외부 링크 제외)
           let detail: { workHours?: string; jobType?: string; description?: string } = {}

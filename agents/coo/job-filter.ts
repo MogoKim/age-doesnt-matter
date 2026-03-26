@@ -21,8 +21,8 @@ import {
 } from './job-types.js'
 
 const DEFAULT_CONFIG: FilterConfig = {
-  batchSize: 5,
-  femaleQuota: 0.6,
+  batchSize: 8,
+  femaleQuota: 0.5,
   metroQuota: 0.5,
 }
 

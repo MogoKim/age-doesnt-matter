@@ -31,9 +31,9 @@ export default async function MyPage() {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-foreground truncate">{profile.nickname}</h1>
-            <p className="text-sm text-muted-foreground">
-              {gradeInfo?.emoji} {gradeInfo?.label ?? '새싹'} 등급
-            </p>
+            <Link href="/grade" className="text-sm text-muted-foreground no-underline hover:text-primary">
+              {gradeInfo?.emoji} {gradeInfo?.label ?? '새싹'} 등급 <span className="text-primary">ⓘ</span>
+            </Link>
             <p className="text-[15px] text-muted-foreground mt-0.5">
               {profile.grade === 'SPROUT' && '다음 등급: 🌿 단골 (게시글 5개 또는 댓글 20개)'}
               {profile.grade === 'REGULAR' && '다음 등급: 💎 터줏대감 (게시글 20개 + 받은 공감 100개)'}
