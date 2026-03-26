@@ -81,12 +81,14 @@ hotTopics: 상위 5~7개, keywords: 상위 15개, magazineTopics: 상위 3개, p
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
 
-  // JSON 파싱 (코드블록 제거)
-  const jsonStr = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim()
+  // JSON 파싱 (코드블록 제거 + 첫 번째 JSON 객체 추출)
+  const cleaned = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim()
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+  const jsonStr = jsonMatch ? jsonMatch[0] : cleaned
   try {
     return JSON.parse(jsonStr) as TrendAnalysis
   } catch {
-    console.error('[TrendAnalyzer] JSON 파싱 실패, 기본값 반환')
+    console.error('[TrendAnalyzer] JSON 파싱 실패, 원본:', text.slice(0, 200))
     return {
       hotTopics: [],
       keywords: [],
