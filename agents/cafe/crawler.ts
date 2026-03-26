@@ -1,177 +1,351 @@
 /**
  * 네이버 카페 크롤러
- * 로컬 Chrome 프로필을 사용해 로그인 상태로 3개 카페 수집
- * 실행: 로컬 Mac에서만 (cron / 수동)
+ * storage-state.json (쿠키)을 사용해 로그인 상태로 3개 카페 수집
+ * Chrome을 닫을 필요 없이 독립 실행
+ *
+ * 최초 1회: Chrome 닫고 → npx tsx run-local.ts cafe/export-cookies.ts (쿠키 추출)
+ * 이후: npx tsx run-local.ts cafe/crawler.ts (Chrome 열려있어도 OK)
+ *
+ * 전략:
+ *   1차 시도: 신 형식 URL (f-e/cafes/{id}/articles/{id}) — 직접 렌더링, iframe 불필요
+ *   2차 폴백: 구 형식 URL (iframe_url_utf8) — cafe_main iframe에서 추출
  */
-import { chromium, type Browser, type BrowserContext, type Page } from 'playwright'
+import { chromium, type BrowserContext, type Page, type Frame } from 'playwright'
+import { existsSync } from 'fs'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
-import { CAFE_CONFIGS, CHROME_USER_DATA_DIR, CHROME_PROFILE, CRAWL_LIMITS } from './config.js'
+import { CAFE_CONFIGS, CRAWL_LIMITS } from './config.js'
 import type { RawCafePost, CafeConfig } from './types.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const STORAGE_STATE_PATH = resolve(__dirname, 'storage-state.json')
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-/** Chrome 로그인 세션으로 브라우저 열기 */
-async function launchBrowser(): Promise<{ browser: Browser; context: BrowserContext }> {
-  const browser = await chromium.launchPersistentContext(
-    `${CHROME_USER_DATA_DIR}/${CHROME_PROFILE}`,
-    {
-      headless: false,
-      channel: 'chrome',
-      args: [
-        '--disable-blink-features=AutomationControlled',
-        '--no-first-run',
-      ],
-      viewport: { width: 1280, height: 900 },
-      timeout: CRAWL_LIMITS.pageTimeout,
-    },
-  )
-  return { browser: browser.browser()!, context: browser }
+/** Playwright 자체 Chromium + 저장된 쿠키로 브라우저 열기 */
+async function launchBrowser(): Promise<{ context: BrowserContext }> {
+  if (!existsSync(STORAGE_STATE_PATH)) {
+    throw new Error(
+      '쿠키 파일 없음! 먼저 Chrome 닫고 실행:\n  npx tsx run-local.ts cafe/export-cookies.ts',
+    )
+  }
+
+  const browser = await chromium.launch({
+    headless: false,
+    args: [
+      '--disable-blink-features=AutomationControlled',
+      '--no-first-run',
+    ],
+  })
+
+  const context = await browser.newContext({
+    storageState: STORAGE_STATE_PATH,
+    viewport: { width: 1280, height: 900 },
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  })
+
+  return { context }
 }
 
-/** 네이버 카페 글 목록에서 URL 수집 */
-async function collectPostUrls(page: Page, cafe: CafeConfig): Promise<string[]> {
-  const urls: string[] = []
-
-  for (const board of cafe.boards) {
-    const listUrl = board.menuId === 'popular'
-      ? `${cafe.url}?iframe_url=/PopularArticleList.nhn`
-      : `${cafe.url}?iframe_url=/ArticleList.nhn%3Fsearch.clubid=0%26search.boardtype=L`
-
-    console.log(`[CafeCrawler] ${cafe.name} — ${board.name} 수집 중...`)
-
-    for (let pageNum = 1; pageNum <= board.maxPages; pageNum++) {
-      try {
-        await page.goto(listUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
-        await sleep(2000)
-
-        // 네이버 카페는 iframe 구조
-        const cafeFrame = page.frame('cafe_main') ?? page.frames().find(f => f.url().includes('ArticleList') || f.url().includes('PopularArticle'))
-
-        if (!cafeFrame) {
-          console.warn(`[CafeCrawler] ${cafe.name} iframe not found, trying direct`)
-          // iframe 없이 직접 접근 시도
-          const links = await page.locator('a.article').all()
-          for (const link of links) {
-            const href = await link.getAttribute('href')
-            if (href && href.includes('/articles/')) {
-              const fullUrl = href.startsWith('http') ? href : `https://cafe.naver.com${href}`
-              urls.push(fullUrl)
-            }
-          }
-          continue
-        }
-
-        await cafeFrame.waitForSelector('.article-board', { timeout: 10000 }).catch(() => null)
-
-        // 글 목록에서 링크 수집
-        const articleLinks = await cafeFrame.locator('.article-board .board-list .inner_list a.article').all()
-        if (articleLinks.length === 0) {
-          // 다른 셀렉터 시도
-          const altLinks = await cafeFrame.locator('a[href*="/articles/"]').all()
-          for (const link of altLinks) {
-            const href = await link.getAttribute('href')
-            if (href) {
-              const fullUrl = href.startsWith('http') ? href : `https://cafe.naver.com${href}`
-              urls.push(fullUrl)
-            }
-          }
-        } else {
-          for (const link of articleLinks) {
-            const href = await link.getAttribute('href')
-            if (href) {
-              const fullUrl = href.startsWith('http') ? href : `https://cafe.naver.com${href}`
-              urls.push(fullUrl)
-            }
-          }
-        }
-      } catch (err) {
-        console.warn(`[CafeCrawler] ${cafe.name} ${board.name} page ${pageNum} 실패:`, err)
+/** 안전하게 텍스트 추출 — 여러 셀렉터를 순서대로 시도 */
+async function safeText(
+  frame: Page | Frame,
+  selectors: string[],
+  fallback: string = '',
+): Promise<string> {
+  for (const sel of selectors) {
+    try {
+      const el = frame.locator(sel).first()
+      const count = await el.count()
+      if (count > 0) {
+        const text = await el.textContent({ timeout: 3000 })
+        if (text?.trim()) return text.trim()
       }
+    } catch {
+      // 다음 셀렉터 시도
+    }
+  }
+  return fallback
+}
 
-      await sleep(CRAWL_LIMITS.delayBetweenPages)
+/** 안전하게 숫자 추출 */
+async function safeNumber(
+  frame: Page | Frame,
+  selectors: string[],
+): Promise<number> {
+  const text = await safeText(frame, selectors, '0')
+  return parseInt(text.replace(/[^0-9]/g, ''), 10) || 0
+}
+
+// ─── URL 수집 ─────────────────────────────────────────
+
+interface ArticleInfo {
+  articleId: string
+  newFormatUrl: string   // f-e/cafes/{numericId}/articles/{id}
+  oldFormatUrl: string   // cafe.naver.com/{name}?iframe_url_utf8=...
+}
+
+/** 글 목록 URL 수집 — f-e 전체글보기 + 메인 페이지에서 articleId 추출 */
+async function collectPostUrls(page: Page, cafe: CafeConfig): Promise<ArticleInfo[]> {
+  const articleIds = new Set<string>()
+
+  // 방법 1: f-e 전체글보기 (가장 안정적)
+  try {
+    const allPostsUrl = `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/0`
+    console.log(`[CafeCrawler] ${cafe.name} — 전체글보기에서 수집 중...`)
+    await page.goto(allPostsUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
+    await sleep(3000)
+
+    // 스크롤하여 더 많은 글 로드
+    for (let i = 0; i < 3; i++) {
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+      await sleep(1500)
+    }
+
+    const links = await page.locator('a[href*="/articles/"]').all()
+    for (const link of links) {
+      const href = await link.getAttribute('href')
+      if (!href) continue
+      const match = href.match(/\/articles\/(\d+)/)
+      if (match) articleIds.add(match[1])
+    }
+    console.log(`[CafeCrawler] ${cafe.name} 전체글보기: ${articleIds.size}개 글 ID 수집`)
+  } catch (err) {
+    console.warn(`[CafeCrawler] ${cafe.name} 전체글보기 실패:`, err)
+  }
+
+  // 방법 2: 카페 메인 페이지 (보충)
+  if (articleIds.size < 10) {
+    try {
+      console.log(`[CafeCrawler] ${cafe.name} — 메인 페이지 보충 수집...`)
+      await page.goto(cafe.url, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
+      await sleep(3000)
+
+      const links = await page.locator('a[href*="/articles/"]').all()
+      for (const link of links) {
+        const href = await link.getAttribute('href')
+        if (!href) continue
+        const match = href.match(/\/articles\/(\d+)/)
+        if (match) articleIds.add(match[1])
+      }
+      console.log(`[CafeCrawler] ${cafe.name} 메인: 총 ${articleIds.size}개 글 ID`)
+    } catch (err) {
+      console.warn(`[CafeCrawler] ${cafe.name} 메인 페이지 실패:`, err)
     }
   }
 
-  // 중복 제거 + 제한
-  const unique = [...new Set(urls)].slice(0, CRAWL_LIMITS.maxPostsPerCafe)
-  console.log(`[CafeCrawler] ${cafe.name}: ${unique.length}개 URL 수집`)
-  return unique
+  // articleId → 양 형식 URL 모두 생성
+  const articles: ArticleInfo[] = []
+  for (const articleId of articleIds) {
+    articles.push({
+      articleId,
+      newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${articleId}`,
+      oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${articleId}`,
+    })
+  }
+
+  const limited = articles.slice(0, CRAWL_LIMITS.maxPostsPerCafe)
+  console.log(`[CafeCrawler] ${cafe.name}: ${limited.length}개 URL 준비`)
+  return limited
 }
 
-/** 개별 글 상세 크롤링 */
-async function crawlPost(page: Page, url: string, cafe: CafeConfig): Promise<RawCafePost | null> {
+// ─── 신 형식 크롤링 (f-e URL — iframe 불필요) ─────────────
+
+/** 신 형식 URL에서 글 상세 크롤링 — 직접 렌더링이므로 안정적 */
+async function crawlNewFormat(page: Page, article: ArticleInfo, cafe: CafeConfig): Promise<RawCafePost | null> {
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
-    await sleep(2000)
+    await page.goto(article.newFormatUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
+    await sleep(2500)
 
-    // iframe 내부 접근
-    const cafeFrame = page.frame('cafe_main') ?? page.frames().find(f =>
-      f.url().includes('ArticleRead') || f.url().includes('/articles/'),
-    )
+    // 제목 — 신 형식 셀렉터 (페이지 직접 렌더링)
+    const title = await safeText(page, [
+      'h3.title_text',
+      '.title_text',
+      '.se-title-text',
+      '.article_header h3',
+      '.ArticleTitle .title_area',
+      'h2.title',
+    ])
 
-    const frame = cafeFrame ?? page
-
-    // 제목
-    const titleEl = await frame.locator('.title_text, .se-title-text, h3.title_text').first()
-    const title = (await titleEl.textContent().catch(() => null))?.trim()
     if (!title) return null
 
-    // 본문
-    const contentEl = await frame.locator('.se-main-container, .ContentRenderer, .article_viewer').first()
-    let content = (await contentEl.textContent().catch(() => null))?.trim() ?? ''
-    if (content.length > CRAWL_LIMITS.maxContentLength) {
-      content = content.slice(0, CRAWL_LIMITS.maxContentLength)
-    }
-    if (!content || content.length < 10) return null
-
-    // 작성자
-    const authorEl = await frame.locator('.profile_info .nickname, .nick_area .nick, .WriterInfo .nickname').first()
-    const author = (await authorEl.textContent().catch(() => null))?.trim() ?? '익명'
-
-    // 카테고리
-    const categoryEl = await frame.locator('.link_board, .article_category').first()
-    const category = (await categoryEl.textContent().catch(() => null))?.trim() ?? null
-
-    // 좋아요
-    const likeEl = await frame.locator('.like_article .u_cnt, .sympathy_count, .like_article em').first()
-    const likeText = (await likeEl.textContent().catch(() => null))?.trim() ?? '0'
-    const likeCount = parseInt(likeText.replace(/[^0-9]/g, ''), 10) || 0
-
-    // 댓글 수
-    const commentEl = await frame.locator('.comment_count, .comment_info_count .num').first()
-    const commentText = (await commentEl.textContent().catch(() => null))?.trim() ?? '0'
-    const commentCount = parseInt(commentText.replace(/[^0-9]/g, ''), 10) || 0
-
-    // 조회수
-    const viewEl = await frame.locator('.article_info .count, .article_viewer_head .count').first()
-    const viewText = (await viewEl.textContent().catch(() => null))?.trim() ?? '0'
-    const viewCount = parseInt(viewText.replace(/[^0-9]/g, ''), 10) || 0
-
-    // 작성일
-    const dateEl = await frame.locator('.article_info .date, .article_writer .date, .WriterInfo .date').first()
-    const dateText = (await dateEl.textContent().catch(() => null))?.trim()
-    const postedAt = dateText ? new Date(dateText) : new Date()
-    if (isNaN(postedAt.getTime())) postedAt.setTime(Date.now())
-
-    return {
-      cafeId: cafe.id,
-      cafeName: cafe.name,
-      postUrl: url,
-      title,
-      content,
-      author,
-      category,
-      likeCount,
-      commentCount,
-      viewCount,
-      postedAt,
-    }
+    return await buildPostFromTarget(page, article.newFormatUrl, cafe, title)
   } catch (err) {
-    console.warn(`[CafeCrawler] 글 크롤링 실패: ${url}`, err)
+    console.warn(`[CafeCrawler] 신형식 실패: ${article.articleId}`, err instanceof Error ? err.message : '')
     return null
   }
 }
+
+// ─── 구 형식 크롤링 (iframe URL — 폴백) ─────────────
+
+/** 구 형식 URL (iframe) 에서 글 상세 크롤링 */
+async function crawlOldFormat(page: Page, article: ArticleInfo, cafe: CafeConfig): Promise<RawCafePost | null> {
+  try {
+    await page.goto(article.oldFormatUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
+    await sleep(2500)
+
+    // cafe_main iframe 찾기
+    const cafeFrame = page.frame('cafe_main')
+      ?? page.frames().find(f =>
+        f.url().includes('ArticleRead') || f.url().includes('ca-fe/cafes'),
+      )
+
+    if (!cafeFrame) return null
+
+    // iframe 내 콘텐츠 렌더링 대기
+    try {
+      await cafeFrame.waitForSelector('.title_text, .article_header, .se-title-text', { timeout: 8000 })
+    } catch {
+      return null
+    }
+
+    const title = await safeText(cafeFrame, [
+      'h3.title_text',
+      '.title_text',
+      '.se-title-text',
+      '.article_header h3',
+    ])
+
+    if (!title) return null
+
+    return await buildPostFromTarget(cafeFrame, article.oldFormatUrl, cafe, title)
+  } catch {
+    return null
+  }
+}
+
+// ─── 글 데이터 추출 (공통) ─────────────────────────────
+
+/** 페이지/프레임에서 글 데이터 추출 */
+async function buildPostFromTarget(
+  target: Page | Frame,
+  url: string,
+  cafe: CafeConfig,
+  title: string,
+): Promise<RawCafePost | null> {
+  if (!title || title.length < 2) return null
+
+  // 본문
+  let content = await safeText(target, [
+    '.se-main-container',
+    '.ContentRenderer',
+    '.article_viewer',
+    '.content_area .se-component',
+    '.article_container .article_viewer',
+    '#body',
+    '.NHN_Writeform_Main',
+  ])
+
+  if (content.length > CRAWL_LIMITS.maxContentLength) {
+    content = content.slice(0, CRAWL_LIMITS.maxContentLength)
+  }
+
+  if (!content || content.length < 10) {
+    // 이미지만 있는 글 — 제목이라도 저장
+    content = title
+  }
+
+  // 작성자
+  const author = await safeText(target, [
+    '.profile_info .nickname',
+    '.nick_area .nick',
+    '.WriterInfo .nickname',
+    '.article_writer .nickname',
+    '.writer_info .nickname',
+    '.profile_area .nickname',
+    '.nickname',
+    '.nick',
+  ], '익명')
+
+  // 카테고리
+  const category = await safeText(target, [
+    '.link_board',
+    '.article_category',
+    '.ArticleBoardCate',
+    '.board_name',
+  ]) || null
+
+  // 좋아요
+  const likeCount = await safeNumber(target, [
+    '.like_article .u_cnt',
+    '.sympathy_count',
+    '.like_article em',
+    '.u_likeit_list_count .u_cnt',
+    '.LikeButton .count',
+  ])
+
+  // 댓글 수
+  const commentCount = await safeNumber(target, [
+    '.comment_count',
+    '.comment_info_count .num',
+    '.CommentCount',
+    '.reply_count',
+    '.num_comment .num',
+  ])
+
+  // 조회수
+  const viewCount = await safeNumber(target, [
+    '.article_info .count',
+    '.article_viewer_head .count',
+    '.count',
+    '.info_count .num',
+  ])
+
+  // 작성일
+  const dateText = await safeText(target, [
+    '.article_info .date',
+    '.article_writer .date',
+    '.WriterInfo .date',
+    '.date',
+    '.article_info span.date',
+    'time',
+  ])
+
+  let postedAt = dateText ? new Date(dateText.replace(/\./g, '-').replace(/-\s/g, '-').trim()) : new Date()
+  if (isNaN(postedAt.getTime())) {
+    const match = dateText.match(/(\d{4})\.(\d{2})\.(\d{2})\.?\s*(\d{2}):(\d{2})/)
+    if (match) {
+      postedAt = new Date(
+        parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]),
+        parseInt(match[4]), parseInt(match[5]),
+      )
+    } else {
+      postedAt = new Date()
+    }
+  }
+
+  console.log(`[CafeCrawler] ✓ "${title.slice(0, 30)}..." 작성자=${author} 좋아요=${likeCount} 댓글=${commentCount} 조회=${viewCount}`)
+
+  return {
+    cafeId: cafe.id,
+    cafeName: cafe.name,
+    postUrl: url,
+    title,
+    content,
+    author,
+    category,
+    likeCount,
+    commentCount,
+    viewCount,
+    postedAt,
+  }
+}
+
+// ─── 개별 글 크롤링 (신 형식 우선 → 구 형식 폴백) ─────────
+
+/** 개별 글 크롤링 — 신 형식 먼저 시도, 실패 시 구 형식으로 폴백 */
+async function crawlPost(page: Page, article: ArticleInfo, cafe: CafeConfig): Promise<RawCafePost | null> {
+  // 1차: 신 형식 (직접 렌더링, 성공률 높음)
+  const result = await crawlNewFormat(page, article, cafe)
+  if (result) return result
+
+  // 2차: 구 형식 (iframe 기반, 폴백)
+  return crawlOldFormat(page, article, cafe)
+}
+
+// ─── DB 저장 ─────────────────────────────────────────
 
 /** DB에 저장 (중복 skip) */
 async function savePosts(posts: RawCafePost[]): Promise<number> {
@@ -206,33 +380,51 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
   return saved
 }
 
-/** 메인 실행 */
+// ─── 메인 실행 ─────────────────────────────────────────
+
 async function main() {
   console.log('[CafeCrawler] 시작 — 네이버 카페 3곳 크롤링')
   const startTime = Date.now()
 
   let totalCollected = 0
   let totalSaved = 0
+  let totalUrls = 0
 
   const { context } = await launchBrowser()
+  console.log('[CafeCrawler] 브라우저 실행 (Playwright Chromium + 저장된 쿠키)')
   const page = await context.newPage()
 
   try {
     for (const cafe of CAFE_CONFIGS) {
-      console.log(`\n[CafeCrawler] === ${cafe.name} (${cafe.id}) ===`)
+      console.log(`\n[CafeCrawler] === ${cafe.name} (${cafe.id}, #${cafe.numericId}) ===`)
 
       // 1) 글 URL 수집
-      const urls = await collectPostUrls(page, cafe)
+      const articles = await collectPostUrls(page, cafe)
+      totalUrls += articles.length
 
-      // 2) 각 글 상세 크롤링
+      // 2) 각 글 상세 크롤링 (연속 실패 5회 시 차단 의심 → 카페 스킵)
       const posts: RawCafePost[] = []
-      for (const url of urls) {
-        const post = await crawlPost(page, url, cafe)
-        if (post) posts.push(post)
+      let consecutiveFails = 0
+      const MAX_CONSECUTIVE_FAILS = 5
+
+      for (const article of articles) {
+        if (consecutiveFails >= MAX_CONSECUTIVE_FAILS) {
+          console.warn(`[CafeCrawler] ${cafe.name}: 연속 ${MAX_CONSECUTIVE_FAILS}회 실패 — 차단 의심, 이 카페 스킵`)
+          break
+        }
+
+        const post = await crawlPost(page, article, cafe)
+        if (post) {
+          posts.push(post)
+          consecutiveFails = 0
+        } else {
+          consecutiveFails++
+        }
         await sleep(CRAWL_LIMITS.delayBetweenPosts)
       }
 
-      console.log(`[CafeCrawler] ${cafe.name}: ${posts.length}개 글 크롤링 완료`)
+      const successRate = articles.length > 0 ? Math.round(posts.length / articles.length * 100) : 0
+      console.log(`[CafeCrawler] ${cafe.name}: ${posts.length}/${articles.length}개 성공 (수율 ${successRate}%)`)
       totalCollected += posts.length
 
       // 3) DB 저장
@@ -246,6 +438,7 @@ async function main() {
   }
 
   const durationMs = Date.now() - startTime
+  const overallRate = totalUrls > 0 ? Math.round(totalCollected / totalUrls * 100) : 0
 
   // BotLog 기록
   await prisma.botLog.create({
@@ -259,6 +452,8 @@ async function main() {
         cafes: CAFE_CONFIGS.map(c => c.id),
         collected: totalCollected,
         saved: totalSaved,
+        totalUrls,
+        successRate: overallRate,
       }),
       itemCount: totalSaved,
       executionTimeMs: durationMs,
@@ -270,10 +465,10 @@ async function main() {
     level: 'info',
     agent: 'CAFE_CRAWLER',
     title: '카페 크롤링 완료',
-    body: `수집: ${totalCollected}개 / 신규 저장: ${totalSaved}개\n소요: ${Math.round(durationMs / 1000)}초`,
+    body: `수집: ${totalCollected}/${totalUrls}개 (수율 ${overallRate}%) / 신규 저장: ${totalSaved}개\n소요: ${Math.round(durationMs / 1000)}초`,
   })
 
-  console.log(`\n[CafeCrawler] 완료 — 수집 ${totalCollected}, 저장 ${totalSaved}, ${Math.round(durationMs / 1000)}초`)
+  console.log(`\n[CafeCrawler] 완료 — 수집 ${totalCollected}/${totalUrls} (${overallRate}%), 저장 ${totalSaved}, ${Math.round(durationMs / 1000)}초`)
   await disconnect()
 }
 

@@ -13,7 +13,7 @@ class COOContentScheduler extends BaseAgent {
       name: 'COO_CONTENT',
       botType: 'COO',
       role: 'COO (운영총괄 — 콘텐츠)',
-      model: 'heavy',
+      model: 'light',
       tasks: '에디터스 픽 후보 선정, 수다방 발제 주제 생성',
       canWrite: true,
     })

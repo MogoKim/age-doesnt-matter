@@ -27,7 +27,7 @@ interface PostMetrics {
 }
 
 function calcEngagement(m: PostMetrics): number {
-  return (m.likes ?? 0) + (m.replies ?? 0) + (m.reposts ?? m.retweets ?? 0) + (m.quotes ?? 0)
+  return (m.likes ?? 0) + (m.replies ?? 0) + (m.reposts ?? 0) + (m.retweets ?? 0) + (m.quotes ?? 0)
 }
 
 async function main() {
@@ -215,13 +215,15 @@ ${experimentAnalysis ? `\n현재 실험:\n${experimentAnalysis}` : '(활성 실�
   await disconnect()
 }
 
-function getExperimentValue(post: { contentType: string; tone: string | null; personaId: string | null; postingSlot: string | null; promotionLevel: string }, variable: string): string {
+function getExperimentValue(post: { contentType: string; tone: string | null; personaId: string | null; postingSlot: string | null; promotionLevel: string; postText: string }, variable: string): string {
   switch (variable) {
     case 'contentType': return post.contentType
     case 'tone': return post.tone ?? ''
     case 'persona': return post.personaId ?? ''
     case 'postingTime': return post.postingSlot ?? ''
     case 'promotionLevel': return post.promotionLevel
+    case 'format': return post.postText.length < 100 ? 'short' : post.postText.includes('\n') ? 'list' : 'long'
+    case 'interaction': return post.postText.includes('?') || post.postText.includes('여러분') ? 'question' : 'statement'
     default: return ''
   }
 }

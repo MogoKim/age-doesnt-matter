@@ -4,6 +4,9 @@ agents/node_modules
 /.pnp
 .pnp.js
 
+# crawler cookies (sensitive — Naver login session)
+agents/cafe/storage-state.json
+
 # testing
 /coverage
 /test-results/
@@ -59,3 +62,6 @@ antigravity screenshot.png
 .env.vercel
 .env.vercel-check
 supabase/.temp/
+
+# Crawler logs
+/logs/

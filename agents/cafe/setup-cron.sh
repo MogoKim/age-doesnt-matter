@@ -1,6 +1,6 @@
 #!/bin/bash
 # 카페 크롤링 파이프라인 — macOS launchd 설정
-# 하루 3회: 08:30 KST, 12:30 KST, 18:30 KST
+# 하루 2회: 08:30 KST, 18:30 KST (3회→2회 최적화: 크롤링은 아침/저녁 충분)
 #
 # 사용법:
 #   chmod +x agents/cafe/setup-cron.sh
@@ -16,6 +16,16 @@ LOG_DIR="$PROJECT_DIR/logs"
 
 mkdir -p "$LOG_DIR"
 
+# npx 경로 자동 감지 (Homebrew, nvm 등 다양한 환경 대응)
+NPX_PATH=$(which npx 2>/dev/null)
+if [ -z "$NPX_PATH" ]; then
+  echo "❌ npx를 찾을 수 없습니다. Node.js가 설치되어 있는지 확인하세요."
+  exit 1
+fi
+
+# Node.js 경로도 필요 (PATH에 포함)
+NODE_DIR=$(dirname "$NPX_PATH")
+
 cat > "$PLIST_PATH" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -26,7 +36,7 @@ cat > "$PLIST_PATH" << EOF
 
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/bin/npx</string>
+        <string>${NPX_PATH}</string>
         <string>tsx</string>
         <string>${PROJECT_DIR}/agents/cafe/run-pipeline.ts</string>
     </array>
@@ -40,13 +50,6 @@ cat > "$PLIST_PATH" << EOF
         <dict>
             <key>Hour</key>
             <integer>8</integer>
-            <key>Minute</key>
-            <integer>30</integer>
-        </dict>
-        <!-- 12:30 KST (점심) -->
-        <dict>
-            <key>Hour</key>
-            <integer>12</integer>
             <key>Minute</key>
             <integer>30</integer>
         </dict>
@@ -68,7 +71,7 @@ cat > "$PLIST_PATH" << EOF
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+        <string>${NODE_DIR}:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
         <key>HOME</key>
         <string>${HOME}</string>
     </dict>
@@ -82,7 +85,7 @@ echo "✅ plist 생성: $PLIST_PATH"
 launchctl unload "$PLIST_PATH" 2>/dev/null
 launchctl load "$PLIST_PATH"
 
-echo "✅ launchd 등록 완료 — 하루 3회 (08:30, 12:30, 18:30) 실행"
+echo "✅ launchd 등록 완료 — 하루 2회 (08:30, 18:30) 실행"
 echo ""
 echo "📂 로그: $LOG_DIR/cafe-crawler.log"
 echo "🔧 해제: launchctl unload $PLIST_PATH"

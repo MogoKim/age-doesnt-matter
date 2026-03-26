@@ -1,8 +1,8 @@
 name: Agents — Hourly
 on:
   schedule:
-    # 2시간마다 (UTC)
-    - cron: "0 */2 * * *"
+    # 4시간마다 (UTC) — 비용 최적화: 2시간 → 4시간
+    - cron: "0 */4 * * *"
   workflow_dispatch:
     inputs:
       task:

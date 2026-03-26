@@ -212,8 +212,14 @@ ${params.promotionLevel === 'DIRECT' ? '- "우리 나이가 어때서" 커뮤니
       threadsHashtags: parsed.threads_hashtags ?? [],
       xHashtags: parsed.x_hashtags ?? [],
     }
-  } catch {
+  } catch (err) {
     console.error('[SocialPoster] JSON 파싱 실패, 원본:', jsonStr.slice(0, 200))
+    await notifySlack({
+      level: 'important',
+      agent: 'CMO_SOCIAL',
+      title: 'SNS 콘텐츠 생성 실패 — AI JSON 파싱 오류',
+      body: `원본: ${jsonStr.slice(0, 150)}...\n${err instanceof Error ? err.message : ''}`,
+    })
     return { threadsText: '', xText: '', threadsHashtags: [], xHashtags: [] }
   }
 }
@@ -369,12 +375,13 @@ async function main() {
       data: {
         type: 'CONTENT_PUBLISH',
         title: `SNS 게시 승인 — ${SNS_PERSONAS[personaId]?.nickname ?? personaId} (${contentType})`,
-        body: JSON.stringify({
+        description: preview,
+        payload: {
           contentType, tone, personaId, promotionLevel, slot, linkUrl,
           threadsText: content.threadsText, xText: content.xText,
           threadsHashtags: content.threadsHashtags, xHashtags: content.xHashtags,
           sourcePostId, experimentId: experiment?.id,
-        }),
+        },
         requestedBy: 'CMO_SOCIAL',
         status: 'PENDING',
       },
