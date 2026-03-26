@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { createComment } from '@/lib/actions/comments'
+import { gtmCommentCreate } from '@/lib/gtm'
 
 interface CommentInputProps {
   postId: string
@@ -24,6 +25,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder }
       if (result.error) {
         setError(result.error)
       } else {
+        gtmCommentCreate(parentId ? 'reply' : 'comment')
         setValue('')
         onCancel?.()
       }

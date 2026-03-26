@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { prisma } from '@/lib/prisma'
+import CpsClickTracker from './CpsClickTracker'
 
 interface CoupangCPSProps {
   postId: string
@@ -28,35 +29,37 @@ export default async function CoupangCPS({ postId }: CoupangCPSProps) {
       </div>
       <div className="grid gap-3">
         {links.map((link) => (
-          <a
-            key={link.id}
-            href={link.productUrl}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            className="flex items-center gap-3 rounded-lg bg-white p-3 border border-border hover:border-[var(--primary)] transition-colors"
-          >
-            {link.productImageUrl && (
-              <Image
-                src={link.productImageUrl}
-                alt={link.productName}
-                width={64}
-                height={64}
-                className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-              />
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="text-body font-medium text-foreground truncate">{link.productName}</p>
-              {link.rating && (
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {'★'.repeat(Math.round(link.rating))}
-                  {'☆'.repeat(5 - Math.round(link.rating))}
-                  {' '}
-                  {link.rating.toFixed(1)}
-                </p>
+          <CpsClickTracker key={link.id} productName={link.productName} category="">
+
+            <a
+              href={link.productUrl}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="flex items-center gap-3 rounded-lg bg-white p-3 border border-border hover:border-[var(--primary)] transition-colors"
+            >
+              {link.productImageUrl && (
+                <Image
+                  src={link.productImageUrl}
+                  alt={link.productName}
+                  width={64}
+                  height={64}
+                  className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                />
               )}
-            </div>
-            <span className="text-sm text-[var(--primary-text)] font-medium flex-shrink-0">보러가기</span>
-          </a>
+              <div className="min-w-0 flex-1">
+                <p className="text-body font-medium text-foreground truncate">{link.productName}</p>
+                {link.rating && (
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {'★'.repeat(Math.round(link.rating))}
+                    {'☆'.repeat(5 - Math.round(link.rating))}
+                    {' '}
+                    {link.rating.toFixed(1)}
+                  </p>
+                )}
+              </div>
+              <span className="text-sm text-[var(--primary-text)] font-medium flex-shrink-0">보러가기</span>
+            </a>
+          </CpsClickTracker>
         ))}
       </div>
     </aside>

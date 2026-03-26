@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { IconSearch } from '@/components/icons'
+import { gtmSearch } from '@/lib/gtm'
 
 const STORAGE_KEY = 'una-recent-searches'
 const MAX_RECENT = 10
@@ -54,6 +55,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
     const q = query.trim()
     if (q.length < 2) return
     saveToRecent(q)
+    gtmSearch(q)
     router.push(`/search?q=${encodeURIComponent(q)}`)
   }
 

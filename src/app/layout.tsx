@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import Script from 'next/script'
+import { GTMScript, GTMNoScript } from '@/components/common/GoogleTagManager'
 import { ToastProvider } from '@/components/common/Toast'
 import ServiceWorkerRegister from '@/components/common/ServiceWorkerRegister'
 import PageViewTracker from '@/components/common/PageViewTracker'
@@ -52,6 +53,7 @@ export default function RootLayout({
   return (
     <html lang="ko" className={pretendard.variable}>
       <head>
+        <GTMScript />
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4937127825992215"
@@ -60,6 +62,7 @@ export default function RootLayout({
         />
       </head>
       <body className={pretendard.className}>
+        <GTMNoScript />
         <ToastProvider>{children}</ToastProvider>
         <ServiceWorkerRegister />
         <PageViewTracker />

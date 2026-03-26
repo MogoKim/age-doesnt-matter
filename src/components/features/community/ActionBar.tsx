@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap } from '@/lib/actions/likes'
 import { useToast } from '@/components/common/Toast'
 import { shareToKakao, copyShareLink } from '@/lib/kakao-share'
+import { gtmLike, gtmShare } from '@/lib/gtm'
 import { IconHeart, IconBookmark, IconShare, IconFlag, IconKakao, IconCopy } from '@/components/icons'
 import ReportModal from './ReportModal'
 
@@ -34,6 +35,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
     if (willLike) {
       setHeartAnimating(true)
       setTimeout(() => setHeartAnimating(false), 350)
+      gtmLike('post', postId)
     }
 
     startTransition(async () => {
@@ -67,6 +69,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
   async function handleKakaoShare() {
     try {
       await shareToKakao({ title, description, url: window.location.pathname })
+      gtmShare('kakao', 'post', postId)
       setShowShareMenu(false)
     } catch {
       toast('공유에 실패했어요', 'error')
@@ -75,6 +78,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
 
   async function handleCopyLink() {
     const ok = await copyShareLink(window.location.pathname)
+    if (ok) gtmShare('copy_link', 'post', postId)
     toast(ok ? '링크가 복사되었어요' : '링크 복사에 실패했어요', ok ? 'success' : 'error')
     setShowShareMenu(false)
   }

@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { createPost, updatePost } from '@/lib/actions/posts'
 import { saveDraft as saveDraftAction, deleteDraft as deleteDraftAction } from '@/lib/actions/drafts'
 import { useToast } from '@/components/common/Toast'
+import { gtmPostCreate } from '@/lib/gtm'
 import type { ImagePreview } from './TipTapEditor'
 
 // TipTap은 SSR 불가 → dynamic import
@@ -254,6 +255,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
       if (result?.error) {
         setError(result.error)
       } else {
+        if (!isEditMode) gtmPostCreate(selectedBoard, selectedCategory)
         clearDraft()
       }
     })

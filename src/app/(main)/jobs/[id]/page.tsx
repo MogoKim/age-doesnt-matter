@@ -9,6 +9,7 @@ import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { formatSalary } from '@/lib/format'
+import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -91,6 +92,8 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
+      {/* GA4 일자리 조회 이벤트 */}
+      <GTMEventOnMount event="job_view" data={{ job_id: id, job_title: job.title }} />
       {/* JSON-LD 구조화 데이터 */}
       <JobPostingJsonLd job={job} />
 

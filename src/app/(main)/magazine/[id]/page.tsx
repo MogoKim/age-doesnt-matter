@@ -10,6 +10,7 @@ import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeHtml } from '@/lib/sanitize'
+import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 
 const BASE_URL = 'https://age-doesnt-matter.com'
 
@@ -96,6 +97,8 @@ export default async function MagazineDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
+      {/* GA4 매거진 조회 이벤트 */}
+      <GTMEventOnMount event="magazine_view" data={{ article_id: id, article_title: post.title, category: post.category ?? '' }} />
       {/* 구조화 데이터 */}
       <script
         type="application/ld+json"
