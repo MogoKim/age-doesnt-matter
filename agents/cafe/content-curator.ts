@@ -27,12 +27,21 @@ const PERSONAS: PersonaMatch[] = [
   { id: 'B', nickname: '은퇴신사', board: 'STORY', style: '정보형, 차분', patterns: ['~합니다', '~이더군요'], topics: ['퇴직', '건강관리', '재테크', '산책', '독서'] },
   { id: 'C', nickname: '웃음보', board: 'HUMOR', style: '유쾌, 짧은 리액션', patterns: ['ㅋㅋㅋ', '😂'], topics: ['유머', '재미'] },
   { id: 'E', nickname: '동네언니', board: 'STORY', style: '공감, 다정', patterns: ['맞아요~', '저도 그래요'], topics: ['공감', '위로', '경험'] },
-  // 새 페르소나 (확장용)
   { id: 'F', nickname: '텃밭아저씨', board: 'STORY', style: '텃밭, 자연, 요리', patterns: ['~했지요', '~입니다'], topics: ['텃밭', '요리', '자연', '농사'] },
   { id: 'G', nickname: '여행매니아', board: 'STORY', style: '여행, 맛집 탐방', patterns: ['~했어요!', '강추!'], topics: ['여행', '맛집', '산책', '드라이브'] },
   { id: 'H', nickname: '건강박사', board: 'STORY', style: '건강 정보, 운동', patterns: ['~하세요', '~좋습니다'], topics: ['건강', '운동', '관절', '영양제', '수면'] },
   { id: 'I', nickname: '책벌레', board: 'STORY', style: '독서, 문화생활', patterns: ['~읽었는데', '~추천합니다'], topics: ['독서', '영화', '전시', '음악'] },
   { id: 'J', nickname: '요리왕', board: 'STORY', style: '레시피, 반찬', patterns: ['~만들었어요', '~맛있어요'], topics: ['요리', '반찬', '레시피', '장보기'] },
+  { id: 'K', nickname: '패션언니', board: 'STORY', style: '패션, 쇼핑, 자기관리', patterns: ['~했어요', '완전~'], topics: ['패션', '화장품', '쇼핑', '피부'] },
+  { id: 'L', nickname: '손주바보', board: 'STORY', style: '손주 이야기, 육아 경험', patterns: ['우리 손주가~', '~더라구요'], topics: ['손주', '가족', '명절', '육아'] },
+  { id: 'M', nickname: '등산러버', board: 'STORY', style: '등산, 트레킹, 자연 풍경', patterns: ['~다녀왔습니다', '~추천합니다'], topics: ['등산', '둘레길', '산행', '자연'] },
+  { id: 'N', nickname: '살림9단', board: 'STORY', style: '살림 노하우, 절약, 정리정돈', patterns: ['~하면 돼요', '~해보세요'], topics: ['살림', '절약', '정리', '세탁', '재활용'] },
+  { id: 'O', nickname: '음악사랑', board: 'STORY', style: '음악, 추억의 노래, 콘서트', patterns: ['~들으니까', '~생각나요'], topics: ['음악', '노래', '콘서트', '라디오'] },
+  { id: 'P', nickname: '커피한잔', board: 'STORY', style: '카페, 일상, 감성 에세이', patterns: ['~있잖아요', '~좋더라고요'], topics: ['카페', '일상', '산책', '계절'] },
+  { id: 'Q', nickname: '반려견아빠', board: 'STORY', style: '반려동물, 산책, 일상', patterns: ['우리 멍이가~', '~하더라고요'], topics: ['반려견', '산책', '동물병원', '공원'] },
+  { id: 'R', nickname: '드라마덕후', board: 'HUMOR', style: '드라마/예능 감상, 연예인', patterns: ['어제 본 거~', '~완전 재밌어요!'], topics: ['드라마', '예능', '영화', '연예인'] },
+  { id: 'S', nickname: '텃밭할머니', board: 'STORY', style: '텃밭, 꽃, 시골 일상', patterns: ['~피었어요', '~심었는데'], topics: ['꽃', '텃밭', '시골', '계절'] },
+  { id: 'T', nickname: '은퇴교사', board: 'STORY', style: '교육, 인생 조언, 배움', patterns: ['~하시면 좋겠어요', '~해보시는 건 어떨까요'], topics: ['교육', '봉사', '자격증', '배움'] },
 ]
 
 /** 트렌드 주제에 가장 적합한 페르소나 매칭 */
@@ -101,7 +110,7 @@ async function generateCuratedPost(
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 800,
-    system: `당신은 "${persona.nickname}" (5060 시니어 커뮤니티 회원)입니다.
+    system: `당신은 "${persona.nickname}" (50~60대 커뮤니티 회원)입니다.
 성격/스타일: ${persona.style}
 말투: ${persona.patterns.join(', ')}
 
@@ -109,7 +118,9 @@ async function generateCuratedPost(
 - 절대 원본 문장을 그대로 가져오지 마세요
 - 자연스러운 구어체, 맞춤법 살짝 틀려도 됨
 - 본인의 경험담처럼 자연스럽게
-- 정치/종교/혐오/광고 절대 금지`,
+- "시니어", "액티브 시니어" 같은 표현 절대 금지
+- 정치/종교/혐오/광고 절대 금지
+- 카테고리: 일상, 건강, 고민, 자녀, 기타 중 하나 선택`,
     messages: [{
       role: 'user',
       content: `"${topic}" 주제로 글을 써주세요.
@@ -118,23 +129,29 @@ ${references ? `참고 글들:\n${references}` : ''}
 
 응답 형식:
 제목: (15~30자)
+카테고리: (일상/건강/고민/자녀/기타)
 본문: (150~400자, 문단 2~3개)`,
     }],
   })
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
   const titleMatch = text.match(/제목:\s*(.+)/)
+  const categoryMatch = text.match(/카테고리:\s*(.+)/)
   const bodyMatch = text.match(/본문:\s*([\s\S]+)/)
 
   if (!titleMatch || !bodyMatch) return null
+
+  const validCategories = ['일상', '건강', '고민', '자녀', '기타']
+  const category = categoryMatch?.[1]?.trim()
 
   return {
     personaId: persona.id,
     title: titleMatch[1].trim(),
     content: bodyMatch[1].trim(),
     boardType: persona.board,
+    category: validCategories.includes(category ?? '') ? category : '일상',
     sourceTopic: topic,
-    sourcePostIds: referencePosts.map(p => 'ref'),
+    sourcePostIds: referencePosts.map(() => 'ref'),
   }
 }
 
@@ -147,6 +164,7 @@ async function publishCuratedContent(curated: CuratedContent): Promise<void> {
       title: curated.title,
       content: `<p>${curated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`,
       boardType: curated.boardType as 'STORY' | 'HUMOR',
+      category: curated.category ?? '일상',
       authorId: userId,
       source: 'BOT',
       status: 'PUBLISHED',

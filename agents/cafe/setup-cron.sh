@@ -1,6 +1,6 @@
 #!/bin/bash
 # 카페 크롤링 파이프라인 — macOS launchd 설정
-# 하루 2회: 08:30 KST, 18:30 KST (3회→2회 최적화: 크롤링은 아침/저녁 충분)
+# 하루 3회: 08:30, 12:30, 20:40 KST
 #
 # 사용법:
 #   chmod +x agents/cafe/setup-cron.sh
@@ -53,12 +53,19 @@ cat > "$PLIST_PATH" << EOF
             <key>Minute</key>
             <integer>30</integer>
         </dict>
-        <!-- 18:30 KST (저녁) -->
+        <!-- 12:30 KST (점심) -->
         <dict>
             <key>Hour</key>
-            <integer>18</integer>
+            <integer>12</integer>
             <key>Minute</key>
             <integer>30</integer>
+        </dict>
+        <!-- 20:40 KST (저녁) -->
+        <dict>
+            <key>Hour</key>
+            <integer>20</integer>
+            <key>Minute</key>
+            <integer>40</integer>
         </dict>
     </array>
 
@@ -85,7 +92,7 @@ echo "✅ plist 생성: $PLIST_PATH"
 launchctl unload "$PLIST_PATH" 2>/dev/null
 launchctl load "$PLIST_PATH"
 
-echo "✅ launchd 등록 완료 — 하루 2회 (08:30, 18:30) 실행"
+echo "✅ launchd 등록 완료 — 하루 3회 (08:30, 12:30, 20:40) 실행"
 echo ""
 echo "📂 로그: $LOG_DIR/cafe-crawler.log"
 echo "🔧 해제: launchctl unload $PLIST_PATH"

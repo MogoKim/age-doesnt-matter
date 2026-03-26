@@ -5,6 +5,7 @@ export interface CafeConfig {
   id: string        // wgang, welovesilver, 5060years
   name: string      // 한글 카페명
   url: string       // 카페 URL
+  numericId: number // 네이버 내부 카페 숫자 ID (URL에서 추출)
   /** 수집할 게시판 경로 (인기글, 최신글 등) */
   boards: CafeBoardConfig[]
 }
@@ -76,6 +77,7 @@ export interface CuratedContent {
   title: string
   content: string
   boardType: string
+  category?: string    // 게시 카테고리 (일상/건강/고민/자녀/기타)
   sourceTopic: string  // 원본 트렌드 주제
   sourcePostIds: string[] // 참고한 CafePost IDs
 }

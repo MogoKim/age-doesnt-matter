@@ -8,6 +8,13 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 export const metadata: Metadata = {
   title: '매거진',
   description: '건강, 재테크, 여행, 생활정보 등 50·60대를 위한 유익한 콘텐츠',
+  alternates: { canonical: 'https://age-doesnt-matter.com/magazine' },
+  openGraph: {
+    title: '매거진 | 우나어',
+    description: '건강, 재테크, 여행, 생활정보 등 50·60대를 위한 유익한 콘텐츠',
+    url: 'https://age-doesnt-matter.com/magazine',
+    type: 'website',
+  },
 }
 
 const getCachedMagazine = unstable_cache(

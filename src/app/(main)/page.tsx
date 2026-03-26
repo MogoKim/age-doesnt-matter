@@ -8,6 +8,7 @@ import EditorsPickSection from '@/components/features/home/EditorsPickSection'
 import AdInline from '@/components/features/home/AdInline'
 import MagazineSection from '@/components/features/home/MagazineSection'
 import CommunitySection from '@/components/features/home/CommunitySection'
+import RecentActivityFeed from '@/components/features/home/RecentActivityFeed'
 import HomeSidebar from '@/components/features/home/HomeSidebar'
 import {
   getLatestJobs,
@@ -15,6 +16,7 @@ import {
   getEditorsPicks,
   getLatestMagazinePosts,
   getLatestCommunityPosts,
+  getRecentActivities,
 } from '@/lib/queries/posts'
 
 export const metadata: Metadata = {
@@ -49,14 +51,20 @@ const getCachedCommunity = unstable_cache(
   ['home-community'],
   { revalidate: 60 }
 )
+const getCachedActivity = unstable_cache(
+  () => getRecentActivities(8),
+  ['home-activity'],
+  { revalidate: 30 }
+)
 
 export default async function HomePage() {
-  const [jobs, trending, editorsPicks, magazine, community] = await Promise.all([
+  const [jobs, trending, editorsPicks, magazine, community, activities] = await Promise.all([
     getCachedJobs(),
     getCachedTrending(),
     getCachedEditorsPicks(),
     getCachedMagazine(),
     getCachedCommunity(),
+    getCachedActivity(),
   ])
 
   return (
@@ -72,6 +80,7 @@ export default async function HomePage() {
             <EditorsPickSection posts={editorsPicks} />
             <AdInline />
             <MagazineSection posts={magazine} />
+            <RecentActivityFeed activities={activities} />
             <CommunitySection posts={community} />
           </div>
           <HomeSidebar posts={community} />

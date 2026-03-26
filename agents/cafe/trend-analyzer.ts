@@ -43,11 +43,11 @@ async function analyzeTrends(posts: Awaited<ReturnType<typeof getTodayPosts>>): 
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 2000,
-    system: `당신은 5060 시니어 커뮤니티 트렌드 분석가입니다.
+    system: `당신은 50~60대 커뮤니티 트렌드 분석가입니다.
 네이버 카페 3곳(우리가남이가, 실버사랑, 5060세대)에서 수집한 게시글을 분석합니다.
 
 분석 목적:
-1. 요즘 5060이 어떤 이야기를 하는지 파악
+1. 요즘 50~60대가 어떤 이야기를 하는지 파악
 2. 우리 커뮤니티(우나어)에서 다룰 매거진 주제 추천
 3. 새로운 페르소나(시드봇) 캐릭터 힌트 제공
 

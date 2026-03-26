@@ -45,16 +45,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const postPages: MetadataRoute.Sitemap = posts.map((post) => {
     const isJob = post.boardType === 'JOB'
+    const isMagazine = post.boardType === 'MAGAZINE'
     const slug = BOARD_TYPE_TO_SLUG[post.boardType]
-    const url = isJob
-      ? `${BASE_URL}/jobs/${post.id}`
-      : `${BASE_URL}/community/${slug}/${post.id}`
+
+    let url: string
+    if (isJob) {
+      url = `${BASE_URL}/jobs/${post.id}`
+    } else if (isMagazine) {
+      url = `${BASE_URL}/magazine/${post.id}`
+    } else {
+      url = `${BASE_URL}/community/${slug}/${post.id}`
+    }
 
     return {
       url,
       lastModified: post.updatedAt,
       changeFrequency: isJob ? 'daily' : 'weekly',
-      priority: isJob ? 0.9 : 0.6,
+      priority: isJob ? 0.9 : isMagazine ? 0.8 : 0.6,
     }
   })
 
