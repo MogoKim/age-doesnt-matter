@@ -24,7 +24,7 @@ export default function TrendingSection({ posts }: Props) {
           <span className="text-xl">🔥</span>
           지금 뜨는 이야기
         </h2>
-        <Link href="/best" className="text-[15px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
+        <Link href="/best" className="text-[0.88rem] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
           더보기 →
         </Link>
       </div>
@@ -38,10 +38,10 @@ export default function TrendingSection({ posts }: Props) {
               <span className="text-base font-bold text-primary min-w-[24px] shrink-0 leading-[1.4]">{index + 1}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-base text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
-                <div className="flex items-center gap-2.5 text-[15px] text-muted-foreground">
+                <div className="flex items-center gap-2.5 text-[0.88rem] text-muted-foreground">
                   <span>💬 {post.commentCount}</span>
                   <span>❤️ {post.likeCount}</span>
-                  <span className="bg-background px-2 py-0.5 rounded text-[15px] text-muted-foreground">{BOARD_LABEL[post.boardType] ?? post.boardType}</span>
+                  <span className="bg-background px-2 py-0.5 rounded text-[0.88rem] text-muted-foreground">{BOARD_LABEL[post.boardType] ?? post.boardType}</span>
                 </div>
               </div>
             </Link>

@@ -17,7 +17,7 @@ export default function IconMenu() {
   const pathname = usePathname()
 
   return (
-    <nav className="sticky top-14 z-[99] h-16 bg-card border-b border-border flex items-center justify-around lg:hidden" aria-label="주요 메뉴">
+    <nav className="sticky top-[56px] z-[99] h-[64px] bg-card border-b border-border flex items-center justify-around lg:hidden" aria-label="주요 메뉴">
       {MENU_ITEMS.map((item) => {
         const isActive = pathname.startsWith(item.href)
         const Icon = item.icon
@@ -32,7 +32,7 @@ export default function IconMenu() {
             aria-current={isActive ? 'page' : undefined}
           >
             <Icon size={24} filled={isActive} />
-            <span className="text-[15px] leading-none whitespace-nowrap">{item.label}</span>
+            <span className="text-[0.88rem] leading-none whitespace-nowrap">{item.label}</span>
           </Link>
         )
       })}

@@ -66,22 +66,22 @@ export default function GradePage() {
               <span className={`text-3xl ${grade.emojiColor}`}>{grade.emoji}</span>
               <div>
                 <h2 className="text-lg font-bold text-foreground m-0">{grade.label}</h2>
-                <p className="text-[15px] text-muted-foreground m-0">{grade.description}</p>
+                <p className="text-[0.88rem] text-muted-foreground m-0">{grade.description}</p>
               </div>
             </div>
 
             <div className="bg-white/60 rounded-xl p-3 mb-3">
-              <p className="text-[15px] text-foreground m-0">
+              <p className="text-[0.88rem] text-foreground m-0">
                 <span className="font-bold text-primary">승급 조건:</span>{' '}
                 {grade.condition}
               </p>
             </div>
 
             <div>
-              <p className="text-[15px] font-bold text-foreground mb-1.5">혜택</p>
+              <p className="text-[0.88rem] font-bold text-foreground mb-1.5">혜택</p>
               <ul className="list-none m-0 p-0 space-y-1">
                 {grade.benefits.map((benefit) => (
-                  <li key={benefit} className="text-[15px] text-foreground flex items-start gap-2">
+                  <li key={benefit} className="text-[0.88rem] text-foreground flex items-start gap-2">
                     <span className="text-primary shrink-0">✓</span>
                     {benefit}
                   </li>
@@ -131,7 +131,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   return (
     <div className="p-4 bg-card rounded-xl border border-border">
       <p className="text-base font-bold text-foreground mb-1 m-0">Q. {q}</p>
-      <p className="text-[15px] text-muted-foreground m-0 leading-relaxed">{a}</p>
+      <p className="text-[0.88rem] text-muted-foreground m-0 leading-relaxed">{a}</p>
     </div>
   )
 }

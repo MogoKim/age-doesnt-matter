@@ -15,7 +15,7 @@ export default function MagazineSection({ posts }: Props) {
           <span className="text-xl">📖</span>
           매거진
         </h2>
-        <Link href="/magazine" className="text-[15px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
+        <Link href="/magazine" className="text-[0.88rem] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
           전체보기 →
         </Link>
       </div>
@@ -32,8 +32,8 @@ export default function MagazineSection({ posts }: Props) {
               aria-label={article.title}
             />
             <div className="p-3">
-              <span className="text-[15px] text-primary font-semibold mb-1 block">{article.category}</span>
-              <h3 className="text-[15px] font-bold text-foreground leading-[1.4] line-clamp-2 break-keep">{article.title}</h3>
+              <span className="text-[0.88rem] text-primary font-semibold mb-1 block">{article.category}</span>
+              <h3 className="text-[0.88rem] font-bold text-foreground leading-[1.4] line-clamp-2 break-keep">{article.title}</h3>
             </div>
           </Link>
         ))}

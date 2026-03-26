@@ -30,10 +30,10 @@ export default function EditorsPickSection({ posts }: Props) {
               aria-label={post.title}
             />
             <div className="p-4">
-              <span className="inline-flex items-center gap-1 h-6 px-2.5 bg-[var(--badge-editors)] text-white rounded-md text-[15px] font-bold mb-2.5">PO 추천</span>
+              <span className="inline-flex items-center gap-1 h-6 px-2.5 bg-[var(--badge-editors)] text-white rounded-md text-[0.88rem] font-bold mb-2.5">PO 추천</span>
               <h3 className="text-base font-bold text-foreground leading-[1.5] mb-2 break-keep line-clamp-2">{post.title}</h3>
-              <p className="text-[15px] text-muted-foreground leading-relaxed mb-3 line-clamp-2">{post.preview}</p>
-              <div className="flex items-center gap-3 text-[15px] text-muted-foreground">
+              <p className="text-[0.88rem] text-muted-foreground leading-relaxed mb-3 line-clamp-2">{post.preview}</p>
+              <div className="flex items-center gap-3 text-[0.88rem] text-muted-foreground">
                 <span>❤️ {post.likeCount}</span>
                 <span>💬 {post.commentCount}</span>
               </div>

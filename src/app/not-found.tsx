@@ -13,7 +13,7 @@ export default function NotFound() {
       <p className="text-lg text-muted-foreground mb-4 leading-relaxed">
         주소가 잘못되었거나, 삭제된 페이지일 수 있어요.
       </p>
-      <p className="text-[15px] text-muted-foreground mb-8 leading-relaxed">
+      <p className="text-[0.88rem] text-muted-foreground mb-8 leading-relaxed">
         아래 버튼을 눌러 홈으로 돌아가시거나,<br />
         상단 검색에서 원하는 내용을 찾아보세요.
       </p>

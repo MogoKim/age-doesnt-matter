@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { unstable_cache } from 'next/cache'
 import HeroSlider from '@/components/features/home/HeroSlider'
 import IdentitySection from '@/components/features/home/IdentitySection'
 import JobSection from '@/components/features/home/JobSection'
@@ -21,20 +22,45 @@ export const metadata: Metadata = {
   description: '나이 걱정 없이 소통하는 따뜻한 커뮤니티. 일자리 정보, 건강·생활 매거진, 자유로운 소통까지.',
 }
 
-// ISR: 60초마다 백그라운드 재생성 (force-dynamic 제거 → 캐시 활성화)
-export const revalidate = 60
+// layout.tsx의 auth() 때문에 페이지 레벨 ISR이 무효화됨
+// → unstable_cache로 DB 쿼리 자체를 60초 캐싱하여 속도 확보
+const getCachedJobs = unstable_cache(
+  () => getLatestJobs(5),
+  ['home-jobs'],
+  { revalidate: 60 }
+)
+const getCachedTrending = unstable_cache(
+  () => getTrendingPosts(5),
+  ['home-trending'],
+  { revalidate: 60 }
+)
+const getCachedEditorsPicks = unstable_cache(
+  () => getEditorsPicks(2),
+  ['home-editors'],
+  { revalidate: 60 }
+)
+const getCachedMagazine = unstable_cache(
+  () => getLatestMagazinePosts(4),
+  ['home-magazine'],
+  { revalidate: 60 }
+)
+const getCachedCommunity = unstable_cache(
+  () => getLatestCommunityPosts(5),
+  ['home-community'],
+  { revalidate: 60 }
+)
 
 export default async function HomePage() {
   const [jobs, trending, editorsPicks, magazine, community] = await Promise.all([
-    getLatestJobs(5),
-    getTrendingPosts(5),
-    getEditorsPicks(2),
-    getLatestMagazinePosts(4),
-    getLatestCommunityPosts(5),
+    getCachedJobs(),
+    getCachedTrending(),
+    getCachedEditorsPicks(),
+    getCachedMagazine(),
+    getCachedCommunity(),
   ])
 
   return (
-    <div className="pt-[calc(56px+64px)] lg:pt-0">
+    <div>
       <h1 className="sr-only">우리 나이가 어때서 — 5060 세대 커뮤니티</h1>
       <HeroSlider />
       <IdentitySection />

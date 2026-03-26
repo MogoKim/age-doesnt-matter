@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { unstable_cache } from 'next/cache'
 import { getMagazineList } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
@@ -9,10 +10,14 @@ export const metadata: Metadata = {
   description: '건강, 재테크, 여행, 생활정보 등 50·60대를 위한 유익한 콘텐츠',
 }
 
-export const revalidate = 60
+const getCachedMagazine = unstable_cache(
+  () => getMagazineList({ limit: 20 }),
+  ['magazine-list'],
+  { revalidate: 60 }
+)
 
 export default async function MagazinePage() {
-  const { posts } = await getMagazineList({ limit: 20 })
+  const { posts } = await getCachedMagazine()
 
   const featured = posts[0]
   const rest = posts.slice(1)
@@ -67,12 +72,12 @@ function FeaturedCard({ post }: { post: PostSummary }) {
       )}
       <div className="p-4">
         {post.category && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[15px] font-bold mb-2">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[0.88rem] font-bold mb-2">
             {post.category}
           </span>
         )}
         <h3 className="text-lg font-bold text-foreground m-0 mb-2 line-clamp-2">{post.title}</h3>
-        <div className="flex items-center gap-3 text-[15px] text-muted-foreground">
+        <div className="flex items-center gap-3 text-[0.88rem] text-muted-foreground">
           <span>👁 {post.viewCount}</span>
           <span>{formatTimeAgo(post.createdAt)}</span>
         </div>
@@ -92,12 +97,12 @@ function MagazineCard({ post }: { post: PostSummary }) {
       </div>
       <div className="p-3">
         {post.category && (
-          <span className="text-[15px] text-primary font-bold">{post.category}</span>
+          <span className="text-[0.88rem] text-primary font-bold">{post.category}</span>
         )}
         <h3 className="text-sm font-bold text-foreground m-0 line-clamp-2 leading-snug">
           {post.title}
         </h3>
-        <p className="text-[15px] text-muted-foreground mt-1 m-0">
+        <p className="text-[0.88rem] text-muted-foreground mt-1 m-0">
           👁 {post.viewCount} · {formatTimeAgo(post.createdAt)}
         </p>
       </div>

@@ -9,7 +9,7 @@ interface HeaderProps {
 
 export default function Header({ isLoggedIn = false }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-[100] h-14 bg-card border-b border-border flex items-center justify-between px-4 lg:hidden">
+    <header className="sticky top-0 z-[100] h-[56px] bg-card border-b border-border flex items-center justify-between px-4 lg:hidden">
       <Link href="/" className="flex items-center no-underline shrink-0" aria-label="우나어 홈">
         <Image
           src="/images/logo.png"

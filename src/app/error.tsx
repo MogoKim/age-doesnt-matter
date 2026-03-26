@@ -15,7 +15,7 @@ export default function GlobalError({
       <p className="text-lg text-muted-foreground mb-4 leading-relaxed">
         일시적인 오류가 발생했어요.
       </p>
-      <p className="text-[15px] text-muted-foreground mb-8 leading-relaxed">
+      <p className="text-[0.88rem] text-muted-foreground mb-8 leading-relaxed">
         잠시 후 다시 시도해 주세요.<br />
         문제가 계속되면 로그아웃 후 다시 로그인해 보세요.
       </p>

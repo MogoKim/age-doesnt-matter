@@ -32,6 +32,8 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
       if (result.error) {
         setMessage(result.error)
       } else {
+        // localStorage에도 저장 → 다른 페이지에서 즉시 적용
+        localStorage.setItem('unao-font-size', selected)
         setMessage('글자 크기가 변경되었어요')
         router.refresh()
       }

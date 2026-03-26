@@ -362,7 +362,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
       {/* 등급별 안내 */}
       {userGrade === 'SPROUT' && (
         <div className="mb-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
-          <p className="text-[15px] text-foreground leading-relaxed">
+          <p className="text-[0.88rem] text-foreground leading-relaxed">
             🌱 <strong>새싹 등급</strong>이에요. 글쓰기와 댓글이 가능합니다.
             <span className="text-muted-foreground"> 이미지·유튜브 첨부는 🌿 단골 등급부터 가능해요.</span>
           </p>
@@ -377,7 +377,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
             <button
               key={slug}
               className={cn(
-                'flex-1 min-h-[52px] px-4 py-3.5 border-2 rounded-2xl text-[15px] font-medium cursor-pointer transition-all text-center shadow-sm',
+                'flex-1 min-h-[52px] px-4 py-3.5 border-2 rounded-2xl text-[0.88rem] font-medium cursor-pointer transition-all text-center shadow-sm',
                 selectedBoard === slug
                   ? 'border-primary bg-primary/5 text-primary font-bold shadow-[0_0_0_3px_rgba(255,111,97,0.1)]'
                   : 'border-border bg-card text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5'
@@ -397,7 +397,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
             <button
               key={cat}
               className={cn(
-                'shrink-0 px-5 py-2.5 rounded-full border-2 text-[15px] font-medium cursor-pointer transition-all min-h-[52px] flex items-center whitespace-nowrap shadow-sm',
+                'shrink-0 px-5 py-2.5 rounded-full border-2 text-[0.88rem] font-medium cursor-pointer transition-all min-h-[52px] flex items-center whitespace-nowrap shadow-sm',
                 selectedCategory === cat
                   ? 'bg-primary text-white border-primary font-bold shadow-[0_2px_8px_rgba(255,111,97,0.3)]'
                   : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary hover:bg-primary/5'
@@ -412,7 +412,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
 
       {/* 제목 입력 */}
       <div className="mb-6">
-        <label className="flex items-center gap-1 text-[15px] font-bold text-foreground mb-2">
+        <label className="flex items-center gap-1 text-[0.88rem] font-bold text-foreground mb-2">
           제목 <span className="text-primary font-bold">*</span>
         </label>
         <input
@@ -424,7 +424,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
           maxLength={40}
         />
         <div className={cn(
-          'text-right text-[15px] font-medium text-muted-foreground mt-1',
+          'text-right text-[0.88rem] font-medium text-muted-foreground mt-1',
           (title.length > 40 || (title.length > 0 && title.length < 2)) && 'text-destructive font-bold'
         )}>
           {title.length}/40
@@ -433,7 +433,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
 
       {/* 본문 입력 (TipTap 에디터) */}
       <div className="mb-6">
-        <label className="flex items-center gap-1 text-[15px] font-bold text-foreground mb-2">
+        <label className="flex items-center gap-1 text-[0.88rem] font-bold text-foreground mb-2">
           본문 <span className="text-primary font-bold">*</span>
         </label>
         <TipTapEditor
@@ -443,7 +443,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
           onImagesChange={setImages}
         />
         <div className={cn(
-          'text-right text-[15px] font-medium text-muted-foreground mt-1',
+          'text-right text-[0.88rem] font-medium text-muted-foreground mt-1',
           plainTextLength > 0 && plainTextLength < 10 && 'text-destructive font-bold'
         )}>
           {plainTextLength}자
@@ -453,7 +453,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
       {/* 하단 액션바 */}
       <div className="flex items-center justify-between py-6 border-t border-border mt-8 gap-2">
         <button
-          className="min-h-[52px] lg:min-h-[48px] px-8 py-3.5 border-2 border-border rounded-xl bg-card text-muted-foreground text-[15px] font-bold cursor-pointer transition-all hover:border-muted-foreground hover:text-foreground"
+          className="min-h-[52px] lg:min-h-[48px] px-8 py-3.5 border-2 border-border rounded-xl bg-card text-muted-foreground text-[0.88rem] font-bold cursor-pointer transition-all hover:border-muted-foreground hover:text-foreground"
           onClick={handleCancel}
         >
           취소

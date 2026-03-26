@@ -8,7 +8,7 @@ export default function IdentitySection() {
           50·60대 일자리와 따뜻한 수다,{' '}
           우나어에서 만나요
         </p>
-        <Link href="/about" className="shrink-0 text-[15px] text-primary font-semibold no-underline min-h-[44px] flex items-center">
+        <Link href="/about" className="shrink-0 text-[0.88rem] text-primary font-semibold no-underline min-h-[44px] flex items-center">
           알아보기 →
         </Link>
       </div>

@@ -71,7 +71,7 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
 
   if (comment.isDeleted) {
     return (
-      <div className="py-4 border-b border-[#f0eeec] text-muted-foreground text-[15px] italic">
+      <div className="py-4 border-b border-[#f0eeec] text-muted-foreground text-[0.88rem] italic">
         삭제된 댓글입니다.
         {comment.replies.length > 0 && (
           <div>
@@ -98,19 +98,19 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
             <span className="text-sm font-bold text-foreground">{comment.author.nickname}</span>
           </>
         )}
-        <span className="text-[15px] text-muted-foreground">· {formatTimeAgo(comment.createdAt)}</span>
+        <span className="text-[0.88rem] text-muted-foreground">· {formatTimeAgo(comment.createdAt)}</span>
         {comment.isOwn && (
           <div className="ml-auto flex items-center gap-1">
             {comment.canEdit && (
               <button
-                className="text-[15px] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary transition-colors"
+                className="text-[0.88rem] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary transition-colors"
                 onClick={() => { setIsEditing(!isEditing); setEditValue(comment.content) }}
               >
                 수정
               </button>
             )}
             <button
-              className="text-[15px] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
+              className="text-[0.88rem] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
               onClick={handleDelete}
               disabled={isPending}
             >
@@ -129,13 +129,13 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
           />
           <div className="flex justify-end gap-2 mt-2">
             <button
-              className="px-4 py-2 text-[15px] font-bold text-muted-foreground min-h-[52px] rounded-lg hover:text-foreground transition-colors"
+              className="px-4 py-2 text-[0.88rem] font-bold text-muted-foreground min-h-[52px] rounded-lg hover:text-foreground transition-colors"
               onClick={() => setIsEditing(false)}
             >
               취소
             </button>
             <button
-              className="px-4 py-2 text-[15px] font-bold text-white bg-primary rounded-lg min-h-[52px] hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-[0.88rem] font-bold text-white bg-primary rounded-lg min-h-[52px] hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed transition-colors"
               onClick={handleEdit}
               disabled={isPending || !editValue.trim()}
             >
@@ -150,7 +150,7 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
       <div className="flex items-center gap-4">
         <button
           className={cn(
-            'flex items-center gap-1 bg-none border-none text-muted-foreground text-[15px] cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5',
+            'flex items-center gap-1 bg-none border-none text-muted-foreground text-[0.88rem] cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5',
             isLiked && 'text-primary font-bold'
           )}
           onClick={handleLike}
@@ -161,7 +161,7 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
         </button>
         {!isReply && (
           <button
-            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-[15px] cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-[0.88rem] cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
             onClick={() => setShowReplyInput(!showReplyInput)}
             aria-label="답글"
           >

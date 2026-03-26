@@ -18,7 +18,7 @@ export default async function MyCommentsPage() {
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <Link
         href="/my"
-        className="inline-flex items-center gap-1 text-[15px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-[0.88rem] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
       >
         ← 마이페이지
       </Link>
@@ -38,7 +38,7 @@ export default async function MyCommentsPage() {
                 <p className="text-base text-foreground m-0 mb-2 line-clamp-2 leading-relaxed">
                   {comment.content}
                 </p>
-                <div className="flex items-center gap-2 text-[15px] text-muted-foreground">
+                <div className="flex items-center gap-2 text-[0.88rem] text-muted-foreground">
                   <span className="truncate max-w-[200px]">{comment.postTitle}</span>
                   <span>·</span>
                   <span>{formatTimeAgo(comment.createdAt)}</span>

@@ -166,8 +166,8 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
                 검색어를 입력해 주세요
               </p>
               <div className="bg-background rounded-xl p-4 text-left inline-block">
-                <p className="text-[15px] text-foreground font-medium mb-2">검색 팁</p>
-                <ul className="text-[15px] text-muted-foreground space-y-1.5 leading-relaxed">
+                <p className="text-[0.88rem] text-foreground font-medium mb-2">검색 팁</p>
+                <ul className="text-[0.88rem] text-muted-foreground space-y-1.5 leading-relaxed">
                   <li>· 지역명으로 일자리 검색 (예: &quot;강남&quot;, &quot;부산&quot;)</li>
                   <li>· 관심사로 글 찾기 (예: &quot;건강&quot;, &quot;여행&quot;)</li>
                   <li>· 2글자 이상 입력하면 검색돼요</li>

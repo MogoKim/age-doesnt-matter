@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { unstable_cache } from 'next/cache'
 import { getHotPosts, getHallOfFamePosts } from '@/lib/queries/posts'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { PostSummary } from '@/types/api'
@@ -10,12 +11,21 @@ export const metadata: Metadata = {
   description: '우나어 커뮤니티에서 가장 인기 있는 글 모음',
 }
 
-export const revalidate = 60
+const getCachedHot = unstable_cache(
+  () => getHotPosts({ limit: 10 }),
+  ['best-hot'],
+  { revalidate: 60 }
+)
+const getCachedFame = unstable_cache(
+  () => getHallOfFamePosts({ limit: 10 }),
+  ['best-fame'],
+  { revalidate: 60 }
+)
 
 export default async function BestPage() {
   const [hotResult, fameResult] = await Promise.all([
-    getHotPosts({ limit: 10 }),
-    getHallOfFamePosts({ limit: 10 }),
+    getCachedHot(),
+    getCachedFame(),
   ])
 
   return (
@@ -68,16 +78,16 @@ function BestPostCard({ post }: { post: PostSummary }) {
       className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30"
     >
       <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[15px] font-bold">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[0.88rem] font-bold">
           {boardLabel}
         </span>
         {post.promotionLevel === 'HOT' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[15px] font-bold bg-gradient-to-br from-[var(--gradient-hot-from)] to-[var(--gradient-hot-to)] text-white">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.88rem] font-bold bg-gradient-to-br from-[var(--gradient-hot-from)] to-[var(--gradient-hot-to)] text-white">
             🔥 HOT
           </span>
         )}
         {post.promotionLevel === 'HALL_OF_FAME' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[15px] font-bold bg-gradient-to-br from-[var(--gradient-fame-from)] to-[var(--gradient-fame-to)] text-white">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.88rem] font-bold bg-gradient-to-br from-[var(--gradient-fame-from)] to-[var(--gradient-fame-to)] text-white">
             👑 FAME
           </span>
         )}
@@ -93,7 +103,7 @@ function BestPostCard({ post }: { post: PostSummary }) {
         </p>
       )}
 
-      <div className="flex items-center gap-3 text-[15px] text-muted-foreground">
+      <div className="flex items-center gap-3 text-[0.88rem] text-muted-foreground">
         <span>{post.author.gradeEmoji} {post.author.nickname}</span>
         <span>❤️ {post.likeCount}</span>
         <span>💬 {post.commentCount}</span>

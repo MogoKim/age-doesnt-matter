@@ -17,7 +17,7 @@ export default function HomeSidebar({ posts }: Props) {
             <li key={post.id}>
               <Link
                 href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.id}`}
-                className="block py-2.5 border-b border-border last:border-b-0 text-[15px] text-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis no-underline hover:text-primary"
+                className="block py-2.5 border-b border-border last:border-b-0 text-[0.88rem] text-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis no-underline hover:text-primary"
               >
                 {post.title}
               </Link>
@@ -26,7 +26,7 @@ export default function HomeSidebar({ posts }: Props) {
         </ul>
       </div>
       <div className="bg-[var(--surface-warm)] rounded-xl p-4 border border-border relative min-h-[250px] flex items-center justify-center text-muted-foreground text-sm" role="complementary" aria-label="광고 영역">
-        <span className="absolute top-2 right-3 text-[15px] text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border">광고</span>
+        <span className="absolute top-2 right-3 text-[0.88rem] text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border">광고</span>
         광고 영역
       </div>
     </aside>
