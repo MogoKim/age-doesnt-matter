@@ -1,7 +1,6 @@
 name: "Agents — Cafe Trend & Curate"
 
 on:
-  # 로컬 크롤링 후 수동 트리거
   workflow_dispatch:
     inputs:
       step:
@@ -14,7 +13,7 @@ on:
           - analyze
           - curate
 
-  # 매일 09:00, 13:00, 19:00 KST — 로컬 크롤링 후 30분 뒤 자동 분석
+  # 매일 09:00, 13:00, 19:00 KST — 카페 트렌드 분석 + 콘텐츠 큐레이션
   schedule:
     - cron: "0 0 * * *"   # 09:00 KST
     - cron: "0 4 * * *"   # 13:00 KST
@@ -24,6 +23,8 @@ env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   DIRECT_URL: ${{ secrets.DIRECT_URL }}
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
   SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
   SLACK_CHANNEL_CEO_FOUNDER: ${{ secrets.SLACK_CHANNEL_CEO_FOUNDER }}
@@ -39,6 +40,7 @@ env:
   SLACK_CHANNEL_LOG_MARKETING: ${{ secrets.SLACK_CHANNEL_LOG_MARKETING }}
   SLACK_CHANNEL_LOG_COST: ${{ secrets.SLACK_CHANNEL_LOG_COST }}
   SLACK_CHANNEL_EXPERIMENT: ${{ secrets.SLACK_CHANNEL_EXPERIMENT }}
+
 jobs:
   analyze-and-curate:
     runs-on: ubuntu-latest
@@ -53,14 +55,13 @@ jobs:
           cache: "npm"
 
       - run: npm ci
-
-      - name: Generate Prisma Client
-        run: npx prisma generate
+      - run: npx prisma generate
+      - run: cd agents && npm ci
 
       - name: Run Trend Analyzer
         if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'analyze' || github.event_name == 'schedule' }}
-        run: npx tsx agents/cafe/trend-analyzer.ts
+        run: cd agents && npx tsx cafe/trend-analyzer.ts
 
       - name: Run Content Curator
         if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'curate' || github.event_name == 'schedule' }}
-        run: npx tsx agents/cafe/content-curator.ts
+        run: cd agents && npx tsx cafe/content-curator.ts

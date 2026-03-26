@@ -1,7 +1,7 @@
 name: Agents — Hourly
 on:
   schedule:
-    # 2시간마다 (UTC) — API 비용 50% 절감
+    # 2시간마다 (UTC)
     - cron: "0 */2 * * *"
   workflow_dispatch:
     inputs:
@@ -9,6 +9,28 @@ on:
         description: "실행할 태스크 (health-check, error-monitor, anomaly-detector)"
         required: true
         default: "health-check"
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+  SLACK_CHANNEL_CEO_FOUNDER: ${{ secrets.SLACK_CHANNEL_CEO_FOUNDER }}
+  SLACK_CHANNEL_DAILY_BRIEFING: ${{ secrets.SLACK_CHANNEL_DAILY_BRIEFING }}
+  SLACK_CHANNEL_WEEKLY_REPORT: ${{ secrets.SLACK_CHANNEL_WEEKLY_REPORT }}
+  SLACK_CHANNEL_AGENT_MEETING: ${{ secrets.SLACK_CHANNEL_AGENT_MEETING }}
+  SLACK_CHANNEL_MEETING_LOG: ${{ secrets.SLACK_CHANNEL_MEETING_LOG }}
+  SLACK_CHANNEL_ALERT_URGENT: ${{ secrets.SLACK_CHANNEL_ALERT_URGENT }}
+  SLACK_CHANNEL_ALERT_SYSTEM: ${{ secrets.SLACK_CHANNEL_ALERT_SYSTEM }}
+  SLACK_CHANNEL_ALERT_KPI: ${{ secrets.SLACK_CHANNEL_ALERT_KPI }}
+  SLACK_CHANNEL_LOG_JOBS: ${{ secrets.SLACK_CHANNEL_LOG_JOBS }}
+  SLACK_CHANNEL_LOG_CONTENT: ${{ secrets.SLACK_CHANNEL_LOG_CONTENT }}
+  SLACK_CHANNEL_LOG_MARKETING: ${{ secrets.SLACK_CHANNEL_LOG_MARKETING }}
+  SLACK_CHANNEL_LOG_COST: ${{ secrets.SLACK_CHANNEL_LOG_COST }}
+  SLACK_CHANNEL_EXPERIMENT: ${{ secrets.SLACK_CHANNEL_EXPERIMENT }}
+  SITE_URL: ${{ secrets.SITE_URL }}
 
 jobs:
   health-check:
@@ -22,23 +44,6 @@ jobs:
       - run: npx prisma generate
       - run: cd agents && npm ci
       - run: cd agents && npx tsx cron/runner.ts cto health-check
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
-  SLACK_CHANNEL_CEO_FOUNDER: ${{ secrets.SLACK_CHANNEL_CEO_FOUNDER }}
-  SLACK_CHANNEL_DAILY_BRIEFING: ${{ secrets.SLACK_CHANNEL_DAILY_BRIEFING }}
-  SLACK_CHANNEL_WEEKLY_REPORT: ${{ secrets.SLACK_CHANNEL_WEEKLY_REPORT }}
-  SLACK_CHANNEL_AGENT_MEETING: ${{ secrets.SLACK_CHANNEL_AGENT_MEETING }}
-  SLACK_CHANNEL_MEETING_LOG: ${{ secrets.SLACK_CHANNEL_MEETING_LOG }}
-  SLACK_CHANNEL_ALERT_URGENT: ${{ secrets.SLACK_CHANNEL_ALERT_URGENT }}
-  SLACK_CHANNEL_ALERT_SYSTEM: ${{ secrets.SLACK_CHANNEL_ALERT_SYSTEM }}
-  SLACK_CHANNEL_ALERT_KPI: ${{ secrets.SLACK_CHANNEL_ALERT_KPI }}
-  SLACK_CHANNEL_LOG_JOBS: ${{ secrets.SLACK_CHANNEL_LOG_JOBS }}
-  SLACK_CHANNEL_LOG_CONTENT: ${{ secrets.SLACK_CHANNEL_LOG_CONTENT }}
-  SLACK_CHANNEL_LOG_MARKETING: ${{ secrets.SLACK_CHANNEL_LOG_MARKETING }}
-  SLACK_CHANNEL_LOG_COST: ${{ secrets.SLACK_CHANNEL_LOG_COST }}
-  SLACK_CHANNEL_EXPERIMENT: ${{ secrets.SLACK_CHANNEL_EXPERIMENT }}          SITE_URL: ${{ secrets.SITE_URL }}
 
   error-monitor:
     runs-on: ubuntu-latest
@@ -51,23 +56,7 @@ jobs:
       - run: npx prisma generate
       - run: cd agents && npm ci
       - run: cd agents && npx tsx cron/runner.ts cto error-monitor
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
-  SLACK_CHANNEL_CEO_FOUNDER: ${{ secrets.SLACK_CHANNEL_CEO_FOUNDER }}
-  SLACK_CHANNEL_DAILY_BRIEFING: ${{ secrets.SLACK_CHANNEL_DAILY_BRIEFING }}
-  SLACK_CHANNEL_WEEKLY_REPORT: ${{ secrets.SLACK_CHANNEL_WEEKLY_REPORT }}
-  SLACK_CHANNEL_AGENT_MEETING: ${{ secrets.SLACK_CHANNEL_AGENT_MEETING }}
-  SLACK_CHANNEL_MEETING_LOG: ${{ secrets.SLACK_CHANNEL_MEETING_LOG }}
-  SLACK_CHANNEL_ALERT_URGENT: ${{ secrets.SLACK_CHANNEL_ALERT_URGENT }}
-  SLACK_CHANNEL_ALERT_SYSTEM: ${{ secrets.SLACK_CHANNEL_ALERT_SYSTEM }}
-  SLACK_CHANNEL_ALERT_KPI: ${{ secrets.SLACK_CHANNEL_ALERT_KPI }}
-  SLACK_CHANNEL_LOG_JOBS: ${{ secrets.SLACK_CHANNEL_LOG_JOBS }}
-  SLACK_CHANNEL_LOG_CONTENT: ${{ secrets.SLACK_CHANNEL_LOG_CONTENT }}
-  SLACK_CHANNEL_LOG_MARKETING: ${{ secrets.SLACK_CHANNEL_LOG_MARKETING }}
-  SLACK_CHANNEL_LOG_COST: ${{ secrets.SLACK_CHANNEL_LOG_COST }}
-  SLACK_CHANNEL_EXPERIMENT: ${{ secrets.SLACK_CHANNEL_EXPERIMENT }}
+
   anomaly-detector:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule' || github.event.inputs.task == 'anomaly-detector'
@@ -79,20 +68,3 @@ jobs:
       - run: npx prisma generate
       - run: cd agents && npm ci
       - run: cd agents && npx tsx cron/runner.ts cdo anomaly-detector
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
-  SLACK_CHANNEL_CEO_FOUNDER: ${{ secrets.SLACK_CHANNEL_CEO_FOUNDER }}
-  SLACK_CHANNEL_DAILY_BRIEFING: ${{ secrets.SLACK_CHANNEL_DAILY_BRIEFING }}
-  SLACK_CHANNEL_WEEKLY_REPORT: ${{ secrets.SLACK_CHANNEL_WEEKLY_REPORT }}
-  SLACK_CHANNEL_AGENT_MEETING: ${{ secrets.SLACK_CHANNEL_AGENT_MEETING }}
-  SLACK_CHANNEL_MEETING_LOG: ${{ secrets.SLACK_CHANNEL_MEETING_LOG }}
-  SLACK_CHANNEL_ALERT_URGENT: ${{ secrets.SLACK_CHANNEL_ALERT_URGENT }}
-  SLACK_CHANNEL_ALERT_SYSTEM: ${{ secrets.SLACK_CHANNEL_ALERT_SYSTEM }}
-  SLACK_CHANNEL_ALERT_KPI: ${{ secrets.SLACK_CHANNEL_ALERT_KPI }}
-  SLACK_CHANNEL_LOG_JOBS: ${{ secrets.SLACK_CHANNEL_LOG_JOBS }}
-  SLACK_CHANNEL_LOG_CONTENT: ${{ secrets.SLACK_CHANNEL_LOG_CONTENT }}
-  SLACK_CHANNEL_LOG_MARKETING: ${{ secrets.SLACK_CHANNEL_LOG_MARKETING }}
-  SLACK_CHANNEL_LOG_COST: ${{ secrets.SLACK_CHANNEL_LOG_COST }}
-  SLACK_CHANNEL_EXPERIMENT: ${{ secrets.SLACK_CHANNEL_EXPERIMENT }}

@@ -21,6 +21,7 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
+    "@slack/web-api": "^7.8.0",
     "oauth-1.0a": "^2.2.6",
     "pg": "^8.13.0",
     "yaml": "^2.7.0"
