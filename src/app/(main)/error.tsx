@@ -20,13 +20,13 @@ export default function MainError({
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <button
           onClick={reset}
-          className="inline-flex items-center justify-center min-h-[52px] px-8 py-3 bg-primary text-white font-bold text-base rounded-2xl transition-opacity hover:opacity-90"
+          className="inline-flex items-center justify-center min-h-[52px] px-8 py-3 bg-primary text-white font-bold text-body rounded-2xl transition-opacity hover:opacity-90"
         >
           다시 시도하기
         </button>
         <Link
           href="/"
-          className="inline-flex items-center justify-center min-h-[52px] px-8 py-3 border-2 border-border bg-card text-foreground font-bold text-base rounded-2xl no-underline transition-colors hover:border-primary hover:text-primary"
+          className="inline-flex items-center justify-center min-h-[52px] px-8 py-3 border-2 border-border bg-card text-foreground font-bold text-body rounded-2xl no-underline transition-colors hover:border-primary hover:text-primary"
         >
           홈으로 가기
         </Link>

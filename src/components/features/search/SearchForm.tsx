@@ -83,7 +83,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="검색어를 입력해 주세요"
-          className="flex-1 h-12 px-4 bg-background border border-border rounded-xl text-base text-foreground outline-none transition-colors focus:border-primary placeholder:text-muted-foreground"
+          className="flex-1 h-12 px-4 bg-background border border-border rounded-xl text-body text-foreground outline-none transition-colors focus:border-primary placeholder:text-muted-foreground"
           aria-label="검색어 입력"
         />
         <button
@@ -102,7 +102,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
           {recentSearches.length > 0 && (
             <section className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold text-foreground">최근 검색어</h3>
+                <h3 className="text-body font-bold text-foreground">최근 검색어</h3>
                 <button
                   type="button"
                   onClick={clearAllRecent}
@@ -117,7 +117,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
                     <button
                       type="button"
                       onClick={() => handleKeywordClick(keyword)}
-                      className="flex-1 text-left text-base text-foreground py-3 min-h-[52px] px-2"
+                      className="flex-1 text-left text-body text-foreground py-3 min-h-[52px] px-2"
                     >
                       {keyword}
                     </button>
@@ -138,7 +138,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
           {/* 인기 검색어 */}
           {popularKeywords.length > 0 && (
             <section>
-              <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-1.5">
+              <h3 className="text-body font-bold text-foreground mb-4 flex items-center gap-1.5">
                 🔥 인기 검색어
               </h3>
               <ol className="space-y-1">
@@ -149,10 +149,10 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
                       onClick={() => handleKeywordClick(keyword)}
                       className="flex items-center gap-3 w-full text-left py-3 min-h-[52px] px-2"
                     >
-                      <span className="text-base font-bold text-primary w-6 text-center">
+                      <span className="text-body font-bold text-primary w-6 text-center">
                         {idx + 1}
                       </span>
-                      <span className="text-base text-foreground">{keyword}</span>
+                      <span className="text-body text-foreground">{keyword}</span>
                     </button>
                   </li>
                 ))}
@@ -162,12 +162,12 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
 
           {recentSearches.length === 0 && popularKeywords.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-muted-foreground text-base mb-4">
+              <p className="text-muted-foreground text-body mb-4">
                 검색어를 입력해 주세요
               </p>
               <div className="bg-background rounded-xl p-4 text-left inline-block">
-                <p className="text-[0.88rem] text-foreground font-medium mb-2">검색 팁</p>
-                <ul className="text-[0.88rem] text-muted-foreground space-y-1.5 leading-relaxed">
+                <p className="text-caption text-foreground font-medium mb-2">검색 팁</p>
+                <ul className="text-caption text-muted-foreground space-y-1.5 leading-relaxed">
                   <li>· 지역명으로 일자리 검색 (예: &quot;강남&quot;, &quot;부산&quot;)</li>
                   <li>· 관심사로 글 찾기 (예: &quot;건강&quot;, &quot;여행&quot;)</li>
                   <li>· 2글자 이상 입력하면 검색돼요</li>

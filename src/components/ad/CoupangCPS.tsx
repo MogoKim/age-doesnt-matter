@@ -21,8 +21,8 @@ export default async function CoupangCPS({ postId }: CoupangCPSProps) {
       aria-label="추천 상품"
     >
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-semibold text-foreground">이 글과 관련된 상품</h3>
-        <span className="text-[13px] text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border">
+        <h3 className="text-body font-semibold text-foreground">이 글과 관련된 상품</h3>
+        <span className="text-caption text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border">
           광고
         </span>
       </div>
@@ -45,7 +45,7 @@ export default async function CoupangCPS({ postId }: CoupangCPSProps) {
               />
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-base font-medium text-foreground truncate">{link.productName}</p>
+              <p className="text-body font-medium text-foreground truncate">{link.productName}</p>
               {link.rating && (
                 <p className="text-sm text-muted-foreground mt-0.5">
                   {'★'.repeat(Math.round(link.rating))}

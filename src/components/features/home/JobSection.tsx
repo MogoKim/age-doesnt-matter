@@ -21,11 +21,11 @@ export default function JobSection({ jobs }: Props) {
   return (
     <section className="py-4 border-b-4 border-background lg:py-8 lg:border-b-0">
       <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+        <h2 className="text-title font-bold text-foreground flex items-center gap-2">
           <span className="text-xl">💼</span>
           오늘의 추천 일자리
         </h2>
-        <Link href="/jobs" className="text-[0.88rem] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
+        <Link href="/jobs" className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
           전체보기 →
         </Link>
       </div>
@@ -38,21 +38,21 @@ export default function JobSection({ jobs }: Props) {
           >
             <div className="flex gap-1.5 flex-wrap mb-2.5">
               {job.isUrgent && (
-                <span className="h-[26px] px-2.5 bg-destructive text-white rounded-md text-[0.88rem] font-semibold flex items-center whitespace-nowrap">긴급</span>
+                <span className="h-[26px] px-2.5 bg-destructive text-white rounded-md text-caption font-semibold flex items-center whitespace-nowrap">긴급</span>
               )}
               {job.tags.slice(0, 2).map((tag) => (
-                <span key={tag} className="h-[26px] px-2.5 bg-primary/10 text-primary rounded-md text-[0.88rem] font-semibold flex items-center whitespace-nowrap">
+                <span key={tag} className="h-[26px] px-2.5 bg-primary/10 text-primary rounded-md text-caption font-semibold flex items-center whitespace-nowrap">
                   {tag}
                 </span>
               ))}
             </div>
-            <h3 className="text-base font-bold text-foreground mb-1.5 leading-[1.4] line-clamp-2">{job.title}</h3>
-            <div className="text-[0.88rem] text-muted-foreground mb-2 flex items-center gap-1.5">
+            <h3 className="text-body font-bold text-foreground mb-1.5 leading-[1.4] line-clamp-2">{job.title}</h3>
+            <div className="text-caption text-muted-foreground mb-2 flex items-center gap-1.5">
               <span>{job.location}</span>
               <span>·</span>
               <span className="text-primary font-bold">{formatSalary(job.salary)}</span>
             </div>
-            {job.highlight && <p className="text-[0.88rem] text-muted-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis">{job.highlight}</p>}
+            {job.highlight && <p className="text-caption text-muted-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis">{job.highlight}</p>}
           </Link>
         ))}
       </div>

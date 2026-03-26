@@ -9,7 +9,7 @@ export default function PrivacyPage() {
     <div className="max-w-[720px] mx-auto px-4 py-8 md:px-6 md:py-12">
       <h1 className="text-2xl font-bold text-foreground mb-8">개인정보처리방침</h1>
 
-      <div className="prose-senior space-y-8 text-base text-foreground leading-[1.85] break-keep">
+      <div className="prose-senior space-y-8 text-body text-foreground leading-[1.85] break-keep">
         <section>
           <h2 className="text-lg font-bold mb-3">1. 개인정보의 수집 및 이용 목적</h2>
           <p>

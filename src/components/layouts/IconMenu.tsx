@@ -17,7 +17,7 @@ export default function IconMenu() {
   const pathname = usePathname()
 
   return (
-    <nav className="sticky top-[56px] z-[99] h-[64px] bg-card border-b border-border flex items-center justify-around lg:hidden" aria-label="주요 메뉴">
+    <nav className="sticky top-[56px] z-[99] min-h-[64px] bg-card border-b border-border flex items-center justify-around lg:hidden overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="주요 메뉴">
       {MENU_ITEMS.map((item) => {
         const isActive = pathname.startsWith(item.href)
         const Icon = item.icon
@@ -26,13 +26,13 @@ export default function IconMenu() {
             key={item.href}
             href={item.href}
             className={cn(
-              'nav-icon-hover flex flex-col items-center justify-center gap-1 min-w-[52px] min-h-[52px] p-1 no-underline text-muted-foreground relative [-webkit-tap-highlight-color:transparent] hover:text-primary-text',
+              'nav-icon-hover flex flex-col items-center justify-center gap-1 shrink-0 min-w-[52px] min-h-[52px] p-1 no-underline text-muted-foreground relative [-webkit-tap-highlight-color:transparent] hover:text-primary-text',
               isActive && 'text-primary-text after:content-[""] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-6 after:h-0.5 after:bg-primary after:rounded-sm'
             )}
             aria-current={isActive ? 'page' : undefined}
           >
             <Icon size={24} filled={isActive} />
-            <span className="text-[0.88rem] leading-none whitespace-nowrap">{item.label}</span>
+            <span className="text-caption leading-none whitespace-nowrap">{item.label}</span>
           </Link>
         )
       })}

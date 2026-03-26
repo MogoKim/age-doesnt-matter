@@ -68,10 +68,10 @@ export default async function PostDetailPage({ params }: PageProps) {
       {/* 게시글 헤더 */}
       <div className="mb-8 pb-6 border-b border-border">
         {post.category && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-bold w-fit mb-2">{post.category}</span>
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-caption font-bold w-fit mb-2">{post.category}</span>
         )}
         <h1 className="text-xl font-bold text-foreground m-0 mb-4 leading-[1.4]">{post.title}</h1>
-        <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+        <div className="flex items-center gap-2 text-caption text-muted-foreground">
           <span>{post.author.gradeEmoji}</span>
           <span className="font-bold text-foreground">{post.author.nickname}</span>
           <span>·</span>
@@ -83,7 +83,7 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 본문 */}
       <div
-        className="text-base text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4 [&_img]:max-w-full [&_img]:rounded-xl [&_img]:my-4 [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4"
+        className="text-body text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4 [&_img]:max-w-full [&_img]:rounded-xl [&_img]:my-4 [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4"
         dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
       />
 

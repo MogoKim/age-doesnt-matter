@@ -21,7 +21,7 @@ export default async function MySettingsPage() {
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <Link
         href="/my"
-        className="inline-flex items-center gap-1 text-[0.88rem] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-caption font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
       >
         ← 마이페이지
       </Link>
@@ -31,7 +31,7 @@ export default async function MySettingsPage() {
       <div className="space-y-6">
         {/* 닉네임 변경 */}
         <section className="bg-card rounded-2xl p-6 border border-border">
-          <h2 className="text-base font-bold text-foreground mb-4">닉네임 변경</h2>
+          <h2 className="text-body font-bold text-foreground mb-4">닉네임 변경</h2>
           <NicknameSettings
             currentNickname={settings.nickname}
             canChange={settings.canChangeNickname}
@@ -41,13 +41,13 @@ export default async function MySettingsPage() {
 
         {/* 글자 크기 */}
         <section className="bg-card rounded-2xl p-6 border border-border">
-          <h2 className="text-base font-bold text-foreground mb-4">글자 크기</h2>
+          <h2 className="text-body font-bold text-foreground mb-4">글자 크기</h2>
           <FontSizeSettings currentSize={settings.fontSize} />
         </section>
 
         {/* 정보 공개 설정 */}
         <section className="bg-card rounded-2xl p-6 border border-border">
-          <h2 className="text-base font-bold text-foreground mb-4">정보 공개 설정</h2>
+          <h2 className="text-body font-bold text-foreground mb-4">정보 공개 설정</h2>
           <PrivacySettings
             isGenderPublic={settings.isGenderPublic}
             isRegionPublic={settings.isRegionPublic}
@@ -56,12 +56,12 @@ export default async function MySettingsPage() {
 
         {/* 차단 관리 */}
         <section className="bg-card rounded-2xl p-6 border border-border">
-          <h2 className="text-base font-bold text-foreground mb-4">차단 관리</h2>
+          <h2 className="text-body font-bold text-foreground mb-4">차단 관리</h2>
           <BlockedUserList />
         </section>
         {/* 회원 탈퇴 */}
         <section className="bg-card rounded-2xl p-6 border border-border">
-          <h2 className="text-base font-bold text-foreground mb-4">회원 탈퇴</h2>
+          <h2 className="text-body font-bold text-foreground mb-4">회원 탈퇴</h2>
           <WithdrawSection />
         </section>
       </div>

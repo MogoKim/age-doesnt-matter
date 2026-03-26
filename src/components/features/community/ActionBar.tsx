@@ -79,7 +79,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
     setShowShareMenu(false)
   }
 
-  const btnBase = 'action-btn flex items-center gap-2 min-h-[52px] min-w-[52px] px-4 py-2 bg-none border-none text-muted-foreground text-[0.88rem] font-medium cursor-pointer rounded-xl justify-center hover:bg-primary/5 hover:text-primary-text'
+  const btnBase = 'action-btn flex items-center gap-2 min-h-[52px] min-w-[52px] px-4 py-2 bg-none border-none text-muted-foreground text-caption font-medium cursor-pointer rounded-xl justify-center hover:bg-primary/5 hover:text-primary-text'
 
   return (
     <>
@@ -116,7 +116,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
                 <button
                   type="button"
                   onClick={handleKakaoShare}
-                  className="action-btn flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[52px] text-[0.88rem] text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text"
+                  className="action-btn flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[52px] text-caption text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text"
                 >
                   <IconKakao size={18} />
                   <span>카카오톡</span>
@@ -124,7 +124,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="action-btn flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[52px] text-[0.88rem] text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text"
+                  className="action-btn flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[52px] text-caption text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text"
                 >
                   <IconCopy size={18} />
                   <span>링크 복사</span>

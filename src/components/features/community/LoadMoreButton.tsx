@@ -63,7 +63,7 @@ export default function LoadMoreButton({
           <button
             onClick={handleLoadMore}
             disabled={isPending}
-            className="min-h-[52px] px-12 py-3.5 rounded-full border-2 border-border bg-card text-muted-foreground text-[0.88rem] font-bold cursor-pointer transition-all shadow-sm hover:border-primary hover:text-primary hover:bg-primary/5 hover:shadow-[0_3px_10px_rgba(255,111,97,0.15)] hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
+            className="min-h-[52px] px-12 py-3.5 rounded-full border-2 border-border bg-card text-muted-foreground text-caption font-bold cursor-pointer transition-all shadow-sm hover:border-primary hover:text-primary hover:bg-primary/5 hover:shadow-[0_3px_10px_rgba(255,111,97,0.15)] hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? '불러오는 중...' : '더보기'}
           </button>

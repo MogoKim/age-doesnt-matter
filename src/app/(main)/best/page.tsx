@@ -33,7 +33,7 @@ export default async function BestPage() {
       <h1 className="sr-only">인기글 — 우나어 베스트</h1>
       {/* 실시간 인기글 */}
       <section className="px-4 py-6">
-        <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+        <h2 className="text-title font-bold text-foreground mb-4 flex items-center gap-2">
           🔥 실시간 인기글
         </h2>
 
@@ -50,7 +50,7 @@ export default async function BestPage() {
 
       {/* 명예의 전당 */}
       <section className="px-4 py-6 border-t border-border">
-        <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+        <h2 className="text-title font-bold text-foreground mb-4 flex items-center gap-2">
           👑 명예의 전당
         </h2>
 
@@ -78,22 +78,22 @@ function BestPostCard({ post }: { post: PostSummary }) {
       className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30"
     >
       <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[0.88rem] font-bold">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-bold">
           {boardLabel}
         </span>
         {post.promotionLevel === 'HOT' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.88rem] font-bold bg-gradient-to-br from-[var(--gradient-hot-from)] to-[var(--gradient-hot-to)] text-white">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caption font-bold bg-gradient-to-br from-[var(--gradient-hot-from)] to-[var(--gradient-hot-to)] text-white">
             🔥 HOT
           </span>
         )}
         {post.promotionLevel === 'HALL_OF_FAME' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.88rem] font-bold bg-gradient-to-br from-[var(--gradient-fame-from)] to-[var(--gradient-fame-to)] text-white">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caption font-bold bg-gradient-to-br from-[var(--gradient-fame-from)] to-[var(--gradient-fame-to)] text-white">
             👑 FAME
           </span>
         )}
       </div>
 
-      <h3 className="text-base font-bold text-foreground m-0 mb-1 line-clamp-2">
+      <h3 className="text-body font-bold text-foreground m-0 mb-1 line-clamp-2">
         {post.title}
       </h3>
 
@@ -103,7 +103,7 @@ function BestPostCard({ post }: { post: PostSummary }) {
         </p>
       )}
 
-      <div className="flex items-center gap-3 text-[0.88rem] text-muted-foreground">
+      <div className="flex items-center gap-3 text-caption text-muted-foreground">
         <span>{post.author.gradeEmoji} {post.author.nickname}</span>
         <span>❤️ {post.likeCount}</span>
         <span>💬 {post.commentCount}</span>
@@ -117,7 +117,7 @@ function BestPostCard({ post }: { post: PostSummary }) {
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-      <p className="text-base text-muted-foreground leading-relaxed">{message}</p>
+      <p className="text-body text-muted-foreground leading-relaxed">{message}</p>
     </div>
   )
 }

@@ -13,34 +13,34 @@ export default function ContactPage() {
 
       <div className="space-y-6">
         <section className="bg-card rounded-2xl p-6 border border-border">
-          <h2 className="text-base font-bold text-foreground mb-3">서비스 관련 문의</h2>
-          <p className="text-base text-muted-foreground leading-relaxed break-keep mb-4">
+          <h2 className="text-body font-bold text-foreground mb-3">서비스 관련 문의</h2>
+          <p className="text-body text-muted-foreground leading-relaxed break-keep mb-4">
             서비스 이용 중 불편한 점이나 궁금한 점이 있으시면 아래 이메일로 문의해 주세요.
           </p>
           <a
             href="mailto:help@age-doesnt-matter.com"
-            className="inline-flex items-center gap-2 text-base text-primary font-medium no-underline min-h-[52px]"
+            className="inline-flex items-center gap-2 text-body text-primary font-medium no-underline min-h-[52px]"
           >
             📧 help@age-doesnt-matter.com
           </a>
         </section>
 
         <section className="bg-card rounded-2xl p-6 border border-border">
-          <h2 className="text-base font-bold text-foreground mb-3">제휴·광고 문의</h2>
-          <p className="text-base text-muted-foreground leading-relaxed break-keep mb-4">
+          <h2 className="text-body font-bold text-foreground mb-3">제휴·광고 문의</h2>
+          <p className="text-body text-muted-foreground leading-relaxed break-keep mb-4">
             제휴, 광고, 협업 관련 문의는 아래 이메일로 보내주세요.
           </p>
           <a
             href="mailto:biz@age-doesnt-matter.com"
-            className="inline-flex items-center gap-2 text-base text-primary font-medium no-underline min-h-[52px]"
+            className="inline-flex items-center gap-2 text-body text-primary font-medium no-underline min-h-[52px]"
           >
             📧 biz@age-doesnt-matter.com
           </a>
         </section>
 
         <section className="bg-card rounded-2xl p-6 border border-border">
-          <h2 className="text-base font-bold text-foreground mb-3">운영 시간</h2>
-          <div className="space-y-2 text-base text-muted-foreground">
+          <h2 className="text-body font-bold text-foreground mb-3">운영 시간</h2>
+          <div className="space-y-2 text-body text-muted-foreground">
             <p className="m-0">평일 오전 10시 ~ 오후 6시</p>
             <p className="m-0">주말·공휴일 휴무</p>
             <p className="m-0 text-sm">문의 접수 후 영업일 기준 1~2일 내 답변드려요.</p>

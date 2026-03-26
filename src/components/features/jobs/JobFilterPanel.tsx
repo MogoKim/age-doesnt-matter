@@ -69,7 +69,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
         <div className="p-6 space-y-6">
           {/* 지역 */}
           <div>
-            <h3 className="text-base font-bold text-foreground mb-3">지역</h3>
+            <h3 className="text-body font-bold text-foreground mb-3">지역</h3>
             <div className="flex flex-wrap gap-2">
               <button
                 className={`px-4 py-2 rounded-full text-sm font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
@@ -95,7 +95,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
 
           {/* 근무 시간 */}
           <div>
-            <h3 className="text-base font-bold text-foreground mb-3">근무 시간</h3>
+            <h3 className="text-body font-bold text-foreground mb-3">근무 시간</h3>
             <div className="flex flex-wrap gap-2">
               {WORK_TIMES.map((t) => (
                 <button
@@ -113,7 +113,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
 
           {/* 조건 */}
           <div>
-            <h3 className="text-base font-bold text-foreground mb-3">조건</h3>
+            <h3 className="text-body font-bold text-foreground mb-3">조건</h3>
             <div className="flex flex-wrap gap-2">
               {CONDITIONS.map((c) => (
                 <button
@@ -132,7 +132,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
 
         <div className="sticky bottom-0 bg-card px-6 py-4 border-t border-border">
           <button
-            className="w-full h-[52px] bg-primary text-white rounded-xl font-bold text-base cursor-pointer hover:bg-primary/90 transition-colors"
+            className="w-full h-[52px] bg-primary text-white rounded-xl font-bold text-body cursor-pointer hover:bg-primary/90 transition-colors"
             onClick={handleApply}
           >
             필터 적용하기

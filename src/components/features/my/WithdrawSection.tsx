@@ -37,7 +37,7 @@ export default function WithdrawSection() {
   return (
     <div className="space-y-4">
       <div className="bg-destructive/5 rounded-xl p-4 border border-destructive/20">
-        <p className="text-base font-bold text-destructive mb-2">정말 탈퇴하시겠어요?</p>
+        <p className="text-body font-bold text-destructive mb-2">정말 탈퇴하시겠어요?</p>
         <ul className="text-sm text-foreground space-y-1 leading-[1.8]">
           <li>탈퇴하면 작성한 글과 댓글이 더 이상 표시되지 않습니다.</li>
           <li>탈퇴 후 30일 이내에 같은 카카오 계정으로 로그인하면 계정이 복구됩니다.</li>

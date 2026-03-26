@@ -89,7 +89,7 @@ export default function ReportModal({ targetId, targetType, onClose }: ReportMod
               onChange={(e) => setDescription(e.target.value)}
               maxLength={500}
             />
-            <p className="text-[13px] text-muted-foreground text-right mt-1">
+            <p className="text-caption text-muted-foreground text-right mt-1">
               {description.length}/500
             </p>
           </div>

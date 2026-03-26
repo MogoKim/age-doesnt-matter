@@ -9,7 +9,7 @@ export default function RulesPage() {
     <div className="max-w-[720px] mx-auto px-4 py-8 md:px-6 md:py-12">
       <h1 className="text-2xl font-bold text-foreground mb-8">커뮤니티 이용규칙</h1>
 
-      <div className="prose-senior space-y-8 text-base text-foreground leading-[1.85] break-keep">
+      <div className="prose-senior space-y-8 text-body text-foreground leading-[1.85] break-keep">
         <p className="text-lg text-muted-foreground">
           우리 나이가 어때서는 5060 세대가 서로 존중하며 소통하는 따뜻한 커뮤니티입니다.
           아래 규칙을 지켜주시면 모두가 즐거운 공간이 됩니다.

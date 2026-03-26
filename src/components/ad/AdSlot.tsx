@@ -29,7 +29,7 @@ export default async function AdSlot({ slot, className }: AdSlotProps) {
 
   return (
     <aside className={`relative ${className ?? ''}`} role="complementary" aria-label="광고">
-      <span className="absolute top-2 right-3 text-[13px] text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border z-10">
+      <span className="absolute top-2 right-3 text-caption text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border z-10">
         광고
       </span>
 
@@ -54,7 +54,7 @@ export default async function AdSlot({ slot, className }: AdSlotProps) {
           rel="noopener noreferrer nofollow"
           className="block bg-[var(--surface-warm)] border border-border rounded-lg p-4 text-center hover:bg-zinc-50 transition-colors"
         >
-          <p className="text-base font-medium text-foreground">{ad.title}</p>
+          <p className="text-body font-medium text-foreground">{ad.title}</p>
         </a>
       )}
     </aside>

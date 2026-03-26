@@ -169,19 +169,19 @@ export default function OnboardingForm() {
         <div className="mb-8 text-center">
           <span className="text-5xl mb-4 block">👋</span>
           <h1 className="text-2xl font-bold text-foreground mb-2">반가워요!</h1>
-          <p className="text-base text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             우나어에서 사용할 닉네임을 정해 주세요
           </p>
         </div>
 
         <div className="mb-6">
-          <label className="block text-[0.88rem] font-bold text-foreground mb-2" htmlFor="nickname">닉네임</label>
+          <label className="block text-caption font-bold text-foreground mb-2" htmlFor="nickname">닉네임</label>
           <div className="relative">
             <input
               id="nickname"
               type="text"
               className={cn(
-                'w-full min-h-[52px] px-4 pr-12 border-2 rounded-xl text-base font-medium text-foreground bg-card outline-none transition-all placeholder:text-muted-foreground placeholder:font-normal',
+                'w-full min-h-[52px] px-4 pr-12 border-2 rounded-xl text-body font-medium text-foreground bg-card outline-none transition-all placeholder:text-muted-foreground placeholder:font-normal',
                 nicknameStatus === 'valid'
                   ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/10'
                   : nicknameStatus === 'error'
@@ -201,20 +201,20 @@ export default function OnboardingForm() {
               {nicknameStatus === 'checking' && '⏳'}
             </span>
           </div>
-          <div className="text-right text-[0.88rem] text-muted-foreground mt-1">{nickname.length}/10</div>
+          <div className="text-right text-caption text-muted-foreground mt-1">{nickname.length}/10</div>
 
           {nicknameStatus === 'valid' && (
-            <div className="flex items-center gap-1.5 mt-2 text-[0.88rem] text-green-500 font-medium min-h-6">
+            <div className="flex items-center gap-1.5 mt-2 text-caption text-green-500 font-medium min-h-6">
               ✓ 사용 가능한 닉네임이에요
             </div>
           )}
           {nicknameStatus === 'error' && nicknameError && (
-            <div className="flex items-center gap-1.5 mt-2 text-[0.88rem] text-destructive font-medium min-h-6">
+            <div className="flex items-center gap-1.5 mt-2 text-caption text-destructive font-medium min-h-6">
               ✗ {nicknameError}
             </div>
           )}
           {nicknameStatus === 'checking' && (
-            <div className="flex items-center gap-1.5 mt-2 text-[0.88rem] text-muted-foreground min-h-6">
+            <div className="flex items-center gap-1.5 mt-2 text-caption text-muted-foreground min-h-6">
               중복 확인 중...
             </div>
           )}
@@ -222,15 +222,15 @@ export default function OnboardingForm() {
 
         {/* 규칙 안내 */}
         <div className="bg-background rounded-xl p-4 mb-8">
-          <p className="text-[0.88rem] font-bold text-muted-foreground mb-2">닉네임 규칙</p>
+          <p className="text-caption font-bold text-muted-foreground mb-2">닉네임 규칙</p>
           <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
-            <li className={cn('text-[0.88rem] flex items-center gap-1.5', lengthOk ? 'text-green-500' : 'text-muted-foreground')}>
+            <li className={cn('text-caption flex items-center gap-1.5', lengthOk ? 'text-green-500' : 'text-muted-foreground')}>
               {lengthOk ? '✓' : '·'} 2~10자
             </li>
-            <li className={cn('text-[0.88rem] flex items-center gap-1.5', charOk ? 'text-green-500' : 'text-muted-foreground')}>
+            <li className={cn('text-caption flex items-center gap-1.5', charOk ? 'text-green-500' : 'text-muted-foreground')}>
               {charOk ? '✓' : '·'} 한글, 영문, 숫자만 가능
             </li>
-            <li className={cn('text-[0.88rem] flex items-center gap-1.5', noBanned ? 'text-green-500' : 'text-muted-foreground')}>
+            <li className={cn('text-caption flex items-center gap-1.5', noBanned ? 'text-green-500' : 'text-muted-foreground')}>
               {noBanned ? '✓' : '·'} 금지어 미포함
             </li>
           </ul>
@@ -254,13 +254,13 @@ export default function OnboardingForm() {
         <div className="mb-8 text-center">
           <span className="text-5xl mb-4 block">📋</span>
           <h1 className="text-2xl font-bold text-foreground mb-2">약관 동의</h1>
-          <p className="text-base text-muted-foreground leading-relaxed">
+          <p className="text-body text-muted-foreground leading-relaxed">
             서비스 이용을 위해 약관에 동의해 주세요
           </p>
         </div>
 
         {submitError && (
-          <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-base font-medium">
+          <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-body font-medium">
             {submitError}
           </div>
         )}
@@ -288,7 +288,7 @@ export default function OnboardingForm() {
             >
               ✓
             </span>
-            <span className="text-base font-bold text-foreground flex-1">전체 동의</span>
+            <span className="text-body font-bold text-foreground flex-1">전체 동의</span>
           </div>
 
           {/* 개별 약관 */}
@@ -308,16 +308,16 @@ export default function OnboardingForm() {
                 >
                   ✓
                 </span>
-                <span className="flex-1 text-[0.88rem] text-foreground" onClick={() => toggleTerm(term.id)}>
+                <span className="flex-1 text-caption text-foreground" onClick={() => toggleTerm(term.id)}>
                   {term.label}
                 </span>
-                <span className={cn('text-[0.88rem]', term.required ? 'text-primary font-bold' : 'text-muted-foreground')}>
+                <span className={cn('text-caption', term.required ? 'text-primary font-bold' : 'text-muted-foreground')}>
                   {term.required ? '[필수]' : '[선택]'}
                 </span>
                 {term.url && (
                   <a
                     href={term.url}
-                    className="text-[0.88rem] text-muted-foreground underline shrink-0 min-w-[52px] min-h-[52px] flex items-center justify-center hover:text-primary"
+                    className="text-caption text-muted-foreground underline shrink-0 min-w-[52px] min-h-[52px] flex items-center justify-center hover:text-primary"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -349,20 +349,20 @@ export default function OnboardingForm() {
       <div className="text-center py-8">
         <span className="text-7xl mb-6 block animate-in zoom-in-50 duration-500">🎉</span>
         <h1 className="text-2xl font-bold text-foreground mb-2">환영합니다!</h1>
-        <p className="text-base text-muted-foreground leading-relaxed mb-4">
+        <p className="text-body text-muted-foreground leading-relaxed mb-4">
           <strong>{nickname}</strong>님,<br />
           우나어에 오신 것을 환영해요
         </p>
-        <div className="inline-flex items-center gap-2 px-6 py-2 bg-primary/5 rounded-full text-base font-bold text-primary mb-4">
+        <div className="inline-flex items-center gap-2 px-6 py-2 bg-primary/5 rounded-full text-body font-bold text-primary mb-4">
           🌱 새싹 등급
         </div>
         <div className="bg-background rounded-xl p-5 text-left space-y-2 mb-4">
-          <p className="text-[0.88rem] text-foreground font-medium">🌱 새싹 등급으로 시작해요!</p>
-          <p className="text-[0.88rem] text-muted-foreground leading-relaxed">
+          <p className="text-caption text-foreground font-medium">🌱 새싹 등급으로 시작해요!</p>
+          <p className="text-caption text-muted-foreground leading-relaxed">
             글쓰기와 댓글 작성이 가능합니다.<br />
             활동하면 등급이 올라가고, 이미지 첨부 등 더 많은 기능을 쓸 수 있어요.
           </p>
-          <div className="text-[0.88rem] text-muted-foreground pt-1">
+          <div className="text-caption text-muted-foreground pt-1">
             <span className="text-primary font-bold">다음 등급 🌿 단골</span> → 게시글 5개 또는 댓글 20개
           </div>
         </div>

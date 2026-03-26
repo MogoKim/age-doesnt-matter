@@ -51,12 +51,12 @@ export default async function JobsPage({ searchParams }: PageProps) {
           <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
             <span>적용된 필터:</span>
             {region && (
-              <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-medium">
+              <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-caption font-medium">
                 {region}
               </span>
             )}
             {tags?.map((tag) => (
-              <span key={tag} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-medium">
+              <span key={tag} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-caption font-medium">
                 {tag}
               </span>
             ))}
@@ -72,7 +72,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-            <p className="text-base text-muted-foreground leading-relaxed">
+            <p className="text-body text-muted-foreground leading-relaxed">
               {hasFilters ? (
                 <>조건에 맞는 일자리가 없어요.<br />필터를 변경해 보세요!</>
               ) : (
@@ -103,7 +103,7 @@ function JobCard({ job }: { job: JobCardItem }) {
           {job.tags.slice(0, 2).map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[13px] font-medium"
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-medium"
             >
               {tag}
             </span>
@@ -112,7 +112,7 @@ function JobCard({ job }: { job: JobCardItem }) {
       )}
 
       {/* 제목 */}
-      <h3 className="text-base font-bold text-foreground m-0 mb-1">
+      <h3 className="text-body font-bold text-foreground m-0 mb-1">
         {job.title}
       </h3>
 
@@ -129,7 +129,7 @@ function JobCard({ job }: { job: JobCardItem }) {
       )}
 
       {/* 메타 */}
-      <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
+      <div className="flex items-center gap-3 text-caption text-muted-foreground">
         <span>조회 {job.viewCount}</span>
         <span>댓글 {job.commentCount}</span>
         <span>{formatTimeAgo(job.createdAt)}</span>

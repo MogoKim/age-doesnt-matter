@@ -19,7 +19,7 @@ export default function Header({ isLoggedIn = false }: HeaderProps) {
           className="h-9 w-9 rounded-lg object-contain"
           priority
         />
-        <span className="ml-1.5 text-base font-bold text-foreground">우나어</span>
+        <span className="ml-1.5 text-body font-bold text-foreground">우나어</span>
       </Link>
 
       <div className="flex items-center gap-1">

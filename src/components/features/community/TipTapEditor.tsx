@@ -77,7 +77,7 @@ export default function TipTapEditor({
     editorProps: {
       attributes: {
         class:
-          'prose prose-lg max-w-none min-h-[250px] p-4 text-base leading-[1.85] text-foreground outline-none focus:outline-none [word-break:keep-all]',
+          'prose prose-lg max-w-none min-h-[250px] p-4 text-body leading-[1.85] text-foreground outline-none focus:outline-none [word-break:keep-all]',
       },
     },
   })
@@ -171,7 +171,7 @@ export default function TipTapEditor({
       {/* 등급 부족 알림 */}
       {showGradeAlert && (
         <div className="absolute top-0 left-0 right-0 z-10 mx-4 mt-2 rounded-xl bg-amber-50 border border-amber-200 p-4 text-center shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-          <p className="text-base font-bold text-amber-800 mb-1">
+          <p className="text-body font-bold text-amber-800 mb-1">
             🌿 단골 등급부터 가능해요
           </p>
           <p className="text-sm text-amber-600">
@@ -253,7 +253,7 @@ export default function TipTapEditor({
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
             className={cn(
-              'flex items-center justify-center min-h-[52px] min-w-[52px] lg:min-h-[44px] lg:min-w-[44px] rounded-xl text-base font-bold transition-colors',
+              'flex items-center justify-center min-h-[52px] min-w-[52px] lg:min-h-[44px] lg:min-w-[44px] rounded-xl text-body font-bold transition-colors',
               editor.isActive('bold')
                 ? 'bg-primary/10 text-primary'
                 : 'text-foreground hover:bg-muted',
@@ -267,7 +267,7 @@ export default function TipTapEditor({
             type="button"
             onClick={() => editor.chain().focus().toggleItalic().run()}
             className={cn(
-              'flex items-center justify-center min-h-[52px] min-w-[52px] lg:min-h-[44px] lg:min-w-[44px] rounded-xl text-base italic transition-colors',
+              'flex items-center justify-center min-h-[52px] min-w-[52px] lg:min-h-[44px] lg:min-w-[44px] rounded-xl text-body italic transition-colors',
               editor.isActive('italic')
                 ? 'bg-primary/10 text-primary'
                 : 'text-foreground hover:bg-muted',
@@ -290,7 +290,7 @@ export default function TipTapEditor({
       {/* 유튜브 URL 입력 팝업 */}
       {showYouTubeInput && (
         <div className="mt-2 p-4 border-2 border-border rounded-xl bg-card shadow-lg">
-          <p className="text-base font-bold text-foreground mb-2">유튜브 주소를 붙여넣어 주세요</p>
+          <p className="text-body font-bold text-foreground mb-2">유튜브 주소를 붙여넣어 주세요</p>
           <input
             type="url"
             value={youtubeUrl}
@@ -299,7 +299,7 @@ export default function TipTapEditor({
               setYoutubeError('')
             }}
             placeholder="https://youtube.com/watch?v=..."
-            className="w-full min-h-[48px] px-4 border-2 border-border rounded-xl text-base text-foreground bg-background outline-none focus:border-primary transition-colors"
+            className="w-full min-h-[48px] px-4 border-2 border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()

@@ -6,9 +6,9 @@ import { cn } from '@/lib/utils'
 import { updateFontSize } from '@/lib/actions/settings'
 
 const FONT_SIZES = [
-  { value: 'NORMAL', label: '보통', size: '17px' },
-  { value: 'LARGE', label: '크게', size: '20px' },
-  { value: 'XLARGE', label: '아주크게', size: '24px' },
+  { value: 'NORMAL', label: '보통', desc: '기본 크기' },
+  { value: 'LARGE', label: '크게', desc: '본문 20px' },
+  { value: 'XLARGE', label: '아주크게', desc: '본문 24px' },
 ] as const
 
 interface FontSizeSettingsProps {
@@ -21,7 +21,8 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
   const [isPending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
 
-  const previewSize = FONT_SIZES.find((f) => f.value === selected)?.size ?? '17px'
+  const PREVIEW_SIZE_MAP: Record<string, string> = { NORMAL: '17px', LARGE: '20px', XLARGE: '24px' }
+  const previewSize = PREVIEW_SIZE_MAP[selected] ?? '17px'
 
   function handleSave() {
     if (selected === currentSize) return
@@ -63,8 +64,8 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
                 : 'border-border bg-background text-foreground hover:border-primary/30',
             )}
           >
-            <span className="flex-1 text-base">{option.label}</span>
-            <span className="text-sm text-muted-foreground">{option.size}</span>
+            <span className="flex-1 text-body">{option.label}</span>
+            <span className="text-sm text-muted-foreground">{option.desc}</span>
           </button>
         ))}
       </div>
@@ -79,7 +80,7 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
         type="button"
         onClick={handleSave}
         disabled={isPending || selected === currentSize}
-        className="w-full h-[52px] bg-primary text-white rounded-xl text-base font-bold transition-colors hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed lg:h-12"
+        className="w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold transition-colors hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed lg:h-12"
       >
         {isPending ? '적용 중...' : '적용하기'}
       </button>

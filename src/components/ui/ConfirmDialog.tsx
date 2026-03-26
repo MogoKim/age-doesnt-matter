@@ -48,14 +48,14 @@ export default function ConfirmDialog({
         <AlertDialogFooter className="flex-row gap-2">
           <AlertDialogCancel
             disabled={isLoading}
-            className="mt-0 h-[52px] flex-1 text-base lg:h-12"
+            className="mt-0 h-[52px] flex-1 text-body lg:h-12"
           >
             {cancelLabel}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isLoading}
-            className={`h-[52px] flex-1 text-base lg:h-12 ${variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}`}
+            className={`h-[52px] flex-1 text-body lg:h-12 ${variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}`}
           >
             {isLoading && (
               <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />

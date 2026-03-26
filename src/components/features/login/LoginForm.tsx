@@ -15,7 +15,7 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
           className="w-20 h-20 mx-auto mb-4 object-contain"
         />
         <h1 className="text-2xl font-bold text-foreground mb-1">우리 나이가 어때서</h1>
-        <p className="text-base text-muted-foreground leading-relaxed">
+        <p className="text-body text-muted-foreground leading-relaxed">
           나이 걱정 없이 소통하는<br />
           따뜻한 커뮤니티
         </p>
@@ -38,7 +38,7 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       </form>
 
       {/* 안내 문구 */}
-      <p className="text-[0.88rem] text-muted-foreground leading-relaxed">
+      <p className="text-caption text-muted-foreground leading-relaxed">
         로그인 시{' '}
         <Link href="/terms/service" className="text-muted-foreground underline hover:text-primary">이용약관</Link>
         {' '}및{' '}
@@ -49,7 +49,7 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       {/* 비회원 둘러보기 */}
       <Link
         href="/"
-        className="inline-flex items-center min-h-[52px] px-4 mt-4 text-[0.88rem] font-medium text-muted-foreground rounded-lg transition-colors hover:text-primary"
+        className="inline-flex items-center min-h-[52px] px-4 mt-4 text-caption font-medium text-muted-foreground rounded-lg transition-colors hover:text-primary"
       >
         비회원으로 둘러보기 →
       </Link>

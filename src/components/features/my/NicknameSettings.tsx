@@ -45,14 +45,14 @@ export default function NicknameSettings({ currentNickname, canChange, lastChang
           onChange={(e) => setNickname(e.target.value)}
           maxLength={12}
           disabled={!canChange}
-          className="flex-1 h-[52px] px-4 border border-border rounded-xl text-base text-foreground bg-background outline-none transition-colors focus:border-primary disabled:bg-muted disabled:text-muted-foreground lg:h-12"
+          className="flex-1 h-[52px] px-4 border border-border rounded-xl text-body text-foreground bg-background outline-none transition-colors focus:border-primary disabled:bg-muted disabled:text-muted-foreground lg:h-12"
           placeholder="닉네임 입력"
         />
         <button
           type="button"
           onClick={handleSave}
           disabled={isPending || !canChange || nickname.trim() === currentNickname}
-          className="shrink-0 whitespace-nowrap h-[52px] px-4 bg-primary text-white rounded-xl text-base font-bold transition-colors hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed lg:h-12 lg:px-5"
+          className="shrink-0 whitespace-nowrap h-[52px] px-4 bg-primary text-white rounded-xl text-body font-bold transition-colors hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed lg:h-12 lg:px-5"
         >
           {isPending ? '변경 중...' : '변경'}
         </button>
@@ -70,7 +70,7 @@ export default function NicknameSettings({ currentNickname, canChange, lastChang
         </p>
       )}
 
-      <p className="text-[0.88rem] text-muted-foreground mt-2 px-1">
+      <p className="text-caption text-muted-foreground mt-2 px-1">
         한글, 영문, 숫자 2~12자 · 30일에 1회 변경 가능
       </p>
     </div>

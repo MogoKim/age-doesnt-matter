@@ -25,13 +25,13 @@ export default async function MagazinePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="px-4 py-6">
-        <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
+        <h2 className="text-title font-bold text-foreground mb-6 flex items-center gap-2">
           📖 매거진
         </h2>
 
         {posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-            <p className="text-base text-muted-foreground leading-relaxed">
+            <p className="text-body text-muted-foreground leading-relaxed">
               아직 매거진이 없어요. 곧 유익한 글이 올라올 거예요!
             </p>
           </div>
@@ -72,12 +72,12 @@ function FeaturedCard({ post }: { post: PostSummary }) {
       )}
       <div className="p-4">
         {post.category && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[0.88rem] font-bold mb-2">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-bold mb-2">
             {post.category}
           </span>
         )}
         <h3 className="text-lg font-bold text-foreground m-0 mb-2 line-clamp-2">{post.title}</h3>
-        <div className="flex items-center gap-3 text-[0.88rem] text-muted-foreground">
+        <div className="flex items-center gap-3 text-caption text-muted-foreground">
           <span>👁 {post.viewCount}</span>
           <span>{formatTimeAgo(post.createdAt)}</span>
         </div>
@@ -97,12 +97,12 @@ function MagazineCard({ post }: { post: PostSummary }) {
       </div>
       <div className="p-3">
         {post.category && (
-          <span className="text-[0.88rem] text-primary font-bold">{post.category}</span>
+          <span className="text-caption text-primary font-bold">{post.category}</span>
         )}
         <h3 className="text-sm font-bold text-foreground m-0 line-clamp-2 leading-snug">
           {post.title}
         </h3>
-        <p className="text-[0.88rem] text-muted-foreground mt-1 m-0">
+        <p className="text-caption text-muted-foreground mt-1 m-0">
           👁 {post.viewCount} · {formatTimeAgo(post.createdAt)}
         </p>
       </div>

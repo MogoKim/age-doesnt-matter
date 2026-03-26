@@ -65,8 +65,27 @@
     --font-family: var(--font-pretendard), 'Pretendard Variable', 'Pretendard',
       -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
-    /* 시니어 글꼴 크기 — FontSizeProvider가 동적으로 설정 (17/20/24) */
-    --font-body: 17px;
+    /* ── 시니어 글꼴 크기 스케일 (FontSizeProvider가 data-font-size 속성으로 전환) ── */
+    --text-body: 1.0625rem;   /* 17px — 본문 */
+    --text-caption: 0.9375rem; /* 15px — 보조/캡션 */
+    --text-title: 1.25rem;    /* 20px — 섹션 제목 */
+    --text-heading: 1.5rem;   /* 24px — 페이지 제목 */
+  }
+
+  /* LARGE (20px 베이스) */
+  html[data-font-size="LARGE"] {
+    --text-body: 1.25rem;     /* 20px */
+    --text-caption: 1.0625rem; /* 17px */
+    --text-title: 1.5rem;     /* 24px */
+    --text-heading: 1.75rem;  /* 28px */
+  }
+
+  /* XLARGE (24px 베이스) */
+  html[data-font-size="XLARGE"] {
+    --text-body: 1.5rem;      /* 24px */
+    --text-caption: 1.25rem;  /* 20px */
+    --text-title: 1.75rem;    /* 28px */
+    --text-heading: 2rem;     /* 32px */
   }
 }
 
@@ -80,7 +99,7 @@
 }
 
 html {
-  font-size: var(--font-body, 17px);
+  font-size: 16px; /* 고정 — rem 기반 레이아웃(패딩/마진/높이)이 절대 변하지 않음 */
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -88,7 +107,7 @@ html {
 
 body {
   font-family: var(--font-family);
-  font-size: inherit;
+  font-size: var(--text-body);
   font-weight: 400;
   line-height: 1.75;
   color: hsl(var(--foreground));
@@ -187,4 +206,14 @@ textarea {
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
   border-radius: 9999px;
+}
+
+/* ── 시니어 친화 텍스트 스케일 유틸리티 ──
+   font-size만 변경 (line-height는 컴포넌트에서 개별 지정)
+   레이아웃(rem 기반 padding/margin/height)에 영향 없음 */
+@layer utilities {
+  .text-body { font-size: var(--text-body); }
+  .text-caption { font-size: var(--text-caption); }
+  .text-title { font-size: var(--text-title); }
+  .text-heading { font-size: var(--text-heading); }
 }

@@ -51,7 +51,7 @@ export default function GradePage() {
       <h1 className="text-2xl font-bold text-foreground mb-2 leading-tight">
         회원 등급 안내
       </h1>
-      <p className="text-base text-muted-foreground mb-8 leading-relaxed">
+      <p className="text-body text-muted-foreground mb-8 leading-relaxed">
         우나어에서 활동하면 등급이 올라가요. 더 많이 참여할수록 좋은 혜택이!
       </p>
 
@@ -66,22 +66,22 @@ export default function GradePage() {
               <span className={`text-3xl ${grade.emojiColor}`}>{grade.emoji}</span>
               <div>
                 <h2 className="text-lg font-bold text-foreground m-0">{grade.label}</h2>
-                <p className="text-[0.88rem] text-muted-foreground m-0">{grade.description}</p>
+                <p className="text-caption text-muted-foreground m-0">{grade.description}</p>
               </div>
             </div>
 
             <div className="bg-white/60 rounded-xl p-3 mb-3">
-              <p className="text-[0.88rem] text-foreground m-0">
+              <p className="text-caption text-foreground m-0">
                 <span className="font-bold text-primary">승급 조건:</span>{' '}
                 {grade.condition}
               </p>
             </div>
 
             <div>
-              <p className="text-[0.88rem] font-bold text-foreground mb-1.5">혜택</p>
+              <p className="text-caption font-bold text-foreground mb-1.5">혜택</p>
               <ul className="list-none m-0 p-0 space-y-1">
                 {grade.benefits.map((benefit) => (
-                  <li key={benefit} className="text-[0.88rem] text-foreground flex items-start gap-2">
+                  <li key={benefit} className="text-caption text-foreground flex items-start gap-2">
                     <span className="text-primary shrink-0">✓</span>
                     {benefit}
                   </li>
@@ -118,7 +118,7 @@ export default function GradePage() {
       <div className="text-center">
         <Link
           href="/community/stories"
-          className="inline-flex items-center gap-1.5 h-[52px] px-6 bg-primary text-white rounded-xl text-base font-bold no-underline hover:bg-[#E85D50]"
+          className="inline-flex items-center gap-1.5 h-[52px] px-6 bg-primary text-white rounded-xl text-body font-bold no-underline hover:bg-[#E85D50]"
         >
           지금 글 쓰러 가기 →
         </Link>
@@ -130,8 +130,8 @@ export default function GradePage() {
 function FaqItem({ q, a }: { q: string; a: string }) {
   return (
     <div className="p-4 bg-card rounded-xl border border-border">
-      <p className="text-base font-bold text-foreground mb-1 m-0">Q. {q}</p>
-      <p className="text-[0.88rem] text-muted-foreground m-0 leading-relaxed">{a}</p>
+      <p className="text-body font-bold text-foreground mb-1 m-0">Q. {q}</p>
+      <p className="text-caption text-muted-foreground m-0 leading-relaxed">{a}</p>
     </div>
   )
 }

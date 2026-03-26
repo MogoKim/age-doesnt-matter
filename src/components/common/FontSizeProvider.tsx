@@ -2,12 +2,7 @@
 
 import { useEffect } from 'react'
 
-const FONT_SIZE_MAP: Record<string, string> = {
-  NORMAL: '17px',
-  LARGE: '20px',
-  XLARGE: '24px',
-}
-
+const VALID_SIZES = ['NORMAL', 'LARGE', 'XLARGE'] as const
 const LS_KEY = 'unao-font-size'
 
 interface FontSizeProviderProps {
@@ -20,8 +15,16 @@ export default function FontSizeProvider({ fontSize, children }: FontSizeProvide
     // 서버 prop 우선, 없으면 localStorage 폴백 (비로그인/캐시)
     const stored = typeof window !== 'undefined' ? localStorage.getItem(LS_KEY) : null
     const effectiveSize = fontSize ?? stored ?? 'NORMAL'
-    const size = FONT_SIZE_MAP[effectiveSize] ?? FONT_SIZE_MAP.NORMAL
-    document.documentElement.style.setProperty('--font-body', size)
+    const size = VALID_SIZES.includes(effectiveSize as typeof VALID_SIZES[number])
+      ? effectiveSize
+      : 'NORMAL'
+
+    // data 속성으로 폰트 크기 전환 — CSS 변수가 자동 반영됨
+    if (size === 'NORMAL') {
+      document.documentElement.removeAttribute('data-font-size')
+    } else {
+      document.documentElement.setAttribute('data-font-size', size)
+    }
 
     // 서버 값이 있으면 localStorage 동기화
     if (fontSize && fontSize !== stored) {
@@ -29,11 +32,9 @@ export default function FontSizeProvider({ fontSize, children }: FontSizeProvide
     }
 
     return () => {
-      document.documentElement.style.removeProperty('--font-body')
+      document.documentElement.removeAttribute('data-font-size')
     }
   }, [fontSize])
 
-  // 초기 렌더링 시 깜빡임 방지: localStorage에서 즉시 읽어 inline script 주입
-  // (useEffect 전에 적용되는 blocking script)
   return <>{children}</>
 }

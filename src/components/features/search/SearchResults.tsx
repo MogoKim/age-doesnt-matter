@@ -18,7 +18,7 @@ export default function SearchResults({ result, query, tab }: SearchResultsProps
         <div className="mb-2 text-muted-foreground">
           <IconSearch size={28} />
         </div>
-        <p className="text-base text-muted-foreground leading-relaxed">
+        <p className="text-body text-muted-foreground leading-relaxed">
           검색 결과가 없어요.
           <br />
           다른 키워드로 검색해 보세요.
@@ -29,7 +29,7 @@ export default function SearchResults({ result, query, tab }: SearchResultsProps
 
   return (
     <div className="px-4 py-6 space-y-8">
-      <p className="text-base text-muted-foreground">
+      <p className="text-body text-muted-foreground">
         &ldquo;<span className="font-bold text-foreground">{query}</span>&rdquo; 검색 결과{' '}
         <span className="font-bold text-primary">{result.totalCount}</span>건
       </p>
@@ -87,7 +87,7 @@ function ResultSection({
 }) {
   return (
     <section>
-      <h3 className="text-base font-bold text-foreground mb-4">
+      <h3 className="text-body font-bold text-foreground mb-4">
         {title} <span className="text-muted-foreground font-normal">({count}건)</span>
       </h3>
 
@@ -100,7 +100,7 @@ function ResultSection({
       {moreHref && count > items.length && (
         <Link
           href={moreHref}
-          className="inline-flex items-center gap-1 mt-4 text-base text-primary font-medium no-underline min-h-[52px] px-2"
+          className="inline-flex items-center gap-1 mt-4 text-body text-primary font-medium no-underline min-h-[52px] px-2"
         >
           더보기 →
         </Link>
@@ -123,11 +123,11 @@ function SearchResultCard({ post, query }: { post: PostSummary; query: string })
       className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30"
     >
       {post.category && (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[13px] font-bold mb-2">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-bold mb-2">
           {post.category}
         </span>
       )}
-      <h4 className="text-base font-bold text-foreground m-0 mb-1 line-clamp-2">
+      <h4 className="text-body font-bold text-foreground m-0 mb-1 line-clamp-2">
         <HighlightText text={post.title} keyword={query} />
       </h4>
       {post.preview && (
@@ -135,7 +135,7 @@ function SearchResultCard({ post, query }: { post: PostSummary; query: string })
           <HighlightText text={post.preview} keyword={query} />
         </p>
       )}
-      <div className="flex items-center gap-3 text-[13px] text-muted-foreground mt-2">
+      <div className="flex items-center gap-3 text-caption text-muted-foreground mt-2">
         <span>{post.author.gradeEmoji} {post.author.nickname}</span>
         <span>❤️ {post.likeCount}</span>
         <span>💬 {post.commentCount}</span>

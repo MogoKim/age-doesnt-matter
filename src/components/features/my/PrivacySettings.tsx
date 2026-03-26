@@ -73,7 +73,7 @@ function ToggleRow({ label, description, checked, disabled, onToggle }: {
     >
       <div className="text-left">
         <div className="text-sm font-bold text-foreground">{label}</div>
-        <div className="text-[13px] text-muted-foreground">{description}</div>
+        <div className="text-caption text-muted-foreground">{description}</div>
       </div>
       <div
         className={`relative w-[52px] h-[30px] rounded-full shrink-0 transition-colors ${

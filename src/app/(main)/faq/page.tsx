@@ -71,13 +71,13 @@ function FaqAccordion({ item }: { item: FaqItem }) {
         className="w-full flex items-center justify-between px-5 py-4 text-left bg-card hover:bg-accent/50 transition-colors min-h-[52px] cursor-pointer"
         onClick={() => setOpen(!open)}
       >
-        <span className="text-base font-bold text-foreground pr-4">{item.q}</span>
+        <span className="text-body font-bold text-foreground pr-4">{item.q}</span>
         <span className="text-xl text-muted-foreground shrink-0 transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : undefined }}>
           ▾
         </span>
       </button>
       {open && (
-        <div className="px-5 py-4 bg-card border-t border-border text-base text-foreground leading-[1.85]">
+        <div className="px-5 py-4 bg-card border-t border-border text-body text-foreground leading-[1.85]">
           {item.a}
         </div>
       )}
@@ -89,7 +89,7 @@ export default function FaqPage() {
   return (
     <div className="max-w-[720px] mx-auto px-4 py-8 md:px-6 md:py-12">
       <h1 className="text-2xl font-bold text-foreground mb-2">자주 묻는 질문</h1>
-      <p className="text-base text-muted-foreground mb-8">궁금한 점이 있으시면 아래에서 찾아보세요.</p>
+      <p className="text-body text-muted-foreground mb-8">궁금한 점이 있으시면 아래에서 찾아보세요.</p>
 
       <div className="space-y-3">
         {faqs.map((faq, i) => (
@@ -98,10 +98,10 @@ export default function FaqPage() {
       </div>
 
       <div className="mt-8 p-6 bg-primary/5 rounded-2xl text-center">
-        <p className="text-base text-foreground mb-2">찾으시는 답변이 없으신가요?</p>
+        <p className="text-body text-foreground mb-2">찾으시는 답변이 없으신가요?</p>
         <a
           href="/contact"
-          className="inline-flex items-center justify-center px-6 py-3 bg-primary text-white rounded-full font-bold text-base no-underline min-h-[52px] hover:bg-primary/90 transition-colors"
+          className="inline-flex items-center justify-center px-6 py-3 bg-primary text-white rounded-full font-bold text-body no-underline min-h-[52px] hover:bg-primary/90 transition-colors"
         >
           문의하기
         </a>

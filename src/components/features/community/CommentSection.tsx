@@ -36,7 +36,7 @@ export default function CommentSection({ postId, comments }: CommentSectionProps
         </h3>
         <div className="flex gap-1">
           <button
-            className={`px-4 py-2 rounded-full text-[0.88rem] font-bold cursor-pointer min-h-[52px] transition-all ${
+            className={`px-4 py-2 rounded-full text-caption font-bold cursor-pointer min-h-[52px] transition-all ${
               sort === 'latest'
                 ? 'bg-primary/5 border border-primary text-primary'
                 : 'bg-none border border-transparent text-muted-foreground hover:bg-background'
@@ -46,7 +46,7 @@ export default function CommentSection({ postId, comments }: CommentSectionProps
             등록순
           </button>
           <button
-            className={`px-4 py-2 rounded-full text-[0.88rem] font-bold cursor-pointer min-h-[52px] transition-all ${
+            className={`px-4 py-2 rounded-full text-caption font-bold cursor-pointer min-h-[52px] transition-all ${
               sort === 'likes'
                 ? 'bg-primary/5 border border-primary text-primary'
                 : 'bg-none border border-transparent text-muted-foreground hover:bg-background'
@@ -66,7 +66,7 @@ export default function CommentSection({ postId, comments }: CommentSectionProps
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
-          <p className="text-base text-muted-foreground leading-[1.8]">
+          <p className="text-body text-muted-foreground leading-[1.8]">
             아직 댓글이 없어요.<br />
             따뜻한 한마디를 남겨보세요!
           </p>

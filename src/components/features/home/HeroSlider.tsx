@@ -70,7 +70,7 @@ export default function HeroSlider() {
             </h2>
             <Link
               href={slide.ctaHref}
-              className="inline-flex items-center gap-1.5 h-[52px] px-5 lg:px-7 bg-primary text-white rounded-lg text-base lg:text-lg font-semibold no-underline self-start hover:bg-[#E85D50]"
+              className="inline-flex items-center gap-1.5 h-[52px] px-5 lg:px-7 bg-primary text-white rounded-lg text-body lg:text-title font-semibold no-underline self-start hover:bg-[#E85D50]"
             >
               {slide.ctaText} →
             </Link>

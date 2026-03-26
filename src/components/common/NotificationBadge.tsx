@@ -47,7 +47,7 @@ export default function NotificationBadge() {
     >
       <IconBell size={22} />
       {count > 0 && (
-        <span className="absolute top-2 right-2 min-w-[20px] h-[20px] bg-primary text-white text-[13px] font-bold rounded-full flex items-center justify-center px-1">
+        <span className="absolute top-2 right-2 min-w-[20px] h-[20px] bg-primary text-white text-caption font-bold rounded-full flex items-center justify-center px-1">
           {count > 99 ? '99+' : count}
         </span>
       )}

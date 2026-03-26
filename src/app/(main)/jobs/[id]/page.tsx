@@ -97,7 +97,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       {/* 뒤로가기 */}
       <Link
         href="/jobs"
-        className="inline-flex items-center gap-1 text-[0.88rem] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-caption font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
       >
         ← 내 일 찾기
       </Link>
@@ -108,7 +108,7 @@ export default async function JobDetailPage({ params }: PageProps) {
           {job.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[0.88rem] font-medium"
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-medium"
             >
               🏷{tag}
             </span>
@@ -133,7 +133,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       {/* 포인트 */}
       {job.pickPoints.length > 0 && (
         <div className="bg-primary/5 rounded-xl p-5 mb-6 space-y-2">
-          <h3 className="text-base font-bold text-foreground m-0 mb-3">이런 분을 찾아요</h3>
+          <h3 className="text-body font-bold text-foreground m-0 mb-3">이런 분을 찾아요</h3>
           {job.pickPoints.map((point, idx) => (
             <p key={idx} className="text-sm text-foreground m-0 flex items-start gap-2">
               <span>{point.icon || '✅'}</span>
@@ -152,12 +152,12 @@ export default async function JobDetailPage({ params }: PageProps) {
       {/* 지원 버튼 */}
       {job.applyUrl && (
         <div className="mb-8">
-          <h3 className="text-base font-bold text-foreground mb-3">📞 지원 방법</h3>
+          <h3 className="text-body font-bold text-foreground mb-3">📞 지원 방법</h3>
           <a
             href={job.applyUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-base font-bold no-underline transition-colors hover:bg-[#E85D50] lg:w-auto lg:h-12 lg:px-8"
+            className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-[#E85D50] lg:w-auto lg:h-12 lg:px-8"
           >
             지원하기
           </a>
@@ -175,8 +175,8 @@ export default async function JobDetailPage({ params }: PageProps) {
       />
 
       {/* 광고 슬롯 */}
-      <div className="bg-[var(--surface-warm)] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-[0.88rem] mb-8">
-        <span className="absolute top-2 left-2 text-[0.88rem] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">
+      <div className="bg-[var(--surface-warm)] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-caption mb-8">
+        <span className="absolute top-2 left-2 text-caption text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">
           광고
         </span>
         광고 영역
@@ -190,7 +190,7 @@ export default async function JobDetailPage({ params }: PageProps) {
 
 function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <div className="flex items-start gap-2 text-base">
+    <div className="flex items-start gap-2 text-body">
       <span className="shrink-0">{icon}</span>
       <span className="text-muted-foreground min-w-[64px] shrink-0">{label}</span>
       <span className="text-foreground font-medium">{value}</span>

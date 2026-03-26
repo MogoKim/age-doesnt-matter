@@ -269,7 +269,7 @@ export default function ComponentShowcasePage() {
       {/* ── 11. Ad Slot ── */}
       <Section title="11. Ad Slot">
         <div className="bg-[#F9F5F0] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-xs">
-          <span className="absolute top-2 left-2 text-[13px] text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">
+          <span className="absolute top-2 left-2 text-caption text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">
             광고
           </span>
           광고 영역 — 모든 광고 슬롯에 &quot;광고&quot; 라벨 필수
