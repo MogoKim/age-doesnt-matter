@@ -30,7 +30,7 @@ export default function MainLayout({
       <IconMenu />
       <GNB isLoggedIn={isLoggedIn} nickname={nickname} />
 
-      <main id="main-content">{children}</main>
+      <main id="main-content" className="pb-[72px] lg:pb-0">{children}</main>
 
       <FAB isLoggedIn={isLoggedIn} />
       <Footer />

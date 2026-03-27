@@ -26,7 +26,7 @@ export default function MobileStickyAd() {
   if (dismissed || !visible) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden pb-[env(safe-area-inset-bottom,0px)]">
       <div className="relative bg-white border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.08)] px-3 py-2">
         <button
           onClick={() => setDismissed(true)}

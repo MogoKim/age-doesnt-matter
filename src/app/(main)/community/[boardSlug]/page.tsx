@@ -29,8 +29,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export const dynamic = 'force-dynamic'
-
 export default async function BoardListPage({ params, searchParams }: PageProps) {
   const { boardSlug } = await params
   const { category, sort } = await searchParams

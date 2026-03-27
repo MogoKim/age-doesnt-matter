@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { prisma } from '@/lib/prisma'
 import type { BoardType, PromotionLevel } from '@/generated/prisma/client'
 import { GRADE_INFO } from '@/lib/grade'
@@ -374,7 +375,7 @@ export interface JobDetailItem {
   createdAt: string
 }
 
-export async function getJobDetail(
+export const getJobDetail = cache(async function getJobDetail(
   postId: string,
   userId?: string,
 ): Promise<JobDetailItem | null> {
@@ -448,7 +449,7 @@ export async function getJobDetail(
     isScrapped,
     createdAt: post.createdAt.toISOString(),
   }
-}
+})
 
 /* ── 매거진 목록 (카테고리 필터) ── */
 
@@ -590,7 +591,7 @@ function formatTimeAgoFromMs(ms: number): string {
 
 /* ── 게시글 상세 ── */
 
-export async function getPostDetail(
+export const getPostDetail = cache(async function getPostDetail(
   postId: string,
   userId?: string,
 ): Promise<PostDetail | null> {
@@ -633,4 +634,4 @@ export async function getPostDetail(
     isScrapped,
     updatedAt: post.updatedAt.toISOString(),
   }
-}
+})

@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
@@ -17,8 +18,8 @@ export function slugToBoardType(slug: string): BoardType | null {
   return (mapped as BoardType) ?? null
 }
 
-/** BoardConfig를 DB에서 조회 (slug 기반) */
-export async function getBoardConfig(slug: string): Promise<BoardConfigData | null> {
+/** BoardConfig를 DB에서 조회 (slug 기반, 같은 요청 내 중복 호출 제거) */
+export const getBoardConfig = cache(async function getBoardConfig(slug: string): Promise<BoardConfigData | null> {
   const boardType = slugToBoardType(slug)
   if (!boardType) return null
 
@@ -34,7 +35,7 @@ export async function getBoardConfig(slug: string): Promise<BoardConfigData | nu
     description: config.description ?? '',
     categories: config.categories,
   }
-}
+})
 
 /** 활성 BoardConfig 전체 조회 (5분 캐싱) */
 export const getAllBoardConfigs = unstable_cache(
