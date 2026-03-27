@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { IconStories } from '@/components/icons'
+import AdSenseUnit from '@/components/ad/AdSenseUnit'
 
 interface Props {
   posts: PostSummary[]
@@ -25,10 +26,7 @@ export default function HomeSidebar({ posts }: Props) {
           ))}
         </ul>
       </div>
-      <div className="bg-[var(--surface-warm)] rounded-xl p-4 border border-border relative min-h-[250px] flex items-center justify-center text-muted-foreground text-sm" role="complementary" aria-label="광고 영역">
-        <span className="absolute top-2 right-3 text-caption text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border">광고</span>
-        광고 영역
-      </div>
+      <AdSenseUnit slotId="auto" format="rectangle" className="rounded-xl overflow-hidden min-h-[250px]" />
     </aside>
   )
 }

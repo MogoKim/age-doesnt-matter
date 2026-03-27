@@ -10,6 +10,7 @@ import CommentSection from '@/components/features/community/CommentSection'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { formatSalary } from '@/lib/format'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
+import AdSenseUnit from '@/components/ad/AdSenseUnit'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -177,12 +178,9 @@ export default async function JobDetailPage({ params }: PageProps) {
         isScrapped={job.isScrapped}
       />
 
-      {/* 광고 슬롯 */}
-      <div className="bg-[var(--surface-warm)] rounded-2xl px-4 py-8 text-center relative border border-dashed border-border text-muted-foreground text-caption mb-8">
-        <span className="absolute top-2 left-2 text-caption text-muted-foreground bg-white/90 px-2 py-0.5 rounded-full font-medium">
-          광고
-        </span>
-        광고 영역
+      {/* 광고 — AdSense */}
+      <div className="mb-8">
+        <AdSenseUnit slotId="auto" format="auto" className="rounded-2xl overflow-hidden" />
       </div>
 
       {/* 댓글 */}

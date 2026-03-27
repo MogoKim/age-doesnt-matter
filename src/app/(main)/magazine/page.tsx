@@ -4,6 +4,7 @@ import { unstable_cache } from 'next/cache'
 import { getMagazineList } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
+import FeedAd from '@/components/ad/FeedAd'
 
 export const metadata: Metadata = {
   title: '매거진',
@@ -47,13 +48,28 @@ export default async function MagazinePage() {
             {/* 최신 1건: 대형 카드 */}
             {featured && <FeaturedCard post={featured} />}
 
-            {/* 나머지: 2열 그리드 */}
+            {/* 피처 카드 아래 광고 */}
+            <FeedAd format="horizontal" />
+
+            {/* 나머지: 2열 그리드 (8번째 카드 뒤 광고 삽입) */}
             {rest.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 mt-4 lg:grid-cols-4">
-                {rest.map((post) => (
-                  <MagazineCard key={post.id} post={post} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-2 gap-3 mt-4 lg:grid-cols-4">
+                  {rest.slice(0, 8).map((post) => (
+                    <MagazineCard key={post.id} post={post} />
+                  ))}
+                </div>
+                {rest.length > 8 && (
+                  <>
+                    <FeedAd format="horizontal" />
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                      {rest.slice(8).map((post) => (
+                        <MagazineCard key={post.id} post={post} />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
             )}
           </>
         )}

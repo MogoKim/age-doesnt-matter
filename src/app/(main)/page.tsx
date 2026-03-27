@@ -6,6 +6,7 @@ import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
 import EditorsPickSection from '@/components/features/home/EditorsPickSection'
 import AdInline from '@/components/features/home/AdInline'
+import FeedAd from '@/components/ad/FeedAd'
 import MagazineSection from '@/components/features/home/MagazineSection'
 import CommunitySection from '@/components/features/home/CommunitySection'
 import RecentActivityFeed from '@/components/features/home/RecentActivityFeed'
@@ -82,6 +83,7 @@ export default async function HomePage() {
             <MagazineSection posts={magazine} />
             <RecentActivityFeed activities={activities} />
             <CommunitySection posts={community} />
+            <FeedAd format="horizontal" />
           </div>
           <HomeSidebar posts={community} />
         </div>

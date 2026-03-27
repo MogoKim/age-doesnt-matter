@@ -11,6 +11,7 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 import { formatSalary } from '@/lib/format'
 import JobFilterButton from '@/components/features/jobs/JobFilterButton'
 import JobQuickTags from '@/components/features/jobs/JobQuickTags'
+import FeedAd from '@/components/ad/FeedAd'
 
 interface PageProps {
   searchParams: Promise<{ region?: string; tags?: string }>
@@ -66,8 +67,11 @@ export default async function JobsPage({ searchParams }: PageProps) {
         {/* 일자리 목록 */}
         {jobs.length > 0 ? (
           <div className="space-y-3">
-            {jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
+            {jobs.map((job, idx) => (
+              <div key={job.id}>
+                <JobCard job={job} />
+                {idx === 4 && <FeedAd format="horizontal" />}
+              </div>
             ))}
           </div>
         ) : (

@@ -5,6 +5,7 @@ import { getHotPosts, getHallOfFamePosts } from '@/lib/queries/posts'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
+import FeedAd from '@/components/ad/FeedAd'
 
 export const metadata: Metadata = {
   title: '인기글',
@@ -47,6 +48,11 @@ export default async function BestPage() {
           <EmptyState message="아직 인기글이 없어요. 글에 공감을 눌러보세요!" />
         )}
       </section>
+
+      {/* 섹션 사이 광고 */}
+      <div className="px-4">
+        <FeedAd format="horizontal" />
+      </div>
 
       {/* 명예의 전당 */}
       <section className="px-4 py-6 border-t border-border">

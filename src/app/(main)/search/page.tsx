@@ -10,6 +10,7 @@ import { auth } from '@/lib/auth'
 import SearchForm from '@/components/features/search/SearchForm'
 import SearchTabs from '@/components/features/search/SearchTabs'
 import SearchResults from '@/components/features/search/SearchResults'
+import FeedAd from '@/components/ad/FeedAd'
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string; tab?: string }>
@@ -52,6 +53,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       </Suspense>
 
       <SearchResults result={result} query={query} tab={tab} />
+
+      {/* 검색 결과 하단 광고 */}
+      <div className="px-4 pb-6">
+        <FeedAd format="horizontal" />
+      </div>
     </div>
   )
 }
