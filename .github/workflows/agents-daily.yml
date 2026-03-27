@@ -9,6 +9,8 @@ on:
     - cron: "0 2 * * *"
     # 14:00 KST = 05:00 UTC — COO 콘텐츠
     - cron: "0 5 * * *"
+    # 16:00 KST = 07:00 UTC — 매거진 자동발행
+    - cron: "0 7 * * *"
     # 22:00 KST = 13:00 UTC — CDO KPI
     - cron: "0 13 * * *"
     # 23:00 KST = 14:00 UTC — CFO 비용
@@ -77,6 +79,7 @@ jobs:
                 ;;
               02) echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=ux-analyzer" >> $GITHUB_OUTPUT ;;
               05) echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;
+              07) echo "agent=cafe_crawler" >> $GITHUB_OUTPUT; echo "task=magazine-generate" >> $GITHUB_OUTPUT ;;
               13) echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=kpi-collector" >> $GITHUB_OUTPUT ;;
               14)
                 MIN=$(date -u +%M)

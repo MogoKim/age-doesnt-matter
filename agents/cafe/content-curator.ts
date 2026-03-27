@@ -199,20 +199,8 @@ async function main() {
     return
   }
 
-  // 2) UGC 비율 체크 (시드봇과 동일한 안전장치)
-  const [totalPosts, userPosts] = await Promise.all([
-    prisma.post.count({ where: { status: 'PUBLISHED' } }),
-    prisma.post.count({ where: { source: 'USER', status: 'PUBLISHED' } }),
-  ])
-  const ugcRatio = totalPosts > 0 ? userPosts / totalPosts : 0
-  if (ugcRatio >= 0.7) {
-    console.log(`[ContentCurator] UGC ${(ugcRatio * 100).toFixed(0)}% — 자동 중단`)
-    await disconnect()
-    return
-  }
-
-  // 3) 상위 3개 핫토픽으로 글 생성
-  const maxPosts = ugcRatio >= 0.5 ? 1 : 3
+  // 2) 상위 3개 핫토픽으로 글 생성
+  const maxPosts = 3
   let publishedCount = 0
 
   for (const topic of hotTopics.slice(0, maxPosts)) {
@@ -240,7 +228,6 @@ async function main() {
       details: JSON.stringify({
         topicsUsed: hotTopics.slice(0, maxPosts).map(t => t.topic),
         published: publishedCount,
-        ugcRatio,
       }),
       itemCount: publishedCount,
       executionTimeMs: durationMs,
@@ -251,7 +238,7 @@ async function main() {
     level: 'info',
     agent: 'CONTENT_CURATOR',
     title: '트렌드 기반 콘텐츠 게시',
-    body: `핫토픽 ${hotTopics.length}개 중 ${publishedCount}개 글 게시\nUGC 비율: ${(ugcRatio * 100).toFixed(0)}%`,
+    body: `핫토픽 ${hotTopics.length}개 중 ${publishedCount}개 글 게시`,
   })
 
   console.log(`[ContentCurator] 완료 — ${publishedCount}개 게시, ${Math.round(durationMs / 1000)}초`)

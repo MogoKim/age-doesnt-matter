@@ -26,12 +26,12 @@ schedules:
     task: trend-analyzer
     handler: "cmo/trend-analyzer.ts"
 
-  # 매거진 자동발행 — 월/수/금 10:30 KST (01:30 UTC)
-  - cron: "30 1 * * 1,3,5"
+  # 매거진 자동발행 — 매일 16:00 KST (07:00 UTC)
+  - cron: "0 7 * * *"
     agent: CAFE_CRAWLER
     task: magazine-generate
     handler: "cafe/magazine-generator.ts"
-    note: "CafeTrend 기반 매거진 자동생성 (월/수/금)"
+    note: "CafeTrend 기반 매거진 자동생성 (매일 16시)"
 
   # 매일 10:00 KST — 시드 콘텐츠
   - cron: "0 1 * * *"

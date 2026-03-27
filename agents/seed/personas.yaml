@@ -425,6 +425,6 @@ safety:
   daily_likes: "40~60개"             # 20명 기준
   daily_replies: "15~25개"           # 20명 기준
   db_source: "BOT"                   # source 필드 값
-  reduce_at_ugc_50: true             # UGC 50% 시 빈도 50% 감소
-  stop_at_ugc_70: true               # UGC 70% 시 중단
+  reduce_at_ugc_50: false            # 비활성 — 초기 콘텐츠 확보 필요
+  stop_at_ugc_70: false              # 비활성 — 초기 콘텐츠 확보 필요
   max_same_author_daily: 2           # 같은 페르소나 하루 최대 글 2개

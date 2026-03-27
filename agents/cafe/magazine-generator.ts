@@ -1,7 +1,7 @@
 /**
  * 매거진 자동생성기
  * CafeTrend.magazineTopics를 기반으로 에디터 스타일 매거진 글 생성
- * 월/수/금 10:30 KST 실행 (트렌드 분석 09:00 이후)
+ * 매일 16:00 KST 실행 (트렌드 분석 후)
  */
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
@@ -163,14 +163,6 @@ async function publishMagazine(
 async function main() {
   console.log('[MagazineGenerator] 시작')
   const startTime = Date.now()
-
-  // 월/수/금만 실행
-  const dayOfWeek = new Date().getDay()
-  if (![1, 3, 5].includes(dayOfWeek)) {
-    console.log(`[MagazineGenerator] 오늘은 ${['일', '월', '화', '수', '목', '금', '토'][dayOfWeek]}요일 — 발행일 아님 (월/수/금만)`)
-    await disconnect()
-    return
-  }
 
   // 1) 오늘/어제 트렌드 분석 결과 조회
   const today = new Date()

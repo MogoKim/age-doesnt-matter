@@ -139,15 +139,6 @@ const SCHEDULE: Record<string, Activity[]> = {
   ],
 }
 
-async function checkUGCRatio(): Promise<{ ratio: number; shouldReduce: boolean; shouldStop: boolean }> {
-  const [totalPosts, userPosts] = await Promise.all([
-    prisma.post.count({ where: { status: 'PUBLISHED' } }),
-    prisma.post.count({ where: { source: 'USER', status: 'PUBLISHED' } }),
-  ])
-  const ratio = totalPosts > 0 ? userPosts / totalPosts : 0
-  return { ratio, shouldReduce: ratio >= 0.5, shouldStop: ratio >= 0.7 }
-}
-
 async function getRandomPosts(board: string, limit: number) {
   return prisma.post.findMany({
     where: { boardType: board as 'STORY' | 'HUMOR' | 'JOB', status: 'PUBLISHED' },
@@ -311,26 +302,7 @@ async function main() {
     return
   }
 
-  // UGC 비율 체크
-  const { ratio, shouldReduce, shouldStop } = await checkUGCRatio()
-  console.log(`[Seed] UGC 비율: ${(ratio * 100).toFixed(1)}%`)
-
-  if (shouldStop) {
-    console.log('[Seed] UGC 70% 이상 — 시드 콘텐츠 중단')
-    await notifyAdmin({
-      level: 'info',
-      agent: 'SEED',
-      title: '시드 콘텐츠 자동 중단',
-      body: `UGC 비율 ${(ratio * 100).toFixed(1)}% — 70% 초과로 시드 봇 중단`,
-    })
-    await disconnect()
-    return
-  }
-
-  // 50% 이상이면 절반만 실행
-  const toRun = shouldReduce
-    ? activities.filter((_, i) => i % 2 === 0)
-    : activities
+  const toRun = activities
 
   let successCount = 0
   let errorCount = 0
@@ -355,7 +327,6 @@ async function main() {
         hour,
         success: successCount,
         errors: errorCount,
-        ugcRatio: ratio,
         totalActivities: toRun.length,
       }),
       itemCount: successCount,
