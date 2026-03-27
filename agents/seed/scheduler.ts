@@ -293,7 +293,10 @@ async function runActivity(activity: Activity): Promise<void> {
 }
 
 async function main() {
-  const hour = new Date().getHours().toString().padStart(2, '0')
+  // KST = UTC + 9 (GitHub Actions는 UTC로 실행)
+  const now = new Date()
+  const kstHour = (now.getUTCHours() + 9) % 24
+  const hour = kstHour.toString().padStart(2, '0')
   const activities = SCHEDULE[hour]
 
   if (!activities || activities.length === 0) {
