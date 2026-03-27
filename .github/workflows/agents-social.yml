@@ -18,6 +18,8 @@ on:
           - knowledge-responder
           - seo-optimizer
           - threads-token-refresh
+          - test-validate
+          - test-post
   schedule:
     # 텍스트 게시 (Threads/X)
     - cron: "0 0 * * *"    # 09:00 KST — 아침
@@ -329,3 +331,57 @@ jobs:
           SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
           SLACK_CHANNEL_LOG_MARKETING: ${{ secrets.SLACK_CHANNEL_LOG_MARKETING }}
           SLACK_CHANNEL_ALERT_SYSTEM: ${{ secrets.SLACK_CHANNEL_ALERT_SYSTEM }}
+
+  test-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: >-
+      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'test-validate'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: cd agents && npm ci
+      - run: cd agents && npx tsx cmo/test-platforms.ts validate
+        env:
+          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ACCOUNT_ID: ${{ secrets.INSTAGRAM_BUSINESS_ACCOUNT_ID }}
+          THREADS_APP_ID: ${{ secrets.THREADS_APP_ID }}
+          THREADS_APP_SECRET: ${{ secrets.THREADS_APP_SECRET }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          X_CONSUMER_KEY: ${{ secrets.X_CONSUMER_KEY }}
+          X_CONSUMER_SECRET: ${{ secrets.X_CONSUMER_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          BAND_ACCESS_TOKEN: ${{ secrets.BAND_ACCESS_TOKEN }}
+          BAND_KEY: ${{ secrets.BAND_KEY }}
+
+  test-post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: >-
+      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'test-post'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: cd agents && npm ci
+      - run: cd agents && npx tsx cmo/test-platforms.ts post-test
+        env:
+          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ACCOUNT_ID: ${{ secrets.INSTAGRAM_BUSINESS_ACCOUNT_ID }}
+          THREADS_APP_ID: ${{ secrets.THREADS_APP_ID }}
+          THREADS_APP_SECRET: ${{ secrets.THREADS_APP_SECRET }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          X_CONSUMER_KEY: ${{ secrets.X_CONSUMER_KEY }}
+          X_CONSUMER_SECRET: ${{ secrets.X_CONSUMER_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          BAND_ACCESS_TOKEN: ${{ secrets.BAND_ACCESS_TOKEN }}
+          BAND_KEY: ${{ secrets.BAND_KEY }}
