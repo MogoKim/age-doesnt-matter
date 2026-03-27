@@ -11,9 +11,34 @@
 import { execSync } from 'child_process'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { readFileSync } from 'fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const projectRoot = resolve(__dirname, '../..')
 const step = process.argv[2] ?? 'all'
+
+// launchd 실행 시 .env.local 환경변수가 없으므로 직접 로드
+function loadEnvFile(filePath: string) {
+  try {
+    const content = readFileSync(filePath, 'utf-8')
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) continue
+      const eqIdx = trimmed.indexOf('=')
+      if (eqIdx === -1) continue
+      const key = trimmed.slice(0, eqIdx).trim()
+      const value = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '')
+      if (!process.env[key]) {
+        process.env[key] = value
+      }
+    }
+  } catch {
+    // 파일 없으면 무시
+  }
+}
+
+loadEnvFile(resolve(projectRoot, '.env.local'))
+loadEnvFile(resolve(projectRoot, '.env'))
 
 function run(script: string, label: string) {
   console.log(`\n${'='.repeat(50)}`)
@@ -21,14 +46,19 @@ function run(script: string, label: string) {
   console.log('='.repeat(50))
 
   try {
-    execSync(`npx tsx ${resolve(__dirname, script)}`, {
-      stdio: 'inherit',
+    const output = execSync(`npx tsx ${resolve(__dirname, script)}`, {
       env: { ...process.env },
-      timeout: 600000, // 10분
+      timeout: 900000, // 15분 — 크롤링은 카페당 2-3분 소요
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
     })
+    if (output) console.log(output)
     console.log(`[Pipeline] ${label} ✅ 완료`)
-  } catch (err) {
-    console.error(`[Pipeline] ${label} ❌ 실패:`, err)
+  } catch (err: unknown) {
+    const execErr = err as { stdout?: string; stderr?: string; message?: string }
+    if (execErr.stdout) console.log(execErr.stdout)
+    if (execErr.stderr) console.error(execErr.stderr)
+    console.error(`[Pipeline] ${label} ❌ 실패:`, execErr.message ?? err)
     // 분석/큐레이션 실패해도 다음 단계 진행
   }
 }

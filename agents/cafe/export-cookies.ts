@@ -1,14 +1,15 @@
 /**
- * 네이버 쿠키 추출 스크립트 (1회성)
- * Chrome 프로필에서 네이버 로그인 쿠키를 추출해서 storage-state.json으로 저장
+ * 네이버 쿠키 추출 스크립트
+ * Chrome 프로필의 암호화된 쿠키를 Python browser_cookie3로 복호화하여 추출
  *
  * 사용법: Chrome 완전히 종료 후 실행
- *   cd agents && npx tsx run-local.ts cafe/export-cookies.ts
+ *   npx tsx agents/cafe/export-cookies.ts
  *
- * 이후 크롤러는 이 파일만 사용하므로 Chrome을 닫을 필요 없음
+ * 주의: Chrome이 쿠키 DB를 잠그므로 반드시 Chrome 종료 후 실행해야 함
+ * 핵심 쿠키: NID_AUT, NID_SES (네이버 로그인 인증)
  */
-import { chromium } from 'playwright'
-import { writeFileSync } from 'fs'
+import { execSync } from 'child_process'
+import { writeFileSync, readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { CHROME_USER_DATA_DIR, CHROME_PROFILE } from './config.js'
@@ -17,49 +18,50 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const STORAGE_STATE_PATH = resolve(__dirname, 'storage-state.json')
 
 async function main() {
-  console.log('[ExportCookies] Chrome 프로필에서 네이버 쿠키 추출 시작')
-  console.log(`[ExportCookies] 프로필: ${CHROME_USER_DATA_DIR}/${CHROME_PROFILE}`)
+  const cookieFile = resolve(CHROME_USER_DATA_DIR, CHROME_PROFILE, 'Cookies')
+  console.log('[ExportCookies] Chrome 쿠키 DB에서 네이버 쿠키 복호화 추출')
+  console.log(`[ExportCookies] 쿠키 DB: ${cookieFile}`)
 
-  // Chrome 프로필로 브라우저 열기 (1회성)
-  const context = await chromium.launchPersistentContext(
-    `${CHROME_USER_DATA_DIR}/${CHROME_PROFILE}`,
-    {
-      headless: false,
-      channel: 'chrome',
-      args: ['--disable-blink-features=AutomationControlled', '--no-first-run'],
-      viewport: { width: 1280, height: 900 },
-      timeout: 15000,
-    },
-  )
+  // Python browser_cookie3로 암호화된 Chrome 쿠키 복호화
+  const pythonScript = `
+import browser_cookie3, json, sys
+cookie_file = sys.argv[1]
+cj = browser_cookie3.chrome(domain_name='.naver.com', cookie_file=cookie_file)
+cookies = []
+for c in cj:
+    if 'naver' in c.domain:
+        cookies.append({
+            "name": c.name, "value": c.value, "domain": c.domain,
+            "path": c.path, "expires": c.expires or -1,
+            "httpOnly": False, "secure": bool(c.secure), "sameSite": "Lax"
+        })
+print(json.dumps(cookies, ensure_ascii=False))
+`
 
-  const page = await context.newPage()
+  const result = execSync(
+    `python3 -c ${JSON.stringify(pythonScript)} ${JSON.stringify(cookieFile)}`,
+    { encoding: 'utf-8', timeout: 15000 },
+  ).trim()
 
-  // 네이버 접속해서 로그인 상태 확인
-  await page.goto('https://naver.com', { waitUntil: 'domcontentloaded' })
-  await new Promise(r => setTimeout(r, 3000))
+  const cookies: Array<{name: string; value: string; domain: string; path: string; expires: number; httpOnly: boolean; secure: boolean; sameSite: string}> = JSON.parse(result)
 
-  // 로그인 확인
-  const loginCheck = await page.locator('.MyView-module__nick_text___aAOnp, .nick_area .nick, [class*="nick"]').first().textContent().catch(() => null)
-  if (loginCheck) {
-    console.log(`[ExportCookies] 네이버 로그인 확인: ${loginCheck}`)
-  } else {
-    console.warn('[ExportCookies] 네이버 로그인 안 됨 — 쿠키가 유효하지 않을 수 있음')
+  // 핵심 쿠키 검증
+  const hasNidAut = cookies.some(c => c.name === 'NID_AUT')
+  const hasNidSes = cookies.some(c => c.name === 'NID_SES')
+
+  console.log(`[ExportCookies] NID_AUT: ${hasNidAut ? '✅' : '❌'}`)
+  console.log(`[ExportCookies] NID_SES: ${hasNidSes ? '✅' : '❌'}`)
+  console.log(`[ExportCookies] 총 네이버 쿠키: ${cookies.length}개`)
+
+  if (!hasNidAut || !hasNidSes) {
+    console.error('[ExportCookies] ❌ 핵심 인증 쿠키 누락! Chrome에서 네이버에 로그인되어 있는지 확인하세요.')
+    process.exit(1)
   }
 
-  // storage state 저장 (쿠키 + localStorage)
-  const state = await context.storageState()
-  writeFileSync(STORAGE_STATE_PATH, JSON.stringify(state, null, 2))
-
-  const cookieCount = state.cookies.length
-  const naverCookies = state.cookies.filter(c => c.domain.includes('naver'))
-  console.log(`[ExportCookies] 저장 완료: ${STORAGE_STATE_PATH}`)
-  console.log(`[ExportCookies] 총 쿠키 ${cookieCount}개 (네이버 ${naverCookies.length}개)`)
-
-  await page.close()
-  await context.close()
-
-  console.log('[ExportCookies] 완료! 이제 Chrome을 자유롭게 사용하세요.')
-  console.log('[ExportCookies] 크롤러는 이 쿠키 파일로 독립 실행됩니다.')
+  // storage-state.json 저장
+  const storageState = { cookies, origins: [] }
+  writeFileSync(STORAGE_STATE_PATH, JSON.stringify(storageState, null, 2))
+  console.log(`[ExportCookies] ✅ 저장 완료: ${STORAGE_STATE_PATH}`)
 }
 
 main().catch(err => {

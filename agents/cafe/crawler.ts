@@ -11,7 +11,7 @@
  *   2차 폴백: 구 형식 URL (iframe_url_utf8) — cafe_main iframe에서 추출
  */
 import { chromium, type BrowserContext, type Page, type Frame } from 'playwright'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
@@ -28,15 +28,28 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 async function launchBrowser(): Promise<{ context: BrowserContext }> {
   if (!existsSync(STORAGE_STATE_PATH)) {
     throw new Error(
-      '쿠키 파일 없음! 먼저 Chrome 닫고 실행:\n  npx tsx run-local.ts cafe/export-cookies.ts',
+      '쿠키 파일 없음! 먼저 Chrome 닫고 실행:\n  npx tsx agents/cafe/export-cookies.ts',
     )
   }
 
+  // 핵심 인증 쿠키 사전 검증 — NID_AUT, NID_SES 없으면 회원 전용 글 크롤링 불가
+  const stateData = JSON.parse(readFileSync(STORAGE_STATE_PATH, 'utf-8'))
+  const cookieNames = (stateData.cookies ?? []).map((c: { name: string }) => c.name)
+  if (!cookieNames.includes('NID_AUT') || !cookieNames.includes('NID_SES')) {
+    throw new Error(
+      '쿠키에 NID_AUT/NID_SES 없음! 네이버 로그인 쿠키가 필요합니다.\n' +
+      'Chrome 닫고 실행: npx tsx agents/cafe/export-cookies.ts',
+    )
+  }
+
+  // headless: false 필수 — 네이버 카페는 headless 봇을 탐지/차단함
+  // launchd 실행 시에도 화면이 필요 (macOS는 로그인 상태면 display 사용 가능)
   const browser = await chromium.launch({
     headless: false,
     args: [
       '--disable-blink-features=AutomationControlled',
       '--no-first-run',
+      '--disable-dev-shm-usage',
     ],
   })
 
@@ -153,14 +166,32 @@ async function collectPostUrls(page: Page, cafe: CafeConfig): Promise<ArticleInf
 
 // ─── 신 형식 크롤링 (f-e URL — iframe 불필요) ─────────────
 
-/** 신 형식 URL에서 글 상세 크롤링 — 직접 렌더링이므로 안정적 */
+/** 신 형식 URL에서 글 상세 크롤링 — cafe_main iframe 안에서 콘텐츠 추출 */
 async function crawlNewFormat(page: Page, article: ArticleInfo, cafe: CafeConfig): Promise<RawCafePost | null> {
   try {
     await page.goto(article.newFormatUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
-    await sleep(2500)
+    await sleep(3000)
 
-    // 제목 — 신 형식 셀렉터 (페이지 직접 렌더링)
-    const title = await safeText(page, [
+    // 네이버 카페는 f-e URL도 cafe_main iframe 안에 실제 콘텐츠를 렌더링
+    const cafeFrame = page.frame('cafe_main')
+      ?? page.frames().find(f =>
+        f.url().includes('ca-fe/cafes') || f.url().includes('ArticleRead'),
+      )
+
+    // iframe이 있으면 iframe에서, 없으면 page에서 직접 시도
+    const target = cafeFrame ?? page
+
+    if (cafeFrame) {
+      // iframe 콘텐츠 렌더링 대기
+      try {
+        await cafeFrame.waitForSelector('.title_text, .se-title-text, .article_header, .ContentRenderer', { timeout: 8000 })
+      } catch {
+        // 타임아웃이어도 계속 시도
+      }
+      await sleep(1000)
+    }
+
+    const title = await safeText(target, [
       'h3.title_text',
       '.title_text',
       '.se-title-text',
@@ -171,7 +202,7 @@ async function crawlNewFormat(page: Page, article: ArticleInfo, cafe: CafeConfig
 
     if (!title) return null
 
-    return await buildPostFromTarget(page, article.newFormatUrl, cafe, title)
+    return await buildPostFromTarget(target, article.newFormatUrl, cafe, title)
   } catch (err) {
     console.warn(`[CafeCrawler] 신형식 실패: ${article.articleId}`, err instanceof Error ? err.message : '')
     return null

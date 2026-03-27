@@ -42,7 +42,7 @@ async function analyzeTrends(posts: Awaited<ReturnType<typeof getTodayPosts>>): 
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 2000,
+    max_tokens: 4000,
     system: `당신은 50~60대 커뮤니티 트렌드 분석가입니다.
 네이버 카페 3곳(우리가남이가, 실버사랑, 5060세대)에서 수집한 게시글을 분석합니다.
 
@@ -80,21 +80,44 @@ hotTopics: 상위 5~7개, keywords: 상위 15개, magazineTopics: 상위 3개, p
   })
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
+  console.log(`[TrendAnalyzer] AI 응답 길이: ${text.length}자`)
 
   // JSON 파싱 (코드블록 제거 + 첫 번째 JSON 객체 추출)
   const cleaned = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim()
   const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
   const jsonStr = jsonMatch ? jsonMatch[0] : cleaned
   try {
-    return JSON.parse(jsonStr) as TrendAnalysis
+    const parsed = JSON.parse(jsonStr)
+    console.log(`[TrendAnalyzer] 파싱 성공 — hotTopics: ${parsed.hotTopics?.length}, keywords: ${parsed.keywords?.length}, magazineTopics: ${parsed.magazineTopics?.length}`)
+    return parsed as TrendAnalysis
   } catch {
-    console.error('[TrendAnalyzer] JSON 파싱 실패, 원본:', text.slice(0, 200))
-    return {
-      hotTopics: [],
-      keywords: [],
-      sentimentMap: { positive: 33, neutral: 34, negative: 33 },
-      magazineTopics: [],
-      personaHints: [],
+    console.log(`[TrendAnalyzer] JSON 파싱 실패 (${jsonStr.length}자) — max_tokens 부족 가능성`)
+    // 불완전한 JSON 복구 시도: 닫히지 않은 배열/객체 닫기
+    let repaired = jsonStr
+    const openBraces = (repaired.match(/\{/g) ?? []).length
+    const closeBraces = (repaired.match(/\}/g) ?? []).length
+    const openBrackets = (repaired.match(/\[/g) ?? []).length
+    const closeBrackets = (repaired.match(/\]/g) ?? []).length
+    // 마지막 완전한 항목까지 자르기
+    const lastComplete = repaired.lastIndexOf('}')
+    if (lastComplete > 0) {
+      repaired = repaired.slice(0, lastComplete + 1)
+      repaired += ']}'.repeat(Math.max(0, openBrackets - (repaired.match(/\]/g) ?? []).length))
+      repaired += '}'.repeat(Math.max(0, openBraces - (repaired.match(/\}/g) ?? []).length))
+    }
+    try {
+      const parsed = JSON.parse(repaired)
+      console.log(`[TrendAnalyzer] JSON 복구 성공 — hotTopics: ${parsed.hotTopics?.length ?? 0}`)
+      return parsed as TrendAnalysis
+    } catch {
+      console.log('[TrendAnalyzer] JSON 복구도 실패, 원본 앞부분:', text.slice(0, 300))
+      return {
+        hotTopics: [],
+        keywords: [],
+        sentimentMap: { positive: 33, neutral: 34, negative: 33 },
+        magazineTopics: [],
+        personaHints: [],
+      }
     }
   }
 }
