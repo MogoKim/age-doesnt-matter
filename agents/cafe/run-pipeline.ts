@@ -8,7 +8,7 @@
  *   npx tsx agents/cafe/run-pipeline.ts analyze   # 분석만
  *   npx tsx agents/cafe/run-pipeline.ts curate    # 큐레이션만
  */
-import { execSync } from 'child_process'
+import { execFileSync } from 'child_process'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { readFileSync } from 'fs'
@@ -46,18 +46,16 @@ function run(script: string, label: string) {
   console.log('='.repeat(50))
 
   try {
-    const output = execSync(`npx tsx ${resolve(__dirname, script)}`, {
+    // stdio: 'inherit' — 자식 프로세스 출력을 부모에 직접 연결
+    // execSync + pipe 조합은 출력 버퍼 초과 시 프로세스가 블로킹되어 ETIMEDOUT 발생
+    execFileSync('npx', ['tsx', resolve(__dirname, script)], {
       env: { ...process.env },
       timeout: 900000, // 15분 — 크롤링은 카페당 2-3분 소요
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: 'inherit',
     })
-    if (output) console.log(output)
     console.log(`[Pipeline] ${label} ✅ 완료`)
   } catch (err: unknown) {
-    const execErr = err as { stdout?: string; stderr?: string; message?: string }
-    if (execErr.stdout) console.log(execErr.stdout)
-    if (execErr.stderr) console.error(execErr.stderr)
+    const execErr = err as { status?: number; message?: string }
     console.error(`[Pipeline] ${label} ❌ 실패:`, execErr.message ?? err)
     // 분석/큐레이션 실패해도 다음 단계 진행
   }
