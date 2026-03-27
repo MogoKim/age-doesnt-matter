@@ -66,30 +66,33 @@ jobs:
             echo "agent=${{ github.event.inputs.agent }}" >> $GITHUB_OUTPUT
             echo "task=${{ github.event.inputs.task }}" >> $GITHUB_OUTPUT
           else
-            HOUR=$(date -u +%H)
+            # github.event.schedule로 매칭 — cron 딜레이와 무관하게 정확히 동작
+            CRON="${{ github.event.schedule }}"
             DOW=$(date -u +%u)  # 1=Monday
-            case $HOUR in
-              00) echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-cycle" >> $GITHUB_OUTPUT ;;
-              01)
+            case "$CRON" in
+              "0 0 * * *")
+                echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-cycle" >> $GITHUB_OUTPUT ;;
+              "0 1 * * *")
                 if [ "$DOW" = "1" ]; then
                   echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=weekly-report" >> $GITHUB_OUTPUT
                 else
                   echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=trend-analyzer" >> $GITHUB_OUTPUT
                 fi
                 ;;
-              02) echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=ux-analyzer" >> $GITHUB_OUTPUT ;;
-              05) echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;
-              07) echo "agent=cafe_crawler" >> $GITHUB_OUTPUT; echo "task=magazine-generate" >> $GITHUB_OUTPUT ;;
-              13) echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=kpi-collector" >> $GITHUB_OUTPUT ;;
-              14)
-                MIN=$(date -u +%M)
-                if [ "$MIN" -ge 15 ]; then
-                  echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=revenue-tracker" >> $GITHUB_OUTPUT
-                else
-                  echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=cost-tracker" >> $GITHUB_OUTPUT
-                fi
-                ;;
-              *) echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
+              "0 2 * * *")
+                echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=ux-analyzer" >> $GITHUB_OUTPUT ;;
+              "0 5 * * *")
+                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;
+              "0 7 * * *")
+                echo "agent=cafe_crawler" >> $GITHUB_OUTPUT; echo "task=magazine-generate" >> $GITHUB_OUTPUT ;;
+              "0 13 * * *")
+                echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=kpi-collector" >> $GITHUB_OUTPUT ;;
+              "0 14 * * *")
+                echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=cost-tracker" >> $GITHUB_OUTPUT ;;
+              "30 14 * * *")
+                echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=revenue-tracker" >> $GITHUB_OUTPUT ;;
+              *)
+                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
             esac
           fi
       - name: Run agent

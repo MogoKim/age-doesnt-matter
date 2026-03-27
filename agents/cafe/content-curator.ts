@@ -12,6 +12,21 @@ import type { CuratedContent, TrendAnalysis } from './types.js'
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
 
+/** AI 응답에서 마크다운 문법 제거 */
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/#{1,6}\s?/g, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/_(.+?)_/g, '$1')
+    .replace(/~~(.+?)~~/g, '$1')
+    .replace(/`(.+?)`/g, '$1')
+    .replace(/^[-*+]\s/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .trim()
+}
+
 /** 페르소나별 적합 매칭 */
 interface PersonaMatch {
   id: string
@@ -119,6 +134,7 @@ async function generateCuratedPost(
 - 자연스러운 구어체, 맞춤법 살짝 틀려도 됨
 - 본인의 경험담처럼 자연스럽게
 - "시니어", "액티브 시니어" 같은 표현 절대 금지
+- 마크다운 문법(**, ##, *, _ 등) 절대 사용 금지. 순수 텍스트로만 작성
 - 정치/종교/혐오/광고 절대 금지
 - 카테고리: 일상, 건강, 고민, 자녀, 기타 중 하나 선택`,
     messages: [{
@@ -146,8 +162,8 @@ ${references ? `참고 글들:\n${references}` : ''}
 
   return {
     personaId: persona.id,
-    title: titleMatch[1].trim(),
-    content: bodyMatch[1].trim(),
+    title: stripMarkdown(titleMatch[1].trim()),
+    content: stripMarkdown(bodyMatch[1].trim()),
     boardType: persona.board,
     category: validCategories.includes(category ?? '') ? category : '일상',
     sourceTopic: topic,
@@ -159,10 +175,14 @@ ${references ? `참고 글들:\n${references}` : ''}
 async function publishCuratedContent(curated: CuratedContent): Promise<void> {
   const userId = await getBotUser(curated.personaId)
 
+  const htmlContent = `<p>${curated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
+  const summary = curated.content.replace(/\n/g, ' ').slice(0, 150).trim()
+
   await prisma.post.create({
     data: {
       title: curated.title,
-      content: `<p>${curated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`,
+      content: htmlContent,
+      summary,
       boardType: curated.boardType as 'STORY' | 'HUMOR',
       category: curated.category ?? '일상',
       authorId: userId,

@@ -190,10 +190,14 @@ async function runActivity(activity: Activity): Promise<void> {
 
   if (activity.type === 'post') {
     const { title, content, boardType, category } = await generatePost(activity.personaId)
+    const htmlContent = `<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
+    const summary = content.replace(/\n/g, ' ').slice(0, 150).trim()
+
     await prisma.post.create({
       data: {
         title,
-        content: `<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`,
+        content: htmlContent,
+        summary,
         boardType: boardType as 'STORY' | 'HUMOR',
         category: category ?? null,
         authorId: userId,

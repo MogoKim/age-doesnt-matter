@@ -5,6 +5,21 @@ const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 
 const client = new Anthropic()
 
+/** AI 응답에서 마크다운 문법 제거 */
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/#{1,6}\s?/g, '')         // ## headings
+    .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold**
+    .replace(/\*(.+?)\*/g, '$1')       // *italic*
+    .replace(/__(.+?)__/g, '$1')       // __bold__
+    .replace(/_(.+?)_/g, '$1')         // _italic_
+    .replace(/~~(.+?)~~/g, '$1')       // ~~strike~~
+    .replace(/`(.+?)`/g, '$1')         // `code`
+    .replace(/^[-*+]\s/gm, '')         // list bullets
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [link](url)
+    .trim()
+}
+
 interface Persona {
   nickname: string
   age: number
@@ -75,6 +90,7 @@ export async function generatePost(personaId: string): Promise<{ title: string; 
 - 자연스러운 구어체, 맞춤법 살짝 틀려도 됨
 - "시니어", "액티브 시니어" 같은 표현 절대 금지
 - 정치/종교/혐오/광고 절대 금지
+- 마크다운 문법(**, ##, *, _ 등) 절대 사용 금지. 순수 텍스트로만 작성
 - 카테고리: ${boardCategories.join(', ')} 중 하나를 선택하세요
 - 제목, 카테고리, 본문을 작성하세요`,
     messages: [{
@@ -97,8 +113,8 @@ export async function generatePost(personaId: string): Promise<{ title: string; 
   const validCategory = boardCategories.includes(category ?? '') ? category : boardCategories[0]
 
   return {
-    title: titleMatch?.[1]?.trim() ?? `${p.nickname}의 일상`,
-    content: bodyMatch?.[1]?.trim() ?? text,
+    title: stripMarkdown(titleMatch?.[1]?.trim() ?? `${p.nickname}의 일상`),
+    content: stripMarkdown(bodyMatch?.[1]?.trim() ?? text),
     boardType: p.board,
     category: validCategory,
   }
@@ -116,6 +132,7 @@ export async function generateComment(personaId: string, postTitle: string, post
 말투: ${p.speech_patterns.join(', ')}
 - 자연스러운 댓글을 작성하세요 (1~3문장)
 - "시니어", "액티브 시니어" 같은 표현 절대 금지
+- 마크다운 문법(**, ##, *, _ 등) 절대 사용 금지
 - 정치/종교/혐오/광고 절대 금지`,
     messages: [{
       role: 'user',
@@ -123,7 +140,8 @@ export async function generateComment(personaId: string, postTitle: string, post
     }],
   })
 
-  return response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+  const comment = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+  return stripMarkdown(comment)
 }
 
 /** 대댓글(답글) 생성 */
@@ -139,6 +157,7 @@ export async function generateReply(personaId: string, postTitle: string, commen
 - 댓글에 대한 짧은 답글을 작성하세요 (1~2문장)
 - "시니어", "액티브 시니어" 같은 표현 절대 금지
 - 자연스럽게 대화하듯 써주세요
+- 마크다운 문법(**, ##, *, _ 등) 절대 사용 금지
 - 정치/종교/혐오/광고 절대 금지`,
     messages: [{
       role: 'user',
@@ -146,7 +165,8 @@ export async function generateReply(personaId: string, postTitle: string, commen
     }],
   })
 
-  return response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+  const reply = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+  return stripMarkdown(reply)
 }
 
 /** 봇 유저 조회 또는 생성 */
