@@ -61,6 +61,14 @@ export const THREADS_APP_ID = optionalEnv('THREADS_APP_ID', '')
 export const THREADS_APP_SECRET = optionalEnv('THREADS_APP_SECRET', '')
 export const THREADS_ACCESS_TOKEN = optionalEnv('THREADS_ACCESS_TOKEN', '')
 
+/** Instagram (optional) */
+export const INSTAGRAM_ACCESS_TOKEN = optionalEnv('INSTAGRAM_ACCESS_TOKEN', '')
+export const INSTAGRAM_BUSINESS_ACCOUNT_ID = optionalEnv('INSTAGRAM_BUSINESS_ACCOUNT_ID', '')
+
+/** Facebook Page (optional) */
+export const FACEBOOK_PAGE_ACCESS_TOKEN = optionalEnv('FACEBOOK_PAGE_ACCESS_TOKEN', '')
+export const FACEBOOK_PAGE_ID = optionalEnv('FACEBOOK_PAGE_ID', '')
+
 /** Google Analytics / GTM (NEXT_PUBLIC_ — 클라이언트에서 직접 접근) */
 export const NEXT_PUBLIC_GTM_ID = optionalEnv('NEXT_PUBLIC_GTM_ID', '')
 export const NEXT_PUBLIC_GA4_ID = optionalEnv('NEXT_PUBLIC_GA4_ID', '')

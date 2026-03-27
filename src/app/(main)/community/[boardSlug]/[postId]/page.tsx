@@ -13,19 +13,39 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeHtml } from '@/lib/sanitize'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CoupangCPS from '@/components/ad/CoupangCPS'
+import Breadcrumbs from '@/components/common/Breadcrumbs'
 
 interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
 }
 
+const BASE_URL = 'https://age-doesnt-matter.com'
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { postId } = await params
+  const { boardSlug, postId } = await params
   const post = await getPostDetail(postId)
   if (!post) return {}
 
+  const url = `${BASE_URL}/community/${boardSlug}/${postId}`
+  const description = post.preview || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티'
+
   return {
     title: post.title,
-    description: post.preview,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: post.title,
+      description,
+      url,
+      type: 'article',
+      siteName: '우리 나이가 어때서',
+      locale: 'ko_KR',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description,
+    },
   }
 }
 
@@ -47,6 +67,13 @@ export default async function PostDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
+      {/* Breadcrumbs + JSON-LD */}
+      <Breadcrumbs items={[
+        { label: '홈', href: '/' },
+        { label: board.displayName, href: `/community/${boardSlug}` },
+        { label: post.title },
+      ]} />
+
       {/* 뒤로가기 */}
       <div className="flex items-center justify-between">
         <Link href={`/community/${boardSlug}`} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5">

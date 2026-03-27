@@ -68,8 +68,28 @@ export default async function HomePage() {
     getCachedActivity(),
   ])
 
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: '우리 나이가 어때서',
+    alternateName: '우나어',
+    url: 'https://age-doesnt-matter.com',
+    logo: 'https://age-doesnt-matter.com/logo-512.png',
+    description: '50·60대가 나이 걱정 없이 일자리와 소통을 찾는 따뜻한 커뮤니티',
+    sameAs: [
+      'https://www.threads.net/@unaeo_official',
+      'https://x.com/unaeo_official',
+      'https://www.instagram.com/unaeo_official',
+      'https://www.facebook.com/unaeo.official',
+    ],
+  }
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
       <h1 className="sr-only">우리 나이가 어때서 — 5060 세대 커뮤니티</h1>
       <HeroSlider />
       <IdentitySection />

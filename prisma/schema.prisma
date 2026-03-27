@@ -191,6 +191,9 @@ enum AdminQueueStatus {
 enum SocialPlatform {
   THREADS
   X
+  INSTAGRAM
+  FACEBOOK
+  BAND
 }
 
 enum SocialPostStatus {
@@ -784,6 +787,9 @@ model SocialPost {
   postingSlot     String?           // morning, lunch, afternoon, evening
   linkUrl         String?           // 우나어 링크 (없으면 순수 콘텐츠)
 
+  imageUrls       String[]          // 카드뉴스 R2 URL 목록
+  cardNewsType    String?           // NEWS_TREND, INFO_TOPIC, COMMUNITY_PROMO
+
   metrics         Json?             // { impressions, likes, comments, shares, clicks }
   metricsUpdatedAt DateTime?
   status          SocialPostStatus  @default(DRAFT)
@@ -821,4 +827,20 @@ model SocialExperiment {
 
   @@index([status])
   @@index([weekNumber])
+}
+
+/// 반자동 채널 마케팅 초안 (카카오/지식인/당근/커뮤니티)
+model ChannelDraft {
+  id           String   @id @default(cuid())
+  channel      String   // KAKAO_OPENCHAT, NAVER_KNOWLEDGE, DANGGEUN, COMMUNITY
+  targetName   String   // 구체적 방/밴드/사이트명
+  draftText    String   @db.Text
+  linkUrl      String?
+  imageUrls    String[]
+  status       String   @default("DRAFT") // DRAFT, SENT, SKIPPED
+  createdAt    DateTime @default(now())
+  sentAt       DateTime?
+
+  @@index([channel, status])
+  @@index([createdAt(sort: Desc)])
 }

@@ -29,16 +29,25 @@ export interface ThreadsPostResult {
  * Threads 텍스트 게시 (2단계: container → publish)
  */
 export async function postThread(text: string): Promise<ThreadsPostResult> {
-  // Step 1: Container 생성
+  return publishContainer(await createContainer({ media_type: 'TEXT', text }))
+}
+
+/**
+ * Threads 이미지 + 텍스트 게시
+ * @param text - 게시 텍스트
+ * @param imageUrl - 공개 접근 가능한 이미지 URL (R2 등)
+ */
+export async function postThreadWithImage(text: string, imageUrl: string): Promise<ThreadsPostResult> {
+  return publishContainer(await createContainer({ media_type: 'IMAGE', text, image_url: imageUrl }))
+}
+
+/** Container 생성 (텍스트/이미지 공통) */
+async function createContainer(params: Record<string, string>): Promise<string> {
   const userId = await getThreadsUserId()
   const containerRes = await fetch(`${GRAPH_API}/${userId}/threads`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      media_type: 'TEXT',
-      text,
-      access_token: accessToken,
-    }),
+    body: JSON.stringify({ ...params, access_token: accessToken }),
   })
 
   if (!containerRes.ok) {
@@ -47,13 +56,17 @@ export async function postThread(text: string): Promise<ThreadsPostResult> {
   }
 
   const container = (await containerRes.json()) as { id: string }
+  return container.id
+}
 
-  // Step 2: Publish
+/** Container → Publish */
+async function publishContainer(containerId: string): Promise<ThreadsPostResult> {
+  const userId = await getThreadsUserId()
   const publishRes = await fetch(`${GRAPH_API}/${userId}/threads_publish`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      creation_id: container.id,
+      creation_id: containerId,
       access_token: accessToken,
     }),
   })
