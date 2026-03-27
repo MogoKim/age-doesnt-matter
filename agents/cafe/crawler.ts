@@ -42,6 +42,14 @@ async function launchBrowser(): Promise<{ context: BrowserContext }> {
     )
   }
 
+  // 쿠키 타입 정규화 — Python 추출 시 secure/httpOnly가 number(0/1)로 저장될 수 있음
+  if (stateData.cookies) {
+    for (const cookie of stateData.cookies) {
+      if (typeof cookie.secure !== 'boolean') cookie.secure = Boolean(cookie.secure)
+      if (typeof cookie.httpOnly !== 'boolean') cookie.httpOnly = Boolean(cookie.httpOnly)
+    }
+  }
+
   // headless: false 필수 — 네이버 카페는 headless 봇을 탐지/차단함
   // launchd 실행 시에도 화면이 필요 (macOS는 로그인 상태면 display 사용 가능)
   const browser = await chromium.launch({
@@ -54,7 +62,7 @@ async function launchBrowser(): Promise<{ context: BrowserContext }> {
   })
 
   const context = await browser.newContext({
-    storageState: STORAGE_STATE_PATH,
+    storageState: stateData,
     viewport: { width: 1280, height: 900 },
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   })
