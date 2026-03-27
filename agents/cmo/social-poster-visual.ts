@@ -15,6 +15,7 @@ import { renderCardNews } from './card-news/renderer.js'
 import * as instagramClient from './platforms/instagram-client.js'
 import * as facebookClient from './platforms/facebook-client.js'
 import * as threadsClient from './platforms/threads-client.js'
+import * as bandClient from './platforms/band-client.js'
 
 const SITE_URL = 'https://age-doesnt-matter.com'
 
@@ -148,6 +149,34 @@ async function main() {
       console.log(`[SocialPosterVisual] Threads 이미지 게시 완료: ${thResult.id}`)
     } catch (err) {
       console.error('[SocialPosterVisual] Threads 게시 실패:', err)
+    }
+  }
+
+  // 6. Band 게시
+  if (bandClient.isConfigured()) {
+    try {
+      const bandCaption = `${content.topic}\n\n${caption.split('\n\n').slice(1).join('\n\n')}`
+      const bandResult = await bandClient.postWithImage(bandCaption, rendered.imageUrls)
+      await prisma.socialPost.create({
+        data: {
+          platform: 'BAND',
+          contentType: content.cardNewsType,
+          promotionLevel: content.cardNewsType === 'COMMUNITY_PROMO' ? 'SOFT' : 'PURE',
+          postText: bandCaption,
+          hashtags,
+          imageUrls: rendered.imageUrls,
+          cardNewsType: content.cardNewsType,
+          platformPostId: bandResult.postKey,
+          postingSlot: slot,
+          linkUrl: SITE_URL,
+          status: 'POSTED',
+          postedAt: new Date(),
+        },
+      })
+      postedCount++
+      console.log(`[SocialPosterVisual] Band 게시 완료: ${bandResult.postKey}`)
+    } catch (err) {
+      console.error('[SocialPosterVisual] Band 게시 실패:', err)
     }
   }
 

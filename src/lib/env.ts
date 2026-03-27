@@ -69,6 +69,10 @@ export const INSTAGRAM_BUSINESS_ACCOUNT_ID = optionalEnv('INSTAGRAM_BUSINESS_ACC
 export const FACEBOOK_PAGE_ACCESS_TOKEN = optionalEnv('FACEBOOK_PAGE_ACCESS_TOKEN', '')
 export const FACEBOOK_PAGE_ID = optionalEnv('FACEBOOK_PAGE_ID', '')
 
+/** Naver Band (optional) */
+export const BAND_ACCESS_TOKEN = optionalEnv('BAND_ACCESS_TOKEN', '')
+export const BAND_KEY = optionalEnv('BAND_KEY', '')
+
 /** Google Analytics / GTM (NEXT_PUBLIC_ — 클라이언트에서 직접 접근) */
 export const NEXT_PUBLIC_GTM_ID = optionalEnv('NEXT_PUBLIC_GTM_ID', '')
 export const NEXT_PUBLIC_GA4_ID = optionalEnv('NEXT_PUBLIC_GA4_ID', '')
