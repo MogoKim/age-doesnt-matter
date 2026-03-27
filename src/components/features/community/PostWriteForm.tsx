@@ -453,17 +453,27 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
       </div>
 
       {/* 하단 액션바 */}
-      <div className="flex items-center justify-between py-6 border-t border-border mt-8 gap-2">
+      <div className="py-6 border-t border-border mt-8 space-y-3">
+        {/* 등록 버튼 — 항상 전체 너비 */}
         <button
-          className="min-h-[52px] lg:min-h-[48px] px-8 py-3.5 border-2 border-border rounded-xl bg-card text-muted-foreground text-caption font-bold cursor-pointer transition-all hover:border-muted-foreground hover:text-foreground"
-          onClick={handleCancel}
+          className="w-full min-h-[52px] lg:min-h-[48px] py-3.5 border-none rounded-xl bg-primary text-white text-body font-bold cursor-pointer transition-all shadow-[0_2px_8px_rgba(255,111,97,0.3)] hover:bg-[#E85D50] hover:shadow-[0_4px_12px_rgba(255,111,97,0.4)] hover:-translate-y-px disabled:bg-border disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0"
+          disabled={!canSubmit || isPending}
+          onClick={handleSubmit}
         >
-          취소
+          {isPending ? (isEditMode ? '수정 중...' : '등록 중...') : (isEditMode ? '수정하기' : '등록하기')}
         </button>
+
+        {/* 보조 버튼들 */}
         <div className="flex gap-2">
+          <button
+            className="flex-1 min-h-[52px] lg:min-h-[48px] py-3.5 border-2 border-border rounded-xl bg-card text-muted-foreground text-caption font-bold cursor-pointer transition-all hover:border-muted-foreground hover:text-foreground"
+            onClick={handleCancel}
+          >
+            취소
+          </button>
           {!isEditMode && (
             <button
-              className="min-h-[52px] lg:min-h-[48px] px-6 py-3.5 border-2 border-border rounded-xl bg-card text-foreground text-sm font-bold cursor-pointer transition-all hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 min-h-[52px] lg:min-h-[48px] py-3.5 border-2 border-border rounded-xl bg-card text-foreground text-caption font-bold cursor-pointer transition-all hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleSaveDraft}
               disabled={isSavingDraft || (!title && !content)}
             >
@@ -471,18 +481,11 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
             </button>
           )}
           <button
-            className="min-h-[52px] lg:min-h-[48px] px-6 py-3.5 border-2 border-border rounded-xl bg-card text-foreground text-sm font-bold cursor-pointer transition-all hover:border-primary hover:text-primary"
+            className="flex-1 min-h-[52px] lg:min-h-[48px] py-3.5 border-2 border-border rounded-xl bg-card text-foreground text-caption font-bold cursor-pointer transition-all hover:border-primary hover:text-primary"
             onClick={() => setShowPreview(true)}
             disabled={!title && !content}
           >
             미리보기
-          </button>
-          <button
-            className="min-h-[52px] lg:min-h-[48px] px-12 py-3.5 border-none rounded-xl bg-primary text-white text-sm font-bold cursor-pointer transition-all shadow-[0_2px_8px_rgba(255,111,97,0.3)] hover:bg-[#E85D50] hover:shadow-[0_4px_12px_rgba(255,111,97,0.4)] hover:-translate-y-px disabled:bg-border disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0"
-            disabled={!canSubmit || isPending}
-            onClick={handleSubmit}
-          >
-            {isPending ? (isEditMode ? '수정 중...' : '등록 중...') : (isEditMode ? '수정하기' : '등록하기')}
           </button>
         </div>
       </div>
