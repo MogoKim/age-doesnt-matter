@@ -1,6 +1,6 @@
 # 우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서
 
-> **최종 업데이트**: 2026-03-26 (v6 — GTM + GA4 애널리틱스 기반 구축 + 커뮤니티 활성화 시스템 v3)
+> **최종 업데이트**: 2026-03-28 (v7 — 비주얼 카드뉴스 + 멀티채널 마케팅 + AdSense 배치 + 스킬 시스템)
 > **문서 관리자**: Claude Code (자동화) + 창업자 (승인)
 > **변경 시**: 이 문서 하단 [문서 업데이트 가이드](#문서-업데이트-가이드) 참고
 
@@ -28,8 +28,8 @@
 
 | 수익원 | 구현 상태 | 설명 |
 |--------|----------|------|
-| Google AdSense | 컴포넌트 준비, 승인 대기 | 게시글 하단, 목록 인라인, 모바일 스티키 |
-| Coupang CPS | 컴포넌트 준비, 가입 대기 | 매거진 내 상품 링크 수수료 |
+| Google AdSense | ✅ 등록 완료, 13곳 배치 | 게시글 하단, 목록 인피드, 모바일 스티키, 사이드바 |
+| Coupang CPS | ✅ 가입 완료 | 매거진 내 상품 링크 수수료 |
 
 ---
 
@@ -143,6 +143,12 @@
 | `X_ACCESS_TOKEN` / `X_ACCESS_SECRET` | X 사용자 토큰 | CMO SNS 포스팅 |
 | `THREADS_APP_ID` / `THREADS_APP_SECRET` | Threads OAuth | CMO SNS 포스팅 |
 | `THREADS_ACCESS_TOKEN` | Threads 장기 토큰 (60일) | CMO SNS 포스팅 |
+| `INSTAGRAM_ACCESS_TOKEN` | Instagram Graph API 토큰 | CMO 카드뉴스 캐러셀 |
+| `INSTAGRAM_BUSINESS_ACCOUNT_ID` | Instagram 비즈니스 계정 ID | CMO 카드뉴스 캐러셀 |
+| `FACEBOOK_PAGE_ACCESS_TOKEN` | Facebook 페이지 토큰 | CMO 카드뉴스 + 텍스트 게시 |
+| `FACEBOOK_PAGE_ID` | Facebook 페이지 ID | CMO 카드뉴스 + 텍스트 게시 |
+| `BAND_ACCESS_TOKEN` | Naver Band 액세스 토큰 | CMO Band 게시 |
+| `BAND_KEY` | Naver Band 앱 키 | CMO Band API |
 | `CLOUDFLARE_R2_*` | R2 스토리지 | 이미지 업로드 |
 | `ADMIN_JWT_SECRET` | 어드민 JWT | 어드민 인증 |
 | `BOT_API_KEY_*` | 봇 API 인증 | 봇 엔드포인트 |
@@ -199,6 +205,7 @@
 ┌── SNS 마케팅 실험 ─────────────┐
 │ SocialPost       SNS 게시물      │
 │ SocialExperiment A/B 실험 관리   │
+│ ChannelDraft     채널 홍보 초안   │
 └────────────────────────────────┘
 ```
 
@@ -213,7 +220,7 @@
 | **PromotionLevel** | NORMAL, HOT, HALL_OF_FAME |
 | **AdSlot** | HERO, HOME_INLINE, SIDEBAR, LIST_INLINE, POST_BOTTOM, MOBILE_STICKY, MAGAZINE_CPS |
 | **BotType** | JOB, HUMOR, STORY, THREAD, CEO, CTO, CMO, CPO, CDO, CFO, COO, SEED, CAFE_CRAWLER |
-| **SocialPlatform** | THREADS, X |
+| **SocialPlatform** | THREADS, X, INSTAGRAM, FACEBOOK, BAND |
 | **SocialPostStatus** | DRAFT, QUEUED, APPROVED, POSTED, FAILED |
 | **ExperimentStatus** | PLANNING, ACTIVE, COMPLETED, ANALYZED |
 
@@ -271,8 +278,12 @@
 | **CTO** | `cto/health-check.ts` | 2시간마다 | Haiku | 서비스 헬스체크 (API, DB 응답속도) |
 | **CTO** | `cto/error-monitor.ts` | 2시간마다 | Haiku | 에러 로그 분석 + 알림 |
 | **CMO** | `cmo/trend-analyzer.ts` | 매일 10:00 | Sonnet | 시니어 트렌드 분석, 콘텐츠 주제 제안 |
-| **CMO** | `cmo/social-poster.ts` | 매일 09/15/19시 | Haiku | Threads/X 실험 인식 게시 (홍보 믹스 60/25/15) |
-| **CMO** | `cmo/social-metrics.ts` | 매일 20:00 | AI 불필요 | 48시간 내 게시물 Threads/X 메트릭 수집 |
+| **CMO** | `cmo/social-poster.ts` | 매일 09:00 | Haiku | Threads/X 텍스트 게시 (홍보 믹스 60/25/15) |
+| **CMO** | `cmo/social-poster-visual.ts` | 매일 11:00 | Haiku | 카드뉴스 → IG/FB/Threads/Band 멀티플랫폼 게시 |
+| **CMO** | `cmo/channel-seeder.ts` | 매일 11:30 | Haiku | 카카오 오픈챗/당근마켓/커뮤니티 홍보 초안 생성 |
+| **CMO** | `cmo/knowledge-responder.ts` | 화/목/토 12:00 | Sonnet | 네이버 지식iN Q&A 초안 생성 |
+| **CMO** | `cmo/seo-optimizer.ts` | 월요일 08:00 | Haiku | 주간 SEO 키워드 분석 + 메타데이터 커버리지 체크 |
+| **CMO** | `cmo/social-metrics.ts` | 매일 20:00 | AI 불필요 | 48시간 내 게시물 멀티플랫폼 메트릭 수집 |
 | **CMO** | `cmo/social-reviewer.ts` | 월요일 10:00 | Haiku | 주간 실험 분석 — 통제/실험군 비교, 인사이트 도출 |
 | **CMO** | `cmo/social-strategy.ts` | 월요일 10:15 | Sonnet | 주간 전략 설계 — 실험 로드맵 + 트렌드 교차 참조 |
 | **CPO** | `cpo/ux-analyzer.ts` | 매일 11:00 | Sonnet | UX 패턴 분석, 개선 제안 |
@@ -296,6 +307,13 @@
 | `core/slack-commander.ts` | Slack 양방향 커맨드 (/status, /agents, /stop 등) |
 | `cmo/platforms/x-client.ts` | X (Twitter) API v2 래퍼 — OAuth 1.0a 서명 + 게시 + 메트릭 |
 | `cmo/platforms/threads-client.ts` | Threads API 래퍼 — 게시 + 메트릭 + 토큰 60일 갱신 |
+| `cmo/platforms/instagram-client.ts` | Instagram Graph API v21.0 — 캐러셀 3단계 (아이템→컨테이너→퍼블리시) |
+| `cmo/platforms/facebook-client.ts` | Facebook Graph API v21.0 — 멀티포토 + 텍스트 게시 |
+| `cmo/platforms/band-client.ts` | Naver Band Open API v2.2 — 텍스트+이미지 게시 |
+| `cmo/card-news/generator.ts` | AI 카드뉴스 슬라이드 생성 (요일별 유형 로테이션) |
+| `cmo/card-news/renderer.ts` | HTML → 1080×1350px JPEG 렌더링 (Playwright + Sharp + R2) |
+| `cmo/card-news/templates/` | 3종 HTML 템플릿 (news-trend, info-topic, community) + base.css |
+| `cmo/test-platforms.ts` | SNS 플랫폼 토큰 검증 + 테스트 게시 유틸리티 |
 | `skills/registry.ts` | 검증된 SNS 전략 스킬 레지스트리 (승률 기반 가중 선택) |
 | `skills/types.ts` | ProvenSkill, SkillSuggestion 타입 정의 |
 
@@ -377,6 +395,54 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 
 **Skills 레지스트리**: 반복 우승 패턴 → `agents/skills/registry.ts`에 코드화 → 승률 기반 가중 랜덤 선택으로 exploit 모드 자동 적용.
 
+### 5.5.1 비주얼 카드뉴스 파이프라인 (CMO)
+
+```
+CafeTrend (매일 수집)
+  └→ card-news/generator.ts
+      ├→ 요일별 유형 로테이션
+      │   월/수/금: NEWS_TREND (뉴스·트렌드)
+      │   화/목:   INFO_TOPIC (생활정보·팁)
+      │   토/일:   COMMUNITY_PROMO (커뮤니티 인기글)
+      ├→ Claude Haiku → JSON 슬라이드 3~7장 생성
+      └→ card-news/renderer.ts
+          ├→ HTML 템플릿 3종 + base.css 로드
+          ├→ Playwright 렌더링 (1080×1350px)
+          ├→ Sharp JPEG 최적화 (quality 85)
+          └→ Cloudflare R2 업로드 → public URL
+               └→ social-poster-visual.ts
+                   ├→ Instagram 캐러셀 (2~10장)
+                   ├→ Facebook 멀티포토
+                   ├→ Threads 단일 이미지
+                   ├→ Band 텍스트+이미지
+                   └→ SocialPost DB 저장 + Slack 알림
+```
+
+### 5.5.2 멀티채널 홍보 시스템 (CMO)
+
+```
+┌─────────────────────────────────────────────────────┐
+│  channel-seeder.ts (매일 11:30)                       │
+│  → 오늘의 인기 콘텐츠 (게시글, 매거진, 일자리) 수집       │
+│  → 채널별 맞춤 초안 생성 (Claude Haiku)                 │
+│  → ChannelDraft DB 저장 + AdminQueue (창업자 승인 필요)  │
+│  → 대상: 카카오 오픈챗 / 당근마켓 / 커뮤니티             │
+└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│  knowledge-responder.ts (화/목/토 12:00)               │
+│  → 타겟 키워드에서 2~3개 랜덤 선택                       │
+│  → 현실적 Q&A 초안 생성 (Claude Sonnet)                 │
+│  → 자연스러운 사이트 언급 (하드셀 금지)                   │
+│  → ChannelDraft + AdminQueue 저장                       │
+└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│  seo-optimizer.ts (월 08:00)                           │
+│  → CafeTrend 키워드 집계 (7일) → Top 20                 │
+│  → 메타데이터 커버리지 체크 (summary/thumbnailUrl 누락)   │
+│  → SEO 개선 추천 리포트 → Slack #log_marketing           │
+└─────────────────────────────────────────────────────┘
+```
+
 ### 5.6 시드 페르소나 (SEED)
 
 | ID | 닉네임 | 나이/성별 | 보드 | 성격 | 주요 주제 |
@@ -423,27 +489,30 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 | `agents-jobs.yml` | 12, 16, 20시 | COO (일자리 수집) |
 | `agents-moderation.yml` | 09, 15, 21시 | COO (모더레이션) |
 | `agents-seed.yml` | 09, 10, 14, 16, 19, 21시 | SEED (시드 콘텐츠) |
-| `agents-social.yml` | 09/15/19시 + 20시 + 월 10:00/10:15 | CMO (SNS 포스팅·메트릭·리뷰·전략) |
+| `agents-social.yml` | 09/11/11:30/12/20시 + 월 08/10/10:15 + 수 10시 | CMO (텍스트포스팅·카드뉴스·채널시딩·지식iN·SEO·메트릭·리뷰·전략·토큰갱신) |
 | `agents-cafe.yml` | 09, 13, 19시 | CAFE (네이버 카페 크롤링) |
 
 ### 6.3 전체 타임라인 (KST)
 
 ```
+08:00 (월) CMO SEO옵티마이저
 08:30  ░░ CAFE 크롤링 (로컬)
-09:00  ██ CEO 모닝사이클 | SEED 활동 | COO 모더레이션 | CMO SNS포스팅(아침)
+09:00  ██ CEO 모닝사이클 | SEED 활동 | COO 모더레이션 | CMO 텍스트포스팅(Threads/X)
 10:00  ██ CMO 트렌드분석 | SEED 활동
  (월)  ██ CMO 리뷰(10:00) → 전략(10:15) [주간 실험 분석 + 설계]
+ (수)  ██ CMO Threads 토큰 갱신 (10:00)
 10:30  ██ CEO 주간리포트 (월요일, SNS 메트릭 포함)
-11:00  ██ CPO UX분석
-12:00  ██ COO 일자리수집
+11:00  ██ CPO UX분석 | CMO 카드뉴스→멀티플랫폼(IG/FB/Threads/Band)
+11:30  ██ CMO 채널시딩(카카오/당근/커뮤니티)
+12:00  ██ COO 일자리수집 | CMO 지식iN(화/목/토)
 12:30  ░░ CAFE 크롤링 (로컬)
 13:00  ░░ CAFE 크롤링 (Actions)
 14:00  ██ COO 콘텐츠편성 | SEED 활동
-15:00  ██ CMO SNS포스팅(오후) | COO 모더레이션
+15:00  ██ COO 모더레이션
 16:00  ██ COO 일자리수집 | SEED 활동
 18:30  ░░ CAFE 크롤링 (로컬)
-19:00  ██ CMO SNS포스팅(저녁) | SEED 활동 | CAFE 크롤링 (Actions)
-20:00  ██ COO 일자리수집 | CMO SNS메트릭수집
+19:00  ██ SEED 활동 | CAFE 크롤링 (Actions)
+20:00  ██ COO 일자리수집 | CMO SNS메트릭수집(전 플랫폼)
 21:00  ██ COO 모더레이션 | SEED 활동
 22:00  ██ CDO KPI수집
 23:00  ██ CFO 비용추적
@@ -463,6 +532,9 @@ GitHub Actions Cron (12:00, 16:00, 20:00 KST)
 | **Cloudflare R2** | `*.r2.cloudflarestorage.com` | 아웃바운드 | 이미지 업로드/서빙 |
 | **Threads API** | `graph.threads.net/*` | 아웃바운드 | SNS 게시 + 메트릭 수집 (OAuth 2.0, 60일 토큰) |
 | **X API v2** | `api.x.com/2/*` | 아웃바운드 | SNS 게시 + 메트릭 수집 (OAuth 1.0a HMAC-SHA1) |
+| **Instagram Graph API** | `graph.facebook.com/v21.0/*` | 아웃바운드 | 카드뉴스 캐러셀 게시 (3단계: 아이템→컨테이너→퍼블리시) |
+| **Facebook Graph API** | `graph.facebook.com/v21.0/*` | 아웃바운드 | 멀티포토 + 텍스트 페이지 게시 |
+| **Naver Band API** | `openapi.band.us/v2.2/*` | 아웃바운드 | 밴드 텍스트+이미지 게시 |
 | **Threads OAuth** | `/api/threads/auth`, `/api/threads/callback` | 인바운드 | Threads 토큰 발급 (1회성) |
 | **Google Tag Manager** | `www.googletagmanager.com` | 아웃바운드 | 태그 관리 (GTM 컨테이너 로드) |
 | **Google Analytics 4** | `www.google-analytics.com`, `analytics.google.com` | 아웃바운드 | 사용자 행동 분석 (GTM 경유) |
@@ -790,9 +862,9 @@ Slack Workspace: 우나어-ops
 | **검색** | 3개 | SearchForm, SearchResults, SearchTabs |
 | **마이페이지** | 8개 | NicknameSettings, FontSizeSettings, BlockedUserList, WithdrawSection |
 | **인증** | 3개 | LoginForm, LoginPromptModal, OnboardingForm |
-| **광고** | 4개 | AdSlot, AdClickTracker, CoupangCPS, CpsClickTracker |
+| **광고** | 6개 | AdSlot, AdClickTracker, CoupangCPS, CpsClickTracker, FeedAd, MobileStickyAd |
 | **어드민** | 11개 | MemberTable, ContentTable, ReportTable, BannerManager |
-| **공통** | 9개 | UserAvatar, ShareButton, OfflineBanner, PageViewTracker, GoogleTagManager, GTMEventOnMount |
+| **공통** | 10개 | UserAvatar, ShareButton, OfflineBanner, PageViewTracker, GoogleTagManager, GTMEventOnMount, Breadcrumbs |
 
 ---
 
@@ -934,14 +1006,14 @@ Slack Workspace: 우나어-ops
 |------|--------|
 | 에이전트 AI (7 C-level + SEED) | ~$15 (최적화 후) |
 | 일자리 스크래퍼 AI | ~$3 |
-| SNS 자동화 AI | ~$2 |
+| SNS 자동화 AI (텍스트+카드뉴스+채널시딩+지식iN) | ~$5 |
 | Vercel Hosting | $0 (Hobby) |
 | Supabase DB | $0 (Free tier) |
 | GitHub Actions | $0 (Free 2,000분/월) |
 | Cloudflare R2 | $0 (Free tier) |
 | Cloudflare DNS | $0 |
 | 도메인 (가비아) | ~$1.5 (연 $18) |
-| **합계** | **~$21.5/월** |
+| **합계** | **~$24.5/월** |
 | **예산 상한** | **$50/월** |
 
 ---
@@ -967,6 +1039,28 @@ Slack Workspace: 우나어-ops
   - Slack 커맨드: /social, /experiment
   - Skills 레지스트리: 검증된 전략 코드화 (승률 기반 가중 선택)
   - Threads OAuth 토큰 발급 플로우 (/api/threads/auth → callback)
+- **제로 예산 멀티채널 마케팅 자동화** (2026-03-27 구축 완료)
+  - 카드뉴스 AI 생성 파이프라인: CafeTrend → AI 슬라이드 → HTML 렌더링 → R2 업로드
+  - 3종 HTML 템플릿 (news-trend, info-topic, community) + 시니어 친화 base.css
+  - 비주얼 포스터: IG 캐러셀 / FB 멀티포토 / Threads 단일 / Band 게시
+  - 플랫폼 클라이언트 추가: Instagram (Graph API v21.0), Facebook (Graph API v21.0), Band (Open API v2.2)
+  - 채널 시딩: 카카오 오픈챗/당근마켓/커뮤니티 맞춤 초안 생성 (AdminQueue 승인)
+  - 지식iN 응답: 타겟 키워드 Q&A 초안 (화/목/토)
+  - SEO 옵티마이저: 주간 키워드 분석 + 메타데이터 커버리지 체크
+  - DB: ChannelDraft 모델, CafePost 미디어 필드 (imageUrls, videoUrls), SocialPost 카드뉴스 필드
+  - 토큰 검증 유틸: test-platforms.ts (validate / post-test 모드)
+- **카페 크롤러 미디어 수집** (2026-03-27 구축 완료)
+  - CafePost에 이미지/GIF/동영상 URL 수집 필드 추가
+  - execSync 버퍼 블로킹 해소 (ETIMEDOUT 수정)
+- **AdSense 수익 인프라** (2026-03-27 구축 완료)
+  - FeedAd 컴포넌트: 목록 인피드 광고 (auto/horizontal/rectangle)
+  - MobileStickyAd 컴포넌트: 모바일 스크롤 후 하단 스티키 (세션별 닫기)
+  - 13곳 광고 구좌 배치 완료 (게시글 하단, 목록, 사이드바, 검색, 매거진 등)
+- **SEO + UX 개선** (2026-03-27 구축 완료)
+  - Breadcrumbs 컴포넌트 (Schema.org JSON-LD)
+  - 커뮤니티 게시글 동적 OG 이미지 생성
+  - 주요 페이지 로딩 스켈레톤 추가 (글쓰기, 일자리 상세, 매거진 상세)
+  - 로그인 UX 개선 (50-60대 맞춤 맥락 설명 + 안심 문구)
 - **GTM + GA4 애널리틱스 기반** (2026-03-26 구축 완료)
   - GTM 컨테이너 스크립트 (GoogleTagManager.tsx — head + noscript)
   - dataLayer 유틸리티 (gtm.ts — 15개 커스텀 이벤트 헬퍼)
@@ -982,10 +1076,13 @@ Slack Workspace: 우나어-ops
 - [ ] 도메인 만기 연장 (2026-04-25)
 - [ ] 커스텀 도메인 연결 (Cloudflare → Vercel)
 - [ ] Slack Workspace + App 설정
-- [ ] GitHub Actions secrets 설정 (기존 + X/Threads 토큰)
-- [ ] Threads OAuth 토큰 발급 (age-doesnt-matter.com/api/threads/auth 접속)
-- [ ] Google AdSense 승인 신청
-- [ ] 쿠팡 파트너스 가입
+- [x] GitHub Actions secrets 설정 (Meta 토큰 완료: FB/IG/Threads)
+- [x] Threads OAuth 토큰 발급 완료
+- [x] Google AdSense 등록 완료 (13곳 배치)
+- [x] 쿠팡 파트너스 가입 완료
+- [ ] Facebook `pages_manage_posts` 권한 추가 + 토큰 재발급
+- [ ] X (Twitter) 개발자 토큰 발급
+- [ ] Band API 등록 완료 + 토큰 발급
 - [ ] GA4 계정/속성 생성 → 측정 ID 발급
 - [ ] GTM 컨테이너 생성 → 컨테이너 ID 발급
 - [ ] Vercel에 NEXT_PUBLIC_GTM_ID, NEXT_PUBLIC_GA4_ID 환경변수 등록
@@ -994,9 +1091,10 @@ Slack Workspace: 우나어-ops
 ### 향후 확장 (Phase 3+)
 - CEO 자동 의사결정 프레임워크
 - CDO 퍼널 분석기 (GA4 데이터 연동)
-- 카카오톡 채널 / 네이버 밴드 / YouTube Shorts 확장
+- 카카오톡 채널 / YouTube Shorts 확장
 - GA4 API → 에이전트 보고서 연동 (Search Console MCP 포함)
 - GTM으로 Hotjar/Microsoft Clarity 추가 (코드 수정 불필요)
+- 카드뉴스 팀 에이전트 토론 구조 (품질 향상, 비용 검토 후)
 
 ---
 
