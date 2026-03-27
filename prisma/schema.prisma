@@ -719,6 +719,12 @@ model CafePost {
   postedAt     DateTime // 카페 원본 작성일
   crawledAt    DateTime @default(now())
 
+  // 미디어
+  imageUrls    String[] // 본문 이미지/GIF URL 목록
+  videoUrls    String[] // 본문 동영상 URL 목록
+  thumbnailUrl String?  // 대표 이미지 (첫 번째 이미지)
+  mediaCount   Int      @default(0) // 총 미디어 수
+
   // 분석 결과
   topics       String[] // AI가 추출한 토픽 태그
   sentiment    String?  // positive, neutral, negative

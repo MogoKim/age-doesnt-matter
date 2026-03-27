@@ -83,6 +83,97 @@ async function safeText(
   return fallback
 }
 
+/** 미디어(이미지/GIF/동영상) URL 추출 */
+async function extractMedia(target: Page | Frame): Promise<{
+  imageUrls: string[]
+  videoUrls: string[]
+  thumbnailUrl: string | null
+}> {
+  const imageUrls: string[] = []
+  const videoUrls: string[] = []
+
+  try {
+    // 이미지 추출 — 본문 영역의 img 태그에서 src 수집
+    const images = await target.locator([
+      '.se-main-container img',
+      '.ContentRenderer img',
+      '.article_viewer img',
+      '.content_area img',
+      '#body img',
+    ].join(', ')).all()
+
+    for (const img of images) {
+      const src = await img.getAttribute('src').catch(() => null)
+        ?? await img.getAttribute('data-src').catch(() => null)
+        ?? await img.getAttribute('data-lazy-src').catch(() => null)
+
+      if (!src) continue
+
+      // 실제 콘텐츠 이미지만 필터 (아이콘, 이모지, 트래킹 픽셀 제외)
+      if (
+        src.includes('cafe.pstatic.net/cafechat') ||  // 채팅 아이콘
+        src.includes('static.nid.naver.com') ||       // 네이버 UI 아이콘
+        src.includes('ssl.pstatic.net/static') ||     // 정적 리소스
+        src.includes('castbox') ||
+        src.length < 30 ||
+        src.includes('/blank.gif') ||
+        src.includes('spacer.gif') ||
+        src.includes('1x1') ||
+        src.endsWith('.svg')
+      ) continue
+
+      // GIF도 이미지로 처리 (확장자로 구분 가능)
+      const cleanUrl = src.split('?')[0]  // 쿼리 파라미터 제거하여 확장자 확인용
+      if (cleanUrl) {
+        imageUrls.push(src)  // 원본 URL 유지 (CDN 파라미터 포함)
+      }
+    }
+
+    // 동영상 추출 — video 태그 + iframe 임베드 (YouTube, Naver TV 등)
+    const videos = await target.locator([
+      '.se-main-container video source',
+      '.ContentRenderer video source',
+      '.article_viewer video source',
+      'video source',
+    ].join(', ')).all()
+
+    for (const video of videos) {
+      const src = await video.getAttribute('src').catch(() => null)
+      if (src && src.length > 20) videoUrls.push(src)
+    }
+
+    // iframe 기반 동영상 (YouTube, Naver TV, Vimeo)
+    const iframes = await target.locator([
+      '.se-main-container iframe',
+      '.ContentRenderer iframe',
+      '.article_viewer iframe',
+      'iframe[src*="youtube"]',
+      'iframe[src*="tv.naver"]',
+      'iframe[src*="vimeo"]',
+    ].join(', ')).all()
+
+    for (const iframe of iframes) {
+      const src = await iframe.getAttribute('src').catch(() => null)
+      if (src && (
+        src.includes('youtube.com') || src.includes('youtu.be') ||
+        src.includes('tv.naver.com') || src.includes('vimeo.com') ||
+        src.includes('naver.me')
+      )) {
+        videoUrls.push(src)
+      }
+    }
+  } catch (err) {
+    console.warn('[CafeCrawler] 미디어 추출 중 오류 (무시):', err instanceof Error ? err.message : '')
+  }
+
+  // 중복 제거
+  const uniqueImages = [...new Set(imageUrls)]
+  const uniqueVideos = [...new Set(videoUrls)]
+  const thumbnailUrl = uniqueImages[0] ?? null
+
+  return { imageUrls: uniqueImages, videoUrls: uniqueVideos, thumbnailUrl }
+}
+
 /** 안전하게 숫자 추출 */
 async function safeNumber(
   frame: Page | Frame,
@@ -347,7 +438,13 @@ async function buildPostFromTarget(
     }
   }
 
-  console.log(`[CafeCrawler] ✓ "${title.slice(0, 30)}..." 작성자=${author} 좋아요=${likeCount} 댓글=${commentCount} 조회=${viewCount}`)
+  // 미디어 추출
+  const media = await extractMedia(target)
+
+  const mediaInfo = media.imageUrls.length + media.videoUrls.length > 0
+    ? ` 이미지=${media.imageUrls.length} 동영상=${media.videoUrls.length}`
+    : ''
+  console.log(`[CafeCrawler] ✓ "${title.slice(0, 30)}..." 작성자=${author} 좋아요=${likeCount} 댓글=${commentCount} 조회=${viewCount}${mediaInfo}`)
 
   return {
     cafeId: cafe.id,
@@ -361,6 +458,9 @@ async function buildPostFromTarget(
     commentCount,
     viewCount,
     postedAt,
+    imageUrls: media.imageUrls,
+    videoUrls: media.videoUrls,
+    thumbnailUrl: media.thumbnailUrl,
   }
 }
 
@@ -401,6 +501,10 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
           commentCount: post.commentCount,
           viewCount: post.viewCount,
           postedAt: post.postedAt,
+          imageUrls: post.imageUrls,
+          videoUrls: post.videoUrls,
+          thumbnailUrl: post.thumbnailUrl,
+          mediaCount: post.imageUrls.length + post.videoUrls.length,
         },
       })
       saved++

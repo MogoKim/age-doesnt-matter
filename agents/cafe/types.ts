@@ -29,6 +29,10 @@ export interface RawCafePost {
   commentCount: number
   viewCount: number
   postedAt: Date
+  // 미디어
+  imageUrls: string[]
+  videoUrls: string[]
+  thumbnailUrl: string | null
 }
 
 /** AI 분석된 트렌드 */
