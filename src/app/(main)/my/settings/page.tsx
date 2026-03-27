@@ -30,7 +30,7 @@ export default async function MySettingsPage() {
 
       <div className="space-y-6">
         {/* 닉네임 변경 */}
-        <section className="bg-card rounded-2xl p-6 border border-border">
+        <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
           <h2 className="text-body font-bold text-foreground mb-4">닉네임 변경</h2>
           <NicknameSettings
             currentNickname={settings.nickname}
@@ -40,13 +40,13 @@ export default async function MySettingsPage() {
         </section>
 
         {/* 글자 크기 */}
-        <section className="bg-card rounded-2xl p-6 border border-border">
+        <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
           <h2 className="text-body font-bold text-foreground mb-4">글자 크기</h2>
           <FontSizeSettings currentSize={settings.fontSize} />
         </section>
 
         {/* 정보 공개 설정 */}
-        <section className="bg-card rounded-2xl p-6 border border-border">
+        <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
           <h2 className="text-body font-bold text-foreground mb-4">정보 공개 설정</h2>
           <PrivacySettings
             isGenderPublic={settings.isGenderPublic}
@@ -55,12 +55,12 @@ export default async function MySettingsPage() {
         </section>
 
         {/* 차단 관리 */}
-        <section className="bg-card rounded-2xl p-6 border border-border">
+        <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
           <h2 className="text-body font-bold text-foreground mb-4">차단 관리</h2>
           <BlockedUserList />
         </section>
         {/* 회원 탈퇴 */}
-        <section className="bg-card rounded-2xl p-6 border border-border">
+        <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
           <h2 className="text-body font-bold text-foreground mb-4">회원 탈퇴</h2>
           <WithdrawSection />
         </section>
