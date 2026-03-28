@@ -140,7 +140,7 @@ export async function getTrendingPosts(limit = 5): Promise<PostSummary[]> {
 /* ── 에디터스 픽 (HALL_OF_FAME) ── */
 
 export async function getEditorsPicks(limit = 2): Promise<PostSummary[]> {
-  const rows = await prisma.post.findMany({
+  let rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
       promotionLevel: 'HALL_OF_FAME',
@@ -149,6 +149,21 @@ export async function getEditorsPicks(limit = 2): Promise<PostSummary[]> {
     orderBy: { createdAt: 'desc' },
     take: limit,
   })
+
+  // HALL_OF_FAME 부족 시 HOT 글로 채우기
+  if (rows.length < limit) {
+    const hotFill = await prisma.post.findMany({
+      where: {
+        status: 'PUBLISHED',
+        promotionLevel: 'HOT',
+        id: { notIn: rows.map((r) => r.id) },
+      },
+      select: postSelect,
+      orderBy: { likeCount: 'desc' },
+      take: limit - rows.length,
+    })
+    rows = [...rows, ...hotFill]
+  }
 
   return rows.map(toPostSummary)
 }

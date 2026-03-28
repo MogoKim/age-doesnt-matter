@@ -60,6 +60,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'D', type: 'comment', board: 'JOB', count: 2 },
     { personaId: 'E', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'N', type: 'comment', board: 'STORY', count: 2 },
+    { personaId: 'G', type: 'comment', board: 'HUMOR', count: 1 }, // 크로스보드 댓글
     // 좋아요
     { personaId: 'D', type: 'like', board: 'JOB', count: 2 },
     { personaId: 'J', type: 'like', board: 'STORY', count: 2 },
@@ -82,6 +83,7 @@ const SCHEDULE: Record<string, Activity[]> = {
   '15': [
     { personaId: 'P', type: 'post' },                         // 커피한잔 감성 에세이
     { personaId: 'C', type: 'post', board: 'HUMOR' },           // 웃음보 오후 유머 (활력충전소)
+    { personaId: 'T', type: 'post', board: 'WEEKLY' },           // 은퇴교사 주간토론/수다
     { personaId: 'K', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'R', type: 'comment', board: 'HUMOR', count: 2 },
     // 좋아요
@@ -93,6 +95,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'F', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'L', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'Q', type: 'comment', board: 'STORY', count: 1 },
+    { personaId: 'N', type: 'comment', board: 'HUMOR', count: 1 }, // 크로스보드 댓글
     // 대댓글
     { personaId: 'L', type: 'reply', board: 'STORY', count: 1 },
     // 좋아요
@@ -105,6 +108,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'I', type: 'post' },                         // 책벌레 독서 글
     { personaId: 'O', type: 'post' },                         // 음악사랑 음악 글
     { personaId: 'R', type: 'post', board: 'HUMOR' },           // 드라마덕후 저녁 유머 (활력충전소)
+    { personaId: 'I', type: 'post', board: 'WEEKLY' },           // 책벌레 수다방 글
     { personaId: 'E', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'G', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'M', type: 'comment', board: 'STORY', count: 1 },
@@ -192,7 +196,7 @@ async function runActivity(activity: Activity): Promise<void> {
   const userId = await getBotUser(activity.personaId)
 
   if (activity.type === 'post') {
-    const { title, content, boardType, category } = await generatePost(activity.personaId)
+    const { title, content, boardType, category } = await generatePost(activity.personaId, activity.board)
     const htmlContent = `<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
     const summary = content.replace(/\n/g, ' ').slice(0, 150).trim()
 
@@ -201,7 +205,7 @@ async function runActivity(activity: Activity): Promise<void> {
         title,
         content: htmlContent,
         summary,
-        boardType: boardType as 'STORY' | 'HUMOR',
+        boardType: boardType as 'STORY' | 'HUMOR' | 'WEEKLY',
         category: category ?? null,
         authorId: userId,
         source: 'BOT',
@@ -291,12 +295,91 @@ async function runActivity(activity: Activity): Promise<void> {
           where: { id: target.authorId },
           data: { receivedLikes: { increment: 1 } },
         })
+        // promotionLevel 승격 체크 (HOT: 10+, HALL_OF_FAME: 50+)
+        const updatedPost = await prisma.post.findUnique({
+          where: { id: target.id },
+          select: { likeCount: true },
+        })
+        if (updatedPost) {
+          if (updatedPost.likeCount >= 50) {
+            await prisma.post.updateMany({
+              where: { id: target.id, promotionLevel: { in: ['NORMAL', 'HOT'] } },
+              data: { promotionLevel: 'HALL_OF_FAME' },
+            }).catch(() => {})
+          } else if (updatedPost.likeCount >= 10) {
+            await prisma.post.updateMany({
+              where: { id: target.id, promotionLevel: 'NORMAL' },
+              data: { promotionLevel: 'HOT' },
+            }).catch(() => {})
+          }
+        }
         console.log(`[Seed] ${activity.personaId} liked post ${target.id.slice(0, 8)}`)
       } catch {
         // unique constraint 위반 시 무시 (이미 좋아요)
       }
     }
   }
+}
+
+/**
+ * 집중 좋아요 라운드 — HOT 문턱(10) 근처 글에 좋아요 집중 투입
+ * 하루 최대 2-3개 글만 타겟 → 자연스러움 유지
+ * 21시 스케줄 실행 후 호출
+ */
+async function focusedLikeRound(): Promise<number> {
+  // 48시간 내 likeCount 5~9인 글 찾기 (HOT 근접)
+  const nearHot = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      promotionLevel: 'NORMAL',
+      likeCount: { gte: 5, lt: 10 },
+      createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+    },
+    orderBy: { likeCount: 'desc' },
+    take: 3,
+    select: { id: true, authorId: true, likeCount: true },
+  })
+
+  if (nearHot.length === 0) return 0
+
+  // 봇 5명으로 집중 투입 (B, E, G, K, M — 다양한 페르소나)
+  const boostBotIds = ['B', 'E', 'G', 'K', 'M']
+  let boosted = 0
+
+  for (const post of nearHot) {
+    for (const botId of boostBotIds) {
+      const userId = await getBotUser(botId)
+      try {
+        await prisma.like.create({ data: { userId, postId: post.id } })
+        await prisma.post.update({
+          where: { id: post.id },
+          data: { likeCount: { increment: 1 } },
+        })
+        await prisma.user.update({
+          where: { id: post.authorId },
+          data: { receivedLikes: { increment: 1 } },
+        })
+        boosted++
+      } catch {
+        // 이미 좋아요 — 다음 봇으로
+        continue
+      }
+    }
+    // 승격 체크
+    const updated = await prisma.post.findUnique({
+      where: { id: post.id },
+      select: { likeCount: true },
+    })
+    if (updated && updated.likeCount >= 10) {
+      await prisma.post.updateMany({
+        where: { id: post.id, promotionLevel: 'NORMAL' },
+        data: { promotionLevel: 'HOT' },
+      }).catch(() => {})
+      console.log(`[Seed] 🔥 집중 좋아요로 HOT 승격: ${post.id.slice(0, 8)} (${updated.likeCount}개)`)
+    }
+  }
+
+  return boosted
 }
 
 async function main() {
@@ -327,6 +410,15 @@ async function main() {
     }
   }
 
+  // 21시: 집중 좋아요 라운드 실행 (하루 한 번)
+  let focusedCount = 0
+  if (hour === '21') {
+    focusedCount = await focusedLikeRound()
+    if (focusedCount > 0) {
+      console.log(`[Seed] 집중 좋아요 ${focusedCount}개 투입 완료`)
+    }
+  }
+
   // 로그 기록
   await prisma.botLog.create({
     data: {
@@ -338,6 +430,7 @@ async function main() {
         success: successCount,
         errors: errorCount,
         totalActivities: toRun.length,
+        ...(focusedCount > 0 ? { focusedLikes: focusedCount } : {}),
       }),
       itemCount: successCount,
       executionTimeMs: 0,

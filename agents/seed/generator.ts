@@ -64,9 +64,17 @@ export function getAllPersonaIds(): string[] {
   return 'ABCDEFGHIJKLMNOPQRST'.split('')
 }
 
-/** 글 생성 */
-export async function generatePost(personaId: string): Promise<{ title: string; content: string; boardType: string; category?: string }> {
+/** 글 길이 다양화 — 짧은/보통/긴 글 랜덤 선택 */
+const POST_LENGTHS = [
+  { instruction: '60~120자, 짧고 가벼운 톤으로 1문단', maxTokens: 400 },
+  { instruction: '150~300자, 문단 2~3개', maxTokens: 800 },
+  { instruction: '400~600자, 깊이 있는 정보나 이야기, 문단 3~5개', maxTokens: 1200 },
+]
+
+/** 글 생성 (boardOverride로 페르소나 기본 게시판 외 다른 게시판에도 글 작성 가능) */
+export async function generatePost(personaId: string, boardOverride?: string): Promise<{ title: string; content: string; boardType: string; category?: string }> {
   const p = getPersona(personaId)
+  const board = boardOverride ?? p.board
   const topic = p.topics[Math.floor(Math.random() * p.topics.length)] ?? '일상'
 
   // 카테고리 매핑
@@ -74,12 +82,16 @@ export async function generatePost(personaId: string): Promise<{ title: string; 
     STORY: ['일상', '건강', '고민', '자녀', '기타'],
     HUMOR: ['유머', '힐링', '자랑', '추천', '기타'],
     JOB: ['전체'],
+    WEEKLY: ['주간토론', '이번주화제', '자유수다', '기타'],
   }
-  const boardCategories = categoryMap[p.board] ?? ['기타']
+  const boardCategories = categoryMap[board] ?? ['기타']
+
+  // 글 길이 랜덤 선택
+  const length = POST_LENGTHS[Math.floor(Math.random() * POST_LENGTHS.length)]
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 800,
+    max_tokens: length.maxTokens,
     system: `당신은 "${p.nickname}" (${p.age}세 ${p.gender}성)입니다.
 성격: ${p.personality}
 글 스타일: ${p.style}
@@ -100,7 +112,7 @@ export async function generatePost(personaId: string): Promise<{ title: string; 
 응답 형식:
 제목: (15~30자)
 카테고리: (${boardCategories.join('/')})
-본문: (100~300자, 문단 2~3개)`,
+본문: (${length.instruction})`,
     }],
   })
 
@@ -115,7 +127,7 @@ export async function generatePost(personaId: string): Promise<{ title: string; 
   return {
     title: stripMarkdown(titleMatch?.[1]?.trim() ?? `${p.nickname}의 일상`),
     content: stripMarkdown(bodyMatch?.[1]?.trim() ?? text),
-    boardType: p.board,
+    boardType: board,
     category: validCategory,
   }
 }
