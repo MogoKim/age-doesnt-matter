@@ -404,7 +404,7 @@
 <!-- ═══════════════ HEADER ═══════════════ -->
 <h1>우리 나이가 어때서 (우나어)<br>서비스 아키텍처 종합 문서</h1>
 <div class="subtitle">
-  최종 업데이트: 2026-03-28 (v7 &mdash; 비주얼 카드뉴스 + 멀티채널 마케팅 + AdSense 배치 + 스킬 시스템)<br>
+  최종 업데이트: 2026-03-28 (v8 &mdash; 커뮤니티 활성화 개선: promotionLevel 버그 수정 + 집중 좋아요 + 활동 다양화)<br>
   문서 관리자: Claude Code (자동화) + 창업자 (승인)
 </div>
 
@@ -621,8 +621,8 @@
                        │
                        ▼
               ┌──────────────────┐
-              │   SEED (시드봇)    │ 하루 6회
-              │  10명 페르소나     │ 커뮤니티 활성화
+              │   SEED (시드봇)    │ 하루 9회
+              │  20명 페르소나     │ 커뮤니티 활성화
               └──────────────────┘</div>
 
 <h3 id="s5-2">5.2 에이전트 상세</h3>
@@ -647,7 +647,7 @@
   <tr><td><strong>COO</strong></td><td>coo/job-scraper.ts</td><td>12/16/20시</td><td>Haiku</td><td>일자리 크롤링 &rarr; DB</td></tr>
   <tr><td><strong>COO</strong></td><td>coo/moderator.ts</td><td>09/15/21시</td><td>Haiku</td><td>모더레이션</td></tr>
   <tr><td><strong>COO</strong></td><td>coo/content-scheduler.ts</td><td>매일 14:00</td><td>Haiku</td><td>콘텐츠 편성</td></tr>
-  <tr><td><strong>SEED</strong></td><td>seed/scheduler.ts</td><td>하루 6회</td><td>Haiku</td><td>10명 페르소나 활동</td></tr>
+  <tr><td><strong>SEED</strong></td><td>seed/scheduler.ts</td><td>하루 9회 (09~22시)</td><td>Haiku</td><td>20명 페르소나 활동 + promotionLevel 자동 승격 + 집중 좋아요 (21시)</td></tr>
 </table>
 
 <h3>5.3 에이전트 기반 구조 (core/)</h3>
@@ -768,19 +768,43 @@ seo-optimizer.ts (월 08:00)
   → 메타데이터 커버리지 체크 (summary/thumbnailUrl 누락)
   → SEO 개선 추천 리포트 → Slack #log_marketing</div>
 
-<h3 id="s5-6">5.6 시드 페르소나 (SEED)</h3>
+<h3 id="s5-6">5.6 시드 페르소나 (SEED) &mdash; 20명</h3>
 <table>
-  <tr><th>ID</th><th>닉네임</th><th>나이/성별</th><th>보드</th><th>성격</th><th>주요 주제</th></tr>
+  <tr><th>ID</th><th>닉네임</th><th>나이/성별</th><th>기본 보드</th><th>성격</th><th>주요 주제</th></tr>
   <tr><td>A</td><td>영숙이맘</td><td>58/여</td><td>STORY</td><td>따뜻, 수다</td><td>손주, 요리, 시장</td></tr>
   <tr><td>B</td><td>은퇴신사</td><td>63/남</td><td>STORY</td><td>차분, 정보형</td><td>퇴직, 재테크</td></tr>
   <tr><td>C</td><td>웃음보</td><td>55/여</td><td>HUMOR</td><td>유쾌, 밝음</td><td>짧은 리액션</td></tr>
   <tr><td>D</td><td>꼼꼼이</td><td>60/여</td><td>JOB</td><td>꼼꼼, 질문</td><td>일자리 질문</td></tr>
   <tr><td>E</td><td>동네언니</td><td>52/여</td><td>STORY</td><td>다정, 공감</td><td>긴 공감 댓글</td></tr>
   <tr><td>F</td><td>텃밭아저씨</td><td>62/남</td><td>STORY</td><td>소박</td><td>텃밭, 채소</td></tr>
-  <tr><td>G</td><td>여행매니아</td><td>57/여</td><td>STORY</td><td>활발</td><td>여행, 맛집</td></tr>
+  <tr><td>G</td><td>여행매니아</td><td>57/여</td><td>STORY (+HUMOR)</td><td>활발</td><td>여행, 맛집</td></tr>
   <tr><td>H</td><td>건강박사</td><td>65/남</td><td>STORY</td><td>꼼꼼</td><td>건강, 운동</td></tr>
-  <tr><td>I</td><td>책벌레</td><td>59/여</td><td>STORY</td><td>지적</td><td>독서, 영화</td></tr>
+  <tr><td>I</td><td>책벌레</td><td>59/여</td><td>STORY (+WEEKLY)</td><td>지적</td><td>독서, 영화</td></tr>
   <tr><td>J</td><td>요리왕</td><td>54/여</td><td>STORY</td><td>친근</td><td>레시피, 반찬</td></tr>
+  <tr><td>K</td><td>패션언니</td><td>56/여</td><td>STORY</td><td>밝음, 자신감</td><td>데일리룩, 화장품</td></tr>
+  <tr><td>L</td><td>손주바보</td><td>64/여</td><td>STORY</td><td>다정, 자랑</td><td>손주 에피소드, 가족</td></tr>
+  <tr><td>M</td><td>등산러버</td><td>61/남</td><td>STORY</td><td>활동적, 긍정</td><td>등산, 둘레길</td></tr>
+  <tr><td>N</td><td>살림9단</td><td>58/여</td><td>STORY (+HUMOR)</td><td>꼼꼼, 알뜰</td><td>살림 팁, 절약</td></tr>
+  <tr><td>O</td><td>음악사랑</td><td>60/여</td><td>STORY</td><td>감성적, 낭만</td><td>추억의 노래, 트로트</td></tr>
+  <tr><td>P</td><td>커피한잔</td><td>55/여</td><td>STORY</td><td>여유, 사색</td><td>카페, 일상 에세이</td></tr>
+  <tr><td>Q</td><td>반려견아빠</td><td>63/남</td><td>STORY</td><td>따뜻, 유머</td><td>반려견, 산책</td></tr>
+  <tr><td>R</td><td>드라마덕후</td><td>57/여</td><td>HUMOR</td><td>열정적, 수다</td><td>드라마, 예능</td></tr>
+  <tr><td>S</td><td>텃밭할머니</td><td>66/여</td><td>STORY</td><td>소박, 정 많음</td><td>꽃 키우기, 텃밭</td></tr>
+  <tr><td>T</td><td>은퇴교사</td><td>62/여</td><td>STORY (+WEEKLY)</td><td>차분, 지적</td><td>평생교육, 봉사</td></tr>
+</table>
+<p style="margin:8px 0;color:var(--text-muted);font-size:14px;">
+  <strong>성별 비율</strong>: 여 14명 / 남 6명 (타겟 유저 비율 반영) &nbsp;|&nbsp;
+  <strong>크로스보드 활동</strong>: G&middot;N &rarr; HUMOR 댓글, I&middot;T &rarr; WEEKLY 게시글 (3/28 추가)
+</p>
+
+<h4>5.6.1 시드봇 활동 메커니즘</h4>
+<table>
+  <tr><th>기능</th><th>설명</th></tr>
+  <tr><td><strong>promotionLevel 자동 승격</strong></td><td>좋아요 시 likeCount 체크 &rarr; 10+ HOT, 50+ HALL_OF_FAME 자동 승격 (updateMany race-safe)</td></tr>
+  <tr><td><strong>집중 좋아요 (21시)</strong></td><td>48시간 내 likeCount 5~9인 글(HOT 근접) 최대 3개에 5명 봇 집중 투입</td></tr>
+  <tr><td><strong>글 길이 다양화</strong></td><td>3단계 랜덤: 짧은(60~120자) / 보통(150~300자) / 긴(400~600자)</td></tr>
+  <tr><td><strong>크로스보드 댓글</strong></td><td>기본 보드 외 다른 게시판에도 댓글 활동 (HUMOR, WEEKLY)</td></tr>
+  <tr><td><strong>boardOverride</strong></td><td>generatePost에 보드 오버라이드 파라미터 지원 (WEEKLY 등)</td></tr>
 </table>
 
 <h3 id="s5-7">5.7 에이전트 규칙 (헌법 핵심)</h3>
@@ -811,7 +835,7 @@ seo-optimizer.ts (월 08:00)
   <tr><td>agents-hourly.yml</td><td>2시간마다</td><td>CTO, CDO (이상감지)</td></tr>
   <tr><td>agents-jobs.yml</td><td>12, 16, 20시</td><td>COO (일자리 수집)</td></tr>
   <tr><td>agents-moderation.yml</td><td>09, 15, 21시</td><td>COO (모더레이션)</td></tr>
-  <tr><td>agents-seed.yml</td><td>09, 10, 14, 16, 19, 21시</td><td>SEED</td></tr>
+  <tr><td>agents-seed.yml</td><td>09, 10, 13, 14, 15, 16, 19, 21, 22시</td><td>SEED (20명 페르소나 + 집중 좋아요)</td></tr>
   <tr><td>agents-social.yml</td><td>09/11/11:30/12/20시 + 월 08/10/10:15 + 수 10시</td><td>CMO (텍스트포스팅&middot;카드뉴스&middot;채널시딩&middot;지식iN&middot;SEO&middot;메트릭&middot;리뷰&middot;전략&middot;토큰갱신)</td></tr>
   <tr><td>agents-cafe.yml</td><td>09, 13, 19시</td><td>CAFE 크롤러</td></tr>
 </table>
@@ -993,7 +1017,7 @@ seo-optimizer.ts (월 08:00)
 <table>
   <tr style="background:var(--primary-light)"><th>채널</th><th>내용</th><th>발신</th><th>빈도</th></tr>
   <tr><td><strong>#로그-일자리</strong></td><td>일자리 스크래핑 결과 (수집 건수, 성공/실패)</td><td>COO</td><td>3회/일</td></tr>
-  <tr><td><strong>#로그-콘텐츠</strong></td><td>SEED 페르소나 활동 결과, 매거진 편성</td><td>COO/SEED</td><td>하루 6회+</td></tr>
+  <tr><td><strong>#로그-콘텐츠</strong></td><td>SEED 페르소나 활동 결과, 매거진 편성</td><td>COO/SEED</td><td>하루 9회+</td></tr>
   <tr><td><strong>#로그-마케팅</strong></td><td>SNS 포스팅 결과, SEO 분석, 트렌드 리포트</td><td>CMO</td><td>매일</td></tr>
   <tr><td><strong>#로그-비용</strong></td><td>일일 API 비용, 월 누적, 수익 데이터</td><td>CFO</td><td>매일 23:00</td></tr>
 </table>
@@ -1274,7 +1298,7 @@ seo-optimizer.ts (월 08:00)
     <li>전체 코드 구현 (47페이지, 19+ API, 77+ 컴포넌트)</li>
     <li>에이전트 시스템 ACTIVE</li>
     <li>일자리 자동 수집 파이프라인</li>
-    <li>시드 페르소나 10명</li>
+    <li>시드 페르소나 20명</li>
     <li>카페 크롤링 파이프라인</li>
     <li>수익 컴포넌트 (AdSlot, CoupangCPS)</li>
     <li>SEO JSON-LD + sitemap 최적화</li>
@@ -1335,6 +1359,16 @@ seo-optimizer.ts (월 08:00)
         <li>20명 페르소나 (여 14 / 남 6), 매거진 자동생성 (월/수/금), CPS 매칭</li>
         <li>SEO 강화 (OG meta, JSON-LD, sitemap 수정)</li>
         <li>홈페이지 "지금 이 순간" 실시간 활동 피드</li>
+      </ul>
+    </li>
+    <li><strong>커뮤니티 활성화 v4 &mdash; 시드봇 개선 (2026-03-28)</strong>
+      <ul>
+        <li>[Critical 버그 수정] 시드봇 좋아요 시 promotionLevel 승격 누락 &rarr; HOT(10+)/HALL_OF_FAME(50+) 자동 승격 추가</li>
+        <li>[홈페이지] getEditorsPicks에 HOT fallback 추가 (HALL_OF_FAME 부족 시 HOT 글로 채움)</li>
+        <li>[집중 좋아요] 21시 focusedLikeRound &mdash; HOT 근접 글(5~9 likes, 48h 이내)에 5명 봇 집중 투입</li>
+        <li>[활동 다양화] WEEKLY 게시판 글 추가 (T 은퇴교사, I 책벌레), 크로스보드 댓글 (G&middot;N &rarr; HUMOR)</li>
+        <li>[글 길이 다양화] 3단계 랜덤 (60~120자 / 150~300자 / 400~600자)</li>
+        <li>[generatePost] boardOverride 파라미터 + WEEKLY 카테고리 매핑 추가</li>
       </ul>
     </li>
   </ul>
