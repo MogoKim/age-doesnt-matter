@@ -3,13 +3,14 @@ import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import * as xClient from './platforms/x-client.js'
 import * as threadsClient from './platforms/threads-client.js'
+import { getDayStrategy, getTopicTag, detectOptimalSlot, THREADS_TONE_GUIDE, DWELL_TIME_GUIDE } from './threads-config.js'
 
 /**
  * CMO Social Poster — SNS 자동 게시 에이전트
  *
  * 흐름:
  * 1. 현재 활성 실험(SocialExperiment) 읽기
- * 2. 실험 변수에 따라 콘텐츠 유형/톤/페르소나 결정
+ * 2. 실험 변수에 따라 콘텐츠 유형/톤/페르소나 결정 (요일 전략 기반)
  * 3. 홍보 믹스(PURE 60% / SOFT 25% / DIRECT 15%) 적용
  * 4. AI로 SNS 게시글 생성
  * 5. Threads + X에 실제 게시 (or AdminQueue 승인 대기)
@@ -20,24 +21,13 @@ const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? 'https://www.age-doesnt-matter.com').trim()
 
-// ─── 게시 시간 슬롯 감지 ───
-
-function detectSlot(): string {
-  const hour = new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul', hour: 'numeric', hour12: false })
-  const h = parseInt(hour, 10)
-  if (h >= 6 && h < 11) return 'morning'
-  if (h >= 11 && h < 14) return 'lunch'
-  if (h >= 14 && h < 17) return 'afternoon'
-  return 'evening'
-}
-
 // ─── 페르소나 정의 (SNS용 4명) ───
 
 const SNS_PERSONAS: Record<string, { nickname: string; tone: string; style: string }> = {
-  A: { nickname: '영숙이맘', tone: 'warm', style: '아이고~ 일상 수다, 친근한 아줌마 톤, 이모지 적당히' },
-  B: { nickname: '은퇴신사', tone: 'informational', style: '차분한 어르신 톤, 경험 공유, "~합니다" 체' },
-  C: { nickname: '웃음보', tone: 'humorous', style: '짧고 재밌게, ㅋㅋ와 이모지 적극, 관찰 유머' },
-  H: { nickname: '건강박사', tone: 'informational', style: '건강 정보 전달, 실용적, "오늘의 건강 한 줄"' },
+  A: { nickname: '영숙이맘', tone: 'warm', style: '따뜻하고 공감하는 이웃 언니 톤, 자연스러운 반말, 이모지 1-2개' },
+  B: { nickname: '은퇴신사', tone: 'informational', style: '차분하고 경험 많은 톤, 반말과 존댓말 자연 혼용, 깊이 있는 이야기' },
+  C: { nickname: '웃음보', tone: 'humorous', style: '밝고 유쾌한 톤, 위트 있는 반말, 관찰 유머 (ㅋㅋ 남발 금지)' },
+  H: { nickname: '건강박사', tone: 'informational', style: '실용적 건강/생활 정보, 다정한 반말, 근거 있는 팁 공유' },
 }
 
 // ─── 콘텐츠 소스 수집 ───
@@ -114,30 +104,34 @@ function decidePromotionLevel(): 'PURE' | 'SOFT' | 'DIRECT' {
   return 'DIRECT'
 }
 
-// ─── 콘텐츠 유형 결정 ───
+// ─── 콘텐츠 유형 결정 (요일 전략 기반) ───
 
-function decideContentType(experiment: Awaited<ReturnType<typeof getActiveExperiment>>): string {
+function decideContentType(experiment: Awaited<ReturnType<typeof getActiveExperiment>>, dayStrategy: ReturnType<typeof getDayStrategy>): string {
   if (experiment?.variable === 'contentType') {
     return Math.random() < 0.5 ? experiment.controlValue : experiment.testValue
   }
-  // 기본: 랜덤 분배
-  const types = ['PERSONA', 'COMMUNITY', 'JOB_ALERT', 'MAGAZINE', 'HUMOR', 'PRACTICAL']
+  // 요일 전략의 contentTypes에서 랜덤 선택
+  const types = dayStrategy.contentTypes
   return types[Math.floor(Math.random() * types.length)]
 }
 
-function decideTone(experiment: Awaited<ReturnType<typeof getActiveExperiment>>): string {
+function decideTone(experiment: Awaited<ReturnType<typeof getActiveExperiment>>, dayStrategy: ReturnType<typeof getDayStrategy>): string {
   if (experiment?.variable === 'tone') {
     return Math.random() < 0.5 ? experiment.controlValue : experiment.testValue
   }
+  // 요일 전략의 preferredPersonas에서 첫 번째 페르소나의 톤 사용, 나머지는 랜덤
+  const preferredPersona = SNS_PERSONAS[dayStrategy.preferredPersonas[0]]
+  if (preferredPersona && Math.random() < 0.7) return preferredPersona.tone
   const tones = ['warm', 'humorous', 'informational', 'emotional']
   return tones[Math.floor(Math.random() * tones.length)]
 }
 
-function decidePersona(experiment: Awaited<ReturnType<typeof getActiveExperiment>>): string {
+function decidePersona(experiment: Awaited<ReturnType<typeof getActiveExperiment>>, dayStrategy: ReturnType<typeof getDayStrategy>): string {
   if (experiment?.variable === 'persona') {
     return Math.random() < 0.5 ? experiment.controlValue : experiment.testValue
   }
-  const ids = ['A', 'B', 'C', 'H']
+  // 요일 전략의 preferredPersonas에서 랜덤 선택
+  const ids = dayStrategy.preferredPersonas
   return ids[Math.floor(Math.random() * ids.length)]
 }
 
@@ -152,7 +146,7 @@ const BOARD_SLUG: Record<string, string> = {
 interface GeneratedContent {
   threadsText: string
   xText: string
-  threadsHashtags: string[]
+  threadTopicTag: string
   xHashtags: string[]
 }
 
@@ -161,34 +155,53 @@ async function generateContent(params: {
   tone: string
   promotionLevel: string
   personaId: string
+  dayStrategy: ReturnType<typeof getDayStrategy>
   sourceTitle?: string
   sourcePreview?: string
   sourceUrl?: string
 }): Promise<GeneratedContent> {
   const persona = SNS_PERSONAS[params.personaId]
   const isPromo = params.promotionLevel !== 'PURE'
+  const strategy = params.dayStrategy
 
-  const systemPrompt = `당신은 50-60대 시니어 커뮤니티 "우리 나이가 어때서"의 SNS 마케터입니다.
+  const dayContext = `[요일 전략 — ${strategy.dayName}]
+- 분위기: ${strategy.mood}
+- 포맷: ${strategy.format}
+- 토픽 태그 방향: ${strategy.topicTagHint}`
+
+  const systemPrompt = `당신은 50-60대 커뮤니티 "우리 나이가 어때서"의 SNS 마케터입니다.
 ${persona ? `페르소나: ${persona.nickname} (${persona.style})` : ''}
 
-규칙:
-- Threads용: 대화체, 따뜻한 톤, 100-150자
-- X용: 간결, 정보형, 100-140자 (링크 공간 확보)
+[톤 규칙]
+${THREADS_TONE_GUIDE}
+
+[체류 시간 최적화 — Threads 알고리즘 핵심]
+${DWELL_TIME_GUIDE}
+
+[Threads 규칙]
+- Threads용: 반말 대화체, 100-200자, 토픽 태그 정확히 1개만
+- 토픽 태그는 #없이 자연스러운 한글 단어 1개 (예: 일상, 건강정보, 꿀팁)
 - 톤: ${params.tone}
-- 해시태그: Threads 2-3개, X 4-5개 (한글)
 ${isPromo ? '- 우나어 커뮤니티 언급 자연스럽게 포함' : '- 홍보 없이 순수 콘텐츠로'}
-${params.promotionLevel === 'DIRECT' ? '- "우리 나이가 어때서" 커뮤니티를 직접 추천 (가입 유도)' : ''}
-- 정치/종교/혐오 절대 금지
-- 50-60대가 공감할 수 있는 표현
+${params.promotionLevel === 'DIRECT' ? '- "우리 나이가 어때서" 커뮤니티를 직접 추천' : ''}
+
+[X 규칙]
+- X용: 정보형, 간결, 100-140자 (링크 공간 확보)
+- 해시태그 2-3개 (한글)
+- 톤: ${params.tone}
+${isPromo ? '- 우나어 커뮤니티 언급 자연스럽게 포함' : '- 홍보 없이 순수 콘텐츠로'}
+${params.promotionLevel === 'DIRECT' ? '- "우리 나이가 어때서" 커뮤니티를 직접 추천' : ''}
+
+${dayContext}
 
 반드시 JSON으로만 응답:
-{"threads_text": "...", "x_text": "...", "threads_hashtags": ["...", "..."], "x_hashtags": ["...", "...", "...", "...", "..."]}`
+{"threads_text": "...", "thread_topic_tag": "일상", "x_text": "...", "x_hashtags": ["...", "..."]}`
 
   let userContent: string
   if (params.sourceTitle) {
     userContent = `원본: "${params.sourceTitle}"\n${params.sourcePreview ? `내용: ${params.sourcePreview.slice(0, 200)}` : ''}\n콘텐츠 유형: ${params.contentType}\n${params.sourceUrl ? `링크: ${params.sourceUrl}` : ''}`
   } else {
-    userContent = `콘텐츠 유형: ${params.contentType}\n톤: ${params.tone}\n${persona ? `페르소나 "${persona.nickname}"로 일상 이야기를 만들어주세요.` : '50-60대가 공감할 일상 이야기를 만들어주세요.'}`
+    userContent = `콘텐츠 유형: ${params.contentType}\n톤: ${params.tone}\n${persona ? `페르소나 "${persona.nickname}"로 일상 이야기를 만들어주세요.` : '50대 60대가 공감할 일상 이야기를 만들어주세요.'}`
   }
 
   const response = await client.messages.create({
@@ -204,12 +217,12 @@ ${params.promotionLevel === 'DIRECT' ? '- "우리 나이가 어때서" 커뮤니
   try {
     const parsed = JSON.parse(jsonStr) as {
       threads_text: string; x_text: string
-      threads_hashtags: string[]; x_hashtags: string[]
+      thread_topic_tag: string; x_hashtags: string[]
     }
     return {
       threadsText: parsed.threads_text,
       xText: parsed.x_text,
-      threadsHashtags: parsed.threads_hashtags ?? [],
+      threadTopicTag: parsed.thread_topic_tag ?? getTopicTag(params.contentType),
       xHashtags: parsed.x_hashtags ?? [],
     }
   } catch (err) {
@@ -220,7 +233,7 @@ ${params.promotionLevel === 'DIRECT' ? '- "우리 나이가 어때서" 커뮤니
       title: 'SNS 콘텐츠 생성 실패 — AI JSON 파싱 오류',
       body: `원본: ${jsonStr.slice(0, 150)}...\n${err instanceof Error ? err.message : ''}`,
     })
-    return { threadsText: '', xText: '', threadsHashtags: [], xHashtags: [] }
+    return { threadsText: '', xText: '', threadTopicTag: '', xHashtags: [] }
   }
 }
 
@@ -229,6 +242,7 @@ ${params.promotionLevel === 'DIRECT' ? '- "우리 나이가 어때서" 커뮤니
 async function publishAndSave(params: {
   platform: 'THREADS' | 'X'
   text: string
+  topicTag?: string
   hashtags: string[]
   contentType: string
   tone: string
@@ -239,25 +253,28 @@ async function publishAndSave(params: {
   experimentId?: string
   slot: string
 }) {
-  const fullText = params.hashtags.length > 0
-    ? `${params.text}\n\n${params.hashtags.map(h => `#${h}`).join(' ')}`
-    : params.text
+  // Threads: 토픽 태그 1개만, X: 해시태그 여러 개
+  const finalText = params.platform === 'THREADS'
+    ? (params.topicTag ? `${params.text}\n\n#${params.topicTag}` : params.text)
+    : (params.hashtags.length > 0
+      ? `${params.text}\n\n${params.hashtags.map(h => `#${h}`).join(' ')}`
+      : params.text)
 
   // 링크 추가 (SOFT/DIRECT 홍보)
-  const finalText = params.linkUrl && params.platform === 'X'
-    ? `${fullText}\n${params.linkUrl}`
-    : fullText
+  const withLink = params.linkUrl && params.platform === 'X'
+    ? `${finalText}\n${params.linkUrl}`
+    : finalText
 
   let platformPostId: string | undefined
   let status: 'POSTED' | 'FAILED' = 'FAILED'
 
   try {
     if (params.platform === 'THREADS' && threadsClient.isConfigured()) {
-      const result = await threadsClient.postThread(finalText)
+      const result = await threadsClient.postThread(withLink)
       platformPostId = result.id
       status = 'POSTED'
     } else if (params.platform === 'X' && xClient.isConfigured()) {
-      const result = await xClient.postTweet(finalText)
+      const result = await xClient.postTweet(withLink)
       platformPostId = result.id
       status = 'POSTED'
     } else {
@@ -269,7 +286,11 @@ async function publishAndSave(params: {
     status = 'FAILED'
   }
 
-  // DB 저장
+  // DB 저장 — hashtags는 호환성을 위해 배열로 저장
+  const dbHashtags = params.platform === 'THREADS'
+    ? (params.topicTag ? [params.topicTag] : [])
+    : params.hashtags
+
   const post = await prisma.socialPost.create({
     data: {
       platform: params.platform,
@@ -279,7 +300,7 @@ async function publishAndSave(params: {
       personaId: params.personaId,
       promotionLevel: params.promotionLevel,
       postText: params.text,
-      hashtags: params.hashtags,
+      hashtags: dbHashtags,
       sourcePostId: params.sourcePostId ?? null,
       platformPostId: platformPostId ?? null,
       postingSlot: params.slot,
@@ -297,7 +318,8 @@ async function publishAndSave(params: {
 async function main() {
   console.log('[SocialPoster] 시작')
   const startTime = Date.now()
-  const slot = detectSlot()
+  const dayStrategy = getDayStrategy(new Date())
+  const slot = detectOptimalSlot()
 
   // 1. 현재 실험 조회
   const experiment = await getActiveExperiment()
@@ -312,13 +334,13 @@ async function main() {
     getRecentJobs(),
   ])
 
-  // 3. 콘텐츠 파라미터 결정
-  const contentType = decideContentType(experiment)
-  const tone = decideTone(experiment)
-  const personaId = decidePersona(experiment)
+  // 3. 콘텐츠 파라미터 결정 (요일 전략 기반)
+  const contentType = decideContentType(experiment, dayStrategy)
+  const tone = decideTone(experiment, dayStrategy)
+  const personaId = decidePersona(experiment, dayStrategy)
   const promotionLevel = decidePromotionLevel()
 
-  console.log(`[SocialPoster] 결정: type=${contentType}, tone=${tone}, persona=${personaId}, promo=${promotionLevel}, slot=${slot}`)
+  console.log(`[SocialPoster] 결정: type=${contentType}, tone=${tone}, persona=${personaId}, promo=${promotionLevel}, slot=${slot}, day=${dayStrategy.dayName}`)
 
   // 4. 소스 선택
   let sourceTitle: string | undefined
@@ -348,7 +370,7 @@ async function main() {
   // 5. AI 콘텐츠 생성
   const linkUrl = promotionLevel !== 'PURE' ? (sourceUrl ?? SITE_URL) : undefined
   const content = await generateContent({
-    contentType, tone, promotionLevel, personaId,
+    contentType, tone, promotionLevel, personaId, dayStrategy,
     sourceTitle, sourcePreview, sourceUrl: linkUrl,
   })
 
@@ -379,7 +401,7 @@ async function main() {
         payload: {
           contentType, tone, personaId, promotionLevel, slot, linkUrl,
           threadsText: content.threadsText, xText: content.xText,
-          threadsHashtags: content.threadsHashtags, xHashtags: content.xHashtags,
+          threadTopicTag: content.threadTopicTag, xHashtags: content.xHashtags,
           sourcePostId, experimentId: experiment?.id,
         },
         requestedBy: 'CMO_SOCIAL',
@@ -393,7 +415,7 @@ async function main() {
         data: {
           platform: 'THREADS', experimentId: experiment?.id ?? null,
           contentType, tone, personaId, promotionLevel,
-          postText: content.threadsText, hashtags: content.threadsHashtags,
+          postText: content.threadsText, hashtags: content.threadTopicTag ? [content.threadTopicTag] : [],
           sourcePostId: sourcePostId ?? null, postingSlot: slot,
           linkUrl: linkUrl ?? null, status: 'QUEUED',
         },
@@ -423,7 +445,7 @@ async function main() {
     // 자동 게시 (exploit 모드)
     if (content.threadsText) {
       const r = await publishAndSave({
-        platform: 'THREADS', text: content.threadsText, hashtags: content.threadsHashtags,
+        platform: 'THREADS', text: content.threadsText, topicTag: content.threadTopicTag, hashtags: [],
         contentType, tone, personaId, promotionLevel,
         sourcePostId, linkUrl, experimentId: experiment?.id, slot,
       })
@@ -447,7 +469,7 @@ async function main() {
       botType: 'CMO',
       action: 'SOCIAL_POST',
       status: results.some(r => r.status === 'POSTED') ? 'SUCCESS' : 'PARTIAL',
-      details: JSON.stringify({ contentType, tone, personaId, promotionLevel, slot, results }),
+      details: JSON.stringify({ contentType, tone, personaId, promotionLevel, slot, day: dayStrategy.dayName, results }),
       itemCount: results.length,
       executionTimeMs: durationMs,
     },
@@ -457,9 +479,9 @@ async function main() {
   const persona = SNS_PERSONAS[personaId]
   const statusEmoji = (s: string) => s === 'POSTED' ? '✅' : s === 'DRAFT' ? '📝' : '❌'
 
-  const preview = [
-    `*페르소나*: ${persona?.nickname ?? personaId} | *유형*: ${contentType} | *톤*: ${tone} | *홍보*: ${promotionLevel}`,
-    content.threadsText ? `\n*Threads*: ${content.threadsText}\n${content.threadsHashtags.map(h => `#${h}`).join(' ')}` : '',
+  const slackPreview = [
+    `*페르소나*: ${persona?.nickname ?? personaId} | *유형*: ${contentType} | *톤*: ${tone} | *홍보*: ${promotionLevel} | *요일*: ${dayStrategy.dayName}`,
+    content.threadsText ? `\n*Threads*: ${content.threadsText}\n#${content.threadTopicTag}` : '',
     content.xText ? `\n*X*: ${content.xText}\n${content.xHashtags.map(h => `#${h}`).join(' ')}` : '',
     `\n${results.map(r => `${statusEmoji(r.status)} ${r.platform}: ${r.status}${r.id ? ` (ID: ${r.id})` : ''}`).join(' | ')}`,
     linkUrl ? `\n🔗 ${linkUrl}` : '',
@@ -469,7 +491,7 @@ async function main() {
     level: 'info',
     agent: 'CMO_SOCIAL',
     title: `SNS 게시 완료 — ${results.filter(r => r.status === 'POSTED').length}/${results.length}개 성공`,
-    body: preview,
+    body: slackPreview,
   })
 
   console.log(`[SocialPoster] 완료 — ${results.length}개 게시, ${Math.round(durationMs / 1000)}초`)

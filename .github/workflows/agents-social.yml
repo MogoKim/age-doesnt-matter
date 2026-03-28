@@ -21,9 +21,9 @@ on:
           - test-validate
           - test-post
   schedule:
-    # 텍스트 게시 (Threads/X)
-    - cron: "0 0 * * *"    # 09:00 KST — 아침
-    - cron: "0 6 * * *"    # 15:00 KST — 오후
+    # 텍스트 게시 (Threads/X) — 황금 시간대
+    - cron: "0 22 * * *"   # 07:00 KST — 아침 황금시간
+    - cron: "0 3 * * *"    # 12:00 KST — 점심 황금시간
     # 카드뉴스 게시 (IG/FB/Threads)
     - cron: "0 2 * * *"    # 11:00 KST — 점심 전
     # 채널 시딩 (카카오/지식인/커뮤니티 초안)
@@ -46,7 +46,7 @@ jobs:
     timeout-minutes: 5
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-poster' ||
-      github.event_name == 'schedule' && (github.event.schedule == '0 0 * * *' || github.event.schedule == '0 6 * * *' || github.event.schedule == '0 10 * * *')
+      github.event_name == 'schedule' && (github.event.schedule == '0 22 * * *' || github.event.schedule == '0 3 * * *')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

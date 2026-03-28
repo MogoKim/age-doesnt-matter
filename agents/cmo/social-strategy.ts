@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import { conductMeeting } from '../core/meeting.js'
+import { getDayStrategy } from './threads-config.js'
 
 /**
  * CMO Social Strategy — 매주 월요일 10:15 KST 실행
@@ -16,21 +18,22 @@ import { notifySlack } from '../core/notifier.js'
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
 
-// 8주 테스트 로드맵 — 주차별 실험 변수
+// 8주 테스트 로드맵 — 주차별 실험 변수 (Threads 트렌드 기반)
 const EXPERIMENT_ROADMAP: Array<{
+  week: number
   variable: string
   controlValue: string
   testValue: string
   hypothesis: string
 }> = [
-  { variable: 'baseline', controlValue: 'mixed', testValue: 'mixed', hypothesis: '베이스라인 — 모든 유형 골고루 테스트하여 기본 성과 측정' },
-  { variable: 'contentType', controlValue: 'PERSONA', testValue: 'COMMUNITY', hypothesis: '페르소나 일상 vs 커뮤니티 하이라이트 — 어떤 유형이 더 높은 참여를 이끄는가' },
-  { variable: 'tone', controlValue: 'warm', testValue: 'humorous', hypothesis: '따뜻한 공감형 vs 유머/위트형 — 어떤 톤이 50-60대에게 더 먹히는가' },
-  { variable: 'postingTime', controlValue: 'afternoon', testValue: 'evening', hypothesis: '오후 3시 vs 저녁 7시 — 언제 올려야 가장 잘 퍼지는가' },
-  { variable: 'promotionLevel', controlValue: 'PURE', testValue: 'SOFT', hypothesis: '순수 콘텐츠 vs 소프트 홍보 — 링크가 참여율을 낮추는가' },
-  { variable: 'format', controlValue: 'short', testValue: 'list', hypothesis: '짧은 글(80자) vs 리스트형("3가지 팁") — 어떤 포맷이 효과적인가' },
-  { variable: 'persona', controlValue: 'A', testValue: 'C', hypothesis: '영숙이맘(따뜻) vs 웃음보(유머) — 어떤 캐릭터가 더 먹히는가' },
-  { variable: 'interaction', controlValue: 'statement', testValue: 'question', hypothesis: '일방적 게시 vs 질문형 — 대화 유도가 참여율에 효과적인가' },
+  { week: 1, variable: 'baseline', controlValue: 'mixed', testValue: 'mixed', hypothesis: '베이스라인 측정 — 현재 전략의 참여율 기준점 확인' },
+  { week: 2, variable: 'format', controlValue: 'story', testValue: 'question', hypothesis: '스토리텔링형 vs 질문형 — 체류 시간과 댓글 수 비교' },
+  { week: 3, variable: 'postingTime', controlValue: 'earlyMorning', testValue: 'lunch', hypothesis: '오전 7-9시 vs 점심 12-1시 — 황금 시간대 검증' },
+  { week: 4, variable: 'tone', controlValue: 'warm', testValue: 'practical', hypothesis: '따뜻한 공감형 vs 실용 정보형 — 50-60대 선호도' },
+  { week: 5, variable: 'topicTag', controlValue: 'lifestyle', testValue: 'job', hypothesis: '라이프스타일 태그 vs 일자리 태그 — 도달 범위' },
+  { week: 6, variable: 'contentLength', controlValue: 'short', testValue: 'medium', hypothesis: '80자 vs 150자 — 체류 시간과 참여율 균형' },
+  { week: 7, variable: 'persona', controlValue: 'A', testValue: 'B', hypothesis: '영숙이맘 vs 은퇴신사 — 50-60대 공감 비교' },
+  { week: 8, variable: 'interaction', controlValue: 'statement', testValue: 'question', hypothesis: '일방 게시 vs 질문형 — 댓글 유도 효과' },
 ]
 
 async function main() {
@@ -109,14 +112,49 @@ JSON으로만 응답: {"variable": "...", "controlValue": "...", "testValue": ".
     }
   }
 
-  // 4. 전략 AI 생성 (콘텐츠 믹스 + 주간 방향)
-  const strategyPrompt = `당신은 50-60대 시니어 커뮤니티 "우리 나이가 어때서"의 CMO입니다.
+  // 4. 전략 생성 — conductMeeting()으로 CEO·CMO·CDO 합의
+  const experimentAnalysis = cumulativeLearnings || '(첫 주 — 아직 학습 없음)'
+  const dataContext = JSON.stringify({
+    pastExperiments: pastExperiments.slice(-4),
+    trendContext,
+    nextExperiment,
+  })
+
+  const meetingResult = await conductMeeting({
+    type: 'WEEKLY_STRATEGY',
+    chairAgent: 'CEO',
+    participants: ['CMO', 'CDO'],
+    agenda: [
+      `지난주 실험 결과: ${experimentAnalysis}`,
+      `이번 주 실험 계획: ${nextExperiment.hypothesis}`,
+      `트렌드 변화: ${trendContext}`,
+      '콘텐츠 믹스 및 요일별 전략 조정 필요 여부',
+    ],
+    context: dataContext,
+    maxRounds: 1,
+  })
+
+  const strategyBrief = meetingResult.decisions.join('\n')
+
+  // 4-b. AI 보완 — Threads 트렌드 컨텍스트 반영 세부 전략
+  const strategyPrompt = `당신은 50-60대 커뮤니티 "우리 나이가 어때서"의 CMO입니다.
+
+Threads 한국 트렌드 (2026):
+- 토픽 태그 1개만 (다중 = 스팸)
+- 체류 시간(Dwell Time)이 알고리즘 최대 가중치
+- 화-목 오전 7-9시, 점심 12-1시가 황금 시간대
+- 50-60대 타겟: 텍스트 기반이라 진입 쉬움, 커뮤니티 문화 선호
+- 이미지 포함 시 +60% 인게이지먼트
+- 반말 문화 유지 (자연스러운 반말)
 
 과거 실험 학습:
 ${cumulativeLearnings || '(첫 주 — 아직 학습 없음)'}
 
 최신 트렌드:
 ${trendContext || '(트렌드 데이터 없음)'}
+
+회의 결과:
+${strategyBrief}
 
 다음 주 실험:
 - 변수: ${nextExperiment.variable}
@@ -133,11 +171,11 @@ ${trendContext || '(트렌드 데이터 없음)'}
   const strategyResponse = await client.messages.create({
     model: MODEL,
     max_tokens: 800,
-    system: '50-60대 시니어 커뮤니티 CMO로서 주간 SNS 전략을 수립하세요. 실행 가능한 구체적인 계획으로.',
+    system: '50-60대 커뮤니티 CMO로서 주간 SNS 전략을 수립하세요. Threads 트렌드를 반영한 실행 가능한 구체적인 계획으로.',
     messages: [{ role: 'user', content: strategyPrompt }],
   })
 
-  const strategyBrief = strategyResponse.content[0].type === 'text' ? strategyResponse.content[0].text : ''
+  const detailedStrategy = strategyResponse.content[0].type === 'text' ? strategyResponse.content[0].text : ''
 
   // 5. 새 실험 레코드 생성
   const startDate = new Date()
@@ -167,7 +205,8 @@ ${trendContext || '(트렌드 데이터 없음)'}
       details: JSON.stringify({
         weekNumber: nextWeek,
         experiment: nextExperiment,
-        strategy: strategyBrief.slice(0, 2000),
+        meetingDecisions: strategyBrief.slice(0, 1000),
+        strategy: detailedStrategy.slice(0, 2000),
         learningsCount: pastExperiments.length,
       }),
       itemCount: 1,
@@ -185,10 +224,17 @@ ${trendContext || '(트렌드 데이터 없음)'}
       `> 가설: ${nextExperiment.hypothesis}`,
       `> 변수: ${nextExperiment.variable} (${nextExperiment.controlValue} vs ${nextExperiment.testValue})`,
       '',
-      `*전략 브리핑*`,
+      `*회의 결과 (CEO·CMO·CDO)*`,
       strategyBrief,
       '',
+      `*세부 전략*`,
+      detailedStrategy,
+      '',
       `*누적 학습*: ${pastExperiments.length}개 실험 완료`,
+      '',
+      `*창업자 의사결정:*`,
+      `- 이번 주 실험 변수를 [${nextExperiment.variable}]로 설정했습니다`,
+      `- 성공 전략 [${nextExperiment.controlValue}]의 유지 기간 설정 필요`,
     ].join('\n'),
   })
 

@@ -13,6 +13,8 @@ on:
     - cron: "0 7 * * *"
     # 22:00 KST = 13:00 UTC — CDO KPI
     - cron: "0 13 * * *"
+    # 08:30 KST = 23:30 UTC (전날) — CEO SNS 일일 브리핑
+    - cron: "30 23 * * *"
     # 23:00 KST = 14:00 UTC — CFO 비용
     - cron: "0 14 * * *"
     # 23:30 KST = 14:30 UTC — CFO 수익 추적
@@ -91,6 +93,8 @@ jobs:
                 echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=cost-tracker" >> $GITHUB_OUTPUT ;;
               "30 14 * * *")
                 echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=revenue-tracker" >> $GITHUB_OUTPUT ;;
+              "30 23 * * *")
+                echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-sns-briefing" >> $GITHUB_OUTPUT ;;
               *)
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
             esac

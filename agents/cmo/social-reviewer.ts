@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
-import { notifySlack } from '../core/notifier.js'
+import { notifySlack, sendSlackMessage } from '../core/notifier.js'
 
 /**
  * CMO Social Reviewer — 매주 월요일 10:00 KST 실행
@@ -14,6 +14,16 @@ import { notifySlack } from '../core/notifier.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
+
+interface StructuredLearnings {
+  winner: 'control' | 'test' | 'inconclusive'
+  confidence: 'high' | 'medium' | 'low'
+  keyInsight: string
+  recommendation: string
+  retainStrategies: string[]
+  deprecateStrategies: string[]
+  nextExperimentSuggestion: string
+}
 
 interface PostMetrics {
   likes?: number
@@ -102,6 +112,10 @@ async function main() {
   })
 
   let experimentAnalysis = ''
+  let expControlAvg = 0
+  let expTestAvg = 0
+  let expDelta = 'N/A'
+
   if (activeExperiment) {
     const controlPosts = posts.filter(
       p => p.experimentId === activeExperiment.id && getExperimentValue(p, activeExperiment.variable) === activeExperiment.controlValue
@@ -113,23 +127,12 @@ async function main() {
     const controlEng = controlPosts.map(p => calcEngagement(p.metrics as PostMetrics ?? {}))
     const testEng = testPosts.map(p => calcEngagement(p.metrics as PostMetrics ?? {}))
 
-    const controlAvg = avg(controlEng)
-    const testAvg = avg(testEng)
-    const winner = testAvg > controlAvg ? activeExperiment.testValue : activeExperiment.controlValue
-    const delta = controlAvg > 0 ? ((testAvg - controlAvg) / controlAvg * 100).toFixed(1) : 'N/A'
+    expControlAvg = avg(controlEng)
+    expTestAvg = avg(testEng)
+    const winner = expTestAvg > expControlAvg ? activeExperiment.testValue : activeExperiment.controlValue
+    expDelta = expControlAvg > 0 ? ((expTestAvg - expControlAvg) / expControlAvg * 100).toFixed(1) : 'N/A'
 
-    const results = { controlAvg, testAvg, winner, delta, controlCount: controlPosts.length, testCount: testPosts.length }
-
-    experimentAnalysis = `실험 "${activeExperiment.hypothesis}"\n변수: ${activeExperiment.variable}\n통제(${activeExperiment.controlValue}): 평균 ${controlAvg.toFixed(1)} (${controlPosts.length}개)\n실험(${activeExperiment.testValue}): 평균 ${testAvg.toFixed(1)} (${testPosts.length}개)\n우승: ${winner} (${delta}% 차이)`
-
-    // 실험 결과 업데이트
-    await prisma.socialExperiment.update({
-      where: { id: activeExperiment.id },
-      data: {
-        results: JSON.parse(JSON.stringify(results)),
-        status: 'COMPLETED',
-      },
-    })
+    experimentAnalysis = `실험 "${activeExperiment.hypothesis}"\n변수: ${activeExperiment.variable}\n통제(${activeExperiment.controlValue}): 평균 ${expControlAvg.toFixed(1)} (${controlPosts.length}개)\n실험(${activeExperiment.testValue}): 평균 ${expTestAvg.toFixed(1)} (${testPosts.length}개)\n우승: ${winner} (${expDelta}% 차이)`
   }
 
   // 4. AI 인사이트 도출
@@ -160,21 +163,38 @@ ${experimentAnalysis ? `\n현재 실험:\n${experimentAnalysis}` : '(활성 실�
   const aiResponse = await client.messages.create({
     model: MODEL,
     max_tokens: 600,
-    system: '당신은 50-60대 시니어 커뮤니티의 SNS 마케팅 분석가입니다. 데이터를 기반으로 핵심 인사이트 3-5개를 도출하세요. 짧고 실행 가능한 형태로. 한국어로.',
+    system: '당신은 50-60대 우리 또래 커뮤니티의 SNS 마케팅 분석가입니다. 데이터를 기반으로 실험 결과를 분석하세요. 한국어로.\n\n반드시 JSON으로만 응답:\n{\n  "winner": "control" 또는 "test" 또는 "inconclusive",\n  "confidence": "high" 또는 "medium" 또는 "low",\n  "keyInsight": "핵심 발견 1문장",\n  "recommendation": "다음 주에 할 것 1문장",\n  "retainStrategies": ["유지할 전략1", "유지할 전략2"],\n  "deprecateStrategies": ["폐기할 전략1"],\n  "nextExperimentSuggestion": "다음 실험 제안"\n}',
     messages: [{ role: 'user', content: summaryData }],
   })
 
-  const learnings = aiResponse.content[0].type === 'text' ? aiResponse.content[0].text : ''
+  const rawText = aiResponse.content[0].type === 'text' ? aiResponse.content[0].text : '{}'
+  const structuredLearnings: StructuredLearnings = JSON.parse(rawText)
 
-  // 5. 실험 learnings 저장
+  // 5. 실험 learnings 저장 + nextAction + 실험 결과 카드
   if (activeExperiment) {
     await prisma.socialExperiment.update({
       where: { id: activeExperiment.id },
       data: {
-        learnings,
+        learnings: JSON.stringify(structuredLearnings),
+        nextAction: structuredLearnings.recommendation,
         status: 'ANALYZED',
+        results: { controlAvg: expControlAvg, testAvg: expTestAvg, winner: structuredLearnings.winner, delta: expDelta },
       },
     })
+
+    // #실험-보드 채널에 실험 결과 카드 전송
+    await sendSlackMessage('EXPERIMENT', '', [
+      { type: 'header', text: { type: 'plain_text', text: `실험 결과 — Week ${activeExperiment.weekNumber}`, emoji: true } },
+      { type: 'section', fields: [
+        { type: 'mrkdwn', text: `*가설:*\n${activeExperiment.hypothesis}` },
+        { type: 'mrkdwn', text: `*변수:*\n${activeExperiment.variable}` },
+      ]},
+      { type: 'section', fields: [
+        { type: 'mrkdwn', text: `*통제군:*\n${activeExperiment.controlValue} (${expControlAvg.toFixed(1)})` },
+        { type: 'mrkdwn', text: `*실험군:*\n${activeExperiment.testValue} (${expTestAvg.toFixed(1)})` },
+      ]},
+      { type: 'section', text: { type: 'mrkdwn', text: `*우승:* ${structuredLearnings.winner} (신뢰도: ${structuredLearnings.confidence})\n*인사이트:* ${structuredLearnings.keyInsight}\n*다음 액션:* ${structuredLearnings.recommendation}` } },
+    ])
   }
 
   const durationMs = Date.now() - startTime
@@ -185,7 +205,7 @@ ${experimentAnalysis ? `\n현재 실험:\n${experimentAnalysis}` : '(활성 실�
       botType: 'CMO',
       action: 'SOCIAL_REVIEW',
       status: 'SUCCESS',
-      details: JSON.stringify({ postCount: posts.length, rankings, learnings: learnings.slice(0, 500) }),
+      details: JSON.stringify({ postCount: posts.length, rankings, learnings: structuredLearnings }),
       itemCount: posts.length,
       executionTimeMs: durationMs,
     },
@@ -207,7 +227,7 @@ ${experimentAnalysis ? `\n현재 실험:\n${experimentAnalysis}` : '(활성 실�
       topTone ? `*최고 톤*: ${topTone.key} (평균 ${topTone.avg.toFixed(1)})` : '',
       topPersona ? `*최고 페르소나*: ${topPersona.key} (평균 ${topPersona.avg.toFixed(1)})` : '',
       experimentAnalysis ? `\n*실험 결과*:\n${experimentAnalysis}` : '',
-      `\n*AI 인사이트*:\n${learnings}`,
+      `\n*AI 인사이트*:\n${structuredLearnings.keyInsight}\n*추천 액션*: ${structuredLearnings.recommendation}`,
     ].filter(Boolean).join('\n'),
   })
 
