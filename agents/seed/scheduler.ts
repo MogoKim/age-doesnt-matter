@@ -45,7 +45,8 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'G', type: 'post' },                         // 여행매니아 글
     { personaId: 'K', type: 'post' },                         // 패션언니 뷰티 글
     { personaId: 'M', type: 'post' },                         // 등산러버 등산 글
-    { personaId: 'R', type: 'post' },                         // 드라마덕후 감상 글
+    { personaId: 'R', type: 'post', board: 'HUMOR' },           // 드라마덕후 감상 글 (활력충전소)
+    { personaId: 'C', type: 'post', board: 'HUMOR' },           // 웃음보 유머 글 (활력충전소)
     // 대댓글 — 아침 글 댓글에 답글
     { personaId: 'A', type: 'reply', board: 'STORY', count: 1 },
     { personaId: 'G', type: 'reply', board: 'STORY', count: 1 },
@@ -80,6 +81,7 @@ const SCHEDULE: Record<string, Activity[]> = {
   // ── 오후 자체 활동 ──
   '15': [
     { personaId: 'P', type: 'post' },                         // 커피한잔 감성 에세이
+    { personaId: 'C', type: 'post', board: 'HUMOR' },           // 웃음보 오후 유머 (활력충전소)
     { personaId: 'K', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'R', type: 'comment', board: 'HUMOR', count: 2 },
     // 좋아요
@@ -102,6 +104,7 @@ const SCHEDULE: Record<string, Activity[]> = {
   '19': [
     { personaId: 'I', type: 'post' },                         // 책벌레 독서 글
     { personaId: 'O', type: 'post' },                         // 음악사랑 음악 글
+    { personaId: 'R', type: 'post', board: 'HUMOR' },           // 드라마덕후 저녁 유머 (활력충전소)
     { personaId: 'E', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'G', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'M', type: 'comment', board: 'STORY', count: 1 },

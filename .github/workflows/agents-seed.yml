@@ -1,8 +1,8 @@
 name: Agents — Seed Content
 on:
   schedule:
-    # 09, 10, 14, 16, 19, 21 KST → UTC 변환
-    - cron: "0 0,1,5,7,10,12 * * *"
+    # 09,10,13,14,15,16,19,21,22 KST → UTC 변환
+    - cron: "0 0,1,4,5,6,7,10,12,13 * * *"
   workflow_dispatch:
 
 env:
