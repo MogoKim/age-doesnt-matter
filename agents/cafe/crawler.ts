@@ -16,8 +16,9 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
-import { CAFE_CONFIGS, CRAWL_LIMITS } from './config.js'
-import type { RawCafePost, CafeConfig } from './types.js'
+import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS } from './config.js'
+import type { RawCafePost, CafeConfig, CafeBoardConfig, ContentCategory } from './types.js'
+import { calculateQualityScore } from './quality-scorer.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const STORAGE_STATE_PATH = resolve(__dirname, 'storage-state.json')
@@ -197,39 +198,61 @@ interface ArticleInfo {
   articleId: string
   newFormatUrl: string   // f-e/cafes/{numericId}/articles/{id}
   oldFormatUrl: string   // cafe.naver.com/{name}?iframe_url_utf8=...
+  boardName: string | null
+  boardCategory: ContentCategory | null
 }
 
-/** 글 목록 URL 수집 — f-e 전체글보기 + 메인 페이지에서 articleId 추출 */
+/** 글 목록 URL 수집 — 게시판별 크롤링 + 메인 페이지 폴백 */
 async function collectPostUrls(page: Page, cafe: CafeConfig): Promise<ArticleInfo[]> {
-  const articleIds = new Set<string>()
+  const collectedMap = new Map<string, ArticleInfo>() // articleId → ArticleInfo (중복 방지)
 
-  // 방법 1: f-e 전체글보기 (가장 안정적)
-  try {
-    const allPostsUrl = `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/0`
-    console.log(`[CafeCrawler] ${cafe.name} — 전체글보기에서 수집 중...`)
-    await page.goto(allPostsUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
-    await sleep(3000)
+  // 방법 1: 게시판별 크롤링 (priority !== 'skip' 인 게시판만)
+  const activeBoards = cafe.boards.filter(b => b.priority !== 'skip')
 
-    // 스크롤하여 더 많은 글 로드
-    for (let i = 0; i < 3; i++) {
-      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-      await sleep(1500)
+  for (const board of activeBoards) {
+    try {
+      const boardUrl = `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/${board.menuId}`
+      console.log(`[CafeCrawler] ${cafe.name} — 게시판 "${board.name}" (menuId=${board.menuId}) 수집 중...`)
+      await page.goto(boardUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
+      await sleep(3000)
+
+      // 스크롤하여 더 많은 글 로드
+      const scrollCount = board.menuId === 0 ? 3 : Math.min(board.maxPages, 3)
+      for (let i = 0; i < scrollCount; i++) {
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+        await sleep(1500)
+      }
+
+      const links = await page.locator('a[href*="/articles/"]').all()
+      let boardCount = 0
+      for (const link of links) {
+        const href = await link.getAttribute('href')
+        if (!href) continue
+        const match = href.match(/\/articles\/(\d+)/)
+        if (match && !collectedMap.has(match[1])) {
+          collectedMap.set(match[1], {
+            articleId: match[1],
+            newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${match[1]}`,
+            oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${match[1]}`,
+            boardName: board.name,
+            boardCategory: board.category,
+          })
+          boardCount++
+        }
+      }
+      console.log(`[CafeCrawler] ${cafe.name} 게시판 "${board.name}": ${boardCount}개 신규 수집 (총 ${collectedMap.size}개)`)
+
+      // 게시판 간 딜레이
+      if (activeBoards.indexOf(board) < activeBoards.length - 1) {
+        await sleep(CRAWL_LIMITS.delayBetweenPages)
+      }
+    } catch (err) {
+      console.warn(`[CafeCrawler] ${cafe.name} 게시판 "${board.name}" 실패:`, err)
     }
-
-    const links = await page.locator('a[href*="/articles/"]').all()
-    for (const link of links) {
-      const href = await link.getAttribute('href')
-      if (!href) continue
-      const match = href.match(/\/articles\/(\d+)/)
-      if (match) articleIds.add(match[1])
-    }
-    console.log(`[CafeCrawler] ${cafe.name} 전체글보기: ${articleIds.size}개 글 ID 수집`)
-  } catch (err) {
-    console.warn(`[CafeCrawler] ${cafe.name} 전체글보기 실패:`, err)
   }
 
-  // 방법 2: 카페 메인 페이지 (보충)
-  if (articleIds.size < 10) {
+  // 방법 2: 카페 메인 페이지 (보충 — 총 수집이 10개 미만일 때)
+  if (collectedMap.size < 10) {
     try {
       console.log(`[CafeCrawler] ${cafe.name} — 메인 페이지 보충 수집...`)
       await page.goto(cafe.url, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
@@ -240,24 +263,23 @@ async function collectPostUrls(page: Page, cafe: CafeConfig): Promise<ArticleInf
         const href = await link.getAttribute('href')
         if (!href) continue
         const match = href.match(/\/articles\/(\d+)/)
-        if (match) articleIds.add(match[1])
+        if (match && !collectedMap.has(match[1])) {
+          collectedMap.set(match[1], {
+            articleId: match[1],
+            newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${match[1]}`,
+            oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${match[1]}`,
+            boardName: null,
+            boardCategory: null,
+          })
+        }
       }
-      console.log(`[CafeCrawler] ${cafe.name} 메인: 총 ${articleIds.size}개 글 ID`)
+      console.log(`[CafeCrawler] ${cafe.name} 메인: 총 ${collectedMap.size}개 글 ID`)
     } catch (err) {
       console.warn(`[CafeCrawler] ${cafe.name} 메인 페이지 실패:`, err)
     }
   }
 
-  // articleId → 양 형식 URL 모두 생성
-  const articles: ArticleInfo[] = []
-  for (const articleId of articleIds) {
-    articles.push({
-      articleId,
-      newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${articleId}`,
-      oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${articleId}`,
-    })
-  }
-
+  const articles = Array.from(collectedMap.values())
   const limited = articles.slice(0, CRAWL_LIMITS.maxPostsPerCafe)
   console.log(`[CafeCrawler] ${cafe.name}: ${limited.length}개 URL 준비`)
   return limited
@@ -301,7 +323,7 @@ async function crawlNewFormat(page: Page, article: ArticleInfo, cafe: CafeConfig
 
     if (!title) return null
 
-    return await buildPostFromTarget(target, article.newFormatUrl, cafe, title)
+    return await buildPostFromTarget(target, article.newFormatUrl, cafe, title, article.boardName, article.boardCategory)
   } catch (err) {
     console.warn(`[CafeCrawler] 신형식 실패: ${article.articleId}`, err instanceof Error ? err.message : '')
     return null
@@ -340,7 +362,7 @@ async function crawlOldFormat(page: Page, article: ArticleInfo, cafe: CafeConfig
 
     if (!title) return null
 
-    return await buildPostFromTarget(cafeFrame, article.oldFormatUrl, cafe, title)
+    return await buildPostFromTarget(cafeFrame, article.oldFormatUrl, cafe, title, article.boardName, article.boardCategory)
   } catch {
     return null
   }
@@ -354,6 +376,8 @@ async function buildPostFromTarget(
   url: string,
   cafe: CafeConfig,
   title: string,
+  boardName?: string | null,
+  boardCategory?: ContentCategory | null,
 ): Promise<RawCafePost | null> {
   if (!title || title.length < 2) return null
 
@@ -462,6 +486,8 @@ async function buildPostFromTarget(
     content,
     author,
     category,
+    boardName: boardName ?? null,
+    boardCategory: boardCategory ?? null,
     likeCount,
     commentCount,
     viewCount,
@@ -486,16 +512,36 @@ async function crawlPost(page: Page, article: ArticleInfo, cafe: CafeConfig): Pr
 
 // ─── DB 저장 ─────────────────────────────────────────
 
-/** DB에 저장 (중복 skip) */
+/** DB에 저장 (중복 skip + 블랙리스트/품질 필터링) */
 async function savePosts(posts: RawCafePost[]): Promise<number> {
   let saved = 0
   for (const post of posts) {
     try {
+      // 1. 게시판 블랙리스트 체크
+      if (post.category && BOARD_BLACKLIST.some(bl => post.category!.includes(bl))) {
+        console.log(`[CafeCrawler] 블랙리스트 게시판 스킵: "${post.category}" — ${post.title.slice(0, 20)}`)
+        continue
+      }
+
+      // 2. 토픽 블랙리스트 체크
+      if (TOPIC_BLACKLIST.some(bl => post.title.includes(bl) || post.content.includes(bl))) {
+        console.log(`[CafeCrawler] 블랙리스트 토픽 스킵: ${post.title.slice(0, 20)}`)
+        continue
+      }
+
+      // 3. 품질 점수 계산
+      const qualityScore = calculateQualityScore(post)
+      if (qualityScore < QUALITY_THRESHOLDS.minSave) {
+        continue
+      }
+
+      // 4. 중복 체크
       const existing = await prisma.cafePost.findUnique({
         where: { postUrl: post.postUrl },
       })
       if (existing) continue
 
+      // 5. 새 필드 포함하여 저장
       await prisma.cafePost.create({
         data: {
           cafeId: post.cafeId,
@@ -505,6 +551,10 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
           content: post.content,
           author: post.author,
           category: post.category,
+          boardName: post.boardName,
+          boardCategory: post.boardCategory,
+          qualityScore,
+          isUsable: qualityScore >= QUALITY_THRESHOLDS.minUsable,
           likeCount: post.likeCount,
           commentCount: post.commentCount,
           viewCount: post.viewCount,

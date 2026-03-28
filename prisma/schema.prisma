@@ -716,6 +716,9 @@ model CafePost {
   content      String   @db.Text
   author       String   // 카페 작성자 닉네임
   category     String?  // 카페 내 카테고리
+  boardName     String?  // config에서 설정한 게시판명
+  boardCategory String?  // config에서 설정한 카테고리 (health, hobby, food 등)
+  qualityScore  Float    @default(0) // 다중 요소 품질 점수 (0-100)
   likeCount    Int      @default(0)
   commentCount Int      @default(0)
   viewCount    Int      @default(0)

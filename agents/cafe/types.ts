@@ -1,5 +1,10 @@
 /** 카페 크롤링 & 트렌드 분석 타입 정의 */
 
+// ── 게시판 우선순위 & 카테고리 ──
+
+export type BoardPriority = 'high' | 'medium' | 'skip'
+export type ContentCategory = 'health' | 'hobby' | 'food' | 'humor' | 'lifestyle' | 'job' | 'finance' | 'general'
+
 /** 크롤링 대상 카페 설정 */
 export interface CafeConfig {
   id: string        // wgang, welovesilver, 5060years
@@ -11,9 +16,11 @@ export interface CafeConfig {
 }
 
 export interface CafeBoardConfig {
-  name: string      // 게시판 이름
-  menuId: string    // 네이버 카페 menuId
-  maxPages: number  // 수집할 페이지 수
+  name: string             // 게시판 이름
+  menuId: number           // 네이버 카페 menuId (숫자)
+  maxPages: number         // 수집할 페이지 수
+  priority: BoardPriority  // 크롤링 우선순위
+  category: ContentCategory // 콘텐츠 카테고리
 }
 
 /** 크롤링된 원본 게시글 */
@@ -24,7 +31,9 @@ export interface RawCafePost {
   title: string
   content: string
   author: string
-  category: string | null
+  category: string | null      // 원본 카페 게시판명 (크롤링 시 추출)
+  boardName: string | null     // config에서 설정한 게시판명
+  boardCategory: ContentCategory | null  // config에서 설정한 카테고리
   likeCount: number
   commentCount: number
   viewCount: number

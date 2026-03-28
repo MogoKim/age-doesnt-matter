@@ -1,6 +1,16 @@
 import type { CafeConfig } from './types.js'
 
-/** 크롤링 대상 네이버 카페 3곳 */
+/**
+ * 크롤링 대상 네이버 카페 3곳
+ *
+ * boards: discover-boards.ts 실행 후 실제 menuId로 교체 예정
+ * 현재는 menuId: 0 (전체글보기)으로 설정 — 블랙리스트로 필터링
+ *
+ * priority:
+ *   high — 50-60대에 직접 유용한 콘텐츠 (건강, 취미, 맛집, 유머, 일자리, 생활팁)
+ *   medium — 참여도 높지만 품질 편차 (자유게시판, 일상수다)
+ *   skip — 콘텐츠 가치 없음 (가입인사, 공지, 출석)
+ */
 export const CAFE_CONFIGS: CafeConfig[] = [
   {
     id: 'wgang',
@@ -8,8 +18,8 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/wgang',
     numericId: 29349320,
     boards: [
-      { name: '인기글', menuId: 'popular', maxPages: 2 },
-      { name: '최신글', menuId: 'ArticleList', maxPages: 2 },
+      // TODO: discover-boards.ts 실행 후 실제 menuId로 교체
+      { name: '전체글', menuId: 0, maxPages: 3, priority: 'high', category: 'general' },
     ],
   },
   {
@@ -18,8 +28,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/welovesilver',
     numericId: 28648142,
     boards: [
-      { name: '인기글', menuId: 'popular', maxPages: 2 },
-      { name: '최신글', menuId: 'ArticleList', maxPages: 2 },
+      { name: '전체글', menuId: 0, maxPages: 3, priority: 'high', category: 'general' },
     ],
   },
   {
@@ -28,8 +37,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/5060years',
     numericId: 28962370,
     boards: [
-      { name: '인기글', menuId: 'popular', maxPages: 2 },
-      { name: '최신글', menuId: 'ArticleList', maxPages: 2 },
+      { name: '전체글', menuId: 0, maxPages: 3, priority: 'high', category: 'general' },
     ],
   },
 ]
@@ -53,4 +61,28 @@ export const CRAWL_LIMITS = {
   delayBetweenPosts: 2000,
   /** 글 목록 간 딜레이 (ms) */
   delayBetweenPages: 3000,
+}
+
+// ── 블랙리스트 ──
+
+/** 크롤링 제외 게시판 이름 패턴 */
+export const BOARD_BLACKLIST = [
+  '가입인사', '공지사항', '가입양식', '출석체크', '출석부', '출석이벤트',
+  '이벤트당첨', '운영자공지', '광고', '홍보', '규칙', '카페규칙',
+  '공구', '판매', '중고거래',
+]
+
+/** 크롤링 제외 토픽 패턴 (제목/내용에 포함 시 스킵) */
+export const TOPIC_BLACKLIST = [
+  '정치', '선거', '정당', '대통령', '국회',
+  '스팸', '도박', '카지노', '대출', '코인추천', '투자수익',
+  '다단계', '네트워크마케팅',
+]
+
+/** 품질 점수 기준 */
+export const QUALITY_THRESHOLDS = {
+  /** 이 점수 미만은 DB 저장 안 함 */
+  minSave: 30,
+  /** 이 점수 이상은 isUsable = true */
+  minUsable: 60,
 }

@@ -17,8 +17,11 @@ async function getTodayPosts() {
   todayStart.setHours(0, 0, 0, 0)
 
   return prisma.cafePost.findMany({
-    where: { crawledAt: { gte: todayStart } },
-    orderBy: { likeCount: 'desc' },
+    where: {
+      crawledAt: { gte: todayStart },
+      qualityScore: { gte: 30 }, // 최소 품질 점수 이상만 분석
+    },
+    orderBy: { qualityScore: 'desc' },
     take: 100,
     select: {
       id: true,
@@ -27,6 +30,8 @@ async function getTodayPosts() {
       title: true,
       content: true,
       category: true,
+      boardCategory: true,
+      qualityScore: true,
       likeCount: true,
       commentCount: true,
       viewCount: true,
@@ -37,7 +42,7 @@ async function getTodayPosts() {
 /** Claude에게 트렌드 분석 요청 */
 async function analyzeTrends(posts: Awaited<ReturnType<typeof getTodayPosts>>): Promise<TrendAnalysis> {
   const postSummaries = posts.map((p, i) =>
-    `[${i + 1}] (${p.cafeName}/${p.category ?? '일반'}) "${p.title}" — 좋아요 ${p.likeCount}, 댓글 ${p.commentCount}\n   ${p.content.slice(0, 200)}`,
+    `[${i + 1}] (${p.cafeName}/${p.boardCategory ?? p.category ?? '일반'}) [품질${Math.round(p.qualityScore)}] "${p.title}" — 좋아요 ${p.likeCount}, 댓글 ${p.commentCount}\n   ${p.content.slice(0, 200)}`,
   ).join('\n\n')
 
   const response = await client.messages.create({
@@ -131,8 +136,8 @@ async function tagPosts(posts: Awaited<ReturnType<typeof getTodayPosts>>, analys
       post.title.toLowerCase().includes(topic) || post.content.toLowerCase().includes(topic),
     )
 
-    // 인기글(좋아요 5+)은 콘텐츠 참고용으로 마킹
-    const isUsable = post.likeCount >= 5 || post.commentCount >= 10
+    // 품질 점수 기반 isUsable (qualityScore >= 60)
+    const isUsable = (post.qualityScore ?? 0) >= 60
 
     await prisma.cafePost.update({
       where: { id: post.id },
