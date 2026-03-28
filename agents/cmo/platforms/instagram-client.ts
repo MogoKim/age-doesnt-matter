@@ -38,6 +38,33 @@ async function fetchWithRetry(url: string, options: RequestInit): Promise<Respon
 }
 
 /**
+ * 컨테이너 상태 폴링 — FINISHED가 될 때까지 최대 60초 대기
+ * Instagram은 이미지 다운로드/처리에 시간이 걸려 즉시 publish하면 실패함
+ */
+async function waitForContainerReady(containerId: string, maxWaitMs = 60000): Promise<void> {
+  const pollInterval = 3000
+  const start = Date.now()
+
+  while (Date.now() - start < maxWaitMs) {
+    const res = await fetch(
+      `${GRAPH_API}/${containerId}?fields=status_code,status&access_token=${accessToken}`,
+    )
+    if (res.ok) {
+      const json = (await res.json()) as { status_code?: string; status?: string }
+      const status = json.status_code ?? json.status
+      if (status === 'FINISHED') return
+      if (status === 'ERROR') {
+        throw new Error(`Instagram 컨테이너 처리 실패: ${JSON.stringify(json)}`)
+      }
+      console.log(`[Instagram] 컨테이너 ${containerId} 상태: ${status}, 대기 중...`)
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollInterval))
+  }
+
+  throw new Error(`Instagram 컨테이너 ${containerId} 준비 시간 초과 (${maxWaitMs / 1000}초)`)
+}
+
+/**
  * Instagram 캐러셀 게시 (3단계)
  * 1. 개별 이미지 container 생성 (is_carousel_item: true)
  * 2. Carousel container 생성 (children: container_ids)
@@ -96,6 +123,9 @@ export async function postCarousel(
 
   const carousel = (await carouselRes.json()) as { id: string }
 
+  // Step 2.5: 컨테이너 준비 대기 (FINISHED 상태까지 폴링)
+  await waitForContainerReady(carousel.id)
+
   // Step 3: Publish
   const publishRes = await fetchWithRetry(`${GRAPH_API}/${accountId}/media_publish`, {
     method: 'POST',
@@ -139,6 +169,9 @@ export async function postSingleImage(
   }
 
   const container = (await containerRes.json()) as { id: string }
+
+  // Step 1.5: 컨테이너 준비 대기
+  await waitForContainerReady(container.id)
 
   // Step 2: Publish
   const publishRes = await fetchWithRetry(`${GRAPH_API}/${accountId}/media_publish`, {

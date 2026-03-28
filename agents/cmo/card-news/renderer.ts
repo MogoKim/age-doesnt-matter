@@ -12,7 +12,8 @@
 import { chromium, type Browser, type Page } from 'playwright'
 import sharp from 'sharp'
 import { readFileSync } from 'node:fs'
-import { uploadToR2 } from '../../../src/lib/r2.js'
+// dynamic import — tsx 정적 분석 .js→.ts 체인 해석 문제 우회
+const { uploadToR2 } = await import('../../../src/lib/r2.js')
 
 // ─── Types ───
 
