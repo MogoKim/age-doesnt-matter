@@ -15,6 +15,8 @@ on:
     - cron: "0 13 * * *"
     # 08:30 KST = 23:30 UTC (전날) — CEO SNS 일일 브리핑
     - cron: "30 23 * * *"
+    # 09:30 KST = 00:30 UTC — 승인 대기 리마인더 + 만료 처리
+    - cron: "30 0 * * *"
     # 23:00 KST = 14:00 UTC — CFO 비용
     - cron: "0 14 * * *"
     # 23:30 KST = 14:30 UTC — CFO 수익 추적
@@ -49,6 +51,7 @@ env:
   SLACK_CHANNEL_LOG_MARKETING: ${{ secrets.SLACK_CHANNEL_LOG_MARKETING }}
   SLACK_CHANNEL_LOG_COST: ${{ secrets.SLACK_CHANNEL_LOG_COST }}
   SLACK_CHANNEL_EXPERIMENT: ${{ secrets.SLACK_CHANNEL_EXPERIMENT }}
+  SLACK_CHANNEL_APPROVAL_QUEUE: ${{ secrets.SLACK_CHANNEL_APPROVAL_QUEUE }}
   SITE_URL: ${{ secrets.SITE_URL }}
 
 jobs:
@@ -93,6 +96,8 @@ jobs:
                 echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=cost-tracker" >> $GITHUB_OUTPUT ;;
               "30 14 * * *")
                 echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=revenue-tracker" >> $GITHUB_OUTPUT ;;
+              "30 0 * * *")
+                echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=approval-reminder" >> $GITHUB_OUTPUT ;;
               "30 23 * * *")
                 echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-sns-briefing" >> $GITHUB_OUTPUT ;;
               *)
