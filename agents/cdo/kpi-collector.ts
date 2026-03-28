@@ -1,7 +1,9 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
 import { notifyAdmin } from '../core/notifier.js'
+import { fetchGA4Report, fetchSearchConsoleReport } from '../core/google-api.js'
 import type { AgentResult } from '../core/types.js'
+import type { GA4Report, SearchConsoleReport } from '../core/google-api.js'
 
 /**
  * CDO 에이전트 — KPI 집계
@@ -57,7 +59,13 @@ class CDOKpiCollector extends BaseAgent {
     const dauMauRatio = mau > 0 ? (dau / mau).toFixed(3) : 'N/A'
     const ugcRatio = totalPosts > 0 ? ((userPosts / totalPosts) * 100).toFixed(1) : '0'
 
-    const kpi = {
+    // GA4 + Search Console 외부 데이터 (환경변수 설정 시에만)
+    const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+    const todayStr = new Date().toISOString().split('T')[0]
+    const ga4Data: GA4Report | null = await fetchGA4Report(yesterdayStr, todayStr)
+    const scData: SearchConsoleReport | null = await fetchSearchConsoleReport(yesterdayStr, todayStr)
+
+    const kpi: Record<string, unknown> = {
       dau,
       mau,
       dauMauRatio,
@@ -72,6 +80,8 @@ class CDOKpiCollector extends BaseAgent {
       botPosts,
       newUsers7d,
       reports,
+      ...(ga4Data ? { ga4: ga4Data } : {}),
+      ...(scData ? { searchConsole: scData } : {}),
     }
 
     // KPI를 BotLog에 기록 (히스토리 추적용)
@@ -86,7 +96,26 @@ class CDOKpiCollector extends BaseAgent {
       },
     })
 
-    const summary = `DAU ${dau} | MAU ${mau} | DAU/MAU ${dauMauRatio} | UGC ${ugcRatio}% | 글 ${todayPosts} | 댓글 ${todayComments} | 공감 ${todayLikes}`
+    // 내부 DB KPI 요약
+    const summaryParts: string[] = [
+      `DAU ${dau} | MAU ${mau} | DAU/MAU ${dauMauRatio} | UGC ${ugcRatio}% | 글 ${todayPosts} | 댓글 ${todayComments} | 공감 ${todayLikes}`,
+    ]
+
+    // GA4 요약 (데이터 있을 때만)
+    if (ga4Data) {
+      summaryParts.push(
+        `\n📊 GA4: 활성 ${ga4Data.activeUsers}명 | 세션 ${ga4Data.sessions} | PV ${ga4Data.pageViews} | 이탈률 ${(ga4Data.bounceRate * 100).toFixed(1)}%`,
+      )
+    }
+
+    // Search Console 요약 (데이터 있을 때만)
+    if (scData) {
+      summaryParts.push(
+        `\n🔍 SC: 클릭 ${scData.totalClicks} | 노출 ${scData.totalImpressions} | CTR ${(scData.avgCtr * 100).toFixed(1)}% | 순위 ${scData.avgPosition.toFixed(1)}`,
+      )
+    }
+
+    const summary = summaryParts.join('')
 
     await notifyAdmin({
       level: 'info',

@@ -35,6 +35,9 @@ const CHANNELS = {
 
   // 성장
   EXPERIMENT: process.env.SLACK_CHANNEL_EXPERIMENT ?? '',           // #실험-보드
+
+  // 승인 워크플로우
+  APPROVAL_QUEUE: process.env.SLACK_CHANNEL_APPROVAL_QUEUE ?? '',  // #승인-대기
 } as const
 
 type ChannelKey = keyof typeof CHANNELS
@@ -201,6 +204,93 @@ export async function notifyAdmin(payload: NotifyPayload): Promise<void> {
     console.error('[Notifier] 어드민 알림 저장 실패:', err)
     // 폴백: Slack으로 전송
     await notifySlack(payload)
+  }
+}
+
+/**
+ * AdminQueue 승인 요청 항목 타입
+ */
+interface ApprovalItem {
+  id: string
+  type: string
+  title: string
+  description?: string | null
+  requestedBy: string
+}
+
+/**
+ * Slack #승인-대기 채널에 Block Kit 승인 요청 메시지 전송
+ */
+export async function notifyApproval(item: ApprovalItem): Promise<void> {
+  if (!slack) {
+    console.warn('[Notifier] Slack 설정 없음 — 승인 알림 스킵')
+    console.log(`[승인 요청] ${item.title} (by ${item.requestedBy})`)
+    return
+  }
+
+  const channelId = CHANNELS.APPROVAL_QUEUE
+  if (!channelId) {
+    console.warn('[Notifier] APPROVAL_QUEUE 채널 미설정 — 승인 알림 스킵')
+    return
+  }
+
+  const kstTime = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+  const fallbackText = `[승인 요청] ${item.title} — ${item.requestedBy}`
+
+  const blocks: Record<string, unknown>[] = [
+    {
+      type: 'header',
+      text: { type: 'plain_text', text: `승인 요청: ${item.title}`, emoji: true },
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*유형:*\n${item.type}` },
+        { type: 'mrkdwn', text: `*요청자:*\n${item.requestedBy}` },
+      ],
+    },
+    ...(item.description
+      ? [{
+          type: 'section' as const,
+          text: { type: 'mrkdwn' as const, text: `*미리보기:*\n${item.description.slice(0, 500)}` },
+        }]
+      : []),
+    {
+      type: 'actions',
+      elements: [
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: '승인', emoji: true },
+          style: 'primary',
+          action_id: 'approve',
+          value: item.id,
+        },
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: '거절', emoji: true },
+          style: 'danger',
+          action_id: 'reject',
+          value: item.id,
+        },
+      ],
+    },
+    {
+      type: 'context',
+      elements: [
+        { type: 'mrkdwn', text: `요청 시각: ${kstTime}` },
+      ],
+    },
+  ]
+
+  try {
+    await slack.chat.postMessage({
+      channel: channelId,
+      text: fallbackText,
+      blocks: blocks as never,
+      unfurl_links: false,
+    })
+  } catch (err) {
+    console.error('[Notifier] 승인 알림 전송 실패:', err)
   }
 }
 

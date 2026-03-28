@@ -3,6 +3,7 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { parse as parseYaml } from 'yaml'
 import { disconnect } from '../core/db.js'
+import { waitForDependencies } from './dependencies.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -47,6 +48,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cmo:social-reviewer': () => import('../cmo/social-reviewer.js').then(() => {}),
   'cmo:social-strategy': () => import('../cmo/social-strategy.js').then(() => {}),
   'ceo:morning-sns-briefing': () => import('../ceo/morning-sns-briefing.js').then(() => {}),
+  'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
 }
 
 function getAutomationStatus(): string {
@@ -82,6 +84,14 @@ async function main() {
   const status = getAutomationStatus()
   if (status !== 'ACTIVE' && !MONITORING_TASKS.has(key)) {
     console.log(`[Runner] automation_status=${status} — ${key} 실행 스킵 (모니터링 태스크만 허용)`)
+    await disconnect()
+    process.exit(0)
+  }
+
+  // 의존성 체크
+  const depsOk = await waitForDependencies(key)
+  if (!depsOk) {
+    console.log(`[Runner] ${key}: 선행 작업 미완료 — 스킵`)
     await disconnect()
     process.exit(0)
   }

@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import { createApprovalRequest } from '../core/approval-helper.js'
 
 /**
  * CMO Channel Seeder — 외부 채널 홍보 초안 생성 에이전트
@@ -217,15 +218,13 @@ async function main() {
       totalDrafts++
     }
 
-    // AdminQueue 등록
-    await prisma.adminQueue.create({
-      data: {
-        type: 'CONTENT_PUBLISH',
-        title: `[채널시딩] ${result.channel} 초안 ${result.drafts.length}건`,
-        payload: JSON.stringify({ draftIds }),
-        requestedBy: 'CMO_CHANNEL_SEEDER',
-        status: 'PENDING',
-      },
+    // AdminQueue 등록 + Slack 승인 알림
+    await createApprovalRequest({
+      type: 'CONTENT_PUBLISH',
+      title: `[채널시딩] ${result.channel} 초안 ${result.drafts.length}건`,
+      payload: JSON.stringify({ draftIds }),
+      requestedBy: 'CMO_CHANNEL_SEEDER',
+      status: 'PENDING',
     })
 
     // Slack 미리보기

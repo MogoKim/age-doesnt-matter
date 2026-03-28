@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import { createApprovalRequest } from '../core/approval-helper.js'
 import * as xClient from './platforms/x-client.js'
 import * as threadsClient from './platforms/threads-client.js'
 import { getDayStrategy, getTopicTag, detectOptimalSlot, THREADS_TONE_GUIDE, DWELL_TIME_GUIDE } from './threads-config.js'
@@ -393,20 +394,18 @@ async function main() {
       linkUrl ? `\n🔗 ${linkUrl}` : '',
     ].join('')
 
-    await prisma.adminQueue.create({
-      data: {
-        type: 'CONTENT_PUBLISH',
-        title: `SNS 게시 승인 — ${SNS_PERSONAS[personaId]?.nickname ?? personaId} (${contentType})`,
-        description: preview,
-        payload: {
-          contentType, tone, personaId, promotionLevel, slot, linkUrl,
-          threadsText: content.threadsText, xText: content.xText,
-          threadTopicTag: content.threadTopicTag, xHashtags: content.xHashtags,
-          sourcePostId, experimentId: experiment?.id,
-        },
-        requestedBy: 'CMO_SOCIAL',
-        status: 'PENDING',
+    await createApprovalRequest({
+      type: 'CONTENT_PUBLISH',
+      title: `SNS 게시 승인 — ${SNS_PERSONAS[personaId]?.nickname ?? personaId} (${contentType})`,
+      description: preview,
+      payload: {
+        contentType, tone, personaId, promotionLevel, slot, linkUrl,
+        threadsText: content.threadsText, xText: content.xText,
+        threadTopicTag: content.threadTopicTag, xHashtags: content.xHashtags,
+        sourcePostId, experimentId: experiment?.id,
       },
+      requestedBy: 'CMO_SOCIAL',
+      status: 'PENDING',
     })
 
     // QUEUED 상태로 DB 저장 (승인 후 별도 게시 필요)

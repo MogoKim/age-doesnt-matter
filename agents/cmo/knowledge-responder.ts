@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import { createApprovalRequest } from '../core/approval-helper.js'
 
 /**
  * CMO Knowledge Responder — 네이버 지식iN 답변 초안 생성 에이전트
@@ -175,15 +176,13 @@ async function main() {
     draftIds.push(saved.id)
   }
 
-  // 5. AdminQueue 등록
-  await prisma.adminQueue.create({
-    data: {
-      type: 'CONTENT_PUBLISH',
-      title: `[지식iN] 답변 초안 ${drafts.length}건 — 키워드: ${selectedKeywords.join(', ')}`,
-      payload: JSON.stringify({ draftIds, keywords: selectedKeywords }),
-      requestedBy: 'CMO_KNOWLEDGE',
-      status: 'PENDING',
-    },
+  // 5. AdminQueue 등록 + Slack 승인 알림
+  await createApprovalRequest({
+    type: 'CONTENT_PUBLISH',
+    title: `[지식iN] 답변 초안 ${drafts.length}건 — 키워드: ${selectedKeywords.join(', ')}`,
+    payload: JSON.stringify({ draftIds, keywords: selectedKeywords }),
+    requestedBy: 'CMO_KNOWLEDGE',
+    status: 'PENDING',
   })
 
   // 6. Slack 알림

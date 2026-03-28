@@ -242,8 +242,8 @@ async function main() {
   // BotLog
   await prisma.botLog.create({
     data: {
-      botType: 'SEED',
-      action: 'CONTENT_CURATION',
+      botType: 'CAFE_CRAWLER',
+      action: 'CONTENT_CURATE',
       status: publishedCount > 0 ? 'SUCCESS' : 'PARTIAL',
       details: JSON.stringify({
         topicsUsed: hotTopics.slice(0, maxPosts).map(t => t.topic),

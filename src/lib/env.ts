@@ -77,6 +77,11 @@ export const BAND_KEY = optionalEnv('BAND_KEY', '')
 export const NEXT_PUBLIC_GTM_ID = optionalEnv('NEXT_PUBLIC_GTM_ID', '')
 export const NEXT_PUBLIC_GA4_ID = optionalEnv('NEXT_PUBLIC_GA4_ID', '')
 
+/** Google Service Account — GA4 Data API + Search Console API (CDO 에이전트용) */
+export const GOOGLE_SERVICE_ACCOUNT_JSON = optionalEnv('GOOGLE_SERVICE_ACCOUNT_JSON', '')
+export const GA4_PROPERTY_ID = optionalEnv('GA4_PROPERTY_ID', '')
+export const SEARCH_CONSOLE_SITE_URL = optionalEnv('SEARCH_CONSOLE_SITE_URL', 'https://age-doesnt-matter.com')
+
 /** App */
 export const NEXT_PUBLIC_APP_URL = optionalEnv('NEXT_PUBLIC_APP_URL', 'https://age-doesnt-matter.com')
 export const NODE_ENV = optionalEnv('NODE_ENV', 'development')
