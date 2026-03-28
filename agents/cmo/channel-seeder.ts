@@ -22,7 +22,7 @@ type ChannelType = 'KAKAO_OPENCHAT' | 'DANGGEUN' | 'COMMUNITY'
 interface ContentSource {
   popularPosts: Array<{ id: string; title: string; boardType: string; likeCount: number; content: string }>
   latestMagazine: { id: string; title: string; content: string } | null
-  latestJobs: Array<{ id: string; title: string; company: string | null; location: string | null }>
+  latestJobs: Array<{ id: string; title: string; jobDetail: { company: string; location: string } | null }>
 }
 
 interface DraftOutput {
@@ -60,7 +60,7 @@ async function fetchContentSources(): Promise<ContentSource> {
       },
       orderBy: { createdAt: 'desc' },
       take: 3,
-      select: { id: true, title: true, company: true, location: true },
+      select: { id: true, title: true, jobDetail: { select: { company: true, location: true } } },
     }),
   ])
 
@@ -115,7 +115,7 @@ async function generateDraftsForChannel(
     : '(매거진 없음)'
 
   const jobSummary = sources.latestJobs.length > 0
-    ? sources.latestJobs.map(j => `- "${j.title}"${j.company ? ` (${j.company})` : ''}${j.location ? ` - ${j.location}` : ''} → ${SITE_URL}/community/jobs/${j.id}`).join('\n')
+    ? sources.latestJobs.map(j => `- "${j.title}"${j.jobDetail?.company ? ` (${j.jobDetail.company})` : ''}${j.jobDetail?.location ? ` - ${j.jobDetail.location}` : ''} → ${SITE_URL}/community/jobs/${j.id}`).join('\n')
     : '(일자리 없음)'
 
   const response = await client.messages.create({

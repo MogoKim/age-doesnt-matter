@@ -51,13 +51,16 @@ async function fetchTrendContext(): Promise<string> {
   const recentTrends = await prisma.cafeTrend.findMany({
     orderBy: { createdAt: 'desc' },
     take: 5,
-    select: { keyword: true, summary: true },
+    select: { keywords: true, summary: true },
   })
 
   if (recentTrends.length === 0) return '(트렌드 데이터 없음)'
 
   return recentTrends
-    .map(t => `- ${t.keyword}: ${t.summary ?? ''}`)
+    .map(t => {
+      const kws = Array.isArray(t.keywords) ? (t.keywords as Array<{ word: string }>).slice(0, 3).map(k => k.word).join(', ') : ''
+      return `- ${kws}: ${t.summary ?? ''}`
+    })
     .join('\n')
 }
 
