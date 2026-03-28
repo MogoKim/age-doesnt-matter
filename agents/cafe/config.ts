@@ -18,8 +18,10 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/wgang',
     numericId: 29349320,
     boards: [
-      // TODO: discover-boards.ts 실행 후 실제 menuId로 교체
+      // 등급 올라가면 discover-boards.ts 재실행하여 추가 게시판 확보
       { name: '전체글', menuId: 0, maxPages: 3, priority: 'high', category: 'general' },
+      { name: '성형/피부/헤어/패션', menuId: 12, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+      { name: '내가 찍은 사진', menuId: 27, maxPages: 2, priority: 'medium', category: 'hobby' },
     ],
   },
   {
@@ -29,6 +31,9 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     numericId: 28648142,
     boards: [
       { name: '전체글', menuId: 0, maxPages: 3, priority: 'high', category: 'general' },
+      { name: '식사하셨나요', menuId: 135, maxPages: 2, priority: 'high', category: 'food' },
+      { name: '바람 쐬고 왔어요', menuId: 137, maxPages: 2, priority: 'medium', category: 'lifestyle' },
+      { name: '은사랑 사진 앨범', menuId: 70, maxPages: 1, priority: 'medium', category: 'hobby' },
     ],
   },
   {
@@ -38,6 +43,8 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     numericId: 28962370,
     boards: [
       { name: '전체글', menuId: 0, maxPages: 3, priority: 'high', category: 'general' },
+      { name: '시시콜콜 일상이야기', menuId: 13, maxPages: 2, priority: 'medium', category: 'lifestyle' },
+      { name: '사랑/이별/그리움', menuId: 304, maxPages: 1, priority: 'medium', category: 'lifestyle' },
     ],
   },
 ]
