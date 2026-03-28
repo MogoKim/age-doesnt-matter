@@ -16,31 +16,46 @@ function normalizeSalary(raw: string | undefined | null): string {
   if (!raw || raw.trim() === '' || raw === '정보 없음') return '급여 협의'
   const cleaned = raw.replace(/,/g, '').replace(/\s+/g, ' ').trim()
 
-  const rangeMatch = cleaned.match(/(\d{4,})원?\s*[~\-]\s*(\d{4,})원?/)
-  if (rangeMatch) {
-    const low = Math.round(parseInt(rangeMatch[1]) / 10000)
-    const high = Math.round(parseInt(rangeMatch[2]) / 10000)
-    if (low === high) return `월 ${low}만원`
-    return `월 ${low}~${high}만원`
-  }
+  // 이미 정규화된 형식
+  if (/^(월|시급)\s*\d+[~\-]?\d*만/.test(cleaned)) return cleaned.endsWith('원') ? cleaned : cleaned + '원'
 
-  const singleMatch = cleaned.match(/(\d{4,})원?/)
-  if (singleMatch) {
-    const amount = Math.round(parseInt(singleMatch[1]) / 10000)
-    if (amount >= 100) return `월 ${amount}만원`
-    return `시급 ${amount.toLocaleString()}원`
-  }
-
+  // 명시적 시급 먼저 처리
   const hourlyMatch = cleaned.match(/시급\s*(\d[\d,.]*)\s*(만|원)?/)
   if (hourlyMatch) {
     const val = hourlyMatch[1].replace(/,/g, '')
     if (hourlyMatch[2] === '만') return `시급 ${val}만원`
     const num = parseInt(val)
     if (num >= 10000) return `시급 ${(num / 10000).toFixed(1).replace('.0', '')}만원`
-    return `시급 ${num.toLocaleString()}원`
+    if (num >= 5000) return `시급 ${num.toLocaleString()}원`
+    return '급여 협의'
   }
 
-  if (/월\s*\d+만/.test(cleaned)) return cleaned.replace(/원$/, '') + (cleaned.endsWith('원') ? '' : '원')
+  // 범위 — 원본 금액 기준 판별
+  const rangeMatch = cleaned.match(/(\d{4,})원?\s*[~\-]\s*(\d{4,})원?/)
+  if (rangeMatch) {
+    const lowRaw = parseInt(rangeMatch[1])
+    const highRaw = parseInt(rangeMatch[2])
+    if (lowRaw >= 100000 || highRaw >= 100000) {
+      const low = Math.round(lowRaw / 10000)
+      const high = Math.round(highRaw / 10000)
+      if (low === high) return `월 ${low}만원`
+      return `월 ${low}~${high}만원`
+    }
+    if (lowRaw >= 5000) {
+      return `시급 ${lowRaw.toLocaleString()}~${highRaw.toLocaleString()}원`
+    }
+    return '급여 협의'
+  }
+
+  // 단일 금액 — 원본 금액 기준 월급/시급 판별
+  const singleMatch = cleaned.match(/(\d{4,})원?/)
+  if (singleMatch) {
+    const rawAmount = parseInt(singleMatch[1])
+    if (rawAmount >= 100000) return `월 ${Math.round(rawAmount / 10000)}만원`
+    if (rawAmount >= 5000) return `시급 ${rawAmount.toLocaleString()}원`
+    return '급여 협의'
+  }
+
   return raw.trim()
 }
 

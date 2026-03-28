@@ -32,17 +32,27 @@ export function formatSalary(raw: string | null | undefined): string {
   // "월급 2800000원 ~ 3000000원"
   const rangeMatch = cleaned.match(/(\d{4,})원?\s*[~\-]\s*(\d{4,})원?/)
   if (rangeMatch) {
-    const low = Math.round(parseInt(rangeMatch[1]) / 10000)
-    const high = Math.round(parseInt(rangeMatch[2]) / 10000)
-    if (low === high) return `월 ${low}만원`
-    return `월 ${low}~${high}만원`
+    const lowRaw = parseInt(rangeMatch[1])
+    const highRaw = parseInt(rangeMatch[2])
+    if (lowRaw >= 100000 || highRaw >= 100000) {
+      const low = Math.round(lowRaw / 10000)
+      const high = Math.round(highRaw / 10000)
+      if (low === high) return `월 ${low}만원`
+      return `월 ${low}~${high}만원`
+    }
+    if (lowRaw >= 5000) {
+      return `시급 ${lowRaw.toLocaleString()}~${highRaw.toLocaleString()}원`
+    }
+    return '급여 협의'
   }
 
-  // "2800000원" 단일
+  // "2800000원" 단일 — 원본 금액 기준으로 월급/시급 판별
   const singleMatch = cleaned.match(/(\d{4,})원?/)
   if (singleMatch) {
-    const amount = Math.round(parseInt(singleMatch[1]) / 10000)
-    if (amount >= 100) return `월 ${amount}만원`
+    const rawAmount = parseInt(singleMatch[1])
+    if (rawAmount >= 100000) return `월 ${Math.round(rawAmount / 10000)}만원`
+    if (rawAmount >= 5000) return `시급 ${rawAmount.toLocaleString()}원`
+    return '급여 협의'
   }
 
   return raw.trim()
