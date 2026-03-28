@@ -96,8 +96,8 @@ async function shouldAutoPost(experiment: Awaited<ReturnType<typeof getActiveExp
   const completedExperiments = await prisma.socialExperiment.count({
     where: { status: 'ANALYZED' },
   })
-  // 처음 2주는 모두 승인제
-  if (completedExperiments < 2) return false
+  // 1인 운영: 초기부터 자동 게시 (실험 데이터 축적 후 explore만 승인제로 전환)
+  if (completedExperiments < 2) return true
   // 활성 실험이 없으면 자동 게시 (검증된 공식 운영 중)
   if (!experiment) return true
   // 활성 실험이 있고, 현재 게시가 실험군이면 승인 필요
