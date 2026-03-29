@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { unstable_cache } from 'next/cache'
 import type {
   AdSlot,
   BoardType,
@@ -9,63 +10,65 @@ import type {
   UserStatus,
 } from '@/generated/prisma/client'
 
-// ─── 대시보드 KPI ───
+// ─── 대시보드 KPI (5분 캐시) ───
 
-export async function getDashboardStats() {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+export const getDashboardStats = unstable_cache(
+  async () => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
-  const [
-    todayUsers,
-    todaySignups,
-    todayPosts,
-    todayComments,
-    pendingReports,
-    pendingBotReviews,
-  ] = await Promise.all([
-    // 오늘 방문자 (lastLoginAt 기준)
-    prisma.user.count({
-      where: { lastLoginAt: { gte: today } },
-    }),
-    // 오늘 가입
-    prisma.user.count({
-      where: { createdAt: { gte: today } },
-    }),
-    // 오늘 글
-    prisma.post.count({
-      where: { createdAt: { gte: today }, status: 'PUBLISHED' },
-    }),
-    // 오늘 댓글
-    prisma.comment.count({
-      where: { createdAt: { gte: today }, status: 'ACTIVE' },
-    }),
-    // 미처리 신고
-    prisma.report.count({
-      where: { status: 'PENDING' },
-    }),
-    // 봇 검수 대기
-    prisma.botLog.count({
-      where: { reviewPendingCount: { gt: 0 } },
-    }),
-  ])
+    const [
+      todayUsers,
+      todaySignups,
+      todayPosts,
+      todayComments,
+      pendingReports,
+      pendingBotReviews,
+    ] = await Promise.all([
+      prisma.user.count({
+        where: { lastLoginAt: { gte: today } },
+      }),
+      prisma.user.count({
+        where: { createdAt: { gte: today } },
+      }),
+      prisma.post.count({
+        where: { createdAt: { gte: today }, status: 'PUBLISHED' },
+      }),
+      prisma.comment.count({
+        where: { createdAt: { gte: today }, status: 'ACTIVE' },
+      }),
+      prisma.report.count({
+        where: { status: 'PENDING' },
+      }),
+      prisma.botLog.count({
+        where: { reviewPendingCount: { gt: 0 } },
+      }),
+    ])
 
-  return {
-    todayUsers,
-    todaySignups,
-    todayPosts,
-    todayComments,
-    pendingReports,
-    pendingBotReviews,
-  }
-}
+    return {
+      todayUsers,
+      todaySignups,
+      todayPosts,
+      todayComments,
+      pendingReports,
+      pendingBotReviews,
+    }
+  },
+  ['admin-dashboard-stats'],
+  { revalidate: 300 }
+)
 
-export async function getRecentBotLogs() {
-  return prisma.botLog.findMany({
-    orderBy: { executedAt: 'desc' },
-    take: 10,
-    distinct: ['botType'],
-  })
-}
+export const getRecentBotLogs = unstable_cache(
+  async () => {
+    return prisma.botLog.findMany({
+      orderBy: { executedAt: 'desc' },
+      take: 10,
+      distinct: ['botType'],
+    })
+  },
+  ['admin-recent-bot-logs'],
+  { revalidate: 300 }
+)
 
 // ─── 콘텐츠 관리 ───
 
@@ -343,14 +346,18 @@ export async function getBoardConfigById(id: string) {
 
 // ─── 총 카운트 ───
 
-export async function getTotalCounts() {
-  const [totalUsers, totalPosts, totalComments] = await Promise.all([
-    prisma.user.count({ where: { status: 'ACTIVE' } }),
-    prisma.post.count({ where: { status: 'PUBLISHED' } }),
-    prisma.comment.count({ where: { status: 'ACTIVE' } }),
-  ])
-  return { totalUsers, totalPosts, totalComments }
-}
+export const getTotalCounts = unstable_cache(
+  async () => {
+    const [totalUsers, totalPosts, totalComments] = await Promise.all([
+      prisma.user.count({ where: { status: 'ACTIVE' } }),
+      prisma.post.count({ where: { status: 'PUBLISHED' } }),
+      prisma.comment.count({ where: { status: 'ACTIVE' } }),
+    ])
+    return { totalUsers, totalPosts, totalComments }
+  },
+  ['admin-total-counts'],
+  { revalidate: 600 }
+)
 
 // ─── 감사 로그 ───
 

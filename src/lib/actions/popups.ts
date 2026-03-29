@@ -82,5 +82,6 @@ export async function deletePopup(id: string) {
 export async function getPopupList() {
   return prisma.popup.findMany({
     orderBy: [{ isActive: 'desc' }, { priority: 'desc' }, { createdAt: 'desc' }],
+    take: 100,
   })
 }

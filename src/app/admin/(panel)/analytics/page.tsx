@@ -1,30 +1,41 @@
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
+import { unstable_cache } from 'next/cache'
 
 export const metadata: Metadata = { title: '데이터 분석' }
-export const dynamic = 'force-dynamic'
+
+const getAnalyticsStats = unstable_cache(
+  async () => {
+    const now = new Date()
+    const todayStart = new Date(now)
+    todayStart.setHours(0, 0, 0, 0)
+
+    const weekAgo = new Date(now)
+    weekAgo.setDate(weekAgo.getDate() - 7)
+
+    const monthAgo = new Date(now)
+    monthAgo.setDate(monthAgo.getDate() - 30)
+
+    const [dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports] =
+      await Promise.all([
+        prisma.user.count({ where: { lastLoginAt: { gte: todayStart } } }),
+        prisma.user.count({ where: { lastLoginAt: { gte: weekAgo } } }),
+        prisma.user.count({ where: { lastLoginAt: { gte: monthAgo } } }),
+        prisma.post.count({ where: { createdAt: { gte: todayStart }, status: 'PUBLISHED' } }),
+        prisma.comment.count({ where: { createdAt: { gte: todayStart }, status: 'ACTIVE' } }),
+        prisma.user.count({ where: { status: 'ACTIVE' } }),
+        prisma.report.count({ where: { status: 'PENDING' } }),
+      ])
+
+    return { dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports }
+  },
+  ['admin-analytics-stats'],
+  { revalidate: 600 }
+)
 
 export default async function AdminAnalyticsPage() {
-  const now = new Date()
-  const todayStart = new Date(now)
-  todayStart.setHours(0, 0, 0, 0)
-
-  const weekAgo = new Date(now)
-  weekAgo.setDate(weekAgo.getDate() - 7)
-
-  const monthAgo = new Date(now)
-  monthAgo.setDate(monthAgo.getDate() - 30)
-
-  const [dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports] =
-    await Promise.all([
-      prisma.user.count({ where: { lastLoginAt: { gte: todayStart } } }),
-      prisma.user.count({ where: { lastLoginAt: { gte: weekAgo } } }),
-      prisma.user.count({ where: { lastLoginAt: { gte: monthAgo } } }),
-      prisma.post.count({ where: { createdAt: { gte: todayStart }, status: 'PUBLISHED' } }),
-      prisma.comment.count({ where: { createdAt: { gte: todayStart }, status: 'ACTIVE' } }),
-      prisma.user.count({ where: { status: 'ACTIVE' } }),
-      prisma.report.count({ where: { status: 'PENDING' } }),
-    ])
+  const { dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports } =
+    await getAnalyticsStats()
 
   const kpis = [
     { label: 'DAU (오늘)', value: dau },
