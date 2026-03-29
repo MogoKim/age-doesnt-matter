@@ -38,10 +38,10 @@ export function formatSalary(raw: string | null | undefined): string {
       const low = Math.round(lowRaw / 10000)
       const high = Math.round(highRaw / 10000)
       if (low === high) return `월 ${low}만원`
-      return `월 ${low}~${high}만원`
+      return `월 ${high}만원`
     }
     if (lowRaw >= 5000) {
-      return `시급 ${lowRaw.toLocaleString()}~${highRaw.toLocaleString()}원`
+      return `시급 ${highRaw.toLocaleString()}원`
     }
     return '급여 협의'
   }

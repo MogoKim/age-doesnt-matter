@@ -12,14 +12,13 @@ export default function Header({ isLoggedIn = false }: HeaderProps) {
     <header className="sticky top-0 z-[100] h-[56px] bg-card border-b border-border flex items-center justify-between px-4 lg:hidden">
       <Link href="/" className="flex items-center no-underline shrink-0" aria-label="우나어 홈">
         <Image
-          src="/images/logo.png"
+          src="/images/logo2.png"
           alt="우리나이가어때서"
-          width={36}
-          height={36}
-          className="h-9 w-9 rounded-lg object-contain"
+          width={48}
+          height={48}
+          className="h-12 w-12 rounded-lg object-contain"
           priority
         />
-        <span className="ml-1.5 text-body font-bold text-foreground">우나어</span>
       </Link>
 
       <div className="flex items-center gap-1">

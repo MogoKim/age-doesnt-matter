@@ -217,3 +217,16 @@ textarea {
   .text-title { font-size: var(--text-title); }
   .text-heading { font-size: var(--text-heading); }
 }
+
+/* ── 글씨 크기 설정 시 게시글 본문 내부 인라인 스타일 오버라이드 ── */
+[data-font-size] .post-content p,
+[data-font-size] .post-content li,
+[data-font-size] .post-content span,
+[data-font-size] .post-content div {
+  font-size: var(--text-body) !important;
+  line-height: 1.7 !important;
+}
+[data-font-size] .post-content h2,
+[data-font-size] .post-content h3 {
+  font-size: var(--text-title) !important;
+}

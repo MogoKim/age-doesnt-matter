@@ -16,6 +16,7 @@ const navItems: NavItem[] = [
   { label: '회원 관리', icon: '👥', href: '/admin/members' },
   { label: '신고 관리', icon: '🛡️', href: '/admin/reports' },
   { label: '배너 관리', icon: '🖼️', href: '/admin/banners' },
+  { label: '팝업 관리', icon: '📢', href: '/admin/popups' },
   { label: '데이터 분석', icon: '📈', href: '/admin/analytics' },
   { label: '설정', icon: '⚙️', href: '/admin/settings' },
 ]

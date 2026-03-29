@@ -39,11 +39,11 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
       <div className="flex items-center w-full max-w-[1200px] px-8 gap-8">
         <Link href="/" className="flex items-center no-underline shrink-0" aria-label="우나어 홈">
           <Image
-            src="/images/logo.png"
+            src="/images/logo2.png"
             alt="우리나이가어때서"
-            width={180}
-            height={40}
-            className="h-10 w-auto object-contain"
+            width={200}
+            height={48}
+            className="h-12 w-auto object-contain"
             priority
           />
         </Link>

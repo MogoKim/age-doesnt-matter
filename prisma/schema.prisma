@@ -122,9 +122,11 @@ enum AdType {
 enum AdSlot {
   HERO
   HOME_INLINE
+  HOME_SECTION_GAP
   SIDEBAR
   LIST_INLINE
   POST_BOTTOM
+  POST_INLINE
   MOBILE_STICKY
   MAGAZINE_CPS
 }
@@ -846,4 +848,51 @@ model ChannelDraft {
 
   @@index([channel, status])
   @@index([createdAt(sort: Desc)])
+}
+
+// ── 팝업 시스템 ──
+
+enum PopupType {
+  BOTTOM_SHEET
+  FULLSCREEN
+  CENTER
+}
+
+enum PopupTarget {
+  ALL
+  HOME
+  COMMUNITY
+  JOBS
+  MAGAZINE
+  CUSTOM
+}
+
+model Popup {
+  id            String      @id @default(cuid())
+  type          PopupType
+  target        PopupTarget @default(ALL)
+  targetPaths   String[]
+
+  title         String?
+  content       String?     @db.Text
+  imageUrl      String?
+  linkUrl       String?
+  buttonText    String?     @default("확인")
+
+  startDate     DateTime
+  endDate       DateTime
+  priority      Int         @default(0)
+  isActive      Boolean     @default(true)
+
+  showOncePerDay Boolean    @default(false)
+  hideForDays    Int?
+
+  impressions   Int         @default(0)
+  clicks        Int         @default(0)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([isActive, startDate, endDate])
+  @@index([type])
 }

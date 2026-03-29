@@ -4,6 +4,7 @@ import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
 import OfflineBanner from '@/components/common/OfflineBanner'
 import MobileStickyAd from '@/components/ad/MobileStickyAd'
+import PopupRenderer from '@/components/common/PopupRenderer'
 
 export default async function MainGroupLayout({
   children,
@@ -24,6 +25,7 @@ export default async function MainGroupLayout({
         {children}
       </MainLayout>
       <MobileStickyAd />
+      <PopupRenderer />
     </FontSizeProvider>
   )
 }

@@ -97,10 +97,12 @@ export default async function HomePage() {
         <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
           <div>
             <JobSection jobs={jobs} />
+            <FeedAd format="horizontal" />
             <TrendingSection posts={trending} />
             <EditorsPickSection posts={editorsPicks} />
             <AdInline />
             <MagazineSection posts={magazine} />
+            <FeedAd format="horizontal" />
             <RecentActivityFeed activities={activities} />
             <CommunitySection posts={community} />
             <FeedAd format="horizontal" />

@@ -29,7 +29,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   if (!query) {
     const popularKeywords = await getPopularKeywords()
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background overflow-x-hidden">
         <SearchForm popularKeywords={popularKeywords} />
       </div>
     )
@@ -45,7 +45,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const popularKeywords = await getPopularKeywords()
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <SearchForm initialQuery={query} popularKeywords={popularKeywords} />
 
       <Suspense>

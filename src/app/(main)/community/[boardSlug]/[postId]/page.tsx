@@ -110,7 +110,7 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 본문 */}
       <div
-        className="text-body text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4 [&_img]:max-w-full [&_img]:rounded-xl [&_img]:my-4 [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4"
+        className="post-content text-body text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4 [&_img]:max-w-full [&_img]:rounded-xl [&_img]:my-4 [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4"
         dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
       />
 
@@ -124,10 +124,11 @@ export default async function PostDetailPage({ params }: PageProps) {
         isScrapped={post.isScrapped}
       />
 
-      {/* 광고 — AdSense 자동 + 쿠팡 CPS */}
+      {/* 광고 — AdSense 자동 + 쿠팡 CPS + 추가 AdSense */}
       <div className="mb-8 space-y-4">
         <AdSenseUnit slotId="auto" format="auto" className="rounded-2xl overflow-hidden" />
         <CoupangCPS postId={postId} />
+        <AdSenseUnit slotId="post-bottom" format="auto" className="rounded-2xl overflow-hidden" />
       </div>
 
       {/* 댓글 */}
