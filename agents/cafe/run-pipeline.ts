@@ -12,6 +12,7 @@ import { execFileSync } from 'child_process'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { readFileSync } from 'fs'
+import { notifySlack } from '../core/notifier.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(__dirname, '../..')
@@ -40,7 +41,7 @@ function loadEnvFile(filePath: string) {
 loadEnvFile(resolve(projectRoot, '.env.local'))
 loadEnvFile(resolve(projectRoot, '.env'))
 
-function run(script: string, label: string) {
+async function run(script: string, label: string) {
   console.log(`\n${'='.repeat(50)}`)
   console.log(`[Pipeline] ${label} 시작`)
   console.log('='.repeat(50))
@@ -56,7 +57,15 @@ function run(script: string, label: string) {
     console.log(`[Pipeline] ${label} ✅ 완료`)
   } catch (err: unknown) {
     const execErr = err as { status?: number; message?: string }
-    console.error(`[Pipeline] ${label} ❌ 실패:`, execErr.message ?? err)
+    const errorMsg = execErr.message ?? String(err)
+    console.error(`[Pipeline] ${label} ❌ 실패:`, errorMsg)
+    // Slack 알림 — 창업자가 파이프라인 실패를 즉시 인식할 수 있도록
+    await notifySlack({
+      level: 'critical',
+      agent: 'CAFE_CRAWLER',
+      title: `카페 파이프라인 실패: ${label}`,
+      body: `단계: ${label}\n스크립트: ${script}\n오류: ${errorMsg.slice(0, 300)}`,
+    })
     // 분석/큐레이션 실패해도 다음 단계 진행
   }
 }
@@ -67,15 +76,15 @@ async function main() {
   console.log(`[Pipeline] 모드: ${step}`)
 
   if (step === 'all' || step === 'crawl') {
-    run('crawler.ts', '1단계: 카페 크롤링')
+    await run('crawler.ts', '1단계: 카페 크롤링')
   }
 
   if (step === 'all' || step === 'analyze') {
-    run('trend-analyzer.ts', '2단계: 트렌드 분석')
+    await run('trend-analyzer.ts', '2단계: 트렌드 분석')
   }
 
   if (step === 'all' || step === 'curate') {
-    run('content-curator.ts', '3단계: 콘텐츠 큐레이션')
+    await run('content-curator.ts', '3단계: 콘텐츠 큐레이션')
   }
 
   const elapsed = Math.round((Date.now() - startTime) / 1000)
