@@ -65,7 +65,7 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       {/* 비회원 둘러보기 */}
       <Link
         href="/"
-        className="inline-flex items-center min-h-[52px] px-4 mt-3 text-[15px] font-medium text-muted-foreground rounded-lg transition-colors hover:text-primary"
+        className="flex items-center justify-center gap-2 w-full h-[56px] px-6 mt-3 border-2 border-border rounded-xl bg-background text-foreground text-base font-bold no-underline transition-all hover:border-primary hover:text-primary"
       >
         먼저 둘러볼게요 →
       </Link>

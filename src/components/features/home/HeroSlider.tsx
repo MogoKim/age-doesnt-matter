@@ -29,7 +29,7 @@ const SLIDES: HeroSlide[] = [
   },
   {
     id: '3',
-    title: '건강하고 활기찬\n시니어 라이프',
+    title: '건강하고 활기찬\n매일을 함께',
     ctaText: '매거진 읽기',
     ctaHref: '/magazine',
     bgColor: 'var(--hero-slide-3)',
