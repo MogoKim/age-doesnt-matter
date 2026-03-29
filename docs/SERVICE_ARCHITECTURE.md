@@ -1,6 +1,6 @@
 # 우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서
 
-> **최종 업데이트**: 2026-03-28 (v8 — 커뮤니티 활성화 개선: promotionLevel 버그 수정 + 집중 좋아요 + 활동 다양화)
+> **최종 업데이트**: 2026-03-29 (v9 — 시드봇 35명 리뉴얼 + 82cook 크롤러 + 광고 슬롯 전면 개편)
 > **문서 관리자**: Claude Code (자동화) + 창업자 (승인)
 > **변경 시**: 이 문서 하단 [문서 업데이트 가이드](#문서-업데이트-가이드) 참고
 
@@ -28,8 +28,8 @@
 
 | 수익원 | 구현 상태 | 설명 |
 |--------|----------|------|
-| Google AdSense | ✅ 등록 완료, 13곳 배치 | 게시글 하단, 목록 인피드, 모바일 스티키, 사이드바 |
-| Coupang CPS | ✅ 가입 완료 | 매거진 내 상품 링크 수수료 |
+| Google AdSense | ✅ 실제 슬롯 ID 적용 완료 | 4종: 섹션사이(디스플레이) / 인피드(피드 사이) / 인아티클(글 본문) / 사이드바(데스크탑) |
+| Coupang Partners | ✅ 다이나믹 배너 + CPS + 검색위젯 | 6종: 모바일 배너 / 데스크탑 배너 / 카테고리 배너(로켓프레시·주방) / 검색 위젯 / 상품 캐러셀 / CPS 상품 링크 |
 
 ---
 
@@ -47,7 +47,7 @@
 | **CSS** | Tailwind CSS + shadcn/ui | - |
 | **폰트** | Pretendard Variable (next/font/local) | - |
 | **스토리지** | Cloudflare R2 (이미지) | - |
-| **AI** | Anthropic Claude (Sonnet 4.6 / Haiku 4.5) | - |
+| **AI** | Anthropic Claude (Opus 4.6 / Sonnet 4.6 / Haiku 4.5) | 3-tier |
 | **배포** | Vercel (Hobby Plan) | - |
 | **CI/CD** | GitHub Actions | - |
 | **운영 커뮤니케이션** | Slack (Bot + Webhook) | - |
@@ -69,7 +69,7 @@
 - `X-Frame-Options: DENY`
 - `X-Content-Type-Options: nosniff`
 - `Strict-Transport-Security: max-age=63072000; preload`
-- CSP: Kakao SDK, YouTube, Slack API, Google Analytics, GTM, AdSense 허용
+- CSP: Kakao SDK, YouTube, Slack API, Google Analytics, GTM, AdSense, Coupang Partners, coupa.ng 허용
 
 ---
 
@@ -199,6 +199,7 @@
 
 ┌── 카페 인텔리전스 ──────────────┐
 │ CafePost      카페 크롤링 원본    │
+│               (네이버 3곳+82cook) │
 │ CafeTrend     일별 트렌드 분석    │
 └────────────────────────────────┘
 
@@ -266,7 +267,7 @@
                        ▼
               ┌──────────────────┐
               │   SEED (시드봇)    │ 하루 9회
-              │  20명 페르소나     │ 커뮤니티 활성화
+              │  35명 페르소나     │ 커뮤니티 활성화
               └──────────────────┘
 ```
 
@@ -293,7 +294,7 @@
 | **COO** | `coo/job-scraper.ts` | 12/16/20시 | Haiku | 50plus.or.kr 일자리 크롤링 → AI 가공 → DB |
 | **COO** | `coo/moderator.ts` | 09/15/21시 | Haiku | 신고 처리, 콘텐츠 모더레이션 |
 | **COO** | `coo/content-scheduler.ts` | 매일 14:00 | Haiku | 에디터스 픽 + 시드 콘텐츠 편성 |
-| **SEED** | `seed/scheduler.ts` | 하루 9회 (09~22시) | Haiku | 20명 페르소나 활동 (게시글, 댓글, 좋아요, 대댓글) + promotionLevel 자동 승격 + 집중 좋아요 (21시) |
+| **SEED** | `seed/scheduler.ts` | 하루 9회 (09~22시) | Haiku | 35명 페르소나 활동 (게시글, 댓글, 좋아요, 대댓글) + promotionLevel 자동 승격 + 집중 좋아요 (21시) |
 
 ### 5.3 에이전트 기반 구조 (core/)
 
@@ -314,6 +315,8 @@
 | `cmo/card-news/renderer.ts` | HTML → 1080×1350px JPEG 렌더링 (Playwright + Sharp + R2) |
 | `cmo/card-news/templates/` | 3종 HTML 템플릿 (news-trend, info-topic, community) + base.css |
 | `cmo/test-platforms.ts` | SNS 플랫폼 토큰 검증 + 테스트 게시 유틸리티 |
+| `cafe/external-crawler.ts` | **82cook 외부 크롤러** — Playwright headless, 공개 게시판(bn=15), 품질 점수 필터링 |
+| `seed/persona-data.ts` | **35명 페르소나 정의** — 닉네임, 성격, 말투, 습관, 금지사항, 예시문장 (캐릭터 시트 방식) |
 | `skills/registry.ts` | 검증된 SNS 전략 스킬 레지스트리 (승률 기반 가중 선택) |
 | `skills/types.ts` | ProvenSkill, SkillSuggestion 타입 정의 |
 
@@ -443,42 +446,77 @@ CafeTrend (매일 수집)
 └─────────────────────────────────────────────────────┘
 ```
 
-### 5.6 시드 페르소나 (SEED) — 20명
+### 5.6 시드 페르소나 (SEED) — 35명
 
-| ID | 닉네임 | 나이/성별 | 기본 보드 | 성격 | 주요 주제 |
-|----|--------|----------|----------|------|----------|
-| A | 영숙이맘 | 58/여 | STORY | 따뜻, 수다 | 손주, 요리, 시장 |
-| B | 은퇴신사 | 63/남 | STORY | 차분, 정보형 | 퇴직, 재테크 |
-| C | 웃음보 | 55/여 | HUMOR | 유쾌, 밝음 | 짧은 리액션 |
-| D | 꼼꼼이 | 60/여 | JOB | 꼼꼼, 질문 | 일자리 질문 댓글 |
-| E | 동네언니 | 52/여 | STORY | 다정, 공감 | 긴 공감 댓글 |
-| F | 텃밭아저씨 | 62/남 | STORY | 소박, 자연파 | 텃밭, 채소 |
-| G | 여행매니아 | 57/여 | STORY (+HUMOR) | 활발, 열정 | 여행, 맛집 |
-| H | 건강박사 | 65/남 | STORY | 꼼꼼, 실용 | 건강, 운동 |
-| I | 책벌레 | 59/여 | STORY (+WEEKLY) | 지적, 감성 | 독서, 영화 |
-| J | 요리왕 | 54/여 | STORY | 친근, 실용 | 레시피, 반찬 |
-| K | 패션언니 | 56/여 | STORY | 밝음, 자신감 | 데일리룩, 화장품 |
-| L | 손주바보 | 64/여 | STORY | 다정, 자랑 | 손주 에피소드, 가족 |
-| M | 등산러버 | 61/남 | STORY | 활동적, 긍정 | 등산, 둘레길 |
-| N | 살림9단 | 58/여 | STORY (+HUMOR) | 꼼꼼, 알뜰 | 살림 팁, 절약 |
-| O | 음악사랑 | 60/여 | STORY | 감성적, 낭만 | 추억의 노래, 트로트 |
-| P | 커피한잔 | 55/여 | STORY | 여유, 사색 | 카페, 일상 에세이 |
-| Q | 반려견아빠 | 63/남 | STORY | 따뜻, 유머 | 반려견, 산책 |
-| R | 드라마덕후 | 57/여 | HUMOR | 열정적, 수다 | 드라마, 예능 |
-| S | 텃밭할머니 | 66/여 | STORY | 소박, 정 많음 | 꽃 키우기, 텃밭 |
-| T | 은퇴교사 | 62/여 | STORY (+WEEKLY) | 차분, 지적 | 평생교육, 봉사 |
+> **v2 전면 리뉴얼 (2026-03-29)**: AI스러운 닉네임/말투 문제 해결. 캐릭터 시트 방식으로 페르소나별 성격·말투·습관·금지사항·예시문장 차별화. 부정/비판 페르소나 8명 + 특수 캐릭터 5명 추가.
+> **소스 코드**: `agents/seed/persona-data.ts` (YAML은 참조용)
 
-> **성별 비율**: 여 14명 / 남 6명 (타겟 유저 비율 반영)
-> **크로스보드 활동**: G·N → HUMOR 댓글, I·T → WEEKLY 게시글 (3월 28일 추가)
+#### 기존 리뉴얼 (A-T)
+
+| ID | 닉네임 | 나이/성별 | mood | 보드 | 스타일 |
+|----|--------|----------|------|------|--------|
+| A | 하늘바라기 | 58/여 | positive | STORY | 일상 수다, 시장, 동네 |
+| B | 정호씨 | 63/남 | neutral | STORY | 정보형, 은퇴, 합니다체 |
+| C | ㅋㅋ요정 | 55/여 | positive | HUMOR | 초짧은 리액션, ㅋㅋ 전문 |
+| D | 궁금한건못참아 | 60/여 | neutral | JOB | 질문 폭격, 물음표 다수 |
+| E | 봄바람 | 52/여 | positive | STORY | 공감 천재, 긴 위로 댓글 |
+| F | 텃밭할배 | 62/남 | neutral | STORY | 텃밭 일지, 소박, 자연 |
+| G | 여행이좋아 | 57/여 | positive | STORY | 여행 감탄, 느낌표 과다 |
+| H | 매일걷기 | 65/남 | neutral | STORY | 건강 데이터, 수치 중심 |
+| I | 한페이지 | 59/여 | neutral | STORY | 독서, 문화, 감성적 짧은 글 |
+| J | 맛있는거좋아 | 54/여 | positive | STORY | 레시피, 맛집, 재료 상세 |
+| K | 예쁘게살자 | 56/여 | positive | STORY | 패션, 뷰티, 나이불문 |
+| L | 손주러브 | 64/여 | positive | STORY | 손주 자랑, 구어체 |
+| M | 산이좋아 | 61/남 | neutral | STORY | 등산 후기, 코스+시간 데이터 |
+| N | 알뜰맘 | 58/여 | neutral | STORY | 살림 팁, 가격 비교 |
+| O | 올드팝 | 60/남 | neutral | STORY | 음악, 추억의 노래 |
+| P | 오후세시 | 55/여 | neutral | STORY | 감성 에세이, 여유 |
+| Q | 멍멍이아빠 | 63/남 | positive | STORY | 반려견, 유머 |
+| R | 밤새봤다 | 57/여 | positive | HUMOR | 드라마/예능 덕후 |
+| S | 제주살이 | 60/여 | mixed | STORY | 제주 귀촌, 사투리 살짝 |
+| T | 배움은즐거워 | 62/여 | positive | STORY | 평생교육, 격려 |
+
+#### 신규 부정/비판 (U-Z)
+
+| ID | 닉네임 | 나이/성별 | mood | 보드 | 스타일 |
+|----|--------|----------|------|------|--------|
+| U | 부산아지매 | 62/여 | mixed | STORY | 경상도 사투리, 직설 |
+| V | 세상에나 | 60/여 | negative | STORY | 물가 한탄, 한숨 |
+| W | 참나진짜 | 58/남 | negative | STORY | 까칠 리뷰, 독설 |
+| X | 걱정인형 | 62/남 | negative | STORY | 건강/노후 불안 |
+| Y | 솔직히말해서 | 57/남 | neutral | WEEKLY | 팩폭, 현실주의 |
+| Z | 혼자잘산다 | 54/여 | mixed | STORY | 자조 유머, 당당한 독신 |
+
+#### 신규 특수 캐릭터 (AA-AI)
+
+| ID | 닉네임 | 나이/성별 | mood | 보드 | 스타일 |
+|----|--------|----------|------|------|--------|
+| AA | 어휴답답 | 61/여 | negative | STORY | 한탄, 자녀 걱정 |
+| AB | 따져보자 | 59/남 | neutral | WEEKLY | 팩트체크, 논쟁 |
+| AC | 느긋이 | 63/남 | neutral | STORY | 충청도 사투리, 느긋 |
+| AD | 그때그시절 | 66/남 | mixed | STORY | 회고, 과거 비교 |
+| AE | 새벽감성 | 52/여 | mixed | STORY | 새벽 감성, 불면증 |
+| AF | 하하호호 | 64/남 | positive | HUMOR | 아재개그, 말장난 |
+| AG | 비교분석왕 | 57/여 | neutral | STORY | 비교 분석, 목록형 |
+| AH | 피곤해요 | 55/여 | negative | STORY | TMI, 만성 피로 |
+| AI | 시골아낙네 | 60/여 | positive | STORY | 시골 자급자족, 순수 |
+
+> **성격 분포**: 긍정(12) + 중립(10) + 부정/비판(8) + 특이(5) = 35명
+> **성별 비율**: 여 22명 / 남 13명 (타겟 유저 비율 반영)
+> **지역 사투리**: 경상도(U), 충청도(AC), 제주(S)
+> **일일 목표**: 게시글 18~22개 / 댓글 80~100개 / 좋아요 60~80개 / 대댓글 25~35개
 
 ### 5.6.1 시드봇 활동 메커니즘
 
 | 기능 | 설명 |
 |------|------|
+| **캐릭터 시트 프롬프트** | 페르소나별 성격/습관/금지사항/예시문장을 System Prompt에 주입 → Haiku가 개성 있는 글 생성 |
+| **mood 기반 댓글** | positive/neutral/negative/mixed에 따라 댓글 톤 차별화 (W 비판 댓글, AB 반론, V 불만 등) |
 | **promotionLevel 자동 승격** | 좋아요 시 likeCount 체크 → 10+ HOT, 50+ HALL_OF_FAME 자동 승격 (updateMany race-safe) |
-| **집중 좋아요 (21시)** | 48시간 내 likeCount 5~9인 글(HOT 근접) 최대 3개에 5명 봇이 집중 투입 → HOT 달성 촉진 |
+| **집중 좋아요 (21시)** | 48시간 내 likeCount 5~9인 글(HOT 근접) 최대 3개에 7명 봇 집중 투입 (B, E, G, K, M, AC, AI) |
 | **글 길이 다양화** | 3단계 랜덤: 짧은(60~120자) / 보통(150~300자) / 긴(400~600자) |
 | **크로스보드 댓글** | 기본 보드 외 다른 게시판에도 댓글 활동 (HUMOR, WEEKLY) |
+| **봇 유저 자동 업데이트** | `prisma.user.upsert` — 닉네임 변경 시 DB 자동 반영 |
 | **boardOverride** | generatePost에 보드 오버라이드 파라미터 지원 (WEEKLY 등) |
 
 ### 5.7 에이전트 규칙 (헌법 핵심)
@@ -513,7 +551,7 @@ CafeTrend (매일 수집)
 | `agents-moderation.yml` | 09, 15, 21시 | COO (모더레이션) |
 | `agents-seed.yml` | 09, 10, 14, 16, 19, 21시 | SEED (시드 콘텐츠) |
 | `agents-social.yml` | 09/11/11:30/12/20시 + 월 08/10/10:15 + 수 10시 | CMO (텍스트포스팅·카드뉴스·채널시딩·지식iN·SEO·메트릭·리뷰·전략·토큰갱신) |
-| `agents-cafe.yml` | 09, 13, 19시 | CAFE (네이버 카페 크롤링) |
+| `agents-cafe.yml` | 09, 13, 19시 | CAFE (네이버 카페 3곳 + 82cook 크롤링) |
 
 ### 6.3 전체 타임라인 (KST)
 
@@ -562,6 +600,8 @@ CafeTrend (매일 수집)
 | **Google Tag Manager** | `www.googletagmanager.com` | 아웃바운드 | 태그 관리 (GTM 컨테이너 로드) |
 | **Google Analytics 4** | `www.google-analytics.com`, `analytics.google.com` | 아웃바운드 | 사용자 행동 분석 (GTM 경유) |
 | **50plus.or.kr** | 웹 크롤링 | 아웃바운드 | 일자리 수집 |
+| **82cook.com** | 웹 크롤링 (Playwright headless) | 아웃바운드 | 커뮤니티 콘텐츠 수집 (자유게시판 bn=15, 공개) |
+| **Coupang Partners** | `ads-partners.coupang.com` | 아웃바운드 | 다이나믹 배너, 검색 위젯, CPS API |
 
 ### 7.1 Slack 운영 채널 아키텍처
 
@@ -885,7 +925,7 @@ Slack Workspace: 우나어-ops
 | **검색** | 3개 | SearchForm, SearchResults, SearchTabs |
 | **마이페이지** | 8개 | NicknameSettings, FontSizeSettings, BlockedUserList, WithdrawSection |
 | **인증** | 3개 | LoginForm, LoginPromptModal, OnboardingForm |
-| **광고** | 6개 | AdSlot, AdClickTracker, CoupangCPS, CpsClickTracker, FeedAd, MobileStickyAd |
+| **광고** | 10개 | AdSenseUnit, AdSlot, AdClickTracker, CoupangCPS, CoupangBanner, CoupangCategoryBanner, CoupangSearchWidget, CpsClickTracker, FeedAd, MobileStickyAd + ad-slots.ts(상수) |
 | **어드민** | 11개 | MemberTable, ContentTable, ReportTable, BannerManager |
 | **공통** | 10개 | UserAvatar, ShareButton, OfflineBanner, PageViewTracker, GoogleTagManager, GTMEventOnMount, Breadcrumbs |
 
@@ -988,7 +1028,7 @@ Slack Workspace: 우나어-ops
 │   ├── 📁 cdo/                     # CDO 에이전트
 │   ├── 📁 cfo/                     # CFO 에이전트
 │   ├── 📁 coo/                     # COO 에이전트 (일자리, 모더레이션)
-│   ├── 📁 seed/                    # 시드봇 (10명 페르소나)
+│   ├── 📁 seed/                    # 시드봇 (35명 페르소나)
 │   └── 📁 cafe/                    # 카페 크롤러
 │
 ├── 📁 prisma/                       # DB 스키마
@@ -1101,6 +1141,31 @@ Slack Workspace: 우나어-ops
   - [활동 다양화] WEEKLY 게시판 글 추가 (T 은퇴교사, I 책벌레), 크로스보드 댓글 (G·N → HUMOR)
   - [글 길이 다양화] 3단계 랜덤 (60~120자 / 150~300자 / 400~600자)
   - [generatePost] boardOverride 파라미터 + WEEKLY 카테고리 매핑 추가
+- **시드봇 페르소나 35명 전면 리뉴얼** (2026-03-29 구축 완료)
+  - [핵심] 20명 → 35명 확장. AI스러운 닉네임·말투·내용 차별화 문제 전면 해결
+  - [캐릭터 시트] persona-data.ts — 페르소나별 성격·말투·습관·금지사항·예시문장 정의 (few-shot 방식)
+  - [mood 분포] 긍정(12) + 중립(10) + 부정/비판(8) + 특이(5) — 현실적 커뮤니티 분위기 재현
+  - [신규 페르소나] 부산아지매(경상도 사투리), 세상에나(물가 한탄), 참나진짜(까칠), 걱정인형(불안), 솔직히말해서(팩폭), 혼자잘산다(자조 유머), 어휴답답(한탄), 따져보자(논쟁), 느긋이(충청도 사투리), 그때그시절(회고), 새벽감성(불면증), 하하호호(아재개그), 비교분석왕(분석형), 피곤해요(TMI), 시골아낙네(자급자족)
+  - [닉네임 개선] 설명적 닉네임(영숙이맘, 은퇴신사) → 자연스러운 온라인 닉네임(하늘바라기, 정호씨)
+  - [봇 유저] prisma.user.upsert — 닉네임 변경 시 DB 자동 업데이트
+  - [스케줄 확대] 일일 목표: 게시글 18~22 / 댓글 80~100 / 좋아요 60~80 / 대댓글 25~35
+- **82cook 외부 크롤러** (2026-03-29 구축 완료)
+  - [신규] agents/cafe/external-crawler.ts — 82cook 자유게시판(bn=15) 전용 크롤러
+  - [구조] Playwright headless (차단 없음), 로그인 불필요(공개 게시판)
+  - [파이프라인] 목록 크롤링 → 글 상세 크롤링 → 블랙리스트 필터 → 품질 점수 → DB 저장
+  - [용도] 부정/비판 페르소나 콘텐츠 소싱에 최적 (날것의 불만, 고민, 논쟁 등)
+  - [설정] agents/cafe/config.ts에 EXTERNAL_CONFIGS 추가
+- **광고 시스템 전면 개편** (2026-03-29 구축 완료)
+  - [AdSense] `slotId="auto"` → 실제 광고 슬롯 ID 4종 적용
+    - 섹션사이(4387790031): 게시판 인라인, 모바일 스티키
+    - 인피드(3489844591): 홈/베스트/매거진/일자리/검색 피드 사이
+    - 인아티클(4367811991): 게시글/매거진/일자리 상세 본문
+    - 사이드바(2176762926): 데스크탑 사이드바
+  - [AdSenseUnit] layout(in-article) + layoutKey(in-feed) 지원 확장
+  - [쿠팡 신규] CoupangBanner(다이나믹 배너) + CoupangCategoryBanner(로켓프레시/주방) + CoupangSearchWidget(iframe 검색) + 상품 캐러셀
+  - [ad-slots.ts] AdSense 4종 + 쿠팡 8종 슬롯 상수 중앙 관리
+  - [CSP] next.config.js에 ads-partners.coupang.com / image*.coupangcdn.com / coupa.ng 도메인 추가
+  - [배치맵] 홈(인피드+쿠팡모바일+카테고리배너) / 사이드바(AdSense+쿠팡데스크탑) / 상세(인아티클+검색위젯) / 매거진(상품캐러셀)
 
 ### 창업자 대기 작업
 - [ ] 도메인 만기 연장 (2026-04-25)
