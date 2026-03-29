@@ -18,9 +18,13 @@ export default function HomeSidebar({ posts }: Props) {
             <li key={post.id}>
               <Link
                 href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.id}`}
-                className="block py-2.5 border-b border-border last:border-b-0 text-caption text-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis no-underline hover:text-primary"
+                className="block py-2.5 border-b border-border last:border-b-0 no-underline hover:text-primary"
               >
-                {post.title}
+                <span className="text-caption text-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis block">{post.title}</span>
+                <span className="flex items-center gap-2 text-caption text-muted-foreground mt-0.5">
+                  <span>❤️ {post.likeCount}</span>
+                  <span>💬 {post.commentCount}</span>
+                </span>
               </Link>
             </li>
           ))}

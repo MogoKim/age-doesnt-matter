@@ -58,6 +58,27 @@ export function formatSalary(raw: string | null | undefined): string {
   return raw.trim()
 }
 
+/** 카테고리별 fallback 이모지 */
+const CATEGORY_EMOJI: Record<string, string> = {
+  건강: '🏃',
+  여행: '✈️',
+  요리: '🍳',
+  재테크: '💰',
+  문화: '🎭',
+  운동: '💪',
+  취미: '🎨',
+  라이프: '🌿',
+  뷰티: '💄',
+  반려동물: '🐾',
+}
+
+export function getCategoryEmoji(category: string): string {
+  for (const [key, emoji] of Object.entries(CATEGORY_EMOJI)) {
+    if (category.includes(key)) return emoji
+  }
+  return '📖'
+}
+
 /** 숫자를 1.2k 형식으로 포매팅 */
 export function formatCount(n: number): string {
   if (n < 1000) return String(n)

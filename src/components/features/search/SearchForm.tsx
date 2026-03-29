@@ -8,6 +8,17 @@ import { gtmSearch } from '@/lib/gtm'
 const STORAGE_KEY = 'una-recent-searches'
 const MAX_RECENT = 10
 
+const FALLBACK_KEYWORDS = ['건강 관리', '일자리', '국내 여행', '연금', '밑반찬', '운동', '재테크', '취미']
+
+const CATEGORY_QUICK_BUTTONS = [
+  { label: '🏃 건강', query: '건강' },
+  { label: '💼 일자리', query: '일자리' },
+  { label: '✈️ 여행', query: '여행' },
+  { label: '🍳 요리', query: '요리' },
+  { label: '💰 재테크', query: '재테크' },
+  { label: '🎨 취미', query: '취미' },
+]
+
 interface SearchFormProps {
   initialQuery?: string
   popularKeywords?: string[]
@@ -137,46 +148,50 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
             </section>
           )}
 
-          {/* 인기 검색어 */}
-          {popularKeywords.length > 0 && (
-            <section>
-              <h3 className="text-body font-bold text-foreground mb-4 flex items-center gap-1.5">
-                🔥 인기 검색어
-              </h3>
-              <ol className="space-y-1">
-                {popularKeywords.map((keyword, idx) => (
-                  <li key={keyword}>
-                    <button
-                      type="button"
-                      onClick={() => handleKeywordClick(keyword)}
-                      className="flex items-center gap-3 w-full text-left py-3 min-h-[52px] px-2"
-                    >
-                      <span className="text-body font-bold text-primary w-6 text-center">
-                        {idx + 1}
-                      </span>
-                      <span className="text-body text-foreground">{keyword}</span>
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          )}
-
-          {recentSearches.length === 0 && popularKeywords.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground text-body mb-4">
-                검색어를 입력해 주세요
-              </p>
-              <div className="bg-background rounded-xl p-4 text-left inline-block">
-                <p className="text-caption text-foreground font-medium mb-2">검색 팁</p>
-                <ul className="text-caption text-muted-foreground space-y-1.5 leading-relaxed">
-                  <li>· 지역명으로 일자리 검색 (예: &quot;강남&quot;, &quot;부산&quot;)</li>
-                  <li>· 관심사로 글 찾기 (예: &quot;건강&quot;, &quot;여행&quot;)</li>
-                  <li>· 2글자 이상 입력하면 검색돼요</li>
-                </ul>
-              </div>
+          {/* 카테고리 퀵버튼 */}
+          <section className="mb-8">
+            <h3 className="text-body font-bold text-foreground mb-4">카테고리로 찾기</h3>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORY_QUICK_BUTTONS.map((cat) => (
+                <button
+                  key={cat.query}
+                  type="button"
+                  onClick={() => handleKeywordClick(cat.query)}
+                  className="inline-flex items-center min-h-[52px] px-4 rounded-full border border-border bg-background text-foreground transition-colors hover:border-primary hover:text-primary lg:min-h-[48px]"
+                >
+                  {cat.label}
+                </button>
+              ))}
             </div>
-          )}
+          </section>
+
+          {/* 인기 검색어 (없으면 fallback) */}
+          {(() => {
+            const keywords = popularKeywords.length > 0 ? popularKeywords : FALLBACK_KEYWORDS
+            return (
+              <section>
+                <h3 className="text-body font-bold text-foreground mb-4 flex items-center gap-1.5">
+                  🔥 {popularKeywords.length > 0 ? '인기 검색어' : '추천 검색어'}
+                </h3>
+                <ol className="space-y-1">
+                  {keywords.map((keyword, idx) => (
+                    <li key={keyword}>
+                      <button
+                        type="button"
+                        onClick={() => handleKeywordClick(keyword)}
+                        className="flex items-center gap-3 w-full text-left py-3 min-h-[52px] px-2"
+                      >
+                        <span className="text-body font-bold text-primary w-6 text-center">
+                          {idx + 1}
+                        </span>
+                        <span className="text-body text-foreground">{keyword}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )
+          })()}
         </div>
       )}
     </div>

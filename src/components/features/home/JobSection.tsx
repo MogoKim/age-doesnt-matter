@@ -29,7 +29,8 @@ export default function JobSection({ jobs }: Props) {
           전체보기 →
         </Link>
       </div>
-      <div className="overflow-x-auto [-webkit-overflow-scrolling:touch] [scroll-snap-type:x_mandatory] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 flex gap-3 lg:overflow-x-visible lg:[scroll-snap-type:none] lg:px-0 lg:grid lg:grid-cols-4 lg:gap-4">
+      <div className="relative">
+        <div className="overflow-x-auto [-webkit-overflow-scrolling:touch] [scroll-snap-type:x_mandatory] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 pr-12 flex gap-3 lg:overflow-x-visible lg:[scroll-snap-type:none] lg:px-0 lg:pr-0 lg:grid lg:grid-cols-4 lg:gap-4">
         {jobs.map((job) => (
           <Link
             href={`/jobs/${job.id}`}
@@ -55,6 +56,9 @@ export default function JobSection({ jobs }: Props) {
             {job.highlight && <p className="text-caption text-muted-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis">{job.highlight}</p>}
           </Link>
         ))}
+        </div>
+        {/* 스크롤 힌트 — 우측 페이드 그래디언트 (모바일만) */}
+        <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-background to-transparent pointer-events-none lg:hidden" />
       </div>
     </section>
   )

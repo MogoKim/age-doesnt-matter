@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
+import { getCategoryEmoji } from '@/lib/format'
 
 interface Props {
   posts: PostSummary[]
@@ -24,11 +26,21 @@ export default function EditorsPickSection({ posts }: Props) {
             key={post.id}
             className="mx-4 lg:mx-0 bg-card rounded-xl overflow-hidden border border-border no-underline text-inherit block mb-3 last:mb-0 lg:mb-0 active:opacity-95 lg:hover:shadow-md lg:hover:-translate-y-0.5 lg:hover:transition-all"
           >
-            <div
-              className="w-full h-40 bg-background"
-              role="img"
-              aria-label={post.title}
-            />
+            <div className="relative w-full h-40 bg-background">
+              {post.thumbnailUrl ? (
+                <Image
+                  src={post.thumbnailUrl}
+                  alt={post.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-4xl">
+                  {getCategoryEmoji(post.category)}
+                </div>
+              )}
+            </div>
             <div className="p-4">
               <span className="inline-flex items-center gap-1 h-6 px-2.5 bg-[var(--badge-editors)] text-white rounded-md text-caption font-bold mb-2.5">PO 추천</span>
               <h3 className="text-body font-bold text-foreground leading-[1.5] mb-2 break-keep line-clamp-2">{post.title}</h3>

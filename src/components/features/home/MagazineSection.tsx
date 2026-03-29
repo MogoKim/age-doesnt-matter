@@ -1,5 +1,7 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { PostSummary } from '@/types/api'
+import { getCategoryEmoji } from '@/lib/format'
 
 interface Props {
   posts: PostSummary[]
@@ -26,11 +28,21 @@ export default function MagazineSection({ posts }: Props) {
             key={article.id}
             className="bg-card rounded-xl overflow-hidden border border-border no-underline text-inherit block active:opacity-95 lg:hover:shadow-md lg:hover:-translate-y-0.5 lg:hover:transition-all"
           >
-            <div
-              className="w-full h-[100px] lg:h-[140px] bg-background"
-              role="img"
-              aria-label={article.title}
-            />
+            <div className="relative w-full h-[100px] lg:h-[140px] bg-background">
+              {article.thumbnailUrl ? (
+                <Image
+                  src={article.thumbnailUrl}
+                  alt={article.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 50vw, 25vw"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-3xl">
+                  {getCategoryEmoji(article.category)}
+                </div>
+              )}
+            </div>
             <div className="p-3">
               <span className="text-caption text-primary font-semibold mb-1 block">{article.category}</span>
               <h3 className="text-caption font-bold text-foreground leading-[1.4] line-clamp-2 break-keep">{article.title}</h3>
