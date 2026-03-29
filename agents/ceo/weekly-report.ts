@@ -14,7 +14,7 @@ class CEOWeeklyReport extends BaseAgent {
       name: 'CEO',
       botType: 'CEO',
       role: 'CEO (최고경영자)',
-      model: 'light',
+      model: 'strategic',
       tasks: '주간 리포트: 7일간 KPI 종합, 트렌드, 에이전트 성과 분석',
       canWrite: false,
     })

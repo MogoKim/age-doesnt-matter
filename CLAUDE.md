@@ -30,7 +30,7 @@
 
 ## AI 에이전트 규칙
 - 에이전트 코드: /agents 폴더 (TypeScript)
-- 모델: claude-sonnet-4-6 (전략 판단) / claude-haiku-4-5 (빠른 작업)
+- 모델 3-tier: strategic=Opus(주간 전략) / heavy=Sonnet(고객 대면+분석) / light=Haiku(데이터+모니터링) → 상세: constitution.yaml model_policy
 - 회사 헌법: /agents/core/constitution.yaml 항상 참조
 - DB write: COO 에이전트만 가능
 

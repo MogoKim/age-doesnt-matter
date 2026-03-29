@@ -127,13 +127,43 @@ export async function getTrendingPosts(limit = 5): Promise<PostSummary[]> {
   const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
-      createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
     },
     select: postSelect,
-    orderBy: [{ likeCount: 'desc' }, { commentCount: 'desc' }],
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
     take: limit,
   })
 
+  return rows.map(toPostSummary)
+}
+
+/* ── 일간 인기글 (Trending) ── */
+
+export async function getDailyTrendingPosts(limit = 10): Promise<PostSummary[]> {
+  const rows = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    },
+    select: postSelect,
+    orderBy: [{ trendingScore: 'desc' }],
+    take: limit,
+  })
+  return rows.map(toPostSummary)
+}
+
+/* ── 주간 인기글 (Trending) ── */
+
+export async function getWeeklyTrendingPosts(limit = 10): Promise<PostSummary[]> {
+  const rows = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+    },
+    select: postSelect,
+    orderBy: [{ trendingScore: 'desc' }],
+    take: limit,
+  })
   return rows.map(toPostSummary)
 }
 
@@ -247,7 +277,10 @@ export async function getHotPosts(
     where: {
       status: 'PUBLISHED',
       boardType: { in: ['STORY', 'HUMOR'] as BoardType[] },
-      promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] as PromotionLevel[] },
+      OR: [
+        { promotionLevel: 'HALL_OF_FAME' as PromotionLevel },
+        { promotionLevel: 'HOT' as PromotionLevel, createdAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) } },
+      ],
       ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
     },
     select: postSelect,

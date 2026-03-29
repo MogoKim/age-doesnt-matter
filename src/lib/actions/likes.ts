@@ -81,6 +81,12 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
     }).catch(() => {})
   }
 
+  // lastEngagedAt 업데이트
+  await prisma.post.update({
+    where: { id: postId },
+    data: { lastEngagedAt: new Date() },
+  }).catch(() => {})
+
   revalidatePath(`/community`)
   return { toggled: true }
 }

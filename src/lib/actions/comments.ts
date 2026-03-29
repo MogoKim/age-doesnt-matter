@@ -82,6 +82,12 @@ export async function createComment(
     }),
   ])
 
+  // lastEngagedAt 업데이트
+  await prisma.post.update({
+    where: { id: postId },
+    data: { lastEngagedAt: new Date() },
+  }).catch(() => {})
+
   // 알림 생성 (본인에게는 보내지 않음)
   const commentAuthor = await prisma.user.findUnique({
     where: { id: session.user.id },

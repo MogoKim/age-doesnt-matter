@@ -45,6 +45,20 @@ schedules:
     task: ux-analyzer
     handler: "cpo/ux-analyzer.ts"
 
+  # 매주 월요일 11:30 KST (02:30 UTC) — CPO 기능 사용률 트래커
+  - cron: "30 2 * * 1"
+    agent: CPO
+    task: feature-tracker
+    handler: "cpo/feature-tracker.ts"
+    note: "주간 기능별 사용률 집계 + 추세 분석"
+
+  # 매주 월요일 12:00 KST (03:00 UTC) — CPO 사용자 여정 분석
+  - cron: "0 3 * * 1"
+    agent: CPO
+    task: journey-analyzer
+    handler: "cpo/journey-analyzer.ts"
+    note: "전환 퍼널, 등급 전환, 이탈 지점 분석"
+
   # 매일 13:00 KST (04:00 UTC) — 시드 댓글/좋아요 (크롤링 12:30 후)
   - cron: "0 4 * * *"
     agent: SEED
@@ -101,11 +115,25 @@ schedules:
     task: cost-tracker
     handler: "cfo/cost-tracker.ts"
 
+  # 트렌딩 스코어 갱신 (30분마다)
+  - cron: "*/30 * * * *"
+    agent: COO
+    task: trending-scorer
+    handler: "coo/trending-scorer.ts"
+    note: "트렌딩 점수 계산 + HOT 강등 (30분 주기)"
+
   # 매일 모더레이션 (하루 3회: 09, 15, 21 KST)
   - cron: "0 0,6,12 * * *"
     agent: COO
     task: moderator
     handler: "coo/moderator.ts"
+
+  # 매일 06:00 KST (21:00 UTC) — CTO 보안 감사
+  - cron: "0 21 * * *"
+    agent: CTO
+    task: security-audit
+    handler: "cto/security-audit.ts"
+    note: "일일 보안 감사: 로그인 실패, 에러 급증, 비용 이상, 어드민 액션"
 
   # 에러 모니터 (2시간마다)
   - cron: "30 */2 * * *"

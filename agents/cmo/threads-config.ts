@@ -1,6 +1,11 @@
 /**
  * Threads 전략 설정 — 요일별 전략 + 토픽 태그 + 톤 가이드
  *
+ * NOTE: 플랫폼별 전략의 canonical source는 `platforms/platform-adapters.ts`로 이전됨.
+ * 이 파일은 하위 호환성을 위해 유지합니다. Threads-specific 상세 가이드
+ * (THREADS_TONE_GUIDE, DWELL_TIME_GUIDE, DayStrategy 등)는 social-poster.ts에서
+ * 여전히 참조하므로 삭제하지 마세요.
+ *
  * Threads 한국 트렌드 (2026) 기반:
  * - 토픽 태그 1개만 (다중 = 스팸 처리)
  * - 체류 시간(Dwell Time)이 알고리즘 최대 가중치

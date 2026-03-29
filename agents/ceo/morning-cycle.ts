@@ -13,7 +13,7 @@ class CEOMorningCycle extends BaseAgent {
       name: 'CEO',
       botType: 'CEO',
       role: 'CEO (최고경영자)',
-      model: 'light',
+      model: 'heavy',
       tasks: '모닝 사이클: 전체 KPI 수집, 문제 감지, 에이전트 소집 및 액션 배정',
       canWrite: false,
     })

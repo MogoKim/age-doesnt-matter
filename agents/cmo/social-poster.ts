@@ -4,21 +4,25 @@ import { notifySlack } from '../core/notifier.js'
 import { createApprovalRequest } from '../core/approval-helper.js'
 import * as xClient from './platforms/x-client.js'
 import * as threadsClient from './platforms/threads-client.js'
+import * as instagramClient from './platforms/instagram-client.js'
+import * as facebookClient from './platforms/facebook-client.js'
+import * as bandClient from './platforms/band-client.js'
 import { getDayStrategy, getTopicTag, detectOptimalSlot, THREADS_TONE_GUIDE, DWELL_TIME_GUIDE } from './threads-config.js'
+import { getActiveAdapters, type PlatformAdapter } from './platforms/platform-adapters.js'
+import { getCMOContext, type CMOContext } from './knowledge-base.js'
 
 /**
  * CMO Social Poster — SNS 자동 게시 에이전트
  *
  * 흐름:
  * 1. 현재 활성 실험(SocialExperiment) 읽기
- * 2. 실험 변수에 따라 콘텐츠 유형/톤/페르소나 결정 (요일 전략 기반)
- * 3. 홍보 믹스(PURE 60% / SOFT 25% / DIRECT 15%) 적용
- * 4. AI로 SNS 게시글 생성
- * 5. Threads + X에 실제 게시 (or AdminQueue 승인 대기)
- * 6. SocialPost DB 저장 + Slack 알림
+ * 2. CMO 컨텍스트 로드 (knowledge-base 피드백 루프)
+ * 3. 활성 플랫폼 어댑터별로 콘텐츠 생성
+ * 4. 각 플랫폼에 실제 게시 (or AdminQueue 승인 대기)
+ * 5. SocialPost DB 저장 + Slack 알림
  */
 
-const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
+const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? 'https://www.age-doesnt-matter.com').trim()
 
@@ -142,61 +146,85 @@ const BOARD_SLUG: Record<string, string> = {
   STORY: 'stories', HUMOR: 'humor', JOB: 'jobs', MAGAZINE: 'magazine', WEEKLY: 'weekly',
 }
 
-// ─── AI 콘텐츠 생성 ───
+// ─── 플랫폼별 AI 콘텐츠 생성 ───
 
-interface GeneratedContent {
-  threadsText: string
-  xText: string
-  threadTopicTag: string
-  xHashtags: string[]
+interface PlatformContent {
+  text: string
+  hashtags: string[]
+  topicTag?: string // Threads 전용
 }
 
-async function generateContent(params: {
+function buildCMOContextBlock(cmoContext: CMOContext): string {
+  const parts: string[] = []
+
+  if (cmoContext.recentLearnings.length > 0) {
+    parts.push(`## 최근 학습 (지난 실험 결과)\n${cmoContext.recentLearnings.join('\n')}`)
+  }
+
+  if (cmoContext.strategyMemo) {
+    parts.push(`## 이번 주 전략\n${cmoContext.strategyMemo}`)
+  }
+
+  if (cmoContext.topPerformingContent.length > 0) {
+    parts.push(`## 성과 TOP 3\n${cmoContext.topPerformingContent.map(c => `${c.platform} ${c.contentType}: 평균 참여 ${c.avgEngagement.toFixed(1)}`).join('\n')}`)
+  }
+
+  return parts.length > 0 ? parts.join('\n\n') : ''
+}
+
+async function generatePlatformContent(params: {
+  adapter: PlatformAdapter
   contentType: string
   tone: string
   promotionLevel: string
   personaId: string
   dayStrategy: ReturnType<typeof getDayStrategy>
+  cmoContext: CMOContext
   sourceTitle?: string
   sourcePreview?: string
   sourceUrl?: string
-}): Promise<GeneratedContent> {
+}): Promise<PlatformContent> {
+  const { adapter } = params
   const persona = SNS_PERSONAS[params.personaId]
   const isPromo = params.promotionLevel !== 'PURE'
-  const strategy = params.dayStrategy
+  const dayOfWeek = new Date().getDay()
+  const platformDayStrategy = adapter.dayStrategies[dayOfWeek] ?? ''
 
-  const dayContext = `[요일 전략 — ${strategy.dayName}]
-- 분위기: ${strategy.mood}
-- 포맷: ${strategy.format}
-- 토픽 태그 방향: ${strategy.topicTagHint}`
+  const cmoContextBlock = buildCMOContextBlock(params.cmoContext)
 
-  const systemPrompt = `당신은 50-60대 커뮤니티 "우리 나이가 어때서"의 SNS 마케터입니다.
-${persona ? `페르소나: ${persona.nickname} (${persona.style})` : ''}
-
+  // Threads는 기존의 상세한 톤/체류시간 가이드를 유지
+  const threadsSpecificGuide = adapter.platform === 'THREADS' ? `
 [톤 규칙]
 ${THREADS_TONE_GUIDE}
 
 [체류 시간 최적화 — Threads 알고리즘 핵심]
 ${DWELL_TIME_GUIDE}
+` : ''
 
-[Threads 규칙]
-- Threads용: 반말 대화체, 100-200자, 토픽 태그 정확히 1개만
-- 토픽 태그는 #없이 자연스러운 한글 단어 1개 (예: 일상, 건강정보, 꿀팁)
+  const systemPrompt = `당신은 50-60대 커뮤니티 "우리 나이가 어때서"의 ${adapter.name} 마케터입니다.
+${persona ? `페르소나: ${persona.nickname} (${persona.style})` : ''}
+
+[플랫폼: ${adapter.name}]
+- 톤: ${adapter.tone}
+- 최대 글자수: ${adapter.maxLength}자
+- 포맷 가이드:
+${adapter.formatGuide}
+- 해시태그 전략: ${adapter.hashtagStrategy}
+- 타겟: ${adapter.demographicNotes}
+
+[오늘의 전략]
+${platformDayStrategy}
+${threadsSpecificGuide}
+[콘텐츠 규칙]
 - 톤: ${params.tone}
+- "시니어", "액티브 시니어" 절대 금지 → "우리 또래", "50대 60대", "인생 2막"
 ${isPromo ? '- 우나어 커뮤니티 언급 자연스럽게 포함' : '- 홍보 없이 순수 콘텐츠로'}
 ${params.promotionLevel === 'DIRECT' ? '- "우리 나이가 어때서" 커뮤니티를 직접 추천' : ''}
 
-[X 규칙]
-- X용: 정보형, 간결, 100-140자 (링크 공간 확보)
-- 해시태그 2-3개 (한글)
-- 톤: ${params.tone}
-${isPromo ? '- 우나어 커뮤니티 언급 자연스럽게 포함' : '- 홍보 없이 순수 콘텐츠로'}
-${params.promotionLevel === 'DIRECT' ? '- "우리 나이가 어때서" 커뮤니티를 직접 추천' : ''}
-
-${dayContext}
+${cmoContextBlock ? `[CMO 컨텍스트 — 최근 데이터 기반 최적화]\n${cmoContextBlock}` : ''}
 
 반드시 JSON으로만 응답:
-{"threads_text": "...", "thread_topic_tag": "일상", "x_text": "...", "x_hashtags": ["...", "..."]}`
+{"text": "...", "hashtags": ["...", "..."]}${adapter.platform === 'THREADS' ? '\n추가 필드: "topic_tag": "일상" (토픽 태그 1개, #없이)' : ''}`
 
   let userContent: string
   if (params.sourceTitle) {
@@ -217,31 +245,31 @@ ${dayContext}
 
   try {
     const parsed = JSON.parse(jsonStr) as {
-      threads_text: string; x_text: string
-      thread_topic_tag: string; x_hashtags: string[]
+      text: string; hashtags?: string[]; topic_tag?: string
     }
     return {
-      threadsText: parsed.threads_text,
-      xText: parsed.x_text,
-      threadTopicTag: parsed.thread_topic_tag ?? getTopicTag(params.contentType),
-      xHashtags: parsed.x_hashtags ?? [],
+      text: parsed.text ?? '',
+      hashtags: parsed.hashtags ?? [],
+      topicTag: parsed.topic_tag ?? (adapter.platform === 'THREADS' ? getTopicTag(params.contentType) : undefined),
     }
   } catch (err) {
-    console.error('[SocialPoster] JSON 파싱 실패, 원본:', jsonStr.slice(0, 200))
+    console.error(`[SocialPoster] ${adapter.name} JSON 파싱 실패, 원본:`, jsonStr.slice(0, 200))
     await notifySlack({
       level: 'important',
       agent: 'CMO_SOCIAL',
-      title: 'SNS 콘텐츠 생성 실패 — AI JSON 파싱 오류',
+      title: `${adapter.name} 콘텐츠 생성 실패 — AI JSON 파싱 오류`,
       body: `원본: ${jsonStr.slice(0, 150)}...\n${err instanceof Error ? err.message : ''}`,
     })
-    return { threadsText: '', xText: '', threadTopicTag: '', xHashtags: [] }
+    return { text: '', hashtags: [] }
   }
 }
 
 // ─── 게시 + DB 저장 ───
 
+type SocialPlatformType = 'THREADS' | 'X' | 'INSTAGRAM' | 'FACEBOOK' | 'BAND'
+
 async function publishAndSave(params: {
-  platform: 'THREADS' | 'X'
+  platform: SocialPlatformType
   text: string
   topicTag?: string
   hashtags: string[]
@@ -254,15 +282,23 @@ async function publishAndSave(params: {
   experimentId?: string
   slot: string
 }) {
-  // Threads: 토픽 태그 1개만, X: 해시태그 여러 개
-  const finalText = params.platform === 'THREADS'
-    ? (params.topicTag ? `${params.text}\n\n#${params.topicTag}` : params.text)
-    : (params.hashtags.length > 0
+  // 플랫폼별 최종 텍스트 구성
+  let finalText: string
+  if (params.platform === 'THREADS') {
+    // Threads: 토픽 태그 1개만
+    finalText = params.topicTag ? `${params.text}\n\n#${params.topicTag}` : params.text
+  } else if (params.platform === 'BAND') {
+    // Band: 해시태그 없음 (문화적 특성)
+    finalText = params.text
+  } else {
+    // X, Instagram, Facebook: 해시태그 여러 개
+    finalText = params.hashtags.length > 0
       ? `${params.text}\n\n${params.hashtags.map(h => `#${h}`).join(' ')}`
-      : params.text)
+      : params.text
+  }
 
-  // 링크 추가 (SOFT/DIRECT 홍보)
-  const withLink = params.linkUrl && params.platform === 'X'
+  // 링크 추가 (SOFT/DIRECT 홍보) — X와 Facebook에서 링크 첨부
+  const withLink = params.linkUrl && (params.platform === 'X' || params.platform === 'FACEBOOK')
     ? `${finalText}\n${params.linkUrl}`
     : finalText
 
@@ -277,6 +313,19 @@ async function publishAndSave(params: {
     } else if (params.platform === 'X' && xClient.isConfigured()) {
       const result = await xClient.postTweet(withLink)
       platformPostId = result.id
+      status = 'POSTED'
+    } else if (params.platform === 'INSTAGRAM' && instagramClient.isConfigured()) {
+      // Instagram은 이미지 필수 — 텍스트만 있으면 DRAFT로 저장
+      // TODO: 카드뉴스 생성기와 연동하여 이미지 자동 생성
+      console.log(`[SocialPoster] Instagram: 이미지 없이 텍스트만 — DRAFT로 저장`)
+      status = 'DRAFT' as 'POSTED'
+    } else if (params.platform === 'FACEBOOK' && facebookClient.isConfigured()) {
+      const result = await facebookClient.postText(withLink, params.linkUrl)
+      platformPostId = result.id
+      status = 'POSTED'
+    } else if (params.platform === 'BAND' && bandClient.isConfigured()) {
+      const result = await bandClient.postText(withLink)
+      platformPostId = result.postKey
       status = 'POSTED'
     } else {
       console.log(`[SocialPoster] ${params.platform} API 미설정 — DB에만 기록`)
@@ -322,10 +371,18 @@ async function main() {
   const dayStrategy = getDayStrategy(new Date())
   const slot = detectOptimalSlot()
 
-  // 1. 현재 실험 조회
-  const experiment = await getActiveExperiment()
+  // 1. 현재 실험 조회 + CMO 컨텍스트 로드
+  const [experiment, cmoContext] = await Promise.all([
+    getActiveExperiment(),
+    getCMOContext(),
+  ])
+
   if (experiment) {
     console.log(`[SocialPoster] 활성 실험: ${experiment.hypothesis} (${experiment.variable}: ${experiment.controlValue} vs ${experiment.testValue})`)
+  }
+
+  if (cmoContext.recentLearnings.length > 0) {
+    console.log(`[SocialPoster] CMO 컨텍스트: 학습 ${cmoContext.recentLearnings.length}건, TOP 성과 ${cmoContext.topPerformingContent.length}건`)
   }
 
   // 2. 소스 콘텐츠 수집
@@ -368,15 +425,32 @@ async function main() {
     sourcePostId = job.id
   }
 
-  // 5. AI 콘텐츠 생성
-  const linkUrl = promotionLevel !== 'PURE' ? (sourceUrl ?? SITE_URL) : undefined
-  const content = await generateContent({
-    contentType, tone, promotionLevel, personaId, dayStrategy,
-    sourceTitle, sourcePreview, sourceUrl: linkUrl,
-  })
+  // 5. 활성 플랫폼 어댑터별 콘텐츠 생성
+  const adapters = getActiveAdapters()
+  if (adapters.length === 0) {
+    console.log('[SocialPoster] 활성 플랫폼 없음 — 종료')
+    await disconnect()
+    return
+  }
 
-  if (!content.threadsText && !content.xText) {
-    console.log('[SocialPoster] 콘텐츠 생성 실패 — 스킵')
+  console.log(`[SocialPoster] 활성 플랫폼: ${adapters.map(a => a.name).join(', ')}`)
+
+  const linkUrl = promotionLevel !== 'PURE' ? (sourceUrl ?? SITE_URL) : undefined
+
+  // 플랫폼별 콘텐츠 생성 (순차 — AI 호출 비용 관리)
+  const platformContents = new Map<SocialPlatformType, PlatformContent>()
+  for (const adapter of adapters) {
+    const content = await generatePlatformContent({
+      adapter, contentType, tone, promotionLevel, personaId, dayStrategy, cmoContext,
+      sourceTitle, sourcePreview, sourceUrl: linkUrl,
+    })
+    if (content.text) {
+      platformContents.set(adapter.platform as SocialPlatformType, content)
+    }
+  }
+
+  if (platformContents.size === 0) {
+    console.log('[SocialPoster] 모든 플랫폼 콘텐츠 생성 실패 — 스킵')
     await disconnect()
     return
   }
@@ -386,78 +460,68 @@ async function main() {
   const results: Array<{ platform: string; status: string; id?: string }> = []
 
   if (!autoPost) {
-    // AdminQueue에 승인 요청 등록, DB에 QUEUED 상태로 저장
-    const preview = [
+    // AdminQueue에 승인 요청 등록
+    const previewParts = [
       `[${contentType}] ${SNS_PERSONAS[personaId]?.nickname ?? personaId} / ${tone} / ${promotionLevel}`,
-      content.threadsText ? `\nThreads: ${content.threadsText.slice(0, 80)}...` : '',
-      content.xText ? `\nX: ${content.xText.slice(0, 80)}...` : '',
-      linkUrl ? `\n🔗 ${linkUrl}` : '',
-    ].join('')
+    ]
+    for (const [platform, content] of platformContents) {
+      previewParts.push(`\n${platform}: ${content.text.slice(0, 80)}...`)
+    }
+    if (linkUrl) previewParts.push(`\n🔗 ${linkUrl}`)
+    const preview = previewParts.join('')
+
+    // 승인 요청에 모든 플랫폼 콘텐츠 포함
+    const payloadContents: Record<string, { text: string; hashtags: string[]; topicTag?: string }> = {}
+    for (const [platform, content] of platformContents) {
+      payloadContents[platform] = { text: content.text, hashtags: content.hashtags, topicTag: content.topicTag }
+    }
 
     await createApprovalRequest({
       type: 'CONTENT_PUBLISH',
-      title: `SNS 게시 승인 — ${SNS_PERSONAS[personaId]?.nickname ?? personaId} (${contentType})`,
+      title: `SNS 게시 승인 — ${SNS_PERSONAS[personaId]?.nickname ?? personaId} (${contentType}) [${platformContents.size}개 플랫폼]`,
       description: preview,
       payload: {
         contentType, tone, personaId, promotionLevel, slot, linkUrl,
-        threadsText: content.threadsText, xText: content.xText,
-        threadTopicTag: content.threadTopicTag, xHashtags: content.xHashtags,
+        platformContents: payloadContents,
         sourcePostId, experimentId: experiment?.id,
       },
       requestedBy: 'CMO_SOCIAL',
       status: 'PENDING',
     })
 
-    // QUEUED 상태로 DB 저장 (승인 후 별도 게시 필요)
-    if (content.threadsText) {
+    // QUEUED 상태로 DB 저장
+    for (const [platform, content] of platformContents) {
       await prisma.socialPost.create({
         data: {
-          platform: 'THREADS', experimentId: experiment?.id ?? null,
+          platform, experimentId: experiment?.id ?? null,
           contentType, tone, personaId, promotionLevel,
-          postText: content.threadsText, hashtags: content.threadTopicTag ? [content.threadTopicTag] : [],
+          postText: content.text,
+          hashtags: platform === 'THREADS' ? (content.topicTag ? [content.topicTag] : []) : content.hashtags,
           sourcePostId: sourcePostId ?? null, postingSlot: slot,
           linkUrl: linkUrl ?? null, status: 'QUEUED',
         },
       })
-      results.push({ platform: 'Threads', status: 'QUEUED' })
-    }
-    if (content.xText) {
-      await prisma.socialPost.create({
-        data: {
-          platform: 'X', experimentId: experiment?.id ?? null,
-          contentType, tone, personaId, promotionLevel,
-          postText: content.xText, hashtags: content.xHashtags,
-          sourcePostId: sourcePostId ?? null, postingSlot: slot,
-          linkUrl: linkUrl ?? null, status: 'QUEUED',
-        },
-      })
-      results.push({ platform: 'X', status: 'QUEUED' })
+      results.push({ platform, status: 'QUEUED' })
     }
 
     await notifySlack({
       level: 'info',
       agent: 'CMO_SOCIAL',
-      title: `SNS 게시 승인 대기 — /una-approve 로 승인`,
+      title: `SNS 게시 승인 대기 — /una-approve 로 승인 (${platformContents.size}개 플랫폼)`,
       body: preview,
     })
   } else {
-    // 자동 게시 (exploit 모드)
-    if (content.threadsText) {
+    // 자동 게시 (exploit 모드) — 각 플랫폼별로 게시
+    for (const [platform, content] of platformContents) {
       const r = await publishAndSave({
-        platform: 'THREADS', text: content.threadsText, topicTag: content.threadTopicTag, hashtags: [],
+        platform,
+        text: content.text,
+        topicTag: content.topicTag,
+        hashtags: content.hashtags,
         contentType, tone, personaId, promotionLevel,
         sourcePostId, linkUrl, experimentId: experiment?.id, slot,
       })
-      results.push({ platform: 'Threads', status: r.status, id: r.platformPostId })
-    }
-
-    if (content.xText) {
-      const r = await publishAndSave({
-        platform: 'X', text: content.xText, hashtags: content.xHashtags,
-        contentType, tone, personaId, promotionLevel,
-        sourcePostId, linkUrl, experimentId: experiment?.id, slot,
-      })
-      results.push({ platform: 'X', status: r.status, id: r.platformPostId })
+      results.push({ platform, status: r.status, id: r.platformPostId })
     }
   }
 
@@ -468,7 +532,7 @@ async function main() {
       botType: 'CMO',
       action: 'SOCIAL_POST',
       status: results.some(r => r.status === 'POSTED') ? 'SUCCESS' : 'PARTIAL',
-      details: JSON.stringify({ contentType, tone, personaId, promotionLevel, slot, day: dayStrategy.dayName, results }),
+      details: JSON.stringify({ contentType, tone, personaId, promotionLevel, slot, day: dayStrategy.dayName, platforms: adapters.map(a => a.name), results }),
       itemCount: results.length,
       executionTimeMs: durationMs,
     },
@@ -476,24 +540,32 @@ async function main() {
 
   // 8. Slack 알림
   const persona = SNS_PERSONAS[personaId]
-  const statusEmoji = (s: string) => s === 'POSTED' ? '✅' : s === 'DRAFT' ? '📝' : '❌'
+  const statusEmoji = (s: string) => s === 'POSTED' ? '✅' : s === 'QUEUED' ? '⏳' : s === 'DRAFT' ? '📝' : '❌'
 
-  const slackPreview = [
+  const slackParts = [
     `*페르소나*: ${persona?.nickname ?? personaId} | *유형*: ${contentType} | *톤*: ${tone} | *홍보*: ${promotionLevel} | *요일*: ${dayStrategy.dayName}`,
-    content.threadsText ? `\n*Threads*: ${content.threadsText}\n#${content.threadTopicTag}` : '',
-    content.xText ? `\n*X*: ${content.xText}\n${content.xHashtags.map(h => `#${h}`).join(' ')}` : '',
-    `\n${results.map(r => `${statusEmoji(r.status)} ${r.platform}: ${r.status}${r.id ? ` (ID: ${r.id})` : ''}`).join(' | ')}`,
-    linkUrl ? `\n🔗 ${linkUrl}` : '',
-  ].join('')
+  ]
+
+  for (const [platform, content] of platformContents) {
+    const hashtagText = platform === 'THREADS' && content.topicTag
+      ? `#${content.topicTag}`
+      : content.hashtags.map(h => `#${h}`).join(' ')
+    slackParts.push(`\n*${platform}*: ${content.text}${hashtagText ? `\n${hashtagText}` : ''}`)
+  }
+
+  slackParts.push(`\n${results.map(r => `${statusEmoji(r.status)} ${r.platform}: ${r.status}${r.id ? ` (ID: ${r.id})` : ''}`).join(' | ')}`)
+  if (linkUrl) slackParts.push(`\n🔗 ${linkUrl}`)
+
+  const slackPreview = slackParts.join('')
 
   await notifySlack({
     level: 'info',
     agent: 'CMO_SOCIAL',
-    title: `SNS 게시 완료 — ${results.filter(r => r.status === 'POSTED').length}/${results.length}개 성공`,
+    title: `SNS 게시 완료 — ${results.filter(r => r.status === 'POSTED').length}/${results.length}개 성공 (${adapters.map(a => a.name).join(', ')})`,
     body: slackPreview,
   })
 
-  console.log(`[SocialPoster] 완료 — ${results.length}개 게시, ${Math.round(durationMs / 1000)}초`)
+  console.log(`[SocialPoster] 완료 — ${results.length}개 게시 (${adapters.map(a => a.name).join(', ')}), ${Math.round(durationMs / 1000)}초`)
   await disconnect()
 }
 

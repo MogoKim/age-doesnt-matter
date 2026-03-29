@@ -63,7 +63,7 @@ export interface AgentConfig {
   name: string
   botType: AgentBotType
   role: string
-  model: 'heavy' | 'light'
+  model: 'strategic' | 'heavy' | 'light'
   tasks: string
   canWrite: boolean
 }

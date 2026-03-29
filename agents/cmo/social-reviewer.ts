@@ -12,7 +12,7 @@ import { notifySlack, sendSlackMessage } from '../core/notifier.js'
  * 4. SocialExperiment.learnings 기록
  */
 
-const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
+const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
 
 interface StructuredLearnings {

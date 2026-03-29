@@ -21,6 +21,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const MONITORING_TASKS = new Set([
   'cto:health-check',
   'cto:error-monitor',
+  'cto:security-audit',
   'cdo:anomaly-detector',
 ])
 
@@ -29,13 +30,17 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'ceo:weekly-report': () => import('../ceo/weekly-report.js').then(() => {}),
   'cto:health-check': () => import('../cto/health-check.js').then(() => {}),
   'cto:error-monitor': () => import('../cto/error-monitor.js').then(() => {}),
+  'cto:security-audit': () => import('../cto/security-audit.js').then(() => {}),
   'cmo:trend-analyzer': () => import('../cmo/trend-analyzer.js').then(() => {}),
   'cpo:ux-analyzer': () => import('../cpo/ux-analyzer.js').then(() => {}),
+  'cpo:feature-tracker': () => import('../cpo/feature-tracker.js').then(() => {}),
+  'cpo:journey-analyzer': () => import('../cpo/journey-analyzer.js').then(() => {}),
   'cfo:cost-tracker': () => import('../cfo/cost-tracker.js').then(() => {}),
   'cfo:revenue-tracker': () => import('../cfo/revenue-tracker.js').then(() => {}),
   'coo:moderator': () => import('../coo/moderator.js').then(() => {}),
   'coo:content-scheduler': () => import('../coo/content-scheduler.js').then(() => {}),
   'coo:job-scraper': () => import('../coo/job-scraper.js').then(() => {}),
+  'coo:trending-scorer': () => import('../coo/trending-scorer.js').then(() => {}),
   'cdo:kpi-collector': () => import('../cdo/kpi-collector.js').then(() => {}),
   'cdo:anomaly-detector': () => import('../cdo/anomaly-detector.js').then(() => {}),
   'seed:scheduler': () => import('../seed/scheduler.js').then(() => {}),

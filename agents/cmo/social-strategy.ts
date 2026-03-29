@@ -15,7 +15,7 @@ import { getDayStrategy } from './threads-config.js'
  * 5. #에이전트-회의실에 전략 브리핑
  */
 
-const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
+const MODEL = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-6'
 const client = new Anthropic()
 
 // 8주 테스트 로드맵 — 주차별 실험 변수 (Threads 트렌드 기반)

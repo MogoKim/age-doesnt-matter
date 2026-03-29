@@ -325,6 +325,10 @@ model Post {
   scrapCount     Int            @default(0)
   reportCount    Int            @default(0)
 
+  // 트렌딩 시스템
+  trendingScore  Float          @default(0)
+  lastEngagedAt  DateTime?
+
   // SEO
   seoTitle       String?
   seoDescription String?

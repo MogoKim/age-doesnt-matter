@@ -14,7 +14,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { FilteredJob, ProcessedJob, PickPoint, QnA } from './job-types.js'
 import { normalizeSalary, generateDisplayTags } from './job-types.js'
 
-const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
+const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 
 export class JobProcessor {
   private client: Anthropic

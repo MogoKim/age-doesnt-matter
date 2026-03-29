@@ -10,6 +10,7 @@ import type { BotType } from '../../src/generated/prisma/client.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const constitution = readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')
 
+const MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-6'
 const MODEL_HEAVY = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const MODEL_LIGHT = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 
@@ -20,7 +21,9 @@ export abstract class BaseAgent {
 
   constructor(config: AgentConfig) {
     this.client = new Anthropic()
-    this.model = config.model === 'heavy' ? MODEL_HEAVY : MODEL_LIGHT
+    this.model = config.model === 'strategic' ? MODEL_STRATEGIC
+               : config.model === 'heavy' ? MODEL_HEAVY
+               : MODEL_LIGHT
     this.config = config
   }
 
