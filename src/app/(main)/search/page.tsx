@@ -56,7 +56,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
       {/* 검색 결과 하단 광고 */}
       <div className="px-4 pb-6">
-        <FeedAd format="horizontal" />
+        <FeedAd />
       </div>
     </div>
   )

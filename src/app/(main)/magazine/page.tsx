@@ -49,7 +49,7 @@ export default async function MagazinePage() {
             {featured && <FeaturedCard post={featured} />}
 
             {/* 피처 카드 아래 광고 */}
-            <FeedAd format="horizontal" />
+            <FeedAd />
 
             {/* 나머지: 2열 그리드 (8번째 카드 뒤 광고 삽입) */}
             {rest.length > 0 && (
@@ -61,7 +61,7 @@ export default async function MagazinePage() {
                 </div>
                 {rest.length > 8 && (
                   <>
-                    <FeedAd format="horizontal" />
+                    <FeedAd />
                     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                       {rest.slice(8).map((post) => (
                         <MagazineCard key={post.id} post={post} />

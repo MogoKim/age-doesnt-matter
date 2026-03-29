@@ -3,6 +3,8 @@ import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { IconStories } from '@/components/icons'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
+import CoupangBanner from '@/components/ad/CoupangBanner'
+import { ADSENSE } from '@/components/ad/ad-slots'
 
 interface Props {
   posts: PostSummary[]
@@ -30,7 +32,8 @@ export default function HomeSidebar({ posts }: Props) {
           ))}
         </ul>
       </div>
-      <AdSenseUnit slotId="auto" format="rectangle" className="rounded-xl overflow-hidden min-h-[250px]" />
+      <AdSenseUnit slotId={ADSENSE.SIDEBAR} format="rectangle" className="rounded-xl overflow-hidden min-h-[250px]" />
+      <CoupangBanner preset="desktop" className="rounded-xl overflow-hidden" />
     </aside>
   )
 }

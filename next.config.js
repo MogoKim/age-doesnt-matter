@@ -11,6 +11,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'pub-*.r2.dev',
       },
+      {
+        protocol: 'https',
+        hostname: 'ads-partners.coupang.com',
+      },
     ],
   },
   experimental: {
@@ -37,12 +41,12 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://t1.kakaocdn.net https://developers.kakao.com https://www.googletagmanager.com https://www.google-analytics.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://t1.kakaocdn.net https://developers.kakao.com https://www.googletagmanager.com https://www.google-analytics.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://ads-partners.coupang.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://pub-*.r2.dev https://k.kakaocdn.net https://t1.kakaocdn.net https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com",
+              "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://pub-*.r2.dev https://k.kakaocdn.net https://t1.kakaocdn.net https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com https://image*.coupangcdn.com",
               "font-src 'self'",
-              "connect-src 'self' https://kauth.kakao.com https://kapi.kakao.com https://api.telegram.org https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://pagead2.googlesyndication.com",
-              "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com",
+              "connect-src 'self' https://kauth.kakao.com https://kapi.kakao.com https://api.telegram.org https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com",
+              "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://coupa.ng",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self' https://kauth.kakao.com",

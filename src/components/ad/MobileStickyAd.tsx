@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import AdSenseUnit from './AdSenseUnit'
+import { ADSENSE } from './ad-slots'
 
 /**
  * 모바일 하단 스티키 광고
@@ -41,7 +42,7 @@ export default function MobileStickyAd() {
         >
           ✕
         </button>
-        <AdSenseUnit slotId="auto" format="horizontal" responsive className="min-h-[50px]" />
+        <AdSenseUnit slotId={ADSENSE.SECTION_BETWEEN} format="horizontal" responsive className="min-h-[50px]" />
       </div>
     </div>
   )

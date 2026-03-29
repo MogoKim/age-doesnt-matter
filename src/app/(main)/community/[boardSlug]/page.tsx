@@ -9,6 +9,7 @@ import PostCard from '@/components/features/community/PostCard'
 import LoadMoreButton from '@/components/features/community/LoadMoreButton'
 import SortToggle from '@/components/features/community/SortToggle'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
+import { ADSENSE } from '@/components/ad/ad-slots'
 
 interface PageProps {
   params: Promise<{ boardSlug: string }>
@@ -69,7 +70,7 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
                 <PostCard post={post} boardSlug={boardSlug} />
                 {idx === 4 && (
                   <div className="mt-4">
-                    <AdSenseUnit slotId="auto" format="horizontal" className="rounded-2xl overflow-hidden" />
+                    <AdSenseUnit slotId={ADSENSE.SECTION_BETWEEN} format="horizontal" className="rounded-2xl overflow-hidden" />
                   </div>
                 )}
               </div>

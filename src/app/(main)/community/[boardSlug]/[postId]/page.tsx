@@ -13,6 +13,8 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeHtml } from '@/lib/sanitize'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CoupangCPS from '@/components/ad/CoupangCPS'
+import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
+import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
 
 interface PageProps {
@@ -124,11 +126,12 @@ export default async function PostDetailPage({ params }: PageProps) {
         isScrapped={post.isScrapped}
       />
 
-      {/* 광고 — AdSense 자동 + 쿠팡 CPS + 추가 AdSense */}
+      {/* 광고 — 인아티클 + 쿠팡 CPS + 섹션사이 + 검색위젯 */}
       <div className="mb-8 space-y-4">
-        <AdSenseUnit slotId="auto" format="auto" className="rounded-2xl overflow-hidden" />
+        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
         <CoupangCPS postId={postId} />
-        <AdSenseUnit slotId="post-bottom" format="auto" className="rounded-2xl overflow-hidden" />
+        <AdSenseUnit slotId={ADSENSE.SECTION_BETWEEN} format="auto" className="rounded-2xl overflow-hidden" />
+        <CoupangSearchWidget />
       </div>
 
       {/* 댓글 */}

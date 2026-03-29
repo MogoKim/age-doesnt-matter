@@ -104,7 +104,7 @@ export default async function BestPage({
                 <BestPostCard post={post} />
                 {idx === 2 && (
                   <div className="mt-3">
-                    <FeedAd format="horizontal" />
+                    <FeedAd />
                   </div>
                 )}
               </div>
