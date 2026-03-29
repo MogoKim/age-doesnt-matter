@@ -3,9 +3,12 @@ import { notifyAdmin } from '../core/notifier.js'
 import { generatePost, generateComment, generateReply, getBotUser } from './generator.js'
 
 /**
- * 시드 콘텐츠 스케줄러 (20명 — A~T)
+ * 시드 콘텐츠 스케줄러 (35명 — A~T + U~Z + AA~AI)
  * 크롤링 08:30/12:30/20:40에 연동하여 시드봇 활동
  * 활동: 글쓰기, 댓글, 대댓글, 좋아요
+ *
+ * 성격 분포: 긍정(12) + 중립(10) + 부정/비판(8) + 특이(5) = 35명
+ * 게시판 분포: STORY(25) + HUMOR(4) + JOB(1) + WEEKLY(3) + 크로스보드 활동
  */
 
 type ActivityType = 'post' | 'comment' | 'reply' | 'like'
@@ -18,131 +21,189 @@ interface Activity {
 }
 
 /**
- * 시간대별 활동 스케줄 (20명 A~T)
- * 크롤링 후 30분~1시간 뒤 시드봇 활동 시작
+ * 시간대별 활동 스케줄 (35명)
  * 08:30 크롤링 → 09:00/10:00 시드
  * 12:30 크롤링 → 13:00/14:00 시드
  * 20:40 크롤링 → 21:00/22:00 시드
  * + 15:00/16:00/19:00 자체 활동
+ *
+ * 일일 목표: 글 18-22개, 댓글 80-100개, 좋아요 60-80개, 대댓글 25-35개
  */
 const SCHEDULE: Record<string, Activity[]> = {
   // ── 아침 (크롤링 08:30 후) ──
   '09': [
-    { personaId: 'A', type: 'post' },                         // 영숙이맘 일상 글
+    // 글쓰기 — 아침형 페르소나
+    { personaId: 'A', type: 'post' },                          // 하늘바라기 일상
+    { personaId: 'F', type: 'post' },                          // 텃밭할배 아침 텃밭
+    { personaId: 'J', type: 'post' },                          // 맛있는거좋아 아침 요리
+    { personaId: 'L', type: 'post' },                          // 손주러브 가족
+    { personaId: 'Q', type: 'post' },                          // 멍멍이아빠 아침 산책
+    { personaId: 'U', type: 'post' },                          // 부산아지매 시장 이야기
+    { personaId: 'AI', type: 'post' },                         // 시골아낙네 아침 텃밭
+    // 댓글
     { personaId: 'A', type: 'comment', board: 'STORY', count: 2 },
-    { personaId: 'C', type: 'comment', board: 'HUMOR', count: 3 },
-    { personaId: 'F', type: 'post' },                         // 텃밭아저씨 아침 글
-    { personaId: 'J', type: 'post' },                         // 요리왕 아침 글
-    { personaId: 'L', type: 'post' },                         // 손주바보 가족 글
-    { personaId: 'Q', type: 'post' },                         // 반려견아빠 산책 글
-    { personaId: 'S', type: 'post' },                         // 텃밭할머니 꽃 글
+    { personaId: 'C', type: 'comment', board: 'HUMOR', count: 3 },  // ㅋㅋ요정 리액션
+    { personaId: 'U', type: 'comment', board: 'STORY', count: 2 },  // 부산아지매 직설 반응
     // 좋아요
     { personaId: 'E', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'L', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'AI', type: 'like', board: 'STORY', count: 2 },
   ],
+
   '10': [
-    { personaId: 'B', type: 'post' },                         // 은퇴신사 정보 글
-    { personaId: 'G', type: 'post' },                         // 여행매니아 글
-    { personaId: 'K', type: 'post' },                         // 패션언니 뷰티 글
-    { personaId: 'M', type: 'post' },                         // 등산러버 등산 글
-    { personaId: 'R', type: 'post', board: 'HUMOR' },           // 드라마덕후 감상 글 (활력충전소)
-    { personaId: 'C', type: 'post', board: 'HUMOR' },           // 웃음보 유머 글 (활력충전소)
-    // 대댓글 — 아침 글 댓글에 답글
+    // 글쓰기 — 정보형 + 활발형
+    { personaId: 'B', type: 'post' },                          // 정호씨 정보
+    { personaId: 'G', type: 'post' },                          // 여행이좋아 여행
+    { personaId: 'K', type: 'post' },                          // 예쁘게살자 패션
+    { personaId: 'M', type: 'post' },                          // 산이좋아 등산
+    { personaId: 'V', type: 'post' },                          // 세상에나 불만 (부정)
+    { personaId: 'AF', type: 'post', board: 'HUMOR' },         // 하하호호 아재개그
+    { personaId: 'R', type: 'post', board: 'HUMOR' },          // 밤새봤다 드라마 감상
+    { personaId: 'C', type: 'post', board: 'HUMOR' },          // ㅋㅋ요정 유머
+    // 대댓글 — 아침 글에 답글
     { personaId: 'A', type: 'reply', board: 'STORY', count: 1 },
-    { personaId: 'G', type: 'reply', board: 'STORY', count: 1 },
+    { personaId: 'U', type: 'reply', board: 'STORY', count: 1 },
     // 좋아요
     { personaId: 'C', type: 'like', board: 'HUMOR', count: 3 },
     { personaId: 'K', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'V', type: 'like', board: 'STORY', count: 2 },
   ],
 
   // ── 점심 (크롤링 12:30 후) ──
   '13': [
-    { personaId: 'D', type: 'comment', board: 'JOB', count: 2 },
-    { personaId: 'E', type: 'comment', board: 'STORY', count: 2 },
-    { personaId: 'N', type: 'comment', board: 'STORY', count: 2 },
-    { personaId: 'G', type: 'comment', board: 'HUMOR', count: 1 }, // 크로스보드 댓글
+    // 댓글 위주 — 부정/비판 캐릭터 활동 시작
+    { personaId: 'D', type: 'comment', board: 'JOB', count: 2 },     // 궁금한건못참아 질문
+    { personaId: 'E', type: 'comment', board: 'STORY', count: 2 },   // 봄바람 공감
+    { personaId: 'W', type: 'comment', board: 'STORY', count: 2 },   // 참나진짜 비판 (!)
+    { personaId: 'X', type: 'comment', board: 'STORY', count: 2 },   // 걱정인형 걱정
+    { personaId: 'N', type: 'comment', board: 'STORY', count: 2 },   // 알뜰맘 정보
+    { personaId: 'AC', type: 'comment', board: 'STORY', count: 1 },  // 느긋이 느긋 반응
     // 좋아요
     { personaId: 'D', type: 'like', board: 'JOB', count: 2 },
     { personaId: 'J', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'X', type: 'like', board: 'STORY', count: 2 },
   ],
+
   '14': [
-    { personaId: 'H', type: 'post' },                         // 건강박사 건강 글
-    { personaId: 'N', type: 'post' },                         // 살림9단 살림 글
-    { personaId: 'T', type: 'post' },                         // 은퇴교사 교육 글
+    // 글쓰기 — 오후 활동
+    { personaId: 'H', type: 'post' },                          // 매일걷기 건강 데이터
+    { personaId: 'N', type: 'post' },                          // 알뜰맘 살림 팁
+    { personaId: 'T', type: 'post' },                          // 배움은즐거워 교육
+    { personaId: 'X', type: 'post' },                          // 걱정인형 걱정 글 (부정)
+    { personaId: 'AA', type: 'post' },                         // 어휴답답 한탄 (부정)
+    { personaId: 'AG', type: 'post' },                         // 비교분석왕 비교 리뷰
+    // 댓글
     { personaId: 'J', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'S', type: 'comment', board: 'STORY', count: 1 },
+    { personaId: 'AA', type: 'comment', board: 'STORY', count: 1 },  // 어휴답답 한탄 댓글
     // 대댓글
     { personaId: 'E', type: 'reply', board: 'STORY', count: 2 },
+    { personaId: 'W', type: 'reply', board: 'STORY', count: 1 },   // 참나진짜 반박 답글
     { personaId: 'H', type: 'reply', board: 'STORY', count: 1 },
     // 좋아요
     { personaId: 'N', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'T', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'AG', type: 'like', board: 'STORY', count: 2 },
   ],
 
   // ── 오후 자체 활동 ──
   '15': [
-    { personaId: 'P', type: 'post' },                         // 커피한잔 감성 에세이
-    { personaId: 'C', type: 'post', board: 'HUMOR' },           // 웃음보 오후 유머 (활력충전소)
-    { personaId: 'T', type: 'post', board: 'WEEKLY' },           // 은퇴교사 주간토론/수다
+    // 글쓰기 — 감성 + 논쟁
+    { personaId: 'P', type: 'post' },                          // 오후세시 감성 에세이
+    { personaId: 'Z', type: 'post' },                          // 혼자잘산다 자조 유머
+    { personaId: 'AB', type: 'post', board: 'WEEKLY' },        // 따져보자 토론 주제
+    { personaId: 'Y', type: 'post', board: 'WEEKLY' },         // 솔직히말해서 현실 팩폭
+    { personaId: 'AD', type: 'post' },                         // 그때그시절 회고
+    // 댓글
     { personaId: 'K', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'R', type: 'comment', board: 'HUMOR', count: 2 },
+    { personaId: 'AB', type: 'comment', board: 'STORY', count: 2 },  // 따져보자 반론
+    { personaId: 'Z', type: 'comment', board: 'STORY', count: 1 },   // 혼자잘산다 한마디
     // 좋아요
     { personaId: 'P', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'G', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'Z', type: 'like', board: 'STORY', count: 2 },
   ],
+
   '16': [
+    // 댓글 중심 — 다양한 반응
     { personaId: 'A', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'F', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'L', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'Q', type: 'comment', board: 'STORY', count: 1 },
-    { personaId: 'N', type: 'comment', board: 'HUMOR', count: 1 }, // 크로스보드 댓글
+    { personaId: 'AD', type: 'comment', board: 'STORY', count: 2 },  // 그때그시절 "옛날에는~"
+    { personaId: 'AH', type: 'comment', board: 'STORY', count: 2 },  // 피곤해요 공감
+    { personaId: 'Y', type: 'comment', board: 'WEEKLY', count: 1 },  // 솔직히말해서 팩폭
     // 대댓글
     { personaId: 'L', type: 'reply', board: 'STORY', count: 1 },
+    { personaId: 'AB', type: 'reply', board: 'WEEKLY', count: 1 },
     // 좋아요
     { personaId: 'A', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'F', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'AH', type: 'like', board: 'STORY', count: 2 },
   ],
 
   // ── 저녁 ──
   '19': [
-    { personaId: 'I', type: 'post' },                         // 책벌레 독서 글
-    { personaId: 'O', type: 'post' },                         // 음악사랑 음악 글
-    { personaId: 'R', type: 'post', board: 'HUMOR' },           // 드라마덕후 저녁 유머 (활력충전소)
-    { personaId: 'I', type: 'post', board: 'WEEKLY' },           // 책벌레 수다방 글
+    // 글쓰기 — 저녁 감성 + 문화
+    { personaId: 'I', type: 'post' },                          // 한페이지 독서
+    { personaId: 'O', type: 'post' },                          // 올드팝 음악
+    { personaId: 'W', type: 'post' },                          // 참나진짜 비판 리뷰
+    { personaId: 'AH', type: 'post' },                         // 피곤해요 하루 TMI
+    { personaId: 'S', type: 'post' },                          // 제주살이 저녁 풍경
+    { personaId: 'R', type: 'post', board: 'HUMOR' },          // 밤새봤다 저녁 드라마
+    { personaId: 'T', type: 'post', board: 'WEEKLY' },         // 배움은즐거워 수다방
+    // 댓글
     { personaId: 'E', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'G', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'M', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'P', type: 'comment', board: 'STORY', count: 2 },
-    { personaId: 'T', type: 'comment', board: 'STORY', count: 1 },
+    { personaId: 'V', type: 'comment', board: 'STORY', count: 2 },   // 세상에나 불만 댓글
+    { personaId: 'AC', type: 'comment', board: 'STORY', count: 1 },  // 느긋이 느긋 반응
     // 좋아요
     { personaId: 'I', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'O', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'M', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'S', type: 'like', board: 'STORY', count: 2 },
   ],
 
   // ── 밤 (크롤링 20:40 후) ──
   '21': [
+    // 밤 감성 페르소나 활동
+    { personaId: 'AE', type: 'post' },                         // 새벽감성 밤 글
+    { personaId: 'AC', type: 'post' },                         // 느긋이 느긋한 하루 마무리
+    // 댓글
     { personaId: 'C', type: 'comment', board: 'HUMOR', count: 2 },
     { personaId: 'H', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'I', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'N', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'O', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'R', type: 'comment', board: 'HUMOR', count: 2 },
+    { personaId: 'AF', type: 'comment', board: 'HUMOR', count: 2 },  // 하하호호 유머 댓글
+    { personaId: 'AE', type: 'comment', board: 'STORY', count: 1 },  // 새벽감성 밤 댓글
     // 대댓글
     { personaId: 'C', type: 'reply', board: 'HUMOR', count: 1 },
     { personaId: 'R', type: 'reply', board: 'HUMOR', count: 1 },
+    { personaId: 'V', type: 'reply', board: 'STORY', count: 1 },
     // 좋아요
     { personaId: 'B', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'Q', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'S', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'AE', type: 'like', board: 'STORY', count: 2 },
   ],
+
   '22': [
+    // 마무리 활동
     { personaId: 'B', type: 'comment', board: 'STORY', count: 1 },
+    { personaId: 'AD', type: 'comment', board: 'STORY', count: 1 },  // 그때그시절 밤 회고
     // 대댓글
     { personaId: 'B', type: 'reply', board: 'STORY', count: 1 },
+    { personaId: 'AF', type: 'reply', board: 'HUMOR', count: 1 },
     // 좋아요 마무리
     { personaId: 'H', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'R', type: 'like', board: 'HUMOR', count: 2 },
+    { personaId: 'W', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'AA', type: 'like', board: 'STORY', count: 2 },
   ],
 }
 
@@ -160,7 +221,7 @@ async function getReplyTargets(board: string, limit: number) {
   const comments = await prisma.comment.findMany({
     where: {
       post: { boardType: board as 'STORY' | 'HUMOR' | 'JOB', status: 'PUBLISHED' },
-      parentId: null, // 최상위 댓글만
+      parentId: null,
       status: 'ACTIVE',
     },
     orderBy: { createdAt: 'desc' },
@@ -173,7 +234,6 @@ async function getReplyTargets(board: string, limit: number) {
       post: { select: { title: true } },
     },
   })
-  // 셔플
   return comments.sort(() => Math.random() - 0.5).slice(0, limit)
 }
 
@@ -219,13 +279,11 @@ async function runActivity(activity: Activity): Promise<void> {
   if (activity.type === 'comment') {
     const posts = await getRandomPosts(activity.board ?? 'STORY', activity.count ?? 1)
     for (const post of posts.slice(0, activity.count ?? 1)) {
-      // 같은 글에 이 봇이 이미 댓글 달았는지 확인
       const existingComment = await prisma.comment.findFirst({
         where: { postId: post.id, authorId: userId },
       })
       if (existingComment) continue
 
-      // 같은 글에 봇 댓글이 2개 이상이면 스킵
       const botCommentCount = await prisma.comment.count({
         where: {
           postId: post.id,
@@ -251,10 +309,8 @@ async function runActivity(activity: Activity): Promise<void> {
   if (activity.type === 'reply') {
     const targets = await getReplyTargets(activity.board ?? 'STORY', activity.count ?? 1)
     for (const target of targets) {
-      // 자기 댓글에 답글 달지 않기
       if (target.authorId === userId) continue
 
-      // 같은 댓글에 이미 답글 달았는지 확인
       const existingReply = await prisma.comment.findFirst({
         where: { parentId: target.id, authorId: userId },
       })
@@ -290,12 +346,11 @@ async function runActivity(activity: Activity): Promise<void> {
           where: { id: target.id },
           data: { likeCount: { increment: 1 } },
         })
-        // 글 작성자의 receivedLikes 증가
         await prisma.user.update({
           where: { id: target.authorId },
           data: { receivedLikes: { increment: 1 } },
         })
-        // promotionLevel 승격 체크 (HOT: 10+, HALL_OF_FAME: 50+)
+        // promotionLevel 승격 체크
         const updatedPost = await prisma.post.findUnique({
           where: { id: target.id },
           select: { likeCount: true },
@@ -315,7 +370,7 @@ async function runActivity(activity: Activity): Promise<void> {
         }
         console.log(`[Seed] ${activity.personaId} liked post ${target.id.slice(0, 8)}`)
       } catch {
-        // unique constraint 위반 시 무시 (이미 좋아요)
+        // unique constraint 위반 시 무시
       }
     }
   }
@@ -324,10 +379,8 @@ async function runActivity(activity: Activity): Promise<void> {
 /**
  * 집중 좋아요 라운드 — HOT 문턱(10) 근처 글에 좋아요 집중 투입
  * 하루 최대 2-3개 글만 타겟 → 자연스러움 유지
- * 21시 스케줄 실행 후 호출
  */
 async function focusedLikeRound(): Promise<number> {
-  // 48시간 내 likeCount 5~9인 글 찾기 (HOT 근접)
   const nearHot = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
@@ -342,8 +395,8 @@ async function focusedLikeRound(): Promise<number> {
 
   if (nearHot.length === 0) return 0
 
-  // 봇 5명으로 집중 투입 (B, E, G, K, M — 다양한 페르소나)
-  const boostBotIds = ['B', 'E', 'G', 'K', 'M']
+  // 다양한 페르소나로 집중 투입 (긍정+중립+부정 믹스)
+  const boostBotIds = ['B', 'E', 'G', 'K', 'M', 'AC', 'AI']
   let boosted = 0
 
   for (const post of nearHot) {
@@ -361,11 +414,9 @@ async function focusedLikeRound(): Promise<number> {
         })
         boosted++
       } catch {
-        // 이미 좋아요 — 다음 봇으로
         continue
       }
     }
-    // 승격 체크
     const updated = await prisma.post.findUnique({
       where: { id: post.id },
       select: { likeCount: true },
@@ -375,7 +426,7 @@ async function focusedLikeRound(): Promise<number> {
         where: { id: post.id, promotionLevel: 'NORMAL' },
         data: { promotionLevel: 'HOT' },
       }).catch(() => {})
-      console.log(`[Seed] 🔥 집중 좋아요로 HOT 승격: ${post.id.slice(0, 8)} (${updated.likeCount}개)`)
+      console.log(`[Seed] 집중 좋아요로 HOT 승격: ${post.id.slice(0, 8)} (${updated.likeCount}개)`)
     }
   }
 
@@ -383,7 +434,6 @@ async function focusedLikeRound(): Promise<number> {
 }
 
 async function main() {
-  // KST = UTC + 9 (GitHub Actions는 UTC로 실행)
   const now = new Date()
   const kstHour = (now.getUTCHours() + 9) % 24
   const hour = kstHour.toString().padStart(2, '0')
@@ -395,12 +445,10 @@ async function main() {
     return
   }
 
-  const toRun = activities
-
   let successCount = 0
   let errorCount = 0
 
-  for (const activity of toRun) {
+  for (const activity of activities) {
     try {
       await runActivity(activity)
       successCount++
@@ -410,7 +458,7 @@ async function main() {
     }
   }
 
-  // 21시: 집중 좋아요 라운드 실행 (하루 한 번)
+  // 21시: 집중 좋아요 라운드
   let focusedCount = 0
   if (hour === '21') {
     focusedCount = await focusedLikeRound()
@@ -419,7 +467,6 @@ async function main() {
     }
   }
 
-  // 로그 기록
   await prisma.botLog.create({
     data: {
       botType: 'SEED' as const,
@@ -429,7 +476,7 @@ async function main() {
         hour,
         success: successCount,
         errors: errorCount,
-        totalActivities: toRun.length,
+        totalActivities: activities.length,
         ...(focusedCount > 0 ? { focusedLikes: focusedCount } : {}),
       }),
       itemCount: successCount,

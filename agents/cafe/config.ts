@@ -1,4 +1,47 @@
-import type { CafeConfig } from './types.js'
+import type { CafeConfig, ContentCategory } from './types.js'
+
+// ── 외부 사이트 크롤링 설정 (네이버 카페 외) ──
+
+export interface ExternalSiteConfig {
+  id: string
+  name: string
+  url: string
+  /** 크롤링할 게시판 경로 */
+  boards: ExternalBoardConfig[]
+}
+
+export interface ExternalBoardConfig {
+  name: string
+  /** 게시판 번호 (URL 파라미터 bn) */
+  boardNumber: number
+  /** 수집할 페이지 수 */
+  maxPages: number
+  priority: 'high' | 'medium'
+  category: ContentCategory
+}
+
+/**
+ * 82cook 커뮤니티 크롤링 설정
+ * URL 패턴:
+ *   목록: https://www.82cook.com/entiz/enti.php?bn=15&page=1
+ *   글: https://www.82cook.com/entiz/read.php?num=XXXXX&bn=15
+ *
+ * 82cook 특징:
+ *   - 네이버 카페보다 솔직하고 날것인 글이 많음
+ *   - 불만, 고민, 논쟁, 현실적 이야기 → 부정/비판 페르소나 콘텐츠 소싱에 최적
+ *   - 로그인 불필요 (공개 게시판)
+ */
+export const EXTERNAL_CONFIGS: ExternalSiteConfig[] = [
+  {
+    id: '82cook',
+    name: '82쿡',
+    url: 'https://www.82cook.com',
+    boards: [
+      // 커뮤니티 게시판만 (유저 요청)
+      { name: '자유게시판', boardNumber: 15, maxPages: 3, priority: 'high', category: 'lifestyle' },
+    ],
+  },
+]
 
 /**
  * 크롤링 대상 네이버 카페 3곳
