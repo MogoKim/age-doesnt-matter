@@ -55,3 +55,29 @@ export function rateLimit(
 
   return { success: true, remaining: max - entry.count, resetAt: entry.resetAt }
 }
+
+/* ── checkRateLimit: 새로운 간결한 API ── */
+
+export interface RateLimitConfig {
+  /** 허용 횟수 */
+  limit: number
+  /** 시간 윈도우 (밀리초) */
+  windowMs: number
+}
+
+export function checkRateLimit(key: string, config: RateLimitConfig): { allowed: boolean; remainingMs: number } {
+  const now = Date.now()
+  const entry = cache.get(key)
+
+  if (!entry || entry.resetAt < now) {
+    cache.set(key, { count: 1, resetAt: now + config.windowMs })
+    return { allowed: true, remainingMs: 0 }
+  }
+
+  entry.count++
+  if (entry.count > config.limit) {
+    return { allowed: false, remainingMs: entry.resetAt - now }
+  }
+
+  return { allowed: true, remainingMs: 0 }
+}

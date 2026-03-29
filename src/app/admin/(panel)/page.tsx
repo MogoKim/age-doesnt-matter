@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getDashboardStats, getRecentBotLogs } from '@/lib/queries/admin'
+import AdminQuickStart from '@/components/admin/AdminQuickStart'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,8 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
+      <AdminQuickStart />
+
       {/* KPI 카드 */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard label="오늘 방문" value={stats.todayUsers} icon="👁️" />

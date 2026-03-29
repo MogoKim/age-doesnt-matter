@@ -3,23 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-
-interface NavItem {
-  label: string
-  icon: string
-  href: string
-}
-
-const navItems: NavItem[] = [
-  { label: '대시보드', icon: '📊', href: '/admin' },
-  { label: '콘텐츠 관리', icon: '📝', href: '/admin/content' },
-  { label: '회원 관리', icon: '👥', href: '/admin/members' },
-  { label: '신고 관리', icon: '🛡️', href: '/admin/reports' },
-  { label: '배너 관리', icon: '🖼️', href: '/admin/banners' },
-  { label: '팝업 관리', icon: '📢', href: '/admin/popups' },
-  { label: '데이터 분석', icon: '📈', href: '/admin/analytics' },
-  { label: '설정', icon: '⚙️', href: '/admin/settings' },
-]
+import { adminNavItems } from './admin-nav'
 
 interface AdminSidebarProps {
   nickname: string
@@ -38,7 +22,7 @@ export default function AdminSidebar({ nickname }: AdminSidebarProps) {
       {/* 네비게이션 */}
       <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="어드민 메뉴">
         <ul className="space-y-1">
-          {navItems.map((item) => {
+          {adminNavItems.map((item) => {
             const isActive =
               item.href === '/admin'
                 ? pathname === '/admin'

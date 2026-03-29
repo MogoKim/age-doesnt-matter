@@ -114,7 +114,7 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
         <select
           value={filters.board || ''}
           onChange={(e) => updateFilter('board', e.target.value)}
-          className="h-9 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
+          className="h-10 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
         >
           <option value="">전체 게시판</option>
           {Object.entries(BOARD_LABELS).map(([key, label]) => (
@@ -125,7 +125,7 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
         <select
           value={filters.status || ''}
           onChange={(e) => updateFilter('status', e.target.value)}
-          className="h-9 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
+          className="h-10 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
         >
           <option value="">전체 상태</option>
           <option value="PUBLISHED">게시</option>
@@ -136,7 +136,7 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
         <select
           value={filters.source || ''}
           onChange={(e) => updateFilter('source', e.target.value)}
-          className="h-9 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
+          className="h-10 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
         >
           <option value="">전체 소스</option>
           <option value="USER">유저</option>
@@ -150,11 +150,11 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="제목/본문/작성자 검색"
-            className="h-9 w-48 rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+            className="h-10 w-48 rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
           />
           <button
             type="submit"
-            className="h-9 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800"
+            className="h-10 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800"
           >
             검색
           </button>
@@ -168,14 +168,14 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
           <button
             onClick={() => handleBulkAction('HIDDEN')}
             disabled={isPending}
-            className="rounded-md bg-yellow-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-600 disabled:opacity-50"
+            className="rounded-md bg-yellow-500 px-3 py-2 text-sm font-medium text-white hover:bg-yellow-600 disabled:opacity-50"
           >
             일괄 숨김
           </button>
           <button
             onClick={() => handleBulkAction('DELETED')}
             disabled={isPending}
-            className="rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+            className="rounded-md bg-red-500 px-3 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
           >
             일괄 삭제
           </button>
@@ -341,7 +341,7 @@ function ActionButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`rounded px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${variants[variant]}`}
+      className={`rounded-md px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 min-h-[44px] ${variants[variant]}`}
     >
       {label}
     </button>

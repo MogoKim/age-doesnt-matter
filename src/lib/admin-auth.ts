@@ -8,6 +8,9 @@ function getSecret(): Uint8Array {
   if (!secret) {
     throw new Error('ADMIN_JWT_SECRET 환경변수가 설정되지 않았습니다')
   }
+  if (secret.length < 32) {
+    throw new Error('ADMIN_JWT_SECRET은 최소 32자 이상이어야 합니다')
+  }
   return new TextEncoder().encode(secret)
 }
 
@@ -24,7 +27,7 @@ export async function createAdminToken(payload: AdminSession): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('1d')
+    .setExpirationTime('4h')
     .sign(getSecret())
 }
 
@@ -38,7 +41,7 @@ export async function setAdminCookie(token: string) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/admin',
-    maxAge: 24 * 60 * 60, // 1일
+    maxAge: 4 * 60 * 60, // 4시간
   })
 }
 

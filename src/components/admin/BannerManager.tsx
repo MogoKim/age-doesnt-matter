@@ -3,6 +3,8 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { adminCreateBanner, adminUpdateBanner, adminDeleteBanner } from '@/lib/actions/admin'
+import HelpTip from './HelpTip'
+import { HELP } from './admin-help-texts'
 
 interface Banner {
   id: string
@@ -217,7 +219,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">우선순위</label>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">우선순위 <HelpTip text={HELP.BANNER_PRIORITY} /></label>
               <input
                 type="number"
                 value={form.priority}
@@ -291,7 +293,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                     : 'text-green-600 hover:bg-green-50'
                 }`}
               >
-                {banner.isActive ? '비활성' : '활성'}
+                {banner.isActive ? '비활성' : '활성'} <HelpTip text={HELP.BANNER_ACTIVE} />
               </button>
               <button
                 onClick={() => startEdit(banner)}

@@ -13,6 +13,17 @@ import type {
   UserStatus,
 } from '@/generated/prisma/client'
 
+/** 광고 HTML 코드에서 위험한 태그/속성 제거 */
+function sanitizeHtmlCode(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/on\w+\s*=\s*[^\s>]*/gi, '')
+    .replace(/javascript\s*:/gi, '')
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+    .replace(/<iframe[\s\S]*?\/?>/gi, '')
+}
+
 async function requireAdmin() {
   const session = await getAdminSession()
   if (!session) throw new Error('관리자 인증이 필요합니다.')
@@ -23,6 +34,8 @@ async function requireAdmin() {
 
 export async function adminUpdatePostStatus(postId: string, status: PostStatus) {
   const admin = await requireAdmin()
+
+  const existing = await prisma.post.findUnique({ where: { id: postId } })
 
   await prisma.post.update({
     where: { id: postId },
@@ -35,6 +48,8 @@ export async function adminUpdatePostStatus(postId: string, status: PostStatus) 
       action: `POST_${status}`,
       targetType: 'POST',
       targetId: postId,
+      before: existing ? JSON.stringify({ status: existing.status }) : undefined,
+      after: JSON.stringify({ status }),
     },
   })
 
@@ -43,6 +58,8 @@ export async function adminUpdatePostStatus(postId: string, status: PostStatus) 
 
 export async function adminTogglePin(postId: string, isPinned: boolean) {
   const admin = await requireAdmin()
+
+  const existing = await prisma.post.findUnique({ where: { id: postId } })
 
   await prisma.post.update({
     where: { id: postId },
@@ -55,6 +72,8 @@ export async function adminTogglePin(postId: string, isPinned: boolean) {
       action: isPinned ? 'POST_PIN' : 'POST_UNPIN',
       targetType: 'POST',
       targetId: postId,
+      before: existing ? JSON.stringify({ isPinned: existing.isPinned }) : undefined,
+      after: JSON.stringify({ isPinned }),
     },
   })
 
@@ -95,6 +114,8 @@ export async function adminUpdateUserStatus(
 ) {
   const admin = await requireAdmin()
 
+  const existingUser = await prisma.user.findUnique({ where: { id: userId } })
+
   const data: Record<string, unknown> = { status }
   if (status === 'SUSPENDED' && suspendDays) {
     const until = new Date()
@@ -133,6 +154,8 @@ export async function adminUpdateUserStatus(
       action: `USER_${status}`,
       targetType: 'USER',
       targetId: userId,
+      before: existingUser ? JSON.stringify({ status: existingUser.status, suspendedUntil: existingUser.suspendedUntil }) : undefined,
+      after: JSON.stringify(data),
       note: suspendDays ? `${suspendDays}일 정지` : undefined,
     },
   })
@@ -142,6 +165,8 @@ export async function adminUpdateUserStatus(
 
 export async function adminUpdateUserGrade(userId: string, grade: Grade) {
   const admin = await requireAdmin()
+
+  const existingUser = await prisma.user.findUnique({ where: { id: userId } })
 
   await prisma.user.update({
     where: { id: userId },
@@ -154,6 +179,7 @@ export async function adminUpdateUserGrade(userId: string, grade: Grade) {
       action: 'USER_GRADE_CHANGE',
       targetType: 'USER',
       targetId: userId,
+      before: existingUser ? JSON.stringify({ grade: existingUser.grade }) : undefined,
       after: { grade },
     },
   })
@@ -168,6 +194,8 @@ export async function adminProcessReport(
   action: ReportAction
 ) {
   const admin = await requireAdmin()
+
+  const existingReport = await prisma.report.findUnique({ where: { id: reportId } })
 
   const report = await prisma.report.update({
     where: { id: reportId },
@@ -202,6 +230,8 @@ export async function adminProcessReport(
       action: `REPORT_${action}`,
       targetType: 'REPORT',
       targetId: reportId,
+      before: existingReport ? JSON.stringify({ status: existingReport.status, action: existingReport.action }) : undefined,
+      after: JSON.stringify({ status: 'RESOLVED', action }),
     },
   })
 
@@ -221,14 +251,23 @@ export async function adminCreateBanner(data: {
 }) {
   const admin = await requireAdmin()
 
+  const start = new Date(data.startDate)
+  const end = new Date(data.endDate)
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw new Error('올바른 날짜 형식이 아닙니다.')
+  }
+  if (start >= end) {
+    throw new Error('시작일은 종료일보다 이전이어야 합니다.')
+  }
+
   const banner = await prisma.banner.create({
     data: {
       title: data.title,
       description: data.description,
       imageUrl: data.imageUrl,
       linkUrl: data.linkUrl,
-      startDate: new Date(data.startDate),
-      endDate: new Date(data.endDate),
+      startDate: start,
+      endDate: end,
       priority: data.priority ?? 0,
     },
   })
@@ -260,6 +299,19 @@ export async function adminUpdateBanner(
 ) {
   const admin = await requireAdmin()
 
+  if (data.startDate && data.endDate) {
+    const start = new Date(data.startDate)
+    const end = new Date(data.endDate)
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new Error('올바른 날짜 형식이 아닙니다.')
+    }
+    if (start >= end) {
+      throw new Error('시작일은 종료일보다 이전이어야 합니다.')
+    }
+  }
+
+  const existing = await prisma.banner.findUnique({ where: { id: bannerId } })
+
   await prisma.banner.update({
     where: { id: bannerId },
     data: {
@@ -275,6 +327,8 @@ export async function adminUpdateBanner(
       action: 'BANNER_UPDATE',
       targetType: 'BANNER',
       targetId: bannerId,
+      before: existing ? JSON.stringify(existing) : undefined,
+      after: JSON.stringify(data),
     },
   })
 
@@ -313,13 +367,15 @@ export async function adminCreateAdBanner(data: {
 }) {
   const admin = await requireAdmin()
 
+  const sanitizedHtmlCode = data.htmlCode ? sanitizeHtmlCode(data.htmlCode) : data.htmlCode
+
   const ad = await prisma.adBanner.create({
     data: {
       slot: data.slot,
       adType: data.adType,
       title: data.title,
       imageUrl: data.imageUrl,
-      htmlCode: data.htmlCode,
+      htmlCode: sanitizedHtmlCode,
       clickUrl: data.clickUrl,
       startDate: new Date(data.startDate),
       endDate: new Date(data.endDate),
@@ -354,10 +410,15 @@ export async function adminUpdateAdBanner(
 ) {
   const admin = await requireAdmin()
 
+  const existing = await prisma.adBanner.findUnique({ where: { id: adId } })
+
+  const sanitizedHtmlCode = data.htmlCode ? sanitizeHtmlCode(data.htmlCode) : data.htmlCode
+
   await prisma.adBanner.update({
     where: { id: adId },
     data: {
       ...data,
+      htmlCode: sanitizedHtmlCode,
       ...(data.startDate && { startDate: new Date(data.startDate) }),
       ...(data.endDate && { endDate: new Date(data.endDate) }),
     },
@@ -369,6 +430,8 @@ export async function adminUpdateAdBanner(
       action: 'AD_UPDATE',
       targetType: 'AD',
       targetId: adId,
+      before: existing ? JSON.stringify(existing) : undefined,
+      after: JSON.stringify(data),
     },
   })
 
@@ -467,6 +530,8 @@ export async function adminUpdateBoardConfig(
 ) {
   const admin = await requireAdmin()
 
+  const existingConfig = await prisma.boardConfig.findUnique({ where: { id: configId } })
+
   await prisma.boardConfig.update({
     where: { id: configId },
     data,
@@ -478,6 +543,7 @@ export async function adminUpdateBoardConfig(
       action: 'BOARD_CONFIG_UPDATE',
       targetType: 'BOARD_CONFIG',
       targetId: configId,
+      before: existingConfig ? JSON.stringify(existingConfig) : undefined,
       after: JSON.parse(JSON.stringify(data)),
     },
   })

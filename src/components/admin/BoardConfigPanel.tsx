@@ -3,6 +3,8 @@
 import { useState, useTransition } from 'react'
 import { adminUpdateBoardConfig } from '@/lib/actions/admin'
 import type { Grade } from '@/generated/prisma/client'
+import HelpTip from './HelpTip'
+import { HELP } from './admin-help-texts'
 
 const GRADE_OPTIONS: { value: Grade; label: string }[] = [
   { value: 'SPROUT', label: '새싹 🌱' },
@@ -146,7 +148,7 @@ export default function BoardConfigPanel({ configs }: BoardConfigPanelProps) {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-600">말머리 (콤마 구분)</label>
+                    <label className="mb-1 block text-xs font-medium text-zinc-600">말머리 (콤마 구분) <HelpTip text={HELP.BOARD_CATEGORIES} /></label>
                     <input
                       value={editData?.categories || ''}
                       onChange={(e) => setEditData(editData ? { ...editData, categories: e.target.value } : null)}
@@ -155,7 +157,7 @@ export default function BoardConfigPanel({ configs }: BoardConfigPanelProps) {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-600">글쓰기 권한</label>
+                    <label className="mb-1 block text-xs font-medium text-zinc-600">글쓰기 권한 <HelpTip text={HELP.BOARD_WRITE_PERMISSION} /></label>
                     <select
                       value={editData?.writeGrade || 'SPROUT'}
                       onChange={(e) => setEditData(editData ? { ...editData, writeGrade: e.target.value as Grade } : null)}
@@ -167,7 +169,7 @@ export default function BoardConfigPanel({ configs }: BoardConfigPanelProps) {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-600">뜨는글 추천컷</label>
+                    <label className="mb-1 block text-xs font-medium text-zinc-600">뜨는글 추천컷 <HelpTip text={HELP.BOARD_HOT_THRESHOLD} /></label>
                     <input
                       type="number"
                       value={editData?.hotThreshold ?? 10}
@@ -176,7 +178,7 @@ export default function BoardConfigPanel({ configs }: BoardConfigPanelProps) {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-600">명예의전당 추천컷</label>
+                    <label className="mb-1 block text-xs font-medium text-zinc-600">명예의전당 추천컷 <HelpTip text={HELP.BOARD_FAME_THRESHOLD} /></label>
                     <input
                       type="number"
                       value={editData?.fameThreshold ?? 50}

@@ -351,3 +351,37 @@ export async function getTotalCounts() {
   ])
   return { totalUsers, totalPosts, totalComments }
 }
+
+// ─── 감사 로그 ───
+
+export async function getAuditLogs(filters: {
+  action?: string
+  search?: string
+  cursor?: string
+}) {
+  const where: Record<string, unknown> = {}
+  if (filters.action) where.action = filters.action
+  if (filters.search) {
+    where.OR = [
+      { targetId: { contains: filters.search, mode: 'insensitive' } },
+      { action: { contains: filters.search, mode: 'insensitive' } },
+    ]
+  }
+
+  const logs = await prisma.adminAuditLog.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    take: 30,
+    ...(filters.cursor
+      ? { cursor: { id: filters.cursor }, skip: 1 }
+      : {}),
+    include: {
+      admin: { select: { nickname: true, email: true } },
+    },
+  })
+
+  return {
+    logs,
+    hasMore: logs.length === 30,
+  }
+}

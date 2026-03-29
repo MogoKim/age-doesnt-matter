@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { createAdminToken, setAdminCookie, clearAdminCookie } from '@/lib/admin-auth'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function adminLogin(
   _prevState: { error?: string } | null,
@@ -14,6 +15,12 @@ export async function adminLogin(
 
   if (!email || !password) {
     return { error: '이메일과 비밀번호를 입력해 주세요.' }
+  }
+
+  const rateCheck = checkRateLimit(`admin-login:${email}`, { limit: 5, windowMs: 15 * 60 * 1000 })
+  if (!rateCheck.allowed) {
+    const minutes = Math.ceil(rateCheck.remainingMs / 60_000)
+    return { error: `로그인 시도가 너무 많습니다. ${minutes}분 후 다시 시도해 주세요.` }
   }
 
   try {

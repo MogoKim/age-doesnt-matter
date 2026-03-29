@@ -86,7 +86,7 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
         <select
           value={filters.status || ''}
           onChange={(e) => updateFilter('status', e.target.value)}
-          className="h-9 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
+          className="h-10 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
         >
           <option value="">전체 상태</option>
           <option value="ACTIVE">정상</option>
@@ -101,11 +101,11 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="닉네임/이메일 검색"
-            className="h-9 w-48 rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+            className="h-10 w-48 rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
           />
           <button
             type="submit"
-            className="h-9 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800"
+            className="h-10 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800"
           >
             검색
           </button>
@@ -166,7 +166,7 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
                     <div className="relative flex items-center justify-center">
                       <button
                         onClick={() => setActionUserId(actionUserId === user.id ? null : user.id)}
-                        className="rounded px-2 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-100"
+                        className="rounded px-2 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-100 min-h-[44px]"
                       >
                         제재 ▾
                       </button>
@@ -176,7 +176,7 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
                             <button
                               onClick={() => handleStatusChange(user.id, 'ACTIVE')}
                               disabled={isPending}
-                              className="w-full px-3 py-2 text-left text-xs text-green-600 hover:bg-green-50 disabled:opacity-50"
+                              className="w-full px-3 py-3 text-left text-xs text-green-600 hover:bg-green-50 disabled:opacity-50"
                             >
                               ✅ 해제
                             </button>
@@ -184,21 +184,21 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
                           <button
                             onClick={() => handleStatusChange(user.id, 'SUSPENDED', 7)}
                             disabled={isPending}
-                            className="w-full px-3 py-2 text-left text-xs text-yellow-600 hover:bg-yellow-50 disabled:opacity-50"
+                            className="w-full px-3 py-3 text-left text-xs text-yellow-600 hover:bg-yellow-50 disabled:opacity-50"
                           >
                             ⚠️ 7일 정지
                           </button>
                           <button
                             onClick={() => handleStatusChange(user.id, 'SUSPENDED', 30)}
                             disabled={isPending}
-                            className="w-full px-3 py-2 text-left text-xs text-orange-600 hover:bg-orange-50 disabled:opacity-50"
+                            className="w-full px-3 py-3 text-left text-xs text-orange-600 hover:bg-orange-50 disabled:opacity-50"
                           >
                             🟠 30일 정지
                           </button>
                           <button
                             onClick={() => handleStatusChange(user.id, 'BANNED')}
                             disabled={isPending}
-                            className="w-full px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            className="w-full px-3 py-3 text-left text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
                           >
                             🔴 영구 차단
                           </button>

@@ -139,6 +139,17 @@ export async function POST(request: Request) {
     const userName = payload.user.name || payload.user.username
 
     if (actionId === 'approve' || actionId === 'reject') {
+      // 승인 권한 검증
+      const allowedUserIds = (process.env.SLACK_ADMIN_USER_IDS || '').split(',').map(id => id.trim()).filter(Boolean)
+      const slackUserId = payload.user?.id
+
+      if (allowedUserIds.length > 0 && slackUserId && !allowedUserIds.includes(slackUserId)) {
+        return NextResponse.json({
+          response_type: 'ephemeral',
+          text: '⛔ 승인 권한이 없습니다. 관리자에게 문의하세요.',
+        })
+      }
+
       const newStatus = actionId === 'approve' ? 'APPROVED' : 'REJECTED'
       const statusLabel = actionId === 'approve' ? '승인' : '거절'
       const statusEmoji = actionId === 'approve' ? '✅' : '❌'
@@ -148,7 +159,7 @@ export async function POST(request: Request) {
         where: { id: itemId },
         data: {
           status: newStatus,
-          resolvedBy: 'founder',
+          resolvedBy: payload.user?.name || 'unknown',
           resolvedAt: new Date(),
         },
       })

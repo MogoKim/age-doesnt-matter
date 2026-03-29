@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from 'react'
 import type { Popup } from '@/generated/prisma/client'
-import { togglePopupActive, deletePopup, createPopup } from '@/lib/actions/popups'
+import { togglePopupActive, deletePopup, createPopup, updatePopup } from '@/lib/actions/popups'
 import type { PopupType, PopupTarget } from '@/generated/prisma/client'
+import HelpTip from './HelpTip'
+import { HELP } from './admin-help-texts'
 
 const TYPE_LABELS: Record<string, string> = {
   BOTTOM_SHEET: '바텀 시트',
@@ -26,6 +28,7 @@ interface Props {
 
 export default function PopupManager({ popups }: Props) {
   const [showForm, setShowForm] = useState(false)
+  const [editingPopup, setEditingPopup] = useState<Popup | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function handleToggle(id: string, isActive: boolean) {
@@ -43,14 +46,20 @@ export default function PopupManager({ popups }: Props) {
         <h1 className="text-xl font-bold">팝업 관리</h1>
         <button
           type="button"
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            setShowForm(!showForm)
+            setEditingPopup(null)
+          }}
           className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium"
         >
           {showForm ? '취소' : '+ 새 팝업'}
         </button>
       </div>
 
-      {showForm && <CreatePopupForm onDone={() => setShowForm(false)} />}
+      {showForm && <PopupForm onDone={() => setShowForm(false)} />}
+      {editingPopup && (
+        <PopupForm popup={editingPopup} onDone={() => setEditingPopup(null)} />
+      )}
 
       <div className="bg-white rounded-xl border overflow-hidden">
         <table className="w-full text-sm">
@@ -83,7 +92,7 @@ export default function PopupManager({ popups }: Props) {
                     type="button"
                     onClick={() => handleToggle(popup.id, popup.isActive)}
                     disabled={isPending}
-                    className={`px-2 py-1 rounded text-xs font-medium ${
+                    className={`px-3 py-2 rounded-md text-sm font-medium ${
                       popup.isActive
                         ? 'bg-green-100 text-green-700'
                         : 'bg-gray-100 text-gray-500'
@@ -95,9 +104,20 @@ export default function PopupManager({ popups }: Props) {
                 <td className="p-3 text-center">
                   <button
                     type="button"
+                    onClick={() => {
+                      setEditingPopup(popup)
+                      setShowForm(false)
+                    }}
+                    disabled={isPending}
+                    className="text-blue-500 text-sm hover:underline mr-2"
+                  >
+                    편집
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleDelete(popup.id)}
                     disabled={isPending}
-                    className="text-red-500 text-xs hover:underline"
+                    className="text-red-500 text-sm hover:underline"
                   >
                     삭제
                   </button>
@@ -118,9 +138,9 @@ export default function PopupManager({ popups }: Props) {
   )
 }
 
-/* ── 팝업 생성 폼 ── */
+/* ── 팝업 생성/수정 폼 ── */
 
-function CreatePopupForm({ onDone }: { onDone: () => void }) {
+function PopupForm({ popup, onDone }: { popup?: Popup; onDone: () => void }) {
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -132,35 +152,41 @@ function CreatePopupForm({ onDone }: { onDone: () => void }) {
       ? targetPathsRaw.split(',').map((p) => p.trim()).filter(Boolean)
       : []
 
+    const data = {
+      type: fd.get('type') as PopupType,
+      target: fd.get('target') as PopupTarget,
+      targetPaths,
+      title: (fd.get('title') as string) || null,
+      content: (fd.get('content') as string) || null,
+      imageUrl: (fd.get('imageUrl') as string) || null,
+      linkUrl: (fd.get('linkUrl') as string) || null,
+      buttonText: (fd.get('buttonText') as string) || null,
+      startDate: fd.get('startDate') as string,
+      endDate: fd.get('endDate') as string,
+      priority: parseInt(fd.get('priority') as string) || 0,
+      isActive: fd.get('isActive') === 'on',
+      showOncePerDay: fd.get('showOncePerDay') === 'on',
+      hideForDays: fd.get('hideForDays') ? parseInt(fd.get('hideForDays') as string) : null,
+    }
+
     startTransition(async () => {
-      await createPopup({
-        type: fd.get('type') as PopupType,
-        target: fd.get('target') as PopupTarget,
-        targetPaths,
-        title: (fd.get('title') as string) || null,
-        content: (fd.get('content') as string) || null,
-        imageUrl: (fd.get('imageUrl') as string) || null,
-        linkUrl: (fd.get('linkUrl') as string) || null,
-        buttonText: (fd.get('buttonText') as string) || null,
-        startDate: fd.get('startDate') as string,
-        endDate: fd.get('endDate') as string,
-        priority: parseInt(fd.get('priority') as string) || 0,
-        isActive: fd.get('isActive') === 'on',
-        showOncePerDay: fd.get('showOncePerDay') === 'on',
-        hideForDays: fd.get('hideForDays') ? parseInt(fd.get('hideForDays') as string) : null,
-      })
+      if (popup) {
+        await updatePopup(popup.id, data)
+      } else {
+        await createPopup(data)
+      }
       onDone()
     })
   }
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-xl border p-6 mb-6 space-y-4">
-      <h2 className="font-bold text-lg mb-2">새 팝업 등록</h2>
+      <h2 className="font-bold text-lg mb-2">{popup ? '팝업 수정' : '새 팝업 등록'}</h2>
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
-          <span className="text-sm font-medium">유형</span>
-          <select name="type" className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" required>
+          <span className="text-sm font-medium">유형 <HelpTip text={HELP.POPUP_TYPE} /></span>
+          <select name="type" defaultValue={popup?.type ?? 'CENTER'} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" required>
             <option value="CENTER">센터 팝업</option>
             <option value="BOTTOM_SHEET">바텀 시트</option>
             <option value="FULLSCREEN">전면 팝업</option>
@@ -168,8 +194,8 @@ function CreatePopupForm({ onDone }: { onDone: () => void }) {
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium">대상 페이지</span>
-          <select name="target" className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" required>
+          <span className="text-sm font-medium">대상 페이지 <HelpTip text={HELP.POPUP_TARGET} /></span>
+          <select name="target" defaultValue={popup?.target ?? 'ALL'} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" required>
             <option value="ALL">전체 페이지</option>
             <option value="HOME">홈</option>
             <option value="COMMUNITY">커뮤니티</option>
@@ -181,65 +207,65 @@ function CreatePopupForm({ onDone }: { onDone: () => void }) {
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium">커스텀 경로 (쉼표 구분)</span>
-        <input name="targetPaths" className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="/community, /jobs/123" />
+        <span className="text-sm font-medium">커스텀 경로 (쉼표 구분) <HelpTip text={HELP.POPUP_TARGET_PATHS} /></span>
+        <input name="targetPaths" defaultValue={popup?.targetPaths?.join(', ') ?? ''} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="/community, /jobs/123" />
       </label>
 
       <label className="block">
         <span className="text-sm font-medium">제목</span>
-        <input name="title" className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="팝업 제목" />
+        <input name="title" defaultValue={popup?.title ?? ''} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="팝업 제목" />
       </label>
 
       <label className="block">
         <span className="text-sm font-medium">내용 (HTML 가능)</span>
-        <textarea name="content" rows={3} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="팝업 내용..." />
+        <textarea name="content" rows={3} defaultValue={popup?.content ?? ''} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="팝업 내용..." />
       </label>
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
           <span className="text-sm font-medium">이미지 URL</span>
-          <input name="imageUrl" className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
+          <input name="imageUrl" defaultValue={popup?.imageUrl ?? ''} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
         </label>
         <label className="block">
           <span className="text-sm font-medium">링크 URL</span>
-          <input name="linkUrl" className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
+          <input name="linkUrl" defaultValue={popup?.linkUrl ?? ''} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
         </label>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         <label className="block">
           <span className="text-sm font-medium">버튼 텍스트</span>
-          <input name="buttonText" defaultValue="확인" className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" />
+          <input name="buttonText" defaultValue={popup?.buttonText ?? '확인'} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" />
         </label>
         <label className="block">
-          <span className="text-sm font-medium">우선순위</span>
-          <input name="priority" type="number" defaultValue="0" className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" />
+          <span className="text-sm font-medium">우선순위 <HelpTip text={HELP.POPUP_PRIORITY} /></span>
+          <input name="priority" type="number" defaultValue={popup?.priority ?? 0} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" />
         </label>
         <label className="block">
-          <span className="text-sm font-medium">N일간 안보기</span>
-          <input name="hideForDays" type="number" className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="7" />
+          <span className="text-sm font-medium">N일간 안보기 <HelpTip text={HELP.POPUP_HIDE_FOR_DAYS} /></span>
+          <input name="hideForDays" type="number" defaultValue={popup?.hideForDays ?? ''} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" placeholder="7" />
         </label>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
           <span className="text-sm font-medium">시작일</span>
-          <input name="startDate" type="datetime-local" className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" required />
+          <input name="startDate" type="datetime-local" defaultValue={popup?.startDate ? new Date(popup.startDate).toISOString().slice(0, 16) : ''} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" required />
         </label>
         <label className="block">
           <span className="text-sm font-medium">종료일</span>
-          <input name="endDate" type="datetime-local" className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" required />
+          <input name="endDate" type="datetime-local" defaultValue={popup?.endDate ? new Date(popup.endDate).toISOString().slice(0, 16) : ''} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" required />
         </label>
       </div>
 
       <div className="flex items-center gap-6">
         <label className="flex items-center gap-2 text-sm">
-          <input name="isActive" type="checkbox" defaultChecked className="rounded" />
-          활성화
+          <input name="isActive" type="checkbox" defaultChecked={popup?.isActive ?? true} className="rounded" />
+          활성화 <HelpTip text={HELP.POPUP_ACTIVE} />
         </label>
         <label className="flex items-center gap-2 text-sm">
-          <input name="showOncePerDay" type="checkbox" className="rounded" />
-          하루 1회만 노출
+          <input name="showOncePerDay" type="checkbox" defaultChecked={popup?.showOncePerDay ?? false} className="rounded" />
+          하루 1회만 노출 <HelpTip text={HELP.POPUP_SHOW_ONCE_PER_DAY} />
         </label>
       </div>
 
@@ -252,7 +278,7 @@ function CreatePopupForm({ onDone }: { onDone: () => void }) {
           disabled={isPending}
           className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"
         >
-          {isPending ? '저장 중...' : '저장'}
+          {isPending ? '저장 중...' : popup ? '수정' : '저장'}
         </button>
       </div>
     </form>

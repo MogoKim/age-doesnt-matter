@@ -4,6 +4,8 @@ import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { adminCreateAdBanner, adminUpdateAdBanner, adminDeleteAdBanner } from '@/lib/actions/admin'
 import type { AdSlot, AdType } from '@/generated/prisma/client'
+import HelpTip from './HelpTip'
+import { HELP } from './admin-help-texts'
 
 const TAB_ITEMS = [
   { value: 'hero', label: '히어로 배너' },
@@ -158,7 +160,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">슬롯 *</label>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">슬롯 * <HelpTip text={HELP.AD_SLOT} /></label>
               <select
                 value={form.slot}
                 onChange={(e) => setForm({ ...form, slot: e.target.value as AdSlot })}
@@ -215,7 +217,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">시작일 *</label>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">시작일 * </label>
               <input
                 required
                 type="date"
@@ -267,7 +269,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               <th className="px-3 py-3 text-center font-medium text-zinc-600">순위</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">노출</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">클릭</th>
-              <th className="px-3 py-3 text-center font-medium text-zinc-600">CTR</th>
+              <th className="px-3 py-3 text-center font-medium text-zinc-600">CTR <HelpTip text={HELP.AD_CTR} /></th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">상태</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">액션</th>
             </tr>
