@@ -9,6 +9,7 @@ import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
 import type { MagazineSuggestion } from './types.js'
 import { matchCpsProducts, saveCpsLinks } from './cps-matcher.js'
+import { generateMagazineThumbnail } from './thumbnail-generator.js'
 
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
@@ -138,6 +139,7 @@ ${recentList ? `최근 발행 매거진 (중복 주제 피해주세요):\n${rece
 async function publishMagazine(
   article: { title: string; content: string; summary: string },
   category: string,
+  thumbnailUrl?: string,
 ): Promise<string> {
   // 매거진 전용 봇 — 페르소나 B(은퇴신사) 사용 (차분한 정보형)
   const editorUserId = await getBotUser('B')
@@ -147,6 +149,7 @@ async function publishMagazine(
       title: article.title,
       content: article.content,
       summary: article.summary,
+      thumbnailUrl: thumbnailUrl ?? null,
       boardType: 'MAGAZINE',
       category,
       authorId: editorUserId,
@@ -219,7 +222,22 @@ async function main() {
       continue
     }
 
-    const postId = await publishMagazine(article, category)
+    // 썸네일 생성 (실패해도 발행은 계속)
+    let thumbnailUrl: string | undefined
+    try {
+      // 임시 ID로 키 생성 후, 실제 postId로 업데이트
+      const tempId = `tmp-${Date.now()}`
+      thumbnailUrl = await generateMagazineThumbnail({
+        title: article.title,
+        category,
+        postId: tempId,
+      })
+      console.log(`[MagazineGenerator] 썸네일 생성: ${thumbnailUrl}`)
+    } catch (err) {
+      console.warn('[MagazineGenerator] 썸네일 생성 실패 (무시):', err)
+    }
+
+    const postId = await publishMagazine(article, category, thumbnailUrl)
 
     // CPS 상품 매칭 + 저장
     try {

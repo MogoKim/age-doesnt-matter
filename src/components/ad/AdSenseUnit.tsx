@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface AdSenseUnitProps {
   /** AdSense 광고 슬롯 ID (예: "1234567890") */
@@ -15,6 +15,7 @@ interface AdSenseUnitProps {
 /**
  * Google AdSense 디스플레이 광고 유닛
  * 게시글 하단, 목록 인라인 등에 사용
+ * 3초 후 광고 높이가 0이면 자동 숨김
  */
 export default function AdSenseUnit({
   slotId,
@@ -24,6 +25,7 @@ export default function AdSenseUnit({
 }: AdSenseUnitProps) {
   const adRef = useRef<HTMLModElement>(null)
   const pushed = useRef(false)
+  const [hidden, setHidden] = useState(false)
 
   useEffect(() => {
     if (pushed.current) return
@@ -34,7 +36,18 @@ export default function AdSenseUnit({
     } catch {
       // AdSense 스크립트 미로드 시 무시
     }
+
+    // 3초 후 광고 로드 실패 감지 — 높이 0이면 숨김
+    const timer = setTimeout(() => {
+      if (adRef.current && adRef.current.offsetHeight === 0) {
+        setHidden(true)
+      }
+    }, 3000)
+
+    return () => clearTimeout(timer)
   }, [])
+
+  if (hidden) return null
 
   return (
     <aside
