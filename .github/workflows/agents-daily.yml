@@ -17,6 +17,14 @@ on:
     - cron: "30 23 * * *"
     # 09:30 KST = 00:30 UTC — 승인 대기 리마인더 + 만료 처리
     - cron: "30 0 * * *"
+    # 12:00 KST = 03:00 UTC — COO 트렌딩 스코어 (화~일) / CPO 사용자 여정 (월)
+    - cron: "0 3 * * *"
+    # 18:00 KST = 09:00 UTC — COO 트렌딩 스코어 (2차)
+    - cron: "0 9 * * *"
+    # 06:00 KST = 21:00 UTC (전날) — CTO 보안 감사
+    - cron: "0 21 * * *"
+    # 11:30 KST = 02:30 UTC (월요일) — CPO 기능 사용률
+    - cron: "30 2 * * 1"
     # 23:00 KST = 14:00 UTC — CFO 비용
     - cron: "0 14 * * *"
     # 23:30 KST = 14:30 UTC — CFO 수익 추적
@@ -101,6 +109,19 @@ jobs:
                 echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=approval-reminder" >> $GITHUB_OUTPUT ;;
               "30 23 * * *")
                 echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-sns-briefing" >> $GITHUB_OUTPUT ;;
+              "0 3 * * *")
+                if [ "$DOW" = "1" ]; then
+                  echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=journey-analyzer" >> $GITHUB_OUTPUT
+                else
+                  echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT
+                fi
+                ;;
+              "0 9 * * *")
+                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;
+              "0 21 * * *")
+                echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=security-audit" >> $GITHUB_OUTPUT ;;
+              "30 2 * * 1")
+                echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=feature-tracker" >> $GITHUB_OUTPUT ;;
               *)
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
             esac
