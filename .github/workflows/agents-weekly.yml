@@ -1,0 +1,76 @@
+name: Agents — Weekly
+on:
+  schedule:
+    # 월요일 09:00 KST = 00:00 UTC — CMO 소스 분석
+    - cron: "0 0 * * 1"
+    # 수요일 09:00 KST = 00:00 UTC — CPO 페르소나 다양성
+    - cron: "0 0 * * 3"
+    # 금요일 09:00 KST = 00:00 UTC — CMO 콘텐츠 갭
+    - cron: "0 0 * * 5"
+  workflow_dispatch:
+    inputs:
+      agent:
+        description: "에이전트 (cmo, cpo)"
+        required: true
+      task:
+        description: "태스크"
+        required: true
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_STRATEGIC: ${{ secrets.CLAUDE_MODEL_STRATEGIC }}
+  CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+  SLACK_CHANNEL_CEO_FOUNDER: ${{ secrets.SLACK_CHANNEL_CEO_FOUNDER }}
+  SLACK_CHANNEL_DAILY_BRIEFING: ${{ secrets.SLACK_CHANNEL_DAILY_BRIEFING }}
+  SLACK_CHANNEL_WEEKLY_REPORT: ${{ secrets.SLACK_CHANNEL_WEEKLY_REPORT }}
+  SLACK_CHANNEL_AGENT_MEETING: ${{ secrets.SLACK_CHANNEL_AGENT_MEETING }}
+  SLACK_CHANNEL_MEETING_LOG: ${{ secrets.SLACK_CHANNEL_MEETING_LOG }}
+  SLACK_CHANNEL_ALERT_URGENT: ${{ secrets.SLACK_CHANNEL_ALERT_URGENT }}
+  SLACK_CHANNEL_ALERT_SYSTEM: ${{ secrets.SLACK_CHANNEL_ALERT_SYSTEM }}
+  SLACK_CHANNEL_ALERT_KPI: ${{ secrets.SLACK_CHANNEL_ALERT_KPI }}
+  SLACK_CHANNEL_LOG_JOBS: ${{ secrets.SLACK_CHANNEL_LOG_JOBS }}
+  SLACK_CHANNEL_LOG_CONTENT: ${{ secrets.SLACK_CHANNEL_LOG_CONTENT }}
+  SLACK_CHANNEL_LOG_MARKETING: ${{ secrets.SLACK_CHANNEL_LOG_MARKETING }}
+  SLACK_CHANNEL_LOG_COST: ${{ secrets.SLACK_CHANNEL_LOG_COST }}
+  SLACK_CHANNEL_EXPERIMENT: ${{ secrets.SLACK_CHANNEL_EXPERIMENT }}
+  SLACK_CHANNEL_APPROVAL_QUEUE: ${{ secrets.SLACK_CHANNEL_APPROVAL_QUEUE }}
+  SITE_URL: ${{ secrets.SITE_URL }}
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+      - name: Determine agent and task
+        id: determine
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "agent=${{ github.event.inputs.agent }}" >> $GITHUB_OUTPUT
+            echo "task=${{ github.event.inputs.task }}" >> $GITHUB_OUTPUT
+          else
+            CRON="${{ github.event.schedule }}"
+            DOW=$(date -u +%u)  # 1=Mon, 3=Wed, 5=Fri
+            case "$CRON" in
+              "0 0 * * 1")
+                echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=source-expander" >> $GITHUB_OUTPUT ;;
+              "0 0 * * 3")
+                echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=persona-diversity-checker" >> $GITHUB_OUTPUT ;;
+              "0 0 * * 5")
+                echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=content-gap-finder" >> $GITHUB_OUTPUT ;;
+              *)
+                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
+            esac
+          fi
+      - name: Run agent
+        if: steps.determine.outputs.agent != 'skip'
+        run: cd agents && npx tsx cron/runner.ts ${{ steps.determine.outputs.agent }} ${{ steps.determine.outputs.task }}
