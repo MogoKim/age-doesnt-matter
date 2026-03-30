@@ -28,10 +28,10 @@ async function collectData(): Promise<CollectedData> {
   const [cafeCategoryStats, topQualityPosts, topEngagementPosts, cafeSentimentRaw] = await Promise.all([
     prisma.cafePost.groupBy({
       by: ['boardCategory'],
-      _count: { _all: true },
+      _count: { id: true },
       _avg: { qualityScore: true, likeCount: true, commentCount: true },
       where: { boardCategory: { not: null } },
-      orderBy: { _count: { _all: 'desc' } },
+      orderBy: { _count: { id: 'desc' } },
     }),
     prisma.cafePost.findMany({
       where: { qualityScore: { gte: 60 } },
@@ -52,7 +52,7 @@ async function collectData(): Promise<CollectedData> {
     }),
     prisma.cafePost.groupBy({
       by: ['boardCategory', 'sentiment'],
-      _count: { _all: true },
+      _count: { id: true },
       where: { boardCategory: { not: null }, sentiment: { not: null } },
     }),
   ])
@@ -72,7 +72,7 @@ async function collectData(): Promise<CollectedData> {
   const [postEngagement, topTrendingPosts, postBySource] = await Promise.all([
     prisma.post.groupBy({
       by: ['boardType'],
-      _count: { _all: true },
+      _count: { id: true },
       _avg: { viewCount: true, likeCount: true, commentCount: true, scrapCount: true },
       where: { status: 'PUBLISHED' },
     }),
@@ -87,7 +87,7 @@ async function collectData(): Promise<CollectedData> {
     }),
     prisma.post.groupBy({
       by: ['source'],
-      _count: { _all: true },
+      _count: { id: true },
       _avg: { viewCount: true, likeCount: true },
       where: { status: 'PUBLISHED' },
     }),
@@ -97,18 +97,18 @@ async function collectData(): Promise<CollectedData> {
   const [birthYearDist, genderDist, gradeDist, totalUsers] = await Promise.all([
     prisma.user.groupBy({
       by: ['birthYear'],
-      _count: { _all: true },
+      _count: { id: true },
       where: { status: 'ACTIVE', birthYear: { not: null } },
-      orderBy: { _count: { _all: 'desc' } },
+      orderBy: { _count: { id: 'desc' } },
     }),
     prisma.user.groupBy({
       by: ['gender'],
-      _count: { _all: true },
+      _count: { id: true },
       where: { status: 'ACTIVE' },
     }),
     prisma.user.groupBy({
       by: ['grade'],
-      _count: { _all: true },
+      _count: { id: true },
       where: { status: 'ACTIVE' },
     }),
     prisma.user.count({ where: { status: 'ACTIVE' } }),
@@ -124,9 +124,9 @@ async function collectData(): Promise<CollectedData> {
     }),
     prisma.eventLog.groupBy({
       by: ['path'],
-      _count: { _all: true },
+      _count: { id: true },
       where: { eventName: 'page_view', createdAt: { gte: thirtyDaysAgo }, path: { not: null } },
-      orderBy: { _count: { _all: 'desc' } },
+      orderBy: { _count: { id: 'desc' } },
       take: 20,
     }),
   ])
@@ -145,9 +145,9 @@ async function collectData(): Promise<CollectedData> {
     .slice(0, 50)
     .map(([query, count]) => ({ query, count }))
 
-  const topPages = (pageViewEvents as Array<{ path: string | null; _count: { _all: number } }>).map(p => ({
+  const topPages = (pageViewEvents as Array<{ path: string | null; _count: { id: number } }>).map(p => ({
     path: p.path!,
-    count: p._count._all,
+    count: p._count.id,
   }))
 
   // 배치 F: 시간 패턴 (JS에서 집계 — $queryRaw 타입 이슈 회피)
@@ -172,7 +172,7 @@ async function collectData(): Promise<CollectedData> {
   const [socialPerformance, experimentLearnings] = await Promise.all([
     prisma.socialPost.groupBy({
       by: ['contentType'],
-      _count: { _all: true },
+      _count: { id: true },
       where: { status: 'POSTED' },
     }),
     prisma.socialExperiment.findMany({
@@ -183,16 +183,16 @@ async function collectData(): Promise<CollectedData> {
   ])
 
   // 타입 캐스트 — prisma가 Record<string, unknown>으로 타입되어 any 회피
-  type GroupByResult = { boardCategory?: string | null; sentiment?: string | null; _count: { _all: number }; _avg?: Record<string, number | null> }
-  type PostGroupBy = { boardType: string; _count: { _all: number }; _avg: Record<string, number | null> }
-  type SourceGroupBy = { source: string; _count: { _all: number }; _avg: Record<string, number | null> }
-  type UserGroupBy = { birthYear?: number | null; gender?: string | null; grade?: string; _count: { _all: number } }
-  type SocialGroupBy = { contentType: string; _count: { _all: number } }
+  type GroupByResult = { boardCategory?: string | null; sentiment?: string | null; _count: { id: number }; _avg?: Record<string, number | null> }
+  type PostGroupBy = { boardType: string; _count: { id: number }; _avg: Record<string, number | null> }
+  type SourceGroupBy = { source: string; _count: { id: number }; _avg: Record<string, number | null> }
+  type UserGroupBy = { birthYear?: number | null; gender?: string | null; grade?: string; _count: { id: number } }
+  type SocialGroupBy = { contentType: string; _count: { id: number } }
 
   return {
     cafeCategoryStats: (cafeCategoryStats as GroupByResult[]).map((c: GroupByResult) => ({
       boardCategory: c.boardCategory ?? 'unknown',
-      _count: c._count._all,
+      _count: c._count.id,
       _avg: {
         qualityScore: c._avg?.qualityScore ?? 0,
         likeCount: c._avg?.likeCount ?? 0,
@@ -204,12 +204,12 @@ async function collectData(): Promise<CollectedData> {
     cafeSentiment: (cafeSentimentRaw as GroupByResult[]).map((s: GroupByResult) => ({
       boardCategory: s.boardCategory ?? 'unknown',
       sentiment: s.sentiment ?? 'unknown',
-      _count: s._count._all,
+      _count: s._count.id,
     })),
     recentTrends: recentTrends as CollectedData['recentTrends'],
     postEngagement: (postEngagement as PostGroupBy[]).map((p: PostGroupBy) => ({
       boardType: p.boardType,
-      _count: p._count._all,
+      _count: p._count.id,
       _avg: {
         viewCount: p._avg.viewCount ?? 0,
         likeCount: p._avg.likeCount ?? 0,
@@ -220,13 +220,13 @@ async function collectData(): Promise<CollectedData> {
     topTrendingPosts: topTrendingPosts as CollectedData['topTrendingPosts'],
     postBySource: (postBySource as SourceGroupBy[]).map((p: SourceGroupBy) => ({
       source: p.source,
-      _count: p._count._all,
+      _count: p._count.id,
       _avg: { viewCount: p._avg.viewCount ?? 0, likeCount: p._avg.likeCount ?? 0 },
     })),
     userDemographics: {
-      birthYearDist: (birthYearDist as UserGroupBy[]).map((b: UserGroupBy) => ({ birthYear: b.birthYear ?? null, _count: b._count._all })),
-      genderDist: (genderDist as UserGroupBy[]).map((g: UserGroupBy) => ({ gender: g.gender ?? null, _count: g._count._all })),
-      gradeDist: (gradeDist as UserGroupBy[]).map((g: UserGroupBy) => ({ grade: g.grade ?? '', _count: g._count._all })),
+      birthYearDist: (birthYearDist as UserGroupBy[]).map((b: UserGroupBy) => ({ birthYear: b.birthYear ?? null, _count: b._count.id })),
+      genderDist: (genderDist as UserGroupBy[]).map((g: UserGroupBy) => ({ gender: g.gender ?? null, _count: g._count.id })),
+      gradeDist: (gradeDist as UserGroupBy[]).map((g: UserGroupBy) => ({ grade: g.grade ?? '', _count: g._count.id })),
       totalUsers,
     },
     searchTerms,
@@ -237,7 +237,7 @@ async function collectData(): Promise<CollectedData> {
     },
     socialPerformance: (socialPerformance as SocialGroupBy[]).map((s: SocialGroupBy) => ({
       contentType: s.contentType,
-      _count: s._count._all,
+      _count: s._count.id,
       avgMetrics: null,
     })),
     experimentLearnings: experimentLearnings as CollectedData['experimentLearnings'],
