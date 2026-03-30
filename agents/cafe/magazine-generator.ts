@@ -78,7 +78,7 @@ async function generateMagazineArticle(
   category: string,
   referencePosts: { title: string; content: string; cafeName: string }[],
   recentTitles: string[],
-): Promise<{ title: string; content: string; summary: string } | null> {
+): Promise<{ title: string; content: string; summary: string; imageHints: string[] } | null> {
   const refs = referencePosts.map((p, i) =>
     `[${i + 1}] (${p.cafeName}) "${p.title}"\n${p.content.slice(0, 300)}`,
   ).join('\n\n')
@@ -87,17 +87,25 @@ async function generateMagazineArticle(
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 2000,
+    max_tokens: 4000,
     system: `당신은 "우리 나이가 어때서" 커뮤니티의 매거진 에디터입니다.
 50~60대 독자를 위한 따뜻하고 유익한 매거진 기사를 작성합니다.
 
 작성 규칙:
-- "시니어", "액티브 시니어" 같은 표현 절대 금지
+- "시니어", "액티브 시니어" 같은 표현 절대 금지. 대신 "우리 또래", "50대 60대", "인생 2막" 등 자연스러운 표현 사용
 - 편안한 존댓말 (해요체)
 - 실용적이고 바로 써먹을 수 있는 정보 중심
-- 공감할 수 있는 에피소드 포함
-- HTML 형식으로 작성 (h2, h3, p, ul, li, strong 태그 사용)
-- 정치/종교/혐오/광고 절대 금지`,
+- 구체적 수치/데이터를 반드시 1개 이상 포함 (예: "국민건강영양조사에 따르면...", "전문가에 따르면...")
+- 경험 기반 서술 포함 (예: "직접 해본 결과", "실제로 시도해보니", "주변에서 들은 이야기로는")
+- 공감할 수 있는 에피소드나 사례 포함
+- 정치/종교/혐오/광고 절대 금지
+
+HTML 형식 규칙:
+- 사용 가능 태그: h2, h3, p, ul, ol, li, strong, em, blockquote, aside
+- <h2>로 메인 소제목 (3~4개)
+- <aside class="tip-box">💡 꿀팁: 내용</aside>로 실용 팁 박스 (1~2개)
+- <blockquote>로 경험담/인용문 (1개)
+- 이미지가 들어갈 위치에 <!-- [IMAGE:N] --> 주석 삽입 (N은 1부터)`,
     messages: [{
       role: 'user',
       content: `"${topic.title}" 주제로 매거진 기사를 작성해주세요.
@@ -108,30 +116,52 @@ ${refs ? `참고 자료 (카페 인기글):\n${refs}` : ''}
 
 ${recentList ? `최근 발행 매거진 (중복 주제 피해주세요):\n${recentList}` : ''}
 
-응답 형식:
+응답 형식 (반드시 아래 형식을 따라주세요):
 제목: (20~40자, 매력적이고 클릭하고 싶은 제목)
 요약: (50~80자, 한 줄 요약)
-본문: (HTML, 600~1200자, 소제목 2~3개 포함)
+이미지힌트: (각 이미지에 대한 설명, 쉼표로 구분. 예: "공원에서 걷기 운동하는 중년 부부, 건강한 식탁 위 제철 과일과 채소")
+본문: (HTML, 1500~3000자, 소제목 3~4개 포함)
 
-본문 구조 예시:
-<h2>소제목</h2>
-<p>내용...</p>
-<h3>팁/포인트</h3>
-<ul><li>항목</li></ul>`,
+본문 구조:
+<p>서문 2~3문장 — 독자의 공감을 이끄는 도입부</p>
+
+<h2>소제목 1</h2>
+<p>핵심 정보 + 구체적 데이터...</p>
+<!-- [IMAGE:1] -->
+
+<aside class="tip-box">💡 꿀팁: 바로 실천할 수 있는 팁</aside>
+
+<h2>소제목 2</h2>
+<p>심화 정보...</p>
+<!-- [IMAGE:2] -->
+
+<blockquote>실제 경험담이나 전문가 인용</blockquote>
+
+<h2>소제목 3</h2>
+<p>추가 정보 + 주의사항...</p>
+
+<h2>마무리</h2>
+<p>따뜻한 마무리 + 행동 유도 (CTA)</p>`,
     }],
   })
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
   const titleMatch = text.match(/제목:\s*(.+)/)
   const summaryMatch = text.match(/요약:\s*(.+)/)
+  const imageHintsMatch = text.match(/이미지힌트:\s*(.+)/)
   const bodyMatch = text.match(/본문:\s*([\s\S]+)/)
 
   if (!titleMatch || !bodyMatch) return null
+
+  const imageHints = imageHintsMatch
+    ? imageHintsMatch[1].trim().split(/[,，]/).map(h => h.trim()).filter(Boolean)
+    : []
 
   return {
     title: titleMatch[1].trim(),
     summary: summaryMatch?.[1]?.trim() ?? '',
     content: bodyMatch[1].trim(),
+    imageHints,
   }
 }
 
@@ -252,6 +282,9 @@ async function main() {
 
     publishedCount++
     publishedTitles.push(article.title)
+    if (article.imageHints.length > 0) {
+      console.log(`[MagazineGenerator] 이미지 힌트 ${article.imageHints.length}개: ${article.imageHints.join(', ')}`)
+    }
     console.log(`[MagazineGenerator] 발행: "${article.title}" (${postId})`)
   }
 

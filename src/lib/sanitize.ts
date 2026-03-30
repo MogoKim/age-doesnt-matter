@@ -7,14 +7,17 @@ import sanitize from 'sanitize-html'
 const SANITIZE_OPTIONS: sanitize.IOptions = {
   allowedTags: [
     'p', 'br', 'b', 'strong', 'i', 'em', 'u', 'del', 's',
-    'ul', 'ol', 'li', 'blockquote', 'a', 'h3', 'h4',
+    'ul', 'ol', 'li', 'blockquote', 'a', 'h2', 'h3', 'h4',
     'img', 'hr', 'div', 'iframe',
+    'figure', 'figcaption', 'aside',
   ],
   allowedAttributes: {
     a: ['href', 'target', 'rel'],
     img: ['src', 'alt', 'width', 'height', 'class'],
     iframe: ['src', 'allowfullscreen', 'frameborder', 'allow', 'width', 'height'],
     div: ['class', 'data-youtube-video'],
+    aside: ['class'],
+    figure: ['class'],
   },
   allowedIframeHostnames: ['www.youtube.com', 'youtube.com', 'www.youtube-nocookie.com'],
 }

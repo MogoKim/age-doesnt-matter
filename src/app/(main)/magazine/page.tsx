@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { unstable_cache } from 'next/cache'
 import { getMagazineList } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
@@ -85,8 +86,15 @@ function FeaturedCard({ post }: { post: PostSummary }) {
       className="block bg-card rounded-2xl border border-border overflow-hidden no-underline transition-all hover:border-primary/30 hover:shadow-md"
     >
       {post.thumbnailUrl ? (
-        <div className="w-full h-48 bg-muted flex items-center justify-center text-4xl lg:h-64">
-          📖
+        <div className="relative w-full h-48 lg:h-64">
+          <Image
+            src={post.thumbnailUrl}
+            alt={post.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 800px"
+            priority
+          />
         </div>
       ) : (
         <div className="w-full h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-4xl lg:h-64">
@@ -115,9 +123,21 @@ function MagazineCard({ post }: { post: PostSummary }) {
       href={`/magazine/${post.id}`}
       className="block bg-card rounded-xl border border-border overflow-hidden no-underline transition-all hover:border-primary/30"
     >
-      <div className="w-full h-28 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-2xl lg:h-36">
-        📖
-      </div>
+      {post.thumbnailUrl ? (
+        <div className="relative w-full h-28 lg:h-36">
+          <Image
+            src={post.thumbnailUrl}
+            alt={post.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 50vw, 25vw"
+          />
+        </div>
+      ) : (
+        <div className="w-full h-28 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-2xl lg:h-36">
+          📖
+        </div>
+      )}
       <div className="p-3">
         {post.category && (
           <span className="text-caption text-primary font-bold">{post.category}</span>
