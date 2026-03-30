@@ -5,10 +5,10 @@ import IdentitySection from '@/components/features/home/IdentitySection'
 import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
 import EditorsPickSection from '@/components/features/home/EditorsPickSection'
-import AdInline from '@/components/features/home/AdInline'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
-import CoupangCategoryBanner from '@/components/ad/CoupangCategoryBanner'
+import AdSenseUnit from '@/components/ad/AdSenseUnit'
+import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
 import CommunitySection from '@/components/features/home/CommunitySection'
 import RecentActivityFeed from '@/components/features/home/RecentActivityFeed'
@@ -99,18 +99,14 @@ export default async function HomePage() {
         <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
           <div>
             <JobSection jobs={jobs} />
-            <FeedAd />
+            <AdSenseUnit slotId={ADSENSE.SECTION_BETWEEN} format="auto" className="my-4 rounded-2xl overflow-hidden" />
             <TrendingSection posts={trending} />
-            <EditorsPickSection posts={editorsPicks} />
-            <AdInline />
             <CoupangBanner preset="mobile" className="my-4 lg:hidden rounded-2xl overflow-hidden" />
+            <EditorsPickSection posts={editorsPicks} />
             <MagazineSection posts={magazine} />
-            <CoupangCategoryBanner category="fresh" className="my-4 lg:hidden rounded-2xl overflow-hidden" />
             <FeedAd />
             <RecentActivityFeed activities={activities} />
-            <CoupangCategoryBanner category="kitchen" className="my-4 lg:hidden rounded-2xl overflow-hidden" />
             <CommunitySection posts={community} />
-            <FeedAd />
           </div>
           <HomeSidebar posts={community} />
         </div>

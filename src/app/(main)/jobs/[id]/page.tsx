@@ -170,6 +170,12 @@ export default async function JobDetailPage({ params }: PageProps) {
         </div>
       )}
 
+      {/* 광고 — 인아티클 + 검색위젯 */}
+      <div className="mb-8 space-y-4">
+        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
+        <CoupangSearchWidget />
+      </div>
+
       {/* 액션 바 */}
       <ActionBar
         postId={id}
@@ -179,12 +185,6 @@ export default async function JobDetailPage({ params }: PageProps) {
         isLiked={job.isLiked}
         isScrapped={job.isScrapped}
       />
-
-      {/* 광고 — 인아티클 + 검색위젯 */}
-      <div className="mb-8 space-y-4">
-        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
-        <CoupangSearchWidget />
-      </div>
 
       {/* 댓글 */}
       <CommentSection postId={id} comments={comments} />

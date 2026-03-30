@@ -8,8 +8,8 @@ import BoardFilter from '@/components/features/community/BoardFilter'
 import PostCard from '@/components/features/community/PostCard'
 import LoadMoreButton from '@/components/features/community/LoadMoreButton'
 import SortToggle from '@/components/features/community/SortToggle'
-import AdSenseUnit from '@/components/ad/AdSenseUnit'
-import { ADSENSE } from '@/components/ad/ad-slots'
+import FeedAd from '@/components/ad/FeedAd'
+import CoupangCategoryBanner from '@/components/ad/CoupangCategoryBanner'
 
 interface PageProps {
   params: Promise<{ boardSlug: string }>
@@ -68,10 +68,11 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
             {posts.map((post, idx) => (
               <div key={post.id}>
                 <PostCard post={post} boardSlug={boardSlug} />
-                {idx === 4 && (
-                  <div className="mt-4">
-                    <AdSenseUnit slotId={ADSENSE.SECTION_BETWEEN} format="horizontal" className="rounded-2xl overflow-hidden" />
-                  </div>
+                {(idx + 1) % 3 === 0 && (idx + 1) % 6 !== 0 && (
+                  <div className="mt-4"><FeedAd /></div>
+                )}
+                {(idx + 1) % 6 === 0 && (
+                  <div className="mt-4"><CoupangCategoryBanner category="fresh" className="rounded-2xl overflow-hidden" /></div>
                 )}
               </div>
             ))}

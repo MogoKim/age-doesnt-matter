@@ -12,7 +12,6 @@ import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeHtml } from '@/lib/sanitize'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
-import CoupangCPS from '@/components/ad/CoupangCPS'
 import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
@@ -116,6 +115,12 @@ export default async function PostDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
       />
 
+      {/* 광고 — 인아티클 + 검색위젯 */}
+      <div className="mb-8 space-y-4">
+        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
+        <CoupangSearchWidget />
+      </div>
+
       {/* 액션 바 */}
       <ActionBar
         postId={postId}
@@ -125,14 +130,6 @@ export default async function PostDetailPage({ params }: PageProps) {
         isLiked={post.isLiked}
         isScrapped={post.isScrapped}
       />
-
-      {/* 광고 — 인아티클 + 쿠팡 CPS + 섹션사이 + 검색위젯 */}
-      <div className="mb-8 space-y-4">
-        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
-        <CoupangCPS postId={postId} />
-        <AdSenseUnit slotId={ADSENSE.SECTION_BETWEEN} format="auto" className="rounded-2xl overflow-hidden" />
-        <CoupangSearchWidget />
-      </div>
 
       {/* 댓글 */}
       <CommentSection postId={postId} comments={comments} />

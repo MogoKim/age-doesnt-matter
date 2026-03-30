@@ -70,7 +70,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
             {jobs.map((job, idx) => (
               <div key={job.id}>
                 <JobCard job={job} />
-                {idx === 4 && <FeedAd />}
+                {(idx + 1) % 4 === 0 && <FeedAd />}
               </div>
             ))}
           </div>

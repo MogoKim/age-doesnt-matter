@@ -12,8 +12,6 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeHtml } from '@/lib/sanitize'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
-import CoupangBanner from '@/components/ad/CoupangBanner'
-import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import { ADSENSE } from '@/components/ad/ad-slots'
 
 const BASE_URL = 'https://age-doesnt-matter.com'
@@ -142,7 +140,12 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
       />
 
-      {/* CPS 추천 상품 */}
+      {/* 광고 — 인아티클 */}
+      <div className="mb-8">
+        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
+      </div>
+
+      {/* CPS 추천 상품 (쿠팡 상품링크) */}
       {cpsLinks.length > 0 && (
         <div className="mb-8 p-4 bg-[var(--surface-warm)] rounded-2xl border border-border">
           <h3 className="text-body font-bold text-foreground mb-3 flex items-center gap-2">
@@ -191,13 +194,6 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         isLiked={post.isLiked}
         isScrapped={post.isScrapped}
       />
-
-      {/* 광고 — 인아티클 + 쿠팡 상품 캐러셀 + 검색위젯 */}
-      <div className="mb-8 space-y-4">
-        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
-        <CoupangBanner preset="product" className="rounded-2xl overflow-hidden" />
-        <CoupangSearchWidget />
-      </div>
 
       {/* 댓글 */}
       <CommentSection postId={id} comments={comments} />
