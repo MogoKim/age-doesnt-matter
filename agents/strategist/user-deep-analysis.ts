@@ -537,18 +537,21 @@ function formatMarkdown(analysis: StrategicAnalysis): string {
   lines.push(`> 생성일: ${now} | 모델: ${MODEL}\n`)
 
   // 1. 인구통계
-  lines.push(`## 1. 인구통계 인사이트`)
-  lines.push(`- **연령/성별**: ${analysis.demographicInsights.ageGenderProfile}`)
-  lines.push(`- **지역**: ${analysis.demographicInsights.geographicPatterns}`)
-  lines.push(`- **디지털 행동**: ${analysis.demographicInsights.digitalBehavior}`)
-  lines.push(`\n**핵심 발견:**`)
-  for (const f of analysis.demographicInsights.keyFindings) {
-    lines.push(`- ${f}`)
+  const di = analysis.demographicInsights
+  if (di) {
+    lines.push(`## 1. 인구통계 인사이트`)
+    lines.push(`- **연령/성별**: ${di.ageGenderProfile}`)
+    lines.push(`- **지역**: ${di.geographicPatterns}`)
+    lines.push(`- **디지털 행동**: ${di.digitalBehavior}`)
+    lines.push(`\n**핵심 발견:**`)
+    for (const f of (di.keyFindings ?? [])) {
+      lines.push(`- ${f}`)
+    }
   }
 
   // 2. 핵심 욕망
   lines.push(`\n## 2. 핵심 욕망 — 이 사람들은 진짜 무엇을 원하는가?`)
-  for (const d of analysis.coreDesires) {
+  for (const d of (analysis.coreDesires ?? [])) {
     lines.push(`\n### ${d.desire}`)
     lines.push(`- **근거**: ${d.evidence}`)
     lines.push(`- **현재 충족도**: ${d.currentSatisfaction}`)
@@ -557,64 +560,78 @@ function formatMarkdown(analysis: StrategicAnalysis): string {
 
   // 3. 페르소나
   lines.push(`\n## 3. 검증된 페르소나`)
-  for (const p of analysis.personas) {
+  for (const p of (analysis.personas ?? [])) {
     lines.push(`\n### ${p.id}. ${p.name}`)
     lines.push(`- **프로필**: ${p.profile}`)
     lines.push(`- **핵심 동기**: ${p.coreDesire}`)
-    lines.push(`- **고통**: ${p.painPoints.join(', ')}`)
-    lines.push(`- **선호 콘텐츠**: ${p.contentPreferences.join(', ')}`)
+    lines.push(`- **고통**: ${p.painPoints?.join(', ') ?? 'N/A'}`)
+    lines.push(`- **선호 콘텐츠**: ${p.contentPreferences?.join(', ') ?? 'N/A'}`)
     lines.push(`- **플랫폼 행동**: ${p.platformBehavior}`)
     lines.push(`- **핵심 지표**: ${p.keyMetric}`)
     lines.push(`- **근거 강도**: ${p.evidenceStrength} (${p.dataSource})`)
   }
 
   // 4. 콘텐츠 전략
-  lines.push(`\n## 4. 콘텐츠 전략 인사이트`)
-  lines.push(`- **참여도 높은 카테고리**: ${analysis.contentInsights.topEngagingCategories.join(' > ')}`)
-  lines.push(`- **갭 분석**: ${analysis.contentInsights.gapAnalysis}`)
-  lines.push(`- **말 vs 행동**: ${analysis.contentInsights.saidVsDid}`)
-  lines.push(`\n**매거진 추천**: ${analysis.contentInsights.magazineTopicRecommendations.join(', ')}`)
-  lines.push(`**커뮤니티 추천**: ${analysis.contentInsights.communityTopicRecommendations.join(', ')}`)
+  const ci = analysis.contentInsights
+  if (ci) {
+    lines.push(`\n## 4. 콘텐츠 전략 인사이트`)
+    lines.push(`- **참여도 높은 카테고리**: ${ci.topEngagingCategories?.join(' > ') ?? 'N/A'}`)
+    lines.push(`- **갭 분석**: ${ci.gapAnalysis ?? 'N/A'}`)
+    lines.push(`- **말 vs 행동**: ${ci.saidVsDid ?? 'N/A'}`)
+    lines.push(`\n**매거진 추천**: ${ci.magazineTopicRecommendations?.join(', ') ?? 'N/A'}`)
+    lines.push(`**커뮤니티 추천**: ${ci.communityTopicRecommendations?.join(', ') ?? 'N/A'}`)
+  }
 
   // 5. 헌법 권고안
-  lines.push(`\n## 5. 헌법 업데이트 권고안`)
   const cu = analysis.constitutionUpdates
-  lines.push(`- **미션**: ${cu.missionSuggestion}`)
-  lines.push(`- **비전**: ${cu.visionSuggestion}`)
-  lines.push(`- **에센스**: ${cu.essenceSuggestion}`)
-  lines.push(`- **페르소나 우선순위**: ${cu.personaPriorityChange}`)
-  lines.push(`- **콘텐츠 정책**: ${cu.contentPolicyChange}`)
-  lines.push(`- **톤앤매너**: ${cu.toneAdjustment}`)
+  if (cu) {
+    lines.push(`\n## 5. 헌법 업데이트 권고안`)
+    lines.push(`- **미션**: ${cu.missionSuggestion ?? 'N/A'}`)
+    lines.push(`- **비전**: ${cu.visionSuggestion ?? 'N/A'}`)
+    lines.push(`- **에센스**: ${cu.essenceSuggestion ?? 'N/A'}`)
+    lines.push(`- **페르소나 우선순위**: ${cu.personaPriorityChange ?? 'N/A'}`)
+    lines.push(`- **콘텐츠 정책**: ${cu.contentPolicyChange ?? 'N/A'}`)
+    lines.push(`- **톤앤매너**: ${cu.toneAdjustment ?? 'N/A'}`)
+  }
 
   // 6. SNS 전략
-  lines.push(`\n## 6. SNS 채널 전략`)
-  lines.push(`- **주력 플랫폼**: ${analysis.snsStrategy.primaryPlatform}`)
-  lines.push(`\n**플랫폼-페르소나 매핑:**`)
-  for (const [platform, persona] of Object.entries(analysis.snsStrategy.platformPersonaAlignment)) {
-    lines.push(`- ${platform} → ${persona}`)
+  const sns = analysis.snsStrategy
+  if (sns) {
+    lines.push(`\n## 6. SNS 채널 전략`)
+    lines.push(`- **주력 플랫폼**: ${sns.primaryPlatform ?? 'N/A'}`)
+    if (sns.platformPersonaAlignment) {
+      lines.push(`\n**플랫폼-페르소나 매핑:**`)
+      for (const [platform, persona] of Object.entries(sns.platformPersonaAlignment)) {
+        lines.push(`- ${platform} → ${persona}`)
+      }
+    }
+    lines.push(`\n**매거진 카테고리 재정의**: ${sns.magazineTopics?.join(', ') ?? 'N/A'}`)
   }
-  lines.push(`\n**매거진 카테고리 재정의**: ${analysis.snsStrategy.magazineTopics.join(', ')}`)
 
   // 7. 방법론
-  lines.push(`\n## 7. 방법론 & 한계`)
-  lines.push(`- **데이터 품질**: ${analysis.methodology.dataQuality}`)
-  lines.push(`- **분석 규모**: ${analysis.methodology.sampleSize}`)
-  lines.push(`- **한계**: ${analysis.methodology.limitations.join('; ')}`)
-  lines.push(`- **추가 수집 권고**: ${analysis.methodology.recommendedFollowUp.join('; ')}`)
+  const meth = analysis.methodology
+  if (meth) {
+    lines.push(`\n## 7. 방법론 & 한계`)
+    lines.push(`- **데이터 품질**: ${meth.dataQuality ?? 'N/A'}`)
+    lines.push(`- **분석 규모**: ${meth.sampleSize ?? 'N/A'}`)
+    lines.push(`- **한계**: ${meth.limitations?.join('; ') ?? 'N/A'}`)
+    lines.push(`- **추가 수집 권고**: ${meth.recommendedFollowUp?.join('; ') ?? 'N/A'}`)
+  }
 
   return lines.join('\n')
 }
 
 function formatSlackSummary(analysis: StrategicAnalysis): string {
-  const desires = analysis.coreDesires.slice(0, 3)
+  const desires = (analysis.coreDesires ?? []).slice(0, 3)
     .map((d, i) => `${i + 1}. *${d.desire}* (충족도: ${d.currentSatisfaction})\n   └ ${d.opportunity}`)
-    .join('\n')
+    .join('\n') || '데이터 부족'
 
-  const personas = analysis.personas
+  const personas = (analysis.personas ?? [])
     .map(p => `• *${p.name}* — ${p.coreDesire} [${p.evidenceStrength}]`)
-    .join('\n')
+    .join('\n') || '데이터 부족'
 
   const cu = analysis.constitutionUpdates
+  const sns = analysis.snsStrategy
 
   return `📊 *사용자 심층 분석 완료*
 
@@ -625,18 +642,18 @@ ${desires}
 ${personas}
 
 📝 *미션 권고*
-${cu.missionSuggestion}
+${cu?.missionSuggestion ?? 'N/A'}
 
 🔭 *비전 권고*
-${cu.visionSuggestion}
+${cu?.visionSuggestion ?? 'N/A'}
 
 📌 *에센스 권고*
-${cu.essenceSuggestion}
+${cu?.essenceSuggestion ?? 'N/A'}
 
 💡 *페르소나 변경*
-${cu.personaPriorityChange}
+${cu?.personaPriorityChange ?? 'N/A'}
 
-📱 *주력 SNS*: ${analysis.snsStrategy.primaryPlatform}
+📱 *주력 SNS*: ${sns?.primaryPlatform ?? 'N/A'}
 
 ⚠️ 이 분석은 권고안입니다. 헌법 변경은 창업자 승인이 필요합니다.
 전체 리포트는 BotLog 또는 GitHub Actions 로그에서 확인하세요.`
