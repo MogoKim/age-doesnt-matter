@@ -3,11 +3,11 @@ import { notifyAdmin } from '../core/notifier.js'
 import { generatePost, generateComment, generateReply, getBotUser } from './generator.js'
 
 /**
- * 시드 콘텐츠 스케줄러 (35명 — A~T + U~Z + AA~AI)
+ * 시드 콘텐츠 스케줄러 (50명 — A~T + U~Z + AA~AI + AJ~AX)
  * 크롤링 08:30/12:30/20:40에 연동하여 시드봇 활동
  * 활동: 글쓰기, 댓글, 대댓글, 좋아요
  *
- * 성격 분포: 긍정(12) + 중립(10) + 부정/비판(8) + 특이(5) = 35명
+ * 성격 분포: 긍정(12) + 중립(10) + 부정/비판(8) + 특이(5) + 신규(15) = 50명
  * 게시판 분포: STORY(25) + HUMOR(4) + JOB(1) + WEEKLY(3) + 크로스보드 활동
  */
 
@@ -21,13 +21,13 @@ interface Activity {
 }
 
 /**
- * 시간대별 활동 스케줄 (35명)
+ * 시간대별 활동 스케줄 (50명)
  * 08:30 크롤링 → 09:00/10:00 시드
  * 12:30 크롤링 → 13:00/14:00 시드
  * 20:40 크롤링 → 21:00/22:00 시드
  * + 15:00/16:00/19:00 자체 활동
  *
- * 일일 목표: 글 18-22개, 댓글 80-100개, 좋아요 60-80개, 대댓글 25-35개
+ * 일일 목표: 글 25-30개, 댓글 150-200개, 좋아요 100-120개, 대댓글 60-80개
  */
 const SCHEDULE: Record<string, Activity[]> = {
   // ── 아침 (크롤링 08:30 후) ──
@@ -48,6 +48,8 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'E', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'L', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'AI', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'AQ', type: 'comment', board: 'STORY', count: 2 }, // 조용한수다 아침
+    { personaId: 'AV', type: 'like', board: 'STORY', count: 2 },
   ],
 
   '10': [
@@ -69,6 +71,25 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'V', type: 'like', board: 'STORY', count: 2 },
   ],
 
+  '11': [
+    // 글쓰기 — 간병·건강 페르소나
+    { personaId: 'AJ', type: 'post' },                          // 간병일기 간병
+    { personaId: 'AN', type: 'post' },                          // 약국단골 영양제
+    { personaId: 'AT', type: 'post' },                          // 자격증도전 공부
+    // 댓글 — 신규 페르소나 반응
+    { personaId: 'AK', type: 'comment', board: 'STORY', count: 3 }, // 우리엄마 공감
+    { personaId: 'AM', type: 'comment', board: 'STORY', count: 2 }, // 불안한밤 질문
+    { personaId: 'AQ', type: 'comment', board: 'STORY', count: 3 }, // 조용한수다 짧은공감
+    { personaId: 'AP', type: 'comment', board: 'HUMOR', count: 3 }, // 짤방요정 리액션
+    // 대댓글
+    { personaId: 'AK', type: 'reply', board: 'STORY', count: 2 },
+    { personaId: 'AN', type: 'reply', board: 'STORY', count: 1 },
+    // 좋아요
+    { personaId: 'AJ', type: 'like', board: 'STORY', count: 3 },
+    { personaId: 'AQ', type: 'like', board: 'STORY', count: 3 },
+    { personaId: 'AP', type: 'like', board: 'HUMOR', count: 3 },
+  ],
+
   // ── 점심 (크롤링 12:30 후) ──
   '13': [
     // 댓글 위주 — 부정/비판 캐릭터 활동 시작
@@ -82,6 +103,9 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'D', type: 'like', board: 'JOB', count: 2 },
     { personaId: 'J', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'X', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'AS', type: 'comment', board: 'JOB', count: 2 },   // 일자리헌터
+    { personaId: 'AT', type: 'comment', board: 'STORY', count: 2 },  // 자격증도전
+    { personaId: 'AN', type: 'comment', board: 'STORY', count: 2 },  // 약국단골
   ],
 
   '14': [
@@ -143,6 +167,28 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AH', type: 'like', board: 'STORY', count: 2 },
   ],
 
+  '17': [
+    // 글쓰기 — 오후 활동형
+    { personaId: 'AL', type: 'post' },                          // 근육할머니 운동
+    { personaId: 'AV', type: 'post' },                          // 혼밥일기 저녁 준비
+    { personaId: 'AX', type: 'post', board: 'HUMOR' },          // 밴드여왕 모임 공지
+    // 댓글 — 대량 반응
+    { personaId: 'AO', type: 'comment', board: 'HUMOR', count: 3 }, // 웃음충전 유머
+    { personaId: 'AS', type: 'comment', board: 'JOB', count: 2 },   // 일자리헌터 정보
+    { personaId: 'AW', type: 'comment', board: 'STORY', count: 2 }, // 손뜨개 느린 공감
+    { personaId: 'AR', type: 'comment', board: 'STORY', count: 2 }, // 요즘세상 관찰
+    { personaId: 'AU', type: 'comment', board: 'STORY', count: 2 }, // 철인할배 응원
+    // 대댓글
+    { personaId: 'AL', type: 'reply', board: 'STORY', count: 2 },
+    { personaId: 'AO', type: 'reply', board: 'HUMOR', count: 2 },
+    { personaId: 'AS', type: 'reply', board: 'JOB', count: 1 },
+    // 좋아요
+    { personaId: 'AL', type: 'like', board: 'STORY', count: 3 },
+    { personaId: 'AV', type: 'like', board: 'STORY', count: 3 },
+    { personaId: 'AX', type: 'like', board: 'HUMOR', count: 3 },
+    { personaId: 'AU', type: 'like', board: 'STORY', count: 3 },
+  ],
+
   // ── 저녁 ──
   '19': [
     // 글쓰기 — 저녁 감성 + 문화
@@ -165,6 +211,29 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'O', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'M', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'S', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'AJ', type: 'comment', board: 'STORY', count: 2 }, // 간병일기 저녁
+    { personaId: 'AO', type: 'comment', board: 'HUMOR', count: 2 }, // 웃음충전
+    { personaId: 'AW', type: 'comment', board: 'STORY', count: 1 }, // 손뜨개
+    { personaId: 'AR', type: 'reply', board: 'STORY', count: 1 },   // 요즘세상
+  ],
+
+  '20': [
+    // 저녁 댓글+대댓글 집중
+    { personaId: 'AJ', type: 'comment', board: 'STORY', count: 2 }, // 간병일기 밤 글
+    { personaId: 'AM', type: 'comment', board: 'STORY', count: 3 }, // 불안한밤 밤 활동
+    { personaId: 'AK', type: 'comment', board: 'STORY', count: 2 }, // 우리엄마 저녁
+    { personaId: 'AQ', type: 'comment', board: 'STORY', count: 2 }, // 조용한수다 저녁
+    { personaId: 'AP', type: 'comment', board: 'HUMOR', count: 3 }, // 짤방요정 리액션
+    { personaId: 'AW', type: 'comment', board: 'STORY', count: 2 }, // 손뜨개 저녁
+    // 대댓글 — 체인 대화 유도
+    { personaId: 'AJ', type: 'reply', board: 'STORY', count: 2 },
+    { personaId: 'AM', type: 'reply', board: 'STORY', count: 2 },
+    { personaId: 'AV', type: 'reply', board: 'STORY', count: 1 },
+    { personaId: 'AR', type: 'reply', board: 'STORY', count: 1 },
+    // 좋아요
+    { personaId: 'AM', type: 'like', board: 'STORY', count: 3 },
+    { personaId: 'AK', type: 'like', board: 'STORY', count: 3 },
+    { personaId: 'AN', type: 'like', board: 'STORY', count: 2 },
   ],
 
   // ── 밤 (크롤링 20:40 후) ──
@@ -190,6 +259,9 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'Q', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'S', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'AE', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'AM', type: 'post' },                               // 불안한밤 밤 글
+    { personaId: 'AE', type: 'reply', board: 'STORY', count: 2 },   // 새벽감성 대댓글
+    { personaId: 'AJ', type: 'reply', board: 'STORY', count: 1 },   // 간병일기 대댓글
   ],
 
   '22': [
@@ -290,7 +362,7 @@ async function runActivity(activity: Activity): Promise<void> {
           author: { email: { endsWith: '@unao.bot' } },
         },
       })
-      if (botCommentCount >= 2) continue
+      if (botCommentCount >= 3) continue
 
       const commentText = await generateComment(activity.personaId, post.title, post.content)
       if (commentText) {
@@ -396,7 +468,7 @@ async function focusedLikeRound(): Promise<number> {
   if (nearHot.length === 0) return 0
 
   // 다양한 페르소나로 집중 투입 (긍정+중립+부정 믹스)
-  const boostBotIds = ['B', 'E', 'G', 'K', 'M', 'AC', 'AI']
+  const boostBotIds = ['B', 'E', 'G', 'K', 'M', 'AC', 'AI', 'AQ', 'AL', 'AU']
   let boosted = 0
 
   for (const post of nearHot) {

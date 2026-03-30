@@ -1,8 +1,8 @@
-name: Agents — Seed Content
+name: Agents — Seed Micro (댓글/대댓글/좋아요 전용)
 on:
   schedule:
-    # 09,10,11,13,14,15,16,17,19,20,21,22 KST → UTC 변환 (12 슬롯)
-    - cron: "0 0,1,2,4,5,6,7,8,10,11,12,13 * * *"
+    # 08,12,18,23 KST → UTC 변환 (메인 스케줄과 겹치지 않음)
+    - cron: "0 23,3,9,14 * * *"
   workflow_dispatch:
 
 env:
@@ -26,7 +26,7 @@ env:
   SLACK_CHANNEL_LOG_COST: ${{ secrets.SLACK_CHANNEL_LOG_COST }}
   SLACK_CHANNEL_EXPERIMENT: ${{ secrets.SLACK_CHANNEL_EXPERIMENT }}
 jobs:
-  seed:
+  seed-micro:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,4 +35,4 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
-      - run: cd agents && npx tsx cron/runner.ts seed scheduler
+      - run: cd agents && npx tsx cron/runner.ts seed micro

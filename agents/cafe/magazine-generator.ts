@@ -10,8 +10,11 @@ import { getBotUser } from '../seed/generator.js'
 import type { MagazineSuggestion } from './types.js'
 import { matchCpsProducts, saveCpsLinks } from './cps-matcher.js'
 import { generateMagazineThumbnail } from './thumbnail-generator.js'
+import { generateMagazineImage, getImageStyle } from './image-generator.js'
+import { buildMagazineHtml, parseSectionsFromAI } from './magazine-template.js'
 
-const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
+const CLAUDE_MODEL_HEAVY = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
+const CLAUDE_MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-6'
 const client = new Anthropic()
 
 /** 카테고리 자동 매핑 */
@@ -72,7 +75,7 @@ async function getReferencePosts(topic: MagazineSuggestion) {
   })
 }
 
-/** 매거진 글 생성 (Sonnet 사용) */
+/** 매거진 글 생성 (평일: Sonnet / 일요일 특집: Opus) */
 async function generateMagazineArticle(
   topic: MagazineSuggestion,
   category: string,
@@ -85,11 +88,25 @@ async function generateMagazineArticle(
 
   const recentList = recentTitles.slice(0, 10).map(t => `- ${t}`).join('\n')
 
+  // 일요일(KST) = Opus 특집호, 평일 = Sonnet
+  const now = new Date()
+  const kstDay = new Date(now.getTime() + 9 * 60 * 60 * 1000).getDay()
+  const isSunday = kstDay === 0
+  const model = isSunday ? CLAUDE_MODEL_STRATEGIC : CLAUDE_MODEL_HEAVY
+  console.log(`[Magazine] 모델: ${isSunday ? 'Opus (일요일 특집)' : 'Sonnet (평일)'}`)
+
   const response = await client.messages.create({
-    model: MODEL,
+    model,
     max_tokens: 4000,
-    system: `당신은 "우리 나이가 어때서" 커뮤니티의 매거진 에디터입니다.
-50~60대 독자를 위한 따뜻하고 유익한 매거진 기사를 작성합니다.
+    system: `당신은 50·60대 독자를 위한 매거진 편집장입니다.
+"우리 나이가 어때서" 커뮤니티의 따뜻하고 유익한 매거진 기사를 작성합니다.
+
+독자 페르소나를 이해하세요:
+- P1 영숙씨: 느슨한 연결을 원하는 사교형
+- P2 정희씨: 건강 불안이 있는 정보 탐색형
+- P3 미영씨: 유머와 재미를 찾는 활력형
+- P4 순자씨: 생계 걱정이 있는 실용형
+- P5 현주씨: 간병 부담을 안고 있는 헌신형
 
 작성 규칙:
 - "시니어", "액티브 시니어" 같은 표현 절대 금지. 대신 "우리 또래", "50대 60대", "인생 2막" 등 자연스러운 표현 사용
@@ -99,6 +116,12 @@ async function generateMagazineArticle(
 - 경험 기반 서술 포함 (예: "직접 해본 결과", "실제로 시도해보니", "주변에서 들은 이야기로는")
 - 공감할 수 있는 에피소드나 사례 포함
 - 정치/종교/혐오/광고 절대 금지
+
+글의 구조:
+- ## 제목으로 3-4개 섹션, 각 섹션에 구체적 사례/데이터 포함
+- 💡 꿀팁: 섹션에 실용적 팁 박스 최소 1개
+- 인용문: 공감되는 한 줄 인용 최소 1개
+- imagePrompt: 기사 주제에 맞는 이미지 프롬프트를 마지막에 한 줄로 출력 (형식: [IMAGE_PROMPT: 설명])
 
 HTML 형식 규칙:
 - 사용 가능 태그: h2, h3, p, ul, ol, li, strong, em, blockquote, aside
@@ -252,10 +275,35 @@ async function main() {
       continue
     }
 
+    // 이미지 프롬프트 추출 + DALL-E 이미지 생성
+    const imagePromptMatch = article.content.match(/\[IMAGE_PROMPT:\s*(.+?)\]/)
+    const imagePrompt = imagePromptMatch?.[1] ?? `${topic.title} 관련 따뜻한 이미지`
+
+    const image = await generateMagazineImage(imagePrompt, getImageStyle(category))
+    if (image) {
+      console.log(`[MagazineGenerator] 이미지 생성 완료: ${image.url.slice(0, 50)}...`)
+    }
+
+    // 리치 HTML 템플릿으로 최종 콘텐츠 빌드
+    const sections = parseSectionsFromAI(article.content)
+    const todayDate = new Date()
+    const kstDate = new Date(todayDate.getTime() + 9 * 60 * 60 * 1000)
+    const dateStr = kstDate.toISOString().split('T')[0]
+
+    const finalHtml = buildMagazineHtml({
+      title: article.title,
+      subtitle: article.summary ?? '',
+      category,
+      heroImageUrl: image?.url,
+      readingTime: Math.ceil(article.content.length / 500),
+      sections,
+      authorName: '우나어 매거진 편집팀',
+      publishedDate: dateStr,
+    })
+
     // 썸네일 생성 (실패해도 발행은 계속)
     let thumbnailUrl: string | undefined
     try {
-      // 임시 ID로 키 생성 후, 실제 postId로 업데이트
       const tempId = `tmp-${Date.now()}`
       thumbnailUrl = await generateMagazineThumbnail({
         title: article.title,
@@ -267,7 +315,9 @@ async function main() {
       console.warn('[MagazineGenerator] 썸네일 생성 실패 (무시):', err)
     }
 
-    const postId = await publishMagazine(article, category, thumbnailUrl)
+    // 리치 HTML을 게시 콘텐츠로 사용
+    const richArticle = { ...article, content: finalHtml }
+    const postId = await publishMagazine(richArticle, category, thumbnailUrl)
 
     // CPS 상품 매칭 + 저장
     try {
