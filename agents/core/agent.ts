@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url'
 import { notifyAdmin } from './notifier.js'
 import type { AgentResult, AgentConfig, AgentLog } from './types.js'
 import { prisma } from './db.js'
-import type { BotType } from '../../src/generated/prisma/client.js'
+
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const constitution = readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')

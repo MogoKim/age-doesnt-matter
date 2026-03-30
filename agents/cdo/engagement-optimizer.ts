@@ -29,9 +29,8 @@ async function main() {
       todayLikes,
       todayPosts,
       yesterdayComments,
-      yesterdayReplies,
+      ,
       yesterdayLikes,
-      yesterdayPosts,
     ] = await Promise.all([
       prisma.comment.count({ where: { createdAt: { gte: todayStart }, parentId: null } }),
       prisma.comment.count({ where: { createdAt: { gte: todayStart }, parentId: { not: null } } }),
@@ -40,7 +39,6 @@ async function main() {
       prisma.comment.count({ where: { createdAt: { gte: yesterdayStart, lt: todayStart }, parentId: null } }),
       prisma.comment.count({ where: { createdAt: { gte: yesterdayStart, lt: todayStart }, parentId: { not: null } } }),
       prisma.like.count({ where: { createdAt: { gte: yesterdayStart, lt: todayStart } } }),
-      prisma.post.count({ where: { createdAt: { gte: yesterdayStart, lt: todayStart }, status: 'PUBLISHED' } }),
     ])
 
     // 2. 비율 계산

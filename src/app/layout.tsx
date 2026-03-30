@@ -30,6 +30,11 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    other: {
+      'google-adsense-account': 'ca-pub-4117999106913048',
+    },
+  },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -56,7 +61,7 @@ export default function RootLayout({
         <GTMScript />
         <Script
           async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4937127825992215"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4117999106913048"
           crossOrigin="anonymous"
           strategy="lazyOnload"
         />

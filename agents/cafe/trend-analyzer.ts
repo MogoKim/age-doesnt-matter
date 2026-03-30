@@ -100,9 +100,7 @@ hotTopics: 상위 5~7개, keywords: 상위 15개, magazineTopics: 상위 3개, p
     // 불완전한 JSON 복구 시도: 닫히지 않은 배열/객체 닫기
     let repaired = jsonStr
     const openBraces = (repaired.match(/\{/g) ?? []).length
-    const closeBraces = (repaired.match(/\}/g) ?? []).length
     const openBrackets = (repaired.match(/\[/g) ?? []).length
-    const closeBrackets = (repaired.match(/\]/g) ?? []).length
     // 마지막 완전한 항목까지 자르기
     const lastComplete = repaired.lastIndexOf('}')
     if (lastComplete > 0) {

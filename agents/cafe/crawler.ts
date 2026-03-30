@@ -17,7 +17,7 @@ import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS } from './config.js'
-import type { RawCafePost, CafeConfig, CafeBoardConfig, ContentCategory } from './types.js'
+import type { RawCafePost, CafeConfig, ContentCategory } from './types.js'
 import { calculateQualityScore } from './quality-scorer.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))

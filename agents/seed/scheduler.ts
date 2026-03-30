@@ -1,5 +1,4 @@
 import { prisma, disconnect } from '../core/db.js'
-import { notifyAdmin } from '../core/notifier.js'
 import { generatePost, generateComment, generateReply, getBotUser } from './generator.js'
 
 /**

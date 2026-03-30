@@ -16,10 +16,6 @@ import { renderCardNews, type SlideData, type RenderResult } from './renderer.js
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
-const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? 'https://www.age-doesnt-matter.com'
-).trim()
-
 // ─── Types ───
 
 type CardNewsType = 'NEWS_TREND' | 'INFO_TOPIC' | 'COMMUNITY_PROMO'

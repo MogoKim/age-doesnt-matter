@@ -253,7 +253,7 @@ JSON 배열로만 응답 (3개):
  * 8섹션 HTML 본문 생성 (AI 불필요 — 템플릿 기반)
  */
 export function buildJobContent(job: FilteredJob, processed: ProcessedJob): string {
-  const { cleanTitle, subtitle, seoKeywords, pickPoints, qna } = processed
+  const { subtitle, seoKeywords, pickPoints, qna } = processed
 
   // 섹션 1: SEO 키워드 (sr-only)
   const seoSection = `<div class="sr-only">${seoKeywords.join(', ')}</div>`

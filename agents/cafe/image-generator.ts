@@ -73,9 +73,6 @@ async function uploadToR2(sourceUrl: string, filename: string): Promise<string |
   const R2_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID
   const R2_ACCESS_KEY = process.env.CLOUDFLARE_R2_ACCESS_KEY
   const R2_SECRET_KEY = process.env.CLOUDFLARE_R2_SECRET_KEY
-  const R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET ?? 'unaeo-uploads'
-  const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL
-
   if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY || !R2_SECRET_KEY) {
     console.log('[ImageGen] R2 미설정 — DALL-E 임시 URL 사용 (1시간 후 만료)')
     return null

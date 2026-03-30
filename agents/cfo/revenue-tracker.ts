@@ -21,7 +21,6 @@ class CFORevenueTracker extends BaseAgent {
 
   protected async run(): Promise<Omit<AgentResult, 'durationMs' | 'timestamp'>> {
     const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
     // 1. AdSense 광고 성과 (DB 기반 — AdBanner 테이블)
@@ -44,7 +43,7 @@ class CFORevenueTracker extends BaseAgent {
     }
 
     // 슬롯별 CTR 계산
-    for (const [slot, stats] of Object.entries(slotStats)) {
+    for (const stats of Object.values(slotStats)) {
       stats.ctr = stats.impressions > 0
         ? `${((stats.clicks / stats.impressions) * 100).toFixed(2)}%`
         : '0%'

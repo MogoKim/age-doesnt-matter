@@ -9,7 +9,7 @@
  * 핵심 쿠키: NID_AUT, NID_SES (네이버 로그인 인증)
  */
 import { execSync } from 'child_process'
-import { writeFileSync, readFileSync } from 'fs'
+import { writeFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { CHROME_USER_DATA_DIR, CHROME_PROFILE } from './config.js'

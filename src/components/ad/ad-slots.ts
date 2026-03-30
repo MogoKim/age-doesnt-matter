@@ -5,7 +5,7 @@
 
 // ── Google AdSense ──
 export const ADSENSE = {
-  CLIENT_ID: 'ca-pub-4937127825992215',
+  CLIENT_ID: 'ca-pub-4117999106913048',
 
   /** 섹션 사이 — 디스플레이 광고 (게시글 상/하단, 보드 리스트 인라인) */
   SECTION_BETWEEN: '4387790031',

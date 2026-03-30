@@ -1,6 +1,6 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
-import { sendSlackMessage, notifySlack } from '../core/notifier.js'
+import { sendSlackMessage } from '../core/notifier.js'
 import type { AgentResult } from '../core/types.js'
 
 /**

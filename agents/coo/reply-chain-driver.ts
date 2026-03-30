@@ -110,7 +110,7 @@ async function main() {
         if (!post) continue
 
         // responders 순서대로 답글 생성 (maxDepth 제한)
-        let parentCommentId = comment.id
+        const parentCommentId = comment.id
         const respondersToUse = chain.responders.slice(0, chain.maxDepth - 1)
 
         for (const responderId of respondersToUse) {

@@ -2,7 +2,6 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { conductMeeting } from '../core/meeting.js'
-import { getDayStrategy } from './threads-config.js'
 
 /**
  * CMO Social Strategy — 매주 월요일 10:15 KST 실행
