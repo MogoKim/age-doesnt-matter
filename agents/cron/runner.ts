@@ -54,6 +54,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cmo:social-strategy': () => import('../cmo/social-strategy.js').then(() => {}),
   'ceo:morning-sns-briefing': () => import('../ceo/morning-sns-briefing.js').then(() => {}),
   'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
+  'strategist:user-deep-analysis': () => import('../strategist/user-deep-analysis.js').then(() => {}),
 }
 
 function getAutomationStatus(): string {
