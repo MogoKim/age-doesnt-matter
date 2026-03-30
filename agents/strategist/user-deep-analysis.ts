@@ -23,8 +23,10 @@ const client = new Anthropic()
 async function collectData(): Promise<CollectedData> {
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const ninetyDaysAgo = new Date()
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
 
-  // 배치 A: CafePost 콘텐츠 분석
+  // 배치 A: CafePost 콘텐츠 분석 — 전체 크롤링 데이터 대상 (기간 제한 없음)
   const [cafeCategoryStats, topQualityPosts, topEngagementPosts, cafeSentimentRaw] = await Promise.all([
     prisma.cafePost.groupBy({
       by: ['boardCategory'],
@@ -34,9 +36,9 @@ async function collectData(): Promise<CollectedData> {
       orderBy: { _count: { id: 'desc' } },
     }),
     prisma.cafePost.findMany({
-      where: { qualityScore: { gte: 60 } },
+      where: { qualityScore: { gte: 40 } },
       orderBy: { qualityScore: 'desc' },
-      take: 200,
+      take: 500,
       select: {
         title: true, content: true, boardCategory: true,
         qualityScore: true, likeCount: true, commentCount: true, cafeName: true,
@@ -44,7 +46,7 @@ async function collectData(): Promise<CollectedData> {
     }),
     prisma.cafePost.findMany({
       orderBy: [{ likeCount: 'desc' }, { commentCount: 'desc' }],
-      take: 50,
+      take: 100,
       select: {
         title: true, boardCategory: true, likeCount: true,
         commentCount: true, viewCount: true, cafeName: true,
@@ -57,11 +59,11 @@ async function collectData(): Promise<CollectedData> {
     }),
   ])
 
-  // 배치 B: CafeTrend 트렌드 패턴
+  // 배치 B: CafeTrend 트렌드 패턴 — 90일로 확대
   const recentTrends = await prisma.cafeTrend.findMany({
-    where: { date: { gte: thirtyDaysAgo } },
+    where: { date: { gte: ninetyDaysAgo } },
     orderBy: { date: 'desc' },
-    take: 30,
+    take: 90,
     select: {
       date: true, hotTopics: true, keywords: true,
       personaHints: true, magazineTopics: true,
@@ -79,7 +81,7 @@ async function collectData(): Promise<CollectedData> {
     prisma.post.findMany({
       where: { status: 'PUBLISHED' },
       orderBy: { trendingScore: 'desc' },
-      take: 30,
+      take: 50,
       select: {
         title: true, boardType: true, category: true, trendingScore: true,
         viewCount: true, likeCount: true, commentCount: true, source: true,
@@ -114,20 +116,20 @@ async function collectData(): Promise<CollectedData> {
     prisma.user.count({ where: { status: 'ACTIVE' } }),
   ])
 
-  // 배치 E: 검색어 & 페이지뷰 (EventLog)
+  // 배치 E: 검색어 & 페이지뷰 (EventLog) — 90일로 확대
   const [searchEvents, pageViewEvents] = await Promise.all([
     prisma.eventLog.findMany({
-      where: { eventName: 'search', createdAt: { gte: thirtyDaysAgo } },
+      where: { eventName: 'search', createdAt: { gte: ninetyDaysAgo } },
       select: { properties: true },
-      take: 5000,
+      take: 10000,
       orderBy: { createdAt: 'desc' },
     }),
     prisma.eventLog.groupBy({
       by: ['path'],
       _count: { id: true },
-      where: { eventName: 'page_view', createdAt: { gte: thirtyDaysAgo }, path: { not: null } },
+      where: { eventName: 'page_view', createdAt: { gte: ninetyDaysAgo }, path: { not: null } },
       orderBy: { _count: { id: 'desc' } },
-      take: 20,
+      take: 30,
     }),
   ])
 
@@ -150,9 +152,9 @@ async function collectData(): Promise<CollectedData> {
     count: p._count.id,
   }))
 
-  // 배치 F: 시간 패턴 (JS에서 집계 — $queryRaw 타입 이슈 회피)
+  // 배치 F: 시간 패턴 (90일, JS에서 집계)
   const recentPosts = await (prisma as Record<string, unknown> & { post: { findMany: (args: Record<string, unknown>) => Promise<Array<{ createdAt: Date }>> } }).post.findMany({
-    where: { status: 'PUBLISHED', createdAt: { gte: thirtyDaysAgo } },
+    where: { status: 'PUBLISHED', createdAt: { gte: ninetyDaysAgo } },
     select: { createdAt: true },
   })
   const hourMap = new Map<number, number>()
@@ -251,21 +253,24 @@ async function collectData(): Promise<CollectedData> {
 function formatDataForAI(data: CollectedData): string {
   const sections: string[] = []
 
-  // A. 카페 콘텐츠 분석
-  sections.push(`## A. 네이버 카페 콘텐츠 (50·60대가 실제로 하는 이야기)
+  // 총 크롤링 건수
+  const totalCafePosts = data.cafeCategoryStats.reduce((sum, c) => sum + c._count, 0)
 
-### 카테고리별 분포:
+  // A. 카페 콘텐츠 분석
+  sections.push(`## A. 네이버 카페 콘텐츠 (50·60대가 실제로 하는 이야기) — 총 ${totalCafePosts}건 분석
+
+### 카테고리별 분포 (전체):
 ${data.cafeCategoryStats.map(c =>
   `- ${c.boardCategory}: ${c._count}건 (평균 품질 ${c._avg.qualityScore.toFixed(1)}, 좋아요 ${c._avg.likeCount.toFixed(1)}, 댓글 ${c._avg.commentCount.toFixed(1)})`,
 ).join('\n')}
 
-### 가장 높은 참여를 받은 글 TOP 20:
-${data.topEngagementPosts.slice(0, 20).map((p, i) =>
+### 가장 높은 참여를 받은 글 TOP 50:
+${data.topEngagementPosts.slice(0, 50).map((p, i) =>
   `${i + 1}. [${p.boardCategory ?? '일반'}] "${p.title}" — 좋아요 ${p.likeCount}, 댓글 ${p.commentCount}, 조회 ${p.viewCount} (${p.cafeName})`,
 ).join('\n')}
 
-### 감성 분포:
-${data.cafeSentiment.slice(0, 15).map(s =>
+### 감성 분포 (전체):
+${data.cafeSentiment.map(s =>
   `- ${s.boardCategory}/${s.sentiment}: ${s._count}건`,
 ).join('\n')}`)
 
@@ -286,8 +291,8 @@ ${data.cafeSentiment.slice(0, 15).map(s =>
       }
     }
   }
-  const topKeywords = [...allKeywords.entries()].sort((a, b) => b[1] - a[1]).slice(0, 30)
-  const topTopics = [...allTopics.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15)
+  const topKeywords = [...allKeywords.entries()].sort((a, b) => b[1] - a[1]).slice(0, 50)
+  const topTopics = [...allTopics.entries()].sort((a, b) => b[1] - a[1]).slice(0, 25)
 
   // 페르소나 힌트 집계
   const personaHints: string[] = []
@@ -300,16 +305,31 @@ ${data.cafeSentiment.slice(0, 15).map(s =>
     }
   }
 
-  sections.push(`## B. 30일간 트렌드 키워드 & 토픽
+  // 매거진 토픽 집계
+  const magazineTopicMap = new Map<string, number>()
+  for (const trend of data.recentTrends) {
+    const mTopics = trend.magazineTopics as Array<{ topic: string; relevance: number }> | null
+    if (mTopics) {
+      for (const m of mTopics) {
+        magazineTopicMap.set(m.topic, (magazineTopicMap.get(m.topic) ?? 0) + m.relevance)
+      }
+    }
+  }
+  const topMagazineTopics = [...magazineTopicMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20)
 
-### 반복 키워드 TOP 30:
+  sections.push(`## B. 90일간 트렌드 키워드 & 토픽 (${data.recentTrends.length}일 데이터)
+
+### 반복 키워드 TOP 50:
 ${topKeywords.map(([word, freq]) => `- ${word}: ${freq}회`).join('\n')}
 
-### 반복 핫토픽 TOP 15:
+### 반복 핫토픽 TOP 25:
 ${topTopics.map(([topic, count]) => `- ${topic}: ${count}건`).join('\n')}
 
-### AI가 감지한 페르소나 힌트 (최근 30일):
-${[...new Set(personaHints)].slice(0, 15).map(h => `- ${h}`).join('\n')}`)
+### 매거진 추천 토픽 TOP 20 (AI 감지):
+${topMagazineTopics.map(([topic, score]) => `- ${topic}: 누적 관련도 ${score.toFixed(0)}`).join('\n')}
+
+### AI가 감지한 페르소나 힌트 (90일):
+${[...new Set(personaHints)].slice(0, 25).map(h => `- ${h}`).join('\n')}`)
 
   // C. 우나어 플랫폼 참여도
   sections.push(`## C. 우나어 플랫폼 콘텐츠 참여도
@@ -319,8 +339,8 @@ ${data.postEngagement.map(p =>
   `- ${p.boardType}: ${p._count}건 (평균 조회 ${p._avg.viewCount.toFixed(0)}, 좋아요 ${p._avg.likeCount.toFixed(1)}, 댓글 ${p._avg.commentCount.toFixed(1)}, 스크랩 ${p._avg.scrapCount.toFixed(1)})`,
 ).join('\n')}
 
-### 트렌딩 상위 글:
-${data.topTrendingPosts.slice(0, 15).map((p, i) =>
+### 트렌딩 상위 글 TOP 30:
+${data.topTrendingPosts.slice(0, 30).map((p, i) =>
   `${i + 1}. [${p.boardType}/${p.category ?? '일반'}] "${p.title}" — 점수 ${p.trendingScore.toFixed(1)}, 조회 ${p.viewCount}, 좋아요 ${p.likeCount}, 댓글 ${p.commentCount} (소스: ${p.source})`,
 ).join('\n')}
 
@@ -345,14 +365,14 @@ ${ud.genderDist.map(g => `- ${g.gender ?? '미입력'}: ${g._count}명`).join('\
 ${ud.gradeDist.map(g => `- ${g.grade}: ${g._count}명`).join('\n')}`)
 
   // E. 검색어 & 페이지뷰
-  sections.push(`## E. 사용자 검색어 & 인기 페이지 (최근 30일)
+  sections.push(`## E. 사용자 검색어 & 인기 페이지 (최근 90일)
 
 ### 검색어 TOP 50:
 ${data.searchTerms.length > 0
     ? data.searchTerms.map(s => `- "${s.query}": ${s.count}회`).join('\n')
     : '(검색 데이터 없음 — 아직 사용자 유입 초기)'}
 
-### 인기 페이지 TOP 20:
+### 인기 페이지 TOP 30:
 ${data.topPages.length > 0
     ? data.topPages.map(p => `- ${p.path}: ${p.count}회`).join('\n')
     : '(페이지뷰 데이터 없음)'}`)
@@ -378,18 +398,30 @@ ${data.experimentLearnings.length > 0
     ? data.experimentLearnings.map(e => `- [${e.variable}] ${e.hypothesis}\n  결과: ${e.learnings ?? '분석 중'}`).join('\n')
     : '(아직 완료된 실험 없음)'}`)
 
-  // 고품질 글 내용 샘플 (AI가 톤/주제를 깊이 파악하도록)
-  const contentSamples = data.topQualityPosts.slice(0, 30).map((p, i) =>
-    `### 글 ${i + 1} [${p.boardCategory ?? '일반'}] (품질 ${p.qualityScore.toFixed(0)}, 좋아요 ${p.likeCount}, 댓글 ${p.commentCount})
+  // 고품질 글 내용 샘플 (AI가 톤/주제/감정을 깊이 파악하도록) — 50개, 500자
+  const contentSamples = data.topQualityPosts.slice(0, 50).map((p, i) =>
+    `### 글 ${i + 1} [${p.boardCategory ?? '일반'}/${p.cafeName}] (품질 ${p.qualityScore.toFixed(0)}, 좋아요 ${p.likeCount}, 댓글 ${p.commentCount})
 제목: ${p.title}
-내용 (200자): ${p.content.slice(0, 200)}...`,
+내용: ${p.content.slice(0, 500)}`,
   ).join('\n\n')
 
-  sections.push(`## H. 고품질 글 내용 샘플 (30개)
-이 글들은 50·60대가 실제로 작성한 글 중 품질 점수가 가장 높은 글입니다.
-이 글들의 톤, 주제, 감정을 분석하세요.
+  sections.push(`## H. 고품질 글 내용 샘플 (50개 — 품질 점수 40+ 전체)
+이 글들은 50·60대가 네이버 카페에서 실제로 작성한 글 중 품질 점수가 높은 글입니다.
+이 글들의 톤, 주제, 감정, 사용 어휘, 문장 구조를 면밀히 분석하세요.
+특히: 어떤 감정이 글쓰기의 동기인지, 어떤 단어가 반복되는지, 무엇을 호소하는지에 집중하세요.
 
 ${contentSamples}`)
+
+  // I. 교차분석 힌트
+  sections.push(`## I. 교차분석 요청 — 반드시 수행하세요
+
+다음 교차분석을 데이터에서 직접 수행하고 인사이트를 도출하세요:
+1. **검색어 vs 참여도 괴리**: 사용자가 검색하지만 참여(좋아요/댓글)는 낮은 주제 = 잠재 니즈
+2. **카페 인기글 vs 플랫폼 인기글 괴리**: 카페에서 인기인데 우나어에 없는 주제 = 콘텐츠 갭
+3. **BOT vs USER 글 성과 비교**: 소스별 참여도 차이의 원인 분석
+4. **시간대 vs 콘텐츠 유형**: 언제 어떤 글이 참여를 받는지 패턴
+5. **감성(positive/negative/neutral) vs 참여도**: 어떤 감정의 글이 더 공감 받는지
+6. **카테고리별 "좋아요 대비 댓글 비율"**: 어디서 대화가 일어나고 어디서 침묵하는지`)
 
   return sections.join('\n\n---\n\n')
 }
@@ -403,91 +435,103 @@ async function analyzeWithOpus(dataText: string): Promise<StrategicAnalysis> {
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 8000,
+    max_tokens: 16000,
     system: `당신은 한국 50·60대 커뮤니티 플랫폼 "우리 나이가 어때서"의 사용자 리서치 전략가입니다.
+창업자가 직접 돈을 내고 당신에게 분석을 맡겼습니다. 뻔한 분석은 가치가 없습니다.
 
 당신에게 실제 데이터가 주어집니다:
-- 네이버 카페 3곳(우리가남이가, 실버사랑, 5060세대)에서 크롤링한 게시글
-- 플랫폼 내 사용자 행동 데이터
-- 검색어, 참여도, 인구통계
+- 네이버 카페 3곳(우리가남이가, 실버사랑, 5060세대)에서 크롤링한 수백 건의 게시글 + 내용
+- 플랫폼 내 사용자 행동 데이터 (90일)
+- 검색어, 참여도, 인구통계, 시간 패턴
+- SNS 마케팅 실험 결과
 
-당신의 임무는 이 사람들을 깊이 이해하는 것입니다.
-"시니어"나 "액티브 시니어" 같은 용어를 절대 쓰지 마세요.
-이들을 욕망과 두려움과 일상이 있는 진짜 사람으로 바라보세요.
+■ 절대 규칙:
+- "시니어", "액티브 시니어" 용어 절대 금지
+- 뻔한 일반론 금지 ("건강에 관심이 많다" 수준은 가치 없음)
+- 반드시 데이터의 숫자를 인용하며 근거를 대라
+- 교차분석(섹션 I)을 반드시 수행하고 결과를 반영하라
 
-분석 관점:
-1. 이들이 진짜 원하는 것은 무엇인가? (표면적 니즈가 아닌 깊은 욕망)
-2. 왜 커뮤니티에 글을 쓰는가? 어떤 감정이 동기인가?
-3. 말하는 것(검색어)과 실제 행동(참여도)의 차이는?
-4. 어떤 콘텐츠가 진짜 공감을 얻는가? 왜?
-5. 현재 페르소나(외로움해소형/실리추구형/체면중시형/생계절실형)는 맞는가?
+■ 핵심 분석 관점:
+1. 이들이 진짜 원하는 것은 무엇인가? (표면이 아닌 근원적 욕망 — "왜?"를 3번 파고들어라)
+2. 글의 실제 내용을 읽었을 때 반복되는 감정 키워드와 문장 패턴은?
+3. 말하는 것(검색어)과 실제 행동(참여도)의 괴리 — 무엇을 찾지만 참여하지 않는가? 왜?
+4. 카페에서 인기인데 우나어에 없는 주제(콘텐츠 갭)는?
+5. BOT 글 vs USER 글의 성과 차이가 말하는 것은?
+6. 현재 페르소나(외로움해소형/실리추구형/체면중시형/생계절실형)가 데이터와 맞는지 검증하라. 틀렸다면 왜 틀렸는지 명확히.
+7. 감성(positive/negative/neutral)별로 참여도가 어떻게 다른지 분석하라.
+8. 이 사람들의 "디지털 리터러시 수준"을 글쓰기 스타일에서 추론하라.
 
 현재 헌법의 미션: "50·60대가 다시 사회와 연결되고, 자신만의 속도로 새로운 삶을 시작할 수 있도록 돕는다."
 현재 비전: "나이가 가능성의 한계가 되지 않는 세상, 누구나 설레는 마음으로 두 번째 전성기를 맞이하는 라이프 플랫폼."
 
-반드시 아래 JSON 형식으로만 응답하세요. 한국어로 작성하세요.`,
+■ 출력 규칙:
+- 반드시 JSON만 출력. 마크다운 코드블록(\`\`\`) 없이 순수 JSON만.
+- 반드시 7개 섹션 전부 출력. 도중에 끊기지 않게 각 섹션을 간결하게 작성.
+- contentInsights, constitutionUpdates, snsStrategy, methodology는 필수 — 빠뜨리면 안 됨.
+- 한국어로 작성.`,
     messages: [{
       role: 'user',
       content: `아래 데이터를 기반으로 사용자를 심층 분석해주세요.
+데이터가 말하는 것과 데이터가 말하지 않는 것 모두를 분석하세요.
 
 ${dataText}
 
-응답 형식 (JSON):
+응답 형식 (순수 JSON — 코드블록 없이):
 {
   "demographicInsights": {
-    "ageGenderProfile": "데이터 기반 인구통계 요약",
-    "geographicPatterns": "지역 집중도",
-    "digitalBehavior": "이용 패턴 (언제/어떻게)",
-    "keyFindings": ["핵심 발견 1", "핵심 발견 2", "..."]
+    "ageGenderProfile": "데이터 기반 인구통계 — 추론 포함 (글 톤/주제로 성별·연령 역추론)",
+    "geographicPatterns": "지역 집중도 + 추론",
+    "digitalBehavior": "이용 시간·요일·행동 패턴 + 디지털 리터러시 수준 평가",
+    "keyFindings": ["놀라운 발견 1 (숫자 인용)", "놀라운 발견 2", "...(최소 6개)"]
   },
   "coreDesires": [
     {
-      "desire": "핵심 욕망명",
-      "evidence": "어떤 데이터가 이를 뒷받침하는가",
+      "desire": "핵심 욕망명 (구체적으로)",
+      "evidence": "어떤 데이터(숫자)가 이를 뒷받침하는가 — 최소 3개 데이터 포인트 인용",
       "currentSatisfaction": "low|medium|high",
-      "opportunity": "우나어가 이를 어떻게 더 잘 충족할 수 있는가"
+      "opportunity": "우나어가 구체적으로 무엇을 바꿔야 하는가 — 액션 수준으로"
     }
   ],
   "personas": [
     {
       "id": "P1",
-      "name": "페르소나 이름",
-      "profile": "인구통계 설명",
-      "coreDesire": "핵심 동기",
-      "painPoints": ["고통 1", "고통 2"],
-      "contentPreferences": ["선호 콘텐츠 유형"],
-      "platformBehavior": "플랫폼 사용 패턴",
-      "keyMetric": "이 페르소나를 잘 서빙하고 있는지 측정 지표",
+      "name": "감정적 공명이 있는 이름",
+      "profile": "연령·성별·상황 설명 (150자 이상)",
+      "coreDesire": "이 사람이 진짜 원하는 한 가지",
+      "painPoints": ["구체적 고통 — 일반론 아닌 데이터 기반"],
+      "contentPreferences": ["선호 콘텐츠 유형 — 실제 인기글 제목 인용"],
+      "platformBehavior": "플랫폼 사용 패턴 — 시간·게시판·행동 구체적으로",
+      "keyMetric": "이 페르소나 서빙 성과 측정 KPI",
       "evidenceStrength": "strong|moderate|hypothesis",
-      "dataSource": "어떤 데이터에서 도출됨"
+      "dataSource": "근거 데이터 3줄 요약"
     }
   ],
   "contentInsights": {
-    "topEngagingCategories": ["카테고리 순위"],
-    "gapAnalysis": "사용자가 찾지만 없는 콘텐츠",
-    "saidVsDid": "말하는 것 vs 실제 행동 차이",
-    "magazineTopicRecommendations": ["매거진 추천 주제"],
-    "communityTopicRecommendations": ["커뮤니티 추천 주제"]
+    "topEngagingCategories": ["참여도 순위 (숫자 포함)"],
+    "gapAnalysis": "카페에서 인기인데 우나어에 없는 주제 — 콘텐츠 갭 3개 이상",
+    "saidVsDid": "검색어 vs 실제 참여 괴리 구체 분석 (3개 이상 예시)",
+    "magazineTopicRecommendations": ["매거진 주제 — 제목 수준으로 구체적으로 (10개)"],
+    "communityTopicRecommendations": ["커뮤니티 게시판/주제 — 구체적 (10개)"]
   },
   "constitutionUpdates": {
-    "missionSuggestion": "새로운 미션 제안",
-    "visionSuggestion": "새로운 비전 제안",
-    "essenceSuggestion": "새로운 에센스(한줄 정의) 제안",
-    "personaPriorityChange": "페르소나 우선순위 변경 권고",
-    "contentPolicyChange": "콘텐츠 정책 변경 권고",
-    "toneAdjustment": "톤앤매너 조정 권고"
+    "missionSuggestion": "새 미션문 전체 (데이터에서 발견한 핵심 욕망 반영)",
+    "visionSuggestion": "새 비전문 전체",
+    "essenceSuggestion": "한줄 에센스 (예: '같은 하늘 아래 같은 마음')",
+    "personaPriorityChange": "기존 4개 페르소나 vs 신규 페르소나 비교 + 우선순위",
+    "contentPolicyChange": "콘텐츠 정책 변경 3가지",
+    "toneAdjustment": "톤앤매너 구체 조정 — 어떤 단어를 쓰고 어떤 단어를 피해야 하는지"
   },
   "snsStrategy": {
-    "primaryPlatform": "주력 플랫폼 추천",
-    "platformPersonaAlignment": {"플랫폼": "대상 페르소나"},
-    "contentTypeByPlatform": {"플랫폼": ["콘텐츠 유형"]},
-    "magazineTopics": ["매거진 카테고리 재정의"]
+    "primaryPlatform": "주력 플랫폼 + 이유",
+    "platformPersonaAlignment": {"Threads": "P?", "Instagram": "P?", "Facebook": "P?", "Band": "P?", "NaverBlog": "P?"},
+    "contentTypeByPlatform": {"Threads": ["유형"], "Instagram": ["유형"], "Facebook": ["유형"]},
+    "magazineTopics": ["매거진 카테고리 10개 — 기존 대비 변경점 명시"]
   },
   "methodology": {
-    "dataQuality": "데이터 품질 평가",
-    "sampleSize": "분석 규모",
-    "limitations": ["한계점"],
-    "recommendedFollowUp": ["추가 수집 권고"]
+    "dataQuality": "데이터 품질 솔직한 평가 (무엇이 부족한지)",
+    "sampleSize": "분석 규모 (카페 N건, 플랫폼 N건, 사용자 N명 등)",
+    "limitations": ["한계점 3개 이상 — 이 분석의 맹점"],
+    "recommendedFollowUp": ["추가로 수집해야 할 데이터 — 구체적으로"]
   }
 }`,
     }],
@@ -671,16 +715,22 @@ async function main() {
   console.log('[Strategist] 데이터 수집 중...')
   const data = await collectData()
 
-  const dataPoints = data.cafeCategoryStats.length
+  const totalCafePosts = data.cafeCategoryStats.reduce((sum, c) => sum + c._count, 0)
+  const dataPoints = totalCafePosts
     + data.topQualityPosts.length
     + data.topEngagementPosts.length
+    + data.cafeSentiment.length
     + data.recentTrends.length
     + data.topTrendingPosts.length
+    + data.postEngagement.length
+    + data.postBySource.length
     + data.userDemographics.totalUsers
     + data.searchTerms.length
     + data.topPages.length
+    + data.socialPerformance.length
+    + data.experimentLearnings.length
 
-  console.log(`[Strategist] 데이터 수집 완료 — ${dataPoints}개 데이터 포인트`)
+  console.log(`[Strategist] 데이터 수집 완료 — ${dataPoints}개 데이터 포인트 (카페 ${totalCafePosts}건, 품질글 ${data.topQualityPosts.length}건, 트렌드 ${data.recentTrends.length}일, 사용자 ${data.userDemographics.totalUsers}명)`)
 
   if (data.cafeCategoryStats.length === 0 && data.topTrendingPosts.length === 0) {
     console.warn('[Strategist] 분석할 데이터 부족 — CafePost/Post 모두 비어있음')
@@ -701,7 +751,7 @@ async function main() {
   // 3) Claude Opus 분석
   console.log('[Strategist] Opus 분석 중... (1-2분 소요)')
   const analysis = await analyzeWithOpus(dataText)
-  console.log(`[Strategist] 분석 완료 — 페르소나 ${analysis.personas.length}개, 욕망 ${analysis.coreDesires.length}개`)
+  console.log(`[Strategist] 분석 완료 — 페르소나 ${analysis.personas?.length ?? 0}개, 욕망 ${analysis.coreDesires?.length ?? 0}개, 콘텐츠전략 ${analysis.contentInsights ? '✓' : '✗'}, 헌법 ${analysis.constitutionUpdates ? '✓' : '✗'}, SNS ${analysis.snsStrategy ? '✓' : '✗'}`)
 
   // 4) Markdown 전체 리포트 출력
   const markdown = formatMarkdown(analysis)
