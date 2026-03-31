@@ -35,7 +35,7 @@ export const COUPANG = {
   CATEGORY_FRESH: {
     bannerId: 976338,
     url: 'https://link.coupang.com/a/edTKOs',
-    imgSrc: 'https://ads-partners.coupang.com/banners/976338?subId=&traceId=V0-301-371ae01f4226dec2-I976338&w=320&h=100',
+    imgSrc: '/images/ad/coupang-fresh.jpg',
     alt: '로켓프레시',
   },
 
@@ -43,7 +43,7 @@ export const COUPANG = {
   CATEGORY_KITCHEN: {
     bannerId: 976342,
     url: 'https://link.coupang.com/a/edTNKp',
-    imgSrc: 'https://ads-partners.coupang.com/banners/976342?subId=&traceId=V0-301-2b8ef06377ec8f50-I976342&w=320&h=100',
+    imgSrc: '/images/ad/coupang-kitchen.png',
     alt: '로켓주방용품',
   },
 

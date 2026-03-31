@@ -51,7 +51,6 @@ export default function CoupangBanner({ preset, className }: CoupangBannerProps)
             width={width}
             height={height}
             loading="lazy"
-            unoptimized
           />
         </a>
       </div>
