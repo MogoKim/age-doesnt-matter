@@ -121,12 +121,18 @@ test.describe('시나리오 6: axe-core WCAG 2.1 AA 접근성 검증', () => {
   })
 
   // ── ARIA 랜드마크 검증 ──
-  test('홈: ARIA 랜드마크 구조 (header, main, footer)', async ({ page }) => {
+  test('홈: ARIA 랜드마크 구조 (header/nav, main)', async ({ page }) => {
     await page.goto('/')
 
-    // header 존재
-    const header = page.locator('header')
-    await expect(header.first()).toBeVisible()
+    // 반응형: 데스크탑(≥1024px)은 GNB <nav>, 모바일은 <header>
+    const viewport = page.viewportSize()
+    if (viewport && viewport.width >= 1024) {
+      const nav = page.locator('nav[aria-label="메인 네비게이션"]')
+      await expect(nav.first()).toBeVisible()
+    } else {
+      const header = page.locator('header')
+      await expect(header.first()).toBeVisible()
+    }
 
     // main 존재
     const main = page.locator('main')
