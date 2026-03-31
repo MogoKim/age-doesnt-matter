@@ -17,12 +17,17 @@ interface AdSenseUnitProps {
   className?: string
 }
 
+declare global {
+  interface Window {
+    adsbygoogle: Record<string, unknown>[]
+  }
+}
+
 /**
  * Google AdSense 광고 유닛
  * - display: 섹션사이, 사이드바
  * - in-feed: 피드 목록 사이
  * - in-article: 글 본문 영역
- * 3초 후 광고 높이가 0이면 자동 숨김
  */
 export default function AdSenseUnit({
   slotId,
@@ -38,8 +43,9 @@ export default function AdSenseUnit({
   useEffect(() => {
     if (pushed.current) return
     try {
-      const adsbygoogle = (window as unknown as { adsbygoogle: unknown[] }).adsbygoogle ?? []
-      adsbygoogle.push({})
+      // Google 공식 패턴: window에 배열 할당 후 push
+      // 스크립트 로드 전이면 배열에 대기, 로드 후면 즉시 처리
+      ;(window.adsbygoogle = window.adsbygoogle || []).push({})
       pushed.current = true
     } catch {
       // AdSense 스크립트 미로드 시 무시

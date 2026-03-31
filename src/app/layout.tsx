@@ -63,11 +63,7 @@ export default function RootLayout({
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4117999106913048"
           crossOrigin="anonymous"
-          strategy="lazyOnload"
-        />
-        <Script
-          src="https://ads-partners.coupang.com/g.js"
-          strategy="lazyOnload"
+          strategy="afterInteractive"
         />
       </head>
       <body className={pretendard.className}>
