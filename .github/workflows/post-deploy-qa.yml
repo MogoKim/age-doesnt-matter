@@ -31,6 +31,10 @@ env:
   SLACK_CHANNEL_LOG_COST: ${{ secrets.SLACK_CHANNEL_LOG_COST }}
   SLACK_CHANNEL_EXPERIMENT: ${{ secrets.SLACK_CHANNEL_EXPERIMENT }}
 
+concurrency:
+  group: post-deploy-qa
+  cancel-in-progress: true
+
 jobs:
   qa:
     runs-on: ubuntu-latest
@@ -48,7 +52,7 @@ jobs:
         id: smoke
         continue-on-error: true
         run: |
-          URL="${{ github.event.inputs.url || github.event.deployment_status.target_url || env.SITE_URL }}"
+          URL="${{ github.event.inputs.url || env.SITE_URL }}"
           npx tsx scripts/smoke-test.ts --url "$URL" > smoke-result.json
 
       - name: Cron Link Verification
