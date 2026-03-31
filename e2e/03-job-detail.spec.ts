@@ -23,7 +23,7 @@ test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우
       await expect(page.locator('h1').first()).toBeVisible() // 제목
 
       // 뒤로 가기 링크
-      const backLink = page.locator('a[href="/jobs"]').first()
+      const backLink = page.locator('main a[href="/jobs"]').first()
       await expect(backLink).toBeVisible()
     }
   })
@@ -115,7 +115,7 @@ test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우
       await expect(page.locator('h1').first()).toBeVisible()
 
       // 뒤로 가기 (에러바운더리 렌더링 시 skip)
-      const backLink = page.locator('a[href="/magazine"]').first()
+      const backLink = page.locator('main a[href="/magazine"]').first()
       const hasBackLink = await backLink.isVisible({ timeout: 10000 }).catch(() => false)
 
       if (!hasBackLink) {

@@ -36,7 +36,7 @@ test.describe('시나리오 2: 커뮤니티 글 목록 → 상세 → 댓글 →
       await expect(page.locator('main')).toBeVisible()
 
       // 뒤로 가기 링크 존재
-      const backLink = page.locator('a[href="/community/stories"]').first()
+      const backLink = page.locator('main a[href="/community/stories"]').first()
       await expect(backLink).toBeVisible()
     }
   })
@@ -87,7 +87,7 @@ test.describe('시나리오 2: 커뮤니티 글 목록 → 상세 → 댓글 →
       await expect(page).toHaveURL(/\/community\/stories\//)
 
       // 뒤로가기 클릭
-      const backLink = page.locator('a[href="/community/stories"]').first()
+      const backLink = page.locator('main a[href="/community/stories"]').first()
       await backLink.click()
       await expect(page).toHaveURL(/\/community\/stories$/)
     }

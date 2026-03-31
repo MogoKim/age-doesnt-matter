@@ -103,7 +103,7 @@ test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', (
     await page.goto('/')
 
     await page.locator('header a[href="/search"]').click()
-    await page.waitForURL('/search')
+    await page.waitForURL(/\/search/, { waitUntil: 'domcontentloaded' })
     await expect(page.locator('main')).toBeVisible()
   })
 
