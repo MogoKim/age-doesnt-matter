@@ -13,7 +13,6 @@ import { notifySlack } from '../core/notifier.js'
 import {
   generateCardNewsV2,
   type ContentCategory,
-  type CardNewsSlide,
   type CardNewsOutput,
 } from './card-news/generator.js'
 import { generateCardNewsImages, type CardNewsImageResult } from './card-news/image-gen.js'
@@ -66,35 +65,6 @@ function detectSlot(): string {
   return 'evening'
 }
 
-/** Facebook용 핵심 슬라이드 선택 (3~4장) */
-function selectKeySlides(slides: CardNewsSlide[]): number[] {
-  const indices = new Set<number>()
-
-  // 항상 첫 번째 (hook)
-  indices.add(0)
-
-  // 첫 번째 stat/story/tip 슬라이드
-  for (let i = 1; i < slides.length; i++) {
-    const t = slides[i].slideType
-    if (t === 'stat' || t === 'story' || t === 'tip' || t === 'step') {
-      indices.add(i)
-      break
-    }
-  }
-
-  // summary 슬라이드가 있으면 추가
-  for (let i = 0; i < slides.length; i++) {
-    if (slides[i].slideType === 'summary') {
-      indices.add(i)
-      break
-    }
-  }
-
-  // 마지막 (cta)
-  indices.add(slides.length - 1)
-
-  return Array.from(indices).sort((a, b) => a - b)
-}
 
 /** Band용 bullet 요약 생성 */
 function buildBandSummary(output: CardNewsOutput): string {
@@ -203,12 +173,10 @@ async function main() {
     }
   }
 
-  // 7. Facebook — 핵심 슬라이드 3~4장
+  // 7. Facebook — 전체 슬라이드 (인스타그램과 동일)
   if (facebookClient.isConfigured()) {
     try {
-      const fbSlideIndices = selectKeySlides(output.slides)
-      const fbImageUrls = fbSlideIndices.map(i => rendered.imageUrls[i])
-      const fbResult = await facebookClient.postWithPhotos(fbImageUrls, caption)
+      const fbResult = await facebookClient.postWithPhotos(rendered.imageUrls, caption)
       await prisma.socialPost.create({
         data: {
           platform: 'FACEBOOK',
@@ -216,7 +184,7 @@ async function main() {
           promotionLevel: output.category === 'COMMUNITY' ? 'SOFT' : 'PURE',
           postText: caption,
           hashtags,
-          imageUrls: fbImageUrls,
+          imageUrls: rendered.imageUrls,
           cardNewsType: output.category,
           platformPostId: fbResult.id,
           postingSlot: slot,
@@ -226,7 +194,7 @@ async function main() {
         },
       })
       postedCount++
-      console.log(`[v2] Facebook 게시 완료: ${fbResult.id} (${fbImageUrls.length}장)`)
+      console.log(`[v2] Facebook 게시 완료: ${fbResult.id} (${rendered.imageUrls.length}장)`)
     } catch (err) {
       console.error('[v2] Facebook 게시 실패:', err)
     }
