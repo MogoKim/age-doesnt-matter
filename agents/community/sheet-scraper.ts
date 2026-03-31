@@ -268,7 +268,7 @@ async function main() {
             const persona = pickPersona(category, tab.boardType, row.persona)
             const userId = await getBotUser(persona.id)
 
-            // 게시 (SEO_ONLY)
+            // 게시 (PUBLISHED — 피드 + 검색 모두 노출)
             const post = await prisma.post.create({
               data: {
                 title,
@@ -277,7 +277,7 @@ async function main() {
                 category,
                 authorId: userId,
                 source: 'BOT',
-                status: 'SEO_ONLY',
+                status: 'PUBLISHED',
                 sourceUrl: row.sourceUrl,
                 sourceSite: siteConfig.id,
                 thumbnailUrl,
