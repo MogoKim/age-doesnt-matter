@@ -58,6 +58,7 @@ enum BoardType {
 enum PostStatus {
   DRAFT
   PUBLISHED
+  SEO_ONLY
   HIDDEN
   DELETED
 }
@@ -332,6 +333,10 @@ model Post {
   // SEO
   seoTitle       String?
   seoDescription String?
+
+  // 외부 스크랩 출처
+  sourceUrl      String?   @unique
+  sourceSite     String?
 
   publishedAt    DateTime?
   createdAt      DateTime       @default(now())

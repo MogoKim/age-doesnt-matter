@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       step:
-        description: "실행 단계 (analyze / curate / external / all)"
+        description: "실행 단계 (analyze / curate / external / sheet-scrape / all)"
         required: true
         default: "all"
         type: choice
@@ -13,14 +13,18 @@ on:
           - analyze
           - curate
           - external
+          - sheet-scrape
 
   # 매일 09:00, 13:00, 19:00 KST — 카페 트렌드 분석 + 콘텐츠 큐레이션
   # 매일 11:30 KST — 외부 사이트 크롤링 (82cook 등)
+  # 매일 11:00, 21:00 KST — 시트 스크래퍼 (펨코/오유/네이트판)
   schedule:
     - cron: "0 0 * * *"   # 09:00 KST
     - cron: "0 4 * * *"   # 13:00 KST
     - cron: "0 10 * * *"  # 19:00 KST
     - cron: "30 2 * * *"  # 11:30 KST — external-crawl
+    - cron: "0 2 * * *"   # 11:00 KST — sheet-scrape
+    - cron: "0 12 * * *"  # 21:00 KST — sheet-scrape
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -36,6 +40,13 @@ env:
   SLACK_CHANNEL_SYSTEM: ${{ secrets.SLACK_CHANNEL_SYSTEM }}
   SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
   SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
+  SHEETS_SCRAPER_ID: ${{ secrets.SHEETS_SCRAPER_ID }}
+  GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_R2_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
+  CLOUDFLARE_R2_SECRET_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}
+  CLOUDFLARE_R2_BUCKET: ${{ secrets.CLOUDFLARE_R2_BUCKET }}
+  NEXT_PUBLIC_R2_PUBLIC_URL: ${{ secrets.NEXT_PUBLIC_R2_PUBLIC_URL }}
 
 jobs:
   analyze-and-curate:
@@ -84,3 +95,26 @@ jobs:
 
       - name: Run External Crawler
         run: cd agents && npx tsx cron/runner.ts cafe_crawler external-crawl
+
+  sheet-scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: ${{ github.event.inputs.step == 'sheet-scrape' || github.event.schedule == '0 2 * * *' || github.event.schedule == '0 12 * * *' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Sheet Scraper
+        run: cd agents && npx tsx cron/runner.ts community sheet-scrape

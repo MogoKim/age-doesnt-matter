@@ -644,7 +644,7 @@ export const getPostDetail = cache(async function getPostDetail(
   userId?: string,
 ): Promise<PostDetail | null> {
   const post = await prisma.post.findUnique({
-    where: { id: postId, status: 'PUBLISHED' },
+    where: { id: postId, status: { in: ['PUBLISHED', 'SEO_ONLY'] } },
     select: {
       ...postSelect,
       content: true,

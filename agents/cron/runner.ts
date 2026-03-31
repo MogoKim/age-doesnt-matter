@@ -74,6 +74,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cpo:persona-diversity-checker': () => import('../cpo/persona-diversity-checker.js').then(() => {}),
   'cdo:engagement-optimizer': () => import('../cdo/engagement-optimizer.js').then(() => {}),
   'cto:qa-verify': () => import('../cto/qa-verifier.js').then(() => {}),
+  'community:sheet-scrape': () => import('../community/sheet-scraper.js').then(() => {}),
 }
 
 function getAutomationStatus(): string {
