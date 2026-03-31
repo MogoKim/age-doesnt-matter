@@ -116,5 +116,7 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
-      - name: Run Sheet Scraper
+      - name: Run Sheet Scraper (펨코 제외 — 로컬 Mac에서 처리)
         run: cd agents && npx tsx cron/runner.ts community sheet-scrape
+        env:
+          SHEET_SCRAPER_EXCLUDE_SITE: fmkorea

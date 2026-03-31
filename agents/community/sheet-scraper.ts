@@ -1,10 +1,17 @@
 /**
  * 외부 커뮤니티 시트 스크래퍼
- * Google Sheet에서 PENDING URL 읽기 → 스크래핑 → 게시 (SEO_ONLY) → Sheet 업데이트
+ * Google Sheet에서 PENDING URL 읽기 → 스크래핑 → 게시 → Sheet 업데이트
  *
- * 사용: npx tsx agents/community/sheet-scraper.ts
- * 크론: community:sheet-scrape (runner.ts)
- * 스케줄: 매일 11:00 / 21:00 KST
+ * 사용:
+ *   npx tsx agents/community/sheet-scraper.ts              # 전체 사이트
+ *   npx tsx agents/community/sheet-scraper.ts --site fmkorea  # 펨코만 (로컬)
+ *
+ * 크론: community:sheet-scrape (runner.ts) — GA에서 실행
+ * 로컬: run-local-fmkorea.ts → launchd — Mac에서 펨코 전용 실행
+ * 스케줄: GA 11:00/21:00 KST (오유/네이트판) + 로컬 11:30/21:30 KST (펨코)
+ *
+ * 환경변수:
+ *   SHEET_SCRAPER_EXCLUDE_SITE — GA에서 펨코 제외용 (예: fmkorea)
  */
 
 import { chromium, type BrowserContext, type Page } from 'playwright'
@@ -184,12 +191,25 @@ function kstNow(): string {
 
 // ── 메인 파이프라인 ──
 
+// ── CLI 인자 + 환경변수 파싱 ──
+
+function parseSiteFilter(): { siteOnly: string | null; siteExclude: string | null } {
+  const args = process.argv.slice(2)
+  const siteIdx = args.indexOf('--site')
+  const siteOnly = siteIdx !== -1 ? args[siteIdx + 1] ?? null : null
+  const siteExclude = process.env.SHEET_SCRAPER_EXCLUDE_SITE ?? null
+  return { siteOnly, siteExclude }
+}
+
 async function main() {
-  console.log('[sheet-scraper] 시작:', kstNow())
+  const { siteOnly, siteExclude } = parseSiteFilter()
+  const filterLabel = siteOnly ? `[${siteOnly} only]` : siteExclude ? `[${siteExclude} 제외]` : ''
+  console.log(`[sheet-scraper]${filterLabel} 시작:`, kstNow())
 
   let totalProcessed = 0
   let totalPublished = 0
   let totalFailed = 0
+  let totalSkippedFilter = 0
 
   try {
     // 1. Sheet에서 PENDING 행 읽기
@@ -213,6 +233,22 @@ async function main() {
           console.log(`[sheet-scraper] [${totalProcessed}/${totalRows}] ${row.sourceUrl}`)
 
           try {
+            // 사이트 감지 (필터링 전에 먼저 수행 — PROCESSING 마킹 방지)
+            const siteConfig = detectSite(row.sourceUrl)
+
+            // 사이트 필터: --site fmkorea → 펨코만 처리, 나머지 PENDING 유지
+            if (siteOnly && siteConfig && siteConfig.id !== siteOnly) {
+              console.log(`  → SKIP (필터: ${siteOnly} only)`)
+              totalSkippedFilter++
+              continue
+            }
+            // 사이트 제외: SHEET_SCRAPER_EXCLUDE_SITE=fmkorea → 펨코 건너뜀
+            if (siteExclude && siteConfig && siteConfig.id === siteExclude) {
+              console.log(`  → SKIP (제외: ${siteExclude})`)
+              totalSkippedFilter++
+              continue
+            }
+
             // PROCESSING 상태로 업데이트
             await updateRow(tab.tabName, row.rowIndex, { status: 'PROCESSING' })
 
@@ -230,8 +266,6 @@ async function main() {
               continue
             }
 
-            // 사이트 감지
-            const siteConfig = detectSite(row.sourceUrl)
             if (!siteConfig) {
               await updateRow(tab.tabName, row.rowIndex, {
                 status: 'FAILED',
@@ -332,16 +366,17 @@ async function main() {
         botType: 'CAFE_CRAWLER',
         action: 'SHEET_SCRAPE',
         status: totalFailed === 0 ? 'SUCCESS' : totalPublished > 0 ? 'PARTIAL' : 'FAILED',
-        details: `처리 ${totalProcessed}건: 게시 ${totalPublished}, 실패 ${totalFailed}`,
-        logData: { totalProcessed, totalPublished, totalFailed },
+        details: `처리 ${totalProcessed}건: 게시 ${totalPublished}, 실패 ${totalFailed}, 필터 스킵 ${totalSkippedFilter}`,
+        logData: { totalProcessed, totalPublished, totalFailed, totalSkippedFilter, siteOnly, siteExclude },
       },
     })
 
     // 4. Slack 알림
     const emoji = totalFailed === 0 ? '✅' : totalPublished > 0 ? '⚠️' : '❌'
+    const skipInfo = totalSkippedFilter > 0 ? `, 필터 스킵 ${totalSkippedFilter}` : ''
     await notifySlack(
       'log',
-      `${emoji} [시트 스크래퍼] ${totalProcessed}건 처리 → ${totalPublished}건 게시, ${totalFailed}건 실패`,
+      `${emoji} [시트 스크래퍼]${filterLabel} ${totalProcessed}건 처리 → ${totalPublished}건 게시, ${totalFailed}건 실패${skipInfo}`,
     )
   } catch (err) {
     console.error('[sheet-scraper] 치명적 오류:', err)
@@ -354,7 +389,7 @@ async function main() {
   }
 
   console.log(
-    `[sheet-scraper] 완료: 게시 ${totalPublished}, 실패 ${totalFailed} (${kstNow()})`,
+    `[sheet-scraper]${filterLabel} 완료: 게시 ${totalPublished}, 실패 ${totalFailed}, 필터 스킵 ${totalSkippedFilter} (${kstNow()})`,
   )
 }
 
