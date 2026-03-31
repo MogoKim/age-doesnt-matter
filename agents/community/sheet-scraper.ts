@@ -103,8 +103,8 @@ async function scrapePage(
 
   try {
     await page.goto(url, {
-      waitUntil: 'networkidle',
-      timeout: 20000,
+      waitUntil: 'domcontentloaded',
+      timeout: 45000,
     })
 
     // Cloudflare 대기
@@ -332,7 +332,7 @@ async function main() {
         action: 'SHEET_SCRAPE',
         status: totalFailed === 0 ? 'SUCCESS' : totalPublished > 0 ? 'PARTIAL' : 'FAILED',
         details: `처리 ${totalProcessed}건: 게시 ${totalPublished}, 실패 ${totalFailed}`,
-        metrics: { totalProcessed, totalPublished, totalFailed },
+        logData: { totalProcessed, totalPublished, totalFailed },
       },
     })
 
