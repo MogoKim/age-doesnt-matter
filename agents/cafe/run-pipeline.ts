@@ -7,6 +7,7 @@
  *   npx tsx agents/cafe/run-pipeline.ts crawl     # 크롤링만
  *   npx tsx agents/cafe/run-pipeline.ts analyze   # 분석만
  *   npx tsx agents/cafe/run-pipeline.ts curate    # 큐레이션만
+ *   npx tsx agents/cafe/run-pipeline.ts external  # 외부 크롤링만 (82cook 등)
  */
 import { execFileSync } from 'child_process'
 import { resolve, dirname } from 'path'
@@ -85,6 +86,10 @@ async function main() {
 
   if (step === 'all' || step === 'curate') {
     await run('content-curator.ts', '3단계: 콘텐츠 큐레이션')
+  }
+
+  if (step === 'all' || step === 'external') {
+    await run('external-crawler.ts', '4단계: 외부 사이트 크롤링 (82cook 등)')
   }
 
   const elapsed = Math.round((Date.now() - startTime) / 1000)

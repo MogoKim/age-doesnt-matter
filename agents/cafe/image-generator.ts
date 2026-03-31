@@ -1,8 +1,20 @@
 /**
  * 매거진 AI 이미지 생성기 — DALL-E 3
- * 기사당 히어로 이미지 1장 생성
+ * 기사당 히어로 이미지 1장 + 본문 이미지 최대 2장 생성
  * 비용: $0.04/장 (standard 1024x1024)
+ *
+ * 이미지 생성 규칙: agents/core/image-generation-rules.md
+ * 프롬프트 빌더: agents/core/image-prompt-builder.ts
  */
+import {
+  buildImagePrompt,
+  getMagazineImageStyle,
+  type ImageStyle,
+} from '../core/image-prompt-builder.js'
+
+// Re-export for consumers
+export { getMagazineImageStyle as getImageStyle }
+export type { ImageStyle }
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 
@@ -11,17 +23,9 @@ interface ImageResult {
   prompt: string     // used prompt for logging
 }
 
-type ImageStyle = 'warm' | 'informative' | 'fun'
-
-const STYLE_PREFIXES: Record<ImageStyle, string> = {
-  warm: '따뜻하고 밝은 톤의 일러스트레이션, 중년 한국인들이 함께하는 장면,',
-  informative: '깔끔하고 신뢰감 있는 인포그래픽 스타일, 건강/정보 주제,',
-  fun: '유쾌하고 밝은 카툰 스타일 일러스트, 웃음을 주는 장면,',
-}
-
 export async function generateMagazineImage(
   prompt: string,
-  style: ImageStyle = 'warm'
+  style: ImageStyle = 'warm-lifestyle'
 ): Promise<ImageResult | null> {
   if (!OPENAI_API_KEY) {
     console.log('[ImageGen] OPENAI_API_KEY 없음 — 이미지 생성 스킵')
@@ -29,7 +33,7 @@ export async function generateMagazineImage(
   }
 
   try {
-    const fullPrompt = `${STYLE_PREFIXES[style]} ${prompt}. 한국적 감성, 사실적이지만 따뜻한 느낌. 텍스트/글자 절대 없이 이미지만. 잡지 표지 품질.`
+    const fullPrompt = buildImagePrompt(prompt, style)
 
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -93,20 +97,4 @@ async function uploadToR2(sourceUrl: string, filename: string): Promise<string |
     console.error('[ImageGen] R2 업로드 실패:', err)
     return null
   }
-}
-
-/** 카테고리 -> 이미지 스타일 매핑 */
-export function getImageStyle(category: string): ImageStyle {
-  const map: Record<string, ImageStyle> = {
-    '건강': 'informative',
-    '재테크': 'informative',
-    '일자리': 'informative',
-    '유머': 'fun',
-    '문화': 'fun',
-    '여행': 'warm',
-    '요리': 'warm',
-    '생활': 'warm',
-    '간병': 'warm',
-  }
-  return map[category] ?? 'warm'
 }

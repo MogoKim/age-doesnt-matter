@@ -1,3 +1,5 @@
+// LOCAL ONLY — 네이버 카페 크롤러는 GitHub Actions에서 실행 불가 (네이버 IP 차단)
+// 로컬에서 run-pipeline.ts를 통해 실행: npx tsx agents/cafe/run-pipeline.ts
 /**
  * 네이버 카페 크롤러
  * storage-state.json (쿠키)을 사용해 로그인 상태로 3개 카페 수집

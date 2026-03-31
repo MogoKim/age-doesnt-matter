@@ -7,6 +7,7 @@ import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
+import ResponsiveAd from '@/components/ad/ResponsiveAd'
 
 export const metadata: Metadata = {
   title: '인기글',
@@ -107,7 +108,7 @@ export default async function BestPage({
                   <div className="mt-3"><FeedAd /></div>
                 )}
                 {idx === 5 && (
-                  <div className="mt-3"><CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" /></div>
+                  <div className="mt-3"><ResponsiveAd mobile={<CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" />} desktop={null} /></div>
                 )}
                 {idx === 8 && (
                   <div className="mt-3"><FeedAd /></div>

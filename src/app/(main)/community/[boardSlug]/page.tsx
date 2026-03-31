@@ -10,6 +10,7 @@ import LoadMoreButton from '@/components/features/community/LoadMoreButton'
 import SortToggle from '@/components/features/community/SortToggle'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
+import ResponsiveAd from '@/components/ad/ResponsiveAd'
 
 interface PageProps {
   params: Promise<{ boardSlug: string }>
@@ -72,7 +73,7 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
                   <div className="mt-4"><FeedAd /></div>
                 )}
                 {(idx + 1) % 6 === 0 && (
-                  <div className="mt-4"><CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" /></div>
+                  <div className="mt-4"><ResponsiveAd mobile={<CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" />} desktop={null} /></div>
                 )}
               </div>
             ))}

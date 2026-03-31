@@ -27,6 +27,7 @@
 - 서버 컴포넌트 기본, 'use client' 최소화
 - 이미지: next/image 필수 (WebP + lazy load)
 - 에러 클래스: AppError / NotFoundError / ForbiddenError
+- 에이전트 스크립트 생성 시: .claude/rules/agent-lifecycle.md 체크리스트 필수 준수 (runner.ts 등록 + 크론 연결 + 비용 영향 명시)
 
 ## AI 에이전트 규칙
 - 에이전트 코드: /agents 폴더 (TypeScript)

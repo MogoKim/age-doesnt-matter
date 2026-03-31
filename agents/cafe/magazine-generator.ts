@@ -275,13 +275,27 @@ async function main() {
       continue
     }
 
-    // 이미지 프롬프트 추출 + DALL-E 이미지 생성
+    // 히어로 이미지 프롬프트 추출 + DALL-E 이미지 생성
     const imagePromptMatch = article.content.match(/\[IMAGE_PROMPT:\s*(.+?)\]/)
     const imagePrompt = imagePromptMatch?.[1] ?? `${topic.title} 관련 따뜻한 이미지`
+    const imageStyle = getImageStyle(category)
 
-    const image = await generateMagazineImage(imagePrompt, getImageStyle(category))
+    const image = await generateMagazineImage(imagePrompt, imageStyle)
     if (image) {
-      console.log(`[MagazineGenerator] 이미지 생성 완료: ${image.url.slice(0, 50)}...`)
+      console.log(`[MagazineGenerator] 히어로 이미지 생성 완료: ${image.url.slice(0, 50)}...`)
+    }
+
+    // 본문 이미지 생성 (imageHints 기반, 최대 2장 — 비용 제어)
+    const MAX_BODY_IMAGES = 2
+    const bodyImageUrls = new Map<number, string>()
+
+    for (let i = 0; i < Math.min(article.imageHints.length, MAX_BODY_IMAGES); i++) {
+      const hint = article.imageHints[i]
+      const bodyImg = await generateMagazineImage(hint, imageStyle)
+      if (bodyImg) {
+        bodyImageUrls.set(i + 1, bodyImg.url) // IMAGE:N은 1부터 시작
+        console.log(`[MagazineGenerator] 본문 이미지 ${i + 1} 생성: ${bodyImg.url.slice(0, 50)}...`)
+      }
     }
 
     // 리치 HTML 템플릿으로 최종 콘텐츠 빌드
@@ -290,7 +304,7 @@ async function main() {
     const kstDate = new Date(todayDate.getTime() + 9 * 60 * 60 * 1000)
     const dateStr = kstDate.toISOString().split('T')[0]
 
-    const finalHtml = buildMagazineHtml({
+    let finalHtml = buildMagazineHtml({
       title: article.title,
       subtitle: article.summary ?? '',
       category,
@@ -300,6 +314,16 @@ async function main() {
       authorName: '우나어 매거진 편집팀',
       publishedDate: dateStr,
     })
+
+    // 본문 <!-- [IMAGE:N] --> 플레이스홀더를 실제 이미지로 치환
+    for (const [n, url] of bodyImageUrls) {
+      finalHtml = finalHtml.replace(
+        `<!-- [IMAGE:${n}] -->`,
+        `<img src="${url}" alt="${article.imageHints[n - 1] ?? ''}" style="width:100%;height:auto;border-radius:12px;margin:16px 0;" loading="lazy" />`,
+      )
+    }
+    // 생성되지 않은 나머지 플레이스홀더 제거
+    finalHtml = finalHtml.replace(/<!-- \[IMAGE:\d+\] -->/g, '')
 
     // 썸네일 생성 (실패해도 발행은 계속)
     let thumbnailUrl: string | undefined
@@ -332,10 +356,7 @@ async function main() {
 
     publishedCount++
     publishedTitles.push(article.title)
-    if (article.imageHints.length > 0) {
-      console.log(`[MagazineGenerator] 이미지 힌트 ${article.imageHints.length}개: ${article.imageHints.join(', ')}`)
-    }
-    console.log(`[MagazineGenerator] 발행: "${article.title}" (${postId})`)
+    console.log(`[MagazineGenerator] 발행: "${article.title}" (${postId}) — 이미지: 히어로 ${image ? 1 : 0}장 + 본문 ${bodyImageUrls.size}장`)
   }
 
   const durationMs = Date.now() - startTime

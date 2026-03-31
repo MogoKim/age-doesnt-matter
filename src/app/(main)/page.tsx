@@ -7,6 +7,7 @@ import TrendingSection from '@/components/features/home/TrendingSection'
 import EditorsPickSection from '@/components/features/home/EditorsPickSection'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
+import ResponsiveAd from '@/components/ad/ResponsiveAd'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
@@ -101,7 +102,7 @@ export default async function HomePage() {
             <JobSection jobs={jobs} />
             <AdSenseUnit slotId={ADSENSE.HOME_SECTION} format="auto" className="my-4 rounded-2xl overflow-hidden" />
             <TrendingSection posts={trending} />
-            <CoupangBanner preset="mobile" className="my-4 lg:hidden rounded-2xl overflow-hidden" />
+            <ResponsiveAd mobile={<CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />} desktop={null} />
             <EditorsPickSection posts={editorsPicks} />
             <MagazineSection posts={magazine} />
             <FeedAd />

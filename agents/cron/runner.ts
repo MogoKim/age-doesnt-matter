@@ -51,6 +51,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cafe_crawler:magazine-morning': () => import('../cafe/magazine-generator.js').then(() => {}),
   'cafe_crawler:magazine-evening': () => import('../cafe/magazine-generator.js').then(() => {}),
   'cafe_crawler:content-curate': () => import('../cafe/content-curator.js').then(() => {}),
+  'cafe_crawler:external-crawl': () => import('../cafe/external-crawler.js').then(() => {}),
   'cmo:social-poster': () => import('../cmo/social-poster.js').then(() => {}),
   'cmo:social-metrics': () => import('../cmo/social-metrics.js').then(() => {}),
   'cmo:social-reviewer': () => import('../cmo/social-reviewer.js').then(() => {}),

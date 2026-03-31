@@ -5,6 +5,7 @@ import type { AgentResult } from '../core/types.js'
 
 const MONTHLY_BUDGET_USD = 50
 const WARNING_THRESHOLD_USD = 40
+const DALLE_COST_PER_IMAGE = 0.04
 
 /**
  * CFO 에이전트 — 비용 추적
@@ -47,7 +48,27 @@ class CFOCostTracker extends BaseAgent {
       estimatedCost += agent._count * costPerRun
     }
 
-    // 3. 예산 경고
+    // 3. DALL-E 이미지 생성 비용
+    const dalleLogEntries = await prisma.botLog.findMany({
+      where: {
+        createdAt: { gte: monthStart },
+        action: { in: ['IMAGE', 'MAGAZINE', 'CARD_NEWS'] },
+      },
+      select: { details: true },
+    })
+
+    let dalleImageCount = 0
+    for (const entry of dalleLogEntries) {
+      const details = entry.details as Record<string, unknown> | null
+      if (details) {
+        const count = (details.dalleImages as number) ?? (details.imageCount as number) ?? 1
+        dalleImageCount += count
+      }
+    }
+    const dalleCost = dalleImageCount * DALLE_COST_PER_IMAGE
+    estimatedCost += dalleCost
+
+    // 4. 예산 경고
     if (estimatedCost >= WARNING_THRESHOLD_USD) {
       await notifySlack({
         level: 'critical',
@@ -57,7 +78,7 @@ class CFOCostTracker extends BaseAgent {
       })
     }
 
-    const summary = `이번 달 예상 비용: $${estimatedCost.toFixed(2)}/${MONTHLY_BUDGET_USD} (에이전트 ${agentRuns}회 실행)`
+    const summary = `이번 달 예상 비용: $${estimatedCost.toFixed(2)}/${MONTHLY_BUDGET_USD} (에이전트 ${agentRuns}회 실행, DALL-E ${dalleImageCount}장 $${dalleCost.toFixed(2)})`
 
     await notifyAdmin({
       level: estimatedCost >= WARNING_THRESHOLD_USD ? 'important' : 'info',
@@ -75,6 +96,8 @@ class CFOCostTracker extends BaseAgent {
         budgetUsd: MONTHLY_BUDGET_USD,
         agentRuns,
         breakdown: Object.fromEntries(agentBreakdown.map((a) => [a.botType, a._count])),
+        dalleImageCount,
+        dalleCostUsd: dalleCost,
       },
     }
   }

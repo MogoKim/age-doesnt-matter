@@ -1,7 +1,14 @@
 /**
  * 카드뉴스 v2 이미지 생성기 — DALL-E 3 + R2 업로드
  * 슬라이드별 프롬프트를 받아 병렬로 이미지 생성 후 R2에 업로드
+ *
+ * 이미지 생성 규칙: agents/core/image-generation-rules.md
+ * 프롬프트 빌더: agents/core/image-prompt-builder.ts
  */
+import { buildImagePrompt, type ImageStyle } from '../../core/image-prompt-builder.js'
+
+// Re-export ImageStyle for consumers
+export type { ImageStyle }
 
 // ---------------------------------------------------------------------------
 // Types
@@ -12,12 +19,6 @@ export interface CardNewsImageResult {
   prompt: string       // used prompt
   slideIndex: number   // which slide this is for
 }
-
-export type ImageStyle =
-  | 'warm-lifestyle'
-  | 'clean-infographic'
-  | 'cozy-community'
-  | 'active-growth'
 
 interface ImagePromptInput {
   slideIndex: number
@@ -31,68 +32,12 @@ interface ImagePromptInput {
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 
-const PERSON_STYLE_GUIDE = {
-  femalePrompt:
-    'elegant Korean woman in her early 50s, well-groomed, healthy and vibrant, '
-    + 'natural dark hair with subtle highlights, confident smile, '
-    + 'stylish casual outfit, warm natural lighting, '
-    + 'similar vibe to a refined Korean actress in her 50s',
-
-  malePrompt:
-    'charismatic Korean man in his early 50s, well-maintained appearance, '
-    + 'natural dark hair, warm genuine smile, '
-    + 'smart casual style, confident posture, '
-    + 'similar vibe to a distinguished Korean actor in his 50s',
-
-  never: [
-    'white hair', 'gray hair', 'wrinkled', 'elderly', 'senior citizen',
-    'old person', 'frail', 'walking stick', 'cane', 'Western', 'Caucasian',
-  ] as const,
-}
-
-const STYLE_PREFIXES: Record<ImageStyle, string> = {
-  'warm-lifestyle': '따뜻하고 밝은 톤의 일러스트레이션, 한국적 감성, 잡지 품질,',
-  'clean-infographic': '깔끔하고 신뢰감 있는 인포그래픽 스타일, 미니멀,',
-  'cozy-community': '포근하고 따뜻한 커뮤니티 분위기, 함께하는 장면,',
-  'active-growth': '활기차고 에너지 넘치는, 도전과 성장의 분위기,',
-}
-
-const PERSON_KEYWORDS = ['사람', '여성', '남성', '얼굴', '인물', '남자', '여자', '부부', '커플']
-
-const NO_TEXT_DIRECTIVE = 'No text, no letters, no words, no numbers in the image.'
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 interface DalleResponse {
   data: Array<{ url: string }>
-}
-
-function containsPersonKeyword(prompt: string): boolean {
-  return PERSON_KEYWORDS.some((kw) => prompt.includes(kw))
-}
-
-function buildNegativePrompt(): string {
-  return PERSON_STYLE_GUIDE.never.map((term) => `NOT ${term}`).join(', ')
-}
-
-function buildFullPrompt(prompt: string, style: ImageStyle): string {
-  const parts: string[] = [STYLE_PREFIXES[style]]
-
-  if (containsPersonKeyword(prompt)) {
-    // Randomly pick male or female style (deterministic based on prompt length)
-    const personPrompt = prompt.length % 2 === 0
-      ? PERSON_STYLE_GUIDE.femalePrompt
-      : PERSON_STYLE_GUIDE.malePrompt
-    parts.push(personPrompt)
-    parts.push(buildNegativePrompt())
-  }
-
-  parts.push(prompt)
-  parts.push(NO_TEXT_DIRECTIVE)
-
-  return parts.join(' ')
 }
 
 function getDatePrefix(): string {
@@ -111,7 +56,7 @@ async function generateSingleImage(
   input: ImagePromptInput,
   datePrefix: string,
 ): Promise<CardNewsImageResult | null> {
-  const fullPrompt = buildFullPrompt(input.prompt, input.style)
+  const fullPrompt = buildImagePrompt(input.prompt, input.style)
 
   try {
     // 1. Generate with DALL-E 3

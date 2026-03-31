@@ -5,12 +5,14 @@ on:
     - cron: "0 0 * * 1"
     # 수요일 09:00 KST = 00:00 UTC — CPO 페르소나 다양성
     - cron: "0 0 * * 3"
+    # 목요일 09:00 KST = 00:00 UTC — Strategist 유저 심층 분석
+    - cron: "0 0 * * 4"
     # 금요일 09:00 KST = 00:00 UTC — CMO 콘텐츠 갭
     - cron: "0 0 * * 5"
   workflow_dispatch:
     inputs:
       agent:
-        description: "에이전트 (cmo, cpo)"
+        description: "에이전트 (cmo, cpo, strategist)"
         required: true
       task:
         description: "태스크"
@@ -59,12 +61,14 @@ jobs:
             echo "task=${{ github.event.inputs.task }}" >> $GITHUB_OUTPUT
           else
             CRON="${{ github.event.schedule }}"
-            DOW=$(date -u +%u)  # 1=Mon, 3=Wed, 5=Fri
+            DOW=$(date -u +%u)  # 1=Mon, 3=Wed, 4=Thu, 5=Fri
             case "$CRON" in
               "0 0 * * 1")
                 echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=source-expander" >> $GITHUB_OUTPUT ;;
               "0 0 * * 3")
                 echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=persona-diversity-checker" >> $GITHUB_OUTPUT ;;
+              "0 0 * * 4")
+                echo "agent=strategist" >> $GITHUB_OUTPUT; echo "task=user-deep-analysis" >> $GITHUB_OUTPUT ;;
               "0 0 * * 5")
                 echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=content-gap-finder" >> $GITHUB_OUTPUT ;;
               *)
