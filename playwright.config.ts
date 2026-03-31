@@ -25,7 +25,9 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
+  // E2E_BASE_URL 설정 시 외부 URL 직접 테스트 (프로덕션 QA)
+  // 미설정 시 로컬 서버 자동 시작
+  webServer: process.env.E2E_BASE_URL ? undefined : {
     command: process.env.CI ? 'npm run start' : 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,

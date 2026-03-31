@@ -1,7 +1,9 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { ADSENSE } from './ad-slots'
+import CoupangBanner from './CoupangBanner'
 
 interface AdSenseUnitProps {
   /** AdSense 광고 슬롯 ID */
@@ -24,10 +26,16 @@ declare global {
 }
 
 /**
- * Google AdSense 광고 유닛
- * - display: 섹션사이, 사이드바
- * - in-feed: 피드 목록 사이
- * - in-article: 글 본문 영역
+ * Google AdSense 광고 유닛 (v2 — 근본 재작성)
+ *
+ * 이전 버전 문제:
+ * - pushed.current = true → 1회만 push, SPA 라우트 전환 시 광고 재로드 안 됨
+ * - 스크립트 로드 전 push → race condition
+ *
+ * v2 변경:
+ * - pathname 변경 시 ins 태그 재생성 + push 재호출
+ * - data-ad-status 감시 → unfilled 시 쿠팡 폴백
+ * - 스크립트 로드 상태 확인 후 push
  */
 export default function AdSenseUnit({
   slotId,
@@ -37,25 +45,66 @@ export default function AdSenseUnit({
   layoutKey,
   className,
 }: AdSenseUnitProps) {
-  const adRef = useRef<HTMLModElement>(null)
-  const pushed = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
+  const [showFallback, setShowFallback] = useState(false)
 
   useEffect(() => {
-    if (pushed.current) return
+    const container = containerRef.current
+    if (!container) return
+
+    // 이전 ins 제거 (SPA 네비게이션 대응)
+    container.innerHTML = ''
+    setShowFallback(false)
+
+    // 새 ins 태그 생성
+    const ins = document.createElement('ins')
+    ins.className = 'adsbygoogle'
+    ins.setAttribute('data-ad-client', ADSENSE.CLIENT_ID)
+    ins.setAttribute('data-ad-slot', slotId)
+    ins.setAttribute('data-ad-format', format)
+
+    if (layout === 'in-article') {
+      ins.style.display = 'block'
+      ins.style.textAlign = 'center'
+      ins.setAttribute('data-ad-layout', 'in-article')
+    } else {
+      ins.style.display = 'block'
+    }
+
+    if (responsive && !layout && !layoutKey) {
+      ins.setAttribute('data-full-width-responsive', 'true')
+    }
+    if (layoutKey) {
+      ins.setAttribute('data-ad-layout-key', layoutKey)
+    }
+
+    container.appendChild(ins)
+
+    // data-ad-status 감시 — unfilled 시 쿠팡 폴백
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === 'attributes' && m.attributeName === 'data-ad-status') {
+          const status = (m.target as HTMLElement).getAttribute('data-ad-status')
+          if (status === 'unfilled') {
+            setShowFallback(true)
+          }
+        }
+      }
+    })
+    observer.observe(ins, { attributes: true })
+
+    // adsbygoogle.push() — 스크립트가 로드되지 않았으면 큐에 쌓임
     try {
-      // Google 공식 패턴: window에 배열 할당 후 push
-      // 스크립트 로드 전이면 배열에 대기, 로드 후면 즉시 처리
       ;(window.adsbygoogle = window.adsbygoogle || []).push({})
-      pushed.current = true
     } catch {
       // AdSense 스크립트 미로드 시 무시
     }
-  }, [])
 
-  // 인아티클 스타일: 중앙 정렬
-  const style: React.CSSProperties = layout === 'in-article'
-    ? { display: 'block', textAlign: 'center' as const }
-    : { display: 'block' }
+    return () => {
+      observer.disconnect()
+    }
+  }, [slotId, format, responsive, layout, layoutKey, pathname])
 
   return (
     <aside
@@ -66,17 +115,10 @@ export default function AdSenseUnit({
       <span className="absolute top-2 right-3 text-caption text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border z-10">
         광고
       </span>
-      <ins
-        ref={adRef}
-        className="adsbygoogle"
-        style={style}
-        data-ad-client={ADSENSE.CLIENT_ID}
-        data-ad-slot={slotId}
-        data-ad-format={format}
-        {...(responsive && !layout && !layoutKey ? { 'data-full-width-responsive': 'true' } : {})}
-        {...(layout ? { 'data-ad-layout': layout } : {})}
-        {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : {})}
-      />
+      <div ref={containerRef} />
+      {showFallback && (
+        <CoupangBanner preset="mobile" className="mt-2" />
+      )}
     </aside>
   )
 }

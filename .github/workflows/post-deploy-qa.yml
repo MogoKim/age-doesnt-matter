@@ -60,6 +60,20 @@ jobs:
         continue-on-error: true
         run: npx tsx scripts/check-cron-links.ts > cron-result.json
 
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Ad Verification (Browser)
+        id: ad-verify
+        continue-on-error: true
+        env:
+          E2E_BASE_URL: ${{ github.event.inputs.url || env.SITE_URL }}
+        run: |
+          npx playwright test e2e/07-ad-verification.spec.ts \
+            --project=chromium \
+            --project=mobile-chrome \
+            --reporter=json > ad-verify-result.json 2>&1 || true
+
       - name: Upload QA Results
         uses: actions/upload-artifact@v4
         with:
@@ -67,23 +81,32 @@ jobs:
           path: |
             smoke-result.json
             cron-result.json
+            ad-verify-result.json
           retention-days: 30
 
       - name: QA Failed — Agent Verify
-        if: steps.smoke.outcome == 'failure' || steps.cron.outcome == 'failure'
+        if: >-
+          steps.smoke.outcome == 'failure' ||
+          steps.cron.outcome == 'failure' ||
+          steps.ad-verify.outcome == 'failure'
         env:
           QA_SMOKE_RESULT: ${{ steps.smoke.outcome }}
           QA_CRON_RESULT: ${{ steps.cron.outcome }}
+          QA_AD_VERIFY_RESULT: ${{ steps.ad-verify.outcome }}
         run: |
           npx prisma generate
           cd agents && npm ci
           npx tsx cron/runner.ts cto qa-verify
 
       - name: QA Passed — Agent Notify
-        if: steps.smoke.outcome == 'success' && steps.cron.outcome == 'success'
+        if: >-
+          steps.smoke.outcome == 'success' &&
+          steps.cron.outcome == 'success' &&
+          steps.ad-verify.outcome == 'success'
         env:
           QA_SMOKE_RESULT: ${{ steps.smoke.outcome }}
           QA_CRON_RESULT: ${{ steps.cron.outcome }}
+          QA_AD_VERIFY_RESULT: ${{ steps.ad-verify.outcome }}
           QA_ALL_PASSED: "true"
         run: |
           npx prisma generate

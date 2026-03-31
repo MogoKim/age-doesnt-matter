@@ -1,5 +1,3 @@
-'use client'
-
 import Image from 'next/image'
 import { COUPANG } from './ad-slots'
 
@@ -10,18 +8,23 @@ interface CoupangBannerProps {
 }
 
 /**
- * 쿠팡 CPS 배너 — 정적 이미지 + 어필리에이트 링크
- * 외부 JS SDK 의존성 없음 → 한 번 설정하면 깨질 일 없음
- * 모바일: 카테고리 배너 2종 랜덤 로테이션 (320x100)
- * 데스크탑: 카테고리 배너 2종 랜덤 로테이션 (320x100, 컨테이너 중앙 정렬)
+ * 쿠팡 CPS 배너 (v2 — 서버 컴포넌트화)
+ *
+ * 이전 버전 문제:
+ * - 'use client' + new Date().getHours() → 서버(UTC) vs 클라이언트(KST) 시간대 불일치 → hydration mismatch
+ *
+ * v2 변경:
+ * - 서버 컴포넌트 (use client 제거) → hydration mismatch 원천 차단
+ * - 날짜 기반 로테이션 (시간대 무관)
+ * - next/image는 서버 컴포넌트에서 사용 가능
  */
 
 const BANNERS = [COUPANG.CATEGORY_FRESH, COUPANG.CATEGORY_KITCHEN] as const
 
 function pickBanner() {
-  // 시간 기반 로테이션 — 같은 시간대에는 같은 배너 표시 (hydration mismatch 방지)
-  const hourSlot = new Date().getHours()
-  return BANNERS[hourSlot % BANNERS.length]
+  // 날짜 기반 로테이션 — UTC 기준 날짜로 시간대 불일치 제거
+  const day = new Date().getUTCDate()
+  return BANNERS[day % BANNERS.length]
 }
 
 export default function CoupangBanner({ preset, className }: CoupangBannerProps) {
