@@ -91,7 +91,7 @@ ${kpiSummary}
 
     const dateStr = now.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
 
-    await sendSlackMessage('DAILY_BRIEFING', '', [
+    await sendSlackMessage('DASHBOARD', '', [
       { type: 'header', text: { type: 'plain_text', text: `CEO 일일 브리핑 — ${dateStr}`, emoji: true } },
       {
         type: 'section',

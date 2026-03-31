@@ -1,9 +1,16 @@
 /**
- * Slack Notifier — 에이전트 알림 시스템
+ * Slack Notifier v2 — 6채널 통합 알림 시스템
  *
- * 13개 채널에 심각도/에이전트별 라우팅
+ * 14채널 → 6채널 재설계:
+ *   DASHBOARD: 창업자 매일 확인 (critical + 브리핑 + 승인)
+ *   REPORT: 주간 리포트 + KPI + 실험
+ *   QA: 배포별 QA 결과 (스레드 기반)
+ *   SYSTEM: CTO/CPO 시스템 알림
+ *   LOG: 통합 운영 로그 (카테고리 prefix)
+ *   AGENT: 에이전트 내부 협업
  */
 import { WebClient } from '@slack/web-api'
+import type { ChatPostMessageResponse } from '@slack/web-api'
 import type { NotifyPayload } from './types.js'
 import { prisma } from './db.js'
 
@@ -11,77 +18,62 @@ import { prisma } from './db.js'
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN ?? ''
 const slack = SLACK_BOT_TOKEN ? new WebClient(SLACK_BOT_TOKEN) : null
 
-// ── 채널 ID 매핑 (환경변수에서 로드) ──
+// ── 채널 ID 매핑 (6채널) ──
 const CHANNELS = {
-  // 창업자 전용
-  CEO_FOUNDER: process.env.SLACK_CHANNEL_CEO_FOUNDER ?? '',        // #ceo-창업자
-  DAILY_BRIEFING: process.env.SLACK_CHANNEL_DAILY_BRIEFING ?? '',  // #일일-브리핑
-  WEEKLY_REPORT: process.env.SLACK_CHANNEL_WEEKLY_REPORT ?? '',    // #주간-리포트
-
-  // 에이전트 협업
-  AGENT_MEETING: process.env.SLACK_CHANNEL_AGENT_MEETING ?? '',    // #에이전트-회의실
-  MEETING_LOG: process.env.SLACK_CHANNEL_MEETING_LOG ?? '',        // #회의록
-
-  // 알림 (심각도별)
-  ALERT_URGENT: process.env.SLACK_CHANNEL_ALERT_URGENT ?? '',      // #알림-긴급
-  ALERT_SYSTEM: process.env.SLACK_CHANNEL_ALERT_SYSTEM ?? '',      // #알림-시스템
-  ALERT_KPI: process.env.SLACK_CHANNEL_ALERT_KPI ?? '',            // #알림-kpi
-
-  // 자동화 로그
-  LOG_JOBS: process.env.SLACK_CHANNEL_LOG_JOBS ?? '',              // #로그-일자리
-  LOG_CONTENT: process.env.SLACK_CHANNEL_LOG_CONTENT ?? '',        // #로그-콘텐츠
-  LOG_MARKETING: process.env.SLACK_CHANNEL_LOG_MARKETING ?? '',    // #로그-마케팅
-  LOG_COST: process.env.SLACK_CHANNEL_LOG_COST ?? '',              // #로그-비용
-
-  // 성장
-  EXPERIMENT: process.env.SLACK_CHANNEL_EXPERIMENT ?? '',           // #실험-보드
-
-  // 승인 워크플로우
-  APPROVAL_QUEUE: process.env.SLACK_CHANNEL_APPROVAL_QUEUE ?? '',  // #승인-대기
+  DASHBOARD: process.env.SLACK_CHANNEL_DASHBOARD ?? '',  // #대시보드
+  REPORT: process.env.SLACK_CHANNEL_REPORT ?? '',        // #리포트
+  QA: process.env.SLACK_CHANNEL_QA ?? '',                // #qa
+  SYSTEM: process.env.SLACK_CHANNEL_SYSTEM ?? '',        // #시스템
+  LOG: process.env.SLACK_CHANNEL_LOG ?? '',              // #로그
+  AGENT: process.env.SLACK_CHANNEL_AGENT ?? '',          // #에이전트
 } as const
 
 type ChannelKey = keyof typeof CHANNELS
 
 // ── 에이전트 → 로그 채널 매핑 ──
 const AGENT_LOG_CHANNEL: Record<string, ChannelKey> = {
-  COO: 'LOG_JOBS',
-  JOB: 'LOG_JOBS',
-  SEED: 'LOG_CONTENT',
-  CMO: 'LOG_MARKETING',
-  CFO: 'LOG_COST',
-  CDO: 'ALERT_KPI',
-  CEO: 'CEO_FOUNDER',
-  CTO: 'ALERT_SYSTEM',
-  CPO: 'ALERT_SYSTEM',
+  COO: 'LOG',
+  JOB: 'LOG',
+  SEED: 'LOG',
+  CMO: 'LOG',
+  CFO: 'LOG',
+  CDO: 'REPORT',
+  CEO: 'DASHBOARD',
+  CTO: 'SYSTEM',
+  CPO: 'SYSTEM',
 }
 
-// ── 심각도 → 채널 매핑 ──
+// ── 로그 카테고리 prefix (통합 #로그 채널용) ──
+const LOG_PREFIX: Record<string, string> = {
+  COO: '[운영]',
+  JOB: '[일자리]',
+  SEED: '[콘텐츠]',
+  CMO: '[마케팅]',
+  CFO: '[비용]',
+}
+
+// ── 심각도 → 채널 매핑 (이중 전송 제거!) ──
 function resolveChannels(payload: NotifyPayload): ChannelKey[] {
   const channels: ChannelKey[] = []
 
-  // 심각도별 알림 채널
   switch (payload.level) {
     case 'critical':
-      channels.push('ALERT_URGENT')
-      channels.push('CEO_FOUNDER')  // critical은 창업자에게도
+      channels.push('DASHBOARD')  // 1곳만! (기존: ALERT_URGENT + CEO_FOUNDER 2곳)
       break
     case 'important':
-      channels.push('ALERT_SYSTEM')
+      channels.push('SYSTEM')
       break
     case 'info':
-      // info는 에이전트별 로그 채널에만
       break
   }
 
-  // 에이전트별 로그 채널 추가
   const logChannel = AGENT_LOG_CHANNEL[payload.agent]
   if (logChannel && !channels.includes(logChannel)) {
     channels.push(logChannel)
   }
 
-  // 채널이 비면 기본값
   if (channels.length === 0) {
-    channels.push('ALERT_SYSTEM')
+    channels.push('LOG')
   }
 
   return channels
@@ -99,19 +91,26 @@ function levelEmoji(level: NotifyPayload['level']): string {
 /**
  * Slack 채널로 메시지 전송
  */
-async function sendToSlack(channelKey: ChannelKey, text: string, blocks?: Record<string, unknown>[]): Promise<void> {
+async function sendToSlack(
+  channelKey: ChannelKey,
+  text: string,
+  blocks?: Record<string, unknown>[],
+  threadTs?: string,
+): Promise<ChatPostMessageResponse | null> {
   const channelId = CHANNELS[channelKey]
-  if (!slack || !channelId) return
+  if (!slack || !channelId) return null
 
   try {
-    await slack.chat.postMessage({
+    return await slack.chat.postMessage({
       channel: channelId,
       text,
       blocks: blocks as never,
+      thread_ts: threadTs,
       unfurl_links: false,
     })
   } catch (err) {
     console.error(`[Slack] ${channelKey} 전송 실패:`, err)
+    return null
   }
 }
 
@@ -128,8 +127,6 @@ export async function sendSlackMessage(
 
 /**
  * Slack 알림 전송 — 심각도 + 에이전트별 자동 라우팅
- *
- * 심각도 + 에이전트별 자동 라우팅
  */
 export async function notifySlack(payload: NotifyPayload): Promise<void> {
   if (!slack) {
@@ -140,12 +137,17 @@ export async function notifySlack(payload: NotifyPayload): Promise<void> {
 
   const emoji = levelEmoji(payload.level)
   const channels = resolveChannels(payload)
-  const text = `${emoji} *${payload.title}*\n\n에이전트: ${payload.agent}\n${payload.body}`
+
+  // 로그 채널이면 카테고리 prefix 추가
+  const prefix = LOG_PREFIX[payload.agent] ?? ''
+  const titleWithPrefix = prefix ? `${prefix} ${payload.title}` : payload.title
+
+  const text = `${emoji} *${titleWithPrefix}*\n\n에이전트: ${payload.agent}\n${payload.body}`
 
   const blocks = [
     {
       type: 'header',
-      text: { type: 'plain_text', text: `${payload.title}`, emoji: true },
+      text: { type: 'plain_text', text: titleWithPrefix, emoji: true },
     },
     {
       type: 'section',
@@ -172,8 +174,6 @@ export async function notifySlack(payload: NotifyPayload): Promise<void> {
 }
 
 /**
- * 어드민 대시보드 알림 (DB 저장 + Slack 라우팅)
- *
  * 어드민 대시보드 알림 (DB 저장 + Slack 라우팅)
  */
 export async function notifyAdmin(payload: NotifyPayload): Promise<void> {
@@ -202,7 +202,6 @@ export async function notifyAdmin(payload: NotifyPayload): Promise<void> {
     })
   } catch (err) {
     console.error('[Notifier] 어드민 알림 저장 실패:', err)
-    // 폴백: Slack으로 전송
     await notifySlack(payload)
   }
 }
@@ -219,7 +218,7 @@ interface ApprovalItem {
 }
 
 /**
- * Slack #승인-대기 채널에 Block Kit 승인 요청 메시지 전송
+ * Slack #대시보드 채널에 Block Kit 승인 요청 메시지 전송
  */
 export async function notifyApproval(item: ApprovalItem): Promise<void> {
   if (!slack) {
@@ -228,9 +227,9 @@ export async function notifyApproval(item: ApprovalItem): Promise<void> {
     return
   }
 
-  const channelId = CHANNELS.APPROVAL_QUEUE
+  const channelId = CHANNELS.DASHBOARD
   if (!channelId) {
-    console.warn('[Notifier] APPROVAL_QUEUE 채널 미설정 — 승인 알림 스킵')
+    console.warn('[Notifier] DASHBOARD 채널 미설정 — 승인 알림 스킵')
     return
   }
 
@@ -291,6 +290,89 @@ export async function notifyApproval(item: ApprovalItem): Promise<void> {
     })
   } catch (err) {
     console.error('[Notifier] 승인 알림 전송 실패:', err)
+  }
+}
+
+/**
+ * QA 결과를 #qa 채널에 스레드로 전송
+ *
+ * 1. 부모 메시지 생성 (커밋 + 상태)
+ * 2. 개별 결과를 스레드 답글로
+ * 3. 최종 상태로 부모 업데이트
+ * 4. 실패 시 #대시보드에 cross-post
+ */
+export interface QaReportOptions {
+  commitSha: string
+  results: Array<{ name: string; passed: boolean; detail: string }>
+  analysis?: string
+}
+
+export async function sendQaReport(opts: QaReportOptions): Promise<void> {
+  if (!slack) {
+    console.warn('[Notifier] Slack 설정 없음 — QA 리포트 스킵')
+    return
+  }
+
+  const kstTime = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+  const shortSha = opts.commitSha.slice(0, 7)
+  const allPassed = opts.results.every((r) => r.passed)
+  const statusEmoji = allPassed ? ':white_check_mark:' : ':x:'
+  const statusText = allPassed ? 'QA 통과' : 'QA 실패'
+
+  // Step 1: 부모 메시지
+  const parentText = `${statusEmoji} 배포 QA — ${shortSha} (${kstTime})`
+  const parentBlocks = [
+    {
+      type: 'header',
+      text: { type: 'plain_text', text: `배포 QA — ${shortSha}`, emoji: true },
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*커밋:*\n\`${shortSha}\`` },
+        { type: 'mrkdwn', text: `*상태:*\n${statusEmoji} ${statusText}` },
+      ],
+    },
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: opts.results.map((r) =>
+          `${r.passed ? ':white_check_mark:' : ':x:'} ${r.name}`
+        ).join('\n'),
+      },
+    },
+    {
+      type: 'context',
+      elements: [
+        { type: 'mrkdwn', text: kstTime },
+      ],
+    },
+  ]
+
+  const parentMsg = await sendToSlack('QA', parentText, parentBlocks)
+  const threadTs = parentMsg?.ts
+
+  // Step 2: 개별 결과를 스레드로
+  if (threadTs) {
+    for (const result of opts.results) {
+      const emoji = result.passed ? ':white_check_mark:' : ':x:'
+      await sendToSlack('QA', `${emoji} ${result.name}\n${result.detail}`, undefined, threadTs)
+    }
+
+    // 분석 결과도 스레드로
+    if (opts.analysis) {
+      await sendToSlack('QA', `:mag: AI 분석\n${opts.analysis}`, undefined, threadTs)
+    }
+  }
+
+  // Step 3: 실패 시 #대시보드에 cross-post
+  if (!allPassed) {
+    const failedItems = opts.results.filter((r) => !r.passed)
+    const crossPostText = `:x: 배포 QA 실패 — \`${shortSha}\`\n실패: ${failedItems.map((f) => f.name).join(', ')}\n상세는 #qa 채널 확인`
+    await sendToSlack('DASHBOARD', crossPostText)
+  } else {
+    await sendToSlack('DASHBOARD', `:white_check_mark: 배포 QA 통과 — \`${shortSha}\``)
   }
 }
 

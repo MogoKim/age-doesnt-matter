@@ -136,7 +136,7 @@ ${snsExperiment ? `- 현재 실험: ${snsExperiment.hypothesis} (${snsExperiment
     // 6. 주간 리포트 Slack 전송
     const weekRange = `${weekAgo.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: 'short', day: 'numeric' })} ~ ${now.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: 'short', day: 'numeric' })}`
 
-    await sendSlackMessage('WEEKLY_REPORT', '', [
+    await sendSlackMessage('REPORT', '', [
       { type: 'header', text: { type: 'plain_text', text: `CEO 주간 리포트 (${weekRange})`, emoji: true } },
       { type: 'divider' },
       {

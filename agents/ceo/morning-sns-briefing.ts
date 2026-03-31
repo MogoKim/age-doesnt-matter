@@ -44,7 +44,7 @@ class MorningSNSBriefing extends BaseAgent {
     if (posts.length === 0) {
       const emptyMessage = '어제 게시된 SNS 게시물이 없습니다.'
 
-      await sendSlackMessage('DAILY_BRIEFING', `SNS 일일 브리핑 -- ${dateStr}`, [
+      await sendSlackMessage('DASHBOARD', `SNS 일일 브리핑 -- ${dateStr}`, [
         { type: 'header', text: { type: 'plain_text', text: `SNS 일일 브리핑 -- ${dateStr}`, emoji: true } },
         { type: 'section', text: { type: 'mrkdwn', text: `*어제 성과:* 게시물 0개` } },
         { type: 'section', text: { type: 'mrkdwn', text: `*참고:* ${emptyMessage}` } },
@@ -163,7 +163,7 @@ ${bottomPostsSummary}
     })
 
     // ── 6. Slack 블록 전송 ──
-    await sendSlackMessage('DAILY_BRIEFING', `SNS 일일 브리핑 -- ${dateStr}`, [
+    await sendSlackMessage('DASHBOARD', `SNS 일일 브리핑 -- ${dateStr}`, [
       { type: 'header', text: { type: 'plain_text', text: `SNS 일일 브리핑 -- ${dateStr}`, emoji: true } },
       { type: 'section', text: { type: 'mrkdwn', text: `*어제 성과:* ${posts.length}개 게시, 총 참여 ${totalEngagement}` } },
       { type: 'section', text: { type: 'mrkdwn', text: `*성공 TOP:*\n${topPostsSummary}` } },

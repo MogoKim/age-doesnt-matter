@@ -761,7 +761,7 @@ async function main() {
 
   // 5) Slack 요약 전송
   const slackSummary = formatSlackSummary(analysis)
-  await sendSlackMessage('CEO_FOUNDER', slackSummary)
+  await sendSlackMessage('DASHBOARD', slackSummary)
 
   // 6) BotLog 저장
   const durationMs = Date.now() - startTime

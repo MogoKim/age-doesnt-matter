@@ -232,10 +232,10 @@ ${transcriptParts.join('\n')}
     ]},
   ]
 
-  await sendSlackMessage('MEETING_LOG', `에이전트 회의 완료 — ${result.summary}`, meetingBlocks)
+  await sendSlackMessage('AGENT', `에이전트 회의 완료 — ${result.summary}`, meetingBlocks)
 
   // #에이전트-회의실에도 요약
-  await sendSlackMessage('AGENT_MEETING', '', [
+  await sendSlackMessage('AGENT', '', [
     { type: 'header', text: { type: 'plain_text', text: `회의 결론 — ${config.type}`, emoji: true } },
     { type: 'section', text: { type: 'mrkdwn', text: `*요약:* ${result.summary}\n\n*결정:*\n${result.decisions.map((d, i) => `${i + 1}. ${d}`).join('\n')}` } },
   ])

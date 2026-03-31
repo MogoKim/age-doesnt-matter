@@ -80,7 +80,7 @@ class CFORevenueTracker extends BaseAgent {
       .map(([slot, s]) => `  ${slot}: ${s.impressions.toLocaleString()} 노출 / ${s.clicks} 클릭 (CTR ${s.ctr})`)
       .join('\n')
 
-    await sendSlackMessage('LOG_COST', '', [
+    await sendSlackMessage('LOG', '', [
       {
         type: 'header',
         text: { type: 'plain_text', text: `CFO 수익 리포트 — ${now.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric' })}`, emoji: true },

@@ -26,7 +26,7 @@ async function main() {
       `• *${item.id.slice(-6)}* | ${item.type} | ${item.title}\n  └ ${item.requestedBy} · ${item.createdAt.toLocaleDateString('ko-KR')}`
     )
 
-    await sendSlackMessage('APPROVAL_QUEUE', `⏰ *승인 대기 ${pending.length}건*\n\n${lines.join('\n\n')}\n\n\`/una-approve [ID]\` 로 승인하거나 위 메시지의 버튼을 클릭하세요.`)
+    await sendSlackMessage('DASHBOARD', `⏰ *승인 대기 ${pending.length}건*\n\n${lines.join('\n\n')}\n\n\`/una-approve [ID]\` 로 승인하거나 위 메시지의 버튼을 클릭하세요.`)
   }
 
   console.log(`[ApprovalReminder] 완료 — PENDING ${pending.length}건, 만료 ${expired.count}건`)

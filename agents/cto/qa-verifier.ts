@@ -1,13 +1,13 @@
 import { readFileSync } from 'fs'
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
-import { notifySlack } from '../core/notifier.js'
+import { notifySlack, sendQaReport } from '../core/notifier.js'
 import type { AgentResult } from '../core/types.js'
 
 /**
  * CTO QA Verifier — 3가지 모드
- * 1. QA_ALL_PASSED=true → 배포 QA 성공 리포트
- * 2. QA_SMOKE_RESULT 있음 → 배포 QA 실패 분석
+ * 1. QA_ALL_PASSED=true → 배포 QA 성공 리포트 (#qa 스레드)
+ * 2. QA_SMOKE_RESULT 있음 → 배포 QA 실패 분석 (#qa 스레드 + #대시보드 cross-post)
  * 3. QA_MODE=cron-audit → 크론 실행 감사 (일 1회 23:45 KST)
  */
 
@@ -74,38 +74,57 @@ class CTOQAVerifier extends BaseAgent {
     return 'cron-audit'
   }
 
-  private readJson<T>(envKey: string): T | null {
-    const path = process.env[envKey]
-    if (!path) return null
+  private readJsonFile<T>(filePath: string): T | null {
     try {
-      return JSON.parse(readFileSync(path, 'utf-8')) as T
+      return JSON.parse(readFileSync(filePath, 'utf-8')) as T
     } catch {
       return null
     }
   }
 
   private async handleDeployPass(): Promise<Omit<AgentResult, 'durationMs' | 'timestamp'>> {
-    const smoke = this.readJson<SmokeResult>('QA_SMOKE_RESULT')
-    const cron = this.readJson<CronResult>('QA_CRON_RESULT')
+    const smoke = this.readJsonFile<SmokeResult>('smoke-result.json')
+    const cron = this.readJsonFile<CronResult>('cron-result.json')
 
+    const commitSha = process.env.GITHUB_SHA ?? 'unknown'
     const version = smoke?.version ?? cron?.version ?? 'unknown'
     const passed = smoke?.checks.filter((c) => c.passed).length ?? 0
     const total = smoke?.checks.length ?? 0
     const linked = cron?.handlers.filter((h) => h.linked).length ?? 0
     const cronTotal = cron?.handlers.length ?? 0
 
-    const body = `✅ 배포 QA 통과 — v${version}\n${passed}/${total} 체크 통과 | 크론 ${linked}/${cronTotal} 연결 정상`
+    // #qa 채널에 스레드 리포트
+    const results = [
+      {
+        name: 'Smoke Test',
+        passed: process.env.QA_SMOKE_RESULT !== 'failure',
+        detail: `${passed}/${total} 체크 통과 (v${version})`,
+      },
+      {
+        name: 'Cron 연결',
+        passed: process.env.QA_CRON_RESULT !== 'failure',
+        detail: `${linked}/${cronTotal} 핸들러 연결 정상`,
+      },
+      {
+        name: '광고 검증',
+        passed: process.env.QA_AD_VERIFY_RESULT !== 'failure',
+        detail: process.env.QA_AD_VERIFY_RESULT === 'failure'
+          ? '광고 렌더링 검증 실패'
+          : '광고 렌더링 검증 통과',
+      },
+    ]
 
-    await notifySlack({ level: 'info', agent: 'CTO', title: '배포 QA 통과', body })
+    await sendQaReport({ commitSha, results })
 
-    return { agent: 'CTO', success: true, summary: body }
+    const summary = `배포 QA 통과 — ${commitSha.slice(0, 7)}`
+    return { agent: 'CTO', success: true, summary }
   }
 
   private async handleDeployFail(): Promise<Omit<AgentResult, 'durationMs' | 'timestamp'>> {
-    const smoke = this.readJson<SmokeResult>('QA_SMOKE_RESULT')
-    const cron = this.readJson<CronResult>('QA_CRON_RESULT')
+    const smoke = this.readJsonFile<SmokeResult>('smoke-result.json')
+    const cron = this.readJsonFile<CronResult>('cron-result.json')
 
-    const version = smoke?.version ?? cron?.version ?? 'unknown'
+    const commitSha = process.env.GITHUB_SHA ?? 'unknown'
     const checks = smoke?.checks ?? []
     const failed = checks.filter((c) => !c.passed)
     const total = checks.length
@@ -116,19 +135,39 @@ class CTOQAVerifier extends BaseAgent {
       `배포 QA에서 아래 항목이 실패했습니다. 각 항목의 원인과 조치 방안을 간단히 분석해주세요.\n\n${failSummary}`
     )
 
-    const body = [
-      `🔴 배포 QA 실패 — v${version}`,
-      '',
-      `실패 항목 (${failed.length}/${total}):`,
-      ...failed.map((f) => `• ${f.name} — ${f.detail ?? '원인 불명'}\n  → 원인: AI 분석 참조`),
-      '',
-      `조치 필요: ${analysis}`,
-    ].join('\n')
+    // #qa 채널에 스레드 리포트
+    const results = [
+      {
+        name: 'Smoke Test',
+        passed: process.env.QA_SMOKE_RESULT !== 'failure',
+        detail: process.env.QA_SMOKE_RESULT === 'failure'
+          ? `실패 ${failed.length}/${total}: ${failed.map((f) => f.name).join(', ')}`
+          : `${total - failed.length}/${total} 체크 통과`,
+      },
+      {
+        name: 'Cron 연결',
+        passed: process.env.QA_CRON_RESULT !== 'failure',
+        detail: process.env.QA_CRON_RESULT === 'failure'
+          ? '크론 연결 검증 실패'
+          : `${cron?.handlers.filter((h) => h.linked).length ?? 0}/${cron?.handlers.length ?? 0} 연결 정상`,
+      },
+      {
+        name: '광고 검증',
+        passed: process.env.QA_AD_VERIFY_RESULT !== 'failure',
+        detail: process.env.QA_AD_VERIFY_RESULT === 'failure'
+          ? '광고 렌더링 검증 실패'
+          : '광고 렌더링 검증 통과',
+      },
+    ]
 
-    await notifySlack({ level: 'critical', agent: 'CTO', title: '배포 QA 실패', body })
-    await notifySlack({ level: 'important', agent: 'CTO', title: '배포 QA 실패 상세', body })
+    await sendQaReport({ commitSha, results, analysis })
 
-    return { agent: 'CTO', success: false, summary: `배포 QA 실패 — ${failed.length}/${total} 항목`, data: { analysis } }
+    return {
+      agent: 'CTO',
+      success: false,
+      summary: `배포 QA 실패 — ${commitSha.slice(0, 7)}`,
+      data: { analysis },
+    }
   }
 
   private async handleCronAudit(): Promise<Omit<AgentResult, 'durationMs' | 'timestamp'>> {
@@ -156,7 +195,7 @@ class CTOQAVerifier extends BaseAgent {
     }
 
     const missingList = missing.map((m) => `• ${m.label} (${m.botType}:${m.action})`).join('\n')
-    const body = `⚠️ 크론 미실행 에이전트 (${missing.length}/${DAILY_EXPECTED.length}):\n${missingList}`
+    const body = `크론 미실행 에이전트 (${missing.length}/${DAILY_EXPECTED.length}):\n${missingList}`
 
     await notifySlack({ level: 'important', agent: 'CTO', title: '크론 미실행 감지', body })
 
