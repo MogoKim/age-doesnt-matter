@@ -15,26 +15,28 @@ const PRESET_MAP = {
   product: COUPANG.PRODUCT_CAROUSEL,
 } as const
 
+interface PartnersCoupangGlobal {
+  G: new (config: Record<string, unknown>) => void
+}
+
 /**
  * 쿠팡 파트너스 다이나믹 배너
- * script 동적 로드 → PartnersCoupang.G() 호출
+ * g.js는 layout.tsx에서 글로벌 1회 로드 → 여기서는 PartnersCoupang.G()만 호출
+ * cleanup으로 언마운트 시 innerHTML 초��화
  */
 export default function CoupangBanner({ preset, className }: CoupangBannerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const loaded = useRef(false)
 
   useEffect(() => {
-    if (loaded.current || !containerRef.current) return
-    loaded.current = true
-
-    const config = PRESET_MAP[preset]
+    if (!containerRef.current) return
     const container = containerRef.current
+    const config = PRESET_MAP[preset]
 
-    // g.js 로드
-    const script = document.createElement('script')
-    script.src = 'https://ads-partners.coupang.com/g.js'
-    script.async = true
-    script.onload = () => {
+    const tryInit = (): boolean => {
+      const PC = (window as unknown as { PartnersCoupang?: PartnersCoupangGlobal }).PartnersCoupang
+      if (!PC) return false
+
+      // PartnersCoupang.G는 container 내부에 직접 렌더링하므로 script 생성 필요
       const initScript = document.createElement('script')
       initScript.textContent = `new PartnersCoupang.G(${JSON.stringify({
         id: config.id,
@@ -42,11 +44,27 @@ export default function CoupangBanner({ preset, className }: CoupangBannerProps)
         trackingCode: COUPANG.TRACKING_CODE,
         width: String(config.width),
         height: String(config.height),
-        tsource: '',
+        subId: null,
       })});`
       container.appendChild(initScript)
+      return true
     }
-    container.appendChild(script)
+
+    // g.js 로드 완료 대기 → 500ms 간격 재시도 (최대 6회 = 3초)
+    if (!tryInit()) {
+      let attempts = 0
+      const interval = setInterval(() => {
+        attempts++
+        if (tryInit() || attempts >= 6) {
+          clearInterval(interval)
+        }
+      }, 500)
+      return () => clearInterval(interval)
+    }
+
+    return () => {
+      container.innerHTML = ''
+    }
   }, [preset])
 
   return (

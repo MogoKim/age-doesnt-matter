@@ -99,7 +99,7 @@ export default async function HomePage() {
         <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
           <div>
             <JobSection jobs={jobs} />
-            <AdSenseUnit slotId={ADSENSE.SECTION_BETWEEN} format="auto" className="my-4 rounded-2xl overflow-hidden" />
+            <AdSenseUnit slotId={ADSENSE.HOME_SECTION} format="auto" className="my-4 rounded-2xl overflow-hidden" />
             <TrendingSection posts={trending} />
             <CoupangBanner preset="mobile" className="my-4 lg:hidden rounded-2xl overflow-hidden" />
             <EditorsPickSection posts={editorsPicks} />

@@ -65,6 +65,10 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="lazyOnload"
         />
+        <Script
+          src="https://ads-partners.coupang.com/g.js"
+          strategy="lazyOnload"
+        />
       </head>
       <body className={pretendard.className}>
         <GTMNoScript />

@@ -32,7 +32,7 @@ export default function HomeSidebar({ posts }: Props) {
           ))}
         </ul>
       </div>
-      <AdSenseUnit slotId={ADSENSE.SIDEBAR} format="rectangle" className="rounded-xl overflow-hidden min-h-[250px]" />
+      <AdSenseUnit slotId={ADSENSE.PC_SIDEBAR} format="rectangle" className="rounded-xl overflow-hidden min-h-[250px]" />
       <CoupangBanner preset="desktop" className="rounded-xl overflow-hidden" />
     </aside>
   )

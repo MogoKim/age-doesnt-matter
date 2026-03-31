@@ -42,7 +42,7 @@ export default function MobileStickyAd() {
         >
           ✕
         </button>
-        <AdSenseUnit slotId={ADSENSE.SECTION_BETWEEN} format="horizontal" responsive className="min-h-[50px]" />
+        <AdSenseUnit slotId={ADSENSE.HOME_SECTION} format="horizontal" responsive className="min-h-[50px]" />
       </div>
     </div>
   )
