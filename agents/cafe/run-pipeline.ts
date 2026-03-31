@@ -1,3 +1,4 @@
+// LOCAL ONLY — 네이버 카페 크롤링은 Playwright + macOS launchd로 로컬 실행
 /**
  * 카페 파이프라인 런처
  * 로컬 Mac에서 실행: 크롤링 → 트렌드 분석 → 콘텐츠 큐레이션 순차 실행

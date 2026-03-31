@@ -37,7 +37,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.deployment_status.state == 'success' &&
-       github.event.deployment_status.environment == 'Production')
+       startsWith(github.event.deployment_status.environment, 'Production'))
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

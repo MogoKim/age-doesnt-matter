@@ -1,3 +1,4 @@
+// DISPATCH ONLY — Band API 심사중 (~4월 첫째 주 예상)
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 
