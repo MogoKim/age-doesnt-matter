@@ -27,6 +27,64 @@ export function sanitizeHtml(dirty: string): string {
 }
 
 /**
+ * 매거진 전용 새니타이제이션 — 봇 생성 콘텐츠이므로 인라인 스타일 허용
+ * 사용자 입력(댓글/게시글)에는 절대 사용 금지
+ */
+const MAGAZINE_SANITIZE_OPTIONS: sanitize.IOptions = {
+  allowedTags: [
+    ...SANITIZE_OPTIONS.allowedTags as string[],
+    'span', 'article', 'h1', 'section',
+  ],
+  allowedAttributes: {
+    ...SANITIZE_OPTIONS.allowedAttributes,
+    '*': ['style', 'class'],
+    img: ['src', 'alt', 'width', 'height', 'class', 'loading', 'style'],
+  },
+  allowedStyles: {
+    '*': {
+      'color': [/.*/],
+      'background': [/.*/],
+      'background-color': [/.*/],
+      'font-size': [/.*/],
+      'font-weight': [/.*/],
+      'font-style': [/.*/],
+      'line-height': [/.*/],
+      'text-align': [/.*/],
+      'margin': [/.*/],
+      'margin-top': [/.*/],
+      'margin-bottom': [/.*/],
+      'margin-left': [/.*/],
+      'margin-right': [/.*/],
+      'padding': [/.*/],
+      'padding-top': [/.*/],
+      'padding-bottom': [/.*/],
+      'padding-left': [/.*/],
+      'padding-right': [/.*/],
+      'border': [/.*/],
+      'border-left': [/.*/],
+      'border-top': [/.*/],
+      'border-radius': [/.*/],
+      'border-none': [/.*/],
+      'display': [/^(block|flex|inline-flex|none)$/],
+      'width': [/.*/],
+      'height': [/.*/],
+      'max-width': [/.*/],
+      'gap': [/.*/],
+      'align-items': [/.*/],
+      'justify-content': [/.*/],
+      'flex-wrap': [/.*/],
+      'flex-shrink': [/.*/],
+      'overflow': [/^hidden$/],
+    },
+  },
+  allowedIframeHostnames: SANITIZE_OPTIONS.allowedIframeHostnames,
+}
+
+export function sanitizeMagazineHtml(dirty: string): string {
+  return sanitize(dirty, MAGAZINE_SANITIZE_OPTIONS)
+}
+
+/**
  * 평문 → HTML 변환 (줄바꿈 → <p> 태그) 후 새니타이즈
  */
 export function plainTextToSafeHtml(text: string): string {
