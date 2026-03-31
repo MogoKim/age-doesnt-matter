@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_BUILD_VERSION: (() => {
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, '.')
+      const sha = (process.env.VERCEL_GIT_COMMIT_SHA || 'local').slice(0, 7)
+      return `${date}-${sha}`
+    })(),
+  },
   images: {
     formats: ['image/webp'],
     remotePatterns: [

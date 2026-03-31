@@ -1,0 +1,87 @@
+name: Post-Deploy QA
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "테스트할 URL"
+        required: false
+        default: "https://age-doesnt-matter.com"
+
+env:
+  SITE_URL: ${{ secrets.SITE_URL }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+  SLACK_CHANNEL_CEO_FOUNDER: ${{ secrets.SLACK_CHANNEL_CEO_FOUNDER }}
+  SLACK_CHANNEL_DAILY_BRIEFING: ${{ secrets.SLACK_CHANNEL_DAILY_BRIEFING }}
+  SLACK_CHANNEL_WEEKLY_REPORT: ${{ secrets.SLACK_CHANNEL_WEEKLY_REPORT }}
+  SLACK_CHANNEL_AGENT_MEETING: ${{ secrets.SLACK_CHANNEL_AGENT_MEETING }}
+  SLACK_CHANNEL_MEETING_LOG: ${{ secrets.SLACK_CHANNEL_MEETING_LOG }}
+  SLACK_CHANNEL_ALERT_URGENT: ${{ secrets.SLACK_CHANNEL_ALERT_URGENT }}
+  SLACK_CHANNEL_ALERT_SYSTEM: ${{ secrets.SLACK_CHANNEL_ALERT_SYSTEM }}
+  SLACK_CHANNEL_ALERT_KPI: ${{ secrets.SLACK_CHANNEL_ALERT_KPI }}
+  SLACK_CHANNEL_LOG_JOBS: ${{ secrets.SLACK_CHANNEL_LOG_JOBS }}
+  SLACK_CHANNEL_LOG_CONTENT: ${{ secrets.SLACK_CHANNEL_LOG_CONTENT }}
+  SLACK_CHANNEL_LOG_MARKETING: ${{ secrets.SLACK_CHANNEL_LOG_MARKETING }}
+  SLACK_CHANNEL_LOG_COST: ${{ secrets.SLACK_CHANNEL_LOG_COST }}
+  SLACK_CHANNEL_EXPERIMENT: ${{ secrets.SLACK_CHANNEL_EXPERIMENT }}
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment_status.environment == 'Production')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+
+      - name: Smoke Test
+        id: smoke
+        continue-on-error: true
+        run: |
+          URL="${{ github.event.inputs.url || github.event.deployment_status.target_url || env.SITE_URL }}"
+          npx tsx scripts/smoke-test.ts --url "$URL" > smoke-result.json
+
+      - name: Cron Link Verification
+        id: cron
+        continue-on-error: true
+        run: npx tsx scripts/check-cron-links.ts > cron-result.json
+
+      - name: Upload QA Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-results
+          path: |
+            smoke-result.json
+            cron-result.json
+          retention-days: 30
+
+      - name: QA Failed — Agent Verify
+        if: steps.smoke.outcome == 'failure' || steps.cron.outcome == 'failure'
+        env:
+          QA_SMOKE_RESULT: ${{ steps.smoke.outcome }}
+          QA_CRON_RESULT: ${{ steps.cron.outcome }}
+        run: |
+          npx prisma generate
+          cd agents && npm ci
+          npx tsx cron/runner.ts cto qa-verify
+
+      - name: QA Passed — Agent Notify
+        if: steps.smoke.outcome == 'success' && steps.cron.outcome == 'success'
+        env:
+          QA_SMOKE_RESULT: ${{ steps.smoke.outcome }}
+          QA_CRON_RESULT: ${{ steps.cron.outcome }}
+          QA_ALL_PASSED: "true"
+        run: |
+          npx prisma generate
+          cd agents && npm ci
+          npx tsx cron/runner.ts cto qa-verify

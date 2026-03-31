@@ -23,6 +23,7 @@ const MONITORING_TASKS = new Set([
   'cto:error-monitor',
   'cto:security-audit',
   'cdo:anomaly-detector',
+  'cto:qa-verify',
 ])
 
 const HANDLERS: Record<string, () => Promise<void>> = {
@@ -72,6 +73,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cto:crawler-health': () => import('../cto/crawler-health.js').then(() => {}),
   'cpo:persona-diversity-checker': () => import('../cpo/persona-diversity-checker.js').then(() => {}),
   'cdo:engagement-optimizer': () => import('../cdo/engagement-optimizer.js').then(() => {}),
+  'cto:qa-verify': () => import('../cto/qa-verifier.js').then(() => {}),
 }
 
 function getAutomationStatus(): string {

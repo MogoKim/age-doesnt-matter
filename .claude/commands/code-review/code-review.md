@@ -34,6 +34,11 @@ npx eslint . --ext .ts,.tsx  # 린트
 - [ ] 서버 컴포넌트 기본 ('use client' 최소화)
 - [ ] 불필요한 API 호출 없음
 
+### 6. 배포 QA (광고/에이전트/워크플로우 변경 시)
+- [ ] `npm run smoke-test -- --url http://localhost:3000` 로컬 통과
+- [ ] 에이전트 추가 시: `npx tsx scripts/check-cron-links.ts` 통과
+- [ ] 광고 변경 시: SSR HTML에 광고 마커 포함 확인
+
 ## 참조 파일
 - `references/senior-ui-rules.md` — 시니어 UI 상세 규칙
 - `references/security-check.md` — 보안 체크 상세

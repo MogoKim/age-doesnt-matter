@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
+const BUILD_VERSION = process.env.NEXT_PUBLIC_BUILD_VERSION ?? 'dev'
+
 export async function GET() {
   const checks: Record<string, string> = {}
   let healthy = true
@@ -20,6 +22,7 @@ export async function GET() {
   return NextResponse.json(
     {
       status: healthy ? 'healthy' : 'degraded',
+      version: BUILD_VERSION,
       timestamp: new Date().toISOString(),
       checks,
     },

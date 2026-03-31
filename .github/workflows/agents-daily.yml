@@ -60,6 +60,8 @@ on:
     - cron: "0 22 * * *"
     # 22:30 KST = 13:30 UTC — CDO 참여 최적화
     - cron: "30 13 * * *"
+    # 23:45 KST = 14:45 UTC — CTO QA 크론 실행 감사
+    - cron: "45 14 * * *"
   workflow_dispatch:
     inputs:
       agent:
@@ -184,10 +186,15 @@ jobs:
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=crawler-health" >> $GITHUB_OUTPUT ;;
               "30 13 * * *")
                 echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=engagement-optimizer" >> $GITHUB_OUTPUT ;;
+              "45 14 * * *")
+                echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=qa-verify" >> $GITHUB_OUTPUT ;;
               *)
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
             esac
           fi
+      - name: Set QA env
+        if: github.event.schedule == '45 14 * * *'
+        run: echo "QA_MODE=cron-audit" >> $GITHUB_ENV
       - name: Run agent
         if: steps.determine.outputs.agent != 'skip'
         run: cd agents && npx tsx cron/runner.ts ${{ steps.determine.outputs.agent }} ${{ steps.determine.outputs.task }}
