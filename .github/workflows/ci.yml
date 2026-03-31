@@ -52,6 +52,7 @@ jobs:
         env:
           AUTH_SECRET: ci-build-secret-not-real
           AUTH_URL: http://localhost:3000
+          E2E_BASE_URL: https://age-doesnt-matter.com
       - name: Upload report on failure
         uses: actions/upload-artifact@v4
         if: failure()
