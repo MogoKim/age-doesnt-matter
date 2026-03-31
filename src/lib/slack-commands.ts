@@ -301,7 +301,7 @@ async function handleCafe(): Promise<SlackCommandResult> {
 }
 
 async function handleStop(): Promise<SlackCommandResult> {
-  await sendToChannel('SLACK_CHANNEL_ALERT_URGENT', '🛑 *자동화 긴급 중지 요청* — 창업자가 /una-stop 실행')
+  await sendToChannel('SLACK_CHANNEL_DASHBOARD', '🛑 *자동화 긴급 중지 요청* — 창업자가 /una-stop 실행')
 
   return {
     response_type: 'in_channel',
@@ -366,7 +366,7 @@ async function handleApprove(text: string): Promise<SlackCommandResult> {
     data: { status: 'APPROVED', resolvedAt: new Date(), resolvedBy: 'founder' },
   })
 
-  await sendToChannel('SLACK_CHANNEL_CEO_FOUNDER', `✅ *승인 완료*: ${item.title}\n요청: ${item.requestedBy} | ID: ${item.id.slice(-6)}`)
+  await sendToChannel('SLACK_CHANNEL_DASHBOARD', `✅ *승인 완료*: ${item.title}\n요청: ${item.requestedBy} | ID: ${item.id.slice(-6)}`)
 
   return {
     response_type: 'in_channel',
@@ -396,7 +396,7 @@ async function handleReject(text: string): Promise<SlackCommandResult> {
     data: { status: 'REJECTED', resolvedAt: new Date(), resolvedBy: 'founder' },
   })
 
-  await sendToChannel('SLACK_CHANNEL_CEO_FOUNDER', `❌ *거절됨*: ${item.title}\n요청: ${item.requestedBy} | ID: ${item.id.slice(-6)}`)
+  await sendToChannel('SLACK_CHANNEL_DASHBOARD', `❌ *거절됨*: ${item.title}\n요청: ${item.requestedBy} | ID: ${item.id.slice(-6)}`)
 
   return {
     response_type: 'in_channel',
@@ -571,7 +571,7 @@ async function handleExperiment(): Promise<SlackCommandResult> {
 
 async function handleMeeting(text: string): Promise<SlackCommandResult> {
   const topic = text.trim() || '긴급 안건'
-  await sendToChannel('SLACK_CHANNEL_AGENT_MEETING', `🔔 *긴급 회의 소집*\n\n안건: ${topic}\n소집자: 창업자\n시간: 즉시`)
+  await sendToChannel('SLACK_CHANNEL_AGENT', `🔔 *긴급 회의 소집*\n\n안건: ${topic}\n소집자: 창업자\n시간: 즉시`)
 
   return {
     response_type: 'in_channel',

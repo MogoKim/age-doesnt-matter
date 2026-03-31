@@ -302,10 +302,11 @@ async function main() {
 
 main().catch(async (err) => {
   console.error('[82cook] 치명적 오류:', err)
-  await notifySlack(
-    '82cook-크롤러-에러',
-    `82cook 크롤링 실패: ${err instanceof Error ? err.message : String(err)}`,
-    'error',
-  ).catch(() => {})
+  await notifySlack({
+    level: 'important',
+    agent: 'CAFE_CRAWLER',
+    title: '82cook 크롤러 에러',
+    body: `82cook 크롤링 실패: ${err instanceof Error ? err.message : String(err)}`,
+  }).catch(() => {})
   process.exit(1)
 })
