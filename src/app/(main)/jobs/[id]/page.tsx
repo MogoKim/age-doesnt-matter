@@ -141,7 +141,7 @@ export default async function JobDetailPage({ params }: PageProps) {
         <div className="bg-primary/5 rounded-xl p-5 mb-6 space-y-2">
           <h3 className="text-body font-bold text-foreground m-0 mb-3">이런 분을 찾아요</h3>
           {job.pickPoints.map((point, idx) => (
-            <p key={idx} className="text-sm text-foreground m-0 flex items-start gap-2">
+            <p key={idx} className="text-body text-foreground m-0 flex items-start gap-2">
               <span>{point.icon || '✅'}</span>
               <span>{point.point}</span>
             </p>

@@ -75,15 +75,21 @@ test.describe('시나리오 5: 접근성 + 시니어 친화 UI 검증', () => {
   }
 
   // ── 폰트 크기 최소 기준 ──
-  test('홈 페이지: 본문 텍스트 최소 15px', async ({ page }) => {
+  test('홈 페이지: --text-body CSS 변수 최소 18px', async ({ page }) => {
     await page.goto('/')
 
-    // body의 font-size 확인
+    // --text-body CSS 변수의 computed 값 확인
     const bodyFontSize = await page.evaluate(() => {
-      const style = getComputedStyle(document.body)
-      return parseFloat(style.fontSize)
+      const raw = getComputedStyle(document.documentElement).getPropertyValue('--text-body').trim()
+      // rem → px 변환: temp 요소로 실제 px 계산
+      const el = document.createElement('div')
+      el.style.fontSize = raw
+      document.body.appendChild(el)
+      const px = parseFloat(getComputedStyle(el).fontSize)
+      el.remove()
+      return px
     })
-    expect(bodyFontSize).toBeGreaterThanOrEqual(14) // rem 기반이라 14px 허용
+    expect(bodyFontSize).toBeGreaterThanOrEqual(18) // 시니어 규칙: 본문 최소 18px
   })
 
   // ── 색상 대비 (브랜드 컬러) ──

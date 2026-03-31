@@ -121,13 +121,13 @@ function JobCard({ job }: { job: JobCardItem }) {
       </h3>
 
       {/* 급여 — 정규화된 형식 */}
-      <p className="text-sm text-foreground m-0 mb-1 font-medium">
+      <p className="text-body text-foreground m-0 mb-1 font-medium">
         {formatSalary(job.salary)}
       </p>
 
       {/* 하이라이트 */}
       {job.highlight && (
-        <p className="text-sm text-muted-foreground m-0 mb-2">
+        <p className="text-body text-muted-foreground m-0 mb-2">
           {job.highlight}
         </p>
       )}

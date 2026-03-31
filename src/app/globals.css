@@ -66,7 +66,7 @@
       -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
     /* ── 시니어 글꼴 크기 스케일 (FontSizeProvider가 data-font-size 속성으로 전환) ── */
-    --text-body: 1.0625rem;   /* 17px — 본문 */
+    --text-body: 1.125rem;    /* 18px — 본문 (시니어 규칙 최소) */
     --text-caption: 0.9375rem; /* 15px — 보조/캡션 */
     --text-title: 1.25rem;    /* 20px — 섹션 제목 */
     --text-heading: 1.5rem;   /* 24px — 페이지 제목 */

@@ -164,7 +164,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
                   🛍️
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground m-0 line-clamp-1">
+                  <p className="text-body font-medium text-foreground m-0 line-clamp-1">
                     {link.productName}
                   </p>
                   {link.rating && (
