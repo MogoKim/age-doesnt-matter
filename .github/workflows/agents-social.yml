@@ -24,15 +24,15 @@ on:
     # 텍스트 게시 (Threads/X) — 황금 시간대
     - cron: "0 22 * * *"   # 07:00 KST — 아침 황금시간
     - cron: "0 3 * * *"    # 12:00 KST — 점심 황금시간
-    # 카드뉴스 게시 (IG/FB/Threads)
-    - cron: "0 2 * * *"    # 11:00 KST — 점심 전
+    # 카드뉴스 v2 게시 (IG/FB/Threads) — 오후 황금시간
+    - cron: "0 6 * * *"    # 15:00 KST — 오후 황금시간
     # 채널 시딩 (카카오/지식인/커뮤니티 초안)
     - cron: "30 2 * * *"   # 11:30 KST — 채널 초안
     # 메트릭 수집
     - cron: "0 11 * * *"   # 20:00 KST — 성과 수집
-    # 월요일 회의
-    - cron: "0 1 * * 1"    # 월 10:00 KST — reviewer
-    - cron: "15 1 * * 1"   # 월 10:15 KST — strategy
+    # 3일 주기 리뷰 (월+목)
+    - cron: "0 1 * * 1,4"    # 월+목 10:00 KST — reviewer
+    - cron: "15 1 * * 1,4"   # 월+목 10:15 KST — strategy
     # 주간 SEO
     - cron: "0 23 * * 0"   # 월 08:00 KST — SEO 모니터
     # 지식인 답변 초안 (주 3회: 화/목/토)
@@ -128,7 +128,7 @@ jobs:
     timeout-minutes: 5
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-reviewer' ||
-      github.event_name == 'schedule' && github.event.schedule == '0 1 * * 1'
+      github.event_name == 'schedule' && github.event.schedule == '0 1 * * 1,4'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -163,7 +163,7 @@ jobs:
     timeout-minutes: 5
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-strategy' ||
-      github.event_name == 'schedule' && github.event.schedule == '15 1 * * 1'
+      github.event_name == 'schedule' && github.event.schedule == '15 1 * * 1,4'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -226,7 +226,7 @@ jobs:
     timeout-minutes: 10
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-poster-visual' ||
-      github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
+      github.event_name == 'schedule' && github.event.schedule == '0 6 * * *'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -240,12 +240,15 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+          CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
           SLACK_CHANNEL_CEO_FOUNDER: ${{ secrets.SLACK_CHANNEL_CEO_FOUNDER }}
           SLACK_CHANNEL_LOG_MARKETING: ${{ secrets.SLACK_CHANNEL_LOG_MARKETING }}
           SLACK_CHANNEL_ALERT_SYSTEM: ${{ secrets.SLACK_CHANNEL_ALERT_SYSTEM }}
+          SLACK_CHANNEL_ALERT_URGENT: ${{ secrets.SLACK_CHANNEL_ALERT_URGENT }}
           THREADS_APP_ID: ${{ secrets.THREADS_APP_ID }}
           THREADS_APP_SECRET: ${{ secrets.THREADS_APP_SECRET }}
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}

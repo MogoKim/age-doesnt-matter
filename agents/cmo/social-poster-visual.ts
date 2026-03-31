@@ -1,17 +1,23 @@
 /**
- * CMO Social Poster (Visual) — 카드뉴스 기반 Instagram/Facebook 게시 에이전트
+ * CMO Social Poster Visual v2 — 카드뉴스 v2 파이프라인
  *
  * 흐름:
- * 1. 카드뉴스 콘텐츠 생성 (card-news/generator.ts)
- * 2. HTML → PNG 렌더링 (card-news/renderer.ts)
- * 3. Instagram 캐러셀 + Facebook 멀티포토 게시
- * 4. Threads에도 표지 이미지 게시
- * 5. SocialPost DB 저장 + Slack 알림
+ * 1. research → generate (카드뉴스 콘텐츠 + 리서치)
+ * 2. image-gen (DALL-E 이미지 생성)
+ * 3. render (HTML → PNG 렌더링)
+ * 4. post (4개 플랫폼 게시)
+ * 5. log (BotLog + Slack)
  */
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
-import { generateCardNewsContent } from './card-news/generator.js'
-import { renderCardNews } from './card-news/renderer.js'
+import {
+  generateCardNewsV2,
+  type ContentCategory,
+  type CardNewsSlide,
+  type CardNewsOutput,
+} from './card-news/generator.js'
+import { generateCardNewsImages, type CardNewsImageResult } from './card-news/image-gen.js'
+import { renderCardNewsV2, type CardNewsSlideData } from './card-news/renderer.js'
 import * as instagramClient from './platforms/instagram-client.js'
 import * as facebookClient from './platforms/facebook-client.js'
 import * as threadsClient from './platforms/threads-client.js'
@@ -19,27 +25,35 @@ import * as bandClient from './platforms/band-client.js'
 
 const SITE_URL = 'https://age-doesnt-matter.com'
 
-/** 해시태그 생성 */
-function buildHashtags(topic: string, cardNewsType: string): string[] {
-  const base = ['#우리나이가어때서', '#5060세대', '#인생2막']
-  const typeMap: Record<string, string[]> = {
-    NEWS_TREND: ['#최신뉴스', '#트렌드', '#알아두면좋은'],
-    INFO_TOPIC: ['#생활꿀팁', '#유익한정보', '#건강생활'],
-    COMMUNITY_PROMO: ['#커뮤니티', '#소통', '#또래모임'],
-  }
-  return [...base, ...(typeMap[cardNewsType] ?? [])].slice(0, 6)
+/* ── 카테고리별 해시태그 ── */
+const CATEGORY_HASHTAGS: Record<ContentCategory, string[]> = {
+  WELLNESS: ['#건강한하루', '#운동습관', '#건강정보'],
+  PRACTICAL: ['#생활꿀팁', '#알아두면좋은', '#재테크'],
+  COMMUNITY: ['#또래모임', '#함께해요', '#우리또래'],
+  LIFESTYLE: ['#여행스타그램', '#취미생활', '#일상'],
+  GROWTH: ['#배움', '#자기계발', '#새로운시작'],
+  TRENDING: ['#화제의소식', '#요즘이슈', '#트렌드'],
 }
+const BASE_HASHTAGS = ['#우리나이가어때서', '#인생2막', '#5060']
 
-/** 캡션 생성 */
-function buildCaption(topic: string, cardNewsType: string, hashtags: string[]): string {
-  const typeIntro: Record<string, string> = {
-    NEWS_TREND: `📰 ${topic}\n\n요즘 우리 또래 사이에서 화제인 이야기, 카드로 정리했어요!`,
-    INFO_TOPIC: `💡 ${topic}\n\n알아두면 좋은 정보, 한 장씩 넘겨보세요!`,
-    COMMUNITY_PROMO: `🔥 이번 주 우나어에서 가장 뜨거운 이야기\n\n${topic}`,
+/* ── 캡션 빌더 ── */
+function buildCaption(output: CardNewsOutput): string {
+  const categoryIntro: Record<ContentCategory, string> = {
+    WELLNESS: `💪 ${output.topic}\n\n건강한 하루를 위한 꿀팁, 한 장씩 넘겨보세요!`,
+    PRACTICAL: `💡 ${output.topic}\n\n알아두면 좋은 실용 정보를 정리했어요!`,
+    COMMUNITY: `🔥 ${output.topic}\n\n우리 또래가 함께 나누는 따뜻한 이야기`,
+    LIFESTYLE: `✨ ${output.topic}\n\n일상을 더 풍요롭게 만드는 정보!`,
+    GROWTH: `📚 ${output.topic}\n\n새로운 도전, 함께 시작해봐요!`,
+    TRENDING: `📰 ${output.topic}\n\n요즘 우리 또래 사이에서 화제인 이야기!`,
   }
 
-  const intro = typeIntro[cardNewsType] ?? topic
-  return `${intro}\n\n👉 더 많은 이야기: ${SITE_URL}\n\n${hashtags.join(' ')}`
+  const hashtags = [
+    ...BASE_HASHTAGS,
+    ...CATEGORY_HASHTAGS[output.category],
+    ...output.tags.slice(0, 2),
+  ]
+
+  return `${categoryIntro[output.category]}\n\n👉 더 많은 이야기: ${SITE_URL}\n\n${hashtags.join(' ')}`
 }
 
 /** 시간 슬롯 감지 */
@@ -52,37 +66,129 @@ function detectSlot(): string {
   return 'evening'
 }
 
-/** 메인 실행 */
+/** Facebook용 핵심 슬라이드 선택 (3~4장) */
+function selectKeySlides(slides: CardNewsSlide[]): number[] {
+  const indices = new Set<number>()
+
+  // 항상 첫 번째 (hook)
+  indices.add(0)
+
+  // 첫 번째 stat/story/tip 슬라이드
+  for (let i = 1; i < slides.length; i++) {
+    const t = slides[i].slideType
+    if (t === 'stat' || t === 'story' || t === 'tip' || t === 'step') {
+      indices.add(i)
+      break
+    }
+  }
+
+  // summary 슬라이드가 있으면 추가
+  for (let i = 0; i < slides.length; i++) {
+    if (slides[i].slideType === 'summary') {
+      indices.add(i)
+      break
+    }
+  }
+
+  // 마지막 (cta)
+  indices.add(slides.length - 1)
+
+  return Array.from(indices).sort((a, b) => a - b)
+}
+
+/** Band용 bullet 요약 생성 */
+function buildBandSummary(output: CardNewsOutput): string {
+  const bullets = output.slides
+    .filter(s => s.bulletPoints && s.bulletPoints.length > 0)
+    .flatMap(s => s.bulletPoints ?? [])
+    .slice(0, 5)
+    .map(b => `• ${b}`)
+    .join('\n')
+
+  const summary = bullets || output.slides
+    .filter(s => s.body)
+    .slice(0, 3)
+    .map(s => `• ${s.title}`)
+    .join('\n')
+
+  return `${output.topic}\n\n${summary}\n\n👉 더 많은 이야기: ${SITE_URL}`
+}
+
+/* ── 메인 파이프라인 ── */
 async function main() {
-  console.log('[SocialPosterVisual] 시작 — 카드뉴스 생성 + 멀티채널 게시')
+  console.log('[SocialPosterVisual v2] 시작')
   const startTime = Date.now()
   let postedCount = 0
 
-  // 1. 카드뉴스 콘텐츠 생성
-  const content = await generateCardNewsContent()
-  console.log(`[SocialPosterVisual] 콘텐츠 생성 완료: ${content.cardNewsType} — "${content.topic}" (${content.slides.length}슬라이드)`)
+  // 1. 콘텐츠 생성 (리서치 포함)
+  const { output, research, sourcePostIds } = await generateCardNewsV2()
+  console.log(`[v2] 콘텐츠 생성: ${output.category} — "${output.topic}" (${output.slides.length}장)`)
 
-  // 2. HTML → PNG 렌더링
-  const rendered = await renderCardNews(content.cardNewsType, content.slides)
-  console.log(`[SocialPosterVisual] 렌더링 완료: ${rendered.imageUrls.length}장`)
+  // 2. DALL-E 이미지 생성 (imagePrompt가 있는 슬라이드만)
+  const imagePrompts = output.slides
+    .map((s, i) =>
+      s.imagePrompt
+        ? { slideIndex: i, prompt: s.imagePrompt, style: (s.imageStyle ?? 'warm-lifestyle') as 'warm-lifestyle' | 'infographic' | 'illustration' | 'photo-realistic' }
+        : null,
+    )
+    .filter((x): x is NonNullable<typeof x> => x !== null)
 
-  const hashtags = buildHashtags(content.topic, content.cardNewsType)
-  const caption = buildCaption(content.topic, content.cardNewsType, hashtags)
+  let imageResults: CardNewsImageResult[] = []
+  if (imagePrompts.length > 0) {
+    imageResults = await generateCardNewsImages(imagePrompts)
+    console.log(`[v2] DALL-E 이미지: ${imageResults.length}/${imagePrompts.length}장 생성`)
+  }
+
+  // 3. SlideData 빌드 (이미지 URL 주입)
+  const slideData: CardNewsSlideData[] = output.slides.map((s, i) => {
+    const img = imageResults.find(r => r.slideIndex === i)
+    return {
+      slideType: s.slideType,
+      title: s.title,
+      body: s.body,
+      bulletPoints: s.bulletPoints,
+      statNumber: s.statNumber,
+      statLabel: s.statLabel,
+      stepNumber: s.stepNumber,
+      stepTotal: s.stepTotal,
+      listRank: s.listRank,
+      imageUrl: img?.url,
+      ctaText: s.ctaText,
+      ctaUrl: s.ctaUrl ?? SITE_URL,
+      icon: s.icon,
+      leftLabel: s.leftLabel,
+      leftText: s.leftText,
+      rightLabel: s.rightLabel,
+      rightText: s.rightText,
+      attribution: s.attribution,
+      slideNumber: i + 1,
+      totalSlides: output.slides.length,
+      category: output.category,
+    }
+  })
+
+  // 4. 슬라이드 렌더링 (HTML → PNG)
+  const rendered = await renderCardNewsV2(slideData)
+  console.log(`[v2] 렌더링: ${rendered.imageUrls.length}장`)
+
+  // 5. 캡션 + 슬롯
+  const caption = buildCaption(output)
   const slot = detectSlot()
+  const hashtags = [...BASE_HASHTAGS, ...CATEGORY_HASHTAGS[output.category]]
 
-  // 3. Instagram 캐러셀 게시
+  // 6. Instagram — 전체 캐러셀
   if (instagramClient.isConfigured()) {
     try {
       const igResult = await instagramClient.postCarousel(rendered.imageUrls, caption)
       await prisma.socialPost.create({
         data: {
           platform: 'INSTAGRAM',
-          contentType: content.cardNewsType,
-          promotionLevel: content.cardNewsType === 'COMMUNITY_PROMO' ? 'SOFT' : 'PURE',
+          contentType: output.category,
+          promotionLevel: output.category === 'COMMUNITY' ? 'SOFT' : 'PURE',
           postText: caption,
           hashtags,
           imageUrls: rendered.imageUrls,
-          cardNewsType: content.cardNewsType,
+          cardNewsType: output.category,
           platformPostId: igResult.id,
           postingSlot: slot,
           linkUrl: SITE_URL,
@@ -91,25 +197,27 @@ async function main() {
         },
       })
       postedCount++
-      console.log(`[SocialPosterVisual] Instagram 게시 완료: ${igResult.id}`)
+      console.log(`[v2] Instagram 게시 완료: ${igResult.id}`)
     } catch (err) {
-      console.error('[SocialPosterVisual] Instagram 게시 실패:', err)
+      console.error('[v2] Instagram 게시 실패:', err)
     }
   }
 
-  // 4. Facebook 게시
+  // 7. Facebook — 핵심 슬라이드 3~4장
   if (facebookClient.isConfigured()) {
     try {
-      const fbResult = await facebookClient.postWithPhotos(rendered.imageUrls, caption)
+      const fbSlideIndices = selectKeySlides(output.slides)
+      const fbImageUrls = fbSlideIndices.map(i => rendered.imageUrls[i])
+      const fbResult = await facebookClient.postWithPhotos(fbImageUrls, caption)
       await prisma.socialPost.create({
         data: {
           platform: 'FACEBOOK',
-          contentType: content.cardNewsType,
-          promotionLevel: content.cardNewsType === 'COMMUNITY_PROMO' ? 'SOFT' : 'PURE',
+          contentType: output.category,
+          promotionLevel: output.category === 'COMMUNITY' ? 'SOFT' : 'PURE',
           postText: caption,
           hashtags,
-          imageUrls: rendered.imageUrls,
-          cardNewsType: content.cardNewsType,
+          imageUrls: fbImageUrls,
+          cardNewsType: output.category,
           platformPostId: fbResult.id,
           postingSlot: slot,
           linkUrl: SITE_URL,
@@ -118,26 +226,27 @@ async function main() {
         },
       })
       postedCount++
-      console.log(`[SocialPosterVisual] Facebook 게시 완료: ${fbResult.id}`)
+      console.log(`[v2] Facebook 게시 완료: ${fbResult.id} (${fbImageUrls.length}장)`)
     } catch (err) {
-      console.error('[SocialPosterVisual] Facebook 게시 실패:', err)
+      console.error('[v2] Facebook 게시 실패:', err)
     }
   }
 
-  // 5. Threads에 표지 이미지 게시
+  // 8. Threads — 표지 이미지 + 짧은 캡션 (500자)
   if (threadsClient.isConfigured()) {
     try {
-      const threadsCaption = caption.replace(/\n👉.*\n/, '\n').slice(0, 500)
-      const thResult = await threadsClient.postThreadWithImage(threadsCaption, rendered.thumbnailUrl)
+      const threadsCaption = caption.slice(0, 500)
+      const coverUrl = rendered.imageUrls[0]
+      const thResult = await threadsClient.postThreadWithImage(threadsCaption, coverUrl)
       await prisma.socialPost.create({
         data: {
           platform: 'THREADS',
-          contentType: content.cardNewsType,
-          promotionLevel: content.cardNewsType === 'COMMUNITY_PROMO' ? 'SOFT' : 'PURE',
+          contentType: output.category,
+          promotionLevel: output.category === 'COMMUNITY' ? 'SOFT' : 'PURE',
           postText: threadsCaption,
           hashtags,
-          imageUrls: [rendered.thumbnailUrl],
-          cardNewsType: content.cardNewsType,
+          imageUrls: [coverUrl],
+          cardNewsType: output.category,
           platformPostId: thResult.id,
           postingSlot: slot,
           linkUrl: SITE_URL,
@@ -146,26 +255,27 @@ async function main() {
         },
       })
       postedCount++
-      console.log(`[SocialPosterVisual] Threads 이미지 게시 완료: ${thResult.id}`)
+      console.log(`[v2] Threads 게시 완료: ${thResult.id}`)
     } catch (err) {
-      console.error('[SocialPosterVisual] Threads 게시 실패:', err)
+      console.error('[v2] Threads 게시 실패:', err)
     }
   }
 
-  // 6. Band 게시
+  // 9. Band — 표지 + bullet 요약
   if (bandClient.isConfigured()) {
     try {
-      const bandCaption = `${content.topic}\n\n${caption.split('\n\n').slice(1).join('\n\n')}`
-      const bandResult = await bandClient.postWithImage(bandCaption, rendered.imageUrls)
+      const bandCaption = buildBandSummary(output)
+      const coverUrl = rendered.imageUrls[0]
+      const bandResult = await bandClient.postWithImage(bandCaption, [coverUrl])
       await prisma.socialPost.create({
         data: {
           platform: 'BAND',
-          contentType: content.cardNewsType,
-          promotionLevel: content.cardNewsType === 'COMMUNITY_PROMO' ? 'SOFT' : 'PURE',
+          contentType: output.category,
+          promotionLevel: output.category === 'COMMUNITY' ? 'SOFT' : 'PURE',
           postText: bandCaption,
           hashtags,
-          imageUrls: rendered.imageUrls,
-          cardNewsType: content.cardNewsType,
+          imageUrls: [coverUrl],
+          cardNewsType: output.category,
           platformPostId: bandResult.postKey,
           postingSlot: slot,
           linkUrl: SITE_URL,
@@ -174,26 +284,29 @@ async function main() {
         },
       })
       postedCount++
-      console.log(`[SocialPosterVisual] Band 게시 완료: ${bandResult.postKey}`)
+      console.log(`[v2] Band 게시 완료: ${bandResult.postKey}`)
     } catch (err) {
-      console.error('[SocialPosterVisual] Band 게시 실패:', err)
+      console.error('[v2] Band 게시 실패:', err)
     }
   }
 
+  // 10. BotLog + Slack 알림
   const durationMs = Date.now() - startTime
 
-  // BotLog
   await prisma.botLog.create({
     data: {
       botType: 'CMO',
-      action: 'CARD_NEWS_POST',
+      action: 'CARD_NEWS_POST_V2',
       status: postedCount > 0 ? 'SUCCESS' : 'PARTIAL',
       details: JSON.stringify({
-        cardNewsType: content.cardNewsType,
-        topic: content.topic,
-        slides: content.slides.length,
+        category: output.category,
+        topic: output.topic,
+        slides: output.slides.length,
+        dalleImages: imageResults.length,
         platforms: postedCount,
         imageUrls: rendered.imageUrls,
+        sourcePostIds,
+        research: research ? { topicCount: research.topics?.length ?? 0 } : null,
       }),
       itemCount: postedCount,
       executionTimeMs: durationMs,
@@ -202,17 +315,17 @@ async function main() {
 
   await notifySlack({
     level: postedCount > 0 ? 'info' : 'warn',
-    agent: 'SOCIAL_POSTER_VISUAL',
-    title: '카드뉴스 멀티채널 게시',
-    body: `${content.cardNewsType} — "${content.topic}"\n슬라이드 ${content.slides.length}장 → ${postedCount}개 플랫폼 게시\n소요: ${Math.round(durationMs / 1000)}초`,
+    agent: 'SOCIAL_POSTER_VISUAL_V2',
+    title: '카드뉴스 v2 멀티채널 게시',
+    body: `${output.category} — "${output.topic}"\n슬라이드 ${output.slides.length}장 (DALL-E ${imageResults.length}장) → ${postedCount}개 플랫폼 게시\n소요: ${Math.round(durationMs / 1000)}초`,
   })
 
-  console.log(`[SocialPosterVisual] 완료 — ${postedCount}개 플랫폼, ${Math.round(durationMs / 1000)}초`)
+  console.log(`[SocialPosterVisual v2] 완료 — ${postedCount}개 플랫폼, ${Math.round(durationMs / 1000)}초`)
   await disconnect()
 }
 
 main().catch(async (err) => {
-  console.error('[SocialPosterVisual] 치명적 오류:', err)
+  console.error('[SocialPosterVisual v2] 치명적 오류:', err)
   await disconnect()
   process.exit(1)
 })

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1080px; height: 1350px; overflow: hidden; -webkit-font-smoothing: antialiased; }
+body {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #1A1A1A;
+  line-height: 1.6;
+}
+
+.card {
+  width: 1080px; height: 1350px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+}
+
+/* Category color variables — defaults */
+.card { --cat-primary: #FF6F61; --cat-accent: #FF6F61; }
+.card[data-category="WELLNESS"] { --cat-primary: #2E7D32; --cat-accent: #4CAF50; background: linear-gradient(135deg, #E8F5E9, #C8E6C9); }
+.card[data-category="PRACTICAL"] { --cat-primary: #1565C0; --cat-accent: #2196F3; background: linear-gradient(135deg, #E3F2FD, #BBDEFB); }
+.card[data-category="COMMUNITY"] { --cat-primary: #E65100; --cat-accent: #FF9800; background: linear-gradient(135deg, #FFF3E0, #FFE0B2); }
+.card[data-category="LIFESTYLE"] { --cat-primary: #6A1B9A; --cat-accent: #9C27B0; background: linear-gradient(135deg, #F3E5F5, #E1BEE7); }
+.card[data-category="GROWTH"] { --cat-primary: #00695C; --cat-accent: #009688; background: linear-gradient(135deg, #E0F2F1, #B2DFDB); }
+.card[data-category="TRENDING"] { --cat-primary: #AD1457; --cat-accent: #E91E63; background: linear-gradient(135deg, #FCE4EC, #F8BBD0); }
+
+.card-inner {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: center;
+  padding: 100px 60px 60px;
+  position: relative; z-index: 2;
+}
+
+.title {
+  font-size: 44px; font-weight: 800;
+  color: var(--cat-primary);
+  line-height: 1.3; letter-spacing: -0.5px;
+  margin-bottom: 48px; word-break: keep-all;
+  text-align: center;
+}
+
+.check-list {
+  list-style: none; padding: 0; margin: 0;
+}
+
+.check-item {
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px 40px 32px 80px;
+  margin-bottom: 18px;
+  font-size: 28px; font-weight: 500;
+  line-height: 1.5; color: #1A1A1A;
+  position: relative;
+  box-shadow: 0 3px 16px rgba(0, 0, 0, 0.06);
+  word-break: keep-all;
+}
+
+.check-item::before {
+  content: '\2713';
+  position: absolute;
+  left: 32px; top: 32px;
+  font-size: 28px; font-weight: 800;
+  color: #FF6F61;
+}
+
+/* Decorative top icon */
+.summary-icon {
+  text-align: center;
+  font-size: 56px;
+  margin-bottom: 20px;
+}
+
+/* Slide indicator */
+.slide-indicator {
+  position: absolute; top: 40px; right: 48px;
+  font-size: 22px; font-weight: 600;
+  color: var(--cat-primary);
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 24px; padding: 6px 20px; z-index: 10;
+}
+
+.brand-footer {
+  width: 100%; padding: 28px 48px;
+  text-align: center; font-size: 22px; font-weight: 500;
+  color: #fff; letter-spacing: 0.5px;
+  background: var(--cat-primary);
+}
+</style>
+</head>
+<body>
+<div class="card summary-v2" data-category="{{category}}">
+  <div class="slide-indicator">{{slideNumber}} / {{totalSlides}}</div>
+  <div class="card-inner">
+    <div class="summary-icon">&#128221;</div>
+    <div class="title">{{title}}</div>
+    <ul class="check-list">
+      {{#bulletPoints}}<li class="check-item">{{.}}</li>{{/bulletPoints}}
+    </ul>
+  </div>
+  <div class="brand-footer">우리 나이가 어때서 | age-doesnt-matter.com</div>
+</div>
+</body>
+</html>

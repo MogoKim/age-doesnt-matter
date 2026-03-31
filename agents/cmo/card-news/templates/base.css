@@ -39,6 +39,8 @@ body {
   flex-direction: column;
   justify-content: center;
   padding: 80px 72px;
+  position: relative;
+  z-index: 2;
 }
 
 /* ─── Slide Number Indicator (top-right) ─── */
@@ -268,4 +270,269 @@ body {
   text-transform: uppercase;
   opacity: 0.7;
   margin-bottom: 24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Card News v2 — New Design Tokens & Slide Types
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Category Color Palettes ─── */
+/* Used via data-category attribute on .card */
+
+.card[data-category="WELLNESS"] {
+  --cat-primary: #2E7D32;
+  --cat-bg: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+  --cat-accent: #4CAF50;
+}
+
+.card[data-category="PRACTICAL"] {
+  --cat-primary: #1565C0;
+  --cat-bg: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+  --cat-accent: #2196F3;
+}
+
+.card[data-category="COMMUNITY"] {
+  --cat-primary: #E65100;
+  --cat-bg: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+  --cat-accent: #FF9800;
+}
+
+.card[data-category="LIFESTYLE"] {
+  --cat-primary: #6A1B9A;
+  --cat-bg: linear-gradient(135deg, #F3E5F5, #E1BEE7);
+  --cat-accent: #9C27B0;
+}
+
+.card[data-category="GROWTH"] {
+  --cat-primary: #00695C;
+  --cat-bg: linear-gradient(135deg, #E0F2F1, #B2DFDB);
+  --cat-accent: #009688;
+}
+
+.card[data-category="TRENDING"] {
+  --cat-primary: #AD1457;
+  --cat-bg: linear-gradient(135deg, #FCE4EC, #F8BBD0);
+  --cat-accent: #E91E63;
+}
+
+/* ─── Image-based slide types ─── */
+
+.card.hook,
+.card.story,
+.card.context,
+.card.quote {
+  background: #1A1A1A;
+}
+
+/* ─── Template-based slide types ─── */
+
+.card.stat,
+.card.tip,
+.card.comparison,
+.card.listicle,
+.card.stepguide,
+.card.summary-v2 {
+  background: var(--cat-bg, linear-gradient(135deg, #FFF8F6, #FFE8E4));
+}
+
+/* ─── Image overlay for DALL-E compositing ─── */
+
+.bg-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ─── Category Badge ─── */
+
+.category-badge {
+  display: inline-block;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 8px 24px;
+  border-radius: 30px;
+  z-index: 10;
+}
+
+/* ─── Stat Display ─── */
+
+.stat-number {
+  font-size: 72px;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+
+.stat-label {
+  font-size: 28px;
+  font-weight: 500;
+  color: #555;
+  margin-top: 16px;
+}
+
+.source-text {
+  font-size: 20px;
+  font-weight: 400;
+  color: #999;
+}
+
+/* ─── White Content Card ─── */
+
+.content-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 48px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Step Indicator ─── */
+
+.step-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 800;
+  color: #fff;
+  background: #FF6F61;
+}
+
+/* ─── Flow Line (decorative connector) ─── */
+
+.flow-line {
+  width: 4px;
+  height: 60px;
+  background: linear-gradient(180deg, #FF6F61, rgba(255, 111, 97, 0.2));
+  margin: 0 auto;
+  border-radius: 2px;
+}
+
+/* ─── Checkmark List ─── */
+
+.check-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.check-item {
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px 36px 28px 72px;
+  margin-bottom: 16px;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #1A1A1A;
+  position: relative;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  word-break: keep-all;
+}
+
+.check-item::before {
+  content: '\2713';
+  position: absolute;
+  left: 28px;
+  top: 28px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #FF6F61;
+}
+
+/* ─── Comparison Layout ─── */
+
+.comparison-grid {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+}
+
+.comparison-side {
+  flex: 1;
+  border-radius: 24px;
+  padding: 48px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.comparison-side .side-label {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 24px;
+  letter-spacing: 1px;
+}
+
+.comparison-side .side-text {
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+
+/* ─── Listicle Row ─── */
+
+.listicle-row {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 40px 36px 100px;
+  margin-bottom: 20px;
+  position: relative;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+}
+
+.listicle-rank {
+  position: absolute;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 48px;
+  font-weight: 900;
+  color: #FF6F61;
+  line-height: 1;
+}
+
+.listicle-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin-bottom: 8px;
+  word-break: keep-all;
+}
+
+.listicle-desc {
+  font-size: 26px;
+  font-weight: 400;
+  color: #777;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+/* ─── Quote Decorative ─── */
+
+.quote-mark {
+  font-size: 160px;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0.15;
+  color: #fff;
+  position: absolute;
+  top: 120px;
+  left: 72px;
+  z-index: 3;
+  font-family: Georgia, 'Times New Roman', serif;
 }
