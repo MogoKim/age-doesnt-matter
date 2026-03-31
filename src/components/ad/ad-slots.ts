@@ -55,7 +55,4 @@ export const COUPANG = {
   /** 상품 캐러셀 — 매거진 전용 (320x250) */
   PRODUCT_CAROUSEL: { id: 976346, width: 320, height: 250 },
 
-  IFRAME_MOBILE: '',   // 쿠팡 파트너스 iframe URL (추후 주입)
-  IFRAME_DESKTOP: '',  // 쿠팡 파트너스 iframe URL (추후 주입)
-  IFRAME_PRODUCT: '',  // 쿠팡 파트너스 iframe URL (추후 주입)
 } as const
