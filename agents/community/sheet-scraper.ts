@@ -116,9 +116,10 @@ async function scrapePage(
       throw new Error('CF_BLOCKED')
     }
 
-    // 제목 추출
-    const title = await extractText(page, siteConfig.selectors.title)
-    if (!title) throw new Error('제목 추출 실패')
+    // 제목 추출 (댓글 수 [숫자] 패턴 제거)
+    const rawTitle = await extractText(page, siteConfig.selectors.title)
+    if (!rawTitle) throw new Error('제목 추출 실패')
+    const title = rawTitle.replace(/\s*\[\d+\]\s*$/, '').trim()
 
     // 본문 추출
     const rawContent = await extractHtml(page, siteConfig.selectors.content)
