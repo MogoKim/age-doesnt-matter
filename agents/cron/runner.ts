@@ -75,6 +75,11 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cdo:engagement-optimizer': () => import('../cdo/engagement-optimizer.js').then(() => {}),
   'cto:qa-verify': () => import('../cto/qa-verifier.js').then(() => {}),
   'community:sheet-scrape': () => import('../community/sheet-scraper.js').then(() => {}),
+  'cmo:channel-seeder': () => import('../cmo/channel-seeder.js').then(() => {}),
+  'cmo:knowledge-responder': () => import('../cmo/knowledge-responder.js').then(() => {}),
+  'cmo:seo-optimizer': () => import('../cmo/seo-optimizer.js').then(() => {}),
+  'cmo:social-poster-visual': () => import('../cmo/social-poster-visual.js').then(() => {}),
+  'cmo:threads-token-refresh': () => import('../cmo/platforms/threads-token-refresh.js').then(() => {}),
 }
 
 function getAutomationStatus(): string {

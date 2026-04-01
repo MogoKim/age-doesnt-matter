@@ -67,11 +67,11 @@ jobs:
 
       - name: Run Trend Analyzer
         if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'analyze' || github.event_name == 'schedule' }}
-        run: cd agents && npx tsx cafe/trend-analyzer.ts
+        run: cd agents && npx tsx cron/runner.ts cafe_crawler trend-analysis
 
       - name: Run Content Curator
         if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'curate' || github.event_name == 'schedule' }}
-        run: cd agents && npx tsx cafe/content-curator.ts
+        run: cd agents && npx tsx cron/runner.ts cafe_crawler content-curate
 
   external-crawl:
     runs-on: ubuntu-latest

@@ -14,13 +14,13 @@ import { execFileSync } from 'child_process'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { readFileSync } from 'fs'
-import { notifySlack } from '../core/notifier.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(__dirname, '../..')
 const step = process.argv[2] ?? 'all'
 
-// launchd 실행 시 .env.local 환경변수가 없으므로 직접 로드
+// ⚠️ launchd 실행 시 .env.local 환경변수가 없으므로 직접 로드
+// 반드시 notifier 등 DB 의존 모듈 import 전에 실행해야 함 (ESM top-level import 순서)
 function loadEnvFile(filePath: string) {
   try {
     const content = readFileSync(filePath, 'utf-8')
@@ -42,6 +42,9 @@ function loadEnvFile(filePath: string) {
 
 loadEnvFile(resolve(projectRoot, '.env.local'))
 loadEnvFile(resolve(projectRoot, '.env'))
+
+// notifier는 db.ts를 import하므로, 반드시 env 로드 후 동적 import
+const { notifySlack } = await import('../core/notifier.js')
 
 async function run(script: string, label: string) {
   console.log(`\n${'='.repeat(50)}`)

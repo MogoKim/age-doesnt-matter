@@ -402,7 +402,16 @@ export async function generateCardNewsV2(
     )
   }
 
-  // 4. Validate
+  // 4. Auto-trim: 슬라이드 초과 시 10장으로 자동 조정 (hook + 중간 8장 + cta)
+  if (Array.isArray(parsed.slides) && parsed.slides.length > 10) {
+    console.log(`[CardNewsV2] 슬라이드 ${parsed.slides.length}장 → 10장으로 자동 트림`)
+    const hook = parsed.slides[0]
+    const cta = parsed.slides[parsed.slides.length - 1]
+    const middle = parsed.slides.slice(1, -1).slice(0, 8)
+    parsed.slides = [hook, ...middle, cta]
+  }
+
+  // 5. Validate
   validateCardNewsOutput(parsed)
   console.log(
     `[CardNewsV2] 콘텐츠 생성 완료: "${parsed.topic}" (${parsed.slides.length}장, ${parsed.tags.length} tags)`,

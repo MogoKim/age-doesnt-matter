@@ -179,7 +179,7 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
-      - run: cd agents && npx tsx cmo/platforms/threads-token-refresh.ts
+      - run: cd agents && npx tsx cron/runner.ts cmo threads-token-refresh
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
@@ -209,7 +209,7 @@ jobs:
       - run: npx prisma generate
       - run: cd agents && npm ci
       - run: npx playwright install chromium --with-deps
-      - run: cd agents && npx tsx cmo/social-poster-visual.ts
+      - run: cd agents && npx tsx cron/runner.ts cmo social-poster-visual
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
@@ -253,7 +253,7 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
-      - run: cd agents && npx tsx cmo/channel-seeder.ts
+      - run: cd agents && npx tsx cron/runner.ts cmo channel-seeder
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
@@ -281,7 +281,7 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
-      - run: cd agents && npx tsx cmo/knowledge-responder.ts
+      - run: cd agents && npx tsx cron/runner.ts cmo knowledge-responder
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
@@ -309,7 +309,7 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
-      - run: cd agents && npx tsx cmo/seo-optimizer.ts
+      - run: cd agents && npx tsx cron/runner.ts cmo seo-optimizer
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}

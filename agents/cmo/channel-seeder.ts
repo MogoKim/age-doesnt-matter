@@ -55,7 +55,7 @@ async function fetchContentSources(): Promise<ContentSource> {
     }),
     prisma.post.findMany({
       where: {
-        boardType: 'JOBS',
+        boardType: 'JOB',
         status: 'PUBLISHED',
       },
       orderBy: { createdAt: 'desc' },
