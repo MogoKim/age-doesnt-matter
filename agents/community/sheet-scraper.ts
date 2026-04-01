@@ -105,6 +105,7 @@ async function scrapePage(
   context: BrowserContext,
   url: string,
   siteConfig: SiteConfig,
+  boardType: 'STORY' | 'HUMOR' = 'HUMOR',
 ): Promise<ScrapeResult> {
   const page = await context.newPage()
 
@@ -133,7 +134,7 @@ async function scrapePage(
     if (!rawContent) throw new Error('본문 추출 실패')
 
     // 콘텐츠 변환
-    const transformed = transformContent(rawContent, url, siteConfig)
+    const transformed = transformContent(rawContent, url, siteConfig, boardType)
 
     // 이미지 파이프라인
     const dateKey = new Date().toISOString().slice(0, 10)
@@ -287,11 +288,11 @@ async function main() {
             if (row.rawContent) {
               // 수동 붙여넣기 모드
               title = row.title || '(제목 없음)'
-              content = transformRawContent(row.rawContent, row.sourceUrl, siteConfig.name)
+              content = transformRawContent(row.rawContent, row.sourceUrl, siteConfig.name, tab.boardType)
               console.log(`  → raw_content 사용 (스크래핑 스킵)`)
             } else {
               // 자동 스크래핑
-              const result = await scrapePage(context, row.sourceUrl, siteConfig)
+              const result = await scrapePage(context, row.sourceUrl, siteConfig, tab.boardType)
               title = row.title || result.title // 창업자 제목 우선
               content = result.content
               thumbnailUrl = result.thumbnailUrl

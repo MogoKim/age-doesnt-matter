@@ -75,6 +75,7 @@ async function main() {
       sourceUrl: true,
       sourceSite: true,
       thumbnailUrl: true,
+      boardType: true,
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -149,7 +150,7 @@ async function main() {
         if (!rawContent) throw new Error('본문 추출 실패')
 
         // 콘텐츠 변환
-        const transformed = modules.transformContent(rawContent, post.sourceUrl!, siteConfig)
+        const transformed = modules.transformContent(rawContent, post.sourceUrl!, siteConfig, (post.boardType as 'STORY' | 'HUMOR') || 'HUMOR')
 
         // 미디어 파이프라인 (수정된 버전)
         const dateKey = new Date().toISOString().slice(0, 10)

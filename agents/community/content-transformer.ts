@@ -40,6 +40,7 @@ export function transformContent(
   rawHtml: string,
   sourceUrl: string,
   siteConfig: SiteConfig,
+  boardType: 'STORY' | 'HUMOR' = 'HUMOR',
 ): string {
   // 1. 불필요 요소 제거 (사이트별)
   let cleaned = rawHtml
@@ -65,10 +66,12 @@ export function transformContent(
   // 7. 빈 태그 정리
   processed = cleanEmptyTags(processed)
 
-  // 8. 출처 표시 (CSS 클래스 — 2차 sanitize 통과 보장)
-  const attribution = `<div class="source-attribution">📎 출처: <a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(siteConfig.name)}</a></div>`
+  // 8. 출처 표시 — STORY(사는이야기)는 개인 글처럼 보이므로 출처 없음
+  if (boardType === 'HUMOR') {
+    processed = `${processed}\n<p>출처: ${escapeHtml(siteConfig.name)}</p>`
+  }
 
-  return `${processed}\n${attribution}`
+  return processed
 }
 
 /**
@@ -78,6 +81,7 @@ export function transformRawContent(
   rawContent: string,
   sourceUrl: string,
   siteName: string,
+  boardType: 'STORY' | 'HUMOR' = 'HUMOR',
 ): string {
   const isHtml = /<[a-z][\s\S]*>/i.test(rawContent)
 
@@ -96,9 +100,12 @@ export function transformRawContent(
       .join('\n')
   }
 
-  const attribution = `<div class="source-attribution">📎 출처: <a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(siteName)}</a></div>`
+  // STORY(사는이야기)는 개인 글처럼 보여야 하므로 출처 없음
+  if (boardType === 'HUMOR') {
+    content = `${content}\n<p>출처: ${escapeHtml(siteName)}</p>`
+  }
 
-  return `${content}\n${attribution}`
+  return content
 }
 
 // ── 게시판별 카테고리 키워드 ──
@@ -157,11 +164,12 @@ function preClean(html: string, siteConfig: SiteConfig): string {
     // 펨코 rel="highslide" 이미지 확대 wrapper → 내부 콘텐츠만 남기기
     result = result.replace(/<a[^>]*rel=["']highslide["'][^>]*>([\s\S]*?)<\/a>/gi, '$1')
 
-    // 펨코 비디오 wrapper 내 썸네일 img 제거 (video가 있는 div 안의 img)
-    result = result.replace(
-      /(<div[^>]*class="[^"]*auto_media_wrapper[^"]*"[^>]*>[\s\S]*?<video[^>]*>[\s\S]*?)<img[^>]*\/?>(\s*<\/div>)/gi,
-      '$1$2',
-    )
+    // 펨코 auto_media_wrapper: 비디오만 추출, 나머지(플레이어 UI 텍스트) 제거
+    result = stripVideoPlayerWrappers(result)
+
+    // 펨코 비디오 플레이어 UI 요소 제거 (button, input, speed selector)
+    result = result.replace(/<button[^>]*>[\s\S]*?<\/button>/gi, '')
+    result = result.replace(/<input[^>]*\/?>/gi, '')
   }
 
   if (siteConfig.id === 'natepann') {
@@ -194,6 +202,16 @@ function postClean(html: string): string {
     /<a[^>]*href=["']https?:\/\/link\.fmkorea\.org\/link\.php\?url=([^"'&]+)[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi,
     (_, encoded, inner) => `<a href="${decodeURIComponent(encoded)}" target="_blank" rel="noopener noreferrer">${inner}</a>`,
   )
+
+  // 비디오 플레이어 UI 잔해 제거 (펨코 MediaElement.js)
+  result = result.replace(/Video Player/g, '')
+  // 속도 셀렉터 리스트
+  result = result.replace(/<ul>\s*(?:<li>\s*\d\.\d{2}x\s*<\/li>\s*)+<\/ul>/gi, '')
+  result = result.replace(/<div>\s*\d\.\d{2}x\s*(?:<div>\s*<\/div>\s*)?<\/div>/gi, '')
+  result = result.replace(/<div>\s*\/\s*<\/div>/gi, '')
+  result = result.replace(/<div>\s*\d{1,2}:\d{2}\s*<\/div>/gi, '')
+  result = result.replace(/<li>\s*\d\.\d{2}x\s*<\/li>/gi, '')
+  result = result.replace(/<p>\s*\d\.\d{2}x\s*<\/p>/gi, '')
 
   return result
 }
@@ -253,6 +271,53 @@ function escapeHtml(str: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
+}
+
+/**
+ * 펨코 auto_media_wrapper에서 <video> 태그만 추출, 나머지(플레이어 UI) 제거
+ * 중첩 div를 정확히 처리하기 위해 depth 카운팅 사용
+ */
+function stripVideoPlayerWrappers(html: string): string {
+  const openPattern = /<div[^>]*class="[^"]*auto_media_wrapper[^"]*"[^>]*>/gi
+  let openMatch
+  const replacements: Array<[number, number, string]> = []
+
+  while ((openMatch = openPattern.exec(html)) !== null) {
+    const startIdx = openMatch.index
+    let depth = 1
+    let searchIdx = startIdx + openMatch[0].length
+
+    while (depth > 0 && searchIdx < html.length) {
+      const nextOpen = html.indexOf('<div', searchIdx)
+      const nextClose = html.indexOf('</div>', searchIdx)
+
+      if (nextClose === -1) break
+
+      if (nextOpen !== -1 && nextOpen < nextClose && /^<div[\s>]/i.test(html.slice(nextOpen))) {
+        depth++
+        searchIdx = nextOpen + 4
+      } else {
+        depth--
+        if (depth === 0) {
+          const endIdx = nextClose + '</div>'.length
+          const wrapperHtml = html.slice(startIdx, endIdx)
+          // video 태그만 추출
+          const videos = wrapperHtml.match(/<video[^>]*>[\s\S]*?<\/video>|<video[^>]*\/>/gi) || []
+          replacements.push([startIdx, endIdx, videos.join('\n')])
+        }
+        searchIdx = nextClose + '</div>'.length
+      }
+    }
+  }
+
+  // 뒤에서부터 교체 (인덱스 보존)
+  let result = html
+  for (let i = replacements.length - 1; i >= 0; i--) {
+    const [start, end, replacement] = replacements[i]
+    result = result.slice(0, start) + replacement + result.slice(end)
+  }
+
+  return result
 }
 
 /**
