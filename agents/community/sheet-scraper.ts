@@ -38,8 +38,8 @@ const PERSONAS: PersonaMapping[] = [
   { id: 'C', nickname: 'ㅋㅋ요정', categories: ['유머'], boards: ['HUMOR'] },
   { id: 'E', nickname: '봄바람', categories: ['일상', '고민'], boards: ['STORY'] },
   { id: 'H', nickname: '매일걷기', categories: ['건강'], boards: ['STORY'] },
-  { id: 'I', nickname: '한페이지', categories: ['감동'], boards: ['STORY'] },
-  { id: 'P', nickname: '오후세시', categories: ['기타'], boards: ['STORY', 'HUMOR'] },
+  { id: 'I', nickname: '한페이지', categories: ['힐링'], boards: ['HUMOR'] },
+  { id: 'P', nickname: '오후세시', categories: ['추천', '자랑', '자녀', '기타'], boards: ['STORY', 'HUMOR'] },
 ]
 
 function pickPersona(
@@ -99,7 +99,6 @@ interface ScrapeResult {
   thumbnailUrl: string | null
   imageCount: number
   videoCount: number
-  category: string
 }
 
 async function scrapePage(
@@ -145,10 +144,7 @@ async function scrapePage(
       postKey,
     )
 
-    // 카테고리 자동분류
-    const category = classifyCategory(title, finalContent)
-
-    return { title, content: finalContent, thumbnailUrl, imageCount, videoCount, category }
+    return { title, content: finalContent, thumbnailUrl, imageCount, videoCount }
   } finally {
     await page.close()
   }
@@ -253,12 +249,12 @@ async function main() {
             // PROCESSING 상태로 업데이트
             await updateRow(tab.tabName, row.rowIndex, { status: 'PROCESSING' })
 
-            // 중복 체크
-            const existing = await prisma.post.findFirst({
-              where: { sourceUrl: row.sourceUrl },
+            // 중복 체크 — 삭제된 게시글은 재활용(update), 활성 게시글은 스킵
+            const existingActive = await prisma.post.findFirst({
+              where: { sourceUrl: row.sourceUrl, status: { not: 'DELETED' } },
               select: { id: true },
             })
-            if (existing) {
+            if (existingActive) {
               await updateRow(tab.tabName, row.rowIndex, {
                 status: 'SKIPPED',
                 error: '이미 게시됨',
@@ -266,6 +262,10 @@ async function main() {
               console.log(`  → SKIPPED (중복)`)
               continue
             }
+            const existingDeleted = await prisma.post.findFirst({
+              where: { sourceUrl: row.sourceUrl, status: 'DELETED' },
+              select: { id: true },
+            })
 
             if (!siteConfig) {
               await updateRow(tab.tabName, row.rowIndex, {
@@ -288,7 +288,6 @@ async function main() {
               // 수동 붙여넣기 모드
               title = row.title || '(제목 없음)'
               content = transformRawContent(row.rawContent, row.sourceUrl, siteConfig.name)
-              category = row.category || classifyCategory(title, content)
               console.log(`  → raw_content 사용 (스크래핑 스킵)`)
             } else {
               // 자동 스크래핑
@@ -298,29 +297,36 @@ async function main() {
               thumbnailUrl = result.thumbnailUrl
               imageCount = result.imageCount
               videoCount = result.videoCount
-              category = row.category || result.category // 창업자 카테고리 우선
             }
+
+            // 카테고리 결정 (창업자 지정 우선, 아니면 게시판별 자동 분류)
+            category = row.category || classifyCategory(title, content, tab.boardType)
 
             // 페르소나 선택
             const persona = pickPersona(category, tab.boardType, row.persona)
             const userId = await getBotUser(persona.id)
 
-            // 게시 (PUBLISHED — 피드 + 검색 모두 노출)
-            const post = await prisma.post.create({
-              data: {
-                title,
-                content,
-                boardType: tab.boardType,
-                category,
-                authorId: userId,
-                source: 'BOT',
-                status: 'PUBLISHED',
-                sourceUrl: row.sourceUrl,
-                sourceSite: siteConfig.id,
-                thumbnailUrl,
-                publishedAt: new Date(),
-              },
-            })
+            // 게시 (삭제된 게시글 재활용 또는 신규 생성)
+            const postData = {
+              title,
+              content,
+              boardType: tab.boardType,
+              category,
+              authorId: userId,
+              source: 'BOT' as const,
+              status: 'PUBLISHED' as const,
+              sourceUrl: row.sourceUrl,
+              sourceSite: siteConfig.id,
+              thumbnailUrl,
+              publishedAt: new Date(),
+            }
+
+            const post = existingDeleted
+              ? await prisma.post.update({
+                  where: { id: existingDeleted.id },
+                  data: postData,
+                })
+              : await prisma.post.create({ data: postData })
 
             // 게시글 URL 생성
             const boardSlug = tab.boardType === 'STORY' ? 'stories' : 'humor'
