@@ -57,7 +57,7 @@ export const EXTERNAL_CONFIGS: ExternalSiteConfig[] = [
 export const CAFE_CONFIGS: CafeConfig[] = [
   {
     id: 'wgang',
-    name: '우리가남이가',
+    name: '우갱 (우아한 갱년기)',
     url: 'https://cafe.naver.com/wgang',
     numericId: 29349320,
     boards: [
@@ -84,7 +84,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
   },
   {
     id: 'welovesilver',
-    name: '실버사랑',
+    name: '은사랑 카페 (5060,7080)',
     url: 'https://cafe.naver.com/welovesilver',
     numericId: 28648142,
     boards: [
@@ -113,7 +113,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
   },
   {
     id: '5060years',
-    name: '5060세대',
+    name: '50대60대 인생2막',
     url: 'https://cafe.naver.com/5060years',
     numericId: 28962370,
     boards: [
