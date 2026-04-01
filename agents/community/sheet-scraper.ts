@@ -20,7 +20,7 @@ import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
 import { readPendingRows, updateRow, type SheetTab } from './sheets-client.js'
 import { detectSite, randomUserAgent, isCloudflareChallenge, type SiteConfig } from './site-configs.js'
-import { processContentImages } from './image-pipeline.js'
+import { processContentMedia } from './image-pipeline.js'
 import { transformContent, transformRawContent, classifyCategory } from './content-transformer.js'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -98,6 +98,7 @@ interface ScrapeResult {
   content: string // 정제된 HTML
   thumbnailUrl: string | null
   imageCount: number
+  videoCount: number
   category: string
 }
 
@@ -138,7 +139,7 @@ async function scrapePage(
     // 이미지 파이프라인
     const dateKey = new Date().toISOString().slice(0, 10)
     const postKey = `${dateKey}/${Date.now()}`
-    const { html: finalContent, thumbnailUrl, imageCount } = await processContentImages(
+    const { html: finalContent, thumbnailUrl, imageCount, videoCount } = await processContentMedia(
       transformed,
       url,
       postKey,
@@ -147,7 +148,7 @@ async function scrapePage(
     // 카테고리 자동분류
     const category = classifyCategory(title, finalContent)
 
-    return { title, content: finalContent, thumbnailUrl, imageCount, category }
+    return { title, content: finalContent, thumbnailUrl, imageCount, videoCount, category }
   } finally {
     await page.close()
   }
@@ -280,6 +281,7 @@ async function main() {
             let content: string
             let thumbnailUrl: string | null = null
             let imageCount = 0
+            let videoCount = 0
             let category: string
 
             if (row.rawContent) {
@@ -295,6 +297,7 @@ async function main() {
               content = result.content
               thumbnailUrl = result.thumbnailUrl
               imageCount = result.imageCount
+              videoCount = result.videoCount
               category = row.category || result.category // 창업자 카테고리 우선
             }
 
@@ -334,7 +337,10 @@ async function main() {
             })
 
             totalPublished++
-            console.log(`  → PUBLISHED: ${postUrl} (이미지 ${imageCount}개)`)
+            const mediaSummary = imageCount > 0 || videoCount > 0
+              ? `(이미지 ${imageCount}개${videoCount > 0 ? `, 동영상 ${videoCount}개` : ''})`
+              : ''
+            console.log(`  → PUBLISHED: ${postUrl} ${mediaSummary}`)
 
             // 요청 간 딜레이
             await sleep(2000 + Math.random() * 3000)
