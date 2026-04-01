@@ -4,7 +4,13 @@
  */
 
 import sharp from 'sharp'
-import { uploadToR2 } from '../../src/lib/r2.js'
+import { createRequire } from 'module'
+
+// ESM(agents/)에서 CJS(src/lib/) 모듈 import — named export 호환
+const require = createRequire(import.meta.url)
+const { uploadToR2 } = require('../../src/lib/r2.ts') as {
+  uploadToR2: (buffer: Buffer, key: string, contentType: string) => Promise<{ key: string; url: string }>
+}
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
 const MIN_IMAGE_DIMENSION = 50 // px — 이모티콘/아이콘 필터
