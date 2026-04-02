@@ -22,8 +22,6 @@ export default async function WritePage({ searchParams }: PageProps) {
   if (!session?.user?.id) redirect('/login')
 
   const { board } = await searchParams
-  const userGrade = session.user.grade ?? 'SPROUT'
-
   const [allBoards, drafts] = await Promise.all([
     getAllBoardConfigs(),
     getMyDrafts(),
@@ -51,7 +49,6 @@ export default async function WritePage({ searchParams }: PageProps) {
       <PostWriteForm
         defaultBoard={board}
         boards={writableBoards}
-        userGrade={userGrade}
         serverDrafts={serverDrafts}
       />
     </div>

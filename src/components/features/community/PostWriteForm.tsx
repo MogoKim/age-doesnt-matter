@@ -41,12 +41,11 @@ interface ServerDraft {
 interface PostWriteFormProps {
   defaultBoard?: string
   boards: BoardOption[]
-  userGrade?: string
   editData?: EditData
   serverDrafts?: ServerDraft[]
 }
 
-export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROUT', editData, serverDrafts = [] }: PostWriteFormProps) {
+export default function PostWriteForm({ defaultBoard, boards, editData, serverDrafts = [] }: PostWriteFormProps) {
   const isEditMode = !!editData
   const router = useRouter()
   const { toast } = useToast()

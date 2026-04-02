@@ -22,8 +22,6 @@ export default async function EditPage({ params }: PageProps) {
   if (!session?.user?.id) redirect('/login')
 
   const { boardSlug, postId } = await params
-  const userGrade = session.user.grade ?? 'SEEDLING'
-
   // 게시글 조회 + 소유권 확인
   const post = await prisma.post.findUnique({
     where: { id: postId, status: 'PUBLISHED' },
@@ -57,7 +55,6 @@ export default async function EditPage({ params }: PageProps) {
       <PostWriteForm
         defaultBoard={currentSlug}
         boards={writableBoards}
-        userGrade={userGrade}
         editData={{
           postId: post.id,
           boardSlug: currentSlug,
