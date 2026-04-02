@@ -18,6 +18,7 @@ export abstract class BaseAgent {
   protected client: Anthropic
   protected model: string
   protected config: AgentConfig
+  private lessons = ''
 
   constructor(config: AgentConfig) {
     this.client = new Anthropic()
@@ -27,8 +28,53 @@ export abstract class BaseAgent {
     this.config = config
   }
 
+  /**
+   * Pattern C — BotLog 이력 학습
+   * 최근 실패 로그를 Haiku로 분석해 교훈을 추출하고 시스템 프롬프트에 주입.
+   * 마지막 실행이 FAILED일 때만 호출 (오버헤드 최소화).
+   */
+  private async learnFromHistory(): Promise<void> {
+    try {
+      type LogRow = { action: string; status: string; details: string | null; createdAt: Date }
+      type BotLogFindMany = (args: unknown) => Promise<LogRow[]>
+      const findMany = ((prisma as Record<string, Record<string, unknown>>).botLog.findMany as BotLogFindMany)
+
+      const logs = await findMany({
+        where: { botType: this.config.botType },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { action: true, status: true, details: true, createdAt: true },
+      })
+
+      const failures = logs.filter((l) => l.status === 'FAILED')
+      if (failures.length === 0) return
+
+      const logText = logs
+        .map(
+          (l) =>
+            `[${l.createdAt.toISOString().slice(0, 10)}] ${l.action} → ${l.status}` +
+            (l.details ? `: ${l.details.slice(0, 120)}` : ''),
+        )
+        .join('\n')
+
+      const haiku = new Anthropic()
+      const res = await haiku.messages.create({
+        model: MODEL_LIGHT,
+        max_tokens: 250,
+        system:
+          '에이전트 실행 로그를 분석해서 핵심 실패 패턴과 주의사항을 2-3줄로 요약해줘. 한국어로, 각 항목은 "- "로 시작.',
+        messages: [{ role: 'user', content: `[${this.config.name} 실행 기록]\n${logText}` }],
+      })
+
+      const block = res.content[0]
+      if (block.type === 'text' && block.text) this.lessons = block.text.trim()
+    } catch {
+      // 학습 실패해도 에이전트 실행에 영향 없음
+    }
+  }
+
   protected getSystemPrompt(): string {
-    return `당신은 "우리 나이가 어때서" 커뮤니티의 ${this.config.role}입니다.
+    const base = `당신은 "우리 나이가 어때서" 커뮤니티의 ${this.config.role}입니다.
 아래 회사 헌법을 항상 준수하세요:
 
 ${constitution}
@@ -43,6 +89,8 @@ ${constitution}
 - 불확실한 경우 실행 금지, 승인 요청
 - DB write는 ${this.config.canWrite ? '허용됨' : '금지 — 읽기만 가능'}
 `
+    if (!this.lessons) return base
+    return base + `\n## 과거 실행에서 학습한 교훈\n${this.lessons}\n`
   }
 
   protected async chat(userMessage: string, maxTokens?: number): Promise<string> {
@@ -60,7 +108,9 @@ ${constitution}
 
   protected async log(action: string, status: AgentLog['status'], details?: string, _costUsd?: number, durationMs = 0): Promise<void> {
     try {
-      await prisma.botLog.create({
+      type BotLogCreate = (args: unknown) => Promise<unknown>
+      const create = ((prisma as Record<string, Record<string, unknown>>).botLog.create as BotLogCreate)
+      await create({
         data: {
           botType: this.config.botType,
           action,
@@ -77,6 +127,20 @@ ${constitution}
 
   async execute(): Promise<AgentResult> {
     const start = Date.now()
+
+    // Pattern C: 마지막 실행이 실패였으면 이력 학습 후 시스템 프롬프트에 반영
+    try {
+      type LastRunRow = { status: string } | null
+      type BotLogFindFirst = (args: unknown) => Promise<LastRunRow>
+      const findFirst = ((prisma as Record<string, Record<string, unknown>>).botLog.findFirst as BotLogFindFirst)
+      const lastRun = await findFirst({
+        where: { botType: this.config.botType },
+        orderBy: { createdAt: 'desc' },
+        select: { status: true },
+      })
+      if (lastRun?.status === 'FAILED') await this.learnFromHistory()
+    } catch { /* ignore */ }
+
     try {
       const result = await this.run()
       const durationMs = Date.now() - start
