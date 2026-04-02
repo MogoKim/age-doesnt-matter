@@ -25,6 +25,8 @@ test.describe('시나리오 6: axe-core WCAG 2.1 AA 접근성 검증', () => {
 
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .exclude('iframe')           // 광고 iframe(AdSense/YouTube) — 서드파티 제어 불가
+        .exclude('[id^="aswift"]')   // AdSense 호스트 컨테이너
         .disableRules([
           'color-contrast',   // 동적 테마 색상은 별도 검증
           'page-has-heading-one', // SPA 구조상 예외 허용
@@ -59,6 +61,8 @@ test.describe('시나리오 6: axe-core WCAG 2.1 AA 접근성 검증', () => {
 
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa'])
+        .exclude('iframe')
+        .exclude('[id^="aswift"]')
         .disableRules(['color-contrast', 'page-has-heading-one'])
         .analyze()
 
