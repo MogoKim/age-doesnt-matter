@@ -159,6 +159,24 @@ export async function adminUpdateUserStatus(
     data,
   })
 
+  // 차단 해제(ACTIVE 복원) 시 — BANNED였던 경우에만 글/댓글 복구
+  if (status === 'ACTIVE' && existingUser?.status === 'BANNED') {
+    const userPosts = await prisma.post.findMany({
+      where: { authorId: userId, status: 'HIDDEN' },
+      select: { boardType: true },
+    })
+    await prisma.post.updateMany({
+      where: { authorId: userId, status: 'HIDDEN' },
+      data: { status: 'PUBLISHED' },
+    })
+    await prisma.comment.updateMany({
+      where: { authorId: userId, status: 'HIDDEN' },
+      data: { status: 'ACTIVE' },
+    })
+    const boardTypes = [...new Set(userPosts.map((p) => p.boardType))]
+    for (const bt of boardTypes) revalidateServicePaths(bt)
+  }
+
   // 영구 차단 시 기존 글/댓글 전체 숨김 + 서비스 캐시 무효화
   if (status === 'BANNED') {
     const userPosts = await prisma.post.findMany({
