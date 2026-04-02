@@ -159,6 +159,24 @@ export async function adminUpdateUserStatus(
     data,
   })
 
+  // 영구 차단 시 기존 글/댓글 전체 숨김 + 서비스 캐시 무효화
+  if (status === 'BANNED') {
+    const userPosts = await prisma.post.findMany({
+      where: { authorId: userId, status: 'PUBLISHED' },
+      select: { boardType: true },
+    })
+    await prisma.post.updateMany({
+      where: { authorId: userId, status: 'PUBLISHED' },
+      data: { status: 'HIDDEN' },
+    })
+    await prisma.comment.updateMany({
+      where: { authorId: userId, status: 'ACTIVE' },
+      data: { status: 'HIDDEN' },
+    })
+    const boardTypes = [...new Set(userPosts.map((p) => p.boardType))]
+    for (const bt of boardTypes) revalidateServicePaths(bt)
+  }
+
   // 제재 시 사용자에게 알림 발송
   if (status !== 'ACTIVE') {
     const messages: Record<string, string> = {
