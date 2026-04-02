@@ -31,10 +31,21 @@ function loadEnvFile(filePath: string) {
 loadEnvFile(resolve(projectRoot, '.env.local'))
 loadEnvFile(resolve(projectRoot, '.env'))
 
+import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
 
-const adapter = new PrismaPg({ connectionString: process.env.DIRECT_URL ?? process.env.DATABASE_URL })
+// agents/core/db.ts와 동일한 연결 방식 — DATABASE_URL(session pooler) 우선
+const dbUrl = new URL(process.env.DATABASE_URL ?? process.env.DIRECT_URL ?? '')
+const pool = new Pool({
+  host: dbUrl.hostname,
+  port: parseInt(dbUrl.port, 10) || 5432,
+  user: decodeURIComponent(dbUrl.username),
+  password: decodeURIComponent(dbUrl.password),
+  database: dbUrl.pathname.slice(1) || 'postgres',
+  ssl: { rejectUnauthorized: false },
+})
+const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
 const dryRun = process.argv.includes('--dry-run')
