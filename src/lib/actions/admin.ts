@@ -30,6 +30,25 @@ async function requireAdmin() {
   return session
 }
 
+// BoardType → 서비스 페이지 경로 매핑
+const BOARD_PATHS: Record<string, string> = {
+  STORY: '/community/stories',
+  HUMOR: '/community/humor',
+  MAGAZINE: '/magazine',
+  JOB: '/jobs',
+}
+
+/** 게시글 상태 변경 시 서비스 페이지 캐시 무효화 */
+function revalidateServicePaths(boardType?: string | null, postId?: string) {
+  const boardPath = boardType ? BOARD_PATHS[boardType] : null
+  if (boardPath) {
+    revalidatePath(boardPath)
+    if (postId) revalidatePath(`${boardPath}/${postId}`)
+  }
+  revalidatePath('/')
+  revalidatePath('/best')
+}
+
 // ─── 콘텐츠 액션 ───
 
 export async function adminUpdatePostStatus(postId: string, status: PostStatus) {
@@ -53,6 +72,7 @@ export async function adminUpdatePostStatus(postId: string, status: PostStatus) 
     },
   })
 
+  revalidateServicePaths(existing?.boardType, postId)
   revalidatePath('/admin/content')
 }
 
@@ -77,6 +97,7 @@ export async function adminTogglePin(postId: string, isPinned: boolean) {
     },
   })
 
+  revalidateServicePaths(existing?.boardType, postId)
   revalidatePath('/admin/content')
 }
 
@@ -85,6 +106,11 @@ export async function adminBulkAction(
   action: 'HIDDEN' | 'DELETED'
 ) {
   const admin = await requireAdmin()
+
+  const posts = await prisma.post.findMany({
+    where: { id: { in: postIds } },
+    select: { boardType: true },
+  })
 
   await prisma.post.updateMany({
     where: { id: { in: postIds } },
@@ -102,6 +128,8 @@ export async function adminBulkAction(
     })
   }
 
+  const boardTypes = [...new Set(posts.map((p) => p.boardType))]
+  for (const bt of boardTypes) revalidateServicePaths(bt)
   revalidatePath('/admin/content')
 }
 
@@ -215,6 +243,7 @@ export async function adminProcessReport(
         where: { id: report.postId },
         data: { status: action === 'DELETED' ? 'DELETED' : 'HIDDEN' },
       })
+      revalidateServicePaths(report.post?.boardType, report.postId)
     }
     if (report.commentId) {
       await prisma.comment.update({
