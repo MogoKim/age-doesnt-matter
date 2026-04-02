@@ -18,7 +18,7 @@ import { chromium, type BrowserContext, type Page } from 'playwright'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
-import { readPendingRows, updateRow, type SheetTab } from './sheets-client.js'
+import { readPendingRows, updateRow } from './sheets-client.js'
 import { detectSite, randomUserAgent, isCloudflareChallenge, type SiteConfig } from './site-configs.js'
 import { processContentMedia } from './image-pipeline.js'
 import { transformContent, transformRawContent, classifyCategory } from './content-transformer.js'
@@ -283,7 +283,6 @@ async function main() {
             let thumbnailUrl: string | null = null
             let imageCount = 0
             let videoCount = 0
-            let category: string
 
             if (row.rawContent) {
               // 수동 붙여넣기 모드
@@ -301,7 +300,7 @@ async function main() {
             }
 
             // 카테고리 결정 (창업자 지정 우선, 아니면 게시판별 자동 분류)
-            category = row.category || classifyCategory(title, content, tab.boardType)
+            const category = row.category || classifyCategory(title, content, tab.boardType)
 
             // 페르소나 선택
             const persona = pickPersona(category, tab.boardType, row.persona)
