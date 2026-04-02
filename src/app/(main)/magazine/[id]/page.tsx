@@ -12,6 +12,7 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
+import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import { ADSENSE } from '@/components/ad/ad-slots'
 
 const BASE_URL = 'https://age-doesnt-matter.com'
@@ -184,6 +185,11 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           </p>
         </div>
       )}
+
+      {/* 쿠팡 관련 상품 */}
+      <div className="mb-8">
+        <CoupangSearchWidget />
+      </div>
 
       {/* 액션 바 */}
       <ActionBar

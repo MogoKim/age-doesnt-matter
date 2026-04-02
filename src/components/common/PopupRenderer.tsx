@@ -126,14 +126,7 @@ export default function PopupRenderer() {
 
   return (
     <>
-      {activePopup.type === 'BOTTOM_SHEET' && (
-        <BottomSheetPopup
-          popup={activePopup}
-          onClose={handleClose}
-          onHide={handleHideForDays}
-          onClick={handleClick}
-        />
-      )}
+      {/* BOTTOM_SHEET 비활성화 — 광고 팝업 UX 문제로 제거. 공지는 CENTER 타입 사용 */}
       {activePopup.type === 'FULLSCREEN' && (
         <FullscreenPopup
           popup={activePopup}

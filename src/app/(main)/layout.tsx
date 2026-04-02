@@ -3,7 +3,6 @@ import { getUserFontSize } from '@/lib/queries/my'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
 import OfflineBanner from '@/components/common/OfflineBanner'
-import MobileStickyAd from '@/components/ad/MobileStickyAd'
 import PopupRenderer from '@/components/common/PopupRenderer'
 
 export default async function MainGroupLayout({
@@ -24,7 +23,6 @@ export default async function MainGroupLayout({
       <MainLayout isLoggedIn={isLoggedIn} nickname={nickname}>
         {children}
       </MainLayout>
-      <MobileStickyAd />
       <PopupRenderer />
     </FontSizeProvider>
   )

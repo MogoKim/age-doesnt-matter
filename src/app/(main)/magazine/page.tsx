@@ -6,6 +6,7 @@ import { getMagazineList } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import FeedAd from '@/components/ad/FeedAd'
+import CoupangBanner from '@/components/ad/CoupangBanner'
 
 export const metadata: Metadata = {
   title: '매거진',
@@ -60,15 +61,15 @@ export default async function MagazinePage() {
                     <MagazineCard key={post.id} post={post} />
                   ))}
                 </div>
+                <div className="my-4">
+                  <CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" />
+                </div>
                 {rest.length > 8 && (
-                  <>
-                    <FeedAd />
-                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                      {rest.slice(8).map((post) => (
-                        <MagazineCard key={post.id} post={post} />
-                      ))}
-                    </div>
-                  </>
+                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    {rest.slice(8).map((post) => (
+                      <MagazineCard key={post.id} post={post} />
+                    ))}
+                  </div>
                 )}
               </>
             )}

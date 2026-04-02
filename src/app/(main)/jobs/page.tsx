@@ -12,6 +12,7 @@ import { formatSalary } from '@/lib/format'
 import JobFilterButton from '@/components/features/jobs/JobFilterButton'
 import JobQuickTags from '@/components/features/jobs/JobQuickTags'
 import FeedAd from '@/components/ad/FeedAd'
+import CoupangBanner from '@/components/ad/CoupangBanner'
 
 interface PageProps {
   searchParams: Promise<{ region?: string; tags?: string }>
@@ -70,7 +71,8 @@ export default async function JobsPage({ searchParams }: PageProps) {
             {jobs.map((job, idx) => (
               <div key={job.id}>
                 <JobCard job={job} />
-                {(idx + 1) % 4 === 0 && <FeedAd />}
+                {(idx + 1) % 8 === 4 && <FeedAd />}
+                {(idx + 1) % 8 === 0 && <div className="mt-3"><CoupangBanner preset="mobile" className="rounded-xl overflow-hidden" /></div>}
               </div>
             ))}
           </div>
