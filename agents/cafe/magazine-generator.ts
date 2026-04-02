@@ -340,7 +340,12 @@ async function main() {
       })
       console.log(`[MagazineGenerator] 썸네일 생성: ${thumbnailUrl}`)
     } catch (err) {
-      console.warn('[MagazineGenerator] 썸네일 생성 실패 (무시):', err)
+      console.warn('[MagazineGenerator] 썸네일 생성 실패, 히어로 이미지 폴백:', err)
+    }
+    // 히어로 이미지 폴백 — Playwright 실패 시 DALL-E 히어로 이미지를 썸네일로 사용
+    if (!thumbnailUrl && image?.url) {
+      thumbnailUrl = image.url
+      console.log(`[MagazineGenerator] 히어로 이미지를 썸네일로 사용: ${image.url.slice(0, 50)}...`)
     }
 
     // 리치 HTML을 게시 콘텐츠로 사용
