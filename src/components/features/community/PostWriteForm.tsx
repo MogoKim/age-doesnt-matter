@@ -19,8 +19,11 @@ interface BoardOption {
   categories: string[]
 }
 
-const DRAFT_KEY = 'unae_post_draft'
 const AUTOSAVE_INTERVAL = 30_000 // 30초
+
+function getDraftKey(boardSlug: string) {
+  return `unae_post_draft_${boardSlug}`
+}
 
 interface EditData {
   postId: string
@@ -86,13 +89,12 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       setDraftLoaded(true)
       return
     }
-    // 서버 임시저장이 없으면 localStorage에서 복원
+    // 서버 임시저장이 없으면 localStorage에서 복원 (게시판별 키)
     try {
-      const saved = localStorage.getItem(DRAFT_KEY)
+      const saved = localStorage.getItem(getDraftKey(selectedBoard))
       if (saved) {
         const draft = JSON.parse(saved) as { board?: string; category?: string; title?: string; content?: string }
         if (draft.title || draft.content) {
-          setSelectedBoard(draft.board || selectedBoard)
           setSelectedCategory(draft.category || '')
           setTitle(draft.title || '')
           setContent(draft.content || '')
@@ -108,7 +110,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   const saveLocalDraft = useCallback(() => {
     if (!title && !content) return
     try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      localStorage.setItem(getDraftKey(selectedBoard), JSON.stringify({
         board: selectedBoard,
         category: selectedCategory,
         title,
@@ -132,7 +134,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   }, [saveLocalDraft, draftLoaded, isEditMode])
 
   function clearDraft() {
-    try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
+    try { localStorage.removeItem(getDraftKey(selectedBoard)) } catch { /* ignore */ }
     // 서버 임시저장도 삭제
     if (currentDraftId) {
       deleteDraftAction(currentDraftId).catch(() => {})
@@ -206,6 +208,22 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   function handleBoardChange(slug: string) {
     setSelectedBoard(slug)
     setSelectedCategory('')
+    // 전환한 게시판의 임시저장 자동 로드
+    try {
+      const saved = localStorage.getItem(getDraftKey(slug))
+      if (saved) {
+        const draft = JSON.parse(saved) as { category?: string; title?: string; content?: string }
+        if (draft.title || draft.content) {
+          setSelectedCategory(draft.category || '')
+          setTitle(draft.title || '')
+          setContent(draft.content || '')
+          toast('임시저장된 글을 불러왔어요', 'info')
+        }
+      } else {
+        setTitle('')
+        setContent('')
+      }
+    } catch { /* ignore */ }
   }
 
   function handleCancel() {
