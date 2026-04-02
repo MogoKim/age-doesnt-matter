@@ -4,7 +4,7 @@ import { uploadToR2 } from '@/lib/r2'
 import { randomUUID } from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
 
-const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB (Vercel 요청 크기 제한)
 const ALLOWED_TYPES = ['video/mp4', 'video/quicktime', 'video/webm']
 
 export async function POST(request: Request) {
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
   if (file.size > MAX_VIDEO_SIZE) {
     return NextResponse.json(
-      { error: '동영상은 최대 100MB까지 업로드할 수 있어요' },
+      { error: '동영상은 최대 50MB까지 업로드할 수 있어요' },
       { status: 400 },
     )
   }

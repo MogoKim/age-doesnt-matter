@@ -10,9 +10,8 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
-const MAX_IMAGES = 5
 const MAX_FILE_SIZE = 5 * 1024 * 1024   // 5MB
-const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
 
 // ─── 인라인 텍스트 크기 Extension ───
 const FontSizeExtension = Extension.create({
@@ -60,30 +59,23 @@ const FONT_SIZES = [
 
 type VideoSheet = 'closed' | 'picking' | 'youtube'
 
-export interface ImagePreview {
-  file: File
-  url: string
-}
-
 interface TipTapEditorProps {
   content: string
   onChange: (html: string) => void
   placeholder?: string
-  onImagesChange?: (images: ImagePreview[]) => void
 }
 
 export default function TipTapEditor({
   content,
   onChange,
   placeholder = '내용을 입력해 주세요 (10자 이상)',
-  onImagesChange,
 }: TipTapEditorProps) {
-  const [images, setImages] = useState<ImagePreview[]>([])
   const [videoSheet, setVideoSheet] = useState<VideoSheet>('closed')
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [youtubeError, setYoutubeError] = useState('')
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
-  const [videoUploadError, setVideoUploadError] = useState('')
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [mediaError, setMediaError] = useState('')
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -131,7 +123,10 @@ export default function TipTapEditor({
         const isOnlyYoutubeUrl =
           /^https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)[^\s]+$/.test(trimmed)
         if (isOnlyYoutubeUrl) {
-          editorRef.current?.chain().focus().setYoutubeVideo({ src: trimmed }).run()
+          editorRef.current?.chain().focus()
+            .setYoutubeVideo({ src: trimmed })
+            .createParagraphNear()
+            .run()
           return true
         }
         return false
@@ -152,38 +147,48 @@ export default function TipTapEditor({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content])
 
-  // 이미지 변경 시 부모에게 알림
-  useEffect(() => {
-    onImagesChange?.(images)
-  }, [images, onImagesChange])
-
-  // ─── 이미지 첨부 핸들러 ───
-  const handleImageClick = useCallback(() => {
-    fileInputRef.current?.click()
-  }, [])
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ─── 사진 인라인 삽입 핸들러 (A안: 즉시 업로드 → 커서 위치 삽입) ───
+  const handleImageFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || [])
-      const valid = files.filter((f) => f.size <= MAX_FILE_SIZE && f.type.startsWith('image/'))
-      const remaining = MAX_IMAGES - images.length
-      const toAdd = valid.slice(0, remaining).map((file) => ({
-        file,
-        url: URL.createObjectURL(file),
-      }))
-      if (toAdd.length > 0) setImages((prev) => [...prev, ...toAdd])
-      e.target.value = ''
-    },
-    [images.length],
-  )
+      if (files.length === 0 || !editor) return
 
-  const removeImage = useCallback((idx: number) => {
-    setImages((prev) => {
-      const removed = prev[idx]
-      if (removed) URL.revokeObjectURL(removed.url)
-      return prev.filter((_, i) => i !== idx)
-    })
-  }, [])
+      // 크기 초과 파일 체크
+      const oversized = files.filter((f) => f.size > MAX_FILE_SIZE)
+      if (oversized.length > 0) {
+        setMediaError('5MB를 넘는 사진은 추가할 수 없어요')
+        e.target.value = ''
+        return
+      }
+
+      setIsUploadingImage(true)
+      setMediaError('')
+      try {
+        const uploadData = new FormData()
+        files.forEach((f) => uploadData.append('files', f))
+        const res = await fetch('/api/uploads', { method: 'POST', body: uploadData })
+        if (!res.ok) {
+          const err = await res.json()
+          setMediaError(err.error || '이미지 업로드에 실패했어요')
+          return
+        }
+        const { images: uploaded } = await res.json()
+        for (const img of uploaded as { url: string }[]) {
+          editor.chain()
+            .focus()
+            .setImage({ src: img.url })
+            .createParagraphNear()
+            .run()
+        }
+      } catch {
+        setMediaError('이미지 업로드에 실패했어요')
+      } finally {
+        setIsUploadingImage(false)
+        e.target.value = ''
+      }
+    },
+    [editor],
+  )
 
   // ─── 동영상 직접 업로드 핸들러 ───
   const handleVideoFileChange = useCallback(
@@ -192,13 +197,13 @@ export default function TipTapEditor({
       if (!file || !editor) return
 
       if (file.size > MAX_VIDEO_SIZE) {
-        setVideoUploadError('동영상은 최대 100MB까지 업로드할 수 있어요')
+        setMediaError('동영상은 최대 50MB까지 업로드할 수 있어요')
         e.target.value = ''
         return
       }
 
       setIsUploadingVideo(true)
-      setVideoUploadError('')
+      setMediaError('')
       setVideoSheet('closed')
 
       try {
@@ -207,13 +212,17 @@ export default function TipTapEditor({
         const res = await fetch('/api/uploads/video', { method: 'POST', body: formData })
         if (!res.ok) {
           const err = await res.json()
-          setVideoUploadError(err.error || '동영상 업로드에 실패했어요')
+          setMediaError(err.error || '동영상 업로드에 실패했어요')
           return
         }
         const { url } = await res.json()
-        editor.chain().focus().insertContent({ type: 'video', attrs: { src: url } }).run()
+        editor.chain()
+          .focus()
+          .insertContent({ type: 'video', attrs: { src: url } })
+          .createParagraphNear()
+          .run()
       } catch {
-        setVideoUploadError('동영상 업로드에 실패했어요')
+        setMediaError('동영상 업로드에 실패했어요')
       } finally {
         setIsUploadingVideo(false)
         e.target.value = ''
@@ -230,13 +239,19 @@ export default function TipTapEditor({
       setYoutubeError('올바른 유튜브 주소를 입력해 주세요')
       return
     }
-    editor.chain().focus().setYoutubeVideo({ src: youtubeUrl }).run()
+    editor.chain()
+      .focus()
+      .setYoutubeVideo({ src: youtubeUrl })
+      .createParagraphNear()
+      .run()
     setYoutubeUrl('')
     setYoutubeError('')
     setVideoSheet('closed')
   }, [editor, youtubeUrl])
 
   if (!editor) return null
+
+  const isUploading = isUploadingImage || isUploadingVideo
 
   return (
     <div className="relative">
@@ -299,17 +314,17 @@ export default function TipTapEditor({
       <div className="grid grid-cols-2 gap-2 mb-2">
         <button
           type="button"
-          onClick={handleImageClick}
-          disabled={images.length >= MAX_IMAGES}
+          onClick={() => { setMediaError(''); fileInputRef.current?.click() }}
+          disabled={isUploadingImage}
           className="flex items-center justify-center gap-2 min-h-[52px] rounded-xl border-2 border-border bg-card text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <span className="text-lg">📷</span>
-          <span>사진 추가 {images.length > 0 && `(${images.length}/${MAX_IMAGES})`}</span>
+          <span className="text-lg">{isUploadingImage ? '⏳' : '📷'}</span>
+          <span>{isUploadingImage ? '업로드 중...' : '사진 추가'}</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setVideoSheet('picking')}
+          onClick={() => { setMediaError(''); setVideoSheet('picking') }}
           disabled={isUploadingVideo}
           className="flex items-center justify-center gap-2 min-h-[52px] rounded-xl border-2 border-border bg-card text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
         >
@@ -318,32 +333,17 @@ export default function TipTapEditor({
         </button>
       </div>
 
-      {videoUploadError && (
-        <p className="text-sm text-destructive mb-2">{videoUploadError}</p>
+      {/* ── 미디어 에러 메시지 (통합) ── */}
+      {mediaError && (
+        <p className="text-sm text-destructive mb-2">{mediaError}</p>
       )}
 
       {/* ── 3. 에디터 본문 ── */}
-      <div className="border-2 border-border rounded-xl bg-card transition-all focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(255,111,97,0.1)]">
+      <div
+        className="border-2 border-border rounded-xl bg-card transition-all focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(255,111,97,0.1)]"
+        onClick={() => setMediaError('')}
+      >
         <EditorContent editor={editor} />
-
-        {/* ── 4. 첨부 이미지 프리뷰 ── */}
-        {images.length > 0 && (
-          <div className="flex flex-wrap gap-3 px-4 pb-3">
-            {images.map((img, idx) => (
-              <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.url} alt={`첨부 ${idx + 1}`} className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  className="absolute top-0.5 right-0.5 w-7 h-7 bg-black/60 text-white rounded-full text-xs flex items-center justify-center hover:bg-black/80 transition-colors"
-                  onClick={() => removeImage(idx)}
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* ── 동영상 선택 바텀시트 ── */}
@@ -358,6 +358,19 @@ export default function TipTapEditor({
               <>
                 <p className="text-body font-bold text-foreground mb-4">동영상 추가 방법을 선택해 주세요</p>
                 <div className="space-y-2">
+                  {/* 1번: 내 동영상 올리기 (순서 변경) */}
+                  <button
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                    className="w-full flex items-center gap-3 min-h-[52px] px-4 rounded-xl border-2 border-border bg-background text-body font-medium text-foreground text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+                  >
+                    <span className="text-2xl">🎞</span>
+                    <div>
+                      <p className="font-bold">내 동영상 올리기</p>
+                      <p className="text-caption text-muted-foreground">MP4, MOV, WebM · 최대 50MB</p>
+                    </div>
+                  </button>
+                  {/* 2번: 유튜브 링크 */}
                   <button
                     type="button"
                     onClick={() => setVideoSheet('youtube')}
@@ -367,17 +380,6 @@ export default function TipTapEditor({
                     <div>
                       <p className="font-bold">유튜브 링크</p>
                       <p className="text-caption text-muted-foreground">유튜브 주소를 붙여넣어 삽입</p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => videoInputRef.current?.click()}
-                    className="w-full flex items-center gap-3 min-h-[52px] px-4 rounded-xl border-2 border-border bg-background text-body font-medium text-foreground text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
-                  >
-                    <span className="text-2xl">🎞</span>
-                    <div>
-                      <p className="font-bold">내 동영상 올리기</p>
-                      <p className="text-caption text-muted-foreground">MP4, MOV, WebM · 최대 100MB</p>
                     </div>
                   </button>
                 </div>
@@ -436,7 +438,7 @@ export default function TipTapEditor({
         accept="image/jpeg,image/png,image/gif,image/webp"
         multiple
         className="hidden"
-        onChange={handleFileChange}
+        onChange={handleImageFileChange}
       />
       <input
         ref={videoInputRef}
@@ -458,6 +460,7 @@ export default function TipTapEditor({
         .tiptap {
           word-break: keep-all;
           line-height: 1.85;
+          caret-color: #FF6F61;
         }
         .tiptap p {
           margin: 0.5em 0;
@@ -487,6 +490,18 @@ export default function TipTapEditor({
           border-radius: 12px;
         }
       `}</style>
+
+      {/* 업로드 중 오버레이 (전체 에디터 블로킹) */}
+      {isUploading && (
+        <div className="absolute inset-0 bg-card/60 rounded-xl flex items-center justify-center z-10 pointer-events-none">
+          <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 shadow-md">
+            <span className="text-lg">⏳</span>
+            <span className="text-caption font-medium text-foreground">
+              {isUploadingImage ? '사진 업로드 중...' : '동영상 업로드 중...'}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

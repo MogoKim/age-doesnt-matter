@@ -8,7 +8,6 @@ import { createPost, updatePost } from '@/lib/actions/posts'
 import { saveDraft as saveDraftAction, deleteDraft as deleteDraftAction } from '@/lib/actions/drafts'
 import { useToast } from '@/components/common/Toast'
 import { gtmPostCreate } from '@/lib/gtm'
-import type { ImagePreview } from './TipTapEditor'
 
 // TipTap은 SSR 불가 → dynamic import
 const TipTapEditor = dynamic(() => import('./TipTapEditor'), { ssr: false })
@@ -59,7 +58,6 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   const [selectedCategory, setSelectedCategory] = useState(editData?.category || '')
   const [title, setTitle] = useState(editData?.title || '')
   const [content, setContent] = useState(editData?.content || '')
-  const [images, setImages] = useState<ImagePreview[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const [showDraftList, setShowDraftList] = useState(false)
   const [draftLoaded, setDraftLoaded] = useState(false)
@@ -239,32 +237,11 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
     setError('')
 
     startTransition(async () => {
-      // 이미지가 있으면 먼저 업로드
-      let imageUrls: string[] = []
-      if (images.length > 0) {
-        const uploadData = new FormData()
-        images.forEach((img) => uploadData.append('files', img.file))
-
-        const uploadRes = await fetch('/api/uploads', {
-          method: 'POST',
-          body: uploadData,
-        })
-        if (!uploadRes.ok) {
-          const err = await uploadRes.json()
-          setError(err.error || '이미지 업로드에 실패했어요')
-          return
-        }
-        const uploadResult = await uploadRes.json()
-        imageUrls = uploadResult.images.map((img: { url: string }) => img.url)
-      }
-
-      // 게시글 생성 또는 수정
       const formData = new FormData()
       formData.set('boardSlug', selectedBoard)
       if (selectedCategory) formData.set('category', selectedCategory)
       formData.set('title', title)
       formData.set('content', content)
-      imageUrls.forEach((url) => formData.append('imageUrls', url))
 
       const result = isEditMode
         ? await updatePost(editData.postId, formData)
@@ -342,23 +319,9 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
             {title || '(제목 없음)'}
           </h3>
           <div
-            className="prose prose-lg max-w-none text-body text-foreground leading-[1.85] mb-4 [word-break:keep-all] [&_img]:rounded-xl [&_img]:max-w-full [&_hr]:border-border [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl"
+            className="prose prose-lg max-w-none text-body text-foreground leading-[1.85] mb-4 [word-break:keep-all] [&_img]:rounded-xl [&_img]:max-w-full [&_hr]:border-border [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_video]:w-full [&_video]:rounded-xl"
             dangerouslySetInnerHTML={{ __html: content || '<p>(본문 없음)</p>' }}
           />
-
-          {images.length > 0 && (
-            <div className="flex gap-3 flex-wrap mb-4">
-              {images.map((img, idx) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={idx}
-                  src={img.url}
-                  alt={`첨부 ${idx + 1}`}
-                  className="w-24 h-24 object-cover rounded-xl border border-border"
-                />
-              ))}
-            </div>
-          )}
 
           <button
             onClick={() => setShowPreview(false)}
@@ -373,6 +336,40 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
 
   return (
     <>
+      {/* ── 상단 헤더 (네이버 카페 표준: 취소 | 글쓰기 | 임시저장 | 등록) ── */}
+      <div className="sticky top-0 z-30 bg-card border-b border-border flex items-center justify-between px-1 h-[52px] -mx-4 mb-4 md:-mx-6">
+        <button
+          type="button"
+          onClick={handleCancel}
+          className="min-w-[52px] min-h-[52px] flex items-center justify-center text-body text-muted-foreground hover:text-foreground transition-colors px-3"
+        >
+          취소
+        </button>
+        <span className="text-body font-bold text-foreground">
+          {isEditMode ? '수정하기' : '글쓰기'}
+        </span>
+        <div className="flex items-center">
+          {!isEditMode && (
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={isSavingDraft || (!title && !content)}
+              className="min-w-[52px] min-h-[52px] flex items-center justify-center text-caption text-muted-foreground hover:text-foreground transition-colors px-3 disabled:opacity-40"
+            >
+              {isSavingDraft ? '저장중' : '임시저장'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!canSubmit || isPending}
+            className="min-w-[52px] min-h-[52px] flex items-center justify-center text-body font-bold text-primary hover:text-[#E85D50] transition-colors px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isPending ? (isEditMode ? '수정중' : '등록중') : (isEditMode ? '수정' : '등록')}
+          </button>
+        </div>
+      </div>
+
       {error && (
         <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-sm font-medium">
           {error}
@@ -451,7 +448,6 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         <TipTapEditor
           content={content}
           onChange={setContent}
-          onImagesChange={setImages}
         />
         <div className={cn(
           'text-right text-caption font-medium text-muted-foreground mt-1',
@@ -461,42 +457,15 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         </div>
       </div>
 
-      {/* 하단 액션바 */}
-      <div className="py-6 border-t border-border mt-8 space-y-3">
-        {/* 등록 버튼 — 항상 전체 너비 */}
+      {/* 하단 보조 버튼 (미리보기만) */}
+      <div className="py-4 border-t border-border mt-4">
         <button
-          className="w-full min-h-[52px] lg:min-h-[48px] py-3.5 border-none rounded-xl bg-primary text-white text-body font-bold cursor-pointer transition-all shadow-[0_2px_8px_rgba(255,111,97,0.3)] hover:bg-[#E85D50] hover:shadow-[0_4px_12px_rgba(255,111,97,0.4)] hover:-translate-y-px disabled:bg-border disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0"
-          disabled={!canSubmit || isPending}
-          onClick={handleSubmit}
+          className="w-full min-h-[52px] lg:min-h-[48px] py-3.5 border-2 border-border rounded-xl bg-card text-foreground text-caption font-bold cursor-pointer transition-all hover:border-primary hover:text-primary"
+          onClick={() => setShowPreview(true)}
+          disabled={!title && !content}
         >
-          {isPending ? (isEditMode ? '수정 중...' : '등록 중...') : (isEditMode ? '수정하기' : '등록하기')}
+          미리보기
         </button>
-
-        {/* 보조 버튼들 */}
-        <div className="flex gap-2">
-          <button
-            className="flex-1 min-h-[52px] lg:min-h-[48px] py-3.5 border-2 border-border rounded-xl bg-card text-muted-foreground text-caption font-bold cursor-pointer transition-all hover:border-muted-foreground hover:text-foreground"
-            onClick={handleCancel}
-          >
-            취소
-          </button>
-          {!isEditMode && (
-            <button
-              className="flex-1 min-h-[52px] lg:min-h-[48px] py-3.5 border-2 border-border rounded-xl bg-card text-foreground text-caption font-bold cursor-pointer transition-all hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleSaveDraft}
-              disabled={isSavingDraft || (!title && !content)}
-            >
-              {isSavingDraft ? '저장 중...' : '임시저장'}
-            </button>
-          )}
-          <button
-            className="flex-1 min-h-[52px] lg:min-h-[48px] py-3.5 border-2 border-border rounded-xl bg-card text-foreground text-caption font-bold cursor-pointer transition-all hover:border-primary hover:text-primary"
-            onClick={() => setShowPreview(true)}
-            disabled={!title && !content}
-          >
-            미리보기
-          </button>
-        </div>
       </div>
     </>
   )
