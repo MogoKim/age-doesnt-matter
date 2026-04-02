@@ -156,33 +156,6 @@ interface PopupProps {
   onClick: () => void
 }
 
-/* ── 바텀 시트 팝업 ── */
-
-function BottomSheetPopup({ popup, onClose, onHide, onClick }: PopupProps) {
-  return (
-    <div className="fixed inset-0 z-[200]" role="dialog" aria-modal="true" aria-label={popup.title ?? '팝업'}>
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl max-h-[80vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
-        <div className="sticky top-0 flex items-center justify-between p-4 border-b border-border bg-card rounded-t-2xl">
-          {popup.title && <h2 className="text-title font-bold text-foreground">{popup.title}</h2>}
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex items-center justify-center w-[52px] h-[52px] text-muted-foreground text-xl ml-auto"
-            aria-label="닫기"
-          >
-            ✕
-          </button>
-        </div>
-
-        <PopupBody popup={popup} onClick={onClick} />
-
-        <PopupFooter popup={popup} onClose={onClose} onHide={onHide} />
-      </div>
-    </div>
-  )
-}
-
 /* ── 전면 팝업 ── */
 
 function FullscreenPopup({ popup, onClose, onHide, onClick }: PopupProps) {
