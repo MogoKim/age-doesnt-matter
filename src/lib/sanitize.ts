@@ -101,6 +101,20 @@ export function plainTextToSafeHtml(text: string): string {
 }
 
 /**
+ * 매거진 HTML 내 R2 이미지 URL을 Next.js Image Optimization으로 프록시
+ * 브라우저에서 R2 직접 요청이 실패하므로 /_next/image 프록시 경유
+ */
+export function proxyMagazineImages(html: string): string {
+  return html.replace(
+    /(<img\s[^>]*?)src="(https:\/\/[^"]*\.r2\.dev\/[^"]+)"/g,
+    (_, before, url) => {
+      const proxied = `/_next/image?url=${encodeURIComponent(url)}&w=750&q=80`
+      return `${before}src="${proxied}"`
+    },
+  )
+}
+
+/**
  * HTML 태그 제거 → 순수 텍스트 (요약용)
  */
 export function stripHtmlTags(html: string): string {

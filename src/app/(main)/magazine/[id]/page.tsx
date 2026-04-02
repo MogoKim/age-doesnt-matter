@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma'
 import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
-import { sanitizeMagazineHtml } from '@/lib/sanitize'
+import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import { ADSENSE } from '@/components/ad/ad-slots'
@@ -137,7 +137,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       {/* 본문 */}
       <article
         className="post-content text-base text-foreground leading-[1.85] mb-8 break-keep [&_p]:mb-4 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:text-foreground [&_h2]:border-l-4 [&_h2]:border-primary [&_h2]:pl-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mt-6 [&_h3]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-4 [&_li]:mb-1 [&_strong]:font-bold [&_aside.tip-box]:bg-amber-50 [&_aside.tip-box]:dark:bg-amber-950/30 [&_aside.tip-box]:border-l-4 [&_aside.tip-box]:border-amber-400 [&_aside.tip-box]:p-4 [&_aside.tip-box]:rounded-r-xl [&_aside.tip-box]:my-6 [&_aside.tip-box]:text-base [&_aside.tip-box]:leading-relaxed [&_blockquote]:border-l-4 [&_blockquote]:border-primary/30 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-6 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_blockquote]:bg-muted/30 [&_blockquote]:rounded-r-lg [&_figure]:my-6 [&_figure]:rounded-xl [&_figure]:overflow-hidden [&_figcaption]:text-caption [&_figcaption]:text-muted-foreground [&_figcaption]:text-center [&_figcaption]:mt-2 [&_figcaption]:px-2"
-        dangerouslySetInnerHTML={{ __html: sanitizeMagazineHtml(post.content) }}
+        dangerouslySetInnerHTML={{ __html: proxyMagazineImages(sanitizeMagazineHtml(post.content)) }}
       />
 
       {/* 광고 — 인아티클 */}
