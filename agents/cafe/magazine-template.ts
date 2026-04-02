@@ -145,6 +145,7 @@ export function parseSectionsFromAI(content: string): MagazineSection[] {
 
     let cleanBody = body
       .replace(/💡\s*꿀팁[:\s]*.+?(?=\n\n|$)/s, '')
+      .replace(/\[IMAGE_PROMPT:\s*.+?\]/g, '')
       .replace(/<[^>]+>/g, '')
       .trim()
 

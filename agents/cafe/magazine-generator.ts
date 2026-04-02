@@ -278,6 +278,8 @@ async function main() {
     // 히어로 이미지 프롬프트 추출 + DALL-E 이미지 생성
     const imagePromptMatch = article.content.match(/\[IMAGE_PROMPT:\s*(.+?)\]/)
     const imagePrompt = imagePromptMatch?.[1] ?? `${topic.title} 관련 따뜻한 이미지`
+    // 추출 후 원본에서 제거 — 최종 HTML에 텍스트 노출 방지
+    article.content = article.content.replace(/\[IMAGE_PROMPT:\s*.+?\]/g, '')
     const imageStyle = getImageStyle(category)
 
     const image = await generateMagazineImage(imagePrompt, imageStyle)
@@ -324,6 +326,8 @@ async function main() {
     }
     // 생성되지 않은 나머지 플레이스홀더 제거
     finalHtml = finalHtml.replace(/<!-- \[IMAGE:\d+\] -->/g, '')
+    // IMAGE_PROMPT 텍스트 잔존 방어 (AI가 예상 외 위치에 출력한 경우)
+    finalHtml = finalHtml.replace(/\[IMAGE_PROMPT:[^\]]*\]/g, '')
 
     // 썸네일 생성 (실패해도 발행은 계속)
     let thumbnailUrl: string | undefined
