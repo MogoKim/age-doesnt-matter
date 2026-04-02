@@ -25,7 +25,7 @@ export default function LoginForm({
         />
         <h1 className="text-2xl font-bold text-foreground mb-2">우리 나이가 어때서</h1>
         <p className="text-body text-foreground/80 leading-snug font-medium">
-          나이 들어도 하고 싶은 말은 많잖아요
+          우리의 삶을 잇다
         </p>
       </div>
 
