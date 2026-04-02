@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useTransition, useEffect, useCallback, useRef } from 'react'
+import { useState, useTransition, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { createPost, updatePost } from '@/lib/actions/posts'
-import { saveDraft as saveDraftAction, deleteDraft as deleteDraftAction } from '@/lib/actions/drafts'
+import { deleteDraft as deleteDraftAction } from '@/lib/actions/drafts'
 import { useToast } from '@/components/common/Toast'
 import { gtmPostCreate } from '@/lib/gtm'
 
@@ -52,19 +52,19 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   const router = useRouter()
   const { toast } = useToast()
   const [isPending, startTransition] = useTransition()
-  const [isSavingDraft, setSavingDraft] = useState(false)
   const [error, setError] = useState('')
-  const [selectedBoard, setSelectedBoard] = useState(editData?.boardSlug || defaultBoard || boards[0]?.slug || 'stories')
+  const [selectedBoard, setSelectedBoard] = useState(() => {
+    if (editData?.boardSlug) return editData.boardSlug
+    if (defaultBoard && boards.some((b) => b.slug === defaultBoard)) return defaultBoard
+    return boards[0]?.slug ?? ''
+  })
   const [selectedCategory, setSelectedCategory] = useState(editData?.category || '')
   const [title, setTitle] = useState(editData?.title || '')
   const [content, setContent] = useState(editData?.content || '')
-  const [showPreview, setShowPreview] = useState(false)
   const [showDraftList, setShowDraftList] = useState(false)
   const [draftLoaded, setDraftLoaded] = useState(false)
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<ServerDraft[]>(serverDrafts)
-
-  const lastSavedRef = useRef('')
 
   const board = boards.find((b) => b.slug === selectedBoard)
   const categories = board?.categories.filter((c) => c !== '전체') || []
@@ -131,47 +131,22 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [saveLocalDraft, draftLoaded, isEditMode])
 
+  // 모바일 앱 전환 시에도 임시저장
+  useEffect(() => {
+    if (!draftLoaded || isEditMode) return
+    const handler = () => {
+      if (document.visibilityState === 'hidden') saveLocalDraft()
+    }
+    document.addEventListener('visibilitychange', handler)
+    return () => document.removeEventListener('visibilitychange', handler)
+  }, [saveLocalDraft, draftLoaded, isEditMode])
+
   function clearDraft() {
     try { localStorage.removeItem(getDraftKey(selectedBoard)) } catch { /* ignore */ }
     // 서버 임시저장도 삭제
     if (currentDraftId) {
       deleteDraftAction(currentDraftId).catch(() => {})
       setCurrentDraftId(null)
-    }
-  }
-
-  // 서버 임시저장 (수동)
-  async function handleSaveDraft() {
-    if (!title && !content) {
-      toast('제목이나 본문을 입력해주세요', 'error')
-      return
-    }
-    const snapshot = `${selectedBoard}|${selectedCategory}|${title}|${content}`
-    if (snapshot === lastSavedRef.current) {
-      toast('이미 저장되었어요', 'info')
-      return
-    }
-
-    setSavingDraft(true)
-    try {
-      const formData = new FormData()
-      formData.set('boardSlug', selectedBoard)
-      if (selectedCategory) formData.set('category', selectedCategory)
-      formData.set('title', title)
-      formData.set('content', content)
-
-      const result = await saveDraftAction(currentDraftId, formData)
-      if (result.error) {
-        toast(result.error, 'error')
-      } else {
-        setCurrentDraftId(result.draftId ?? null)
-        lastSavedRef.current = snapshot
-        toast('임시저장 완료', 'success')
-      }
-    } catch {
-      toast('임시저장에 실패했어요', 'error')
-    } finally {
-      setSavingDraft(false)
     }
   }
 
@@ -294,50 +269,10 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
     )
   }
 
-  // 미리보기 모달
-  if (showPreview) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
-        <div className="absolute inset-0 bg-black/50" onClick={() => setShowPreview(false)} />
-        <div className="relative w-full max-w-[720px] bg-card rounded-t-2xl md:rounded-2xl p-6 shadow-xl max-h-[85vh] overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-foreground">미리보기</h2>
-            <button
-              onClick={() => setShowPreview(false)}
-              className="min-h-[52px] min-w-[52px] lg:min-h-[44px] lg:min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors text-xl"
-            >
-              ✕
-            </button>
-          </div>
-
-          {selectedCategory && (
-            <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-caption font-bold w-fit mb-2">
-              {selectedCategory}
-            </span>
-          )}
-          <h3 className="text-xl font-bold text-foreground mb-4 leading-[1.4]">
-            {title || '(제목 없음)'}
-          </h3>
-          <div
-            className="prose prose-lg max-w-none text-body text-foreground leading-[1.85] mb-4 [word-break:keep-all] [&_img]:rounded-xl [&_img]:max-w-full [&_hr]:border-border [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_video]:w-full [&_video]:rounded-xl"
-            dangerouslySetInnerHTML={{ __html: content || '<p>(본문 없음)</p>' }}
-          />
-
-          <button
-            onClick={() => setShowPreview(false)}
-            className="w-full min-h-[52px] bg-primary text-white rounded-xl text-body font-bold transition-opacity hover:opacity-90"
-          >
-            돌아가기
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <>
-      {/* ── 상단 헤더 (네이버 카페 표준: 취소 | 글쓰기 | 임시저장 | 등록) ── */}
-      <div className="sticky top-0 z-30 bg-card border-b border-border flex items-center justify-between px-1 h-[52px] -mx-4 mb-4 md:-mx-6">
+      {/* ── 상단 헤더 (취소 + 타이틀) ── */}
+      <div className="sticky top-0 z-30 bg-card border-b border-border flex items-center px-1 h-[52px] -mx-4 mb-4 md:-mx-6">
         <button
           type="button"
           onClick={handleCancel}
@@ -345,29 +280,9 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         >
           취소
         </button>
-        <span className="text-body font-bold text-foreground">
+        <span className="text-body font-bold text-foreground flex-1 text-center pr-[52px]">
           {isEditMode ? '수정하기' : '글쓰기'}
         </span>
-        <div className="flex items-center">
-          {!isEditMode && (
-            <button
-              type="button"
-              onClick={handleSaveDraft}
-              disabled={isSavingDraft || (!title && !content)}
-              className="min-w-[52px] min-h-[52px] flex items-center justify-center text-caption text-muted-foreground hover:text-foreground transition-colors px-3 disabled:opacity-40"
-            >
-              {isSavingDraft ? '저장중' : '임시저장'}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit || isPending}
-            className="min-w-[52px] min-h-[52px] flex items-center justify-center text-body font-bold text-primary hover:text-[#E85D50] transition-colors px-3 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {isPending ? (isEditMode ? '수정중' : '등록중') : (isEditMode ? '수정' : '등록')}
-          </button>
-        </div>
       </div>
 
       {error && (
@@ -441,7 +356,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       </div>
 
       {/* 본문 입력 (TipTap 에디터) */}
-      <div className="mb-6">
+      <div className="mb-6 pb-[80px]">
         <label className="flex items-center gap-1 text-caption font-bold text-foreground mb-2">
           본문 <span className="text-primary font-bold">*</span>
         </label>
@@ -457,15 +372,28 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         </div>
       </div>
 
-      {/* 하단 보조 버튼 (미리보기만) */}
-      <div className="py-4 border-t border-border mt-4">
-        <button
-          className="w-full min-h-[52px] lg:min-h-[48px] py-3.5 border-2 border-border rounded-xl bg-card text-foreground text-caption font-bold cursor-pointer transition-all hover:border-primary hover:text-primary"
-          onClick={() => setShowPreview(true)}
-          disabled={!title && !content}
-        >
-          미리보기
-        </button>
+      {/* 하단 CTA 버튼 (fixed) */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border px-4 pt-3"
+        style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
+      >
+        <div className="flex gap-3 max-w-[720px] mx-auto">
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="flex-1 min-h-[52px] rounded-xl border-2 border-border text-body font-bold text-muted-foreground hover:bg-muted transition-colors"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!canSubmit || isPending}
+            className="flex-1 min-h-[52px] rounded-xl bg-primary text-white text-body font-bold transition-colors hover:bg-[#E85D50] disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isPending ? (isEditMode ? '수정중...' : '등록중...') : (isEditMode ? '수정' : '등록')}
+          </button>
+        </div>
       </div>
     </>
   )

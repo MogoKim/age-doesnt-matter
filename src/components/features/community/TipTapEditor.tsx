@@ -51,10 +51,9 @@ const VideoExtension = Node.create({
 })
 
 const FONT_SIZES = [
-  { label: '가', size: null, title: '기본 (18px)' },
-  { label: '가', size: '20px', title: '크게 (20px)' },
-  { label: '가', size: '24px', title: '더 크게 (24px)' },
-  { label: '가', size: '30px', title: '최대 (30px)' },
+  { label: '가', size: null,   title: '기본' },
+  { label: '가', size: '22px', title: '크게' },
+  { label: '가', size: '28px', title: '최대' },
 ] as const
 
 type VideoSheet = 'closed' | 'picking' | 'youtube'
@@ -87,7 +86,6 @@ export default function TipTapEditor({
       StarterKit.configure({
         heading: false,
         codeBlock: false,
-        blockquote: false,
         bulletList: false,
         orderedList: false,
         listItem: false,
@@ -255,82 +253,94 @@ export default function TipTapEditor({
 
   return (
     <div className="relative">
-      {/* ── 1. 서식 툴바 ── */}
-      <div className="flex items-center gap-1 border border-border rounded-xl bg-card px-2 py-1 mb-2">
-        {/* 굵게 */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className={cn(
-            'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body font-bold transition-colors',
-            editor.isActive('bold') ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
-          )}
-        >
-          B
-        </button>
+      {/* ── sticky 툴바 래퍼 (서식 + 미디어) ── */}
+      <div className="sticky top-[52px] z-20 bg-card pt-1 pb-0.5">
+        {/* ── 1. 서식 툴바 ── */}
+        <div className="flex items-center gap-1 border border-border rounded-xl bg-card px-2 py-1 mb-2">
+          {/* 굵게 */}
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={cn(
+              'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body font-bold transition-colors',
+              editor.isActive('bold') ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
+            )}
+          >
+            B
+          </button>
 
-        {/* 기울임 */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={cn(
-            'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body italic transition-colors',
-            editor.isActive('italic') ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
-          )}
-        >
-          I
-        </button>
+          {/* 인용구 */}
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            className={cn(
+              'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body transition-colors',
+              editor.isActive('blockquote') ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
+            )}
+          >
+            "
+          </button>
 
-        <div className="w-px h-6 bg-border mx-1" />
+          {/* 수평선 */}
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body transition-colors text-foreground hover:bg-muted"
+          >
+            ——
+          </button>
 
-        {/* 글자 크기 */}
-        {FONT_SIZES.map(({ label, size, title }) => {
-          const isActive = size !== null && editor.isActive('textStyle', { fontSize: size })
-          return (
-            <button
-              key={title}
-              type="button"
-              title={title}
-              onClick={() => {
-                if (size === null) {
-                  editor.chain().focus().unsetMark('textStyle').run()
-                } else {
-                  editor.chain().focus().setMark('textStyle', { fontSize: size }).run()
-                }
-              }}
-              className={cn(
-                'flex items-center justify-center min-h-[44px] min-w-[36px] rounded-xl transition-colors font-medium',
-                isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
-              )}
-              style={{ fontSize: size ?? '15px' }}
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
+          <div className="w-px h-6 bg-border mx-1" />
 
-      {/* ── 2. 미디어 버튼 ── */}
-      <div className="grid grid-cols-2 gap-2 mb-2">
-        <button
-          type="button"
-          onClick={() => { setMediaError(''); fileInputRef.current?.click() }}
-          disabled={isUploadingImage}
-          className="flex items-center justify-center gap-2 min-h-[52px] rounded-xl border-2 border-border bg-card text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <span className="text-lg">{isUploadingImage ? '⏳' : '📷'}</span>
-          <span>{isUploadingImage ? '업로드 중...' : '사진 추가'}</span>
-        </button>
+          {/* 글자 크기 */}
+          {FONT_SIZES.map(({ label, size, title }) => {
+            const isActive = size !== null && editor.isActive('textStyle', { fontSize: size })
+            return (
+              <button
+                key={title}
+                type="button"
+                title={title}
+                onClick={() => {
+                  if (size === null) {
+                    editor.chain().focus().unsetMark('textStyle').run()
+                  } else {
+                    editor.chain().focus().setMark('textStyle', { fontSize: size }).run()
+                  }
+                }}
+                className={cn(
+                  'flex items-center justify-center min-h-[44px] min-w-[36px] rounded-xl transition-colors font-medium',
+                  isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
+                )}
+                style={{ fontSize: size ?? '15px' }}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
 
-        <button
-          type="button"
-          onClick={() => { setMediaError(''); setVideoSheet('picking') }}
-          disabled={isUploadingVideo}
-          className="flex items-center justify-center gap-2 min-h-[52px] rounded-xl border-2 border-border bg-card text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <span className="text-lg">{isUploadingVideo ? '⏳' : '🎬'}</span>
-          <span>{isUploadingVideo ? '업로드 중...' : '동영상 추가'}</span>
-        </button>
+        {/* ── 2. 미디어 버튼 ── */}
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <button
+            type="button"
+            onClick={() => { setMediaError(''); fileInputRef.current?.click() }}
+            disabled={isUploadingImage}
+            className="flex items-center justify-center gap-2 min-h-[52px] rounded-xl border-2 border-border bg-card text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <span className="text-lg">{isUploadingImage ? '⏳' : '📷'}</span>
+            <span>{isUploadingImage ? '업로드 중...' : '사진 추가'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setMediaError(''); setVideoSheet('picking') }}
+            disabled={isUploadingVideo}
+            className="flex items-center justify-center gap-2 min-h-[52px] rounded-xl border-2 border-border bg-card text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <span className="text-lg">{isUploadingVideo ? '⏳' : '🎬'}</span>
+            <span>{isUploadingVideo ? '업로드 중...' : '동영상 추가'}</span>
+          </button>
+        </div>
       </div>
 
       {/* ── 미디어 에러 메시지 (통합) ── */}
@@ -464,6 +474,14 @@ export default function TipTapEditor({
         }
         .tiptap p {
           margin: 0.5em 0;
+        }
+        .tiptap blockquote {
+          border-left: 4px solid #FF6F61;
+          padding: 0.5rem 1rem;
+          margin: 1rem 0;
+          background: rgba(255, 111, 97, 0.06);
+          border-radius: 0 0.5rem 0.5rem 0;
+          color: var(--muted-foreground);
         }
         .tiptap hr {
           border: none;

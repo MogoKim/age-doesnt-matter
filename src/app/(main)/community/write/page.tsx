@@ -35,6 +35,10 @@ export default async function WritePage({ searchParams }: PageProps) {
       categories: b.categories,
     }))
 
+  // URL searchParam이 유효하지 않은 slug일 경우 undefined로 처리
+  const validSlugs = writableBoards.map((b) => b.slug)
+  const validDefaultBoard = board && validSlugs.includes(board) ? board : undefined
+
   const serverDrafts = drafts.map((d) => ({
     id: d.id,
     boardSlug: d.boardSlug,
@@ -47,7 +51,7 @@ export default async function WritePage({ searchParams }: PageProps) {
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <h1 className="text-xl font-bold text-foreground m-0 mb-6 pb-4 border-b-2 border-foreground">글쓰기</h1>
       <PostWriteForm
-        defaultBoard={board}
+        defaultBoard={validDefaultBoard}
         boards={writableBoards}
         serverDrafts={serverDrafts}
       />
