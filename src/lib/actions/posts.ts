@@ -11,6 +11,7 @@ import { sanitizeHtml, stripHtmlTags } from '@/lib/sanitize'
 
 interface CreatePostResult {
   error?: string
+  postUrl?: string
 }
 
 export async function createPost(formData: FormData): Promise<CreatePostResult> {
@@ -123,7 +124,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   const slug = BOARD_TYPE_TO_SLUG[boardType]
   revalidatePath(`/community/${slug}`)
   revalidatePath('/')
-  redirect(`/community/${slug}/${post.id}`)
+  return { postUrl: `/community/${slug}/${post.id}` }
 }
 
 export async function updatePost(postId: string, formData: FormData): Promise<CreatePostResult> {
@@ -226,7 +227,7 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
   revalidatePath(`/community/${slug}/${postId}`)
   revalidatePath(`/community/${slug}`)
   revalidatePath('/')
-  redirect(`/community/${slug}/${postId}`)
+  return { postUrl: `/community/${slug}/${postId}` }
 }
 
 export async function deletePost(postId: string): Promise<{ error?: string }> {

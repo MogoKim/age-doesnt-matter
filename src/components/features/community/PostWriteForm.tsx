@@ -73,7 +73,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
   // HTML 태그 제거 후 텍스트 길이 검사
   const plainTextLength = content.replace(/<[^>]*>/g, '').trim().length
   const isContentValid = plainTextLength >= 10
-  const canSubmit = isTitleValid && isContentValid && selectedBoard
+  const canSubmit = isTitleValid && isContentValid && selectedBoard && boards.length > 0
 
   // localStorage 임시저장 복원 (수정 모드에서는 스킵)
   useEffect(() => {
@@ -257,6 +257,7 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
       } else {
         if (!isEditMode) gtmPostCreate(selectedBoard, selectedCategory)
         clearDraft()
+        if (result?.postUrl) router.push(result.postUrl)
       }
     })
   }
@@ -361,16 +362,6 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
         </div>
       )}
 
-      {/* 등급별 안내 */}
-      {userGrade === 'SPROUT' && (
-        <div className="mb-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
-          <p className="text-caption text-foreground leading-relaxed">
-            🌱 <strong>새싹 등급</strong>이에요. 글쓰기와 댓글이 가능합니다.
-            <span className="text-muted-foreground"> 이미지·유튜브 첨부는 🌿 단골 등급부터 가능해요.</span>
-          </p>
-        </div>
-      )}
-
       {/* 게시판 선택 — defaultBoard가 없을 때만 표시 (FAB에서 진입 시 자동 선택됨) */}
       {!defaultBoard && !isEditMode && (
         <div className="flex gap-2 mb-6">
@@ -443,7 +434,6 @@ export default function PostWriteForm({ defaultBoard, boards, userGrade = 'SPROU
         <TipTapEditor
           content={content}
           onChange={setContent}
-          userGrade={userGrade}
           onImagesChange={setImages}
         />
         <div className={cn(

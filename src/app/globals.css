@@ -70,6 +70,12 @@
     --text-caption: 0.9375rem; /* 15px — 보조/캡션 */
     --text-title: 1.25rem;    /* 20px — 섹션 제목 */
     --text-heading: 1.5rem;   /* 24px — 페이지 제목 */
+
+    /* ── HomePage.module.css 연결 (CSS 변수 시스템과 통일) ── */
+    --font-size-xs: var(--text-caption);   /* 15px → 설정에 따라 확대 */
+    --font-size-sm: var(--text-body);      /* 18px → 설정에 따라 확대 */
+    --font-size-base: var(--text-body);    /* 18px → 설정에 따라 확대 */
+    --font-size-lg: var(--text-title);     /* 20px → 설정에 따라 확대 */
   }
 
   /* LARGE (20px 베이스) */
@@ -218,15 +224,24 @@ textarea {
   .text-heading { font-size: var(--text-heading); }
 }
 
-/* ── 글씨 크기 설정 시 게시글 본문 내부 인라인 스타일 오버라이드 ── */
-[data-font-size] .post-content p,
-[data-font-size] .post-content li,
-[data-font-size] .post-content span,
-[data-font-size] .post-content div {
+/* ── 게시글 본문 폰트 크기 — 항상 적용 (NORMAL 포함) ── */
+.post-content p,
+.post-content li,
+.post-content span,
+.post-content div,
+.post-content strong,
+.post-content em,
+.post-content a {
   font-size: var(--text-body) !important;
-  line-height: 1.7 !important;
+  line-height: 1.85 !important;
 }
-[data-font-size] .post-content h2,
-[data-font-size] .post-content h3 {
+.post-content h1 {
+  font-size: var(--text-heading) !important;
+  line-height: 1.4 !important;
+}
+.post-content h2,
+.post-content h3,
+.post-content h4 {
   font-size: var(--text-title) !important;
+  line-height: 1.5 !important;
 }

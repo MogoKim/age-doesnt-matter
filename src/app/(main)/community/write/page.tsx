@@ -22,7 +22,7 @@ export default async function WritePage({ searchParams }: PageProps) {
   if (!session?.user?.id) redirect('/login')
 
   const { board } = await searchParams
-  const userGrade = session.user.grade ?? 'SEEDLING'
+  const userGrade = session.user.grade ?? 'SPROUT'
 
   const [allBoards, drafts] = await Promise.all([
     getAllBoardConfigs(),

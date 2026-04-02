@@ -1,22 +1,46 @@
 'use client'
 
 import { useEditor, EditorContent } from '@tiptap/react'
+import { Extension } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
+import { TextStyle } from '@tiptap/extension-text-style'
 import Image from '@tiptap/extension-image'
 import Youtube from '@tiptap/extension-youtube'
 import Placeholder from '@tiptap/extension-placeholder'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
-// ─── 등급별 업로드 권한 ───
-const UPLOAD_GRADES = ['REGULAR', 'VETERAN', 'WARM_NEIGHBOR']
 const MAX_IMAGES = 5
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+
+// ─── 인라인 텍스트 크기 Extension ───
+const FontSizeExtension = Extension.create({
+  name: 'fontSize',
+  addOptions() { return { types: ['textStyle'] } },
+  addGlobalAttributes() {
+    return [{
+      types: this.options.types,
+      attributes: {
+        fontSize: {
+          default: null,
+          parseHTML: (el) => (el as HTMLElement).style.fontSize || null,
+          renderHTML: (attrs) => attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
+        },
+      },
+    }]
+  },
+})
+
+const FONT_SIZES = [
+  { label: '가', size: null, title: '기본 (18px)' },
+  { label: '가', size: '20px', title: '크게 (20px)' },
+  { label: '가', size: '24px', title: '더 크게 (24px)' },
+  { label: '가', size: '30px', title: '최대 (30px)' },
+] as const
 
 interface TipTapEditorProps {
   content: string
   onChange: (html: string) => void
-  userGrade?: string
   placeholder?: string
   onImagesChange?: (images: ImagePreview[]) => void
 }
@@ -29,7 +53,6 @@ export interface ImagePreview {
 export default function TipTapEditor({
   content,
   onChange,
-  userGrade = 'SEEDLING',
   placeholder = '내용을 입력해 주세요 (10자 이상)',
   onImagesChange,
 }: TipTapEditorProps) {
@@ -38,9 +61,6 @@ export default function TipTapEditor({
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [youtubeError, setYoutubeError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const canUploadImages = UPLOAD_GRADES.includes(userGrade)
-  const [showGradeAlert, setShowGradeAlert] = useState(false)
 
   const editor = useEditor({
     extensions: [
@@ -53,6 +73,8 @@ export default function TipTapEditor({
         listItem: false,
         code: false,
       }),
+      TextStyle,
+      FontSizeExtension,
       Image.configure({
         HTMLAttributes: {
           class: 'rounded-xl max-w-full h-auto my-3',
@@ -97,13 +119,8 @@ export default function TipTapEditor({
 
   // ─── 이미지 첨부 핸들러 ───
   const handleImageClick = useCallback(() => {
-    if (!canUploadImages) {
-      setShowGradeAlert(true)
-      setTimeout(() => setShowGradeAlert(false), 3000)
-      return
-    }
     fileInputRef.current?.click()
-  }, [canUploadImages])
+  }, [])
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,35 +168,16 @@ export default function TipTapEditor({
       return
     }
 
-    if (!canUploadImages) {
-      setShowGradeAlert(true)
-      setTimeout(() => setShowGradeAlert(false), 3000)
-      setShowYouTubeInput(false)
-      return
-    }
-
     editor.chain().focus().setYoutubeVideo({ src: youtubeUrl }).run()
     setYoutubeUrl('')
     setYoutubeError('')
     setShowYouTubeInput(false)
-  }, [editor, youtubeUrl, canUploadImages])
+  }, [editor, youtubeUrl])
 
   if (!editor) return null
 
   return (
     <div className="relative">
-      {/* 등급 부족 알림 */}
-      {showGradeAlert && (
-        <div className="absolute top-0 left-0 right-0 z-10 mx-4 mt-2 rounded-xl bg-amber-50 border border-amber-200 p-4 text-center shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-          <p className="text-body font-bold text-amber-800 mb-1">
-            🌿 단골 등급부터 가능해요
-          </p>
-          <p className="text-sm text-amber-600">
-            글 5개 쓰거나 댓글 20개 달면 단골이 돼요
-          </p>
-        </div>
-      )}
-
       {/* 에디터 본문 */}
       <div className="border-2 border-border rounded-xl bg-card transition-all focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(255,111,97,0.1)]">
         <EditorContent editor={editor} />
@@ -207,17 +205,12 @@ export default function TipTapEditor({
         )}
 
         {/* ─── 하단 고정 툴바 (시니어 친화 52px) ─── */}
-        <div className="flex items-center gap-1 border-t border-border px-2 py-1.5">
+        <div className="flex flex-wrap items-center gap-1 border-t border-border px-2 py-1.5">
           {/* 사진 */}
           <button
             type="button"
             onClick={handleImageClick}
-            className={cn(
-              'flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-3 rounded-xl text-sm font-medium transition-colors',
-              canUploadImages
-                ? 'text-foreground hover:bg-primary/5 hover:text-primary'
-                : 'text-muted-foreground/50 cursor-not-allowed',
-            )}
+            className="flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-3 rounded-xl text-sm font-medium transition-colors text-foreground hover:bg-primary/5 hover:text-primary"
           >
             <span className="text-lg">📷</span>
             <span className="text-sm">사진</span>
@@ -226,20 +219,8 @@ export default function TipTapEditor({
           {/* 동영상 */}
           <button
             type="button"
-            onClick={() => {
-              if (!canUploadImages) {
-                setShowGradeAlert(true)
-                setTimeout(() => setShowGradeAlert(false), 3000)
-                return
-              }
-              setShowYouTubeInput(!showYouTubeInput)
-            }}
-            className={cn(
-              'flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-3 rounded-xl text-sm font-medium transition-colors',
-              canUploadImages
-                ? 'text-foreground hover:bg-primary/5 hover:text-primary'
-                : 'text-muted-foreground/50 cursor-not-allowed',
-            )}
+            onClick={() => setShowYouTubeInput(!showYouTubeInput)}
+            className="flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-3 rounded-xl text-sm font-medium transition-colors text-foreground hover:bg-primary/5 hover:text-primary"
           >
             <span className="text-lg">🎬</span>
             <span className="text-sm">동영상</span>
@@ -284,6 +265,37 @@ export default function TipTapEditor({
           >
             <span className="block w-5 h-0.5 bg-current rounded-full" />
           </button>
+
+          {/* 구분선 */}
+          <div className="w-px h-8 bg-border mx-1" />
+
+          {/* 글자 크기 (가 버튼 4단계) */}
+          {FONT_SIZES.map(({ label, size, title }) => {
+            const isActive = size !== null && editor.isActive('textStyle', { fontSize: size })
+            return (
+              <button
+                key={title}
+                type="button"
+                title={title}
+                onClick={() => {
+                  if (size === null) {
+                    editor.chain().focus().unsetMark('textStyle').run()
+                  } else {
+                    editor.chain().focus().setMark('textStyle', { fontSize: size }).run()
+                  }
+                }}
+                className={cn(
+                  'flex items-center justify-center min-h-[52px] min-w-[40px] lg:min-h-[44px] rounded-xl transition-colors font-medium',
+                  isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-foreground hover:bg-muted',
+                )}
+                style={{ fontSize: size ?? '15px' }}
+              >
+                {label}
+              </button>
+            )
+          })}
         </div>
       </div>
 

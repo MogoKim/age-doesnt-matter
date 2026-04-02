@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { updateFontSize } from '@/lib/actions/settings'
 
 const FONT_SIZES = [
-  { value: 'NORMAL', label: '보통', desc: '기본 크기' },
+  { value: 'NORMAL', label: '보통', desc: '본문 18px' },
   { value: 'LARGE', label: '크게', desc: '본문 20px' },
   { value: 'XLARGE', label: '아주크게', desc: '본문 24px' },
 ] as const
@@ -21,8 +21,8 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
   const [isPending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
 
-  const PREVIEW_SIZE_MAP: Record<string, string> = { NORMAL: '17px', LARGE: '20px', XLARGE: '24px' }
-  const previewSize = PREVIEW_SIZE_MAP[selected] ?? '17px'
+  const PREVIEW_SIZE_MAP: Record<string, string> = { NORMAL: '18px', LARGE: '20px', XLARGE: '24px' }
+  const previewSize = PREVIEW_SIZE_MAP[selected] ?? '18px'
 
   function handleSave() {
     if (selected === currentSize) return

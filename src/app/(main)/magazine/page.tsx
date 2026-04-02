@@ -107,7 +107,7 @@ function FeaturedCard({ post }: { post: PostSummary }) {
             {post.category}
           </span>
         )}
-        <h3 className="text-lg font-bold text-foreground m-0 mb-2 line-clamp-2">{post.title}</h3>
+        <h3 className="text-title font-bold text-foreground m-0 mb-2 line-clamp-2">{post.title}</h3>
         <div className="flex items-center gap-3 text-caption text-muted-foreground">
           <span>👁 {post.viewCount}</span>
           <span>{formatTimeAgo(post.createdAt)}</span>
@@ -142,7 +142,7 @@ function MagazineCard({ post }: { post: PostSummary }) {
         {post.category && (
           <span className="text-caption text-primary font-bold">{post.category}</span>
         )}
-        <h3 className="text-sm font-bold text-foreground m-0 line-clamp-2 leading-snug">
+        <h3 className="text-body font-bold text-foreground m-0 line-clamp-2 leading-snug">
           {post.title}
         </h3>
         <p className="text-caption text-muted-foreground mt-1 m-0">
