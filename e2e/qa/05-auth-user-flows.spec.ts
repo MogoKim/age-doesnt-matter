@@ -30,13 +30,12 @@ test.describe('마이페이지', () => {
       test.skip()
       return
     }
-    const res = await page.goto('/my')
+    const res = await page.goto('/my', { waitUntil: 'domcontentloaded', timeout: 15000 })
     expect(res?.status()).toBeLessThan(400)
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.waitForTimeout(1500)
     await expect(page.locator('main').first()).toBeVisible()
-    // 닉네임 또는 프로필 정보
-    const profileSection = page.locator('[class*="profile"], [class*="nickname"], [class*="my"]').first()
-    await expect(profileSection).toBeVisible({ timeout: 10000 })
+    // 닉네임은 마이페이지 h1에 렌더링됨
+    await expect(page.locator('h1').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('마이페이지 — 작성한 글 / 스크랩 탭 존재', async ({ page }) => {
@@ -44,8 +43,8 @@ test.describe('마이페이지', () => {
       test.skip()
       return
     }
-    await page.goto('/my')
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.goto('/my', { waitUntil: 'domcontentloaded', timeout: 15000 })
+    await page.waitForTimeout(1000)
     // 탭 또는 메뉴
     const tabs = page.locator('[role="tab"], [class*="tab"]')
     const count = await tabs.count()
@@ -59,19 +58,9 @@ test.describe('글쓰기 (폼 렌더링만)', () => {
       test.skip()
       return
     }
-    // FAB 또는 직접 URL
-    await page.goto('/community')
-    await page.waitForLoadState('networkidle')
-
-    const fab = page.locator('button, a').filter({ hasText: /글쓰기|✏️/ }).first()
-    if (await fab.count() > 0) {
-      await fab.click()
-      await page.waitForLoadState('networkidle', { timeout: 15000 })
-    } else {
-      // 직접 진입 시도
-      await page.goto('/community/write')
-      await page.waitForLoadState('networkidle', { timeout: 15000 })
-    }
+    // 직접 URL로 진입 (FAB 클릭 후 networkidle 대기는 30s 예산 초과)
+    await page.goto('/community/write', { waitUntil: 'domcontentloaded', timeout: 15000 })
+    await page.waitForTimeout(1500)
 
     // 제목/내용 입력폼 렌더링
     const titleInput = page.locator('input[name="title"], input[placeholder*="제목"]').first()
@@ -87,8 +76,8 @@ test.describe('커뮤니티 인증 기능', () => {
       test.skip()
       return
     }
-    await page.goto('/community')
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.goto('/community', { waitUntil: 'domcontentloaded', timeout: 15000 })
+    await page.waitForTimeout(2000)
 
     const firstLink = page
       .locator('a[href*="/community/"]')
@@ -99,7 +88,8 @@ test.describe('커뮤니티 인증 기능', () => {
       return
     }
     await firstLink.click()
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.waitForLoadState('domcontentloaded', { timeout: 15000 })
+    await page.waitForTimeout(1500)
 
     const likeBtn = page
       .locator('button')
@@ -122,8 +112,8 @@ test.describe('커뮤니티 인증 기능', () => {
       test.skip()
       return
     }
-    await page.goto('/community')
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.goto('/community', { waitUntil: 'domcontentloaded', timeout: 15000 })
+    await page.waitForTimeout(2000)
 
     const firstLink = page
       .locator('a[href*="/community/"]')
@@ -131,7 +121,8 @@ test.describe('커뮤니티 인증 기능', () => {
       .first()
     if (await firstLink.count() === 0) return
     await firstLink.click()
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.waitForLoadState('domcontentloaded', { timeout: 15000 })
+    await page.waitForTimeout(1500)
 
     const commentInput = page.locator(
       'textarea[placeholder*="댓글"], input[placeholder*="댓글"], [class*="comment-input"]',
@@ -146,15 +137,14 @@ test.describe('설정 페이지', () => {
       test.skip()
       return
     }
-    // /my 또는 /settings 경로
-    const settingsRes = await page.goto('/my/settings')
+    const settingsRes = await page.goto('/my/settings', { waitUntil: 'domcontentloaded', timeout: 15000 })
     if (settingsRes && settingsRes.status() === 404) {
-      await page.goto('/my')
-      await page.waitForLoadState('networkidle')
+      await page.goto('/my', { waitUntil: 'domcontentloaded', timeout: 15000 })
+      await page.waitForTimeout(1000)
       const settingsLink = page.locator('a, button').filter({ hasText: /설정|프로필 수정/ }).first()
       if (await settingsLink.count() > 0) await settingsLink.click()
+      await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
     }
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
     await expect(page.locator('main').first()).toBeVisible()
   })
 })
