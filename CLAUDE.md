@@ -79,6 +79,34 @@
 - **큰 작업 분할**: 파일 5개 이상 변경이 예상되면 서브에이전트(Agent tool)로 분할. 메인 컨텍스트는 교통정리만
 - **점진적 공개**: 스킬/참조 문서는 메인 파일에 개요만, 상세는 하위 파일로 분리. 필요할 때만 읽기
 
+## 스킬 라우팅 규칙
+
+다음 요청이 들어오면 코드 작성 전에 해당 스킬을 먼저 실행:
+- "이게 맞나?", "더 크게", "전략 리뷰", "방향성 검토" → `/plan-ceo-review`
+- "아키텍처 검토", "코딩 시작 전 확인", "설계 검토" → `/plan-eng-review`
+- "버그", "에러", "왜 안되지", "자꾸 실패해" → `/investigate`
+- "코드 리뷰", "PR 전 확인", "리뷰해줘" → `/code-review`
+- DB 마이그레이션, force push, 에이전트 구조 변경, rm -rf → `/careful`
+- "회고", "이번 주 어땠어", "주간 리뷰" → `/retro`
+
+## Claude Code 스킬 목록
+
+| 스킬 | 용도 |
+|------|------|
+| `/plan-ceo-review` | 창업자 관점 제품 전략 리뷰 (4 모드: 확장/선택/유지/축소) |
+| `/plan-eng-review` | 엔지니어링 매니저 아키텍처 리뷰 (코딩 전 필수) |
+| `/code-review` | 2-pass PR 리뷰 + 계획 이행률 감사 |
+| `/investigate` | Iron Law 버그 근본 원인 분석 (4단계) |
+| `/careful` | 파괴적 작업 전 확인 게이트 |
+| `/retro` | 주간 회고 (BotLog + git) |
+| `/verify` | 프로덕션 배포 후 검증 |
+| `/qa` | QA 체크리스트 |
+| `/done` | 작업 완료 처리 |
+| `/status` | 프로젝트 진행 상황 |
+| `/sync-memory` | 메모리 동기화 |
+| `/prisma-guide` | Prisma DB 작업 가이드 |
+| `/runbook-crawler` | 카페 크롤러 장애 대응 |
+
 ## 디렉토리 구조 (주요)
 - `/src/app/` — Next.js App Router 페이지 + API 라우트
 - `/src/components/` — 공통 UI 컴포넌트
