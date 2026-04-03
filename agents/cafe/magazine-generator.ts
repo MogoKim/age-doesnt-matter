@@ -10,8 +10,9 @@ import { getBotUser } from '../seed/generator.js'
 import type { MagazineSuggestion } from './types.js'
 import { matchCpsProducts, saveCpsLinks } from './cps-matcher.js'
 import { generateMagazineThumbnail } from './thumbnail-generator.js'
-import { generateMagazineImage, getImageStyle } from './image-generator.js'
+import { generateMagazineImageByContext, generateMagazineImage, getImageStyle } from './image-generator.js'
 import { buildMagazineHtml, parseSectionsFromAI } from './magazine-template.js'
+import { getDefaultImagePlan, type ImageContext } from '../core/image-prompt-builder.js'
 
 const CLAUDE_MODEL_HEAVY = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const CLAUDE_MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-6'
@@ -81,7 +82,7 @@ async function generateMagazineArticle(
   category: string,
   referencePosts: { title: string; content: string; cafeName: string }[],
   recentTitles: string[],
-): Promise<{ title: string; content: string; summary: string; imageHints: string[] } | null> {
+): Promise<{ title: string; content: string; summary: string; imageContexts: ImageContext[] } | null> {
   const refs = referencePosts.map((p, i) =>
     `[${i + 1}] (${p.cafeName}) "${p.title}"\n${p.content.slice(0, 300)}`,
   ).join('\n\n')
@@ -97,38 +98,35 @@ async function generateMagazineArticle(
 
   const response = await client.messages.create({
     model,
-    max_tokens: 4000,
+    max_tokens: 3000,
     system: `당신은 50·60대 독자를 위한 매거진 편집장입니다.
-"우리 나이가 어때서" 커뮤니티의 따뜻하고 유익한 매거진 기사를 작성합니다.
+"우리 나이가 어때서" 커뮤니티의 짧고 유익한 매거진 기사를 작성합니다.
 
-독자 페르소나를 이해하세요:
-- P1 영숙씨: 느슨한 연결을 원하는 사교형
+독자 페르소나:
 - P2 정희씨: 건강 불안이 있는 정보 탐색형
-- P3 미영씨: 유머와 재미를 찾는 활력형
 - P4 순자씨: 생계 걱정이 있는 실용형
 - P5 현주씨: 간병 부담을 안고 있는 헌신형
 
 작성 규칙:
-- "시니어", "액티브 시니어" 같은 표현 절대 금지. 대신 "우리 또래", "50대 60대", "인생 2막" 등 자연스러운 표현 사용
+- "시니어", "액티브 시니어" 절대 금지 → "우리 또래", "50대 60대", "인생 2막" 사용
 - 편안한 존댓말 (해요체)
-- 실용적이고 바로 써먹을 수 있는 정보 중심
-- 구체적 수치/데이터를 반드시 1개 이상 포함 (예: "국민건강영양조사에 따르면...", "전문가에 따르면...")
-- 경험 기반 서술 포함 (예: "직접 해본 결과", "실제로 시도해보니", "주변에서 들은 이야기로는")
-- 공감할 수 있는 에피소드나 사례 포함
+- 구체적 수치/데이터 1개 이상 포함 (예: "대한당뇨병학회 2023년 자료에 따르면...")
 - 정치/종교/혐오/광고 절대 금지
 
-글의 구조:
-- ## 제목으로 3-4개 섹션, 각 섹션에 구체적 사례/데이터 포함
-- 💡 꿀팁: 섹션에 실용적 팁 박스 최소 1개
-- 인용문: 공감되는 한 줄 인용 최소 1개
-- imagePrompt: 기사 주제에 맞는 이미지 프롬프트를 마지막에 한 줄로 출력 (형식: [IMAGE_PROMPT: 설명])
+글의 구조 규칙 (엄수):
+- 본문 총 글자 수: 800~1200자 (초과 금지)
+- 소제목: 2~3개, 각 15자 이내
+- 서론 없음: 공감 유도 없이 핵심 정보 바로 시작
+- 단락: 최대 3문장
+- 팁 박스: 정확히 1개
+- 인용문/경험담: 선택사항 (꼭 필요할 때만 1개)
 
-HTML 형식 규칙:
-- 사용 가능 태그: h2, h3, p, ul, ol, li, strong, em, blockquote, aside
-- <h2>로 메인 소제목 (3~4개)
-- <aside class="tip-box">💡 꿀팁: 내용</aside>로 실용 팁 박스 (1~2개)
-- <blockquote>로 경험담/인용문 (1개)
-- 이미지가 들어갈 위치에 <!-- [IMAGE:N] --> 주석 삽입 (N은 1부터)`,
+HTML 형식:
+- 사용 가능 태그: h2, p, ul, li, strong, blockquote, aside
+- <h2>로 소제목 (2~3개)
+- <aside class="tip-box">💡 꿀팁: 내용</aside> (1개만)
+- <blockquote>로 경험담 (선택)
+- 이미지 위치에 <!-- [IMAGE:N] --> 삽입 (N은 1, 2)`,
     messages: [{
       role: 'user',
       content: `"${topic.title}" 주제로 매거진 기사를 작성해주세요.
@@ -140,51 +138,62 @@ ${refs ? `참고 자료 (카페 인기글):\n${refs}` : ''}
 ${recentList ? `최근 발행 매거진 (중복 주제 피해주세요):\n${recentList}` : ''}
 
 응답 형식 (반드시 아래 형식을 따라주세요):
-제목: (20~40자, 매력적이고 클릭하고 싶은 제목)
-요약: (50~80자, 한 줄 요약)
-이미지힌트: (각 이미지에 대한 설명, 쉼표로 구분. 예: "공원에서 걷기 운동하는 중년 부부, 건강한 식탁 위 제철 과일과 채소")
-본문: (HTML, 1500~3000자, 소제목 3~4개 포함)
+제목: (20자 이내, 핵심을 담은 제목)
+요약: (40자 이내, 한 줄 요약)
+이미지컨텍스트1: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, FOOD/SCENE/OBJECT만)
+이미지컨텍스트2: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, FOOD/SCENE/OBJECT만)
+본문: (HTML, 800~1200자, 소제목 2~3개, 각 15자 이내)
 
 본문 구조:
-<p>서문 2~3문장 — 독자의 공감을 이끄는 도입부</p>
-
-<h2>소제목 1</h2>
-<p>핵심 정보 + 구체적 데이터...</p>
+<h2>소제목 1 (15자 이내)</h2>
+<p>핵심 정보 + 데이터. 최대 3문장.</p>
 <!-- [IMAGE:1] -->
 
-<aside class="tip-box">💡 꿀팁: 바로 실천할 수 있는 팁</aside>
-
-<h2>소제목 2</h2>
-<p>심화 정보...</p>
+<h2>소제목 2 (15자 이내)</h2>
+<p>실용 정보. 최대 3문장.</p>
 <!-- [IMAGE:2] -->
 
-<blockquote>실제 경험담이나 전문가 인용</blockquote>
+<aside class="tip-box">💡 꿀팁: 바로 실천할 수 있는 팁 1~3가지</aside>
 
-<h2>소제목 3</h2>
-<p>추가 정보 + 주의사항...</p>
-
-<h2>마무리</h2>
-<p>따뜻한 마무리 + 행동 유도 (CTA)</p>`,
+<p>마무리 1문장</p>`,
     }],
   })
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
   const titleMatch = text.match(/제목:\s*(.+)/)
   const summaryMatch = text.match(/요약:\s*(.+)/)
-  const imageHintsMatch = text.match(/이미지힌트:\s*(.+)/)
   const bodyMatch = text.match(/본문:\s*([\s\S]+)/)
 
   if (!titleMatch || !bodyMatch) return null
 
-  const imageHints = imageHintsMatch
-    ? imageHintsMatch[1].trim().split(/[,，]/).map(h => h.trim()).filter(Boolean)
-    : []
+  // 이미지 컨텍스트 파싱
+  const imageContexts: ImageContext[] = []
+  for (let n = 1; n <= 2; n++) {
+    const ctxMatch = text.match(new RegExp(`이미지컨텍스트${n}:\\s*(.+)`))
+    if (ctxMatch) {
+      const raw = ctxMatch[1]
+      const typeMatch = raw.match(/type:(\w+)/)
+      const genderMatch = raw.match(/gender:(female|male)/)
+      const contextMatch = raw.match(/context:([^,\n]+)/)
+      const unsplashMatch = raw.match(/unsplash:([^,\n]+)/)
+
+      if (typeMatch && contextMatch) {
+        const ctx: ImageContext = {
+          type: typeMatch[1] as ImageContext['type'],
+          dallePrompt: contextMatch[1].trim(),
+        }
+        if (genderMatch) ctx.gender = genderMatch[1] as 'female' | 'male'
+        if (unsplashMatch) ctx.unsplashQuery = unsplashMatch[1].trim()
+        imageContexts.push(ctx)
+      }
+    }
+  }
 
   return {
     title: titleMatch[1].trim(),
     summary: summaryMatch?.[1]?.trim() ?? '',
     content: bodyMatch[1].trim(),
-    imageHints,
+    imageContexts,
   }
 }
 
@@ -275,29 +284,28 @@ async function main() {
       continue
     }
 
-    // 히어로 이미지 프롬프트 추출 + DALL-E 이미지 생성
-    const imagePromptMatch = article.content.match(/\[IMAGE_PROMPT:\s*(.+?)\]/)
-    const imagePrompt = imagePromptMatch?.[1] ?? `${topic.title} 관련 따뜻한 이미지`
-    // 추출 후 원본에서 제거 — 최종 HTML에 텍스트 노출 방지
+    // IMAGE_PROMPT 잔존 텍스트 방어 제거
     article.content = article.content.replace(/\[IMAGE_PROMPT:\s*.+?\]/g, '')
-    const imageStyle = getImageStyle(category)
 
-    const image = await generateMagazineImage(imagePrompt, imageStyle)
+    // 이미지 컨텍스트: AI 제공 우선, 없으면 카테고리 기본값
+    const [defaultCtx1, defaultCtx2] = getDefaultImagePlan(category)
+    const ctxList = [
+      article.imageContexts[0] ?? defaultCtx1,
+      article.imageContexts[1] ?? defaultCtx2,
+    ]
+
+    // 히어로 이미지 (첫 번째 컨텍스트)
+    const image = await generateMagazineImageByContext(ctxList[0])
     if (image) {
-      console.log(`[MagazineGenerator] 히어로 이미지 생성 완료: ${image.url.slice(0, 50)}...`)
+      console.log(`[MagazineGenerator] 히어로 이미지 (${ctxList[0].type}, ${image.source}): ${image.url.slice(0, 50)}...`)
     }
 
-    // 본문 이미지 생성 (imageHints 기반, 최대 2장 — 비용 제어)
-    const MAX_BODY_IMAGES = 2
+    // 본문 이미지 (두 번째 컨텍스트)
     const bodyImageUrls = new Map<number, string>()
-
-    for (let i = 0; i < Math.min(article.imageHints.length, MAX_BODY_IMAGES); i++) {
-      const hint = article.imageHints[i]
-      const bodyImg = await generateMagazineImage(hint, imageStyle)
-      if (bodyImg) {
-        bodyImageUrls.set(i + 1, bodyImg.url) // IMAGE:N은 1부터 시작
-        console.log(`[MagazineGenerator] 본문 이미지 ${i + 1} 생성: ${bodyImg.url.slice(0, 50)}...`)
-      }
+    const bodyImg = await generateMagazineImageByContext(ctxList[1])
+    if (bodyImg) {
+      bodyImageUrls.set(1, bodyImg.url)
+      console.log(`[MagazineGenerator] 본문 이미지 1 (${ctxList[1].type}, ${bodyImg.source}): ${bodyImg.url.slice(0, 50)}...`)
     }
 
     // 리치 HTML 템플릿으로 최종 콘텐츠 빌드
@@ -365,7 +373,7 @@ async function main() {
 
     publishedCount++
     publishedTitles.push(article.title)
-    console.log(`[MagazineGenerator] 발행: "${article.title}" (${postId}) — 이미지: 히어로 ${image ? 1 : 0}장 + 본문 ${bodyImageUrls.size}장`)
+    console.log(`[MagazineGenerator] 발행: "${article.title}" (${postId}) — 히어로 ${image ? `1장(${image.source})` : '없음'} + 본문 ${bodyImageUrls.size}장`)
   }
 
   const durationMs = Date.now() - startTime

@@ -2,14 +2,23 @@
  * 전사적 이미지 프롬프트 빌더 — 공유 유틸리티
  * 규칙 문서: agents/core/image-generation-rules.md
  *
- * 모든 에이전트(카드뉴스, 매거진 등)가 이미지 생성 시 사용하는
- * 인물 묘사, 스타일 프리픽스, 네거티브 프롬프트를 통합 관리합니다.
+ * v1: ImageStyle — 카드뉴스용 (하위 호환 유지)
+ * v2: ImageType  — 매거진용 (5종 분류, Unsplash 지원)
  */
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
+/** v2: 매거진 이미지 타입 5종 */
+export type ImageType =
+  | 'PERSON_REAL'   // 한국인 인물 실사 → DALL-E 전용
+  | 'FOOD_PHOTO'    // 음식·식재료 → Unsplash 우선, DALL-E 폴백
+  | 'SCENE_PHOTO'   // 장소·공간·환경 → Unsplash 우선, DALL-E 폴백
+  | 'OBJECT_PHOTO'  // 제품·도구·의료기기 → Unsplash 우선, DALL-E 폴백
+  | 'ILLUSTRATION'  // 추상 개념·정보 → DALL-E 전용
+
+/** v1: 카드뉴스 스타일 (하위 호환) */
 export type ImageStyle =
   | 'warm-lifestyle'
   | 'clean-infographic'
@@ -17,21 +26,28 @@ export type ImageStyle =
   | 'active-growth'
 
 // ---------------------------------------------------------------------------
-// Person Style Guide — 한국인 5060 인물 규칙
+// Person Style Guide — 한국인 4050 실사 인물 규칙 (v2)
+// 레퍼런스: 여성(김성령/견미리/황신혜/나경원), 남성(한석규/최수종/박중훈/손창민/차인표)
 // ---------------------------------------------------------------------------
 
 export const PERSON_STYLE_GUIDE = {
   femalePrompt:
-    'elegant Korean woman in her early 50s, well-groomed, healthy and vibrant, '
-    + 'natural dark hair with subtle highlights, confident smile, '
-    + 'stylish casual outfit, warm natural lighting, '
-    + 'similar vibe to a refined Korean actress in her 50s',
+    'Photorealistic photograph, Korean woman in her late 40s to early 50s, '
+    + 'refined and intelligent appearance, naturally styled dark hair with soft volume and subtle layers, '
+    + 'healthy natural skin complexion, warm confident smile, elegant casual Korean fashion, '
+    + 'soft natural window lighting, candid editorial photograph style, '
+    + 'sharp focus, real skin texture, genuine human expression, '
+    + 'NOT illustration, NOT animation, NOT CGI render, NOT perfect smooth skin, '
+    + 'NOT gray hair, NOT white hair, NOT elderly appearance',
 
   malePrompt:
-    'charismatic Korean man in his early 50s, well-maintained appearance, '
-    + 'natural dark hair, warm genuine smile, '
-    + 'smart casual style, confident posture, '
-    + 'similar vibe to a distinguished Korean actor in his 50s',
+    'Photorealistic photograph, Korean man in his late 40s to early 50s, '
+    + 'distinguished and trustworthy appearance, well-maintained natural dark hair, '
+    + 'healthy natural complexion, warm genuine smile, smart casual Korean style, '
+    + 'natural lighting, candid editorial photograph style, '
+    + 'sharp focus, real skin texture, genuine human expression, '
+    + 'NOT illustration, NOT animation, NOT CGI render, '
+    + 'NOT gray hair, NOT white hair, NOT elderly appearance',
 
   never: [
     'white hair', 'gray hair', 'wrinkled', 'elderly', 'senior citizen',
@@ -40,14 +56,38 @@ export const PERSON_STYLE_GUIDE = {
 } as const
 
 // ---------------------------------------------------------------------------
-// Style Prefixes — 통합 4종
+// Style Prefixes v1 — 카드뉴스 하위 호환
 // ---------------------------------------------------------------------------
 
 export const STYLE_PREFIXES: Record<ImageStyle, string> = {
-  'warm-lifestyle': '따뜻하고 밝은 톤의 일러스트레이션, 한국적 감성, 잡지 품질,',
-  'clean-infographic': '깔끔하고 신뢰감 있는 인포그래픽 스타일, 미니멀,',
-  'cozy-community': '포근하고 따뜻한 커뮤니티 분위기, 함께하는 장면,',
-  'active-growth': '활기차고 에너지 넘치는, 도전과 성장의 분위기,',
+  'warm-lifestyle':
+    'Photorealistic editorial photograph, warm natural lighting, Korean everyday life scene, magazine quality,',
+  'clean-infographic':
+    'Clean minimal flat design illustration, professional Korean magazine style, soft warm color palette, NOT cartoon, NOT anime,',
+  'cozy-community':
+    'Photorealistic photograph, warm cozy community atmosphere, people together, soft natural lighting,',
+  'active-growth':
+    'Photorealistic photograph, energetic active lifestyle, dynamic moment, natural lighting,',
+}
+
+// ---------------------------------------------------------------------------
+// Image Type Prefixes v2 — 매거진 타입별 DALL-E 프리픽스
+// ---------------------------------------------------------------------------
+
+const IMAGE_TYPE_PREFIXES: Record<Exclude<ImageType, 'PERSON_REAL'>, string> = {
+  'FOOD_PHOTO':
+    'Photorealistic food photography, warm natural window lighting, fresh appetizing ingredients, '
+    + 'Korean home cooking aesthetic, magazine editorial quality, clean composition,',
+  'SCENE_PHOTO':
+    'Photorealistic lifestyle photograph, warm golden natural lighting, '
+    + 'Korean aesthetic sensibility, cinematic quality, wide angle,',
+  'OBJECT_PHOTO':
+    'Photorealistic product photography, clean neutral background, '
+    + 'professional soft studio lighting, sharp detail, magazine quality,',
+  'ILLUSTRATION':
+    'Clean minimal flat design illustration, professional Korean digital magazine style, '
+    + 'soft warm color palette with coral accent, geometric shapes and simple icons, '
+    + 'NOT cartoon characters, NOT anime, NOT children illustration style,',
 }
 
 // ---------------------------------------------------------------------------
@@ -68,12 +108,7 @@ export function buildNegativePrompt(): string {
 }
 
 /**
- * 최종 DALL-E 프롬프트를 조립합니다.
- *
- * 1. 스타일 프리픽스
- * 2. 인물 키워드 감지 시 → 인물 묘사 + 네거티브 프롬프트 자동 삽입
- * 3. 원본 프롬프트
- * 4. 텍스트 금지 디렉티브
+ * v1: 카드뉴스용 DALL-E 프롬프트 조립 (하위 호환)
  */
 export function buildImagePrompt(prompt: string, style: ImageStyle): string {
   const parts: string[] = [STYLE_PREFIXES[style]]
@@ -92,11 +127,30 @@ export function buildImagePrompt(prompt: string, style: ImageStyle): string {
   return parts.join(' ')
 }
 
+/**
+ * v2: 매거진용 타입별 DALL-E 프롬프트 조립
+ */
+export function buildImagePromptByType(
+  prompt: string,
+  imageType: ImageType,
+  gender: 'female' | 'male' = 'female',
+): string {
+  if (imageType === 'PERSON_REAL') {
+    const personBase = gender === 'male'
+      ? PERSON_STYLE_GUIDE.malePrompt
+      : PERSON_STYLE_GUIDE.femalePrompt
+    return `${personBase}, ${prompt}, ${buildNegativePrompt()} ${NO_TEXT_DIRECTIVE}`
+  }
+
+  const prefix = IMAGE_TYPE_PREFIXES[imageType]
+  return `${prefix} ${prompt} ${NO_TEXT_DIRECTIVE}`.trim()
+}
+
 // ---------------------------------------------------------------------------
-// Magazine Style Mapping — 카테고리 → ImageStyle 변환
+// Magazine Style Mapping v1 — 하위 호환
 // ---------------------------------------------------------------------------
 
-/** 매거진 카테고리를 통합 ImageStyle로 매핑 */
+/** 매거진 카테고리를 v1 ImageStyle로 매핑 */
 export function getMagazineImageStyle(category: string): ImageStyle {
   const map: Record<string, ImageStyle> = {
     '건강': 'clean-infographic',
@@ -110,4 +164,118 @@ export function getMagazineImageStyle(category: string): ImageStyle {
     '간병': 'warm-lifestyle',
   }
   return map[category] ?? 'warm-lifestyle'
+}
+
+// ---------------------------------------------------------------------------
+// Magazine Image Plan v2 — 카테고리별 기본 이미지 컨텍스트
+// ---------------------------------------------------------------------------
+
+/** 매거진 이미지 컨텍스트 (v2) */
+export interface ImageContext {
+  type: ImageType
+  gender?: 'female' | 'male'
+  dallePrompt: string       // DALL-E용 영문 프롬프트
+  unsplashQuery?: string    // Unsplash 검색어 (FOOD/SCENE/OBJECT만)
+}
+
+/** 카테고리별 기본 이미지 컨텍스트 2종 (AI가 컨텍스트를 주지 않을 때 폴백) */
+export function getDefaultImagePlan(category: string): [ImageContext, ImageContext] {
+  const plans: Record<string, [ImageContext, ImageContext]> = {
+    '건강': [
+      {
+        type: 'PERSON_REAL',
+        gender: 'female',
+        dallePrompt: 'Korean woman doing gentle morning exercise or stretching outdoors',
+      },
+      {
+        type: 'FOOD_PHOTO',
+        dallePrompt: 'fresh healthy Korean vegetables and ingredients on wooden table',
+        unsplashQuery: 'korean healthy food vegetables',
+      },
+    ],
+    '생활': [
+      {
+        type: 'PERSON_REAL',
+        gender: 'female',
+        dallePrompt: 'Korean woman organizing a tidy Korean home with warm morning sunlight',
+      },
+      {
+        type: 'SCENE_PHOTO',
+        dallePrompt: 'cozy Korean home interior warm living room natural light',
+        unsplashQuery: 'korean home interior cozy living room',
+      },
+    ],
+    '재테크': [
+      {
+        type: 'ILLUSTRATION',
+        dallePrompt: 'savings growth finance investment concept illustration — coins, growth chart, piggy bank',
+      },
+      {
+        type: 'PERSON_REAL',
+        gender: 'male',
+        dallePrompt: 'Korean man reviewing financial documents at home desk with smartphone',
+      },
+    ],
+    '여행': [
+      {
+        type: 'SCENE_PHOTO',
+        dallePrompt: 'beautiful Korean nature scenery mountains or coast autumn golden hour',
+        unsplashQuery: 'korea nature scenery mountains autumn',
+      },
+      {
+        type: 'PERSON_REAL',
+        gender: 'female',
+        dallePrompt: 'Korean woman enjoying sightseeing at a scenic Korean location',
+      },
+    ],
+    '요리': [
+      {
+        type: 'FOOD_PHOTO',
+        dallePrompt: 'delicious Korean home cooked meal with rice and healthy banchan side dishes',
+        unsplashQuery: 'korean food homemade healthy banchan',
+      },
+      {
+        type: 'PERSON_REAL',
+        gender: 'female',
+        dallePrompt: 'Korean woman cooking in a bright modern Korean kitchen smiling',
+      },
+    ],
+    '문화': [
+      {
+        type: 'SCENE_PHOTO',
+        dallePrompt: 'Korean art gallery museum interior warm elegant lighting',
+        unsplashQuery: 'korean museum art gallery interior',
+      },
+      {
+        type: 'PERSON_REAL',
+        gender: 'female',
+        dallePrompt: 'Korean woman reading a book in a cozy sunlit Korean cafe',
+      },
+    ],
+    '일자리': [
+      {
+        type: 'PERSON_REAL',
+        gender: 'male',
+        dallePrompt: 'Korean man working confidently at a clean modern office desk',
+      },
+      {
+        type: 'SCENE_PHOTO',
+        dallePrompt: 'modern clean Korean workplace office bright natural lighting',
+        unsplashQuery: 'modern office workspace professional',
+      },
+    ],
+    '간병': [
+      {
+        type: 'PERSON_REAL',
+        gender: 'female',
+        dallePrompt: 'Korean woman warmly and gently caring for an elderly parent at home',
+      },
+      {
+        type: 'OBJECT_PHOTO',
+        dallePrompt: 'home care medical supplies caregiving items organized neatly',
+        unsplashQuery: 'home care medical supplies healthcare',
+      },
+    ],
+  }
+  return plans[category] ?? plans['생활']
 }
