@@ -193,6 +193,9 @@ jobs:
       - name: Set QA env
         if: github.event.schedule == '45 14 * * *'
         run: echo "QA_MODE=cron-audit" >> $GITHUB_ENV
+      - name: Install Playwright Chromium (magazine thumbnail)
+        if: steps.determine.outputs.agent == 'cafe_crawler'
+        run: npx playwright install chromium --with-deps
       - name: Run agent
         if: steps.determine.outputs.agent != 'skip'
         run: cd agents && npx tsx cron/runner.ts ${{ steps.determine.outputs.agent }} ${{ steps.determine.outputs.task }}
