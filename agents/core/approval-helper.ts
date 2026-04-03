@@ -33,7 +33,7 @@ export async function createApprovalRequest(
         requestedBy: string
       }>
     }
-  }).adminQueue.create({ data })
+  }).adminQueue.create({ data: { ...data, description: data.description ?? '' } })
 
   await notifyApproval({
     id: item.id,

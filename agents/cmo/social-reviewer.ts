@@ -170,7 +170,8 @@ ${experimentAnalysis ? `\n현재 실험:\n${experimentAnalysis}` : '(활성 실�
   })
 
   const rawText = aiResponse.content[0].type === 'text' ? aiResponse.content[0].text : '{}'
-  const structuredLearnings: StructuredLearnings = JSON.parse(rawText)
+  const cleanedText = rawText.replace(/```json?\n?/g, '').replace(/```/g, '').trim()
+  const structuredLearnings: StructuredLearnings = JSON.parse(cleanedText)
 
   // 5. 실험 learnings 저장 + nextAction + 실험 결과 카드
   if (activeExperiment) {
