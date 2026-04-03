@@ -12,6 +12,9 @@ const accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN ?? ''
 const pageId = process.env.FACEBOOK_PAGE_ID ?? ''
 
 export function isConfigured(): boolean {
+  // pages_manage_posts 권한이 없어 Meta App Review 승인 전까지 비활성화
+  // App Review 완료 후 GitHub Secret에 FACEBOOK_POSTING_ENABLED=true 추가하면 자동 활성화
+  if (process.env.FACEBOOK_POSTING_ENABLED !== 'true') return false
   return !!(accessToken && pageId)
 }
 
