@@ -27,7 +27,7 @@ test.describe('어드민 설정', () => {
 
   test('금지어 목록 접근 (서브페이지 있는 경우)', async ({ page }) => {
     // 금지어 전용 페이지가 있으면 접근, 없으면 설정 페이지에 포함
-    const res = await page.goto('/admin/settings')
+    await page.goto('/admin/settings')
     await page.waitForLoadState('networkidle', { timeout: 15000 })
 
     // "금지어" 텍스트 존재 여부만 확인

@@ -45,7 +45,6 @@ test.describe('커뮤니티 글 상세', () => {
       return
     }
 
-    const href = await firstLink.getAttribute('href')
     await firstLink.click()
     await page.waitForLoadState('networkidle', { timeout: 15000 })
 

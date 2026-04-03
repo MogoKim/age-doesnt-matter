@@ -8,7 +8,7 @@
  *   - API 에러 응답 형식
  *   - 모바일 뷰포트 핵심 페이지 렌더링
  */
-import { test, expect, devices } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
 test.describe('404 에러 페이지', () => {
   test('존재하지 않는 URL → 404 또는 not-found 페이지', async ({ page }) => {
