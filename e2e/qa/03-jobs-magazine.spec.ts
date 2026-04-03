@@ -82,7 +82,9 @@ test.describe('매거진', () => {
   test('매거진 목록 200 + 아이템 존재', async ({ page }) => {
     const res = await page.goto('/magazine')
     expect(res?.status()).toBeLessThan(400)
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    // 광고로 인해 networkidle 불가 → domcontentloaded 사용
+    await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
+    await page.waitForTimeout(2000)
 
     await expect(page.locator('main').first()).toBeVisible()
     const items = await page.locator('article, [class*="magazine"], [class*="card"]').count()
@@ -91,7 +93,8 @@ test.describe('매거진', () => {
 
   test('첫 번째 매거진 상세 — 콘텐츠 + 제목 렌더링', async ({ page }) => {
     await page.goto('/magazine')
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
+    await page.waitForTimeout(2000)
 
     const firstLink = page
       .locator('a[href*="/magazine/"]')
@@ -113,7 +116,8 @@ test.describe('매거진', () => {
 
   test('매거진 상세 — OG 메타 태그 존재', async ({ page }) => {
     await page.goto('/magazine')
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
+    await page.waitForTimeout(2000)
 
     const firstLink = page
       .locator('a[href*="/magazine/"]')

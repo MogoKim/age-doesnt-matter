@@ -23,11 +23,17 @@ const OUTPUT_PATH = resolve(OUTPUT_DIR, 'bug-report.md')
 
 interface TestResult {
   title: string
-  fullTitle: string
-  status: 'passed' | 'failed' | 'timedOut' | 'skipped' | 'pending'
-  duration: number
+  fullTitle?: string
+  // Playwright v1.40+ JSON 형식: 'expected' | 'unexpected' | 'skipped' | 'flaky'
+  status: 'expected' | 'unexpected' | 'skipped' | 'flaky' | 'passed' | 'failed' | 'timedOut'
+  duration?: number
+  results?: Array<{
+    status: 'passed' | 'failed' | 'timedOut' | 'skipped'
+    duration: number
+    error?: { message?: string; stack?: string }
+  }>
   error?: { message?: string; stack?: string }
-  retry: number
+  retry?: number
 }
 
 interface TestSuite {
@@ -54,13 +60,22 @@ interface PlaywrightReport {
 function collectFailures(suite: TestSuite, results: Array<{ file: string; title: string; error: string; duration: number }>) {
   for (const spec of suite.specs ?? []) {
     for (const test of spec.tests ?? []) {
-      if (test.status === 'failed' || test.status === 'timedOut') {
-        const errorMsg = test.error?.message ?? test.error?.stack ?? '알 수 없는 오류'
+      // Playwright v1.40+: status='unexpected', 이전 버전: status='failed'|'timedOut'
+      const isFailed = test.status === 'unexpected' || test.status === 'failed' || test.status === 'timedOut'
+      if (isFailed) {
+        const firstResult = test.results?.[0]
+        const errorMsg =
+          firstResult?.error?.message ??
+          firstResult?.error?.stack ??
+          test.error?.message ??
+          test.error?.stack ??
+          '알 수 없는 오류'
+        const duration = firstResult?.duration ?? test.duration ?? 0
         results.push({
           file: suite.file ?? '',
           title: `${suite.title} > ${spec.title}`,
           error: errorMsg.slice(0, 500),
-          duration: test.duration,
+          duration,
         })
       }
     }

@@ -23,8 +23,8 @@ test.describe('커뮤니티 목록', () => {
   test('게시판 탭 또는 카테고리 필터 존재', async ({ page }) => {
     await page.goto('/community')
     await page.waitForLoadState('networkidle')
-    // 탭 또는 버튼 그룹
-    const tabs = page.locator('[role="tab"], [class*="tab"], [class*="filter"], [class*="category"]').first()
+    // 탭 또는 버튼 그룹 (role="group"은 카테고리 필터 그룹)
+    const tabs = page.locator('[role="tab"], [role="group"], [class*="tab"], [class*="filter"], [class*="category"]').first()
     await expect(tabs).toBeVisible({ timeout: 10000 })
   })
 })
@@ -34,10 +34,9 @@ test.describe('커뮤니티 글 상세', () => {
     await page.goto('/community')
     await page.waitForLoadState('networkidle', { timeout: 15000 })
 
-    // 첫 번째 클릭 가능한 글 링크
+    // 실제 게시글 링크: /community/stories/[id] 또는 /community/humor/[id] 형식
     const firstLink = page
-      .locator('a[href*="/community/"]')
-      .filter({ hasNotText: /글쓰기|더보기|전체/ })
+      .locator('a[href*="/community/stories/"], a[href*="/community/humor/"]')
       .first()
 
     const count = await firstLink.count()
@@ -60,8 +59,7 @@ test.describe('커뮤니티 글 상세', () => {
     await page.waitForLoadState('networkidle', { timeout: 15000 })
 
     const firstLink = page
-      .locator('a[href*="/community/"]')
-      .filter({ hasNotText: /글쓰기|더보기|전체/ })
+      .locator('a[href*="/community/stories/"], a[href*="/community/humor/"]')
       .first()
 
     if (await firstLink.count() === 0) {
@@ -78,13 +76,12 @@ test.describe('커뮤니티 글 상세', () => {
     await expect(commentSection).toBeVisible({ timeout: 10000 })
   })
 
-  test('글 상세 — 비로그인 공감 클릭 → 로그인 유도', async ({ page }) => {
+  test('글 상대 — 비로그인 공감 클릭 → 로그인 유도', async ({ page }) => {
     await page.goto('/community')
     await page.waitForLoadState('networkidle', { timeout: 15000 })
 
     const firstLink = page
-      .locator('a[href*="/community/"]')
-      .filter({ hasNotText: /글쓰기|더보기|전체/ })
+      .locator('a[href*="/community/stories/"], a[href*="/community/humor/"]')
       .first()
 
     if (await firstLink.count() === 0) {
