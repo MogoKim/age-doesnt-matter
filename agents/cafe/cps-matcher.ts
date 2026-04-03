@@ -4,7 +4,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../core/db.js'
-import { createDeepLink } from '../../src/lib/coupang.js'
+import { createDeepLink } from '../core/coupang.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
