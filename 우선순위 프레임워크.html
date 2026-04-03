@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우나어 비즈니스 프레임워크 v2</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2C3E50;
+            --accent: #3498DB;
+            --bg: #F8F9FA;
+            --card-bg: #FFFFFF;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border: #EAEAEA;
+            --success: #27AE60;
+            --warning: #F39C12;
+            --danger: #E74C3C;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle-box {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            color: var(--primary);
+            font-size: 1.1rem;
+            text-align: left;
+            margin: 0 auto;
+            max-width: 800px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 10px 15px rgba(0,0,0,0.03);
+            border: 1px solid var(--border);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--bg);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quote {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: var(--bg);
+            margin-bottom: 20px;
+        }
+
+        .status.done { color: var(--success); background: rgba(39, 174, 96, 0.1); }
+        .status.warn { color: var(--warning); background: rgba(243, 156, 18, 0.1); }
+        .status.alert { color: var(--danger); background: rgba(231, 76, 60, 0.1); }
+
+        h3 {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        ul {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        li {
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+
+        .checkbox-item::before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            top: -2px;
+        }
+
+        .insight {
+            background: #FFFBE6;
+            border-left: 4px solid #F1C40F;
+            padding: 15px 20px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            color: #8C7B16;
+            font-weight: 500;
+        }
+
+        code {
+            background: var(--bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+
+        .workflow {
+            background: #2C3E50;
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            font-family: monospace;
+            line-height: 2;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .sub-list {
+            padding-left: 20px;
+            margin-top: 5px;
+        }
+        
+        .sub-list li::before {
+            content: "•";
+            color: var(--accent);
+            position: absolute;
+            left: 0;
+            font-size: 1.2rem;
+            top: -2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🏛️ 우나어 — 근본을 파헤치다 (비즈니스 프레임워크 v2)</h1>
+        <div class="subtitle-box">
+            <strong>이 문서는 빈 캔버스다.</strong> 미리 답을 적지 않는다.<br>
+            창업자와 하나씩, Why를 외치며, 티키타카로 채워나간다.<br>
+            각 단계가 확정되어야 다음 단계로 넘어갈 수 있다.
+        </div>
+    </header>
+
+    <div class="card">
+        <h2>1️⃣ 고객의 욕망 / 니즈 / 원츠 (WHY)</h2>
+        <div class="quote">"우리가 해결하려는 고객의 근본적인 문제는 무엇인가?"</div>
+        <div class="status warn">⚠️ 가설 단계 (검증 필요)</div>
+        
+        <p><strong>데이터 소스:</strong> 카페 크롤링으로 매일 수천 개의 글이 DB에 쌓이고 있다. "어떤 주제에 좋아요/댓글이 폭발하는가"를 정량 분석하면 간접 검증이 가능하다. 추후 실제 유저 5~10명 대상 심층 인터뷰(IDI)로 직접 검증이 필요하지만, 지금은 이 데이터로도 충분히 시작할 수 있다.</p>
+        
+        <h3>채워야 할 것</h3>
+        <ul>
+            <li class="checkbox-item">메인 주제 (고객이 가장 뜨겁게 반응하는 대주제)</li>
+            <li class="checkbox-item">서브 주제들 (대주제 아래 세부 관심사)</li>
+            <li class="checkbox-item">핵심 키워드 (고객의 입에서 반복적으로 나오는 단어들)</li>
+            <li class="checkbox-item">욕망 / 니즈 / 원츠 구분 정의</li>
+        </ul>
+        
+        <div class="insight">
+            ⚡ 이 단계가 확정되면 → 2️⃣ 수단의 정체성, 4️⃣ 카테고리 우선순위, 5️⃣ 기능 우선순위가 자동으로 결정된다.
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>2️⃣ 수단: 커뮤니티 (HOW)</h2>
+        <div class="quote">"그 욕망을 해결해주기 위한 우리의 무기는 '커뮤니티'다."</div>
+        <div class="status done">✅ 수단 자체는 결정됨</div>
+        
+        <p><strong>핵심 논점:</strong> 고객의 욕망/니즈/원츠를 해결해줄 수단은 수없이 많다. 블로그, 유튜브, 앱, 뉴스레터, 오프라인 모임... 그런데 <strong>왜 하필 커뮤니티인가?</strong> 이 질문에 본질적으로 대답해야 한다.</p>
+
+        <h3>풀어야 할 핵심 질문</h3>
+        <ul>
+            <li class="checkbox-item"><strong>인간 심리의 본질:</strong> 레딧, 디시인사이드, 펨코가 왜 거대한 기업이 되었는가? 인간의 어떤 근원적 심리가 커뮤니티를 만드는가?</li>
+            <li class="checkbox-item"><strong>5060에게도 동일하게 작동하는가?</strong> 젊은 세대의 커뮤니티 욕구와 5060의 커뮤니티 욕구는 같은가, 다른가?</li>
+            <li class="checkbox-item"><strong>다른 수단 대비 커뮤니티의 압도적 장점은?</strong> 블로그/유튜브/뉴스레터가 아닌 커뮤니티여야만 해결되는 것은 무엇인가?</li>
+            <li class="checkbox-item"><strong>커뮤니티의 정체성:</strong> 어떤 성격의 커뮤니티인가? (이 질문의 답은 1️⃣이 확정된 후에 구체화된다)</li>
+        </ul>
+
+        <div class="insight">
+            ⚡ 여기서는 구체적 기능(활력충전소, 매거진 등)을 논하지 않는다. 그것은 4️⃣ 카테고리 전략에서 다룬다.<br>
+            ⚡ 1️⃣이 확정되면 → 커뮤니티의 정체성과 성격이 자연스럽게 결정된다.
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>3️⃣ 미션 / 비전 / 철학 (WHO WE ARE)</h2>
+        <div class="quote">"우리는 왜 존재하는가?"</div>
+        <div class="status warn">⚠️ 암묵적으로만 존재 (명문화 필요)</div>
+        
+        <h3>채워야 할 것</h3>
+        <ul>
+            <li class="checkbox-item"><strong>미션 (Mission):</strong> 우리가 매일 하는 일 한 문장. (현재: "5060이 나이 걱정 없이 일자리와 소통을 찾는 따뜻한 커뮤니티" → 너무 넓다. "일자리"와 "소통" 중 뭐가 핵심인가?)</li>
+            <li class="checkbox-item"><strong>비전 (Vision):</strong> 3년 뒤 우나어는 어떤 모습인가? (없으면 OKR의 O를 세울 수 없다)</li>
+            <li class="checkbox-item"><strong>철학/톤 (Tone):</strong> 우리가 고객에게 말하는 방식의 원칙 (현재 constitution.yaml에 흩어져 있음)</li>
+        </ul>
+
+        <div class="insight">
+            ⚡ 1️⃣ + 2️⃣가 확정되면 자연스럽게 미션과 비전의 방향이 잡힌다.
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>4️⃣ 카테고리 전략 (WHAT WE OFFER)</h2>
+        <div class="quote">"커뮤니티 안에서 어떤 방(카테고리)을 만들 것인가?"</div>
+        
+        <p><strong>현재 카테고리:</strong> 매거진 / 일자리 / 활력 충전소 / 사는 이야기</p>
+
+        <h3>채워야 할 것</h3>
+        <ul>
+            <li class="checkbox-item">이 4개가 맞는가? 빼야 할 것, 추가해야 할 것은?</li>
+            <li class="checkbox-item">각 카테고리는 1️⃣의 어떤 욕망을 해결해주는가? (매핑)</li>
+            <li class="checkbox-item">카테고리 간 우선순위 (MVP 카테고리는 무엇인가?)</li>
+            <li class="checkbox-item">각 카테고리별 SEO 타겟 키워드</li>
+        </ul>
+
+        <div class="insight">
+            ⚡ 1️⃣이 확정되면 → 카테고리 우선순위가 결정되고 → 홈의 UI/UX, 전체 UX 라이팅이 변경될 수 있다.
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>5️⃣ 기능(Feature) 전략</h2>
+        <div class="quote">"커뮤니티에서 어떤 기능을 제공할 것인가?"</div>
+        
+        <h3>채워야 할 것</h3>
+        <ul>
+            <li class="checkbox-item">현재 개발된 기능 전수 목록</li>
+            <li class="checkbox-item">1️⃣ 고객 욕망 기준으로 각 기능의 존재 이유 매핑</li>
+            <li class="checkbox-item">필수인데 아직 없는 기능 식별 (예: 카카오톡 공유 등)</li>
+            <li class="checkbox-item">기능 우선순위 (고객 가치 × 임팩트 기준)</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>6️⃣ SEO 전략</h2>
+        <div class="quote">"고객이 우리를 어떻게 발견하게 할 것인가?"</div>
+        
+        <h3>채워야 할 것</h3>
+        <ul>
+            <li class="checkbox-item">회사 전체 SEO 전략 방향</li>
+            <li class="checkbox-item">4️⃣의 각 카테고리별 타겟 키워드 맵</li>
+            <li class="checkbox-item">매거진 봇 프롬프트에 SEO 키워드를 반영하는 구조</li>
+            <li class="checkbox-item">유입 채널별(구글/네이버/SNS/카카오톡) 전략</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>7️⃣ 매출 공식 (Revenue Formula)</h2>
+        <div class="quote">"돈은 어떤 구조로 벌리는가?"</div>
+        
+        <div class="workflow" style="padding: 15px; margin-bottom: 20px;">월 매출 = DAU × PV/DAU × eCPM/1000 × 30일 + CPS 수익<br>월 순수익 = 월 매출 - 운영 비용</div>
+
+        <h3>각 변수의 드라이버 (영향 요인) 채워야 할 것</h3>
+        <ul>
+            <li class="checkbox-item"><strong>DAU 드라이버:</strong> 어떤 기능들, 어떤 콘텐츠, 어떻게 유입, RR(재방문율), RR에 영향 주는 것은 또 뭔지 파고들기</li>
+            <li class="checkbox-item"><strong>PV/DAU 드라이버:</strong> 1인당 페이지뷰에 영향을 주는 요인들</li>
+            <li class="checkbox-item"><strong>eCPM 드라이버:</strong> eCPM을 높이려면 PV를 높여야 하는가? 콘텐츠 질을 높여야 하는가? 클릭 유도인가?</li>
+            <li class="checkbox-item"><strong>CPS 드라이버:</strong> 쿠팡 파트너스 수익에 영향을 주는 요인들</li>
+            <li class="checkbox-item"><strong>eCPM vs CPC 구조:</strong> 애드센스 수익 구조가 eCPM 기반인지 CPC 기반인지 정확히 파악</li>
+        </ul>
+
+        <div class="insight">
+            ⚡ 이 드라이버들을 파악하면 → 어떤 부분을 건드려야 매출에 가장 큰 임팩트를 주는지 보이고 → 그것이 Initiatives가 된다.
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>8️⃣ OKR (Objectives & Key Results)</h2>
+        <div class="quote">"이번 분기에 무엇을 달성할 것인가?"</div>
+        <div class="status alert">🔴 1️⃣~7️⃣이 확정되어야 세울 수 있음</div>
+        
+        <h3>채워야 할 것</h3>
+        <ul>
+            <li class="checkbox-item"><strong>O (Objective):</strong> 가슴 뛰는 한 문장 목표</li>
+            <li class="checkbox-item"><strong>KR (Key Results):</strong> 달성을 증명하는 3~4개의 숫자 지표</li>
+            <li class="checkbox-item"><strong>Initiatives:</strong> 각 KR을 달성하기 위한 구체적 행동 계획 (가장 임팩트 센 것 위주)</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>9️⃣ 전체 흐름도 (The Big Picture)</h2>
+        <div class="workflow">
+[1] 고객 욕망/니즈/원츠 정의 (WHY)
+        │
+        ▼
+[2] 수단 확정: 커뮤니티 (HOW) — 정체성/성격 결정
+        │
+        ▼
+[3] 미션 / 비전 / 철학 명문화 (WHO WE ARE)
+        │
+        ▼
+[4] 카테고리 전략 (WHAT) — 욕망과 매핑, 우선순위
+        │
+        ▼
+[5] 기능 전략 (FEATURE) — 욕망을 해결하는 도구들
+        │
+        ▼
+[6] SEO 전략 — 카테고리별 키워드, 발견 경로
+        │
+        ▼
+[7] 매출 공식 & 지표 트리 — 돈의 구조, 각 드라이버 파악
+        │
+        ▼
+[8] OKR 수립 — 이번 분기 목표 + KR + Initiatives
+        │
+        ▼
+[9] 실행 사이클 (반복)
+    문제 정의 → 가설 → 실험 설계 → 실행 → 회고
+        │                                    │
+        └────────── 반복 (Sprint) ◄──────────┘
+        </div>
+    </div>
+
+    <div class="card" style="border-left: 5px solid var(--accent);">
+        <h2>🔟 TODO: 딥다이브 리스트</h2>
+        <div class="quote">위 프레임워크가 확정되면, 독립된 세션에서 하나씩 잘게 쪼개서 채운다.</div>
+        
+        <ul>
+            <li class="checkbox-item"><strong>[딥다이브 #1] 고객 욕망 추출</strong>
+                <ul class="sub-list">
+                    <li>DB에 쌓인 카페 크롤링 데이터 정량 분석</li>
+                    <li>메인 주제 3~5개 도출 및 서브 주제 나열</li>
+                    <li>반복 등장하는 핵심 키워드 추출</li>
+                    <li>욕망 / 니즈 / 원츠 구분 정의</li>
+                </ul>
+            </li>
+            <br>
+            <li class="checkbox-item"><strong>[딥다이브 #2] "왜 커뮤니티인가?" 본질적 논증</strong>
+                <ul class="sub-list">
+                    <li>레딧/디시/펨코가 거대해진 인간 심리 분석</li>
+                    <li>5060 세대에게 이 심리가 동일하게 작동하는가?</li>
+                    <li>블로그/유튜브/뉴스레터 대비 커뮤니티만의 압도적 장점</li>
+                </ul>
+            </li>
+            <br>
+            <li class="checkbox-item"><strong>[딥다이브 #3] 미션 확정</strong>
+                <ul class="sub-list">
+                    <li>현재 미션문 검토 및 한 문장으로 다시 쓰기</li>
+                    <li>철학/톤(constitution.yaml) 한 곳에 정리</li>
+                </ul>
+            </li>
+            <br>
+            <li class="checkbox-item"><strong>[딥다이브 #4] 비전 확정</strong>
+                <ul class="sub-list">
+                    <li>"3년 뒤 우나어는 어떤 모습인가?" 답하기</li>
+                    <li>정성적 비전 + 정량적 목표 산정</li>
+                </ul>
+            </li>
+            <br>
+            <li class="checkbox-item"><strong>[딥다이브 #5] 카테고리 재설계</strong>
+                <ul class="sub-list">
+                    <li>현재 4개 카테고리 욕망 매핑 검증</li>
+                    <li>카테고리 간 우선순위 (MVP 선정) 및 역할 정의</li>
+                </ul>
+            </li>
+            <br>
+            <li class="checkbox-item"><strong>[딥다이브 #6] 핵심 기능 확정</strong>
+                <ul class="sub-list">
+                    <li>현재 기능 매핑 및 부족한 필수 기능 식별</li>
+                    <li>기능 우선순위 (고객 임팩트 × 개발 난이도) 배정</li>
+                </ul>
+            </li>
+            <br>
+            <li class="checkbox-item"><strong>[딥다이브 #7] SEO 키워드 맵</strong>
+                <ul class="sub-list">
+                    <li>카테고리별 타겟/롱테일 키워드 선정</li>
+                    <li>매거진 봇 프롬프트 반영 구조 및 유입 채널별 전략 수립</li>
+                </ul>
+            </li>
+            <br>
+            <li class="checkbox-item"><strong>[딥다이브 #8] 매출 공식 & 드라이버 트리</strong>
+                <ul class="sub-list">
+                    <li>eCPM vs CPC 수익 구조 확인</li>
+                    <li>DAU / PV / CPS 드라이버 트리 완성</li>
+                    <li>현재 각 드라이버의 베이스라인 측정</li>
+                </ul>
+            </li>
+            <br>
+            <li class="checkbox-item"><strong>[딥다이브 #9] Q2 OKR 수립</strong>
+                <ul class="sub-list">
+                    <li>O 확정 및 KR 3~4개 세팅</li>
+                    <li>각 KR별 Initiatives 수립 및 실험 사이클 설계</li>
+                </ul>
+            </li>
+            <br>
+            <li class="checkbox-item"><strong>[딥다이브 #10] 사이트 UI/UX 재정비</strong>
+                <ul class="sub-list">
+                    <li>위 1~9 결과를 반영한 홈 화면 및 UX 라이팅 재설계</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+</div>
+
+</body>
+</html>
