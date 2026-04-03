@@ -65,3 +65,8 @@ supabase/.temp/
 
 # Crawler logs
 /logs/
+
+# Playwright QA — auth storageState (인증 쿠키 포함, 커밋 금지)
+e2e/.auth/
+# Playwright 결과 JSON
+playwright-report/results.json

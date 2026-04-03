@@ -1,4 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
+import path from 'path'
+
+// QA 전용 storageState 경로
+const ADMIN_AUTH = path.join(__dirname, 'e2e/.auth/admin.json')
+const USER_AUTH = path.join(__dirname, 'e2e/.auth/user.json')
 
 export default defineConfig({
   testDir: './e2e',
@@ -6,7 +11,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: [['html'], ['json', { outputFile: 'playwright-report/results.json' }]],
 
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
@@ -15,13 +20,55 @@ export default defineConfig({
   },
 
   projects: [
+    // ── 기존 프로젝트 ──
     {
       name: 'chromium',
+      testMatch: /^(?!.*\/qa\/).*\.spec\.ts$/,
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'mobile-chrome',
+      testMatch: /^(?!.*\/qa\/).*\.spec\.ts$/,
       use: { ...devices['Pixel 7'] },
+    },
+
+    // ── QA 프로젝트 ──
+    // 1. 어드민 storageState 생성 (setup)
+    {
+      name: 'setup-admin',
+      testMatch: /fixtures\/auth\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // 2. 공개 페이지 QA (인증 불필요)
+    {
+      name: 'qa-public',
+      testMatch: /qa\/(0[1-4])-.*\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // 3. 유저 인증 QA (user.json storageState)
+    {
+      name: 'qa-user',
+      testMatch: /qa\/05-.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: USER_AUTH,
+      },
+    },
+    // 4. 어드민 QA (admin.json storageState, setup-admin 후 실행)
+    {
+      name: 'qa-admin',
+      testMatch: /qa\/(0[6-9]|1[0-4])-.*\.spec\.ts/,
+      dependencies: ['setup-admin'],
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: ADMIN_AUTH,
+      },
+    },
+    // 5. 에러/엣지케이스 QA
+    {
+      name: 'qa-edge',
+      testMatch: /qa\/14-.*\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 
