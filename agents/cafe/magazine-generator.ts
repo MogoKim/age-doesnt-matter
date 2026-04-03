@@ -10,7 +10,7 @@ import { getBotUser } from '../seed/generator.js'
 import type { MagazineSuggestion } from './types.js'
 import { matchCpsProducts, saveCpsLinks } from './cps-matcher.js'
 import { generateMagazineThumbnail } from './thumbnail-generator.js'
-import { generateMagazineImageByContext, generateMagazineImage, getImageStyle } from './image-generator.js'
+import { generateMagazineImageByContext } from './image-generator.js'
 import { buildMagazineHtml, parseSectionsFromAI } from './magazine-template.js'
 import { getDefaultImagePlan, type ImageContext } from '../core/image-prompt-builder.js'
 
