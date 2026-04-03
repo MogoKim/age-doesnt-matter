@@ -87,6 +87,7 @@ test.describe('일자리', () => {
 
     await firstLink.click()
     await page.waitForURL('**/jobs/**', { timeout: 15000 })
+    await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
 
     // 핵심 정보 중 최소 1개 이상 렌더링
     const hasInfo = await page.getByText(/급여|월급|시급|근무지|지역|고용형태|채용/, { exact: false }).count()
@@ -122,7 +123,9 @@ test.describe('매거진', () => {
     }
 
     await firstLink.click()
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    // networkidle은 광고 로딩으로 불안정 → URL 변경 대기 후 domcontentloaded 사용
+    await page.waitForURL('**/magazine/**', { timeout: 15000 })
+    await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
     expect(page.url()).toContain('/magazine/')
 
     // 제목 + 본문 최소 렌더링
@@ -142,7 +145,9 @@ test.describe('매거진', () => {
     if (await firstLink.count() === 0) return
 
     await firstLink.click()
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    // OG 메타는 SSR에서 생성 — networkidle 대신 domcontentloaded 사용
+    await page.waitForURL('**/magazine/**', { timeout: 15000 })
+    await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
 
     const ogTitle = await page.locator('meta[property="og:title"]').getAttribute('content')
     expect(ogTitle && ogTitle.length > 0, 'og:title 미설정').toBe(true)

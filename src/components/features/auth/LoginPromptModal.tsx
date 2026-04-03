@@ -25,7 +25,7 @@ export default function LoginPromptModal({ message, onClose }: LoginPromptModalP
   }, [])
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center">
+    <div role="dialog" aria-modal="true" aria-label="로그인 필요" className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center">
       {/* 오버레이 */}
       <div
         className="absolute inset-0 bg-black/40"
