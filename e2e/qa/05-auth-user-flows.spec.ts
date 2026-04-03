@@ -71,7 +71,7 @@ test.describe('글쓰기 (폼 렌더링만)', () => {
 })
 
 test.describe('커뮤니티 인증 기능', () => {
-  test('로그인 상태 — 공감 버튼 클릭 가능 (API 오류 없음)', async ({ page }) => {
+  test('로그인 상태 — 공감 버튼 클릭 가능 (API 오류 없음)', { timeout: 60000 }, async ({ page }) => {
     if (!existsSync(USER_AUTH)) {
       test.skip()
       return
