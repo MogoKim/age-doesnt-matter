@@ -38,7 +38,35 @@ export async function postThread(text: string): Promise<ThreadsPostResult> {
  * @param imageUrl - 공개 접근 가능한 이미지 URL (R2 등)
  */
 export async function postThreadWithImage(text: string, imageUrl: string): Promise<ThreadsPostResult> {
-  return publishContainer(await createContainer({ media_type: 'IMAGE', text, image_url: imageUrl }))
+  const containerId = await createContainer({ media_type: 'IMAGE', text, image_url: imageUrl })
+  await waitForContainerReady(containerId)
+  return publishContainer(containerId)
+}
+
+/**
+ * 컨테이너 상태 폴링 — FINISHED가 될 때까지 최대 60초 대기
+ * Threads도 Instagram과 동일하게 이미지 처리 후 publish해야 함
+ */
+async function waitForContainerReady(containerId: string, maxWaitMs = 60000): Promise<void> {
+  const pollInterval = 3000
+  const start = Date.now()
+
+  while (Date.now() - start < maxWaitMs) {
+    const res = await fetch(
+      `${GRAPH_API}/${containerId}?fields=status,error_message&access_token=${accessToken}`,
+    )
+    if (res.ok) {
+      const json = (await res.json()) as { status?: string; error_message?: string }
+      if (json.status === 'FINISHED') return
+      if (json.status === 'ERROR') {
+        throw new Error(`Threads 컨테이너 처리 실패: ${json.error_message ?? JSON.stringify(json)}`)
+      }
+      console.log(`[Threads] 컨테이너 ${containerId} 상태: ${json.status}, 대기 중...`)
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollInterval))
+  }
+
+  throw new Error(`Threads 컨테이너 ${containerId} 준비 시간 초과 (${maxWaitMs / 1000}초)`)
 }
 
 /** Container 생성 (텍스트/이미지 공통) */
