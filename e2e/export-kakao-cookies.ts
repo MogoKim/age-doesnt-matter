@@ -48,7 +48,11 @@ async function main() {
     // 로그인 상태 확인 — NextAuth 세션 쿠키 존재 여부
     const cookies = await browser.cookies()
     const sessionCookie = cookies.find(
-      (c) => c.name === 'next-auth.session-token' || c.name === '__Secure-next-auth.session-token',
+      (c) =>
+        c.name === 'next-auth.session-token' ||
+        c.name === '__Secure-next-auth.session-token' ||
+        c.name === 'authjs.session-token' ||
+        c.name === '__Secure-authjs.session-token',
     )
 
     if (!sessionCookie) {
@@ -62,7 +66,11 @@ async function main() {
         await page.waitForTimeout(5000)
         const current = await browser.cookies()
         const session = current.find(
-          (c) => c.name === 'next-auth.session-token' || c.name === '__Secure-next-auth.session-token',
+          (c) =>
+            c.name === 'next-auth.session-token' ||
+            c.name === '__Secure-next-auth.session-token' ||
+            c.name === 'authjs.session-token' ||
+            c.name === '__Secure-authjs.session-token',
         )
         if (session) {
           console.log('[ExportKakaoCookies] ✅ 로그인 감지!')
@@ -85,7 +93,7 @@ async function main() {
 
     // 세션 쿠키 확인 출력
     const sessionCookies = storageState.cookies.filter(
-      (c) => c.name.includes('session-token') || c.name.includes('next-auth'),
+      (c) => c.name.includes('session-token') || c.name.includes('next-auth') || c.name.includes('authjs'),
     )
     console.log(`[ExportKakaoCookies] ✅ 총 쿠키: ${storageState.cookies.length}개`)
     console.log(`[ExportKakaoCookies] 세션 관련 쿠키: ${sessionCookies.map((c) => c.name).join(', ')}`)

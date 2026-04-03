@@ -84,7 +84,9 @@ test.describe('모바일 뷰포트', () => {
 
   test('홈 — 모바일 렌더링', async ({ page }) => {
     await page.goto('/')
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    // networkidle은 광고로 타임아웃 → domcontentloaded 사용
+    await page.waitForLoadState('domcontentloaded', { timeout: 15000 })
+    await page.waitForTimeout(1500)
     await expect(page.locator('main').first()).toBeVisible()
     // 가로 스크롤 없어야 함
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth)
@@ -96,13 +98,13 @@ test.describe('모바일 뷰포트', () => {
 
   test('커뮤니티 — 모바일 렌더링', async ({ page }) => {
     await page.goto('/community')
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.waitForLoadState('domcontentloaded', { timeout: 15000 })
     await expect(page.locator('main').first()).toBeVisible()
   })
 
   test('일자리 — 모바일 렌더링', async ({ page }) => {
     await page.goto('/jobs')
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.waitForLoadState('domcontentloaded', { timeout: 15000 })
     await expect(page.locator('main').first()).toBeVisible()
   })
 })
