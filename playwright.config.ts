@@ -12,6 +12,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [['html'], ['json', { outputFile: 'playwright-report/results.json' }]],
+  timeout: 60_000, // 기본 30s → 60s (광고 로딩 페이지 대응)
 
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
