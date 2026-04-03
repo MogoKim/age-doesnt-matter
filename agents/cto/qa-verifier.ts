@@ -171,9 +171,16 @@ class CTOQAVerifier extends BaseAgent {
   }
 
   private async handleCronAudit(): Promise<Omit<AgentResult, 'durationMs' | 'timestamp'>> {
-    const today = new Date()
-    today.setHours(today.getHours() + 9) // KST
-    const kstDate = today.toISOString().slice(0, 10)
+    // KST 기준 날짜 계산 (UTC+9)
+    const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000)
+    const kstHour = kstNow.getUTCHours()
+
+    // 23:45 KST 예약이 GitHub Actions 지연으로 자정 넘어 실행될 경우 전날 데이터 감사
+    // (새벽 6시 이전이면 당일 크론이 아직 안 돌았을 가능성 높음 → 전날 감사)
+    if (kstHour < 6) {
+      kstNow.setTime(kstNow.getTime() - 24 * 60 * 60 * 1000)
+    }
+    const kstDate = kstNow.toISOString().slice(0, 10)
     const startOfDay = new Date(`${kstDate}T00:00:00+09:00`)
     const endOfDay = new Date(`${kstDate}T23:59:59+09:00`)
 
