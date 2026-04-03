@@ -33,7 +33,6 @@ import {
   updateAnswered,
   updateError,
   updateCategory,
-  type JisikRow,
 } from '../community/jisik-sheets-client.js'
 import { disconnect } from '../core/db.js'
 
@@ -309,52 +308,105 @@ async function generateAnswer(
 // ─── 사람처럼 타이핑 ──────────────────────────────────────
 
 async function humanType(page: Page, _selector: string, text: string): Promise<void> {
-  // JS로 직접 포커스 (contenteditable이 off-screen x:-9999 위치에 있어 click() 불가)
-  await page.evaluate(() => {
-    const el = document.querySelector('[contenteditable="true"]') as HTMLElement
-    if (el) el.focus()
-  })
-  await sleep(randomBetween(800, 1500)) // 포커스 후 잠시 대기
+  // SmartEditor 내부 상태 업데이트를 위해 execCommand('insertText') 사용
+  // innerHTML 주입/클립보드는 SmartEditor 직렬화 상태를 업데이트하지 않음
 
-  for (const char of text) {
-    // 3% 확률로 오타 후 수정
-    if (Math.random() < 0.03 && /[가-힣]/.test(char)) {
-      await page.keyboard.type('으', { delay: randomBetween(80, 150) })
-      await sleep(randomBetween(300, 700))
-      await page.keyboard.press('Backspace')
-      await sleep(randomBetween(200, 400))
+  // 1. 메인 문서에서 contenteditable 탐색 (visibility 필터 없이 전체 탐색)
+  const inserted = await page.evaluate((content: string) => {
+    const editors = Array.from(document.querySelectorAll('[contenteditable="true"]'))
+    if (editors.length === 0) return { ok: false, reason: 'no-editor', count: 0 }
+
+    // 가시 에디터 우선, 없으면 오프스크린 포함 전체에서 첫 번째
+    const target = (
+      editors.find((el) => {
+        const r = el.getBoundingClientRect()
+        return r.width > 0 && r.height > 0 && r.left > -1000
+      }) ?? editors[0]
+    ) as HTMLElement
+
+    target.focus()
+    // 기존 내용 전체 선택 후 삭제
+    document.execCommand('selectAll', false, undefined)
+    document.execCommand('delete', false, undefined)
+    // SmartEditor가 인식하는 방식으로 텍스트 삽입
+    const ok = document.execCommand('insertText', false, content)
+    return { ok, reason: ok ? 'execCommand' : 'execCommand-failed', count: editors.length }
+  }, text)
+
+  console.log(`[JisikAnswerer] execCommand 결과: ${JSON.stringify(inserted)}`)
+
+  if (!inserted.ok) {
+    // execCommand 실패 시 frame 내 에디터 시도
+    const frames = page.frames()
+    console.log(`[JisikAnswerer] iframe 탐색 (${frames.length}개)`)
+    let frameInserted = false
+    for (const frame of frames.slice(1)) { // 메인 프레임 제외
+      try {
+        const ok = await frame.evaluate((content: string) => {
+          const el = document.querySelector('[contenteditable="true"]') as HTMLElement | null
+          if (!el) return false
+          el.focus()
+          document.execCommand('selectAll', false, undefined)
+          document.execCommand('delete', false, undefined)
+          return document.execCommand('insertText', false, content)
+        }, text)
+        if (ok) { frameInserted = true; console.log('[JisikAnswerer] iframe 에디터 삽입 성공'); break }
+      } catch { /* 다음 frame */ }
     }
-
-    await page.keyboard.type(char, { delay: randomBetween(80, 150) })
-
-    // 5% 확률로 생각하는 척 멈춤
-    if (Math.random() < 0.05) {
-      await sleep(randomBetween(500, 1500))
-    }
+    if (!frameInserted) throw new Error('EDITOR_INSERT_FAILED: execCommand 실패 + iframe 모두 실패')
   }
 
-  // 타이핑 완료 후 검토하는 척 5~10초 대기
-  await sleep(randomBetween(5000, 10000))
+  // 2. 내용 확인
+  await sleep(randomBetween(1000, 2000))
+  const verifyLen = await page.evaluate(() => {
+    const editors = Array.from(document.querySelectorAll('[contenteditable="true"]'))
+    return Math.max(...editors.map((e) => (e as HTMLElement).innerText?.length ?? 0), 0)
+  })
+  console.log(`[JisikAnswerer] 에디터 내용 확인 (${verifyLen}자)`)
+
+  // 검토하는 척 3~5초 대기
+  await sleep(randomBetween(3000, 5000))
 }
 
 // ─── 지식인 답변 게시 ─────────────────────────────────────
 
 async function postAnswer(page: Page, answer: string): Promise<string> {
-  // 1단계: 항상 "답변하기" 버튼 먼저 클릭해서 에디터 열기
-  const answerBtns = [
-    'button.endAnswerRegisterButton',
+  // 0단계: 다이얼로그 리스너 먼저 등록 (제출 후 "불가한 질문" 팝업 감지용)
+  let dialogMessage = ''
+  page.once('dialog', async (dialog) => {
+    dialogMessage = dialog.message()
+    await dialog.dismiss()
+  })
+
+  // 1단계: "답변하기" 버튼 클릭 (에디터 열기용 — 제출 버튼과 다름)
+  // endAnswerRegisterButton = 제출 버튼 → opener 목록에서 제외
+  let editorOpened = false
+  const openerSelectors = [
     'button._answerWriteButton',
-    'button:has-text("답변하기")',
-    'button:has-text("답변")',
+    '[class*="answerWrite"]',
+    '[class*="btn_answer"]',
   ]
-  for (const btn of answerBtns) {
-    const el = page.locator(btn).first()
-    if (await el.count() > 0) {
-      await el.scrollIntoViewIfNeeded()
-      await el.click()
-      await sleep(randomBetween(2000, 3000))
-      break
-    }
+  for (const sel of openerSelectors) {
+    try {
+      const el = page.locator(sel).first()
+      if (await el.count() > 0) {
+        await el.click({ force: true, timeout: 5000 })
+        editorOpened = true
+        console.log(`[JisikAnswerer] 답변하기 버튼 클릭: ${sel}`)
+        break
+      }
+    } catch { /* 계속 시도 */ }
+  }
+  if (!editorOpened) {
+    // 텍스트 기반 폴백 — "답변하기" 정확히 일치하는 버튼
+    try {
+      await page.click('button:has-text("답변하기")', { force: true, timeout: 8000 })
+      editorOpened = true
+      console.log('[JisikAnswerer] 답변하기 버튼 클릭: text-match')
+    } catch { /* 무시 */ }
+  }
+  if (!editorOpened) {
+    throw new Error('ANSWER_BTN_NOT_FOUND: 답변하기 버튼 미발견')
   }
 
   // 2단계: 에디터 열릴 때까지 잠시 대기 (스마트 에디터 로딩)
@@ -384,9 +436,14 @@ async function postAnswer(page: Page, answer: string): Promise<string> {
 
   if (!submitted) throw new Error('SUBMIT_NOT_FOUND: 제출 버튼 미발견')
 
-  // 제출 후 URL 추출
-  await sleep(randomBetween(3000, 5000))
-  await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }).catch(() => {})
+  // 제출 후 다이얼로그 확인 (채택 완료 질문 = "답변등록이 불가한 질문입니다.")
+  await sleep(randomBetween(2000, 3000))
+  if (dialogMessage && (dialogMessage.includes('불가') || dialogMessage.includes('등록이 불가'))) {
+    throw new Error(`SKIP_ADOPTED: ${dialogMessage}`)
+  }
+
+  await sleep(randomBetween(1000, 2000))
+  await page.waitForURL('**', { waitUntil: 'networkidle', timeout: 15000 }).catch(() => {})
 
   return extractAnswerUrl(page, answer)
 }
@@ -481,9 +538,15 @@ async function main() {
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.error(`[JisikAnswerer] ❌ 실패 (행 ${row.rowIndex}): ${msg}`)
-      await updateError(row.rowIndex, msg)
-      results.failed++
+      if (msg.startsWith('SKIP_')) {
+        // 채택 완료 등 게시 불가 → Skip 처리 (에러 아님)
+        console.log(`[JisikAnswerer] ⏭ Skip (행 ${row.rowIndex}): ${msg}`)
+        await updateStatus(row.rowIndex, 'Skip')
+      } else {
+        console.error(`[JisikAnswerer] ❌ 실패 (행 ${row.rowIndex}): ${msg}`)
+        await updateError(row.rowIndex, msg)
+        results.failed++
+      }
     }
 
     // 다음 행까지 8~15분 랜덤 대기 (마지막 행은 대기 없음)
