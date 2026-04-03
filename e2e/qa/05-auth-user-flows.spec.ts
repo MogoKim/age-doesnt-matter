@@ -76,28 +76,22 @@ test.describe('커뮤니티 인증 기능', () => {
       test.skip()
       return
     }
-    await page.goto('/community', { waitUntil: 'domcontentloaded', timeout: 15000 })
-    await page.waitForTimeout(2000)
+    // 커뮤니티 목록 경유 대신 직접 게시글 URL 추출 후 goto (목록→클릭→로드 시간 절약)
+    await page.goto('/community/stories', { waitUntil: 'commit', timeout: 15000 })
+    await page.waitForTimeout(3000)
 
-    const firstLink = page
-      .locator('a[href*="/community/"]')
-      .filter({ hasNotText: /글쓰기|더보기/ })
-      .first()
-    if (await firstLink.count() === 0) {
+    const firstHref = await page.locator('a[href*="/community/stories/"]').first().getAttribute('href')
+    if (!firstHref) {
       test.skip(true, '게시글 없음')
       return
     }
-    await firstLink.click()
-    await page.waitForLoadState('domcontentloaded', { timeout: 15000 })
+
+    await page.goto(firstHref, { waitUntil: 'domcontentloaded', timeout: 20000 })
     await page.waitForTimeout(1500)
 
-    const likeBtn = page
-      .locator('button')
-      .filter({ hasText: /공감|좋아요|👍/ })
-      .first()
+    const likeBtn = page.locator('button').filter({ hasText: /공감|좋아요|👍/ }).first()
     if (await likeBtn.count() === 0) return
 
-    // 401 에러 없이 클릭 가능해야 함
     let apiError = false
     page.on('response', (res) => {
       if (res.url().includes('/api/') && res.status() === 401) apiError = true
@@ -112,16 +106,14 @@ test.describe('커뮤니티 인증 기능', () => {
       test.skip()
       return
     }
-    await page.goto('/community', { waitUntil: 'domcontentloaded', timeout: 15000 })
-    await page.waitForTimeout(2000)
+    // 직접 게시글 URL로 이동 (목록 경유 제거)
+    await page.goto('/community/stories', { waitUntil: 'commit', timeout: 15000 })
+    await page.waitForTimeout(3000)
 
-    const firstLink = page
-      .locator('a[href*="/community/"]')
-      .filter({ hasNotText: /글쓰기|더보기/ })
-      .first()
-    if (await firstLink.count() === 0) return
-    await firstLink.click()
-    await page.waitForLoadState('domcontentloaded', { timeout: 15000 })
+    const firstHref = await page.locator('a[href*="/community/stories/"]').first().getAttribute('href')
+    if (!firstHref) return
+
+    await page.goto(firstHref, { waitUntil: 'domcontentloaded', timeout: 20000 })
     await page.waitForTimeout(1500)
 
     const commentInput = page.locator(
