@@ -100,7 +100,7 @@ async function main() {
   // 6-8: 홈 HTML 파싱
   checks.push(checkHtml(homeHtml, /<meta[^>]+name=["']google-adsense-account["'][^>]+content=["'][^"']+["']/i, 'AdSense 메타태그', 'google-adsense-account 메타태그 미발견'))
   checks.push(checkHtml(homeHtml, 'adsbygoogle', 'AdSense 광고 슬롯', 'adsbygoogle 클래스 미발견'))
-  checks.push(checkHtml(homeHtml, 'ads-partners.coupang.com/banners', '쿠팡 배너 이미지', 'coupang 배너 URL 미발견'))
+  checks.push(checkHtml(homeHtml, 'link.coupang.com', '쿠팡 배너 이미지', 'coupang 배너 URL 미발견'))
 
   const passed = checks.filter((c) => c.pass).length
   const failed = checks.length - passed
