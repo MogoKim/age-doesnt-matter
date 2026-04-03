@@ -139,11 +139,22 @@ async function checkSession(page: Page): Promise<'OK' | 'EXPIRED'> {
     await page.goto('https://kin.naver.com', { waitUntil: 'domcontentloaded', timeout: 20000 })
     await sleep(randomBetween(2000, 4000))
 
-    const loginBtn = await page.locator(
-      'a[href*="nid.naver.com/nidlogin"], .btn_login, a.link_login'
+    // 로그인된 상태 확인: 내 프로필/닉네임 영역 존재 여부
+    const loggedInEl = await page.locator(
+      '.MyProfile, .gnb_my, [class*="MyProfile"], [class*="gnb_my"], .kin_gnb_my, a[href*="mypage"]'
     ).count()
 
-    if (loginBtn > 0) return 'EXPIRED'
+    if (loggedInEl > 0) return 'OK'
+
+    // 로그인 페이지로 리다이렉트됐는지 확인
+    const currentUrl = page.url()
+    if (currentUrl.includes('nidlogin') || currentUrl.includes('nid.naver.com')) return 'EXPIRED'
+
+    // 추가 확인: 답변하기 버튼 접근 가능 여부 (로그인 필요)
+    // 페이지에 로그인 유도 팝업이 전체를 덮고 있으면 만료
+    const loginPopup = await page.locator('.login_area > a[href*="login"], #login-layer').count()
+    if (loginPopup > 0) return 'EXPIRED'
+
     return 'OK'
   } catch {
     return 'EXPIRED'
@@ -198,7 +209,7 @@ async function scrapeQuestion(page: Page, url: string): Promise<QuestionData> {
   }
 
   // 제목 추출
-  const titleSelectors = ['.question-title', '.c-heading--question', 'h3.title', '.question_area h3']
+  const titleSelectors = ['.endTitleSection', '.question-title', '.c-heading--question', 'h3.title', '.question_area h3']
   let title = ''
   for (const sel of titleSelectors) {
     const el = page.locator(sel).first()
@@ -210,6 +221,7 @@ async function scrapeQuestion(page: Page, url: string): Promise<QuestionData> {
 
   // 본문 추출
   const contentSelectors = [
+    '.questionDetail',
     '.question-content .c-heading-content',
     '.question_area .c-content-body',
     '.question_detail',
@@ -296,11 +308,12 @@ async function generateAnswer(
 
 // ─── 사람처럼 타이핑 ──────────────────────────────────────
 
-async function humanType(page: Page, selector: string, text: string): Promise<void> {
-  const editor = page.locator(selector).first()
-  if (await editor.count() === 0) throw new Error(`에디터 셀렉터 미발견: ${selector}`)
-
-  await editor.click()
+async function humanType(page: Page, _selector: string, text: string): Promise<void> {
+  // JS로 직접 포커스 (contenteditable이 off-screen x:-9999 위치에 있어 click() 불가)
+  await page.evaluate(() => {
+    const el = document.querySelector('[contenteditable="true"]') as HTMLElement
+    if (el) el.focus()
+  })
   await sleep(randomBetween(800, 1500)) // 포커스 후 잠시 대기
 
   for (const char of text) {
@@ -327,57 +340,36 @@ async function humanType(page: Page, selector: string, text: string): Promise<vo
 // ─── 지식인 답변 게시 ─────────────────────────────────────
 
 async function postAnswer(page: Page, answer: string): Promise<string> {
-  // 답변 에디터 셀렉터 — 폴백 순서로 시도
-  const editorSelectors = [
-    '.se-content[contenteditable="true"]',   // 스마트 에디터 3
-    '[contenteditable="true"].se-content',
-    '#editorTypeWrite [contenteditable="true"]',
-    '.kin-editor [contenteditable="true"]',
-    '[contenteditable="true"]',              // 최종 폴백
+  // 1단계: 항상 "답변하기" 버튼 먼저 클릭해서 에디터 열기
+  const answerBtns = [
+    'button.endAnswerRegisterButton',
+    'button._answerWriteButton',
+    'button:has-text("답변하기")',
+    'button:has-text("답변")',
   ]
-
-  let editorSel = ''
-  for (const sel of editorSelectors) {
-    const el = page.locator(sel).first()
+  for (const btn of answerBtns) {
+    const el = page.locator(btn).first()
     if (await el.count() > 0) {
-      editorSel = sel
+      await el.scrollIntoViewIfNeeded()
+      await el.click()
+      await sleep(randomBetween(2000, 3000))
       break
     }
   }
 
-  if (!editorSel) {
-    // 답변 버튼 먼저 클릭해야 에디터가 열리는 경우
-    const answerBtns = ['.c-button--answer', '.btn_answer_write', 'button:has-text("답변")']
-    for (const btn of answerBtns) {
-      const el = page.locator(btn).first()
-      if (await el.count() > 0) {
-        await el.click()
-        await sleep(randomBetween(1500, 2500))
-        break
-      }
-    }
-    // 버튼 클릭 후 재시도
-    for (const sel of editorSelectors) {
-      const el = page.locator(sel).first()
-      if (await el.count() > 0) {
-        editorSel = sel
-        break
-      }
-    }
-  }
+  // 2단계: 에디터 열릴 때까지 잠시 대기 (스마트 에디터 로딩)
+  await sleep(randomBetween(2000, 3000))
 
-  if (!editorSel) throw new Error('EDITOR_NOT_FOUND: 답변창 셀렉터 미발견 — DOM 변경 가능성')
-
-  // 사람처럼 타이핑
-  await humanType(page, editorSel, answer)
+  // 3단계: JS focus + 타이핑 (contenteditable이 x:-9999 off-screen이므로 click() 불가)
+  await humanType(page, '[contenteditable="true"]', answer)
 
   // 제출 버튼 찾기
   const submitSelectors = [
+    'button.endAnswerButton._answerRegisterButton',
+    'button._answerRegisterButton',
+    'button:has-text("답변등록")',
     'button.c-button--primary:has-text("답변 등록")',
-    'button.c-button--primary:has-text("등록")',
-    'button[type="submit"]:has-text("등록")',
     '.btn_register',
-    '.c-button--answer-submit',
   ]
 
   let submitted = false

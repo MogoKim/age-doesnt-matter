@@ -176,6 +176,17 @@ export async function initSheet(): Promise<void> {
   const sheets = getSheets()
   const spreadsheetId = getSheetId()
 
+  // 0. 탭 존재 여부 확인 후 없으면 생성
+  const metaCheck = await sheets.spreadsheets.get({ spreadsheetId })
+  const tabExists = metaCheck.data.sheets?.some((s) => s.properties?.title === TAB_NAME)
+  if (!tabExists) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: { requests: [{ addSheet: { properties: { title: TAB_NAME } } }] },
+    })
+    console.log(`[JisikSheets] "${TAB_NAME}" 탭 생성 완료`)
+  }
+
   // 1. 헤더 값 작성
   await sheets.spreadsheets.values.update({
     spreadsheetId,
