@@ -74,7 +74,9 @@ test('홈 페이지 — 최신글 또는 트렌딩 콘텐츠 렌더링', async (
 
 test('홈 페이지 — 광고 슬롯 HTML 마커 존재', async ({ page }) => {
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  // networkidle은 광고 로딩으로 타임아웃 → domcontentloaded 사용
+  await page.waitForLoadState('domcontentloaded', { timeout: 15000 })
+  await page.waitForTimeout(2000)
   // AdSense 또는 쿠팡 광고 마커 최소 1개
   const adSlots = await page.locator('.adsbygoogle, [class*="coupang"], [data-ad]').count()
   // 광고는 조건부 렌더링일 수 있어 soft check
