@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       siteName: '우리 나이가 어때서',
       locale: 'ko_KR',
-      ...(post.thumbnailUrl ? { images: [{ url: post.thumbnailUrl, width: 1200, height: 630 }] } : {}),
+      images: [{ url: post.thumbnailUrl || `${BASE_URL}/logo.png`, width: 1200, height: 630 }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -199,6 +199,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         likeCount={post.likeCount}
         isLiked={post.isLiked}
         isScrapped={post.isScrapped}
+        isLoggedIn={!!userId}
       />
 
       {/* 댓글 */}

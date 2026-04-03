@@ -20,8 +20,9 @@ test.describe('배너 관리', () => {
     await page.goto('/admin/banners')
     await page.waitForLoadState('networkidle', { timeout: 15000 })
 
-    const table = page.locator('table, [role="table"]').first()
-    const emptyMsg = page.getByText(/배너 없|등록된 배너/, { exact: false })
+    const table = page.locator('table, [class*="table"], [class*="list"]').first()
+    // "등록된 히어로 배너가 없습니다." / "등록된 광고가 없습니다." 패턴 대응
+    const emptyMsg = page.getByText(/없습니다|배너.*없|등록된.*배너|없음/, { exact: false })
     const hasContent = (await table.count()) > 0 || (await emptyMsg.count()) > 0
     expect(hasContent, '배너 페이지 콘텐츠 없음').toBe(true)
   })

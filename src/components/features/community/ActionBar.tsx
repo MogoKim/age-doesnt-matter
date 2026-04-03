@@ -8,6 +8,7 @@ import { shareToKakao, copyShareLink } from '@/lib/kakao-share'
 import { gtmLike, gtmShare } from '@/lib/gtm'
 import { IconHeart, IconBookmark, IconShare, IconFlag, IconKakao, IconCopy } from '@/components/icons'
 import ReportModal from './ReportModal'
+import LoginPromptModal from '@/components/features/auth/LoginPromptModal'
 
 interface ActionBarProps {
   postId: string
@@ -16,9 +17,10 @@ interface ActionBarProps {
   likeCount: number
   isLiked: boolean
   isScrapped: boolean
+  isLoggedIn?: boolean
 }
 
-export default function ActionBar({ postId, title, description, likeCount, isLiked: initialLiked, isScrapped: initialScrapped }: ActionBarProps) {
+export default function ActionBar({ postId, title, description, likeCount, isLiked: initialLiked, isScrapped: initialScrapped, isLoggedIn = false }: ActionBarProps) {
   const { toast } = useToast()
   const [isLiked, setIsLiked] = useState(initialLiked)
   const [likes, setLikes] = useState(likeCount)
@@ -26,8 +28,13 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
   const [isPending, startTransition] = useTransition()
   const [showReport, setShowReport] = useState(false)
   const [heartAnimating, setHeartAnimating] = useState(false)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   function handleLike() {
+    if (!isLoggedIn) {
+      setShowLoginPrompt(true)
+      return
+    }
     if (isPending) return
     const willLike = !isLiked
     setIsLiked(willLike)
@@ -49,6 +56,10 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
   }
 
   function handleScrap() {
+    if (!isLoggedIn) {
+      setShowLoginPrompt(true)
+      return
+    }
     if (isPending) return
     const wasScrapped = isScrapped
     setIsScrapped(!isScrapped)
@@ -148,6 +159,13 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
           targetId={postId}
           targetType="post"
           onClose={() => setShowReport(false)}
+        />
+      )}
+
+      {showLoginPrompt && (
+        <LoginPromptModal
+          message="공감하려면 로그인이 필요해요"
+          onClose={() => setShowLoginPrompt(false)}
         />
       )}
     </>

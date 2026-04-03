@@ -55,16 +55,17 @@ for (const p of PUBLIC_PAGES) {
 
 test('홈 페이지 — 네비게이션 메뉴 존재', async ({ page }) => {
   await page.goto('/')
-  await page.waitForLoadState('networkidle', { timeout: 15000 })
-  // nav, header 중 하나 이상이 DOM에 존재하면 OK (데스크탑/모바일 분기)
+  // 광고 로딩으로 networkidle 불가 → domcontentloaded 사용
+  await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
+  await page.waitForTimeout(1500)
   const navCount = await page.locator('nav, header, [role="navigation"]').count()
   expect(navCount, '네비게이션 요소 없음').toBeGreaterThan(0)
 })
 
 test('홈 페이지 — 최신글 또는 트렌딩 콘텐츠 렌더링', async ({ page }) => {
   await page.goto('/')
-  await page.waitForLoadState('networkidle', { timeout: 15000 })
-  // 게시글 카드 또는 목록 아이템
+  await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
+  await page.waitForTimeout(1500)
   const hasContent = await page
     .locator('article, [class*="card"], [class*="post"], [class*="item"]')
     .count()

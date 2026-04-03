@@ -108,8 +108,10 @@ test.describe('커뮤니티 글 상세', () => {
 
 test.describe('글쓰기 버튼', () => {
   test('비로그인 — FAB 글쓰기 클릭 → 로그인 유도', async ({ page }) => {
-    await page.goto('/community')
-    await page.waitForLoadState('networkidle')
+    // FAB은 /community/stories 또는 /community/humor 에서만 렌더링됨
+    await page.goto('/community/stories')
+    await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
+    await page.waitForTimeout(1500)
 
     const fab = page
       .locator('button, a')

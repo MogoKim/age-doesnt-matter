@@ -183,6 +183,7 @@ export default async function JobDetailPage({ params }: PageProps) {
         likeCount={job.likeCount}
         isLiked={job.isLiked}
         isScrapped={job.isScrapped}
+        isLoggedIn={!!userId}
       />
 
       {/* 쿠팡 관련 상품 */}

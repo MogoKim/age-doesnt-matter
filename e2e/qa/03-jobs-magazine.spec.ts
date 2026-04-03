@@ -38,10 +38,12 @@ test.describe('일자리', () => {
 
   test('첫 번째 일자리 상세 진입', async ({ page }) => {
     await page.goto('/jobs')
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
+    await page.waitForTimeout(2000)
 
+    // 실제 일자리 상세 링크: /jobs/[id] 형식 (id는 cuid 형식)
     const firstLink = page
-      .locator('a[href*="/jobs/"]')
+      .locator('a[href^="/jobs/"]')
       .filter({ hasNotText: /더보기|전체/ })
       .first()
 
@@ -50,18 +52,26 @@ test.describe('일자리', () => {
       return
     }
 
+    const href = await firstLink.getAttribute('href')
+    // href가 /jobs/ 만이면 목록으로 가므로 skip
+    if (!href || href === '/jobs/' || href === '/jobs') {
+      test.skip(true, '유효한 일자리 링크 없음')
+      return
+    }
+
     await firstLink.click()
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.waitForURL('**/jobs/**', { timeout: 15000 })
     expect(page.url()).toContain('/jobs/')
     await expect(page.locator('main, article').first()).toBeVisible()
   })
 
   test('일자리 상세 — 급여/근무지/고용형태 정보 렌더링', async ({ page }) => {
     await page.goto('/jobs')
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.waitForLoadState('domcontentloaded', { timeout: 10000 })
+    await page.waitForTimeout(2000)
 
     const firstLink = page
-      .locator('a[href*="/jobs/"]')
+      .locator('a[href^="/jobs/"]')
       .filter({ hasNotText: /더보기|전체/ })
       .first()
     if (await firstLink.count() === 0) {
@@ -69,8 +79,14 @@ test.describe('일자리', () => {
       return
     }
 
+    const href = await firstLink.getAttribute('href')
+    if (!href || href === '/jobs/' || href === '/jobs') {
+      test.skip(true, '유효한 일자리 링크 없음')
+      return
+    }
+
     await firstLink.click()
-    await page.waitForLoadState('networkidle', { timeout: 15000 })
+    await page.waitForURL('**/jobs/**', { timeout: 15000 })
 
     // 핵심 정보 중 최소 1개 이상 렌더링
     const hasInfo = await page.getByText(/급여|월급|시급|근무지|지역|고용형태|채용/, { exact: false }).count()

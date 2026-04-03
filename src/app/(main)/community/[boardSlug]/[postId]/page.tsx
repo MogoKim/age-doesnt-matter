@@ -128,6 +128,7 @@ export default async function PostDetailPage({ params }: PageProps) {
         likeCount={post.likeCount}
         isLiked={post.isLiked}
         isScrapped={post.isScrapped}
+        isLoggedIn={!!userId}
       />
 
       {/* 쿠팡 관련 상품 */}
