@@ -748,12 +748,14 @@ model CafePost {
   isUsable     Boolean  @default(false) // 콘텐츠 참고용으로 적합한지
 
   // AI 심리 분석 결과 (psych-analyzer.ts)
-  emotionTags    String[] // ["ANXIOUS", "LONELY"] — docs/desire_taxonomy.md 참고
-  desireCategory String?  // "HEALTH" | "FAMILY" | "MONEY" | "RETIRE" | "JOB" | "RELATION" | "HOBBY" | "MEANING"
-  desireType     String?  // "big_desire" | "need" | "want" | "demerit"
-  psychInsight   String?  // 1줄 심리 요약 (예: "갱년기 증상 불안, 정보 갈증")
-  urgencyLevel   Int?     // 1(일상관심) ~ 5(즉각위기)
-  aiAnalyzed     Boolean  @default(false) // psych-analyzer 처리 완료 여부
+  emotionTags      String[] // ["ANXIOUS", "LONELY"] — docs/desire_taxonomy.md 참고
+  desireCategory   String?  // "HEALTH"|"FAMILY"|"MONEY"|"RETIRE"|"JOB"|"RELATION"|"HOBBY"|"MEANING"|"DIGNITY"|"LEGACY"|"CARE"|"FREEDOM"|"ENTERTAIN"
+  desireType       String?  // "big_desire" | "need" | "want" | "demerit"
+  psychInsight     String?  // 1줄 심리 요약 (예: "갱년기 증상 불안, 정보 갈증")
+  urgencyLevel     Int?     // 1(일상관심) ~ 5(즉각위기)
+  communitySignal  String?  // "question"|"complaint"|"confession"|"recommendation"|"celebration"
+  ageSignal        String?  // "50s"|"60s"|"70s+"|"unknown"
+  aiAnalyzed       Boolean  @default(false) // psych-analyzer 처리 완료 여부
 
   // 댓글 내용 (상위 5개, DEEP 모드에서만 수집)
   topComments    Json?    // [{author: string, content: string, likeCount: number}]
@@ -800,6 +802,39 @@ model CafeTrend {
   createdAt     DateTime @default(now())
 
   @@unique([date, period])
+  @@index([date(sort: Desc)])
+}
+
+/// 매일 아침 크롤링 후 생성되는 에이전트 공통 인텔리전스 브리프
+model DailyBrief {
+  id              String   @id @default(cuid())
+  date            DateTime @unique @db.Date  // 해당 날짜
+  mode            String   // "deep" | "quick_update"
+
+  // 욕망 인텔리전스
+  desireRanking   Json     // [{category, percent, label}] — 내림차순 정렬
+  dominantDesire  String?  // 최상위 욕망 코드 (25% 이상일 때만)
+  dominantEmotion String?  // 최상위 감정 코드
+
+  // 긴급 토픽
+  urgentTopics    Json     // [{topic, psychInsight, urgencyAvg, count}]
+
+  // 페르소나 쿼터 배분 (daily-brief.ts에서 계산)
+  personaQuotas   Json     // Record<personaId, {desireAlignment, quotaMultiplier, topicHint, shouldBoost}>
+
+  // 에이전트 공통 지시사항
+  contentDirective Json    // {primaryTheme, toneGuide, avoidTopics[]}
+
+  // 엔터 활성화 여부
+  entertainPct    Float    @default(0)  // ENTERTAIN 태그 글 비율 (%)
+  entertainActive Boolean  @default(false) // 10% 이상이면 true
+
+  // 점심 퀵 업데이트 (12:30 이후 갱신)
+  midDayPatch     Json?    // {updatedAt, shiftNotes, adjustedPersonas[]}
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
   @@index([date(sort: Desc)])
 }
 

@@ -325,3 +325,46 @@ notification:
     alerts: ["#알림-긴급", "#알림-시스템", "#알림-kpi"]
     logs: ["#로그-일자리", "#로그-콘텐츠", "#로그-마케팅", "#로그-비용"]
     growth: ["#실험-보드"]
+
+# ──────────────────────────────────────────
+# 10. 인텔리전스 정책 (Intelligence Harness)
+# ──────────────────────────────────────────
+intelligence_policy:
+  # 모든 에이전트는 오늘의 욕망 지도를 읽어야 함
+  daily_brief_mandatory: true
+  brief_source: "agents/core/today-brief.json"
+  db_model: "DailyBrief"
+
+  # 오늘 브리프 없으면 어제 브리프로 폴백
+  fallback_to_previous: true
+  fallback_alert_channel: "#알림-시스템"
+
+  # 브리프 직접 인용 금지 — 자연스러운 분위기 반영만
+  content_override_prohibited: true
+  reason: "브리프를 직접 인용하면 부자연스러움. 분위기로 흡수해서 행동."
+
+  # 지배적 욕망 판정 임계값
+  dominant_desire_threshold_pct: 25
+  flat_distribution_behavior: "quotaMultiplier 조정 없이 기본 스케줄 유지"
+
+  # 엔터 페르소나 활성화 규칙
+  entertain_activation:
+    active_threshold_pct: 10    # ENTERTAIN >= 10% → EN1-EN5 글쓰기 + 댓글
+    passive_threshold_pct: 5    # ENTERTAIN >= 5% → 댓글만
+    dormant_below_pct: 5        # ENTERTAIN < 5% → 완전 비활성
+
+  # midDayPatch 제한
+  mid_day_patch:
+    schedule: "12:30 KST (quick crawl 완료 후)"
+    quota_delta_cap: 0.2         # quotaMultiplier 최대 ±0.2 조정
+    min_change_trigger_pct: 5    # 5% 이상 변화 시에만 패치 생성
+    dominant_desire_immutable: true  # 아침에 결정된 dominantDesire 변경 불가
+
+  # 파이프라인 순서
+  pipeline_order:
+    - "crawler.ts (08:30 DEEP)"
+    - "external-crawler.ts (82cook)"
+    - "psych-analyzer.ts (Haiku 배치)"
+    - "trend-analyzer.ts (집계)"
+    - "daily-brief.ts (욕망지도 → today-brief.json)"
+    - "모든 에이전트 09:00 이후 loadTodayBrief() 호출"

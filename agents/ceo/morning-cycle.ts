@@ -1,6 +1,7 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
 import { notifyAdmin, notifySlack, sendSlackMessage } from '../core/notifier.js'
+import { loadTodayBrief } from '../core/intelligence.js'
 import type { AgentResult } from '../core/types.js'
 
 /**
@@ -38,7 +39,20 @@ class CEOMorningCycle extends BaseAgent {
       ? ((todayUsers - yesterdayUsers) / yesterdayUsers * 100).toFixed(1)
       : 'N/A'
 
-    // 2. AI 분석
+    // 2. 욕망 지도 로드
+    const brief = await loadTodayBrief({ fallbackToPrevious: true })
+    const desireMapSection = brief
+      ? `
+[오늘의 커뮤니티 욕망 지도]
+- 지배적 욕망: ${brief.dominantDesire ?? '분포 고름'}
+- 주된 감정: ${brief.dominantEmotion ?? '복합'}
+- 욕망 상위 3개: ${brief.desireRanking.slice(0, 3).map(d => `${d.label}(${d.percent.toFixed(0)}%)`).join(' / ')}
+- 긴급 토픽: ${brief.urgentTopics.slice(0, 2).map(t => t.topic).join(' / ') || '없음'}
+- 콘텐츠 방향: ${brief.contentDirective.primaryTheme}${brief.entertainActive ? `\n- 엔터 활성: ENTERTAIN ${brief.entertainPct.toFixed(0)}%` : ''}${brief.date !== new Date().toISOString().slice(0, 10) ? '\n  ⚠️ 어제 데이터 기반 (오늘 크롤링 미완료)' : ''}
+`
+      : '\n[욕망 지도] 오늘 데이터 없음 (크롤링 대기 중)\n'
+
+    // 3. AI 분석
     const kpiSummary = `
 [일일 KPI 현황]
 - DAU(어제 로그인): ${todayUsers}명 (전일 대비 ${dauChange}%)
@@ -49,10 +63,10 @@ class CEOMorningCycle extends BaseAgent {
 `
 
     const analysis = await this.chat(`
-아래 KPI를 분석하고, 문제가 있다면 어떤 에이전트에게 어떤 액션을 배정할지 JSON으로 응답하세요.
+아래 KPI와 오늘의 커뮤니티 욕망 지도를 함께 분석하고, 문제가 있다면 어떤 에이전트에게 어떤 액션을 배정할지 JSON으로 응답하세요.
 문제가 없다면 빈 배열로 응답하세요.
 
-${kpiSummary}
+${kpiSummary}${desireMapSection}
 
 응답 형식:
 {
@@ -104,6 +118,13 @@ ${kpiSummary}
       },
       { type: 'section', text: { type: 'mrkdwn', text: `*상태:* ${statusEmoji} ${parsed.status}\n*요약:* ${parsed.summary}` } },
       { type: 'section', text: { type: 'mrkdwn', text: `*감지된 이슈:*\n${issueText}` } },
+      ...(brief ? [{
+        type: 'section' as const,
+        text: {
+          type: 'mrkdwn' as const,
+          text: `*오늘 커뮤니티 욕망:* ${brief.dominantDesire ?? '분포 고름'} | *주된 감정:* ${brief.dominantEmotion ?? '복합'}\n${brief.desireRanking.slice(0, 3).map(d => `${d.label} ${d.percent.toFixed(0)}%`).join(' · ')}${brief.entertainActive ? ` · ENTERTAIN ${brief.entertainPct.toFixed(0)}%` : ''}`,
+        },
+      }] : []),
       { type: 'divider' },
       { type: 'context', elements: [{ type: 'mrkdwn', text: `전체 게시글: ${totalPosts}건 | 자동 생성 by CEO 에이전트` }] },
     ])

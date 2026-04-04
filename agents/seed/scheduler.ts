@@ -1,5 +1,6 @@
 import { prisma, disconnect } from '../core/db.js'
 import { generatePost, generateComment, generateReply, getBotUser } from './generator.js'
+import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
 
 /**
  * 시드 콘텐츠 스케줄러 (50명 — A~T + U~Z + AA~AI + AJ~AX)
@@ -447,6 +448,87 @@ async function runActivity(activity: Activity): Promise<void> {
   }
 }
 
+// 엔터 페르소나가 활성화될 시간대 (수다 많은 오전/오후)
+const ENTERTAIN_HOURS = ['10', '13', '15', '21']
+
+/**
+ * buildDailySchedule — 오늘의 욕망 지도를 반영한 동적 스케줄 반환
+ *
+ * BASE_SCHEDULE(SCHEDULE)을 기반으로:
+ * 1. 쿼터 배율이 높은 페르소나 → 댓글/좋아요 count 증가
+ * 2. 쿼터 배율이 낮은 페르소나(< 0.9) → 글쓰기 스킵 (댓글/좋아요만 유지)
+ * 3. entertainActive=true → EN1-EN5 해당 시간대에 추가
+ * 4. midDayPatch → ±0.2 이내 미세 조정
+ */
+async function buildDailySchedule(hour: string): Promise<Activity[]> {
+  const base = SCHEDULE[hour] ?? []
+
+  // 브리프 없으면 BASE_SCHEDULE 그대로 반환 (폴백)
+  const brief = await loadTodayBrief({ fallbackToPrevious: true })
+  if (!brief) return base
+
+  const adjusted: Activity[] = []
+
+  for (const activity of base) {
+    const quota = getPersonaQuota(brief, activity.personaId)
+
+    // 글쓰기: quotaMultiplier < 0.9 이면 스킵 (댓글/좋아요는 유지)
+    if (activity.type === 'post' && quota.quotaMultiplier < 0.9) {
+      console.log(`[Seed] ${activity.personaId} 글쓰기 스킵 (quota ×${quota.quotaMultiplier.toFixed(2)})`)
+      continue
+    }
+
+    // count가 있는 활동: quotaMultiplier 반영
+    if (activity.count !== undefined && quota.quotaMultiplier !== 1.0) {
+      const newCount = Math.max(1, Math.round(activity.count * quota.quotaMultiplier))
+      adjusted.push({ ...activity, count: newCount })
+    } else {
+      adjusted.push(activity)
+    }
+
+    // shouldBoost=true인 페르소나: 댓글 한 번 더 (post 타입 제외)
+    if (activity.type !== 'post' && quota.shouldBoost && activity.count === undefined) {
+      adjusted.push({ ...activity, count: 1 })
+    }
+  }
+
+  // 엔터 페르소나 추가 (활성화된 경우)
+  if (brief.entertainActive && ENTERTAIN_HOURS.includes(hour)) {
+    const entertainPersonas = ['EN1', 'EN2', 'EN3', 'EN4', 'EN5']
+    for (const personaId of entertainPersonas) {
+      const quota = getPersonaQuota(brief, personaId)
+      if (quota.quotaMultiplier <= 0) continue
+
+      if (quota.quotaMultiplier >= 1.1) {
+        // 글쓰기 + 댓글
+        adjusted.push({ personaId, type: 'post', board: 'STORY' })
+        adjusted.push({ personaId, type: 'comment', board: 'STORY', count: 1 })
+      } else {
+        // 댓글만 (quotaMultiplier 0.5 = 댓글 모드)
+        adjusted.push({ personaId, type: 'comment', board: 'STORY', count: 1 })
+      }
+    }
+  }
+
+  // midDayPatch 조정 (점심 이후 시간대)
+  const patchHours = ['13', '14', '15']
+  if (brief.midDayPatch && patchHours.includes(hour)) {
+    const patch = brief.midDayPatch
+    for (const { personaId, delta } of patch.adjustedPersonas) {
+      // delta는 ±0.2 이내. 해당 페르소나의 count를 조정
+      const idx = adjusted.findIndex(a => a.personaId === personaId && a.count !== undefined)
+      if (idx !== -1) {
+        const act = adjusted[idx]
+        const base_ = act.count ?? 1
+        const newCount = Math.max(1, Math.round(base_ * (1 + delta)))
+        adjusted[idx] = { ...act, count: newCount }
+      }
+    }
+  }
+
+  return adjusted
+}
+
 /**
  * 집중 좋아요 라운드 — HOT 문턱(10) 근처 글에 좋아요 집중 투입
  * 하루 최대 2-3개 글만 타겟 → 자연스러움 유지
@@ -508,7 +590,7 @@ async function main() {
   const now = new Date()
   const kstHour = (now.getUTCHours() + 9) % 24
   const hour = kstHour.toString().padStart(2, '0')
-  const activities = SCHEDULE[hour]
+  const activities = await buildDailySchedule(hour)
 
   if (!activities || activities.length === 0) {
     console.log(`[Seed] ${hour}시 — 예정된 활동 없음`)

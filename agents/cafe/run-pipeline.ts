@@ -86,21 +86,47 @@ async function run(script: string, label: string) {
   }
 }
 
+async function runWithArgs(script: string, args: string[], label: string) {
+  console.log(`\n${'='.repeat(50)}`)
+  console.log(`[Pipeline] ${label} 시작`)
+  console.log('='.repeat(50))
+
+  try {
+    execFileSync('npx', ['tsx', resolve(__dirname, script), ...args], {
+      env: { ...process.env },
+      timeout: 300000, // 5분
+      stdio: 'inherit',
+    })
+    console.log(`[Pipeline] ${label} ✅ 완료`)
+  } catch (err: unknown) {
+    const execErr = err as { status?: number; message?: string }
+    const errorMsg = execErr.message ?? String(err)
+    console.error(`[Pipeline] ${label} ❌ 실패:`, errorMsg)
+    await notifySlack({
+      level: 'critical',
+      agent: 'CAFE_CRAWLER',
+      title: `카페 파이프라인 실패: ${label}`,
+      body: `단계: ${label}\n스크립트: ${script}\n오류: ${errorMsg.slice(0, 300)}`,
+    })
+  }
+}
+
 async function main() {
   const startTime = Date.now()
   console.log(`[Pipeline] 카페 콘텐츠 파이프라인 시작 — ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`)
   console.log(`[Pipeline] 모드: ${step}`)
 
-  // ── DEEP 모드 (08:30 KST) — 전체 크롤 + 심리 분석 + 풀 트렌드 ──
+  // ── DEEP 모드 (08:30 KST) — 전체 크롤 + 심리 분석 + 풀 트렌드 + 인텔리전스 브리프 ──
   if (step === 'deep') {
     await run('crawler.ts', '1단계: 딥다이브 크롤링 (댓글 포함)')
     await run('external-crawler.ts', '2단계: 외부 크롤링 (82cook)')
     await run('psych-analyzer.ts', '3단계: AI 심리 분석')
     await run('trend-analyzer.ts', '4단계: 풀 트렌드 생성 (욕망/감정 집계 포함)')
-    await run('content-curator.ts', '5단계: 콘텐츠 큐레이션')
+    await run('daily-brief.ts', '5단계: 욕망 지도 → DailyIntelligenceBrief 생성')
+    await run('content-curator.ts', '6단계: 콘텐츠 큐레이션')
   }
 
-  // ── QUICK 모드 (12:30 KST) — 빠른 크롤 + 경량 트렌드 업데이트 ──
+  // ── QUICK 모드 (12:30 KST) — 빠른 크롤 + 경량 트렌드 업데이트 + midDayPatch ──
   else if (step === 'quick') {
     // crawler.ts에 --quick 플래그 전달 (빠른 크롤: HIGH 게시판 1페이지만)
     process.env.CRAWL_MODE = 'quick'
@@ -110,6 +136,7 @@ async function main() {
     // trend-analyzer는 quickUpdate만 갱신
     process.env.TREND_MODE = 'quick'
     await run('trend-analyzer.ts', '3단계: 퀵 트렌드 업데이트')
+    await runWithArgs('daily-brief.ts', ['--patch'], '4단계: 점심 midDayPatch 업데이트')
   }
 
   // ── ALL 모드 — deep + curate (수동 실행용, 기본값) ──
@@ -118,7 +145,8 @@ async function main() {
     await run('external-crawler.ts', '2단계: 외부 크롤링 (82cook)')
     await run('psych-analyzer.ts', '3단계: AI 심리 분석')
     await run('trend-analyzer.ts', '4단계: 트렌드 분석')
-    await run('content-curator.ts', '5단계: 콘텐츠 큐레이션')
+    await run('daily-brief.ts', '5단계: DailyIntelligenceBrief 생성')
+    await run('content-curator.ts', '6단계: 콘텐츠 큐레이션')
   }
 
   // ── 단계별 실행 ──
