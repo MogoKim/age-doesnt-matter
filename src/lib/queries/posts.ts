@@ -204,7 +204,7 @@ export async function getLatestCommunityPosts(limit = 5): Promise<PostSummary[]>
   const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
-      boardType: { in: ['STORY', 'HUMOR', 'WEEKLY'] },
+      boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] },
     },
     select: postSelect,
     orderBy: { createdAt: 'desc' },
@@ -276,7 +276,7 @@ export async function getHotPosts(
   const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
-      boardType: { in: ['STORY', 'HUMOR'] as BoardType[] },
+      boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] as BoardType[] },
       OR: [
         { promotionLevel: 'HALL_OF_FAME' as PromotionLevel },
         { promotionLevel: 'HOT' as PromotionLevel, createdAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) } },
@@ -304,7 +304,7 @@ export async function getHallOfFamePosts(
   const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
-      boardType: { in: ['STORY', 'HUMOR'] as BoardType[] },
+      boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] as BoardType[] },
       promotionLevel: 'HALL_OF_FAME',
       ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
     },
@@ -564,7 +564,7 @@ export async function getRecentActivities(limit = 8): Promise<RecentActivity[]> 
       where: {
         createdAt: { gte: since },
         status: 'PUBLISHED',
-        boardType: { in: ['STORY', 'HUMOR', 'WEEKLY'] },
+        boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] },
       },
       select: {
         id: true,

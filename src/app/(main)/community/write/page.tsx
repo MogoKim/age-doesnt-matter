@@ -15,7 +15,7 @@ interface PageProps {
 }
 
 // 글쓰기 가능한 보드 타입
-const WRITABLE_BOARD_TYPES = ['STORY', 'HUMOR']
+const WRITABLE_BOARD_TYPES = ['STORY', 'HUMOR', 'LIFE2']
 
 export default async function WritePage({ searchParams }: PageProps) {
   const session = await auth()

@@ -50,6 +50,7 @@ export const getAllBoardConfigs = unstable_cache(
       MAGAZINE: 'magazine',
       JOB: 'jobs',
       WEEKLY: 'weekly',
+      LIFE2: 'life2',
     }
 
     return configs.map((c) => ({

@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 
 const BASE_URL = 'https://age-doesnt-matter.com'
 
-const BOARD_SLUGS = ['stories', 'humor', 'magazine', 'jobs', 'weekly']
+const BOARD_SLUGS = ['stories', 'humor', 'life2', 'magazine', 'jobs']
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 정적 페이지
@@ -41,6 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     MAGAZINE: 'magazine',
     JOB: 'jobs',
     WEEKLY: 'weekly',
+    LIFE2: 'life2',
   }
 
   const postPages: MetadataRoute.Sitemap = posts.map((post) => {

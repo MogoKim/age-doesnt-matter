@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'title, content, boardType, authorId 필수' }, { status: 400 })
     }
 
-    if (!['STORY', 'HUMOR', 'MAGAZINE'].includes(boardType)) {
-      return NextResponse.json({ error: 'boardType은 STORY, HUMOR, MAGAZINE 중 하나' }, { status: 400 })
+    if (!['STORY', 'HUMOR', 'MAGAZINE', 'LIFE2'].includes(boardType)) {
+      return NextResponse.json({ error: 'boardType은 STORY, HUMOR, MAGAZINE, LIFE2 중 하나' }, { status: 400 })
     }
 
     const post = await prisma.post.create({

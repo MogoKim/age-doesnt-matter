@@ -48,11 +48,12 @@ enum AgreementType {
 }
 
 enum BoardType {
-  JOB       // 내 일 찾기
-  STORY     // 사는이야기
+  JOB       // 일자리
+  STORY     // 사는 이야기
   HUMOR     // 활력충전소
   MAGAZINE  // 매거진
-  WEEKLY    // 수다방
+  WEEKLY    // 수다방 (숨김 — LIFE2로 대체)
+  LIFE2     // 2막 준비
 }
 
 enum PostStatus {

@@ -116,7 +116,7 @@ export async function searchAll(
 
     tab === 'all' || tab === 'posts'
       ? prisma.post.findMany({
-          where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR'] } },
+          where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] } },
           select: postSelect,
           orderBy: { createdAt: 'desc' },
           take: tab === 'posts' ? 20 : limit,
@@ -139,7 +139,7 @@ export async function searchAll(
       ? prisma.post.count({ where: { ...textFilter, boardType: 'JOB' } })
       : 0,
     tab === 'all' || tab === 'posts'
-      ? prisma.post.count({ where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR'] } } })
+      ? prisma.post.count({ where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] } } })
       : 0,
     tab === 'all' || tab === 'magazine'
       ? prisma.post.count({ where: { ...textFilter, boardType: 'MAGAZINE' } })

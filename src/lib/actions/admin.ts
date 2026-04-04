@@ -34,6 +34,7 @@ async function requireAdmin() {
 const BOARD_PATHS: Record<string, string> = {
   STORY: '/community/stories',
   HUMOR: '/community/humor',
+  LIFE2: '/community/life2',
   MAGAZINE: '/magazine',
   JOB: '/jobs',
 }

@@ -4,7 +4,7 @@ import { handleApiError } from '@/lib/api-utils'
 import { checkApiRateLimit } from '@/lib/api-rate-limit'
 import type { BoardType } from '@/generated/prisma/client'
 
-const VALID_BOARD_TYPES: BoardType[] = ['JOB', 'STORY', 'HUMOR', 'MAGAZINE', 'WEEKLY']
+const VALID_BOARD_TYPES: BoardType[] = ['JOB', 'STORY', 'HUMOR', 'MAGAZINE', 'WEEKLY', 'LIFE2']
 
 export async function GET(request: NextRequest) {
   const rateLimited = checkApiRateLimit(request, 'posts', { max: 60 })

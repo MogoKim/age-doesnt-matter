@@ -15,7 +15,7 @@ interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
 }
 
-const WRITABLE_BOARD_TYPES = ['STORY', 'HUMOR']
+const WRITABLE_BOARD_TYPES = ['STORY', 'HUMOR', 'LIFE2']
 
 export default async function EditPage({ params }: PageProps) {
   const session = await auth()

@@ -59,7 +59,7 @@ export const GRADE_ORDER: Record<Grade, number> = {
 
 // ── 게시판 ──
 
-export type BoardType = 'JOB' | 'STORY' | 'HUMOR' | 'MAGAZINE' | 'WEEKLY'
+export type BoardType = 'JOB' | 'STORY' | 'HUMOR' | 'MAGAZINE' | 'WEEKLY' | 'LIFE2'
 export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'HIDDEN' | 'DELETED'
 export type PromotionLevel = 'NORMAL' | 'HOT' | 'HALL_OF_FAME'
 
@@ -70,6 +70,7 @@ export const BOARD_SLUG_MAP: Record<string, BoardType> = {
   magazine: 'MAGAZINE',
   jobs: 'JOB',
   weekly: 'WEEKLY',
+  life2: 'LIFE2',
 }
 
 export const BOARD_TYPE_TO_SLUG: Record<BoardType, string> = {
@@ -78,6 +79,7 @@ export const BOARD_TYPE_TO_SLUG: Record<BoardType, string> = {
   MAGAZINE: 'magazine',
   JOB: 'jobs',
   WEEKLY: 'weekly',
+  LIFE2: 'life2',
 }
 
 // ── 리소스 타입 ──
