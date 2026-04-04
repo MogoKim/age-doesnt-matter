@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 자율 운영 AI 회사 블루프린트</title>
+<title>우나어 — 전략 프레임워크 v5.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0f0f14;--card:#1a1a24;--card2:#22222e;--accent:#FF6F61;--accent2:#7c5cfc;--accent3:#00d4aa;--text:#e8e8ef;--muted:#8888a0;--border:#2a2a3a;--green:#00d4aa;--yellow:#ffd166;--red:#ef4444}
@@ -16,28 +16,36 @@ h4{font-size:14px;color:var(--accent3);margin:14px 0 8px}
 p,.desc{color:var(--muted);font-size:14px;margin-bottom:12px}
 .hero{text-align:center;padding:48px 20px;background:linear-gradient(180deg,#1a1028 0%,var(--bg) 100%);border-bottom:1px solid var(--border);margin-bottom:24px}
 .hero .tag{display:inline-block;background:var(--accent);color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;margin-bottom:12px;font-weight:600}
+.hero .sub{font-size:13px;color:var(--muted);margin-top:8px}
 .hero p{max-width:700px;margin:12px auto 0;font-size:15px;color:var(--muted)}
 .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
 .card.highlight{border-color:var(--accent);box-shadow:0 0 20px rgba(255,111,97,.08)}
+.card.highlight2{border-color:var(--accent2);box-shadow:0 0 20px rgba(124,92,252,.08)}
 .card.green{border-left:3px solid var(--green)}
 .card.yellow{border-left:3px solid var(--yellow)}
 .card.red{border-left:3px solid var(--red)}
+.card.purple{border-left:3px solid var(--accent2)}
 table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
 th{background:var(--card2);color:var(--accent);text-align:left;padding:10px 12px;font-weight:600;border-bottom:1px solid var(--border)}
 td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tr:hover td{background:rgba(124,92,252,.04)}
 .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;margin-right:4px}
-.badge.auto{background:rgba(0,212,170,.15);color:var(--green)}
-.badge.manual{background:rgba(255,209,102,.15);color:var(--yellow)}
-.badge.api{background:rgba(124,92,252,.15);color:var(--accent2)}
+.badge.confirmed{background:rgba(0,212,170,.15);color:var(--green)}
+.badge.data{background:rgba(124,92,252,.15);color:var(--accent2)}
+.badge.hidden{background:rgba(255,100,100,.15);color:var(--red)}
+.badge.new{background:rgba(255,111,97,.15);color:var(--accent)}
 .flow{background:var(--card2);border-radius:8px;padding:16px;font-family:'SF Mono',monospace;font-size:12px;color:var(--muted);white-space:pre-wrap;margin:10px 0;line-height:1.8;overflow-x:auto}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:768px){.grid{grid-template-columns:1fr}}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:768px){.grid,.grid3{grid-template-columns:1fr}}
 .num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:var(--accent2);color:#fff;border-radius:50%;font-size:11px;font-weight:700;margin-right:6px;flex-shrink:0}
-.phase{display:flex;align-items:flex-start;margin-bottom:10px}
-.phase-content{flex:1}
-.phase-content strong{color:var(--text);font-size:14px}
-.phase-content span{color:var(--muted);font-size:12px;display:block}
+.rank{display:flex;align-items:flex-start;margin-bottom:12px;gap:12px}
+.rank-num{min-width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:14px;font-weight:700;background:var(--accent);color:#fff;flex-shrink:0}
+.rank-num.r2{background:var(--accent2)}
+.rank-num.r3{background:var(--accent3);color:#000}
+.rank-num.r4{background:#555;color:var(--text)}
+.rank-body strong{color:var(--text);font-size:14px}
+.rank-body span{color:var(--muted);font-size:12px;display:block}
 .sep{height:1px;background:var(--border);margin:32px 0}
 ul{padding-left:20px;margin:6px 0}
 li{font-size:13px;margin-bottom:4px;color:var(--muted)}
@@ -45,460 +53,595 @@ li strong{color:var(--text)}
 .alert{padding:12px 16px;border-radius:8px;font-size:13px;margin:10px 0}
 .alert.warn{background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2);color:var(--yellow)}
 .alert.info{background:rgba(124,92,252,.08);border:1px solid rgba(124,92,252,.2);color:var(--accent2)}
+.alert.success{background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);color:var(--green)}
 .toc{list-style:none;padding:0;columns:2}
 .toc li{margin-bottom:4px;font-size:13px}
 .toc a{color:var(--accent2);text-decoration:none}
 .toc a:hover{text-decoration:underline}
+.big-quote{font-size:20px;color:var(--text);font-weight:700;line-height:1.5;padding:16px 0;border-left:3px solid var(--accent);padding-left:16px;margin:16px 0}
+.two-axis{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:12px 0}
+.axis-box{padding:20px;text-align:center}
+.axis-box:first-child{background:rgba(255,111,97,.08);border-right:1px solid var(--border)}
+.axis-box:last-child{background:rgba(0,212,170,.08)}
+.axis-box .axis-icon{font-size:28px;margin-bottom:8px}
+.axis-box .axis-title{font-size:15px;font-weight:700;color:var(--text)}
+.axis-box .axis-sub{font-size:12px;color:var(--muted);margin-top:4px}
+@media(max-width:600px){.two-axis{grid-template-columns:1fr}.axis-box:first-child{border-right:none;border-bottom:1px solid var(--border)}}
+.board-pill{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-right:6px;margin-bottom:4px}
+.pill-story{background:rgba(255,111,97,.15);color:var(--accent)}
+.pill-humor{background:rgba(124,92,252,.15);color:var(--accent2)}
+.pill-life2{background:rgba(0,212,170,.15);color:var(--green)}
+.pill-job{background:rgba(255,209,102,.15);color:var(--yellow)}
+.pill-magazine{background:rgba(100,160,255,.15);color:#64a0ff}
+.pill-weekly{background:rgba(100,100,100,.15);color:#777;text-decoration:line-through}
+.version-tag{font-size:11px;color:var(--muted);margin-left:8px;font-weight:400}
 </style>
 </head>
 <body>
 
 <div class="hero">
-<div class="tag">CLAUDE CODE PROMPT</div>
-<h1>우나어 — 자율 운영 AI 회사 블루프린트</h1>
-<p><code>New_Claude_agenotmatter</code> 프로젝트를 <strong>사람 개입 최소화로 자율 운영되는 AI 회사</strong>로 만들어라.<br>창업자는 Slack에서 KPI 지시와 Gate 승인만 한다.</p>
+  <div class="tag">우나어 전략 프레임워크 v5.0 — 2026-04-04 확정</div>
+  <h1>우리 나이가 어때서<br>전략 프레임워크</h1>
+  <p>Sessions 1~3 창업자 결정 사항 전체 반영<br>constitution.yaml v5.0 + 카테고리 재설계 + 포지셔닝 확정</p>
+  <div class="sub">domain: age-doesnt-matter.com · 검토일: 2026-04-04</div>
 </div>
 
 <div class="container">
 
 <!-- TOC -->
 <div class="card">
-<h3>📑 목차</h3>
-<ol class="toc">
-<li><a href="#goal">최종 목표</a></li>
-<li><a href="#current">현재 상태</a></li>
-<li><a href="#problem">문제점 (GAP)</a></li>
-<li><a href="#crawler">크롤러 방법론 & 전략</a></li>
-<li><a href="#intelligence">인텔리전스 루프</a></li>
-<li><a href="#content">콘텐츠 생산 루프</a></li>
-<li><a href="#marketing">외부 마케팅 (채널별 전략)</a></li>
-<li><a href="#experiment">데이터 분석 & 실험 루프</a></li>
-<li><a href="#slack">Slack 채널 재설계</a></li>
-<li><a href="#tech">기술 구현 방향</a></li>
-<li><a href="#phases">실행 순서</a></li>
-<li><a href="#founder">창업자 할 일</a></li>
-</ol>
+  <h3>📑 목차</h3>
+  <ol class="toc">
+    <li><a href="#s1">§1 욕망 지도 (데이터 기반)</a></li>
+    <li><a href="#s2">§2 타겟 & 페르소나</a></li>
+    <li><a href="#s3">§3 미션 · 비전 · 슬로건</a></li>
+    <li><a href="#s4">§4 카테고리 재설계</a></li>
+    <li><a href="#s5">§5 브랜드 보이스 & 톤</a></li>
+    <li><a href="#s6">§6 콘텐츠 정책</a></li>
+    <li><a href="#s7">§7 홈 섹션 구성</a></li>
+    <li><a href="#s8">§8 에이전트 시스템</a></li>
+    <li><a href="#s9">§9 광고 정책</a></li>
+    <li><a href="#s10">§10 KPI & 성장 지표</a></li>
+    <li><a href="#s11">§11 포지셔닝 & 경쟁 전략</a></li>
+    <li><a href="#s12">§12 SNS 플랫폼 전략</a></li>
+    <li><a href="#s13">§13 실행 로드맵</a></li>
+  </ol>
 </div>
 
-<!-- 1. GOAL -->
-<h2 id="goal">🎯 1. 최종 목표</h2>
+<!-- §1 욕망 지도 -->
+<h2 id="s1">§1 욕망 지도 — 데이터 기반 확정 <span class="version-tag">D1 확정</span></h2>
+
+<div class="alert success">크롤 데이터 분석 완료 (2026-04-04). 아래 전략 우선순위는 글 수 비율이 아닌 5 Whys 심층 욕망 분석 결과입니다.</div>
+
 <div class="card highlight">
-<p style="color:var(--text);font-size:15px;margin:0">C-level 에이전트들이 <strong>관찰→분석→의사결정→실행→검증</strong> 사이클을 스스로 돌린다. 창업자는 KPI 방향 지시 + Gate 승인만.</p>
+  <h3 style="margin-top:0">전략 욕망 우선순위 (창업자 확정)</h3>
+  <div class="rank">
+    <div class="rank-num">1</div>
+    <div class="rank-body">
+      <strong>RELATION — 연결·소속·외로움</strong>
+      <span>크롤 3% 글 수지만 체면 뒤에 숨은 가장 깊은 욕망 — 이게 우나어를 찾는 진짜 이유</span>
+      <span style="color:var(--accent);font-size:12px">→ 플랫폼 존재 이유, 감성 축</span>
+    </div>
+  </div>
+  <div class="rank">
+    <div class="rank-num r2">2</div>
+    <div class="rank-body">
+      <strong>RETIRE — 인생의 의미·다음 챕터</strong>
+      <span>퇴사·주거·인생2막 반응 폭발. LIFE2 게시판 신설의 근거.</span>
+      <span style="color:var(--accent2);font-size:12px">→ 머무르는 이유, 실용 축</span>
+    </div>
+  </div>
+  <div class="rank">
+    <div class="rank-num r3">3</div>
+    <div class="rank-body">
+      <strong>MONEY — 연금·노후자금·재무 설계</strong>
+      <span>재무 불안, 검색 의도 명확. 19% 글 수. LIFE2 카테고리 내 '재테크·연금' 서브.</span>
+      <span style="color:var(--accent3);font-size:12px">→ 실용 정보 니즈</span>
+    </div>
+  </div>
+  <div class="rank">
+    <div class="rank-num r4">4</div>
+    <div class="rank-body">
+      <strong>HEALTH — 건강 불안</strong>
+      <span>글 수 27% 1위지만 정보 소비형. 네이버 검색으로 해결 가능. 매거진 + 사는이야기로 커버.</span>
+    </div>
+  </div>
 </div>
 
-<!-- 2. CURRENT STATE -->
-<h2 id="current">📋 2. 현재 상태 (구축 완료)</h2>
-<div class="card green">
-<table>
-<tr><th>영역</th><th>상태</th></tr>
-<tr><td>C-Level 에이전트 7명</td><td>CEO, CTO, CMO, CPO, CDO, CFO, COO — GitHub Actions cron 실행 중</td></tr>
-<tr><td>SEED 페르소나 10명</td><td>사는이야기/활력충전소 게시글·댓글·좋아요 활동</td></tr>
-<tr><td>카페 크롤러</td><td>네이버 카페 → CafePost + CafeTrend DB</td></tr>
-<tr><td>SNS 파이프라인</td><td>Threads, X, IG, FB, Band 자동 게시 + 메트릭 + A/B</td></tr>
-<tr><td>카드뉴스 생성</td><td>AI → HTML → R2 → 멀티플랫폼 배포</td></tr>
-<tr><td>KPI 프레임워크</td><td>CDO 수집 → CEO 브리핑 → 성장 루프 → Gate 1/2</td></tr>
-<tr><td>Slack 13개 채널</td><td>창업자, 회의실, 알림, 로그</td></tr>
-</table>
-</div>
-
-<!-- 3. PROBLEM -->
-<h2 id="problem">🔴 3. 문제점 — 지금 안 되는 것</h2>
-<div class="card red">
-<ul>
-<li><strong>에이전트 간 실시간 협업 부재</strong> — 각자 cron으로 독립 실행될 뿐, 서로 소통/반응 구조 없음</li>
-<li><strong>크롤링 인사이트 → 콘텐츠 단절</strong> — 카페 트렌드가 SEED 글쓰기에 자동 반영 안 됨</li>
-<li><strong>크롤러 품질 문제</strong> — 가입인사 같은 무의미한 글까지 수집, 필터링/전략 부재</li>
-<li><strong>데이터 → 자동 가설 수립 부재</strong> — CDO가 수집해도 병목→가설→실험 자동화 안 됨</li>
-<li><strong>채널별 전담 에이전트 없음</strong> — CMO 산하 채널별 세분화 필요</li>
-<li><strong>실험 주기 자동화 부재</strong> — 주 1~2회 사이클이 수동 개입 없이 안 돌아감</li>
-<li><strong>Slack 승인 누락 위험</strong> — 한 채널에 로그+승인 혼재하여 중요 건 놓침</li>
-</ul>
-</div>
-
-<!-- 4. CRAWLER -->
-<h2 id="crawler">🕷️ 4. 크롤러 방법론 & 전략</h2>
-
-<h3>4.1 크롤링 대상 선정 원칙</h3>
 <div class="card">
-<table>
-<tr><th>플랫폼</th><th>타겟 커뮤니티</th><th>수집 대상 게시판</th><th>제외 대상</th></tr>
-<tr><td><strong>네이버 카페</strong></td><td>시니어 여성 카페 3~5곳<br>(인생2막, 5060동호회 등)</td><td>자유게시판, 건강, 여행, 요리, 고민상담</td><td>❌ 가입인사, 중고거래, 광고, 공지</td></tr>
-<tr><td><strong>82cook</strong></td><td>82cook.com 자유게시판</td><td>살림, 수다, 건강, 시사/잡담</td><td>❌ 장터, 쿠폰, 단순 링크 공유</td></tr>
-<tr><td><strong>네이버 밴드</strong></td><td>5060 여성 공개 밴드</td><td>일상 공유, 건강정보, 취미</td><td>❌ 홍보, 광고성 글</td></tr>
-<tr><td><strong>네이버 블로그</strong></td><td>키워드 검색 기반</td><td>"50대 일상", "60대 건강", "퇴직 후" 등</td><td>❌ 협찬/광고 블로그</td></tr>
-</table>
+  <h4>크롤 데이터 원시 순위 (2026-04-04 오전 deep 크롤, N=100+ 글)</h4>
+  <table>
+    <tr><th>순위</th><th>욕망</th><th>글 비율</th><th>전략 반영</th></tr>
+    <tr><td>1</td><td>HEALTH (건강/증상/병원)</td><td>27%</td><td>매거진 + 사는이야기 건강 카테고리</td></tr>
+    <tr><td>2</td><td>MONEY (돈/재테크/연금)</td><td>19%</td><td>LIFE2 재테크·연금 서브카테고리</td></tr>
+    <tr><td>3</td><td>MEANING (삶의 의미/철학)</td><td>11%</td><td>사는이야기 커버</td></tr>
+    <tr><td>4</td><td>JOB (일자리/자격증)</td><td>10%</td><td>내 일 찾기 전용 게시판</td></tr>
+    <tr><td>5</td><td>HOBBY (취미/여가)</td><td>9%</td><td>활력충전소 커버</td></tr>
+    <tr><td>6</td><td>RETIRE (은퇴/노후/인생2막)</td><td>7%</td><td>LIFE2 전용 게시판 신설</td></tr>
+    <tr><td>7+</td><td>RELATION, FAMILY, DIGNITY, CARE...</td><td>각 2~3%</td><td>체면 장벽으로 저평가 → 전략 #1 포지션</td></tr>
+  </table>
 </div>
 
-<h3>4.2 품질 필터링 전략</h3>
+<!-- §2 타겟 -->
+<h2 id="s2">§2 타겟 고객 & 페르소나</h2>
+
 <div class="card">
-<div class="flow">수집 파이프라인:
-  Raw 크롤링 → 1차 필터 → 2차 AI 분석 → DB 저장
-
-[1차 필터] (규칙 기반, 비용 $0)
-  ├ 글자 수: 최소 50자 이상 (한 줄 인사 제거)
-  ├ 제외 키워드: "가입인사", "중고", "택배", "쿠폰", "광고"
-  ├ 제외 게시판: 가입인사, 장터, 공지, 이벤트
-  ├ 중복 체크: 제목+내용 해시 → 기존 CafePost와 비교
-  └ 이미지만 글: 텍스트 50자 미만 + 이미지 있으면 "짤/밈" 분류
-
-[2차 AI 분석] (Claude Haiku, 건당 ~$0.001)
-  ├ 감정 분류: 외로움/불안/기쁨/분노/공감/자랑/기타
-  ├ 주제 태깅: 건강/요리/여행/가족/일자리/재테크/취미/고민
-  ├ 페르소나 매칭: 이 글을 우나어에서 쓸 SEED 페르소나 추천
-  ├ 심리 인사이트: "50대 여성의 핵심 니즈" 1줄 요약
-  └ 품질 점수: 1~5점 (3점 이상만 CafeTrend 반영)</div>
+  <table>
+    <tr><th>구분</th><th>비율</th><th>특징</th></tr>
+    <tr><td><strong>Primary</strong><br>50~60대 여성</td><td>70~80%</td><td>자녀 독립, 갱년기, 사회적 고립, 재취업 고민</td></tr>
+    <tr><td><strong>Secondary</strong><br>50~60대 남성</td><td>20~30%</td><td>은퇴/퇴직, 재정 불안, 건강 관리</td></tr>
+  </table>
 </div>
 
-<h3>4.3 심리 분석 프레임워크</h3>
-<div class="card">
-<table>
-<tr><th>분석 축</th><th>수집 내용</th><th>활용처</th></tr>
-<tr><td><strong>감정 트렌드</strong></td><td>일별 감정 분포 (외로움 30%, 불안 20%…)</td><td>SEED 글 톤 결정, 매거진 주제</td></tr>
-<tr><td><strong>관심사 트렌드</strong></td><td>일별 주제 랭킹 (건강 1위, 요리 2위…)</td><td>콘텐츠 편성, SEO 키워드</td></tr>
-<tr><td><strong>언어 패턴</strong></td><td>자주 쓰는 말투, 이모티콘, 존칭 패턴</td><td>SEED 페르소나 말투 교정</td></tr>
-<tr><td><strong>통증 포인트</strong></td><td>"~가 걱정이다", "~가 불편하다" 패턴</td><td>실험 가설 소스, 기능 제안</td></tr>
-<tr><td><strong>바이럴 요소</strong></td><td>좋아요/댓글 많은 글의 공통 패턴</td><td>활력충전소 큐레이션 기준</td></tr>
-</table>
-</div>
-
-<!-- 5. INTELLIGENCE -->
-<h2 id="intelligence">🧠 5. 인텔리전스 루프 (매일)</h2>
-<div class="card">
-<div class="flow">카페/82cook/밴드 크롤러 (09/13/19시)
-  → 1차 필터 → 2차 AI 분석 → CafePost + CafeTrend 저장
-  → "오늘의 5060 심리 리포트" 생성
-     ↓
-CMO trend-analyzer: 심리 리포트 + 외부 트렌드 종합
-  → "오늘의 콘텐츠 방향" 결정
-     ↓
-CEO morning-cycle: 전 에이전트에게 방향 공유
-  → COO: SEED 페르소나 글 주제에 반영
-  → CMO: SNS 메시지 톤/주제에 반영
-  → CPO: UX 개선점 발굴 소스로 활용</div>
-</div>
-
-<!-- 6. CONTENT -->
-<h2 id="content">✍️ 6. 콘텐츠 생산 루프 (매일)</h2>
+<h3>검증된 5대 페르소나</h3>
 <div class="grid">
-<div class="card">
-<h4>📖 사는이야기</h4>
-<ul>
-<li><strong>목적</strong>: 진짜 50/60대가 쓴 것 같은 글 → 실유저가 "나도 쓸 수 있겠다" 느끼게</li>
-<li><strong>소스</strong>: 크롤러 인사이트 기반 주제·톤·키워드</li>
-<li><strong>실행</strong>: SEED 페르소나 10명이 돌아가며 작성</li>
-<li><strong>댓글</strong>: 다른 페르소나가 공감 댓글, 질문, 응원</li>
-</ul>
-</div>
-<div class="card">
-<h4>⚡ 활력충전소</h4>
-<ul>
-<li><strong>목적</strong>: 재밌는 글로 체류시간↑, PV↑</li>
-<li><strong>소스</strong>: 크롤러에서 좋아요/댓글 많은 콘텐츠 큐레이션</li>
-<li><strong>유형</strong>: 짧은 유머, 공감짤, 건강팁, 레시피, 퀴즈</li>
-<li><strong>기준</strong>: 원본 품질점수 4점 이상만</li>
-</ul>
-</div>
-<div class="card">
-<h4>📰 매거진 (SEO)</h4>
-<ul>
-<li><strong>목적</strong>: 검색 유입용 롱폼 콘텐츠</li>
-<li><strong>주제 선정</strong>: C-level 회의에서 CafeTrend + SEO 키워드 교차</li>
-<li><strong>발행</strong>: 주 2~3회, JSON-LD + OG 메타 완비</li>
-<li><strong>CPS 연동</strong>: 쿠팡 링크 매칭</li>
-</ul>
-</div>
-<div class="card">
-<h4>📋 일자리 (COO)</h4>
-<ul>
-<li><strong>기존 유지</strong>: 50plus.or.kr 크롤링 파이프라인</li>
-<li><strong>보강</strong>: 크롤러 인사이트에서 "일자리 걱정" 키워드 감지 시 관련 일자리 추천 글 자동 생성</li>
-</ul>
-</div>
+  <div class="card purple">
+    <h4>P1 영숙씨 — 느슨한 연결 <span class="badge confirmed">핵심</span></h4>
+    <p>58세 여성, 자녀 독립 후 혼자 살며 외로움. 체면 때문에 직접 표현 어려움.</p>
+    <p><strong>니즈:</strong> 평가 없이 편하게 수다할 수 있는 공간</p>
+    <p><strong>주 게시판:</strong> 사는 이야기, 활력충전소</p>
+  </div>
+  <div class="card">
+    <h4>P2 정희씨 — 건강 불안</h4>
+    <p>63세 여성, 갱년기/만성질환. 건강 정보 과잉 속 혼란.</p>
+    <p><strong>니즈:</strong> 신뢰할 수 있는 건강 정보 + 같은 경험자 공감</p>
+    <p><strong>주 게시판:</strong> 매거진, 사는 이야기</p>
+  </div>
+  <div class="card">
+    <h4>P3 미영씨 — 유머 소비</h4>
+    <p>55세 여성, 무기력함을 웃음으로 해소.</p>
+    <p><strong>니즈:</strong> 웃음·재미, 짧고 빠른 콘텐츠</p>
+    <p><strong>주 게시판:</strong> 활력충전소, 베스트</p>
+  </div>
+  <div class="card">
+    <h4>P4 순자씨 — 생계</h4>
+    <p>61세 여성, 경제적 어려움으로 일자리 필요.</p>
+    <p><strong>니즈:</strong> 바로 지원 가능한 현실적 일자리</p>
+    <p><strong>주 게시판:</strong> 내 일 찾기</p>
+  </div>
+  <div class="card">
+    <h4>P5 현주씨 — 간병 <span class="badge new">NEW</span></h4>
+    <p>57세 여성, 부모/배우자 간병 중.</p>
+    <p><strong>니즈:</strong> 간병 실용 정보 + 공감 + 잠시 쉴 공간</p>
+    <p><strong>주 게시판:</strong> 매거진, 사는 이야기</p>
+  </div>
 </div>
 
-<!-- 7. MARKETING -->
-<h2 id="marketing">📣 7. 외부 마케팅 — 채널별 세부 전략</h2>
+<!-- §3 미션·비전·슬로건 -->
+<h2 id="s3">§3 미션 · 비전 · 슬로건 <span class="version-tag">D2·D3·D4 확정</span></h2>
 
-<div class="alert info">모든 마케팅 활동은 <strong>실험</strong>이다. 가설→실행→데이터→판단. API 자동 게시 가능한 채널과 수동 초안 채널을 구분한다.</div>
-
-<h3>7.1 API 자동 게시 채널 (5개)</h3>
-
-<div class="card">
-<h4>① Instagram <span class="badge api">Graph API 캐러셀</span></h4>
-<table>
-<tr><th>항목</th><th>전략</th></tr>
-<tr><td>콘텐츠 유형</td><td>카드뉴스 캐러셀 3~7장 (1080×1350px)</td></tr>
-<tr><td>톤</td><td>따뜻 + 정보형. "우리 또래 알아두면 좋은~"</td></tr>
-<tr><td>해시태그</td><td>#50대일상 #60대건강 #인생2막 #우리또래 + 트렌드 태그 3개</td></tr>
-<tr><td>게시 빈도</td><td>1일 1회 (11:00)</td></tr>
-<tr><td>실험 변수</td><td>카드뉴스 유형(뉴스 vs 정보 vs 커뮤니티), 첫 장 카피, CTA 문구</td></tr>
-<tr><td>성공 지표</td><td>도달(reach), 저장(save), 프로필 클릭 → 사이트 유입</td></tr>
-</table>
+<div class="card highlight">
+  <div class="big-quote">"우리, 서로가 있잖아"</div>
+  <p style="color:var(--muted);font-size:13px;margin:0">슬로건 — "나만 그런 게 아니었어" → "우리, 서로가 있잖아" 로 전환. 수동적 발견에서 능동적 연결로.</p>
 </div>
 
-<div class="card">
-<h4>② Facebook <span class="badge api">Graph API 멀티포토</span></h4>
-<table>
-<tr><th>항목</th><th>전략</th></tr>
-<tr><td>콘텐츠 유형</td><td>카드뉴스 + 공감형 텍스트 게시 (혼합)</td></tr>
-<tr><td>톤</td><td>공감 중심. "맞아요, 저도 그랬어요~" 스타일</td></tr>
-<tr><td>게시 빈도</td><td>1일 1~2회 (09:00 텍스트, 11:00 카드뉴스)</td></tr>
-<tr><td>실험 변수</td><td>텍스트 길이(짧은 vs 긴), 이미지 유무, 질문형 vs 서술형</td></tr>
-<tr><td>성공 지표</td><td>공유 수, 댓글 수, 링크 클릭률</td></tr>
-<tr><td>차별화</td><td>FB 그룹에 공유 유도 CTA ("이 글 공감되시면 친구에게 공유해주세요")</td></tr>
-</table>
-</div>
-
-<div class="card">
-<h4>③ Threads <span class="badge api">Threads API</span></h4>
-<table>
-<tr><th>항목</th><th>전략</th></tr>
-<tr><td>콘텐츠 유형</td><td>짧은 공감 텍스트 (300자 이내) + 단일 이미지</td></tr>
-<tr><td>톤</td><td>가볍고 유쾌. 일상 토크 느낌</td></tr>
-<tr><td>게시 빈도</td><td>1일 2~3회 (09:00, 15:00, 19:00)</td></tr>
-<tr><td>실험 변수</td><td>게시 시간, 이모지 사용량, 질문형 vs 독백형</td></tr>
-<tr><td>성공 지표</td><td>좋아요, 리포스트, 회원 가입 전환 추적</td></tr>
-<tr><td>차별화</td><td>크롤러에서 발견한 "오늘의 5060 공감 키워드"를 제목에 활용</td></tr>
-</table>
-</div>
-
-<div class="card">
-<h4>④ X (Twitter) <span class="badge api">X API v2</span></h4>
-<table>
-<tr><th>항목</th><th>전략</th></tr>
-<tr><td>콘텐츠 유형</td><td>정보형 요약 트윗 + 사이트 링크</td></tr>
-<tr><td>톤</td><td>간결, 정보 중심. "50대 건강 체크리스트 5가지 →"</td></tr>
-<tr><td>게시 빈도</td><td>1일 1~2회</td></tr>
-<tr><td>실험 변수</td><td>트렌딩 해시태그 연결 vs 독립 게시, 이미지 유무</td></tr>
-<tr><td>성공 지표</td><td>임프레션, 링크 클릭, 팔로워 증가</td></tr>
-</table>
-</div>
-
-<div class="card">
-<h4>⑤ 네이버 밴드 <span class="badge api">Band Open API</span></h4>
-<table>
-<tr><th>항목</th><th>전략</th></tr>
-<tr><td>콘텐츠 유형</td><td>건강/운동/요리 정보 + 이미지</td></tr>
-<tr><td>톤</td><td>친근, 동네 언니/형 느낌</td></tr>
-<tr><td>게시 빈도</td><td>1일 1회</td></tr>
-<tr><td>차별화</td><td>밴드는 40~60대 비율 최고. "나이 걱정 없는 일자리" 연결</td></tr>
-</table>
-</div>
-
-<h3>7.2 수동 게시 채널 — 초안 생성 (4개)</h3>
-<div class="alert warn">⚠️ 이 채널들은 API 자동 게시가 불가능하거나, 자연스러운 침투를 위해 수동 게시가 필요합니다. Slack <strong>#승인-마케팅-초안</strong> 채널로 초안이 전달됩니다.</div>
-
-<div class="card">
-<h4>⑥ 카카오 오픈채팅방</h4>
-<table>
-<tr><th>항목</th><th>전략</th></tr>
-<tr><td>타겟 방</td><td>5060 여성 대화방, 건강/요리/여행 주제방</td></tr>
-<tr><td>전략</td><td>대화에 자연스럽게 참여 → 맥락에 맞을 때 "이런 사이트 있더라~" 식 공유</td></tr>
-<tr><td>초안 형태</td><td>대화 시나리오 스크립트 (진입문→대화→자연스러운 언급→링크)</td></tr>
-<tr><td>빈도</td><td>주 2~3회</td></tr>
-<tr><td>금지</td><td>❌ 하드셀, 스팸성 링크 투척, 같은 방에 반복</td></tr>
-</table>
-</div>
-
-<div class="card">
-<h4>⑦ 네이버 카페 바이럴</h4>
-<table>
-<tr><th>항목</th><th>전략</th></tr>
-<tr><td>타겟 카페</td><td>5060 대표 카페 3~5곳 (크롤링 대상과 동일)</td></tr>
-<tr><td>전략</td><td>자유게시판에 자연스러운 경험담/정보글 → 댓글에서 "여기 참고하세요" 식 링크</td></tr>
-<tr><td>초안 형태</td><td>본문 (500~800자 경험담) + 댓글용 답글 (2~3개)</td></tr>
-<tr><td>빈도</td><td>주 2회 (카페별 1회씩 분산)</td></tr>
-<tr><td>금지</td><td>❌ 광고 느낌, 동일 문구 반복, 가입 직후 홍보글</td></tr>
-</table>
-</div>
-
-<div class="card">
-<h4>⑧ 커뮤니티 바이럴 (82cook, 뽐뿌 등)</h4>
-<table>
-<tr><th>항목</th><th>전략</th></tr>
-<tr><td>타겟</td><td>82cook 자유게시판, 뽐뿌 자유게시판, 보배드림 유머</td></tr>
-<tr><td>전략</td><td>커뮤니티 톤에 맞는 글 → 자연스러운 사이트 언급</td></tr>
-<tr><td>82cook 특화</td><td>여성 비율 높으므로 공감형 글 (시어머니, 건강, 자녀) + 잡담 속 언급</td></tr>
-<tr><td>빈도</td><td>주 1~2회</td></tr>
-<tr><td>금지</td><td>❌ 노골적 홍보, 계정 정지 리스크 행위</td></tr>
-</table>
-</div>
-
-<div class="card">
-<h4>⑨ 네이버 지식iN</h4>
-<table>
-<tr><th>항목</th><th>전략</th></tr>
-<tr><td>타겟 질문</td><td>"50대 일자리", "60대 취미", "퇴직 후 뭐하지" 등</td></tr>
-<tr><td>전략</td><td>성의 있는 긴 답변(500자+) → 마지막에 "참고로 이런 곳도 있어요"</td></tr>
-<tr><td>빈도</td><td>화/목/토 (주 3회, 회당 2~3개 답변)</td></tr>
-<tr><td>금지</td><td>❌ 복붙 답변, 답변 전체가 홍보문</td></tr>
-</table>
-</div>
-
-<!-- 8. EXPERIMENT -->
-<h2 id="experiment">🔬 8. 데이터 분석 & 실험 루프</h2>
-<div class="card">
-<div class="flow">매일:
-  CDO → DAU, 리텐션, 이탈률, 유저 저니, 동선, 병목 수집
-  CMO → SNS 채널별 메트릭 수집 (도달, 참여, 클릭, 전환)
-
-주 1회 (월요일 에이전트 회의):
-  CDO 데이터 발표 → 각 C-level 전문분야 의견 제시
-  → CEO 종합 → 가설 도출
-  → KPI 기준 임팩트 순서 우선순위
-  → 실험 설계 → Gate 1 (창업자 승인, #승인-실험)
-  → A/B 테스트 실행
-  → 결과 측정 → Gate 2
-
-판단 기준:
-  ✅ 목표 KPI 달성 → 정식 채택
-  ❌ 미달 → 원인 분석 → 새 가설로 교체
-  🔄 이 사이클을 주 1~2회 자동으로</div>
-</div>
-
-<!-- 9. SLACK -->
-<h2 id="slack">💬 9. Slack 채널 재설계 (20개)</h2>
-<div class="alert warn">핵심: <strong>승인이 필요한 건</strong>은 반드시 별도 채널에. 로그와 혼재하면 누락된다.</div>
-
-<h3>🔴 A. 승인 전용 채널 (3개) — 반드시 확인</h3>
-<div class="card red">
-<table>
-<tr><th>채널</th><th>내용</th><th>알림</th></tr>
-<tr><td><strong>#승인-실험</strong></td><td>Gate 1/2 실험 승인. CEO가 가설+예상 임팩트와 함께 전달. /approve /reject /feedback</td><td>🔴 즉시</td></tr>
-<tr><td><strong>#승인-마케팅-초안</strong></td><td>수동 게시 초안 (카카오, 카페, 커뮤니티, 지식iN). 채널별 분류 태그 포함</td><td>🟡 매일 1회</td></tr>
-<tr><td><strong>#승인-시스템</strong></td><td>DB스키마 변경, 새 에이전트 추가, 비용 상한 초과 등 기술 승인</td><td>🟡 주 1회</td></tr>
-</table>
-</div>
-
-<h3>⭐ B. 창업자 전용 (3개)</h3>
-<div class="card">
-<table>
-<tr><th>채널</th><th>내용</th><th>빈도</th></tr>
-<tr><td><strong>#ceo-창업자</strong></td><td>CEO↔창업자 양방향 전략 대화, KPI 지시</td><td>수시</td></tr>
-<tr><td><strong>#일일-브리핑</strong></td><td>매일 09:00 KPI 스냅샷 + 에이전트 요약</td><td>매일</td></tr>
-<tr><td><strong>#주간-리포트</strong></td><td>주간 KPI 종합 + 회의 결과 + SNS 성과</td><td>월요일</td></tr>
-</table>
-</div>
-
-<h3>🤖 C. 에이전트 협업 (2개)</h3>
-<div class="card">
-<table>
-<tr><th>채널</th><th>내용</th></tr>
-<tr><td><strong>#에이전트-회의실</strong></td><td>주간/긴급/1:1 회의. CEO 의장</td></tr>
-<tr><td><strong>#회의록</strong></td><td>스레드 기반 아카이브</td></tr>
-</table>
-</div>
-
-<h3>🚨 D. 알림 (3개 — 심각도별)</h3>
-<div class="card">
-<table>
-<tr><th>채널</th><th>트리거</th><th>알림</th></tr>
-<tr><td><strong>#알림-긴급</strong></td><td>서비스 다운, KPI 20%+ 하락, 비용 $40+</td><td>🔴 즉시</td></tr>
-<tr><td><strong>#알림-시스템</strong></td><td>헬스체크, 에러로그, 배포결과</td><td>🟡 묵음</td></tr>
-<tr><td><strong>#알림-KPI</strong></td><td>KPI 변동, 이상치, 트렌드 변화</td><td>🟡 묵음</td></tr>
-</table>
-</div>
-
-<h3>📝 E. 자동화 로그 (5개 — 세분화)</h3>
-<div class="card">
-<table>
-<tr><th>채널</th><th>발신</th><th>내용</th></tr>
-<tr><td><strong>#로그-일자리</strong></td><td>COO</td><td>일자리 수집 결과 (건수, 필터 통계)</td></tr>
-<tr><td><strong>#로그-콘텐츠</strong></td><td>COO/SEED</td><td>페르소나 활동, 매거진, 콘텐츠 편성</td></tr>
-<tr><td><strong>#로그-SNS</strong></td><td>CMO</td><td>API 자동 게시 결과 (IG/FB/Threads/X/Band)</td></tr>
-<tr><td><strong>#로그-크롤러</strong></td><td>CAFE</td><td>크롤링 결과, 품질 통계, 인사이트 요약</td></tr>
-<tr><td><strong>#로그-비용</strong></td><td>CFO</td><td>일일 API 비용, 월 누적, 수익</td></tr>
-</table>
-</div>
-
-<h3>📊 F. 성장 & 실험 (2개)</h3>
-<div class="card">
-<table>
-<tr><th>채널</th><th>내용</th></tr>
-<tr><td><strong>#실험-보드</strong></td><td>실험 라이프사이클 (Gate1→진행→Gate2→회고)</td></tr>
-<tr><td><strong>#마케팅-메트릭</strong></td><td>SNS 채널별 주간 성과 비교, 실험 결과 데이터</td></tr>
-</table>
-</div>
-
-<!-- 10. TECH -->
-<h2 id="tech">🔧 10. 기술 구현 방향</h2>
 <div class="grid">
-<div class="card">
-<h4>에이전트 간 통신</h4>
-<ul>
-<li>DB <code>AgentMessage</code> 테이블 (from, to, type, content, status)</li>
-<li>에이전트 실행 시 UNREAD 메시지 읽고 반응</li>
-<li>CEO 회의 소집 → 각 에이전트 다음 실행 시 의견 제출</li>
-</ul>
-</div>
-<div class="card">
-<h4>크롤러 → 콘텐츠 연결</h4>
-<ul>
-<li>CafeTrend → SEED 프롬프트 자동 주입</li>
-<li>"오늘의 관심사" 기반 글 주제/톤/키워드 결정</li>
-<li>활력충전소: 품질 4점+ 글 자동 큐레이션</li>
-</ul>
-</div>
-<div class="card">
-<h4>CMO 하위 에이전트</h4>
-<ul>
-<li><code>cmo/channels/instagram.ts</code></li>
-<li><code>cmo/channels/facebook.ts</code></li>
-<li><code>cmo/channels/kakao-openchat.ts</code></li>
-<li><code>cmo/channels/cafe-viral.ts</code> 등 채널별 파일</li>
-<li>채널별 전략 config (톤, 빈도, 실험 변수)</li>
-</ul>
-</div>
-<div class="card">
-<h4>실험 자동화</h4>
-<ul>
-<li><code>ExperimentCycle</code> 에이전트: 주 1회</li>
-<li>CDO 데이터 → 병목 식별 → 가설 → 실험 설계</li>
-<li>Gate 1 Slack 전달 → 승인 후 자동 실행</li>
-</ul>
-</div>
+  <div class="card green">
+    <h4>미션</h4>
+    <p style="color:var(--text)">50·60대가 혼자라는 느낌에서 벗어나<br>서로를 통해 다시 살아갈 힘을 찾도록<br>느슨하지만 진짜인 연결을 만든다.</p>
+  </div>
+  <div class="card purple">
+    <h4>비전</h4>
+    <p style="color:var(--text)">50·60대라면 누구나<br>"여기 오면 내 얘기가 있다"고 느끼는<br>한국 최초의 중장년 연결 커뮤니티.</p>
+  </div>
 </div>
 
-<!-- 11. PHASES -->
-<h2 id="phases">📐 11. 실행 순서</h2>
 <div class="card">
-<div class="phase"><span class="num">1</span><div class="phase-content"><strong>크롤러 품질 업그레이드</strong><span>82cook 추가, 필터링 전략, AI 심리 분석 파이프라인</span></div></div>
-<div class="phase"><span class="num">2</span><div class="phase-content"><strong>에이전트 간 통신 레이어</strong><span>AgentMessage DB 모델 + 메시지 교환 로직</span></div></div>
-<div class="phase"><span class="num">3</span><div class="phase-content"><strong>크롤러 인사이트 → 콘텐츠 연결</strong><span>SEED 글쓰기에 트렌드 자동 주입 + 활력충전소 큐레이션</span></div></div>
-<div class="phase"><span class="num">4</span><div class="phase-content"><strong>CMO 하위 채널 에이전트</strong><span>9개 채널별 전략 구현 + 수동 초안 시스템</span></div></div>
-<div class="phase"><span class="num">5</span><div class="phase-content"><strong>Slack 채널 재설계</strong><span>20개 채널 구조 + 승인 플로우 정비</span></div></div>
-<div class="phase"><span class="num">6</span><div class="phase-content"><strong>주간 실험 자동화</strong><span>ExperimentCycle 에이전트 + Gate 1/2 자동 전달</span></div></div>
-<div class="phase"><span class="num">7</span><div class="phase-content"><strong>전체 오케스트레이션 테스트</strong><span>End-to-end 검증 + 튜닝</span></div></div>
+  <h4>마케팅 7문장</h4>
+  <ul>
+    <li>"이 나이의 고민은 이 나이가 제일 잘 알아요."</li>
+    <li>"혼자 끙끙 앓던 그 고민, 여기선 다 있어요."</li>
+    <li>"이 나이에 이런 얘기 어디서 하겠어요 — 여기서 하세요."</li>
+    <li>"나만 이런 줄 알았는데, 우리 다 이래요."</li>
+    <li>"퇴직 후, 갱년기 후, 자녀 독립 후 — 그다음이 막막한 분들께."</li>
+    <li>"우리, 서로가 있잖아요."</li>
+    <li>"건강, 돈, 인생 다음 챕터 — 혼자 고민 안 해도 돼요."</li>
+  </ul>
 </div>
-<div class="alert info">각 Phase마다 구현 계획서를 먼저 보여주고, 창업자 승인 후 실행할 것.</div>
 
-<!-- 12. FOUNDER -->
-<h2 id="founder">🙋 12. 창업자가 직접 해줄 것</h2>
-<div class="card yellow">
-<ul>
-<li><strong>API 키 발급</strong> / 결제 연결 / OAuth 토큰 → 필요하면 목록으로 한 번에 요청</li>
-<li><strong>MCP 서버</strong> 추가 설치</li>
-<li><strong>맥미니</strong> 구매 + 설정 (필요 시)</li>
-<li><strong>외부 계정 생성</strong> (카카오, 네이버 등)</li>
-<li><strong>Slack 채널</strong> 생성/설정</li>
-<li><strong>수동 게시</strong> (카카오 오픈챗, 카페, 커뮤니티, 지식iN)</li>
-</ul>
+<!-- §4 카테고리 -->
+<h2 id="s4">§4 카테고리 재설계 <span class="version-tag">D5 확정 — LIFE2 신설</span></h2>
+
+<div class="alert success">결정: 옵션 B 변형 — BoardType LIFE2 신설 (ADD ONLY). WEEKLY는 DB 유지, UI 숨김.</div>
+
+<div class="card highlight">
+  <h4>확정 게시판 구조</h4>
+  <div style="margin:12px 0">
+    <span class="board-pill pill-story">💬 사는 이야기</span>
+    <span class="board-pill pill-humor">⚡ 활력충전소</span>
+    <span class="board-pill pill-life2">🌿 2막 준비 NEW</span>
+    <span class="board-pill pill-job">💼 내 일 찾기</span>
+    <span class="board-pill pill-magazine">📖 매거진</span>
+    <span class="board-pill pill-weekly">수다방(숨김)</span>
+  </div>
+</div>
+
+<table>
+  <tr><th>게시판</th><th>URL</th><th>서브 카테고리</th><th>쓰기 권한</th><th>역할</th></tr>
+  <tr>
+    <td><strong>⭐ 베스트</strong></td><td>/best</td>
+    <td>오늘 / 주간 / 명예의전당</td><td>없음 (자동)</td><td>이탈 방지 — 인기글</td>
+  </tr>
+  <tr>
+    <td><strong>💼 내 일 찾기</strong></td><td>/jobs</td>
+    <td>전체</td><td>운영자 전용</td><td>유입 핵심 — 일자리 큐레이션</td>
+  </tr>
+  <tr>
+    <td><strong>💬 사는 이야기</strong></td><td>/community/stories</td>
+    <td>건강 / 가족 / 취미 / 고민 / 자유수다</td><td>새싹 이상</td><td>소통·안착 — 일상 수다</td>
+  </tr>
+  <tr>
+    <td><strong>⚡ 활력충전소</strong></td><td>/community/humor</td>
+    <td>유머·웃음 / 엔터·TV / 추천·리뷰 / 기타</td><td>새싹 이상</td><td>재미·체류 — 유머, 힐링</td>
+  </tr>
+  <tr>
+    <td><strong>🌿 2막 준비</strong> <span class="badge new">NEW</span></td><td>/community/life2</td>
+    <td>은퇴준비 / 재테크·연금 / 보험 / 주거·이사</td><td>새싹 이상</td><td>정보·결정 — 인생2막 실용 정보</td>
+  </tr>
+  <tr>
+    <td><strong>📖 매거진</strong></td><td>/magazine</td>
+    <td>—</td><td>운영자 전용</td><td>정보·신뢰 — PO 알짜 정보</td>
+  </tr>
+  <tr>
+    <td><span style="color:#666">수다방</span></td><td>/community/weekly</td>
+    <td>—</td><td><span class="badge hidden">UI 숨김</span></td><td>DB enum 유지, 기존 글 보존</td>
+  </tr>
+</table>
+
+<div class="card">
+  <h4>LIFE2 신설 근거</h4>
+  <ul>
+    <li><strong>RETIRE 욕망 반응 폭발</strong> — 퇴사·주거·인생2막 주제 댓글·공유 수치 상위</li>
+    <li><strong>MONEY 19%</strong> — 연금·재테크 전용 공간 수요 명확</li>
+    <li><strong>기존 STORY 오염 방지</strong> — 수다 공간에 재무 정보 섞이면 둘 다 품질 저하</li>
+    <li><strong>SEO 독립 키워드</strong> — "은퇴 준비 커뮤니티", "50대 재테크" 검색 캡처</li>
+  </ul>
+</div>
+
+<!-- §5 브랜드 보이스 -->
+<h2 id="s5">§5 브랜드 보이스 & 톤 <span class="version-tag">D4 확정</span></h2>
+
+<div class="grid">
+  <div class="card green">
+    <h4>페르소나</h4>
+    <p style="color:var(--text)"><strong>"옆자리 친구"</strong></p>
+    <p>같은 나이, 같은 고민, 먼저 공감해주는 따뜻한 동네 친구.</p>
+  </div>
+  <div class="card purple">
+    <h4>커뮤니케이션 순서 (절대 준수)</h4>
+    <p style="color:var(--text);font-size:15px">공감 → 위로 → 응원 → 정보</p>
+    <p>정보부터 던지는 것은 금지. 공감 없이 조언하지 않는다.</p>
+  </div>
+</div>
+
+<div class="card">
+  <h4>톤 원칙</h4>
+  <table>
+    <tr><th>✅ 해야 할 것</th><th>❌ 하지 말 것</th></tr>
+    <tr><td>존댓말 필수 (~해요, ~입니다)</td><td>"시니어", "어르신", "노인" 표현</td></tr>
+    <tr><td>어렵지 않은 단어, 전문용어 풀어쓰기</td><td>조언하거나 가르치는 톤</td></tr>
+    <tr><td>결론(이득)은 두괄식</td><td>정치·세대갈등 언급</td></tr>
+    <tr><td>밝고 따뜻하게, 응원과 긍정은 적극적으로</td><td>"요즘 젊은이들은", "우리 때는" 세대 비교</td></tr>
+    <tr><td>50·60대, 우리 또래, 우리 나이 표현 사용</td><td>TMI, 갓생, 핵인싸 등 젊은 세대 중심 표현</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>6대 핵심 가치</h4>
+  <div class="grid">
+    <div>
+      <p><strong style="color:var(--accent)">연결</strong><br><span>우리, 서로가 있잖아 — 느슨하지만 진짜인 연결</span></p>
+      <p><strong style="color:var(--accent)">공감</strong><br><span>먼저 공감, 그다음 위로, 그다음 응원, 마지막에 정보</span></p>
+      <p><strong style="color:var(--accent)">응원</strong><br><span>할 수 있다고 믿어준다</span></p>
+    </div>
+    <div>
+      <p><strong style="color:var(--accent2)">실용</strong><br><span>당장 삶에 써먹을 수 있는 정보와 선택지</span></p>
+      <p><strong style="color:var(--accent2)">존중</strong><br><span>삶의 속도와 선택을 비교하지 않는다</span></p>
+      <p><strong style="color:var(--accent2)">안전</strong><br><span>정치·혐오 없는 따뜻한 공간</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- §6 콘텐츠 정책 -->
+<h2 id="s6">§6 콘텐츠 정책</h2>
+
+<div class="grid">
+  <div class="card green">
+    <h4>허용 콘텐츠</h4>
+    <ul>
+      <li>일상생활 (요리, 손주, 여행, 건강 경험담)</li>
+      <li>취업·일자리 정보 및 경험</li>
+      <li>건강 정보 (사실 기반, 경험담)</li>
+      <li>재테크·연금·보험 (사실 기반)</li>
+      <li>유머·웃음 (긍정적, 무해한)</li>
+      <li>공감·위로·응원</li>
+      <li>간병·돌봄 경험담 및 실용 정보</li>
+      <li>자격증·교육·배움 도전기</li>
+    </ul>
+  </div>
+  <div class="card red">
+    <h4>절대 금지 (ABSOLUTE ZERO)</h4>
+    <ul>
+      <li>정치적 발언 및 선동</li>
+      <li>종교 갈등 유발</li>
+      <li>혐오 표현 (세대·성별·지역·인종)</li>
+      <li>성인 콘텐츠</li>
+      <li>도박·다단계·불법 광고</li>
+      <li>타인 비방·명예훼손</li>
+      <li>의학적 확정 진단</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <h4>자동 모더레이션</h4>
+  <table>
+    <tr><th>단계</th><th>기준</th><th>조치</th></tr>
+    <tr><td>AI 1차</td><td>금지어 감지</td><td>즉시 숨김</td></tr>
+    <tr><td>신고 집계</td><td>신고 3회 누적</td><td>자동 숨김</td></tr>
+    <tr><td>PO 검토</td><td>숨김된 글</td><td>어드민 최종 판단</td></tr>
+  </table>
+</div>
+
+<!-- §7 홈 섹션 구성 -->
+<h2 id="s7">§7 홈 섹션 구성 <span class="version-tag">D6 확정 — 안 A</span></h2>
+
+<div class="alert success">결정: 안 A — 욕망 순위 직반영. RELATION이 오는 이유이므로 커뮤니티 섹션 상단 배치. LIFE2 신설 삽입.</div>
+
+<div class="card">
+  <div class="flow">홈 섹션 순서 (TOBE — 확정)
+
+  [1] HeroSlider            ← 슬로건 "우리, 서로가 있잖아" 노출
+  [2] IdentitySection       ← "우리, 서로가 있잖아 — 50·60대의 이야기가 여기 다 있어요"
+  [3] TrendingSection       ← HOT 게시글 (48h 이내, trendingScore 상위 5개)
+  [—] AdSense 광고
+  [4] CommunitySection      ← 사는이야기 + 활력충전소 + 2막준비 최신글
+  [—] 쿠팡 배너
+  [5] Life2Section (NEW)    ← 🌿 2막 준비 — 은퇴·재테크 최신글 (5개)
+  [6] EditorsPickSection    ← 매거진 에디터 픽
+  [7] MagazineSection       ← 매거진 최신글
+  [—] Feed 광고
+  [8] JobSection            ← 내 일 찾기 (JOB 10% → 하단 배치)
+  [9] RecentActivityFeed    ← 최근 활동 피드</div>
+</div>
+
+<div class="card">
+  <h4>배치 근거</h4>
+  <table>
+    <tr><th>변경</th><th>이전</th><th>이후</th><th>이유</th></tr>
+    <tr><td>JobSection</td><td>3번째 (상단)</td><td>8번째 (하단)</td><td>JOB 10% — 상단 배치 근거 없음</td></tr>
+    <tr><td>CommunitySection</td><td>8번째 (하단)</td><td>4번째 (TrendingSection 직후)</td><td>RELATION #1 — 연결이 오는 이유</td></tr>
+    <tr><td>Life2Section</td><td>없음</td><td>5번째 (신설)</td><td>RETIRE+MONEY = 머무르는 이유</td></tr>
+  </table>
+</div>
+
+<!-- §8 에이전트 시스템 -->
+<h2 id="s8">§8 에이전트 시스템</h2>
+
+<div class="card">
+  <h4>모델 3-Tier 정책</h4>
+  <table>
+    <tr><th>Tier</th><th>모델</th><th>용도</th><th>빈도</th></tr>
+    <tr><td><strong>Strategic</strong></td><td>Claude Opus</td><td>주간 전략 수립, 실험 설계</td><td>주 1~2회</td></tr>
+    <tr><td><strong>Heavy</strong></td><td>Claude Sonnet</td><td>고객 대면 콘텐츠, 분석, 일자리 가공</td><td>일 1~3회</td></tr>
+    <tr><td><strong>Light</strong></td><td>Claude Haiku</td><td>데이터 집계, 모니터링, 헬스체크</td><td>빈번</td></tr>
+  </table>
+  <p style="margin-top:8px">규칙: 고객이 보는 결과물 = Heavy 이상 / 내부 운영 = Light / 매거진 = Heavy (주1 Opus 특집호)</p>
+</div>
+
+<div class="card">
+  <h4>C-Level 에이전트 구성</h4>
+  <table>
+    <tr><th>에이전트</th><th>역할</th><th>모델</th></tr>
+    <tr><td>CEO</td><td>일일 브리핑, KPI 판단, 실험 승인 요청</td><td>Heavy</td></tr>
+    <tr><td>CTO</td><td>에러 감지, 보안 감사, 비용 이상 모니터링</td><td>Light</td></tr>
+    <tr><td>CMO</td><td>SNS 콘텐츠 생성, 지식인 답변, 마케팅 전략</td><td>Heavy</td></tr>
+    <tr><td>CPO</td><td>기능 사용률, 전환 퍼널, 이탈 분석</td><td>Light</td></tr>
+    <tr><td>CDO</td><td>카페 크롤링, 욕망 지도, 트렌드 분석</td><td>Light</td></tr>
+    <tr><td>CFO</td><td>비용 집계, 예산 경보, 수익 리포트</td><td>Light</td></tr>
+    <tr><td>COO</td><td>콘텐츠 스케줄, 트렌딩 스코어, DB write</td><td>Light</td></tr>
+    <tr><td>SEED (35명)</td><td>시드봇 글쓰기·댓글·좋아요 활동</td><td>Light</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>인텔리전스 파이프라인</h4>
+  <div class="flow">매일 08:30 KST:
+  CDO crawler.ts (DEEP) → external-crawler.ts (82cook)
+    → psych-analyzer.ts (감정/욕망 태깅)
+    → trend-analyzer.ts (집계)
+    → daily-brief.ts → today-brief.json (욕망 지도)
+
+09:00 이후:
+  전체 에이전트 loadTodayBrief() 호출
+  → 오늘의 dominantDesire 반영한 콘텐츠/전략 실행
+
+12:30 KST midDayPatch (±0.2 fine-tuning, dominantDesire 불변)</div>
+</div>
+
+<div class="card">
+  <h4>시드봇 LIFE2 배치 (Session 3 확정)</h4>
+  <table>
+    <tr><th>페르소나</th><th>게시판</th><th>전문 주제</th></tr>
+    <tr><td>B (정호씨)</td><td>LIFE2 + STORY</td><td>은퇴/재테크 정보, 노후 준비 경험담</td></tr>
+    <tr><td>Y (솔직히말해서)</td><td>LIFE2</td><td>은퇴 현실, 연금, 노후자금 솔직 이야기</td></tr>
+    <tr><td>AB (따져보자)</td><td>LIFE2</td><td>연금 팩트체크, 재테크 팁, 은퇴 준비 분석</td></tr>
+  </table>
+</div>
+
+<!-- §9 광고 정책 -->
+<h2 id="s9">§9 광고 정책</h2>
+
+<div class="card">
+  <h4>우선순위</h4>
+  <div class="flow">1순위: 외부 직접 (유료 계약)
+2순위: 자체 배너 (이벤트·홍보)
+3순위: 쿠팡 CPS (수익)
+4순위: 구글 애드센스 (기본 fill)</div>
+</div>
+
+<div class="card">
+  <h4>규칙</h4>
+  <ul>
+    <li>모든 광고에 <strong>'광고' 라벨</strong> 필수</li>
+    <li>모바일: 화면당 최대 1개 광고</li>
+    <li>정치/도박/성인/약물/다단계 광고 절대 금지</li>
+    <li>쿠팡 CPS: 투명성 안내 문구 필수</li>
+  </ul>
+</div>
+
+<!-- §10 KPI -->
+<h2 id="s10">§10 KPI & 성장 지표</h2>
+
+<div class="card">
+  <h4>Phase 2 북극성 지표</h4>
+  <table>
+    <tr><th>지표</th><th>목표값</th><th>의미</th></tr>
+    <tr><td><strong>DAU/MAU</strong></td><td>> 0.15</td><td>습관적 방문 여부</td></tr>
+    <tr><td>D7 리텐션</td><td>> 20%</td><td>첫 방문 후 재방문</td></tr>
+    <tr><td>UGC 비율</td><td>> 30%</td><td>실사용자 글 비율</td></tr>
+    <tr><td>일자리 지원 클릭</td><td>> 50/일</td><td>핵심 가치 전달</td></tr>
+    <tr><td>평균 세션</td><td>> 3분</td><td>콘텐츠 소비 깊이</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>인기글 정책 (trendingScore)</h4>
+  <div class="flow">공식: (likeCount×3 + commentCount×5 + viewCount×0.1) / (hoursAge+2)^1.5
+재계산: 매 30분 (COO trending-scorer)
+HOT 강등: 72시간 무참여 + 7일 경과 → NORMAL
+명예의전당: 50+ 공감 달성 → 영구 유지
+홈 Trending: 48시간 이내 게시글, 상위 5개</div>
+</div>
+
+<!-- §11 포지셔닝 -->
+<h2 id="s11">§11 포지셔닝 & 경쟁 전략 <span class="version-tag">D7 확정</span></h2>
+
+<div class="card highlight">
+  <div class="big-quote">"50·60대의 외로움과 막막함을<br>서로의 이야기로 채우는 곳"</div>
+</div>
+
+<div class="two-axis">
+  <div class="axis-box">
+    <div class="axis-icon">❤️</div>
+    <div class="axis-title">감성 축: RELATION</div>
+    <div class="axis-sub">혼자라는 느낌에서 벗어나는 연결<br><strong>→ 왜 오는가</strong></div>
+  </div>
+  <div class="axis-box">
+    <div class="axis-icon">🌿</div>
+    <div class="axis-title">실용 축: RETIRE+MONEY</div>
+    <div class="axis-sub">인생 다음 챕터 준비<br><strong>→ 머무르는 이유</strong></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="big-quote" style="font-size:16px">"혼자 끙끙 앓던 그 고민 — 여기 다 있어요.<br>인생 다음 챕터, 같이 준비해요."</div>
+</div>
+
+<h3>3대 해자 (Moat)</h3>
+<div class="grid3">
+  <div class="card green">
+    <h4>🏰 전용 공간</h4>
+    <p>'시니어 플랫폼'이 아닌 50·60대가 스스로 만드는 커뮤니티 — 체면 없이 진짜 이야기</p>
+  </div>
+  <div class="card purple">
+    <h4>🧠 욕망 설계 구조</h4>
+    <p>RELATION(연결) + RETIRE(인생2막) + MONEY(노후준비) 3축으로 설계된 카테고리</p>
+  </div>
+  <div class="card">
+    <h4>🤖 AI 운영 플라이휠</h4>
+    <p>시드봇 콘텐츠 → 실사용자 유입 → 데이터 학습 → 더 나은 콘텐츠 → 재유입</p>
+  </div>
+</div>
+
+<h3>경쟁자 분석</h3>
+<div class="card">
+  <table>
+    <tr><th>경쟁자</th><th>강점</th><th>약점</th><th>우나어 차별점</th></tr>
+    <tr>
+      <td><strong>네이버 카페</strong></td>
+      <td>기존 회원 수십만, 검색 유입</td>
+      <td>카테고리 파편화, AI 없음, 50·60대 전용 아님</td>
+      <td>단일 홈 + AI 큐레이션 + 욕망 설계 카테고리</td>
+    </tr>
+    <tr>
+      <td><strong>밴드</strong></td>
+      <td>중장년 사용자 많음, 모임 기능</td>
+      <td>폐쇄적 그룹, 검색 노출 없음</td>
+      <td>느슨한 연결 (익명 발견 가능) vs 폐쇄 모임</td>
+    </tr>
+    <tr>
+      <td><strong>시니어 앱들</strong></td>
+      <td>50+ 타겟 명확</td>
+      <td>단일 기능, UX 열악, 규모 극소</td>
+      <td>연결+인생2막+노후준비+일자리 종합 플랫폼</td>
+    </tr>
+  </table>
+  <div class="alert success" style="margin-top:12px">결론: 직접 경쟁자 없음 — 50·60대 전용 + AI 운영 + 욕망 설계 종합 커뮤니티는 우나어가 유일</div>
+</div>
+
+<!-- §12 SNS -->
+<h2 id="s12">§12 SNS 플랫폼 전략</h2>
+
+<div class="card">
+  <table>
+    <tr><th>플랫폼</th><th>전략</th><th>길이</th><th>상태</th></tr>
+    <tr><td><strong>Threads</strong></td><td>체류시간 최적화 — 캐주얼 대화체, 토픽태그 1개</td><td>100~200자</td><td><span class="badge confirmed">✅ 운영 중</span></td></tr>
+    <tr><td><strong>X (Twitter)</strong></td><td>정보형 권위 — 뉴스톤 팩트 기반, 해시태그 2~3개</td><td>100~140자</td><td><span class="badge data">4/1 크레딧 리셋</span></td></tr>
+    <tr><td><strong>Instagram</strong></td><td>비주얼 라이프스타일 — 카드뉴스 캐러셀</td><td>캐러셀</td><td><span class="badge confirmed">✅ 운영 중</span></td></tr>
+    <tr><td><strong>Facebook</strong></td><td>커뮤니티 공유 — 이야기체 + 질문, 댓글 유도</td><td>500~1000자</td><td><span class="badge confirmed">✅ 운영 중</span></td></tr>
+    <tr><td><strong>Band</strong></td><td>실용 그룹 정보 — 이웃 친근감, 이벤트/팁</td><td>300~500자</td><td><span class="badge data">API 심사중</span></td></tr>
+    <tr><td><strong>네이버</strong></td><td>SEO 검색 유입 — 매거진 리퍼포징</td><td>1000~3000자</td><td>—</td></tr>
+  </table>
+</div>
+
+<!-- §13 실행 로드맵 -->
+<h2 id="s13">§13 실행 로드맵</h2>
+
+<div class="card highlight2">
+  <h3 style="margin-top:0">Sessions 1~3 완료 사항 (2026-04-04)</h3>
+  <ul>
+    <li>✅ <strong>constitution.yaml v5.0</strong> — 미션/비전/슬로건/욕망 TOP3/포지셔닝 확정 반영</li>
+    <li>✅ <strong>LIFE2 게시판 신설</strong> — DB enum ADD, BoardConfig INSERT, 12개 하드코딩 파일 전수 수정</li>
+    <li>✅ <strong>홈 섹션 재구성</strong> — 욕망 순위 반영, Life2Section 컴포넌트 신설</li>
+    <li>✅ <strong>포지셔닝 확정</strong> — RELATION(감성) + RETIRE+MONEY(실용) 이중 축</li>
+    <li>✅ <strong>시드봇 LIFE2 배치</strong> — B/Y/AB 페르소나 board 업데이트, generator.ts categoryMap 추가</li>
+    <li>✅ <strong>서브카테고리 확정</strong> — 사는이야기(5개), 활력충전소(4개), 2막준비(4개)</li>
+  </ul>
+</div>
+
+<h3>다음 Phase — 실사용자 유입</h3>
+<div class="card">
+  <table>
+    <tr><th>단계</th><th>작업</th><th>우선순위</th></tr>
+    <tr><td>SEO</td><td>sitemap.ts에 /community/life2 포함 확인 → 구글서치콘솔 제출</td><td>높음</td></tr>
+    <tr><td>SNS</td><td>X 크레딧 리셋(4/1) 후 자동화 재가동</td><td>높음</td></tr>
+    <tr><td>Band</td><td>API 심사 완료 후 배포 (~4월 첫째 주)</td><td>중간</td></tr>
+    <tr><td>온보딩</td><td>카카오 로그인 허들 최소화 → 가입 전환율 측정</td><td>중간</td></tr>
+    <tr><td>UGC 유도</td><td>첫 방문자 → 2막준비 게시판 진입 → 글쓰기 유도 플로우 최적화</td><td>중간</td></tr>
+    <tr><td>Lighthouse</td><td>SEO 점수 80+ 달성 확인</td><td>낮음</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>안전 원칙 (모든 작업에 적용)</h4>
+  <ul>
+    <li><strong>ADD ONLY</strong>: DB enum 값 절대 삭제하지 않음</li>
+    <li><strong>URL 삭제 없음</strong>: 기존 /community/stories 등 유지</li>
+    <li><strong>헌법 변경 전 dry-run</strong>: CEO dry-run으로 시뮬레이션 후 적용</li>
+    <li><strong>크롤링 시간 회피</strong>: 08:25~08:50, 12:25~12:50 작업 금지</li>
+    <li><strong>어드민 영향도 체크</strong>: 서비스 변경 시 어드민 패널 동시 수정</li>
+  </ul>
 </div>
 
 <div class="sep"></div>
 
-<div class="card highlight" style="text-align:center;padding:24px">
-<h3 style="margin:0 0 8px">🧭 핵심 원칙</h3>
-<p style="margin:0;font-size:14px;color:var(--text)">
-① 창업자 개입 최소화 &nbsp;|&nbsp; ② 모든 마케팅은 실험 &nbsp;|&nbsp; ③ $50/월 상한 유지<br>
-④ SERVICE_ARCHITECTURE.md 항상 최신 &nbsp;|&nbsp; ⑤ "시니어" 용어 절대 금지
-</p>
+<div class="card" style="text-align:center;padding:32px">
+  <p style="color:var(--accent);font-size:18px;font-weight:700;margin-bottom:8px">"우리, 서로가 있잖아"</p>
+  <p style="color:var(--muted);font-size:13px">우리 나이가 어때서 · constitution v5.0 · 2026-04-04 확정</p>
+  <p style="color:var(--muted);font-size:12px;margin-top:4px">age-doesnt-matter.com</p>
 </div>
 
-<p style="text-align:center;margin-top:32px;font-size:12px;color:var(--muted)">
-이 문서를 읽었으면, <code>SERVICE_ARCHITECTURE.md</code>와 에이전트 코드를 전부 읽고 Phase 1 구현 계획서를 작성해라.
-</p>
-
-</div>
+</div><!-- /container -->
 </body>
 </html>
