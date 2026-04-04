@@ -388,3 +388,42 @@ intelligence_policy:
     - "trend-analyzer.ts (집계)"
     - "daily-brief.ts (욕망지도 → today-brief.json)"
     - "모든 에이전트 09:00 이후 loadTodayBrief() 호출"
+
+# ──────────────────────────────────────────
+# 11. 포지셔닝 & 경쟁 전략 (2026-04-04 확정)
+# ──────────────────────────────────────────
+positioning:
+  one_line: "50·60대의 외로움과 막막함을 서로의 이야기로 채우는 곳"
+
+  # 감성 축(RELATION) + 실용 축(RETIRE+MONEY) 동시 포지셔닝
+  axes:
+    emotional: "RELATION — 혼자라는 느낌에서 벗어나는 연결 (왜 오는가)"
+    practical: "RETIRE+MONEY — 인생 다음 챕터 준비 (머무르는 이유)"
+
+  headline_message: >
+    "혼자 끙끙 앓던 그 고민 — 여기 다 있어요.
+    인생 다음 챕터, 같이 준비해요."
+
+  moat:
+    - name: "전용 공간"
+      desc: "'시니어 플랫폼'이 아닌 50·60대가 스스로 만드는 커뮤니티 — 체면 없이 진짜 이야기"
+    - name: "욕망 설계 구조"
+      desc: "RELATION(연결) + RETIRE(인생2막) + MONEY(노후준비) 3축으로 설계된 카테고리"
+    - name: "AI 운영 플라이휠"
+      desc: "시드봇 콘텐츠 → 실사용자 유입 → 데이터 학습 → 더 나은 콘텐츠 → 재유입"
+
+  competitors:
+    naver_cafe:
+      strength: "기존 회원 수십만, 검색 유입"
+      weakness: "카테고리 파편화, AI 없음, 50·60대 전용 아님"
+      우나어_차별점: "단일 홈 + AI 큐레이션 + 욕망 설계 카테고리"
+    band:
+      strength: "중장년 사용자 많음, 모임 기능"
+      weakness: "폐쇄적 그룹, 검색 노출 없음"
+      우나어_차별점: "느슨한 연결 (익명 발견 가능) vs 폐쇄 모임"
+    senior_apps:
+      strength: "50+ 타겟 명확"
+      weakness: "단일 기능(일자리/건강), UX 열악, 규모 극소"
+      우나어_차별점: "연결+인생2막+노후준비+일자리 종합 플랫폼"
+
+  conclusion: "직접 경쟁자 없음 — 50·60대 전용 + AI 운영 + 욕망 설계 종합 커뮤니티는 우나어가 유일"
