@@ -1,6 +1,8 @@
 import Link from 'next/link'
-import { getDashboardStats, getRecentBotLogs } from '@/lib/queries/admin'
+import { getDashboardStats, getRecentBotLogs, getDailyBrief, getAutomationStatus, getAdminQueueCounts } from '@/lib/queries/admin'
 import AdminQuickStart from '@/components/admin/AdminQuickStart'
+import DailyBriefWidget from '@/components/admin/DailyBriefWidget'
+import AutomationToggle from '@/components/admin/AutomationToggle'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,6 +11,15 @@ const BOT_TYPE_LABELS: Record<string, string> = {
   HUMOR: '😄 유머',
   STORY: '💬 이야기',
   THREAD: '🤖 스레드',
+  CEO: '👑 CEO',
+  CTO: '🔧 CTO',
+  CMO: '📣 CMO',
+  CPO: '📦 CPO',
+  CDO: '📊 CDO',
+  CFO: '💰 CFO',
+  COO: '⚙️ COO',
+  SEED: '🌱 SEED',
+  CAFE_CRAWLER: '☕ 카페 크롤러',
 }
 
 const BOT_STATUS_BADGE: Record<string, { label: string; className: string }> = {
@@ -18,13 +29,29 @@ const BOT_STATUS_BADGE: Record<string, { label: string; className: string }> = {
 }
 
 export default async function AdminDashboardPage() {
-  const [stats, botLogs] = await Promise.all([
+  const [stats, botLogs, brief, isAutomationActive, queueCounts] = await Promise.all([
     getDashboardStats(),
     getRecentBotLogs(),
+    getDailyBrief(),
+    getAutomationStatus(),
+    getAdminQueueCounts(),
   ])
 
   return (
     <div className="space-y-6">
+      {/* 자동화 상태 배너 */}
+      {!isAutomationActive && (
+        <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="font-bold text-orange-800">🚨 자동화 일시 중지 중</span>
+              <p className="mt-0.5 text-sm text-orange-700">에이전트가 실행되지 않습니다. 재개하려면 아래 버튼을 누르세요.</p>
+            </div>
+            <AutomationToggle isActive={false} />
+          </div>
+        </div>
+      )}
+
       <AdminQuickStart />
 
       {/* KPI 카드 */}
@@ -35,8 +62,18 @@ export default async function AdminDashboardPage() {
         <KpiCard label="오늘 댓글" value={stats.todayComments} icon="💬" prefix="+" />
       </div>
 
+      {/* 욕망 지도 위젯 */}
+      {brief && (
+        <DailyBriefWidget
+          dominantDesire={brief.dominantDesire}
+          dominantEmotion={brief.dominantEmotion}
+          desireRanking={brief.desireRanking as Array<{ category: string; percent: number; label: string }>}
+          date={brief.date}
+        />
+      )}
+
       {/* 긴급 알림 */}
-      {(stats.pendingReports > 0 || stats.pendingBotReviews > 0) && (
+      {(stats.pendingReports > 0 || stats.pendingBotReviews > 0 || queueCounts.pending > 0) && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-5">
           <h2 className="mb-3 text-sm font-bold text-red-800">🚨 긴급</h2>
           <ul className="space-y-2">
@@ -54,9 +91,23 @@ export default async function AdminDashboardPage() {
             {stats.pendingBotReviews > 0 && (
               <li className="flex items-center justify-between text-sm text-red-700">
                 <span>봇 검수 대기 {stats.pendingBotReviews}건</span>
-                <span className="rounded-md bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
-                  검수 →
-                </span>
+                <Link
+                  href="/admin/agents"
+                  className="rounded-md bg-red-100 px-3 py-1 text-xs font-medium text-red-700 no-underline transition-colors hover:bg-red-200"
+                >
+                  확인 →
+                </Link>
+              </li>
+            )}
+            {queueCounts.pending > 0 && (
+              <li className="flex items-center justify-between text-sm text-red-700">
+                <span>에이전트 승인 대기 {queueCounts.pending}건</span>
+                <Link
+                  href="/admin/queue"
+                  className="rounded-md bg-red-100 px-3 py-1 text-xs font-medium text-red-700 no-underline transition-colors hover:bg-red-200"
+                >
+                  승인하기 →
+                </Link>
               </li>
             )}
           </ul>
@@ -65,7 +116,18 @@ export default async function AdminDashboardPage() {
 
       {/* 봇 상태 */}
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="mb-4 text-sm font-bold text-zinc-900">🤖 봇 상태</h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-zinc-900">🤖 봇 상태</h2>
+          <div className="flex items-center gap-3">
+            <AutomationToggle isActive={isAutomationActive} />
+            <Link
+              href="/admin/agents"
+              className="text-xs font-medium text-[#FF6F61] no-underline hover:underline"
+            >
+              전체 로그 →
+            </Link>
+          </div>
+        </div>
         {botLogs.length === 0 ? (
           <p className="text-sm text-zinc-500">봇 실행 기록이 없습니다.</p>
         ) : (

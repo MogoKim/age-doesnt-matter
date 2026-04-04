@@ -17,6 +17,7 @@ const TARGET_LABELS: Record<string, string> = {
   ALL: '전체 페이지',
   HOME: '홈',
   COMMUNITY: '커뮤니티',
+  LIFE2: '2막 준비',
   JOBS: '일자리',
   MAGAZINE: '매거진',
   CUSTOM: '커스텀 경로',
@@ -199,6 +200,7 @@ function PopupForm({ popup, onDone }: { popup?: Popup; onDone: () => void }) {
             <option value="ALL">전체 페이지</option>
             <option value="HOME">홈</option>
             <option value="COMMUNITY">커뮤니티</option>
+            <option value="LIFE2">2막 준비</option>
             <option value="JOBS">일자리</option>
             <option value="MAGAZINE">매거진</option>
             <option value="CUSTOM">커스텀 경로</option>

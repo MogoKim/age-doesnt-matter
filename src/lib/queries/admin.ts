@@ -2,8 +2,11 @@ import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 import type {
   AdSlot,
+  AdminQueueStatus,
   BoardType,
   BannedWordCategory,
+  BotStatus,
+  BotType,
   PostSource,
   PostStatus,
   ReportStatus,
@@ -149,13 +152,17 @@ export interface MemberListOptions {
   search?: string
   cursor?: string
   limit?: number
+  botOnly?: boolean
+  hideBot?: boolean
 }
 
 export async function getMemberList(options: MemberListOptions = {}) {
-  const { status, search, cursor, limit = 20 } = options
+  const { status, search, cursor, limit = 20, botOnly, hideBot } = options
 
   const where = {
     ...(status && { status }),
+    ...(botOnly && { email: { endsWith: '@unao.bot' } }),
+    ...(hideBot && { NOT: { email: { endsWith: '@unao.bot' } } }),
     ...(search && {
       OR: [
         { nickname: { contains: search, mode: 'insensitive' as const } },
@@ -358,6 +365,112 @@ export const getTotalCounts = unstable_cache(
   ['admin-total-counts'],
   { revalidate: 600 }
 )
+
+// ─── AdminQueue ───
+
+export async function getAdminQueue(status?: AdminQueueStatus) {
+  return prisma.adminQueue.findMany({
+    where: status ? { status } : undefined,
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  })
+}
+
+export async function getAdminQueueCounts() {
+  const [pending, approved, rejected, expired] = await Promise.all([
+    prisma.adminQueue.count({ where: { status: 'PENDING' } }),
+    prisma.adminQueue.count({ where: { status: 'APPROVED' } }),
+    prisma.adminQueue.count({ where: { status: 'REJECTED' } }),
+    prisma.adminQueue.count({ where: { status: 'EXPIRED' } }),
+  ])
+  return { pending, approved, rejected, expired }
+}
+
+// ─── DailyBrief ───
+
+export async function getDailyBrief(date?: Date) {
+  const target = date ?? new Date()
+  target.setHours(0, 0, 0, 0)
+  return prisma.dailyBrief.findFirst({
+    where: { date: { gte: target, lt: new Date(target.getTime() + 86400000) } },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export async function getDailyBriefs(days = 7) {
+  const since = new Date()
+  since.setDate(since.getDate() - days)
+  since.setHours(0, 0, 0, 0)
+  return prisma.dailyBrief.findMany({
+    where: { date: { gte: since } },
+    orderBy: { date: 'desc' },
+  })
+}
+
+// ─── BotLog 상세 ───
+
+export interface BotLogFilterOptions {
+  botType?: BotType
+  status?: BotStatus
+  since?: Date
+  limit?: number
+  cursor?: string
+}
+
+export async function getBotLogsDetail(options: BotLogFilterOptions = {}) {
+  const { botType, status, since, limit = 50, cursor } = options
+  const logs = await prisma.botLog.findMany({
+    where: {
+      ...(botType && { botType }),
+      ...(status && { status }),
+      ...(since && { executedAt: { gte: since } }),
+      ...(cursor && { executedAt: { lt: new Date(cursor) } }),
+    },
+    orderBy: { executedAt: 'desc' },
+    take: limit + 1,
+  })
+  const hasMore = logs.length > limit
+  if (hasMore) logs.pop()
+  return { logs, hasMore }
+}
+
+export async function getBotLogStats() {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const [todayCount, successCount, failedCount, totalTimeResult] = await Promise.all([
+    prisma.botLog.count({ where: { executedAt: { gte: today } } }),
+    prisma.botLog.count({ where: { executedAt: { gte: today }, status: 'SUCCESS' } }),
+    prisma.botLog.count({ where: { executedAt: { gte: today }, status: 'FAILED' } }),
+    prisma.botLog.aggregate({ _avg: { executionTimeMs: true }, where: { executedAt: { gte: today } } }),
+  ])
+  return {
+    todayCount,
+    successCount,
+    failedCount,
+    avgExecutionMs: Math.round(totalTimeResult._avg.executionTimeMs ?? 0),
+  }
+}
+
+// ─── SocialExperiment ───
+
+export async function getSocialExperiments(limit = 10) {
+  return prisma.socialExperiment.findMany({
+    orderBy: { weekNumber: 'desc' },
+    take: limit,
+  })
+}
+
+// ─── 자동화 상태 조회 ───
+
+export async function getAutomationStatus(): Promise<boolean> {
+  const latest = await prisma.adminAuditLog.findFirst({
+    where: { action: 'AUTOMATION_TOGGLE' },
+    orderBy: { createdAt: 'desc' },
+  })
+  if (!latest || !latest.after) return true
+  const after = latest.after as { active?: boolean }
+  return after.active !== false
+}
 
 // ─── 감사 로그 ───
 

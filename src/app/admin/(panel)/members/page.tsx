@@ -11,6 +11,7 @@ interface Props {
     status?: string
     search?: string
     cursor?: string
+    bot?: string
   }>
 }
 
@@ -20,6 +21,8 @@ export default async function AdminMembersPage({ searchParams }: Props) {
     status: params.status as UserStatus | undefined,
     search: params.search,
     cursor: params.cursor,
+    botOnly: params.bot === 'only',
+    hideBot: params.bot === 'hide',
   })
 
   return (
@@ -30,6 +33,7 @@ export default async function AdminMembersPage({ searchParams }: Props) {
         filters={{
           status: params.status,
           search: params.search,
+          bot: params.bot,
         }}
       />
     </div>

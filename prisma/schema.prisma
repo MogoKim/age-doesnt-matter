@@ -932,6 +932,7 @@ enum PopupTarget {
   ALL
   HOME
   COMMUNITY
+  LIFE2
   JOBS
   MAGAZINE
   CUSTOM

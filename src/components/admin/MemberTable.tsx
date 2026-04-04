@@ -38,6 +38,7 @@ interface MemberTableProps {
   filters: {
     status?: string
     search?: string
+    bot?: string
   }
 }
 
@@ -94,6 +95,27 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
           <option value="BANNED">차단</option>
           <option value="WITHDRAWN">탈퇴</option>
         </select>
+
+        {/* 봇 계정 필터 */}
+        <div className="flex gap-1">
+          {[
+            { value: '', label: '전체' },
+            { value: 'hide', label: '실사용자만' },
+            { value: 'only', label: '봇만' },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => updateFilter('bot', opt.value)}
+              className={`h-10 rounded-lg px-3 text-sm font-medium transition-colors ${
+                (filters.bot ?? '') === opt.value
+                  ? 'bg-zinc-900 text-white'
+                  : 'border border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-50'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
 
         <form onSubmit={handleSearch} className="flex gap-2">
           <input

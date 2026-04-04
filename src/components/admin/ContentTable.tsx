@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { adminUpdatePostStatus, adminTogglePin, adminBulkAction } from '@/lib/actions/admin'
+import { adminUpdatePostStatus, adminTogglePin, adminBulkAction, adminSetPostPromotionLevel } from '@/lib/actions/admin'
+import type { PromotionLevel } from '@/generated/prisma/client'
 
 const BOARD_LABELS: Record<string, string> = {
   JOB: '일자리',
@@ -285,6 +286,12 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
                           variant="success"
                         />
                       ) : null}
+                      <PromotionButton
+                        postId={post.id}
+                        current={post.promotionLevel as PromotionLevel}
+                        isPending={isPending}
+                        startTransition={startTransition}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -346,5 +353,56 @@ function ActionButton({
     >
       {label}
     </button>
+  )
+}
+
+function PromotionButton({
+  postId,
+  current,
+  isPending,
+  startTransition,
+}: {
+  postId: string
+  current: PromotionLevel
+  isPending: boolean
+  startTransition: (fn: () => void) => void
+}) {
+  const [open, setOpen] = useState(false)
+
+  const options: { level: PromotionLevel; label: string }[] = [
+    { level: 'HOT', label: '🔥 HOT' },
+    { level: 'HALL_OF_FAME', label: '👑 명예의전당' },
+    { level: 'NORMAL', label: '⬜ 일반' },
+  ]
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        disabled={isPending}
+        className="min-h-[44px] rounded-md px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:opacity-50"
+      >
+        등급▾
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-xl border border-zinc-200 bg-white shadow-lg">
+          {options.map((opt) => (
+            <button
+              key={opt.level}
+              onClick={() => {
+                setOpen(false)
+                startTransition(() => adminSetPostPromotionLevel(postId, opt.level))
+              }}
+              className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-50 ${
+                current === opt.level ? 'font-bold text-[#FF6F61]' : 'text-zinc-700'
+              }`}
+            >
+              {opt.label}
+              {current === opt.level && <span className="ml-auto text-xs">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

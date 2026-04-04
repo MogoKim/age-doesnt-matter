@@ -9,6 +9,7 @@ import type {
   BannedWordCategory,
   Grade,
   PostStatus,
+  PromotionLevel,
   ReportAction,
   UserStatus,
 } from '@/generated/prisma/client'
@@ -48,6 +49,162 @@ function revalidateServicePaths(boardType?: string | null, postId?: string) {
   }
   revalidatePath('/')
   revalidatePath('/best')
+}
+
+// ─── AdminQueue 액션 ───
+
+export async function adminApproveQueueItem(queueId: string) {
+  const admin = await requireAdmin()
+
+  const item = await prisma.adminQueue.findUnique({ where: { id: queueId } })
+  if (!item) throw new Error('승인 항목을 찾을 수 없습니다.')
+  if (item.status !== 'PENDING') throw new Error('대기 중인 항목만 처리할 수 있습니다.')
+
+  await prisma.adminQueue.update({
+    where: { id: queueId },
+    data: {
+      status: 'APPROVED',
+      resolvedBy: admin.adminId,
+      resolvedAt: new Date(),
+    },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'ADMIN_QUEUE_APPROVE',
+      targetType: 'ADMIN_QUEUE',
+      targetId: queueId,
+      before: JSON.stringify({ status: 'PENDING' }),
+      after: JSON.stringify({ status: 'APPROVED' }),
+    },
+  })
+
+  revalidatePath('/admin/queue')
+}
+
+export async function adminRejectQueueItem(queueId: string, reason?: string) {
+  const admin = await requireAdmin()
+
+  const item = await prisma.adminQueue.findUnique({ where: { id: queueId } })
+  if (!item) throw new Error('승인 항목을 찾을 수 없습니다.')
+  if (item.status !== 'PENDING') throw new Error('대기 중인 항목만 처리할 수 있습니다.')
+
+  await prisma.adminQueue.update({
+    where: { id: queueId },
+    data: {
+      status: 'REJECTED',
+      resolvedBy: admin.adminId,
+      resolvedAt: new Date(),
+      payload: {
+        ...(item.payload as object ?? {}),
+        rejectionReason: reason,
+      },
+    },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'ADMIN_QUEUE_REJECT',
+      targetType: 'ADMIN_QUEUE',
+      targetId: queueId,
+      before: JSON.stringify({ status: 'PENDING' }),
+      after: JSON.stringify({ status: 'REJECTED', reason }),
+      note: reason,
+    },
+  })
+
+  revalidatePath('/admin/queue')
+}
+
+// ─── 자동화 토글 ───
+
+export async function adminSetAutomationStatus(active: boolean) {
+  const admin = await requireAdmin()
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'AUTOMATION_TOGGLE',
+      targetType: 'AGENT',
+      targetId: 'automation',
+      after: { active },
+      note: active ? '자동화 재개' : '자동화 긴급정지',
+    },
+  })
+
+  revalidatePath('/admin')
+}
+
+// ─── promotionLevel 수동 조정 ───
+
+export async function adminSetPostPromotionLevel(postId: string, level: PromotionLevel) {
+  const admin = await requireAdmin()
+
+  const existing = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { promotionLevel: true, boardType: true },
+  })
+
+  await prisma.post.update({
+    where: { id: postId },
+    data: { promotionLevel: level },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'PROMOTION_LEVEL_CHANGE',
+      targetType: 'POST',
+      targetId: postId,
+      before: existing ? JSON.stringify({ promotionLevel: existing.promotionLevel }) : undefined,
+      after: JSON.stringify({ promotionLevel: level }),
+    },
+  })
+
+  revalidateServicePaths(existing?.boardType, postId)
+  revalidatePath('/admin/content')
+  revalidatePath('/best')
+}
+
+// ─── 일자리 만료 일괄 처리 ───
+
+export async function adminBulkDeleteExpiredJobs() {
+  const admin = await requireAdmin()
+  const now = new Date()
+
+  const expiredJobs = await prisma.post.findMany({
+    where: {
+      boardType: 'JOB',
+      status: 'PUBLISHED',
+      jobDetail: { expiresAt: { lt: now } },
+    },
+    select: { id: true },
+  })
+
+  if (expiredJobs.length === 0) return { deleted: 0 }
+
+  const ids = expiredJobs.map((j) => j.id)
+  await prisma.post.updateMany({
+    where: { id: { in: ids } },
+    data: { status: 'HIDDEN' },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'BULK_EXPIRE_JOBS',
+      targetType: 'POST',
+      targetId: 'bulk',
+      after: JSON.stringify({ count: ids.length, ids }),
+      note: `만료 일자리 ${ids.length}건 숨김 처리`,
+    },
+  })
+
+  revalidateServicePaths('JOB')
+  revalidatePath('/admin/content')
+  return { deleted: ids.length }
 }
 
 // ─── 콘텐츠 액션 ───
