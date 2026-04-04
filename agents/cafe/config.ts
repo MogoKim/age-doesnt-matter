@@ -55,32 +55,29 @@ export const EXTERNAL_CONFIGS: ExternalSiteConfig[] = [
  *   high — 욕망/감정/고민이 직접 드러나는 게시판 (DEEP + QUICK 모두)
  *   medium — 참고용, DEEP 모드에서만 수집
  *
- * TODO: dlxogns01, wgang 신규 게시판, welovesilver·5060years 신규 게시판의
- *       menuId는 카페 방문 후 URL ?menuid= 파라미터 확인 필요 (현재 0으로 임시 설정)
  */
 export const CAFE_CONFIGS: CafeConfig[] = [
   // ─────────────────────────────────────────────────
   // 1) 은퇴 후 50년 (dlxogns01) — 신규 추가
   // ─────────────────────────────────────────────────
-  // TODO: numericId — 카페 접속 후 개발자도구 네트워크 탭에서 clubId 파라미터 확인 필요
-  // TODO: 각 게시판 menuId — 게시판 클릭 후 URL ?menuid= 확인 필요
   {
     id: 'dlxogns01',
     name: '은퇴 후 50년',
     url: 'https://cafe.naver.com/dlxogns01',
-    numericId: 0, // TODO: 실제 numericId로 교체 필요
+    numericId: 23676262,
     boards: [
       // ── high: 욕망/감정이 직접 드러나는 게시판 ──
-      { name: '자유로운 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' },    // TODO: menuId
-      { name: '예비은퇴자 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'finance' },   // TODO: menuId
-      { name: '은퇴 일기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' },          // TODO: menuId
-      { name: '건강 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'health' },           // TODO: menuId
-      { name: '고민 있어요(QnA)', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' },   // TODO: menuId
-      { name: '투자 이야기(금융/부동산)', menuId: 0, maxPages: 2, priority: 'high', category: 'finance' }, // TODO: menuId
-      { name: '일자리·자격증 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'job' },    // TODO: menuId
+      { name: '자유로운 이야기', menuId: 45, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '예비은퇴자 이야기', menuId: 356, maxPages: 2, priority: 'high', category: 'finance' },
+      { name: '은퇴 일기', menuId: 29, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '건강 이야기', menuId: 65, maxPages: 2, priority: 'high', category: 'health' },
+      { name: '고민 있어요(QnA)', menuId: 113, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '투자 이야기(금융)', menuId: 106, maxPages: 2, priority: 'high', category: 'finance' },
+      { name: '투자 이야기(부동산)', menuId: 274, maxPages: 1, priority: 'high', category: 'finance' },
+      { name: '일자리·자격증 이야기', menuId: 149, maxPages: 2, priority: 'high', category: 'job' },
       // ── medium ──
-      { name: '귀농·귀촌 이야기', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId
-      { name: '소소한 일상과 행복', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId
+      { name: '귀농·귀촌 이야기', menuId: 198, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+      { name: '소소한 일상과 행복', menuId: 98, maxPages: 1, priority: 'medium', category: 'lifestyle' },
     ],
   },
 
@@ -99,14 +96,14 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     boards: [
       // ── high: 건강·가족·돈·은퇴 욕망 집중 ──
       { name: '갱년기 몸 증상', menuId: 8, maxPages: 3, priority: 'high', category: 'health' },
-      { name: '갱년기 마음 증상', menuId: 0, maxPages: 3, priority: 'high', category: 'health' }, // TODO: menuId
+      { name: '갱년기 마음 증상', menuId: 3, maxPages: 3, priority: 'high', category: 'health' },
       { name: '갱년기 극복후기', menuId: 81, maxPages: 2, priority: 'high', category: 'health' },
       { name: '약/영양제/건강/병원', menuId: 66, maxPages: 2, priority: 'high', category: 'health' },
       { name: '운동/다이어트', menuId: 10, maxPages: 2, priority: 'high', category: 'health' },
       { name: '은퇴 노후 계획', menuId: 112, maxPages: 2, priority: 'high', category: 'finance' },
       { name: '돈 이야기', menuId: 32, maxPages: 2, priority: 'high', category: 'finance' },
-      { name: '딸아들 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' },   // TODO: menuId
-      { name: '남편 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' },     // TODO: menuId
+      { name: '딸아들 이야기', menuId: 5, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '남편 이야기', menuId: 6, maxPages: 2, priority: 'high', category: 'lifestyle' },
       // ── medium ──
       { name: '자유 주제', menuId: 34, maxPages: 1, priority: 'medium', category: 'lifestyle' },
     ],
@@ -128,7 +125,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     boards: [
       // ── high ──
       { name: '건강', menuId: 23, maxPages: 3, priority: 'high', category: 'health' },
-      { name: '가족/자녀/부모/손주/손녀', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' }, // TODO: menuId
+      { name: '가족/자녀/부모/손주/손녀', menuId: 13, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '금융/저축/보험/증권/투자', menuId: 27, maxPages: 2, priority: 'high', category: 'finance' },
       { name: '위로받기/응원하기', menuId: 79, maxPages: 2, priority: 'high', category: 'lifestyle' }, // medium → high 승격
       // ── medium ──
@@ -151,10 +148,10 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     numericId: 28962370,
     boards: [
       // ── high ──
-      { name: '자격증/노후대비', menuId: 0, maxPages: 2, priority: 'high', category: 'job' },        // TODO: menuId
+      { name: '자격증/노후대비', menuId: 35, maxPages: 2, priority: 'high', category: 'job' },
       { name: '나만 아는 건강법', menuId: 17, maxPages: 2, priority: 'high', category: 'health' },
       { name: '인생 2막 설계/경험담/고민', menuId: 389, maxPages: 2, priority: 'high', category: 'finance' },
-      { name: '아~ 화가 나요. 왜?', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' }, // TODO: menuId
+      { name: '아~ 화가 나요. 왜?', menuId: 82, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '사랑/이별/그리움', menuId: 304, maxPages: 2, priority: 'high', category: 'lifestyle' },
       // ── medium ──
       { name: '생활의 지혜 공유', menuId: 16, maxPages: 1, priority: 'medium', category: 'lifestyle' },
