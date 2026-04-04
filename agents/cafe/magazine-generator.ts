@@ -7,12 +7,14 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
+import { loadTodayBrief } from '../core/intelligence.js'
 import type { MagazineSuggestion } from './types.js'
 import { matchCpsProducts, saveCpsLinks } from './cps-matcher.js'
 import { generateMagazineThumbnail } from './thumbnail-generator.js'
 import { generateMagazineImageByContext } from './image-generator.js'
 import { buildMagazineHtml, parseSectionsFromAI } from './magazine-template.js'
 import { getDefaultImagePlan, type ImageContext } from '../core/image-prompt-builder.js'
+import { buildMagazineSystemPrompt, DESIRE_TO_CATEGORY, DESIRE_TOPIC_HINTS } from '../magazine/prompt.js'
 
 const CLAUDE_MODEL_HEAVY = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const CLAUDE_MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-6'
@@ -22,13 +24,14 @@ const client = new Anthropic()
 function detectCategory(title: string, reason: string): string {
   const text = `${title} ${reason}`.toLowerCase()
   const map: Record<string, string[]> = {
-    '건강': ['건강', '운동', '관절', '영양', '수면', '병원', '치매', '혈압', '당뇨', '걷기'],
+    '건강': ['건강', '운동', '관절', '영양', '수면', '병원', '치매', '혈압', '당뇨', '걷기', '갱년기'],
+    '재테크': ['재테크', '연금', '저축', '투자', '부동산', '노후', '보험', '퇴직연금', 'irp'],
+    '은퇴준비': ['은퇴', '퇴직', '인생 2막', '2막', '노후 준비', '노후준비', '은퇴 준비'],
+    '일자리': ['일자리', '취업', '자격증', '봉사', '창업', '알바', '재취업', '파트타임'],
     '생활': ['살림', '정리', '세탁', '절약', '생활', '꿀팁', '재활용'],
-    '재테크': ['재테크', '연금', '저축', '투자', '부동산', '노후', '보험'],
     '여행': ['여행', '맛집', '산책', '둘레길', '관광', '기차', '드라이브'],
     '문화': ['독서', '영화', '드라마', '음악', '전시', '공연', '문화'],
     '요리': ['요리', '레시피', '반찬', '김치', '밑반찬', '제철', '장보기'],
-    '일자리': ['일자리', '취업', '자격증', '봉사', '은퇴', '창업', '알바'],
   }
 
   for (const [cat, keywords] of Object.entries(map)) {
@@ -99,34 +102,7 @@ async function generateMagazineArticle(
   const response = await client.messages.create({
     model,
     max_tokens: 3000,
-    system: `당신은 50·60대 독자를 위한 매거진 편집장입니다.
-"우리 나이가 어때서" 커뮤니티의 짧고 유익한 매거진 기사를 작성합니다.
-
-독자 페르소나:
-- P2 정희씨: 건강 불안이 있는 정보 탐색형
-- P4 순자씨: 생계 걱정이 있는 실용형
-- P5 현주씨: 간병 부담을 안고 있는 헌신형
-
-작성 규칙:
-- "시니어", "액티브 시니어" 절대 금지 → "우리 또래", "50대 60대", "인생 2막" 사용
-- 편안한 존댓말 (해요체)
-- 구체적 수치/데이터 1개 이상 포함 (예: "대한당뇨병학회 2023년 자료에 따르면...")
-- 정치/종교/혐오/광고 절대 금지
-
-글의 구조 규칙 (엄수):
-- 본문 총 글자 수: 800~1200자 (초과 금지)
-- 소제목: 2~3개, 각 15자 이내
-- 서론 없음: 공감 유도 없이 핵심 정보 바로 시작
-- 단락: 최대 3문장
-- 팁 박스: 정확히 1개
-- 인용문/경험담: 선택사항 (꼭 필요할 때만 1개)
-
-HTML 형식:
-- 사용 가능 태그: h2, p, ul, li, strong, blockquote, aside
-- <h2>로 소제목 (2~3개)
-- <aside class="tip-box">💡 꿀팁: 내용</aside> (1개만)
-- <blockquote>로 경험담 (선택)
-- 이미지 위치에 <!-- [IMAGE:N] --> 삽입 (N은 1, 2)`,
+    system: buildMagazineSystemPrompt(category),
     messages: [{
       role: 'user',
       content: `"${topic.title}" 주제로 매거진 기사를 작성해주세요.
@@ -252,10 +228,32 @@ async function main() {
   }
 
   const magazineTopics = trend.magazineTopics as unknown as MagazineSuggestion[]
+
+  // 욕망 지도 로드 — 주제 보강에 활용
+  const brief = await loadTodayBrief({ fallbackToPrevious: true })
+  const dominantDesire = brief?.dominantDesire ?? 'HEALTH'
+
+  // 욕망 지도 기반 보충 주제: 매거진 주제가 부족하거나 현재 욕망과 다를 때 보강
+  const desireHints = DESIRE_TOPIC_HINTS[dominantDesire] ?? DESIRE_TOPIC_HINTS['HEALTH']
   if (!magazineTopics || magazineTopics.length === 0) {
-    console.log('[MagazineGenerator] 매거진 추천 주제 없음 — 스킵')
-    await disconnect()
-    return
+    // 욕망 지도 기반 폴백 주제 사용
+    const fallbackTopic: MagazineSuggestion = {
+      title: desireHints[Math.floor(Math.random() * desireHints.length)],
+      reason: `오늘 커뮤니티 지배 욕망: ${dominantDesire}`,
+      relatedPosts: [],
+      score: 8,
+    }
+    console.log(`[MagazineGenerator] 욕망지도 폴백 주제 사용: "${fallbackTopic.title}"`)
+    const category = DESIRE_TO_CATEGORY[dominantDesire] ?? '생활'
+    const refs = await getReferencePosts(fallbackTopic)
+    const recentTitles = await getRecentMagazineTitles(14)
+    const article = await generateMagazineArticle(fallbackTopic, category, refs, recentTitles)
+    if (!article) {
+      console.log('[MagazineGenerator] 폴백 주제 생성 실패')
+      await disconnect()
+      return
+    }
+    magazineTopics.push(fallbackTopic)
   }
 
   // 2) 최근 매거진 제목 (중복 방지)

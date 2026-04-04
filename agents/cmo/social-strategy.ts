@@ -30,9 +30,9 @@ const EXPERIMENT_ROADMAP: Array<{
   { week: 2, variable: 'format', controlValue: 'story', testValue: 'question', hypothesis: '스토리텔링형 vs 질문형 — 체류 시간과 댓글 수 비교' },
   { week: 3, variable: 'postingTime', controlValue: 'earlyMorning', testValue: 'lunch', hypothesis: '오전 7-9시 vs 점심 12-1시 — 황금 시간대 검증' },
   { week: 4, variable: 'tone', controlValue: 'warm', testValue: 'practical', hypothesis: '따뜻한 공감형 vs 실용 정보형 — 50-60대 선호도' },
-  { week: 5, variable: 'topicTag', controlValue: 'lifestyle', testValue: 'job', hypothesis: '라이프스타일 태그 vs 일자리 태그 — 도달 범위' },
+  { week: 5, variable: 'topicTag', controlValue: 'relation', testValue: 'life2', hypothesis: 'RELATION(연결·공감) 주제 vs RETIRE+MONEY(2막준비) 주제 — 도달범위 vs 체류시간' },
   { week: 6, variable: 'contentLength', controlValue: 'short', testValue: 'medium', hypothesis: '80자 vs 150자 — 체류 시간과 참여율 균형' },
-  { week: 7, variable: 'persona', controlValue: 'A', testValue: 'B', hypothesis: '영숙이맘 vs 은퇴신사 — 50-60대 공감 비교' },
+  { week: 7, variable: 'persona', controlValue: 'A', testValue: 'B', hypothesis: '영숙이맘(RELATION 감성) vs 은퇴신사(RETIRE 실용) — 50-60대 공감 비교' },
   { week: 8, variable: 'interaction', controlValue: 'statement', testValue: 'question', hypothesis: '일방 게시 vs 질문형 — 댓글 유도 효과' },
 ]
 
@@ -96,6 +96,12 @@ async function main() {
       max_tokens: 400,
       system: `당신은 SNS 마케팅 실험 설계 전문가입니다. 과거 실험 결과를 바탕으로 다음 주 실험을 설계하세요.
 규칙: 70%는 검증된 우승 공식 유지, 30%는 새 변수 탐색.
+
+[우나어 확정 전략 — 실험 설계 기준]
+- 포지셔닝: RELATION(연결·왜 오는가) + RETIRE+MONEY(인생2막·머무르는 이유) 이중 축
+- 게시판: 사는이야기(공감·수다) / 활력충전소(유머·힐링) / 2막준비(은퇴·재테크) / 내일찾기 / 매거진
+- 핵심 메시지: "혼자 끙끙 앓던 그 고민 — 여기 다 있어요. 인생 다음 챕터, 같이 준비해요."
+- 금지: 시니어·어르신·노인 표현, 정치, 세대 비교
 JSON으로만 응답: {"variable": "...", "controlValue": "...", "testValue": "...", "hypothesis": "..."}`,
       messages: [{ role: 'user', content: `과거 실험:\n${cumulativeLearnings}\n\n트렌드:\n${trendContext}\n\nWeek ${nextWeek} 실험을 설계하세요.` }],
     })

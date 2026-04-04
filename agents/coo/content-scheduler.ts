@@ -1,6 +1,7 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
 import { notifyAdmin } from '../core/notifier.js'
+import { loadTodayBrief } from '../core/intelligence.js'
 import type { AgentResult } from '../core/types.js'
 
 /**
@@ -22,12 +23,26 @@ class COOContentScheduler extends BaseAgent {
   protected async run(): Promise<Omit<AgentResult, 'durationMs' | 'timestamp'>> {
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
-    // 1. 에디터스 픽 후보: 지난 24시간 인기글
+    // 욕망 지도 로드 — 에디터스 픽 기준 및 발제 주제에 활용
+    const brief = await loadTodayBrief({ fallbackToPrevious: true })
+    const dominantDesire = brief?.dominantDesire ?? 'RELATION'
+    const topDesires = brief?.desireRanking.slice(0, 3).map(d => d.label).join(', ') ?? 'RELATION, RETIRE, MONEY'
+
+    // 전략 욕망 우선순위 (확정): RELATION(연결) → RETIRE(인생2막) → MONEY(노후자금) → HEALTH(건강)
+    const DESIRE_BOARD_HINT: Record<string, string> = {
+      RELATION: '사는이야기/활력충전소 — 공감, 연결, 위로 글 우선',
+      RETIRE: '2막준비 — 은퇴, 인생2막, 의미 찾기 글 우선',
+      MONEY: '2막준비 — 재테크, 연금, 노후자금 글 우선',
+      HEALTH: '사는이야기/매거진 — 건강 경험담, 정보 글 우선',
+    }
+    const boardHint = DESIRE_BOARD_HINT[dominantDesire] ?? DESIRE_BOARD_HINT['RELATION']
+
+    // 1. 에디터스 픽 후보: 지난 24시간 인기글 (LIFE2 포함)
     const candidates = await prisma.post.findMany({
       where: {
         createdAt: { gte: yesterday },
         status: 'PUBLISHED',
-        boardType: { in: ['STORY', 'HUMOR'] },
+        boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] },
         likeCount: { gte: 5 },
       },
       orderBy: { likeCount: 'desc' },
@@ -41,6 +56,9 @@ class COOContentScheduler extends BaseAgent {
       pickRecommendation = await this.chat(`
 다음 인기글 중 에디터스 픽으로 추천할 글을 최대 2개 골라주세요.
 선정 기준: 따뜻한 공감, 유용한 정보, 커뮤니티 가치에 부합
+
+[오늘의 커뮤니티 욕망: ${dominantDesire} / 상위 욕망: ${topDesires}]
+[에디터스 픽 기준 힌트: ${boardHint}]
 
 ${candidates.map((p, i) => `${i + 1}. [${p.boardType}] "${p.title}" — 공감 ${p.likeCount}, 조회 ${p.viewCount}, 댓글 ${p.commentCount}`).join('\n')}
 
@@ -62,13 +80,18 @@ ${candidates.map((p, i) => `${i + 1}. [${p.boardType}] "${p.title}" — 공감 $
     let topicSuggestion = ''
     if (dayOfWeek === 1) {
       topicSuggestion = await this.chat(`
-50~60대 커뮤니티 "사는 이야기" 게시판에 올릴 이번 주 수다방 발제 주제를 2개 제안해주세요.
-- 톤: 따뜻하고 편안한 수다 주제
-- 예시: "요즘 아침에 일어나면 제일 먼저 뭐 하세요?", "올해 꼭 가보고 싶은 여행지 있으세요?"
-- 정치/종교/혐오 절대 금지
+50~60대 커뮤니티에 올릴 이번 주 수다방 발제 주제를 3개 제안해주세요.
+- 사는 이야기(STORY) 2개: 따뜻한 수다, 공감, 일상 연결 주제 (우리, 서로가 있잖아 — 외로움·연결 욕망 반영)
+- 2막 준비(LIFE2) 1개: 은퇴준비·연금·노후·인생2막 실용 주제
+
+[오늘의 커뮤니티 욕망: ${dominantDesire} | 상위: ${topDesires}]
+톤: "이 나이에 이런 얘기 어디서 하겠어요 — 여기서 하세요." 느낌
+예시(STORY): "요즘 아침에 일어나면 제일 먼저 뭐 하세요?", "혼자라는 생각이 들 때 어떻게 하세요?"
+예시(LIFE2): "퇴직 후 생활비 얼마나 드세요? 미리 계획하신 분 있으세요?"
+정치/종교/혐오 절대 금지
 
 응답 형식 (JSON):
-{ "topics": [{"title": "발제 제목", "body": "발제 본문 (2-3문장)"}] }
+{ "topics": [{"board": "STORY|LIFE2", "title": "발제 제목", "body": "발제 본문 (2-3문장)"}] }
 `)
 
       await notifyAdmin({
