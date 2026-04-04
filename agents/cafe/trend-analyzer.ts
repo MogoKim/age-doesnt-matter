@@ -36,8 +36,74 @@ async function getTodayPosts() {
       likeCount: true,
       commentCount: true,
       viewCount: true,
+      // 심리 분석 결과 (psych-analyzer 실행 후 채워짐)
+      emotionTags: true,
+      desireCategory: true,
+      desireType: true,
+      psychInsight: true,
+      urgencyLevel: true,
+      aiAnalyzed: true,
     },
   })
+}
+
+/** 심리 분석 결과 집계 — desireMap, emotionDistribution, urgentTopics */
+function aggregatePsychData(posts: Awaited<ReturnType<typeof getTodayPosts>>) {
+  const analyzedPosts = posts.filter(p => p.aiAnalyzed && p.desireCategory)
+
+  if (analyzedPosts.length === 0) {
+    return { desireMap: null, emotionDistribution: null, urgentTopics: null, dominantDesire: null, dominantEmotion: null }
+  }
+
+  // 욕망 카테고리 분포
+  const desireCount: Record<string, number> = {}
+  for (const p of analyzedPosts) {
+    const cat = p.desireCategory!
+    desireCount[cat] = (desireCount[cat] ?? 0) + 1
+  }
+  const totalAnalyzed = analyzedPosts.length
+  const desireMap: Record<string, number> = {}
+  for (const [cat, cnt] of Object.entries(desireCount)) {
+    desireMap[cat] = Math.round((cnt / totalAnalyzed) * 100)
+  }
+
+  // 감정 분포
+  const emotionCount: Record<string, number> = {}
+  for (const p of analyzedPosts) {
+    for (const tag of (p.emotionTags as string[])) {
+      emotionCount[tag] = (emotionCount[tag] ?? 0) + 1
+    }
+  }
+  const emotionDistribution: Record<string, number> = {}
+  for (const [tag, cnt] of Object.entries(emotionCount)) {
+    emotionDistribution[tag] = Math.round((cnt / totalAnalyzed) * 100)
+  }
+
+  // 지배적 욕망/감정
+  const dominantDesire = Object.entries(desireCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+  const dominantEmotion = Object.entries(emotionCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+
+  // 긴급 토픽 (urgencyLevel >= 4)
+  const urgentPosts = analyzedPosts.filter(p => (p.urgencyLevel ?? 0) >= 4)
+  const urgentByCategory: Record<string, { count: number; urgencySum: number; insights: string[] }> = {}
+  for (const p of urgentPosts) {
+    const cat = p.desireCategory!
+    if (!urgentByCategory[cat]) urgentByCategory[cat] = { count: 0, urgencySum: 0, insights: [] }
+    urgentByCategory[cat].count++
+    urgentByCategory[cat].urgencySum += p.urgencyLevel ?? 0
+    if (p.psychInsight) urgentByCategory[cat].insights.push(p.psychInsight)
+  }
+  const urgentTopics = Object.entries(urgentByCategory)
+    .map(([cat, data]) => ({
+      topic: cat,
+      count: data.count,
+      urgencyAvg: Math.round(data.urgencySum / data.count * 10) / 10,
+      psychInsight: data.insights[0] ?? '',
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+
+  return { desireMap, emotionDistribution, urgentTopics, dominantDesire, dominantEmotion }
 }
 
 /** Claude에게 트렌드 분석 요청 */
@@ -149,32 +215,35 @@ async function tagPosts(posts: Awaited<ReturnType<typeof getTodayPosts>>, analys
 }
 
 /** 트렌드 결과 DB 저장 */
-async function saveTrend(analysis: TrendAnalysis, totalPosts: number, cafeSummary: Record<string, number>) {
+async function saveTrend(
+  analysis: TrendAnalysis,
+  totalPosts: number,
+  cafeSummary: Record<string, number>,
+  psychData: ReturnType<typeof aggregatePsychData>,
+) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
+  const baseData = {
+    hotTopics: JSON.parse(JSON.stringify(analysis.hotTopics)),
+    keywords: JSON.parse(JSON.stringify(analysis.keywords)),
+    sentimentMap: JSON.parse(JSON.stringify(analysis.sentimentMap)),
+    magazineTopics: JSON.parse(JSON.stringify(analysis.magazineTopics)),
+    personaHints: JSON.parse(JSON.stringify(analysis.personaHints)),
+    totalPosts,
+    cafeSummary: JSON.parse(JSON.stringify(cafeSummary)),
+    // 심리 분석 집계
+    desireMap: psychData.desireMap ? JSON.parse(JSON.stringify(psychData.desireMap)) : undefined,
+    emotionDistribution: psychData.emotionDistribution ? JSON.parse(JSON.stringify(psychData.emotionDistribution)) : undefined,
+    urgentTopics: psychData.urgentTopics ? JSON.parse(JSON.stringify(psychData.urgentTopics)) : undefined,
+    dominantDesire: psychData.dominantDesire ?? undefined,
+    dominantEmotion: psychData.dominantEmotion ?? undefined,
+  }
+
   await prisma.cafeTrend.upsert({
     where: { date_period: { date: today, period: 'daily' } },
-    create: {
-      date: today,
-      period: 'daily',
-      hotTopics: JSON.parse(JSON.stringify(analysis.hotTopics)),
-      keywords: JSON.parse(JSON.stringify(analysis.keywords)),
-      sentimentMap: JSON.parse(JSON.stringify(analysis.sentimentMap)),
-      magazineTopics: JSON.parse(JSON.stringify(analysis.magazineTopics)),
-      personaHints: JSON.parse(JSON.stringify(analysis.personaHints)),
-      totalPosts,
-      cafeSummary: JSON.parse(JSON.stringify(cafeSummary)),
-    },
-    update: {
-      hotTopics: JSON.parse(JSON.stringify(analysis.hotTopics)),
-      keywords: JSON.parse(JSON.stringify(analysis.keywords)),
-      sentimentMap: JSON.parse(JSON.stringify(analysis.sentimentMap)),
-      magazineTopics: JSON.parse(JSON.stringify(analysis.magazineTopics)),
-      personaHints: JSON.parse(JSON.stringify(analysis.personaHints)),
-      totalPosts,
-      cafeSummary: JSON.parse(JSON.stringify(cafeSummary)),
-    },
+    create: { date: today, period: 'daily', ...baseData },
+    update: baseData,
   })
 }
 
@@ -226,8 +295,16 @@ async function main() {
     cafeSummary[post.cafeId] = (cafeSummary[post.cafeId] ?? 0) + 1
   }
 
-  // 5) DB 저장
-  await saveTrend(analysis, posts.length, cafeSummary)
+  // 5) 심리 분석 집계 (psych-analyzer가 먼저 실행된 경우에만 데이터 존재)
+  const psychData = aggregatePsychData(posts)
+  if (psychData.dominantDesire) {
+    console.log(`[TrendAnalyzer] 심리 집계 — 지배적 욕망: ${psychData.dominantDesire}, 감정: ${psychData.dominantEmotion}, 긴급토픽: ${psychData.urgentTopics?.length ?? 0}개`)
+  } else {
+    console.log('[TrendAnalyzer] 심리 분석 데이터 없음 (psych-analyzer 미실행 상태)')
+  }
+
+  // 6) DB 저장
+  await saveTrend(analysis, posts.length, cafeSummary, psychData)
 
   // 6) 텔레그램 알림
   await notifyMagazineTopics(analysis)

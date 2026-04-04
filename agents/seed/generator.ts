@@ -2,6 +2,53 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../core/db.js'
 import { getPersona, getAllPersonaIds, type Persona } from './persona-data.js'
 
+// ── 욕망 카테고리 → 적합 페르소나 매핑 ──
+const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint: string }> = {
+  HEALTH:   { personas: ['H', 'P2', 'A'], topicHint: '건강 정보, 병원 경험, 증상 공감' },
+  FAMILY:   { personas: ['A', 'L', 'E'], topicHint: '가족 이야기, 자녀 고민, 손주 자랑' },
+  MONEY:    { personas: ['B', 'P4', 'N'], topicHint: '절약 팁, 재테크 경험, 연금 이야기' },
+  RETIRE:   { personas: ['T', 'B', 'G'], topicHint: '은퇴 후 일상, 의미 찾기, 새 시작' },
+  JOB:      { personas: ['P4', 'T', 'B'], topicHint: '일자리 경험, 자격증, 재취업 이야기' },
+  RELATION: { personas: ['E', 'P5', 'C'], topicHint: '공감, 위로, 소통, 친구 이야기' },
+  HOBBY:    { personas: ['G', 'M', 'F'], topicHint: '취미, 여행, 텃밭, 활동' },
+  MEANING:  { personas: ['T', 'P', 'I'], topicHint: '삶의 의미, 감사, 보람, 철학' },
+}
+
+/** 오늘의 CafeTrend 조회 */
+async function getLatestTrend() {
+  try {
+    return await prisma.cafeTrend.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { dominantDesire: true, dominantEmotion: true, urgentTopics: true },
+    })
+  } catch {
+    return null
+  }
+}
+
+/** 페르소나에게 주입할 오늘의 분위기 컨텍스트 */
+function buildTrendContext(
+  trend: Awaited<ReturnType<typeof getLatestTrend>>,
+  personaId: string,
+): string {
+  if (!trend?.dominantDesire) return ''
+  const desireInfo = DESIRE_PERSONA_MAP[trend.dominantDesire]
+  const urgentTopics = Array.isArray(trend.urgentTopics)
+    ? (trend.urgentTopics as Array<{ topic: string; psychInsight: string }>)
+    : []
+  const topUrgent = urgentTopics[0]
+  const isRelevant = desireInfo?.personas.includes(personaId)
+  const topicHint = isRelevant ? `\n- 오늘 어울리는 주제: ${desireInfo.topicHint}` : ''
+
+  return `
+[오늘의 커뮤니티 분위기 — 참고만, 직접 인용 절대 금지]
+- 오늘 주된 관심: ${trend.dominantDesire} 관련 이야기
+- 오늘의 감정 흐름: ${trend.dominantEmotion ?? '다양함'}${topUrgent ? `\n- 긴급 관심사: ${topUrgent.psychInsight}` : ''}${topicHint}
+
+이 분위기를 당신의 개성으로 자연스럽게 녹여내세요.
+위 내용을 그대로 쓰거나 직접 언급하지 마세요.`
+}
+
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 
 const client = new Anthropic()
@@ -101,11 +148,16 @@ export async function generatePost(
 
   const length = POST_LENGTHS[Math.floor(Math.random() * POST_LENGTHS.length)]
 
+  // 오늘의 CafeTrend 심리 프로파일 주입
+  const trend = await getLatestTrend()
+  const trendContext = buildTrendContext(trend, personaId)
+
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: length.maxTokens,
     system: buildSystemPrompt(p, 'post') +
-      `\n- 카테고리: ${boardCategories.join(', ')} 중 하나를 선택하세요`,
+      `\n- 카테고리: ${boardCategories.join(', ')} 중 하나를 선택하세요` +
+      trendContext,
     messages: [{
       role: 'user',
       content: `오늘 "${topic}" 주제로 글을 써주세요.

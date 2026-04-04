@@ -15,12 +15,24 @@ interface MetricsJson {
   clicks?: number
 }
 
+export interface UrgentTopic {
+  topic: string
+  count: number
+  urgencyAvg: number
+  psychInsight: string
+}
+
 export interface CMOContext {
   topPerformingContent: Array<{ platform: string; contentType: string; avgEngagement: number }>
   activeExperiment: { variable: string; controlValue: string; testValue: string; week: number } | null
   latestTrends: string[]
   strategyMemo: string | null
   recentLearnings: string[]
+  // 오늘의 심리 프로파일 (psych-analyzer + trend-analyzer 결과)
+  todayDominantDesire: string | null   // "HEALTH"
+  todayDominantEmotion: string | null  // "ANXIOUS"
+  desireMap: Record<string, number>    // {HEALTH: 35, FAMILY: 20, ...}
+  urgentTopics: UrgentTopic[]          // 긴급도 높은 토픽 상위 3개
 }
 
 export async function getCMOContext(): Promise<CMOContext> {
@@ -89,5 +101,27 @@ export async function getCMOContext(): Promise<CMOContext> {
     .filter(e => e.learnings)
     .map(e => `Week ${e.weekNumber} (${e.variable}): ${String(e.learnings).slice(0, 200)}`)
 
-  return { topPerformingContent, activeExperiment, latestTrends, strategyMemo, recentLearnings }
+  // 6. 오늘의 심리 프로파일 (CafeTrend 최신)
+  const latestTrend = await prisma.cafeTrend.findFirst({
+    orderBy: { createdAt: 'desc' },
+    select: { dominantDesire: true, dominantEmotion: true, desireMap: true, urgentTopics: true },
+  })
+  const todayDominantDesire = latestTrend?.dominantDesire ?? null
+  const todayDominantEmotion = latestTrend?.dominantEmotion ?? null
+  const desireMap = (latestTrend?.desireMap as Record<string, number> | null) ?? {}
+  const urgentTopics = Array.isArray(latestTrend?.urgentTopics)
+    ? (latestTrend.urgentTopics as UrgentTopic[]).slice(0, 3)
+    : []
+
+  return {
+    topPerformingContent,
+    activeExperiment,
+    latestTrends,
+    strategyMemo,
+    recentLearnings,
+    todayDominantDesire,
+    todayDominantEmotion,
+    desireMap,
+    urgentTopics,
+  }
 }

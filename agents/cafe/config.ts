@@ -44,73 +44,106 @@ export const EXTERNAL_CONFIGS: ExternalSiteConfig[] = [
 ]
 
 /**
- * 크롤링 대상 네이버 카페 3곳
+ * 크롤링 대상 네이버 카페 5곳
  *
- * boards: discover-boards.ts 실행 후 실제 menuId로 교체 예정
- * 현재는 menuId: 0 (전체글보기)으로 설정 — 블랙리스트로 필터링
+ * 선정 원칙 (욕망 독해 최적화):
+ *   정보글 < 취미글 < 고민/감정/불만 글 우선
+ *   제거: 사진, 여행/나들이, 음식/요리, 유머, 취미, 골프/낚시 게시판
+ *   유지: 건강증상, 가족갈등, 돈걱정, 은퇴고민, 외로움, 위로 게시판
  *
  * priority:
- *   high — 50-60대에 직접 유용한 콘텐츠 (건강, 취미, 맛집, 유머, 일자리, 생활팁)
- *   medium — 참여도 높지만 품질 편차 (자유게시판, 일상수다)
- *   skip — 콘텐츠 가치 없음 (가입인사, 공지, 출석)
+ *   high — 욕망/감정/고민이 직접 드러나는 게시판 (DEEP + QUICK 모두)
+ *   medium — 참고용, DEEP 모드에서만 수집
+ *
+ * TODO: dlxogns01, wgang 신규 게시판, welovesilver·5060years 신규 게시판의
+ *       menuId는 카페 방문 후 URL ?menuid= 파라미터 확인 필요 (현재 0으로 임시 설정)
  */
 export const CAFE_CONFIGS: CafeConfig[] = [
+  // ─────────────────────────────────────────────────
+  // 1) 은퇴 후 50년 (dlxogns01) — 신규 추가
+  // ─────────────────────────────────────────────────
+  // TODO: numericId — 카페 접속 후 개발자도구 네트워크 탭에서 clubId 파라미터 확인 필요
+  // TODO: 각 게시판 menuId — 게시판 클릭 후 URL ?menuid= 확인 필요
+  {
+    id: 'dlxogns01',
+    name: '은퇴 후 50년',
+    url: 'https://cafe.naver.com/dlxogns01',
+    numericId: 0, // TODO: 실제 numericId로 교체 필요
+    boards: [
+      // ── high: 욕망/감정이 직접 드러나는 게시판 ──
+      { name: '자유로운 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' },    // TODO: menuId
+      { name: '예비은퇴자 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'finance' },   // TODO: menuId
+      { name: '은퇴 일기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' },          // TODO: menuId
+      { name: '건강 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'health' },           // TODO: menuId
+      { name: '고민 있어요(QnA)', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' },   // TODO: menuId
+      { name: '투자 이야기(금융/부동산)', menuId: 0, maxPages: 2, priority: 'high', category: 'finance' }, // TODO: menuId
+      { name: '일자리·자격증 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'job' },    // TODO: menuId
+      // ── medium ──
+      { name: '귀농·귀촌 이야기', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId
+      { name: '소소한 일상과 행복', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId
+    ],
+  },
+
+  // ─────────────────────────────────────────────────
+  // 2) 우아한 갱년기 (wgang) — 게시판 재설계
+  //    제거: 웃으면 복이와요, 식품/집밥, 취미/특기, 나들이/여행/외식,
+  //           좋은 글 나누기, 영화/음악, 내가 찍은 사진, 반려동식물,
+  //           성형/피부/헤어/패션, 보험 이야기
+  //    추가: 갱년기 마음 증상, 딸아들 이야기, 남편 이야기 (menuId 확인 필요)
+  // ─────────────────────────────────────────────────
   {
     id: 'wgang',
-    name: '우갱 (우아한 갱년기)',
+    name: '우아한 갱년기',
     url: 'https://cafe.naver.com/wgang',
     numericId: 29349320,
     boards: [
-      // ── high: 50-60대 핵심 관심사 ──
-      { name: '웃으면 복이와요', menuId: 101, maxPages: 3, priority: 'high', category: 'humor' },
-      { name: '약/영양제/건강/병원', menuId: 66, maxPages: 3, priority: 'high', category: 'health' },
-      { name: '갱년기 몸 증상', menuId: 8, maxPages: 2, priority: 'high', category: 'health' },
+      // ── high: 건강·가족·돈·은퇴 욕망 집중 ──
+      { name: '갱년기 몸 증상', menuId: 8, maxPages: 3, priority: 'high', category: 'health' },
+      { name: '갱년기 마음 증상', menuId: 0, maxPages: 3, priority: 'high', category: 'health' }, // TODO: menuId
       { name: '갱년기 극복후기', menuId: 81, maxPages: 2, priority: 'high', category: 'health' },
+      { name: '약/영양제/건강/병원', menuId: 66, maxPages: 2, priority: 'high', category: 'health' },
       { name: '운동/다이어트', menuId: 10, maxPages: 2, priority: 'high', category: 'health' },
-      { name: '식품/집밥', menuId: 11, maxPages: 2, priority: 'high', category: 'food' },
-      { name: '취미/특기', menuId: 14, maxPages: 2, priority: 'high', category: 'hobby' },
-      { name: '나들이/여행/외식', menuId: 13, maxPages: 2, priority: 'high', category: 'hobby' },
-      { name: '돈 이야기', menuId: 32, maxPages: 2, priority: 'high', category: 'finance' },
       { name: '은퇴 노후 계획', menuId: 112, maxPages: 2, priority: 'high', category: 'finance' },
-      { name: '좋은 글 나누기', menuId: 48, maxPages: 2, priority: 'high', category: 'lifestyle' },
-      // ── medium: 참여도 높지만 품질 편차 ──
+      { name: '돈 이야기', menuId: 32, maxPages: 2, priority: 'high', category: 'finance' },
+      { name: '딸아들 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' },   // TODO: menuId
+      { name: '남편 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' },     // TODO: menuId
+      // ── medium ──
       { name: '자유 주제', menuId: 34, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '영화/음악/공연/문화', menuId: 9, maxPages: 1, priority: 'medium', category: 'hobby' },
-      { name: '내가 찍은 사진', menuId: 27, maxPages: 1, priority: 'medium', category: 'hobby' },
-      { name: '반려 동식물', menuId: 28, maxPages: 1, priority: 'medium', category: 'hobby' },
-      { name: '성형/피부/헤어/패션', menuId: 12, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '보험 이야기', menuId: 114, maxPages: 1, priority: 'medium', category: 'finance' },
     ],
   },
+
+  // ─────────────────────────────────────────────────
+  // 3) 은사랑 카페 (welovesilver) — 게시판 재설계
+  //    제거: 유머/웃음/개그, 감동 이야기, 운동, 치료/병원, 음식/요리,
+  //           식사하셨나요, 취미/등산/댄스/운동, 여행, 취업 정보/구인/구직,
+  //           자유게시판, 음악/노래, 바람 쐬고 왔어요, 부동산, 반려동물
+  //    추가: 가족/자녀/부모/손주/손녀 (menuId 확인 필요)
+  //    승격: 위로받기/응원하기 medium → high
+  // ─────────────────────────────────────────────────
   {
     id: 'welovesilver',
-    name: '은사랑 카페 (5060,7080)',
+    name: '은사랑 카페',
     url: 'https://cafe.naver.com/welovesilver',
     numericId: 28648142,
     boards: [
       // ── high ──
-      { name: '유머/웃음/개그', menuId: 74, maxPages: 3, priority: 'high', category: 'humor' },
-      { name: '감동 이야기', menuId: 75, maxPages: 2, priority: 'high', category: 'humor' },
       { name: '건강', menuId: 23, maxPages: 3, priority: 'high', category: 'health' },
-      { name: '운동', menuId: 24, maxPages: 2, priority: 'high', category: 'health' },
-      { name: '치료/병원/한의원/재활', menuId: 14, maxPages: 2, priority: 'high', category: 'health' },
-      { name: '음식/요리', menuId: 25, maxPages: 2, priority: 'high', category: 'food' },
-      { name: '식사하셨나요', menuId: 135, maxPages: 2, priority: 'high', category: 'food' },
-      { name: '취미/등산/댄스/운동', menuId: 15, maxPages: 2, priority: 'high', category: 'hobby' },
-      { name: '여행', menuId: 71, maxPages: 2, priority: 'high', category: 'hobby' },
-      { name: '각종 생활 정보', menuId: 26, maxPages: 2, priority: 'high', category: 'lifestyle' },
-      { name: '취업 정보/구인/구직', menuId: 98, maxPages: 2, priority: 'high', category: 'job' },
+      { name: '가족/자녀/부모/손주/손녀', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' }, // TODO: menuId
       { name: '금융/저축/보험/증권/투자', menuId: 27, maxPages: 2, priority: 'high', category: 'finance' },
+      { name: '위로받기/응원하기', menuId: 79, maxPages: 2, priority: 'high', category: 'lifestyle' }, // medium → high 승격
       // ── medium ──
-      { name: '자유게시판', menuId: 1, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '음악/노래', menuId: 69, maxPages: 1, priority: 'medium', category: 'hobby' },
-      { name: '바람 쐬고 왔어요', menuId: 137, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '위로받기/응원하기', menuId: 79, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '부동산/주택/아파트', menuId: 34, maxPages: 1, priority: 'medium', category: 'finance' },
-      { name: '반려동물', menuId: 127, maxPages: 1, priority: 'medium', category: 'hobby' },
+      { name: '각종 생활 정보', menuId: 26, maxPages: 1, priority: 'medium', category: 'lifestyle' },
       { name: '귀농 귀촌', menuId: 134, maxPages: 1, priority: 'medium', category: 'lifestyle' },
     ],
   },
+
+  // ─────────────────────────────────────────────────
+  // 4) 50대60대 인생2막 (5060years) — 게시판 재설계
+  //    제거: 자작 글/유머/재치, 오늘 뭐 드셨습니까, 맛집/음식/요리 솜씨 자랑,
+  //           국내 나들이 여행, 골프/낚시/라이딩, 걷기/등산/댄스, 꽃/나무/풍경/사진,
+  //           시시콜콜 일상이야기, 반려동물 사랑방, 국외 나들이 여행, 귀촌/귀농/귀어 일기
+  //    추가: 자격증/노후대비, 아~ 화가 나요. 왜? (menuId 확인 필요)
+  // ─────────────────────────────────────────────────
   {
     id: '5060years',
     name: '50대60대 인생2막',
@@ -118,22 +151,13 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     numericId: 28962370,
     boards: [
       // ── high ──
-      { name: '자작 글/유머/재치', menuId: 23, maxPages: 3, priority: 'high', category: 'humor' },
-      { name: '나만 아는 건강법', menuId: 17, maxPages: 3, priority: 'high', category: 'health' },
-      { name: '오늘 뭐 드셨습니까', menuId: 14, maxPages: 2, priority: 'high', category: 'food' },
-      { name: '맛집/음식/요리 솜씨 자랑', menuId: 102, maxPages: 2, priority: 'high', category: 'food' },
-      { name: '생활의 지혜 공유', menuId: 16, maxPages: 2, priority: 'high', category: 'lifestyle' },
-      { name: '국내 나들이 여행', menuId: 126, maxPages: 2, priority: 'high', category: 'hobby' },
-      { name: '골프/낚시/라이딩', menuId: 116, maxPages: 2, priority: 'high', category: 'hobby' },
-      { name: '걷기/등산/댄스', menuId: 121, maxPages: 2, priority: 'high', category: 'hobby' },
-      { name: '인생 2막 설계/경험담', menuId: 389, maxPages: 2, priority: 'high', category: 'finance' },
-      { name: '꽃/나무/풍경/사진', menuId: 53, maxPages: 2, priority: 'high', category: 'hobby' },
+      { name: '자격증/노후대비', menuId: 0, maxPages: 2, priority: 'high', category: 'job' },        // TODO: menuId
+      { name: '나만 아는 건강법', menuId: 17, maxPages: 2, priority: 'high', category: 'health' },
+      { name: '인생 2막 설계/경험담/고민', menuId: 389, maxPages: 2, priority: 'high', category: 'finance' },
+      { name: '아~ 화가 나요. 왜?', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' }, // TODO: menuId
+      { name: '사랑/이별/그리움', menuId: 304, maxPages: 2, priority: 'high', category: 'lifestyle' },
       // ── medium ──
-      { name: '시시콜콜 일상이야기', menuId: 13, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '사랑/이별/그리움', menuId: 304, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '반려동물 사랑방', menuId: 109, maxPages: 1, priority: 'medium', category: 'hobby' },
-      { name: '국외 나들이 여행', menuId: 127, maxPages: 1, priority: 'medium', category: 'hobby' },
-      { name: '귀촌/귀농/귀어 일기', menuId: 46, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+      { name: '생활의 지혜 공유', menuId: 16, maxPages: 1, priority: 'medium', category: 'lifestyle' },
     ],
   },
 ]

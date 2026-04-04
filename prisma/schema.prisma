@@ -747,9 +747,23 @@ model CafePost {
   sentiment    String?  // positive, neutral, negative
   isUsable     Boolean  @default(false) // 콘텐츠 참고용으로 적합한지
 
+  // AI 심리 분석 결과 (psych-analyzer.ts)
+  emotionTags    String[] // ["ANXIOUS", "LONELY"] — docs/desire_taxonomy.md 참고
+  desireCategory String?  // "HEALTH" | "FAMILY" | "MONEY" | "RETIRE" | "JOB" | "RELATION" | "HOBBY" | "MEANING"
+  desireType     String?  // "big_desire" | "need" | "want" | "demerit"
+  psychInsight   String?  // 1줄 심리 요약 (예: "갱년기 증상 불안, 정보 갈증")
+  urgencyLevel   Int?     // 1(일상관심) ~ 5(즉각위기)
+  aiAnalyzed     Boolean  @default(false) // psych-analyzer 처리 완료 여부
+
+  // 댓글 내용 (상위 5개, DEEP 모드에서만 수집)
+  topComments    Json?    // [{author: string, content: string, likeCount: number}]
+  commentCrawled Boolean  @default(false) // 댓글 내용 크롤링 완료 여부
+
   @@index([cafeId, crawledAt(sort: Desc)])
   @@index([crawledAt(sort: Desc)])
   @@index([isUsable, crawledAt(sort: Desc)])
+  @@index([aiAnalyzed, crawledAt(sort: Desc)])
+  @@index([desireCategory, urgencyLevel])
 }
 
 /// 일별 트렌드 분석 결과
@@ -771,6 +785,17 @@ model CafeTrend {
 
   totalPosts    Int      @default(0)
   cafeSummary   Json?    // 카페별 요약 {wgang: {count, top}, ...}
+
+  // AI 심리 분석 집계 결과 (trend-analyzer.ts)
+  desireMap           Json?    // {HEALTH: 35, FAMILY: 20, MONEY: 15, ...} — 퍼센트
+  emotionDistribution Json?    // {ANXIOUS: 30, LONELY: 25, HOPEFUL: 20, ...} — 퍼센트
+  urgentTopics        Json?    // [{topic, urgencyAvg, count, psychInsight}]
+  dominantDesire      String?  // 오늘 지배적 욕망 코드 (예: "HEALTH")
+  dominantEmotion     String?  // 오늘 지배적 감정 코드 (예: "ANXIOUS")
+
+  // 점심 퀵 업데이트 (12:30 QUICK 모드)
+  quickUpdate   Json?    // {time: "12:30", topTitles: [], surfaceTrend: ""}
+  updatedAt     DateTime @updatedAt
 
   createdAt     DateTime @default(now())
 
