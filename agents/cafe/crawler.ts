@@ -194,6 +194,82 @@ async function safeNumber(
   return parseInt(text.replace(/[^0-9]/g, ''), 10) || 0
 }
 
+/** DEEP 모드 전용 — 상위 댓글 추출 (최대 5개) */
+async function extractComments(
+  target: Page | Frame,
+  maxComments = 5,
+): Promise<Array<{ author: string; content: string; likeCount: number }>> {
+  const comments: Array<{ author: string; content: string; likeCount: number }> = []
+
+  // 댓글 렌더링 대기 (동적 로드)
+  await sleep(1500)
+
+  // 네이버 카페 신/구 형식 댓글 컨테이너 셀렉터
+  const containerSelectors = [
+    '.CommentItem',
+    '.comment_item',
+    '.u_cbox_comment',
+    '.reply_item',
+    '.cmt_text',
+  ]
+
+  for (const sel of containerSelectors) {
+    let items: Awaited<ReturnType<typeof target.locator>>[] = []
+    try {
+      items = await target.locator(sel).all()
+    } catch {
+      continue
+    }
+    if (items.length === 0) continue
+
+    for (const item of items.slice(0, maxComments)) {
+      // 작성자
+      let author = '익명'
+      for (const authorSel of ['.u_cbox_nick', '.nickname', '.nick', '.comment_writer']) {
+        try {
+          const el = item.locator(authorSel).first()
+          if (await el.count() > 0) {
+            const text = await el.textContent({ timeout: 2000 })
+            if (text?.trim()) { author = text.trim(); break }
+          }
+        } catch { /* 다음 셀렉터 */ }
+      }
+
+      // 댓글 본문
+      let content = ''
+      for (const contentSel of ['.u_cbox_contents', '.comment_text', '.text', '.content_area']) {
+        try {
+          const el = item.locator(contentSel).first()
+          if (await el.count() > 0) {
+            const text = await el.textContent({ timeout: 2000 })
+            if (text?.trim()) { content = text.trim().slice(0, 200); break }
+          }
+        } catch { /* 다음 셀렉터 */ }
+      }
+
+      if (!content) continue
+
+      // 좋아요 수
+      let likeCount = 0
+      for (const likeSel of ['.u_cbox_cnt_recomm', '.like_count', '.recomm_count']) {
+        try {
+          const el = item.locator(likeSel).first()
+          if (await el.count() > 0) {
+            const text = await el.textContent({ timeout: 2000 })
+            if (text) { likeCount = parseInt(text.replace(/[^0-9]/g, ''), 10) || 0; break }
+          }
+        } catch { /* 다음 셀렉터 */ }
+      }
+
+      comments.push({ author, content, likeCount })
+    }
+
+    if (comments.length > 0) break // 이 셀렉터로 댓글 찾았으면 중단
+  }
+
+  return comments
+}
+
 // ─── URL 수집 ─────────────────────────────────────────
 
 interface ArticleInfo {
@@ -205,11 +281,13 @@ interface ArticleInfo {
 }
 
 /** 글 목록 URL 수집 — 게시판별 크롤링 + 메인 페이지 폴백 */
-async function collectPostUrls(page: Page, cafe: CafeConfig): Promise<ArticleInfo[]> {
+async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false): Promise<ArticleInfo[]> {
   const collectedMap = new Map<string, ArticleInfo>() // articleId → ArticleInfo (중복 방지)
 
-  // 방법 1: 게시판별 크롤링 (priority !== 'skip' 인 게시판만)
-  const activeBoards = cafe.boards.filter(b => b.priority !== 'skip')
+  // QUICK 모드: HIGH 게시판만, 1페이지만 수집
+  const activeBoards = quickMode
+    ? cafe.boards.filter(b => b.priority === 'high')
+    : cafe.boards.filter(b => b.priority !== 'skip')
 
   for (const board of activeBoards) {
     try {
@@ -218,8 +296,8 @@ async function collectPostUrls(page: Page, cafe: CafeConfig): Promise<ArticleInf
       await page.goto(boardUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
       await sleep(3000)
 
-      // 스크롤하여 더 많은 글 로드
-      const scrollCount = board.menuId === 0 ? 3 : Math.min(board.maxPages, 3)
+      // 스크롤하여 더 많은 글 로드 (QUICK 모드: 1페이지만)
+      const scrollCount = quickMode ? 1 : (board.menuId === 0 ? 3 : Math.min(board.maxPages, 3))
       for (let i = 0; i < scrollCount; i++) {
         await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
         await sleep(1500)
@@ -282,15 +360,17 @@ async function collectPostUrls(page: Page, cafe: CafeConfig): Promise<ArticleInf
   }
 
   const articles = Array.from(collectedMap.values())
-  const limited = articles.slice(0, CRAWL_LIMITS.maxPostsPerCafe)
-  console.log(`[CafeCrawler] ${cafe.name}: ${limited.length}개 URL 준비`)
+  // QUICK 모드: 카페당 최대 15개로 제한 (전체 50개 이내)
+  const limit = quickMode ? 15 : CRAWL_LIMITS.maxPostsPerCafe
+  const limited = articles.slice(0, limit)
+  console.log(`[CafeCrawler] ${cafe.name}: ${limited.length}개 URL 준비 (${quickMode ? 'QUICK' : 'DEEP'} 모드)`)
   return limited
 }
 
 // ─── 신 형식 크롤링 (f-e URL — iframe 불필요) ─────────────
 
 /** 신 형식 URL에서 글 상세 크롤링 — cafe_main iframe 안에서 콘텐츠 추출 */
-async function crawlNewFormat(page: Page, article: ArticleInfo, cafe: CafeConfig): Promise<RawCafePost | null> {
+async function crawlNewFormat(page: Page, article: ArticleInfo, cafe: CafeConfig, includeComments = false): Promise<RawCafePost | null> {
   try {
     await page.goto(article.newFormatUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
     await sleep(3000)
@@ -325,7 +405,7 @@ async function crawlNewFormat(page: Page, article: ArticleInfo, cafe: CafeConfig
 
     if (!title) return null
 
-    return await buildPostFromTarget(target, article.newFormatUrl, cafe, title, article.boardName, article.boardCategory)
+    return await buildPostFromTarget(target, article.newFormatUrl, cafe, title, article.boardName, article.boardCategory, includeComments)
   } catch (err) {
     console.warn(`[CafeCrawler] 신형식 실패: ${article.articleId}`, err instanceof Error ? err.message : '')
     return null
@@ -335,7 +415,7 @@ async function crawlNewFormat(page: Page, article: ArticleInfo, cafe: CafeConfig
 // ─── 구 형식 크롤링 (iframe URL — 폴백) ─────────────
 
 /** 구 형식 URL (iframe) 에서 글 상세 크롤링 */
-async function crawlOldFormat(page: Page, article: ArticleInfo, cafe: CafeConfig): Promise<RawCafePost | null> {
+async function crawlOldFormat(page: Page, article: ArticleInfo, cafe: CafeConfig, includeComments = false): Promise<RawCafePost | null> {
   try {
     await page.goto(article.oldFormatUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
     await sleep(2500)
@@ -364,7 +444,7 @@ async function crawlOldFormat(page: Page, article: ArticleInfo, cafe: CafeConfig
 
     if (!title) return null
 
-    return await buildPostFromTarget(cafeFrame, article.oldFormatUrl, cafe, title, article.boardName, article.boardCategory)
+    return await buildPostFromTarget(cafeFrame, article.oldFormatUrl, cafe, title, article.boardName, article.boardCategory, includeComments)
   } catch {
     return null
   }
@@ -380,6 +460,7 @@ async function buildPostFromTarget(
   title: string,
   boardName?: string | null,
   boardCategory?: ContentCategory | null,
+  includeComments = false,
 ): Promise<RawCafePost | null> {
   if (!title || title.length < 2) return null
 
@@ -475,10 +556,14 @@ async function buildPostFromTarget(
   // 미디어 추출
   const media = await extractMedia(target)
 
+  // DEEP 모드: 댓글 추출
+  const topComments = includeComments ? await extractComments(target) : undefined
+
   const mediaInfo = media.imageUrls.length + media.videoUrls.length > 0
     ? ` 이미지=${media.imageUrls.length} 동영상=${media.videoUrls.length}`
     : ''
-  console.log(`[CafeCrawler] ✓ "${title.slice(0, 30)}..." 작성자=${author} 좋아요=${likeCount} 댓글=${commentCount} 조회=${viewCount}${mediaInfo}`)
+  const commentInfo = topComments && topComments.length > 0 ? ` 댓글수집=${topComments.length}개` : ''
+  console.log(`[CafeCrawler] ✓ "${title.slice(0, 30)}..." 작성자=${author} 좋아요=${likeCount} 댓글=${commentCount} 조회=${viewCount}${mediaInfo}${commentInfo}`)
 
   return {
     cafeId: cafe.id,
@@ -497,19 +582,20 @@ async function buildPostFromTarget(
     imageUrls: media.imageUrls,
     videoUrls: media.videoUrls,
     thumbnailUrl: media.thumbnailUrl,
+    topComments,
   }
 }
 
 // ─── 개별 글 크롤링 (신 형식 우선 → 구 형식 폴백) ─────────
 
 /** 개별 글 크롤링 — 신 형식 먼저 시도, 실패 시 구 형식으로 폴백 */
-async function crawlPost(page: Page, article: ArticleInfo, cafe: CafeConfig): Promise<RawCafePost | null> {
+async function crawlPost(page: Page, article: ArticleInfo, cafe: CafeConfig, includeComments = false): Promise<RawCafePost | null> {
   // 1차: 신 형식 (직접 렌더링, 성공률 높음)
-  const result = await crawlNewFormat(page, article, cafe)
+  const result = await crawlNewFormat(page, article, cafe, includeComments)
   if (result) return result
 
   // 2차: 구 형식 (iframe 기반, 폴백)
-  return crawlOldFormat(page, article, cafe)
+  return crawlOldFormat(page, article, cafe, includeComments)
 }
 
 // ─── DB 저장 ─────────────────────────────────────────
@@ -565,6 +651,9 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
           videoUrls: post.videoUrls,
           thumbnailUrl: post.thumbnailUrl,
           mediaCount: post.imageUrls.length + post.videoUrls.length,
+          // DEEP 모드: 댓글 데이터
+          topComments: post.topComments ? JSON.parse(JSON.stringify(post.topComments)) : undefined,
+          commentCrawled: (post.topComments?.length ?? 0) > 0,
         },
       })
       saved++
@@ -578,7 +667,11 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
 // ─── 메인 실행 ─────────────────────────────────────────
 
 async function main() {
-  console.log('[CafeCrawler] 시작 — 네이버 카페 3곳 크롤링')
+  const crawlMode = process.env.CRAWL_MODE ?? 'deep'
+  const isQuickMode = crawlMode === 'quick'
+  const includeComments = !isQuickMode  // DEEP 모드만 댓글 수집
+
+  console.log(`[CafeCrawler] 시작 — 모드: ${isQuickMode ? 'QUICK (HIGH 게시판 1페이지, 댓글 없음)' : 'DEEP (전체 게시판, 댓글 포함)'}`)
   const startTime = Date.now()
 
   let totalCollected = 0
@@ -594,7 +687,7 @@ async function main() {
       console.log(`\n[CafeCrawler] === ${cafe.name} (${cafe.id}, #${cafe.numericId}) ===`)
 
       // 1) 글 URL 수집
-      const articles = await collectPostUrls(page, cafe)
+      const articles = await collectPostUrls(page, cafe, isQuickMode)
       totalUrls += articles.length
 
       // 2) 각 글 상세 크롤링 (연속 실패 5회 시 차단 의심 → 카페 스킵)
@@ -608,14 +701,15 @@ async function main() {
           break
         }
 
-        const post = await crawlPost(page, article, cafe)
+        const post = await crawlPost(page, article, cafe, includeComments)
         if (post) {
           posts.push(post)
           consecutiveFails = 0
         } else {
           consecutiveFails++
         }
-        await sleep(CRAWL_LIMITS.delayBetweenPosts)
+        // QUICK 모드: 딜레이 단축
+        await sleep(isQuickMode ? Math.floor(CRAWL_LIMITS.delayBetweenPosts / 2) : CRAWL_LIMITS.delayBetweenPosts)
       }
 
       const successRate = articles.length > 0 ? Math.round(posts.length / articles.length * 100) : 0
@@ -663,7 +757,7 @@ async function main() {
     body: `수집: ${totalCollected}/${totalUrls}개 (수율 ${overallRate}%) / 신규 저장: ${totalSaved}개\n소요: ${Math.round(durationMs / 1000)}초`,
   })
 
-  console.log(`\n[CafeCrawler] 완료 — 수집 ${totalCollected}/${totalUrls} (${overallRate}%), 저장 ${totalSaved}, ${Math.round(durationMs / 1000)}초`)
+  console.log(`\n[CafeCrawler] 완료 — [${crawlMode.toUpperCase()}] 수집 ${totalCollected}/${totalUrls} (${overallRate}%), 저장 ${totalSaved}, ${Math.round(durationMs / 1000)}초`)
   await disconnect()
 }
 

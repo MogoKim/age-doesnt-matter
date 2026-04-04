@@ -42,6 +42,8 @@ export interface RawCafePost {
   imageUrls: string[]
   videoUrls: string[]
   thumbnailUrl: string | null
+  // DEEP 모드: 상위 댓글 (최대 5개)
+  topComments?: Array<{ author: string; content: string; likeCount: number }>
 }
 
 /** AI 분석된 트렌드 */
