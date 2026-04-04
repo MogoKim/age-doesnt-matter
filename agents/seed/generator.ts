@@ -139,10 +139,11 @@ export async function generatePost(
     : '일상'
 
   const categoryMap: Record<string, string[]> = {
-    STORY: ['일상', '건강', '고민', '자녀', '기타'],
-    HUMOR: ['유머', '힐링', '자랑', '추천', '기타'],
+    STORY: ['건강', '가족', '취미', '고민', '자유수다'],
+    HUMOR: ['유머·웃음', '엔터·TV', '추천·리뷰', '기타'],
     JOB: ['전체'],
-    WEEKLY: ['주간토론', '이번주화제', '자유수다', '기타'],
+    LIFE2: ['은퇴준비', '재테크·연금', '보험', '주거·이사'],
+    WEEKLY: ['은퇴준비', '재테크·연금', '보험', '주거·이사'],  // WEEKLY 숨김 — LIFE2와 동일 카테고리
   }
   const boardCategories = categoryMap[board] ?? ['기타']
 

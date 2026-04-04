@@ -8,7 +8,7 @@ import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
  * 활동: 글쓰기, 댓글, 대댓글, 좋아요
  *
  * 성격 분포: 긍정(12) + 중립(10) + 부정/비판(8) + 특이(5) + 신규(15) = 50명
- * 게시판 분포: STORY(25) + HUMOR(4) + JOB(1) + WEEKLY(3) + 크로스보드 활동
+ * 게시판 분포: STORY(22) + HUMOR(4) + JOB(1) + LIFE2(6) + 크로스보드 활동
  */
 
 type ActivityType = 'post' | 'comment' | 'reply' | 'like'
@@ -110,6 +110,7 @@ const SCHEDULE: Record<string, Activity[]> = {
 
   '14': [
     // 글쓰기 — 오후 활동
+    { personaId: 'B', type: 'post', board: 'LIFE2' },           // 정호씨 은퇴/재테크 정보
     { personaId: 'H', type: 'post' },                          // 매일걷기 건강 데이터
     { personaId: 'N', type: 'post' },                          // 알뜰맘 살림 팁
     { personaId: 'T', type: 'post' },                          // 배움은즐거워 교육
@@ -135,8 +136,8 @@ const SCHEDULE: Record<string, Activity[]> = {
     // 글쓰기 — 감성 + 논쟁
     { personaId: 'P', type: 'post' },                          // 오후세시 감성 에세이
     { personaId: 'Z', type: 'post' },                          // 혼자잘산다 자조 유머
-    { personaId: 'AB', type: 'post', board: 'WEEKLY' },        // 따져보자 토론 주제
-    { personaId: 'Y', type: 'post', board: 'WEEKLY' },         // 솔직히말해서 현실 팩폭
+    { personaId: 'AB', type: 'post', board: 'LIFE2' },        // 따져보자 토론 주제
+    { personaId: 'Y', type: 'post', board: 'LIFE2' },         // 솔직히말해서 현실 팩폭
     { personaId: 'AD', type: 'post' },                         // 그때그시절 회고
     // 댓글
     { personaId: 'K', type: 'comment', board: 'STORY', count: 2 },
@@ -157,10 +158,10 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'Q', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'AD', type: 'comment', board: 'STORY', count: 2 },  // 그때그시절 "옛날에는~"
     { personaId: 'AH', type: 'comment', board: 'STORY', count: 2 },  // 피곤해요 공감
-    { personaId: 'Y', type: 'comment', board: 'WEEKLY', count: 1 },  // 솔직히말해서 팩폭
+    { personaId: 'Y', type: 'comment', board: 'LIFE2', count: 1 },  // 솔직히말해서 팩폭
     // 대댓글
     { personaId: 'L', type: 'reply', board: 'STORY', count: 1 },
-    { personaId: 'AB', type: 'reply', board: 'WEEKLY', count: 1 },
+    { personaId: 'AB', type: 'reply', board: 'LIFE2', count: 1 },
     // 좋아요
     { personaId: 'A', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'F', type: 'like', board: 'STORY', count: 2 },
@@ -198,7 +199,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AH', type: 'post' },                         // 피곤해요 하루 TMI
     { personaId: 'S', type: 'post' },                          // 제주살이 저녁 풍경
     { personaId: 'R', type: 'post', board: 'HUMOR' },          // 밤새봤다 저녁 드라마
-    { personaId: 'T', type: 'post', board: 'WEEKLY' },         // 배움은즐거워 수다방
+    { personaId: 'T', type: 'post', board: 'LIFE2' },         // 배움은즐거워 수다방
     // 댓글
     { personaId: 'E', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'G', type: 'comment', board: 'STORY', count: 2 },
@@ -337,7 +338,7 @@ async function runActivity(activity: Activity): Promise<void> {
         title,
         content: htmlContent,
         summary,
-        boardType: boardType as 'STORY' | 'HUMOR' | 'WEEKLY',
+        boardType: boardType as 'STORY' | 'HUMOR' | 'LIFE2',
         category: category ?? null,
         authorId: userId,
         source: 'BOT',
