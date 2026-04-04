@@ -70,3 +70,4 @@ supabase/.temp/
 e2e/.auth/
 # Playwright 결과 JSON
 playwright-report/results.json
+agents/core/today-brief.json
