@@ -12,6 +12,7 @@ import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
 import CommunitySection from '@/components/features/home/CommunitySection'
+import Life2Section from '@/components/features/home/Life2Section'
 import RecentActivityFeed from '@/components/features/home/RecentActivityFeed'
 import HomeSidebar from '@/components/features/home/HomeSidebar'
 import {
@@ -20,12 +21,13 @@ import {
   getEditorsPicks,
   getLatestMagazinePosts,
   getLatestCommunityPosts,
+  getLatestLife2Posts,
   getRecentActivities,
 } from '@/lib/queries/posts'
 
 export const metadata: Metadata = {
   title: '우리 나이가 어때서 — 5060 세대 커뮤니티',
-  description: '나이 걱정 없이 소통하는 따뜻한 커뮤니티. 일자리 정보, 건강·생활 매거진, 자유로운 소통까지.',
+  description: '50·60대라면 누구나 "여기 오면 내 얘기가 있다"고 느끼는 중장년 연결 커뮤니티. 사는 이야기, 2막 준비, 일자리까지.',
 }
 
 // layout.tsx의 auth() 때문에 페이지 레벨 ISR이 무효화됨
@@ -55,6 +57,11 @@ const getCachedCommunity = unstable_cache(
   ['home-community'],
   { revalidate: 60 }
 )
+const getCachedLife2 = unstable_cache(
+  () => getLatestLife2Posts(5),
+  ['home-life2'],
+  { revalidate: 60 }
+)
 const getCachedActivity = unstable_cache(
   () => getRecentActivities(8),
   ['home-activity'],
@@ -62,12 +69,13 @@ const getCachedActivity = unstable_cache(
 )
 
 export default async function HomePage() {
-  const [jobs, trending, editorsPicks, magazine, community, activities] = await Promise.all([
+  const [jobs, trending, editorsPicks, magazine, community, life2, activities] = await Promise.all([
     getCachedJobs(),
     getCachedTrending(),
     getCachedEditorsPicks(),
     getCachedMagazine(),
     getCachedCommunity(),
+    getCachedLife2(),
     getCachedActivity(),
   ])
 
@@ -99,15 +107,16 @@ export default async function HomePage() {
       <div className="max-w-[1200px] mx-auto">
         <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
           <div>
-            <JobSection jobs={jobs} />
-            <AdSenseUnit slotId={ADSENSE.HOME_SECTION} format="auto" className="my-4 rounded-2xl overflow-hidden" />
             <TrendingSection posts={trending} />
+            <AdSenseUnit slotId={ADSENSE.HOME_SECTION} format="auto" className="my-4 rounded-2xl overflow-hidden" />
+            <CommunitySection posts={community} />
             <ResponsiveAd mobile={<CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />} desktop={null} />
+            <Life2Section posts={life2} />
             <EditorsPickSection posts={editorsPicks} />
             <MagazineSection posts={magazine} />
             <FeedAd />
+            <JobSection jobs={jobs} />
             <RecentActivityFeed activities={activities} />
-            <CommunitySection posts={community} />
           </div>
           <HomeSidebar posts={community} />
         </div>

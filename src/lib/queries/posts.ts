@@ -499,6 +499,21 @@ export const getJobDetail = cache(async function getJobDetail(
   }
 })
 
+/* ── 2막 준비 최신글 ── */
+
+export async function getLatestLife2Posts(limit = 5): Promise<PostSummary[]> {
+  const rows = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      boardType: 'LIFE2',
+    },
+    select: postSelect,
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  })
+  return rows.map(toPostSummary)
+}
+
 /* ── 매거진 목록 (카테고리 필터) ── */
 
 export async function getMagazineList(
