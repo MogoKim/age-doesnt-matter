@@ -157,6 +157,48 @@ interface PlatformContent {
 function buildCMOContextBlock(cmoContext: CMOContext): string {
   const parts: string[] = []
 
+  // 오늘의 심리 프로파일 — 가장 먼저, 가장 크게 (콘텐츠 방향 결정)
+  if (cmoContext.todayDominantDesire || cmoContext.urgentTopics.length > 0) {
+    const desireLabel: Record<string, string> = {
+      HEALTH: '건강/증상/병원',
+      FAMILY: '가족/자녀/손주',
+      MONEY: '돈/재테크/연금',
+      RETIRE: '은퇴/노후/인생2막',
+      JOB: '일자리/자격증',
+      RELATION: '관계/외로움/소통',
+      HOBBY: '취미/여가',
+      MEANING: '삶의 의미/감사/보람',
+    }
+    const emotionLabel: Record<string, string> = {
+      ANXIOUS: '불안', LONELY: '외로움', ANGRY: '분노/억울',
+      HOPEFUL: '기대/희망', RESIGNED: '체념', GRATEFUL: '감사', PROUD: '자랑/성취',
+    }
+
+    const psychLines: string[] = []
+    if (cmoContext.todayDominantDesire) {
+      psychLines.push(`- 오늘 주된 관심사: **${desireLabel[cmoContext.todayDominantDesire] ?? cmoContext.todayDominantDesire}**`)
+    }
+    if (cmoContext.todayDominantEmotion) {
+      psychLines.push(`- 오늘의 감정 흐름: ${emotionLabel[cmoContext.todayDominantEmotion] ?? cmoContext.todayDominantEmotion}`)
+    }
+    if (cmoContext.urgentTopics.length > 0) {
+      const top = cmoContext.urgentTopics[0]
+      psychLines.push(`- 긴급 관심사: ${top.psychInsight || desireLabel[top.topic] || top.topic} (긴급도 ${top.urgencyAvg}/5, ${top.count}개 글)`)
+    }
+    if (Object.keys(cmoContext.desireMap).length > 0) {
+      const topDesires = Object.entries(cmoContext.desireMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([k, v]) => `${desireLabel[k] ?? k} ${v}%`)
+        .join(', ')
+      psychLines.push(`- 욕망 분포: ${topDesires}`)
+    }
+    psychLines.push(`→ 오늘 콘텐츠는 이 관심사와 감정에 공명하는 방향으로 작성하세요.`)
+    psychLines.push(`  직접 인용 금지. 당신의 개성으로 자연스럽게 녹여내세요.`)
+
+    parts.push(`## 오늘의 커뮤니티 심리 프로파일\n${psychLines.join('\n')}`)
+  }
+
   if (cmoContext.recentLearnings.length > 0) {
     parts.push(`## 최근 학습 (지난 실험 결과)\n${cmoContext.recentLearnings.join('\n')}`)
   }
@@ -383,6 +425,9 @@ async function main() {
 
   if (cmoContext.recentLearnings.length > 0) {
     console.log(`[SocialPoster] CMO 컨텍스트: 학습 ${cmoContext.recentLearnings.length}건, TOP 성과 ${cmoContext.topPerformingContent.length}건`)
+  }
+  if (cmoContext.todayDominantDesire) {
+    console.log(`[SocialPoster] 오늘 심리 프로파일: 욕망=${cmoContext.todayDominantDesire}, 감정=${cmoContext.todayDominantEmotion ?? '없음'}, 긴급토픽=${cmoContext.urgentTopics.length}개`)
   }
 
   // 2. 소스 콘텐츠 수집

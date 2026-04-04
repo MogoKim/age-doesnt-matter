@@ -34,7 +34,8 @@ import {
   updateError,
   updateCategory,
 } from '../community/jisik-sheets-client.js'
-import { disconnect } from '../core/db.js'
+import { prisma, disconnect } from '../core/db.js'
+import type { UrgentTopic } from './knowledge-base.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const STORAGE_STATE_PATH = resolve(__dirname, '../cafe/storage-state-jisik.json')
@@ -43,6 +44,36 @@ const MAX_ANSWERS_PER_RUN = 3
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const randomBetween = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min
+
+// ─── 오늘의 긴급 토픽 로드 ───────────────────────────────────
+
+/** CafeTrend에서 오늘의 urgentTopics 조회 */
+async function loadUrgentTopics(): Promise<UrgentTopic[]> {
+  try {
+    const trend = await prisma.cafeTrend.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { urgentTopics: true, dominantDesire: true },
+    })
+    if (!trend?.urgentTopics) return []
+    return Array.isArray(trend.urgentTopics)
+      ? (trend.urgentTopics as UrgentTopic[]).slice(0, 3)
+      : []
+  } catch {
+    return []
+  }
+}
+
+/** 욕망 카테고리 → 지식인 카테고리 매핑 */
+const DESIRE_TO_JISIK_CATEGORY: Record<string, string> = {
+  HEALTH: '건강',
+  FAMILY: '가족',
+  MONEY: '재테크',
+  RETIRE: '생활',
+  JOB: '취업',
+  RELATION: '생활',
+  HOBBY: '생활',
+  MEANING: '기타',
+}
 
 // ─── 카테고리별 페르소나 ───────────────────────────────────
 
@@ -250,6 +281,7 @@ async function scrapeQuestion(page: Page, url: string): Promise<QuestionData> {
 async function generateAnswer(
   question: QuestionData,
   category: string,
+  urgentTopics: UrgentTopic[] = [],
 ): Promise<string> {
   const client = new Anthropic()
   const persona = PERSONA_MAP[category] ?? PERSONA_MAP['기타']
@@ -263,7 +295,16 @@ async function generateAnswer(
     persona.tone === 'practical' ? '경험 기반의 실용적인' :
     '감정적으로 위로해주는'
 
+  // 오늘의 긴급 토픽 중 질문 카테고리와 일치하는 것만 추출
+  const relevantTopic = urgentTopics.find(t =>
+    DESIRE_TO_JISIK_CATEGORY[t.topic] === category && t.psychInsight,
+  )
+  const communityContext = relevantTopic
+    ? `\n[오늘 커뮤니티 분위기 — 참고만, 직접 인용 금지]\n요즘 "${relevantTopic.psychInsight}" 관련 고민을 가진 분들이 많습니다. 이 분위기를 공감 표현에 자연스럽게 녹여주세요.\n`
+    : ''
+
   const systemPrompt = `당신은 ${persona.age} ${genderDesc}입니다. 네이버 지식인에서 비슷한 처지의 분들 고민에 진심으로 답변을 달고 있어요.
+${communityContext}
 
 답변 3단계 구조:
 1단계 [공감 Hook — 2~3문장]: 질문자의 상황/감정에 먼저 완전히 공감. "저도 그런 경험~", "아, 그 마음 정말 알아요~" 식으로 시작. 절대 "안녕하세요"로 시작 금지.
@@ -472,6 +513,12 @@ async function extractAnswerUrl(page: Page, answer: string): Promise<string> {
 async function main() {
   console.log('[JisikAnswerer] 지식인 자동 답변 시작')
 
+  // 오늘의 긴급 토픽 로드 (답변 공감도 강화용)
+  const urgentTopics = await loadUrgentTopics()
+  if (urgentTopics.length > 0) {
+    console.log(`[JisikAnswerer] 오늘 긴급 토픽 ${urgentTopics.length}개: ${urgentTopics.map(t => t.topic).join(', ')}`)
+  }
+
   // Sheet에서 Ready 행 읽기
   const rows = await readReadyRows()
   if (rows.length === 0) {
@@ -525,7 +572,7 @@ async function main() {
       }
 
       // 3. Claude 답변 생성
-      const answer = await generateAnswer(question, category)
+      const answer = await generateAnswer(question, category, urgentTopics)
       console.log(`[JisikAnswerer] 답변 생성 완료 (${answer.length}자)`)
 
       // 4. 답변 게시
