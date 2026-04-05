@@ -92,6 +92,24 @@ export default defineConfig({
         storageState: USER_AUTH,
       },
     },
+    // 8. 업로드 검증 (user.json)
+    {
+      name: 'qa-upload',
+      testMatch: /qa\/16-.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: USER_AUTH,
+      },
+    },
+    // 9. 최근 수정사항 검증 (user.json)
+    {
+      name: 'qa-fixes',
+      testMatch: /qa\/17-.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: USER_AUTH,
+      },
+    },
   ],
 
   // E2E_BASE_URL 설정 시 외부 URL 직접 테스트 (프로덕션 QA)
