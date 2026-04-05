@@ -33,7 +33,6 @@ export interface SheetTab {
 const TAB_TO_BOARD: Record<string, 'STORY' | 'HUMOR'> = {
   '사는이야기': 'STORY',
   '웃음방': 'HUMOR',
-  '활력충전소': 'HUMOR',  // 하위 호환 (시트 탭명이 아직 구명일 경우)
 }
 
 function getSheetId(): string {

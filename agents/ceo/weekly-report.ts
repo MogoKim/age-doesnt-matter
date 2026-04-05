@@ -64,6 +64,27 @@ class CEOWeeklyReport extends BaseAgent {
     })
     const nsmCount = nsmResult.length
 
+    // KR3: D7 리텐션 — CDO KPI_DAILY BotLog에서 GA4 코호트 데이터 파싱
+    const cdoKpiLog = await prisma.botLog.findFirst({
+      where: { botType: 'CDO', action: 'KPI_DAILY', status: 'SUCCESS' },
+      orderBy: { createdAt: 'desc' },
+      select: { details: true },
+    })
+    let d7RetentionPct: number | null = null
+    let d7CohortSize: number | null = null
+    let d7Users: number | null = null
+    if (cdoKpiLog?.details) {
+      const details = typeof cdoKpiLog.details === 'string'
+        ? JSON.parse(cdoKpiLog.details) as { kpi?: { cohortRetention?: { d7RetentionRate?: number; cohortSize?: number; d7RetentionUsers?: number } } }
+        : cdoKpiLog.details as { kpi?: { cohortRetention?: { d7RetentionRate?: number; cohortSize?: number; d7RetentionUsers?: number } } }
+      const cohort = details?.kpi?.cohortRetention
+      if (cohort) {
+        d7RetentionPct = Math.round((cohort.d7RetentionRate ?? 0) * 1000) / 10
+        d7CohortSize = cohort.cohortSize ?? null
+        d7Users = cohort.d7RetentionUsers ?? null
+      }
+    }
+
     // 3. SNS 성과
     const [snsPostCount, snsExperiment] = await Promise.all([
       prisma.socialPost.count({ where: { status: 'POSTED', postedAt: { gte: weekAgo } } }),
@@ -209,7 +230,9 @@ ${snsExperiment ? `- 현재 실험: ${snsExperiment.hypothesis} (${snsExperiment
             `*:bar_chart: Q2 OKR 진행률*`,
             `  KR1 MAU:  ${mauCount}명 / 500명 목표 (${Math.round(mauCount / 500 * 100)}%)  [마일스톤: 4월50→5월150→6월500]`,
             `  KR2 NSM:  ${nsmCount}명/주 / 50명 목표 (${Math.round(nsmCount / 50 * 100)}%)`,
-            `  KR3 D7:   GA4 Cohort 설정 필요 (수동)`,
+            d7RetentionPct !== null
+              ? `  KR3 D7:   ${d7RetentionPct}% (${d7Users}/${d7CohortSize}명, 목표 25%)`
+              : `  KR3 D7:   GA4 데이터 수집 대기 중`,
             `  KR4 매출: 어드민 수동 기록 필요`,
           ].join('\n'),
         },
