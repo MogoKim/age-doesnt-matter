@@ -9,8 +9,8 @@ import { HELP } from './admin-help-texts'
 const GRADE_OPTIONS: { value: Grade; label: string }[] = [
   { value: 'SPROUT', label: '새싹 🌱' },
   { value: 'REGULAR', label: '단골 🌿' },
-  { value: 'VETERAN', label: '터줏대감 💎' },
   { value: 'WARM_NEIGHBOR', label: '따뜻한이웃 ☀️' },
+  { value: 'HONORARY', label: '명예우나어인 🏅' },
 ]
 
 interface BoardConfig {

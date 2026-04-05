@@ -22,7 +22,7 @@ beforeEach(() => {
 
 describe('GRADE_INFO', () => {
   it('4개 등급 모두 emoji + label 존재', () => {
-    const grades = ['SPROUT', 'REGULAR', 'VETERAN', 'WARM_NEIGHBOR'] as const
+    const grades = ['SPROUT', 'REGULAR', 'WARM_NEIGHBOR', 'HONORARY'] as const
     for (const g of grades) {
       expect(GRADE_INFO[g].emoji).toBeDefined()
       expect(GRADE_INFO[g].label).toBeDefined()
@@ -83,8 +83,8 @@ describe('checkAndPromote', () => {
     })
   })
 
-  describe('REGULAR → VETERAN 승급', () => {
-    it('게시글 20개 + 좋아요 100개 이상이면 VETERAN 승급', async () => {
+  describe('REGULAR → WARM_NEIGHBOR 승급', () => {
+    it('게시글 20개 + 좋아요 100개 이상이면 WARM_NEIGHBOR 승급', async () => {
       mockFindUnique.mockResolvedValue({
         grade: 'REGULAR',
         postCount: 20,
@@ -94,7 +94,7 @@ describe('checkAndPromote', () => {
       mockUpdate.mockResolvedValue({} as never)
 
       const result = await checkAndPromote('user1')
-      expect(result).toBe('VETERAN')
+      expect(result).toBe('WARM_NEIGHBOR')
     })
 
     it('게시글만 충족하면 승급 안 됨 (AND 조건)', async () => {
@@ -122,10 +122,10 @@ describe('checkAndPromote', () => {
     })
   })
 
-  describe('VETERAN/WARM_NEIGHBOR는 자동 승급 없음', () => {
-    it('VETERAN은 자동 승급 경로 없음', async () => {
+  describe('WARM_NEIGHBOR/HONORARY는 자동 승급 없음', () => {
+    it('WARM_NEIGHBOR는 자동 승급 경로 없음', async () => {
       mockFindUnique.mockResolvedValue({
-        grade: 'VETERAN',
+        grade: 'WARM_NEIGHBOR',
         postCount: 100,
         commentCount: 500,
         receivedLikes: 1000,
@@ -135,9 +135,9 @@ describe('checkAndPromote', () => {
       expect(result).toBeNull()
     })
 
-    it('WARM_NEIGHBOR는 PO 수동 부여만 가능', async () => {
+    it('HONORARY는 PO 수동 부여만 가능', async () => {
       mockFindUnique.mockResolvedValue({
-        grade: 'WARM_NEIGHBOR',
+        grade: 'HONORARY',
         postCount: 100,
         commentCount: 500,
         receivedLikes: 1000,

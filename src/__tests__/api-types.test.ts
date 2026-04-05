@@ -9,14 +9,14 @@ import {
 import type { Grade, BoardType } from '@/types/api'
 
 describe('등급 시스템', () => {
-  it('등급 순서: SPROUT < REGULAR < VETERAN < WARM_NEIGHBOR', () => {
+  it('등급 순서: SPROUT < REGULAR < WARM_NEIGHBOR < HONORARY', () => {
     expect(GRADE_ORDER.SPROUT).toBeLessThan(GRADE_ORDER.REGULAR)
-    expect(GRADE_ORDER.REGULAR).toBeLessThan(GRADE_ORDER.VETERAN)
-    expect(GRADE_ORDER.VETERAN).toBeLessThan(GRADE_ORDER.WARM_NEIGHBOR)
+    expect(GRADE_ORDER.REGULAR).toBeLessThan(GRADE_ORDER.WARM_NEIGHBOR)
+    expect(GRADE_ORDER.WARM_NEIGHBOR).toBeLessThan(GRADE_ORDER.HONORARY)
   })
 
   it('4개 등급 모두 이모지 존재', () => {
-    const grades: Grade[] = ['SPROUT', 'REGULAR', 'VETERAN', 'WARM_NEIGHBOR']
+    const grades: Grade[] = ['SPROUT', 'REGULAR', 'WARM_NEIGHBOR', 'HONORARY']
     for (const g of grades) {
       expect(GRADE_EMOJI[g]).toBeDefined()
       expect(GRADE_EMOJI[g].length).toBeGreaterThan(0)
@@ -26,8 +26,8 @@ describe('등급 시스템', () => {
   it('4개 등급 모두 라벨 존재', () => {
     expect(GRADE_LABEL.SPROUT).toBe('새싹')
     expect(GRADE_LABEL.REGULAR).toBe('단골')
-    expect(GRADE_LABEL.VETERAN).toBe('터줏대감')
     expect(GRADE_LABEL.WARM_NEIGHBOR).toBe('따뜻한이웃')
+    expect(GRADE_LABEL.HONORARY).toBe('명예우나어인')
   })
 })
 

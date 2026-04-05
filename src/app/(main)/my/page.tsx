@@ -36,9 +36,9 @@ export default async function MyPage() {
             </Link>
             <p className="text-caption text-muted-foreground mt-0.5">
               {profile.grade === 'SPROUT' && '다음 등급: 🌿 단골 (게시글 5개 또는 댓글 20개)'}
-              {profile.grade === 'REGULAR' && '다음 등급: 💎 터줏대감 (게시글 20개 + 받은 공감 100개)'}
-              {profile.grade === 'VETERAN' && '최고 등급까지 한 걸음! ☀️ 따뜻한이웃은 운영진 선정'}
-              {profile.grade === 'WARM_NEIGHBOR' && '최고 등급을 달성했어요! 감사합니다 ☀️'}
+              {profile.grade === 'REGULAR' && '다음 등급: ☀️ 따뜻한이웃 (게시글 20개 + 받은 공감 100개)'}
+              {profile.grade === 'WARM_NEIGHBOR' && '최고 등급까지 한 걸음! 🏅 명예우나어인은 운영진 선정'}
+              {profile.grade === 'HONORARY' && '명예우나어인! 우나어를 함께 만들어 주셔서 감사합니다 🏅'}
             </p>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { cn } from '@/lib/utils'
-import { togglePostLike, togglePostScrap } from '@/lib/actions/likes'
+import { togglePostLike, togglePostScrap, incrementShareCount } from '@/lib/actions/likes'
 import { useToast } from '@/components/common/Toast'
 import { shareToKakao, copyShareLink } from '@/lib/kakao-share'
 import { gtmLike, gtmShare } from '@/lib/gtm'
@@ -81,6 +81,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
     try {
       await shareToKakao({ title, description, url: window.location.pathname })
       gtmShare('kakao', 'post', postId)
+      void incrementShareCount(postId)
       setShowShareMenu(false)
     } catch {
       toast('공유에 실패했어요', 'error')
@@ -89,7 +90,10 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
 
   async function handleCopyLink() {
     const ok = await copyShareLink(window.location.pathname)
-    if (ok) gtmShare('copy_link', 'post', postId)
+    if (ok) {
+      gtmShare('copy_link', 'post', postId)
+      void incrementShareCount(postId)
+    }
     toast(ok ? '링크가 복사되었어요' : '링크 복사에 실패했어요', ok ? 'success' : 'error')
     setShowShareMenu(false)
   }

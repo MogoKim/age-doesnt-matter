@@ -24,8 +24,8 @@ enum Role {
 enum Grade {
   SPROUT         // 🌱 새싹
   REGULAR        // 🌿 단골
-  VETERAN        // 💎 터줏대감
   WARM_NEIGHBOR  // ☀️ 따뜻한이웃
+  HONORARY       // 🏅 명예우나어인
 }
 
 enum UserStatus {
@@ -325,6 +325,7 @@ model Post {
   likeCount      Int            @default(0)
   commentCount   Int            @default(0)
   scrapCount     Int            @default(0)
+  shareCount     Int            @default(0)
   reportCount    Int            @default(0)
 
   // 트렌딩 시스템

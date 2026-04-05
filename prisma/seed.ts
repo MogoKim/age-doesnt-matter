@@ -55,7 +55,7 @@ async function main() {
   const usersData = [
     { providerId: 'seed_001', nickname: '행복한순자', grade: 'REGULAR' as const, postCount: 12, commentCount: 45, receivedLikes: 56 },
     { providerId: 'seed_002', nickname: '영희맘', grade: 'SPROUT' as const, postCount: 3, commentCount: 8, receivedLikes: 5 },
-    { providerId: 'seed_003', nickname: '건강하자', grade: 'VETERAN' as const, postCount: 35, commentCount: 120, receivedLikes: 210 },
+    { providerId: 'seed_003', nickname: '건강하자', grade: 'WARM_NEIGHBOR' as const, postCount: 35, commentCount: 120, receivedLikes: 210 },
     { providerId: 'seed_004', nickname: '동네이장님', grade: 'WARM_NEIGHBOR' as const, postCount: 50, commentCount: 200, receivedLikes: 500 },
     { providerId: 'seed_005', nickname: '산책매니아', grade: 'REGULAR' as const, postCount: 8, commentCount: 30, receivedLikes: 22 },
     { providerId: 'seed_006', nickname: '텃밭농부', grade: 'SPROUT' as const, postCount: 2, commentCount: 5, receivedLikes: 3 },

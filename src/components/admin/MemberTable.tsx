@@ -8,8 +8,8 @@ import type { Grade, UserStatus } from '@/generated/prisma/client'
 const GRADE_LABELS: Record<string, { label: string; icon: string }> = {
   SPROUT: { label: '새싹', icon: '🌱' },
   REGULAR: { label: '단골', icon: '🌿' },
-  VETERAN: { label: '터줏대감', icon: '💎' },
   WARM_NEIGHBOR: { label: '따뜻한이웃', icon: '☀️' },
+  HONORARY: { label: '명예우나어인', icon: '🏅' },
 }
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {

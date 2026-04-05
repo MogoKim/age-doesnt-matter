@@ -9,8 +9,8 @@ interface GradeInfo {
 export const GRADE_INFO: Record<Grade, GradeInfo> = {
   SPROUT: { emoji: '🌱', label: '새싹' },
   REGULAR: { emoji: '🌿', label: '단골' },
-  VETERAN: { emoji: '💎', label: '터줏대감' },
   WARM_NEIGHBOR: { emoji: '☀️', label: '따뜻한이웃' },
+  HONORARY: { emoji: '🏅', label: '명예우나어인' },
 }
 
 /**
@@ -33,7 +33,7 @@ export async function checkAndPromote(userId: string): Promise<Grade | null> {
     }
   } else if (user.grade === 'REGULAR') {
     if (user.postCount >= 20 && user.receivedLikes >= 100) {
-      newGrade = 'VETERAN'
+      newGrade = 'WARM_NEIGHBOR'
     }
   }
 

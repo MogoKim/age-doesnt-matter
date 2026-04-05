@@ -1,0 +1,2155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우나어 — 비즈니스 프레임워크 v2.0</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0b0b10;--sb:#111118;--card:#181824;--card2:#1e1e2c;--card3:#232334;
+  --accent:#FF6F61;--p:#7c5cfc;--g:#00cca3;--y:#ffc955;--b:#4a9eff;--r:#ef4444;
+  --text:#e4e4ec;--muted:#7a7a96;--faint:#3a3a52;
+  --confirmed:#00cca3;--partial:#ffc955;--pending:#ef4444;--decision:#7c5cfc;
+}
+body{font-family:'Pretendard Variable',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sb{width:230px;min-height:100vh;background:var(--sb);border-right:1px solid var(--faint);padding:0;position:fixed;top:0;left:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sb-logo{padding:18px 16px 14px;border-bottom:1px solid var(--faint)}
+.sb-logo .title{font-size:13px;font-weight:800;color:var(--accent);line-height:1.4}
+.sb-logo .sub{font-size:10px;color:var(--muted);margin-top:3px}
+.sb-logo .progress{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.sp{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700}
+.sp.c{background:rgba(0,204,163,.12);color:var(--g)}
+.sp.p{background:rgba(255,201,85,.12);color:var(--y)}
+.sp.r{background:rgba(239,68,68,.12);color:var(--r)}
+.sp.d{background:rgba(124,92,252,.12);color:var(--p)}
+.sb nav{padding:8px 0;flex:1}
+.sb nav .group{margin-bottom:2px}
+.sb nav .group-label{font-size:9px;font-weight:700;color:var(--muted);padding:6px 16px 2px;letter-spacing:.08em;text-transform:uppercase}
+.sb nav a{display:flex;align-items:center;gap:7px;padding:6px 16px;font-size:11.5px;color:var(--muted);text-decoration:none;transition:all .12s;border-left:2px solid transparent;line-height:1.4}
+.sb nav a:hover{color:var(--text);background:rgba(255,255,255,.025)}
+.sb nav a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(255,111,97,.05)}
+.sb nav a .badge{margin-left:auto;font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700}
+.sb nav a .b-c{background:rgba(0,204,163,.15);color:var(--g)}
+.sb nav a .b-p{background:rgba(255,201,85,.15);color:var(--y)}
+.sb nav a .b-r{background:rgba(239,68,68,.15);color:var(--r)}
+.sb-legend{padding:12px 16px;border-top:1px solid var(--faint)}
+.sb-legend .li{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);margin-bottom:3px}
+.sb-legend .li .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ── MAIN ── */
+.main{margin-left:230px;flex:1;max-width:1040px;padding:36px 44px 80px}
+@media(max-width:860px){.sb{display:none}.main{margin-left:0;padding:20px}}
+
+/* ── HERO ── */
+.hero{margin-bottom:40px}
+.hero .tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,111,97,.1);color:var(--accent);font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700;letter-spacing:.04em;margin-bottom:12px}
+.hero h1{font-size:28px;font-weight:900;line-height:1.25;background:linear-gradient(135deg,#fff 30%,rgba(255,111,97,.7));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero .tagline{font-size:14px;color:var(--muted);margin-top:8px}
+.hero .meta{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+.hero .meta span{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
+
+/* ── THESIS BOX ── */
+.thesis{background:linear-gradient(135deg,rgba(255,111,97,.07),rgba(124,92,252,.05));border:1px solid rgba(255,111,97,.2);border-radius:12px;padding:20px 24px;margin-bottom:40px}
+.thesis .t-label{font-size:9px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.thesis .t-text{font-size:15px;font-weight:600;color:var(--text);line-height:1.7}
+.thesis .t-sub{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
+
+/* ── SECTION ── */
+.s{margin-bottom:56px;scroll-margin-top:20px}
+.s-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--faint)}
+.s-num{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;margin-top:2px}
+.s-num.n-accent{background:var(--accent);color:#fff}
+.s-num.n-p{background:var(--p);color:#fff}
+.s-num.n-g{background:var(--g);color:#000}
+.s-num.n-sys{background:var(--card2);color:var(--muted);border:1px solid var(--faint)}
+.s-meta{flex:1}
+.s-meta h2{font-size:18px;font-weight:800;color:var(--text);line-height:1.3}
+.s-meta .s-sub{font-size:12px;color:var(--muted);margin-top:3px;font-style:italic}
+.status{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;margin-left:8px;vertical-align:middle;letter-spacing:.03em}
+.status.c{background:rgba(0,204,163,.1);color:var(--g)}
+.status.partial{background:rgba(255,201,85,.1);color:var(--y)}
+.status.r{background:rgba(239,68,68,.1);color:var(--r)}
+.status.d{background:rgba(124,92,252,.1);color:var(--p)}
+
+/* ── INSIGHT BOX ── */
+.insight{background:rgba(124,92,252,.06);border-left:3px solid var(--p);border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:13px;color:var(--text);line-height:1.6}
+.insight .i-label{font-size:9px;font-weight:700;color:var(--p);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.key-insight{background:rgba(255,111,97,.06);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0}
+.key-insight .ki-label{font-size:9px;font-weight:700;color:var(--accent);letter-spacing:.08em;margin-bottom:6px}
+.key-insight .ki-text{font-size:14px;font-weight:600;color:var(--text);line-height:1.6}
+.key-insight .ki-sub{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--faint);border-radius:10px;padding:18px 20px;margin-bottom:14px}
+.card h3{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card.accent{border-left:3px solid var(--accent)}
+.card.purple{border-left:3px solid var(--p)}
+.card.green{border-left:3px solid var(--g)}
+.card.yellow{border-left:3px solid var(--y)}
+.card.blue{border-left:3px solid var(--b)}
+.card.red{border-left:3px solid var(--r)}
+
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+@media(max-width:700px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0}
+th{background:var(--card2);color:var(--accent);text-align:left;padding:9px 12px;font-weight:700;border-bottom:1px solid var(--faint);font-size:11px;letter-spacing:.03em}
+td{padding:9px 12px;border-bottom:1px solid var(--faint);vertical-align:top;color:var(--muted);font-size:12px}
+td strong{color:var(--text)}
+tr:last-child td{border-bottom:none}
+
+/* ── DESIRE RANK ── */
+.dr{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--faint)}
+.dr:last-child{border-bottom:none}
+.dr-n{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0}
+.dr-body{flex:1}
+.dr-body strong{font-size:13px;color:var(--text);display:block;margin-bottom:2px}
+.dr-body .dr-sub{font-size:11px;color:var(--muted);margin-bottom:4px}
+.dr-body .dr-why{font-size:11px;color:var(--accent);font-weight:600}
+.dr-body .dr-trigger{font-size:11px;color:var(--p);margin-top:2px}
+.dr-body .dr-implication{font-size:11px;color:var(--g);margin-top:2px}
+
+/* ── DECISION CARD ── */
+.decision{background:rgba(124,92,252,.04);border:1px solid rgba(124,92,252,.2);border-radius:10px;padding:18px 20px;margin:14px 0}
+.decision .d-header{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.decision .d-header .d-num{background:var(--p);color:#fff;width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.decision .d-header .d-title{font-size:12px;font-weight:700;color:var(--p)}
+.opt{background:var(--card2);border:1px solid var(--faint);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:default}
+.opt:last-child{margin-bottom:0}
+.opt .o-label{font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.05em;margin-bottom:3px}
+.opt .o-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px}
+.opt .o-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.opt .o-impact{font-size:10px;color:var(--g);margin-top:4px}
+.opt.rec{border-color:rgba(124,92,252,.35);background:rgba(124,92,252,.05)}
+.opt.rec .o-label{color:var(--p)}
+
+/* ── FORMULA ── */
+.formula{background:var(--card2);border:1px solid var(--faint);border-radius:8px;padding:14px 16px;font-family:'SF Mono',monospace;font-size:12px;color:var(--muted);white-space:pre-wrap;overflow-x:auto;line-height:2;margin:10px 0}
+.formula strong{color:var(--g)}
+.formula .hl{color:var(--accent)}
+.formula .dim{color:#444}
+
+/* ── ALERT ── */
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;margin:10px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.alert.warn{background:rgba(255,201,85,.06);border:1px solid rgba(255,201,85,.18);color:var(--y)}
+.alert.info{background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.18);color:var(--b)}
+.alert.danger{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);color:#ef8888}
+.alert.ok{background:rgba(0,204,163,.06);border:1px solid rgba(0,204,163,.18);color:var(--g)}
+.alert.p{background:rgba(124,92,252,.06);border:1px solid rgba(124,92,252,.18);color:var(--p)}
+
+/* ── FEATURE MATRIX ── */
+.fm-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--faint);border-radius:10px;overflow:hidden}
+.fm-cell{padding:16px;border-bottom:1px solid var(--faint);border-right:1px solid var(--faint)}
+.fm-cell:nth-child(2n){border-right:none}
+.fm-cell:nth-last-child(-n+2){border-bottom:none}
+.fm-cell .fm-label{font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.fm-cell ul{list-style:none;padding:0}
+.fm-cell li{font-size:11px;color:var(--muted);margin-bottom:3px;display:flex;align-items:flex-start;gap:5px}
+.fm-cell li::before{content:'·';flex-shrink:0;margin-top:2px}
+
+/* ── BAR CHART ── */
+.bar-chart{margin:12px 0}
+.bc-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.bc-label{font-size:11px;color:var(--muted);width:120px;flex-shrink:0;text-align:right}
+.bc-bar-wrap{flex:1;background:var(--card2);border-radius:4px;height:18px;overflow:hidden}
+.bc-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:700;color:#fff;transition:width .3s}
+.bc-val{font-size:10px;color:var(--muted);width:40px;text-align:left;flex-shrink:0}
+
+/* ── FLYWHEEL ── */
+.fw{display:flex;align-items:stretch;flex-wrap:wrap;gap:0;margin:16px 0}
+.fw-step{background:var(--card);border:1px solid var(--faint);padding:14px;flex:1;min-width:90px;text-align:center;position:relative}
+.fw-step:not(:last-child)::after{content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;z-index:1}
+.fw-step:first-child{border-radius:8px 0 0 8px}
+.fw-step:last-child{border-radius:0 8px 8px 0}
+.fw-step .fw-icon{font-size:20px;margin-bottom:4px}
+.fw-step .fw-title{font-size:11px;font-weight:700;color:var(--text)}
+.fw-step .fw-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.fw-step .fw-metric{font-size:9px;color:var(--p);margin-top:4px;font-weight:600}
+@media(max-width:700px){.fw-step{min-width:calc(50% - 1px)}.fw-step:nth-child(2n)::after{display:none}}
+
+/* ── COMPETITIVE MAP ── */
+.cmap{position:relative;background:var(--card);border:1px solid var(--faint);border-radius:10px;padding:20px;margin:14px 0;overflow:hidden}
+.cmap .axis-x{position:absolute;top:50%;left:20px;right:20px;height:1px;background:var(--faint)}
+.cmap .axis-y{position:absolute;left:50%;top:20px;bottom:20px;width:1px;background:var(--faint)}
+.cmap .ax-label{font-size:9px;color:var(--muted);position:absolute;font-weight:600}
+.cmap-inner{position:relative;height:260px}
+.cmap-dot{position:absolute;transform:translate(-50%,-50%)}
+.cmap-dot .dot{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;cursor:default}
+.cmap-dot .dot-label{font-size:9px;color:var(--muted);text-align:center;margin-top:3px;white-space:nowrap}
+
+/* ── JOURNEY ── */
+.journey{margin:14px 0}
+.jrow{display:grid;grid-template-columns:80px 1fr 1fr;gap:0;border-bottom:1px solid var(--faint)}
+.jrow:last-child{border-bottom:none}
+.jrow:first-child .jcell{background:var(--card2);font-size:10px;font-weight:700;color:var(--accent);letter-spacing:.04em;padding:7px 10px}
+.jcell{padding:10px;font-size:11px;color:var(--muted);vertical-align:top;border-right:1px solid var(--faint)}
+.jcell:last-child{border-right:none}
+.jcell .jcell-label{font-size:9px;font-weight:700;color:var(--text);margin-bottom:3px}
+
+/* ── SNS CHECK ── */
+.sns-table{border:1px solid var(--faint);border-radius:8px;overflow:hidden;margin:10px 0}
+.sns-row{display:grid;grid-template-columns:90px 1fr 1fr 24px;gap:0;border-bottom:1px solid var(--faint)}
+.sns-row:last-child{border-bottom:none}
+.sns-row:first-child{background:var(--card2)}
+.sns-cell{padding:10px 12px;font-size:11px;color:var(--muted);border-right:1px solid var(--faint)}
+.sns-cell:last-child{border-right:none;text-align:center}
+
+/* ── MISC ── */
+ul{list-style:none;padding:0}
+ul li{font-size:12px;color:var(--muted);margin-bottom:5px;display:flex;align-items:flex-start;gap:6px;line-height:1.5}
+ul li::before{content:'→';color:var(--faint);flex-shrink:0;margin-top:1px;font-size:10px}
+ul li strong{color:var(--text)}
+.tag-chip{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;margin:1px;font-weight:600}
+.tc-s{background:rgba(255,111,97,.12);color:var(--accent)}
+.tc-h{background:rgba(124,92,252,.12);color:var(--p)}
+.tc-l{background:rgba(0,204,163,.12);color:var(--g)}
+.tc-j{background:rgba(255,201,85,.12);color:var(--y)}
+.tc-m{background:rgba(74,158,255,.12);color:var(--b)}
+.tc-b{background:rgba(255,255,255,.08);color:var(--text)}
+.sep{height:1px;background:var(--faint);margin:20px 0}
+p.desc{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="title">우나어 비즈니스<br>프레임워크 v3.0</div>
+    <div class="sub">2026-04-05 · 결정 필요 항목 2개</div>
+    <div class="progress">
+      <span class="sp c">✅ 확정 10</span>
+      <span class="sp p">⚠️ 부분 4</span>
+      <span class="sp r">🔴 미결 1</span>
+      <span class="sp d">🔵 결정 5</span>
+    </div>
+  </div>
+  <nav>
+    <div class="group">
+      <div class="group-label">이론 (WHY · WHO · HOW)</div>
+      <a href="#s1">§1 고객 욕망 (WHY) <span class="badge b-c">확정</span></a>
+      <a href="#s2">§2 커뮤니티 (HOW) <span class="badge b-p">부분</span></a>
+      <a href="#s3">§3 미션/비전/철학 <span class="badge b-c">확정</span></a>
+      <a href="#s10">§10 경쟁/포지셔닝 <span class="badge b-p">부분</span></a>
+    </div>
+    <div class="group">
+      <div class="group-label">제품 (WHAT · HOW BUILD)</div>
+      <a href="#s4">§4 카테고리 전략 <span class="badge b-c">확정</span></a>
+      <a href="#s5">§5 기능 전략 <span class="badge b-p">부분</span></a>
+      <a href="#s11">§11 콘텐츠 엔진 <span class="badge b-p">강화</span></a>
+    </div>
+    <div class="group">
+      <div class="group-label">성장 (GROW · MEASURE)</div>
+      <a href="#s6">§6 SEO 전략 <span class="badge b-r">미결</span></a>
+      <a href="#s7">§7 매출 공식 <span class="badge b-p">부분</span></a>
+      <a href="#s8">§8 OKR <span class="badge b-r">미결</span></a>
+      <a href="#s12">§12 성장/획득 <span class="badge b-p">부분</span></a>
+      <a href="#s13">§13 커뮤니티 플라이휠 <span class="badge b-r">미결</span></a>
+    </div>
+    <div class="group">
+      <div class="group-label">시스템</div>
+      <a href="#harness">⚙️ 시스템 하네스</a>
+      <a href="#qa">📋 QA 플랜</a>
+    </div>
+  </nav>
+  <div class="sb-legend">
+    <div class="li"><div class="dot" style="background:var(--g)"></div>✅ 확정</div>
+    <div class="li"><div class="dot" style="background:var(--y)"></div>⚠️ 부분확정</div>
+    <div class="li"><div class="dot" style="background:var(--r)"></div>🔴 미결정</div>
+    <div class="li"><div class="dot" style="background:var(--p)"></div>🔵 결정 필요 (3개안)</div>
+  </div>
+</aside>
+
+<!-- ═══════ MAIN ═══════ -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="tag">🏗️ 우나어 비즈니스 프레임워크 v3.0</div>
+  <h1>우리 나이가 어때서<br>Product · Growth · System</h1>
+  <div class="tagline">창업자 확정 기준 + 전략적 공백 식별 + 시스템 연결 추적</div>
+  <div class="meta">
+    <span>📅 2026-04-05 최종 업데이트</span>
+    <span>🏛️ constitution.yaml v5.0 기반</span>
+    <span>🔵 결정 필요 항목 2개</span>
+  </div>
+</div>
+
+<!-- CORE THESIS -->
+<div class="thesis">
+  <div class="t-label">핵심 사업 논리 (Core Thesis)</div>
+  <div class="t-text">한국의 5060 세대는 디지털 시대에 처음으로 노후를 맞이하는 세대다. 이들은 스마트폰을 쓰지만, 자신을 위해 설계된 디지털 공간이 없다. 체면 문화 때문에 "외롭다"고 말하지 못하고 "건강 정보 찾으러 왔다"고 말한다. 우나어는 그 체면 뒤에 숨은 욕망 — 연결, 소속, "나 같은 사람이 있다"는 확인 — 을 정면으로 해결하는 첫 번째 5060 전용 오픈 커뮤니티다.</div>
+  <div class="t-sub">왜 지금인가: 한국 베이비부머(1955-1974) 은퇴 피크 파동 + 스마트폰 보급 완료 + 코로나 이후 온라인 연결 갈망 급증. 왜 커뮤니티인가: 검색(네이버)은 정보를 주지만 소속감을 주지 않는다. 밴드는 지인 기반으로 새 연결이 불가능하다. 오픈 커뮤니티만이 "낯선 사람과 진짜 이야기"를 가능하게 한다.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §1 고객 욕망 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s1">
+  <div class="s-header">
+    <div class="s-num n-accent">1</div>
+    <div class="s-meta">
+      <h2>고객의 욕망 / 니즈 / 원츠 (WHY) <span class="status c">✅ 확정</span></h2>
+      <div class="s-sub">"우리가 해결하려는 고객의 근본적인 문제는 무엇인가?" — 데이터 + 5 Whys + JTBD</div>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <div class="ki-label">핵심 인사이트 (번복 불가)</div>
+    <div class="ki-text">5060은 "건강 정보"가 필요한 게 아니다. "나 같은 사람이 여기 있다"는 확인이 필요하다. 건강/돈 질문은 입장권이고, 진짜 욕망은 연결이다. 이것을 모르면 우나어는 또 다른 네이버 블로그가 된다.</div>
+    <div class="ki-sub">근거: 크롤 데이터에서 RELATION 글은 3%에 불과. 하지만 "자식 키운 게 다인 것 같아요" 류 글의 반응(댓글/공감)은 평균의 4-5배. 체면 장벽이 글 수를 억누르고 있을 뿐, 수요는 최대.</div>
+  </div>
+
+  <!-- 욕망 4계층 -->
+  <div class="card accent">
+    <h3>전략 욕망 4계층 — 표면 니즈 vs. 진짜 욕망 (확정)</h3>
+    <div class="dr">
+      <div class="dr-n" style="background:var(--accent);color:#fff">1</div>
+      <div class="dr-body">
+        <strong>RELATION — 연결 · 소속 · "나 같은 사람이 있다"는 확인</strong>
+        <div class="dr-sub">크롤 글 수 3% (저평가). 체면 장벽으로 인해 말을 못 꺼낼 뿐 — 실제 반응률 1위. 5060이 우나어를 찾는 <em>진짜</em> 이유.</div>
+        <div class="dr-trigger">트리거 모먼트: 자녀 독립 후 텅 빈 집, 퇴직 후 전화 끊긴 전 동료, 갱년기·건강 이상 후 "나만 이런가?" 두려움</div>
+        <div class="dr-implication">→ 플랫폼 존재 이유 / 감성 포지션 / D0 경험 설계의 핵심 변수</div>
+      </div>
+    </div>
+    <div class="dr">
+      <div class="dr-n" style="background:var(--p);color:#fff">2</div>
+      <div class="dr-body">
+        <strong>RETIRE — 인생의 의미 · 다음 챕터 · "나는 뭘 해야 하나"</strong>
+        <div class="dr-sub">크롤 7%. LIFE2 게시판 신설 근거. 퇴직·주거·인생2막 관련 글의 댓글 참여 폭발적. RELATION과 함께 재방문 동력.</div>
+        <div class="dr-trigger">트리거: 명예퇴직 통보, 막내 자녀 독립, 배우자 퇴직, "이제 뭘 하며 살지?" 공허함</div>
+        <div class="dr-implication">→ LIFE2 카테고리 / 머무르는 이유 / 장기 리텐션 핵심</div>
+      </div>
+    </div>
+    <div class="dr">
+      <div class="dr-n" style="background:var(--g);color:#000">3</div>
+      <div class="dr-body">
+        <strong>MONEY — 연금 불안 · 노후자금 · "얼마면 충분한가"</strong>
+        <div class="dr-sub">크롤 19%. 검색 의도 명확. 재무 불안은 매우 구체적 (연금 수령 전략, 노인 일자리 수당). eCPM 높은 주제.</div>
+        <div class="dr-trigger">트리거: 연금 수령 연령 도달, 주변 지인 경제적 어려움 목격, 뉴스에서 노후 파산 기사</div>
+        <div class="dr-implication">→ LIFE2 재테크 서브 / 매거진 키워드 / 광고 eCPM 최적화</div>
+      </div>
+    </div>
+    <div class="dr">
+      <div class="dr-n" style="background:#555;color:var(--text)">4</div>
+      <div class="dr-body">
+        <strong>HEALTH — 건강 불안 · 증상 정보 · "나 큰 병인가"</strong>
+        <div class="dr-sub">크롤 27% (글 수 1위). 하지만 정보 소비형 — 네이버 검색으로 해결 가능. 우나어에서는 공감이 목적. 유입 채널로는 최강.</div>
+        <div class="dr-trigger">트리거: 검진 결과지, 갱년기 증상, 만성질환 진단, 가족의 건강 위기</div>
+        <div class="dr-implication">→ SEO 유입 키워드 1순위 / 매거진 주제 / 리텐션은 약함 (정보만 얻고 이탈 가능)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JTBD -->
+  <div class="card purple">
+    <h3>JTBD (Jobs To Be Done) — "5060이 우나어를 고용하는 이유"</h3>
+    <table>
+      <tr><th>상황 (When)</th><th>고용하는 일 (Job)</th><th>대안 (기존 해결책)</th><th>기존 해결책의 실패</th></tr>
+      <tr><td>자녀가 독립하고 집이 텅 빈 저녁</td><td>나 같은 처지의 사람과 연결되고 싶다</td><td>카카오톡 가족 단톡</td><td>자녀에게 짐 되기 싫음 → 말 못 함</td></tr>
+      <tr><td>퇴직 후 6개월, 무기력함이 밀려올 때</td><td>"나처럼 퇴직한 사람은 어떻게 지내나" 확인</td><td>밴드 동창 모임</td><td>체면 때문에 "힘들다" 말 못 함</td></tr>
+      <tr><td>건강 검진 후 이상 소견 나왔을 때</td><td>같은 경험한 사람의 진짜 이야기 듣기</td><td>네이버 검색</td><td>정보는 있지만 공감이 없음</td></tr>
+      <tr><td>연금 수령 시작 전, 재정 계획 막막할 때</td><td>비슷한 상황 사람들의 실전 경험 수집</td><td>금융사 상담</td><td>판매 의도 → 신뢰 안 감</td></tr>
+      <tr><td>퇴직 후 "뭔가 새로 시작해보고 싶다"</td><td>인생 2막 성공 사례 + 공감 네트워크</td><td>유튜브 시청</td><td>일방향, 댓글 소통 없음</td></tr>
+    </table>
+  </div>
+
+  <!-- 체면 장벽 -->
+  <div class="insight">
+    <div class="i-label">체면 장벽 (Face-Saving Barrier) — 5060 특수 구조</div>
+    한국 5060은 "약함을 드러내는 것 = 부끄러운 것"이라는 세대 문화를 가졌다. 직접 "외롭다", "힘들다"고 쓰는 글은 극히 드물지만, "건강 고민 글"에 달린 "저도 그랬어요, 혼자가 아니에요" 댓글에 눈물이 난다는 DM이 온다. 우나어의 모든 UX 설계는 이 체면 장벽을 낮추는 방향으로 가야 한다. "건강 정보 공유"라는 포장지로 "연결"이라는 선물을 주는 것.
+  </div>
+
+  <!-- 세대 특수성 -->
+  <div class="card green">
+    <h3>왜 지금 5060인가 — 세대 특수성과 타이밍</h3>
+    <table>
+      <tr><th>요인</th><th>내용</th><th>우나어 기회</th></tr>
+      <tr><td><strong>압축 성장 세대</strong></td><td>고도 성장기 직장인 정체성 = 은퇴 후 정체성 공백 최대</td><td>RETIRE 욕망이 유독 강함</td></tr>
+      <tr><td><strong>베이비부머 은퇴 파동</strong></td><td>1955-1963년생 2020-2028년 집중 은퇴 중</td><td>시장 타이밍 최적</td></tr>
+      <tr><td><strong>스마트폰 완전 보급</strong></td><td>55-65세 스마트폰 이용률 93% (2024)</td><td>디지털 커뮤니티 진입 장벽 소멸</td></tr>
+      <tr><td><strong>코로나 이후 온라인 연결 습관</strong></td><td>코로나로 강제 디지털 전환 완료</td><td>온라인 관계 친숙도 급상승</td></tr>
+      <tr><td><strong>핵가족화</strong></td><td>자녀 독립, 부부 둘만 남거나 혼자 남는 경우 증가</td><td>오프라인 커뮤니티 공백 최대</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §2 HOW 커뮤니티 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s2">
+  <div class="s-header">
+    <div class="s-num n-accent">2</div>
+    <div class="s-meta">
+      <h2>수단: 커뮤니티 (HOW) <span class="status partial">⚠️ 부분확정</span></h2>
+      <div class="s-sub">"왜 밴드도 블로그도 유튜브도 아닌 커뮤니티인가?" — 형식 선택의 논리</div>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <div class="ki-label">핵심 논리</div>
+    <div class="ki-text">5060의 욕망(RELATION)을 해결하려면 "낯선 사람과 진짜 이야기"가 필요하다. 이것이 가능한 형식은 오픈 커뮤니티뿐이다. 밴드는 지인 기반(새 연결 불가), 블로그는 일방향(소속감 없음), 유튜브는 수동 소비(참여 없음), 카카오 오픈채팅은 휘발성(기록 없음). 커뮤니티만이 "처음 보는 사람 → 공감 → 연대"의 경험을 설계할 수 있다.</div>
+  </div>
+
+  <div class="card accent">
+    <h3>형식 비교 — 왜 커뮤니티인가</h3>
+    <table>
+      <tr><th>형식</th><th>5060 실제 사용</th><th>연결 가능성</th><th>검색 가능</th><th>소속감</th><th>결론</th></tr>
+      <tr><td><strong>밴드</strong></td><td>많음</td><td>❌ 초대제</td><td>❌</td><td>지인만</td><td>새 연결 불가</td></tr>
+      <tr><td><strong>카카오 오픈채팅</strong></td><td>많음</td><td>△ 익명</td><td>❌</td><td>약함 (휘발)</td><td>기록 없음, 신뢰 낮음</td></tr>
+      <tr><td><strong>네이버 카페</strong></td><td>있음</td><td>△</td><td>△</td><td>약함</td><td>5060 전용 없음, 피로감</td></tr>
+      <tr><td><strong>블로그/브런치</strong></td><td>있음</td><td>❌ 일방향</td><td>✅</td><td>없음</td><td>글 쓰는 사람만의 공간</td></tr>
+      <tr><td><strong>유튜브</strong></td><td>많음</td><td>❌ 수동소비</td><td>✅</td><td>없음</td><td>참여 장벽 극도로 높음</td></tr>
+      <tr><td><strong style="color:var(--accent)">우나어 커뮤니티</strong></td><td>—</td><td><strong style="color:var(--g)">✅ 오픈</strong></td><td><strong style="color:var(--g)">✅</strong></td><td><strong style="color:var(--g)">설계 가능</strong></td><td><strong style="color:var(--g)">유일한 선택</strong></td></tr>
+    </table>
+  </div>
+
+  <div class="g2">
+    <div class="card purple">
+      <h3>네트워크 효과 수학</h3>
+      <div class="formula">멤버 N명의 잠재 연결 수 = N(N-1)/2
+
+N=10 →  45가지 연결 가능
+N=100 → 4,950가지
+N=1000 → 499,500가지
+
+<strong>임계 질량 (Critical Mass)</strong>
+→ 비슷한 고민 보유자 3명 발견 시
+  "여기 내 자리가 있다" 확신
+→ 추정 임계 MAU: ~300명
+  (욕망별 30-50명 동시 존재)</div>
+      <p class="desc" style="margin-top:8px">밴드와 달리 오픈 커뮤니티는 낯선 사람의 연결이 가능 → 네트워크 효과가 무한히 확장됨.</p>
+    </div>
+    <div class="card green">
+      <h3>콘텐츠 플라이휠</h3>
+      <div class="formula"><strong>UGC(사용자 글)</strong> > 에이전트 시드 글
+
+이유:
+① 시드봇 35명이 "분위기" 조성
+② 실 사용자가 자신 이야기 추가
+③ 진짜 공감 댓글 → 더 많은 참여
+④ 커뮤니티가 살아있어 보임 → 신규 유입
+
+<strong>에이전트의 역할:</strong>
+콘텐츠 생성 → 분위기 조성
+사용자 UGC가 늘면 에이전트 비중 ↓</div>
+    </div>
+  </div>
+
+  <div class="card accent">
+    <h3>왜 지금인가? — 3가지 복합 논리 (모두 해당)</h3>
+    <div class="g3" style="margin-top:12px">
+      <div style="background:rgba(255,111,97,.06);border:1px solid rgba(255,111,97,.15);border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:800;color:var(--accent);margin-bottom:6px">① 세대 규모 타이밍</div>
+        <div style="font-size:12px;color:var(--text);font-weight:600;margin-bottom:4px">베이비부머 은퇴 절정기 2024~2028</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">1955~1963년생 약 730만명. 연 70만명 이상 은퇴. 2025년이 피크. 지금 시작하지 않으면 5년 후엔 다른 플랫폼이 이 자리를 차지한다. 은퇴 직후 3년 = 디지털 커뮤니티 진입 황금 창구.</div>
+      </div>
+      <div style="background:rgba(124,92,252,.06);border:1px solid rgba(124,92,252,.15);border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:800;color:var(--p);margin-bottom:6px">② 경쟁 공백 타이밍</div>
+        <div style="font-size:12px;color:var(--text);font-weight:600;margin-bottom:4px">5060 전문 오픈 커뮤니티가 없다</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">네이버카페: 고령화된 UI, 세대 혼재. 밴드: 지인 기반 폐쇄형. 유튜브: 수동 소비. 지금 이 공백에 들어가면 <strong style="color:var(--p)">문화 선점 = 영구 해자</strong>. 커뮤니티는 네트워크 효과 특성상 후발주자가 이기기 극도로 어렵다.</div>
+      </div>
+      <div style="background:rgba(0,204,163,.06);border:1px solid rgba(0,204,163,.15);border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:800;color:var(--g);margin-bottom:6px">③ 기술 타이밍</div>
+        <div style="font-size:12px;color:var(--text);font-weight:600;margin-bottom:4px">LLM으로 소규모팀이 콘텐츠 파이프라인 운영 가능한 첫 시대</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">SEED봇 35명 + 매거진봇 + CMO + 크롤러 = 인력 0명으로 운영. 2년 전엔 불가능했다. 이 기술 우위가 경쟁사 대비 <strong style="color:var(--g)">최소 6-12개월 선점</strong>을 만든다.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card purple">
+    <h3>왜 우나어가 할 수 있는가? — 창업자 Unfair Advantage</h3>
+    <table>
+      <tr><th>우위 요소</th><th>구체 내용</th><th>모방 난이도</th></tr>
+      <tr><td><strong>당사자성</strong></td><td>5060 여성 창업자 = 타겟 그 자체. 제품을 쓰는 사람이 만든다. 인터뷰 없이도 페인포인트를 안다.</td><td>🔴 불가능 (태생적)</td></tr>
+      <tr><td><strong>AI-first 스택</strong></td><td>에이전트 35명 + 크롤러 파이프라인 = 콘텐츠 생산 비용 거의 0. 대형 경쟁사가 대규모 에디터팀 뽑는 동안 자동화로 선행.</td><td>🟡 어려움 (기술 투자)</td></tr>
+      <tr><td><strong>커뮤니티 문화 자산</strong></td><td>지금 쌓이는 글, 댓글, 관계 패턴 = 2-3년 후 경쟁사가 살 수 없는 자산. Reddit이 그랬듯, 문화는 이전되지 않는다.</td><td>🔴 불가능 (시간)</td></tr>
+      <tr><td><strong>운영비 구조</strong></td><td>월 ~$71로 운영 가능. 대형 플랫폼이 들어오려면 수억원 투자가 필요하고, 그 전에 우나어가 임계 질량을 달성한다.</td><td>🟡 어려움</td></tr>
+    </table>
+  </div>
+
+  <div class="card green">
+    <h3>임계 질량 0→300명 전략 — 단계별 구체 계획</h3>
+    <table>
+      <tr><th>단계</th><th>MAU 목표</th><th>핵심 레버</th><th>봇:UGC</th></tr>
+      <tr><td><strong>Phase 1 (지금)</strong></td><td>0→100</td><td>시드봇 35명 → 빈 광장 해결 (새 유저가 와도 글이 있음) + SEO + 지식인봇 무료 유입</td><td>95:5</td></tr>
+      <tr><td><strong>Phase 2</strong></td><td>100→300</td><td>온보딩 → 첫 참여 → 재방문 설계 완성. "내 글에 댓글 달렸다" 경험이 리텐션 핵심. 첫 실 유저 UGC 등장.</td><td>70:30</td></tr>
+      <tr><td><strong>Phase 3 (임계)</strong></td><td>300→1,000</td><td>네트워크 효과 자발적 발동. 욕망별 30-50명 동시 존재 → "내 이야기 들어주는 사람이 있다" 경험. 봇 역할 씨앗으로 축소.</td><td>40:60</td></tr>
+      <tr><td><strong>Phase 4</strong></td><td>1,000+</td><td>입소문 (K-factor). 에디터즈픽 큐레이션으로 질 관리. UGC가 자동으로 SEO 롱테일 키워드 생성.</td><td>20:80</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>커뮤니티 Health 지표 (DAU/MAU 외)</h3>
+    <div class="g2" style="margin-top:8px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--g);margin-bottom:6px">✅ 건강한 커뮤니티 신호</div>
+        <ul>
+          <li><strong>댓글/글 비율 ≥ 3</strong> — 읽기만 하는 게 아니라 반응하는 사람이 있다</li>
+          <li><strong>신규 유저 D7 첫 참여율 ≥ 20%</strong> — 가입 후 1주 안에 댓글/글 작성</li>
+          <li><strong>카테고리 다양성 지수</strong> — 특정 카테고리 70%+ 집중 시 경보</li>
+          <li><strong>재방문 사용자 글 비율</strong> — 처음 온 사람만 쓰는 건 커뮤니티 아님</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--r);margin-bottom:6px">🔴 경보 신호</div>
+        <ul>
+          <li><strong>봇 글 반응률 급락</strong> — 실 유저가 봇처럼 느끼기 시작한 신호</li>
+          <li><strong>신고/악성 비율 ↑</strong> — 커뮤니티 문화 오염 시작</li>
+          <li><strong>특정 사용자 독점</strong> — 1명이 글 30%+ 작성 시 커뮤니티 아님</li>
+          <li><strong>D30 리텐션 &lt; 10%</strong> — 재방문 이유가 없음</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §3 미션/비전/철학 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s3">
+  <div class="s-header">
+    <div class="s-num n-accent">3</div>
+    <div class="s-meta">
+      <h2>미션 / 비전 / 철학 (WHO WE ARE) <span class="status c">✅ 확정</span></h2>
+      <div class="s-sub">"우리는 왜 존재하는가?" — 브랜드 아키텍처 전체</div>
+    </div>
+  </div>
+
+  <div class="card accent">
+    <h3>확정 아이덴티티</h3>
+    <table>
+      <tr><th>항목</th><th>내용</th><th>사용 맥락</th></tr>
+      <tr><td><strong>서비스명</strong></td><td>우리 나이가 어때서</td><td>공식 표기, 구글 검색, SEO 타이틀</td></tr>
+      <tr><td><strong>닉네임</strong></td><td>우나어</td><td>짧은 맥락 (앱, SNS, 대화체)</td></tr>
+      <tr><td><strong>슬로건</strong></td><td style="color:var(--accent);font-weight:700">"우리, 서로가 있잖아"</td><td>모든 마케팅 카피, SNS bio, 팝업</td></tr>
+      <tr><td><strong>미션</strong></td><td>50·60대가 혼자라는 느낌에서 벗어나, 서로를 통해 다시 살아갈 힘을 찾도록, 느슨하지만 진짜인 연결을 만든다</td><td>내부 의사결정 기준</td></tr>
+      <tr><td><strong>비전</strong></td><td>50·60대라면 누구나 "여기 오면 내 얘기가 있다"고 느끼는 한국 최초의 중장년 연결 커뮤니티</td><td>장기 목표, 팀 공유</td></tr>
+      <tr><td><strong>브랜드 페르소나</strong></td><td>"옆자리 친구" — 같은 나이, 같은 고민, 먼저 공감해주는 따뜻한 동네 친구</td><td>에이전트 프롬프트, 콘텐츠 톤</td></tr>
+    </table>
+  </div>
+
+  <!-- 브랜드 명칭 사용 규칙 -->
+  <div class="card purple">
+    <h3>브랜드 명칭 사용 규칙 (아직 명문화 안 됨)</h3>
+    <table>
+      <tr><th>상황</th><th>사용할 이름</th><th>이유</th></tr>
+      <tr><td>구글/네이버 검색 타이틀 (SEO)</td><td><strong>우리 나이가 어때서</strong></td><td>검색 키워드 일치 → 클릭률</td></tr>
+      <tr><td>Instagram/Threads bio 첫 줄</td><td><strong>우리 나이가 어때서</strong></td><td>서비스 인지도 구축</td></tr>
+      <tr><td>SNS 해시태그</td><td><strong>#우나어 #우리나이가어때서</strong></td><td>짧은 태그 + 인지도 동시</td></tr>
+      <tr><td>앱/웹 내 UI (짧은 맥락)</td><td><strong>우나어</strong></td><td>공간 절약, 친근함</td></tr>
+      <tr><td>마케팅 카피 끝 CTA</td><td><strong>"우리, 서로가 있잖아" — 우나어</strong></td><td>슬로건 + 닉네임 조합</td></tr>
+      <tr><td>뉴스/언론 보도</td><td><strong>우리 나이가 어때서(우나어)</strong></td><td>공식명(닉네임) 병기</td></tr>
+    </table>
+  </div>
+
+  <div class="g2">
+    <div class="card green">
+      <h3>커뮤니케이션 원칙 (확정)</h3>
+      <ul>
+        <li>순서: <strong>공감 → 위로 → 응원 → 정보</strong> (정보는 마지막)</li>
+        <li>톤: 존댓말 필수 (~해요, ~입니다)</li>
+        <li>어려운 단어, 전문용어 풀어쓰기</li>
+        <li>결론(이득)은 두괄식</li>
+        <li>밝고 따뜻하게 — "할 수 있다" 믿어준다</li>
+      </ul>
+    </div>
+    <div class="card red">
+      <h3>절대 금지 (Anti-Positioning)</h3>
+      <ul>
+        <li><strong>금지어:</strong> 시니어 / 어르신 / 노인 / 실버 / 황혼</li>
+        <li><strong>금지 태도:</strong> 가르치는 톤 / 조언 먼저</li>
+        <li><strong>금지 주제:</strong> 정치 / 세대갈등 / "요즘 젊은이들"</li>
+        <li><strong>금지 표현:</strong> TMI / 갓생 / 핵인싸 / MZ</li>
+        <li><strong>금지 감성:</strong> 과도한 강요형 응원 "할 수 있어요!"</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 핵심 7문장 -->
+  <div class="card">
+    <h3>핵심 마케팅 7문장 (확정 · 에이전트/SNS/카피 공용)</h3>
+    <table>
+      <tr><th>#</th><th>문장</th><th>타겟 욕망</th></tr>
+      <tr><td>1</td><td>이 나이의 고민은 이 나이가 제일 잘 알아요.</td><td>RELATION (공감)</td></tr>
+      <tr><td>2</td><td>혼자 끙끙 앓던 그 고민, 여기선 다 있어요.</td><td>RELATION (소속)</td></tr>
+      <tr><td>3</td><td>이 나이에 이런 얘기 어디서 하겠어요 — 여기서 하세요.</td><td>RELATION (장벽 낮춤)</td></tr>
+      <tr><td>4</td><td>나만 이런 줄 알았는데, 우리 다 이래요.</td><td>RELATION (정상화)</td></tr>
+      <tr><td>5</td><td>퇴직 후, 갱년기 후, 자녀 독립 후 — 그다음이 막막한 분들께.</td><td>RETIRE</td></tr>
+      <tr><td>6</td><td style="color:var(--accent);font-weight:600">우리, 서로가 있잖아요.</td><td>핵심 슬로건</td></tr>
+      <tr><td>7</td><td>건강, 돈, 인생 다음 챕터 — 혼자 고민 안 해도 돼요.</td><td>HEALTH+MONEY+RETIRE</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §10 경쟁/포지셔닝 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s10">
+  <div class="s-header">
+    <div class="s-num n-p">10</div>
+    <div class="s-meta">
+      <h2>경쟁/포지셔닝 전략 <span class="status partial">⚠️ 부분확정</span></h2>
+      <div class="s-sub">"우리는 어디서 싸우고, 어떻게 이기는가?" — 포지셔닝 + 경쟁 해자</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card accent">
+      <h3>포지셔닝 두 축 (확정)</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--faint);border-radius:8px;overflow:hidden;margin-top:8px">
+        <div style="padding:16px;background:rgba(255,111,97,.06);text-align:center;border-right:1px solid var(--faint)">
+          <div style="font-size:22px;margin-bottom:6px">💛</div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent)">감성 축</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">RELATION<br>"우리, 서로가 있잖아"<br>차별화 포지션</div>
+        </div>
+        <div style="padding:16px;background:rgba(0,204,163,.06);text-align:center">
+          <div style="font-size:22px;margin-bottom:6px">🔧</div>
+          <div style="font-size:13px;font-weight:700;color:var(--g)">실용 축</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">RETIRE + MONEY<br>2막준비 + 재테크<br>SEO 검색 유입</div>
+        </div>
+      </div>
+      <p class="desc" style="margin-top:10px">감성 축: "우리가 다르게 느껴지는 이유" — 경쟁사가 흉내 내기 어려움 (커뮤니티 문화는 쌓이는 것). 실용 축: "검색에서 찾아오는 이유" — SEO, 매거진봇, 지식인봇으로 수확.</p>
+    </div>
+    <div class="card purple">
+      <h3>경쟁 해자 (Moat) — 우리를 못 베끼는 이유</h3>
+      <ul>
+        <li><strong>커뮤니티 문화:</strong> 글 10만 개가 쌓이면 복사 불가. 시간이 자산.</li>
+        <li><strong>5060 신뢰:</strong> "여기 내 또래가 있다"는 체험 — 코드로 못 만듦</li>
+        <li><strong>AI+커뮤니티 결합:</strong> 욕망 지도 → 맞춤 시드콘텐츠 → UGC 활성화. 일반 커뮤니티 플랫폼은 이 파이프라인 없음</li>
+        <li><strong>데이터 축적:</strong> 5060 욕망 데이터 → 최적 콘텐츠 전략. 경쟁사가 시작해도 6-12개월 데이터 격차</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>경쟁자 분석 (상세)</h3>
+    <table>
+      <tr><th>경쟁자</th><th>강점</th><th>약점</th><th>우나어 대응 전략</th><th>위협 수준</th></tr>
+      <tr><td><strong>밴드 (50대 모임방)</strong></td><td>5060 이미 대규모 사용. 친숙함.</td><td>폐쇄적, 지인 기반, SEO 불가, 새 연결 불가</td><td>"밴드 이후의 공간" 포지셔닝. 밴드 모임 → 우나어로 확장 유도</td><td>🔴 높음 (현재 사용자 뺏겨야)</td></tr>
+      <tr><td><strong>네이버 카페 (중년)</strong></td><td>검색 노출, 트래픽 큼</td><td>5060 전용 아님, 분산, "오래된 느낌"</td><td>우나어만의 따뜻한 톤 + 5060 전용 정체성</td><td>🟡 중간</td></tr>
+      <tr><td><strong>카카오 오픈채팅</strong></td><td>5060도 이미 사용. 즉각성.</td><td>휘발성, 기록 없음, 신뢰 낮음</td><td>"쌓이는 커뮤니티" 대비 "사라지는 채팅" 대조</td><td>🟡 중간</td></tr>
+      <tr><td><strong>시니어 전문 플랫폼</strong></td><td>전용 서비스</td><td>대부분 "시니어" 용어 사용 → 타겟 거부감</td><td>"시니어" 없는 자연스러운 커뮤니티 → 차별화</td><td>🟢 낮음</td></tr>
+      <tr><td><strong>네이버/구글 직접 검색</strong></td><td>정보 풍부</td><td>소속감 없음, 대화 불가</td><td>"정보는 구글, 대화는 우나어" 포지션</td><td>🟢 낮음 (보완재)</td></tr>
+    </table>
+  </div>
+
+  <div class="decision">
+    <div class="d-header"><div class="d-num">D1</div><div class="d-title">결정 필요: 1순위 경쟁 대응 포지셔닝 메시지</div></div>
+    <div class="opt">
+      <div class="o-label">안 A — 밴드 이탈자 공략</div>
+      <div class="o-title">"밴드에는 지인만 있어요. 여기엔 새 친구가 있어요."</div>
+      <div class="o-desc">밴드의 한계(지인 기반, 새 연결 불가)를 직접 공략. 밴드 피로감 느끼는 5060이 타겟.</div>
+      <div class="o-impact">채널: 밴드 내 자연스러운 우나어 소개 / 리스크: 밴드 사용자 오해 소지</div>
+    </div>
+    <div class="opt rec">
+      <div class="o-label">안 B — 검색→소속 전환 (추천)</div>
+      <div class="o-title">"건강/돈은 네이버에서 검색하셨죠? 그 다음 이야기는 우나어에서."</div>
+      <div class="o-desc">네이버 검색 → 우나어 유입(SEO) → 커뮤니티 소속 전환. 검색과 커뮤니티를 보완재로. 자연스러운 퍼널.</div>
+      <div class="o-impact">채널: SEO + 매거진봇 키워드 전략과 완전 연동 / 리스크: 중장기 전략 (즉각 효과 낮음)</div>
+    </div>
+    <div class="opt">
+      <div class="o-label">안 C — 오픈채팅 탈출구</div>
+      <div class="o-title">"단톡방보다 편한 공간 — 부담 없이 글 올려요."</div>
+      <div class="o-desc">카카오 오픈채팅 피로감(스팸, 소음, 부담) 이탈자 타겟. 커뮤니티의 '기록되는 대화' 강점 강조.</div>
+      <div class="o-impact">채널: 오픈채팅 내 자연 침투 / 리스크: 즉각적이지만 확장성 제한</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §4 카테고리 전략 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s4">
+  <div class="s-header">
+    <div class="s-num n-accent">4</div>
+    <div class="s-meta">
+      <h2>카테고리 전략 (WHAT WE OFFER) <span class="status c">✅ 확정</span></h2>
+      <div class="s-sub">"커뮤니티 안에서 어떤 방을 만들 것인가?" — 욕망 → 공간 매핑</div>
+    </div>
+  </div>
+
+  <div class="card accent">
+    <h3>확정 카테고리 6개 — 각각의 존재 이유</h3>
+    <table>
+      <tr><th>카테고리</th><th>해결하는 욕망</th><th>타겟 페르소나</th><th>KPI 지표</th><th>에이전트 지원</th></tr>
+      <tr><td><span class="tag-chip tc-b">BEST</span> 베스트</td><td>사회적 증거 (인기글 = 신뢰)</td><td>신규 방문자 (D0)</td><td>베스트글 CTR</td><td>트렌딩스코어 알고리즘</td></tr>
+      <tr><td><span class="tag-chip tc-s">STORY</span> 사는이야기</td><td>RELATION #1 — 일상 공감</td><td>P1 영숙씨 (연결 갈망)</td><td>댓글 수 / 공감 수</td><td>SEED봇 35명</td></tr>
+      <tr><td><span class="tag-chip tc-h">HUMOR</span> 웃음방</td><td>HEALTH 부가 / 무기력 해소</td><td>P3 미영씨 (유머)</td><td>조회수 / 공유</td><td>HUMOR SEED봇</td></tr>
+      <tr><td><span class="tag-chip tc-l">LIFE2 🆕</span> 2막준비</td><td>RETIRE #2 + MONEY #3</td><td>P5 민준씨 (은퇴 앞)</td><td>재방문율 (정보 재소비)</td><td>CDO 욕망 지도 연동</td></tr>
+      <tr><td><span class="tag-chip tc-j">JOB</span> 일자리</td><td>MONEY (수입 불안)</td><td>P4 순자씨 (생계)</td><td>공고 클릭 / CPS</td><td>자동 크롤링</td></tr>
+      <tr><td><span class="tag-chip tc-m">MAGAZINE</span> 매거진</td><td>HEALTH #4 (정보 소비)</td><td>P2 정희씨 (건강 정보)</td><td>구글 검색 유입 / eCPM</td><td>Magazine Agent SEO 발행</td></tr>
+    </table>
+  </div>
+
+  <div class="g2">
+    <div class="card green">
+      <h3>UX 라이팅 확정 내역</h3>
+      <table>
+        <tr><th>게시판</th><th>확정 이름</th><th>결정 이유</th><th>상태</th></tr>
+        <tr><td>HUMOR</td><td><strong style="color:var(--accent)">웃음방</strong></td><td>짧고 직관적. "웃음이 있는 방"이라는 의미 명확. 5060 여성 공감 최적화.</td><td style="color:var(--g)">✅ 확정</td></tr>
+        <tr><td>LIFE2</td><td><strong>2막준비</strong></td><td>"준비"의 능동성이 RETIRE 욕망과 잘 맞음. "인생2막"보다 실천적 느낌.</td><td style="color:var(--g)">✅ 확정</td></tr>
+        <tr><td>JOB</td><td><strong>일자리</strong></td><td>명확함 — 변경 불필요</td><td style="color:var(--g)">✅ 확정</td></tr>
+        <tr><td>MAGAZINE</td><td><strong>매거진</strong></td><td>현재 유지. 5060 친숙도는 트렌드 상향 중.</td><td style="color:var(--g)">✅ 확정</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>WEEKLY — 보류 이유 명시</h3>
+      <p class="desc">DB enum 유지, UI 숨김 처리 (2026-04-04 확정).</p>
+      <ul>
+        <li>활성화 조건: <strong>MAU 1,000+ 달성 후</strong> 주간 특집 운영 가능</li>
+        <li>활용 예시: 이번 주 화제 주제 큐레이션, 에디터 픽, 계절 특집</li>
+        <li>운영 방식: 에이전트 자동 생성 + 어드민 편집</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card accent">
+    <h3>서브카테고리 현황 (DB 기준)</h3>
+    <table>
+      <tr><th>게시판</th><th>서브카테고리</th><th>상태</th></tr>
+      <tr><td><strong>사는이야기</strong></td><td>일상 / 건강 / 고민 / 자녀 / 기타</td><td style="color:var(--g)">✅ DB 있음</td></tr>
+      <tr><td><strong>웃음방</strong></td><td>유머 / 힐링 / 자랑 / 추천 / 기타</td><td style="color:var(--g)">✅ DB 있음</td></tr>
+      <tr><td><strong>2막준비</strong></td><td>🔴 미정 — 결정 필요</td><td style="color:var(--r)">🔴 DB 없음</td></tr>
+      <tr><td><strong>일자리</strong></td><td>(서브카테고리 없음)</td><td style="color:var(--g)">✅</td></tr>
+      <tr><td><strong>매거진</strong></td><td>건강 / 재테크 / 여행 / 생활정보</td><td style="color:var(--g)">✅ DB 있음</td></tr>
+    </table>
+  </div>
+
+  <div class="decision">
+    <div class="d-header"><div class="d-num">D_L2</div><div class="d-title">결정 필요: 2막준비 서브카테고리</div></div>
+    <div class="opt rec">
+      <div class="o-label">안 A — 욕망 기반 (추천)</div>
+      <div class="o-title">퇴직·은퇴 / 재취업 / 자산·연금 / 건강관리 / 새로운 도전 / 기타</div>
+      <div class="o-desc">RETIRE(#2)+MONEY(#3)+HEALTH(#4) 욕망을 2막준비 안에서 세분화. 사용자가 "내 고민"을 바로 선택 가능. SEO 롱테일 키워드와 직결.</div>
+      <div class="o-impact">예: "퇴직·은퇴" → 은퇴 후 무기력, 명퇴 고민 / "자산·연금" → 국민연금 수령 전략, 노후자금</div>
+    </div>
+    <div class="opt">
+      <div class="o-label">안 B — 활동 기반</div>
+      <div class="o-title">재취업·일 / 재테크·연금 / 건강·생활 / 취미·여행 / 가족·관계</div>
+      <div class="o-desc">행동 단위로 분류. "뭘 하고 싶은가"로 찾는 사용자에 적합. 더 넓은 범위 커버.</div>
+    </div>
+    <div class="opt">
+      <div class="o-label">안 C — 심플 (감성+실용 2분류)</div>
+      <div class="o-title">마음준비 / 실전준비</div>
+      <div class="o-desc">단순화 최대. "마음준비" = 감성적 고민(의미, 관계), "실전준비" = 실용 정보(재테크, 재취업). 진입 장벽 낮음.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §5 기능 전략 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s5">
+  <div class="s-header">
+    <div class="s-num n-accent">5</div>
+    <div class="s-meta">
+      <h2>기능(Feature) 전략 <span class="status partial">⚠️ 부분확정</span></h2>
+      <div class="s-sub">"욕망을 해결하는 도구들 — 있는 것, 없는 것, 의도적으로 안 만드는 것"</div>
+    </div>
+  </div>
+
+  <!-- 2x2 매트릭스 -->
+  <div class="card purple">
+    <h3>기능 우선순위 매트릭스 (Impact × Effort)</h3>
+    <div class="fm-wrap">
+      <div class="fm-cell">
+        <div class="fm-label" style="color:var(--g)">🚀 Quick Win (High Impact, Low Effort)</div>
+        <ul style="padding:0;list-style:none">
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>댓글 알림 강화 (내 글에 댓글 → 즉시 알림)</span></li>
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>"오늘의 화제글" 홈 상단 노출</span></li>
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>글 북마크 (스크랩) 기능</span></li>
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>신규 가입자 온보딩 팝업</span></li>
+        </ul>
+      </div>
+      <div class="fm-cell">
+        <div class="fm-label" style="color:var(--b)">💎 Big Bet (High Impact, High Effort)</div>
+        <ul style="padding:0;list-style:none">
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>건강/생활 AI 챗봇 (유입+리텐션)</span></li>
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>또래 추천 / 비슷한 글 매칭</span></li>
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>오프라인 모임 연계</span></li>
+        </ul>
+      </div>
+      <div class="fm-cell">
+        <div class="fm-label" style="color:var(--y)">📦 Fill-In (Low Impact, Low Effort)</div>
+        <ul style="padding:0;list-style:none">
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>검색 기능 개선</span></li>
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>프로필 사진 커스터마이징</span></li>
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>다크모드</span></li>
+        </ul>
+      </div>
+      <div class="fm-cell">
+        <div class="fm-label" style="color:var(--muted)">🗑️ Avoid (Low Impact, High Effort)</div>
+        <ul style="padding:0;list-style:none">
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>DM / 1:1 채팅 (리소스 큼, 트러블 위험)</span></li>
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>포인트/마일리지 시스템</span></li>
+          <li style="display:flex;gap:5px;align-items:flex-start"><span>→</span><span>복잡한 랭킹 시스템</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>현재 기능 현황 + 욕망 연결</h3>
+    <table>
+      <tr><th>기능</th><th>현황</th><th>해결 욕망</th><th>개선 방향</th></tr>
+      <tr><td>글쓰기/댓글/좋아요</td><td style="color:var(--g)">✅ Live</td><td>RELATION</td><td>에디터 UX 시니어 최적화 확인 필요</td></tr>
+      <tr><td>카테고리 게시판 6개</td><td style="color:var(--g)">✅ Live</td><td>전체</td><td>—</td></tr>
+      <tr><td>베스트 (오늘/주간/명예의전당)</td><td style="color:var(--g)">✅ Live</td><td>사회적 증거</td><td>—</td></tr>
+      <tr><td>등급 시스템 (새싹→터줏대감)</td><td style="color:var(--g)">✅ Live</td><td>소속감</td><td>⚠️ 욕망(RELATION)과 연결 강화 필요 — "터줏대감 = 여기서 오래 살았다" 감성 전달?</td></tr>
+      <tr><td>알림 시스템</td><td style="color:var(--y)">⚠️ 기본만</td><td>D1 리텐션</td><td>댓글 알림 + 주간 요약 알림 강화 → D1 리텐션 직결</td></tr>
+      <tr><td>검색</td><td style="color:var(--y)">⚠️ 기본만</td><td>HEALTH/MONEY 정보 탐색</td><td>검색 결과 품질 + 관련글 추천</td></tr>
+      <tr><td>북마크/스크랩</td><td style="color:var(--r)">❌ 없음</td><td>MONEY/HEALTH 정보 저장</td><td>Quick Win — 빠르게 추가 가능</td></tr>
+      <tr><td>온보딩 플로우</td><td style="color:var(--r)">❌ 없음</td><td>D0 첫 경험</td><td>§13 D0 설계 후 연동 필수</td></tr>
+      <tr><td>건강 AI 챗봇</td><td style="color:var(--r)">❌ 없음</td><td>HEALTH 유입</td><td>Big Bet — 별도 계획 필요</td></tr>
+      <tr><td>또래 추천</td><td style="color:var(--r)">❌ 없음</td><td>RELATION #1 직결</td><td>Big Bet — 사용자 수 임계치 필요</td></tr>
+    </table>
+  </div>
+
+  <!-- ── 확정 기능 상세 기획 ── -->
+  <div class="alert ok">✅ 아래 4개 기능은 Q2 개발 확정. 각 기능의 상세 기획, 스키마 변경, 어드민 영향도를 정리합니다.</div>
+
+  <!-- 검색 강화 -->
+  <div class="card green">
+    <h3>🔍 검색 강화 — ✅ 안A 확정 (Prisma Fulltext + 관련글 추천)</h3>
+    <div class="g2" style="margin-top:10px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--g);margin-bottom:6px">기능 명세</div>
+        <ul>
+          <li>Prisma <code style="font-size:10px;background:var(--card2);padding:1px 4px;border-radius:3px">@@fulltext</code> 인덱스 — title + content 전문 검색</li>
+          <li>검색 결과 UI: 제목 + 미리보기 200자 + 카테고리 뱃지 + 작성일</li>
+          <li>관련글 추천: 같은 카테고리 + 제목 키워드 겹침 3개 (글 상세 하단)</li>
+          <li>검색어 로깅 → 어드민 "인기 검색어" 탭 (SearchLog 테이블)</li>
+          <li>빈 검색 결과: "이 주제로 글 쓰기" CTA (UGC 유도)</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">스키마 + 어드민 영향</div>
+        <ul>
+          <li>Post 테이블: <code style="font-size:10px;background:var(--card2);padding:1px 4px;border-radius:3px">@@fulltext([title, content])</code> 인덱스 추가</li>
+          <li>SearchLog 테이블: query, count, boardType, createdAt</li>
+          <li>어드민 분석 탭: 인기 검색어 Top 20, 검색 후 이탈률</li>
+          <li>개발 기간: <strong>1주</strong> / 추가 비용: 없음</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert info" style="margin-top:8px">5060 사용 패턴: "갱년기", "국민연금", "퇴직 후" 검색이 많을 것 → SEO 키워드 피드백 루프로 연결</div>
+  </div>
+
+  <!-- 폴더형 스크랩 -->
+  <div class="card blue">
+    <h3>🔖 폴더형 북마크/스크랩 — ✅ 안B 확정 (카테고리별 저장)</h3>
+    <div class="g2" style="margin-top:10px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--b);margin-bottom:6px">UX 설계</div>
+        <ul>
+          <li><strong>저장 버튼 위치</strong>: 글 상세 하단 액션 버튼 (52px) + 매거진 글 상단 우측</li>
+          <li>목록에서: <code style="font-size:10px;background:var(--card2);padding:1px 4px;border-radius:3px">···</code> 메뉴 → "저장하기" (모바일) / 호버 시 아이콘 (데스크탑)</li>
+          <li>저장 시: 폴더 선택 모달 (기본 "내 스크랩" + 사용자 생성 폴더)</li>
+          <li>마이페이지 > 스크랩 탭: 폴더 목록 + 폴더별 저장글 그리드</li>
+          <li>"나만 보기" 기본값 — 개인 정보 보호</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">스키마 + 어드민 영향</div>
+        <ul>
+          <li>BookmarkFolder: id, userId, name, createdAt</li>
+          <li>Bookmark: id, userId, postId, folderId, createdAt</li>
+          <li>기본 폴더 "내 스크랩" 가입 시 자동 생성</li>
+          <li>어드민 영향: 없음 (개인 데이터)</li>
+          <li>개발 기간: <strong>2-3주</strong> / 추가 비용: 없음</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert info" style="margin-top:8px">MONEY/HEALTH 콘텐츠 "나중에 다시 보기" 니즈 강함. 매거진 글 북마크율 → 콘텐츠 품질 지표로 활용 가능</div>
+  </div>
+
+  <!-- 관심사 선택 온보딩 -->
+  <div class="card purple">
+    <h3>👋 관심사 선택 온보딩 — ✅ 안B 확정 (개발 2주)</h3>
+    <div style="margin-top:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--p);margin-bottom:8px">플로우 상세 (5060 UX 고려)</div>
+      <div class="fw">
+        <div class="fw-step">
+          <div class="fw-icon">🔑</div>
+          <div class="fw-title">카카오 로그인</div>
+          <div class="fw-sub">isOnboarded = false</div>
+          <div class="fw-metric">→ /onboarding 리다이렉트</div>
+        </div>
+        <div class="fw-step">
+          <div class="fw-icon">❓</div>
+          <div class="fw-title">관심사 선택</div>
+          <div class="fw-sub">"어떤 이야기가 궁금하세요?" 카드 6개</div>
+          <div class="fw-metric">1-3개 선택 / 건너뛰기 제공</div>
+        </div>
+        <div class="fw-step">
+          <div class="fw-icon">👀</div>
+          <div class="fw-title">인기글 프리뷰</div>
+          <div class="fw-sub">선택 주제 인기글 3개</div>
+          <div class="fw-metric">"아, 이런 글이 있구나"</div>
+        </div>
+        <div class="fw-step">
+          <div class="fw-icon">🏠</div>
+          <div class="fw-title">커뮤니티 입장</div>
+          <div class="fw-sub">"이야기 보러 가기"</div>
+          <div class="fw-metric">isOnboarded = true</div>
+        </div>
+      </div>
+    </div>
+    <div class="g2" style="margin-top:10px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--p);margin-bottom:6px">5060 UX 원칙</div>
+        <ul>
+          <li>카드 크기 최대화 (전체화면 활용) — 52px+ 터치 타겟</li>
+          <li>각 카테고리에 아이콘 + 한 줄 설명 (예: "사는이야기 — 일상과 고민을 나눠요")</li>
+          <li>"건너뛰기" 항상 노출 — 강요 금지</li>
+          <li>선택 후 즉시 맞춤 피드 → 첫 방문부터 "내 글이 있다" 경험</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">스키마 + 어드민 영향</div>
+        <ul>
+          <li>User 테이블: <code style="font-size:10px;background:var(--card2);padding:1px 4px;border-radius:3px">isOnboarded Boolean @default(false)</code></li>
+          <li>User 테이블: <code style="font-size:10px;background:var(--card2);padding:1px 4px;border-radius:3px">interests String[]</code></li>
+          <li>어드민 회원 테이블: isOnboarded 컬럼 추가</li>
+          <li>어드민 분석: 관심사 분포 차트 (어떤 카테고리 선택 多)</li>
+          <li>개발 기간: <strong>2주</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 공유하기 -->
+  <div class="card accent">
+    <h3>📤 공유하기 — 카카오톡 공유 + 링크 복사</h3>
+    <div class="g2" style="margin-top:10px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">기능 명세</div>
+        <ul>
+          <li><strong>카카오톡 공유</strong>: kakao.Kakao.Share.sendDefault — 썸네일 + 제목 + 설명 + 링크</li>
+          <li><strong>링크 복사</strong>: navigator.clipboard.writeText() + execCommand fallback</li>
+          <li>버튼 위치: 글 상세 하단 액션 버튼 줄 (모바일 플로팅 바 포함)</li>
+          <li>OG 태그 강화: 글별 동적 title/description/image (Next.js generateMetadata)</li>
+          <li>이미지: 첫 번째 첨부 이미지 → 없으면 브랜드 기본 이미지</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">5060 공유 심리 + 어드민</div>
+        <ul>
+          <li>5060 공유 동기: <strong>"카카오톡으로 친구한테 알려주기"</strong>가 압도적 1위</li>
+          <li>카카오 공유 > 링크 복사 (카카오 공유 버튼을 더 크게, 더 위에)</li>
+          <li>공유된 글 = 신규 유입 시작점 → K-factor 측정 가능</li>
+          <li>스키마: Post.shareCount (Int, 선택) — 공유 통계용</li>
+          <li>어드민: 공유 Top 글 목록 → 바이럴 콘텐츠 패턴 발견</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert warn" style="margin-top:8px">카카오 JS SDK 초기화 필요 (kakao.init) — CSP script-src에 kakao 도메인 추가 확인</div>
+  </div>
+
+  <div class="decision">
+    <div class="d-header"><div class="d-num">D2</div><div class="d-title">결정 필요: Q2 집중 개발 기능 1순위</div></div>
+    <div class="opt rec">
+      <div class="o-label">안 A — 관심사 선택 온보딩 (추천)</div>
+      <div class="o-title">신규 가입자 D0 경험 최적화: 관심사 선택 → 맞춤 글 피드</div>
+      <div class="o-desc">가입 직후 "어떤 이야기가 궁금하세요?" 카테고리 카드 선택 (1-3개) → 선택 주제 인기글 3개 프리뷰 → "이야기 보러 가기". 지금 가입자는 아무것도 안내받지 못하고 이탈 중. 리텐션 근본 문제 해결.</div>
+      <div class="o-impact">예상 효과: 가입→재방문 전환 +20-40% / 개발 기간: 2주 / 스키마: User.isOnboarded + User.interests 추가</div>
+    </div>
+    <div class="opt">
+      <div class="o-label">안 B — 건강 AI 챗봇</div>
+      <div class="o-title">건강 질문 → AI 답변 + 우나어 관련 글 추천</div>
+      <div class="o-desc">유입 SEO 강화 + 리텐션 훅 동시. Claude API ~$20-40/월 추가. 5060 건강 욕망(#4) 직접 해결. 온보딩 이후 단계에서 검토.</div>
+      <div class="o-impact">예상 효과: 유입 +30% SEO / 개발 기간: 4-6주 / 비용: ~$20-40/월 추가</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §11 콘텐츠 엔진 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s11">
+  <div class="s-header">
+    <div class="s-num n-p">11</div>
+    <div class="s-meta">
+      <h2>콘텐츠 엔진 전략 <span class="status partial">⚠️ 부분확정</span></h2>
+      <div class="s-sub">"어떤 콘텐츠가 5060을 끌어들이고 붙잡는가?" — 에이전트 + UGC + 편집</div>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <div class="ki-label">콘텐츠 엔진 핵심 원칙</div>
+    <div class="ki-text">자동화 파이프라인 × 진짜 사람처럼. 에이전트가 빈 광장을 채우고, 실 유저가 그 위에 올라탄다. 단 — 에이전트 글이 "AI가 쓴 것 같다"는 느낌을 주는 순간 커뮤니티 신뢰는 무너진다. 이것이 우나어 콘텐츠 엔진의 가장 어려운 도전이다.</div>
+    <div class="ki-sub">5060이 가장 공감하는 콘텐츠 = 전문 에디터가 쓴 완벽한 글이 아니라, 자기와 비슷한 사람이 쓴 조금 어설프지만 솔직한 이야기</div>
+  </div>
+
+  <!-- 파이프라인 전체 흐름 -->
+  <div class="card green">
+    <h3>콘텐츠 파이프라인 전체 흐름 (현재 가동 중)</h3>
+    <div class="fw" style="margin-top:12px">
+      <div class="fw-step">
+        <div class="fw-icon">🌅</div>
+        <div class="fw-title">아침 크롤러</div>
+        <div class="fw-sub">날씨·오늘 이슈·5060 화제어 수집</div>
+        <div class="fw-metric">06:00 KST</div>
+      </div>
+      <div class="fw-step">
+        <div class="fw-icon">☀️</div>
+        <div class="fw-title">점심 크롤러</div>
+        <div class="fw-sub">오전 반응 트렌드·뉴스 업데이트</div>
+        <div class="fw-metric">12:00 KST</div>
+      </div>
+      <div class="fw-step">
+        <div class="fw-icon">🧠</div>
+        <div class="fw-title">CDO 분석</div>
+        <div class="fw-sub">트렌드 → 오늘의 방향 지시 (욕망 비율 + DailyBrief)</div>
+        <div class="fw-metric">매일 설정</div>
+      </div>
+      <div class="fw-step">
+        <div class="fw-icon">🤖</div>
+        <div class="fw-title">SEED봇 35명</div>
+        <div class="fw-sub">CDO 지시 + 당일 트렌드 반영 글 생성</div>
+        <div class="fw-metric">매일 ✅</div>
+      </div>
+      <div class="fw-step">
+        <div class="fw-icon">📣</div>
+        <div class="fw-title">CMO + 지식인봇</div>
+        <div class="fw-sub">SNS 배포 + 외부 유입 유도</div>
+        <div class="fw-metric">매일 ✅</div>
+      </div>
+      <div class="fw-step">
+        <div class="fw-icon">💬</div>
+        <div class="fw-title">실 유저 UGC</div>
+        <div class="fw-sub">봇 글에 자연스럽게 반응 → 공감·댓글·새 글</div>
+        <div class="fw-metric">목표 → Phase 3</div>
+      </div>
+    </div>
+    <div style="background:rgba(0,204,163,.06);border-radius:8px;padding:12px;margin-top:8px;font-size:11px;color:var(--g)">
+      <strong>실시간 트렌드 반영 예시</strong><br>
+      4/5 아침 크롤러: "벚꽃 절정 + 어젯밤 비" → CDO: "봄나들이 + 비 온 뒤 날씨 걱정 포맷 우선" → SEED봇: 벚꽃 나들이 계획 고민 글, 환절기 건강 이야기 생성<br>
+      5/1 공식 휴무 → CDO: "노동절 남편 하루 더 쉼, 집에 있는 답답함, 뭐 할지 고민" → SEED봇: 명절+휴일 공감 글 생성
+    </div>
+  </div>
+
+  <!-- 봇/UGC 비율 전략 -->
+  <div class="card purple">
+    <h3>봇 vs. UGC 비율 전략 — MAU 단계별 관리</h3>
+    <table>
+      <tr><th>Phase</th><th>MAU</th><th>봇:UGC</th><th>핵심 전략</th><th>봇의 역할</th></tr>
+      <tr><td><strong>Phase 1</strong></td><td>0 → 100</td><td style="color:var(--accent)">95:5</td><td>빈 광장 해결 — 새 유저가 와도 글이 있다는 것 보장</td><td>분위기 조성</td></tr>
+      <tr><td><strong>Phase 2</strong></td><td>100 → 300</td><td style="color:var(--y)">70:30</td><td>실 유저 첫 반응 유발. 봇 글 품질↑로 댓글 달고 싶은 글 비중 늘리기</td><td>씨앗 + 반응 유발</td></tr>
+      <tr><td><strong>Phase 3 (임계)</strong></td><td>300 → 1,000</td><td style="color:var(--g)">40:60</td><td>플라이휠 가동. UGC가 봇을 자연스럽게 묻힌다</td><td>틈새 채우기</td></tr>
+      <tr><td><strong>Phase 4</strong></td><td>1,000+</td><td style="color:var(--g)">20:80</td><td>에디터즈픽으로 질 관리. 봇은 특정 욕망 보완에만</td><td>특수 역할</td></tr>
+    </table>
+  </div>
+
+  <!-- AI 아닌 사람 느낌 전략 -->
+  <div class="card accent">
+    <h3>⚠️ "AI가 쓴 느낌" 제거 전략 — 가장 어려운 도전</h3>
+    <div class="alert danger" style="margin-bottom:12px">봇 글에 "댓글 달아주세요", "어떻게 생각하세요?" 같은 인위적 CTA 절대 금지. 이런 글은 즉시 봇이라는 것을 노출한다.</div>
+    <div class="g2">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">금지 패턴</div>
+        <ul>
+          <li>댓글 유도 문구 ("어떠신지 댓글로 알려주세요")</li>
+          <li>완벽한 맞춤법 + 일정한 문체 (모든 봇이 비슷해 보임)</li>
+          <li>글 길이가 항상 비슷함 (늘 5-7줄, 늘 150자)</li>
+          <li>지나치게 정돈된 구조 (서론-본론-결론 패턴)</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--g);margin-bottom:6px">자연화 전략 (5060 실제 말투)</div>
+        <ul>
+          <li><strong>오타·맞춤법 오류</strong>: "어쩌다보니", "그렇게됐어" 가끔</li>
+          <li><strong>음슴체·함축체</strong>: "~함", "~임", "~던데", "그냥 뒀음"</li>
+          <li><strong>ㅎㅎ 감탄사</strong>: "ㅎ", "ㅎㅎ" 간간이</li>
+          <li><strong>반말·존댓말 혼용</strong>: 웃음방에서 특히</li>
+          <li><strong>글 길이 다양화</strong>: 2줄짜리 짧은 글도, 20줄 긴 글도</li>
+          <li><strong>열린 서술 마무리</strong>: 이야기가 그냥 끝남 → 공감 사람이 알아서 댓글</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert info" style="margin-top:8px">📌 구현 방향: 카페 크롤러가 5060 실제 말투 패턴 수집 → SEED봇 페르소나 프롬프트 업데이트. 각 페르소나별 "오타 습관", "자주 쓰는 표현" 정의 필요 (별도 에이전트 개선 작업)</div>
+  </div>
+
+  <!-- 5060 공감 콘텐츠 유형 -->
+  <div class="card">
+    <h3>5060에게 자연스럽게 반응 유발하는 콘텐츠 유형</h3>
+    <table>
+      <tr><th>유형</th><th>예시 (실제 말투)</th><th>왜 반응하는가</th><th>우나어 배치</th></tr>
+      <tr><td><strong>정상화</strong></td><td>"나만 이런 줄 알았어요. 퇴직하고 나니 아는 사람이 갑자기 다 없어진 느낌이에요..."</td><td>체면 장벽 뒤 숨겨진 감정 대신 표현해줌 → 댓글 폭발</td><td>사는이야기 시그니처</td></tr>
+      <tr><td><strong>체험 후기</strong></td><td>"퇴직 2년 됐어요. 처음엔 막막했는데 지금은 그냥 이렇게 살고 있음 ㅎ"</td><td>같은 상황 독자 "나도 괜찮을 수 있다" 희망</td><td>LIFE2 핵심</td></tr>
+      <tr><td><strong>실용 정보</strong></td><td>"국민연금 1년 미루면 얼마나 더 받는지 계산해봤어요"</td><td>즐겨찾기 + 공유 (재무 정보 희귀)</td><td>매거진 + LIFE2</td></tr>
+      <tr><td><strong>감성 공명</strong></td><td>"자식한테 짐 되기 싫어서 말 못 하고 있었는데..."</td><td>억눌린 감정 대신 표현 → "저도요" 댓글</td><td>사는이야기</td></tr>
+      <tr><td><strong>가벼운 공감</strong></td><td>"이 나이 되면 생기는 일ㅋㅋ 무릎 소리가 이제 날씨 예보임"</td><td>공유하기 쉬움, 부담 없음</td><td>웃음방</td></tr>
+    </table>
+  </div>
+
+  <!-- 에이전트 품질 KPI + 에디터즈픽 -->
+  <div class="g2">
+    <div class="card yellow">
+      <h3>에이전트 콘텐츠 품질 KPI</h3>
+      <ul>
+        <li>봇별 <strong>공감률</strong> (좋아요/노출) 주간 측정</li>
+        <li>봇별 <strong>댓글유발률</strong> (댓글 달린 글 비율)</li>
+        <li><strong>D7 재방문 기여도</strong> — 어떤 봇 글이 재방문 트리거?</li>
+        <li>하위 20% 봇 → <strong>evolve-prompt 파이프라인</strong>으로 자동 개선</li>
+        <li>목표: 봇 글 댓글유발률 ≥ 15% (현재 측정 필요)</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <h3>에디터즈픽 큐레이션 (MAU 300+ 이후)</h3>
+      <ul>
+        <li>주 1회 창업자 선정 3-5개 글 → 홈 상단 "이번 주 이야기" 노출</li>
+        <li>선정 기준: 진솔함 + 공감수 + 커뮤니티 가치</li>
+        <li>봇 글 선정 금지 — 실 유저 UGC만</li>
+        <li>선정된 사람 → "에디터즈픽 배지" → 소속감 강화</li>
+        <li>운영 어드민: 어드민 패널 > 콘텐츠 > 에디터즈픽 설정</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §6 SEO 전략 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s6">
+  <div class="s-header">
+    <div class="s-num n-accent">6</div>
+    <div class="s-meta">
+      <h2>SEO 전략 <span class="status partial">⚠️ 방향 설정 중</span></h2>
+      <div class="s-sub">"5060의 욕망을 검색하는 사람이 우나어를 먼저 찾도록" — 검색 독점 전략</div>
+    </div>
+  </div>
+
+  <!-- SNS 브랜드 확정 -->
+  <div class="alert ok">✅ D4 확정 — SNS 채널 bio 통일: <strong>"우리 나이가 어때서 — 5060, 서로를 잇다"</strong></div>
+
+  <!-- SNS 채널 bio 확정 표 -->
+  <div class="card">
+    <h3>SNS 채널 bio 확정값 <span style="background:rgba(0,204,163,.12);color:var(--g);font-size:9px;padding:2px 7px;border-radius:4px;font-weight:700;margin-left:6px">✅ 확정</span></h3>
+    <table>
+      <tr><th>채널</th><th>계정</th><th>Bio (확정)</th><th>상태</th></tr>
+      <tr><td><strong>🌐 웹사이트</strong></td><td>age-doesnt-matter.com</td><td>"우리 나이가 어때서 — 5060 세대 커뮤니티 | 우나어"</td><td style="color:var(--g)">✅ 적용 중</td></tr>
+      <tr><td><strong>📸 Instagram</strong></td><td>@age.not.matter</td><td>"우리 나이가 어때서 — 5060, 서로를 잇다"</td><td style="color:var(--y)">⚠️ 수동 수정 필요</td></tr>
+      <tr><td><strong>🔗 Threads</strong></td><td>@age.not.matter</td><td>"우리 나이가 어때서 — 5060, 서로를 잇다"</td><td style="color:var(--y)">⚠️ 수동 수정 필요</td></tr>
+      <tr><td><strong>👥 Facebook</strong></td><td>@age.not.matter</td><td>"우리 나이가 어때서 — 5060, 서로를 잇다"</td><td style="color:var(--y)">⚠️ 수동 수정 필요</td></tr>
+      <tr><td><strong>constitution.yaml</strong></td><td>brand_voice.tagline</td><td>"우리, 서로가 있잖아" → "5060, 서로를 잇다"</td><td style="color:var(--r)">🔴 코드 업데이트 필요</td></tr>
+    </table>
+  </div>
+
+  <div class="decision">
+    <div class="d-header"><div class="d-num">D3</div><div class="d-title">결정 필요: Threads 운영 방식</div></div>
+    <div class="opt">
+      <div class="o-label">안 A — 창업자 개인 계정 활용</div>
+      <div class="o-title">@jemma_jinjoohwang + bio에 "우리 나이가 어때서 창업자" 명시</div>
+      <div class="o-desc">창업자 퍼스널 브랜딩 유지. 진정성 있음. "창업자 스토리" 각도로 서비스 연결. 비용 0, 즉시 적용.</div>
+      <div class="o-impact">장점: 팔로워 유지 + 진정성 / 단점: 개인-브랜드 경계 모호</div>
+    </div>
+    <div class="opt rec">
+      <div class="o-label">안 B — 브랜드 계정 신규 개설 (추천)</div>
+      <div class="o-title">@age.not.matter Threads 계정 개설 (Instagram과 동일 핸들)</div>
+      <div class="o-desc">Instagram과 핸들 일관성. CMO 에이전트가 브랜드 계정에 콘텐츠 자동 발행. 개인 계정(@jemma)은 창업자 개인 활동용 유지.</div>
+      <div class="o-impact">장점: 브랜드 일관성 + 자동화 / 단점: 팔로워 0부터 시작</div>
+    </div>
+    <div class="opt">
+      <div class="o-label">안 C — 점진적 브랜드 전환</div>
+      <div class="o-title">@jemma 계정에서 우나어 브랜드 콘텐츠 비중 점차 높이기</div>
+      <div class="o-desc">기존 팔로워 유지하며 개인 계정 → 브랜드 계정으로 전환. "우나어 창업자의 이야기" 포맷으로 운영.</div>
+      <div class="o-impact">장점: 팔로워 유지 / 단점: 개인 생활 노출 부담</div>
+    </div>
+  </div>
+
+  <!-- 검색 공백 기회 -->
+  <div class="key-insight">
+    <div class="ki-label">SEO 핵심 기회 — "5060 검색 시장의 공백"</div>
+    <div class="ki-text">대형 포털과 언론은 건강/재테크 정보를 다루지만, 5060의 <em>감성적 욕망</em>(외로움, 소속감, "나 같은 사람")을 키워드로 커버하는 콘텐츠는 거의 없다. "50대 공감 커뮤니티", "퇴직 후 무기력", "60대 친구 사귀기" — 이 키워드들은 검색 볼륨은 있지만 경쟁이 극도로 낮다.</div>
+    <div class="ki-sub">SEO는 복리다. 지금 발행한 글이 6-12개월 후 트래픽을 만든다. 늦게 시작할수록 더 오래 기다려야 한다.</div>
+  </div>
+
+  <!-- 검색 공백 지도 -->
+  <div class="card accent">
+    <h3>5060 검색 공백 지도 — 욕망별 기회 분석</h3>
+    <table>
+      <tr><th>욕망</th><th>대표 키워드</th><th>검색 볼륨</th><th>경쟁 강도</th><th>우나어 기회</th><th>현재 커버</th></tr>
+      <tr><td><strong>RELATION</strong></td><td>50대 친구 사귀기, 60대 소통, 중년 공감 커뮤니티</td><td>있음</td><td style="color:var(--g)">매우 낮음</td><td style="color:var(--g)"><strong>독점 가능</strong></td><td style="color:var(--r)">🔴 거의 없음</td></tr>
+      <tr><td><strong>RETIRE</strong></td><td>퇴직 후 무기력, 은퇴 후 하루 루틴, 인생 2막 준비</td><td>높음</td><td style="color:var(--y)">중간</td><td>감정 각도로 차별화</td><td style="color:var(--r)">🔴 미약</td></tr>
+      <tr><td><strong>MONEY</strong></td><td>국민연금 수령 나이, 60대 재테크, 노후자금</td><td>매우 높음</td><td style="color:var(--r)">강함</td><td>5060 커뮤니티 경험 각도</td><td style="color:var(--y)">⚠️ 부분</td></tr>
+      <tr><td><strong>HEALTH</strong></td><td>50대 건강, 갱년기 증상, 혈압 관리</td><td>최고</td><td style="color:var(--r)">강함</td><td>정보+공감 결합 차별화</td><td style="color:var(--y)">⚠️ 매거진봇</td></tr>
+    </table>
+  </div>
+
+  <!-- 3층 SEO 구조 -->
+  <div class="card purple">
+    <h3>3층 SEO 구조 — 단계별 실행</h3>
+    <div class="g3" style="margin-top:10px">
+      <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:800;color:var(--r);margin-bottom:6px">1층 — 기술 SEO (지금 당장)</div>
+        <ul>
+          <li>GSC 연동 + 소유권 인증</li>
+          <li>sitemap.xml 확인/업데이트</li>
+          <li>JSON-LD 구조화 데이터 (Article, WebSite, BreadcrumbList)</li>
+          <li>OG 태그 글별 동적 생성 완성</li>
+          <li>Core Web Vitals 측정 + 개선</li>
+        </ul>
+        <div style="font-size:10px;color:var(--r);margin-top:8px;font-weight:700">기간: 1-2주 / 이 없으면 2층이 낭비</div>
+      </div>
+      <div style="background:rgba(255,201,85,.06);border:1px solid rgba(255,201,85,.15);border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:800;color:var(--y);margin-bottom:6px">2층 — 콘텐츠 SEO (진행 중)</div>
+        <ul>
+          <li>매거진봇 키워드 방향 수정: RETIRE/RELATION 비중 ↑</li>
+          <li>각 카테고리 페이지 메타데이터 최적화</li>
+          <li>URL slug 키워드 포함 확인</li>
+          <li>내부 링크 자동 삽입 (관련글 추천)</li>
+          <li>지식인봇 답변에 우나어 관련글 링크 삽입</li>
+        </ul>
+        <div style="font-size:10px;color:var(--y);margin-top:8px;font-weight:700">기간: 매월 꾸준히 / 복리 효과</div>
+      </div>
+      <div style="background:rgba(0,204,163,.06);border:1px solid rgba(0,204,163,.15);border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:800;color:var(--g);margin-bottom:6px">3층 — 커뮤니티 SEO (MAU 300+ 자동)</div>
+        <ul>
+          <li>UGC가 롱테일 키워드 자동 생성 (Reddit 모델)</li>
+          <li>포럼 구조화 데이터로 리치 스니펫 노출</li>
+          <li>댓글 많은 글 = SEO 강화 자동 선순환</li>
+          <li>커뮤니티 UGC → 구글 인덱싱 → 신규 유입</li>
+        </ul>
+        <div style="font-size:10px;color:var(--g);margin-top:8px;font-weight:700">기간: MAU 300+ 달성 후 자동 작동</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 페이지별 SEO 설계 -->
+  <div class="card">
+    <h3>페이지별 SEO 메타데이터 설계 — Next.js generateMetadata 적용</h3>
+    <table>
+      <tr><th>페이지</th><th>title (구글 스니펫)</th><th>description</th><th>핵심 키워드</th></tr>
+      <tr><td><strong>/</strong> 홈</td><td>우리 나이가 어때서 — 5060 커뮤니티 | 우나어</td><td>나이 걱정 없이 소통하는 우리 또래의 따뜻한 커뮤니티. 일상, 건강, 인생 2막 이야기.</td><td>5060 커뮤니티, 중장년 소통</td></tr>
+      <tr><td><strong>/community/stories</strong> 사는이야기</td><td>50대 60대 사는이야기 — 우나어</td><td>일상, 건강 고민, 자녀 이야기를 나누는 우리 또래의 공간</td><td>50대 일상, 60대 공감 이야기</td></tr>
+      <tr><td><strong>/community/humor</strong> 웃음방</td><td>웃음방 — 50대 유머 공감 | 우나어</td><td>이 나이에 생기는 일들, 중년의 웃음과 힐링</td><td>50대 유머, 중년 공감, 웃음방</td></tr>
+      <tr><td><strong>/community/life2</strong> 2막준비</td><td>2막준비 — 퇴직 후 인생 2막 | 우나어</td><td>은퇴 후 생활, 재취업, 연금, 새로운 도전 이야기</td><td>퇴직 후 생활, 인생 2막, 은퇴 준비</td></tr>
+      <tr><td><strong>/community/jobs</strong> 일자리</td><td>50대 60대 일자리 정보 — 우나어</td><td>우리 또래를 위한 일자리 정보와 취업 경험담</td><td>50대 일자리, 60대 취업, 중장년 구인구직</td></tr>
+      <tr><td><strong>/magazine</strong> 매거진</td><td>매거진 — 건강·재테크·생활정보 | 우나어</td><td>우리 나이에 꼭 필요한 건강, 재테크, 생활 정보 모음</td><td>50대 건강, 국민연금, 노후 재테크</td></tr>
+      <tr><td><strong>/best</strong> 베스트</td><td>베스트 — 이주의 화제글 | 우나어</td><td>가장 공감받은 우리 또래의 이야기</td><td>50대 공감, 중년 화제글</td></tr>
+    </table>
+  </div>
+
+  <!-- 기술 SEO 체크리스트 -->
+  <div class="card yellow">
+    <h3>기술 SEO 체크리스트 — 우선순위 순</h3>
+    <table>
+      <tr><th>우선순위</th><th>항목</th><th>현재 상태</th><th>액션</th></tr>
+      <tr><td style="color:var(--r)"><strong>P0</strong></td><td>Google Search Console 연동</td><td style="color:var(--r)">🔴 미연동</td><td>GSC 소유권 인증 → 색인 상태 확인</td></tr>
+      <tr><td style="color:var(--r)"><strong>P0</strong></td><td>JSON-LD 구조화 데이터</td><td style="color:var(--r)">🔴 미구현</td><td>Article, WebSite, BreadcrumbList 스키마 추가</td></tr>
+      <tr><td style="color:var(--y)"><strong>P1</strong></td><td>OG 태그 글별 동적 생성</td><td style="color:var(--y)">⚠️ 부분 구현</td><td>generateMetadata로 글마다 고유 title/description/image</td></tr>
+      <tr><td style="color:var(--y)"><strong>P1</strong></td><td>sitemap.xml</td><td style="color:var(--y)">⚠️ 확인 필요</td><td>Next.js sitemap.ts 자동 생성 + GSC에 제출</td></tr>
+      <tr><td style="color:var(--y)"><strong>P2</strong></td><td>URL slug 키워드 포함</td><td style="color:var(--y)">⚠️ 확인 필요</td><td>/magazine/[한글-키워드-slug] 패턴 확인</td></tr>
+      <tr><td style="color:var(--y)"><strong>P2</strong></td><td>Core Web Vitals</td><td style="color:var(--y)">⚠️ 미측정</td><td>PageSpeed Insights 측정 → LCP/CLS 개선</td></tr>
+      <tr><td><strong>P3</strong></td><td>내부 링크 (관련글 추천)</td><td style="color:var(--r)">🔴 미구현</td><td>글 하단 "이 글도 봐요" 자동 3개 (검색 기능과 연동)</td></tr>
+    </table>
+  </div>
+
+  <!-- 지식인봇 SEO 시너지 -->
+  <div class="insight">
+    <div class="i-label">지식인봇 × SEO 시너지 플로우</div>
+    네이버 지식인 답변 → 우나어 관련글 링크 삽입 → 유입 → 댓글/UGC → SEO 강화 → 더 많은 유입. 지식인봇은 단순 유입 채널이 아니라 <strong>SEO 파이프라인의 첫 번째 링크</strong>. 지식인 답변 품질 = 클릭율 = 우나어 인지도.
+  </div>
+
+  <div class="decision">
+    <div class="d-header"><div class="d-num">D_SEO</div><div class="d-title">결정 필요: SEO Q2 집중 전략 1순위</div></div>
+    <div class="opt rec">
+      <div class="o-label">안 A — 기술 SEO 완성 먼저 (추천)</div>
+      <div class="o-title">GSC + JSON-LD + sitemap 완성 → 콘텐츠 인덱싱 기반 다지기 (1-2주)</div>
+      <div class="o-desc">기반 없이 콘텐츠만 쌓는 건 낭비. 구글이 크롤링을 못 하면 아무리 좋은 글도 검색에 안 뜬다. JSON-LD로 리치 스니펫 노출 → CTR 2-3배 향상 가능.</div>
+      <div class="o-impact">기간: 1-2주 / 효과: 즉시 + 장기 / 비용: 없음</div>
+    </div>
+    <div class="opt">
+      <div class="o-label">안 B — RETIRE/RELATION 키워드 콘텐츠 집중</div>
+      <div class="o-title">매거진봇 방향 수정 + 2막준비 카테고리 SEO 콘텐츠 집중 발행</div>
+      <div class="o-desc">경쟁이 약한 RETIRE/RELATION 키워드 공략. 지금 당장 콘텐츠 축적 시작. 기술 SEO는 병행 진행.</div>
+      <div class="o-impact">기간: 즉시 시작 / 효과: 3-6개월 후 트래픽 / 비용: 없음 (에이전트 방향만 수정)</div>
+    </div>
+    <div class="opt">
+      <div class="o-label">안 C — 커뮤니티 SEO 설계 (MAU 300+ 이후)</div>
+      <div class="o-title">포럼 구조화 데이터 + 댓글 SEO 인덱싱 설계</div>
+      <div class="o-desc">UGC가 자동으로 롱테일 키워드 생성하도록 기술적으로 설계. 실 유저가 늘어날수록 SEO가 자동 강화되는 구조. MAU 300+ 달성 후 최우선 작업.</div>
+      <div class="o-impact">기간: MAU 300 이후 / 효과: 지수적 성장 / 비용: 없음</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §7 매출 공식 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s7">
+  <div class="s-header">
+    <div class="s-num n-accent">7</div>
+    <div class="s-meta">
+      <h2>매출 공식 (Revenue Formula) <span class="status partial">⚠️ 구조 있음, 드라이버 미정</span></h2>
+      <div class="s-sub">"돈은 어떤 구조로 벌리는가?" — 현재 + 미래 수익 사다리</div>
+    </div>
+  </div>
+
+  <div class="formula"><strong class="hl">현재 수익 구조</strong>
+
+월 매출 = <strong>애드센스</strong> (DAU × PV/DAU × eCPM/1000 × 30일)
+         + <strong>쿠팡파트너스 CPS</strong> (건강/생활용품 클릭 × 전환 × 수수료)
+
+월 순수익 = 월 매출 - 운영비 (~$71/월 = 약 10만원)
+
+<strong class="hl">운영비 상세</strong>
+  Vercel Pro              ~$20/월
+  Supabase Pro            ~$25/월
+  Claude API (에이전트)     ~$21/월  [Opus 2개 + Sonnet 7개 + Haiku 10개]
+  기타 (도메인 등)           ~$5/월
+  ─────────────────────────────────
+  합계                     ~$71/월  ≈ 10만원/월
+
+<strong class="hl">손익분기점 (BEP)</strong>
+  최소 BEP: 월 매출 > 10만원 (운영비 커버)
+  의미 있는 수익: 월 매출 > 30만원 (창업자 시간 가치 포함 시 ~100만원)</div>
+
+  <!-- 수익 사다리 -->
+  <div class="card purple">
+    <h3>수익 사다리 (Revenue Ladder) — 2026~2027 로드맵</h3>
+    <table>
+      <tr><th>단계</th><th>조건</th><th>수익원</th><th>월 예상</th></tr>
+      <tr><td><strong>1단계 (지금)</strong></td><td>MAU &lt; 1,000</td><td>애드센스 + 쿠팡파트너스</td><td>2-10만원</td></tr>
+      <tr><td><strong>2단계</strong></td><td>MAU 1,000-5,000</td><td>애드센스 최적화 + 쿠팡 + 일자리 공고 프리미엄</td><td>30-100만원</td></tr>
+      <tr><td><strong>3단계</strong></td><td>MAU 5,000-20,000</td><td>+ 일자리 구인구직 수수료 + 스폰서 콘텐츠</td><td>100-300만원</td></tr>
+      <tr><td><strong>4단계</strong></td><td>MAU 20,000+</td><td>+ 프리미엄 멤버십 + B2B 데이터 / 광고 솔루션</td><td>300만원+</td></tr>
+    </table>
+  </div>
+
+  <div class="card accent">
+    <h3>💡 수익 드라이버 — 레버별 활성화 방법</h3>
+    <table>
+      <tr><th>수익원</th><th>핵심 레버</th><th>현재 상태</th><th>액션</th></tr>
+      <tr>
+        <td><strong>애드센스</strong></td>
+        <td>건강/금융 주제 비중 → eCPM $3-8<br>체류 시간 ↑ → PV/session ↑<br>광고 배치 최적화 (글 중간 &gt; 댓글 위)</td>
+        <td style="color:var(--y)">eCPM 미측정 (GA4 미연동)</td>
+        <td>GA4 연동 후 eCPM 실측 → 키워드 전략 조정</td>
+      </tr>
+      <tr>
+        <td><strong>쿠팡파트너스</strong></td>
+        <td>건강/생활용품 글 내 자연 삽입<br>위치: 글 본문 중간 &gt; 하단</td>
+        <td style="color:var(--y)">전환율 미측정</td>
+        <td>건강 카테고리 글 내 쿠팡 CPS 위젯 클릭율 측정</td>
+      </tr>
+      <tr>
+        <td><strong>일자리 수익화</strong></td>
+        <td>MAU 1,000+ → 프리미엄 공고 7,000원/건<br>MAU 5,000+ → 채용 중개 수수료 구조</td>
+        <td style="color:var(--r)">미실행 (MAU 미달)</td>
+        <td>MAU 추적 → 1,000명 달성 시 기업 영업 시작</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card green">
+    <h3>📊 BEP 달성 경로 시뮬레이션</h3>
+    <div class="alert info" style="margin-bottom:10px">⚠️ GA4 미연동 상태에서는 eCPM, PV/session, 전환율 모두 추정값. GA4 + GSC 연동이 BEP 계산의 전제 조건.</div>
+    <table>
+      <tr><th>DAU</th><th>PV/session</th><th>eCPM (추정)</th><th>월 애드센스</th><th>쿠팡 CPS</th><th>월 합계</th><th>BEP</th></tr>
+      <tr><td>50</td><td>3</td><td>$1.5</td><td>~1만원</td><td>~0.5만원</td><td style="color:var(--r)">~1.5만원</td><td style="color:var(--r)">❌</td></tr>
+      <tr><td>200</td><td>4</td><td>$2.0</td><td>~9만원</td><td>~3만원</td><td style="color:var(--y)">~12만원</td><td style="color:var(--y)">⚠️ 최소</td></tr>
+      <tr><td>500</td><td>5</td><td>$3.0</td><td>~54만원</td><td>~10만원</td><td style="color:var(--g)">~64만원</td><td style="color:var(--g)">✅ 의미있음</td></tr>
+      <tr><td>1,000</td><td>6</td><td>$4.0</td><td>~216만원</td><td>~30만원</td><td style="color:var(--g)">~246만원</td><td style="color:var(--g)">✅ 충분</td></tr>
+    </table>
+    <div class="alert ok" style="margin-top:10px">💡 핵심 인사이트: MAU 300 = DAU ~50-100 (DAU/MAU ~30%). DAU 200은 MAU 700-1,000명 수준. 임계 질량 MAU 300이면 최소 BEP 근접.</div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <h3>eCPM 최적화 전략</h3>
+      <ul>
+        <li>건강/금융 주제 콘텐츠 = eCPM $3-8 (일반 $0.5-1.5 대비 3-5배)</li>
+        <li>매거진봇 키워드 → "건강보험", "국민연금", "병원" 비중 높일수록 수익↑</li>
+        <li>광고 배치 최적화 → 글 중간, 댓글 위, 관련글 사이</li>
+        <li>체류 시간 늘리기 = PV/DAU 높이기 = 광고 노출 증가</li>
+      </ul>
+    </div>
+    <div class="card yellow">
+      <h3>미측정 변수 (우선 확인)</h3>
+      <ul>
+        <li>현재 DAU, PV/session, eCPM 실제값 → <strong>GA4 연동 필수</strong></li>
+        <li>쿠팡 CPS 실제 전환율</li>
+        <li>일자리 공고 클릭율 → 프리미엄 공고 수익화 근거</li>
+        <li>비용 중 Claude API — 실제 월 사용량 어드민에서 모니터링 필요</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §8 OKR -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s8">
+  <div class="s-header">
+    <div class="s-num n-accent">8</div>
+    <div class="s-meta">
+      <h2>OKR (Objectives & Key Results) <span class="status r">🔴 미수립</span></h2>
+      <div class="s-sub">"이번 분기에 무엇을 달성할 것인가?" — 측정 가능한 목표 설정</div>
+    </div>
+  </div>
+
+  <div class="card purple">
+    <h3>North Star Metric (NSM) — 우나어의 가장 중요한 단 1개 지표</h3>
+    <div class="insight" style="margin:0">
+      <div class="i-label">NSM 후보: "주간 댓글 참여 유저 수 (Weekly Active Commenter)"</div>
+      DAU/MAU는 방문자를 세지만, 커뮤니티의 진짜 건강 = 얼마나 많은 사람이 <em>참여</em>하는가. 글을 읽는 것과 댓글 다는 것은 다르다. 댓글을 단 사람 = "여기 내 자리가 있다"고 느끼는 사람. 이 숫자가 늘어야 플라이휠이 돈다.
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <div class="ki-label">💡 왜 "주간 댓글 참여 유저"가 NSM인가</div>
+    <div class="ki-text">봇은 댓글을 쓰지 않는다. DAU는 크롤러/봇으로 부풀릴 수 있지만, 댓글은 실제 사람만 쓸 수 있다. 봇 필터링 후 댓글 유저 수 = 진짜 커뮤니티 생명력의 정확한 측정값. 이 숫자가 주 50명 넘으면 "우나어에 사람이 있다"는 신호.</div>
+    <div class="ki-sub">측정 방법: 어드민 → Analytics → 주간 댓글 참여 유저 위젯 (현재 미구현, 개발 필요)</div>
+  </div>
+
+  <div class="card">
+    <h3>측정 파이프라인 — AS-IS → TO-BE</h3>
+    <table>
+      <tr><th>지표</th><th>AS-IS</th><th>TO-BE</th><th>필요 작업</th></tr>
+      <tr><td><strong>DAU / WAU / MAU</strong></td><td style="color:var(--g)">✅ 어드민 실시간</td><td>GA4 코호트 연동 추가</td><td>GSC 연동 (1주)</td></tr>
+      <tr><td><strong>주간 댓글 참여 유저 (NSM)</strong></td><td style="color:var(--r)">❌ 없음</td><td>어드민 Analytics 실시간 위젯</td><td>analytics/page.tsx 위젯 개발</td></tr>
+      <tr><td><strong>D7 재방문율</strong></td><td style="color:var(--r)">❌ 없음</td><td>GA4 Cohort 탭에서 확인</td><td>GA4 Cohort 설정 (1일)</td></tr>
+      <tr><td><strong>가입 → 첫 참여 전환율</strong></td><td style="color:var(--r)">❌ 없음</td><td>온보딩 완료 후 D7 이내 댓글 여부</td><td>isOnboarded 필드 추가 후 추적 가능</td></tr>
+      <tr><td><strong>댓글 / 글 비율</strong></td><td style="color:var(--y)">⚠️ 쿼리로만</td><td>어드민 Analytics 탭 표시</td><td>KPI 쿼리 추가</td></tr>
+      <tr><td><strong>월 매출</strong></td><td style="color:var(--y)">⚠️ 각 플랫폼 수동</td><td>어드민 통합 (선택)</td><td>GA4 + 쿠팡 API 연동 필요</td></tr>
+    </table>
+    <div class="alert warn" style="margin-top:10px">⚠️ NSM 위젯과 댓글/글 비율은 어드민 Analytics 탭 개선으로 추가 가능. D5 OKR 확정 후 구현 우선순위 확정.</div>
+  </div>
+
+  <div class="decision">
+    <div class="d-header"><div class="d-num">D5</div><div class="d-title">결정 필요: Q2 2026 OKR (2026년 4-6월)</div></div>
+    <div class="opt">
+      <div class="o-label">안 A — 보수적 (기반 다지기)</div>
+      <div class="o-title">O: "우나어 커뮤니티가 살아있다는 걸 증명한다"</div>
+      <div class="o-desc">KR1: MAU 300 달성 / KR2: 주간 댓글 참여 유저 50명 / KR3: D7 재방문율 25% / KR4: 월 매출 10만원 (BEP 달성)</div>
+      <div class="o-impact">근거: 임계 질량(MAU 300) 달성 → 진짜 커뮤니티 시작점</div>
+    </div>
+    <div class="opt rec">
+      <div class="o-label">안 B — 중간 (성장 시작)</div>
+      <div class="o-title">O: "5060이 스스로 찾아오는 커뮤니티를 만든다"</div>
+      <div class="o-desc">KR1: MAU 1,000 달성 / KR2: 주간 댓글 참여 유저 200명 / KR3: 가입→첫 참여 전환 20% / KR4: 월 매출 30만원</div>
+      <div class="o-impact">근거: 1,000명이면 욕망별 100-200명 동시 존재 → 진짜 네트워크 효과 시작</div>
+    </div>
+    <div class="opt">
+      <div class="o-label">안 C — 도전적 (외부 성장)</div>
+      <div class="o-title">O: "우나어를 5060의 기본 앱으로 만든다"</div>
+      <div class="o-desc">KR1: MAU 5,000 달성 / KR2: SNS 팔로워 5,000 / KR3: 월 매출 100만원 / KR4: 지식인봇 월 1,000 유입</div>
+      <div class="o-impact">근거: 추가 성장 채널(유료 광고 또는 입소문) 필요. 현재 자원으로는 무리일 수 있음.</div>
+    </div>
+  </div>
+  <div class="alert p" style="margin-top:10px">
+    🔵 D5 확정 시 자동 연동: constitution.yaml growth_targets 섹션 업데이트 → CEO 에이전트 주간 리포트에 KR 대비 실적 자동 주입 (예: "KR1 MAU 300/1000 달성 30%")
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §12 성장/획득 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s12">
+  <div class="s-header">
+    <div class="s-num n-p">12</div>
+    <div class="s-meta">
+      <h2>성장/획득 전략 <span class="status partial">⚠️ 채널 있음, 우선순위 미정</span></h2>
+      <div class="s-sub">"첫 1,000명의 MAU를 어떻게 얻는가?" — 채널 × 단계 전략</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>성장 채널 현황 + 단계별 우선순위</h3>
+    <table>
+      <tr><th>채널</th><th>현황</th><th>CAC 추정</th><th>스케일 가능성</th><th>적합 단계</th></tr>
+      <tr><td><strong>SEO (구글/네이버)</strong></td><td style="color:var(--g)">✅ 매거진봇 발행</td><td>거의 0 (시간 투자)</td><td>🔴 매우 높음 (복리)</td><td>지금~장기</td></tr>
+      <tr><td><strong>네이버 지식인 답변봇</strong></td><td style="color:var(--g)">✅ 가동</td><td>거의 0 (API만)</td><td>🟡 중간 (계정 제재 위험)</td><td>지금~중기</td></tr>
+      <tr><td><strong>Instagram (@age.not.matter)</strong></td><td style="color:var(--g)">✅ 1.2K 팔로워</td><td>낮음</td><td>🟡 중간</td><td>지금~중기</td></tr>
+      <tr><td><strong>Threads / Facebook</strong></td><td style="color:var(--y)">⚠️ 운영 중</td><td>낮음</td><td>🟡 중간</td><td>지금~중기</td></tr>
+      <tr><td><strong>밴드 API 연동</strong></td><td style="color:var(--y)">⚠️ 심사 중</td><td>낮음</td><td>🔴 높음 (5060 밀집)</td><td>심사 통과 후</td></tr>
+      <tr><td><strong>카카오 오픈채팅 침투</strong></td><td style="color:var(--r)">🔴 미실행</td><td>시간</td><td>🟡 중간 (스팸 위험)</td><td>중기</td></tr>
+      <tr><td><strong>입소문 (Word of Mouth)</strong></td><td style="color:var(--r)">🔴 미설계</td><td>0</td><td>🔴 매우 높음 (K&gt;1)</td><td>MAU 300+ 이후</td></tr>
+      <tr><td><strong>유료 광고 (Meta/네이버)</strong></td><td style="color:var(--r)">🔴 미실행</td><td>높음 ($1-10/가입)</td><td>🟡 중간</td><td>MAU 1,000+ 이후</td></tr>
+    </table>
+  </div>
+
+  <div class="insight">
+    <div class="i-label">지금 놓치고 있는 것 — 입소문 설계</div>
+    현재 성장 채널이 모두 "우리가 나가서 데려오는" 방식(Push). 하지만 진짜 성장은 "사용자가 알아서 데려오는" Pull(입소문). 5060이 카카오톡으로 "이런 곳 있어요" 공유하게 만드는 설계가 없다. 공유 가치 있는 콘텐츠 + 쉬운 공유 버튼 + "친구 초대" 동기부여가 필요하다.
+  </div>
+
+  <div class="decision decided">
+    <div class="d-header"><div class="d-num">D6</div><div class="d-title">✅ 확정: Q2 집중 성장 채널 — SEO + 입소문 동시 진행</div></div>
+    <div class="opt rec" style="border-color:var(--g)">
+      <div class="o-label" style="color:var(--g)">✅ 확정 — 안 A: SEO 완성</div>
+      <div class="o-title">GSC 연동 + 커뮤니티 JSON-LD + 키워드→콘텐츠 피드백 루프</div>
+      <div class="o-desc">Search Console 속성 연동 → 인덱싱 현황 + 키워드 유입 확인. 커뮤니티 글 Article JSON-LD 추가 → 구글 리치결과 노출. 매거진봇 RETIRE/RELATION 키워드 방향 수정.</div>
+      <div class="o-impact">추가 비용: 0 / 즉시 착수 / 예상 효과: 3개월 후 유기적 유입 +50%</div>
+    </div>
+    <div class="opt" style="opacity:0.55">
+      <div class="o-label" style="color:var(--muted)">🔒 현상태 유지 — 안 B: 지식인봇</div>
+      <div class="o-title">현재 가동 중 — 창업자가 직접 점진 개선 예정</div>
+      <div class="o-desc">네이버 계정 제재 리스크 관리를 위해 현상태 유지. 창업자가 직접 운영하며 개선 시점 결정.</div>
+      <div class="o-impact">변경 없음</div>
+    </div>
+    <div class="opt rec" style="border-color:var(--g)">
+      <div class="o-label" style="color:var(--g)">✅ 확정 — 안 C: 입소문 설계</div>
+      <div class="o-title">Post.shareCount 집계 + OG 카드 최적화 + 공유 버튼 UX</div>
+      <div class="o-desc">ActionBar.tsx 카카오 공유 이미 구현됨 → shareCount Prisma 필드 추가 + 공유 시 API 호출. OG 이미지/설명 최적화 → 카카오톡 공유 시 썸네일 완성. K-factor 0.1+ 목표.</div>
+      <div class="o-impact">추가 비용: 거의 0 / 즉시 착수 / 장기 복리 효과</div>
+    </div>
+  </div>
+
+  <!-- 채널별 30일 실행 계획 -->
+  <div class="card purple">
+    <h3>📅 채널별 30일 실행 계획 (지금 당장)</h3>
+    <table>
+      <tr><th>채널</th><th>이번 주 (즉시)</th><th>이번 달 (4월 내)</th><th>KPI</th></tr>
+      <tr>
+        <td><strong>SEO (매거진봇)</strong></td>
+        <td>RETIRE/RELATION 키워드로 매거진봇 방향 수정<br><small>예: "50대 혼자 사는 법", "은퇴 후 공허함"</small></td>
+        <td>GSC 속성 연동 + 인덱싱 현황 확인<br>sitemap.xml 제출</td>
+        <td>유기적 유입 3개월 후 +50% 목표</td>
+      </tr>
+      <tr>
+        <td><strong>지식인봇</strong></td>
+        <td>타겟 질문 유형 확대<br><small>갱년기 / 퇴직 후 일상 / 국민연금</small></td>
+        <td>답변 품질 A/B (긴 답변 vs 짧은 답변)<br>우나어 링크 삽입 위치 최적화</td>
+        <td>월 유입 100명 목표</td>
+      </tr>
+      <tr>
+        <td><strong>Instagram</strong></td>
+        <td>bio 수정: "5060, 서로를 잇다" 적용<br>스토리 2회/주 재개</td>
+        <td>카드뉴스 시리즈 기획 (RELATION 주제)<br>"나 같은 분 있으시나요?" 포맷</td>
+        <td>팔로워 1.2K → 2K (3개월)</td>
+      </tr>
+      <tr>
+        <td><strong>입소문</strong></td>
+        <td>공유 버튼 UX 확인<br><small>ActionBar.tsx 카카오 공유 이미 구현됨</small></td>
+        <td>OG 태그 이미지 최적화 (공유 시 썸네일)<br>공유 후 shareCount 카운터 표시</td>
+        <td>K-factor 0.1+ (공유→가입 추적)</td>
+      </tr>
+      <tr>
+        <td><strong>밴드 (심사 중)</strong></td>
+        <td>심사 결과 대기<br><small>~4월 첫째 주 (미확인)</small></td>
+        <td>통과 시: UTM 파라미터 설정 후 크로스포스팅</td>
+        <td>밴드 그룹 1개 = 잠재 500-5,000명</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 입소문 설계 구체화 -->
+  <div class="card accent">
+    <h3>📣 입소문 (WOM) 루프 설계 — "사용자가 데려오는" 성장</h3>
+    <div class="alert info" style="margin-bottom:12px">💡 ActionBar.tsx에 카카오톡 공유 + URL 복사가 이미 구현됨. 필요한 건 "공유하고 싶어지는 이유"와 "추적 시스템".</div>
+    <div class="g2">
+      <div>
+        <p class="desc" style="margin-bottom:6px"><strong style="color:var(--text)">트리거 — 언제 공유하는가</strong></p>
+        <ul>
+          <li>"나 같은 사람이 또 있다" 공감 절정 순간</li>
+          <li>"친구한테 보여주고 싶다" 웃기거나 감동적인 글</li>
+          <li>"이거 알아야 해" 연금/건강 실용 정보</li>
+          <li>댓글 달고 싶지만 글로 못 쓸 때 → 공유로 대리 표현</li>
+        </ul>
+      </div>
+      <div>
+        <p class="desc" style="margin-bottom:6px"><strong style="color:var(--text)">메커니즘 — 바이럴 루프</strong></p>
+        <div class="fw" style="flex-direction:column;gap:4px;margin:0">
+          <div style="background:var(--card2);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--muted)">① 공감글 → 카카오톡 공유 버튼 탭 (52px, 주황)</div>
+          <div style="text-align:center;color:var(--muted);font-size:12px">↓</div>
+          <div style="background:var(--card2);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--muted)">② 카카오 OG 카드: 썸네일 + 제목 + "우나어에서" 표시</div>
+          <div style="text-align:center;color:var(--muted);font-size:12px">↓</div>
+          <div style="background:var(--card2);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--muted)">③ 친구 클릭 → 글 상세 → "나도 이런 고민" → 가입</div>
+          <div style="text-align:center;color:var(--muted);font-size:12px">↓</div>
+          <div style="background:rgba(0,204,163,.08);border:1px solid rgba(0,204,163,.2);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--g)">④ 온보딩 → 첫 참여 → 또 공유 → 루프 완성 ♻️</div>
+        </div>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <p class="desc"><strong style="color:var(--text)">밴드 API 심사 통과 후 플랜</strong></p>
+    <ul>
+      <li>밴드 커뮤니티 게시글 자동 크로스포스팅 (SEED봇 글 중 RELATION 카테고리)</li>
+      <li>밴드 링크에 UTM: <code style="font-size:10px;color:var(--accent)">?utm_source=band&utm_medium=auto&utm_campaign=cross</code></li>
+      <li>어드민 Analytics에서 밴드 유입 분리 추적 → 성과 측정 후 포스팅 빈도 조정</li>
+      <li>예상 규모: 5060 밴드 그룹 1개 = 멤버 500-5,000명, 클릭율 1-3% = 월 5-150명 유입</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- §13 커뮤니티 플라이휠 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="s13">
+  <div class="s-header">
+    <div class="s-num n-p">13</div>
+    <div class="s-meta">
+      <h2>커뮤니티 플라이휠 <span class="status r">🔴 미설계</span></h2>
+      <div class="s-sub">"커뮤니티는 언제 스스로 돌아가는가?" — D0/D1/D7/D30 여정 설계</div>
+    </div>
+  </div>
+
+  <!-- 플라이휠 -->
+  <div class="card accent">
+    <h3>플라이휠 구조 (초안)</h3>
+    <div class="fw">
+      <div class="fw-step"><div class="fw-icon">🔍</div><div class="fw-title">발견</div><div class="fw-sub">SEO/SNS</div><div class="fw-metric">유입</div></div>
+      <div class="fw-step"><div class="fw-icon">💡</div><div class="fw-title">인식</div><div class="fw-sub">D0 경험</div><div class="fw-metric">"여기 내 자리?"</div></div>
+      <div class="fw-step"><div class="fw-icon">✍️</div><div class="fw-title">첫 참여</div><div class="fw-sub">댓글/글</div><div class="fw-metric">활성화</div></div>
+      <div class="fw-step"><div class="fw-icon">💬</div><div class="fw-title">반응</div><div class="fw-sub">공감/댓글</div><div class="fw-metric">"여기 나 있다"</div></div>
+      <div class="fw-step"><div class="fw-icon">🔄</div><div class="fw-title">재방문</div><div class="fw-sub">D1 알림</div><div class="fw-metric">리텐션</div></div>
+      <div class="fw-step"><div class="fw-icon">📣</div><div class="fw-title">공유</div><div class="fw-sub">카톡 전파</div><div class="fw-metric">바이럴</div></div>
+    </div>
+  </div>
+
+  <!-- 여정 설계 -->
+  <div class="card purple">
+    <h3>사용자 여정 D0 → D30 (현재 설계 현황)</h3>
+    <div class="journey">
+      <div class="jrow">
+        <div class="jcell">단계</div>
+        <div class="jcell">이상적 경험</div>
+        <div class="jcell">현재 실제</div>
+      </div>
+      <div class="jrow">
+        <div class="jcell"><strong style="color:var(--accent)">D0<br>처음 10분</strong></div>
+        <div class="jcell">
+          <div class="jcell-label">목표: "여기 나 같은 사람 있다" 확인</div>
+          홈 진입 → 베스트글 2-3개 → "나도 이런 고민" 공감 → 가입 → 비슷한 글 추천 → 첫 댓글 또는 좋아요
+        </div>
+        <div class="jcell" style="color:var(--r)">
+          온보딩 없음. 가입 후 바로 피드. 비슷한 글 추천 없음. 이탈 가능성 높음.
+        </div>
+      </div>
+      <div class="jrow">
+        <div class="jcell"><strong style="color:var(--p)">D1<br>다음 날</strong></div>
+        <div class="jcell">
+          <div class="jcell-label">목표: "어제 내 댓글에 반응이 왔다"</div>
+          알림 수신 → 앱 재방문 → 대화 이어가기 → 또 다른 글 탐색
+        </div>
+        <div class="jcell" style="color:var(--y)">
+          기본 알림 있음. 댓글 알림 강도 확인 필요. 주간 요약 없음.
+        </div>
+      </div>
+      <div class="jrow">
+        <div class="jcell"><strong style="color:var(--g)">D7<br>1주일</strong></div>
+        <div class="jcell">
+          <div class="jcell-label">목표: "여기 내 단골집 됐다"</div>
+          주간 화제글 알림 → 좋아하는 카테고리 정착 → 첫 글 쓰기 → 등급 새싹 달성
+        </div>
+        <div class="jcell" style="color:var(--r)">
+          주간 알림 없음. 등급 표시는 있음. 첫 글 유도 없음.
+        </div>
+      </div>
+      <div class="jrow">
+        <div class="jcell"><strong style="color:var(--b)">D30<br>1개월</strong></div>
+        <div class="jcell">
+          <div class="jcell-label">목표: "여기 없으면 허전하다"</div>
+          단골 등급 달성 → 정기 방문 루틴화 → 글 공유 시작 → 지인 추천
+        </div>
+        <div class="jcell" style="color:var(--r)">
+          등급 달성 기준 있음. 이후 경험 미설계. 공유 동기 없음.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="decision decided">
+    <div class="d-header"><div class="d-num">D7</div><div class="d-title">✅ 확정: D0 핵심 경험 — 소속감형 1순위</div></div>
+    <div class="opt" style="border-color:var(--b);background:rgba(var(--b-rgb,99,102,241),.04)">
+      <div class="o-label" style="color:var(--b)">2순위 — 안 A: 정보형</div>
+      <div class="o-title">관심 주제 선택 → "맞춤 콘텐츠" 즉시 제공</div>
+      <div class="o-desc">온보딩 Step3 관심사 선택 후 해당 주제 베스트글 3개 표시. D2 온보딩 확정 시 자동으로 실현됨.</div>
+      <div class="o-impact">소속감형(1순위)과 함께 구현 — 온보딩 Step3와 세트</div>
+    </div>
+    <div class="opt rec" style="border-color:var(--g)">
+      <div class="o-label" style="color:var(--g)">✅ 1순위 확정 — 안 B: 소속감형</div>
+      <div class="o-title">"나 같은 사람 발견" → "여기 내 자리가 있다" 확인</div>
+      <div class="o-desc">가입 직후: "비슷한 고민을 가진 분들의 이야기예요" → 공감글 3개 추천. "저도 그랬어요" 댓글 미리 보여줌. RELATION #1 욕망 직결. 5060의 "나도 여기 있어도 돼" 느낌이 핵심.</div>
+      <div class="o-impact">구현: 가입 완료 팝업 + 관심사 기반 추천글 / D2 온보딩 Step3와 연동</div>
+    </div>
+    <div class="opt" style="opacity:0.6">
+      <div class="o-label" style="color:var(--muted)">3순위 — 안 C: 참여형</div>
+      <div class="o-title">첫 글/댓글 쓰기 가이드 → "첫 발자국 남기기"</div>
+      <div class="o-desc">5060 글쓰기 장벽이 높아 3순위. 소속감(1순위)이 형성된 이후 자연스럽게 참여로 이어지는 플로우로 설계.</div>
+      <div class="o-impact">장벽 낮추기 위한 SEED봇 "쉬운 반응 유도" 포맷으로 보완</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>등급 시스템 ✅ 확정 — 욕망 직결 4단계</h3>
+    <table>
+      <tr><th>등급</th><th>DB Enum</th><th>기준</th><th>욕망 연결 메시지</th></tr>
+      <tr><td><span style="color:var(--g)">🌱 새싹</span></td><td><code style="font-size:10px">SPROUT</code></td><td>신규 가입</td><td>"막 도착했어요 — 환영합니다" → D0 소속감 신호</td></tr>
+      <tr><td><span style="color:var(--y)">🌿 단골</span></td><td><code style="font-size:10px">REGULAR</code></td><td>활동 누적</td><td>"여기 자주 오는 분이에요 🌿" → D7-30 리텐션 보상</td></tr>
+      <tr><td><span style="color:var(--accent)">☀️ 따뜻한이웃</span></td><td><code style="font-size:10px">WARM_NEIGHBOR</code></td><td>높은 활동 + 기여</td><td>"다른 분들에게 많이 힘이 됐어요" → 커뮤니티 기여 인정</td></tr>
+      <tr><td><span style="color:var(--p)">🏅 명예우나어인</span></td><td><code style="font-size:10px">HONORARY</code></td><td>최상위 (신설)</td><td>"우나어를 함께 만들어 주셨어요" → 창업자 인정 + 핵심 멤버 감각</td></tr>
+    </table>
+    <div class="alert ok" style="margin-top:10px">✅ 확정: VETERAN(터줏대감) 제거 → WARM_NEIGHBOR(따뜻한이웃) 3단계 승격 + HONORARY(명예우나어인) 신설 최상위.<br>Prisma 마이그레이션 필요: <code style="font-size:10px">ADD VALUE 'HONORARY'</code> + 기존 VETERAN 유저 → WARM_NEIGHBOR 이전.</div>
+  </div>
+
+  <!-- 단계별 트리거 메커니즘 -->
+  <div class="card">
+    <h3>🔧 플라이휠 단계별 구현 현황 — AS-IS → TO-BE</h3>
+    <table>
+      <tr><th>단계</th><th>AS-IS (현재)</th><th>TO-BE (목표)</th><th>구현 필요</th></tr>
+      <tr>
+        <td><strong>① 발견</strong><br><small>SEO/SNS</small></td>
+        <td style="color:var(--y)">매거진봇 발행 ✅<br>SNS 가동 ✅<br>GSC 연동 ❌</td>
+        <td>GSC 키워드 피드백 루프<br>공유 → 신규 유입 추적</td>
+        <td>GSC 연동 (1주)</td>
+      </tr>
+      <tr>
+        <td><strong>② 인식 D0</strong><br><small>처음 10분</small></td>
+        <td style="color:var(--r)">온보딩 없음<br>가입→바로 피드<br>추천글 없음</td>
+        <td>관심사 선택 온보딩 Step3<br>"나 같은 글 3개" 추천<br>"환영합니다" 팝업</td>
+        <td>onboarding 관심사 Step3 (1주)<br>User.isOnboarded 필드</td>
+      </tr>
+      <tr>
+        <td><strong>③ 첫 참여</strong><br><small>D0 이내</small></td>
+        <td style="color:var(--y)">댓글/좋아요 UI ✅<br>쉬운 첫 글 유도 ❌</td>
+        <td>"이 글 어떠세요? 한 줄 남겨주세요"<br>첫 댓글 달기 쉬운 글 큐레이션</td>
+        <td>SEED봇 "쉬운 반응 유도" 포맷 추가</td>
+      </tr>
+      <tr>
+        <td><strong>④ 반응 수신</strong><br><small>보상 루프</small></td>
+        <td style="color:var(--y)">댓글 알림 ✅<br>좋아요 알림 ✅<br>베스트 후보 알림 ❌</td>
+        <td>좋아요 10개 → "베스트 후보" 알림<br>댓글 3개 → "이야기가 이어지고 있어요"</td>
+        <td>notifications.ts 새 트리거 추가</td>
+      </tr>
+      <tr>
+        <td><strong>⑤ 재방문 D1</strong><br><small>리텐션</small></td>
+        <td style="color:var(--y)">기본 알림 있음<br>D1 "어제 반응" 요약 ❌</td>
+        <td>"어제 내 글에 X명이 공감했어요" 알림<br>오전 9시 (습관 형성)</td>
+        <td>스케줄 알림 (cron 기반) 설계 필요</td>
+      </tr>
+      <tr>
+        <td><strong>⑥ 공유 → 루프</strong><br><small>바이럴</small></td>
+        <td style="color:var(--y)">카카오 공유 UI ✅<br>공유 카운트 ❌<br>K-factor 추적 ❌</td>
+        <td>Post.shareCount 표시<br>UTM 파라미터로 공유→가입 추적<br>K-factor 목표 0.1+</td>
+        <td>Post.shareCount Prisma 추가<br>ActionBar 공유 시 API 호출</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 반응 보상 루프 -->
+  <div class="card green">
+    <h3>🎯 "반응 보상" 루프 — 리텐션의 핵심 엔진</h3>
+    <div class="g3">
+      <div style="background:var(--card2);border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:8px">💬 D1 — 반응 알림</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">
+          댓글 수신 → 즉각 알림<br>
+          <span style="color:var(--g)">✅ 이미 구현 (comments.ts)</span><br>
+          개선: "X님이 공감했어요" 문구 → "어제 내 글에 반응이 왔어요" 요약으로 강화
+        </div>
+      </div>
+      <div style="background:var(--card2);border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:8px">❤️ 좋아요 10개 → 베스트</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">
+          글 좋아요 10개 달성 시<br>
+          "이 글 베스트 후보예요! 🏆"<br>
+          → 작성자 자부심 → 재방문<br>
+          <span style="color:var(--r)">❌ 미구현 (notifications.ts 추가 필요)</span>
+        </div>
+      </div>
+      <div style="background:var(--card2);border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:8px">🌿 등급 달성 → 소속감</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">
+          새싹→단골 달성 시<br>
+          "단골이 됐어요! 이제 여기 단골이에요 🌿"<br>
+          → 소속감 확인 → 자연스러운 공유<br>
+          <span style="color:var(--y)">⚠️ 등급 업 알림 부분 구현</span>
+        </div>
+      </div>
+    </div>
+    <div class="alert ok" style="margin-top:12px">💡 핵심: 5060은 "내가 인정받았다"는 감정에 민감함. 공감/댓글/등급이 단순 숫자가 아니라 "여기 내 자리가 있다"는 소속감 신호가 되어야 한다.</div>
+  </div>
+
+  <!-- 플라이휠 완성 조건 -->
+  <div class="card blue">
+    <h3>🚀 플라이휠 완성 조건 (임계 질량)</h3>
+    <table>
+      <tr><th>지표</th><th>현재</th><th>임계 목표</th><th>의미</th></tr>
+      <tr><td><strong>MAU</strong></td><td style="color:var(--r)">추정 ~10-50명</td><td style="color:var(--g)">300명</td><td>카테고리별 30-50명 동시 존재 → 글 올리면 댓글 달린다는 확신</td></tr>
+      <tr><td><strong>댓글/글 비율</strong></td><td style="color:var(--r)">추정 1 미만</td><td style="color:var(--g)">3+</td><td>활성 대화 시작 = "게시판이 아닌 커뮤니티"</td></tr>
+      <tr><td><strong>D7 재방문율</strong></td><td style="color:var(--r)">측정 안 됨</td><td style="color:var(--g)">30%+</td><td>루틴 방문 형성 = "단골집" 감각</td></tr>
+      <tr><td><strong>K-factor</strong></td><td style="color:var(--r)">측정 안 됨</td><td style="color:var(--y)">0.1+</td><td>10명 중 1명이 1명을 데려옴 = 자연 성장 시작</td></tr>
+    </table>
+  </div>
+
+  <!-- D8 등급 시스템 확정 -->
+  <div class="decision decided">
+    <div class="d-header"><div class="d-num">D8</div><div class="d-title">✅ 확정: 등급 체계 개편 — 4단계 (VETERAN 제거 + 명예우나어인 신설)</div></div>
+    <div class="card" style="margin:0;border:none;background:var(--card2);padding:16px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        <div style="text-align:center;padding:12px 8px;background:var(--card);border-radius:8px;border:1px solid var(--faint)">
+          <div style="font-size:22px">🌱</div>
+          <div style="font-size:13px;font-weight:700;margin:4px 0">새싹</div>
+          <div style="font-size:10px;color:var(--muted);font-family:monospace">SPROUT</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">신규 가입</div>
+        </div>
+        <div style="text-align:center;padding:12px 8px;background:var(--card);border-radius:8px;border:1px solid var(--faint)">
+          <div style="font-size:22px">🌿</div>
+          <div style="font-size:13px;font-weight:700;margin:4px 0">단골</div>
+          <div style="font-size:10px;color:var(--muted);font-family:monospace">REGULAR</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">활동 누적</div>
+        </div>
+        <div style="text-align:center;padding:12px 8px;background:var(--card);border-radius:8px;border:1px solid rgba(255,111,97,.3)">
+          <div style="font-size:22px">☀️</div>
+          <div style="font-size:13px;font-weight:700;margin:4px 0;color:var(--accent)">따뜻한이웃</div>
+          <div style="font-size:10px;color:var(--muted);font-family:monospace">WARM_NEIGHBOR</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">기여 인정</div>
+        </div>
+        <div style="text-align:center;padding:12px 8px;background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(99,102,241,.08));border-radius:8px;border:1px solid rgba(139,92,246,.3)">
+          <div style="font-size:22px">🏅</div>
+          <div style="font-size:13px;font-weight:700;margin:4px 0;color:#8B5CF6">명예우나어인</div>
+          <div style="font-size:10px;color:var(--muted);font-family:monospace">HONORARY</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">최상위 신설</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.7">
+        <strong style="color:var(--r)">제거:</strong> VETERAN(터줏대감) — "대감" 어감이 5060 여성에게 이질감. 기존 VETERAN 유저 → WARM_NEIGHBOR로 자동 이전.<br>
+        <strong style="color:var(--g)">개발 필요:</strong> Prisma enum <code style="font-size:10px">ADD VALUE 'HONORARY'</code> + migration SQL + MemberTable 라벨 업데이트.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- ⚙️ 시스템 하네스 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="harness">
+  <div class="s-header">
+    <div class="s-num n-sys">⚙</div>
+    <div class="s-meta">
+      <h2>시스템 하네스 영향도</h2>
+      <div class="s-sub">"각 결정이 확정될 때 시스템의 어떤 부분이 바뀌는가?" — 개발 의존성 맵</div>
+    </div>
+  </div>
+
+  <!-- 개발 건 전체 목록 -->
+  <div class="card accent">
+    <h3>🛠️ 개발 건 전체 목록 — 우선순위 × AS-IS → TO-BE</h3>
+    <table>
+      <tr><th>우선순위</th><th>기능</th><th>기간</th><th>AS-IS</th><th>TO-BE</th><th>Prisma 변경</th></tr>
+      <tr>
+        <td><span style="color:var(--accent);font-weight:700">1순위</span></td>
+        <td><strong>온보딩 관심사 Step3</strong></td>
+        <td>1주</td>
+        <td style="color:var(--y)">닉네임+약관 2단계<br>interests 저장 없음</td>
+        <td>+ 관심사 선택 Step3<br>isOnboarded=true 저장</td>
+        <td><code style="font-size:10px;color:var(--p)">User.isOnboarded Boolean @default(false)</code><br>⚠️ 마이그레이션 시 기존 유저 UPDATE 필요</td>
+      </tr>
+      <tr>
+        <td><span style="color:var(--accent);font-weight:700">2순위</span></td>
+        <td><strong>HUMOR 이름 변경</strong></td>
+        <td>0.5일</td>
+        <td style="color:var(--y)">BoardConfig displayName: "활력충전소"</td>
+        <td>"웃음방"</td>
+        <td>DB 직접: <code style="font-size:10px;color:var(--p)">UPDATE "BoardConfig" SET displayName='웃음방' WHERE boardType='HUMOR'</code></td>
+      </tr>
+      <tr>
+        <td>3순위</td>
+        <td><strong>JSON-LD 커뮤니티 글</strong></td>
+        <td>0.5일</td>
+        <td style="color:var(--r)">Article 스키마 ❌<br>(매거진만 있음)</td>
+        <td>community/[postId]/page.tsx에 Article 스키마 추가</td>
+        <td>없음</td>
+      </tr>
+      <tr>
+        <td>4순위</td>
+        <td><strong>GSC 연동</strong></td>
+        <td>1주</td>
+        <td style="color:var(--r)">GA4 ✅ GSC ❌</td>
+        <td>GSC 속성 연동 + 어드민 키워드 탭</td>
+        <td>없음</td>
+      </tr>
+      <tr>
+        <td>5순위</td>
+        <td><strong>Post.shareCount</strong></td>
+        <td>0.5일</td>
+        <td style="color:var(--y)">공유 UI ✅ 카운트 ❌</td>
+        <td>공유 시 +1, 어드민 통계</td>
+        <td><code style="font-size:10px;color:var(--p)">Post.shareCount Int @default(0)</code></td>
+      </tr>
+      <tr>
+        <td>6순위</td>
+        <td><strong>LIFE2 서브카테고리</strong></td>
+        <td>0.5일</td>
+        <td style="color:var(--r)">seed.ts에 없음</td>
+        <td>D_L2 결정 후 BoardConfig INSERT</td>
+        <td>BoardConfig seed 추가</td>
+      </tr>
+      <tr>
+        <td>7순위</td>
+        <td><strong>검색 fulltext 강화</strong></td>
+        <td>1-2주</td>
+        <td style="color:var(--y)">기본 검색 (ILIKE)</td>
+        <td>pg_trgm GIN 인덱스 (한글: pg_bigm 검토)</td>
+        <td>SQL 마이그레이션 (Prisma @@fulltext 미지원)</td>
+      </tr>
+      <tr>
+        <td>8순위</td>
+        <td><strong>폴더형 북마크</strong></td>
+        <td>2-3주</td>
+        <td style="color:var(--y)">Scrap 모델 (폴더 없음)</td>
+        <td>Scrap에 folderId 추가 (기존 데이터 유지)</td>
+        <td><code style="font-size:10px;color:var(--p)">BookmarkFolder 모델 + Scrap.folderId String?</code></td>
+      </tr>
+      <tr>
+        <td>9순위</td>
+        <td><strong>CMO 슬로건 업데이트</strong></td>
+        <td>0.5일</td>
+        <td style="color:var(--y)">constitution.yaml: "우리, 서로가 있잖아"</td>
+        <td>"5060, 서로를 잇다"</td>
+        <td>agents/core/constitution.yaml 수정</td>
+      </tr>
+      <tr>
+        <td>10순위</td>
+        <td><strong>어드민 OKR 위젯</strong></td>
+        <td>1주</td>
+        <td style="color:var(--r)">없음</td>
+        <td>D5 확정 후 KR 진행률 위젯</td>
+        <td>없음</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 어드민 AS-IS → TO-BE -->
+  <div class="card purple">
+    <h3>🖥️ 어드민 패널 AS-IS → TO-BE</h3>
+    <table>
+      <tr><th>어드민 페이지</th><th>AS-IS (현재 코드)</th><th>TO-BE (목표)</th><th>파일</th></tr>
+      <tr>
+        <td><strong>Analytics KPI 카드</strong></td>
+        <td>DAU/WAU/MAU/글/댓글/신고 7개</td>
+        <td>+ 주간 댓글 참여 유저 (NSM)<br>+ 온보딩 전환율 (isOnboarded 추가 후)</td>
+        <td><code style="font-size:10px">analytics/page.tsx</code></td>
+      </tr>
+      <tr>
+        <td><strong>Analytics 개요 탭</strong></td>
+        <td style="color:var(--r)">📈 "준비 중" 빈 화면</td>
+        <td>KR 진행률 위젯 (D5 확정 후)<br>댓글/글 비율<br>채널별 유입 분포 (GSC 연동 후)</td>
+        <td><code style="font-size:10px">analytics/page.tsx</code></td>
+      </tr>
+      <tr>
+        <td><strong>Analytics 탭 메뉴</strong></td>
+        <td>개요 + SNS실험 (2개)</td>
+        <td>+ 검색어 탭 (인기 검색어 Top10)<br>+ 공유 탭 (shareCount 상위 글)</td>
+        <td><code style="font-size:10px">analytics/page.tsx</code></td>
+      </tr>
+      <tr>
+        <td><strong>Members 테이블</strong></td>
+        <td>닉네임/이메일/등급/상태/글/댓글/좋아요/마지막접속/가입일 (9컬럼)</td>
+        <td>+ isOnboarded ✅/❌ 컬럼 (온보딩 완료 여부)</td>
+        <td><code style="font-size:10px">MemberTable.tsx</code></td>
+      </tr>
+      <tr>
+        <td><strong>Content 검색어 통계</strong></td>
+        <td style="color:var(--r)">없음 (EventLog로만 기록)</td>
+        <td>인기 검색어 Top 10 + 검색 후 가입 전환율</td>
+        <td><code style="font-size:10px">admin/analytics/page.tsx</code></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>결정 → 시스템 영향 맵</h3>
+    <table>
+      <tr><th>결정 항목</th><th>영향받는 파일/시스템</th><th>어드민 영향</th><th>에이전트 영향</th></tr>
+      <tr>
+        <td><strong>D4 SNS bio 확정 ✅</strong></td>
+        <td>Instagram/Threads/Facebook 수동 수정<br>brand-voice.md 업데이트</td>
+        <td>없음</td>
+        <td>constitution.yaml brand_voice.tagline 교체<br><code style="font-size:10px">agents/core/constitution.yaml</code></td>
+      </tr>
+      <tr>
+        <td><strong>D2 온보딩 Step3</strong></td>
+        <td>src/app/onboarding/page.tsx<br>src/components/features/onboarding/OnboardingForm.tsx<br>src/lib/actions/onboarding.ts</td>
+        <td>MemberTable: isOnboarded 컬럼 추가</td>
+        <td>없음</td>
+      </tr>
+      <tr>
+        <td><strong>D5 OKR 확정</strong></td>
+        <td>agents/core/constitution.yaml growth_targets</td>
+        <td>어드민 Analytics → KR 진행률 위젯</td>
+        <td>CEO 에이전트 주간 리포트 KR 대비 실적 주입</td>
+      </tr>
+      <tr>
+        <td><strong>D6 GSC 연동</strong></td>
+        <td>src/app/admin/(panel)/analytics/page.tsx<br>GSC API 서비스 계정 설정</td>
+        <td>Analytics → 검색어 유입 키워드 위젯</td>
+        <td>CDO → 유입 키워드 → contentDirective 피드백 루프</td>
+      </tr>
+      <tr>
+        <td><strong>D7 D0 경험</strong></td>
+        <td>onboarding/page.tsx (Step3 추가)<br>Prisma: User.isOnboarded</td>
+        <td>팝업 관리에서 온보딩 메시지 편집 가능</td>
+        <td>SEED봇: 관심 카테고리 기반 추천 글 생성</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 이미 완료 -->
+  <div class="card green">
+    <h3>✅ 이미 완료된 시스템 변경 (2026-04-04)</h3>
+    <table>
+      <tr><th>항목</th><th>완료 내용</th><th>커밋</th></tr>
+      <tr><td>어드민 패널 19개 파일</td><td>AdminQueue/DailyBrief/BotLog/SocialExperiment 페이지, 자동화 토글, 봇 필터, promotionLevel 수동 설정</td><td>ffa8b4c</td></tr>
+      <tr><td>LIFE2 게시판 신설</td><td>PopupTarget 마이그레이션, Supabase SQL Editor 실행 완료</td><td>—</td></tr>
+      <tr><td>constitution.yaml v5.0</td><td>욕망 4계층, 포지셔닝, 카테고리 재설계</td><td>—</td></tr>
+      <tr><td>공유하기 UI</td><td>ActionBar.tsx 카카오 공유 + URL 복사 구현됨 (shareCount만 없음)</td><td>—</td></tr>
+      <tr><td>댓글 알림</td><td>comments.ts: 댓글/대댓글 알림 COMMENT 타입 구현됨</td><td>—</td></tr>
+      <tr><td>JSON-LD 매거진</td><td>magazine/[id]/page.tsx Article 스키마 적용됨</td><td>—</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- QA 플랜 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="s" id="qa">
+  <div class="s-header">
+    <div class="s-num n-sys">📋</div>
+    <div class="s-meta">
+      <h2>QA 플랜</h2>
+      <div class="s-sub">"각 결정이 실제 서비스에 제대로 반영됐는지 검증하는 방법"</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>검증 명령어 (변경 후 반드시 실행)</h3>
+    <div class="formula">npx tsc --noEmit                                    # 타입 오류 없음 확인
+npx eslint src --ext .ts,.tsx                        # 린트 통과
+npm run build                                         # 빌드 성공
+npm run smoke-test -- --url https://age-doesnt-matter.com  # 프로덕션 확인
+npx tsx scripts/check-cron-links.ts                  # 에이전트 크론 연결
+gh run list --workflow=agents-daily.yml --limit=5    # 에이전트 실행 확인</div>
+  </div>
+
+  <!-- E2E 테스트 시나리오 -->
+  <div class="card accent">
+    <h3>🧪 개발 건별 E2E 테스트 시나리오</h3>
+    <table>
+      <tr><th>기능</th><th>테스트 시나리오</th><th>합격 기준</th></tr>
+      <tr>
+        <td><strong>온보딩 Step3</strong></td>
+        <td>① 신규 카카오 계정 가입 → /onboarding 리다이렉트 확인<br>② 닉네임 입력 → 약관 동의 → 관심사 2개 선택 → "우리 이야기 보러 가기" → /<br>③ 기존 유저 로그인 → /onboarding 리다이렉트 없음 확인</td>
+        <td>DB: isOnboarded=true, interests=['STORY','LIFE2'] 저장<br>기존 유저 재온보딩 강제 없음</td>
+      </tr>
+      <tr>
+        <td><strong>HUMOR 이름</strong></td>
+        <td>DB UPDATE 실행 후 → 커뮤니티 탭바 "웃음방" 표시 확인<br>기존 HUMOR 게시글 boardType 변경 없음 확인</td>
+        <td>"웃음방" 표시, 게시글 정상 조회</td>
+      </tr>
+      <tr>
+        <td><strong>JSON-LD 커뮤니티</strong></td>
+        <td>구글 리치결과 테스트 (search.google.com/test/rich-results) URL 입력<br>임의 커뮤니티 글 URL 테스트</td>
+        <td>Article 스키마 인식, 에러 없음</td>
+      </tr>
+      <tr>
+        <td><strong>Post.shareCount</strong></td>
+        <td>① 글 상세 → 카카오 공유 버튼 탭<br>② 어드민 해당 글 확인 → shareCount 증가 확인</td>
+        <td>공유 시 Post.shareCount +1, 응답 < 200ms</td>
+      </tr>
+      <tr>
+        <td><strong>폴더형 북마크</strong></td>
+        <td>① 글 상세 → "저장하기" → 폴더 선택 (기본: "내 스크랩")<br>② 마이페이지 → 스크랩 탭 → 폴더별 목록 확인<br>③ 기존 Scrap 데이터 → 기본 폴더에 정상 표시</td>
+        <td>폴더별 분류, 기존 데이터 손실 없음, 52px 터치타겟</td>
+      </tr>
+      <tr>
+        <td><strong>어드민 OKR 위젯</strong></td>
+        <td>어드민 Analytics 페이지 → KR 진행률 위젯 표시<br>실제 DB 값과 일치 확인</td>
+        <td>KR1-4 목표 대비 실적 정확히 표시</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 리스크 헷징 -->
+  <div class="card">
+    <h3>⚠️ 리스크 헷징 전략 — 개발 전 반드시 확인</h3>
+    <table>
+      <tr><th>위험</th><th>수준</th><th>문제</th><th>해결책</th></tr>
+      <tr>
+        <td><strong>isOnboarded 기존 유저</strong></td>
+        <td style="color:var(--r)">🔴 HIGH</td>
+        <td><code style="font-size:10px">@default(false)</code> 추가 시 기존 유저 모두 false → 재온보딩 강제</td>
+        <td>마이그레이션 후 즉시 실행:<br><code style="font-size:10px;color:var(--g)">UPDATE "User" SET "isOnboarded"=true WHERE nickname NOT LIKE 'user_%'</code><br>(nickname 바꾼 = 온보딩 완료한 사람)</td>
+      </tr>
+      <tr>
+        <td><strong>Scrap → 폴더 마이그레이션</strong></td>
+        <td style="color:var(--y)">🟡 MEDIUM</td>
+        <td>기존 Scrap 데이터 폴더 없이 이전됨<br>새 테이블로 이전 시 데이터 손실 위험</td>
+        <td>Scrap 모델 유지 + folderId 필드만 추가<br>기본 폴더 "내 스크랩" 자동 생성 후 기존 Scrap 연결</td>
+      </tr>
+      <tr>
+        <td><strong>pg_trgm 한글 검색</strong></td>
+        <td style="color:var(--y)">🟡 MEDIUM</td>
+        <td>pg_trgm은 한글 3글자 이하 검색 취약<br>Prisma @@fulltext는 MySQL 전용 (Supabase 미지원)</td>
+        <td>단기: 현재 ILIKE 유지 (작동함)<br>장기: pg_bigm 확장 검토 (Supabase 지원 여부 확인 필요)<br>결정: fulltext 강화는 MAU 300+ 이후 연기 가능</td>
+      </tr>
+      <tr>
+        <td><strong>constitution.yaml 슬로건</strong></td>
+        <td style="color:var(--g)">🟢 LOW</td>
+        <td>변경 후 이미 예약된 SNS 게시물은 구 슬로건 유지</td>
+        <td>CMO 에이전트 재실행 시 새 슬로건 반영됨<br>기존 발행 글은 변경 안됨 (영향 없음)</td>
+      </tr>
+      <tr>
+        <td><strong>BoardConfig HUMOR 변경</strong></td>
+        <td style="color:var(--g)">🟢 LOW</td>
+        <td>seed.ts 변경은 재시드 시에만 적용 (프로덕션 영향 없음)</td>
+        <td>Supabase SQL Editor에서 직접 UPDATE<br>변경 후 Next.js 캐시 무효화: revalidatePath('/community')</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>결정 항목별 QA 체크포인트</h3>
+    <table>
+      <tr><th>결정</th><th>QA 방법</th></tr>
+      <tr><td>D4 SNS bio 수정 ✅</td><td>Instagram 프로필 직접 접속 확인 / Threads bio 확인 / Facebook 페이지 확인</td></tr>
+      <tr><td>D2 온보딩 Step3</td><td>신규 카카오 계정 가입 E2E / 모바일 767px 반응형 / 터치타겟 52px / isOnboarded DB 확인</td></tr>
+      <tr><td>D5 OKR + 어드민 위젯</td><td>어드민 Analytics 개요 탭 → KR 진행률 위젯 표시 확인</td></tr>
+      <tr><td>D6 GSC 연동</td><td>GSC → age-doesnt-matter.com 속성 확인 / sitemap 제출 / 인덱싱 상태</td></tr>
+      <tr><td>D7 D0 경험</td><td>가입 → Step3 → 관심글 3개 표시 → 첫 댓글 플로우 E2E</td></tr>
+      <tr><td>D8 등급 체계 개편 ✅</td><td>Prisma migration 실행 확인 / VETERAN 유저 → WARM_NEIGHBOR 이전 확인 / MemberTable.tsx GRADE_LABELS 확인 / 게시글 프로필 등급 표시 확인 (HONORARY 신설)</td></tr>
+      <tr><td>에이전트 변경</td><td>check-cron-links.ts + BotLog 어드민 + Slack #에이전트 채널 확인</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div style="margin-top:48px;padding-top:24px;border-top:1px solid var(--faint);font-size:11px;color:var(--muted)">
+  <strong style="color:var(--text)">우나어 비즈니스 프레임워크 v3.1</strong> · age-doesnt-matter.com<br>
+  마지막 업데이트: 2026-04-05 · 결정 완료 시 이 문서 즉시 갱신<br>
+  <div style="margin-top:8px;display:flex;gap:12px;flex-wrap:wrap">
+    <span>✅ 확정 10개 (D4·D6·D7·D8 포함)</span>
+    <span>⚠️ 부분확정 4개</span>
+    <span>🔴 미결 1개</span>
+    <span>🔵 결정 필요 2개 항목 (D2·D5)</span>
+  </div>
+  <div style="margin-top:6px;color:var(--muted)">개발 건: 10개 우선순위 정의됨 · Prisma 마이그레이션 5건 · 어드민 영향 5개 페이지</div>
+</div>
+
+</main>
+
+<script>
+const sections = document.querySelectorAll('.s[id]');
+const links = document.querySelectorAll('.sb nav a');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id));
+    }
+  });
+}, { threshold: 0.15, rootMargin: '-60px 0px -65% 0px' });
+sections.forEach(s => io.observe(s));
+</script>
+</body>
+</html>

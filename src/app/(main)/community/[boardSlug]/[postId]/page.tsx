@@ -66,9 +66,33 @@ export default async function PostDetailPage({ params }: PageProps) {
   const isOwnPost = !!userId && !!post.author.id && post.author.id === userId
   const comments = await getCommentsByPostId(postId, userId)
 
+  const url = `${BASE_URL}/community/${boardSlug}/${postId}`
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: post.preview || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티',
+    url,
+    datePublished: post.createdAt,
+    dateModified: post.updatedAt,
+    publisher: {
+      '@type': 'Organization',
+      name: '우리 나이가 어때서',
+      url: BASE_URL,
+    },
+    author: {
+      '@type': 'Person',
+      name: post.author.nickname,
+    },
+  }
+
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
-      {/* Breadcrumbs + JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      {/* Breadcrumbs */}
       <Breadcrumbs items={[
         { label: '홈', href: '/' },
         { label: board.displayName, href: `/community/${boardSlug}` },

@@ -34,27 +34,27 @@ export interface CursorParams {
 
 // ── 등급 ──
 
-export type Grade = 'SPROUT' | 'REGULAR' | 'VETERAN' | 'WARM_NEIGHBOR'
+export type Grade = 'SPROUT' | 'REGULAR' | 'WARM_NEIGHBOR' | 'HONORARY'
 
 export const GRADE_EMOJI: Record<Grade, string> = {
   SPROUT: '🌱',
   REGULAR: '🌿',
-  VETERAN: '💎',
   WARM_NEIGHBOR: '☀️',
+  HONORARY: '🏅',
 }
 
 export const GRADE_LABEL: Record<Grade, string> = {
   SPROUT: '새싹',
   REGULAR: '단골',
-  VETERAN: '터줏대감',
   WARM_NEIGHBOR: '따뜻한이웃',
+  HONORARY: '명예우나어인',
 }
 
 export const GRADE_ORDER: Record<Grade, number> = {
   SPROUT: 1,
   REGULAR: 2,
-  VETERAN: 3,
-  WARM_NEIGHBOR: 4,
+  WARM_NEIGHBOR: 3,
+  HONORARY: 4,
 }
 
 // ── 게시판 ──

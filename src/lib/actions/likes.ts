@@ -160,3 +160,10 @@ export async function toggleCommentLike(commentId: string): Promise<ToggleResult
   ])
   return { toggled: true }
 }
+
+export async function incrementShareCount(postId: string): Promise<void> {
+  await prisma.post.update({
+    where: { id: postId },
+    data: { shareCount: { increment: 1 } },
+  })
+}
