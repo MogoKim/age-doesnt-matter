@@ -43,8 +43,15 @@ export async function POST(request: Request) {
   const ext = file.type === 'video/webm' ? 'webm' : file.type === 'video/quicktime' ? 'mov' : 'mp4'
   const key = `posts/${session.user.id}/${randomUUID()}.${ext}`
 
-  const buffer = Buffer.from(await file.arrayBuffer())
-  const result = await uploadToR2(buffer, key, file.type)
-
-  return NextResponse.json({ url: result.url })
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const result = await uploadToR2(buffer, key, file.type)
+    return NextResponse.json({ url: result.url })
+  } catch (err) {
+    console.error('[API/uploads/video] 동영상 업로드 실패:', err)
+    return NextResponse.json(
+      { error: '동영상 업로드에 실패했어요', detail: String(err) },
+      { status: 500 },
+    )
+  }
 }

@@ -166,8 +166,9 @@ export default function TipTapEditor({
         files.forEach((f) => uploadData.append('files', f))
         const res = await fetch('/api/uploads', { method: 'POST', body: uploadData })
         if (!res.ok) {
-          const err = await res.json()
-          setMediaError(err.error || '이미지 업로드에 실패했어요')
+          const err = await res.json().catch(() => ({}))
+          setMediaError(`${err.error || '이미지 업로드에 실패했어요'} (${res.status})`)
+          console.error('[upload/image] 실패:', res.status, err)
           return
         }
         const { images: uploaded } = await res.json()
@@ -209,8 +210,9 @@ export default function TipTapEditor({
         formData.append('file', file)
         const res = await fetch('/api/uploads/video', { method: 'POST', body: formData })
         if (!res.ok) {
-          const err = await res.json()
-          setMediaError(err.error || '동영상 업로드에 실패했어요')
+          const err = await res.json().catch(() => ({}))
+          setMediaError(`${err.error || '동영상 업로드에 실패했어요'} (${res.status})`)
+          console.error('[upload/video] 실패:', res.status, err)
           return
         }
         const { url } = await res.json()
@@ -253,23 +255,10 @@ export default function TipTapEditor({
 
   return (
     <div className="relative">
-      {/* ── sticky 툴바 래퍼 (서식 + 미디어) ── */}
+      {/* ── sticky 툴바 (1행) ── */}
       {/* top: 모바일 Header(56) + IconMenu(64) + WriteHeader(52) = 172px / 데스크탑 GNB(64) + WriteHeader(52) = 116px */}
-      <div className="sticky top-[172px] lg:top-[116px] z-20 bg-card pt-1 pb-0.5">
-        {/* ── 1. 서식 툴바 ── */}
-        <div className="flex items-center gap-1 border border-border rounded-xl bg-card px-2 py-1 mb-2">
-          {/* 굵게 */}
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className={cn(
-              'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body font-bold transition-colors',
-              editor.isActive('bold') ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
-            )}
-          >
-            B
-          </button>
-
+      <div className="sticky top-[172px] lg:top-[116px] z-20 bg-card pt-1 pb-2">
+        <div className="flex items-center gap-0.5 border border-border rounded-xl bg-card px-2 py-1">
           {/* 인용구 */}
           <button
             type="button"
@@ -282,13 +271,16 @@ export default function TipTapEditor({
             "
           </button>
 
-          {/* 수평선 */}
+          {/* 굵게 */}
           <button
             type="button"
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
-            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body transition-colors text-foreground hover:bg-muted"
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={cn(
+              'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body font-bold transition-colors',
+              editor.isActive('bold') ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
+            )}
           >
-            ——
+            B
           </button>
 
           <div className="w-px h-6 bg-border mx-1" />
@@ -318,35 +310,39 @@ export default function TipTapEditor({
               </button>
             )
           })}
-        </div>
 
-        {/* ── 2. 미디어 버튼 ── */}
-        <div className="grid grid-cols-2 gap-2 mb-2">
+          <div className="w-px h-6 bg-border mx-1" />
+
+          {/* 사진 추가 */}
           <button
             type="button"
             onClick={() => { setMediaError(''); fileInputRef.current?.click() }}
             disabled={isUploadingImage}
-            className="flex items-center justify-center gap-2 min-h-[52px] rounded-xl border-2 border-border bg-card text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+            title="사진 추가"
+            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-xl transition-colors text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <span className="text-lg">{isUploadingImage ? '⏳' : '📷'}</span>
-            <span>{isUploadingImage ? '업로드 중...' : '사진 추가'}</span>
+            {isUploadingImage ? '⏳' : '📷'}
           </button>
 
+          {/* 동영상 추가 */}
           <button
             type="button"
             onClick={() => { setMediaError(''); setVideoSheet('picking') }}
             disabled={isUploadingVideo}
-            className="flex items-center justify-center gap-2 min-h-[52px] rounded-xl border-2 border-border bg-card text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+            title="동영상 추가"
+            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-xl transition-colors text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <span className="text-lg">{isUploadingVideo ? '⏳' : '🎬'}</span>
-            <span>{isUploadingVideo ? '업로드 중...' : '동영상 추가'}</span>
+            {isUploadingVideo ? '⏳' : '🎬'}
           </button>
         </div>
       </div>
 
       {/* ── 미디어 에러 메시지 (통합) ── */}
       {mediaError && (
-        <p className="text-sm text-destructive mb-2">{mediaError}</p>
+        <div className="flex items-center gap-2 px-4 py-3 mb-2 rounded-xl bg-destructive/10 border border-destructive/20">
+          <span className="text-base">⚠️</span>
+          <span className="text-sm font-medium text-destructive">{mediaError}</span>
+        </div>
       )}
 
       {/* ── 3. 에디터 본문 ── */}

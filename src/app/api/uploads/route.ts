@@ -50,15 +50,23 @@ export async function POST(request: Request) {
   // 업로드 실행
   const results: { url: string; key: string }[] = []
 
-  for (const file of files) {
-    const rawBuffer = Buffer.from(await file.arrayBuffer())
+  try {
+    for (const file of files) {
+      const rawBuffer = Buffer.from(await file.arrayBuffer())
 
-    // 이미지 최적화: WebP 변환 + 리사이즈 + EXIF 제거
-    const optimized = await optimizeImage(rawBuffer)
-    const key = `posts/${session.user.id}/${randomUUID()}.webp`
+      // 이미지 최적화: WebP 변환 + 리사이즈 + EXIF 제거
+      const optimized = await optimizeImage(rawBuffer)
+      const key = `posts/${session.user.id}/${randomUUID()}.webp`
 
-    const result = await uploadToR2(optimized.buffer, key, optimized.contentType)
-    results.push(result)
+      const result = await uploadToR2(optimized.buffer, key, optimized.contentType)
+      results.push(result)
+    }
+  } catch (err) {
+    console.error('[API/uploads] 이미지 업로드 실패:', err)
+    return NextResponse.json(
+      { error: '이미지 업로드에 실패했어요', detail: String(err) },
+      { status: 500 },
+    )
   }
 
   return NextResponse.json({ images: results })
