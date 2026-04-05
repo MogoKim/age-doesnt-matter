@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap, incrementShareCount } from '@/lib/actions/likes'
 import { useToast } from '@/components/common/Toast'
@@ -26,6 +26,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
   const [likes, setLikes] = useState(likeCount)
   const [isScrapped, setIsScrapped] = useState(initialScrapped)
   const [isPending, startTransition] = useTransition()
+  const likePendingRef = useRef(false)
   const [showReport, setShowReport] = useState(false)
   const [heartAnimating, setHeartAnimating] = useState(false)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
@@ -35,7 +36,8 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
       setShowLoginPrompt(true)
       return
     }
-    if (isPending) return
+    if (isPending || likePendingRef.current) return
+    likePendingRef.current = true
     const willLike = !isLiked
     setIsLiked(willLike)
     setLikes(willLike ? likes + 1 : likes - 1)
@@ -47,6 +49,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
 
     startTransition(async () => {
       const result = await togglePostLike(postId)
+      likePendingRef.current = false
       if (result.error) {
         setIsLiked(isLiked)
         setLikes(likes)

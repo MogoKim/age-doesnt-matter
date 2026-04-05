@@ -20,7 +20,7 @@ export default async function MyNotificationsPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  const { notifications } = await getMyNotifications(session.user.id)
+  const { notifications } = await getMyNotifications(session.user.id).catch(() => ({ notifications: [] }))
   const hasUnread = notifications.some((n) => !n.isRead)
 
   return (

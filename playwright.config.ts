@@ -71,6 +71,27 @@ export default defineConfig({
       testMatch: /qa\/14-.*\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
+
+    // 6. 종합 Deep QA — 모바일 (390×844, user.json)
+    {
+      name: 'qa-deep-mobile',
+      testMatch: /qa\/15-.*\.spec\.ts/,
+      use: {
+        ...devices['Pixel 7'],
+        viewport: { width: 390, height: 844 },
+        storageState: USER_AUTH,
+      },
+    },
+    // 7. 종합 Deep QA — 데스크탑 (1440×900, user.json)
+    {
+      name: 'qa-deep-desktop',
+      testMatch: /qa\/15-.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 900 },
+        storageState: USER_AUTH,
+      },
+    },
   ],
 
   // E2E_BASE_URL 설정 시 외부 URL 직접 테스트 (프로덕션 QA)

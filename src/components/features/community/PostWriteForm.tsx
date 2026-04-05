@@ -161,11 +161,15 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       if (res.ok) {
         const data = await res.json()
         setContent(data.content ?? '')
+        setCurrentDraftId(draft.id)
+        setShowDraftList(false)
+        toast('임시저장된 글을 불러왔어요', 'info')
+      } else {
+        toast('임시저장 불러오기에 실패했어요', 'error')
       }
-    } catch { /* ignore */ }
-    setCurrentDraftId(draft.id)
-    setShowDraftList(false)
-    toast('임시저장된 글을 불러왔어요', 'info')
+    } catch {
+      toast('임시저장 불러오기에 실패했어요', 'error')
+    }
   }
 
   // 서버 임시저장 삭제
@@ -191,12 +195,20 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           setTitle(draft.title || '')
           setContent(draft.content || '')
           toast('임시저장된 글을 불러왔어요', 'info')
+        } else {
+          setTitle('')
+          setContent('')
         }
       } else {
         setTitle('')
         setContent('')
       }
-    } catch { /* ignore */ }
+    } catch {
+      // 파싱 실패 → 손상된 draft 삭제하고 초기화
+      try { localStorage.removeItem(getDraftKey(slug)) } catch { /* ignore */ }
+      setTitle('')
+      setContent('')
+    }
   }
 
   function handleCancel() {

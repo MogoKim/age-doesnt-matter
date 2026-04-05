@@ -26,12 +26,16 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [query, setQuery] = useState('')
+  const [searchError, setSearchError] = useState('')
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault()
     const q = query.trim()
     if (q.length >= 2) {
+      setSearchError('')
       router.push(`/search?q=${encodeURIComponent(q)}`)
+    } else if (q.length > 0) {
+      setSearchError('두 글자 이상 입력해 주세요')
     }
   }
 
@@ -68,19 +72,26 @@ export default function GNB({ isLoggedIn = false, nickname }: GNBProps) {
           })}
         </div>
 
-        <form className="flex items-center w-60 h-12 px-4 bg-background border border-border rounded-lg text-caption text-foreground shrink-0 transition-colors focus-within:border-primary" onSubmit={handleSearch} role="search" aria-label="통합검색">
-          <input
-            className="flex-1 border-none bg-transparent outline-none font-[inherit] text-inherit min-h-11 placeholder:text-muted-foreground"
-            type="search"
-            placeholder="통합검색"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="통합검색"
-          />
-          <button type="submit" className="icon-hover text-muted-foreground hover:text-primary-text" aria-label="검색">
-            <IconSearch size={18} />
-          </button>
-        </form>
+        <div className="relative shrink-0">
+          <form className="flex items-center w-60 h-12 px-4 bg-background border border-border rounded-lg text-caption text-foreground transition-colors focus-within:border-primary" onSubmit={handleSearch} role="search" aria-label="통합검색">
+            <input
+              className="flex-1 border-none bg-transparent outline-none font-[inherit] text-inherit min-h-11 placeholder:text-muted-foreground"
+              type="search"
+              placeholder="통합검색"
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setSearchError('') }}
+              aria-label="통합검색"
+            />
+            <button type="submit" className="icon-hover text-muted-foreground hover:text-primary-text" aria-label="검색">
+              <IconSearch size={18} />
+            </button>
+          </form>
+          {searchError && (
+            <p className="absolute top-full left-0 mt-1 text-xs text-destructive whitespace-nowrap" role="alert">
+              {searchError}
+            </p>
+          )}
+        </div>
 
         {isLoggedIn ? (
           <div className="flex items-center gap-1 shrink-0">

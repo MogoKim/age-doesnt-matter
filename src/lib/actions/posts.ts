@@ -40,7 +40,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     return { error: '제목은 2~40자로 입력해 주세요' }
   }
 
-  if (content.length < 10) {
+  if (stripHtmlTags(content).trim().length < 10) {
     return { error: '본문은 10자 이상 입력해 주세요' }
   }
 
@@ -156,7 +156,7 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
   if (title.length < 2 || title.length > 40) {
     return { error: '제목은 2~40자로 입력해 주세요' }
   }
-  if (content.length < 10) {
+  if (stripHtmlTags(content).trim().length < 10) {
     return { error: '본문은 10자 이상 입력해 주세요' }
   }
 

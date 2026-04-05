@@ -47,9 +47,9 @@ export default async function BestPage({
   const currentTab = (TABS.find((t) => t.key === params.tab)?.key ?? 'daily') as TabType
 
   const [dailyPosts, weeklyPosts, fameResult] = await Promise.all([
-    getCachedDaily(),
-    getCachedWeekly(),
-    getCachedFame(),
+    getCachedDaily().catch(() => [] as PostSummary[]),
+    getCachedWeekly().catch(() => [] as PostSummary[]),
+    getCachedFame().catch(() => ({ posts: [] as PostSummary[] })),
   ])
 
   const postsMap: Record<TabType, PostSummary[]> = {

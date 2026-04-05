@@ -72,17 +72,19 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
   await ensureKakaoSDK()
 
   if (!window.Kakao?.isInitialized()) {
+    const baseUrl = 'https://age-doesnt-matter.com'
+    const fullUrl = params.url.startsWith('http') ? params.url : `${baseUrl}${params.url}`
     // 카카오 SDK 미초기화 시 Web Share API로 대체
     if (navigator.share) {
       await navigator.share({
         title: params.title,
         text: params.description,
-        url: params.url,
+        url: fullUrl,
       })
       return
     }
     // 클립보드 복사 대체
-    await navigator.clipboard.writeText(params.url)
+    await navigator.clipboard.writeText(fullUrl)
     return
   }
 
