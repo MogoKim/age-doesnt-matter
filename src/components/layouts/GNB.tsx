@@ -10,10 +10,11 @@ import { IconSearch, IconUser } from '@/components/icons'
 
 const MENU_ITEMS = [
   { label: '베스트', href: '/best' },
-  { label: '내 일 찾기', href: '/jobs' },
   { label: '사는 이야기', href: '/community/stories' },
-  { label: '활력 충전소', href: '/community/humor' },
+  { label: '웃음방', href: '/community/humor' },
+  { label: '2막 준비', href: '/community/life2' },
   { label: '매거진', href: '/magazine' },
+  { label: '내 일 찾기', href: '/jobs' },
 ] as const
 
 interface GNBProps {

@@ -3,14 +3,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { IconBest, IconJobs, IconStories, IconEnergy, IconMagazine } from '@/components/icons'
+import { IconBest, IconJobs, IconStories, IconEnergy, IconMagazine, IconLife2 } from '@/components/icons'
 
 const MENU_ITEMS = [
   { icon: IconBest, label: '베스트', href: '/best' },
-  { icon: IconJobs, label: '내 일 찾기', href: '/jobs' },
   { icon: IconStories, label: '사는 이야기', href: '/community/stories' },
-  { icon: IconEnergy, label: '활력 충전소', href: '/community/humor' },
+  { icon: IconEnergy, label: '웃음방', href: '/community/humor' },
+  { icon: IconLife2, label: '2막 준비', href: '/community/life2' },
   { icon: IconMagazine, label: '매거진', href: '/magazine' },
+  { icon: IconJobs, label: '내 일 찾기', href: '/jobs' },
 ] as const
 
 export default function IconMenu() {

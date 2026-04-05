@@ -102,6 +102,22 @@ export function IconEnergy({ size = 24, className, filled }: IconProps) {
   )
 }
 
+/** 2막 준비 — 새싹/잎 */
+export function IconLife2({ size = 24, className, filled }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M12 22V12M12 12C12 12 7 11 5 7c-1-2-1-5 1-6 3 1 5 3 6 5M12 12c0 0 5-1 7-5 1-2 1-5-1-6-3 1-5 3-6 5"
+        stroke="currentColor"
+        strokeWidth={S}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill={filled ? 'currentColor' : 'none'}
+      />
+    </svg>
+  )
+}
+
 /** 매거진 — 펼친 책 (심플) */
 export function IconMagazine({ size = 24, className, filled }: IconProps) {
   return (

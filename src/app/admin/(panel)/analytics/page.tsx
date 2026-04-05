@@ -19,7 +19,7 @@ const getAnalyticsStats = unstable_cache(
     const monthAgo = new Date(now)
     monthAgo.setDate(monthAgo.getDate() - 30)
 
-    const [dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports, weeklyCommentersRaw] =
+    const [dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports, weeklyCommentersRaw, latestCdoLog] =
       await Promise.all([
         prisma.user.count({ where: { lastLoginAt: { gte: todayStart } } }),
         prisma.user.count({ where: { lastLoginAt: { gte: weekAgo } } }),
@@ -33,11 +33,31 @@ const getAnalyticsStats = unstable_cache(
           by: ['authorId'],
           where: { createdAt: { gte: weekAgo }, status: 'ACTIVE' },
         }),
+        // KR3: CDO 에이전트가 수집한 GA4 D7 리텐션율 (BotLog에서 가장 최근 값)
+        prisma.botLog.findFirst({
+          where: { botType: 'CDO', action: 'KPI_DAILY', status: 'SUCCESS' },
+          orderBy: { createdAt: 'desc' },
+          select: { details: true },
+        }),
       ])
+
+    // D7 리텐션율 파싱 (CDO kpi-collector가 cohortRetention.d7RetentionRate를 JSON에 저장)
+    let d7RetentionPct = 0
+    if (latestCdoLog?.details) {
+      try {
+        const kpi = JSON.parse(latestCdoLog.details as string) as {
+          cohortRetention?: { d7RetentionRate?: number }
+        }
+        if (kpi.cohortRetention?.d7RetentionRate !== undefined) {
+          d7RetentionPct = Math.round(kpi.cohortRetention.d7RetentionRate * 100)
+        }
+      } catch { /* 파싱 실패 시 0 유지 */ }
+    }
 
     return {
       dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports,
       weeklyCommenters: weeklyCommentersRaw.length,
+      d7RetentionPct,
     }
   },
   ['admin-analytics-stats'],
@@ -64,7 +84,7 @@ export default async function AdminAnalyticsPage({ searchParams }: Props) {
     activeTab === 'sns' ? getSocialExperiments(20) : Promise.resolve([]),
   ])
 
-  const { dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports } = stats
+  const { dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports, d7RetentionPct } = stats
 
   const kpis = [
     { label: 'DAU (오늘)', value: dau },
@@ -114,7 +134,7 @@ export default async function AdminAnalyticsPage({ searchParams }: Props) {
 
       {/* 탭 콘텐츠 */}
       {activeTab === 'overview' && (
-        <OkrWidget mau={mau} wau={wau} weeklyCommenters={stats.weeklyCommenters} />
+        <OkrWidget mau={mau} wau={wau} weeklyCommenters={stats.weeklyCommenters} d7RetentionPct={d7RetentionPct} />
       )}
 
       {activeTab === 'sns' && (
@@ -220,7 +240,7 @@ export default async function AdminAnalyticsPage({ searchParams }: Props) {
 const Q2_OKR = {
   mau:              { label: 'KR1 — MAU', target: 500,  unit: '명', desc: '채널별: 지식인봇150 / SEO200 / SNS100 / 직접50' },
   weeklyCommenters: { label: 'KR2 — 주간 댓글 참여 (NSM)', target: 50, unit: '명/주', desc: '"봇은 댓글을 쓰지 않는다" — 진짜 커뮤니티 생명력' },
-  d7Retention:      { label: 'KR3 — D7 재방문율', target: 35, unit: '%', desc: 'GA4 Cohort 설정 필요 (현재 미측정)' },
+  d7Retention:      { label: 'KR3 — D7 재방문율', target: 25, unit: '%', desc: 'GA4 Cohort API — CDO 에이전트 매일 22:00 수집' },
   revenue:          { label: 'KR4 — 월 매출', target: 20, unit: '만원', desc: 'AdSense 5만 + 쿠팡파트너스 15만' },
 } as const
 
@@ -238,10 +258,12 @@ function OkrWidget({
   mau,
   wau,
   weeklyCommenters,
+  d7RetentionPct,
 }: {
   mau: number
   wau: number
   weeklyCommenters: number
+  d7RetentionPct: number
 }) {
   const milestones = [
     { date: '4월 말', target: 50 },
@@ -252,7 +274,7 @@ function OkrWidget({
   const krs = [
     { ...Q2_OKR.mau, current: mau },
     { ...Q2_OKR.weeklyCommenters, current: weeklyCommenters },
-    { ...Q2_OKR.d7Retention, current: 0 },   // GA4 미연동 → 0
+    { ...Q2_OKR.d7Retention, current: d7RetentionPct },
     { ...Q2_OKR.revenue, current: 0 },         // 수동 입력 필요
   ]
 
@@ -271,7 +293,7 @@ function OkrWidget({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {krs.map((kr) => {
           const pct = Math.min(100, Math.round((kr.current / kr.target) * 100))
-          const isUnmeasured = kr.current === 0 && (kr.label.includes('D7') || kr.label.includes('매출'))
+          const isUnmeasured = kr.current === 0 && kr.label.includes('매출')
           return (
             <div key={kr.label} className="rounded-xl border border-zinc-200 bg-white p-4">
               <div className="flex items-start justify-between gap-2">
@@ -282,7 +304,7 @@ function OkrWidget({
               </div>
               {isUnmeasured ? (
                 <div className="mt-2 rounded-lg bg-zinc-50 px-3 py-1.5 text-xs text-zinc-400">
-                  측정 미연동 — {kr.label.includes('D7') ? 'GA4 Cohort 설정 필요' : '매출 수동 기록 필요'}
+                  측정 미연동 — 매출 수동 기록 필요
                 </div>
               ) : (
                 <>
