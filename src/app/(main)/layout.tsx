@@ -14,7 +14,7 @@ export default async function MainGroupLayout({
   const isLoggedIn = !!session?.user
   const nickname = session?.user?.nickname
   const fontSize = session?.user?.id
-    ? await getUserFontSize(session.user.id)
+    ? await getUserFontSize(session.user.id).catch(() => undefined)
     : undefined
 
   return (

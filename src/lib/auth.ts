@@ -20,6 +20,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
 
         const existing = await prisma.user.findUnique({
           where: { providerId },
+          select: { status: true, suspendedUntil: true },
         })
 
         // 탈퇴 유예 중인 계정 복구
@@ -68,6 +69,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
 
           let user = await prisma.user.findUnique({
             where: { providerId },
+            select: { id: true, role: true, grade: true, nickname: true, profileImage: true, status: true, suspendedUntil: true },
           })
 
           if (!user) {
@@ -106,6 +108,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           // 기존 세션 갱신: DB에 유저가 실제 존재하는지 확인
           const user = await prisma.user.findUnique({
             where: { id: token.userId as string },
+            select: { id: true, role: true, grade: true, nickname: true, profileImage: true },
           })
           if (!user) {
             // DB에 유저가 없으면 토큰 초기화 → 재로그인 유도
