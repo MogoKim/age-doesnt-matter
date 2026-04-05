@@ -48,13 +48,16 @@ export default async function WritePage({ searchParams }: PageProps) {
   }))
 
   return (
-    <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
-      <h1 className="text-xl font-bold text-foreground m-0 mb-6 pb-4 border-b-2 border-foreground">글쓰기</h1>
-      <PostWriteForm
-        defaultBoard={validDefaultBoard}
-        boards={writableBoards}
-        serverDrafts={serverDrafts}
-      />
-    </div>
+    <>
+      {/* 글쓰기 페이지에서는 Footer가 하단 CTA 바에 가리므로 숨김 */}
+      <style>{'footer { display: none !important; }'}</style>
+      <div className="max-w-[720px] mx-auto px-4 pt-0 pb-6 md:px-6 md:pb-8">
+        <PostWriteForm
+          defaultBoard={validDefaultBoard}
+          boards={writableBoards}
+          serverDrafts={serverDrafts}
+        />
+      </div>
+    </>
   )
 }

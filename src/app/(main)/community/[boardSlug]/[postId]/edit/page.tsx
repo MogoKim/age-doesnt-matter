@@ -50,19 +50,21 @@ export default async function EditPage({ params }: PageProps) {
   const currentSlug = BOARD_TYPE_TO_SLUG[post.boardType] ?? boardSlug
 
   return (
-    <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
-      <h1 className="text-xl font-bold text-foreground m-0 mb-6 pb-4 border-b-2 border-foreground">글 수정</h1>
-      <PostWriteForm
-        defaultBoard={currentSlug}
-        boards={writableBoards}
-        editData={{
-          postId: post.id,
-          boardSlug: currentSlug,
-          category: post.category ?? '',
-          title: post.title,
-          content: post.content,
-        }}
-      />
-    </div>
+    <>
+      <style>{'footer { display: none !important; }'}</style>
+      <div className="max-w-[720px] mx-auto px-4 pt-0 pb-6 md:px-6 md:pb-8">
+        <PostWriteForm
+          defaultBoard={currentSlug}
+          boards={writableBoards}
+          editData={{
+            postId: post.id,
+            boardSlug: currentSlug,
+            category: post.category ?? '',
+            title: post.title,
+            content: post.content,
+          }}
+        />
+      </div>
+    </>
   )
 }

@@ -254,7 +254,8 @@ export default function TipTapEditor({
   return (
     <div className="relative">
       {/* ── sticky 툴바 래퍼 (서식 + 미디어) ── */}
-      <div className="sticky top-[52px] z-20 bg-card pt-1 pb-0.5">
+      {/* top: 모바일 Header(56) + IconMenu(64) + WriteHeader(52) = 172px / 데스크탑 GNB(64) + WriteHeader(52) = 116px */}
+      <div className="sticky top-[172px] lg:top-[116px] z-20 bg-card pt-1 pb-0.5">
         {/* ── 1. 서식 툴바 ── */}
         <div className="flex items-center gap-1 border border-border rounded-xl bg-card px-2 py-1 mb-2">
           {/* 굵게 */}

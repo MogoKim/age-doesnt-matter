@@ -283,16 +283,9 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
 
   return (
     <>
-      {/* ── 상단 헤더 (취소 + 타이틀) ── */}
-      <div className="sticky top-0 z-30 bg-card border-b border-border flex items-center px-1 h-[52px] -mx-4 mb-4 md:-mx-6">
-        <button
-          type="button"
-          onClick={handleCancel}
-          className="min-w-[52px] min-h-[52px] flex items-center justify-center text-body text-muted-foreground hover:text-foreground transition-colors px-3"
-        >
-          취소
-        </button>
-        <span className="text-body font-bold text-foreground flex-1 text-center pr-[52px]">
+      {/* ── 상단 헤더 (타이틀) ── */}
+      <div className="sticky top-[120px] lg:top-[64px] z-30 bg-card border-b border-border flex items-center justify-center px-1 h-[52px] -mx-4 mb-4 md:-mx-6">
+        <span className="text-body font-bold text-foreground">
           {isEditMode ? '수정하기' : '글쓰기'}
         </span>
       </div>
