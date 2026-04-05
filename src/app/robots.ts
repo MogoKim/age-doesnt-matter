@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin/', '/api/', '/my/'],
       },
     ],
-    sitemap: 'https://age-doesnt-matter.com/sitemap.xml',
+    sitemap: 'https://www.age-doesnt-matter.com/sitemap.xml',
   }
 }

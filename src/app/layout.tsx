@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: '%s | 우나어',
   },
   description: '50·60대가 나이 걱정 없이 일자리와 소통을 찾는 따뜻한 커뮤니티',
-  metadataBase: new URL('https://age-doesnt-matter.com'),
+  metadataBase: new URL('https://www.age-doesnt-matter.com'),
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
@@ -31,6 +31,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   verification: {
+    google: process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? undefined,
     other: {
       'google-adsense-account': 'ca-pub-4117999106913048',
     },
