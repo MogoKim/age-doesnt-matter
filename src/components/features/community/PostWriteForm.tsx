@@ -70,9 +70,10 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   const categories = board?.categories.filter((c) => c !== '전체') || []
 
   const isTitleValid = title.length >= 2 && title.length <= 40
-  // HTML 태그 제거 후 텍스트 길이 검사
+  // HTML 태그 제거 후 텍스트 길이 검사 (이미지/동영상만 있어도 유효)
   const plainTextLength = content.replace(/<[^>]*>/g, '').trim().length
-  const isContentValid = plainTextLength >= 10
+  const hasMedia = /<(img|video)[^>]+src=/.test(content)
+  const isContentValid = plainTextLength >= 10 || hasMedia
   const canSubmit = isTitleValid && isContentValid && selectedBoard && boards.length > 0
 
   // localStorage 임시저장 복원 (수정 모드에서는 스킵)

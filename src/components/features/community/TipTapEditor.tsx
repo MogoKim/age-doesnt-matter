@@ -341,14 +341,21 @@ export default function TipTapEditor({
       {mediaError && (
         <div className="flex items-center gap-2 px-4 py-3 mb-2 rounded-xl bg-destructive/10 border border-destructive/20">
           <span className="text-base">⚠️</span>
-          <span className="text-sm font-medium text-destructive">{mediaError}</span>
+          <span className="text-sm font-medium text-destructive flex-1">{mediaError}</span>
+          <button
+            type="button"
+            onClick={() => setMediaError('')}
+            className="text-destructive/60 hover:text-destructive text-lg leading-none ml-1"
+            aria-label="닫기"
+          >
+            ×
+          </button>
         </div>
       )}
 
       {/* ── 3. 에디터 본문 ── */}
       <div
         className="border-2 border-border rounded-xl bg-card transition-all focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(255,111,97,0.1)]"
-        onClick={() => setMediaError('')}
       >
         <EditorContent editor={editor} />
       </div>
@@ -442,7 +449,7 @@ export default function TipTapEditor({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/gif,image/webp"
+        accept="image/*"
         multiple
         className="hidden"
         onChange={handleImageFileChange}
