@@ -36,7 +36,7 @@ export default function FAB({ isLoggedIn = false }: FABProps) {
 
   if (!showFAB) return null
 
-  const board = pathname.includes('stories') ? 'STORIES' : pathname.includes('life2') ? 'LIFE2' : 'HUMOR'
+  const board = pathname.includes('stories') ? 'stories' : pathname.includes('life2') ? 'life2' : 'humor'
 
   const fabClassName = cn(
     'group fixed bottom-[84px] right-6 z-[97] flex items-center gap-2 h-[52px] px-6 bg-primary text-white rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.15)] text-body font-bold cursor-pointer transition-all duration-200 no-underline [-webkit-tap-highlight-color:transparent] active:scale-95',

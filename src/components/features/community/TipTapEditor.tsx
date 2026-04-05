@@ -10,7 +10,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
-const MAX_FILE_SIZE = 4 * 1024 * 1024   // 4MB (Vercel 4.5MB 제한 이하)
+const MAX_FILE_SIZE = 20 * 1024 * 1024  // 20MB (Presigned URL로 Vercel 우회 → R2 직접 업로드)
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
 
 // ─── 인라인 텍스트 크기 Extension ───
@@ -162,7 +162,7 @@ export default function TipTapEditor({
       // 크기 초과 파일 체크
       const oversized = files.filter((f) => f.size > MAX_FILE_SIZE)
       if (oversized.length > 0) {
-        setMediaError('4MB를 넘는 사진은 추가할 수 없어요')
+        setMediaError('20MB를 넘는 사진은 추가할 수 없어요')
         e.target.value = ''
         return
       }
