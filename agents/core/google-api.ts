@@ -172,6 +172,93 @@ export async function fetchGA4Report(
   }
 }
 
+// ─── GA4 Cohort Retention (D7) ──────────────────────────
+
+export interface GA4CohortRetention {
+  cohortSize: number        // 기준 주 신규 유저 수
+  d7RetentionUsers: number  // 7일 후 재방문 유저 수
+  d7RetentionRate: number   // D7 리텐션율 (0.0 ~ 1.0)
+  measuredWeek: string      // 측정 기준 주 (ISO, e.g. "2026-03-30")
+}
+
+/**
+ * GA4 Cohort API — D7 리텐션율 측정
+ *
+ * 방법: firstSessionDate 기준 코호트 + cohortNthWeek=0001 (1주차 복귀율)
+ * = 지난 주에 처음 방문한 유저 중 이번 주에도 재방문한 비율
+ *
+ * KR3 OKR 측정용: D7 리텐션 목표 25%
+ */
+export async function fetchGA4CohortRetention(): Promise<GA4CohortRetention | null> {
+  const propertyId = process.env.GA4_PROPERTY_ID ?? ''
+  if (!propertyId) {
+    console.warn('[google-api] GA4_PROPERTY_ID 미설정 — Cohort 수집 건너뜀')
+    return null
+  }
+
+  const auth = getGoogleAuth([
+    'https://www.googleapis.com/auth/analytics.readonly',
+  ])
+  if (!auth) return null
+
+  try {
+    const analyticsdata = google.analyticsdata({ version: 'v1beta', auth })
+    const property = `properties/${propertyId}`
+
+    // 지난 주 (7~13일 전): 코호트 정의 기간
+    const cohortStart = new Date(Date.now() - 13 * 86400000).toISOString().split('T')[0]
+    const cohortEnd = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]
+
+    const response = await analyticsdata.properties.runReport({
+      property,
+      requestBody: {
+        cohortSpec: {
+          cohorts: [
+            {
+              name: 'week_cohort',
+              dimension: 'firstSessionDate',
+              dateRange: { startDate: cohortStart, endDate: cohortEnd },
+            },
+          ],
+          cohortsRange: {
+            granularity: 'WEEKLY',
+            startOffset: 0,
+            endOffset: 1,
+          },
+        },
+        dimensions: [{ name: 'cohort' }, { name: 'cohortNthWeek' }],
+        metrics: [{ name: 'cohortActiveUsers' }],
+      },
+    })
+
+    const rows = response.data.rows ?? []
+
+    // cohortNthWeek=0000 → 코호트 기준 주 (전체 규모)
+    // cohortNthWeek=0001 → 1주차 복귀 유저 (D7 리텐션)
+    let cohortSize = 0
+    let d7RetentionUsers = 0
+
+    for (const row of rows) {
+      const week = row.dimensionValues?.[1]?.value ?? ''
+      const users = Number(row.metricValues?.[0]?.value ?? '0')
+      if (week === '0000') cohortSize = users
+      if (week === '0001') d7RetentionUsers = users
+    }
+
+    const d7RetentionRate = cohortSize > 0 ? d7RetentionUsers / cohortSize : 0
+
+    return {
+      cohortSize,
+      d7RetentionUsers,
+      d7RetentionRate,
+      measuredWeek: cohortStart,
+    }
+  } catch (err) {
+    console.warn('[google-api] GA4 Cohort API 호출 실패:', err)
+    return null
+  }
+}
+
 // ─── Search Console API ──────────────────────────────────
 
 /**

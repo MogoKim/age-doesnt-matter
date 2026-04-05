@@ -1,9 +1,9 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
 import { notifyAdmin } from '../core/notifier.js'
-import { fetchGA4Report, fetchSearchConsoleReport } from '../core/google-api.js'
+import { fetchGA4Report, fetchSearchConsoleReport, fetchGA4CohortRetention } from '../core/google-api.js'
 import type { AgentResult } from '../core/types.js'
-import type { GA4Report, SearchConsoleReport } from '../core/google-api.js'
+import type { GA4Report, SearchConsoleReport, GA4CohortRetention } from '../core/google-api.js'
 
 /**
  * CDO 에이전트 — KPI 집계
@@ -84,6 +84,8 @@ class CDOKpiCollector extends BaseAgent {
     const todayStr = new Date().toISOString().split('T')[0]
     const ga4Data: GA4Report | null = await fetchGA4Report(yesterdayStr, todayStr)
     const scData: SearchConsoleReport | null = await fetchSearchConsoleReport(yesterdayStr, todayStr)
+    // KR3: D7 리텐션율 — 매주 측정 (cohort API, 주 1회 의미 있는 값)
+    const cohortData: GA4CohortRetention | null = await fetchGA4CohortRetention()
 
     const kpi: Record<string, unknown> = {
       dau,
@@ -105,6 +107,7 @@ class CDOKpiCollector extends BaseAgent {
       life2WeeklyPosts,
       ...(ga4Data ? { ga4: ga4Data } : {}),
       ...(scData ? { searchConsole: scData } : {}),
+      ...(cohortData ? { cohortRetention: cohortData } : {}),
     }
 
     // KPI를 BotLog에 기록 (히스토리 추적용)
@@ -122,7 +125,7 @@ class CDOKpiCollector extends BaseAgent {
     // 내부 DB KPI 요약
     const summaryParts: string[] = [
       `DAU ${dau} | MAU ${mau} | DAU/MAU ${dauMauRatio} | UGC ${ugcRatio}% | 글 ${todayPosts} | 댓글 ${todayComments} | 공감 ${todayLikes}`,
-      `\n📊 OKR 연계 지표\n  KR2 NSM: ${weeklyNSM}명/주 (목표 50명)\n  온보딩 완료율: ${onboardingRate}% (목표 70%)\n  LIFE2 주간 게시글: ${life2WeeklyPosts}건`,
+      `\n📊 OKR 연계 지표\n  KR2 NSM: ${weeklyNSM}명/주 (목표 50명)\n  KR3 D7 리텐션: ${cohortData ? `${(cohortData.d7RetentionRate * 100).toFixed(1)}% (${cohortData.d7RetentionUsers}/${cohortData.cohortSize}명, 목표 25%)` : 'GA4 미설정'}\n  온보딩 완료율: ${onboardingRate}% (목표 70%)\n  LIFE2 주간 게시글: ${life2WeeklyPosts}건`,
     ]
 
     // GA4 요약 (데이터 있을 때만)
