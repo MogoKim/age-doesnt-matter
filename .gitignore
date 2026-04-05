@@ -6,6 +6,7 @@ agents/node_modules
 
 # crawler cookies (sensitive — Naver login session)
 agents/cafe/storage-state.json
+agents/cafe/storage-state-jisik.json
 
 # testing
 /coverage
