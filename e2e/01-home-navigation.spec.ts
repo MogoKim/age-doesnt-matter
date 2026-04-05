@@ -30,9 +30,9 @@ test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', (
 
     const navLinks = [
       { href: '/best', label: '베스트' },
-      { href: '/jobs', label: '내 일 찾기' },
-      { href: '/community/stories', label: '사는 이야기' },
-      { href: '/community/humor', label: '활력 충전소' },
+      { href: '/jobs', label: '내일찾기' },
+      { href: '/community/stories', label: '사는이야기' },
+      { href: '/community/humor', label: '웃음방' },
       { href: '/magazine', label: '매거진' },
     ]
 
@@ -70,12 +70,12 @@ test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', (
     await page.goto('/')
 
     // 일자리 페이지
-    await page.getByRole('link', { name: '내 일 찾기' }).click()
+    await page.getByRole('link', { name: '내일찾기' }).click()
     await page.waitForURL(/\/jobs/, { timeout: 10000 })
     await expect(page.locator('body')).toBeVisible()
 
     // 커뮤니티 이야기
-    await page.getByRole('link', { name: '사는 이야기' }).click()
+    await page.getByRole('link', { name: '사는이야기' }).click()
     await page.waitForURL(/\/community\/stories/, { timeout: 10000 })
     await expect(page.locator('body')).toBeVisible()
 
