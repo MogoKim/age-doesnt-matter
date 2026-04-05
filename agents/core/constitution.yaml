@@ -222,13 +222,60 @@ kpi:
   phase1_primary: "사용자 사이트 + 어드민 모든 기능 완성 (PRD A/B/C 기준)"
 
   phase2_traffic:
-    north_star: "DAU"
+    north_star: "주간 댓글 참여 유저 수 (Weekly Active Commenter)"
+    north_star_rationale: "봇은 댓글을 쓰지 않는다. 댓글 유저 = 진짜 커뮤니티 생명력 측정값"
     targets:
       - "DAU/MAU > 0.15"
       - "D7 리텐션 > 20%"
       - "UGC 비율 > 30%"
       - "일자리 지원 클릭 > 50/일"
       - "평균 세션 > 3분"
+
+  # ── Q2 2026 OKR (2026-04-01 ~ 2026-06-30) — 도전안 확정 ──
+  q2_okr:
+    objective: "SEO + 입소문 동시 성과로 500명을 만든다"
+    confirmed_at: "2026-04-05"
+
+    kr1:
+      metric: "MAU"
+      target: 500
+      breakdown:
+        지식인봇_유입: 150
+        SEO_검색_유입: 200
+        SNS_입소문: 100
+        직접_방문: 50
+      milestones:
+        "2026-04-30": 50
+        "2026-05-31": 150
+        "2026-06-30": 500
+
+    kr2:
+      metric: "주간 댓글 참여 유저 (NSM)"
+      target: 50
+      unit: "명/주"
+      sub_targets:
+        일평균_게시글: 5
+        댓글_글_비율: "3:1 이상"
+        재참여자_비율: "30%+"
+
+    kr3:
+      metric: "D7 재방문율"
+      target: 35
+      unit: "%"
+      sub_targets:
+        온보딩_완료율: "70%+"
+        온보딩_후_D7_댓글_전환: "30%+"
+        알림_CTR: "20%+"
+      dependency: "isOnboarded 필드 + GA4 Cohort 설정 필요"
+
+    kr4:
+      metric: "월 매출"
+      target: 200000
+      unit: "원"
+      breakdown:
+        AdSense: 50000
+        쿠팡파트너스: 150000
+      bep_milestone: "MAU 300 달성 시 BEP 근접 (약 2026-05-31)"
 
 automation_status: "ACTIVE"   # 2026-03-24 창업자 승인 완료. 에이전트 자동화 가동.
 
