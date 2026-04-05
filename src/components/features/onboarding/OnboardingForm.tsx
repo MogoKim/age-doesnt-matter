@@ -5,6 +5,16 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { checkNickname, completeOnboarding, saveInterests } from '@/lib/actions/onboarding'
+import type { RecommendedPost } from '@/lib/actions/onboarding'
+
+const BOARD_LABEL: Record<string, string> = {
+  STORY: '사는이야기', HUMOR: '웃음방', LIFE2: '2막준비',
+  JOB: '일자리', MAGAZINE: '매거진',
+}
+const BOARD_SLUG: Record<string, string> = {
+  STORY: 'stories', HUMOR: 'humor', LIFE2: 'life2',
+  JOB: 'jobs', MAGAZINE: 'magazine',
+}
 
 // ── 닉네임 유효성 검사 ──
 const NICKNAME_REGEX = /^[가-힣a-zA-Z0-9]+$/
@@ -78,6 +88,9 @@ export default function OnboardingForm() {
 
   // Step 3 - 관심사
   const [selectedInterests, setSelectedInterests] = useState<string[]>([])
+
+  // Step 4 - 추천글
+  const [recommendedPosts, setRecommendedPosts] = useState<RecommendedPost[]>([])
 
   const lengthOk = nickname.length >= 2 && nickname.length <= 10
   const charOk = nickname.length === 0 || NICKNAME_REGEX.test(nickname)
@@ -165,7 +178,8 @@ export default function OnboardingForm() {
 
   function handleInterestsDone(skip: boolean) {
     startTransition(async () => {
-      await saveInterests(skip ? [] : selectedInterests)
+      const result = await saveInterests(skip ? [] : selectedInterests)
+      setRecommendedPosts(result.recommendedPosts ?? [])
       setStep(4)
     })
   }
@@ -462,11 +476,50 @@ export default function OnboardingForm() {
             <span className="text-primary font-bold">다음 등급 🌿 단골</span> → 게시글 5개 또는 댓글 20개
           </div>
         </div>
+
+        {recommendedPosts.length > 0 && (
+          <div className="text-left mb-2">
+            <p className="text-caption font-bold text-foreground mb-2">
+              🌟 나와 비슷한 이야기예요
+            </p>
+            <div className="flex flex-col gap-2">
+              {recommendedPosts.map((post) => {
+                const slug = BOARD_SLUG[post.boardType] ?? 'stories'
+                const isJob = post.boardType === 'JOB'
+                const isMag = post.boardType === 'MAGAZINE'
+                const href = isJob
+                  ? `/jobs/${post.id}`
+                  : isMag
+                    ? `/magazine/${post.id}`
+                    : `/community/${slug}/${post.id}`
+                return (
+                  <a
+                    key={post.id}
+                    href={href}
+                    className="block min-h-[52px] px-4 py-3 bg-background rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-colors no-underline"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-caption text-foreground font-medium line-clamp-1 flex-1">
+                        {post.title}
+                      </span>
+                      <span className="text-caption text-muted-foreground shrink-0">
+                        ❤️ {post.likeCount}
+                      </span>
+                    </div>
+                    <div className="text-caption text-muted-foreground mt-0.5">
+                      {BOARD_LABEL[post.boardType] ?? ''} · {post.authorNickname}
+                    </div>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-auto pt-6 flex flex-col gap-3">
         <Button onClick={handleComplete}>
-          첫 글 작성하러 가기
+          {recommendedPosts.length > 0 ? '이야기 보러 가기' : '첫 글 작성하러 가기'}
         </Button>
         <Button variant="ghost" onClick={handleComplete}>
           먼저 둘러볼게요

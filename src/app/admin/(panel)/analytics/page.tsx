@@ -19,7 +19,7 @@ const getAnalyticsStats = unstable_cache(
     const monthAgo = new Date(now)
     monthAgo.setDate(monthAgo.getDate() - 30)
 
-    const [dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports] =
+    const [dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports, weeklyCommentersRaw] =
       await Promise.all([
         prisma.user.count({ where: { lastLoginAt: { gte: todayStart } } }),
         prisma.user.count({ where: { lastLoginAt: { gte: weekAgo } } }),
@@ -28,9 +28,17 @@ const getAnalyticsStats = unstable_cache(
         prisma.comment.count({ where: { createdAt: { gte: todayStart }, status: 'ACTIVE' } }),
         prisma.user.count({ where: { status: 'ACTIVE' } }),
         prisma.report.count({ where: { status: 'PENDING' } }),
+        // NSM: 주간 댓글 작성 고유 유저 수
+        prisma.comment.groupBy({
+          by: ['authorId'],
+          where: { createdAt: { gte: weekAgo }, status: 'ACTIVE' },
+        }),
       ])
 
-    return { dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports }
+    return {
+      dau, wau, mau, todayPosts, todayComments, activeUsers, pendingReports,
+      weeklyCommenters: weeklyCommentersRaw.length,
+    }
   },
   ['admin-analytics-stats'],
   { revalidate: 600 }
@@ -106,14 +114,7 @@ export default async function AdminAnalyticsPage({ searchParams }: Props) {
 
       {/* 탭 콘텐츠 */}
       {activeTab === 'overview' && (
-        <div className="rounded-xl border border-zinc-200 bg-white px-6 py-16 text-center">
-          <p className="text-4xl">📈</p>
-          <h2 className="mt-3 text-lg font-semibold text-zinc-900">상세 분석 대시보드 준비 중</h2>
-          <p className="mt-2 text-sm text-zinc-500">
-            트래픽 추이, 유입 경로, 콘텐츠 분석, 사용자 코호트, 전환, 건강 지표 등<br />
-            GA4 + Search Console 연동 데이터 대시보드가 추가될 예정입니다.
-          </p>
-        </div>
+        <OkrWidget mau={mau} wau={wau} weeklyCommenters={stats.weeklyCommenters} />
       )}
 
       {activeTab === 'sns' && (
@@ -210,6 +211,139 @@ export default async function AdminAnalyticsPage({ searchParams }: Props) {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Q2 2026 OKR 위젯 ──
+// 목표: MAU 500 / 주간 댓글 50명 / D7 35% / 월 매출 20만원
+const Q2_OKR = {
+  mau:              { label: 'KR1 — MAU', target: 500,  unit: '명', desc: '채널별: 지식인봇150 / SEO200 / SNS100 / 직접50' },
+  weeklyCommenters: { label: 'KR2 — 주간 댓글 참여 (NSM)', target: 50, unit: '명/주', desc: '"봇은 댓글을 쓰지 않는다" — 진짜 커뮤니티 생명력' },
+  d7Retention:      { label: 'KR3 — D7 재방문율', target: 35, unit: '%', desc: 'GA4 Cohort 설정 필요 (현재 미측정)' },
+  revenue:          { label: 'KR4 — 월 매출', target: 20, unit: '만원', desc: 'AdSense 5만 + 쿠팡파트너스 15만' },
+} as const
+
+function ProgressBar({ value, max }: { value: number; max: number }) {
+  const pct = Math.min(100, Math.round((value / max) * 100))
+  const color = pct >= 80 ? 'bg-green-500' : pct >= 40 ? 'bg-[#FF6F61]' : 'bg-zinc-300'
+  return (
+    <div className="mt-2 h-2 w-full rounded-full bg-zinc-100">
+      <div className={`h-2 rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+    </div>
+  )
+}
+
+function OkrWidget({
+  mau,
+  wau,
+  weeklyCommenters,
+}: {
+  mau: number
+  wau: number
+  weeklyCommenters: number
+}) {
+  const milestones = [
+    { date: '4월 말', target: 50 },
+    { date: '5월 말', target: 150 },
+    { date: '6월 말 (최종)', target: 500 },
+  ]
+
+  const krs = [
+    { ...Q2_OKR.mau, current: mau },
+    { ...Q2_OKR.weeklyCommenters, current: weeklyCommenters },
+    { ...Q2_OKR.d7Retention, current: 0 },   // GA4 미연동 → 0
+    { ...Q2_OKR.revenue, current: 0 },         // 수동 입력 필요
+  ]
+
+  return (
+    <div className="space-y-4">
+      {/* OKR 헤더 */}
+      <div className="rounded-xl border border-[#FF6F61]/30 bg-[#FF6F61]/5 p-5">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-sm font-bold text-zinc-900">🎯 Q2 2026 OKR — 도전안</h2>
+          <span className="text-xs text-zinc-400">2026-04-01 ~ 2026-06-30</span>
+        </div>
+        <p className="text-sm font-medium text-[#FF6F61]">"SEO + 입소문 동시 성과로 500명을 만든다"</p>
+      </div>
+
+      {/* KR 카드 4개 */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {krs.map((kr) => {
+          const pct = Math.min(100, Math.round((kr.current / kr.target) * 100))
+          const isUnmeasured = kr.current === 0 && (kr.label.includes('D7') || kr.label.includes('매출'))
+          return (
+            <div key={kr.label} className="rounded-xl border border-zinc-200 bg-white p-4">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs font-bold text-zinc-700">{kr.label}</p>
+                <span className="shrink-0 text-xs font-bold text-zinc-900">
+                  {isUnmeasured ? '—' : kr.current.toLocaleString()}{kr.unit} / {kr.target.toLocaleString()}{kr.unit}
+                </span>
+              </div>
+              {isUnmeasured ? (
+                <div className="mt-2 rounded-lg bg-zinc-50 px-3 py-1.5 text-xs text-zinc-400">
+                  측정 미연동 — {kr.label.includes('D7') ? 'GA4 Cohort 설정 필요' : '매출 수동 기록 필요'}
+                </div>
+              ) : (
+                <>
+                  <ProgressBar value={kr.current} max={kr.target} />
+                  <p className="mt-1.5 text-right text-xs font-bold text-zinc-500">{pct}%</p>
+                </>
+              )}
+              <p className="mt-2 text-xs text-zinc-400">{kr.desc}</p>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* 월별 마일스톤 */}
+      <div className="rounded-xl border border-zinc-200 bg-white p-5">
+        <h3 className="mb-3 text-sm font-bold text-zinc-900">📅 MAU 마일스톤</h3>
+        <div className="flex items-end gap-3">
+          {milestones.map((m) => {
+            const reached = mau >= m.target
+            const pct = Math.min(100, Math.round((mau / m.target) * 100))
+            return (
+              <div key={m.date} className="flex-1 text-center">
+                <div className="relative mx-auto mb-1 h-20 w-full rounded-lg bg-zinc-100">
+                  <div
+                    className={`absolute bottom-0 left-0 right-0 rounded-lg transition-all ${reached ? 'bg-green-400' : 'bg-[#FF6F61]/60'}`}
+                    style={{ height: `${pct}%` }}
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-zinc-700">
+                    {reached ? '✅' : `${pct}%`}
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-zinc-700">{m.target}명</p>
+                <p className="text-xs text-zinc-400">{m.date}</p>
+              </div>
+            )
+          })}
+        </div>
+        <p className="mt-3 text-center text-xs text-zinc-400">
+          현재 MAU: <span className="font-bold text-zinc-700">{mau.toLocaleString()}명</span>
+          {' · '}WAU: <span className="font-bold text-zinc-700">{wau.toLocaleString()}명</span>
+        </p>
+      </div>
+
+      {/* NSM 강조 */}
+      <div className="rounded-xl border border-zinc-200 bg-white p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-zinc-900">⭐ NSM — 주간 댓글 참여 유저</h3>
+          <span className="rounded-full bg-[#FF6F61]/10 px-3 py-1 text-xs font-bold text-[#FF6F61]">
+            목표 50명/주
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-4xl font-bold text-zinc-900">{weeklyCommenters}</div>
+          <div className="flex-1">
+            <ProgressBar value={weeklyCommenters} max={50} />
+            <p className="mt-1 text-xs text-zinc-400">
+              봇은 댓글을 쓰지 않는다 — 이 숫자가 진짜 커뮤니티 생명력
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

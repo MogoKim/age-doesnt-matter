@@ -698,3 +698,63 @@ export const getPostDetail = cache(async function getPostDetail(
     updatedAt: post.updatedAt.toISOString(),
   }
 })
+
+// ── 관심사 기반 추천글 (온보딩 완료 후 표시) ──
+
+const INTEREST_TO_BOARD: Record<string, BoardType[]> = {
+  health:   ['STORY', 'MAGAZINE'],
+  exercise: ['STORY', 'HUMOR'],
+  travel:   ['STORY', 'HUMOR'],
+  cooking:  ['STORY', 'HUMOR'],
+  family:   ['STORY'],
+  money:    ['MAGAZINE', 'LIFE2'],
+  life2:    ['LIFE2'],
+  hobby:    ['STORY', 'HUMOR'],
+  job:      ['JOB', 'LIFE2'],
+}
+
+export interface RecommendedPost {
+  id: string
+  title: string
+  boardType: string
+  likeCount: number
+  commentCount: number
+  authorNickname: string
+}
+
+export async function getInterestBasedPosts(
+  interests: string[],
+  limit = 3,
+): Promise<RecommendedPost[]> {
+  const boardTypes = [
+    ...new Set(interests.flatMap((i) => INTEREST_TO_BOARD[i] ?? [])),
+  ] as BoardType[]
+
+  const where = {
+    status: 'PUBLISHED' as const,
+    ...(boardTypes.length > 0 && { boardType: { in: boardTypes } }),
+  }
+
+  const posts = await prisma.post.findMany({
+    where,
+    select: {
+      id: true,
+      title: true,
+      boardType: true,
+      likeCount: true,
+      commentCount: true,
+      author: { select: { nickname: true } },
+    },
+    orderBy: { likeCount: 'desc' },
+    take: limit,
+  })
+
+  return posts.map((p) => ({
+    id: p.id,
+    title: p.title,
+    boardType: p.boardType,
+    likeCount: p.likeCount,
+    commentCount: p.commentCount,
+    authorNickname: p.author?.nickname ?? '탈퇴한 회원',
+  }))
+}

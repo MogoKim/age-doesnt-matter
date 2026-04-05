@@ -2,12 +2,21 @@
 
 import { auth, unstable_update } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getInterestBasedPosts } from '@/lib/queries/posts'
+import type { RecommendedPost } from '@/lib/queries/posts'
+
+export type { RecommendedPost }
 
 const NICKNAME_REGEX = /^[가-힣a-zA-Z0-9]+$/
 const BANNED_WORDS = ['운영자', '관리자', 'admin', '어드민', '관리인']
 
 interface OnboardingResult {
   error?: string
+}
+
+interface SaveInterestsResult {
+  error?: string
+  recommendedPosts?: RecommendedPost[]
 }
 
 /** 닉네임 중복 확인 */
@@ -127,7 +136,7 @@ export async function completeOnboarding(
 }
 
 /** 관심사 저장 + 온보딩 최종 완료 처리 (Step3) */
-export async function saveInterests(interests: string[]): Promise<OnboardingResult> {
+export async function saveInterests(interests: string[]): Promise<SaveInterestsResult> {
   const session = await auth()
   if (!session?.user?.id) {
     return { error: '로그인이 필요합니다' }
@@ -149,15 +158,13 @@ export async function saveInterests(interests: string[]): Promise<OnboardingResu
   try {
     await prisma.user.update({
       where: { id: userId },
-      data: {
-        interests,
-        isOnboarded: true,
-      },
+      data: { interests, isOnboarded: true },
     })
   } catch (error) {
     console.error('[onboarding] saveInterests error:', error)
     return { error: '관심사 저장 중 문제가 발생했습니다.' }
   }
 
-  return {}
+  const recommendedPosts = await getInterestBasedPosts(interests, 3).catch(() => [])
+  return { recommendedPosts }
 }
