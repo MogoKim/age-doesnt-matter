@@ -477,7 +477,7 @@ export default function OnboardingForm() {
         {recommendedPosts.length > 0 && (
           <div className="text-left mb-2">
             <p className="text-caption font-bold text-foreground mb-2">
-              🌟 나와 비슷한 이야기예요
+              {selectedInterests.length > 0 ? '🌟 나와 비슷한 이야기예요' : '🔥 지금 인기있는 이야기예요'}
             </p>
             <div className="flex flex-col gap-2">
               {recommendedPosts.map((post) => {
@@ -516,7 +516,7 @@ export default function OnboardingForm() {
 
       <div className="mt-auto pt-6 flex flex-col gap-3">
         <Button onClick={handleComplete}>
-          {recommendedPosts.length > 0 ? '이야기 보러 가기' : '첫 글 작성하러 가기'}
+          {recommendedPosts.length > 0 ? '이야기 보러 가기' : '우나어 시작하기'}
         </Button>
         <Button variant="ghost" onClick={handleComplete}>
           먼저 둘러볼게요
