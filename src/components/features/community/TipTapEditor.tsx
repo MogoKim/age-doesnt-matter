@@ -145,11 +145,19 @@ export default function TipTapEditor({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content])
 
-  // ─── 사진 인라인 삽입 핸들러 (A안: 즉시 업로드 → 커서 위치 삽입) ───
+  // ─── 사진 인라인 삽입 핸들러 (Presigned URL → R2 직접 업로드, Vercel 완전 우회) ───
   const handleImageFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || [])
       if (files.length === 0 || !editor) return
+
+      // HEIC 체크 (iOS 드물게 발생)
+      const heicFile = files.find((f) => f.type === 'image/heic' || f.type === 'image/heif')
+      if (heicFile) {
+        setMediaError('HEIC 형식은 지원하지 않아요. iOS 설정 → 카메라 → 포맷 → 호환성 우선으로 변경해 주세요.')
+        e.target.value = ''
+        return
+      }
 
       // 크기 초과 파일 체크
       const oversized = files.filter((f) => f.size > MAX_FILE_SIZE)
@@ -162,25 +170,37 @@ export default function TipTapEditor({
       setIsUploadingImage(true)
       setMediaError('')
       try {
-        const uploadData = new FormData()
-        files.forEach((f) => uploadData.append('files', f))
-        const res = await fetch('/api/uploads', { method: 'POST', body: uploadData })
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          setMediaError(`${err.error || '이미지 업로드에 실패했어요'} (${res.status})`)
-          console.error('[upload/image] 실패:', res.status, err)
-          return
+        for (const file of files) {
+          const mimeType = file.type || 'image/jpeg'
+
+          // 1. Presigned URL 발급
+          const presignRes = await fetch(`/api/uploads/presign?type=${encodeURIComponent(mimeType)}`)
+          if (!presignRes.ok) {
+            const err = await presignRes.json().catch(() => ({}))
+            setMediaError(`${err.error || '이미지 업로드 준비에 실패했어요'} (${presignRes.status})`)
+            console.error('[upload/image] presign 실패:', presignRes.status, err)
+            return
+          }
+          const { uploadUrl, publicUrl } = await presignRes.json() as { uploadUrl: string; publicUrl: string }
+
+          // 2. R2에 직접 PUT 업로드
+          const uploadRes = await fetch(uploadUrl, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': mimeType },
+          })
+          if (!uploadRes.ok) {
+            setMediaError(`이미지 업로드에 실패했어요 (${uploadRes.status})`)
+            console.error('[upload/image] R2 PUT 실패:', uploadRes.status)
+            return
+          }
+
+          // 3. 에디터에 삽입
+          editor.chain().focus().setImage({ src: publicUrl }).createParagraphNear().run()
         }
-        const { images: uploaded } = await res.json()
-        for (const img of uploaded as { url: string }[]) {
-          editor.chain()
-            .focus()
-            .setImage({ src: img.url })
-            .createParagraphNear()
-            .run()
-        }
-      } catch {
-        setMediaError('이미지 업로드에 실패했어요')
+      } catch (err) {
+        setMediaError(`이미지 업로드에 실패했어요: ${String(err).slice(0, 80)}`)
+        console.error('[upload/image] 예외:', err)
       } finally {
         setIsUploadingImage(false)
         e.target.value = ''
@@ -350,15 +370,15 @@ export default function TipTapEditor({
         </div>
       </div>
 
-      {/* ── 미디어 에러 메시지 (통합) ── */}
+      {/* ── 미디어 에러 토스트 (fixed: 스크롤·키보드 무관하게 항상 화면에 표시) ── */}
       {mediaError && (
-        <div className="flex items-center gap-2 px-4 py-3 mb-2 rounded-xl bg-destructive/10 border border-destructive/20">
-          <span className="text-base">⚠️</span>
-          <span className="text-sm font-medium text-destructive flex-1">{mediaError}</span>
+        <div className="fixed top-[132px] left-4 right-4 z-[200] flex items-center gap-2 px-4 py-3 rounded-xl bg-destructive text-white shadow-xl">
+          <span className="text-base shrink-0">⚠️</span>
+          <span className="text-sm font-medium flex-1">{mediaError}</span>
           <button
             type="button"
             onClick={() => setMediaError('')}
-            className="text-destructive/60 hover:text-destructive text-lg leading-none ml-1"
+            className="text-white/80 hover:text-white text-xl leading-none shrink-0 ml-1"
             aria-label="닫기"
           >
             ×
