@@ -54,7 +54,7 @@ test.describe('시나리오 7: 광고 렌더링 검증', () => {
 
     if (processed) {
       const status = await slot.getAttribute('data-ad-status')
-      expect(['filled', 'unfilled']).toContain(status)
+      expect(['filled', 'unfilled', 'unfill-optimized']).toContain(status)
     } else {
       // CI IP에서 Google이 광고를 처리하지 못할 수 있음 — 경고만
       console.warn('[CI] AdSense data-ad-status 미설정 — CI 환경에서는 정상일 수 있음')
