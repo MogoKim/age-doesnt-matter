@@ -297,28 +297,6 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         </div>
       )}
 
-      {/* 게시판 선택 — defaultBoard가 없을 때만 표시 (FAB에서 진입 시 자동 선택됨) */}
-      {!defaultBoard && !isEditMode && (
-        <div className="flex gap-2 mb-6">
-          {boards.map((b) => {
-            const slug = b.slug
-            return (
-              <button
-                key={slug}
-                className={cn(
-                  'flex-1 min-h-[52px] px-4 py-3.5 border-2 rounded-2xl text-caption font-medium cursor-pointer transition-all text-center shadow-sm',
-                  selectedBoard === slug
-                    ? 'border-primary bg-primary/5 text-primary font-bold shadow-[0_0_0_3px_rgba(255,111,97,0.1)]'
-                    : 'border-border bg-card text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5'
-                )}
-                onClick={() => handleBoardChange(slug)}
-              >
-                {b.displayName}
-              </button>
-            )
-          })}
-        </div>
-      )}
 
       {/* 카테고리 선택 */}
       {categories.length > 0 && (

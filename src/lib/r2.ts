@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 // Vercel 환경변수 trailing whitespace/newline 제거 (ERR_INVALID_CHAR 방지)
 const ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID ?? '').trim()
@@ -53,6 +54,26 @@ export async function uploadToR2(
     key,
     url: `${PUBLIC_URL}/${key}`,
   }
+}
+
+/**
+ * R2 Pre-signed PUT URL 생성 (대용량 파일 클라이언트 직접 업로드용)
+ */
+export async function getPresignedUploadUrl(
+  key: string,
+  contentType: string,
+  expiresIn = 600,
+): Promise<{ uploadUrl: string; publicUrl: string }> {
+  if (!client) throw new Error('R2 미설정 — CLOUDFLARE_ACCOUNT_ID 환경변수 필요')
+
+  const command = new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: key,
+    ContentType: contentType,
+  })
+
+  const uploadUrl = await getSignedUrl(client, command, { expiresIn })
+  return { uploadUrl, publicUrl: `${PUBLIC_URL}/${key}` }
 }
 
 /**

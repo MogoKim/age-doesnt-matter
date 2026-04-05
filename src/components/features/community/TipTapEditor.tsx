@@ -10,7 +10,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024   // 5MB
+const MAX_FILE_SIZE = 4 * 1024 * 1024   // 4MB (Vercel 4.5MB 제한 이하)
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
 
 // ─── 인라인 텍스트 크기 Extension ───
@@ -154,7 +154,7 @@ export default function TipTapEditor({
       // 크기 초과 파일 체크
       const oversized = files.filter((f) => f.size > MAX_FILE_SIZE)
       if (oversized.length > 0) {
-        setMediaError('5MB를 넘는 사진은 추가할 수 없어요')
+        setMediaError('4MB를 넘는 사진은 추가할 수 없어요')
         e.target.value = ''
         return
       }
@@ -189,7 +189,7 @@ export default function TipTapEditor({
     [editor],
   )
 
-  // ─── 동영상 직접 업로드 핸들러 ───
+  // ─── 동영상 직접 업로드 핸들러 (Pre-signed URL → R2 직접 업로드, Vercel 4.5MB 제한 우회) ───
   const handleVideoFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
@@ -206,19 +206,32 @@ export default function TipTapEditor({
       setVideoSheet('closed')
 
       try {
-        const formData = new FormData()
-        formData.append('file', file)
-        const res = await fetch('/api/uploads/video', { method: 'POST', body: formData })
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          setMediaError(`${err.error || '동영상 업로드에 실패했어요'} (${res.status})`)
-          console.error('[upload/video] 실패:', res.status, err)
+        // 1. Presigned URL 발급
+        const ext = file.type === 'video/webm' ? 'webm' : file.type === 'video/quicktime' ? 'mov' : 'mp4'
+        const presignRes = await fetch(`/api/uploads/video/presign?ext=${ext}`)
+        if (!presignRes.ok) {
+          const err = await presignRes.json().catch(() => ({}))
+          setMediaError(`${err.error || '동영상 업로드 준비에 실패했어요'} (${presignRes.status})`)
           return
         }
-        const { url } = await res.json()
+        const { uploadUrl, publicUrl } = await presignRes.json() as { uploadUrl: string; publicUrl: string }
+
+        // 2. R2에 직접 PUT 업로드
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': file.type },
+        })
+        if (!uploadRes.ok) {
+          setMediaError(`동영상 업로드에 실패했어요 (${uploadRes.status})`)
+          console.error('[upload/video] R2 직접 업로드 실패:', uploadRes.status)
+          return
+        }
+
+        // 3. 에디터에 삽입
         editor.chain()
           .focus()
-          .insertContent({ type: 'video', attrs: { src: url } })
+          .insertContent({ type: 'video', attrs: { src: publicUrl } })
           .createParagraphNear()
           .run()
       } catch {

@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
 import { optimizeImage } from '@/lib/image-optimize'
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_SIZE = 4 * 1024 * 1024 // 4MB (Vercel 4.5MB 제한 이하)
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif']
 
 export async function POST(request: Request) {
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     }
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: `${file.name}: 5MB를 초과했어요` },
+        { error: `${file.name}: 4MB를 초과했어요` },
         { status: 400 },
       )
     }
