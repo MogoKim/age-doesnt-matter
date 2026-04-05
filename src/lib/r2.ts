@@ -1,10 +1,11 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 
-const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID ?? ''
-const ACCESS_KEY = process.env.CLOUDFLARE_R2_ACCESS_KEY ?? ''
-const SECRET_KEY = process.env.CLOUDFLARE_R2_SECRET_KEY ?? ''
-const BUCKET = process.env.CLOUDFLARE_R2_BUCKET ?? 'unaeo-uploads'
-const PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? `https://${BUCKET}.r2.cloudflarestorage.com`
+// Vercel 환경변수 trailing whitespace/newline 제거 (ERR_INVALID_CHAR 방지)
+const ACCOUNT_ID = (process.env.CLOUDFLARE_ACCOUNT_ID ?? '').trim()
+const ACCESS_KEY = (process.env.CLOUDFLARE_R2_ACCESS_KEY ?? '').trim()
+const SECRET_KEY = (process.env.CLOUDFLARE_R2_SECRET_KEY ?? '').trim()
+const BUCKET = (process.env.CLOUDFLARE_R2_BUCKET ?? 'unaeo-uploads').trim()
+const PUBLIC_URL = (process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? `https://${BUCKET}.r2.cloudflarestorage.com`).trim()
 
 if (!ACCOUNT_ID) {
   console.warn('[R2] CLOUDFLARE_ACCOUNT_ID 미설정 — R2 업로드 비활성')
