@@ -119,7 +119,8 @@ export async function createComment(
     }).catch(() => {})
   }
 
-  revalidatePath(`/community`)
+  revalidatePath('/community/[boardSlug]/[postId]', 'page')
+  revalidatePath('/community')
   return {}
 }
 
@@ -158,7 +159,8 @@ export async function editComment(
     data: { content: sanitizeHtml(trimmed) },
   })
 
-  revalidatePath(`/community`)
+  revalidatePath('/community/[boardSlug]/[postId]', 'page')
+  revalidatePath('/community')
   return {}
 }
 
@@ -188,6 +190,7 @@ export async function deleteComment(commentId: string): Promise<CommentResult> {
     }),
   ])
 
-  revalidatePath(`/community`)
+  revalidatePath('/community/[boardSlug]/[postId]', 'page')
+  revalidatePath('/community')
   return {}
 }
