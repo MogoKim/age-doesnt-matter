@@ -47,7 +47,24 @@ class CEOWeeklyReport extends BaseAgent {
       prisma.post.count({ where: { status: 'PUBLISHED' } }),
     ])
 
-    // 2. SNS 성과
+    // 2. Q2 OKR 지표 수집
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+    // KR1: MAU — 이번달 로그인한 유니크 유저 (EventLog 기반)
+    const mauResult = await prisma.eventLog.groupBy({
+      by: ['userId'],
+      where: { createdAt: { gte: monthStart }, userId: { not: null } },
+    })
+    const mauCount = mauResult.length
+
+    // KR2: NSM — 주간 댓글 참여 유저
+    const nsmResult = await prisma.comment.groupBy({
+      by: ['authorId'],
+      where: { createdAt: { gte: weekAgo }, status: 'ACTIVE' },
+    })
+    const nsmCount = nsmResult.length
+
+    // 3. SNS 성과
     const [snsPostCount, snsExperiment] = await Promise.all([
       prisma.socialPost.count({ where: { status: 'POSTED', postedAt: { gte: weekAgo } } }),
       prisma.socialExperiment.findFirst({
@@ -183,6 +200,20 @@ ${snsExperiment ? `- 현재 실험: ${snsExperiment.hypothesis} (${snsExperiment
           text: { type: 'mrkdwn' as const, text: `*:clipboard: 금주 전략 (Week ${memo.weekNumber ?? '?'})*\n${memo.strategy.slice(0, 300)}${memo.strategy.length > 300 ? '...' : ''}` },
         }] : []
       })() : []),
+      { type: 'divider' },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: [
+            `*:bar_chart: Q2 OKR 진행률*`,
+            `  KR1 MAU:  ${mauCount}명 / 500명 목표 (${Math.round(mauCount / 500 * 100)}%)  [마일스톤: 4월50→5월150→6월500]`,
+            `  KR2 NSM:  ${nsmCount}명/주 / 50명 목표 (${Math.round(nsmCount / 50 * 100)}%)`,
+            `  KR3 D7:   GA4 Cohort 설정 필요 (수동)`,
+            `  KR4 매출: 어드민 수동 기록 필요`,
+          ].join('\n'),
+        },
+      },
       { type: 'divider' },
       {
         type: 'section',

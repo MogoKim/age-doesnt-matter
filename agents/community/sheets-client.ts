@@ -32,7 +32,8 @@ export interface SheetTab {
 
 const TAB_TO_BOARD: Record<string, 'STORY' | 'HUMOR'> = {
   '사는이야기': 'STORY',
-  '활력충전소': 'HUMOR',
+  '웃음방': 'HUMOR',
+  '활력충전소': 'HUMOR',  // 하위 호환 (시트 탭명이 아직 구명일 경우)
 }
 
 function getSheetId(): string {
@@ -48,7 +49,7 @@ function getSheets() {
 }
 
 /**
- * 두 탭(사는이야기/활력충전소)에서 PENDING 행 읽기
+ * 두 탭(사는이야기/웃음방)에서 PENDING 행 읽기
  */
 export async function readPendingRows(): Promise<SheetTab[]> {
   const sheets = getSheets()

@@ -9,7 +9,7 @@ test.describe('시나리오 6: axe-core WCAG 2.1 AA 접근성 검증', () => {
   const pages = [
     { name: '홈', path: '/' },
     { name: '사는이야기', path: '/community/stories' },
-    { name: '활력충전소', path: '/community/humor' },
+    { name: '웃음방', path: '/community/humor' },
     { name: '일자리', path: '/jobs' },
     { name: '매거진', path: '/magazine' },
     { name: '베스트', path: '/best' },

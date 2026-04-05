@@ -126,7 +126,8 @@ export default async function BestPage({
 
 function BestPostCard({ post }: { post: PostSummary }) {
   const boardSlug = BOARD_TYPE_TO_SLUG[post.boardType] ?? 'stories'
-  const boardLabel = post.boardType === 'STORY' ? '사는 이야기' : post.boardType === 'LIFE2' ? '2막 준비' : '활력충전소'
+  const LABEL: Record<string, string> = { STORY: '사는이야기', HUMOR: '웃음방', LIFE2: '2막준비', JOB: '일자리', MAGAZINE: '매거진', WEEKLY: '수다방' }
+  const boardLabel = LABEL[post.boardType] ?? post.boardType
 
   return (
     <Link

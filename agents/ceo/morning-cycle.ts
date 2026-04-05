@@ -26,13 +26,19 @@ class CEOMorningCycle extends BaseAgent {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
     const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000)
 
-    const [todayUsers, yesterdayUsers, totalPosts, todayPosts, todayComments, todayLikes] = await Promise.all([
+    const [todayUsers, yesterdayUsers, totalPosts, todayPosts, todayComments, todayLikes, newOnboardedToday] = await Promise.all([
       prisma.user.count({ where: { lastLoginAt: { gte: yesterday } } }),
       prisma.user.count({ where: { lastLoginAt: { gte: twoDaysAgo, lt: yesterday } } }),
       prisma.post.count({ where: { status: 'PUBLISHED' } }),
       prisma.post.count({ where: { createdAt: { gte: yesterday }, status: 'PUBLISHED' } }),
       prisma.comment.count({ where: { createdAt: { gte: yesterday } } }),
       prisma.like.count({ where: { createdAt: { gte: yesterday } } }),
+      prisma.user.count({
+        where: {
+          isOnboarded: true,
+          nicknameChangedAt: { gte: yesterday },
+        },
+      }),
     ])
 
     const dauChange = yesterdayUsers > 0
@@ -60,6 +66,7 @@ class CEOMorningCycle extends BaseAgent {
 - 어제 신규 글: ${todayPosts}건
 - 어제 댓글: ${todayComments}건
 - 어제 공감: ${todayLikes}건
+- 신규 온보딩 유저: ${newOnboardedToday}명 (오늘 가입→온보딩 완료)${newOnboardedToday > 0 ? '\n  → 신규 유입 있음 → D1 경험 품질 모니터링 필요' : ''}
 `
 
     const analysis = await this.chat(`

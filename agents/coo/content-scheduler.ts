@@ -29,13 +29,14 @@ class COOContentScheduler extends BaseAgent {
     const topDesires = brief?.desireRanking.slice(0, 3).map(d => d.label).join(', ') ?? 'RELATION, RETIRE, MONEY'
 
     // 전략 욕망 우선순위 (확정): RELATION(연결) → RETIRE(인생2막) → MONEY(노후자금) → HEALTH(건강)
-    const DESIRE_BOARD_HINT: Record<string, string> = {
-      RELATION: '사는이야기/활력충전소 — 공감, 연결, 위로 글 우선',
-      RETIRE: '2막준비 — 은퇴, 인생2막, 의미 찾기 글 우선',
-      MONEY: '2막준비 — 재테크, 연금, 노후자금 글 우선',
-      HEALTH: '사는이야기/매거진 — 건강 경험담, 정보 글 우선',
+    const DESIRE_BOARD_CONFIG: Record<string, { boardType: string; hint: string }> = {
+      RELATION: { boardType: 'STORY',    hint: '사는이야기/웃음방 — 공감, 연결, 위로 글 우선' },
+      RETIRE:   { boardType: 'LIFE2',    hint: '2막준비(LIFE2) — 은퇴, 인생2막, 의미 찾기 글 우선' },
+      MONEY:    { boardType: 'LIFE2',    hint: '2막준비(LIFE2) — 재테크, 연금, 노후자금 글 우선' },
+      HEALTH:   { boardType: 'MAGAZINE', hint: '사는이야기/매거진 — 건강 경험담, 정보 글 우선' },
     }
-    const boardHint = DESIRE_BOARD_HINT[dominantDesire] ?? DESIRE_BOARD_HINT['RELATION']
+    const desireConfig = DESIRE_BOARD_CONFIG[dominantDesire] ?? DESIRE_BOARD_CONFIG['RELATION']
+    const boardHint = `[boardType: ${desireConfig.boardType}] ${desireConfig.hint}`
 
     // 1. 에디터스 픽 후보: 지난 24시간 인기글 (LIFE2 포함)
     const candidates = await prisma.post.findMany({
@@ -81,7 +82,7 @@ ${candidates.map((p, i) => `${i + 1}. [${p.boardType}] "${p.title}" — 공감 $
     if (dayOfWeek === 1) {
       topicSuggestion = await this.chat(`
 50~60대 커뮤니티에 올릴 이번 주 수다방 발제 주제를 3개 제안해주세요.
-- 사는 이야기(STORY) 2개: 따뜻한 수다, 공감, 일상 연결 주제 (우리, 서로가 있잖아 — 외로움·연결 욕망 반영)
+- 사는 이야기(STORY) 2개: 따뜻한 수다, 공감, 일상 연결 주제 (5060, 서로를 잇다 — 외로움·연결 욕망 반영)
 - 2막 준비(LIFE2) 1개: 은퇴준비·연금·노후·인생2막 실용 주제
 
 [오늘의 커뮤니티 욕망: ${dominantDesire} | 상위: ${topDesires}]

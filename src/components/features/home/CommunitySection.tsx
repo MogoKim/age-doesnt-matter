@@ -10,7 +10,7 @@ interface Props {
 
 const BOARD_LABEL: Record<string, string> = {
   STORY: '사는 이야기',
-  HUMOR: '활력충전소',
+  HUMOR: '웃음방',
   LIFE2: '2막 준비',
   MAGAZINE: '매거진',
   JOB: '일자리',

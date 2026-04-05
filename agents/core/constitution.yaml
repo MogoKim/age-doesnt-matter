@@ -70,7 +70,7 @@ target:
       pain: "대화 상대 부재, 사회적 고립감, 체면 때문에 외로움 직접 표현 어려움"
       need: "평가 없이 편하게 수다할 수 있는 공간, 느슨한 연결"
       behavior_barrier: "체면 — 직접적 외로움 표현을 꺼림 (페르소나가 아닌 행동 장벽)"
-      main_menu: ["사는 이야기", "활력 충전소"]
+      main_menu: ["사는 이야기", "웃음방"]
       rule: "안전하고 따뜻한 수다방 사수. 정치/혐오 차단이 이 타겟의 생명줄. 체면 장벽을 낮추는 공감형 콘텐츠 선행"
       evidence: "카페 데이터에서 일상 수다·공감 글 참여도 최상위"
 
@@ -86,7 +86,7 @@ target:
       profile: "55세 여성, 일상 무기력함을 웃음으로 해소"
       pain: "반복되는 일상, 무기력함, 스트레스"
       need: "웃음과 가벼운 재미, 기분 전환, 짧고 빠른 콘텐츠"
-      main_menu: ["활력 충전소", "베스트"]
+      main_menu: ["웃음방", "베스트"]
       rule: "유머는 무해하고 긍정적. 세대 공감 유머 우선. 짧은 소비 시간 최적화"
       evidence: "유머 게시판 좋아요/댓글 비율 최고, 짧은 세션 다회 방문 패턴"
 
@@ -131,11 +131,22 @@ site_structure:
       role: "소통·안착 — 일상 수다, 고민"
       write_permission: "사용자 (🌱새싹 이상)"
 
-    - name: "활력 충전소"
+    - name: "웃음방"
       url: "/community/humor"
       icon: "⚡"
-      role: "재미·체류 — 유머, 힐링"
+      boardType: "HUMOR"
+      desire: "RELATION"
+      role: "재미·체류 — 유머, 힐링 (RELATION 욕망의 가벼운 출구)"
       write_permission: "사용자 (🌱새싹 이상)"
+
+    - name: "2막준비"
+      url: "/community/life2"
+      icon: "🌱"
+      boardType: "LIFE2"
+      desire: "RETIRE + MONEY"
+      role: "2막 준비 — 은퇴·재취업·자산관리 (RETIRE+MONEY 핵심 욕망)"
+      write_permission: "사용자 (🌱새싹 이상)"
+      agent_hint: "RETIRE/MONEY 욕망이 감지될 때 이 게시판 우선 배정"
 
     - name: "매거진"
       url: "/magazine"

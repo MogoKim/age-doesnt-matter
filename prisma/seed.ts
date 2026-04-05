@@ -18,9 +18,15 @@ async function main() {
     },
     {
       boardType: 'HUMOR' as const,
-      displayName: '활력충전소',
+      displayName: '웃음방',
       description: '웃음과 힐링이 있는 곳',
       categories: ['전체', '유머', '힐링', '자랑', '추천', '기타'],
+    },
+    {
+      boardType: 'LIFE2' as const,
+      displayName: '2막준비',
+      description: '은퇴, 재취업, 자산관리, 인생 2막 준비',
+      categories: ['전체', '은퇴준비', '재취업', '자산·연금', '주거·이사', '새로운 도전'],
     },
     {
       boardType: 'WEEKLY' as const,
@@ -85,7 +91,7 @@ async function main() {
     { title: '퇴직 후 텃밭 가꾸기 시작했어요', category: '기타', summary: '베란다 텃밭으로 시작했는데 재미에 빠졌습니다.', content: '<p>퇴직하고 할 게 없어서 베란다 텃밭을 시작했는데, 이게 이렇게 재미있을 줄이야!</p><p>상추, 고추, 방울토마토를 심었는데 하루하루 자라는 걸 보면 뿌듯해요.</p><p>오늘 첫 수확한 상추로 쌈밥 해먹었습니다. 맛이 기가 막히네요!</p>', authorIdx: 5, likeCount: 22, commentCount: 11, viewCount: 198, promotionLevel: 'NORMAL' as const },
   ]
 
-  // ── 활력충전소 Posts ──
+  // ── 웃음방 Posts ──
   const humorPosts = [
     { title: '아들이 보낸 카톡 ㅋㅋㅋ 현웃 터졌어요', category: '유머', summary: '아들이 실수로 여친한테 보낼 카톡을 저한테...', content: '<p>아들이 여자친구한테 보낼 카톡을 저한테 보냈어요 ㅋㅋㅋ</p><p>"자기야 오늘 뭐 먹을까~"</p><p>그래서 답했죠. "된장찌개 끓여놨다. 빨리 와라."</p><p>아들 반응이 정말 ㅋㅋㅋ 한참을 웃었네요.</p>', authorIdx: 3, likeCount: 56, commentCount: 28, viewCount: 430, promotionLevel: 'HOT' as const },
     { title: '60살에 운전면허 따는 중인데 요즘 세상 좋아졌어요', category: '유머', summary: '60살에 처음 운전면허에 도전 중입니다.', content: '<p>60살에 처음으로 운전면허에 도전하고 있어요.</p><p>자동차 학원 선생님이 손주뻘인데, 참 친절하게 가르쳐줘요.</p><p>어제 기능시험에서 떨어졌지만... 다시 도전합니다! 포기는 없어요!</p>', authorIdx: 6, likeCount: 52, commentCount: 31, viewCount: 380, promotionLevel: 'HOT' as const },
@@ -171,7 +177,7 @@ async function main() {
   }
   console.log(`✅ ${createdStoryPosts.length} story posts seeded`)
 
-  // 활력충전소
+  // 웃음방
   for (let i = 0; i < humorPosts.length; i++) {
     await createPost(humorPosts[i], 'HUMOR', i * 0.7 + 0.2)
   }

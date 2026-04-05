@@ -56,6 +56,26 @@ class CDOKpiCollector extends BaseAgent {
       prisma.report.count({ where: { createdAt: { gte: yesterday } } }),
     ])
 
+    // OKR 연계 지표
+    // KR2: NSM — 주간 댓글 참여 유저
+    const nsmResult = await prisma.comment.groupBy({
+      by: ['authorId'],
+      where: { createdAt: { gte: sevenDaysAgo }, status: 'ACTIVE' },
+    })
+    const weeklyNSM = nsmResult.length
+
+    // 온보딩 완료율 (KR3 전제)
+    const [onboardedCount, totalActiveUsers] = await Promise.all([
+      prisma.user.count({ where: { isOnboarded: true, status: 'ACTIVE' } }),
+      prisma.user.count({ where: { status: 'ACTIVE' } }),
+    ])
+    const onboardingRate = totalActiveUsers > 0 ? Math.round((onboardedCount / totalActiveUsers) * 100) : 0
+
+    // LIFE2 게시판 활성도
+    const life2WeeklyPosts = await prisma.post.count({
+      where: { boardType: 'LIFE2', status: 'PUBLISHED', createdAt: { gte: sevenDaysAgo } },
+    })
+
     const dauMauRatio = mau > 0 ? (dau / mau).toFixed(3) : 'N/A'
     const ugcRatio = totalPosts > 0 ? ((userPosts / totalPosts) * 100).toFixed(1) : '0'
 
@@ -80,6 +100,9 @@ class CDOKpiCollector extends BaseAgent {
       botPosts,
       newUsers7d,
       reports,
+      weeklyNSM,
+      onboardingRate: `${onboardingRate}%`,
+      life2WeeklyPosts,
       ...(ga4Data ? { ga4: ga4Data } : {}),
       ...(scData ? { searchConsole: scData } : {}),
     }
@@ -99,6 +122,7 @@ class CDOKpiCollector extends BaseAgent {
     // 내부 DB KPI 요약
     const summaryParts: string[] = [
       `DAU ${dau} | MAU ${mau} | DAU/MAU ${dauMauRatio} | UGC ${ugcRatio}% | 글 ${todayPosts} | 댓글 ${todayComments} | 공감 ${todayLikes}`,
+      `\n📊 OKR 연계 지표\n  KR2 NSM: ${weeklyNSM}명/주 (목표 50명)\n  온보딩 완료율: ${onboardingRate}% (목표 70%)\n  LIFE2 주간 게시글: ${life2WeeklyPosts}건`,
     ]
 
     // GA4 요약 (데이터 있을 때만)
