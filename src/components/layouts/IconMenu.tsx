@@ -7,18 +7,18 @@ import { IconBest, IconJobs, IconStories, IconEnergy, IconMagazine, IconLife2 } 
 
 const MENU_ITEMS = [
   { icon: IconBest, label: '베스트', href: '/best' },
-  { icon: IconStories, label: '사는 이야기', href: '/community/stories' },
+  { icon: IconStories, label: '사는이야기', href: '/community/stories' },
+  { icon: IconLife2, label: '2막준비', href: '/community/life2' },
   { icon: IconEnergy, label: '웃음방', href: '/community/humor' },
-  { icon: IconLife2, label: '2막 준비', href: '/community/life2' },
   { icon: IconMagazine, label: '매거진', href: '/magazine' },
-  { icon: IconJobs, label: '내 일 찾기', href: '/jobs' },
+  { icon: IconJobs, label: '내일찾기', href: '/jobs' },
 ] as const
 
 export default function IconMenu() {
   const pathname = usePathname()
 
   return (
-    <nav className="sticky top-[56px] z-[99] min-h-[64px] bg-card border-b border-border flex items-center justify-around lg:hidden overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="주요 메뉴">
+    <nav className="sticky top-[56px] z-[99] min-h-[64px] bg-card border-b border-border flex items-center lg:hidden overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-2 gap-1" aria-label="주요 메뉴">
       {MENU_ITEMS.map((item) => {
         const isActive = pathname.startsWith(item.href)
         const Icon = item.icon
