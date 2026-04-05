@@ -183,34 +183,6 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
     }
   }
 
-  function handleBoardChange(slug: string) {
-    setSelectedBoard(slug)
-    setSelectedCategory('')
-    // 전환한 게시판의 임시저장 자동 로드
-    try {
-      const saved = localStorage.getItem(getDraftKey(slug))
-      if (saved) {
-        const draft = JSON.parse(saved) as { category?: string; title?: string; content?: string }
-        if (draft.title || draft.content) {
-          setSelectedCategory(draft.category || '')
-          setTitle(draft.title || '')
-          setContent(draft.content || '')
-          toast('임시저장된 글을 불러왔어요', 'info')
-        } else {
-          setTitle('')
-          setContent('')
-        }
-      } else {
-        setTitle('')
-        setContent('')
-      }
-    } catch {
-      // 파싱 실패 → 손상된 draft 삭제하고 초기화
-      try { localStorage.removeItem(getDraftKey(slug)) } catch { /* ignore */ }
-      setTitle('')
-      setContent('')
-    }
-  }
 
   function handleCancel() {
     if (title || content) {
