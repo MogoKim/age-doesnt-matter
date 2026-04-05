@@ -5,15 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { adminUpdatePostStatus, adminTogglePin, adminBulkAction, adminSetPostPromotionLevel } from '@/lib/actions/admin'
 import type { PromotionLevel } from '@/generated/prisma/client'
+import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 
-const BOARD_LABELS: Record<string, string> = {
-  JOB: '일자리',
-  STORY: '사는 이야기',
-  HUMOR: '웃음방',
-  LIFE2: '2막 준비',
-  MAGAZINE: '매거진',
-  WEEKLY: '수다방(숨김)',
-}
+// 어드민은 WEEKLY를 "숨김"으로 표시 (운영자가 인지해야 함)
+const BOARD_LABELS = { ...BOARD_DISPLAY_NAMES, WEEKLY: '수다방(숨김)' } as Record<string, string>
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   PUBLISHED: { label: '게시', className: 'bg-green-50 text-green-700' },

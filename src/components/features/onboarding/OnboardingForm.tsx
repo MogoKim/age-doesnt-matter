@@ -6,11 +6,8 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { checkNickname, completeOnboarding, saveInterests } from '@/lib/actions/onboarding'
 import type { RecommendedPost } from '@/lib/actions/onboarding'
+import { getBoardDisplayName } from '@/lib/board-constants'
 
-const BOARD_LABEL: Record<string, string> = {
-  STORY: '사는이야기', HUMOR: '웃음방', LIFE2: '2막준비',
-  JOB: '일자리', MAGAZINE: '매거진',
-}
 const BOARD_SLUG: Record<string, string> = {
   STORY: 'stories', HUMOR: 'humor', LIFE2: 'life2',
   JOB: 'jobs', MAGAZINE: 'magazine',
@@ -507,7 +504,7 @@ export default function OnboardingForm() {
                       </span>
                     </div>
                     <div className="text-caption text-muted-foreground mt-0.5">
-                      {BOARD_LABEL[post.boardType] ?? ''} · {post.authorNickname}
+                      {getBoardDisplayName(post.boardType)} · {post.authorNickname}
                     </div>
                   </a>
                 )

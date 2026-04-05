@@ -3,17 +3,10 @@ import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { IconComment, IconHeart, IconStories } from '@/components/icons'
+import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 
 interface Props {
   posts: PostSummary[]
-}
-
-const BOARD_LABEL: Record<string, string> = {
-  STORY: '사는 이야기',
-  HUMOR: '웃음방',
-  LIFE2: '2막 준비',
-  MAGAZINE: '매거진',
-  JOB: '일자리',
 }
 
 export default function CommunitySection({ posts }: Props) {
@@ -38,7 +31,7 @@ export default function CommunitySection({ posts }: Props) {
               className="block py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0"
             >
               <div className="flex items-center gap-2 mb-1">
-                <span className="bg-background px-2 py-0.5 rounded text-caption text-muted-foreground font-medium">{BOARD_LABEL[post.boardType] ?? post.boardType}</span>
+                <span className="bg-background px-2 py-0.5 rounded text-caption text-muted-foreground font-medium">{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
                 <span className="text-caption text-muted-foreground">{post.author.nickname}</span>
               </div>
               <p className="text-body text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>

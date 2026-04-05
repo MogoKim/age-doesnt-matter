@@ -1,3 +1,6 @@
+// ⚠️ ONE-TIME SCRIPT — 재실행 금지
+// 실행됨: 2026-04-05 지식인 답변 봇 초기화용
+// 이 스크립트를 다시 실행하면 Google Sheet 행 2/4/6이 'Ready'로 초기화됨
 import { updateStatus } from '../agents/community/jisik-sheets-client.js'
 
 async function run() {

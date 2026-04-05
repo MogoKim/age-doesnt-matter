@@ -282,7 +282,7 @@ const SCHEDULE: Record<string, Activity[]> = {
 
 async function getRandomPosts(board: string, limit: number) {
   return prisma.post.findMany({
-    where: { boardType: board as 'STORY' | 'HUMOR' | 'JOB', status: 'PUBLISHED' },
+    where: { boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2', status: 'PUBLISHED' },
     orderBy: { createdAt: 'desc' },
     take: limit * 3,
     select: { id: true, title: true, content: true, authorId: true },
@@ -293,7 +293,7 @@ async function getRandomPosts(board: string, limit: number) {
 async function getReplyTargets(board: string, limit: number) {
   const comments = await prisma.comment.findMany({
     where: {
-      post: { boardType: board as 'STORY' | 'HUMOR' | 'JOB', status: 'PUBLISHED' },
+      post: { boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2', status: 'PUBLISHED' },
       parentId: null,
       status: 'ACTIVE',
     },
@@ -314,7 +314,7 @@ async function getReplyTargets(board: string, limit: number) {
 async function getLikeTargets(userId: string, board: string, limit: number) {
   const posts = await prisma.post.findMany({
     where: {
-      boardType: board as 'STORY' | 'HUMOR' | 'JOB',
+      boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2',
       status: 'PUBLISHED',
       NOT: { likes: { some: { userId } } },
     },

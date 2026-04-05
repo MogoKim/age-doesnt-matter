@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
 import { getDailyTrendingPosts, getWeeklyTrendingPosts, getHallOfFamePosts } from '@/lib/queries/posts'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
+import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import FeedAd from '@/components/ad/FeedAd'
@@ -126,8 +127,7 @@ export default async function BestPage({
 
 function BestPostCard({ post }: { post: PostSummary }) {
   const boardSlug = BOARD_TYPE_TO_SLUG[post.boardType] ?? 'stories'
-  const LABEL: Record<string, string> = { STORY: '사는이야기', HUMOR: '웃음방', LIFE2: '2막준비', JOB: '일자리', MAGAZINE: '매거진', WEEKLY: '수다방' }
-  const boardLabel = LABEL[post.boardType] ?? post.boardType
+  const boardLabel = BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType
 
   return (
     <Link

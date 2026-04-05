@@ -1,18 +1,10 @@
 import Link from 'next/link'
 import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
+import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 
 interface Props {
   posts: PostSummary[]
-}
-
-const BOARD_LABEL: Record<string, string> = {
-  STORY: '사는이야기',
-  HUMOR: '웃음방',
-  LIFE2: '2막준비',
-  MAGAZINE: '매거진',
-  WEEKLY: '수다방',
-  JOB: '일자리',
 }
 
 export default function TrendingSection({ posts }: Props) {
@@ -42,7 +34,7 @@ export default function TrendingSection({ posts }: Props) {
                 <div className="flex items-center gap-2.5 text-caption text-muted-foreground">
                   <span>💬 {post.commentCount}</span>
                   <span>❤️ {post.likeCount}</span>
-                  <span className="bg-background px-2 py-0.5 rounded text-caption text-muted-foreground">{BOARD_LABEL[post.boardType] ?? post.boardType}</span>
+                  <span className="bg-background px-2 py-0.5 rounded text-caption text-muted-foreground">{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
                 </div>
               </div>
             </Link>
