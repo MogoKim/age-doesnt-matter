@@ -259,7 +259,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       {/* ── 상단 헤더 (타이틀) ── */}
       <div className="sticky top-[120px] lg:top-[64px] z-30 bg-card border-b border-border flex items-center justify-center px-1 h-[52px] -mx-4 mb-4 md:-mx-6">
         <span className="text-body font-bold text-foreground">
-          {isEditMode ? '수정하기' : '글쓰기'}
+          {isEditMode ? '수정하기' : (board?.displayName ? `${board.displayName} 글쓰기` : '글쓰기')}
         </span>
       </div>
 
