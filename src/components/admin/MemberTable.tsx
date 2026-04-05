@@ -25,6 +25,7 @@ interface User {
   email: string | null
   grade: string
   status: string
+  isOnboarded: boolean
   postCount: number
   commentCount: number
   receivedLikes: number
@@ -143,6 +144,7 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
               <th className="px-3 py-3 text-left font-medium text-zinc-600">이메일</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">등급</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">상태</th>
+              <th className="px-3 py-3 text-center font-medium text-zinc-600">온보딩</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">글</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">댓글</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">받은❤️</th>
@@ -174,6 +176,13 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
                     <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${status.className}`}>
                       {status.label}
                     </span>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {user.isOnboarded ? (
+                      <span className="text-green-600 font-bold">✅</span>
+                    ) : (
+                      <span className="text-zinc-400">❌</span>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-center text-zinc-600">{user.postCount}</td>
                   <td className="px-3 py-3 text-center text-zinc-600">{user.commentCount}</td>

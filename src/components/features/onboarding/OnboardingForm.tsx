@@ -4,13 +4,32 @@ import { useState, useCallback, useRef, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
-import { checkNickname, completeOnboarding } from '@/lib/actions/onboarding'
+import { checkNickname, completeOnboarding, saveInterests } from '@/lib/actions/onboarding'
 
 // ── 닉네임 유효성 검사 ──
 const NICKNAME_REGEX = /^[가-힣a-zA-Z0-9]+$/
 const BANNED_WORDS = ['운영자', '관리자', 'admin', '어드민', '관리인']
 
 type NicknameStatus = 'idle' | 'checking' | 'valid' | 'error'
+
+// ── 관심사 카드 ──
+interface InterestItem {
+  id: string
+  emoji: string
+  label: string
+}
+
+const INTERESTS: InterestItem[] = [
+  { id: 'health', emoji: '💊', label: '건강·의료' },
+  { id: 'exercise', emoji: '🏃', label: '운동·헬스' },
+  { id: 'travel', emoji: '✈️', label: '여행·나들이' },
+  { id: 'cooking', emoji: '🍳', label: '요리·맛집' },
+  { id: 'family', emoji: '👨‍👩‍👧', label: '가족 이야기' },
+  { id: 'money', emoji: '💰', label: '재테크·절약' },
+  { id: 'life2', emoji: '🌅', label: '인생 2막 준비' },
+  { id: 'hobby', emoji: '🎨', label: '취미·문화' },
+  { id: 'job', emoji: '💼', label: '일자리·창업' },
+]
 
 function validateNickname(value: string): string | null {
   if (value.length < 2) return '2자 이상 입력해 주세요'
@@ -40,7 +59,7 @@ const TERMS: TermItem[] = [
 // ── 메인 컴포넌트 ──
 export default function OnboardingForm() {
   const router = useRouter()
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [isPending, startTransition] = useTransition()
   const [submitError, setSubmitError] = useState('')
 
@@ -56,6 +75,9 @@ export default function OnboardingForm() {
     privacy: false,
     marketing: false,
   })
+
+  // Step 3 - 관심사
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([])
 
   const lengthOk = nickname.length >= 2 && nickname.length <= 10
   const charOk = nickname.length === 0 || NICKNAME_REGEX.test(nickname)
@@ -135,6 +157,19 @@ export default function OnboardingForm() {
     })
   }
 
+  function toggleInterest(id: string) {
+    setSelectedInterests((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    )
+  }
+
+  function handleInterestsDone(skip: boolean) {
+    startTransition(async () => {
+      await saveInterests(skip ? [] : selectedInterests)
+      setStep(4)
+    })
+  }
+
   function handleComplete() {
     router.push('/')
     router.refresh()
@@ -153,7 +188,13 @@ export default function OnboardingForm() {
         <div
           className={cn(
             'flex-1 h-1 rounded-full transition-colors duration-300',
-            step >= 2 ? 'bg-primary' : 'bg-border',
+            step === 2 ? 'bg-primary' : step > 2 ? 'bg-green-500' : 'bg-border',
+          )}
+        />
+        <div
+          className={cn(
+            'flex-1 h-1 rounded-full transition-colors duration-300',
+            step === 3 ? 'bg-primary' : step > 3 ? 'bg-green-500' : 'bg-border',
           )}
         />
       </div>
@@ -333,7 +374,7 @@ export default function OnboardingForm() {
 
         <div className="mt-auto pt-6 flex flex-col gap-2">
           <Button disabled={!allRequired || isPending} onClick={handleSubmit}>
-            {isPending ? '가입 처리 중...' : '가입 완료'}
+            {isPending ? '처리 중...' : '다음'}
           </Button>
           <Button variant="ghost" onClick={() => setStep(1)} disabled={isPending}>
             ← 이전 단계
@@ -343,7 +384,62 @@ export default function OnboardingForm() {
     )
   }
 
-  // ── Step 3: 완료 화면 ──
+  // ── Step 3: 관심사 선택 ──
+  if (step === 3) {
+    return (
+      <div className="w-full max-w-[480px] bg-card rounded-2xl p-8 px-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-md:max-w-none max-md:rounded-none max-md:min-h-dvh max-md:shadow-none max-md:flex max-md:flex-col">
+        {renderProgress()}
+
+        <div className="mb-6 text-center">
+          <span className="text-5xl mb-4 block">🌟</span>
+          <h1 className="text-2xl font-bold text-foreground mb-2">관심 분야를 알려주세요</h1>
+          <p className="text-body text-muted-foreground leading-relaxed">
+            나와 비슷한 글을 먼저 보여드릴게요<br />
+            <span className="text-caption text-muted-foreground">(선택 안 해도 괜찮아요)</span>
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2.5 mb-6">
+          {INTERESTS.map((item) => {
+            const selected = selectedInterests.includes(item.id)
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => toggleInterest(item.id)}
+                className={cn(
+                  'flex flex-col items-center justify-center gap-1.5 min-h-[72px] rounded-xl border-2 transition-all text-caption font-medium cursor-pointer',
+                  selected
+                    ? 'border-primary bg-primary/10 text-primary font-bold'
+                    : 'border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                )}
+              >
+                <span className="text-2xl">{item.emoji}</span>
+                <span>{item.label}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {selectedInterests.length > 0 && (
+          <div className="text-center text-caption text-primary font-medium mb-2">
+            {selectedInterests.length}개 선택됨
+          </div>
+        )}
+
+        <div className="mt-auto pt-4 flex flex-col gap-2">
+          <Button
+            disabled={isPending}
+            onClick={() => handleInterestsDone(false)}
+          >
+            {isPending ? '저장 중...' : selectedInterests.length > 0 ? '완료' : '선택하지 않고 시작'}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Step 4: 완료 화면 ──
   return (
     <div className="w-full max-w-[480px] bg-card rounded-2xl p-8 px-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-md:max-w-none max-md:rounded-none max-md:min-h-dvh max-md:shadow-none max-md:flex max-md:flex-col">
       <div className="text-center py-8">

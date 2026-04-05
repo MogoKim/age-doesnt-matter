@@ -243,6 +243,9 @@ model User {
   suspendedUntil  DateTime?
   withdrawnAt     DateTime?
 
+  // 온보딩
+  isOnboarded       Boolean    @default(false)
+
   // 설정
   marketingOptIn    Boolean    @default(false)
   isGenderPublic    Boolean    @default(false)

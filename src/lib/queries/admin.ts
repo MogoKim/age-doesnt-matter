@@ -182,6 +182,7 @@ export async function getMemberList(options: MemberListOptions = {}) {
       email: true,
       grade: true,
       status: true,
+      isOnboarded: true,
       postCount: true,
       commentCount: true,
       receivedLikes: true,

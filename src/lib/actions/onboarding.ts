@@ -125,3 +125,39 @@ export async function completeOnboarding(
 
   return {}
 }
+
+/** 관심사 저장 + 온보딩 최종 완료 처리 (Step3) */
+export async function saveInterests(interests: string[]): Promise<OnboardingResult> {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { error: '로그인이 필요합니다' }
+  }
+
+  let userId = session.user.id
+  const dbUser = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } })
+  if (!dbUser) {
+    const byProvider = await prisma.user.findUnique({
+      where: { providerId: userId },
+      select: { id: true },
+    })
+    if (!byProvider) {
+      return { error: '세션이 만료되었습니다. 다시 로그인해 주세요.' }
+    }
+    userId = byProvider.id
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        interests,
+        isOnboarded: true,
+      },
+    })
+  } catch (error) {
+    console.error('[onboarding] saveInterests error:', error)
+    return { error: '관심사 저장 중 문제가 발생했습니다.' }
+  }
+
+  return {}
+}
