@@ -327,7 +327,7 @@ async function main() {
     for (const [n, url] of bodyImageUrls) {
       finalHtml = finalHtml.replace(
         `<!-- [IMAGE:${n}] -->`,
-        `<img src="${url}" alt="${article.imageHints[n - 1] ?? ''}" style="width:100%;height:auto;border-radius:12px;margin:16px 0;" loading="lazy" />`,
+        `<img src="${url}" alt="${article.imageHints?.[n - 1] ?? ''}" style="width:100%;height:auto;border-radius:12px;margin:16px 0;" loading="lazy" />`,
       )
     }
     // 생성되지 않은 나머지 플레이스홀더 제거
