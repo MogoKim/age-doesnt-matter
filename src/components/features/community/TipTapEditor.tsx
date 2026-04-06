@@ -195,8 +195,9 @@ export default function TipTapEditor({
             return
           }
 
-          // 3. 에디터에 삽입
-          editor.chain().focus().setImage({ src: publicUrl }).createParagraphNear().run()
+          // 3. 에디터에 삽입 (/_next/image 프록시로 브라우저 직접 R2 접근 실패 우회)
+          const proxiedSrc = `/_next/image?url=${encodeURIComponent(publicUrl)}&w=750&q=80`
+          editor.chain().focus().setImage({ src: proxiedSrc }).createParagraphNear().run()
         }
       } catch (err) {
         setMediaError(`이미지 업로드에 실패했어요: ${String(err).slice(0, 80)}`)

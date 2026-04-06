@@ -193,7 +193,17 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   }
 
   function handleSubmit() {
-    if (!canSubmit || isPending) return
+    if (isPending) return
+    if (!canSubmit) {
+      if (!isTitleValid) {
+        toast(title.length === 0 ? '제목을 입력해 주세요' : '제목은 2~40자로 입력해 주세요', 'error')
+      } else if (!isContentValid) {
+        toast('본문은 10자 이상 입력해 주세요', 'error')
+      } else {
+        toast('게시판을 선택해 주세요', 'error')
+      }
+      return
+    }
     setError('')
 
     startTransition(async () => {
@@ -208,6 +218,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         : await createPost(formData)
       if (result?.error) {
         setError(result.error)
+        toast(result.error, 'error')
       } else {
         if (!isEditMode) gtmPostCreate(selectedBoard, selectedCategory)
         clearDraft()
@@ -344,8 +355,11 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!canSubmit || isPending}
-            className="flex-1 min-h-[52px] rounded-xl bg-primary text-white text-body font-bold transition-colors hover:bg-[#E85D50] disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={isPending}
+            className={cn(
+              'flex-1 min-h-[52px] rounded-xl bg-primary text-white text-body font-bold transition-colors',
+              (!canSubmit || isPending) ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#E85D50]',
+            )}
           >
             {isPending ? (isEditMode ? '수정중...' : '등록중...') : (isEditMode ? '수정' : '등록')}
           </button>

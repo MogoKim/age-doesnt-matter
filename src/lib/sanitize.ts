@@ -101,17 +101,26 @@ export function plainTextToSafeHtml(text: string): string {
 }
 
 /**
- * 매거진 HTML 내 R2 이미지 URL을 Next.js Image Optimization으로 프록시
+ * 게시글 HTML 내 R2 이미지 URL을 Next.js Image Optimization으로 프록시
  * 브라우저에서 R2 직접 요청이 실패하므로 /_next/image 프록시 경유
+ * *.r2.dev 및 *.r2.cloudflarestorage.com 모두 커버
  */
-export function proxyMagazineImages(html: string): string {
+export function proxyR2Images(html: string): string {
   return html.replace(
-    /(<img\s[^>]*?)src="(https:\/\/[^"]*\.r2\.dev\/[^"]+)"/g,
+    /(<img\s[^>]*?)src="(https:\/\/[^"]*(?:\.r2\.dev|\.r2\.cloudflarestorage\.com)\/[^"]+)"/g,
     (_, before, url) => {
       const proxied = `/_next/image?url=${encodeURIComponent(url)}&w=750&q=80`
       return `${before}src="${proxied}"`
     },
   )
+}
+
+/**
+ * 매거진 HTML 내 R2 이미지 URL을 Next.js Image Optimization으로 프록시
+ * 브라우저에서 R2 직접 요청이 실패하므로 /_next/image 프록시 경유
+ */
+export function proxyMagazineImages(html: string): string {
+  return proxyR2Images(html)
 }
 
 /**
