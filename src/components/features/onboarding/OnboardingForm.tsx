@@ -43,6 +43,7 @@ export default function OnboardingForm() {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [isPending, startTransition] = useTransition()
   const [submitError, setSubmitError] = useState('')
+  const [isNavigating, setIsNavigating] = useState(false)
 
   // Step 1 - 닉네임
   const [nickname, setNickname] = useState('')
@@ -136,6 +137,7 @@ export default function OnboardingForm() {
   }
 
   function handleComplete() {
+    setIsNavigating(true)
     router.push('/')
     router.refresh()
   }
@@ -228,7 +230,7 @@ export default function OnboardingForm() {
               {lengthOk ? '✓' : '·'} 2~10자
             </li>
             <li className={cn('text-caption flex items-center gap-1.5', charOk ? 'text-green-500' : 'text-muted-foreground')}>
-              {charOk ? '✓' : '·'} 한글, 영문, 숫자만 가능
+              {charOk ? '✓' : '·'} 한글, 영문, 숫자만 (띄어쓰기 불가)
             </li>
             <li className={cn('text-caption flex items-center gap-1.5', noBanned ? 'text-green-500' : 'text-muted-foreground')}>
               {noBanned ? '✓' : '·'} 금지어 미포함
@@ -369,11 +371,8 @@ export default function OnboardingForm() {
       </div>
 
       <div className="mt-auto pt-6 flex flex-col gap-3">
-        <Button onClick={handleComplete}>
-          우나어 시작하기
-        </Button>
-        <Button variant="ghost" onClick={handleComplete}>
-          먼저 둘러볼게요
+        <Button disabled={isNavigating} onClick={handleComplete}>
+          {isNavigating ? '이동 중...' : '우나어 시작하기'}
         </Button>
       </div>
     </div>
