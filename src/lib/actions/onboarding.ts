@@ -98,6 +98,7 @@ export async function completeOnboarding(
           nickname,
           nicknameChangedAt: new Date(),
           marketingOptIn: agreedTerms.marketing,
+          isOnboarded: true,
         },
       }),
       prisma.agreement.upsert({
