@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import type { FontSize } from '@/generated/prisma/client'
@@ -19,6 +19,7 @@ export async function updateFontSize(fontSize: string): Promise<{ error?: string
     data: { fontSize: fontSize as FontSize },
   })
 
+  revalidateTag(`user-${session.user.id}-font`)
   revalidatePath('/my/settings')
   return {}
 }

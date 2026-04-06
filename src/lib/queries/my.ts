@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { GRADE_INFO } from '@/lib/grade'
 import type { PostSummary, NotificationItem, UserSummary, Grade } from '@/types/api'
@@ -226,13 +227,19 @@ export async function getMyNotifications(
   return { notifications, hasMore }
 }
 
-/** 사용자 글꼴 크기 */
-export async function getUserFontSize(userId: string): Promise<string> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { fontSize: true },
-  })
-  return user?.fontSize ?? 'NORMAL'
+/** 사용자 글꼴 크기 (1시간 캐시 — 글꼴 변경 시 revalidateTag(`user-${userId}-font`) 필요) */
+export function getUserFontSize(userId: string): Promise<string> {
+  return unstable_cache(
+    async () => {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { fontSize: true },
+      })
+      return user?.fontSize ?? 'NORMAL'
+    },
+    [`user-font-${userId}`],
+    { revalidate: 3600, tags: [`user-${userId}-font`] },
+  )()
 }
 
 /** 읽지 않은 알림 수 */

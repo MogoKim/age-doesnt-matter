@@ -359,6 +359,8 @@ model Post {
 
   @@index([boardType, status, createdAt(sort: Desc)])
   @@index([boardType, status, promotionLevel, createdAt(sort: Desc)])
+  @@index([status, trendingScore(sort: Desc)])
+  @@index([boardType, status, trendingScore(sort: Desc)])
   @@index([authorId])
   @@index([status, reportCount])
 }

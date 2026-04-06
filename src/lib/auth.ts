@@ -57,6 +57,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
         if (updates.needsOnboarding !== undefined) token.needsOnboarding = updates.needsOnboarding
         if (updates.nickname) token.nickname = updates.nickname
         if (updates.grade) token.grade = updates.grade
+        token.tokenRefreshedAt = 0 // 다음 요청에 DB 재조회 강제
         return token
       }
 
@@ -105,6 +106,13 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           token.nickname = user.nickname
           token.profileImage = user.profileImage
         } else if (token.userId) {
+          // 5분 이내 갱신됐으면 DB 스킵 (매 요청 DB 조회 방지)
+          const now = Date.now()
+          const lastRefresh = (token.tokenRefreshedAt as number) ?? 0
+          if (now - lastRefresh < 5 * 60 * 1000) {
+            return token
+          }
+
           // 기존 세션 갱신: DB에 유저가 실제 존재하는지 확인
           const user = await prisma.user.findUnique({
             where: { id: token.userId as string },
@@ -120,6 +128,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
             token.needsOnboarding = undefined
           } else {
             // DB 최신 정보 반영
+            token.tokenRefreshedAt = now
             token.role = user.role
             token.grade = user.grade
             token.nickname = user.nickname
