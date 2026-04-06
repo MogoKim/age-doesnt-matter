@@ -31,6 +31,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
+// searchParams 사용으로 dynamic rendering 필수 (DYNAMIC_SERVER_USAGE 방지)
+export const dynamic = 'force-dynamic'
+
 export default async function BoardListPage({ params, searchParams }: PageProps) {
   const { boardSlug } = await params
   const { category, sort } = await searchParams
