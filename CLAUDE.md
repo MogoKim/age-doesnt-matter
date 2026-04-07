@@ -50,7 +50,21 @@
    - **커밋+푸시 제안 상황**: `src/`, `agents/`, `prisma/`, `.github/workflows/`, `CLAUDE.md`, `.gitignore`, `docs/`, `assets/` 변경, E2E 테스트·스킬 파일 추가
    - **커밋+푸시 불필요 상황**: 코드 읽기·분석·조사만 수행 / 플랜(`.claude/plans/`)·메모리(`.claude/memory/`) 파일 — 로컬 전용 / 임시 디버그 스크립트 실행 후 버리는 경우
    - 예외: 창업자가 "커밋만" 명시한 경우
-4. **완료 여부 확인**: 작업 안내 전 memory/project_status.md 교차 검증. 이미 완료된 걸 다시 시키지 마라.
+4. **수동 블로킹 작업은 코드보다 먼저 요청하라**: 기능 구현 중 창업자의 수동 액션 없이는 기능이 작동하지 않는 항목을 발견하면,
+   코드 완성·커밋·푸시보다 **먼저** 요청하라. 커밋 후 footnote로 남기지 마라 — 그러면 방치된다.
+
+   **수동 블로킹 작업 유형 (발견 즉시 요청):**
+   | 유형 | 예시 |
+   |------|------|
+   | DB 마이그레이션 | Supabase SQL Editor에서 ALTER TABLE / CREATE INDEX 실행 |
+   | GitHub Secrets | 새 환경변수 (API 키, 서비스 계정) GitHub Settings에 추가 |
+   | 외부 서비스 활성화 | Google API 활성화, Supabase 권한 변경, Search Console 소유자 등록 |
+   | .env.local 추가 | 로컬 개발/테스트용 새 환경변수 |
+   | 외부 승인·심사 | API 심사 신청, 프로덕션 앱 승인 요청 |
+
+   **요청 형식**: 작업 내용 설명 → 정확한 실행 방법 (스텝 바이 스텝) → "완료되면 말씀해주세요" → 완료 확인 후 커밋+푸시
+
+5. **완료 여부 확인**: 작업 안내 전 memory/project_status.md 교차 검증. 이미 완료된 걸 다시 시키지 마라.
 5. **직접 확인 후 안내**: 빌드 통과 ≠ 실제 작동. 반드시 아래 순서로 검증:
    a) `npx tsc --noEmit` 통과
    b) 변경 페이지 curl/WebFetch로 200 응답 확인
