@@ -33,21 +33,47 @@
 ## 이미지 스타일 가이드
 
 ### 실사 이미지 (사람 등장)
+
+> **나이 앵커 원칙**: 실제 타겟은 50-60대지만 프롬프트는 `"late 40s"` 사용.
+> AI가 "50s or 60s" 해석 시 주름 과장 → 할머니 느낌 생성.
+> 전도연·송윤아(실제 52세)처럼 보이는 자연스러운 외모가 목표.
+
+#### 연예인 레퍼런스 (AI 스타일 앵커)
+
+| 성별 | 레퍼런스 | 생년 | 현재 나이 | 특징 |
+|------|---------|------|---------|------|
+| 여성 | 전도연 (Jeon Do-yeon) | 1973 | 52세 | 자연스러운 나이 듦, 지적이고 따뜻한 인상 |
+| 여성 | 송윤아 (Song Yoon-ah) | 1973 | 52세 | 친근하고 활기찬 인상, 주름이 있어도 매력적 |
+| 여성 | 이미연 (Lee Mi-yeon) | 1971 | 54세 | 세련되고 단정, 자연 피부 유지 |
+| 남성 | 차인표 (Cha In-pyo) | 1968 | 57세 | 자연스러운 중년 남성미, 따뜻한 인상 |
+
 ```
 권장 프롬프트 요소:
-- "Korean man/woman in their 50s or 60s"
-- "natural lighting, candid moment"
-- "warm, approachable expression"
-- "photorealistic, f/2.8 aperture"
-- "imperfect, not too polished"
-- "lifestyle photography style"
+- "Korean woman who appears to be in her late 40s, naturally aged"
+- "similar natural look to Korean actress Jeon Do-yeon or Song Yoon-ah"
+- "candid unposed moment, NOT posing for camera"
+- "soft natural window light, no studio lighting"
+- "natural skin texture with visible pores, subtle crow's feet"
+- "film grain, Kodak Portra 400 color tones"
+- "lifestyle editorial photography, documentary style"
 
 금지 요소:
+- "50s or 60s" (AI가 과장 → 할머니 생성)
 - "AI art", "digital art", "CGI"
-- "perfect skin", "model-like"
-- "studio lighting" (부자연스러움)
-- 젊은 모델 (타겟 불일치)
+- "perfect skin", "airbrushed", "plastic skin"
+- "studio lighting", "studio backdrop"
+- 외국인 배경 (서양 카페, 서양 공원 등)
 ```
+
+#### 한국 배경 스니펫 (장소별)
+
+| 장소 | 핵심 키워드 |
+|------|-----------|
+| 카페 | `Korean cafe, wooden tables, small succulent plants, Korean-brand coffee cups, floor-to-ceiling windows overlooking Korean residential street` |
+| 거실 | `Korean apartment living room, ondol-style or modern sofa, plants on balcony visible through sliding glass door, neutral Korean interior` |
+| 공원 | `Korean neighborhood park, concrete walking path, ginkgo or cherry blossom trees, Seoul apartment buildings softly visible in background haze` |
+| 야외 카페 | `outdoor Korean cafe terrace, Mapo or Yeonnam district aesthetic, low wooden tables, Korean storefront signage blur-visible in background` |
+| 주방 | `Korean apartment kitchen, tiled backsplash, Korean appliances, small potted herb on counter, warm natural light from kitchen window` |
 
 ### 일러스트 이미지
 ```
