@@ -658,20 +658,37 @@ export const getPostDetail = cache(async function getPostDetail(
   postId: string,
   userId?: string,
 ): Promise<PostDetail | null> {
-  const post = await prisma.post.findUnique({
+  // CUID로 먼저 조회, 없으면 slug로 재조회
+  let post = await prisma.post.findUnique({
     where: { id: postId, status: { in: ['PUBLISHED', 'SEO_ONLY'] } },
     select: {
       ...postSelect,
       content: true,
       updatedAt: true,
+      slug: true,
     },
   })
 
+  if (!post) {
+    post = await prisma.post.findUnique({
+      where: { slug: postId, status: { in: ['PUBLISHED', 'SEO_ONLY'] } },
+      select: {
+        ...postSelect,
+        content: true,
+        updatedAt: true,
+        slug: true,
+      },
+    })
+  }
+
   if (!post) return null
+
+  // slug로 조회됐을 수 있으므로 실제 DB id 사용
+  const resolvedPostId = post.id
 
   // 조회수 증가 (fire-and-forget)
   prisma.post.update({
-    where: { id: postId },
+    where: { id: resolvedPostId },
     data: { viewCount: { increment: 1 } },
   }).catch(() => {})
 
@@ -681,8 +698,8 @@ export const getPostDetail = cache(async function getPostDetail(
 
   if (userId) {
     const [like, scrap] = await Promise.all([
-      prisma.like.findUnique({ where: { userId_postId: { userId, postId } } }),
-      prisma.scrap.findUnique({ where: { userId_postId: { userId, postId } } }),
+      prisma.like.findUnique({ where: { userId_postId: { userId, postId: resolvedPostId } } }),
+      prisma.scrap.findUnique({ where: { userId_postId: { userId, postId: resolvedPostId } } }),
     ])
     isLiked = !!like
     isScrapped = !!scrap
@@ -696,6 +713,7 @@ export const getPostDetail = cache(async function getPostDetail(
     isLiked,
     isScrapped,
     updatedAt: post.updatedAt.toISOString(),
+    slug: post.slug ?? null,
   }
 })
 

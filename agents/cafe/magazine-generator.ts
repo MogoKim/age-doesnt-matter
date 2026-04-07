@@ -15,6 +15,7 @@ import { generateMagazineImageByContext } from './image-generator.js'
 import { buildMagazineHtml, parseSectionsFromAI } from './magazine-template.js'
 import { getDefaultImagePlan, type ImageContext } from '../core/image-prompt-builder.js'
 import { buildMagazineSystemPrompt, DESIRE_TO_CATEGORY, DESIRE_TOPIC_HINTS } from '../magazine/prompt.js'
+import { requestGoogleIndexing } from './indexing-api.js'
 
 const CLAUDE_MODEL_HEAVY = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const CLAUDE_MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-6'
@@ -173,6 +174,17 @@ ${recentList ? `최근 발행 매거진 (중복 주제 피해주세요):\n${rece
   }
 }
 
+/** title로부터 SEO-friendly URL slug 생성 */
+function generateMagazineSlug(title: string): string {
+  const base = title
+    .replace(/[^\w\s가-힣]/g, '')  // 한글, 영숫자, 공백만 허용
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 50)
+  const suffix = Math.random().toString(36).slice(2, 8)  // 6자 random suffix
+  return `${base}-${suffix}`
+}
+
 /** 매거진 게시 (에디터 봇 계정 사용) */
 async function publishMagazine(
   article: { title: string; content: string; summary: string },
@@ -194,6 +206,7 @@ async function publishMagazine(
       source: 'BOT',
       status: 'PUBLISHED',
       publishedAt: new Date(),
+      slug: generateMagazineSlug(article.title),
     },
   })
 
@@ -369,6 +382,10 @@ async function main() {
     // 리치 HTML을 게시 콘텐츠로 사용
     const richArticle = { ...article, content: finalHtml }
     const postId = await publishMagazine(richArticle, category, thumbnailUrl)
+
+    // Google 인덱싱 요청 (환경변수 미설정 시 자동 skip)
+    const postUrl = `https://age-doesnt-matter.com/magazine/${postId}`
+    await requestGoogleIndexing(postUrl).catch(err => console.warn('[Indexing] 실패 (무시):', err))
 
     // CPS 상품 매칭 + 저장
     try {

@@ -30,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 게시글 동적 페이지
   const posts = await prisma.post.findMany({
     where: { status: { in: ['PUBLISHED', 'SEO_ONLY'] } },
-    select: { id: true, boardType: true, status: true, updatedAt: true },
+    select: { id: true, boardType: true, status: true, updatedAt: true, slug: true },
     orderBy: { createdAt: 'desc' },
     take: 5000,
   })
@@ -53,7 +53,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (isJob) {
       url = `${BASE_URL}/jobs/${post.id}`
     } else if (isMagazine) {
-      url = `${BASE_URL}/magazine/${post.id}`
+      url = post.slug
+        ? `${BASE_URL}/magazine/${post.slug}`
+        : `${BASE_URL}/magazine/${post.id}`
     } else {
       url = `${BASE_URL}/community/${slug}/${post.id}`
     }

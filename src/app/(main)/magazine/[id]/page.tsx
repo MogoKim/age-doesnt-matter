@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -26,7 +26,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const post = await getPostDetail(id)
   if (!post) return {}
 
-  const url = `${BASE_URL}/magazine/${id}`
+  // slug가 있으면 slug URL을 canonical로, 없으면 id 기반 URL 사용
+  const canonicalId = post.slug ?? id
+  const url = `${BASE_URL}/magazine/${canonicalId}`
   // SEO description: 본문 텍스트 첫 150자 (Google 권장 155-160자) → preview(40자) 대비 CTR 개선
   const rawText = post.content
     ? post.content.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
@@ -82,18 +84,24 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   const post = await getPostDetail(id, userId)
   if (!post || post.boardType !== 'MAGAZINE') notFound()
 
+  // CUID로 접근했는데 slug가 있으면 slug URL로 301 redirect
+  if (post.slug && id !== post.slug) {
+    redirect(`/magazine/${post.slug}`)
+  }
+
   const [comments, cpsLinks] = await Promise.all([
     getCommentsByPostId(id, userId),
     getCpsLinks(id),
   ])
 
   // JSON-LD 구조화 데이터
+  const canonicalSlug = post.slug ?? id
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: post.title,
     description: post.preview || '',
-    url: `${BASE_URL}/magazine/${id}`,
+    url: `${BASE_URL}/magazine/${canonicalSlug}`,
     datePublished: post.createdAt,
     dateModified: post.updatedAt,
     publisher: {

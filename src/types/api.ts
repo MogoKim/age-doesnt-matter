@@ -115,6 +115,7 @@ export interface PostDetail extends PostSummary {
   isLiked: boolean
   isScrapped: boolean
   updatedAt: string
+  slug: string | null
 }
 
 export interface CommentItem {
