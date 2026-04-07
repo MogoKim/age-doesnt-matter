@@ -1,4 +1,4 @@
-name: Post-Deploy QA
+name: Post-Deploy QA (Gate 2)
 
 on:
   deployment_status:
@@ -29,7 +29,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  qa:
+  gate2:
+    name: code-gate-post-deploy
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'workflow_dispatch' ||
@@ -41,18 +42,21 @@ jobs:
         with: { node-version: 20, cache: npm }
       - run: npm ci
 
+      # ── 1. 스모크 테스트 ──────────────────────────────────
       - name: Smoke Test
         id: smoke
         continue-on-error: true
         run: |
           URL="${{ github.event.inputs.url || env.SITE_URL }}"
-          npx tsx scripts/smoke-test.ts --url "$URL" > smoke-result.json
+          npx tsx scripts/smoke-test.ts --url "$URL" > smoke-result.json 2>&1
 
+      # ── 2. 크론 연결 검증 ─────────────────────────────────
       - name: Cron Link Verification
         id: cron
         continue-on-error: true
-        run: npx tsx scripts/check-cron-links.ts > cron-result.json
+        run: npx tsx scripts/check-cron-links.ts > cron-result.json 2>&1
 
+      # ── 3. 광고 렌더링 ───────────────────────────────────
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
@@ -67,41 +71,29 @@ jobs:
             --project=mobile-chrome \
             --reporter=json > ad-verify-result.json 2>&1 || true
 
+      # ── 4. QA 결과 아티팩트 저장 ─────────────────────────
       - name: Upload QA Results
         uses: actions/upload-artifact@v4
         with:
-          name: qa-results
+          name: qa-results-${{ github.run_number }}
           path: |
             smoke-result.json
             cron-result.json
             ad-verify-result.json
           retention-days: 30
 
-      - name: QA Failed — Agent Verify
-        if: >-
-          steps.smoke.outcome == 'failure' ||
-          steps.cron.outcome == 'failure' ||
-          steps.ad-verify.outcome == 'failure'
-        env:
-          QA_SMOKE_RESULT: ${{ steps.smoke.outcome }}
-          QA_CRON_RESULT: ${{ steps.cron.outcome }}
-          QA_AD_VERIFY_RESULT: ${{ steps.ad-verify.outcome }}
+      # ── 5. Gate 2 에이전트 실행 (항상 실행, 결과에 따라 판정) ──
+      - name: Setup agents
         run: |
           npx prisma generate
           cd agents && npm ci
-          npx tsx cron/runner.ts cto qa-verify
 
-      - name: QA Passed — Agent Notify
-        if: >-
-          steps.smoke.outcome == 'success' &&
-          steps.cron.outcome == 'success' &&
-          steps.ad-verify.outcome == 'success'
+      - name: Gate 2 — QA Deploy Audit
         env:
           QA_SMOKE_RESULT: ${{ steps.smoke.outcome }}
           QA_CRON_RESULT: ${{ steps.cron.outcome }}
           QA_AD_VERIFY_RESULT: ${{ steps.ad-verify.outcome }}
-          QA_ALL_PASSED: "true"
-        run: |
-          npx prisma generate
-          cd agents && npm ci
-          npx tsx cron/runner.ts cto qa-verify
+          QA_ALL_PASSED: ${{ (steps.smoke.outcome == 'success' && steps.cron.outcome == 'success' && steps.ad-verify.outcome == 'success') && 'true' || 'false' }}
+          QA_COMMIT_SHA: ${{ github.sha }}
+          QA_COMMIT_MSG: ${{ github.event.deployment.description || github.event.head_commit.message || '' }}
+        run: cd agents && npx tsx cron/runner.ts qa deploy-audit

@@ -261,6 +261,43 @@ async function main() {
     // 4. 성능 추세
     const perf = await getPerformanceTrend()
 
+    // 5. Gate 1/2 주간 통과율
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const [gate1Logs, gate2Logs, cpoUxLogs] = await Promise.all([
+      prisma.botLog.findMany({
+        where: { botType: 'QA', action: 'CODE_GATE', createdAt: { gte: sevenDaysAgo } },
+        select: { status: true },
+      }),
+      prisma.botLog.findMany({
+        where: { botType: 'QA', action: 'DEPLOY_AUDIT', createdAt: { gte: sevenDaysAgo } },
+        select: { status: true },
+      }),
+      prisma.botLog.findMany({
+        where: { botType: 'CPO', action: 'UX_ANALYZER', createdAt: { gte: sevenDaysAgo } },
+        select: { details: true, createdAt: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ])
+
+    const gate1Pass = gate1Logs.filter(l => l.status === 'SUCCESS').length
+    const gate1Total = gate1Logs.length
+    const gate2Pass = gate2Logs.filter(l => l.status === 'SUCCESS').length
+    const gate2Total = gate2Logs.length
+
+    // CPO UX 점수 추세 (7일 평균)
+    let cpoUxTrend = '데이터 없음'
+    if (cpoUxLogs.length >= 2) {
+      const parseScore = (log: { details: string | null }) => {
+        try { return (JSON.parse(log.details ?? '{}') as { uxScore?: number }).uxScore ?? null } catch { return null }
+      }
+      const first = parseScore(cpoUxLogs[0])
+      const last = parseScore(cpoUxLogs[cpoUxLogs.length - 1])
+      if (first !== null && last !== null) {
+        const change = last - first
+        cpoUxTrend = `${first} → ${last} (${change >= 0 ? '+' : ''}${change}점)`
+      }
+    }
+
     // 리포트 구성
     const issues: string[] = []
 
@@ -281,10 +318,26 @@ async function main() {
     const perfLine = perf
       ? `DB ${perf.avgDb}ms / Site ${perf.avgSite}ms / API ${perf.avgApi}ms (${perf.sampleCount}개 샘플 평균)`
       : '헬스체크 데이터 없음 (BotLog 없음)'
+    const gate1Line = gate1Total > 0
+      ? `${gate1Pass}/${gate1Total} (${Math.round(gate1Pass / gate1Total * 100)}%)`
+      : '실행 기록 없음'
+    const gate2Line = gate2Total > 0
+      ? `${gate2Pass}/${gate2Total} (${Math.round(gate2Pass / gate2Total * 100)}%)`
+      : '실행 기록 없음'
+
+    // Gate 통과율 낮으면 이슈에 추가
+    if (gate1Total >= 3 && gate1Pass / gate1Total < 0.7) {
+      issues.push(`🟠 Gate 1 통과율 낮음: ${gate1Line} — TypeScript/크론 오류 반복 가능성`)
+    }
+    if (gate2Total >= 3 && gate2Pass / gate2Total < 0.8) {
+      issues.push(`🟠 Gate 2 통과율 낮음: ${gate2Line} — 프로덕션 안정성 점검 필요`)
+    }
 
     const body = [
       `*기술 부채 지표:* ${debtLine}`,
       `*성능 추세 (7일):* ${perfLine}`,
+      `*QA Gate 1 (7일):* ${gate1Line} | *Gate 2 (7일):* ${gate2Line}`,
+      `*CPO UX 점수 추세 (7일):* ${cpoUxTrend}`,
       '',
       issues.length > 0 ? `*⚠️ 발견된 이슈:*\n${issues.join('\n\n')}` : '✅ 이슈 없음',
       '',

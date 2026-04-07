@@ -93,6 +93,11 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // Design 에이전트 (LOCAL ONLY — Gemini API + Playwright)
   // LOCAL ONLY — 이미지 생성 비용 발생, 인터랙티브 세션 전용
   'design:ads-loop': () => import('../marketing-loop/creative-optimizer.js').then(() => {}),
+  // QA 2-Gate 시스템
+  // DISPATCH ONLY — Gate 1은 /done 스킬에서 자동 실행, 독립 실행 시에만 이 핸들러 사용
+  'qa:code-gate': () => import('../qa/pre-deploy-gate.js').then(() => {}),
+  // Gate 2: post-deploy-qa.yml에서 자동 실행 (Vercel 배포 완료 후)
+  'qa:deploy-audit': () => import('../qa/post-deploy.js').then(() => {}),
 }
 
 function getAutomationStatus(): string {

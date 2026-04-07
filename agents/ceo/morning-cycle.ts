@@ -45,7 +45,22 @@ class CEOMorningCycle extends BaseAgent {
       ? ((todayUsers - yesterdayUsers) / yesterdayUsers * 100).toFixed(1)
       : 'N/A'
 
-    // 2. 욕망 지도 로드
+    // 2. QA Gate 2 최신 결과 확인
+    const qaLog = await prisma.botLog.findFirst({
+      where: { botType: 'QA', action: 'DEPLOY_AUDIT' },
+      orderBy: { createdAt: 'desc' },
+    })
+    const qaFailed = qaLog?.status === 'FAILED'
+    const qaIssueDetail = qaFailed
+      ? (() => {
+          try {
+            const d = JSON.parse(qaLog?.details ?? '{}') as { summary?: string }
+            return d.summary ?? '상세 없음'
+          } catch { return '상세 없음' }
+        })()
+      : null
+
+    // 3. 욕망 지도 로드
     const brief = await loadTodayBrief({ fallbackToPrevious: true })
     const desireMapSection = brief
       ? `
@@ -136,6 +151,13 @@ ${kpiSummary}${desireMapSection}
         text: {
           type: 'mrkdwn' as const,
           text: `*오늘 커뮤니티 욕망:* ${brief.dominantDesire ?? '분포 고름'} | *주된 감정:* ${brief.dominantEmotion ?? '복합'}\n${brief.desireRanking.slice(0, 3).map(d => `${d.label} ${d.percent.toFixed(0)}%`).join(' · ')}${brief.entertainActive ? ` · ENTERTAIN ${brief.entertainPct.toFixed(0)}%` : ''}`,
+        },
+      }] : []),
+      ...(qaFailed ? [{
+        type: 'section' as const,
+        text: {
+          type: 'mrkdwn' as const,
+          text: `*⚠️ 기술 이슈 (Gate 2 실패)*\n${qaIssueDetail}\n→ Slack #qa 에서 상세 확인`,
         },
       }] : []),
       { type: 'divider' },
