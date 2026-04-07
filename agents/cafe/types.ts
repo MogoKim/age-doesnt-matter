@@ -23,6 +23,22 @@ export interface CafeBoardConfig {
   category: ContentCategory // 콘텐츠 카테고리
 }
 
+/** 댓글 데이터 (대댓글 포함) */
+export interface CommentData {
+  author: string
+  content: string
+  likeCount: number
+  replies: Array<{ author: string; content: string }>  // 대댓글
+}
+
+/** 말투 분석 결과 */
+export interface SpeechTone {
+  formality: 'formal' | 'casual' | 'mixed'  // 존댓말/반말/혼용
+  emotionalIntensity: 'high' | 'medium' | 'low'
+  keyPhrases: string[]     // 대표 표현 최대 5개 ("어머 진짜요?", "그러게 말이에요")
+  communityVocab: string[] // 커뮤니티 특화 어휘 ("우리 나이", "갱년기야", "언니들")
+}
+
 /** 크롤링된 원본 게시글 */
 export interface RawCafePost {
   cafeId: string
@@ -38,12 +54,13 @@ export interface RawCafePost {
   commentCount: number
   viewCount: number
   postedAt: Date
+  dateParseFailure?: boolean   // true이면 날짜 파싱 실패 → recency 점수 0으로 처리
   // 미디어
   imageUrls: string[]
   videoUrls: string[]
   thumbnailUrl: string | null
-  // DEEP 모드: 상위 댓글 (최대 5개)
-  topComments?: Array<{ author: string; content: string; likeCount: number }>
+  // DEEP 모드: 상위 댓글 (최대 15개, 대댓글 포함)
+  topComments?: CommentData[]
 }
 
 /** AI 분석된 트렌드 */

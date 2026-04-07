@@ -14,12 +14,12 @@ const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint: string
   MEANING:  { personas: ['T', 'P', 'I'], topicHint: '삶의 의미, 감사, 보람, 철학' },
 }
 
-/** 오늘의 CafeTrend 조회 */
+/** 오늘의 CafeTrend 조회 (speechTone 포함) */
 async function getLatestTrend() {
   try {
     return await prisma.cafeTrend.findFirst({
       orderBy: { createdAt: 'desc' },
-      select: { dominantDesire: true, dominantEmotion: true, urgentTopics: true },
+      select: { dominantDesire: true, dominantEmotion: true, urgentTopics: true, cafeSummary: true },
     })
   } catch {
     return null
@@ -40,10 +40,22 @@ function buildTrendContext(
   const isRelevant = desireInfo?.personas.includes(personaId)
   const topicHint = isRelevant ? `\n- 오늘 어울리는 주제: ${desireInfo.topicHint}` : ''
 
+  // speechTone 데이터 (trend-analyzer가 cafeSummary에 저장)
+  const summary = trend.cafeSummary as Record<string, unknown> | null
+  const keyPhrases = Array.isArray(summary?.topKeyPhrases)
+    ? (summary.topKeyPhrases as string[]).slice(0, 5)
+    : []
+  const communityVocab = Array.isArray(summary?.topCommunityVocab)
+    ? (summary.topCommunityVocab as string[]).slice(0, 5)
+    : []
+  const speechToneLine = (keyPhrases.length + communityVocab.length > 0)
+    ? `\n- 오늘 커뮤니티 표현: ${keyPhrases.join(', ')}${communityVocab.length > 0 ? `\n- 자주 쓰는 어휘: ${communityVocab.join(', ')}` : ''}`
+    : ''
+
   return `
 [오늘의 커뮤니티 분위기 — 참고만, 직접 인용 절대 금지]
 - 오늘 주된 관심: ${trend.dominantDesire} 관련 이야기
-- 오늘의 감정 흐름: ${trend.dominantEmotion ?? '다양함'}${topUrgent ? `\n- 긴급 관심사: ${topUrgent.psychInsight}` : ''}${topicHint}
+- 오늘의 감정 흐름: ${trend.dominantEmotion ?? '다양함'}${topUrgent ? `\n- 긴급 관심사: ${topUrgent.psychInsight}` : ''}${topicHint}${speechToneLine}
 
 이 분위기를 당신의 개성으로 자연스럽게 녹여내세요.
 위 내용을 그대로 쓰거나 직접 언급하지 마세요.`

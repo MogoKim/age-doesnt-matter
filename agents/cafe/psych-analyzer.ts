@@ -19,9 +19,10 @@
  */
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
+import { notifySlack } from '../core/notifier.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
-const BATCH_SIZE = 10 // 한 번에 Haiku에 전송할 글 수
+const BATCH_SIZE = 5  // Bug 5: 10 → 5 (본문 1200자 확대로 토큰 비용 균등 유지)
 const client = new Anthropic()
 
 const isTest = process.argv.includes('--test')
@@ -38,6 +39,12 @@ export interface PsychResult {
   psychInsight: string      // "갱년기 증상 불안, 정보 갈증"
   urgencyLevel: number      // 1-5
   qualitySignals: string[]  // ["불안하다", "어떡하나"]
+  speechTone: {
+    formality: 'formal' | 'casual' | 'mixed'
+    emotionalIntensity: 'high' | 'medium' | 'low'
+    keyPhrases: string[]      // 실제 쓰인 표현 최대 5개
+    communityVocab: string[]  // 5060 특화 어휘 최대 5개
+  }
 }
 
 interface PostForAnalysis {
@@ -105,21 +112,29 @@ unknown: 연령 추정 불가
 2: 막연한 걱정 ("나중에 어떡하지", "그냥 불안")
 1: 일상 관심 (정보공유, 수다, 자랑, 엔터 이야기)
 
+[말투 분석 (speechTone)]
+formality: "formal"(존댓말 위주), "casual"(반말 위주), "mixed"(혼용)
+emotionalIntensity: "high"(느낌표/줄임말/감탄사 많음, 감정 폭발), "medium"(보통), "low"(차분한 서술)
+keyPhrases: 글·댓글에서 실제 쓰인 인상적 표현 최대 5개 (예: "어머 진짜요?", "그러게 말이에요", "언니들 어때요?")
+communityVocab: 5060 커뮤니티 특화 어휘 최대 5개 (예: "우리 나이", "갱년기야", "언니들", "이 나이에", "손주")
+
 [분석 원칙]
 - 제목 < 본문 < 댓글 순으로 진짜 감정이 강함 (댓글이 있으면 댓글 우선)
 - 정보 공유글/자랑글은 urgencyLevel=1, 고민/불안글은 3-5
 - ENTERTAIN: 연예인/드라마/트로트/콘서트 이야기면 urgencyLevel=1 고정
 - emotionTags 없으면 [] 반환
-- qualitySignals: 분석 근거가 된 실제 표현들 (최대 3개)`
+- qualitySignals: 분석 근거가 된 실제 표현들 (최대 3개)
+- keyPhrases/communityVocab: 없으면 빈 배열`
 
-export async function analyzeBatch(posts: PostForAnalysis[]): Promise<PsychResult[]> {
-  if (posts.length === 0) return []
-
+/** 단일 API 호출 — 파싱 실패 시 null 반환 */
+async function callAnalyzeApi(posts: PostForAnalysis[]): Promise<PsychResult[] | null> {
   const postTexts = posts.map((p, i) => {
-    const commentText = p.topComments && p.topComments.length > 0
-      ? `\n댓글: ${p.topComments.slice(0, 3).map(c => c.content).join(' / ')}`
+    const comments = p.topComments ?? []
+    const commentText = comments.length > 0
+      ? `\n댓글: ${comments.slice(0, 3).map((c: { content: string }) => c.content).join(' / ')}`
       : ''
-    return `[글 ${i + 1}] 제목: ${p.title}\n본문: ${p.content.slice(0, 600)}${commentText}`
+    // Bug 5: 600 → 1200자 (5060 글은 사연이 길어 핵심이 후반부에 나옴)
+    return `[글 ${i + 1}] 제목: ${p.title}\n본문: ${p.content.slice(0, 1200)}${commentText}`
   }).join('\n\n---\n\n')
 
   const response = await client.messages.create({
@@ -143,7 +158,13 @@ ${postTexts}
     "ageSignal": "50s",
     "psychInsight": "갱년기 증상 불안, 의학적 정보 갈증",
     "urgencyLevel": 4,
-    "qualitySignals": ["어떡하나", "무서워"]
+    "qualitySignals": ["어떡하나", "무서워"],
+    "speechTone": {
+      "formality": "formal",
+      "emotionalIntensity": "high",
+      "keyPhrases": ["어떡하나", "너무 불안해요"],
+      "communityVocab": ["갱년기", "우리 나이"]
+    }
   }
 ]`,
     }],
@@ -157,9 +178,51 @@ ${postTexts}
     const results = JSON.parse(arrMatch ? arrMatch[0] : cleaned) as PsychResult[]
     return results
   } catch {
-    console.warn('[PsychAnalyzer] JSON 파싱 실패, 배치 스킵:', text.slice(0, 200))
-    return []
+    console.warn('[PsychAnalyzer] JSON 파싱 실패:', text.slice(0, 200))
+    return null
   }
+}
+
+export async function analyzeBatch(posts: PostForAnalysis[]): Promise<PsychResult[]> {
+  if (posts.length === 0) return []
+
+  // 1차: 배치 전체 시도
+  const batchResult = await callAnalyzeApi(posts)
+  if (batchResult !== null) return batchResult
+
+  // Bug 6: 배치 실패 → 1개씩 개별 재시도 (배치 전체 유실 방지)
+  console.warn(`[PsychAnalyzer] 배치 파싱 실패 — ${posts.length}개 개별 재시도 시작`)
+  const individualResults: PsychResult[] = []
+  let consecutiveFails = 0
+
+  for (let i = 0; i < posts.length; i++) {
+    const post = posts[i]
+    try {
+      const result = await callAnalyzeApi([post])
+      if (result !== null && result.length > 0) {
+        // index를 배치 내 위치로 재설정
+        individualResults.push({ ...result[0], index: i + 1 })
+        consecutiveFails = 0
+      } else {
+        consecutiveFails++
+      }
+    } catch {
+      consecutiveFails++
+    }
+
+    // 3회 연속 실패 시 Slack 경고 후 중단
+    if (consecutiveFails >= 3) {
+      await notifySlack({
+        level: 'warning',
+        agent: 'PSYCH_ANALYZER',
+        title: 'AI 분석 3회 연속 실패',
+        body: `개별 재시도 중 ${consecutiveFails}회 실패 — 글 "${post.title.slice(0, 30)}" 주변`,
+      })
+      break
+    }
+  }
+
+  return individualResults
 }
 
 // ── 오늘 미분석 글 조회 ──

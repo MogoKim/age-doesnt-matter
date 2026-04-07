@@ -501,13 +501,25 @@ intelligence_policy:
     min_change_trigger_pct: 5    # 5% 이상 변화 시에만 패치 생성
     dominant_desire_immutable: true  # 아침에 결정된 dominantDesire 변경 불가
 
+  # 크롤링 소스 정책 (2026-04-07 개편)
+  data_sources:
+    cafe_crawling:
+      active: [wgang, dlxogns01]
+      removed: [welovesilver, 5060years, 82cook]  # 2026-04-07 데이터 품질 미달로 제거
+      strategy: "2개 카페 딥다이브 — 게시판 ~55개, maxPostsPerCafe:80, 댓글 15개+대댓글"
+    comment_learning:
+      enabled: true
+      max_comments_per_post: 15   # 5 → 15
+      include_replies: true        # 대댓글 수집 신규
+      speech_tone_aggregation: true  # trend-analyzer cafeSummary에 저장
+
   # 파이프라인 순서
   pipeline_order:
-    - "crawler.ts (08:30 DEEP)"
-    - "external-crawler.ts (82cook)"
-    - "psych-analyzer.ts (Haiku 배치)"
-    - "trend-analyzer.ts (집계)"
-    - "daily-brief.ts (욕망지도 → today-brief.json)"
+    - "crawler.ts (08:30 DEEP) — 2개 카페, 댓글+대댓글 수집"
+    - "external-crawler.ts (비활성 — EXTERNAL_CONFIGS 빈 배열)"
+    - "psych-analyzer.ts (Haiku 배치, speechTone 분석 포함)"
+    - "trend-analyzer.ts (집계 + 말투학습 cafeSummary 저장)"
+    - "daily-brief.ts (욕망지도 → today-brief.json, dataSourceBias 포함)"
     - "모든 에이전트 09:00 이후 loadTodayBrief() 호출"
 
 # ──────────────────────────────────────────

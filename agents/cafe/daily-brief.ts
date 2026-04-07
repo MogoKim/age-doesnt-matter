@@ -11,12 +11,12 @@
  *   npx tsx agents/cafe/daily-brief.ts          # DEEP 브리프 (오전 08:45)
  *   npx tsx agents/cafe/daily-brief.ts --patch  # 점심 midDayPatch 업데이트
  */
-import { writeFileSync } from 'fs'
+import { writeFileSync, existsSync, readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
-import type { DailyIntelligenceBrief, DesireRankItem, UrgentTopic, PersonaQuota, ContentDirective } from '../core/intelligence.js'
+import type { DailyIntelligenceBrief, DesireRankItem, UrgentTopic, PersonaQuota, ContentDirective, DataSourceBias } from '../core/intelligence.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BRIEF_PATH = resolve(__dirname, '../core/today-brief.json')
@@ -268,13 +268,104 @@ function buildContentDirective(
   }
 }
 
+// ── dataSourceBias 계산 ──
+
+async function computeDataSourceBias(): Promise<DataSourceBias> {
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+
+  const [wgangCount, dlxognsCount] = await Promise.all([
+    prisma.cafePost.count({ where: { cafeId: 'wgang', crawledAt: { gte: todayStart } } }),
+    prisma.cafePost.count({ where: { cafeId: 'dlxogns01', crawledAt: { gte: todayStart } } }),
+  ])
+
+  const total = wgangCount + dlxognsCount
+  const wgangPct = total > 0 ? Math.round(wgangCount / total * 100) : 0
+  const dlxognsPct = total > 0 ? Math.round(dlxognsCount / total * 100) : 0
+  // wgang = 40-50대 여성 전용 → 80% 이상이면 여성 편향 경고
+  const femaleBiasWarning = wgangPct >= 80
+
+  return { wgangPct, dlxognsPct, femaleBiasWarning }
+}
+
+// ── Bug 7: CafeTrend 없을 때 어제 브리프 복사 ──
+
+async function fallbackToYesterday(): Promise<void> {
+  const yesterdayDate = new Date()
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+  yesterdayDate.setHours(0, 0, 0, 0)
+
+  const yesterdayBrief = await prisma.dailyBrief.findUnique({ where: { date: yesterdayDate } })
+  const todayStr = new Date().toISOString().slice(0, 10)
+
+  if (!yesterdayBrief) {
+    // Slack 경고 (어제 데이터도 없음)
+    await notifySlack({
+      level: 'warning',
+      agent: 'DAILY_BRIEF',
+      title: '오늘 욕망지도 생성 실패 — 어제 데이터도 없음',
+      body: 'CafeTrend 없음. 크롤링 → psych-analyzer → trend-analyzer 순서로 실행 필요.',
+    })
+    console.warn('[DailyBrief] CafeTrend 없음 + 어제 브리프도 없음 — 생성 불가')
+    return
+  }
+
+  // 어제 브리프를 오늘 날짜로 복사 (mode=fallback_yesterday)
+  const todayDate = new Date(todayStr)
+  await prisma.dailyBrief.upsert({
+    where: { date: todayDate },
+    create: {
+      date: todayDate,
+      mode: 'fallback_yesterday',
+      desireRanking: yesterdayBrief.desireRanking ?? [],
+      dominantDesire: yesterdayBrief.dominantDesire,
+      dominantEmotion: yesterdayBrief.dominantEmotion,
+      urgentTopics: yesterdayBrief.urgentTopics ?? [],
+      personaQuotas: yesterdayBrief.personaQuotas ?? {},
+      contentDirective: yesterdayBrief.contentDirective ?? {},
+      entertainPct: yesterdayBrief.entertainPct ?? 0,
+      entertainActive: yesterdayBrief.entertainActive ?? false,
+    },
+    update: {
+      mode: 'fallback_yesterday',
+    },
+  })
+
+  // today-brief.json에도 반영 (mode 표시)
+  const briefJson = {
+    date: todayStr,
+    mode: 'fallback_yesterday',
+    desireRanking: yesterdayBrief.desireRanking,
+    dominantDesire: yesterdayBrief.dominantDesire,
+    dominantEmotion: yesterdayBrief.dominantEmotion,
+    urgentTopics: yesterdayBrief.urgentTopics,
+    personaQuotas: yesterdayBrief.personaQuotas,
+    contentDirective: yesterdayBrief.contentDirective,
+    entertainPct: yesterdayBrief.entertainPct,
+    entertainActive: yesterdayBrief.entertainActive,
+    midDayPatch: null,
+    generatedAt: new Date().toISOString(),
+  }
+  writeFileSync(BRIEF_PATH, JSON.stringify(briefJson, null, 2), 'utf-8')
+
+  // Slack 경고
+  await notifySlack({
+    level: 'warning',
+    agent: 'DAILY_BRIEF',
+    title: '오늘 욕망지도 생성 실패 — 어제 데이터로 대체',
+    body: `오늘(${todayStr}) CafeTrend 없음.\n어제(${yesterdayDate.toISOString().slice(0, 10)}) 브리프 자동 복사됨.\n→ 크롤링 → psych-analyzer → trend-analyzer 실행 후 재생성 필요.`,
+  })
+  console.warn('[DailyBrief] ⚠️ CafeTrend 없음 — 어제 브리프 복사 (fallback_yesterday)')
+}
+
 // ── DailyBrief 생성 + 저장 ──
 
 async function generateDailyBrief(): Promise<void> {
   const trend = await getTodayCafeTrend()
 
   if (!trend) {
-    console.warn('[DailyBrief] 오늘 CafeTrend 없음 — psych-analyzer + trend-analyzer 먼저 실행 필요')
+    // Bug 7: Slack 경고 + 어제 브리프 자동 복사
+    await fallbackToYesterday()
     return
   }
 
@@ -286,6 +377,8 @@ async function generateDailyBrief(): Promise<void> {
 
   if (Object.keys(desireMap).length === 0) {
     console.warn('[DailyBrief] desireMap이 비어있음 — psych-analyzer 미실행 가능성')
+    // 이 경우도 어제 브리프로 폴백
+    await fallbackToYesterday()
     return
   }
 
@@ -318,6 +411,9 @@ async function generateDailyBrief(): Promise<void> {
   // 콘텐츠 방향
   const contentDirective = buildContentDirective(dominantDesire, desireRanking)
 
+  // 카페 소스 편향 (2개 카페 체제 — 여성 편향 감지)
+  const dataSourceBias = await computeDataSourceBias()
+
   const todayStr = new Date().toISOString().slice(0, 10)
   const brief: DailyIntelligenceBrief = {
     date: todayStr,
@@ -331,6 +427,7 @@ async function generateDailyBrief(): Promise<void> {
     entertainPct,
     entertainActive,
     midDayPatch: null,
+    dataSourceBias,
     generatedAt: new Date().toISOString(),
   }
 
@@ -377,11 +474,15 @@ async function generateDailyBrief(): Promise<void> {
     .map(([id, q]) => `${id}(×${q.quotaMultiplier.toFixed(1)})`)
     .join(', ')
 
+  const biasLine = dataSourceBias.femaleBiasWarning
+    ? `\n⚠️ *여성 편향 경고:* 우갱 ${dataSourceBias.wgangPct}% / 은오 ${dataSourceBias.dlxognsPct}% — 남성 데이터 부족`
+    : `\n*데이터 소스:* 우갱 ${dataSourceBias.wgangPct}% / 은오 ${dataSourceBias.dlxognsPct}%`
+
   await notifySlack({
     level: 'info',
     agent: 'DAILY_BRIEF',
     title: `오늘의 욕망 지도 — ${todayStr}`,
-    body: `*지배적 욕망:* ${dominantDesire ?? '분포 고름'}\n*주된 감정:* ${dominantEmotion ?? '복합'}\n\n*욕망 상위 3개:*\n${top3}\n\n*오늘 부스트 페르소나:* ${boostPersonas || '없음'}\n*콘텐츠 방향:* ${contentDirective.primaryTheme}${entertainActive ? `\n*엔터 활성화:* ENTERTAIN ${entertainPct.toFixed(0)}% (EN1-EN5 작동)` : ''}`,
+    body: `*지배적 욕망:* ${dominantDesire ?? '분포 고름'}\n*주된 감정:* ${dominantEmotion ?? '복합'}\n\n*욕망 상위 3개:*\n${top3}\n\n*오늘 부스트 페르소나:* ${boostPersonas || '없음'}\n*콘텐츠 방향:* ${contentDirective.primaryTheme}${entertainActive ? `\n*엔터 활성화:* ENTERTAIN ${entertainPct.toFixed(0)}% (EN1-EN5 작동)` : ''}${biasLine}`,
   })
 }
 

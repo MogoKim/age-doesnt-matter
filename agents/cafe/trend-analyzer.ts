@@ -36,6 +36,8 @@ async function getTodayPosts() {
       likeCount: true,
       commentCount: true,
       viewCount: true,
+      // 댓글 (speechTone 집계에 사용)
+      topComments: true,
       // 심리 분석 결과 (psych-analyzer 실행 후 채워짐)
       emotionTags: true,
       desireCategory: true,
@@ -192,6 +194,70 @@ hotTopics: 상위 5~7개, keywords: 상위 15개, magazineTopics: 상위 3개, p
   }
 }
 
+/**
+ * 말투 학습 집계 — 5060 커뮤니티 특화 어휘 + 인상적 표현 추출
+ * DB 스키마 변경 없이 cafeSummary JSON에 저장됨 → SEED봇 주입용
+ */
+function aggregateSpeechTone(posts: Awaited<ReturnType<typeof getTodayPosts>>): {
+  topKeyPhrases: string[]
+  topCommunityVocab: string[]
+} {
+  // 5060 커뮤니티 특화 어휘 패턴 (갱년기, 은퇴, 관계 중심)
+  const COMMUNITY_VOCAB_PATTERNS = [
+    '갱년기', '우리 나이', '언니들', '이 나이에', '손주', '우리 또래',
+    '인생 2막', '은퇴 후', '퇴직', '노후', '노년', '50대', '60대',
+    '할머니', '아줌마', '남편이', '자녀가', '부모님', '어머니',
+    '건강검진', '혈압', '당뇨', '관절', '영양제', '한의원',
+    '연금', '국민연금', '재테크', '보험', '적금',
+    '산책', '등산', '텃밭', '귀촌', '시골',
+    '드라마', '트로트', '임영웅', '콘서트',
+    '어머 진짜', '맞아요', '저도 그래요', '언니',
+  ]
+
+  const vocabCounts: Record<string, number> = {}
+
+  for (const post of posts) {
+    const commentTexts = post.topComments
+      ? (post.topComments as Array<{ content?: string }>).map(c => c.content ?? '').join(' ')
+      : ''
+    const fullText = `${post.title} ${post.content.slice(0, 500)} ${commentTexts}`
+
+    for (const vocab of COMMUNITY_VOCAB_PATTERNS) {
+      if (fullText.includes(vocab)) {
+        vocabCounts[vocab] = (vocabCounts[vocab] ?? 0) + 1
+      }
+    }
+  }
+
+  // 빈도 상위 10개 커뮤니티 어휘
+  const topCommunityVocab = Object.entries(vocabCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([vocab]) => vocab)
+
+  // keyPhrases: 댓글에서 반응 많은 짧은 표현 추출 (2-4어절 패턴)
+  const phraseCounts: Record<string, number> = {}
+  const PHRASE_PATTERN = /[가-힣]{2,4}\s[가-힣]{2,4}(?:\s[가-힣]{1,4})?/g
+  for (const post of posts) {
+    const commentTexts = post.topComments
+      ? (post.topComments as Array<{ content?: string }>).map(c => c.content ?? '').join(' ')
+      : ''
+    const matches = commentTexts.match(PHRASE_PATTERN) ?? []
+    for (const phrase of matches) {
+      if (phrase.length >= 4 && phrase.length <= 15) {
+        phraseCounts[phrase] = (phraseCounts[phrase] ?? 0) + 1
+      }
+    }
+  }
+  const topKeyPhrases = Object.entries(phraseCounts)
+    .filter(([, cnt]) => cnt >= 2) // 2회 이상 등장한 표현만
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([phrase]) => phrase)
+
+  return { topKeyPhrases, topCommunityVocab }
+}
+
 /** 개별 글에 토픽 태그 + 감정 업데이트 */
 async function tagPosts(posts: Awaited<ReturnType<typeof getTodayPosts>>, analysis: TrendAnalysis) {
   const topicWords = analysis.hotTopics.map(t => t.topic.toLowerCase())
@@ -220,6 +286,7 @@ async function saveTrend(
   totalPosts: number,
   cafeSummary: Record<string, number>,
   psychData: ReturnType<typeof aggregatePsychData>,
+  speechTone: ReturnType<typeof aggregateSpeechTone>,
 ) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -231,7 +298,12 @@ async function saveTrend(
     magazineTopics: JSON.parse(JSON.stringify(analysis.magazineTopics)),
     personaHints: JSON.parse(JSON.stringify(analysis.personaHints)),
     totalPosts,
-    cafeSummary: JSON.parse(JSON.stringify(cafeSummary)),
+    // cafeSummary에 speechTone 집계 포함 (DB 스키마 변경 없이 저장)
+    cafeSummary: JSON.parse(JSON.stringify({
+      ...cafeSummary,
+      topKeyPhrases: speechTone.topKeyPhrases,
+      topCommunityVocab: speechTone.topCommunityVocab,
+    })),
     // 심리 분석 집계
     desireMap: psychData.desireMap ? JSON.parse(JSON.stringify(psychData.desireMap)) : undefined,
     emotionDistribution: psychData.emotionDistribution ? JSON.parse(JSON.stringify(psychData.emotionDistribution)) : undefined,
@@ -303,8 +375,12 @@ async function main() {
     console.log('[TrendAnalyzer] 심리 분석 데이터 없음 (psych-analyzer 미실행 상태)')
   }
 
+  // 5-1) 말투 학습 집계 (5060 커뮤니티 어휘 + 자주 쓰는 표현)
+  const speechTone = aggregateSpeechTone(posts)
+  console.log(`[TrendAnalyzer] 말투 집계 — 커뮤니티 어휘 ${speechTone.topCommunityVocab.length}개, 표현 ${speechTone.topKeyPhrases.length}개`)
+
   // 6) DB 저장
-  await saveTrend(analysis, posts.length, cafeSummary, psychData)
+  await saveTrend(analysis, posts.length, cafeSummary, psychData, speechTone)
 
   // 6) 텔레그램 알림
   await notifyMagazineTopics(analysis)

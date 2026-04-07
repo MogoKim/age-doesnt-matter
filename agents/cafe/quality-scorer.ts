@@ -2,11 +2,11 @@
  * 카페 크롤링 품질 점수 시스템
  *
  * 다중 요소 가중 점수 (0-100):
- * - 참여도 30%: likes, comments, views 기반
+ * - 참여도 40%: likes, comments, views 기반 (감정/고민글 우대)
  * - 콘텐츠 길이 20%: 너무 짧으면 감점
- * - 미디어 15%: 이미지/동영상 포함 여부
+ * - 미디어 5%: 텍스트 전용 감정글 불이익 최소화
  * - 게시판 우선도 20%: high/medium/skip
- * - 최신성 15%: 오늘 > 어제 > 2-3일 전 > 이전
+ * - 최신성 15%: 오늘 > 어제 > 2-3일 전 > 이전 (dateParseFailure → 0)
  */
 
 import type { RawCafePost } from './types.js'
@@ -20,9 +20,9 @@ interface QualityFactors {
 }
 
 const WEIGHTS = {
-  engagement: 0.30,
+  engagement: 0.40,   // Bug 4: 0.30 → 0.40 (감정/고민 텍스트글 우대)
   contentLength: 0.20,
-  media: 0.15,
+  media: 0.05,        // Bug 4: 0.15 → 0.05 (텍스트 전용 고가치 글 불이익 최소화)
   boardPriority: 0.20,
   recency: 0.15,
 }
@@ -94,8 +94,11 @@ function scoreBoardPriority(post: RawCafePost): number {
   return categoryScores[category] ?? 50
 }
 
-/** 최신성 점수 (15%) */
+/** 최신성 점수 (15%) — dateParseFailure이면 0점 (오래된 글로 취급하지 않고 명시적 0) */
 function scoreRecency(post: RawCafePost): number {
+  // Bug 3 연동: 날짜 파싱 실패 시 recency=0 (임의 날짜로 점수 부풀리기 방지)
+  if (post.dateParseFailure) return 0
+
   const now = new Date()
   const diffHours = (now.getTime() - post.postedAt.getTime()) / (1000 * 60 * 60)
 

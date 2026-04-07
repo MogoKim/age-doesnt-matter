@@ -19,7 +19,7 @@ import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS } from './config.js'
-import type { RawCafePost, CafeConfig, ContentCategory } from './types.js'
+import type { RawCafePost, CafeConfig, ContentCategory, CommentData } from './types.js'
 import { calculateQualityScore } from './quality-scorer.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -194,12 +194,12 @@ async function safeNumber(
   return parseInt(text.replace(/[^0-9]/g, ''), 10) || 0
 }
 
-/** DEEP 모드 전용 — 상위 댓글 추출 (최대 5개) */
+/** DEEP 모드 전용 — 상위 댓글 추출 (최대 15개, 대댓글 포함) */
 async function extractComments(
   target: Page | Frame,
-  maxComments = 5,
-): Promise<Array<{ author: string; content: string; likeCount: number }>> {
-  const comments: Array<{ author: string; content: string; likeCount: number }> = []
+  maxComments = 15,
+): Promise<CommentData[]> {
+  const comments: CommentData[] = []
 
   // 댓글 렌더링 대기 (동적 로드)
   await sleep(1500)
@@ -261,7 +261,39 @@ async function extractComments(
         } catch { /* 다음 셀렉터 */ }
       }
 
-      comments.push({ author, content, likeCount })
+      // 대댓글 추출
+      const replies: Array<{ author: string; content: string }> = []
+      for (const replySel of ['.u_cbox_reply_area .u_cbox_comment', '.reply_box .reply_item', '.CommentItem__reply']) {
+        try {
+          const replyItems = await item.locator(replySel).all()
+          for (const replyItem of replyItems.slice(0, 5)) {
+            let replyAuthor = '익명'
+            let replyContent = ''
+            for (const raSel of ['.u_cbox_nick', '.nickname', '.nick']) {
+              try {
+                const el = replyItem.locator(raSel).first()
+                if (await el.count() > 0) {
+                  const t = await el.textContent({ timeout: 1500 })
+                  if (t?.trim()) { replyAuthor = t.trim(); break }
+                }
+              } catch { /* skip */ }
+            }
+            for (const rcSel of ['.u_cbox_contents', '.comment_text', '.text']) {
+              try {
+                const el = replyItem.locator(rcSel).first()
+                if (await el.count() > 0) {
+                  const t = await el.textContent({ timeout: 1500 })
+                  if (t?.trim()) { replyContent = t.trim().slice(0, 150); break }
+                }
+              } catch { /* skip */ }
+            }
+            if (replyContent) replies.push({ author: replyAuthor, content: replyContent })
+          }
+          if (replies.length > 0) break
+        } catch { /* 다음 셀렉터 */ }
+      }
+
+      comments.push({ author, content, likeCount, replies })
     }
 
     if (comments.length > 0) break // 이 셀렉터로 댓글 찾았으면 중단
@@ -289,7 +321,19 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
     ? cafe.boards.filter(b => b.priority === 'high')
     : cafe.boards.filter(b => b.priority !== 'skip')
 
+  // Bug 2: 0건 게시판 카운터 (menuId 변경 감지)
+  let zeroBoardCount = 0
+  const zeroBoardNames: string[] = []
+
   for (const board of activeBoards) {
+    // menuId: 0 게시판은 실제 수집 불가 — 스킵 후 경고
+    if (board.menuId === 0) {
+      console.warn(`[CafeCrawler] ⚠️ "${board.name}" menuId=0 — 스킵 (창업자 확인 필요)`)
+      zeroBoardCount++
+      zeroBoardNames.push(board.name)
+      continue
+    }
+
     try {
       const boardUrl = `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/${board.menuId}`
       console.log(`[CafeCrawler] ${cafe.name} — 게시판 "${board.name}" (menuId=${board.menuId}) 수집 중...`)
@@ -297,7 +341,7 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
       await sleep(3000)
 
       // 스크롤하여 더 많은 글 로드 (QUICK 모드: 1페이지만)
-      const scrollCount = quickMode ? 1 : (board.menuId === 0 ? 3 : Math.min(board.maxPages, 3))
+      const scrollCount = quickMode ? 1 : Math.min(board.maxPages, 3)
       for (let i = 0; i < scrollCount; i++) {
         await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
         await sleep(1500)
@@ -322,13 +366,36 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
       }
       console.log(`[CafeCrawler] ${cafe.name} 게시판 "${board.name}": ${boardCount}개 신규 수집 (총 ${collectedMap.size}개)`)
 
-      // 게시판 간 딜레이
+      // Bug 2: 0건 경고 (menuId 변경 의심)
+      if (boardCount === 0) {
+        console.warn(`[CafeCrawler] ⚠️ "${board.name}" (menuId=${board.menuId}) — 0건. menuId 변경 의심`)
+        zeroBoardCount++
+        zeroBoardNames.push(`${board.name}(menuId=${board.menuId})`)
+      }
+
+      // 게시판 간 딜레이 — medium 게시판은 단축
       if (activeBoards.indexOf(board) < activeBoards.length - 1) {
-        await sleep(CRAWL_LIMITS.delayBetweenPages)
+        const delay = board.priority === 'medium'
+          ? CRAWL_LIMITS.delayBetweenPagesMedium
+          : CRAWL_LIMITS.delayBetweenPages
+        await sleep(delay)
       }
     } catch (err) {
       console.warn(`[CafeCrawler] ${cafe.name} 게시판 "${board.name}" 실패:`, err)
     }
+  }
+
+  // Bug 2: 50% 이상 게시판이 0건이면 Slack 경고
+  const activeCount = activeBoards.length
+  if (activeCount > 0 && zeroBoardCount / activeCount >= 0.5) {
+    await notifySlack({
+      level: 'warning',
+      agent: 'CAFE_CRAWLER',
+      title: `${cafe.name}: 게시판 ${zeroBoardCount}/${activeCount}개 0건 수집`,
+      body: `menuId 변경 의심 또는 미설정 게시판:\n${zeroBoardNames.slice(0, 10).join('\n')}`,
+    })
+  } else if (zeroBoardNames.length > 0) {
+    console.warn(`[CafeCrawler] ${cafe.name}: 0건 게시판 ${zeroBoardNames.length}개 — ${zeroBoardNames.slice(0, 5).join(', ')}`)
   }
 
   // 방법 2: 카페 메인 페이지 (보충 — 총 수집이 10개 미만일 때)
@@ -541,6 +608,7 @@ async function buildPostFromTarget(
   ])
 
   let postedAt = dateText ? new Date(dateText.replace(/\./g, '-').replace(/-\s/g, '-').trim()) : new Date()
+  let dateParseFailure = false
   if (isNaN(postedAt.getTime())) {
     const match = dateText.match(/(\d{4})\.(\d{2})\.(\d{2})\.?\s*(\d{2}):(\d{2})/)
     if (match) {
@@ -549,15 +617,17 @@ async function buildPostFromTarget(
         parseInt(match[4]), parseInt(match[5]),
       )
     } else {
+      // Bug 3: 날짜 파싱 실패 시 현재 시각 대신 플래그만 세팅 → quality-scorer에서 recency=0
       postedAt = new Date()
+      dateParseFailure = true
     }
   }
 
   // 미디어 추출
   const media = await extractMedia(target)
 
-  // DEEP 모드: 댓글 추출
-  const topComments = includeComments ? await extractComments(target) : undefined
+  // DEEP 모드: 댓글 추출 (최대 15개 + 대댓글)
+  const topComments = includeComments ? await extractComments(target, 15) : undefined
 
   const mediaInfo = media.imageUrls.length + media.videoUrls.length > 0
     ? ` 이미지=${media.imageUrls.length} 동영상=${media.videoUrls.length}`
@@ -579,6 +649,7 @@ async function buildPostFromTarget(
     commentCount,
     viewCount,
     postedAt,
+    dateParseFailure: dateParseFailure || undefined,
     imageUrls: media.imageUrls,
     videoUrls: media.videoUrls,
     thumbnailUrl: media.thumbnailUrl,

@@ -51,9 +51,15 @@ export interface MidDayPatch {
   adjustedPersonas: { personaId: string; delta: number }[]
 }
 
+export interface DataSourceBias {
+  wgangPct: number       // 우아한 갱년기 데이터 비율 (여성 40-50대 편향)
+  dlxognsPct: number     // 은퇴 후 50년 데이터 비율 (5060 남녀)
+  femaleBiasWarning: boolean  // 여성 데이터 80%+ 이면 true → CEO 브리핑에 경고 표시
+}
+
 export interface DailyIntelligenceBrief {
   date: string                              // "2026-04-04"
-  mode: 'deep' | 'quick_update'
+  mode: 'deep' | 'quick_update' | 'fallback_yesterday'
   desireRanking: DesireRankItem[]           // 내림차순
   dominantDesire: string | null             // 25% 이상일 때만 설정
   dominantEmotion: string | null            // "ANXIOUS"
@@ -63,6 +69,7 @@ export interface DailyIntelligenceBrief {
   entertainPct: number                      // ENTERTAIN 비율 (%)
   entertainActive: boolean                  // entertain_pct >= 10
   midDayPatch: MidDayPatch | null
+  dataSourceBias?: DataSourceBias           // 카페 소스 편향 정보 (2개 카페 체제)
   generatedAt: string                       // ISO timestamp
 }
 

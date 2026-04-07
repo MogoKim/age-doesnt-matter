@@ -194,6 +194,12 @@ async function crawlPost(
 }
 
 async function main() {
+  // 외부 사이트 크롤링 비활성화 (2026-04-07 전략 개편 — 2개 네이버 카페 집중)
+  if (EXTERNAL_CONFIGS.length === 0) {
+    console.log('[ExternalCrawler] EXTERNAL_CONFIGS 비어있음 — 스킵 (2개 카페 딥다이브 전략)')
+    return
+  }
+
   console.log('[82cook] 크롤링 시작')
   const startTime = Date.now()
 
