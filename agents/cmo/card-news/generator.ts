@@ -289,12 +289,15 @@ function buildUserMessage(
   }
 
   // Research brief
+  const statsSection = research.statistics.length > 0
+    ? `### 통계 (출처 있는 실제 데이터)\n${research.statistics.map((s) => `- ${s.number}: ${s.label}`).join('\n')}`
+    : '### 통계\n⚠️ 검증된 통계 없음 — stat 슬라이드 절대 사용 금지. story/tip/context 슬라이드로 대체.'
+
   parts.push(`## 리서치 결과
 ### 핵심 사실
 ${research.facts.map((f) => `- ${f}`).join('\n')}
 
-### 통계
-${research.statistics.map((s) => `- ${s.number}: ${s.label}`).join('\n')}
+${statsSection}
 
 ### 전문가 인용
 ${research.expertQuotes.map((q) => `- "${q.quote}" — ${q.source}`).join('\n')}

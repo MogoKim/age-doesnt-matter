@@ -142,6 +142,11 @@ async function synthesizeWithClaude(
     ? `\n\n## 웹 검색 결과\n${perplexityResult}`
     : ''
 
+  // Perplexity 없을 때 통계 생성 금지 — 출처 불명 수치 hallucination 방지
+  const statisticsInstruction = perplexityResult
+    ? '  "statistics": [{"number": "수치", "label": "설명(출처 포함)", "source": "출처명"}, ...],  // 2-3개 (반드시 웹 검색 결과에서 추출, 창작 금지)\n'
+    : '  "statistics": [],  // Perplexity 검색 결과 없음 — 빈 배열 유지 (AI 창작 수치 절대 금지)\n'
+
   const userPrompt =
     `주제: "${topic}" (카테고리: ${category})\n`
     + `${contextBlock}\n\n`
@@ -150,7 +155,7 @@ async function synthesizeWithClaude(
     + '반드시 아래 JSON 형식으로만 응답하세요 (마크다운 코드블록 없이 순수 JSON):\n'
     + '{\n'
     + '  "facts": ["사실1", "사실2", ...],           // 3-5개\n'
-    + '  "statistics": [{"number": "수치", "label": "설명"}, ...],  // 2-3개\n'
+    + statisticsInstruction
     + '  "expertQuotes": [{"quote": "인용문", "source": "출처"}, ...],  // 1-2개\n'
     + '  "actionableTips": ["팁1", "팁2", ...],      // 3-4개\n'
     + '  "sources": ["URL1", "URL2", ...],\n'

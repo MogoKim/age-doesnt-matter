@@ -296,6 +296,9 @@ async function main() {
     const image = await generateMagazineImageByContext(ctxList[0])
     if (image) {
       console.log(`[MagazineGenerator] 히어로 이미지 (${ctxList[0].type}, ${image.source}): ${image.url.slice(0, 50)}...`)
+    } else {
+      console.warn(`[MagazineGenerator] ⚠️ 히어로 이미지 생성 실패 — "${topic.title}"`)
+      await notifySlack(`⚠️ *매거진 히어로 이미지 생성 실패*\n제목: ${topic.title}\n카테고리: ${category}\n→ 썸네일 없이 발행됩니다. 수동 확인 필요.`, { channel: '#시스템' })
     }
 
     // 본문 이미지 (두 번째 컨텍스트)
@@ -304,6 +307,8 @@ async function main() {
     if (bodyImg) {
       bodyImageUrls.set(1, bodyImg.url)
       console.log(`[MagazineGenerator] 본문 이미지 1 (${ctxList[1].type}, ${bodyImg.source}): ${bodyImg.url.slice(0, 50)}...`)
+    } else {
+      console.warn(`[MagazineGenerator] ⚠️ 본문 이미지 생성 실패 — "${topic.title}" (<!-- [IMAGE:1] --> 플레이스홀더 제거됨)`)
     }
 
     // 리치 HTML 템플릿으로 최종 콘텐츠 빌드
@@ -325,12 +330,19 @@ async function main() {
 
     // 본문 <!-- [IMAGE:N] --> 플레이스홀더를 실제 이미지로 치환
     for (const [n, url] of bodyImageUrls) {
+      // alt text: Unsplash 검색어(한국어) → 이미지 타입 → 제목 기반 fallback
+      const ctx = ctxList[n - 1]
+      const altText = ctx?.unsplashQuery ?? `${article.title} 관련 이미지`
       finalHtml = finalHtml.replace(
         `<!-- [IMAGE:${n}] -->`,
-        `<img src="${url}" alt="${article.imageHints?.[n - 1] ?? ''}" style="width:100%;height:auto;border-radius:12px;margin:16px 0;" loading="lazy" />`,
+        `<img src="${url}" alt="${altText}" style="width:100%;height:auto;border-radius:12px;margin:16px 0;" loading="lazy" />`,
       )
     }
-    // 생성되지 않은 나머지 플레이스홀더 제거
+    // 생성되지 않은 나머지 플레이스홀더 제거 (잔존 시 경고)
+    const remainingPlaceholders = finalHtml.match(/<!-- \[IMAGE:\d+\] -->/g)
+    if (remainingPlaceholders && remainingPlaceholders.length > 0) {
+      console.warn(`[MagazineGenerator] ⚠️ 미치환 이미지 플레이스홀더 ${remainingPlaceholders.length}개 제거됨:`, remainingPlaceholders)
+    }
     finalHtml = finalHtml.replace(/<!-- \[IMAGE:\d+\] -->/g, '')
     // IMAGE_PROMPT 텍스트 잔존 방어 (AI가 예상 외 위치에 출력한 경우)
     finalHtml = finalHtml.replace(/\[IMAGE_PROMPT:[^\]]*\]/g, '')

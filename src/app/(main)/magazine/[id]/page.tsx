@@ -27,7 +27,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!post) return {}
 
   const url = `${BASE_URL}/magazine/${id}`
-  const description = post.preview || '50·60대를 위한 유익한 매거진 콘텐츠'
+  // SEO description: 본문 텍스트 첫 150자 (Google 권장 155-160자) → preview(40자) 대비 CTR 개선
+  const rawText = post.content
+    ? post.content.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+    : ''
+  const description = rawText.slice(0, 150) || post.preview || '50·60대를 위한 유익한 매거진 콘텐츠'
+
+  // og:image: 썸네일 → 본문 첫 이미지 → 로고 순으로 fallback
+  const firstContentImage = post.content
+    ? (post.content.match(/<img[^>]+src="([^"]+)"/)?.[1] ?? null)
+    : null
+  const ogImage = post.thumbnailUrl || firstContentImage || `${BASE_URL}/logo.png`
 
   return {
     title: post.title,
@@ -40,7 +50,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       siteName: '우리 나이가 어때서',
       locale: 'ko_KR',
-      images: [{ url: post.thumbnailUrl || `${BASE_URL}/logo.png`, width: 1200, height: 630 }],
+      images: [{ url: ogImage, width: 1200, height: 630 }],
     },
     twitter: {
       card: 'summary_large_image',

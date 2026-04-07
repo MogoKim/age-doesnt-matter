@@ -158,9 +158,15 @@ async function callDallE(fullPrompt: string): Promise<ImageResult | null> {
     if (!imageUrl) return null
 
     const r2Url = await uploadToR2(imageUrl, `magazine-${Date.now()}.png`)
+    if (!r2Url) {
+      // R2 업로드 실패 시 OpenAI 임시 URL은 1시간 후 만료되므로 null 반환
+      // (임시 URL을 저장하면 1시간 후 이미지 깨짐)
+      console.error('[ImageGen] R2 업로드 실패 — 이미지 null 반환 (임시 URL 저장 금지)')
+      return null
+    }
 
     return {
-      url: r2Url ?? imageUrl,
+      url: r2Url,
       prompt: fullPrompt,
       source: 'dalle',
     }
