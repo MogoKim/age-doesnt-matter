@@ -72,3 +72,12 @@ e2e/.auth/
 # Playwright 결과 JSON
 playwright-report/results.json
 agents/core/today-brief.json
+
+# Playwright 스크린샷 (테스트 산출물)
+e2e/screenshots/
+
+# Design assets — 에이전트 생성 결과물 (커밋 제외, README 참고)
+assets/generated/
+
+# Local debug scripts
+check-data.mjs
