@@ -76,6 +76,10 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cpo:persona-diversity-checker': () => import('../cpo/persona-diversity-checker.js').then(() => {}),
   'cdo:engagement-optimizer': () => import('../cdo/engagement-optimizer.js').then(() => {}),
   'cto:qa-verify': () => import('../cto/qa-verifier.js').then(() => {}),
+  // CTO 주간 아키텍처 리뷰 (월요일 07:00 KST)
+  'cto:arch-review': () => import('../cto/arch-review.js').then(() => {}),
+  // QA 에이전트 — 콘텐츠 품질 감사 (매일 08:20 KST)
+  'qa:content-audit': () => import('../qa/content-audit.js').then(() => {}),
   'community:sheet-scrape': () => import('../community/sheet-scraper.js').then(() => {}),
   'cmo:channel-seeder': () => import('../cmo/channel-seeder.js').then(() => {}),
   'cmo:knowledge-responder': () => import('../cmo/knowledge-responder.js').then(() => {}),

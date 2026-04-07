@@ -148,6 +148,7 @@ enum BotType {
   COO
   SEED
   CAFE_CRAWLER
+  QA
 }
 
 enum BotStatus {

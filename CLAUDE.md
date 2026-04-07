@@ -107,6 +107,7 @@
 - "영상 만들어줘", "광고 영상", "숏폼" → Video Director Agent (`agents/design/video-director/agent.ts`)
 - "이게 맞나?", "더 크게", "전략 리뷰", "방향성 검토" → `/plan-ceo-review`
 - "아키텍처 검토", "코딩 시작 전 확인", "설계 검토" → `/plan-eng-review`
+- "레거시 영향", "아키텍처 결정", "이 구조 맞나", "설계 결정", "CTO 관점", "하네스 영향" → `/cto-arch`
 - "버그", "에러", "왜 안되지", "자꾸 실패해" → `/investigate`
 - "에러 없는데 이상해", "됐는데 안 보여", "테스트 통과했는데 실제론 안 돼" → `.claude/rules/debug-silent-failure.md` + `/investigate`
 - "코드 리뷰", "PR 전 확인", "리뷰해줘" → `/code-review`
@@ -119,6 +120,7 @@
 |------|------|
 | `/plan-ceo-review` | 창업자 관점 제품 전략 리뷰 (4 모드: 확장/선택/유지/축소) |
 | `/plan-eng-review` | 엔지니어링 매니저 아키텍처 리뷰 (코딩 전 필수) |
+| `/cto-arch` | CTO 아키텍처 거버넌스 — 하네스 규칙 준수 + 레거시 영향 분석 |
 | `/code-review` | 2-pass PR 리뷰 + 계획 이행률 감사 |
 | `/investigate` | Iron Law 버그 근본 원인 분석 (4단계) |
 | `/careful` | 파괴적 작업 전 확인 게이트 |

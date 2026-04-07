@@ -62,6 +62,11 @@ on:
     - cron: "30 13 * * *"
     # 23:45 KST = 14:45 UTC — CTO QA 크론 실행 감사
     - cron: "45 14 * * *"
+    # ─── Phase 5: CTO 거버넌스 + QA 에이전트 ───
+    # 08:20 KST = 23:20 UTC (전날) — QA 콘텐츠 감사
+    - cron: "20 23 * * *"
+    # 07:00 KST 월요일 = 22:00 UTC (일요일) — CTO 주간 아키텍처 리뷰
+    - cron: "0 22 * * 0"
   workflow_dispatch:
     inputs:
       agent:
@@ -183,12 +188,16 @@ jobs:
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=reply-chain-driver" >> $GITHUB_OUTPUT ;;
               "0 11 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=comment-activator" >> $GITHUB_OUTPUT ;;
+              "0 22 * * 0")
+                echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=arch-review" >> $GITHUB_OUTPUT ;;
               "0 22 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=crawler-health" >> $GITHUB_OUTPUT ;;
               "30 13 * * *")
                 echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=engagement-optimizer" >> $GITHUB_OUTPUT ;;
               "45 14 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=qa-verify" >> $GITHUB_OUTPUT ;;
+              "20 23 * * *")
+                echo "agent=qa" >> $GITHUB_OUTPUT; echo "task=content-audit" >> $GITHUB_OUTPUT ;;
               *)
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
             esac

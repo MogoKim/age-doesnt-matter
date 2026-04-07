@@ -388,6 +388,40 @@ security:
     - "단일 에이전트 $1 초과 비용"
 
 # ──────────────────────────────────────────
+# 8-5. CTO 아키텍처 거버넌스 (신설)
+# ──────────────────────────────────────────
+cto_governance:
+  role: "기술 헌법 집행관 — constitution 기술 규칙이 실제 코드에 지켜지는지 감시"
+  domains:
+    - "신뢰성: 헬스체크·에러·보안·크롤러 모니터링 (기존)"
+    - "거버넌스: 주간 코드 건강 리포트 (arch-review, 월요일)"
+    - "QA 오케스트레이션: QA 에이전트를 지휘해서 배포 품질 보장"
+  tasks:
+    - "health-check: 매시간, DB/Site/API 응답 확인 + 추세 저장"
+    - "error-monitor: 2시간마다, 반복 패턴 비교 포함"
+    - "security-audit: 매일 06:00 KST, 보안 이상 징후"
+    - "crawler-health: 매일 07:00 KST, 7일 품질 추세 포함"
+    - "qa-verify: 배포 후 + 23:45 KST, 동적 크론 감사"
+    - "arch-review: 월요일 07:00 KST, 주간 아키텍처 건강 리포트"
+
+# ──────────────────────────────────────────
+# 8-6. QA 에이전트 (신설)
+# ──────────────────────────────────────────
+qa_agent:
+  owner: "QA"
+  reports_to: "CTO"
+  model: "light"  # Haiku — 데이터 검증 위주
+  canWrite: true  # 자동 수정 필요 (JSON unwrap, 이미지 삽입)
+  tasks:
+    - "content-audit: 매일 08:20 KST, 최근 24시간 콘텐츠 품질 검증 + 자동 수정"
+  distinction_from_cto:
+    CTO: "기술 아키텍처 + 보안 + 인프라 (코드 레벨)"
+    QA: "실제 데이터/콘텐츠/사용자 경험 품질 (비즈니스 레벨)"
+  escalation:
+    auto_fixable: "자동 수정 후 Slack #qa info 알림"
+    manual_required: "Slack #qa important 알림 + CTO 에스컬레이션"
+
+# ──────────────────────────────────────────
 # 9. 알림 채널
 # ──────────────────────────────────────────
 notification:

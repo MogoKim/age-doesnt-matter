@@ -62,15 +62,24 @@ class CTOHealthCheck extends BaseAgent {
       })
     }
 
+    const dbMs = checks[0]?.latencyMs ?? 0
+    const siteMs = checks[1]?.latencyMs ?? 0
+    const apiMs = checks[2]?.latencyMs ?? 0
+
     const summary = allOk
-      ? `모든 시스템 정상 (DB ${checks[0].latencyMs}ms, Site ${checks[1].latencyMs}ms, API ${checks[2].latencyMs}ms)`
+      ? `모든 시스템 정상 (DB ${dbMs}ms, Site ${siteMs}ms, API ${apiMs}ms)`
       : `장애 감지: ${failed.map((f) => f.name).join(', ')}`
 
+    // 성능 추세 분석을 위해 latencyMs를 구조화된 형식으로 저장
+    // BotLog.details에 JSON 저장 → 7일 이동평균 등 추세 분석에 활용
     return {
       agent: 'CTO',
       success: allOk,
       summary,
-      data: { checks },
+      data: {
+        latency: { db: dbMs, site: siteMs, api: apiMs },
+        checks,
+      },
     }
   }
 }

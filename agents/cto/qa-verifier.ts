@@ -32,6 +32,29 @@ interface CronResult {
   handlers: CronCheck[]
 }
 
+/**
+ * 매일 실행되어야 하는 에이전트 목록
+ *
+ * 유지보수 규칙:
+ * - runner.ts에 새 핸들러를 추가하면 여기도 추가 (BotLog에 기록되는 botType+action 기준)
+ * - action 이름은 BotLog에 실제 저장되는 값과 동일해야 함 (BaseAgent의 action 설정 참고)
+ * - 주 1회 또는 DISPATCH ONLY 태스크는 WEEKLY_EXPECTED로 분리 관리 (아직 미구현)
+ *
+ * runner.ts 키 → BotLog (botType:action) 매핑:
+ *   ceo:morning-cycle        → CEO:MORNING_CYCLE
+ *   cto:health-check         → CTO:HEALTH_CHECK
+ *   cto:security-audit       → CTO:SECURITY_AUDIT
+ *   cmo:trend-analyzer       → CMO:TREND_ANALYSIS
+ *   coo:moderator            → COO:MODERATION
+ *   coo:job-scraper          → COO:JOB_SCRAPE
+ *   coo:trending-scorer      → COO:TRENDING_SCORE
+ *   cdo:kpi-collector        → CDO:KPI_DAILY
+ *   seed:scheduler           → SEED:SCHEDULE
+ *   cfo:cost-tracker         → CFO:COST_TRACK
+ *   cafe_crawler:trend-analysis    → CAFE_CRAWLER:TREND_ANALYSIS
+ *   cafe_crawler:magazine-generate → CAFE_CRAWLER:MAGAZINE_GENERATE
+ *   qa:content-audit         → QA:CONTENT_AUDIT   ← QA 에이전트 추가 후 활성화
+ */
 const DAILY_EXPECTED: Array<{ botType: string; action: string; label: string }> = [
   { botType: 'CEO', action: 'MORNING_CYCLE', label: 'CEO 모닝' },
   { botType: 'CTO', action: 'HEALTH_CHECK', label: 'CTO 헬스체크' },
@@ -45,6 +68,8 @@ const DAILY_EXPECTED: Array<{ botType: string; action: string; label: string }> 
   { botType: 'CFO', action: 'COST_TRACK', label: 'CFO 비용' },
   { botType: 'CAFE_CRAWLER', action: 'TREND_ANALYSIS', label: '카페 트렌드' },
   { botType: 'CAFE_CRAWLER', action: 'MAGAZINE_GENERATE', label: '매거진 생성' },
+  // TODO: QA 에이전트 배포 후 활성화
+  // { botType: 'QA', action: 'CONTENT_AUDIT', label: 'QA 콘텐츠 감사' },
 ]
 
 class CTOQAVerifier extends BaseAgent {
@@ -195,14 +220,33 @@ class CTOQAVerifier extends BaseAgent {
     const executed = new Set(logs.map((l) => `${l.botType}:${l.action}`))
     const missing = DAILY_EXPECTED.filter((e) => !executed.has(`${e.botType}:${e.action}`))
 
+    // DAILY_EXPECTED 유효성 검증: 7일 내 한 번도 실행 기록 없는 항목 감지
+    // → DAILY_EXPECTED의 botType/action 이름이 실제 BotLog와 다를 가능성 의심
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const recentLogs = await prisma.botLog.findMany({
+      where: { createdAt: { gte: sevenDaysAgo }, status: 'SUCCESS' },
+      select: { botType: true, action: true },
+      distinct: ['botType', 'action'],
+    })
+    const everExecuted = new Set(recentLogs.map((l) => `${l.botType}:${l.action}`))
+    const neverSeen = DAILY_EXPECTED.filter(
+      (e) => !everExecuted.has(`${e.botType}:${e.action}`),
+    )
+
     if (missing.length === 0) {
       const summary = `크론 QA 정상 — ${DAILY_EXPECTED.length}개 에이전트 모두 실행 완료`
-      await notifySlack({ level: 'info', agent: 'CTO', title: '크론 QA 정상', body: summary })
+      const body = neverSeen.length > 0
+        ? `${summary}\n\n⚠️ 7일 내 실행 기록 없는 항목 (action 이름 확인 필요):\n${neverSeen.map((e) => `• ${e.label} (${e.botType}:${e.action})`).join('\n')}`
+        : summary
+      await notifySlack({ level: 'info', agent: 'CTO', title: '크론 QA 정상', body })
       return { agent: 'CTO', success: true, summary }
     }
 
     const missingList = missing.map((m) => `• ${m.label} (${m.botType}:${m.action})`).join('\n')
-    const body = `크론 미실행 에이전트 (${missing.length}/${DAILY_EXPECTED.length}):\n${missingList}`
+    let body = `크론 미실행 에이전트 (${missing.length}/${DAILY_EXPECTED.length}):\n${missingList}`
+    if (neverSeen.length > 0) {
+      body += `\n\n⚠️ 7일 내 실행 기록 없는 항목 (action 이름 오류 가능):\n${neverSeen.map((e) => `• ${e.label}`).join('\n')}`
+    }
 
     await notifySlack({ level: 'important', agent: 'CTO', title: '크론 미실행 감지', body })
 
@@ -210,7 +254,7 @@ class CTOQAVerifier extends BaseAgent {
       agent: 'CTO',
       success: false,
       summary: `크론 미실행 ${missing.length}개: ${missing.map((m) => m.label).join(', ')}`,
-      data: { missing: missing.map((m) => m.label) },
+      data: { missing: missing.map((m) => m.label), neverSeen: neverSeen.map((e) => e.label) },
     }
   }
 }

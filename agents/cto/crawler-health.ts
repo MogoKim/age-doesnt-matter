@@ -109,7 +109,29 @@ async function main() {
     const avgQuality = cafePostStats._avg.qualityScore ?? 0
     const usableRatio = totalCafePosts > 0 ? (usablePosts / totalCafePosts * 100).toFixed(1) : '0'
 
-    // 7. 리포트 구성
+    // 7. 품질 추세 분석: 7일 평균 대비 오늘 품질 비교
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const recentHealthLogs = await prisma.botLog.findMany({
+      where: {
+        botType: 'CTO',
+        action: 'CRAWLER_HEALTH',
+        status: 'SUCCESS',
+        createdAt: { gte: sevenDaysAgo },
+      },
+      select: { details: true },
+      orderBy: { createdAt: 'desc' },
+      take: 7,
+    })
+    // details 형식: "크롤러 성공률 X%, 품질 Y.YY, 경고 Z건"
+    const historicalQualities = recentHealthLogs
+      .map((l) => { const m = /품질 ([\d.]+)/.exec(l.details ?? ''); return m ? parseFloat(m[1]) : null })
+      .filter((v): v is number => v !== null)
+    const historicalAvg = historicalQualities.length > 0
+      ? historicalQualities.reduce((a, b) => a + b, 0) / historicalQualities.length
+      : 0
+    const qualityDrop = historicalAvg > 0 ? ((avgQuality - historicalAvg) / historicalAvg * 100) : 0
+
+    // 8. 리포트 구성
     const totalLogs = crawlerLogs.length
     const successLogs = crawlerLogs.filter(l => l.status === 'SUCCESS').length
     const overallSuccessRate = ((successLogs / totalLogs) * 100).toFixed(1)
@@ -130,6 +152,10 @@ async function main() {
     }
     if (lowCollectionLogs.length > 3) {
       alerts.push(`낮은 수집량 ${lowCollectionLogs.length}건`)
+    }
+    // 품질 추세 경고: 7일 평균 대비 10% 이상 하락
+    if (qualityDrop < -10 && historicalAvg > 0) {
+      alerts.push(`품질점수 7일 평균(${historicalAvg.toFixed(2)}) 대비 ${Math.abs(qualityDrop).toFixed(1)}% 하락`)
     }
 
     const isHealthy = alerts.length === 0 && parseFloat(overallSuccessRate) >= 80
