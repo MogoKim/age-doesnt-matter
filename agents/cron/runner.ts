@@ -85,6 +85,10 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cmo:jisik-answerer': () => import('../cmo/jisik-answerer.js').then(() => {}),
   // DISPATCH ONLY — 로컬 전용 (네이버 IP 차단 + headless 탐지)
   // 실행: npx tsx agents/cmo/jisik-answerer.ts
+
+  // Design 에이전트 (LOCAL ONLY — Gemini API + Playwright)
+  // LOCAL ONLY — 이미지 생성 비용 발생, 인터랙티브 세션 전용
+  'design:ads-loop': () => import('../marketing-loop/creative-optimizer.js').then(() => {}),
 }
 
 function getAutomationStatus(): string {
