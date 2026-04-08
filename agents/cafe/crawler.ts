@@ -352,6 +352,9 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
       }
 
       const links = await page.locator('a[href*="/articles/"]').all()
+      if (board.isPopular) {
+        console.log(`[CafeCrawler] 인기글 셀렉터 매칭: ${links.length}개 링크 발견 (0이면 /popular 페이지 구조 변경 의심)`)
+      }
       let boardCount = 0
       for (const link of links) {
         const href = await link.getAttribute('href')
@@ -370,11 +373,14 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
       }
       console.log(`[CafeCrawler] ${cafe.name} 게시판 "${board.name}": ${boardCount}개 신규 수집 (총 ${collectedMap.size}개)`)
 
-      // Bug 2: 0건 경고 (menuId 변경 의심) — 인기글은 제외
-      if (boardCount === 0 && !board.isPopular) {
-        console.warn(`[CafeCrawler] ⚠️ "${board.name}" (menuId=${board.menuId}) — 0건. menuId 변경 의심`)
+      // Bug 2: 0건 경고 — 일반 게시판(menuId 변경 의심) + 인기글(셀렉터 문제 의심) 모두 감지
+      if (boardCount === 0) {
+        const reason = board.isPopular
+          ? '인기글 셀렉터 미매칭 — /popular 페이지 구조 변경 의심'
+          : `menuId=${board.menuId} 변경 의심`
+        console.warn(`[CafeCrawler] ⚠️ "${board.name}" — 0건. ${reason}`)
         zeroBoardCount++
-        zeroBoardNames.push(`${board.name}(menuId=${board.menuId})`)
+        zeroBoardNames.push(board.isPopular ? `${board.name}(인기글)` : `${board.name}(menuId=${board.menuId})`)
       }
 
       // 게시판 간 딜레이 — medium 게시판은 단축

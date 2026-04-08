@@ -52,6 +52,7 @@ interface PostForAnalysis {
   title: string
   content: string
   topComments: { author: string; content: string; likeCount: number }[] | null
+  boardName?: string | null
 }
 
 // ── Haiku 배치 분석 ──
@@ -133,8 +134,9 @@ async function callAnalyzeApi(posts: PostForAnalysis[]): Promise<PsychResult[] |
     const commentText = comments.length > 0
       ? `\n댓글: ${comments.slice(0, 3).map((c: { content: string }) => c.content).join(' / ')}`
       : ''
+    const boardHint = p.boardName ? `[게시판: ${p.boardName}]\n` : ''
     // Bug 5: 600 → 1200자 (5060 글은 사연이 길어 핵심이 후반부에 나옴)
-    return `[글 ${i + 1}] 제목: ${p.title}\n본문: ${p.content.slice(0, 1200)}${commentText}`
+    return `[글 ${i + 1}] ${boardHint}제목: ${p.title}\n본문: ${p.content.slice(0, 1200)}${commentText}`
   }).join('\n\n---\n\n')
 
   const response = await client.messages.create({
@@ -244,6 +246,7 @@ async function getUnanalyzedPosts(limit = 200) {
       title: true,
       content: true,
       topComments: true,
+      boardName: true,
     },
   })
 }

@@ -57,17 +57,36 @@ function aggregatePsychData(posts: Awaited<ReturnType<typeof getTodayPosts>>) {
     return { desireMap: null, emotionDistribution: null, urgentTopics: null, dominantDesire: null, dominantEmotion: null }
   }
 
-  // 욕망 카테고리 분포
-  const desireCount: Record<string, number> = {}
-  for (const p of analyzedPosts) {
-    const cat = p.desireCategory!
-    desireCount[cat] = (desireCount[cat] ?? 0) + 1
+  // 욕망 카테고리 분포 — 카페별 50:50 가중 평균
+  // 이유: wgang(여성/갱년기)이 글이 많으면 HEALTH만 dominant가 되는 편향 방지
+  const cafeIds = [...new Set(analyzedPosts.map(p => p.cafeId))]
+  const perCafeDesireMap: Record<string, Record<string, number>> = {}
+  for (const cid of cafeIds) {
+    const cafePosts = analyzedPosts.filter(p => p.cafeId === cid)
+    const count: Record<string, number> = {}
+    for (const p of cafePosts) {
+      const cat = p.desireCategory!
+      count[cat] = (count[cat] ?? 0) + 1
+    }
+    const total = cafePosts.length
+    perCafeDesireMap[cid] = {}
+    for (const [cat, cnt] of Object.entries(count)) {
+      perCafeDesireMap[cid][cat] = cnt / total // 비율 (0~1)
+    }
+  }
+  // 카페 수에 상관없이 균등 가중 평균 (1개 카페면 그대로, 2개면 50:50)
+  const desireMap: Record<string, number> = {}
+  const weight = 1 / cafeIds.length
+  for (const ratioMap of Object.values(perCafeDesireMap)) {
+    for (const [cat, ratio] of Object.entries(ratioMap)) {
+      desireMap[cat] = (desireMap[cat] ?? 0) + ratio * weight
+    }
+  }
+  // 퍼센트 변환
+  for (const cat of Object.keys(desireMap)) {
+    desireMap[cat] = Math.round(desireMap[cat] * 100)
   }
   const totalAnalyzed = analyzedPosts.length
-  const desireMap: Record<string, number> = {}
-  for (const [cat, cnt] of Object.entries(desireCount)) {
-    desireMap[cat] = Math.round((cnt / totalAnalyzed) * 100)
-  }
 
   // 감정 분포
   const emotionCount: Record<string, number> = {}

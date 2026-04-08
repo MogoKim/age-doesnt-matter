@@ -1,6 +1,18 @@
 import { prisma, disconnect } from '../core/db.js'
-import { generatePost, generateComment, generateReply, getBotUser } from './generator.js'
+import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP } from './generator.js'
 import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
+
+/** 페르소나 → 욕망 카테고리 역방향 매핑 (다양성 캡용) */
+const PERSONA_DESIRE: Record<string, string> = {}
+for (const [desire, { personas }] of Object.entries(DESIRE_PERSONA_MAP)) {
+  for (const pid of personas) {
+    // 한 페르소나가 여러 욕망에 매핑된 경우 첫 번째 욕망 우선
+    if (!(pid in PERSONA_DESIRE)) PERSONA_DESIRE[pid] = desire
+  }
+}
+
+/** 시간대당 욕망 카테고리별 최대 글쓰기 수 — 쏠림 방지 */
+const MAX_POSTS_PER_DESIRE = 2
 
 /**
  * 시드 콘텐츠 스케줄러 (50명 — A~T + U~Z + AA~AI + AJ~AX)
@@ -469,6 +481,7 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
   if (!brief) return base
 
   const adjusted: Activity[] = []
+  const postsByDesire: Record<string, number> = {}  // 욕망 카테고리별 이번 시간대 글쓰기 수
 
   for (const activity of base) {
     const quota = getPersonaQuota(brief, activity.personaId)
@@ -477,6 +490,19 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
     if (activity.type === 'post' && quota.quotaMultiplier < 0.9) {
       console.log(`[Seed] ${activity.personaId} 글쓰기 스킵 (quota ×${quota.quotaMultiplier.toFixed(2)})`)
       continue
+    }
+
+    // 글쓰기 다양성 캡 — 같은 욕망 카테고리 MAX_POSTS_PER_DESIRE 초과 시 스킵
+    if (activity.type === 'post') {
+      const desire = PERSONA_DESIRE[activity.personaId]
+      if (desire) {
+        const current = postsByDesire[desire] ?? 0
+        if (current >= MAX_POSTS_PER_DESIRE) {
+          console.log(`[Seed] ${activity.personaId} 글쓰기 스킵 (${desire} 캡 ${current}/${MAX_POSTS_PER_DESIRE})`)
+          continue
+        }
+        postsByDesire[desire] = current + 1
+      }
     }
 
     // count가 있는 활동: quotaMultiplier 반영

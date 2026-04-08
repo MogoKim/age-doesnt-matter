@@ -3,7 +3,7 @@ import { prisma } from '../core/db.js'
 import { getPersona, getAllPersonaIds, type Persona } from './persona-data.js'
 
 // ── 욕망 카테고리 → 적합 페르소나 매핑 ──
-const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint: string }> = {
+export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint: string }> = {
   HEALTH:   { personas: ['H', 'P2', 'A'], topicHint: '건강 정보, 병원 경험, 증상 공감' },
   FAMILY:   { personas: ['A', 'L', 'E'], topicHint: '가족 이야기, 자녀 고민, 손주 자랑' },
   MONEY:    { personas: ['B', 'P4', 'N'], topicHint: '절약 팁, 재테크 경험, 연금 이야기' },
