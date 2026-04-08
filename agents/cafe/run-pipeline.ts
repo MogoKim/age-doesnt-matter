@@ -116,6 +116,100 @@ async function runWithArgs(script: string, args: string[], label: string) {
   }
 }
 
+const CRAWL_MAX_RETRIES = 3
+const CRAWL_RETRY_WAIT_MS = 60_000 // 재시도 간격 1분 (네이버 차단 완화)
+
+/**
+ * 크롤링 전용 재시도 래퍼
+ * 실패 감지 기준:
+ *   1. 스크립트 자체 에러 (ETIMEDOUT, 브라우저 크래시)
+ *   2. 스크립트 정상 종료지만 특정 카페 오늘 저장 0건
+ * 최대 3회 재시도 후 모두 실패 시 Slack #시스템 경고
+ */
+async function runCrawlWithRetry(script: string, label: string): Promise<void> {
+  console.log(`\n${'='.repeat(50)}`)
+  console.log(`[Pipeline] ${label} 시작`)
+  console.log('='.repeat(50))
+
+  const CONFIGURED_CAFE_IDS = ['wgang', 'dlxogns01']
+  let lastError = ''
+  let lastFailedCafes: string[] = []
+
+  for (let attempt = 1; attempt <= CRAWL_MAX_RETRIES; attempt++) {
+    if (attempt > 1) {
+      console.log(`[Pipeline] ${label} — ${CRAWL_RETRY_WAIT_MS / 1000}초 후 재시도 (${attempt}/${CRAWL_MAX_RETRIES})`)
+      await new Promise(r => setTimeout(r, CRAWL_RETRY_WAIT_MS))
+    }
+    if (attempt > 1) console.log(`[Pipeline] ${label} 재시도 ${attempt}회차`)
+
+    // 스크립트 실행
+    let scriptFailed = false
+    try {
+      execFileSync('npx', ['tsx', resolve(__dirname, script)], {
+        env: { ...process.env },
+        timeout: 900000,
+        stdio: 'inherit',
+      })
+      lastError = ''
+    } catch (err: unknown) {
+      scriptFailed = true
+      lastError = (err as { message?: string }).message ?? String(err)
+      console.error(`[Pipeline] ${label} 스크립트 오류 (${attempt}회차):`, lastError.slice(0, 200))
+    }
+
+    // 오늘 카페별 저장 수 확인 (CafePost 직접 조회)
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const perCafe = await prisma.cafePost.groupBy({
+      by: ['cafeId'],
+      where: { createdAt: { gte: todayStart } },
+      _count: { id: true },
+    })
+    lastFailedCafes = CONFIGURED_CAFE_IDS.filter(id => {
+      const r = perCafe.find(p => p.cafeId === id)
+      return !r || r._count.id === 0
+    })
+
+    // 성공: 스크립트 정상 + 모든 카페 1건 이상 저장
+    if (!scriptFailed && lastFailedCafes.length === 0) {
+      console.log(`[Pipeline] ${label} ✅ 완료 (${attempt}회 시도)`)
+      return
+    }
+
+    const reason = [
+      scriptFailed ? `스크립트 오류: ${lastError.slice(0, 100)}` : null,
+      lastFailedCafes.length > 0 ? `저장 0건 카페: ${lastFailedCafes.join(', ')}` : null,
+    ].filter(Boolean).join(' / ')
+    console.warn(`[Pipeline] ⚠️ ${attempt}회차 실패 — ${reason}`)
+  }
+
+  // 3회 모두 실패 → 카페별 최종 현황 조회 후 Slack 경고
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const finalCounts = await Promise.all(
+    CONFIGURED_CAFE_IDS.map(async id => {
+      const r = await prisma.cafePost.aggregate({
+        where: { cafeId: id, createdAt: { gte: todayStart } },
+        _count: { id: true },
+      })
+      return `${id}: ${r._count.id}건`
+    })
+  )
+
+  await notifySlack({
+    level: 'critical',
+    agent: 'CAFE_CRAWLER',
+    title: `카페 크롤링 ${CRAWL_MAX_RETRIES}회 연속 실패`,
+    body: [
+      `실패 카페: ${lastFailedCafes.join(', ') || '전체'}`,
+      `카페별 오늘 저장: ${finalCounts.join(' / ')}`,
+      lastError ? `마지막 오류: ${lastError.slice(0, 200)}` : '',
+      '사유: Playwright 브라우저 크래시 또는 네이버 일시 차단 의심',
+      '조치: npx tsx agents/cafe/export-cookies.ts 로 쿠키 재발급 확인',
+    ].filter(Boolean).join('\n'),
+  })
+}
+
 async function main() {
   // Bug 8: 중복 실행 방지 — 30분 이내 락파일이 있으면 스킵
   if (existsSync(LOCK_FILE)) {
@@ -142,7 +236,7 @@ async function main() {
   try {
     // ── DEEP 모드 (08:30 KST) — 전체 크롤 + 심리 분석 + 풀 트렌드 + 인텔리전스 브리프 ──
     if (step === 'deep') {
-      await run('crawler.ts', '1단계: 딥다이브 크롤링 (댓글 포함)')
+      await runCrawlWithRetry('crawler.ts', '1단계: 딥다이브 크롤링 (댓글 포함)')
       await checkCookieExpiry()
       await run('external-crawler.ts', '2단계: 외부 크롤링 (비활성 — 빈 배열)')
       await run('psych-analyzer.ts', '3단계: AI 심리 분석')
@@ -154,7 +248,7 @@ async function main() {
     // ── QUICK 모드 (12:30 KST) — 빠른 크롤 + 경량 트렌드 업데이트 + midDayPatch ──
     else if (step === 'quick') {
       process.env.CRAWL_MODE = 'quick'
-      await run('crawler.ts', '1단계: 퀵 크롤링 (HIGH 게시판 1페이지)')
+      await runCrawlWithRetry('crawler.ts', '1단계: 퀵 크롤링 (HIGH 게시판 1페이지)')
       await checkCookieExpiry()
       // 심리 분석은 스킵 (제목만 수집)
       process.env.TREND_MODE = 'quick'
@@ -164,7 +258,7 @@ async function main() {
 
     // ── ALL 모드 — deep + curate (수동 실행용, 기본값) ──
     else if (step === 'all') {
-      await run('crawler.ts', '1단계: 카페 크롤링')
+      await runCrawlWithRetry('crawler.ts', '1단계: 카페 크롤링')
       await checkCookieExpiry()
       await run('external-crawler.ts', '2단계: 외부 크롤링 (비활성)')
       await run('psych-analyzer.ts', '3단계: AI 심리 분석')
@@ -175,7 +269,7 @@ async function main() {
 
     // ── 단계별 실행 ──
     else {
-      if (step === 'crawl') { await run('crawler.ts', '카페 크롤링'); await checkCookieExpiry() }
+      if (step === 'crawl') { await runCrawlWithRetry('crawler.ts', '카페 크롤링'); await checkCookieExpiry() }
       if (step === 'analyze') await run('psych-analyzer.ts', 'AI 심리 분석')
       if (step === 'trend') await run('trend-analyzer.ts', '트렌드 분석')
       if (step === 'curate') await run('content-curator.ts', '콘텐츠 큐레이션')
