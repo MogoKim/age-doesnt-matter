@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getPostDetail } from '@/lib/queries/posts'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,7 +10,8 @@ export async function GET(
 ) {
   const { id } = await params
 
-  const post = await prisma.post.findFirst({
+  // Raw Prisma query
+  const rawPost = await prisma.post.findFirst({
     where: {
       status: { in: ['PUBLISHED', 'SEO_ONLY'] },
       OR: [{ id }, { slug: id }],
@@ -17,11 +19,19 @@ export async function GET(
     select: { id: true, slug: true, status: true, boardType: true, title: true },
   })
 
+  // Via getPostDetail (React cache wrapped)
+  let cachedResult: 'found' | 'null' | 'error' = 'null'
+  try {
+    const detail = await getPostDetail(id)
+    cachedResult = detail ? 'found' : 'null'
+  } catch {
+    cachedResult = 'error'
+  }
+
   return NextResponse.json({
     received_id: id,
-    id_length: id.length,
-    id_codepoints: [...id].slice(0, 5).map(c => `${c}(U+${c.codePointAt(0)!.toString(16).toUpperCase()})`),
-    post_found: !!post,
-    post: post ? { id: post.id, slug: post.slug, status: post.status, boardType: post.boardType } : null,
+    raw_post_found: !!rawPost,
+    getPostDetail_result: cachedResult,
+    raw_post: rawPost ? { id: rawPost.id, slug: rawPost.slug, status: rawPost.status } : null,
   })
 }
