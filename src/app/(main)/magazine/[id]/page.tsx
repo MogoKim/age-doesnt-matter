@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -82,9 +82,20 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   const userId = session?.user?.id
 
   const post = await getPostDetail(id, userId)
-  // DEBUG: 임시 로그 — 이슈 해결 후 삭제
-  console.error('[DEBUG-MAGAZINE]', JSON.stringify({ id, userId: userId ?? null, postFound: !!post, boardType: post?.boardType ?? null }))
-  if (!post || post.boardType !== 'MAGAZINE') notFound()
+  // DEBUG: 임시 — 이슈 해결 후 삭제
+  if (!post || post.boardType !== 'MAGAZINE') {
+    return (
+      <div style={{padding:'2rem',fontFamily:'monospace'}}>
+        <h2>DEBUG: not found</h2>
+        <p>id: {JSON.stringify(id)}</p>
+        <p>id_length: {id.length}</p>
+        <p>userId: {userId ?? 'null'}</p>
+        <p>postFound: {String(!!post)}</p>
+        <p>boardType: {post?.boardType ?? 'null'}</p>
+        <p>id_chars: {[...id].slice(0,5).map(c=>`${c}(U+${c.codePointAt(0)!.toString(16).toUpperCase()})`).join(' ')}</p>
+      </div>
+    )
+  }
 
   // CUID로 접근했는데 slug가 있으면 slug URL로 301 redirect
   if (post.slug && id !== post.slug) {
