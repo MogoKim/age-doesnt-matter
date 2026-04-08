@@ -757,8 +757,19 @@ async function main() {
   console.log('[CafeCrawler] 브라우저 실행 (Playwright Chromium + 저장된 쿠키)')
   const page = await context.newPage()
 
+  // CRAWL_CAFE_FILTER: 특정 카페만 크롤링 (쉼표 구분, e.g. "dlxogns01" or "wgang,dlxogns01")
+  const cafeFilter = process.env.CRAWL_CAFE_FILTER
+    ? process.env.CRAWL_CAFE_FILTER.split(',').map(s => s.trim())
+    : null
+
   try {
     for (const cafe of CAFE_CONFIGS) {
+      // 필터 적용: 지정된 카페만 크롤링
+      if (cafeFilter && !cafeFilter.includes(cafe.id)) {
+        console.log(`[CafeCrawler] ${cafe.name} 스킵 (CRAWL_CAFE_FILTER=${cafeFilter.join(',')})`)
+        continue
+      }
+
       console.log(`\n[CafeCrawler] === ${cafe.name} (${cafe.id}, #${cafe.numericId}) ===`)
 
       // 1) 글 URL 수집
@@ -774,6 +785,16 @@ async function main() {
         if (consecutiveFails >= MAX_CONSECUTIVE_FAILS) {
           console.warn(`[CafeCrawler] ${cafe.name}: 연속 ${MAX_CONSECUTIVE_FAILS}회 실패 — 차단 의심, 이 카페 스킵`)
           break
+        }
+
+        // Pre-crawl 중복 체크 — 이미 DB에 있는 글은 브라우저 방문 없이 스킵
+        const alreadySaved = await prisma.cafePost.findUnique({
+          where: { postUrl: article.newFormatUrl },
+          select: { id: true },
+        })
+        if (alreadySaved) {
+          totalSkipped++
+          continue
         }
 
         const post = await crawlPost(page, article, cafe, includeComments)
