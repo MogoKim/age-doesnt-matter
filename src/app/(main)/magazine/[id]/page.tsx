@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -22,7 +22,8 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params
+  const { id: rawId } = await params
+  const id = decodeURIComponent(rawId)
   const post = await getPostDetail(id)
   if (!post) return {}
 
@@ -77,25 +78,14 @@ async function getCpsLinks(postId: string) {
 }
 
 export default async function MagazineDetailPage({ params }: PageProps) {
-  const { id } = await params
+  const { id: rawId } = await params
+  // Next.js 미들웨어 통과 시 한글 slug params가 자동 디코딩 안 됨 → 수동 디코딩
+  const id = decodeURIComponent(rawId)
   const session = await auth()
   const userId = session?.user?.id
 
   const post = await getPostDetail(id, userId)
-  // DEBUG: 임시 — 이슈 해결 후 삭제
-  if (!post || post.boardType !== 'MAGAZINE') {
-    return (
-      <div style={{padding:'2rem',fontFamily:'monospace'}}>
-        <h2>DEBUG: not found</h2>
-        <p>id: {JSON.stringify(id)}</p>
-        <p>id_length: {id.length}</p>
-        <p>userId: {userId ?? 'null'}</p>
-        <p>postFound: {String(!!post)}</p>
-        <p>boardType: {post?.boardType ?? 'null'}</p>
-        <p>id_chars: {[...id].slice(0,5).map(c=>`${c}(U+${c.codePointAt(0)!.toString(16).toUpperCase()})`).join(' ')}</p>
-      </div>
-    )
-  }
+  if (!post || post.boardType !== 'MAGAZINE') notFound()
 
   // CUID로 접근했는데 slug가 있으면 slug URL로 301 redirect
   if (post.slug && id !== post.slug) {
