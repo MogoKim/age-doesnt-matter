@@ -855,7 +855,8 @@ async function main() {
   })
 
   console.log(`\n[CafeCrawler] 완료 — [${crawlMode.toUpperCase()}] 수집 ${totalCollected}/${totalUrls} (${overallRate}%), 저장 ${totalSaved}, 중복스킵 ${totalSkipped}, ${Math.round(durationMs / 1000)}초`)
-  await disconnect()
+  await Promise.race([disconnect(), new Promise(r => setTimeout(r, 5000))])
+  process.exit(0)
 }
 
 main().catch(async (err) => {
@@ -866,6 +867,6 @@ main().catch(async (err) => {
     title: '카페 크롤링 실패',
     body: err instanceof Error ? err.message : String(err),
   })
-  await disconnect()
+  await Promise.race([disconnect(), new Promise(r => setTimeout(r, 5000))])
   process.exit(1)
 })
