@@ -38,6 +38,7 @@ async function getTodayPosts() {
       viewCount: true,
       // 댓글 (speechTone 집계에 사용)
       topComments: true,
+      boardName: true,
       // 심리 분석 결과 (psych-analyzer 실행 후 채워짐)
       emotionTags: true,
       desireCategory: true,
@@ -338,8 +339,44 @@ async function saveTrend(
   })
 }
 
+/** 인기글 vs 최신글 욕망 갭 분석 — 10%p 이상 차이만 표시 */
+function calcDesireGap(posts: Awaited<ReturnType<typeof getTodayPosts>>): string | null {
+  const analyzedPosts = posts.filter(p => p.aiAnalyzed && p.desireCategory)
+  const popularPosts = analyzedPosts.filter(p => p.boardName === '인기글')
+  const latestPosts = analyzedPosts.filter(p => p.boardName !== '인기글')
+
+  // 최소 샘플 5건 미만이면 신뢰도 낮아 스킵
+  if (popularPosts.length < 5 || latestPosts.length < 5) return null
+
+  const calcRatio = (items: typeof analyzedPosts): Record<string, number> => {
+    const cnt: Record<string, number> = {}
+    for (const p of items) cnt[p.desireCategory!] = (cnt[p.desireCategory!] ?? 0) + 1
+    const total = items.length
+    return Object.fromEntries(Object.entries(cnt).map(([k, v]) => [k, Math.round(v / total * 100)]))
+  }
+
+  const popularMap = calcRatio(popularPosts)
+  const latestMap = calcRatio(latestPosts)
+
+  const gaps: string[] = []
+  const allDesires = new Set([...Object.keys(popularMap), ...Object.keys(latestMap)])
+  for (const desire of allDesires) {
+    const pop = popularMap[desire] ?? 0
+    const lat = latestMap[desire] ?? 0
+    const diff = pop - lat
+    if (Math.abs(diff) >= 10) {
+      const arrow = diff > 0 ? '▲' : '▼'
+      gaps.push(`${desire}: 인기글 ${pop}% vs 최신글 ${lat}% (${arrow}${Math.abs(diff)}%p)`)
+    }
+  }
+
+  if (gaps.length === 0) return null
+
+  return `\n\n📊 *인기글 vs 최신글 욕망 갭* (10%p+ 차이, 인기글 ${popularPosts.length}건·최신글 ${latestPosts.length}건)\n${gaps.map(g => `• ${g}`).join('\n')}`
+}
+
 /** 매거진 추천 Slack 알림 */
-async function notifyMagazineTopics(analysis: TrendAnalysis) {
+async function notifyMagazineTopics(analysis: TrendAnalysis, gapReport: string | null) {
   if (analysis.magazineTopics.length === 0) return
 
   const topicList = analysis.magazineTopics
@@ -354,7 +391,7 @@ async function notifyMagazineTopics(analysis: TrendAnalysis) {
     level: 'info',
     agent: 'TREND_ANALYZER',
     title: '오늘의 5060 트렌드 분석',
-    body: `🔥 *핫토픽*\n${hotList}\n\n📰 *매거진 주제 추천*\n${topicList}\n\n승인: /magazine\\_approve 1`,
+    body: `🔥 *핫토픽*\n${hotList}\n\n📰 *매거진 주제 추천*\n${topicList}\n\n승인: /magazine\\_approve 1${gapReport ?? ''}`,
   })
 }
 
@@ -398,11 +435,19 @@ async function main() {
   const speechTone = aggregateSpeechTone(posts)
   console.log(`[TrendAnalyzer] 말투 집계 — 커뮤니티 어휘 ${speechTone.topCommunityVocab.length}개, 표현 ${speechTone.topKeyPhrases.length}개`)
 
+  // 5-2) 인기글 vs 최신글 욕망 갭 분석
+  const gapReport = calcDesireGap(posts)
+  if (gapReport) {
+    console.log('[TrendAnalyzer] 욕망 갭 분석 완료 (10%p+ 차이 감지)')
+  } else {
+    console.log('[TrendAnalyzer] 욕망 갭 분석 — 갭 없음 또는 인기글 샘플 부족')
+  }
+
   // 6) DB 저장
   await saveTrend(analysis, posts.length, cafeSummary, psychData, speechTone)
 
-  // 6) 텔레그램 알림
-  await notifyMagazineTopics(analysis)
+  // 7) Slack 알림 (트렌드 + 갭 리포트)
+  await notifyMagazineTopics(analysis, gapReport)
 
   const durationMs = Date.now() - startTime
 

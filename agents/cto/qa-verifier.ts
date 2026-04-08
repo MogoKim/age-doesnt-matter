@@ -68,8 +68,7 @@ const DAILY_EXPECTED: Array<{ botType: string; action: string; label: string }> 
   { botType: 'CFO', action: 'COST_TRACK', label: 'CFO 비용' },
   { botType: 'CAFE_CRAWLER', action: 'TREND_ANALYSIS', label: '카페 트렌드' },
   { botType: 'CAFE_CRAWLER', action: 'MAGAZINE_GENERATE', label: '매거진 생성' },
-  // TODO: QA 에이전트 배포 후 활성화
-  // { botType: 'QA', action: 'CONTENT_AUDIT', label: 'QA 콘텐츠 감사' },
+  { botType: 'QA', action: 'CONTENT_AUDIT', label: 'QA 콘텐츠 감사' },
 ]
 
 class CTOQAVerifier extends BaseAgent {
