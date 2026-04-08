@@ -290,7 +290,7 @@ async function checkCookieExpiry() {
   try {
     const lastLog = await prisma.botLog.findFirst({
       where: { botType: 'CAFE_CRAWLER', action: 'CAFE_CRAWL' },
-      orderBy: { crawledAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     })
     if (!lastLog) return
 

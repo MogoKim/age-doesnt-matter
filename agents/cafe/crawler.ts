@@ -752,6 +752,7 @@ async function main() {
   let totalCollected = 0
   let totalSaved = 0
   let totalUrls = 0
+  let totalSkipped = 0
 
   const { context } = await launchBrowser()
   console.log('[CafeCrawler] 브라우저 실행 (Playwright Chromium + 저장된 쿠키)')
@@ -853,7 +854,7 @@ async function main() {
     body: `수집: ${totalCollected}/${totalUrls}개 (수율 ${overallRate}%) / 신규 저장: ${totalSaved}개\n소요: ${Math.round(durationMs / 1000)}초`,
   })
 
-  console.log(`\n[CafeCrawler] 완료 — [${crawlMode.toUpperCase()}] 수집 ${totalCollected}/${totalUrls} (${overallRate}%), 저장 ${totalSaved}, ${Math.round(durationMs / 1000)}초`)
+  console.log(`\n[CafeCrawler] 완료 — [${crawlMode.toUpperCase()}] 수집 ${totalCollected}/${totalUrls} (${overallRate}%), 저장 ${totalSaved}, 중복스킵 ${totalSkipped}, ${Math.round(durationMs / 1000)}초`)
   await disconnect()
 }
 
