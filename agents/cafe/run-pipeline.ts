@@ -162,7 +162,7 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
     todayStart.setHours(0, 0, 0, 0)
     const perCafe = await prisma.cafePost.groupBy({
       by: ['cafeId'],
-      where: { createdAt: { gte: todayStart } },
+      where: { crawledAt: { gte: todayStart } },
       _count: { id: true },
     })
     lastFailedCafes = CONFIGURED_CAFE_IDS.filter(id => {
@@ -189,7 +189,7 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
   const finalCounts = await Promise.all(
     CONFIGURED_CAFE_IDS.map(async id => {
       const r = await prisma.cafePost.aggregate({
-        where: { cafeId: id, createdAt: { gte: todayStart } },
+        where: { cafeId: id, crawledAt: { gte: todayStart } },
         _count: { id: true },
       })
       return `${id}: ${r._count.id}건`
@@ -290,7 +290,7 @@ async function checkCookieExpiry() {
   try {
     const lastLog = await prisma.botLog.findFirst({
       where: { botType: 'CAFE_CRAWLER', action: 'CAFE_CRAWL' },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { crawledAt: 'desc' },
     })
     if (!lastLog) return
 
