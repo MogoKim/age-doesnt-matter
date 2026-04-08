@@ -85,10 +85,11 @@ const MAGAZINE_SANITIZE_OPTIONS: sanitize.IOptions = {
 
 export function sanitizeMagazineHtml(dirty: string): string {
   // AI 생성 content에서 마크다운 코드 펜스가 잔존하는 경우 제거
-  // 예: ```html\n<h2>...</h2>\n``` → <h2>...</h2>
+  // 템플릿 내부 어디에든 존재할 수 있으므로 전역 치환
+  // 예: <p>```html</p> → 제거, <p>```</p> → 제거
   const stripped = dirty
-    .replace(/^```(?:html)?\s*/i, '')
-    .replace(/\s*```\s*$/i, '')
+    .replace(/```html\s*/gi, '')
+    .replace(/```\s*/g, '')
   return sanitize(stripped, MAGAZINE_SANITIZE_OPTIONS)
 }
 
