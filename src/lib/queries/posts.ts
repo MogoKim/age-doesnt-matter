@@ -662,9 +662,12 @@ export const getPostDetail = cache(async function getPostDetail(
   postId: string,
   userId?: string,
 ): Promise<PostDetail | null> {
-  // CUID로 먼저 조회, 없으면 slug로 재조회
-  let post = await prisma.post.findUnique({
-    where: { id: postId, status: { in: ['PUBLISHED', 'SEO_ONLY'] } },
+  // id(CUID) 또는 slug 어느 쪽으로 접근해도 단일 쿼리로 조회
+  const post = await prisma.post.findFirst({
+    where: {
+      status: { in: ['PUBLISHED', 'SEO_ONLY'] },
+      OR: [{ id: postId }, { slug: postId }],
+    },
     select: {
       ...postSelect,
       content: true,
@@ -672,18 +675,6 @@ export const getPostDetail = cache(async function getPostDetail(
       slug: true,
     },
   })
-
-  if (!post) {
-    post = await prisma.post.findFirst({
-      where: { slug: postId, status: { in: ['PUBLISHED', 'SEO_ONLY'] } },
-      select: {
-        ...postSelect,
-        content: true,
-        updatedAt: true,
-        slug: true,
-      },
-    })
-  }
 
   if (!post) return null
 
