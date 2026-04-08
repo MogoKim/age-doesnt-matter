@@ -82,6 +82,8 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   const userId = session?.user?.id
 
   const post = await getPostDetail(id, userId)
+  // DEBUG: 임시 로그 — 이슈 해결 후 삭제
+  console.error('[DEBUG-MAGAZINE]', JSON.stringify({ id, userId: userId ?? null, postFound: !!post, boardType: post?.boardType ?? null }))
   if (!post || post.boardType !== 'MAGAZINE') notFound()
 
   // CUID로 접근했는데 slug가 있으면 slug URL로 301 redirect
