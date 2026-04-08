@@ -83,7 +83,7 @@ export default async function MagazinePage() {
 function FeaturedCard({ post }: { post: PostSummary }) {
   return (
     <Link
-      href={`/magazine/${post.id}`}
+      href={`/magazine/${post.slug ?? post.id}`}
       className="block bg-card rounded-2xl border border-border overflow-hidden no-underline transition-all hover:border-primary/30 hover:shadow-md"
     >
       {post.thumbnailUrl ? (
@@ -121,7 +121,7 @@ function FeaturedCard({ post }: { post: PostSummary }) {
 function MagazineCard({ post }: { post: PostSummary }) {
   return (
     <Link
-      href={`/magazine/${post.id}`}
+      href={`/magazine/${post.slug ?? post.id}`}
       className="block bg-card rounded-xl border border-border overflow-hidden no-underline transition-all hover:border-primary/30"
     >
       {post.thumbnailUrl ? (

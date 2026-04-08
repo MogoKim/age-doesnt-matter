@@ -379,6 +379,13 @@ async function main() {
       console.log(`[MagazineGenerator] 히어로 이미지를 썸네일로 사용: ${image.url.slice(0, 50)}...`)
     }
 
+    // 본문 길이 검증 — 너무 짧으면 발행 건너뜀
+    const textLength = finalHtml.replace(/<[^>]*>/g, '').trim().length
+    if (textLength < 100) {
+      console.warn(`[MagazineGenerator] ⚠️ 본문 너무 짧음(${textLength}자) — 발행 건너뜀: "${article.title}"`)
+      continue
+    }
+
     // 리치 HTML을 게시 콘텐츠로 사용
     const richArticle = { ...article, content: finalHtml }
     const postId = await publishMagazine(richArticle, category, thumbnailUrl)

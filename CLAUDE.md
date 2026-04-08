@@ -82,7 +82,7 @@
 11. **카카오 정보 수집**: 필수 최소화 (providerId/닉네임/프로필만 자동), 나머지 선택 동의. 가입 허들 낮추기.
 12. **어드민 계정**: 창업자가 자유롭게 생성/닉네임 설정 가능해야 함.
 13. **운영 채널**: Slack 6개 통합 채널 운영 중 (#대시보드, #리포트, #qa, #시스템, #로그, #에이전트). 13개 슬래시 커맨드.
-14. **Figma-First 원칙**: 신규 기능/페이지 개발 시 반드시 Figma 설계 → 창업자 승인 → 코딩 순서. "Figma에 그려줘" → Product Designer 에이전트가 처리. 승인 전 코드 작성 금지. 상세: `.claude/rules/figma-first.md`
+14. **Figma-First 원칙** (현재 운영 모드): Product Designer 에이전트 품질 안정화 전까지 → `/prd` 텍스트 명세 → 창업자 승인 → 코딩 → 코딩 완료 후 역공학. Figma 설계는 블로킹 아님. 품질 안정화 후: Figma 설계 → 승인 → 코딩 순서로 전환. 상세: `.claude/rules/figma-first.md`
     - 디자인 요청 라우팅: 화면 설계 → Product Designer / 광고·SNS 이미지 → Graphic Designer / 영상 소재 → Video Director
     - 역공학: "전체 Figma 초기화해줘" 한 마디로 기존 코드 → Figma 자동 복원
 15. **종속성 파악 후 작업**: 코드 변경 전 해당 코드의 종속 관계 먼저 파악. CSP↔광고, DB↔페이지, 에이전트↔크론↔워크플로우 등 연쇄 영향을 놓치면 프로덕션 장애 발생. grep/Explore로 의존 관계 확인 후 작업.

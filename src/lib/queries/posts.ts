@@ -49,6 +49,7 @@ const postSelect = {
   viewCount: true,
   promotionLevel: true,
   createdAt: true,
+  slug: true,
   author: {
     select: { id: true, nickname: true, grade: true, profileImage: true },
   },
@@ -68,6 +69,7 @@ function toPostSummary(
     viewCount: number
     promotionLevel: PromotionLevel
     createdAt: Date
+    slug?: string | null
     author: { id: string; nickname: string; grade: string; profileImage: string | null } | null
   },
 ): PostSummary {
@@ -85,6 +87,7 @@ function toPostSummary(
     promotionLevel: toPromotionLevel(post.promotionLevel),
     isPinned: post.isPinned ?? false,
     createdAt: post.createdAt.toISOString(),
+    slug: post.slug ?? null,
   }
 }
 
@@ -524,6 +527,7 @@ export async function getMagazineList(
   const where = {
     boardType: 'MAGAZINE' as const,
     status: 'PUBLISHED' as const,
+    NOT: { content: '' },
     ...(options?.category && options.category !== '전체' ? { category: options.category } : {}),
     ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
   }

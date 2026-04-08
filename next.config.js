@@ -22,6 +22,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'ads-partners.coupang.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'plus.unsplash.com',
+      },
     ],
   },
   experimental: {

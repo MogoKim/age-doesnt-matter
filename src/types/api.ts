@@ -106,6 +106,7 @@ export interface PostSummary {
   promotionLevel: PromotionLevel
   isPinned?: boolean
   createdAt: string
+  slug?: string | null
 }
 
 export interface PostDetail extends PostSummary {

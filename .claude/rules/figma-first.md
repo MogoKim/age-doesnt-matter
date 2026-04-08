@@ -28,17 +28,41 @@ Figma Desktop 앱 열기
 
 ---
 
+## 현재 운영 모드 (2026-04-08 기준)
+
+> **Product Designer 에이전트 Figma 드로잉 품질이 아직 불안정.**
+> Figma 단계를 블로킹 요소로 쓰지 않는다.
+
+### 현실적 흐름 (지금 적용)
+
+```
+기획 → /prd (텍스트 명세만) → 창업자 승인 → 코딩
+                                              ↓
+                              Figma는 코딩 완료 후 역공학으로 복원
+```
+
+- `/prd`로 텍스트 PRD 뽑기 → 창업자 승인 → 바로 코딩
+- Figma 설계가 없어도 코딩 시작 가능 (블로킹 아님)
+- 화면 완성 후 "Product Designer야, 역공학해줘"로 Figma 복원
+
+### 이상적 흐름 (Product Designer 품질 안정화 후 전환)
+
+```
+기획 → /prd → Figma(Product Designer) → 창업자 승인 → 코딩
+```
+
+---
+
 ## 핵심 규칙
 
-신규 기능/페이지 개발 시 반드시 아래 순서를 따른다.
+신규 기능/페이지 개발 시 따르는 순서:
 
-1. 창업자 또는 CPO가 Product Designer에게 Figma 설계 요청
-2. Product Designer가 Figma에 화면 그리기 (`mcp__figma-write__*` 도구 사용)
-3. 창업자가 Figma 검토 및 승인 ("승인해" 발화)
-4. 승인 후에만 Claude Code가 코딩 시작
-5. 코딩 완료 후 Figma와 코드 동기화 확인
+1. 창업자 또는 CPO가 `/prd`로 텍스트 PRD 생성
+2. 창업자 승인 ("승인해" 발화)
+3. 승인 후 Claude Code가 코딩 시작
+4. 코딩 완료 후 Product Designer에게 Figma 역공학 요청 (선택)
 
-**위반 시**: 코드를 짜지 말고 반드시 "Figma 설계 먼저 필요합니다"라고 알린다.
+**위반 시**: `/prd` 없이 코딩 시작 금지. 단, 예외 조건 해당 시 즉시 코딩 가능.
 
 ---
 
