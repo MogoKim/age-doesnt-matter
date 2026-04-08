@@ -674,7 +674,7 @@ export const getPostDetail = cache(async function getPostDetail(
   })
 
   if (!post) {
-    post = await prisma.post.findUnique({
+    post = await prisma.post.findFirst({
       where: { slug: postId, status: { in: ['PUBLISHED', 'SEO_ONLY'] } },
       select: {
         ...postSelect,

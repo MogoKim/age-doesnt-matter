@@ -89,9 +89,12 @@ export default async function MagazineDetailPage({ params }: PageProps) {
     redirect(`/magazine/${post.slug}`)
   }
 
+  // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/CPS/ActionBar FK 보장)
+  const resolvedId = post.id
+
   const [comments, cpsLinks] = await Promise.all([
-    getCommentsByPostId(id, userId),
-    getCpsLinks(id),
+    getCommentsByPostId(resolvedId, userId),
+    getCpsLinks(resolvedId),
   ])
 
   // JSON-LD 구조화 데이터
@@ -217,7 +220,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
 
       {/* 액션 바 */}
       <ActionBar
-        postId={id}
+        postId={resolvedId}
         title={post.title}
         description={post.preview}
         likeCount={post.likeCount}
@@ -227,7 +230,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       />
 
       {/* 댓글 */}
-      <CommentSection postId={id} comments={comments} />
+      <CommentSection postId={resolvedId} comments={comments} />
     </div>
   )
 }
