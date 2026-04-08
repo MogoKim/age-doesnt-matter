@@ -84,7 +84,12 @@ const MAGAZINE_SANITIZE_OPTIONS: sanitize.IOptions = {
 }
 
 export function sanitizeMagazineHtml(dirty: string): string {
-  return sanitize(dirty, MAGAZINE_SANITIZE_OPTIONS)
+  // AI 생성 content에서 마크다운 코드 펜스가 잔존하는 경우 제거
+  // 예: ```html\n<h2>...</h2>\n``` → <h2>...</h2>
+  const stripped = dirty
+    .replace(/^```(?:html)?\s*/i, '')
+    .replace(/\s*```\s*$/i, '')
+  return sanitize(stripped, MAGAZINE_SANITIZE_OPTIONS)
 }
 
 /**
@@ -116,11 +121,23 @@ export function proxyR2Images(html: string): string {
 }
 
 /**
- * 매거진 HTML 내 R2 이미지 URL을 Next.js Image Optimization으로 프록시
- * 브라우저에서 R2 직접 요청이 실패하므로 /_next/image 프록시 경유
+ * 매거진 HTML 내 이미지 URL을 Next.js Image Optimization으로 프록시
+ * - *.r2.dev / *.r2.cloudflarestorage.com — R2 직접 접근 불가
+ * - img.age-doesnt-matter.com — 프로덕션 R2 커스텀 도메인 (CORS 우회를 위해 프록시)
+ * [APPLIES TO] proxyR2Images()도 동일 패턴 — 연동 유지
  */
 export function proxyMagazineImages(html: string): string {
-  return proxyR2Images(html)
+  // R2 .r2.dev / .r2.cloudflarestorage.com 프록시
+  let result = proxyR2Images(html)
+  // 프로덕션 커스텀 도메인 프록시
+  result = result.replace(
+    /(<img\s[^>]*?)src="(https:\/\/img\.age-doesnt-matter\.com\/[^"]+)"/g,
+    (_, before, url) => {
+      const proxied = `/_next/image?url=${encodeURIComponent(url)}&w=750&q=80`
+      return `${before}src="${proxied}"`
+    },
+  )
+  return result
 }
 
 /**

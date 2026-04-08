@@ -166,10 +166,16 @@ ${recentList ? `최근 발행 매거진 (중복 주제 피해주세요):\n${rece
     }
   }
 
+  // AI가 마크다운 코드 펜스로 감싼 경우 제거 (```html ... ```)
+  const rawContent = bodyMatch[1].trim()
+  const cleanContent = rawContent
+    .replace(/^```(?:html)?\s*/i, '')
+    .replace(/\s*```\s*$/i, '')
+
   return {
     title: titleMatch[1].trim(),
     summary: summaryMatch?.[1]?.trim() ?? '',
-    content: bodyMatch[1].trim(),
+    content: cleanContent,
     imageContexts,
   }
 }
