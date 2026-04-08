@@ -112,8 +112,8 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/dlxogns01',
     numericId: 23676262,
     boards: [
-      // ── 인기글 (커뮤니티 검증 최고품질 — 2026-04-08 추가) ──
-      { name: '인기글', menuId: 0, isPopular: true, maxPages: 2, priority: 'high', category: 'general' },
+      // ── 인기글 (베스트 게시판 menuId=107 — wgang과 달리 일반 게시판 방식으로 접근) ──
+      { name: '인기글', menuId: 107, maxPages: 2, priority: 'high', category: 'general' },
 
       // ── 은퇴 후 삶 (RETIRE/JOB/MONEY) ──
       { name: '귀농·귀촌 이야기', menuId: 198, maxPages: 2, priority: 'high', category: 'lifestyle' },

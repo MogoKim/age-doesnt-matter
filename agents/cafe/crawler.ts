@@ -335,11 +335,13 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
     }
 
     try {
-      // 인기글(/popular)과 일반 게시판(/menus/{id}) URL 분기
+      // 인기글과 일반 게시판 URL 분기
+      // 인기글: 구 format URL (f-e/popular는 JS 렌더링으로 비로그인 상태에서 링크 미노출)
+      // 일반 게시판: f-e 신 format
       const boardUrl = board.isPopular
-        ? `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/popular`
+        ? `${cafe.url}?iframe_url_utf8=%2FCommunityReadTop.nhn%3Fclubid%3D${cafe.numericId}`
         : `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/${board.menuId}`
-      const boardLabel = board.isPopular ? '인기글' : `menuId=${board.menuId}`
+      const boardLabel = board.isPopular ? '인기글(구format)' : `menuId=${board.menuId}`
       console.log(`[CafeCrawler] ${cafe.name} — 게시판 "${board.name}" (${boardLabel}) 수집 중...`)
       await page.goto(boardUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
       await sleep(3000)
@@ -351,15 +353,20 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
         await sleep(1500)
       }
 
-      const links = await page.locator('a[href*="/articles/"]').all()
+      // 인기글: 구 format href 패턴 (articleid=N), 일반: 신 format (/articles/N)
+      const selector = board.isPopular ? 'a[href*="articleid"]' : 'a[href*="/articles/"]'
+      const links = await page.locator(selector).all()
       if (board.isPopular) {
-        console.log(`[CafeCrawler] 인기글 셀렉터 매칭: ${links.length}개 링크 발견 (0이면 /popular 페이지 구조 변경 의심)`)
+        console.log(`[CafeCrawler] 인기글 셀렉터 매칭: ${links.length}개 링크 발견`)
       }
       let boardCount = 0
       for (const link of links) {
         const href = await link.getAttribute('href')
         if (!href) continue
-        const match = href.match(/\/articles\/(\d+)/)
+        // 인기글: articleid=N 패턴, 일반: /articles/N 패턴
+        const match = board.isPopular
+          ? href.match(/articleid=(\d+)/)
+          : href.match(/\/articles\/(\d+)/)
         if (match && !collectedMap.has(match[1])) {
           collectedMap.set(match[1], {
             articleId: match[1],
@@ -373,10 +380,10 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
       }
       console.log(`[CafeCrawler] ${cafe.name} 게시판 "${board.name}": ${boardCount}개 신규 수집 (총 ${collectedMap.size}개)`)
 
-      // Bug 2: 0건 경고 — 일반 게시판(menuId 변경 의심) + 인기글(셀렉터 문제 의심) 모두 감지
+      // Bug 2: 0건 경고 — 일반 게시판(menuId 변경 의심) + 인기글(구format URL 문제 의심) 모두 감지
       if (boardCount === 0) {
         const reason = board.isPopular
-          ? '인기글 셀렉터 미매칭 — /popular 페이지 구조 변경 의심'
+          ? '인기글 구format URL 매칭 실패 — CommunityReadTop.nhn 접근 불가 의심'
           : `menuId=${board.menuId} 변경 의심`
         console.warn(`[CafeCrawler] ⚠️ "${board.name}" — 0건. ${reason}`)
         zeroBoardCount++
