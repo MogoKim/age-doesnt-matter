@@ -173,32 +173,22 @@ export async function getWeeklyTrendingPosts(limit = 10): Promise<PostSummary[]>
 /* ── 에디터스 픽 (HALL_OF_FAME) ── */
 
 export async function getEditorsPicks(limit = 2): Promise<PostSummary[]> {
-  let rows = await prisma.post.findMany({
+  // HALL_OF_FAME 우선, 부족 시 HOT으로 채움 — 단일 쿼리 (조건부 2차 쿼리 제거)
+  const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
-      promotionLevel: 'HALL_OF_FAME',
+      promotionLevel: { in: ['HALL_OF_FAME', 'HOT'] },
     },
     select: postSelect,
-    orderBy: { createdAt: 'desc' },
-    take: limit,
+    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+    take: limit * 3,
   })
 
-  // HALL_OF_FAME 부족 시 HOT 글로 채우기
-  if (rows.length < limit) {
-    const hotFill = await prisma.post.findMany({
-      where: {
-        status: 'PUBLISHED',
-        promotionLevel: 'HOT',
-        id: { notIn: rows.map((r) => r.id) },
-      },
-      select: postSelect,
-      orderBy: { likeCount: 'desc' },
-      take: limit - rows.length,
-    })
-    rows = [...rows, ...hotFill]
-  }
-
-  return rows.map(toPostSummary)
+  const sorted = [
+    ...rows.filter((r) => r.promotionLevel === 'HALL_OF_FAME'),
+    ...rows.filter((r) => r.promotionLevel === 'HOT'),
+  ]
+  return sorted.slice(0, limit).map(toPostSummary)
 }
 
 /* ── 최신 커뮤니티 글 ── */

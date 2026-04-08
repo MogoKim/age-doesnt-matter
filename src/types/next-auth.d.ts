@@ -10,6 +10,7 @@ declare module 'next-auth' {
       nickname: string
       profileImage: string | null
       needsOnboarding: boolean
+      fontSize?: string
     } & DefaultSession['user']
   }
 }
@@ -22,5 +23,6 @@ declare module 'next-auth/jwt' {
     nickname?: string
     profileImage?: string | null
     needsOnboarding?: boolean
+    fontSize?: string
   }
 }

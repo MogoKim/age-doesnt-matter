@@ -70,7 +70,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
 
           let user = await prisma.user.findUnique({
             where: { providerId },
-            select: { id: true, role: true, grade: true, nickname: true, profileImage: true, status: true, suspendedUntil: true },
+            select: { id: true, role: true, grade: true, nickname: true, profileImage: true, status: true, suspendedUntil: true, fontSize: true },
           })
 
           if (!user) {
@@ -105,6 +105,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           token.grade = user.grade
           token.nickname = user.nickname
           token.profileImage = user.profileImage
+          token.fontSize = user.fontSize ?? 'NORMAL'
         } else if (token.userId) {
           // 5분 이내 갱신됐으면 DB 스킵 (매 요청 DB 조회 방지)
           const now = Date.now()
@@ -116,7 +117,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           // 기존 세션 갱신: DB에 유저가 실제 존재하는지 확인
           const user = await prisma.user.findUnique({
             where: { id: token.userId as string },
-            select: { id: true, role: true, grade: true, nickname: true, profileImage: true },
+            select: { id: true, role: true, grade: true, nickname: true, profileImage: true, fontSize: true },
           })
           if (!user) {
             // DB에 유저가 없으면 토큰 초기화 → 재로그인 유도
@@ -126,6 +127,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
             token.nickname = undefined
             token.profileImage = undefined
             token.needsOnboarding = undefined
+            token.fontSize = undefined
           } else {
             // DB 최신 정보 반영
             token.tokenRefreshedAt = now
@@ -134,6 +136,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
             token.nickname = user.nickname
             token.profileImage = user.profileImage
             token.needsOnboarding = user.nickname.startsWith('user_')
+            token.fontSize = user.fontSize ?? 'NORMAL'
           }
         }
       } catch (error) {

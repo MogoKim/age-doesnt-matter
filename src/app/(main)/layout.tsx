@@ -1,5 +1,4 @@
 import { auth } from '@/lib/auth'
-import { getUserFontSize } from '@/lib/queries/my'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
 import OfflineBanner from '@/components/common/OfflineBanner'
@@ -13,9 +12,8 @@ export default async function MainGroupLayout({
   const session = await auth()
   const isLoggedIn = !!session?.user
   const nickname = session?.user?.nickname
-  const fontSize = session?.user?.id
-    ? await getUserFontSize(session.user.id).catch(() => undefined)
-    : undefined
+  // fontSize는 JWT 토큰에 포함 — 별도 DB 쿼리 없음
+  const fontSize = session?.user?.fontSize
 
   return (
     <FontSizeProvider fontSize={fontSize}>
