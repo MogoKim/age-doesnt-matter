@@ -62,25 +62,27 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/wgang',
     numericId: 29349320,
     boards: [
+      // ── 인기글 (커뮤니티 검증 최고품질 — 2026-04-08 추가) ──
+      { name: '인기글', menuId: 0, isPopular: true, maxPages: 2, priority: 'high', category: 'general' },
+
       // ── 갱년기 증상 그룹 (HEALTH 핵심) ──
       { name: '갱년기 몸 증상', menuId: 8, maxPages: 3, priority: 'high', category: 'health' },
       { name: '갱년기 마음 증상', menuId: 3, maxPages: 3, priority: 'high', category: 'health' },
       { name: '갱년기 극복후기', menuId: 81, maxPages: 2, priority: 'high', category: 'health' },
 
       // ── 관계·가족 그룹 (RELATION/FAMILY 욕망 핵심) ──
-      { name: '혼잣말 반말일기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '4050 대나무숲', menuId: 0, maxPages: 3, priority: 'high', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
+      { name: '혼잣말 반말일기', menuId: 38, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '딸아들 이야기', menuId: 5, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '남편 이야기', menuId: 6, maxPages: 2, priority: 'high', category: 'lifestyle' },
-      { name: '친구 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '친정댁 시댁', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '일터 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '싱글 이야기', menuId: 0, maxPages: 2, priority: 'high', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '지인 이야기', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
+      { name: '친구 이야기', menuId: 65, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '친정댁 시댁', menuId: 21, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '일터 이야기', menuId: 7, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '싱글 이야기', menuId: 105, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '지인 이야기', menuId: 82, maxPages: 1, priority: 'medium', category: 'lifestyle' },
 
       // ── 돈·은퇴 그룹 (MONEY/RETIRE 욕망) ──
       { name: '돈 이야기', menuId: 32, maxPages: 2, priority: 'high', category: 'finance' },
-      { name: '보험 이야기', menuId: 0, maxPages: 1, priority: 'medium', category: 'finance' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
+      { name: '보험 이야기', menuId: 114, maxPages: 1, priority: 'medium', category: 'finance' },
       { name: '은퇴 노후 계획', menuId: 112, maxPages: 2, priority: 'high', category: 'finance' },
 
       // ── 자유 주제 ──
@@ -89,19 +91,13 @@ export const CAFE_CONFIGS: CafeConfig[] = [
       // ── 내 몸 아끼기 (HEALTH) ──
       { name: '운동/다이어트', menuId: 10, maxPages: 2, priority: 'high', category: 'health' },
       { name: '약/영양제/건강/병원', menuId: 66, maxPages: 2, priority: 'high', category: 'health' },
-      { name: '식품/집밥', menuId: 0, maxPages: 1, priority: 'medium', category: 'health' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '성형/피부/헤어/패션', menuId: 12, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // discover-boards.ts로 확인됨
+      { name: '식품/집밥', menuId: 11, maxPages: 1, priority: 'medium', category: 'health' },
+      { name: '성형/피부/헤어/패션', menuId: 12, maxPages: 1, priority: 'medium', category: 'lifestyle' },
 
       // ── 여가·문화·취미 (HOBBY/ENTERTAIN) ──
-      { name: '나들이/여행/외식', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '영화/음악/공연/문화', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '독서/공부/자격증', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '취미/특기', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '반려 동식물', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '정리/청소/쇼핑', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: 'TV/연예인/영상', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '혼자놀기', menuId: 0, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // TODO: menuId 확인 필요 — 창업자 F/U 대기
-      { name: '내가 찍은 사진', menuId: 27, maxPages: 1, priority: 'medium', category: 'lifestyle' }, // discover-boards.ts로 확인됨
+      { name: '독서/공부/자격증', menuId: 79, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+      { name: '취미/특기', menuId: 14, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+      { name: 'TV/연예인/영상', menuId: 46, maxPages: 1, priority: 'medium', category: 'lifestyle' },
     ],
   },
 
@@ -116,6 +112,9 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/dlxogns01',
     numericId: 23676262,
     boards: [
+      // ── 인기글 (커뮤니티 검증 최고품질 — 2026-04-08 추가) ──
+      { name: '인기글', menuId: 0, isPopular: true, maxPages: 2, priority: 'high', category: 'general' },
+
       // ── 은퇴 후 삶 (RETIRE/JOB/MONEY) ──
       { name: '귀농·귀촌 이야기', menuId: 198, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '일자리·자격증 이야기', menuId: 149, maxPages: 2, priority: 'high', category: 'job' },

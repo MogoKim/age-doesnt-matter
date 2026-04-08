@@ -326,8 +326,8 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
   const zeroBoardNames: string[] = []
 
   for (const board of activeBoards) {
-    // menuId: 0 게시판은 실제 수집 불가 — 스킵 후 경고
-    if (board.menuId === 0) {
+    // menuId: 0 게시판은 실제 수집 불가 — isPopular가 아닌 경우만 스킵
+    if (board.menuId === 0 && !board.isPopular) {
       console.warn(`[CafeCrawler] ⚠️ "${board.name}" menuId=0 — 스킵 (창업자 확인 필요)`)
       zeroBoardCount++
       zeroBoardNames.push(board.name)
@@ -335,8 +335,12 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
     }
 
     try {
-      const boardUrl = `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/${board.menuId}`
-      console.log(`[CafeCrawler] ${cafe.name} — 게시판 "${board.name}" (menuId=${board.menuId}) 수집 중...`)
+      // 인기글(/popular)과 일반 게시판(/menus/{id}) URL 분기
+      const boardUrl = board.isPopular
+        ? `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/popular`
+        : `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/${board.menuId}`
+      const boardLabel = board.isPopular ? '인기글' : `menuId=${board.menuId}`
+      console.log(`[CafeCrawler] ${cafe.name} — 게시판 "${board.name}" (${boardLabel}) 수집 중...`)
       await page.goto(boardUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
       await sleep(3000)
 
@@ -366,8 +370,8 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
       }
       console.log(`[CafeCrawler] ${cafe.name} 게시판 "${board.name}": ${boardCount}개 신규 수집 (총 ${collectedMap.size}개)`)
 
-      // Bug 2: 0건 경고 (menuId 변경 의심)
-      if (boardCount === 0) {
+      // Bug 2: 0건 경고 (menuId 변경 의심) — 인기글은 제외
+      if (boardCount === 0 && !board.isPopular) {
         console.warn(`[CafeCrawler] ⚠️ "${board.name}" (menuId=${board.menuId}) — 0건. menuId 변경 의심`)
         zeroBoardCount++
         zeroBoardNames.push(`${board.name}(menuId=${board.menuId})`)

@@ -17,10 +17,11 @@ export interface CafeConfig {
 
 export interface CafeBoardConfig {
   name: string             // 게시판 이름
-  menuId: number           // 네이버 카페 menuId (숫자)
+  menuId: number           // 네이버 카페 menuId (숫자) — isPopular=true이면 무시
   maxPages: number         // 수집할 페이지 수
   priority: BoardPriority  // 크롤링 우선순위
   category: ContentCategory // 콘텐츠 카테고리
+  isPopular?: boolean      // true이면 /popular URL 사용 (커뮤니티 인기글 수집)
 }
 
 /** 댓글 데이터 (대댓글 포함) */
