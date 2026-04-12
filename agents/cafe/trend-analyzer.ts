@@ -102,7 +102,7 @@ function aggregatePsychData(posts: Awaited<ReturnType<typeof getTodayPosts>>) {
   }
 
   // 지배적 욕망/감정
-  const dominantDesire = Object.entries(desireCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+  const dominantDesire = Object.entries(desireMap).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
   const dominantEmotion = Object.entries(emotionCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
 
   // 긴급 토픽 (urgencyLevel >= 4)
