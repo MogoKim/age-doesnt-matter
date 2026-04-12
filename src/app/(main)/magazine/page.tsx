@@ -17,6 +17,7 @@ export const metadata: Metadata = {
     description: '건강, 재테크, 여행, 생활정보 등 50·60대를 위한 유익한 콘텐츠',
     url: 'https://age-doesnt-matter.com/magazine',
     type: 'website',
+    images: [{ url: '/icon-1024.png', width: 1024, height: 1024, alt: '우나어' }],
   },
 }
 

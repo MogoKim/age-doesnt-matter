@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: board.displayName,
       description: board.description,
+      alternates: { canonical: `https://age-doesnt-matter.com/community/${boardSlug}` },
     }
   } catch {
     return { title: '게시판' }
