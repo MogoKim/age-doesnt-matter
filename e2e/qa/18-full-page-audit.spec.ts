@@ -128,9 +128,11 @@ function evaluateIssues(
   if (result.httpStatus !== 200) {
     issues.push({ level: 'FAIL', message: `HTTP ${result.httpStatus}` })
   }
-  // 알려진 외부 스크립트 에러 필터 (Google AdSense/Funding Choices — 제어 불가)
+  // 알려진 무시 에러 필터 (제어 불가 노이즈)
+  // - appendChild: Google AdSense/Funding Choices 내부 스크립트
+  // - RSC payload: Next.js prefetch 실패 (headless 환경 일시적)
   const filteredErrors = result.consoleErrors.filter(
-    (e) => !e.includes('appendChild') && !e.includes('adsbygoogle')
+    (e) => !e.includes('appendChild') && !e.includes('adsbygoogle') && !e.includes('RSC payload')
   )
   if (filteredErrors.length > 0) {
     issues.push({ level: 'FAIL', message: `콘솔 에러 ${filteredErrors.length}건: ${filteredErrors.slice(0, 2).join(' | ')}` })

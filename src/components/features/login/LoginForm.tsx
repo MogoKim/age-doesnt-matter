@@ -39,9 +39,9 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       {/* 약관 + 둘러보기 */}
       <p className="text-caption text-muted-foreground leading-relaxed mt-5 mb-3">
         로그인 시{' '}
-        <Link href="/terms/service" className="text-muted-foreground underline hover:text-primary">이용약관</Link>
+        <Link href="/terms" className="text-muted-foreground underline hover:text-primary">이용약관</Link>
         {' '}및{' '}
-        <Link href="/terms/privacy" className="text-muted-foreground underline hover:text-primary">개인정보처리방침</Link>
+        <Link href="/privacy" className="text-muted-foreground underline hover:text-primary">개인정보처리방침</Link>
         에 동의하게 됩니다.
       </p>
 
