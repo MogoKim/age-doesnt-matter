@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import NextAuth from 'next-auth'
-import { authConfig } from '@/lib/auth.config'
+import { getToken } from 'next-auth/jwt'
 import { verifyAdminToken } from '@/lib/admin-auth'
 
-const nextAuth = NextAuth(authConfig)
-
-// 인증이 필요한 경로들
-const PROTECTED_PATHS = ['/my', '/community/write', '/onboarding']
+// 로그인이 필요한 경로
+const PROTECTED_PATHS = ['/my', '/community/write']
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -18,12 +15,12 @@ export default async function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    const token = request.cookies.get('admin-token')?.value
-    if (!token) {
+    const adminToken = request.cookies.get('admin-token')?.value
+    if (!adminToken) {
       return NextResponse.redirect(new URL('/admin/login', request.url))
     }
 
-    const admin = await verifyAdminToken(token)
+    const admin = await verifyAdminToken(adminToken)
     if (!admin) {
       return NextResponse.redirect(new URL('/admin/login', request.url))
     }
@@ -43,8 +40,24 @@ export default async function middleware(request: NextRequest) {
     }
   }
 
-  // ── 일반 라우트: NextAuth 미들웨어 ──
-  return nextAuth.auth(request as never) as unknown as ReturnType<typeof NextResponse.next>
+  // ── 온보딩 리다이렉트: JWT에서 needsOnboarding 확인 ──
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+    cookieName: request.cookies.has('__Secure-authjs.session-token')
+      ? '__Secure-authjs.session-token'
+      : 'authjs.session-token',
+  })
+
+  if (token?.needsOnboarding && pathname !== '/onboarding') {
+    return NextResponse.redirect(new URL('/onboarding', request.url))
+  }
+
+  if (!token?.needsOnboarding && token && pathname === '/onboarding') {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  return NextResponse.next()
 }
 
 export const config = {

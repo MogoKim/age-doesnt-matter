@@ -110,6 +110,40 @@ export default defineConfig({
         storageState: USER_AUTH,
       },
     },
+
+    // ── 감사(Audit) QA — 프로덕션 대상 검수 ──
+
+    // 10. 전체 페이지 렌더링 + 성능 감사 (데스크탑)
+    {
+      name: 'qa-audit',
+      testMatch: /qa\/(18|19|20)-.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: process.env.QA_AUDIT_URL || 'https://age-doesnt-matter.com',
+        screenshot: 'on',
+      },
+    },
+    // 11. 전체 페이지 + 여정 감사 (모바일 — UX 라이팅은 데스크탑만)
+    {
+      name: 'qa-audit-mobile',
+      testMatch: /qa\/(18|19)-.*\.spec\.ts/,
+      use: {
+        ...devices['Pixel 7'],
+        baseURL: process.env.QA_AUDIT_URL || 'https://age-doesnt-matter.com',
+        screenshot: 'on',
+      },
+    },
+    // 12. 로그인 유저 여정 감사 (user.json)
+    {
+      name: 'qa-audit-user',
+      testMatch: /qa\/19-.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: process.env.QA_AUDIT_URL || 'https://age-doesnt-matter.com',
+        storageState: USER_AUTH,
+        screenshot: 'on',
+      },
+    },
   ],
 
   // E2E_BASE_URL 설정 시 외부 URL 직접 테스트 (프로덕션 QA)

@@ -18,7 +18,11 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "prepare": "husky",
-    "smoke-test": "tsx scripts/smoke-test.ts"
+    "smoke-test": "tsx scripts/smoke-test.ts",
+    "qa:audit": "playwright test --project=qa-audit --workers=1",
+    "qa:audit:mobile": "playwright test --project=qa-audit-mobile --workers=1",
+    "qa:audit:user": "playwright test --project=qa-audit-user --workers=1",
+    "qa:full": "playwright test --project=qa-audit --project=qa-audit-mobile --project=qa-audit-user --workers=1"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

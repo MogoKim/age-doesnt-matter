@@ -9,6 +9,7 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import * as fs from 'fs/promises'
+import sharp from 'sharp'
 
 const client = new Anthropic()
 const VISION_MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5-20251001'
@@ -86,7 +87,18 @@ export async function checkBrandCompliance(
   imagePath: string,
   sceneDescription?: string
 ): Promise<BrandCheckResult> {
-  const imageBuffer = await fs.readFile(imagePath)
+  let imageBuffer = await fs.readFile(imagePath)
+
+  // Claude Vision API 5MB 한도 초과 시 리사이즈 (Gemini는 고해상도 반환)
+  const MAX_BYTES = 4.5 * 1024 * 1024
+  if (imageBuffer.byteLength > MAX_BYTES) {
+    imageBuffer = await sharp(imageBuffer)
+      .resize({ width: 1536, withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer()
+    console.log(`  [Brand Guardian] 이미지 리사이즈: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(1)}MB`)
+  }
+
   const base64Image = imageBuffer.toString('base64')
 
   // magic bytes로 실제 포맷 판별 (확장자는 틀릴 수 있음)

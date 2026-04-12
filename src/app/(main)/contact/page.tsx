@@ -4,6 +4,7 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: '문의',
   description: '우나어에 문의하기',
+  alternates: { canonical: 'https://age-doesnt-matter.com/contact' },
 }
 
 export default function ContactPage() {

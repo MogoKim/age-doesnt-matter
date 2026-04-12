@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: '커뮤니티 이용규칙',
+  alternates: { canonical: 'https://age-doesnt-matter.com/rules' },
 }
 
 export default function RulesPage() {

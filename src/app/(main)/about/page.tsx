@@ -4,6 +4,7 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: '우나어 소개',
   description: '우리 나이가 어때서 — 50·60대를 위한 따뜻한 커뮤니티',
+  alternates: { canonical: 'https://age-doesnt-matter.com/about' },
 }
 
 export default function AboutPage() {

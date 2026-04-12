@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: '이용약관',
+  alternates: { canonical: 'https://age-doesnt-matter.com/terms' },
 }
 
 export default function TermsPage() {

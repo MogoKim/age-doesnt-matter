@@ -25,6 +25,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ko_KR',
     siteName: '우리 나이가 어때서',
+    images: [{ url: '/icon-1024.png', width: 1024, height: 1024, alt: '우나어' }],
   },
   robots: {
     index: true,

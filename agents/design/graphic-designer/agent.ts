@@ -158,7 +158,7 @@ async function planImages(request: string): Promise<PlannerOutput> {
 
 // ─── Generator-Evaluator-Evolver 루프 ────────────────────────────────────────
 
-async function executeImageGeneration(
+export async function executeImageGeneration(
   spec: ImageSpec,
   outputDir: string
 ): Promise<GenerationResult> {
