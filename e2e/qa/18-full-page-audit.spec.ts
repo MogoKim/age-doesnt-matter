@@ -128,8 +128,15 @@ function evaluateIssues(
   if (result.httpStatus !== 200) {
     issues.push({ level: 'FAIL', message: `HTTP ${result.httpStatus}` })
   }
-  if (result.consoleErrors.length > 0) {
-    issues.push({ level: 'FAIL', message: `콘솔 에러 ${result.consoleErrors.length}건: ${result.consoleErrors.slice(0, 2).join(' | ')}` })
+  // 알려진 외부 스크립트 에러 필터 (Google AdSense/Funding Choices — 제어 불가)
+  const KNOWN_EXTERNAL_ERRORS = [
+    "Failed to execute 'appendChild' on 'Node': Invalid or unexpected token",
+  ]
+  const filteredErrors = result.consoleErrors.filter(
+    (e) => !KNOWN_EXTERNAL_ERRORS.some((known) => e.includes(known))
+  )
+  if (filteredErrors.length > 0) {
+    issues.push({ level: 'FAIL', message: `콘솔 에러 ${filteredErrors.length}건: ${filteredErrors.slice(0, 2).join(' | ')}` })
   }
   if (perf.lcp > 4000) {
     issues.push({ level: 'FAIL', message: `LCP ${(perf.lcp / 1000).toFixed(1)}s (임계값 4.0s 초과)` })
