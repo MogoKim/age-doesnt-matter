@@ -105,11 +105,18 @@ test('여정 1 — 비로그인 첫 방문 탐색', async ({ page }) => {
   }))
 
   steps.push(await measureStep('게시글 상세 진입', async () => {
-    const postLink = await page.$('a[href*="/community/"]')
-    if (!postLink) return '클릭 가능한 게시글 링크 없음'
-    const href = await postLink.getAttribute('href')
-    if (!href) return '게시글 링크 href 없음'
-    await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 15_000 })
+    // 게시판 목록 URL(/community/stories)이 아닌 실제 게시글 URL(/community/stories/123) 찾기
+    const postHref = await page.$$eval(
+      'a[href*="/community/"]',
+      (links) => {
+        const href = links
+          .map((a) => a.getAttribute('href') ?? '')
+          .find((h) => h.split('/').filter(Boolean).length >= 3)
+        return href ?? null
+      }
+    )
+    if (!postHref) return '클릭 가능한 게시글 링크 없음 (게시글이 없거나 베스트 목록 비어있음)'
+    await page.goto(postHref, { waitUntil: 'domcontentloaded', timeout: 20_000 })
     const url = page.url()
     if (!url.includes('/community/')) return `게시글 상세 페이지 이동 실패: ${url}`
   }))
@@ -163,9 +170,12 @@ test('여정 2 — 커뮤니티 게시판 탐색', async ({ page }) => {
   }))
 
   steps.push(await measureStep('이야기 게시판 진입', async () => {
-    // 이전 단계에서 이미 /community(→stories)에 있으므로 재탐색 불필요
-    // 사는이야기 게시판으로 직접 이동
-    await page.goto('/community/stories', { waitUntil: 'domcontentloaded', timeout: 15_000 })
+    // /community는 /community/stories로 서버사이드 redirect → 이미 도착해 있음
+    // 동일 URL 재navigate 시 ERR_ABORTED 발생하므로 URL 확인 후 스킵
+    const currentUrl = page.url()
+    if (!currentUrl.includes('/community/stories')) {
+      await page.goto('/community/stories', { waitUntil: 'domcontentloaded', timeout: 15_000 })
+    }
     const posts = await page.$$('article, a[href*="/community/stories/"], a[href*="/community/"][href*="/post"]')
     if (posts.length === 0) return '이야기 게시판 게시글 없음'
   }))

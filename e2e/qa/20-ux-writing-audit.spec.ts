@@ -31,7 +31,7 @@ const AUDIT_PAGES = [
   { url: '/faq', label: 'FAQ' },
   { url: '/search', label: '검색' },
   { url: '/best', label: '베스트' },
-  { url: '/community', label: '커뮤니티 메인' },
+  { url: '/community/stories', label: '커뮤니티 메인' },
   { url: '/magazine', label: '매거진 목록' },
   { url: '/jobs', label: '일자리 목록' },
   { url: '/login', label: '로그인' },

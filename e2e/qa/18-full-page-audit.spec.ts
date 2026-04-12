@@ -133,13 +133,15 @@ function evaluateIssues(
   // - RSC payload: Next.js prefetch 실패 (headless 환경 일시적)
   // - frame-ancestors: Google Ad CSP report-only 위반 (차단 아님)
   // - ERR_FAILED: 외부 광고 리소스 로드 실패
+  // - fonts.googleapis.com: AdSense가 Google Sans 폰트 로드 시 style-src CSP 위반 (외부 제어 불가)
   const filteredErrors = result.consoleErrors.filter(
     (e) =>
       !e.includes('appendChild') &&
       !e.includes('adsbygoogle') &&
       !e.includes('RSC payload') &&
       !e.includes('frame-ancestors') &&
-      !e.includes('ERR_FAILED')
+      !e.includes('ERR_FAILED') &&
+      !e.includes('fonts.googleapis.com')
   )
   if (filteredErrors.length > 0) {
     issues.push({ level: 'FAIL', message: `콘솔 에러 ${filteredErrors.length}건: ${filteredErrors.slice(0, 2).join(' | ')}` })
