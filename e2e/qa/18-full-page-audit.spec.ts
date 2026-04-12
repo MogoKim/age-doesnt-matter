@@ -194,15 +194,8 @@ test.describe('전체 페이지 렌더링 + 성능 감사', () => {
       })
       page.on('pageerror', (err) => consoleErrors.push('[PageError] ' + err.message.slice(0, 200)))
 
-      let httpStatus = 0
-      page.on('response', (res) => {
-        if (res.url().includes(url.replace('/', '')) || res.url().endsWith('/')) {
-          if (res.status() >= 200) httpStatus = res.status()
-        }
-      })
-
       const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20_000 })
-      httpStatus = response?.status() ?? 0
+      const httpStatus = response?.status() ?? 0
 
       // 2초 대기 (LCP/CLS 관찰)
       await page.waitForTimeout(2000)
