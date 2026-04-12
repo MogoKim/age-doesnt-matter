@@ -34,15 +34,15 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
 
-      # Playwright 브라우저 설치 (Chromium만)
-      - name: Install Playwright Chromium
-        run: npx playwright install chromium --with-deps
-
       - run: cd agents && npm ci
 
-      # playwright 의존성 추가 (agents/ 내부)
+      # playwright 의존성 추가 (agents/ 내부) — 반드시 브라우저 설치보다 먼저
       - name: Install playwright for agents
         run: cd agents && npm install playwright --no-save
+
+      # Playwright 브라우저 설치 (agents 버전 기준으로 설치해야 버전 일치)
+      - name: Install Playwright Chromium
+        run: cd agents && npx playwright install chromium --with-deps
 
       - name: Run job scraper
         run: cd agents && npx tsx cron/runner.ts coo job-scraper
