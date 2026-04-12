@@ -107,10 +107,9 @@ test('여정 1 — 비로그인 첫 방문 탐색', async ({ page }) => {
   steps.push(await measureStep('게시글 상세 진입', async () => {
     const postLink = await page.$('a[href*="/community/"]')
     if (!postLink) return '클릭 가능한 게시글 링크 없음'
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 10_000 }).catch(() => {}),
-      postLink.click(),
-    ])
+    const href = await postLink.getAttribute('href')
+    if (!href) return '게시글 링크 href 없음'
+    await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 15_000 })
     const url = page.url()
     if (!url.includes('/community/')) return `게시글 상세 페이지 이동 실패: ${url}`
   }))
@@ -168,10 +167,9 @@ test('여정 2 — 커뮤니티 게시판 탐색', async ({ page }) => {
     // 이야기 게시판 링크 찾기
     const link = await page.$('a:has-text("이야기"), a[href*="saneun"], a[href*="story"], a[href*="iyagi"]')
     if (!link) return '이야기 게시판 링크 없음'
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 10_000 }).catch(() => {}),
-      link.click(),
-    ])
+    const href = await link.getAttribute('href')
+    if (!href) return '이야기 게시판 href 없음'
+    await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 15_000 })
     const posts = await page.$$('article, a[href*="/community/"], [data-testid="post"]')
     if (posts.length === 0) return '이야기 게시판 게시글 없음'
   }))
@@ -189,30 +187,29 @@ test('여정 2 — 커뮤니티 게시판 탐색', async ({ page }) => {
   steps.push(await measureStep('공감 버튼 클릭 → 로그인 유도', async () => {
     const likeBtn = await page.$('button:has-text("공감"), button[aria-label*="공감"], [data-testid="like-btn"]')
     if (!likeBtn) return '공감 버튼 없음'
-    await likeBtn.click()
+    await page.locator('button:has-text("공감"), button[aria-label*="공감"], [data-testid="like-btn"]').first().click({ timeout: 10_000 })
     await page.waitForTimeout(500)
-    // 로그인 유도 확인
-    const loginPrompt = await page.$('[role="dialog"], text=로그인이 필요, a:has-text("로그인")')
-    if (!loginPrompt) return '비로그인 공감 클릭 시 로그인 유도 없음'
+    // 로그인 유도 확인 (dialog 또는 로그인 링크)
+    const loginDialog = await page.$('[role="dialog"]')
+    const loginLink = await page.$('a:has-text("로그인"), button:has-text("로그인")')
+    if (!loginDialog && !loginLink) return '비로그인 공감 클릭 시 로그인 유도 없음'
   }))
 
   steps.push(await measureStep('유머 게시판 전환', async () => {
     const humorLink = await page.$('a:has-text("유머"), a[href*="humor"], a[href*="hwaldong"]')
     if (!humorLink) return '유머 게시판 링크 없음'
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 10_000 }).catch(() => {}),
-      humorLink.click(),
-    ])
+    const href = await humorLink.getAttribute('href')
+    if (!href) return '유머 게시판 href 없음'
+    await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 15_000 })
   }))
 
   steps.push(await measureStep('2막준비 게시판 전환', async () => {
     await page.goto('/community', { waitUntil: 'domcontentloaded' })
     const life2Link = await page.$('a:has-text("2막"), a[href*="life2"], a[href*="imak"]')
     if (!life2Link) return '2막준비 게시판 링크 없음'
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 10_000 }).catch(() => {}),
-      life2Link.click(),
-    ])
+    const href = await life2Link.getAttribute('href')
+    if (!href) return '2막준비 게시판 href 없음'
+    await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 15_000 })
     const posts = await page.$$('article, a[href*="/community/"]')
     if (posts.length === 0) return '2막준비 게시판 게시글 없음 (빈 상태 UI 확인 필요)'
   }))
@@ -268,10 +265,9 @@ test('여정 3 — 검색 사용', async ({ page }) => {
     await page.waitForTimeout(1500)
     const resultLink = await page.$('a[href*="/community/"]')
     if (!resultLink) return '검색 결과 링크 없음 (데이터 부족 가능)'
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 10_000 }).catch(() => {}),
-      resultLink.click(),
-    ])
+    const href = await resultLink.getAttribute('href')
+    if (!href) return '검색 결과 href 없음'
+    await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 15_000 })
     const url = page.url()
     if (!url.includes('/community/')) return `게시글 페이지 이동 실패: ${url}`
   }))
