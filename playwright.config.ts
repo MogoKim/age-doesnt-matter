@@ -119,7 +119,7 @@ export default defineConfig({
       testMatch: /qa\/(18|19|20)-.*\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
-        baseURL: process.env.QA_AUDIT_URL || 'https://age-doesnt-matter.com',
+        baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
         screenshot: 'on',
       },
     },
@@ -129,7 +129,7 @@ export default defineConfig({
       testMatch: /qa\/(18|19)-.*\.spec\.ts/,
       use: {
         ...devices['Pixel 7'],
-        baseURL: process.env.QA_AUDIT_URL || 'https://age-doesnt-matter.com',
+        baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
         screenshot: 'on',
       },
     },
@@ -139,7 +139,7 @@ export default defineConfig({
       testMatch: /qa\/19-.*\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
-        baseURL: process.env.QA_AUDIT_URL || 'https://age-doesnt-matter.com',
+        baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
         storageState: USER_AUTH,
         screenshot: 'on',
       },
