@@ -60,6 +60,9 @@ export default function RootLayout({
   return (
     <html lang="ko" className={pretendard.variable}>
       <head>
+        <link rel="preconnect" href="https://img.age-doesnt-matter.com" />
+        <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://img.age-doesnt-matter.com" />
         <GTMScript />
         <Script
           async

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { unstable_cache } from 'next/cache'
 
 import { getBoardConfig } from '@/lib/queries/boards'
 import { getPostsByBoard } from '@/lib/queries/posts'
@@ -43,7 +44,12 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
   if (!board) notFound()
 
   const sortOption = sort === 'likes' ? 'likes' as const : 'latest' as const
-  const { posts, hasMore } = await getPostsByBoard(board.boardType, { category, sort: sortOption, limit: 20 })
+  const getCachedPosts = unstable_cache(
+    () => getPostsByBoard(board.boardType, { category, sort: sortOption, limit: 20 }),
+    [`board-${board.boardType}-${category ?? 'all'}-${sortOption}`],
+    { revalidate: 30 }
+  )
+  const { posts, hasMore } = await getCachedPosts()
   const lastId = posts.length > 0 ? posts[posts.length - 1].id : undefined
 
   return (

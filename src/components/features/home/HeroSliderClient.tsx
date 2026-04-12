@@ -57,6 +57,7 @@ export default function HeroSliderClient({ slides }: Props) {
               className="object-cover"
               sizes="100vw"
               priority={index === 0}
+              loading={index === 0 ? undefined : 'lazy'}
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent p-4 flex flex-col justify-end lg:max-w-[1200px] lg:mx-auto lg:left-1/2 lg:right-auto lg:-translate-x-1/2 lg:w-full lg:p-10">
