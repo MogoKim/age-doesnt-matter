@@ -4,14 +4,14 @@ import { getPersona, getAllPersonaIds, type Persona } from './persona-data.js'
 
 // ── 욕망 카테고리 → 적합 페르소나 매핑 ──
 export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint: string }> = {
-  HEALTH:   { personas: ['H', 'P2', 'A'], topicHint: '건강 정보, 병원 경험, 증상 공감' },
-  FAMILY:   { personas: ['A', 'L', 'E'], topicHint: '가족 이야기, 자녀 고민, 손주 자랑' },
-  MONEY:    { personas: ['B', 'P4', 'N'], topicHint: '절약 팁, 재테크 경험, 연금 이야기' },
-  RETIRE:   { personas: ['T', 'B', 'G'], topicHint: '은퇴 후 일상, 의미 찾기, 새 시작' },
-  JOB:      { personas: ['P4', 'T', 'B'], topicHint: '일자리 경험, 자격증, 재취업 이야기' },
-  RELATION: { personas: ['E', 'P5', 'C'], topicHint: '공감, 위로, 소통, 친구 이야기' },
-  HOBBY:    { personas: ['G', 'M', 'F'], topicHint: '취미, 여행, 텃밭, 활동' },
-  MEANING:  { personas: ['T', 'P', 'I'], topicHint: '삶의 의미, 감사, 보람, 철학' },
+  HEALTH:   { personas: ['H', 'P2', 'A'], topicHint: '건강 정보, 병원 경험, 증상 공감, 약 부작용, 건강검진 결과' },
+  FAMILY:   { personas: ['A', 'E', 'AK'], topicHint: '자녀 이야기(취업·직장·결혼), 고부갈등(시어머니 입장), 사위/며느리 이야기, 남편 이야기, 친구 질투·시기·위로. 손주가 등장하면 반드시 유치원생/초등 저학년 수준으로만.' },
+  MONEY:    { personas: ['B', 'P4', 'N'], topicHint: '절약 팁, 재테크 경험, 연금 이야기, 물가 한탄' },
+  RETIRE:   { personas: ['T', 'B', 'G'], topicHint: '은퇴 후 일상, 의미 찾기, 새 시작, 무료함, 취미 찾기' },
+  JOB:      { personas: ['P4', 'T', 'B'], topicHint: '일자리 경험, 자격증, 재취업 이야기, 나이 차별' },
+  RELATION: { personas: ['E', 'P5', 'C'], topicHint: '공감, 위로, 소통, 친구 이야기, 섭섭함, 오해, 화해' },
+  HOBBY:    { personas: ['G', 'M', 'F'], topicHint: '취미, 여행 후기(구체적 장소명 포함), 텃밭, 등산 코스명' },
+  MEANING:  { personas: ['T', 'P', 'I'], topicHint: '삶의 의미, 감사, 보람, 철학, 나이 들어 깨달은 것' },
 }
 
 /** 오늘의 CafeTrend 조회 (speechTone 포함) */
@@ -64,6 +64,35 @@ function buildTrendContext(
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 
 const client = new Anthropic()
+
+/** KST 현재 날짜/요일/시간대 문자열 (GitHub Actions UTC 실행 보정) */
+function getKstContext(): string {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000)
+  const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
+  const day = days[kst.getUTCDay()]
+  const hour = kst.getUTCHours()
+  const timeSlot = hour < 6 ? '새벽' : hour < 12 ? '오전' : hour < 18 ? '오후' : '저녁'
+  return `[KST 현재] ${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 ${day} ${timeSlot}\n글에서 날짜/요일/시간대를 언급할 때 반드시 위 기준으로 쓰세요.`
+}
+
+/** HUMOR 보드 글 생성 시 최근 엔터테인먼트 크롤링 글 조회 */
+async function getLatestEntertainPost(): Promise<{ title: string; content: string } | null> {
+  try {
+    return await prisma.cafePost.findFirst({
+      where: {
+        isUsable: true,
+        OR: [
+          { desireCategory: 'ENTERTAIN' },
+          { topics: { hasSome: ['드라마', '예능', '연예인', '트로트', '넷플릭스', '임영웅'] } },
+        ],
+      },
+      orderBy: { likeCount: 'desc' },
+      select: { title: true, content: true },
+    })
+  } catch {
+    return null
+  }
+}
 
 /** AI 응답에서 마크다운 문법 제거 */
 function stripMarkdown(text: string): string {
@@ -136,7 +165,9 @@ ${examplesStr}
 - 정치/종교/혐오/광고 절대 금지
 - 마크다운 문법(**, ##, *, _ 등) 절대 사용 금지. 순수 텍스트만.
 - 다른 캐릭터처럼 쓰지 마세요. 당신은 "${p.nickname}"이고 다른 사람과 다릅니다.
-- 위의 예시 문장을 그대로 복사하지 말고, 같은 스타일로 새로운 내용을 쓰세요.`
+- 위의 예시 문장을 그대로 복사하지 말고, 같은 스타일로 새로운 내용을 쓰세요.
+- 오프라인 모임 모집 글 절대 금지: "같이 걸어요", "이번 수요일 모여요", "○○동 모임합니다" 식의 글 금지. 온라인에서 자기 이야기/정보를 나누는 글만 작성.
+- 드라마/예능/영화 언급 시 반드시 실제 제목 명시: "어제 본 드라마" (X) → "어제 눈물의 여왕 봤는데" (O)`
 }
 
 /** 글 생성 */
@@ -165,15 +196,24 @@ export async function generatePost(
   const trend = await getLatestTrend()
   const trendContext = buildTrendContext(trend, personaId)
 
+  // HUMOR 보드: 최근 엔터 크롤링 글에서 프로그램명/연예인명 힌트 추출
+  let entertainHint = ''
+  if (board === 'HUMOR') {
+    const entertainPost = await getLatestEntertainPost()
+    if (entertainPost) {
+      entertainHint = `\n\n[오늘 화제 엔터 소재 — 이 글을 참고해 구체적 프로그램명/연예인명 사용]\n제목: ${entertainPost.title}\n${entertainPost.content.slice(0, 200)}`
+    }
+  }
+
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: length.maxTokens,
-    system: buildSystemPrompt(p, 'post') +
+    system: getKstContext() + '\n\n' + buildSystemPrompt(p, 'post') +
       `\n- 카테고리: ${boardCategories.join(', ')} 중 하나를 선택하세요` +
       trendContext,
     messages: [{
       role: 'user',
-      content: `오늘 "${topic}" 주제로 글을 써주세요.
+      content: `오늘 "${topic}" 주제로 글을 써주세요.${entertainHint}
 
 응답 형식 (이 형식을 정확히 지켜주세요):
 제목: (15~30자, 당신 말투로)
@@ -209,7 +249,7 @@ export async function generateComment(
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 200,
-    system: buildSystemPrompt(p, 'comment'),
+    system: getKstContext() + '\n\n' + buildSystemPrompt(p, 'comment'),
     messages: [{
       role: 'user',
       content: `다음 글에 댓글을 달아주세요.\n\n제목: ${postTitle}\n내용: ${postContent.slice(0, 300)}`,

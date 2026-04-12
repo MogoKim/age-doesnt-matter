@@ -16,6 +16,16 @@ import { notifySlack } from '../core/notifier.js'
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
 
+/** KST 현재 날짜/요일/시간대 (GitHub Actions UTC 보정) */
+function getKstContext(): string {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000)
+  const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
+  const day = days[kst.getUTCDay()]
+  const hour = kst.getUTCHours()
+  const timeSlot = hour < 6 ? '새벽' : hour < 12 ? '오전' : hour < 18 ? '오후' : '저녁'
+  return `[KST 현재] ${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 ${day} ${timeSlot}\n글에서 날짜/요일/시간대를 언급할 때 반드시 위 기준으로 쓰세요.`
+}
+
 // -- 봇 유저 조회/생성 --
 
 async function ensureBotUser(): Promise<string> {
@@ -40,20 +50,22 @@ async function fetchHumorPosts() {
   return prisma.cafePost.findMany({
     where: {
       OR: [
+        // 필수: 유머 명시 글
         { category: { contains: '유머' } },
         { boardName: { contains: '유머' } },
         { boardCategory: { equals: 'humor' } },
-        { topics: { hasSome: ['유머', '웃음', '재미', '개그', '웃긴'] } },
-        { title: { contains: '유머' } },
-        { title: { contains: '웃음' } },
+        { topics: { hasSome: ['유머', '웃음', '개그', '웃긴'] } },
         { title: { contains: 'ㅋㅋ' } },
+        // 추가: 엔터테인먼트 공감 글 (드라마/예능/연예인명 포함)
+        { desireCategory: { equals: 'ENTERTAIN' } },
+        { topics: { hasSome: ['드라마', '예능', '연예인', '트로트', '임영웅', '넷플릭스', '방송'] } },
       ],
     },
     orderBy: [
       { likeCount: 'desc' },
       { commentCount: 'desc' },
     ],
-    take: 5,
+    take: 8,
     select: {
       id: true,
       title: true,
@@ -61,6 +73,7 @@ async function fetchHumorPosts() {
       likeCount: true,
       commentCount: true,
       cafeName: true,
+      desireCategory: true,
     },
   })
 }
@@ -70,35 +83,45 @@ async function fetchHumorPosts() {
 async function generateHumorPost(
   posts: Awaited<ReturnType<typeof fetchHumorPosts>>,
 ): Promise<{ title: string; content: string; summary: string }> {
-  const humorSources = posts
+  // 상위 5개 소스 글 선택 (유머 + 엔터 혼합)
+  const sourcePosts = posts.slice(0, 5)
+
+  const humorSources = sourcePosts
     .map((p, i) => `${i + 1}. [${p.cafeName}] ${p.title}\n공감 ${p.likeCount} | 댓글 ${p.commentCount}\n${p.content.slice(0, 500)}`)
     .join('\n\n')
 
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 2048,
-    system: `당신은 50대 60대를 위한 커뮤니티 "우리 나이가 어때서"의 유머 큐레이터입니다.
+    system: `${getKstContext()}
 
-절대 규칙:
+당신은 50대 60대를 위한 커뮤니티 "우리 나이가 어때서"의 유머 큐레이터입니다.
+
+[절대 규칙]
 - "시니어", "액티브 시니어" 절대 사용 금지. "우리 또래", "50대 60대" 등 사용
 - 밝고 유쾌한 톤. 세대 공감 유머 중심
 - 정치/종교/혐오 유머 절대 금지
-- 가벼운 일상 유머, 부부 유머, 세대 차이 유머 위주
 - "ㅋㅋ" 남발 금지, 위트 있게
-- HTML 형식 (<p>, <h3>, <strong>, <hr> 태그 사용)`,
+- HTML 형식 (<p>, <h3>, <strong>, <hr> 태그 사용)
+
+[핵심 원칙 — 반드시 지킬 것]
+- 드라마명, 예능 프로그램명, 연예인 이름은 원본에서 그대로 유지하세요
+  예) "어제 본 드라마" (X) → "눈물의 여왕" (O), "어떤 연예인" (X) → "이찬원" (O)
+- 잘 모르는 프로그램이라도 이름은 정확히 표기
+- 유머/웃음 포인트가 구체적이어야 함 — 추상적 재구성 금지`,
     messages: [
       {
         role: 'user',
-        content: `아래 인기 유머 글들을 참고해서 "오늘의 웃음 모음" 포스트를 만들어주세요.
-원본을 그대로 옮기지 말고, 핵심 웃음 포인트를 재구성해서 새로운 글로 만들어주세요.
+        content: `아래 인기 글들을 참고해서 "오늘의 웃음 모음" 포스트를 만들어주세요.
+글의 구체적 소재(프로그램명, 연예인명, 상황)는 그대로 살리고, 재미있게 엮어서 구성하세요.
 
-[인기 유머 글]
+[인기 글 모음]
 ${humorSources}
 
 응답 형식 (JSON):
 {
   "title": "포스트 제목 (재미있고 클릭 유발, 25자 이내)",
-  "content": "HTML 본문 (500-1000자, 3-5개 유머 모음)",
+  "content": "HTML 본문 (500-1000자, 3-5개 유머/공감 모음, 각 항목에 실제 프로그램명/상황 포함)",
   "summary": "요약 (80자 이내)"
 }`,
       },
