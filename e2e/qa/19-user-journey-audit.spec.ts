@@ -170,12 +170,9 @@ test('여정 2 — 커뮤니티 게시판 탐색', async ({ page }) => {
   }))
 
   steps.push(await measureStep('이야기 게시판 진입', async () => {
-    // /community는 /community/stories로 서버사이드 redirect → 이미 도착해 있음
-    // 동일 URL 재navigate 시 ERR_ABORTED 발생하므로 URL 확인 후 스킵
-    const currentUrl = page.url()
-    if (!currentUrl.includes('/community/stories')) {
-      await page.goto('/community/stories', { waitUntil: 'domcontentloaded', timeout: 15_000 })
-    }
+    // /community → /community/stories: Next.js RSC 클라이언트 리다이렉트 완료 대기
+    // domcontentloaded 이후에도 RSC payload로 라우터가 /community/stories로 이동함
+    await page.waitForURL(/community\/stories/, { timeout: 10_000 }).catch(() => {})
     const posts = await page.$$('article, a[href*="/community/stories/"], a[href*="/community/"][href*="/post"]')
     if (posts.length === 0) return '이야기 게시판 게시글 없음'
   }))
