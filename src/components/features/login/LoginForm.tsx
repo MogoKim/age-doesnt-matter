@@ -6,6 +6,8 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   return (
     <div className="w-full max-w-[420px] bg-card rounded-2xl py-12 px-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-center max-md:max-w-none max-md:rounded-none max-md:min-h-dvh max-md:shadow-none max-md:flex max-md:flex-col max-md:justify-center">
 
+      <h1 className="sr-only">로그인</h1>
+
       {/* 로고 + 태그라인 */}
       <div className="mb-10">
         <Image

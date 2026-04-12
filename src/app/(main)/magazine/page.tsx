@@ -36,9 +36,9 @@ export default async function MagazinePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="px-4 py-6">
-        <h2 className="text-title font-bold text-foreground mb-6 flex items-center gap-2">
+        <h1 className="text-title font-bold text-foreground mb-6 flex items-center gap-2">
           📖 매거진
-        </h2>
+        </h1>
 
         {posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">

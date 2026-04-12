@@ -34,9 +34,9 @@ export default async function JobsPage({ searchParams }: PageProps) {
       <div className="px-4 py-6 max-w-[960px] mx-auto">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             내 일 찾기
-          </h2>
+          </h1>
           <Suspense fallback={null}>
             <JobFilterButton />
           </Suspense>
