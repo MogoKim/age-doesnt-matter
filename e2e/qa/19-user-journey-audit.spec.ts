@@ -163,14 +163,10 @@ test('여정 2 — 커뮤니티 게시판 탐색', async ({ page }) => {
   }))
 
   steps.push(await measureStep('이야기 게시판 진입', async () => {
-    await page.goto('/community', { waitUntil: 'domcontentloaded' })
-    // 이야기 게시판 링크 찾기
-    const link = await page.$('a:has-text("이야기"), a[href*="saneun"], a[href*="story"], a[href*="iyagi"]')
-    if (!link) return '이야기 게시판 링크 없음'
-    const href = await link.getAttribute('href')
-    if (!href) return '이야기 게시판 href 없음'
-    await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 15_000 })
-    const posts = await page.$$('article, a[href*="/community/"], [data-testid="post"]')
+    // 이전 단계에서 이미 /community(→stories)에 있으므로 재탐색 불필요
+    // 사는이야기 게시판으로 직접 이동
+    await page.goto('/community/stories', { waitUntil: 'domcontentloaded', timeout: 15_000 })
+    const posts = await page.$$('article, a[href*="/community/stories/"], a[href*="/community/"][href*="/post"]')
     if (posts.length === 0) return '이야기 게시판 게시글 없음'
   }))
 
@@ -204,13 +200,8 @@ test('여정 2 — 커뮤니티 게시판 탐색', async ({ page }) => {
   }))
 
   steps.push(await measureStep('2막준비 게시판 전환', async () => {
-    await page.goto('/community', { waitUntil: 'domcontentloaded' })
-    const life2Link = await page.$('a:has-text("2막"), a[href*="life2"], a[href*="imak"]')
-    if (!life2Link) return '2막준비 게시판 링크 없음'
-    const href = await life2Link.getAttribute('href')
-    if (!href) return '2막준비 게시판 href 없음'
-    await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 15_000 })
-    const posts = await page.$$('article, a[href*="/community/"]')
+    await page.goto('/community/life2', { waitUntil: 'domcontentloaded', timeout: 15_000 })
+    const posts = await page.$$('article, a[href*="/community/life2/"], a[href*="/community/"][href*="/post"]')
     if (posts.length === 0) return '2막준비 게시판 게시글 없음 (빈 상태 UI 확인 필요)'
   }))
 

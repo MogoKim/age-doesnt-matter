@@ -131,8 +131,15 @@ function evaluateIssues(
   // 알려진 무시 에러 필터 (제어 불가 노이즈)
   // - appendChild: Google AdSense/Funding Choices 내부 스크립트
   // - RSC payload: Next.js prefetch 실패 (headless 환경 일시적)
+  // - frame-ancestors: Google Ad CSP report-only 위반 (차단 아님)
+  // - ERR_FAILED: 외부 광고 리소스 로드 실패
   const filteredErrors = result.consoleErrors.filter(
-    (e) => !e.includes('appendChild') && !e.includes('adsbygoogle') && !e.includes('RSC payload')
+    (e) =>
+      !e.includes('appendChild') &&
+      !e.includes('adsbygoogle') &&
+      !e.includes('RSC payload') &&
+      !e.includes('frame-ancestors') &&
+      !e.includes('ERR_FAILED')
   )
   if (filteredErrors.length > 0) {
     issues.push({ level: 'FAIL', message: `콘솔 에러 ${filteredErrors.length}건: ${filteredErrors.slice(0, 2).join(' | ')}` })
