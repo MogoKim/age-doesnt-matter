@@ -13,24 +13,24 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       {/* 상단: 브랜드 + 공감 카피 (primary/5 배경) */}
       <div
         className="px-7 flex flex-col justify-between py-10 md:py-12"
-        style={{ background: 'rgba(255, 111, 97, 0.07)', flex: '0 0 44%' }}
+        style={{ background: 'rgba(255, 111, 97, 0.13)', flex: '0 0 44%' }}
       >
         {/* 소셜 프루프 뱃지 */}
         <div
           className="inline-flex items-center gap-2 w-fit px-3 py-2 rounded-xl text-sm font-semibold"
-          style={{ background: 'rgba(255, 111, 97, 0.12)', color: '#FF6F61' }}
+          style={{ background: 'rgba(255, 111, 97, 0.18)', color: '#FF6F61' }}
         >
           <span>💬</span>
           <span>지금도 누군가 고민을 나누고 있어요</span>
         </div>
 
-        {/* 메인 카피 */}
+        {/* 메인 카피 — 서브텍스트 위, 헤드라인 아래 */}
         <div>
+          <p className="text-[17px] font-medium mb-2" style={{ color: '#888' }}>
+            내 이야기만 해도 되는 곳.
+          </p>
           <p className="font-bold leading-[1.45]" style={{ fontSize: '30px', color: '#111', letterSpacing: '-0.02em' }}>
             엄마 말고,<br />아내 말고,<br />그냥 나로.
-          </p>
-          <p className="text-[17px] font-medium mt-2.5" style={{ color: '#888' }}>
-            내 이야기만 해도 되는 곳.
           </p>
         </div>
       </div>
