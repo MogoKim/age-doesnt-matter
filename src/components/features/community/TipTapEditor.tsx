@@ -2,6 +2,7 @@
 
 import { useEditor, EditorContent } from '@tiptap/react'
 import { Node, Extension, mergeAttributes } from '@tiptap/core'
+import type { Editor } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import { TextStyle } from '@tiptap/extension-text-style'
 import Image from '@tiptap/extension-image'
@@ -55,6 +56,34 @@ const FONT_SIZES = [
   { label: '가', size: '22px', title: '크게' },
   { label: '가', size: '28px', title: '최대' },
 ] as const
+
+// ─── 이미지 blob URL → CDN URL 교체 (업로드 완료 후, 히스토리 제외) ───
+function replaceImageSrc(editor: Editor, oldSrc: string, newSrc: string) {
+  const { state } = editor.view
+  const tr = state.tr.setMeta('addToHistory', false)
+  let replaced = false
+  state.doc.descendants((node, pos) => {
+    if (!replaced && node.type.name === 'image' && node.attrs.src === oldSrc) {
+      tr.setNodeMarkup(pos, undefined, { ...node.attrs, src: newSrc })
+      replaced = true
+    }
+  })
+  if (replaced) editor.view.dispatch(tr)
+}
+
+// ─── 이미지 노드 삭제 (업로드 실패 시 blob 플레이스홀더 제거) ───
+function removeImageNode(editor: Editor, src: string) {
+  const { state } = editor.view
+  const tr = state.tr.setMeta('addToHistory', false)
+  let deleted = false
+  state.doc.descendants((node, pos) => {
+    if (!deleted && node.type.name === 'image' && node.attrs.src === src) {
+      tr.delete(pos, pos + node.nodeSize)
+      deleted = true
+    }
+  })
+  if (deleted) editor.view.dispatch(tr)
+}
 
 type VideoSheet = 'closed' | 'picking' | 'youtube'
 
@@ -125,6 +154,7 @@ export default function TipTapEditor({
             .setYoutubeVideo({ src: trimmed })
             .createParagraphNear()
             .run()
+          editorRef.current?.commands.scrollIntoView()
           return true
         }
         return false
@@ -145,7 +175,8 @@ export default function TipTapEditor({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content])
 
-  // ─── 사진 인라인 삽입 핸들러 (Presigned URL → R2 직접 업로드, Vercel 완전 우회) ───
+  // ─── 사진 인라인 삽입 핸들러 ───
+  // 즉시 blob URL로 프리뷰 삽입 → 병렬 R2 업로드 → CDN URL로 교체 (Vercel 완전 우회)
   const handleImageFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || [])
@@ -170,35 +201,52 @@ export default function TipTapEditor({
       setIsUploadingImage(true)
       setMediaError('')
       try {
-        for (const file of files) {
+        // 각 파일 병렬 처리: 즉시 로컬 프리뷰 삽입 → 백그라운드 업로드 → URL 교체
+        await Promise.all(files.map(async (file) => {
           const mimeType = file.type || 'image/jpeg'
 
-          // 1. Presigned URL 발급
-          const presignRes = await fetch(`/api/uploads/presign?type=${encodeURIComponent(mimeType)}`)
-          if (!presignRes.ok) {
-            const err = await presignRes.json().catch(() => ({}))
-            setMediaError(`${err.error || '이미지 업로드 준비에 실패했어요'} (${presignRes.status})`)
-            console.error('[upload/image] presign 실패:', presignRes.status, err)
-            return
-          }
-          const { uploadUrl, publicUrl } = await presignRes.json() as { uploadUrl: string; publicUrl: string }
+          // 1. 즉시 blob URL로 프리뷰 삽입 (업로드 완료 전 사용자가 바로 볼 수 있음)
+          const blobUrl = URL.createObjectURL(file)
+          editor.chain().focus().setImage({ src: blobUrl }).createParagraphNear().run()
+          editor.commands.scrollIntoView()
 
-          // 2. R2에 직접 PUT 업로드
-          const uploadRes = await fetch(uploadUrl, {
-            method: 'PUT',
-            body: file,
-            headers: { 'Content-Type': mimeType },
-          })
-          if (!uploadRes.ok) {
-            setMediaError(`이미지 업로드에 실패했어요 (${uploadRes.status})`)
-            console.error('[upload/image] R2 PUT 실패:', uploadRes.status)
-            return
-          }
+          try {
+            // 2. Presigned URL 발급
+            const presignRes = await fetch(`/api/uploads/presign?type=${encodeURIComponent(mimeType)}`)
+            if (!presignRes.ok) {
+              const err = await presignRes.json().catch(() => ({}))
+              setMediaError(`${err.error || '이미지 업로드 준비에 실패했어요'} (${presignRes.status})`)
+              console.error('[upload/image] presign 실패:', presignRes.status, err)
+              removeImageNode(editor, blobUrl)
+              URL.revokeObjectURL(blobUrl)
+              return
+            }
+            const { uploadUrl, publicUrl } = await presignRes.json() as { uploadUrl: string; publicUrl: string }
 
-          // 3. 에디터에 삽입 (/_next/image 프록시로 브라우저 직접 R2 접근 실패 우회)
-          const proxiedSrc = `/_next/image?url=${encodeURIComponent(publicUrl)}&w=750&q=80`
-          editor.chain().focus().setImage({ src: proxiedSrc }).createParagraphNear().run()
-        }
+            // 3. R2에 직접 PUT 업로드
+            const uploadRes = await fetch(uploadUrl, {
+              method: 'PUT',
+              body: file,
+              headers: { 'Content-Type': mimeType },
+            })
+            if (!uploadRes.ok) {
+              setMediaError(`이미지 업로드에 실패했어요 (${uploadRes.status})`)
+              console.error('[upload/image] R2 PUT 실패:', uploadRes.status)
+              removeImageNode(editor, blobUrl)
+              URL.revokeObjectURL(blobUrl)
+              return
+            }
+
+            // 4. blob URL → CDN URL로 교체 (/_next/image 프록시, R2 직접 접근 우회)
+            const proxiedSrc = `/_next/image?url=${encodeURIComponent(publicUrl)}&w=750&q=80`
+            replaceImageSrc(editor, blobUrl, proxiedSrc)
+            URL.revokeObjectURL(blobUrl)
+          } catch (err) {
+            removeImageNode(editor, blobUrl)
+            URL.revokeObjectURL(blobUrl)
+            throw err
+          }
+        }))
       } catch (err) {
         setMediaError(`이미지 업로드에 실패했어요: ${String(err).slice(0, 80)}`)
         console.error('[upload/image] 예외:', err)
@@ -249,12 +297,13 @@ export default function TipTapEditor({
           return
         }
 
-        // 3. 에디터에 삽입
+        // 3. 에디터에 삽입 + 커서 위치로 스크롤
         editor.chain()
           .focus()
           .insertContent({ type: 'video', attrs: { src: publicUrl } })
           .createParagraphNear()
           .run()
+        editor.commands.scrollIntoView()
       } catch {
         setMediaError('동영상 업로드에 실패했어요')
       } finally {
@@ -278,6 +327,7 @@ export default function TipTapEditor({
       .setYoutubeVideo({ src: youtubeUrl })
       .createParagraphNear()
       .run()
+    editor.commands.scrollIntoView()
     setYoutubeUrl('')
     setYoutubeError('')
     setVideoSheet('closed')

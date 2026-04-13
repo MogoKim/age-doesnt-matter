@@ -286,7 +286,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
 
       {/* 카테고리 선택 */}
       {categories.length > 0 && (
-        <div className="flex gap-2 flex-wrap mb-6">
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-6 [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
           {categories.map((cat) => (
             <button
               key={cat}
