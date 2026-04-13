@@ -5,6 +5,7 @@ import { GTMScript, GTMNoScript } from '@/components/common/GoogleTagManager'
 import { ToastProvider } from '@/components/common/Toast'
 import ServiceWorkerRegister from '@/components/common/ServiceWorkerRegister'
 import PageViewTracker from '@/components/common/PageViewTracker'
+import AuthProvider from '@/components/common/AuthProvider'
 import './globals.css'
 
 const pretendard = localFont({
@@ -73,9 +74,11 @@ export default function RootLayout({
       </head>
       <body className={pretendard.className}>
         <GTMNoScript />
-        <ToastProvider>{children}</ToastProvider>
-        <ServiceWorkerRegister />
-        <PageViewTracker />
+        <AuthProvider>
+          <ToastProvider>{children}</ToastProvider>
+          <ServiceWorkerRegister />
+          <PageViewTracker />
+        </AuthProvider>
       </body>
     </html>
   )
