@@ -238,18 +238,23 @@ function matchPersona(topic: string): PersonaMatch {
   return bestMatch
 }
 
-/** 참고용 원본 글 가져오기 (isUsable = true) */
+/** 참고용 원본 글 가져오기 (qualityScore >= 50, 부분 단어 매칭) */
 async function getReferencePosts(topic: string, limit: number) {
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
 
+  // 첫 단어 추출 (예: "갱년기 신체 증상" → "갱년기")
+  const firstWord = topic.split(/[\s·,]+/)[0]
+  // 2글자 이상 단어 목록
+  const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
+
   return prisma.cafePost.findMany({
     where: {
-      isUsable: true,
+      qualityScore: { gte: 50 },
       crawledAt: { gte: todayStart },
       OR: [
-        { title: { contains: topic, mode: 'insensitive' } },
-        { topics: { has: topic.toLowerCase() } },
+        { title: { contains: firstWord, mode: 'insensitive' } },
+        { topics: { hasSome: topicWords } },
       ],
     },
     orderBy: { likeCount: 'desc' },
@@ -381,17 +386,70 @@ async function main() {
     return
   }
 
-  // 2) 상위 3개 핫토픽으로 글 생성
+  // 2) 카테고리 다양화 — desireMap 기반으로 HEALTH 독점 방지
   const maxPosts = 3
   let publishedCount = 0
 
-  for (const topic of hotTopics.slice(0, maxPosts)) {
-    const persona = matchPersona(topic.topic)
-    const refs = await getReferencePosts(topic.topic, 3)
+  // 욕망 카테고리 키워드 매핑 (hotTopic 분류용)
+  const DESIRE_KEYWORDS: Record<string, string[]> = {
+    HEALTH:   ['건강', '병원', '약', '증상', '통증', '다이어트', '운동', '혈압', '당뇨', '갱년기', '검진'],
+    FAMILY:   ['자녀', '아들', '딸', '남편', '며느리', '손주', '부모', '시어머니', '가족', '부부'],
+    MONEY:    ['돈', '재테크', '연금', '절약', '투자', '부동산', '물가', '주식', '적금', '노후'],
+    RETIRE:   ['은퇴', '퇴직', '노후', '일자리', '재취업', '인생2막', '정년'],
+    RELATION: ['친구', '모임', '갈등', '화해', '관계', '이웃', '섭섭'],
+    HOBBY:    ['취미', '여행', '등산', '요리', '텃밭', '독서', '공예'],
+    MEANING:  ['삶', '의미', '행복', '감사', '성찰', '기억', '회고'],
+    HUMOR:    ['웃긴', '황당', '유머', '재미', '웃음', '황당'],
+  }
 
-    console.log(`[ContentCurator] "${topic.topic}" → ${persona.nickname} (참고글 ${refs.length}개)`)
+  function guessDesire(topicStr: string): string {
+    const lower = topicStr.toLowerCase()
+    for (const [cat, keywords] of Object.entries(DESIRE_KEYWORDS)) {
+      if (keywords.some(kw => lower.includes(kw))) return cat
+    }
+    return 'GENERAL'
+  }
 
-    const curated = await generateCuratedPost(persona, topic.topic, refs)
+  // desireMap 기반 다양화: 카테고리별 1개씩 선택
+  const desireMap = trend.desireMap as Record<string, number> | null
+  const topDesires = desireMap
+    ? Object.entries(desireMap).sort(([, a], [, b]) => b - a).map(([k]) => k)
+    : []
+
+  const categorizedTopics = hotTopics.map(t => ({ ...t, desireCategory: guessDesire(t.topic) }))
+  const selectedTopics: string[] = []
+  const usedCategories = new Set<string>()
+
+  // 1순위: desireMap 순서대로 카테고리별 첫 번째 hotTopic
+  for (const desire of topDesires) {
+    if (selectedTopics.length >= maxPosts) break
+    const match = categorizedTopics.find(t => t.desireCategory === desire && !usedCategories.has(desire))
+    if (match) {
+      selectedTopics.push(match.topic)
+      usedCategories.add(desire)
+    }
+  }
+  // 2순위: 미달 시 나머지 hotTopics에서 카테고리 중복 없이 채움
+  for (const t of categorizedTopics) {
+    if (selectedTopics.length >= maxPosts) break
+    if (!usedCategories.has(t.desireCategory) && !selectedTopics.includes(t.topic)) {
+      selectedTopics.push(t.topic)
+      usedCategories.add(t.desireCategory)
+    }
+  }
+  // 3순위: 폴백 — 원래 hotTopics 순서
+  for (const t of hotTopics) {
+    if (selectedTopics.length >= maxPosts) break
+    if (!selectedTopics.includes(t.topic)) selectedTopics.push(t.topic)
+  }
+
+  for (const topicStr of selectedTopics) {
+    const persona = matchPersona(topicStr)
+    const refs = await getReferencePosts(topicStr, 3)
+
+    console.log(`[ContentCurator] "${topicStr}" → ${persona.nickname} (참고글 ${refs.length}개)`)
+
+    const curated = await generateCuratedPost(persona, topicStr, refs)
     if (curated) {
       await publishCuratedContent(curated)
       publishedCount++
@@ -408,7 +466,7 @@ async function main() {
       action: 'CONTENT_CURATE',
       status: publishedCount > 0 ? 'SUCCESS' : 'PARTIAL',
       details: JSON.stringify({
-        topicsUsed: hotTopics.slice(0, maxPosts).map(t => t.topic),
+        topicsUsed: selectedTopics,
         published: publishedCount,
       }),
       itemCount: publishedCount,

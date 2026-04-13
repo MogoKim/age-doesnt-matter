@@ -2,16 +2,17 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../core/db.js'
 import { getPersona, getAllPersonaIds, type Persona } from './persona-data.js'
 
-// ── 욕망 카테고리 → 적합 페르소나 매핑 ──
+// ── 욕망 카테고리 → 적합 페르소나 매핑 (실제 39+EN 페르소나 기반) ──
 export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint: string }> = {
-  HEALTH:   { personas: ['H', 'P2', 'A'], topicHint: '건강 정보, 병원 경험, 증상 공감, 약 부작용, 건강검진 결과' },
-  FAMILY:   { personas: ['A', 'E', 'AK'], topicHint: '자녀 이야기(취업·직장·결혼), 고부갈등(시어머니 입장), 사위/며느리 이야기, 남편 이야기, 친구 질투·시기·위로. 손주가 등장하면 반드시 유치원생/초등 저학년 수준으로만.' },
-  MONEY:    { personas: ['B', 'P4', 'N'], topicHint: '절약 팁, 재테크 경험, 연금 이야기, 물가 한탄' },
-  RETIRE:   { personas: ['T', 'B', 'G'], topicHint: '은퇴 후 일상, 의미 찾기, 새 시작, 무료함, 취미 찾기' },
-  JOB:      { personas: ['P4', 'T', 'B'], topicHint: '일자리 경험, 자격증, 재취업 이야기, 나이 차별' },
-  RELATION: { personas: ['E', 'P5', 'C'], topicHint: '공감, 위로, 소통, 친구 이야기, 섭섭함, 오해, 화해' },
-  HOBBY:    { personas: ['G', 'M', 'F'], topicHint: '취미, 여행 후기(구체적 장소명 포함), 텃밭, 등산 코스명' },
-  MEANING:  { personas: ['T', 'P', 'I'], topicHint: '삶의 의미, 감사, 보람, 철학, 나이 들어 깨달은 것' },
+  HEALTH:   { personas: ['H', 'A', 'AC'],   topicHint: '건강 정보, 병원 경험, 증상 공감, 약 부작용, 건강검진 결과' },
+  FAMILY:   { personas: ['E', 'AK', 'BB'],  topicHint: '자녀 이야기(취업·직장·결혼), 고부갈등(시어머니 입장), 사위/며느리 이야기, 남편 이야기, 손주 자랑. 손주가 등장하면 반드시 유치원생/초등 저학년 수준으로만.' },
+  MONEY:    { personas: ['B', 'N', 'AZ'],   topicHint: '절약 팁, 재테크 경험, 연금 이야기, 물가 한탄, ETF·부동산 현실 공유' },
+  RETIRE:   { personas: ['T', 'G', 'BA'],   topicHint: '은퇴 후 일상, 의미 찾기, 새 시작, 무료함, 취미 찾기, 은퇴 준비 현실' },
+  JOB:      { personas: ['T', 'B', 'AZ'],   topicHint: '일자리 경험, 자격증, 재취업 이야기, 나이 차별' },
+  RELATION: { personas: ['C', 'V', 'AD'],   topicHint: '공감, 위로, 소통, 친구 이야기, 섭섭함, 오해, 화해' },
+  HOBBY:    { personas: ['M', 'F', 'AB'],   topicHint: '취미, 여행 후기(구체적 장소명 포함), 텃밭, 등산 코스명' },
+  MEANING:  { personas: ['I', 'P', 'AE'],   topicHint: '삶의 의미, 감사, 보람, 철학, 나이 들어 깨달은 것' },
+  HUMOR:    { personas: ['AF', 'AY', 'U'],  topicHint: '웃긴 일상, 황당 에피소드, 공감 유머, 아재개그, "나만 이래?" 공감글' },
 }
 
 /** 오늘의 CafeTrend 조회 (speechTone 포함) */
@@ -26,21 +27,43 @@ async function getLatestTrend() {
   }
 }
 
+/** 페르소나의 주담당 욕망 카테고리 조회 */
+function getPersonaDesire(personaId: string): string | null {
+  for (const [desire, info] of Object.entries(DESIRE_PERSONA_MAP)) {
+    if (info.personas.includes(personaId)) return desire
+  }
+  return null
+}
+
 /** 페르소나에게 주입할 오늘의 분위기 컨텍스트 */
 function buildTrendContext(
   trend: Awaited<ReturnType<typeof getLatestTrend>>,
   personaId: string,
 ): string {
   if (!trend?.dominantDesire) return ''
-  const desireInfo = DESIRE_PERSONA_MAP[trend.dominantDesire]
-  const urgentTopics = Array.isArray(trend.urgentTopics)
-    ? (trend.urgentTopics as Array<{ topic: string; psychInsight: string }>)
-    : []
-  const topUrgent = urgentTopics[0]
-  const isRelevant = desireInfo?.personas.includes(personaId)
-  const topicHint = isRelevant ? `\n- 오늘 어울리는 주제: ${desireInfo.topicHint}` : ''
 
-  // speechTone 데이터 (trend-analyzer가 cafeSummary에 저장)
+  const urgentTopics = Array.isArray(trend.urgentTopics)
+    ? (trend.urgentTopics as Array<{ topic: string; psychInsight: string; count?: number }>)
+    : []
+
+  // 이 페르소나의 주담당 욕망
+  const personaDesire = getPersonaDesire(personaId)
+  const myDesireInfo = personaDesire ? DESIRE_PERSONA_MAP[personaDesire] : null
+
+  // 페르소나 욕망과 같은 카테고리의 긴급 관심사 (구체 소재)
+  const matchingUrgent = urgentTopics
+    .filter(t => t.topic === personaDesire)
+    .map(t => t.psychInsight)
+    .filter(Boolean)
+    .slice(0, 2)
+
+  // 전체 긴급 관심사 (다른 욕망 참고용)
+  const allUrgentInsights = urgentTopics
+    .slice(0, 4)
+    .map(t => t.psychInsight)
+    .filter(Boolean)
+
+  // speechTone 데이터
   const summary = trend.cafeSummary as Record<string, unknown> | null
   const keyPhrases = Array.isArray(summary?.topKeyPhrases)
     ? (summary.topKeyPhrases as string[]).slice(0, 5)
@@ -48,14 +71,23 @@ function buildTrendContext(
   const communityVocab = Array.isArray(summary?.topCommunityVocab)
     ? (summary.topCommunityVocab as string[]).slice(0, 5)
     : []
+
   const speechToneLine = (keyPhrases.length + communityVocab.length > 0)
     ? `\n- 오늘 커뮤니티 표현: ${keyPhrases.join(', ')}${communityVocab.length > 0 ? `\n- 자주 쓰는 어휘: ${communityVocab.join(', ')}` : ''}`
+    : ''
+
+  const myTopicLine = myDesireInfo
+    ? `\n- 내 관심 영역 오늘 소재: ${matchingUrgent.length > 0 ? matchingUrgent.join(' / ') : myDesireInfo.topicHint}`
+    : ''
+
+  const communityLine = allUrgentInsights.length > 0
+    ? `\n- 커뮤니티 전반 화제: ${allUrgentInsights.join(' / ')}`
     : ''
 
   return `
 [오늘의 커뮤니티 분위기 — 참고만, 직접 인용 절대 금지]
 - 오늘 주된 관심: ${trend.dominantDesire} 관련 이야기
-- 오늘의 감정 흐름: ${trend.dominantEmotion ?? '다양함'}${topUrgent ? `\n- 긴급 관심사: ${topUrgent.psychInsight}` : ''}${topicHint}${speechToneLine}
+- 오늘의 감정 흐름: ${trend.dominantEmotion ?? '다양함'}${myTopicLine}${communityLine}${speechToneLine}
 
 이 분위기를 당신의 개성으로 자연스럽게 녹여내세요.
 위 내용을 그대로 쓰거나 직접 언급하지 마세요.`

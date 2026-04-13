@@ -1,6 +1,7 @@
 import { prisma, disconnect } from '../core/db.js'
 import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP } from './generator.js'
 import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
+import { getPersona } from './persona-data.js'
 
 /** 페르소나 → 욕망 카테고리 역방향 매핑 (다양성 캡용) */
 const PERSONA_DESIRE: Record<string, string> = {}
@@ -88,6 +89,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AJ', type: 'post' },                          // 간병일기 간병
     { personaId: 'AN', type: 'post' },                          // 약국단골 영양제
     { personaId: 'AT', type: 'post' },                          // 자격증도전 공부
+    { personaId: 'AY', type: 'post', board: 'HUMOR' },         // 웃음보따리 일상 유머
     // 댓글 — 신규 페르소나 반응
     { personaId: 'AK', type: 'comment', board: 'STORY', count: 3 }, // 우리엄마 공감
     { personaId: 'AM', type: 'comment', board: 'STORY', count: 2 }, // 불안한밤 질문
@@ -129,6 +131,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'N', type: 'post' },                          // 알뜰맘 살림 팁
     { personaId: 'T', type: 'post' },                          // 배움은즐거워 교육
     { personaId: 'X', type: 'post' },                          // 걱정인형 걱정 글 (부정)
+    { personaId: 'AZ', type: 'post', board: 'LIFE2' },         // 돈공부중 재테크 현실
     { personaId: 'AA', type: 'post' },                         // 어휴답답 한탄 (부정)
     { personaId: 'AG', type: 'post' },                         // 비교분석왕 비교 리뷰
     // 댓글
@@ -155,6 +158,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AB', type: 'post', board: 'LIFE2' },        // 따져보자 토론 주제
     { personaId: 'Y', type: 'post', board: 'LIFE2' },         // 솔직히말해서 현실 팩폭
     { personaId: 'AD', type: 'post' },                         // 그때그시절 회고
+    { personaId: 'BA', type: 'post', board: 'LIFE2' },        // 은퇴D100 은퇴 준비 현실
     // 댓글
     { personaId: 'K', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'R', type: 'comment', board: 'HUMOR', count: 2 },
@@ -218,6 +222,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'W', type: 'post' },                          // 참나진짜 비판 리뷰
     { personaId: 'AH', type: 'post' },                         // 피곤해요 하루 TMI
     { personaId: 'S', type: 'post' },                          // 제주살이 저녁 풍경
+    { personaId: 'BB', type: 'post' },                         // 손주바보 손주 자랑
     { personaId: 'R', type: 'post', board: 'HUMOR' },          // 밤새봤다 저녁 드라마
     { personaId: 'T', type: 'post', board: 'LIFE2' },         // 배움은즐거워 수다방
     // 댓글
@@ -490,6 +495,7 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
 
   const adjusted: Activity[] = []
   const postsByDesire: Record<string, number> = {}  // 욕망 카테고리별 이번 시간대 글쓰기 수
+  const usedPrimaryTopics = new Set<string>()       // 소재 중복 방지 (페르소나 첫 번째 주제)
 
   for (const activity of base) {
     const quota = getPersonaQuota(brief, activity.personaId)
@@ -511,6 +517,15 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
         }
         postsByDesire[desire] = current + 1
       }
+
+      // 소재 중복 방지 — 페르소나 첫 번째 주제 키워드 중복 시 스킵
+      const persona = getPersona(activity.personaId)
+      const primaryTopic = persona.topics[0]?.split(/[\s·,]+/)[0] ?? ''
+      if (primaryTopic && usedPrimaryTopics.has(primaryTopic)) {
+        console.log(`[Seed] ${activity.personaId} 글쓰기 스킵 (소재 중복: ${primaryTopic})`)
+        continue
+      }
+      if (primaryTopic) usedPrimaryTopics.add(primaryTopic)
     }
 
     // count가 있는 활동: quotaMultiplier 반영
