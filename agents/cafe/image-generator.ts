@@ -103,7 +103,7 @@ export async function generateMagazineImageByContext(
     return null
   }
 
-  const fullPrompt = buildImagePromptByType(context.dallePrompt, context.type, context.gender)
+  const fullPrompt = buildImagePromptByType(context.dallePrompt, context.type)
   return callDallE(fullPrompt)
 }
 

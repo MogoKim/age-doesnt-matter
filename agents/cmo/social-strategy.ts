@@ -32,7 +32,7 @@ const EXPERIMENT_ROADMAP: Array<{
   { week: 4, variable: 'tone', controlValue: 'warm', testValue: 'practical', hypothesis: '따뜻한 공감형 vs 실용 정보형 — 50-60대 선호도' },
   { week: 5, variable: 'topicTag', controlValue: 'relation', testValue: 'life2', hypothesis: 'RELATION(연결·공감) 주제 vs RETIRE+MONEY(2막준비) 주제 — 도달범위 vs 체류시간' },
   { week: 6, variable: 'contentLength', controlValue: 'short', testValue: 'medium', hypothesis: '80자 vs 150자 — 체류 시간과 참여율 균형' },
-  { week: 7, variable: 'persona', controlValue: 'A', testValue: 'B', hypothesis: '영숙이맘(RELATION 감성) vs 은퇴신사(RETIRE 실용) — 50-60대 공감 비교' },
+  { week: 7, variable: 'persona', controlValue: 'A', testValue: 'B', hypothesis: '영숙이맘(RELATION 감성) vs 정순씨(LIFE2 일상) — 50-60대 공감 비교' },
   { week: 8, variable: 'interaction', controlValue: 'statement', testValue: 'question', hypothesis: '일방 게시 vs 질문형 — 댓글 유도 효과' },
 ]
 

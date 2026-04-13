@@ -30,7 +30,7 @@ const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? 'h
 
 const SNS_PERSONAS: Record<string, { nickname: string; tone: string; style: string }> = {
   A: { nickname: '영숙이맘', tone: 'warm', style: '따뜻하고 공감하는 이웃 언니 톤, 자연스러운 반말, 이모지 1-2개' },
-  B: { nickname: '은퇴신사', tone: 'informational', style: '차분하고 경험 많은 톤, 반말과 존댓말 자연 혼용, 깊이 있는 이야기' },
+  B: { nickname: '정순씨', tone: 'informational', style: '차분한 일기체 톤, 합니다체 위주, 은퇴 일상 깊이 있는 이야기' },
   C: { nickname: '웃음보', tone: 'humorous', style: '밝고 유쾌한 톤, 위트 있는 반말, 관찰 유머 (ㅋㅋ 남발 금지)' },
   H: { nickname: '건강박사', tone: 'informational', style: '실용적 건강/생활 정보, 다정한 반말, 근거 있는 팁 공유' },
 }

@@ -197,7 +197,7 @@ async function publishMagazine(
   category: string,
   thumbnailUrl?: string,
 ): Promise<string> {
-  // 매거진 전용 봇 — 페르소나 B(은퇴신사) 사용 (차분한 정보형)
+  // 매거진 전용 봇 — 페르소나 B(정순씨) 사용 (차분한 일기체 정보형)
   const editorUserId = await getBotUser('B')
 
   const post = await prisma.post.create({

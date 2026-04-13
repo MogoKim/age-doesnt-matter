@@ -78,15 +78,15 @@ const DESIRE_TO_JISIK_CATEGORY: Record<string, string> = {
 // ─── 카테고리별 페르소나 ───────────────────────────────────
 
 interface Persona {
-  gender: 'female' | 'male' | 'neutral'
+  gender: 'female' | 'neutral'
   age: string
   tone: 'warm' | 'practical' | 'empathetic'
 }
 
 const PERSONA_MAP: Record<string, Persona> = {
   '건강':   { gender: 'female',  age: '55세', tone: 'warm' },
-  '취업':   { gender: 'male',    age: '52세', tone: 'practical' },
-  '재테크': { gender: 'male',    age: '57세', tone: 'practical' },
+  '취업':   { gender: 'female',  age: '49세', tone: 'practical' },
+  '재테크': { gender: 'female',  age: '47세', tone: 'practical' },
   '가족':   { gender: 'female',  age: '54세', tone: 'empathetic' },
   '생활':   { gender: 'female',  age: '56세', tone: 'warm' },
   '기타':   { gender: 'neutral', age: '55세', tone: 'warm' },
@@ -287,8 +287,7 @@ async function generateAnswer(
   const persona = PERSONA_MAP[category] ?? PERSONA_MAP['기타']
 
   const genderDesc =
-    persona.gender === 'female' ? '주부 여성' :
-    persona.gender === 'male' ? '남성' : '분'
+    persona.gender === 'female' ? '주부 여성' : '분'
 
   const toneDesc =
     persona.tone === 'warm' ? '따뜻하고 공감 어린' :

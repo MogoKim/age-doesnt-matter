@@ -47,10 +47,10 @@ const SCHEDULE: Record<string, Activity[]> = {
   '09': [
     // 글쓰기 — 아침형 페르소나
     { personaId: 'A', type: 'post' },                          // 하늘바라기 일상
-    { personaId: 'F', type: 'post' },                          // 텃밭할배 아침 텃밭
+    { personaId: 'F', type: 'post' },                          // 텃밭언니 아침 텃밭
     { personaId: 'J', type: 'post' },                          // 맛있는거좋아 아침 요리
     { personaId: 'L', type: 'post' },                          // 손주러브 가족
-    { personaId: 'Q', type: 'post' },                          // 멍멍이아빠 아침 산책
+    { personaId: 'Q', type: 'post' },                          // 멍멍이엄마 아침 산책
     { personaId: 'U', type: 'post' },                          // 부산아지매 시장 이야기
     { personaId: 'AI', type: 'post' },                         // 시골아낙네 아침 텃밭
     // 댓글
@@ -67,7 +67,7 @@ const SCHEDULE: Record<string, Activity[]> = {
 
   '10': [
     // 글쓰기 — 정보형 + 활발형
-    { personaId: 'B', type: 'post' },                          // 정호씨 정보
+    { personaId: 'B', type: 'post' },                          // 정순씨 정보
     { personaId: 'G', type: 'post' },                          // 여행이좋아 여행
     { personaId: 'K', type: 'post' },                          // 예쁘게살자 패션
     { personaId: 'M', type: 'post' },                          // 산이좋아 등산
@@ -203,7 +203,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AS', type: 'comment', board: 'JOB', count: 2 },   // 일자리헌터 정보
     { personaId: 'AW', type: 'comment', board: 'STORY', count: 2 }, // 손뜨개 느린 공감
     { personaId: 'AR', type: 'comment', board: 'STORY', count: 2 }, // 요즘세상 관찰
-    { personaId: 'AU', type: 'comment', board: 'STORY', count: 2 }, // 철인할배 응원
+    { personaId: 'AU', type: 'comment', board: 'STORY', count: 2 }, // 체력왕 응원
     // 대댓글
     { personaId: 'AL', type: 'reply', board: 'STORY', count: 2 },
     { personaId: 'AO', type: 'reply', board: 'HUMOR', count: 2 },

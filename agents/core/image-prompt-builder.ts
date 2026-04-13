@@ -27,7 +27,7 @@ export type ImageStyle =
 
 // ---------------------------------------------------------------------------
 // Person Style Guide — 한국인 4050 실사 인물 규칙 (v2)
-// 레퍼런스: 여성(김성령/견미리/황신혜/나경원), 남성(한석규/최수종/박중훈/손창민/차인표)
+// 레퍼런스: 여성(김성령/견미리/황신혜/나경원)
 // ---------------------------------------------------------------------------
 
 export const PERSON_STYLE_GUIDE = {
@@ -38,15 +38,6 @@ export const PERSON_STYLE_GUIDE = {
     + 'soft natural window lighting, candid editorial photograph style, '
     + 'sharp focus, real skin texture, genuine human expression, '
     + 'NOT illustration, NOT animation, NOT CGI render, NOT perfect smooth skin, '
-    + 'NOT gray hair, NOT white hair, NOT elderly appearance',
-
-  malePrompt:
-    'Photorealistic photograph, Korean man in his late 40s to early 50s, '
-    + 'distinguished and trustworthy appearance, well-maintained natural dark hair, '
-    + 'healthy natural complexion, warm genuine smile, smart casual Korean style, '
-    + 'natural lighting, candid editorial photograph style, '
-    + 'sharp focus, real skin texture, genuine human expression, '
-    + 'NOT illustration, NOT animation, NOT CGI render, '
     + 'NOT gray hair, NOT white hair, NOT elderly appearance',
 
   never: [
@@ -114,10 +105,7 @@ export function buildImagePrompt(prompt: string, style: ImageStyle): string {
   const parts: string[] = [STYLE_PREFIXES[style]]
 
   if (containsPersonKeyword(prompt)) {
-    const personPrompt = prompt.length % 2 === 0
-      ? PERSON_STYLE_GUIDE.femalePrompt
-      : PERSON_STYLE_GUIDE.malePrompt
-    parts.push(personPrompt)
+    parts.push(PERSON_STYLE_GUIDE.femalePrompt)
     parts.push(buildNegativePrompt())
   }
 
@@ -133,13 +121,9 @@ export function buildImagePrompt(prompt: string, style: ImageStyle): string {
 export function buildImagePromptByType(
   prompt: string,
   imageType: ImageType,
-  gender: 'female' | 'male' = 'female',
 ): string {
   if (imageType === 'PERSON_REAL') {
-    const personBase = gender === 'male'
-      ? PERSON_STYLE_GUIDE.malePrompt
-      : PERSON_STYLE_GUIDE.femalePrompt
-    return `${personBase}, ${prompt}, ${buildNegativePrompt()} ${NO_TEXT_DIRECTIVE}`
+    return `${PERSON_STYLE_GUIDE.femalePrompt}, ${prompt}, ${buildNegativePrompt()} ${NO_TEXT_DIRECTIVE}`
   }
 
   const prefix = IMAGE_TYPE_PREFIXES[imageType]
@@ -173,7 +157,7 @@ export function getMagazineImageStyle(category: string): ImageStyle {
 /** 매거진 이미지 컨텍스트 (v2) */
 export interface ImageContext {
   type: ImageType
-  gender?: 'female' | 'male'
+  gender?: 'female'
   dallePrompt: string       // DALL-E용 영문 프롬프트
   unsplashQuery?: string    // Unsplash 검색어 (FOOD/SCENE/OBJECT만)
 }
@@ -212,8 +196,8 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       },
       {
         type: 'PERSON_REAL',
-        gender: 'male',
-        dallePrompt: 'Korean man reviewing financial documents at home desk with smartphone',
+        gender: 'female',
+        dallePrompt: 'Korean woman reviewing financial documents at home desk with smartphone',
       },
     ],
     '여행': [
@@ -255,8 +239,8 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
     '일자리': [
       {
         type: 'PERSON_REAL',
-        gender: 'male',
-        dallePrompt: 'Korean man working confidently at a clean modern office desk',
+        gender: 'female',
+        dallePrompt: 'Korean woman working confidently at a clean modern office desk',
       },
       {
         type: 'SCENE_PHOTO',

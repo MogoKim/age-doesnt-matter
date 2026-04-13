@@ -11,7 +11,7 @@
  *   npx tsx agents/cafe/daily-brief.ts          # DEEP 브리프 (오전 08:45)
  *   npx tsx agents/cafe/daily-brief.ts --patch  # 점심 midDayPatch 업데이트
  */
-import { writeFileSync, existsSync, readFileSync } from 'fs'
+import { writeFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
@@ -66,7 +66,7 @@ const DIRECTIVE_MAP: Record<string, { theme: string; tone: string; avoid: string
 const PERSONA_DESIRE_AFFINITY: Record<string, Partial<Record<string, number>>> = {
   // A: 하늘바라기 — 일상 수다, 건강 걱정, 동네 소식
   A:  { HEALTH: 0.4, RELATION: 0.6, HOBBY: 0.3, FAMILY: 0.3 },
-  // B: 정호씨 — 은퇴, 건강관리, 재테크
+  // B: 정순씨 — 은퇴 일상, 건강, 합니다체
   B:  { RETIRE: 0.8, HEALTH: 0.5, MONEY: 0.5, HOBBY: 0.2 },
   // C: (topics 없음) — 중립
   C:  { RELATION: 0.3, HOBBY: 0.3 },
