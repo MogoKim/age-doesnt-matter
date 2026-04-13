@@ -63,7 +63,7 @@ export default function HeroSliderClient({ slides }: Props) {
   return (
     <div className="w-full">
       <section
-        className="w-full h-[200px] lg:h-[420px] relative overflow-hidden bg-primary/10"
+        className="w-full aspect-[8/3] relative overflow-hidden bg-primary/10"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
