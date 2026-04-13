@@ -40,7 +40,7 @@ export async function setAdminCookie(token: string) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    path: '/admin',
+    path: '/',
     maxAge: 4 * 60 * 60, // 4시간
   })
 }
