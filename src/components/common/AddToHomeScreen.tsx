@@ -196,14 +196,14 @@ export default function AddToHomeScreen() {
         <div className="flex items-start gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/icons/icon-192x192.png"
+            src="/logo.png"
             alt="우나어"
-            className="w-14 h-14 rounded-2xl flex-shrink-0 object-cover"
+            className="w-14 h-14 rounded-2xl flex-shrink-0 object-contain bg-white"
           />
           <div className="flex-1 min-w-0">
             <p className="font-bold text-foreground text-[18px] leading-snug">홈 화면에 추가하세요</p>
             <p className="text-sm text-muted-foreground mt-1 break-keep leading-relaxed">
-              바탕화면에 저장하면 앱처럼 바로 들어올 수 있어요
+              답답할 때, 이야기 나누고 싶을 때 — 딱 한 번 탭으로
             </p>
           </div>
           <button
