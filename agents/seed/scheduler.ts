@@ -100,6 +100,8 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AJ', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'AQ', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'AP', type: 'like', board: 'HUMOR', count: 3 },
+    { personaId: 'T', type: 'like', board: 'LIFE2', count: 2 },   // 배움은즐거워 LIFE2 응원
+    { personaId: 'AB', type: 'like', board: 'LIFE2', count: 2 },  // 따져보자 LIFE2 관심
   ],
 
   // ── 점심 (크롤링 12:30 후) ──
@@ -141,6 +143,8 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'N', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'T', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'AG', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'Y', type: 'like', board: 'LIFE2', count: 2 },   // 솔직히말해서 LIFE2 공감
+    { personaId: 'H', type: 'like', board: 'LIFE2', count: 2 },   // 매일걷기 LIFE2 공감
   ],
 
   // ── 오후 자체 활동 ──
@@ -160,6 +164,8 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'P', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'G', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'Z', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'B', type: 'like', board: 'LIFE2', count: 3 },   // 정호씨 LIFE2 공감
+    { personaId: 'AB', type: 'like', board: 'LIFE2', count: 2 },  // 따져보자 LIFE2 공감
   ],
 
   '16': [
@@ -178,13 +184,15 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'A', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'F', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'AH', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'E', type: 'like', board: 'LIFE2', count: 2 },   // 봄바람 LIFE2 공감
+    { personaId: 'L', type: 'like', board: 'LIFE2', count: 2 },   // 손주러브 LIFE2 관심
   ],
 
   '17': [
     // 글쓰기 — 오후 활동형
     { personaId: 'AL', type: 'post' },                          // 근육할머니 운동
     { personaId: 'AV', type: 'post' },                          // 혼밥일기 저녁 준비
-    { personaId: 'AX', type: 'post', board: 'HUMOR' },          // 밴드여왕 모임 공지
+    { personaId: 'AX', type: 'post', board: 'HUMOR' },          // 밴드여왕 온라인 챌린지/커뮤니티 이벤트
     // 댓글 — 대량 반응
     { personaId: 'AO', type: 'comment', board: 'HUMOR', count: 3 }, // 웃음충전 유머
     { personaId: 'AS', type: 'comment', board: 'JOB', count: 2 },   // 일자리헌터 정보

@@ -134,7 +134,7 @@ function buildSystemPrompt(p: Persona, context: 'post' | 'comment' | 'reply'): s
 
   const contextInstruction = {
     post: '커뮤니티에 올릴 글을 작성하세요.',
-    comment: '다른 사람의 글에 댓글을 달아주세요. 1~3문장.',
+    comment: '다른 사람의 글에 댓글을 달아주세요. 1~3문장. 매번 같은 첫 문장으로 시작하면 안 됩니다 — 글의 내용을 읽고 그 내용에 맞는 자연스러운 첫 문장을 만드세요. 예: 공감 글이면 "저도 그런 적 있어요", 정보 글이면 "좋은 정보네요", 웃긴 글이면 그 상황에 맞게 반응.',
     reply: '다른 사람의 댓글에 짧은 답글을 달아주세요. 1~2문장.',
   }
 
