@@ -26,11 +26,11 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
 
         {/* 메인 카피 */}
         <div>
-          <p className="text-[17px] font-medium mb-2.5" style={{ color: '#888' }}>
-            내 이야기만 해도 되는 곳.
-          </p>
           <p className="font-bold leading-[1.45]" style={{ fontSize: '30px', color: '#111', letterSpacing: '-0.02em' }}>
             엄마 말고,<br />아내 말고,<br />그냥 나로.
+          </p>
+          <p className="text-[17px] font-medium mt-2.5" style={{ color: '#888' }}>
+            내 이야기만 해도 되는 곳.
           </p>
         </div>
       </div>
