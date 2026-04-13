@@ -47,6 +47,49 @@ export function pushToDataLayer(data: Record<string, unknown>): void {
   window.dataLayer.push(data)
 }
 
+// ── UTM 보존 (광고 소재 → 유저 저니 추적 핵심) ──
+// 광고 클릭 → 랜딩 시 utm_* 파라미터를 sessionStorage에 저장.
+// 이후 sign_up 등 전환 이벤트에 자동 포함 → GA4에서 소재별 코호트 분석 가능.
+
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const
+
+export type UtmParams = Partial<Record<typeof UTM_KEYS[number], string>>
+
+const UTM_STORAGE_KEY = 'unao_utm'
+
+/**
+ * URL의 utm_* 파라미터를 sessionStorage에 저장.
+ * 이미 저장된 UTM이 있으면 덮어쓰지 않음 (첫 랜딩 소재 보존).
+ * PageViewTracker 최초 마운트 시 1회 호출.
+ */
+export function captureUtm(): void {
+  if (typeof window === 'undefined') return
+  const params = new URLSearchParams(window.location.search)
+  const utm: UtmParams = {}
+  for (const key of UTM_KEYS) {
+    const val = params.get(key)
+    if (val) utm[key] = val
+  }
+  if (Object.keys(utm).length === 0) return
+  // 이미 이 세션에서 UTM 저장된 경우 첫 소재 우선 (덮어쓰지 않음)
+  if (!sessionStorage.getItem(UTM_STORAGE_KEY)) {
+    sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(utm))
+  }
+}
+
+/**
+ * 저장된 UTM 파라미터 반환. 없으면 빈 객체.
+ * sign_up, login 등 전환 이벤트에 스프레드해서 사용.
+ */
+export function getStoredUtm(): UtmParams {
+  if (typeof window === 'undefined') return {}
+  try {
+    return JSON.parse(sessionStorage.getItem(UTM_STORAGE_KEY) ?? '{}') as UtmParams
+  } catch {
+    return {}
+  }
+}
+
 // ── 이벤트 헬퍼 ──
 
 /** 페이지 뷰 (SPA 네비게이션 시) */
@@ -57,14 +100,14 @@ export function gtmPageView(path: string, title?: string): void {
   })
 }
 
-/** 회원가입 */
+/** 회원가입 완료 — UTM 포함 (광고 소재 → 가입 전환 추적) */
 export function gtmSignUp(method: string = 'kakao'): void {
-  sendEvent('sign_up', { method })
+  sendEvent('sign_up', { method, ...getStoredUtm() })
 }
 
-/** 로그인 */
+/** 로그인 (재방문) — UTM 포함 */
 export function gtmLogin(method: string = 'kakao'): void {
-  sendEvent('login', { method })
+  sendEvent('login', { method, ...getStoredUtm() })
 }
 
 /** 글 작성 */

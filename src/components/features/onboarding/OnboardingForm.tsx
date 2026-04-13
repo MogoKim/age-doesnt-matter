@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { checkNickname, completeOnboarding } from '@/lib/actions/onboarding'
+import { gtmSignUp } from '@/lib/gtm'
 
 // ── 닉네임 유효성 검사 ──
 const NICKNAME_REGEX = /^[가-힣a-zA-Z0-9]+$/
@@ -138,6 +139,7 @@ export default function OnboardingForm() {
 
   function handleComplete() {
     setIsNavigating(true)
+    gtmSignUp('kakao')
     router.push('/')
     router.refresh()
   }
