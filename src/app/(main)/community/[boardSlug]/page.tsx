@@ -5,17 +5,19 @@ import { unstable_cache } from 'next/cache'
 
 import { getBoardConfig } from '@/lib/queries/boards'
 import { getPostsByBoard } from '@/lib/queries/posts'
+import type { PostSummary } from '@/types/api'
 import BoardFilter from '@/components/features/community/BoardFilter'
 import PostCard from '@/components/features/community/PostCard'
 import LoadMoreButton from '@/components/features/community/LoadMoreButton'
 import SortToggle from '@/components/features/community/SortToggle'
+import CategorySearchBar from '@/components/features/community/CategorySearchBar'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import ResponsiveAd from '@/components/ad/ResponsiveAd'
 
 interface PageProps {
   params: Promise<{ boardSlug: string }>
-  searchParams: Promise<{ category?: string; sort?: string }>
+  searchParams: Promise<{ category?: string; sort?: string; q?: string; sf?: string }>
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -38,18 +40,30 @@ export const dynamic = 'force-dynamic'
 
 export default async function BoardListPage({ params, searchParams }: PageProps) {
   const { boardSlug } = await params
-  const { category, sort } = await searchParams
+  const { category, sort, q: rawQ, sf: rawSf } = await searchParams
 
   const board = await getBoardConfig(boardSlug)
   if (!board) notFound()
 
-  const sortOption = sort === 'likes' ? 'likes' as const : 'latest' as const
-  const getCachedPosts = unstable_cache(
-    () => getPostsByBoard(board.boardType, { category, sort: sortOption, limit: 20 }),
-    [`board-${board.boardType}-${category ?? 'all'}-${sortOption}`],
-    { revalidate: 30 }
-  )
-  const { posts, hasMore } = await getCachedPosts()
+  const q = rawQ?.trim() || undefined
+  const sf = rawSf === 'title' || rawSf === 'content' ? rawSf : ('both' as const)
+  const sortOption = sort === 'likes' ? ('likes' as const) : ('latest' as const)
+
+  let posts: PostSummary[]
+  let hasMore: boolean
+
+  if (q) {
+    // 검색 중: 캐시 스킵
+    ;({ posts, hasMore } = await getPostsByBoard(board.boardType, { category, sort: sortOption, limit: 20, q, sf }))
+  } else {
+    const getCachedPosts = unstable_cache(
+      () => getPostsByBoard(board.boardType, { category, sort: sortOption, limit: 20 }),
+      [`board-${board.boardType}-${category ?? 'all'}-${sortOption}`],
+      { revalidate: 30 },
+    )
+    ;({ posts, hasMore } = await getCachedPosts())
+  }
+
   const lastId = posts.length > 0 ? posts[posts.length - 1].id : undefined
 
   return (
@@ -95,16 +109,24 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
             category={category}
             initialHasMore={hasMore}
             initialLastId={lastId}
+            q={q}
+            sf={sf}
           />
         </>
       ) : (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
           <div className="text-[56px] mb-4">📝</div>
           <p className="text-sm text-muted-foreground leading-[1.8]">
-            아직 작성된 글이 없어요.<br />첫 번째 글을 남겨보세요!
+            {q ? `"${q}" 검색 결과가 없어요.` : '아직 작성된 글이 없어요.'}<br />
+            {q ? '다른 검색어를 입력해 보세요.' : '첫 번째 글을 남겨보세요!'}
           </p>
         </div>
       )}
+
+      {/* 검색 */}
+      <Suspense fallback={null}>
+        <CategorySearchBar />
+      </Suspense>
     </div>
   )
 }

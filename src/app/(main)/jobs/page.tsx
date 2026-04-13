@@ -12,20 +12,23 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 import { formatSalary } from '@/lib/format'
 import JobFilterButton from '@/components/features/jobs/JobFilterButton'
 import JobQuickTags from '@/components/features/jobs/JobQuickTags'
+import CategorySearchBar from '@/components/features/community/CategorySearchBar'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 
 interface PageProps {
-  searchParams: Promise<{ region?: string; tags?: string }>
+  searchParams: Promise<{ region?: string; tags?: string; q?: string; sf?: string }>
 }
 
 export const revalidate = 120
 
 export default async function JobsPage({ searchParams }: PageProps) {
-  const { region, tags: tagsParam } = await searchParams
+  const { region, tags: tagsParam, q: rawQ, sf: rawSf } = await searchParams
   const tags = tagsParam?.split(',').filter(Boolean)
+  const q = rawQ?.trim() || undefined
+  const sf = rawSf === 'title' || rawSf === 'content' ? rawSf : ('both' as const)
 
-  const { jobs } = await getJobList({ region, tags, limit: 20 })
+  const { jobs } = await getJobList({ region, tags, limit: 20, q, sf })
 
   const hasFilters = !!region || (tags && tags.length > 0)
 
@@ -80,7 +83,9 @@ export default async function JobsPage({ searchParams }: PageProps) {
         ) : (
           <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
             <p className="text-body text-muted-foreground leading-relaxed">
-              {hasFilters ? (
+              {q ? (
+                <>&ldquo;{q}&rdquo; 검색 결과가 없어요.<br />다른 검색어를 입력해 보세요.</>
+              ) : hasFilters ? (
                 <>조건에 맞는 일자리가 없어요.<br />필터를 변경해 보세요!</>
               ) : (
                 <>아직 등록된 일자리가 없어요.<br />곧 새로운 일자리가 올라올 거예요!</>
@@ -88,6 +93,11 @@ export default async function JobsPage({ searchParams }: PageProps) {
             </p>
           </div>
         )}
+
+        {/* 검색 */}
+        <Suspense fallback={null}>
+          <CategorySearchBar />
+        </Suspense>
       </div>
     </div>
   )

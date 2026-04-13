@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
 import { getDailyTrendingPosts, getWeeklyTrendingPosts, getHallOfFamePosts } from '@/lib/queries/posts'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
+import CategorySearchBar from '@/components/features/community/CategorySearchBar'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import ResponsiveAd from '@/components/ad/ResponsiveAd'
@@ -42,15 +44,23 @@ const TABS: Array<{ key: TabType; label: string; emoji: string }> = [
 export default async function BestPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>
+  searchParams: Promise<{ tab?: string; q?: string; sf?: string }>
 }) {
   const params = await searchParams
   const currentTab = (TABS.find((t) => t.key === params.tab)?.key ?? 'daily') as TabType
+  const q = params.q?.trim() || undefined
+  const sf = params.sf === 'title' || params.sf === 'content' ? params.sf : ('both' as const)
 
   const [dailyPosts, weeklyPosts, fameResult] = await Promise.all([
-    getCachedDaily().catch(() => [] as PostSummary[]),
-    getCachedWeekly().catch(() => [] as PostSummary[]),
-    getCachedFame().catch(() => ({ posts: [] as PostSummary[] })),
+    q
+      ? getDailyTrendingPosts(10, q, sf).catch(() => [] as PostSummary[])
+      : getCachedDaily().catch(() => [] as PostSummary[]),
+    q
+      ? getWeeklyTrendingPosts(10, q, sf).catch(() => [] as PostSummary[])
+      : getCachedWeekly().catch(() => [] as PostSummary[]),
+    q
+      ? getHallOfFamePosts({ limit: 10, q, sf }).catch(() => ({ posts: [] as PostSummary[] }))
+      : getCachedFame().catch(() => ({ posts: [] as PostSummary[] })),
   ])
 
   const postsMap: Record<TabType, PostSummary[]> = {
@@ -119,8 +129,13 @@ export default async function BestPage({
             ))}
           </div>
         ) : (
-          <EmptyState message={emptyMessages[currentTab]} />
+          <EmptyState message={q ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.` : emptyMessages[currentTab]} />
         )}
+
+        {/* 검색 */}
+        <Suspense fallback={null}>
+          <CategorySearchBar />
+        </Suspense>
       </section>
     </div>
   )

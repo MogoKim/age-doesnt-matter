@@ -91,11 +91,27 @@ function toPostSummary(
   }
 }
 
+/* ── 텍스트 검색 조건 빌더 ── */
+
+type SearchField = 'both' | 'title' | 'content'
+
+function buildTextSearch(
+  q?: string,
+  sf: SearchField = 'both',
+): { OR?: { title?: { contains: string; mode: 'insensitive' }; content?: { contains: string; mode: 'insensitive' } }[] } {
+  if (!q?.trim()) return {}
+  const keyword = q.trim()
+  const OR: { title?: { contains: string; mode: 'insensitive' }; content?: { contains: string; mode: 'insensitive' } }[] = []
+  if (sf === 'both' || sf === 'title') OR.push({ title: { contains: keyword, mode: 'insensitive' } })
+  if (sf === 'both' || sf === 'content') OR.push({ content: { contains: keyword, mode: 'insensitive' } })
+  return { OR }
+}
+
 /* ── 게시판별 목록 ── */
 
 export async function getPostsByBoard(
   boardType: BoardType,
-  options?: { category?: string; cursor?: string; limit?: number; sort?: 'latest' | 'likes' },
+  options?: { category?: string; cursor?: string; limit?: number; sort?: 'latest' | 'likes'; q?: string; sf?: SearchField },
 ): Promise<{ posts: PostSummary[]; hasMore: boolean }> {
   const limit = options?.limit ?? 20
   const sort = options?.sort ?? 'latest'
@@ -105,6 +121,7 @@ export async function getPostsByBoard(
     status: 'PUBLISHED' as const,
     ...(options?.category && options.category !== '전체' ? { category: options.category } : {}),
     ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
+    ...buildTextSearch(options?.q, options?.sf),
   }
 
   const orderBy = sort === 'likes'
@@ -142,11 +159,12 @@ export async function getTrendingPosts(limit = 5): Promise<PostSummary[]> {
 
 /* ── 일간 인기글 (Trending) ── */
 
-export async function getDailyTrendingPosts(limit = 10): Promise<PostSummary[]> {
+export async function getDailyTrendingPosts(limit = 10, q?: string, sf?: SearchField): Promise<PostSummary[]> {
   const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
       createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      ...buildTextSearch(q, sf),
     },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }],
@@ -157,11 +175,12 @@ export async function getDailyTrendingPosts(limit = 10): Promise<PostSummary[]> 
 
 /* ── 주간 인기글 (Trending) ── */
 
-export async function getWeeklyTrendingPosts(limit = 10): Promise<PostSummary[]> {
+export async function getWeeklyTrendingPosts(limit = 10, q?: string, sf?: SearchField): Promise<PostSummary[]> {
   const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
       createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      ...buildTextSearch(q, sf),
     },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }],
@@ -290,7 +309,7 @@ export async function getHotPosts(
 /* ── 베스트: 명예의 전당 (공감 50+) ── */
 
 export async function getHallOfFamePosts(
-  options?: { cursor?: string; limit?: number },
+  options?: { cursor?: string; limit?: number; q?: string; sf?: SearchField },
 ): Promise<{ posts: PostSummary[]; hasMore: boolean }> {
   const limit = options?.limit ?? 10
 
@@ -300,6 +319,7 @@ export async function getHallOfFamePosts(
       boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] as BoardType[] },
       promotionLevel: 'HALL_OF_FAME',
       ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
+      ...buildTextSearch(options?.q, options?.sf),
     },
     select: postSelect,
     orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
@@ -317,6 +337,8 @@ export interface JobListOptions {
   tags?: string[]
   cursor?: string
   limit?: number
+  q?: string
+  sf?: SearchField
 }
 
 export interface JobCardItem {
@@ -352,6 +374,7 @@ export async function getJobList(
       ...(options?.tags && options.tags.length > 0
         ? { jobDetail: { quickTags: { hasSome: options.tags } } }
         : {}),
+      ...buildTextSearch(options?.q, options?.sf),
     },
     select: {
       ...postSelect,
@@ -510,7 +533,7 @@ export async function getLatestLife2Posts(limit = 5): Promise<PostSummary[]> {
 /* ── 매거진 목록 (카테고리 필터) ── */
 
 export async function getMagazineList(
-  options?: { category?: string; cursor?: string; limit?: number },
+  options?: { category?: string; cursor?: string; limit?: number; q?: string; sf?: SearchField },
 ): Promise<{ posts: PostSummary[]; hasMore: boolean }> {
   const limit = options?.limit ?? 10
 
@@ -520,6 +543,7 @@ export async function getMagazineList(
     NOT: { content: '' },
     ...(options?.category && options.category !== '전체' ? { category: options.category } : {}),
     ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
+    ...buildTextSearch(options?.q, options?.sf),
   }
 
   const rows = await prisma.post.findMany({

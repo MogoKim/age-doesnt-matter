@@ -10,6 +10,8 @@ interface LoadMoreButtonProps {
   category?: string
   initialHasMore: boolean
   initialLastId?: string
+  q?: string
+  sf?: string
 }
 
 export default function LoadMoreButton({
@@ -18,6 +20,8 @@ export default function LoadMoreButton({
   category,
   initialHasMore,
   initialLastId,
+  q,
+  sf,
 }: LoadMoreButtonProps) {
   const [morePosts, setMorePosts] = useState<PostSummary[]>([])
   const [hasMore, setHasMore] = useState(initialHasMore)
@@ -35,6 +39,10 @@ export default function LoadMoreButton({
       })
       if (category && category !== '전체') {
         params.set('category', category)
+      }
+      if (q) {
+        params.set('q', q)
+        params.set('sf', sf ?? 'both')
       }
       const res = await fetch(`/api/posts?${params.toString()}`)
       if (!res.ok) return

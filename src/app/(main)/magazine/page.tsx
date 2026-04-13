@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
 import { getMagazineList } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
+import CategorySearchBar from '@/components/features/community/CategorySearchBar'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 
@@ -27,8 +29,18 @@ const getCachedMagazine = unstable_cache(
   { revalidate: 60 }
 )
 
-export default async function MagazinePage() {
-  const { posts } = await getCachedMagazine()
+export default async function MagazinePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; sf?: string }>
+}) {
+  const { q: rawQ, sf: rawSf } = await searchParams
+  const q = rawQ?.trim() || undefined
+  const sf = rawSf === 'title' || rawSf === 'content' ? rawSf : ('both' as const)
+
+  const { posts } = q
+    ? await getMagazineList({ limit: 20, q, sf })
+    : await getCachedMagazine()
 
   const featured = posts[0]
   const rest = posts.slice(1)
@@ -43,7 +55,7 @@ export default async function MagazinePage() {
         {posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
             <p className="text-body text-muted-foreground leading-relaxed">
-              아직 매거진이 없어요. 곧 유익한 글이 올라올 거예요!
+              {q ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.` : '아직 매거진이 없어요. 곧 유익한 글이 올라올 거예요!'}
             </p>
           </div>
         ) : (
@@ -76,6 +88,11 @@ export default async function MagazinePage() {
             )}
           </>
         )}
+
+        {/* 검색 */}
+        <Suspense fallback={null}>
+          <CategorySearchBar />
+        </Suspense>
       </div>
     </div>
   )

@@ -17,12 +17,15 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category') ?? undefined
     const limitParam = searchParams.get('limit')
     const limit = limitParam ? Math.min(parseInt(limitParam, 10), 50) : 20
+    const q = searchParams.get('q') ?? undefined
+    const rawSf = searchParams.get('sf')
+    const sf = rawSf === 'title' || rawSf === 'content' ? rawSf : 'both'
 
     if (!boardType || !VALID_BOARD_TYPES.includes(boardType)) {
       return NextResponse.json({ error: 'Invalid boardType' }, { status: 400 })
     }
 
-    const result = await getPostsByBoard(boardType, { category, cursor, limit })
+    const result = await getPostsByBoard(boardType, { category, cursor, limit, q, sf })
     return NextResponse.json(result)
   } catch (error) {
     return handleApiError(error)
