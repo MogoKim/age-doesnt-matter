@@ -220,7 +220,10 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         setError(result.error)
         toast(result.error, 'error')
       } else {
-        if (!isEditMode) gtmPostCreate(selectedBoard, selectedCategory)
+        if (!isEditMode) {
+          gtmPostCreate(selectedBoard, selectedCategory)
+          window.dispatchEvent(new CustomEvent('pwa-prompt', { detail: 'engagement' }))
+        }
         clearDraft()
         if (result?.postUrl) router.push(result.postUrl)
       }

@@ -6,6 +6,7 @@ import { ToastProvider } from '@/components/common/Toast'
 import ServiceWorkerRegister from '@/components/common/ServiceWorkerRegister'
 import PageViewTracker from '@/components/common/PageViewTracker'
 import AuthProvider from '@/components/common/AuthProvider'
+import AddToHomeScreen from '@/components/common/AddToHomeScreen'
 import './globals.css'
 
 const pretendard = localFont({
@@ -78,6 +79,7 @@ export default function RootLayout({
           <ToastProvider>{children}</ToastProvider>
           <ServiceWorkerRegister />
           <PageViewTracker />
+          <AddToHomeScreen />
         </AuthProvider>
       </body>
     </html>

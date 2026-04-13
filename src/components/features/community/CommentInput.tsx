@@ -26,6 +26,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder }
         setError(result.error)
       } else {
         gtmCommentCreate(parentId ? 'reply' : 'comment')
+        window.dispatchEvent(new CustomEvent('pwa-prompt', { detail: 'engagement' }))
         setValue('')
         onCancel?.()
       }

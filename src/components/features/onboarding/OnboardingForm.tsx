@@ -142,6 +142,9 @@ export default function OnboardingForm() {
     gtmSignUp('kakao')
     router.push('/')
     router.refresh()
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('pwa-prompt', { detail: 'signup' }))
+    }, 1500)
   }
 
   // ── 프로그레스 바 (Step 1, 2만) ──
