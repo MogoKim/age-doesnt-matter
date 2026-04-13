@@ -71,7 +71,7 @@ function scrollCursorIntoView(editor: Editor) {
         window.scrollBy({ top: coords.bottom - vh + 120, behavior: 'smooth' })
       }
     } catch {
-      scrollCursorIntoView(editor)
+      editor.commands.scrollIntoView()
     }
   })
 }
@@ -372,12 +372,15 @@ export default function TipTapEditor({
       {/* ── 툴바: 키보드 닫힘=sticky top / 키보드 열림=fixed bottom (Android 키보드 대응) ── */}
       {/* top: 모바일 Header(56) + IconMenu(64) + WriteHeader(52) = 172px / 데스크탑 GNB(64) + WriteHeader(52) = 116px */}
       {/* bottom-[76px]: CTA 바(pt-3+52px+pb-12) 높이 위에 위치 */}
-      <div className={cn(
-        'z-20 bg-card pt-1 pb-2',
-        keyboardOpen
-          ? 'fixed left-0 right-0 bottom-[76px] border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)]'
-          : 'sticky top-[172px] lg:top-[116px]',
-      )}>
+      <div
+        className={cn(
+          'z-20 bg-card pt-1 pb-2',
+          keyboardOpen
+            ? 'fixed left-0 right-0 border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)]'
+            : 'sticky top-[172px] lg:top-[116px]',
+        )}
+        style={keyboardOpen ? { bottom: 'calc(76px + env(safe-area-inset-bottom, 0px))' } : undefined}
+      >
         <div className="flex items-center gap-0.5 border border-border rounded-xl bg-card px-2 py-1">
           {/* 인용구 */}
           <button
@@ -476,6 +479,7 @@ export default function TipTapEditor({
       {/* ── 3. 에디터 본문 ── */}
       <div
         className="border-2 border-border rounded-xl bg-card transition-all focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(255,111,97,0.1)]"
+        style={keyboardOpen ? { marginBottom: '60px' } : undefined}
       >
         <EditorContent editor={editor} />
       </div>
