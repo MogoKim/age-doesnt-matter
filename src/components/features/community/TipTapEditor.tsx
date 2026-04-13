@@ -57,6 +57,25 @@ const FONT_SIZES = [
   { label: '가', size: '28px', title: '최대' },
 ] as const
 
+// ─── 커서 위치로 스크롤 (Android 키보드 대응: visualViewport 기준) ───
+// scrollCursorIntoView(editor)는 키보드 높이를 모름 → 커스텀 구현
+function scrollCursorIntoView(editor: Editor) {
+  requestAnimationFrame(() => {
+    try {
+      const { state, view } = editor
+      const { from } = state.selection
+      const coords = view.coordsAtPos(from)  // viewport 기준 좌표
+      // visualViewport.height = 키보드 포함한 실제 보이는 영역 높이
+      const vh = window.visualViewport?.height ?? window.innerHeight
+      if (coords.bottom > vh - 80) {
+        window.scrollBy({ top: coords.bottom - vh + 120, behavior: 'smooth' })
+      }
+    } catch {
+      scrollCursorIntoView(editor)
+    }
+  })
+}
+
 // ─── 이미지 blob URL → CDN URL 교체 (업로드 완료 후, 히스토리 제외) ───
 function replaceImageSrc(editor: Editor, oldSrc: string, newSrc: string) {
   const { state } = editor.view
@@ -154,7 +173,7 @@ export default function TipTapEditor({
             .setYoutubeVideo({ src: trimmed })
             .createParagraphNear()
             .run()
-          editorRef.current?.commands.scrollIntoView()
+          if (editorRef.current) scrollCursorIntoView(editorRef.current)
           return true
         }
         return false
@@ -208,7 +227,7 @@ export default function TipTapEditor({
           // 1. 즉시 blob URL로 프리뷰 삽입 (업로드 완료 전 사용자가 바로 볼 수 있음)
           const blobUrl = URL.createObjectURL(file)
           editor.chain().focus().setImage({ src: blobUrl }).createParagraphNear().run()
-          editor.commands.scrollIntoView()
+          scrollCursorIntoView(editor)
 
           try {
             // 2. Presigned URL 발급
@@ -303,7 +322,7 @@ export default function TipTapEditor({
           .insertContent({ type: 'video', attrs: { src: publicUrl } })
           .createParagraphNear()
           .run()
-        editor.commands.scrollIntoView()
+        scrollCursorIntoView(editor)
       } catch {
         setMediaError('동영상 업로드에 실패했어요')
       } finally {
@@ -327,7 +346,7 @@ export default function TipTapEditor({
       .setYoutubeVideo({ src: youtubeUrl })
       .createParagraphNear()
       .run()
-    editor.commands.scrollIntoView()
+    scrollCursorIntoView(editor)
     setYoutubeUrl('')
     setYoutubeError('')
     setVideoSheet('closed')
