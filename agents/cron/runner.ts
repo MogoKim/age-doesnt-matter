@@ -58,6 +58,8 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cmo:social-reviewer': () => import('../cmo/social-reviewer.js').then(() => {}),
   'cmo:social-strategy': () => import('../cmo/social-strategy.js').then(() => {}),
   'cmo:google-ads-report': () => import('../marketing/google-ads/scripts/daily-report.js').then(() => {}),
+  'cmo:upload-creatives': () => import('../marketing/google-ads/scripts/upload-creatives.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
+  'cmo:create-campaigns': () => import('../marketing/google-ads/scripts/create-campaigns.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'ceo:morning-sns-briefing': () => import('../ceo/morning-sns-briefing.js').then(() => {}),
   'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
   'strategist:user-deep-analysis': () => import('../strategist/user-deep-analysis.js').then(() => {}),
