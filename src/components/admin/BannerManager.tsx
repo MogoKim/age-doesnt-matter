@@ -88,7 +88,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
     if (!file) return
     setIsUploading(true)
     try {
-      const res = await fetch(`/api/uploads/presign?type=${encodeURIComponent(file.type)}`)
+      const res = await fetch(`/api/admin/uploads/presign?type=${encodeURIComponent(file.type)}`)
       if (!res.ok) throw new Error('presign 실패')
       const { uploadUrl, publicUrl } = await res.json() as { uploadUrl: string; publicUrl: string }
       const putRes = await fetch(uploadUrl, {
