@@ -9,14 +9,14 @@ interface HeaderProps {
 
 export default function Header({ isLoggedIn = false }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-[100] h-[56px] bg-card border-b border-border flex items-center justify-between px-4 lg:hidden">
+    <header className="sticky top-0 z-[100] h-[64px] bg-card border-b border-border flex items-center justify-between px-4 lg:hidden">
       <Link href="/" className="flex items-center no-underline shrink-0" aria-label="우나어 홈">
         <Image
           src="/images/logo2.png"
           alt="우리나이가어때서"
-          width={54}
-          height={54}
-          className="h-[54px] w-[54px] rounded-lg object-contain"
+          width={60}
+          height={60}
+          className="h-[60px] w-[60px] rounded-lg object-contain"
           priority
         />
       </Link>
