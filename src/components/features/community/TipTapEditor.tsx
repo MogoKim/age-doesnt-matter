@@ -123,6 +123,8 @@ export default function TipTapEditor({
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [mediaError, setMediaError] = useState('')
+  // Android 키보드 열림 감지: 키보드 열리면 툴바를 fixed bottom으로 전환
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -185,6 +187,15 @@ export default function TipTapEditor({
   useEffect(() => {
     editorRef.current = editor
   }, [editor])
+
+  // Android 키보드 열림/닫힘 감지 (visualViewport.resize)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const onResize = () => setKeyboardOpen(window.innerHeight - vv.height > 150)
+    vv.addEventListener('resize', onResize)
+    return () => vv.removeEventListener('resize', onResize)
+  }, [])
 
   // 외부 content 변경 시 에디터 동기화 (임시저장 복원용)
   useEffect(() => {
@@ -358,9 +369,15 @@ export default function TipTapEditor({
 
   return (
     <div className="relative">
-      {/* ── sticky 툴바 (1행) ── */}
+      {/* ── 툴바: 키보드 닫힘=sticky top / 키보드 열림=fixed bottom (Android 키보드 대응) ── */}
       {/* top: 모바일 Header(56) + IconMenu(64) + WriteHeader(52) = 172px / 데스크탑 GNB(64) + WriteHeader(52) = 116px */}
-      <div className="sticky top-[172px] lg:top-[116px] z-20 bg-card pt-1 pb-2">
+      {/* bottom-[76px]: CTA 바(pt-3+52px+pb-12) 높이 위에 위치 */}
+      <div className={cn(
+        'z-20 bg-card pt-1 pb-2',
+        keyboardOpen
+          ? 'fixed left-0 right-0 bottom-[76px] border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)]'
+          : 'sticky top-[172px] lg:top-[116px]',
+      )}>
         <div className="flex items-center gap-0.5 border border-border rounded-xl bg-card px-2 py-1">
           {/* 인용구 */}
           <button
