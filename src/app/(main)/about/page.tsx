@@ -19,13 +19,6 @@ const VALUE_CARDS = [
     label: '사는이야기',
   },
   {
-    emoji: '📖',
-    title: '몰랐던 걸 알게 됐을 때의 그 시원함',
-    desc: '기초연금, 재취업, 건강 — 우리 나이에 맞는 정보만 골라드려요',
-    href: '/magazine',
-    label: '매거진',
-  },
-  {
     emoji: '🌱',
     title: '비슷한 처지의 사람을 만났을 때의 그 안도감',
     desc: '인생 2막 먼저 간 사람, 지금 준비 중인 사람이 다 여기 있어요',
@@ -38,6 +31,13 @@ const VALUE_CARDS = [
     desc: '우리 또래만 아는 유머, 오늘도 한번 웃어봐요',
     href: '/community/humor',
     label: '웃음방',
+  },
+  {
+    emoji: '📖',
+    title: '몰랐던 걸 알게 됐을 때의 그 시원함',
+    desc: '기초연금, 재취업, 건강 — 우리 나이에 맞는 정보만 골라드려요',
+    href: '/magazine',
+    label: '매거진',
   },
 ] as const
 
@@ -92,17 +92,17 @@ export default async function AboutPage() {
       {/* 섹션 1 — 감성 훅 */}
       <section className="px-4 pt-10 pb-10 md:px-6 md:pt-16">
         <p className="text-body text-foreground leading-[2] break-keep">
-          아이들은 크고, 남편과 조금 멀어지고,<br />
-          몸은 조금씩 아파가고.
+          아이들은 크고, 남편과 점차 멀어지고, 친구들은 하나둘 연락이 뜸해지고<br />
+          몸도 예전 같지 않다.
         </p>
         <p className="text-body text-foreground leading-[2] break-keep mt-4">
           그러다 어느 날 문득 깨닫는다.<br />
           내 이야기 들어줄 사람이 없다는 걸.
         </p>
         <p className="text-body text-foreground leading-[2] break-keep mt-6 font-bold">
-          우나어는 그 조용함을 깨러 만든 곳이다.<br />
-          나이가 오히려 무기가 되고,<br />
-          &ldquo;맞아맞아&rdquo; 해주는 사람들이 모이는 공간.
+          우리 나이가 어때서는<br />
+          비슷한 나이, 비슷한 고민을 가진 사람들이<br />
+          눈치 없이 꺼낼 수 있는 곳으로.
         </p>
       </section>
 
