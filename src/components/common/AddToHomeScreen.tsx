@@ -8,16 +8,25 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-type Trigger = 'home15s' | 'signup' | 'engagement' | 'return_visit' | 'weekly'
+type Trigger = 'first_15s' | 'signup' | 'engagement' | 'return_session' | 'weekly'
 
-const KEY_SHOWN = 'pwa_shown_triggers'       // JSON Trigger[]
-const KEY_COUNT = 'pwa_declined_count'        // number (최대 3회 — weekly 이후 정지)
-const KEY_INSTALLED = 'pwa_installed'         // '1'
-const KEY_LAST_PROMPTED = 'pwa_last_prompted_at' // ISO timestamp
-const KEY_VISIT_COUNT = 'pwa_visit_count'    // number (재방문 감지)
+const KEY_SHOWN         = 'pwa_shown_triggers'       // JSON Trigger[]
+const KEY_COUNT         = 'pwa_declined_count'        // number (최대 3회 — weekly 이후 정지)
+const KEY_INSTALLED     = 'pwa_installed'             // '1'
+const KEY_LAST_PROMPTED = 'pwa_last_prompted_at'      // ISO timestamp
+const KEY_SESSION_COUNT = 'pwa_session_count'         // number (세션 횟수)
+const KEY_SHOWN_COUNT   = 'pwa_shown_count'           // number (총 노출 횟수)
 
-const WEEKLY_MS = 7 * 24 * 60 * 60 * 1000
+// sessionStorage (탭 닫으면 리셋)
+const SESSION_VISITED = 'pwa_visited_this_session'    // 세션 카운트 중복 방지
+const SESSION_SHOWN   = 'pwa_shown_this_session'      // 세션 내 1회 노출 제한
+
+// 타이머 미동작 페이지 (가입 플로우 방해 방지)
+const EXCLUDED_PATHS = ['/login', '/signup', '/onboarding']
+
+const WEEKLY_MS   = 7 * 24 * 60 * 60 * 1000
 const MAX_DECLINES = 3
+const TIMER_MS    = 13_000
 
 function getInstalled(): boolean {
   if (typeof window === 'undefined') return false
@@ -32,44 +41,72 @@ function getShown(): Trigger[] {
   try { return JSON.parse(localStorage.getItem(KEY_SHOWN) ?? '[]') } catch { return [] }
 }
 
-function markShown(t: Trigger) {
-  const s = getShown()
-  if (!s.includes(t)) localStorage.setItem(KEY_SHOWN, JSON.stringify([...s, t]))
+function getShownCount(): number {
+  return parseInt(localStorage.getItem(KEY_SHOWN_COUNT) ?? '0')
+}
+
+function getSessionCount(): number {
+  return parseInt(localStorage.getItem(KEY_SESSION_COUNT) ?? '0')
 }
 
 function getDeclineCount(): number {
   return parseInt(localStorage.getItem(KEY_COUNT) ?? '0')
 }
 
+function markShown(t: Trigger) {
+  const s = getShown()
+  if (!s.includes(t)) {
+    localStorage.setItem(KEY_SHOWN, JSON.stringify([...s, t]))
+    localStorage.setItem(KEY_SHOWN_COUNT, String(getShownCount() + 1))
+  }
+}
+
+function incrementSessionCount(): number {
+  // 새로고침 = 동일 세션 (중복 카운트 방지)
+  if (sessionStorage.getItem(SESSION_VISITED)) {
+    return getSessionCount()
+  }
+  sessionStorage.setItem(SESSION_VISITED, '1')
+  const count = getSessionCount() + 1
+  localStorage.setItem(KEY_SESSION_COUNT, String(count))
+  return count
+}
+
 function canShow(t: Trigger): boolean {
   if (getInstalled()) return false
-  const shown = getShown()
+  if (sessionStorage.getItem(SESSION_SHOWN)) return false  // 세션 내 1회 제한
 
-  if (t === 'home15s') return !shown.includes('home15s')
-  if (t === 'signup') return shown.includes('home15s') && !shown.includes('signup')
-  if (t === 'engagement') return shown.includes('signup') && !shown.includes('engagement')
-  if (t === 'return_visit') return shown.includes('engagement') && !shown.includes('return_visit')
+  const shown     = getShown()
+  const shownCount = getShownCount()
+
+  // 1번: 첫 노출 (아직 한 번도 안 뜬 경우에만)
+  if (t === 'first_15s')
+    return shownCount === 0 && !shown.includes('first_15s')
+
+  // 2번: 회원가입 완료 직후 — 앞 트리거 무관, 노출횟수 기반 독립 조건
+  // (첫 방문 즉시 가입 케이스 대응: first_15s 미발동이어도 OK)
+  if (t === 'signup')
+    return shownCount < 2 && !shown.includes('signup')
+
+  // 3번: 첫 글/댓글 완료 — 독립 조건
+  // (기존 회원은 signup 없이 여기 도달 가능)
+  if (t === 'engagement')
+    return shownCount < 3 && !shown.includes('engagement')
+
+  // 4번: 2번째+ 세션 진입, 이미 1회 이상 노출됨
+  // (비로그인/글 미작성 유저도 자연스럽게 진행)
+  if (t === 'return_session')
+    return getSessionCount() >= 2 && shownCount >= 1 && !shown.includes('return_session')
+
+  // 5번: 2회 이상 노출 후 7일마다 반복 (3회 거절 시 중단)
   if (t === 'weekly') {
     if (getDeclineCount() >= MAX_DECLINES) return false
-    const allShown = (['home15s', 'signup', 'engagement', 'return_visit'] as Trigger[])
-      .every(x => shown.includes(x))
-    if (!allShown) return false
+    if (shownCount < 2) return false
     const last = localStorage.getItem(KEY_LAST_PROMPTED)
     if (!last) return true
     return Date.now() - new Date(last).getTime() >= WEEKLY_MS
   }
   return false
-}
-
-function incrementVisitCount(): number {
-  // sessionStorage: 새로고침 = 동일 방문 (중복 카운트 방지)
-  if (sessionStorage.getItem('pwa_visited_this_session')) {
-    return parseInt(localStorage.getItem(KEY_VISIT_COUNT) ?? '0')
-  }
-  sessionStorage.setItem('pwa_visited_this_session', '1')
-  const count = parseInt(localStorage.getItem(KEY_VISIT_COUNT) ?? '0') + 1
-  localStorage.setItem(KEY_VISIT_COUNT, String(count))
-  return count
 }
 
 export default function AddToHomeScreen() {
@@ -79,7 +116,7 @@ export default function AddToHomeScreen() {
   const [canNativeInstall, setCanNativeInstall] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const deferredRef = useRef<BeforeInstallPromptEvent | null>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function markInstalled() {
     localStorage.setItem(KEY_INSTALLED, '1')
@@ -92,6 +129,7 @@ export default function AddToHomeScreen() {
     if (canShow(t)) {
       markShown(t)
       localStorage.setItem(KEY_LAST_PROMPTED, new Date().toISOString())
+      sessionStorage.setItem(SESSION_SHOWN, '1')  // 이 세션은 이미 뜸
       setIsManual(false)
       setVisible(true)
       return true
@@ -99,13 +137,16 @@ export default function AddToHomeScreen() {
     return false
   }, [])
 
+  // 마운트: iOS 감지 + 설치 상태 확인 + 세션 카운트 증가 + 이벤트 등록
   useEffect(() => {
     const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
     setIsIOS(iOS)
 
+    incrementSessionCount()
+
     if (getInstalled()) localStorage.setItem(KEY_INSTALLED, '1')
 
-    // 로그인 유저 DB 상태 확인 (graceful fallback — migration 전에도 안전)
+    // 로그인 유저 DB 상태 확인 (graceful fallback)
     fetch('/api/user/pwa-status')
       .then(r => (r.ok ? r.json() : null))
       .then(data => { if (data?.installed) localStorage.setItem(KEY_INSTALLED, '1') })
@@ -119,10 +160,10 @@ export default function AddToHomeScreen() {
 
     const onPWAPrompt = (e: Event) => {
       const trigger = (e as CustomEvent<Trigger | 'manual'>).detail
-      const native = deferredRef.current !== null && !iOS
+      const native  = deferredRef.current !== null && !iOS
 
       if (trigger === 'manual') {
-        // Footer 버튼: 설치 상태 / 거절 횟수 무관하게 무조건 표시
+        // Footer 버튼: 설치 상태/거절 횟수 무관하게 무조건 표시
         setCanNativeInstall(native)
         setIsManual(true)
         setVisible(true)
@@ -141,17 +182,17 @@ export default function AddToHomeScreen() {
     }
   }, [showTrigger])
 
-  // 홈 15초 타이머 + 재방문 + weekly 체크
+  // 페이지 변경 시: 제외 페이지가 아니면 13초 타이머 시작
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
-    if (pathname === '/') {
-      const visitCount = incrementVisitCount()
+
+    const isExcluded = EXCLUDED_PATHS.some(p => pathname.startsWith(p))
+    if (!isExcluded) {
       timerRef.current = setTimeout(() => {
-        // 발동 가능한 첫 트리거 실행 (순차 우선순위)
-        if (showTrigger('home15s')) return
-        if (visitCount >= 2 && showTrigger('return_visit')) return
+        if (showTrigger('first_15s')) return
+        if (showTrigger('return_session')) return
         showTrigger('weekly')
-      }, 15_000)
+      }, TIMER_MS)
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   }, [pathname, showTrigger])
