@@ -89,21 +89,29 @@ export default async function AboutPage() {
 
   return (
     <div className="max-w-[720px] mx-auto">
+      {/* 섹션 0 — 페이지 헤더 */}
+      <section className="px-4 pt-10 pb-6 md:px-6">
+        <h1 className="text-2xl font-bold text-foreground mb-1.5">우나어 소개</h1>
+        <p className="text-body text-muted-foreground">비슷한 나이, 비슷한 마음이 모이는 곳</p>
+      </section>
+
       {/* 섹션 1 — 감성 훅 */}
-      <section className="px-4 pt-10 pb-10 md:px-6 md:pt-16">
-        <p className="text-body text-foreground leading-[2] break-keep">
-          아이들은 크고, 남편과 점차 멀어지고, 친구들은 하나둘 연락이 뜸해지고<br />
-          몸도 예전 같지 않다.
-        </p>
-        <p className="text-body text-foreground leading-[2] break-keep mt-4">
-          그러다 어느 날 문득 깨닫는다.<br />
-          내 이야기 들어줄 사람이 없다는 걸.
-        </p>
-        <p className="text-body text-foreground leading-[2] break-keep mt-6 font-bold">
-          우리 나이가 어때서는<br />
-          비슷한 나이, 비슷한 고민을 가진 사람들이<br />
-          눈치 없이 꺼낼 수 있는 곳으로.
-        </p>
+      <section className="px-4 pb-10 md:px-6">
+        <div className="bg-primary/5 rounded-2xl p-6 md:p-8">
+          <p className="text-body text-foreground leading-[2] break-keep">
+            아이들은 크고, 남편과 점차 멀어지고, 친구들은 하나둘 연락이 뜸해지고<br />
+            몸도 예전 같지 않다.
+          </p>
+          <p className="text-body text-foreground leading-[2] break-keep mt-4">
+            그러다 어느 날 문득 깨닫는다.<br />
+            내 이야기 들어줄 사람이 없다는 걸.
+          </p>
+          <p className="text-body text-foreground leading-[2] break-keep mt-6 font-bold">
+            우리 나이가 어때서는<br />
+            비슷한 나이, 비슷한 고민을 가진 사람들이<br />
+            눈치 없이 꺼낼 수 있는 곳으로.
+          </p>
+        </div>
       </section>
 
       {/* 섹션 2 — 경험 감성 카드 */}
