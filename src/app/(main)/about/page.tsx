@@ -1,89 +1,193 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { auth } from '@/lib/auth'
+import { FaqAccordion } from '@/components/common/FaqAccordion'
+import type { FaqItem } from '@/components/common/FaqAccordion'
 
 export const metadata: Metadata = {
   title: '우나어 소개',
-  description: '우리 나이가 어때서 — 50·60대를 위한 따뜻한 커뮤니티',
+  description: '아이들은 크고, 내 이야기 들어줄 사람이 없어지는 그 조용함을 깨러 만든 50·60대 공간',
   alternates: { canonical: 'https://age-doesnt-matter.com/about' },
 }
 
-export default function AboutPage() {
-  return (
-    <div className="max-w-[720px] mx-auto px-4 py-8 md:px-6 md:py-12">
-      <h1 className="text-2xl font-bold text-foreground mb-8 leading-tight">
-        우리 나이가 어때서
-      </h1>
+const VALUE_CARDS = [
+  {
+    emoji: '💬',
+    title: '내 이야기에 댓글이 달릴 때의 그 따뜻함',
+    desc: '비슷한 나이, 비슷한 마음 — 혼자가 아니라는 걸 느끼게 해줘요',
+    href: '/community/stories',
+    label: '사는이야기',
+  },
+  {
+    emoji: '📖',
+    title: '몰랐던 걸 알게 됐을 때의 그 시원함',
+    desc: '기초연금, 재취업, 건강 — 우리 나이에 맞는 정보만 골라드려요',
+    href: '/magazine',
+    label: '매거진',
+  },
+  {
+    emoji: '🌱',
+    title: '비슷한 처지의 사람을 만났을 때의 그 안도감',
+    desc: '인생 2막 먼저 간 사람, 지금 준비 중인 사람이 다 여기 있어요',
+    href: '/community/life2',
+    label: '2막준비',
+  },
+  {
+    emoji: '😄',
+    title: '글 하나에 하루가 밝아지는 그 순간',
+    desc: '우리 또래만 아는 유머, 오늘도 한번 웃어봐요',
+    href: '/community/humor',
+    label: '웃음방',
+  },
+] as const
 
-      <section className="mb-10">
-        <p className="text-body text-foreground leading-[1.85] break-keep mb-4">
-          <strong>우나어</strong>는 50·60대를 위한 따뜻한 커뮤니티입니다.
+const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
+  {
+    group: '가입 / 계정',
+    items: [
+      {
+        q: '가입은 어떻게 하나요?',
+        a: '카카오 계정으로 30초면 가입돼요. 아래 [카카오로 시작하기] 버튼을 눌러주세요.',
+      },
+      {
+        q: '가입비가 있나요?',
+        a: '완전 무료입니다. 별도 결제 없이 모든 기능을 이용할 수 있어요.',
+      },
+    ],
+  },
+  {
+    group: '글쓰기 / 댓글',
+    items: [
+      {
+        q: '글은 어떻게 써요?',
+        a: '오른쪽 아래 ✏️ 버튼을 누르면 바로 글쓰기 화면이 열려요.',
+      },
+      {
+        q: '댓글은 누구나 볼 수 있나요?',
+        a: '네, 회원 누구나 볼 수 있어요. 비회원은 읽기만 가능합니다.',
+      },
+    ],
+  },
+  {
+    group: '개인정보 / 보안',
+    items: [
+      {
+        q: '내 정보가 공개되나요?',
+        a: '닉네임만 공개됩니다. 실명·전화번호·카카오 정보는 절대 공개 안 돼요.',
+      },
+      {
+        q: '탈퇴는 어떻게 하나요?',
+        a: '마이페이지 > 설정 > 회원 탈퇴에서 언제든 탈퇴할 수 있어요.',
+      },
+    ],
+  },
+]
+
+export default async function AboutPage() {
+  const session = await auth()
+  const isLoggedIn = !!session
+
+  return (
+    <div className="max-w-[720px] mx-auto">
+      {/* 섹션 1 — 감성 훅 */}
+      <section className="px-4 pt-10 pb-10 md:px-6 md:pt-16">
+        <p className="text-body text-foreground leading-[2] break-keep">
+          아이들은 크고, 남편과 조금 멀어지고,<br />
+          몸은 조금씩 아파가고.
         </p>
-        <p className="text-body text-foreground leading-[1.85] break-keep mb-4">
-          나이는 숫자일 뿐, 지금이 가장 좋은 때입니다. 우나어에서는 같은 세대의 이야기를 나누고,
-          새로운 일자리를 찾고, 유용한 정보를 얻을 수 있어요.
+        <p className="text-body text-foreground leading-[2] break-keep mt-4">
+          그러다 어느 날 문득 깨닫는다.<br />
+          내 이야기 들어줄 사람이 없다는 걸.
+        </p>
+        <p className="text-body text-foreground leading-[2] break-keep mt-6 font-bold">
+          우나어는 그 조용함을 깨러 만든 곳이다.<br />
+          나이가 오히려 무기가 되고,<br />
+          &ldquo;맞아맞아&rdquo; 해주는 사람들이 모이는 공간.
         </p>
       </section>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-bold text-foreground mb-4">우나어에서 할 수 있는 것</h2>
-        <div className="space-y-4">
-          <FeatureCard
-            emoji="💼"
-            title="내 일 찾기"
-            description="50·60대 맞춤 일자리를 쉽게 찾아보세요. 나이 무관, 초보 환영 일자리를 큐레이션해 드려요."
-          />
-          <FeatureCard
-            emoji="💬"
-            title="소통 마당"
-            description="일상 이야기, 건강 정보, 유머까지. 비슷한 세대와 따뜻한 수다를 나눠보세요."
-          />
-          <FeatureCard
-            emoji="📖"
-            title="매거진"
-            description="기초연금, 건강, 생활 꿀팁 등 실생활에 도움되는 알짜 정보를 전해드려요."
-          />
-          <FeatureCard
-            emoji="⭐"
-            title="베스트"
-            description="가장 많은 공감을 받은 인기 글들을 모아볼 수 있어요."
-          />
+      {/* 섹션 2 — 경험 감성 카드 */}
+      <section className="px-4 pb-10 md:px-6">
+        <h2 className="text-xl font-bold text-foreground mb-5">우나어에서 생기는 일들</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {VALUE_CARDS.map((card) => (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="flex flex-col gap-3 p-5 bg-card rounded-2xl border border-border no-underline hover:border-primary/40 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{card.emoji}</span>
+                <span className="text-caption text-primary font-bold bg-primary/10 rounded-full px-2.5 py-0.5">
+                  {card.label}
+                </span>
+              </div>
+              <p className="text-body font-bold text-foreground leading-snug break-keep m-0">
+                {card.title}
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed break-keep m-0">
+                {card.desc}
+              </p>
+            </Link>
+          ))}
         </div>
       </section>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-bold text-foreground mb-4">함께해요</h2>
-        <p className="text-body text-foreground leading-[1.85] break-keep mb-6">
-          카카오 계정 하나면 바로 시작할 수 있어요. 어렵지 않아요!
-        </p>
-        <Link
-          href="/login"
-          className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-[#E85D50] lg:w-auto lg:h-12 lg:px-8"
-        >
-          카카오로 시작하기
-        </Link>
+      {/* 섹션 3 — 가입 유도 */}
+      <section className="px-4 pb-10 md:px-6">
+        <div className="bg-primary/5 rounded-2xl p-6 md:p-8">
+          <h2 className="text-xl font-bold text-foreground mb-4">걱정하지 마세요</h2>
+          <ul className="space-y-3 mb-6 list-none pl-0">
+            {[
+              '닉네임만 공개 — 실명·연락처는 절대 공개 안 됩니다',
+              '언제든 탈퇴 가능 — 가입비도, 약정도 없어요',
+              '30초면 끝 — 카카오 계정 하나면 바로 시작',
+            ].map((text) => (
+              <li key={text} className="flex items-start gap-3 text-body text-foreground">
+                <span className="text-primary font-bold shrink-0 mt-0.5">✓</span>
+                <span className="break-keep">{text}</span>
+              </li>
+            ))}
+          </ul>
+          {isLoggedIn ? (
+            <Link
+              href="/community/stories"
+              className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-[#E85D50] lg:w-auto lg:px-10"
+            >
+              커뮤니티 바로 가기
+            </Link>
+          ) : (
+            <Link
+              href="/login?callbackUrl=/community/stories"
+              className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-[#E85D50] lg:w-auto lg:px-10"
+            >
+              카카오로 시작하기
+            </Link>
+          )}
+        </div>
       </section>
 
-      <section className="pt-6 border-t border-border">
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          문의사항이 있으시면{' '}
-          <Link href="/contact" className="text-primary no-underline font-medium">
-            문의 페이지
+      {/* 섹션 4 — FAQ */}
+      <section className="px-4 pb-14 md:px-6">
+        <h2 className="text-xl font-bold text-foreground mb-5">자주 묻는 질문</h2>
+        <div className="space-y-7">
+          {FAQ_GROUPS.map((group) => (
+            <div key={group.group}>
+              <h3 className="text-sm font-bold text-muted-foreground mb-3">{group.group}</h3>
+              <div className="space-y-2">
+                {group.items.map((item) => (
+                  <FaqAccordion key={item.q} item={item} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-8 text-center">
+          <Link href="/faq" className="text-sm text-primary no-underline font-medium hover:underline">
+            더 많은 질문 보기 →
           </Link>
-          를 이용해 주세요.
-        </p>
+        </div>
       </section>
-    </div>
-  )
-}
-
-function FeatureCard({ emoji, title, description }: { emoji: string; title: string; description: string }) {
-  return (
-    <div className="flex gap-4 p-4 bg-card rounded-xl border border-border">
-      <span className="text-2xl shrink-0">{emoji}</span>
-      <div>
-        <h3 className="text-body font-bold text-foreground m-0 mb-1">{title}</h3>
-        <p className="text-sm text-muted-foreground m-0 leading-relaxed break-keep">{description}</p>
-      </div>
     </div>
   )
 }

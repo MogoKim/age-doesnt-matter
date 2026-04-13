@@ -1,12 +1,5 @@
-'use client'
-
-import { useState } from 'react'
-import type { ReactNode } from 'react'
-
-interface FaqItem {
-  q: string
-  a: ReactNode
-}
+import { FaqAccordion } from '@/components/common/FaqAccordion'
+import type { FaqItem } from '@/components/common/FaqAccordion'
 
 const faqs: FaqItem[] = [
   {
@@ -61,29 +54,6 @@ const faqs: FaqItem[] = [
     a: '네, 마이페이지 > 설정 > 글자 크기에서 작게/보통/크게 중 선택할 수 있습니다.',
   },
 ]
-
-function FaqAccordion({ item }: { item: FaqItem }) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div className="border border-border rounded-2xl overflow-hidden">
-      <button
-        className="w-full flex items-center justify-between px-5 py-4 text-left bg-card hover:bg-accent/50 transition-colors min-h-[52px] cursor-pointer"
-        onClick={() => setOpen(!open)}
-      >
-        <span className="text-body font-bold text-foreground pr-4">{item.q}</span>
-        <span className="text-xl text-muted-foreground shrink-0 transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : undefined }}>
-          ▾
-        </span>
-      </button>
-      {open && (
-        <div className="px-5 py-4 bg-card border-t border-border text-body text-foreground leading-[1.85]">
-          {item.a}
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function FaqPage() {
   return (
