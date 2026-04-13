@@ -192,28 +192,45 @@ export default function TipTapEditor({
     editorRef.current = editor
   }, [editor])
 
-  // Android 키보드 높이 실시간 반영 — DOM 직접 조작 (boolean 전환 타이밍 버그 원천 제거)
-  // resize + scroll 모두 구독 (삼성 키보드는 scroll만 발생하는 경우 있음)
+  // 툴바 position JS 직접 설정 — CSS max-lg:fixed는 부모 transform 있으면 무력화됨
+  // 모바일(<1024): position fixed를 JS로 직접 강제 → visualViewport로 bottom 동적 계산
+  // 데스크탑(≥1024): position sticky top:116px
   useEffect(() => {
+    const toolbar = toolbarRef.current
+    if (!toolbar) return
     const vv = window.visualViewport
-    if (!vv) return
+    const isMobile = window.innerWidth < 1024
+
+    if (!isMobile) {
+      toolbar.style.position = 'sticky'
+      toolbar.style.top = '116px'
+      toolbar.style.bottom = ''
+      toolbar.style.left = ''
+      toolbar.style.right = ''
+      return
+    }
+
+    // 모바일: 항상 fixed (CSS 클래스 의존 제거)
+    toolbar.style.position = 'fixed'
+    toolbar.style.left = '0'
+    toolbar.style.right = '0'
+    toolbar.style.zIndex = '20'
+
     const update = () => {
-      if (window.innerWidth >= 1024) return  // 데스크탑: sticky top 사용, bottom 미조작
-      const diff = Math.max(0, window.innerHeight - vv.height)
-      if (toolbarRef.current) {
-        toolbarRef.current.style.bottom = `calc(76px + ${diff}px + env(safe-area-inset-bottom, 0px))`
-      }
+      // visualViewport가 없는 구형 브라우저 대비 fallback
+      const diff = Math.max(0, window.innerHeight - (vv?.height ?? window.innerHeight))
+      toolbar.style.bottom = `calc(76px + ${diff}px + env(safe-area-inset-bottom, 0px))`
       if (editorWrapRef.current) {
         editorWrapRef.current.style.marginBottom = diff > 50 ? '60px' : '0px'
       }
-      if (showDebug) setDebugVals({ innerH: window.innerHeight, vpH: vv.height, diff })
+      if (showDebug) setDebugVals({ innerH: window.innerHeight, vpH: vv?.height ?? 0, diff })
     }
     update()
-    vv.addEventListener('resize', update)
-    vv.addEventListener('scroll', update)
+    vv?.addEventListener('resize', update)
+    vv?.addEventListener('scroll', update)
     return () => {
-      vv.removeEventListener('resize', update)
-      vv.removeEventListener('scroll', update)
+      vv?.removeEventListener('resize', update)
+      vv?.removeEventListener('scroll', update)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showDebug])
@@ -394,8 +411,7 @@ export default function TipTapEditor({
       {/* 모바일 bottom = CTA바(76px) + 키보드높이(JS) + safe-area / 데스크탑 top = GNB(64)+WriteHeader(52)=116px */}
       <div
         ref={toolbarRef}
-        className="z-20 bg-card pt-1 pb-2 max-lg:fixed max-lg:left-0 max-lg:right-0 max-lg:border-t max-lg:border-border max-lg:shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:sticky lg:top-[116px]"
-        style={{ bottom: 'calc(76px + env(safe-area-inset-bottom, 0px))' }}
+        className="bg-card pt-1 pb-2 border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)]"
       >
         <div className="flex items-center gap-0.5 border border-border rounded-xl bg-card px-2 py-1">
           {/* 인용구 */}
