@@ -54,7 +54,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cafe_crawler:magazine-morning': () => import('../cafe/magazine-generator.js').then(() => {}),
   'cafe_crawler:magazine-evening': () => import('../cafe/magazine-generator.js').then(() => {}),
   'cafe_crawler:content-curate': () => import('../cafe/content-curator.js').then(() => {}),
-  'cafe_crawler:external-crawl': () => import('../cafe/external-crawler.js').then(() => {}),
+  'cafe_crawler:external-crawl': () => import('../cafe/external-crawler.js').then(() => {}), // DISPATCH ONLY — 82cook 외부 크롤, GHA 스케줄 제거됨 (2026-04-13)
   'cmo:social-poster': () => import('../cmo/social-poster.js').then(() => {}),
   'cmo:social-metrics': () => import('../cmo/social-metrics.js').then(() => {}),
   'cmo:social-reviewer': () => import('../cmo/social-reviewer.js').then(() => {}),

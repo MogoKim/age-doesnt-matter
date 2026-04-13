@@ -1,3 +1,4 @@
+// DISPATCH ONLY — GHA 스케줄 제거됨 (2026-04-13). 수동 실행 전용.
 /**
  * 82cook 등 외부 사이트 크롤러
  * 네이버 카페와 다른 구조 → Playwright로 직접 HTML 파싱

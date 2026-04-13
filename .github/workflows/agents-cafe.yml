@@ -15,14 +15,12 @@ on:
           - external
           - sheet-scrape
 
-  # 매일 09:00, 13:00, 19:00 KST — 카페 트렌드 분석 + 콘텐츠 큐레이션
-  # 매일 11:30 KST — 외부 사이트 크롤링 (82cook 등)
+  # 매일 09:00, 13:30, 20:30 KST — 카페 트렌드 분석 + 콘텐츠 큐레이션
   # 매일 11:00, 21:00 KST — 시트 스크래퍼 (펨코/오유/네이트판)
   schedule:
-    - cron: "0 0 * * *"   # 09:00 KST
-    - cron: "0 4 * * *"   # 13:00 KST
-    - cron: "0 10 * * *"  # 19:00 KST
-    - cron: "30 2 * * *"  # 11:30 KST — external-crawl
+    - cron: "0 0 * * *"   # 09:00 KST (08:30 딥크롤 30분 후)
+    - cron: "30 4 * * *"  # 13:30 KST (12:55 딥크롤 35분 후)
+    - cron: "30 11 * * *" # 20:30 KST (20:00 딥크롤 30분 후)
     - cron: "0 2 * * *"   # 11:00 KST — sheet-scrape
     - cron: "0 12 * * *"  # 21:00 KST — sheet-scrape
 
@@ -72,29 +70,6 @@ jobs:
       - name: Run Content Curator
         if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'curate' || github.event_name == 'schedule' }}
         run: cd agents && npx tsx cron/runner.ts cafe_crawler content-curate
-
-  external-crawl:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: ${{ github.event.inputs.step == 'external' || github.event.schedule == '30 2 * * *' }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - run: npm ci
-      - run: npx prisma generate
-      - run: cd agents && npm ci
-
-      - name: Install Playwright Chromium
-        run: npx playwright install chromium --with-deps
-
-      - name: Run External Crawler
-        run: cd agents && npx tsx cron/runner.ts cafe_crawler external-crawl
 
   sheet-scrape:
     runs-on: ubuntu-latest
