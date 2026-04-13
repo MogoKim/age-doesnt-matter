@@ -123,13 +123,17 @@ export default function TipTapEditor({
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [mediaError, setMediaError] = useState('')
-  // Android 키보드 열림 감지: 키보드 열리면 툴바를 fixed bottom으로 전환
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  const [debugVals, setDebugVals] = useState({ innerH: 0, vpH: 0, diff: 0 })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
   // paste handler에서 editor에 접근하기 위한 ref
   const editorRef = useRef<ReturnType<typeof useEditor>>(null)
+  // 툴바/에디터 DOM 직접 스타일 조작 (React 상태 없이 즉시 반영 → 리렌더 없음)
+  const toolbarRef = useRef<HTMLDivElement>(null)
+  const editorWrapRef = useRef<HTMLDivElement>(null)
+  // ?vpdebug=1 URL 파라미터로 디버그 overlay 활성화 (실기기 수치 확인용)
+  const showDebug = typeof window !== 'undefined' && window.location.search.includes('vpdebug=1')
 
   const editor = useEditor({
     extensions: [
@@ -188,14 +192,31 @@ export default function TipTapEditor({
     editorRef.current = editor
   }, [editor])
 
-  // Android 키보드 열림/닫힘 감지 (visualViewport.resize)
+  // Android 키보드 높이 실시간 반영 — DOM 직접 조작 (boolean 전환 타이밍 버그 원천 제거)
+  // resize + scroll 모두 구독 (삼성 키보드는 scroll만 발생하는 경우 있음)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
-    const onResize = () => setKeyboardOpen(window.innerHeight - vv.height > 150)
-    vv.addEventListener('resize', onResize)
-    return () => vv.removeEventListener('resize', onResize)
-  }, [])
+    const update = () => {
+      if (window.innerWidth >= 1024) return  // 데스크탑: sticky top 사용, bottom 미조작
+      const diff = Math.max(0, window.innerHeight - vv.height)
+      if (toolbarRef.current) {
+        toolbarRef.current.style.bottom = `calc(76px + ${diff}px + env(safe-area-inset-bottom, 0px))`
+      }
+      if (editorWrapRef.current) {
+        editorWrapRef.current.style.marginBottom = diff > 50 ? '60px' : '0px'
+      }
+      if (showDebug) setDebugVals({ innerH: window.innerHeight, vpH: vv.height, diff })
+    }
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showDebug])
 
   // 외부 content 변경 시 에디터 동기화 (임시저장 복원용)
   useEffect(() => {
@@ -369,17 +390,12 @@ export default function TipTapEditor({
 
   return (
     <div className="relative">
-      {/* ── 툴바: 키보드 닫힘=sticky top / 키보드 열림=fixed bottom (Android 키보드 대응) ── */}
-      {/* top: 모바일 Header(56) + IconMenu(64) + WriteHeader(52) = 172px / 데스크탑 GNB(64) + WriteHeader(52) = 116px */}
-      {/* bottom-[76px]: CTA 바(pt-3+52px+pb-12) 높이 위에 위치 */}
+      {/* ── 툴바: 모바일=fixed bottom(키보드 높이 동적 반영) / 데스크탑=sticky top ── */}
+      {/* 모바일 bottom = CTA바(76px) + 키보드높이(JS) + safe-area / 데스크탑 top = GNB(64)+WriteHeader(52)=116px */}
       <div
-        className={cn(
-          'z-20 bg-card pt-1 pb-2',
-          keyboardOpen
-            ? 'fixed left-0 right-0 border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)]'
-            : 'sticky top-[172px] lg:top-[116px]',
-        )}
-        style={keyboardOpen ? { bottom: 'calc(76px + env(safe-area-inset-bottom, 0px))' } : undefined}
+        ref={toolbarRef}
+        className="z-20 bg-card pt-1 pb-2 max-lg:fixed max-lg:left-0 max-lg:right-0 max-lg:border-t max-lg:border-border max-lg:shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:sticky lg:top-[116px]"
+        style={{ bottom: 'calc(76px + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="flex items-center gap-0.5 border border-border rounded-xl bg-card px-2 py-1">
           {/* 인용구 */}
@@ -476,10 +492,19 @@ export default function TipTapEditor({
         </div>
       )}
 
+      {/* ── 디버그 overlay (?vpdebug=1 URL 파라미터로 활성화) ── */}
+      {showDebug && (
+        <div className="fixed top-16 right-2 z-[999] bg-black/85 text-white text-[11px] font-mono p-2 rounded-lg leading-relaxed pointer-events-none">
+          <div>innerH: {debugVals.innerH}px</div>
+          <div>vpH: &nbsp;&nbsp;{debugVals.vpH}px</div>
+          <div>diff: &nbsp;&nbsp;{debugVals.diff}px</div>
+        </div>
+      )}
+
       {/* ── 3. 에디터 본문 ── */}
       <div
+        ref={editorWrapRef}
         className="border-2 border-border rounded-xl bg-card transition-all focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(255,111,97,0.1)]"
-        style={keyboardOpen ? { marginBottom: '60px' } : undefined}
       >
         <EditorContent editor={editor} />
       </div>
