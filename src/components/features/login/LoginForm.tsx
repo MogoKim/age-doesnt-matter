@@ -1,58 +1,83 @@
 import { signIn } from '@/lib/auth'
 import Link from 'next/link'
-import Image from 'next/image'
 
 export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   return (
-    <div className="w-full max-w-[420px] bg-card rounded-2xl py-12 px-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-center max-md:max-w-none max-md:rounded-none max-md:min-h-dvh max-md:shadow-none max-md:flex max-md:flex-col max-md:justify-center">
-
+    // 모바일: 전체 화면 세로 분할 / 데스크탑: 420px 카드
+    <div className="
+      w-full min-h-dvh flex flex-col
+      md:min-h-0 md:w-[420px] md:rounded-2xl md:overflow-hidden md:shadow-[0_4px_24px_rgba(0,0,0,0.10)]
+    ">
       <h1 className="sr-only">로그인</h1>
 
-      {/* 로고 + 태그라인 */}
-      <div className="mb-10">
-        <Image
-          src="/images/logo.png"
-          alt="우리 나이가 어때서"
-          width={80}
-          height={80}
-          className="w-20 h-20 mx-auto mb-3 object-contain"
-        />
-        <p className="text-sm text-muted-foreground">
-          우리의 삶을 잇다
-        </p>
+      {/* 상단: 브랜드 + 공감 카피 (primary/5 배경) */}
+      <div
+        className="px-7 flex flex-col justify-between py-10 md:py-12"
+        style={{ background: 'rgba(255, 111, 97, 0.07)', flex: '0 0 44%' }}
+      >
+        {/* 소셜 프루프 뱃지 */}
+        <div
+          className="inline-flex items-center gap-2 w-fit px-3 py-2 rounded-xl text-sm font-semibold"
+          style={{ background: 'rgba(255, 111, 97, 0.12)', color: '#FF6F61' }}
+        >
+          <span>💬</span>
+          <span>지금도 누군가 고민을 나누고 있어요</span>
+        </div>
+
+        {/* 메인 카피 */}
+        <div>
+          <p className="text-[17px] font-medium mb-2.5" style={{ color: '#888' }}>
+            내 이야기만 해도 되는 곳.
+          </p>
+          <p className="font-bold leading-[1.45]" style={{ fontSize: '30px', color: '#111', letterSpacing: '-0.02em' }}>
+            엄마 말고,<br />아내 말고,<br />그냥 나로.
+          </p>
+        </div>
       </div>
 
-      {/* 카카오 버튼 — 메인 CTA */}
-      <form
-        action={async () => {
-          'use server'
-          await signIn('kakao', { redirectTo: callbackUrl })
-        }}
-      >
-        <button
-          type="submit"
-          className="flex items-center justify-center gap-2 w-full h-[56px] px-6 border-none rounded-xl bg-[var(--kakao-bg)] text-[var(--kakao-text)] text-base font-bold cursor-pointer transition-all shadow-[0_2px_8px_rgba(254,229,0,0.3)] hover:brightness-95 hover:shadow-[0_4px_14px_rgba(254,229,0,0.4)] hover:-translate-y-0.5 active:translate-y-0"
+      {/* 하단: 액션 영역 (흰색) */}
+      <div className="bg-background px-6 pt-8 flex flex-col flex-1 md:flex-none md:pb-12">
+
+        {/* 카카오 버튼 */}
+        <form
+          action={async () => {
+            'use server'
+            await signIn('kakao', { redirectTo: callbackUrl })
+          }}
         >
-          <span className="text-[22px] shrink-0">💬</span>
-          카카오톡으로 시작하기
-        </button>
-      </form>
+          <button
+            type="submit"
+            className="flex items-center justify-center gap-2 w-full h-[56px] px-6 border-none rounded-xl font-bold text-base cursor-pointer transition-all hover:brightness-95 hover:-translate-y-0.5 active:translate-y-0"
+            style={{
+              background: '#FEE500',
+              color: '#191919',
+              boxShadow: '0 2px 8px rgba(254,229,0,0.35)',
+            }}
+          >
+            <span className="text-[22px] shrink-0">💬</span>
+            카카오톡으로 시작하기
+          </button>
+        </form>
 
-      {/* 약관 + 둘러보기 */}
-      <p className="text-caption text-muted-foreground leading-relaxed mt-5 mb-3">
-        로그인 시{' '}
-        <Link href="/terms" className="text-muted-foreground underline hover:text-primary">이용약관</Link>
-        {' '}및{' '}
-        <Link href="/privacy" className="text-muted-foreground underline hover:text-primary">개인정보처리방침</Link>
-        에 동의하게 됩니다.
-      </p>
+        {/* 불안 해소 체크리스트 */}
+        <div className="mt-4 flex items-center justify-center gap-4 text-sm" style={{ color: '#999' }}>
+          <span>✓ 닉네임만 공개</span>
+          <span style={{ color: '#ddd' }}>|</span>
+          <span>✓ 10초 가입 · 무료</span>
+        </div>
 
-      <Link
-        href="/"
-        className="text-caption text-muted-foreground/60 hover:text-muted-foreground transition-colors hover:underline underline-offset-2"
-      >
-        먼저 둘러볼게요
-      </Link>
+        {/* 먼저 둘러볼게요 — 최하단 */}
+        <div className="flex-1 flex items-end justify-center pb-10 md:flex-none md:mt-8 md:pb-0">
+          <Link
+            href="/"
+            className="text-sm transition-colors hover:underline underline-offset-2"
+            style={{ color: '#bbb' }}
+          >
+            먼저 둘러볼게요
+          </Link>
+        </div>
+
+      </div>
     </div>
   )
 }

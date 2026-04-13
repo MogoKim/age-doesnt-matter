@@ -15,7 +15,8 @@ export default async function LoginPage({
   const { callbackUrl = '/' } = await searchParams
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-6 bg-background md:px-6 md:py-12">
+    // 모바일: 전체 화면 / 데스크탑: 중앙 정렬 카드
+    <div className="md:min-h-dvh md:flex md:items-center md:justify-center md:bg-background md:px-4 md:py-12">
       <LoginForm callbackUrl={callbackUrl} />
     </div>
   )
