@@ -102,8 +102,8 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
       <h1 className="sr-only">우리 나이가 어때서 — 5060 세대 커뮤니티</h1>
-      <HeroSlider />
       <div className="max-w-[1200px] mx-auto">
+        <HeroSlider />
         <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
           <div>
             <TrendingSection posts={trending} />

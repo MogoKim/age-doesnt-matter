@@ -86,7 +86,7 @@ export default function HeroSliderClient({ slides }: Props) {
                   src={slide.imageUrl}
                   alt={`배너 ${index + 1}`}
                   fill
-                  className="object-cover object-left lg:object-center"
+                  className="object-cover object-center"
                   sizes="100vw"
                   priority={index === 0}
                   loading={index === 0 ? undefined : 'lazy'}

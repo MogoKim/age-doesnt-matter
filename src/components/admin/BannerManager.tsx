@@ -172,7 +172,8 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
           <li>• 최대 <strong>5장</strong> 동시 노출 가능 — 우선순위 숫자가 낮을수록 먼저 표시</li>
           <li>• 권장 이미지: <strong>2000×600px</strong> · JPG/PNG/WebP · 2MB 이하</li>
           <li>• 텍스트·버튼·CTA는 이미지 안에 포함해서 업로드 (코드 오버레이 없음)</li>
-          <li>• 핵심 요소는 세로 기준 <strong>중앙 60%</strong> 안에 배치 (상하 가장자리 잘릴 수 있음)</li>
+          <li>• 핵심 요소는 <strong>가로 기준 중앙 60%</strong> 안에 배치 (모바일에서 좌우 각 20% 크롭됨)</li>
+          <li>• 세로 기준도 <strong>중앙 70%</strong> 안에 배치 (상하 가장자리 잘릴 수 있음)</li>
           <li>• <strong>노출 조건</strong>: isActive 활성화 <em>AND</em> 오늘이 시작일~종료일 사이 — 둘 중 하나라도 빠지면 미노출</li>
           <li>• 배너 없으면 단색 폴백 배경이 자동 표시됨</li>
         </ul>
