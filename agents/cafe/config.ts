@@ -136,7 +136,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
       { name: '꽃·식물·반려동물', menuId: 139, maxPages: 1, priority: 'medium', category: 'lifestyle' },
       { name: '나의 버킷리스트', menuId: 97, maxPages: 1, priority: 'medium', category: 'lifestyle' },
       { name: '나의 창작물', menuId: 83, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '유머·이슈·정보', menuId: 61, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+      { name: '유머·이슈·정보', menuId: 61, maxPages: 2, priority: 'medium', category: 'lifestyle' },
       { name: '칼럼·에세이', menuId: 111, maxPages: 1, priority: 'medium', category: 'lifestyle' },
 
       // ── 은오 자기관리 (HEALTH) ──

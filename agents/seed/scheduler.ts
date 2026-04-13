@@ -159,6 +159,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'Y', type: 'post', board: 'LIFE2' },         // 솔직히말해서 현실 팩폭
     { personaId: 'AD', type: 'post' },                         // 그때그시절 회고
     { personaId: 'BA', type: 'post', board: 'LIFE2' },        // 은퇴D100 은퇴 준비 현실
+    { personaId: 'BD', type: 'post' },                         // 고부갈등맘 서운함 토로
     // 댓글
     { personaId: 'K', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'R', type: 'comment', board: 'HUMOR', count: 2 },
@@ -222,7 +223,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'W', type: 'post' },                          // 참나진짜 비판 리뷰
     { personaId: 'AH', type: 'post' },                         // 피곤해요 하루 TMI
     { personaId: 'S', type: 'post' },                          // 제주살이 저녁 풍경
-    { personaId: 'BB', type: 'post' },                         // 손주바보 손주 자랑
+    { personaId: 'BC', type: 'post' },                         // 억울한아내 남편 하소연
     { personaId: 'R', type: 'post', board: 'HUMOR' },          // 밤새봤다 저녁 드라마
     { personaId: 'T', type: 'post', board: 'LIFE2' },         // 배움은즐거워 수다방
     // 댓글

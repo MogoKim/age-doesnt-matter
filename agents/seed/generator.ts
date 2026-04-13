@@ -5,7 +5,7 @@ import { getPersona, getAllPersonaIds, type Persona } from './persona-data.js'
 // ── 욕망 카테고리 → 적합 페르소나 매핑 (실제 39+EN 페르소나 기반) ──
 export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint: string }> = {
   HEALTH:   { personas: ['H', 'A', 'AC'],   topicHint: '건강 정보, 병원 경험, 증상 공감, 약 부작용, 건강검진 결과' },
-  FAMILY:   { personas: ['E', 'AK', 'BB'],  topicHint: '자녀 이야기(취업·직장·결혼), 고부갈등(시어머니 입장), 사위/며느리 이야기, 남편 이야기, 손주 자랑. 손주가 등장하면 반드시 유치원생/초등 저학년 수준으로만.' },
+  FAMILY:   { personas: ['E', 'BC', 'BD'],  topicHint: '자녀 이야기(취업·직장·결혼), 고부갈등(시어머니 입장), 사위/며느리 이야기, 남편 불만·하소연, 노부부 갈등, 손주 자랑. 손주가 등장하면 반드시 유치원생/초등 저학년 수준으로만.' },
   MONEY:    { personas: ['B', 'N', 'AZ'],   topicHint: '절약 팁, 재테크 경험, 연금 이야기, 물가 한탄, ETF·부동산 현실 공유' },
   RETIRE:   { personas: ['T', 'G', 'BA'],   topicHint: '은퇴 후 일상, 의미 찾기, 새 시작, 무료함, 취미 찾기, 은퇴 준비 현실' },
   JOB:      { personas: ['T', 'B', 'AZ'],   topicHint: '일자리 경험, 자격증, 재취업 이야기, 나이 차별' },
@@ -20,7 +20,16 @@ async function getLatestTrend() {
   try {
     return await prisma.cafeTrend.findFirst({
       orderBy: { createdAt: 'desc' },
-      select: { dominantDesire: true, dominantEmotion: true, urgentTopics: true, cafeSummary: true },
+      select: {
+        dominantDesire: true,
+        dominantEmotion: true,
+        urgentTopics: true,
+        cafeSummary: true,
+        hotTopics: true,
+        keywords: true,
+        desireMap: true,
+        emotionDistribution: true,
+      },
     })
   } catch {
     return null
@@ -57,12 +66,6 @@ function buildTrendContext(
     .filter(Boolean)
     .slice(0, 2)
 
-  // 전체 긴급 관심사 (다른 욕망 참고용)
-  const allUrgentInsights = urgentTopics
-    .slice(0, 4)
-    .map(t => t.psychInsight)
-    .filter(Boolean)
-
   // speechTone 데이터
   const summary = trend.cafeSummary as Record<string, unknown> | null
   const keyPhrases = Array.isArray(summary?.topKeyPhrases)
@@ -72,22 +75,63 @@ function buildTrendContext(
     ? (summary.topCommunityVocab as string[]).slice(0, 5)
     : []
 
-  const speechToneLine = (keyPhrases.length + communityVocab.length > 0)
-    ? `\n- 오늘 커뮤니티 표현: ${keyPhrases.join(', ')}${communityVocab.length > 0 ? `\n- 자주 쓰는 어휘: ${communityVocab.join(', ')}` : ''}`
-    : ''
+  // hotTopics top-5 주제명
+  const hotTopics = Array.isArray(trend.hotTopics)
+    ? (trend.hotTopics as Array<{ topic: string; count?: number }>)
+        .slice(0, 5)
+        .map(t => t.topic)
+        .filter(Boolean)
+    : []
+
+  // keywords top-8 단어
+  const keywords = Array.isArray(trend.keywords)
+    ? (trend.keywords as Array<{ word: string; frequency?: number }>)
+        .slice(0, 8)
+        .map(k => k.word)
+        .filter(Boolean)
+    : []
+
+  // desireMap에서 내 욕망 비중
+  const desireMap = (trend.desireMap ?? {}) as Record<string, number>
+  const myDesirePct = personaDesire && desireMap[personaDesire] != null
+    ? `${desireMap[personaDesire]}%`
+    : null
+
+  // emotionDistribution top-3
+  const emotionDist = (trend.emotionDistribution ?? {}) as Record<string, number>
+  const emotionLines = Object.entries(emotionDist)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([k, v]) => `${k} ${v}%`)
 
   const myTopicLine = myDesireInfo
     ? `\n- 내 관심 영역 오늘 소재: ${matchingUrgent.length > 0 ? matchingUrgent.join(' / ') : myDesireInfo.topicHint}`
     : ''
 
-  const communityLine = allUrgentInsights.length > 0
-    ? `\n- 커뮤니티 전반 화제: ${allUrgentInsights.join(' / ')}`
+  const hotTopicLine = hotTopics.length > 0
+    ? `\n- 오늘 커뮤니티 핫 주제: ${hotTopics.join(', ')}`
+    : ''
+
+  const emotionLine = emotionLines.length > 0
+    ? `\n- 감정 흐름: ${trend.dominantEmotion ?? '다양함'} (${emotionLines.join(', ')})`
+    : `\n- 감정 흐름: ${trend.dominantEmotion ?? '다양함'}`
+
+  const vocabLine = (keyPhrases.length + communityVocab.length + keywords.length > 0)
+    ? [
+        keyPhrases.length > 0 ? `\n- 오늘 유행 표현: ${keyPhrases.join(', ')}` : '',
+        (communityVocab.length + keywords.length > 0)
+          ? `\n- 자주 쓰는 어휘: ${[...communityVocab, ...keywords].slice(0, 8).join(', ')}`
+          : '',
+      ].join('')
+    : ''
+
+  const desirePctLine = myDesirePct
+    ? `\n- 내 욕망 영역 오늘 비중: ${personaDesire} ${myDesirePct}`
     : ''
 
   return `
 [오늘의 커뮤니티 분위기 — 참고만, 직접 인용 절대 금지]
-- 오늘 주된 관심: ${trend.dominantDesire} 관련 이야기
-- 오늘의 감정 흐름: ${trend.dominantEmotion ?? '다양함'}${myTopicLine}${communityLine}${speechToneLine}
+- 오늘 주된 관심: ${trend.dominantDesire} 관련 이야기${myTopicLine}${hotTopicLine}${emotionLine}${vocabLine}${desirePctLine}
 
 이 분위기를 당신의 개성으로 자연스럽게 녹여내세요.
 위 내용을 그대로 쓰거나 직접 언급하지 마세요.`
