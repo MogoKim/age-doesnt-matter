@@ -18,9 +18,12 @@ on:
           - knowledge-responder
           - seo-optimizer
           - threads-token-refresh
+          - google-ads-report
           - test-validate
           - test-post
   schedule:
+    # 구글 애즈 일일 성과 리포트
+    - cron: "0 0 * * *"    # 09:00 KST — 전일 성과 리포트
     # 텍스트 게시 (Threads/X) — 황금 시간대
     - cron: "0 22 * * *"   # 07:00 KST — 아침 황금시간
     - cron: "0 3 * * *"    # 12:00 KST — 점심 황금시간
@@ -351,6 +354,30 @@ jobs:
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
           BAND_ACCESS_TOKEN: ${{ secrets.BAND_ACCESS_TOKEN }}
           BAND_KEY: ${{ secrets.BAND_KEY }}
+
+  google-ads-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: >-
+      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'google-ads-report' ||
+      github.event_name == 'schedule' && github.event.schedule == '0 0 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+      - run: cd agents && npx tsx cron/runner.ts cmo google-ads-report
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          SLACK_WEBHOOK_REPORT: ${{ secrets.SLACK_WEBHOOK_REPORT }}
+          GOOGLE_ADS_DEVELOPER_TOKEN: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN }}
+          GOOGLE_ADS_CLIENT_ID: ${{ secrets.GOOGLE_ADS_CLIENT_ID }}
+          GOOGLE_ADS_CLIENT_SECRET: ${{ secrets.GOOGLE_ADS_CLIENT_SECRET }}
+          GOOGLE_ADS_REFRESH_TOKEN: ${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
+          GOOGLE_ADS_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_CUSTOMER_ID }}
 
   test-post:
     runs-on: ubuntu-latest

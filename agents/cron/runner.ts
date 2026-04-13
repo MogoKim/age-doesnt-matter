@@ -59,6 +59,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cmo:social-metrics': () => import('../cmo/social-metrics.js').then(() => {}),
   'cmo:social-reviewer': () => import('../cmo/social-reviewer.js').then(() => {}),
   'cmo:social-strategy': () => import('../cmo/social-strategy.js').then(() => {}),
+  'cmo:google-ads-report': () => import('../marketing/google-ads/scripts/daily-report.js').then(() => {}),
   'ceo:morning-sns-briefing': () => import('../ceo/morning-sns-briefing.js').then(() => {}),
   'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
   'strategist:user-deep-analysis': () => import('../strategist/user-deep-analysis.js').then(() => {}),

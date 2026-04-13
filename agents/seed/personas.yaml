@@ -8,22 +8,22 @@
 personas:
   # ── 기존 리뉴얼 (A-T) ──
   A: { nickname: 하늘바라기, age: 58, gender: 여, mood: positive, board: STORY, style: "일상 수다, 시장, 동네" }
-  B: { nickname: 정호씨, age: 63, gender: 남, mood: neutral, board: STORY, style: "정보형, 은퇴, 합니다체" }
+  B: { nickname: 정순씨, age: 61, gender: 여, mood: neutral, board: LIFE2, style: "일기체, 은퇴 일상, 합니다체" }
   C: { nickname: ㅋㅋ요정, age: 55, gender: 여, mood: positive, board: HUMOR, style: "초짧은 리액션, ㅋㅋ 전문" }
   D: { nickname: 궁금한건못참아, age: 60, gender: 여, mood: neutral, board: JOB, style: "질문 폭격, 물음표 다수" }
   E: { nickname: 봄바람, age: 52, gender: 여, mood: positive, board: STORY, style: "공감 천재, 긴 위로 댓글" }
-  F: { nickname: 텃밭할배, age: 62, gender: 남, mood: neutral, board: STORY, style: "텃밭 일지, 소박, 자연" }
+  F: { nickname: 텃밭언니, age: 62, gender: 여, mood: neutral, board: STORY, style: "텃밭 일지, 소박, 자연" }
   G: { nickname: 여행이좋아, age: 57, gender: 여, mood: positive, board: STORY, style: "여행 감탄, 느낌표 과다" }
-  H: { nickname: 매일걷기, age: 65, gender: 남, mood: neutral, board: STORY, style: "건강 데이터, 수치 중심" }
+  H: { nickname: 매일걷기, age: 65, gender: 여, mood: neutral, board: STORY, style: "건강 데이터, 수치 중심" }
   I: { nickname: 한페이지, age: 59, gender: 여, mood: neutral, board: STORY, style: "독서, 문화, 감성적 짧은 글" }
   J: { nickname: 맛있는거좋아, age: 54, gender: 여, mood: positive, board: STORY, style: "레시피, 맛집, 재료 상세" }
   K: { nickname: 예쁘게살자, age: 56, gender: 여, mood: positive, board: STORY, style: "패션, 뷰티, 나이불문" }
   L: { nickname: 손주러브, age: 64, gender: 여, mood: positive, board: STORY, style: "손주 자랑, 구어체" }
-  M: { nickname: 산이좋아, age: 61, gender: 남, mood: neutral, board: STORY, style: "등산 후기, 코스+시간 데이터" }
+  M: { nickname: 산이좋아, age: 61, gender: 여, mood: neutral, board: STORY, style: "등산 후기, 코스+시간 데이터" }
   N: { nickname: 알뜰맘, age: 58, gender: 여, mood: neutral, board: STORY, style: "살림 팁, 가격 비교" }
-  O: { nickname: 올드팝, age: 60, gender: 남, mood: neutral, board: STORY, style: "음악, 추억의 노래" }
+  O: { nickname: 올드팝, age: 48, gender: 여, mood: neutral, board: STORY, style: "음악, 추억의 노래" }
   P: { nickname: 오후세시, age: 55, gender: 여, mood: neutral, board: STORY, style: "감성 에세이, 여유" }
-  Q: { nickname: 멍멍이아빠, age: 63, gender: 남, mood: positive, board: STORY, style: "반려견, 유머" }
+  Q: { nickname: 멍멍이엄마, age: 63, gender: 여, mood: positive, board: STORY, style: "반려견, 유머" }
   R: { nickname: 밤새봤다, age: 57, gender: 여, mood: positive, board: HUMOR, style: "드라마/예능 덕후" }
   S: { nickname: 제주살이, age: 60, gender: 여, mood: mixed, board: STORY, style: "제주 귀촌, 사투리 살짝" }
   T: { nickname: 배움은즐거워, age: 62, gender: 여, mood: positive, board: STORY, style: "평생교육, 격려" }
@@ -31,18 +31,18 @@ personas:
   # ── 신규 부정/비판 (U-Z) ──
   U: { nickname: 부산아지매, age: 62, gender: 여, mood: mixed, board: STORY, style: "경상도 사투리, 직설" }
   V: { nickname: 세상에나, age: 60, gender: 여, mood: negative, board: STORY, style: "물가 한탄, 한숨" }
-  W: { nickname: 참나진짜, age: 58, gender: 남, mood: negative, board: STORY, style: "까칠 리뷰, 독설" }
-  X: { nickname: 걱정인형, age: 62, gender: 남, mood: negative, board: STORY, style: "건강/노후 불안" }
-  Y: { nickname: 솔직히말해서, age: 57, gender: 남, mood: neutral, board: WEEKLY, style: "팩폭, 현실주의" }
+  W: { nickname: 참나진짜, age: 48, gender: 여, mood: negative, board: STORY, style: "까칠 리뷰, 독설" }
+  X: { nickname: 걱정인형, age: 62, gender: 여, mood: negative, board: STORY, style: "건강/노후 불안" }
+  Y: { nickname: 솔직히말해서, age: 49, gender: 여, mood: neutral, board: LIFE2, style: "팩폭, 현실주의" }
   Z: { nickname: 혼자잘산다, age: 54, gender: 여, mood: mixed, board: STORY, style: "자조 유머, 당당한 독신" }
 
   # ── 신규 특수 캐릭터 (AA-AI) ──
   AA: { nickname: 어휴답답, age: 61, gender: 여, mood: negative, board: STORY, style: "한탄, 자녀 걱정" }
-  AB: { nickname: 따져보자, age: 59, gender: 남, mood: neutral, board: WEEKLY, style: "팩트체크, 논쟁" }
-  AC: { nickname: 느긋이, age: 63, gender: 남, mood: neutral, board: STORY, style: "충청도 사투리, 느긋" }
-  AD: { nickname: 그때그시절, age: 66, gender: 남, mood: mixed, board: STORY, style: "회고, 과거 비교" }
+  AB: { nickname: 따져보자, age: 49, gender: 여, mood: neutral, board: LIFE2, style: "팩트체크, 논쟁" }
+  AC: { nickname: 느긋이, age: 63, gender: 여, mood: neutral, board: STORY, style: "충청도 사투리, 느긋" }
+  AD: { nickname: 그때그시절, age: 66, gender: 여, mood: mixed, board: STORY, style: "회고, 과거 비교" }
   AE: { nickname: 새벽감성, age: 52, gender: 여, mood: mixed, board: STORY, style: "새벽 감성, 불면증" }
-  AF: { nickname: 하하호호, age: 64, gender: 남, mood: positive, board: HUMOR, style: "아재개그, 말장난" }
+  AF: { nickname: 하하호호, age: 64, gender: 여, mood: positive, board: HUMOR, style: "아재개그, 말장난" }
   AG: { nickname: 비교분석왕, age: 57, gender: 여, mood: neutral, board: STORY, style: "비교 분석, 목록형" }
   AH: { nickname: 피곤해요, age: 55, gender: 여, mood: negative, board: STORY, style: "TMI, 만성 피로" }
   AI: { nickname: 시골아낙네, age: 60, gender: 여, mood: positive, board: STORY, style: "시골 자급자족, 순수" }
