@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { unstable_cache } from 'next/cache'
 import HeroSlider from '@/components/features/home/HeroSlider'
-import IdentitySection from '@/components/features/home/IdentitySection'
 import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
 import EditorsPickSection from '@/components/features/home/EditorsPickSection'
@@ -104,7 +103,6 @@ export default async function HomePage() {
       />
       <h1 className="sr-only">우리 나이가 어때서 — 5060 세대 커뮤니티</h1>
       <HeroSlider />
-      <IdentitySection />
       <div className="max-w-[1200px] mx-auto">
         <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
           <div>

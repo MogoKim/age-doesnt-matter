@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { adminCreateBanner, adminUpdateBanner, adminDeleteBanner } from '@/lib/actions/admin'
 import HelpTip from './HelpTip'
@@ -42,6 +42,8 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
   const [isPending, startTransition] = useTransition()
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
     title: '',
@@ -79,6 +81,30 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
     })
     setEditId(banner.id)
     setShowForm(true)
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIsUploading(true)
+    try {
+      const res = await fetch(`/api/uploads/presign?type=${encodeURIComponent(file.type)}`)
+      if (!res.ok) throw new Error('presign 실패')
+      const { uploadUrl, publicUrl } = await res.json() as { uploadUrl: string; publicUrl: string }
+      const putRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      })
+      if (!putRes.ok) throw new Error('업로드 실패')
+      setForm((prev) => ({ ...prev, imageUrl: publicUrl }))
+    } catch (err) {
+      alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.')
+      console.error(err)
+    } finally {
+      setIsUploading(false)
+      e.target.value = ''
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -142,7 +168,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
       {/* 추가 버튼 */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-zinc-500">
-          히어로 배너 최대 3장. 우선순위(낮은 숫자가 먼저)로 정렬됩니다.
+          히어로 배너 최대 2장. 우선순위(낮은 숫자가 먼저)로 정렬됩니다.
         </p>
         {!showForm && (
           <button
@@ -179,15 +205,44 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                 className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">이미지 URL *</label>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-zinc-600">배너 이미지 *</label>
+              <p className="mb-2 text-[11px] leading-relaxed text-zinc-400">
+                권장 크기: <strong>2000×700px</strong> (20:7 비율) · JPG / PNG / WebP · 2MB 이하<br />
+                텍스트·CTA 버튼을 이미지에 포함해서 업로드하세요. 핵심 요소는 세로 기준 중앙 60% 안에 배치.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  required
+                  value={form.imageUrl}
+                  onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                  className="h-10 flex-1 rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                  placeholder="URL 직접 입력 또는 파일 업로드"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="h-10 whitespace-nowrap rounded-lg border border-zinc-300 px-3 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                >
+                  {isUploading ? '업로드 중...' : '파일 업로드'}
+                </button>
+              </div>
               <input
-                required
-                value={form.imageUrl}
-                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
-                placeholder="https://..."
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleImageUpload}
               />
+              {form.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={form.imageUrl}
+                  alt="미리보기"
+                  className="mt-2 h-16 w-28 rounded-lg object-cover border border-zinc-200"
+                />
+              )}
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">링크 URL</label>

@@ -39,7 +39,7 @@ export default function HeroSliderClient({ slides }: Props) {
   if (slides.length === 0) return null
 
   return (
-    <section className="w-full h-[170px] lg:h-[420px] relative overflow-hidden bg-primary/10">
+    <section className="w-full h-[220px] lg:h-[420px] relative overflow-hidden bg-primary/10">
       {slides.map((slide, index) => (
         <div
           key={slide.id}
@@ -47,46 +47,48 @@ export default function HeroSliderClient({ slides }: Props) {
             'absolute inset-0 opacity-0 transition-opacity duration-500',
             index === current && 'opacity-100'
           )}
-          style={slide.bgColor ? { background: slide.bgColor } : undefined}
         >
-          {slide.imageUrl && (
-            <Image
-              src={slide.imageUrl}
-              alt={slide.title}
-              fill
-              className="object-cover"
-              sizes="100vw"
-              priority={index === 0}
-              loading={index === 0 ? undefined : 'lazy'}
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent p-4 flex flex-col justify-end lg:max-w-[1200px] lg:mx-auto lg:left-1/2 lg:right-auto lg:-translate-x-1/2 lg:w-full lg:p-10">
-            <h2 className="text-white text-[22px] lg:text-[40px] font-bold leading-[1.4] [text-shadow:0_2px_8px_rgba(0,0,0,0.4)] mb-3 lg:mb-5 break-keep whitespace-pre-line">
-              {slide.title}
-            </h2>
-            {slide.ctaText && (
-              <Link
-                href={slide.ctaHref}
-                className="inline-flex items-center gap-1.5 h-[52px] px-5 lg:px-7 bg-primary text-white rounded-lg text-body lg:text-title font-semibold no-underline self-start hover:bg-[#E85D50]"
-              >
-                {slide.ctaText} →
-              </Link>
+          <Link
+            href={slide.ctaHref}
+            className="absolute inset-0 block"
+            aria-label={`배너 ${index + 1}`}
+            tabIndex={index === current ? 0 : -1}
+          >
+            {slide.imageUrl ? (
+              <Image
+                src={slide.imageUrl}
+                alt={`배너 ${index + 1}`}
+                fill
+                className="object-cover"
+                sizes="100vw"
+                priority={index === 0}
+                loading={index === 0 ? undefined : 'lazy'}
+              />
+            ) : (
+              <div
+                className="absolute inset-0"
+                style={slide.bgColor ? { background: slide.bgColor } : undefined}
+              />
             )}
-          </div>
+          </Link>
         </div>
       ))}
       {slides.length > 1 && (
-        <div className="absolute bottom-3 right-4 flex gap-1.5">
+        <div className="absolute bottom-0 left-0 right-0 flex justify-center">
           {slides.map((slide, index) => (
             <button
               key={slide.id}
               className={cn(
-                'w-2 h-2 rounded-full bg-white/50 transition-all duration-300 border-none p-0 cursor-pointer',
-                index === current && 'bg-white w-5 rounded'
+                'p-3 border-none bg-transparent cursor-pointer',
               )}
               onClick={() => goTo(index)}
               aria-label={`슬라이드 ${index + 1}`}
-            />
+            >
+              <span className={cn(
+                'block h-2 rounded-full bg-white/50 transition-all duration-300',
+                index === current ? 'w-6 bg-white' : 'w-2.5'
+              )} />
+            </button>
           ))}
         </div>
       )}

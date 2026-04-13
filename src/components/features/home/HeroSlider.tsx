@@ -1,28 +1,19 @@
 import { getActiveBanners } from '@/lib/queries/banners'
 import HeroSliderClient, { type SlideData } from './HeroSliderClient'
 
-/** 하드코딩 폴백 — DB에 배너 없을 때 사용 */
+/** 하드코딩 폴백 — DB에 배너 없을 때 사용 (이미지 업로드 전 임시 단색 표시) */
 const FALLBACK_SLIDES: SlideData[] = [
   {
     id: 'fallback-1',
-    title: '당신의\n두 번째 전성기',
-    ctaText: '일자리 보기',
-    ctaHref: '/jobs',
+    title: '',
+    ctaHref: '/about',
     bgColor: 'var(--hero-slide-1)',
   },
   {
     id: 'fallback-2',
-    title: '같은 세대의\n따뜻한 이야기',
-    ctaText: '커뮤니티 가기',
+    title: '',
     ctaHref: '/community/stories',
     bgColor: 'var(--hero-slide-2)',
-  },
-  {
-    id: 'fallback-3',
-    title: '건강하고 활기찬\n매일을 함께',
-    ctaText: '매거진 읽기',
-    ctaHref: '/magazine',
-    bgColor: 'var(--hero-slide-3)',
   },
 ]
 
