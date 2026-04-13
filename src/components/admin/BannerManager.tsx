@@ -165,10 +165,23 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
         ))}
       </div>
 
+      {/* 운영 가이드 */}
+      <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800 space-y-1.5">
+        <p className="font-semibold">📋 배너 운영 가이드 (담당자 필독)</p>
+        <ul className="space-y-1 list-none pl-0 text-blue-700">
+          <li>• 최대 <strong>5장</strong> 동시 노출 가능 — 우선순위 숫자가 낮을수록 먼저 표시</li>
+          <li>• 권장 이미지: <strong>2000×600px</strong> · JPG/PNG/WebP · 2MB 이하</li>
+          <li>• 텍스트·버튼·CTA는 이미지 안에 포함해서 업로드 (코드 오버레이 없음)</li>
+          <li>• 핵심 요소는 세로 기준 <strong>중앙 60%</strong> 안에 배치 (상하 가장자리 잘릴 수 있음)</li>
+          <li>• <strong>노출 조건</strong>: isActive 활성화 <em>AND</em> 오늘이 시작일~종료일 사이 — 둘 중 하나라도 빠지면 미노출</li>
+          <li>• 배너 없으면 단색 폴백 배경이 자동 표시됨</li>
+        </ul>
+      </div>
+
       {/* 추가 버튼 */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-zinc-500">
-          히어로 배너 최대 2장. 우선순위(낮은 숫자가 먼저)로 정렬됩니다.
+          히어로 배너 최대 5장. 우선순위(낮은 숫자가 먼저)로 정렬됩니다.
         </p>
         {!showForm && (
           <button
@@ -208,7 +221,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs font-medium text-zinc-600">배너 이미지 *</label>
               <p className="mb-2 text-[11px] leading-relaxed text-zinc-400">
-                권장 크기: <strong>2000×700px</strong> (20:7 비율) · JPG / PNG / WebP · 2MB 이하<br />
+                권장 크기: <strong>2000×600px</strong> (10:3 비율) · JPG / PNG / WebP · 2MB 이하<br />
                 텍스트·CTA 버튼을 이미지에 포함해서 업로드하세요. 핵심 요소는 세로 기준 중앙 60% 안에 배치.
               </p>
               <div className="flex gap-2">

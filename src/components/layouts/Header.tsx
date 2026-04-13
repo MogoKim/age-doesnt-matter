@@ -14,9 +14,9 @@ export default function Header({ isLoggedIn = false }: HeaderProps) {
         <Image
           src="/images/logo2.png"
           alt="우리나이가어때서"
-          width={48}
-          height={48}
-          className="h-12 w-12 rounded-lg object-contain"
+          width={54}
+          height={54}
+          className="h-[54px] w-[54px] rounded-lg object-contain"
           priority
         />
       </Link>
