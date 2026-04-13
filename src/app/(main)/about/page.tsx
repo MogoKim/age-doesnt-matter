@@ -105,7 +105,7 @@ export default async function AboutPage() {
       {/* 섹션 0 — 페이지 헤더 */}
       <section className="px-4 pt-10 pb-6 md:px-6">
         <h1 className="text-2xl font-bold text-foreground mb-1.5">우리 나이가 어때서</h1>
-        <p className="text-body text-muted-foreground">비슷한 나이, 비슷한 마음이 모이는 곳</p>
+        <p className="text-body text-muted-foreground">비슷한 나이, 비슷한 마음이 모이는 곳 — 서로를 잇다.</p>
       </section>
 
       {/* 섹션 1 — 감성 훅 */}
