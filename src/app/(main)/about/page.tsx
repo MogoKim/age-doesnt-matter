@@ -47,7 +47,14 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
     items: [
       {
         q: '가입은 어떻게 하나요?',
-        a: '카카오 계정으로 30초면 가입돼요. 아래 [카카오로 시작하기] 버튼을 눌러주세요.',
+        a: (
+          <span>
+            카카오 계정으로 30초면 가입돼요.{' '}
+            <Link href="/login?callbackUrl=/community/stories" className="text-primary font-bold underline">
+              카카오로 시작하기 →
+            </Link>
+          </span>
+        ),
       },
       {
         q: '가입비가 있나요?',
@@ -60,7 +67,17 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
     items: [
       {
         q: '글은 어떻게 써요?',
-        a: '오른쪽 아래 ✏️ 버튼을 누르면 바로 글쓰기 화면이 열려요.',
+        a: (
+          <div className="space-y-2">
+            <p>원하는 게시판에 들어간 뒤 오른쪽 아래 ✏️ 버튼을 눌러주세요.</p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li><Link href="/community/stories" className="text-primary underline">사는이야기</Link> — 일상·고민·감동 이야기</li>
+              <li><Link href="/community/life2" className="text-primary underline">2막준비</Link> — 재취업·은퇴·인생 2막</li>
+              <li><Link href="/community/humor" className="text-primary underline">웃음방</Link> — 유머·재미있는 글</li>
+            </ul>
+            <p className="text-sm text-muted-foreground">✏️ 버튼은 로그인 후에 보여요.</p>
+          </div>
+        ),
       },
       {
         q: '댓글은 누구나 볼 수 있나요?',
@@ -75,10 +92,6 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
         q: '내 정보가 공개되나요?',
         a: '닉네임만 공개됩니다. 실명·전화번호·카카오 정보는 절대 공개 안 돼요.',
       },
-      {
-        q: '탈퇴는 어떻게 하나요?',
-        a: '마이페이지 > 설정 > 회원 탈퇴에서 언제든 탈퇴할 수 있어요.',
-      },
     ],
   },
 ]
@@ -91,7 +104,7 @@ export default async function AboutPage() {
     <div className="max-w-[720px] mx-auto">
       {/* 섹션 0 — 페이지 헤더 */}
       <section className="px-4 pt-10 pb-6 md:px-6">
-        <h1 className="text-2xl font-bold text-foreground mb-1.5">우나어 소개</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-1.5">우리 나이가 어때서</h1>
         <p className="text-body text-muted-foreground">비슷한 나이, 비슷한 마음이 모이는 곳</p>
       </section>
 
@@ -111,6 +124,14 @@ export default async function AboutPage() {
             비슷한 나이, 비슷한 고민을 가진 사람들이<br />
             눈치 없이 꺼낼 수 있는 곳으로.
           </p>
+          <div className="mt-6 pt-5 border-t border-primary/10">
+            <Link
+              href={isLoggedIn ? '/community/stories' : '/login?callbackUrl=/community/stories'}
+              className="text-primary font-bold text-body no-underline hover:underline"
+            >
+              {isLoggedIn ? '커뮤니티 들어가기 →' : '30초면 시작돼요 →'}
+            </Link>
+          </div>
         </div>
       </section>
 
