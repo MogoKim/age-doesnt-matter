@@ -8,13 +8,18 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-type Trigger = 'home30s' | 'signup' | 'engagement'
+type Trigger = 'home15s' | 'signup' | 'engagement' | 'return_visit' | 'weekly'
 
-const KEY_SHOWN = 'pwa_shown_triggers'   // JSON Trigger[]
-const KEY_COUNT = 'pwa_declined_count'   // number (max 3)
-const KEY_INSTALLED = 'pwa_installed'    // '1'
+const KEY_SHOWN = 'pwa_shown_triggers'       // JSON Trigger[]
+const KEY_COUNT = 'pwa_declined_count'        // number (최대 3회 — weekly 이후 정지)
+const KEY_INSTALLED = 'pwa_installed'         // '1'
+const KEY_LAST_PROMPTED = 'pwa_last_prompted_at' // ISO timestamp
+const KEY_VISIT_COUNT = 'pwa_visit_count'    // number (재방문 감지)
 
-function getInstalled() {
+const WEEKLY_MS = 7 * 24 * 60 * 60 * 1000
+const MAX_DECLINES = 3
+
+function getInstalled(): boolean {
   if (typeof window === 'undefined') return false
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
@@ -32,38 +37,100 @@ function markShown(t: Trigger) {
   if (!s.includes(t)) localStorage.setItem(KEY_SHOWN, JSON.stringify([...s, t]))
 }
 
+function getDeclineCount(): number {
+  return parseInt(localStorage.getItem(KEY_COUNT) ?? '0')
+}
+
 function canShow(t: Trigger): boolean {
   if (getInstalled()) return false
-  if (parseInt(localStorage.getItem(KEY_COUNT) ?? '0') >= 3) return false
   const shown = getShown()
-  if (t === 'home30s') return !shown.includes('home30s')
-  if (t === 'signup')  return shown.includes('home30s') && !shown.includes('signup')
+
+  if (t === 'home15s') return !shown.includes('home15s')
+  if (t === 'signup') return shown.includes('home15s') && !shown.includes('signup')
   if (t === 'engagement') return shown.includes('signup') && !shown.includes('engagement')
+  if (t === 'return_visit') return shown.includes('engagement') && !shown.includes('return_visit')
+  if (t === 'weekly') {
+    if (getDeclineCount() >= MAX_DECLINES) return false
+    const allShown = (['home15s', 'signup', 'engagement', 'return_visit'] as Trigger[])
+      .every(x => shown.includes(x))
+    if (!allShown) return false
+    const last = localStorage.getItem(KEY_LAST_PROMPTED)
+    if (!last) return true
+    return Date.now() - new Date(last).getTime() >= WEEKLY_MS
+  }
   return false
+}
+
+function incrementVisitCount(): number {
+  // sessionStorage: 새로고침 = 동일 방문 (중복 카운트 방지)
+  if (sessionStorage.getItem('pwa_visited_this_session')) {
+    return parseInt(localStorage.getItem(KEY_VISIT_COUNT) ?? '0')
+  }
+  sessionStorage.setItem('pwa_visited_this_session', '1')
+  const count = parseInt(localStorage.getItem(KEY_VISIT_COUNT) ?? '0') + 1
+  localStorage.setItem(KEY_VISIT_COUNT, String(count))
+  return count
 }
 
 export default function AddToHomeScreen() {
   const pathname = usePathname()
   const [visible, setVisible] = useState(false)
+  const [isManual, setIsManual] = useState(false)
+  const [canNativeInstall, setCanNativeInstall] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const deferredRef = useRef<BeforeInstallPromptEvent | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const show = useCallback((t: Trigger) => {
-    if (canShow(t)) { markShown(t); setVisible(true) }
+  async function markInstalled() {
+    localStorage.setItem(KEY_INSTALLED, '1')
+    try {
+      await fetch('/api/user/pwa-status', { method: 'POST' })
+    } catch { /* ignore */ }
+  }
+
+  const showTrigger = useCallback((t: Trigger): boolean => {
+    if (canShow(t)) {
+      markShown(t)
+      localStorage.setItem(KEY_LAST_PROMPTED, new Date().toISOString())
+      setIsManual(false)
+      setVisible(true)
+      return true
+    }
+    return false
   }, [])
 
   useEffect(() => {
-    setIsIOS(/iphone|ipad|ipod/i.test(navigator.userAgent))
+    const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    setIsIOS(iOS)
 
     if (getInstalled()) localStorage.setItem(KEY_INSTALLED, '1')
+
+    // 로그인 유저 DB 상태 확인 (graceful fallback — migration 전에도 안전)
+    fetch('/api/user/pwa-status')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => { if (data?.installed) localStorage.setItem(KEY_INSTALLED, '1') })
+      .catch(() => {})
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault()
       deferredRef.current = e as BeforeInstallPromptEvent
+      setCanNativeInstall(true)
     }
+
     const onPWAPrompt = (e: Event) => {
-      show((e as CustomEvent<Trigger>).detail)
+      const trigger = (e as CustomEvent<Trigger | 'manual'>).detail
+      const native = deferredRef.current !== null && !iOS
+
+      if (trigger === 'manual') {
+        // Footer 버튼: 설치 상태 / 거절 횟수 무관하게 무조건 표시
+        setCanNativeInstall(native)
+        setIsManual(true)
+        setVisible(true)
+        return
+      }
+
+      setCanNativeInstall(native)
+      showTrigger(trigger as Trigger)
     }
 
     window.addEventListener('beforeinstallprompt', onBeforeInstall)
@@ -72,38 +139,57 @@ export default function AddToHomeScreen() {
       window.removeEventListener('beforeinstallprompt', onBeforeInstall)
       window.removeEventListener('pwa-prompt', onPWAPrompt)
     }
-  }, [show])
+  }, [showTrigger])
 
-  // 홈페이지 30초 타이머
+  // 홈 15초 타이머 + 재방문 + weekly 체크
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
     if (pathname === '/') {
-      timerRef.current = setTimeout(() => show('home30s'), 30_000)
+      const visitCount = incrementVisitCount()
+      timerRef.current = setTimeout(() => {
+        // 발동 가능한 첫 트리거 실행 (순차 우선순위)
+        if (showTrigger('home15s')) return
+        if (visitCount >= 2 && showTrigger('return_visit')) return
+        showTrigger('weekly')
+      }, 15_000)
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [pathname, show])
+  }, [pathname, showTrigger])
 
   const handleInstall = async () => {
     if (deferredRef.current) {
       await deferredRef.current.prompt()
       const { outcome } = await deferredRef.current.userChoice
-      if (outcome === 'accepted') localStorage.setItem(KEY_INSTALLED, '1')
+      deferredRef.current = null   // 반드시 초기화 (중복 호출 방지)
+      setCanNativeInstall(false)
+      if (outcome === 'accepted') await markInstalled()
     }
     setVisible(false)
+    setIsManual(false)
   }
 
   const handleDismiss = () => {
-    const c = parseInt(localStorage.getItem(KEY_COUNT) ?? '0')
-    localStorage.setItem(KEY_COUNT, String(c + 1))
+    // manual 트리거로 열렸을 때는 거절 카운트 미증가 (의도적 접근)
+    if (!isManual) {
+      localStorage.setItem(KEY_COUNT, String(getDeclineCount() + 1))
+    }
     setVisible(false)
+    setIsManual(false)
   }
 
   if (!visible) return null
 
+  // iOS이거나 beforeinstallprompt 미발생 → 수동 안내 표시
+  const showManualGuide = isIOS || !canNativeInstall
+
   return (
-    <div className="fixed inset-0 z-[300] flex items-end" onClick={handleDismiss}>
+    <div className="fixed inset-0 z-[300] flex items-center justify-center px-4">
+      {/* 딤 배경 — 클릭 시 거절 처리 */}
+      <div className="absolute inset-0 bg-black/50" onClick={handleDismiss} />
+
+      {/* 모달 카드 */}
       <div
-        className="w-full bg-card rounded-t-2xl border-t border-border p-6 pb-10 shadow-2xl"
+        className="relative w-full max-w-sm bg-card rounded-2xl p-6 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* 헤더 */}
@@ -131,15 +217,21 @@ export default function AddToHomeScreen() {
           </button>
         </div>
 
-        {isIOS ? (
-          /* iOS: 수동 안내 */
+        {showManualGuide ? (
+          /* iOS 또는 beforeinstallprompt 미발생: 수동 3단계 안내 */
           <div className="mt-5 bg-muted/60 rounded-2xl p-4 space-y-3">
             <div className="flex items-center gap-3 text-sm text-foreground">
               <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
-              <span>하단 <strong>공유 버튼</strong>을 탭하세요</span>
-              <svg viewBox="0 0 24 24" className="w-5 h-5 ml-auto text-primary flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
-              </svg>
+              {isIOS ? (
+                <>
+                  <span>하단 <strong>공유 버튼</strong>을 탭하세요</span>
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 ml-auto text-primary flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
+                  </svg>
+                </>
+              ) : (
+                <span>브라우저 메뉴 <strong>⋮</strong> 를 탭하세요</span>
+              )}
             </div>
             <div className="flex items-center gap-3 text-sm text-foreground">
               <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
@@ -151,7 +243,7 @@ export default function AddToHomeScreen() {
             </div>
           </div>
         ) : (
-          /* Android: 브라우저 설치 프롬프트 */
+          /* Android Chrome: beforeinstallprompt 발생 → 네이티브 설치 */
           <button
             onClick={handleInstall}
             className="mt-5 w-full h-[52px] bg-primary text-white rounded-xl font-bold text-[18px]"

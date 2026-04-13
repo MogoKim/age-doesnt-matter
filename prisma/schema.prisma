@@ -253,6 +253,10 @@ model User {
   isRegionPublic    Boolean    @default(false)
   nicknameChangedAt DateTime?
 
+  // PWA 설치 추적
+  pwaInstalled      Boolean    @default(false)
+  pwaInstalledAt    DateTime?
+
   // 타임스탬프
   lastLoginAt     DateTime   @default(now())
   createdAt       DateTime   @default(now())

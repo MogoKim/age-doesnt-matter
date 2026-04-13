@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import FooterFontSizeToggle from '@/components/common/FooterFontSizeToggle'
+import FooterPwaButton from '@/components/common/FooterPwaButton'
 
 const FOOTER_LINKS = [
   { label: '회사소개', href: '/about' },
@@ -23,6 +24,9 @@ export default function Footer() {
       <div className="flex items-center gap-2 mb-4">
         <span className="text-caption text-muted-foreground">글씨 크기</span>
         <FooterFontSizeToggle />
+      </div>
+      <div className="flex items-center gap-4 mb-4">
+        <FooterPwaButton />
       </div>
       <p className="text-caption text-muted-foreground">&copy; 2026 우리 나이가 어때서</p>
     </footer>
