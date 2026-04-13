@@ -355,13 +355,14 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
               <button
                 onClick={() => handleToggleActive(banner)}
                 disabled={isPending}
+                title={banner.isActive ? '클릭 시 비활성화' : '클릭 시 활성화'}
                 className={`rounded px-2 py-1 text-xs font-medium disabled:opacity-50 ${
                   banner.isActive
-                    ? 'text-yellow-600 hover:bg-yellow-50'
-                    : 'text-green-600 hover:bg-green-50'
+                    ? 'bg-green-50 text-green-700 hover:bg-red-50 hover:text-red-600'
+                    : 'bg-zinc-100 text-zinc-500 hover:bg-green-50 hover:text-green-700'
                 }`}
               >
-                {banner.isActive ? '비활성' : '활성'} <HelpTip text={HELP.BANNER_ACTIVE} />
+                {banner.isActive ? '● 활성' : '○ 비활성'} <HelpTip text={HELP.BANNER_ACTIVE} />
               </button>
               <button
                 onClick={() => startEdit(banner)}

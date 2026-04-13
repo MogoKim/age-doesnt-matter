@@ -18,7 +18,7 @@ export async function getActiveBanners(): Promise<BannerSlide[]> {
       startDate: { lte: now },
       endDate: { gte: now },
     },
-    orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
     take: 5,
     select: {
       id: true,

@@ -26,10 +26,10 @@ export type { ImageStyle, ImageContext, ImageType }
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY
 
-interface ImageResult {
+export interface ImageResult {
   url: string       // R2 uploaded URL
   prompt: string    // used prompt for logging
-  source: 'dalle' | 'unsplash'
+  source: 'dalle' | 'unsplash' | 'local'
 }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +87,16 @@ const UNSPLASH_ELIGIBLE: ImageType[] = ['FOOD_PHOTO', 'SCENE_PHOTO', 'OBJECT_PHO
 export async function generateMagazineImageByContext(
   context: ImageContext,
 ): Promise<ImageResult | null> {
+  // LOCAL ONLY — IMAGE_GENERATOR env var 설정 시 Playwright 로컬 엔진 우선
+  const localEngine = process.env.IMAGE_GENERATOR as 'gemini' | 'chatgpt' | undefined
+  if (localEngine === 'gemini' || localEngine === 'chatgpt') {
+    const { generateMagazineImageLocally } = await import('./local-image-generator.js')
+    const localResult = await generateMagazineImageLocally(context, localEngine)
+    if (localResult) return localResult
+    // null이면 ILLUSTRATION 타입이거나 생성 실패 → DALL-E/Unsplash 폴백
+    console.log(`[ImageGen] 로컬 생성 null → DALL-E/Unsplash 폴백 (${context.type})`)
+  }
+
   // Unsplash 시도 (해당 타입 + 검색어 있을 때)
   if (context.unsplashQuery && UNSPLASH_ELIGIBLE.includes(context.type)) {
     const unsplashUrl = await fetchUnsplashPhoto(context.unsplashQuery)

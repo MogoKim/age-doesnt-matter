@@ -219,8 +219,14 @@ async function publishMagazine(
   return post.id
 }
 
+export interface MagazineRunResult {
+  title: string
+  category: string
+  postId: string
+}
+
 /** 메인 실행 */
-async function main() {
+export async function main(): Promise<MagazineRunResult[]> {
   console.log('[MagazineGenerator] 시작')
   const startTime = Date.now()
 
@@ -243,7 +249,7 @@ async function main() {
   if (!trend) {
     console.log('[MagazineGenerator] 트렌드 분석 없음 — 스킵')
     await disconnect()
-    return
+    return []
   }
 
   const magazineTopics = trend.magazineTopics as unknown as MagazineSuggestion[]
@@ -270,7 +276,7 @@ async function main() {
     if (!article) {
       console.log('[MagazineGenerator] 폴백 주제 생성 실패')
       await disconnect()
-      return
+      return []
     }
     magazineTopics.push(fallbackTopic)
   }
@@ -282,6 +288,7 @@ async function main() {
   const maxArticles = 2
   let publishedCount = 0
   const publishedTitles: string[] = []
+  const publishedResults: MagazineRunResult[] = []
 
   for (const topic of magazineTopics.slice(0, maxArticles)) {
     // 점수 7 이상만 발행
@@ -413,6 +420,7 @@ async function main() {
 
     publishedCount++
     publishedTitles.push(article.title)
+    publishedResults.push({ title: article.title, category, postId })
     console.log(`[MagazineGenerator] 발행: "${article.title}" (${postId}) — 히어로 ${image ? `1장(${image.source})` : '없음'} + 본문 ${bodyImageUrls.size}장`)
   }
 
@@ -445,16 +453,21 @@ async function main() {
 
   console.log(`[MagazineGenerator] 완료 — ${publishedCount}편 발행, ${Math.round(durationMs / 1000)}초`)
   await disconnect()
+  return publishedResults
 }
 
-main().catch(async (err) => {
-  console.error('[MagazineGenerator] 치명적 오류:', err)
-  await notifySlack({
-    level: 'critical',
-    agent: 'MAGAZINE_GENERATOR',
-    title: '매거진 생성 실패',
-    body: err instanceof Error ? err.message : String(err),
+// 직접 실행 시에만 main() 호출 (import 시 자동 실행 방지)
+const isDirectRun = process.argv[1]?.includes('magazine-generator')
+if (isDirectRun) {
+  main().catch(async (err) => {
+    console.error('[MagazineGenerator] 치명적 오류:', err)
+    await notifySlack({
+      level: 'critical',
+      agent: 'MAGAZINE_GENERATOR',
+      title: '매거진 생성 실패',
+      body: err instanceof Error ? err.message : String(err),
+    })
+    await disconnect()
+    process.exit(1)
   })
-  await disconnect()
-  process.exit(1)
-})
+}

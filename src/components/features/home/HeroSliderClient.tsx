@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
@@ -22,10 +22,19 @@ interface Props {
 
 export default function HeroSliderClient({ slides }: Props) {
   const [current, setCurrent] = useState(0)
+  const touchStartX = useRef<number | null>(null)
 
   const goTo = useCallback((index: number) => {
     setCurrent(index)
   }, [])
+
+  const goPrev = useCallback(() => {
+    setCurrent((prev) => (prev - 1 + slides.length) % slides.length)
+  }, [slides.length])
+
+  const goNext = useCallback(() => {
+    setCurrent((prev) => (prev + 1) % slides.length)
+  }, [slides.length])
 
   useEffect(() => {
     if (slides.length <= 1) return
@@ -36,17 +45,34 @@ export default function HeroSliderClient({ slides }: Props) {
     return () => clearInterval(timer)
   }, [slides.length])
 
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }, [])
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null) return
+    const diff = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) { goNext() } else { goPrev() }
+    }
+    touchStartX.current = null
+  }, [goNext, goPrev])
+
   if (slides.length === 0) return null
 
   return (
     <div className="w-full">
-      <section className="w-full h-[200px] lg:h-[420px] relative overflow-hidden bg-primary/10">
+      <section
+        className="w-full h-[200px] lg:h-[420px] relative overflow-hidden bg-primary/10"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {slides.map((slide, index) => (
           <div
             key={slide.id}
             className={cn(
-              'absolute inset-0 opacity-0 transition-opacity duration-500',
-              index === current && 'opacity-100'
+              'absolute inset-0 opacity-0 pointer-events-none transition-opacity duration-500',
+              index === current && 'opacity-100 pointer-events-auto'
             )}
           >
             <Link
@@ -60,7 +86,7 @@ export default function HeroSliderClient({ slides }: Props) {
                   src={slide.imageUrl}
                   alt={`배너 ${index + 1}`}
                   fill
-                  className="object-cover"
+                  className="object-cover object-left lg:object-center"
                   sizes="100vw"
                   priority={index === 0}
                   loading={index === 0 ? undefined : 'lazy'}

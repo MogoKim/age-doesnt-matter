@@ -50,9 +50,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // GitHub Actions 실행 불가 (네이버 IP 차단 + headless 탐지). 수동 실행만.
   'cafe_crawler:cafe-pipeline': () => import('../cafe/run-pipeline.js').then(() => {}),
   'cafe_crawler:trend-analysis': () => import('../cafe/trend-analyzer.js').then(() => {}),
-  'cafe_crawler:magazine-generate': () => import('../cafe/magazine-generator.js').then(() => {}),
-  'cafe_crawler:magazine-morning': () => import('../cafe/magazine-generator.js').then(() => {}),
-  'cafe_crawler:magazine-evening': () => import('../cafe/magazine-generator.js').then(() => {}),
+  // 매거진 크론 → 로컬 launchd로 전환 (local-magazine-runner.ts 직접 실행, runner.ts 경유 불필요)
   'cafe_crawler:content-curate': () => import('../cafe/content-curator.js').then(() => {}),
   'cafe_crawler:external-crawl': () => import('../cafe/external-crawler.js').then(() => {}), // DISPATCH ONLY — 82cook 외부 크롤, GHA 스케줄 제거됨 (2026-04-13)
   'cmo:social-poster': () => import('../cmo/social-poster.js').then(() => {}),

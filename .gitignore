@@ -81,3 +81,6 @@ assets/generated/
 
 # Local debug scripts
 check-data.mjs
+
+# 매거진 로컬 러너 일일 결과 파일 (gitignore — 로컬 전용)
+agents/cafe/.magazine-daily-*.json
