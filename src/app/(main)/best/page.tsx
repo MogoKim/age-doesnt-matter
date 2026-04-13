@@ -36,8 +36,8 @@ const getCachedFame = unstable_cache(
 
 type TabType = 'daily' | 'weekly' | 'fame'
 const TABS: Array<{ key: TabType; label: string; emoji: string }> = [
-  { key: 'daily', label: '오늘의 인기글', emoji: '🔥' },
-  { key: 'weekly', label: '이번 주 인기글', emoji: '📈' },
+  { key: 'daily', label: '오늘의 인기', emoji: '🔥' },
+  { key: 'weekly', label: '이번주 인기', emoji: '📈' },
   { key: 'fame', label: '명예의 전당', emoji: '👑' },
 ]
 
@@ -82,14 +82,14 @@ export default async function BestPage({
 
       {/* 탭 네비게이션 */}
       <nav className="px-4 pt-4 pb-2">
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {TABS.map((tab) => (
             <Link
               key={tab.key}
               href={`/best?tab=${tab.key}`}
               className={`
                 flex items-center gap-1.5 px-4 py-3 rounded-xl text-body font-bold
-                no-underline transition-colors min-h-[52px]
+                no-underline transition-colors min-h-[52px] whitespace-nowrap flex-shrink-0
                 ${currentTab === tab.key
                   ? 'bg-primary text-white'
                   : 'bg-card border border-border text-muted-foreground hover:border-primary/30'
@@ -97,8 +97,7 @@ export default async function BestPage({
               `}
             >
               <span>{tab.emoji}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
-              <span className="sm:hidden">{tab.label.replace('오늘의 ', '').replace('이번 주 ', '')}</span>
+              <span>{tab.label}</span>
             </Link>
           ))}
         </div>
