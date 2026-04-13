@@ -40,7 +40,7 @@ export default function HeroSliderClient({ slides }: Props) {
 
   return (
     <div className="w-full">
-      <section className="w-full h-[220px] lg:h-[420px] relative overflow-hidden bg-primary/10">
+      <section className="w-full h-[200px] lg:h-[420px] relative overflow-hidden bg-primary/10">
         {slides.map((slide, index) => (
           <div
             key={slide.id}
