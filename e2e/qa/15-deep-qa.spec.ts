@@ -117,8 +117,8 @@ test.describe('파트A: 비로그인 홈페이지', () => {
     if (isMobile) test.skip()
     await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 15000 })
     await page.waitForTimeout(1000)
-    // GNB 존재 확인 (데스크탑 전용 nav)
-    const nav = page.locator('nav, header').first()
+    // GNB 존재 확인 (데스크탑 전용 nav — hidden lg:flex)
+    const nav = page.locator('nav[aria-label="메인 네비게이션"]')
     await expect(nav).toBeVisible()
   })
 
@@ -452,20 +452,22 @@ test.describe('파트D: 로그인 글쓰기 + 이미지/동영상 업로드', ()
     if (hasMagazine) console.warn('[QA-D2] ❌ MAGAZINE 옵션이 글쓰기에 노출됨 (운영자 전용이어야 함)')
   })
 
-  test('D3 유효성 검사 — 제목 1자 발행 시도 → 오류', async ({ page }) => {
+  test('D3 유효성 검사 — 제목 1자 + 본문 없음 → 등록 버튼 비활성', async ({ page }) => {
     await page.goto('/community/write', { waitUntil: 'domcontentloaded', timeout: 15000 })
     await page.waitForTimeout(2000)
 
     const titleInput = page.locator('input[name="title"], input[placeholder*="제목"]').first()
     if ((await titleInput.count()) === 0) return
 
+    // 제목만 1자 입력 (본문 없음) → 등록 버튼이 disabled 상태여야 함
     await titleInput.fill('가')
-    const submitBtn = page.locator('button').filter({ hasText: /발행|등록|저장|게시/ }).last()
-    if ((await submitBtn.count()) > 0) {
-      await submitBtn.click()
-      await page.waitForTimeout(1000)
-      const errorMsg = await page.locator('[class*="error"], [class*="toast"], [role="alert"]').textContent().catch(() => '')
-      console.log('[QA-D3] 1자 제목 오류 메시지:', errorMsg)
+    await page.waitForTimeout(500)
+
+    // 하단 CTA "등록하기" 버튼 — 내용 없으므로 비활성 상태 확인
+    const ctaBtn = page.getByRole('button', { name: '등록하기', exact: true })
+    if ((await ctaBtn.count()) > 0) {
+      const isDisabled = await ctaBtn.isDisabled()
+      console.log(`[QA-D3] 제목 1자+본문 없음 → 등록하기 disabled: ${isDisabled}`)
     }
   })
 
@@ -703,9 +705,9 @@ test.describe('파트D: 로그인 글쓰기 + 이미지/동영상 업로드', ()
 // ─────────────────────────────────────────────
 test.describe('파트E: 댓글 플로우', () => {
   test.describe.configure({ mode: 'serial' })
-  let testCommentText = `[QA댓글] ${Date.now()}`
+  const testCommentText = `[QA댓글] ${Date.now()}`
 
-  test.afterAll(async ({ browser }) => {
+  test.afterAll(async () => {
     // 댓글 cleanup은 테스트 내에서 삭제 처리
     if (createdCommentPostUrl) {
       console.log('[CLEANUP] 댓글 테스트 게시글:', createdCommentPostUrl)
@@ -753,13 +755,6 @@ test.describe('파트E: 댓글 플로우', () => {
     } else {
       createdCommentPostUrl = targetUrl
     }
-
-    // 댓글 수 확인
-    const commentCountBefore = await page
-      .locator('[class*="comment-count"], [class*="commentCount"]')
-      .first()
-      .textContent()
-      .catch(() => '0')
 
     // 댓글 입력
     const commentInput = page
@@ -1062,7 +1057,6 @@ test.describe('파트G: 마이페이지·설정', () => {
     else console.warn('[QA-G6] ⚠️ 글자크기 설정 UI 미발견')
 
     // 닉네임 변경 폼 확인
-    const nicknameInput = page.locator('input').filter({ hasText: '' }).first()
     const hasNicknameSection = await page.locator('text=/닉네임/').count() > 0
     if (hasNicknameSection) console.log('[QA-G6] ✅ 닉네임 변경 섹션 존재')
     else console.warn('[QA-G6] ⚠️ 닉네임 변경 섹션 미발견')
@@ -1140,9 +1134,9 @@ test.describe('파트H: 공개 기타 페이지', () => {
     expect(res?.status()).toBeLessThan(400)
     await page.waitForTimeout(1500)
 
-    // 검색어 입력
-    const searchInput = page.locator('input[type="search"], input[placeholder*="검색"]').first()
-    if ((await searchInput.count()) > 0) {
+    // 검색어 입력 (main 영역에서 찾아서 GNB hidden input 제외)
+    const searchInput = page.locator('main input[type="search"], main input[placeholder*="검색"], [role="search"] input').first()
+    if ((await searchInput.count()) > 0 && await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('건강')
       await searchInput.press('Enter')
       await page.waitForTimeout(2000)
