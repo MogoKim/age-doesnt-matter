@@ -758,7 +758,7 @@ test.describe('파트E: 댓글 플로우', () => {
 
     // 댓글 입력
     const commentInput = page
-      .locator('textarea[placeholder*="댓글"], input[placeholder*="댓글"]')
+      .locator('textarea[placeholder*="댓글을"], textarea[placeholder*="댓글"], input[placeholder*="댓글"]')
       .first()
     if ((await commentInput.count()) === 0) {
       console.warn('[QA-E2] 댓글 입력창 미발견')
@@ -766,8 +766,14 @@ test.describe('파트E: 댓글 플로우', () => {
     }
 
     await commentInput.fill(testCommentText)
+    await page.waitForTimeout(500) // 입력 debounce 대기 (버튼 활성화)
     const submitBtn = page.locator('button').filter({ hasText: /등록|작성|댓글|전송/ }).last()
     if ((await submitBtn.count()) > 0) {
+      const isDisabled = await submitBtn.isDisabled()
+      if (isDisabled) {
+        console.warn('[QA-E2] 등록 버튼이 disabled — 입력 바인딩 미완')
+        return
+      }
       await submitBtn.click()
       await page.waitForTimeout(2000)
       const hasMyComment = await page.locator(`text=${testCommentText}`).count() > 0

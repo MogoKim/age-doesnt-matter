@@ -63,22 +63,27 @@ function getInstalled(): boolean {
 }
 
 function getShown(): Trigger[] {
+  if (typeof window === 'undefined') return []
   try { return JSON.parse(localStorage.getItem(KEY_SHOWN) ?? '[]') } catch { return [] }
 }
 
 function getShownCount(): number {
+  if (typeof window === 'undefined') return 0
   return parseInt(localStorage.getItem(KEY_SHOWN_COUNT) ?? '0')
 }
 
 function getSessionCount(): number {
+  if (typeof window === 'undefined') return 0
   return parseInt(localStorage.getItem(KEY_SESSION_COUNT) ?? '0')
 }
 
 function getDeclineCount(): number {
+  if (typeof window === 'undefined') return 0
   return parseInt(localStorage.getItem(KEY_COUNT) ?? '0')
 }
 
 function markShown(t: Trigger) {
+  if (typeof window === 'undefined') return
   const s = getShown()
   if (!s.includes(t)) {
     localStorage.setItem(KEY_SHOWN, JSON.stringify([...s, t]))
@@ -87,6 +92,7 @@ function markShown(t: Trigger) {
 }
 
 function incrementSessionCount(): number {
+  if (typeof window === 'undefined') return 0
   // 새로고침 = 동일 세션 (중복 카운트 방지)
   if (sessionStorage.getItem(SESSION_VISITED)) {
     return getSessionCount()
@@ -98,6 +104,7 @@ function incrementSessionCount(): number {
 }
 
 function canShow(t: Trigger): boolean {
+  if (typeof window === 'undefined') return false
   if (getInstalled()) return false
   if (sessionStorage.getItem(SESSION_SHOWN)) return false  // 세션 내 1회 제한
 
