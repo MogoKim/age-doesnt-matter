@@ -144,6 +144,18 @@ export default defineConfig({
         screenshot: 'on',
       },
     },
+    // 13. 글쓰기 화면 모바일 UX 검증 (Pixel 7, user.json, 프로덕션)
+    {
+      name: 'qa-write-mobile',
+      testMatch: /qa\/21-.*\.spec\.ts/,
+      use: {
+        ...devices['Pixel 7'],
+        viewport: { width: 390, height: 844 },
+        baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
+        storageState: USER_AUTH,
+        screenshot: 'on',
+      },
+    },
   ],
 
   // E2E_BASE_URL 설정 시 외부 URL 직접 테스트 (프로덕션 QA)
