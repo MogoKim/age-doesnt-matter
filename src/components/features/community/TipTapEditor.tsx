@@ -727,14 +727,16 @@ export default function TipTapEditor({
           float: left;
           height: 0;
           pointer-events: none;
+          font-size: 18px;
         }
         .tiptap {
           word-break: keep-all;
-          line-height: 1.85;
+          line-height: 1.9;
           caret-color: #FF6F61;
+          font-size: 18px;
         }
         .tiptap p {
-          margin: 0.5em 0;
+          margin: 0.6em 0;
         }
         .tiptap blockquote {
           border-left: 4px solid #FF6F61;

@@ -334,12 +334,18 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           <button
             type="button"
             onClick={() => setCategorySheetOpen(true)}
-            className="w-full min-h-[52px] flex items-center justify-between px-0 py-3 border-b border-border text-body mb-4"
+            className="w-full min-h-[56px] flex items-center justify-between px-0 py-4 border-b-2 border-border mb-2"
           >
-            <span className={selectedCategory ? 'text-foreground font-medium' : 'text-muted-foreground'}>
+            <span className={cn(
+              'text-[17px] font-medium',
+              selectedCategory ? 'text-foreground' : 'text-muted-foreground'
+            )}>
               {selectedCategory || '카테고리를 선택해주세요'}
             </span>
-            <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />
+            <ChevronDown className={cn(
+              'w-5 h-5 shrink-0 transition-colors',
+              selectedCategory ? 'text-primary' : 'text-muted-foreground'
+            )} />
           </button>
           <BottomSheet
             open={categorySheetOpen}
@@ -371,7 +377,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       <div className="mb-4">
         <input
           type="text"
-          className="w-full min-h-[52px] px-0 py-3 border-0 border-b border-border text-lg font-bold text-foreground bg-transparent outline-none transition-colors focus:border-primary placeholder:text-muted-foreground placeholder:font-normal"
+          className="w-full min-h-[60px] px-0 py-4 border-0 border-b-2 border-border text-[22px] font-bold text-foreground bg-transparent outline-none transition-colors focus:border-primary placeholder:text-muted-foreground placeholder:font-normal placeholder:text-[22px]"
           placeholder="제목을 입력해 주세요"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -389,12 +395,10 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       {/* 키보드 없을 때: 툴바(48px) + CTA(56px) + 여유 = pb-[116px] */}
       {/* 키보드 있을 때: 툴바(48px) + 여유 = pb-[60px] */}
       <div className={cn('mb-6', isKeyboardOpen ? 'pb-[60px]' : 'pb-[116px]')}>
-        <label className="flex items-center gap-1 text-caption font-bold text-foreground mb-2">
-          본문 <span className="text-primary font-bold">*</span>
-        </label>
         <TipTapEditor
           content={content}
           onChange={setContent}
+          placeholder="내용을 입력해 주세요"
           bottomBarHeight={isKeyboardOpen ? 0 : 56}
         />
         <div className={cn(
