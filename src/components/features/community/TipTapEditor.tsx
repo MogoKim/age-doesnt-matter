@@ -145,7 +145,18 @@ export default function TipTapEditor({
   const editorWrapRef = useRef<HTMLDivElement>(null)
   // bottomBarHeight 최신값을 update() 클로저에서 읽기 위한 ref (stale closure 방지)
   const bottomBarHeightRef = useRef(bottomBarHeight)
-  useEffect(() => { bottomBarHeightRef.current = bottomBarHeight }, [bottomBarHeight])
+  useEffect(() => {
+    bottomBarHeightRef.current = bottomBarHeight
+    // 키보드 없을 때 bottomBarHeight 변경(CTA 바 등장) 시 툴바 즉시 재배치
+    // resize 이벤트와 React 재렌더 간 타이밍 경쟁 방지
+    const toolbar = toolbarRef.current
+    const vv = window.visualViewport
+    if (!toolbar || window.innerWidth >= 1024) return
+    const kbH = Math.max(0, window.innerHeight - (vv?.height ?? window.innerHeight) - (vv?.offsetTop ?? 0))
+    if (kbH <= 30) {
+      toolbar.style.bottom = `calc(${bottomBarHeight}px + env(safe-area-inset-bottom, 0px))`
+    }
+  }, [bottomBarHeight])
   // ?vpdebug=1 URL 파라미터로 디버그 overlay 활성화 (실기기 수치 확인용)
   const showDebug = typeof window !== 'undefined' && window.location.search.includes('vpdebug=1')
 
