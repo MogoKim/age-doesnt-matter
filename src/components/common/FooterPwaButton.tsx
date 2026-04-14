@@ -1,6 +1,22 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { detectEnv } from './AddToHomeScreen'
+
+const BLOCKED_ENVS = ['kakao-inapp', 'naver-inapp', 'instagram-inapp', 'crios', 'desktop'] as const
+
 export default function FooterPwaButton() {
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    const env = detectEnv()
+    if (!(BLOCKED_ENVS as readonly string[]).includes(env)) {
+      setShow(true)
+    }
+  }, [])
+
+  if (!show) return null
+
   return (
     <button
       onClick={() =>

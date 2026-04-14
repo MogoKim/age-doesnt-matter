@@ -140,11 +140,11 @@ export default function OnboardingForm() {
   function handleComplete() {
     setIsNavigating(true)
     gtmSignUp('kakao')
+    // AddToHomeScreen 마운트 이전에 이벤트가 유실되는 레이스컨디션 방지:
+    // sessionStorage에 pending flag를 저장 → 홈 마운트 시 AddToHomeScreen이 처리
+    sessionStorage.setItem('pwa_pending', 'signup')
     router.push('/')
     router.refresh()
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('pwa-prompt', { detail: 'signup' }))
-    }, 1500)
   }
 
   // ── 프로그레스 바 (Step 1, 2만) ──
