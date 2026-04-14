@@ -3,7 +3,7 @@
  * 배포된 수정사항 실기기 대역 검증:
  * 1. GNB 아이콘 행(nav[aria-label="주요 메뉴"]) 완전 숨김
  * 2. header / footer 숨김
- * 3. 하단 "게시하기" CTA 버튼 표시 (키보드 없을 때)
+ * 3. 하단 "등록하기" CTA 버튼 표시 (키보드 없을 때)
  * 4. 하단 CTA 비활성 확인 (빈 상태)
  * 5. 전용 헤더 "등록" 버튼 표시
  * 6. 툴바 (B/I/U 등) 화면 하단 존재
@@ -74,36 +74,36 @@ test.describe('글쓰기 화면 모바일 UX', () => {
     await page.screenshot({ path: 'e2e/screenshots/21-header-register.png', fullPage: false })
   })
 
-  test('하단 CTA "게시하기" — 기본 표시 확인', async ({ page }) => {
+  test('하단 CTA "등록하기" — 기본 표시 확인', async ({ page }) => {
     await page.goto(`${BASE_URL}/community/write?board=stories`)
     await page.waitForLoadState('networkidle')
     await dismissDraftListIfShown(page)
 
-    // 하단 고정 CTA "게시하기" 버튼 표시
-    const ctaBtn = page.locator('button', { hasText: '게시하기' })
+    // 하단 고정 CTA "등록하기" 버튼 표시
+    const ctaBtn = page.locator('button', { hasText: '등록하기' })
     await expect(ctaBtn).toBeVisible({ timeout: 8000 })
-    console.log('[PASS] 하단 CTA "게시하기" 버튼 표시 확인')
+    console.log('[PASS] 하단 CTA "등록하기" 버튼 표시 확인')
 
     await page.screenshot({ path: 'e2e/screenshots/21-cta-visible.png', fullPage: false })
   })
 
-  test('하단 CTA "게시하기" — 빈 상태에서 비활성', async ({ page }) => {
+  test('하단 CTA "등록하기" — 빈 상태에서 비활성', async ({ page }) => {
     await page.goto(`${BASE_URL}/community/write?board=stories`)
     await page.waitForLoadState('networkidle')
     await dismissDraftListIfShown(page)
 
     // 하단 CTA 버튼 — 빈 상태에서 disabled 또는 muted 색상
-    const ctaBtn = page.locator('button', { hasText: '게시하기' })
+    const ctaBtn = page.locator('button', { hasText: '등록하기' })
     await expect(ctaBtn).toBeVisible({ timeout: 8000 })
     const isDisabled = await ctaBtn.isDisabled()
-    console.log(`[INFO] 빈 상태 게시하기 버튼 disabled: ${isDisabled}`)
+    console.log(`[INFO] 빈 상태 등록하기 버튼 disabled: ${isDisabled}`)
     expect(isDisabled).toBe(true)
-    console.log('[PASS] 빈 상태 게시하기 비활성 확인')
+    console.log('[PASS] 빈 상태 등록하기 비활성 확인')
 
     await page.screenshot({ path: 'e2e/screenshots/21-cta-disabled.png', fullPage: false })
   })
 
-  test('하단 CTA "게시하기" — 내용 입력 후 활성화', async ({ page }) => {
+  test('하단 CTA "등록하기" — 내용 입력 후 활성화', async ({ page }) => {
     await page.goto(`${BASE_URL}/community/write?board=stories`)
     await page.waitForLoadState('networkidle')
     await dismissDraftListIfShown(page)
@@ -126,12 +126,12 @@ test.describe('글쓰기 화면 모바일 UX', () => {
     await editor.fill('테스트 본문 내용입니다')
     await page.waitForTimeout(500)
 
-    // 게시하기 버튼 활성화 확인
-    const ctaBtn = page.locator('button', { hasText: '게시하기' })
+    // 등록하기 버튼 활성화 확인
+    const ctaBtn = page.locator('button', { hasText: '등록하기' })
     const isDisabled = await ctaBtn.isDisabled()
-    console.log(`[INFO] 내용 입력 후 게시하기 버튼 disabled: ${isDisabled}`)
+    console.log(`[INFO] 내용 입력 후 등록하기 버튼 disabled: ${isDisabled}`)
     expect(isDisabled).toBe(false)
-    console.log('[PASS] 내용 입력 후 게시하기 활성화 확인')
+    console.log('[PASS] 내용 입력 후 등록하기 활성화 확인')
 
     await page.screenshot({ path: 'e2e/screenshots/21-cta-enabled.png', fullPage: false })
   })
@@ -170,7 +170,7 @@ test.describe('글쓰기 화면 모바일 UX', () => {
     await expect(gnbNav).toBeHidden({ timeout: 5000 })
 
     // 하단 CTA 표시
-    const ctaBtn = page.locator('button', { hasText: '게시하기' })
+    const ctaBtn = page.locator('button', { hasText: '등록하기' })
     await expect(ctaBtn).toBeVisible({ timeout: 8000 })
 
     console.log('[PASS] 2막준비 글쓰기 레이아웃 확인')
@@ -185,7 +185,7 @@ test.describe('글쓰기 화면 모바일 UX', () => {
     const gnbNav = page.locator('nav[aria-label="주요 메뉴"]')
     await expect(gnbNav).toBeHidden({ timeout: 5000 })
 
-    const ctaBtn = page.locator('button', { hasText: '게시하기' })
+    const ctaBtn = page.locator('button', { hasText: '등록하기' })
     await expect(ctaBtn).toBeVisible({ timeout: 8000 })
 
     console.log('[PASS] 웃음방 글쓰기 레이아웃 확인')

@@ -8,6 +8,8 @@ import { createPost, updatePost } from '@/lib/actions/posts'
 import { deleteDraft as deleteDraftAction } from '@/lib/actions/drafts'
 import { useToast } from '@/components/common/Toast'
 import { gtmPostCreate } from '@/lib/gtm'
+import BottomSheet from '@/components/ui/BottomSheet'
+import { ChevronDown } from 'lucide-react'
 
 // TipTap은 SSR 불가 → dynamic import
 const TipTapEditor = dynamic(() => import('./TipTapEditor'), { ssr: false })
@@ -67,6 +69,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   const [drafts, setDrafts] = useState<ServerDraft[]>(serverDrafts)
   // 모바일 키보드 열림 감지 (visualViewport resize) — 하단 CTA 바 표시/숨김 제어
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
+  const [categorySheetOpen, setCategorySheetOpen] = useState(false)
 
   const board = boards.find((b) => b.slug === selectedBoard)
   const categories = board?.categories.filter((c) => c !== '전체') || []
@@ -251,12 +254,9 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       <button
         type="button"
         onClick={handleCancel}
-        className="w-[44px] h-[52px] flex items-center justify-start text-foreground"
-        aria-label="뒤로가기"
+        className="min-w-[44px] h-[52px] flex items-center justify-start text-body text-muted-foreground"
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
+        취소
       </button>
       <span className="text-body font-bold text-foreground">
         {isEditMode ? '수정하기' : (board?.displayName ? `${board.displayName} 글쓰기` : '글쓰기')}
@@ -328,34 +328,50 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       )}
 
 
-      {/* 카테고리 선택 */}
+      {/* 카테고리 선택 — BottomSheet 셀렉터 */}
       {categories.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 mb-6 [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              className={cn(
-                'shrink-0 px-5 py-2.5 rounded-full border-2 text-caption font-medium cursor-pointer transition-all min-h-[52px] flex items-center whitespace-nowrap shadow-sm',
-                selectedCategory === cat
-                  ? 'bg-primary text-white border-primary font-bold shadow-[0_2px_8px_rgba(255,111,97,0.3)]'
-                  : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary hover:bg-primary/5'
-              )}
-              onClick={() => setSelectedCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        <>
+          <button
+            type="button"
+            onClick={() => setCategorySheetOpen(true)}
+            className="w-full min-h-[52px] flex items-center justify-between px-0 py-3 border-b border-border text-body mb-4"
+          >
+            <span className={selectedCategory ? 'text-foreground font-medium' : 'text-muted-foreground'}>
+              {selectedCategory || '카테고리를 선택해주세요'}
+            </span>
+            <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />
+          </button>
+          <BottomSheet
+            open={categorySheetOpen}
+            onClose={() => setCategorySheetOpen(false)}
+            title="카테고리"
+          >
+            <div className="space-y-1">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => { setSelectedCategory(cat); setCategorySheetOpen(false) }}
+                  className={cn(
+                    'w-full min-h-[52px] flex items-center px-4 rounded-xl text-body transition-colors',
+                    selectedCategory === cat
+                      ? 'bg-primary/10 text-primary font-bold'
+                      : 'text-foreground hover:bg-muted'
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </BottomSheet>
+        </>
       )}
 
       {/* 제목 입력 */}
-      <div className="mb-6">
-        <label className="flex items-center gap-1 text-caption font-bold text-foreground mb-2">
-          제목 <span className="text-primary font-bold">*</span>
-        </label>
+      <div className="mb-4">
         <input
           type="text"
-          className="w-full min-h-[52px] px-4 py-3.5 border-2 border-border rounded-xl text-lg font-bold text-foreground bg-card outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,111,97,0.1)] placeholder:text-muted-foreground placeholder:font-normal"
+          className="w-full min-h-[52px] px-0 py-3 border-0 border-b border-border text-lg font-bold text-foreground bg-transparent outline-none transition-colors focus:border-primary placeholder:text-muted-foreground placeholder:font-normal"
           placeholder="제목을 입력해 주세요"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -408,8 +424,8 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
             )}
           >
             {isPending
-              ? (isEditMode ? '수정 중...' : '게시 중...')
-              : (isEditMode ? '수정하기' : '게시하기')}
+              ? (isEditMode ? '수정 중...' : '등록 중...')
+              : (isEditMode ? '수정하기' : '등록하기')}
           </button>
         </div>
       )}
