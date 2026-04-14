@@ -52,7 +52,11 @@ export default async function EditPage({ params }: PageProps) {
   return (
     <>
       {/* 수정 페이지도 글쓰기 전용 레이아웃: GNB(header)와 Footer 모두 숨김 */}
-      <style>{'header { display: none !important; } footer { display: none !important; }'}</style>
+      <style>{`
+        header { display: none !important; }
+        nav[aria-label="주요 메뉴"] { display: none !important; }
+        footer { display: none !important; }
+      `}</style>
       <div className="max-w-[720px] mx-auto px-4 pt-[52px] pb-6 md:px-6 md:pb-8">
         <PostWriteForm
           defaultBoard={currentSlug}

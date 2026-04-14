@@ -65,6 +65,8 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   const [draftLoaded, setDraftLoaded] = useState(false)
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<ServerDraft[]>(serverDrafts)
+  // 모바일 키보드 열림 감지 (visualViewport resize) — 하단 CTA 바 표시/숨김 제어
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
 
   const board = boards.find((b) => b.slug === selectedBoard)
   const categories = board?.categories.filter((c) => c !== '전체') || []
@@ -141,6 +143,19 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
     document.addEventListener('visibilitychange', handler)
     return () => document.removeEventListener('visibilitychange', handler)
   }, [saveLocalDraft, draftLoaded, isEditMode])
+
+  // 모바일 키보드 열림/닫힘 감지 — visualViewport resize 이벤트
+  // interactiveWidget=overlays-content 설정 시 window.innerHeight 고정 → 공식 정확
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const handler = () => {
+      const kbH = Math.max(0, window.innerHeight - vv.height - (vv.offsetTop ?? 0))
+      setIsKeyboardOpen(kbH > 30)
+    }
+    vv.addEventListener('resize', handler)
+    return () => vv.removeEventListener('resize', handler)
+  }, [])
 
   function clearDraft() {
     try { localStorage.removeItem(getDraftKey(selectedBoard)) } catch { /* ignore */ }
@@ -355,13 +370,16 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       </div>
 
       {/* 본문 입력 (TipTap 에디터) */}
-      <div className="mb-6 pb-[60px]">
+      {/* 키보드 없을 때: 툴바(48px) + CTA(56px) + 여유 = pb-[116px] */}
+      {/* 키보드 있을 때: 툴바(48px) + 여유 = pb-[60px] */}
+      <div className={cn('mb-6', isKeyboardOpen ? 'pb-[60px]' : 'pb-[116px]')}>
         <label className="flex items-center gap-1 text-caption font-bold text-foreground mb-2">
           본문 <span className="text-primary font-bold">*</span>
         </label>
         <TipTapEditor
           content={content}
           onChange={setContent}
+          bottomBarHeight={isKeyboardOpen ? 0 : 56}
         />
         <div className={cn(
           'text-right text-caption font-medium text-muted-foreground mt-1',
@@ -370,6 +388,31 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           {plainTextLength}자
         </div>
       </div>
+
+      {/* ── 하단 CTA 바 (키보드 없을 때만 표시) ── */}
+      {/* 키보드 올라오면 자동 숨김 → 상단 헤더 [등록] 버튼만 사용 */}
+      {!isKeyboardOpen && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-[39] bg-card border-t border-border"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!canSubmit || isPending}
+            className={cn(
+              'w-full h-[56px] text-body font-bold transition-colors',
+              canSubmit && !isPending
+                ? 'bg-primary text-white'
+                : 'bg-muted text-muted-foreground'
+            )}
+          >
+            {isPending
+              ? (isEditMode ? '수정 중...' : '게시 중...')
+              : (isEditMode ? '수정하기' : '게시하기')}
+          </button>
+        </div>
+      )}
 
     </>
   )

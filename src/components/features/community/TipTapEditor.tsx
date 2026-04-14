@@ -118,12 +118,15 @@ interface TipTapEditorProps {
   content: string
   onChange: (html: string) => void
   placeholder?: string
+  // 키보드 없을 때 툴바 아래 고정 바 높이 (CTA 버튼 등) — 툴바가 그만큼 위로 올라감
+  bottomBarHeight?: number
 }
 
 export default function TipTapEditor({
   content,
   onChange,
   placeholder = '내용을 입력해 주세요 (10자 이상)',
+  bottomBarHeight = 0,
 }: TipTapEditorProps) {
   const [videoSheet, setVideoSheet] = useState<VideoSheet>('closed')
   const [youtubeUrl, setYoutubeUrl] = useState('')
@@ -131,7 +134,7 @@ export default function TipTapEditor({
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [mediaError, setMediaError] = useState('')
-  const [debugVals, setDebugVals] = useState({ innerH: 0, vpH: 0, diff: 0 })
+  const [debugVals, setDebugVals] = useState({ innerH: 0, vpH: 0, offsetTop: 0, kbH: 0, toolbarBottom: '' })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -140,6 +143,9 @@ export default function TipTapEditor({
   // 툴바/에디터 DOM 직접 스타일 조작 (React 상태 없이 즉시 반영 → 리렌더 없음)
   const toolbarRef = useRef<HTMLDivElement>(null)
   const editorWrapRef = useRef<HTMLDivElement>(null)
+  // bottomBarHeight 최신값을 update() 클로저에서 읽기 위한 ref (stale closure 방지)
+  const bottomBarHeightRef = useRef(bottomBarHeight)
+  useEffect(() => { bottomBarHeightRef.current = bottomBarHeight }, [bottomBarHeight])
   // ?vpdebug=1 URL 파라미터로 디버그 overlay 활성화 (실기기 수치 확인용)
   const showDebug = typeof window !== 'undefined' && window.location.search.includes('vpdebug=1')
 
@@ -231,11 +237,19 @@ export default function TipTapEditor({
       const keyboardHeight = Math.max(0,
         window.innerHeight - (vv?.height ?? window.innerHeight) - (vv?.offsetTop ?? 0)
       )
-      toolbar.style.bottom = `calc(${keyboardHeight}px + env(safe-area-inset-bottom, 0px))`
+      // 키보드 없을 때: CTA 바 높이만큼 툴바를 위로 올려 겹침 방지
+      const baseOffset = keyboardHeight > 30 ? 0 : bottomBarHeightRef.current
+      toolbar.style.bottom = `calc(${keyboardHeight + baseOffset}px + env(safe-area-inset-bottom, 0px))`
       if (editorWrapRef.current) {
         editorWrapRef.current.style.marginBottom = keyboardHeight > 30 ? '60px' : '0px'
       }
-      if (showDebug) setDebugVals({ innerH: window.innerHeight, vpH: vv?.height ?? 0, diff: keyboardHeight })
+      if (showDebug) setDebugVals({
+        innerH: window.innerHeight,
+        vpH: vv?.height ?? 0,
+        offsetTop: vv?.offsetTop ?? 0,
+        kbH: keyboardHeight,
+        toolbarBottom: toolbar.style.bottom,
+      })
     }
     update()
     vv?.addEventListener('resize', update)
@@ -577,8 +591,10 @@ export default function TipTapEditor({
       {showDebug && (
         <div className="fixed top-16 right-2 z-[999] bg-black/85 text-white text-[11px] font-mono p-2 rounded-lg leading-relaxed pointer-events-none">
           <div>innerH: {debugVals.innerH}px</div>
-          <div>vpH: &nbsp;&nbsp;{debugVals.vpH}px</div>
-          <div>diff: &nbsp;&nbsp;{debugVals.diff}px</div>
+          <div>vpH: &nbsp;&nbsp;&nbsp;{debugVals.vpH}px</div>
+          <div>vpTop: &nbsp;{debugVals.offsetTop}px</div>
+          <div>kbH: &nbsp;&nbsp;&nbsp;{debugVals.kbH}px</div>
+          <div>bottom: {debugVals.toolbarBottom}</div>
         </div>
       )}
 

@@ -52,6 +52,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: '#FF6F61',
+  // Android Chrome: 키보드 올라올 때 window.innerHeight 고정 → visualViewport.height만 감소
+  // → 툴바 keyboardHeight 공식이 정확하게 작동 (미설정 시 innerHeight도 줄어 keyboardH≈0)
+  interactiveWidget: 'overlays-content',
 }
 
 export default function RootLayout({
