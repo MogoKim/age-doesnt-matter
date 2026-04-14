@@ -49,9 +49,9 @@ export default async function WritePage({ searchParams }: PageProps) {
 
   return (
     <>
-      {/* 글쓰기 페이지에서는 Footer가 하단 CTA 바에 가리므로 숨김 */}
-      <style>{'footer { display: none !important; }'}</style>
-      <div className="max-w-[720px] mx-auto px-4 pt-0 pb-6 md:px-6 md:pb-8">
+      {/* 글쓰기 전용 레이아웃: GNB(header)와 Footer 모두 숨김, 전용 헤더 사용 */}
+      <style>{'header { display: none !important; } footer { display: none !important; }'}</style>
+      <div className="max-w-[720px] mx-auto px-4 pt-[52px] pb-6 md:px-6 md:pb-8">
         <PostWriteForm
           defaultBoard={validDefaultBoard}
           boards={writableBoards}

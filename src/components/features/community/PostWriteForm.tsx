@@ -230,10 +230,42 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
     })
   }
 
+  // ── 글쓰기 전용 고정 헤더 (GNB 대체) ──
+  const writeHeader = (
+    <div className="fixed top-0 left-0 right-0 z-40 bg-card border-b border-border h-[52px] flex items-center justify-between px-4">
+      <button
+        type="button"
+        onClick={handleCancel}
+        className="w-[44px] h-[52px] flex items-center justify-start text-foreground"
+        aria-label="뒤로가기"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </button>
+      <span className="text-body font-bold text-foreground">
+        {isEditMode ? '수정하기' : (board?.displayName ? `${board.displayName} 글쓰기` : '글쓰기')}
+      </span>
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={!canSubmit || isPending}
+        className={cn(
+          'min-w-[44px] h-[52px] flex items-center justify-end text-body font-bold transition-colors',
+          canSubmit && !isPending ? 'text-primary' : 'text-muted-foreground opacity-50'
+        )}
+      >
+        {isPending ? (isEditMode ? '수정중' : '등록중') : (isEditMode ? '수정' : '등록')}
+      </button>
+    </div>
+  )
+
   // 임시저장 목록 모달
   if (showDraftList && drafts.length > 0) {
     return (
-      <div className="mb-6 p-5 bg-card border-2 border-primary/20 rounded-2xl">
+      <>
+        {writeHeader}
+        <div className="mb-6 p-5 bg-card border-2 border-primary/20 rounded-2xl">
         <h3 className="text-body font-bold text-foreground mb-3">임시저장된 글이 있어요</h3>
         <div className="space-y-2 mb-4">
           {drafts.map((d) => (
@@ -265,17 +297,14 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           새로 작성하기
         </button>
       </div>
+      </>
     )
   }
 
   return (
     <>
-      {/* ── 상단 헤더 (타이틀) ── */}
-      <div className="sticky top-[120px] lg:top-[64px] z-30 bg-card border-b border-border flex items-center justify-center px-1 h-[52px] -mx-4 mb-4 md:-mx-6">
-        <span className="text-body font-bold text-foreground">
-          {isEditMode ? '수정하기' : (board?.displayName ? `${board.displayName} 글쓰기` : '글쓰기')}
-        </span>
-      </div>
+      {/* ── 글쓰기 전용 헤더 ── */}
+      {writeHeader}
 
       {error && (
         <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-sm font-medium">
@@ -326,7 +355,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       </div>
 
       {/* 본문 입력 (TipTap 에디터) */}
-      <div className="mb-6 pb-[80px]">
+      <div className="mb-6 pb-[60px]">
         <label className="flex items-center gap-1 text-caption font-bold text-foreground mb-2">
           본문 <span className="text-primary font-bold">*</span>
         </label>
@@ -342,32 +371,6 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         </div>
       </div>
 
-      {/* 하단 CTA 버튼 (fixed) */}
-      <div
-        className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border px-4 pt-3"
-        style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
-      >
-        <div className="flex gap-3 max-w-[720px] mx-auto">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="flex-1 min-h-[52px] rounded-xl border-2 border-border text-body font-bold text-muted-foreground hover:bg-muted transition-colors"
-          >
-            취소
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isPending}
-            className={cn(
-              'flex-1 min-h-[52px] rounded-xl bg-primary text-white text-body font-bold transition-colors',
-              (!canSubmit || isPending) ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#E85D50]',
-            )}
-          >
-            {isPending ? (isEditMode ? '수정중...' : '등록중...') : (isEditMode ? '수정' : '등록')}
-          </button>
-        </div>
-      </div>
     </>
   )
 }

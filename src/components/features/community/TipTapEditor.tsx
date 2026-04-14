@@ -11,8 +11,10 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024  // 20MB (Presigned URL로 Vercel 우회 → R2 직접 업로드)
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024  // 10MB/장
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
+const MAX_IMAGE_COUNT = 6  // 이미지 최대 6장
+const MAX_VIDEO_DURATION = 120  // 영상 최대 2분(120초)
 
 // ─── 인라인 텍스트 크기 Extension ───
 const FontSizeExtension = Extension.create({
@@ -57,18 +59,24 @@ const FONT_SIZES = [
   { label: '가', size: '28px', title: '최대' },
 ] as const
 
-// ─── 커서 위치로 스크롤 (Android 키보드 대응: visualViewport 기준) ───
-// scrollCursorIntoView(editor)는 키보드 높이를 모름 → 커스텀 구현
+// ─── 커서 위치로 스크롤 (iOS/Android 키보드 대응) ───
+// window.scrollBy 직접 호출은 iOS visualViewport 타이밍 충돌로 튐 현상 발생
+// → DOM 노드 기준 scrollIntoView 사용으로 교체
 function scrollCursorIntoView(editor: Editor) {
   requestAnimationFrame(() => {
     try {
       const { state, view } = editor
       const { from } = state.selection
-      const coords = view.coordsAtPos(from)  // viewport 기준 좌표
-      // visualViewport.height = 키보드 포함한 실제 보이는 영역 높이
-      const vh = window.visualViewport?.height ?? window.innerHeight
-      if (coords.bottom > vh - 80) {
-        window.scrollBy({ top: coords.bottom - vh + 120, behavior: 'smooth' })
+      const domResult = view.domAtPos(from)
+      // view.domAtPos가 반환하는 node는 DOM Node (TipTap Node와 별개)
+      const domNode = domResult.node as unknown as globalThis.Node
+      const el: Element | null = domNode.nodeType === globalThis.Node.ELEMENT_NODE
+        ? (domNode as unknown as Element)
+        : (domNode as unknown as ChildNode).parentElement
+      if (el?.scrollIntoView) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } else {
+        editor.commands.scrollIntoView()
       }
     } catch {
       editor.commands.scrollIntoView()
@@ -217,13 +225,17 @@ export default function TipTapEditor({
     toolbar.style.zIndex = '20'
 
     const update = () => {
-      // visualViewport가 없는 구형 브라우저 대비 fallback
-      const diff = Math.max(0, window.innerHeight - (vv?.height ?? window.innerHeight))
-      toolbar.style.bottom = `calc(76px + ${diff}px + env(safe-area-inset-bottom, 0px))`
+      // iOS: visualViewport.offsetTop은 Safari 자동스크롤 시 0이 아님 — 반드시 포함
+      // Android Chrome 108+: window.innerHeight 불변, visualViewport.height만 감소
+      // CTA 바 제거 → 기준값 76px 삭제 (0px 베이스)
+      const keyboardHeight = Math.max(0,
+        window.innerHeight - (vv?.height ?? window.innerHeight) - (vv?.offsetTop ?? 0)
+      )
+      toolbar.style.bottom = `calc(${keyboardHeight}px + env(safe-area-inset-bottom, 0px))`
       if (editorWrapRef.current) {
-        editorWrapRef.current.style.marginBottom = diff > 50 ? '60px' : '0px'
+        editorWrapRef.current.style.marginBottom = keyboardHeight > 30 ? '60px' : '0px'
       }
-      if (showDebug) setDebugVals({ innerH: window.innerHeight, vpH: vv?.height ?? 0, diff })
+      if (showDebug) setDebugVals({ innerH: window.innerHeight, vpH: vv?.height ?? 0, diff: keyboardHeight })
     }
     update()
     vv?.addEventListener('resize', update)
@@ -251,9 +263,25 @@ export default function TipTapEditor({
       if (files.length === 0 || !editor) return
 
       // HEIC 체크 (iOS 드물게 발생)
-      const heicFile = files.find((f) => f.type === 'image/heic' || f.type === 'image/heif')
+      // HEIC 탐지 강화 (iOS 17+ 일부에서 file.type이 빈 문자열로 오는 경우 포함)
+      const heicFile = files.find((f) =>
+        f.type === 'image/heic' || f.type === 'image/heif' ||
+        (f.type === '' && /\.heic$/i.test(f.name))
+      )
       if (heicFile) {
-        setMediaError('HEIC 형식은 지원하지 않아요. iOS 설정 → 카메라 → 포맷 → 호환성 우선으로 변경해 주세요.')
+        setMediaError('HEIC 형식은 지원하지 않아요. 아이폰 설정 → 카메라 → 포맷 → 호환성 우선으로 바꿔주세요')
+        e.target.value = ''
+        return
+      }
+
+      // 이미지 장수 제한 (에디터 내 기존 이미지 수 포함)
+      const currentImgCount = (() => {
+        let count = 0
+        editor.state.doc.descendants((node) => { if (node.type.name === 'image') count++ })
+        return count
+      })()
+      if (currentImgCount + files.length > MAX_IMAGE_COUNT) {
+        setMediaError('사진은 최대 6장까지 첨부할 수 있어요')
         e.target.value = ''
         return
       }
@@ -261,7 +289,7 @@ export default function TipTapEditor({
       // 크기 초과 파일 체크
       const oversized = files.filter((f) => f.size > MAX_FILE_SIZE)
       if (oversized.length > 0) {
-        setMediaError('20MB를 넘는 사진은 추가할 수 없어요')
+        setMediaError('사진 크기가 너무 커요. 10MB 이하로 선택해 주세요')
         e.target.value = ''
         return
       }
@@ -283,7 +311,7 @@ export default function TipTapEditor({
             const presignRes = await fetch(`/api/uploads/presign?type=${encodeURIComponent(mimeType)}`)
             if (!presignRes.ok) {
               const err = await presignRes.json().catch(() => ({}))
-              setMediaError(`${err.error || '이미지 업로드 준비에 실패했어요'} (${presignRes.status})`)
+              setMediaError(presignRes.status === 429 ? '업로드 요청이 너무 많아요. 잠시 기다려 주세요' : `${err.error || '사진 업로드에 실패했어요. 잠시 후 다시 시도해 주세요'}`)
               console.error('[upload/image] presign 실패:', presignRes.status, err)
               removeImageNode(editor, blobUrl)
               URL.revokeObjectURL(blobUrl)
@@ -298,7 +326,7 @@ export default function TipTapEditor({
               headers: { 'Content-Type': mimeType },
             })
             if (!uploadRes.ok) {
-              setMediaError(`이미지 업로드에 실패했어요 (${uploadRes.status})`)
+              setMediaError('사진 업로드에 실패했어요. 잠시 후 다시 시도해 주세요')
               console.error('[upload/image] R2 PUT 실패:', uploadRes.status)
               removeImageNode(editor, blobUrl)
               URL.revokeObjectURL(blobUrl)
@@ -316,7 +344,7 @@ export default function TipTapEditor({
           }
         }))
       } catch (err) {
-        setMediaError(`이미지 업로드에 실패했어요: ${String(err).slice(0, 80)}`)
+        setMediaError('인터넷 연결을 확인하고 다시 시도해 주세요')
         console.error('[upload/image] 예외:', err)
       } finally {
         setIsUploadingImage(false)
@@ -332,10 +360,47 @@ export default function TipTapEditor({
       const file = e.target.files?.[0]
       if (!file || !editor) return
 
-      if (file.size > MAX_VIDEO_SIZE) {
-        setMediaError('동영상은 최대 50MB까지 업로드할 수 있어요')
+      // 영상 건수 제한 (에디터 내 기존 영상 수 확인)
+      let currentVideoCount = 0
+      editor.state.doc.descendants((node) => { if (node.type.name === 'video') currentVideoCount++ })
+      if (currentVideoCount >= 1) {
+        setMediaError('동영상은 1개까지만 첨부할 수 있어요')
         e.target.value = ''
         return
+      }
+
+      // 크기 제한 (100MB)
+      if (file.size > MAX_VIDEO_SIZE) {
+        setMediaError('동영상 크기가 너무 커요. 100MB 이하로 선택해 주세요')
+        e.target.value = ''
+        return
+      }
+
+      // 포맷 검증
+      const allowedVideoTypes = ['video/mp4', 'video/quicktime', 'video/webm']
+      if (!allowedVideoTypes.includes(file.type)) {
+        setMediaError('동영상 형식이 맞지 않아요. MP4, MOV, WebM만 가능해요')
+        e.target.value = ''
+        return
+      }
+
+      // 영상 길이 제한 (2분 = 120초)
+      try {
+        const duration = await new Promise<number>((resolve, reject) => {
+          const videoEl = document.createElement('video')
+          videoEl.preload = 'metadata'
+          const objUrl = URL.createObjectURL(file)
+          videoEl.onloadedmetadata = () => { URL.revokeObjectURL(objUrl); resolve(videoEl.duration) }
+          videoEl.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('메타데이터 로드 실패')) }
+          videoEl.src = objUrl
+        })
+        if (duration > MAX_VIDEO_DURATION) {
+          setMediaError('동영상은 2분까지만 첨부할 수 있어요')
+          e.target.value = ''
+          return
+        }
+      } catch {
+        // 메타데이터 로드 실패 시 길이 검사 스킵 (업로드는 허용)
       }
 
       setIsUploadingVideo(true)
@@ -348,7 +413,7 @@ export default function TipTapEditor({
         const presignRes = await fetch(`/api/uploads/video/presign?ext=${ext}`)
         if (!presignRes.ok) {
           const err = await presignRes.json().catch(() => ({}))
-          setMediaError(`${err.error || '동영상 업로드 준비에 실패했어요'} (${presignRes.status})`)
+          setMediaError(presignRes.status === 429 ? '업로드 요청이 너무 많아요. 잠시 기다려 주세요' : `${err.error || '동영상 업로드에 실패했어요. Wi-Fi 연결 후 다시 시도해 주세요'}`)
           return
         }
         const { uploadUrl, publicUrl } = await presignRes.json() as { uploadUrl: string; publicUrl: string }
@@ -360,7 +425,7 @@ export default function TipTapEditor({
           headers: { 'Content-Type': file.type },
         })
         if (!uploadRes.ok) {
-          setMediaError(`동영상 업로드에 실패했어요 (${uploadRes.status})`)
+          setMediaError('동영상 업로드에 실패했어요. Wi-Fi 연결 후 다시 시도해 주세요')
           console.error('[upload/video] R2 직접 업로드 실패:', uploadRes.status)
           return
         }
@@ -373,7 +438,7 @@ export default function TipTapEditor({
           .run()
         scrollCursorIntoView(editor)
       } catch {
-        setMediaError('동영상 업로드에 실패했어요')
+        setMediaError('인터넷 연결을 확인하고 다시 시도해 주세요')
       } finally {
         setIsUploadingVideo(false)
         e.target.value = ''
@@ -459,7 +524,7 @@ export default function TipTapEditor({
                   'flex items-center justify-center min-h-[44px] min-w-[36px] rounded-xl transition-colors font-medium',
                   isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
                 )}
-                style={{ fontSize: size ?? '15px' }}
+                style={{ fontSize: size ?? '16px' }}
               >
                 {label}
               </button>

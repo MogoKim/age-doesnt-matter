@@ -109,6 +109,7 @@ html {
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: contain; /* Android pull-to-refresh 방지 (에디터 스크롤 충돌 예방) */
 }
 
 body {
