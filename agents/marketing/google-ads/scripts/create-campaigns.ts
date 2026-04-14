@@ -45,7 +45,14 @@ async function main(): Promise<void> {
       const result = await createCampaign(config, dryRun)
       results.push(result)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
+      let msg: string
+      if (err instanceof Error) {
+        msg = err.message
+      } else if (typeof err === 'object' && err !== null) {
+        msg = JSON.stringify(err, Object.getOwnPropertyNames(err), 2)
+      } else {
+        msg = String(err)
+      }
       console.error(`\n❌ ${config.name} 생성 실패: ${msg}`)
       errors.push({ name: config.name, error: msg })
     }
