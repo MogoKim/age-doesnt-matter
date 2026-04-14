@@ -66,8 +66,8 @@ test.describe('글쓰기 화면 모바일 UX', () => {
     await expect(title).toContainText('글쓰기', { timeout: 8000 })
     console.log('[PASS] 전용 헤더 타이틀 확인')
 
-    // 헤더 "등록" 버튼 존재
-    const registerBtn = page.locator('button', { hasText: '등록' })
+    // 헤더 "등록" 버튼 존재 (exact: true — "등록하기" 버튼과 구분)
+    const registerBtn = page.getByRole('button', { name: '등록', exact: true })
     await expect(registerBtn).toBeVisible({ timeout: 5000 })
     console.log('[PASS] 헤더 "등록" 버튼 존재 확인')
 
