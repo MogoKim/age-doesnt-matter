@@ -1,12 +1,13 @@
 {
-  "generatedAt": "2026-04-12T12:22:44.916Z",
+  "generatedAt": "2026-04-15T23:23:35.416Z",
   "summary": {
     "forbiddenWordFails": 0,
     "ctaInconsistencies": [
-      "로그인 버튼 문구 3가지 혼재: 로그인 / 카카오로 시작하기 / 💬카카오톡으로 시작하기"
+      "로그인 버튼 문구 4가지 혼재: 로그인 / 30초면 시작돼요 → / 카카오로 시작하기 / 💬카카오톡으로 시작하기",
+      "댓글 버튼 문구 2가지 혼재: 댓글은 누구나 볼 수 있나요?▾ / 부적절한 글이나 댓글은 어떻게 신고하나요?▾"
     ],
     "emptyStateMissing": [],
-    "accessibilityWarnings": 142
+    "accessibilityWarnings": 140
   },
   "forbiddenWords": [],
   "ctaTexts": [
@@ -28,8 +29,22 @@
       "page": "/about",
       "label": "서비스 소개",
       "type": "login",
+      "text": "30초면 시작돼요 →",
+      "selector": ".text-primary.font-bold"
+    },
+    {
+      "page": "/about",
+      "label": "서비스 소개",
+      "type": "login",
       "text": "카카오로 시작하기",
       "selector": ".inline-flex.items-center"
+    },
+    {
+      "page": "/about",
+      "label": "서비스 소개",
+      "type": "comment",
+      "text": "댓글은 누구나 볼 수 있나요?▾",
+      "selector": ".w-full.flex"
     },
     {
       "page": "/best",
@@ -737,19 +752,9 @@
       "label": "로그인",
       "smallTouchTargets": [
         {
-          "selector": ".text-muted-foreground.underline[이용약관]",
-          "width": 52,
-          "height": 18
-        },
-        {
-          "selector": ".text-muted-foreground.underline[개인정보처리방침]",
-          "width": 104,
-          "height": 18
-        },
-        {
-          "selector": ".text-caption.text-muted-foreground/60[먼저 둘러볼게요]",
-          "width": 95,
-          "height": 18
+          "selector": ".text-sm.transition-colors[먼저 둘러볼게요]",
+          "width": 101,
+          "height": 44
         }
       ],
       "smallFontElements": [],

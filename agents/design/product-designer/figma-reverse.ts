@@ -11,7 +11,7 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
-import { DESIGN_TOKENS, SYSTEM_PROMPT } from './agent.js'
+import { SYSTEM_PROMPT } from './agent.js'
 import Anthropic from '@anthropic-ai/sdk'
 
 const __filename = fileURLToPath(import.meta.url)

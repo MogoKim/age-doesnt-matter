@@ -104,7 +104,7 @@ async function renderVideo(opts: RenderOptions): Promise<void> {
   ]
 
   let filterComplex = `[0:v]scale=${opts.width}:${opts.height}:force_original_aspect_ratio=decrease,pad=${opts.width}:${opts.height}:(ow-iw)/2:(oh-ih)/2,setsar=1[vscaled]`
-  let mapVideo = '[vscaled]'
+  const mapVideo = '[vscaled]'
 
   // BGM 믹싱 (있으면)
   if (opts.bgmPath) {

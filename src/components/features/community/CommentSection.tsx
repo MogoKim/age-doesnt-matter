@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import type { CommentItem as CommentItemType } from '@/types/api'
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
@@ -8,6 +9,7 @@ import CommentInput from './CommentInput'
 interface CommentSectionProps {
   postId: string
   comments: CommentItemType[]
+  isLoggedIn?: boolean
 }
 
 function sortComments(comments: CommentItemType[], sort: 'latest' | 'likes'): CommentItemType[] {
@@ -18,7 +20,7 @@ function sortComments(comments: CommentItemType[], sort: 'latest' | 'likes'): Co
   return sorted
 }
 
-export default function CommentSection({ postId, comments }: CommentSectionProps) {
+export default function CommentSection({ postId, comments, isLoggedIn }: CommentSectionProps) {
   const [sort, setSort] = useState<'latest' | 'likes'>('latest')
 
   const totalCount = comments.reduce(
@@ -73,7 +75,21 @@ export default function CommentSection({ postId, comments }: CommentSectionProps
         </div>
       )}
 
-      <CommentInput postId={postId} />
+      {isLoggedIn ? (
+        <CommentInput postId={postId} />
+      ) : (
+        <div className="p-5 bg-card border border-border rounded-2xl mt-4 text-center">
+          <p className="text-body text-muted-foreground mb-4">
+            댓글을 달려면 로그인이 필요해요
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center min-h-[52px] px-6 bg-primary text-white rounded-xl text-body font-bold no-underline"
+          >
+            카카오 로그인
+          </Link>
+        </div>
+      )}
     </section>
   )
 }

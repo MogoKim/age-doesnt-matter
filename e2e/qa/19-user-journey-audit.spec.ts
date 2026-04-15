@@ -178,10 +178,15 @@ test('여정 2 — 커뮤니티 게시판 탐색', async ({ page }) => {
   }))
 
   steps.push(await measureStep('게시글 상세 진입 및 뒤로가기', async () => {
-    const postLink = await page.$('a[href*="/community/"]')
-    if (!postLink) return '게시글 링크 없음'
-    const postUrl = await postLink.getAttribute('href')
-    await page.goto(postUrl ?? '', { waitUntil: 'domcontentloaded' })
+    // 게시판 목록 URL(/community/stories)이 아닌 실제 게시글 URL(/community/stories/postId) 찾기
+    const postUrl = await page.$$eval(
+      'a[href*="/community/"]',
+      (links) => links
+        .map((a) => a.getAttribute('href') ?? '')
+        .find((h) => h.split('/').filter(Boolean).length >= 3) ?? null
+    )
+    if (!postUrl) return '게시글 링크 없음 (목록에 게시글이 없거나 3-세그먼트 URL 없음)'
+    await page.goto(postUrl, { waitUntil: 'domcontentloaded' })
     const content = await page.$('article, [data-testid="post-content"], .post-content')
     if (!content) return '게시글 본문 없음'
     await page.goBack({ waitUntil: 'domcontentloaded' })

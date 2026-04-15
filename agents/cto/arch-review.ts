@@ -104,11 +104,6 @@ interface TechDebtMetrics {
 
 function countTechDebt(): TechDebtMetrics {
   try {
-    const grepTodo = execSync(
-      `grep -r "TODO\\|FIXME\\|HACK" ${join(ROOT, 'agents')} ${join(ROOT, 'src')} --include="*.ts" -l 2>/dev/null | wc -l`,
-      { encoding: 'utf-8' },
-    ).trim()
-
     const grepAny = execSync(
       `grep -r ": any" ${join(ROOT, 'src')} --include="*.ts" 2>/dev/null | wc -l`,
       { encoding: 'utf-8' },

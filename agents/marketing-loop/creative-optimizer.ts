@@ -12,13 +12,11 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
-import * as path from 'path'
-import type { AdsReport, AdCreativePerformance } from './ads-data-agent.js'
+import type { AdsReport } from './ads-data-agent.js'
 import { runVariationEngine } from '../design/graphic-designer/variation-engine.js'
 
 const client = new Anthropic()
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
-const PROJECT_ROOT = path.join(__dirname, '../..')
 
 const OPTIMIZER_SYSTEM_PROMPT = `당신은 우나어 광고 최적화 전문가입니다.
 

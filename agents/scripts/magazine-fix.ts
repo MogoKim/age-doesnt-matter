@@ -27,7 +27,7 @@ async function fixJsonWrappedArticle(id: string) {
     return false
   }
 
-  let cleanContent = contentMatch[1]
+  const cleanContent = contentMatch[1]
     .replace(/\\n/g, '\n')
     .replace(/\\t/g, '\t')
     .replace(/\\"/g, '"')

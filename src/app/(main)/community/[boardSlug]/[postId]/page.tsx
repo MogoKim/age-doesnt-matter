@@ -161,7 +161,7 @@ export default async function PostDetailPage({ params }: PageProps) {
       </div>
 
       {/* 댓글 */}
-      <CommentSection postId={postId} comments={comments} />
+      <CommentSection postId={postId} comments={comments} isLoggedIn={!!userId} />
     </div>
   )
 }

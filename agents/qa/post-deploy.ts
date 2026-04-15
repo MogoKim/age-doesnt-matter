@@ -24,7 +24,7 @@ import { fileURLToPath } from 'url'
 import { execSync } from 'child_process'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
-import { sendSlackMessage, notifySlack } from '../core/notifier.js'
+import { sendSlackMessage } from '../core/notifier.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '../..')

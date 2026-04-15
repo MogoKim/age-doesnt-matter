@@ -1,7 +1,15 @@
 import { prisma, disconnect } from '../core/db.js'
 
+interface MagazinePost {
+  id: string
+  title: string
+  thumbnailUrl: string | null
+  content: string
+  createdAt: Date
+}
+
 async function main() {
-  const posts = await prisma.$queryRaw<any[]>`
+  const posts = await prisma.$queryRaw<MagazinePost[]>`
     SELECT id, title, "thumbnailUrl", content, "createdAt"
     FROM "Post"
     WHERE "boardType" = 'MAGAZINE' AND status = 'PUBLISHED'
@@ -10,7 +18,7 @@ async function main() {
   `
 
   console.log('\n===== 매거진 QA 재확인 (최근 15건) =====\n')
-  posts.forEach((p: any, i: number) => {
+  posts.forEach((p: MagazinePost, i: number) => {
     const hasImg = p.content.includes('<img ')
     const hasPlaceholder = /<!-- \[IMAGE:\d+\] -->/.test(p.content)
     const hasRawAiOutput = /제목:|요약:|이미지컨텍스트\d/.test(p.content)
