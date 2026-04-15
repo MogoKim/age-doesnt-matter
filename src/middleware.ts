@@ -53,6 +53,11 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/onboarding', request.url))
   }
 
+  // 비회원이 /onboarding 직접 접근 → 로그인으로
+  if (!token && pathname === '/onboarding') {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
   if (!token?.needsOnboarding && token && pathname === '/onboarding') {
     return NextResponse.redirect(new URL('/', request.url))
   }

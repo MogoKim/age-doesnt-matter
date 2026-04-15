@@ -48,7 +48,7 @@ jobs:
         continue-on-error: true
         run: |
           URL="${{ github.event.inputs.url || env.SITE_URL }}"
-          npx tsx scripts/smoke-test.ts --url "$URL" > smoke-result.json 2>&1
+          npx tsx scripts/smoke-test.ts --url "$URL" > smoke-result.json 2>smoke-stderr.log || true
 
       # ── 2. 크론 연결 검증 ─────────────────────────────────
       - name: Cron Link Verification

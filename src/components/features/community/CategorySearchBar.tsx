@@ -50,6 +50,7 @@ export default function CategorySearchBar() {
         {/* 검색 범위 드롭다운 */}
         <div className="relative">
           <select
+            aria-label="검색 범위"
             value={field}
             onChange={(e) => setField(e.target.value as SearchField)}
             className="h-[52px] appearance-none rounded-xl border border-border bg-background pl-4 pr-10 text-base text-foreground outline-none transition-colors focus:border-primary/60"
