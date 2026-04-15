@@ -358,9 +358,9 @@ jobs:
   google-ads-report:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # DISPATCH ONLY — google-ads-api 패키지 미설치 + refresh_token 미설정. 준비 완료 시 크론 복원.
     if: >-
-      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'google-ads-report' ||
-      github.event_name == 'schedule' && github.event.schedule == '0 0 * * *'
+      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'google-ads-report'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -57,7 +57,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cmo:social-metrics': () => import('../cmo/social-metrics.js').then(() => {}),
   'cmo:social-reviewer': () => import('../cmo/social-reviewer.js').then(() => {}),
   'cmo:social-strategy': () => import('../cmo/social-strategy.js').then(() => {}),
-  'cmo:google-ads-report': () => import('../marketing/google-ads/scripts/daily-report.js').then(() => {}),
+  'cmo:google-ads-report': () => import('../marketing/google-ads/scripts/daily-report.js').then(() => {}), // DISPATCH ONLY — google-ads-api 패키지 미설치 + refresh_token 미설정. 준비 완료 시 크론 복원.
   'cmo:upload-creatives': () => import('../marketing/google-ads/scripts/upload-creatives.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'cmo:create-campaigns': () => import('../marketing/google-ads/scripts/create-campaigns.js').then(() => {}), // DISPATCH ONLY — 최초 1회 수동 실행
   'ceo:morning-sns-briefing': () => import('../ceo/morning-sns-briefing.js').then(() => {}),
