@@ -48,7 +48,7 @@ class CEOMorningCycle extends BaseAgent {
     // 2. QA Gate 2 최신 결과 확인
     const qaLog = await prisma.botLog.findFirst({
       where: { botType: 'QA', action: 'DEPLOY_AUDIT' },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { executedAt: 'desc' },
     })
     const qaFailed = qaLog?.status === 'FAILED'
     const qaIssueDetail = qaFailed
@@ -59,6 +59,26 @@ class CEOMorningCycle extends BaseAgent {
           } catch { return '상세 없음' }
         })()
       : null
+
+    // 2-b. 에이전트 현황 집계 (최근 24시간 BotLog)
+    const agentLogs = await prisma.botLog.findMany({
+      where: { executedAt: { gte: yesterday } },
+      select: { botType: true, action: true, status: true },
+      orderBy: { executedAt: 'desc' },
+      take: 3000,
+    })
+    const agentLatest = new Map<string, string>()
+    for (const log of agentLogs) {
+      const key = `${log.botType}:${log.action ?? '__'}`
+      if (!agentLatest.has(key)) agentLatest.set(key, log.status)
+    }
+    let agentSuccess = 0, agentFailed = 0, agentPartial = 0
+    const agentFailures: string[] = []
+    for (const [key, status] of agentLatest) {
+      if (status === 'SUCCESS') agentSuccess++
+      else if (status === 'FAILED') { agentFailed++; agentFailures.push(key) }
+      else if (status === 'PARTIAL') { agentPartial++; agentFailures.push(`${key}(부분)`) }
+    }
 
     // 3. 욕망 지도 로드
     const brief = await loadTodayBrief({ fallbackToPrevious: true })
@@ -160,6 +180,20 @@ ${kpiSummary}${desireMapSection}
           text: `*⚠️ 기술 이슈 (Gate 2 실패)*\n${qaIssueDetail}\n→ Slack #qa 에서 상세 확인`,
         },
       }] : []),
+      {
+        type: 'section' as const,
+        text: {
+          type: 'mrkdwn' as const,
+          text: [
+            `*🤖 에이전트 현황 (최근 24h)*`,
+            `✅ 정상 ${agentSuccess}개 | ${agentPartial > 0 ? `⚠️ 부분 ${agentPartial}개 | ` : ''}${agentFailed > 0 ? `🔴 실패 ${agentFailed}개` : '실패 없음'}`,
+            ...(agentFailures.length > 0
+              ? agentFailures.slice(0, 5).map(k => `  • 🔴 ${k}`)
+              : []),
+            ...(agentFailures.length > 5 ? [`  • …외 ${agentFailures.length - 5}건`] : []),
+          ].join('\n'),
+        },
+      },
       { type: 'divider' },
       { type: 'context', elements: [{ type: 'mrkdwn', text: `전체 게시글: ${totalPosts}건 | 자동 생성 by CEO 에이전트` }] },
     ])

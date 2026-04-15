@@ -93,14 +93,14 @@ async function main() {
 
     // 6. CafePost 데이터 품질 메트릭
     const cafePostStats = await prisma.cafePost.aggregate({
-      where: { createdAt: { gte: twentyFourHoursAgo } },
+      where: { crawledAt: { gte: twentyFourHoursAgo } },
       _avg: { qualityScore: true },
       _count: { _all: true },
     })
 
     const usablePosts = await prisma.cafePost.count({
       where: {
-        createdAt: { gte: twentyFourHoursAgo },
+        crawledAt: { gte: twentyFourHoursAgo },
         isUsable: true,
       },
     })
