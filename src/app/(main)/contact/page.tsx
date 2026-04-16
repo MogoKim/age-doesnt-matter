@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import ContactForm from '@/components/features/contact/ContactForm'
 
 export const metadata: Metadata = {
   title: '문의',
@@ -18,25 +19,15 @@ export default function ContactPage() {
           <p className="text-body text-muted-foreground leading-relaxed break-keep mb-4">
             서비스 이용 중 불편한 점이나 궁금한 점이 있으시면 아래 이메일로 문의해 주세요.
           </p>
-          <a
-            href="mailto:korea.age.not.matter@gmail.com"
-            className="inline-flex items-center gap-2 text-body text-primary font-medium no-underline min-h-[52px]"
-          >
-            📧 korea.age.not.matter@gmail.com
-          </a>
+          <ContactForm type="service" />
         </section>
 
         <section className="bg-card rounded-2xl p-6 border border-border">
           <h2 className="text-body font-bold text-foreground mb-3">제휴·광고 문의</h2>
           <p className="text-body text-muted-foreground leading-relaxed break-keep mb-4">
-            제휴, 광고, 협업 관련 문의는 아래 이메일로 보내주세요.
+            제휴, 광고, 협업 관련 문의는 아래로 보내주세요.
           </p>
-          <a
-            href="mailto:korea.age.not.matter@gmail.com"
-            className="inline-flex items-center gap-2 text-body text-primary font-medium no-underline min-h-[52px]"
-          >
-            📧 korea.age.not.matter@gmail.com
-          </a>
+          <ContactForm type="biz" />
         </section>
 
         <section className="bg-card rounded-2xl p-6 border border-border">
