@@ -60,11 +60,13 @@ export default async function PostDetailPage({ params }: PageProps) {
   if (!board) notFound()
 
   const userId = session?.user?.id
-  const post = await getPostDetail(postId, userId)
+  const [post, comments] = await Promise.all([
+    getPostDetail(postId, userId),
+    getCommentsByPostId(postId, userId),
+  ])
   if (!post) notFound()
 
   const isOwnPost = !!userId && !!post.author.id && post.author.id === userId
-  const comments = await getCommentsByPostId(postId, userId)
 
   const url = `${BASE_URL}/community/${boardSlug}/${postId}`
   const jsonLd = {

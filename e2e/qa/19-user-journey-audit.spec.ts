@@ -257,9 +257,12 @@ test('여정 3 — 검색 사용', async ({ page }) => {
   }))
 
   steps.push(await measureStep('빈 키워드 검색 → 빈 상태 확인', async () => {
-    await page.goto('/search?q=존재하지않는키워드xyz123', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(1500)
-    const emptyState = await page.$('text=검색 결과가 없, text=결과 없, text=없습니다, [data-testid="empty-state"]')
+    await page.goto('/search?q=존재하지않는키워드xyz123', { waitUntil: 'networkidle', timeout: 10_000 })
+    // 서버 렌더링 완료 후 empty state 노출 대기 (최대 5초)
+    const emptyState = await page.waitForSelector(
+      'text=검색 결과가 없, [data-testid="empty-state"]',
+      { timeout: 5000 }
+    ).catch(() => null)
     if (!emptyState) return '검색 결과 없을 때 빈 상태 안내 없음'
   }))
 

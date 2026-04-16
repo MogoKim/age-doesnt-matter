@@ -51,7 +51,7 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
           <span>
             카카오 계정으로 30초면 가입돼요.{' '}
             <Link href="/login?callbackUrl=/community/stories" className="text-primary font-bold underline">
-              카카오로 시작하기 →
+              카카오톡으로 시작하기 →
             </Link>
           </span>
         ),
@@ -190,7 +190,7 @@ export default async function AboutPage() {
               href="/login?callbackUrl=/community/stories"
               className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-[#E85D50] lg:w-auto lg:px-10"
             >
-              카카오로 시작하기
+              카카오톡으로 시작하기
             </Link>
           )}
         </div>

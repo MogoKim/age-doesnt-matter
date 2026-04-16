@@ -86,7 +86,7 @@ export default function CommentSection({ postId, comments, isLoggedIn }: Comment
             href="/login"
             className="inline-flex items-center justify-center min-h-[52px] px-6 bg-primary text-white rounded-xl text-body font-bold no-underline"
           >
-            카카오 로그인
+            카카오톡으로 시작하기
           </Link>
         </div>
       )}

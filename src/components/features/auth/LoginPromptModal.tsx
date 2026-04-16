@@ -42,7 +42,7 @@ export default function LoginPromptModal({ message, onClose }: LoginPromptModalP
             href="/login"
             className="w-full flex items-center justify-center gap-2 h-[52px] bg-[#FEE500] text-[#191919] rounded-xl font-bold text-body no-underline transition-colors hover:bg-[#FDD800]"
           >
-            카카오로 시작하기
+            카카오톡으로 시작하기
           </Link>
 
           <button

@@ -88,10 +88,11 @@ export default async function JobDetailPage({ params }: PageProps) {
   const session = await auth()
   const userId = session?.user?.id
 
-  const job = await getJobDetail(id, userId)
+  const [job, comments] = await Promise.all([
+    getJobDetail(id, userId),
+    getCommentsByPostId(id, userId),
+  ])
   if (!job) notFound()
-
-  const comments = await getCommentsByPostId(id, userId)
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
@@ -156,9 +157,9 @@ export default async function JobDetailPage({ params }: PageProps) {
       />
 
       {/* 지원 버튼 */}
-      {job.applyUrl && (
-        <div className="mb-8">
-          <h3 className="text-body font-bold text-foreground mb-3">📞 지원 방법</h3>
+      <div className="mb-8">
+        <h3 className="text-body font-bold text-foreground mb-3">📞 지원 방법</h3>
+        {job.applyUrl ? (
           <a
             href={job.applyUrl}
             target="_blank"
@@ -167,8 +168,12 @@ export default async function JobDetailPage({ params }: PageProps) {
           >
             지원하기
           </a>
-        </div>
-      )}
+        ) : (
+          <p className="text-body text-muted-foreground">
+            지원 링크가 등록되지 않았어요. 공고 내용을 참고해 해당 기업에 직접 문의해 주세요.
+          </p>
+        )}
+      </div>
 
       {/* 광고 — 인아티클 */}
       <div className="mb-8">
@@ -192,7 +197,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       </div>
 
       {/* 댓글 */}
-      <CommentSection postId={id} comments={comments} />
+      <CommentSection postId={id} comments={comments} isLoggedIn={!!userId} />
     </div>
   )
 }
