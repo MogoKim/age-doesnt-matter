@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 
 // 진단용 임시 API — DB의 실제 post status 확인
 export async function GET(req: Request) {
-  const secret = new URL(req.url).searchParams.get('secret')
+  const secret = req.headers.get('x-admin-secret')
   if (secret !== process.env.AUTH_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
