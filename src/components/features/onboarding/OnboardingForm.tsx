@@ -137,12 +137,14 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     })
   }
 
-  function handleComplete() {
+  async function handleComplete() {
     setIsNavigating(true)
     gtmSignUp('kakao')
     // AddToHomeScreen 마운트 이전에 이벤트가 유실되는 레이스컨디션 방지:
     // sessionStorage에 pending flag를 저장 → 홈 마운트 시 AddToHomeScreen이 처리
     sessionStorage.setItem('pwa_pending', 'signup')
+    // gtag() 배치 전송 여유 시간 확보 — 즉시 navigate 시 sign_up 이벤트 유실 방지
+    await new Promise<void>((resolve) => setTimeout(resolve, 300))
     router.push(callbackUrl || '/')
     router.refresh()
   }

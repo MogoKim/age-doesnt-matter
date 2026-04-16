@@ -15,6 +15,7 @@ import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
+import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 
 interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
@@ -90,6 +91,8 @@ export default async function PostDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
+      {/* GA4 게시글 조회 이벤트 */}
+      <GTMEventOnMount event="post_view" data={{ post_id: postId, board_type: board.boardType, category: post.category ?? '' }} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

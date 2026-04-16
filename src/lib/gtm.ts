@@ -19,6 +19,7 @@
  * - cps_click          : 쿠팡 CPS 상품 클릭
  * - search             : 검색
  * - board_view         : 게시판 조회
+ * - post_view          : 커뮤니티 게시글 상세 조회
  */
 
 // ── 타입 ──
@@ -30,14 +31,48 @@ declare global {
   }
 }
 
+// ── 이벤트 큐 (레이스 컨디션 방지) ──
+// gtag.js는 strategy="afterInteractive"로 비동기 로드됨.
+// 컴포넌트 마운트 시점에 window.gtag가 undefined이면 이벤트가 조용히 드랍되는 문제를 방지.
+// gtag 로드 완료 전 발사된 이벤트를 큐에 보관 → markGtagReady() 호출 시 일괄 플러시.
+
+type QueuedEvent = { name: string; params?: Record<string, unknown> }
+const _eventQueue: QueuedEvent[] = []
+let _gtagReady = false
+const MAX_QUEUE_SIZE = 100
+
+/**
+ * gtag-init 스크립트 onLoad 시 호출.
+ * 큐에 쌓인 이벤트를 순서대로 GA4에 전송.
+ */
+export function markGtagReady(): void {
+  _gtagReady = true
+  while (_eventQueue.length > 0) {
+    const item = _eventQueue.shift()!
+    window.gtag?.('event', item.name, item.params)
+  }
+}
+
 // ── Core ──
 
-/** gtag()로 GA4에 직접 이벤트 전송 */
+/** gtag()로 GA4에 직접 이벤트 전송. gtag 미로드 시 큐에 보관. */
 function sendEvent(eventName: string, params?: Record<string, unknown>): void {
   if (typeof window === 'undefined') return
-  if (window.gtag) {
+  if (_gtagReady && window.gtag) {
     window.gtag('event', eventName, params)
+  } else {
+    if (_eventQueue.length < MAX_QUEUE_SIZE) {
+      _eventQueue.push({ name: eventName, params })
+    }
   }
+}
+
+/**
+ * 외부 컴포넌트에서 직접 이벤트를 전송할 때 사용 (GTMEventOnMount 등).
+ * sendEvent 내부 큐를 통해 gtag 레이스 컨디션 자동 처리.
+ */
+export function sendGtmEvent(eventName: string, params?: Record<string, unknown>): void {
+  sendEvent(eventName, params)
 }
 
 /** GTM dataLayer push (GTM 태그 전용 이벤트에만 사용) */
@@ -52,13 +87,16 @@ export function pushToDataLayer(data: Record<string, unknown>): void {
 // 이후 sign_up 등 전환 이벤트에 자동 포함 → GA4에서 소재별 코호트 분석 가능.
 
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const
+// gclid: Google Ads 자동 태깅 파라미터 — sign_up 등 전환 이벤트에 포함 시 Google Ads ROI 측정 가능
+// fbclid: Meta Ads 클릭 ID
+const EXTENDED_CAPTURE_KEYS = [...UTM_KEYS, 'gclid', 'fbclid'] as const
 
-export type UtmParams = Partial<Record<typeof UTM_KEYS[number], string>>
+export type UtmParams = Partial<Record<typeof EXTENDED_CAPTURE_KEYS[number], string>>
 
 const UTM_STORAGE_KEY = 'unao_utm'
 
 /**
- * URL의 utm_* 파라미터를 sessionStorage에 저장.
+ * URL의 utm_* / gclid / fbclid 파라미터를 sessionStorage에 저장.
  * 이미 저장된 UTM이 있으면 덮어쓰지 않음 (첫 랜딩 소재 보존).
  * PageViewTracker 최초 마운트 시 1회 호출.
  */
@@ -66,7 +104,7 @@ export function captureUtm(): void {
   if (typeof window === 'undefined') return
   const params = new URLSearchParams(window.location.search)
   const utm: UtmParams = {}
-  for (const key of UTM_KEYS) {
+  for (const key of EXTENDED_CAPTURE_KEYS) {
     const val = params.get(key)
     if (val) utm[key] = val
   }

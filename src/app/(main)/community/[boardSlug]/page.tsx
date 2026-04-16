@@ -14,6 +14,7 @@ import CategorySearchBar from '@/components/features/community/CategorySearchBar
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import ResponsiveAd from '@/components/ad/ResponsiveAd'
+import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 
 interface PageProps {
   params: Promise<{ boardSlug: string }>
@@ -68,6 +69,8 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-12">
+      {/* GA4 게시판 조회 이벤트 */}
+      <BoardViewTracker boardType={board.boardType} boardSlug={boardSlug} />
       {/* 게시판 헤더 */}
       <div className="mb-6 p-6 bg-card rounded-2xl border-l-4 border-l-primary shadow-sm">
         <h1 className="text-xl font-bold text-foreground m-0 mb-1">{board.displayName}</h1>

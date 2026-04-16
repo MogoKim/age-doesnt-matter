@@ -13,6 +13,7 @@ import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
+import CpsClickTracker from '@/components/ad/CpsClickTracker'
 import { ADSENSE } from '@/components/ad/ad-slots'
 
 const BASE_URL = 'https://age-doesnt-matter.com'
@@ -184,30 +185,31 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           </h3>
           <div className="space-y-3">
             {cpsLinks.map((link) => (
-              <a
-                key={link.id}
-                href={link.productUrl}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border no-underline transition-all hover:border-primary/30 hover:shadow-sm min-h-[52px]"
-              >
-                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-xl flex-shrink-0">
-                  🛍️
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-body font-medium text-foreground m-0 line-clamp-1">
-                    {link.productName}
-                  </p>
-                  {link.rating && (
-                    <p className="text-caption text-muted-foreground m-0">
-                      ⭐ {link.rating}
+              <CpsClickTracker key={link.id} productName={link.productName} category="magazine">
+                <a
+                  href={link.productUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border no-underline transition-all hover:border-primary/30 hover:shadow-sm min-h-[52px]"
+                >
+                  <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-xl flex-shrink-0">
+                    🛍️
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-body font-medium text-foreground m-0 line-clamp-1">
+                      {link.productName}
                     </p>
-                  )}
-                </div>
-                <span className="text-caption text-primary font-bold flex-shrink-0">
-                  보러가기 →
-                </span>
-              </a>
+                    {link.rating && (
+                      <p className="text-caption text-muted-foreground m-0">
+                        ⭐ {link.rating}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-caption text-primary font-bold flex-shrink-0">
+                    보러가기 →
+                  </span>
+                </a>
+              </CpsClickTracker>
             ))}
           </div>
           <p className="text-xs text-muted-foreground mt-2 m-0">
