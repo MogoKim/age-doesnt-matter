@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import Script from 'next/script'
 import { GTMScript, GTMNoScript } from '@/components/common/GoogleTagManager'
+import GtagLoader from '@/components/common/GtagLoader'
 import { ToastProvider } from '@/components/common/Toast'
 import ServiceWorkerRegister from '@/components/common/ServiceWorkerRegister'
 import PageViewTracker from '@/components/common/PageViewTracker'
@@ -80,6 +81,7 @@ export default function RootLayout({
           <ToastProvider>{children}</ToastProvider>
           <ServiceWorkerRegister />
           <PageViewTracker />
+          <GtagLoader />
           <AddToHomeScreen />
         </AuthProvider>
       </body>
