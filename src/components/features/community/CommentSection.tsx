@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import type { CommentItem as CommentItemType } from '@/types/api'
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
@@ -22,6 +23,7 @@ function sortComments(comments: CommentItemType[], sort: 'latest' | 'likes'): Co
 
 export default function CommentSection({ postId, comments, isLoggedIn }: CommentSectionProps) {
   const [sort, setSort] = useState<'latest' | 'likes'>('latest')
+  const pathname = usePathname()
 
   const totalCount = comments.reduce(
     (sum, c) => sum + 1 + c.replies.length,
@@ -83,7 +85,7 @@ export default function CommentSection({ postId, comments, isLoggedIn }: Comment
             댓글을 달려면 로그인이 필요해요
           </p>
           <Link
-            href="/login"
+            href={`/login?callbackUrl=${encodeURIComponent(pathname)}`}
             className="inline-flex items-center justify-center min-h-[52px] px-6 bg-primary text-white rounded-xl text-body font-bold no-underline"
           >
             카카오톡으로 시작하기

@@ -39,7 +39,7 @@ const TERMS: TermItem[] = [
 ]
 
 // ── 메인 컴포넌트 ──
-export default function OnboardingForm() {
+export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }) {
   const router = useRouter()
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [isPending, startTransition] = useTransition()
@@ -143,7 +143,7 @@ export default function OnboardingForm() {
     // AddToHomeScreen 마운트 이전에 이벤트가 유실되는 레이스컨디션 방지:
     // sessionStorage에 pending flag를 저장 → 홈 마운트 시 AddToHomeScreen이 처리
     sessionStorage.setItem('pwa_pending', 'signup')
-    router.push('/')
+    router.push(callbackUrl || '/')
     router.refresh()
   }
 

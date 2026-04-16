@@ -50,7 +50,11 @@ export default async function middleware(request: NextRequest) {
   })
 
   if (token?.needsOnboarding && pathname !== '/onboarding') {
-    return NextResponse.redirect(new URL('/onboarding', request.url))
+    const onboardingUrl = new URL('/onboarding', request.url)
+    if (pathname !== '/' && pathname !== '/login') {
+      onboardingUrl.searchParams.set('callbackUrl', pathname)
+    }
+    return NextResponse.redirect(onboardingUrl)
   }
 
   // 비회원이 /onboarding 직접 접근 → 로그인으로
