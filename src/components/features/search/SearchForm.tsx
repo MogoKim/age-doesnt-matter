@@ -73,6 +73,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
   function handleKeywordClick(keyword: string) {
     setQuery(keyword)
     saveToRecent(keyword)
+    gtmSearch(keyword)
     router.push(`/search?q=${encodeURIComponent(keyword)}`)
   }
 

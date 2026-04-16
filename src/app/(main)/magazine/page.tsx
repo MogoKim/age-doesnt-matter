@@ -9,6 +9,7 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 import CategorySearchBar from '@/components/features/community/CategorySearchBar'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
+import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 
 export const metadata: Metadata = {
   title: '매거진',
@@ -47,6 +48,8 @@ export default async function MagazinePage({
 
   return (
     <div className="min-h-screen bg-background">
+      {/* GA4 게시판 조회 이벤트 */}
+      <BoardViewTracker boardType="MAGAZINE" boardSlug="magazine" />
       <div className="px-4 py-6">
         <h1 className="text-title font-bold text-foreground mb-6 flex items-center gap-2">
           📖 매거진

@@ -15,6 +15,7 @@ import JobQuickTags from '@/components/features/jobs/JobQuickTags'
 import CategorySearchBar from '@/components/features/community/CategorySearchBar'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
+import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 
 interface PageProps {
   searchParams: Promise<{ region?: string; tags?: string; q?: string; sf?: string }>
@@ -34,6 +35,8 @@ export default async function JobsPage({ searchParams }: PageProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* GA4 게시판 조회 이벤트 */}
+      <BoardViewTracker boardType="JOB" boardSlug="jobs" />
       <div className="px-4 py-6 max-w-[960px] mx-auto">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-4">
