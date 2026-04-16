@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', () => {
+test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', { tag: ['@smoke', '@public'] }, () => {
   test('홈페이지 정상 로딩 — 핵심 섹션 렌더링', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveTitle(/우리 나이가 어때서/)

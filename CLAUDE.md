@@ -41,6 +41,15 @@
 - Prisma: `npx prisma generate` (스키마 변경 시)
 - 빌드: `npm run build`
 
+## QA 자동 트리거 (컨텍스트 날아가도 반드시 작동)
+- **Write/Edit 후**: tsc 자동 실행 (Hook, 에러 시 대화창 표시) — `.claude/hooks/auto-typecheck.sh`
+- **git push → CI**: 변경 파일 자동 감지 → 비례 QA (dorny/paths-filter)
+  - `src/**` 변경 → @smoke E2E / `ad/**` 변경 → @ads E2E 추가 / `agents/**` 변경 → cron-links / `docs only` → 스킵
+- **Vercel 배포 후**: Smoke + Visual QA (Claude Haiku) + Lighthouse CI 자동
+- **/done 스킬**: Gate 1 (tsc + cron-links + build + 아키텍처 검토) → PASS 시 자동 커밋+푸시
+- **절대 건너뛰면 안 되는**: tsc 체크 / smoke-test / 광고 변경 시 @ads E2E / 에이전트 변경 시 check-cron-links
+- 상세 규칙: `.claude/rules/qa-deploy.md`
+
 ## 창업자 피드백 규칙 (절대 준수 — 실제 사고에서 나온 규칙들)
 
 ### 작업 방식

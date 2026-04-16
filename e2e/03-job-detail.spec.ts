@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우', () => {
+test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우', { tag: ['@smoke', '@public'] }, () => {
   // ── 일자리 ──
   test('일자리 목록 페이지 — 정상 접근', async ({ page }) => {
     await page.goto('/jobs')

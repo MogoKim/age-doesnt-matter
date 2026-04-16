@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('시나리오 7: 광고 렌더링 검증', () => {
+test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads'] }, () => {
 
   test('데스크탑: AdSense 슬롯 존재', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })

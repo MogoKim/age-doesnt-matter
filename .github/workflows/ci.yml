@@ -1,4 +1,4 @@
-name: CI
+name: CI (Smart QA)
 on:
   pull_request:
     branches: [main, develop]
@@ -9,11 +9,53 @@ env:
   DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
 
 jobs:
+  # Step 1: 변경 파일 감지 (dorny/paths-filter)
+  detect-changes:
+    name: 변경 파일 감지
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      ads:      ${{ steps.filter.outputs.ads }}
+      agents:   ${{ steps.filter.outputs.agents }}
+      admin:    ${{ steps.filter.outputs.admin }}
+      prisma:   ${{ steps.filter.outputs.prisma }}
+      docs-only: ${{ steps.filter.outputs.docs-only }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'src/**'
+              - 'public/**'
+            ads:
+              - 'src/components/ad/**'
+              - 'next.config.js'
+            agents:
+              - 'agents/**'
+              - '.github/workflows/agents-*.yml'
+            admin:
+              - 'src/app/(admin)/**'
+            prisma:
+              - 'prisma/**'
+            docs-only:
+              - 'docs/**'
+              - '*.md'
+              - '.claude/**'
+              - '.bkit/**'
+              - '.omc/**'
+
+  # Step 2: 코드 품질 게이트 (docs-only 변경이면 스킵)
   quality:
     name: Lint → Typecheck → Test → Build
     runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.docs-only != 'true'
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -29,10 +71,54 @@ jobs:
           AUTH_SECRET: ci-build-secret-not-real
           AUTH_URL: http://localhost:3000
 
-  e2e:
-    name: E2E + Accessibility (Playwright)
+  # Step 3: Smoke E2E — frontend(src/**) 변경 시
+  e2e-smoke:
+    name: E2E Smoke (@smoke 태그)
     runs-on: ubuntu-latest
-    needs: quality
+    needs: [quality, detect-changes]
+    if: needs.detect-changes.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx playwright install --with-deps chromium
+      - name: Smoke E2E (PR — 변경된 spec만 / push — @smoke 전체)
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # 변경된 spec 파일이 있으면 그것만, 없으면 @smoke 전체
+            CHANGED=$(npx playwright test --only-changed=origin/${{ github.base_ref }} --list --project=chromium 2>/dev/null | grep -c "\.spec\.ts" || echo "0")
+            if [ "$CHANGED" -gt "0" ]; then
+              npx playwright test --only-changed=origin/${{ github.base_ref }} --project=chromium
+            else
+              npx playwright test --grep "@smoke" --project=chromium
+            fi
+          else
+            npx playwright test --grep "@smoke" --project=chromium
+          fi
+        env:
+          AUTH_SECRET: ci-build-secret-not-real
+          AUTH_URL: http://localhost:3000
+          E2E_BASE_URL: https://age-doesnt-matter.com
+      - name: Upload report on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-smoke
+          path: playwright-report/
+          retention-days: 7
+
+  # Step 4: 광고 E2E — src/components/ad/** 또는 next.config.js 변경 시
+  e2e-ads:
+    name: E2E Ads (@ads 태그)
+    runs-on: ubuntu-latest
+    needs: [quality, detect-changes]
+    if: needs.detect-changes.outputs.ads == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,13 +128,8 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx playwright install --with-deps chromium
-      - name: Build
-        run: npm run build
-        env:
-          AUTH_SECRET: ci-build-secret-not-real
-          AUTH_URL: http://localhost:3000
-      - name: Run E2E + axe-core accessibility tests
-        run: npx playwright test --project=chromium
+      - name: Ads E2E (데스크탑 + 모바일)
+        run: npx playwright test --grep "@ads" --project=chromium --project=mobile-chrome
         env:
           AUTH_SECRET: ci-build-secret-not-real
           AUTH_URL: http://localhost:3000
@@ -57,6 +138,52 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-ads
+          path: playwright-report/
+          retention-days: 7
+
+  # Step 5: 에이전트 크론 연결 검증 — agents/** 변경 시
+  agents-check:
+    name: 에이전트 크론 연결 검증
+    runs-on: ubuntu-latest
+    needs: [quality, detect-changes]
+    if: needs.detect-changes.outputs.agents == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx tsx scripts/check-cron-links.ts
+
+  # Step 6: 어드민 E2E — src/app/(admin)/** 변경 시
+  e2e-admin:
+    name: E2E Admin
+    runs-on: ubuntu-latest
+    needs: [quality, detect-changes]
+    if: needs.detect-changes.outputs.admin == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx playwright install --with-deps chromium
+      - name: Admin E2E
+        run: npx playwright test --project=qa-admin --workers=1
+        env:
+          AUTH_SECRET: ci-build-secret-not-real
+          AUTH_URL: http://localhost:3000
+          E2E_BASE_URL: https://age-doesnt-matter.com
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      - name: Upload report on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-admin
           path: playwright-report/
           retention-days: 7

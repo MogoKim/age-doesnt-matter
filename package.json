@@ -25,6 +25,7 @@
     "qa:full": "playwright test --project=qa-audit --project=qa-audit-mobile --project=qa-audit-user --workers=1"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.89.0",
     "@auth/prisma-adapter": "^2.11.1",
     "@aws-sdk/client-s3": "^3.1014.0",
     "@aws-sdk/s3-request-presigner": "^3.1024.0",

@@ -9,6 +9,9 @@
  */
 import { test, expect } from '@playwright/test'
 
+// @smoke @public 태그 — CI smoke 필터 및 paths-filter 자동 선택 대상
+test.describe('QA 01 — 공개 페이지', { tag: ['@smoke', '@public'] }, () => {
+
 const PUBLIC_PAGES = [
   { path: '/', label: '홈', expect: null },
   { path: '/about', label: '소개', expect: null },
@@ -84,3 +87,5 @@ test('홈 페이지 — 광고 슬롯 HTML 마커 존재', async ({ page }) => {
     console.warn('[QA-01] 광고 슬롯 미발견 — 조건부 렌더링 확인 필요')
   }
 })
+
+}) // end test.describe QA 01

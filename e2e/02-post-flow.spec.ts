@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('시나리오 2: 커뮤니티 글 목록 → 상세 → 댓글 → 좋아요', () => {
+test.describe('시나리오 2: 커뮤니티 글 목록 → 상세 → 댓글 → 좋아요', { tag: ['@smoke', '@public'] }, () => {
   test('사는 이야기 게시판 — 목록 구조 확인', async ({ page }) => {
     await page.goto('/community/stories')
     await expect(page.locator('main')).toBeVisible()

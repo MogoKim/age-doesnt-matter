@@ -9,7 +9,7 @@
  */
 import { test, expect } from '@playwright/test'
 
-test.describe('일자리', () => {
+test.describe('일자리', { tag: ['@smoke', '@public'] }, () => {
   test('일자리 목록 200 + 아이템 존재', async ({ page }) => {
     const res = await page.goto('/jobs')
     expect(res?.status()).toBeLessThan(400)

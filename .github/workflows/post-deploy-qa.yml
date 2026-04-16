@@ -60,18 +60,51 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
+      - name: Get Deploy URL
+        id: deploy-url
+        run: |
+          # deployment_status 이벤트에서 실제 배포 URL 추출 (Vercel Preview 포함)
+          DEPLOY_URL="${{ github.event.deployment_status.target_url }}"
+          FALLBACK_URL="${{ github.event.inputs.url || env.SITE_URL }}"
+          FINAL_URL="${DEPLOY_URL:-$FALLBACK_URL}"
+          echo "url=$FINAL_URL" >> $GITHUB_OUTPUT
+          echo "배포 URL: $FINAL_URL"
+
       - name: Ad Verification (Browser)
         id: ad-verify
         continue-on-error: true
         env:
-          E2E_BASE_URL: ${{ github.event.inputs.url || env.SITE_URL }}
+          E2E_BASE_URL: ${{ steps.deploy-url.outputs.url }}
         run: |
           npx playwright test e2e/07-ad-verification.spec.ts \
             --project=chromium \
             --project=mobile-chrome \
             --reporter=json > ad-verify-result.json 2>&1 || true
 
-      # ── 4. QA 결과 아티팩트 저장 ─────────────────────────
+      # ── 4. Visual QA (Claude Haiku — 시각적 UI 이상 감지) ──
+      - name: Visual QA
+        id: visual-qa
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}
+        run: |
+          npx tsx scripts/visual-qa.ts --url "${{ steps.deploy-url.outputs.url }}" > visual-qa-result.json 2>&1 || true
+
+      # ── 5. Lighthouse CI (프로덕션 URL 직접 — 접근성/SEO) ──
+      - name: Lighthouse CI
+        id: lighthouse
+        continue-on-error: true
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: ./lighthouserc.prod.json
+          uploadArtifacts: false
+          temporaryPublicStorage: false
+        env:
+          LHCI_BUILD_CONTEXT__CURRENT_HASH: ${{ github.sha }}
+
+      # ── 6. QA 결과 아티팩트 저장 ─────────────────────────
       - name: Upload QA Results
         uses: actions/upload-artifact@v4
         with:
@@ -80,6 +113,7 @@ jobs:
             smoke-result.json
             cron-result.json
             ad-verify-result.json
+            visual-qa-result.json
           retention-days: 30
 
       # ── 5. Gate 2 에이전트 실행 (항상 실행, 결과에 따라 판정) ──
@@ -93,7 +127,10 @@ jobs:
           QA_SMOKE_RESULT: ${{ steps.smoke.outcome }}
           QA_CRON_RESULT: ${{ steps.cron.outcome }}
           QA_AD_VERIFY_RESULT: ${{ steps.ad-verify.outcome }}
-          QA_ALL_PASSED: ${{ (steps.smoke.outcome == 'success' && steps.cron.outcome == 'success' && steps.ad-verify.outcome == 'success') && 'true' || 'false' }}
+          QA_VISUAL_QA_RESULT: ${{ steps.visual-qa.outcome }}
+          QA_LIGHTHOUSE_RESULT: ${{ steps.lighthouse.outcome }}
+          QA_ALL_PASSED: ${{ (steps.smoke.outcome == 'success' && steps.cron.outcome == 'success' && steps.ad-verify.outcome == 'success' && steps.visual-qa.outcome != 'failure') && 'true' || 'false' }}
           QA_COMMIT_SHA: ${{ github.sha }}
           QA_COMMIT_MSG: ${{ github.event.deployment.description || github.event.head_commit.message || '' }}
+          QA_DEPLOY_URL: ${{ steps.deploy-url.outputs.url }}
         run: cd agents && npx tsx cron/runner.ts qa deploy-audit

@@ -33,6 +33,15 @@ export default defineConfig({
       use: { ...devices['Pixel 7'] },
     },
 
+    // ── Smoke Fast 프로젝트 (CI --grep @smoke 전용) ──
+    // @smoke 태그 테스트만 실행 — CI e2e-smoke job에서 사용
+    {
+      name: 'smoke-fast',
+      testMatch: /e2e\/.*\.spec\.ts$/,
+      grep: /@smoke/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+
     // ── QA 프로젝트 ──
     // 1. 어드민 storageState 생성 (setup)
     {

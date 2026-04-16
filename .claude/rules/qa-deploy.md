@@ -5,6 +5,36 @@ description: 배포 QA 규칙 — 광고/에이전트/워크플로우 변경 시
 
 # 배포 QA 규칙 (필수, 예외 없음)
 
+## QA 자동 트리거 (요청 없이 자동 실행)
+
+### Layer 0: 코드 편집 후 즉시 (Hook — settings.json)
+- Write/Edit으로 `.ts/.tsx` 수정 → `auto-typecheck.sh` 자동 실행
+- 타입 에러 발견 시 Claude 대화창에 즉시 표시 (블로킹 없음)
+
+### Layer 2: CI 변경 감지 (dorny/paths-filter — ci.yml)
+| 변경 파일 | 실행 QA |
+|-----------|---------|
+| `src/**`, `public/**` | @smoke E2E (smoke-fast 프로젝트) |
+| `src/components/ad/**`, `next.config.js` | @smoke + @ads E2E 추가 |
+| `agents/**`, `.github/workflows/agents-*.yml` | cron-links 검증만 |
+| `src/app/(admin)/**` | qa-admin E2E |
+| `docs/**`, `*.md`, `.claude/**` | QA 스킵 |
+
+### Layer 3: 배포 후 자동 (deployment_status — post-deploy-qa.yml)
+- Smoke Test → 광고 렌더링 → **Visual QA (Claude Haiku)** → **Lighthouse CI** → Gate 2 에이전트
+- 모든 결과 Slack #qa 자동 보고
+
+### 변경 유형별 QA 매핑
+| 변경 | Layer 0 | Layer 2 | Layer 3 |
+|------|---------|---------|---------|
+| 단어/스타일 수정 | tsc ✅ | @smoke | Smoke+Visual |
+| 광고 컴포넌트 | tsc ✅ | @smoke @ads | Smoke+Visual+Lighthouse |
+| 에이전트 코드 | tsc ✅ | cron-links | Smoke |
+| Prisma 스키마 | tsc ✅ | @smoke | Smoke+Visual |
+| docs만 수정 | 스킵 | 스킵 | Smoke |
+
+---
+
 ## 모든 코드 변경 시
 - `npx tsc --noEmit` 통과 확인
 - 변경한 페이지/API 최소 1개 curl/WebFetch 200 확인

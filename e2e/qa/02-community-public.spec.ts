@@ -10,7 +10,7 @@
  */
 import { test, expect } from '@playwright/test'
 
-test.describe('커뮤니티 목록', () => {
+test.describe('커뮤니티 목록', { tag: ['@smoke', '@public'] }, () => {
   test('커뮤니티 홈 200 + 게시글 아이템 존재', async ({ page }) => {
     const res = await page.goto('/community')
     expect(res?.status()).toBeLessThan(400)
