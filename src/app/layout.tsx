@@ -37,6 +37,7 @@ export const metadata: Metadata = {
     google: process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? undefined,
     other: {
       'google-adsense-account': 'ca-pub-4117999106913048',
+      'naver-site-verification': '62a3c316645c9ebba7f716a9e2d2a6992336aa3c',
     },
   },
   manifest: '/manifest.json',
