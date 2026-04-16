@@ -19,10 +19,10 @@ export default function ContactPage() {
             서비스 이용 중 불편한 점이나 궁금한 점이 있으시면 아래 이메일로 문의해 주세요.
           </p>
           <a
-            href="mailto:help@age-doesnt-matter.com"
+            href="mailto:korea.age.not.matter@gmail.com"
             className="inline-flex items-center gap-2 text-body text-primary font-medium no-underline min-h-[52px]"
           >
-            📧 help@age-doesnt-matter.com
+            📧 korea.age.not.matter@gmail.com
           </a>
         </section>
 
@@ -32,10 +32,10 @@ export default function ContactPage() {
             제휴, 광고, 협업 관련 문의는 아래 이메일로 보내주세요.
           </p>
           <a
-            href="mailto:biz@age-doesnt-matter.com"
+            href="mailto:korea.age.not.matter@gmail.com"
             className="inline-flex items-center gap-2 text-body text-primary font-medium no-underline min-h-[52px]"
           >
-            📧 biz@age-doesnt-matter.com
+            📧 korea.age.not.matter@gmail.com
           </a>
         </section>
 
