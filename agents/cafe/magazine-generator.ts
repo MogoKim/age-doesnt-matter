@@ -230,10 +230,24 @@ export async function main(): Promise<MagazineRunResult[]> {
   console.log('[MagazineGenerator] 시작')
   const startTime = Date.now()
 
-  // 1) 오늘/어제 트렌드 분석 결과 조회
+  // 중복 발행 가드 — GitHub Actions(16:00) + 로컬 launchd(12:30/21:00) 합산 4편 초과 방지
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
+  const todayPublished = await prisma.post.count({
+    where: {
+      boardType: 'MAGAZINE',
+      source: 'BOT',
+      publishedAt: { gte: today },
+    },
+  })
+  if (todayPublished >= 4) {
+    console.log(`[MagazineGenerator] 오늘 이미 ${todayPublished}편 발행됨 — 스킵`)
+    await disconnect()
+    return []
+  }
+
+  // 1) 오늘/어제 트렌드 분석 결과 조회
   let trend = await prisma.cafeTrend.findUnique({
     where: { date_period: { date: today, period: 'daily' } },
   })
@@ -275,6 +289,12 @@ export async function main(): Promise<MagazineRunResult[]> {
     const article = await generateMagazineArticle(fallbackTopic, category, refs, recentTitles)
     if (!article) {
       console.log('[MagazineGenerator] 폴백 주제 생성 실패')
+      await notifySlack({
+        level: 'critical',
+        agent: 'MAGAZINE_GENERATOR',
+        title: '🚨 매거진 발행 완전 실패',
+        body: '트렌드 주제 0개, 욕망지도 폴백 생성도 실패\n오늘 매거진 미발행\n→ DB CafeTrend 확인 필요',
+      })
       await disconnect()
       return []
     }
@@ -287,6 +307,7 @@ export async function main(): Promise<MagazineRunResult[]> {
   // 3) 상위 1~2개 주제로 매거진 생성
   const maxArticles = 2
   let publishedCount = 0
+  let totalCpsCount = 0
   const publishedTitles: string[] = []
   const publishedResults: MagazineRunResult[] = []
 
@@ -394,7 +415,13 @@ export async function main(): Promise<MagazineRunResult[]> {
 
     // 본문 길이 검증 — 너무 짧으면 발행 건너뜀
     const textLength = finalHtml.replace(/<[^>]*>/g, '').trim().length
-    if (textLength < 100) {
+    if (textLength < 500) {
+      await notifySlack({
+        level: 'important',
+        agent: 'MAGAZINE_GENERATOR',
+        title: '⚠️ 매거진 본문 너무 짧음',
+        body: `"${article.title}" — ${textLength}자 (기준 500자)\n→ 발행 건너뜀`,
+      })
       console.warn(`[MagazineGenerator] ⚠️ 본문 너무 짧음(${textLength}자) — 발행 건너뜀: "${article.title}"`)
       continue
     }
@@ -412,6 +439,7 @@ export async function main(): Promise<MagazineRunResult[]> {
       const cpsProducts = await matchCpsProducts(category, article.title, article.content)
       if (cpsProducts.length > 0) {
         await saveCpsLinks(postId, cpsProducts)
+        totalCpsCount += cpsProducts.length
         console.log(`[MagazineGenerator] CPS ${cpsProducts.length}개 매칭: ${cpsProducts.map(p => p.productName).join(', ')}`)
       }
     } catch (err) {
@@ -436,6 +464,7 @@ export async function main(): Promise<MagazineRunResult[]> {
         topicsAvailable: magazineTopics.length,
         published: publishedCount,
         titles: publishedTitles,
+        cpsMatched: totalCpsCount,
       }),
       itemCount: publishedCount,
       executionTimeMs: durationMs,

@@ -7,6 +7,7 @@ import { getMagazineList } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import CategorySearchBar from '@/components/features/community/CategorySearchBar'
+import MagazineFilter from '@/components/features/magazine/MagazineFilter'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
@@ -33,14 +34,15 @@ const getCachedMagazine = unstable_cache(
 export default async function MagazinePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sf?: string }>
+  searchParams: Promise<{ q?: string; sf?: string; category?: string }>
 }) {
-  const { q: rawQ, sf: rawSf } = await searchParams
+  const { q: rawQ, sf: rawSf, category: rawCategory } = await searchParams
   const q = rawQ?.trim() || undefined
   const sf = rawSf === 'title' || rawSf === 'content' ? rawSf : ('both' as const)
+  const category = rawCategory && rawCategory !== '전체' ? rawCategory : undefined
 
-  const { posts } = q
-    ? await getMagazineList({ limit: 20, q, sf })
+  const { posts } = q || category
+    ? await getMagazineList({ limit: 20, q, sf, category })
     : await getCachedMagazine()
 
   const featured = posts[0]
@@ -51,14 +53,23 @@ export default async function MagazinePage({
       {/* GA4 게시판 조회 이벤트 */}
       <BoardViewTracker boardType="MAGAZINE" boardSlug="magazine" />
       <div className="px-4 py-6">
-        <h1 className="text-title font-bold text-foreground mb-6 flex items-center gap-2">
+        <h1 className="text-title font-bold text-foreground mb-4 flex items-center gap-2">
           📖 매거진
         </h1>
+
+        {/* 카테고리 탭 */}
+        <Suspense fallback={null}>
+          <MagazineFilter currentCategory={rawCategory} />
+        </Suspense>
 
         {posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
             <p className="text-body text-muted-foreground leading-relaxed">
-              {q ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.` : '아직 매거진이 없어요. 곧 유익한 글이 올라올 거예요!'}
+              {q
+                ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.`
+                : category
+                  ? `${category} 카테고리 매거진이 아직 없어요. 곧 올라올 거예요!`
+                  : '아직 매거진이 없어요. 곧 유익한 글이 올라올 거예요!'}
             </p>
           </div>
         ) : (
