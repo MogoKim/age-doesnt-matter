@@ -163,9 +163,14 @@ export async function getMemberList(options: MemberListOptions = {}) {
     ...(status && { status }),
     ...(botOnly && { email: { endsWith: '@unao.bot' } }),
     ...(hideBot && {
-      OR: [
-        { email: null },
-        { NOT: { email: { endsWith: '@unao.bot' } } },
+      AND: [
+        {
+          OR: [
+            { email: null },
+            { NOT: { email: { endsWith: '@unao.bot' } } },
+          ],
+        },
+        { NOT: { providerId: { startsWith: 'seed_' } } },
       ],
     }),
     ...(search && {
@@ -195,6 +200,7 @@ export async function getMemberList(options: MemberListOptions = {}) {
       createdAt: true,
       birthYear: true,
       gender: true,
+      providerId: true,
     },
   })
 

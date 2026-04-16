@@ -33,12 +33,13 @@ interface User {
   createdAt: Date
   birthYear: number | null
   gender: string | null
+  providerId: string
 }
 
-function getUserType(email: string | null): 'kakao' | 'bot' | 'admin' {
-  if (!email) return 'kakao'
-  if (email.endsWith('@unao.bot')) return 'bot'
-  return 'admin'
+function getUserType(email: string | null, providerId: string): 'kakao' | 'bot' | 'seed' {
+  if (email?.endsWith('@unao.bot') || providerId.startsWith('bot-')) return 'bot'
+  if (providerId.startsWith('seed_')) return 'seed'
+  return 'kakao'
 }
 
 function getBirthDecade(birthYear: number | null): string {
@@ -175,17 +176,22 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
                       <span className="font-medium text-zinc-900">{user.nickname}</span>
-                      {getUserType(user.email) === 'kakao' && (
+                      {getUserType(user.email, user.providerId) === 'kakao' && (
                         <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">카카오</span>
                       )}
-                      {getUserType(user.email) === 'bot' && (
+                      {getUserType(user.email, user.providerId) === 'bot' && (
                         <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-zinc-100 text-zinc-500 border border-zinc-200">봇</span>
+                      )}
+                      {getUserType(user.email, user.providerId) === 'seed' && (
+                        <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-blue-50 text-blue-500 border border-blue-200">시드</span>
                       )}
                     </div>
                   </td>
                   <td className="px-3 py-3 text-zinc-500 text-xs">
-                    {getUserType(user.email) === 'bot'
+                    {getUserType(user.email, user.providerId) === 'bot'
                       ? <span className="text-zinc-400">{user.email}</span>
+                      : getUserType(user.email, user.providerId) === 'seed'
+                      ? <span className="text-blue-400">테스트 계정</span>
                       : <span>{[user.gender === 'M' ? '남' : user.gender === 'F' ? '여' : null, getBirthDecade(user.birthYear)].filter(Boolean).join(' · ') || '-'}</span>
                     }
                   </td>
