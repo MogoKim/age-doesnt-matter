@@ -203,6 +203,13 @@ hotTopics: 상위 5~7개, keywords: 상위 15개, magazineTopics: 상위 3개, p
       return parsed as TrendAnalysis
     } catch {
       console.log('[TrendAnalyzer] JSON 복구도 실패, 원본 앞부분:', text.slice(0, 300))
+      // Slack 알림 — 파싱 실패는 매거진 미발행으로 이어지는 침묵 장애
+      await notifySlack({
+        level: 'important',
+        agent: 'TREND_ANALYZER',
+        title: '⚠️ 트렌드 분석 JSON 파싱 실패',
+        body: `AI 응답 파싱 2차 실패 — magazineTopics 빈 배열로 폴백\n응답 길이: ${text.length}자 (max_tokens: 4000)\n원본 앞부분: ${text.slice(0, 200)}\n→ 오늘 매거진이 자동 발행되지 않을 수 있음`,
+      })
       return {
         hotTopics: [],
         keywords: [],
@@ -377,7 +384,15 @@ function calcDesireGap(posts: Awaited<ReturnType<typeof getTodayPosts>>): string
 
 /** 매거진 추천 Slack 알림 */
 async function notifyMagazineTopics(analysis: TrendAnalysis, gapReport: string | null) {
-  if (analysis.magazineTopics.length === 0) return
+  if (analysis.magazineTopics.length === 0) {
+    await notifySlack({
+      level: 'important',
+      agent: 'TREND_ANALYZER',
+      title: '⚠️ 매거진 주제 없음',
+      body: `오늘 분석 결과 매거진 추천 주제가 0건입니다.\nhotTopics: ${analysis.hotTopics.length}개 | keywords: ${analysis.keywords.length}개\n→ 오늘 매거진 자동 발행이 되지 않을 수 있습니다.`,
+    })
+    return
+  }
 
   const topicList = analysis.magazineTopics
     .map((t, i) => `${i + 1}. *${t.title}* (${t.score}/10)\n   └ ${t.reason}`)
@@ -451,16 +466,18 @@ async function main() {
 
   const durationMs = Date.now() - startTime
 
-  // BotLog
+  // BotLog — magazineTopics 0건이면 PARTIAL로 기록
+  const logStatus = analysis.magazineTopics.length > 0 ? 'SUCCESS' : 'PARTIAL'
   await prisma.botLog.create({
     data: {
       botType: 'CAFE_CRAWLER',
       action: 'TREND_ANALYSIS',
-      status: 'SUCCESS',
+      status: logStatus,
       details: JSON.stringify({
         postsAnalyzed: posts.length,
         hotTopics: analysis.hotTopics.length,
         magazineTopics: analysis.magazineTopics.length,
+        parseFailure: analysis.magazineTopics.length === 0,
       }),
       itemCount: analysis.hotTopics.length,
       executionTimeMs: durationMs,

@@ -225,8 +225,8 @@ async function main() {
       process.stdout.write(`  ${viewport.name.padEnd(8)} ${name.padEnd(10)} `)
 
       try {
-        await page.goto(pageUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 })
-        await page.waitForTimeout(2000) // 광고/이미지 로딩 대기
+        await page.goto(pageUrl, { waitUntil: 'load', timeout: 30_000 })
+        await page.waitForTimeout(4000) // Next.js 스트리밍 SSR + 광고/이미지 로딩 대기
         const screenshot = await page.screenshot({ fullPage: false })
 
         const result = await analyzeScreenshot(client, screenshot, name, viewport.name, pageUrl)
