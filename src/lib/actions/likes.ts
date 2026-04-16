@@ -33,6 +33,13 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
     return { toggled: false }
   }
 
+  // 삭제/숨김된 글에는 좋아요 불가
+  const targetPost = await prisma.post.findUnique({
+    where: { id: postId, status: 'PUBLISHED' },
+    select: { id: true },
+  })
+  if (!targetPost) return { error: '존재하지 않는 게시글입니다' }
+
   await prisma.$transaction([
     prisma.like.create({
       data: { userId, postId },
@@ -43,9 +50,9 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
     }),
   ])
 
-  // 공감 알림 — 글 작성자에게 (본인 제외)
+  // 공감 알림 — 글 작성자에게 (본인 제외), DELETED 글은 조회 불가
   const post = await prisma.post.findUnique({
-    where: { id: postId },
+    where: { id: postId, status: 'PUBLISHED' },
     select: { authorId: true, likeCount: true },
   })
   if (post && post.authorId !== userId) {

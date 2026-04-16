@@ -259,17 +259,54 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
                         disabled={isPending}
                       />
                       {post.status === 'PUBLISHED' ? (
-                        <ActionButton
-                          label="숨김"
-                          onClick={() =>
-                            startTransition(() =>
-                              adminUpdatePostStatus(post.id, 'HIDDEN')
-                            )
-                          }
-                          disabled={isPending}
-                          variant="warning"
-                        />
+                        <>
+                          <ActionButton
+                            label="숨김"
+                            onClick={() =>
+                              startTransition(() =>
+                                adminUpdatePostStatus(post.id, 'HIDDEN')
+                              )
+                            }
+                            disabled={isPending}
+                            variant="warning"
+                          />
+                          <ActionButton
+                            label="삭제"
+                            onClick={() => {
+                              if (!confirm('이 글을 삭제하시겠습니까?')) return
+                              startTransition(() =>
+                                adminUpdatePostStatus(post.id, 'DELETED')
+                              )
+                            }}
+                            disabled={isPending}
+                            variant="danger"
+                          />
+                        </>
                       ) : post.status === 'HIDDEN' ? (
+                        <>
+                          <ActionButton
+                            label="복원"
+                            onClick={() =>
+                              startTransition(() =>
+                                adminUpdatePostStatus(post.id, 'PUBLISHED')
+                              )
+                            }
+                            disabled={isPending}
+                            variant="success"
+                          />
+                          <ActionButton
+                            label="삭제"
+                            onClick={() => {
+                              if (!confirm('이 글을 삭제하시겠습니까?')) return
+                              startTransition(() =>
+                                adminUpdatePostStatus(post.id, 'DELETED')
+                              )
+                            }}
+                            disabled={isPending}
+                            variant="danger"
+                          />
+                        </>
+                      ) : post.status === 'DELETED' ? (
                         <ActionButton
                           label="복원"
                           onClick={() =>
@@ -333,12 +370,13 @@ function ActionButton({
   label: string
   onClick: () => void
   disabled: boolean
-  variant?: 'default' | 'warning' | 'success'
+  variant?: 'default' | 'warning' | 'success' | 'danger'
 }) {
   const variants = {
     default: 'text-zinc-600 hover:bg-zinc-100',
     warning: 'text-yellow-600 hover:bg-yellow-50',
     success: 'text-green-600 hover:bg-green-50',
+    danger: 'text-red-600 hover:bg-red-50',
   }
   return (
     <button

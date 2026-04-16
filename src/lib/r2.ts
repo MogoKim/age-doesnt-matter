@@ -89,3 +89,17 @@ export async function deleteFromR2(key: string): Promise<void> {
     }),
   )
 }
+
+/**
+ * R2 공개 URL에서 오브젝트 키 추출
+ * 예: "https://pub-xxx.r2.dev/posts/abc/img.webp" → "posts/abc/img.webp"
+ */
+export function extractR2KeyFromUrl(url: string): string | null {
+  try {
+    const u = new URL(url)
+    const path = u.pathname
+    return path.startsWith('/') ? path.slice(1) : path
+  } catch {
+    return null
+  }
+}

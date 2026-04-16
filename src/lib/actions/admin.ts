@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
+import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 import type {
   AdSlot,
   AdType,
@@ -38,6 +39,7 @@ const BOARD_PATHS: Record<string, string> = {
   LIFE2: '/community/life2',
   MAGAZINE: '/magazine',
   JOB: '/jobs',
+  WEEKLY: '/community/weekly',
 }
 
 /** 게시글 상태 변경 시 서비스 페이지 캐시 무효화 */
@@ -49,6 +51,7 @@ function revalidateServicePaths(boardType?: string | null, postId?: string) {
   }
   revalidatePath('/')
   revalidatePath('/best')
+  revalidatePath('/search')
 }
 
 // ─── AdminQueue 액션 ───
@@ -219,6 +222,12 @@ export async function adminUpdatePostStatus(postId: string, status: PostStatus) 
     data: { status },
   })
 
+  // DELETED 처리 시 R2 썸네일 삭제 (best-effort)
+  if (status === 'DELETED' && existing?.thumbnailUrl) {
+    const key = extractR2KeyFromUrl(existing.thumbnailUrl)
+    if (key) await deleteFromR2(key).catch(() => {})
+  }
+
   await prisma.adminAuditLog.create({
     data: {
       adminId: admin.adminId,
@@ -267,7 +276,7 @@ export async function adminBulkAction(
 
   const posts = await prisma.post.findMany({
     where: { id: { in: postIds } },
-    select: { boardType: true },
+    select: { id: true, boardType: true, thumbnailUrl: true },
   })
 
   await prisma.post.updateMany({
@@ -286,8 +295,26 @@ export async function adminBulkAction(
     })
   }
 
+  // DELETED 처리 시 R2 썸네일 삭제 (best-effort)
+  if (action === 'DELETED') {
+    for (const post of posts) {
+      if (post.thumbnailUrl) {
+        const key = extractR2KeyFromUrl(post.thumbnailUrl)
+        if (key) await deleteFromR2(key).catch(() => {})
+      }
+    }
+  }
+
+  // 게시판별 목록 캐시 무효화
   const boardTypes = [...new Set(posts.map((p) => p.boardType))]
   for (const bt of boardTypes) revalidateServicePaths(bt)
+
+  // 각 글 상세 페이지 SSG 캐시 명시적 무효화 (핵심 수정)
+  for (const { id: pid, boardType: bt } of posts) {
+    const bp = BOARD_PATHS[bt]
+    if (bp) revalidatePath(`${bp}/${pid}`)
+  }
+
   revalidatePath('/admin/content')
 }
 

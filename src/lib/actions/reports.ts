@@ -40,9 +40,9 @@ export async function reportPost(
     return { error: '이미 신고한 게시글입니다' }
   }
 
-  // 본인 글 신고 방지
+  // 본인 글 신고 방지 + 삭제/숨김 글 신고 차단
   const post = await prisma.post.findUnique({
-    where: { id: postId },
+    where: { id: postId, status: 'PUBLISHED' },
     select: { authorId: true },
   })
   if (!post) {

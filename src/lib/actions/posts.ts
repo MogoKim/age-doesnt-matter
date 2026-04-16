@@ -8,6 +8,7 @@ import { BOARD_SLUG_MAP, BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { BoardType } from '@/generated/prisma/client'
 import { checkBannedWords } from '@/lib/banned-words'
 import { sanitizeHtml, stripHtmlTags } from '@/lib/sanitize'
+import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 
 interface CreatePostResult {
   error?: string
@@ -236,7 +237,7 @@ export async function deletePost(postId: string): Promise<{ error?: string }> {
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { authorId: true, boardType: true, status: true },
+    select: { authorId: true, boardType: true, status: true, thumbnailUrl: true },
   })
   if (!post || post.status === 'DELETED') {
     return { error: '존재하지 않는 게시글입니다' }
@@ -250,8 +251,17 @@ export async function deletePost(postId: string): Promise<{ error?: string }> {
     data: { status: 'DELETED' },
   })
 
+  // R2 썸네일 삭제 (best-effort)
+  if (post.thumbnailUrl) {
+    const key = extractR2KeyFromUrl(post.thumbnailUrl)
+    if (key) await deleteFromR2(key).catch(() => {})
+  }
+
   const slug = BOARD_TYPE_TO_SLUG[post.boardType]
   revalidatePath(`/community/${slug}`)
+  revalidatePath(`/community/${slug}/${postId}`)
   revalidatePath('/')
+  revalidatePath('/best')
+  revalidatePath('/search')
   redirect(`/community/${slug}`)
 }

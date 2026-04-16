@@ -27,7 +27,7 @@ export async function getCommentsByPostId(
   const orderBy = sort === 'latest' ? { createdAt: 'desc' as const } : { createdAt: 'asc' as const }
 
   const rows = await prisma.comment.findMany({
-    where: { postId, parentId: null },
+    where: { postId, parentId: null, status: { not: 'DELETED' } },
     select: {
       id: true,
       content: true,
@@ -38,7 +38,7 @@ export async function getCommentsByPostId(
         select: { id: true, nickname: true, grade: true, profileImage: true },
       },
       replies: {
-        where: { status: { not: 'HIDDEN' } },
+        where: { status: { notIn: ['HIDDEN', 'DELETED'] } },
         select: {
           id: true,
           content: true,

@@ -128,7 +128,10 @@ export async function getMyScraps(
   const limit = options?.limit ?? 20
 
   const scraps = await prisma.scrap.findMany({
-    where: { userId },
+    where: {
+      userId,
+      post: { status: 'PUBLISHED' },  // 삭제/숨김 글 제외
+    },
     select: {
       id: true,
       post: {
@@ -141,7 +144,9 @@ export async function getMyScraps(
   })
 
   const hasMore = scraps.length > limit
-  const posts = scraps.slice(0, limit).map((s) => toPostSummary(s.post))
+  const posts = scraps.slice(0, limit)
+    .filter((s) => s.post !== null)
+    .map((s) => toPostSummary(s.post!))
   return { posts, hasMore }
 }
 
@@ -192,6 +197,16 @@ export async function getMyComments(
   return { comments, hasMore }
 }
 
+// BoardType → 서비스 URL 접두사 (알림 링크 생성용)
+const BOARD_URL_PREFIX: Record<string, string> = {
+  STORY: '/community/stories',
+  HUMOR: '/community/humor',
+  LIFE2: '/community/life2',
+  WEEKLY: '/community/weekly',
+  MAGAZINE: '/magazine',
+  JOB: '/jobs',
+}
+
 /** 알림 목록 */
 export async function getMyNotifications(
   userId: string,
@@ -208,6 +223,7 @@ export async function getMyNotifications(
       postId: true,
       isRead: true,
       createdAt: true,
+      post: { select: { boardType: true } },  // boardType 기반 올바른 URL 생성
     },
     orderBy: { createdAt: 'desc' },
     take: limit + 1,
@@ -215,14 +231,21 @@ export async function getMyNotifications(
   })
 
   const hasMore = rows.length > limit
-  const notifications: NotificationItem[] = rows.slice(0, limit).map((n) => ({
-    id: n.id,
-    type: n.type as NotificationItem['type'],
-    message: n.content,
-    linkUrl: n.postId ? `/community/stories/${n.postId}` : '/my/notifications',
-    isRead: n.isRead,
-    createdAt: n.createdAt.toISOString(),
-  }))
+  const notifications: NotificationItem[] = rows.slice(0, limit).map((n) => {
+    let linkUrl = '/my/notifications'
+    if (n.postId) {
+      const prefix = n.post?.boardType ? BOARD_URL_PREFIX[n.post.boardType] : null
+      linkUrl = prefix ? `${prefix}/${n.postId}` : `/community/stories/${n.postId}`
+    }
+    return {
+      id: n.id,
+      type: n.type as NotificationItem['type'],
+      message: n.content,
+      linkUrl,
+      isRead: n.isRead,
+      createdAt: n.createdAt.toISOString(),
+    }
+  })
 
   return { notifications, hasMore }
 }
