@@ -31,6 +31,20 @@ interface User {
   receivedLikes: number
   lastLoginAt: Date
   createdAt: Date
+  birthYear: number | null
+  gender: string | null
+}
+
+function getUserType(email: string | null): 'kakao' | 'bot' | 'admin' {
+  if (!email) return 'kakao'
+  if (email.endsWith('@unao.bot')) return 'bot'
+  return 'admin'
+}
+
+function getBirthDecade(birthYear: number | null): string {
+  if (!birthYear) return '-'
+  const decade = Math.floor(birthYear / 10) * 10
+  return `${decade % 100}년대생`
 }
 
 interface MemberTableProps {
@@ -141,7 +155,7 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50">
               <th className="px-4 py-3 text-left font-medium text-zinc-600">닉네임</th>
-              <th className="px-3 py-3 text-left font-medium text-zinc-600">이메일</th>
+              <th className="px-3 py-3 text-left font-medium text-zinc-600">유형 / 프로필</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">등급</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">상태</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">온보딩</th>
@@ -158,8 +172,23 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
               const status = STATUS_LABELS[user.status] || STATUS_LABELS.ACTIVE
               return (
                 <tr key={user.id} className="border-b border-zinc-100 hover:bg-zinc-50">
-                  <td className="px-4 py-3 font-medium text-zinc-900">{user.nickname}</td>
-                  <td className="px-3 py-3 text-zinc-500">{user.email || '-'}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium text-zinc-900">{user.nickname}</span>
+                      {getUserType(user.email) === 'kakao' && (
+                        <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">카카오</span>
+                      )}
+                      {getUserType(user.email) === 'bot' && (
+                        <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-zinc-100 text-zinc-500 border border-zinc-200">봇</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-zinc-500 text-xs">
+                    {getUserType(user.email) === 'bot'
+                      ? <span className="text-zinc-400">{user.email}</span>
+                      : <span>{[user.gender === 'M' ? '남' : user.gender === 'F' ? '여' : null, getBirthDecade(user.birthYear)].filter(Boolean).join(' · ') || '-'}</span>
+                    }
+                  </td>
                   <td className="px-3 py-3 text-center">
                     <select
                       value={user.grade}

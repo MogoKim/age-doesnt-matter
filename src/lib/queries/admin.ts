@@ -162,7 +162,12 @@ export async function getMemberList(options: MemberListOptions = {}) {
   const where = {
     ...(status && { status }),
     ...(botOnly && { email: { endsWith: '@unao.bot' } }),
-    ...(hideBot && { NOT: { email: { endsWith: '@unao.bot' } } }),
+    ...(hideBot && {
+      OR: [
+        { email: null },
+        { NOT: { email: { endsWith: '@unao.bot' } } },
+      ],
+    }),
     ...(search && {
       OR: [
         { nickname: { contains: search, mode: 'insensitive' as const } },
@@ -188,6 +193,8 @@ export async function getMemberList(options: MemberListOptions = {}) {
       receivedLikes: true,
       lastLoginAt: true,
       createdAt: true,
+      birthYear: true,
+      gender: true,
     },
   })
 
