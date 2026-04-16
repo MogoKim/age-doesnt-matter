@@ -154,17 +154,30 @@ function getKstContext(): string {
 /** HUMOR 보드 글 생성 시 최근 엔터테인먼트 크롤링 글 조회 */
 async function getLatestEntertainPost(): Promise<{ title: string; content: string } | null> {
   try {
-    return await prisma.cafePost.findFirst({
-      where: {
-        isUsable: true,
-        OR: [
-          { desireCategory: 'ENTERTAIN' },
-          { topics: { hasSome: ['드라마', '예능', '연예인', '트로트', '넷플릭스', '임영웅'] } },
-        ],
-      },
-      orderBy: { likeCount: 'desc' },
-      select: { title: true, content: true },
-    })
+    // KST 오늘 자정을 UTC로 변환
+    const nowKST = new Date(Date.now() + 9 * 60 * 60 * 1000)
+    const startOfTodayKST = new Date(nowKST)
+    startOfTodayKST.setUTCHours(0, 0, 0, 0)
+    const startOfTodayUTC = new Date(startOfTodayKST.getTime() - 9 * 60 * 60 * 1000)
+    const sevenDaysAgoUTC = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+    // 오늘 크롤링 글 우선, 없으면 최근 7일 fallback
+    for (const since of [startOfTodayUTC, sevenDaysAgoUTC]) {
+      const post = await prisma.cafePost.findFirst({
+        where: {
+          isUsable: true,
+          crawledAt: { gte: since },
+          OR: [
+            { desireCategory: 'ENTERTAIN' },
+            { topics: { hasSome: ['드라마', '예능', '연예인', '트로트', '넷플릭스', '임영웅'] } },
+          ],
+        },
+        orderBy: { crawledAt: 'desc' },
+        select: { title: true, content: true },
+      })
+      if (post) return post
+    }
+    return null
   } catch {
     return null
   }
@@ -182,6 +195,7 @@ function stripMarkdown(text: string): string {
     .replace(/`(.+?)`/g, '$1')         // `code`
     .replace(/^[-*+]\s/gm, '')         // list bullets
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [link](url)
+    .replace(/\*+/g, '')                     // 나머지 * /** 일괄 제거
     .trim()
 }
 
@@ -281,6 +295,23 @@ export async function generatePost(
     }
   }
 
+  // 이전 게시 이력 조회 — 중복 주제 방지 (실패해도 글 생성 계속)
+  let recentHint = ''
+  try {
+    const recentPosts = await prisma.post.findMany({
+      where: { author: { email: `bot-${personaId.toLowerCase()}@unao.bot` } },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { title: true },
+    })
+    if (recentPosts.length > 0) {
+      recentHint = `\n\n[최근 쓴 글들 — 이 주제들과 완전히 다른 소재로 써주세요]\n` +
+        recentPosts.map(r => `- ${r.title}`).join('\n')
+    }
+  } catch {
+    // 조회 실패 시 글 생성은 계속
+  }
+
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: length.maxTokens,
@@ -289,7 +320,7 @@ export async function generatePost(
       trendContext,
     messages: [{
       role: 'user',
-      content: `오늘 "${topic}" 주제로 글을 써주세요.${entertainHint}
+      content: `오늘 "${topic}" 주제로 글을 써주세요.${entertainHint}${recentHint}
 
 응답 형식 (이 형식을 정확히 지켜주세요):
 제목: (15~30자, 당신 말투로)
