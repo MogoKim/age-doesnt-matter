@@ -38,7 +38,7 @@ export async function submitContact(data: ContactData): Promise<{ error?: string
   // 4. 이메일 전송
   const typeLabel = data.type === 'service' ? '서비스 문의' : '제휴·광고 문의'
   const { error } = await resend.emails.send({
-    from: 'noreply@send.age-doesnt-matter.com',
+    from: 'noreply@age-doesnt-matter.com',
     to: 'korea.age.not.matter@gmail.com',
     subject: `[우나어 문의] ${typeLabel}`,
     text: [
@@ -51,6 +51,9 @@ export async function submitContact(data: ContactData): Promise<{ error?: string
     ].join('\n'),
   })
 
-  if (error) return { error: '전송 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.' }
+  if (error) {
+    console.error('[contact] Resend error:', JSON.stringify(error))
+    return { error: `[DEBUG] ${(error as { message?: string }).message ?? JSON.stringify(error)}` }
+  }
   return {}
 }
