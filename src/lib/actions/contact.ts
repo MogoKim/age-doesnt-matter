@@ -18,10 +18,13 @@ export async function submitContact(data: ContactData): Promise<{ error?: string
   // 1. honeypot — 봇이면 채워짐, 조용히 무시
   if (data._honey) return {}
 
-  // 2. Rate limit (IP 기반, 1시간 3회)
+  // 2. Rate limit (IP 기반, 1시간 10회)
   const headersList = await headers()
-  const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
-  const rl = checkRateLimit(`contact:${ip}`, { limit: 3, windowMs: 60 * 60 * 1000 })
+  const ip =
+    headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    headersList.get('x-real-ip')?.trim() ??
+    'unknown'
+  const rl = checkRateLimit(`contact:${ip}`, { limit: 10, windowMs: 60 * 60 * 1000 })
   if (!rl.allowed) return { error: '잠시 후 다시 시도해 주세요.' }
 
   // 3. 입력값 검증
@@ -35,7 +38,7 @@ export async function submitContact(data: ContactData): Promise<{ error?: string
   // 4. 이메일 전송
   const typeLabel = data.type === 'service' ? '서비스 문의' : '제휴·광고 문의'
   const { error } = await resend.emails.send({
-    from: 'onboarding@resend.dev',
+    from: 'noreply@age-doesnt-matter.com',
     to: 'korea.age.not.matter@gmail.com',
     subject: `[우나어 문의] ${typeLabel}`,
     text: [
