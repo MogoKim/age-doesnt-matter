@@ -231,5 +231,11 @@ export function gtmSetUserProperties(props: {
   registration_method?: string
 }): void {
   if (typeof window === 'undefined' || !window.gtag) return
-  window.gtag('set', 'user_properties', props)
+  const { user_id, ...userProps } = props
+  // user_id는 GA4 User Explorer 연동을 위해 user_properties와 별도 설정
+  // user_properties에 포함하면 커스텀 속성으로만 저장돼 User Explorer 미작동
+  if (user_id) {
+    window.gtag('set', { user_id })
+  }
+  window.gtag('set', 'user_properties', userProps)
 }

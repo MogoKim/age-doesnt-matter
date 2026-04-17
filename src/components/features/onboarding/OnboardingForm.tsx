@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { checkNickname, completeOnboarding } from '@/lib/actions/onboarding'
-import { gtmSignUp } from '@/lib/gtm'
+import { gtmSignUp, sendGtmEvent } from '@/lib/gtm'
 
 // ── 닉네임 유효성 검사 ──
 const NICKNAME_REGEX = /^[가-힣a-zA-Z0-9]+$/
@@ -99,6 +99,18 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
   }, [])
+
+  // 가입 퍼널 추적 — Step 1 진입 (컴포넌트 첫 마운트 시)
+  useEffect(() => {
+    sendGtmEvent('signup_step', { step: 1, step_name: 'nickname' })
+  }, [])
+
+  // 가입 퍼널 추적 — Step 2 진입
+  useEffect(() => {
+    if (step === 2) {
+      sendGtmEvent('signup_step', { step: 2, step_name: 'terms' })
+    }
+  }, [step])
 
   function handleStep1Next() {
     if (nicknameStatus !== 'valid') return
