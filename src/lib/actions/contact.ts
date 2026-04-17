@@ -38,7 +38,7 @@ export async function submitContact(data: ContactData): Promise<{ error?: string
   // 4. 이메일 전송
   const typeLabel = data.type === 'service' ? '서비스 문의' : '제휴·광고 문의'
   const { error } = await resend.emails.send({
-    from: 'noreply@age-doesnt-matter.com',
+    from: 'noreply@send.age-doesnt-matter.com',
     to: 'korea.age.not.matter@gmail.com',
     subject: `[우나어 문의] ${typeLabel}`,
     text: [
