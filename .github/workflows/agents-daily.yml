@@ -67,6 +67,10 @@ on:
     - cron: "20 23 * * *"
     # 07:00 KST 월요일 = 22:00 UTC (일요일) — CTO 주간 아키텍처 리뷰
     - cron: "0 22 * * 0"
+    # 13:00 KST = 04:00 UTC — 일자리 자동 수집 1차
+    - cron: "0 4 * * *"
+    # 19:00 KST = 10:00 UTC — 일자리 자동 수집 2차
+    - cron: "0 10 * * *"
   workflow_dispatch:
     inputs:
       agent:
@@ -196,6 +200,10 @@ jobs:
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=qa-verify" >> $GITHUB_OUTPUT ;;
               "20 23 * * *")
                 echo "agent=qa" >> $GITHUB_OUTPUT; echo "task=content-audit" >> $GITHUB_OUTPUT ;;
+              "0 4 * * *")
+                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=job-scraper" >> $GITHUB_OUTPUT ;;
+              "0 10 * * *")
+                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=job-scraper" >> $GITHUB_OUTPUT ;;
               *)
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
             esac
@@ -203,8 +211,8 @@ jobs:
       - name: Set QA env
         if: github.event.schedule == '45 14 * * *'
         run: echo "QA_MODE=cron-audit" >> $GITHUB_ENV
-      - name: Install Playwright Chromium (magazine thumbnail)
-        if: steps.determine.outputs.task == 'magazine-generate'
+      - name: Install Playwright Chromium (magazine thumbnail + job scraper)
+        if: steps.determine.outputs.task == 'magazine-generate' || steps.determine.outputs.task == 'job-scraper'
         run: npx playwright install chromium --with-deps
       - name: Run agent
         if: steps.determine.outputs.agent != 'skip'
