@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import { ensureBotUser } from '../core/bot-user.js'
 
 /**
  * CMO Health Anxiety Responder -- P2 정희씨 타겟
@@ -20,21 +21,6 @@ const HEALTH_KEYWORDS = ['건강', '갱년기', '혈압', '당뇨', '관절', '�
 
 // -- 봇 유저 조회/생성 --
 
-async function ensureBotUser(): Promise<string> {
-  const email = 'bot-health@unao.bot'
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: {},
-    create: {
-      email,
-      nickname: '건강길잡이',
-      providerId: `bot-health-${Date.now()}`,
-      role: 'USER',
-      grade: 'WARM_NEIGHBOR',
-    },
-  })
-  return user.id
-}
 
 // -- CafePost에서 건강 관련 글 수집 --
 

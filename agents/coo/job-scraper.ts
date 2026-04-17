@@ -16,6 +16,7 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import { ensureBotUser } from '../core/bot-user.js'
 import type { AgentResult } from '../core/types.js'
 import type { RawJob } from './job-types.js'
 import { filterJobs, summarizeFilter } from './job-filter.js'
@@ -40,7 +41,7 @@ class COOJobScraper extends BaseAgent {
 
   protected async run(): Promise<Omit<AgentResult, 'durationMs' | 'timestamp'>> {
     // 봇 유저 확인 (일자리 게시용)
-    const botUser = await this.ensureBotUser()
+    const botUserId = await ensureBotUser('bot-job@unao.bot', '일자리봇', 'bot-job')
 
     // Step 1: 크롤링
     console.log('[JobScraper] Step 1: 50plus.or.kr 크롤링 시작')
@@ -91,7 +92,7 @@ class COOJobScraper extends BaseAgent {
             title: processed.cleanTitle,
             content,
             summary: processed.subtitle,
-            authorId: botUser.id,
+            authorId: botUserId,
             source: 'BOT',
             status: 'PUBLISHED',
             publishedAt: new Date(),
@@ -326,26 +327,6 @@ class COOJobScraper extends BaseAgent {
     return jobs.filter((j) => !existingSet.has(j.sourceUrl))
   }
 
-  /** 봇 유저 확인/생성 */
-  private async ensureBotUser() {
-    const BOT_EMAIL = 'bot-job@unao.bot'
-    let user = await prisma.user.findUnique({ where: { email: BOT_EMAIL } })
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: BOT_EMAIL,
-          nickname: '일자리봇',
-          providerId: `bot-job-${Date.now()}`,
-          role: 'USER',
-          grade: 'WARM_NEIGHBOR',
-        },
-      })
-      console.log('[JobScraper] 봇 유저 생성 완료:', user.id)
-    }
-
-    return user
-  }
 }
 
 // 실행

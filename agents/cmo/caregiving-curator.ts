@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import { ensureBotUser } from '../core/bot-user.js'
 
 /**
  * CMO Caregiving Curator -- P5 현주씨 타겟
@@ -20,21 +21,6 @@ const CAREGIVING_KEYWORDS = ['간병', '돌봄', '치매', '요양', '요양보�
 
 // -- 봇 유저 조회/생성 --
 
-async function ensureBotUser(): Promise<string> {
-  const email = 'bot-caregiving@unao.bot'
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: {},
-    create: {
-      email,
-      nickname: '돌봄길잡이',
-      providerId: `bot-caregiving-${Date.now()}`,
-      role: 'USER',
-      grade: 'WARM_NEIGHBOR',
-    },
-  })
-  return user.id
-}
 
 // -- CafePost에서 간병/돌봄 글 수집 --
 

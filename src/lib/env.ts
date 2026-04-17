@@ -82,6 +82,14 @@ export const GOOGLE_SERVICE_ACCOUNT_JSON = optionalEnv('GOOGLE_SERVICE_ACCOUNT_J
 export const GA4_PROPERTY_ID = optionalEnv('GA4_PROPERTY_ID', '')
 export const SEARCH_CONSOLE_SITE_URL = optionalEnv('SEARCH_CONSOLE_SITE_URL', 'https://age-doesnt-matter.com')
 
+/** AI API (agents/ 에서 사용 — optional, 없으면 해당 에이전트만 비활성화) */
+export const ANTHROPIC_API_KEY = optionalEnv('ANTHROPIC_API_KEY', '')
+export const CLAUDE_MODEL_STRATEGIC = optionalEnv('CLAUDE_MODEL_STRATEGIC', 'claude-opus-4-6')
+export const CLAUDE_MODEL_HEAVY = optionalEnv('CLAUDE_MODEL_HEAVY', 'claude-sonnet-4-6')
+export const CLAUDE_MODEL_LIGHT = optionalEnv('CLAUDE_MODEL_LIGHT', 'claude-haiku-4-5')
+export const OPENAI_API_KEY = optionalEnv('OPENAI_API_KEY', '')
+export const GEMINI_API_KEY = optionalEnv('GEMINI_API_KEY', '')
+
 /** App */
 export const NEXT_PUBLIC_APP_URL = optionalEnv('NEXT_PUBLIC_APP_URL', 'https://age-doesnt-matter.com')
 export const NODE_ENV = optionalEnv('NODE_ENV', 'development')

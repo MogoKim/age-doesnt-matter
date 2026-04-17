@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import { ensureBotUser } from '../core/bot-user.js'
 
 /**
  * CMO Humor Curator -- P3 미영씨 타겟
@@ -28,21 +29,6 @@ function getKstContext(): string {
 
 // -- 봇 유저 조회/생성 --
 
-async function ensureBotUser(): Promise<string> {
-  const email = 'bot-humor@unao.bot'
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: {},
-    create: {
-      email,
-      nickname: '웃음배달부',
-      providerId: `bot-humor-${Date.now()}`,
-      role: 'USER',
-      grade: 'WARM_NEIGHBOR',
-    },
-  })
-  return user.id
-}
 
 // -- CafePost에서 유머 글 수집 --
 
