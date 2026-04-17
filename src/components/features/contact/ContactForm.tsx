@@ -114,7 +114,10 @@ export default function ContactForm({ type }: ContactFormProps) {
               disabled={isPending}
               className="w-full px-4 py-3 rounded-xl border border-border bg-background text-body text-foreground placeholder:text-muted-foreground resize-none outline-none transition-colors focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,111,97,0.1)] disabled:opacity-50"
             />
-            <p className="text-sm text-muted-foreground text-right">{message.length}/500</p>
+            <div className="flex justify-between">
+              <p className="text-sm text-muted-foreground">{message.trim().length < 10 ? `최소 10자 이상 입력해 주세요 (현재 ${message.length}자)` : ''}</p>
+              <p className="text-sm text-muted-foreground">{message.length}/500</p>
+            </div>
           </div>
 
           {/* 에러 */}
