@@ -134,7 +134,7 @@ async function ensureLoggedIn(context: BrowserContext): Promise<void> {
 
     if (!chatInputVisible) {
       console.log('\n[Gemini Scraper] ⚠️  구글 로그인 필요!')
-      console.log('  1. 열린 Chrome 창에서 mogoyongseok@gmail.com 로그인')
+      console.log('  1. 열린 Chrome 창에서 Google 계정으로 로그인')
       console.log('  2. gemini.google.com 메인 화면이 열리면')
       console.log('  3. 이 터미널에서 Enter 를 누르세요\n')
       await new Promise<void>((resolve) => {

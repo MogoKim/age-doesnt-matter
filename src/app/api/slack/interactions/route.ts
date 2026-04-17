@@ -7,39 +7,13 @@
  * - AdminQueue 상태 업데이트 + 원메시지 버튼 제거
  */
 import { NextResponse } from 'next/server'
-import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
+import { verifySlackSignature } from '@/lib/slack-verify'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET ?? ''
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN ?? ''
-
-// ── Slack 서명 검증 (기존 /api/slack/route.ts와 동일 로직) ──
-
-function verifySlackSignature(
-  signature: string | null,
-  timestamp: string | null,
-  body: string,
-): boolean {
-  if (!signature || !timestamp || !SLACK_SIGNING_SECRET) return false
-
-  const now = Math.floor(Date.now() / 1000)
-  if (Math.abs(now - Number(timestamp)) > 300) return false
-
-  const sigBasestring = `v0:${timestamp}:${body}`
-  const hmac = crypto
-    .createHmac('sha256', SLACK_SIGNING_SECRET)
-    .update(sigBasestring)
-    .digest('hex')
-  const expectedSignature = `v0=${hmac}`
-
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature),
-  )
-}
 
 // ── Slack chat.update API 호출 ──
 

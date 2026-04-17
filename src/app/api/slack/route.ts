@@ -6,40 +6,10 @@
  * 3. 커맨드 핸들러로 라우팅
  */
 import { NextResponse } from 'next/server'
-import crypto from 'crypto'
+import { verifySlackSignature } from '@/lib/slack-verify'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-
-const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET ?? ''
-
-/**
- * Slack 요청 서명 검증
- * https://api.slack.com/authentication/verifying-requests-from-slack
- */
-function verifySlackSignature(
-  signature: string | null,
-  timestamp: string | null,
-  body: string,
-): boolean {
-  if (!signature || !timestamp || !SLACK_SIGNING_SECRET) return false
-
-  // 5분 이상 된 요청 거부 (replay attack 방지)
-  const now = Math.floor(Date.now() / 1000)
-  if (Math.abs(now - Number(timestamp)) > 300) return false
-
-  const sigBasestring = `v0:${timestamp}:${body}`
-  const hmac = crypto
-    .createHmac('sha256', SLACK_SIGNING_SECRET)
-    .update(sigBasestring)
-    .digest('hex')
-  const expectedSignature = `v0=${hmac}`
-
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature),
-  )
-}
 
 /**
  * POST /api/slack — Slack 슬래시 커맨드 + 이벤트 수신
