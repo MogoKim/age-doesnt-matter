@@ -386,16 +386,20 @@ async function main() {
     // 4. Slack 알림
     const emoji = totalFailed === 0 ? '✅' : totalPublished > 0 ? '⚠️' : '❌'
     const skipInfo = totalSkippedFilter > 0 ? `, 필터 스킵 ${totalSkippedFilter}` : ''
-    await notifySlack(
-      'log',
-      `${emoji} [시트 스크래퍼]${filterLabel} ${totalProcessed}건 처리 → ${totalPublished}건 게시, ${totalFailed}건 실패${skipInfo}`,
-    )
+    await notifySlack({
+      level: 'info',
+      agent: 'COO',
+      title: `[시트 스크래퍼]${filterLabel} 처리 완료`,
+      body: `${emoji} ${totalProcessed}건 처리 → ${totalPublished}건 게시, ${totalFailed}건 실패${skipInfo}`,
+    })
   } catch (err) {
     console.error('[sheet-scraper] 치명적 오류:', err)
-    await notifySlack(
-      'system',
-      `❌ [시트 스크래퍼] 치명적 오류: ${err instanceof Error ? err.message : String(err)}`,
-    ).catch(() => {})
+    await notifySlack({
+      level: 'critical',
+      agent: 'COO',
+      title: '[시트 스크래퍼] 치명적 오류',
+      body: `❌ ${err instanceof Error ? err.message : String(err)}`,
+    }).catch(() => {})
   } finally {
     await disconnect()
   }

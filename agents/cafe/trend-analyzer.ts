@@ -490,12 +490,14 @@ async function main() {
 
 main().catch(async (err) => {
   console.error('[TrendAnalyzer] 치명적 오류:', err)
+  const msg = err instanceof Error ? err.message : String(err)
+  const isCreditError = msg.includes('credit balance is too low')
   await notifySlack({
-    level: 'critical',
+    level: isCreditError ? 'important' : 'critical',
     agent: 'TREND_ANALYZER',
-    title: '트렌드 분석 실패',
-    body: err instanceof Error ? err.message : String(err),
+    title: isCreditError ? '🚨 Anthropic 크레딧 소진' : '트렌드 분석 실패',
+    body: isCreditError ? '크레딧 잔액 부족 — Plans & Billing에서 충전 필요' : msg,
   })
   await disconnect()
-  process.exit(1)
+  process.exit(isCreditError ? 0 : 1)
 })
