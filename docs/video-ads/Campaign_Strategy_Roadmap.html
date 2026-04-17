@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우나어 비디오 캠페인 전략 로드맵</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #818CF8;
+            --surface: #ffffff;
+            --background: #F3F4F6;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --relation: #EC4899;
+            --retire: #3B82F6;
+            --money: #10B981;
+            --health: #F59E0B;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+
+        .desire-section {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .desire-section:hover {
+            transform: translateY(-5px);
+        }
+
+        .desire-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--background);
+        }
+
+        .desire-badge {
+            padding: 8px 16px;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 15px;
+        }
+
+        .badge-relation { background-color: var(--relation); }
+        .badge-retire { background-color: var(--retire); }
+        .badge-money { background-color: var(--money); }
+        .badge-health { background-color: var(--health); }
+
+        .desire-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .concept-card {
+            background: var(--background);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #E5E7EB;
+            transition: all 0.2s ease;
+        }
+
+        .concept-card:hover {
+            box-shadow: 0 10px 15px rgba(0,0,0,0.03);
+            background: white;
+            border-color: var(--primary-light);
+        }
+
+        .concept-type {
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .concept-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0 0 15px 0;
+            color: var(--text-main);
+        }
+
+        .concept-info {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .concept-info strong {
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .timeline {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            border-left: 3px solid var(--primary);
+        }
+
+        .timeline ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .timeline li {
+            margin-bottom: 5px;
+        }
+        .timeline li:last-child {
+            margin-bottom: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>우나어 8초 숏폼 광고 전략 로드맵</h1>
+        <p>커뮤니티 빅데이터 기반 4대 핵심 욕망(Desire) 전략 기획 (AI 시각화 프롬프트 작성 전 단계)</p>
+    </div>
+
+    <!-- 1. RELATION -->
+    <section class="desire-section">
+        <div class="desire-header">
+            <span class="desire-badge badge-relation">1. RELATION (관계)</span>
+            <h2 class="desire-title">외로움 해소와 동세대 공감 연대</h2>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 25px;">캠페인 목적: "나만 이렇게 외로운 게 아니었구나"라는 위로를 주며 우나어 커뮤니티의 소속감을 자극</p>
+        
+        <div class="concept-grid">
+            <div class="concept-card">
+                <span class="concept-type">Concept A</span>
+                <h3 class="concept-title">"그 시간" (시네마틱 감성)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 혼자 있는 시간의 고독을 완벽한 위로로 반전
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~4초:</strong> 어두운 거실, 홀로 앉아 있는 쓸쓸한 식탁의 모습</li>
+                        <li><strong>4~8초:</strong> 스마트폰의 따뜻한 빛이 번지며 너무나 환하고 행복한 미소로 반전 (빛나는 말풍선 합성)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="concept-card">
+                <span class="concept-type">Concept B</span>
+                <h3 class="concept-title">"우리끼리 비밀 수다" (UI 공감형)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 남편과 자식에게 할 수 없는 속마음 공유
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~4초:</strong> 커피잔을 들고 편안하게 웃는 주인공 위로 거대한 카톡 대화창들이 폭발하듯 팝업</li>
+                        <li><strong>4~8초:</strong> "며느리 눈치 보여서 나 원~", "언니 저도요!" 공감 텍스트가 쏟아지며 즐거워하는 모습</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="concept-card">
+                <span class="concept-type">Concept C</span>
+                <h3 class="concept-title">"가장 편한 내 편" (일상 브이로그)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 우나어 앱이 가장 친한 친구가 되었음을 어필
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~4초:</strong> 산책하며 폰으로 커뮤니티 글을 읽고 소리 내어 웃는 자연스러운 다큐 연출</li>
+                        <li><strong>4~8초:</strong> "요즘 얘네(우나어 친구들) 때문에 웃고 살아요"라는 카피와 함께 기분 좋은 미소 짓기</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. RETIRE -->
+    <section class="desire-section">
+        <div class="desire-header">
+            <span class="desire-badge badge-retire">2. RETIRE (은퇴/노후)</span>
+            <h2 class="desire-title">상실감 극복과 '동세대' 커뮤니티 연대</h2>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 25px;">캠페인 목적: 가르치는/일자리 플랫폼이 아닌, 직장(명함)이 사라진 빈자리를 채워주는 '동년배들의 따뜻한 소속감' 어필</p>
+        
+        <div class="concept-grid">
+            <div class="concept-card">
+                <span class="concept-type">Concept A</span>
+                <h3 class="concept-title">"시간이 멈춘 아침" (대비 효과)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 출근하지 않는 낯선 아침의 상실감을 커뮤니티 안부로 치유
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~5초:</strong> 아침, 갈 곳이 없어 창밖을 우두커니 바라보는 은퇴한 여성의 쓸쓸한 모습</li>
+                        <li><strong>5~10초:</strong> 폰에서 "퇴직 1일차, 다들 뭐하시나요?" 글에 동년배들의 따뜻한 공감이 쏟아지며 환하게 웃음</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="concept-card">
+                <span class="concept-type">Concept B</span>
+                <h3 class="concept-title">"은퇴 선배들의 비밀 노트" (생생한 조언)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 학원/강사의 가르침이 아닌, 진짜 은퇴한 또래들의 위로와 찐 노하우
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~5초:</strong> 늦은 밤, 다가오는 은퇴에 막막해하며 한숨 쉬며 폰을 보는 40대 후반 여성</li>
+                        <li><strong>5~10초:</strong> "먼저 은퇴한 3년차 선배들의 솔직한 이야기"를 읽으며 안도감에 고개를 끄덕이고 웃음</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="concept-card">
+                <span class="concept-type">Concept C</span>
+                <h3 class="concept-title">"함께라서 괜찮아" (대체 소속감)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 사라진 옛 직함을 그리워하지 않고, 커뮤니티에서 새 친구들을 만나는 즐거움
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~5초:</strong> 낡은 다이어리와 옛날 명함첩을 조용히 서랍에 넣으며 헛헛해하는 40대 후반 여성의 모습</li>
+                        <li><strong>5~10초:</strong> 폰을 보며 여고생처럼 빵 터지게 웃음. 과거의 미련을 버리고 수다를 떠는 통쾌한 에너지</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- 3. MONEY -->
+    <section class="desire-section">
+        <div class="desire-header">
+            <span class="desire-badge badge-money">3. MONEY (돈/경제적 안정)</span>
+            <h2 class="desire-title">불안한 노후 자금과 소박한 현실 벌이</h2>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 25px;">캠페인 목적: 나만 노후 준비가 안 된 것 같은 막막함을 커뮤니티의 '찐 공감'으로 덜어주고, 가르치려 드는 대신 또래들의 소박하고 현실적인 벌이 꿀팁을 교환하는 연대감 어필</p>
+        
+        <div class="concept-grid">
+            <div class="concept-card">
+                <span class="concept-type">Concept A</span>
+                <h3 class="concept-title">"나만 뒤처진 걸까" (불안의 공유)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 부족한 노후 준비에 대한 자괴감을 '다들 똑같이 겪고 있다'는 안도감으로 치유
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~5초:</strong> 늦은 밤, 가계부나 청구서를 보며 막막한 현실 노후 자금에 깊게 한숨 쉬고 우울해하는 모습</li>
+                        <li><strong>5~10초:</strong> "저만 아직 노후 준비 제대로 못했나요ㅠㅠ" 글에 달린 동년배들의 수많은 '저도 그래요' 공감을 보며 가슴 찡한 위로의 미소를 지음</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="concept-card">
+                <span class="concept-type">Concept B</span>
+                <h3 class="concept-title">"푼돈이라도 함께" (현실 꿀팁 교환)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 전문가의 거창한/사기성 투자가 아닌, 소소하지만 확실한 또래들의 현실 알바/절약 경험 교환
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~5초:</strong> 폰에서 쏟아지는 허황된 투자 사기, 재테크 정보 홍수에 피곤하고 지친 표정을 지음</li>
+                        <li><strong>5~10초:</strong> 친구들이 나누는 "전 소소하게 동네 알바 시작했어요", "앱테크 5만원 인증!" 글들을 보며 유레카 하듯 생기를 되찾음</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="concept-card">
+                <span class="concept-type">Concept C</span>
+                <h3 class="concept-title">"서로 지켜주는 어른들" (안전망 연대)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 경제적으로 불안한 시니어를 노리는 유혹/사기를 서로 뜯어말려주는 든든한 커뮤니티의 소속감
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~5초:</strong> 폰으로 온 수상한 투자/대금 유혹 문자를 보며 벼랑 끝에 몰린 듯 솔깃하여 흔들리는 불안한 모습</li>
+                        <li><strong>5~10초:</strong> "그거 절대 하지마세요! 사기에요!"라며 서로 나서서 지켜주는 커뮤니티의 연대를 보며 가슴을 쓸어내리고 든든하게 웃음</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. HEALTH -->
+    <section class="desire-section">
+        <div class="desire-header">
+            <span class="desire-badge badge-health">4. HEALTH (건강/신체변화)</span>
+            <h2 class="desire-title">"나만 그런 게 아니구나" 신체 변화의 불안 해소</h2>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 25px;">캠페인 목적: 나이 들며 겪는 생소한 신체 변화들(관절염, 갱년기, 나잇살)을 혼자 끙끙 앓지 않고, 전국의 또래들과 공유하며 깊은 위로와 경험 기반의 진짜 꿀팁을 얻는 커뮤니티의 힘 어필</p>
+        
+        <div class="concept-grid">
+            <div class="concept-card">
+                <span class="concept-type">Concept A</span>
+                <h3 class="concept-title">"나만 그런 줄 알았어" (안도감)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 갱년기 등 신체 변화로 인한 우울감을 또래 커뮤니티의 집단 공감으로 치유
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~5초:</strong> 늦은 밤, 거울을 보며 갑자기 생기를 잃은 얼굴과 몸의 변화에 깊게 우울해하는 모습</li>
+                        <li><strong>5~10초:</strong> 폰에서 "저만 이렇게 매일 우울하고 열이 오르나요?" 라는 글에 "어머 저도요!" 공감이 폭풍처럼 쏟아지자 코끝이 찡해지며 안도의 미소를 지음</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="concept-card">
+                <span class="concept-type">Concept B</span>
+                <h3 class="concept-title">"동지들의 숨은 꿀팁" (찐 경험담)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 병원이나 정보글이 아닌, 똑같은 아픔을 겪은 '동년배 친구들'의 생생한 극복 노하우 공유
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~5초:</strong> 몸이 예전 같지 않다며 찌뿌둥하게 소파에 푹 기대어 피곤해하는 모습</li>
+                        <li><strong>5~10초:</strong> 우나어 친구들의 "약보다 아침 10분 조깅이 직빵이더라고요!" 등 생생 경험담을 읽고 유레카를 외치듯 생기를 찾고 크게 웃음</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="concept-card">
+                <span class="concept-type">Concept C</span>
+                <h3 class="concept-title">"다시 태어나는 기분" (동반 성장)</h3>
+                <div class="concept-info">
+                    <strong>목적:</strong> 혼자서 포기할 뻔한 건강 관리를 상호 응원하며 함께 이겨내는 커뮤니티 특유의 연대 활력
+                </div>
+                <div class="timeline">
+                    <ul>
+                        <li><strong>0~5초:</strong> 핏이 안 맞는 예전 옷을 보며 좌절하고 체중계 위에서 한숨을 푹 쉬는 모습</li>
+                        <li><strong>5~10초:</strong> 커뮤니티의 '#오늘의만보걷기' 동년배 인증 릴레이를 보며 긍정 자극을 받고, 결의에 찬 밝고 당당한 표정으로 웃음</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 실전 제작 가이드: RELATION Concept A -->
+    <section class="desire-section" style="border: 2px dashed var(--primary); background: #F8FAFC;">
+        <div class="desire-header">
+            <span class="desire-badge badge-relation" style="background-color: var(--text-main);">실전 제작 가이드</span>
+            <h2 class="desire-title">RELATION - Concept A ("그 시간")</h2>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 25px;">현재 최종 확정되어 힉스필드와 캡컷을 통해 제작 중인 첫 번째 광고 영상의 상황 연출 내용과 세부 프롬프트안입니다.</p>
+
+        <div class="concept-card" style="margin-bottom: 20px;">
+            <h3 class="concept-title">🎬 컷 1: 고독한 4초 (힉스필드 1차 생성)</h3>
+            <p style="margin-bottom: 10px;"><strong>상황/연출:</strong> 늦은 밤, 어둡고 차가운 거실 식탁에 40대 중반 여성이 홀로 앉아 식은 밥그릇을 쓸쓸하게 바라봅니다. 빈 스마트폰 화면의 희미한 푸른빛만이 감도는 외로운 분위기 연출.</p>
+            
+            <details style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #E5E7EB; cursor: pointer;">
+                <summary style="font-weight: 700; color: var(--primary);">▶ 상세 프롬프트 (클릭하여 열기)</summary>
+                <div style="margin-top: 15px; font-family: monospace; font-size: 0.9rem; background: var(--background); padding: 15px; border-radius: 5px; line-height: 1.5; color: var(--text-main);">
+                    <strong>[한국어 프롬프트]</strong><br>
+                    매우 우아하고 기품 있는 세련된 40대 중반의 한국 여성. 자연스럽고 옅은 목주름과 부드러운 턱선을 지녔으며, 맑고 투명하게 빛나는 피부(glass skin)를 가졌다. 헤어는 볼륨감 있는 우아한 단발머리. 그녀는 늦은 밤, 어둡고 차가운 거실 식탁에 홀로 앉아 식은 밥그릇을 쓸쓸하게 내려다본다. 어두운 방 안에는 스마트폰 화면의 희미한 푸른빛만이 돌고 있다. 스마트폰 화면에는 아무런 글자도 텍스트도 없이 깨끗한 인터페이스만 떠 있다. 카메라는 그녀를 향해 아주 천천히 다가간다(Slow push in). 매우 우울하고 고독한 다큐멘터리 영화 스타일, 현실적인 조명.<br><br>
+                    <strong>[영어 프롬프트]</strong><br>
+                    A cinematic, slow-motion shot of a highly elegant and sophisticated South Korean woman in her mid 40s. She has subtle, natural neck lines, an elegant jawline, and exudes beautifully radiant skin. She has elegantly styled medium-short hair with natural volume. She sits alone at a dimly lit, cold dining table in the evening, gazing down sadly at a bowl of cold rice. The room is dark, illuminated only by the faint blue glow of her smartphone on the table. The smartphone screen is a clean, blank glowing interface completely without any text. The camera slowly pushes in towards her face. Moody, melancholic cinematic lighting, highly realistic.
+                </div>
+            </details>
+        </div>
+
+        <div class="concept-card" style="margin-bottom: 20px;">
+            <h3 class="concept-title">🎬 컷 2: 안도와 위로의 4초 (힉스필드 2차 생성)</h3>
+            <p style="margin-bottom: 10px;"><strong>상황/연출:</strong> 글자 없는 빈 스마트폰 화면에서부터 빛나는 마법 같은 비눗방울들이 경쾌하게 피어오르고, 찬란한 황금빛 불빛(Golden hour light)이 그녀의 그늘진 얼굴을 환하게 밝혀줍니다. 고독에서 벗어나 가슴 벅찬 환한 미소를 짓는 반전 연출.</p>
+
+            <details style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #E5E7EB; cursor: pointer;">
+                <summary style="font-weight: 700; color: var(--primary);">▶ 상세 프롬프트 (클릭하여 열기)</summary>
+                <div style="margin-top: 15px; font-family: monospace; font-size: 0.9rem; background: var(--background); padding: 15px; border-radius: 5px; line-height: 1.5; color: var(--text-main);">
+                    <strong>[한국어 프롬프트]</strong><br>
+                    우아하고 세련된 40대 중반의 한국 여성 얼굴 클로즈업. 자연스럽고 옅은 목주름과 단아한 턱선, 맑게 빛나는 피부. 그녀는 혼자 밥을 먹다 스마트폰을 들여다본다. 처음에는 식탁의 외로움으로 인해 얼굴이 짙고 차가운 푸른빛 그늘에 가려져 우울해 보인다. 하지만 점차 글자 없는 빈 스마트폰 화면에서부터 따뜻하게 빛나는 마법 같은 비눗방울들과 빛의 구슬들이 허공으로 경쾌하게 피어오른다. 동시에 압도적으로 따뜻하고 찬란한 황금빛 불빛(radiant Golden hour light)이 그녀의 그늘진 얼굴을 그라데이션처럼 환하게 밝혀준다. 어둠이 걷히며 그녀의 눈빛은 벅찬 감동과 안도감으로 빛나고, 이내 너무나 행복하고 진심 어린 큰 미소를 짓는다. 고독에서 완벽한 위로와 기쁨으로 변하는 극적인 조명 전환, 하이엔드 영화 연출.<br><br>
+                    <strong>[영어 프롬프트]</strong><br>
+                    Close-up shot of the same elegant South Korean woman in her mid 40s with subtle, natural neck lines and beautifully radiant skin. Initially, her face is cast in a deep, cold, lonely shadow while looking at her smartphone. Slowly, a completely blank and clean glowing screen emits beautifully glowing, magical soap bubbles and radiant orbs of warm light floating cheerfully into the air. Simultaneously, an overwhelmingly warm, radiant, and comforting golden light washes over her face, completely driving away the dark, cold shadows. With this beautiful transition of light, her initial loneliness completely melts away into an overwhelming sense of profound happiness and relief. Her eyes sparkle, and she breaks into a very bright, huge, and genuinely radiant smile of true comfort. A dramatic and deeply emotional cinematic transition from cold darkness to joyful golden light.
+                </div>
+            </details>
+        </div>
+
+        <div class="concept-card">
+            <h3 class="concept-title">✂️ 캡컷(CapCut) 최후반 합성 작업 가이드</h3>
+            <p style="margin-bottom: 10px;"><strong>진행 목적:</strong> 힉스필드로 연출한 고퀄리티 감성 영상 2컷을 잇고, AI가 그리지 못하는 실제 카톡 말풍선과 로고, 음악을 입히는 단계입니다.</p>
+            <div class="timeline" style="margin-top: 15px;">
+                <ul>
+                    <li><strong>1단계 (영상 합치기):</strong> 힉스필드 무음 영상 붙이기 (컷 1 -> 컷 2)</li>
+                    <li><strong>2단계 (말풍선 오버레이):</strong> 캡컷 [오버레이] 기능 탭하기. 화면 속 빛의 구슬이 떠오르는 타이밍에 맞춰 실제 카톡 말풍선(PNG 투명 파일)을 허공에 팝업 시키기.<br>
+                        <em>- "다들 독립하고 나니 너무 허전하네요 ㅠㅠ"</em><br>
+                        <em>- "어머, 제 얘기인 줄 알았어요!"</em><br>
+                        <em>- "우리 나이 땐 다 그래요. 같이 커피나 해요 😊"</em>
+                    </li>
+                    <li><strong>3단계 (로고 마스킹):</strong> 마지막 미소 지을 때 화면 센터 혹은 여백에 '우리 나이가 어때서' 로고를 페이드인 스티커로 삽입.</li>
+                    <li><strong>4단계 (오디오 추가):</strong> [오디오] 탭에서 '따뜻한 어쿠스틱 피아노' 무료 음원을 깔고, 카톡 말풍선이 뜰 때마다 '팝(Pop)' 또는 알림 소리(ding)를 배치.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 실전 제작 가이드: RELATION Concept B -->
+    <section class="desire-section" style="border: 2px dashed var(--primary); background: #F8FAFC;">
+        <div class="desire-header">
+            <span class="desire-badge badge-relation" style="background-color: var(--text-main);">실전 제작 가이드</span>
+            <h2 class="desire-title">RELATION - Concept B ("우리끼리 비밀 수다")</h2>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 25px;">두 번째 콘셉트인 '우리끼리 비밀 수다'의 상황 연출 내용과 세부 프롬프트안입니다. (실제 대화 텍스트는 캡컷에서 합성합니다)</p>
+
+        <div class="concept-card" style="margin-bottom: 20px;">
+            <h3 class="concept-title">🎬 컷 1: 팝업되는 메시지 알림 (힉스필드 1차 생성)</h3>
+            <p style="margin-bottom: 10px;"><strong>상황/연출:</strong> 40대 중반 여성이 햇살 들어오는 카페에서 커피를 마시며 여유롭게 폰을 봅니다. 화면에서 마치 카톡 대화창이 쏟아지듯 귀여운 빛의 구슬들이 통통 폭발하듯 팝업됩니다.</p>
+            
+            <details style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #E5E7EB; cursor: pointer;">
+                <summary style="font-weight: 700; color: var(--primary);">▶ 상세 프롬프트 (클릭하여 열기)</summary>
+                <div style="margin-top: 15px; font-family: monospace; font-size: 0.9rem; background: var(--background); padding: 15px; border-radius: 5px; line-height: 1.5; color: var(--text-main);">
+                    <strong>[한국어 프롬프트]</strong><br>
+                    우아하고 세련된 40대 중반의 한국 여성. 자연스럽고 옅은 목주름과 단아한 턱선, 맑게 빛나는 투명한 피부. 햇살이 가득 들어오는 따뜻하고 예쁜 카페에 앉아 커피잔을 들고 편안하게 미소 짓고 있다. 그녀가 탁자 위의 스마트폰을 내려다보는 순간, 글자가 없는 빈 스마트폰 화면에서부터 영롱하고 반투명한 마법 같은 빛의 구슬들(glowing, semi-transparent orbs of warm light)이 통통 튀며 공중으로 경쾌하게 팝업된다. 이 귀여운 빛의 구슬들이 마치 대화가 쏟아지듯 빠른 속도로 허공에 떠오른다. 밝고 활기차며 생동감 넘치는 영화적 연출, 따뜻한 자연광.<br><br>
+                    <strong>[영어 프롬프트]</strong><br>
+                    A cinematic shot of a highly elegant and sophisticated South Korean woman in her mid 40s. She has subtle, natural neck lines, an elegant jawline, and beautifully radiant skin. She is relaxing in a warm, beautiful, sunlit cafe, holding a coffee cup and smiling comfortably. As she looks down at her smartphone on the table, magically glowing, semi-transparent cute orbs of warm light pop up and playfully bounce into the air from the completely blank screen. These delightful bubbles of light rapidly float up as if a burst of exciting messages are arriving. Bright, lively, and incredibly cheerful cinematic lighting, warm natural sunlight.
+                </div>
+            </details>
+        </div>
+
+        <div class="concept-card" style="margin-bottom: 20px;">
+            <h3 class="concept-title">🎬 컷 2: 터지는 공감의 찐웃음 (힉스필드 2차 생성)</h3>
+            <p style="margin-bottom: 10px;"><strong>상황/연출:</strong> 쏟아지는 동세대들의 찐공감글을 보면서 너무 재미있어서 빵 터지듯 크게 웃습니다. 가족에게 차마 말하지 못했던 속마음을 또래들과 털어놓으며 얻는 해방감과 통쾌한 웃음을 보여줍니다.</p>
+
+            <details style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #E5E7EB; cursor: pointer;">
+                <summary style="font-weight: 700; color: var(--primary);">▶ 상세 프롬프트 (클릭하여 열기)</summary>
+                <div style="margin-top: 15px; font-family: monospace; font-size: 0.9rem; background: var(--background); padding: 15px; border-radius: 5px; line-height: 1.5; color: var(--text-main);">
+                    <strong>[한국어 프롬프트]</strong><br>
+                    우아한 40대 중반 한국 여성의 생동감 넘치는 얼굴 클로즈업. 맑게 빛나는 피부와 자연스럽고 옅은 목주름. 공중으로 끝없이 경쾌하게 떠오르는 찬란하고 따뜻한 빛의 구슬들과 몽환적인 비눗방울들에 둘러싸여 있다. 그녀는 스마트폰의 빈 화면을 보며 너무나 재미있는 이야기를 들은 것처럼 엄청나게 즐거워하며 '빵' 터지듯 크게 소리 내어 웃는다. 눈가에는 기분 좋은 진짜 웃음 주름이 접히고, 답답했던 속마음을 털어놓은 듯한 통쾌함과 해방감이 얼굴 가득 묻어난다. 가장 편안한 친구와 수다를 떠는 듯한 최고의 행복감, 밝은 햇살 조명, 역동적인 웃음과 긍정 에너지.<br><br>
+                    <strong>[영어 프롬프트]</strong><br>
+                    Dynamic close-up shot of the same elegant South Korean woman in her mid 40s, surrounded by countless glowing, joyful floating orbs of light and magical soap bubbles. Her flawlessly radiant skin is bathed in warm sunlight. Looking at her blank smartphone screen, she completely bursts into genuine, uncontrollable laughter as if hearing the funniest story. She laughs out loud beautifully, showing deeply authentic joy and a sense of absolute liberation and relief. Her eyes playfully crinkle with pure happiness as if sharing the best secret with close friends. Highly dynamic, energetic, and overwhelmingly cheerful mood, beautiful cinematic sunlight, vibrant and moving reality.
+                </div>
+            </details>
+        </div>
+
+        <div class="concept-card">
+            <h3 class="concept-title">✂️ 캡컷(CapCut) 최후반 합성 작업 가이드</h3>
+            <p style="margin-bottom: 10px;"><strong>진행 목적:</strong> 화면 위로 여러 개의 말풍선을 차례대로 팝업시켜 수다가 쏟아지는 시각적 효과를 주는 단계입니다.</p>
+            <div class="timeline" style="margin-top: 15px;">
+                <ul>
+                    <li><strong>1단계 (영상 합치기):</strong> 힉스필드 무음 영상 1컷과 2컷을 캡컷 타임라인에 차례대로 불러옵니다.</li>
+                    <li><strong>2단계 (폭발하는 말풍선 연출):</strong> 영상에서 폰을 보는 순간, 여러 개의 카톡 말풍선 투명 이미지를 화면 이곳저곳에 겹쳐서 '팝! 팝! 팝!' 빠르게 나타나게 [팝업 애니메이션]을 적용합니다.<br>
+                        <em>- 말풍선 1: "며느리 눈치 보여서 나 원 참~"</em><br>
+                        <em>- 말풍선 2: "어머 언니 저도요! 속 터져요 증말 🤣"</em><br>
+                        <em>- 말풍선 3: "그러게요, 안 키워주자니 그렇고..."</em>
+                    </li>
+                    <li><strong>3단계 (오디오 생동감):</strong> 빠르고 경쾌한 어쿠스틱/보사노바 음악을 배경으로 깔고, 말풍선이 뜰 때마다 '팝(Pop)', '톡(Tok)' 하는 유쾌한 메시지 알림 효과음을 연달아 넣어 생동감을 극대화합니다.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+</body>
+</html>

@@ -84,3 +84,16 @@ check-data.mjs
 
 # 매거진 로컬 러너 일일 결과 파일 (gitignore — 로컬 전용)
 agents/cafe/.magazine-daily-*.json
+
+# Local plugin state (bkit, OMC)
+.bkit/
+.omc/
+agents/.omc/
+
+# QA 결과 파일 (생성 산출물 — 커밋 제외)
+visual-qa-result.json
+
+# 로컬 광고 소재 (대용량 이미지/영상 — git 불가)
+assets/campaigns/
+assets/hero_banner/
+assets/review/
