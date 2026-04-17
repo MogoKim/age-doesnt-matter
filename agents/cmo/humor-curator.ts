@@ -162,7 +162,7 @@ async function main() {
   console.log(`[HumorCurator] 유머 모음 생성: ${humor.title}`)
 
   // 3. Post 저장
-  const botUserId = await ensureBotUser()
+  const botUserId = await ensureBotUser('bot-humor@unao.bot', '웃음배달부', 'bot-humor')
   const post = await prisma.post.create({
     data: {
       title: humor.title,

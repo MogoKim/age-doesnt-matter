@@ -132,7 +132,7 @@ async function main() {
   console.log(`[CaregivingCurator] 다이제스트 생성: ${digest.title}`)
 
   // 3. Post 저장
-  const botUserId = await ensureBotUser()
+  const botUserId = await ensureBotUser('bot-caregiving@unao.bot', '돌봄길잡이', 'bot-caregiving')
   const post = await prisma.post.create({
     data: {
       title: digest.title,

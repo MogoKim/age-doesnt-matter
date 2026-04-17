@@ -138,7 +138,7 @@ async function main() {
   console.log(`[HealthAnxietyResponder] Q&A 생성: ${article.title}`)
 
   // 3. Post 저장
-  const botUserId = await ensureBotUser()
+  const botUserId = await ensureBotUser('bot-health@unao.bot', '건강길잡이', 'bot-health')
   const post = await prisma.post.create({
     data: {
       title: article.title,
