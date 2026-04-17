@@ -359,12 +359,12 @@ export default function AddToHomeScreen() {
             </button>
 
             {/* 로고 */}
-            <div className="flex justify-center mb-4">
+            <div className="flex justify-center mb-5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo.png"
+                src="/logo-symbol.png"
                 alt="우나어"
-                className="w-14 h-14 rounded-2xl object-contain bg-white"
+                className="w-14 h-14 object-contain"
               />
             </div>
 
@@ -396,29 +396,37 @@ export default function AddToHomeScreen() {
                 </div>
               </>
             ) : (
-              /* Android Chrome / Samsung Internet: 욕망맵 안 A (RELATION) */
+              /* Android Chrome / Samsung Internet */
               <>
                 {/* 헤드카피 */}
-                <div className="text-center mb-5">
-                  <p className="text-[22px] font-bold text-foreground leading-snug break-keep">
+                <div className="text-center mb-1">
+                  <p className="text-[20px] font-bold text-foreground leading-snug break-keep">
                     우리 또래 이야기,<br />
-                    언제든 꺼낼 수 있게<br />
-                    <span className="text-primary">무료로 다운받기</span>
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    앱 설치와 달라요 — 버튼 하나
+                    언제든 꺼낼 수 있게
                   </p>
                 </div>
 
-                {/* 혜택 2줄 */}
-                <ul className="space-y-2 mb-5">
-                  <li className="flex items-center gap-2 text-[16px] text-foreground">
-                    <span className="text-primary font-bold">✓</span>
+                {/* 구분선 */}
+                <div className="border-t border-primary/20 my-4" />
+
+                {/* 슬로건 */}
+                <p className="text-center text-[17px] font-bold text-primary mb-5 break-keep">
+                  우리 — 서로를 잇다
+                </p>
+
+                {/* 혜택 3줄 */}
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-center gap-2 text-[15px] text-foreground">
+                    <span className="text-primary font-bold flex-shrink-0">✓</span>
                     혼자 답답할 때, 우리 또래 바로
                   </li>
-                  <li className="flex items-center gap-2 text-[16px] text-foreground">
-                    <span className="text-primary font-bold">✓</span>
+                  <li className="flex items-center gap-2 text-[15px] text-foreground">
+                    <span className="text-primary font-bold flex-shrink-0">✓</span>
                     나만의 이야기 편하게 나눠요
+                  </li>
+                  <li className="flex items-center gap-2 text-[15px] text-foreground">
+                    <span className="text-primary font-bold flex-shrink-0">✓</span>
+                    검색 없이 홈에서 바로 열려요
                   </li>
                 </ul>
 
@@ -434,7 +442,7 @@ export default function AddToHomeScreen() {
 
             <button
               onClick={handleDismiss}
-              className="mt-3 w-full h-[52px] text-[16px] text-muted-foreground"
+              className="mt-3 w-full h-[44px] text-[11px] text-muted-foreground/50"
             >
               나중에 할게요
             </button>
