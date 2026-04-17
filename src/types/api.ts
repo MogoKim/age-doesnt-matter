@@ -137,7 +137,7 @@ export type NotificationType =
   | 'LIKE'
   | 'GRADE_UP'
   | 'SYSTEM'
-  | 'POST_STATUS'
+  | 'CONTENT_HIDDEN'
 
 export interface NotificationItem {
   id: string
