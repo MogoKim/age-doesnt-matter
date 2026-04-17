@@ -254,8 +254,14 @@ model User {
   nicknameChangedAt DateTime?
 
   // PWA 설치 추적
-  pwaInstalled      Boolean    @default(false)
-  pwaInstalledAt    DateTime?
+  pwaInstalled         Boolean   @default(false)
+  pwaInstalledAt       DateTime?
+  // PWA 팝업/배너 추적 (유저별 세밀한 상태 관리)
+  pwaPopupShownCount   Int       @default(0)
+  pwaPopupLastShownAt  DateTime?
+  pwaBannerDismissCount   Int       @default(0)
+  pwaBannerLastDismissAt  DateTime?
+  pwaBannerHiddenUntil    DateTime?
 
   // 타임스탬프
   lastLoginAt     DateTime   @default(now())
