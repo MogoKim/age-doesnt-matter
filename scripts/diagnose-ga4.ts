@@ -8,6 +8,7 @@
  * 기본값: https://age-doesnt-matter.com
  */
 
+console.log('[WATCH] diagnose-ga4.ts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import { chromium } from '@playwright/test'
 
 const BASE_URL = process.argv.find((a) => a.startsWith('http')) ?? 'https://age-doesnt-matter.com'

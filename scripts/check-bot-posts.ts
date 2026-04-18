@@ -2,6 +2,7 @@
  * 오늘 봇 게시글 조회
  * Usage: npx tsx scripts/check-bot-posts.ts
  */
+console.log('[WATCH] check-bot-posts.ts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import 'dotenv/config'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'

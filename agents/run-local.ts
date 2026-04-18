@@ -2,6 +2,7 @@
  * 로컬 실행 래퍼 — .env + .env.local 로드 후 지정 스크립트 실행
  * 사용: npx tsx run-local.ts cafe/crawler.ts
  */
+console.log('[WATCH] run-local.ts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import { config } from 'dotenv'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'

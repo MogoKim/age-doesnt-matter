@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+console.log("[WATCH] generate-qa-html.js 실행됨 —", new Date().toISOString(), "| 2주 모니터링 대상")
 const fs = require('fs')
 const path = require('path')
 

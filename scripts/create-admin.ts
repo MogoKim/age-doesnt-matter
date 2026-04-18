@@ -2,6 +2,7 @@
  * 어드민 계정 생성 CLI
  * Usage: npx tsx scripts/create-admin.ts <email> <nickname> <password>
  */
+console.log('[WATCH] create-admin.ts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import 'dotenv/config'
 import bcrypt from 'bcryptjs'
 import { PrismaPg } from '@prisma/adapter-pg'

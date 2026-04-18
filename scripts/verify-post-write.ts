@@ -6,6 +6,7 @@
  * - FontSizeSettings 미리보기
  */
 
+console.log('[WATCH] verify-post-write.ts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import { chromium, type Browser } from 'playwright'
 import { readFileSync } from 'fs'
 import { join } from 'path'

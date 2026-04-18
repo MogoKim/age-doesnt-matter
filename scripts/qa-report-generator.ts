@@ -11,6 +11,7 @@
  *
  * 출력: docs/qa/bug-report.md
  */
+console.log('[WATCH] qa-report-generator.ts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+console.log('[WATCH] fetch_cafe_data.ts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'

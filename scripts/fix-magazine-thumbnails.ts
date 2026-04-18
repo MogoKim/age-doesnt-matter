@@ -10,6 +10,7 @@
  * 드라이런: npx tsx scripts/fix-magazine-thumbnails.ts --dry-run
  */
 
+console.log('[WATCH] fix-magazine-thumbnails.ts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { readFileSync } from 'fs'

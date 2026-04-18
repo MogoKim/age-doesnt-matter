@@ -2,6 +2,7 @@
  * Slack 채널 매핑 테스트 스크립트
  * 실행: npx tsx scripts/test-slack-channels.mts
  */
+console.log('[WATCH] test-slack-channels.mts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import { config } from 'dotenv'
 config({ path: '.env.local' })
 

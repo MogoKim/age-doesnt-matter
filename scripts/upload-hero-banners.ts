@@ -5,6 +5,7 @@
  * 파이프라인:
  *   로컬 파일 읽기 → uploadToR2() (서버→R2, CORS 없음) → curl 접근성 확인 → Prisma Banner 생성
  */
+console.log('[WATCH] upload-hero-banners.ts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import { config } from 'dotenv'
 config({ path: '.env.local' })
 

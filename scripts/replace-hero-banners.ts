@@ -2,6 +2,7 @@
  * 히어로 배너 교체 스크립트 — 기존 배너 전체 삭제 후 새 이미지로 등록
  * Usage: npx tsx scripts/replace-hero-banners.ts
  */
+console.log('[WATCH] replace-hero-banners.ts 실행됨 —', new Date().toISOString(), '| 2주 모니터링 대상')
 import { config } from 'dotenv'
 config({ path: '.env.local' })
 
