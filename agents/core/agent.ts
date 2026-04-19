@@ -120,8 +120,16 @@ ${constitution}
           executionTimeMs: durationMs,
         },
       })
-    } catch {
-      console.error(`[${this.config.name}] Failed to write log`)
+    } catch (err) {
+      console.error(`[${this.config.name}] Failed to write BotLog:`, err)
+      try {
+        await notifyAdmin({
+          level: 'important',
+          agent: this.config.botType,
+          title: `BotLog 기록 실패 — ${action}`,
+          body: err instanceof Error ? err.message : String(err),
+        })
+      } catch { /* Slack도 실패하면 circular fail 방지 위해 그냥 진행 */ }
     }
   }
 

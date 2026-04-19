@@ -1,6 +1,7 @@
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { generateComment, getBotUser } from '../seed/generator.js'
+import { safeBotLog } from '../core/safe-log.js'
 
 /**
  * COO 에이전트 — 댓글 활성화
@@ -47,16 +48,7 @@ async function main() {
 
     if (zeroPosts.length === 0) {
       console.log('[COO] 댓글 활성화 대상 없음')
-      await prisma.botLog.create({
-        data: {
-          botType: 'COO',
-          action: 'COMMENT_ACTIVATE',
-          status: 'SUCCESS',
-          details: '댓글 0개 게시글 없음',
-          itemCount: 0,
-          executionTimeMs: Date.now() - start,
-        },
-      })
+      await safeBotLog({ botType: 'COO', action: 'COMMENT_ACTIVATE', status: 'SUCCESS', details: '댓글 0개 게시글 없음', itemCount: 0, executionTimeMs: Date.now() - start })
       return
     }
 
@@ -128,16 +120,7 @@ async function main() {
 
     const summary = `댓글 활성화 완료: ${postCount}개 게시글에 ${activatedCount}개 댓글 배치`
 
-    await prisma.botLog.create({
-      data: {
-        botType: 'COO',
-        action: 'COMMENT_ACTIVATE',
-        status: 'SUCCESS',
-        details: summary,
-        itemCount: activatedCount,
-        executionTimeMs: Date.now() - start,
-      },
-    })
+    await safeBotLog({ botType: 'COO', action: 'COMMENT_ACTIVATE', status: 'SUCCESS', details: summary, itemCount: activatedCount, executionTimeMs: Date.now() - start })
 
     if (activatedCount > 0) {
       await notifySlack({
@@ -153,16 +136,7 @@ async function main() {
     const errorMsg = err instanceof Error ? err.message : String(err)
     console.error('[COO] 댓글 활성화 실패:', errorMsg)
 
-    await prisma.botLog.create({
-      data: {
-        botType: 'COO',
-        action: 'COMMENT_ACTIVATE',
-        status: 'FAILED',
-        details: errorMsg,
-        itemCount: 0,
-        executionTimeMs: Date.now() - start,
-      },
-    })
+    await safeBotLog({ botType: 'COO', action: 'COMMENT_ACTIVATE', status: 'FAILED', details: errorMsg, itemCount: 0, executionTimeMs: Date.now() - start })
   } finally {
     await disconnect()
   }

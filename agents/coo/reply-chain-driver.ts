@@ -2,6 +2,7 @@ import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { generateReply, getBotUser } from '../seed/generator.js'
 import { REPLY_CHAINS, getChainsForTrigger } from '../seed/reply-chains.js'
+import { safeBotLog } from '../core/safe-log.js'
 
 /**
  * COO 에이전트 — 대댓글 체인 생성
@@ -32,16 +33,7 @@ async function main() {
 
     if (triggerUsers.length === 0) {
       console.log('[COO] trigger 페르소나 유저 없음')
-      await prisma.botLog.create({
-        data: {
-          botType: 'COO',
-          action: 'REPLY_CHAIN_DRIVE',
-          status: 'SUCCESS',
-          details: 'trigger 유저 없음',
-          itemCount: 0,
-          executionTimeMs: Date.now() - start,
-        },
-      })
+      await safeBotLog({ botType: 'COO', action: 'REPLY_CHAIN_DRIVE', status: 'SUCCESS', details: 'trigger 유저 없음', itemCount: 0, executionTimeMs: Date.now() - start })
       return
     }
 
@@ -72,16 +64,7 @@ async function main() {
 
     if (noReplyComments.length === 0) {
       console.log('[COO] 대댓글 체인 대상 없음')
-      await prisma.botLog.create({
-        data: {
-          botType: 'COO',
-          action: 'REPLY_CHAIN_DRIVE',
-          status: 'SUCCESS',
-          details: '답글 없는 trigger 댓글 없음',
-          itemCount: 0,
-          executionTimeMs: Date.now() - start,
-        },
-      })
+      await safeBotLog({ botType: 'COO', action: 'REPLY_CHAIN_DRIVE', status: 'SUCCESS', details: '답글 없는 trigger 댓글 없음', itemCount: 0, executionTimeMs: Date.now() - start })
       return
     }
 
@@ -146,16 +129,7 @@ async function main() {
 
     const summary = `대댓글 체인 완료: ${chainCount}개 체인, ${replyCount}개 답글 생성`
 
-    await prisma.botLog.create({
-      data: {
-        botType: 'COO',
-        action: 'REPLY_CHAIN_DRIVE',
-        status: 'SUCCESS',
-        details: summary,
-        itemCount: replyCount,
-        executionTimeMs: Date.now() - start,
-      },
-    })
+    await safeBotLog({ botType: 'COO', action: 'REPLY_CHAIN_DRIVE', status: 'SUCCESS', details: summary, itemCount: replyCount, executionTimeMs: Date.now() - start })
 
     if (replyCount > 0) {
       await notifySlack({
@@ -171,16 +145,7 @@ async function main() {
     const errorMsg = err instanceof Error ? err.message : String(err)
     console.error('[COO] 대댓글 체인 실패:', errorMsg)
 
-    await prisma.botLog.create({
-      data: {
-        botType: 'COO',
-        action: 'REPLY_CHAIN_DRIVE',
-        status: 'FAILED',
-        details: errorMsg,
-        itemCount: 0,
-        executionTimeMs: Date.now() - start,
-      },
-    })
+    await safeBotLog({ botType: 'COO', action: 'REPLY_CHAIN_DRIVE', status: 'FAILED', details: errorMsg, itemCount: 0, executionTimeMs: Date.now() - start })
   } finally {
     await disconnect()
   }

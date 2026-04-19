@@ -210,7 +210,54 @@ const POST_LENGTHS = [
 ]
 
 /** 페르소나별 강화된 시스템 프롬프트 생성 */
-function buildSystemPrompt(p: Persona, context: 'post' | 'comment' | 'reply'): string {
+// 클러스터별 오타/표현 패턴 (wgang + dlxogns01 실제 게시물 40개 분석 기반)
+const TYPO_CLUSTER: Record<string, string[]> = {
+  SENTI:  ['A', 'C', 'E', 'G', 'K', 'M', 'Q', 'S'],  // 감성/수다형
+  HEALTH: ['H', 'AC', 'R', 'W'],                        // 건강염려형
+  HUMOR:  ['AF', 'U', 'AY', 'X'],                       // 유머/방언형
+  // 나머지: 정보/은퇴형 (B, N, T, BA, AZ 등)
+}
+
+function buildTypoInstruction(p: Persona, personaId: string): string {
+  if (!p.quirks.some(q => q.includes('맞춤법') || q.includes('오타'))) return ''
+
+  if (TYPO_CLUSTER.SENTI.includes(personaId)) return `
+
+[자연스러운 표현 — 3개 중 1개에 아래 중 하나 자연스럽게 포함]
+- "너무" 대신 "넘" / "우리" 대신 "울"
+- 말줄임 ".." (어떡하죠.. / 힘드네요..)
+- "ㅠ" 1개 문장 끝
+- 띄어쓰기 한 군데 자연스럽게 생략
+억지 표현 금물.`
+
+  if (TYPO_CLUSTER.HEALTH.includes(personaId)) return `
+
+[건강 걱정글 특유 표현 — 3개 중 1개에 아래 중 하나 자연스럽게 포함]
+- 문장 끝 ".." (별거 아니겠죠.. / 어디 가서 물어봐야 하나..)
+- "ㅠㅠ" 1개 이하
+- 짧게 끊기 ("병원 가야 하나. 아니 그냥 두나. 모르겠다.")
+- 의문형 마무리 ("이런 거 겪어보신 분 있어요?")
+억지 과장 금물.`
+
+  if (TYPO_CLUSTER.HUMOR.includes(personaId)) return `
+
+[유머/방언 표현 — 3개 중 1개에 아래 중 하나 자연스럽게 포함]
+- 경상도식 표현 중 하나: "카기가", "캐많노ㅋ", "야이야"
+- 또는 띄어쓰기 생략 ("이게저한테", "왜갑자기")
+- 또는 "ㅋ" 1개 단독
+하나만 선택, 전부 쓰지 말 것.`
+
+  // 정보/은퇴형
+  return `
+
+[정보글 자연스러운 표현 — 3개 중 1개에 아래 중 하나 자연스럽게 포함]
+- 인터넷/앱 오기: "유투"(유튜브), "챗Gpt"
+- 또는 한자어 음운 혼동: "북구"(복구), "게산기"(계산기) — 주제와 맞을 때만
+- 또는 격식체 돌출: 구어체 중간에 "~사료됩니다" 1회
+어색하면 생략.`
+}
+
+function buildSystemPrompt(p: Persona, personaId: string, context: 'post' | 'comment' | 'reply'): string {
   const moodDesc = {
     positive: '당신은 대체로 밝고 긍정적인 성격입니다.',
     neutral: '당신은 감정을 크게 드러내지 않는 담담한 성격입니다.',
@@ -222,15 +269,8 @@ function buildSystemPrompt(p: Persona, context: 'post' | 'comment' | 'reply'): s
   const neverStr = p.never.map(n => `- ${n}`).join('\n')
   const examplesStr = p.examples.map(e => `"${e}"`).join('\n')
 
-  // 맞춤법 quirk가 있는 페르소나에게만 오타 실제 예시를 주입
-  const typoInstruction = p.quirks.some(q => q.includes('맞춤법')) ? `
-
-[오타 실제 예시 — 글 3개 중 1개에는 아래 중 하나 자연스럽게 포함]
-- "됩니다" → "됩다" 또는 "됩니다" (그대로)
-- "하세요" → "하세여"
-- "~어요" → "~에요" 혼용
-- 문장 끝 마침표 생략 (구어체)
-억지 오타는 금물. 어색하면 생략해도 됩니다.` : ''
+  // 클러스터별 차별화 표현 지시 (실제 5060 게시물 패턴 기반)
+  const typoInstruction = buildTypoInstruction(p, personaId)
 
   const contextInstruction = {
     post: '커뮤니티에 올릴 글을 작성하세요.',
@@ -325,7 +365,7 @@ export async function generatePost(
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: length.maxTokens,
-    system: getKstContext() + '\n\n' + buildSystemPrompt(p, 'post') +
+    system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'post') +
       `\n- 카테고리: ${boardCategories.join(', ')} 중 하나를 선택하세요` +
       trendContext,
     messages: [{
@@ -366,7 +406,7 @@ export async function generateComment(
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 200,
-    system: getKstContext() + '\n\n' + buildSystemPrompt(p, 'comment'),
+    system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'comment'),
     messages: [{
       role: 'user',
       content: `다음 글에 댓글을 달아주세요.\n\n제목: ${postTitle}\n내용: ${postContent.slice(0, 300)}`,
@@ -388,7 +428,7 @@ export async function generateReply(
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 150,
-    system: buildSystemPrompt(p, 'reply'),
+    system: buildSystemPrompt(p, personaId, 'reply'),
     messages: [{
       role: 'user',
       content: `글 제목: ${postTitle}\n이 댓글에 답글을 달아주세요: "${commentContent.slice(0, 200)}"`,

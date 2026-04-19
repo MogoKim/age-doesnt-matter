@@ -2,6 +2,7 @@ import { prisma, disconnect } from '../core/db.js'
 import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP } from './generator.js'
 import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
 import { getPersona } from './persona-data.js'
+import { safeBotLog } from '../core/safe-log.js'
 
 /** 페르소나 → 욕망 카테고리 역방향 매핑 (다양성 캡용) */
 const PERSONA_DESIRE: Record<string, string> = {}
@@ -671,21 +672,19 @@ async function main() {
     }
   }
 
-  await prisma.botLog.create({
-    data: {
-      botType: 'SEED' as const,
-      action: `SCHEDULE_${hour}`,
-      status: errorCount === 0 ? 'SUCCESS' as const : 'PARTIAL' as const,
-      details: JSON.stringify({
-        hour,
-        success: successCount,
-        errors: errorCount,
-        totalActivities: activities.length,
-        ...(focusedCount > 0 ? { focusedLikes: focusedCount } : {}),
-      }),
-      itemCount: successCount,
-      executionTimeMs: 0,
-    },
+  await safeBotLog({
+    botType: 'SEED',
+    action: `SCHEDULE_${hour}`,
+    status: errorCount === 0 ? 'SUCCESS' : 'PARTIAL',
+    details: JSON.stringify({
+      hour,
+      success: successCount,
+      errors: errorCount,
+      totalActivities: activities.length,
+      ...(focusedCount > 0 ? { focusedLikes: focusedCount } : {}),
+    }),
+    itemCount: successCount,
+    executionTimeMs: 0,
   })
 
   console.log(`[Seed] ${hour}시 완료: 성공 ${successCount}, 실패 ${errorCount}`)

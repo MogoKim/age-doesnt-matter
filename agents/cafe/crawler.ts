@@ -840,24 +840,28 @@ async function main() {
   const overallRate = totalUrls > 0 ? Math.round(totalCollected / totalUrls * 100) : 0
 
   // BotLog 기록
-  await prisma.botLog.create({
-    data: {
-      botType: 'CAFE_CRAWLER',
-      action: 'CAFE_CRAWL',
-      status: totalSaved > 0 ? 'SUCCESS' : 'PARTIAL',
-      collectedCount: totalCollected,
-      publishedCount: totalSaved,
-      details: JSON.stringify({
-        cafes: CAFE_CONFIGS.map(c => c.id),
-        collected: totalCollected,
-        saved: totalSaved,
-        totalUrls,
-        successRate: overallRate,
-      }),
-      itemCount: totalSaved,
-      executionTimeMs: durationMs,
-    },
-  })
+  try {
+    await prisma.botLog.create({
+      data: {
+        botType: 'CAFE_CRAWLER',
+        action: 'CAFE_CRAWL',
+        status: totalSaved > 0 ? 'SUCCESS' : 'PARTIAL',
+        collectedCount: totalCollected,
+        publishedCount: totalSaved,
+        details: JSON.stringify({
+          cafes: CAFE_CONFIGS.map(c => c.id),
+          collected: totalCollected,
+          saved: totalSaved,
+          totalUrls,
+          successRate: overallRate,
+        }),
+        itemCount: totalSaved,
+        executionTimeMs: durationMs,
+      },
+    })
+  } catch (logErr) {
+    await notifySlack({ level: 'important', agent: 'CAFE_CRAWLER', title: 'BotLog 기록 실패 — CAFE_CRAWL', body: logErr instanceof Error ? logErr.message : String(logErr) }).catch(() => {})
+  }
 
   // Slack 알림
   await notifySlack({
