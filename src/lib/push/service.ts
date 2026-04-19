@@ -5,11 +5,17 @@ import type { PushPayload } from './types'
 
 const BASE_URL = 'https://age-doesnt-matter.com'
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-)
+function initVapid() {
+  if (!process.env.VAPID_SUBJECT || !process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    return false
+  }
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT,
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY,
+  )
+  return true
+}
 
 class PushService {
   // UTM 자동 삽입
@@ -27,6 +33,7 @@ class PushService {
 
   async notify(userId: string, payload: PushPayload, campaign = 'notification'): Promise<void> {
     if (!flags.webPush) return
+    if (!initVapid()) return
     try {
       const subs = await prisma.pushSubscription.findMany({ where: { userId } })
       if (subs.length === 0) return
