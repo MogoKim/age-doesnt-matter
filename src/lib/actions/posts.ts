@@ -9,6 +9,7 @@ import type { BoardType } from '@/generated/prisma/client'
 import { checkBannedWords } from '@/lib/banned-words'
 import { sanitizeHtml, stripHtmlTags } from '@/lib/sanitize'
 import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
+import { checkAndPromote } from '@/lib/grade'
 
 interface CreatePostResult {
   error?: string
@@ -121,6 +122,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     where: { id: session.user.id },
     data: { postCount: { increment: 1 } },
   })
+  void checkAndPromote(session.user.id).catch(() => {})
 
   const slug = BOARD_TYPE_TO_SLUG[boardType]
   revalidatePath(`/community/${slug}`)

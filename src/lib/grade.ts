@@ -42,6 +42,13 @@ export async function checkAndPromote(userId: string): Promise<Grade | null> {
       where: { id: userId },
       data: { grade: newGrade },
     })
+    await prisma.notification.create({
+      data: {
+        userId,
+        type: 'GRADE_UP',
+        content: `축하해요! ${GRADE_INFO[newGrade].label} 등급으로 올라가셨어요 🎉`,
+      },
+    }).catch(() => {})
   }
 
   return newGrade

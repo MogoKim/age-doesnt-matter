@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkBannedWords } from '@/lib/banned-words'
 import { sanitizeHtml } from '@/lib/sanitize'
+import { checkAndPromote } from '@/lib/grade'
 
 interface CommentResult {
   error?: string
@@ -81,6 +82,7 @@ export async function createComment(
       data: { commentCount: { increment: 1 } },
     }),
   ])
+  void checkAndPromote(session.user.id).catch(() => {})
 
   // lastEngagedAt 업데이트
   await prisma.post.update({
