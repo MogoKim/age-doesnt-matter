@@ -15,6 +15,7 @@ export const getDashboardStats = unstable_cache(
       todayComments,
       pendingReports,
       pendingBotReviews,
+      pushSubCount,
     ] = await Promise.all([
       prisma.user.count({
         where: { lastLoginAt: { gte: today } },
@@ -34,6 +35,7 @@ export const getDashboardStats = unstable_cache(
       prisma.botLog.count({
         where: { reviewPendingCount: { gt: 0 } },
       }),
+      prisma.pushSubscription.count(),
     ])
 
     return {
@@ -43,6 +45,7 @@ export const getDashboardStats = unstable_cache(
       todayComments,
       pendingReports,
       pendingBotReviews,
+      pushSubCount,
     }
   },
   ['admin-dashboard-stats'],

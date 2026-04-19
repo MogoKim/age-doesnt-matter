@@ -62,6 +62,11 @@ export default async function AdminDashboardPage() {
         <KpiCard label="오늘 댓글" value={stats.todayComments} icon="💬" prefix="+" />
       </div>
 
+      {/* 푸시 구독 KPI */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        <KpiCard label="푸시 구독자" value={stats.pushSubCount} icon="🔔" />
+      </div>
+
       {/* 욕망 지도 위젯 */}
       {brief && (
         <DailyBriefWidget

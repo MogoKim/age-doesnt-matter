@@ -15,6 +15,7 @@ export const adminNavItems: NavItem[] = [
   { label: '배너 관리', icon: '🖼️', href: '/admin/banners' },
   { label: '팝업 관리', icon: '📢', href: '/admin/popups' },
   { label: '데이터 분석', icon: '📈', href: '/admin/analytics' },
+  { label: '푸시 관리', icon: '🔔', href: '/admin/push' },
   { label: '감사 로그', icon: '📋', href: '/admin/audit-log' },
   { label: '설정', icon: '⚙️', href: '/admin/settings' },
 ]
@@ -30,6 +31,7 @@ export const adminPageTitles: Record<string, string> = {
   '/admin/banners': '배너 관리',
   '/admin/popups': '팝업 관리',
   '/admin/analytics': '데이터 분석',
+  '/admin/push': '푸시 관리',
   '/admin/audit-log': '감사 로그',
   '/admin/settings': '설정',
 }
