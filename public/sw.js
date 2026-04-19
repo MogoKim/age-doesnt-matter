@@ -97,6 +97,22 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(title, options))
 })
 
+// 구독 만료 시 자동 재구독 (endpoint 갱신)
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    self.registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: self.VAPID_PUBLIC_KEY,
+    }).then((sub) =>
+      fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sub.toJSON()),
+      })
+    ).catch(() => {}) // 실패해도 SW 크래시 없음
+  )
+})
+
 // 알림 클릭
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
