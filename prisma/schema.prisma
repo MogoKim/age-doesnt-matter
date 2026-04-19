@@ -273,13 +273,14 @@ model User {
   comments          Comment[]
   likes             Like[]
   scraps            Scrap[]
-  reportsMade       Report[]       @relation("reporter")
-  notifications     Notification[] @relation("notificationOwner")
-  notificationsSent Notification[] @relation("notificationSender")
+  reportsMade       Report[]          @relation("reporter")
+  notifications     Notification[]    @relation("notificationOwner")
+  notificationsSent Notification[]    @relation("notificationSender")
   agreements        Agreement[]
-  blocksInitiated   UserBlock[]    @relation("blocker")
-  blocksReceived    UserBlock[]    @relation("blocked")
+  blocksInitiated   UserBlock[]       @relation("blocker")
+  blocksReceived    UserBlock[]       @relation("blocked")
   draftPosts        DraftPost[]
+  pushSubscriptions PushSubscription[]
 
   @@index([status])
   @@index([grade])
@@ -936,6 +937,22 @@ model ChannelDraft {
 
   @@index([channel, status])
   @@index([createdAt(sort: Desc)])
+}
+
+// ─────────────────────────────────────────────────
+// 웹 푸시
+// ─────────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // ── 팝업 시스템 ──

@@ -6,6 +6,8 @@ import { prisma } from '@/lib/prisma'
 import { checkBannedWords } from '@/lib/banned-words'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { checkAndPromote } from '@/lib/grade'
+import { pushService } from '@/lib/push/service'
+import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 
 interface CommentResult {
   error?: string
@@ -97,6 +99,8 @@ export async function createComment(
   })
   const nickname = commentAuthor?.nickname ?? '회원'
 
+  const postUrl = `/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${postId}`
+
   if (parentId && parentAuthorId && parentAuthorId !== session.user.id) {
     // 대댓글 → 부모 댓글 작성자에게 알림
     await prisma.notification.create({
@@ -108,6 +112,12 @@ export async function createComment(
         fromUserId: session.user.id,
       },
     }).catch(() => {})
+    void pushService.notify(parentAuthorId, {
+      title: '새 답글이 달렸어요',
+      body: `${nickname}: ${trimmed.slice(0, 50)}`,
+      url: postUrl,
+      tag: `comment-${postId}`,
+    }, 'comment').catch(() => {})
   } else if (post.authorId !== session.user.id) {
     // 댓글 → 게시글 작성자에게 알림
     await prisma.notification.create({
@@ -119,6 +129,12 @@ export async function createComment(
         fromUserId: session.user.id,
       },
     }).catch(() => {})
+    void pushService.notify(post.authorId, {
+      title: '새 댓글이 달렸어요',
+      body: `${nickname}: ${trimmed.slice(0, 50)}`,
+      url: postUrl,
+      tag: `comment-${postId}`,
+    }, 'comment').catch(() => {})
   }
 
   revalidatePath('/community/[boardSlug]/[postId]', 'page')

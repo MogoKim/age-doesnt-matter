@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import type { Grade } from '@/generated/prisma/client'
+import { pushService } from '@/lib/push/service'
 
 interface GradeInfo {
   emoji: string
@@ -49,6 +50,12 @@ export async function checkAndPromote(userId: string): Promise<Grade | null> {
         content: `축하해요! ${GRADE_INFO[newGrade].label} 등급으로 올라가셨어요 🎉`,
       },
     }).catch(() => {})
+    void pushService.notify(userId, {
+      title: '등급이 올랐어요 🎉',
+      body: `${GRADE_INFO[newGrade].label} 등급으로 승격되었습니다!`,
+      url: '/my',
+      tag: 'grade-up',
+    }, 'grade_up').catch(() => {})
   }
 
   return newGrade
