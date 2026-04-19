@@ -222,6 +222,16 @@ function buildSystemPrompt(p: Persona, context: 'post' | 'comment' | 'reply'): s
   const neverStr = p.never.map(n => `- ${n}`).join('\n')
   const examplesStr = p.examples.map(e => `"${e}"`).join('\n')
 
+  // 맞춤법 quirk가 있는 페르소나에게만 오타 실제 예시를 주입
+  const typoInstruction = p.quirks.some(q => q.includes('맞춤법')) ? `
+
+[오타 실제 예시 — 글 3개 중 1개에는 아래 중 하나 자연스럽게 포함]
+- "됩니다" → "됩다" 또는 "됩니다" (그대로)
+- "하세요" → "하세여"
+- "~어요" → "~에요" 혼용
+- 문장 끝 마침표 생략 (구어체)
+억지 오타는 금물. 어색하면 생략해도 됩니다.` : ''
+
   const contextInstruction = {
     post: '커뮤니티에 올릴 글을 작성하세요.',
     comment: '다른 사람의 글에 댓글을 달아주세요. 1~3문장. 매번 같은 첫 문장으로 시작하면 안 됩니다 — 글의 내용을 읽고 그 내용에 맞는 자연스러운 첫 문장을 만드세요. 예: 공감 글이면 "저도 그런 적 있어요", 정보 글이면 "좋은 정보네요", 웃긴 글이면 그 상황에 맞게 반응.',
@@ -240,7 +250,7 @@ ${p.style}
 말투: ${p.speech_patterns.join(', ')}
 
 [글쓰기 습관 — 반드시 지킬 것]
-${quirksStr}
+${quirksStr}${typoInstruction}
 
 [절대 하지 않는 것 — 이것만은 반드시 피하세요]
 ${neverStr}

@@ -70,7 +70,7 @@ class CTOSecurityAudit extends BaseAgent {
     // 4. 어드민 액션 검토 (AdminAuditLog)
     const adminActions = await prisma.adminAuditLog.findMany({
       where: { createdAt: { gte: oneDayAgo } },
-      select: { action: true, adminId: true, target: true },
+      select: { action: true, adminId: true, targetType: true, targetId: true },
       orderBy: { createdAt: 'desc' },
       take: 20,
     })
