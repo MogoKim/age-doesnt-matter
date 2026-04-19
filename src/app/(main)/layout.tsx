@@ -3,6 +3,7 @@ import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
 import OfflineBanner from '@/components/common/OfflineBanner'
 import PopupRenderer from '@/components/common/PopupRenderer'
+import { PushPermissionToast } from '@/components/common/PushPermissionToast'
 
 export default async function MainGroupLayout({
   children,
@@ -22,6 +23,7 @@ export default async function MainGroupLayout({
         {children}
       </MainLayout>
       <PopupRenderer />
+      <PushPermissionToast />
     </FontSizeProvider>
   )
 }

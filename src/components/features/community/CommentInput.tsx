@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { createComment } from '@/lib/actions/comments'
 import { gtmCommentCreate } from '@/lib/gtm'
+import { setPushToastTrigger } from '@/components/common/PushPermissionToast'
 
 interface CommentInputProps {
   postId: string
@@ -27,6 +28,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder }
       } else {
         gtmCommentCreate(parentId ? 'reply' : 'comment')
         window.dispatchEvent(new CustomEvent('pwa-prompt', { detail: 'engagement' }))
+        setPushToastTrigger('comment')
         setValue('')
         onCancel?.()
       }
