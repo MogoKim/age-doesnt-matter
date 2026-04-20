@@ -51,6 +51,9 @@ export async function submitContact(data: ContactData): Promise<{ error?: string
     ].join('\n'),
   })
 
-  if (error) return { error: '전송 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.' }
+  if (error) {
+    console.error('[Resend] 이메일 전송 실패:', JSON.stringify(error))
+    return { error: '전송 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.' }
+  }
   return {}
 }
