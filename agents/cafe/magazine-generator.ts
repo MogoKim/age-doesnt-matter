@@ -132,7 +132,20 @@ ${recentList ? `최근 발행 매거진 (중복 주제 피해주세요):\n${rece
 
 <aside class="tip-box">💡 꿀팁: 바로 실천할 수 있는 팁 1~3가지</aside>
 
-<p>마무리 1문장</p>`,
+<p>마무리 1문장</p>
+
+<!-- FAQ 섹션 (반드시 포함, GEO 최적화) -->
+<!-- FAQ_START -->
+<section class="faq-section">
+<h2>자주 묻는 질문</h2>
+<details><summary>Q. [독자가 AI에 실제로 물어볼 법한 완성형 질문 — "어떻게 해요?/정상인가요?/왜 그런가요?" 형식]</summary>
+<p>A. [2~3문장 직접 답변. 모호하지 않게. 수치/기준 포함 권장]</p></details>
+<details><summary>Q. [두 번째 질문]</summary>
+<p>A. [직접 답변]</p></details>
+<details><summary>Q. [세 번째 질문]</summary>
+<p>A. [직접 답변]</p></details>
+</section>
+<!-- FAQ_END -->`,
     }],
   })
 
@@ -180,15 +193,25 @@ ${recentList ? `최근 발행 매거진 (중복 주제 피해주세요):\n${rece
   }
 }
 
-/** title로부터 SEO-friendly URL slug 생성 */
-function generateMagazineSlug(title: string): string {
+/** title로부터 SEO-friendly URL slug 생성 (DB 중복 체크로 uniqueness 보장) */
+async function generateMagazineSlug(title: string): Promise<string> {
   const base = title
     .replace(/[^\w\s가-힣]/g, '')  // 한글, 영숫자, 공백만 허용
     .trim()
     .replace(/\s+/g, '-')
     .slice(0, 50)
-  const suffix = Math.random().toString(36).slice(2, 8)  // 6자 random suffix
-  return `${base}-${suffix}`
+
+  // 중복 없으면 clean slug 그대로 사용
+  const exists = await prisma.post.findUnique({ where: { slug: base }, select: { id: true } })
+  if (!exists) return base
+
+  // 중복 있으면 숫자 suffix (-2, -3, ..., -9)
+  for (let i = 2; i <= 9; i++) {
+    const candidate = `${base}-${i}`
+    const dup = await prisma.post.findUnique({ where: { slug: candidate }, select: { id: true } })
+    if (!dup) return candidate
+  }
+  return `${base}-${Date.now()}` // 극히 드문 fallback
 }
 
 /** 매거진 게시 (에디터 봇 계정 사용) */
@@ -196,9 +219,10 @@ async function publishMagazine(
   article: { title: string; content: string; summary: string },
   category: string,
   thumbnailUrl?: string,
-): Promise<string> {
+): Promise<{ id: string; slug: string }> {
   // 매거진 전용 봇 — 페르소나 B(정순씨) 사용 (차분한 일기체 정보형)
   const editorUserId = await getBotUser('B')
+  const slug = await generateMagazineSlug(article.title)
 
   const post = await prisma.post.create({
     data: {
@@ -212,11 +236,11 @@ async function publishMagazine(
       source: 'BOT',
       status: 'PUBLISHED',
       publishedAt: new Date(),
-      slug: generateMagazineSlug(article.title),
+      slug,
     },
   })
 
-  return post.id
+  return { id: post.id, slug }
 }
 
 export interface MagazineRunResult {
@@ -428,10 +452,10 @@ export async function main(): Promise<MagazineRunResult[]> {
 
     // 리치 HTML을 게시 콘텐츠로 사용
     const richArticle = { ...article, content: finalHtml }
-    const postId = await publishMagazine(richArticle, category, thumbnailUrl)
+    const { id: postId, slug: postSlug } = await publishMagazine(richArticle, category, thumbnailUrl)
 
     // Google 인덱싱 요청 (환경변수 미설정 시 자동 skip)
-    const postUrl = `https://age-doesnt-matter.com/magazine/${postId}`
+    const postUrl = `https://www.age-doesnt-matter.com/magazine/${postSlug}`
     await requestGoogleIndexing(postUrl).catch(err => console.warn('[Indexing] 실패 (무시):', err))
 
     // CPS 상품 매칭 + 저장
