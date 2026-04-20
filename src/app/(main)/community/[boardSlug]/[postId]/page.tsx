@@ -21,7 +21,7 @@ interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
 }
 
-const BASE_URL = 'https://age-doesnt-matter.com'
+const BASE_URL = 'https://www.age-doesnt-matter.com'
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { boardSlug, postId } = await params
@@ -42,6 +42,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       siteName: '우리 나이가 어때서',
       locale: 'ko_KR',
+      images: post.thumbnailUrl
+        ? [{ url: post.thumbnailUrl, width: 1200, height: 630, alt: post.title }]
+        : [{ url: `${BASE_URL}/og-default.png`, width: 1200, height: 630, alt: '우리 나이가 어때서' }],
     },
     twitter: {
       card: 'summary_large_image',

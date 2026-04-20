@@ -18,13 +18,39 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
+const BASE_URL = 'https://www.age-doesnt-matter.com'
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
   const job = await getJobDetail(id)
   if (!job) return {}
+
+  const title = `${job.title} — ${job.company} 채용`
+  const rawDescription = job.content
+    ? job.content.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 100)
+    : ''
+  const description = [rawDescription, `${job.location} 근무`, formatSalary(job.salary)]
+    .filter(Boolean).join(' · ').slice(0, 155)
+  const url = `/jobs/${id}`
+
   return {
-    title: `${job.title} — ${job.company}`,
-    description: `${job.location} · ${formatSalary(job.salary)}`,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: 'article',
+      siteName: '우리 나이가 어때서',
+      locale: 'ko_KR',
+      images: [{ url: `${BASE_URL}/og-jobs.png`, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
   }
 }
 

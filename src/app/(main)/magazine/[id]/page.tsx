@@ -16,7 +16,7 @@ import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import CpsClickTracker from '@/components/ad/CpsClickTracker'
 import { ADSENSE } from '@/components/ad/ad-slots'
 
-const BASE_URL = 'https://age-doesnt-matter.com'
+const BASE_URL = 'https://www.age-doesnt-matter.com'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -61,6 +61,31 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: post.title,
       description,
     },
+  }
+}
+
+/** 본문 HTML에서 FAQ 블록 파싱 → FAQPage JSON-LD 생성 */
+function extractFaqJsonLd(html: string): object | null {
+  const match = html.match(/<!-- FAQ_START -->([\s\S]*?)<!-- FAQ_END -->/)
+  if (!match) return null
+
+  const faqHtml = match[1]
+  const items: { q: string; a: string }[] = []
+  const qaRegex = /<summary>Q\.\s*([^<]+)<\/summary>\s*<p>A\.\s*([^<]+)<\/p>/g
+  let m: RegExpExecArray | null
+  while ((m = qaRegex.exec(faqHtml)) !== null) {
+    items.push({ q: m[1].trim(), a: m[2].trim() })
+  }
+  if (items.length === 0) return null
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map(({ q, a }) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
   }
 }
 
@@ -123,6 +148,8 @@ export default async function MagazineDetailPage({ params }: PageProps) {
     ...(post.thumbnailUrl ? { image: post.thumbnailUrl } : {}),
   }
 
+  const faqJsonLd = post.content ? extractFaqJsonLd(post.content) : null
+
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       {/* GA4 매거진 조회 이벤트 */}
@@ -132,6 +159,12 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
 
       {/* 뒤로가기 */}
       <Link

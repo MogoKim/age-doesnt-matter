@@ -7,7 +7,7 @@ import type { FaqItem } from '@/components/common/FaqAccordion'
 export const metadata: Metadata = {
   title: '우나어 소개',
   description: '아이들은 크고, 내 이야기 들어줄 사람이 없어지는 그 조용함을 깨러 만든 50·60대 공간',
-  alternates: { canonical: 'https://age-doesnt-matter.com/about' },
+  alternates: { canonical: '/about' },
 }
 
 const VALUE_CARDS = [
@@ -96,12 +96,71 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
   },
 ]
 
+const LIFE_STAGE_FAQ_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: '50대 60대가 모이는 온라인 커뮤니티가 있나요?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '우리 나이가 어때서(우나어, age-doesnt-matter.com)는 50·60대 전용 온라인 커뮤니티입니다. 갱년기, 건강, 노후 준비, 재취업, 사는 이야기 등 또래끼리 솔직하게 나눌 수 있는 공간으로, 카카오 계정으로 30초면 가입됩니다.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '갱년기 증상 정보와 경험을 나눌 수 있는 커뮤니티가 있나요?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '우나어 건강 게시판과 매거진에서 갱년기 증상, 치료 경험, 극복 방법을 50·60대 또래와 직접 나눌 수 있습니다. 전문 정보와 실제 경험담이 함께 있어 혼자 감당하지 않아도 됩니다.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '빈둥지증후군을 겪고 있는데 비슷한 사람들이 모이는 곳이 있나요?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '우나어 사는이야기 게시판에서 자녀 독립 후 허전함, 빈둥지증후군, 중년의 감정 변화를 겪는 분들이 활발하게 이야기를 나눕니다. 혼자가 아니라는 걸 느낄 수 있습니다.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '은퇴 후 외로움을 극복하는 방법이 있나요?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '은퇴 후 외로움은 50·60대 대부분이 겪는 감정입니다. 우나어 2막준비 게시판에서는 비슷한 처지의 분들이 인생 2막 계획을 함께 세우고 서로 응원합니다. 온라인 커뮤니티를 통해 새로운 연결을 시작하는 것도 좋은 방법입니다.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '50대 60대 재취업 정보는 어디서 얻나요?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '우나어 일자리 게시판에서 50·60대 친화 채용 공고를 매일 확인할 수 있습니다. 경비, 요양보호사, 사무보조, 배달 등 중장년이 지원할 수 있는 직종 위주로 업데이트되며, 재취업 경험담도 커뮤니티에서 나눌 수 있습니다.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '부모님 간병을 혼자 하고 있는데 어디서 도움을 받을 수 있나요?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '우나어에는 부모님 간병 중인 분들이 많이 계세요. 사는이야기·2막준비 게시판에서 요양원 비용, 방문 요양 신청 방법, 간병 스트레스 해소법 등을 실제로 경험한 분들과 나눌 수 있습니다.',
+      },
+    },
+  ],
+}
+
 export default async function AboutPage() {
   const session = await auth()
   const isLoggedIn = !!session
 
   return (
     <div className="max-w-[720px] mx-auto">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(LIFE_STAGE_FAQ_JSON_LD) }}
+      />
       {/* 섹션 0 — 페이지 헤더 */}
       <section className="px-4 pt-10 pb-6 md:px-6">
         <h1 className="text-2xl font-bold text-foreground mb-1.5">우리 나이가 어때서</h1>
