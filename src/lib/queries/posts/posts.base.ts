@@ -107,6 +107,25 @@ export function buildTextSearch(
   return { OR }
 }
 
+/* ── 메타데이터 전용 경량 조회 (generateMetadata에서 사용) ── */
+
+export const getPostMeta = cache(async function getPostMeta(postId: string) {
+  return prisma.post.findFirst({
+    where: {
+      status: { in: ['PUBLISHED', 'SEO_ONLY'] },
+      OR: [{ id: postId }, { slug: postId }],
+    },
+    select: {
+      title: true,
+      summary: true,
+      thumbnailUrl: true,
+      slug: true,
+      seoTitle: true,
+      seoDescription: true,
+    },
+  })
+})
+
 /* ── 게시글 상세 ── */
 
 export const getPostDetail = cache(async function getPostDetail(
