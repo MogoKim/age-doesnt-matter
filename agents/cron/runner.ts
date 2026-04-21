@@ -85,6 +85,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // QA 에이전트 — 콘텐츠 품질 감사 (매일 08:20 KST)
   'qa:content-audit': () => import('../qa/content-audit.js').then(() => {}),
   'community:sheet-scrape': () => import('../community/sheet-scraper.js').then(() => {}),
+  // LOCAL ONLY — 펨코 Cloudflare 차단으로 로컬 Mac launchd에서만 실행 (GitHub Actions 불가)
+  // launchd: com.unao.fmkorea-scraper.plist (11:30, 21:30 KST)
+  'community:fmkorea-scrape': () => import('../community/run-local-fmkorea.js').then(() => {}),
   'cmo:channel-seeder': () => import('../cmo/channel-seeder.js').then(() => {}),
   'cmo:knowledge-responder': () => import('../cmo/knowledge-responder.js').then(() => {}),
   'cmo:seo-optimizer': () => import('../cmo/seo-optimizer.js').then(() => {}),

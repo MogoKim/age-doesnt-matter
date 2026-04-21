@@ -32,7 +32,7 @@ const step = process.argv[2] ?? 'all'
 
 // Bug 8: 중복 실행 방지 락파일
 const LOCK_FILE = '/tmp/unao-crawler.lock'
-const LOCK_MAX_AGE_MS = 30 * 60 * 1000 // 30분
+const LOCK_MAX_AGE_MS = 20 * 60 * 1000 // 20분 (크롤링 소요 ~23분, 겹침 방지)
 
 // ⚠️ launchd 실행 시 .env.local 환경변수가 없으므로 직접 로드
 // 반드시 notifier 등 DB 의존 모듈 import 전에 실행해야 함 (ESM top-level import 순서)
@@ -277,7 +277,17 @@ async function main() {
     }
   } finally {
     // 락파일 항상 삭제
-    rmSync(LOCK_FILE, { force: true })
+    try {
+      rmSync(LOCK_FILE, { force: true })
+    } catch (err) {
+      console.error('[Pipeline] 락파일 삭제 실패 — 수동 삭제 필요:', LOCK_FILE, err)
+      await notifySlack({
+        level: 'critical',
+        agent: 'CAFE_CRAWLER',
+        title: '락파일 삭제 실패 — 다음 실행 차단 위험',
+        body: `수동 삭제 필요: rm ${LOCK_FILE}\n오류: ${String(err).slice(0, 200)}`,
+      }).catch(() => {})
+    }
     await disconnect()
   }
 
