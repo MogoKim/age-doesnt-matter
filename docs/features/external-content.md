@@ -171,6 +171,7 @@ BotLog 기록 + Slack #로그 알림
 | 날짜 | 변경 내용 | 이유 | 커밋 |
 |------|---------|------|------|
 | 2026-04-21 | `agents-cafe.yml` sheet-scrape 잡 `if` 조건 수정 (`github.event.schedule` → `github.event_name == 'schedule'`) | `github.event.schedule` 매칭이 GA 런타임에서 동작 안 해 잡이 계속 skipped 됨 | `f706f1a` |
+| 2026-04-21 | `agents-cafe.yml` Install Playwright Chromium 스텝 `cd agents &&` 추가 | 루트 playwright vs agents playwright 버전 불일치로 chromium 경로 오류 발생 | — |
 | 2026-04-21 | 이 기획서 최초 작성 | 운영 문서 관리 체계 도입 | — |
 
 ---
@@ -187,6 +188,18 @@ BotLog 기록 + Slack #로그 알림
 - **원인**: `github.event.schedule` 값 비교 조건이 실제 GA에서 동작하지 않아 잡 자체가 실행 안 됨
 - **해결**: if 조건을 `github.event_name == 'schedule'`로 단순화 (`f706f1a`)
 - **재발 방지**: 워크플로우 잡 if 조건은 `github.event_name`으로 판단, cron 분기는 determine 스텝으로 처리
+
+### [2026-04-21] 오유/네이트판 게시 0건 — GA Playwright chromium 버전 불일치
+
+- **증상**: GA sheet-scrape 잡이 실행됐으나 `browserType.launch: Executable doesn't exist at chromium_headless_shell-1217/...` 오류로 0건 게시
+- **진단 과정**:
+  1. if 조건 수정 후 수동 GA 트리거 (`gh workflow run agents-cafe.yml -f step=sheet-scrape`)
+  2. 로그 확인 → `11건 PENDING 발견` 후 바로 chromium 실행 오류
+  3. Install Playwright Chromium 스텝이 루트 `npx playwright install` 실행 → 루트 playwright 버전 기준 chromium 설치
+  4. 실제 실행은 `agents/` playwright 사용 → 다른 버전 번호의 chromium 경로 참조
+- **원인**: `npx playwright install chromium --with-deps` 가 루트 디렉토리에서 실행되어 `agents/` playwright 버전과 불일치
+- **해결**: `cd agents && npx playwright install chromium --with-deps` 로 변경
+- **재발 방지**: playwright install 스텝은 항상 실행 컨텍스트(agents/)와 동일한 디렉토리에서 실행
 
 ---
 
