@@ -44,9 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       siteName: '우리 나이가 어때서',
       locale: 'ko_KR',
-      images: post.thumbnailUrl
-        ? [{ url: post.thumbnailUrl, width: 1200, height: 630, alt: post.title }]
-        : undefined,
+      ...(post.thumbnailUrl ? { images: [{ url: post.thumbnailUrl, width: 1200, height: 630, alt: post.title }] } : {}),
     },
     twitter: {
       card: 'summary_large_image',

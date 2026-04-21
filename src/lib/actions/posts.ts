@@ -88,6 +88,12 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     }
   }
 
+  // 커뮤니티 게시판만 slug 생성 (MAGAZINE/JOB/WEEKLY는 각자 slug 관리)
+  const COMMUNITY_BOARD_TYPES: BoardType[] = ['STORY', 'HUMOR', 'LIFE2']
+  const communitySlug = COMMUNITY_BOARD_TYPES.includes(boardType)
+    ? await generateCommunitySlug(title)
+    : undefined
+
   // 게시글 생성 — HTML 새니타이즈 (TipTap HTML 지원)
   const safeContent = sanitizeHtml(content)
   const plainText = stripHtmlTags(safeContent)
@@ -104,9 +110,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     finalContent += imgTags
   }
 
-  const communitySlug = await generateCommunitySlug(title)
-
-  await prisma.post.create({
+  const post = await prisma.post.create({
     data: {
       boardType,
       category: category || null,
@@ -117,7 +121,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
       authorId: session.user.id,
       status: 'PUBLISHED',
       publishedAt: new Date(),
-      slug: communitySlug,
+      slug: communitySlug ?? null,
     },
   })
 
@@ -131,7 +135,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   const boardSlugPath = BOARD_TYPE_TO_SLUG[boardType]
   revalidatePath(`/community/${boardSlugPath}`)
   revalidatePath('/')
-  return { postUrl: `/community/${boardSlugPath}/${communitySlug}` }
+  return { postUrl: `/community/${boardSlugPath}/${communitySlug ?? post.id}` }
 }
 
 export async function updatePost(postId: string, formData: FormData): Promise<CreatePostResult> {
