@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useRef } from 'react'
+import { useState, useTransition, useRef, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap, incrementShareCount } from '@/lib/actions/likes'
 import { useToast } from '@/components/common/Toast'
@@ -31,16 +31,18 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
   const [heartAnimating, setHeartAnimating] = useState(false)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
-  function handleLike() {
+  const handleLike = useCallback(() => {
     if (!isLoggedIn) {
       setShowLoginPrompt(true)
       return
     }
     if (isPending || likePendingRef.current) return
     likePendingRef.current = true
-    const willLike = !isLiked
+    const prevLiked = isLiked
+    const prevLikes = likes
+    const willLike = !prevLiked
     setIsLiked(willLike)
-    setLikes(willLike ? likes + 1 : likes - 1)
+    setLikes(willLike ? prevLikes + 1 : prevLikes - 1)
     if (willLike) {
       setHeartAnimating(true)
       setTimeout(() => setHeartAnimating(false), 350)
@@ -51,21 +53,21 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
       const result = await togglePostLike(postId)
       likePendingRef.current = false
       if (result.error) {
-        setIsLiked(isLiked)
-        setLikes(likes)
+        setIsLiked(prevLiked)
+        setLikes(prevLikes)
         toast(result.error, 'error')
       }
     })
-  }
+  }, [isLoggedIn, isPending, isLiked, likes, postId, toast])
 
-  function handleScrap() {
+  const handleScrap = useCallback(() => {
     if (!isLoggedIn) {
       setShowLoginPrompt(true)
       return
     }
     if (isPending) return
     const wasScrapped = isScrapped
-    setIsScrapped(!isScrapped)
+    setIsScrapped(!wasScrapped)
 
     startTransition(async () => {
       const result = await togglePostScrap(postId)
@@ -76,7 +78,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         toast(wasScrapped ? '스크랩을 취소했어요' : '스크랩했어요')
       }
     })
-  }
+  }, [isLoggedIn, isPending, isScrapped, postId, toast])
 
   const [showShareMenu, setShowShareMenu] = useState(false)
 

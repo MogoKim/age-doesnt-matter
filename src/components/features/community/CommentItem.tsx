@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useCallback, memo } from 'react'
 import type { CommentItem as CommentItemType } from '@/types/api'
 import { formatTimeAgo } from './utils'
 import { cn } from '@/lib/utils'
@@ -16,7 +16,7 @@ interface CommentItemProps {
   isReply?: boolean
 }
 
-export default function CommentItem({ comment, postId, isReply = false }: CommentItemProps) {
+function CommentItem({ comment, postId, isReply = false }: CommentItemProps) {
   const { toast } = useToast()
   const [isLiked, setIsLiked] = useState(comment.isLiked)
   const [likeCount, setLikeCount] = useState(comment.likeCount)
@@ -25,22 +25,24 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
   const [editValue, setEditValue] = useState(comment.content)
   const [isPending, startTransition] = useTransition()
 
-  function handleLike() {
+  const handleLike = useCallback(() => {
     if (isPending) return
-    setIsLiked(!isLiked)
-    setLikeCount(isLiked ? likeCount - 1 : likeCount + 1)
+    const prevLiked = isLiked
+    const prevCount = likeCount
+    setIsLiked(!prevLiked)
+    setLikeCount(prevLiked ? prevCount - 1 : prevCount + 1)
 
     startTransition(async () => {
       const result = await toggleCommentLike(comment.id)
       if (result.error) {
-        setIsLiked(isLiked)
-        setLikeCount(likeCount)
+        setIsLiked(prevLiked)
+        setLikeCount(prevCount)
         toast(result.error, 'error')
       }
     })
-  }
+  }, [isPending, isLiked, likeCount, comment.id, toast])
 
-  function handleEdit() {
+  const handleEdit = useCallback(() => {
     if (isPending) return
     setIsEditing(false)
 
@@ -53,9 +55,9 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
         toast('댓글이 수정되었어요')
       }
     })
-  }
+  }, [isPending, comment.id, editValue, toast])
 
-  function handleDelete() {
+  const handleDelete = useCallback(() => {
     if (isPending) return
     if (!confirm('댓글을 삭제하시겠어요?')) return
 
@@ -67,7 +69,7 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
         toast('댓글이 삭제되었어요')
       }
     })
-  }
+  }, [isPending, comment.id, toast])
 
   if (comment.isDeleted) {
     return (
@@ -191,3 +193,13 @@ export default function CommentItem({ comment, postId, isReply = false }: Commen
     </div>
   )
 }
+
+export default memo(CommentItem, (prev, next) =>
+  prev.comment.id === next.comment.id &&
+  prev.comment.content === next.comment.content &&
+  prev.comment.likeCount === next.comment.likeCount &&
+  prev.comment.isLiked === next.comment.isLiked &&
+  prev.comment.replies.length === next.comment.replies.length &&
+  prev.postId === next.postId &&
+  prev.isReply === next.isReply
+)
