@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -29,7 +29,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const post = await getPostDetail(postId)
   if (!post) return {}
 
-  const url = `${BASE_URL}/community/${boardSlug}/${postId}`
+  const canonicalId = post.slug ?? postId
+  const url = `${BASE_URL}/community/${boardSlug}/${canonicalId}`
   const description = post.preview || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티'
 
   return {
@@ -65,19 +66,26 @@ export default async function PostDetailPage({ params }: PageProps) {
   if (!board) notFound()
 
   const userId = session?.user?.id
-  const [post, comments] = await Promise.all([
-    getPostDetail(postId, userId),
-    getCommentsByPostId(postId, userId),
-  ])
+  const post = await getPostDetail(postId, userId)
   if (!post) notFound()
+
+  // CUID로 접근했는데 slug가 있으면 slug URL로 301 redirect
+  if (post.slug && postId !== post.slug) {
+    redirect(`/community/${boardSlug}/${post.slug}`)
+  }
+
+  // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/likes FK 보장)
+  const resolvedId = post.id
+  const comments = await getCommentsByPostId(resolvedId, userId)
 
   const isOwnPost = !!userId && !!post.author.id && post.author.id === userId
 
-  const url = `${BASE_URL}/community/${boardSlug}/${postId}`
+  const canonicalSlug = post.slug ?? postId
+  const url = `${BASE_URL}/community/${boardSlug}/${canonicalSlug}`
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: '홈', path: '/' },
     { name: board.displayName, path: `/community/${boardSlug}` },
-    { name: post.title, path: `/community/${boardSlug}/${postId}` },
+    { name: post.title, path: `/community/${boardSlug}/${canonicalSlug}` },
   ])
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -101,7 +109,7 @@ export default async function PostDetailPage({ params }: PageProps) {
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       {/* GA4 게시글 조회 이벤트 */}
-      <GTMEventOnMount event="post_view" data={{ post_id: postId, board_type: board.boardType, category: post.category ?? '' }} />
+      <GTMEventOnMount event="post_view" data={{ post_id: resolvedId, board_type: board.boardType, category: post.category ?? '' }} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -125,12 +133,12 @@ export default async function PostDetailPage({ params }: PageProps) {
         {isOwnPost && (
           <div className="flex items-center gap-1">
             <Link
-              href={`/community/${boardSlug}/${postId}/edit`}
+              href={`/community/${boardSlug}/${resolvedId}/edit`}
               className="text-xs text-muted-foreground min-h-[52px] px-3 py-1 rounded-lg hover:text-primary transition-colors no-underline flex items-center"
             >
               수정
             </Link>
-            <PostDeleteButton postId={postId} />
+            <PostDeleteButton postId={resolvedId} />
           </div>
         )}
       </div>
@@ -164,7 +172,7 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 액션 바 */}
       <ActionBar
-        postId={postId}
+        postId={resolvedId}
         title={post.title}
         description={post.preview}
         likeCount={post.likeCount}
@@ -179,7 +187,7 @@ export default async function PostDetailPage({ params }: PageProps) {
       </div>
 
       {/* 댓글 */}
-      <CommentSection postId={postId} comments={comments} isLoggedIn={!!userId} />
+      <CommentSection postId={resolvedId} comments={comments} isLoggedIn={!!userId} />
     </div>
   )
 }

@@ -10,6 +10,7 @@ import { checkBannedWords } from '@/lib/banned-words'
 import { sanitizeHtml, stripHtmlTags } from '@/lib/sanitize'
 import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 import { checkAndPromote } from '@/lib/grade'
+import { generateCommunitySlug } from '@/lib/seo/slug'
 
 interface CreatePostResult {
   error?: string
@@ -103,7 +104,9 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     finalContent += imgTags
   }
 
-  const post = await prisma.post.create({
+  const communitySlug = await generateCommunitySlug(title)
+
+  await prisma.post.create({
     data: {
       boardType,
       category: category || null,
@@ -114,6 +117,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
       authorId: session.user.id,
       status: 'PUBLISHED',
       publishedAt: new Date(),
+      slug: communitySlug,
     },
   })
 
@@ -124,10 +128,10 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   })
   void checkAndPromote(session.user.id).catch(() => {})
 
-  const slug = BOARD_TYPE_TO_SLUG[boardType]
-  revalidatePath(`/community/${slug}`)
+  const boardSlugPath = BOARD_TYPE_TO_SLUG[boardType]
+  revalidatePath(`/community/${boardSlugPath}`)
   revalidatePath('/')
-  return { postUrl: `/community/${slug}/${post.id}` }
+  return { postUrl: `/community/${boardSlugPath}/${communitySlug}` }
 }
 
 export async function updatePost(postId: string, formData: FormData): Promise<CreatePostResult> {
