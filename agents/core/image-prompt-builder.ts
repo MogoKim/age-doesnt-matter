@@ -26,19 +26,67 @@ export type ImageStyle =
   | 'active-growth'
 
 // ---------------------------------------------------------------------------
-// Person Style Guide — 한국인 4050 실사 인물 규칙 (v2)
-// 레퍼런스: 여성(김성령/견미리/황신혜/나경원)
+// Person Style Guide — 한국인 실사 인물 규칙 (v2)
+// 레퍼런스 연령대: 1978~1982년생 한국 여성 (만 44~46세)
 // ---------------------------------------------------------------------------
 
+/** 다중 인물 감지 키워드 */
+const MULTI_PERSON_KEYWORDS = [
+  'two', 'three', 'women', 'friends', 'together', 'group',
+  'couple', 'sisters', 'colleagues', 'gathering', 'duo',
+]
+
+/** dallePrompt에 복수 인물 키워드가 포함됐는지 감지 */
+export function isMultiPersonPrompt(dallePrompt: string): boolean {
+  const lower = dallePrompt.toLowerCase()
+  return MULTI_PERSON_KEYWORDS.some((kw) => lower.includes(kw))
+}
+
+/** 실제 한국인임을 강조하는 공통 기반 (단수·복수 공유) */
+const KOREAN_REALISM_BASE =
+  // 실제 인물 3중 강조
+  'THIS IS A PHOTOGRAPH OF REAL PEOPLE — not AI art, not illustration, not CGI. '
+  + 'Captured on a full-frame mirrorless camera, photojournalistic documentary style, '
+  + 'indistinguishable from a real photograph taken by a professional photographer. '
+  // 한국인 특성
+  + 'Genuine East Asian Korean facial features and bone structure — '
+  + 'Korean women born in the late 1970s to early 1980s (around 1978–1982), '
+  + 'inspired by the natural appearance of real Korean women of this generation, '
+  + 'NOT resembling any specific individual or celebrity. '
+  // 헤어·피부
+  + 'Naturally styled dark brown to dark black hair, modern flattering Korean cut, '
+  + 'barely visible grey — less than 5% grey strands at most. '
+  + 'Healthy luminous skin with genuine human skin texture: visible pores, '
+  + 'subtle laugh lines at eye corners, natural pigmentation — '
+  + 'NOT airbrushed NOT perfectly smooth NOT model skin. '
+  // 부정 지시
+  + 'NOT illustration, NOT animation, NOT CGI render, NOT Midjourney style, '
+  + 'NOT gray hair, NOT white hair, NOT elderly, NOT young girl under 35, '
+  + 'NOT Western, NOT Caucasian, NOT Southeast Asian.'
+
 export const PERSON_STYLE_GUIDE = {
-  femalePrompt:
-    'Photorealistic photograph, Korean woman in her late 40s to early 50s, '
-    + 'refined and intelligent appearance, naturally styled dark hair with soft volume and subtle layers, '
-    + 'healthy natural skin complexion, warm confident smile, elegant casual Korean fashion, '
-    + 'soft natural window lighting, candid editorial photograph style, '
-    + 'sharp focus, real skin texture, genuine human expression, '
-    + 'NOT illustration, NOT animation, NOT CGI render, NOT perfect smooth skin, '
-    + 'NOT gray hair, NOT white hair, NOT elderly appearance',
+  /** 단일 인물 (1명) — 중반 40대 한국 여성 */
+  femalePromptSingle:
+    'Photorealistic photograph, one Korean woman in her mid-40s (age 44 to 46), '
+    + 'refined intelligent warmth, modern Korean everyday fashion in muted elegant tones, '
+    + 'candid authentic lifestyle moment — genuine natural expression, NOT posed, '
+    + 'soft natural window light or warm outdoor golden light, '
+    + 'shot on Canon EOS R5 85mm f/1.8 portrait lens, shallow depth of field, '
+    + 'editorial magazine photograph quality, subtle warm coral accent in environment, '
+    + KOREAN_REALISM_BASE,
+
+  /** 복수 인물 (2~3명) — 중반 40대 한국 여성들 */
+  femalePromptMultiple:
+    'Photorealistic photograph, two to three Korean women in their mid-40s (age 44 to 46), '
+    + 'genuine warm friendship — real laughter, natural eye contact, authentic connection, '
+    + 'NOT models, NOT posed stock photo, spontaneous candid moment, '
+    + 'modern Korean everyday fashion, '
+    + 'soft natural window light or warm outdoor golden light, '
+    + 'shot on Canon EOS R5 35mm f/2.8, editorial magazine quality, '
+    + KOREAN_REALISM_BASE,
+
+  /** 하위 호환용 — 기존 코드 참조 대응 (= femalePromptSingle) */
+  get femalePrompt() { return this.femalePromptSingle },
 
   never: [
     'white hair', 'gray hair', 'wrinkled', 'elderly', 'senior citizen',
@@ -123,7 +171,10 @@ export function buildImagePromptByType(
   imageType: ImageType,
 ): string {
   if (imageType === 'PERSON_REAL') {
-    return `${PERSON_STYLE_GUIDE.femalePrompt}, ${prompt}, ${buildNegativePrompt()} ${NO_TEXT_DIRECTIVE}`
+    const basePrompt = isMultiPersonPrompt(prompt)
+      ? PERSON_STYLE_GUIDE.femalePromptMultiple
+      : PERSON_STYLE_GUIDE.femalePromptSingle
+    return `${basePrompt}, ${prompt}, ${buildNegativePrompt()} ${NO_TEXT_DIRECTIVE}`
   }
 
   const prefix = IMAGE_TYPE_PREFIXES[imageType]
