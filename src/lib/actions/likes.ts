@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { checkAndPromote } from '@/lib/grade'
 
 interface ToggleResult {
   error?: string
@@ -22,6 +23,10 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
   })
 
   if (existing) {
+    const cancelPost = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true },
+    })
     await prisma.$transaction([
       prisma.like.delete({ where: { id: existing.id } }),
       prisma.post.update({
@@ -29,6 +34,12 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
         data: { likeCount: { decrement: 1 } },
       }),
     ])
+    if (cancelPost && cancelPost.authorId !== userId) {
+      await prisma.user.update({
+        where: { id: cancelPost.authorId },
+        data: { receivedLikes: { decrement: 1 } },
+      }).catch(() => {})
+    }
     revalidatePath(`/community`)
     return { toggled: false }
   }
@@ -56,6 +67,13 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
     select: { authorId: true, likeCount: true },
   })
   if (post && post.authorId !== userId) {
+    // 글 작성자 receivedLikes 증가 + 등급 승급 체크
+    await prisma.user.update({
+      where: { id: post.authorId },
+      data: { receivedLikes: { increment: 1 } },
+    }).catch(() => {})
+    void checkAndPromote(post.authorId).catch(() => {})
+
     // 공감 묶음 알림: 5의 배수마다 알림 생성
     if (post.likeCount % 5 === 0 || post.likeCount === 1) {
       const content = post.likeCount === 1
@@ -146,6 +164,10 @@ export async function toggleCommentLike(commentId: string): Promise<ToggleResult
   })
 
   if (existing) {
+    const cancelComment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { authorId: true },
+    })
     await prisma.$transaction([
       prisma.like.delete({ where: { id: existing.id } }),
       prisma.comment.update({
@@ -153,6 +175,12 @@ export async function toggleCommentLike(commentId: string): Promise<ToggleResult
         data: { likeCount: { decrement: 1 } },
       }),
     ])
+    if (cancelComment && cancelComment.authorId !== userId) {
+      await prisma.user.update({
+        where: { id: cancelComment.authorId },
+        data: { receivedLikes: { decrement: 1 } },
+      }).catch(() => {})
+    }
     return { toggled: false }
   }
 
@@ -165,6 +193,20 @@ export async function toggleCommentLike(commentId: string): Promise<ToggleResult
       data: { likeCount: { increment: 1 } },
     }),
   ])
+
+  // 댓글 작성자 receivedLikes 증가 + 등급 승급 체크 (본인 제외)
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { authorId: true },
+  })
+  if (comment && comment.authorId !== userId) {
+    await prisma.user.update({
+      where: { id: comment.authorId },
+      data: { receivedLikes: { increment: 1 } },
+    }).catch(() => {})
+    void checkAndPromote(comment.authorId).catch(() => {})
+  }
+
   return { toggled: true }
 }
 
