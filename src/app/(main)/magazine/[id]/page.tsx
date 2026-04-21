@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth'
 import { getPostDetail } from '@/lib/queries/posts'
 import { getRelatedMagazinePosts } from '@/lib/queries/posts/posts.magazine'
 import { getCommentsByPostId } from '@/lib/queries/comments'
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import ActionBar from '@/components/features/community/ActionBar'
@@ -91,18 +92,23 @@ function extractFaqJsonLd(html: string): object | null {
   }
 }
 
-/** 매거진 글의 CPS 상품 링크 조회 */
+/** 매거진 글의 CPS 상품 링크 조회 (5분 캐시) */
 async function getCpsLinks(postId: string) {
-  return prisma.cpsLink.findMany({
-    where: { postId },
-    select: {
-      id: true,
-      productName: true,
-      productUrl: true,
-      productImageUrl: true,
-      rating: true,
-    },
-  })
+  return unstable_cache(
+    () =>
+      prisma.cpsLink.findMany({
+        where: { postId },
+        select: {
+          id: true,
+          productName: true,
+          productUrl: true,
+          productImageUrl: true,
+          rating: true,
+        },
+      }),
+    [`cps-links-${postId}`],
+    { revalidate: 300 },
+  )()
 }
 
 export default async function MagazineDetailPage({ params }: PageProps) {

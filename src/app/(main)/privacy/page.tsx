@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 
+export const revalidate = 604800
+
 export const metadata: Metadata = {
   title: '개인정보처리방침',
   alternates: { canonical: 'https://age-doesnt-matter.com/privacy' },

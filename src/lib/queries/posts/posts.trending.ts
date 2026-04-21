@@ -54,22 +54,24 @@ export async function getWeeklyTrendingPosts(limit = 10, q?: string, sf?: Search
 /* ── 에디터스 픽 (HALL_OF_FAME) ── */
 
 export async function getEditorsPicks(limit = 2): Promise<PostSummary[]> {
-  // HALL_OF_FAME 우선, 부족 시 HOT으로 채움 — 단일 쿼리 (조건부 2차 쿼리 제거)
-  const rows = await prisma.post.findMany({
-    where: {
-      status: 'PUBLISHED',
-      promotionLevel: { in: ['HALL_OF_FAME', 'HOT'] },
-    },
-    select: postSelect,
-    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
-    take: limit * 3,
-  })
+  // HALL_OF_FAME와 HOT을 병렬 조회 → 오버페치 제거
+  const [hallOfFame, hot] = await Promise.all([
+    prisma.post.findMany({
+      where: { status: 'PUBLISHED', promotionLevel: 'HALL_OF_FAME' },
+      select: postSelect,
+      orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+      take: limit,
+    }),
+    prisma.post.findMany({
+      where: { status: 'PUBLISHED', promotionLevel: 'HOT' },
+      select: postSelect,
+      orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+      take: limit,
+    }),
+  ])
 
-  const sorted = [
-    ...rows.filter((r) => r.promotionLevel === 'HALL_OF_FAME'),
-    ...rows.filter((r) => r.promotionLevel === 'HOT'),
-  ]
-  return sorted.slice(0, limit).map(toPostSummary)
+  // HALL_OF_FAME 우선, 부족 시 HOT으로 채움
+  return [...hallOfFame, ...hot].slice(0, limit).map(toPostSummary)
 }
 
 /* ── 베스트: 실시간 인기글 (공감 10+) ── */

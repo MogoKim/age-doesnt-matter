@@ -1,3 +1,5 @@
+export const revalidate = 86400
+
 import { FaqAccordion } from '@/components/common/FaqAccordion'
 import type { FaqItem } from '@/components/common/FaqAccordion'
 

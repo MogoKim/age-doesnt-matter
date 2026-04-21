@@ -74,6 +74,20 @@ const nextConfig = {
           },
         ],
       },
+      // 정적 자산: 콘텐츠 해시 포함 → 1년 immutable 캐시
+      {
+        source: '/_next/static/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      // 공개 아이콘/스크린샷: 30일 캐시
+      {
+        source: '/icons/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000' }],
+      },
+      {
+        source: '/screenshots/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000' }],
+      },
     ]
   },
 }

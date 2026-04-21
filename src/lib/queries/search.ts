@@ -104,46 +104,43 @@ export async function searchAll(
     status: 'PUBLISHED' as const,
   }
 
-  const [jobs, posts, magazine] = await Promise.all([
+  // findMany + count를 단일 Promise.all로 병렬 실행 (Waterfall 제거)
+  const [[jobs, jobCount], [posts, postCount], [magazine, magazineCount]] = await Promise.all([
     tab === 'all' || tab === 'jobs'
-      ? prisma.post.findMany({
-          where: { ...textFilter, boardType: 'JOB' },
-          select: postSelect,
-          orderBy: { createdAt: 'desc' },
-          take: tab === 'jobs' ? 20 : limit,
-        })
-      : Promise.resolve([]),
+      ? Promise.all([
+          prisma.post.findMany({
+            where: { ...textFilter, boardType: 'JOB' },
+            select: postSelect,
+            orderBy: { createdAt: 'desc' },
+            take: tab === 'jobs' ? 20 : limit,
+          }),
+          prisma.post.count({ where: { ...textFilter, boardType: 'JOB' } }),
+        ])
+      : Promise.resolve([[], 0] as const),
 
     tab === 'all' || tab === 'posts'
-      ? prisma.post.findMany({
-          where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] } },
-          select: postSelect,
-          orderBy: { createdAt: 'desc' },
-          take: tab === 'posts' ? 20 : limit,
-        })
-      : Promise.resolve([]),
+      ? Promise.all([
+          prisma.post.findMany({
+            where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] } },
+            select: postSelect,
+            orderBy: { createdAt: 'desc' },
+            take: tab === 'posts' ? 20 : limit,
+          }),
+          prisma.post.count({ where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] } } }),
+        ])
+      : Promise.resolve([[], 0] as const),
 
     tab === 'all' || tab === 'magazine'
-      ? prisma.post.findMany({
-          where: { ...textFilter, boardType: 'MAGAZINE' },
-          select: postSelect,
-          orderBy: { createdAt: 'desc' },
-          take: tab === 'magazine' ? 20 : limit,
-        })
-      : Promise.resolve([]),
-  ])
-
-  // 각 카테고리 총 건수 (tab=all일 때만 카운트)
-  const [jobCount, postCount, magazineCount] = await Promise.all([
-    tab === 'all' || tab === 'jobs'
-      ? prisma.post.count({ where: { ...textFilter, boardType: 'JOB' } })
-      : 0,
-    tab === 'all' || tab === 'posts'
-      ? prisma.post.count({ where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] } } })
-      : 0,
-    tab === 'all' || tab === 'magazine'
-      ? prisma.post.count({ where: { ...textFilter, boardType: 'MAGAZINE' } })
-      : 0,
+      ? Promise.all([
+          prisma.post.findMany({
+            where: { ...textFilter, boardType: 'MAGAZINE' },
+            select: postSelect,
+            orderBy: { createdAt: 'desc' },
+            take: tab === 'magazine' ? 20 : limit,
+          }),
+          prisma.post.count({ where: { ...textFilter, boardType: 'MAGAZINE' } }),
+        ])
+      : Promise.resolve([[], 0] as const),
   ])
 
   return {
