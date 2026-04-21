@@ -10,6 +10,7 @@
  */
 
 import type { ImageContext, ImageResult } from './image-generator.js'
+import { isMultiPersonPrompt } from '../core/image-prompt-builder.js'
 
 // ─── R2 업로드 헬퍼 ──────────────────────────────────────────────────────────
 
@@ -44,17 +45,23 @@ function buildGeminiPromptFromContext(ctx: ImageContext): string | null {
   if (ctx.type === 'ILLUSTRATION') return null
 
   if (ctx.type === 'PERSON_REAL') {
+    const isMulti = isMultiPersonPrompt(ctx.dallePrompt)
+    const subjectDesc = isMulti
+      ? 'two to three stylish Korean women in their mid-40s (age 44 to 46), genuine warm friendship, real laughter and authentic connection'
+      : 'portrait of a stylish Korean woman in her mid-40s (age 44 to 46)'
     return [
-      'portrait of a stylish Korean woman in her late 40s',
+      subjectDesc,
       ctx.dallePrompt,
-      'inspired by natural refined elegance of acclaimed Korean actresses born late 1960s to mid-1970s',
-      'NOT resembling any specific individual',
-      'naturally styled dark brown to dark black hair, very minimal gray, modern flattering cut',
+      'THIS IS A PHOTOGRAPH OF REAL PEOPLE — not AI art, not illustration, not CGI',
+      'Genuine East Asian Korean facial features and bone structure, born around 1978–1982',
+      'NOT resembling any specific individual or celebrity',
+      'naturally styled dark brown to dark black hair, less than 5% grey strands, modern flattering Korean cut',
       'candid unposed authentic lifestyle moment, warm confident expression',
       'shot on Canon EOS R5, 85mm f/1.4 portrait lens, soft bokeh',
       'soft natural window light or outdoor daylight',
-      'natural skin texture, subtle aging details, vibrant for her age',
-      'photorealistic high resolution, NOT AI art NOT stock photo',
+      'healthy luminous skin with genuine human texture: visible pores, subtle laugh lines, NOT airbrushed',
+      'photorealistic high resolution, NOT AI art NOT stock photo NOT Midjourney style',
+      'NOT gray hair, NOT elderly, NOT Western, NOT Caucasian',
       'subtle warm coral #FF6F61 accent in environment',
     ].join(', ')
   }
@@ -84,16 +91,22 @@ function buildChatGPTPromptFromContext(ctx: ImageContext): string | null {
   if (ctx.type === 'ILLUSTRATION') return null
 
   if (ctx.type === 'PERSON_REAL') {
+    const isMulti = isMultiPersonPrompt(ctx.dallePrompt)
+    const subjectDesc = isMulti
+      ? `ONLY women present, no men. Two to three stylish Korean women in their mid-40s (age 44 to 46), genuine warm friendship — real laughter, natural eye contact, authentic connection. ${ctx.dallePrompt}`
+      : `ONLY women present, no men. Portrait of a stylish Korean woman in her mid-40s (age 44 to 46). ${ctx.dallePrompt}`
     return [
-      'ONLY women present, no men',
-      `portrait of a stylish Korean woman in her late 40s, ${ctx.dallePrompt}`,
-      'inspired by natural refined elegance of acclaimed Korean actresses born late 1960s to mid-1970s',
-      'NOT resembling any specific individual',
-      'naturally styled dark brown to dark black hair, very minimal gray, modern flattering cut',
+      subjectDesc,
+      'THIS IS A PHOTOGRAPH OF REAL PEOPLE — not AI art, not illustration, not CGI',
+      'Genuine East Asian Korean facial features and bone structure, born around 1978–1982',
+      'NOT resembling any specific individual or celebrity',
+      'naturally styled dark brown to dark black hair, less than 5% grey strands, modern flattering Korean cut',
       'candid unposed authentic lifestyle moment, warm confident smile',
-      'shot on Canon EOS R5, 85mm portrait lens, sharp crisp focus, f/5.6 deep depth of field, NO blur NO bokeh',
+      'shot on Canon EOS R5, 85mm portrait lens, sharp crisp focus, f/5.6, NO blur NO bokeh',
       'soft natural window light or outdoor daylight',
-      'photorealistic high resolution, NOT AI art NOT stock photo',
+      'healthy luminous skin with genuine human texture: visible pores, subtle laugh lines, NOT airbrushed',
+      'photorealistic high resolution, NOT AI art NOT stock photo NOT Midjourney style',
+      'NOT gray hair, NOT elderly, NOT Western, NOT Caucasian',
       'subtle warm coral #FF6F61 accent in environment',
     ].join(', ')
   }

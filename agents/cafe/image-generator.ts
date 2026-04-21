@@ -199,17 +199,25 @@ async function uploadToR2(sourceUrl: string, filename: string): Promise<string |
     return null
   }
 
-  try {
-    const imgResponse = await fetch(sourceUrl)
-    const imgBuffer = Buffer.from(await imgResponse.arrayBuffer())
+  const MAX_RETRIES = 2
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const imgResponse = await fetch(sourceUrl)
+      const imgBuffer = Buffer.from(await imgResponse.arrayBuffer())
 
-    const { uploadToR2: r2Upload } = await import('../../src/lib/r2.js')
-    const key = `magazine/${filename}`
-    const { url } = await r2Upload(imgBuffer, key, filename.endsWith('.jpg') ? 'image/jpeg' : 'image/png')
+      const { uploadToR2: r2Upload } = await import('../../src/lib/r2.js')
+      const key = `magazine/${filename}`
+      const { url } = await r2Upload(imgBuffer, key, filename.endsWith('.jpg') ? 'image/jpeg' : 'image/png')
 
-    return url
-  } catch (err) {
-    console.error('[ImageGen] R2 업로드 실패:', err)
-    return null
+      return url
+    } catch (err) {
+      console.warn(`[ImageGen] R2 업로드 실패 (시도 ${attempt}/${MAX_RETRIES}):`, err)
+      if (attempt === MAX_RETRIES) {
+        console.error('[ImageGen] R2 업로드 최종 실패')
+        return null
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+    }
   }
+  return null
 }
