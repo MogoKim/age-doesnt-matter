@@ -74,7 +74,7 @@ jobs:
   sheet-scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'sheet-scrape' || github.event.schedule == '0 2 * * *' || github.event.schedule == '0 12 * * *' }}
+    if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'sheet-scrape' || github.event_name == 'schedule' }}
 
     steps:
       - uses: actions/checkout@v4
