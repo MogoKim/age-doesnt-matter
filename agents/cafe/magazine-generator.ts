@@ -290,7 +290,18 @@ export async function main(): Promise<MagazineRunResult[]> {
     return []
   }
 
-  const magazineTopics = trend.magazineTopics as unknown as MagazineSuggestion[]
+  // GEO 시드 주제 확인 — period='geo_seed'로 미리 INSERT된 주제가 있으면 최우선 처리
+  const geoSeed = await prisma.cafeTrend.findUnique({
+    where: { date_period: { date: today, period: 'geo_seed' } },
+  })
+  const geoTopics = geoSeed
+    ? (geoSeed.magazineTopics as unknown as MagazineSuggestion[])
+    : []
+
+  const magazineTopics = [
+    ...geoTopics,
+    ...(trend.magazineTopics as unknown as MagazineSuggestion[]),
+  ]
 
   // 욕망 지도 로드 — 주제 보강에 활용
   const brief = await loadTodayBrief({ fallbackToPrevious: true })
