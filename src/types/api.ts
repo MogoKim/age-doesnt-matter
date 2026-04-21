@@ -117,6 +117,8 @@ export interface PostDetail extends PostSummary {
   isScrapped: boolean
   updatedAt: string
   slug: string | null
+  seoTitle: string | null
+  seoDescription: string | null
 }
 
 export interface CommentItem {

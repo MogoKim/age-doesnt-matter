@@ -15,6 +15,7 @@ import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import ResponsiveAd from '@/components/ad/ResponsiveAd'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
+import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 
 interface PageProps {
   params: Promise<{ boardSlug: string }>
@@ -100,6 +101,10 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
   const lastId = posts.length > 0 ? posts[posts.length - 1].id : undefined
 
   const boardFaqJsonLd = getBoardFaqJsonLd(boardSlug)
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: '홈', path: '/' },
+    { name: board.displayName, path: `/community/${boardSlug}` },
+  ])
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-12">
@@ -109,6 +114,10 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
           dangerouslySetInnerHTML={{ __html: JSON.stringify(boardFaqJsonLd) }}
         />
       )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* GA4 게시판 조회 이벤트 */}
       <BoardViewTracker boardType={board.boardType} boardSlug={boardSlug} />
       {/* 게시판 헤더 */}

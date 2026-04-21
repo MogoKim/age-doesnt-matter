@@ -11,6 +11,7 @@ import { sanitizeHtml } from '@/lib/sanitize'
 import { formatSalary } from '@/lib/format'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
+import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import { ADSENSE } from '@/components/ad/ad-slots'
 
@@ -18,19 +19,19 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
-const BASE_URL = 'https://www.age-doesnt-matter.com'
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
   const job = await getJobDetail(id)
   if (!job) return {}
 
-  const title = `${job.title} — ${job.company} 채용`
+  const baseTitle = `${job.title} — ${job.company} 채용`
+  const title = job.seoTitle ?? baseTitle
   const rawDescription = job.content
     ? job.content.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 100)
     : ''
-  const description = [rawDescription, `${job.location} 근무`, formatSalary(job.salary)]
+  const baseDescription = [rawDescription, `${job.location} 근무`, formatSalary(job.salary)]
     .filter(Boolean).join(' · ').slice(0, 155)
+  const description = job.seoDescription ?? baseDescription
   const url = `/jobs/${id}`
 
   return {
@@ -44,7 +45,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       siteName: '우리 나이가 어때서',
       locale: 'ko_KR',
-      images: [{ url: `${BASE_URL}/og-jobs.png`, width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -126,6 +126,14 @@ export default async function JobDetailPage({ params }: PageProps) {
       <GTMEventOnMount event="job_view" data={{ job_id: id, job_title: job.title }} />
       {/* JSON-LD 구조화 데이터 */}
       <JobPostingJsonLd job={job} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBreadcrumbJsonLd([
+          { name: '홈', path: '/' },
+          { name: '일자리', path: '/jobs' },
+          { name: job.title, path: `/jobs/${id}` },
+        ])) }}
+      />
 
       {/* 뒤로가기 */}
       <Link

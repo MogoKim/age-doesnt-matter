@@ -4,8 +4,10 @@ import type { Metadata } from 'next'
 
 import { auth } from '@/lib/auth'
 import { getPostDetail } from '@/lib/queries/posts'
+import { getRelatedMagazinePosts } from '@/lib/queries/posts/posts.magazine'
 import { getCommentsByPostId } from '@/lib/queries/comments'
 import { prisma } from '@/lib/prisma'
+import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
@@ -44,8 +46,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const ogImage = post.thumbnailUrl || firstContentImage || `${BASE_URL}/logo.png`
 
   return {
-    title: post.title,
-    description,
+    title: post.seoTitle ?? post.title,
+    description: post.seoDescription ?? description,
     alternates: { canonical: url },
     openGraph: {
       title: post.title,
@@ -121,9 +123,10 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/CPS/ActionBar FK 보장)
   const resolvedId = post.id
 
-  const [comments, cpsLinks] = await Promise.all([
+  const [comments, cpsLinks, relatedPosts] = await Promise.all([
     getCommentsByPostId(resolvedId, userId),
     getCpsLinks(resolvedId),
+    getRelatedMagazinePosts(post.category ?? null, resolvedId, 3),
   ])
 
   // JSON-LD 구조화 데이터
@@ -165,6 +168,14 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
         />
       )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBreadcrumbJsonLd([
+          { name: '홈', path: '/' },
+          { name: '매거진', path: '/magazine' },
+          { name: post.title, path: `/magazine/${canonicalSlug}` },
+        ])) }}
+      />
 
       {/* 뒤로가기 */}
       <Link
@@ -266,6 +277,34 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         isScrapped={post.isScrapped}
         isLoggedIn={!!userId}
       />
+
+      {/* 함께 읽어보세요 */}
+      {relatedPosts.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-body font-bold text-foreground mb-4">함께 읽어보세요</h3>
+          <div className="space-y-3">
+            {relatedPosts.map((related) => (
+              <a
+                key={related.id}
+                href={`/magazine/${related.slug ?? related.id}`}
+                className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-all hover:border-primary/30 hover:shadow-sm min-h-[52px]"
+              >
+                <div className="flex-1 min-w-0">
+                  {related.category && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[13px] font-bold mb-1">
+                      {related.category}
+                    </span>
+                  )}
+                  <p className="text-body font-medium text-foreground m-0 line-clamp-2 leading-[1.4]">
+                    {related.title}
+                  </p>
+                </div>
+                <span className="text-caption text-muted-foreground flex-shrink-0 mt-1">→</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 댓글 */}
       <CommentSection postId={resolvedId} comments={comments} />

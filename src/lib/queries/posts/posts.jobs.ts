@@ -144,6 +144,8 @@ export interface JobDetailItem {
   isLiked: boolean
   isScrapped: boolean
   createdAt: string
+  seoTitle: string | null
+  seoDescription: string | null
 }
 
 export const getJobDetail = cache(async function getJobDetail(
@@ -160,6 +162,8 @@ export const getJobDetail = cache(async function getJobDetail(
       likeCount: true,
       commentCount: true,
       createdAt: true,
+      seoTitle: true,
+      seoDescription: true,
       jobDetail: {
         select: {
           company: true,
@@ -219,5 +223,7 @@ export const getJobDetail = cache(async function getJobDetail(
     isLiked,
     isScrapped,
     createdAt: post.createdAt.toISOString(),
+    seoTitle: post.seoTitle ?? null,
+    seoDescription: post.seoDescription ?? null,
   }
 })

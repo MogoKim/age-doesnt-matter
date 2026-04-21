@@ -86,7 +86,7 @@ async function generateMagazineArticle(
   category: string,
   referencePosts: { title: string; content: string; cafeName: string }[],
   recentTitles: string[],
-): Promise<{ title: string; content: string; summary: string; imageContexts: ImageContext[] } | null> {
+): Promise<{ title: string; content: string; summary: string; imageContexts: ImageContext[]; seoTitle: string | null; seoDescription: string | null } | null> {
   const refs = referencePosts.map((p, i) =>
     `[${i + 1}] (${p.cafeName}) "${p.title}"\n${p.content.slice(0, 300)}`,
   ).join('\n\n')
@@ -117,6 +117,8 @@ ${recentList ? `최근 발행 매거진 (중복 주제 피해주세요):\n${rece
 응답 형식 (반드시 아래 형식을 따라주세요):
 제목: (20자 이내, 핵심을 담은 제목)
 요약: (40자 이내, 한 줄 요약)
+seoTitle: (50자 이내, 주요 키워드 앞에 배치, 숫자/연도 포함 권장 예: "50대 갱년기 증상 7가지 — 2024 완벽 정리")
+seoDescription: (120자 이내, 첫 문장에 직접 답변, "50대" "갱년기" 등 핵심 키워드 포함, 공감 유도)
 이미지컨텍스트1: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, FOOD/SCENE/OBJECT만)
 이미지컨텍스트2: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, FOOD/SCENE/OBJECT만)
 본문: (HTML, 800~1200자, 소제목 2~3개, 각 15자 이내)
@@ -152,6 +154,8 @@ ${recentList ? `최근 발행 매거진 (중복 주제 피해주세요):\n${rece
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
   const titleMatch = text.match(/제목:\s*(.+)/)
   const summaryMatch = text.match(/요약:\s*(.+)/)
+  const seoTitleMatch = text.match(/seoTitle:\s*(.+)/)
+  const seoDescriptionMatch = text.match(/seoDescription:\s*(.+)/)
   const bodyMatch = text.match(/본문:\s*([\s\S]+)/)
 
   if (!titleMatch || !bodyMatch) return null
@@ -190,6 +194,8 @@ ${recentList ? `최근 발행 매거진 (중복 주제 피해주세요):\n${rece
     summary: summaryMatch?.[1]?.trim() ?? '',
     content: cleanContent,
     imageContexts,
+    seoTitle: seoTitleMatch?.[1]?.trim().slice(0, 60) ?? null,
+    seoDescription: seoDescriptionMatch?.[1]?.trim().slice(0, 120) ?? null,
   }
 }
 
@@ -216,7 +222,7 @@ async function generateMagazineSlug(title: string): Promise<string> {
 
 /** 매거진 게시 (에디터 봇 계정 사용) */
 async function publishMagazine(
-  article: { title: string; content: string; summary: string },
+  article: { title: string; content: string; summary: string; seoTitle: string | null; seoDescription: string | null },
   category: string,
   thumbnailUrl?: string,
 ): Promise<{ id: string; slug: string }> {
@@ -237,6 +243,8 @@ async function publishMagazine(
       status: 'PUBLISHED',
       publishedAt: new Date(),
       slug,
+      seoTitle: article.seoTitle ?? null,
+      seoDescription: article.seoDescription ?? null,
     },
   })
 

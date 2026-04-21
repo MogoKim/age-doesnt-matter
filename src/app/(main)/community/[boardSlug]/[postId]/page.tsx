@@ -16,6 +16,7 @@ import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
+import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 
 interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
@@ -44,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       locale: 'ko_KR',
       images: post.thumbnailUrl
         ? [{ url: post.thumbnailUrl, width: 1200, height: 630, alt: post.title }]
-        : [{ url: `${BASE_URL}/og-default.png`, width: 1200, height: 630, alt: '우리 나이가 어때서' }],
+        : undefined,
     },
     twitter: {
       card: 'summary_large_image',
@@ -73,6 +74,11 @@ export default async function PostDetailPage({ params }: PageProps) {
   const isOwnPost = !!userId && !!post.author.id && post.author.id === userId
 
   const url = `${BASE_URL}/community/${boardSlug}/${postId}`
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: '홈', path: '/' },
+    { name: board.displayName, path: `/community/${boardSlug}` },
+    { name: post.title, path: `/community/${boardSlug}/${postId}` },
+  ])
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -99,6 +105,10 @@ export default async function PostDetailPage({ params }: PageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {/* Breadcrumbs */}
       <Breadcrumbs items={[

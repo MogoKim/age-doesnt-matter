@@ -2,6 +2,27 @@ import { prisma } from '@/lib/prisma'
 import type { PostSummary } from '@/types/api'
 import { postSelect, toPostSummary, buildTextSearch, SearchField } from './posts.base'
 
+/* ── 관련 매거진 (내부 링크용) ── */
+
+export async function getRelatedMagazinePosts(
+  category: string | null,
+  excludeId: string,
+  limit = 3,
+): Promise<PostSummary[]> {
+  const rows = await prisma.post.findMany({
+    where: {
+      boardType: 'MAGAZINE',
+      status: 'PUBLISHED',
+      id: { not: excludeId },
+      ...(category ? { category } : {}),
+    },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    select: postSelect,
+  })
+  return rows.map(toPostSummary)
+}
+
 /* ── 매거진 최신글 ── */
 
 export async function getLatestMagazinePosts(limit = 4): Promise<PostSummary[]> {

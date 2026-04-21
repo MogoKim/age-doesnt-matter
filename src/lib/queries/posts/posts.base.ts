@@ -124,6 +124,8 @@ export const getPostDetail = cache(async function getPostDetail(
       content: true,
       updatedAt: true,
       slug: true,
+      seoTitle: true,
+      seoDescription: true,
     },
   })
 
@@ -160,5 +162,7 @@ export const getPostDetail = cache(async function getPostDetail(
     isScrapped,
     updatedAt: post.updatedAt.toISOString(),
     slug: post.slug ?? null,
+    seoTitle: post.seoTitle ?? null,
+    seoDescription: post.seoDescription ?? null,
   }
 })
