@@ -7,6 +7,16 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    notification: {
+      create: vi.fn().mockResolvedValue({}),
+    },
+  },
+}))
+
+// pushService mock
+vi.mock('@/lib/push/service', () => ({
+  pushService: {
+    notify: vi.fn().mockResolvedValue(undefined),
   },
 }))
 
