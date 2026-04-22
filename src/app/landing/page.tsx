@@ -79,7 +79,7 @@ export default async function LandingPage({
       </div>
 
       {/* 카드 목록 + 스티키 CTA (클라이언트) */}
-      <LandingClient posts={posts} />
+      <LandingClient posts={posts} t={t} />
 
     </div>
   )

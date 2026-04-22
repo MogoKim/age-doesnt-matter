@@ -1,7 +1,15 @@
-import { signIn } from '@/lib/auth'
+'use client'
+
 import Link from 'next/link'
+import { kakaoSignIn } from '@/app/login/actions'
+import { sendGtmEvent, getStoredUtm } from '@/lib/gtm'
 
 export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
+  async function handleKakaoClick() {
+    sendGtmEvent('kakao_button_click', { from: 'login_page', ...getStoredUtm() })
+    await kakaoSignIn(callbackUrl)
+  }
+
   return (
     // 모바일: 전체 화면 세로 분할 / 데스크탑: 420px 카드
     <div className="
@@ -24,7 +32,7 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
           <span>지금도 누군가 고민을 나누고 있어요</span>
         </div>
 
-        {/* 메인 카피 — 서브텍스트 위, 헤드라인 아래 */}
+        {/* 메인 카피 */}
         <div>
           <p className="font-bold leading-[1.45]" style={{ fontSize: '30px', color: '#111', letterSpacing: '-0.02em' }}>
             엄마 말고,<br />아내 말고,<br />그냥 나로.
@@ -39,25 +47,19 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       <div className="bg-background px-6 pt-8 flex flex-col flex-1 md:flex-none md:pb-12">
 
         {/* 카카오 버튼 */}
-        <form
-          action={async () => {
-            'use server'
-            await signIn('kakao', { redirectTo: callbackUrl })
+        <button
+          type="button"
+          onClick={handleKakaoClick}
+          className="flex items-center justify-center gap-2 w-full h-[56px] px-6 border-none rounded-xl font-bold text-base cursor-pointer transition-all hover:brightness-95 hover:-translate-y-0.5 active:translate-y-0"
+          style={{
+            background: '#FEE500',
+            color: '#191919',
+            boxShadow: '0 2px 8px rgba(254,229,0,0.35)',
           }}
         >
-          <button
-            type="submit"
-            className="flex items-center justify-center gap-2 w-full h-[56px] px-6 border-none rounded-xl font-bold text-base cursor-pointer transition-all hover:brightness-95 hover:-translate-y-0.5 active:translate-y-0"
-            style={{
-              background: '#FEE500',
-              color: '#191919',
-              boxShadow: '0 2px 8px rgba(254,229,0,0.35)',
-            }}
-          >
-            <span className="text-[22px] shrink-0">💬</span>
-            카카오톡으로 시작하기
-          </button>
-        </form>
+          <span className="text-[22px] shrink-0">💬</span>
+          카카오톡으로 시작하기
+        </button>
 
         {/* 불안 해소 체크리스트 */}
         <div className="mt-4 flex items-center justify-center gap-4 text-sm" style={{ color: '#999' }}>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { sendGtmEvent } from '@/lib/gtm'
 
 type Post = {
   id: string
@@ -14,7 +15,7 @@ type Post = {
   postedAt: Date
 }
 
-function SignupModal({ onClose }: { onClose: () => void }) {
+function SignupModal({ onClose, tParam }: { onClose: () => void; tParam: string }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
@@ -36,6 +37,7 @@ function SignupModal({ onClose }: { onClose: () => void }) {
           href="/login?callbackUrl=/"
           className="flex items-center justify-center gap-2 w-full h-[52px] rounded-xl font-bold text-base"
           style={{ background: '#FEE500', color: '#191919' }}
+          onClick={() => sendGtmEvent('landing_cta_click', { button: 'modal', t_param: tParam })}
         >
           <span className="text-[20px]">💬</span>
           카카오로 무료 가입
@@ -53,7 +55,7 @@ function SignupModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-function PostCard({ post, onAction }: { post: Post; onAction: () => void }) {
+function PostCard({ post, onAction }: { post: Post; onAction: (action: 'like' | 'comment') => void }) {
   const preview = post.content.length > 100
     ? post.content.slice(0, 100) + '...'
     : post.content
@@ -92,14 +94,14 @@ function PostCard({ post, onAction }: { post: Post; onAction: () => void }) {
       {/* 액션 버튼 */}
       <div className="flex gap-2">
         <button
-          onClick={onAction}
+          onClick={() => onAction('like')}
           className="flex-1 h-[44px] rounded-xl text-[14px] font-semibold border transition-colors"
           style={{ borderColor: '#FF6F61', color: '#FF6F61' }}
         >
           공감하기
         </button>
         <button
-          onClick={onAction}
+          onClick={() => onAction('comment')}
           className="flex-1 h-[44px] rounded-xl text-[14px] font-semibold border transition-colors"
           style={{ borderColor: '#ddd', color: '#666' }}
         >
@@ -110,8 +112,13 @@ function PostCard({ post, onAction }: { post: Post; onAction: () => void }) {
   )
 }
 
-export default function LandingClient({ posts }: { posts: Post[] }) {
+export default function LandingClient({ posts, t = 'relation' }: { posts: Post[]; t?: string }) {
   const [showModal, setShowModal] = useState(false)
+
+  function handleCardAction(action: 'like' | 'comment') {
+    sendGtmEvent('landing_card_action', { action, t_param: t })
+    setShowModal(true)
+  }
 
   return (
     <>
@@ -126,7 +133,7 @@ export default function LandingClient({ posts }: { posts: Post[] }) {
             <PostCard
               key={post.id}
               post={post}
-              onAction={() => setShowModal(true)}
+              onAction={handleCardAction}
             />
           ))
         )}
@@ -142,6 +149,7 @@ export default function LandingClient({ posts }: { posts: Post[] }) {
             href="/login?callbackUrl=/"
             className="flex items-center justify-center gap-2 w-full h-[52px] rounded-xl font-bold text-base shadow-sm"
             style={{ background: '#FEE500', color: '#191919' }}
+            onClick={() => sendGtmEvent('landing_cta_click', { button: 'sticky_bar', t_param: t })}
           >
             <span className="text-[20px]">💬</span>
             카카오로 무료 가입하기
@@ -155,7 +163,7 @@ export default function LandingClient({ posts }: { posts: Post[] }) {
       </div>
 
       {/* 가입 유도 모달 */}
-      {showModal && <SignupModal onClose={() => setShowModal(false)} />}
+      {showModal && <SignupModal onClose={() => setShowModal(false)} tParam={t} />}
     </>
   )
 }

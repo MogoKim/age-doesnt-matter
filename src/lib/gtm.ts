@@ -53,6 +53,24 @@ export function markGtagReady(): void {
   }
 }
 
+/**
+ * _gtagReady가 true가 될 때까지 대기 (markGtagReady() 호출 시).
+ * window.gtag 존재 체크는 부족 — GTM stub이 미리 생성되기 때문.
+ * 핵심: _gtagReady=true + 큐 플러시 완료를 보장해야 sign_up 전송 가능.
+ */
+export async function waitForGtagReady(timeoutMs = 2000): Promise<void> {
+  if (typeof window === 'undefined') return
+  if (_gtagReady) return
+  return new Promise((resolve) => {
+    const t0 = Date.now()
+    const check = () => {
+      if (_gtagReady || Date.now() - t0 > timeoutMs) resolve()
+      else setTimeout(check, 50)
+    }
+    check()
+  })
+}
+
 // ── Core ──
 
 /** gtag()로 GA4에 직접 이벤트 전송. gtag 미로드 시 큐에 보관. */
