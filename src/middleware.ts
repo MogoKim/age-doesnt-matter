@@ -21,8 +21,8 @@ async function resolveSlug(cuid: string): Promise<string | null> {
         `?select=slug&id=eq.${cuid}&slug=not.is.null&limit=1`,
       {
         headers: {
-          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
         },
       },
     )
