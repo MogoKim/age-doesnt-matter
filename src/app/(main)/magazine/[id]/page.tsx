@@ -31,6 +31,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const post = await getPostDetail(id)
   if (!post) return {}
 
+  // CUID로 접근 시 streaming 시작 전에 308 redirect (generateMetadata가 page보다 먼저 실행됨)
+  if (post.slug && id !== post.slug) {
+    permanentRedirect(`/magazine/${post.slug}`)
+  }
+
   // slug가 있으면 slug URL을 canonical로, 없으면 id 기반 URL 사용
   const canonicalId = post.slug ?? id
   const url = `${BASE_URL}/magazine/${canonicalId}`

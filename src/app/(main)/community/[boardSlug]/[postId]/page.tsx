@@ -29,6 +29,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const post = await getPostMeta(postId)
   if (!post) return {}
 
+  // CUID로 접근 시 streaming 시작 전에 308 redirect
+  if (post.slug && postId !== post.slug) {
+    permanentRedirect(`/community/${boardSlug}/${post.slug}`)
+  }
+
   const canonicalId = post.slug ?? postId
   const url = `${BASE_URL}/community/${boardSlug}/${canonicalId}`
   const description = post.summary || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티'
