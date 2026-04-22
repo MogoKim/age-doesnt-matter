@@ -90,7 +90,10 @@ export function sanitizeMagazineHtml(dirty: string): string {
   const stripped = dirty
     .replace(/```html\s*/gi, '')
     .replace(/```\s*/g, '')
-  return sanitize(stripped, MAGAZINE_SANITIZE_OPTIONS)
+  let safeHtml = sanitize(stripped, MAGAZINE_SANITIZE_OPTIONS)
+  // H1 중복 방지: JSX가 이미 <h1>을 렌더링하므로 본문 내 h1은 h2로 강등
+  safeHtml = safeHtml.replace(/<h1(\s[^>]*)?>/gi, '<h2$1>').replace(/<\/h1>/gi, '</h2>')
+  return safeHtml
 }
 
 /**

@@ -89,7 +89,9 @@ ${seoHint}
 - 인용문/경험담: 선택사항 (꼭 필요할 때만 1개)
 
 HTML 형식:
-- 사용 가능 태그: h2, p, ul, li, strong, blockquote, aside
+- <h1> 절대 사용 금지 (페이지 제목은 시스템이 별도 렌더링)
+- 소제목은 반드시 <h2>, 세부 소제목은 <h3> 사용
+- 사용 가능 태그: h2, h3, p, ul, li, strong, blockquote, aside
 - <h2>로 소제목 (2~3개)
 - <aside class="tip-box">💡 꿀팁: 내용</aside> (1개만)
 - <blockquote>로 경험담 (선택)

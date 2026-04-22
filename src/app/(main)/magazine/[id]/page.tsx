@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       siteName: '우리 나이가 어때서',
       locale: 'ko_KR',
-      images: [{ url: ogImage, width: 1200, height: 630 }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: post.seoTitle ?? post.title }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -121,9 +121,9 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   const post = await getPostDetail(id, userId)
   if (!post || post.boardType !== 'MAGAZINE') notFound()
 
-  // CUID로 접근했는데 slug가 있으면 slug URL로 301 redirect
+  // CUID로 접근했는데 slug가 있으면 slug URL로 308 영구 redirect
   if (post.slug && id !== post.slug) {
-    redirect(`/magazine/${post.slug}`)
+    permanentRedirect(`/magazine/${post.slug}`)
   }
 
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/CPS/ActionBar FK 보장)

@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -67,9 +67,9 @@ export default async function PostDetailPage({ params }: PageProps) {
   const post = await getPostDetail(postId, userId)
   if (!post) notFound()
 
-  // CUID로 접근했는데 slug가 있으면 slug URL로 301 redirect
+  // CUID로 접근했는데 slug가 있으면 slug URL로 308 영구 redirect
   if (post.slug && postId !== post.slug) {
-    redirect(`/community/${boardSlug}/${post.slug}`)
+    permanentRedirect(`/community/${boardSlug}/${post.slug}`)
   }
 
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/likes FK 보장)

@@ -57,7 +57,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         ? `${BASE_URL}/magazine/${post.slug}`
         : `${BASE_URL}/magazine/${post.id}`
     } else {
-      url = `${BASE_URL}/community/${slug}/${post.id}`
+      const postSlug = post.slug ?? post.id
+      url = `${BASE_URL}/community/${slug}/${postSlug}`
     }
 
     const isSeoOnly = post.status === 'SEO_ONLY'
