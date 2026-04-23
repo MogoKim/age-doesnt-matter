@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { gtmPwaPopupShown, gtmPwaInstall, gtmPwaBannerAction } from '@/lib/gtm'
+import { useToast } from '@/components/ui/Toast'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -167,6 +168,7 @@ export default function AddToHomeScreen() {
   const [kakaoGuideVisible, setKakaoGuideVisible] = useState(false)
   const [naverGuideVisible, setNaverGuideVisible] = useState(false)
   const [instagramGuideVisible, setInstagramGuideVisible] = useState(false)
+  const { show: showToast } = useToast()
   const envRef          = useRef<Env>('other')
   const deferredRef     = useRef<BeforeInstallPromptEvent | null>(null)
   const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -197,8 +199,10 @@ export default function AddToHomeScreen() {
     if (envRef.current === 'kakao-android') {
       const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
       location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
+    } else {
+      // iOS: intent 불가 → 복사 완료 안내
+      showToast('주소가 복사됐어요. Safari 주소창에 붙여넣으세요', '📋')
     }
-    // iOS: 클립보드 복사 + 안내만 (프로그래매틱 Safari 오픈 불가)
   }
 
   const handleKakaoGuideDismiss = () => {
@@ -221,8 +225,10 @@ export default function AddToHomeScreen() {
     if (/android/i.test(navigator.userAgent)) {
       const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
       location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
+    } else {
+      // iOS: intent 불가 → 복사 완료 안내
+      showToast('주소가 복사됐어요. Safari 주소창에 붙여넣으세요', '📋')
     }
-    // iOS: 클립보드 복사 + 안내만
   }
 
   const handleInappGuideDismiss = (env: 'naver-inapp' | 'instagram-inapp') => {
