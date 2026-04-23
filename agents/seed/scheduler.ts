@@ -394,13 +394,15 @@ async function runActivity(activity: Activity): Promise<void> {
 
       const commentText = await generateComment(activity.personaId, post.title, post.content)
       if (commentText) {
-        await prisma.comment.create({
-          data: { postId: post.id, authorId: userId, content: commentText },
-        })
-        await prisma.post.update({
-          where: { id: post.id },
-          data: { commentCount: { increment: 1 } },
-        })
+        await prisma.$transaction([
+          prisma.comment.create({
+            data: { postId: post.id, authorId: userId, content: commentText },
+          }),
+          prisma.post.update({
+            where: { id: post.id },
+            data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() },
+          }),
+        ])
         console.log(`[Seed] ${activity.personaId} commented on: "${post.title.slice(0, 30)}"`)
       }
     }
@@ -418,18 +420,20 @@ async function runActivity(activity: Activity): Promise<void> {
 
       const replyText = await generateReply(activity.personaId, target.post.title, target.content)
       if (replyText) {
-        await prisma.comment.create({
-          data: {
-            postId: target.postId,
-            authorId: userId,
-            content: replyText,
-            parentId: target.id,
-          },
-        })
-        await prisma.post.update({
-          where: { id: target.postId },
-          data: { commentCount: { increment: 1 } },
-        })
+        await prisma.$transaction([
+          prisma.comment.create({
+            data: {
+              postId: target.postId,
+              authorId: userId,
+              content: replyText,
+              parentId: target.id,
+            },
+          }),
+          prisma.post.update({
+            where: { id: target.postId },
+            data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() },
+          }),
+        ])
         console.log(`[Seed] ${activity.personaId} replied to comment: "${target.content.slice(0, 30)}"`)
       }
     }
@@ -439,35 +443,32 @@ async function runActivity(activity: Activity): Promise<void> {
     const targets = await getLikeTargets(userId, activity.board ?? 'STORY', activity.count ?? 1)
     for (const target of targets) {
       try {
-        await prisma.like.create({
-          data: { userId, postId: target.id },
-        })
-        await prisma.post.update({
-          where: { id: target.id },
-          data: { likeCount: { increment: 1 } },
-        })
-        await prisma.user.update({
-          where: { id: target.authorId },
-          data: { receivedLikes: { increment: 1 } },
-        })
-        // promotionLevel 승격 체크
-        const updatedPost = await prisma.post.findUnique({
-          where: { id: target.id },
-          select: { likeCount: true },
-        })
-        if (updatedPost) {
-          if (updatedPost.likeCount >= 50) {
-            await prisma.post.updateMany({
+        await prisma.$transaction(async (tx) => {
+          await tx.like.create({ data: { userId, postId: target.id } })
+          const updatedPost = await tx.post.update({
+            where: { id: target.id },
+            data: { likeCount: { increment: 1 }, lastEngagedAt: new Date() },
+            select: { likeCount: true },
+          })
+          if (target.authorId !== userId) {
+            await tx.user.update({
+              where: { id: target.authorId },
+              data: { receivedLikes: { increment: 1 } },
+            })
+          }
+          const newCount = updatedPost.likeCount
+          if (newCount >= 50) {
+            await tx.post.updateMany({
               where: { id: target.id, promotionLevel: { in: ['NORMAL', 'HOT'] } },
               data: { promotionLevel: 'HALL_OF_FAME' },
-            }).catch(() => {})
-          } else if (updatedPost.likeCount >= 10) {
-            await prisma.post.updateMany({
+            })
+          } else if (newCount >= 10) {
+            await tx.post.updateMany({
               where: { id: target.id, promotionLevel: 'NORMAL' },
               data: { promotionLevel: 'HOT' },
-            }).catch(() => {})
+            })
           }
-        }
+        })
         console.log(`[Seed] ${activity.personaId} liked post ${target.id.slice(0, 8)}`)
       } catch {
         // unique constraint 위반 시 무시
@@ -492,7 +493,7 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
   const base = SCHEDULE[hour] ?? []
 
   // 브리프 없으면 BASE_SCHEDULE 그대로 반환 (폴백)
-  const brief = await loadTodayBrief({ fallbackToPrevious: true })
+  const brief = await loadTodayBrief({ fallbackToPrevious: true, consumedBy: 'seed-scheduler' })
   if (!brief) return base
 
   const adjusted: Activity[] = []
@@ -608,15 +609,17 @@ async function focusedLikeRound(): Promise<number> {
     for (const botId of boostBotIds) {
       const userId = await getBotUser(botId)
       try {
-        await prisma.like.create({ data: { userId, postId: post.id } })
-        await prisma.post.update({
-          where: { id: post.id },
-          data: { likeCount: { increment: 1 } },
-        })
-        await prisma.user.update({
-          where: { id: post.authorId },
-          data: { receivedLikes: { increment: 1 } },
-        })
+        await prisma.$transaction([
+          prisma.like.create({ data: { userId, postId: post.id } }),
+          prisma.post.update({
+            where: { id: post.id },
+            data: { likeCount: { increment: 1 } },
+          }),
+          prisma.user.update({
+            where: { id: post.authorId },
+            data: { receivedLikes: { increment: 1 } },
+          }),
+        ])
         boosted++
       } catch {
         continue

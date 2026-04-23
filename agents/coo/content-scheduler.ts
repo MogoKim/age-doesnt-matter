@@ -24,7 +24,7 @@ class COOContentScheduler extends BaseAgent {
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
     // 욕망 지도 로드 — 에디터스 픽 기준 및 발제 주제에 활용
-    const brief = await loadTodayBrief({ fallbackToPrevious: true })
+    const brief = await loadTodayBrief({ fallbackToPrevious: true, consumedBy: 'coo-content' })
     const dominantDesire = brief?.dominantDesire ?? 'RELATION'
     const topDesires = brief?.desireRanking.slice(0, 3).map(d => d.label).join(', ') ?? 'RELATION, RETIRE, MONEY'
 

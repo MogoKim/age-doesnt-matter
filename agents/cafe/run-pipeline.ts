@@ -365,6 +365,18 @@ async function reportPipelineStage(stage: 'crawl' | 'psych' | 'trend' | 'brief' 
       } else {
         const ok = brief.mode === 'deep'
         lines.push(`4️⃣ 브리프 ${ok ? '✅' : '⚠️'}: mode=${brief.mode}${ok ? '' : ' (어제 폴백)'}`)
+        // 소비 에이전트 추적 (BRIEF_CONSUMED 로그)
+        const consumedLogs = await prisma.botLog.findMany({
+          where: { action: 'BRIEF_CONSUMED', executedAt: { gte: todayStart } },
+          select: { details: true },
+        })
+        if (consumedLogs.length > 0) {
+          const consumers = consumedLogs
+            .map(l => { try { return (JSON.parse(l.details as string) as { consumedBy?: string }).consumedBy } catch { return null } })
+            .filter(Boolean)
+            .join(', ')
+          lines.push(`   └ 소비 에이전트: ${consumers}`)
+        }
       }
     }
 

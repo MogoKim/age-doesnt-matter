@@ -81,7 +81,7 @@ class CEOMorningCycle extends BaseAgent {
     }
 
     // 3. 욕망 지도 로드
-    const brief = await loadTodayBrief({ fallbackToPrevious: true })
+    const brief = await loadTodayBrief({ fallbackToPrevious: true, consumedBy: 'ceo-morning' })
     const desireMapSection = brief
       ? `
 [오늘의 커뮤니티 욕망 지도]

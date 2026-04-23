@@ -69,7 +69,7 @@ async function main() {
   ])
 
   // 욕망 지도 로드 — 주간 콘텐츠 믹스 기준으로 활용
-  const brief = await loadTodayBrief({ fallbackToPrevious: true })
+  const brief = await loadTodayBrief({ fallbackToPrevious: true, consumedBy: 'cmo-social' })
   const desireContext = brief
     ? `커뮤니티 욕망 상위 3개: ${brief.desireRanking.slice(0, 3).map(d => `${d.label}(${d.percent.toFixed(0)}%)`).join(' / ')} | 지배적 욕망: ${brief.dominantDesire ?? '없음'}`
     : ''

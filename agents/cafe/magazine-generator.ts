@@ -312,7 +312,7 @@ export async function main(): Promise<MagazineRunResult[]> {
   ]
 
   // 욕망 지도 로드 — 주제 보강에 활용
-  const brief = await loadTodayBrief({ fallbackToPrevious: true })
+  const brief = await loadTodayBrief({ fallbackToPrevious: true, consumedBy: 'magazine-generator' })
   const dominantDesire = brief?.dominantDesire ?? 'HEALTH'
 
   // 욕망 지도 기반 보충 주제: 매거진 주제가 부족하거나 현재 욕망과 다를 때 보강

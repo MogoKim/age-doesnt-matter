@@ -13,6 +13,7 @@ import { readFileSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma } from './db.js'
+import { safeBotLog } from './safe-log.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BRIEF_PATH = resolve(__dirname, 'today-brief.json')
@@ -77,59 +78,60 @@ export interface DailyIntelligenceBrief {
 
 export async function loadTodayBrief(options: {
   fallbackToPrevious?: boolean
+  consumedBy?: string   // 소비 에이전트 이름 — BotLog BRIEF_CONSUMED 추적용
 } = {}): Promise<DailyIntelligenceBrief | null> {
   const todayStr = new Date().toISOString().slice(0, 10)
+  let result: DailyIntelligenceBrief | null = null
 
   // 1) 파일 캐시 먼저 (가장 빠름)
   if (existsSync(BRIEF_PATH)) {
     try {
       const raw = readFileSync(BRIEF_PATH, 'utf-8')
       const brief = JSON.parse(raw) as DailyIntelligenceBrief
-      if (brief.date === todayStr) return brief
+      if (brief.date === todayStr) result = brief
     } catch {
       // 파일 손상 시 DB로 폴백
     }
   }
 
   // 2) DB에서 조회
-  try {
-    const todayStart = new Date(todayStr)
-    const record = await prisma.dailyBrief.findUnique({
-      where: { date: todayStart },
-    })
-    if (record) {
-      return {
-        date: todayStr,
-        mode: record.mode as 'deep' | 'quick_update',
-        desireRanking: record.desireRanking as DesireRankItem[],
-        dominantDesire: record.dominantDesire ?? null,
-        dominantEmotion: record.dominantEmotion ?? null,
-        urgentTopics: record.urgentTopics as UrgentTopic[],
-        personaQuotas: record.personaQuotas as Record<string, PersonaQuota>,
-        contentDirective: record.contentDirective as ContentDirective,
-        entertainPct: record.entertainPct,
-        entertainActive: record.entertainActive,
-        midDayPatch: (record.midDayPatch as MidDayPatch) ?? null,
-        generatedAt: record.createdAt.toISOString(),
+  if (!result) {
+    try {
+      const todayStart = new Date(todayStr)
+      const record = await prisma.dailyBrief.findUnique({
+        where: { date: todayStart },
+      })
+      if (record) {
+        result = {
+          date: todayStr,
+          mode: record.mode as 'deep' | 'quick_update',
+          desireRanking: record.desireRanking as DesireRankItem[],
+          dominantDesire: record.dominantDesire ?? null,
+          dominantEmotion: record.dominantEmotion ?? null,
+          urgentTopics: record.urgentTopics as UrgentTopic[],
+          personaQuotas: record.personaQuotas as Record<string, PersonaQuota>,
+          contentDirective: record.contentDirective as ContentDirective,
+          entertainPct: record.entertainPct,
+          entertainActive: record.entertainActive,
+          midDayPatch: (record.midDayPatch as MidDayPatch) ?? null,
+          generatedAt: record.createdAt.toISOString(),
+        }
       }
+    } catch (err) {
+      console.warn('[Intelligence] DB 조회 실패:', err instanceof Error ? err.message : err)
     }
-  } catch (err) {
-    console.warn('[Intelligence] DB 조회 실패:', err instanceof Error ? err.message : err)
   }
 
   // 3) 폴백: 어제 브리프 사용
-  if (options.fallbackToPrevious) {
+  if (!result && options.fallbackToPrevious) {
     try {
-      const yesterday = new Date(todayStr)
-      yesterday.setDate(yesterday.getDate() - 1)
-
       const record = await prisma.dailyBrief.findFirst({
         where: { date: { lt: new Date(todayStr) } },
         orderBy: { date: 'desc' },
       })
       if (record) {
         console.warn('[Intelligence] 오늘 브리프 없음 — 어제 브리프 사용 (폴백)')
-        return {
+        result = {
           date: record.date.toISOString().slice(0, 10),
           mode: record.mode as 'deep' | 'quick_update',
           desireRanking: record.desireRanking as DesireRankItem[],
@@ -149,7 +151,22 @@ export async function loadTodayBrief(options: {
     }
   }
 
-  return null
+  // 소비 로깅 (brief 획득 성공 + consumedBy 있을 때만)
+  if (result && options.consumedBy) {
+    safeBotLog({
+      botType: options.consumedBy.toUpperCase().replace(/-/g, '_'),
+      action: 'BRIEF_CONSUMED',
+      status: 'SUCCESS',
+      details: JSON.stringify({
+        consumedBy: options.consumedBy,
+        briefDate: result.date,
+        mode: result.mode,
+      }),
+      executionTimeMs: 0,
+    }).catch(() => {}) // 로깅 실패해도 브리프 로드 영향 없음
+  }
+
+  return result
 }
 
 // ── 에이전트 시스템 프롬프트용 인텔리전스 블록 생성 ──
