@@ -18,10 +18,44 @@ async function main() {
     return
   }
 
+  // --- 선제 만료 경고: 마지막 성공 로그의 expiresAt 확인 ---
   try {
-    const newToken = await threadsClient.refreshLongLivedToken()
+    const lastSuccess = await prisma.botLog.findFirst({
+      where: { action: 'THREADS_TOKEN_REFRESH', status: 'SUCCESS' },
+      orderBy: { createdAt: 'desc' },
+      select: { details: true },
+    })
 
-    // 성공 로그
+    if (lastSuccess?.details) {
+      const parsed = JSON.parse(lastSuccess.details) as { expiresAt?: string }
+      if (parsed.expiresAt) {
+        const expiresAt = new Date(parsed.expiresAt)
+        const daysLeft = Math.floor((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+
+        if (daysLeft <= 7) {
+          await notifySlack({
+            level: 'critical',
+            agent: 'CMO',
+            title: `Threads 토큰 만료 임박 — ${daysLeft}일 남음`,
+            body: [
+              `만료 예정: ${expiresAt.toISOString()}`,
+              '이번 갱신 실패 시 토큰이 만료될 수 있습니다.',
+              '갱신 결과를 확인하고, 실패 시 즉시 수동 재발급하세요.',
+            ].join('\n'),
+          })
+        }
+      }
+    }
+  } catch (warnErr) {
+    // 선제 경고 실패는 갱신 자체를 막지 않음
+    console.warn('[ThreadsTokenRefresh] 만료 경고 확인 실패 (무시):', warnErr)
+  }
+
+  // --- 토큰 갱신 ---
+  try {
+    const { token: newToken, expiresIn } = await threadsClient.refreshLongLivedToken()
+    const expiresAt = new Date(Date.now() + expiresIn * 1000)
+
     await prisma.botLog.create({
       data: {
         botType: 'CMO',
@@ -30,6 +64,8 @@ async function main() {
         details: JSON.stringify({
           tokenPrefix: newToken.slice(0, 10) + '...',
           refreshedAt: new Date().toISOString(),
+          expiresAt: expiresAt.toISOString(),
+          expiresInDays: Math.floor(expiresIn / 86400),
         }),
         itemCount: 1,
         executionTimeMs: 0,
@@ -38,12 +74,16 @@ async function main() {
 
     await notifySlack({
       level: 'info',
-      agent: 'CMO_SOCIAL',
+      agent: 'CMO',
       title: 'Threads 토큰 갱신 완료',
-      body: `새 토큰 발급됨 (60일 유효). 다음 갱신: ~53일 후.\n⚠️ GitHub Secrets의 THREADS_ACCESS_TOKEN도 업데이트 필요:\n\`${newToken.slice(0, 10)}...${newToken.slice(-6)}\``,
+      body: [
+        `새 토큰 발급됨. 만료: ${expiresAt.toISOString().slice(0, 10)} (~${Math.floor(expiresIn / 86400)}일 후)`,
+        `⚠️ GitHub Secrets의 THREADS_ACCESS_TOKEN도 업데이트 필요:`,
+        `\`${newToken.slice(0, 10)}...${newToken.slice(-6)}\``,
+      ].join('\n'),
     })
 
-    console.log('[ThreadsTokenRefresh] 갱신 성공')
+    console.log('[ThreadsTokenRefresh] 갱신 성공. 만료:', expiresAt.toISOString())
   } catch (err) {
     console.error('[ThreadsTokenRefresh] 갱신 실패:', err)
 
@@ -62,7 +102,7 @@ async function main() {
 
     await notifySlack({
       level: 'critical',
-      agent: 'CMO_SOCIAL',
+      agent: 'CMO',
       title: 'Threads 토큰 갱신 실패 — 수동 재발급 필요',
       body: [
         `오류: ${err instanceof Error ? err.message : String(err)}`,

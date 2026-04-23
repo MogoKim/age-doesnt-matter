@@ -4,7 +4,7 @@ import { handleApiError } from '@/lib/api-utils'
 import { checkApiRateLimit } from '@/lib/api-rate-limit'
 
 export async function GET(request: NextRequest) {
-  const rateLimited = checkApiRateLimit(request, 'jobs', { max: 60 })
+  const rateLimited = await checkApiRateLimit(request, 'jobs', { max: 60 })
   if (rateLimited) return rateLimited
 
   try {

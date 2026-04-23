@@ -460,6 +460,7 @@ model Like {
   @@unique([userId, commentId])
   @@index([postId])
   @@index([commentId])
+  @@index([userId])
 }
 
 model Scrap {
@@ -493,8 +494,8 @@ model Report {
   createdAt   DateTime      @default(now())
 
   reporter  User          @relation("reporter", fields: [userId], references: [id])
-  post      Post?         @relation("postReports", fields: [postId], references: [id], onDelete: Cascade)
-  comment   Comment?      @relation("commentReports", fields: [commentId], references: [id], onDelete: Cascade)
+  post      Post?         @relation("postReports", fields: [postId], references: [id], onDelete: Restrict)
+  comment   Comment?      @relation("commentReports", fields: [commentId], references: [id], onDelete: Restrict)
   processor AdminAccount? @relation("reportProcessor", fields: [processedBy], references: [id])
 
   @@index([status, createdAt])

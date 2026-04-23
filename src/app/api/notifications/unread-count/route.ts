@@ -4,7 +4,7 @@ import { getUnreadNotificationCount } from '@/lib/queries/my'
 import { checkApiRateLimit } from '@/lib/api-rate-limit'
 
 export async function GET(request: NextRequest) {
-  const rateLimited = checkApiRateLimit(request, 'unread', { max: 30 })
+  const rateLimited = await checkApiRateLimit(request, 'unread', { max: 30 })
   if (rateLimited) return rateLimited
 
   const session = await auth()

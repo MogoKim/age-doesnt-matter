@@ -16,7 +16,7 @@ const pool = new Pool({
   user: decodeURIComponent(u.username),
   password: decodeURIComponent(u.password),
   database: u.pathname.slice(1) || 'postgres',
-  ssl: undefined,
+  ssl: { rejectUnauthorized: false }, // SSL 암호화 활성화 (undefined에서 변경)
   max: 3,
 })
 const adapter = new PrismaPg(pool)

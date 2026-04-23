@@ -1,8 +1,7 @@
 name: Agents — Design & Marketing Loop
 on:
-  schedule:
-    # 09:05 KST = 00:05 UTC — 광고 성과 수집 + 소재 최적화 의사결정
-    - cron: "5 0 * * *"
+  # schedule 제거: design:ads-loop는 Playwright+Gemini 로컬 전용 — GHA에서 실행 불가
+  # 이전: cron "5 0 * * *" (매일 09:05 KST) → 매일 runner만 기동되고 실제 광고 생성 안 됨
   workflow_dispatch:
     inputs:
       agent:
@@ -43,18 +42,8 @@ jobs:
       - name: Determine agent and task
         id: determine
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "agent=${{ github.event.inputs.agent }}" >> $GITHUB_OUTPUT
-            echo "task=${{ github.event.inputs.task }}" >> $GITHUB_OUTPUT
-          else
-            CRON="${{ github.event.schedule }}"
-            case "$CRON" in
-              "5 0 * * *")
-                echo "agent=design" >> $GITHUB_OUTPUT; echo "task=ads-loop" >> $GITHUB_OUTPUT ;;
-              *)
-                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
-            esac
-          fi
+          echo "agent=${{ github.event.inputs.agent }}" >> $GITHUB_OUTPUT
+          echo "task=${{ github.event.inputs.task }}" >> $GITHUB_OUTPUT
 
       # Playwright: Google Ads 스크래핑용
       - name: Install Playwright Chromium

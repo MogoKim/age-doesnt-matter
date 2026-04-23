@@ -169,9 +169,9 @@ async function getThreadsUserId(): Promise<string> {
 
 /**
  * Long-lived token 갱신 (만료 7일 전에 호출)
- * @returns 새 토큰 (60일 유효)
+ * @returns 새 토큰과 유효기간(초)
  */
-export async function refreshLongLivedToken(): Promise<string> {
+export async function refreshLongLivedToken(): Promise<{ token: string; expiresIn: number }> {
   const url = `${GRAPH_API}/refresh_access_token?grant_type=th_refresh_token&access_token=${accessToken}`
 
   const res = await fetch(url)
@@ -182,7 +182,7 @@ export async function refreshLongLivedToken(): Promise<string> {
 
   const json = (await res.json()) as { access_token: string; expires_in: number }
   accessToken = json.access_token
-  return json.access_token
+  return { token: json.access_token, expiresIn: json.expires_in }
 }
 
 /**

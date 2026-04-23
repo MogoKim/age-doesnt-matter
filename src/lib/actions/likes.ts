@@ -23,23 +23,24 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
   })
 
   if (existing) {
-    const cancelPost = await prisma.post.findUnique({
-      where: { id: postId },
-      select: { authorId: true },
-    })
-    await prisma.$transaction([
-      prisma.like.delete({ where: { id: existing.id } }),
-      prisma.post.update({
+    // 취소 경로: receivedLikes 감소 포함 단일 트랜잭션
+    await prisma.$transaction(async (tx) => {
+      const cancelPost = await tx.post.findUnique({
+        where: { id: postId },
+        select: { authorId: true },
+      })
+      await tx.like.delete({ where: { id: existing.id } })
+      await tx.post.update({
         where: { id: postId },
         data: { likeCount: { decrement: 1 } },
-      }),
-    ])
-    if (cancelPost && cancelPost.authorId !== userId) {
-      await prisma.user.update({
-        where: { id: cancelPost.authorId },
-        data: { receivedLikes: { decrement: 1 } },
-      }).catch(() => {})
-    }
+      })
+      if (cancelPost && cancelPost.authorId !== userId) {
+        await tx.user.update({
+          where: { id: cancelPost.authorId },
+          data: { receivedLikes: { decrement: 1 } },
+        })
+      }
+    })
     revalidatePath(`/community`)
     return { toggled: false }
   }
@@ -47,70 +48,71 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
   // 삭제/숨김된 글에는 좋아요 불가
   const targetPost = await prisma.post.findUnique({
     where: { id: postId, status: 'PUBLISHED' },
-    select: { id: true },
+    select: { id: true, authorId: true },
   })
   if (!targetPost) return { error: '존재하지 않는 게시글입니다' }
 
-  await prisma.$transaction([
-    prisma.like.create({
-      data: { userId, postId },
-    }),
-    prisma.post.update({
+  // 추가 경로: 모든 카운터 업데이트 + 알림 + 승격을 단일 트랜잭션으로
+  const authorId = await prisma.$transaction(async (tx) => {
+    await tx.like.create({ data: { userId, postId } })
+
+    const updatedPost = await tx.post.update({
       where: { id: postId },
-      data: { likeCount: { increment: 1 } },
-    }),
-  ])
+      data: {
+        likeCount: { increment: 1 },
+        lastEngagedAt: new Date(),
+      },
+      select: { likeCount: true, authorId: true },
+    })
 
-  // 공감 알림 — 글 작성자에게 (본인 제외), DELETED 글은 조회 불가
-  const post = await prisma.post.findUnique({
-    where: { id: postId, status: 'PUBLISHED' },
-    select: { authorId: true, likeCount: true },
-  })
-  if (post && post.authorId !== userId) {
-    // 글 작성자 receivedLikes 증가 + 등급 승급 체크
-    await prisma.user.update({
-      where: { id: post.authorId },
-      data: { receivedLikes: { increment: 1 } },
-    }).catch(() => {})
-    void checkAndPromote(post.authorId).catch(() => {})
+    const newCount = updatedPost.likeCount
 
-    // 공감 묶음 알림: 5의 배수마다 알림 생성
-    if (post.likeCount % 5 === 0 || post.likeCount === 1) {
-      const content = post.likeCount === 1
-        ? '회원님의 글에 첫 공감이 달렸어요'
-        : `회원님의 글에 ${post.likeCount}명이 공감했어요`
-      await prisma.notification.create({
-        data: {
-          userId: post.authorId,
-          type: 'LIKE',
-          content,
-          postId,
-          fromUserId: userId,
-        },
-      }).catch(() => {})
+    // HOT / HALL_OF_FAME 승격 (트랜잭션 내)
+    if (newCount >= 50) {
+      await tx.post.updateMany({
+        where: { id: postId, promotionLevel: { in: ['NORMAL', 'HOT'] } },
+        data: { promotionLevel: 'HALL_OF_FAME' },
+      })
+    } else if (newCount >= 10) {
+      await tx.post.updateMany({
+        where: { id: postId, promotionLevel: 'NORMAL' },
+        data: { promotionLevel: 'HOT' },
+      })
     }
-  }
 
-  // HOT 승격 체크
-  if (post && post.likeCount >= 10) {
-    await prisma.post.updateMany({
-      where: { id: postId, promotionLevel: 'NORMAL' },
-      data: { promotionLevel: 'HOT' },
-    }).catch(() => {})
-  }
-  // HALL_OF_FAME 승격 체크
-  if (post && post.likeCount >= 50) {
-    await prisma.post.updateMany({
-      where: { id: postId, promotionLevel: { in: ['NORMAL', 'HOT'] } },
-      data: { promotionLevel: 'HALL_OF_FAME' },
-    }).catch(() => {})
-  }
+    if (updatedPost.authorId !== userId) {
+      // 글 작성자 receivedLikes 증가
+      await tx.user.update({
+        where: { id: updatedPost.authorId },
+        data: { receivedLikes: { increment: 1 } },
+      })
 
-  // lastEngagedAt 업데이트
-  await prisma.post.update({
-    where: { id: postId },
-    data: { lastEngagedAt: new Date() },
-  }).catch(() => {})
+      // 공감 묶음 알림: 첫 공감 또는 5의 배수마다
+      if (newCount % 5 === 0 || newCount === 1) {
+        const content = newCount === 1
+          ? '회원님의 글에 첫 공감이 달렸어요'
+          : `회원님의 글에 ${newCount}명이 공감했어요`
+        await tx.notification.create({
+          data: {
+            userId: updatedPost.authorId,
+            type: 'LIKE',
+            content,
+            postId,
+            fromUserId: userId,
+          },
+        })
+      }
+    }
+
+    return updatedPost.authorId
+  })
+
+  // 등급 승격은 트랜잭션 외부 (실패해도 핵심 데이터 영향 없음)
+  if (authorId !== userId) {
+    void checkAndPromote(authorId).catch((e) =>
+      console.error('[likes] grade promote 실패:', e),
+    )
+  }
 
   revalidatePath(`/community`)
   return { toggled: true }
@@ -164,47 +166,55 @@ export async function toggleCommentLike(commentId: string): Promise<ToggleResult
   })
 
   if (existing) {
-    const cancelComment = await prisma.comment.findUnique({
-      where: { id: commentId },
-      select: { authorId: true },
-    })
-    await prisma.$transaction([
-      prisma.like.delete({ where: { id: existing.id } }),
-      prisma.comment.update({
+    // 취소 경로: receivedLikes 감소 포함 단일 트랜잭션
+    await prisma.$transaction(async (tx) => {
+      const cancelComment = await tx.comment.findUnique({
+        where: { id: commentId },
+        select: { authorId: true },
+      })
+      await tx.like.delete({ where: { id: existing.id } })
+      await tx.comment.update({
         where: { id: commentId },
         data: { likeCount: { decrement: 1 } },
-      }),
-    ])
-    if (cancelComment && cancelComment.authorId !== userId) {
-      await prisma.user.update({
-        where: { id: cancelComment.authorId },
-        data: { receivedLikes: { decrement: 1 } },
-      }).catch(() => {})
-    }
+      })
+      if (cancelComment && cancelComment.authorId !== userId) {
+        await tx.user.update({
+          where: { id: cancelComment.authorId },
+          data: { receivedLikes: { decrement: 1 } },
+        })
+      }
+    })
     return { toggled: false }
   }
 
-  await prisma.$transaction([
-    prisma.like.create({
-      data: { userId, commentId },
-    }),
-    prisma.comment.update({
+  // 추가 경로: 모든 카운터 업데이트를 단일 트랜잭션으로
+  const commentAuthorId = await prisma.$transaction(async (tx) => {
+    await tx.like.create({ data: { userId, commentId } })
+    await tx.comment.update({
       where: { id: commentId },
       data: { likeCount: { increment: 1 } },
-    }),
-  ])
+    })
 
-  // 댓글 작성자 receivedLikes 증가 + 등급 승급 체크 (본인 제외)
-  const comment = await prisma.comment.findUnique({
-    where: { id: commentId },
-    select: { authorId: true },
+    const comment = await tx.comment.findUnique({
+      where: { id: commentId },
+      select: { authorId: true },
+    })
+
+    if (comment && comment.authorId !== userId) {
+      await tx.user.update({
+        where: { id: comment.authorId },
+        data: { receivedLikes: { increment: 1 } },
+      })
+    }
+
+    return comment?.authorId
   })
-  if (comment && comment.authorId !== userId) {
-    await prisma.user.update({
-      where: { id: comment.authorId },
-      data: { receivedLikes: { increment: 1 } },
-    }).catch(() => {})
-    void checkAndPromote(comment.authorId).catch(() => {})
+
+  // 등급 승격은 트랜잭션 외부 (실패해도 핵심 데이터 영향 없음)
+  if (commentAuthorId && commentAuthorId !== userId) {
+    void checkAndPromote(commentAuthorId).catch((e) =>
+      console.error('[likes] comment grade promote 실패:', e),
+    )
   }
 
   return { toggled: true }

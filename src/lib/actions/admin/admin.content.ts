@@ -100,6 +100,10 @@ export async function adminBulkDeleteExpiredJobs() {
   return { deleted: ids.length }
 }
 
+// ⚠️ RESTRICT 제약 주의: Report.postId / Report.commentId 가 onDelete: Restrict 로 설정됨
+// 만약 prisma.post.delete() 또는 prisma.comment.delete() (하드 삭제) 를 추가할 경우
+// 먼저 해당 post/comment의 Report를 삭제하거나 Report.postId/commentId 를 null 로 업데이트해야 함
+// 현재 이 파일의 모든 삭제는 소프트 삭제(status 변경)이므로 영향 없음
 export async function adminUpdatePostStatus(postId: string, status: PostStatus) {
   const admin = await requireAdmin()
 

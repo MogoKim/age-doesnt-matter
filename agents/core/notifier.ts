@@ -30,6 +30,19 @@ const CHANNELS = {
 
 type ChannelKey = keyof typeof CHANNELS
 
+// ── Slack 설정 조기 검증 (프로덕션에서 누락 시 즉시 경고) ──
+if (process.env.NODE_ENV === 'production') {
+  const missingChannels = (Object.keys(CHANNELS) as ChannelKey[]).filter(
+    (k) => !CHANNELS[k],
+  )
+  if (!SLACK_BOT_TOKEN || missingChannels.length > 0) {
+    console.error('[Notifier] CRITICAL — Slack 설정 누락:', {
+      token: SLACK_BOT_TOKEN ? '있음' : '없음 (SLACK_BOT_TOKEN 미설정)',
+      missingChannels,
+    })
+  }
+}
+
 // ── 에이전트 → 로그 채널 매핑 ──
 const AGENT_LOG_CHANNEL: Record<string, ChannelKey> = {
   COO: 'LOG',
@@ -221,17 +234,22 @@ interface ApprovalItem {
  * Slack #대시보드 채널에 Block Kit 승인 요청 메시지 전송
  */
 export async function notifyApproval(item: ApprovalItem): Promise<void> {
-  if (!slack) {
-    console.warn('[Notifier] Slack 설정 없음 — 승인 알림 스킵')
-    console.log(`[승인 요청] ${item.title} (by ${item.requestedBy})`)
+  if (!slack || !CHANNELS.DASHBOARD) {
+    const reason = !slack ? 'Slack 미설정' : 'DASHBOARD 채널 미설정'
+    console.warn(`[Notifier] ${reason} — 승인 알림 스킵, BotLog에 기록`)
+    // 폴백: BotLog에 기록 → 어드민 패널에서 확인 가능
+    await prisma.botLog.create({
+      data: {
+        botType: 'CTO',
+        status: 'FAILED',
+        action: 'APPROVAL_REQUEST_UNSENT',
+        details: JSON.stringify({ itemId: item.id, title: item.title, requestedBy: item.requestedBy, reason }),
+      },
+    }).catch((e) => console.error('[notifier] 폴백 DB 기록 실패:', e))
     return
   }
 
   const channelId = CHANNELS.DASHBOARD
-  if (!channelId) {
-    console.warn('[Notifier] DASHBOARD 채널 미설정 — 승인 알림 스킵')
-    return
-  }
 
   const kstTime = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
   const fallbackText = `[승인 요청] ${item.title} — ${item.requestedBy}`

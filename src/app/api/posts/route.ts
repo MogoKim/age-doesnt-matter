@@ -7,7 +7,7 @@ import type { BoardType } from '@/generated/prisma/client'
 const VALID_BOARD_TYPES: BoardType[] = ['JOB', 'STORY', 'HUMOR', 'MAGAZINE', 'WEEKLY', 'LIFE2']
 
 export async function GET(request: NextRequest) {
-  const rateLimited = checkApiRateLimit(request, 'posts', { max: 60 })
+  const rateLimited = await checkApiRateLimit(request, 'posts', { max: 60 })
   if (rateLimited) return rateLimited
 
   try {

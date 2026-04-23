@@ -1,3 +1,7 @@
+import { readFileSync } from 'fs'
+import { dirname, resolve } from 'path'
+import { fileURLToPath } from 'url'
+import { parse as parseYaml } from 'yaml'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
@@ -21,6 +25,16 @@ import { getCMOContext, type CMOContext } from './knowledge-base.js'
  * 4. 각 플랫폼에 실제 게시 (or AdminQueue 승인 대기)
  * 5. SocialPost DB 저장 + Slack 알림
  */
+
+// ─── Constitution에서 CMO 비율 로드 ───
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const _constitution = parseYaml(
+  readFileSync(resolve(__dirname, '../core/constitution.yaml'), 'utf-8')
+) as { cmo_content_ratios?: { exploit_ratio?: number; promotion_level?: { pure?: number; soft?: number } } }
+const EXPLOIT_RATIO = _constitution.cmo_content_ratios?.exploit_ratio ?? 0.7
+const PROMO_PURE    = _constitution.cmo_content_ratios?.promotion_level?.pure  ?? 60
+const PROMO_SOFT    = _constitution.cmo_content_ratios?.promotion_level?.soft  ?? 25
 
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
@@ -97,15 +111,15 @@ async function shouldAutoPost(experiment: Awaited<ReturnType<typeof getActiveExp
   if (!experiment) return true
   // 활성 실험이 있고, 현재 게시가 실험군이면 승인 필요
   // → 70% exploit은 자동, 30% explore는 확률적으로 실험 참여
-  return Math.random() < 0.7 // 70% 확률로 자동 게시 (exploit)
+  return Math.random() < EXPLOIT_RATIO // constitution.yaml cmo_content_ratios.exploit_ratio
 }
 
 // ─── 홍보 레벨 결정 (60/25/15 비율) ───
 
 function decidePromotionLevel(): 'PURE' | 'SOFT' | 'DIRECT' {
   const rand = Math.random() * 100
-  if (rand < 60) return 'PURE'
-  if (rand < 85) return 'SOFT'
+  if (rand < PROMO_PURE) return 'PURE'
+  if (rand < PROMO_PURE + PROMO_SOFT) return 'SOFT'
   return 'DIRECT'
 }
 
@@ -298,7 +312,7 @@ ${cmoContextBlock ? `[CMO 컨텍스트 — 최근 데이터 기반 최적화]\n$
     console.error(`[SocialPoster] ${adapter.name} JSON 파싱 실패, 원본:`, jsonStr.slice(0, 200))
     await notifySlack({
       level: 'important',
-      agent: 'CMO_SOCIAL',
+      agent: 'CMO',
       title: `${adapter.name} 콘텐츠 생성 실패 — AI JSON 파싱 오류`,
       body: `원본: ${jsonStr.slice(0, 150)}...\n${err instanceof Error ? err.message : ''}`,
     })
@@ -376,6 +390,13 @@ async function publishAndSave(params: {
   } catch (err) {
     console.error(`[SocialPoster] ${params.platform} 게시 실패:`, err)
     status = 'FAILED'
+    // 즉각 Slack 알림 (며칠간 방치 방지)
+    await notifySlack({
+      level: 'important',
+      agent: 'CMO',
+      title: `${params.platform} 게시 실패`,
+      body: `포스트 ID: ${params.sourcePostId ?? 'N/A'}\n에러: ${err instanceof Error ? err.message : String(err).slice(0, 200)}`,
+    }).catch(() => {})
   }
 
   // DB 저장 — hashtags는 호환성을 위해 배열로 저장
@@ -551,7 +572,7 @@ async function main() {
 
     await notifySlack({
       level: 'info',
-      agent: 'CMO_SOCIAL',
+      agent: 'CMO',
       title: `SNS 게시 승인 대기 — /una-approve 로 승인 (${platformContents.size}개 플랫폼)`,
       body: preview,
     })
@@ -605,7 +626,7 @@ async function main() {
 
   await notifySlack({
     level: 'info',
-    agent: 'CMO_SOCIAL',
+    agent: 'CMO',
     title: `SNS 게시 완료 — ${results.filter(r => r.status === 'POSTED').length}/${results.length}개 성공 (${adapters.map(a => a.name).join(', ')})`,
     body: slackPreview,
   })
@@ -618,7 +639,7 @@ main().catch(async (err) => {
   console.error('[SocialPoster] 오류:', err)
   await notifySlack({
     level: 'critical',
-    agent: 'CMO_SOCIAL',
+    agent: 'CMO',
     title: 'SNS 게시 실패',
     body: err instanceof Error ? err.message : String(err),
   })

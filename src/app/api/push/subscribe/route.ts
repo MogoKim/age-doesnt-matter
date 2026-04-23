@@ -4,7 +4,7 @@ import { checkApiRateLimit } from '@/lib/api-rate-limit'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(req: NextRequest) {
-  const rateLimited = checkApiRateLimit(req, 'push-subscribe', { max: 10 })
+  const rateLimited = await checkApiRateLimit(req, 'push-subscribe', { max: 10 })
   if (rateLimited) return rateLimited
 
   const session = await auth()
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const rateLimited = checkApiRateLimit(req, 'push-unsubscribe', { max: 10 })
+  const rateLimited = await checkApiRateLimit(req, 'push-unsubscribe', { max: 10 })
   if (rateLimited) return rateLimited
 
   const session = await auth()

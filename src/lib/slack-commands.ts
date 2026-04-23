@@ -301,21 +301,31 @@ async function handleCafe(): Promise<SlackCommandResult> {
 }
 
 async function handleStop(): Promise<SlackCommandResult> {
-  await sendToChannel('SLACK_CHANNEL_DASHBOARD', '🛑 *자동화 긴급 중지 요청* — 창업자가 /una-stop 실행')
+  // DB에 EMERGENCY_STOP 기록 — runner.ts가 다음 실행 시 감지하여 에이전트 실행 스킵
+  await prisma.botLog.create({
+    data: {
+      botType: 'CTO',
+      status: 'FAILED',
+      action: 'EMERGENCY_STOP',
+      details: JSON.stringify({ requestedAt: new Date().toISOString(), requestedBy: 'slack_una_stop' }),
+    },
+  }).catch((e) => console.error('[handleStop] DB 기록 실패:', e))
+
+  await sendToChannel('SLACK_CHANNEL_DASHBOARD', '🔴 *자동화 긴급 중지됨* — DB EMERGENCY_STOP 기록. 다음 GHA 실행부터 모니터링 에이전트만 실행됩니다.')
 
   return {
     response_type: 'in_channel',
-    text: '🛑 자동화 중지 요청',
+    text: '🔴 자동화 중지됨',
     blocks: [
       {
         type: 'header',
-        text: { type: 'plain_text', text: '🛑 자동화 긴급 중지', emoji: true },
+        text: { type: 'plain_text', text: '🔴 자동화 긴급 중지됨', emoji: true },
       },
       {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: 'constitution.yaml의 `automation_status`를 `LOCKED`로 변경해야 합니다.\nGitHub에서 직접 수정하거나 Claude Code에게 요청하세요.',
+          text: 'DB에 `EMERGENCY_STOP` 기록 완료. 다음 GHA 크론 실행부터 모니터링 에이전트(health-check 등)만 실행됩니다.\n재개하려면 `/una-resume` 또는 constitution.yaml을 ACTIVE로 직접 변경하세요.',
         },
       },
     ],

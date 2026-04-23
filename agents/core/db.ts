@@ -28,7 +28,12 @@ function createPrismaClient() {
     user: decodeURIComponent(u.username),
     password: decodeURIComponent(u.password),
     database: u.pathname.slice(1) || 'postgres',
+    // NOTE: Supabase PgBouncer uses self-signed cert → rejectUnauthorized:true fails
+    // Full cert validation requires SUPABASE_SSL_CA secret (future improvement)
     ssl: { rejectUnauthorized: false },
+    max: 3,                    // GHA 프로세스당 최대 3개 (src/lib/prisma.ts 동일)
+    idleTimeoutMillis: 10000,  // 유휴 연결 10초 후 해제
+    connectionTimeoutMillis: 10000, // 연결 실패 10초 후 에러 발생
   })
 
   return new PrismaClient({ adapter: new PrismaPg(pool) })

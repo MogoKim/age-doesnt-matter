@@ -110,25 +110,27 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     finalContent += imgTags
   }
 
-  const post = await prisma.post.create({
-    data: {
-      boardType,
-      category: category || null,
-      title,
-      content: finalContent,
-      summary,
-      thumbnailUrl: imageUrls[0] || null,
-      authorId: session.user.id,
-      status: 'PUBLISHED',
-      publishedAt: new Date(),
-      slug: communitySlug ?? null,
-    },
-  })
-
-  // 작성자 postCount 증가
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { postCount: { increment: 1 } },
+  // post.create + postCount 증가를 단일 트랜잭션으로 (부분 실패 방지)
+  const post = await prisma.$transaction(async (tx) => {
+    const newPost = await tx.post.create({
+      data: {
+        boardType,
+        category: category || null,
+        title,
+        content: finalContent,
+        summary,
+        thumbnailUrl: imageUrls[0] || null,
+        authorId: session.user.id,
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
+        slug: communitySlug ?? null,
+      },
+    })
+    await tx.user.update({
+      where: { id: session.user.id },
+      data: { postCount: { increment: 1 } },
+    })
+    return newPost
   })
   void checkAndPromote(session.user.id).catch(() => {})
 
