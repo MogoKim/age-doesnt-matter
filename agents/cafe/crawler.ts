@@ -27,6 +27,10 @@ const STORAGE_STATE_PATH = resolve(__dirname, 'storage-state.json')
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+/** 자연스러운 랜덤 딜레이 — 네이버 봇 감지 패턴 회피 */
+const randomDelay = (baseMs: number, minFactor = 0.7, maxFactor = 1.5): number =>
+  Math.floor(baseMs * (minFactor + Math.random() * (maxFactor - minFactor)))
+
 /** Playwright 자체 Chromium + 저장된 쿠키로 브라우저 열기 */
 async function launchBrowser(): Promise<{ context: BrowserContext }> {
   if (!existsSync(STORAGE_STATE_PATH)) {
@@ -202,7 +206,7 @@ async function extractComments(
   const comments: CommentData[] = []
 
   // 댓글 렌더링 대기 (동적 로드)
-  await sleep(1500)
+  await sleep(randomDelay(1500, 0.8, 1.3))
 
   // 네이버 카페 신/구 형식 댓글 컨테이너 셀렉터
   const containerSelectors = [
@@ -344,7 +348,7 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
       const boardLabel = board.isPopular ? '인기글(구format)' : `menuId=${board.menuId}`
       console.log(`[CafeCrawler] ${cafe.name} — 게시판 "${board.name}" (${boardLabel}) 수집 중...`)
       await page.goto(boardUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
-      await sleep(3000)
+      await sleep(randomDelay(3000, 0.8, 1.5))
 
       // 스크롤하여 더 많은 글 로드 (QUICK 모드: 1페이지만)
       const scrollCount = quickMode ? 1 : Math.min(board.maxPages, 3)
@@ -395,7 +399,7 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
         const delay = board.priority === 'medium'
           ? CRAWL_LIMITS.delayBetweenPagesMedium
           : CRAWL_LIMITS.delayBetweenPages
-        await sleep(delay)
+        await sleep(randomDelay(delay))
       }
     } catch (err) {
       console.warn(`[CafeCrawler] ${cafe.name} 게시판 "${board.name}" 실패:`, err)
@@ -457,7 +461,7 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
 async function crawlNewFormat(page: Page, article: ArticleInfo, cafe: CafeConfig, includeComments = false): Promise<RawCafePost | null> {
   try {
     await page.goto(article.newFormatUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
-    await sleep(3000)
+    await sleep(randomDelay(3000, 0.8, 1.6))
 
     // 네이버 카페는 f-e URL도 cafe_main iframe 안에 실제 콘텐츠를 렌더링
     const cafeFrame = page.frame('cafe_main')
@@ -502,7 +506,7 @@ async function crawlNewFormat(page: Page, article: ArticleInfo, cafe: CafeConfig
 async function crawlOldFormat(page: Page, article: ArticleInfo, cafe: CafeConfig, includeComments = false): Promise<RawCafePost | null> {
   try {
     await page.goto(article.oldFormatUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
-    await sleep(2500)
+    await sleep(randomDelay(2500, 0.8, 1.6))
 
     // cafe_main iframe 찾기
     const cafeFrame = page.frame('cafe_main')
@@ -822,7 +826,7 @@ async function main() {
           consecutiveFails++
         }
         // QUICK 모드: 딜레이 단축
-        await sleep(isQuickMode ? Math.floor(CRAWL_LIMITS.delayBetweenPosts / 2) : CRAWL_LIMITS.delayBetweenPosts)
+        await sleep(randomDelay(isQuickMode ? Math.floor(CRAWL_LIMITS.delayBetweenPosts / 2) : CRAWL_LIMITS.delayBetweenPosts))
       }
 
       const successRate = articles.length > 0 ? Math.round(posts.length / articles.length * 100) : 0

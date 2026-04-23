@@ -20,6 +20,10 @@ const BOARD_PERSONAS: Record<string, string[]> = {
 const MAX_BOT_COMMENTS_PER_POST = 3
 
 async function main() {
+  // 봇 패턴 분산 — 매 run마다 0~3분 랜덤 딜레이로 시작 타이밍 변주
+  const startDelay = Math.floor(Math.random() * 3 * 60 * 1000)
+  await new Promise(r => setTimeout(r, startDelay))
+
   console.log('[COO] 댓글 활성화 시작')
   const start = Date.now()
   let activatedCount = 0
@@ -27,13 +31,15 @@ async function main() {
 
   try {
     const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
+    // 게시글 등록 직후 봇 댓글 패턴 방지 — 최소 30분 경과한 글만 처리
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000)
 
-    // 1. 댓글 0개인 게시글 찾기 (최근 12시간, 최대 10개)
+    // 1. 댓글 0개인 게시글 찾기 (최근 12시간 내, 30분 이상 경과, 최대 10개)
     const zeroPosts = await prisma.post.findMany({
       where: {
         status: 'PUBLISHED',
         commentCount: 0,
-        createdAt: { gte: twelveHoursAgo },
+        createdAt: { gte: twelveHoursAgo, lte: thirtyMinutesAgo },
       },
       select: {
         id: true,

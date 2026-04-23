@@ -452,13 +452,33 @@ export async function generateComment(
       examples.map(e => `"${e}"`).join('\n')
     : ''
 
+  // 이전 댓글 이력 조회 — 첫 문장·표현 반복 방지
+  let recentCommentHint = ''
+  try {
+    const recentComments = await prisma.comment.findMany({
+      where: {
+        author: { email: `bot-${personaId.toLowerCase()}@unao.bot` },
+        parentId: null,  // 대댓글 제외, 댓글만
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+      select: { content: true },
+    })
+    if (recentComments.length > 0) {
+      recentCommentHint = `\n\n[최근 단 댓글들 — 다른 첫 문장·표현으로 시작하세요]\n` +
+        recentComments.map(c => `- "${c.content.slice(0, 60)}"`).join('\n')
+    }
+  } catch {
+    // 조회 실패 시 댓글 생성 계속
+  }
+
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 200,
     system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'comment') + trendContext,
     messages: [{
       role: 'user',
-      content: `다음 글에 댓글을 달아주세요.\n\n제목: ${postTitle}\n내용: ${postContent.slice(0, 300)}${exampleBlock}`,
+      content: `다음 글에 댓글을 달아주세요.\n\n제목: ${postTitle}\n내용: ${postContent.slice(0, 300)}${exampleBlock}${recentCommentHint}`,
     }],
   })
 

@@ -234,6 +234,9 @@ async function main() {
   console.log(`[Pipeline] 모드: ${step}`)
 
   try {
+    // 쿠키 만료 사전 알림 — 파이프라인 시작 시 1회 (만료 7일·3일 전 Slack 경고)
+    await checkCookieExpiryWarning()
+
     // ── DEEP 모드 (08:30 KST) — 전체 크롤 + 심리 분석 + 풀 트렌드 + 인텔리전스 브리프 ──
     if (step === 'deep') {
       await runCrawlWithRetry('crawler.ts', '1단계: 딥다이브 크롤링 (댓글 포함)')
@@ -380,6 +383,56 @@ async function reportPipelineStage(stage: 'crawl' | 'psych' | 'trend' | 'brief' 
     }
   } catch (err) {
     console.warn(`[Pipeline] reportPipelineStage(${stage}) 실패 (무시):`, err)
+  }
+}
+
+/**
+ * 쿠키 만료 사전 알림 — 7일·3일·당일 3단계
+ * COOKIE_SET_DATE 환경변수 우선, 없으면 BotLog 최근 성공 스트릭으로 추정
+ */
+async function checkCookieExpiryWarning() {
+  try {
+    const COOKIE_TTL_DAYS = 30
+
+    let cookieSetDate: Date | null = null
+
+    if (process.env.COOKIE_SET_DATE) {
+      cookieSetDate = new Date(process.env.COOKIE_SET_DATE)
+    } else {
+      // BotLog에서 최근 14일 내 가장 오래된 성공 크롤 레코드 조회 (스트릭 시작 추정)
+      const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+      const firstRecent = await prisma.botLog.findFirst({
+        where: {
+          botType: 'CAFE_CRAWLER',
+          action: 'CAFE_CRAWL',
+          status: 'SUCCESS',
+          createdAt: { gte: twoWeeksAgo },
+        },
+        orderBy: { createdAt: 'asc' },
+      })
+      if (firstRecent) cookieSetDate = firstRecent.createdAt
+    }
+
+    if (!cookieSetDate) return
+
+    const daysSince = (Date.now() - cookieSetDate.getTime()) / (1000 * 60 * 60 * 24)
+    const daysRemaining = COOKIE_TTL_DAYS - daysSince
+
+    if (daysRemaining > COOKIE_TTL_DAYS) return  // 미래 날짜 오입력 방어
+
+    if (daysRemaining <= 0) {
+      // 이미 만료 예상 — checkCookieExpiry()가 처리
+    } else if (daysRemaining <= 3) {
+      await sendSlackMessage('SYSTEM',
+        `🔴 *쿠키 만료 임박* — 약 ${Math.floor(daysRemaining)}일 후 만료 예상\n` +
+        `→ 지금 바로 로컬에서 \`npx tsx agents/cafe/export-cookies.ts\` 실행 후 \`.env.local\`의 COOKIE_SET_DATE 갱신`)
+    } else if (daysRemaining <= 7) {
+      await sendSlackMessage('SYSTEM',
+        `⚠️ *쿠키 만료 예정* — 약 ${Math.floor(daysRemaining)}일 후 만료 예상\n` +
+        `→ 이번 주 내 \`export-cookies.ts\` 실행 권장`)
+    }
+  } catch (err) {
+    console.warn('[Pipeline] 쿠키 만료 사전 알림 실패 (무시):', err)
   }
 }
 
