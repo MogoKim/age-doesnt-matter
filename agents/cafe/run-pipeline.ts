@@ -238,11 +238,16 @@ async function main() {
     if (step === 'deep') {
       await runCrawlWithRetry('crawler.ts', '1단계: 딥다이브 크롤링 (댓글 포함)')
       await checkCookieExpiry()
+      await reportPipelineStage('crawl')
       await run('external-crawler.ts', '2단계: 외부 크롤링 (비활성 — 빈 배열)')
       await run('psych-analyzer.ts', '3단계: AI 심리 분석')
+      await reportPipelineStage('psych')
       await run('trend-analyzer.ts', '4단계: 풀 트렌드 생성 (욕망/감정 집계 포함)')
+      await reportPipelineStage('trend')
       await run('daily-brief.ts', '5단계: 욕망 지도 → DailyIntelligenceBrief 생성')
+      await reportPipelineStage('brief')
       await run('content-curator.ts', '6단계: 콘텐츠 큐레이션')
+      await reportPipelineStage('curate')
     }
 
     // ── QUICK 모드 (12:30 KST) — 빠른 크롤 + 경량 트렌드 업데이트 + midDayPatch ──
@@ -260,11 +265,16 @@ async function main() {
     else if (step === 'all') {
       await runCrawlWithRetry('crawler.ts', '1단계: 카페 크롤링')
       await checkCookieExpiry()
+      await reportPipelineStage('crawl')
       await run('external-crawler.ts', '2단계: 외부 크롤링 (비활성)')
       await run('psych-analyzer.ts', '3단계: AI 심리 분석')
+      await reportPipelineStage('psych')
       await run('trend-analyzer.ts', '4단계: 트렌드 분석')
+      await reportPipelineStage('trend')
       await run('daily-brief.ts', '5단계: DailyIntelligenceBrief 생성')
+      await reportPipelineStage('brief')
       await run('content-curator.ts', '6단계: 콘텐츠 큐레이션')
+      await reportPipelineStage('curate')
     }
 
     // ── 단계별 실행 ──
@@ -293,6 +303,88 @@ async function main() {
 
   const elapsed = Math.round((Date.now() - startTime) / 1000)
   console.log(`\n[Pipeline] 전체 완료 — ${elapsed}초`)
+}
+
+/** Phase 3-A: 파이프라인 단계별 Slack #리포트 자동 전송 */
+async function reportPipelineStage(stage: 'crawl' | 'psych' | 'trend' | 'brief' | 'curate') {
+  try {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const lines: string[] = []
+
+    if (stage === 'crawl') {
+      const perCafe = await prisma.cafePost.groupBy({
+        by: ['cafeId'],
+        where: { crawledAt: { gte: todayStart } },
+        _count: { id: true },
+      })
+      const total = perCafe.reduce((s, r) => s + r._count.id, 0)
+      const cafeStr = perCafe.map(r => `${r.cafeId} ${r._count.id}건`).join(' / ')
+      lines.push(`1️⃣ 크롤 ${total >= 10 ? '✅' : '⚠️'}: ${total}건 수집 (${cafeStr || '없음'})`)
+
+      const wgang = perCafe.find(r => r.cafeId === 'wgang')?._count.id ?? 0
+      if (total > 0 && wgang / total > 0.8) {
+        lines.push(`⚠️ 편향: wgang ${Math.round((wgang / total) * 100)}% → HEALTH 과대 대표 주의`)
+      }
+    }
+
+    else if (stage === 'psych') {
+      const [total, analyzed] = await Promise.all([
+        prisma.cafePost.count({ where: { crawledAt: { gte: todayStart } } }),
+        prisma.cafePost.count({ where: { crawledAt: { gte: todayStart }, aiAnalyzed: true } }),
+      ])
+      const rate = total > 0 ? Math.round((analyzed / total) * 100) : 0
+      lines.push(`2️⃣ 심리분석 ${rate >= 95 ? '✅' : '⚠️'}: ${analyzed}/${total}건 완료 (${rate}%)`)
+    }
+
+    else if (stage === 'trend') {
+      const trend = await prisma.cafeTrend.findFirst({
+        where: { date: todayStart, period: 'daily' },
+        select: { desireMap: true },
+        orderBy: { id: 'desc' },
+      })
+      if (!trend?.desireMap) {
+        lines.push('3️⃣ 트렌드 ❌: 오늘 CafeTrend 없음')
+      } else {
+        const dm = trend.desireMap as Record<string, number>
+        const top5 = Object.entries(dm).sort((a, b) => b[1] - a[1]).slice(0, 5)
+        const topStr = top5.map(([k, v]) => `${k} ${v}%`).join(' / ')
+        const dominated = (top5[0]?.[1] ?? 0) >= 70
+        lines.push(`3️⃣ 트렌드 ${dominated ? '⚠️' : '✅'}: ${topStr}`)
+        if (dominated) lines.push(`⚠️ ${top5[0][0]} 단독 ${top5[0][1]}% — 편향 의심`)
+      }
+    }
+
+    else if (stage === 'brief') {
+      const brief = await prisma.dailyBrief.findFirst({
+        where: { date: todayStart },
+        select: { mode: true },
+      })
+      if (!brief) {
+        lines.push('4️⃣ 브리프 ❌: 오늘 DailyBrief 없음')
+      } else {
+        const ok = brief.mode === 'deep'
+        lines.push(`4️⃣ 브리프 ${ok ? '✅' : '⚠️'}: mode=${brief.mode}${ok ? '' : ' (어제 폴백)'}`)
+      }
+    }
+
+    else if (stage === 'curate') {
+      const log = await prisma.botLog.findFirst({
+        where: { botType: 'CAFE_CRAWLER', action: 'CONTENT_CURATE' },
+        orderBy: { executedAt: 'desc' },
+        select: { itemCount: true },
+      })
+      const count = log?.itemCount ?? 0
+      lines.push(`5️⃣ 큐레이션 ${count >= 2 ? '✅' : '⚠️'}: ${count}건 발행`)
+    }
+
+    if (lines.length > 0) {
+      await sendSlackMessage('REPORT', lines.join('\n'))
+    }
+  } catch (err) {
+    console.warn(`[Pipeline] reportPipelineStage(${stage}) 실패 (무시):`, err)
+  }
 }
 
 /** Bug 1: 쿠키 만료 감지 — 크롤링 직후 BotLog 확인 */
