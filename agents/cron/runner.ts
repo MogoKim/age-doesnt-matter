@@ -2,7 +2,7 @@ import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { parse as parseYaml } from 'yaml'
-import { disconnect } from '../core/db.js'
+import { prisma, disconnect } from '../core/db.js'
 import { waitForDependencies } from './dependencies.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -53,6 +53,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // 매거진: 로컬 launchd(12:30/21:00 KST) + GitHub Actions(16:00 KST) 이중 발행
   'cafe_crawler:magazine-generate': () => import('../cafe/magazine-generator.js').then(async m => { await m.main() }),
   'cafe_crawler:content-curate': () => import('../cafe/content-curator.js').then(() => {}),
+  'cafe_crawler:brief-monitor': () => import('../cafe/brief-monitor.js').then(() => {}),
   'cafe_crawler:external-crawl': () => import('../cafe/external-crawler.js').then(() => {}), // DISPATCH ONLY — 82cook 외부 크롤, GHA 스케줄 제거됨 (2026-04-13)
   'cmo:social-poster': () => import('../cmo/social-poster.js').then(() => {}),
   'cmo:social-metrics': () => import('../cmo/social-metrics.js').then(() => {}),
@@ -118,6 +119,26 @@ function getAutomationStatus(): string {
   }
 }
 
+/** DB EMERGENCY_STOP 플래그 확인 — /una-stop Slack 커맨드가 기록한 경우 LOCKED 처리 */
+async function isDbEmergencyStop(): Promise<boolean> {
+  try {
+    const lastStop = await prisma.botLog.findFirst({
+      where: { botType: 'CTO', action: 'EMERGENCY_STOP' },
+      orderBy: { createdAt: 'desc' },
+    })
+    if (!lastStop) return false
+
+    const lastResume = await prisma.botLog.findFirst({
+      where: { botType: 'CTO', action: 'EMERGENCY_RESUME' },
+      orderBy: { createdAt: 'desc' },
+    })
+    // 마지막 RESUME가 STOP보다 이전이거나 없으면 중지 상태
+    return !lastResume || lastStop.createdAt > lastResume.createdAt
+  } catch {
+    return false // DB 체크 실패 시 차단하지 않음
+  }
+}
+
 async function main() {
   const [agent, task] = process.argv.slice(2)
 
@@ -136,10 +157,12 @@ async function main() {
     process.exit(1)
   }
 
-  // automation_status 체크
+  // automation_status 체크 (constitution.yaml + DB EMERGENCY_STOP 병행)
   const status = getAutomationStatus()
-  if (status !== 'ACTIVE' && !MONITORING_TASKS.has(key)) {
-    console.log(`[Runner] automation_status=${status} — ${key} 실행 스킵 (모니터링 태스크만 허용)`)
+  const dbStopped = await isDbEmergencyStop()
+  if ((status !== 'ACTIVE' || dbStopped) && !MONITORING_TASKS.has(key)) {
+    const reason = dbStopped ? 'DB_EMERGENCY_STOP' : `automation_status=${status}`
+    console.log(`[Runner] ${reason} — ${key} 실행 스킵 (모니터링 태스크만 허용)`)
     await disconnect()
     process.exit(0)
   }
