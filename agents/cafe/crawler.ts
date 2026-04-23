@@ -770,6 +770,9 @@ async function main() {
   const { context } = await launchBrowser()
   console.log('[CafeCrawler] 브라우저 실행 (Playwright Chromium + 저장된 쿠키)')
   const page = await context.newPage()
+  // 개별 액션/내비게이션 상한 — pageTimeout(15s)보다 느슨한 안전망
+  page.setDefaultTimeout(30_000)
+  page.setDefaultNavigationTimeout(30_000)
 
   // CRAWL_CAFE_FILTER: 특정 카페만 크롤링 (쉼표 구분, e.g. "dlxogns01" or "wgang,dlxogns01")
   const cafeFilter = process.env.CRAWL_CAFE_FILTER
@@ -832,8 +835,15 @@ async function main() {
       console.log(`[CafeCrawler] ${cafe.name}: ${saved}개 신규 저장 (${posts.length - saved}개 중복)`)
     }
   } finally {
-    await page.close()
-    await context.close()
+    // close() 타임아웃 보호 — headless:false 브라우저가 OS 레벨에서 응답 불가 시 무한 hang 방지
+    await Promise.race([
+      page.close(),
+      new Promise<void>(r => setTimeout(r, 10_000)),
+    ]).catch(() => {})
+    await Promise.race([
+      context.close(),
+      new Promise<void>(r => setTimeout(r, 10_000)),
+    ]).catch(() => {})
   }
 
   const durationMs = Date.now() - startTime
@@ -876,12 +886,22 @@ async function main() {
   process.exit(0)
 }
 
-main().catch(async (err) => {
+// 전체 실행 90분 안전망 — 정상 DEEP 크롤 40-50분의 2배 여유
+// context.close() 10초 fix가 핵심이므로 이 timeout은 backup
+const TOTAL_TIMEOUT_MS = 90 * 60 * 1000
+
+Promise.race([
+  main(),
+  new Promise<void>((_, reject) =>
+    setTimeout(() => reject(new Error('CRAWL_TOTAL_TIMEOUT_90MIN')), TOTAL_TIMEOUT_MS)
+  ),
+]).catch(async (err) => {
   console.error('[CafeCrawler] 치명적 오류:', err)
+  const isTimeout = err instanceof Error && err.message.includes('TIMEOUT')
   await notifySlack({
     level: 'critical',
     agent: 'CAFE_CRAWLER',
-    title: '카페 크롤링 실패',
+    title: isTimeout ? '카페 크롤링 90분 타임아웃 — 강제 종료' : '카페 크롤링 실패',
     body: err instanceof Error ? err.message : String(err),
   })
   await Promise.race([disconnect(), new Promise(r => setTimeout(r, 5000))])
