@@ -488,32 +488,54 @@
     <div class="section-title"><span class="num">5</span>측정 퍼널 & GTM 이벤트</div>
 
     <table>
-      <tr><th>단계</th><th>GTM 이벤트</th><th>파라미터</th></tr>
-      <tr><td>배너 노출</td><td><code>signup_banner_shown</code></td><td>variant, page_path, show_count</td></tr>
-      <tr><td>배너 CTA 클릭</td><td><code>signup_banner_clicked</code></td><td>variant, page_path</td></tr>
-      <tr><td>배너 닫기</td><td><code>signup_banner_dismissed</code></td><td>variant, page_path, show_count</td></tr>
-      <tr><td>모달 노출</td><td><code>login_prompt_shown</code></td><td>trigger (like/scrap/comment), page_path</td></tr>
-      <tr><td>모달 CTA 클릭</td><td><code>login_prompt_clicked</code></td><td>trigger, page_path</td></tr>
-      <tr><td>가입 완료</td><td><code>sign_up</code></td><td>method: 'kakao', variant, utm_*</td></tr>
+      <tr><th>단계</th><th>GTM 이벤트</th><th>파라미터</th><th>비고</th></tr>
+      <tr><td>조건 충족 (분모 기준)</td><td><code>signup_banner_eligible</code></td><td>variant, page_path</td><td>🆕 20초+스크롤 50% 충족 시점. 차단/미표시와 무관하게 발송 → <strong>진짜 분모</strong></td></tr>
+      <tr><td>배너 노출</td><td><code>signup_banner_shown</code></td><td>variant, page_path, show_count</td><td>실제 표시된 경우만</td></tr>
+      <tr><td>배너 CTA 클릭</td><td><code>signup_banner_clicked</code></td><td>variant, page_path</td><td></td></tr>
+      <tr><td>배너 닫기</td><td><code>signup_banner_dismissed</code></td><td>variant, page_path, show_count</td><td></td></tr>
+      <tr><td>모달 노출</td><td><code>login_prompt_shown</code></td><td>trigger (like/scrap/comment), page_path</td><td>배리언트 무관</td></tr>
+      <tr><td>모달 CTA 클릭</td><td><code>login_prompt_clicked</code></td><td>trigger, page_path</td><td></td></tr>
+      <tr><td>가입 완료</td><td><code>sign_up</code></td><td>method: 'kakao', variant, utm_*</td><td></td></tr>
     </table>
+
+    <div class="gap-box" style="margin-top:16px">
+      <div class="gap-title">⚠️ 갭 A 해소 — GA4 Custom Dimensions 미등록 시 분석 불가</div>
+      이벤트 파라미터를 코드에서 보내도 GA4 탐색 보고서에서 배리언트별 세그멘테이션하려면 <strong>Custom Dimension을 GA4 콘솔에서 수동 등록</strong>해야 함. 코드 배포 전 선행 필요.
+    </div>
+    <div class="resolved-box">
+      <div class="res-title">📋 GA4 설정 — 창업자 수동 작업 (코드 배포 전)</div>
+      GA4 → 관리 → 맞춤 정의 → 맞춤 측정기준 → 만들기<br><br>
+      <table style="margin-top:8px">
+        <tr><th>측정기준 이름</th><th>범위</th><th>이벤트 파라미터</th></tr>
+        <tr><td>배리언트</td><td>이벤트</td><td>variant</td></tr>
+        <tr><td>노출 횟수</td><td>이벤트</td><td>show_count</td></tr>
+        <tr><td>모달 트리거</td><td>이벤트</td><td>trigger</td></tr>
+      </table>
+    </div>
+
+    <div class="subtitle" style="margin-top:20px">완성된 퍼널 (eligible 추가)</div>
+    <div class="flow-box">
+      <span class="highlight">signup_banner_eligible</span> (진짜 분모)<br>
+      <span class="arrow">→</span> signup_banner_shown (세션 차단·영구 차단 통과한 것만)<br>
+      <span class="arrow">→</span> signup_banner_clicked<br>
+      <span class="arrow">→</span> sign_up
+    </div>
 
     <div class="subtitle" style="margin-top:20px">핵심 측정 지표</div>
     <div class="metrics-row">
       <div class="metric-card">
+        <div class="metric-val">노출률</div>
+        <div class="metric-label">shown / eligible<br>(차단 제외 비율)</div>
+      </div>
+      <div class="metric-card">
         <div class="metric-val">CTR</div>
-        <div class="metric-label">배너 클릭률<br>(clicked / shown)</div>
+        <div class="metric-label">clicked / shown<br>(배너 클릭률)</div>
       </div>
       <div class="metric-card">
         <div class="metric-val">CVR</div>
-        <div class="metric-label">가입 전환율<br>(sign_up / shown)</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-val">1-DR</div>
-        <div class="metric-label">1 - 닫기율<br>(1 - dismissed/shown)</div>
+        <div class="metric-label">sign_up / eligible<br>(진짜 전환율)</div>
       </div>
     </div>
-
-    <p>GA4 보고서: 탐색 분석 → 퍼널 탐색 → 이벤트 순서: signup_banner_shown → signup_banner_clicked → sign_up</p>
   </div>
 
   <!-- S6: 샘플 사이즈 -->
@@ -542,12 +564,27 @@
     <div class="subtitle" style="margin-top:20px">집계 단위</div>
     <p>"20초 AND 스크롤 50%" 조건을 충족한 비회원 세션 기준. 조건 미충족 세션은 분모에서 제외.</p>
 
-    <div class="subtitle">승자 결정 기준</div>
+    <div class="subtitle">집계 기준: eligible vs shown</div>
+    <table>
+      <tr><th>지표</th><th>분모</th><th>설명</th></tr>
+      <tr><td>노출률</td><td>eligible</td><td>조건 충족자 중 실제로 배너를 본 비율 (차단 영향 측정)</td></tr>
+      <tr><td>CTR</td><td>shown</td><td>배너를 본 사람 중 클릭률</td></tr>
+      <tr><td>CVR (핵심)</td><td>eligible</td><td>조건 충족자 중 가입 전환율 — A/B 비교의 진짜 기준</td></tr>
+    </table>
+
+    <div class="subtitle" style="margin-top:20px">승자 결정 기준</div>
     <ul class="plain">
       <li>Fisher's exact test p &lt; 0.05</li>
       <li>3개 배리언트 동시 비교 시 Bonferroni 보정 적용 (α/3 = 0.017)</li>
       <li>CVR 차이가 +1%p 미만이면 실용적 유의성 없음으로 간주 → 롤아웃 보류</li>
     </ul>
+
+    <div class="gap-box" style="margin-top:20px">
+      <div class="gap-title">⚠️ 갭 C — 교차 디바이스 오염 한계</div>
+      <code>unao_device_id</code>(localStorage)로 배리언트 고정 → 같은 사람이 모바일+PC로 접속하면 다른 배리언트 배정 가능.<br><br>
+      <strong>수용 근거:</strong> 우나어 트래픽 규모(DAU ~300명)에서는 교차 디바이스 비율이 낮아 통계적 오염 영향 미미. 로그인 후 user_id 기반 고정은 v2 테스트 이후 적용 검토.<br>
+      <strong>분석 시 주의:</strong> GA4 보고서에서 user_id 기준과 device_id 기준 결과를 교차 확인할 것.
+    </div>
   </div>
 
   <!-- S7: 환경별 동작 -->
@@ -768,7 +805,7 @@
       <tr><th>파일</th><th>변경 내용</th><th>우선순위</th></tr>
       <tr><td><code>src/components/common/SignupPromptBanner.tsx</code></td><td>신규 생성 — A/B/C 배리언트, BANNER_PATHS 화이트리스트, Tab Visibility 타이머, 스크롤+시간 AND 조건, 충돌 방지 키 저장</td><td>P1</td></tr>
       <tr><td><code>src/app/(main)/layout.tsx</code></td><td>수정 — SignupPromptBanner 전역 삽입, 환영 토스트 로직, pwa_page_views_after_signup 카운터</td><td>P1</td></tr>
-      <tr><td><code>src/lib/gtm.ts</code></td><td>수정 — gtmSignupBannerShown/Clicked/Dismissed 추가, gtmSignUp에 variant 파라미터 추가</td><td>P1</td></tr>
+      <tr><td><code>src/lib/gtm.ts</code></td><td>수정 — gtmSignupBannerEligible/Shown/Clicked/Dismissed 추가 (eligible 이벤트 포함), gtmSignUp에 variant 파라미터 추가</td><td>P1</td></tr>
       <tr><td><code>src/components/features/onboarding/OnboardingForm.tsx</code></td><td>수정 — signup_completed_at localStorage 저장, signup_welcome_toast 저장, gtmSignUp에 variant 전달</td><td>P1</td></tr>
       <tr><td><code>src/components/common/AddToHomeScreen.tsx</code></td><td>수정 — PWA 노출 시 bottom_banner_shown_this_session='pwa' 저장</td><td>P1</td></tr>
       <tr><td><code>src/components/common/PwaInlineBanner.tsx</code></td><td>수정 — bottom_banner_shown_this_session 체크 추가</td><td>P2</td></tr>

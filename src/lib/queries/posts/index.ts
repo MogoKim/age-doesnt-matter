@@ -1,5 +1,0 @@
-export * from './posts.base'
-export * from './posts.community'
-export * from './posts.jobs'
-export * from './posts.trending'
-export * from './posts.magazine'

@@ -1,8 +1,0 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.agenotmatter.app",
-    "sha256_cert_fingerprints": ["14:79:0C:CB:6A:1B:5B:8C:65:C4:0D:32:D5:79:EC:40:30:AC:24:96:9A:40:96:F5:80:5A:C9:30:45:11:9A:D5"]
-  }
-}]
