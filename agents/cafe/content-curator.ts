@@ -13,6 +13,14 @@ import type { CuratedContent, TrendAnalysis } from './types.js'
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
 
+/** 네이버 카페 텍스트의 lone surrogate 문자 제거 (Anthropic API JSON 직렬화 오류 방지) */
+function sanitizeForApi(text: string): string {
+  return text
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+}
+
 /** AI 응답에서 마크다운 문법 제거 */
 function stripMarkdown(text: string): string {
   return text
@@ -270,7 +278,7 @@ async function generateCuratedPost(
   referencePosts: { title: string; content: string; cafeName: string }[],
 ): Promise<CuratedContent | null> {
   const references = referencePosts.map((p, i) =>
-    `인기글 ${i + 1} (${p.cafeName}): "${p.title}"\n${p.content.slice(0, 400)}`,
+    `인기글 ${i + 1} (${p.cafeName}): "${sanitizeForApi(p.title)}"\n${sanitizeForApi(p.content.slice(0, 400))}`,
   ).join('\n\n')
 
   const quirksStr = persona.quirks.map(q => `- ${q}`).join('\n')

@@ -12,6 +12,14 @@ import type { TrendAnalysis } from './types.js'
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
 
+/** 네이버 카페 텍스트의 lone surrogate 문자 제거 (Anthropic API JSON 직렬화 오류 방지) */
+function sanitizeForApi(text: string): string {
+  return text
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+}
+
 /** 오늘 크롤링된 글 가져오기 */
 async function getTodayPosts() {
   const todayStart = new Date()
@@ -131,7 +139,7 @@ function aggregatePsychData(posts: Awaited<ReturnType<typeof getTodayPosts>>) {
 /** Claude에게 트렌드 분석 요청 */
 async function analyzeTrends(posts: Awaited<ReturnType<typeof getTodayPosts>>): Promise<TrendAnalysis> {
   const postSummaries = posts.map((p, i) =>
-    `[${i + 1}] (${p.cafeName}/${p.boardCategory ?? p.category ?? '일반'}) [품질${Math.round(p.qualityScore)}] "${p.title}" — 좋아요 ${p.likeCount}, 댓글 ${p.commentCount}\n   ${p.content.slice(0, 200)}`,
+    `[${i + 1}] (${p.cafeName}/${p.boardCategory ?? p.category ?? '일반'}) [품질${Math.round(p.qualityScore)}] "${sanitizeForApi(p.title)}" — 좋아요 ${p.likeCount}, 댓글 ${p.commentCount}\n   ${sanitizeForApi(p.content.slice(0, 200))}`,
   ).join('\n\n')
 
   const response = await client.messages.create({

@@ -25,6 +25,14 @@ const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const BATCH_SIZE = 5  // Bug 5: 10 → 5 (본문 1200자 확대로 토큰 비용 균등 유지)
 const client = new Anthropic()
 
+/** 네이버 카페 텍스트의 lone surrogate 문자 제거 (Anthropic API JSON 직렬화 오류 방지) */
+function sanitizeForApi(text: string): string {
+  return text
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+}
+
 const isTest = process.argv.includes('--test')
 
 // ── 타입 정의 ──
@@ -136,7 +144,7 @@ async function callAnalyzeApi(posts: PostForAnalysis[]): Promise<PsychResult[] |
       : ''
     const boardHint = p.boardName ? `[게시판: ${p.boardName}]\n` : ''
     // Bug 5: 600 → 1200자 (5060 글은 사연이 길어 핵심이 후반부에 나옴)
-    return `[글 ${i + 1}] ${boardHint}제목: ${p.title}\n본문: ${p.content.slice(0, 1200)}${commentText}`
+    return `[글 ${i + 1}] ${boardHint}제목: ${sanitizeForApi(p.title)}\n본문: ${sanitizeForApi(p.content.slice(0, 1200))}${commentText}`
   }).join('\n\n---\n\n')
 
   const response = await client.messages.create({
