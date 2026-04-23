@@ -323,10 +323,6 @@ async function reportPipelineStage(stage: 'crawl' | 'psych' | 'trend' | 'brief' 
       const cafeStr = perCafe.map(r => `${r.cafeId} ${r._count.id}건`).join(' / ')
       lines.push(`1️⃣ 크롤 ${total >= 10 ? '✅' : '⚠️'}: ${total}건 수집 (${cafeStr || '없음'})`)
 
-      const wgang = perCafe.find(r => r.cafeId === 'wgang')?._count.id ?? 0
-      if (total > 0 && wgang / total > 0.8) {
-        lines.push(`⚠️ 편향: wgang ${Math.round((wgang / total) * 100)}% → HEALTH 과대 대표 주의`)
-      }
     }
 
     else if (stage === 'psych') {
