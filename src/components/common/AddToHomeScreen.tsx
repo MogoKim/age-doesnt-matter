@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { gtmPwaPopupShown, gtmPwaInstall, gtmPwaBannerAction } from '@/lib/gtm'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -157,9 +158,10 @@ export default function AddToHomeScreen() {
   const [canNativeInstall, setCanNativeInstall] = useState(false)
   const [bannerVisible, setBannerVisible] = useState(false)
   const [pwaStatus, setPwaStatus] = useState<PwaStatus | null>(null)
-  const envRef     = useRef<Env>('other')
-  const deferredRef = useRef<BeforeInstallPromptEvent | null>(null)
-  const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const envRef          = useRef<Env>('other')
+  const deferredRef     = useRef<BeforeInstallPromptEvent | null>(null)
+  const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const currentTriggerRef = useRef<string>('first_15s')
 
   async function markInstalled() {
     localStorage.setItem(KEY_INSTALLED, '1')
@@ -177,9 +179,11 @@ export default function AddToHomeScreen() {
       markShown(t)
       localStorage.setItem(KEY_LAST_PROMPTED, new Date().toISOString())
       sessionStorage.setItem(SESSION_SHOWN, '1')
+      currentTriggerRef.current = t
       setIsManual(false)
       setVisible(true)
       postPopupShown()
+      gtmPwaPopupShown(t, envRef.current)
       return true
     }
     return false
@@ -229,6 +233,7 @@ export default function AddToHomeScreen() {
 
       if (trigger === 'manual') {
         setCanNativeInstall(native)
+        currentTriggerRef.current = 'manual'
         setIsManual(true)
         setVisible(true)
         return
@@ -288,6 +293,7 @@ export default function AddToHomeScreen() {
 
     sessionStorage.setItem(SESSION_BANNER_SHOWN, '1')
     setBannerVisible(true)
+    gtmPwaBannerAction('shown')
   }, [pwaStatus, session, pathname, canNativeInstall])
 
   const handleInstall = async () => {
@@ -296,6 +302,7 @@ export default function AddToHomeScreen() {
       const { outcome } = await deferredRef.current.userChoice
       deferredRef.current = null
       setCanNativeInstall(false)
+      gtmPwaInstall(currentTriggerRef.current, envRef.current, outcome)
       if (outcome === 'accepted') await markInstalled()
     }
     setVisible(false)
@@ -309,18 +316,21 @@ export default function AddToHomeScreen() {
       deferredRef.current = null
       if (outcome === 'accepted') await markInstalled()
     }
+    gtmPwaBannerAction('install')
     setBannerVisible(false)
   }
 
   const handleDismiss = () => {
     if (!isManual) {
       localStorage.setItem(KEY_COUNT, String(getDeclineCount() + 1))
+      gtmPwaInstall(currentTriggerRef.current, envRef.current, 'dismissed')
     }
     setVisible(false)
     setIsManual(false)
   }
 
   const handleBannerDismiss = () => {
+    gtmPwaBannerAction('dismissed')
     setBannerVisible(false)
     fetch('/api/user/pwa-status', {
       method: 'POST',

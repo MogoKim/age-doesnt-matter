@@ -242,6 +242,21 @@ export function gtmBoardView(boardType: string): void {
   sendEvent('board_view', { board_type: boardType })
 }
 
+/** PWA 팝업 노출 */
+export function gtmPwaPopupShown(trigger: string, platform: string): void {
+  sendEvent('pwa_popup_shown', { trigger, platform })
+}
+
+/** PWA 설치 결과 (accepted/dismissed) */
+export function gtmPwaInstall(trigger: string, platform: string, outcome: 'accepted' | 'dismissed'): void {
+  sendEvent('pwa_install', { trigger, platform, outcome })
+}
+
+/** PWA 하단 배너 액션 */
+export function gtmPwaBannerAction(action: 'shown' | 'install' | 'dismissed'): void {
+  sendEvent('pwa_banner', { action })
+}
+
 /** 사용자 속성 설정 (로그인 후) */
 export function gtmSetUserProperties(props: {
   user_id?: string
