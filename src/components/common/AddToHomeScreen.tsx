@@ -188,7 +188,7 @@ export default function AddToHomeScreen() {
     targetUrl.searchParams.set('utm_medium', 'pwa_banner')
 
     // 클립보드 복사 (Android intent 실패 시 폴백 보장)
-    navigator.clipboard?.writeText(targetUrl.toString()).catch(() => {})
+    navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
 
     if (envRef.current === 'kakao-android') {
       const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
