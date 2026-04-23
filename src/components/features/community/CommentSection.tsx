@@ -68,14 +68,14 @@ export default function CommentSection({ postId, comments, isLoggedIn }: Comment
             <CommentItemComponent key={comment.id} comment={comment} postId={postId} />
           ))}
         </div>
-      ) : (
+      ) : isLoggedIn ? (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
           <p className="text-body text-muted-foreground leading-[1.8]">
             아직 댓글이 없어요.<br />
             따뜻한 한마디를 남겨보세요!
           </p>
         </div>
-      )}
+      ) : null}
 
       {isLoggedIn ? (
         <CommentInput postId={postId} />
