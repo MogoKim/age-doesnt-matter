@@ -45,7 +45,9 @@ const KEY_LAST_PROMPTED = 'pwa_last_prompted_at'      // ISO timestamp
 const KEY_SESSION_COUNT = 'pwa_session_count'         // number (세션 횟수)
 const KEY_SHOWN_COUNT   = 'pwa_shown_count'           // number (총 노출 횟수)
 
-const KEY_KAKAO_GUIDE_AT       = 'pwa_kakao_guide_at'   // 3일 쿨다운 timestamp
+const KEY_KAKAO_GUIDE_AT       = 'pwa_kakao_guide_at'       // 3일 쿨다운 timestamp
+const KEY_NAVER_GUIDE_AT       = 'pwa_naver_guide_at'       // 3일 쿨다운 timestamp
+const KEY_INSTAGRAM_GUIDE_AT   = 'pwa_instagram_guide_at'   // 3일 쿨다운 timestamp
 const KAKAO_GUIDE_COOLDOWN_MS  = 3 * 24 * 60 * 60 * 1000
 
 // sessionStorage (탭 닫으면 리셋)
@@ -163,6 +165,8 @@ export default function AddToHomeScreen() {
   const [bannerVisible, setBannerVisible] = useState(false)
   const [pwaStatus, setPwaStatus] = useState<PwaStatus | null>(null)
   const [kakaoGuideVisible, setKakaoGuideVisible] = useState(false)
+  const [naverGuideVisible, setNaverGuideVisible] = useState(false)
+  const [instagramGuideVisible, setInstagramGuideVisible] = useState(false)
   const envRef          = useRef<Env>('other')
   const deferredRef     = useRef<BeforeInstallPromptEvent | null>(null)
   const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -202,6 +206,32 @@ export default function AddToHomeScreen() {
     setKakaoGuideVisible(false)
   }
 
+  const handleInappGuide = (env: 'naver-inapp' | 'instagram-inapp') => {
+    const key = env === 'naver-inapp' ? KEY_NAVER_GUIDE_AT : KEY_INSTAGRAM_GUIDE_AT
+    localStorage.setItem(key, String(Date.now()))
+    if (env === 'naver-inapp') setNaverGuideVisible(false)
+    else setInstagramGuideVisible(false)
+
+    const targetUrl = new URL(window.location.href)
+    targetUrl.searchParams.set('utm_source', env === 'naver-inapp' ? 'naver_inapp' : 'instagram_inapp')
+    targetUrl.searchParams.set('utm_medium', 'pwa_banner')
+
+    navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
+
+    if (/android/i.test(navigator.userAgent)) {
+      const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
+      location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
+    }
+    // iOS: 클립보드 복사 + 안내만
+  }
+
+  const handleInappGuideDismiss = (env: 'naver-inapp' | 'instagram-inapp') => {
+    const key = env === 'naver-inapp' ? KEY_NAVER_GUIDE_AT : KEY_INSTAGRAM_GUIDE_AT
+    localStorage.setItem(key, String(Date.now()))
+    if (env === 'naver-inapp') setNaverGuideVisible(false)
+    else setInstagramGuideVisible(false)
+  }
+
   const showTrigger = useCallback((t: Trigger, dbShownCount?: number): boolean => {
     if (canShow(t, dbShownCount)) {
       markShown(t)
@@ -227,6 +257,20 @@ export default function AddToHomeScreen() {
       const last = localStorage.getItem(KEY_KAKAO_GUIDE_AT)
       const expired = !last || Date.now() - Number(last) > KAKAO_GUIDE_COOLDOWN_MS
       if (expired) setKakaoGuideVisible(true)
+      return
+    }
+
+    // 네이버/인스타그램 인앱: 동일하게 외부 브라우저 유도 배너 (3일 쿨다운)
+    if (env === 'naver-inapp') {
+      const last = localStorage.getItem(KEY_NAVER_GUIDE_AT)
+      const expired = !last || Date.now() - Number(last) > KAKAO_GUIDE_COOLDOWN_MS
+      if (expired) setNaverGuideVisible(true)
+      return
+    }
+    if (env === 'instagram-inapp') {
+      const last = localStorage.getItem(KEY_INSTAGRAM_GUIDE_AT)
+      const expired = !last || Date.now() - Number(last) > KAKAO_GUIDE_COOLDOWN_MS
+      if (expired) setInstagramGuideVisible(true)
       return
     }
 
@@ -410,6 +454,78 @@ export default function AddToHomeScreen() {
           </button>
           <p className="text-center text-[12px] text-muted-foreground mt-2">
             {envRef.current === 'kakao-android'
+              ? '주소도 자동으로 복사돼요'
+              : '복사 후 Safari 주소창에 붙여넣으세요'}
+          </p>
+        </div>
+      )}
+
+      {/* ── 네이버 인앱 외부 브라우저 유도 배너 ── */}
+      {naverGuideVisible && (
+        <div className="fixed bottom-0 left-0 right-0 z-[300] bg-card border-t border-border shadow-lg px-4 pt-3 pb-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[15px] font-bold text-foreground">앱처럼 편하게 쓰려면</p>
+            <button
+              onClick={() => handleInappGuideDismiss('naver-inapp')}
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground"
+              aria-label="닫기"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M11 3L3 11M3 3L11 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <p className="text-[14px] text-muted-foreground mb-3 break-keep">
+            {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
+              ? 'Chrome 앱에서 열면 홈 화면에 추가할 수 있어요'
+              : 'Safari에서 열면 홈 화면에 추가할 수 있어요'}
+          </p>
+          <button
+            onClick={() => handleInappGuide('naver-inapp')}
+            className="w-full h-[52px] bg-primary text-white rounded-xl font-bold text-[16px]"
+          >
+            {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
+              ? '크롬으로 열기'
+              : '주소 복사하기'}
+          </button>
+          <p className="text-center text-[12px] text-muted-foreground mt-2">
+            {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
+              ? '주소도 자동으로 복사돼요'
+              : '복사 후 Safari 주소창에 붙여넣으세요'}
+          </p>
+        </div>
+      )}
+
+      {/* ── 인스타그램 인앱 외부 브라우저 유도 배너 ── */}
+      {instagramGuideVisible && (
+        <div className="fixed bottom-0 left-0 right-0 z-[300] bg-card border-t border-border shadow-lg px-4 pt-3 pb-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[15px] font-bold text-foreground">앱처럼 편하게 쓰려면</p>
+            <button
+              onClick={() => handleInappGuideDismiss('instagram-inapp')}
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground"
+              aria-label="닫기"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M11 3L3 11M3 3L11 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <p className="text-[14px] text-muted-foreground mb-3 break-keep">
+            {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
+              ? 'Chrome 앱에서 열면 홈 화면에 추가할 수 있어요'
+              : 'Safari에서 열면 홈 화면에 추가할 수 있어요'}
+          </p>
+          <button
+            onClick={() => handleInappGuide('instagram-inapp')}
+            className="w-full h-[52px] bg-primary text-white rounded-xl font-bold text-[16px]"
+          >
+            {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
+              ? '크롬으로 열기'
+              : '주소 복사하기'}
+          </button>
+          <p className="text-center text-[12px] text-muted-foreground mt-2">
+            {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
               ? '주소도 자동으로 복사돼요'
               : '복사 후 Safari 주소창에 붙여넣으세요'}
           </p>

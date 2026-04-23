@@ -15,6 +15,7 @@ import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import ResponsiveAd from '@/components/ad/ResponsiveAd'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
+import PwaInlineBanner from '@/components/common/PwaInlineBanner'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 
 interface PageProps {
@@ -125,6 +126,9 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
         <h1 className="text-xl font-bold text-foreground m-0 mb-1">{board.displayName}</h1>
         <p className="text-body text-muted-foreground m-0">{board.description}</p>
       </div>
+
+      {/* PWA 인라인 배너 (미설치 + 비차단 환경에서만 노출) */}
+      <PwaInlineBanner />
 
       {/* 카테고리 필터 + 정렬 */}
       <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
