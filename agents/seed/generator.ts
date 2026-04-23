@@ -36,6 +36,34 @@ async function getLatestTrend() {
   }
 }
 
+/**
+ * 실제 CafePost에서 스타일 예시 추출 — "모방" 파이프라인 핵심
+ * 페르소나 욕망과 일치하는 카테고리의 실제 커뮤니티 글/댓글 발췌
+ */
+async function getExampleCafePosts(desire: string | null): Promise<string[]> {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const posts = await prisma.cafePost.findMany({
+      where: {
+        isUsable: true,
+        aiAnalyzed: true,
+        ...(desire ? { desireCategory: desire } : {}),
+        crawledAt: { gte: sevenDaysAgo },
+      },
+      select: { content: true },
+      orderBy: { crawledAt: 'desc' },
+      take: 5,
+    })
+    // 실제 글에서 자연스러운 첫 100자 발췌 (줄바꿈 제거, 빈 문장 제외)
+    return posts
+      .map(p => p.content.replace(/\n+/g, ' ').trim().slice(0, 100))
+      .filter(s => s.length > 20)
+      .slice(0, 3)
+  } catch {
+    return []
+  }
+}
+
 /** 페르소나의 주담당 욕망 카테고리 조회 */
 function getPersonaDesire(personaId: string): string | null {
   for (const [desire, info] of Object.entries(DESIRE_PERSONA_MAP)) {
@@ -130,11 +158,12 @@ function buildTrendContext(
     : ''
 
   return `
-[오늘의 커뮤니티 분위기 — 참고만, 직접 인용 절대 금지]
+[오늘 커뮤니티 말투·어휘 — 적극 모방하세요]
 - 오늘 주된 관심: ${trend.dominantDesire} 관련 이야기${myTopicLine}${hotTopicLine}${emotionLine}${vocabLine}${desirePctLine}
 
-이 분위기를 당신의 개성으로 자연스럽게 녹여내세요.
-위 내용을 그대로 쓰거나 직접 언급하지 마세요.`
+위의 "오늘 유행 표현"과 "자주 쓰는 어휘"는 실제 우갱 회원들이 오늘 쓴 말입니다.
+이 단어와 표현 방식을 당신 글에 자연스럽게 녹여 쓰세요.
+내용 직접 인용은 금지, 말투와 어휘 스타일만 따라하세요.`
 }
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
@@ -362,6 +391,14 @@ export async function generatePost(
     // 조회 실패 시 글 생성은 계속
   }
 
+  // 실제 CafePost 예시 — 말투 모방 (글 생성)
+  const desire = getPersonaDesire(personaId)
+  const examples = await getExampleCafePosts(desire)
+  const exampleBlock = examples.length > 0
+    ? `\n\n[실제 우갱 회원 글 말투 — 이 스타일로 쓰세요, 내용 인용 절대 금지]\n` +
+      examples.map(e => `"${e}"`).join('\n')
+    : ''
+
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: length.maxTokens,
@@ -370,7 +407,7 @@ export async function generatePost(
       trendContext,
     messages: [{
       role: 'user',
-      content: `오늘 "${topic}" 주제로 글을 써주세요.${entertainHint}${recentHint}
+      content: `오늘 "${topic}" 주제로 글을 써주세요.${entertainHint}${recentHint}${exampleBlock}
 
 응답 형식 (이 형식을 정확히 지켜주세요):
 제목: (15~30자, 당신 말투로)
@@ -403,13 +440,25 @@ export async function generateComment(
 ): Promise<string> {
   const p = getPersona(personaId)
 
+  // 오늘 커뮤니티 말투·어휘 주입 (글 생성과 동일 수준)
+  const trend = await getLatestTrend()
+  const trendContext = buildTrendContext(trend, personaId)
+
+  // 실제 CafePost 예시 — 말투 모방
+  const desire = getPersonaDesire(personaId)
+  const examples = await getExampleCafePosts(desire)
+  const exampleBlock = examples.length > 0
+    ? `\n\n[실제 우갱 회원 글 말투 — 이 스타일로 댓글 쓰세요, 내용 인용 절대 금지]\n` +
+      examples.map(e => `"${e}"`).join('\n')
+    : ''
+
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 200,
-    system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'comment'),
+    system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'comment') + trendContext,
     messages: [{
       role: 'user',
-      content: `다음 글에 댓글을 달아주세요.\n\n제목: ${postTitle}\n내용: ${postContent.slice(0, 300)}`,
+      content: `다음 글에 댓글을 달아주세요.\n\n제목: ${postTitle}\n내용: ${postContent.slice(0, 300)}${exampleBlock}`,
     }],
   })
 
@@ -425,10 +474,14 @@ export async function generateReply(
 ): Promise<string> {
   const p = getPersona(personaId)
 
+  // 오늘 커뮤니티 말투 주입 (어휘 모방 유지)
+  const trend = await getLatestTrend()
+  const trendContext = buildTrendContext(trend, personaId)
+
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 150,
-    system: buildSystemPrompt(p, personaId, 'reply'),
+    system: buildSystemPrompt(p, personaId, 'reply') + trendContext,
     messages: [{
       role: 'user',
       content: `글 제목: ${postTitle}\n이 댓글에 답글을 달아주세요: "${commentContent.slice(0, 200)}"`,
