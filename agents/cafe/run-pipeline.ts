@@ -32,7 +32,7 @@ const step = process.argv[2] ?? 'all'
 
 // Bug 8: 중복 실행 방지 락파일
 const LOCK_FILE = '/tmp/unao-crawler.lock'
-const LOCK_MAX_AGE_MS = 20 * 60 * 1000 // 20분 (크롤링 소요 ~23분, 겹침 방지)
+const LOCK_MAX_AGE_MS = 30 * 60 * 1000 // 30분 (크롤링 최대 23분 + 여유 7분)
 
 // ⚠️ launchd 실행 시 .env.local 환경변수가 없으므로 직접 로드
 // 반드시 notifier 등 DB 의존 모듈 import 전에 실행해야 함 (ESM top-level import 순서)
@@ -310,12 +310,15 @@ async function checkCookieExpiry() {
 
     if (saved === 0 || (collected > 0 && saved / collected < 0.2)) {
       const successRate = collected > 0 ? Math.round(saved / collected * 100) : 0
-      await sendSlackMessage('SYSTEM', `⚠️ *쿠키 만료 의심*
+      await sendSlackMessage('SYSTEM', `🚨 *쿠키 만료 의심 — 파이프라인 중단*
 수집: ${collected}건 / 저장: ${saved}건 (성공률 ${successRate}%)
-→ 로컬에서 \`npx tsx agents/cafe/export-cookies.ts\` 재실행 필요`)
-      console.warn(`[Pipeline] ⚠️ 쿠키 만료 의심 — 저장 ${saved}건 (수율 ${successRate}%)`)
+→ 로컬에서 \`npx tsx agents/cafe/export-cookies.ts\` 재실행 필요
+→ 파이프라인은 빈 데이터 방지를 위해 즉시 중단됩니다`)
+      console.error(`[Pipeline] 🚨 쿠키 만료 의심 — 파이프라인 중단 (저장 ${saved}건, 수율 ${successRate}%)`)
+      throw new Error('COOKIE_EXPIRED')
     }
   } catch (err) {
+    if ((err as Error).message === 'COOKIE_EXPIRED') throw err
     console.warn('[Pipeline] 쿠키 만료 체크 실패 (무시):', err)
   }
 }

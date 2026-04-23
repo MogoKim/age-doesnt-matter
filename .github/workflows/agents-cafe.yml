@@ -64,7 +64,8 @@ jobs:
       - run: cd agents && npm ci
 
       - name: Run Trend Analyzer
-        if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'analyze' || github.event_name == 'schedule' }}
+        # 20:30 KST 딥크롤 결과만 분석 (09:00/13:30 scheduled는 curate만 실행 — 중복 비용 제거)
+        if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'analyze' || (github.event_name == 'schedule' && github.event.schedule == '30 11 * * *') }}
         run: cd agents && npx tsx cron/runner.ts cafe_crawler trend-analysis
 
       - name: Run Content Curator
