@@ -78,11 +78,13 @@ export default function RootLayout({
       <body className={pretendard.className}>
         <GTMNoScript />
         <AuthProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            {children}
+            <AddToHomeScreen />
+          </ToastProvider>
           <ServiceWorkerRegister />
           <PageViewTracker />
           <GtagLoader />
-          <AddToHomeScreen />
         </AuthProvider>
       </body>
     </html>
