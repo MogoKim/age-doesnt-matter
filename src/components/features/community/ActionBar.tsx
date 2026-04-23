@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useRef, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap, incrementShareCount } from '@/lib/actions/likes'
 import { useToast } from '@/components/common/Toast'
@@ -22,6 +23,7 @@ interface ActionBarProps {
 
 export default function ActionBar({ postId, title, description, likeCount, isLiked: initialLiked, isScrapped: initialScrapped, isLoggedIn = false }: ActionBarProps) {
   const { toast } = useToast()
+  const pathname = usePathname()
   const [isLiked, setIsLiked] = useState(initialLiked)
   const [likes, setLikes] = useState(likeCount)
   const [isScrapped, setIsScrapped] = useState(initialScrapped)
@@ -30,9 +32,11 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
   const [showReport, setShowReport] = useState(false)
   const [heartAnimating, setHeartAnimating] = useState(false)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [loginPromptMessage, setLoginPromptMessage] = useState('')
 
   const handleLike = useCallback(() => {
     if (!isLoggedIn) {
+      setLoginPromptMessage('이 글에 공감했다면, 우리 또래와 더 깊이 연결될 수 있어요')
       setShowLoginPrompt(true)
       return
     }
@@ -62,6 +66,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
 
   const handleScrap = useCallback(() => {
     if (!isLoggedIn) {
+      setLoginPromptMessage('이 글이 마음에 드셨나요? 스크랩하면 언제든 다시 찾아볼 수 있어요')
       setShowLoginPrompt(true)
       return
     }
@@ -173,7 +178,8 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
 
       {showLoginPrompt && (
         <LoginPromptModal
-          message="공감하려면 로그인이 필요해요"
+          message={loginPromptMessage}
+          callbackUrl={pathname}
           onClose={() => setShowLoginPrompt(false)}
         />
       )}

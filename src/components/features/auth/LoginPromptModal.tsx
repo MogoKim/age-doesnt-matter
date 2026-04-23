@@ -6,9 +6,10 @@ import Link from 'next/link'
 interface LoginPromptModalProps {
   message: string
   onClose: () => void
+  callbackUrl?: string
 }
 
-export default function LoginPromptModal({ message, onClose }: LoginPromptModalProps) {
+export default function LoginPromptModal({ message, onClose, callbackUrl }: LoginPromptModalProps) {
   // ESC 키로 닫기
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -35,21 +36,24 @@ export default function LoginPromptModal({ message, onClose }: LoginPromptModalP
       {/* 모바일: 하단 시트 / 데스크탑: 중앙 팝업 */}
       <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full max-w-[420px] p-8 pb-10 lg:p-8 shadow-2xl animate-in slide-in-from-bottom duration-300 lg:slide-in-from-bottom-0 lg:fade-in">
         <div className="flex flex-col items-center text-center gap-5">
-          <div className="text-[48px]">🔒</div>
-          <p className="text-lg font-bold text-foreground leading-[1.6]">{message}</p>
+          <div className="text-[48px]">💬</div>
+          <div>
+            <p className="text-lg font-bold text-foreground leading-[1.6] mb-1">{message}</p>
+            <p className="text-sm text-muted-foreground">우나어에서 우리 또래와 더 깊이 연결돼요</p>
+          </div>
 
           <Link
-            href="/login"
+            href={`/login${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
             className="w-full flex items-center justify-center gap-2 h-[52px] bg-[#FEE500] text-[#191919] rounded-xl font-bold text-body no-underline transition-colors hover:bg-[#FDD800]"
           >
-            카카오톡으로 시작하기
+            💛 카카오로 1초 가입하기
           </Link>
 
           <button
             className="text-sm text-muted-foreground cursor-pointer min-h-[52px] lg:min-h-[44px] hover:text-foreground transition-colors"
             onClick={onClose}
           >
-            닫기
+            나중에
           </button>
         </div>
       </div>

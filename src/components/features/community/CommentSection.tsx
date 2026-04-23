@@ -80,15 +80,20 @@ export default function CommentSection({ postId, comments, isLoggedIn }: Comment
       {isLoggedIn ? (
         <CommentInput postId={postId} />
       ) : (
-        <div className="p-5 bg-card border border-border rounded-2xl mt-4 text-center">
-          <p className="text-body text-muted-foreground mb-4">
-            댓글을 달려면 로그인이 필요해요
+        <div className="p-6 bg-card border border-border rounded-2xl mt-4 text-center">
+          <p className="text-base font-bold text-foreground mb-1">
+            {totalCount > 0
+              ? `💬 ${totalCount}개의 대화가 이미 시작됐어요`
+              : '💬 첫 번째 댓글을 남겨보세요'}
+          </p>
+          <p className="text-sm text-muted-foreground mb-5">
+            우리 또래끼리만 통하는 이야기, 가입하면 바로 참여할 수 있어요
           </p>
           <Link
             href={`/login?callbackUrl=${encodeURIComponent(pathname)}`}
-            className="inline-flex items-center justify-center min-h-[52px] px-6 bg-primary text-white rounded-xl text-body font-bold no-underline"
+            className="inline-flex items-center justify-center min-h-[52px] px-6 bg-[#FEE500] text-[#191919] rounded-xl text-body font-bold no-underline transition-colors hover:bg-[#FDD800]"
           >
-            카카오톡으로 시작하기
+            💛 카카오로 1초 가입하기
           </Link>
         </div>
       )}
