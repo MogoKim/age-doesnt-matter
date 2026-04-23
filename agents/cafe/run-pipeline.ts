@@ -371,10 +371,11 @@ async function reportPipelineStage(stage: 'crawl' | 'psych' | 'trend' | 'brief' 
           select: { details: true },
         })
         if (consumedLogs.length > 0) {
-          const consumers = consumedLogs
+          const consumers = [...new Set(
+          consumedLogs
             .map(l => { try { return (JSON.parse(l.details as string) as { consumedBy?: string }).consumedBy } catch { return null } })
-            .filter(Boolean)
-            .join(', ')
+            .filter((v): v is string => Boolean(v))
+        )].join(', ')
           lines.push(`   └ 소비 에이전트: ${consumers}`)
         }
       }

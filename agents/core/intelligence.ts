@@ -153,8 +153,17 @@ export async function loadTodayBrief(options: {
 
   // 소비 로깅 (brief 획득 성공 + consumedBy 있을 때만)
   if (result && options.consumedBy) {
+    /** consumedBy 이름 → 유효 Prisma BotType enum 값 매핑 */
+    const CONSUMED_BY_BOT_TYPE: Record<string, string> = {
+      'magazine-generator': 'CAFE_CRAWLER',
+      'seed-scheduler':     'SEED',
+      'ceo-morning':        'CEO',
+      'cmo-social':         'CMO',
+      'coo-content':        'COO',
+    }
+    const botType = CONSUMED_BY_BOT_TYPE[options.consumedBy] ?? 'CEO'
     safeBotLog({
-      botType: options.consumedBy.toUpperCase().replace(/-/g, '_'),
+      botType,
       action: 'BRIEF_CONSUMED',
       status: 'SUCCESS',
       details: JSON.stringify({
