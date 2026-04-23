@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { detectEnv } from './AddToHomeScreen'
 
-const BLOCKED_ENVS = ['kakao-inapp', 'naver-inapp', 'instagram-inapp', 'crios', 'desktop'] as const
+const BLOCKED_ENVS = ['kakao-android', 'kakao-ios', 'naver-inapp', 'instagram-inapp', 'crios', 'desktop'] as const
 
 export default function FooterPwaButton() {
   const [show, setShow] = useState(false)

@@ -15,21 +15,22 @@ type Trigger = 'first_15s' | 'signup' | 'engagement' | 'weekly'
 type Env =
   | 'android-chrome'   // beforeinstallprompt 가능
   | 'ios-safari'       // 수동 3단계 안내
-  | 'kakao-inapp'      // 설치 불가 → 팝업/버튼 숨김
+  | 'kakao-android'    // 카카오 Android 인앱 → Chrome 유도 배너
+  | 'kakao-ios'        // 카카오 iOS 인앱 → Safari 유도 배너
   | 'naver-inapp'      // 설치 불가 → 팝업/버튼 숨김
   | 'crios'            // iOS Chrome — 설치 불가
   | 'instagram-inapp'  // 설치 불가
   | 'desktop'          // 모바일 전용
   | 'other'            // Samsung Internet 등 (beforeinstallprompt 대기)
 
-const BLOCKED_ENVS: Env[] = ['kakao-inapp', 'naver-inapp', 'instagram-inapp', 'crios', 'desktop']
+const BLOCKED_ENVS: Env[] = ['kakao-android', 'kakao-ios', 'naver-inapp', 'instagram-inapp', 'crios', 'desktop']
 const ANDROID_ENVS: Env[] = ['android-chrome', 'other']  // Chrome + Samsung Internet
 
 export function detectEnv(): Env {
   if (typeof window === 'undefined') return 'other'
   const ua = navigator.userAgent
   if (window.innerWidth >= 1024) return 'desktop'
-  if (/KAKAOTALK/i.test(ua)) return 'kakao-inapp'
+  if (/KAKAOTALK/i.test(ua)) return /android/i.test(ua) ? 'kakao-android' : 'kakao-ios'
   if (/NAVER\(inapp|NaverSearchApp/i.test(ua)) return 'naver-inapp'
   if (/Instagram|FBAN|FBAV/i.test(ua)) return 'instagram-inapp'
   if (/CriOS/i.test(ua)) return 'crios'
@@ -43,6 +44,9 @@ const KEY_INSTALLED     = 'pwa_installed'             // '1'
 const KEY_LAST_PROMPTED = 'pwa_last_prompted_at'      // ISO timestamp
 const KEY_SESSION_COUNT = 'pwa_session_count'         // number (세션 횟수)
 const KEY_SHOWN_COUNT   = 'pwa_shown_count'           // number (총 노출 횟수)
+
+const KEY_KAKAO_GUIDE_AT       = 'pwa_kakao_guide_at'   // 3일 쿨다운 timestamp
+const KAKAO_GUIDE_COOLDOWN_MS  = 3 * 24 * 60 * 60 * 1000
 
 // sessionStorage (탭 닫으면 리셋)
 const SESSION_VISITED       = 'pwa_visited_this_session'        // 세션 카운트 중복 방지
@@ -158,6 +162,7 @@ export default function AddToHomeScreen() {
   const [canNativeInstall, setCanNativeInstall] = useState(false)
   const [bannerVisible, setBannerVisible] = useState(false)
   const [pwaStatus, setPwaStatus] = useState<PwaStatus | null>(null)
+  const [kakaoGuideVisible, setKakaoGuideVisible] = useState(false)
   const envRef          = useRef<Env>('other')
   const deferredRef     = useRef<BeforeInstallPromptEvent | null>(null)
   const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -172,6 +177,29 @@ export default function AddToHomeScreen() {
         body: JSON.stringify({ action: 'installed' }),
       })
     } catch { /* ignore */ }
+  }
+
+  const handleKakaoGuide = () => {
+    localStorage.setItem(KEY_KAKAO_GUIDE_AT, String(Date.now()))
+    setKakaoGuideVisible(false)
+
+    const targetUrl = new URL(window.location.href)
+    targetUrl.searchParams.set('utm_source', 'kakao_inapp')
+    targetUrl.searchParams.set('utm_medium', 'pwa_banner')
+
+    // 클립보드 복사 (Android intent 실패 시 폴백 보장)
+    navigator.clipboard?.writeText(targetUrl.toString()).catch(() => {})
+
+    if (envRef.current === 'kakao-android') {
+      const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
+      location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
+    }
+    // iOS: 클립보드 복사 + 안내만 (프로그래매틱 Safari 오픈 불가)
+  }
+
+  const handleKakaoGuideDismiss = () => {
+    localStorage.setItem(KEY_KAKAO_GUIDE_AT, String(Date.now()))
+    setKakaoGuideVisible(false)
   }
 
   const showTrigger = useCallback((t: Trigger, dbShownCount?: number): boolean => {
@@ -193,6 +221,14 @@ export default function AddToHomeScreen() {
   useEffect(() => {
     const env = detectEnv()
     envRef.current = env
+
+    // 카카오 인앱: PWA 설치 불가 → 외부 브라우저 유도 배너 (3일 쿨다운)
+    if (env === 'kakao-android' || env === 'kakao-ios') {
+      const last = localStorage.getItem(KEY_KAKAO_GUIDE_AT)
+      const expired = !last || Date.now() - Number(last) > KAKAO_GUIDE_COOLDOWN_MS
+      if (expired) setKakaoGuideVisible(true)
+      return
+    }
 
     if (BLOCKED_ENVS.includes(env)) return
 
@@ -346,6 +382,40 @@ export default function AddToHomeScreen() {
 
   return (
     <>
+      {/* ── 카카오 인앱 외부 브라우저 유도 배너 ── */}
+      {kakaoGuideVisible && (
+        <div className="fixed bottom-0 left-0 right-0 z-[300] bg-card border-t border-border shadow-lg px-4 pt-3 pb-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[15px] font-bold text-foreground">앱처럼 편하게 쓰려면</p>
+            <button
+              onClick={handleKakaoGuideDismiss}
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground"
+              aria-label="닫기"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M11 3L3 11M3 3L11 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <p className="text-[14px] text-muted-foreground mb-3 break-keep">
+            {envRef.current === 'kakao-android'
+              ? 'Chrome 앱에서 열면 홈 화면에 추가할 수 있어요'
+              : 'Safari에서 열면 홈 화면에 추가할 수 있어요'}
+          </p>
+          <button
+            onClick={handleKakaoGuide}
+            className="w-full h-[52px] bg-primary text-white rounded-xl font-bold text-[16px]"
+          >
+            {envRef.current === 'kakao-android' ? '크롬으로 열기' : '주소 복사하기'}
+          </button>
+          <p className="text-center text-[12px] text-muted-foreground mt-2">
+            {envRef.current === 'kakao-android'
+              ? '주소도 자동으로 복사돼요'
+              : '복사 후 Safari 주소창에 붙여넣으세요'}
+          </p>
+        </div>
+      )}
+
       {/* ── 팝업 ── */}
       {showPopup && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center px-4">
