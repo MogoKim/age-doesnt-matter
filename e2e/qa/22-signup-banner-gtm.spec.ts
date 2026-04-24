@@ -87,13 +87,16 @@ async function triggerBanner(page: Page): Promise<void> {
 
 test.describe('SignupPromptBanner GTM 이벤트', () => {
   test.beforeEach(async ({ page }) => {
-    // 페이지 로드 전 storage 완전 초기화 (테스트 격리)
+    // 페이지 로드 전 storage 초기화 (테스트 격리)
     await page.addInitScript(() => {
       sessionStorage.clear()
       localStorage.removeItem('signup_prompt_done')
       localStorage.removeItem('signup_prompt_count')
       localStorage.removeItem('signup_variant')
-      localStorage.removeItem('pwa_installed')
+      // pwa_installed='1' — AddToHomeScreen(13초 타이머)이 SignupPromptBanner보다 먼저 발화해
+      // pwa_shown_this_session='1'을 세팅하면 canShow()=false가 되어 배너 미노출.
+      // 이 스위트는 SignupPromptBanner GTM만 검증하므로 PWA 팝업 간섭을 차단한다.
+      localStorage.setItem('pwa_installed', '1')
     })
   })
 
