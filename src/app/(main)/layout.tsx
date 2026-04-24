@@ -4,6 +4,7 @@ import FontSizeProvider from '@/components/common/FontSizeProvider'
 import OfflineBanner from '@/components/common/OfflineBanner'
 import PopupRenderer from '@/components/common/PopupRenderer'
 import { PushPermissionToast } from '@/components/common/PushPermissionToast'
+import { WelcomeToast } from '@/components/common/WelcomeToast'
 
 export default async function MainGroupLayout({
   children,
@@ -18,6 +19,7 @@ export default async function MainGroupLayout({
 
   return (
     <FontSizeProvider fontSize={fontSize}>
+      <WelcomeToast />
       <OfflineBanner />
       <MainLayout isLoggedIn={isLoggedIn} nickname={nickname}>
         {children}
