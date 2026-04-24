@@ -74,6 +74,27 @@ jobs:
         if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'curate' || github.event_name == 'schedule' }}
         run: cd agents && npx tsx cron/runner.ts cafe_crawler content-curate
 
+  brief-fallback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # 09:00 KST (0 0 * * * UTC) — Mac launchd(08:45 KST) 실행 여부 확인 후 없으면 fallback_yesterday 생성
+    if: ${{ github.event.inputs.step == 'all' || (github.event_name == 'schedule' && github.event.schedule == '0 0 * * *') }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Run DailyBrief Fallback (Mac 미실행 시 fallback_yesterday 자동 생성)
+        run: cd agents && npx tsx cron/runner.ts cafe_crawler daily-brief-fallback
+
   brief-monitor:
     runs-on: ubuntu-latest
     timeout-minutes: 5

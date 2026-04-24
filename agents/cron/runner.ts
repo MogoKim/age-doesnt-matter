@@ -54,6 +54,8 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cafe_crawler:magazine-generate': () => import('../cafe/magazine-generator.js').then(async m => { await m.main() }),
   'cafe_crawler:content-curate': () => import('../cafe/content-curator.js').then(() => {}),
   'cafe_crawler:brief-monitor': () => import('../cafe/brief-monitor.js').then(() => {}),
+  // GHA 안전망 — Mac launchd 미실행 시 fallback_yesterday 자동 생성 (09:00 KST, 0 0 * * * UTC)
+  'cafe_crawler:daily-brief-fallback': () => import('../cafe/daily-brief.js').then(async m => { await m.runFallbackBrief() }),
   'cafe_crawler:external-crawl': () => import('../cafe/external-crawler.js').then(() => {}), // DISPATCH ONLY — 82cook 외부 크롤, GHA 스케줄 제거됨 (2026-04-13)
   'cmo:social-poster': () => import('../cmo/social-poster.js').then(() => {}),
   'cmo:social-metrics': () => import('../cmo/social-metrics.js').then(() => {}),

@@ -358,6 +358,48 @@ async function fallbackToYesterday(): Promise<void> {
   console.warn('[DailyBrief] ⚠️ CafeTrend 없음 — 어제 브리프 복사 (fallback_yesterday)')
 }
 
+/**
+ * GHA 안전망 — Mac launchd 미실행 시 fallback_yesterday 자동 생성
+ * 실행 조건: 오늘 DailyBrief 없을 때만 (idempotent)
+ * 호출: runner.ts cafe_crawler:daily-brief-fallback
+ */
+export async function runFallbackBrief(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayDate = new Date(todayStr)
+  const startTime = Date.now()
+
+  // 이미 오늘 브리프 있으면 skip (Mac이 정상 실행한 경우)
+  const existing = await prisma.dailyBrief.findUnique({
+    where: { date: todayDate },
+    select: { mode: true },
+  })
+  if (existing) {
+    console.log(`[DailyBrief] 오늘 브리프 이미 존재 (mode=${existing.mode}) — fallback 스킵`)
+    await prisma.botLog.create({
+      data: {
+        botType: 'CAFE_CRAWLER',
+        action: 'DAILY_BRIEF_FALLBACK',
+        status: 'SKIP',
+        details: JSON.stringify({ todayStr, reason: 'already_exists', mode: existing.mode }),
+        executionTimeMs: Date.now() - startTime,
+      },
+    })
+    return
+  }
+
+  // 브리프 없음 → fallback_yesterday 생성
+  await fallbackToYesterday()
+  await prisma.botLog.create({
+    data: {
+      botType: 'CAFE_CRAWLER',
+      action: 'DAILY_BRIEF_FALLBACK',
+      status: 'SUCCESS',
+      details: JSON.stringify({ todayStr, reason: 'mac_not_running' }),
+      executionTimeMs: Date.now() - startTime,
+    },
+  })
+}
+
 // ── DailyBrief 생성 + 저장 ──
 
 async function generateDailyBrief(): Promise<void> {
@@ -587,8 +629,11 @@ async function main() {
   console.log(`[DailyBrief] 완료 — ${Math.round((Date.now() - startTime) / 1000)}초`)
 }
 
-main().catch(async (err) => {
-  console.error('[DailyBrief] 오류:', err)
-  await disconnect()
-  process.exit(1)
-})
+// ESM isMain guard — runner.ts 등 import 시 main() auto-run 방지 (runFallbackBrief() 중복 실행 방지)
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch(async (err) => {
+    console.error('[DailyBrief] 오류:', err)
+    await disconnect()
+    process.exit(1)
+  })
+}
