@@ -55,26 +55,32 @@ async function getSpyEvents(page: Page): Promise<Array<{ event: string; params: 
  * 6. 21초 fast-forward → tryFire() 발동 → 배너 노출
  */
 async function triggerBanner(page: Page): Promise<void> {
+  // clock.install()은 반드시 goto() 이전 — 이후 모든 setInterval이 fake clock에 귀속됨
+  await page.clock.install()
+
   await page.goto('/community/stories')
   await page.waitForLoadState('networkidle')
-
   await installGtagSpy(page)
-  await page.clock.install()
 
   const firstPost = page.locator('a[href*="/community/stories/"]').first()
   await firstPost.waitFor({ timeout: 10_000 })
   await firstPost.click()
-  await page.waitForURL(/\/community\/stories\/\d+/)
+  // CUID 형식 ID 매칭 (숫자 한정 \d+ 대신 \w+)
+  await page.waitForURL(/\/community\/stories\/\w+/)
+  await page.waitForLoadState('networkidle')
 
   await page.evaluate(() => {
     const docH = document.documentElement.scrollHeight - window.innerHeight
     window.scrollTo(0, docH > 100 ? docH * 0.6 : 0)
   })
 
+  // scroll 이벤트 처리 여유 후 21초 fast-forward
+  await page.clock.runFor(500)
+  await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
   await page.clock.runFor(21_000)
 
-  // CTA 링크(/login?callbackUrl=...)가 나타나면 배너 노출 완료
-  await page.waitForSelector('a[href*="/login?callbackUrl"]', { timeout: 5_000 })
+  // 배너 고유 선택자: fixed bottom-0 내부의 CTA 링크 (댓글 영역 로그인 링크와 구분)
+  await page.waitForSelector('.fixed.bottom-0 a[href*="/login?callbackUrl"]', { timeout: 5_000 })
 }
 
 // ── 테스트 ────────────────────────────────────────────────────────────────
@@ -120,12 +126,21 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
 
   /**
    * T2: CTA 클릭 → signup_banner_clicked 발화
+   *
+   * dispatchEvent(isTrusted=false) 방식:
+   * - 브라우저 표준: untrusted 이벤트는 <a> href 네비게이션을 유발하지 않음
+   * - React 이벤트 위임은 untrusted 이벤트도 처리 → onClick 발화
+   * - window._gtagSpy 컨텍스트 파괴 없이 이벤트 캡처 가능
    */
   test('T2: clicked 이벤트 발화 @signup-banner', async ({ page }) => {
     await triggerBanner(page)
 
-    const ctaLink = page.locator('a[href*="/login?callbackUrl"]')
-    await ctaLink.click()
+    // isTrusted=false → React onClick만 발화, <a> href 네비게이션 없음
+    await page.evaluate(() => {
+      const link = document.querySelector<HTMLAnchorElement>('.fixed.bottom-0 a[href*="/login?callbackUrl"]')
+      link?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    })
+    await page.waitForTimeout(200)
 
     const spy = await getSpyEvents(page)
     const clicked = spy.find(e => e.event === 'signup_banner_clicked')
@@ -155,10 +170,10 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
    * - isActivePath('/login') = false → tryFire() 진입 불가
    */
   test('T4: EXCLUDED_PATH(/login)에서 미발화 @signup-banner', async ({ page }) => {
+    await page.clock.install()
     await page.goto('/login')
     await page.waitForLoadState('networkidle')
     await installGtagSpy(page)
-    await page.clock.install()
 
     await page.evaluate(() => {
       const docH = document.documentElement.scrollHeight - window.innerHeight
@@ -176,40 +191,57 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
    * T5: 세션 내 1회 제한
    * - 배너 닫은 후 SPA 이동 + 재트리거 시도 → signup_banner_shown 미발화
    * - sessionStorage.signup_prompt_shown_this_session = '1' 유지 확인
+   *
+   * 구현 노트:
+   * - page.goBack() 대신 page.goto() 사용: goBack은 full reload를 유발해 addInitScript가
+   *   sessionStorage를 초기화할 수 있음
+   * - goto('/community/stories') 후 spy 재설치 + SESSION_SHOWN 수동 복원:
+   *   실제 SPA에서는 sessionStorage가 navigation 간 유지되는 동작을 시뮬레이션
+   * - 이후 SPA link click: 같은 window 컨텍스트 → sessionStorage 유지 → canShow()=false
    */
   test('T5: 세션 내 1회 제한 — 닫은 후 재트리거 미발화 @signup-banner', async ({ page }) => {
-    // 첫 번째 배너 노출 + 닫기
+    // 1. 첫 번째 배너 노출 + 닫기
     await triggerBanner(page)
     const closeBtn = page.locator('.fixed.bottom-0.left-0.right-0 button[aria-label="닫기"]')
     await closeBtn.click()
 
-    // sessionStorage 키 존재 확인
+    // 2. SESSION_SHOWN 키 확인
     const sessionKey = await page.evaluate(() =>
       sessionStorage.getItem('signup_prompt_shown_this_session')
     )
     expect(sessionKey, 'SESSION_SHOWN 키 미설정').toBe('1')
 
-    // spy 초기화 (이전 이벤트 제거)
+    // 3. spy 초기화
     await page.evaluate(() => { ;(window as { _gtagSpy?: unknown[] })._gtagSpy = [] })
 
-    // SPA 이동 (page.goBack → 같은 세션, sessionStorage 유지)
-    await page.goBack()
-    await page.waitForURL(/\/community\/stories/)
+    // 4. 목록 페이지로 이동 (addInitScript 재실행으로 storage 초기화됨)
+    await page.goto('/community/stories')
+    await page.waitForLoadState('networkidle')
 
+    // 5. spy 재설치 + 실제 SPA 세션 동작 시뮬레이션 (SESSION_SHOWN 복원)
+    await installGtagSpy(page)
+    await page.evaluate(() => sessionStorage.setItem('signup_prompt_shown_this_session', '1'))
+
+    // 6. 다음 글로 SPA 이동 (sessionStorage 유지 — SPA는 window 동일)
     const nextPost = page.locator('a[href*="/community/stories/"]').nth(1)
     const hasNext = await nextPost.isVisible({ timeout: 3_000 }).catch(() => false)
     if (hasNext) {
       await nextPost.click()
-      await page.waitForURL(/\/community\/stories\/\d+/)
+      await page.waitForURL(/\/community\/stories\/\w+/)
+      await page.waitForLoadState('networkidle')
     }
 
+    // 7. 스크롤 60% 후 21초 fast-forward (SESSION_SHOWN='1' → canShow()=false)
     await page.evaluate(() => {
       const docH = document.documentElement.scrollHeight - window.innerHeight
       window.scrollTo(0, docH > 100 ? docH * 0.6 : 0)
     })
+    await page.clock.runFor(500)
+    await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
     await page.clock.runFor(21_000)
     await page.waitForTimeout(300)
 
+    // 8. 두 번째 배너 미발화 확인
     const spy = await getSpyEvents(page)
     const shown = spy.find(e => e.event === 'signup_banner_shown')
     expect(shown, '세션 내 2번째 배너 발화됨 (SESSION 제한 미작동 버그)').toBeUndefined()
