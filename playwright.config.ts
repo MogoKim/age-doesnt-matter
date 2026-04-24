@@ -165,6 +165,16 @@ export default defineConfig({
         screenshot: 'on',
       },
     },
+
+    // 14. SignupPromptBanner GTM 이벤트 검증 (비로그인, 모바일, E2E_BASE_URL 권장)
+    {
+      name: 'signup-banner',
+      testMatch: /qa\/22-signup-banner-gtm\.spec\.ts/,
+      use: {
+        ...devices['Pixel 7'],
+        viewport: { width: 390, height: 844 },
+      },
+    },
   ],
 
   // E2E_BASE_URL 설정 시 외부 URL 직접 테스트 (프로덕션 QA)

@@ -22,7 +22,8 @@
     "qa:audit": "playwright test --project=qa-audit --workers=1",
     "qa:audit:mobile": "playwright test --project=qa-audit-mobile --workers=1",
     "qa:audit:user": "playwright test --project=qa-audit-user --workers=1",
-    "qa:full": "playwright test --project=qa-audit --project=qa-audit-mobile --project=qa-audit-user --workers=1"
+    "qa:full": "playwright test --project=qa-audit --project=qa-audit-mobile --project=qa-audit-user --workers=1",
+    "test:signup-banner": "playwright test --project=signup-banner"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.89.0",
