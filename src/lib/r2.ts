@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import type { S3ClientConfig } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 // Vercel 환경변수 trailing whitespace/newline 제거 (ERR_INVALID_CHAR 방지)
@@ -12,16 +13,16 @@ if (!ACCOUNT_ID) {
   console.warn('[R2] CLOUDFLARE_ACCOUNT_ID 미설정 — R2 업로드 비활성')
 }
 
-const client = ACCOUNT_ID
-  ? new S3Client({
-      region: 'auto',
-      endpoint: `https://${ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: ACCESS_KEY,
-        secretAccessKey: SECRET_KEY,
-      },
-    })
-  : null
+const r2Config: S3ClientConfig = {
+  region: 'auto',
+  endpoint: `https://${ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: ACCESS_KEY,
+    secretAccessKey: SECRET_KEY,
+  },
+}
+
+const client = ACCOUNT_ID ? new S3Client(r2Config) : null
 
 interface UploadResult {
   key: string

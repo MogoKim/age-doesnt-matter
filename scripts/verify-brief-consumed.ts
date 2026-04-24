@@ -61,9 +61,11 @@ const EXPECTED_BOT_TYPE: Record<string, string> = {
   'coo-content':        'COO',
 }
 
-/** consumedBy → 교차 검증용 에이전트 BotType (다른 BotLog 확인) */
+/** consumedBy → 교차 검증용 에이전트 BotType (다른 BotLog 확인)
+ * magazine-generator는 BRIEF_CONSUMED를 CAFE_CRAWLER로 기록하지만(intelligence.ts 매핑),
+ * 실제 실행 여부 확인은 MAGAZINE_GENERATE 액션(botType='COO')으로 검증해야 함 */
 const CROSS_CHECK_BOT_TYPE: Record<string, string> = {
-  'magazine-generator': 'CAFE_CRAWLER',
+  'magazine-generator': 'COO',
   'seed-scheduler':     'SEED',
   'ceo-morning':        'CEO',
   'cmo-social':         'CMO',
