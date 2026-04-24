@@ -2,8 +2,8 @@ import Image from 'next/image'
 import { COUPANG } from './ad-slots'
 
 interface CoupangBannerProps {
-  /** 배너 프리셋: mobile(320x100) / desktop(300x100) / leaderboard(728x90) */
-  preset: 'mobile' | 'desktop' | 'leaderboard'
+  /** 배너 프리셋: mobile(320x100) / desktop(300x100) / leaderboard(728x90) / electronics(320x100) */
+  preset: 'mobile' | 'desktop' | 'leaderboard' | 'electronics'
   className?: string
 }
 
@@ -28,9 +28,9 @@ function pickBanner() {
 }
 
 export default function CoupangBanner({ preset, className }: CoupangBannerProps) {
-  // leaderboard 배너 — 외부 동적 URL 사용 (728x90, 전체폭)
-  if (preset === 'leaderboard') {
-    const slot = COUPANG.LEADERBOARD
+  // electronics / leaderboard 배너 — 외부 동적 URL 사용
+  if (preset === 'electronics' || preset === 'leaderboard') {
+    const slot = preset === 'electronics' ? COUPANG.CATEGORY_ELECTRONICS : COUPANG.LEADERBOARD
     return (
       <aside className={`relative ${className ?? ''}`} role="complementary" aria-label="광고">
         <span className="absolute top-2 right-3 text-caption text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border z-10">

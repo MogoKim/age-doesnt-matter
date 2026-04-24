@@ -120,6 +120,7 @@ export default async function HomePage() {
             <CommunitySection posts={community} />
             <ResponsiveAd mobile={<CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />} desktop={null} />
             <Life2Section posts={life2} />
+            <ResponsiveAd mobile={<CoupangBanner preset="electronics" className="my-4 rounded-2xl overflow-hidden" />} desktop={null} />
             <MagazineSection posts={magazine} />
             <FeedAd />
             <JobSection jobs={jobs} />
