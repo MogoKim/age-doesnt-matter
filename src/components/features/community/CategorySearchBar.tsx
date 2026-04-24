@@ -98,7 +98,7 @@ export default function CategorySearchBar() {
       </div>
 
       {currentQ && (
-        <p className="mt-2 text-sm font-medium text-primary">
+        <p className="mt-2 text-sm font-medium text-primary-text">
           &ldquo;{currentQ}&rdquo; 검색 결과
         </p>
       )}

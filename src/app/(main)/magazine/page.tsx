@@ -175,7 +175,7 @@ function MagazineCard({ post }: { post: PostSummary }) {
       )}
       <div className="p-3">
         {post.category && (
-          <span className="text-caption text-primary font-bold">{post.category}</span>
+          <span className="text-caption text-primary-text font-bold">{post.category}</span>
         )}
         <h3 className="text-body font-bold text-foreground m-0 line-clamp-2 leading-snug">
           {post.title}
