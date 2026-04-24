@@ -30,7 +30,7 @@ export default function SortToggle() {
         aria-pressed={current === 'latest'}
         className={`${btnBase} ${
           current === 'latest'
-            ? 'bg-primary/5 border border-primary text-primary'
+            ? 'bg-primary/10 border border-primary text-foreground'
             : 'bg-none border border-transparent text-muted-foreground hover:bg-background'
         }`}
         onClick={() => handleSort('latest')}
@@ -41,7 +41,7 @@ export default function SortToggle() {
         aria-pressed={current === 'likes'}
         className={`${btnBase} ${
           current === 'likes'
-            ? 'bg-primary/5 border border-primary text-primary'
+            ? 'bg-primary/10 border border-primary text-foreground'
             : 'bg-none border border-transparent text-muted-foreground hover:bg-background'
         }`}
         onClick={() => handleSort('likes')}
