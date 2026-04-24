@@ -5,6 +5,7 @@ import OfflineBanner from '@/components/common/OfflineBanner'
 import PopupRenderer from '@/components/common/PopupRenderer'
 import { PushPermissionToast } from '@/components/common/PushPermissionToast'
 import { WelcomeToast } from '@/components/common/WelcomeToast'
+import { SignupPromptBanner } from '@/components/common/SignupPromptBanner'
 
 export default async function MainGroupLayout({
   children,
@@ -16,6 +17,7 @@ export default async function MainGroupLayout({
   const nickname = session?.user?.nickname
   // fontSize는 JWT 토큰에 포함 — 별도 DB 쿼리 없음
   const fontSize = session?.user?.fontSize
+  const createdAt = session?.user?.createdAt
 
   return (
     <FontSizeProvider fontSize={fontSize}>
@@ -24,6 +26,7 @@ export default async function MainGroupLayout({
       <MainLayout isLoggedIn={isLoggedIn} nickname={nickname}>
         {children}
       </MainLayout>
+      <SignupPromptBanner isLoggedIn={isLoggedIn} createdAt={createdAt} />
       <PopupRenderer />
       <PushPermissionToast />
     </FontSizeProvider>
