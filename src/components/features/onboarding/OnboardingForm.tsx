@@ -151,7 +151,11 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
 
   async function handleComplete() {
     setIsNavigating(true)
-    gtmSignUp('kakao')
+    // 인앱→외부브라우저 재접속 감지용 (sessionStorage는 탭 전환 시 유실됨)
+    localStorage.setItem('signup_completed_at', new Date().toISOString())
+    // 환영 토스트 1회 표시 트리거 (layout.tsx Phase 3에서 처리)
+    localStorage.setItem('signup_welcome_toast', '1')
+    gtmSignUp('kakao')  // variant는 Phase 5 전까지 undefined → 기존 동작 유지
     // AddToHomeScreen 마운트 이전에 이벤트가 유실되는 레이스컨디션 방지:
     // sessionStorage에 pending flag를 저장 → 홈 마운트 시 AddToHomeScreen이 처리
     sessionStorage.setItem('pwa_pending', 'signup')
