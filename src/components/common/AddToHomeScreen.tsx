@@ -582,18 +582,18 @@ export default function AddToHomeScreen() {
                 </p>
                 <div className="bg-muted/60 rounded-2xl p-4 space-y-3">
                   <div className="flex items-center gap-3 text-sm text-foreground">
-                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                    <span className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
                     <span>하단 <strong>공유 버튼</strong>을 탭하세요</span>
                     <svg viewBox="0 0 24 24" className="w-5 h-5 ml-auto text-primary flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
                     </svg>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-foreground">
-                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                    <span className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
                     <span><strong>홈 화면에 추가</strong>를 선택하세요</span>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-foreground">
-                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                    <span className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
                     <span>오른쪽 상단 <strong>추가</strong>를 탭하세요</span>
                   </div>
                 </div>
@@ -645,7 +645,7 @@ export default function AddToHomeScreen() {
 
             <button
               onClick={handleDismiss}
-              className="mt-3 w-full h-[44px] text-[11px] text-muted-foreground/50"
+              className="mt-3 w-full h-[44px] text-[11px] text-muted-foreground"
             >
               나중에 할게요
             </button>
