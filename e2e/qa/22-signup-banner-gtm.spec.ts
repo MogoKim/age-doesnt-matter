@@ -279,6 +279,10 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
     await page.clock.install()
     await page.goto('/')
     await page.waitForLoadState('load') // 홈은 광고 요청 지속으로 networkidle 도달 불가
+    // AddToHomeScreen TIMER_MS=13초 → runFor(21s) 중 먼저 발화 → pwa_shown_this_session='1' 설정
+    // → SignupPromptBanner canShow()=false 충돌 방지
+    // pwa_installed='1' → getInstalled()=true → AddToHomeScreen canShow()=false → 미발화
+    await page.evaluate(() => localStorage.setItem('pwa_installed', '1'))
     await installGtagSpy(page)
 
     await page.evaluate(() => {
