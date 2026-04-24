@@ -8,7 +8,7 @@ export default function IdentitySection() {
           5060, 서로를 잇다 —{' '}
           50·60대의 이야기가 여기 다 있어요
         </p>
-        <Link href="/about" className="shrink-0 text-caption text-primary font-semibold no-underline min-h-[44px] flex items-center">
+        <Link href="/about" className="shrink-0 text-caption text-primary-text font-semibold no-underline min-h-[44px] flex items-center">
           알아보기 →
         </Link>
       </div>

@@ -28,7 +28,7 @@ export default function TrendingSection({ posts }: Props) {
               href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.id}`}
               className="flex items-start gap-3 py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0"
             >
-              <span className="text-body font-bold text-primary min-w-[24px] shrink-0 leading-[1.4]">{index + 1}</span>
+              <span className="text-body font-bold text-primary-text min-w-[24px] shrink-0 leading-[1.4]">{index + 1}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-body text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
                 <div className="flex items-center gap-2.5 text-caption text-muted-foreground">
