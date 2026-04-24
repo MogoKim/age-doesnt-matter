@@ -1,0 +1,4658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우나어 서비스 아키텍처 종합 문서</title>
+<style>
+  :root {
+    --primary: #FF6F61;
+    --primary-light: #fff0ee;
+    --primary-dark: #e85d50;
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --border: #e5e5e5;
+    --code-bg: #f5f5f5;
+    --sidebar-w: 280px;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    z-index: 100;
+    padding: 20px 0;
+    transition: transform 0.3s;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  .sidebar-header h2 {
+    font-size: 16px;
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  .sidebar-header .version {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .sidebar nav a {
+    display: block;
+    padding: 6px 20px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .sidebar nav a:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-left-color: var(--primary);
+  }
+
+  .sidebar nav a.depth-1 { font-weight: 600; color: var(--text); padding-top: 10px; }
+  .sidebar nav a.depth-2 { padding-left: 32px; font-size: 12.5px; }
+
+  /* ── Main ── */
+  .main {
+    margin-left: var(--sidebar-w);
+    max-width: 900px;
+    padding: 40px 48px 80px;
+  }
+
+  /* ── Mobile ── */
+  .menu-toggle {
+    display: none;
+    position: fixed;
+    top: 12px; left: 12px;
+    z-index: 200;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    width: 40px; height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  @media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,0.1); }
+    .main { margin-left: 0; padding: 60px 20px 80px; }
+    .menu-toggle { display: block; }
+    pre { font-size: 11px !important; }
+  }
+
+  /* ── Typography ── */
+  h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--primary);
+  }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 48px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary-light);
+    scroll-margin-top: 20px;
+  }
+
+  h2 .num {
+    color: var(--primary);
+    margin-right: 6px;
+  }
+
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 28px 0 12px;
+    scroll-margin-top: 20px;
+  }
+
+  h4 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; }
+
+  p { margin-bottom: 12px; }
+
+  strong { color: var(--primary-dark); }
+
+  /* ── Table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 13.5px;
+  }
+
+  th {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td { background: #fafafa; }
+  tr:hover td { background: var(--primary-light); }
+
+  /* ── Code / Pre ── */
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 20px;
+    border-radius: 12px;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin: 12px 0 20px;
+  }
+
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    color: var(--primary-dark);
+  }
+
+  pre code { background: none; padding: 0; color: inherit; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 12px 0 20px;
+  }
+
+  .card-accent {
+    border-left: 4px solid var(--primary);
+  }
+
+  .card-warning {
+    background: #fffbeb;
+    border-color: var(--warning);
+    border-left: 4px solid var(--warning);
+  }
+
+  .card-danger {
+    background: #fef2f2;
+    border-color: var(--danger);
+    border-left: 4px solid var(--danger);
+  }
+
+  .card-success {
+    background: #f0fdf4;
+    border-color: var(--success);
+    border-left: 4px solid var(--success);
+  }
+
+  .card-info {
+    background: #eff6ff;
+    border-color: var(--info);
+    border-left: 4px solid var(--info);
+  }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+
+  .badge-done { background: #dcfce7; color: #166534; }
+  .badge-partial { background: #fef3c7; color: #92400e; }
+  .badge-missing { background: #fee2e2; color: #991b1b; }
+  .badge-active { background: #dbeafe; color: #1e40af; }
+
+  /* ── Lists ── */
+  ul, ol { padding-left: 24px; margin-bottom: 12px; }
+  li { margin-bottom: 4px; }
+
+  /* ── Collapsible ── */
+  details {
+    margin: 12px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  summary {
+    padding: 12px 16px;
+    background: var(--code-bg);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    user-select: none;
+  }
+
+  summary:hover { background: var(--primary-light); }
+
+  details[open] summary { border-bottom: 1px solid var(--border); }
+
+  details .inner { padding: 16px; }
+
+  /* ── Diagram Container ── */
+  .diagram {
+    background: #1e1e2e;
+    color: #89b4fa;
+    padding: 20px;
+    border-radius: 12px;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 12px 0 20px;
+    white-space: pre;
+  }
+
+  /* ── Gate Highlight ── */
+  .gate {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #999; }
+
+  /* ── Print ── */
+  @media print {
+    .sidebar, .menu-toggle { display: none; }
+    .main { margin-left: 0; max-width: 100%; }
+    pre, .diagram { white-space: pre-wrap; }
+  }
+
+  /* ── Back to Top ── */
+  .top-btn {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 44px; height: 44px;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 50;
+  }
+
+  .top-btn.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h2>우나어 아키텍처</h2>
+    <div class="version">v9 &middot; 2026-03-29</div>
+  </div>
+  <nav>
+    <a href="#s1" class="depth-1">1. 서비스 개요</a>
+    <a href="#s1-1" class="depth-2">미션 &amp; 비전</a>
+    <a href="#s1-2" class="depth-2">수익 모델</a>
+    <a href="#s2" class="depth-1">2. 기술 스택</a>
+    <a href="#s3" class="depth-1">3. 인프라 구조</a>
+    <a href="#s3-1" class="depth-2">환경 변수</a>
+    <a href="#s4" class="depth-1">4. 데이터베이스</a>
+    <a href="#s5" class="depth-1">5. AI 에이전트</a>
+    <a href="#s5-2" class="depth-2">에이전트 상세</a>
+    <a href="#s5-4" class="depth-2">일자리 파이프라인</a>
+    <a href="#s5-5" class="depth-2">시드 페르소나</a>
+    <a href="#82cook-외부-크롤러" class="depth-2">82cook 크롤러</a>
+    <a href="#s5-6" class="depth-2">에이전트 규칙</a>
+    <a href="#s6" class="depth-1">6. GitHub Actions</a>
+    <a href="#s7" class="depth-1">7. Webhook &amp; 연동</a>
+    <a href="#s7-slack" class="depth-2" style="color:var(--primary)">Slack 채널 아키텍처</a>
+    <a href="#s7-commands" class="depth-2">Slack 커맨드</a>
+    <a href="#s7-migration" class="depth-2">마이그레이션 계획</a>
+    <a href="#s8" class="depth-1">8. MCP 서버</a>
+    <a href="#s9" class="depth-1">9. 시니어 UI 원칙</a>
+    <a href="#s10" class="depth-1">10. 페이지 구조</a>
+    <a href="#s11" class="depth-1">11. 컴포넌트 구조</a>
+    <a href="#s12" class="depth-1">12. 폴더 구조</a>
+    <a href="#s13" class="depth-1">13. 예산</a>
+    <a href="#s14" class="depth-1">14. 현재 상태</a>
+    <a href="#광고-시스템-전면-개편-2026-03-29-구축-완료" class="depth-2">광고 시스템 개편</a>
+    <a href="#시드봇-페르소나-35명-전면-리뉴얼" class="depth-2">시드봇 35명 리뉴얼</a>
+    <a href="#s15" class="depth-1" style="color:var(--primary)">15. KPI 프레임워크</a>
+    <a href="#s15-tree" class="depth-2">KPI 트리</a>
+    <a href="#s15-ceo" class="depth-2">CEO ↔ 창업자 소통</a>
+    <a href="#s15-daily" class="depth-2">일일/주간 브리핑</a>
+    <a href="#s15-loop" class="depth-2">KPI → 성장루프 연결</a>
+    <a href="#s16" class="depth-1" style="color:var(--primary)">16. 성장 루프</a>
+    <a href="#s16-gate1" class="depth-2">Gate 1: 창업자 승인</a>
+    <a href="#s16-gate2" class="depth-2">Gate 2: 사용자 피드백</a>
+    <a href="#s17" class="depth-1" style="color:var(--primary)">17. QA &amp; 배포</a>
+    <a href="#s18" class="depth-1" style="color:var(--primary)">18. 에이전트 협업</a>
+    <a href="#s18-weekly" class="depth-2">정기 회의</a>
+    <a href="#s18-emergency" class="depth-2">긴급 회의</a>
+    <a href="#s18-example" class="depth-2">전체 흐름 예시</a>
+    <a href="#s19" class="depth-1" style="color:var(--primary)">19. 갭 분석</a>
+    <a href="#s-update" class="depth-1">문서 업데이트 가이드</a>
+  </nav>
+</aside>
+
+<main class="main">
+<h1>우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서</h1>
+<blockquote>
+<p><strong>최종 업데이트</strong>: 2026-03-29 (v9 — 시드봇 35명 리뉴얼 + 82cook 크롤러 + 광고 슬롯 전면 개편)
+<strong>문서 관리자</strong>: Claude Code (자동화) + 창업자 (승인)
+<strong>변경 시</strong>: 이 문서 하단 <a href="#%EB%AC%B8%EC%84%9C-%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8-%EA%B0%80%EC%9D%B4%EB%93%9C">문서 업데이트 가이드</a> 참고</p>
+</blockquote>
+<hr>
+<h2>1. 서비스 개요</h2>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>서비스명</strong></td>
+<td>우리 나이가 어때서 (우나어)</td>
+</tr>
+<tr>
+<td><strong>도메인</strong></td>
+<td>age-doesnt-matter.com</td>
+</tr>
+<tr>
+<td><strong>한줄 소개</strong></td>
+<td>50·60대를 위한 제2의 인생 플랫폼 — 일자리 + 커뮤니티 + 매거진</td>
+</tr>
+<tr>
+<td><strong>타겟</strong></td>
+<td>50<del>60대, 여성 70</del>80% / 남성 20~30%</td>
+</tr>
+<tr>
+<td><strong>핵심 페르소나</strong></td>
+<td>1순위: 외로움 해소형 → 2순위: 체면중시형 → 3순위: 건강걱정형 → 4순위: 능동적 시니어</td>
+</tr>
+</tbody></table>
+<h3>1.1 미션 &amp; 비전</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>미션</strong></td>
+<td>&quot;나이는 숫자일 뿐&quot; — 50·60대가 자신감 있게 새로운 도전을 시작할 수 있는 공간을 만든다</td>
+</tr>
+<tr>
+<td><strong>비전</strong></td>
+<td>시니어 세대의 디지털 허브 — 일자리, 정보, 소통을 하나의 플랫폼에서</td>
+</tr>
+<tr>
+<td><strong>핵심 가치</strong></td>
+<td>실용, 따뜻함, 연결, 용기, 존중, 현실성</td>
+</tr>
+</tbody></table>
+<h3>1.2 수익 모델</h3>
+<table>
+<thead>
+<tr>
+<th>수익원</th>
+<th>구현 상태</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Google AdSense</td>
+<td>✅ 실제 슬롯 ID 적용 완료</td>
+<td>4종: 섹션사이(디스플레이) / 인피드(피드 사이) / 인아티클(글 본문) / 사이드바(데스크탑)</td>
+</tr>
+<tr>
+<td>Coupang Partners</td>
+<td>✅ 다이나믹 배너 + CPS + 검색위젯</td>
+<td>6종: 모바일 배너 / 데스크탑 배너 / 카테고리 배너(로켓프레시·주방) / 검색 위젯 / 상품 캐러셀 / CPS 상품 링크</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>2. 기술 스택</h2>
+<h3>2.1 핵심 스택</h3>
+<table>
+<thead>
+<tr>
+<th>영역</th>
+<th>기술</th>
+<th>버전</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>프레임워크</strong></td>
+<td>Next.js (App Router)</td>
+<td>14.2.35</td>
+</tr>
+<tr>
+<td><strong>언어</strong></td>
+<td>TypeScript (strict)</td>
+<td>5.9.3</td>
+</tr>
+<tr>
+<td><strong>DB</strong></td>
+<td>Supabase PostgreSQL</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>ORM</strong></td>
+<td>Prisma</td>
+<td>7.5.0</td>
+</tr>
+<tr>
+<td><strong>인증</strong></td>
+<td>NextAuth v5 (카카오 전용)</td>
+<td>beta.30</td>
+</tr>
+<tr>
+<td><strong>CSS</strong></td>
+<td>Tailwind CSS + shadcn/ui</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>폰트</strong></td>
+<td>Pretendard Variable (next/font/local)</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>스토리지</strong></td>
+<td>Cloudflare R2 (이미지)</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>AI</strong></td>
+<td>Anthropic Claude (Opus 4.6 / Sonnet 4.6 / Haiku 4.5)</td>
+<td>3-tier</td>
+</tr>
+<tr>
+<td><strong>배포</strong></td>
+<td>Vercel (Hobby Plan)</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>CI/CD</strong></td>
+<td>GitHub Actions</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>운영 커뮤니케이션</strong></td>
+<td>Slack (Bot + Webhook)</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>애널리틱스</strong></td>
+<td>Google Tag Manager + GA4</td>
+<td>-</td>
+</tr>
+</tbody></table>
+<h3>2.2 테스팅</h3>
+<table>
+<thead>
+<tr>
+<th>도구</th>
+<th>용도</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Vitest</td>
+<td>유닛 테스트</td>
+</tr>
+<tr>
+<td>Playwright</td>
+<td>E2E 테스트</td>
+</tr>
+<tr>
+<td>axe-core</td>
+<td>접근성 테스트</td>
+</tr>
+<tr>
+<td>Lighthouse CI</td>
+<td>성능 테스트</td>
+</tr>
+<tr>
+<td>Secretlint</td>
+<td>시크릿 스캐닝</td>
+</tr>
+<tr>
+<td>Husky</td>
+<td>Git hooks (pre-commit)</td>
+</tr>
+</tbody></table>
+<h3>2.3 보안 헤더 (next.config.js)</h3>
+<ul>
+<li><code>X-Frame-Options: DENY</code></li>
+<li><code>X-Content-Type-Options: nosniff</code></li>
+<li><code>Strict-Transport-Security: max-age=63072000; preload</code></li>
+<li>CSP: Kakao SDK, YouTube, Slack API, Google Analytics, GTM, AdSense, Coupang Partners, coupa.ng 허용</li>
+</ul>
+<hr>
+<h2>3. 인프라 구조</h2>
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│                      사용자 (브라우저)                       │
+└──────────────────────────┬──────────────────────────────┘
+                           │ HTTPS
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  Cloudflare (DNS + CDN)                                  │
+│  age-doesnt-matter.com → CNAME → Vercel                 │
+└──────────────────────────┬──────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  Vercel (Hobby Plan)                                     │
+│  ┌─────────────┐  ┌──────────────┐  ┌───────────────┐  │
+│  │ Next.js SSR  │  │ API Routes   │  │ Middleware     │  │
+│  │ (App Router) │  │ /api/*       │  │ (인증 체크)    │  │
+│  └──────┬──────┘  └──────┬───────┘  └───────────────┘  │
+│         │                │                               │
+│         ▼                ▼                               │
+│  ┌──────────────────────────┐                           │
+│  │ Serverless Functions      │                           │
+│  │ - Slack Webhook            │                           │
+│  │ - Bot API endpoints       │                           │
+│  └──────────┬───────────────┘                           │
+└─────────────┼───────────────────────────────────────────┘
+              │
+    ┌─────────┼──────────────────┐
+    ▼         ▼                  ▼
+┌────────┐ ┌──────────┐ ┌──────────────┐
+│Supabase│ │Cloudflare│ │  Anthropic   │
+│Postgres│ │    R2    │ │  Claude API  │
+│(DB)    │ │(이미지)  │ │  (AI 에이전트)│
+└────────┘ └──────────┘ └──────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│  GitHub Actions (자동화 크론)                              │
+│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐         │
+│  │ CEO  │ │ CTO  │ │ CMO  │ │ COO  │ │ SEED │  ...    │
+│  │09:00 │ │2h마다│ │10:00 │ │3회/일│ │6회/일│         │
+│  └──────┘ └──────┘ └──────┘ └──────┘ └──────┘         │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+            ┌─────────────┼─────────────┐
+            ▼             ▼             ▼
+      ┌──────────┐ ┌──────────┐ ┌──────────┐
+      │  Slack   │ │ Supabase │ │ Anthropic│
+      │ (운영)   │ │ (DB R/W) │ │ (AI)     │
+      └──────────┘ └──────────┘ └──────────┘
+</code></pre>
+<h3>3.1 환경 변수</h3>
+<table>
+<thead>
+<tr>
+<th>변수</th>
+<th>용도</th>
+<th>사용처</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DATABASE_URL</code></td>
+<td>Supabase 연결 (트랜잭션 풀러 6543)</td>
+<td>Prisma, 에이전트</td>
+</tr>
+<tr>
+<td><code>DIRECT_URL</code></td>
+<td>Supabase 직접 연결 (5432)</td>
+<td>마이그레이션</td>
+</tr>
+<tr>
+<td><code>AUTH_SECRET</code></td>
+<td>NextAuth 세션 암호화</td>
+<td>인증</td>
+</tr>
+<tr>
+<td><code>KAKAO_CLIENT_ID</code> / <code>SECRET</code></td>
+<td>카카오 OAuth</td>
+<td>로그인</td>
+</tr>
+<tr>
+<td><code>ANTHROPIC_API_KEY</code></td>
+<td>Claude API</td>
+<td>에이전트</td>
+</tr>
+<tr>
+<td><code>CLAUDE_MODEL_HEAVY</code></td>
+<td>전략 판단 모델 (claude-sonnet-4-6)</td>
+<td>에이전트</td>
+</tr>
+<tr>
+<td><code>CLAUDE_MODEL_LIGHT</code></td>
+<td>빠른 작업 모델 (claude-haiku-4-5)</td>
+<td>에이전트</td>
+</tr>
+<tr>
+<td><code>SLACK_BOT_TOKEN</code></td>
+<td>Slack 봇 토큰</td>
+<td>에이전트 운영 채널</td>
+</tr>
+<tr>
+<td><code>SLACK_SIGNING_SECRET</code></td>
+<td>Slack 서명 시크릿</td>
+<td>Webhook 검증</td>
+</tr>
+<tr>
+<td><code>SLACK_CHANNEL_*</code></td>
+<td>채널별 ID</td>
+<td>각 채널 메시지 발송</td>
+</tr>
+<tr>
+<td><code>X_API_KEY</code> / <code>X_API_SECRET</code></td>
+<td>X (Twitter) OAuth 1.0a</td>
+<td>CMO SNS 포스팅</td>
+</tr>
+<tr>
+<td><code>X_ACCESS_TOKEN</code> / <code>X_ACCESS_SECRET</code></td>
+<td>X 사용자 토큰</td>
+<td>CMO SNS 포스팅</td>
+</tr>
+<tr>
+<td><code>THREADS_APP_ID</code> / <code>THREADS_APP_SECRET</code></td>
+<td>Threads OAuth</td>
+<td>CMO SNS 포스팅</td>
+</tr>
+<tr>
+<td><code>THREADS_ACCESS_TOKEN</code></td>
+<td>Threads 장기 토큰 (60일)</td>
+<td>CMO SNS 포스팅</td>
+</tr>
+<tr>
+<td><code>INSTAGRAM_ACCESS_TOKEN</code></td>
+<td>Instagram Graph API 토큰</td>
+<td>CMO 카드뉴스 캐러셀</td>
+</tr>
+<tr>
+<td><code>INSTAGRAM_BUSINESS_ACCOUNT_ID</code></td>
+<td>Instagram 비즈니스 계정 ID</td>
+<td>CMO 카드뉴스 캐러셀</td>
+</tr>
+<tr>
+<td><code>FACEBOOK_PAGE_ACCESS_TOKEN</code></td>
+<td>Facebook 페이지 토큰</td>
+<td>CMO 카드뉴스 + 텍스트 게시</td>
+</tr>
+<tr>
+<td><code>FACEBOOK_PAGE_ID</code></td>
+<td>Facebook 페이지 ID</td>
+<td>CMO 카드뉴스 + 텍스트 게시</td>
+</tr>
+<tr>
+<td><code>BAND_ACCESS_TOKEN</code></td>
+<td>Naver Band 액세스 토큰</td>
+<td>CMO Band 게시</td>
+</tr>
+<tr>
+<td><code>BAND_KEY</code></td>
+<td>Naver Band 앱 키</td>
+<td>CMO Band API</td>
+</tr>
+<tr>
+<td><code>CLOUDFLARE_R2_*</code></td>
+<td>R2 스토리지</td>
+<td>이미지 업로드</td>
+</tr>
+<tr>
+<td><code>ADMIN_JWT_SECRET</code></td>
+<td>어드민 JWT</td>
+<td>어드민 인증</td>
+</tr>
+<tr>
+<td><code>BOT_API_KEY_*</code></td>
+<td>봇 API 인증</td>
+<td>봇 엔드포인트</td>
+</tr>
+<tr>
+<td><code>NEXT_PUBLIC_GTM_ID</code></td>
+<td>Google Tag Manager 컨테이너 ID</td>
+<td>클라이언트 (layout.tsx)</td>
+</tr>
+<tr>
+<td><code>NEXT_PUBLIC_GA4_ID</code></td>
+<td>Google Analytics 4 측정 ID</td>
+<td>GTM에서 참조</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>4. 데이터베이스 스키마</h2>
+<h3>4.1 전체 모델 맵</h3>
+<pre><code>┌── 사용자 ──────────────────────┐
+│ User          사용자 (등급 시스템) │
+│ AdminAccount  어드민 계정         │
+│ Agreement     이용약관 동의        │
+│ UserBlock     사용자 차단          │
+└────────────────────────────────┘
+
+┌── 콘텐츠 ──────────────────────┐
+│ Post          게시글 (5개 보드)   │
+│ JobDetail     일자리 상세 (1:1)  │
+│ Comment       댓글 (대댓글 지원)  │
+│ DraftPost     임시저장            │
+└────────────────────────────────┘
+
+┌── 상호작용 ────────────────────┐
+│ Like          좋아요             │
+│ Scrap         스크랩             │
+│ Report        신고               │
+│ Notification  알림               │
+└────────────────────────────────┘
+
+┌── 운영 ────────────────────────┐
+│ BoardConfig   게시판 설정         │
+│ BannedWord    금칙어              │
+│ Banner        프로모션 배너        │
+│ AdBanner      광고 배너           │
+│ CpsLink       쿠팡 CPS 링크      │
+└────────────────────────────────┘
+
+┌── 분석·로그 ───────────────────┐
+│ BotLog        봇 실행 로그       │
+│ EventLog      분석 이벤트         │
+│ AdminAuditLog 어드민 감사 로그    │
+└────────────────────────────────┘
+
+┌── 카페 인텔리전스 ──────────────┐
+│ CafePost      카페 크롤링 원본    │
+│               (네이버 3곳+82cook) │
+│ CafeTrend     일별 트렌드 분석    │
+└────────────────────────────────┘
+
+┌── SNS 마케팅 실험 ─────────────┐
+│ SocialPost       SNS 게시물      │
+│ SocialExperiment A/B 실험 관리   │
+│ ChannelDraft     채널 홍보 초안   │
+└────────────────────────────────┘
+</code></pre>
+<h3>4.2 핵심 Enum 값</h3>
+<table>
+<thead>
+<tr>
+<th>Enum</th>
+<th>값</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>BoardType</strong></td>
+<td>JOB, STORY, HUMOR, MAGAZINE, WEEKLY</td>
+</tr>
+<tr>
+<td><strong>Grade</strong></td>
+<td>SPROUT(새싹) → REGULAR(단골) → VETERAN(베테랑) → WARM_NEIGHBOR(따뜻한이웃)</td>
+</tr>
+<tr>
+<td><strong>PostStatus</strong></td>
+<td>DRAFT, PUBLISHED, HIDDEN, DELETED</td>
+</tr>
+<tr>
+<td><strong>PostSource</strong></td>
+<td>USER, BOT, ADMIN</td>
+</tr>
+<tr>
+<td><strong>PromotionLevel</strong></td>
+<td>NORMAL, HOT, HALL_OF_FAME</td>
+</tr>
+<tr>
+<td><strong>AdSlot</strong></td>
+<td>HERO, HOME_INLINE, SIDEBAR, LIST_INLINE, POST_BOTTOM, MOBILE_STICKY, MAGAZINE_CPS</td>
+</tr>
+<tr>
+<td><strong>BotType</strong></td>
+<td>JOB, HUMOR, STORY, THREAD, CEO, CTO, CMO, CPO, CDO, CFO, COO, SEED, CAFE_CRAWLER</td>
+</tr>
+<tr>
+<td><strong>SocialPlatform</strong></td>
+<td>THREADS, X, INSTAGRAM, FACEBOOK, BAND</td>
+</tr>
+<tr>
+<td><strong>SocialPostStatus</strong></td>
+<td>DRAFT, QUEUED, APPROVED, POSTED, FAILED</td>
+</tr>
+<tr>
+<td><strong>ExperimentStatus</strong></td>
+<td>PLANNING, ACTIVE, COMPLETED, ANALYZED</td>
+</tr>
+</tbody></table>
+<h3>4.3 주요 관계</h3>
+<ul>
+<li><code>User</code> 1:N <code>Post</code>, <code>Comment</code>, <code>Like</code>, <code>Scrap</code>, <code>Notification</code></li>
+<li><code>Post</code> 1:1 <code>JobDetail</code> (boardType=JOB인 경우만)</li>
+<li><code>Post</code> 1:N <code>Comment</code>, <code>Like</code>, <code>Scrap</code>, <code>CpsLink</code></li>
+<li><code>Comment</code> 자기참조 (parent → replies, 대댓글)</li>
+</ul>
+<hr>
+<h2>5. AI 에이전트 시스템</h2>
+<h3>5.1 에이전트 조직도</h3>
+<pre><code>                    ┌─────────┐
+                    │ 창업자    │ Slack #ceo-창업자
+                    │ (Human)  │ /status /approve /stop
+                    └────┬────┘
+                         │ 승인·지시
+                         ▼
+              ┌──────────────────────┐
+              │    CEO (전략총괄)      │ 매일 09:00
+              │  morning-cycle.ts     │ KPI 분석 + 브리핑
+              └──────────┬───────────┘
+                         │
+    ┌────────┬───────────┼───────────┬────────┬────────┐
+    ▼        ▼           ▼           ▼        ▼        ▼
+┌───────┐┌───────┐┌──────────┐┌───────┐┌───────┐┌───────┐
+│ CTO   ││ CMO   ││   COO    ││ CPO   ││ CDO   ││ CFO   │
+│기술총괄││마케팅 ││  운영총괄  ││제품총괄││데이터 ││재무총괄│
+│       ││       ││          ││       ││       ││       │
+│헬스체크││트렌드 ││일자리수집 ││UX분석 ││KPI수집││비용   │
+│에러감시││SNS포스││모더레이션 ││       ││이상감지││추적   │
+│       ││팅+실험││콘텐츠편성 ││       ││       ││       │
+│       ││전략+리││          ││       ││       ││       │
+│       ││뷰+메트││          ││       ││       ││       │
+│       ││릭수집 ││          ││       ││       ││       │
+└───────┘└───────┘└────┬─────┘└───────┘└───────┘└───────┘
+                       │
+                       ▼
+              ┌──────────────────┐
+              │   SEED (시드봇)    │ 하루 9회
+              │  35명 페르소나     │ 커뮤니티 활성화
+              └──────────────────┘
+</code></pre>
+<h3>5.2 에이전트 상세</h3>
+<table>
+<thead>
+<tr>
+<th>에이전트</th>
+<th>파일</th>
+<th>스케줄</th>
+<th>AI 모델</th>
+<th>역할</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>CEO</strong></td>
+<td><code>ceo/morning-cycle.ts</code></td>
+<td>매일 09:00</td>
+<td>Sonnet</td>
+<td>DAU/게시글/댓글 KPI 분석, 창업자 브리핑</td>
+</tr>
+<tr>
+<td><strong>CTO</strong></td>
+<td><code>cto/health-check.ts</code></td>
+<td>2시간마다</td>
+<td>Haiku</td>
+<td>서비스 헬스체크 (API, DB 응답속도)</td>
+</tr>
+<tr>
+<td><strong>CTO</strong></td>
+<td><code>cto/error-monitor.ts</code></td>
+<td>2시간마다</td>
+<td>Haiku</td>
+<td>에러 로그 분석 + 알림</td>
+</tr>
+<tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/trend-analyzer.ts</code></td>
+<td>매일 10:00</td>
+<td>Sonnet</td>
+<td>시니어 트렌드 분석, 콘텐츠 주제 제안</td>
+</tr>
+<tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/social-poster.ts</code></td>
+<td>매일 09:00</td>
+<td>Haiku</td>
+<td>Threads/X 텍스트 게시 (홍보 믹스 60/25/15)</td>
+</tr>
+<tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/social-poster-visual.ts</code></td>
+<td>매일 11:00</td>
+<td>Haiku</td>
+<td>카드뉴스 → IG/FB/Threads/Band 멀티플랫폼 게시</td>
+</tr>
+<tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/channel-seeder.ts</code></td>
+<td>매일 11:30</td>
+<td>Haiku</td>
+<td>카카오 오픈챗/당근마켓/커뮤니티 홍보 초안 생성</td>
+</tr>
+<tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/knowledge-responder.ts</code></td>
+<td>화/목/토 12:00</td>
+<td>Sonnet</td>
+<td>네이버 지식iN Q&amp;A 초안 생성</td>
+</tr>
+<tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/seo-optimizer.ts</code></td>
+<td>월요일 08:00</td>
+<td>Haiku</td>
+<td>주간 SEO 키워드 분석 + 메타데이터 커버리지 체크</td>
+</tr>
+<tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/social-metrics.ts</code></td>
+<td>매일 20:00</td>
+<td>AI 불필요</td>
+<td>48시간 내 게시물 멀티플랫폼 메트릭 수집</td>
+</tr>
+<tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/social-reviewer.ts</code></td>
+<td>월요일 10:00</td>
+<td>Haiku</td>
+<td>주간 실험 분석 — 통제/실험군 비교, 인사이트 도출</td>
+</tr>
+<tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/social-strategy.ts</code></td>
+<td>월요일 10:15</td>
+<td>Sonnet</td>
+<td>주간 전략 설계 — 실험 로드맵 + 트렌드 교차 참조</td>
+</tr>
+<tr>
+<td><strong>CPO</strong></td>
+<td><code>cpo/ux-analyzer.ts</code></td>
+<td>매일 11:00</td>
+<td>Sonnet</td>
+<td>UX 패턴 분석, 개선 제안</td>
+</tr>
+<tr>
+<td><strong>CDO</strong></td>
+<td><code>cdo/kpi-collector.ts</code></td>
+<td>매일 22:00</td>
+<td>Haiku</td>
+<td>DAU, 게시글, 댓글 등 KPI 수집</td>
+</tr>
+<tr>
+<td><strong>CDO</strong></td>
+<td><code>cdo/anomaly-detector.ts</code></td>
+<td>2시간마다</td>
+<td>Haiku</td>
+<td>KPI 이상치 감지 + 알림</td>
+</tr>
+<tr>
+<td><strong>CFO</strong></td>
+<td><code>cfo/cost-tracker.ts</code></td>
+<td>매일 23:00</td>
+<td>Haiku</td>
+<td>API 비용 추적 + 예산 경고</td>
+</tr>
+<tr>
+<td><strong>COO</strong></td>
+<td><code>coo/job-scraper.ts</code></td>
+<td>12/16/20시</td>
+<td>Haiku</td>
+<td>50plus.or.kr 일자리 크롤링 → AI 가공 → DB</td>
+</tr>
+<tr>
+<td><strong>COO</strong></td>
+<td><code>coo/moderator.ts</code></td>
+<td>09/15/21시</td>
+<td>Haiku</td>
+<td>신고 처리, 콘텐츠 모더레이션</td>
+</tr>
+<tr>
+<td><strong>COO</strong></td>
+<td><code>coo/content-scheduler.ts</code></td>
+<td>매일 14:00</td>
+<td>Haiku</td>
+<td>에디터스 픽 + 시드 콘텐츠 편성</td>
+</tr>
+<tr>
+<td><strong>SEED</strong></td>
+<td><code>seed/scheduler.ts</code></td>
+<td>하루 9회 (09~22시)</td>
+<td>Haiku</td>
+<td>35명 페르소나 활동 (게시글, 댓글, 좋아요, 대댓글) + promotionLevel 자동 승격 + 집중 좋아요 (21시)</td>
+</tr>
+</tbody></table>
+<h3>5.3 에이전트 기반 구조 (core/)</h3>
+<table>
+<thead>
+<tr>
+<th>파일</th>
+<th>역할</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>core/agent.ts</code></td>
+<td><strong>BaseAgent</strong> 추상 클래스 — 모든 에이전트가 상속. AI 호출, 로깅, 에러 처리</td>
+</tr>
+<tr>
+<td><code>core/constitution.yaml</code></td>
+<td><strong>회사 헌법</strong> — 모든 에이전트 System Prompt에 주입. 서비스 정체성, 가드레일, 콘텐츠 정책</td>
+</tr>
+<tr>
+<td><code>core/types.ts</code></td>
+<td>타입 정의 (AgentResult, AgentConfig, NotifyPayload 등)</td>
+</tr>
+<tr>
+<td><code>core/db.ts</code></td>
+<td>Prisma 클라이언트 초기화</td>
+</tr>
+<tr>
+<td><code>core/notifier.ts</code></td>
+<td>Slack + 어드민큐 알림</td>
+</tr>
+<tr>
+<td><code>core/slack-commander.ts</code></td>
+<td>Slack 양방향 커맨드 (/status, /agents, /stop 등)</td>
+</tr>
+<tr>
+<td><code>cmo/platforms/x-client.ts</code></td>
+<td>X (Twitter) API v2 래퍼 — OAuth 1.0a 서명 + 게시 + 메트릭</td>
+</tr>
+<tr>
+<td><code>cmo/platforms/threads-client.ts</code></td>
+<td>Threads API 래퍼 — 게시 + 메트릭 + 토큰 60일 갱신</td>
+</tr>
+<tr>
+<td><code>cmo/platforms/instagram-client.ts</code></td>
+<td>Instagram Graph API v21.0 — 캐러셀 3단계 (아이템→컨테이너→퍼블리시)</td>
+</tr>
+<tr>
+<td><code>cmo/platforms/facebook-client.ts</code></td>
+<td>Facebook Graph API v21.0 — 멀티포토 + 텍스트 게시</td>
+</tr>
+<tr>
+<td><code>cmo/platforms/band-client.ts</code></td>
+<td>Naver Band Open API v2.2 — 텍스트+이미지 게시</td>
+</tr>
+<tr>
+<td><code>cmo/card-news/generator.ts</code></td>
+<td>AI 카드뉴스 슬라이드 생성 (요일별 유형 로테이션)</td>
+</tr>
+<tr>
+<td><code>cmo/card-news/renderer.ts</code></td>
+<td>HTML → 1080×1350px JPEG 렌더링 (Playwright + Sharp + R2)</td>
+</tr>
+<tr>
+<td><code>cmo/card-news/templates/</code></td>
+<td>3종 HTML 템플릿 (news-trend, info-topic, community) + base.css</td>
+</tr>
+<tr>
+<td><code>cmo/test-platforms.ts</code></td>
+<td>SNS 플랫폼 토큰 검증 + 테스트 게시 유틸리티</td>
+</tr>
+<tr>
+<td><code>cafe/external-crawler.ts</code></td>
+<td><strong>82cook 외부 크롤러</strong> — Playwright headless, 공개 게시판(bn=15), 품질 점수 필터링</td>
+</tr>
+<tr>
+<td><code>seed/persona-data.ts</code></td>
+<td><strong>35명 페르소나 정의</strong> — 닉네임, 성격, 말투, 습관, 금지사항, 예시문장 (캐릭터 시트 방식)</td>
+</tr>
+<tr>
+<td><code>skills/registry.ts</code></td>
+<td>검증된 SNS 전략 스킬 레지스트리 (승률 기반 가중 선택)</td>
+</tr>
+<tr>
+<td><code>skills/types.ts</code></td>
+<td>ProvenSkill, SkillSuggestion 타입 정의</td>
+</tr>
+</tbody></table>
+<h3>5.4 일자리 파이프라인 (COO)</h3>
+<pre><code>GitHub Actions Cron (12:00, 16:00, 20:00 KST)
+  └→ coo/job-scraper.ts
+      ├→ Step 1: 50plus.or.kr Playwright 크롤링 (최대 30건)
+      ├→ Step 2: DB 중복 체크 (JobDetail.sourceUrl)
+      ├→ Step 3: Waterfall 4단계 필터링
+      │   ├ Tier 1: 대기업/공공기관 (삼성, LG, 공단 등)
+      │   ├ Tier 2: Sweet-Spot (사무, 안내, 경비 등)
+      │   ├ Tier 3: 광역시 소재
+      │   └ Tier 4: Safety-Net
+      │   + 여성 쿼터 60% + 수도권:비수도권 5:5
+      ├→ Step 4: AI 가공 (Claude Haiku x 4 병렬 호출)
+      │   ├ 제목 정제: &quot;[지역] 직무명&quot; (25자 이내)
+      │   ├ SEO 키워드 4개 (숨김)
+      │   ├ Pick 포인트 5개 (이모지 + 한줄)
+      │   └ Q&amp;A 3개 (시니어 눈높이)
+      │   + 규칙 기반: displayTags 최대 3개, 급여 정규화
+      ├→ Step 5: Post + JobDetail DB INSERT (Prisma)
+      └→ Step 6: Slack #로그-일자리 요약 알림
+</code></pre>
+<h3>5.5 SNS 바이럴 마케팅 파이프라인 (CMO)</h3>
+<pre><code>┌─────────────────────────────────────────────────────┐
+│              OBSERVE (매일 20:00)                     │
+│  social-metrics.ts                                   │
+│  → Threads/X API에서 메트릭 수집                       │
+│  → SocialPost.metrics 업데이트                        │
+│  → 이상치 감지 시 Slack 알림 (참여 ≥ 10)               │
+└──────────────────┬──────────────────────────────────┘
+                   ▼
+┌─────────────────────────────────────────────────────┐
+│              ANALYZE (매주 월 10:00)                   │
+│  social-reviewer.ts                                  │
+│  → 통제군 vs 실험군 비교 (A/B 테스트)                   │
+│  → 콘텐츠 유형/톤/시간/페르소나별 성과 랭킹               │
+│  → AI 인사이트 도출 → SocialExperiment.learnings       │
+└──────────────────┬──────────────────────────────────┘
+                   ▼
+┌─────────────────────────────────────────────────────┐
+│              ACT (매주 월 10:15)                       │
+│  social-strategy.ts                                  │
+│  → 누적 학습 + 카페 트렌드 + CMO 트렌드 교차 참조       │
+│  → 8주 로드맵 기반 다음 실험 설계                       │
+│  → 새 SocialExperiment 생성                           │
+└──────────────────┬──────────────────────────────────┘
+                   ▼
+┌─────────────────────────────────────────────────────┐
+│              EXECUTE (매일 09/15/19시)                 │
+│  social-poster.ts                                    │
+│  → 활성 실험 config 읽기 → 콘텐츠 유형/톤/페르소나 결정  │
+│  → 홍보 믹스: 60% PURE / 25% SOFT / 15% DIRECT        │
+│  → 4명 SNS 페르소나 (영숙이맘, 은퇴신사, 웃음보, 건강박사)│
+│  → Threads + X 게시 → SocialPost DB 저장               │
+└─────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>8주 실험 로드맵</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>주차</th>
+<th>실험 변수</th>
+<th>통제군</th>
+<th>실험군</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Week 1</td>
+<td>베이스라인</td>
+<td>모든 유형 골고루</td>
+<td>(없음)</td>
+</tr>
+<tr>
+<td>Week 2</td>
+<td>콘텐츠 유형</td>
+<td>PERSONA</td>
+<td>COMMUNITY</td>
+</tr>
+<tr>
+<td>Week 3</td>
+<td>톤/어조</td>
+<td>warm</td>
+<td>humorous</td>
+</tr>
+<tr>
+<td>Week 4</td>
+<td>게시 시간</td>
+<td>afternoon</td>
+<td>evening</td>
+</tr>
+<tr>
+<td>Week 5</td>
+<td>홍보 강도</td>
+<td>PURE</td>
+<td>SOFT</td>
+</tr>
+<tr>
+<td>Week 6</td>
+<td>포맷</td>
+<td>short</td>
+<td>list</td>
+</tr>
+<tr>
+<td>Week 7</td>
+<td>페르소나</td>
+<td>A (영숙이맘)</td>
+<td>C (웃음보)</td>
+</tr>
+<tr>
+<td>Week 8</td>
+<td>인터랙션</td>
+<td>statement</td>
+<td>question</td>
+</tr>
+<tr>
+<td>Week 9+</td>
+<td><strong>AI 자동 결정</strong></td>
+<td>이전 우승자</td>
+<td>새 변수</td>
+</tr>
+</tbody></table>
+<p><strong>졸업 기준</strong>: 8주 후 70% exploit (검증된 우승 공식) + 30% explore (새 실험). 우승 공식이 2주 연속 하락 시 재탐색.</p>
+<p><strong>Skills 레지스트리</strong>: 반복 우승 패턴 → <code>agents/skills/registry.ts</code>에 코드화 → 승률 기반 가중 랜덤 선택으로 exploit 모드 자동 적용.</p>
+<h3>5.5.1 비주얼 카드뉴스 파이프라인 (CMO)</h3>
+<pre><code>CafeTrend (매일 수집)
+  └→ card-news/generator.ts
+      ├→ 요일별 유형 로테이션
+      │   월/수/금: NEWS_TREND (뉴스·트렌드)
+      │   화/목:   INFO_TOPIC (생활정보·팁)
+      │   토/일:   COMMUNITY_PROMO (커뮤니티 인기글)
+      ├→ Claude Haiku → JSON 슬라이드 3~7장 생성
+      └→ card-news/renderer.ts
+          ├→ HTML 템플릿 3종 + base.css 로드
+          ├→ Playwright 렌더링 (1080×1350px)
+          ├→ Sharp JPEG 최적화 (quality 85)
+          └→ Cloudflare R2 업로드 → public URL
+               └→ social-poster-visual.ts
+                   ├→ Instagram 캐러셀 (2~10장)
+                   ├→ Facebook 멀티포토
+                   ├→ Threads 단일 이미지
+                   ├→ Band 텍스트+이미지
+                   └→ SocialPost DB 저장 + Slack 알림
+</code></pre>
+<h3>5.5.2 멀티채널 홍보 시스템 (CMO)</h3>
+<pre><code>┌─────────────────────────────────────────────────────┐
+│  channel-seeder.ts (매일 11:30)                       │
+│  → 오늘의 인기 콘텐츠 (게시글, 매거진, 일자리) 수집       │
+│  → 채널별 맞춤 초안 생성 (Claude Haiku)                 │
+│  → ChannelDraft DB 저장 + AdminQueue (창업자 승인 필요)  │
+│  → 대상: 카카오 오픈챗 / 당근마켓 / 커뮤니티             │
+└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│  knowledge-responder.ts (화/목/토 12:00)               │
+│  → 타겟 키워드에서 2~3개 랜덤 선택                       │
+│  → 현실적 Q&amp;A 초안 생성 (Claude Sonnet)                 │
+│  → 자연스러운 사이트 언급 (하드셀 금지)                   │
+│  → ChannelDraft + AdminQueue 저장                       │
+└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│  seo-optimizer.ts (월 08:00)                           │
+│  → CafeTrend 키워드 집계 (7일) → Top 20                 │
+│  → 메타데이터 커버리지 체크 (summary/thumbnailUrl 누락)   │
+│  → SEO 개선 추천 리포트 → Slack #log_marketing           │
+└─────────────────────────────────────────────────────┘
+</code></pre>
+<h3>5.6 시드 페르소나 (SEED) — 35명</h3>
+<blockquote>
+<p><strong>v2 전면 리뉴얼 (2026-03-29)</strong>: AI스러운 닉네임/말투 문제 해결. 캐릭터 시트 방식으로 페르소나별 성격·말투·습관·금지사항·예시문장 차별화. 부정/비판 페르소나 8명 + 특수 캐릭터 5명 추가.
+<strong>소스 코드</strong>: <code>agents/seed/persona-data.ts</code> (YAML은 참조용)</p>
+</blockquote>
+<h4>기존 리뉴얼 (A-T)</h4>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>닉네임</th>
+<th>나이/성별</th>
+<th>mood</th>
+<th>보드</th>
+<th>스타일</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>하늘바라기</td>
+<td>58/여</td>
+<td>positive</td>
+<td>STORY</td>
+<td>일상 수다, 시장, 동네</td>
+</tr>
+<tr>
+<td>B</td>
+<td>정호씨</td>
+<td>63/남</td>
+<td>neutral</td>
+<td>STORY</td>
+<td>정보형, 은퇴, 합니다체</td>
+</tr>
+<tr>
+<td>C</td>
+<td>ㅋㅋ요정</td>
+<td>55/여</td>
+<td>positive</td>
+<td>HUMOR</td>
+<td>초짧은 리액션, ㅋㅋ 전문</td>
+</tr>
+<tr>
+<td>D</td>
+<td>궁금한건못참아</td>
+<td>60/여</td>
+<td>neutral</td>
+<td>JOB</td>
+<td>질문 폭격, 물음표 다수</td>
+</tr>
+<tr>
+<td>E</td>
+<td>봄바람</td>
+<td>52/여</td>
+<td>positive</td>
+<td>STORY</td>
+<td>공감 천재, 긴 위로 댓글</td>
+</tr>
+<tr>
+<td>F</td>
+<td>텃밭할배</td>
+<td>62/남</td>
+<td>neutral</td>
+<td>STORY</td>
+<td>텃밭 일지, 소박, 자연</td>
+</tr>
+<tr>
+<td>G</td>
+<td>여행이좋아</td>
+<td>57/여</td>
+<td>positive</td>
+<td>STORY</td>
+<td>여행 감탄, 느낌표 과다</td>
+</tr>
+<tr>
+<td>H</td>
+<td>매일걷기</td>
+<td>65/남</td>
+<td>neutral</td>
+<td>STORY</td>
+<td>건강 데이터, 수치 중심</td>
+</tr>
+<tr>
+<td>I</td>
+<td>한페이지</td>
+<td>59/여</td>
+<td>neutral</td>
+<td>STORY</td>
+<td>독서, 문화, 감성적 짧은 글</td>
+</tr>
+<tr>
+<td>J</td>
+<td>맛있는거좋아</td>
+<td>54/여</td>
+<td>positive</td>
+<td>STORY</td>
+<td>레시피, 맛집, 재료 상세</td>
+</tr>
+<tr>
+<td>K</td>
+<td>예쁘게살자</td>
+<td>56/여</td>
+<td>positive</td>
+<td>STORY</td>
+<td>패션, 뷰티, 나이불문</td>
+</tr>
+<tr>
+<td>L</td>
+<td>손주러브</td>
+<td>64/여</td>
+<td>positive</td>
+<td>STORY</td>
+<td>손주 자랑, 구어체</td>
+</tr>
+<tr>
+<td>M</td>
+<td>산이좋아</td>
+<td>61/남</td>
+<td>neutral</td>
+<td>STORY</td>
+<td>등산 후기, 코스+시간 데이터</td>
+</tr>
+<tr>
+<td>N</td>
+<td>알뜰맘</td>
+<td>58/여</td>
+<td>neutral</td>
+<td>STORY</td>
+<td>살림 팁, 가격 비교</td>
+</tr>
+<tr>
+<td>O</td>
+<td>올드팝</td>
+<td>60/남</td>
+<td>neutral</td>
+<td>STORY</td>
+<td>음악, 추억의 노래</td>
+</tr>
+<tr>
+<td>P</td>
+<td>오후세시</td>
+<td>55/여</td>
+<td>neutral</td>
+<td>STORY</td>
+<td>감성 에세이, 여유</td>
+</tr>
+<tr>
+<td>Q</td>
+<td>멍멍이아빠</td>
+<td>63/남</td>
+<td>positive</td>
+<td>STORY</td>
+<td>반려견, 유머</td>
+</tr>
+<tr>
+<td>R</td>
+<td>밤새봤다</td>
+<td>57/여</td>
+<td>positive</td>
+<td>HUMOR</td>
+<td>드라마/예능 덕후</td>
+</tr>
+<tr>
+<td>S</td>
+<td>제주살이</td>
+<td>60/여</td>
+<td>mixed</td>
+<td>STORY</td>
+<td>제주 귀촌, 사투리 살짝</td>
+</tr>
+<tr>
+<td>T</td>
+<td>배움은즐거워</td>
+<td>62/여</td>
+<td>positive</td>
+<td>STORY</td>
+<td>평생교육, 격려</td>
+</tr>
+</tbody></table>
+<h4>신규 부정/비판 (U-Z)</h4>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>닉네임</th>
+<th>나이/성별</th>
+<th>mood</th>
+<th>보드</th>
+<th>스타일</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>U</td>
+<td>부산아지매</td>
+<td>62/여</td>
+<td>mixed</td>
+<td>STORY</td>
+<td>경상도 사투리, 직설</td>
+</tr>
+<tr>
+<td>V</td>
+<td>세상에나</td>
+<td>60/여</td>
+<td>negative</td>
+<td>STORY</td>
+<td>물가 한탄, 한숨</td>
+</tr>
+<tr>
+<td>W</td>
+<td>참나진짜</td>
+<td>58/남</td>
+<td>negative</td>
+<td>STORY</td>
+<td>까칠 리뷰, 독설</td>
+</tr>
+<tr>
+<td>X</td>
+<td>걱정인형</td>
+<td>62/남</td>
+<td>negative</td>
+<td>STORY</td>
+<td>건강/노후 불안</td>
+</tr>
+<tr>
+<td>Y</td>
+<td>솔직히말해서</td>
+<td>57/남</td>
+<td>neutral</td>
+<td>WEEKLY</td>
+<td>팩폭, 현실주의</td>
+</tr>
+<tr>
+<td>Z</td>
+<td>혼자잘산다</td>
+<td>54/여</td>
+<td>mixed</td>
+<td>STORY</td>
+<td>자조 유머, 당당한 독신</td>
+</tr>
+</tbody></table>
+<h4>신규 특수 캐릭터 (AA-AI)</h4>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>닉네임</th>
+<th>나이/성별</th>
+<th>mood</th>
+<th>보드</th>
+<th>스타일</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AA</td>
+<td>어휴답답</td>
+<td>61/여</td>
+<td>negative</td>
+<td>STORY</td>
+<td>한탄, 자녀 걱정</td>
+</tr>
+<tr>
+<td>AB</td>
+<td>따져보자</td>
+<td>59/남</td>
+<td>neutral</td>
+<td>WEEKLY</td>
+<td>팩트체크, 논쟁</td>
+</tr>
+<tr>
+<td>AC</td>
+<td>느긋이</td>
+<td>63/남</td>
+<td>neutral</td>
+<td>STORY</td>
+<td>충청도 사투리, 느긋</td>
+</tr>
+<tr>
+<td>AD</td>
+<td>그때그시절</td>
+<td>66/남</td>
+<td>mixed</td>
+<td>STORY</td>
+<td>회고, 과거 비교</td>
+</tr>
+<tr>
+<td>AE</td>
+<td>새벽감성</td>
+<td>52/여</td>
+<td>mixed</td>
+<td>STORY</td>
+<td>새벽 감성, 불면증</td>
+</tr>
+<tr>
+<td>AF</td>
+<td>하하호호</td>
+<td>64/남</td>
+<td>positive</td>
+<td>HUMOR</td>
+<td>아재개그, 말장난</td>
+</tr>
+<tr>
+<td>AG</td>
+<td>비교분석왕</td>
+<td>57/여</td>
+<td>neutral</td>
+<td>STORY</td>
+<td>비교 분석, 목록형</td>
+</tr>
+<tr>
+<td>AH</td>
+<td>피곤해요</td>
+<td>55/여</td>
+<td>negative</td>
+<td>STORY</td>
+<td>TMI, 만성 피로</td>
+</tr>
+<tr>
+<td>AI</td>
+<td>시골아낙네</td>
+<td>60/여</td>
+<td>positive</td>
+<td>STORY</td>
+<td>시골 자급자족, 순수</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>성격 분포</strong>: 긍정(12) + 중립(10) + 부정/비판(8) + 특이(5) = 35명
+<strong>성별 비율</strong>: 여 22명 / 남 13명 (타겟 유저 비율 반영)
+<strong>지역 사투리</strong>: 경상도(U), 충청도(AC), 제주(S)
+<strong>일일 목표</strong>: 게시글 18<del>22개 / 댓글 80</del>100개 / 좋아요 60<del>80개 / 대댓글 25</del>35개</p>
+</blockquote>
+<h3>5.6.1 시드봇 활동 메커니즘</h3>
+<table>
+<thead>
+<tr>
+<th>기능</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>캐릭터 시트 프롬프트</strong></td>
+<td>페르소나별 성격/습관/금지사항/예시문장을 System Prompt에 주입 → Haiku가 개성 있는 글 생성</td>
+</tr>
+<tr>
+<td><strong>mood 기반 댓글</strong></td>
+<td>positive/neutral/negative/mixed에 따라 댓글 톤 차별화 (W 비판 댓글, AB 반론, V 불만 등)</td>
+</tr>
+<tr>
+<td><strong>promotionLevel 자동 승격</strong></td>
+<td>좋아요 시 likeCount 체크 → 10+ HOT, 50+ HALL_OF_FAME 자동 승격 (updateMany race-safe)</td>
+</tr>
+<tr>
+<td><strong>집중 좋아요 (21시)</strong></td>
+<td>48시간 내 likeCount 5~9인 글(HOT 근접) 최대 3개에 7명 봇 집중 투입 (B, E, G, K, M, AC, AI)</td>
+</tr>
+<tr>
+<td><strong>글 길이 다양화</strong></td>
+<td>3단계 랜덤: 짧은(60<del>120자) / 보통(150</del>300자) / 긴(400~600자)</td>
+</tr>
+<tr>
+<td><strong>크로스보드 댓글</strong></td>
+<td>기본 보드 외 다른 게시판에도 댓글 활동 (HUMOR, WEEKLY)</td>
+</tr>
+<tr>
+<td><strong>봇 유저 자동 업데이트</strong></td>
+<td><code>prisma.user.upsert</code> — 닉네임 변경 시 DB 자동 반영</td>
+</tr>
+<tr>
+<td><strong>boardOverride</strong></td>
+<td>generatePost에 보드 오버라이드 파라미터 지원 (WEEKLY 등)</td>
+</tr>
+</tbody></table>
+<h3>5.7 에이전트 규칙 (헌법 핵심)</h3>
+<table>
+<thead>
+<tr>
+<th>규칙</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>DB 쓰기</strong></td>
+<td>COO 에이전트만 가능, 나머지 읽기 전용</td>
+</tr>
+<tr>
+<td><strong>비용 상한</strong></td>
+<td>$50/월, $40 도달 시 경고, 초과 시 즉시 중단</td>
+</tr>
+<tr>
+<td><strong>승인 필요</strong></td>
+<td>UI/UX 변경, DB 스키마 변경, 새 에이전트 추가, 자동화 시작/중단</td>
+</tr>
+<tr>
+<td><strong>헌법 수정</strong></td>
+<td>창업자 승인 없이 수정 불가</td>
+</tr>
+<tr>
+<td><strong>콘텐츠 금지</strong></td>
+<td>정치, 혐오, 도박, 성인콘텐츠 (ABSOLUTE_ZERO)</td>
+</tr>
+<tr>
+<td><strong>자동화 상태</strong></td>
+<td>ACTIVE (2026-03-24 승인), 1클릭 긴급 중지 가능</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>6. GitHub Actions 워크플로우</h2>
+<h3>6.1 CI/CD</h3>
+<table>
+<thead>
+<tr>
+<th>파일</th>
+<th>트리거</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ci.yml</code></td>
+<td>PR, push to main</td>
+<td>Lint → Typecheck → Test → Build</td>
+</tr>
+<tr>
+<td><code>lighthouse.yml</code></td>
+<td>PR, push to main</td>
+<td>Lighthouse 접근성 감사</td>
+</tr>
+</tbody></table>
+<h3>6.2 에이전트 크론</h3>
+<table>
+<thead>
+<tr>
+<th>파일</th>
+<th>스케줄 (KST)</th>
+<th>에이전트</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>agents-daily.yml</code></td>
+<td>09, 10, 11, 14, 22, 23시</td>
+<td>CEO, CMO, CPO, COO, CDO, CFO</td>
+</tr>
+<tr>
+<td><code>agents-hourly.yml</code></td>
+<td>2시간마다</td>
+<td>CTO (헬스체크, 에러감시), CDO (이상감지)</td>
+</tr>
+<tr>
+<td><code>agents-jobs.yml</code></td>
+<td>12, 16, 20시</td>
+<td>COO (일자리 수집)</td>
+</tr>
+<tr>
+<td><code>agents-moderation.yml</code></td>
+<td>09, 15, 21시</td>
+<td>COO (모더레이션)</td>
+</tr>
+<tr>
+<td><code>agents-seed.yml</code></td>
+<td>09, 10, 14, 16, 19, 21시</td>
+<td>SEED (시드 콘텐츠)</td>
+</tr>
+<tr>
+<td><code>agents-social.yml</code></td>
+<td>09/11/11:30/12/20시 + 월 08/10/10:15 + 수 10시</td>
+<td>CMO (텍스트포스팅·카드뉴스·채널시딩·지식iN·SEO·메트릭·리뷰·전략·토큰갱신)</td>
+</tr>
+<tr>
+<td><code>agents-cafe.yml</code></td>
+<td>09, 13, 19시</td>
+<td>CAFE (네이버 카페 3곳 + 82cook 크롤링)</td>
+</tr>
+</tbody></table>
+<h3>6.3 전체 타임라인 (KST)</h3>
+<pre><code>08:00 (월) CMO SEO옵티마이저
+08:30  ░░ CAFE 크롤링 (로컬)
+09:00  ██ CEO 모닝사이클 | SEED 활동 | COO 모더레이션 | CMO 텍스트포스팅(Threads/X)
+10:00  ██ CMO 트렌드분석 | SEED 활동
+ (월)  ██ CMO 리뷰(10:00) → 전략(10:15) [주간 실험 분석 + 설계]
+ (수)  ██ CMO Threads 토큰 갱신 (10:00)
+10:30  ██ CEO 주간리포트 (월요일, SNS 메트릭 포함)
+11:00  ██ CPO UX분석 | CMO 카드뉴스→멀티플랫폼(IG/FB/Threads/Band)
+11:30  ██ CMO 채널시딩(카카오/당근/커뮤니티)
+12:00  ██ COO 일자리수집 | CMO 지식iN(화/목/토)
+12:30  ░░ CAFE 크롤링 (로컬)
+13:00  ░░ CAFE 크롤링 (Actions)
+14:00  ██ COO 콘텐츠편성 | SEED 활동
+15:00  ██ COO 모더레이션
+16:00  ██ COO 일자리수집 | SEED 활동
+18:30  ░░ CAFE 크롤링 (로컬)
+19:00  ██ SEED 활동 | CAFE 크롤링 (Actions)
+20:00  ██ COO 일자리수집 | CMO SNS메트릭수집(전 플랫폼)
+21:00  ██ COO 모더레이션 | SEED 활동
+22:00  ██ CDO KPI수집
+23:00  ██ CFO 비용추적
+(2h)   ▒▒ CTO 헬스체크 + 에러감시 + CDO 이상감지
+</code></pre>
+<hr>
+<h2>7. Webhook &amp; 외부 연동</h2>
+<table>
+<thead>
+<tr>
+<th>연동</th>
+<th>엔드포인트</th>
+<th>방향</th>
+<th>용도</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Kakao OAuth</strong></td>
+<td><code>/api/auth/[...nextauth]</code></td>
+<td>인바운드</td>
+<td>사용자 로그인</td>
+</tr>
+<tr>
+<td><strong>Slack Events</strong></td>
+<td><code>/api/slack</code></td>
+<td>인바운드</td>
+<td>슬래시 커맨드, 인터랙티브</td>
+</tr>
+<tr>
+<td><strong>Slack Web API</strong></td>
+<td><code>slack.com/api/*</code></td>
+<td>아웃바운드</td>
+<td>메시지 발송, 채널 관리</td>
+</tr>
+<tr>
+<td><strong>Anthropic API</strong></td>
+<td><code>api.anthropic.com</code></td>
+<td>아웃바운드</td>
+<td>AI 에이전트 호출</td>
+</tr>
+<tr>
+<td><strong>Cloudflare R2</strong></td>
+<td><code>*.r2.cloudflarestorage.com</code></td>
+<td>아웃바운드</td>
+<td>이미지 업로드/서빙</td>
+</tr>
+<tr>
+<td><strong>Threads API</strong></td>
+<td><code>graph.threads.net/*</code></td>
+<td>아웃바운드</td>
+<td>SNS 게시 + 메트릭 수집 (OAuth 2.0, 60일 토큰)</td>
+</tr>
+<tr>
+<td><strong>X API v2</strong></td>
+<td><code>api.x.com/2/*</code></td>
+<td>아웃바운드</td>
+<td>SNS 게시 + 메트릭 수집 (OAuth 1.0a HMAC-SHA1)</td>
+</tr>
+<tr>
+<td><strong>Instagram Graph API</strong></td>
+<td><code>graph.facebook.com/v21.0/*</code></td>
+<td>아웃바운드</td>
+<td>카드뉴스 캐러셀 게시 (3단계: 아이템→컨테이너→퍼블리시)</td>
+</tr>
+<tr>
+<td><strong>Facebook Graph API</strong></td>
+<td><code>graph.facebook.com/v21.0/*</code></td>
+<td>아웃바운드</td>
+<td>멀티포토 + 텍스트 페이지 게시</td>
+</tr>
+<tr>
+<td><strong>Naver Band API</strong></td>
+<td><code>openapi.band.us/v2.2/*</code></td>
+<td>아웃바운드</td>
+<td>밴드 텍스트+이미지 게시</td>
+</tr>
+<tr>
+<td><strong>Threads OAuth</strong></td>
+<td><code>/api/threads/auth</code>, <code>/api/threads/callback</code></td>
+<td>인바운드</td>
+<td>Threads 토큰 발급 (1회성)</td>
+</tr>
+<tr>
+<td><strong>Google Tag Manager</strong></td>
+<td><code>www.googletagmanager.com</code></td>
+<td>아웃바운드</td>
+<td>태그 관리 (GTM 컨테이너 로드)</td>
+</tr>
+<tr>
+<td><strong>Google Analytics 4</strong></td>
+<td><code>www.google-analytics.com</code>, <code>analytics.google.com</code></td>
+<td>아웃바운드</td>
+<td>사용자 행동 분석 (GTM 경유)</td>
+</tr>
+<tr>
+<td><strong>50plus.or.kr</strong></td>
+<td>웹 크롤링</td>
+<td>아웃바운드</td>
+<td>일자리 수집</td>
+</tr>
+<tr>
+<td><strong>82cook.com</strong></td>
+<td>웹 크롤링 (Playwright headless)</td>
+<td>아웃바운드</td>
+<td>커뮤니티 콘텐츠 수집 (자유게시판 bn=15, 공개)</td>
+</tr>
+<tr>
+<td><strong>Coupang Partners</strong></td>
+<td><code>ads-partners.coupang.com</code></td>
+<td>아웃바운드</td>
+<td>다이나믹 배너, 검색 위젯, CPS API</td>
+</tr>
+</tbody></table>
+<h3>7.1 Slack 운영 채널 아키텍처</h3>
+<p>Telegram에서 Slack으로 전환한 이유:</p>
+<ul>
+<li>에이전트 간 <strong>구조화된 채널 분리</strong> 필요 (회의, 로그, 알림이 한 곳에 섞이면 관리 불가)</li>
+<li><strong>미팅 로그 아카이브</strong> (스레드 기반으로 회의별 기록 분리)</li>
+<li>창업자 ↔ CEO <strong>전용 채널</strong> (지시/보고가 알림과 섞이지 않음)</li>
+<li><strong>알림 수준 분리</strong> (긴급 vs 일반 vs 로그)</li>
+</ul>
+<h4>채널 구조 전체 맵</h4>
+<pre><code>Slack Workspace: 우나어-ops
+
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  ★ 창업자 전용 (최우선 확인)                                       │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌───────────────┐  │
+│  │ #ceo-창업자       │  │ #일일-브리핑      │  │ #주간-리포트   │  │
+│  │ CEO↔창업자 양방향 │  │ CEO→창업자 매일   │  │ CEO→창업자 주간│  │
+│  │ 지시·승인·KPI    │  │ 09:00 KPI 스냅샷  │  │ 월 10:00 종합 │  │
+│  └──────────────────┘  └──────────────────┘  └───────────────┘  │
+│                                                                  │
+│  ★ 에이전트 협업                                                  │
+│  ┌──────────────────┐  ┌──────────────────┐                     │
+│  │ #에이전트-회의실   │  │ #회의록           │                     │
+│  │ 주간/긴급/1:1    │  │ 스레드 기반 아카이브│                     │
+│  │ CEO 의장         │  │ 자동 정리         │                     │
+│  └──────────────────┘  └──────────────────┘                     │
+│                                                                  │
+│  ★ 알림 (심각도별 분리)                                            │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌───────────────┐  │
+│  │ #알림-긴급        │  │ #알림-시스템       │  │ #알림-KPI     │  │
+│  │ 🔴 서비스다운     │  │ 🟡 헬스체크       │  │ 🟡 KPI 변동  │  │
+│  │ KPI 20%+하락     │  │ 에러로그          │  │ 임계값 근접    │  │
+│  │ 비용 $40 초과    │  │ 배포결과          │  │ 트렌드 변화    │  │
+│  └──────────────────┘  └──────────────────┘  └───────────────┘  │
+│                                                                  │
+│  ★ 자동화 로그 (묵음 가능, 필요 시 확인)                             │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐   │
+│  │#로그-일자리 │ │#로그-콘텐츠│ │#로그-마케팅│ │#로그-비용  │   │
+│  │COO 수집결과│ │SEED/매거진 │ │CMO SNS결과 │ │CFO 비용/수익│  │
+│  └────────────┘ └────────────┘ └────────────┘ └────────────┘   │
+│                                                                  │
+│  ★ 성장                                                          │
+│  ┌──────────────────┐                                           │
+│  │ #실험-보드        │                                           │
+│  │ Gate1→진행→Gate2 │                                           │
+│  │ →회고 전체 관리   │                                           │
+│  └──────────────────┘                                           │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>7.2 채널별 상세 설계</h3>
+<h4>카테고리 A: 창업자 전용 채널</h4>
+<table>
+<thead>
+<tr>
+<th>채널</th>
+<th>용도</th>
+<th>발신→수신</th>
+<th>빈도</th>
+<th>알림 설정</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>#ceo-창업자</strong></td>
+<td>CEO ↔ 창업자 양방향 소통. KPI 지시, 전략 논의, Gate 1 승인(/approve), 긴급 보고, 피드백</td>
+<td>양방향</td>
+<td>수시</td>
+<td>모든 메시지</td>
+</tr>
+<tr>
+<td><strong>#일일-브리핑</strong></td>
+<td>CEO 일일 KPI 스냅샷 + 에이전트 활동 요약 + 창업자 대기건</td>
+<td>CEO→창업자</td>
+<td>매일 09:00</td>
+<td>모든 메시지</td>
+</tr>
+<tr>
+<td><strong>#주간-리포트</strong></td>
+<td>CEO 주간 KPI 종합 + 에이전트 회의 결과 + Gate 1 대기</td>
+<td>CEO→창업자</td>
+<td>매주 월 10:00</td>
+<td>모든 메시지</td>
+</tr>
+</tbody></table>
+<pre><code>#ceo-창업자 사용 예시:
+
+[창업자 → CEO]
+  &quot;이번 달은 DAU보다 리텐션에 집중해&quot;
+  → CEO: 확인 → 주간 회의에서 전 에이전트에 방향 전파
+
+[CEO → 창업자]
+  &quot;⛔ Gate 1 대기: 모바일 UX 가설 — 승인/피드백 선택&quot;
+  → 창업자: /approve 또는 /feedback &quot;검색이 더 중요하다&quot;
+
+[CEO → 창업자 긴급]
+  &quot;🚨 DAU 3일 연속 하락. 원인 분석 중. 회의 소집합니다.&quot;
+</code></pre>
+<h4>카테고리 B: 에이전트 협업 채널</h4>
+<table>
+<thead>
+<tr>
+<th>채널</th>
+<th>용도</th>
+<th>참여자</th>
+<th>빈도</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>#에이전트-회의실</strong></td>
+<td>주간/긴급/1:1 회의 진행. CEO가 의장.</td>
+<td>전체 에이전트</td>
+<td>주 1~2회 + 긴급</td>
+</tr>
+<tr>
+<td><strong>#회의록</strong></td>
+<td>회의 결과 자동 정리. 스레드 기반으로 회의별 분리.</td>
+<td>CEO(작성), 전체(열람)</td>
+<td>회의 후</td>
+</tr>
+</tbody></table>
+<pre><code>#에이전트-회의실 메시지 예시:
+
+📋 주간 회의 시작 (2026-03-31 월)
+─────────────────────────────
+참석: CEO, CTO, CMO, CPO, CDO, CFO, COO
+
+[CDO 보고] KPI: DAU 45(+5), 댓글 -10%, UGC 비율 12%
+[CTO 보고] 헬스체크 정상, 에러 2건(재시도 성공)
+[CMO 보고] 트렌드: &#39;봄 나들이&#39;, X 팔로워 +12
+[CPO 보고] /jobs 바운스율 38%(-2%p)
+[CFO 보고] 이번 달 $19.5 / $50
+[COO 보고] 일자리 38건 수집, 모더레이션 정상
+
+[문제 정의] 댓글 -10% — 커뮤니티 활성화 약화
+[가설 초안] &quot;게시글에 질문형 마무리 추가 시 댓글 +20%&quot;
+→ #ceo-창업자 로 Gate 1 전달 완료
+─────────────────────────────
+</code></pre>
+<h4>카테고리 C: 알림 채널 (심각도별)</h4>
+<table>
+<thead>
+<tr>
+<th>채널</th>
+<th>트리거</th>
+<th>발신 에이전트</th>
+<th>알림 수준</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>#알림-긴급</strong></td>
+<td>서비스 다운, KPI 20%+ 하락 2일 연속, 비용 $40 초과, 법적 리스크 콘텐츠</td>
+<td>CTO/CDO/CFO/COO</td>
+<td>🔴 <strong>즉시 알림</strong> (소리+배너)</td>
+</tr>
+<tr>
+<td><strong>#알림-시스템</strong></td>
+<td>헬스체크 결과, 에러 로그, 배포 결과, 응답 속도</td>
+<td>CTO</td>
+<td>🟡 묵음 가능</td>
+</tr>
+<tr>
+<td><strong>#알림-KPI</strong></td>
+<td>KPI 일일 변동, 임계값 근접, 이상치 감지, 트렌드 변화</td>
+<td>CDO/CEO</td>
+<td>🟡 묵음 가능</td>
+</tr>
+</tbody></table>
+<pre><code>#알림-긴급 메시지 예시:
+
+🚨 [CTO] 서비스 헬스체크 실패
+  시각: 2026-03-31 14:02 KST
+  증상: /api/health 응답 시간 초과 (&gt;10초)
+  DB 상태: 커넥션 풀 90% 사용 중
+  조치: CEO에게 긴급 회의 소집 요청
+  → #ceo-창업자 에도 동시 알림
+</code></pre>
+<h4>카테고리 D: 자동화 로그 채널</h4>
+<table>
+<thead>
+<tr>
+<th>채널</th>
+<th>내용</th>
+<th>발신</th>
+<th>빈도</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>#로그-일자리</strong></td>
+<td>일자리 스크래핑 결과 (수집 건수, 성공/실패, Waterfall 통계)</td>
+<td>COO</td>
+<td>3회/일</td>
+</tr>
+<tr>
+<td><strong>#로그-콘텐츠</strong></td>
+<td>SEED 페르소나 활동 결과, 매거진 편성, 콘텐츠 스케줄</td>
+<td>COO/SEED</td>
+<td>하루 6회+</td>
+</tr>
+<tr>
+<td><strong>#로그-마케팅</strong></td>
+<td>SNS 포스팅 결과, SEO 분석 결과, 트렌드 리포트</td>
+<td>CMO</td>
+<td>매일</td>
+</tr>
+<tr>
+<td><strong>#로그-비용</strong></td>
+<td>일일 API 비용, 월 누적, 수익 데이터 (AdSense/CPS)</td>
+<td>CFO</td>
+<td>매일 23:00</td>
+</tr>
+</tbody></table>
+<h4>카테고리 E: 성장 채널</h4>
+<table>
+<thead>
+<tr>
+<th>채널</th>
+<th>용도</th>
+<th>참여</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>#실험-보드</strong></td>
+<td>실험 라이프사이클 전체 관리. Gate 1 제출 → 승인 → 실험 설계 → 실행 → Gate 2 → 회고. 각 실험을 스레드로 관리.</td>
+<td>CEO(주도), 전체</td>
+</tr>
+</tbody></table>
+<h3>7.3 Slack 커맨드 (슬래시 커맨드)</h3>
+<table>
+<thead>
+<tr>
+<th>커맨드</th>
+<th>채널</th>
+<th>기능</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/status</code></td>
+<td>#ceo-창업자</td>
+<td>현재 KPI 요약 (DAU, 게시글, 수익)</td>
+</tr>
+<tr>
+<td><code>/agents</code></td>
+<td>#ceo-창업자</td>
+<td>에이전트 상태 (마지막 실행, 성공/실패)</td>
+</tr>
+<tr>
+<td><code>/approve</code></td>
+<td>#ceo-창업자</td>
+<td>Gate 1 승인 (실험 진행 허가)</td>
+</tr>
+<tr>
+<td><code>/feedback [내용]</code></td>
+<td>#ceo-창업자</td>
+<td>Gate 1 피드백 (가설 수정 요청)</td>
+</tr>
+<tr>
+<td><code>/reject [이유]</code></td>
+<td>#ceo-창업자</td>
+<td>Gate 1 기각</td>
+</tr>
+<tr>
+<td><code>/stop</code></td>
+<td>#ceo-창업자</td>
+<td>전체 자동화 긴급 중지</td>
+</tr>
+<tr>
+<td><code>/run [에이전트명]</code></td>
+<td>#ceo-창업자</td>
+<td>특정 에이전트 수동 실행</td>
+</tr>
+<tr>
+<td><code>/cost</code></td>
+<td>#ceo-창업자</td>
+<td>이번 달 비용 현황</td>
+</tr>
+<tr>
+<td><code>/kpi</code></td>
+<td>#ceo-창업자</td>
+<td>KPI 전체 현황 (목표 vs 실적)</td>
+</tr>
+<tr>
+<td><code>/meeting</code></td>
+<td>#에이전트-회의실</td>
+<td>수동 회의 소집</td>
+</tr>
+<tr>
+<td><code>/social</code></td>
+<td>#ceo-창업자</td>
+<td>이번 주 SNS 성과 요약 (게시 수, 참여, 최고 게시물)</td>
+</tr>
+<tr>
+<td><code>/experiment</code></td>
+<td>#ceo-창업자</td>
+<td>현재 실험 상태 (가설, 진행률, 중간 결과)</td>
+</tr>
+</tbody></table>
+<h3>7.4 Slack Bot 기술 구현</h3>
+<pre><code>[구현 방식]
+1. Slack App 생성 (api.slack.com/apps)
+   - Bot Token Scopes: chat:write, channels:read, commands, incoming-webhook
+   - Event Subscriptions: slash commands → /api/slack
+
+2. Vercel Serverless Function
+   - /api/slack (POST) — Slack Events + 슬래시 커맨드 수신
+   - Slack Signing Secret으로 요청 검증
+
+3. 에이전트 → Slack 발송
+   - core/notifier.ts에서 Slack Web API (chat.postMessage) 사용
+   - 채널별 SLACK_CHANNEL_* 환경 변수로 라우팅
+
+4. 채널 자동 라우팅 규칙
+   notifier.send({
+     channel: &quot;CEO_FOUNDER&quot;,    // → #ceo-창업자
+     channel: &quot;DAILY_BRIEFING&quot;, // → #일일-브리핑
+     channel: &quot;ALERT_URGENT&quot;,   // → #알림-긴급
+     channel: &quot;LOG_JOBS&quot;,       // → #로그-일자리
+     ...
+   })
+</code></pre>
+<h3>7.5 Telegram → Slack 마이그레이션 계획</h3>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>변경 전 (Telegram)</th>
+<th>변경 후 (Slack)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>환경 변수</td>
+<td><code>TELEGRAM_BOT_TOKEN</code>, <code>TELEGRAM_CHAT_ID</code></td>
+<td><code>SLACK_BOT_TOKEN</code>, <code>SLACK_SIGNING_SECRET</code>, <code>SLACK_CHANNEL_*</code></td>
+</tr>
+<tr>
+<td>알림 발송</td>
+<td><code>core/notifier.ts</code> → Telegram Bot API</td>
+<td><code>core/notifier.ts</code> → Slack Web API</td>
+</tr>
+<tr>
+<td>커맨드 수신</td>
+<td><code>core/telegram-commander.ts</code> → <code>/api/telegram</code></td>
+<td><code>core/slack-commander.ts</code> → <code>/api/slack</code></td>
+</tr>
+<tr>
+<td>일일 브리핑</td>
+<td>1개 채팅방에 모든 메시지</td>
+<td>#일일-브리핑 전용 채널</td>
+</tr>
+<tr>
+<td>긴급 알림</td>
+<td>일반 알림과 동일 채팅방</td>
+<td>#알림-긴급 (별도 알림 설정)</td>
+</tr>
+<tr>
+<td>회의록</td>
+<td>없음 (메시지에 혼재)</td>
+<td>#회의록 (스레드 기반 아카이브)</td>
+</tr>
+<tr>
+<td>Gate 1 승인</td>
+<td>채팅방 /approve</td>
+<td>#ceo-창업자 /approve</td>
+</tr>
+<tr>
+<td>API 엔드포인트</td>
+<td><code>/api/telegram</code> (POST)</td>
+<td><code>/api/slack</code> (POST)</td>
+</tr>
+</tbody></table>
+<pre><code>마이그레이션 단계:
+1. Slack Workspace 생성 (우나어-ops) ← 창업자
+2. Slack App 생성 + Bot 설정 ← 창업자
+3. 13개 채널 생성 ← 창업자 (또는 Claude가 API로)
+4. 환경 변수 교체 (GitHub Secrets + Vercel) ← 창업자
+5. notifier.ts 리팩토링 (Telegram → Slack API) ← Claude
+6. slack-commander.ts 구현 ← Claude
+7. /api/telegram → /api/slack 교체 ← Claude
+8. 각 에이전트 알림 채널 매핑 ← Claude
+9. 테스트: 각 채널에 테스트 메시지 발송 ← Claude
+10. Telegram 코드 제거 ← Claude
+</code></pre>
+<hr>
+<h2>8. MCP 서버</h2>
+<table>
+<thead>
+<tr>
+<th>MCP</th>
+<th>용도</th>
+<th>상태</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>context7</strong></td>
+<td>라이브러리 문서 조회</td>
+<td>활성</td>
+</tr>
+<tr>
+<td><strong>figma-write</strong></td>
+<td>Figma 디자인 연동</td>
+<td>활성</td>
+</tr>
+<tr>
+<td><strong>github</strong></td>
+<td>GitHub 이슈/PR 관리</td>
+<td>활성</td>
+</tr>
+<tr>
+<td><strong>sequential-thinking</strong></td>
+<td>복잡한 추론 체이닝</td>
+<td>활성</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>9. 시니어 친화 UI 원칙</h2>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>규칙</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>터치 타겟</strong></td>
+<td>최소 52×52px</td>
+</tr>
+<tr>
+<td><strong>폰트 최소</strong></td>
+<td>15px (caption/배지만), 본문 18px 베이스</td>
+</tr>
+<tr>
+<td><strong>브랜드 컬러</strong></td>
+<td><code>--color-primary: #FF6F61</code> (코랄)</td>
+</tr>
+<tr>
+<td><strong>버튼 높이</strong></td>
+<td>52px (모바일) / 48px (데스크탑)</td>
+</tr>
+<tr>
+<td><strong>모달</strong></td>
+<td>모바일=하단 풀스크린 시트, 데스크탑=중앙 팝업</td>
+</tr>
+<tr>
+<td><strong>네비게이션</strong></td>
+<td>상단 아이콘 메뉴 + 플로팅 FAB (하단 탭바 없음)</td>
+</tr>
+<tr>
+<td><strong>폰트 크기 설정</strong></td>
+<td>사용자가 NORMAL / LARGE / XLARGE 선택 가능</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>10. 페이지 구조</h2>
+<h3>10.1 사용자 페이지 (47개)</h3>
+<table>
+<thead>
+<tr>
+<th>경로</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/</code></td>
+<td>홈 (히어로 슬라이더, 일자리, 커뮤니티, 매거진, 트렌딩)</td>
+</tr>
+<tr>
+<td><code>/about</code></td>
+<td>서비스 소개</td>
+</tr>
+<tr>
+<td><code>/login</code></td>
+<td>카카오 로그인</td>
+</tr>
+<tr>
+<td><code>/onboarding</code></td>
+<td>신규 회원 온보딩 (닉네임, 관심사)</td>
+</tr>
+<tr>
+<td><code>/jobs</code></td>
+<td>일자리 목록 (필터, 퀵태그)</td>
+</tr>
+<tr>
+<td><code>/jobs/[id]</code></td>
+<td>일자리 상세 (JSON-LD, Pick포인트, Q&amp;A)</td>
+</tr>
+<tr>
+<td><code>/magazine</code></td>
+<td>매거진 목록</td>
+</tr>
+<tr>
+<td><code>/magazine/[id]</code></td>
+<td>매거진 상세</td>
+</tr>
+<tr>
+<td><code>/best</code></td>
+<td>인기글</td>
+</tr>
+<tr>
+<td><code>/search</code></td>
+<td>통합 검색</td>
+</tr>
+<tr>
+<td><code>/community/[boardSlug]</code></td>
+<td>게시판 (stories, humor, weekly)</td>
+</tr>
+<tr>
+<td><code>/community/[boardSlug]/[postId]</code></td>
+<td>게시글 상세</td>
+</tr>
+<tr>
+<td><code>/community/[boardSlug]/[postId]/edit</code></td>
+<td>게시글 수정</td>
+</tr>
+<tr>
+<td><code>/community/write</code></td>
+<td>글쓰기 (TipTap 에디터)</td>
+</tr>
+<tr>
+<td><code>/my</code></td>
+<td>마이페이지</td>
+</tr>
+<tr>
+<td><code>/my/posts</code></td>
+<td>내 게시글</td>
+</tr>
+<tr>
+<td><code>/my/comments</code></td>
+<td>내 댓글</td>
+</tr>
+<tr>
+<td><code>/my/scraps</code></td>
+<td>스크랩</td>
+</tr>
+<tr>
+<td><code>/my/notifications</code></td>
+<td>알림</td>
+</tr>
+<tr>
+<td><code>/my/settings</code></td>
+<td>설정 (닉네임, 폰트, 차단, 탈퇴)</td>
+</tr>
+<tr>
+<td><code>/faq</code></td>
+<td>자주 묻는 질문</td>
+</tr>
+<tr>
+<td><code>/terms</code></td>
+<td>이용약관</td>
+</tr>
+<tr>
+<td><code>/privacy</code></td>
+<td>개인정보처리방침</td>
+</tr>
+<tr>
+<td><code>/rules</code></td>
+<td>커뮤니티 규칙</td>
+</tr>
+<tr>
+<td><code>/contact</code></td>
+<td>문의</td>
+</tr>
+<tr>
+<td><code>/offline</code></td>
+<td>오프라인 안내</td>
+</tr>
+</tbody></table>
+<h3>10.2 어드민 페이지</h3>
+<table>
+<thead>
+<tr>
+<th>경로</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/admin/login</code></td>
+<td>어드민 로그인</td>
+</tr>
+<tr>
+<td><code>/admin</code></td>
+<td>대시보드</td>
+</tr>
+<tr>
+<td><code>/admin/members</code></td>
+<td>회원 관리</td>
+</tr>
+<tr>
+<td><code>/admin/content</code></td>
+<td>콘텐츠 관리</td>
+</tr>
+<tr>
+<td><code>/admin/reports</code></td>
+<td>신고 관리</td>
+</tr>
+<tr>
+<td><code>/admin/analytics</code></td>
+<td>분석</td>
+</tr>
+<tr>
+<td><code>/admin/banners</code></td>
+<td>배너 관리</td>
+</tr>
+<tr>
+<td><code>/admin/settings</code></td>
+<td>설정 (게시판, 금칙어, 광고)</td>
+</tr>
+</tbody></table>
+<h3>10.3 API 라우트 (17+개)</h3>
+<table>
+<thead>
+<tr>
+<th>엔드포인트</th>
+<th>메서드</th>
+<th>용도</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/api/auth/[...nextauth]</code></td>
+<td>*</td>
+<td>NextAuth 핸들러</td>
+</tr>
+<tr>
+<td><code>/api/health</code></td>
+<td>GET</td>
+<td>헬스체크</td>
+</tr>
+<tr>
+<td><code>/api/posts</code></td>
+<td>GET, POST</td>
+<td>게시글 목록/생성</td>
+</tr>
+<tr>
+<td><code>/api/posts/[postId]</code></td>
+<td>GET, PATCH, DELETE</td>
+<td>게시글 CRUD</td>
+</tr>
+<tr>
+<td><code>/api/comments</code></td>
+<td>GET, POST</td>
+<td>댓글 CRUD</td>
+</tr>
+<tr>
+<td><code>/api/drafts/[id]</code></td>
+<td>GET, PUT, DELETE</td>
+<td>임시저장</td>
+</tr>
+<tr>
+<td><code>/api/best</code></td>
+<td>GET</td>
+<td>인기글</td>
+</tr>
+<tr>
+<td><code>/api/jobs</code></td>
+<td>GET</td>
+<td>일자리 목록</td>
+</tr>
+<tr>
+<td><code>/api/magazine</code></td>
+<td>GET</td>
+<td>매거진</td>
+</tr>
+<tr>
+<td><code>/api/search</code></td>
+<td>GET</td>
+<td>통합 검색</td>
+</tr>
+<tr>
+<td><code>/api/notifications</code></td>
+<td>GET, PATCH</td>
+<td>알림</td>
+</tr>
+<tr>
+<td><code>/api/notifications/unread-count</code></td>
+<td>GET</td>
+<td>읽지 않은 알림 수</td>
+</tr>
+<tr>
+<td><code>/api/uploads</code></td>
+<td>POST</td>
+<td>이미지 업로드 (R2)</td>
+</tr>
+<tr>
+<td><code>/api/ad-click</code></td>
+<td>POST</td>
+<td>광고 클릭 추적</td>
+</tr>
+<tr>
+<td><code>/api/events</code></td>
+<td>POST</td>
+<td>분석 이벤트 로깅</td>
+</tr>
+<tr>
+<td><code>/api/slack</code></td>
+<td>POST</td>
+<td>Slack Events + 커맨드</td>
+</tr>
+<tr>
+<td><code>/api/threads/auth</code></td>
+<td>GET</td>
+<td>Threads OAuth 시작 (리다이렉트)</td>
+</tr>
+<tr>
+<td><code>/api/threads/callback</code></td>
+<td>GET</td>
+<td>Threads OAuth 콜백 + 토큰 교환</td>
+</tr>
+<tr>
+<td><code>/api/bot/*</code></td>
+<td>*</td>
+<td>봇 API (check, jobs, posts, logs)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>11. 컴포넌트 구조</h2>
+<h3>11.1 카테고리별</h3>
+<table>
+<thead>
+<tr>
+<th>카테고리</th>
+<th>개수</th>
+<th>주요 컴포넌트</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>UI (공통)</strong></td>
+<td>12개</td>
+<td>Button, Card, Input, Badge, BottomSheet, Toast, Skeleton</td>
+</tr>
+<tr>
+<td><strong>레이아웃</strong></td>
+<td>6개</td>
+<td>Header, GNB, Footer, MainLayout, FAB, IconMenu</td>
+</tr>
+<tr>
+<td><strong>홈</strong></td>
+<td>9개</td>
+<td>HeroSlider, JobSection, CommunitySection, MagazineSection, TrendingSection</td>
+</tr>
+<tr>
+<td><strong>커뮤니티</strong></td>
+<td>13개</td>
+<td>PostCard, CommentSection, ActionBar, TipTapEditor, ReportModal</td>
+</tr>
+<tr>
+<td><strong>일자리</strong></td>
+<td>3개</td>
+<td>JobFilterButton, JobFilterPanel, JobQuickTags</td>
+</tr>
+<tr>
+<td><strong>검색</strong></td>
+<td>3개</td>
+<td>SearchForm, SearchResults, SearchTabs</td>
+</tr>
+<tr>
+<td><strong>마이페이지</strong></td>
+<td>8개</td>
+<td>NicknameSettings, FontSizeSettings, BlockedUserList, WithdrawSection</td>
+</tr>
+<tr>
+<td><strong>인증</strong></td>
+<td>3개</td>
+<td>LoginForm, LoginPromptModal, OnboardingForm</td>
+</tr>
+<tr>
+<td><strong>광고</strong></td>
+<td>10개</td>
+<td>AdSenseUnit, AdSlot, AdClickTracker, CoupangCPS, CoupangBanner, CoupangCategoryBanner, CoupangSearchWidget, CpsClickTracker, FeedAd, MobileStickyAd + ad-slots.ts(상수)</td>
+</tr>
+<tr>
+<td><strong>어드민</strong></td>
+<td>11개</td>
+<td>MemberTable, ContentTable, ReportTable, BannerManager</td>
+</tr>
+<tr>
+<td><strong>공통</strong></td>
+<td>10개</td>
+<td>UserAvatar, ShareButton, OfflineBanner, PageViewTracker, GoogleTagManager, GTMEventOnMount, Breadcrumbs</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>12. 폴더·파일 구조</h2>
+<pre><code>/Users/yanadoo/Documents/New_Claude_agenotmatter/
+│
+├── 📁 src/                          # 메인 애플리케이션
+│   ├── 📁 app/                      # Next.js App Router
+│   │   ├── layout.tsx               # 루트 레이아웃 (폰트, 메타데이터)
+│   │   ├── error.tsx                # 글로벌 에러 바운더리
+│   │   ├── not-found.tsx            # 404
+│   │   ├── sitemap.ts              # 동적 사이트맵
+│   │   ├── robots.ts               # SEO robots
+│   │   ├── 📁 (main)/              # 메인 레이아웃 그룹
+│   │   │   ├── page.tsx            # 홈
+│   │   │   ├── 📁 jobs/            # 일자리
+│   │   │   ├── 📁 magazine/        # 매거진
+│   │   │   ├── 📁 community/       # 커뮤니티 (게시판)
+│   │   │   ├── 📁 best/            # 인기글
+│   │   │   ├── 📁 search/          # 검색
+│   │   │   ├── 📁 my/              # 마이페이지
+│   │   │   └── 📁 about|faq|...    # 정보 페이지
+│   │   ├── 📁 admin/               # 어드민 패널
+│   │   │   ├── login/
+│   │   │   └── (panel)/            # 어드민 대시보드 그룹
+│   │   ├── 📁 api/                 # API 라우트
+│   │   │   ├── auth/               # NextAuth
+│   │   │   ├── posts/              # 게시글 CRUD
+│   │   │   ├── comments/           # 댓글
+│   │   │   ├── jobs/               # 일자리
+│   │   │   ├── slack/              # Slack Events + 커맨드
+│   │   │   ├── bot/                # 봇 API
+│   │   │   └── ...                 # 기타 (uploads, events, ad-click)
+│   │   ├── login/
+│   │   └── onboarding/
+│   │
+│   ├── 📁 components/              # React 컴포넌트 (77+개)
+│   │   ├── 📁 ui/                  # 공통 UI (Button, Card, Input...)
+│   │   ├── 📁 layouts/             # 레이아웃 (Header, GNB, Footer, FAB)
+│   │   ├── 📁 icons/               # SVG 아이콘
+│   │   ├── 📁 ad/                  # 광고 (AdSlot, CoupangCPS)
+│   │   ├── 📁 common/              # 공통 기능 (Avatar, Toast, Tracker)
+│   │   ├── 📁 admin/               # 어드민 전용
+│   │   └── 📁 features/            # 기능별
+│   │       ├── home/               # 홈 섹션들
+│   │       ├── community/          # 커뮤니티 (PostCard, ActionBar...)
+│   │       ├── jobs/               # 일자리 필터
+│   │       ├── search/             # 검색
+│   │       ├── my/                 # 마이페이지
+│   │       ├── auth/               # 인증
+│   │       ├── login/              # 로그인
+│   │       └── onboarding/         # 온보딩
+│   │
+│   ├── 📁 lib/                     # 유틸리티 &amp; 비즈니스 로직
+│   │   ├── prisma.ts               # Prisma 클라이언트 (Supabase 풀링)
+│   │   ├── auth.ts                 # NextAuth 설정 (카카오)
+│   │   ├── auth.config.ts          # NextAuth 컨피그
+│   │   ├── admin-auth.ts           # 어드민 인증
+│   │   ├── bot-auth.ts             # 봇 API 인증
+│   │   ├── format.ts               # 날짜/급여 포맷팅
+│   │   ├── sanitize.ts             # HTML 새니타이즈
+│   │   ├── grade.ts                # 등급 계산
+│   │   ├── banned-words.ts         # 금칙어 필터
+│   │   ├── rate-limit.ts           # Rate limiting
+│   │   ├── r2.ts                   # Cloudflare R2
+│   │   ├── gtm.ts                  # GTM dataLayer 유틸 (커스텀 이벤트 15종)
+│   │   ├── track.ts                # 내부 EventLog 트래킹
+│   │   ├── utils.ts                # cn() 유틸
+│   │   ├── errors.ts               # 커스텀 에러 클래스
+│   │   ├── 📁 actions/             # Server Actions (13개)
+│   │   └── 📁 queries/             # DB 쿼리 함수 (6개)
+│   │
+│   ├── 📁 types/                   # 타입 정의
+│   │   ├── api.ts                  # API 타입
+│   │   └── next-auth.d.ts          # NextAuth 타입 확장
+│   │
+│   ├── 📁 generated/prisma/        # Prisma 자동 생성
+│   ├── 📁 __tests__/               # 테스트 (10개)
+│   └── middleware.ts               # 라우트 보호 미들웨어
+│
+├── 📁 agents/                       # AI 에이전트 시스템
+│   ├── 📁 core/                    # 기반 인프라
+│   │   ├── agent.ts                # BaseAgent 추상 클래스
+│   │   ├── constitution.yaml       # 회사 헌법
+│   │   ├── types.ts                # 에이전트 타입
+│   │   ├── db.ts                   # Prisma 클라이언트
+│   │   ├── notifier.ts             # 알림 (Slack + DB)
+│   │   └── slack-commander.ts      # Slack 커맨드
+│   ├── 📁 cron/                    # 크론 스케줄러
+│   │   ├── runner.ts
+│   │   └── schedules.yaml
+│   ├── 📁 ceo/                     # CEO 에이전트
+│   ├── 📁 cto/                     # CTO 에이전트
+│   ├── 📁 cmo/                     # CMO 에이전트
+│   ├── 📁 cpo/                     # CPO 에이전트
+│   ├── 📁 cdo/                     # CDO 에이전트
+│   ├── 📁 cfo/                     # CFO 에이전트
+│   ├── 📁 coo/                     # COO 에이전트 (일자리, 모더레이션)
+│   ├── 📁 seed/                    # 시드봇 (35명 페르소나)
+│   └── 📁 cafe/                    # 카페 크롤러
+│
+├── 📁 prisma/                       # DB 스키마
+│   ├── schema.prisma               # 22개 모델, 20개 Enum
+│   ├── seed.ts                     # 시드 데이터
+│   └── 📁 migrations/             # 마이그레이션 히스토리
+│
+├── 📁 scripts/                      # 유틸리티 스크립트
+│   ├── create-admin.ts             # 어드민 계정 생성
+│   └── fix-existing-jobs.ts        # 기존 일자리 데이터 정리
+│
+├── 📁 public/                       # 정적 파일
+│   ├── logo.svg                    # 로고
+│   ├── manifest.json               # PWA 매니페스트
+│   └── sw.js                       # 서비스 워커
+│
+├── 📁 .github/workflows/           # CI/CD + 에이전트 크론 (9개)
+│
+├── 📁 docs/                         # 문서
+│   ├── 📁 prd/                     # PRD 문서 (A~G)
+│   ├── 📁 reports/                 # 작업 보고서
+│   └── SERVICE_ARCHITECTURE.md     # ← 이 문서
+│
+├── 📁 e2e/                          # E2E 테스트
+├── CLAUDE.md                        # Claude Code 지시사항
+├── next.config.js                   # Next.js 설정
+├── tailwind.config.ts               # Tailwind 설정
+├── tsconfig.json                    # TypeScript 설정
+├── .env.example                     # 환경변수 템플릿
+└── package.json                     # 의존성 + 스크립트
+</code></pre>
+<hr>
+<h2>13. 예산</h2>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>월 비용</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>에이전트 AI (7 C-level + SEED)</td>
+<td>~$15 (최적화 후)</td>
+</tr>
+<tr>
+<td>일자리 스크래퍼 AI</td>
+<td>~$3</td>
+</tr>
+<tr>
+<td>SNS 자동화 AI (텍스트+카드뉴스+채널시딩+지식iN)</td>
+<td>~$5</td>
+</tr>
+<tr>
+<td>Vercel Hosting</td>
+<td>$0 (Hobby)</td>
+</tr>
+<tr>
+<td>Supabase DB</td>
+<td>$0 (Free tier)</td>
+</tr>
+<tr>
+<td>GitHub Actions</td>
+<td>$0 (Free 2,000분/월)</td>
+</tr>
+<tr>
+<td>Cloudflare R2</td>
+<td>$0 (Free tier)</td>
+</tr>
+<tr>
+<td>Cloudflare DNS</td>
+<td>$0</td>
+</tr>
+<tr>
+<td>도메인 (가비아)</td>
+<td>~$1.5 (연 $18)</td>
+</tr>
+<tr>
+<td><strong>합계</strong></td>
+<td><strong>~$24.5/월</strong></td>
+</tr>
+<tr>
+<td><strong>예산 상한</strong></td>
+<td><strong>$50/월</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>14. 현재 상태 &amp; 남은 작업</h2>
+<h3>완료됨</h3>
+<ul>
+<li>전체 코드 구현 (47페이지, 19+ API, 77+ 컴포넌트)</li>
+<li>에이전트 시스템 ACTIVE</li>
+<li>일자리 자동 수집 파이프라인</li>
+<li>시드 페르소나 10명</li>
+<li>카페 크롤링 파이프라인</li>
+<li>수익 컴포넌트 (AdSlot, CoupangCPS)</li>
+<li>SEO JSON-LD + sitemap 최적화</li>
+<li><strong>SNS 바이럴 마케팅 실험 시스템</strong> (2026-03-25 구축 완료)<ul>
+<li>DB: SocialPost + SocialExperiment 모델</li>
+<li>플랫폼 API: X (OAuth 1.0a) + Threads (OAuth 2.0) 클라이언트</li>
+<li>게시 에이전트: social-poster (실험 인식 + 홍보 믹스 + 4명 페르소나)</li>
+<li>메트릭 수집: social-metrics (매일 20:00)</li>
+<li>주간 분석: social-reviewer (월 10:00, A/B 비교 + AI 인사이트)</li>
+<li>주간 전략: social-strategy (월 10:15, 8주 로드맵 + AI 실험 설계)</li>
+<li>CEO 주간 리포트 SNS 섹션 추가</li>
+<li>Slack 커맨드: /social, /experiment</li>
+<li>Skills 레지스트리: 검증된 전략 코드화 (승률 기반 가중 선택)</li>
+<li>Threads OAuth 토큰 발급 플로우 (/api/threads/auth → callback)</li>
+</ul>
+</li>
+<li><strong>제로 예산 멀티채널 마케팅 자동화</strong> (2026-03-27 구축 완료)<ul>
+<li>카드뉴스 AI 생성 파이프라인: CafeTrend → AI 슬라이드 → HTML 렌더링 → R2 업로드</li>
+<li>3종 HTML 템플릿 (news-trend, info-topic, community) + 시니어 친화 base.css</li>
+<li>비주얼 포스터: IG 캐러셀 / FB 멀티포토 / Threads 단일 / Band 게시</li>
+<li>플랫폼 클라이언트 추가: Instagram (Graph API v21.0), Facebook (Graph API v21.0), Band (Open API v2.2)</li>
+<li>채널 시딩: 카카오 오픈챗/당근마켓/커뮤니티 맞춤 초안 생성 (AdminQueue 승인)</li>
+<li>지식iN 응답: 타겟 키워드 Q&amp;A 초안 (화/목/토)</li>
+<li>SEO 옵티마이저: 주간 키워드 분석 + 메타데이터 커버리지 체크</li>
+<li>DB: ChannelDraft 모델, CafePost 미디어 필드 (imageUrls, videoUrls), SocialPost 카드뉴스 필드</li>
+<li>토큰 검증 유틸: test-platforms.ts (validate / post-test 모드)</li>
+</ul>
+</li>
+<li><strong>카페 크롤러 미디어 수집</strong> (2026-03-27 구축 완료)<ul>
+<li>CafePost에 이미지/GIF/동영상 URL 수집 필드 추가</li>
+<li>execSync 버퍼 블로킹 해소 (ETIMEDOUT 수정)</li>
+</ul>
+</li>
+<li><strong>AdSense 수익 인프라</strong> (2026-03-27 구축 완료)<ul>
+<li>FeedAd 컴포넌트: 목록 인피드 광고 (auto/horizontal/rectangle)</li>
+<li>MobileStickyAd 컴포넌트: 모바일 스크롤 후 하단 스티키 (세션별 닫기)</li>
+<li>13곳 광고 구좌 배치 완료 (게시글 하단, 목록, 사이드바, 검색, 매거진 등)</li>
+</ul>
+</li>
+<li><strong>SEO + UX 개선</strong> (2026-03-27 구축 완료)<ul>
+<li>Breadcrumbs 컴포넌트 (Schema.org JSON-LD)</li>
+<li>커뮤니티 게시글 동적 OG 이미지 생성</li>
+<li>주요 페이지 로딩 스켈레톤 추가 (글쓰기, 일자리 상세, 매거진 상세)</li>
+<li>로그인 UX 개선 (50-60대 맞춤 맥락 설명 + 안심 문구)</li>
+</ul>
+</li>
+<li><strong>GTM + GA4 애널리틱스 기반</strong> (2026-03-26 구축 완료)<ul>
+<li>GTM 컨테이너 스크립트 (GoogleTagManager.tsx — head + noscript)</li>
+<li>dataLayer 유틸리티 (gtm.ts — 15개 커스텀 이벤트 헬퍼)</li>
+<li>이벤트 트래킹 삽입: page_view, post_create, comment_create, like, share, search, job_view, magazine_view, ad_click, cps_click</li>
+<li>CSP 헤더에 Google Analytics/GTM/AdSense 도메인 추가</li>
+<li>환경변수: NEXT_PUBLIC_GTM_ID, NEXT_PUBLIC_GA4_ID</li>
+</ul>
+</li>
+<li><strong>커뮤니티 활성화 시스템 v3</strong> (2026-03-26 구축 완료)<ul>
+<li>20명 페르소나 (여 14 / 남 6), 매거진 자동생성 (월/수/금), CPS 매칭</li>
+<li>SEO 강화 (OG meta, JSON-LD, sitemap 수정)</li>
+<li>홈페이지 &quot;지금 이 순간&quot; 실시간 활동 피드</li>
+</ul>
+</li>
+<li><strong>커뮤니티 활성화 v4 — 시드봇 개선</strong> (2026-03-28 구축 완료)<ul>
+<li>[Critical 버그 수정] 시드봇 좋아요 시 promotionLevel 승격 누락 → HOT(10+)/HALL_OF_FAME(50+) 자동 승격 추가</li>
+<li>[홈페이지] getEditorsPicks에 HOT fallback 추가 (HALL_OF_FAME 부족 시 HOT 글로 채움)</li>
+<li>[집중 좋아요] 21시 focusedLikeRound — HOT 근접 글(5~9 likes, 48h 이내)에 5명 봇 집중 투입</li>
+<li>[활동 다양화] WEEKLY 게시판 글 추가 (T 은퇴교사, I 책벌레), 크로스보드 댓글 (G·N → HUMOR)</li>
+<li>[글 길이 다양화] 3단계 랜덤 (60<del>120자 / 150</del>300자 / 400~600자)</li>
+<li>[generatePost] boardOverride 파라미터 + WEEKLY 카테고리 매핑 추가</li>
+</ul>
+</li>
+<li><strong>시드봇 페르소나 35명 전면 리뉴얼</strong> (2026-03-29 구축 완료)<ul>
+<li>[핵심] 20명 → 35명 확장. AI스러운 닉네임·말투·내용 차별화 문제 전면 해결</li>
+<li>[캐릭터 시트] persona-data.ts — 페르소나별 성격·말투·습관·금지사항·예시문장 정의 (few-shot 방식)</li>
+<li>[mood 분포] 긍정(12) + 중립(10) + 부정/비판(8) + 특이(5) — 현실적 커뮤니티 분위기 재현</li>
+<li>[신규 페르소나] 부산아지매(경상도 사투리), 세상에나(물가 한탄), 참나진짜(까칠), 걱정인형(불안), 솔직히말해서(팩폭), 혼자잘산다(자조 유머), 어휴답답(한탄), 따져보자(논쟁), 느긋이(충청도 사투리), 그때그시절(회고), 새벽감성(불면증), 하하호호(아재개그), 비교분석왕(분석형), 피곤해요(TMI), 시골아낙네(자급자족)</li>
+<li>[닉네임 개선] 설명적 닉네임(영숙이맘, 은퇴신사) → 자연스러운 온라인 닉네임(하늘바라기, 정호씨)</li>
+<li>[봇 유저] prisma.user.upsert — 닉네임 변경 시 DB 자동 업데이트</li>
+<li>[스케줄 확대] 일일 목표: 게시글 18<del>22 / 댓글 80</del>100 / 좋아요 60<del>80 / 대댓글 25</del>35</li>
+</ul>
+</li>
+<li><strong>82cook 외부 크롤러</strong> (2026-03-29 구축 완료)<ul>
+<li>[신규] agents/cafe/external-crawler.ts — 82cook 자유게시판(bn=15) 전용 크롤러</li>
+<li>[구조] Playwright headless (차단 없음), 로그인 불필요(공개 게시판)</li>
+<li>[파이프라인] 목록 크롤링 → 글 상세 크롤링 → 블랙리스트 필터 → 품질 점수 → DB 저장</li>
+<li>[용도] 부정/비판 페르소나 콘텐츠 소싱에 최적 (날것의 불만, 고민, 논쟁 등)</li>
+<li>[설정] agents/cafe/config.ts에 EXTERNAL_CONFIGS 추가</li>
+</ul>
+</li>
+<li><strong>광고 시스템 전면 개편</strong> (2026-03-29 구축 완료)<ul>
+<li>[AdSense] <code>slotId=&quot;auto&quot;</code> → 실제 광고 슬롯 ID 4종 적용<ul>
+<li>섹션사이(4387790031): 게시판 인라인, 모바일 스티키</li>
+<li>인피드(3489844591): 홈/베스트/매거진/일자리/검색 피드 사이</li>
+<li>인아티클(4367811991): 게시글/매거진/일자리 상세 본문</li>
+<li>사이드바(2176762926): 데스크탑 사이드바</li>
+</ul>
+</li>
+<li>[AdSenseUnit] layout(in-article) + layoutKey(in-feed) 지원 확장</li>
+<li>[쿠팡 신규] CoupangBanner(다이나믹 배너) + CoupangCategoryBanner(로켓프레시/주방) + CoupangSearchWidget(iframe 검색) + 상품 캐러셀</li>
+<li>[ad-slots.ts] AdSense 4종 + 쿠팡 8종 슬롯 상수 중앙 관리</li>
+<li>[CSP] next.config.js에 ads-partners.coupang.com / image*.coupangcdn.com / coupa.ng 도메인 추가</li>
+<li>[배치맵] 홈(인피드+쿠팡모바일+카테고리배너) / 사이드바(AdSense+쿠팡데스크탑) / 상세(인아티클+검색위젯) / 매거진(상품캐러셀)</li>
+</ul>
+</li>
+</ul>
+<h3>창업자 대기 작업</h3>
+<ul>
+<li><input disabled="" type="checkbox"> 도메인 만기 연장 (2026-04-25)</li>
+<li><input disabled="" type="checkbox"> 커스텀 도메인 연결 (Cloudflare → Vercel)</li>
+<li><input disabled="" type="checkbox"> Slack Workspace + App 설정</li>
+<li><input checked="" disabled="" type="checkbox"> GitHub Actions secrets 설정 (Meta 토큰 완료: FB/IG/Threads)</li>
+<li><input checked="" disabled="" type="checkbox"> Threads OAuth 토큰 발급 완료</li>
+<li><input checked="" disabled="" type="checkbox"> Google AdSense 등록 완료 (13곳 배치)</li>
+<li><input checked="" disabled="" type="checkbox"> 쿠팡 파트너스 가입 완료</li>
+<li><input disabled="" type="checkbox"> Facebook <code>pages_manage_posts</code> 권한 추가 + 토큰 재발급</li>
+<li><input disabled="" type="checkbox"> X (Twitter) 개발자 토큰 발급</li>
+<li><input disabled="" type="checkbox"> Band API 등록 완료 + 토큰 발급</li>
+<li><input disabled="" type="checkbox"> GA4 계정/속성 생성 → 측정 ID 발급</li>
+<li><input disabled="" type="checkbox"> GTM 컨테이너 생성 → 컨테이너 ID 발급</li>
+<li><input disabled="" type="checkbox"> Vercel에 NEXT_PUBLIC_GTM_ID, NEXT_PUBLIC_GA4_ID 환경변수 등록</li>
+<li><input disabled="" type="checkbox"> GTM에서 GA4 구성 태그 + 커스텀 이벤트 태그 설정</li>
+</ul>
+<h3>향후 확장 (Phase 3+)</h3>
+<ul>
+<li>CEO 자동 의사결정 프레임워크</li>
+<li>CDO 퍼널 분석기 (GA4 데이터 연동)</li>
+<li>카카오톡 채널 / YouTube Shorts 확장</li>
+<li>GA4 API → 에이전트 보고서 연동 (Search Console MCP 포함)</li>
+<li>GTM으로 Hotjar/Microsoft Clarity 추가 (코드 수정 불필요)</li>
+<li>카드뉴스 팀 에이전트 토론 구조 (품질 향상, 비용 검토 후)</li>
+<li>시드봇 주간 토론 스타터 (매주 월요일 T가 WEEKLY에 토론 주제 게시)</li>
+<li>시드봇 크로스 레퍼런스 댓글 (20% 확률로 관련 글 언급)</li>
+<li>시드봇 요일별 활동 밀도 조절 (주말 1.3배, 월요일 오전 0.7배)</li>
+</ul>
+<hr>
+<h2>15. KPI 프레임워크 — CEO와 창업자의 공동 경영 언어</h2>
+<h3>15.1 왜 KPI가 성장 루프보다 먼저인가</h3>
+<pre><code>성장 루프의 DATA 단계가 &quot;무엇을 수집할 것인가?&quot;를 결정하려면
+먼저 &quot;우리가 지금 가장 중요하게 보는 숫자가 무엇인가?&quot;가 정의되어야 한다.
+
+KPI 없는 성장 루프:
+  DATA(뭘 봐야 하지?) → PROBLEM(뭐가 문제지?) → HYPOTHESIS(감으로 추측)
+  → 결국 방향 없이 돌아감
+
+KPI 있는 성장 루프:
+  KPI(DAU 500 목표인데 현재 120) → DATA(DAU 관련 지표 심층 수집)
+  → PROBLEM(가입 후 7일 리텐션 15%가 병목) → HYPOTHESIS(온보딩 개선하면 25%로)
+  → 방향이 명확함
+
+결론: KPI는 성장 루프의 나침반이다. 나침반 없이 항해하지 않는다.
+</code></pre>
+<h3>15.2 KPI 트리 — 우나어 버전</h3>
+<pre><code>                    ┌─────────────────────┐
+                    │  ⭐ North Star Metric │
+                    │  주간 활성 사용자(WAU) │
+                    │  (커뮤니티+일자리 활동) │
+                    └──────────┬──────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              ▼                ▼                ▼
+     ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+     │  성장 지표     │  │  참여 지표     │  │  수익 지표     │
+     │  (Growth)     │  │  (Engagement) │  │  (Revenue)   │
+     └──────┬───────┘  └──────┬───────┘  └──────┬───────┘
+            │                 │                  │
+     ┌──────┴──────┐   ┌─────┴──────┐   ┌──────┴──────┐
+     │ DAU          │   │ 글/댓글 수  │   │ AdSense RPM │
+     │ 신규 가입     │   │ 체류 시간   │   │ CPS 전환율   │
+     │ SEO 유입     │   │ 좋아요/스크랩│   │ 월 수익      │
+     │ 소셜 유입     │   │ 재방문율    │   │              │
+     └─────────────┘   └────────────┘   └─────────────┘
+</code></pre>
+<h3>15.3 KPI 정의 테이블</h3>
+<table>
+<thead>
+<tr>
+<th>카테고리</th>
+<th>KPI</th>
+<th>정의</th>
+<th>현재 값</th>
+<th>1차 목표</th>
+<th>3개월 목표</th>
+<th>담당 에이전트</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>North Star</strong></td>
+<td>WAU</td>
+<td>주 1회 이상 방문+활동(글/댓글/좋아요)</td>
+<td>측정 전</td>
+<td>50</td>
+<td>300</td>
+<td>CEO (종합)</td>
+</tr>
+<tr>
+<td><strong>성장</strong></td>
+<td>DAU</td>
+<td>일일 방문자 수</td>
+<td>측정 전</td>
+<td>20</td>
+<td>100</td>
+<td>CDO</td>
+</tr>
+<tr>
+<td><strong>성장</strong></td>
+<td>신규 가입/주</td>
+<td>주간 신규 회원</td>
+<td>측정 전</td>
+<td>10</td>
+<td>50</td>
+<td>CDO</td>
+</tr>
+<tr>
+<td><strong>성장</strong></td>
+<td>SEO 유입/일</td>
+<td>검색 유입 수</td>
+<td>측정 전</td>
+<td>10</td>
+<td>50</td>
+<td>CMO</td>
+</tr>
+<tr>
+<td><strong>참여</strong></td>
+<td>게시글/일</td>
+<td>일일 게시글 (SEED 포함)</td>
+<td>~5</td>
+<td>8</td>
+<td>15</td>
+<td>COO</td>
+</tr>
+<tr>
+<td><strong>참여</strong></td>
+<td>댓글/일</td>
+<td>일일 댓글 (SEED 포함)</td>
+<td>~10</td>
+<td>15</td>
+<td>30</td>
+<td>COO</td>
+</tr>
+<tr>
+<td><strong>참여</strong></td>
+<td>UGC 비율</td>
+<td>실제 사용자 콘텐츠 비율</td>
+<td>0%</td>
+<td>10%</td>
+<td>30%</td>
+<td>CDO</td>
+</tr>
+<tr>
+<td><strong>참여</strong></td>
+<td>평균 체류시간</td>
+<td>세션당 체류 시간</td>
+<td>측정 전</td>
+<td>1분</td>
+<td>3분</td>
+<td>CPO</td>
+</tr>
+<tr>
+<td><strong>참여</strong></td>
+<td>7일 리텐션</td>
+<td>가입 후 7일 내 재방문율</td>
+<td>측정 전</td>
+<td>15%</td>
+<td>30%</td>
+<td>CPO</td>
+</tr>
+<tr>
+<td><strong>수익</strong></td>
+<td>월 수익</td>
+<td>AdSense + CPS 합산</td>
+<td>$0</td>
+<td>$10</td>
+<td>$50</td>
+<td>CFO</td>
+</tr>
+<tr>
+<td><strong>수익</strong></td>
+<td>페이지뷰/DAU</td>
+<td>사용자당 페이지 조회 수</td>
+<td>측정 전</td>
+<td>3</td>
+<td>5</td>
+<td>CPO</td>
+</tr>
+<tr>
+<td><strong>안정성</strong></td>
+<td>업타임</td>
+<td>서비스 가용률</td>
+<td>측정 전</td>
+<td>99%</td>
+<td>99.5%</td>
+<td>CTO</td>
+</tr>
+<tr>
+<td><strong>안정성</strong></td>
+<td>에이전트 성공률</td>
+<td>크론 실행 성공/전체</td>
+<td>측정 전</td>
+<td>90%</td>
+<td>95%</td>
+<td>CTO</td>
+</tr>
+</tbody></table>
+<h3>15.4 CEO — 창업자 KPI 커뮤니케이션 구조</h3>
+<pre><code>CEO 에이전트의 핵심 역할은 &quot;KPI 기반 경영 파트너&quot;이다.
+CEO는 단순히 보고만 하는 게 아니라, 창업자와 수시로 대화하면서
+KPI를 함께 설정하고, 조정하고, 그에 따라 다른 에이전트들을 이끈다.
+
+┌──────────────────────────────────────────────────────────────┐
+│                    CEO ↔ 창업자 소통 구조                       │
+│                                                               │
+│  [수시]  창업자 → CEO: KPI 방향 지시                            │
+│         &quot;이번 달은 DAU보다 리텐션에 집중해&quot;                       │
+│         &quot;수익은 아직 신경 쓰지 마, 사용자 확보가 먼저야&quot;            │
+│         CEO: 이해함 → 주간 회의에서 전 에이전트에 방향 전파         │
+│                                                               │
+│  [수시]  CEO → 창업자: KPI 이상 징후 보고                       │
+│         &quot;DAU가 3일 연속 하락 중입니다. 원인 분석하겠습니다&quot;         │
+│         &quot;리텐션이 목표 대비 절반입니다. 회의 소집하겠습니다&quot;          │
+│                                                               │
+│  [Daily] CEO → 창업자: 일일 브리핑 (#일일-브리핑)                │
+│         오늘의 KPI 스냅샷 + 에이전트 활동 요약                    │
+│                                                               │
+│  [Weekly] CEO → 창업자: 주간 리포트 + 회의 결과 공유              │
+│         KPI 변동 추이 + 에이전트 회의 결과 + 다음 주 방향 제안      │
+│         &quot;이번 주 에이전트 회의에서 나온 가설입니다 (Gate 1 대기)&quot;    │
+│                                                               │
+│  [Monthly] CEO ↔ 창업자: KPI 목표 재설정                        │
+│         &quot;1차 목표 달성했습니다. 다음 목표를 설정해주세요&quot;            │
+│         창업자: &quot;다음 달은 UGC 비율 20% + SEO 유입 30/일&quot;        │
+│         CEO: 확인 → 전 에이전트에 신규 목표 전파                   │
+│                                                               │
+└──────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>15.5 CEO 일일 브리핑 — Slack #일일-브리핑 포맷</h3>
+<pre><code>────────────────────────────────────────────
+📊 우나어 일일 브리핑 (2026-03-25 화)
+
+📈 오늘의 KPI
+  DAU: 45 (+5 vs 어제)  ▲
+  신규 가입: 3명
+  게시글: 7건 (UGC 2건, SEED 5건)
+  댓글: 12건 (UGC 4건, SEED 8건)
+  일자리 조회: 89회
+
+⚡ 주목 포인트
+  • SEO 유입 12건 (전주 대비 +40%) — CMO 키워드 최적화 효과
+  • /jobs 바운스율 38% → 35% 개선 중
+
+🤖 에이전트 활동
+  ✅ COO: 일자리 4건 수집 완료
+  ✅ SEED: 게시글 5건, 댓글 8건 생성
+  ✅ CTO: 헬스체크 정상
+  ⚠️ CMO: X API 429 에러 1회 (재시도 성공)
+
+📋 창업자 대기 건
+  • Gate 1 대기: 1건 (모바일 UX 가설 — /approve 또는 /feedback)
+
+/detail — 상세 보기 (→ #ceo-창업자 에서)
+/kpi — KPI 전체 현황 (→ #ceo-창업자 에서)
+────────────────────────────────────────────
+</code></pre>
+<h3>15.6 CEO 주간 KPI 리포트 + 회의 결과 공유</h3>
+<pre><code>────────────────────────────────────────────
+📋 주간 경영 리포트 (3/18 ~ 3/24)
+
+━━ KPI 변동 ━━
+  WAU: 120 → 135 (+12.5%) 🟢
+  DAU 평균: 38 → 45 (+18%) 🟢
+  신규 가입: 22명 (목표 10 달성) 🟢
+  UGC 비율: 8% → 12% (+4%p) 🟢
+  리텐션 7일: 14% (목표 15% 미달) 🟡
+  월 수익: $4.2 (목표 $10 대비 42%) 🟡
+
+━━ 이번 주 에이전트 회의 결과 ━━
+  [문제 정의] 7일 리텐션 14%가 가장 큰 병목
+  [가설 초안] 가입 후 24시간 내 환영 댓글 + 추천 게시글 알림 시
+             리텐션 20%로 개선 가능
+  [참여 에이전트] CEO, CPO, COO, CDO
+
+  ⛔ Gate 1 대기: 위 가설에 대한 승인/피드백 필요
+  /approve — 이 방향으로 실험 설계
+  /feedback — 수정 의견
+  /reject — 기각
+
+━━ 다음 주 중점 ━━
+  창업자 방향에 따라 결정 (Gate 1 응답 대기 중)
+
+━━ 비용 현황 ━━
+  이번 달 누적: $18.5 / $50 (37%)
+────────────────────────────────────────────
+</code></pre>
+<h3>15.7 KPI 설정/변경 프로세스</h3>
+<pre><code>KPI는 창업자가 설정하고, CEO가 운영한다.
+
+[KPI 신규 설정]
+  1. 창업자 → CEO: &quot;이번 달 KPI는 DAU 50, UGC 비율 15%에 집중해&quot;
+  2. CEO: KPI 테이블 업데이트 + 각 에이전트에 관련 목표 전파
+     CEO → CDO: &quot;DAU 50 모니터링 강화, 일일 리포트에 DAU 트렌드 포함&quot;
+     CEO → COO: &quot;UGC 촉진 위한 SEED 전략 조정 (대화형 콘텐츠 증가)&quot;
+     CEO → CMO: &quot;DAU 기여 채널별 분석 요청&quot;
+  3. 각 에이전트: 다음 실행 시 반영
+
+[KPI 목표 변경]
+  창업자: &quot;DAU는 달성됐으니 이제 리텐션 30%에 집중해&quot;
+  CEO: 확인 → 리텐션 관련 데이터 수집 강화 지시
+  → 다음 주간 회의에서 리텐션 중심 문제 정의 시작
+
+[KPI 추가]
+  창업자: &quot;네이버 카페 유입도 트래킹하고 싶어&quot;
+  CEO: 확인 → CDO에게 카페 유입 메트릭 수집 요청
+  → KPI 테이블에 추가 → 다음 리포트부터 포함
+
+[KPI 폐기]
+  창업자: &quot;에이전트 성공률은 안 봐도 될 것 같아&quot;
+  CEO: 확인 → CTO에게 리포트에서 제외 통보
+  → KPI 테이블에서 비활성화 (삭제 아닌 비활성화 — 나중에 다시 볼 수 있으므로)
+</code></pre>
+<h3>15.8 KPI → 성장 루프 연결 — 전체 흐름</h3>
+<pre><code>┌──────────────────────────────────────────────────────────────────────┐
+│                                                                       │
+│   [창업자]                                                            │
+│   &quot;이번 달 KPI: DAU 50, 리텐션 20%, UGC 15%&quot;                         │
+│       │                                                               │
+│       ▼                                                               │
+│   [CEO] KPI 수신 → 전 에이전트에 방향 전파                              │
+│       │                                                               │
+│       ▼                                                               │
+│   ┌─────────── 성장 루프 시작 ───────────┐                            │
+│   │                                       │                            │
+│   │  DATA: CDO가 KPI 기준으로 데이터 수집   │ ← KPI가 수집 범위 결정    │
+│   │  &quot;DAU 45인데 목표 50. 격차 5.&quot;          │                            │
+│   │       ↓                                │                            │
+│   │  PROBLEM: CEO가 KPI 격차에서 문제 도출  │ ← KPI가 문제의 기준       │
+│   │  &quot;신규 유입은 충분한데 재방문이 약하다&quot;   │                            │
+│   │       ↓                                │                            │
+│   │  HYPOTHESIS: CEO+에이전트 가설 수립     │ ← KPI 목표가 성공 기준    │
+│   │  &quot;환영 시스템 구축 시 리텐션 20% 달성&quot;   │                            │
+│   │       ↓                                │                            │
+│   │  ⛔ Gate 1: 창업자 승인               │                            │
+│   │       ↓ (승인)                         │                            │
+│   │  EXPERIMENT → EXECUTE → Gate 2 → RETRO │                            │
+│   │       ↓                                │                            │
+│   │  RETRO 결과가 KPI에 반영               │ ← 실험 결과 → KPI 변동    │
+│   │  &quot;리텐션 14% → 19% (목표 20% 근접)&quot;    │                            │
+│   │       ↓                                │                            │
+│   │  CEO → 창업자: 결과 보고 + 다음 제안    │                            │
+│   │                                       │                            │
+│   └───────── 다음 사이클로 ─────────────┘                             │
+│                                                                       │
+│   [창업자]                                                            │
+│   &quot;리텐션 거의 왔네. 이제 UGC에 집중하자&quot; → KPI 우선순위 변경            │
+│       │                                                               │
+│       ▼                                                               │
+│   다음 성장 루프에서 UGC 중심으로 DATA 수집 시작                        │
+│                                                                       │
+└──────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>15.9 CEO의 에이전트 리딩 구조</h3>
+<pre><code>CEO는 단순 보고자가 아니라 &quot;에이전트 조직의 리더&quot;이다.
+
+[CEO의 책임]
+  1. 창업자로부터 KPI 방향을 받아 전 에이전트에 전파
+  2. Daily/Weekly로 각 에이전트와 소통하며 KPI 진척 관리
+  3. KPI 이상 징후 발견 시 즉시 창업자에게 보고
+  4. 주간 회의를 소집하여 에이전트 간 시너지 창출
+  5. 회의 결과를 창업자에게 공유하고 Gate 1 승인 요청
+  6. 창업자 피드백을 다시 에이전트에 전달하여 가설 수정
+
+[CEO의 일일 루틴]
+  09:00 — Morning Cycle
+    • 전일 KPI 확인 (CDO 데이터)
+    • 에이전트 BotLog + AgentMessage 확인
+    • 일일 브리핑 작성 → #일일-브리핑 채널 전송
+    • UNREAD 에이전트 메시지 처리 (1:1 협의)
+
+[CEO의 주간 루틴]
+  월요일 09:00 — Weekly Meeting
+    • 주간 KPI 리포트 작성
+    • 에이전트 회의 소집 (전원 참석)
+    • 문제 정의 + 가설 도출
+    • 회의 결과 + 가설을 창업자에게 전달 (Gate 1)
+    • 창업자 피드백 수신 대기
+
+[CEO의 월간 루틴]
+  월초 — Monthly Review
+    • 월간 KPI 달성률 정리
+    • 이번 달 실험 회고 종합
+    • 창업자와 다음 달 KPI 목표 논의
+    • 새 KPI 목표 확정 → 전 에이전트 전파
+
+[에이전트별 CEO 소통 패턴]
+  CEO ↔ CDO: &quot;이 KPI 데이터 좀 더 깊이 봐줘&quot; (수시)
+  CEO ↔ CTO: &quot;서비스 안정성 이슈 있어?&quot; (매일)
+  CEO ↔ CMO: &quot;이번 주 SEO 성과 어때?&quot; (주간)
+  CEO ↔ CPO: &quot;UX 개선 실험 결과 나왔어?&quot; (주간)
+  CEO ↔ CFO: &quot;이번 달 비용 어디까지 갔어?&quot; (주간)
+  CEO ↔ COO: &quot;일자리 수집 정상? UGC 촉진 아이디어?&quot; (주간)
+</code></pre>
+<h3>15.10 KPI 기반 의사결정 매트릭스</h3>
+<pre><code>CEO가 KPI 변동을 보고 자동으로 판단하는 기준:
+
+[즉시 행동 (자동)]
+  KPI 20%+ 하락 2일 연속 → 긴급 회의 소집 + 창업자 즉시 알림
+  에이전트 실패율 30%+ → CTO 긴급 점검 요청
+  비용 $40 돌파 → 전 에이전트 활동 빈도 축소 검토
+
+[주간 회의 의제]
+  KPI 목표 대비 미달 항목 → 원인 분석 + 가설 수립
+  KPI 목표 초과 달성 → 성공 요인 분석 + 목표 상향 검토
+  새로운 KPI 요청 (창업자) → 수집 방법 설계
+
+[월간 리뷰 의제]
+  KPI 전체 달성률 → 목표 현실성 재평가
+  KPI 항목 추가/폐기 → 사업 방향 변화 반영
+  에이전트별 KPI 기여도 → 리소스 재배분
+
+[CEO가 혼자 결정하지 않는 것]
+  ⛔ KPI 목표 설정/변경 → 반드시 창업자 결정
+  ⛔ 실험 시작 → 반드시 Gate 1 승인
+  ⛔ 실험 정식 적용 → 반드시 창업자 판단
+  ⛔ 비용 구조 변경 → 반드시 창업자 승인
+</code></pre>
+<h3>15.11 구현에 필요한 것</h3>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>현재</th>
+<th>필요한 것</th>
+<th>우선순위</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>KPI 테이블 (DB)</td>
+<td>EventLog만 존재</td>
+<td>KpiTarget 모델 (목표+실적+기간)</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>CEO 일일 브리핑</td>
+<td>Morning Cycle에 없음</td>
+<td>CEO morning-cycle에 KPI 스냅샷 + Slack #일일-브리핑 발송</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>CEO 주간 리포트</td>
+<td>없음</td>
+<td>CEO weekly-report.ts 신규</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>KPI 대시보드 (어드민)</td>
+<td>없음</td>
+<td>/admin/kpi 페이지</td>
+<td>P2</td>
+</tr>
+<tr>
+<td>KPI 히스토리</td>
+<td>없음</td>
+<td>KpiSnapshot 모델 (일별 스냅샷)</td>
+<td>P2</td>
+</tr>
+<tr>
+<td>월간 KPI 리뷰</td>
+<td>없음</td>
+<td>CEO monthly-review.ts</td>
+<td>P2</td>
+</tr>
+</tbody></table>
+<pre><code>KpiTarget {
+  id          String
+  name        String    // &quot;DAU&quot;, &quot;WAU&quot;, &quot;7일 리텐션&quot; 등
+  category    String    // &quot;growth&quot; | &quot;engagement&quot; | &quot;revenue&quot; | &quot;stability&quot;
+  current     Float     // 현재 값
+  target      Float     // 목표 값
+  period      String    // &quot;2026-03&quot; (월 단위)
+  unit        String    // &quot;명&quot;, &quot;%&quot;, &quot;$&quot; 등
+  isActive    Boolean   // 활성/비활성
+  owner       String    // 담당 에이전트 &quot;CDO&quot;, &quot;CMO&quot; 등
+  updatedAt   DateTime
+}
+
+KpiSnapshot {
+  id          String
+  kpiName     String
+  value       Float
+  date        DateTime  // 스냅샷 일자
+  note        String?   // &quot;실험 X 적용 후 변동&quot;
+}
+</code></pre>
+<hr>
+<h2>16. 성장 루프 — Data-Driven Growth Cycle</h2>
+<h3>16.1 목표 프레임워크</h3>
+<p>서비스 성장의 핵심은 <strong>반복 가능한 학습 루프</strong>다. 감이 아니라 데이터로 의사결정하고, 실험으로 검증하고, 회고로 학습한다.</p>
+<p><strong>절대 원칙: 에이전트는 독단적으로 실행하지 않는다. 창업자가 루프 안에 있다.</strong></p>
+<pre><code>  ┌─────────────────────────────────────────────────────────────────────┐
+  │                       GROWTH LOOP (v2)                              │
+  │                                                                     │
+  │   ┌────────┐   ┌────────┐   ┌──────────┐   ┌──────────────────┐  │
+  │   │ DATA   │──▶│PROBLEM │──▶│HYPOTHESIS│──▶│ 창업자 승인/피드백 │  │
+  │   │ 수집   │   │ 정의   │   │ 수립     │   │ (Gate 1)         │  │
+  │   └────────┘   └────────┘   └──────────┘   └────────┬─────────┘  │
+  │       ▲                                              │             │
+  │       │                                    ┌─────────┴─────────┐  │
+  │       │                                    │ 승인    │ 피드백   │  │
+  │       │                                    │  ▼      │  ▼      │  │
+  │       │                                    │실험설계 │가설 재작성│  │
+  │       │                                    └────┬────┴─────────┘  │
+  │       │                                         │                  │
+  │       │                                         ▼                  │
+  │   ┌────────┐   ┌────────┐   ┌──────────┐   ┌──────────┐         │
+  │   │ RETRO  │◀──│사용자   │◀──│EXECUTE   │◀──│EXPERIMENT│         │
+  │   │ 회고   │   │피드백   │   │ 실행     │   │ 설계     │         │
+  │   │        │   │(Gate 2) │   │          │   │          │         │
+  │   └───┬────┘   └────────┘   └──────────┘   └──────────┘         │
+  │       │                                                            │
+  │       └──── 학습 → 다음 사이클 ─────────────────────────▶ DATA   │
+  │                                                                     │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  Gate 1: 창업자 승인 — 에이전트가 짠 문제정의/가설을 창업자가 검토
+  Gate 2: 사용자 피드백 — 실행 결과에 대한 실제 사용자 반응 수집
+</code></pre>
+<h3>16.2 두 개의 Gate — 왜 필요한가</h3>
+<h4>Gate 1: 창업자 승인/피드백 (HYPOTHESIS → EXPERIMENT 사이)</h4>
+<pre><code>에이전트가 하는 것:
+  - DATA 수집 (자동)
+  - PROBLEM 정의 (AI 분석)
+  - HYPOTHESIS 수립 (AI 제안)
+
+여기서 멈춘다. ⛔
+
+창업자가 하는 것:
+  - 문제 정의가 맞는지 판단 (&quot;이건 문제가 아니라 자연스러운 변동이다&quot;)
+  - 가설이 타당한지 판단 (&quot;이 가설보다 이쪽이 더 본질적이다&quot;)
+  - 인사이트 추가 (&quot;실제로 사용자들이 이런 불만을 자주 하더라&quot;)
+  - 우선순위 조정 (&quot;지금 이건 중요하지 않다, 이걸 먼저 해라&quot;)
+  - 피드백 → 에이전트가 가설 수정 → 다시 창업자 확인 (반복 가능)
+
+승인 후에만 EXPERIMENT 단계로 진행.
+
+이유:
+  AI는 데이터에서 패턴을 찾는 건 잘하지만,
+  &quot;이게 지금 우리 상황에서 진짜 중요한 문제인가?&quot;는 창업자만 판단할 수 있다.
+  에이전트는 제안하고, 창업자는 결정한다.
+</code></pre>
+<h4>Gate 2: 사용자 피드백 (EXECUTE → RETRO 사이)</h4>
+<pre><code>실험 실행 후, 회고 전에 실제 사용자 반응을 수집:
+
+  - 정량: KPI 변동 (DAU, 체류시간, CTR, 바운스율)
+  - 정성: 댓글 반응, 커뮤니티 분위기 변화, 이탈 패턴
+  - 간접: 검색 유입 키워드 변화, 재방문율
+
+이유:
+  숫자만으로 판단하면 &quot;지표 올리기 게임&quot;이 된다.
+  실제 사용자(50·60대)가 어떻게 느끼는지가 핵심.
+  사용자 피드백 없는 회고는 자기만족에 불과하다.
+</code></pre>
+<h3>16.3 각 단계별 상세 프로세스</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>주 담당</th>
+<th>보조</th>
+<th>산출물</th>
+<th>창업자 역할</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>DATA (수집)</strong></td>
+<td>CDO</td>
+<td>CTO, CFO</td>
+<td>KPI 대시보드, EventLog, BotLog</td>
+<td>없음 (자동)</td>
+</tr>
+<tr>
+<td><strong>PROBLEM (정의)</strong></td>
+<td>CEO</td>
+<td>CDO, CPO</td>
+<td>문제 정의서</td>
+<td>없음 (자동)</td>
+</tr>
+<tr>
+<td><strong>HYPOTHESIS (가설)</strong></td>
+<td>CEO + CMO + CPO</td>
+<td>CDO</td>
+<td>가설 초안</td>
+<td>없음 (자동)</td>
+</tr>
+<tr>
+<td><strong>Gate 1 (승인)</strong></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><strong>검토 + 피드백 + 승인</strong></td>
+</tr>
+<tr>
+<td><strong>EXPERIMENT (설계)</strong></td>
+<td>CPO</td>
+<td>CTO</td>
+<td>실험 계획서</td>
+<td>없음 (승인 후 자동)</td>
+</tr>
+<tr>
+<td><strong>EXECUTE (실행)</strong></td>
+<td>COO + CTO</td>
+<td>CMO</td>
+<td>코드 배포, 콘텐츠 변경</td>
+<td>없음 (자동)</td>
+</tr>
+<tr>
+<td><strong>Gate 2 (피드백)</strong></td>
+<td>CDO</td>
+<td>CPO</td>
+<td>사용자 반응 데이터</td>
+<td><strong>결과 확인</strong></td>
+</tr>
+<tr>
+<td><strong>RETRO (회고)</strong></td>
+<td>CEO</td>
+<td>전체</td>
+<td>결과 리포트 + 학습 + 다음 액션</td>
+<td><strong>최종 판단</strong></td>
+</tr>
+</tbody></table>
+<h3>16.4 Gate 1 실제 흐름 — Slack #ceo-창업자 기반</h3>
+<pre><code>[에이전트 작업 — 자동]
+CEO: 주간 회의에서 문제 정의 + 가설 수립
+  │
+  ▼
+[Slack #ceo-창업자로 창업자에게 전달]
+────────────────────────────────────────────
+📋 주간 분석 결과 (승인 필요)
+
+🔴 문제 정의:
+  일자리 페이지 PV가 전주 대비 -25%.
+  모바일 사용자의 평균 체류시간 12초 (목표: 30초).
+
+💡 가설 (CEO + CPO 합의):
+  &quot;모바일에서 퀵태그 필터가 스크롤 아래에 숨어 있어
+   사용자가 원하는 일자리를 찾지 못하고 이탈한다.
+   퀵태그를 상단 고정하면 체류시간 30초 달성 가능.&quot;
+
+📊 근거 데이터:
+  - 모바일 바운스율 40% (데스크탑 22%)
+  - 퀵태그 클릭률: 데스크탑 35%, 모바일 8%
+  - 필터 사용 후 체류시간: 45초 (미사용: 12초)
+
+👉 승인하시겠습니까?
+  /approve — 이 가설로 실험 설계 진행
+  /feedback — 피드백 입력 (가설 수정)
+  /reject — 기각 (이유 입력)
+────────────────────────────────────────────
+
+[창업자 응답 시나리오]
+
+시나리오 A — 승인:
+  창업자: /approve
+  → EXPERIMENT 단계로 자동 진행
+
+시나리오 B — 피드백:
+  창업자: /feedback 퀵태그보다 검색 기능이 없는게 더 문제다.
+          내가 실제로 써보니까 &quot;서울 경비&quot; 이런 검색을 하고 싶은데
+          검색이 안됨. 이쪽이 더 본질적인 문제 아닌가?
+  → CEO가 피드백 반영하여 가설 재작성
+  → 다시 #ceo-창업자로 수정 가설 전달
+  → 창업자 재검토 (반복 가능)
+
+시나리오 C — 기각:
+  창업자: /reject 지금 이건 우선순위가 아님. 이번 주는 커뮤니티 활성화에 집중.
+  → CEO가 기각 사유 기록
+  → 창업자가 제시한 방향으로 새 PROBLEM 정의 시작
+</code></pre>
+<h3>16.5 Gate 2 실제 흐름 — 사용자 피드백 수집</h3>
+<pre><code>[실험 실행 완료 후 — 최소 3일 경과]
+
+CDO가 자동 수집:
+  ┌─────────────────────────────────────────┐
+  │ 정량 데이터 (자동)                        │
+  │  - 목표 지표 변동: 체류시간 12초 → ?초    │
+  │  - 바운스율 변동: 40% → ?%               │
+  │  - 퀵태그 클릭률 변동: 8% → ?%           │
+  └─────────────────────────────────────────┘
+  ┌─────────────────────────────────────────┐
+  │ 정성 데이터 (반자동)                      │
+  │  - 일자리 게시글 댓글 감정 분석            │
+  │  - 커뮤니티 내 일자리 관련 게시글 변화     │
+  │  - 검색 유입 키워드 변화                  │
+  └─────────────────────────────────────────┘
+  ┌─────────────────────────────────────────┐
+  │ 간접 시그널 (수동 — 창업자 관찰)           │
+  │  - 실제 사용자 반응 (커뮤니티 글)          │
+  │  - 창업자 본인의 사용 경험                 │
+  │  - 주변 시니어 피드백                     │
+  └─────────────────────────────────────────┘
+
+→ 이 데이터가 모여야 RETRO(회고) 진행
+→ 숫자만으로 &quot;성공/실패&quot; 판단하지 않음
+→ 창업자의 정성적 판단이 포함됨
+</code></pre>
+<h3>16.6 현재 문제점 — 루프가 끊겨 있다</h3>
+<pre><code>현재 실제 흐름:
+
+CDO 데이터 수집 ──▶ BotLog에 저장 ──▶ 끝 ❌
+CEO 모닝사이클 ──▶ &quot;이슈 3건 발견&quot; ──▶ Slack 알림 ──▶ 창업자가 읽음 ──▶ 끝 ❌
+CMO 트렌드분석 ──▶ &quot;이번주 인기: 건강&quot; ──▶ 로그 저장 ──▶ 끝 ❌
+CPO UX분석 ──▶ &quot;바운스율 높음&quot; ──▶ 로그 저장 ──▶ 끝 ❌
+
+문제:
+1. DATA → PROBLEM 전환 없음: 데이터는 쌓이지만 &quot;문제&quot;로 정의되지 않음
+2. PROBLEM → HYPOTHESIS 없음: 문제를 발견해도 가설을 세우지 않음
+3. 창업자 Gate 없음: 에이전트가 혼자 판단하거나, 아예 판단을 안 함
+4. HYPOTHESIS → EXPERIMENT 없음: 실험 설계 프로세스가 없음
+5. EXECUTE → 사용자 피드백 수집 없음: 실행 후 반응을 측정하지 않음
+6. RETRO 없음: 학습이 축적되지 않음
+7. 에이전트 간 데이터 전달 없음: 각자 DB에 쓰고 끝
+</code></pre>
+<h3>16.7 루프를 닫기 위해 필요한 것</h3>
+<h4>A. 에이전트 간 메시지 버스</h4>
+<pre><code>현재: Agent → DB(BotLog) → 끝
+목표: Agent → AgentMessage 테이블 → 다른 Agent가 다음 실행 시 읽음
+
+AgentMessage {
+  id          String
+  fromAgent   String    // &quot;CDO&quot;
+  toAgent     String    // &quot;CEO&quot;  (또는 &quot;ALL&quot; 또는 &quot;FOUNDER&quot;)
+  type        String    // &quot;FINDING&quot; | &quot;QUESTION&quot; | &quot;PROPOSAL&quot; | &quot;DECISION&quot; | &quot;FOUNDER_FEEDBACK&quot;
+  subject     String    // &quot;DAU 전일 대비 15% 하락&quot;
+  body        Json      // 상세 데이터
+  priority    String    // &quot;CRITICAL&quot; | &quot;HIGH&quot; | &quot;NORMAL&quot;
+  status      String    // &quot;UNREAD&quot; | &quot;READ&quot; | &quot;ACTED_ON&quot;
+  meetingId   String?   // 어떤 회의에서 생성되었는가
+  createdAt   DateTime
+}
+
+핵심: toAgent에 &quot;FOUNDER&quot;가 있음.
+      창업자 피드백도 AgentMessage로 기록되어 에이전트가 학습함.
+</code></pre>
+<h4>B. 실험(Experiment) 관리 — 창업자 Gate 포함</h4>
+<pre><code>Experiment {
+  id              String
+  title           String    // &quot;홈 히어로 CTA 문구 변경&quot;
+  hypothesis      String    // &quot;CTA를 &#39;일자리 보기&#39;→&#39;내 일자리 찾기&#39;로 변경하면 CTR 20% 증가&quot;
+  proposedBy      String    // &quot;CPO&quot;
+
+  // Gate 1: 창업자 승인
+  founderStatus   String    // PENDING → APPROVED → FEEDBACK → REJECTED
+  founderFeedback String?   // 창업자 피드백 내용
+  founderApprovedAt DateTime? // 승인 시각
+  revisionCount   Int       // 피드백 후 수정 횟수 (가설이 몇 번 다듬어졌는가)
+
+  status          String    // DRAFT → FOUNDER_REVIEW → APPROVED → RUNNING → MEASURING → COMPLETED
+  startDate       DateTime?
+  endDate         DateTime?
+  successMetric   String    // &quot;jobs_page_ctr&quot;
+  successCriteria String    // &quot;&gt;= 20% uplift&quot;
+  variants        Json      // { A: &quot;현재&quot;, B: &quot;변경안&quot; }
+
+  // Gate 2: 사용자 피드백
+  quantResult     Json?     // 정량 데이터 { metric: value }
+  qualResult      Json?     // 정성 데이터 { comments: [...], sentiment: &quot;positive&quot; }
+  founderJudgment String?   // 창업자 최종 판단 (&quot;숫자는 좋지만 UX가 어색함&quot;)
+
+  result          Json?     // 종합 결과
+  learnings       String?   // 회고에서 도출된 학습
+  nextActions     String[]  // 다음 실험 또는 정식 적용
+}
+
+상태 흐름:
+  DRAFT ──▶ FOUNDER_REVIEW ──▶ APPROVED ──▶ RUNNING ──▶ MEASURING ──▶ COMPLETED
+                │                                           │
+                ▼ (피드백)                                   ▼ (사용자 피드백 수집)
+              DRAFT (수정 후 재제출)                      RETRO 진행
+                │
+                ▼ (기각)
+              REJECTED (사유 기록)
+</code></pre>
+<h4>C. 피드백 반복 루프 (가설 다듬기)</h4>
+<pre><code>에이전트와 창업자 간 가설 디벨롭 프로세스:
+
+Round 1:
+  CEO 제안: &quot;모바일 퀵태그 상단 고정하면 체류시간 증가&quot;
+  창업자: &quot;퀵태그보다 검색이 더 문제다&quot;
+
+Round 2:
+  CEO 수정: &quot;모바일 일자리 검색 기능 추가하면 체류시간 2배 증가&quot;
+  창업자: &quot;검색은 좋은데, 시니어가 검색어를 잘 못 칠 수 있다.
+           자동완성이나 추천 검색어가 같이 있어야 한다&quot;
+
+Round 3:
+  CEO 최종: &quot;모바일 일자리 검색 + 추천 검색어 5개 노출 시
+            체류시간 2배 + 검색 사용률 30% 달성&quot;
+  창업자: /approve
+
+→ 이 과정이 Slack #ceo-창업자에서 자연스럽게 이루어짐
+→ 각 Round의 피드백이 AgentMessage로 기록됨
+→ revisionCount: 3 (가설이 3번 다듬어짐)
+→ 이 학습은 다음 가설 수립 시 참고됨
+  (&quot;창업자는 UX 관점에서 시니어 특성을 반영하길 원함&quot;)
+</code></pre>
+<h4>D. 회고(Retrospective) 프로세스</h4>
+<pre><code>매주 월요일 09:00 — CEO 주간 회고 사이클:
+
+1. CDO: 지난주 KPI 변동 요약 → CEO에게 전달
+2. CDO: 진행 중 실험의 Gate 2 데이터 (사용자 피드백) 수집
+3. CEO: KPI + 실험 결과 + 사용자 피드백 종합 → 회고 리포트 작성
+4. CEO → Slack #주간-리포트: 창업자에게 회고 리포트 발송
+   - &quot;이번 실험 결과: [정량] + [정성]&quot;
+   - &quot;학습: [무엇을 배웠는가]&quot;
+   - &quot;다음 제안: [새 문제 정의 + 새 가설]&quot; ← 다시 Gate 1로
+5. 창업자 확인 + 다음 사이클 방향 결정
+6. CEO → 전체 에이전트: &quot;이번 주 최우선 과제: [X]&quot;
+</code></pre>
+<hr>
+<h2>17. QA &amp; 배포 안정성 시스템</h2>
+<h3>17.1 현재 문제점</h3>
+<pre><code>현재 배포 흐름:
+
+코드 변경 → git push → Vercel 자동 배포 → 프로덕션 즉시 반영
+
+문제점:
+❌ QA 환경 없음 — 프로덕션에서 바로 테스트
+❌ 스테이징 없음 — 변경사항 사전 검증 불가
+❌ 스모크 테스트 없음 — 배포 후 핵심 기능 동작 확인 없음
+❌ 롤백 전략 없음 — 문제 발생 시 수동 revert만 가능
+❌ 에이전트 변경 검증 없음 — 에이전트 프롬프트 변경이 품질에 미치는 영향 미측정
+</code></pre>
+<h3>17.2 목표 배포 파이프라인</h3>
+<pre><code>┌──────────────────────────────────────────────────────────────────┐
+│                     배포 파이프라인 (목표)                          │
+│                                                                   │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐     │
+│  │  개발     │──▶│  PR 검증  │──▶│ Preview  │──▶│ 프로덕션  │    │
+│  │ (로컬)   │   │ (CI)     │   │ (QA)     │   │ (배포)    │     │
+│  └──────────┘   └──────────┘   └──────────┘   └──────────┘     │
+│                                                                   │
+│  Phase 1         Phase 2         Phase 3        Phase 4          │
+│  코드 작성        자동 검증        수동 확인       프로덕션 배포     │
+│                                                                   │
+└──────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>17.3 각 Phase 상세</h3>
+<h4>Phase 1: 개발 (로컬)</h4>
+<table>
+<thead>
+<tr>
+<th>검증 항목</th>
+<th>도구</th>
+<th>자동화</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>TypeScript 타입 체크</td>
+<td><code>tsc --noEmit</code></td>
+<td>Husky pre-commit</td>
+</tr>
+<tr>
+<td>ESLint</td>
+<td><code>eslint .</code></td>
+<td>Husky pre-commit</td>
+</tr>
+<tr>
+<td>유닛 테스트</td>
+<td><code>vitest</code></td>
+<td>수동 (→ pre-commit 추가 필요)</td>
+</tr>
+<tr>
+<td>시크릿 스캐닝</td>
+<td><code>secretlint</code></td>
+<td>Husky pre-commit</td>
+</tr>
+</tbody></table>
+<h4>Phase 2: PR 검증 (CI — 현재 구축됨)</h4>
+<table>
+<thead>
+<tr>
+<th>검증 항목</th>
+<th>워크플로우</th>
+<th>상태</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Lint + Typecheck + Build</td>
+<td><code>ci.yml</code></td>
+<td>✅ 구축됨</td>
+</tr>
+<tr>
+<td>Lighthouse 접근성</td>
+<td><code>lighthouse.yml</code></td>
+<td>✅ 구축됨</td>
+</tr>
+<tr>
+<td>E2E 테스트</td>
+<td>Playwright</td>
+<td>⚠️ 테스트 존재, CI 미연동</td>
+</tr>
+<tr>
+<td>접근성 테스트</td>
+<td>axe-core</td>
+<td>⚠️ 테스트 존재, CI 미연동</td>
+</tr>
+</tbody></table>
+<h4>Phase 3: Preview/QA (현재 빠져 있음 ❌)</h4>
+<pre><code>목표 구조:
+
+main 브랜치  ──▶  프로덕션 (age-doesnt-matter.com)
+PR 브랜치    ──▶  Preview URL (Vercel 자동 생성, 이미 가능)
+                  ↑
+                  이 URL에서 수동 QA 수행
+
+QA 체크리스트 (PR마다):
+□ 모바일 (375px) 레이아웃 깨짐 없음
+□ 터치 타겟 52px 이상
+□ 핵심 플로우 동작 (로그인 → 글쓰기 → 댓글)
+□ 일자리 상세 페이지 렌더링
+□ 에러 페이지 정상 작동
+</code></pre>
+<p><strong>Vercel Preview 활용 전략:</strong></p>
+<ul>
+<li>Vercel Hobby Plan은 모든 PR에 Preview URL 자동 생성</li>
+<li>별도 스테이징 서버 불필요 (비용 $0)</li>
+<li>PR Description에 Preview URL + QA 체크리스트 자동 삽입 (GitHub Actions)</li>
+</ul>
+<h4>Phase 4: 프로덕션 배포 후 검증</h4>
+<pre><code>배포 완료 → CTO deploy-verifier 자동 실행 (구축 필요):
+
+1. 헬스체크: /api/health 200 응답 확인
+2. 핵심 페이지 로드: /, /jobs, /magazine, /community/stories
+3. DB 연결: 게시글 목록 API 응답 확인
+4. 응답 속도: 각 페이지 &lt; 3초
+5. 결과 → Slack #알림-시스템 알림
+
+실패 시:
+→ Vercel 이전 배포로 즉시 롤백 (Vercel 대시보드에서 1클릭)
+→ CTO → CEO 긴급 알림
+</code></pre>
+<h3>17.4 에이전트 QA (프롬프트 변경 검증)</h3>
+<pre><code>에이전트 프롬프트/로직 변경 시 QA 프로세스:
+
+1. 변경 전 현재 에이전트 출력 3건 샘플 저장
+2. 변경 적용
+3. 동일 입력으로 신규 출력 3건 생성
+4. 비교 검토:
+   - 품질이 개선되었는가?
+   - 헌법(constitution) 위반은 없는가?
+   - 비용이 증가하지 않았는가?
+5. 창업자 승인 → 프로덕션 적용
+
+파일: agents/core/prompt-qa.ts (구축 필요)
+</code></pre>
+<h3>17.5 현재 vs 목표 비교</h3>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>현재</th>
+<th>목표</th>
+<th>우선순위</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>tsc + ESLint (로컬)</td>
+<td>✅ Husky</td>
+<td>✅ 유지</td>
+<td>-</td>
+</tr>
+<tr>
+<td>CI 빌드 검증</td>
+<td>✅ ci.yml</td>
+<td>✅ 유지</td>
+<td>-</td>
+</tr>
+<tr>
+<td>E2E in CI</td>
+<td>❌ 미연동</td>
+<td>Playwright CI</td>
+<td>P2</td>
+</tr>
+<tr>
+<td>Preview QA</td>
+<td>⚠️ URL은 있으나 체크리스트 없음</td>
+<td>QA 체크리스트 자동화</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>배포 후 스모크</td>
+<td>❌ 없음</td>
+<td>CTO deploy-verifier</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>롤백 전략</td>
+<td>⚠️ Vercel 수동</td>
+<td>자동 감지 + 1클릭 롤백</td>
+<td>P2</td>
+</tr>
+<tr>
+<td>에이전트 QA</td>
+<td>❌ 없음</td>
+<td>prompt-qa.ts</td>
+<td>P2</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>18. 에이전트 협업 시스템 — C-level 회의 프레임워크</h2>
+<h3>18.1 현재 문제: &quot;회사인데 회의가 없다&quot;</h3>
+<pre><code>현재 에이전트 구조의 근본 문제:
+
+CEO  ────▶ DB에 로그 ────▶ 끝
+CTO  ────▶ DB에 로그 ────▶ 끝
+CMO  ────▶ DB에 로그 ────▶ 끝
+CPO  ────▶ DB에 로그 ────▶ 끝
+CDO  ────▶ DB에 로그 ────▶ 끝
+CFO  ────▶ DB에 로그 ────▶ 끝
+COO  ────▶ DB에 로그 ────▶ 끝
+
+→ 7명의 C-level이 같은 회사에 있지만 한 번도 대화하지 않음
+→ CEO가 문제를 발견해도 CMO/CPO에게 지시할 수 없음
+→ CMO가 트렌드를 발견해도 COO에게 콘텐츠 요청 불가
+→ 결국 모든 판단이 &quot;창업자&quot;에게 집중됨 (병목)
+</code></pre>
+<h3>18.2 목표: 에이전트 자율 협업 구조</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│              에이전트 협업 아키텍처 (목표)                      │
+│                                                              │
+│                    ┌──────────┐                              │
+│                    │  창업자   │                              │
+│                    │ (최종승인)│                              │
+│                    └─────┬────┘                              │
+│                          │ /approve                          │
+│                          ▼                                   │
+│              ┌───────────────────────┐                       │
+│              │    CEO (의장)          │                       │
+│              │  회의 소집 + 최종 결정  │                       │
+│              └───────────┬───────────┘                       │
+│                          │                                   │
+│         ┌────────────────┼────────────────┐                 │
+│         ▼                ▼                ▼                  │
+│   ┌───────────┐  ┌───────────┐  ┌───────────┐             │
+│   │  정기 회의  │  │ 긴급 회의  │  │ 1:1 협의   │             │
+│   │ (주1회)    │  │ (이슈 발생)│  │ (필요 시)  │             │
+│   └───────────┘  └───────────┘  └───────────┘             │
+│                                                              │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │              AgentMessage Bus                        │   │
+│   │  FINDING → PROPOSAL → DECISION → ACTION → RESULT   │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>18.3 회의 유형 3가지</h3>
+<h4>A. 정기 회의 — 주간 전략 회의 (매주 월요일 09:00)</h4>
+<pre><code>참석: 전원 (CEO, CTO, CMO, CPO, CDO, CFO, COO)
+의장: CEO
+소요 시간: ~3분 (AI 처리)
+비용: ~$0.05 (Sonnet 1회 호출)
+
+프로세스:
+
+Step 1 — 데이터 수집 (CEO 주도)
+  CEO가 각 에이전트의 지난 주 BotLog + AgentMessage를 수집
+
+Step 2 — 요약 + 의제 도출
+  CEO AI 호출:
+  &quot;지난주 각 에이전트 보고 요약 + 핵심 이슈 3개 도출 + 다음 주 우선순위 제안&quot;
+
+  Input:
+  - CDO: KPI 변동 (DAU +5%, 댓글 -10%)
+  - CTO: 에러 3건, 응답속도 정상
+  - CMO: 트렌드 &quot;봄 나들이&quot;
+  - CPO: /jobs 바운스율 40%
+  - CFO: 이번 달 $18 사용
+  - COO: 일자리 42건 수집, 모더레이션 정상
+
+Step 3 — 문제 정의 + 가설 초안 (에이전트 작업)
+  CEO AI가 종합 판단:
+  {
+    &quot;problemDefinition&quot;: &quot;/jobs 바운스율 40% (데스크탑 22%). 모바일 UX 문제 의심&quot;,
+    &quot;hypothesis&quot;: &quot;필터를 상단 고정하면 바운스율 30%로 감소&quot;,
+    &quot;supportingData&quot;: { &quot;mobileFilterCTR&quot;: &quot;8%&quot;, &quot;desktopFilterCTR&quot;: &quot;35%&quot; },
+    &quot;otherIssues&quot;: [
+      { &quot;issue&quot;: &quot;댓글 -10%&quot;, &quot;suggestedAction&quot;: &quot;SEED 댓글 활동 증가&quot; },
+      { &quot;issue&quot;: &quot;봄 나들이 트렌드&quot;, &quot;suggestedAction&quot;: &quot;관련 매거진 기획&quot; }
+    ]
+  }
+
+Step 4 — ⛔ 창업자 Gate 1 (여기서 멈춤)
+  Slack #ceo-창업자로 창업자에게 전달:
+  &quot;📋 주간 분석 결과 (검토 필요)
+
+   🔴 문제 정의:
+   일자리 페이지 모바일 바운스율 40% (데스크탑 22%).
+   모바일 필터 클릭률 8%로, 사용자가 필터를 못 찾는 것으로 추정.
+
+   💡 가설:
+   필터를 상단 고정하면 바운스율 30%로 감소할 것.
+
+   📊 기타 이슈:
+   - 댓글 -10% → SEED 활동 증가 제안
+   - 봄 나들이 트렌드 → 매거진 기획 제안
+
+   /approve — 이 방향으로 실험 설계 진행
+   /feedback — 피드백 (문제 정의/가설 수정)
+   /reject — 기각&quot;
+
+  ※ 창업자가 /approve 또는 /feedback 하기 전까지 실험은 진행되지 않음
+  ※ /feedback 시 CEO가 가설 수정 후 재전달 (반복 가능)
+
+Step 5 — 창업자 승인 후에만 지시 전달
+  창업자 /approve 확인 →
+  CEO → AgentMessage로 각 에이전트에 지시 전달
+  각 에이전트는 다음 실행 시 AgentMessage.UNREAD를 확인하고 반영
+</code></pre>
+<h4>B. 긴급 회의 — 이슈 트리거 (자동 소집)</h4>
+<pre><code>트리거 조건 (자동):
+- CTO: 서비스 다운 또는 에러율 급증
+- CDO: KPI 20%+ 급변 2일 연속
+- CFO: 예산 $40 돌파
+- COO: 모더레이션 긴급 (법적 리스크)
+
+프로세스:
+
+1. 트리거 에이전트가 AgentMessage(type: &quot;EMERGENCY&quot;) 발행
+2. CEO가 즉시 소집 (다음 크론 실행 시)
+3. 관련 에이전트만 참석 (예: 서비스 다운 → CEO + CTO + CDO)
+4. CEO AI가 긴급 대응 결정
+5. Slack #알림-긴급 즉시 알림 + 자동 실행 가능한 조치는 바로 실행
+
+예시 — 서비스 다운:
+  CTO 감지 → EMERGENCY 메시지 → CEO 소집
+  CEO 결정: &quot;CTO: 상세 진단, CDO: 영향 범위 파악&quot;
+  CTO 결과: &quot;DB 커넥션 풀 소진&quot;
+  CEO 최종: &quot;Supabase 연결 풀 증가 필요 → 창업자 승인 요청&quot;
+  #알림-긴급: &quot;🚨 긴급: DB 커넥션 풀 이슈&quot; + #ceo-창업자: &quot;/approve 로 설정 변경 승인&quot;
+</code></pre>
+<h4>C. 1:1 협의 — 에이전트 간 직접 대화</h4>
+<pre><code>특정 에이전트가 다른 에이전트에게 직접 질문/요청:
+
+예시 1 — CMO → COO:
+  CMO: &quot;이번 주 트렌드 &#39;봄 나들이&#39; → 관련 일자리 있으면 에디터스 픽으로&quot;
+  COO: 다음 content-scheduler 실행 시 반영
+
+예시 2 — CPO → CDO:
+  CPO: &quot;/jobs 페이지 이탈 패턴 데이터 필요&quot;
+  CDO: 다음 실행 시 해당 데이터 수집 후 응답
+
+예시 3 — CFO → CEO:
+  CFO: &quot;이번 달 비용 $38 도달. 주의 단계.&quot;
+  CEO: 비용이 높은 에이전트 식별 → 해당 에이전트에 빈도 조정 지시
+
+구현 방식:
+  AgentMessage(fromAgent: &quot;CMO&quot;, toAgent: &quot;COO&quot;, type: &quot;REQUEST&quot;)
+  → COO 다음 실행 시 UNREAD 메시지 확인 → 반영 → ACTED_ON으로 변경
+</code></pre>
+<h3>18.4 회의록 &amp; 학습 축적</h3>
+<pre><code>AgentMeeting {
+  id            String
+  type          String    // &quot;WEEKLY&quot; | &quot;EMERGENCY&quot; | &quot;ONE_ON_ONE&quot;
+  chairAgent    String    // &quot;CEO&quot;
+  participants  String[]  // [&quot;CEO&quot;, &quot;CTO&quot;, &quot;CMO&quot;, ...]
+  agenda        Json      // 의제
+  decisions     Json      // 결정사항
+  actionItems   Json[]    // [{ owner: &quot;CPO&quot;, task: &quot;UX 개선안&quot;, deadline: &quot;2026-04-01&quot; }]
+  experiments   Json[]    // 새로 제안된 실험
+  summary       String    // 한줄 요약
+  createdAt     DateTime
+}
+</code></pre>
+<p><strong>학습 축적 흐름:</strong></p>
+<pre><code>회의 결정 → 실험 실행 → 결과 측정 → 회고 (다음 주간 회의)
+                                         │
+                                         ▼
+                                   AgentLearning {
+                                     experiment: &quot;필터 UX 개선&quot;
+                                     result: &quot;바운스율 40% → 32%&quot;
+                                     learning: &quot;상단 고정 필터가 효과적&quot;
+                                     appliedTo: &quot;정식 적용 완료&quot;
+                                   }
+                                         │
+                                         ▼
+                              다음 유사 실험 시 참고
+</code></pre>
+<h3>18.5 구현 로드맵</h3>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>내용</th>
+<th>구현 항목</th>
+<th>예상 비용</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Phase A</strong> (기획 완료 후)</td>
+<td>메시지 버스</td>
+<td>AgentMessage 테이블 + BaseAgent에 읽기/쓰기 메서드</td>
+<td>$0 (DB만)</td>
+</tr>
+<tr>
+<td><strong>Phase B</strong></td>
+<td>주간 회의</td>
+<td>CEO weekly-meeting.ts + 회의록 저장</td>
+<td>+$0.20/월</td>
+</tr>
+<tr>
+<td><strong>Phase C</strong></td>
+<td>긴급 회의</td>
+<td>트리거 조건 + emergency-meeting.ts</td>
+<td>+$0.10/월</td>
+</tr>
+<tr>
+<td><strong>Phase D</strong></td>
+<td>1:1 협의</td>
+<td>각 에이전트가 UNREAD 메시지 확인 로직 추가</td>
+<td>$0</td>
+</tr>
+<tr>
+<td><strong>Phase E</strong></td>
+<td>실험 관리</td>
+<td>Experiment 테이블 + CEO가 실험 라이프사이클 관리</td>
+<td>+$0.10/월</td>
+</tr>
+<tr>
+<td><strong>Phase F</strong></td>
+<td>학습 축적</td>
+<td>AgentLearning + 회고 자동화</td>
+<td>+$0.05/월</td>
+</tr>
+</tbody></table>
+<p><strong>총 추가 비용: ~$0.45/월</strong> (현재 예산 여유 $28.5 내)</p>
+<h3>18.6 협업 프로세스 전체 흐름 예시</h3>
+<pre><code>[Week 1 일요일 — DATA 수집]
+  CDO 22:00: KPI 수집 → &quot;일자리 페이지 조회수 전주 대비 -25%&quot;
+  CDO → AgentMessage(to: CEO, type: FINDING, &quot;일자리 PV -25%&quot;)
+
+[Week 1 월요일 09:00 — 에이전트 주간 회의 (PROBLEM + HYPOTHESIS)]
+  CEO: 주간 회의 소집, 각 에이전트 보고 수집
+  CPO: &quot;필터 UX 불편, 모바일에서 퀵태그 미노출&quot;
+  CMO: &quot;&#39;시니어 일자리 지원방법&#39; 검색 증가&quot;
+  CEO 종합:
+    문제 정의: &quot;모바일 일자리 필터 접근성 부족이 이탈 원인&quot;
+    가설: &quot;퀵태그를 상단 고정하면 바운스율 40% → 30%로 감소&quot;
+
+[Week 1 월요일 09:05 — ⛔ Gate 1: 창업자 검토]
+  Slack #ceo-창업자로 문제 정의 + 가설 + 근거 데이터 전달
+  &quot;...승인/피드백/기각 중 선택해주세요&quot;
+
+  창업자: /feedback &quot;퀵태그도 중요하지만, 내가 써보니 일자리 목록에서
+          급여 정보가 바로 안 보이는 게 더 큰 문제다. 급여를 카드에
+          크게 보여주는 게 우선 아닐까?&quot;
+
+[Week 1 월요일 — CEO 가설 수정 (Round 2)]
+  CEO: 창업자 피드백 반영
+  수정 가설: &quot;일자리 카드에 급여를 크게 노출하면 바운스율 30%로 감소&quot;
+  → #ceo-창업자 재전달
+
+  창업자: /feedback &quot;급여 + 퀵태그 둘 다 하자. 급여 먼저, 퀵태그는 다음 주.&quot;
+
+[Week 1 월요일 — CEO 최종 수정 (Round 3)]
+  CEO: 최종 수정
+  &quot;일자리 카드 급여 강조 표시 → 바운스율 감소 실험&quot;
+  → #ceo-창업자 재전달
+
+  창업자: /approve ✅
+  revisionCount: 3 (가설이 3번 다듬어짐)
+
+[Week 1 화~금 — EXPERIMENT 설계 + EXECUTE]
+  CPO: 실험 설계 → &quot;A: 현재 카드 / B: 급여 강조 카드&quot;
+  CTO: 코드 변경 + Preview QA 검증
+  → Vercel Preview URL에서 확인
+  → 프로덕션 배포
+
+[Week 2 — ⛔ Gate 2: 사용자 피드백 수집 (MEASURING)]
+  CDO 자동: 바운스율 40% → 33%, 카드 클릭률 +18%
+  CPO 자동: 일자리 상세 페이지 체류시간 +25%
+  창업자 수동: &quot;주변 시니어분들이 급여가 바로 보여서 좋다고 함&quot;
+  간접 시그널: 일자리 댓글 +8%
+
+[Week 2 월요일 — RETRO (회고)]
+  CEO: 정량 + 정성 + 창업자 판단 종합
+  &quot;실험 성공. 급여 강조 정식 적용.
+   학습 1: 시니어에게 급여 정보 가시성이 핵심 (창업자 인사이트)
+   학습 2: 창업자 피드백이 데이터보다 정확한 경우 있음 → 정성 피드백 중시&quot;
+  → AgentLearning 저장
+  → 다음 문제 정의 + 가설 → 다시 Gate 1로 (반복)
+</code></pre>
+<h3>18.7 핵심 원칙</h3>
+<table>
+<thead>
+<tr>
+<th>원칙</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>에이전트는 제안, 창업자가 결정</strong></td>
+<td>에이전트가 독단적으로 실행하지 않음. 문제 정의/가설을 만들어 창업자에게 제출.</td>
+</tr>
+<tr>
+<td><strong>Gate 1 필수</strong></td>
+<td>모든 실험은 창업자 승인 없이 시작할 수 없음. 피드백 시 가설 수정 반복.</td>
+</tr>
+<tr>
+<td><strong>Gate 2 필수</strong></td>
+<td>실험 후 사용자 피드백(정량+정성) 수집 없이 회고하지 않음.</td>
+</tr>
+<tr>
+<td><strong>CEO가 의장</strong></td>
+<td>회의는 CEO가 소집하고 초안 결정. 최종 결정권은 창업자.</td>
+</tr>
+<tr>
+<td><strong>피드백은 학습</strong></td>
+<td>창업자 피드백은 AgentMessage로 기록 → 다음 가설 수립 시 패턴 학습</td>
+</tr>
+<tr>
+<td><strong>비용 효율</strong></td>
+<td>회의 1회 = AI 1-2회 호출. 불필요한 회의 없음.</td>
+</tr>
+<tr>
+<td><strong>비동기 우선</strong></td>
+<td>긴급 상황 외에는 AgentMessage로 비동기 소통</td>
+</tr>
+<tr>
+<td><strong>학습 축적</strong></td>
+<td>모든 실험 결과 + 창업자 피드백 + 사용자 반응이 DB에 저장</td>
+</tr>
+<tr>
+<td><strong>데이터 + 감</strong></td>
+<td>정량 데이터가 기본이지만, 창업자의 정성적 판단도 동등하게 중시</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>19. 현재 아키텍처 갭 분석</h2>
+<h3>19.1 전체 갭 맵</h3>
+<pre><code>┌────────────────────────────────────────────────────────────────┐
+│                    아키텍처 성숙도 맵                             │
+│                                                                 │
+│  ████████████  코드 (47페이지, 77+컴포넌트)          ✅ 완료     │
+│  ████████████  에이전트 (7 C-level + SEED + CAFE)   ✅ 완료     │
+│  ████████████  CI/CD (빌드, 린트, 타입체크)          ✅ 완료     │
+│  ████████░░░░  QA (Preview 있으나 체크리스트 없음)    ⚠️ 부분    │
+│  ████████░░░░  모니터링 (GTM+GA4 구축, 대시보드 미설정) ⚠️ 부분    │
+│  ██░░░░░░░░░░  에이전트 협업 (각자 독립 실행)         ❌ 미구축   │
+│  ░░░░░░░░░░░░  운영 채널 (Slack 채널 분리/구조화)     ❌ 미구축   │
+│  ░░░░░░░░░░░░  KPI 프레임워크 (목표 설정→추적→리포트) ❌ 미구축   │
+│  ░░░░░░░░░░░░  성장 루프 (데이터→가설→실험→회고)     ❌ 미구축   │
+│  ████████████  SNS 실험 관리 (A/B 테스트 7일 사이클)  ✅ 완료     │
+│  ████████████  SNS 학습 축적 (실험→인사이트→전략)    ✅ 완료     │
+│                                                                 │
+└────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>19.2 우선순위별 갭</h3>
+<h4>P0 — 배포 전 반드시 (인프라 연결)</h4>
+<table>
+<thead>
+<tr>
+<th>갭</th>
+<th>현재</th>
+<th>필요한 것</th>
+<th>담당</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>도메인 연결</td>
+<td>Vercel 기본 URL</td>
+<td>Cloudflare → Vercel CNAME</td>
+<td>창업자</td>
+</tr>
+<tr>
+<td>GitHub Secrets</td>
+<td>미설정</td>
+<td>에이전트 크론 실행 불가 → 설정 필요</td>
+<td>창업자</td>
+</tr>
+<tr>
+<td>Slack Workspace</td>
+<td>미생성</td>
+<td>운영 채널 구조 필수 → Slack App 설정 필요</td>
+<td>창업자</td>
+</tr>
+</tbody></table>
+<h4>P1 — 운영 안정성</h4>
+<table>
+<thead>
+<tr>
+<th>갭</th>
+<th>현재</th>
+<th>필요한 것</th>
+<th>담당</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>배포 후 스모크 테스트</td>
+<td>없음</td>
+<td>CTO deploy-verifier.ts</td>
+<td>개발</td>
+</tr>
+<tr>
+<td>QA 체크리스트</td>
+<td>없음</td>
+<td>PR 템플릿 + Preview URL QA</td>
+<td>개발</td>
+</tr>
+<tr>
+<td>에이전트 메시지 버스</td>
+<td>없음</td>
+<td>AgentMessage 테이블 + BaseAgent 메서드</td>
+<td>개발</td>
+</tr>
+<tr>
+<td>주간 회의 시스템</td>
+<td>없음</td>
+<td>CEO weekly-meeting.ts</td>
+<td>개발</td>
+</tr>
+<tr>
+<td>KPI 목표 테이블</td>
+<td>없음</td>
+<td>KpiTarget 모델 + CEO 일일 브리핑</td>
+<td>개발</td>
+</tr>
+<tr>
+<td>CEO 일일/주간 리포트</td>
+<td>없음</td>
+<td>morning-cycle KPI 스냅샷 + weekly-report.ts</td>
+<td>개발</td>
+</tr>
+<tr>
+<td>Slack 운영 채널</td>
+<td>없음</td>
+<td>Slack App + 13개 채널 + slack-commander.ts</td>
+<td>개발+창업자</td>
+</tr>
+</tbody></table>
+<h4>P2 — 성장 엔진</h4>
+<table>
+<thead>
+<tr>
+<th>갭</th>
+<th>현재</th>
+<th>필요한 것</th>
+<th>담당</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><del>실험 관리</del></td>
+<td>✅ 완료</td>
+<td>SocialExperiment + social-reviewer/strategy</td>
+<td>—</td>
+</tr>
+<tr>
+<td>회고 자동화</td>
+<td>없음</td>
+<td>CEO retrospective.ts + AgentLearning</td>
+<td>개발</td>
+</tr>
+<tr>
+<td>E2E 테스트 CI</td>
+<td>로컬만</td>
+<td>Playwright CI 연동</td>
+<td>개발</td>
+</tr>
+<tr>
+<td>에이전트 프롬프트 QA</td>
+<td>없음</td>
+<td>prompt-qa.ts 비교 도구</td>
+<td>개발</td>
+</tr>
+</tbody></table>
+<h4>P3 — 고도화</h4>
+<table>
+<thead>
+<tr>
+<th>갭</th>
+<th>현재</th>
+<th>필요한 것</th>
+<th>담당</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><del>A/B 테스트 인프라</del></td>
+<td>✅ SNS 실험 완료</td>
+<td>SocialExperiment 8주 로드맵 + Skills 레지스트리</td>
+<td>—</td>
+</tr>
+<tr>
+<td>퍼널 분석</td>
+<td>EventLog만</td>
+<td>CDO funnel-analyzer.ts</td>
+<td>개발</td>
+</tr>
+<tr>
+<td>자동 롤백</td>
+<td>Vercel 수동</td>
+<td>에러율 기반 자동 롤백</td>
+<td>개발</td>
+</tr>
+</tbody></table>
+<h3>19.3 구축 순서 제안</h3>
+<pre><code>현재 위치 ──────────────────────────────────────────────▶ 목표
+
+[Phase 0]         [Phase 1]           [Phase 2]          [Phase 3]
+인프라 연결        에이전트 협업         성장 루프          고도화
+
+도메인 연결        AgentMessage         Experiment         A/B 테스트
+Secrets 설정       주간 회의             회고 자동화        퍼널 분석
+Slack 설정         긴급 회의             학습 축적          자동 롤백
+                   1:1 협의
+                   QA 체크리스트
+                   스모크 테스트
+
+창업자 작업        개발 작업             개발 작업          개발 작업
+~1일              ~1주                  ~1주               ~2주
+</code></pre>
+<hr>
+<h2>문서 업데이트 가이드</h2>
+<h3>이 문서를 언제 업데이트해야 하는가?</h3>
+<table>
+<thead>
+<tr>
+<th>변경 사항</th>
+<th>업데이트할 섹션</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>새 에이전트 추가</td>
+<td>5. AI 에이전트 시스템</td>
+</tr>
+<tr>
+<td>새 페이지/API 추가</td>
+<td>10. 페이지 구조, 12. 폴더 구조</td>
+</tr>
+<tr>
+<td>새 컴포넌트 추가</td>
+<td>11. 컴포넌트 구조</td>
+</tr>
+<tr>
+<td>DB 모델 변경</td>
+<td>4. 데이터베이스 스키마</td>
+</tr>
+<tr>
+<td>워크플로우 변경</td>
+<td>6. GitHub Actions</td>
+</tr>
+<tr>
+<td>외부 연동 추가</td>
+<td>7. Webhook &amp; 외부 연동</td>
+</tr>
+<tr>
+<td>Slack 채널 변경</td>
+<td>7. Webhook &amp; 외부 연동 (7.1~7.5)</td>
+</tr>
+<tr>
+<td>MCP 추가/제거</td>
+<td>8. MCP 서버</td>
+</tr>
+<tr>
+<td>환경변수 추가</td>
+<td>3.1 환경 변수</td>
+</tr>
+<tr>
+<td>KPI 목표 변경</td>
+<td>15. KPI 프레임워크</td>
+</tr>
+<tr>
+<td>실험 추가/완료</td>
+<td>16. 성장 루프</td>
+</tr>
+<tr>
+<td>QA 프로세스 변경</td>
+<td>17. QA &amp; 배포 안정성</td>
+</tr>
+<tr>
+<td>에이전트 협업 변경</td>
+<td>18. 에이전트 협업 시스템</td>
+</tr>
+<tr>
+<td>갭 해소 시</td>
+<td>19. 아키텍처 갭 분석</td>
+</tr>
+</tbody></table>
+<h3>업데이트 방법</h3>
+<p>Claude Code에게 다음과 같이 요청:</p>
+<pre><code>docs/SERVICE_ARCHITECTURE.md 에 [변경 내용] 반영해줘
+</code></pre>
+<p>예시:</p>
+<ul>
+<li>&quot;새 에이전트 추가했으니 SERVICE_ARCHITECTURE.md 업데이트해줘&quot;</li>
+<li>&quot;새 API 라우트 만들었으니 SERVICE_ARCHITECTURE.md에 반영해줘&quot;</li>
+</ul>
+<h3>관련 문서 위치</h3>
+<table>
+<thead>
+<tr>
+<th>문서</th>
+<th>경로</th>
+<th>용도</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>이 문서 (종합 아키텍처)</strong></td>
+<td><code>docs/SERVICE_ARCHITECTURE.md</code></td>
+<td>전체 서비스 구조</td>
+</tr>
+<tr>
+<td>Claude Code 지시사항</td>
+<td><code>CLAUDE.md</code></td>
+<td>코딩 규칙, 기술 스택</td>
+</tr>
+<tr>
+<td>에이전트 지시사항</td>
+<td><code>agents/CLAUDE.md</code></td>
+<td>에이전트 작성 규칙</td>
+</tr>
+<tr>
+<td>회사 헌법</td>
+<td><code>agents/core/constitution.yaml</code></td>
+<td>서비스 정체성, 가드레일</td>
+</tr>
+<tr>
+<td>PRD 문서</td>
+<td><code>docs/prd/</code></td>
+<td>기능별 상세 기획</td>
+</tr>
+<tr>
+<td>작업 보고서</td>
+<td><code>docs/reports/</code></td>
+<td>작업 이력</td>
+</tr>
+<tr>
+<td>DB 스키마</td>
+<td><code>prisma/schema.prisma</code></td>
+<td>테이블 정의</td>
+</tr>
+<tr>
+<td>환경변수 템플릿</td>
+<td><code>.env.example</code></td>
+<td>필요한 환경변수 목록</td>
+</tr>
+</tbody></table>
+
+</main>
+
+<button class="top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// Back to Top button visibility
+window.addEventListener('scroll', () => {
+  document.querySelector('.top-btn').classList.toggle('show', window.scrollY > 300);
+});
+
+// Close sidebar on mobile when clicking a link
+document.querySelectorAll('.sidebar nav a').forEach(a => {
+  a.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      document.querySelector('.sidebar').classList.remove('open');
+    }
+  });
+});
+</script>
+
+</body>
+</html>

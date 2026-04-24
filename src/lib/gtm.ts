@@ -157,28 +157,8 @@ export function gtmPageView(path: string, title?: string): void {
 }
 
 /** 회원가입 완료 — UTM 포함 (광고 소재 → 가입 전환 추적) */
-export function gtmSignUp(method: string = 'kakao', variant?: string): void {
-  sendEvent('sign_up', { method, ...(variant ? { variant } : {}), ...getStoredUtm() })
-}
-
-/** 배너 조건 충족 (20초 활성 체류 AND 스크롤 50%) — A/B 분석의 진짜 분모 */
-export function gtmSignupBannerEligible(variant: string, pagePath: string): void {
-  sendEvent('signup_banner_eligible', { variant, page_path: pagePath })
-}
-
-/** 배너 실제 노출 (차단 조건 통과 후 화면에 표시된 경우만) */
-export function gtmSignupBannerShown(variant: string, pagePath: string, showCount: number): void {
-  sendEvent('signup_banner_shown', { variant, page_path: pagePath, show_count: showCount })
-}
-
-/** 배너 CTA 클릭 */
-export function gtmSignupBannerClicked(variant: string, pagePath: string): void {
-  sendEvent('signup_banner_clicked', { variant, page_path: pagePath })
-}
-
-/** 배너 닫기 */
-export function gtmSignupBannerDismissed(variant: string, pagePath: string, showCount: number): void {
-  sendEvent('signup_banner_dismissed', { variant, page_path: pagePath, show_count: showCount })
+export function gtmSignUp(method: string = 'kakao'): void {
+  sendEvent('sign_up', { method, ...getStoredUtm() })
 }
 
 /** 로그인 (재방문) — UTM 포함 */

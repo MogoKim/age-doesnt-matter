@@ -1,0 +1,1005 @@
+// =================================================
+// 우나어 — Prisma Schema (DB_SCHEMA_FULL.md 기준)
+// 총 19개 모델 · PostgreSQL · Supabase
+// =================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Grade {
+  SPROUT         // 🌱 새싹
+  REGULAR        // 🌿 단골
+  WARM_NEIGHBOR  // ☀️ 따뜻한이웃
+  HONORARY       // 🏅 명예우나어인
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  WITHDRAWN
+}
+
+enum FontSize {
+  NORMAL  // 17px
+  LARGE   // 20px
+  XLARGE  // 24px
+}
+
+enum AgreementType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  MARKETING
+}
+
+enum BoardType {
+  JOB       // 일자리
+  STORY     // 사는 이야기
+  HUMOR     // 웃음방
+  MAGAZINE  // 매거진
+  WEEKLY    // 수다방 (숨김 — LIFE2로 대체)
+  LIFE2     // 2막 준비
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  SEO_ONLY
+  HIDDEN
+  DELETED
+}
+
+enum PostSource {
+  USER
+  BOT
+  ADMIN
+}
+
+enum PromotionLevel {
+  NORMAL
+  HOT            // 공감 10+
+  HALL_OF_FAME   // 공감 50+
+}
+
+enum CommentStatus {
+  ACTIVE
+  HIDDEN
+  DELETED
+}
+
+enum ReportReason {
+  PROFANITY
+  POLITICS
+  HATE
+  SPAM
+  ADULT
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}
+
+enum ReportAction {
+  DELETED
+  HIDDEN
+  WARNING
+  SUSPENDED
+  BANNED
+  DISMISSED
+}
+
+enum NotificationType {
+  COMMENT
+  LIKE
+  GRADE_UP
+  SYSTEM
+  CONTENT_HIDDEN
+}
+
+enum AdType {
+  SELF
+  GOOGLE
+  COUPANG
+  EXTERNAL
+}
+
+enum AdSlot {
+  HERO
+  HOME_INLINE
+  HOME_SECTION_GAP
+  SIDEBAR
+  LIST_INLINE
+  POST_BOTTOM
+  POST_INLINE
+  MOBILE_STICKY
+  MAGAZINE_CPS
+}
+
+enum BotType {
+  JOB
+  HUMOR
+  STORY
+  THREAD
+  // AI 에이전트 시스템
+  CEO
+  CTO
+  CMO
+  CPO
+  CDO
+  CFO
+  COO
+  SEED
+  CAFE_CRAWLER
+  QA
+}
+
+enum BotStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum BannedWordCategory {
+  PROFANITY
+  POLITICS
+  HATE
+  SPAM
+  ADULT
+}
+
+enum AuditTargetType {
+  USER
+  POST
+  COMMENT
+  REPORT
+  BOARD_CONFIG
+  BANNER
+  AD
+  BOT
+  AGENT
+  ADMIN_QUEUE
+}
+
+enum AdminQueueType {
+  CONTENT_PUBLISH   // SNS 콘텐츠 게시 승인
+  AGENT_EVOLUTION   // 에이전트 스킬 진화 제안
+  SCHEMA_CHANGE     // DB 스키마 변경 제안
+  BUDGET_CHANGE     // 예산 한도 변경
+  SYSTEM_ACTION     // 기타 시스템 액션
+}
+
+enum AdminQueueStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum SocialPlatform {
+  THREADS
+  X
+  INSTAGRAM
+  FACEBOOK
+  BAND
+}
+
+enum SocialPostStatus {
+  DRAFT
+  QUEUED
+  APPROVED
+  POSTED
+  FAILED
+}
+
+enum ExperimentStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  ANALYZED
+}
+
+// ─────────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────────
+
+model User {
+  id              String     @id @default(cuid())
+  email           String?    @unique
+  nickname        String     @unique
+  profileImage    String?
+  providerId      String     @unique // 카카오 User ID
+  role            Role       @default(USER)
+  grade           Grade      @default(SPROUT)
+  birthYear       Int?
+  gender          String?
+  regions         String[]
+  interests       String[]
+  fontSize        FontSize   @default(NORMAL)
+
+  // 비정규화 카운트
+  postCount       Int        @default(0)
+  commentCount    Int        @default(0)
+  receivedLikes   Int        @default(0)
+
+  // 상태
+  status          UserStatus @default(ACTIVE)
+  suspendedUntil  DateTime?
+  withdrawnAt     DateTime?
+
+  // 온보딩
+  isOnboarded       Boolean    @default(false)
+
+  // 설정
+  marketingOptIn    Boolean    @default(false)
+  isGenderPublic    Boolean    @default(false)
+  isRegionPublic    Boolean    @default(false)
+  nicknameChangedAt DateTime?
+
+  // PWA 설치 추적
+  pwaInstalled         Boolean   @default(false)
+  pwaInstalledAt       DateTime?
+  // PWA 팝업/배너 추적 (유저별 세밀한 상태 관리)
+  pwaPopupShownCount   Int       @default(0)
+  pwaPopupLastShownAt  DateTime?
+  pwaBannerDismissCount   Int       @default(0)
+  pwaBannerLastDismissAt  DateTime?
+  pwaBannerHiddenUntil    DateTime?
+
+  // 타임스탬프
+  lastLoginAt     DateTime   @default(now())
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // 관계
+  posts             Post[]
+  comments          Comment[]
+  likes             Like[]
+  scraps            Scrap[]
+  reportsMade       Report[]          @relation("reporter")
+  notifications     Notification[]    @relation("notificationOwner")
+  notificationsSent Notification[]    @relation("notificationSender")
+  agreements        Agreement[]
+  blocksInitiated   UserBlock[]       @relation("blocker")
+  blocksReceived    UserBlock[]       @relation("blocked")
+  draftPosts        DraftPost[]
+  pushSubscriptions PushSubscription[]
+
+  @@index([status])
+  @@index([grade])
+  @@index([createdAt])
+}
+
+model AdminAccount {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String   // bcrypt (saltRounds=12)
+  nickname      String
+  role          Role     @default(ADMIN)
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  auditLogs        AdminAuditLog[]
+  processedReports Report[]        @relation("reportProcessor")
+}
+
+model Agreement {
+  id       String        @id @default(cuid())
+  userId   String
+  type     AgreementType
+  version  String
+  agreedAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, version])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────
+// 콘텐츠
+// ─────────────────────────────────────────────────
+
+model Post {
+  id             String         @id @default(cuid())
+  boardType      BoardType
+  category       String?
+  title          String
+  content        String
+  summary        String?
+  thumbnailUrl   String?
+
+  authorId       String
+  source         PostSource     @default(USER)
+
+  status         PostStatus     @default(PUBLISHED)
+  promotionLevel PromotionLevel @default(NORMAL)
+  isPinned       Boolean        @default(false)
+  pinnedPosition Int?
+
+  // 비정규화 카운트
+  viewCount      Int            @default(0)
+  likeCount      Int            @default(0)
+  commentCount   Int            @default(0)
+  scrapCount     Int            @default(0)
+  shareCount     Int            @default(0)
+  reportCount    Int            @default(0)
+
+  // 트렌딩 시스템
+  trendingScore  Float          @default(0)
+  lastEngagedAt  DateTime?
+
+  // SEO
+  seoTitle       String?
+  seoDescription String?
+  slug           String?   @unique  // URL 슬러그 (매거진: 한글 키워드 기반)
+
+  // 외부 스크랩 출처
+  sourceUrl      String?   @unique
+  sourceSite     String?
+
+  publishedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // 관계
+  author        User           @relation(fields: [authorId], references: [id])
+  jobDetail     JobDetail?
+  comments      Comment[]
+  likes         Like[]         @relation("postLikes")
+  scraps        Scrap[]
+  reports       Report[]       @relation("postReports")
+  notifications Notification[] @relation("notificationPost")
+  cpsLinks      CpsLink[]
+
+  @@index([boardType, status, createdAt(sort: Desc)])
+  @@index([boardType, status, promotionLevel, createdAt(sort: Desc)])
+  @@index([status, trendingScore(sort: Desc)])
+  @@index([boardType, status, trendingScore(sort: Desc)])
+  @@index([authorId])
+  @@index([status, reportCount])
+}
+
+model JobDetail {
+  id         String    @id @default(cuid())
+  postId     String    @unique
+
+  company    String
+  salary     String?
+  workHours  String?
+  workDays   String?
+  location   String
+  region     String
+  jobType    String?
+  applyUrl   String?
+
+  pickPoints Json?     // [{point, icon}]
+  qna        Json?     // [{q, a}]
+  quickTags  String[]
+
+  tier       Int       @default(0)
+  expiresAt  DateTime?
+
+  // 자동 수집 메타데이터 (중복 방지)
+  sourceUrl  String?   @unique  // 원본 공고 URL
+  sourceId   String?             // 소스 사이트 내부 ID
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([region])
+  @@index([expiresAt])
+  @@index([sourceUrl])
+}
+
+model Comment {
+  id          String        @id @default(cuid())
+  postId      String
+  authorId    String
+  content     String
+  imageUrl    String?
+
+  parentId    String?
+  likeCount   Int           @default(0)
+  reportCount Int           @default(0)
+  isFiltered  Boolean       @default(false)
+
+  status      CommentStatus @default(ACTIVE)
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User      @relation(fields: [authorId], references: [id])
+  parent  Comment?  @relation("replies", fields: [parentId], references: [id])
+  replies Comment[] @relation("replies")
+  likes   Like[]    @relation("commentLikes")
+  reports Report[]  @relation("commentReports")
+
+  @@index([postId, status, createdAt])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+// ─────────────────────────────────────────────────
+// 인터랙션
+// ─────────────────────────────────────────────────
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String?
+  commentId String?
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id])
+  post    Post?    @relation("postLikes", fields: [postId], references: [id], onDelete: Cascade)
+  comment Comment? @relation("commentLikes", fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@index([postId])
+  @@index([commentId])
+  @@index([userId])
+}
+
+model Scrap {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model Report {
+  id          String        @id @default(cuid())
+  userId      String
+  postId      String?
+  commentId   String?
+
+  reason      ReportReason
+  description String?
+
+  status      ReportStatus  @default(PENDING)
+  action      ReportAction?
+
+  processedBy String?
+  processedAt DateTime?
+
+  createdAt   DateTime      @default(now())
+
+  reporter  User          @relation("reporter", fields: [userId], references: [id])
+  post      Post?         @relation("postReports", fields: [postId], references: [id], onDelete: Restrict)
+  comment   Comment?      @relation("commentReports", fields: [commentId], references: [id], onDelete: Restrict)
+  processor AdminAccount? @relation("reportProcessor", fields: [processedBy], references: [id])
+
+  @@index([status, createdAt])
+  @@index([postId])
+  @@index([commentId])
+  @@index([userId])
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  type       NotificationType
+  content    String
+  postId     String?
+  fromUserId String?
+  isRead     Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  user     User  @relation("notificationOwner", fields: [userId], references: [id], onDelete: Cascade)
+  fromUser User? @relation("notificationSender", fields: [fromUserId], references: [id])
+  post     Post? @relation("notificationPost", fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model UserBlock {
+  id            String   @id @default(cuid())
+  userId        String
+  blockedUserId String
+  createdAt     DateTime @default(now())
+
+  blocker User @relation("blocker", fields: [userId], references: [id], onDelete: Cascade)
+  blocked User @relation("blocked", fields: [blockedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, blockedUserId])
+}
+
+// ─────────────────────────────────────────────────
+// 운영
+// ─────────────────────────────────────────────────
+
+model Banner {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  linkUrl     String?
+  startDate   DateTime
+  endDate     DateTime
+  priority    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, startDate, endDate])
+}
+
+model AdBanner {
+  id          String   @id @default(cuid())
+  slot        AdSlot
+  adType      AdType
+  title       String?
+  imageUrl    String?
+  htmlCode    String?
+  clickUrl    String?
+
+  startDate   DateTime
+  endDate     DateTime
+  priority    Int      @default(0)
+
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slot, isActive, startDate, endDate])
+  @@index([adType])
+}
+
+model CpsLink {
+  id              String   @id @default(cuid())
+  postId          String
+  productName     String
+  productUrl      String
+  productImageUrl String?
+  rating          Float?
+  createdAt       DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model BoardConfig {
+  id            String    @id @default(cuid())
+  boardType     BoardType @unique
+
+  displayName   String
+  description   String?
+  categories    String[]
+  writeGrade    Grade     @default(SPROUT)
+  isActive      Boolean   @default(true)
+  hotThreshold  Int       @default(10)
+  fameThreshold Int       @default(50)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model BannedWord {
+  id        String             @id @default(cuid())
+  word      String             @unique
+  category  BannedWordCategory
+  isActive  Boolean            @default(true)
+  createdAt DateTime           @default(now())
+
+  @@index([category, isActive])
+}
+
+// ─────────────────────────────────────────────────
+// 임시저장
+// ─────────────────────────────────────────────────
+
+model DraftPost {
+  id        String    @id @default(cuid())
+  authorId  String
+  boardSlug String
+  category  String?
+  title     String    @default("")
+  content   String    @default("")
+  updatedAt DateTime  @updatedAt
+  createdAt DateTime  @default(now())
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId, updatedAt(sort: Desc)])
+}
+
+// ─────────────────────────────────────────────────
+// 로그
+// ─────────────────────────────────────────────────
+
+model BotLog {
+  id                 String    @id @default(cuid())
+  botType            BotType
+  status             BotStatus
+
+  // 크롤러 봇 전용 필드
+  collectedCount     Int       @default(0)
+  filteredCount      Int       @default(0)
+  publishedCount     Int       @default(0)
+  reviewPendingCount Int       @default(0)
+  logData            Json?
+
+  // AI 에이전트 전용 필드
+  action             String?   // 실행 액션 (MORNING_CYCLE, KPI_DAILY 등)
+  details            String?   // 실행 상세 (JSON string)
+  itemCount          Int       @default(0)  // 처리 건수
+  executionTimeMs    Int       @default(0)  // 실행 시간 (ms)
+
+  executedAt         DateTime  @default(now())
+  nextScheduledAt    DateTime?
+
+  createdAt          DateTime  @default(now())
+
+  @@index([botType, executedAt(sort: Desc)])
+  @@index([status])
+}
+
+model EventLog {
+  id        String   @id @default(cuid())
+  eventName String
+  userId    String?
+  sessionId String?
+  properties Json?
+
+  path      String?
+  referrer  String?
+  userAgent String?
+  ip        String?
+
+  createdAt DateTime @default(now())
+
+  @@index([eventName, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+}
+
+model AdminAuditLog {
+  id         String          @id @default(cuid())
+  adminId    String
+  action     String
+  targetType AuditTargetType
+  targetId   String
+  before     Json?
+  after      Json?
+  note       String?
+
+  createdAt  DateTime        @default(now())
+
+  admin AdminAccount @relation(fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt(sort: Desc)])
+  @@index([targetType, targetId])
+  @@index([createdAt(sort: Desc)])
+}
+
+// ─────────────────────────────────────────────────
+// 어드민 승인 큐
+// ─────────────────────────────────────────────────
+
+/// 에이전트가 창업자 승인이 필요한 액션을 제안할 때 사용
+model AdminQueue {
+  id          String           @id @default(cuid())
+  type        AdminQueueType
+  status      AdminQueueStatus @default(PENDING)
+
+  title       String           // 승인 요청 제목
+  description String           // 상세 설명
+  payload     Json?            // 실행에 필요한 데이터 (에이전트별 구조)
+
+  requestedBy String           // 요청한 에이전트 (CEO, CMO 등)
+  resolvedBy  String?          // 처리자 (창업자 Slack user_id 등)
+  resolvedAt  DateTime?
+
+  expiresAt   DateTime?        // 만료 시간 (null이면 무기한)
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([type, status])
+  @@index([requestedBy])
+}
+
+// ─────────────────────────────────────────────────
+// 카페 크롤링 & 트렌드
+// ─────────────────────────────────────────────────
+
+/// 네이버 카페에서 수집한 원본 게시글
+model CafePost {
+  id           String   @id @default(cuid())
+  cafeId       String   // wgang, welovesilver, 5060years
+  cafeName     String   // 카페 이름
+  postUrl      String   @unique // 원본 URL (중복 방지)
+  title        String
+  content      String   @db.Text
+  author       String   // 카페 작성자 닉네임
+  category     String?  // 카페 내 카테고리
+  boardName     String?  // config에서 설정한 게시판명
+  boardCategory String?  // config에서 설정한 카테고리 (health, hobby, food 등)
+  qualityScore  Float    @default(0) // 다중 요소 품질 점수 (0-100)
+  likeCount    Int      @default(0)
+  commentCount Int      @default(0)
+  viewCount    Int      @default(0)
+  postedAt     DateTime // 카페 원본 작성일
+  crawledAt    DateTime @default(now())
+
+  // 미디어
+  imageUrls    String[] // 본문 이미지/GIF URL 목록
+  videoUrls    String[] // 본문 동영상 URL 목록
+  thumbnailUrl String?  // 대표 이미지 (첫 번째 이미지)
+  mediaCount   Int      @default(0) // 총 미디어 수
+
+  // 분석 결과
+  topics       String[] // AI가 추출한 토픽 태그
+  sentiment    String?  // positive, neutral, negative
+  isUsable     Boolean  @default(false) // 콘텐츠 참고용으로 적합한지
+
+  // AI 심리 분석 결과 (psych-analyzer.ts)
+  emotionTags      String[] // ["ANXIOUS", "LONELY"] — docs/desire_taxonomy.md 참고
+  desireCategory   String?  // "HEALTH"|"FAMILY"|"MONEY"|"RETIRE"|"JOB"|"RELATION"|"HOBBY"|"MEANING"|"DIGNITY"|"LEGACY"|"CARE"|"FREEDOM"|"ENTERTAIN"
+  desireType       String?  // "big_desire" | "need" | "want" | "demerit"
+  psychInsight     String?  // 1줄 심리 요약 (예: "갱년기 증상 불안, 정보 갈증")
+  urgencyLevel     Int?     // 1(일상관심) ~ 5(즉각위기)
+  communitySignal  String?  // "question"|"complaint"|"confession"|"recommendation"|"celebration"
+  ageSignal        String?  // "50s"|"60s"|"70s+"|"unknown"
+  aiAnalyzed       Boolean  @default(false) // psych-analyzer 처리 완료 여부
+
+  // 댓글 내용 (상위 5개, DEEP 모드에서만 수집)
+  topComments    Json?    // [{author: string, content: string, likeCount: number}]
+  commentCrawled Boolean  @default(false) // 댓글 내용 크롤링 완료 여부
+
+  @@index([cafeId, crawledAt(sort: Desc)])
+  @@index([crawledAt(sort: Desc)])
+  @@index([isUsable, crawledAt(sort: Desc)])
+  @@index([aiAnalyzed, crawledAt(sort: Desc)])
+  @@index([desireCategory, urgencyLevel])
+}
+
+/// 일별 트렌드 분석 결과
+model CafeTrend {
+  id            String   @id @default(cuid())
+  date          DateTime @db.Date // 분석 날짜
+  period        String   @default("daily") // daily, weekly
+
+  // 트렌드 데이터
+  hotTopics     Json     // [{topic, count, sentiment, examples}]
+  keywords      Json     // [{word, frequency}]
+  sentimentMap  Json     // {positive: 40, neutral: 35, negative: 25}
+
+  // 매거진 추천
+  magazineTopics Json    // [{title, reason, score, relatedPosts}]
+
+  // 페르소나 참고
+  personaHints   Json?   // [{type, description, examplePosts}]
+
+  totalPosts    Int      @default(0)
+  cafeSummary   Json?    // 카페별 요약 {wgang: {count, top}, ...}
+
+  // AI 심리 분석 집계 결과 (trend-analyzer.ts)
+  desireMap           Json?    // {HEALTH: 35, FAMILY: 20, MONEY: 15, ...} — 퍼센트
+  emotionDistribution Json?    // {ANXIOUS: 30, LONELY: 25, HOPEFUL: 20, ...} — 퍼센트
+  urgentTopics        Json?    // [{topic, urgencyAvg, count, psychInsight}]
+  dominantDesire      String?  // 오늘 지배적 욕망 코드 (예: "HEALTH")
+  dominantEmotion     String?  // 오늘 지배적 감정 코드 (예: "ANXIOUS")
+
+  // 점심 퀵 업데이트 (12:30 QUICK 모드)
+  quickUpdate   Json?    // {time: "12:30", topTitles: [], surfaceTrend: ""}
+  updatedAt     DateTime @updatedAt
+
+  createdAt     DateTime @default(now())
+
+  @@unique([date, period])
+  @@index([date(sort: Desc)])
+}
+
+/// 매일 아침 크롤링 후 생성되는 에이전트 공통 인텔리전스 브리프
+model DailyBrief {
+  id              String   @id @default(cuid())
+  date            DateTime @unique @db.Date  // 해당 날짜
+  mode            String   // "deep" | "quick_update"
+
+  // 욕망 인텔리전스
+  desireRanking   Json     // [{category, percent, label}] — 내림차순 정렬
+  dominantDesire  String?  // 최상위 욕망 코드 (25% 이상일 때만)
+  dominantEmotion String?  // 최상위 감정 코드
+
+  // 긴급 토픽
+  urgentTopics    Json     // [{topic, psychInsight, urgencyAvg, count}]
+
+  // 페르소나 쿼터 배분 (daily-brief.ts에서 계산)
+  personaQuotas   Json     // Record<personaId, {desireAlignment, quotaMultiplier, topicHint, shouldBoost}>
+
+  // 에이전트 공통 지시사항
+  contentDirective Json    // {primaryTheme, toneGuide, avoidTopics[]}
+
+  // 엔터 활성화 여부
+  entertainPct    Float    @default(0)  // ENTERTAIN 태그 글 비율 (%)
+  entertainActive Boolean  @default(false) // 10% 이상이면 true
+
+  // 점심 퀵 업데이트 (12:30 이후 갱신)
+  midDayPatch     Json?    // {updatedAt, shiftNotes, adjustedPersonas[]}
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([date(sort: Desc)])
+}
+
+// ─────────────────────────────────────────────────
+// SNS 마케팅 실험 시스템
+// ─────────────────────────────────────────────────
+
+/// SNS 게시물 추적 (Threads, X)
+model SocialPost {
+  id              String            @id @default(cuid())
+  platform        SocialPlatform
+  experimentId    String?
+  experiment      SocialExperiment? @relation(fields: [experimentId], references: [id])
+
+  contentType     String            // PERSONA, COMMUNITY, JOB_ALERT, MAGAZINE, NOSTALGIA, HUMOR, PRACTICAL
+  tone            String?           // warm, humorous, informational, emotional
+  personaId       String?           // A~J (SEED 페르소나 코드)
+  promotionLevel  String            @default("PURE") // PURE, SOFT, DIRECT
+
+  postText        String            @db.Text
+  hashtags        String[]
+  sourcePostId    String?           // 원본 커뮤니티 글 ID
+  platformPostId  String?           // Threads/X에서 받은 게시물 ID
+  postingSlot     String?           // morning, lunch, afternoon, evening
+  linkUrl         String?           // 우나어 링크 (없으면 순수 콘텐츠)
+
+  imageUrls       String[]          // 카드뉴스 R2 URL 목록
+  cardNewsType    String?           // NEWS_TREND, INFO_TOPIC, COMMUNITY_PROMO
+
+  metrics         Json?             // { impressions, likes, comments, shares, clicks }
+  metricsUpdatedAt DateTime?
+  status          SocialPostStatus  @default(DRAFT)
+
+  postedAt        DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([platform, createdAt(sort: Desc)])
+  @@index([experimentId])
+  @@index([status])
+}
+
+/// 7일 실험 사이클 — A/B 테스트 추적
+model SocialExperiment {
+  id            String           @id @default(cuid())
+  weekNumber    Int              // ISO 주차
+  startDate     DateTime
+  endDate       DateTime
+
+  hypothesis    String           // "커뮤니티 하이라이트가 페르소나보다 효과적일 것이다"
+  variable      String           // contentType, tone, postingTime, format, persona, promotionLevel
+  controlValue  String           // 통제군 값
+  testValue     String           // 실험군 값
+
+  status        ExperimentStatus @default(PLANNING)
+  results       Json?            // { controlAvg, testAvg, winner, delta }
+  learnings     String?          @db.Text // AI가 생성한 인사이트
+  nextAction    String?          // 다음 주에 무엇을 할지
+
+  posts         SocialPost[]
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([status])
+  @@index([weekNumber])
+}
+
+/// 반자동 채널 마케팅 초안 (카카오/지식인/당근/커뮤니티)
+model ChannelDraft {
+  id           String   @id @default(cuid())
+  channel      String   // KAKAO_OPENCHAT, NAVER_KNOWLEDGE, DANGGEUN, COMMUNITY
+  targetName   String   // 구체적 방/밴드/사이트명
+  draftText    String   @db.Text
+  linkUrl      String?
+  imageUrls    String[]
+  status       String   @default("DRAFT") // DRAFT, SENT, SKIPPED
+  createdAt    DateTime @default(now())
+  sentAt       DateTime?
+
+  @@index([channel, status])
+  @@index([createdAt(sort: Desc)])
+}
+
+// ─────────────────────────────────────────────────
+// 웹 푸시
+// ─────────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ── 팝업 시스템 ──
+
+enum PopupType {
+  BOTTOM_SHEET
+  FULLSCREEN
+  CENTER
+}
+
+enum PopupTarget {
+  ALL
+  HOME
+  COMMUNITY
+  LIFE2
+  JOBS
+  MAGAZINE
+  CUSTOM
+}
+
+model Popup {
+  id            String      @id @default(cuid())
+  type          PopupType
+  target        PopupTarget @default(ALL)
+  targetPaths   String[]
+
+  title         String?
+  content       String?     @db.Text
+  imageUrl      String?
+  linkUrl       String?
+  buttonText    String?     @default("확인")
+
+  startDate     DateTime
+  endDate       DateTime
+  priority      Int         @default(0)
+  isActive      Boolean     @default(true)
+
+  showOncePerDay Boolean    @default(false)
+  hideForDays    Int?
+
+  impressions   Int         @default(0)
+  clicks        Int         @default(0)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([isActive, startDate, endDate])
+  @@index([type])
+}

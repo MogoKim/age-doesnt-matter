@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인 페이지 프리뷰</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+    * { font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-100 flex items-start justify-center min-h-screen pt-10 pb-10">
+
+  <div class="fixed top-0 left-0 right-0 bg-gray-800 text-white text-xs text-center py-2 z-50">
+    📱 상단 영역 3개 안 비교 — 390×844px
+  </div>
+
+  <div class="flex gap-6 items-start mt-2">
+
+    <!-- AS-IS: 텍스트만 -->
+    <div>
+      <p class="text-center text-xs text-gray-500 mb-2 font-bold">AS-IS — 텍스트만</p>
+      <div class="w-[390px] h-[844px] bg-white shadow-2xl overflow-hidden flex flex-col relative">
+
+        <!-- 상단 -->
+        <div style="background: rgba(255,111,97,0.07); flex: 0 0 44%;"
+             class="px-7 flex flex-col justify-end pb-10">
+          <p style="color:#888; font-size:17px; font-weight:500; margin-bottom:10px; letter-spacing:-0.01em;">
+            내 이야기만 해도 되는 곳.
+          </p>
+          <p style="color:#111; font-size:30px; font-weight:700; line-height:1.45; letter-spacing:-0.02em;">
+            엄마 말고,<br>아내 말고,<br>그냥 나로.
+          </p>
+        </div>
+
+        <!-- 하단 -->
+        <div class="bg-white px-6 pt-8 flex flex-col flex-1">
+          <button style="background:#FEE500;color:#191919;box-shadow:0 2px 8px rgba(254,229,0,0.35);"
+                  class="w-full h-[56px] rounded-xl font-bold text-base flex items-center justify-center gap-2">
+            <span style="font-size:22px;">💬</span> 카카오톡으로 시작하기
+          </button>
+          <div class="mt-4 flex items-center justify-center gap-4 text-sm" style="color:#999;">
+            <span>✓ 닉네임만 공개</span>
+            <span style="color:#ddd;">|</span>
+            <span>✓ 10초 가입 · 무료</span>
+          </div>
+          <!-- 최하단 고정 -->
+          <div class="flex-1 flex items-end justify-center pb-10">
+            <p class="text-sm" style="color:#bbb;">먼저 둘러볼게요</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 옵션 2: 서비스명 텍스트 -->
+    <div>
+      <p class="text-center text-xs text-gray-500 mb-2 font-bold">옵션 2 — 서비스명</p>
+      <div class="w-[390px] h-[844px] bg-white shadow-2xl overflow-hidden flex flex-col relative">
+
+        <div style="background: rgba(255,111,97,0.07); flex: 0 0 44%;"
+             class="px-7 flex flex-col justify-between py-10">
+          <!-- 상단: 서비스명 -->
+          <p style="color:#FF6F61; font-size:15px; font-weight:700; letter-spacing:0.02em;">
+            우리 나이가 어때서
+          </p>
+          <!-- 하단: 카피 -->
+          <div>
+            <p style="color:#888; font-size:17px; font-weight:500; margin-bottom:10px;">
+              내 이야기만 해도 되는 곳.
+            </p>
+            <p style="color:#111; font-size:30px; font-weight:700; line-height:1.45; letter-spacing:-0.02em;">
+              엄마 말고,<br>아내 말고,<br>그냥 나로.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white px-6 pt-8 flex flex-col flex-1">
+          <button style="background:#FEE500;color:#191919;box-shadow:0 2px 8px rgba(254,229,0,0.35);"
+                  class="w-full h-[56px] rounded-xl font-bold text-base flex items-center justify-center gap-2">
+            <span style="font-size:22px;">💬</span> 카카오톡으로 시작하기
+          </button>
+          <div class="mt-4 flex items-center justify-center gap-4 text-sm" style="color:#999;">
+            <span>✓ 닉네임만 공개</span>
+            <span style="color:#ddd;">|</span>
+            <span>✓ 10초 가입 · 무료</span>
+          </div>
+          <div class="flex-1 flex items-end justify-center pb-10">
+            <p class="text-sm" style="color:#bbb;">먼저 둘러볼게요</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 옵션 3: 공감 카운터 -->
+    <div>
+      <p class="text-center text-xs text-gray-500 mb-2 font-bold">옵션 3 — 소셜 프루프</p>
+      <div class="w-[390px] h-[844px] bg-white shadow-2xl overflow-hidden flex flex-col relative">
+
+        <div style="background: rgba(255,111,97,0.07); flex: 0 0 44%;"
+             class="px-7 flex flex-col justify-between py-10">
+          <!-- 상단: 소셜 프루프 -->
+          <div style="background:rgba(255,111,97,0.1); border-radius:12px; padding:10px 14px; display:inline-flex; align-items:center; gap:8px; width:fit-content;">
+            <span style="font-size:16px;">💬</span>
+            <span style="color:#FF6F61; font-size:14px; font-weight:600;">지금도 누군가 이야기 나누는 중</span>
+          </div>
+          <!-- 하단: 카피 -->
+          <div>
+            <p style="color:#888; font-size:17px; font-weight:500; margin-bottom:10px;">
+              내 이야기만 해도 되는 곳.
+            </p>
+            <p style="color:#111; font-size:30px; font-weight:700; line-height:1.45; letter-spacing:-0.02em;">
+              엄마 말고,<br>아내 말고,<br>그냥 나로.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white px-6 pt-8 flex flex-col flex-1">
+          <button style="background:#FEE500;color:#191919;box-shadow:0 2px 8px rgba(254,229,0,0.35);"
+                  class="w-full h-[56px] rounded-xl font-bold text-base flex items-center justify-center gap-2">
+            <span style="font-size:22px;">💬</span> 카카오톡으로 시작하기
+          </button>
+          <div class="mt-4 flex items-center justify-center gap-4 text-sm" style="color:#999;">
+            <span>✓ 닉네임만 공개</span>
+            <span style="color:#ddd;">|</span>
+            <span>✓ 10초 가입 · 무료</span>
+          </div>
+          <div class="flex-1 flex items-end justify-center pb-10">
+            <p class="text-sm" style="color:#bbb;">먼저 둘러볼게요</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

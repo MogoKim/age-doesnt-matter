@@ -1,0 +1,45 @@
+{
+  "_comment": "Stitch screenId ↔ route 매핑. Stitch 프로젝트 생성 후 screenId를 채워 넣으세요.",
+  "projectId": "",
+  "routes": [
+    { "screenId": "", "name": "user/mobile/home", "route": "/", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/best", "route": "/best", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/jobs-list", "route": "/jobs", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/jobs-detail", "route": "/jobs/[id]", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/community-list", "route": "/community/stories", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/community-detail", "route": "/community/stories/[postId]", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/community-write", "route": "/community/write", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/magazine", "route": "/magazine", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/magazine-detail", "route": "/magazine/[id]", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/search", "route": "/search", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/my-page", "route": "/my", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/my-settings", "route": "/my/settings", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/login", "route": "/login", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/onboarding", "route": "/onboarding", "device": "mobile", "priority": "P0" },
+    { "screenId": "", "name": "user/mobile/faq", "route": "/faq", "device": "mobile", "priority": "P0" },
+
+    { "screenId": "", "name": "user/desktop/home", "route": "/", "device": "desktop", "priority": "P0" },
+    { "screenId": "", "name": "user/desktop/best", "route": "/best", "device": "desktop", "priority": "P0" },
+    { "screenId": "", "name": "user/desktop/jobs-list", "route": "/jobs", "device": "desktop", "priority": "P0" },
+    { "screenId": "", "name": "user/desktop/community-list", "route": "/community/stories", "device": "desktop", "priority": "P0" },
+    { "screenId": "", "name": "user/desktop/community-detail", "route": "/community/stories/[postId]", "device": "desktop", "priority": "P0" },
+    { "screenId": "", "name": "user/desktop/magazine", "route": "/magazine", "device": "desktop", "priority": "P0" },
+    { "screenId": "", "name": "user/desktop/search", "route": "/search", "device": "desktop", "priority": "P0" },
+    { "screenId": "", "name": "user/desktop/my-page", "route": "/my", "device": "desktop", "priority": "P0" },
+    { "screenId": "", "name": "user/desktop/login", "route": "/login", "device": "desktop", "priority": "P0" },
+    { "screenId": "", "name": "user/desktop/about", "route": "/about", "device": "desktop", "priority": "P0" },
+    { "screenId": "", "name": "user/desktop/faq", "route": "/faq", "device": "desktop", "priority": "P0" },
+    { "screenId": "", "name": "user/desktop/contact", "route": "/contact", "device": "desktop", "priority": "P0" },
+
+    { "screenId": "", "name": "admin/desktop/login", "route": "/admin/login", "device": "desktop", "priority": "P1" },
+    { "screenId": "", "name": "admin/desktop/dashboard", "route": "/admin", "device": "desktop", "priority": "P1" },
+    { "screenId": "", "name": "admin/desktop/content", "route": "/admin/content", "device": "desktop", "priority": "P1" },
+    { "screenId": "", "name": "admin/desktop/members", "route": "/admin/members", "device": "desktop", "priority": "P1" },
+    { "screenId": "", "name": "admin/desktop/reports", "route": "/admin/reports", "device": "desktop", "priority": "P1" },
+    { "screenId": "", "name": "admin/desktop/banners", "route": "/admin/banners", "device": "desktop", "priority": "P1" },
+    { "screenId": "", "name": "admin/desktop/analytics", "route": "/admin/analytics", "device": "desktop", "priority": "P1" },
+    { "screenId": "", "name": "admin/desktop/settings", "route": "/admin/settings", "device": "desktop", "priority": "P1" },
+
+    { "screenId": "", "name": "components/buttons-cards", "route": "/dev/components", "device": "desktop", "priority": "P0" }
+  ]
+}

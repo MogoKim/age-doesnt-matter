@@ -1,0 +1,31 @@
+name: Agents — Seed Content
+on:
+  schedule:
+    # 09,10,11,13,14,15,16,17,19,20,21,22 KST → UTC 변환 (12 슬롯)
+    - cron: "0 0,1,2,4,5,6,7,8,10,11,12,13 * * *"
+  workflow_dispatch:
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+  SLACK_CHANNEL_DASHBOARD: ${{ secrets.SLACK_CHANNEL_DASHBOARD }}
+  SLACK_CHANNEL_REPORT: ${{ secrets.SLACK_CHANNEL_REPORT }}
+  SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}
+  SLACK_CHANNEL_SYSTEM: ${{ secrets.SLACK_CHANNEL_SYSTEM }}
+  SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
+  SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+      - run: cd agents && npx tsx cron/runner.ts seed scheduler

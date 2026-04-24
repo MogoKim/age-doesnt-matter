@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1080px; height: 1350px; overflow: hidden; -webkit-font-smoothing: antialiased; }
+body {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #1A1A1A;
+  line-height: 1.6;
+}
+
+.card {
+  width: 1080px; height: 1350px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  background: #1A1A1A;
+}
+
+/* Background image */
+.bg-image {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; z-index: 0;
+}
+
+/* Dark gradient overlay: top transparent → bottom dark */
+.image-overlay {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.1) 10%,
+    rgba(0, 0, 0, 0.25) 40%,
+    rgba(0, 0, 0, 0.7) 75%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+}
+
+.card-inner {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: flex-end; align-items: center;
+  text-align: center;
+  padding: 80px 72px 40px;
+  position: relative; z-index: 2;
+}
+
+/* Category badge */
+.category-badge {
+  position: absolute; top: 48px; left: 48px; z-index: 10;
+  display: inline-block;
+  font-size: 22px; font-weight: 700;
+  letter-spacing: 1px;
+  padding: 10px 28px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  color: #fff;
+}
+
+/* Slide indicator */
+.slide-indicator {
+  position: absolute; top: 40px; right: 48px;
+  font-size: 22px; font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 24px; padding: 6px 20px; z-index: 10;
+}
+
+.title {
+  font-size: 56px; font-weight: 900;
+  color: #fff; line-height: 1.25;
+  letter-spacing: -0.5px;
+  margin-bottom: 28px;
+  word-break: keep-all;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+}
+
+.subtitle {
+  font-size: 30px; font-weight: 400;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.5;
+  word-break: keep-all;
+  margin-bottom: 40px;
+}
+
+.brand-footer {
+  width: 100%; padding: 28px 48px;
+  text-align: center; font-size: 22px; font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.5px;
+  background: rgba(0, 0, 0, 0.3);
+  position: relative; z-index: 2;
+}
+</style>
+</head>
+<body>
+<div class="card hook" data-category="{{category}}">
+  <img class="bg-image" src="{{imageUrl}}" alt="">
+  <div class="image-overlay"></div>
+  <div class="category-badge">{{category}}</div>
+  <div class="slide-indicator">{{slideNumber}} / {{totalSlides}}</div>
+  <div class="card-inner">
+    <div class="title">{{title}}</div>
+    <div class="subtitle">{{subtitle}}</div>
+  </div>
+  <div class="brand-footer">우리 나이가 어때서 | age-doesnt-matter.com</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우나어 비즈니스 프레임워크 v3</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --card: #1a1d27;
+  --card2: #21253a;
+  --border: #2a2f45;
+  --accent: #6366f1;
+  --accent2: #06b6d4;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --tag: #2d3748;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+}
+.layout { display: flex; min-height: 100vh; }
+nav {
+  width: 240px;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 24px 0;
+  z-index: 100;
+}
+nav .logo {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+nav a {
+  display: block;
+  padding: 9px 20px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.82rem;
+  transition: all 0.15s;
+}
+nav a:hover { color: var(--text); background: var(--card2); }
+nav .nav-section {
+  padding: 16px 20px 6px;
+  font-size: 0.7rem;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+main {
+  margin-left: 240px;
+  flex: 1;
+  padding: 48px 48px 80px;
+  max-width: 1000px;
+}
+.hero {
+  margin-bottom: 48px;
+  padding: 40px;
+  background: linear-gradient(135deg, #1a1d27 0%, #1e2235 100%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--accent); }
+.hero p { color: var(--muted); font-size: 0.95rem; max-width: 600px; line-height: 1.8; }
+.version-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: white;
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+.section { margin-bottom: 48px; }
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.section-num {
+  width: 36px; height: 36px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.section-title { font-size: 1.3rem; font-weight: 700; }
+.section-sub { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.badge.empty { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.badge.partial { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+.badge.done { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+.check-list { list-style: none; }
+.check-list li {
+  padding: 8px 0 8px 28px;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.check-list li:last-child { border-bottom: none; }
+.check-list li::before {
+  content: "☐";
+  position: absolute;
+  left: 0;
+  color: var(--border);
+  font-size: 1rem;
+}
+.check-list li strong { color: var(--text); }
+.cascade {
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(6,182,212,0.05));
+  border: 1px solid rgba(99,102,241,0.25);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-top: 16px;
+}
+.cascade-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.cascade-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+.cascade-item {
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.cascade-item span { display: block; font-size: 0.68rem; color: #4a5568; margin-top: 2px; }
+.impact {
+  background: rgba(245,158,11,0.07);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--yellow);
+}
+.impact::before { content: "⚡ "; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.code-block {
+  background: #0a0c12;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  color: #a5b4fc;
+  line-height: 2;
+  overflow-x: auto;
+}
+.harness-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+.harness-table th {
+  background: var(--card2);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.harness-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+}
+.harness-table td:first-child { color: var(--text); font-weight: 600; }
+.harness-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tag {
+  display: inline-block;
+  background: var(--tag);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin: 2px;
+}
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+.flow {
+  background: #0a0c12;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  font-family: monospace;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 2.2;
+  white-space: pre;
+  overflow-x: auto;
+}
+.added-badge {
+  display: inline-block;
+  background: rgba(16,185,129,0.15);
+  color: var(--green);
+  font-size: 0.65rem;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 700;
+  margin-left: 8px;
+  vertical-align: middle;
+  border: 1px solid rgba(16,185,129,0.3);
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav>
+  <div class="logo">🏛️ WOONAEO FRAMEWORK v3</div>
+  <div class="nav-section">Foundation</div>
+  <a href="#s0">§0 데이터 기반 의사결정</a>
+  <a href="#s1">§1 고객 욕망/니즈/원츠</a>
+  <a href="#s2">§2 수단: 커뮤니티</a>
+  <a href="#s3">§3 미션/비전/철학</a>
+  <div class="nav-section">Strategy</div>
+  <a href="#s4">§4 카테고리 전략</a>
+  <a href="#s5">§5 기능 전략</a>
+  <a href="#s6">§6 SEO 전략</a>
+  <a href="#s7">§7 매출 공식</a>
+  <div class="nav-section">New</div>
+  <a href="#s10">§10 경쟁/포지셔닝</a>
+  <a href="#s11">§11 콘텐츠 엔진</a>
+  <a href="#s12">§12 성장/획득 전략</a>
+  <a href="#s13">§13 커뮤니티 플라이휠</a>
+  <div class="nav-section">Execution</div>
+  <a href="#s8">§8 OKR</a>
+  <a href="#harness">시스템 하네스 영향도</a>
+  <a href="#deepdive">딥다이브 리스트</a>
+</nav>
+
+<main>
+
+<div class="hero">
+  <div class="version-badge">v3 · 2026.04</div>
+  <h1>우나어 — <span>근본을 파헤치다</span></h1>
+  <p>
+    이 문서는 <strong>빈 캔버스이자 실행 지도</strong>다. 창업자가 각 섹션을 딥다이브로 채울 때, 시스템 전체에 어떤 산출물이 바뀌어야 하는지를 자동으로 보여준다.<br><br>
+    크롤링은 <strong>수동으로 직접 돌린다.</strong> 양보다 질 — 5060이 가장 뜨겁게 반응한 게시물을 빡세게 긁어낸 뒤, 반응 지수(좋아요+댓글×2+조회수×0.1)로 정렬해 욕망을 귀납한다.
+  </p>
+</div>
+
+<!-- ─────────────────────────────── §0 ─────────────────────────── -->
+<div class="section" id="s0">
+  <div class="section-header">
+    <div class="section-num" style="background:#06b6d4">0</div>
+    <div>
+      <div class="section-title">데이터 기반 의사결정 시스템 <span class="added-badge">NEW</span></div>
+      <div class="section-sub">"우리는 직관이 아닌 데이터로 욕망을 발견한다"</div>
+    </div>
+    <span class="badge partial">⚠️ 진행중</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📡 크롤링 방법론 (이번 세션 기준)</div>
+    <ul class="check-list">
+      <li><strong>수동 실행 방식:</strong> <code>npx tsx agents/cafe/crawler.ts</code> 직접 실행 — 자동화 스케줄 외 집중 수집</li>
+      <li><strong>타겟 카페:</strong> 우갱(wgang), 은빛사랑(welovesilver), 5060년대생, 82cook 4곳</li>
+      <li><strong>수집 기준:</strong> 조회수 100+, 댓글 5+, 또는 좋아요 3+ 게시물만 isUsable=true 처리</li>
+      <li><strong>반응 지수 공식:</strong> likeCount×3 + commentCount×2 + viewCount×0.1 → TOP 50 추출</li>
+      <li><strong>목표 수집량:</strong> 이번 세션 1,000건+ (현재 ~239건)</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📊 분석 스크립트</div>
+    <ul class="check-list">
+      <li><strong>agents/analyze_desires.ts</strong> — 실행하면 반응 TOP30, 키워드, 감정분포, 페르소나 힌트 출력</li>
+      <li><strong>CafeTrend 테이블</strong> — AI가 일별 트렌드 분석 후 hotTopics, keywords, personaHints 저장</li>
+      <li><strong>채워야 할 것:</strong> 이번 수동 크롤링 후 analyze_desires.ts 실행 → 결과를 §1에 반영</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── §1 ─────────────────────────── -->
+<div class="section" id="s1">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <div>
+      <div class="section-title">고객의 욕망 / 니즈 / 원츠 (WHY)</div>
+      <div class="section-sub">"우리가 해결하려는 고객의 근본적인 문제는 무엇인가?"</div>
+    </div>
+    <span class="badge empty">🔴 미완성</span>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">채워야 할 것</div>
+      <ul class="check-list">
+        <li><strong>메인 주제 3가지</strong> — 가장 뜨거운 반응을 일으키는 대주제</li>
+        <li><strong>서브 주제</strong> — 각 대주제 아래 세부 관심사</li>
+        <li><strong>핵심 키워드</strong> — 반복적으로 등장하는 단어 TOP 20</li>
+        <li><strong>욕망</strong> — 고객이 진짜 원하는 심리적 동기</li>
+        <li><strong>니즈</strong> — 욕망을 해결하기 위해 필요한 것</li>
+        <li><strong>원츠</strong> — 니즈를 충족시키는 구체적 수단 선호</li>
+        <li><strong>서비스 관심사/욕망/니즈/원츠</strong> — 우나어 관련 직접 욕망</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">5 Whys 템플릿</div>
+      <ul class="check-list">
+        <li>왜 건강 글에 댓글이 폭발하는가? → Why?</li>
+        <li>왜 일자리 글보다 일상 소통 글이 많이 읽히는가? → Why?</li>
+        <li>왜 부정 감정 글에 공감이 더 많은가? → Why?</li>
+        <li>왜 음식/여행 주제가 상위에 오는가? → Why?</li>
+        <li><em style="color:#4a5568">각 질문을 5번 why → 욕망의 뿌리 발견</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cascade">
+    <div class="cascade-title">⚡ §1 확정 시 자동으로 변경되는 것들</div>
+    <div class="cascade-grid">
+      <div class="cascade-item">§2 커뮤니티 정체성<span>성격/톤 결정</span></div>
+      <div class="cascade-item">§4 카테고리 우선순위<span>욕망과 매핑</span></div>
+      <div class="cascade-item">§5 기능 우선순위<span>필수 기능 도출</span></div>
+      <div class="cascade-item">§6 SEO 키워드 맵<span>타겟 키워드 확정</span></div>
+      <div class="cascade-item">§11 콘텐츠 엔진<span>매거진 봇 프롬프트</span></div>
+      <div class="cascade-item">constitution.yaml<span>톤/철학 업데이트</span></div>
+      <div class="cascade-item">CLAUDE.md<span>CEO 에이전트 지시</span></div>
+      <div class="cascade-item">SNS 에이전트<span>메시지/해시태그</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── §2 ─────────────────────────── -->
+<div class="section" id="s2">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <div>
+      <div class="section-title">수단: 커뮤니티 (HOW)</div>
+      <div class="section-sub">"왜 블로그도 유튜브도 아닌 커뮤니티인가?"</div>
+    </div>
+    <span class="badge partial">⚠️ 수단 결정, 논거 필요</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">풀어야 할 핵심 질문</div>
+    <ul class="check-list">
+      <li><strong>인간 심리의 본질:</strong> 레딧/디시/펨코가 거대해진 이유 — 어떤 심리가 작동하는가?</li>
+      <li><strong>5060에게도 동일한가?</strong> 젊은 세대와 5060의 커뮤니티 욕구 차이/공통점</li>
+      <li><strong>압도적 장점:</strong> 블로그/유튜브/뉴스레터 대비 커뮤니티만이 해결하는 것</li>
+      <li><strong>커뮤니티 성격:</strong> 정보형? 감성형? 유머형? 실용형? (§1 확정 후 결정)</li>
+    </ul>
+  </div>
+
+  <div class="cascade">
+    <div class="cascade-title">⚡ §2 확정 시 변경되는 것들</div>
+    <div class="cascade-grid">
+      <div class="cascade-item">§3 미션 문장<span>커뮤니티 성격 반영</span></div>
+      <div class="cascade-item">홈 UX 설계<span>진입점/가입 유도</span></div>
+      <div class="cascade-item">커뮤니티 규칙<span>운영 원칙 문서</span></div>
+      <div class="cascade-item">지식인 답변봇<span>역할 포지셔닝</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── §3 ─────────────────────────── -->
+<div class="section" id="s3">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <div>
+      <div class="section-title">미션 / 비전 / 철학 (WHO WE ARE)</div>
+      <div class="section-sub">"우리는 왜 존재하는가?"</div>
+    </div>
+    <span class="badge empty">🔴 명문화 필요</span>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">채워야 할 것</div>
+      <ul class="check-list">
+        <li><strong>서비스명 확정:</strong> "우리 나이가 어때서" → 우나어? 브랜드 정리</li>
+        <li><strong>서비스 철학 1문장</strong></li>
+        <li><strong>미션:</strong> 우리가 매일 하는 일 (한 문장)</li>
+        <li><strong>비전:</strong> 3년 뒤 우나어의 모습</li>
+        <li><strong>핵심 마케팅 3문장</strong> — 광고에 바로 쓸 수 있는 문장</li>
+        <li><strong>톤 원칙 3가지</strong> — 우리가 절대 하지 않는 말투</li>
+        <li><strong>슬로건/태그라인</strong></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">산출 문서 (확정 후 생성)</div>
+      <ul class="check-list">
+        <li><strong>constitution.yaml</strong> 업데이트 — 현재 흩어진 철학 통합</li>
+        <li><strong>CLAUDE.md</strong> 수정 — CEO 에이전트 지시에 미션 반영</li>
+        <li><strong>각 SNS 에이전트 프롬프트</strong> — 브랜드 보이스 통일</li>
+        <li><strong>사이트 메타 description</strong> — 서비스 설명 통일</li>
+        <li><strong>온보딩 문구</strong> — 가입 시 첫 화면 메시지</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cascade">
+    <div class="cascade-title">⚡ §3 확정 시 변경되는 것들</div>
+    <div class="cascade-grid">
+      <div class="cascade-item">constitution.yaml<span>전면 재작성</span></div>
+      <div class="cascade-item">CLAUDE.md<span>미션/비전 반영</span></div>
+      <div class="cascade-item">매거진봇 프롬프트<span>브랜드 보이스</span></div>
+      <div class="cascade-item">SNS 에이전트<span>Threads/X/IG/FB</span></div>
+      <div class="cascade-item">사이트 메타태그<span>title/description</span></div>
+      <div class="cascade-item">온보딩 UX<span>가입 후 첫 경험</span></div>
+      <div class="cascade-item">지식인봇 페르소나<span>캐릭터 설정</span></div>
+      <div class="cascade-item">OKR §8<span>O 방향성 결정</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── §10 (NEW) ─────────────────── -->
+<div class="section" id="s10">
+  <div class="section-header">
+    <div class="section-num" style="background:#10b981">10</div>
+    <div>
+      <div class="section-title">경쟁/포지셔닝 전략 <span class="added-badge">NEW</span></div>
+      <div class="section-sub">"우리는 어디서 싸우고, 어떻게 이기는가?"</div>
+    </div>
+    <span class="badge empty">🔴 미완성</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">채워야 할 것</div>
+    <ul class="check-list">
+      <li><strong>직접 경쟁자:</strong> 5060 타겟 커뮤니티/플랫폼 목록 (실버넷, 중장년일자리센터, 카페 자체 등)</li>
+      <li><strong>간접 경쟁자:</strong> 네이버 카페, 밴드, 유튜브 시니어 채널 등</li>
+      <li><strong>우나어만의 차별점(Moat):</strong> 경쟁자가 쉽게 따라할 수 없는 것</li>
+      <li><strong>포지셔닝 맵:</strong> X축(정보↔감성) × Y축(젊음↔시니어) 상 우리 위치</li>
+      <li><strong>우리가 절대 하지 않는 것:</strong> 포지셔닝의 경계선</li>
+    </ul>
+  </div>
+
+  <div class="cascade">
+    <div class="cascade-title">⚡ §10 확정 시 변경되는 것들</div>
+    <div class="cascade-grid">
+      <div class="cascade-item">§3 마케팅 문장<span>차별점 기반 작성</span></div>
+      <div class="cascade-item">§6 SEO 전략<span>경쟁 키워드 회피/공략</span></div>
+      <div class="cascade-item">§12 성장전략<span>채널 선택 기준</span></div>
+      <div class="cascade-item">바이럴 봇 전략<span>침투 커뮤니티 선정</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── §4 ─────────────────────────── -->
+<div class="section" id="s4">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <div>
+      <div class="section-title">카테고리 전략 (WHAT WE OFFER)</div>
+      <div class="section-sub">"커뮤니티 안에서 어떤 방을 만들 것인가?"</div>
+    </div>
+    <span class="badge partial">⚠️ 재검토 필요</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">현재 카테고리 vs 재설계 체크포인트</div>
+    <ul class="check-list">
+      <li><strong>현재:</strong> 매거진 / 일자리 / 활력충전소 / 사는이야기 — 이 4개가 §1 욕망과 매핑되는가?</li>
+      <li><strong>빼야 할 것?</strong> 반응이 없는 카테고리, 정체성이 불명확한 카테고리</li>
+      <li><strong>추가해야 할 것?</strong> §1에서 발견된 욕망 중 현재 카테고리가 못 담는 것</li>
+      <li><strong>MVP 카테고리:</strong> 지금 당장 가장 집중해야 할 1~2개</li>
+      <li><strong>각 카테고리별 SEO 타겟 키워드</strong> — §6과 연동</li>
+      <li><strong>각 카테고리별 담당 에이전트/봇</strong> — 자동화 우선순위</li>
+    </ul>
+  </div>
+
+  <div class="cascade">
+    <div class="cascade-title">⚡ §4 확정 시 변경되는 것들</div>
+    <div class="cascade-grid">
+      <div class="cascade-item">src/app/(main) 라우트<span>카테고리 URL 구조</span></div>
+      <div class="cascade-item">BoardType enum<span>prisma schema 수정</span></div>
+      <div class="cascade-item">홈 네비게이션 UI<span>메뉴 구조 변경</span></div>
+      <div class="cascade-item">매거진봇 카테고리<span>발행 범위 조정</span></div>
+      <div class="cascade-item">SEO sitemap.ts<span>URL 구조 반영</span></div>
+      <div class="cascade-item">cafe/config.ts<span>크롤링 보드 매핑</span></div>
+      <div class="cascade-item">지식인봇 타겟<span>답변 카테고리 선정</span></div>
+      <div class="cascade-item">GA4 이벤트<span>board_view 파라미터</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── §5 ─────────────────────────── -->
+<div class="section" id="s5">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <div>
+      <div class="section-title">기능(Feature) 전략</div>
+      <div class="section-sub">"욕망을 해결하는 도구들"</div>
+    </div>
+    <span class="badge partial">⚠️ 매핑 필요</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">현재 구현된 기능 목록</div>
+    <ul class="check-list">
+      <li><span class="tag">완료</span> 게시판(STORY/HUMOR/MAGAZINE/JOB/WEEKLY)</li>
+      <li><span class="tag">완료</span> 카카오 로그인 / 온보딩</li>
+      <li><span class="tag">완료</span> 글쓰기 / 댓글 / 좋아요 / 스크랩</li>
+      <li><span class="tag">완료</span> 일자리 상세 / 매거진 봇 자동발행</li>
+      <li><span class="tag">완료</span> 검색 / 베스트 / 등급 시스템</li>
+      <li><span class="tag">미완</span> 카카오톡 공유 버튼 (백로그)</li>
+      <li><span class="tag">미완</span> 건강 AI 챗봇 (광고 크레딧 모델)</li>
+      <li><span class="tag">미완</span> 알림 시스템 (댓글 알림 등)</li>
+      <li><span class="tag">미완</span> 내 스크랩함 / 활동 피드</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title">채워야 할 것</div>
+    <ul class="check-list">
+      <li><strong>§1 욕망 → 기능 매핑표:</strong> 각 기능이 어떤 욕망을 해결하는가?</li>
+      <li><strong>필수인데 없는 기능:</strong> 욕망을 해결 못 하는 공백 발견</li>
+      <li><strong>기능 우선순위:</strong> 고객 임팩트 × 개발 비용 매트릭스</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── §11 (NEW) ─────────────────── -->
+<div class="section" id="s11">
+  <div class="section-header">
+    <div class="section-num" style="background:#10b981">11</div>
+    <div>
+      <div class="section-title">콘텐츠 엔진 전략 <span class="added-badge">NEW</span></div>
+      <div class="section-sub">"어떤 콘텐츠가 5060을 끌어들이고 붙잡는가?"</div>
+    </div>
+    <span class="badge empty">🔴 미완성</span>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">채워야 할 것</div>
+      <ul class="check-list">
+        <li><strong>콘텐츠 유형 정의:</strong> 정보형/감성형/유머형/실용형 비율</li>
+        <li><strong>발행 주기/캘린더:</strong> 매거진봇 주간 발행 계획</li>
+        <li><strong>시드 콘텐츠 전략:</strong> 초기 빈 커뮤니티 채우는 방법</li>
+        <li><strong>UGC 유도 메커니즘:</strong> 유저가 글 쓰게 만드는 장치</li>
+        <li><strong>크롤링 → 콘텐츠 파이프라인:</strong> 카페 트렌드 → 매거진 자동화</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">에이전트 영향</div>
+      <ul class="check-list">
+        <li><strong>매거진봇 프롬프트</strong> — §1 키워드 + §6 SEO 키워드 삽입 구조</li>
+        <li><strong>CafeTrend 분석봇</strong> — 트렌드→콘텐츠 아이디어 자동 추출</li>
+        <li><strong>SNS 에이전트</strong> — 콘텐츠 발행 후 SNS 배포 자동화</li>
+        <li><strong>지식인 답변봇</strong> — 네이버 지식인에 콘텐츠 연결 링크 삽입</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── §6 ─────────────────────────── -->
+<div class="section" id="s6">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <div>
+      <div class="section-title">SEO 전략</div>
+      <div class="section-sub">"고객이 우리를 어떻게 발견하게 할 것인가?"</div>
+    </div>
+    <span class="badge empty">🔴 미완성</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">채워야 할 것</div>
+    <ul class="check-list">
+      <li><strong>서비스 전체 SEO 방향:</strong> "우리 나이가 어때서 + [주제]" 검색 독점 전략</li>
+      <li><strong>홈페이지 meta:</strong> title, description, OG 태그 확정</li>
+      <li><strong>각 카테고리 페이지 SEO:</strong> /magazine, /jobs, /community 별 타겟 키워드</li>
+      <li><strong>매거진 봇 SEO 연동:</strong> 발행 시 타겟 키워드를 제목과 본문에 자연 삽입</li>
+      <li><strong>URL slug 전략:</strong> /magazine/[키워드-포함-슬러그]</li>
+      <li><strong>서치콘솔 GSC 활용:</strong> 현재 유입 쿼리 → 공략 키워드 선정</li>
+      <li><strong>채널별 전략:</strong> 구글 / 네이버 / 카카오톡 공유 / SNS 유입</li>
+    </ul>
+  </div>
+
+  <div class="cascade">
+    <div class="cascade-title">⚡ §6 확정 시 변경되는 것들</div>
+    <div class="cascade-grid">
+      <div class="cascade-item">src/app/sitemap.ts<span>동적 URL 생성</span></div>
+      <div class="cascade-item">layout.tsx metadata<span>전역 메타태그</span></div>
+      <div class="cascade-item">각 page.tsx<span>페이지별 메타태그</span></div>
+      <div class="cascade-item">매거진봇 프롬프트<span>키워드 삽입 지시</span></div>
+      <div class="cascade-item">robots.ts<span>크롤링 허용 범위</span></div>
+      <div class="cascade-item">GSC Search Console<span>URL 제출 자동화</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── §12 (NEW) ─────────────────── -->
+<div class="section" id="s12">
+  <div class="section-header">
+    <div class="section-num" style="background:#10b981">12</div>
+    <div>
+      <div class="section-title">성장/획득 전략 <span class="added-badge">NEW</span></div>
+      <div class="section-sub">"첫 1,000명의 MAU를 어떻게 얻는가?"</div>
+    </div>
+    <span class="badge empty">🔴 미완성</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">채워야 할 것</div>
+    <ul class="check-list">
+      <li><strong>유입 채널 우선순위:</strong> SEO / 네이버 지식인봇 / 카카오 오픈채팅 / 밴드 침투 / SNS 중 1순위</li>
+      <li><strong>바이럴 계수(K-Factor) 목표:</strong> K=0.3이면? K=1이면?</li>
+      <li><strong>네이버 커뮤니티 침투 전략:</strong> 지식인 답변봇 실행 기준/타겟 질문 선정</li>
+      <li><strong>카카오 오픈채팅 전략:</strong> 어떤 오픈채팅에 어떻게 자연스럽게 노출</li>
+      <li><strong>초기 시드 유저 확보:</strong> 카페 크롤링 데이터로 역으로 찾아가는 방법</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title">백로그 연동</div>
+    <ul class="check-list">
+      <li><span class="tag">백로그</span> 지식인 답변 달아주는 자동화</li>
+      <li><span class="tag">백로그</span> 네이버 밴드/커뮤니티 바이럴</li>
+      <li><span class="tag">백로그</span> 카카오톡 오픈채팅 침투 바이럴</li>
+      <li><span class="tag">백로그</span> 건강 AI 챗봇 (유입+리텐션 겸용)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── §13 (NEW) ─────────────────── -->
+<div class="section" id="s13">
+  <div class="section-header">
+    <div class="section-num" style="background:#10b981">13</div>
+    <div>
+      <div class="section-title">커뮤니티 플라이휠 <span class="added-badge">NEW</span></div>
+      <div class="section-sub">"커뮤니티는 언제 스스로 돌아가는가?"</div>
+    </div>
+    <span class="badge empty">🔴 미완성</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">채워야 할 것</div>
+    <ul class="check-list">
+      <li><strong>플라이휠 설계:</strong> 유입 → 첫 참여 → 재방문 → 글쓰기 → 팬 → 바이럴 사이클</li>
+      <li><strong>D0 경험 설계:</strong> 처음 온 5060이 10분 안에 경험해야 할 핵심 가치</li>
+      <li><strong>D1 리텐션 요인:</strong> 다음 날 다시 오게 만드는 훅(Hook)</li>
+      <li><strong>등급/뱃지 시스템:</strong> 현재 새싹→단골→터줏대감 — 욕망과 연결되어 있는가?</li>
+      <li><strong>Super User 전략:</strong> 파워 유저를 어떻게 발굴하고 키울 것인가?</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── §7 ─────────────────────────── -->
+<div class="section" id="s7">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <div>
+      <div class="section-title">매출 공식 (Revenue Formula)</div>
+      <div class="section-sub">"돈은 어떤 구조로 벌리는가?"</div>
+    </div>
+    <span class="badge partial">⚠️ 구조 있음, 드라이버 필요</span>
+  </div>
+
+  <div class="code-block">월 매출  = DAU × PV/DAU × eCPM/1000 × 30일  +  CPS 수익
+월 순수익 = 월 매출 - (Vercel + Supabase + Claude API + 기타)
+
+현재 운영 비용 예상:
+  · Vercel (Pro): ~$20/월
+  · Supabase (Pro): ~$25/월  
+  · Claude API (매거진봇 등): ~$10-50/월
+  ─────────────────────────────────────
+  합계: 약 $55~95/월 (≈ 8~14만원)</div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-title">각 변수의 드라이버 (채워야 할 것)</div>
+    <ul class="check-list">
+      <li><strong>DAU 드라이버:</strong> SEO 유입 × 재방문율(RR) × [콘텐츠 신선도, 알림, 플라이휠]</li>
+      <li><strong>PV/DAU 드라이버:</strong> 내부 링크 구조, 관련글 추천, 댓글 알림 클릭, 카테고리 탐색</li>
+      <li><strong>eCPM 드라이버:</strong> 콘텐츠 주제(건강/돈 관련이 eCPM 높음), 페이지 체류시간</li>
+      <li><strong>CPS 드라이버:</strong> 쿠팡파트너스 링크 클릭 유도 시점, 건강/생활용품 콘텐츠 비율</li>
+      <li><strong>eCPM vs CPC 구조 파악:</strong> 애드센스 실제 수익 모델 확인 필요</li>
+    </ul>
+  </div>
+
+  <div class="impact">§7 드라이버 파악 → 어디를 건드려야 매출 임팩트가 가장 큰지 보임 → §8 Initiatives가 됨</div>
+</div>
+
+<!-- ─────────────────────────────── §8 ─────────────────────────── -->
+<div class="section" id="s8">
+  <div class="section-header">
+    <div class="section-num">8</div>
+    <div>
+      <div class="section-title">OKR (Objectives & Key Results)</div>
+      <div class="section-sub">"이번 분기에 무엇을 달성할 것인가?"</div>
+    </div>
+    <span class="badge empty">🔴 §1~7 확정 후 수립</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">채워야 할 것</div>
+    <ul class="check-list">
+      <li><strong>O (Objective):</strong> 가슴 뛰는 한 문장 목표 — §3 비전에서 도출</li>
+      <li><strong>KR1:</strong> DAU/MAU 숫자 목표</li>
+      <li><strong>KR2:</strong> 월 매출 목표</li>
+      <li><strong>KR3:</strong> 핵심 전환 지표 (가입률, 글쓰기 전환 등)</li>
+      <li><strong>Initiatives:</strong> 각 KR을 달성하는 구체 행동 Top 3</li>
+    </ul>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ─────────────────────────────── 시스템 하네스 ──────────────── -->
+<div class="section" id="harness">
+  <div class="section-header">
+    <div class="section-num" style="background:#8b5cf6; width:auto; padding:0 12px">⚙️</div>
+    <div>
+      <div class="section-title">시스템 하네스 영향도 <span class="added-badge">NEW</span></div>
+      <div class="section-sub">"각 섹션 확정 시, 시스템의 어떤 부분이 바뀌는가?"</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">핵심 문서 / 에이전트 변경 영향 매트릭스</div>
+    <table class="harness-table">
+      <thead>
+        <tr>
+          <th>파일 / 에이전트</th>
+          <th>현재 역할</th>
+          <th>변경 트리거</th>
+          <th>우선순위</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>CLAUDE.md</td>
+          <td>CEO 에이전트 전체 지시서</td>
+          <td>§1욕망 + §3미션 확정</td>
+          <td><span class="tag">긴급</span></td>
+        </tr>
+        <tr>
+          <td>constitution.yaml</td>
+          <td>브랜드 보이스/톤 원칙</td>
+          <td>§3 철학 확정</td>
+          <td><span class="tag">긴급</span></td>
+        </tr>
+        <tr>
+          <td>agents/cafe/config.ts</td>
+          <td>크롤링 타겟 보드 설정</td>
+          <td>§4 카테고리 재설계</td>
+          <td><span class="tag">중간</span></td>
+        </tr>
+        <tr>
+          <td>agents/magazine/prompt.ts</td>
+          <td>매거진 봇 콘텐츠 프롬프트</td>
+          <td>§1키워드 + §6SEO + §11콘텐츠</td>
+          <td><span class="tag">긴급</span></td>
+        </tr>
+        <tr>
+          <td>agents/social/*.ts</td>
+          <td>Threads/X/IG/FB 자동 포스팅</td>
+          <td>§3 브랜드보이스 + §12 성장전략</td>
+          <td><span class="tag">중간</span></td>
+        </tr>
+        <tr>
+          <td>agents/kin/ (미구현)</td>
+          <td>네이버 지식인 답변봇</td>
+          <td>§1욕망 + §4카테고리 + §12성장</td>
+          <td><span class="tag">백로그</span></td>
+        </tr>
+        <tr>
+          <td>prisma/schema.prisma</td>
+          <td>DB 스키마 (BoardType enum 등)</td>
+          <td>§4 카테고리 확정</td>
+          <td><span class="tag">중간</span></td>
+        </tr>
+        <tr>
+          <td>src/app layout.tsx</td>
+          <td>전역 메타태그 / 네비 구조</td>
+          <td>§3서비스명 + §6SEO</td>
+          <td><span class="tag">중간</span></td>
+        </tr>
+        <tr>
+          <td>src/app sitemap.ts</td>
+          <td>검색엔진 URL 제출</td>
+          <td>§6 SEO 전략 확정</td>
+          <td><span class="tag">중간</span></td>
+        </tr>
+        <tr>
+          <td>GA4 이벤트 설정</td>
+          <td>전환/행동 추적</td>
+          <td>§5 기능 + §8 KR 지표</td>
+          <td><span class="tag">낮음</span></td>
+        </tr>
+        <tr>
+          <td>GTM 태그/트리거</td>
+          <td>이벤트 트래킹 자동화</td>
+          <td>§5 기능 확정</td>
+          <td><span class="tag">낮음</span></td>
+        </tr>
+        <tr>
+          <td>MCP: 추가 필요</td>
+          <td>—</td>
+          <td>현재 필요 MCP 검토 필요</td>
+          <td><span class="tag">검토</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-title">MCP 추가 검토 필요 항목</div>
+    <ul class="check-list">
+      <li><strong>Google Search Console MCP:</strong> GSC 데이터를 CEO 에이전트가 직접 읽어 SEO 전략 자동 제안</li>
+      <li><strong>GA4 MCP:</strong> 트래픽/이벤트 데이터를 에이전트가 실시간으로 읽어 OKR 진척 보고</li>
+      <li><strong>Supabase MCP:</strong> DB 데이터를 에이전트가 직접 쿼리하여 욕망 분석 자동화</li>
+      <li><strong>Naver API MCP:</strong> 지식인 답변봇 실행에 필요한 네이버 로그인/API 연동</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── 딥다이브 ──────────────────── -->
+<div class="section" id="deepdive">
+  <div class="section-header">
+    <div class="section-num" style="background:#f59e0b; color:#000">🔟</div>
+    <div>
+      <div class="section-title">딥다이브 실행 리스트</div>
+      <div class="section-sub">"각 세션에서 하나씩, 순서대로"</div>
+    </div>
+  </div>
+
+  <div class="flow">
+[딥다이브 #0] 크롤링 빡세게 돌리기 ← 오늘
+  └ 수동 실행: npx tsx agents/cafe/crawler.ts
+  └ 목표: 1,000건+ 수집
+  └ 실행 후: analyze_desires.ts 돌려서 결과 확인
+
+[딥다이브 #1] 고객 욕망/니즈/원츠 정의 ← §1
+  └ 크롤링 결과 기반 정량 분석
+  └ 5 Whys로 욕망 뿌리 발견
+  └ 메인 욕망 3가지, 서브 욕망, 키워드 TOP20 확정
+
+[딥다이브 #2] 경쟁/포지셔닝 전략 ← §10
+  └ 직간접 경쟁자 목록
+  └ 우나어만의 Moat 정의
+
+[딥다이브 #3] 미션/비전/철학 명문화 ← §3
+  └ 서비스명/슬로건/마케팅 3문장
+  └ constitution.yaml 전면 업데이트
+
+[딥다이브 #4] 카테고리 재설계 ← §4
+  └ §1 욕망과 카테고리 매핑
+  └ MVP 카테고리 1~2개 선정
+
+[딥다이브 #5] 콘텐츠 엔진 설계 ← §11
+  └ 매거진봇 프롬프트 개편
+  └ SEO 키워드 삽입 구조
+
+[딥다이브 #6] SEO 전략 ← §6
+  └ 카테고리별 타겟 키워드
+  └ 메타태그 전수 정비
+
+[딥다이브 #7] 성장/획득 전략 ← §12
+  └ 지식인봇 실행 계획
+  └ 카카오/밴드 침투 플랜
+
+[딥다이브 #8] 커뮤니티 플라이휠 ← §13
+  └ D0~D7 리텐션 경험 설계
+
+[딥다이브 #9] 매출 공식 드라이버 파악 ← §7
+  └ eCPM/CPC 구조 확인
+  └ DAU 드라이버 트리 완성
+
+[딥다이브 #10] OKR 수립 ← §8
+  └ O + KR 3~4개 + Initiatives
+
+[딥다이브 #11] 시스템 업데이트 실행
+  └ CLAUDE.md / constitution.yaml 개편
+  └ 에이전트 프롬프트 일괄 업데이트
+  └ 사이트 메타태그/SEO 코드 반영</div>
+</div>
+
+</main>
+</div>
+</body>
+</html>

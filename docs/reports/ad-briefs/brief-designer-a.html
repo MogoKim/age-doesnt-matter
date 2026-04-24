@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우나어 광고 소재 의뢰서 — 디자이너 A (RELATION 4종)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #FAFAF8; color: #1A1A1A; line-height: 1.7; }
+
+  .cover { background: #FF6F61; color: white; padding: 72px 60px; }
+  .cover .badge { background: rgba(255,255,255,0.2); display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 24px; letter-spacing: 0.05em; }
+  .cover h1 { font-size: 40px; font-weight: 800; line-height: 1.2; margin-bottom: 12px; }
+  .cover p { font-size: 18px; opacity: 0.9; }
+  .cover .meta { margin-top: 40px; display: flex; gap: 32px; flex-wrap: wrap; }
+  .cover .meta-item { background: rgba(255,255,255,0.15); padding: 14px 20px; border-radius: 12px; }
+  .cover .meta-item .label { font-size: 12px; opacity: 0.8; margin-bottom: 4px; }
+  .cover .meta-item .value { font-size: 20px; font-weight: 700; }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 60px 40px; }
+
+  .section { margin-bottom: 56px; }
+  .section-title { font-size: 22px; font-weight: 800; color: #FF6F61; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #FFE8E5; }
+
+  p { color: #444; margin-bottom: 12px; }
+
+  .highlight-box { background: #FFF5F4; border-left: 4px solid #FF6F61; padding: 20px 24px; border-radius: 0 12px 12px 0; margin-bottom: 16px; }
+  .highlight-box p { margin: 0; color: #333; }
+
+  .desire-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .desire-card { border: 1px solid #eee; border-radius: 12px; padding: 20px; }
+  .desire-card.active { background: #FF6F61; color: white; border-color: #FF6F61; }
+  .desire-card.active .desire-tag { background: rgba(255,255,255,0.2); color: white; }
+  .desire-card.active ul li { color: rgba(255,255,255,0.9); }
+  .desire-card.inactive { background: #f9f9f9; }
+  .desire-card.inactive .desire-num { color: #bbb; }
+  .desire-tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #FFE8E5; color: #FF6F61; margin-bottom: 8px; letter-spacing: 0.05em; }
+  .desire-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+  .desire-card ul { padding-left: 18px; }
+  .desire-card ul li { font-size: 14px; color: #555; margin-bottom: 4px; }
+  .this-brief { display: inline-block; background: white; color: #FF6F61; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+
+  .color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .color-card { border-radius: 12px; overflow: hidden; border: 1px solid #eee; }
+  .color-swatch { height: 60px; }
+  .color-info { padding: 12px; background: white; }
+  .color-info .name { font-size: 13px; font-weight: 700; }
+  .color-info .hex { font-size: 12px; color: #888; font-family: monospace; }
+  .color-info .desc { font-size: 12px; color: #666; margin-top: 4px; }
+  .color-card.main .color-info { background: #FFF5F4; }
+
+  .person-guide { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .guide-block { background: white; border: 1px solid #eee; border-radius: 12px; padding: 20px; }
+  .guide-block h4 { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #FF6F61; }
+  .guide-block ul { padding-left: 18px; }
+  .guide-block ul li { font-size: 14px; color: #444; margin-bottom: 6px; }
+  .forbidden { background: #FFF3F3; border: 1px solid #FFCCCC; }
+  .forbidden h4 { color: #CC3333; }
+
+  .spec-box { background: #1A1A1A; color: #F0F0F0; border-radius: 12px; padding: 24px 28px; font-family: monospace; font-size: 14px; line-height: 1.8; }
+  .spec-box .key { color: #FF9B8A; }
+
+  .creative-list { display: flex; flex-direction: column; gap: 32px; }
+  .creative-card { background: white; border: 1px solid #eee; border-radius: 16px; overflow: hidden; }
+  .creative-card-header { background: #FF6F61; color: white; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .creative-card-header .num { background: rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; }
+  .creative-card-header .title { font-size: 17px; font-weight: 700; }
+  .creative-card-header .tag { background: rgba(255,255,255,0.2); font-size: 12px; padding: 3px 10px; border-radius: 20px; margin-left: auto; }
+  .creative-card-body { padding: 24px; }
+  .scene-label { font-size: 12px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .scene-text { font-size: 15px; color: #333; line-height: 1.8; margin-bottom: 24px; background: #F9F9F9; padding: 16px 18px; border-radius: 10px; }
+  .copy-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: start; }
+  .copy-label { font-size: 12px; font-weight: 700; color: #FF6F61; white-space: nowrap; padding-top: 2px; }
+  .copy-value { font-size: 15px; color: #1A1A1A; font-weight: 600; }
+  .copy-value.desc { font-weight: 400; color: #444; }
+  .copy-value.cta { display: inline-block; background: #FF6F61; color: white; padding: 6px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; }
+
+  .delivery-box { background: white; border: 2px solid #FF6F61; border-radius: 16px; padding: 28px; }
+  .delivery-box h3 { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+  .delivery-box ul { padding-left: 20px; }
+  .delivery-box ul li { font-size: 15px; color: #333; margin-bottom: 8px; }
+  .delivery-box .note { margin-top: 16px; font-size: 13px; color: #888; }
+
+  @media (max-width: 600px) {
+    .cover { padding: 48px 24px; }
+    .container { padding: 40px 20px; }
+    .desire-grid, .person-guide { grid-template-columns: 1fr; }
+    .color-grid { grid-template-columns: 1fr 1fr; }
+    .copy-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="badge">디자이너 A 전용 브리핑</div>
+  <h1>우나어 Google Ads<br>광고 소재 제작 의뢰</h1>
+  <p>RELATION 욕망 — 소재 4종 담당</p>
+  <div class="meta">
+    <div class="meta-item">
+      <div class="label">담당 소재 수</div>
+      <div class="value">4종</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">사이즈</div>
+      <div class="value">1080 × 1920px</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">납품 형식</div>
+      <div class="value">Figma 링크</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 브랜드 소개 -->
+  <div class="section">
+    <div class="section-title">브랜드 소개</div>
+    <div class="highlight-box">
+      <p><strong>우나어(우리 나이가 어때서)</strong>는 40대 후반~50대 여성만을 위한 온라인 커뮤니티입니다. 한국 40~50대 여성은 기존 SNS와 커뮤니티에서 철저히 소외되어 있습니다. 20~30대 중심의 플랫폼 속에서 "나 같은 사람들이 모인 공간"을 찾지 못하고 있는 이 세대를 위한 서비스입니다.</p>
+    </div>
+    <p>이 광고의 목표는 단 하나 — <strong>"아, 이게 나를 위한 서비스구나"</strong>라는 첫인상을 만드는 것입니다. 광고를 보는 0.3초 안에 타겟이 자신의 이야기라고 느껴야 합니다.</p>
+  </div>
+
+  <!-- 욕망 맵 -->
+  <div class="section">
+    <div class="section-title">타겟 욕망 맵 — 디자이너 A는 RELATION 담당</div>
+    <p style="margin-bottom:16px;">우나어 사용자는 아래 4가지 욕망 중 하나로 서비스를 찾아옵니다. <strong>디자이너 A는 가장 강력한 첫 번째 욕망 RELATION을 담당합니다.</strong></p>
+    <div class="desire-grid">
+      <div class="desire-card active">
+        <div class="desire-tag">욕망 #1 · 디자이너 A 담당 <span class="this-brief">THIS</span></div>
+        <h3>RELATION — 관계·소속감</h3>
+        <ul>
+          <li>"내 또래 여성들끼리 모인 공간이 없어"</li>
+          <li>"나만 이런 고민 하는 건 아니겠지?"</li>
+          <li>"내 얘기를 진심으로 들어줄 사람이 필요해"</li>
+          <li>"젊은 사람들 SNS에서 나는 이방인 같아"</li>
+        </ul>
+      </div>
+      <div class="desire-card inactive">
+        <div class="desire-tag" style="background:#eee;color:#999;">욕망 #2</div>
+        <h3>RETIRE — 인생 2막·새 출발</h3>
+        <ul>
+          <li>"퇴직 후 뭘 해야 할지 모르겠어"</li>
+          <li>"새로 시작하기엔 너무 늦은 건 아닐까"</li>
+          <li>"먼저 해본 사람의 솔직한 얘기가 듣고 싶어"</li>
+        </ul>
+      </div>
+      <div class="desire-card inactive">
+        <div class="desire-tag" style="background:#eee;color:#999;">욕망 #3</div>
+        <h3>MONEY — 재정·노후 준비</h3>
+        <ul>
+          <li>"연금만으로 진짜 살 수 있을까"</li>
+          <li>"퇴직금 어떻게 굴려야 하는지 모르겠어"</li>
+          <li>"같은 상황 사람들이 어떻게 하는지 궁금해"</li>
+        </ul>
+      </div>
+      <div class="desire-card inactive">
+        <div class="desire-tag" style="background:#eee;color:#999;">욕망 #4</div>
+        <h3>HEALTH — 건강·활력</h3>
+        <ul>
+          <li>"갱년기 증상인데 누구한테 물어봐야 할지"</li>
+          <li>"우리 나이 기준 건강 정보가 필요해"</li>
+          <li>"또래한테 직접 건강 루틴을 듣고 싶어"</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 브랜드 컬러 -->
+  <div class="section">
+    <div class="section-title">브랜드 컬러</div>
+    <div class="color-grid">
+      <div class="color-card main">
+        <div class="color-swatch" style="background:#FF6F61;"></div>
+        <div class="color-info">
+          <div class="name">메인 — 코랄</div>
+          <div class="hex">#FF6F61</div>
+          <div class="desc">따뜻함, 소속감, 활력.<br>브랜드의 핵심 컬러.</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#E8F5F0;"></div>
+        <div class="color-info">
+          <div class="name">RETIRE 계열</div>
+          <div class="hex">#E8F5F0</div>
+          <div class="desc">새출발, 청량함, 설렘</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#FFF9F0;"></div>
+        <div class="color-info">
+          <div class="name">MONEY 계열</div>
+          <div class="hex">#FFF9F0</div>
+          <div class="desc">안정감, 크림, 신뢰</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#F0F8F0;"></div>
+        <div class="color-info">
+          <div class="name">HEALTH 계열</div>
+          <div class="hex">#F0F8F0</div>
+          <div class="desc">자연, 활력, 안심</div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:16px; font-size:14px; color:#666;">브랜드 톤: 따뜻하고 친근하되 유치하지 않음. 자극적이거나 화려한 디자인 지양.</p>
+  </div>
+
+  <!-- 인물 가이드 -->
+  <div class="section">
+    <div class="section-title">인물 이미지 가이드</div>
+    <div class="person-guide">
+      <div class="guide-block">
+        <h4>외모 기준</h4>
+        <ul>
+          <li>한국 여성, 외모 기준 <strong>40대 후반</strong></li>
+          <li>레퍼런스: 전도연·송윤아·김성령·김희애·나경원 느낌</li>
+          <li>자연스러운 피부 (잔주름·생기 OK)</li>
+          <li>자연스러운 일상 메이크업</li>
+          <li>의상: 린넨 블라우스, 니트 가디건 등 일상 캐주얼</li>
+        </ul>
+      </div>
+      <div class="guide-block">
+        <h4>촬영·분위기</h4>
+        <ul>
+          <li>캔디드 스타일 — 카메라 비응시</li>
+          <li>실제 공간 (카페, 거실, 공원)</li>
+          <li>자연광 기반, 과보정 금지</li>
+          <li>자연스러운 피부 질감 유지</li>
+        </ul>
+      </div>
+      <div class="guide-block forbidden">
+        <h4>⛔ 절대 금지</h4>
+        <ul>
+          <li>남성 인물 등장</li>
+          <li>흰머리·새치</li>
+          <li>할머니·노인 이미지</li>
+          <li>스튜디오 배경지</li>
+          <li>AI 생성 느낌 (완벽한 피부, 균일한 조명)</li>
+        </ul>
+      </div>
+      <div class="guide-block">
+        <h4>라이선스</h4>
+        <ul>
+          <li>스톡 이미지 사용 시 상업적 라이선스 필수</li>
+          <li>라이선스 증빙 납품 시 함께 첨부</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 납품 스펙 -->
+  <div class="section">
+    <div class="section-title">납품 스펙</div>
+    <div class="spec-box">
+      <span class="key">사이즈</span>   1080 × 1920px (세로형, 9:16 — 안드로이드 모바일 최적화)<br>
+      <span class="key">수량</span>     4종 (소재 1~4)<br>
+      <span class="key">형식</span>     Figma 파일 링크<br>
+      <span class="key">텍스트</span>   헤드라인 / 디스크립션 / CTA 포함<br>
+      <span class="key">자율성</span>   레이아웃, 폰트, 배색 디자이너 자율
+    </div>
+  </div>
+
+  <!-- 소재 상세 -->
+  <div class="section">
+    <div class="section-title">소재 상세 — 4종</div>
+    <div class="creative-list">
+
+      <div class="creative-card">
+        <div class="creative-card-header">
+          <div class="num">1</div>
+          <div class="title">카페 — 혼자 웃음</div>
+          <div class="tag">RELATION · 감성훅</div>
+        </div>
+        <div class="creative-card-body">
+          <div class="scene-label">이미지 장면</div>
+          <div class="scene-text">카페 창가 자리. 오후 햇빛이 은은하게 들어오는 따뜻한 분위기. 여성이 스마트폰을 들고 화면을 읽다가 나도 모르게 환하고 크게 웃음이 터진 순간. 입 꼬리가 올라가고 눈이 가늘어진 자연스러운 표정. 배경은 살짝 흐릿하게 아웃포커스.</div>
+          <div class="copy-grid">
+            <div class="copy-label">헤드라인</div>
+            <div class="copy-value">읽다 보니 나도 모르게 웃었어요</div>
+            <div class="copy-label">디스크립션</div>
+            <div class="copy-value desc">우리 나이 이야기가 이렇게 재밌을 줄 몰랐어요</div>
+            <div class="copy-label">CTA</div>
+            <div class="copy-value"><span class="cta">지금 읽어보기</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="creative-card">
+        <div class="creative-card-header">
+          <div class="num">2</div>
+          <div class="title">카페 — 감동·공감</div>
+          <div class="tag">RELATION · 감성훅</div>
+        </div>
+        <div class="creative-card-body">
+          <div class="scene-label">이미지 장면</div>
+          <div class="scene-text">카페 안. 여성이 스마트폰 화면을 읽다가 눈가가 촉촉해진 순간. 슬픈 게 아니라 "나만 이런 게 아니었구나" 하는 공감의 감동. 시선은 화면을 향해 있고, 입가에 옅은 미소. 따뜻한 커피잔이 테이블 위에 놓여 있음.</div>
+          <div class="copy-grid">
+            <div class="copy-label">헤드라인</div>
+            <div class="copy-value">우리 나이 이야기, 여기 다 있어요</div>
+            <div class="copy-label">디스크립션</div>
+            <div class="copy-value desc">나만 그런 거 아니었구나 — 5060 여성 커뮤니티</div>
+            <div class="copy-label">CTA</div>
+            <div class="copy-value"><span class="cta">지금 읽어보기</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="creative-card">
+        <div class="creative-card-header">
+          <div class="num">3</div>
+          <div class="title">카페 — 고개 끄덕</div>
+          <div class="tag">RELATION · 실용훅</div>
+        </div>
+        <div class="creative-card-body">
+          <div class="scene-label">이미지 장면</div>
+          <div class="scene-text">카페 또는 집 소파. 여성이 스마트폰 화면을 보며 "맞아 맞아" 하는 표정으로 고개를 끄덕이는 순간. 진지하지 않고 편안한 분위기. 살짝 앞으로 몸을 기울인 자세.</div>
+          <div class="copy-grid">
+            <div class="copy-label">헤드라인</div>
+            <div class="copy-value">"맞아, 나도 그래" — 매일 터집니다</div>
+            <div class="copy-label">디스크립션</div>
+            <div class="copy-value desc">같은 나이 여성이 쓴 글은 왜 이렇게 공감될까</div>
+            <div class="copy-label">CTA</div>
+            <div class="copy-value"><span class="cta">공감하러 가기</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="creative-card">
+        <div class="creative-card-header">
+          <div class="num">4</div>
+          <div class="title">카페 — 그룹 웃음</div>
+          <div class="tag">RELATION · 그룹</div>
+        </div>
+        <div class="creative-card-body">
+          <div class="scene-label">이미지 장면</div>
+          <div class="scene-text">카페 테이블. 한국 여성 2~3명(모두 40대 후반 외모)이 한 명의 스마트폰 화면을 같이 들여다보며 서로를 보고 깔깔 웃는 장면. 서로 어깨가 맞닿을 만큼 친밀한 구도. 진짜 친구들 같은 자연스러운 웃음. ※ 그룹 소재이므로 여성 2~3명 등장 가능 — 단, 남성 절대 금지.</div>
+          <div class="copy-grid">
+            <div class="copy-label">헤드라인</div>
+            <div class="copy-value">우리끼리라서 더 솔직해요</div>
+            <div class="copy-label">디스크립션</div>
+            <div class="copy-value desc">같은 나이 여성들만 있는 공간, 이해받는 느낌이 완전히 달라요</div>
+            <div class="copy-label">CTA</div>
+            <div class="copy-value"><span class="cta">함께하기</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 납품 안내 -->
+  <div class="section">
+    <div class="delivery-box">
+      <h3>납품 안내</h3>
+      <ul>
+        <li>Figma 파일 링크로 납품 (편집 권한 또는 뷰 권한)</li>
+        <li>소재 4종 × 1080×1920px, 각 프레임 분리</li>
+        <li>사용한 스톡 이미지의 상업적 라이선스 증빙 첨부</li>
+      </ul>
+      <div class="note">※ 궁금한 사항은 언제든지 문의 주세요. 브랜드 컬러 팔레트나 추가 레퍼런스가 필요하시면 요청해 주세요.</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

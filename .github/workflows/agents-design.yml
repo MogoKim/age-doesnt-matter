@@ -1,0 +1,55 @@
+name: Agents — Design & Marketing Loop
+on:
+  # schedule 제거: design:ads-loop는 Playwright+Gemini 로컬 전용 — GHA에서 실행 불가
+  # 이전: cron "5 0 * * *" (매일 09:05 KST) → 매일 runner만 기동되고 실제 광고 생성 안 됨
+  workflow_dispatch:
+    inputs:
+      agent:
+        description: "에이전트 (design)"
+        required: true
+        default: "design"
+      task:
+        description: "태스크 (ads-loop)"
+        required: true
+        default: "ads-loop"
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5-20251001
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  GOOGLE_ADS_EMAIL: ${{ secrets.GOOGLE_ADS_EMAIL }}
+  GOOGLE_ADS_PASSWORD: ${{ secrets.GOOGLE_ADS_PASSWORD }}
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+jobs:
+  run-design-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Determine agent and task
+        id: determine
+        run: |
+          echo "agent=${{ github.event.inputs.agent }}" >> $GITHUB_OUTPUT
+          echo "task=${{ github.event.inputs.task }}" >> $GITHUB_OUTPUT
+
+      # Playwright: Google Ads 스크래핑용
+      - name: Install Playwright Chromium
+        if: steps.determine.outputs.task == 'ads-loop'
+        run: npx playwright install chromium --with-deps
+
+      - name: Run design agent
+        if: steps.determine.outputs.agent != 'skip'
+        run: cd agents && npx tsx cron/runner.ts ${{ steps.determine.outputs.agent }} ${{ steps.determine.outputs.task }}

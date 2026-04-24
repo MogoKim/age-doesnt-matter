@@ -1,0 +1,38 @@
+{
+  "name": "@unao/agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "ceo:morning": "tsx ceo/morning-cycle.ts",
+    "cto:health": "tsx cto/health-check.ts",
+    "cto:error": "tsx cto/error-monitor.ts",
+    "cmo:trend": "tsx cmo/trend-analyzer.ts",
+    "coo:moderate": "tsx coo/moderator.ts",
+    "coo:content": "tsx coo/content-scheduler.ts",
+    "coo:seed": "tsx seed/scheduler.ts",
+    "cdo:kpi": "tsx cdo/kpi-collector.ts",
+    "cdo:anomaly": "tsx cdo/anomaly-detector.ts",
+    "cfo:cost": "tsx cfo/cost-tracker.ts",
+    "cron": "tsx cron/runner.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "@slack/web-api": "^7.8.0",
+    "ffmpeg-static": "^5.3.0",
+    "google-ads-api": "^23.0.0",
+    "oauth-1.0a": "^2.2.6",
+    "pg": "^8.13.0",
+    "playwright": "^1.59.1",
+    "sharp": "^0.34.5",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
