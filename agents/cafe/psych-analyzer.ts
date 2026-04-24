@@ -34,6 +34,7 @@ function sanitizeForApi(text: string): string {
 }
 
 const isTest = process.argv.includes('--test')
+const isBackfill = process.argv.includes('--backfill')
 
 // ── 타입 정의 ──
 
@@ -237,14 +238,15 @@ export async function analyzeBatch(posts: PostForAnalysis[]): Promise<PsychResul
 
 // ── 오늘 미분석 글 조회 ──
 
-async function getUnanalyzedPosts(limit = 200) {
+async function getUnanalyzedPosts(limit = 200, backfill = false) {
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
 
   return prisma.cafePost.findMany({
     where: {
       aiAnalyzed: false,
-      crawledAt: { gte: todayStart },
+      // --backfill 플래그 시 날짜 제한 없이 전체 미분석 글 처리
+      ...(backfill ? {} : { crawledAt: { gte: todayStart } }),
       qualityScore: { gte: 30 },
     },
     orderBy: { qualityScore: 'desc' },
@@ -340,9 +342,9 @@ async function main() {
   console.log('[PsychAnalyzer] 시작')
   const startTime = Date.now()
 
-  const posts = await getUnanalyzedPosts()
+  const posts = await getUnanalyzedPosts(200, isBackfill)
   if (posts.length === 0) {
-    console.log('[PsychAnalyzer] 오늘 분석할 글 없음 — 스킵')
+    console.log(isBackfill ? '[PsychAnalyzer] 백필 대상 글 없음 — 스킵' : '[PsychAnalyzer] 오늘 분석할 글 없음 — 스킵')
     await disconnect()
     return
   }

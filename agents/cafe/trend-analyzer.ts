@@ -12,12 +12,32 @@ import type { TrendAnalysis } from './types.js'
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
 
-/** 네이버 카페 텍스트의 lone surrogate 문자 제거 (Anthropic API JSON 직렬화 오류 방지) */
+/** 네이버 카페 텍스트의 lone surrogate 문자 제거 (Anthropic API JSON 직렬화 오류 방지)
+ *
+ * 정규식 lookbehind 방식은 surrogate pair 경계에서 오작동 가능 →
+ * code unit 순회 방식으로 교체: lone surrogate만 버리고 valid pair는 보존
+ */
 function sanitizeForApi(text: string): string {
-  return text
-    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
-    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+  let result = ''
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i)
+    if (code >= 0xD800 && code <= 0xDBFF) {
+      // high surrogate — 뒤에 low surrogate가 있으면 valid pair로 보존
+      const next = i + 1 < text.length ? text.charCodeAt(i + 1) : 0
+      if (next >= 0xDC00 && next <= 0xDFFF) {
+        result += text[i] + text[i + 1]
+        i++ // low surrogate 소비
+      }
+      // lone high surrogate → 버림
+    } else if (code >= 0xDC00 && code <= 0xDFFF) {
+      // lone low surrogate → 버림
+    } else if (code <= 0x08 || code === 0x0B || code === 0x0C || (code >= 0x0E && code <= 0x1F) || code === 0x7F) {
+      // 제어 문자 → 버림
+    } else {
+      result += text[i]
+    }
+  }
+  return result
 }
 
 /** 오늘 크롤링된 글 가져오기 */
@@ -139,7 +159,7 @@ function aggregatePsychData(posts: Awaited<ReturnType<typeof getTodayPosts>>) {
 /** Claude에게 트렌드 분석 요청 */
 async function analyzeTrends(posts: Awaited<ReturnType<typeof getTodayPosts>>): Promise<TrendAnalysis> {
   const postSummaries = posts.map((p, i) =>
-    `[${i + 1}] (${p.cafeName}/${p.boardCategory ?? p.category ?? '일반'}) [품질${Math.round(p.qualityScore)}] "${sanitizeForApi(p.title)}" — 좋아요 ${p.likeCount}, 댓글 ${p.commentCount}\n   ${sanitizeForApi(p.content.slice(0, 200))}`,
+    `[${i + 1}] (${sanitizeForApi(p.cafeName)}/${sanitizeForApi(p.boardCategory ?? p.category ?? '일반')}) [품질${Math.round(p.qualityScore)}] "${sanitizeForApi(p.title)}" — 좋아요 ${p.likeCount}, 댓글 ${p.commentCount}\n   ${sanitizeForApi(p.content.slice(0, 200))}`,
   ).join('\n\n')
 
   const response = await client.messages.create({
