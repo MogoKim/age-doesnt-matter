@@ -3,7 +3,6 @@ import { unstable_cache } from 'next/cache'
 import HeroSlider from '@/components/features/home/HeroSlider'
 import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
-import EditorsPickSection from '@/components/features/home/EditorsPickSection'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import ResponsiveAd from '@/components/ad/ResponsiveAd'
@@ -17,7 +16,6 @@ import HomeSidebar from '@/components/features/home/HomeSidebar'
 import {
   getLatestJobs,
   getTrendingPosts,
-  getEditorsPicks,
   getLatestMagazinePosts,
   getLatestCommunityPosts,
   getLatestLife2Posts,
@@ -42,11 +40,6 @@ const getCachedTrending = unstable_cache(
   ['home-trending'],
   { revalidate: 60 }
 )
-const getCachedEditorsPicks = unstable_cache(
-  () => getEditorsPicks(5),
-  ['home-editors'],
-  { revalidate: 60 }
-)
 const getCachedMagazine = unstable_cache(
   () => getLatestMagazinePosts(4),
   ['home-magazine'],
@@ -69,10 +62,9 @@ const getCachedActivity = unstable_cache(
 )
 
 export default async function HomePage() {
-  const [jobs, trending, editorsPicks, magazine, community, life2, activities] = await Promise.all([
+  const [jobs, trending, magazine, community, life2, activities] = await Promise.all([
     getCachedJobs(),
     getCachedTrending(),
-    getCachedEditorsPicks(),
     getCachedMagazine(),
     getCachedCommunity(),
     getCachedLife2(),
@@ -128,8 +120,6 @@ export default async function HomePage() {
             <CommunitySection posts={community} />
             <ResponsiveAd mobile={<CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />} desktop={null} />
             <Life2Section posts={life2} />
-            <EditorsPickSection posts={editorsPicks} />
-            <CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />
             <MagazineSection posts={magazine} />
             <FeedAd />
             <JobSection jobs={jobs} />
