@@ -22,7 +22,7 @@ const EXCLUDED_PATHS = [
   '/terms', '/privacy', '/rules', '/about', '/contact',
   '/faq', '/grade', '/error', '/_next', '/api',
 ]
-const CONTENT_PATHS = ['/community/', '/magazine/', '/jobs/', '/best']
+const CONTENT_PATHS = ['/community/', '/magazine/', '/jobs/', '/best', '/']
 
 // localStorage keys
 const KEY_VARIANT = 'signup_variant'
@@ -63,9 +63,10 @@ type Variant = keyof typeof VARIANT_CONTENT
 // ──────────────────────────────────────────────
 function isActivePath(p: string): boolean {
   if (EXCLUDED_PATHS.some(ep => p.startsWith(ep))) return false
-  return CONTENT_PATHS.some(cp =>
-    cp.endsWith('/') ? p.startsWith(cp) : p === cp || p.startsWith(cp + '/')
-  )
+  return CONTENT_PATHS.some(cp => {
+    if (cp === '/') return p === '/' // 홈: 정확히 '/'만 매칭 (startsWith 버그 방지)
+    return cp.endsWith('/') ? p.startsWith(cp) : p === cp || p.startsWith(cp + '/')
+  })
 }
 
 function canShow(): boolean {

@@ -269,4 +269,31 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
     const ctaVisible = await page.locator('[data-testid="signup-banner-cta"]').isVisible().catch(() => false)
     expect(ctaVisible, '딤 클릭 후 배너 미사라짐').toBe(false)
   })
+
+  /**
+   * T7: 홈('/')에서 배너 발화 확인
+   * - CONTENT_PATHS에 '/' 추가 후 홈에서도 배너 트리거 가능
+   * - isActivePath('/')가 true를 반환해야 함 (exact match 가드 적용)
+   */
+  test('T7: 홈 페이지에서 배너 발화 @signup-banner', async ({ page }) => {
+    await page.clock.install()
+    await page.goto('/')
+    await page.waitForLoadState('load') // 홈은 광고 요청 지속으로 networkidle 도달 불가
+    await installGtagSpy(page)
+
+    await page.evaluate(() => {
+      const docH = document.documentElement.scrollHeight - window.innerHeight
+      window.scrollTo(0, docH > 100 ? docH * 0.6 : 0)
+    })
+    await page.clock.runFor(500)
+    await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
+    await page.clock.runFor(21_000)
+
+    await page.waitForSelector('[data-testid="signup-banner-cta"]', { timeout: 5_000 })
+
+    const spy = await getSpyEvents(page)
+    const shown = spy.find(e => e.event === 'signup_banner_shown')
+    expect(shown, '홈에서 signup_banner_shown 미발화').toBeTruthy()
+    expect(String(shown!.params.page_path)).toBe('/')
+  })
 })
