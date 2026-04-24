@@ -8,7 +8,17 @@ import {
   gtmSignupBannerShown,
   gtmSignupBannerClicked,
   gtmSignupBannerDismissed,
+  gtmInappRedirectAttempted,
 } from '@/lib/gtm'
+import { detectEnv } from '@/components/common/AddToHomeScreen'
+
+// 인앱 환경 (카카오/네이버/구글 앱) 감지 — CTA를 외부브라우저 유도로 변경
+const INAPP_ENVS = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp'] as const
+type InappEnv = typeof INAPP_ENVS[number]
+
+function isInappEnv(env: string): env is InappEnv {
+  return (INAPP_ENVS as readonly string[]).includes(env)
+}
 
 // ──────────────────────────────────────────────
 // 상수
@@ -113,9 +123,15 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
   const [visible, setVisible] = useState(false)
   const [variant, setVariant] = useState<Variant>('A')
   const [isPending, startTransition] = useTransition()
+  const [currentEnv, setCurrentEnv] = useState<string>('android-chrome')
 
   const scrolledRef = useRef(false)
   const tryFireRef = useRef<() => void>(() => {})
+
+  // 마운트 시 환경 감지 (SSR 안전)
+  useEffect(() => {
+    setCurrentEnv(detectEnv())
+  }, [])
 
   // ── 인앱→Chrome 재접속 backfill ──
   useEffect(() => {
@@ -205,14 +221,54 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
 
   const content = VARIANT_CONTENT[variant]
 
+  const inapp = isInappEnv(currentEnv)
+
+  // 인앱 환경별 CTA 텍스트
+  const inappCtaText = currentEnv === 'kakao-android' || currentEnv === 'kakao-ios'
+    ? '카카오 밖에서 가입하기'
+    : '브라우저에서 가입하기'
+
   const handleDismiss = () => {
     gtmSignupBannerDismissed(variant, pathname, getPromptCount())
     setVisible(false)
   }
 
   const handleCTAClick = () => {
-    gtmSignupBannerClicked(variant, pathname)
-    startTransition(async () => { await kakaoSignIn(pathname) })
+    if (inapp) {
+      // 인앱 환경: 외부브라우저로 현재 페이지 열기 + signup=1 파라미터
+      gtmSignupBannerClicked(variant, pathname, 'external_browser')
+      const targetUrl = new URL(window.location.href)
+      targetUrl.searchParams.set('signup', '1')
+      targetUrl.searchParams.set('utm_source', currentEnv)
+      targetUrl.searchParams.set('utm_medium', 'signup_banner')
+
+      if (currentEnv === 'kakao-android') {
+        gtmInappRedirectAttempted(currentEnv, 'intent')
+        navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
+        const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
+        location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
+      } else if (currentEnv === 'kakao-ios') {
+        gtmInappRedirectAttempted(currentEnv, 'clipboard')
+        navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
+        // iOS: 클립보드 복사 후 Safari에서 붙여넣기 안내는 AddToHomeScreen 토스트 재사용 불가
+        // → 배너 UI 자체에서 안내 (닫기 대신 안내 메시지로 전환은 Phase 2)
+        setVisible(false)
+      } else {
+        // naver-inapp, google-inapp: Android intent 시도
+        gtmInappRedirectAttempted(currentEnv, 'intent')
+        navigator.clipboard?.writeText(targetUrl.toString())?.catch(() => {})
+        if (/android/i.test(navigator.userAgent)) {
+          const host = targetUrl.hostname + targetUrl.pathname + targetUrl.search
+          location.href = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`
+        } else {
+          setVisible(false)
+        }
+      }
+    } else {
+      // 일반 브라우저: 직접 카카오 OAuth
+      gtmSignupBannerClicked(variant, pathname, 'kakao_oauth')
+      startTransition(async () => { await kakaoSignIn(pathname) })
+    }
   }
 
   return (
@@ -237,9 +293,10 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
                   {content.sub}
                 </p>
               </div>
+              {/* 닫기 버튼: 44×44px (5060 터치 타겟 기준) */}
               <button
                 onClick={handleDismiss}
-                className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                className="shrink-0 w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="닫기"
               >
                 ✕
@@ -251,7 +308,7 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
               disabled={isPending}
               className="mt-3 flex items-center justify-center w-full h-[52px] bg-[#FEE500] text-[#191919] rounded-xl font-bold text-[15px] disabled:opacity-70 transition-opacity"
             >
-              {isPending ? '잠깐만요...' : `💛 ${content.cta}`}
+              {isPending ? '잠깐만요...' : `💛 ${inapp ? inappCtaText : content.cta}`}
             </button>
           </div>
         </div>

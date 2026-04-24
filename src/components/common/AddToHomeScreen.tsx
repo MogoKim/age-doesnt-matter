@@ -19,12 +19,13 @@ type Env =
   | 'kakao-android'    // 카카오 Android 인앱 → Chrome 유도 배너
   | 'kakao-ios'        // 카카오 iOS 인앱 → Safari 유도 배너
   | 'naver-inapp'      // 설치 불가 → 팝업/버튼 숨김
+  | 'google-inapp'     // Google 앱(GSA/) 인앱 → 설치 불가, 외부브라우저 유도
   | 'crios'            // iOS Chrome — 설치 불가
   | 'instagram-inapp'  // 설치 불가
   | 'desktop'          // 모바일 전용
   | 'other'            // Samsung Internet 등 (beforeinstallprompt 대기)
 
-const BLOCKED_ENVS: Env[] = ['kakao-android', 'kakao-ios', 'naver-inapp', 'instagram-inapp', 'crios', 'desktop']
+const BLOCKED_ENVS: Env[] = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp', 'instagram-inapp', 'crios', 'desktop']
 const ANDROID_ENVS: Env[] = ['android-chrome', 'other']  // Chrome + Samsung Internet
 
 export function detectEnv(): Env {
@@ -34,6 +35,7 @@ export function detectEnv(): Env {
   if (/KAKAOTALK/i.test(ua)) return /android/i.test(ua) ? 'kakao-android' : 'kakao-ios'
   if (/NAVER\(inapp|NaverSearchApp/i.test(ua)) return 'naver-inapp'
   if (/Instagram|FBAN|FBAV/i.test(ua)) return 'instagram-inapp'
+  if (/\bGSA\//i.test(ua)) return 'google-inapp'  // Google Search App 인앱브라우저
   if (/CriOS/i.test(ua)) return 'crios'
   if (/iphone|ipad|ipod/i.test(ua)) return 'ios-safari'
   return 'android-chrome'

@@ -146,6 +146,26 @@ export function getStoredUtm(): UtmParams {
   }
 }
 
+// ── 브라우저 환경 식별 ──
+
+/**
+ * 현재 브라우저 환경을 문자열로 반환.
+ * AddToHomeScreen의 detectEnv()와 동일한 로직 (순환 의존 방지를 위해 인라인).
+ * 모든 이벤트의 browser_env 파라미터에 사용.
+ */
+export function getBrowserEnv(): string {
+  if (typeof window === 'undefined') return 'server'
+  const ua = navigator.userAgent
+  if (window.innerWidth >= 1024) return 'desktop'
+  if (/KAKAOTALK/i.test(ua)) return /android/i.test(ua) ? 'kakao-android' : 'kakao-ios'
+  if (/NAVER\(inapp|NaverSearchApp/i.test(ua)) return 'naver-inapp'
+  if (/Instagram|FBAN|FBAV/i.test(ua)) return 'instagram-inapp'
+  if (/\bGSA\//i.test(ua)) return 'google-inapp'
+  if (/CriOS/i.test(ua)) return 'crios'
+  if (/iphone|ipad|ipod/i.test(ua)) return 'ios-safari'
+  return 'android-chrome'
+}
+
 // ── 이벤트 헬퍼 ──
 
 /** 페이지 뷰 (SPA 네비게이션 시) */
@@ -163,22 +183,32 @@ export function gtmSignUp(method: string = 'kakao', variant?: string): void {
 
 /** 배너 조건 충족 (20초 활성 체류 AND 스크롤 50%) — A/B 분석의 진짜 분모 */
 export function gtmSignupBannerEligible(variant: string, pagePath: string): void {
-  sendEvent('signup_banner_eligible', { variant, page_path: pagePath })
+  sendEvent('signup_banner_eligible', { variant, page_path: pagePath, browser_env: getBrowserEnv() })
 }
 
 /** 배너 실제 노출 (차단 조건 통과 후 화면에 표시된 경우만) */
 export function gtmSignupBannerShown(variant: string, pagePath: string, showCount: number): void {
-  sendEvent('signup_banner_shown', { variant, page_path: pagePath, show_count: showCount })
+  sendEvent('signup_banner_shown', { variant, page_path: pagePath, show_count: showCount, browser_env: getBrowserEnv() })
 }
 
 /** 배너 CTA 클릭 */
-export function gtmSignupBannerClicked(variant: string, pagePath: string): void {
-  sendEvent('signup_banner_clicked', { variant, page_path: pagePath })
+export function gtmSignupBannerClicked(variant: string, pagePath: string, ctaType: 'kakao_oauth' | 'external_browser' = 'kakao_oauth'): void {
+  sendEvent('signup_banner_clicked', { variant, page_path: pagePath, cta_type: ctaType, browser_env: getBrowserEnv() })
 }
 
 /** 배너 닫기 */
 export function gtmSignupBannerDismissed(variant: string, pagePath: string, showCount: number): void {
-  sendEvent('signup_banner_dismissed', { variant, page_path: pagePath, show_count: showCount })
+  sendEvent('signup_banner_dismissed', { variant, page_path: pagePath, show_count: showCount, browser_env: getBrowserEnv() })
+}
+
+/** 인앱 → 외부브라우저 리다이렉트 시도 (SignupPromptBanner CTA 클릭 시) */
+export function gtmInappRedirectAttempted(browserEnv: string, method: 'intent' | 'clipboard'): void {
+  sendEvent('inapp_redirect_attempted', { browser_env: browserEnv, redirect_method: method })
+}
+
+/** 외부브라우저 도착 확인 (?signup=1 파라미터 감지 시, Phase 2) */
+export function gtmInappRedirectSuccess(fromEnv: string): void {
+  sendEvent('inapp_redirect_success', { from_env: fromEnv, to_env: getBrowserEnv() })
 }
 
 /** 로그인 (재방문) — UTM 포함 */
