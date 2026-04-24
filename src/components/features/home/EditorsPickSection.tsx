@@ -16,7 +16,7 @@ export default function EditorsPickSection({ posts }: Props) {
       <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
         <h2 className="text-title font-bold text-foreground flex items-center gap-2">
           <span className="text-xl">⭐</span>
-          에디터스 픽
+          이달의 인기글
         </h2>
       </div>
       <div className="lg:grid lg:grid-cols-2 lg:gap-4">
@@ -42,7 +42,7 @@ export default function EditorsPickSection({ posts }: Props) {
               )}
             </div>
             <div className="p-4">
-              <span className="inline-flex items-center gap-1 h-6 px-2.5 bg-[var(--badge-editors)] text-white rounded-md text-caption font-bold mb-2.5">PO 추천</span>
+              <span className="inline-flex items-center gap-1 h-6 px-2.5 bg-[var(--badge-editors)] text-white rounded-md text-caption font-bold mb-2.5">이달의 인기</span>
               <h3 className="text-body font-bold text-foreground leading-[1.5] mb-2 break-keep line-clamp-2">{post.title}</h3>
               <p className="text-caption text-muted-foreground leading-relaxed mb-3 line-clamp-2">{post.preview}</p>
               <div className="flex items-center gap-3 text-caption text-muted-foreground">

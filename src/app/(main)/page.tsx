@@ -124,11 +124,12 @@ export default async function HomePage() {
         <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
           <div>
             <TrendingSection posts={trending} />
-            <AdSenseUnit slotId={ADSENSE.HOME_SECTION} format="auto" className="my-4 rounded-2xl overflow-hidden" />
+            <AdSenseUnit slotId={ADSENSE.HOME_SECTION} format="horizontal" className="my-4 rounded-2xl overflow-hidden" />
             <CommunitySection posts={community} />
             <ResponsiveAd mobile={<CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />} desktop={null} />
             <Life2Section posts={life2} />
             <EditorsPickSection posts={editorsPicks} />
+            <CoupangBanner preset="leaderboard" className="my-4 rounded-2xl overflow-hidden" />
             <MagazineSection posts={magazine} />
             <FeedAd />
             <JobSection jobs={jobs} />

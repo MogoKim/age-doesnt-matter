@@ -55,4 +55,13 @@ export const COUPANG = {
   /** 상품 캐러셀 — 매거진 전용 (320x250) */
   PRODUCT_CAROUSEL: { id: 976346, width: 320, height: 250 },
 
+  /** 리더보드 배너 (728x90) — 홈 이달의 인기글 아래 */
+  LEADERBOARD: {
+    bannerId: 882049,
+    href: 'https://link.coupang.com/a/evBXpM',
+    imgSrc: 'https://ads-partners.coupang.com/banners/882049?subId=&traceId=V0-301-5f9bd61900e673c0-I882049&w=728&h=90',
+    width: 728,
+    height: 90,
+  },
+
 } as const

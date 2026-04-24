@@ -51,27 +51,47 @@ export async function getWeeklyTrendingPosts(limit = 10, q?: string, sf?: Search
   return rows.map(toPostSummary)
 }
 
-/* ── 에디터스 픽 (HALL_OF_FAME) ── */
+/* ── 이달의 인기글 (월간 베스트) ── */
 
 export async function getEditorsPicks(limit = 2): Promise<PostSummary[]> {
-  // HALL_OF_FAME와 HOT을 병렬 조회 → 오버페치 제거
-  const [hallOfFame, hot] = await Promise.all([
-    prisma.post.findMany({
-      where: { status: 'PUBLISHED', promotionLevel: 'HALL_OF_FAME' },
-      select: postSelect,
-      orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
-      take: limit,
-    }),
-    prisma.post.findMany({
-      where: { status: 'PUBLISHED', promotionLevel: 'HOT' },
-      select: postSelect,
-      orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
-      take: limit,
-    }),
-  ])
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  // HALL_OF_FAME 우선, 부족 시 HOT으로 채움
-  return [...hallOfFame, ...hot].slice(0, limit).map(toPostSummary)
+  // 1순위: 이번 달 게시글 중 thumbnailUrl 있는 것, likeCount 기준 상위
+  const thisMonthWithThumb = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      createdAt: { gte: startOfMonth },
+      thumbnailUrl: { not: null },
+    },
+    select: postSelect,
+    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  if (thisMonthWithThumb.length >= limit) return thisMonthWithThumb.map(toPostSummary)
+
+  // 2순위: 이번 달 전체 (썸네일 없는 것 포함)
+  const thisMonthAll = await prisma.post.findMany({
+    where: { status: 'PUBLISHED', createdAt: { gte: startOfMonth } },
+    select: postSelect,
+    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  if (thisMonthAll.length >= limit) return thisMonthAll.map(toPostSummary)
+
+  // 3순위 fallback: 지난 3개월 HOT 이상
+  const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+  const recent = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] },
+      createdAt: { gte: threeMonthsAgo },
+    },
+    select: postSelect,
+    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  return recent.map(toPostSummary)
 }
 
 /* ── 베스트: 실시간 인기글 (공감 10+) ── */
