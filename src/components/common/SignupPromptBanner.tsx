@@ -162,12 +162,6 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
       }
     }
 
-    // 마운트 시 초기 스크롤 체크 (이미 50% 이상 스크롤된 경우)
-    const docH = document.documentElement.scrollHeight - window.innerHeight
-    if (docH < 100 || window.scrollY / docH >= SCROLL_THRESHOLD) {
-      scrolledRef.current = true
-    }
-
     if (!document.hidden) startInterval()
     document.addEventListener('visibilitychange', handleVisibility)
 
@@ -181,7 +175,9 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
   // ── 스크롤 감지 ──
   useEffect(() => {
     if (isLoggedIn || !isActivePath(pathname)) return
-    scrolledRef.current = false // pathname 변경 시 초기화
+    // pathname 변경 시 현재 스크롤 위치로 초기화 (scroll effect가 timer effect보다 나중에 실행됨)
+    const docH0 = document.documentElement.scrollHeight - window.innerHeight
+    scrolledRef.current = docH0 < 100 || window.scrollY / docH0 >= SCROLL_THRESHOLD
 
     const handleScroll = () => {
       const docH = document.documentElement.scrollHeight - window.innerHeight
