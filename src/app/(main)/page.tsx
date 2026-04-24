@@ -5,6 +5,7 @@ import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
+import CoupangCarousel from '@/components/ad/CoupangCarousel'
 import ResponsiveAd from '@/components/ad/ResponsiveAd'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import { ADSENSE } from '@/components/ad/ad-slots'
@@ -120,7 +121,9 @@ export default async function HomePage() {
             <CommunitySection posts={community} />
             <ResponsiveAd mobile={<CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />} desktop={null} />
             <Life2Section posts={life2} />
-            <ResponsiveAd mobile={<CoupangBanner preset="electronics" className="my-4 rounded-2xl overflow-hidden" />} desktop={null} />
+            <div className="block lg:hidden">
+              <CoupangCarousel className="my-4 rounded-2xl overflow-hidden" />
+            </div>
             <MagazineSection posts={magazine} />
             <FeedAd />
             <JobSection jobs={jobs} />
