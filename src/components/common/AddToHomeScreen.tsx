@@ -120,6 +120,7 @@ function canShow(t: Trigger, dbShownCount?: number): boolean {
   if (typeof window === 'undefined') return false
   if (getInstalled()) return false
   if (sessionStorage.getItem(SESSION_SHOWN)) return false  // 세션 내 1회 제한
+  if (sessionStorage.getItem('signup_prompt_shown_this_session')) return false  // 가입 유도 배너 노출 시 충돌 방지
 
   const shown = getShown()
   // 로그인 유저: DB 카운트와 localStorage 중 큰 값 사용 (localStorage 삭제 우회 방지)

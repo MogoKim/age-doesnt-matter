@@ -15,6 +15,7 @@ export default function PwaInlineBanner() {
     if ((BLOCKED_ENVS as readonly string[]).includes(env)) return
     if (localStorage.getItem(KEY_INSTALLED) === '1') return
     if (sessionStorage.getItem(SESSION_INLINE_SHOWN)) return
+    if (sessionStorage.getItem('signup_prompt_shown_this_session')) return  // 가입 유도 배너 노출 시 충돌 방지
     setShow(true)
   }, [])
 
