@@ -11,6 +11,7 @@ declare module 'next-auth' {
       profileImage: string | null
       needsOnboarding: boolean
       fontSize?: string
+      createdAt?: string  // ISO 8601 — 24시간 내 가입 여부 판단용
     } & DefaultSession['user']
   }
 }
@@ -24,5 +25,6 @@ declare module 'next-auth/jwt' {
     profileImage?: string | null
     needsOnboarding?: boolean
     fontSize?: string
+    createdAt?: string
   }
 }

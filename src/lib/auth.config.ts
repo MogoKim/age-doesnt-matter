@@ -64,6 +64,7 @@ export const authConfig: NextAuthConfig = {
         session.user.profileImage = token.profileImage as string | null
         session.user.needsOnboarding = token.needsOnboarding as boolean
         session.user.fontSize = token.fontSize as string | undefined
+        session.user.createdAt = token.createdAt as string | undefined
       }
       return session
     },
