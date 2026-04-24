@@ -8,6 +8,26 @@ import LoginPromptModal from '@/components/features/auth/LoginPromptModal'
 
 const FAB_PAGES = ['/community/stories', '/community/humor', '/community/life2']
 
+function PenIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0"
+      aria-hidden="true"
+    >
+      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+    </svg>
+  )
+}
+
 interface FABProps {
   isLoggedIn?: boolean
 }
@@ -54,12 +74,12 @@ export default function FAB({ isLoggedIn = false }: FABProps) {
     <>
       {isLoggedIn ? (
         <Link href={`/community/write?board=${board}`} className={fabClassName} aria-label="글쓰기">
-          <span className="text-xl leading-none shrink-0">✏️</span>
+          <PenIcon />
           <span className={labelClassName}>글쓰기</span>
         </Link>
       ) : (
         <button className={fabClassName} onClick={() => setShowLoginPrompt(true)} aria-label="글쓰기">
-          <span className="text-xl leading-none shrink-0">✏️</span>
+          <PenIcon />
           <span className={labelClassName}>글쓰기</span>
         </button>
       )}
