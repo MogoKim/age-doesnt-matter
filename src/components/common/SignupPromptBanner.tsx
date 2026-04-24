@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { usePathname } from 'next/navigation'
-import Link from 'next/link'
+import { kakaoSignIn } from '@/app/login/actions'
 import {
   gtmSignupBannerEligible,
   gtmSignupBannerShown,
@@ -39,20 +39,20 @@ const VARIANT_CONTENT = {
   A: {
     emoji: '👋',
     headline: '가입하면 더 많이 즐길 수 있어요',
-    sub: '좋아요·댓글·스크랩이 모두 무료예요',
-    cta: '1초 카카오 가입',
+    sub: '소중한 내 일상과 생각들을 간직해봐요',
+    cta: '카카오로 바로 시작하기',
   },
   B: {
-    emoji: '💬',
-    headline: '우리 또래와 대화해 보세요',
-    sub: '가입하면 댓글·공감·스크랩 가능해요',
-    cta: '무료로 가입하기',
+    emoji: '👋',
+    headline: '가입하고 더 재미있게 놀다 가세요',
+    sub: '혼자 읽기 아까운 글, 함께 나눠봐요',
+    cta: '3초만에 카카오로 시작',
   },
   C: {
-    emoji: '💛',
-    headline: '이 글이 마음에 드세요?',
-    sub: '가입하면 좋아요를 남기고 나중에 다시 찾아볼 수 있어요',
-    cta: '카카오로 가입',
+    emoji: '👋',
+    headline: '나만 이런 게 아니었네?',
+    sub: '우리끼리 편하게 수다 떨어봐요',
+    cta: '카카오 한 번 클릭으로 가입',
   },
 } as const
 
@@ -111,6 +111,7 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
   const pathname = usePathname()
   const [visible, setVisible] = useState(false)
   const [variant, setVariant] = useState<Variant>('A')
+  const [isPending, startTransition] = useTransition()
 
   const scrolledRef = useRef(false)
   const tryFireRef = useRef<() => void>(() => {})
@@ -191,6 +192,14 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [pathname, isLoggedIn])
 
+  // ── Body scroll lock ──
+  useEffect(() => {
+    if (visible) {
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = '' }
+    }
+  }, [visible])
+
   if (!visible) return null
 
   const content = VARIANT_CONTENT[variant]
@@ -200,37 +209,52 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
     setVisible(false)
   }
 
+  const handleCTAClick = () => {
+    gtmSignupBannerClicked(variant, pathname)
+    startTransition(async () => { await kakaoSignIn(pathname) })
+  }
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[150] animate-in slide-in-from-bottom duration-300">
-      <div className="bg-card border-t border-border shadow-2xl px-4 pt-4 pb-6">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl" aria-hidden="true">{content.emoji}</span>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-base leading-snug text-foreground">
-                {content.headline}
-              </p>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {content.sub}
-              </p>
+    <>
+      {/* 딤 오버레이 */}
+      <div
+        className="fixed inset-0 z-[149] bg-black/50 animate-in fade-in duration-300"
+        onClick={handleDismiss}
+        aria-hidden="true"
+      />
+      {/* 배너 */}
+      <div className="fixed bottom-0 left-0 right-0 z-[150] animate-in slide-in-from-bottom duration-300">
+        <div className="bg-card border-t border-border shadow-2xl px-4 pt-4 pb-[max(24px,env(safe-area-inset-bottom))]">
+          <div className="max-w-lg mx-auto">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl" aria-hidden="true">{content.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-base leading-snug text-foreground">
+                  {content.headline}
+                </p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {content.sub}
+                </p>
+              </div>
+              <button
+                onClick={handleDismiss}
+                className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="닫기"
+              >
+                ✕
+              </button>
             </div>
             <button
-              onClick={handleDismiss}
-              className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="닫기"
+              data-testid="signup-banner-cta"
+              onClick={handleCTAClick}
+              disabled={isPending}
+              className="mt-3 flex items-center justify-center w-full h-[52px] bg-[#FEE500] text-[#191919] rounded-xl font-bold text-[15px] disabled:opacity-70 transition-opacity"
             >
-              ✕
+              {isPending ? '잠깐만요...' : `💛 ${content.cta}`}
             </button>
           </div>
-          <Link
-            href={`/login?callbackUrl=${encodeURIComponent(pathname)}`}
-            onClick={() => gtmSignupBannerClicked(variant, pathname)}
-            className="mt-3 flex items-center justify-center w-full h-[52px] bg-[#FEE500] text-[#191919] rounded-xl font-bold text-[15px]"
-          >
-            💛 {content.cta}
-          </Link>
         </div>
       </div>
-    </div>
+    </>
   )
 }

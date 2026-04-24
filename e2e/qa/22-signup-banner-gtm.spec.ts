@@ -79,8 +79,8 @@ async function triggerBanner(page: Page): Promise<void> {
   await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
   await page.clock.runFor(21_000)
 
-  // 배너 고유 선택자: fixed bottom-0 내부의 CTA 링크 (댓글 영역 로그인 링크와 구분)
-  await page.waitForSelector('.fixed.bottom-0 a[href*="/login?callbackUrl"]', { timeout: 5_000 })
+  // 배너 CTA: data-testid으로 식별 (Link → button 전환 후)
+  await page.waitForSelector('[data-testid="signup-banner-cta"]', { timeout: 5_000 })
 }
 
 // ── 테스트 ────────────────────────────────────────────────────────────────
@@ -135,10 +135,13 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
   test('T2: clicked 이벤트 발화 @signup-banner', async ({ page }) => {
     await triggerBanner(page)
 
-    // isTrusted=false → React onClick만 발화, <a> href 네비게이션 없음
+    // 서버 액션(카카오 OAuth) fetch 차단 → navigation 없이 GTM 이벤트만 캡처
+    await page.route('**/api/auth/**', route => route.abort())
+
+    // isTrusted=false → React onClick만 발화, redirect 없음
     await page.evaluate(() => {
-      const link = document.querySelector<HTMLAnchorElement>('.fixed.bottom-0 a[href*="/login?callbackUrl"]')
-      link?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      const btn = document.querySelector<HTMLButtonElement>('[data-testid="signup-banner-cta"]')
+      btn?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
     })
     await page.waitForTimeout(200)
 
@@ -245,5 +248,25 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
     const spy = await getSpyEvents(page)
     const shown = spy.find(e => e.event === 'signup_banner_shown')
     expect(shown, '세션 내 2번째 배너 발화됨 (SESSION 제한 미작동 버그)').toBeUndefined()
+  })
+
+  /**
+   * T6: 딤 오버레이 클릭 → dismissed 이벤트 발화 + 배너 사라짐
+   * - 딤 레이어(fixed inset-0 z-[149])의 상단 영역 클릭 = 배너 바깥 = 딤 클릭
+   */
+  test('T6: 딤 오버레이 클릭 → dismissed 이벤트 발화 @signup-banner', async ({ page }) => {
+    await triggerBanner(page)
+
+    // 화면 상단(배너 위쪽) 클릭 → 딤 레이어 onClick 발동
+    await page.mouse.click(200, 100)
+    await page.waitForTimeout(300)
+
+    const spy = await getSpyEvents(page)
+    const dismissed = spy.find(e => e.event === 'signup_banner_dismissed')
+    expect(dismissed, 'dismissed 이벤트 미발화').toBeTruthy()
+
+    // 배너 사라짐 확인
+    const ctaVisible = await page.locator('[data-testid="signup-banner-cta"]').isVisible().catch(() => false)
+    expect(ctaVisible, '딤 클릭 후 배너 미사라짐').toBe(false)
   })
 })
