@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.unaeo.session-refresh</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx</string>
+        <string>tsx</string>
+        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/session-manager.ts</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
+
+    <!-- 매일 02:00 KST — macOS 로컬시간 기준 (시스템 시간대: Asia/Seoul) -->
+    <!-- NID_SES 5일 이내 만료 시에만 실제 갱신, 항상 만료일 체크 + NID_AUT 경보 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>2</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/session-refresh.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/session-refresh-error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+        <key>HOME</key>
+        <string>/Users/yanadoo</string>
+    </dict>
+</dict>
+</plist>

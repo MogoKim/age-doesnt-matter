@@ -97,3 +97,7 @@ visual-qa-result.json
 assets/campaigns/
 assets/hero_banner/
 assets/review/
+
+# 네이버 세션 백업 및 차단 플래그 (쿠키 포함 — 절대 커밋 금지)
+agents/cafe/session-backups/
+agents/cafe/.session-halted

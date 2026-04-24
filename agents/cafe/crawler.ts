@@ -18,6 +18,7 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import { ensureSession, SESSION_HALTED_FLAG } from './session-manager.js'
 import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS } from './config.js'
 import type { RawCafePost, CafeConfig, ContentCategory, CommentData } from './types.js'
 import { calculateQualityScore } from './quality-scorer.js'
@@ -33,6 +34,26 @@ const randomDelay = (baseMs: number, minFactor = 0.7, maxFactor = 1.5): number =
 
 /** Playwright 자체 Chromium + 저장된 쿠키로 브라우저 열기 */
 async function launchBrowser(): Promise<{ context: BrowserContext }> {
+  // ── 세션 사전 검증 (최후 방어선) ──
+  // 주 갱신은 매일 02:00 KST launchd(session-manager.ts)가 담당.
+  // 크롤러 시작 직전 SESSION_HALTED 플래그 및 만료 임박 여부를 재확인.
+  if (existsSync(SESSION_HALTED_FLAG)) {
+    await notifySlack({
+      level: 'critical',
+      agent: 'CAFE_CRAWLER',
+      title: '크롤러 시작 차단 — SESSION_HALTED 상태',
+      body: 'NID_SES 갱신 실패로 크롤러가 차단됐습니다.\n' +
+        '조치: Chrome 닫고 npx tsx agents/cafe/export-cookies.ts 실행',
+    })
+    process.exit(1)
+  }
+  try {
+    await ensureSession()
+  } catch {
+    // ensureSession() 내부에서 이미 SESSION_HALTED 설정 + Slack 알림 전송됨
+    process.exit(1)
+  }
+
   if (!existsSync(STORAGE_STATE_PATH)) {
     throw new Error(
       '쿠키 파일 없음! 먼저 Chrome 닫고 실행:\n  npx tsx agents/cafe/export-cookies.ts',

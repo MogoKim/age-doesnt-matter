@@ -24,6 +24,7 @@ const MONITORING_TASKS = new Set([
   'cto:security-audit',
   'cdo:anomaly-detector',
   'cto:qa-verify',
+  'cafe:session-refresh',  // LOCKED 상태에서도 세션 유지 필수 (크롤러 재가동 보장)
 ])
 
 const HANDLERS: Record<string, () => Promise<void>> = {
@@ -108,6 +109,10 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'qa:code-gate': () => import('../qa/pre-deploy-gate.js').then(() => {}),
   // Gate 2: post-deploy-qa.yml에서 자동 실행 (Vercel 배포 완료 후)
   'qa:deploy-audit': () => import('../qa/post-deploy.js').then(() => {}),
+  // LOCAL ONLY — 매일 02:00 KST launchd, NID_SES 5일 이내 만료 시 자동 갱신
+  // NID_AUT(~1년)로 headless Playwright naver.com 접속 → 새 NID_SES 획득
+  // 실패 시: SESSION_HALTED 플래그 + #대시보드/#시스템/#qa 3채널 긴급 알림
+  'cafe:session-refresh': () => import('../cafe/session-manager.js').then(async m => { await m.ensureSession() }),
 }
 
 function getAutomationStatus(): string {

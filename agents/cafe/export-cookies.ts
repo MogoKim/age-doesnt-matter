@@ -9,8 +9,9 @@
  * 핵심 쿠키: NID_AUT, NID_SES (네이버 로그인 인증)
  */
 import { execSync } from 'child_process'
-import { writeFileSync } from 'fs'
+import { writeFileSync, existsSync, rmSync, mkdtempSync, unlinkSync } from 'fs'
 import { resolve, dirname } from 'path'
+import { tmpdir } from 'os'
 import { fileURLToPath } from 'url'
 import { CHROME_USER_DATA_DIR, CHROME_PROFILE } from './config.js'
 
@@ -38,10 +39,20 @@ for c in cj:
 print(json.dumps(cookies, ensure_ascii=False))
 `
 
-  const result = execSync(
-    `python3 -c ${JSON.stringify(pythonScript)} ${JSON.stringify(cookieFile)}`,
-    { encoding: 'utf-8', timeout: 15000 },
-  ).trim()
+  // 임시 파일로 Python 스크립트 실행 (-c 플래그는 \n을 리터럴로 전달하는 버그)
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'naver-cookies-'))
+  const tmpScript = resolve(tmpDir, 'extract.py')
+  writeFileSync(tmpScript, pythonScript)
+  let result: string
+  try {
+    result = execSync(
+      `python3 ${JSON.stringify(tmpScript)} ${JSON.stringify(cookieFile)}`,
+      { encoding: 'utf-8', timeout: 15000 },
+    ).trim()
+  } finally {
+    try { unlinkSync(tmpScript) } catch { /* ignore */ }
+    try { rmSync(tmpDir, { recursive: true }) } catch { /* ignore */ }
+  }
 
   const cookies: Array<{name: string; value: string; domain: string; path: string; expires: number; httpOnly: boolean; secure: boolean; sameSite: string}> = JSON.parse(result)
 
@@ -61,6 +72,14 @@ print(json.dumps(cookies, ensure_ascii=False))
   // storage-state.json 저장
   const storageState = { cookies, origins: [] }
   writeFileSync(STORAGE_STATE_PATH, JSON.stringify(storageState, null, 2))
+
+  // SESSION_HALTED 플래그 해제 — 쿠키 저장 성공 후에만 삭제
+  const SESSION_HALTED_FLAG = resolve(__dirname, '.session-halted')
+  if (existsSync(SESSION_HALTED_FLAG)) {
+    rmSync(SESSION_HALTED_FLAG, { force: true })
+    console.log('[ExportCookies] SESSION_HALTED 플래그 해제 완료 — 크롤러 재가동 가능')
+  }
+
   console.log(`[ExportCookies] ✅ 저장 완료: ${STORAGE_STATE_PATH}`)
 }
 
