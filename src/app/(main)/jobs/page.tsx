@@ -60,12 +60,12 @@ export default async function JobsPage({ searchParams }: PageProps) {
           <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
             <span>적용된 필터:</span>
             {region && (
-              <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-caption font-medium">
+              <span className="px-2.5 py-1 rounded-full bg-primary/10 text-foreground text-caption font-medium">
                 {region}
               </span>
             )}
             {tags?.map((tag) => (
-              <span key={tag} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-caption font-medium">
+              <span key={tag} className="px-2.5 py-1 rounded-full bg-primary/10 text-foreground text-caption font-medium">
                 {tag}
               </span>
             ))}
@@ -123,7 +123,7 @@ function JobCard({ job }: { job: JobCardItem }) {
           {job.tags.slice(0, 2).map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-medium"
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-foreground text-caption font-medium"
             >
               {tag}
             </span>

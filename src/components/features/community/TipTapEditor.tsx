@@ -510,7 +510,7 @@ export default function TipTapEditor({
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             className={cn(
               'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body transition-colors',
-              editor.isActive('blockquote') ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
+              editor.isActive('blockquote') ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted',
             )}
           >
             "
@@ -522,7 +522,7 @@ export default function TipTapEditor({
             onClick={() => editor.chain().focus().toggleBold().run()}
             className={cn(
               'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body font-bold transition-colors',
-              editor.isActive('bold') ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
+              editor.isActive('bold') ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted',
             )}
           >
             B
@@ -547,7 +547,7 @@ export default function TipTapEditor({
                 }}
                 className={cn(
                   'flex items-center justify-center min-h-[44px] min-w-[36px] rounded-xl transition-colors font-medium',
-                  isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
+                  isActive ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted',
                 )}
                 style={{ fontSize: size ?? '16px' }}
               >

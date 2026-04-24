@@ -150,7 +150,7 @@ function BestPostCard({ post }: { post: PostSummary }) {
       className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 min-h-[52px]"
     >
       <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-bold">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-foreground text-caption font-bold">
           {boardLabel}
         </span>
         {post.promotionLevel === 'HOT' && (

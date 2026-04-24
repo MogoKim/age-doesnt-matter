@@ -123,7 +123,7 @@ function SearchResultCard({ post, query }: { post: PostSummary; query: string })
       className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30"
     >
       {post.category && (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-bold mb-2">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-foreground text-caption font-bold mb-2">
           {post.category}
         </span>
       )}

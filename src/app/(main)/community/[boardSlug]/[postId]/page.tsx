@@ -149,7 +149,7 @@ export default async function PostDetailPage({ params }: PageProps) {
       {/* 게시글 헤더 */}
       <div className="mb-8 pb-6 border-b border-border">
         {post.category && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-caption font-bold w-fit mb-2">{post.category}</span>
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-foreground text-caption font-bold w-fit mb-2">{post.category}</span>
         )}
         <h1 className="text-xl font-bold text-foreground m-0 mb-4 leading-[1.4]">{post.title}</h1>
         <div className="flex items-center gap-2 text-caption text-muted-foreground">

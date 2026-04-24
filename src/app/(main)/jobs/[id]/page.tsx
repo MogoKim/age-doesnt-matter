@@ -149,7 +149,7 @@ export default async function JobDetailPage({ params }: PageProps) {
           {job.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-medium"
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-foreground text-caption font-medium"
             >
               🏷{tag}
             </span>

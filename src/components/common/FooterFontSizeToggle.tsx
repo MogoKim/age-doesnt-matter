@@ -44,7 +44,7 @@ export default function FooterFontSizeToggle() {
             'flex items-center justify-center w-10 h-10 rounded-lg border transition-colors',
             s.class,
             current === s.key
-              ? 'border-primary bg-primary/10 text-primary font-bold'
+              ? 'border-primary bg-primary/10 text-foreground font-bold'
               : 'border-border text-muted-foreground hover:border-primary/50'
           )}
         >

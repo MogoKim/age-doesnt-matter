@@ -361,7 +361,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
                   className={cn(
                     'w-full min-h-[52px] flex items-center px-4 rounded-xl text-body transition-colors',
                     selectedCategory === cat
-                      ? 'bg-primary/10 text-primary font-bold'
+                      ? 'bg-primary/10 text-foreground font-bold'
                       : 'text-foreground hover:bg-muted'
                   )}
                 >
