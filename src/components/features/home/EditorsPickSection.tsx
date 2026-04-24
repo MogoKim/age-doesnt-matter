@@ -18,6 +18,9 @@ export default function EditorsPickSection({ posts }: Props) {
           <span className="text-xl">⭐</span>
           이달의 인기글
         </h2>
+        <Link href="/best" className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
+          더보기 →
+        </Link>
       </div>
       <div className="relative">
         <div className="overflow-x-auto [-webkit-overflow-scrolling:touch] [scroll-snap-type:x_mandatory] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 pr-12 flex gap-3 lg:overflow-x-visible lg:[scroll-snap-type:none] lg:px-0 lg:pr-0 lg:grid lg:grid-cols-2 lg:gap-4">

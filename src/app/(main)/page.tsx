@@ -43,7 +43,7 @@ const getCachedTrending = unstable_cache(
   { revalidate: 60 }
 )
 const getCachedEditorsPicks = unstable_cache(
-  () => getEditorsPicks(2),
+  () => getEditorsPicks(5),
   ['home-editors'],
   { revalidate: 60 }
 )
