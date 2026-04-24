@@ -54,7 +54,7 @@ const VALID_BOT_TYPES = new Set([
 
 /** consumedBy → 예상 BotType 매핑 (intelligence.ts CONSUMED_BY_BOT_TYPE와 동기화) */
 const EXPECTED_BOT_TYPE: Record<string, string> = {
-  'magazine-generator': 'CAFE_CRAWLER',
+  'magazine-generator': 'COO',  // intelligence.ts CONSUMED_BY_BOT_TYPE와 동기화
   'seed-scheduler':     'SEED',
   'ceo-morning':        'CEO',
   'cmo-social':         'CMO',

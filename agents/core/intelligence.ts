@@ -155,7 +155,7 @@ export async function loadTodayBrief(options: {
   if (result && options.consumedBy) {
     /** consumedBy 이름 → 유효 Prisma BotType enum 값 매핑 */
     const CONSUMED_BY_BOT_TYPE: Record<string, string> = {
-      'magazine-generator': 'CAFE_CRAWLER',
+      'magazine-generator': 'COO',  // magazine-generator의 모든 BotLog는 COO (MAGAZINE_GENERATE 액션과 일관성)
       'seed-scheduler':     'SEED',
       'ceo-morning':        'CEO',
       'cmo-social':         'CMO',
