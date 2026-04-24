@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       step:
-        description: "실행 단계 (analyze / curate / external / sheet-scrape / brief-monitor / all)"
+        description: "실행 단계 (analyze / curate / external / sheet-scrape / all)"
         required: true
         default: "all"
         type: choice
@@ -14,18 +14,17 @@ on:
           - curate
           - external
           - sheet-scrape
-          - brief-monitor
 
   # 매일 09:00, 13:30, 20:30 KST — 카페 트렌드 분석 + 콘텐츠 큐레이션
-  # 매일 09:30 KST — DailyBrief 생성 모니터 (run-pipeline 미실행 감지)
   # 매일 11:00, 21:00 KST — 시트 스크래퍼 (펨코/오유/네이트판)
+  # 매일 09:30 KST — DailyBrief 생성 모니터
   schedule:
     - cron: "0 0 * * *"   # 09:00 KST (08:30 딥크롤 30분 후)
-    - cron: "30 0 * * *"  # 09:30 KST — DailyBrief 모니터 (run-pipeline 미실행 감지)
     - cron: "30 4 * * *"  # 13:30 KST (12:55 딥크롤 35분 후)
     - cron: "30 11 * * *" # 20:30 KST (20:00 딥크롤 30분 후)
     - cron: "0 2 * * *"   # 11:00 KST — sheet-scrape
     - cron: "0 12 * * *"  # 21:00 KST — sheet-scrape
+    - cron: "30 0 * * *"  # 09:30 KST — brief-monitor
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -53,9 +52,6 @@ jobs:
   analyze-and-curate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.event.schedule != '30 0 * * *')
 
     steps:
       - uses: actions/checkout@v4
@@ -78,12 +74,30 @@ jobs:
         if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'curate' || github.event_name == 'schedule' }}
         run: cd agents && npx tsx cron/runner.ts cafe_crawler content-curate
 
+  brief-monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ github.event.inputs.step == 'all' || (github.event_name == 'schedule' && github.event.schedule == '30 0 * * *') }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Run DailyBrief Monitor
+        run: cd agents && npx tsx cron/runner.ts cafe_crawler brief-monitor
+
   sheet-scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: |
-      github.event.inputs.step == 'all' || github.event.inputs.step == 'sheet-scrape' ||
-      (github.event_name == 'schedule' && (github.event.schedule == '0 2 * * *' || github.event.schedule == '0 12 * * *'))
+    if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'sheet-scrape' || github.event_name == 'schedule' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -104,25 +118,3 @@ jobs:
         run: cd agents && npx tsx cron/runner.ts community sheet-scrape
         env:
           SHEET_SCRAPER_EXCLUDE_SITE: fmkorea
-
-  brief-monitor:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    if: |
-      (github.event_name == 'schedule' && github.event.schedule == '30 0 * * *') ||
-      (github.event_name == 'workflow_dispatch' && (github.event.inputs.step == 'all' || github.event.inputs.step == 'brief-monitor'))
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - run: npm ci
-      - run: npx prisma generate
-      - run: cd agents && npm ci
-
-      - name: Run Brief Monitor (DailyBrief 미생성 감지)
-        run: cd agents && npx tsx cron/runner.ts cafe_crawler brief-monitor
