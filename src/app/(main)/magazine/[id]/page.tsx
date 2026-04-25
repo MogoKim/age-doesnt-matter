@@ -14,6 +14,7 @@ import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
+import SeriesNav from '@/components/features/magazine/SeriesNav'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import CpsClickTracker from '@/components/ad/CpsClickTracker'
@@ -214,6 +215,16 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           <span>👁 {post.viewCount}</span>
         </div>
       </div>
+
+      {/* 시리즈 네비게이션 (연재물일 때만 표시) */}
+      {post.seriesId && post.seriesTitle && post.seriesOrder && post.seriesCount && (
+        <SeriesNav
+          seriesId={post.seriesId}
+          seriesTitle={post.seriesTitle}
+          seriesOrder={post.seriesOrder}
+          seriesCount={post.seriesCount}
+        />
+      )}
 
       {/* 본문 */}
       {!post.content || post.content.replace(/<[^>]*>/g, '').trim().length < 50 ? (

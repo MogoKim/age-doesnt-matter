@@ -352,6 +352,13 @@ model Post {
   seoDescription String?
   slug           String?   @unique  // URL 슬러그 (매거진: 한글 키워드 기반)
 
+  // 시리즈 (매거진 연재)
+  seriesId     String?   // null=단발, 값 있으면 시리즈 구성원
+  seriesTitle  String?   // "50대 갱년기 완벽 가이드"
+  seriesOrder  Int?      // 시리즈 내 순서 (1, 2, 3...)
+  seriesCount  Int?      // 총 편수
+  seasonId     String?   // "2026-Q1" 등 분기 태깅
+
   // 외부 스크랩 출처
   sourceUrl      String?   @unique
   sourceSite     String?
@@ -376,6 +383,7 @@ model Post {
   @@index([boardType, status, trendingScore(sort: Desc)])
   @@index([authorId])
   @@index([status, reportCount])
+  @@index([seriesId, seriesOrder])
 }
 
 model JobDetail {

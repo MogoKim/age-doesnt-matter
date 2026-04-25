@@ -119,6 +119,12 @@ export interface PostDetail extends PostSummary {
   slug: string | null
   seoTitle: string | null
   seoDescription: string | null
+  // 시리즈 (매거진 연재)
+  seriesId: string | null
+  seriesTitle: string | null
+  seriesOrder: number | null
+  seriesCount: number | null
+  seasonId: string | null
 }
 
 export interface CommentItem {

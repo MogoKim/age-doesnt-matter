@@ -12,7 +12,6 @@
  */
 import {
   buildImagePrompt,
-  buildImagePromptByType,
   getMagazineImageStyle,
   type ImageStyle,
   type ImageContext,
@@ -77,12 +76,13 @@ async function fetchUnsplashPhoto(query: string): Promise<string | null> {
 // v2: 이미지 컨텍스트 기반 생성 (매거진 전용)
 // ---------------------------------------------------------------------------
 
-const UNSPLASH_ELIGIBLE: ImageType[] = ['FOOD_PHOTO', 'SCENE_PHOTO', 'OBJECT_PHOTO']
+// PERSON_REAL도 unsplashQuery 있을 때 Unsplash 시도 허용 (v3 Gemini 이관)
+const UNSPLASH_ELIGIBLE: ImageType[] = ['PERSON_REAL', 'FOOD_PHOTO', 'SCENE_PHOTO', 'OBJECT_PHOTO']
 
 /**
- * v2: ImageContext를 받아 최적 방식으로 이미지 생성
- * - FOOD/SCENE/OBJECT + unsplashQuery 있음 → Unsplash 우선
- * - PERSON_REAL / ILLUSTRATION / Unsplash 실패 → DALL-E
+ * v3: ImageContext를 받아 최적 방식으로 이미지 생성
+ * 폴백 체인: Gemini Playwright → Unsplash (unsplashQuery 있을 때) → null
+ * DALL-E 비활성화 — IMAGE_GENERATOR=gemini 로컬 전용 운영
  */
 export async function generateMagazineImageByContext(
   context: ImageContext,
@@ -93,28 +93,29 @@ export async function generateMagazineImageByContext(
     const { generateMagazineImageLocally } = await import('./local-image-generator.js')
     const localResult = await generateMagazineImageLocally(context, localEngine)
     if (localResult) return localResult
-    // null이면 ILLUSTRATION 타입이거나 생성 실패 → DALL-E/Unsplash 폴백
-    console.log(`[ImageGen] 로컬 생성 null → DALL-E/Unsplash 폴백 (${context.type})`)
+    // null이면 ILLUSTRATION 타입이거나 생성 실패 → Unsplash 폴백 시도
+    console.log(`[ImageGen] 로컬 생성 null → Unsplash 폴백 시도 (${context.type})`)
   }
 
-  // Unsplash 시도 (해당 타입 + 검색어 있을 때)
+  // Unsplash 시도 (unsplashQuery 있을 때 — PERSON_REAL 포함 전 타입)
   if (context.unsplashQuery && UNSPLASH_ELIGIBLE.includes(context.type)) {
     const unsplashUrl = await fetchUnsplashPhoto(context.unsplashQuery)
     if (unsplashUrl) {
       console.log(`[ImageGen] Unsplash 성공 (${context.type}): ${unsplashUrl.slice(0, 60)}...`)
       return { url: unsplashUrl, prompt: `unsplash:${context.unsplashQuery}`, source: 'unsplash' }
     }
-    console.log(`[ImageGen] Unsplash 실패 → DALL-E 폴백 (${context.type})`)
+    console.log(`[ImageGen] Unsplash 실패 (${context.type}) — 이미지 없음`)
   }
 
-  // DALL-E 생성
-  if (!OPENAI_API_KEY) {
-    console.log('[ImageGen] OPENAI_API_KEY 없음 — 이미지 생성 스킵')
-    return null
-  }
+  // DALL-E 비활성화 — Gemini Playwright 이관 완료
+  // 긴급 복구 시: .env.local에서 IMAGE_GENERATOR 제거하면 아래 주석 해제로 자동 복구
+  // if (OPENAI_API_KEY) {
+  //   const fullPrompt = buildImagePromptByType(context.dallePrompt, context.type)
+  //   return callDallE(fullPrompt)
+  // }
 
-  const fullPrompt = buildImagePromptByType(context.dallePrompt, context.type)
-  return callDallE(fullPrompt)
+  console.log(`[ImageGen] 이미지 수급 불가 (${context.type}) — null 반환`)
+  return null
 }
 
 // ---------------------------------------------------------------------------

@@ -8,7 +8,77 @@ export async function getRelatedMagazinePosts(
   category: string | null,
   excludeId: string,
   limit = 3,
+  titleKeywords?: string[],  // 제목 키워드 (시리즈명, 주요 단어)
 ): Promise<PostSummary[]> {
+  // 1순위: 같은 시리즈 내 다른 편 (seriesId 기반)
+  const currentPost = await prisma.post.findUnique({
+    where: { id: excludeId },
+    select: { seriesId: true },
+  })
+
+  if (currentPost?.seriesId) {
+    const seriesRows = await prisma.post.findMany({
+      where: {
+        boardType: 'MAGAZINE',
+        status: 'PUBLISHED',
+        id: { not: excludeId },
+        seriesId: currentPost.seriesId,
+      },
+      orderBy: { seriesOrder: 'asc' },
+      take: limit,
+      select: postSelect,
+    })
+    if (seriesRows.length >= limit) return seriesRows.map(toPostSummary)
+
+    // 시리즈 내 편이 limit보다 적으면 같은 카테고리로 채움
+    const remainingLimit = limit - seriesRows.length
+    const categoryRows = await prisma.post.findMany({
+      where: {
+        boardType: 'MAGAZINE',
+        status: 'PUBLISHED',
+        id: { notIn: [excludeId, ...seriesRows.map(r => r.id)] },
+        ...(category ? { category } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: remainingLimit,
+      select: postSelect,
+    })
+    return [...seriesRows, ...categoryRows].map(toPostSummary)
+  }
+
+  // 2순위: 제목 키워드 매칭 (같은 카테고리 내)
+  if (titleKeywords && titleKeywords.length > 0) {
+    const keywordRows = await prisma.post.findMany({
+      where: {
+        boardType: 'MAGAZINE',
+        status: 'PUBLISHED',
+        id: { not: excludeId },
+        ...(category ? { category } : {}),
+        OR: titleKeywords.slice(0, 3).map(kw => ({ title: { contains: kw } })),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      select: postSelect,
+    })
+    if (keywordRows.length >= limit) return keywordRows.map(toPostSummary)
+
+    // 키워드 매칭이 부족하면 같은 카테고리로 채움
+    const remainingLimit = limit - keywordRows.length
+    const categoryRows = await prisma.post.findMany({
+      where: {
+        boardType: 'MAGAZINE',
+        status: 'PUBLISHED',
+        id: { notIn: [excludeId, ...keywordRows.map(r => r.id)] },
+        ...(category ? { category } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: remainingLimit,
+      select: postSelect,
+    })
+    return [...keywordRows, ...categoryRows].map(toPostSummary)
+  }
+
+  // 3순위: 카테고리 기반 (기존 방식)
   const rows = await prisma.post.findMany({
     where: {
       boardType: 'MAGAZINE',

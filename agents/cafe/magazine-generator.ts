@@ -15,6 +15,7 @@ import { generateMagazineImageByContext } from './image-generator.js'
 import { buildMagazineHtml, parseSectionsFromAI } from './magazine-template.js'
 import { getDefaultImagePlan, type ImageContext } from '../core/image-prompt-builder.js'
 import { buildMagazineSystemPrompt, DESIRE_TO_CATEGORY, DESIRE_TOPIC_HINTS } from '../magazine/prompt.js'
+import { getActiveSeriesToday } from '../magazine/series-plan.js'
 import { requestGoogleIndexing } from './indexing-api.js'
 
 const CLAUDE_MODEL_HEAVY = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
@@ -52,9 +53,28 @@ async function getRecentMagazineTitles(days: number): Promise<string[]> {
     },
     select: { title: true },
     orderBy: { createdAt: 'desc' },
-    take: 20,
+    take: 60,
   })
   return recent.map(p => p.title)
+}
+
+/**
+ * 새 제목이 기존 제목과 의미상 중복인지 체크
+ * - 첫 두 단어(키워드) 공유 시 중복으로 판단
+ * - 예: "갱년기 수면 개선법" vs "갱년기 수면 어떻게" → 중복
+ */
+function isSimilarTitle(newTitle: string, existingTitles: string[]): boolean {
+  const extractKeywords = (title: string) =>
+    title.replace(/[,.\s]+/g, ' ').trim().split(' ').filter(w => w.length > 1).slice(0, 3)
+
+  const newKws = extractKeywords(newTitle)
+
+  return existingTitles.some(existing => {
+    const existKws = extractKeywords(existing)
+    // 첫 두 키워드 중 2개 이상 겹치면 중복
+    const overlap = newKws.filter(kw => existKws.includes(kw)).length
+    return overlap >= 2
+  })
 }
 
 /** 카페 참고글 가져오기 */
@@ -220,11 +240,20 @@ async function generateMagazineSlug(title: string): Promise<string> {
   return `${base}-${Date.now()}` // 극히 드문 fallback
 }
 
+interface SeriesMeta {
+  seriesId: string
+  seriesTitle: string
+  seriesOrder: number
+  seriesCount: number
+  seasonId: string
+}
+
 /** 매거진 게시 (에디터 봇 계정 사용) */
 async function publishMagazine(
   article: { title: string; content: string; summary: string; seoTitle: string | null; seoDescription: string | null },
   category: string,
   thumbnailUrl?: string,
+  seriesMeta?: SeriesMeta,
 ): Promise<{ id: string; slug: string }> {
   // 매거진 전용 봇 — 페르소나 B(정순씨) 사용 (차분한 일기체 정보형)
   const editorUserId = await getBotUser('B')
@@ -245,6 +274,12 @@ async function publishMagazine(
       slug,
       seoTitle: article.seoTitle ?? null,
       seoDescription: article.seoDescription ?? null,
+      // 시리즈 메타 (단발 기사는 null)
+      seriesId: seriesMeta?.seriesId ?? null,
+      seriesTitle: seriesMeta?.seriesTitle ?? null,
+      seriesOrder: seriesMeta?.seriesOrder ?? null,
+      seriesCount: seriesMeta?.seriesCount ?? null,
+      seasonId: seriesMeta?.seasonId ?? null,
     },
   })
 
@@ -259,10 +294,18 @@ export interface MagazineRunResult {
 
 /** 메인 실행 */
 export async function main(): Promise<MagazineRunResult[]> {
+  // IMAGE_GENERATOR 가드 — GHA/클라우드 환경에서 발행 완전 차단 (Gemini Playwright 불가)
+  const imageEngine = process.env.IMAGE_GENERATOR
+  if (!imageEngine) {
+    console.log('[MagazineGenerator] IMAGE_GENERATOR 미설정 — 클라우드 환경, 발행 스킵')
+    await disconnect()
+    return []
+  }
+
   console.log('[MagazineGenerator] 시작')
   const startTime = Date.now()
 
-  // 중복 발행 가드 — GitHub Actions(16:00) + 로컬 launchd(12:30/21:00) 합산 4편 초과 방지
+  // 중복 발행 가드 — 로컬 launchd(10:00/15:00/17:00) 일일 최대 3편
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -273,8 +316,8 @@ export async function main(): Promise<MagazineRunResult[]> {
       publishedAt: { gte: today },
     },
   })
-  if (todayPublished >= 4) {
-    console.log(`[MagazineGenerator] 오늘 이미 ${todayPublished}편 발행됨 — 스킵`)
+  if (todayPublished >= 3) {
+    console.log(`[MagazineGenerator] 오늘 이미 ${todayPublished}편 발행됨 — 일일 최대 3편 초과, 스킵`)
     await disconnect()
     return []
   }
@@ -306,7 +349,29 @@ export async function main(): Promise<MagazineRunResult[]> {
     ? (geoSeed.magazineTopics as unknown as MagazineSuggestion[])
     : []
 
+  // 시리즈 우선순위 — 오늘 발행해야 할 시리즈 편 체크
+  const seriesMetaMap = new Map<string, SeriesMeta>()  // topic.title → 시리즈 메타
+  const seriesTopics: MagazineSuggestion[] = []
+  const todaySeriesItems = getActiveSeriesToday(today)
+  for (const item of todaySeriesItems) {
+    seriesTopics.push({
+      title: item.episodeTitle,
+      reason: `시리즈: ${item.series.title} (${item.episodeIndex + 1}/${item.series.topics.length}편)`,
+      relatedPosts: [],
+      score: 10,  // 시리즈 편은 최고 우선순위
+    })
+    seriesMetaMap.set(item.episodeTitle, {
+      seriesId: item.series.seriesId,
+      seriesTitle: item.series.title,
+      seriesOrder: item.episodeIndex + 1,
+      seriesCount: item.series.topics.length,
+      seasonId: item.series.seasonId,
+    })
+    console.log(`[MagazineGenerator] 📚 시리즈 주제: ${item.series.title} ${item.episodeIndex + 1}/${item.series.topics.length}편 — "${item.episodeTitle}"`)
+  }
+
   const magazineTopics = [
+    ...seriesTopics,  // 시리즈 최우선
     ...geoTopics,
     ...(trend.magazineTopics as unknown as MagazineSuggestion[]),
   ]
@@ -328,7 +393,7 @@ export async function main(): Promise<MagazineRunResult[]> {
     console.log(`[MagazineGenerator] 욕망지도 폴백 주제 사용: "${fallbackTopic.title}"`)
     const category = DESIRE_TO_CATEGORY[dominantDesire] ?? '생활'
     const refs = await getReferencePosts(fallbackTopic)
-    const recentTitles = await getRecentMagazineTitles(14)
+    const recentTitles = await getRecentMagazineTitles(30)
     const article = await generateMagazineArticle(fallbackTopic, category, refs, recentTitles)
     if (!article) {
       console.log('[MagazineGenerator] 폴백 주제 생성 실패')
@@ -345,7 +410,7 @@ export async function main(): Promise<MagazineRunResult[]> {
   }
 
   // 2) 최근 매거진 제목 (중복 방지)
-  const recentTitles = await getRecentMagazineTitles(14)
+  const recentTitles = await getRecentMagazineTitles(30)
 
   // 3) 상위 1~2개 주제로 매거진 생성
   const maxArticles = 2
@@ -358,6 +423,13 @@ export async function main(): Promise<MagazineRunResult[]> {
     // 점수 7 이상만 발행
     if (topic.score < 7) {
       console.log(`[MagazineGenerator] "${topic.title}" (${topic.score}/10) — 점수 미달, 스킵`)
+      continue
+    }
+
+    // 의미 중복 주제 스킵
+    const allRecentTitles = [...recentTitles, ...publishedTitles]
+    if (isSimilarTitle(topic.title, allRecentTitles)) {
+      console.log(`[MagazineGenerator] "${topic.title}" — 최근 30일 유사 주제 이미 발행, 스킵`)
       continue
     }
 
@@ -387,8 +459,9 @@ export async function main(): Promise<MagazineRunResult[]> {
     if (image) {
       console.log(`[MagazineGenerator] 히어로 이미지 (${ctxList[0].type}, ${image.source}): ${image.url.slice(0, 50)}...`)
     } else {
-      console.warn(`[MagazineGenerator] ⚠️ 히어로 이미지 생성 실패 — "${topic.title}"`)
-      await notifySlack(`⚠️ *매거진 히어로 이미지 생성 실패*\n제목: ${topic.title}\n카테고리: ${category}\n→ 썸네일 없이 발행됩니다. 수동 확인 필요.`, { channel: '#시스템' })
+      console.warn(`[MagazineGenerator] ⚠️ 히어로 이미지 없음 — "${topic.title}" 발행 보류`)
+      await notifySlack(`⚠️ *매거진 히어로 이미지 생성 실패*\n제목: ${topic.title}\n카테고리: ${category}\n→ 이미지 없음, 발행 보류됩니다.`, { channel: '#시스템' })
+      continue
     }
 
     // 본문 이미지 (두 번째 컨텍스트)
@@ -471,7 +544,8 @@ export async function main(): Promise<MagazineRunResult[]> {
 
     // 리치 HTML을 게시 콘텐츠로 사용
     const richArticle = { ...article, content: finalHtml }
-    const { id: postId, slug: postSlug } = await publishMagazine(richArticle, category, thumbnailUrl)
+    const seriesMeta = seriesMetaMap.get(topic.title)
+    const { id: postId, slug: postSlug } = await publishMagazine(richArticle, category, thumbnailUrl, seriesMeta)
 
     // Google 인덱싱 요청 (환경변수 미설정 시 자동 skip)
     const postUrl = `https://www.age-doesnt-matter.com/magazine/${postSlug}`

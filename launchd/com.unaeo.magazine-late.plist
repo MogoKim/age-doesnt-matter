@@ -3,19 +3,19 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.unaeo.magazine-morning</string>
+  <string>com.unaeo.magazine-late</string>
 
   <key>ProgramArguments</key>
   <array>
     <string>/bin/zsh</string>
     <string>-c</string>
-    <string>cd /Users/yanadoo/Documents/New_Claude_agenotmatter &amp;&amp; set -a &amp;&amp; source .env.local &amp;&amp; set +a &amp;&amp; SESSION_TIME=morning IMAGE_GENERATOR=gemini /usr/local/bin/npx tsx agents/cafe/local-magazine-runner.ts >> /tmp/magazine-morning.log 2>&amp;1</string>
+    <string>cd /Users/yanadoo/Documents/New_Claude_agenotmatter &amp;&amp; set -a &amp;&amp; source .env.local &amp;&amp; set +a &amp;&amp; SESSION_TIME=late IMAGE_GENERATOR=gemini /usr/local/bin/npx tsx agents/cafe/local-magazine-runner.ts >> /tmp/magazine-late.log 2>&amp;1</string>
   </array>
 
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key>
-    <integer>1</integer>
+    <integer>8</integer>
     <key>Minute</key>
     <integer>0</integer>
   </dict>
@@ -24,9 +24,9 @@
   <false/>
 
   <key>StandardOutPath</key>
-  <string>/tmp/magazine-morning.log</string>
+  <string>/tmp/magazine-late.log</string>
   <key>StandardErrorPath</key>
-  <string>/tmp/magazine-morning.log</string>
+  <string>/tmp/magazine-late.log</string>
 
   <key>EnvironmentVariables</key>
   <dict>
@@ -35,7 +35,7 @@
     <key>HOME</key>
     <string>/Users/yanadoo</string>
     <key>SESSION_TIME</key>
-    <string>morning</string>
+    <string>late</string>
     <key>IMAGE_GENERATOR</key>
     <string>gemini</string>
   </dict>

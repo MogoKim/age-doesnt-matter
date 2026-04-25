@@ -113,9 +113,10 @@ export function buildMagazineHtml(data: MagazineTemplateData): string {
     </div>`
 
   const ctaBlock = `
-    <div style="margin-top:28px;padding:24px;background:#FFF5F4;border-radius:12px;text-align:center;">
-      <p style="margin:0 0 8px;font-size:17px;color:#333;">이 글이 도움이 되셨나요?</p>
-      <p style="margin:0;font-size:15px;color:#666;">댓글로 여러분의 경험도 나눠주세요 ❤️</p>
+    <div style="margin-top:32px;padding:28px 24px;background:linear-gradient(135deg,#FFF5F4 0%,#FFF0EF 100%);border-radius:16px;border-left:4px solid #FF6F61;">
+      <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#333;">같은 고민, 혼자 하지 마세요 💬</p>
+      <p style="margin:0 0 20px;font-size:16px;color:#555;line-height:1.6;">우나어에는 같은 나이, 비슷한 고민을 나누는 분들이 모여 있어요.</p>
+      <a href="/community/stories" style="display:inline-flex;align-items:center;height:52px;padding:0 28px;background:#FF6F61;color:#fff;border-radius:26px;font-size:17px;font-weight:600;text-decoration:none;gap:8px;">우나어 커뮤니티 가기 →</a>
     </div>`
 
   return `

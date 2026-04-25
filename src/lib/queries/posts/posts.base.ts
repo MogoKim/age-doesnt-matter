@@ -145,6 +145,11 @@ export const getPostDetail = cache(async function getPostDetail(
       slug: true,
       seoTitle: true,
       seoDescription: true,
+      seriesId: true,
+      seriesTitle: true,
+      seriesOrder: true,
+      seriesCount: true,
+      seasonId: true,
     },
   })
 
@@ -183,5 +188,10 @@ export const getPostDetail = cache(async function getPostDetail(
     slug: post.slug ?? null,
     seoTitle: post.seoTitle ?? null,
     seoDescription: post.seoDescription ?? null,
+    seriesId: post.seriesId ?? null,
+    seriesTitle: post.seriesTitle ?? null,
+    seriesOrder: post.seriesOrder ?? null,
+    seriesCount: post.seriesCount ?? null,
+    seasonId: post.seasonId ?? null,
   }
 })

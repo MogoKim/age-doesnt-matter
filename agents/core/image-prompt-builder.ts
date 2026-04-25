@@ -27,7 +27,7 @@ export type ImageStyle =
 
 // ---------------------------------------------------------------------------
 // Person Style Guide — 한국인 실사 인물 규칙 (v2)
-// 레퍼런스 연령대: 1978~1982년생 한국 여성 (만 44~46세)
+// 레퍼런스 연령대: 1956~1965년생 한국 여성 (만 60~70세) — 우나어 5060 타겟 매칭
 // ---------------------------------------------------------------------------
 
 /** 다중 인물 감지 키워드 */
@@ -50,24 +50,24 @@ const KOREAN_REALISM_BASE =
   + 'indistinguishable from a real photograph taken by a professional photographer. '
   // 한국인 특성
   + 'Genuine East Asian Korean facial features and bone structure — '
-  + 'Korean women born in the late 1970s to early 1980s (around 1978–1982), '
-  + 'inspired by the natural appearance of real Korean women of this generation, '
+  + 'inspired by the natural appearance of real Korean women in their 50s and 60s, '
   + 'NOT resembling any specific individual or celebrity. '
-  // 헤어·피부
-  + 'Naturally styled dark brown to dark black hair, modern flattering Korean cut, '
-  + 'barely visible grey — less than 5% grey strands at most. '
+  // 헤어·피부 — 5060 자연스러운 노화 허용 (흰머리 금지 조항 제거)
+  + 'Naturally styled hair with possible subtle grey highlights (less than 20%), '
+  + 'modern flattering Korean cut that celebrates natural aging beautifully. '
   + 'Healthy luminous skin with genuine human skin texture: visible pores, '
-  + 'subtle laugh lines at eye corners, natural pigmentation — '
+  + 'fine lines around eyes and mouth showing life experience, '
+  + 'natural pigmentation — '
   + 'NOT airbrushed NOT perfectly smooth NOT model skin. '
   // 부정 지시
   + 'NOT illustration, NOT animation, NOT CGI render, NOT Midjourney style, '
-  + 'NOT gray hair, NOT white hair, NOT elderly, NOT young girl under 35, '
+  + 'NOT elderly frail, NOT young girl under 45, '
   + 'NOT Western, NOT Caucasian, NOT Southeast Asian.'
 
 export const PERSON_STYLE_GUIDE = {
-  /** 단일 인물 (1명) — 중반 40대 한국 여성 */
+  /** 단일 인물 (1명) — 5060 한국 여성 (DALL-E 렌더링 기준 mid-40s = 실제 5060 외모) */
   femalePromptSingle:
-    'Photorealistic photograph, one Korean woman in her mid-40s (age 44 to 46), '
+    'Photorealistic photograph, one Korean woman in her mid-40s, '
     + 'refined intelligent warmth, modern Korean everyday fashion in muted elegant tones, '
     + 'candid authentic lifestyle moment — genuine natural expression, NOT posed, '
     + 'soft natural window light or warm outdoor golden light, '
@@ -75,10 +75,10 @@ export const PERSON_STYLE_GUIDE = {
     + 'editorial magazine photograph quality, subtle warm coral accent in environment, '
     + KOREAN_REALISM_BASE,
 
-  /** 복수 인물 (2~3명) — 중반 40대 한국 여성들 */
+  /** 복수 인물 (2~3명) — 5060 한국 여성들 그룹 (DALL-E 렌더링 기준 mid-40s = 실제 5060) */
   femalePromptMultiple:
-    'Photorealistic photograph, two to three Korean women in their mid-40s (age 44 to 46), '
-    + 'genuine warm friendship — real laughter, natural eye contact, authentic connection, '
+    'Photorealistic photograph, two to three Korean women in their mid-40s, '
+    + 'genuine warm friendship — real laughter, natural eye contact, authentic joyful connection, '
     + 'NOT models, NOT posed stock photo, spontaneous candid moment, '
     + 'modern Korean everyday fashion, '
     + 'soft natural window light or warm outdoor golden light, '
@@ -89,8 +89,8 @@ export const PERSON_STYLE_GUIDE = {
   get femalePrompt() { return this.femalePromptSingle },
 
   never: [
-    'white hair', 'gray hair', 'wrinkled', 'elderly', 'senior citizen',
-    'old person', 'frail', 'walking stick', 'cane', 'Western', 'Caucasian',
+    'wrinkled', 'elderly frail', 'senior citizen',
+    'old person hunched', 'frail', 'walking stick', 'cane', 'Western', 'Caucasian',
   ] as const,
 } as const
 
@@ -193,9 +193,13 @@ export function getMagazineImageStyle(category: string): ImageStyle {
     '일자리': 'clean-infographic',
     '유머': 'active-growth',
     '문화': 'active-growth',
+    '취미': 'active-growth',
     '여행': 'warm-lifestyle',
     '요리': 'warm-lifestyle',
     '생활': 'warm-lifestyle',
+    '관계': 'warm-lifestyle',
+    '집꾸미기': 'warm-lifestyle',
+    '패션': 'warm-lifestyle',
     '간병': 'warm-lifestyle',
   }
   return map[category] ?? 'warm-lifestyle'
@@ -220,19 +224,20 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman doing gentle morning exercise or stretching outdoors',
+        dallePrompt: 'Korean woman in her mid-40s doing gentle morning walk outdoors smiling, natural sunlight, park path',
+        unsplashQuery: 'mature women outdoor walk smiling park morning',
       },
       {
         type: 'FOOD_PHOTO',
-        dallePrompt: 'fresh healthy Korean vegetables and ingredients on wooden table',
-        unsplashQuery: 'korean healthy food vegetables',
+        dallePrompt: 'fresh healthy Korean vegetables and ingredients on wooden table, natural light, appetizing',
+        unsplashQuery: 'fresh vegetables healthy food wooden table light',
       },
     ],
     '생활': [
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman organizing a tidy Korean home with warm morning sunlight',
+        dallePrompt: 'Korean woman in her 60s organizing a cozy Korean home with warm morning sunlight',
       },
       {
         type: 'SCENE_PHOTO',
@@ -240,27 +245,42 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
         unsplashQuery: 'korean home interior cozy living room',
       },
     ],
+    '관계': [
+      {
+        type: 'PERSON_REAL',
+        gender: 'female',
+        dallePrompt: 'Korean woman in her mid-40s smiling warmly at cafe table with coffee, genuine happy expression, window light, candid moment',
+        unsplashQuery: 'women friends laughing together coffee cafe',
+      },
+      {
+        type: 'SCENE_PHOTO',
+        dallePrompt: 'cozy Korean cafe interior warm wooden tables coffee cups afternoon light, inviting atmosphere',
+        unsplashQuery: 'cozy cafe interior wooden table warm light',
+      },
+    ],
     '재테크': [
       {
-        type: 'ILLUSTRATION',
-        dallePrompt: 'savings growth finance investment concept illustration — coins, growth chart, piggy bank',
+        type: 'SCENE_PHOTO',
+        dallePrompt: 'Korean home study desk with notebook, glasses, calculator, warm morning light, cozy atmosphere',
+        unsplashQuery: 'home desk notebook writing morning light cozy',
       },
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman reviewing financial documents at home desk with smartphone',
+        dallePrompt: 'Korean woman in her mid-40s reviewing financial documents at home desk with reading glasses, thoughtful expression, warm light',
+        unsplashQuery: 'mature woman reading documents desk home',
       },
     ],
     '여행': [
       {
         type: 'SCENE_PHOTO',
         dallePrompt: 'beautiful Korean nature scenery mountains or coast autumn golden hour',
-        unsplashQuery: 'korea nature scenery mountains autumn',
+        unsplashQuery: 'asian women 50s travel outdoor smiling group',
       },
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman enjoying sightseeing at a scenic Korean location',
+        dallePrompt: 'two Korean women in their 60s enjoying sightseeing at a scenic Korean location together',
       },
     ],
     '요리': [
@@ -272,7 +292,31 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman cooking in a bright modern Korean kitchen smiling',
+        dallePrompt: 'Korean woman in her 60s cooking happily in a bright modern kitchen smiling',
+      },
+    ],
+    '집꾸미기': [
+      {
+        type: 'SCENE_PHOTO',
+        dallePrompt: 'beautifully decorated Korean home interior cozy living room warm lighting',
+        unsplashQuery: 'cozy home interior living room warm lighting decor',
+      },
+      {
+        type: 'PERSON_REAL',
+        gender: 'female',
+        dallePrompt: 'Korean woman in her 60s proudly decorating her home interior with plants and cozy items',
+      },
+    ],
+    '패션': [
+      {
+        type: 'PERSON_REAL',
+        gender: 'female',
+        dallePrompt: 'Korean woman in her 60s wearing elegant comfortable everyday Korean fashion smiling confidently',
+      },
+      {
+        type: 'SCENE_PHOTO',
+        dallePrompt: 'elegant minimal Korean fashion accessories scarf bag shoes flat lay, soft light',
+        unsplashQuery: 'mature woman casual elegance modern fashion style',
       },
     ],
     '문화': [
@@ -284,14 +328,26 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman reading a book in a cozy sunlit Korean cafe',
+        dallePrompt: 'Korean woman in her 60s reading a book in a cozy sunlit Korean cafe',
+      },
+    ],
+    '취미': [
+      {
+        type: 'PERSON_REAL',
+        gender: 'female',
+        dallePrompt: 'Korean woman in her 60s happily doing a hobby like painting or gardening with natural sunlight',
+      },
+      {
+        type: 'SCENE_PHOTO',
+        dallePrompt: 'hobby craft supplies art materials warm light creative workspace',
+        unsplashQuery: 'hobby craft painting creative lifestyle woman',
       },
     ],
     '일자리': [
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman working confidently at a clean modern office desk',
+        dallePrompt: 'Korean woman in her 60s working confidently at a clean modern office desk',
       },
       {
         type: 'SCENE_PHOTO',
@@ -303,12 +359,12 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman warmly and gently caring for an elderly parent at home',
+        dallePrompt: 'Korean woman in her mid-40s warmly and gently holding hands with elderly parent at home, soft warm light, caring expression',
+        unsplashQuery: 'daughter caring elderly parent home warm',
       },
       {
-        type: 'OBJECT_PHOTO',
-        dallePrompt: 'home care medical supplies caregiving items organized neatly',
-        unsplashQuery: 'home care medical supplies healthcare',
+        type: 'ILLUSTRATION',
+        dallePrompt: 'warm home care support concept illustration — gentle hands holding, soft warm colors, minimal style, caring family bond',
       },
     ],
   }
