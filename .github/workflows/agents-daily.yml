@@ -11,8 +11,8 @@ on:
     - cron: "0 5 * * *"
     # 09:45 KST = 00:45 UTC — 매거진 모닝 발행 (로컬 launchd로 전환 — 비활성화)
     # - cron: "45 0 * * *"
-    # 16:00 KST = 07:00 UTC — 매거진 자동발행 (GitHub Actions + 로컬 launchd 이중화)
-    - cron: "0 7 * * *"
+    # 16:00 KST = 07:00 UTC — launchd 10:00/15:00/17:00 KST로 이관 완료, GHA 비활성화
+    # - cron: "0 7 * * *"
     # 19:30 KST = 10:30 UTC — 매거진 이브닝 발행 (로컬 launchd로 전환 — 비활성화)
     # - cron: "30 10 * * *"
     # 22:00 KST = 13:00 UTC — CDO KPI
@@ -140,8 +140,8 @@ jobs:
               "0 5 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;
               # "45 0 * * *") magazine-morning — 로컬 launchd로 전환
-              "0 7 * * *")
-                echo "agent=cafe_crawler" >> $GITHUB_OUTPUT; echo "task=magazine-generate" >> $GITHUB_OUTPUT ;;
+              # "0 7 * * *") — launchd 이관 완료, GHA 비활성화
+              # echo "agent=cafe_crawler" >> $GITHUB_OUTPUT; echo "task=magazine-generate" >> $GITHUB_OUTPUT ;;
               # "30 10 * * *") magazine-evening — 로컬 launchd로 전환
               "0 13 * * *")
                 echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=kpi-collector" >> $GITHUB_OUTPUT ;;

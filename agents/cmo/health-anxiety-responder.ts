@@ -157,7 +157,7 @@ async function main() {
       title: article.title,
       content: article.content,
       summary: article.summary,
-      boardType: 'MAGAZINE',
+      boardType: 'STORY',    // 커뮤니티 큐레이션 — 매거진 아님 (MAGAZINE은 magazine-generator.ts 전용)
       category: '건강',
       authorId: botUserId,
       source: 'BOT',
