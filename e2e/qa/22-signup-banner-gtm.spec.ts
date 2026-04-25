@@ -284,7 +284,7 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
    * - layout.tsx signupAutoTrigger=true → SignupPromptBanner autoVisible=true
    * - inapp_redirect_success 이벤트 발화
    */
-  // T8은 Phase 2 배포(Vercel) 완료 후 통과 — 배포 전 프로덕션에서는 signupAutoTrigger=false
+  // T8: 배포 후 활성화 — useSearchParams()로 클라이언트에서 직접 감지
   test.skip('T8: signup=1 auto-trigger 배너 노출 + GTM 이벤트 @signup-banner', async ({ page }) => {
     await page.clock.install()
     await page.goto('/community/stories?signup=1&utm_source=kakao-android')

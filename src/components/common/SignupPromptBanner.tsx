@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useTransition } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { kakaoSignIn } from '@/app/login/actions'
 import {
   gtmSignupBannerEligible,
@@ -117,18 +117,26 @@ const AUTO_TRIGGER_COUNTDOWN_S = 5
 // sessionStorage: 탭 내 1회 제한 (취소 또는 완료 시 세팅)
 const SESSION_AUTO_TRIGGERED = 'signup_auto_triggered'
 
+// auto-trigger: 유효한 인앱 utm_source 목록
+const INAPP_UTM_SOURCES = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp'] as const
+
 interface Props {
   isLoggedIn: boolean
   createdAt?: string // ISO 8601 — 인앱→Chrome 재접속 backfill용
-  signupAutoTrigger?: boolean  // layout.tsx: ?signup=1 + 유효 utm_source 감지
-  signupUtmSource?: string     // layout.tsx: utm_source 값 (GTM 전송용)
 }
 
 // ──────────────────────────────────────────────
 // 컴포넌트
 // ──────────────────────────────────────────────
-export function SignupPromptBanner({ isLoggedIn, createdAt, signupAutoTrigger, signupUtmSource }: Props) {
+export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // ?signup=1 + 유효 utm_source 감지 (클라이언트에서 직접 읽기 — layout은 searchParams 미지원)
+  const signupAutoTrigger =
+    searchParams.get('signup') === '1' &&
+    INAPP_UTM_SOURCES.includes(searchParams.get('utm_source') as typeof INAPP_UTM_SOURCES[number])
+  const signupUtmSource = searchParams.get('utm_source') ?? ''
   const [visible, setVisible] = useState(false)
   const [variant, setVariant] = useState<Variant>('A')
   const [isPending, startTransition] = useTransition()
