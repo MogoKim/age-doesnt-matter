@@ -281,15 +281,37 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
 
   /**
    * T8: ?signup=1&utm_source=kakao-android → auto-trigger 배너 노출 + GTM 이벤트
-   * - layout.tsx signupAutoTrigger=true → SignupPromptBanner autoVisible=true
+   * - useSearchParams()로 클라이언트에서 직접 감지 → autoVisible=true
    * - inapp_redirect_success 이벤트 발화
+   *
+   * GTM 이벤트 캡처 전략:
+   * window.gtag spy 불가 — gtag-init(afterInteractive)이 "function gtag(){dataLayer.push(arguments)}"
+   * 선언으로 window.gtag를 교체하고, sendEvent는 _gtagReady 모듈 변수 체크로 큐에 먼저 쌓음.
+   * → dataLayer.push 자체를 인터셉트 (markGtagReady flush 포함 모든 경로 포착)
    */
-  // T8: 배포 후 활성화 — useSearchParams()로 클라이언트에서 직접 감지
-  test.skip('T8: signup=1 auto-trigger 배너 노출 + GTM 이벤트 @signup-banner', async ({ page }) => {
+  test('T8: signup=1 auto-trigger 배너 노출 + GTM 이벤트 @signup-banner', async ({ page }) => {
+    // dataLayer.push 인터셉트 — gtag 이벤트의 최종 도착지
+    await page.addInitScript(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const w = window as any
+      w._allGtagEvents = []
+      w.dataLayer = w.dataLayer || []
+      const origPush = Array.prototype.push.bind(w.dataLayer)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      w.dataLayer.push = function (...items: any[]) {
+        for (const item of items) {
+          // gtag('event', name, params) → dataLayer.push(Arguments{0:'event',1:name,2:params})
+          if (item && typeof item === 'object' && item[0] === 'event' && typeof item[1] === 'string') {
+            w._allGtagEvents.push({ event: item[1], params: item[2] ?? {} })
+          }
+        }
+        return origPush(...items)
+      }
+    })
+
     await page.clock.install()
     await page.goto('/community/stories?signup=1&utm_source=kakao-android')
     await page.waitForLoadState('networkidle')
-    await installGtagSpy(page)
     await page.clock.runFor(500)
 
     // auto-trigger 배너 노출 확인
@@ -299,9 +321,11 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
     const bannerText = await page.locator('[data-testid="signup-auto-trigger-banner"]').textContent()
     expect(bannerText).toMatch(/초 후 자동으로/)
 
-    // GTM inapp_redirect_success 이벤트 확인
-    const spy = await getSpyEvents(page)
-    const redirectSuccess = spy.find(e => e.event === 'inapp_redirect_success')
+    // dataLayer 인터셉트로 캡처된 이벤트 확인
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allEvents = await page.evaluate(() => (window as any)._allGtagEvents ?? [])
+    const redirectSuccess = (allEvents as Array<{ event: string; params: Record<string, unknown> }>)
+      .find(e => e.event === 'inapp_redirect_success')
     expect(redirectSuccess, 'inapp_redirect_success 이벤트 미발화').toBeTruthy()
     expect(redirectSuccess!.params.from_env).toBe('kakao-android')
   })
