@@ -15,7 +15,7 @@ export function WelcomeToast() {
     const flag = localStorage.getItem('signup_welcome_toast')
     if (flag !== '1') return
     localStorage.removeItem('signup_welcome_toast')
-    toast('우나어에 오신 걸 환영해요! 이제 또래들과 이야기 나눠보세요 👋', 'info')
+    toast('가입을 마쳤어요! 우리 또래들이 기다리고 있어요 🎉', 'info')
   }, [toast])
 
   return null

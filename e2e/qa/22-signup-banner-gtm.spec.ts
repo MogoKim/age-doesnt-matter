@@ -22,9 +22,15 @@ async function installGtagSpy(page: Page): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const w = window as any
     w._gtagSpy = []
+    w._allGtagEvents = []
     const capture = (...args: unknown[]) => {
-      if (args[0] === 'event' && typeof args[1] === 'string' && args[1].startsWith('signup_banner')) {
-        w._gtagSpy.push({ event: args[1], params: (args[2] as Record<string, unknown>) ?? {} })
+      if (args[0] === 'event' && typeof args[1] === 'string') {
+        const eventName = args[1] as string
+        const params = (args[2] as Record<string, unknown>) ?? {}
+        w._allGtagEvents.push({ event: eventName, params })
+        if (eventName.startsWith('signup_banner') || eventName === 'inapp_redirect_success') {
+          w._gtagSpy.push({ event: eventName, params })
+        }
       }
     }
     const orig = w.gtag as ((...a: unknown[]) => void) | undefined
@@ -271,6 +277,65 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
     // 배너 사라짐 확인
     const ctaVisible = await page.locator('[data-testid="signup-banner-cta"]').isVisible().catch(() => false)
     expect(ctaVisible, '딤 클릭 후 배너 미사라짐').toBe(false)
+  })
+
+  /**
+   * T8: ?signup=1&utm_source=kakao-android → auto-trigger 배너 노출 + GTM 이벤트
+   * - layout.tsx signupAutoTrigger=true → SignupPromptBanner autoVisible=true
+   * - inapp_redirect_success 이벤트 발화
+   */
+  // T8은 Phase 2 배포(Vercel) 완료 후 통과 — 배포 전 프로덕션에서는 signupAutoTrigger=false
+  test.skip('T8: signup=1 auto-trigger 배너 노출 + GTM 이벤트 @signup-banner', async ({ page }) => {
+    await page.clock.install()
+    await page.goto('/community/stories?signup=1&utm_source=kakao-android')
+    await page.waitForLoadState('networkidle')
+    await installGtagSpy(page)
+    await page.clock.runFor(500)
+
+    // auto-trigger 배너 노출 확인
+    await page.waitForSelector('[data-testid="signup-auto-trigger-banner"]', { timeout: 3_000 })
+
+    // 카운트다운 텍스트 확인
+    const bannerText = await page.locator('[data-testid="signup-auto-trigger-banner"]').textContent()
+    expect(bannerText).toMatch(/초 후 자동으로/)
+
+    // GTM inapp_redirect_success 이벤트 확인
+    const spy = await getSpyEvents(page)
+    const redirectSuccess = spy.find(e => e.event === 'inapp_redirect_success')
+    expect(redirectSuccess, 'inapp_redirect_success 이벤트 미발화').toBeTruthy()
+    expect(redirectSuccess!.params.from_env).toBe('kakao-android')
+  })
+
+  /**
+   * T9: signup_auto_triggered sessionStorage 세팅 시 auto-trigger 배너 미노출 (중복 차단)
+   */
+  test('T9: signup_auto_triggered 세션 플래그 → 배너 미노출 @signup-banner', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('signup_auto_triggered', '1')
+    })
+    await page.clock.install()
+    await page.goto('/community/stories?signup=1&utm_source=kakao-android')
+    await page.waitForLoadState('networkidle')
+    await page.clock.runFor(500)
+
+    const bannerVisible = await page.locator('[data-testid="signup-auto-trigger-banner"]')
+      .isVisible({ timeout: 1_500 }).catch(() => false)
+    expect(bannerVisible, '이미 트리거된 세션에서 auto-trigger 배너 재노출됨').toBe(false)
+  })
+
+  /**
+   * T10: utm_source 없음(또는 'desktop') → auto-trigger 배너 미노출 (오발동 방지)
+   */
+  test('T10: utm_source 없음 → auto-trigger 배너 미노출 @signup-banner', async ({ page }) => {
+    await page.clock.install()
+    // utm_source 없이 signup=1만 있는 경우 (일반 공유링크 오발동 시나리오)
+    await page.goto('/community/stories?signup=1')
+    await page.waitForLoadState('networkidle')
+    await page.clock.runFor(500)
+
+    const bannerVisible = await page.locator('[data-testid="signup-auto-trigger-banner"]')
+      .isVisible({ timeout: 1_500 }).catch(() => false)
+    expect(bannerVisible, 'utm_source 없을 때 auto-trigger 오발동됨').toBe(false)
   })
 
   /**

@@ -307,7 +307,7 @@ export default function AddToHomeScreen() {
     const pending = sessionStorage.getItem(SESSION_PENDING)
     if (pending === 'signup') {
       sessionStorage.removeItem(SESSION_PENDING)
-      setTimeout(() => showTrigger('signup'), 300)
+      setTimeout(() => showTrigger('signup'), 3_000)
     }
 
     const onBeforeInstall = (e: Event) => {

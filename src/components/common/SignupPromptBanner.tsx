@@ -9,6 +9,7 @@ import {
   gtmSignupBannerClicked,
   gtmSignupBannerDismissed,
   gtmInappRedirectAttempted,
+  gtmInappRedirectSuccess,
 } from '@/lib/gtm'
 import { detectEnv } from '@/components/common/AddToHomeScreen'
 
@@ -110,20 +111,33 @@ function incrementCount(): void {
 // ──────────────────────────────────────────────
 // Props
 // ──────────────────────────────────────────────
+// auto-trigger 카운트다운 초
+const AUTO_TRIGGER_COUNTDOWN_S = 5
+
+// sessionStorage: 탭 내 1회 제한 (취소 또는 완료 시 세팅)
+const SESSION_AUTO_TRIGGERED = 'signup_auto_triggered'
+
 interface Props {
   isLoggedIn: boolean
   createdAt?: string // ISO 8601 — 인앱→Chrome 재접속 backfill용
+  signupAutoTrigger?: boolean  // layout.tsx: ?signup=1 + 유효 utm_source 감지
+  signupUtmSource?: string     // layout.tsx: utm_source 값 (GTM 전송용)
 }
 
 // ──────────────────────────────────────────────
 // 컴포넌트
 // ──────────────────────────────────────────────
-export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
+export function SignupPromptBanner({ isLoggedIn, createdAt, signupAutoTrigger, signupUtmSource }: Props) {
   const pathname = usePathname()
   const [visible, setVisible] = useState(false)
   const [variant, setVariant] = useState<Variant>('A')
   const [isPending, startTransition] = useTransition()
   const [currentEnv, setCurrentEnv] = useState<string>('android-chrome')
+
+  // auto-trigger 카운트다운 상태
+  const [autoVisible, setAutoVisible] = useState(false)
+  const [autoCountdown, setAutoCountdown] = useState(AUTO_TRIGGER_COUNTDOWN_S)
+  const autoCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const scrolledRef = useRef(false)
   const tryFireRef = useRef<() => void>(() => {})
@@ -132,6 +146,47 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
   useEffect(() => {
     setCurrentEnv(detectEnv())
   }, [])
+
+  // ── ?signup=1 auto-trigger: 인앱→외부브라우저 도착 시 카운트다운 배너 ──
+  useEffect(() => {
+    if (!signupAutoTrigger) return
+    if (isLoggedIn) return
+    if (sessionStorage.getItem(SESSION_AUTO_TRIGGERED)) return
+
+    // 조건 통과: GTM 이벤트 + 카운트다운 시작
+    gtmInappRedirectSuccess(signupUtmSource ?? '')
+    sessionStorage.setItem(SESSION_AUTO_TRIGGERED, '1')
+    setAutoCountdown(AUTO_TRIGGER_COUNTDOWN_S)
+    setAutoVisible(true)
+
+    autoCountdownRef.current = setInterval(() => {
+      setAutoCountdown(prev => {
+        if (prev <= 1) {
+          if (autoCountdownRef.current) clearInterval(autoCountdownRef.current)
+          // 카운트다운 만료 → 자동 OAuth 실행
+          startTransition(async () => { await kakaoSignIn(pathname) })
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1_000)
+
+    return () => {
+      if (autoCountdownRef.current) clearInterval(autoCountdownRef.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signupAutoTrigger])
+
+  const handleAutoTriggerDismiss = () => {
+    if (autoCountdownRef.current) clearInterval(autoCountdownRef.current)
+    setAutoVisible(false)
+  }
+
+  const handleAutoTriggerNow = () => {
+    if (autoCountdownRef.current) clearInterval(autoCountdownRef.current)
+    setAutoVisible(false)
+    startTransition(async () => { await kakaoSignIn(pathname) })
+  }
 
   // ── 인앱→Chrome 재접속 backfill ──
   useEffect(() => {
@@ -216,6 +271,66 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
       return () => { document.body.style.overflow = '' }
     }
   }, [visible])
+
+  // ── auto-trigger 카운트다운 배너 (일반 배너보다 우선 렌더) ──
+  if (autoVisible) {
+    const utmLabel =
+      signupUtmSource === 'kakao-android' || signupUtmSource === 'kakao-ios'
+        ? '카카오톡'
+        : signupUtmSource === 'naver-inapp'
+          ? '네이버'
+          : '앱'
+    return (
+      <>
+        <div
+          className="fixed inset-0 z-[149] bg-black/50 animate-in fade-in duration-300"
+          onClick={handleAutoTriggerDismiss}
+          aria-hidden="true"
+        />
+        <div
+          data-testid="signup-auto-trigger-banner"
+          className="fixed bottom-0 left-0 right-0 z-[150] animate-in slide-in-from-bottom duration-300"
+        >
+          <div className="bg-card border-t border-border shadow-2xl px-4 pt-4 pb-[max(24px,env(safe-area-inset-bottom))]">
+            <div className="max-w-lg mx-auto">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl" aria-hidden="true">👋</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-base leading-snug text-foreground">
+                    {utmLabel}에서 오셨군요!
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {autoCountdown}초 후 자동으로 가입을 시작해요
+                  </p>
+                </div>
+                <button
+                  onClick={handleAutoTriggerDismiss}
+                  className="shrink-0 w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="닫기"
+                >
+                  ✕
+                </button>
+              </div>
+              <button
+                data-testid="signup-auto-trigger-cta"
+                onClick={handleAutoTriggerNow}
+                disabled={isPending}
+                className="mt-3 flex items-center justify-center w-full h-[52px] bg-[#FEE500] text-[#191919] rounded-xl font-bold text-[15px] disabled:opacity-70 transition-opacity"
+              >
+                {isPending ? '잠깐만요...' : '💛 지금 바로 시작하기'}
+              </button>
+              <button
+                onClick={handleAutoTriggerDismiss}
+                className="mt-2 w-full text-center text-xs text-muted-foreground py-2"
+              >
+                잠깐, 직접 할게요
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   if (!visible) return null
 
