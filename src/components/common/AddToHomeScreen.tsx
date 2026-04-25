@@ -180,6 +180,7 @@ export default function AddToHomeScreen() {
   const deferredRef     = useRef<BeforeInstallPromptEvent | null>(null)
   const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null)
   const currentTriggerRef = useRef<string>('first_15s')
+  const lastCountedPathRef = useRef<string | null>(null)  // Phase 3: 같은 pathname 이중 카운트 방지
 
   async function markInstalled() {
     localStorage.setItem(KEY_INSTALLED, '1')
@@ -357,8 +358,15 @@ export default function AddToHomeScreen() {
       }, TIMER_MS)
 
       // ── Phase 3: 가입 완료 후 3페이지 탐색 시 PWA 팝업 트리거 ──
+      // lastCountedPathRef: pwaStatus 변경으로 useEffect 재실행 시 같은 pathname 이중 카운트 방지
       const signupCompletedAt = localStorage.getItem('signup_completed_at')
-      if (signupCompletedAt && !getInstalled() && !sessionStorage.getItem(SESSION_SHOWN)) {
+      if (
+        signupCompletedAt &&
+        !getInstalled() &&
+        !sessionStorage.getItem(SESSION_SHOWN) &&
+        lastCountedPathRef.current !== pathname
+      ) {
+        lastCountedPathRef.current = pathname
         const views = parseInt(localStorage.getItem(KEY_PAGE_VIEWS_AFTER_SIGNUP) ?? '0', 10)
         const newViews = views + 1
         localStorage.setItem(KEY_PAGE_VIEWS_AFTER_SIGNUP, String(Math.min(newViews, 20)))

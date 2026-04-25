@@ -393,3 +393,144 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
     expect(String(shown!.params.page_path)).toBe('/')
   })
 })
+
+// ── Phase 3: PWA 3페이지 탐색 트리거 ────────────────────────────────────────
+// 검증 전략:
+//   Primary  — localStorage 'pwa_shown_triggers' 에 'signup' 포함 여부 (DOM-independent)
+//   Secondary — beforeinstallprompt 이벤트 dispatch 후 팝업 DOM 가시성
+// 주의: addInitScript는 모든 page.goto()마다 실행됨.
+//       '_pwa_phase3_init' 가드로 첫 번째 goto에서만 전체 초기화,
+//       이후 goto에서는 counter를 건드리지 않아 누적 카운트 보장.
+
+test.describe('Phase 3 — PWA 3페이지 탐색 후 signup 트리거', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      const isFirstLoad = !localStorage.getItem('_pwa_phase3_init')
+      if (isFirstLoad) {
+        // 첫 번째 goto에서만 전체 초기화
+        localStorage.setItem('_pwa_phase3_init', '1')
+        sessionStorage.clear()
+        localStorage.setItem('signup_completed_at', new Date().toISOString())
+        localStorage.removeItem('pwa_installed')
+        localStorage.setItem('pwa_page_views_after_signup', '0')
+        localStorage.removeItem('pwa_shown_triggers')
+        localStorage.removeItem('pwa_shown_count')
+        localStorage.removeItem('pwa_declined_count')
+      }
+      // 모든 로드: SignupPromptBanner 간섭 차단
+      localStorage.setItem('signup_prompt_done', '1')
+    })
+  })
+
+  test.afterEach(async ({ page }) => {
+    // 가드 제거 → 다음 테스트 첫 goto에서 재초기화 보장
+    await page.evaluate(() => localStorage.removeItem('_pwa_phase3_init')).catch(() => {})
+  })
+
+  /**
+   * T11: 가입 완료 → 3페이지 탐색 → pwa_shown_triggers에 'signup' 포함
+   * + beforeinstallprompt dispatch 후 팝업 DOM 노출 확인 (Secondary)
+   *
+   * 카운트 흐름: goto 1 → views=1, goto 2 → views=2, goto 3 → views=3 → trigger
+   */
+  test('T11: 3페이지 탐색 → signup 트리거 발동 @pwa-phase3', async ({ page }) => {
+    await page.goto('/community/stories')
+    await page.waitForLoadState('networkidle')
+    await page.goto('/magazine')
+    await page.waitForLoadState('networkidle')
+    await page.goto('/')
+    await page.waitForLoadState('load')
+
+    // Primary: pwa_shown_triggers에 'signup' 포함 대기
+    await page.waitForFunction(
+      () => {
+        try { return JSON.parse(localStorage.getItem('pwa_shown_triggers') ?? '[]').includes('signup') }
+        catch { return false }
+      },
+      { timeout: 5_000 }
+    )
+
+    // 카운터가 정확히 3인지 확인 (이중 카운트 버그 회귀 방지)
+    const views = await page.evaluate(() =>
+      parseInt(localStorage.getItem('pwa_page_views_after_signup') ?? '0')
+    )
+    expect(views, '카운터가 3이어야 함 (이중 카운트 버그 재발 시 다른 값)').toBe(3)
+  })
+
+  /**
+   * T11-visual: beforeinstallprompt dispatch → 팝업 DOM 노출 확인 (Secondary)
+   * 헤드리스 Chromium 환경에서 canNativeInstall 상태 반영이 불안정 → fixme
+   * 수동 QA: DevTools > Application > localStorage에서 signup_completed_at 세팅 후 3페이지 탐색
+   */
+  test.fixme('T11-visual: 3페이지 후 beforeinstallprompt dispatch → 팝업 DOM 노출 @pwa-phase3', async ({ page }) => {
+    await page.goto('/community/stories')
+    await page.waitForLoadState('networkidle')
+    await page.goto('/magazine')
+    await page.waitForLoadState('networkidle')
+    await page.goto('/')
+    await page.waitForLoadState('load')
+
+    await page.waitForFunction(
+      () => {
+        try { return JSON.parse(localStorage.getItem('pwa_shown_triggers') ?? '[]').includes('signup') }
+        catch { return false }
+      },
+      { timeout: 5_000 }
+    )
+
+    await page.evaluate(() => window.dispatchEvent(new Event('beforeinstallprompt')))
+    await page.waitForTimeout(500)
+    await expect(page.locator('button:has-text("나중에 할게요")')).toBeVisible({ timeout: 3_000 })
+  })
+
+  /**
+   * T12: 카운터 2 선탑재 → 1페이지 탐색 → 즉시 signup 트리거
+   * (재방문 시 localStorage 카운터 누적 검증)
+   */
+  test('T12: 카운터 2 선탑재 → 1페이지에서 즉시 트리거 @pwa-phase3', async ({ page }) => {
+    // beforeEach가 counter=0 세팅 후, 이 스크립트가 2로 덮어씀
+    await page.addInitScript(() => {
+      localStorage.setItem('pwa_page_views_after_signup', '2')
+    })
+
+    await page.goto('/community/stories')
+    await page.waitForLoadState('networkidle')
+
+    await page.waitForFunction(
+      () => {
+        try { return JSON.parse(localStorage.getItem('pwa_shown_triggers') ?? '[]').includes('signup') }
+        catch { return false }
+      },
+      { timeout: 5_000 }
+    )
+  })
+
+  /**
+   * T13: pwa_installed=1 → 3페이지 탐색해도 signup 트리거·카운터 모두 없음
+   */
+  test('T13: pwa_installed=1 → 3페이지 탐색 → 트리거 없음 @pwa-phase3', async ({ page }) => {
+    // beforeEach가 pwa_installed 제거 후, 이 스크립트가 '1'로 덮어씀
+    await page.addInitScript(() => {
+      localStorage.setItem('pwa_installed', '1')
+    })
+
+    await page.goto('/community/stories')
+    await page.waitForLoadState('networkidle')
+    await page.goto('/magazine')
+    await page.waitForLoadState('networkidle')
+    await page.goto('/')
+    await page.waitForLoadState('load')
+    await page.waitForTimeout(1_000)
+
+    const shownTriggers = await page.evaluate(() => {
+      try { return JSON.parse(localStorage.getItem('pwa_shown_triggers') ?? '[]') }
+      catch { return [] }
+    })
+    expect(shownTriggers, 'pwa_installed=1인데 signup 트리거됨').not.toContain('signup')
+
+    const views = await page.evaluate(() =>
+      parseInt(localStorage.getItem('pwa_page_views_after_signup') ?? '0')
+    )
+    expect(views, '설치 상태인데 카운터 증가됨').toBe(0)
+  })
+})
