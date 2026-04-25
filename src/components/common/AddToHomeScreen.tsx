@@ -53,6 +53,10 @@ const KEY_NAVER_GUIDE_AT       = 'pwa_naver_guide_at'       // 3일 쿨다운 ti
 const KEY_INSTAGRAM_GUIDE_AT   = 'pwa_instagram_guide_at'   // 3일 쿨다운 timestamp
 const KAKAO_GUIDE_COOLDOWN_MS  = 3 * 24 * 60 * 60 * 1000
 
+// Phase 3: 가입 완료 후 페이지 탐색 카운터
+const KEY_PAGE_VIEWS_AFTER_SIGNUP  = 'pwa_page_views_after_signup'
+const PAGE_VIEW_TRIGGER_THRESHOLD  = 3
+
 // sessionStorage (탭 닫으면 리셋)
 const SESSION_VISITED       = 'pwa_visited_this_session'        // 세션 카운트 중복 방지
 const SESSION_SHOWN         = 'pwa_shown_this_session'          // 세션 내 팝업 1회 노출 제한
@@ -307,7 +311,7 @@ export default function AddToHomeScreen() {
     const pending = sessionStorage.getItem(SESSION_PENDING)
     if (pending === 'signup') {
       sessionStorage.removeItem(SESSION_PENDING)
-      setTimeout(() => showTrigger('signup'), 3_000)
+      // pwa_pending deprecated — 페이지 카운터(pathname effect)가 signup 트리거 처리
     }
 
     const onBeforeInstall = (e: Event) => {
@@ -340,7 +344,7 @@ export default function AddToHomeScreen() {
     }
   }, [showTrigger])
 
-  // 페이지 변경 시: 제외 페이지가 아니면 13초 타이머 시작
+  // 페이지 변경 시: 제외 페이지가 아니면 13초 타이머 시작 + 가입 후 페이지 카운터
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
 
@@ -351,6 +355,17 @@ export default function AddToHomeScreen() {
         if (showTrigger('first_15s', dbCount)) return
         showTrigger('weekly', dbCount)
       }, TIMER_MS)
+
+      // ── Phase 3: 가입 완료 후 3페이지 탐색 시 PWA 팝업 트리거 ──
+      const signupCompletedAt = localStorage.getItem('signup_completed_at')
+      if (signupCompletedAt && !getInstalled() && !sessionStorage.getItem(SESSION_SHOWN)) {
+        const views = parseInt(localStorage.getItem(KEY_PAGE_VIEWS_AFTER_SIGNUP) ?? '0', 10)
+        const newViews = views + 1
+        localStorage.setItem(KEY_PAGE_VIEWS_AFTER_SIGNUP, String(Math.min(newViews, 20)))
+        if (newViews >= PAGE_VIEW_TRIGGER_THRESHOLD) {
+          showTrigger('signup')
+        }
+      }
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   }, [pathname, showTrigger, pwaStatus])

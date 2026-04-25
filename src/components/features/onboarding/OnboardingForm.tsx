@@ -156,9 +156,6 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     // 환영 토스트 1회 표시 트리거 (layout.tsx Phase 3에서 처리)
     localStorage.setItem('signup_welcome_toast', '1')
     gtmSignUp('kakao')  // variant는 Phase 5 전까지 undefined → 기존 동작 유지
-    // AddToHomeScreen 마운트 이전에 이벤트가 유실되는 레이스컨디션 방지:
-    // sessionStorage에 pending flag를 저장 → 홈 마운트 시 AddToHomeScreen이 처리
-    sessionStorage.setItem('pwa_pending', 'signup')
     // gtag.js 로드 완료 대기 — _gtagReady=true 확인 후 navigate
     // window.gtag 존재 체크는 부족 (GTM stub이 미리 생성됨)
     await waitForGtagReady()
