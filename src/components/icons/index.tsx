@@ -349,6 +349,28 @@ export function IconKakao({ size = 24, className }: IconProps) {
   )
 }
 
+/** 편집/글쓰기 — FAB 글쓰기 버튼 */
+export function IconWrite({ size = 24, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
+        stroke="currentColor"
+        strokeWidth={S}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 /** 클립보드 — 복사 */
 export function IconCopy({ size = 24, className }: IconProps) {
   return (

@@ -4,29 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { IconWrite } from '@/components/icons'
 import LoginPromptModal from '@/components/features/auth/LoginPromptModal'
 
 const FAB_PAGES = ['/community/stories', '/community/humor', '/community/life2']
-
-function PenIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="shrink-0"
-      aria-hidden="true"
-    >
-      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-    </svg>
-  )
-}
 
 interface FABProps {
   isLoggedIn?: boolean
@@ -59,7 +40,7 @@ export default function FAB({ isLoggedIn = false }: FABProps) {
   const board = pathname.includes('stories') ? 'stories' : pathname.includes('life2') ? 'life2' : 'humor'
 
   const fabClassName = cn(
-    'group fixed bottom-[84px] right-6 z-[97] flex items-center gap-2 h-[52px] px-6 bg-primary text-white rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.15)] text-body font-bold cursor-pointer transition-all duration-200 no-underline [-webkit-tap-highlight-color:transparent] active:scale-95',
+    'group fixed bottom-[84px] right-6 z-[97] flex items-center gap-2 h-[52px] px-6 bg-primary text-white rounded-full shadow-[0_4px_20px_rgba(255,111,97,0.30)] text-body font-bold cursor-pointer transition-all duration-200 no-underline [-webkit-tap-highlight-color:transparent] active:scale-95',
     'lg:bottom-8 lg:right-8 lg:h-14 lg:w-14 lg:p-0 lg:justify-center lg:hover:w-auto lg:hover:px-6',
     collapsed && 'px-4 w-[52px] justify-center'
   )
@@ -74,12 +55,12 @@ export default function FAB({ isLoggedIn = false }: FABProps) {
     <>
       {isLoggedIn ? (
         <Link href={`/community/write?board=${board}`} className={fabClassName} aria-label="글쓰기">
-          <PenIcon />
+          <IconWrite size={20} />
           <span className={labelClassName}>글쓰기</span>
         </Link>
       ) : (
         <button className={fabClassName} onClick={() => setShowLoginPrompt(true)} aria-label="글쓰기">
-          <PenIcon />
+          <IconWrite size={20} />
           <span className={labelClassName}>글쓰기</span>
         </button>
       )}
