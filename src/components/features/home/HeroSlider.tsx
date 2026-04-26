@@ -51,6 +51,7 @@ export default async function HeroSlider() {
         themeColorEnd: b.themeColorEnd ?? undefined,
         ctaText: b.ctaText ?? undefined,
         ctaUrl: b.ctaUrl ?? '/',
+        imageUrl: b.imageUrl && b.imageUrl.length > 0 ? b.imageUrl : undefined,
       }))
     } else {
       slides = FALLBACK_SLIDES

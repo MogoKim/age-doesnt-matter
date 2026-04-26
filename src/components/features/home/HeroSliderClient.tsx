@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 export interface SlideData {
@@ -13,6 +14,7 @@ export interface SlideData {
   themeColorEnd?: string
   ctaText?: string
   ctaUrl: string
+  imageUrl?: string
 }
 
 const AUTO_PLAY_INTERVAL = 5000
@@ -93,21 +95,46 @@ export default function HeroSliderClient({ slides }: Props) {
               'absolute inset-0 transition-opacity duration-500',
               index === current ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             )}
-            style={{ background: buildGradient(slide) }}
+            style={{ background: slide.imageUrl ? undefined : buildGradient(slide) }}
           >
+            {/* 이미지 배경 */}
+            {slide.imageUrl && (
+              <Image
+                src={slide.imageUrl}
+                alt={slide.title}
+                fill
+                className="object-cover object-center"
+                priority={index === 0}
+                sizes="100vw"
+              />
+            )}
+
+            {/* 오버레이 — 이미지 있으면 좌측 어두운 그라디언트, 없으면 반투명 어둠 */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: slide.imageUrl
+                  ? 'linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.08) 100%)'
+                  : undefined,
+              }}
+            />
+
             {/* 텍스트 오버레이 */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 gap-3">
+            <div className={cn(
+              'absolute inset-0 flex flex-col justify-center gap-3 px-6',
+              slide.imageUrl ? 'items-start text-left max-w-[60%] lg:px-16' : 'items-center text-center'
+            )}>
               <h2
                 className="text-white font-bold leading-[1.35] break-keep"
-                style={{ fontSize: 'clamp(20px, 5vw, 32px)', whiteSpace: 'pre-line', textShadow: '0 1px 4px rgba(0,0,0,0.18)' }}
+                style={{ fontSize: 'clamp(20px, 5vw, 32px)', whiteSpace: 'pre-line', textShadow: '0 1px 4px rgba(0,0,0,0.25)' }}
               >
                 {slide.title}
               </h2>
 
               {slide.subtitle && (
                 <p
-                  className="text-white/85 leading-snug break-keep"
-                  style={{ fontSize: 'clamp(14px, 3vw, 18px)', textShadow: '0 1px 3px rgba(0,0,0,0.15)' }}
+                  className="text-white/90 leading-snug break-keep"
+                  style={{ fontSize: 'clamp(14px, 3vw, 18px)', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
                 >
                   {slide.subtitle}
                 </p>

@@ -50,7 +50,7 @@ export default function TopPromoBannerClient({
       {/* 텍스트 + 링크 */}
       <Link
         href={href}
-        className="text-white text-[15px] font-medium leading-snug no-underline hover:underline line-clamp-1 flex-1 min-w-0"
+        className="text-white text-[16px] font-semibold leading-snug no-underline hover:underline line-clamp-1 flex-1 min-w-0"
       >
         {text}
       </Link>

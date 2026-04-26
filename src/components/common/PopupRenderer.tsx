@@ -122,7 +122,9 @@ export default function PopupRenderer() {
     }).catch(() => {})
   }, [activePopup])
 
-  if (!activePopup) return null
+  // TODO: 팝업 내용 수정 후 false로 변경
+  const POPUP_DISABLED = true
+  if (POPUP_DISABLED || !activePopup) return null
 
   return (
     <>

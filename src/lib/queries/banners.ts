@@ -9,6 +9,7 @@ export interface BannerSlide {
   themeColorEnd: string | null
   ctaText: string | null
   ctaUrl: string | null
+  imageUrl: string | null
 }
 
 /** 활성 히어로 배너 조회 — Phase 1 신규 스키마 기반 (그라디언트 전용, imageUrl 미사용) */
@@ -43,6 +44,7 @@ export async function getActiveBanners(): Promise<BannerSlide[]> {
       themeColorEnd: true,
       ctaText: true,
       ctaUrl: true,
+      imageUrl: true,
     },
   })
 
