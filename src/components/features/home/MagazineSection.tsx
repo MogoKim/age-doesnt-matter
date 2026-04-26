@@ -21,21 +21,22 @@ export default function MagazineSection({ posts }: Props) {
           전체보기 →
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-3 px-4 lg:grid-cols-4 lg:gap-4 lg:px-0">
+      {/* 모바일: 가로 스크롤 1열 / 데스크탑: 4열 그리드 */}
+      <div className="flex gap-3 px-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [scroll-snap-type:x_mandatory] lg:grid lg:grid-cols-4 lg:gap-4 lg:px-0 lg:overflow-x-visible lg:[scroll-snap-type:none]">
         {posts.map((article) => (
           <Link
             href={`/magazine/${article.id}`}
             key={article.id}
-            className="bg-card rounded-xl overflow-hidden border border-border no-underline text-inherit block active:opacity-95 lg:hover:shadow-md lg:hover:-translate-y-0.5 lg:hover:transition-all"
+            className="shrink-0 w-[200px] lg:w-auto bg-card rounded-xl overflow-hidden border border-border no-underline text-inherit block active:opacity-95 [scroll-snap-align:start] lg:hover:shadow-md lg:hover:-translate-y-0.5 lg:hover:transition-all"
           >
-            <div className="relative w-full h-[100px] lg:h-[140px] bg-background">
+            <div className="relative w-full h-[120px] lg:h-[140px] bg-background">
               {article.thumbnailUrl ? (
                 <Image
                   src={article.thumbnailUrl}
                   alt={article.title}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 1024px) 50vw, 25vw"
+                  sizes="(max-width: 1024px) 200px, 25vw"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-3xl">

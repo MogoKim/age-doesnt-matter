@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { unstable_cache } from 'next/cache'
+import { auth } from '@/lib/auth'
 import HeroSlider from '@/components/features/home/HeroSlider'
 import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
@@ -12,16 +13,20 @@ import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
 import CommunitySection from '@/components/features/home/CommunitySection'
 import Life2Section from '@/components/features/home/Life2Section'
-import RecentActivityFeed from '@/components/features/home/RecentActivityFeed'
 import HomeSidebar from '@/components/features/home/HomeSidebar'
+import PersonalGreeting from '@/components/features/home/PersonalGreeting'
+import MyActivity from '@/components/features/home/MyActivity'
+import ActivityPulse from '@/components/features/home/ActivityPulse'
+import SignupCard from '@/components/features/home/SignupCard'
+import StickyBottomAd from '@/components/ad/StickyBottomAd'
 import {
   getLatestJobs,
   getTrendingPosts,
   getLatestMagazinePosts,
   getLatestCommunityPosts,
   getLatestLife2Posts,
-  getRecentActivities,
 } from '@/lib/queries/posts'
+import { getUserCounts } from '@/lib/queries/home'
 
 export const metadata: Metadata = {
   title: '우리 나이가 어때서 — 5060 세대 커뮤니티',
@@ -56,20 +61,20 @@ const getCachedLife2 = unstable_cache(
   ['home-life2'],
   { revalidate: 60 }
 )
-const getCachedActivity = unstable_cache(
-  () => getRecentActivities(8),
-  ['home-activity'],
-  { revalidate: 30 }
-)
 
 export default async function HomePage() {
-  const [jobs, trending, magazine, community, life2, activities] = await Promise.all([
+  // layout.tsx와 동일 요청 내 auth() 호출 — NextAuth v5 request memoization으로 중복 쿼리 없음
+  const session = await auth()
+  const isMember = !!session?.user
+
+  const [jobs, trending, magazine, community, life2, myCounts] = await Promise.all([
     getCachedJobs(),
     getCachedTrending(),
     getCachedMagazine(),
     getCachedCommunity(),
     getCachedLife2(),
-    getCachedActivity(),
+    // 회원 전용 활동 현황 — 에러 시 자동 null 폴백 (getUserCounts 내부 try-catch)
+    isMember && session.user?.id ? getUserCounts(session.user.id) : Promise.resolve(null),
   ])
 
   const organizationJsonLd = {
@@ -102,36 +107,83 @@ export default async function HomePage() {
   }
 
   return (
-    <div>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
-      />
-      <h1 className="sr-only">우리 나이가 어때서 — 5060 세대 커뮤니티</h1>
-      <div className="max-w-[1200px] mx-auto">
-        <HeroSlider />
-        <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
-          <div>
-            <TrendingSection posts={trending} />
-            <AdSenseUnit slotId={ADSENSE.HOME_SECTION} format="horizontal" className="my-4 rounded-2xl overflow-hidden" />
-            <CommunitySection posts={community} />
-            <ResponsiveAd mobile={<CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />} desktop={null} />
-            <Life2Section posts={life2} />
-            <div className="block lg:hidden">
-              <CoupangCarousel className="my-4 rounded-2xl overflow-hidden" />
+    <>
+      <div>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
+        />
+        <h1 className="sr-only">우리 나이가 어때서 — 5060 세대 커뮤니티</h1>
+        <div className="max-w-[1200px] mx-auto">
+          {/* HeroSlider — 자체적으로 DB 배너 조회 (즉시 반영, 캐시 없음) */}
+          <HeroSlider />
+
+          <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
+            <div>
+              {/* 회원 전용 인사 카드 */}
+              {isMember && session.user?.nickname && (
+                <PersonalGreeting nickname={session.user.nickname} />
+              )}
+
+              <TrendingSection posts={trending} />
+
+              {/* HOME_SECTION 광고 — TrendingSection 다음 (위치 유지) */}
+              <AdSenseUnit
+                slotId={ADSENSE.HOME_SECTION}
+                format="horizontal"
+                className="my-4 rounded-2xl overflow-hidden"
+              />
+
+              <CommunitySection posts={community} />
+
+              <ResponsiveAd
+                mobile={<CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />}
+                desktop={null}
+              />
+
+              <Life2Section posts={life2} />
+
+              {/* IN_FEED 광고 — Life2Section 다음으로 이동 (기존: MagazineSection 다음) */}
+              <FeedAd />
+
+              <MagazineSection posts={magazine} />
+
+              {/* CoupangCarousel — MagazineSection 다음으로 이동 (기존: Life2Section 다음) */}
+              <div className="block lg:hidden">
+                <CoupangCarousel className="my-4 rounded-2xl overflow-hidden" />
+              </div>
+
+              <JobSection jobs={jobs} />
+
+              {/* 활동 현황 — 회원: MyActivity + ActivityPulse / 비회원: ActivityPulse */}
+              {isMember && myCounts ? (
+                <>
+                  <MyActivity
+                    todayPosts={myCounts.todayPosts}
+                    newComments={myCounts.newComments}
+                    receivedLikes={myCounts.receivedLikes}
+                  />
+                  <ActivityPulse />
+                </>
+              ) : (
+                <ActivityPulse />
+              )}
+
+              {/* 비회원 가입 유도 카드 (홈 중반부 1회) */}
+              {!isMember && <SignupCard />}
             </div>
-            <MagazineSection posts={magazine} />
-            <FeedAd />
-            <JobSection jobs={jobs} />
-            <RecentActivityFeed activities={activities} />
+
+            <HomeSidebar posts={community} />
           </div>
-          <HomeSidebar posts={community} />
         </div>
       </div>
-    </div>
+
+      {/* StickyBottomAd — 스크롤 50% 이상 시 하단 fixed 광고 (모바일 전용) */}
+      <StickyBottomAd />
+    </>
   )
 }

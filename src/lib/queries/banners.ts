@@ -3,29 +3,46 @@ import { prisma } from '@/lib/prisma'
 export interface BannerSlide {
   id: string
   title: string
-  description: string | null
-  imageUrl: string
-  linkUrl: string | null
+  subtitle: string | null
+  themeColor: string
+  themeColorMid: string | null
+  themeColorEnd: string | null
+  ctaText: string | null
+  ctaUrl: string | null
 }
 
-/** 활성 히어로 배너 조회 (우선순위순) */
+/** 활성 히어로 배너 조회 — Phase 1 신규 스키마 기반 (그라디언트 전용, imageUrl 미사용) */
 export async function getActiveBanners(): Promise<BannerSlide[]> {
   const now = new Date()
 
   const banners = await prisma.banner.findMany({
     where: {
+      slot: 'HERO',
       isActive: true,
-      startDate: { lte: now },
-      endDate: { gte: now },
+      OR: [
+        { startsAt: null },
+        { startsAt: { lte: now } },
+      ],
+      AND: [
+        {
+          OR: [
+            { endsAt: null },
+            { endsAt: { gte: now } },
+          ],
+        },
+      ],
     },
-    orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
+    orderBy: { displayOrder: 'asc' },
     take: 5,
     select: {
       id: true,
       title: true,
-      description: true,
-      imageUrl: true,
-      linkUrl: true,
+      subtitle: true,
+      themeColor: true,
+      themeColorMid: true,
+      themeColorEnd: true,
+      ctaText: true,
+      ctaUrl: true,
     },
   })
 

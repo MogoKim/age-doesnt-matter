@@ -6,8 +6,12 @@ import { IconBell } from '@/components/icons'
 
 const POLL_INTERVAL = 30_000 // 30초마다 폴링
 
-export default function NotificationBadge() {
-  const [count, setCount] = useState(0)
+interface NotificationBadgeProps {
+  initialCount?: number
+}
+
+export default function NotificationBadge({ initialCount = 0 }: NotificationBadgeProps) {
+  const [count, setCount] = useState(initialCount)
 
   const fetchCount = useCallback(async () => {
     try {

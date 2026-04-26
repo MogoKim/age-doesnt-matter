@@ -3,17 +3,20 @@ import IconMenu from './IconMenu'
 import GNB from './GNB'
 import FAB from './FAB'
 import Footer from './Footer'
+import TopPromoBanner from './TopPromoBanner'
 
 interface MainLayoutProps {
   children: React.ReactNode
   isLoggedIn?: boolean
   nickname?: string
+  unreadCount?: number
 }
 
 export default function MainLayout({
   children,
   isLoggedIn = false,
   nickname,
+  unreadCount = 0,
 }: MainLayoutProps) {
   return (
     <>
@@ -25,10 +28,13 @@ export default function MainLayout({
         본문으로 건너뛰기
       </a>
 
+      {/* 전 페이지 최상단 홍보 띠 배너 */}
+      <TopPromoBanner />
+
       {/* 모바일: Header + IconMenu / 데스크탑: GNB */}
-      <Header isLoggedIn={isLoggedIn} />
+      <Header isLoggedIn={isLoggedIn} unreadCount={unreadCount} />
       <IconMenu />
-      <GNB isLoggedIn={isLoggedIn} nickname={nickname} />
+      <GNB isLoggedIn={isLoggedIn} nickname={nickname} unreadCount={unreadCount} />
 
       <main id="main-content" className="pb-[72px] lg:pb-0">{children}</main>
 

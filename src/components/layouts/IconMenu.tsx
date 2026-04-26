@@ -18,7 +18,7 @@ export default function IconMenu() {
   const pathname = usePathname()
 
   return (
-    <nav className="sticky top-[64px] z-[99] min-h-[76px] bg-card border-b border-border flex items-center lg:hidden overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-0 gap-0" aria-label="주요 메뉴">
+    <nav className="sticky top-[64px] z-[99] min-h-[76px] bg-card border-b border-border flex items-center lg:hidden overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [scroll-snap-type:x_proximity] px-0 gap-0" aria-label="주요 메뉴">
       {MENU_ITEMS.map((item) => {
         const isActive = pathname.startsWith(item.href)
         const Icon = item.icon
@@ -27,7 +27,7 @@ export default function IconMenu() {
             key={item.href}
             href={item.href}
             className={cn(
-              'nav-icon-hover flex flex-col items-center justify-center gap-2 shrink-0 min-w-[72px] min-h-[64px] py-2 px-1 no-underline text-muted-foreground relative [-webkit-tap-highlight-color:transparent] hover:text-primary-text',
+              'nav-icon-hover flex flex-col items-center justify-center gap-2 shrink-0 w-[70px] min-h-[64px] py-2 px-1 no-underline text-muted-foreground relative [-webkit-tap-highlight-color:transparent] [scroll-snap-align:start] hover:text-primary-text',
               isActive && 'text-primary-text after:content-[""] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-6 after:h-0.5 after:bg-primary after:rounded-sm'
             )}
             aria-current={isActive ? 'page' : undefined}

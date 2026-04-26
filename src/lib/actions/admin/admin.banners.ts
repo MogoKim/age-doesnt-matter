@@ -22,37 +22,50 @@ async function requireAdmin() {
   return session
 }
 
-// ─── 히어로 배너 ───
+// ─── 히어로 배너 (Phase 3 신규 스키마 기반) ───
 
 export async function adminCreateBanner(data: {
   title: string
-  description?: string
-  imageUrl: string
-  linkUrl?: string
-  startDate: string
-  endDate: string
-  priority?: number
+  subtitle?: string
+  themeColor: string
+  themeColorMid?: string
+  themeColorEnd?: string
+  ctaText?: string
+  ctaUrl?: string
+  displayOrder?: number
+  slot?: string
+  startsAt?: string   // ISO date string, optional
+  endsAt?: string     // ISO date string, optional
+  isActive?: boolean
 }) {
   const admin = await requireAdmin()
 
-  const start = new Date(data.startDate)
-  const end = new Date(data.endDate)
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    throw new Error('올바른 날짜 형식이 아닙니다.')
-  }
-  if (start >= end) {
+  const startsAtDate = data.startsAt ? new Date(data.startsAt) : null
+  const endsAtDate = data.endsAt ? new Date(data.endsAt) : null
+
+  if (startsAtDate && endsAtDate && startsAtDate >= endsAtDate) {
     throw new Error('시작일은 종료일보다 이전이어야 합니다.')
   }
 
   const banner = await prisma.banner.create({
     data: {
       title: data.title,
-      description: data.description,
-      imageUrl: data.imageUrl,
-      linkUrl: data.linkUrl,
-      startDate: start,
-      endDate: end,
-      priority: data.priority ?? 0,
+      subtitle: data.subtitle,
+      themeColor: data.themeColor,
+      themeColorMid: data.themeColorMid,
+      themeColorEnd: data.themeColorEnd,
+      ctaText: data.ctaText,
+      ctaUrl: data.ctaUrl,
+      displayOrder: data.displayOrder ?? 0,
+      slot: data.slot ?? 'HERO',
+      isActive: data.isActive ?? true,
+      startsAt: startsAtDate,
+      endsAt: endsAtDate,
+      // 레거시 NOT NULL 필드 — 구버전 HeroSlider 호환용 (imageUrl: 미사용, 빈 문자열 유지)
+      imageUrl: '',
+      startDate: startsAtDate ?? new Date(),
+      endDate: endsAtDate ?? new Date('2099-12-31'),
+      priority: data.displayOrder ?? 0,
     },
   })
 
@@ -66,32 +79,33 @@ export async function adminCreateBanner(data: {
   })
 
   revalidatePath('/admin/banners')
+  revalidatePath('/')
 }
 
 export async function adminUpdateBanner(
   bannerId: string,
   data: {
     title?: string
-    description?: string
-    imageUrl?: string
-    linkUrl?: string
-    startDate?: string
-    endDate?: string
-    priority?: number
+    subtitle?: string
+    themeColor?: string
+    themeColorMid?: string
+    themeColorEnd?: string
+    ctaText?: string
+    ctaUrl?: string
+    displayOrder?: number
+    slot?: string
+    startsAt?: string
+    endsAt?: string
     isActive?: boolean
   }
 ) {
   const admin = await requireAdmin()
 
-  if (data.startDate && data.endDate) {
-    const start = new Date(data.startDate)
-    const end = new Date(data.endDate)
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      throw new Error('올바른 날짜 형식이 아닙니다.')
-    }
-    if (start >= end) {
-      throw new Error('시작일은 종료일보다 이전이어야 합니다.')
-    }
+  const startsAtDate = data.startsAt ? new Date(data.startsAt) : undefined
+  const endsAtDate = data.endsAt ? new Date(data.endsAt) : undefined
+
+  if (startsAtDate && endsAtDate && startsAtDate >= endsAtDate) {
+    throw new Error('시작일은 종료일보다 이전이어야 합니다.')
   }
 
   const existing = await prisma.banner.findUnique({ where: { id: bannerId } })
@@ -99,9 +113,18 @@ export async function adminUpdateBanner(
   await prisma.banner.update({
     where: { id: bannerId },
     data: {
-      ...data,
-      ...(data.startDate && { startDate: new Date(data.startDate) }),
-      ...(data.endDate && { endDate: new Date(data.endDate) }),
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.subtitle !== undefined && { subtitle: data.subtitle }),
+      ...(data.themeColor !== undefined && { themeColor: data.themeColor }),
+      ...(data.themeColorMid !== undefined && { themeColorMid: data.themeColorMid }),
+      ...(data.themeColorEnd !== undefined && { themeColorEnd: data.themeColorEnd }),
+      ...(data.ctaText !== undefined && { ctaText: data.ctaText }),
+      ...(data.ctaUrl !== undefined && { ctaUrl: data.ctaUrl }),
+      ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder, priority: data.displayOrder }),
+      ...(data.slot !== undefined && { slot: data.slot }),
+      ...(data.isActive !== undefined && { isActive: data.isActive }),
+      ...(startsAtDate !== undefined && { startsAt: startsAtDate, startDate: startsAtDate }),
+      ...(endsAtDate !== undefined && { endsAt: endsAtDate, endDate: endsAtDate }),
     },
   })
 
@@ -117,6 +140,7 @@ export async function adminUpdateBanner(
   })
 
   revalidatePath('/admin/banners')
+  revalidatePath('/')
 }
 
 export async function adminDeleteBanner(bannerId: string) {
@@ -134,6 +158,7 @@ export async function adminDeleteBanner(bannerId: string) {
   })
 
   revalidatePath('/admin/banners')
+  revalidatePath('/')
 }
 
 // ─── 광고 배너 ───

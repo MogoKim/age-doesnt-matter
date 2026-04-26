@@ -19,6 +19,9 @@ export const ADSENSE = {
 
   /** PC 사이드바 — 디스플레이 광고 (데스크탑 전용 우측 사이드바) */
   PC_SIDEBAR: '4568825260',
+
+  /** 하단 sticky — 320×50 앵커 광고 (스크롤 50% 후 노출) */
+  STICKY_BOTTOM: '7952779304',
 } as const
 
 // ── Coupang Partners ──

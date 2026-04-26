@@ -21,12 +21,13 @@ export default function TrendingSection({ posts }: Props) {
           더보기 →
         </Link>
       </div>
-      <ol className="list-none m-0 px-4 lg:px-0">
+      {/* 모바일: 1열 / 데스크탑: 2열 그리드 */}
+      <ol className="list-none m-0 px-4 lg:px-0 lg:grid lg:grid-cols-2 lg:gap-x-8">
         {posts.map((post, index) => (
-          <li key={post.id}>
+          <li key={post.id} className="lg:border-b lg:border-border lg:last:border-b-0">
             <Link
               href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.id}`}
-              className="flex items-start gap-3 py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0"
+              className="flex items-start gap-3 py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:border-b-0 lg:active:mx-0 lg:active:px-0"
             >
               <span className="text-body font-bold text-primary-text min-w-[24px] shrink-0 leading-[1.4]">{index + 1}</span>
               <div className="flex-1 min-w-0">
