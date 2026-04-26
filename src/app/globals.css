@@ -62,6 +62,28 @@
     --hero-slide-2: #5B8DEF;
     --hero-slide-3: #4CAF50;
 
+    /* ── 우나어 디자인 시스템 v0.3 — Hero 카테고리 그라디언트 ── */
+    --hero-1-from: #C4453B; --hero-1-mid: #FF6F61;  --hero-1-to: #FFB4A2; /* 브랜드 (코랄) */
+    --hero-2-from: #C7651E; --hero-2-mid: #E89456;  --hero-2-to: #FAC775; /* 사는이야기 (오렌지) */
+    --hero-3-from: #1B5E20; --hero-3-mid: #4A8C3A;  --hero-3-to: #97C459; /* 2막준비 (그린) */
+
+    /* ── IconMenu 카테고리 (6종) ── */
+    --icon-best-bg:     #FFE9E5; --icon-best-stroke:     #C4453B;
+    --icon-life-bg:     #FFF1E5; --icon-life-stroke:     #C7651E;
+    --icon-life2-bg:    #E8F5E9; --icon-life2-stroke:    #2E7D32;
+    --icon-laugh-bg:    #FFF8E1; --icon-laugh-stroke:    #A06900;
+    --icon-magazine-bg: #E3F2FD; --icon-magazine-stroke: #185FA5;
+    --icon-job-bg:      #F3E5F5; --icon-job-stroke:      #6A1B9A;
+
+    /* ── 보조 surface (코랄 계열) ── */
+    --surface-coral-soft: #FFE9E5; /* 태그·뱃지 배경 */
+    --surface-coral-pale: #FFF8F6; /* 카드·greeting 배경 */
+    --border-coral-soft:  #FFD4CC; /* 강조 보더 */
+
+    /* ── Activity Pulse (살아있음 신호) ── */
+    --pulse-dot-color: #FF6F61;
+    --pulse-dot-glow:  rgba(255, 111, 97, 0.2);
+
     --font-family: var(--font-pretendard), 'Pretendard Variable', 'Pretendard',
       -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 

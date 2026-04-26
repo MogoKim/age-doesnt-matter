@@ -281,6 +281,7 @@ model User {
   blocksReceived    UserBlock[]       @relation("blocked")
   draftPosts        DraftPost[]
   pushSubscriptions PushSubscription[]
+  postViews         PostView[]
 
   @@index([status])
   @@index([grade])
@@ -376,6 +377,7 @@ model Post {
   reports       Report[]       @relation("postReports")
   notifications Notification[] @relation("notificationPost")
   cpsLinks      CpsLink[]
+  views         PostView[]
 
   @@index([boardType, status, createdAt(sort: Desc)])
   @@index([boardType, status, promotionLevel, createdAt(sort: Desc)])
@@ -547,19 +549,46 @@ model UserBlock {
 // ─────────────────────────────────────────────────
 
 model Banner {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  imageUrl    String
-  linkUrl     String?
-  startDate   DateTime
-  endDate     DateTime
-  priority    Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String    @id @default(cuid())
+  // ── v2.0 신규 필드 (그라디언트 only 운영) ──
+  slot          String    @default("HERO")      // HERO | ...
+  category      String    @default("CUSTOM")    // BRAND | LIFE_STORY | LIFE2 | CUSTOM
+  subtitle      String?
+  themeColor    String    @default("#FF6F61")   // 그라디언트 시작 색
+  themeColorMid String?                         // 그라디언트 중간 색
+  themeColorEnd String?                         // 그라디언트 끝 색
+  ctaText       String?
+  ctaUrl        String?
+  displayOrder  Int       @default(0)
+  startsAt      DateTime?
+  endsAt        DateTime?
+  // ── 기존 필드 유지 (하위 호환, 1주일 후 DROP 예정) ──
+  title         String
+  description   String?
+  imageUrl      String    @default("")          // NOT NULL 완화 — 그라디언트 only 전환 중
+  linkUrl       String?
+  startDate     DateTime  @default(now())
+  endDate       DateTime  @default(now())
+  priority      Int       @default(0)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
+  @@index([slot, isActive, displayOrder])
   @@index([isActive, startDate, endDate])
+}
+
+model PostView {
+  id          String   @id @default(cuid())
+  userId      String
+  postId      String
+  viewedAt    DateTime @default(now())
+  readPercent Int      @default(0)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId, viewedAt])
 }
 
 model AdBanner {
@@ -1010,4 +1039,11 @@ model Popup {
 
   @@index([isActive, startDate, endDate])
   @@index([type])
+}
+
+// TopPromoBanner + 기타 운영 설정값 (key-value 스토어)
+model Setting {
+  key       String   @id
+  value     String   @default("")
+  updatedAt DateTime @updatedAt
 }

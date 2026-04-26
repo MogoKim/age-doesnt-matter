@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import Script from 'next/script'
+import { cookies } from 'next/headers'
 import { GTMScript, GTMNoScript } from '@/components/common/GoogleTagManager'
 import GtagLoader from '@/components/common/GtagLoader'
 import { ToastProvider } from '@/components/common/Toast'
@@ -9,6 +10,21 @@ import PageViewTracker from '@/components/common/PageViewTracker'
 import AuthProvider from '@/components/common/AuthProvider'
 import AddToHomeScreen from '@/components/common/AddToHomeScreen'
 import './globals.css'
+
+const VALID_FONT_SIZES = ['NORMAL', 'LARGE', 'XLARGE'] as const
+type FontSizeValue = typeof VALID_FONT_SIZES[number]
+
+function getInitialFontSize(): FontSizeValue {
+  try {
+    const stored = cookies().get('unao-font-size')?.value
+    if (stored && VALID_FONT_SIZES.includes(stored as FontSizeValue)) {
+      return stored as FontSizeValue
+    }
+  } catch {
+    // cookies() 접근 실패 시 기본값
+  }
+  return 'NORMAL'
+}
 
 const pretendard = localFont({
   src: '../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2',
@@ -61,8 +77,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const initialFontSize = getInitialFontSize()
+  const fontSizeAttr = initialFontSize !== 'NORMAL' ? initialFontSize : undefined
   return (
-    <html lang="ko" className={pretendard.variable}>
+    <html lang="ko" className={pretendard.variable} {...(fontSizeAttr ? { 'data-font-size': fontSizeAttr } : {})}>
       <head>
         <link rel="preconnect" href="https://img.age-doesnt-matter.com" />
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />

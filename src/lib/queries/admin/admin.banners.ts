@@ -5,7 +5,7 @@ import type { AdSlot } from '@/generated/prisma/client'
 
 export async function getBannerList() {
   return prisma.banner.findMany({
-    orderBy: [{ priority: 'asc' }, { createdAt: 'desc' }],
+    orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
   })
 }
 

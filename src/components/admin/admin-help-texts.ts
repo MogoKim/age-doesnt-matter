@@ -10,7 +10,7 @@ export const HELP = {
   POPUP_TYPE: '바텀 시트: 하단 슬라이드, 전면: 전체 화면, 센터: 중앙 직사각형 팝업',
 
   // 배너 관리
-  BANNER_PRIORITY: '숫자가 높을수록 슬라이더에서 먼저 표시됩니다.',
+  BANNER_PRIORITY: '숫자가 낮을수록 슬라이더에서 먼저 표시됩니다. 0이 가장 앞.',
   BANNER_ACTIVE: '켜면 기간 내일 때 즉시 배너가 노출됩니다.',
 
   // 광고 관리

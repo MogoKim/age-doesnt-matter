@@ -32,8 +32,9 @@ const EXCLUDED_PATHS = [
   '/login', '/onboarding', '/signup', '/my', '/admin',
   '/terms', '/privacy', '/rules', '/about', '/contact',
   '/faq', '/grade', '/error', '/_next', '/api',
+  '/',  // 홈: SignupCard가 중반부에 이미 있으므로 SignupPromptBanner 비활성화
 ]
-const CONTENT_PATHS = ['/community/', '/magazine/', '/jobs/', '/best', '/']
+const CONTENT_PATHS = ['/community/', '/magazine/', '/jobs/', '/best']
 
 // localStorage keys
 const KEY_VARIANT = 'signup_variant'
@@ -73,9 +74,9 @@ type Variant = keyof typeof VARIANT_CONTENT
 // 순수 유틸
 // ──────────────────────────────────────────────
 function isActivePath(p: string): boolean {
-  if (EXCLUDED_PATHS.some(ep => p.startsWith(ep))) return false
+  // '/'는 정확히 매칭 (startsWith 시 모든 경로 차단되는 버그 방지)
+  if (EXCLUDED_PATHS.some(ep => ep === '/' ? p === '/' : p.startsWith(ep))) return false
   return CONTENT_PATHS.some(cp => {
-    if (cp === '/') return p === '/' // 홈: 정확히 '/'만 매칭 (startsWith 버그 방지)
     return cp.endsWith('/') ? p.startsWith(cp) : p === cp || p.startsWith(cp + '/')
   })
 }
