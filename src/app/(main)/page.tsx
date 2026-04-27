@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
 import { auth } from '@/lib/auth'
 import HeroSlider from '@/components/features/home/HeroSlider'
@@ -66,22 +67,69 @@ const getCachedActivityPulse = unstable_cache(
   { revalidate: 60 }
 )
 
+/* ── Suspense 스켈레톤 ── */
+function SectionSkeleton({ h = 'h-[200px]' }: { h?: string }) {
+  return <div className={`${h} animate-pulse bg-muted/50 rounded-2xl mx-4 my-3`} />
+}
+
+/* ── 섹션별 async 서버 컴포넌트 (독립 스트리밍) ── */
+
+async function TrendingWrapper() {
+  const posts = await getCachedTrending()
+  return <TrendingSection posts={posts} />
+}
+
+async function CommunityWrapper() {
+  const posts = await getCachedCommunity()
+  return <CommunitySection posts={posts} />
+}
+
+async function Life2Wrapper() {
+  const posts = await getCachedLife2()
+  return <Life2Section posts={posts} />
+}
+
+async function MagazineWrapper() {
+  const posts = await getCachedMagazine()
+  return <MagazineSection posts={posts} />
+}
+
+async function JobWrapper() {
+  const jobs = await getCachedJobs()
+  return <JobSection jobs={jobs} />
+}
+
+async function ActivityWrapper() {
+  // auth()는 NextAuth v5 request memoization → 이미 page level에서 호출한 것과 동일 결과 (DB 1번)
+  const [session, activityPulse] = await Promise.all([auth(), getCachedActivityPulse()])
+  const myCounts = session?.user?.id ? await getUserCounts(session.user.id) : null
+  if (myCounts) {
+    return (
+      <>
+        <MyActivity
+          todayPosts={myCounts.todayPosts}
+          newComments={myCounts.newComments}
+          receivedLikes={myCounts.receivedLikes}
+        />
+        <ActivityPulse activeCount={activityPulse.activeCount} recentActivities={activityPulse.recentActivities} />
+      </>
+    )
+  }
+  return <ActivityPulse activeCount={activityPulse.activeCount} recentActivities={activityPulse.recentActivities} />
+}
+
+async function HomeSidebarWrapper() {
+  // getCachedCommunity는 unstable_cache → CommunityWrapper와 캐시 공유 (DB 쿼리 1번)
+  const posts = await getCachedCommunity()
+  return <HomeSidebar posts={posts} />
+}
+
+/* ── 페이지 ── */
+
 export default async function HomePage() {
-  // layout.tsx와 동일 요청 내 auth() 호출 — NextAuth v5 request memoization으로 중복 쿼리 없음
+  // auth()만 await — HeroSlider 이전에 회원 여부 판단 필요
   const session = await auth()
   const isMember = !!session?.user
-
-  const [jobs, trending, magazine, community, life2, myCounts, activityPulse] = await Promise.all([
-    getCachedJobs(),
-    getCachedTrending(),
-    getCachedMagazine(),
-    getCachedCommunity(),
-    getCachedLife2(),
-    // 회원 전용 활동 현황 — 에러 시 자동 null 폴백 (getUserCounts 내부 try-catch)
-    isMember && session.user?.id ? getUserCounts(session.user.id) : Promise.resolve(null),
-    // 실시간 커뮤니티 현황 — 회원/비회원 공용, 에러 시 자동 폴백 (getActivityPulseData 내부 try-catch)
-    getCachedActivityPulse(),
-  ])
 
   const organizationJsonLd = {
     '@context': 'https://schema.org',
@@ -125,17 +173,19 @@ export default async function HomePage() {
         />
         <h1 className="sr-only">우리 나이가 어때서 — 5060 세대 커뮤니티</h1>
         <div className="max-w-[1200px] mx-auto">
-          {/* HeroSlider — 자체적으로 DB 배너 조회 (즉시 반영, 캐시 없음) */}
+          {/* HeroSlider — Promise.all 제거로 auth() 완료 즉시 스트리밍 */}
           <HeroSlider />
 
           <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
             <div>
-              {/* 회원 전용 인사 카드 */}
+              {/* 회원 전용 인사 카드 — auth() 결과 즉시 사용 */}
               {isMember && session.user?.nickname && (
                 <PersonalGreeting nickname={session.user.nickname} />
               )}
 
-              <TrendingSection posts={trending} />
+              <Suspense fallback={<SectionSkeleton />}>
+                <TrendingWrapper />
+              </Suspense>
 
               {/* HOME_SECTION 광고 — TrendingSection 다음 (위치 유지) */}
               <AdSenseUnit
@@ -144,46 +194,46 @@ export default async function HomePage() {
                 className="my-4 rounded-2xl overflow-hidden"
               />
 
-              <CommunitySection posts={community} />
+              <Suspense fallback={<SectionSkeleton />}>
+                <CommunityWrapper />
+              </Suspense>
 
               <ResponsiveAd
                 mobile={<CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />}
                 desktop={null}
               />
 
-              <Life2Section posts={life2} />
+              <Suspense fallback={<SectionSkeleton />}>
+                <Life2Wrapper />
+              </Suspense>
 
-              {/* IN_FEED 광고 — Life2Section 다음으로 이동 (기존: MagazineSection 다음) */}
+              {/* IN_FEED 광고 — Life2Section 다음 */}
               <FeedAd />
 
-              <MagazineSection posts={magazine} />
+              <Suspense fallback={<SectionSkeleton />}>
+                <MagazineWrapper />
+              </Suspense>
 
-              {/* CoupangCarousel — MagazineSection 다음으로 이동 (기존: Life2Section 다음) */}
+              {/* CoupangCarousel — MagazineSection 다음 (모바일만) */}
               <div className="block lg:hidden">
                 <CoupangCarousel className="my-4 rounded-2xl overflow-hidden" />
               </div>
 
-              <JobSection jobs={jobs} />
+              <Suspense fallback={<SectionSkeleton h="h-[280px]" />}>
+                <JobWrapper />
+              </Suspense>
 
-              {/* 활동 현황 — 회원: MyActivity + ActivityPulse / 비회원: ActivityPulse */}
-              {isMember && myCounts ? (
-                <>
-                  <MyActivity
-                    todayPosts={myCounts.todayPosts}
-                    newComments={myCounts.newComments}
-                    receivedLikes={myCounts.receivedLikes}
-                  />
-                  <ActivityPulse activeCount={activityPulse.activeCount} recentActivities={activityPulse.recentActivities} />
-                </>
-              ) : (
-                <ActivityPulse activeCount={activityPulse.activeCount} recentActivities={activityPulse.recentActivities} />
-              )}
+              <Suspense fallback={<SectionSkeleton h="h-[120px]" />}>
+                <ActivityWrapper />
+              </Suspense>
 
-              {/* 비회원 가입 유도 카드 (홈 중반부 1회) */}
+              {/* 비회원 가입 유도 카드 */}
               {!isMember && <SignupCard />}
             </div>
 
-            <HomeSidebar posts={community} />
+            <Suspense fallback={<div className="hidden lg:block" />}>
+              <HomeSidebarWrapper />
+            </Suspense>
           </div>
         </div>
       </div>
