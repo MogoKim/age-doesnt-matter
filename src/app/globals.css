@@ -98,6 +98,11 @@
     --font-size-sm: var(--text-body);      /* 18px → 설정에 따라 확대 */
     --font-size-base: var(--text-body);    /* 18px → 설정에 따라 확대 */
     --font-size-lg: var(--text-title);     /* 20px → 설정에 따라 확대 */
+
+    /* ── IconMenu 반응형 크기 (폰트 크기 설정에 따라 확대) ── */
+    --icon-box-size: 3rem;        /* 48px — 아이콘 컬러 박스 */
+    --icon-svg-size: 1.375rem;    /* 22px — SVG 아이콘 */
+    --icon-container-w: 4.5rem;   /* 72px — Link 셀 너비 */
   }
 
   /* LARGE (20px 베이스) */
@@ -106,6 +111,9 @@
     --text-caption: 1.0625rem; /* 17px */
     --text-title: 1.5rem;     /* 24px */
     --text-heading: 1.75rem;  /* 28px */
+    --icon-box-size: 3.5rem;       /* 56px */
+    --icon-svg-size: 1.625rem;     /* 26px */
+    --icon-container-w: 5.125rem;  /* 82px */
   }
 
   /* XLARGE (24px 베이스) */
@@ -114,7 +122,17 @@
     --text-caption: 1.25rem;  /* 20px */
     --text-title: 1.75rem;    /* 28px */
     --text-heading: 2rem;     /* 32px */
+    --icon-box-size: 4rem;        /* 64px */
+    --icon-svg-size: 1.875rem;    /* 30px */
+    --icon-container-w: 6rem;     /* 96px */
   }
+}
+
+/* ── IconMenu SVG 크기 오버라이드 (CSS vars가 SVG presentation attributes 덮어씀) ── */
+nav[aria-label="주요 메뉴"] svg {
+  width: var(--icon-svg-size);
+  height: var(--icon-svg-size);
+  flex-shrink: 0;
 }
 
 /* ── 글로벌 리셋 ── */
