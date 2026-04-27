@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import Link from 'next/link'
+import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 
 interface LoginPromptModalProps {
   message: string
@@ -42,12 +42,13 @@ export default function LoginPromptModal({ message, onClose, callbackUrl }: Logi
             <p className="text-sm text-muted-foreground">우나어에서 우리 또래와 더 깊이 연결돼요</p>
           </div>
 
-          <Link
-            href={`/login${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
-            className="w-full flex items-center justify-center gap-2 h-[52px] bg-[#FEE500] text-[#191919] rounded-xl font-bold text-body no-underline transition-colors hover:bg-[#FDD800]"
+          <KakaoSignupButton
+            callbackUrl={callbackUrl || '/'}
+            gtmFrom="login_prompt_modal"
+            className="w-full flex items-center justify-center gap-2 h-[52px] bg-[#FEE500] text-[#191919] rounded-xl font-bold text-body transition-colors hover:bg-[#FDD800]"
           >
             💛 카카오로 1초 가입하기
-          </Link>
+          </KakaoSignupButton>
 
           <button
             className="text-sm text-muted-foreground cursor-pointer min-h-[52px] lg:min-h-[44px] hover:text-foreground transition-colors"

@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 import type { CommentItem as CommentItemType } from '@/types/api'
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
@@ -89,12 +89,13 @@ export default function CommentSection({ postId, comments, isLoggedIn }: Comment
           <p className="text-sm text-muted-foreground mb-5">
             우리 또래끼리만 통하는 이야기, 가입하면 바로 참여할 수 있어요
           </p>
-          <Link
-            href={`/login?callbackUrl=${encodeURIComponent(pathname)}`}
-            className="inline-flex items-center justify-center min-h-[52px] px-6 bg-[#FEE500] text-[#191919] rounded-xl text-body font-bold no-underline transition-colors hover:bg-[#FDD800]"
+          <KakaoSignupButton
+            callbackUrl={pathname}
+            gtmFrom="comment_section"
+            className="inline-flex items-center justify-center min-h-[52px] px-6 bg-[#FEE500] text-[#191919] rounded-xl text-body font-bold transition-colors hover:bg-[#FDD800]"
           >
             💛 카카오로 1초 가입하기
-          </Link>
+          </KakaoSignupButton>
         </div>
       )}
     </section>

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { FaqAccordion } from '@/components/common/FaqAccordion'
 import type { FaqItem } from '@/components/common/FaqAccordion'
+import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 
 export const metadata: Metadata = {
   title: '우나어 소개',
@@ -50,9 +51,9 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
         a: (
           <span>
             카카오로 1초 가입돼요.{' '}
-            <Link href="/login?callbackUrl=/community/stories" className="text-primary font-bold underline">
+            <KakaoSignupButton callbackUrl="/community/stories" gtmFrom="about_faq" className="text-primary font-bold underline cursor-pointer bg-transparent border-none p-0">
               카카오톡으로 시작하기 →
-            </Link>
+            </KakaoSignupButton>
           </span>
         ),
       },
@@ -189,12 +190,18 @@ export default async function AboutPage() {
             눈치 없이 꺼낼 수 있는 곳으로.
           </p>
           <div className="mt-6 pt-5 border-t border-primary/10">
-            <Link
-              href={isLoggedIn ? '/community/stories' : '/login?callbackUrl=/community/stories'}
-              className="text-primary font-bold text-body no-underline hover:underline"
-            >
-              {isLoggedIn ? '커뮤니티 들어가기 →' : '1초만에 무료 회원가입 →'}
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                href="/community/stories"
+                className="text-primary font-bold text-body no-underline hover:underline"
+              >
+                커뮤니티 들어가기 →
+              </Link>
+            ) : (
+              <KakaoSignupButton callbackUrl="/community/stories" gtmFrom="about_mid_cta" className="text-primary font-bold text-body bg-transparent border-none p-0 cursor-pointer hover:underline">
+                1초만에 무료 회원가입 →
+              </KakaoSignupButton>
+            )}
           </div>
         </div>
       </section>
@@ -250,14 +257,15 @@ export default async function AboutPage() {
               커뮤니티 바로 가기
             </Link>
           ) : (
-            <Link
-              href="/login?callbackUrl=/community/stories"
-              className="inline-flex items-center justify-center gap-2 w-full h-[52px] rounded-xl text-body font-bold no-underline transition-opacity hover:opacity-90 lg:w-auto lg:px-10"
+            <KakaoSignupButton
+              callbackUrl="/community/stories"
+              gtmFrom="about_bottom_cta"
+              className="inline-flex items-center justify-center gap-2 w-full h-[52px] rounded-xl text-body font-bold transition-opacity hover:opacity-90 lg:w-auto lg:px-10"
               style={{ background: '#FEE500', color: '#191919' }}
             >
               <span className="text-[20px]">💬</span>
               카카오로 1초 가입
-            </Link>
+            </KakaoSignupButton>
           )}
         </div>
       </section>

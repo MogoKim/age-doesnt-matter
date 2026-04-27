@@ -2,6 +2,7 @@ export const revalidate = 86400
 
 import { FaqAccordion } from '@/components/common/FaqAccordion'
 import type { FaqItem } from '@/components/common/FaqAccordion'
+import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 
 const faqs: FaqItem[] = [
   {
@@ -13,9 +14,9 @@ const faqs: FaqItem[] = [
     a: (
       <span>
         카카오로 1초 가입돼요. 별도 회원가입 절차 없이 바로 이용 가능합니다.{' '}
-        <a href="/login?callbackUrl=/community/stories" className="text-primary font-bold underline">
+        <KakaoSignupButton callbackUrl="/community/stories" gtmFrom="faq_page" className="text-primary font-bold underline cursor-pointer bg-transparent border-none p-0">
           카카오로 시작하기 →
-        </a>
+        </KakaoSignupButton>
       </span>
     ),
   },

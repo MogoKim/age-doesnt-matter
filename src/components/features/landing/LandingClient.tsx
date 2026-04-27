@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { sendGtmEvent } from '@/lib/gtm'
+import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 
 type Post = {
   id: string
@@ -15,7 +15,7 @@ type Post = {
   postedAt: Date
 }
 
-function SignupModal({ onClose, tParam }: { onClose: () => void; tParam: string }) {
+function SignupModal({ onClose }: { onClose: () => void }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
@@ -33,15 +33,15 @@ function SignupModal({ onClose, tParam }: { onClose: () => void; tParam: string 
           나 같은 사람들이 기다리고 있어요
         </p>
 
-        <Link
-          href="/login?callbackUrl=/"
+        <KakaoSignupButton
+          callbackUrl="/"
+          gtmFrom="landing_modal"
           className="flex items-center justify-center gap-2 w-full h-[52px] rounded-xl font-bold text-base"
           style={{ background: '#FEE500', color: '#191919' }}
-          onClick={() => sendGtmEvent('landing_cta_click', { button: 'modal', t_param: tParam })}
         >
           <span className="text-[20px]">💬</span>
           카카오로 무료 가입
-        </Link>
+        </KakaoSignupButton>
 
         <button
           onClick={onClose}
@@ -145,15 +145,15 @@ export default function LandingClient({ posts, t = 'relation' }: { posts: Post[]
         style={{ background: 'rgba(255,255,255,0.96)', borderTop: '1px solid #f0f0f0', backdropFilter: 'blur(8px)' }}
       >
         <div className="max-w-lg mx-auto">
-          <Link
-            href="/login?callbackUrl=/"
+          <KakaoSignupButton
+            callbackUrl="/"
+            gtmFrom="landing_sticky_bar"
             className="flex items-center justify-center gap-2 w-full h-[52px] rounded-xl font-bold text-base shadow-sm"
             style={{ background: '#FEE500', color: '#191919' }}
-            onClick={() => sendGtmEvent('landing_cta_click', { button: 'sticky_bar', t_param: t })}
           >
             <span className="text-[20px]">💬</span>
             카카오로 무료 가입하기
-          </Link>
+          </KakaoSignupButton>
           <div className="flex items-center justify-center gap-4 mt-2 text-[12px]" style={{ color: '#aaa' }}>
             <span>✓ 닉네임만 공개</span>
             <span style={{ color: '#ddd' }}>|</span>
@@ -163,7 +163,7 @@ export default function LandingClient({ posts, t = 'relation' }: { posts: Post[]
       </div>
 
       {/* 가입 유도 모달 */}
-      {showModal && <SignupModal onClose={() => setShowModal(false)} tParam={t} />}
+      {showModal && <SignupModal onClose={() => setShowModal(false)} />}
     </>
   )
 }
