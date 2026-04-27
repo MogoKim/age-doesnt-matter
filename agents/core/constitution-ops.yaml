@@ -1,0 +1,113 @@
+# ================================================================
+# 우나어 헌법 — OPS 모듈
+# ================================================================
+# 포함: 인기글 정책 + SNS 전략 + CMO 콘텐츠 비율 + 광고 정책 + 인텔리전스 정책
+# 대상: CMO (SNS 포스터, 트렌드), COO (트렌딩 스코어러)
+# ================================================================
+
+# ──────────────────────────────────────────
+# 7. 광고 정책
+# ──────────────────────────────────────────
+ad_policy:
+  types: ["자체 배너", "구글 애드센스", "쿠팡 CPS", "외부 직접"]
+
+  priority_order:
+    - "1순위: 외부 직접 (유료 계약)"
+    - "2순위: 자체 배너 (이벤트·홍보)"
+    - "3순위: 쿠팡 CPS (수익)"
+    - "4순위: 구글 애드센스 (기본 fill)"
+
+  rules:
+    - "모든 광고에 '광고' 라벨 필수"
+    - "모바일: 화면당 최대 1개 광고"
+    - "정치/도박/성인/약물/다단계 광고 절대 금지"
+    - "쿠팡 CPS: 투명성 안내 문구 필수"
+
+# ──────────────────────────────────────────
+# 8-2. 인기글 정책
+# ──────────────────────────────────────────
+trending_policy:
+  score_formula: "(likeCount*3 + commentCount*5 + viewCount*0.1) / (hoursAge+2)^1.5"
+  recalculation: "매 30분 (COO trending-scorer)"
+  hot_demotion: "72시간 무참여 + 7일 경과 → NORMAL 강등"
+  hall_of_fame: "영구 유지 (50+ 공감 달성 보상)"
+  home_trending: "48시간 이내 게시글, trendingScore 상위 5개"
+
+# ──────────────────────────────────────────
+# 8-3. SNS 플랫폼 전략 (상세는 코드 참조)
+# ──────────────────────────────────────────
+sns_platform_strategy:
+  threads: "체류시간 최적화 — 캐주얼 대화체, 100-200자, 토픽태그 1개"
+  x: "정보형 권위 — 뉴스톤 팩트 기반, 100-140자, 해시태그 2-3개"
+  instagram: "비주얼 라이프스타일 — 카드뉴스 캐러셀, 따뜻한 인생 2막 감성"
+  facebook: "커뮤니티 공유 — 이야기체 + 질문, 500-1000자, 댓글 유도"
+  band: "실용 그룹 정보 — 이웃 친근감, 이벤트/일정/팁, 300-500자"
+  naver: "SEO 검색 유입 — 매거진 리퍼포징, 1000-3000자"
+
+# ──────────────────────────────────────────
+# 8-3b. CMO 콘텐츠 전략 비율 (social-poster.ts가 파싱하여 사용)
+# ──────────────────────────────────────────
+cmo_content_ratios:
+  exploit_ratio: 0.7       # exploit(검증 공식 자동 게시) 비율 — 0.0~1.0
+  promotion_level:
+    pure: 60               # 순수 커뮤니티 콘텐츠 (홍보 없음) %
+    soft: 25               # 서비스 자연스럽게 언급 %
+    direct: 15             # 직접 서비스 홍보 %
+  # 창업자 조정 가이드:
+  # - 서비스 초기/실험 많음 → exploit_ratio 낮추기 (0.5~0.6)
+  # - 서비스 안정/검증 완료 → exploit_ratio 높이기 (0.8~0.9)
+
+# ──────────────────────────────────────────
+# 10. 인텔리전스 정책 (Intelligence Harness)
+# ──────────────────────────────────────────
+intelligence_policy:
+  # 모든 에이전트는 오늘의 욕망 지도를 읽어야 함
+  daily_brief_mandatory: true
+  brief_source: "agents/core/today-brief.json"
+  db_model: "DailyBrief"
+
+  # 오늘 브리프 없으면 어제 브리프로 폴백
+  fallback_to_previous: true
+  fallback_alert_channel: "#알림-시스템"
+
+  # 브리프 직접 인용 금지 — 자연스러운 분위기 반영만
+  content_override_prohibited: true
+  reason: "브리프를 직접 인용하면 부자연스러움. 분위기로 흡수해서 행동."
+
+  # 지배적 욕망 판정 임계값
+  dominant_desire_threshold_pct: 25
+  flat_distribution_behavior: "quotaMultiplier 조정 없이 기본 스케줄 유지"
+
+  # 엔터 페르소나 활성화 규칙
+  entertain_activation:
+    active_threshold_pct: 10    # ENTERTAIN >= 10% → EN1-EN5 글쓰기 + 댓글
+    passive_threshold_pct: 5    # ENTERTAIN >= 5% → 댓글만
+    dormant_below_pct: 5        # ENTERTAIN < 5% → 완전 비활성
+
+  # midDayPatch 제한
+  mid_day_patch:
+    schedule: "12:30 KST (quick crawl 완료 후)"
+    quota_delta_cap: 0.2         # quotaMultiplier 최대 ±0.2 조정
+    min_change_trigger_pct: 5    # 5% 이상 변화 시에만 패치 생성
+    dominant_desire_immutable: true  # 아침에 결정된 dominantDesire 변경 불가
+
+  # 크롤링 소스 정책 (2026-04-07 개편)
+  data_sources:
+    cafe_crawling:
+      active: [wgang, dlxogns01]
+      removed: [welovesilver, 5060years, 82cook]  # 2026-04-07 데이터 품질 미달로 제거
+      strategy: "2개 카페 딥다이브 — 게시판 ~55개, maxPostsPerCafe:80, 댓글 15개+대댓글"
+    comment_learning:
+      enabled: true
+      max_comments_per_post: 15   # 5 → 15
+      include_replies: true        # 대댓글 수집 신규
+      speech_tone_aggregation: true  # trend-analyzer cafeSummary에 저장
+
+  # 파이프라인 순서
+  pipeline_order:
+    - "crawler.ts (08:30 DEEP) — 2개 카페, 댓글+대댓글 수집"
+    - "external-crawler.ts (비활성 — EXTERNAL_CONFIGS 빈 배열)"
+    - "psych-analyzer.ts (Haiku 배치, speechTone 분석 포함)"
+    - "trend-analyzer.ts (집계 + 말투학습 cafeSummary 저장)"
+    - "daily-brief.ts (욕망지도 → today-brief.json, dataSourceBias 포함)"
+    - "모든 에이전트 09:00 이후 loadTodayBrief() 호출"

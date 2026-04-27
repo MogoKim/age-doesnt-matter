@@ -3,12 +3,30 @@ import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { notifyAdmin } from './notifier.js'
-import type { AgentResult, AgentConfig, AgentLog } from './types.js'
+import type { AgentResult, AgentConfig, AgentLog, ConstitutionModule } from './types.js'
 import { prisma } from './db.js'
 
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const constitution = readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')
+
+/**
+ * 에이전트 역할에 맞는 constitution 텍스트를 로드한다.
+ * - modules === undefined → 원본 constitution.yaml 전체 (Phase 2b 완료 전 안전 fallback)
+ * - modules === [] → constitution-core.yaml만
+ * - modules = ['audience', ...] → core + 지정 모듈 합산
+ */
+function loadConstitution(modules?: ConstitutionModule[]): string {
+  if (!modules) {
+    return readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')
+  }
+  const core = readFileSync(resolve(__dirname, 'constitution-core.yaml'), 'utf-8')
+  if (modules.length === 0) return core
+  const parts = [core]
+  for (const mod of modules) {
+    parts.push(readFileSync(resolve(__dirname, `constitution-${mod}.yaml`), 'utf-8'))
+  }
+  return parts.join('\n')
+}
 
 const MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-6'
 const MODEL_HEAVY = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
@@ -19,6 +37,7 @@ export abstract class BaseAgent {
   protected model: string
   protected config: AgentConfig
   private lessons = ''
+  private constitutionText: string
 
   constructor(config: AgentConfig) {
     this.client = new Anthropic()
@@ -26,6 +45,7 @@ export abstract class BaseAgent {
                : config.model === 'heavy' ? MODEL_HEAVY
                : MODEL_LIGHT
     this.config = config
+    this.constitutionText = loadConstitution(config.constitutionModules)
   }
 
   /**
@@ -77,7 +97,7 @@ export abstract class BaseAgent {
     const base = `당신은 "우리 나이가 어때서" 커뮤니티의 ${this.config.role}입니다.
 아래 회사 헌법을 항상 준수하세요:
 
-${constitution}
+${this.constitutionText}
 
 당신의 역할: ${this.config.role}
 담당 업무: ${this.config.tasks}

@@ -58,6 +58,16 @@ export interface MeetingAction {
 /** BotType enum (Prisma와 일치) */
 export type AgentBotType = 'CEO' | 'CTO' | 'CMO' | 'CPO' | 'CDO' | 'CFO' | 'COO' | 'SEED' | 'QA'
 
+/**
+ * constitution 모듈 식별자
+ * - audience: target + site_structure + content_policy + brand
+ * - strategy: current_phase + kpi + q2_okr + positioning + competitors
+ * - ops: trending_policy + sns_platform_strategy + cmo_content_ratios + ad_policy + intelligence_policy
+ * - infra: security + cto_governance + qa_agent
+ * undefined = 원본 constitution.yaml 전체 로드 (안전 fallback)
+ */
+export type ConstitutionModule = 'audience' | 'strategy' | 'ops' | 'infra'
+
 /** 에이전트 설정 */
 export interface AgentConfig {
   name: string
@@ -66,6 +76,7 @@ export interface AgentConfig {
   model: 'strategic' | 'heavy' | 'light'
   tasks: string
   canWrite: boolean
+  constitutionModules?: ConstitutionModule[]
 }
 
 /** Cron 스케줄 엔트리 */
