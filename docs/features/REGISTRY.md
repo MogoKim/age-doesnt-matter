@@ -77,7 +77,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 매일 07:00 KST | GHA | `docs/features/jobs-bot.md` | ACTIVE | 2026-04-21 |
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/community/fmkorea-scraper.ts` | launchd 11:30, 21:30 KST | LOCAL_ONLY | `docs/features/external-content.md` | ACTIVE | 2026-04-21 |
 | A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | [A05](A05-seed-bot.md) | ACTIVE | 2026-04-27 |
-| A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 09:00, 15:00 KST | GHA | - | ACTIVE | 2026-04-05 |
+| A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 07:00·12:00·15:00 KST | GHA | [A06](A06-sns-posting.md) | ACTIVE | 2026-04-27 |
 | A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 11:00 KST | GHA | - | ACTIVE | 2026-03-30 |
 | A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | - | ACTIVE | 2026-04-05 |
 | A09 | SEO 최적화 | `agents/cmo/seo-optimizer.ts` | GHA 일 08:00 KST | GHA | - | ACTIVE | 2026-03-30 |
