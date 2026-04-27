@@ -55,7 +55,7 @@ export default function GNB({ isLoggedIn = false, nickname, unreadCount = 0 }: G
           />
         </Link>
 
-        <div className="flex items-center gap-6 flex-1">
+        <div className="flex items-center gap-4 flex-1">
           {MENU_ITEMS.map((item) => {
             const isActive = pathname.startsWith(item.href)
             return (

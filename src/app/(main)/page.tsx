@@ -18,6 +18,7 @@ import PersonalGreeting from '@/components/features/home/PersonalGreeting'
 import MyActivity from '@/components/features/home/MyActivity'
 import ActivityPulse from '@/components/features/home/ActivityPulse'
 import SignupCard from '@/components/features/home/SignupCard'
+import StickyBottomAd from '@/components/ad/StickyBottomAd'
 import {
   getLatestJobs,
   getTrendingPosts,
@@ -188,6 +189,8 @@ export default async function HomePage() {
         </div>
       </div>
 
+      {/* 하단 스티키 광고 — 스크롤 50% 이상 시 노출, 모바일 전용 */}
+      <StickyBottomAd />
     </>
   )
 }

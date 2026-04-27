@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우나어 디자인 시스템 v0.3 — 시각 가이드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+<style>
+  :root {
+    --coral: #FF6F61;
+    --coral-text: #C4453B;
+    --coral-soft: #FFE9E5;
+    --coral-pale: #FFF8F6;
+    --coral-border: #FFD4CC;
+    --bg: #F8F9FA;
+    --card: #FFFFFF;
+    --text: #111827;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --secondary: #F1F3F5;
+    --kakao: #FEE500;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.6;
+    word-break: keep-all;
+  }
+
+  /* ── 레이아웃 ── */
+  .wrapper { max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  .page-header {
+    background: linear-gradient(135deg, #C4453B 0%, #FF6F61 50%, #FFB4A2 100%);
+    color: white;
+    padding: 48px 32px;
+    border-radius: 20px;
+    margin-bottom: 48px;
+  }
+  .page-header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+  .page-header p { font-size: 16px; opacity: 0.9; }
+  .page-header .badge {
+    display: inline-block; background: rgba(255,255,255,0.25);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 20px; padding: 4px 14px; font-size: 13px;
+    margin-top: 16px; margin-right: 8px;
+  }
+
+  /* ── 섹션 ── */
+  .section { margin-bottom: 64px; }
+  .section-title {
+    font-size: 22px; font-weight: 700; color: var(--text);
+    border-left: 4px solid var(--coral); padding-left: 14px;
+    margin-bottom: 24px;
+  }
+  .section-subtitle { font-size: 14px; color: var(--muted); margin-top: 4px; font-weight: 400; }
+
+  /* ── 그리드 ── */
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  @media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4, .grid-6 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ── 카드 ── */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+
+  /* ── 컬러 스워치 ── */
+  .swatch-group { margin-bottom: 32px; }
+  .swatch-group-title { font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  .swatch {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .swatch-color { height: 80px; }
+  .swatch-info { padding: 12px 14px; background: white; }
+  .swatch-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .swatch-hex { font-size: 12px; color: var(--muted); font-family: monospace; }
+  .swatch-usage { font-size: 11px; color: #9CA3AF; margin-top: 4px; }
+
+  /* ── 그라디언트 카드 ── */
+  .gradient-card {
+    border-radius: 16px; padding: 28px 24px; color: white;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    min-height: 120px; display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .gradient-card h3 { font-size: 20px; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+  .gradient-card p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .gradient-card .cta {
+    display: inline-block; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 20px; padding: 6px 16px; font-size: 13px; font-weight: 600; margin-top: 12px;
+  }
+  .gradient-caption { margin-top: 10px; font-size: 12px; color: var(--muted); font-family: monospace; }
+
+  /* ── 타이포그래피 ── */
+  .typo-row { padding: 20px 0; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 24px; }
+  .typo-row:last-child { border-bottom: none; }
+  .typo-meta { min-width: 180px; }
+  .typo-meta .label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .typo-meta .size { font-size: 13px; color: var(--muted); font-family: monospace; margin-top: 2px; }
+  .typo-sample { flex: 1; color: var(--text); }
+
+  .font-scale-table { width: 100%; border-collapse: collapse; }
+  .font-scale-table th, .font-scale-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  .font-scale-table th { background: var(--secondary); font-size: 12px; font-weight: 600; color: var(--muted); }
+  .font-scale-table td:first-child { font-family: monospace; font-size: 13px; color: var(--coral-text); }
+
+  /* ── 아이콘 메뉴 ── */
+  .icon-menu { display: flex; gap: 0; overflow-x: auto; }
+  .icon-item {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    width: 72px; flex-shrink: 0; padding: 16px 0;
+  }
+  .icon-box {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .icon-label { font-size: 11px; color: var(--muted); text-align: center; }
+  .icon-active .icon-label { color: var(--coral-text); font-weight: 600; }
+  .icon-active .icon-box { outline: 2px solid; outline-offset: 1px; }
+
+  /* ── 컴포넌트 ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    border: none; cursor: pointer; font-family: inherit; font-weight: 600;
+    border-radius: 12px; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--coral); color: white; }
+  .btn-secondary { background: var(--secondary); color: var(--text); }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-kakao { background: var(--kakao); color: #191919; }
+  .btn-ghost { background: transparent; color: var(--text); }
+  .btn-destructive { background: #F44336; color: white; }
+
+  .btn-lg { height: 52px; padding: 0 24px; font-size: 16px; }
+  .btn-md { height: 44px; padding: 0 20px; font-size: 15px; }
+  .btn-sm { height: 36px; padding: 0 16px; font-size: 14px; }
+  .btn-full { width: 100%; }
+
+  .badge {
+    display: inline-flex; align-items: center; padding: 3px 10px;
+    border-radius: 999px; font-size: 12px; font-weight: 600;
+  }
+  .badge-primary { background: var(--coral-soft); color: var(--coral-text); }
+  .badge-secondary { background: var(--secondary); color: var(--muted); }
+  .badge-new { background: #DCFCE7; color: #166534; }
+  .badge-hot { background: linear-gradient(90deg, #FF6B6B, #FF8E53); color: white; }
+  .badge-editors { background: #FF8C00; color: white; }
+
+  .chip { display: inline-flex; align-items: center; padding: 0 14px; height: 36px; border-radius: 999px; font-size: 14px; border: 1.5px solid var(--border); background: white; color: var(--text); cursor: pointer; }
+  .chip-active { border-color: var(--coral); background: var(--coral-soft); color: var(--coral-text); }
+
+  /* ── 카드 컴포넌트 ── */
+  .post-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; }
+  .post-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--coral-soft); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .post-card-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+  .post-card-excerpt { font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .post-card-footer { display: flex; gap: 12px; margin-top: 12px; }
+  .post-meta { font-size: 12px; color: var(--muted); }
+
+  /* ── 탭 ── */
+  .tab-row { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+  .tab { padding: 10px 16px; font-size: 15px; font-weight: 500; color: var(--muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+  .tab-active { color: var(--coral-text); border-bottom-color: var(--coral); font-weight: 700; }
+
+  /* ── 시니어 규칙 ── */
+  .rule-table { width: 100%; border-collapse: collapse; }
+  .rule-table th, .rule-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+  .rule-table th { background: var(--secondary); font-size: 13px; font-weight: 600; }
+  .rule-table td { font-size: 14px; }
+  .rule-table td:nth-child(2) { font-family: monospace; color: var(--coral-text); }
+  .rule-pass { color: #16A34A; font-weight: 600; }
+  .rule-note { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── 레이아웃 다이어그램 ── */
+  .layout-diagram {
+    font-family: monospace; font-size: 13px; background: #1E293B; color: #94A3B8;
+    border-radius: var(--radius); padding: 24px; line-height: 1.8;
+  }
+  .layout-diagram .hl-coral { color: #FF6F61; font-weight: 600; }
+  .layout-diagram .hl-green { color: #4ADE80; }
+  .layout-diagram .hl-blue { color: #60A5FA; }
+  .layout-diagram .hl-yellow { color: #FBBF24; }
+  .layout-diagram .hl-muted { color: #64748B; }
+
+  /* ── 레이아웃 시각적 ── */
+  .layout-visual { border: 2px dashed var(--border); border-radius: var(--radius); overflow: hidden; }
+  .layout-bar { padding: 8px 12px; font-size: 12px; font-weight: 600; text-align: center; }
+  .lv-promo { background: linear-gradient(90deg, #FF6F61, #FF9F61); color: white; }
+  .lv-header { background: white; border-bottom: 1px solid var(--border); color: var(--text); }
+  .lv-iconmenu { background: white; border-bottom: 1px solid var(--border); color: var(--muted); display: flex; justify-content: center; gap: 8px; }
+  .lv-hero { height: 180px; background: linear-gradient(135deg, #C4453B, #FF6F61, #FFB4A2); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 18px; }
+  .lv-section { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+  .lv-ad { padding: 8px 12px; background: #FFF8F0; border-bottom: 1px solid var(--border); font-size: 11px; color: #9CA3AF; text-align: center; border: 1px dashed var(--border); margin: 4px; border-radius: 8px; }
+  .lv-fab { position: absolute; bottom: 80px; right: 12px; background: var(--coral); color: white; border-radius: 999px; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 16px rgba(255,111,97,0.35); }
+  .lv-sticky-ad { background: #F3F4F6; border-top: 1px solid var(--border); text-align: center; padding: 8px; font-size: 12px; color: var(--muted); }
+
+  /* ── 스페이싱 ── */
+  .spacing-item { display: flex; align-items: center; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .spacing-bar { background: var(--coral); border-radius: 4px; height: 16px; flex-shrink: 0; }
+  .spacing-label { font-size: 13px; font-family: monospace; color: var(--coral-text); min-width: 50px; }
+  .spacing-desc { font-size: 13px; color: var(--muted); }
+
+  /* ── 접근성 색상 대비 ── */
+  .contrast-swatch {
+    border-radius: 12px; overflow: hidden; border: 1px solid var(--border);
+  }
+  .contrast-bg { height: 60px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; }
+  .contrast-info { background: white; padding: 10px 12px; }
+  .contrast-ratio { font-size: 14px; font-weight: 700; }
+  .contrast-pass { color: #16A34A; }
+  .contrast-fail { color: #DC2626; }
+  .contrast-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── 피드백 섹션 ── */
+  .feedback-box {
+    background: linear-gradient(135deg, var(--coral-pale), white);
+    border: 1.5px solid var(--coral-border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .feedback-box h3 { font-size: 16px; font-weight: 700; color: var(--coral-text); margin-bottom: 12px; }
+  .feedback-item { display: flex; gap: 10px; margin-bottom: 10px; font-size: 14px; }
+  .feedback-num { font-weight: 700; color: var(--coral); min-width: 20px; }
+
+  /* ── TOC ── */
+  .toc { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 48px; }
+  .toc h2 { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+  .toc-list { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .toc-list li a { font-size: 14px; color: var(--coral-text); text-decoration: none; }
+  .toc-list li a:hover { text-decoration: underline; }
+
+  /* ── 반응형 폰트 레벨 ── */
+  .font-level { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; }
+  .font-level-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  .font-level-row { display: flex; align-items: baseline; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .font-level-row:last-child { border-bottom: none; }
+  .font-level-key { font-size: 11px; font-family: monospace; color: var(--coral-text); min-width: 100px; }
+  .font-level-val { font-family: monospace; font-size: 11px; color: var(--muted); min-width: 60px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ── 헤더 ── -->
+  <header class="page-header">
+    <h1>우나어 디자인 시스템</h1>
+    <p>우리 나이가 어때서 (age-doesnt-matter.com) — 5060+ 커뮤니티</p>
+    <div>
+      <span class="badge">v0.3 (2026-04-27)</span>
+      <span class="badge">Pretendard Variable</span>
+      <span class="badge">Tailwind CSS + shadcn/ui</span>
+      <span class="badge">라이트 모드 전용</span>
+    </div>
+    <p style="margin-top:16px; font-size:14px; opacity:0.8;">
+      ⚠️ 이 문서는 브라우저에서 열어서 실제 색상·폰트·컴포넌트를 확인하세요. 코드와 시각을 모두 담았습니다.
+    </p>
+  </header>
+
+  <!-- ── TOC ── -->
+  <nav class="toc">
+    <h2>목차</h2>
+    <ol class="toc-list">
+      <li><a href="#colors">1. 컬러 시스템</a></li>
+      <li><a href="#gradients">2. 그라디언트</a></li>
+      <li><a href="#typography">3. 타이포그래피</a></li>
+      <li><a href="#iconmenu">4. 아이콘 메뉴</a></li>
+      <li><a href="#buttons">5. 버튼 & CTA</a></li>
+      <li><a href="#cards">6. 카드 컴포넌트</a></li>
+      <li><a href="#badges">7. 배지 & 칩</a></li>
+      <li><a href="#spacing">8. 스페이싱 시스템</a></li>
+      <li><a href="#layout">9. 레이아웃 구조</a></li>
+      <li><a href="#senior">10. 시니어 친화 규칙</a></li>
+      <li><a href="#contrast">11. 색상 대비 (접근성)</a></li>
+      <li><a href="#tokens">12. 전체 디자인 토큰</a></li>
+    </ol>
+  </nav>
+
+
+  <!-- ── 1. 컬러 시스템 ── -->
+  <section class="section" id="colors">
+    <h2 class="section-title">1. 컬러 시스템
+      <span class="section-subtitle">CSS Variables (HSL) + Tailwind 토큰으로 관리</span>
+    </h2>
+
+    <div class="swatch-group">
+      <div class="swatch-group-title">Primary — 브랜드 코랄</div>
+      <div class="grid-4">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FF6F61;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Primary (Fill)</div>
+            <div class="swatch-hex">#FF6F61 · HSL(5, 100%, 69%)</div>
+            <div class="swatch-usage">버튼 배경, 배지 배경, 강조 fill</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#C4453B;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Primary Text (WCAG AA)</div>
+            <div class="swatch-hex">#C4453B · 4.93:1 대비율</div>
+            <div class="swatch-usage">텍스트 전용. 흰 배경에만 사용</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FFE9E5;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Coral Soft</div>
+            <div class="swatch-hex">#FFE9E5</div>
+            <div class="swatch-usage">태그 배경, 베스트 아이콘 박스</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FFF8F6;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Coral Pale</div>
+            <div class="swatch-hex">#FFF8F6</div>
+            <div class="swatch-usage">PersonalGreeting 카드 배경</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="swatch-group">
+      <div class="swatch-group-title">Neutral — 배경 & 텍스트</div>
+      <div class="grid-4">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#F8F9FA;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Background</div>
+            <div class="swatch-hex">#F8F9FA · HSL(210, 17%, 98%)</div>
+            <div class="swatch-usage">페이지 전체 배경. 옅은 웜그레이</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FFFFFF; border: 1px solid #E5E7EB;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Card / Surface</div>
+            <div class="swatch-hex">#FFFFFF</div>
+            <div class="swatch-usage">카드, 모달, 팝오버 배경</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#111827;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Foreground</div>
+            <div class="swatch-hex">#111827 · HSL(222, 47%, 11%)</div>
+            <div class="swatch-usage">기본 텍스트. 차콜 블랙</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#6B7280;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Muted Foreground</div>
+            <div class="swatch-hex">#6B7280 · HSL(220, 9%, 38%)</div>
+            <div class="swatch-usage">보조 텍스트, 메타정보, 날짜</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="swatch-group">
+      <div class="swatch-group-title">Category — 아이콘 메뉴 6종 (박스 배경 + 스트로크)</div>
+      <div class="grid-6">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FFE9E5;"></div>
+          <div class="swatch-info" style="padding:8px 10px;">
+            <div class="swatch-name" style="font-size:12px;">베스트</div>
+            <div class="swatch-hex">BG: #FFE9E5</div>
+            <div style="width:100%; height:4px; background:#C4453B; border-radius:2px; margin-top:4px;"></div>
+            <div class="swatch-hex" style="margin-top:4px;">Stroke: #C4453B</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FFF1E5;"></div>
+          <div class="swatch-info" style="padding:8px 10px;">
+            <div class="swatch-name" style="font-size:12px;">사는이야기</div>
+            <div class="swatch-hex">BG: #FFF1E5</div>
+            <div style="width:100%; height:4px; background:#C7651E; border-radius:2px; margin-top:4px;"></div>
+            <div class="swatch-hex" style="margin-top:4px;">Stroke: #C7651E</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#E8F5E9;"></div>
+          <div class="swatch-info" style="padding:8px 10px;">
+            <div class="swatch-name" style="font-size:12px;">2막준비</div>
+            <div class="swatch-hex">BG: #E8F5E9</div>
+            <div style="width:100%; height:4px; background:#2E7D32; border-radius:2px; margin-top:4px;"></div>
+            <div class="swatch-hex" style="margin-top:4px;">Stroke: #2E7D32</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FFF8E1;"></div>
+          <div class="swatch-info" style="padding:8px 10px;">
+            <div class="swatch-name" style="font-size:12px;">웃음방</div>
+            <div class="swatch-hex">BG: #FFF8E1</div>
+            <div style="width:100%; height:4px; background:#A06900; border-radius:2px; margin-top:4px;"></div>
+            <div class="swatch-hex" style="margin-top:4px;">Stroke: #A06900</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#E3F2FD;"></div>
+          <div class="swatch-info" style="padding:8px 10px;">
+            <div class="swatch-name" style="font-size:12px;">매거진</div>
+            <div class="swatch-hex">BG: #E3F2FD</div>
+            <div style="width:100%; height:4px; background:#185FA5; border-radius:2px; margin-top:4px;"></div>
+            <div class="swatch-hex" style="margin-top:4px;">Stroke: #185FA5</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#F3E5F5;"></div>
+          <div class="swatch-info" style="padding:8px 10px;">
+            <div class="swatch-name" style="font-size:12px;">내일찾기</div>
+            <div class="swatch-hex">BG: #F3E5F5</div>
+            <div style="width:100%; height:4px; background:#6A1B9A; border-radius:2px; margin-top:4px;"></div>
+            <div class="swatch-hex" style="margin-top:4px;">Stroke: #6A1B9A</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="swatch-group">
+      <div class="swatch-group-title">Special — 외부 서비스 & 기능 색상</div>
+      <div class="grid-4">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FEE500;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Kakao</div>
+            <div class="swatch-hex">#FEE500 · 텍스트: #191919</div>
+            <div class="swatch-usage">카카오 로그인 버튼 전용</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:linear-gradient(90deg, #FF6B6B, #FF8E53);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Hot Gradient</div>
+            <div class="swatch-hex">#FF6B6B → #FF8E53</div>
+            <div class="swatch-usage">HOT 배지, 트렌딩 태그</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FF8C00;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Badge Editors</div>
+            <div class="swatch-hex">#FF8C00</div>
+            <div class="swatch-usage">에디터픽 배지</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#F44336;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Destructive</div>
+            <div class="swatch-hex">#F44336</div>
+            <div class="swatch-usage">삭제, 에러, 경고 버튼</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── 2. 그라디언트 ── -->
+  <section class="section" id="gradients">
+    <h2 class="section-title">2. 그라디언트 시스템
+      <span class="section-subtitle">Hero 슬라이더 배경 — linear-gradient(135deg)</span>
+    </h2>
+
+    <div class="grid-3" style="margin-bottom:32px;">
+      <div>
+        <div class="gradient-card" style="background: linear-gradient(135deg, #C4453B 0%, #FF6F61 50%, #FFB4A2 100%);">
+          <h3>인생 2막,<br>지금 시작해요</h3>
+          <p>우리 또래 이야기</p>
+          <span class="cta">지금 바로 →</span>
+        </div>
+        <p class="gradient-caption">Hero-1 (브랜드 코랄)<br>#C4453B → #FF6F61 → #FFB4A2</p>
+      </div>
+      <div>
+        <div class="gradient-card" style="background: linear-gradient(135deg, #C7651E 0%, #E89456 50%, #FAC775 100%);">
+          <h3>사는 이야기,<br>모두의 일상</h3>
+          <p>공감 가득 이야기</p>
+          <span class="cta">보러 가기 →</span>
+        </div>
+        <p class="gradient-caption">Hero-2 (사는이야기 오렌지)<br>#C7651E → #E89456 → #FAC775</p>
+      </div>
+      <div>
+        <div class="gradient-card" style="background: linear-gradient(135deg, #1B5E20 0%, #4A8C3A 50%, #97C459 100%);">
+          <h3>일자리,<br>새 출발점</h3>
+          <p>내일 찾기 일자리</p>
+          <span class="cta">찾아보기 →</span>
+        </div>
+        <p class="gradient-caption">Hero-3 (2막준비 그린)<br>#1B5E20 → #4A8C3A → #97C459</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <p style="font-size:14px; color:var(--muted); margin-bottom:12px;">
+        <strong>buildGradient() 함수</strong> — 어드민에서 themeColor, themeColorMid, themeColorEnd를 설정하면 자동 생성
+      </p>
+      <pre style="background:#1E293B; color:#94A3B8; padding:16px; border-radius:10px; font-size:13px; overflow-x:auto; line-height:1.7;">
+function buildGradient(slide) {
+  const from = slide.themeColor         // 필수
+  const mid  = slide.themeColorMid ?? slide.themeColor
+  const to   = slide.themeColorEnd ?? slide.themeColorMid ?? slide.themeColor
+  return `linear-gradient(135deg, ${from} 0%, ${mid} 50%, ${to} 100%)`
+}</pre>
+    </div>
+  </section>
+
+
+  <!-- ── 3. 타이포그래피 ── -->
+  <section class="section" id="typography">
+    <h2 class="section-title">3. 타이포그래피
+      <span class="section-subtitle">Pretendard Variable · 폰트 크기 3단계 동적 전환</span>
+    </h2>
+
+    <div class="card" style="margin-bottom:24px;">
+      <div class="typo-row">
+        <div class="typo-meta">
+          <div class="label">Heading</div>
+          <div class="size">--text-heading · 24px</div>
+        </div>
+        <div class="typo-sample" style="font-size:24px; font-weight:700; line-height:1.4;">우리 나이가 어때서</div>
+      </div>
+      <div class="typo-row">
+        <div class="typo-meta">
+          <div class="label">Title</div>
+          <div class="size">--text-title · 20px</div>
+        </div>
+        <div class="typo-sample" style="font-size:20px; font-weight:600; line-height:1.5;">베스트 인기글 · 커뮤니티 소식</div>
+      </div>
+      <div class="typo-row">
+        <div class="typo-meta">
+          <div class="label">Body (기본)</div>
+          <div class="size">--text-body · 18px</div>
+        </div>
+        <div class="typo-sample" style="font-size:18px; font-weight:400; line-height:1.75;">
+          오늘 날씨가 참 좋네요. 오랜만에 공원에 나가서 산책을 했어요.<br>
+          요즘 퇴직 후 어떻게 지내야 할지 고민이 많은데, 여기 오니 마음이 따뜻해집니다.
+        </div>
+      </div>
+      <div class="typo-row">
+        <div class="typo-meta">
+          <div class="label">Caption (최소)</div>
+          <div class="size">--text-caption · 15px</div>
+        </div>
+        <div class="typo-sample" style="font-size:15px; color:#6B7280; line-height:1.6;">
+          3시간 전 · 댓글 12 · 좋아요 47 · 조회수 328
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size:16px; font-weight:700; margin-bottom:16px;">폰트 크기 동적 전환 시스템 (3단계)</h3>
+    <p style="font-size:14px; color:var(--muted); margin-bottom:16px;">
+      헤더의 "가" 버튼을 누르면 전 페이지가 일괄 전환됩니다. <code style="background:var(--secondary); padding:2px 6px; border-radius:4px;">html[data-font-size]</code> 속성 기반 CSS 변수 오버라이드.
+    </p>
+
+    <div class="grid-3" style="margin-bottom:24px;">
+      <div class="font-level">
+        <div class="font-level-title">NORMAL (기본)</div>
+        <div class="font-level-row"><span class="font-level-key">--text-body</span><span class="font-level-val">18px</span><span style="font-size:18px;">본문 텍스트</span></div>
+        <div class="font-level-row"><span class="font-level-key">--text-caption</span><span class="font-level-val">15px</span><span style="font-size:15px; color:var(--muted);">메타정보</span></div>
+        <div class="font-level-row"><span class="font-level-key">--text-title</span><span class="font-level-val">20px</span><span style="font-size:20px; font-weight:600;">섹션 제목</span></div>
+        <div class="font-level-row"><span class="font-level-key">--text-heading</span><span class="font-level-val">24px</span><span style="font-size:24px; font-weight:700;">페이지 제목</span></div>
+        <div class="font-level-row"><span class="font-level-key">--icon-box-size</span><span class="font-level-val">48px</span><span style="font-size:12px; color:var(--muted);">아이콘 박스</span></div>
+      </div>
+      <div class="font-level" style="border-color:#FF6F61; border-width:2px;">
+        <div class="font-level-title" style="color:var(--coral);">LARGE (크게 설정)</div>
+        <div class="font-level-row"><span class="font-level-key">--text-body</span><span class="font-level-val">20px</span><span style="font-size:20px;">본문 텍스트</span></div>
+        <div class="font-level-row"><span class="font-level-key">--text-caption</span><span class="font-level-val">17px</span><span style="font-size:17px; color:var(--muted);">메타정보</span></div>
+        <div class="font-level-row"><span class="font-level-key">--text-title</span><span class="font-level-val">24px</span><span style="font-size:24px; font-weight:600;">섹션 제목</span></div>
+        <div class="font-level-row"><span class="font-level-key">--text-heading</span><span class="font-level-val">28px</span><span style="font-size:28px; font-weight:700;">페이지 제목</span></div>
+        <div class="font-level-row"><span class="font-level-key">--icon-box-size</span><span class="font-level-val">56px</span><span style="font-size:12px; color:var(--muted);">아이콘 박스</span></div>
+      </div>
+      <div class="font-level">
+        <div class="font-level-title">XLARGE (매우 크게)</div>
+        <div class="font-level-row"><span class="font-level-key">--text-body</span><span class="font-level-val">24px</span><span style="font-size:24px;">본문 텍스트</span></div>
+        <div class="font-level-row"><span class="font-level-key">--text-caption</span><span class="font-level-val">20px</span><span style="font-size:20px; color:var(--muted);">메타정보</span></div>
+        <div class="font-level-row"><span class="font-level-key">--text-title</span><span class="font-level-val">28px</span><span style="font-size:28px; font-weight:600;">섹션 제목</span></div>
+        <div class="font-level-row"><span class="font-level-key">--text-heading</span><span class="font-level-val">32px</span><span style="font-size:32px; font-weight:700;">페이지 제목</span></div>
+        <div class="font-level-row"><span class="font-level-key">--icon-box-size</span><span class="font-level-val">64px</span><span style="font-size:12px; color:var(--muted);">아이콘 박스</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p style="font-size:14px; font-weight:600; margin-bottom:12px;">Tailwind fontSize 스케일 (tailwind.config.ts)</p>
+      <table class="font-scale-table">
+        <thead><tr><th>클래스</th><th>크기</th><th>line-height</th><th>용도</th></tr></thead>
+        <tbody>
+          <tr><td>text-xs</td><td>15px</td><td>1.4</td><td>최소 캡션 (WCAG 준수 하한)</td></tr>
+          <tr><td>text-sm</td><td>16px</td><td>1.5</td><td>소형 UI 텍스트</td></tr>
+          <tr><td>text-base</td><td>18px</td><td>1.6</td><td>기본 본문</td></tr>
+          <tr><td>text-lg</td><td>20px</td><td>1.6</td><td>중형 본문, 섹션 부제목</td></tr>
+          <tr><td>text-xl</td><td>24px</td><td>1.4</td><td>섹션 제목</td></tr>
+          <tr><td>text-2xl</td><td>28px</td><td>1.3</td><td>페이지 타이틀</td></tr>
+          <tr><td>text-3xl</td><td>36px</td><td>1.2</td><td>Hero 대제목</td></tr>
+          <tr><td>text-4xl</td><td>44px</td><td>1.2</td><td>랜딩 대형 헤드라인</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <!-- ── 4. 아이콘 메뉴 ── -->
+  <section class="section" id="iconmenu">
+    <h2 class="section-title">4. 아이콘 메뉴 (IconMenu)
+      <span class="section-subtitle">6개 카테고리 · 컬러 박스 + 라벨 · peek 스크롤 (모바일)</span>
+    </h2>
+
+    <div class="card" style="margin-bottom:20px;">
+      <p style="font-size:14px; color:var(--muted); margin-bottom:16px;">
+        Header 아래 sticky 고정. 모바일에서 6번째 아이콘이 절반 잘려 스크롤 유도 (peek 패턴).
+      </p>
+
+      <!-- 아이콘 메뉴 시뮬레이션 -->
+      <div style="background:white; border:1px solid var(--border); border-radius:12px; padding:12px 0; overflow:hidden;">
+        <div class="icon-menu">
+          <div class="icon-item icon-active">
+            <div class="icon-box" style="background:#FFE9E5; color:#C4453B; outline-color:#C4453B;">
+              ★
+            </div>
+            <span class="icon-label" style="color:#C4453B; font-weight:600;">베스트</span>
+          </div>
+          <div class="icon-item">
+            <div class="icon-box" style="background:#FFF1E5; color:#C7651E;">💬</div>
+            <span class="icon-label">사는이야기</span>
+          </div>
+          <div class="icon-item">
+            <div class="icon-box" style="background:#E8F5E9; color:#2E7D32;">🌱</div>
+            <span class="icon-label">2막준비</span>
+          </div>
+          <div class="icon-item">
+            <div class="icon-box" style="background:#FFF8E1; color:#A06900;">😄</div>
+            <span class="icon-label">웃음방</span>
+          </div>
+          <div class="icon-item">
+            <div class="icon-box" style="background:#E3F2FD; color:#185FA5;">📖</div>
+            <span class="icon-label">매거진</span>
+          </div>
+          <div class="icon-item" style="opacity:0.5;">
+            <div class="icon-box" style="background:#F3E5F5; color:#6A1B9A;">💼</div>
+            <span class="icon-label">내일찾기</span>
+          </div>
+        </div>
+        <p style="font-size:11px; color:#9CA3AF; text-align:center; padding:6px 0 0;">← 스크롤 가능 (모바일) · 6번째는 peek으로 반만 보임</p>
+      </div>
+
+      <div style="margin-top:16px; background:var(--secondary); border-radius:10px; padding:14px 16px; font-size:13px;">
+        <strong>Active 상태:</strong> 박스에 stroke outline (2px) · 라벨 font-weight 600 · 하단 코랄 밑줄 dot<br>
+        <strong>아이콘 박스:</strong> CSS var(--icon-box-size) = 48/56/64px (폰트 크기 3단계에 따라)<br>
+        <strong>SVG 아이콘:</strong> var(--icon-svg-size) = 22/26/30px · 1.75px stroke · currentColor 상속
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── 5. 버튼 & CTA ── -->
+  <section class="section" id="buttons">
+    <h2 class="section-title">5. 버튼 & CTA
+      <span class="section-subtitle">모바일 최소 52px · 데스크탑 48px</span>
+    </h2>
+
+    <div class="card" style="margin-bottom:20px;">
+      <p style="font-size:14px; color:var(--muted); margin-bottom:20px;">6가지 variant · height: 52px (mobile) / 48px (desktop)</p>
+
+      <!-- Variants -->
+      <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
+        <button class="btn btn-primary btn-lg">기본 버튼 (Primary)</button>
+        <button class="btn btn-secondary btn-lg">보조 버튼 (Secondary)</button>
+        <button class="btn btn-outline btn-lg">아웃라인 (Outline)</button>
+        <button class="btn btn-destructive btn-lg">삭제 (Destructive)</button>
+        <button class="btn btn-ghost btn-lg">고스트 (Ghost)</button>
+      </div>
+
+      <!-- Kakao -->
+      <div style="max-width:360px; margin-bottom:24px;">
+        <p style="font-size:13px; color:var(--muted); margin-bottom:8px;">카카오 로그인 버튼 (52px, 항상 full-width)</p>
+        <button class="btn btn-kakao btn-lg btn-full" style="border-radius:12px; font-size:16px;">
+          💛 카카오로 30초 가입
+        </button>
+      </div>
+
+      <!-- Sizes -->
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <button class="btn btn-primary btn-lg">Large (52px)</button>
+        <button class="btn btn-primary btn-md">Medium (44px)</button>
+        <button class="btn btn-primary btn-sm">Small (36px)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <p style="font-size:14px; font-weight:600; margin-bottom:12px;">버튼 규칙</p>
+      <table class="rule-table">
+        <thead><tr><th>항목</th><th>값</th><th>비고</th></tr></thead>
+        <tbody>
+          <tr><td>모바일 높이</td><td>52px</td><td>CLAUDE.md 절대 규칙</td></tr>
+          <tr><td>데스크탑 높이</td><td>48px</td><td>lg: 이상에서 적용</td></tr>
+          <tr><td>border-radius</td><td>12px (rounded-xl)</td><td>--radius 기반</td></tr>
+          <tr><td>font-weight</td><td>600 (font-semibold)</td><td>가독성 확보</td></tr>
+          <tr><td>font-size</td><td>최소 15px</td><td>btn-sm도 14px</td></tr>
+          <tr><td>코랄 버튼 텍스트</td><td>#FFFFFF</td><td>primary-foreground</td></tr>
+          <tr><td>카카오 버튼 텍스트</td><td>#191919</td><td>카카오 브랜드 가이드</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <!-- ── 6. 카드 컴포넌트 ── -->
+  <section class="section" id="cards">
+    <h2 class="section-title">6. 카드 컴포넌트
+      <span class="section-subtitle">게시글 카드 · 개인화 카드 · 가입 유도 카드</span>
+    </h2>
+
+    <div class="grid-3" style="margin-bottom:24px;">
+      <!-- 게시글 카드 -->
+      <div class="post-card">
+        <div class="post-card-header">
+          <div class="avatar">👩</div>
+          <div>
+            <div style="font-size:14px; font-weight:600;">김민정</div>
+            <div style="font-size:12px; color:var(--muted);">사는이야기 · 2시간 전</div>
+          </div>
+          <span class="badge badge-hot" style="margin-left:auto;">HOT</span>
+        </div>
+        <p class="post-card-title">오늘 남편이랑 첫 해외여행 준비 중인데요...</p>
+        <p class="post-card-excerpt">퇴직 후 처음으로 같이 유럽 여행을 가보려고요. 어디가 좋을지 추천해주세요 😊</p>
+        <div class="post-card-footer">
+          <span class="post-meta">❤️ 47</span>
+          <span class="post-meta">💬 12</span>
+          <span class="post-meta">👁️ 328</span>
+        </div>
+      </div>
+
+      <!-- PersonalGreeting 카드 -->
+      <div class="post-card" style="background:var(--coral-pale); border-color:var(--coral-border);">
+        <div style="font-size:13px; color:var(--coral-text); font-weight:600; margin-bottom:8px;">오늘도 반가워요 👋</div>
+        <div style="font-size:20px; font-weight:700; color:var(--text); margin-bottom:4px;">김철수님</div>
+        <div style="font-size:14px; color:var(--muted);">오늘 우나어에 무슨 일이 있었는지 확인해볼까요?</div>
+        <div style="display:flex; gap:12px; margin-top:16px;">
+          <div style="text-align:center; flex:1; background:white; border-radius:10px; padding:12px 8px; border:1px solid var(--coral-border);">
+            <div style="font-size:22px; font-weight:700; color:var(--coral-text);">3</div>
+            <div style="font-size:12px; color:var(--muted);">오늘 내 글</div>
+          </div>
+          <div style="text-align:center; flex:1; background:white; border-radius:10px; padding:12px 8px; border:1px solid var(--coral-border);">
+            <div style="font-size:22px; font-weight:700; color:var(--coral-text);">12</div>
+            <div style="font-size:12px; color:var(--muted);">새 댓글</div>
+          </div>
+          <div style="text-align:center; flex:1; background:white; border-radius:10px; padding:12px 8px; border:1px solid var(--coral-border);">
+            <div style="font-size:22px; font-weight:700; color:var(--coral-text);">47</div>
+            <div style="font-size:12px; color:var(--muted);">받은 공감</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SignupCard 카드 -->
+      <div class="post-card" style="background: linear-gradient(135deg, var(--coral-pale), white); border-color:var(--coral-border); text-align:center;">
+        <div style="font-size:32px; margin-bottom:12px;">👋</div>
+        <div style="font-size:18px; font-weight:700; margin-bottom:8px;">우리 또래끼리 모인 곳</div>
+        <div style="font-size:14px; color:var(--muted); margin-bottom:20px; line-height:1.6;">
+          글 쓰고, 공감하고, 댓글 달고—<br>가입하면 훨씬 더 재미있어요
+        </div>
+        <button class="btn btn-kakao btn-lg btn-full" style="border-radius:12px; font-size:15px;">
+          💛 카카오로 30초 가입
+        </button>
+        <p style="font-size:12px; color:#9CA3AF; margin-top:10px;">읽기는 누구나 가능해요</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── 7. 배지 & 칩 ── -->
+  <section class="section" id="badges">
+    <h2 class="section-title">7. 배지 & 칩
+      <span class="section-subtitle">인라인 태그 시스템</span>
+    </h2>
+
+    <div class="card" style="margin-bottom:20px;">
+      <p style="font-size:14px; color:var(--muted); margin-bottom:16px;">배지 — 게시글 상태, 카테고리 태그</p>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;">
+        <span class="badge badge-primary">우나어 추천</span>
+        <span class="badge badge-hot">🔥 HOT</span>
+        <span class="badge badge-editors">에디터픽</span>
+        <span class="badge badge-new">NEW</span>
+        <span class="badge badge-secondary">사는이야기</span>
+        <span class="badge badge-secondary">2막준비</span>
+        <span class="badge" style="background:var(--coral-soft); color:var(--coral-text);">#일자리</span>
+        <span class="badge" style="background:#E3F2FD; color:#185FA5;">#여행</span>
+        <span class="badge" style="background:#E8F5E9; color:#2E7D32;">#건강</span>
+      </div>
+
+      <p style="font-size:14px; color:var(--muted); margin-bottom:12px;">칩 — 필터, 선택 UI</p>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <button class="chip chip-active">전체</button>
+        <button class="chip">사는이야기</button>
+        <button class="chip">2막준비</button>
+        <button class="chip">웃음방</button>
+        <button class="chip">매거진</button>
+        <button class="chip">내일찾기</button>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── 8. 스페이싱 ── -->
+  <section class="section" id="spacing">
+    <h2 class="section-title">8. 스페이싱 시스템
+      <span class="section-subtitle">rem 기반 고정 (폰트 크기 변경에 영향 없음)</span>
+    </h2>
+
+    <div class="card">
+      <p style="font-size:14px; color:var(--muted); margin-bottom:16px;">
+        <strong>핵심 원칙:</strong> html root font-size = 16px 고정. 동적 폰트 시스템이 rem 레이아웃에 영향을 주지 않음.
+        패딩/마진/높이는 항상 동일한 px값 유지.
+      </p>
+      <div class="spacing-item"><div class="spacing-bar" style="width:4px;"></div><div class="spacing-label">1px</div><div class="spacing-desc">border, divider</div></div>
+      <div class="spacing-item"><div class="spacing-bar" style="width:4px;"></div><div class="spacing-label">4px</div><div class="spacing-desc">gap-1 · 아이콘 내부 여백</div></div>
+      <div class="spacing-item"><div class="spacing-bar" style="width:8px;"></div><div class="spacing-label">8px</div><div class="spacing-desc">gap-2 · 인라인 요소 간격</div></div>
+      <div class="spacing-item"><div class="spacing-bar" style="width:12px;"></div><div class="spacing-label">12px</div><div class="spacing-desc">gap-3 · 배지, 칩 패딩</div></div>
+      <div class="spacing-item"><div class="spacing-bar" style="width:16px;"></div><div class="spacing-label">16px</div><div class="spacing-desc">p-4 · 카드 기본 패딩</div></div>
+      <div class="spacing-item"><div class="spacing-bar" style="width:20px;"></div><div class="spacing-label">20px</div><div class="spacing-desc">p-5 · 폼 필드 패딩</div></div>
+      <div class="spacing-item"><div class="spacing-bar" style="width:24px;"></div><div class="spacing-label">24px</div><div class="spacing-desc">p-6 · 섹션 간 여백</div></div>
+      <div class="spacing-item"><div class="spacing-bar" style="width:32px;"></div><div class="spacing-label">32px</div><div class="spacing-desc">p-8 · 페이지 좌우 패딩</div></div>
+      <div class="spacing-item"><div class="spacing-bar" style="width:48px;"></div><div class="spacing-label">48px</div><div class="spacing-desc">Header height · FAB size</div></div>
+      <div class="spacing-item"><div class="spacing-bar" style="width:52px;"></div><div class="spacing-label">52px</div><div class="spacing-desc">✅ 모바일 최소 터치 타겟 (CLAUDE.md 절대 규칙)</div></div>
+      <div class="spacing-item"><div class="spacing-bar" style="width:64px;"></div><div class="spacing-label">64px</div><div class="spacing-desc">Header sticky height (모바일)</div></div>
+      <div class="spacing-item"><div class="spacing-bar" style="width:96px;"></div><div class="spacing-label">96px</div><div class="spacing-desc">FAB bottom offset (StickyBottomAd 위)</div></div>
+    </div>
+  </section>
+
+
+  <!-- ── 9. 레이아웃 구조 ── -->
+  <section class="section" id="layout">
+    <h2 class="section-title">9. 레이아웃 구조
+      <span class="section-subtitle">모바일 375px · 데스크탑 1200px max</span>
+    </h2>
+
+    <div class="grid-2">
+      <!-- 모바일 레이아웃 -->
+      <div>
+        <p style="font-size:14px; font-weight:600; margin-bottom:12px;">📱 모바일 (0 ~ 1023px)</p>
+        <div class="layout-visual" style="position:relative; max-width:280px;">
+          <div class="layout-bar lv-promo">🎉 TopPromoBanner (~40px) · sessionStorage 닫기</div>
+          <div class="layout-bar lv-header">📍 Header (64px, sticky, z-100)</div>
+          <div class="layout-bar lv-iconmenu">
+            <span style="font-size:10px;">★베스트 💬사는이야기 🌱2막 😄웃음 📖매거진 [절반➡]</span>
+          </div>
+          <div class="lv-hero">Hero 슬라이더 (그라디언트, 5초 자동재생)</div>
+          <div class="lv-section">PersonalGreeting (회원만)</div>
+          <div class="lv-section">TrendingSection (인기글 5개)</div>
+          <div class="lv-ad">AdSense HOME_SECTION #9127452149 · 광고</div>
+          <div class="lv-section">CommunitySection</div>
+          <div class="lv-ad">Coupang 320×100 · 광고</div>
+          <div class="lv-section">Life2Section (2막준비)</div>
+          <div class="lv-ad">AdSense IN_FEED #5592036395 · 광고</div>
+          <div class="lv-section">MagazineSection (가로스크롤)</div>
+          <div class="lv-ad">CoupangCarousel · 광고</div>
+          <div class="lv-section">JobSection</div>
+          <div class="lv-section">MyActivity + ActivityPulse (회원) / ActivityPulse (비회원)</div>
+          <div class="lv-section">SignupCard (비회원만)</div>
+          <div class="layout-bar" style="background:var(--secondary); color:var(--muted);">Footer</div>
+          <div class="lv-sticky-ad">StickyBottomAd (스크롤 50%+ 후 · z-90)</div>
+          <div class="lv-fab">✏️</div>
+        </div>
+      </div>
+
+      <!-- 데스크탑 레이아웃 -->
+      <div>
+        <p style="font-size:14px; font-weight:600; margin-bottom:12px;">🖥️ 데스크탑 (1024px+)</p>
+        <div class="layout-visual">
+          <div class="layout-bar lv-promo">🎉 TopPromoBanner (전체 너비)</div>
+          <div class="layout-bar" style="background:#1E293B; color:#94A3B8;">GNB (상단 네비 바 · sticky)</div>
+          <div class="lv-hero" style="height:100px;">Hero 슬라이더 (최대 360px, 텍스트 오버레이)</div>
+          <div style="display:grid; grid-template-columns:1fr 300px; gap:12px; padding:12px;">
+            <div>
+              <div class="lv-section" style="margin-bottom:8px;">TrendingSection (2열 그리드)</div>
+              <div class="lv-section" style="margin-bottom:8px;">CommunitySection · Magazine · Jobs</div>
+            </div>
+            <div style="background:var(--secondary); border-radius:10px; padding:12px; font-size:12px; color:var(--muted); text-align:center;">
+              HomeSidebar<br>(300px sticky)<br><br>AdSense<br>PC_SIDEBAR
+            </div>
+          </div>
+          <div class="layout-bar" style="background:var(--secondary); color:var(--muted);">Footer</div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <p style="font-size:13px; font-weight:600; margin-bottom:8px;">레이아웃 코드 패턴</p>
+          <pre style="background:#1E293B; color:#94A3B8; padding:12px; border-radius:8px; font-size:12px; overflow-x:auto;">
+&lt;div class="max-w-[1200px] mx-auto"&gt;
+  &lt;HeroSlider /&gt;
+  &lt;div class="block
+    lg:grid
+    lg:grid-cols-[1fr_300px]
+    lg:gap-5
+    lg:px-8"&gt;
+    &lt;main&gt;...섹션들&lt;/main&gt;
+    &lt;HomeSidebar /&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── 10. 시니어 친화 규칙 ── -->
+  <section class="section" id="senior">
+    <h2 class="section-title">10. 시니어 친화 규칙 (절대 준수)
+      <span class="section-subtitle">CLAUDE.md에 명시된 불변 원칙 — 어기면 QA 반려</span>
+    </h2>
+
+    <div class="card">
+      <table class="rule-table">
+        <thead><tr><th>항목</th><th>값</th><th>적용 범위</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>터치 타겟</strong></td>
+            <td>최소 52px (모바일)<br>최소 48px (데스크탑)</td>
+            <td>모든 버튼, 링크, 인풋, 탭 항목<br><span class="rule-note">WCAG 2.1 Success Criterion 2.5.5 초과 준수</span></td>
+          </tr>
+          <tr>
+            <td><strong>폰트 최소</strong></td>
+            <td>15px (캡션만)<br>18px (본문 기본)</td>
+            <td>페이지 내 모든 텍스트<br><span class="rule-note">12px, 13px, 11px 사용 시 즉시 반려</span></td>
+          </tr>
+          <tr>
+            <td><strong>색상 대비</strong></td>
+            <td>4.5:1 이상 (WCAG AA)</td>
+            <td>텍스트 vs 배경<br><span class="rule-note">#FF6F61은 텍스트용 불가 → #C4453B 사용</span></td>
+          </tr>
+          <tr>
+            <td><strong>line-height</strong></td>
+            <td>1.75 (본문)</td>
+            <td>post-content · 게시글 본문<br><span class="rule-note">줄간격 넓어야 읽기 편함</span></td>
+          </tr>
+          <tr>
+            <td><strong>word-break</strong></td>
+            <td>keep-all</td>
+            <td>모든 한글 텍스트<br><span class="rule-note">어절 단위 줄바꿈 (음절 단위 방지)</span></td>
+          </tr>
+          <tr>
+            <td><strong>금지 용어</strong></td>
+            <td>"시니어", "액티브시니어"</td>
+            <td>UI 텍스트, 코드 주석 전부<br><span class="rule-note">대체: "우리 또래", "50대 60대", "인생 2막"</span></td>
+          </tr>
+          <tr>
+            <td><strong>모달 패턴</strong></td>
+            <td>모바일: 하단 풀스크린 시트<br>데스크탑: 중앙 팝업</td>
+            <td>로그인 안내, 확인 모달<br><span class="rule-note">하단 시트는 엄지손가락 접근성 우수</span></td>
+          </tr>
+          <tr>
+            <td><strong>이미지</strong></td>
+            <td>next/image 필수</td>
+            <td>모든 이미지 컴포넌트<br><span class="rule-note">WebP + lazy load + CLS 방지</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <!-- ── 11. 색상 대비 ── -->
+  <section class="section" id="contrast">
+    <h2 class="section-title">11. 색상 대비 (접근성 WCAG AA)
+      <span class="section-subtitle">4.5:1 이상 = PASS · 3:1 이상 = Large text PASS</span>
+    </h2>
+
+    <div class="grid-4">
+      <div class="contrast-swatch">
+        <div class="contrast-bg" style="background:#111827; color:white;">텍스트 샘플</div>
+        <div class="contrast-info">
+          <div class="contrast-ratio contrast-pass">21:1 ✅ PASS</div>
+          <div class="contrast-desc">#111827 on #FFFFFF<br>본문 기본 텍스트</div>
+        </div>
+      </div>
+      <div class="contrast-swatch">
+        <div class="contrast-bg" style="background:#C4453B; color:white;">텍스트 샘플</div>
+        <div class="contrast-info">
+          <div class="contrast-ratio contrast-pass">4.93:1 ✅ PASS</div>
+          <div class="contrast-desc">#C4453B on #FFFFFF<br>코랄 텍스트 (primary-text)</div>
+        </div>
+      </div>
+      <div class="contrast-swatch">
+        <div class="contrast-bg" style="background:#FF6F61; color:white;">텍스트 샘플</div>
+        <div class="contrast-info">
+          <div class="contrast-ratio contrast-fail">2.79:1 ❌ FAIL</div>
+          <div class="contrast-desc">#FF6F61 on #FFFFFF<br>⚠️ 텍스트 용도 불가</div>
+        </div>
+      </div>
+      <div class="contrast-swatch">
+        <div class="contrast-bg" style="background:#6B7280; color:white;">텍스트 샘플</div>
+        <div class="contrast-info">
+          <div class="contrast-ratio contrast-pass">4.61:1 ✅ PASS</div>
+          <div class="contrast-desc">#6B7280 on #FFFFFF<br>muted-foreground</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px; background:#FFF8DC; border-color:#FFD700;">
+      <p style="font-size:14px;"><strong>⚠️ 중요:</strong> 브랜드 코랄 #FF6F61은 배경/채움(Fill)에만 사용. 텍스트에는 반드시 #C4453B를 사용해야 WCAG AA 통과.</p>
+    </div>
+  </section>
+
+
+  <!-- ── 12. 전체 디자인 토큰 ── -->
+  <section class="section" id="tokens">
+    <h2 class="section-title">12. 전체 CSS 디자인 토큰
+      <span class="section-subtitle">globals.css :root 변수 — 코드에서 그대로 사용 가능</span>
+    </h2>
+
+    <div class="card">
+      <pre style="background:#1E293B; color:#94A3B8; padding:24px; border-radius:12px; font-size:12px; overflow-x:auto; line-height:2;">
+<span style="color:#60A5FA;">/* ── Core Palette ── */</span>
+<span style="color:#FBBF24;">--background:</span>    210 17% 98%;   <span style="color:#64748B;">/* #F8F9FA */</span>
+<span style="color:#FBBF24;">--foreground:</span>    222 47% 11%;   <span style="color:#64748B;">/* #111827 */</span>
+<span style="color:#FBBF24;">--card:</span>          0 0% 100%;     <span style="color:#64748B;">/* #FFFFFF */</span>
+<span style="color:#FBBF24;">--primary:</span>       5 100% 69%;    <span style="color:#64748B;">/* #FF6F61 (fill only) */</span>
+<span style="color:#FBBF24;">--primary-text:</span>  5 55% 50%;     <span style="color:#64748B;">/* #C4453B (text, WCAG AA) */</span>
+<span style="color:#FBBF24;">--secondary:</span>     220 14% 96%;   <span style="color:#64748B;">/* #F1F3F5 */</span>
+<span style="color:#FBBF24;">--muted-foreground:</span> 220 9% 38%;  <span style="color:#64748B;">/* #6B7280 */</span>
+<span style="color:#FBBF24;">--border:</span>        220 13% 91%;   <span style="color:#64748B;">/* #E5E7EB */</span>
+<span style="color:#FBBF24;">--destructive:</span>   4 90% 58%;     <span style="color:#64748B;">/* #F44336 */</span>
+<span style="color:#FBBF24;">--radius:</span>        0.75rem;       <span style="color:#64748B;">/* 12px */</span>
+
+<span style="color:#60A5FA;">/* ── Hero 그라디언트 (v0.3) ── */</span>
+<span style="color:#FBBF24;">--hero-1-from:</span> #C4453B;  <span style="color:#FBBF24;">--hero-1-mid:</span> #FF6F61;  <span style="color:#FBBF24;">--hero-1-to:</span> #FFB4A2;
+<span style="color:#FBBF24;">--hero-2-from:</span> #C7651E;  <span style="color:#FBBF24;">--hero-2-mid:</span> #E89456;  <span style="color:#FBBF24;">--hero-2-to:</span> #FAC775;
+<span style="color:#FBBF24;">--hero-3-from:</span> #1B5E20;  <span style="color:#FBBF24;">--hero-3-mid:</span> #4A8C3A;  <span style="color:#FBBF24;">--hero-3-to:</span> #97C459;
+
+<span style="color:#60A5FA;">/* ── IconMenu 카테고리 ── */</span>
+<span style="color:#FBBF24;">--icon-best-bg:</span>     #FFE9E5; <span style="color:#FBBF24;">--icon-best-stroke:</span>     #C4453B;
+<span style="color:#FBBF24;">--icon-life-bg:</span>     #FFF1E5; <span style="color:#FBBF24;">--icon-life-stroke:</span>     #C7651E;
+<span style="color:#FBBF24;">--icon-life2-bg:</span>    #E8F5E9; <span style="color:#FBBF24;">--icon-life2-stroke:</span>    #2E7D32;
+<span style="color:#FBBF24;">--icon-laugh-bg:</span>    #FFF8E1; <span style="color:#FBBF24;">--icon-laugh-stroke:</span>    #A06900;
+<span style="color:#FBBF24;">--icon-magazine-bg:</span> #E3F2FD; <span style="color:#FBBF24;">--icon-magazine-stroke:</span> #185FA5;
+<span style="color:#FBBF24;">--icon-job-bg:</span>      #F3E5F5; <span style="color:#FBBF24;">--icon-job-stroke:</span>      #6A1B9A;
+
+<span style="color:#60A5FA;">/* ── Surface (보조) ── */</span>
+<span style="color:#FBBF24;">--surface-coral-soft:</span> #FFE9E5;
+<span style="color:#FBBF24;">--surface-coral-pale:</span> #FFF8F6;
+<span style="color:#FBBF24;">--border-coral-soft:</span>  #FFD4CC;
+<span style="color:#FBBF24;">--kakao-bg:</span>           #FEE500;
+<span style="color:#FBBF24;">--kakao-text:</span>         #191919;
+
+<span style="color:#60A5FA;">/* ── 동적 폰트 (NORMAL 기본값) ── */</span>
+<span style="color:#FBBF24;">--text-body:</span>    1.125rem;   <span style="color:#64748B;">/* 18px */</span>
+<span style="color:#FBBF24;">--text-caption:</span> 0.9375rem;  <span style="color:#64748B;">/* 15px */</span>
+<span style="color:#FBBF24;">--text-title:</span>   1.25rem;    <span style="color:#64748B;">/* 20px */</span>
+<span style="color:#FBBF24;">--text-heading:</span> 1.5rem;     <span style="color:#64748B;">/* 24px */</span>
+
+<span style="color:#60A5FA;">/* ── IconMenu 반응형 ── */</span>
+<span style="color:#FBBF24;">--icon-box-size:</span>    3rem;      <span style="color:#64748B;">/* 48px */</span>
+<span style="color:#FBBF24;">--icon-svg-size:</span>    1.375rem;  <span style="color:#64748B;">/* 22px */</span>
+<span style="color:#FBBF24;">--icon-container-w:</span> 4.5rem;   <span style="color:#64748B;">/* 72px */</span></pre>
+    </div>
+  </section>
+
+
+  <!-- ── 디자이너 피드백 요청 ── -->
+  <section class="section">
+    <h2 class="section-title" style="border-color:#FEE500;">디자이너 피드백 요청 항목</h2>
+    <div class="feedback-box">
+      <h3>이 문서를 보고 아래 항목에 대한 의견을 부탁드립니다</h3>
+
+      <div class="feedback-item">
+        <span class="feedback-num">1</span>
+        <div><strong>아이콘 메뉴 카테고리 컬러</strong> — 6개 박스 색상(베스트/사는이야기/2막준비/웃음방/매거진/내일찾기)이 전체 톤과 어울리나요? 더 통일감 있게 가는 게 좋을까요?</div>
+      </div>
+      <div class="feedback-item">
+        <span class="feedback-num">2</span>
+        <div><strong>Hero 그라디언트 3종</strong> — 코랄/오렌지/그린 3가지 방향성이 브랜드에 맞는지, 개선할 색상 방향이 있는지?</div>
+      </div>
+      <div class="feedback-item">
+        <span class="feedback-num">3</span>
+        <div><strong>카드 radius</strong> — 현재 12px(rounded-xl). 더 둥글게 16px이나, 더 각지게 8px로 가는 게 나을지?</div>
+      </div>
+      <div class="feedback-item">
+        <span class="feedback-num">4</span>
+        <div><strong>타이포그래피 계층</strong> — 18px 본문 / 20px 제목 / 24px 헤딩. 5060 대상 서비스에서 더 큰 차이가 필요한지?</div>
+      </div>
+      <div class="feedback-item">
+        <span class="feedback-num">5</span>
+        <div><strong>브랜드 코랄 #FF6F61</strong> — 텍스트엔 #C4453B를 써야 해서 코랄이 fill에만 쓰임. 이 구분이 시각적으로 일관성 있어 보이는지?</div>
+      </div>
+      <div class="feedback-item">
+        <span class="feedback-num">6</span>
+        <div><strong>PersonalGreeting 카드</strong> — 코랄 pale 배경(#FFF8F6) + 코랄 테두리. 너무 강하거나 약하지 않은지?</div>
+      </div>
+      <div class="feedback-item">
+        <span class="feedback-num">7</span>
+        <div><strong>전반적 톤</strong> — 현재 "따뜻하고 가독성 좋은" 방향. 더 세련되게, 또는 더 친근하게 수정할 지점이 있는지?</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── 푸터 ── -->
+  <footer style="text-align:center; padding:32px 0; color:var(--muted); font-size:13px;">
+    <p><strong>우나어 디자인 시스템 v0.3</strong> · 2026-04-27</p>
+    <p style="margin-top:4px;">Pretendard Variable · Tailwind CSS · shadcn/ui · Next.js 14</p>
+    <p style="margin-top:8px; color:#9CA3AF;">이 문서는 <code>docs/design/DESIGN_SYSTEM_VISUAL.html</code>에 위치합니다</p>
+  </footer>
+
+</div>
+</body>
+</html>

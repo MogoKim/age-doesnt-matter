@@ -108,6 +108,20 @@
 - **큰 작업 분할**: 파일 5개 이상 변경이 예상되면 서브에이전트(Agent tool)로 분할. 메인 컨텍스트는 교통정리만
 - **점진적 공개**: 스킬/참조 문서는 메인 파일에 개요만, 상세는 하위 파일로 분리. 필요할 때만 읽기
 
+## 기능 라이프사이클 규칙 (자동 적용 — 요청 없이도 실행)
+
+> **단일 진실의 원천**: `docs/features/REGISTRY.md` | 상세 규칙: `.claude/rules/feature-lifecycle.md`
+
+| 작업 유형 | Claude 자동 실행 사항 |
+|---------|-------------------|
+| **신규 기능 추가** | REGISTRY.md 행 추가 + `docs/features/{ID}-{name}.md` 생성 (커밋 전) |
+| **기존 기능 개선** | 해당 feature 문서 수정 이력 한 줄 추가 + REGISTRY 날짜 갱신 |
+| **기능 제거** | REGISTRY ARCHIVED + 제거 체크리스트 (runner.ts, GHA, plist, env 정리) |
+| **버그수정/리팩토링** | 면제 (수정 이력 추가 권장) |
+
+- **PATH MAP**: `docs/features/REGISTRY.md` PATH MAP 섹션 → 파일 경로로 Feature ID 자동 매핑
+- **/done 연동**: Gate 2-F에서 자동 체크 (커밋 블로킹 없음, 경고만)
+
 ## 스킬 라우팅 규칙
 
 다음 요청이 들어오면 코드 작성 전에 해당 스킬을 먼저 실행:

@@ -42,7 +42,7 @@ export default function TopPromoBannerClient({
     >
       {/* 태그 칩 */}
       {tag && (
-        <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full bg-white/20 text-white text-[12px] font-semibold leading-none whitespace-nowrap">
+        <span className="shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full bg-white/20 text-white text-caption font-semibold leading-none whitespace-nowrap">
           {tag}
         </span>
       )}

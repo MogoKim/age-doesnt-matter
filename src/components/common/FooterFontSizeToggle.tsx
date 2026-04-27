@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { useFontSize } from '@/components/common/FontSizeProvider'
 
 const SIZES = [
-  { key: 'NORMAL', label: '가', class: 'text-[14px]' },
+  { key: 'NORMAL', label: '가', class: 'text-[15px]' },
   { key: 'LARGE',  label: '가', class: 'text-[18px]' },
   { key: 'XLARGE', label: '가', class: 'text-[22px]' },
 ] as const

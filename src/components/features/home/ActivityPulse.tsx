@@ -27,7 +27,7 @@ export default function ActivityPulse({ activeCount = 0, recentActivities = [] }
   return (
     <section className="py-4 px-4 lg:px-0">
       {activeCount > 0 && (
-        <p className="text-[13px] text-muted-foreground mb-2 px-1">
+        <p className="text-caption text-muted-foreground mb-2 px-1">
           지금 이 시간 <span className="font-semibold text-foreground">{activeCount}개</span>의 글이 올라왔어요
         </p>
       )}

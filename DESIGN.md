@@ -2,7 +2,7 @@
 
 > Machine-readable design spec for AI tools (Stitch AI, Claude Code, Figma MCP).
 > Source of truth: code (`globals.css`, `tailwind.config.ts`, `src/components/ui/`).
-> Last updated: 2026-03-24
+> Last updated: 2026-04-27 (v0.3 — Hero 그라디언트, IconMenu 반응형, TopPromoBanner, 신규 홈 컴포넌트)
 
 ---
 
@@ -46,6 +46,37 @@ CSS variables defined in `src/app/globals.css` using HSL format.
 | `--input` | 220 13% 91% | #E5E7EB | Input borders |
 | `--ring` | 5 100% 69% | #FF6F61 | Focus ring |
 
+### v0.3 Extended Palette
+
+#### Hero Category Gradients (135deg)
+
+| Token | From | Mid | To | Category |
+|-------|------|-----|----|----------|
+| `--hero-1-*` | #C4453B | #FF6F61 | #FFB4A2 | 브랜드 (코랄) |
+| `--hero-2-*` | #C7651E | #E89456 | #FAC775 | 사는이야기 (오렌지) |
+| `--hero-3-*` | #1B5E20 | #4A8C3A | #97C459 | 2막준비 (그린) |
+
+#### IconMenu Category Colors (6종)
+
+| Category | BG Token | BG HEX | Stroke Token | Stroke HEX |
+|----------|----------|--------|--------------|------------|
+| 베스트 | `--icon-best-bg` | #FFE9E5 | `--icon-best-stroke` | #C4453B |
+| 사는이야기 | `--icon-life-bg` | #FFF1E5 | `--icon-life-stroke` | #C7651E |
+| 2막준비 | `--icon-life2-bg` | #E8F5E9 | `--icon-life2-stroke` | #2E7D32 |
+| 웃음방 | `--icon-laugh-bg` | #FFF8E1 | `--icon-laugh-stroke` | #A06900 |
+| 매거진 | `--icon-magazine-bg` | #E3F2FD | `--icon-magazine-stroke` | #185FA5 |
+| 내일찾기 | `--icon-job-bg` | #F3E5F5 | `--icon-job-stroke` | #6A1B9A |
+
+#### Supplementary Surface (코랄 계열)
+
+| Token | HEX | Usage |
+|-------|-----|-------|
+| `--surface-coral-soft` | #FFE9E5 | 태그·뱃지 배경 |
+| `--surface-coral-pale` | #FFF8F6 | 카드·greeting 배경 |
+| `--border-coral-soft` | #FFD4CC | 강조 보더 |
+| `--pulse-dot-color` | #FF6F61 | Activity Pulse 점 |
+| `--pulse-dot-glow` | rgba(255,111,97,0.2) | Activity Pulse 글로우 |
+
 ### Usage Rules
 
 - **Brand color on backgrounds**: Use `--primary` (#FF6F61)
@@ -73,11 +104,27 @@ Font: **Pretendard Variable** (loaded via `next/font/local`)
 
 ### Body Defaults
 
-- `font-size`: `var(--font-body, 16px)` (dynamically adjustable via FontSizeProvider)
+- `font-size`: `var(--text-body)` (dynamically adjustable via FontSizeProvider — see §3-A)
 - `line-height`: 1.75
 - `font-weight`: 400
 - `word-break`: keep-all (Korean text)
 - `-webkit-font-smoothing`: antialiased
+
+### 3-A. Dynamic Font Size System (3 Levels)
+
+Controlled by `html[data-font-size]` attribute. Set via `FontSizeProvider` (cookie + localStorage).
+
+| CSS Variable | NORMAL (default) | LARGE | XLARGE |
+|-------------|-----------------|-------|--------|
+| `--text-body` | 1.125rem (18px) | 1.25rem (20px) | 1.5rem (24px) |
+| `--text-caption` | 0.9375rem (15px) | 1.0625rem (17px) | 1.25rem (20px) |
+| `--text-title` | 1.25rem (20px) | 1.5rem (24px) | 1.75rem (28px) |
+| `--text-heading` | 1.5rem (24px) | 1.75rem (28px) | 2rem (32px) |
+| `--icon-box-size` | 3rem (48px) | 3.5rem (56px) | 4rem (64px) |
+| `--icon-svg-size` | 1.375rem (22px) | 1.625rem (26px) | 1.875rem (30px) |
+| `--icon-container-w` | 4.5rem (72px) | 5.125rem (82px) | 6rem (96px) |
+
+**html root font-size is fixed at 16px** — rem-based layout (padding/margin/height) never changes with font-size toggle. Only text and icon sizes scale.
 
 ---
 
@@ -232,6 +279,40 @@ Radix Dialog-based side panel. Supports `top/bottom/left/right` sides.
 - Overlay: `bg-black/80`
 - Transition: slide in/out with `data-[state]` animations
 
+### v0.3 New Components (홈 리디자인)
+
+#### TopPromoBanner (`layouts/TopPromoBanner.tsx`)
+- Server Component (DB `Setting` 테이블에서 tag/text/href/enabled 읽기)
+- 높이: ~40px, 그라디언트 배경 (코랄 계열)
+- 태그 칩(12px) + 본문 텍스트 + × 닫기 버튼
+- 닫기: `sessionStorage.setItem('top-promo-dismissed', '1')` → 탭 내 유지, 새 탭 재노출
+- 전 24개 페이지 최상단 렌더 (layout.tsx 포함)
+
+#### SignupCard (`features/home/SignupCard.tsx`)
+- 비회원 전용 홈 중반부 인라인 가입 유도 카드
+- 카카오 버튼: 52px 높이, #FEE500 배경, #191919 텍스트
+- `variant="middle"` (홈 전용)
+
+#### PersonalGreeting (`features/home/PersonalGreeting.tsx`)
+- 회원 전용, 닉네임 기반 환영 메시지
+- 배경: `--surface-coral-pale` (#FFF8F6)
+
+#### MyActivity (`features/home/MyActivity.tsx`)
+- 회원 전용, 3-stat 그리드 (오늘 게시글 / 새 댓글 / 받은 좋아요)
+- getUserCounts(userId) 서버 쿼리 연동
+
+#### ActivityPulse (`features/home/ActivityPulse.tsx`)
+- 회원/비회원 공용, 실시간 커뮤니티 현황
+- 최근 1시간 내 게시글 최대 3개 표시 (제목 + 링크)
+- 데이터 없으면 정적 메시지 3개 폴백
+- `--pulse-dot-color` 점 + `--pulse-dot-glow` 글로우
+
+#### StickyBottomAd (`ad/StickyBottomAd.tsx`)
+- 스크롤 50% 후 fixed bottom-0 노출
+- × 닫기: `sessionStorage.setItem('sticky-ad-dismissed', '1')`
+- 모바일 전용 권장 (데스크탑 미노출)
+- FAB와 겹침 방지: FAB `bottom-[80px]`
+
 ---
 
 ## 7. Layout Structure
@@ -240,9 +321,11 @@ Radix Dialog-based side panel. Supports `top/bottom/left/right` sides.
 
 ```
 ┌─────────────────────────────┐
-│ Header (56px, sticky)       │ ← Logo + Search + Profile (52px icons)
+│ TopPromoBanner (~40px)      │ ← 프로모 배너 (닫기 가능, 전 페이지)
 ├─────────────────────────────┤
-│ IconMenu (64px, sticky)     │ ← 5 nav icons (52px each)
+│ Header (64px, sticky)       │ ← 로고 + 글씨크기토글 + 알림/로그인
+├─────────────────────────────┤
+│ IconMenu (sticky, 반응형)   │ ← 6개 카테고리 아이콘 (가로 스크롤)
 ├─────────────────────────────┤
 │                             │
 │  main#main-content          │ ← Page content
@@ -250,16 +333,20 @@ Radix Dialog-based side panel. Supports `top/bottom/left/right` sides.
 ├─────────────────────────────┤
 │ Footer                      │
 └─────────────────────────────┘
-        [FAB] ← Floating bottom-right (coral, 글쓰기)
+        [FAB] ← 우측 하단 (코랄, 글쓰기, bottom-80px)
+        [StickyBottomAd] ← bottom-0 (스크롤 50% 후 노출)
 ```
 
-**Navigation icons**: ⭐ 베스트 | 💼 내 일 찾기 | 💬 사는 이야기 | ⚡ 활력 충전소 | 📖 매거진
+**IconMenu 6종**: ⭐ 베스트 | 💬 사는이야기 | 🌱 2막준비 | 😄 웃음방 | 📖 매거진 | 💼 내일찾기
+**IconMenu 특징**: 파스텔 컬러 박스 + 카테고리별 stroke 색상, 가로 스크롤 peek 패턴 (6번째 아이콘 절반 잘림)
 
 ### Desktop (>= 1024px)
 
 ```
 ┌───────────────────────────────────────────────┐
-│ GNB (64px, sticky)                            │ ← Logo + Nav links + Search + Auth
+│ TopPromoBanner (~40px)                        │ ← 프로모 배너 (non-sticky)
+├───────────────────────────────────────────────┤
+│ GNB (64px, sticky)                            │ ← 로고 + 메뉴 + 글씨크기토글 + 알림/로그인
 ├───────────────────────────────────────────────┤
 │                                               │
 │  main#main-content (max-1200px centered)      │
