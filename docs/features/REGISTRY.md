@@ -3,7 +3,7 @@
 > 모든 기능의 단일 진실의 원천.
 > **Claude가 /done 실행 시 자동 업데이트한다. 수동으로 편집하지 마라.**
 
-마지막 갱신: 2026-04-27 (A01·A04 마이그레이션)
+마지막 갱신: 2026-04-27 (R01·R02 마이그레이션)
 
 ---
 
@@ -111,8 +111,8 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 배치 위치 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|---------|------|------|---------|
-| R01 | AdSense 광고 | `src/components/ad/AdSenseUnit.tsx` | 홈·매거진·커뮤니티·일자리·검색 | `docs/specs/10-advertising.md` | ACTIVE | 2026-04-05 |
-| R02 | 쿠팡 파트너스 CPS | `src/components/ad/CoupangBanner.tsx` + `agents/cafe/cps-matcher.ts` | 매거진 상세·목록 | `docs/specs/10-advertising.md` | ACTIVE | 2026-04-05 |
+| R01 | AdSense 광고 | `src/components/ad/AdSenseUnit.tsx` | 홈·매거진·커뮤니티·일자리·검색·베스트 | [R01](R01-adsense.md) | ACTIVE | 2026-04-27 |
+| R02 | 쿠팡 파트너스 CPS | `src/components/ad/CoupangBanner.tsx` + `agents/cafe/cps-matcher.ts` | 매거진 상세·목록·전 페이지 배너 | [R02](R02-coupang-cps.md) | ACTIVE | 2026-04-27 |
 
 ---
 
