@@ -41,8 +41,8 @@ function createPrismaClient() {
     password: parsed.password,
     database: parsed.database,
     ssl: isProduction ? { rejectUnauthorized: false } : undefined,
-    // 서버리스 환경: Supabase 무료 티어 제한 대응 (직접 연결 ~20개)
-    max: isProduction ? 3 : 5,
+    // 서버리스 환경: Supabase 무료 티어 제한 대응 (직접 연결 ~60개 / PgBouncer 경유)
+    max: 5,
     idleTimeoutMillis: isProduction ? 10000 : 30000,
     connectionTimeoutMillis: 10000,
   })

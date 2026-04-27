@@ -138,7 +138,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   const [comments, cpsLinks, relatedPosts] = await Promise.all([
     getCommentsByPostId(resolvedId, userId),
     getCpsLinks(resolvedId),
-    getRelatedMagazinePosts(post.category ?? null, resolvedId, 3),
+    getRelatedMagazinePosts(post.category ?? null, resolvedId, 3, undefined, post.seriesId ?? null),
   ])
 
   // JSON-LD 구조화 데이터

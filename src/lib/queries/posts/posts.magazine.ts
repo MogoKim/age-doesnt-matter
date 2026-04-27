@@ -9,20 +9,20 @@ export async function getRelatedMagazinePosts(
   excludeId: string,
   limit = 3,
   titleKeywords?: string[],  // 제목 키워드 (시리즈명, 주요 단어)
+  seriesId?: string | null,  // 이미 알고 있으면 DB 조회 생략 (Q1 제거)
 ): Promise<PostSummary[]> {
   // 1순위: 같은 시리즈 내 다른 편 (seriesId 기반)
-  const currentPost = await prisma.post.findUnique({
-    where: { id: excludeId },
-    select: { seriesId: true },
-  })
+  const resolvedSeriesId = seriesId !== undefined
+    ? seriesId
+    : (await prisma.post.findUnique({ where: { id: excludeId }, select: { seriesId: true } }))?.seriesId ?? null
 
-  if (currentPost?.seriesId) {
+  if (resolvedSeriesId) {
     const seriesRows = await prisma.post.findMany({
       where: {
         boardType: 'MAGAZINE',
         status: 'PUBLISHED',
         id: { not: excludeId },
-        seriesId: currentPost.seriesId,
+        seriesId: resolvedSeriesId,
       },
       orderBy: { seriesOrder: 'asc' },
       take: limit,
