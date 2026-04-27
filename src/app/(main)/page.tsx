@@ -25,7 +25,7 @@ import {
   getLatestCommunityPosts,
   getLatestLife2Posts,
 } from '@/lib/queries/posts'
-import { getUserCounts } from '@/lib/queries/home'
+import { getUserCounts, getActivityPulseData } from '@/lib/queries/home'
 
 export const metadata: Metadata = {
   title: '우리 나이가 어때서 — 5060 세대 커뮤니티',
@@ -60,13 +60,18 @@ const getCachedLife2 = unstable_cache(
   ['home-life2'],
   { revalidate: 60 }
 )
+const getCachedActivityPulse = unstable_cache(
+  () => getActivityPulseData(),
+  ['home-activity-pulse'],
+  { revalidate: 60 }
+)
 
 export default async function HomePage() {
   // layout.tsx와 동일 요청 내 auth() 호출 — NextAuth v5 request memoization으로 중복 쿼리 없음
   const session = await auth()
   const isMember = !!session?.user
 
-  const [jobs, trending, magazine, community, life2, myCounts] = await Promise.all([
+  const [jobs, trending, magazine, community, life2, myCounts, activityPulse] = await Promise.all([
     getCachedJobs(),
     getCachedTrending(),
     getCachedMagazine(),
@@ -74,6 +79,8 @@ export default async function HomePage() {
     getCachedLife2(),
     // 회원 전용 활동 현황 — 에러 시 자동 null 폴백 (getUserCounts 내부 try-catch)
     isMember && session.user?.id ? getUserCounts(session.user.id) : Promise.resolve(null),
+    // 실시간 커뮤니티 현황 — 회원/비회원 공용, 에러 시 자동 폴백 (getActivityPulseData 내부 try-catch)
+    getCachedActivityPulse(),
   ])
 
   const organizationJsonLd = {
@@ -166,10 +173,10 @@ export default async function HomePage() {
                     newComments={myCounts.newComments}
                     receivedLikes={myCounts.receivedLikes}
                   />
-                  <ActivityPulse />
+                  <ActivityPulse activeCount={activityPulse.activeCount} recentActivities={activityPulse.recentActivities} />
                 </>
               ) : (
-                <ActivityPulse />
+                <ActivityPulse activeCount={activityPulse.activeCount} recentActivities={activityPulse.recentActivities} />
               )}
 
               {/* 비회원 가입 유도 카드 (홈 중반부 1회) */}
