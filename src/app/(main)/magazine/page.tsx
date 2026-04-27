@@ -12,7 +12,7 @@ import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: '매거진',
