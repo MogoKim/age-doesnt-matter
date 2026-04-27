@@ -25,6 +25,15 @@ declare global {
   }
 }
 
+/** 광고 로드 전 레이아웃 공간 예약 → CLS 방지 */
+const FORMAT_MIN_HEIGHT: Record<string, number> = {
+  horizontal: 90,
+  rectangle:  250,
+  auto:       100,
+  fluid:      250,
+  vertical:   600,
+}
+
 /**
  * Google AdSense 광고 유닛 (v2 — 근본 재작성)
  *
@@ -115,7 +124,7 @@ export default function AdSenseUnit({
       <span className="absolute top-2 right-3 text-caption text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border z-10">
         광고
       </span>
-      <div ref={containerRef} />
+      <div ref={containerRef} style={{ minHeight: FORMAT_MIN_HEIGHT[format] ?? 90 }} />
       {showFallback && (
         <CoupangBanner preset="mobile" className="mt-2" />
       )}
