@@ -65,7 +65,7 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
         <div className="mt-4 flex items-center justify-center gap-4 text-sm" style={{ color: '#999' }}>
           <span>✓ 닉네임만 공개</span>
           <span style={{ color: '#ddd' }}>|</span>
-          <span>✓ 10초 가입 · 무료</span>
+          <span>✓ 1초 가입 · 무료</span>
         </div>
 
         {/* 먼저 둘러볼게요 — 최하단 */}

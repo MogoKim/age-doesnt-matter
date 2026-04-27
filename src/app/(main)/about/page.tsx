@@ -49,7 +49,7 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
         q: '가입은 어떻게 하나요?',
         a: (
           <span>
-            카카오 계정으로 30초면 가입돼요.{' '}
+            카카오로 1초 가입돼요.{' '}
             <Link href="/login?callbackUrl=/community/stories" className="text-primary font-bold underline">
               카카오톡으로 시작하기 →
             </Link>
@@ -90,7 +90,12 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
     items: [
       {
         q: '내 정보가 공개되나요?',
-        a: '닉네임만 공개됩니다. 실명·전화번호·카카오 정보는 절대 공개 안 돼요.',
+        a: (
+          <span>
+            닉네임만 공개됩니다. 실명·전화번호·카카오 정보는{' '}
+            <strong className="text-foreground font-bold">절대 공개되지 않습니다.</strong>
+          </span>
+        ),
       },
     ],
   },
@@ -105,7 +110,7 @@ const LIFE_STAGE_FAQ_JSON_LD = {
       name: '50대 60대가 모이는 온라인 커뮤니티가 있나요?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: '우리 나이가 어때서(우나어, age-doesnt-matter.com)는 50·60대 전용 온라인 커뮤니티입니다. 갱년기, 건강, 노후 준비, 재취업, 사는 이야기 등 또래끼리 솔직하게 나눌 수 있는 공간으로, 카카오 계정으로 30초면 가입됩니다.',
+        text: '우리 나이가 어때서(우나어, age-doesnt-matter.com)는 50·60대 전용 온라인 커뮤니티입니다. 갱년기, 건강, 노후 준비, 재취업, 사는 이야기 등 또래끼리 솔직하게 나눌 수 있는 공간으로, 카카오로 1초면 가입됩니다.',
       },
     },
     {
@@ -188,7 +193,7 @@ export default async function AboutPage() {
               href={isLoggedIn ? '/community/stories' : '/login?callbackUrl=/community/stories'}
               className="text-primary font-bold text-body no-underline hover:underline"
             >
-              {isLoggedIn ? '커뮤니티 들어가기 →' : '30초면 시작돼요 →'}
+              {isLoggedIn ? '커뮤니티 들어가기 →' : '1초만에 무료 회원가입 →'}
             </Link>
           </div>
         </div>
@@ -229,7 +234,7 @@ export default async function AboutPage() {
             {[
               '닉네임만 공개 — 실명·연락처는 절대 공개 안 됩니다',
               '언제든 탈퇴 가능 — 가입비도, 약정도 없어요',
-              '30초면 끝 — 카카오 계정 하나면 바로 시작',
+              '1초면 끝 — 카카오 계정 하나면 바로 시작',
             ].map((text) => (
               <li key={text} className="flex items-start gap-3 text-body text-foreground">
                 <span className="text-primary font-bold shrink-0 mt-0.5">✓</span>
@@ -247,9 +252,11 @@ export default async function AboutPage() {
           ) : (
             <Link
               href="/login?callbackUrl=/community/stories"
-              className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-[#E85D50] lg:w-auto lg:px-10"
+              className="inline-flex items-center justify-center gap-2 w-full h-[52px] rounded-xl text-body font-bold no-underline transition-opacity hover:opacity-90 lg:w-auto lg:px-10"
+              style={{ background: '#FEE500', color: '#191919' }}
             >
-              카카오톡으로 시작하기
+              <span className="text-[20px]">💬</span>
+              카카오로 1초 가입
             </Link>
           )}
         </div>

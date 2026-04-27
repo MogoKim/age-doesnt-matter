@@ -16,7 +16,7 @@ export default function SignupCard() {
             우리 또래 이야기, 여기 다 있어요
           </p>
           <p className="text-body text-muted-foreground break-keep">
-            30초 카카오 로그인으로 시작해 보세요
+            카카오로 1초 가입해 보세요
           </p>
         </div>
 
@@ -31,7 +31,7 @@ export default function SignupCard() {
               fill="currentColor"
             />
           </svg>
-          카카오로 30초 가입
+          카카오로 1초 가입
         </Link>
       </div>
     </section>

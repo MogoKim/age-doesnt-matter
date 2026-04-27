@@ -12,7 +12,7 @@ const faqs: FaqItem[] = [
     q: '가입은 어떻게 하나요?',
     a: (
       <span>
-        카카오 계정으로 30초면 가입돼요. 별도 회원가입 절차 없이 바로 이용 가능합니다.{' '}
+        카카오로 1초 가입돼요. 별도 회원가입 절차 없이 바로 이용 가능합니다.{' '}
         <a href="/login?callbackUrl=/community/stories" className="text-primary font-bold underline">
           카카오로 시작하기 →
         </a>
