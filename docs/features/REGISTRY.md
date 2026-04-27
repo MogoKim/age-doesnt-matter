@@ -3,7 +3,7 @@
 > 모든 기능의 단일 진실의 원천.
 > **Claude가 /done 실행 시 자동 업데이트한다. 수동으로 편집하지 마라.**
 
-마지막 갱신: 2026-04-27 (A03 마이그레이션)
+마지막 갱신: 2026-04-27 (A01·A04 마이그레이션)
 
 ---
 
@@ -72,10 +72,10 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 스케줄/트리거 | 실행환경 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|-------------|---------|------|------|---------|
-| A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` | launchd 08:30 KST | LOCAL_ONLY | `docs/features/external-content.md` | ACTIVE | 2026-04-08 |
+| A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` | launchd 08:30·12:30·20:40 KST (DEEP/QUICK/ALL) | LOCAL_ONLY | [A01](A01-cafe-crawler.md) | ACTIVE | 2026-04-27 |
 | A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 15:00, 17:00 KST | LOCAL_ONLY | [F05](F05-magazine.md) | ACTIVE | 2026-04-27 |
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
-| A04 | 외부 콘텐츠 스크래퍼 | `agents/community/fmkorea-scraper.ts` | launchd 11:30, 21:30 KST | LOCAL_ONLY | `docs/features/external-content.md` | ACTIVE | 2026-04-21 |
+| A04 | 외부 콘텐츠 스크래퍼 | `agents/cmo/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | GHA 11:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | [A04](A04-external-content.md) | ACTIVE | 2026-04-27 |
 | A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | [A05](A05-seed-bot.md) | ACTIVE | 2026-04-27 |
 | A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 07:00·12:00·15:00 KST | GHA | [A06](A06-sns-posting.md) | ACTIVE | 2026-04-27 |
 | A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 11:00 KST | GHA | [A07](A07-card-news.md) | ACTIVE | 2026-04-27 |
