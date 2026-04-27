@@ -3,7 +3,7 @@
 > 모든 기능의 단일 진실의 원천.
 > **Claude가 /done 실행 시 자동 업데이트한다. 수동으로 편집하지 마라.**
 
-마지막 갱신: 2026-04-27 (A07, I01, M02, M03, M04 문서 연결)
+마지막 갱신: 2026-04-27 (A09 문서 연결 — 미운영 상태 기록)
 
 ---
 
@@ -80,7 +80,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 07:00·12:00·15:00 KST | GHA | [A06](A06-sns-posting.md) | ACTIVE | 2026-04-27 |
 | A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 11:00 KST | GHA | [A07](A07-card-news.md) | ACTIVE | 2026-04-27 |
 | A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | - | ACTIVE | 2026-04-05 |
-| A09 | SEO 최적화 | `agents/cmo/seo-optimizer.ts` | GHA 일 08:00 KST | GHA | - | ACTIVE | 2026-03-30 |
+| A09 | SEO 최적화 | `agents/cmo/seo-optimizer.ts` | GHA 일 08:00 KST (크론 미연결) | GHA | [A09](A09-seo-optimizer.md) | ACTIVE | 2026-04-27 |
 | A10 | 채널 시딩 | `agents/cmo/channel-seeder.ts` | GHA 11:30 KST | GHA | - | ACTIVE | 2026-03-30 |
 
 ---
