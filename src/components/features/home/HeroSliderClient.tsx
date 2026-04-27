@@ -73,8 +73,8 @@ export default function HeroSliderClient({ slides }: Props) {
   return (
     <div className="w-full">
       <section
-        className="w-full relative overflow-hidden"
-        style={{ aspectRatio: '8/3', minHeight: 160 }}
+        className="w-full relative overflow-hidden [aspect-ratio:3/2] lg:[aspect-ratio:8/3]"
+        style={{ minHeight: 200 }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onMouseEnter={() => setPaused(true)}
@@ -119,38 +119,41 @@ export default function HeroSliderClient({ slides }: Props) {
               }}
             />
 
-            {/* 텍스트 오버레이 */}
-            <div className={cn(
-              'absolute inset-0 flex flex-col justify-center gap-3 px-6',
-              slide.imageUrl ? 'items-start text-left max-w-[60%] lg:px-16' : 'items-center text-center'
-            )}>
+            {/* 텍스트 오버레이 — 전체 영역 클릭 시 ctaUrl로 이동 */}
+            <Link
+              href={slide.ctaUrl ?? '/'}
+              className={cn(
+                'absolute inset-0 flex flex-col justify-center gap-3 px-5 lg:px-16 no-underline [-webkit-tap-highlight-color:transparent]',
+                slide.imageUrl ? 'items-start text-left' : 'items-center text-center'
+              )}
+              tabIndex={index === current ? 0 : -1}
+              aria-label={slide.title.replace(/\\n/g, ' ')}
+            >
               <h2
-                className="text-white font-bold leading-[1.35] break-keep"
-                style={{ fontSize: 'clamp(20px, 5vw, 32px)', whiteSpace: 'pre-line', textShadow: '0 1px 4px rgba(0,0,0,0.25)' }}
+                className="text-white font-bold leading-[1.4] break-keep max-w-[72%] lg:max-w-none"
+                style={{ fontSize: 'clamp(20px, 5.5vw, 32px)', whiteSpace: 'pre-line', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
               >
-                {slide.title}
+                {slide.title.replace(/\\n/g, '\n')}
               </h2>
 
               {slide.subtitle && (
                 <p
-                  className="text-white/90 leading-snug break-keep"
-                  style={{ fontSize: 'clamp(14px, 3vw, 18px)', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
+                  className="text-white/90 leading-snug break-keep max-w-[72%] lg:max-w-none"
+                  style={{ fontSize: 'clamp(15px, 3.5vw, 18px)', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
                 >
                   {slide.subtitle}
                 </p>
               )}
 
               {slide.ctaText && (
-                <Link
-                  href={slide.ctaUrl}
-                  className="mt-1 inline-flex items-center justify-center px-5 h-[44px] rounded-full bg-white/20 backdrop-blur-sm text-white font-semibold no-underline hover:bg-white/30 transition-colors active:scale-95"
-                  style={{ fontSize: 'clamp(13px, 3vw, 16px)', minWidth: 100 }}
-                  tabIndex={index === current ? 0 : -1}
+                <span
+                  className="mt-1 inline-flex items-center justify-center px-5 h-[52px] rounded-full bg-white/20 backdrop-blur-sm text-white font-semibold"
+                  style={{ fontSize: 'clamp(15px, 3.5vw, 16px)', minWidth: 110 }}
                 >
                   {slide.ctaText}
-                </Link>
+                </span>
               )}
-            </div>
+            </Link>
           </div>
         ))}
 
