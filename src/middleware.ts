@@ -9,12 +9,15 @@ const PROTECTED_PATHS = ['/my', '/community/write']
 // CUID 패턴: 소문자 알파벳+숫자 20~30자 (한글/하이픈 포함 slug와 겹치지 않음)
 const CUID_PATTERN = /^[a-z0-9]{20,30}$/
 
-/**
- * CUID로 Supabase REST API에서 slug 조회
- * Edge Runtime에서 Prisma 사용 불가 → fetch() 직접 사용
- * 실패 시 null 반환 → middleware 통과 (RSC redirect가 fallback)
- */
+// Edge function 인스턴스 내 CUID→slug 캐시 (TTL 60초)
+const slugCache = new Map<string, { slug: string | null; expiresAt: number }>()
+const SLUG_CACHE_TTL_MS = 60_000
+
 async function resolveSlug(cuid: string): Promise<string | null> {
+  const now = Date.now()
+  const cached = slugCache.get(cuid)
+  if (cached && cached.expiresAt > now) return cached.slug
+
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/Post` +
@@ -26,9 +29,14 @@ async function resolveSlug(cuid: string): Promise<string | null> {
         },
       },
     )
-    if (!res.ok) return null
+    if (!res.ok) {
+      slugCache.set(cuid, { slug: null, expiresAt: now + SLUG_CACHE_TTL_MS })
+      return null
+    }
     const data = (await res.json()) as { slug: string }[]
-    return data[0]?.slug ?? null
+    const slug = data[0]?.slug ?? null
+    slugCache.set(cuid, { slug, expiresAt: now + SLUG_CACHE_TTL_MS })
+    return slug
   } catch {
     return null
   }

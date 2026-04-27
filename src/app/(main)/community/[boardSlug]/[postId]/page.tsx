@@ -1,4 +1,5 @@
 import { notFound, permanentRedirect } from 'next/navigation'
+import { Suspense } from 'react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -59,6 +60,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
+async function CommentsLoader({ postId, userId }: { postId: string; userId?: string }) {
+  const comments = await getCommentsByPostId(postId, userId)
+  return <CommentSection postId={postId} comments={comments} isLoggedIn={!!userId} />
+}
+
 export default async function PostDetailPage({ params }: PageProps) {
   const { boardSlug, postId } = await params
 
@@ -79,7 +85,6 @@ export default async function PostDetailPage({ params }: PageProps) {
 
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/likes FK 보장)
   const resolvedId = post.id
-  const comments = await getCommentsByPostId(resolvedId, userId)
 
   const isOwnPost = !!userId && !!post.author.id && post.author.id === userId
 
@@ -189,8 +194,16 @@ export default async function PostDetailPage({ params }: PageProps) {
         <CoupangSearchWidget />
       </div>
 
-      {/* 댓글 */}
-      <CommentSection postId={resolvedId} comments={comments} isLoggedIn={!!userId} />
+      {/* 댓글 — Suspense로 지연 로딩 (본문 먼저 표시) */}
+      <Suspense fallback={
+        <div className="mb-12 space-y-4">
+          <div className="h-8 bg-muted rounded animate-pulse w-32" />
+          <div className="h-20 bg-muted rounded-xl animate-pulse" />
+          <div className="h-20 bg-muted rounded-xl animate-pulse" />
+        </div>
+      }>
+        <CommentsLoader postId={resolvedId} userId={userId} />
+      </Suspense>
     </div>
   )
 }
