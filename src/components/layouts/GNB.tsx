@@ -65,7 +65,7 @@ export default function GNB({ isLoggedIn = false, nickname, unreadCount = 0 }: G
                 className={cn(
                   'text-caption no-underline px-3 py-1.5 rounded-lg transition-colors duration-150 whitespace-nowrap',
                   isActive
-                    ? 'bg-[#FFE9E5] text-[#C4453B] font-semibold'
+                    ? 'bg-[#FFE9E5] text-primary-text font-semibold'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 )}
                 aria-current={isActive ? 'page' : undefined}

@@ -21,7 +21,7 @@ async function LatestMagazineSection() {
           >
             <div className="flex-1 min-w-0">
               {post.category && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-foreground text-[13px] font-bold mb-1">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-foreground text-caption font-bold mb-1">
                   {post.category}
                 </span>
               )}

@@ -473,7 +473,7 @@ export default function AddToHomeScreen() {
               </svg>
             </button>
           </div>
-          <p className="text-[14px] text-muted-foreground mb-3 break-keep">
+          <p className="text-caption text-muted-foreground mb-3 break-keep">
             {envRef.current === 'kakao-android'
               ? 'Chrome 앱에서 열면 홈 화면에 추가할 수 있어요'
               : 'Safari에서 열면 홈 화면에 추가할 수 있어요'}
@@ -484,7 +484,7 @@ export default function AddToHomeScreen() {
           >
             {envRef.current === 'kakao-android' ? '크롬으로 열기' : '주소 복사하기'}
           </button>
-          <p className="text-center text-[12px] text-muted-foreground mt-2">
+          <p className="text-center text-caption text-muted-foreground mt-2">
             {envRef.current === 'kakao-android'
               ? '주소도 자동으로 복사돼요'
               : '복사 후 Safari 주소창에 붙여넣으세요'}
@@ -507,7 +507,7 @@ export default function AddToHomeScreen() {
               </svg>
             </button>
           </div>
-          <p className="text-[14px] text-muted-foreground mb-3 break-keep">
+          <p className="text-caption text-muted-foreground mb-3 break-keep">
             {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
               ? 'Chrome 앱에서 열면 홈 화면에 추가할 수 있어요'
               : 'Safari에서 열면 홈 화면에 추가할 수 있어요'}
@@ -520,7 +520,7 @@ export default function AddToHomeScreen() {
               ? '크롬으로 열기'
               : '주소 복사하기'}
           </button>
-          <p className="text-center text-[12px] text-muted-foreground mt-2">
+          <p className="text-center text-caption text-muted-foreground mt-2">
             {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
               ? '주소도 자동으로 복사돼요'
               : '복사 후 Safari 주소창에 붙여넣으세요'}
@@ -543,7 +543,7 @@ export default function AddToHomeScreen() {
               </svg>
             </button>
           </div>
-          <p className="text-[14px] text-muted-foreground mb-3 break-keep">
+          <p className="text-caption text-muted-foreground mb-3 break-keep">
             {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
               ? 'Chrome 앱에서 열면 홈 화면에 추가할 수 있어요'
               : 'Safari에서 열면 홈 화면에 추가할 수 있어요'}
@@ -556,7 +556,7 @@ export default function AddToHomeScreen() {
               ? '크롬으로 열기'
               : '주소 복사하기'}
           </button>
-          <p className="text-center text-[12px] text-muted-foreground mt-2">
+          <p className="text-center text-caption text-muted-foreground mt-2">
             {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
               ? '주소도 자동으로 복사돼요'
               : '복사 후 Safari 주소창에 붙여넣으세요'}

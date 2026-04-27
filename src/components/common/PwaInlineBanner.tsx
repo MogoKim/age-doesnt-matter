@@ -42,7 +42,7 @@ export default function PwaInlineBanner() {
       />
       <div className="flex-1 min-w-0">
         <p className="text-[15px] font-bold text-foreground leading-tight">앱처럼 쓰는데 완전 무료</p>
-        <p className="text-[13px] text-muted-foreground leading-tight mt-0.5">홈 화면에 추가하면 바로 열려요</p>
+        <p className="text-caption text-muted-foreground leading-tight mt-0.5">홈 화면에 추가하면 바로 열려요</p>
       </div>
       <button
         onClick={handleInstall}

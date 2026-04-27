@@ -68,7 +68,7 @@ function PostCard({ post, onAction }: { post: Post; onAction: (action: 'like' | 
           {post.author}
         </span>
         <span
-          className="text-[12px] px-2 py-0.5 rounded-full font-medium"
+          className="text-caption px-2 py-0.5 rounded-full font-medium"
           style={{ background: '#FFF0EE', color: '#FF6F61' }}
         >
           {post.cafeName}
@@ -81,12 +81,12 @@ function PostCard({ post, onAction }: { post: Post; onAction: (action: 'like' | 
       </p>
 
       {/* 본문 앞 100자 */}
-      <p className="text-[14px] leading-relaxed mb-3" style={{ color: '#666' }}>
+      <p className="text-caption leading-relaxed mb-3" style={{ color: '#666' }}>
         {preview}
       </p>
 
       {/* 공감/댓글 수 */}
-      <div className="flex items-center gap-3 mb-3 text-[13px]" style={{ color: '#aaa' }}>
+      <div className="flex items-center gap-3 mb-3 text-caption" style={{ color: '#aaa' }}>
         <span>❤️ {post.likeCount.toLocaleString()}</span>
         <span>💬 {post.commentCount.toLocaleString()}</span>
       </div>

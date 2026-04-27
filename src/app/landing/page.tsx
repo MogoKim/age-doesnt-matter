@@ -73,7 +73,7 @@ export default async function LandingPage({
       <div className="max-w-lg mx-auto px-4 mb-4">
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px" style={{ background: '#e8e8e8' }} />
-          <span className="text-[12px] font-medium" style={{ color: '#aaa' }}>지금 나누고 있는 이야기</span>
+          <span className="text-caption font-medium" style={{ color: '#aaa' }}>지금 나누고 있는 이야기</span>
           <div className="flex-1 h-px" style={{ background: '#e8e8e8' }} />
         </div>
       </div>
