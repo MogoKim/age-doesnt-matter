@@ -3,7 +3,7 @@
 > 모든 기능의 단일 진실의 원천.
 > **Claude가 /done 실행 시 자동 업데이트한다. 수동으로 편집하지 마라.**
 
-마지막 갱신: 2026-04-27
+마지막 갱신: 2026-04-27 (A05 문서 연결)
 
 ---
 
@@ -76,7 +76,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 15:00, 17:00 KST | LOCAL_ONLY | [F05](F05-magazine.md) | ACTIVE | 2026-04-27 |
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 매일 07:00 KST | GHA | `docs/features/jobs-bot.md` | ACTIVE | 2026-04-21 |
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/community/fmkorea-scraper.ts` | launchd 11:30, 21:30 KST | LOCAL_ONLY | `docs/features/external-content.md` | ACTIVE | 2026-04-21 |
-| A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 9회 (09~22시) | GHA | - | ACTIVE | 2026-03-30 |
+| A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | [A05](A05-seed-bot.md) | ACTIVE | 2026-04-27 |
 | A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 09:00, 15:00 KST | GHA | - | ACTIVE | 2026-04-05 |
 | A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 11:00 KST | GHA | - | ACTIVE | 2026-03-30 |
 | A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | - | ACTIVE | 2026-04-05 |
