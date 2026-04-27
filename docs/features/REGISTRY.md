@@ -3,7 +3,7 @@
 > 모든 기능의 단일 진실의 원천.
 > **Claude가 /done 실행 시 자동 업데이트한다. 수동으로 편집하지 마라.**
 
-마지막 갱신: 2026-04-27 (A05 문서 연결)
+마지막 갱신: 2026-04-27 (A07, I01, M02, M03, M04 문서 연결)
 
 ---
 
@@ -78,7 +78,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/community/fmkorea-scraper.ts` | launchd 11:30, 21:30 KST | LOCAL_ONLY | `docs/features/external-content.md` | ACTIVE | 2026-04-21 |
 | A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | [A05](A05-seed-bot.md) | ACTIVE | 2026-04-27 |
 | A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 07:00·12:00·15:00 KST | GHA | [A06](A06-sns-posting.md) | ACTIVE | 2026-04-27 |
-| A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 11:00 KST | GHA | - | ACTIVE | 2026-03-30 |
+| A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 11:00 KST | GHA | [A07](A07-card-news.md) | ACTIVE | 2026-04-27 |
 | A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | - | ACTIVE | 2026-04-05 |
 | A09 | SEO 최적화 | `agents/cmo/seo-optimizer.ts` | GHA 일 08:00 KST | GHA | - | ACTIVE | 2026-03-30 |
 | A10 | 채널 시딩 | `agents/cmo/channel-seeder.ts` | GHA 11:30 KST | GHA | - | ACTIVE | 2026-03-30 |
@@ -90,9 +90,9 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | ID | 기능명 | 코드 위치 | 스케줄 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|--------|------|------|---------|
 | M01 | CTO 헬스체크 + 에러모니터 | `agents/cto/health-check.ts` + `error-monitor.ts` + `crawler-health.ts` | GHA 4시간마다 | [M01](M01-cto-monitoring.md) | ACTIVE | 2026-04-27 |
-| M02 | QA 콘텐츠 감사 | `agents/qa/content-audit.ts` | GHA 매일 08:20 KST | - | ACTIVE | 2026-04-07 |
-| M03 | 브리프 모니터 | `agents/cafe/brief-monitor.ts` | GHA 09:30 KST | - | ACTIVE | 2026-04-24 |
-| M04 | Threads 토큰 갱신 알림 | `agents/cmo/threads-token-check.ts` | GHA 수 10:00 KST | - | ACTIVE | 2026-04-23 |
+| M02 | QA 콘텐츠 감사 | `agents/qa/content-audit.ts` | GHA 매일 08:20 KST | [M02](M02-qa-content-audit.md) | ACTIVE | 2026-04-27 |
+| M03 | 브리프 모니터 | `agents/cafe/brief-monitor.ts` | GHA 09:30 KST | [M03](M03-brief-monitor.md) | ACTIVE | 2026-04-27 |
+| M04 | Threads 토큰 갱신 알림 | `agents/cmo/threads-token-check.ts` | GHA 수 10:00 KST | [M04](M04-threads-token.md) | ACTIVE | 2026-04-27 |
 
 ---
 
@@ -100,7 +100,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드/설정 위치 | 문서 | 상태 | 최근변경 |
 |----|--------|--------------|------|------|---------|
-| I01 | launchd 로컬 스케줄러 | `~/Library/LaunchAgents/com.unaeo.*.plist` | - | ACTIVE | 2026-04-27 |
+| I01 | launchd 로컬 스케줄러 | `~/Library/LaunchAgents/com.unaeo.*.plist` | [I01](I01-launchd-scheduler.md) | ACTIVE | 2026-04-27 |
 | I02 | Upstash Redis 레이트리밋 | `src/lib/rate-limit.ts` | `docs/04-report/전방위감사.report.md` | ACTIVE | 2026-04-23 |
 | I03 | Cloudflare R2 이미지 저장소 | `src/lib/r2.ts` + `agents/core/r2.ts` | - | ACTIVE | 2026-04-23 |
 | I04 | Google Indexing API | 발행 시 자동 호출 | - | ACTIVE | 2026-03-30 |
