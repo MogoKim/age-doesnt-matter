@@ -12,3 +12,10 @@ globs: src/components/**/*.tsx
 - CSS: cn() 유틸 사용 (clsx + tailwind-merge)
 - 서버 컴포넌트 기본, 'use client' 최소화
 - 이미지: next/image 필수 (WebP + lazy load)
+
+## Primary Color 컨트라스트 규칙 (절대 준수 — WCAG)
+- `bg-primary` 사용 시: `text-white` 필수 (`text-foreground` / `text-muted` 금지)
+- `bg-primary/10~30` (투명도) 사용 시: `text-primary-text` (#C4453B) 사용
+- SVG 아이콘: `stroke="currentColor"` / `fill="currentColor"` 필수 (하드코딩 색상 금지)
+- hover 변형 (`bg-primary/90`, `bg-[#E85D50]`) 시에도 `text-white` 유지
+- 점/인디케이터 등 텍스트 없는 `bg-primary` 사용은 예외

@@ -66,6 +66,21 @@ npm run build 2>&1 | tail -20
 - ✅ PASS: 200 응답
 - 변경 없으면: 스킵
 
+### 2-F. Feature Lifecycle (항상 실행 — 커밋 막지 않음, 경고만)
+
+상세 규칙: `.claude/rules/feature-lifecycle.md`
+
+1. `git diff --name-only HEAD` + `git status --short` 변경 파일 목록 확보
+2. `docs/features/REGISTRY.md`의 PATH MAP과 대조 → 영향받는 Feature ID 식별
+3. 작업 유형 판단:
+   - **신규 기능** (untracked 파일 + REGISTRY 미등록): REGISTRY 행 추가 + `docs/features/{ID}-{name}.md` 생성
+   - **기능 개선** (기존 파일 수정 + REGISTRY 등록됨): 해당 feature 문서 수정 이력 한 줄 추가 + REGISTRY 최근변경 날짜 갱신
+   - **기능 제거** (파일 삭제): REGISTRY ARCHIVED 처리 + `.claude/rules/feature-lifecycle.md` 5-B 체크리스트 실행
+   - **버그수정/리팩토링/설정변경/문서만 변경**: 스킵
+
+- ✅ 처리됨: 완료 보고에 `Feature 문서: {ID} {기능명} — {작업유형}` 추가
+- ⚠️ 미처리: 커밋은 진행하되 `⚠️ Feature 문서화 미완: {ID}` 경고 표시
+
 ---
 
 ## STEP 3: Gate 1 실패 시 Slack 알림
@@ -124,6 +139,7 @@ git push origin main
 Gates: all passed | 배포: Vercel 자동 진행 중
 앞으로 달라지는 것: [한 줄]
 어드민 영향: 없음 / 있음(내용)  ← src 변경 시만
+Feature 문서: [ID] [기능명] — [신규생성 / 수정이력추가 / ARCHIVED / 해당없음]
 ```
 
 실패한 게이트가 있을 경우에만 추가:
