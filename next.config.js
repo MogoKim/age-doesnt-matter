@@ -20,6 +20,10 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: '*.r2.cloudflare.com',
+      },
+      {
+        protocol: 'https',
         hostname: 'ads-partners.coupang.com',
       },
       {
@@ -62,7 +66,7 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://t1.kakaocdn.net https://developers.kakao.com https://www.googletagmanager.com https://www.google-analytics.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://tpc.googlesyndication.com https://www.google.com https://ads-partners.coupang.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://fundingchoicesmessages.google.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://*.r2.dev https://img.age-doesnt-matter.com https://images.unsplash.com https://plus.unsplash.com https://k.kakaocdn.net https://t1.kakaocdn.net https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com https://*.coupangcdn.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://*.adtrafficquality.google",
+              "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://*.r2.dev https://*.r2.cloudflare.com https://img.age-doesnt-matter.com https://images.unsplash.com https://plus.unsplash.com https://k.kakaocdn.net https://t1.kakaocdn.net https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com https://*.coupangcdn.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://*.adtrafficquality.google",
               "font-src 'self'",
               "connect-src 'self' https://kauth.kakao.com https://kapi.kakao.com https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://*.r2.cloudflarestorage.com https://*.r2.dev https://fundingchoicesmessages.google.com",
               "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng",
