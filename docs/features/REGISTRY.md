@@ -3,7 +3,7 @@
 > 모든 기능의 단일 진실의 원천.
 > **Claude가 /done 실행 시 자동 업데이트한다. 수동으로 편집하지 마라.**
 
-마지막 갱신: 2026-04-27 (I02/I03/I04 문서 연결)
+마지막 갱신: 2026-04-27 (A03 마이그레이션)
 
 ---
 
@@ -61,7 +61,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F03 | 히어로 배너 | `src/components/features/home/HeroSlider.tsx` | 홈 방문 | [F03](F03-hero-banner.md) | ACTIVE | 2026-04-27 |
 | F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | `docs/specs/01-community.md` | ACTIVE | 2026-04-05 |
 | F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 | [F05](F05-magazine.md) | ACTIVE | 2026-04-27 |
-| F06 | 일자리 게시판 | `src/app/(main)/jobs/` | 자동수집(A03) + 사용자 탐색 | `docs/features/jobs-bot.md` | ACTIVE | 2026-04-21 |
+| F06 | 일자리 게시판 | `src/app/(main)/jobs/` | 자동수집(A03) + 사용자 탐색 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
 | F07 | 베스트 탭 | `src/app/(main)/best/` | trendingScore 상위 | `docs/specs/05-best.md` | ACTIVE | 2026-04-05 |
 | F08 | 검색 | `src/app/(main)/search/` | 사용자 검색 | `docs/specs/04-search.md` | ACTIVE | 2026-04-05 |
 | F09 | 어드민 패널 | `src/app/(admin)/` | 운영자 접근 | `docs/specs/09-admin.md` | ACTIVE | 2026-04-05 |
@@ -74,7 +74,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 |----|--------|----------|-------------|---------|------|------|---------|
 | A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` | launchd 08:30 KST | LOCAL_ONLY | `docs/features/external-content.md` | ACTIVE | 2026-04-08 |
 | A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 15:00, 17:00 KST | LOCAL_ONLY | [F05](F05-magazine.md) | ACTIVE | 2026-04-27 |
-| A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 매일 07:00 KST | GHA | `docs/features/jobs-bot.md` | ACTIVE | 2026-04-21 |
+| A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/community/fmkorea-scraper.ts` | launchd 11:30, 21:30 KST | LOCAL_ONLY | `docs/features/external-content.md` | ACTIVE | 2026-04-21 |
 | A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | [A05](A05-seed-bot.md) | ACTIVE | 2026-04-27 |
 | A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 07:00·12:00·15:00 KST | GHA | [A06](A06-sns-posting.md) | ACTIVE | 2026-04-27 |
