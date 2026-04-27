@@ -22,7 +22,7 @@ import * as facebookClient from './platforms/facebook-client.js'
 import * as threadsClient from './platforms/threads-client.js'
 import * as bandClient from './platforms/band-client.js'
 
-const SITE_URL = 'https://age-doesnt-matter.com'
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? 'https://www.age-doesnt-matter.com').trim()
 
 /* ── 카테고리별 해시태그 ── */
 const CATEGORY_HASHTAGS: Record<ContentCategory, string[]> = {

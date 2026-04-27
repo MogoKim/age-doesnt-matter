@@ -9,6 +9,19 @@ export function ok<T>(data: T, status = 200) {
   return NextResponse.json({ ok: true, data }, { status })
 }
 
+/** cursor + limit 파라미터 파싱 — 4개 목록 API 공통 */
+export function parsePaginationParams(
+  searchParams: URLSearchParams,
+  options?: { maxLimit?: number; defaultLimit?: number },
+): { cursor: string | undefined; limit: number } {
+  const maxLimit = options?.maxLimit ?? 50
+  const defaultLimit = options?.defaultLimit ?? 10
+  const cursor = searchParams.get('cursor') ?? undefined
+  const raw = parseInt(searchParams.get('limit') ?? '', 10)
+  const limit = isNaN(raw) ? defaultLimit : Math.min(raw, maxLimit)
+  return { cursor, limit }
+}
+
 /** 성공 응답 + 페이지네이션 */
 export function okList<T>(
   data: T[],

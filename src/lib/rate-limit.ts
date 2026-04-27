@@ -18,6 +18,7 @@ interface RateLimitEntry {
 }
 
 const cache = new Map<string, RateLimitEntry>()
+const MAX_CACHE_SIZE = 10_000
 
 // 5분마다 만료된 항목 정리
 setInterval(() => {
@@ -26,6 +27,11 @@ setInterval(() => {
     if (entry.resetAt < now) cache.delete(key)
   }
 }, 5 * 60 * 1000)
+
+function cacheSet(key: string, entry: RateLimitEntry): void {
+  if (cache.size >= MAX_CACHE_SIZE) cache.clear()
+  cache.set(key, entry)
+}
 
 interface RateLimitOptions {
   /** 윈도우 시간 (ms) */
@@ -52,7 +58,7 @@ export function rateLimit(
 
   if (!entry || entry.resetAt < now) {
     const resetAt = now + windowMs
-    cache.set(key, { count: 1, resetAt })
+    cacheSet(key, { count: 1, resetAt })
     return { success: true, remaining: max - 1, resetAt }
   }
 
@@ -79,7 +85,7 @@ export function checkRateLimit(key: string, config: RateLimitConfig): { allowed:
   const entry = cache.get(key)
 
   if (!entry || entry.resetAt < now) {
-    cache.set(key, { count: 1, resetAt: now + config.windowMs })
+    cacheSet(key, { count: 1, resetAt: now + config.windowMs })
     return { allowed: true, remainingMs: 0 }
   }
 

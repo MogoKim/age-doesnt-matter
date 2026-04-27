@@ -3,7 +3,7 @@
  * BASE_URL은 여기 한 곳에서만 관리
  */
 
-const BASE_URL = 'https://www.age-doesnt-matter.com'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
 
 export interface BreadcrumbItem {
   name: string

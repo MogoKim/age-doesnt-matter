@@ -35,6 +35,8 @@ interface KakaoShareOptions {
   }>
 }
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
+
 let isLoading = false
 
 async function ensureKakaoSDK(): Promise<void> {
@@ -72,7 +74,7 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
   await ensureKakaoSDK()
 
   if (!window.Kakao?.isInitialized()) {
-    const baseUrl = 'https://age-doesnt-matter.com'
+    const baseUrl = APP_URL
     const fullUrl = params.url.startsWith('http') ? params.url : `${baseUrl}${params.url}`
     // 카카오 SDK 미초기화 시 Web Share API로 대체
     if (navigator.share) {
@@ -88,7 +90,7 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
     return
   }
 
-  const baseUrl = 'https://age-doesnt-matter.com'
+  const baseUrl = APP_URL
 
   window.Kakao.Share.sendDefault({
     objectType: 'feed',
@@ -118,7 +120,7 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
  */
 export async function copyShareLink(url: string): Promise<boolean> {
   try {
-    const fullUrl = `https://age-doesnt-matter.com${url}`
+    const fullUrl = `${APP_URL}${url}`
     await navigator.clipboard.writeText(fullUrl)
     return true
   } catch {

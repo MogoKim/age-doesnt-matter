@@ -12,7 +12,7 @@ interface BreadcrumbsProps {
   items: BreadcrumbItem[]
 }
 
-const BASE_URL = 'https://age-doesnt-matter.com'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
 
 export default function Breadcrumbs({ items }: BreadcrumbsProps) {
   const router = useRouter()

@@ -5,7 +5,7 @@ import { Suspense } from 'react'
 export const metadata: Metadata = {
   title: '내 일 찾기',
   description: '50·60대 맞춤 일자리 정보, 나이 무관 채용공고',
-  alternates: { canonical: 'https://age-doesnt-matter.com/jobs' },
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/jobs` },
 }
 import { getJobList, type JobCardItem } from '@/lib/queries/posts'
 import { formatTimeAgo } from '@/components/features/community/utils'

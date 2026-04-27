@@ -136,8 +136,8 @@ export default async function HomePage() {
     '@type': 'Organization',
     name: '우리 나이가 어때서',
     alternateName: '우나어',
-    url: 'https://www.age-doesnt-matter.com',
-    logo: 'https://www.age-doesnt-matter.com/logo-512.png',
+    url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com',
+    logo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/logo-512.png`,
     description: '50·60대가 나이 걱정 없이 일자리와 소통을 찾는 따뜻한 커뮤니티',
     sameAs: [
       'https://www.threads.net/@unaeo_official',
@@ -152,10 +152,10 @@ export default async function HomePage() {
     '@type': 'WebSite',
     name: '우리 나이가 어때서',
     alternateName: '우나어',
-    url: 'https://www.age-doesnt-matter.com',
+    url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com',
     potentialAction: {
       '@type': 'SearchAction',
-      target: 'https://www.age-doesnt-matter.com/search?q={search_term_string}',
+      target: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/search?q={search_term_string}`,
       'query-input': 'required name=search_term_string',
     },
   }

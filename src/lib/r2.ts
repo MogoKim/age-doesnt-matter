@@ -98,8 +98,10 @@ export async function deleteFromR2(key: string): Promise<void> {
 export function extractR2KeyFromUrl(url: string): string | null {
   try {
     const u = new URL(url)
-    const path = u.pathname
-    return path.startsWith('/') ? path.slice(1) : path
+    const raw = u.pathname.startsWith('/') ? u.pathname.slice(1) : u.pathname
+    // 경로 순회 공격 방지: ../ 시퀀스 제거
+    const safe = raw.replace(/\.\.[\\/]/g, '').replace(/^\.\./, '').replace(/[\\]/g, '')
+    return safe || null
   } catch {
     return null
   }

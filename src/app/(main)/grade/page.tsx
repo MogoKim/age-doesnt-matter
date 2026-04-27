@@ -4,7 +4,7 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: '회원 등급 안내',
   description: '우나어 회원 등급 시스템 — 새싹부터 따뜻한이웃까지',
-  alternates: { canonical: 'https://age-doesnt-matter.com/grade' },
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/grade` },
 }
 
 const GRADES = [

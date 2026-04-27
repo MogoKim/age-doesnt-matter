@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     template: '%s | 우나어',
   },
   description: '50·60대가 나이 걱정 없이 일자리와 소통을 찾는 따뜻한 커뮤니티',
-  metadataBase: new URL('https://www.age-doesnt-matter.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'),
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
   verification: {
     google: process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? undefined,
     other: {
-      'google-adsense-account': 'ca-pub-4117999106913048',
+      'google-adsense-account': process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID ?? 'ca-pub-4117999106913048',
       'naver-site-verification': '62a3c316645c9ebba7f716a9e2d2a6992336aa3c',
     },
   },
@@ -88,7 +88,7 @@ export default function RootLayout({
         <GTMScript />
         <Script
           async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4117999106913048"
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID ?? 'ca-pub-4117999106913048'}`}
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />

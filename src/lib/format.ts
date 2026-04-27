@@ -20,6 +20,9 @@ export function formatRelativeTime(dateStr: string): string {
   return `${y}.${m}.${day}`
 }
 
+const SALARY_MONTHLY_THRESHOLD = 100_000
+const SALARY_HOURLY_THRESHOLD = 5_000
+
 /** 급여 정규화: "월급 2,800,000원 ~ 2,800,000원" → "월 280만원" */
 export function formatSalary(raw: string | null | undefined): string {
   if (!raw || raw.trim() === '') return '급여 협의'
@@ -34,13 +37,13 @@ export function formatSalary(raw: string | null | undefined): string {
   if (rangeMatch) {
     const lowRaw = parseInt(rangeMatch[1])
     const highRaw = parseInt(rangeMatch[2])
-    if (lowRaw >= 100000 || highRaw >= 100000) {
+    if (lowRaw >= SALARY_MONTHLY_THRESHOLD || highRaw >= SALARY_MONTHLY_THRESHOLD) {
       const low = Math.round(lowRaw / 10000)
       const high = Math.round(highRaw / 10000)
       if (low === high) return `월 ${low}만원`
       return `월 ${high}만원`
     }
-    if (lowRaw >= 5000) {
+    if (lowRaw >= SALARY_HOURLY_THRESHOLD) {
       return `시급 ${highRaw.toLocaleString()}원`
     }
     return '급여 협의'
@@ -50,8 +53,8 @@ export function formatSalary(raw: string | null | undefined): string {
   const singleMatch = cleaned.match(/(\d{4,})원?/)
   if (singleMatch) {
     const rawAmount = parseInt(singleMatch[1])
-    if (rawAmount >= 100000) return `월 ${Math.round(rawAmount / 10000)}만원`
-    if (rawAmount >= 5000) return `시급 ${rawAmount.toLocaleString()}원`
+    if (rawAmount >= SALARY_MONTHLY_THRESHOLD) return `월 ${Math.round(rawAmount / 10000)}만원`
+    if (rawAmount >= SALARY_HOURLY_THRESHOLD) return `시급 ${rawAmount.toLocaleString()}원`
     return '급여 협의'
   }
 

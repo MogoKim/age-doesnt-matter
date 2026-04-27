@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { flags } from '@/lib/feature-flags'
 import type { PushPayload } from './types'
 
-const BASE_URL = 'https://age-doesnt-matter.com'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
 
 function initVapid() {
   if (!process.env.VAPID_SUBJECT || !process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {

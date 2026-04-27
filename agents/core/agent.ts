@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { notifyAdmin } from './notifier.js'
@@ -16,16 +16,31 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
  * - modules = ['audience', ...] → core + 지정 모듈 합산
  */
 function loadConstitution(modules?: ConstitutionModule[]): string {
-  if (!modules) {
+  try {
+    if (!modules) {
+      return readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')
+    }
+    const corePath = resolve(__dirname, 'constitution-core.yaml')
+    if (!existsSync(corePath)) {
+      console.warn('[constitution] constitution-core.yaml missing, falling back to constitution.yaml')
+      return readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')
+    }
+    const core = readFileSync(corePath, 'utf-8')
+    if (modules.length === 0) return core
+    const parts = [core]
+    for (const mod of modules) {
+      const modPath = resolve(__dirname, `constitution-${mod}.yaml`)
+      if (existsSync(modPath)) {
+        parts.push(readFileSync(modPath, 'utf-8'))
+      } else {
+        console.warn(`[constitution] ${mod} module not found, skipping`)
+      }
+    }
+    return parts.join('\n')
+  } catch (e) {
+    console.error('[constitution] load failed, falling back to constitution.yaml:', e)
     return readFileSync(resolve(__dirname, 'constitution.yaml'), 'utf-8')
   }
-  const core = readFileSync(resolve(__dirname, 'constitution-core.yaml'), 'utf-8')
-  if (modules.length === 0) return core
-  const parts = [core]
-  for (const mod of modules) {
-    parts.push(readFileSync(resolve(__dirname, `constitution-${mod}.yaml`), 'utf-8'))
-  }
-  return parts.join('\n')
 }
 
 const MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-6'

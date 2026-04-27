@@ -24,7 +24,7 @@ export default function CoupangCarousel({ className }: Props) {
 
     const init = () => {
       const initScript = document.createElement('script')
-      initScript.text = `new PartnersCoupang.G({"id":${id},"template":"carousel","trackingCode":"${trackingCode}","width":"${width}","height":"${height}","tsource":""});`
+      initScript.text = `new PartnersCoupang.G({"id":${id},"template":"carousel","trackingCode":${JSON.stringify(trackingCode)},"width":${JSON.stringify(width)},"height":${JSON.stringify(height)},"tsource":""});`
       containerRef.current?.appendChild(initScript)
     }
 

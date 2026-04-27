@@ -43,9 +43,16 @@ export async function GET(request: NextRequest) {
     const shortLived = (await tokenRes.json()) as { access_token: string; user_id: string }
 
     // Step 2: short-lived → long-lived token (60일)
-    const longRes = await fetch(
-      `https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${appSecret}&access_token=${shortLived.access_token}`,
-    )
+    // POST body 사용 — URL 쿼리에 시크릿 노출 시 Vercel 로그에 기록되는 것 방지
+    const longRes = await fetch('https://graph.threads.net/access_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'th_exchange_token',
+        client_secret: appSecret,
+        access_token: shortLived.access_token,
+      }),
+    })
 
     if (!longRes.ok) {
       const body = await longRes.text()
@@ -83,7 +90,13 @@ button{background:#FF6F61;color:white;border:none;padding:10px 20px;border-radiu
 </div>
 </body></html>`
 
-    return new NextResponse(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+    return new NextResponse(html, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+      },
+    })
   } catch (err) {
     return NextResponse.json({ error: 'Token exchange failed', detail: String(err) }, { status: 500 })
   }

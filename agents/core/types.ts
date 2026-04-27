@@ -56,7 +56,7 @@ export interface MeetingAction {
 }
 
 /** BotType enum (Prisma와 일치) */
-export type AgentBotType = 'CEO' | 'CTO' | 'CMO' | 'CPO' | 'CDO' | 'CFO' | 'COO' | 'SEED' | 'QA'
+export type AgentBotType = 'CEO' | 'CTO' | 'CMO' | 'CPO' | 'CDO' | 'CFO' | 'COO' | 'SEED' | 'QA' | 'CAFE_CRAWLER' | 'JOB' | 'HUMOR' | 'STORY' | 'THREAD'
 
 /**
  * constitution 모듈 식별자

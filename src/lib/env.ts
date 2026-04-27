@@ -80,7 +80,7 @@ export const NEXT_PUBLIC_GA4_ID = optionalEnv('NEXT_PUBLIC_GA4_ID', '')
 /** Google Service Account — GA4 Data API + Search Console API (CDO 에이전트용) */
 export const GOOGLE_SERVICE_ACCOUNT_JSON = optionalEnv('GOOGLE_SERVICE_ACCOUNT_JSON', '')
 export const GA4_PROPERTY_ID = optionalEnv('GA4_PROPERTY_ID', '')
-export const SEARCH_CONSOLE_SITE_URL = optionalEnv('SEARCH_CONSOLE_SITE_URL', 'https://age-doesnt-matter.com')
+export const SEARCH_CONSOLE_SITE_URL = optionalEnv('SEARCH_CONSOLE_SITE_URL', 'https://www.age-doesnt-matter.com')
 
 /** AI API (agents/ 에서 사용 — optional, 없으면 해당 에이전트만 비활성화) */
 export const ANTHROPIC_API_KEY = optionalEnv('ANTHROPIC_API_KEY', '')
@@ -91,5 +91,5 @@ export const OPENAI_API_KEY = optionalEnv('OPENAI_API_KEY', '')
 export const GEMINI_API_KEY = optionalEnv('GEMINI_API_KEY', '')
 
 /** App */
-export const NEXT_PUBLIC_APP_URL = optionalEnv('NEXT_PUBLIC_APP_URL', 'https://age-doesnt-matter.com')
+export const NEXT_PUBLIC_APP_URL = optionalEnv('NEXT_PUBLIC_APP_URL', 'https://www.age-doesnt-matter.com')
 export const NODE_ENV = optionalEnv('NODE_ENV', 'development')

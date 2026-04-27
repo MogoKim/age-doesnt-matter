@@ -270,7 +270,7 @@ export async function fetchSearchConsoleReport(
   endDate: string,
 ): Promise<SearchConsoleReport | null> {
   const siteUrl =
-    process.env.SEARCH_CONSOLE_SITE_URL ?? 'https://age-doesnt-matter.com'
+    process.env.SEARCH_CONSOLE_SITE_URL ?? 'https://www.age-doesnt-matter.com'
   if (!process.env.SEARCH_CONSOLE_SITE_URL) {
     console.warn('[google-api] SEARCH_CONSOLE_SITE_URL 미설정 — SC 수집 건너뜀')
     return null

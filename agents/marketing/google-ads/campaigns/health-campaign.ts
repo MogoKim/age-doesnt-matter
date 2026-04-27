@@ -24,7 +24,7 @@ export const HEALTH_CAMPAIGN: CampaignConfig = {
   desireCode: 'HEALTH',
   dailyBudgetKrw: 10000,
   maxCpcKrw: 2000,
-  landingUrl: 'https://age-doesnt-matter.com/magazine',
+  landingUrl: 'https://www.age-doesnt-matter.com/magazine',
   adSchedule: {
     startHour: 8,
     endHour: 22,
@@ -93,6 +93,6 @@ export const HEALTH_CAMPAIGN: CampaignConfig = {
     },
   ],
 
-  finalUrl: 'https://age-doesnt-matter.com/magazine',
+  finalUrl: 'https://www.age-doesnt-matter.com/magazine',
   displayPath: ['갱년기정보', '또래경험담'],
 }

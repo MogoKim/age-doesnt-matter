@@ -4,8 +4,9 @@
  */
 
 // ── Google AdSense ──
+// NEXT_PUBLIC_ADSENSE_CLIENT_ID 환경변수를 Vercel에 먼저 추가한 뒤 배포할 것
 export const ADSENSE = {
-  CLIENT_ID: 'ca-pub-4117999106913048',
+  CLIENT_ID: process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID ?? 'ca-pub-4117999106913048',
 
   /** 홈 섹션 사이 — 디스플레이 광고 (모바일/PC 공통, 홈 섹션 간 배너) */
   HOME_SECTION: '9127452149',

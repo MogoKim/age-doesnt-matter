@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getActivePopups, incrementPopupImpressions, incrementPopupClicks } from '@/lib/queries/popups'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { checkApiRateLimit } from '@/lib/api-rate-limit'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -20,15 +20,8 @@ export async function GET(req: NextRequest) {
 /** POST /api/popups — 노출/클릭 이벤트 기록 */
 export async function POST(req: NextRequest) {
   try {
-    // Rate limiting (IP 기반, 분당 30회)
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? req.ip ?? 'unknown'
-    const rateCheck = checkRateLimit(`popup-event:${ip}`, { limit: 30, windowMs: 60_000 })
-    if (!rateCheck.allowed) {
-      return NextResponse.json(
-        { error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
-        { status: 429 },
-      )
-    }
+    const rl = await checkApiRateLimit(req, 'popup-event', { max: 30 })
+    if (rl) return rl
 
     const body = await req.json() as { popupId: string; event: string }
     const { popupId, event } = body

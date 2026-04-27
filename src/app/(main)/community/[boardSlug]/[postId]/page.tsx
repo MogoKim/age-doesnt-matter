@@ -22,7 +22,7 @@ interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
 }
 
-const BASE_URL = 'https://www.age-doesnt-matter.com'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { boardSlug, postId } = await params

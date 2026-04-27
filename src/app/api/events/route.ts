@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import { rateLimit } from '@/lib/rate-limit'
+import { checkApiRateLimit } from '@/lib/api-rate-limit'
 
 interface EventPayload {
   eventName: string
@@ -10,14 +10,14 @@ interface EventPayload {
   properties?: Record<string, unknown>
 }
 
-export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+export async function POST(request: NextRequest) {
+  const rl = await checkApiRateLimit(request, 'event', { max: 30 })
+  if (rl) return rl
 
-  // Rate limit: IP당 분당 30회
-  const rl = rateLimit(`event:${ip}`, { max: 30, windowMs: 60_000 })
-  if (!rl.success) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
-  }
+  const ip =
+    request.headers.get('x-real-ip')?.trim() ||
+    request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() ||
+    null
 
   const body = (await request.json()) as EventPayload
 

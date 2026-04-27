@@ -54,6 +54,10 @@ const AGENT_LOG_CHANNEL: Record<string, ChannelKey> = {
   CEO: 'DASHBOARD',
   CTO: 'SYSTEM',
   CPO: 'SYSTEM',
+  CAFE_CRAWLER: 'LOG',
+  STRATEGIST: 'LOG',
+  COMMUNITY: 'LOG',
+  QA: 'QA',
 }
 
 // ── 로그 카테고리 prefix (통합 #로그 채널용) ──
@@ -228,6 +232,7 @@ interface ApprovalItem {
   title: string
   description?: string | null
   requestedBy: string
+  botType?: string
 }
 
 /**
@@ -240,7 +245,7 @@ export async function notifyApproval(item: ApprovalItem): Promise<void> {
     // 폴백: BotLog에 기록 → 어드민 패널에서 확인 가능
     await prisma.botLog.create({
       data: {
-        botType: 'CTO',
+        botType: item.botType ?? 'COO',
         status: 'FAILED',
         action: 'APPROVAL_REQUEST_UNSENT',
         details: JSON.stringify({ itemId: item.id, title: item.title, requestedBy: item.requestedBy, reason }),

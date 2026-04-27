@@ -15,12 +15,17 @@ interface Props {
  * 카카오 OAuth 직행 버튼 — /login 페이지를 거치지 않고 바로 카카오로 이동
  * callbackUrl: 로그인 후 돌아올 경로 (기본값 '/')
  */
+function safeCallbackUrl(url: string): string {
+  // 상대경로만 허용 — 외부 도메인 오픈 리다이렉트 방지
+  return url.startsWith('/') && !url.startsWith('//') ? url : '/'
+}
+
 export default function KakaoSignupButton({ callbackUrl = '/', className, style, children, gtmFrom }: Props) {
   async function handleClick() {
     if (gtmFrom) {
       sendGtmEvent('kakao_button_click', { from: gtmFrom, ...getStoredUtm() })
     }
-    await signIn('kakao', { callbackUrl })
+    await signIn('kakao', { callbackUrl: safeCallbackUrl(callbackUrl) })
   }
 
   return (

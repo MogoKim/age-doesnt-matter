@@ -110,7 +110,7 @@ function formatSuccessMessage(status: DailyStatus): string {
 
   const totalCount = status.morningArticles.length + status.eveningArticles.length
 
-  return `✅ *${dateStr} 매거진 ${totalCount}건 발행 완료*\n──────────────────────────\n${morningSection}\n\n${eveningSection}\n──────────────────────────\n🔗 https://age-doesnt-matter.com/magazine`
+  return `✅ *${dateStr} 매거진 ${totalCount}건 발행 완료*\n──────────────────────────\n${morningSection}\n\n${eveningSection}\n──────────────────────────\n🔗 https://www.age-doesnt-matter.com/magazine`
 }
 
 function formatFailureMessage(session: 'morning' | 'evening', engine: string, stage: string, error: string): string {

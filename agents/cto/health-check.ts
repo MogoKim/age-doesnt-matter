@@ -32,7 +32,7 @@ class CTOHealthCheck extends BaseAgent {
     }
 
     // 2. 사이트 응답 체크
-    const siteUrl = process.env.SITE_URL ?? 'https://age-doesnt-matter.com'
+    const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? 'https://www.age-doesnt-matter.com'
     const siteStart = Date.now()
     try {
       const res = await fetch(siteUrl, { signal: AbortSignal.timeout(10_000) })

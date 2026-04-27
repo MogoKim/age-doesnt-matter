@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getHotPosts, getHallOfFamePosts } from '@/lib/queries/posts'
-import { handleApiError } from '@/lib/api-utils'
+import { handleApiError, parsePaginationParams } from '@/lib/api-utils'
 import { checkApiRateLimit } from '@/lib/api-rate-limit'
 
 export async function GET(request: NextRequest) {
@@ -10,10 +10,9 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl
     const type = searchParams.get('type') ?? 'hot' // hot | fame
-    const sort = (searchParams.get('sort') ?? 'recent') as 'recent' | 'likes'
-    const cursor = searchParams.get('cursor') ?? undefined
-    const limitParam = searchParams.get('limit')
-    const limit = limitParam ? Math.min(parseInt(limitParam, 10), 50) : 10
+    const rawSort = searchParams.get('sort') ?? 'recent'
+    const sort: 'recent' | 'likes' = rawSort === 'likes' ? 'likes' : 'recent'
+    const { cursor, limit } = parsePaginationParams(searchParams)
 
     if (type === 'fame') {
       const result = await getHallOfFamePosts({ cursor, limit })

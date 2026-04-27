@@ -260,7 +260,7 @@ function buildSystemPrompt(category: ContentCategory): string {
     {"slideType": "stat", "title": "...", "statNumber": "73%", "statLabel": "..."},
     {"slideType": "tip", "title": "...", "bulletPoints": ["...", "..."], "icon": "💡"},
     ...
-    {"slideType": "cta", "title": "...", "body": "...", "ctaText": "함께 이야기해요", "ctaUrl": "https://age-doesnt-matter.com"}
+    {"slideType": "cta", "title": "...", "body": "...", "ctaText": "함께 이야기해요", "ctaUrl": "https://www.age-doesnt-matter.com"}
   ]
 }`
 }
@@ -527,7 +527,7 @@ async function main() {
     stepTotal: s.stepTotal,
     listRank: s.listRank,
     ctaText: s.ctaText,
-    ctaUrl: s.ctaUrl ?? 'https://age-doesnt-matter.com',
+    ctaUrl: s.ctaUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com',
     icon: s.icon,
     leftLabel: s.leftLabel,
     leftText: s.leftText,

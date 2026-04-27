@@ -62,7 +62,7 @@ export const RELATION_CAMPAIGN: CampaignConfig = {
   desireCode: 'RELATION',
   dailyBudgetKrw: 10000,
   maxCpcKrw: 2000,
-  landingUrl: 'https://age-doesnt-matter.com',
+  landingUrl: 'https://www.age-doesnt-matter.com',
   adSchedule: {
     startHour: 8,   // 08:00 KST
     endHour: 22,    // 22:00 KST
@@ -131,6 +131,6 @@ export const RELATION_CAMPAIGN: CampaignConfig = {
     },
   ],
 
-  finalUrl: 'https://age-doesnt-matter.com',
+  finalUrl: 'https://www.age-doesnt-matter.com',
   displayPath: ['또래커뮤니티', '무료가입'],
 }

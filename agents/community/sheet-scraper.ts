@@ -330,7 +330,7 @@ async function main() {
 
             // 게시글 URL 생성
             const boardSlug = tab.boardType === 'STORY' ? 'stories' : 'humor'
-            const postUrl = `https://age-doesnt-matter.com/community/${boardSlug}/${post.id}`
+            const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${boardSlug}/${post.id}`
 
             // Sheet 업데이트
             await updateRow(tab.tabName, row.rowIndex, {

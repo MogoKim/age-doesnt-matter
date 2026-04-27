@@ -2,6 +2,8 @@ import NextAuth from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authConfig } from '@/lib/auth.config'
 
+const TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000
+
 /**
  * 전체 auth 설정 (서버 전용 — Prisma DB 접근 포함)
  * 미들웨어에서는 auth.config.ts의 경량 버전 사용
@@ -65,8 +67,8 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
         if (account?.provider === 'kakao' && profile) {
           const providerId = String(profile.id)
           const kakaoAccount = profile as Record<string, unknown>
-          const kakaoProfile = (kakaoAccount.kakao_account as Record<string, unknown>)
-            ?.profile as Record<string, string> | undefined
+          const kakaoData = kakaoAccount.kakao_account as Record<string, unknown>
+          const kakaoProfile = kakaoData?.profile as Record<string, string> | undefined
 
           let user = await prisma.user.findUnique({
             where: { providerId },
@@ -79,16 +81,10 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
               data: {
                 providerId,
                 nickname: tempNickname,
-                email: (kakaoAccount.kakao_account as Record<string, unknown>)?.email as
-                  | string
-                  | undefined,
+                email: typeof kakaoData?.email === 'string' ? kakaoData.email : undefined,
                 profileImage: kakaoProfile?.profile_image_url,
-                birthYear: (kakaoAccount.kakao_account as Record<string, unknown>)?.birthyear
-                  ? Number((kakaoAccount.kakao_account as Record<string, unknown>)?.birthyear)
-                  : undefined,
-                gender: (kakaoAccount.kakao_account as Record<string, unknown>)?.gender as
-                  | string
-                  | undefined,
+                birthYear: kakaoData?.birthyear ? Number(kakaoData.birthyear) : undefined,
+                gender: typeof kakaoData?.gender === 'string' ? kakaoData.gender : undefined,
               },
             })
             token.needsOnboarding = true
@@ -111,7 +107,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           // 5분 이내 갱신됐으면 DB 스킵 (매 요청 DB 조회 방지)
           const now = Date.now()
           const lastRefresh = (token.tokenRefreshedAt as number) ?? 0
-          if (now - lastRefresh < 5 * 60 * 1000) {
+          if (now - lastRefresh < TOKEN_REFRESH_WINDOW_MS) {
             return token
           }
 

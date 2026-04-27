@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 
 const ADMIN_COOKIE = 'admin-token'
+const ADMIN_SESSION_HOURS = 4
 
 function getSecret(): Uint8Array {
   const secret = process.env.ADMIN_JWT_SECRET
@@ -27,7 +28,7 @@ export async function createAdminToken(payload: AdminSession): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('4h')
+    .setExpirationTime(`${ADMIN_SESSION_HOURS}h`)
     .sign(getSecret())
 }
 
@@ -41,7 +42,7 @@ export async function setAdminCookie(token: string) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 4 * 60 * 60, // 4시간
+    maxAge: ADMIN_SESSION_HOURS * 60 * 60,
   })
 }
 
@@ -63,11 +64,11 @@ export async function getAdminSession(): Promise<AdminSession | null> {
 
   try {
     const { payload } = await jwtVerify(token, getSecret())
-    return {
-      adminId: payload.adminId as string,
-      email: payload.email as string,
-      nickname: payload.nickname as string,
-    }
+    const adminId = typeof payload.adminId === 'string' ? payload.adminId : null
+    const email = typeof payload.email === 'string' ? payload.email : null
+    const nickname = typeof payload.nickname === 'string' ? payload.nickname : null
+    if (!adminId || !email || !nickname) return null
+    return { adminId, email, nickname }
   } catch {
     return null
   }
@@ -79,11 +80,11 @@ export async function getAdminSession(): Promise<AdminSession | null> {
 export async function verifyAdminToken(token: string): Promise<AdminSession | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret())
-    return {
-      adminId: payload.adminId as string,
-      email: payload.email as string,
-      nickname: payload.nickname as string,
-    }
+    const adminId = typeof payload.adminId === 'string' ? payload.adminId : null
+    const email = typeof payload.email === 'string' ? payload.email : null
+    const nickname = typeof payload.nickname === 'string' ? payload.nickname : null
+    if (!adminId || !email || !nickname) return null
+    return { adminId, email, nickname }
   } catch {
     return null
   }

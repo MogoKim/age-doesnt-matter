@@ -15,7 +15,7 @@ import ResponsiveAd from '@/components/ad/ResponsiveAd'
 export const metadata: Metadata = {
   title: '인기글',
   description: '우나어 커뮤니티에서 가장 인기 있는 글 모음',
-  alternates: { canonical: 'https://age-doesnt-matter.com/best' },
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/best` },
 }
 
 const getCachedDaily = unstable_cache(

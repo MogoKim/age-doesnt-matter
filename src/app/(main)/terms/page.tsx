@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: '이용약관',
-  alternates: { canonical: 'https://age-doesnt-matter.com/terms' },
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/terms` },
 }
 
 export default function TermsPage() {
