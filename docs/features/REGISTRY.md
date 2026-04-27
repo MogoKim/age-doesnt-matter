@@ -58,7 +58,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 |----|--------|----------|--------|------|------|---------|
 | F01 | 회원가입 유도 배너 | `src/components/common/SignupPromptBanner.tsx` | 20초 체류 + 50% 스크롤 | [F01](F01-signup-prompt.md) | ACTIVE | 2026-04-27 |
 | F02 | PWA 설치 유도 | `src/components/common/AddToHomeScreen.tsx` | 4단계 트리거 (13s/3페이지/행동/주간) | [F02](F02-pwa-install.md) | ACTIVE | 2026-04-27 |
-| F03 | 히어로 배너 | `src/app/(main)/page.tsx` | 홈 방문 | - | ACTIVE | 2026-04-21 |
+| F03 | 히어로 배너 | `src/components/features/home/HeroSlider.tsx` | 홈 방문 | [F03](F03-hero-banner.md) | ACTIVE | 2026-04-27 |
 | F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | `docs/specs/01-community.md` | ACTIVE | 2026-04-05 |
 | F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 | [F05](F05-magazine.md) | ACTIVE | 2026-04-27 |
 | F06 | 일자리 게시판 | `src/app/(main)/jobs/` | 자동수집(A03) + 사용자 탐색 | `docs/features/jobs-bot.md` | ACTIVE | 2026-04-21 |
