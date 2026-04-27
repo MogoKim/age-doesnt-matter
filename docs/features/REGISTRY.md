@@ -3,7 +3,7 @@
 > 모든 기능의 단일 진실의 원천.
 > **Claude가 /done 실행 시 자동 업데이트한다. 수동으로 편집하지 마라.**
 
-마지막 갱신: 2026-04-27 (A10 문서 연결)
+마지막 갱신: 2026-04-27 (I02/I03/I04 문서 연결)
 
 ---
 
@@ -101,9 +101,9 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | ID | 기능명 | 코드/설정 위치 | 문서 | 상태 | 최근변경 |
 |----|--------|--------------|------|------|---------|
 | I01 | launchd 로컬 스케줄러 | `~/Library/LaunchAgents/com.unaeo.*.plist` | [I01](I01-launchd-scheduler.md) | ACTIVE | 2026-04-27 |
-| I02 | Upstash Redis 레이트리밋 | `src/lib/rate-limit.ts` | `docs/04-report/전방위감사.report.md` | ACTIVE | 2026-04-23 |
-| I03 | Cloudflare R2 이미지 저장소 | `src/lib/r2.ts` + `agents/core/r2.ts` | - | ACTIVE | 2026-04-23 |
-| I04 | Google Indexing API | 발행 시 자동 호출 | - | ACTIVE | 2026-03-30 |
+| I02 | Upstash Redis 레이트리밋 | `src/lib/rate-limit.ts` | [I02](I02-redis-ratelimit.md) | ACTIVE | 2026-04-27 |
+| I03 | Cloudflare R2 이미지 저장소 | `src/lib/r2.ts` + `agents/core/r2.ts` | [I03](I03-r2-storage.md) | ACTIVE | 2026-04-27 |
+| I04 | Google Indexing API | 발행 시 자동 호출 | [I04](I04-google-indexing.md) | ACTIVE | 2026-04-27 |
 
 ---
 
