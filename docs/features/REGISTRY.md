@@ -89,7 +89,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 스케줄 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|--------|------|------|---------|
-| M01 | CTO 헬스체크 + 에러모니터 | `agents/cto/health-check.ts` + `error-monitor.ts` + `crawler-health.ts` | GHA 4시간마다 | - | ACTIVE | 2026-04-07 |
+| M01 | CTO 헬스체크 + 에러모니터 | `agents/cto/health-check.ts` + `error-monitor.ts` + `crawler-health.ts` | GHA 4시간마다 | [M01](M01-cto-monitoring.md) | ACTIVE | 2026-04-27 |
 | M02 | QA 콘텐츠 감사 | `agents/qa/content-audit.ts` | GHA 매일 08:20 KST | - | ACTIVE | 2026-04-07 |
 | M03 | 브리프 모니터 | `agents/cafe/brief-monitor.ts` | GHA 09:30 KST | - | ACTIVE | 2026-04-24 |
 | M04 | Threads 토큰 갱신 알림 | `agents/cmo/threads-token-check.ts` | GHA 수 10:00 KST | - | ACTIVE | 2026-04-23 |
