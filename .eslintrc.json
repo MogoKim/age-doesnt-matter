@@ -9,5 +9,5 @@
     "@typescript-eslint/no-explicit-any": "error",
     "react/no-unescaped-entities": "off"
   },
-  "ignorePatterns": ["src/generated/**"]
+  "ignorePatterns": ["src/generated/**", "_quarantine/**"]
 }

@@ -1,0 +1,55 @@
+name: Quarantine Check
+
+on:
+  schedule:
+    # 매주 월요일 00:00 UTC = 09:00 KST
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check quarantine deadlines
+        id: check
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+          OVERDUE=0
+          OVERDUE_LIST=""
+
+          for manifest in _quarantine/*/quarantine_manifest.md; do
+            if [ -f "$manifest" ]; then
+              folder=$(dirname "$manifest" | sed 's|_quarantine/||')
+              deadline=$(grep -m1 "삭제 예정일" "$manifest" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
+              if [ -n "$deadline" ] && [[ "$TODAY" > "$deadline" || "$TODAY" == "$deadline" ]]; then
+                OVERDUE=$((OVERDUE + 1))
+                OVERDUE_LIST="${OVERDUE_LIST}\n• ${folder} (기한: ${deadline})"
+              fi
+            fi
+          done
+
+          echo "overdue=$OVERDUE" >> "$GITHUB_OUTPUT"
+          # 개행 문자를 이스케이프해서 저장
+          echo "overdue_list<<EOF" >> "$GITHUB_OUTPUT"
+          printf "%b" "$OVERDUE_LIST" >> "$GITHUB_OUTPUT"
+          echo "" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Slack if overdue
+        if: steps.check.outputs.overdue != '0'
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_LOG }}
+        run: |
+          COUNT="${{ steps.check.outputs.overdue }}"
+          LIST="${{ steps.check.outputs.overdue_list }}"
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"🗑️ *[격리 삭제 기한 초과]* ${COUNT}개 항목\n\`\`\`${LIST}\`\`\`\n→ \`bash scripts/clean_quarantine.sh\` 실행 후 git commit 하세요.\"
+            }"
+
+      - name: No overdue items
+        if: steps.check.outputs.overdue == '0'
+        run: echo "✅ 삭제 기한 초과 항목 없음."

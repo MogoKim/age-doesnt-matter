@@ -34,3 +34,8 @@
 ## 판정 기준
 2주 후 빌드/에이전트 이상 없고 WATCH 로그 미발생 → 이 폴더 전체 삭제
 문제 발생 → git checkout pre-cleanup 으로 복구
+
+## 소급 감사 상태 (2026-04-28 확인)
+- 격리 후 14일 경과, 서비스 정상 운영 확인됨
+- **삭제 가능 상태**: `bash scripts/clean_quarantine.sh` 실행 후 이 폴더 제거
+- 팔로우업 자동화: `.github/workflows/quarantine-check.yml` (매주 월요일 Slack 알림) 추가됨

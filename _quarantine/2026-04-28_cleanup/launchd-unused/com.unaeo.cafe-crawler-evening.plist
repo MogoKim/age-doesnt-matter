@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.unaeo.cafe-crawler-evening</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx</string>
+        <string>tsx</string>
+        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/run-pipeline.ts</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
+
+    <!-- 20:40 KST (저녁 딥다이브: 크롤 + 심리분석 + 욕망지도 + 큐레이션) -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>20</integer>
+        <key>Minute</key>
+        <integer>40</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler-evening.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler-evening-error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+        <key>HOME</key>
+        <string>/Users/yanadoo</string>
+    </dict>
+</dict>
+</plist>

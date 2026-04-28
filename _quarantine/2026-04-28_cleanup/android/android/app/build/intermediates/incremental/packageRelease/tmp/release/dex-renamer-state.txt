@@ -1,0 +1,4 @@
+#Sun Apr 19 18:05:09 KST 2026
+base.0=/Users/yanadoo/Documents/New_Claude_agenotmatter/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+renamed.0=classes.dex
+path.0=classes.dex

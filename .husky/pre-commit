@@ -22,7 +22,7 @@ if [ -n "$STAGED_FILES" ]; then
 fi
 
 # ── TypeScript + ESLint (ts/tsx 스테이징 시에만) ──
-STAGED_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
+STAGED_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' | grep -v '^_quarantine/' || true)
 
 if [ -n "$STAGED_TS" ]; then
   # TypeScript 전체 타입 체크 (incremental 캐시 활용 — 2회차부터 빠름)
