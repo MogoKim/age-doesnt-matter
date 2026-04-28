@@ -187,16 +187,16 @@ export default async function HomePage() {
                 <TrendingWrapper />
               </Suspense>
 
-              {/* HOME_SECTION 광고 — TrendingSection 다음 (위치 유지) */}
+              <Suspense fallback={<SectionSkeleton />}>
+                <CommunityWrapper />
+              </Suspense>
+
+              {/* HOME_SECTION 광고 — CommunitySection 이후로 이동 (LCP critical path 제외) */}
               <AdSenseUnit
                 slotId={ADSENSE.HOME_SECTION}
                 format="horizontal"
                 className="my-4 rounded-2xl overflow-hidden"
               />
-
-              <Suspense fallback={<SectionSkeleton />}>
-                <CommunityWrapper />
-              </Suspense>
 
               <ResponsiveAd
                 mobile={<CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />}

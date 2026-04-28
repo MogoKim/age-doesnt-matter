@@ -17,33 +17,37 @@ export async function getRelatedMagazinePosts(
     : (await prisma.post.findUnique({ where: { id: excludeId }, select: { seriesId: true } }))?.seriesId ?? null
 
   if (resolvedSeriesId) {
-    const seriesRows = await prisma.post.findMany({
-      where: {
-        boardType: 'MAGAZINE',
-        status: 'PUBLISHED',
-        id: { not: excludeId },
-        seriesId: resolvedSeriesId,
-      },
-      orderBy: { seriesOrder: 'asc' },
-      take: limit,
-      select: postSelect,
-    })
+    // Q2 + Q3 병렬 실행 후 메모리 결합 (waterfall 제거)
+    const [seriesRows, categoryRows] = await Promise.all([
+      prisma.post.findMany({
+        where: {
+          boardType: 'MAGAZINE',
+          status: 'PUBLISHED',
+          id: { not: excludeId },
+          seriesId: resolvedSeriesId,
+        },
+        orderBy: { seriesOrder: 'asc' },
+        take: limit,
+        select: postSelect,
+      }),
+      prisma.post.findMany({
+        where: {
+          boardType: 'MAGAZINE',
+          status: 'PUBLISHED',
+          id: { not: excludeId },
+          ...(category ? { category } : {}),
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        select: postSelect,
+      }),
+    ])
     if (seriesRows.length >= limit) return seriesRows.map(toPostSummary)
 
-    // 시리즈 내 편이 limit보다 적으면 같은 카테고리로 채움
+    const seriesIdSet = new Set(seriesRows.map(r => r.id))
+    const filteredCategory = categoryRows.filter(r => !seriesIdSet.has(r.id))
     const remainingLimit = limit - seriesRows.length
-    const categoryRows = await prisma.post.findMany({
-      where: {
-        boardType: 'MAGAZINE',
-        status: 'PUBLISHED',
-        id: { notIn: [excludeId, ...seriesRows.map(r => r.id)] },
-        ...(category ? { category } : {}),
-      },
-      orderBy: { createdAt: 'desc' },
-      take: remainingLimit,
-      select: postSelect,
-    })
-    return [...seriesRows, ...categoryRows].map(toPostSummary)
+    return [...seriesRows, ...filteredCategory.slice(0, remainingLimit)].map(toPostSummary)
   }
 
   // 2순위: 제목 키워드 매칭 (같은 카테고리 내)
