@@ -125,6 +125,7 @@
 | 2026-04-27 | Feature 문서 최초 생성 | Feature Lifecycle 도입 |
 | 2026-04-27 | launchd npx 경로 수정 (nvm 경로로 변경) + Full Disk Access 부여 | `/usr/local/bin/npx` 존재하지 않아 exit 127 |
 | 2026-04-27 | MagazineFilter 활성탭 `text-foreground` → `text-white` | bg-primary 위 text-foreground WCAG 컨트라스트 위반 수정 |
+| 2026-04-28 | SESSION_TIME 정규화 (afternoon/late → morning/evening) + notifySlack 문자열→NotifyPayload 수정 + PERSON_REAL unsplashQuery 허용 + gemini-scraper 타임아웃 스크린샷 추가 | 매거진 발행 0건 원인 4개 수정 (SESSION_TIME 불일치, Slack invalid_blocks, Unsplash 폴백 차단, 디버그 강화) |
 
 ---
 
@@ -135,3 +136,4 @@
 | 2026-04-27 | morning exit 127 | launchd plist npx 경로 `/usr/local/bin/npx` 없음 | `/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx`로 변경 |
 | 2026-04-27 | .env.local 읽기 실패 | macOS Full Disk Access Documents 폴더 접근 제한 | /bin/zsh Full Disk Access 추가 |
 | 2026-04-05 | imageHints undefined 크래시 | agents-daily 07:46 실행 시 필드 누락 | imageHints 방어 코드 추가 |
+| 2026-04-28 | 매거진 0건 발행 | Gemini 로그인 만료 + SESSION_TIME 불일치 + Slack invalid_blocks + PERSON_REAL unsplashQuery 미생성 4중 복합 원인 | 3개 코드 버그 수정 + 사용자 수동 Gemini 재로그인 → 1건 발행 성공 확인 |

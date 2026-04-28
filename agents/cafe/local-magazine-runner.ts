@@ -121,7 +121,9 @@ function formatFailureMessage(session: 'morning' | 'evening', engine: string, st
 // ─── 메인 실행 ────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  const sessionTime = (process.env.SESSION_TIME ?? 'morning') as 'morning' | 'evening'
+  const rawSession = process.env.SESSION_TIME ?? 'morning'
+  // plist 값: morning(10:00) / afternoon(15:00) → 중간 세션, late(17:00) → 마지막 세션(일일 Slack 전송)
+  const sessionTime: 'morning' | 'evening' = rawSession === 'late' ? 'evening' : 'morning'
   const engine = (process.env.IMAGE_GENERATOR ?? 'gemini') as 'gemini' | 'chatgpt'
 
   console.log(`\n[MagazineRunner] 시작 — ${sessionTime} 세션 (${engine})`)

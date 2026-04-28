@@ -215,6 +215,12 @@ async function downloadGeneratedImage(page: Page, beforeSrcs: string[] = []): Pr
   }
 
   if (!newImgLocator) {
+    // 타임아웃 시 스크린샷 저장 (Gemini UI 변경/content policy 디버깅용)
+    try {
+      const screenshotPath = `/tmp/gemini-timeout-${Date.now()}.png`
+      await page.screenshot({ path: screenshotPath, fullPage: false })
+      console.log(`  [Gemini] 타임아웃 스크린샷 저장: ${screenshotPath}`)
+    } catch { /* 무시 */ }
     throw new Error('이미지 생성 완료를 120초 내 감지하지 못함 (새 img 요소 미출현)')
   }
 

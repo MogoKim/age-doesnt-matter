@@ -139,8 +139,8 @@ ${recentList ? `최근 발행 매거진 (중복 주제 피해주세요):\n${rece
 요약: (40자 이내, 한 줄 요약)
 seoTitle: (50자 이내, 주요 키워드 앞에 배치, 숫자/연도 포함 권장 예: "50대 갱년기 증상 7가지 — 2024 완벽 정리")
 seoDescription: (120자 이내, 첫 문장에 직접 답변, "50대" "갱년기" 등 핵심 키워드 포함, 공감 유도)
-이미지컨텍스트1: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, FOOD/SCENE/OBJECT만)
-이미지컨텍스트2: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, FOOD/SCENE/OBJECT만)
+이미지컨텍스트1: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, ILLUSTRATION 제외 전 타입 필수 작성 — PERSON_REAL은 "Korean women lifestyle", "mature woman wellness" 등 인물 관련 키워드)
+이미지컨텍스트2: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, ILLUSTRATION 제외 전 타입 필수 작성 — PERSON_REAL은 "Korean women lifestyle", "mature woman wellness" 등 인물 관련 키워드)
 본문: (HTML, 800~1200자, 소제목 2~3개, 각 15자 이내)
 
 본문 구조:
@@ -460,7 +460,7 @@ export async function main(): Promise<MagazineRunResult[]> {
       console.log(`[MagazineGenerator] 히어로 이미지 (${ctxList[0].type}, ${image.source}): ${image.url.slice(0, 50)}...`)
     } else {
       console.warn(`[MagazineGenerator] ⚠️ 히어로 이미지 없음 — "${topic.title}" 발행 보류`)
-      await notifySlack(`⚠️ *매거진 히어로 이미지 생성 실패*\n제목: ${topic.title}\n카테고리: ${category}\n→ 이미지 없음, 발행 보류됩니다.`, { channel: '#시스템' })
+      await notifySlack({ level: 'important', agent: 'CAFE_CRAWLER', title: '매거진 히어로 이미지 생성 실패', body: `제목: ${topic.title}\n카테고리: ${category}\n→ 이미지 없음, 발행 보류됩니다.` })
       continue
     }
 
