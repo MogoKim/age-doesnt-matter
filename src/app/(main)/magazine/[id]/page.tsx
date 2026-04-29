@@ -135,9 +135,11 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/CPS/ActionBar FK 보장)
   const resolvedId = post.id
 
+  // CPS_ENABLED=false: 쿠팡 CPS 상품 준비 완료 후 활성화
+  const CPS_ENABLED = false
   const [comments, cpsLinks, relatedPosts] = await Promise.all([
     getCommentsByPostId(resolvedId, userId),
-    getCpsLinks(resolvedId),
+    CPS_ENABLED ? getCpsLinks(resolvedId) : Promise.resolve([] as Awaited<ReturnType<typeof getCpsLinks>>),
     getRelatedMagazinePosts(post.category ?? null, resolvedId, 3, undefined, post.seriesId ?? null),
   ])
 

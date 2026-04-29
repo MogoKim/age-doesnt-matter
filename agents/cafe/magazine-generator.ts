@@ -10,7 +10,6 @@ import { getBotUser } from '../seed/generator.js'
 import { loadTodayBrief } from '../core/intelligence.js'
 import type { MagazineSuggestion } from './types.js'
 import { matchCpsProducts, saveCpsLinks } from './cps-matcher.js'
-import { generateMagazineThumbnail } from './thumbnail-generator.js'
 import { generateMagazineImageByContext } from './image-generator.js'
 import { buildMagazineHtml, parseSectionsFromAI } from './magazine-template.js'
 import { getDefaultImagePlan, type ImageContext } from '../core/image-prompt-builder.js'
@@ -214,7 +213,7 @@ seoDescription: (120자 이내, 첫 문장에 직접 답변, "50대" "갱년기"
     summary: summaryMatch?.[1]?.trim() ?? '',
     content: cleanContent,
     imageContexts,
-    seoTitle: seoTitleMatch?.[1]?.trim().slice(0, 60) ?? null,
+    seoTitle: seoTitleMatch?.[1]?.trim().slice(0, 50) ?? null,
     seoDescription: seoDescriptionMatch?.[1]?.trim().slice(0, 120) ?? null,
   }
 }
@@ -336,9 +335,7 @@ export async function main(): Promise<MagazineRunResult[]> {
   }
 
   if (!trend) {
-    console.log('[MagazineGenerator] 트렌드 분석 없음 — 스킵')
-    await disconnect()
-    return []
+    console.log('[MagazineGenerator] 트렌드 분석 없음 — 욕망 지도 기반 폴백으로 진행')
   }
 
   // GEO 시드 주제 확인 — period='geo_seed'로 미리 INSERT된 주제가 있으면 최우선 처리
@@ -373,7 +370,7 @@ export async function main(): Promise<MagazineRunResult[]> {
   const magazineTopics = [
     ...seriesTopics,  // 시리즈 최우선
     ...geoTopics,
-    ...(trend.magazineTopics as unknown as MagazineSuggestion[]),
+    ...((trend?.magazineTopics ?? []) as unknown as MagazineSuggestion[]),
   ]
 
   // 욕망 지도 로드 — 주제 보강에 활용
@@ -413,7 +410,7 @@ export async function main(): Promise<MagazineRunResult[]> {
   const recentTitles = await getRecentMagazineTitles(30)
 
   // 3) 상위 1~2개 주제로 매거진 생성
-  const maxArticles = 2
+  const maxArticles = 3
   let publishedCount = 0
   let totalCpsCount = 0
   const publishedTitles: string[] = []
@@ -510,24 +507,8 @@ export async function main(): Promise<MagazineRunResult[]> {
     // IMAGE_PROMPT 텍스트 잔존 방어 (AI가 예상 외 위치에 출력한 경우)
     finalHtml = finalHtml.replace(/\[IMAGE_PROMPT:[^\]]*\]/g, '')
 
-    // 썸네일 생성 (실패해도 발행은 계속)
-    let thumbnailUrl: string | undefined
-    try {
-      const tempId = `tmp-${Date.now()}`
-      thumbnailUrl = await generateMagazineThumbnail({
-        title: article.title,
-        category,
-        postId: tempId,
-      })
-      console.log(`[MagazineGenerator] 썸네일 생성: ${thumbnailUrl}`)
-    } catch (err) {
-      console.warn('[MagazineGenerator] 썸네일 생성 실패, 히어로 이미지 폴백:', err)
-    }
-    // 히어로 이미지 폴백 — Playwright 실패 시 DALL-E 히어로 이미지를 썸네일로 사용
-    if (!thumbnailUrl && image?.url) {
-      thumbnailUrl = image.url
-      console.log(`[MagazineGenerator] 히어로 이미지를 썸네일로 사용: ${image.url.slice(0, 50)}...`)
-    }
+    // 썸네일 = 히어로 이미지 직접 사용 (별도 Playwright 생성 불필요)
+    const thumbnailUrl: string | undefined = image?.url
 
     // 본문 길이 검증 — 너무 짧으면 발행 건너뜀
     const textLength = finalHtml.replace(/<[^>]*>/g, '').trim().length

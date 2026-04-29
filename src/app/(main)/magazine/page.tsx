@@ -180,6 +180,9 @@ function MagazineCard({ post }: { post: PostSummary }) {
         <h3 className="text-body font-bold text-foreground m-0 line-clamp-2 leading-snug">
           {post.title}
         </h3>
+        {post.preview && (
+          <p className="text-sm text-muted-foreground mt-1 m-0 line-clamp-2">{post.preview}</p>
+        )}
         <p className="text-caption text-muted-foreground mt-1 m-0">
           👁 {post.viewCount} · {formatTimeAgo(post.createdAt)}
         </p>

@@ -65,9 +65,6 @@ export function buildMagazineHtml(data: MagazineTemplateData): string {
     </div>`
 
   const titleBlock = `
-    <h1 style="font-size:26px;font-weight:700;line-height:1.4;margin:0 0 8px 0;color:#1a1a1a;">
-      ${data.title}
-    </h1>
     <p style="font-size:17px;color:#666;margin:0 0 24px 0;line-height:1.5;">
       ${data.subtitle}
     </p>
