@@ -42,7 +42,6 @@ const KEY_COUNT = 'signup_prompt_count'
 const KEY_DONE = 'signup_prompt_done'
 // sessionStorage keys
 const SESSION_SHOWN = 'signup_prompt_shown_this_session'
-const SESSION_PWA_SHOWN = 'pwa_shown_this_session'
 
 // ──────────────────────────────────────────────
 // 배리언트 콘텐츠
@@ -84,7 +83,6 @@ function isActivePath(p: string): boolean {
 function canShow(): boolean {
   if (localStorage.getItem(KEY_DONE) === '1') return false
   if (sessionStorage.getItem(SESSION_SHOWN)) return false
-  if (sessionStorage.getItem(SESSION_PWA_SHOWN)) return false
   return true
 }
 
@@ -92,7 +90,17 @@ function getOrAssignVariant(): Variant {
   const stored = localStorage.getItem(KEY_VARIANT) as Variant | null
   if (stored && stored in VARIANT_CONTENT) return stored
   const keys = Object.keys(VARIANT_CONTENT) as Variant[]
-  const assigned = keys[Math.floor(Math.random() * keys.length)]
+  // 디바이스 고유 ID 기반 결정론적 배정 (재방문 시 배리언트 불변)
+  let uid = localStorage.getItem('_uid')
+  if (!uid) {
+    uid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    localStorage.setItem('_uid', uid)
+  }
+  let hash = 0
+  for (let i = 0; i < uid.length; i++) hash += uid.charCodeAt(i)
+  const assigned = keys[hash % keys.length]
   localStorage.setItem(KEY_VARIANT, assigned)
   return assigned
 }
@@ -215,7 +223,8 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
     let interval: ReturnType<typeof setInterval> | null = null
 
     const tryFire = () => {
-      if (alreadyFired || elapsed < TIMER_MS || !scrolledRef.current) return
+      if (alreadyFired) return
+      if (elapsed < TIMER_MS && !scrolledRef.current) return  // OR: 20초 경과 또는 50% 스크롤 중 하나 충족
       if (!canShow()) return
       alreadyFired = true
       if (interval) { clearInterval(interval); interval = null }
