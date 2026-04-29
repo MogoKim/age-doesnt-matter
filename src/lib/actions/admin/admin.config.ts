@@ -109,26 +109,34 @@ export async function adminUpdateBoardConfig(
 
 // ─── 최상단 띠 배너 설정 ───
 
+function validatePromoHref(href: string) {
+  if (!href) return
+  if (!href.startsWith('/') && !/^https:\/\//.test(href)) {
+    throw new Error('링크는 /로 시작하는 내부 경로 또는 https://로 시작하는 외부 URL만 허용됩니다.')
+  }
+}
+
 export async function adminUpdateTopPromoBanner(data: {
+  type: 'guest' | 'member'
   enabled: boolean
   tag: string
   text: string
   href: string
 }) {
   await requireAdmin()
+  validatePromoHref(data.href)
 
-  if (data.href && !data.href.startsWith('/') && !/^https?:\/\/age-doesnt-matter\.com/.test(data.href)) {
-    throw new Error('링크는 /로 시작하는 내부 경로만 허용됩니다.')
-  }
+  const prefix = data.type === 'guest' ? 'TOP_PROMO_GUEST' : 'TOP_PROMO_MEMBER'
 
   await prisma.$transaction([
-    prisma.setting.upsert({ where: { key: 'TOP_PROMO_ENABLED' }, create: { key: 'TOP_PROMO_ENABLED', value: String(data.enabled) }, update: { value: String(data.enabled) } }),
-    prisma.setting.upsert({ where: { key: 'TOP_PROMO_TAG' },     create: { key: 'TOP_PROMO_TAG',     value: data.tag  }, update: { value: data.tag  } }),
-    prisma.setting.upsert({ where: { key: 'TOP_PROMO_TEXT' },    create: { key: 'TOP_PROMO_TEXT',    value: data.text }, update: { value: data.text } }),
-    prisma.setting.upsert({ where: { key: 'TOP_PROMO_HREF' },    create: { key: 'TOP_PROMO_HREF',    value: data.href }, update: { value: data.href } }),
+    prisma.setting.upsert({ where: { key: `${prefix}_ENABLED` }, create: { key: `${prefix}_ENABLED`, value: String(data.enabled) }, update: { value: String(data.enabled) } }),
+    prisma.setting.upsert({ where: { key: `${prefix}_TAG` },     create: { key: `${prefix}_TAG`,     value: data.tag  }, update: { value: data.tag  } }),
+    prisma.setting.upsert({ where: { key: `${prefix}_TEXT` },    create: { key: `${prefix}_TEXT`,    value: data.text }, update: { value: data.text } }),
+    prisma.setting.upsert({ where: { key: `${prefix}_HREF` },    create: { key: `${prefix}_HREF`,    value: data.href }, update: { value: data.href } }),
   ])
 
-  revalidateTag('top-promo-settings')
+  const cacheTag = data.type === 'guest' ? 'top-promo-guest' : 'top-promo-member'
+  revalidateTag(cacheTag)
   revalidatePath('/', 'layout')
   revalidatePath('/admin/banners')
 }

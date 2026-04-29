@@ -3,32 +3,40 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-const SESSION_KEY = 'top-promo-dismissed'
-
 interface TopPromoBannerClientProps {
+  type: 'guest' | 'member'
   tag:  string
   text: string
   href: string
 }
 
 export default function TopPromoBannerClient({
+  type,
   tag,
   text,
   href,
 }: TopPromoBannerClientProps) {
+  const sessionKey = `top-promo-${type}-dismissed`
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
-    // 이번 탭 세션에서 닫은 경우 숨김
-    if (sessionStorage.getItem(SESSION_KEY)) setVisible(false)
-  }, [])
+    if (sessionStorage.getItem(sessionKey)) setVisible(false)
+  }, [sessionKey])
 
   if (!visible) return null
 
   function handleDismiss() {
-    sessionStorage.setItem(SESSION_KEY, '1')
+    sessionStorage.setItem(sessionKey, '1')
     setVisible(false)
   }
+
+  const isExternal = href.startsWith('https://')
+
+  const linkContent = (
+    <span className="text-white text-caption font-semibold leading-snug line-clamp-1 flex-1 min-w-0">
+      {text}
+    </span>
+  )
 
   return (
     <div
@@ -39,22 +47,30 @@ export default function TopPromoBannerClient({
       role="banner"
       aria-label="프로모션 배너"
     >
-      {/* 태그 칩 */}
       {tag && (
         <span className="shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full bg-white/20 text-white text-caption font-semibold leading-none whitespace-nowrap">
           {tag}
         </span>
       )}
 
-      {/* 텍스트 + 링크 */}
-      <Link
-        href={href}
-        className="text-white text-caption font-semibold leading-snug no-underline hover:underline line-clamp-1 flex-1 min-w-0"
-      >
-        {text}
-      </Link>
+      {isExternal ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="no-underline hover:underline flex-1 min-w-0"
+        >
+          {linkContent}
+        </a>
+      ) : (
+        <Link
+          href={href}
+          className="no-underline hover:underline flex-1 min-w-0"
+        >
+          {linkContent}
+        </Link>
+      )}
 
-      {/* 닫기 버튼 */}
       <button
         type="button"
         onClick={handleDismiss}
