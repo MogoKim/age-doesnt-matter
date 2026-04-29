@@ -16,12 +16,11 @@ export default function TopPromoBannerClient({
   text,
   href,
 }: TopPromoBannerClientProps) {
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState(true)
 
   useEffect(() => {
     // 이번 탭 세션에서 닫은 경우 숨김
-    const dismissed = sessionStorage.getItem(SESSION_KEY)
-    if (!dismissed) setVisible(true)
+    if (sessionStorage.getItem(SESSION_KEY)) setVisible(false)
   }, [])
 
   if (!visible) return null
@@ -33,7 +32,7 @@ export default function TopPromoBannerClient({
 
   return (
     <div
-      className="relative flex items-center justify-center gap-2 min-h-[40px] px-4 py-2 text-center"
+      className="relative flex items-center justify-center gap-2 h-[44px] px-4 overflow-hidden text-center"
       style={{
         background: 'linear-gradient(90deg, var(--hero-1-from) 0%, var(--hero-1-mid) 50%, var(--hero-1-to) 100%)',
       }}
@@ -50,7 +49,7 @@ export default function TopPromoBannerClient({
       {/* 텍스트 + 링크 */}
       <Link
         href={href}
-        className="text-white text-[16px] font-semibold leading-snug no-underline hover:underline line-clamp-1 flex-1 min-w-0"
+        className="text-white text-caption font-semibold leading-snug no-underline hover:underline line-clamp-1 flex-1 min-w-0"
       >
         {text}
       </Link>
@@ -59,7 +58,7 @@ export default function TopPromoBannerClient({
       <button
         type="button"
         onClick={handleDismiss}
-        className="shrink-0 flex items-center justify-center w-[32px] h-[32px] rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors [-webkit-tap-highlight-color:transparent]"
+        className="shrink-0 flex items-center justify-center w-[44px] h-[44px] rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors [-webkit-tap-highlight-color:transparent]"
         aria-label="배너 닫기"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">

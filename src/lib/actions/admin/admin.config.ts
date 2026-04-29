@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import type { BannedWordCategory, Grade } from '@/generated/prisma/client'
@@ -105,4 +105,30 @@ export async function adminUpdateBoardConfig(
   })
 
   revalidatePath('/admin/settings')
+}
+
+// ─── 최상단 띠 배너 설정 ───
+
+export async function adminUpdateTopPromoBanner(data: {
+  enabled: boolean
+  tag: string
+  text: string
+  href: string
+}) {
+  await requireAdmin()
+
+  if (data.href && !data.href.startsWith('/') && !/^https?:\/\/age-doesnt-matter\.com/.test(data.href)) {
+    throw new Error('링크는 /로 시작하는 내부 경로만 허용됩니다.')
+  }
+
+  await prisma.$transaction([
+    prisma.setting.upsert({ where: { key: 'TOP_PROMO_ENABLED' }, create: { key: 'TOP_PROMO_ENABLED', value: String(data.enabled) }, update: { value: String(data.enabled) } }),
+    prisma.setting.upsert({ where: { key: 'TOP_PROMO_TAG' },     create: { key: 'TOP_PROMO_TAG',     value: data.tag  }, update: { value: data.tag  } }),
+    prisma.setting.upsert({ where: { key: 'TOP_PROMO_TEXT' },    create: { key: 'TOP_PROMO_TEXT',    value: data.text }, update: { value: data.text } }),
+    prisma.setting.upsert({ where: { key: 'TOP_PROMO_HREF' },    create: { key: 'TOP_PROMO_HREF',    value: data.href }, update: { value: data.href } }),
+  ])
+
+  revalidateTag('top-promo-settings')
+  revalidatePath('/', 'layout')
+  revalidatePath('/admin/banners')
 }

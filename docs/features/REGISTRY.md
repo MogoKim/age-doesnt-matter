@@ -65,6 +65,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F07 | 베스트 탭 | `src/app/(main)/best/` | trendingScore 상위 | `docs/specs/05-best.md` | ACTIVE | 2026-04-05 |
 | F08 | 검색 | `src/app/(main)/search/` | 사용자 검색 | `docs/specs/04-search.md` | ACTIVE | 2026-04-05 |
 | F09 | 어드민 패널 | `src/app/(admin)/` | 운영자 접근 | `docs/specs/09-admin.md` | ACTIVE | 2026-04-05 |
+| F10 | 최상단 띠 배너 | `src/components/layouts/TopPromoBanner.tsx` + `TopPromoBannerClient.tsx` + `src/components/admin/TopPromoBannerPanel.tsx` | DB Setting 테이블 (어드민 관리) | [F10](F10-top-promo-banner.md) | ACTIVE | 2026-04-29 |
 
 ---
 
