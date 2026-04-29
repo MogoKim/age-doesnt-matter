@@ -39,6 +39,15 @@
 - Prisma: `npx prisma generate` (스키마 변경 시)
 - 빌드: `npm run build`
 
+## 회원가입(Auth) 변경 시 절대 준수 체크리스트
+
+- `src/lib/auth.config.ts` / `src/lib/auth.ts` 변경 시:
+  1. 배포 후 `/api/health/auth` 200 확인
+  2. Android Chrome + iOS Safari 실기기 직접 로그인 테스트
+  3. BotLog `action: 'AUTH_FAILURE'` 1시간 모니터링
+- 다른 기능 개발 완료 후: `grep -rn "from.*auth\|from.*session" src/` 로 의도치 않은 변경 없는지 확인
+- Kakao Developer Console redirect_uri 변경 시: 반드시 창업자 승인 후
+
 ## QA 자동 트리거
 - **코드 편집 후**: tsc 자동 실행 (Hook)
 - **git push**: CI 변경 감지 → @smoke/@ads E2E / agents → cron-links | 배포 후: Smoke+Visual QA+Lighthouse

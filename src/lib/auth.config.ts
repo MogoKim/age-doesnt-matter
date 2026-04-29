@@ -45,6 +45,29 @@ export const authConfig: NextAuthConfig = {
     }),
   ],
 
+  cookies: {
+    state: {
+      name: 'authjs.state',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 15,
+      },
+    },
+    pkceCodeVerifier: {
+      name: 'authjs.pkce.code_verifier',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 15,
+      },
+    },
+  },
+
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60,
@@ -52,6 +75,7 @@ export const authConfig: NextAuthConfig = {
 
   pages: {
     signIn: '/login',
+    error: '/auth/error',
   },
 
   callbacks: {

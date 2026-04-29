@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authConfig } from '@/lib/auth.config'
+import { logAuthFailure } from '@/lib/auth-monitor'
 
 const TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000
 
@@ -48,6 +49,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
         return true
       } catch (error) {
         console.error('[auth] signIn error:', error)
+        await logAuthFailure('signin_exception', String(error)).catch(() => {})
         return false
       }
     },
@@ -142,6 +144,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
         }
       } catch (error) {
         console.error('[auth] jwt callback error:', error)
+        await logAuthFailure('jwt_exception', String(error)).catch(() => {})
       }
 
       return token
