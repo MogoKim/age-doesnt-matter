@@ -23,7 +23,7 @@ export default function MagazineSection({ posts }: Props) {
       </div>
       {/* 모바일: 가로 스크롤 1열 / 데스크탑: 4열 그리드 */}
       <div className="flex gap-3 px-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [scroll-snap-type:x_mandatory] lg:grid lg:grid-cols-4 lg:gap-4 lg:px-0 lg:overflow-x-visible lg:[scroll-snap-type:none]">
-        {posts.map((article) => (
+        {posts.map((article, index) => (
           <Link
             href={`/magazine/${article.id}`}
             key={article.id}
@@ -37,6 +37,7 @@ export default function MagazineSection({ posts }: Props) {
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 200px, 25vw"
+                  priority={index === 0}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-3xl">

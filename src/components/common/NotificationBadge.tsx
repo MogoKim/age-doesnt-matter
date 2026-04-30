@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { IconBell } from '@/components/icons'
 
-const POLL_INTERVAL = 30_000 // 30초마다 폴링
+const POLL_INTERVAL = 60_000 // 60초마다 폴링
 
 interface NotificationBadgeProps {
   initialCount?: number

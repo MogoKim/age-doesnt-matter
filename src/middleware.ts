@@ -11,7 +11,7 @@ const CUID_PATTERN = /^[a-z0-9]{20,30}$/
 
 // Edge function 인스턴스 내 CUID→slug 캐시 (TTL 60초)
 const slugCache = new Map<string, { slug: string | null; expiresAt: number }>()
-const SLUG_CACHE_TTL_MS = 60_000
+const SLUG_CACHE_TTL_MS = 300_000
 
 async function resolveSlug(cuid: string): Promise<string | null> {
   const now = Date.now()

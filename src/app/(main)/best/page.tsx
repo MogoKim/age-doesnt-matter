@@ -51,24 +51,21 @@ export default async function BestPage({
   const q = params.q?.trim() || undefined
   const sf = params.sf === 'title' || params.sf === 'content' ? params.sf : ('both' as const)
 
-  const [dailyPosts, weeklyPosts, fameResult] = await Promise.all([
-    q
-      ? getDailyTrendingPosts(10, q, sf).catch(() => [] as PostSummary[])
-      : getCachedDaily().catch(() => [] as PostSummary[]),
-    q
-      ? getWeeklyTrendingPosts(10, q, sf).catch(() => [] as PostSummary[])
-      : getCachedWeekly().catch(() => [] as PostSummary[]),
-    q
-      ? getHallOfFamePosts({ limit: 10, q, sf }).catch(() => ({ posts: [] as PostSummary[] }))
-      : getCachedFame().catch(() => ({ posts: [] as PostSummary[] })),
-  ])
-
-  const postsMap: Record<TabType, PostSummary[]> = {
-    daily: dailyPosts,
-    weekly: weeklyPosts,
-    fame: fameResult.posts,
+  let posts: PostSummary[]
+  if (currentTab === 'daily') {
+    posts = q
+      ? await getDailyTrendingPosts(10, q, sf).catch(() => [] as PostSummary[])
+      : await getCachedDaily().catch(() => [] as PostSummary[])
+  } else if (currentTab === 'weekly') {
+    posts = q
+      ? await getWeeklyTrendingPosts(10, q, sf).catch(() => [] as PostSummary[])
+      : await getCachedWeekly().catch(() => [] as PostSummary[])
+  } else {
+    const result = q
+      ? await getHallOfFamePosts({ limit: 10, q, sf }).catch(() => ({ posts: [] as PostSummary[] }))
+      : await getCachedFame().catch(() => ({ posts: [] as PostSummary[] }))
+    posts = result.posts
   }
-  const posts = postsMap[currentTab]
 
   const emptyMessages: Record<TabType, string> = {
     daily: '오늘은 아직 인기글이 없어요. 글에 공감을 눌러보세요!',
