@@ -462,7 +462,7 @@ async function checkCookieExpiry() {
     const saved = details.saved ?? lastLog.itemCount ?? 0
     const collected = details.collected ?? 0
 
-    if (saved === 0 || (collected > 0 && saved / collected < 0.2)) {
+    if (collected < 10) {
       const successRate = collected > 0 ? Math.round(saved / collected * 100) : 0
       await sendSlackMessage('SYSTEM', `🚨 *쿠키 만료 의심 — 파이프라인 중단*
 수집: ${collected}건 / 저장: ${saved}건 (성공률 ${successRate}%)
