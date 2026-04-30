@@ -852,6 +852,7 @@ model CafeTrend {
   urgentTopics        Json?    // [{topic, urgencyAvg, count, psychInsight}]
   dominantDesire      String?  // 오늘 지배적 욕망 코드 (예: "HEALTH")
   dominantEmotion     String?  // 오늘 지배적 감정 코드 (예: "ANXIOUS")
+  controversyTopics   Json?    // [{controversyType, seedContent, controversyScore, sourcePostId}]
 
   // 점심 퀵 업데이트 (12:30 QUICK 모드)
   quickUpdate   Json?    // {time: "12:30", topTitles: [], surfaceTrend: ""}

@@ -16,7 +16,7 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
-import type { DailyIntelligenceBrief, DesireRankItem, UrgentTopic, PersonaQuota, ContentDirective, DataSourceBias } from '../core/intelligence.js'
+import type { DailyIntelligenceBrief, DesireRankItem, UrgentTopic, PersonaQuota, ContentDirective, DataSourceBias, ControversyTopic } from '../core/intelligence.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BRIEF_PATH = resolve(__dirname, '../core/today-brief.json')
@@ -470,6 +470,7 @@ async function generateDailyBrief(): Promise<void> {
     entertainActive,
     midDayPatch: null,
     dataSourceBias,
+    controversySeeds: (trend.controversyTopics as ControversyTopic[] | null) ?? undefined,
     generatedAt: new Date().toISOString(),
   }
 

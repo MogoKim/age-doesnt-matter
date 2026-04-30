@@ -288,6 +288,23 @@ async function saveResults(posts: PostForAnalysis[], results: PsychResult[]) {
   )
 }
 
+// ── controversy 점수 계산 (Fix 13-A) ──
+
+export function calcControversyScore(result: {
+  communitySignal?: string | null
+  urgencyLevel?: number | null
+  emotionTags?: string[] | null
+  desireCategory?: string | null
+}): number {
+  let score = 0
+  if (result.communitySignal === 'complaint') score += 3
+  if ((result.urgencyLevel ?? 0) >= 4) score += 2
+  if (result.emotionTags?.includes('ANGRY')) score += 2
+  if (result.emotionTags?.includes('JEALOUS')) score += 1
+  if (['FAMILY', 'DIGNITY', 'RELATION'].includes(result.desireCategory ?? '')) score += 2
+  return Math.min(score, 10)
+}
+
 // ── 메인 실행 ──
 
 async function main() {

@@ -1,8 +1,8 @@
 name: Agents — Seed Micro (댓글/대댓글/좋아요 전용)
 on:
   schedule:
-    # 08,12,18,23 KST → UTC 변환 (메인 스케줄과 겹치지 않음)
-    - cron: "0 23,3,9,14 * * *"
+    # 08,12,18,23 KST + 00,01 KST(심야) → UTC 변환 (메인 스케줄과 겹치지 않음)
+    - cron: "0 23,3,9,14,15,16 * * *"
   workflow_dispatch:
 
 env:

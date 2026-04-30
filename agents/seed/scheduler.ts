@@ -1,6 +1,7 @@
 import { prisma, disconnect } from '../core/db.js'
 import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP } from './generator.js'
 import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
+import type { ControversyTopic } from '../core/intelligence.js'
 import { getPersona } from './persona-data.js'
 import { safeBotLog } from '../core/safe-log.js'
 
@@ -32,6 +33,8 @@ interface Activity {
   type: ActivityType
   board?: string
   count?: number
+  controversySeed?: ControversyTopic  // 논쟁 체인 시드 (Fix 13-E)
+  targetPostId?: string               // 논쟁 댓글 타겟 글 ID
 }
 
 /**
@@ -79,6 +82,8 @@ const SCHEDULE: Record<string, Activity[]> = {
     // 대댓글 — 아침 글에 답글
     { personaId: 'A', type: 'reply', board: 'STORY', count: 1 },
     { personaId: 'U', type: 'reply', board: 'STORY', count: 1 },
+    { personaId: 'B', type: 'reply', board: 'STORY', count: 2 },  // Fix 14
+    { personaId: 'G', type: 'reply', board: 'STORY', count: 1 },  // Fix 14
     // 좋아요
     { personaId: 'C', type: 'like', board: 'HUMOR', count: 3 },
     { personaId: 'K', type: 'like', board: 'STORY', count: 2 },
@@ -243,6 +248,8 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AO', type: 'comment', board: 'HUMOR', count: 2 }, // 웃음충전
     { personaId: 'AW', type: 'comment', board: 'STORY', count: 1 }, // 손뜨개
     { personaId: 'AR', type: 'reply', board: 'STORY', count: 1 },   // 요즘세상
+    { personaId: 'E', type: 'reply', board: 'STORY', count: 2 },    // Fix 14
+    { personaId: 'S', type: 'reply', board: 'STORY', count: 2 },    // Fix 14
   ],
 
   '20': [
@@ -305,13 +312,29 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'W', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'AA', type: 'like', board: 'STORY', count: 2 },
   ],
+
+  // ── 심야 (Fix 10 — 잠 못 드는 00~01시) ──
+  '00': [
+    { personaId: 'E', type: 'post' },                               // 봄바람: 새벽 감성 글
+    { personaId: 'AE', type: 'post' },                              // 새벽감성: 불면 이야기
+    { personaId: 'P', type: 'comment', board: 'STORY', count: 2 },
+    { personaId: 'AQ', type: 'comment', board: 'STORY', count: 2 },
+    { personaId: 'E', type: 'like', board: 'STORY', count: 3 },
+    { personaId: 'AE', type: 'like', board: 'STORY', count: 2 },
+  ],
+  '01': [
+    { personaId: 'P', type: 'post' },                               // 오후세시: 늦은 밤 혼자만의 시간
+    { personaId: 'AD', type: 'comment', board: 'STORY', count: 2 },
+    { personaId: 'AE', type: 'reply', board: 'STORY', count: 1 },
+    { personaId: 'P', type: 'like', board: 'STORY', count: 2 },
+  ],
 }
 
 async function getRandomPosts(board: string, limit: number) {
   return prisma.post.findMany({
     where: { boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2', status: 'PUBLISHED' },
     orderBy: { createdAt: 'desc' },
-    take: limit * 3,
+    take: Math.min(limit * 5, 200),  // Fix 14: 봇 댓글 3개 cap 대응
     select: { id: true, title: true, content: true, authorId: true },
   })
 }
@@ -352,15 +375,42 @@ async function getLikeTargets(userId: string, board: string, limit: number) {
   return posts.sort(() => Math.random() - 0.5).slice(0, limit)
 }
 
+/** 페르소나 오늘 글쓰기 횟수 조회 (Fix 6 — 일 2회 제한) */
+async function getTodayPostCount(personaId: string): Promise<number> {
+  try {
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const user = await prisma.user.findFirst({
+      where: { email: `bot-${personaId.toLowerCase()}@unao.bot` },
+      select: { id: true },
+    })
+    if (!user) return 0
+    return prisma.post.count({
+      where: { authorId: user.id, createdAt: { gte: today }, status: 'PUBLISHED' },
+    })
+  } catch { return 0 }
+}
+
 async function runActivity(activity: Activity): Promise<void> {
   const userId = await getBotUser(activity.personaId)
 
   if (activity.type === 'post') {
-    const { title, content, boardType, category } = await generatePost(activity.personaId, activity.board)
+    // Fix 6: 하루 최대 2회 제한
+    const todayCount = await getTodayPostCount(activity.personaId)
+    if (todayCount >= 2) {
+      console.log(`[Seed] ${activity.personaId} 글쓰기 스킵 (오늘 ${todayCount}회)`)
+      return
+    }
+
+    const { title, content, boardType, category } = await generatePost(
+      activity.personaId,
+      activity.board,
+      activity.controversySeed,  // Fix 13-E: controversyBlock 주입용
+    )
     const htmlContent = `<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
     const summary = content.replace(/\n/g, ' ').slice(0, 150).trim()
 
-    await prisma.post.create({
+    // Fix 13-E: create() 반환값 직접 캡처 (findFirst race condition 방지)
+    const newPost = await prisma.post.create({
       data: {
         title,
         content: htmlContent,
@@ -372,12 +422,29 @@ async function runActivity(activity: Activity): Promise<void> {
         status: 'PUBLISHED',
         publishedAt: new Date(),
       },
+      select: { id: true },
     })
     console.log(`[Seed] ${activity.personaId} posted: "${title}"`)
+
+    // Fix 13-E: 논쟁글 생성 시 BotLog 기록 (16/17시 체인이 이 postId로 타겟 찾음)
+    if (activity.controversySeed) {
+      await safeBotLog({
+        botType: 'SEED',
+        action: 'CONTROVERSY_POST_CREATED',
+        status: 'SUCCESS',
+        details: JSON.stringify({ postId: newPost.id, controversyType: activity.controversySeed.controversyType }),
+        executionTimeMs: 0,
+      }).catch(() => {})
+    }
   }
 
   if (activity.type === 'comment') {
-    const posts = await getRandomPosts(activity.board ?? 'STORY', activity.count ?? 1)
+    const rawPosts = await getRandomPosts(activity.board ?? 'STORY', activity.count ?? 1)
+    // 논쟁 체인 글이 있으면 우선 타겟에 포함 (16시 댓글 체인 연결)
+    const controversyPost = await getControversyPost()
+    const posts = controversyPost
+      ? [controversyPost, ...rawPosts.filter(p => p.id !== controversyPost.id)]
+      : rawPosts
     for (const post of posts.slice(0, activity.count ?? 1)) {
       const existingComment = await prisma.comment.findFirst({
         where: { postId: post.id, authorId: userId },
@@ -477,6 +544,49 @@ async function runActivity(activity: Activity): Promise<void> {
   }
 }
 
+// ── 논쟁 체인 헬퍼 (Fix 13-E) ──
+
+function buildControversyChain(seed: ControversyTopic, hour: string): Activity[] {
+  if (hour === '14') {
+    const authorMap: Record<string, string> = {
+      family_conflict: 'BD', social_anger: 'W',
+      dignity_hurt: 'Y', money_stress: 'AZ',
+    }
+    return [{ personaId: authorMap[seed.controversyType] ?? 'BD', type: 'post', controversySeed: seed }]
+  }
+  if (hour === '16') return [
+    { personaId: 'W', type: 'comment', board: 'STORY', count: 1 },
+    { personaId: 'E', type: 'comment', board: 'STORY', count: 1 },
+    { personaId: 'X', type: 'comment', board: 'STORY', count: 1 },
+  ]
+  if (hour === '17') return [
+    { personaId: 'BD', type: 'reply', board: 'STORY', count: 1 },
+    { personaId: 'AQ', type: 'reply', board: 'STORY', count: 1 },
+  ]
+  return []
+}
+
+async function getControversyPost(): Promise<{ id: string; title: string; content: string } | null> {
+  try {
+    const log = await prisma.botLog.findFirst({
+      where: {
+        botType: 'SEED',
+        action: 'CONTROVERSY_POST_CREATED',
+        createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { details: true },
+    })
+    if (!log?.details) return null
+    const parsed = log.details as { postId?: string }
+    if (!parsed.postId) return null
+    return prisma.post.findFirst({
+      where: { id: parsed.postId, status: 'PUBLISHED' },
+      select: { id: true, title: true, content: true },
+    })
+  } catch { return null }
+}
+
 // 엔터 페르소나가 활성화될 시간대 (수다 많은 오전/오후)
 const ENTERTAIN_HOURS = ['10', '13', '15', '21']
 
@@ -561,6 +671,13 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
         adjusted.push({ personaId, type: 'comment', board: 'STORY', count: 1 })
       }
     }
+  }
+
+  // 논쟁 체인 주입 — 14시(글), 16시(댓글), 17시(대댓글)
+  if (brief.controversySeeds?.length) {
+    const seed = brief.controversySeeds[0]
+    const chainActivities = buildControversyChain(seed, hour)
+    adjusted.push(...chainActivities)
   }
 
   // midDayPatch 조정 (점심 이후 시간대)

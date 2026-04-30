@@ -70,10 +70,31 @@ const MICRO_SCHEDULE: Record<string, MicroActivity[]> = {
     { personaId: 'AK', type: 'reply', board: 'STORY', count: 2 },
     { personaId: 'AM', type: 'reply', board: 'STORY', count: 1 },
     { personaId: 'AW', type: 'reply', board: 'STORY', count: 1 },
+    { personaId: 'AR', type: 'reply', board: 'STORY', count: 2 },
     // 좋아요
     { personaId: 'AJ', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'AK', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'AM', type: 'like', board: 'STORY', count: 3 },
+  ],
+
+  // ── 00시: 심야 — 잠 못 드는 감성 활동 ──
+  '00': [
+    // 댓글
+    { personaId: 'AE', type: 'comment', board: 'STORY', count: 2 },
+    { personaId: 'P', type: 'comment', board: 'STORY', count: 2 },
+    // 대댓글
+    { personaId: 'E', type: 'reply', board: 'STORY', count: 1 },
+    // 좋아요
+    { personaId: 'AE', type: 'like', board: 'STORY', count: 3 },
+  ],
+
+  // ── 01시: 새벽 — 회상·감성 마무리 ──
+  '01': [
+    // 댓글
+    { personaId: 'AQ', type: 'comment', board: 'STORY', count: 1 },
+    // 좋아요
+    { personaId: 'I', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'AM', type: 'like', board: 'STORY', count: 2 },
   ],
 
   // ── 23시: 밤 마무리 — 조용한 활동 ──
@@ -100,7 +121,7 @@ async function getRandomPosts(board: string, limit: number) {
   return prisma.post.findMany({
     where: { boardType: board as 'STORY' | 'HUMOR' | 'JOB', status: 'PUBLISHED' },
     orderBy: { createdAt: 'desc' },
-    take: limit * 3,
+    take: Math.min(limit * 5, 200),
     select: { id: true, title: true, content: true, authorId: true },
   })
 }

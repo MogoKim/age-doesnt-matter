@@ -1,18 +1,47 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../core/db.js'
 import { getPersona, getAllPersonaIds, type Persona } from './persona-data.js'
+import type { ControversyTopic } from '../core/intelligence.js'
 
-// ── 욕망 카테고리 → 적합 페르소나 매핑 (실제 39+EN 페르소나 기반) ──
+// ── 욕망 카테고리 → 적합 페르소나 매핑 (v8 — 12카테고리 55명 완전매핑, EN1~EN5 제외) ──
 export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint: string }> = {
-  HEALTH:   { personas: ['H', 'A', 'AC'],   topicHint: '건강 정보, 병원 경험, 증상 공감, 약 부작용, 건강검진 결과' },
-  FAMILY:   { personas: ['E', 'BC', 'BD'],  topicHint: '자녀 이야기(취업·직장·결혼), 고부갈등(시어머니 입장), 사위/며느리 이야기, 남편 불만·하소연, 노부부 갈등, 손주 자랑. 손주가 등장하면 반드시 유치원생/초등 저학년 수준으로만.' },
-  MONEY:    { personas: ['B', 'N', 'AZ'],   topicHint: '절약 팁, 재테크 경험, 연금 이야기, 물가 한탄, ETF·부동산 현실 공유' },
-  RETIRE:   { personas: ['T', 'G', 'BA'],   topicHint: '은퇴 후 일상, 의미 찾기, 새 시작, 무료함, 취미 찾기, 은퇴 준비 현실' },
-  JOB:      { personas: ['T', 'B', 'AZ'],   topicHint: '일자리 경험, 자격증, 재취업 이야기, 나이 차별' },
-  RELATION: { personas: ['C', 'V', 'AD'],   topicHint: '공감, 위로, 소통, 친구 이야기, 섭섭함, 오해, 화해' },
-  HOBBY:    { personas: ['M', 'F', 'AB'],   topicHint: '취미, 여행 후기(구체적 장소명 포함), 텃밭, 등산 코스명' },
-  MEANING:  { personas: ['I', 'P', 'AE'],   topicHint: '삶의 의미, 감사, 보람, 철학, 나이 들어 깨달은 것' },
-  HUMOR:    { personas: ['AF', 'AY', 'U'],  topicHint: '웃긴 일상, 황당 에피소드, 공감 유머, 아재개그, "나만 이래?" 공감글' },
+  // HEALTH (6명): 갱년기/증상/병원 중심
+  HEALTH:   { personas: ['H', 'A', 'AC', 'R', 'AM', 'AG'],
+              topicHint: '건강 정보, 병원 경험, 갱년기 증상 공감, 약 부작용' },
+  // FAMILY (4명): 자녀/고부/남편
+  FAMILY:   { personas: ['E', 'BC', 'BD', 'K'],
+              topicHint: '자녀 이야기, 고부갈등, 남편 이야기, 손주 자랑' },
+  // MONEY (5명): 재테크/연금/절약
+  MONEY:    { personas: ['B', 'N', 'AZ', 'AA', 'Y'],
+              topicHint: '절약 팁, 재테크, 연금, 물가, ETF, 돈공부' },
+  // RETIRE (4명): 은퇴/인생2막
+  RETIRE:   { personas: ['T', 'G', 'BA', 'L'],
+              topicHint: '은퇴 후 일상, 의미 찾기, 새 시작, 은퇴D100' },
+  // JOB (3명): 일자리/자격증/재취업
+  JOB:      { personas: ['AT', 'AS', 'D'],
+              topicHint: '일자리 경험, 자격증, 재취업, 구직 과정' },
+  // RELATION (4명): 공감/소통/친구
+  RELATION: { personas: ['C', 'V', 'AD', 'O'],
+              topicHint: '공감, 위로, 소통, 친구 이야기, 대화' },
+  // HOBBY (7명): 취미/여행/운동/등산
+  HOBBY:    { personas: ['M', 'F', 'AB', 'AI', 'AU', 'AW', 'AL'],
+              topicHint: '취미, 여행, 텃밭, 등산, 체력관리, 손뜨개, 근육' },
+  // MEANING (5명): 삶의의미/철학/감사
+  MEANING:  { personas: ['I', 'P', 'AE', 'Q', 'AR'],
+              topicHint: '삶의 의미, 감사, 보람, 철학, 요즘세상 단상' },
+  // HUMOR (7명): 웃긴일상/황당에피
+  HUMOR:    { personas: ['AF', 'AY', 'U', 'X', 'AO', 'AP', 'AX'],
+              topicHint: '웃긴 일상, 황당 에피소드, 유머, 짤방, 온라인챌린지' },
+  // FOOD (3명): 요리/음식/혼밥
+  FOOD:     { personas: ['J', 'AQ', 'AV'],
+              topicHint: '요리, 음식 이야기, 레시피, 혼밥, 간편요리' },
+  // FREEDOM (3명): 독립/혼자여행/자유
+  FREEDOM:  { personas: ['S', 'Z', 'AN'],
+              topicHint: '혼자 여행, 독립, 자유, 나만의 시간' },
+  // CARE (4명): 돌봄/노부모/건강관리
+  CARE:     { personas: ['W', 'AH', 'AK', 'AJ'],
+              topicHint: '돌봄, 노부모, 건강관리, 간병 경험' },
+  // 총 55명 = 6+4+5+4+3+4+7+5+7+3+3+4 (BB 없음, EN1~EN5 별도 처리)
 }
 
 /** 오늘의 CafeTrend 조회 (speechTone 포함) */
@@ -64,6 +93,30 @@ async function getExampleCafePosts(desire: string | null): Promise<string[]> {
   }
 }
 
+/** 댓글 스타일 예시 — CafePost.topComments에서 실제 댓글 발췌 (Fix 5) */
+async function getExampleCafeComments(desire: string | null): Promise<string[]> {
+  try {
+    const posts = await prisma.cafePost.findMany({
+      where: {
+        isUsable: true,
+        aiAnalyzed: true,
+        ...(desire ? { desireCategory: desire } : {}),
+        crawledAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      },
+      select: { topComments: true },
+      orderBy: { crawledAt: 'desc' },
+      take: 10,
+    })
+    return posts
+      .flatMap(p => (p.topComments as Array<{ content: string }> | null) ?? [])
+      .map(c => c.content.slice(0, 80))
+      .filter(s => s.length > 10)
+      .slice(0, 3)
+  } catch {
+    return []
+  }
+}
+
 /** 페르소나의 주담당 욕망 카테고리 조회 */
 function getPersonaDesire(personaId: string): string | null {
   for (const [desire, info] of Object.entries(DESIRE_PERSONA_MAP)) {
@@ -72,10 +125,46 @@ function getPersonaDesire(personaId: string): string | null {
   return null
 }
 
+/** 페르소나 욕망 area에 맞는 hotTopic 1개 선택 (Fix 2) */
+function selectPersonalizedTopic(
+  hotTopics: Array<{ topic: string; area?: string }>,
+  persona: Persona,
+  personaId: string,
+): string | null {
+  if (!hotTopics.length) return null
+
+  const desireToArea: Record<string, string> = {
+    HEALTH: 'health', FAMILY: 'family', MONEY: 'money',
+    RETIRE: 'money', JOB: 'money', RELATION: 'relation',
+    HOBBY: 'hobby', MEANING: 'meaning', HUMOR: 'humor',
+    FOOD: 'hobby', FREEDOM: 'meaning', CARE: 'health',
+  }
+  const personaDesire = getPersonaDesire(personaId)
+  const myArea = personaDesire ? desireToArea[personaDesire] : null
+
+  // 1순위: area가 내 욕망과 일치
+  if (myArea) {
+    const match = hotTopics.find(t => t.area === myArea)
+    if (match) return match.topic
+  }
+
+  // 2순위: 페르소나 topics 키워드와 겹치는 hotTopic
+  const myKeywords = new Set(
+    persona.topics.flatMap(t => t.replace(/[~·]/g, ' ').split(/\s+/)).filter(w => w.length >= 2),
+  )
+  const kwMatch = hotTopics.find(t =>
+    t.topic.split(/[\s·,]+/).some(w => w.length >= 2 && myKeywords.has(w)),
+  )
+  if (kwMatch) return kwMatch.topic
+
+  return null
+}
+
 /** 페르소나에게 주입할 오늘의 분위기 컨텍스트 */
 function buildTrendContext(
   trend: Awaited<ReturnType<typeof getLatestTrend>>,
   personaId: string,
+  persona: Persona,
 ): string {
   if (!trend?.dominantDesire) return ''
 
@@ -103,12 +192,12 @@ function buildTrendContext(
     ? (summary.topCommunityVocab as string[]).slice(0, 5)
     : []
 
-  // hotTopics top-5 주제명
+  // hotTopics top-7 (Fix 9: area 필드 포함, slice 5→7)
   const hotTopics = Array.isArray(trend.hotTopics)
-    ? (trend.hotTopics as Array<{ topic: string; count?: number }>)
-        .slice(0, 5)
-        .map(t => t.topic)
-        .filter(Boolean)
+    ? (trend.hotTopics as Array<{ topic: string; area?: string; count?: number }>)
+        .slice(0, 7)
+        .map(t => ({ topic: t.topic, area: t.area }))
+        .filter(t => Boolean(t.topic))
     : []
 
   // keywords top-8 단어
@@ -136,8 +225,10 @@ function buildTrendContext(
     ? `\n- 내 관심 영역 오늘 소재: ${matchingUrgent.length > 0 ? matchingUrgent.join(' / ') : myDesireInfo.topicHint}`
     : ''
 
-  const hotTopicLine = hotTopics.length > 0
-    ? `\n- 오늘 커뮤니티 핫 주제: ${hotTopics.join(', ')}`
+  // Fix 2: 60명 전원 동일 → 페르소나 욕망 관련 1개만 (꼭 쓸 필요 없음 안내)
+  const personalTopic = selectPersonalizedTopic(hotTopics, persona, personaId)
+  const hotTopicLine = personalTopic
+    ? `\n- 오늘 커뮤니티에서 이런 이야기도 있어요 (꼭 쓸 필요 없음): ${personalTopic}`
     : ''
 
   const emotionLine = emotionLines.length > 0
@@ -169,6 +260,17 @@ function buildTrendContext(
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 
 const client = new Anthropic()
+
+/** KST 현재 시간대별 분위기 힌트 (Fix 10) */
+function getTimeOfDayMood(kstHour: number): string {
+  if (kstHour >= 9 && kstHour <= 11)  return '상쾌한 아침, 활기차게 하루 시작'
+  if (kstHour >= 12 && kstHour <= 13) return '여유로운 점심 시간'
+  if (kstHour >= 14 && kstHour <= 17) return '한가로운 오후'
+  if (kstHour >= 18 && kstHour <= 20) return '하루를 마무리하는 저녁'
+  if (kstHour >= 21 && kstHour <= 22) return '조용한 밤, 오늘을 돌아보는 시간'
+  if (kstHour === 0 || kstHour === 1)  return '잠 못 드는 깊은 밤, 감성이 차오르는 시간'
+  return ''
+}
 
 /** KST 현재 날짜/요일/시간대 문자열 (GitHub Actions UTC 실행 보정) */
 function getKstContext(): string {
@@ -287,6 +389,15 @@ function buildTypoInstruction(p: Persona, personaId: string): string {
 }
 
 function buildSystemPrompt(p: Persona, personaId: string, context: 'post' | 'comment' | 'reply'): string {
+  const kstHour = new Date(Date.now() + 9 * 60 * 60 * 1000).getUTCHours()
+  const timeMood = getTimeOfDayMood(kstHour)
+  const lateNightExtra = (kstHour === 0 || kstHour === 1)
+    ? `\n\n[심야 감성 모드] 잠 못 드는 날 혼자 쓰는 글처럼.
+외로움, 그리움, 회상. 절제된 감성 (과장 금지). 짧고 솔직하게.
+"또 잠이 안 오네", "이 나이에 왜 이렇게 생각이 많은지" 같은 자연스러운 시작.`
+    : ''
+  const timeMoodLine = timeMood ? `\n- 현재 분위기: ${timeMood}` : ''
+
   const moodDesc = {
     positive: '당신은 대체로 밝고 긍정적인 성격입니다.',
     neutral: '당신은 감정을 크게 드러내지 않는 담담한 성격입니다.',
@@ -336,13 +447,14 @@ ${examplesStr}
 - 다른 캐릭터처럼 쓰지 마세요. 당신은 "${p.nickname}"이고 다른 사람과 다릅니다.
 - 위의 예시 문장을 그대로 복사하지 말고, 같은 스타일로 새로운 내용을 쓰세요.
 - 오프라인 모임 모집 글 절대 금지: "같이 걸어요", "이번 수요일 모여요", "○○동 모임합니다" 식의 글 금지. 온라인에서 자기 이야기/정보를 나누는 글만 작성.
-- 드라마/예능/영화 언급 시 반드시 실제 제목 명시: "어제 본 드라마" (X) → "어제 눈물의 여왕 봤는데" (O)`
+- 드라마/예능/영화 언급 시 반드시 실제 제목 명시: "어제 본 드라마" (X) → "어제 눈물의 여왕 봤는데" (O)${timeMoodLine}${lateNightExtra}`
 }
 
 /** 글 생성 */
 export async function generatePost(
   personaId: string,
   boardOverride?: string,
+  controversySeed?: ControversyTopic,
 ): Promise<{ title: string; content: string; boardType: string; category?: string }> {
   const p = getPersona(personaId)
   const board = boardOverride ?? p.board
@@ -363,7 +475,16 @@ export async function generatePost(
 
   // 오늘의 CafeTrend 심리 프로파일 주입
   const trend = await getLatestTrend()
-  const trendContext = buildTrendContext(trend, personaId)
+  const trendContext = buildTrendContext(trend, personaId, p)
+
+  // Fix 13-D: controversy 시드 있을 때 논쟁 체인 글 유도
+  const controversyBlock = controversySeed
+    ? `\n\n[오늘 커뮤니티 화제 유형 — 이런 상황 경험 글 써주세요]
+유형: ${controversySeed.controversyType}
+분위기: "${controversySeed.seedContent}"
+- "저만 이런 건가요?", "여러분은 어떻게 생각하세요?" 식 열린 결말
+- 직접 인용 금지, 본인 경험처럼 자연스럽게`
+    : ''
 
   // HUMOR 보드: 최근 엔터 크롤링 글에서 프로그램명/연예인명 힌트 추출
   let entertainHint = ''
@@ -407,7 +528,7 @@ export async function generatePost(
       trendContext,
     messages: [{
       role: 'user',
-      content: `오늘 "${topic}" 주제로 글을 써주세요.${entertainHint}${recentHint}${exampleBlock}
+      content: `오늘 "${topic}" 주제로 글을 써주세요.${entertainHint}${recentHint}${exampleBlock}${controversyBlock}
 
 응답 형식 (이 형식을 정확히 지켜주세요):
 제목: (15~30자, 당신 말투로)
@@ -425,7 +546,8 @@ export async function generatePost(
   const validCategory = boardCategories.includes(category ?? '') ? category : boardCategories[0]
 
   return {
-    title: stripMarkdown(titleMatch?.[1]?.trim() ?? `${p.nickname}의 일상`),
+    title: stripMarkdown(titleMatch?.[1]?.trim() ?? `${p.nickname}의 일상`)
+      .replace(/^\*+\s?/, '').replace(/\s?\*+$/, '').trim(),
     content: stripMarkdown(bodyMatch?.[1]?.trim() ?? text),
     boardType: board,
     category: validCategory,
@@ -442,14 +564,14 @@ export async function generateComment(
 
   // 오늘 커뮤니티 말투·어휘 주입 (글 생성과 동일 수준)
   const trend = await getLatestTrend()
-  const trendContext = buildTrendContext(trend, personaId)
+  const trendContext = buildTrendContext(trend, personaId, p)
 
-  // 실제 CafePost 예시 — 말투 모방
+  // Fix 5: 게시글 예시(content) → 실제 댓글(topComments) 예시로 교체
   const desire = getPersonaDesire(personaId)
-  const examples = await getExampleCafePosts(desire)
-  const exampleBlock = examples.length > 0
-    ? `\n\n[실제 우갱 회원 글 말투 — 이 스타일로 댓글 쓰세요, 내용 인용 절대 금지]\n` +
-      examples.map(e => `"${e}"`).join('\n')
+  const commentExamples = await getExampleCafeComments(desire)
+  const exampleBlock = commentExamples.length > 0
+    ? `\n\n[실제 우갱 회원 댓글 예시 — 이 길이와 톤으로 댓글 쓰세요, 내용 인용 절대 금지]\n` +
+      commentExamples.map(e => `"${e}"`).join('\n')
     : ''
 
   // 이전 댓글 이력 조회 — 첫 문장·표현 반복 방지
@@ -496,7 +618,7 @@ export async function generateReply(
 
   // 오늘 커뮤니티 말투 주입 (어휘 모방 유지)
   const trend = await getLatestTrend()
-  const trendContext = buildTrendContext(trend, personaId)
+  const trendContext = buildTrendContext(trend, personaId, p)
 
   const response = await client.messages.create({
     model: MODEL,

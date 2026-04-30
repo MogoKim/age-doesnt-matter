@@ -66,12 +66,12 @@ export const CAFE_CONFIGS: CafeConfig[] = [
       { name: '인기글', menuId: 0, isPopular: true, maxPages: 2, priority: 'high', category: 'general' },
 
       // ── 갱년기 증상 그룹 (HEALTH 핵심) ──
-      { name: '갱년기 몸 증상', menuId: 8, maxPages: 3, priority: 'high', category: 'health' },
-      { name: '갱년기 마음 증상', menuId: 3, maxPages: 3, priority: 'high', category: 'health' },
+      { name: '갱년기 몸 증상', menuId: 8, maxPages: 2, priority: 'high', category: 'health' },
+      { name: '갱년기 마음 증상', menuId: 3, maxPages: 2, priority: 'high', category: 'health' },
       { name: '갱년기 극복후기', menuId: 81, maxPages: 2, priority: 'high', category: 'health' },
 
       // ── 관계·가족 그룹 (RELATION/FAMILY 욕망 핵심) ──
-      { name: '혼잣말 반말일기', menuId: 38, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '혼잣말 반말일기', menuId: 38, maxPages: 3, priority: 'high', category: 'lifestyle' },
       { name: '딸아들 이야기', menuId: 5, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '남편 이야기', menuId: 6, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '친구 이야기', menuId: 65, maxPages: 2, priority: 'high', category: 'lifestyle' },
@@ -86,7 +86,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
       { name: '은퇴 노후 계획', menuId: 112, maxPages: 2, priority: 'high', category: 'finance' },
 
       // ── 자유 주제 ──
-      { name: '자유 주제', menuId: 34, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '자유 주제', menuId: 34, maxPages: 3, priority: 'high', category: 'lifestyle' },
 
       // ── 내 몸 아끼기 (HEALTH) ──
       { name: '운동/다이어트', menuId: 10, maxPages: 2, priority: 'high', category: 'health' },
@@ -96,8 +96,8 @@ export const CAFE_CONFIGS: CafeConfig[] = [
 
       // ── 여가·문화·취미 (HOBBY/ENTERTAIN) ──
       { name: '독서/공부/자격증', menuId: 79, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '취미/특기', menuId: 14, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: 'TV/연예인/영상', menuId: 46, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+      { name: '취미/특기', menuId: 14, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: 'TV/연예인/영상', menuId: 46, maxPages: 2, priority: 'high', category: 'lifestyle' },
     ],
   },
 
@@ -128,15 +128,15 @@ export const CAFE_CONFIGS: CafeConfig[] = [
       // ── 은오 일상 (RELATION/MEANING/FREEDOM) ──
       { name: '자유로운 이야기', menuId: 45, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '예비은퇴자 이야기', menuId: 356, maxPages: 2, priority: 'high', category: 'finance' },
-      { name: '고민 있어요(QnA)', menuId: 113, maxPages: 2, priority: 'high', category: 'lifestyle' },
-      { name: '은퇴 일기', menuId: 29, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '고민 있어요(QnA)', menuId: 113, maxPages: 3, priority: 'high', category: 'lifestyle' },
+      { name: '은퇴 일기', menuId: 29, maxPages: 3, priority: 'high', category: 'lifestyle' },
       { name: '소소한 일상과 행복', menuId: 98, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '여행 이야기', menuId: 102, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '맛집 이야기', menuId: 136, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+      { name: '여행 이야기', menuId: 102, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '맛집 이야기', menuId: 136, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '꽃·식물·반려동물', menuId: 139, maxPages: 1, priority: 'medium', category: 'lifestyle' },
       { name: '나의 버킷리스트', menuId: 97, maxPages: 1, priority: 'medium', category: 'lifestyle' },
       { name: '나의 창작물', menuId: 83, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '유머·이슈·정보', menuId: 61, maxPages: 2, priority: 'medium', category: 'lifestyle' },
+      { name: '유머·이슈·정보', menuId: 61, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '칼럼·에세이', menuId: 111, maxPages: 1, priority: 'medium', category: 'lifestyle' },
 
       // ── 은오 자기관리 (HEALTH) ──
@@ -144,6 +144,36 @@ export const CAFE_CONFIGS: CafeConfig[] = [
       { name: '운동 이야기', menuId: 103, maxPages: 1, priority: 'medium', category: 'health' },
       { name: '공부 이야기', menuId: 44, maxPages: 1, priority: 'medium', category: 'lifestyle' },
       { name: '독서 이야기', menuId: 112, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+
+      // ── Fix 0 신규 추가 (2026-04-30) ──
+
+      // MEANING (인생 의미/철학/회고 — 기존 0개)
+      { name: '인생 스토리', menuId: 27, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '인생 가장 기억에 남는 일', menuId: 265, maxPages: 2, priority: 'high', category: 'lifestyle' },
+      { name: '임사자들의 브런치', menuId: 277, maxPages: 2, priority: 'high', category: 'finance' },
+
+      // FAMILY (은퇴 관점 자녀 — 결혼/출가)
+      { name: '자녀 결혼시키기', menuId: 199, maxPages: 2, priority: 'high', category: 'lifestyle' },
+
+      // SINGLES/FREEDOM (독거 은퇴자 — 기존 0개)
+      { name: '싱글 은퇴자', menuId: 214, maxPages: 2, priority: 'high', category: 'lifestyle' },
+
+      // FIRE족 MONEY (4050 조기은퇴 — 기존 0개)
+      { name: '4050 파이어족', menuId: 251, maxPages: 2, priority: 'high', category: 'finance' },
+
+      // ENTERTAIN (영화/감상 — 기존 0개)
+      { name: '영화보고 감상말하기', menuId: 222, maxPages: 1, priority: 'high', category: 'lifestyle' },
+
+      // HOBBY 다양성
+      { name: '피아노 연주 감상 모임', menuId: 202, maxPages: 1, priority: 'high', category: 'lifestyle' },
+      { name: '렌즈로 쓰는 인생2막', menuId: 308, maxPages: 1, priority: 'high', category: 'lifestyle' },
+      { name: '여행스터디클럽', menuId: 259, maxPages: 1, priority: 'high', category: 'lifestyle' },
+
+      // HEALTH 다른 각도 (질병 아닌 성취감)
+      { name: '오운완~^^', menuId: 236, maxPages: 1, priority: 'high', category: 'health' },
+
+      // FOOD (dlxogns01 기존 0개)
+      { name: '신선식품 (먹거리를 부탁해)', menuId: 137, maxPages: 1, priority: 'medium', category: 'health' },
     ],
   },
 ]

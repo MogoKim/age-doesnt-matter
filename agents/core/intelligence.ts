@@ -33,6 +33,13 @@ export interface UrgentTopic {
   count: number
 }
 
+export interface ControversyTopic {
+  controversyType: 'family_conflict' | 'social_anger' | 'dignity_hurt' | 'money_stress'
+  seedContent: string
+  controversyScore: number
+  sourcePostId: string
+}
+
 export interface PersonaQuota {
   desireAlignment: number   // 0.0–1.0 (욕망 친화도 × 분포 비중)
   quotaMultiplier: number   // 1.0 = 기본, 1.5 = 50% 증가
@@ -71,6 +78,7 @@ export interface DailyIntelligenceBrief {
   entertainActive: boolean                  // entertain_pct >= 10
   midDayPatch: MidDayPatch | null
   dataSourceBias?: DataSourceBias           // 카페 소스 편향 정보 (2개 카페 체제)
+  controversySeeds?: ControversyTopic[]     // 논쟁 체인 시드 (optional — 없으면 논쟁 체인 비활성)
   generatedAt: string                       // ISO timestamp
 }
 

@@ -8,6 +8,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import type { TrendAnalysis } from './types.js'
+import type { ControversyTopic } from '../core/intelligence.js'
+import { calcControversyScore } from './psych-analyzer.js'
 
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
@@ -162,18 +164,23 @@ async function analyzeTrends(posts: Awaited<ReturnType<typeof getTodayPosts>>): 
     `[${i + 1}] (${sanitizeForApi(p.cafeName)}/${sanitizeForApi(p.boardCategory ?? p.category ?? '일반')}) [품질${Math.round(p.qualityScore)}] "${sanitizeForApi(p.title)}" — 좋아요 ${p.likeCount}, 댓글 ${p.commentCount}\n   ${sanitizeForApi(p.content.slice(0, 200))}`,
   ).join('\n\n')
 
+  const kstHour = new Date(Date.now() + 9 * 60 * 60 * 1000).getUTCHours()
+  const timeHint = (kstHour >= 20 || kstHour <= 4)
+    ? '\n현재 저녁/심야 크롤링입니다. relation/meaning 영역 hotTopics를 우선 추출해주세요.'
+    : '\n현재 낮 크롤링입니다. 고르게 추출해주세요.'
+
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 5000,
     system: `당신은 50~60대 커뮤니티 트렌드 분석가입니다.
-네이버 카페 3곳(우리가남이가, 실버사랑, 5060세대)에서 수집한 게시글을 분석합니다.
+네이버 카페 2곳(우아한갱년기 wgang, 은퇴후50년 dlxogns01)에서 수집한 게시글을 분석합니다.
 
 분석 목적:
 1. 요즘 50~60대가 어떤 이야기를 하는지 파악
 2. 우리 커뮤니티(우나어)에서 다룰 매거진 주제 추천
 3. 새로운 페르소나(시드봇) 캐릭터 힌트 제공
 
-반드시 아래 JSON 형식으로만 응답하세요.`,
+반드시 아래 JSON 형식으로만 응답하세요.${timeHint}`,
     messages: [{
       role: 'user',
       content: `오늘 수집된 카페 게시글 ${posts.length}개를 분석해주세요.
@@ -183,7 +190,7 @@ ${postSummaries}
 응답 형식 (JSON):
 {
   "hotTopics": [
-    {"topic": "주제명", "count": 관련글수, "sentiment": "positive|neutral|negative", "examples": ["글제목1", "글제목2"]}
+    {"topic": "주제명", "area": "health|family|money|hobby|relation|humor|meaning", "count": 관련글수, "sentiment": "positive|neutral|negative", "examples": ["글제목1", "글제목2"]}
   ],
   "keywords": [
     {"word": "키워드", "frequency": 출현횟수}
@@ -197,7 +204,16 @@ ${postSummaries}
   ]
 }
 
-hotTopics: 상위 5~7개, keywords: 상위 15개, magazineTopics: 상위 3개, personaHints: 2~3개`,
+hotTopics: 아래 7개 생활 영역에서 각 1개씩 대표 주제 추출. 없으면 null (억지 금지):
+- health: 건강/몸/병원/갱년기
+- family: 가족/자녀/남편/손주
+- money: 돈/재테크/은퇴준비/연금
+- hobby: 취미/여행/요리/운동/문화/음악/영화
+- relation: 관계/외로움/친구/소통
+- humor: 웃긴일/황당에피소드/유머
+- meaning: 인생/철학/감사/보람/인생2막
+각 hotTopic 객체에 "area" 필드 추가 필수.
+keywords: 상위 15개, magazineTopics: 상위 3개, personaHints: 2~3개`,
     }],
   })
 
@@ -335,6 +351,49 @@ async function tagPosts(posts: Awaited<ReturnType<typeof getTodayPosts>>, analys
   }
 }
 
+// ── controversy 집계 (Fix 13-B) ──
+
+function inferControversyType(desire: string, signal: string): ControversyTopic['controversyType'] {
+  if (desire === 'FAMILY') return 'family_conflict'
+  if (desire === 'DIGNITY' || desire === 'RELATION') return 'dignity_hurt'
+  if (desire === 'MONEY' || desire === 'RETIRE') return 'money_stress'
+  void signal
+  return 'social_anger'
+}
+
+async function aggregateControversyTopics(): Promise<ControversyTopic[]> {
+  const recentPosts = await prisma.cafePost.findMany({
+    where: {
+      aiAnalyzed: true,
+      isUsable: true,
+      OR: [{ urgencyLevel: { gte: 3 } }, { communitySignal: 'complaint' }],
+      crawledAt: { gte: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
+    },
+    select: { id: true, title: true, communitySignal: true, urgencyLevel: true, emotionTags: true, desireCategory: true },
+    take: 50,
+  })
+
+  return recentPosts
+    .map(p => ({
+      post: p,
+      score: calcControversyScore({
+        communitySignal: p.communitySignal,
+        urgencyLevel: p.urgencyLevel,
+        emotionTags: p.emotionTags as string[] | null,
+        desireCategory: p.desireCategory,
+      }),
+    }))
+    .filter(x => x.score >= 7)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 2)
+    .map(x => ({
+      controversyType: inferControversyType(x.post.desireCategory ?? '', x.post.communitySignal ?? ''),
+      seedContent: x.post.title,
+      controversyScore: x.score,
+      sourcePostId: x.post.id,
+    }))
+}
+
 /** 트렌드 결과 DB 저장 */
 async function saveTrend(
   analysis: TrendAnalysis,
@@ -345,6 +404,9 @@ async function saveTrend(
 ) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
+
+  // Fix 13-B: controversy 집계 (saveTrend 내부 호출 필수 — 단독 정의만으로는 저장 안 됨)
+  const controversyTopics = await aggregateControversyTopics()
 
   const baseData = {
     hotTopics: JSON.parse(JSON.stringify(analysis.hotTopics)),
@@ -365,6 +427,10 @@ async function saveTrend(
     urgentTopics: psychData.urgentTopics ? JSON.parse(JSON.stringify(psychData.urgentTopics)) : undefined,
     dominantDesire: psychData.dominantDesire ?? undefined,
     dominantEmotion: psychData.dominantEmotion ?? undefined,
+    // Fix 13-B: controversy 시드 저장
+    controversyTopics: controversyTopics.length
+      ? JSON.parse(JSON.stringify(controversyTopics))
+      : null,
   }
 
   await prisma.cafeTrend.upsert({
