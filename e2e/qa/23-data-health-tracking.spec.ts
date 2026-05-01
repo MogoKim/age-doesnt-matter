@@ -20,6 +20,7 @@ import { test, expect, type Page } from '@playwright/test'
 
 // ── GTM spy 헬퍼 (22-signup-banner-gtm.spec.ts 패턴과 동일) ──────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function installGtagSpy(page: Page): Promise<void> {
   await page.evaluate(() => {
     const w = window as Record<string, unknown> & typeof window
