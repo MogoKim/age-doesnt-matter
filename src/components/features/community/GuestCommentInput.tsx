@@ -57,8 +57,8 @@ export default function GuestCommentInput({
       const siteKey = process.env.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY ?? '1x00000000000000000000AA'
       widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
         sitekey: siteKey,
-        size: 'invisible',
-        // execution 없음 → auto-execute (렌더 즉시 챌린지 수행)
+        size: 'compact',
+        language: 'auto',
         callback: (token: string) => { tokenRef.current = token },
         'error-callback': () => { tokenRef.current = '' },
         'expired-callback': () => {
@@ -81,8 +81,8 @@ export default function GuestCommentInput({
     }
   }, [])
 
-  // 시크릿 모드(캐시 없음) 대비: 토큰이 준비될 때까지 최대 6초 대기
-  async function waitForToken(maxMs = 6000): Promise<string> {
+  // compact 모드: 사용자 클릭 시간 포함 최대 15초 대기
+  async function waitForToken(maxMs = 15000): Promise<string> {
     const start = Date.now()
     while (Date.now() - start < maxMs) {
       if (tokenRef.current) return tokenRef.current
@@ -179,8 +179,10 @@ export default function GuestCommentInput({
       />
       <p className="text-caption text-muted-foreground text-right mb-3">{content.length}/500</p>
 
-      {/* Turnstile 위젯 — display:none 금지, 절대위치로 DOM 유지 */}
-      <div ref={turnstileRef} style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} />
+      {/* Turnstile compact 위젯 — 자동 검증 또는 체크박스 표시 */}
+      <div className="mb-2">
+        <div ref={turnstileRef} />
+      </div>
 
       <div className="flex items-center gap-2">
         <KakaoSignupButton
