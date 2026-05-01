@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { createPost, updatePost } from '@/lib/actions/posts'
 import { deleteDraft as deleteDraftAction } from '@/lib/actions/drafts'
 import { useToast } from '@/components/common/Toast'
-import { gtmPostCreate } from '@/lib/gtm'
+import { gtmPostCreate, sendGtmEvent } from '@/lib/gtm'
 import BottomSheet from '@/components/ui/BottomSheet'
 import { ChevronDown } from 'lucide-react'
 
@@ -160,6 +160,17 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
     return () => vv.removeEventListener('resize', handler)
   }, [])
 
+  // 글쓰기 퍼널 추적 — 진입 이벤트 (편집 모드 제외)
+  useEffect(() => {
+    if (!isEditMode) {
+      sendGtmEvent('post_create_started', {
+        board_type: selectedBoard,
+        has_draft: !!(title || content),
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   function clearDraft() {
     try { localStorage.removeItem(getDraftKey(selectedBoard)) } catch { /* ignore */ }
     // 서버 임시저장도 삭제
@@ -205,6 +216,12 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   function handleCancel() {
     if (title || content) {
       if (!confirm('작성 중인 내용이 사라져요. 나가시겠어요?')) return
+      sendGtmEvent('post_write_abandoned', {
+        board_type: selectedBoard,
+        category: selectedCategory,
+        has_title: !!title,
+        content_length: content.replace(/<[^>]*>/g, '').trim().length,
+      })
       clearDraft()
     }
     router.back()

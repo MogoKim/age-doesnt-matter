@@ -9,6 +9,20 @@ const PROTECTED_PATHS = ['/my', '/community/write']
 // CUID 패턴: 소문자 알파벳+숫자 20~30자 (한글/하이픈 포함 slug와 겹치지 않음)
 const CUID_PATTERN = /^[a-z0-9]{20,30}$/
 
+// 비회원 익명 세션 쿠키 — EventLog.sessionId에 저장해 비회원 동선 추적
+function addAnonSession(response: NextResponse, request: NextRequest): NextResponse {
+  if (!request.cookies.get('_anon_sid')) {
+    response.cookies.set('_anon_sid', crypto.randomUUID(), {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+      secure: process.env.NODE_ENV === 'production',
+    })
+  }
+  return response
+}
+
 // Edge function 인스턴스 내 CUID→slug 캐시 (TTL 60초)
 const slugCache = new Map<string, { slug: string | null; expiresAt: number }>()
 const SLUG_CACHE_TTL_MS = 300_000
@@ -73,7 +87,10 @@ export default async function middleware(request: NextRequest) {
     if (CUID_PATTERN.test(segment)) {
       const slug = await resolveSlug(segment)
       if (slug) {
-        return NextResponse.redirect(new URL(`/magazine/${slug}`, request.url), 308)
+        return addAnonSession(
+          NextResponse.redirect(new URL(`/magazine/${slug}`, request.url), 308),
+          request,
+        )
       }
     }
   }
@@ -85,9 +102,9 @@ export default async function middleware(request: NextRequest) {
     if (CUID_PATTERN.test(decoded)) {
       const slug = await resolveSlug(decoded)
       if (slug) {
-        return NextResponse.redirect(
-          new URL(`/community/${communityMatch[1]}/${slug}`, request.url),
-          308,
+        return addAnonSession(
+          NextResponse.redirect(new URL(`/community/${communityMatch[1]}/${slug}`, request.url), 308),
+          request,
         )
       }
     }
@@ -101,7 +118,7 @@ export default async function middleware(request: NextRequest) {
     if (!sessionToken) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('callbackUrl', pathname)
-      return NextResponse.redirect(loginUrl)
+      return addAnonSession(NextResponse.redirect(loginUrl), request)
     }
   }
 
@@ -119,19 +136,19 @@ export default async function middleware(request: NextRequest) {
     if (pathname !== '/' && pathname !== '/login') {
       onboardingUrl.searchParams.set('callbackUrl', pathname)
     }
-    return NextResponse.redirect(onboardingUrl)
+    return addAnonSession(NextResponse.redirect(onboardingUrl), request)
   }
 
   // 비회원이 /onboarding 직접 접근 → 로그인으로
   if (!token && pathname === '/onboarding') {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return addAnonSession(NextResponse.redirect(new URL('/login', request.url)), request)
   }
 
   if (!token?.needsOnboarding && token && pathname === '/onboarding') {
-    return NextResponse.redirect(new URL('/', request.url))
+    return addAnonSession(NextResponse.redirect(new URL('/', request.url)), request)
   }
 
-  return NextResponse.next()
+  return addAnonSession(NextResponse.next(), request)
 }
 
 export const config = {

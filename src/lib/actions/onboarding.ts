@@ -1,6 +1,7 @@
 'use server'
 
 import { auth, unstable_update } from '@/lib/auth'
+import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { getInterestBasedPosts } from '@/lib/queries/posts'
 import type { RecommendedPost } from '@/lib/queries/posts'
@@ -124,6 +125,21 @@ export async function completeOnboarding(
   } catch (error) {
     console.error('[onboarding] transaction error:', error)
     return { error: '가입 처리 중 문제가 발생했습니다. 다시 시도해 주세요.' }
+  }
+
+  // 비회원 익명 세션 → 신규 userId로 귀속 (비크리티컬)
+  try {
+    const cookieStore = await cookies()
+    const anonSid = cookieStore.get('_anon_sid')?.value
+    if (anonSid) {
+      await prisma.eventLog.updateMany({
+        where: { sessionId: anonSid, userId: null },
+        data: { userId },
+      }).catch(() => {})
+      cookieStore.delete('_anon_sid')
+    }
+  } catch {
+    // claim 실패는 온보딩을 막지 않음
   }
 
   // JWT 토큰 갱신 — 미들웨어가 needsOnboarding=false를 인식하도록

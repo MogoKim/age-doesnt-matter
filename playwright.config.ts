@@ -175,6 +175,22 @@ export default defineConfig({
         viewport: { width: 390, height: 844 },
       },
     },
+
+    // 15. 데이터 헬스 트래킹 QA — 비인증 (T1-T5, T8)
+    {
+      name: 'qa-tracking',
+      testMatch: /qa\/23-.*\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // 16. 데이터 헬스 트래킹 QA — 인증 필요 (T6, user.json)
+    {
+      name: 'qa-tracking-user',
+      testMatch: /qa\/23-.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: USER_AUTH,
+      },
+    },
   ],
 
   // E2E_BASE_URL 설정 시 외부 URL 직접 테스트 (프로덕션 QA)

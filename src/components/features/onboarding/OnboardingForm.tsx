@@ -51,6 +51,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>('idle')
   const [nicknameError, setNicknameError] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const stepRef = useRef<1 | 2 | 3>(1)
 
   // Step 2 - 약관
   const [agreed, setAgreed] = useState<Record<string, boolean>>({
@@ -112,6 +113,24 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     }
   }, [step])
 
+  // stepRef 동기화 (beforeunload 클로저 스테일 방지)
+  useEffect(() => { stepRef.current = step }, [step])
+
+  // 가입 이탈 감지 — 탭 닫기/새로고침 시 어느 단계에서 이탈했는지 GA4 기록
+  useEffect(() => {
+    const startTime = Date.now()
+    const handleUnload = () => {
+      if (!localStorage.getItem('signup_completed_at')) {
+        sendGtmEvent('signup_abandoned', {
+          abandoned_at_step: stepRef.current,
+          time_spent_ms: Date.now() - startTime,
+        })
+      }
+    }
+    window.addEventListener('beforeunload', handleUnload)
+    return () => window.removeEventListener('beforeunload', handleUnload)
+  }, [])
+
   function handleStep1Next() {
     if (nicknameStatus !== 'valid') return
     setStep(2)
@@ -144,6 +163,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
       if (result.error) {
         setSubmitError(result.error)
       } else {
+        sendGtmEvent('signup_step', { step: 3, step_name: 'welcome' })
         setStep(3)
       }
     })

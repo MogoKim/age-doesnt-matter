@@ -76,6 +76,22 @@ function checkHtml(html: string, pattern: string | RegExp, name: string, failMsg
   return { name, pass: found, detail: found ? '발견됨' : failMsg }
 }
 
+async function checkEventsApi(url: string): Promise<CheckResult> {
+  try {
+    const start = Date.now()
+    const res = await fetch(`${url}/api/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventName: 'smoke_test', path: '/smoke' }),
+    })
+    const ms = Date.now() - start
+    const pass = res.status === 200
+    return { name: '/api/events 이벤트 로깅', pass, detail: pass ? `200 OK (${ms}ms)` : `HTTP ${res.status} (${ms}ms)` }
+  } catch (e) {
+    return { name: '/api/events 이벤트 로깅', pass: false, detail: `요청 실패: ${e instanceof Error ? e.message : String(e)}` }
+  }
+}
+
 async function main() {
   const url = parseArgs()
   const version = getVersion()
@@ -101,6 +117,9 @@ async function main() {
   checks.push(checkHtml(homeHtml, /<meta[^>]+name=["']google-adsense-account["'][^>]+content=["'][^"']+["']/i, 'AdSense 메타태그', 'google-adsense-account 메타태그 미발견'))
   checks.push(checkHtml(homeHtml, 'adsbygoogle', 'AdSense 광고 슬롯', 'adsbygoogle 클래스 미발견'))
   checks.push(checkHtml(homeHtml, 'link.coupang.com', '쿠팡 배너 이미지', 'coupang 배너 URL 미발견'))
+
+  // 9: /api/events POST 동작 확인 (sessionId 처리 포함)
+  checks.push(await checkEventsApi(url))
 
   const passed = checks.filter((c) => c.pass).length
   const failed = checks.length - passed

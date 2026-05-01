@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useTransition } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 import { useToast } from '@/components/common/Toast'
@@ -12,6 +12,7 @@ declare global {
       render: (el: HTMLElement, options: Record<string, unknown>) => string
       reset: (widgetId: string) => void
       remove: (widgetId: string) => void
+      execute: (widgetId: string) => void
     }
   }
 }
@@ -36,10 +37,10 @@ export default function GuestCommentInput({
   const [nickname, setNickname] = useState('')
   const [password, setPassword] = useState('')
   const [content, setContent] = useState('')
-  const [isPending, startTransition] = useTransition()
+  const [isLoading, setIsLoading] = useState(false)
   const turnstileRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
-  const tokenRef = useRef<string>('dev')
+  const tokenResolverRef = useRef<((token: string) => void) | null>(null)
 
   useEffect(() => {
     if (!document.getElementById('cf-turnstile-script')) {
@@ -57,7 +58,11 @@ export default function GuestCommentInput({
       widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
         sitekey: siteKey,
         size: 'invisible',
-        callback: (token: string) => { tokenRef.current = token },
+        execution: 'execute',
+        callback: (token: string) => {
+          tokenResolverRef.current?.(token)
+          tokenResolverRef.current = null
+        },
       })
     }
 
@@ -71,33 +76,40 @@ export default function GuestCommentInput({
     }
   }, [])
 
-  function handleSubmit() {
-    if (!content.trim()) return
-    if (!nickname.trim()) {
-      toast('닉네임을 입력해 주세요', 'error')
-      return
-    }
-    if (password.length < 4) {
-      toast('비밀번호는 4~8자리로 입력해 주세요', 'error')
-      return
-    }
+  async function getToken(): Promise<string> {
+    if (!window.turnstile || !widgetIdRef.current) return 'dev'
+    window.turnstile.reset(widgetIdRef.current)
+    return new Promise<string>((resolve) => {
+      tokenResolverRef.current = resolve
+      window.turnstile!.execute(widgetIdRef.current!)
+      setTimeout(() => {
+        if (tokenResolverRef.current) {
+          tokenResolverRef.current = null
+          resolve('')
+        }
+      }, 10000)
+    })
+  }
 
-    startTransition(async () => {
+  async function handleSubmit() {
+    if (!content.trim()) return
+    if (!nickname.trim()) { toast('닉네임을 입력해 주세요', 'error'); return }
+    if (password.length < 4) { toast('비밀번호는 4~8자리로 입력해 주세요', 'error'); return }
+
+    setIsLoading(true)
+    try {
+      const token = await getToken()
       const result = await createGuestComment({
         postId,
         parentId,
         content: content.trim(),
         guestNickname: nickname.trim(),
         guestPassword: password,
-        turnstileToken: tokenRef.current,
+        turnstileToken: token,
       })
 
       if (result.error) {
         toast(result.error, 'error')
-        tokenRef.current = 'dev'
-        if (window.turnstile && widgetIdRef.current) {
-          window.turnstile.reset(widgetIdRef.current)
-        }
         return
       }
 
@@ -105,9 +117,10 @@ export default function GuestCommentInput({
       setContent('')
       setNickname('')
       setPassword('')
-      tokenRef.current = 'dev'
       onSuccess?.()
-    })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const canSubmit = content.trim().length > 0 && nickname.trim().length > 0 && password.length >= 4
@@ -151,8 +164,8 @@ export default function GuestCommentInput({
       />
       <p className="text-caption text-muted-foreground text-right mb-3">{content.length}/500</p>
 
-      {/* 비가시적 Turnstile 위젯 */}
-      <div ref={turnstileRef} className="hidden" />
+      {/* Turnstile 위젯 — display:none 금지, 절대위치로 DOM 유지 */}
+      <div ref={turnstileRef} style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} />
 
       <div className="flex items-center gap-2">
         <KakaoSignupButton
@@ -165,10 +178,10 @@ export default function GuestCommentInput({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={isPending || !canSubmit}
+          disabled={isLoading || !canSubmit}
           className="flex-1 flex items-center justify-center min-h-[52px] px-4 bg-primary text-white rounded-xl text-caption font-bold hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed transition-colors"
         >
-          {isPending ? '등록 중...' : '비회원으로 작성'}
+          {isLoading ? '등록 중...' : '비회원으로 작성'}
         </button>
         {onCancel && (
           <button

@@ -26,11 +26,13 @@ export async function POST(request: NextRequest) {
   }
 
   const session = await auth()
+  const sessionId = request.cookies.get('_anon_sid')?.value ?? null
 
   await prisma.eventLog.create({
     data: {
       eventName: body.eventName,
       userId: session?.user?.id ?? null,
+      sessionId,
       path: body.path?.slice(0, 500) ?? null,
       referrer: body.referrer?.slice(0, 500) ?? null,
       userAgent: request.headers.get('user-agent')?.slice(0, 500) ?? null,
