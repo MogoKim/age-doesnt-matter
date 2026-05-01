@@ -177,7 +177,7 @@ export async function toggleCommentLike(commentId: string): Promise<ToggleResult
         where: { id: commentId },
         data: { likeCount: { decrement: 1 } },
       })
-      if (cancelComment && cancelComment.authorId !== userId) {
+      if (cancelComment && cancelComment.authorId && cancelComment.authorId !== userId) {
         await tx.user.update({
           where: { id: cancelComment.authorId },
           data: { receivedLikes: { decrement: 1 } },
@@ -200,7 +200,7 @@ export async function toggleCommentLike(commentId: string): Promise<ToggleResult
       select: { authorId: true },
     })
 
-    if (comment && comment.authorId !== userId) {
+    if (comment && comment.authorId && comment.authorId !== userId) {
       await tx.user.update({
         where: { id: comment.authorId },
         data: { receivedLikes: { increment: 1 } },

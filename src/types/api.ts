@@ -131,6 +131,8 @@ export interface CommentItem {
   id: string
   content: string
   author: UserSummary | null
+  guestNickname?: string
+  isGuest?: boolean
   likeCount: number
   isLiked: boolean
   isDeleted: boolean

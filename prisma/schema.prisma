@@ -373,6 +373,7 @@ model Post {
   jobDetail     JobDetail?
   comments      Comment[]
   likes         Like[]         @relation("postLikes")
+  guestLikes    GuestLike[]
   scraps        Scrap[]
   reports       Report[]       @relation("postReports")
   notifications Notification[] @relation("notificationPost")
@@ -425,9 +426,15 @@ model JobDetail {
 model Comment {
   id          String        @id @default(cuid())
   postId      String
-  authorId    String
+  authorId    String?
   content     String
   imageUrl    String?
+
+  // 비회원 댓글 전용
+  guestNickname         String?
+  guestPasswordHash     String?
+  guestPasswordAttempts Int       @default(0)
+  guestLockedUntil      DateTime?
 
   parentId    String?
   likeCount   Int           @default(0)
@@ -439,12 +446,13 @@ model Comment {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author  User      @relation(fields: [authorId], references: [id])
-  parent  Comment?  @relation("replies", fields: [parentId], references: [id])
-  replies Comment[] @relation("replies")
-  likes   Like[]    @relation("commentLikes")
-  reports Report[]  @relation("commentReports")
+  post       Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author     User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  parent     Comment?   @relation("replies", fields: [parentId], references: [id])
+  replies    Comment[]  @relation("replies")
+  likes      Like[]     @relation("commentLikes")
+  guestLikes GuestLike[]
+  reports    Report[]   @relation("commentReports")
 
   @@index([postId, status, createdAt])
   @@index([authorId])
@@ -473,6 +481,25 @@ model Like {
   @@index([userId])
 }
 
+model GuestLike {
+  id        String   @id @default(cuid())
+  postId    String?
+  commentId String?
+  ipHash    String   // SHA-256(IP+salt) — GDPR 준수, 역산 불가
+  cookieId  String   // nanoid(21), 쿠키에 저장 (1년 만료)
+  createdAt DateTime @default(now())
+
+  post    Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, ipHash])
+  @@unique([postId, cookieId])
+  @@unique([commentId, ipHash])
+  @@unique([commentId, cookieId])
+  @@index([postId])
+  @@index([commentId])
+}
+
 model Scrap {
   id        String   @id @default(cuid())
   userId    String
@@ -488,7 +515,7 @@ model Scrap {
 
 model Report {
   id          String        @id @default(cuid())
-  userId      String
+  userId      String?
   postId      String?
   commentId   String?
 
@@ -503,7 +530,7 @@ model Report {
 
   createdAt   DateTime      @default(now())
 
-  reporter  User          @relation("reporter", fields: [userId], references: [id])
+  reporter  User?         @relation("reporter", fields: [userId], references: [id])
   post      Post?         @relation("postReports", fields: [postId], references: [id], onDelete: Restrict)
   comment   Comment?      @relation("commentReports", fields: [commentId], references: [id], onDelete: Restrict)
   processor AdminAccount? @relation("reportProcessor", fields: [processedBy], references: [id])

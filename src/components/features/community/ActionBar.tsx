@@ -4,6 +4,7 @@ import { useState, useTransition, useRef, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap, incrementShareCount } from '@/lib/actions/likes'
+import { toggleGuestPostLike } from '@/lib/actions/guest-likes'
 import { useToast } from '@/components/common/Toast'
 import { shareToKakao, copyShareLink } from '@/lib/kakao-share'
 import { gtmLike, gtmShare } from '@/lib/gtm'
@@ -36,10 +37,33 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
 
   const handleLike = useCallback(() => {
     if (!isLoggedIn) {
-      setLoginPromptMessage('이 글에 공감했다면, 우리 또래와 더 깊이 연결될 수 있어요')
-      setShowLoginPrompt(true)
+      if (isLiked) {
+        toast('이미 공감하셨어요')
+        return
+      }
+      const prevLikes = likes
+      setIsLiked(true)
+      setLikes(prevLikes + 1)
+      setHeartAnimating(true)
+      setTimeout(() => setHeartAnimating(false), 350)
+
+      startTransition(async () => {
+        const result = await toggleGuestPostLike(postId)
+        if (result.alreadyLiked) {
+          setLikes(prevLikes)
+          toast('이미 공감하셨어요')
+        } else if (result.error) {
+          setIsLiked(false)
+          setLikes(prevLikes)
+          toast(result.error, 'error')
+        } else {
+          gtmLike('post', postId)
+          toast('공감했어요! 회원가입하면 더 많은 활동을 즐길 수 있어요')
+        }
+      })
       return
     }
+
     if (isPending || likePendingRef.current) return
     likePendingRef.current = true
     const prevLiked = isLiked

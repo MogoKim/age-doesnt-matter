@@ -125,7 +125,7 @@ export async function getRecentActivities(limit = 8): Promise<RecentActivity[]> 
   const activities: Array<RecentActivity & { _sortTime: Date }> = []
 
   for (const c of recentComments) {
-    if (!c.post) continue
+    if (!c.post || !c.author) continue
     activities.push({
       type: 'comment',
       nickname: c.author.nickname,

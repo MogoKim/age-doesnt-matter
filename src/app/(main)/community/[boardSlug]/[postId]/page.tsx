@@ -17,6 +17,7 @@ import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
+import PostViewBeacon from '@/components/common/PostViewBeacon'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 
 interface PageProps {
@@ -116,8 +117,9 @@ export default async function PostDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
-      {/* GA4 게시글 조회 이벤트 */}
+      {/* GA4 게시글 조회 이벤트 + PostView DB 기록 */}
       <GTMEventOnMount event="post_view" data={{ post_id: resolvedId, board_type: board.boardType, category: post.category ?? '' }} />
+      <PostViewBeacon postId={resolvedId} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

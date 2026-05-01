@@ -37,7 +37,7 @@ interface Report {
   action: string | null
   createdAt: Date
   processedAt: Date | null
-  reporter: { id: string; nickname: string }
+  reporter: { id: string; nickname: string } | null
   post: { id: string; title: string; boardType: string } | null
   comment: { id: string; content: string } | null
   processor: { nickname: string } | null
@@ -130,7 +130,7 @@ export default function ReportTable({ reports, hasMore, currentStatus }: ReportT
                       '-'
                     )}
                   </td>
-                  <td className="px-3 py-3 text-zinc-600">{report.reporter.nickname}</td>
+                  <td className="px-3 py-3 text-zinc-600">{report.reporter?.nickname ?? '비회원'}</td>
                   <td className="max-w-xs truncate px-3 py-3 text-zinc-500">
                     {report.description || '-'}
                   </td>

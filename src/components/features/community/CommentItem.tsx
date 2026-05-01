@@ -5,18 +5,22 @@ import type { CommentItem as CommentItemType } from '@/types/api'
 import { formatTimeAgo } from './utils'
 import { cn } from '@/lib/utils'
 import { toggleCommentLike } from '@/lib/actions/likes'
+import { toggleGuestCommentLike } from '@/lib/actions/guest-likes'
 import { IconHeart } from '@/components/icons'
 import { editComment, deleteComment } from '@/lib/actions/comments'
 import { useToast } from '@/components/common/Toast'
 import CommentInput from './CommentInput'
+import GuestCommentInput from './GuestCommentInput'
+import GuestPasswordModal from './GuestPasswordModal'
 
 interface CommentItemProps {
   comment: CommentItemType
   postId: string
   isReply?: boolean
+  isLoggedIn?: boolean
 }
 
-function CommentItem({ comment, postId, isReply = false }: CommentItemProps) {
+function CommentItem({ comment, postId, isReply = false, isLoggedIn = false }: CommentItemProps) {
   const { toast } = useToast()
   const [isLiked, setIsLiked] = useState(comment.isLiked)
   const [likeCount, setLikeCount] = useState(comment.likeCount)
@@ -24,9 +28,32 @@ function CommentItem({ comment, postId, isReply = false }: CommentItemProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(comment.content)
   const [isPending, startTransition] = useTransition()
+  const [guestModal, setGuestModal] = useState<'edit' | 'delete' | null>(null)
 
   const handleLike = useCallback(() => {
     if (isPending) return
+
+    if (!isLoggedIn) {
+      if (isLiked) {
+        toast('이미 공감하셨어요')
+        return
+      }
+      const prevCount = likeCount
+      setIsLiked(true)
+      setLikeCount(prevCount + 1)
+      startTransition(async () => {
+        const result = await toggleGuestCommentLike(comment.id)
+        if (result.alreadyLiked) {
+          setLikeCount(prevCount)
+          toast('이미 공감하셨어요')
+        } else if (result.error) {
+          setIsLiked(false)
+          setLikeCount(prevCount)
+        }
+      })
+      return
+    }
+
     const prevLiked = isLiked
     const prevCount = likeCount
     setIsLiked(!prevLiked)
@@ -40,7 +67,7 @@ function CommentItem({ comment, postId, isReply = false }: CommentItemProps) {
         toast(result.error, 'error')
       }
     })
-  }, [isPending, isLiked, likeCount, comment.id, toast])
+  }, [isPending, isLoggedIn, isLiked, likeCount, comment.id, toast])
 
   const handleEdit = useCallback(() => {
     if (isPending) return
@@ -78,7 +105,7 @@ function CommentItem({ comment, postId, isReply = false }: CommentItemProps) {
         {comment.replies.length > 0 && (
           <div>
             {comment.replies.map((reply) => (
-              <CommentItem key={reply.id} comment={reply} postId={postId} isReply />
+              <CommentItem key={reply.id} comment={reply} postId={postId} isReply isLoggedIn={isLoggedIn} />
             ))}
           </div>
         )}
@@ -94,14 +121,21 @@ function CommentItem({ comment, postId, isReply = false }: CommentItemProps) {
       )}
     >
       <div className="flex items-center gap-1.5 mb-1.5">
-        {comment.author && (
+        {comment.isGuest ? (
+          <>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-caption bg-muted text-muted-foreground font-medium leading-none">비회원</span>
+            <span className="text-sm font-bold text-foreground">{comment.guestNickname}</span>
+          </>
+        ) : comment.author ? (
           <>
             <span className="text-sm">{comment.author.gradeEmoji}</span>
             <span className="text-sm font-bold text-foreground">{comment.author.nickname}</span>
           </>
-        )}
+        ) : null}
         <span className="text-caption text-muted-foreground">· {formatTimeAgo(comment.createdAt)}</span>
-        {comment.isOwn && (
+
+        {/* 회원 본인 댓글 수정/삭제 */}
+        {comment.isOwn && !comment.isGuest && (
           <div className="ml-auto flex items-center gap-1">
             {comment.canEdit && (
               <button
@@ -115,6 +149,24 @@ function CommentItem({ comment, postId, isReply = false }: CommentItemProps) {
               className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
               onClick={handleDelete}
               disabled={isPending}
+            >
+              삭제
+            </button>
+          </div>
+        )}
+
+        {/* 비회원 댓글 수정/삭제 (비밀번호 확인) */}
+        {comment.isGuest && (
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary transition-colors"
+              onClick={() => setGuestModal('edit')}
+            >
+              수정
+            </button>
+            <button
+              className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
+              onClick={() => setGuestModal('delete')}
             >
               삭제
             </button>
@@ -174,21 +226,40 @@ function CommentItem({ comment, postId, isReply = false }: CommentItemProps) {
 
       {showReplyInput && (
         <div className="mt-2">
-          <CommentInput
-            postId={postId}
-            parentId={comment.id}
-            placeholder="답글을 남겨주세요..."
-            onCancel={() => setShowReplyInput(false)}
-          />
+          {isLoggedIn ? (
+            <CommentInput
+              postId={postId}
+              parentId={comment.id}
+              placeholder="답글을 남겨주세요..."
+              onCancel={() => setShowReplyInput(false)}
+            />
+          ) : (
+            <GuestCommentInput
+              postId={postId}
+              parentId={comment.id}
+              placeholder="답글을 남겨주세요... (최대 500자)"
+              onCancel={() => setShowReplyInput(false)}
+              onSuccess={() => setShowReplyInput(false)}
+            />
+          )}
         </div>
       )}
 
       {!isReply && comment.replies.length > 0 && (
         <div>
           {comment.replies.map((reply) => (
-            <CommentItem key={reply.id} comment={reply} postId={postId} isReply />
+            <CommentItem key={reply.id} comment={reply} postId={postId} isReply isLoggedIn={isLoggedIn} />
           ))}
         </div>
+      )}
+
+      {guestModal && (
+        <GuestPasswordModal
+          commentId={comment.id}
+          mode={guestModal}
+          initialContent={comment.content}
+          onClose={() => setGuestModal(null)}
+        />
       )}
     </div>
   )
@@ -201,5 +272,6 @@ export default memo(CommentItem, (prev, next) =>
   prev.comment.isLiked === next.comment.isLiked &&
   prev.comment.replies.length === next.comment.replies.length &&
   prev.postId === next.postId &&
-  prev.isReply === next.isReply
+  prev.isReply === next.isReply &&
+  prev.isLoggedIn === next.isLoggedIn
 )

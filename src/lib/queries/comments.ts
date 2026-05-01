@@ -34,6 +34,8 @@ export async function getCommentsByPostId(
       likeCount: true,
       status: true,
       createdAt: true,
+      authorId: true,
+      guestNickname: true,
       author: {
         select: { id: true, nickname: true, grade: true, profileImage: true },
       },
@@ -45,6 +47,8 @@ export async function getCommentsByPostId(
           likeCount: true,
           status: true,
           createdAt: true,
+          authorId: true,
+          guestNickname: true,
           author: {
             select: { id: true, nickname: true, grade: true, profileImage: true },
           },
@@ -71,12 +75,15 @@ export async function getCommentsByPostId(
 
   function toComment(row: typeof rows[number] | typeof rows[number]['replies'][number]): CommentItem {
     const isDeleted = row.status === 'DELETED'
-    const isOwn = !!userId && row.author.id === userId
+    const isGuest = !row.authorId
+    const isOwn = !!userId && !!row.author && row.author.id === userId
     const canEdit = isOwn && !isDeleted && (Date.now() - row.createdAt.getTime() < EDIT_WINDOW_MS)
     return {
       id: row.id,
       content: isDeleted ? '삭제된 댓글입니다.' : row.content,
-      author: isDeleted ? null : toUserSummary(row.author),
+      author: isDeleted || !row.author ? null : toUserSummary(row.author),
+      guestNickname: row.guestNickname ?? undefined,
+      isGuest,
       likeCount: row.likeCount,
       isLiked: likedSet.has(row.id),
       isDeleted,

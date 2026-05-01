@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { usePathname } from 'next/navigation'
-import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 import type { CommentItem as CommentItemType } from '@/types/api'
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
+import GuestCommentInput from './GuestCommentInput'
 
 interface CommentSectionProps {
   postId: string
@@ -23,7 +22,6 @@ function sortComments(comments: CommentItemType[], sort: 'latest' | 'likes'): Co
 
 export default function CommentSection({ postId, comments, isLoggedIn }: CommentSectionProps) {
   const [sort, setSort] = useState<'latest' | 'likes'>('latest')
-  const pathname = usePathname()
 
   const totalCount = comments.reduce(
     (sum, c) => sum + 1 + c.replies.length,
@@ -65,38 +63,22 @@ export default function CommentSection({ postId, comments, isLoggedIn }: Comment
       {sorted.length > 0 ? (
         <div>
           {sorted.map((comment) => (
-            <CommentItemComponent key={comment.id} comment={comment} postId={postId} />
+            <CommentItemComponent key={comment.id} comment={comment} postId={postId} isLoggedIn={isLoggedIn} />
           ))}
         </div>
-      ) : isLoggedIn ? (
+      ) : (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
           <p className="text-body text-muted-foreground leading-[1.8]">
             아직 댓글이 없어요.<br />
             따뜻한 한마디를 남겨보세요!
           </p>
         </div>
-      ) : null}
+      )}
 
       {isLoggedIn ? (
         <CommentInput postId={postId} />
       ) : (
-        <div className="p-6 bg-card border border-border rounded-2xl mt-4 text-center">
-          <p className="text-base font-bold text-foreground mb-1">
-            {totalCount > 0
-              ? `💬 ${totalCount}개의 대화가 이미 시작됐어요`
-              : '💬 첫 번째 댓글을 남겨보세요'}
-          </p>
-          <p className="text-sm text-muted-foreground mb-5">
-            우리 또래끼리만 통하는 이야기, 가입하면 바로 참여할 수 있어요
-          </p>
-          <KakaoSignupButton
-            callbackUrl={pathname}
-            gtmFrom="comment_section"
-            className="inline-flex items-center justify-center min-h-[52px] px-6 bg-[#FEE500] text-[#191919] rounded-xl text-body font-bold transition-colors hover:bg-[#FDD800]"
-          >
-            💛 카카오로 1초 가입하기
-          </KakaoSignupButton>
-        </div>
+        <GuestCommentInput postId={postId} />
       )}
     </section>
   )

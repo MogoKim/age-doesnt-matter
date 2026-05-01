@@ -121,7 +121,7 @@ export async function reportComment(
   if (!comment) {
     return { error: '존재하지 않는 댓글입니다' }
   }
-  if (comment.authorId === session.user.id) {
+  if (comment.authorId && comment.authorId === session.user.id) {
     return { error: '본인의 댓글은 신고할 수 없습니다' }
   }
 
@@ -146,20 +146,27 @@ export async function reportComment(
     select: { reportCount: true, authorId: true, postId: true },
   })
   if (updatedComment && updatedComment.reportCount >= 3) {
-    await prisma.$transaction([
-      prisma.comment.update({
+    if (updatedComment.authorId) {
+      await prisma.$transaction([
+        prisma.comment.update({
+          where: { id: commentId },
+          data: { status: 'HIDDEN' },
+        }),
+        prisma.notification.create({
+          data: {
+            userId: updatedComment.authorId,
+            type: 'CONTENT_HIDDEN',
+            content: '신고가 누적되어 댓글이 숨김 처리되었어요.',
+            postId: updatedComment.postId,
+          },
+        }),
+      ])
+    } else {
+      await prisma.comment.update({
         where: { id: commentId },
         data: { status: 'HIDDEN' },
-      }),
-      prisma.notification.create({
-        data: {
-          userId: updatedComment.authorId,
-          type: 'CONTENT_HIDDEN',
-          content: '신고가 누적되어 댓글이 숨김 처리되었어요.',
-          postId: updatedComment.postId,
-        },
-      }),
-    ])
+      })
+    }
   }
 
   revalidatePath('/community')
