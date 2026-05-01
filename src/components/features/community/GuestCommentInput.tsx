@@ -12,7 +12,6 @@ declare global {
       render: (el: HTMLElement, options: Record<string, unknown>) => string
       reset: (widgetId: string) => void
       remove: (widgetId: string) => void
-      execute: (widgetId: string) => void
     }
   }
 }
@@ -40,7 +39,8 @@ export default function GuestCommentInput({
   const [isLoading, setIsLoading] = useState(false)
   const turnstileRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
-  const tokenResolverRef = useRef<((token: string) => void) | null>(null)
+  // auto-execute: 위젯 렌더 즉시 챌린지 수행 → 토큰 미리 저장
+  const tokenRef = useRef<string>('')
 
   useEffect(() => {
     if (!document.getElementById('cf-turnstile-script')) {
@@ -58,10 +58,14 @@ export default function GuestCommentInput({
       widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
         sitekey: siteKey,
         size: 'invisible',
-        execution: 'execute',
-        callback: (token: string) => {
-          tokenResolverRef.current?.(token)
-          tokenResolverRef.current = null
+        // execution 없음 → auto-execute (렌더 즉시 챌린지 수행)
+        callback: (token: string) => { tokenRef.current = token },
+        'error-callback': () => { tokenRef.current = '' },
+        'expired-callback': () => {
+          tokenRef.current = ''
+          if (window.turnstile && widgetIdRef.current) {
+            window.turnstile.reset(widgetIdRef.current)
+          }
         },
       })
     }
@@ -73,22 +77,18 @@ export default function GuestCommentInput({
         window.turnstile.remove(widgetIdRef.current)
         widgetIdRef.current = null
       }
+      tokenRef.current = ''
     }
   }, [])
 
-  async function getToken(): Promise<string> {
-    if (!window.turnstile || !widgetIdRef.current) return 'dev'
-    window.turnstile.reset(widgetIdRef.current)
-    return new Promise<string>((resolve) => {
-      tokenResolverRef.current = resolve
-      window.turnstile!.execute(widgetIdRef.current!)
-      setTimeout(() => {
-        if (tokenResolverRef.current) {
-          tokenResolverRef.current = null
-          resolve('')
-        }
-      }, 10000)
-    })
+  // 시크릿 모드(캐시 없음) 대비: 토큰이 준비될 때까지 최대 6초 대기
+  async function waitForToken(maxMs = 6000): Promise<string> {
+    const start = Date.now()
+    while (Date.now() - start < maxMs) {
+      if (tokenRef.current) return tokenRef.current
+      await new Promise(r => setTimeout(r, 200))
+    }
+    return ''
   }
 
   async function handleSubmit() {
@@ -98,7 +98,12 @@ export default function GuestCommentInput({
 
     setIsLoading(true)
     try {
-      const token = await getToken()
+      const token = await waitForToken()
+      if (!token) {
+        toast('보안 확인 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.', 'error')
+        return
+      }
+
       const result = await createGuestComment({
         postId,
         parentId,
@@ -110,6 +115,11 @@ export default function GuestCommentInput({
 
       if (result.error) {
         toast(result.error, 'error')
+        // 토큰 소진 → 위젯 초기화로 새 토큰 발급
+        tokenRef.current = ''
+        if (window.turnstile && widgetIdRef.current) {
+          window.turnstile.reset(widgetIdRef.current)
+        }
         return
       }
 
@@ -117,6 +127,11 @@ export default function GuestCommentInput({
       setContent('')
       setNickname('')
       setPassword('')
+      // 사용 후 초기화 → 위젯이 새 토큰 자동 발급
+      tokenRef.current = ''
+      if (window.turnstile && widgetIdRef.current) {
+        window.turnstile.reset(widgetIdRef.current)
+      }
       onSuccess?.()
     } finally {
       setIsLoading(false)

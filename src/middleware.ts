@@ -9,8 +9,15 @@ const PROTECTED_PATHS = ['/my', '/community/write']
 // CUID 패턴: 소문자 알파벳+숫자 20~30자 (한글/하이픈 포함 slug와 겹치지 않음)
 const CUID_PATTERN = /^[a-z0-9]{20,30}$/
 
+// 봇 UA 패턴 — 세션 쿠키 미발급 대상
+const BOT_UA_QUICK = /googlebot|bingbot|yandex|HeadlessChrome|Playwright|node-fetch|python|curl|wget/i
+
 // 비회원 익명 세션 쿠키 — EventLog.sessionId에 저장해 비회원 동선 추적
+// 봇(크롤러/E2E/자동화)에는 발급하지 않아 세션 오염 방지
 function addAnonSession(response: NextResponse, request: NextRequest): NextResponse {
+  const ua = request.headers.get('user-agent') ?? ''
+  if (BOT_UA_QUICK.test(ua)) return response
+
   if (!request.cookies.get('_anon_sid')) {
     response.cookies.set('_anon_sid', crypto.randomUUID(), {
       httpOnly: true,

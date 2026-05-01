@@ -13,7 +13,10 @@ export async function verifyTurnstile(token: string): Promise<boolean> {
       body: new URLSearchParams({ secret, response: token }),
     })
     if (!res.ok) return false
-    const data = await res.json() as { success: boolean }
+    const data = await res.json() as { success: boolean; error_codes?: string[] }
+    if (!data.success) {
+      console.error('[Turnstile] 검증 실패:', JSON.stringify(data))
+    }
     return data.success === true
   } catch {
     return false

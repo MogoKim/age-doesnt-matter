@@ -180,7 +180,10 @@ export default defineConfig({
     {
       name: 'qa-tracking',
       testMatch: /qa\/23-.*\.spec\.ts/,
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        extraHTTPHeaders: { 'x-bot-type': 'e2e-test' },
+      },
     },
     // 16. 데이터 헬스 트래킹 QA — 인증 필요 (T6, user.json)
     {
@@ -189,6 +192,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: USER_AUTH,
+        extraHTTPHeaders: { 'x-bot-type': 'e2e-test' },
       },
     },
   ],

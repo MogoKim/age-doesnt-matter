@@ -744,11 +744,15 @@ model EventLog {
   userAgent String?
   ip        String?
 
+  isBot     Boolean  @default(false)
+  botType   String?  // e2e-test | external-bot | seed-agent | cdo-agent 등
+
   createdAt DateTime @default(now())
 
   @@index([eventName, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
+  @@index([isBot, createdAt(sort: Desc)])
 }
 
 model AdminAuditLog {

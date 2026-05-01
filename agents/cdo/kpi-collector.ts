@@ -42,9 +42,9 @@ class CDOKpiCollector extends BaseAgent {
       newUsers7d,
       reports,
     ] = await Promise.all([
-      // EventLog page_view 기반 실방문 DAU (lastLoginAt은 OAuth 재로그인 시만 갱신 — 실방문자 아님)
-      prisma.eventLog.groupBy({ by: ['userId'], where: { eventName: 'page_view', userId: { not: null }, createdAt: { gte: yesterday } } }).then(r => r.length),
-      prisma.eventLog.groupBy({ by: ['userId'], where: { eventName: 'page_view', userId: { not: null }, createdAt: { gte: thirtyDaysAgo } } }).then(r => r.length),
+      // EventLog page_view 기반 실방문 DAU — isBot:false 필터로 봇 트래픽 제외
+      prisma.eventLog.groupBy({ by: ['userId'], where: { eventName: 'page_view', userId: { not: null }, isBot: false, createdAt: { gte: yesterday } } }).then(r => r.length),
+      prisma.eventLog.groupBy({ by: ['userId'], where: { eventName: 'page_view', userId: { not: null }, isBot: false, createdAt: { gte: thirtyDaysAgo } } }).then(r => r.length),
       prisma.user.count(),
       prisma.post.count({ where: { createdAt: { gte: yesterday }, status: 'PUBLISHED' } }),
       prisma.comment.count({ where: { createdAt: { gte: yesterday } } }),
