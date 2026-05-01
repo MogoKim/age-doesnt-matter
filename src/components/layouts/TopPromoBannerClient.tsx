@@ -58,14 +58,14 @@ export default function TopPromoBannerClient({
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="no-underline hover:underline flex-1 min-w-0"
+          className="no-underline hover:underline flex-1 min-w-0 flex items-center"
         >
           {linkContent}
         </a>
       ) : (
         <Link
           href={href}
-          className="no-underline hover:underline flex-1 min-w-0"
+          className="no-underline hover:underline flex-1 min-w-0 flex items-center"
         >
           {linkContent}
         </Link>
