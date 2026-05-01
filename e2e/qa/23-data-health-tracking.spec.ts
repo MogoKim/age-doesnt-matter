@@ -123,8 +123,15 @@ test.describe('PostView 기록 (PostViewBeacon)', () => {
     await page.goto('/')
     await page.waitForLoadState('load')
 
-    // 홈에서 커뮤니티 게시글 링크 동적 수집
-    const href = await page.locator('a[href*="/community/"]').first().getAttribute('href').catch(() => null)
+    // 홈에서 커뮤니티 게시글 링크 수집 (카테고리 링크 제외 — /community/category/slug 형태)
+    const href = await page.evaluate(() => {
+      const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href*="/community/"]'))
+      const postLink = links.find(a => {
+        const parts = (a.getAttribute('href') ?? '').split('/').filter(Boolean)
+        return parts.length >= 3 // /community/{category}/{slug}
+      })
+      return postLink?.getAttribute('href') ?? null
+    })
     if (!href) {
       test.skip()
       return
