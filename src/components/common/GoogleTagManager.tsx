@@ -2,6 +2,7 @@ import Script from 'next/script'
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID
+const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? 'AW-18086681147'
 
 /**
  * Google Tag Manager + gtag 초기화 (Server Component)
@@ -37,7 +38,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             __html: `window.dataLayer=window.dataLayer||[];
 function gtag(){dataLayer.push(arguments);}
 gtag('js',new Date());
-gtag('config','${GA4_ID}',{send_page_view:false});`,
+gtag('config','${GA4_ID}',{send_page_view:false});
+gtag('config','${GOOGLE_ADS_ID}');`,
           }}
         />
       )}
