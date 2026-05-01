@@ -378,7 +378,10 @@ async function getLikeTargets(userId: string, board: string, limit: number) {
 /** 페르소나 오늘 글쓰기 횟수 조회 (Fix 6 — 일 2회 제한) */
 async function getTodayPostCount(personaId: string): Promise<number> {
   try {
-    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const KST_OFFSET = 9 * 60 * 60 * 1000
+    const nowKst = new Date(Date.now() + KST_OFFSET)
+    nowKst.setUTCHours(0, 0, 0, 0)
+    const today = new Date(nowKst.getTime() - KST_OFFSET)
     const user = await prisma.user.findFirst({
       where: { email: `bot-${personaId.toLowerCase()}@unao.bot` },
       select: { id: true },

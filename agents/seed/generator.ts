@@ -250,7 +250,7 @@ function buildTrendContext(
 
   return `
 [오늘 커뮤니티 말투·어휘 — 적극 모방하세요]
-- 오늘 주된 관심: ${trend.dominantDesire} 관련 이야기${myTopicLine}${hotTopicLine}${emotionLine}${vocabLine}${desirePctLine}
+- 오늘 주된 관심: ${personaDesire ?? trend.dominantDesire} 관련 이야기${myTopicLine}${hotTopicLine}${emotionLine}${vocabLine}${desirePctLine}
 
 위의 "오늘 유행 표현"과 "자주 쓰는 어휘"는 실제 우갱 회원들이 오늘 쓴 말입니다.
 이 단어와 표현 방식을 당신 글에 자연스럽게 녹여 쓰세요.
@@ -531,7 +531,7 @@ export async function generatePost(
       content: `오늘 "${topic}" 주제로 글을 써주세요.${entertainHint}${recentHint}${exampleBlock}${controversyBlock}
 
 응답 형식 (이 형식을 정확히 지켜주세요):
-제목: (15~30자, 당신 말투로)
+제목: (15~30자, 당신 말투로. *, **, #, _ 기호 절대 사용금지)
 카테고리: (${boardCategories.join('/')})
 본문: (${length.instruction})`,
     }],
