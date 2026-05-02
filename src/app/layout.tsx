@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import Script from 'next/script'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { GTMScript, GTMNoScript } from '@/components/common/GoogleTagManager'
 import GtagLoader from '@/components/common/GtagLoader'
 import { ToastProvider } from '@/components/common/Toast'
@@ -79,13 +79,14 @@ export default function RootLayout({
 }) {
   const initialFontSize = getInitialFontSize()
   const fontSizeAttr = initialFontSize !== 'NORMAL' ? initialFontSize : undefined
+  const isBot = headers().has('x-bot-type')
   return (
     <html lang="ko" className={pretendard.variable} {...(fontSizeAttr ? { 'data-font-size': fontSizeAttr } : {})}>
       <head>
         <link rel="preconnect" href="https://img.age-doesnt-matter.com" />
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://img.age-doesnt-matter.com" />
-        <GTMScript />
+        {!isBot && <GTMScript />}
         <Script
           async
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID ?? 'ca-pub-4117999106913048'}`}
@@ -94,15 +95,15 @@ export default function RootLayout({
         />
       </head>
       <body className={pretendard.className}>
-        <GTMNoScript />
+        {!isBot && <GTMNoScript />}
         <AuthProvider>
           <ToastProvider>
             {children}
             <AddToHomeScreen />
           </ToastProvider>
           <ServiceWorkerRegister />
-          <PageViewTracker />
-          <GtagLoader />
+          {!isBot && <PageViewTracker />}
+          {!isBot && <GtagLoader />}
         </AuthProvider>
       </body>
     </html>

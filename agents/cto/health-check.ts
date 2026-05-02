@@ -35,7 +35,7 @@ class CTOHealthCheck extends BaseAgent {
     const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.SITE_URL ?? 'https://www.age-doesnt-matter.com'
     const siteStart = Date.now()
     try {
-      const res = await fetch(siteUrl, { signal: AbortSignal.timeout(10_000) })
+      const res = await fetch(siteUrl, { signal: AbortSignal.timeout(10_000), headers: { 'x-bot-type': 'cto-agent' } })
       checks.push({ name: 'Website', ok: res.ok, latencyMs: Date.now() - siteStart, error: res.ok ? undefined : `HTTP ${res.status}` })
     } catch (err) {
       checks.push({ name: 'Website', ok: false, latencyMs: Date.now() - siteStart, error: String(err) })
@@ -44,7 +44,7 @@ class CTOHealthCheck extends BaseAgent {
     // 3. API 응답 체크
     const apiStart = Date.now()
     try {
-      const res = await fetch(`${siteUrl}/api/best`, { signal: AbortSignal.timeout(10_000) })
+      const res = await fetch(`${siteUrl}/api/best`, { signal: AbortSignal.timeout(10_000), headers: { 'x-bot-type': 'cto-agent' } })
       checks.push({ name: 'API', ok: res.ok, latencyMs: Date.now() - apiStart, error: res.ok ? undefined : `HTTP ${res.status}` })
     } catch (err) {
       checks.push({ name: 'API', ok: false, latencyMs: Date.now() - apiStart, error: String(err) })

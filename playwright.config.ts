@@ -18,6 +18,7 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    extraHTTPHeaders: { 'x-bot-type': 'e2e-test' },
   },
 
   projects: [
