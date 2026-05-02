@@ -41,7 +41,13 @@ const nextConfig = {
     ],
   },
   experimental: {
-    serverComponentsExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg', 'bcrypt', 'sharp'],
+    serverComponentsExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg', 'bcrypt', 'sharp', '@panva/hkdf', '@auth/core', 'next-auth'],
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)), '@panva/hkdf']
+    }
+    return config
   },
   async headers() {
     return [
