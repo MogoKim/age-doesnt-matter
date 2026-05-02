@@ -52,3 +52,4 @@ Cloudflare Turnstile(invisible)로 봇 차단, 기존 회원 기능 무영향.
 |------|---------|------|
 | 2026-05-01 | 최초 구현 | 비로그인 참여 진입장벽 제거 |
 | 2026-05-01 | Turnstile 봇 오탐 수정 — auto-execute + 6초 폴링, error_codes 서버 로깅 | 시크릿 모드(캐시 없음)에서 스크립트 로드 지연 시 'dev' 폴백 토큰 전송 → 봇 판단 오탐 |
+| 2026-05-02 | CSP 차단 해제 — next.config.js script-src/frame-src/connect-src에 challenges.cloudflare.com 추가 | 브라우저가 Turnstile 스크립트·iframe·API 요청을 전면 차단 → 위젯 미표시 근본 원인 |
