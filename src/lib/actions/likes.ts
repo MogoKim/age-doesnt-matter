@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkAndPromote } from '@/lib/grade'
@@ -41,7 +40,6 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
         })
       }
     })
-    revalidatePath(`/community`)
     return { toggled: false }
   }
 
@@ -114,7 +112,6 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
     )
   }
 
-  revalidatePath(`/community`)
   return { toggled: true }
 }
 

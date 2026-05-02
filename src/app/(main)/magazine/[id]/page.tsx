@@ -121,10 +121,10 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   const { id: rawId } = await params
   // Next.js 미들웨어 통과 시 한글 slug params가 자동 디코딩 안 됨 → 수동 디코딩
   const id = decodeURIComponent(rawId)
-  const session = await auth()
-  const userId = session?.user?.id
 
-  const post = await getPostDetail(id, userId)
+  // P1-C: auth() + getPostDetail() 병렬화
+  // getPostDetail(id) without userId = generateMetadata의 호출과 React cache 공유 → DB 쿼리 1회 절감
+  const [session, post] = await Promise.all([auth(), getPostDetail(id)])
   if (!post || post.boardType !== 'MAGAZINE') notFound()
 
   // CUID로 접근했는데 slug가 있으면 slug URL로 308 영구 redirect
@@ -132,15 +132,23 @@ export default async function MagazineDetailPage({ params }: PageProps) {
     permanentRedirect(`/magazine/${post.slug}`)
   }
 
+  const userId = session?.user?.id
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/CPS/ActionBar FK 보장)
   const resolvedId = post.id
 
   // CPS_ENABLED=false: 쿠팡 CPS 상품 준비 완료 후 활성화
   const CPS_ENABLED = false
-  const [comments, cpsLinks, relatedPosts] = await Promise.all([
+  // isLiked/isScrapped를 별도로 병렬 조회 (getPostDetail은 userId 없이 호출했으므로)
+  const [comments, cpsLinks, relatedPosts, isLiked, isScrapped] = await Promise.all([
     getCommentsByPostId(resolvedId, userId),
     CPS_ENABLED ? getCpsLinks(resolvedId) : Promise.resolve([] as Awaited<ReturnType<typeof getCpsLinks>>),
     getRelatedMagazinePosts(post.category ?? null, resolvedId, 3, undefined, post.seriesId ?? null),
+    userId
+      ? prisma.like.findUnique({ where: { userId_postId: { userId, postId: resolvedId } }, select: { id: true } }).then(r => !!r)
+      : Promise.resolve(false),
+    userId
+      ? prisma.scrap.findUnique({ where: { userId_postId: { userId, postId: resolvedId } }, select: { id: true } }).then(r => !!r)
+      : Promise.resolve(false),
   ])
 
   // JSON-LD 구조화 데이터
@@ -297,8 +305,8 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         title={post.title}
         description={post.preview}
         likeCount={post.likeCount}
-        isLiked={post.isLiked}
-        isScrapped={post.isScrapped}
+        isLiked={isLiked}
+        isScrapped={isScrapped}
         isLoggedIn={!!userId}
       />
 

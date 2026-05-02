@@ -239,7 +239,6 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
   const slug = BOARD_TYPE_TO_SLUG[existing.boardType]
   revalidatePath(`/community/${slug}/${postId}`)
   revalidatePath(`/community/${slug}`)
-  revalidatePath('/')
   return { postUrl: `/community/${slug}/${postId}` }
 }
 

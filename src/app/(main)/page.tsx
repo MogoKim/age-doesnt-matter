@@ -66,6 +66,12 @@ const getCachedActivityPulse = unstable_cache(
   ['home-activity-pulse'],
   { revalidate: 60 }
 )
+// 회원 활동 카운트: 알림 배지 수치 → 10s 지연 허용 (매 요청 3× DB count 제거)
+const getCachedUserCounts = unstable_cache(
+  (userId: string) => getUserCounts(userId),
+  ['home-user-counts'],
+  { revalidate: 10 }
+)
 
 /* ── Suspense 스켈레톤 ── */
 function SectionSkeleton({ h = 'h-[200px]' }: { h?: string }) {
@@ -108,7 +114,7 @@ async function JobWrapper() {
 async function ActivityWrapper() {
   // auth()는 NextAuth v5 request memoization → 이미 page level에서 호출한 것과 동일 결과 (DB 1번)
   const [session, activityPulse] = await Promise.all([auth(), getCachedActivityPulse()])
-  const myCounts = session?.user?.id ? await getUserCounts(session.user.id) : null
+  const myCounts = session?.user?.id ? await getCachedUserCounts(session.user.id) : null
   if (myCounts) {
     return (
       <>

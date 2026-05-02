@@ -138,7 +138,6 @@ export async function createComment(
   }
 
   revalidatePath('/community/[boardSlug]/[postId]', 'page')
-  revalidatePath('/community')
   return {}
 }
 
@@ -178,7 +177,6 @@ export async function editComment(
   })
 
   revalidatePath('/community/[boardSlug]/[postId]', 'page')
-  revalidatePath('/community')
   return {}
 }
 
@@ -209,6 +207,5 @@ export async function deleteComment(commentId: string): Promise<CommentResult> {
   ])
 
   revalidatePath('/community/[boardSlug]/[postId]', 'page')
-  revalidatePath('/community')
   return {}
 }
