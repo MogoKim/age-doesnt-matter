@@ -26,7 +26,8 @@ export default function Life2Section({ posts }: Props) {
         {posts.map((post) => (
           <li key={post.id}>
             <Link
-              href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.id}`}
+              href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
+              prefetch={false}
               className="block py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0"
             >
               <div className="flex items-center gap-2 mb-1">

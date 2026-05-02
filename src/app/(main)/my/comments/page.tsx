@@ -33,6 +33,7 @@ export default async function MyCommentsPage() {
               <Link
                 key={comment.id}
                 href={`/community/${boardSlug}/${comment.postId}`}
+                prefetch={false}
                 className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30"
               >
                 <p className="text-body text-foreground m-0 mb-2 line-clamp-2 leading-relaxed">

@@ -143,7 +143,8 @@ function BestPostCard({ post }: { post: PostSummary }) {
 
   return (
     <Link
-      href={`/community/${boardSlug}/${post.id}`}
+      href={`/community/${boardSlug}/${post.slug ?? post.id}`}
+      prefetch={false}
       className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 min-h-[52px]"
     >
       <div className="flex items-center gap-2 mb-2">

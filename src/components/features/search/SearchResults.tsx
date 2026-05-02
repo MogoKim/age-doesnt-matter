@@ -115,11 +115,14 @@ function SearchResultCard({ post, query }: { post: PostSummary; query: string })
   const boardSlug = BOARD_TYPE_TO_SLUG[post.boardType] ?? 'stories'
   const href = post.boardType === 'JOB'
     ? `/jobs/${post.id}`
-    : `/community/${boardSlug}/${post.id}`
+    : post.boardType === 'MAGAZINE'
+    ? `/magazine/${post.slug ?? post.id}`
+    : `/community/${boardSlug}/${post.slug ?? post.id}`
 
   return (
     <Link
       href={href}
+      prefetch={false}
       className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30"
     >
       {post.category && (

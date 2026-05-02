@@ -26,7 +26,8 @@ export default function TrendingSection({ posts }: Props) {
         {posts.map((post, index) => (
           <li key={post.id} className="lg:border-b lg:border-border lg:last:border-b-0">
             <Link
-              href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.id}`}
+              href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
+              prefetch={false}
               className="flex items-start gap-3 py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:border-b-0 lg:active:mx-0 lg:active:px-0"
             >
               <span className="text-body font-bold text-primary-text min-w-[24px] shrink-0 leading-[1.4]">{index + 1}</span>

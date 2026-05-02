@@ -11,7 +11,8 @@ interface PostCardProps {
 export default function PostCard({ post, boardSlug }: PostCardProps) {
   return (
     <Link
-      href={`/community/${boardSlug}/${post.id}`}
+      href={`/community/${boardSlug}/${post.slug ?? post.id}`}
+      prefetch={false}
       className="bg-card rounded-2xl p-6 border border-border shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-200 flex flex-col gap-2.5 no-underline text-inherit relative overflow-hidden after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[3px] after:bg-primary after:scale-x-0 after:transition-transform after:duration-300 hover:after:scale-x-100 lg:p-5 lg:hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] lg:hover:-translate-y-[3px] lg:hover:border-primary/20"
     >
       {post.category && (

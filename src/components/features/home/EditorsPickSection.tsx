@@ -26,7 +26,8 @@ export default function EditorsPickSection({ posts }: Props) {
         <div className="overflow-x-auto [-webkit-overflow-scrolling:touch] [scroll-snap-type:x_mandatory] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 pr-12 flex gap-3 lg:overflow-x-visible lg:[scroll-snap-type:none] lg:px-0 lg:pr-0 lg:grid lg:grid-cols-2 lg:gap-4">
           {posts.map((post, index) => (
             <Link
-              href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.id}`}
+              href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
+              prefetch={false}
               key={post.id}
               className="shrink-0 w-[200px] lg:w-auto bg-card rounded-xl overflow-hidden border border-border [scroll-snap-align:start] lg:[scroll-snap-align:none] no-underline text-inherit block active:opacity-95 lg:hover:shadow-md lg:hover:-translate-y-0.5 lg:hover:transition-all"
             >

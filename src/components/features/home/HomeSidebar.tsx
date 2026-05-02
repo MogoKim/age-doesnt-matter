@@ -19,7 +19,8 @@ export default function HomeSidebar({ posts }: Props) {
           {posts.map((post) => (
             <li key={post.id}>
               <Link
-                href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.id}`}
+                href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
+                prefetch={false}
                 className="block py-2.5 border-b border-border last:border-b-0 no-underline hover:text-primary"
               >
                 <span className="text-caption text-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis block">{post.title}</span>
