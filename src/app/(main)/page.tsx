@@ -72,6 +72,12 @@ function SectionSkeleton({ h = 'h-[200px]' }: { h?: string }) {
   return <div className={`${h} animate-pulse bg-muted/50 rounded-2xl mx-4 my-3`} />
 }
 
+function HeroSkeleton() {
+  return (
+    <div className="w-full [aspect-ratio:3/2] lg:[aspect-ratio:8/3] animate-pulse bg-gradient-to-br from-primary/20 to-primary/10" />
+  )
+}
+
 /* ── 섹션별 async 서버 컴포넌트 (독립 스트리밍) ── */
 
 async function TrendingWrapper() {
@@ -124,13 +130,21 @@ async function HomeSidebarWrapper() {
   return <HomeSidebar posts={posts} />
 }
 
+async function PersonalGreetingWrapper() {
+  const session = await auth()
+  if (!session?.user?.nickname) return null
+  return <PersonalGreeting nickname={session.user.nickname} />
+}
+
+async function SignupCardWrapper() {
+  const session = await auth()
+  if (session?.user) return null
+  return <SignupCard />
+}
+
 /* ── 페이지 ── */
 
 export default async function HomePage() {
-  // auth()만 await — HeroSlider 이전에 회원 여부 판단 필요
-  const session = await auth()
-  const isMember = !!session?.user
-
   const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -173,15 +187,17 @@ export default async function HomePage() {
         />
         <h1 className="sr-only">우리 나이가 어때서 — 5060 세대 커뮤니티</h1>
         <div className="max-w-[1200px] mx-auto">
-          {/* HeroSlider — Promise.all 제거로 auth() 완료 즉시 스트리밍 */}
-          <HeroSlider />
+          {/* HeroSlider — Suspense로 감싸 banners 쿼리 블로킹 제거 */}
+          <Suspense fallback={<HeroSkeleton />}>
+            <HeroSlider />
+          </Suspense>
 
           <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
             <div>
-              {/* 회원 전용 인사 카드 — auth() 결과 즉시 사용 */}
-              {isMember && session.user?.nickname && (
-                <PersonalGreeting nickname={session.user.nickname} />
-              )}
+              {/* 회원 전용 인사 카드 — auth() 비동기 처리로 cold-start 블로킹 해소 */}
+              <Suspense fallback={null}>
+                <PersonalGreetingWrapper />
+              </Suspense>
 
               <Suspense fallback={<SectionSkeleton />}>
                 <TrendingWrapper />
@@ -228,7 +244,9 @@ export default async function HomePage() {
               </Suspense>
 
               {/* 비회원 가입 유도 카드 */}
-              {!isMember && <SignupCard />}
+              <Suspense fallback={null}>
+                <SignupCardWrapper />
+              </Suspense>
             </div>
 
             <Suspense fallback={<div className="hidden lg:block" />}>
