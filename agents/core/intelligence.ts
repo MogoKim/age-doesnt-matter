@@ -159,6 +159,22 @@ export async function loadTodayBrief(options: {
     }
   }
 
+  // DB 경로로 읽은 경우 controversySeeds 보강 (DailyBrief DB에 없으므로 CafeTrend에서 조회)
+  if (result && !result.controversySeeds) {
+    try {
+      const latestTrend = await prisma.cafeTrend.findFirst({
+        where: { controversyTopics: { not: null } },
+        orderBy: { createdAt: 'desc' },
+        select: { controversyTopics: true },
+      })
+      if (latestTrend?.controversyTopics) {
+        result.controversySeeds = latestTrend.controversyTopics as ControversyTopic[]
+      }
+    } catch {
+      // controversySeeds 없어도 논쟁 체인 비활성으로 안전 폴백
+    }
+  }
+
   // 소비 로깅 (brief 획득 성공 + consumedBy 있을 때만)
   if (result && options.consumedBy) {
     /** consumedBy 이름 → 유효 Prisma BotType enum 값 매핑 */
