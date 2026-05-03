@@ -26,50 +26,48 @@ export async function getCommentsByPostId(
 ): Promise<CommentItem[]> {
   const orderBy = sort === 'latest' ? { createdAt: 'desc' as const } : { createdAt: 'asc' as const }
 
-  const rows = await prisma.comment.findMany({
-    where: { postId, parentId: null, status: { not: 'DELETED' } },
-    select: {
-      id: true,
-      content: true,
-      likeCount: true,
-      status: true,
-      createdAt: true,
-      authorId: true,
-      guestNickname: true,
-      author: {
-        select: { id: true, nickname: true, grade: true, profileImage: true },
-      },
-      replies: {
-        where: { status: { notIn: ['HIDDEN', 'DELETED'] } },
-        select: {
-          id: true,
-          content: true,
-          likeCount: true,
-          status: true,
-          createdAt: true,
-          authorId: true,
-          guestNickname: true,
-          author: {
-            select: { id: true, nickname: true, grade: true, profileImage: true },
-          },
+  const [rows, likesResult] = await Promise.all([
+    prisma.comment.findMany({
+      where: { postId, parentId: null, status: { not: 'DELETED' } },
+      select: {
+        id: true,
+        content: true,
+        likeCount: true,
+        status: true,
+        createdAt: true,
+        authorId: true,
+        guestNickname: true,
+        author: {
+          select: { id: true, nickname: true, grade: true, profileImage: true },
         },
-        orderBy: { createdAt: 'asc' },
+        replies: {
+          where: { status: { notIn: ['HIDDEN', 'DELETED'] } },
+          select: {
+            id: true,
+            content: true,
+            likeCount: true,
+            status: true,
+            createdAt: true,
+            authorId: true,
+            guestNickname: true,
+            author: {
+              select: { id: true, nickname: true, grade: true, profileImage: true },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
       },
-    },
-    orderBy,
-  })
+      orderBy,
+    }),
+    userId
+      ? prisma.like.findMany({
+          where: { userId, comment: { postId } },
+          select: { commentId: true },
+        })
+      : Promise.resolve([]),
+  ])
 
-  // 좋아요 상태 일괄 조회
-  const allCommentIds = rows.flatMap((r) => [r.id, ...r.replies.map((re) => re.id)])
-  let likedSet = new Set<string>()
-
-  if (userId && allCommentIds.length > 0) {
-    const likes = await prisma.like.findMany({
-      where: { userId, commentId: { in: allCommentIds } },
-      select: { commentId: true },
-    })
-    likedSet = new Set(likes.map((l) => l.commentId!))
-  }
+  const likedSet = new Set(likesResult.map((l) => l.commentId!))
 
   const EDIT_WINDOW_MS = 10 * 60 * 1000
 
