@@ -96,5 +96,8 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0"
+  },
+  "overrides": {
+    "@auth/core": "0.41.1"
   }
 }
