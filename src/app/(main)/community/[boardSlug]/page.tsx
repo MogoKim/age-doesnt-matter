@@ -6,6 +6,8 @@ import { unstable_cache } from 'next/cache'
 import { getBoardConfig } from '@/lib/queries/boards'
 import { getPostsByBoard } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
+import type { BoardType } from '@/generated/prisma/client'
+import type { SearchField } from '@/lib/queries/posts/posts.base'
 import BoardFilter from '@/components/features/community/BoardFilter'
 import PostCard from '@/components/features/community/PostCard'
 import LoadMoreButton from '@/components/features/community/LoadMoreButton'
@@ -70,6 +72,87 @@ function getBoardFaqJsonLd(boardSlug: string): object | null {
   }
 }
 
+function PostListSkeleton() {
+  return (
+    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="bg-card rounded-xl p-5 border border-border animate-pulse">
+          <div className="h-4 bg-muted rounded w-3/4 mb-3" />
+          <div className="h-3 bg-muted rounded w-full mb-2" />
+          <div className="h-3 bg-muted rounded w-1/2" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+interface PostListContainerProps {
+  boardType: BoardType
+  boardSlug: string
+  category: string | undefined
+  sortOption: 'latest' | 'likes'
+  q: string | undefined
+  sf: SearchField
+}
+
+async function PostListContainer({ boardType, boardSlug, category, sortOption, q, sf }: PostListContainerProps) {
+  let posts: PostSummary[]
+  let hasMore: boolean
+
+  if (q) {
+    ;({ posts, hasMore } = await getPostsByBoard(boardType, { category, sort: sortOption, limit: 20, q, sf }))
+  } else {
+    const getCachedPosts = unstable_cache(
+      () => getPostsByBoard(boardType, { category, sort: sortOption, limit: 20 }),
+      [`board-${boardType}-${category ?? 'all'}-${sortOption}`],
+      { revalidate: 30 },
+    )
+    ;({ posts, hasMore } = await getCachedPosts())
+  }
+
+  const lastId = posts.length > 0 ? posts[posts.length - 1].id : undefined
+
+  if (posts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
+        <div className="text-[56px] mb-4">📝</div>
+        <p className="text-sm text-muted-foreground leading-[1.8]">
+          {q ? `"${q}" 검색 결과가 없어요.` : '아직 작성된 글이 없어요.'}<br />
+          {q ? '다른 검색어를 입력해 보세요.' : '첫 번째 글을 남겨보세요!'}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6">
+        {posts.map((post, idx) => (
+          <div key={post.id}>
+            <PostCard post={post} boardSlug={boardSlug} />
+            {(idx + 1) % 3 === 0 && (idx + 1) % 6 !== 0 && (
+              <div className="mt-4"><FeedAd /></div>
+            )}
+            {(idx + 1) % 6 === 0 && (
+              <div className="mt-4"><ResponsiveAd mobile={<CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" />} desktop={null} /></div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <LoadMoreButton
+        boardSlug={boardSlug}
+        boardType={boardType}
+        category={category}
+        initialHasMore={hasMore}
+        initialLastId={lastId}
+        q={q}
+        sf={sf}
+      />
+    </>
+  )
+}
+
 // searchParams 사용으로 dynamic rendering 필수 (DYNAMIC_SERVER_USAGE 방지)
 export const dynamic = 'force-dynamic'
 
@@ -83,23 +166,6 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
   const q = rawQ?.trim() || undefined
   const sf = rawSf === 'title' || rawSf === 'content' ? rawSf : ('both' as const)
   const sortOption = sort === 'likes' ? ('likes' as const) : ('latest' as const)
-
-  let posts: PostSummary[]
-  let hasMore: boolean
-
-  if (q) {
-    // 검색 중: 캐시 스킵
-    ;({ posts, hasMore } = await getPostsByBoard(board.boardType, { category, sort: sortOption, limit: 20, q, sf }))
-  } else {
-    const getCachedPosts = unstable_cache(
-      () => getPostsByBoard(board.boardType, { category, sort: sortOption, limit: 20 }),
-      [`board-${board.boardType}-${category ?? 'all'}-${sortOption}`],
-      { revalidate: 30 },
-    )
-    ;({ posts, hasMore } = await getCachedPosts())
-  }
-
-  const lastId = posts.length > 0 ? posts[posts.length - 1].id : undefined
 
   const boardFaqJsonLd = getBoardFaqJsonLd(boardSlug)
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -121,7 +187,7 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
       />
       {/* GA4 게시판 조회 이벤트 */}
       <BoardViewTracker boardType={board.boardType} boardSlug={boardSlug} />
-      {/* 게시판 헤더 */}
+      {/* 게시판 헤더 — getBoardConfig만 필요, 즉시 표시 */}
       <div className="mb-6 p-6 bg-card rounded-2xl border-l-4 border-l-primary shadow-sm">
         <h1 className="text-xl font-bold text-foreground m-0 mb-1">{board.displayName}</h1>
         <p className="text-body text-muted-foreground m-0">{board.description}</p>
@@ -142,42 +208,17 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
         </Suspense>
       </div>
 
-      {/* 게시글 목록 */}
-      {posts.length > 0 ? (
-        <>
-          <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6">
-            {posts.map((post, idx) => (
-              <div key={post.id}>
-                <PostCard post={post} boardSlug={boardSlug} />
-                {(idx + 1) % 3 === 0 && (idx + 1) % 6 !== 0 && (
-                  <div className="mt-4"><FeedAd /></div>
-                )}
-                {(idx + 1) % 6 === 0 && (
-                  <div className="mt-4"><ResponsiveAd mobile={<CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" />} desktop={null} /></div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <LoadMoreButton
-            boardSlug={boardSlug}
-            boardType={board.boardType}
-            category={category}
-            initialHasMore={hasMore}
-            initialLastId={lastId}
-            q={q}
-            sf={sf}
-          />
-        </>
-      ) : (
-        <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
-          <div className="text-[56px] mb-4">📝</div>
-          <p className="text-sm text-muted-foreground leading-[1.8]">
-            {q ? `"${q}" 검색 결과가 없어요.` : '아직 작성된 글이 없어요.'}<br />
-            {q ? '다른 검색어를 입력해 보세요.' : '첫 번째 글을 남겨보세요!'}
-          </p>
-        </div>
-      )}
+      {/* 게시글 목록 — 스트리밍 (board header와 독립적으로 로드) */}
+      <Suspense fallback={<PostListSkeleton />}>
+        <PostListContainer
+          boardType={board.boardType}
+          boardSlug={boardSlug}
+          category={category}
+          sortOption={sortOption}
+          q={q}
+          sf={sf}
+        />
+      </Suspense>
 
       {/* 검색 */}
       <Suspense fallback={null}>
