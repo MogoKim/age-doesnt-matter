@@ -31,7 +31,7 @@ export function toUserSummary(user: {
   }
 }
 
-export function toPromotionLevel(level: PromotionLevel): PostSummaryK'promotionLevel'] {
+export function toPromotionLevel(level: PromotionLevel): PostSummary['promotionLevel'] {
   if (level === 'HALL_OF_FAME') return 'HALL_OF_FAME'
   return level
 }
