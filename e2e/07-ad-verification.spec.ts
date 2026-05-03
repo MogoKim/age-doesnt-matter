@@ -113,7 +113,7 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
     }
 
     await homeLink.click()
-    await page.waitForURL('/', { timeout: 10000 })
+    await page.waitForURL(/\/$/, { timeout: 10000 })
     await page.waitForLoadState('load')
     await page.waitForTimeout(2000)
 
