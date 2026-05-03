@@ -5,7 +5,8 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
   test('데스크탑: AdSense 슬롯 존재', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('load')
+    await page.waitForTimeout(2000)
 
     // ins.adsbygoogle 태그가 DOM에 존재하는지 확인
     const adsenseSlots = page.locator('ins.adsbygoogle')
@@ -22,7 +23,8 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
   test('모바일: AdSense 슬롯 존재', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('load')
+    await page.waitForTimeout(2000)
 
     const adsenseSlots = page.locator('ins.adsbygoogle')
     const count = await adsenseSlots.count()
@@ -34,7 +36,8 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
 
   test('AdSense 스크립트 처리 확인 (data-ad-status)', async ({ page }) => {
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('load')
+    await page.waitForTimeout(2000)
 
     const slot = page.locator('ins.adsbygoogle').first()
     const attached = await slot.waitFor({ state: 'attached', timeout: 10000 }).then(() => true).catch(() => false)
@@ -64,7 +67,8 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
   test('쿠팡 배너 이미지 렌더링', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('load')
+    await page.waitForTimeout(2000)
 
     // 쿠팡 배너 또는 폴백 배너 — 둘 중 하나라도 있으면 성공
     const coupangBanner = page.locator('img[src*="ads-partners.coupang.com"]')
@@ -82,7 +86,8 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
 
   test('SPA 네비게이션 후 광고 슬롯 재생성', async ({ page }) => {
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('load')
+    await page.waitForTimeout(2000)
 
     // 매거진으로 이동
     const magLink = page.getByRole('navigation').getByRole('link', { name: '매거진' })
@@ -95,7 +100,8 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
 
     await magLink.click()
     await page.waitForURL(/\/magazine/, { timeout: 10000 })
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('load')
+    await page.waitForTimeout(2000)
 
     // 홈으로 돌아오기
     const homeLink = page.locator('header a[href="/"]').first()
@@ -108,7 +114,8 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
 
     await homeLink.click()
     await page.waitForURL('/', { timeout: 10000 })
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('load')
+    await page.waitForTimeout(2000)
 
     // 광고 슬롯이 다시 생성되었는지 확인
     const afterNavCount = await page.locator('ins.adsbygoogle').count()
@@ -139,7 +146,7 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
     })
 
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('load')
     await page.waitForTimeout(5000)
 
     if (errors.length > 0) {
