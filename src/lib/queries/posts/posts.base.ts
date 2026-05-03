@@ -1,4 +1,4 @@
-import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { BoardType, PromotionLevel } from '@/generated/prisma/client'
 import { GRADE_INFO } from '@/lib/grade'
@@ -31,7 +31,7 @@ export function toUserSummary(user: {
   }
 }
 
-export function toPromotionLevel(level: PromotionLevel): PostSummary['promotionLevel'] {
+export function toPromotionLevel(level: PromotionLevel): PostSummaryK'promotionLevel'] {
   if (level === 'HALL_OF_FAME') return 'HALL_OF_FAME'
   return level
 }
@@ -109,89 +109,78 @@ export function buildTextSearch(
 
 /* ── 메타데이터 전용 경량 조회 (generateMetadata에서 사용) ── */
 
-export const getPostMeta = cache(async function getPostMeta(postId: string) {
-  return prisma.post.findFirst({
-    where: {
-      status: { in: ['PUBLISHED', 'SEO_ONLY'] },
-      OR: [{ id: postId }, { slug: postId }],
-    },
-    select: {
-      title: true,
-      summary: true,
-      thumbnailUrl: true,
-      slug: true,
-      seoTitle: true,
-      seoDescription: true,
-    },
-  })
-})
+export const getPostMeta = unstable_cache(
+  async (postId: string) => {
+    return prisma.post.findFirst({
+      where: {
+        status: { in: ['PUBLISHED', 'SEO_ONLY'] },
+        OR: [{ id: postId }, { slug: postId }],
+      },
+      select: {
+        title: true,
+        summary: true,
+        thumbnailUrl: true,
+        slug: true,
+        seoTitle: true,
+        seoDescription: true,
+      },
+    })
+  },
+  ['post-meta'],
+  { revalidate: 60 },
+)
 
 /* ── 게시글 상세 ── */
 
-export const getPostDetail = cache(async function getPostDetail(
-  postId: string,
-  userId?: string,
-): Promise<PostDetail | null> {
-  // id(CUID) 또는 slug 어느 쪽으로 접근해도 단일 쿼리로 조회
-  const post = await prisma.post.findFirst({
-    where: {
-      status: { in: ['PUBLISHED', 'SEO_ONLY'] },
-      OR: [{ id: postId }, { slug: postId }],
-    },
-    select: {
-      ...postSelect,
-      content: true,
-      updatedAt: true,
-      slug: true,
-      seoTitle: true,
-      seoDescription: true,
-      seriesId: true,
-      seriesTitle: true,
-      seriesOrder: true,
-      seriesCount: true,
-      seasonId: true,
-    },
-  })
+export const getPostDetail = unstable_cache(
+  async (postId: string): Promise<PostDetail | null> => {
+    // id(CUID) 또는 slug 어느 쪽으로 접근해도 단일 쿼리로 조회
+    const post = await prisma.post.findFirst({
+      where: {
+        status: { in: ['PUBLISHED', 'SEO_ONLY'] },
+        OR: [{ id: postId }, { slug: postId }],
+      },
+      select: {
+        ...postSelect,
+        content: true,
+        updatedAt: true,
+        slug: true,
+        seoTitle: true,
+        seoDescription: true,
+        seriesId: true,
+        seriesTitle: true,
+        seriesOrder: true,
+        seriesCount: true,
+        seasonId: true,
+      },
+    })
 
-  if (!post) return null
+    if (!post) return null
 
-  // slug로 조회됐을 수 있으므로 실제 DB id 사용
-  const resolvedPostId = post.id
+    // 조회수 증가 (fire-and-forget, 캐시 miss 시만 실행)
+    prisma.post.update({
+      where: { id: post.id },
+      data: { viewCount: { increment: 1 } },
+    }).catch(() => {})
 
-  // 조회수 증가 (fire-and-forget)
-  prisma.post.update({
-    where: { id: resolvedPostId },
-    data: { viewCount: { increment: 1 } },
-  }).catch(() => {})
-
-  // 좋아요/스크랩 상태 조회
-  let isLiked = false
-  let isScrapped = false
-
-  if (userId) {
-    const [like, scrap] = await Promise.all([
-      prisma.like.findUnique({ where: { userId_postId: { userId, postId: resolvedPostId } } }),
-      prisma.scrap.findUnique({ where: { userId_postId: { userId, postId: resolvedPostId } } }),
-    ])
-    isLiked = !!like
-    isScrapped = !!scrap
-  }
-
-  return {
-    ...toPostSummary(post),
-    content: post.content,
-    imageUrls: [],
-    youtubeUrl: null,
-    isLiked,
-    isScrapped,
-    updatedAt: post.updatedAt.toISOString(),
-    slug: post.slug ?? null,
-    seoTitle: post.seoTitle ?? null,
-    seoDescription: post.seoDescription ?? null,
-    seriesId: post.seriesId ?? null,
-    seriesTitle: post.seriesTitle ?? null,
-    seriesOrder: post.seriesOrder ?? null,
-    seriesCount: post.seriesCount ?? null,
-    seasonId: post.seasonId ?? null,
-  }
-})
+    return {
+      ...toPostSummary(post),
+      content: post.content,
+      imageUrls: [],
+      youtubeUrl: null,
+      isLiked: false,
+      isScrapped: false,
+      updatedAt: post.updatedAt.toISOString(),
+      slug: post.slug ?? null,
+      seoTitle: post.seoTitle ?? null,
+      seoDescription: post.seoDescription ?? null,
+      seriesId: post.seriesId ?? null,
+      seriesTitle: post.seriesTitle ?? null,
+      seriesOrder: post.seriesOrder ?? null,
+      seriesCount: post.seriesCount ?? null,
+      seasonId: post.seasonId ?? null,
+    }
+  },
+  ['post-detail'],
+  { revalidate: 30 },
+)
