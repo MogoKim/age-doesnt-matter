@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import { getBoardConfig } from '@/lib/queries/boards'
 import { getPostDetail, getPostMeta } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
@@ -69,14 +70,12 @@ async function CommentsLoader({ postId, userId }: { postId: string; userId?: str
 export default async function PostDetailPage({ params }: PageProps) {
   const { boardSlug, postId } = await params
 
-  const [board, session] = await Promise.all([
+  const [board, session, post] = await Promise.all([
     getBoardConfig(boardSlug),
     auth(),
+    getPostDetail(postId),
   ])
   if (!board) notFound()
-
-  const userId = session?.user?.id
-  const post = await getPostDetail(postId, userId)
   if (!post) notFound()
 
   // CUID로 접근했는데 slug가 있으면 slug URL로 308 영구 redirect
@@ -84,8 +83,18 @@ export default async function PostDetailPage({ params }: PageProps) {
     permanentRedirect(`/community/${boardSlug}/${post.slug}`)
   }
 
+  const userId = session?.user?.id
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/likes FK 보장)
   const resolvedId = post.id
+
+  const [isLiked, isScrapped] = await Promise.all([
+    userId
+      ? prisma.like.findUnique({ where: { userId_postId: { userId, postId: resolvedId } }, select: { id: true } }).then(r => !!r)
+      : Promise.resolve(false),
+    userId
+      ? prisma.scrap.findUnique({ where: { userId_postId: { userId, postId: resolvedId } }, select: { id: true } }).then(r => !!r)
+      : Promise.resolve(false),
+  ])
 
   const isOwnPost = !!userId && !!post.author.id && post.author.id === userId
 
@@ -186,8 +195,8 @@ export default async function PostDetailPage({ params }: PageProps) {
         title={post.title}
         description={post.preview}
         likeCount={post.likeCount}
-        isLiked={post.isLiked}
-        isScrapped={post.isScrapped}
+        isLiked={isLiked}
+        isScrapped={isScrapped}
         isLoggedIn={!!userId}
       />
 
