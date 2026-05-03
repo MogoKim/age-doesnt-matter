@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { usePathname } from 'next/navigation'
 import { ADSENSE } from './ad-slots'
 import CoupangBanner from './CoupangBanner'
 
@@ -42,7 +41,6 @@ const FORMAT_MIN_HEIGHT: Record<string, number> = {
  * - 스크립트 로드 전 push → race condition
  *
  * v2 변경:
- * - pathname 변경 시 ins 태그 재생성 + push 재호출
  * - data-ad-status 감시 → unfilled 시 쿠팡 폴백
  * - 스크립트 로드 상태 확인 후 push
  */
@@ -55,7 +53,6 @@ export default function AdSenseUnit({
   className,
 }: AdSenseUnitProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const pathname = usePathname()
   const [showFallback, setShowFallback] = useState(false)
 
   useEffect(() => {
@@ -113,7 +110,7 @@ export default function AdSenseUnit({
     return () => {
       observer.disconnect()
     }
-  }, [slotId, format, responsive, layout, layoutKey, pathname])
+  }, [slotId, format, responsive, layout, layoutKey])
 
   return (
     <aside
