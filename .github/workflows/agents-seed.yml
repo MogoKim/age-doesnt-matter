@@ -29,3 +29,4 @@ jobs:
       - run: npx prisma generate
       - run: cd agents && npm ci
       - run: cd agents && npx tsx cron/runner.ts seed scheduler
+      - run: cd agents && npx tsx cron/runner.ts controversy-chain execute

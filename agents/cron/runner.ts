@@ -78,6 +78,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'coo:job-matcher': () => import('../coo/job-matcher.js').then(() => {}),
   'coo:comment-activator': () => import('../coo/comment-activator.js').then(() => {}),
   'coo:reply-chain-driver': () => import('../coo/reply-chain-driver.js').then(() => {}),
+  'controversy-chain:execute': () => import('../seed/controversy-chain.js').then(() => {}),
   'cto:crawler-health': () => import('../cto/crawler-health.js').then(() => {}),
   'cpo:persona-diversity-checker': () => import('../cpo/persona-diversity-checker.js').then(() => {}),
   'cdo:engagement-optimizer': () => import('../cdo/engagement-optimizer.js').then(() => {}),

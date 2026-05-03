@@ -1,5 +1,6 @@
 import { prisma, disconnect } from '../core/db.js'
 import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP } from './generator.js'
+import { scheduleChainFromPost } from './controversy-chain.js'
 import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
 import type { ControversyTopic } from '../core/intelligence.js'
 import { getPersona } from './persona-data.js'
@@ -429,7 +430,7 @@ async function runActivity(activity: Activity): Promise<void> {
     })
     console.log(`[Seed] ${activity.personaId} posted: "${title}"`)
 
-    // Fix 13-E: 논쟁글 생성 시 BotLog 기록 (16/17시 체인이 이 postId로 타겟 찾음)
+    // Fix 13-E: 논쟁글 생성 시 BotLog 기록 + 5단계 체인 예약
     if (activity.controversySeed) {
       await safeBotLog({
         botType: 'SEED',
@@ -438,6 +439,7 @@ async function runActivity(activity: Activity): Promise<void> {
         details: JSON.stringify({ postId: newPost.id, controversyType: activity.controversySeed.controversyType }),
         executionTimeMs: 0,
       }).catch(() => {})
+      await scheduleChainFromPost(newPost.id, activity.personaId).catch(() => {})
     }
   }
 

@@ -125,6 +125,69 @@ function getPersonaDesire(personaId: string): string | null {
   return null
 }
 
+// ── 갈등 DNA 변주 엔진 (v12) ──
+
+type VariationType = 'ESCALATION' | 'EMOTIONAL_DEPTH' | 'REVERSAL'
+
+function pickVariationType(): VariationType {
+  const r = Math.random()
+  if (r < 0.40) return 'ESCALATION'
+  if (r < 0.75) return 'EMOTIONAL_DEPTH'
+  return 'REVERSAL'
+}
+
+async function getTopDNAPost(): Promise<{
+  conflictTrigger: string
+  betrayalFactor: string | null
+  emotionalPeak: string | null
+  viralType: string
+  commentSplit: number
+} | null> {
+  try {
+    const post = await prisma.cafePost.findFirst({
+      where: {
+        viralType: { not: null },
+        commentSplit: { gte: 6 },
+        isUsable: true,
+        aiAnalyzed: true,
+        crawledAt: { gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+      },
+      orderBy: { commentSplit: 'desc' },
+      select: { conflictTrigger: true, betrayalFactor: true, emotionalPeak: true, viralType: true, commentSplit: true },
+    })
+    if (!post?.conflictTrigger || !post?.viralType) return null
+    return {
+      conflictTrigger: post.conflictTrigger,
+      betrayalFactor: post.betrayalFactor,
+      emotionalPeak: post.emotionalPeak,
+      viralType: post.viralType,
+      commentSplit: post.commentSplit ?? 0,
+    }
+  } catch {
+    return null
+  }
+}
+
+function buildVariationBlock(
+  dna: NonNullable<Awaited<ReturnType<typeof getTopDNAPost>>>,
+  variation: VariationType,
+): string {
+  const baseCtx = `갈등 상황: "${dna.conflictTrigger}"${dna.betrayalFactor ? ` / 배신: "${dna.betrayalFactor}"` : ''}`
+  const instructions: Record<VariationType, string> = {
+    ESCALATION:      `비슷하지만 더 심했던 내 경험 — 억울함·분노·배신감을 행동·상황으로만 표현 (감정 직접 묘사 금지). "저는 그보다 더했어요..." 식으로 시작`,
+    EMOTIONAL_DEPTH: `표면 분노 말고 내면 상처·외로움·섭섭함 — 행동·상황으로 표현 (감정 직접 묘사 금지). "겉으론 웃고 있었는데 속으론..." 식`,
+    REVERSAL:        `처음엔 상대 잘못인 줄 알았다가 내 잘못이기도 했던 경험 — "그때는 몰랐는데..." 식 반전`,
+  }
+  return `\n\n[커뮤니티 화제 참고 — 당신만의 이야기로 자연스럽게 변주]
+${baseCtx}
+방향: ${instructions[variation]}
+규칙:
+- 원문 인용/복붙 절대 금지
+- 감정("슬펐어요", "화났어요") 직접 묘사 금지 — 행동·상황으로만 표현
+- AI 특유의 서론/본론/결론 구조 금지 — 중간에서 바로 시작
+- "안녕하세요", "공유드립니다" 등 기계적 인사말 금지`
+}
+
 /** 페르소나 욕망 area에 맞는 hotTopic 1개 선택 (Fix 2) */
 function selectPersonalizedTopic(
   hotTopics: Array<{ topic: string; area?: string }>,
@@ -455,7 +518,7 @@ export async function generatePost(
   personaId: string,
   boardOverride?: string,
   controversySeed?: ControversyTopic,
-): Promise<{ title: string; content: string; boardType: string; category?: string }> {
+): Promise<{ title: string; content: string; boardType: string; category?: string; variationType?: VariationType }> {
   const p = getPersona(personaId)
   const board = boardOverride ?? p.board
   const topic = p.topics.length > 0
@@ -520,6 +583,28 @@ export async function generatePost(
       examples.map(e => `"${e}"`).join('\n')
     : ''
 
+  // 변주 엔진 — FAMILY/RELATION/CARE 페르소나 + 20% 확률 (controversySeed 없을 때만)
+  const DNA_ELIGIBLE_DESIRES = ['FAMILY', 'RELATION', 'CARE']
+  let variationType: VariationType | undefined
+  let variationBlock = ''
+  if (!controversySeed && desire && DNA_ELIGIBLE_DESIRES.includes(desire) && Math.random() < 0.20) {
+    const dna = await getTopDNAPost()
+    if (dna) {
+      variationType = pickVariationType()
+      variationBlock = buildVariationBlock(dna, variationType)
+    }
+  }
+
+  if (process.env.DRY_RUN === 'true') {
+    return {
+      title: `${p.nickname} — ${variationType ? `[${variationType}] ` : ''}${topic}`,
+      content: `[DRY_RUN] personaId=${personaId} desire=${desire ?? 'null'} board=${board} variationType=${variationType ?? 'none'}\n변주블록:${variationBlock || '(없음)'}`,
+      boardType: board,
+      category: boardCategories[0],
+      variationType,
+    }
+  }
+
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: length.maxTokens,
@@ -528,7 +613,7 @@ export async function generatePost(
       trendContext,
     messages: [{
       role: 'user',
-      content: `오늘 "${topic}" 주제로 글을 써주세요.${entertainHint}${recentHint}${exampleBlock}${controversyBlock}
+      content: `오늘 "${topic}" 주제로 글을 써주세요.${entertainHint}${recentHint}${exampleBlock}${controversyBlock}${variationBlock}
 
 응답 형식 (이 형식을 정확히 지켜주세요):
 제목: (15~30자, 당신 말투로. *, **, #, _ 기호 절대 사용금지)
@@ -551,6 +636,7 @@ export async function generatePost(
     content: stripMarkdown(bodyMatch?.[1]?.trim() ?? text),
     boardType: board,
     category: validCategory,
+    variationType,
   }
 }
 

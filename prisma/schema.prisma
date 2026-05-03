@@ -368,6 +368,10 @@ model Post {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
+  // 논쟁 체인 추적
+  isControversySeed  Boolean  @default(false)  // DNA 기반 변주 시드글 여부
+  controversyChainId String?                    // 같은 논쟁 스레드 UUID
+
   // 관계
   author        User           @relation(fields: [authorId], references: [id])
   jobDetail     JobDetail?
@@ -722,6 +726,7 @@ model BotLog {
   details            String?   // 실행 상세 (JSON string)
   itemCount          Int       @default(0)  // 처리 건수
   executionTimeMs    Int       @default(0)  // 실행 시간 (ms)
+  variationType      String?               // ESCALATION|EMOTIONAL_DEPTH|REVERSAL (변주 엔진 기록)
 
   executedAt         DateTime  @default(now())
   nextScheduledAt    DateTime?
@@ -845,6 +850,13 @@ model CafePost {
   communitySignal  String?  // "question"|"complaint"|"confession"|"recommendation"|"celebration"
   ageSignal        String?  // "50s"|"60s"|"70s+"|"unknown"
   aiAnalyzed       Boolean  @default(false) // psych-analyzer 처리 완료 여부
+
+  // 갈등 DNA (psych-analyzer v2 — 바이럴 구조 추출)
+  conflictTrigger  String?  // 갈등 유발 원인 (예: "며느리가 아이를 멀리하는 상황")
+  betrayalFactor   String?  // 배신/배반 요소 (예: "믿었던 사람인데")
+  emotionalPeak    String?  // 감정 최고조 순간 (예: "기가 막혀서 말이 안 나왔어요")
+  viralType        String?  // BETRAYAL|INJUSTICE|CONTROVERSY|REVERSAL|EMPATHY
+  commentSplit     Int?     // 예상 댓글 분열도 0-10 (10=극단분열)
 
   // 댓글 내용 (상위 5개, DEEP 모드에서만 수집)
   topComments    Json?    // [{author: string, content: string, likeCount: number}]

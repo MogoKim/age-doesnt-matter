@@ -54,6 +54,12 @@ export interface PsychResult {
     keyPhrases: string[]      // 실제 쓰인 표현 최대 5개
     communityVocab: string[]  // 5060 특화 어휘 최대 5개
   }
+  // 갈등 DNA (v12 — commentSplit >= 6 글에만 채워짐, 나머지 null)
+  conflictTrigger?: string | null
+  betrayalFactor?: string | null
+  emotionalPeak?: string | null
+  viralType?: 'BETRAYAL' | 'INJUSTICE' | 'CONTROVERSY' | 'REVERSAL' | 'EMPATHY' | null
+  commentSplit?: number | null
 }
 
 interface PostForAnalysis {
@@ -134,7 +140,16 @@ communityVocab: 5060 커뮤니티 특화 어휘 최대 5개 (예: "우리 나이
 - ENTERTAIN: 연예인/드라마/트로트/콘서트 이야기면 urgencyLevel=1 고정
 - emotionTags 없으면 [] 반환
 - qualitySignals: 분석 근거가 된 실제 표현들 (최대 3개)
-- keyPhrases/communityVocab: 없으면 빈 배열`
+- keyPhrases/communityVocab: 없으면 빈 배열
+
+[갈등 DNA 분석]
+갈등성 없는 글(urgencyLevel <= 2, communitySignal = celebration/recommendation/question)은 5개 필드 모두 null.
+갈등성 있는 글(complaint/confession + urgencyLevel >= 3)에만 아래를 채우세요:
+- conflictTrigger: 갈등을 일으킨 구체적 상황/행동 (10-30자. 예: "며느리가 아이를 함부로 대하는 것")
+- betrayalFactor: 배신감 유발 요소, 없으면 null (예: "가족인데 그런 말을", "믿었던 사람인데")
+- emotionalPeak: 감정이 가장 높아진 순간 묘사 (예: "그 말 듣고 입이 떡 벌어졌어요")
+- viralType: BETRAYAL(배신/가족배신) / INJUSTICE(억울함/부당함) / CONTROVERSY(갑론을박 유발) / REVERSAL(반전/의외) / EMPATHY(공감폭발)
+- commentSplit: 0-10 정수. 10=찬반 극단 분열 예상, 0=전원 공감`
 
 /** 단일 API 호출 — 파싱 실패 시 null 반환 */
 async function callAnalyzeApi(posts: PostForAnalysis[]): Promise<PsychResult[] | null> {
@@ -175,7 +190,12 @@ ${postTexts}
       "emotionalIntensity": "high",
       "keyPhrases": ["어떡하나", "너무 불안해요"],
       "communityVocab": ["갱년기", "우리 나이"]
-    }
+    },
+    "conflictTrigger": null,
+    "betrayalFactor": null,
+    "emotionalPeak": null,
+    "viralType": null,
+    "commentSplit": 0
   }
 ]`,
     }],
@@ -281,6 +301,11 @@ async function saveResults(posts: PostForAnalysis[], results: PsychResult[]) {
           ageSignal: result.ageSignal ?? null,
           psychInsight: result.psychInsight ?? null,
           urgencyLevel: result.urgencyLevel ?? null,
+          conflictTrigger: result.conflictTrigger ?? null,
+          betrayalFactor: result.betrayalFactor ?? null,
+          emotionalPeak: result.emotionalPeak ?? null,
+          viralType: result.viralType ?? null,
+          commentSplit: typeof result.commentSplit === 'number' ? result.commentSplit : null,
           aiAnalyzed: true,
         },
       })
