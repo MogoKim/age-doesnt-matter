@@ -8,8 +8,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/zsh</string>
-    <string>-c</string>
-    <string>cd /Users/yanadoo/Documents/New_Claude_agenotmatter &amp;&amp; set -a &amp;&amp; source .env.local &amp;&amp; set +a &amp;&amp; SESSION_TIME=morning IMAGE_GENERATOR=gemini /usr/local/bin/npx tsx agents/cafe/local-magazine-runner.ts >> /tmp/magazine-morning.log 2>&amp;1</string>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/run-magazine.sh</string>
   </array>
 
   <key>StartCalendarInterval</key>

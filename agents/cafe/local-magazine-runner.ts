@@ -9,8 +9,9 @@
  *   IMAGE_GENERATOR=gemini|chatgpt
  *
  * 스케줄:
- *   morning (12:30 KST) — Gemini Imagen
- *   evening (21:00 KST) — ChatGPT
+ *   morning (10:00 KST) — Gemini Imagen, 결과 JSON 저장
+ *   afternoon (15:00 KST) — Gemini Imagen, 결과 JSON 저장
+ *   late (17:00 KST) — Gemini Imagen, 오전+오후 합산 Slack 알림
  *
  * 결과 파일: agents/cafe/.magazine-daily-YYYYMMDD.json (gitignore 포함)
  * Slack 채널: #매거진 (C0ARZET1X63)
