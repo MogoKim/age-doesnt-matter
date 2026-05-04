@@ -2,6 +2,8 @@
 # 매거진 자동 발행 — launchd 래퍼 스크립트
 # SESSION_TIME, IMAGE_GENERATOR는 plist EnvironmentVariables에서 주입됨
 
+export PATH="/Users/yanadoo/.nvm/versions/node/v24.14.0/bin:$PATH"
+
 set -a
 source /Users/yanadoo/Documents/New_Claude_agenotmatter/.env.local
 set +a
