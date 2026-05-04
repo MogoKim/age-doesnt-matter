@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { generateComment, generateReply, getBotUser } from './generator.js'
 
@@ -269,7 +270,7 @@ async function runMicroActivity(activity: MicroActivity): Promise<void> {
 
 // ── 메인 ──
 
-async function main() {
+export async function main() {
   const now = new Date()
   const kstHour = (now.getUTCHours() + 9) % 24
   const hour = kstHour.toString().padStart(2, '0')
@@ -314,7 +315,9 @@ async function main() {
   await disconnect()
 }
 
-main().catch((err) => {
-  console.error('[Micro] 치명적 오류:', err)
-  process.exit(1)
-})
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error('[Micro] 치명적 오류:', err)
+    process.exit(1)
+  })
+}

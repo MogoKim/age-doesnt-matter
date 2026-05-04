@@ -251,5 +251,5 @@ export function getPersonaQuota(
   }
 
   if (!brief) return DEFAULT
-  return brief.personaQuotas[personaId] ?? DEFAULT
+  return (brief.personaQuotas ?? {})[personaId] ?? DEFAULT
 }

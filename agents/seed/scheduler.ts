@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP } from './generator.js'
 import { scheduleChainFromPost } from './controversy-chain.js'
@@ -763,7 +764,7 @@ async function focusedLikeRound(): Promise<number> {
   return boosted
 }
 
-async function main() {
+export async function main() {
   const now = new Date()
   const kstHour = (now.getUTCHours() + 9) % 24
   const hour = kstHour.toString().padStart(2, '0')
@@ -816,7 +817,11 @@ async function main() {
   await disconnect()
 }
 
-main().catch((err) => {
-  console.error('[Seed] 치명적 오류:', err)
-  process.exit(1)
-})
+// npx tsx agents/seed/scheduler.ts 로 직접 실행할 때만 main() 호출
+// runner.ts에서 import 시에는 main()을 직접 호출하지 않음 (runner.ts가 m.main() 명시적 await)
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error('[Seed] 치명적 오류:', err)
+    process.exit(1)
+  })
+}
