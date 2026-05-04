@@ -335,7 +335,7 @@ async function tagPosts(posts: Awaited<ReturnType<typeof getTodayPosts>>, analys
 
   for (const post of posts) {
     const matchedTopics = topicWords.filter(topic =>
-      post.title.toLowerCase().includes(topic) || post.content.toLowerCase().includes(topic),
+      (post.title ?? '').toLowerCase().includes(topic) || (post.content ?? '').toLowerCase().includes(topic),
     )
 
     // 품질 점수 기반 isUsable (qualityScore >= 60)

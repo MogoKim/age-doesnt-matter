@@ -41,6 +41,9 @@ function createPrismaClient() {
 
 export const prisma = createPrismaClient()
 
+let _disconnected = false
 export async function disconnect() {
+  if (_disconnected) return
+  _disconnected = true
   await (prisma as { $disconnect: () => Promise<void> }).$disconnect()
 }

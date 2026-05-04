@@ -18,6 +18,7 @@
  *   executePendingChainSteps()                      — cron 매 실행 시 호출
  */
 
+import { fileURLToPath } from 'url'
 import { generateComment, generateReply, getBotUser } from './generator.js'
 import { prisma, disconnect } from '../core/db.js'
 import { safeBotLog } from '../core/safe-log.js'
@@ -255,10 +256,13 @@ async function executeStep(
   }).catch(() => {})
 }
 
-async function main() {
+export async function main() {
   await executePendingChainSteps()
-  await disconnect()
-  process.exit(0)
 }
 
-main().catch(e => { console.error(e); process.exit(1) })
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main()
+    .then(() => disconnect())
+    .then(() => process.exit(0))
+    .catch(e => { console.error(e); process.exit(1) })
+}
