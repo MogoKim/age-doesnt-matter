@@ -11,8 +11,8 @@
  * // LOCAL ONLY — Playwright 기반 스크래핑, 크론 불필요
  */
 
-import { chromium } from '@playwright/test'
-import type { BrowserContext, Page, Locator } from '@playwright/test'
+import { chromium } from 'playwright-core'
+import type { BrowserContext, Page, Locator } from 'playwright-core'
 import type { GeneratedImage } from './generate-image.js'
 import * as fsp from 'fs/promises'
 import * as path from 'path'
