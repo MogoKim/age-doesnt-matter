@@ -8,5 +8,8 @@ set -a
 source /Users/yanadoo/Documents/New_Claude_agenotmatter/.env.local
 set +a
 
+# tsx CJS 훅 EAGAIN(errno -11) retry 패치 — Node.js v24 + tsx 조합 버그 우회
+export NODE_OPTIONS="--require /Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/preload-eagain-retry.cjs"
+
 /Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx tsx \
   /Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/local-magazine-runner.ts

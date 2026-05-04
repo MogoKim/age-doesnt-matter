@@ -21,6 +21,8 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 import { WebClient } from '@slack/web-api'
+// R2 + @aws-sdk를 Playwright 전 시작 시점에 로드 → 이후 dynamic import가 cache hit 반환
+import '../../src/lib/r2.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 

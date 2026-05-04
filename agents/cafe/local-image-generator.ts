@@ -11,6 +11,8 @@
 
 import type { ImageContext, ImageResult } from './image-generator.js'
 import { isMultiPersonPrompt } from '../core/image-prompt-builder.js'
+// Playwright 실행 전(모듈 로드 시점)에 r2 + @aws-sdk를 CJS 캐시에 적재 → 사후 readFileSync EAGAIN 방지
+import { uploadToR2 } from '../../src/lib/r2.js'
 
 // ─── R2 업로드 헬퍼 ──────────────────────────────────────────────────────────
 
@@ -23,7 +25,6 @@ async function uploadBufferToR2(buffer: Buffer, filename: string): Promise<strin
     return null
   }
   try {
-    const { uploadToR2 } = await import('../../src/lib/r2.js')
     const key = `magazine/${filename}`
     const { url } = await uploadToR2(buffer, key, 'image/png')
     return url
