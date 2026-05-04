@@ -331,7 +331,7 @@ function aggregateSpeechTone(posts: Awaited<ReturnType<typeof getTodayPosts>>): 
 
 /** 개별 글에 토픽 태그 + 감정 업데이트 */
 async function tagPosts(posts: Awaited<ReturnType<typeof getTodayPosts>>, analysis: TrendAnalysis) {
-  const topicWords = analysis.hotTopics.map(t => t.topic.toLowerCase())
+  const topicWords = analysis.hotTopics.map(t => t.topic?.toLowerCase()).filter(Boolean) as string[]
 
   for (const post of posts) {
     const matchedTopics = topicWords.filter(topic =>
