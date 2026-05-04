@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { BoardType, PromotionLevel } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
@@ -53,45 +54,47 @@ export async function getWeeklyTrendingPosts(limit = 10, q?: string, sf?: Search
 
 /* ── 이달의 인기글 (월간 베스트) ── */
 
-export async function getEditorsPicks(limit = 2): Promise<PostSummary[]> {
+async function _getEditorsPicks(limit: number): Promise<PostSummary[]> {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-
-  // 1순위: 이번 달 게시글 중 thumbnailUrl 있는 것, likeCount 기준 상위
-  const thisMonthWithThumb = await prisma.post.findMany({
-    where: {
-      status: 'PUBLISHED',
-      createdAt: { gte: startOfMonth },
-      thumbnailUrl: { not: null },
-    },
-    select: postSelect,
-    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
-    take: limit,
-  })
-  if (thisMonthWithThumb.length >= limit) return thisMonthWithThumb.map(toPostSummary)
-
-  // 2순위: 이번 달 전체 (썸네일 없는 것 포함)
-  const thisMonthAll = await prisma.post.findMany({
-    where: { status: 'PUBLISHED', createdAt: { gte: startOfMonth } },
-    select: postSelect,
-    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
-    take: limit,
-  })
-  if (thisMonthAll.length >= limit) return thisMonthAll.map(toPostSummary)
-
-  // 3순위 fallback: 지난 3개월 HOT 이상
   const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1)
-  const recent = await prisma.post.findMany({
-    where: {
-      status: 'PUBLISHED',
-      promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] },
-      createdAt: { gte: threeMonthsAgo },
-    },
-    select: postSelect,
-    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
-    take: limit,
-  })
-  return recent.map(toPostSummary)
+
+  const [withThumb, allMonth, hotRecent] = await Promise.all([
+    prisma.post.findMany({
+      where: { status: 'PUBLISHED', createdAt: { gte: startOfMonth }, thumbnailUrl: { not: null } },
+      select: postSelect,
+      orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+      take: limit,
+    }),
+    prisma.post.findMany({
+      where: { status: 'PUBLISHED', createdAt: { gte: startOfMonth } },
+      select: postSelect,
+      orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+      take: limit,
+    }),
+    prisma.post.findMany({
+      where: {
+        status: 'PUBLISHED',
+        promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] as PromotionLevel[] },
+        createdAt: { gte: threeMonthsAgo },
+      },
+      select: postSelect,
+      orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+      take: limit,
+    }),
+  ])
+
+  if (withThumb.length >= limit) return withThumb.map(toPostSummary)
+  if (allMonth.length >= limit) return allMonth.map(toPostSummary)
+  return hotRecent.map(toPostSummary)
+}
+
+export function getEditorsPicks(limit = 2): Promise<PostSummary[]> {
+  return unstable_cache(
+    () => _getEditorsPicks(limit),
+    [`editors-picks-${limit}`],
+    { revalidate: 300 },
+  )()
 }
 
 /* ── 베스트: 실시간 인기글 (공감 10+) ── */

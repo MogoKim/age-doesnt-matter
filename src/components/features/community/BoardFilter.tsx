@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useTransition } from 'react'
 import { cn } from '@/lib/utils'
 
 interface BoardFilterProps {
@@ -11,6 +12,7 @@ interface BoardFilterProps {
 export default function BoardFilter({ categories, boardSlug }: BoardFilterProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
   const currentCategory = searchParams.get('category') || '전체'
 
   function handleSelect(category: string) {
@@ -20,7 +22,9 @@ export default function BoardFilter({ categories, boardSlug }: BoardFilterProps)
     } else {
       params.set('category', category)
     }
-    router.push(`/community/${boardSlug}?${params.toString()}`)
+    startTransition(() => {
+      router.push(`/community/${boardSlug}?${params.toString()}`)
+    })
   }
 
   return (
@@ -33,7 +37,8 @@ export default function BoardFilter({ categories, boardSlug }: BoardFilterProps)
             'shrink-0 px-5 py-2.5 rounded-full border-2 text-caption font-medium cursor-pointer transition-all min-h-[52px] flex items-center whitespace-nowrap shadow-sm',
             currentCategory === cat
               ? 'bg-primary text-white border-primary font-bold shadow-[0_2px_8px_rgba(255,111,97,0.3)]'
-              : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary hover:bg-primary/5 hover:-translate-y-px hover:shadow-[0_2px_6px_rgba(255,111,97,0.15)]'
+              : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary hover:bg-primary/5 hover:-translate-y-px hover:shadow-[0_2px_6px_rgba(255,111,97,0.15)]',
+            isPending && 'opacity-60',
           )}
           onClick={() => handleSelect(cat)}
         >
