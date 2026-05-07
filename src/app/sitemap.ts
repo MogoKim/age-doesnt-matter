@@ -28,8 +28,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   // 게시글 동적 페이지
+  // WEEKLY 제외: /community/weekly 라우트 없음 (LIFE2로 대체된 숨겨진 게시판) → 포함 시 404 대량 발생
   const posts = await prisma.post.findMany({
-    where: { status: { in: ['PUBLISHED', 'SEO_ONLY'] } },
+    where: {
+      status: { in: ['PUBLISHED', 'SEO_ONLY'] },
+      boardType: { not: 'WEEKLY' },
+    },
     select: { id: true, boardType: true, status: true, updatedAt: true, slug: true },
     orderBy: { createdAt: 'desc' },
     take: 5000,
@@ -40,36 +44,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     HUMOR: 'humor',
     MAGAZINE: 'magazine',
     JOB: 'jobs',
-    WEEKLY: 'weekly',
     LIFE2: 'life2',
   }
 
-  const postPages: MetadataRoute.Sitemap = posts.map((post) => {
-    const isJob = post.boardType === 'JOB'
-    const isMagazine = post.boardType === 'MAGAZINE'
-    const slug = BOARD_TYPE_TO_SLUG[post.boardType]
+  const postPages: MetadataRoute.Sitemap = posts
+    .filter((post) => {
+      // 커뮤니티 게시글(JOB·MAGAZINE 제외): slug 없으면 CUID URL → 슬러그 추가 시 308 리디렉션 유발
+      const isCommunity = post.boardType !== 'JOB' && post.boardType !== 'MAGAZINE'
+      return !(isCommunity && !post.slug)
+    })
+    .map((post) => {
+      const isJob = post.boardType === 'JOB'
+      const isMagazine = post.boardType === 'MAGAZINE'
+      const slug = BOARD_TYPE_TO_SLUG[post.boardType]
 
-    let url: string
-    if (isJob) {
-      url = `${BASE_URL}/jobs/${post.id}`
-    } else if (isMagazine) {
-      url = post.slug
-        ? `${BASE_URL}/magazine/${post.slug}`
-        : `${BASE_URL}/magazine/${post.id}`
-    } else {
-      const postSlug = post.slug ?? post.id
-      url = `${BASE_URL}/community/${slug}/${postSlug}`
-    }
+      let url: string
+      if (isJob) {
+        url = `${BASE_URL}/jobs/${post.id}`
+      } else if (isMagazine) {
+        url = post.slug
+          ? `${BASE_URL}/magazine/${post.slug}`
+          : `${BASE_URL}/magazine/${post.id}`
+      } else {
+        url = `${BASE_URL}/community/${slug}/${post.slug!}`
+      }
 
-    const isSeoOnly = post.status === 'SEO_ONLY'
+      const isSeoOnly = post.status === 'SEO_ONLY'
 
-    return {
-      url,
-      lastModified: post.updatedAt,
-      changeFrequency: isJob ? 'daily' : 'weekly',
-      priority: isSeoOnly ? 0.5 : isJob ? 0.9 : isMagazine ? 0.8 : 0.6,
-    }
-  })
+      return {
+        url,
+        lastModified: post.updatedAt,
+        changeFrequency: isJob ? 'daily' : 'weekly',
+        priority: isSeoOnly ? 0.5 : isJob ? 0.9 : isMagazine ? 0.8 : 0.6,
+      }
+    })
 
   return [...staticPages, ...postPages]
 }
