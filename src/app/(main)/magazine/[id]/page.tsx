@@ -84,8 +84,8 @@ function extractFaqJsonLd(html: string): object | null {
   const faqHtml = markerMatch?.[1] ?? sectionMatch?.[1] ?? html
 
   const items: { q: string; a: string }[] = []
-  // 답변에 <strong>, <br> 등 HTML 태그 포함 허용 ([\s\S]+? 비탐욕)
-  const qaRegex = /<summary>Q\.\s*([^<]+)<\/summary>\s*<p>A\.\s*([\s\S]+?)<\/p>/g
+  // 답변에 <strong>, <br> 등 HTML 태그 포함 허용, </summary>와 <p> 사이 <br/> 허용
+  const qaRegex = /<summary>Q\.\s*([^<]+)<\/summary>(?:<[^>]+>|\s)*<p>A\.\s*([\s\S]+?)<\/p>/g
   let m: RegExpExecArray | null
   while ((m = qaRegex.exec(faqHtml)) !== null) {
     items.push({
