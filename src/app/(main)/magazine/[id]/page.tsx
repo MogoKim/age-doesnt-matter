@@ -78,10 +78,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 function extractFaqJsonLd(html: string): object | null {
   // 1차: <!-- FAQ_START --> 마커 기반 (정상 케이스)
   // 2차 fallback: AI가 주석 생략하고 <section class="faq-section">만 출력한 케이스
+  // 3차 fallback: 래퍼 없이 <details><summary>Q. 패턴만 있는 경우 전체 html에서 직접 추출
   const markerMatch = html.match(/<!-- FAQ_START -->([\s\S]*?)<!-- FAQ_END -->/)
   const sectionMatch = html.match(/<section[^>]*class="faq-section"[^>]*>([\s\S]*?)<\/section>/)
-  const faqHtml = markerMatch?.[1] ?? sectionMatch?.[1] ?? null
-  if (!faqHtml) return null
+  const faqHtml = markerMatch?.[1] ?? sectionMatch?.[1] ?? html
 
   const items: { q: string; a: string }[] = []
   // 답변에 <strong>, <br> 등 HTML 태그 포함 허용 ([\s\S]+? 비탐욕)
