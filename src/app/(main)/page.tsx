@@ -13,6 +13,7 @@ import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
 import CommunitySection from '@/components/features/home/CommunitySection'
+import IdentitySection from '@/components/features/home/IdentitySection'
 import Life2Section from '@/components/features/home/Life2Section'
 import HomeSidebar from '@/components/features/home/HomeSidebar'
 import PersonalGreeting from '@/components/features/home/PersonalGreeting'
@@ -197,6 +198,8 @@ export default async function HomePage() {
           <Suspense fallback={<HeroSkeleton />}>
             <HeroSlider />
           </Suspense>
+
+          <IdentitySection />
 
           <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
             <div>
