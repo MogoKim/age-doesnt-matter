@@ -211,7 +211,7 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
-      - run: npx playwright install chromium --with-deps
+      - run: npx playwright install --with-deps
       - run: cd agents && npx tsx cron/runner.ts cmo social-poster-visual
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

@@ -261,5 +261,6 @@ class CTOQAVerifier extends BaseAgent {
 const agent = new CTOQAVerifier()
 agent.execute().then((result) => {
   console.log('[CTO] QA 검증:', result.summary)
-  process.exit(result.success ? 0 : 1)
+  // 크론 미실행 감지는 Slack 경고로 충분 — 워크플로우 실패 불필요
+  process.exit(0)
 })

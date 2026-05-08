@@ -155,6 +155,7 @@ enum BotStatus {
   SUCCESS
   PARTIAL
   FAILED
+  SKIP
 }
 
 enum BannedWordCategory {
