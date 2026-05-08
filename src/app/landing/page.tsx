@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { getLandingCafePosts } from '@/lib/queries/cafe-posts.landing'
 import LandingClient from '@/components/features/landing/LandingClient'
 
+export const revalidate = 3600 // 1시간 — 랜딩 페이지 카페 게시글 캐시
+
 const COPY: Record<string, { hook: string; sub: string }> = {
   relation: {
     hook: '혼자가 아니에요',

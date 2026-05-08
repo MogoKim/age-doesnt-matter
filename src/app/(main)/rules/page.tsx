@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 
+export const revalidate = 604800 // 7일 — 이용규칙은 거의 불변
+
 export const metadata: Metadata = {
   title: '커뮤니티 이용규칙',
   alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/rules` },

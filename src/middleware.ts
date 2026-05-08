@@ -6,6 +6,17 @@ import { verifyAdminToken } from '@/lib/admin-auth'
 // 로그인이 필요한 경로
 const PROTECTED_PATHS = ['/my', '/community/write']
 
+// 아임웹 레거시 경로 → 현재 경로 매핑 (middleware 최상단 early return용)
+const LEGACY_REDIRECTS: Record<string, string> = {
+  '/Humor':      '/community/humor',
+  '/Free-Board': '/community/stories',
+  '/job':        '/jobs',
+  '/blog':       '/magazine',
+  '/write_1st':  '/community/write',
+  '/write':      '/community/write',
+  '/faq':        '/about',
+}
+
 // CUID 패턴: 소문자 알파벳+숫자 20~30자 (한글/하이픈 포함 slug와 겹치지 않음)
 const CUID_PATTERN = /^[a-z0-9]{20,30}$/
 
@@ -65,6 +76,13 @@ async function resolveSlug(cuid: string): Promise<string | null> {
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // ── 레거시 경로 즉시 301 (getToken/addAnonSession 실행 없음) ──
+  for (const [src, dest] of Object.entries(LEGACY_REDIRECTS)) {
+    if (pathname === src || pathname.startsWith(src + '/')) {
+      return NextResponse.redirect(new URL(dest, request.url), { status: 301 })
+    }
+  }
 
   // ── 어드민 라우트 처리 ──
   if (pathname.startsWith('/admin')) {
@@ -130,13 +148,19 @@ export default async function middleware(request: NextRequest) {
   }
 
   // ── 온보딩 리다이렉트: JWT에서 needsOnboarding 확인 ──
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-    cookieName: request.cookies.has('__Secure-authjs.session-token')
-      ? '__Secure-authjs.session-token'
-      : 'authjs.session-token',
-  })
+  // 세션 쿠키 없으면 getToken() (JWT 복호화) 자체를 skip — 비로그인 사용자 오버헤드 제거
+  const hasSession =
+    request.cookies.has('authjs.session-token') ||
+    request.cookies.has('__Secure-authjs.session-token')
+  const token = hasSession
+    ? await getToken({
+        req: request,
+        secret: process.env.AUTH_SECRET,
+        cookieName: request.cookies.has('__Secure-authjs.session-token')
+          ? '__Secure-authjs.session-token'
+          : 'authjs.session-token',
+      })
+    : null
 
   if (token?.needsOnboarding && pathname !== '/onboarding') {
     const onboardingUrl = new URL('/onboarding', request.url)

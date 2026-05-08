@@ -1,7 +1,13 @@
 import { redirect } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { getAdminSession } from '@/lib/admin-auth'
-import AdminSidebar from '@/components/admin/AdminSidebar'
-import AdminHeader from '@/components/admin/AdminHeader'
+
+const AdminSidebar = dynamic(() => import('@/components/admin/AdminSidebar'), {
+  loading: () => <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-60 bg-zinc-100 animate-pulse" />,
+})
+const AdminHeader = dynamic(() => import('@/components/admin/AdminHeader'), {
+  loading: () => <div className="h-16 bg-zinc-100 animate-pulse" />,
+})
 
 export default async function AdminPanelLayout({
   children,

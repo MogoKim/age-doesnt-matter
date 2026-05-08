@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { postSelect, buildTextSearch, SearchField } from './posts.base'
 
@@ -147,6 +148,70 @@ export interface JobDetailItem {
   seoTitle: string | null
   seoDescription: string | null
 }
+
+/** 공개 job 데이터만 cross-request 캐시 (userId 미포함 → 모든 방문자 공유) */
+export type JobDetailPublicItem = Omit<JobDetailItem, 'isLiked' | 'isScrapped'>
+
+export const getJobDetailPublic = unstable_cache(
+  async (postId: string): Promise<JobDetailPublicItem | null> => {
+    const post = await prisma.post.findUnique({
+      where: { id: postId, status: 'PUBLISHED', boardType: 'JOB' },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        viewCount: true,
+        likeCount: true,
+        commentCount: true,
+        createdAt: true,
+        seoTitle: true,
+        seoDescription: true,
+        jobDetail: {
+          select: {
+            company: true,
+            salary: true,
+            workHours: true,
+            workDays: true,
+            location: true,
+            region: true,
+            quickTags: true,
+            applyUrl: true,
+            pickPoints: true,
+          },
+        },
+      },
+    })
+
+    if (!post) return null
+
+    const pickPoints = Array.isArray(post.jobDetail?.pickPoints)
+      ? (post.jobDetail.pickPoints as Array<{ point: string; icon: string }>)
+      : []
+
+    return {
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      company: post.jobDetail?.company ?? '',
+      location: post.jobDetail?.location ?? '',
+      region: post.jobDetail?.region ?? '',
+      salary: post.jobDetail?.salary ?? '',
+      workHours: post.jobDetail?.workHours ?? null,
+      workDays: post.jobDetail?.workDays ?? null,
+      tags: post.jobDetail?.quickTags ?? [],
+      applyUrl: post.jobDetail?.applyUrl ?? null,
+      pickPoints,
+      viewCount: post.viewCount,
+      likeCount: post.likeCount,
+      commentCount: post.commentCount,
+      createdAt: post.createdAt.toISOString(),
+      seoTitle: post.seoTitle ?? null,
+      seoDescription: post.seoDescription ?? null,
+    }
+  },
+  ['job-detail-public'],
+  { revalidate: 300 },
+)
 
 export const getJobDetail = cache(async function getJobDetail(
   postId: string,

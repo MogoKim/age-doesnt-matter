@@ -1,15 +1,30 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
+import dynamic from 'next/dynamic'
 import Script from 'next/script'
 import { cookies, headers } from 'next/headers'
 import { GTMScript, GTMNoScript } from '@/components/common/GoogleTagManager'
-import GtagLoader from '@/components/common/GtagLoader'
 import { ToastProvider } from '@/components/common/Toast'
-import ServiceWorkerRegister from '@/components/common/ServiceWorkerRegister'
-import PageViewTracker from '@/components/common/PageViewTracker'
 import AuthProvider from '@/components/common/AuthProvider'
-import AddToHomeScreen from '@/components/common/AddToHomeScreen'
 import './globals.css'
+
+// PWA/트래킹 컴포넌트 — 초기 번들 제외, 인터랙션 후 로드
+const AddToHomeScreen = dynamic(
+  () => import('@/components/common/AddToHomeScreen'),
+  { loading: () => null, ssr: false },
+)
+const ServiceWorkerRegister = dynamic(
+  () => import('@/components/common/ServiceWorkerRegister'),
+  { loading: () => null },
+)
+const PageViewTracker = dynamic(
+  () => import('@/components/common/PageViewTracker'),
+  { loading: () => null },
+)
+const GtagLoader = dynamic(
+  () => import('@/components/common/GtagLoader'),
+  { loading: () => null },
+)
 
 const VALID_FONT_SIZES = ['NORMAL', 'LARGE', 'XLARGE'] as const
 type FontSizeValue = typeof VALID_FONT_SIZES[number]

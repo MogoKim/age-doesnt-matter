@@ -21,5 +21,7 @@ export async function GET(request: NextRequest) {
   }
 
   const result = await searchAll(query, { tab })
-  return NextResponse.json(result)
+  return NextResponse.json(result, {
+    headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
+  })
 }

@@ -20,7 +20,9 @@ export async function GET(request: NextRequest) {
     const session = await auth()
     const comments = await getCommentsByPostId(postId, session?.user?.id, sort)
 
-    return NextResponse.json({ comments })
+    return NextResponse.json({ comments }, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    })
   } catch (error) {
     return handleApiError(error)
   }

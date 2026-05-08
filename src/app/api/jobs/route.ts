@@ -15,7 +15,9 @@ export async function GET(request: NextRequest) {
     const { cursor, limit } = parsePaginationParams(searchParams)
 
     const result = await getJobList({ region, tags, cursor, limit })
-    return NextResponse.json(result)
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600' },
+    })
   } catch (error) {
     return handleApiError(error)
   }

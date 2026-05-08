@@ -17,5 +17,7 @@ export async function GET(request: NextRequest) {
     getUnreadNotificationCount(session.user.id),
   ])
 
-  return NextResponse.json({ notifications, hasMore, unreadCount })
+  return NextResponse.json({ notifications, hasMore, unreadCount }, {
+    headers: { 'Cache-Control': 'private, no-store' },
+  })
 }

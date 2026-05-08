@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 
 import { auth } from '@/lib/auth'
-import { getJobDetail } from '@/lib/queries/posts'
+import { getJobDetailPublic, type JobDetailPublicItem } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
+import { prisma } from '@/lib/prisma'
 import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
 import { sanitizeHtml } from '@/lib/sanitize'
@@ -21,7 +23,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
-  const job = await getJobDetail(id)
+  const job = await getJobDetailPublic(id)
   if (!job) return {}
 
   const baseTitle = `${job.title} — ${job.company} 채용`
@@ -55,7 +57,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /** JobPosting JSON-LD 구조화 데이터 (Google 검색 리치 스니펫) */
-function JobPostingJsonLd({ job }: { job: NonNullable<Awaited<ReturnType<typeof getJobDetail>>> }) {
+function JobPostingJsonLd({ job }: { job: JobDetailPublicItem }) {
   const salaryText = formatSalary(job.salary)
 
   // 급여 파싱: "월 280만원" → baseSalary 객체
@@ -114,11 +116,19 @@ export default async function JobDetailPage({ params }: PageProps) {
   const session = await auth()
   const userId = session?.user?.id
 
-  const [job, comments] = await Promise.all([
-    getJobDetail(id, userId),
-    getCommentsByPostId(id, userId),
+  const [jobPublic, isLiked, isScrapped] = await Promise.all([
+    getJobDetailPublic(id),
+    userId
+      ? prisma.like.findUnique({ where: { userId_postId: { userId, postId: id } }, select: { id: true } }).then(r => !!r)
+      : Promise.resolve(false),
+    userId
+      ? prisma.scrap.findUnique({ where: { userId_postId: { userId, postId: id } }, select: { id: true } }).then(r => !!r)
+      : Promise.resolve(false),
   ])
-  if (!job) notFound()
+  if (!jobPublic) notFound()
+  const job = { ...jobPublic, isLiked, isScrapped }
+
+  prisma.post.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {})
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
@@ -231,9 +241,22 @@ export default async function JobDetailPage({ params }: PageProps) {
       </div>
 
       {/* 댓글 */}
-      <CommentSection postId={id} comments={comments} isLoggedIn={!!userId} />
+      <Suspense fallback={
+        <div className="space-y-4 mt-8">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-20 bg-muted animate-pulse rounded-xl" />
+          ))}
+        </div>
+      }>
+        <JobCommentsLoader postId={id} userId={userId} />
+      </Suspense>
     </div>
   )
+}
+
+async function JobCommentsLoader({ postId, userId }: { postId: string; userId?: string }) {
+  const comments = await getCommentsByPostId(postId, userId)
+  return <CommentSection postId={postId} comments={comments} isLoggedIn={!!userId} />
 }
 
 function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {

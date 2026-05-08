@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import ContactForm from '@/components/features/contact/ContactForm'
 
+export const revalidate = 604800 // 7일 — 문의 안내는 거의 불변
+
 export const metadata: Metadata = {
   title: '문의',
   description: '우나어에 문의하기',

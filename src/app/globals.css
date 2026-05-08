@@ -286,3 +286,7 @@ textarea {
   font-size: var(--text-title) !important;
   line-height: 1.5 !important;
 }
+.post-content img:not([height]) {
+  min-height: 200px;
+  background-color: hsl(var(--muted));
+}

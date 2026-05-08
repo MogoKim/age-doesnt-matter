@@ -1,6 +1,7 @@
 import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 
 import { auth } from '@/lib/auth'
 import { getPostDetail } from '@/lib/queries/posts'
@@ -139,8 +140,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   // CPS_ENABLED=false: 쿠팡 CPS 상품 준비 완료 후 활성화
   const CPS_ENABLED = false
   // isLiked/isScrapped를 별도로 병렬 조회 (getPostDetail은 userId 없이 호출했으므로)
-  const [comments, cpsLinks, relatedPosts, isLiked, isScrapped] = await Promise.all([
-    getCommentsByPostId(resolvedId, userId),
+  const [cpsLinks, relatedPosts, isLiked, isScrapped] = await Promise.all([
     CPS_ENABLED ? getCpsLinks(resolvedId) : Promise.resolve([] as Awaited<ReturnType<typeof getCpsLinks>>),
     getRelatedMagazinePosts(post.category ?? null, resolvedId, 3, undefined, post.seriesId ?? null),
     userId
@@ -339,7 +339,20 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       )}
 
       {/* 댓글 */}
-      <CommentSection postId={resolvedId} comments={comments} />
+      <Suspense fallback={
+        <div className="space-y-4 mt-8">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-20 bg-muted animate-pulse rounded-xl" />
+          ))}
+        </div>
+      }>
+        <MagazineCommentsLoader postId={resolvedId} userId={userId} />
+      </Suspense>
     </div>
   )
+}
+
+async function MagazineCommentsLoader({ postId, userId }: { postId: string; userId?: string }) {
+  const comments = await getCommentsByPostId(postId, userId)
+  return <CommentSection postId={postId} comments={comments} />
 }

@@ -1,12 +1,21 @@
 import { Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import { auth } from '@/lib/auth'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
 import OfflineBanner from '@/components/common/OfflineBanner'
-import PopupRenderer from '@/components/common/PopupRenderer'
 import { PushPermissionToast } from '@/components/common/PushPermissionToast'
 import { WelcomeToast } from '@/components/common/WelcomeToast'
-import { SignupPromptBanner } from '@/components/common/SignupPromptBanner'
+
+// 무거운 클라이언트 컴포넌트 — 초기 번들 제외
+const PopupRenderer = dynamic(
+  () => import('@/components/common/PopupRenderer'),
+  { loading: () => null },
+)
+const SignupPromptBanner = dynamic(
+  () => import('@/components/common/SignupPromptBanner').then(m => ({ default: m.SignupPromptBanner })),
+  { loading: () => null },
+)
 export default async function MainGroupLayout({
   children,
 }: {

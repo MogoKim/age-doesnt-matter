@@ -37,7 +37,9 @@ export async function GET(request: Request) {
 
   try {
     const { uploadUrl, publicUrl } = await getPresignedUploadUrl(key, contentType)
-    return NextResponse.json({ uploadUrl, key, publicUrl })
+    return NextResponse.json({ uploadUrl, key, publicUrl }, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    })
   } catch (err) {
     console.error('[API/uploads/presign] 실패:', err)
     return NextResponse.json(

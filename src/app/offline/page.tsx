@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+export const revalidate = 604800 // 7일 — 오프라인 안내 페이지는 불변
+
 export const metadata = {
   title: '오프라인',
 }

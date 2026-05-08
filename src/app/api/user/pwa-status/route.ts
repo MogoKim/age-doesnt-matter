@@ -31,6 +31,8 @@ export async function GET() {
       bannerDismissCount: user?.pwaBannerDismissCount ?? 0,
       bannerLastDismissAt: user?.pwaBannerLastDismissAt?.toISOString() ?? null,
       bannerHiddenUntil: user?.pwaBannerHiddenUntil?.toISOString() ?? null,
+    }, {
+      headers: { 'Cache-Control': 'private, no-store' },
     })
   } catch {
     return NextResponse.json({

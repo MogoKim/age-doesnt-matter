@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import AdminLoginForm from '@/components/admin/AdminLoginForm'
 
+export const revalidate = 604800 // 7일 — 어드민 로그인 폼은 불변
+
 export const metadata: Metadata = {
   title: '어드민 로그인',
 }
