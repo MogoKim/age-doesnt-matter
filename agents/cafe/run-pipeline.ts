@@ -28,7 +28,7 @@ import { readFileSync, existsSync, writeFileSync, rmSync } from 'fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(__dirname, '../..')
-const step = process.argv[2] ?? 'all'
+let step = process.argv[2] ?? 'all'
 
 // Bug 8: 중복 실행 방지 락파일
 const LOCK_FILE = '/tmp/unao-crawler.lock'
@@ -210,7 +210,8 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
   })
 }
 
-async function main() {
+export async function main(stepOverride?: string) {
+  if (stepOverride) step = stepOverride
   // Bug 8: 중복 실행 방지 — 30분 이내 락파일이 있으면 스킵
   if (existsSync(LOCK_FILE)) {
     try {

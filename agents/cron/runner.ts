@@ -49,7 +49,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'seed:micro': () => import('../seed/micro-scheduler.js').then(m => m.main()),
   // LOCAL ONLY — run-pipeline.ts는 네이버 크롤링 통합 파이프라인, launchd로 로컬 실행
   // GitHub Actions 실행 불가 (네이버 IP 차단 + headless 탐지). 수동 실행만.
-  'cafe_crawler:cafe-pipeline': () => import('../cafe/run-pipeline.js').then(() => {}),
+  'cafe_crawler:cafe-pipeline': () => import('../cafe/run-pipeline.js').then(async m => { await m.main('all') }),
   'cafe_crawler:trend-analysis': () => import('../cafe/trend-analyzer.js').then(() => {}),
   // 매거진: 로컬 launchd(12:30/21:00 KST) + GitHub Actions(16:00 KST) 이중 발행
   'cafe_crawler:magazine-generate': () => import('../cafe/magazine-generator.js').then(async m => { await m.main() }),
