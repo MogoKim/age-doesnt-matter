@@ -58,8 +58,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: post.seoDescription ?? description,
     alternates: { canonical: url },
     openGraph: {
-      title: post.title,
-      description,
+      title: post.seoTitle ?? post.title,
+      description: post.seoDescription ?? description,
       url,
       type: 'article',
       siteName: '우리 나이가 어때서',
@@ -68,23 +68,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: 'summary_large_image',
-      title: post.title,
-      description,
+      title: post.seoTitle ?? post.title,
+      description: post.seoDescription ?? description,
     },
   }
 }
 
 /** 본문 HTML에서 FAQ 블록 파싱 → FAQPage JSON-LD 생성 */
 function extractFaqJsonLd(html: string): object | null {
-  const match = html.match(/<!-- FAQ_START -->([\s\S]*?)<!-- FAQ_END -->/)
-  if (!match) return null
+  // 1차: <!-- FAQ_START --> 마커 기반 (정상 케이스)
+  // 2차 fallback: AI가 주석 생략하고 <section class="faq-section">만 출력한 케이스
+  const markerMatch = html.match(/<!-- FAQ_START -->([\s\S]*?)<!-- FAQ_END -->/)
+  const sectionMatch = html.match(/<section[^>]*class="faq-section"[^>]*>([\s\S]*?)<\/section>/)
+  const faqHtml = markerMatch?.[1] ?? sectionMatch?.[1] ?? null
+  if (!faqHtml) return null
 
-  const faqHtml = match[1]
   const items: { q: string; a: string }[] = []
-  const qaRegex = /<summary>Q\.\s*([^<]+)<\/summary>\s*<p>A\.\s*([^<]+)<\/p>/g
+  // 답변에 <strong>, <br> 등 HTML 태그 포함 허용 ([\s\S]+? 비탐욕)
+  const qaRegex = /<summary>Q\.\s*([^<]+)<\/summary>\s*<p>A\.\s*([\s\S]+?)<\/p>/g
   let m: RegExpExecArray | null
   while ((m = qaRegex.exec(faqHtml)) !== null) {
-    items.push({ q: m[1].trim(), a: m[2].trim() })
+    items.push({
+      q: m[1].trim(),
+      a: m[2].replace(/<[^>]+>/g, '').trim(),  // JSON-LD text 필드는 plain text
+    })
   }
   if (items.length === 0) return null
 

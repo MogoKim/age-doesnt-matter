@@ -65,9 +65,9 @@ async function fetchUnsplashPhoto(query: string): Promise<string | null> {
       fetch(`${data.links.download_location}?client_id=${UNSPLASH_ACCESS_KEY}`).catch(() => {})
     }
 
-    // R2에 업로드
+    // R2에 업로드 — 실패 시 null 반환 (raw Unsplash URL 저장 금지: proxyMagazineImages 처리 범위 밖)
     const r2Url = await uploadToR2(photoUrl, `magazine-unsplash-${Date.now()}.jpg`)
-    return r2Url ?? photoUrl
+    return r2Url ?? null
   } catch (err) {
     console.warn('[ImageGen] Unsplash 조회 실패:', err)
     return null

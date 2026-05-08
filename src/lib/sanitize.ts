@@ -37,6 +37,7 @@ const MAGAZINE_SANITIZE_OPTIONS: sanitize.IOptions = {
   allowedTags: [
     ...SANITIZE_OPTIONS.allowedTags as string[],
     'span', 'article', 'h1', 'section',
+    'details', 'summary',  // FAQ 아코디언 표시
   ],
   allowedAttributes: {
     ...SANITIZE_OPTIONS.allowedAttributes,
@@ -136,6 +137,15 @@ export function proxyMagazineImages(html: string): string {
   // 프로덕션 커스텀 도메인 프록시
   result = result.replace(
     /(<img\s[^>]*?)src="(https:\/\/img\.age-doesnt-matter\.com\/[^"]+)"/g,
+    (_, before, url) => {
+      const proxied = `/_next/image?url=${encodeURIComponent(url)}&w=750&q=80`
+      return `${before}src="${proxied}"`
+    },
+  )
+  // Unsplash 직접 URL 방어 — R2 업로드 실패 시 raw URL이 저장된 기존 글 대응
+  // [APPLIES TO] image-generator.ts uploadToR2 실패 케이스
+  result = result.replace(
+    /(<img\s[^>]*?)src="(https:\/\/images\.unsplash\.com\/[^"]+)"/g,
     (_, before, url) => {
       const proxied = `/_next/image?url=${encodeURIComponent(url)}&w=750&q=80`
       return `${before}src="${proxied}"`
