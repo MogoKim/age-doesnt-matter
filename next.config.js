@@ -43,6 +43,22 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg', 'bcrypt', 'sharp'],
   },
+  async redirects() {
+    return [
+      // 아임웹 레거시 경로 → 현재 경로 301 영구 리다이렉트
+      { source: '/Humor',          destination: '/community/humor',  permanent: true },
+      { source: '/Humor/:path*',   destination: '/community/humor',  permanent: true },
+      { source: '/Free-Board',     destination: '/community/stories', permanent: true },
+      { source: '/Free-Board/:path*', destination: '/community/stories', permanent: true },
+      { source: '/job',            destination: '/jobs',             permanent: true },
+      { source: '/job/:path*',     destination: '/jobs',             permanent: true },
+      { source: '/blog',           destination: '/magazine',         permanent: true },
+      { source: '/blog/:path*',    destination: '/magazine',         permanent: true },
+      { source: '/write_1st',      destination: '/community/write',  permanent: true },
+      { source: '/write',          destination: '/community/write',  permanent: true },
+      { source: '/faq',            destination: '/about',            permanent: true },
+    ]
+  },
   async headers() {
     return [
       {
