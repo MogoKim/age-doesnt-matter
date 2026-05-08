@@ -83,11 +83,11 @@ async function getExampleCafePosts(desire: string | null): Promise<string[]> {
       orderBy: { crawledAt: 'desc' },
       take: 5,
     })
-    // 실제 글에서 자연스러운 첫 100자 발췌 (줄바꿈 제거, 빈 문장 제외)
+    // 실제 글에서 자연스러운 첫 220자 발췌 (줄바꿈 제거, 빈 문장 제외) — 100자는 스타일 전달 불충분
     return posts
-      .map(p => p.content.replace(/\n+/g, ' ').trim().slice(0, 100))
+      .map(p => p.content.replace(/\n+/g, ' ').trim().slice(0, 220))
       .filter(s => s.length > 20)
-      .slice(0, 3)
+      .slice(0, 5)
   } catch {
     return []
   }
@@ -320,7 +320,14 @@ function buildTrendContext(
 내용 직접 인용은 금지, 말투와 어휘 스타일만 따라하세요.`
 }
 
-const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
+/** 상위 10명 페르소나 — Sonnet 사용 (글 품질 우선, 월 $3~5 추가) */
+const HEAVY_PERSONAS = new Set(['A', 'E', 'H', 'B', 'M', 'F', 'I', 'G', 'J', 'AJ'])
+
+function getModelForPersona(personaId: string): string {
+  return HEAVY_PERSONAS.has(personaId)
+    ? (process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-5')
+    : (process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5')
+}
 
 const client = new Anthropic()
 
@@ -396,11 +403,33 @@ function stripMarkdown(text: string): string {
 // re-export for scheduler.ts
 export { getAllPersonaIds, getPersona }
 
-/** 글 길이 다양화 — 짧은/보통/긴 글 랜덤 선택 */
+/** 제목 목록에서 중복 소재 키워드 추출 — 2회 이상 등장 한국어 명사 (2~4글자) */
+function extractTopicKeywords(titles: string[]): string[] {
+  const stopwords = new Set([
+    '있어요', '없어요', '했어요', '좋아요', '같아요', '것들', '이번', '요즘',
+    '오늘', '어제', '그냥', '너무', '진짜', '정말', '그래서', '하지만',
+    '그런데', '드디어', '우리가', '이게', '이런', '저도', '나도', '다들',
+    '아직', '벌써', '이미', '내가', '우리', '모두', '어떻게', '하나',
+    '이제', '여기', '저기', '가장', '조금', '많이', '갑자기', '결국',
+    '처음', '나중', '마지막', '이렇게', '저렇게', '그렇게', '지금', '다시',
+  ])
+  const allText = titles.join(' ')
+  const words = allText.match(/[가-힣]{2,4}/g) ?? []
+  const freq = new Map<string, number>()
+  for (const w of words) {
+    if (!stopwords.has(w)) freq.set(w, (freq.get(w) ?? 0) + 1)
+  }
+  return [...freq.entries()]
+    .filter(([, count]) => count >= 2)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 6)
+    .map(([word]) => word)
+}
+
+/** 글 길이 다양화 — 짧은/보통 글 랜덤 선택 (300자 초과 옵션 제거 — 에세이 구조 유발) */
 const POST_LENGTHS = [
-  { instruction: '60~120자, 짧고 가벼운 톤으로 1문단', maxTokens: 400 },
-  { instruction: '150~300자, 문단 2~3개', maxTokens: 800 },
-  { instruction: '400~600자, 깊이 있는 정보나 이야기, 문단 3~5개', maxTokens: 1200 },
+  { instruction: '60~120자, 짧고 가벼운 1문단', maxTokens: 350 },
+  { instruction: '150~280자, 2~3문장으로 나눠서', maxTokens: 700 },
 ]
 
 /** 페르소나별 강화된 시스템 프롬프트 생성 */
@@ -451,66 +480,55 @@ function buildTypoInstruction(p: Persona, personaId: string): string {
 어색하면 생략.`
 }
 
+/** 지금 이 순간의 상황으로 페르소나 묘사 — 캐릭터 카드 레이블 대신 즉석 임베딩 */
+function buildSituationLine(p: Persona, kstHour: number): string {
+  const timeDesc = kstHour < 12 ? '오전' : kstHour < 18 ? '오후' : '저녁'
+  const moodDesc = {
+    positive:  '밝고 긍정적',
+    neutral:   '담담하고 감정을 잘 드러내지 않는',
+    negative:  '불만 많고 걱정 많은',
+    mixed:     '때론 밝고 때론 현실적인',
+  }
+  return `지금 이 순간: ${p.age}세 ${p.gender}성 "${p.nickname}"이 ${timeDesc}에 스마트폰으로 커뮤니티에 글을 쓰는 중.
+성격: ${p.personality} ${moodDesc[p.mood]} 편.
+말투: ${p.speech_patterns.join(', ')}
+절대 안 하는 것: ${p.never.join(' / ')}`
+}
+
+/** 컨텍스트별 핵심 규칙 — 금지 목록 나열 대신 무엇을 해야 하는지 명시 */
+function buildContextRule(context: 'post' | 'comment' | 'reply'): string {
+  if (context === 'post') {
+    return `원글을 쓴다. 내 이야기로 시작 ("오늘", "어제", "요즘", "우리 집"). 결론 내리지 않기, 레시피 나열 금지, "안녕하세요" 금지, !! 2개 이상 금지, 마크다운 금지, 오프라인 모임 모집 금지.`
+  }
+  if (context === 'comment') {
+    return `댓글을 단다. 1~2문장. 글에서 구체적인 것 하나("설악산 다녀오셨군요" / "딸이 허전하시겠다") 집어서 반응. "맞아요 저도 그런 경험이 있어요" / "공감이 너무 돼요" / "위로가 됩니다" 패턴 절대 금지. 자기 경험 한 줄 붙여도 좋음. 마크다운 금지.`
+  }
+  return `대댓글 1문장. 상대 댓글 핵심 단어 하나 집기. "감사합니다" / "좋은 댓글 감사해요" 절대 금지. 자연스러운 맞장구: "맞아요ㅋㅋ" / "그쵸 ㅠ" / "ㅎㅎ 역시". 마크다운 금지.`
+}
+
 function buildSystemPrompt(p: Persona, personaId: string, context: 'post' | 'comment' | 'reply'): string {
   const kstHour = new Date(Date.now() + 9 * 60 * 60 * 1000).getUTCHours()
   const timeMood = getTimeOfDayMood(kstHour)
   const lateNightExtra = (kstHour === 0 || kstHour === 1)
-    ? `\n\n[심야 감성 모드] 잠 못 드는 날 혼자 쓰는 글처럼.
-외로움, 그리움, 회상. 절제된 감성 (과장 금지). 짧고 솔직하게.
-"또 잠이 안 오네", "이 나이에 왜 이렇게 생각이 많은지" 같은 자연스러운 시작.`
+    ? `\n\n잠 못 드는 깊은 밤. 혼자 쓰는 일기처럼. 외로움, 그리움, 회상. 짧고 솔직하게.`
     : ''
-  const timeMoodLine = timeMood ? `\n- 현재 분위기: ${timeMood}` : ''
-
-  const moodDesc = {
-    positive: '당신은 대체로 밝고 긍정적인 성격입니다.',
-    neutral: '당신은 감정을 크게 드러내지 않는 담담한 성격입니다.',
-    negative: '당신은 세상에 불만이 많고, 걱정이 많으며, 쉽게 한숨을 쉽니다.',
-    mixed: '당신은 때론 밝고 때론 부정적이며, 현실적인 감정을 솔직하게 표현합니다.',
-  }
+  const timeMoodLine = timeMood ? `\n현재 시간대: ${timeMood}` : ''
 
   const quirksStr = p.quirks.map(q => `- ${q}`).join('\n')
-  const neverStr = p.never.map(n => `- ${n}`).join('\n')
   const examplesStr = p.examples.map(e => `"${e}"`).join('\n')
-
-  // 클러스터별 차별화 표현 지시 (실제 5060 게시물 패턴 기반)
   const typoInstruction = buildTypoInstruction(p, personaId)
+  const situationLine = buildSituationLine(p, kstHour)
+  const contextRule = buildContextRule(context)
 
-  const contextInstruction = {
-    post: '커뮤니티에 올릴 글을 작성하세요.',
-    comment: '다른 사람의 글에 댓글을 달아주세요. 1~3문장. 매번 같은 첫 문장으로 시작하면 안 됩니다 — 글의 내용을 읽고 그 내용에 맞는 자연스러운 첫 문장을 만드세요. 예: 공감 글이면 "저도 그런 적 있어요", 정보 글이면 "좋은 정보네요", 웃긴 글이면 그 상황에 맞게 반응.',
-    reply: '다른 사람의 댓글에 짧은 답글을 달아주세요. 1~2문장.',
-  }
+  return `${situationLine}
 
-  return `당신은 50-60대 온라인 커뮤니티 회원 "${p.nickname}"입니다.
-나이: ${p.age}세 / 성별: ${p.gender}성
-
-[성격]
-${p.personality}
-${moodDesc[p.mood]}
-
-[글 스타일]
-${p.style}
-말투: ${p.speech_patterns.join(', ')}
-
-[글쓰기 습관 — 반드시 지킬 것]
+글쓰기 습관:
 ${quirksStr}${typoInstruction}
-
-[절대 하지 않는 것 — 이것만은 반드시 피하세요]
-${neverStr}
-
-[당신이 실제로 쓰는 글 예시 — 이 톤과 스타일을 유지하세요]
+평소 이런 글을 쓴다:
 ${examplesStr}
 
-[핵심 규칙]
-- ${contextInstruction[context]}
-- 자연스러운 구어체로 쓰세요. 인터넷 커뮤니티에 올리는 글답게.
-- "시니어", "액티브 시니어" 같은 표현 절대 금지
-- 정치/종교/혐오/광고 절대 금지
-- 마크다운 문법(**, ##, *, _ 등) 절대 사용 금지. 순수 텍스트만.
-- 다른 캐릭터처럼 쓰지 마세요. 당신은 "${p.nickname}"이고 다른 사람과 다릅니다.
-- 위의 예시 문장을 그대로 복사하지 말고, 같은 스타일로 새로운 내용을 쓰세요.
-- 오프라인 모임 모집 글 절대 금지: "같이 걸어요", "이번 수요일 모여요", "○○동 모임합니다" 식의 글 금지. 온라인에서 자기 이야기/정보를 나누는 글만 작성.
-- 드라마/예능/영화 언급 시 반드시 실제 제목 명시: "어제 본 드라마" (X) → "어제 눈물의 여왕 봤는데" (O)${timeMoodLine}${lateNightExtra}`
+지금 할 일: ${contextRule}
+"시니어"/"액티브 시니어" 금지. 정치/종교/혐오/광고 금지. 드라마/예능 언급 시 실제 제목 명시. 예시 문장 그대로 복사 금지.${timeMoodLine}${lateNightExtra}`
 }
 
 /** 글 생성 */
@@ -558,18 +576,32 @@ export async function generatePost(
     }
   }
 
-  // 이전 게시 이력 조회 — 중복 주제 방지 (실패해도 글 생성 계속)
+  // 이전 게시 이력 + 오늘 봇 전체 발행 소재 조회 — 중복 주제 방지 (실패해도 글 생성 계속)
   let recentHint = ''
   try {
-    const recentPosts = await prisma.post.findMany({
-      where: { author: { email: `bot-${personaId.toLowerCase()}@unao.bot` } },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      select: { title: true },
-    })
+    const [recentPosts, todayBotPosts] = await Promise.all([
+      prisma.post.findMany({
+        where: { author: { email: `bot-${personaId.toLowerCase()}@unao.bot` } },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: { title: true },
+      }),
+      prisma.post.findMany({
+        where: {
+          author: { email: { endsWith: '@unao.bot' } },
+          createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+        },
+        select: { title: true },
+        take: 30,
+      }),
+    ])
     if (recentPosts.length > 0) {
       recentHint = `\n\n[최근 쓴 글들 — 이 주제들과 완전히 다른 소재로 써주세요]\n` +
         recentPosts.map(r => `- ${r.title}`).join('\n')
+    }
+    const todayKeywords = extractTopicKeywords(todayBotPosts.map(r => r.title))
+    if (todayKeywords.length > 0) {
+      recentHint += `\n오늘 이미 나온 소재 (반드시 피하세요): ${todayKeywords.join(', ')}`
     }
   } catch {
     // 조회 실패 시 글 생성은 계속
@@ -606,34 +638,30 @@ export async function generatePost(
   }
 
   const response = await client.messages.create({
-    model: MODEL,
+    model: getModelForPersona(personaId),
     max_tokens: length.maxTokens,
-    system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'post') +
-      `\n- 카테고리: ${boardCategories.join(', ')} 중 하나를 선택하세요` +
-      trendContext,
+    system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'post') + trendContext,
     messages: [{
       role: 'user',
-      content: `오늘 "${topic}" 주제로 글을 써주세요.${entertainHint}${recentHint}${exampleBlock}${controversyBlock}${variationBlock}
+      content: `오늘 "${topic}" 주제로 커뮤니티 글 하나만 써줘.${entertainHint}${recentHint}${exampleBlock}${controversyBlock}${variationBlock}
 
-응답 형식 (이 형식을 정확히 지켜주세요):
-제목: (15~30자, 당신 말투로. *, **, #, _ 기호 절대 사용금지)
-카테고리: (${boardCategories.join('/')})
-본문: (${length.instruction})`,
+첫 줄에 제목 (구어체, 15~25자), 빈 줄 하나, 그 다음 본문 (${length.instruction}).
+제목/카테고리/본문 레이블 붙이지 말 것.`,
     }],
   })
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
-  const titleMatch = text.match(/제목:\s*(.+)/)
-  const categoryMatch = text.match(/카테고리:\s*(.+)/)
-  const bodyMatch = text.match(/본문:\s*([\s\S]+)/)
-
-  const category = categoryMatch?.[1]?.trim()
-  const validCategory = boardCategories.includes(category ?? '') ? category : boardCategories[0]
+  // 폼 양식 제거 — 첫 줄 = 제목, 나머지 = 본문으로 파싱
+  const lines = text.trim().split('\n')
+  const rawTitle = lines[0]?.trim() ?? ''
+  const rawBody = lines.slice(1).join('\n').replace(/^\n+/, '').trim()
+  // 카테고리는 AI 선택 제거 → 해당 게시판 카테고리 중 랜덤 배정
+  const validCategory = boardCategories[Math.floor(Math.random() * boardCategories.length)]
 
   return {
-    title: stripMarkdown(titleMatch?.[1]?.trim() ?? `${p.nickname}의 일상`)
+    title: stripMarkdown(rawTitle || `${p.nickname}의 일상`)
       .replace(/^\*+\s?/, '').replace(/\s?\*+$/, '').trim(),
-    content: stripMarkdown(bodyMatch?.[1]?.trim() ?? text),
+    content: stripMarkdown(rawBody || text),
     boardType: board,
     category: validCategory,
     variationType,
@@ -681,7 +709,7 @@ export async function generateComment(
   }
 
   const response = await client.messages.create({
-    model: MODEL,
+    model: getModelForPersona(personaId),
     max_tokens: 200,
     system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'comment') + trendContext,
     messages: [{
@@ -707,7 +735,7 @@ export async function generateReply(
   const trendContext = buildTrendContext(trend, personaId, p)
 
   const response = await client.messages.create({
-    model: MODEL,
+    model: getModelForPersona(personaId),
     max_tokens: 150,
     system: buildSystemPrompt(p, personaId, 'reply') + trendContext,
     messages: [{
@@ -720,20 +748,28 @@ export async function generateReply(
   return stripMarkdown(reply)
 }
 
-/** 봇 유저 조회 또는 생성 (닉네임 변경 시 자동 업데이트) */
+/** 페르소나 ID 기반 결정론적 grade 배정 — 60명이 🌱/🌿/☀️ 고르게 분포 */
+function getBotGrade(personaId: string): 'SPROUT' | 'REGULAR' | 'WARM_NEIGHBOR' {
+  const sum = personaId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  const grades: ('SPROUT' | 'REGULAR' | 'WARM_NEIGHBOR')[] = ['SPROUT', 'REGULAR', 'WARM_NEIGHBOR']
+  return grades[sum % 3]
+}
+
+/** 봇 유저 조회 또는 생성 (닉네임·grade 변경 시 자동 업데이트) */
 export async function getBotUser(personaId: string): Promise<string> {
   const p = getPersona(personaId)
   const email = `bot-${personaId.toLowerCase()}@unao.bot`
+  const grade = getBotGrade(personaId)
 
   const user = await prisma.user.upsert({
     where: { email },
-    update: { nickname: p.nickname },
+    update: { nickname: p.nickname, grade },
     create: {
       email,
       nickname: p.nickname,
       providerId: `bot-${personaId.toLowerCase()}`,
       role: 'USER',
-      grade: 'REGULAR',
+      grade,
     },
   })
   return user.id

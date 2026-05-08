@@ -220,6 +220,7 @@ Constitution 상한 $50/월 대비 여유 있음.
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
 | 2026-04-27 | Feature 문서 최초 생성 (코드 딥다이브 기반) | Feature Lifecycle 도입 |
+| 2026-05-08 | buildSystemPrompt 상황임베딩 재설계, 폼양식 제거, 예시 220자 확대, POST_LENGTHS 장문제거, 댓글지시 교체, recentHint 오늘소재 감지, HEAVY_PERSONAS Sonnet 업그레이드, 닉네임 8개 다양화 | 창업자 "인간스럽지 않아" 피드백 반복 → 프롬프트 설계 철학 전면 개편 |
 
 ---
 

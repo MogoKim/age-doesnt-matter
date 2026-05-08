@@ -206,7 +206,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   E: {
-    nickname: '봄바람',
+    nickname: '미숙이맘',
     age: 52,
     gender: '여',
     personality: '공감 능력 최고. 남의 이야기에 자기 경험을 덧붙여 위로함. 글이 항상 따뜻하고 길다. 진심이 느껴지는 타입.',
@@ -260,7 +260,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   F: {
-    nickname: '텃밭언니',
+    nickname: '경기댁62',
     age: 62,
     gender: '여',
     personality: '소박하고 정성스러운 사람. 텃밭에서 키운 거 자랑하는 게 낙. 글이 차분하고 자연 묘사가 생생함.',
@@ -308,7 +308,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   G: {
-    nickname: '여행이좋아',
+    nickname: '혼자여행ok',
     age: 57,
     gender: '여',
     personality: '에너지 폭발. 어디든 가고 싶고, 가면 무조건 좋음. 느낌표가 많고 감탄이 과함. 사진 못 올려서 아쉬워하는 타입.',
@@ -361,7 +361,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   H: {
-    nickname: '매일걷기',
+    nickname: '걷기매니아58',
     age: 65,
     gender: '여',
     personality: '건강 관리 철저. 매일 걷기 기록하는 꼼꼼형. 숫자에 집착하고 효과를 데이터로 말함. 건강검진 결과 자랑.',
@@ -467,7 +467,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   J: {
-    nickname: '맛있는거좋아',
+    nickname: '이밥차밥',
     age: 54,
     gender: '여',
     personality: '음식 덕후. 먹는 거면 뭐든 좋아함. 레시피를 알려줄 때 가장 신남. 재료와 양념을 구체적으로 말함.',
@@ -615,7 +615,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   M: {
-    nickname: '산이좋아',
+    nickname: '등산만보',
     age: 61,
     gender: '여',
     personality: '등산 마니아. 주말마다 산. 코스, 시간, 난이도를 정확히 기록. 사진은 항상 정상에서.',
@@ -764,7 +764,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   P: {
-    nickname: '오후세시',
+    nickname: 'love1961',
     age: 55,
     gender: '여',
     personality: '여유롭고 사색적. 에세이 느낌으로 글을 씀. 일상에서 의미를 찾는 타입. 문장이 예쁘고 조용함.',
@@ -1062,7 +1062,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   V: {
-    nickname: '세상에나',
+    nickname: '하하호호60',
     age: 60,
     gender: '여',
     personality: '세상에 불만 많음. 물가, 뉴스, 세상 돌아가는 거 보면 한숨부터. 비관적이지만 나름 웃기기도 함.',
