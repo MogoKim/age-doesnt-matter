@@ -53,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
@@ -89,7 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
@@ -121,7 +121,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
@@ -149,7 +149,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
@@ -178,7 +178,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
@@ -207,7 +207,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
@@ -253,7 +253,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
@@ -281,7 +281,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
@@ -309,7 +309,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
@@ -336,7 +336,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: cd agents && npm ci
       - run: cd agents && npx tsx cmo/test-platforms.ts validate
@@ -364,7 +364,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
@@ -387,7 +387,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: cd agents && npm ci
       - run: cd agents && npx tsx cmo/test-platforms.ts post-test
