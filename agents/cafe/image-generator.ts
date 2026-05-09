@@ -17,8 +17,8 @@ import {
   type ImageContext,
   type ImageType,
 } from '../core/image-prompt-builder.js'
-// Playwright 실행 전(모듈 로드 시점)에 r2 + @aws-sdk를 CJS 캐시에 적재 → 사후 readFileSync EAGAIN 방지
-import { uploadToR2 as r2Upload } from '../../src/lib/r2.js'
+// local-magazine-runner.ts에서 side-effect import로 r2 + @aws-sdk를 미리 로드 → EAGAIN 방지
+// 이 파일에서는 top-level import 없이 함수 내부 dynamic import 사용 (CJS-ESM 호환)
 
 // Re-export for consumers
 export { getMagazineImageStyle as getImageStyle }
@@ -209,6 +209,7 @@ async function uploadToR2(sourceUrl: string, filename: string): Promise<string |
       const imgBuffer = Buffer.from(await imgResponse.arrayBuffer())
 
       const key = `magazine/${filename}`
+      const { uploadToR2: r2Upload } = await import('../../src/lib/r2.js')
       const { url } = await r2Upload(imgBuffer, key, filename.endsWith('.jpg') ? 'image/jpeg' : 'image/png')
 
       return url

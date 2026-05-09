@@ -69,6 +69,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AI', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'AQ', type: 'comment', board: 'STORY', count: 2 }, // 조용한수다 아침
     { personaId: 'AV', type: 'like', board: 'STORY', count: 2 },
+    { personaId: 'BD', type: 'comment', board: 'STORY', count: 1 }, // 고부갈등맘 오전 댓글
   ],
 
   '10': [
@@ -168,6 +169,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AD', type: 'post' },                         // 그때그시절 회고
     { personaId: 'BA', type: 'post', board: 'LIFE2' },        // 은퇴D100 은퇴 준비 현실
     { personaId: 'BD', type: 'post' },                         // 고부갈등맘 서운함 토로
+    { personaId: 'BF', type: 'post' },                         // 속터지는현실 억울형 에피소드
     // 댓글
     { personaId: 'K', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'R', type: 'comment', board: 'HUMOR', count: 2 },
@@ -232,6 +234,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AH', type: 'post' },                         // 피곤해요 하루 TMI
     { personaId: 'S', type: 'post' },                          // 제주살이 저녁 풍경
     { personaId: 'BC', type: 'post' },                         // 억울한아내 남편 하소연
+    { personaId: 'BG', type: 'post' },                         // 황당목격자 황당 에피소드
     { personaId: 'R', type: 'post', board: 'HUMOR' },          // 밤새봤다 저녁 드라마
     { personaId: 'T', type: 'post', board: 'LIFE2' },         // 배움은즐거워 수다방
     // 댓글
@@ -278,7 +281,9 @@ const SCHEDULE: Record<string, Activity[]> = {
     // 밤 감성 페르소나 활동
     { personaId: 'AE', type: 'post' },                         // 새벽감성 밤 글
     { personaId: 'AC', type: 'post' },                         // 느긋이 느긋한 하루 마무리
+    { personaId: 'BH', type: 'post' },                         // 반전언니 밤 고백형
     // 댓글
+    { personaId: 'BC', type: 'comment', board: 'STORY', count: 1 }, // 억울한아내 밤 댓글 (2차)
     { personaId: 'C', type: 'comment', board: 'HUMOR', count: 2 },
     { personaId: 'H', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'I', type: 'comment', board: 'STORY', count: 1 },

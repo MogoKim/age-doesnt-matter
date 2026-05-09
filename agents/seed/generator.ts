@@ -8,9 +8,9 @@ export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint:
   // HEALTH (6명): 갱년기/증상/병원 중심
   HEALTH:   { personas: ['H', 'A', 'AC', 'R', 'AM', 'AG'],
               topicHint: '건강 정보, 병원 경험, 갱년기 증상 공감, 약 부작용' },
-  // FAMILY (4명): 자녀/고부/남편
-  FAMILY:   { personas: ['E', 'BC', 'BD', 'K'],
-              topicHint: '자녀 이야기, 고부갈등, 남편 이야기, 손주 자랑' },
+  // FAMILY (6명): 자녀/고부/남편/억울/반전
+  FAMILY:   { personas: ['E', 'BC', 'BD', 'K', 'BF', 'BH'],
+              topicHint: '자녀 이야기, 고부갈등, 남편 이야기, 손주 자랑, 억울한 상황, 반전 고백' },
   // MONEY (5명): 재테크/연금/절약
   MONEY:    { personas: ['B', 'N', 'AZ', 'AA', 'Y'],
               topicHint: '절약 팁, 재테크, 연금, 물가, ETF, 돈공부' },
@@ -29,8 +29,8 @@ export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint:
   // MEANING (5명): 삶의의미/철학/감사
   MEANING:  { personas: ['I', 'P', 'AE', 'Q', 'AR'],
               topicHint: '삶의 의미, 감사, 보람, 철학, 요즘세상 단상' },
-  // HUMOR (7명): 웃긴일상/황당에피
-  HUMOR:    { personas: ['AF', 'AY', 'U', 'X', 'AO', 'AP', 'AX'],
+  // HUMOR (8명): 웃긴일상/황당에피
+  HUMOR:    { personas: ['AF', 'AY', 'U', 'X', 'AO', 'AP', 'AX', 'BG'],
               topicHint: '웃긴 일상, 황당 에피소드, 유머, 짤방, 온라인챌린지' },
   // FOOD (3명): 요리/음식/혼밥
   FOOD:     { personas: ['J', 'AQ', 'AV'],
@@ -41,7 +41,7 @@ export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint:
   // CARE (4명): 돌봄/노부모/건강관리
   CARE:     { personas: ['W', 'AH', 'AK', 'AJ'],
               topicHint: '돌봄, 노부모, 건강관리, 간병 경험' },
-  // 총 55명 = 6+4+5+4+3+4+7+5+7+3+3+4 (BB 없음, EN1~EN5 별도 처리)
+  // 총 58명 = 6+6+5+4+3+4+7+5+8+3+3+4 (BF/BG/BH 추가, BB 없음, EN1~EN5 별도 처리)
 }
 
 /** 오늘의 CafeTrend 조회 (speechTone 포함) */
@@ -489,7 +489,19 @@ function buildSituationLine(p: Persona, kstHour: number): string {
     negative:  '불만 많고 걱정 많은',
     mixed:     '때론 밝고 때론 현실적인',
   }
+  const TRIGGER_MOMENTS = [
+    '방금 있었던 일이 머릿속에서 안 떠나서',
+    '이거 나만 그런가 싶어서 물어보고 싶어서',
+    '하소연 좀 해야겠다 싶어서',
+    '누군가한테 말하고 싶었는데 마땅한 곳이 없어서',
+    '비슷한 경험 있는 분 있는지 궁금해서',
+    '혼자 생각하다 답이 안 나와서',
+    '오늘 있었던 일 기록해두고 싶어서',
+    '자꾸 신경 쓰여서 일단 써놓고 싶어서',
+  ]
+  const trigger = TRIGGER_MOMENTS[Math.floor(Math.random() * TRIGGER_MOMENTS.length)]
   return `지금 이 순간: ${p.age}세 ${p.gender}성 "${p.nickname}"이 ${timeDesc}에 스마트폰으로 커뮤니티에 글을 쓰는 중.
+글 쓰는 이유: ${trigger}.
 성격: ${p.personality} ${moodDesc[p.mood]} 편.
 말투: ${p.speech_patterns.join(', ')}
 절대 안 하는 것: ${p.never.join(' / ')}`
@@ -615,11 +627,11 @@ export async function generatePost(
       examples.map(e => `"${e}"`).join('\n')
     : ''
 
-  // 변주 엔진 — FAMILY/RELATION/CARE 페르소나 + 20% 확률 (controversySeed 없을 때만)
-  const DNA_ELIGIBLE_DESIRES = ['FAMILY', 'RELATION', 'CARE']
+  // 변주 엔진 — FAMILY/RELATION/CARE/HEALTH 페르소나 + 40% 확률 (controversySeed 없을 때만)
+  const DNA_ELIGIBLE_DESIRES = ['FAMILY', 'RELATION', 'CARE', 'HEALTH']
   let variationType: VariationType | undefined
   let variationBlock = ''
-  if (!controversySeed && desire && DNA_ELIGIBLE_DESIRES.includes(desire) && Math.random() < 0.20) {
+  if (!controversySeed && desire && DNA_ELIGIBLE_DESIRES.includes(desire) && Math.random() < 0.40) {
     const dna = await getTopDNAPost()
     if (dna) {
       variationType = pickVariationType()
@@ -645,6 +657,7 @@ export async function generatePost(
       role: 'user',
       content: `오늘 "${topic}" 주제로 커뮤니티 글 하나만 써줘.${entertainHint}${recentHint}${exampleBlock}${controversyBlock}${variationBlock}
 
+글이 시작되는 순간이 중요해: 지금 막 어떤 일이 있었거나 어떤 생각이 떠올라서 바로 그 장면부터 써줘. "오늘", "아까", "방금", "요즘"으로 바로 시작.
 첫 줄에 제목 (구어체, 15~25자), 빈 줄 하나, 그 다음 본문 (${length.instruction}).
 제목/카테고리/본문 레이블 붙이지 말 것.`,
     }],
