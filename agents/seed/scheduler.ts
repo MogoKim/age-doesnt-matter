@@ -143,6 +143,9 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AZ', type: 'post', board: 'LIFE2' },         // 돈공부중 재테크 현실
     { personaId: 'AA', type: 'post' },                         // 어휴답답 한탄 (부정)
     { personaId: 'AG', type: 'post' },                         // 비교분석왕 비교 리뷰
+    { personaId: 'Y', type: 'post', board: 'LIFE2' },         // 솔직히말해서 현실 팩폭 (15시 cron 불안정으로 이동)
+    { personaId: 'AB', type: 'post', board: 'LIFE2' },        // 따져보자 토론 주제 (15시 cron 불안정으로 이동)
+    { personaId: 'BF', type: 'post' },                         // 속터지는현실 억울형 에피소드 (15시 cron 불안정으로 이동)
     // 댓글
     { personaId: 'J', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'S', type: 'comment', board: 'STORY', count: 1 },
@@ -164,12 +167,9 @@ const SCHEDULE: Record<string, Activity[]> = {
     // 글쓰기 — 감성 + 논쟁
     { personaId: 'P', type: 'post' },                          // 오후세시 감성 에세이
     { personaId: 'Z', type: 'post' },                          // 혼자잘산다 자조 유머
-    { personaId: 'AB', type: 'post', board: 'LIFE2' },        // 따져보자 토론 주제
-    { personaId: 'Y', type: 'post', board: 'LIFE2' },         // 솔직히말해서 현실 팩폭
     { personaId: 'AD', type: 'post' },                         // 그때그시절 회고
     { personaId: 'BA', type: 'post', board: 'LIFE2' },        // 은퇴D100 은퇴 준비 현실
     { personaId: 'BD', type: 'post' },                         // 고부갈등맘 서운함 토로
-    { personaId: 'BF', type: 'post' },                         // 속터지는현실 억울형 에피소드
     // 댓글
     { personaId: 'K', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'R', type: 'comment', board: 'HUMOR', count: 2 },
