@@ -20,6 +20,7 @@ import PersonalGreeting from '@/components/features/home/PersonalGreeting'
 import MyActivity from '@/components/features/home/MyActivity'
 import ActivityPulse from '@/components/features/home/ActivityPulse'
 import SignupCard from '@/components/features/home/SignupCard'
+import HomeFaqSection from '@/components/features/home/HomeFaqSection'
 import {
   getLatestJobs,
   getTrendingPosts,
@@ -251,6 +252,8 @@ export default async function HomePage() {
               <Suspense fallback={<SectionSkeleton h="h-[120px]" />}>
                 <ActivityWrapper />
               </Suspense>
+
+              <HomeFaqSection />
 
               {/* 비회원 가입 유도 카드 */}
               <Suspense fallback={null}>

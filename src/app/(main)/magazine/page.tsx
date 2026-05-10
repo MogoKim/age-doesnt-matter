@@ -34,6 +34,34 @@ const getCachedMagazine = unstable_cache(
   { revalidate: 60 }
 )
 
+const magazineCollectionPageJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: '우나어 매거진 — 50·60대를 위한 정보',
+  description: '건강, 재테크, 여행, 생활정보 등 50대·60대를 위한 유익한 콘텐츠. 갱년기, 기초연금, 재취업, 인생 2막 정보.',
+  url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/magazine`,
+  publisher: {
+    '@type': 'Organization',
+    name: '우나어',
+    logo: {
+      '@type': 'ImageObject',
+      url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/logo-512.png`,
+    },
+  },
+  about: [
+    { '@type': 'Thing', name: '갱년기' },
+    { '@type': 'Thing', name: '기초연금' },
+    { '@type': 'Thing', name: '50대 재취업' },
+    { '@type': 'Thing', name: '인생 2막' },
+    { '@type': 'Thing', name: '50대 건강관리' },
+    { '@type': 'Thing', name: '중장년 재테크' },
+  ],
+  audience: {
+    '@type': 'Audience',
+    audienceType: '50대·60대 중장년',
+  },
+}
+
 export default async function MagazinePage({
   searchParams,
 }: {
@@ -53,6 +81,10 @@ export default async function MagazinePage({
 
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(magazineCollectionPageJsonLd) }}
+      />
       {/* GA4 게시판 조회 이벤트 */}
       <BoardViewTracker boardType="MAGAZINE" boardSlug="magazine" />
       <div className="px-4 py-6">
