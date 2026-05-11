@@ -443,20 +443,20 @@
 
   <div class="header-stats">
     <div class="header-stat">
-      <div class="val">~$87</div>
-      <div class="lbl">5월 월 총비용 (실측)</div>
+      <div class="val">~$198</div>
+      <div class="lbl">5월 월 총비용 (실측 전체)</div>
     </div>
     <div class="header-stat">
       <div class="val green">-$258</div>
-      <div class="lbl">4월 대비 절감 (Vercel 최적화)</div>
+      <div class="lbl">Vercel 최적화 절감 (4월 대비)</div>
     </div>
     <div class="header-stat">
       <div class="val yellow">$7.72</div>
-      <div class="lbl">Anthropic 잔액 (2026-05-11)</div>
+      <div class="lbl">Anthropic API 잔액 (2026-05-11)</div>
     </div>
     <div class="header-stat">
-      <div class="val">~$345</div>
-      <div class="lbl">4월 월 총비용 (최적화 전)</div>
+      <div class="val yellow">$110</div>
+      <div class="lbl">Claude Max 구독 (5x 플랜 + VAT)</div>
     </div>
   </div>
 </div>
@@ -466,9 +466,14 @@
   <!-- 서비스별 비용 카드 -->
   <div class="service-grid">
     <div class="service-card tier-red">
-      <div class="svc-name">🔴 Anthropic Claude</div>
+      <div class="svc-name">🔴 Claude Max 구독</div>
+      <div class="svc-cost">~$110</div>
+      <div class="svc-note">$100 + VAT. 개발자 도구 (5x 플랜)</div>
+    </div>
+    <div class="service-card tier-red">
+      <div class="svc-name">🔴 Anthropic API</div>
       <div class="svc-cost">~$55</div>
-      <div class="svc-note">$11 재충전 × ~5회/월</div>
+      <div class="svc-note">$11 재충전 × ~5회/월. 에이전트용</div>
     </div>
     <div class="service-card tier-orange">
       <div class="svc-name">🟡 Vercel Pro</div>
@@ -486,14 +491,9 @@
       <div class="svc-note">5월 $0.12 / $20 한도</div>
     </div>
     <div class="service-card tier-green">
-      <div class="svc-name">🟢 Supabase</div>
+      <div class="svc-name">🟢 Supabase + 기타</div>
       <div class="svc-cost">$0</div>
       <div class="svc-note">Free Plan 확인 완료</div>
-    </div>
-    <div class="service-card tier-green">
-      <div class="svc-name">🟢 도메인 + 기타</div>
-      <div class="svc-cost">~$1.5</div>
-      <div class="svc-note">연간 환산 ~$18/년</div>
     </div>
   </div>
 
@@ -506,62 +506,76 @@
     <div class="section-body">
       <table>
         <thead>
-          <tr><th>구분</th><th>서비스</th><th>5월 실측</th><th>4월 비교</th><th>관리 위치</th></tr>
+          <tr><th>구분</th><th>서비스</th><th>성격</th><th>5월 실측</th><th>관리 위치</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td rowspan="3" style="font-weight:600; color:var(--gray-700)">AI API</td>
-            <td>Anthropic Claude</td>
-            <td><strong>~$55</strong> <span class="badge badge-red">최대 항목</span></td>
-            <td>비슷</td>
-            <td>console.anthropic.com</td>
+            <td rowspan="2" style="font-weight:600; color:var(--gray-700)">개발자 도구</td>
+            <td>Claude Max 구독 (5x 플랜)</td>
+            <td><span class="badge badge-orange">개인 구독</span></td>
+            <td><strong>~$110</strong> <span class="badge badge-red">2위</span></td>
+            <td>claude.ai/settings</td>
           </tr>
           <tr>
-            <td>Google Gemini</td>
+            <td>Google Gemini 구독</td>
+            <td><span class="badge badge-orange">개인 구독</span></td>
             <td>~$8 (₩11,000)</td>
-            <td>비슷</td>
             <td>월 구독</td>
           </tr>
           <tr>
+            <td rowspan="3" style="font-weight:600; color:var(--gray-700)">AI 인프라</td>
+            <td>Anthropic API (에이전트)</td>
+            <td><span class="badge badge-blue">서비스 인프라</span></td>
+            <td><strong>~$55</strong> <span class="badge badge-red">1위</span></td>
+            <td>console.anthropic.com</td>
+          </tr>
+          <tr>
             <td>OpenAI DALL-E</td>
+            <td><span class="badge badge-blue">서비스 인프라</span></td>
             <td>~$1.5</td>
-            <td>비슷</td>
             <td>platform.openai.com</td>
           </tr>
           <tr>
-            <td style="font-weight:600; color:var(--gray-700)">인프라</td>
             <td>Vercel Pro</td>
-            <td>~$22 <span class="badge badge-green">✅ 최적화 완료</span></td>
-            <td><strong style="color:var(--red)">~$280</strong></td>
+            <td><span class="badge badge-blue">서비스 인프라</span></td>
+            <td>~$22 <span class="badge badge-green">✅ 최적화</span></td>
             <td>vercel.com/dashboard</td>
           </tr>
           <tr>
             <td style="font-weight:600; color:var(--gray-700)">무료 확인</td>
             <td>Supabase / Upstash / Resend / Cloudflare / Slack</td>
-            <td>$0</td>
+            <td><span class="badge badge-green">무료</span></td>
             <td>$0</td>
             <td>각 콘솔 직접 확인</td>
           </tr>
           <tr>
             <td style="font-weight:600; color:var(--gray-700)">기타</td>
             <td>도메인 (age-doesnt-matter.com)</td>
+            <td>—</td>
             <td>~$1.5</td>
-            <td>비슷</td>
             <td>연간 환산</td>
           </tr>
           <tr class="total-row">
-            <td colspan="2"><strong>5월 합계</strong></td>
-            <td><strong>~$87/월</strong></td>
-            <td><strong>~$345/월</strong></td>
-            <td>💚 월 $258 절감</td>
+            <td colspan="3"><strong>5월 실제 총합</strong></td>
+            <td><strong>~$198/월</strong></td>
+            <td>Claude Max 누락 전 ~$87</td>
           </tr>
         </tbody>
       </table>
-      <div class="alert alert-green" style="margin-top:16px">
+      <div class="alert alert-orange" style="margin-top:16px">
+        <span class="alert-icon">💡</span>
+        <div class="alert-content">
+          <strong>Claude Max($110) vs Anthropic API($55) — 성격이 다른 두 항목</strong>
+          Claude Max = 창업자가 Claude Code로 개발할 때 쓰는 구독 (개발자 도구).
+          Anthropic API = 에이전트가 콘텐츠 생성할 때 소비하는 인프라 비용. 별도 청구.
+          개발이 없는 기간에 Claude Max → Pro($20) 다운그레이드 시 $90 즉시 절감 가능.
+        </div>
+      </div>
+      <div class="alert alert-green" style="margin-top:12px">
         <span class="alert-icon">✅</span>
         <div class="alert-content">
           <strong>Vercel 최적화 효과 (ignoreCommand + Standard 머신)</strong>
-          4월 $280 → 5월 $22. 단 한 번의 설정 변경으로 월 $258 절감. 연간 환산 $3,096 절감 효과.
+          4월 $280 → 5월 $22. 월 $258 절감. 연간 환산 $3,096 절감 효과.
         </div>
       </div>
     </div>
@@ -756,6 +770,20 @@
     </div>
     <div class="section-body">
       <div class="saving-list">
+        <div class="saving-item priority-high">
+          <div>
+            <div class="saving-badge">개발 휴지기에 — $90/월 절감</div>
+          </div>
+          <div>
+            <h4>Claude Max → Pro 다운그레이드</h4>
+            <p>
+              현재 Max 5x ($100 + VAT = ~$110/월). 개발이 집중되지 않는 기간에는
+              Pro ($20/월)로 내리면 즉시 $90 절감. claude.ai/settings → Plan에서
+              언제든 변경 가능. 개발 재개 시 다시 Max로 업그레이드.
+              단, Claude Code를 매일 쓰는 기간에는 Pro 한도가 몇 시간 안에 소진됨.
+            </p>
+          </div>
+        </div>
         <div class="saving-item priority-high">
           <div>
             <div class="saving-badge">즉시 가능 — ~$1.5/월 절감</div>
