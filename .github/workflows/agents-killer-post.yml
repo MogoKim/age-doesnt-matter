@@ -1,10 +1,10 @@
 name: Agents — Killer Post
 on:
   schedule:
-    # 09:10 KST = 00:10 UTC — 아침 DEEP 크롤링(08:30) 완료 후 킬러 포스트 생성
+    # 09:10 KST = 00:10 UTC — 아침 DEEP 크롤링(08:30, ~30분 소요) 완료 후 킬러 포스트 생성
     - cron: "10 0 * * *"
-    # 21:10 KST = 12:10 UTC — 저녁 DEEP 크롤링(20:00) 완료 후 킬러 포스트 생성
-    - cron: "10 12 * * *"
+    # 22:10 KST = 13:10 UTC — 저녁 DEEP 크롤링(20:40, ~40분 소요) 완료 후 킬러 포스트 생성
+    - cron: "10 13 * * *"
   workflow_dispatch:
 
 env:
