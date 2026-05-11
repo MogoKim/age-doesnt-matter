@@ -48,7 +48,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{
               \"text\": \"🗑️ *[격리 삭제 기한 초과]* ${COUNT}개 항목\n\`\`\`${LIST}\`\`\`\n→ \`bash scripts/clean_quarantine.sh\` 실행 후 git commit 하세요.\"
-            }"
+            }" || echo "⚠️ Slack 알림 실패 (SLACK_WEBHOOK_LOG 시크릿 확인 필요)"
 
       - name: No overdue items
         if: steps.check.outputs.overdue == '0'
