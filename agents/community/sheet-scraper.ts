@@ -187,6 +187,16 @@ function kstNow(): string {
   return new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
 }
 
+// ── 핵심 키워드 추출 (댓글 품질 검증용) ──
+
+function extractKeyTerms(title: string): string[] {
+  return title
+    .replace(/[^가-힣a-zA-Z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 2 && w.length <= 6)
+    .slice(0, 5)
+}
+
 // ── 메인 파이프라인 ──
 
 // ── CLI 인자 + 환경변수 파싱 ──
@@ -313,12 +323,13 @@ async function main() {
               boardType: tab.boardType,
               category,
               authorId: userId,
-              source: 'BOT' as const,
+              source: 'SHEET' as const,
               status: 'PUBLISHED' as const,
               sourceUrl: row.sourceUrl,
               sourceSite: siteConfig.id,
               thumbnailUrl,
               publishedAt: new Date(),
+              isFeatured: tab.isFeatured,
             }
 
             const post = existingDeleted
@@ -331,6 +342,59 @@ async function main() {
             // 게시글 URL 생성
             const boardSlug = tab.boardType === 'STORY' ? 'stories' : 'humor'
             const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${boardSlug}/${post.id}`
+
+            // BotLog 파동 예약
+            const now = new Date()
+            if (tab.isFeatured) {
+              // 화제성 글: WAVE_L(좋아요) + WAVE_1/2/3(댓글) 4파동 예약
+              const keyTerms = extractKeyTerms(title)
+              const waves = [
+                { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 2 },
+                { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 5 },
+                { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 35 },
+                { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 65 },
+              ]
+              for (const wave of waves) {
+                await prisma.botLog.create({
+                  data: {
+                    botType: 'SEED',
+                    action: wave.action,
+                    status: 'PENDING',
+                    details: `${tab.tabName} 화제성 파동: ${wave.waveType}`,
+                    scheduledAt: new Date(now.getTime() + wave.delayMin * 60 * 1000),
+                    logData: {
+                      postId: post.id,
+                      waveType: wave.waveType,
+                      rawContent: content.slice(0, 2000),
+                      keyTerms,
+                    },
+                  },
+                })
+              }
+              console.log(`  → 화제성 파동 4개 예약 (WAVE_L+1+2+3)`)
+            } else {
+              // 일반 스크래퍼 글: engagement 파동 2개 예약 (댓글 +40분, 좋아요 +90분)
+              await prisma.botLog.create({
+                data: {
+                  botType: 'SEED',
+                  action: 'SHEET_ENGAGE_COMMENT_PENDING',
+                  status: 'PENDING',
+                  details: `${tab.tabName} 일반 engagement 댓글`,
+                  scheduledAt: new Date(now.getTime() + 40 * 60 * 1000),
+                  logData: { postId: post.id, waveType: 'general' },
+                },
+              })
+              await prisma.botLog.create({
+                data: {
+                  botType: 'SEED',
+                  action: 'SHEET_ENGAGE_LIKE_PENDING',
+                  status: 'PENDING',
+                  details: `${tab.tabName} 일반 engagement 좋아요`,
+                  scheduledAt: new Date(now.getTime() + 90 * 60 * 1000),
+                  logData: { postId: post.id, waveType: 'general' },
+                },
+              })
+            }
 
             // Sheet 업데이트
             await updateRow(tab.tabName, row.rowIndex, {
@@ -346,7 +410,8 @@ async function main() {
             const mediaSummary = imageCount > 0 || videoCount > 0
               ? `(이미지 ${imageCount}개${videoCount > 0 ? `, 동영상 ${videoCount}개` : ''})`
               : ''
-            console.log(`  → PUBLISHED: ${postUrl} ${mediaSummary}`)
+            const featuredTag = tab.isFeatured ? ' [화제성]' : ''
+            console.log(`  → PUBLISHED${featuredTag}: ${postUrl} ${mediaSummary}`)
 
             // 요청 간 딜레이
             await sleep(2000 + Math.random() * 3000)

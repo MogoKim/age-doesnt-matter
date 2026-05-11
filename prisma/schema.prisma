@@ -68,6 +68,7 @@ enum PostSource {
   USER
   BOT
   ADMIN
+  SHEET  // 구글 시트 스크래퍼 게시물 (시드봇 접근 불가, 스크래퍼봇 전담)
 }
 
 enum PromotionLevel {

@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
-import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP, generateKillerPost, generateKillerComments } from './generator.js'
+import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP, generateKillerPost, generateKillerComments, generateSheetViralComment } from './generator.js'
 import { scheduleChainFromPost } from './controversy-chain.js'
 import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
 import type { ControversyTopic } from '../core/intelligence.js'
@@ -339,7 +339,7 @@ const SCHEDULE: Record<string, Activity[]> = {
 
 async function getRandomPosts(board: string, limit: number) {
   return prisma.post.findMany({
-    where: { boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2', status: 'PUBLISHED' },
+    where: { boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2', status: 'PUBLISHED', source: { not: 'SHEET' } },
     orderBy: { createdAt: 'desc' },
     take: Math.min(limit * 5, 200),  // Fix 14: 봇 댓글 3개 cap 대응
     select: { id: true, title: true, content: true, authorId: true },
@@ -350,7 +350,7 @@ async function getRandomPosts(board: string, limit: number) {
 async function getReplyTargets(board: string, limit: number) {
   const comments = await prisma.comment.findMany({
     where: {
-      post: { boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2', status: 'PUBLISHED' },
+      post: { boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2', status: 'PUBLISHED', source: { not: 'SHEET' } },
       parentId: null,
       status: 'ACTIVE',
     },
@@ -373,6 +373,7 @@ async function getLikeTargets(userId: string, board: string, limit: number) {
     where: {
       boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2',
       status: 'PUBLISHED',
+      source: { not: 'SHEET' },
       NOT: { likes: { some: { userId } } },
     },
     orderBy: { createdAt: 'desc' },
@@ -461,6 +462,13 @@ async function runActivity(activity: Activity): Promise<void> {
         where: { postId: post.id, authorId: userId },
       })
       if (existingComment) continue
+
+      // Risk C 대응: 화제성 SHEET 글은 스크래퍼봇 파동 전담 — 일반 시드봇 댓글 차단
+      const postMeta = await prisma.post.findUnique({
+        where: { id: post.id },
+        select: { isFeatured: true, source: true },
+      })
+      if (postMeta?.isFeatured && postMeta?.source === 'SHEET') continue
 
       const botCommentCount = await prisma.comment.count({
         where: {
@@ -945,6 +953,7 @@ async function focusedLikeRound(): Promise<number> {
     where: {
       status: 'PUBLISHED',
       promotionLevel: { not: 'HALL_OF_FAME' },
+      source: { not: 'SHEET' },  // Risk H 대응: 스크래퍼 글은 스크래퍼봇 전담 — 시드봇 접근 차단
       OR: [
         {
           isFeatured: true,
@@ -1003,6 +1012,202 @@ async function focusedLikeRound(): Promise<number> {
   }
 
   return boosted
+}
+
+function startOfKstDay(): Date {
+  const KST_OFFSET = 9 * 60 * 60 * 1000
+  const nowKst = new Date(Date.now() + KST_OFFSET)
+  nowKst.setUTCHours(0, 0, 0, 0)
+  return new Date(nowKst.getTime() - KST_OFFSET)
+}
+
+/** SHEET 화제성 글 좋아요 파동 — promotionLevel HOT 트랜잭션 포함 (Risk B 대응) */
+async function processViralLikeWave(postId: string, personaIds: string[]): Promise<number> {
+  let liked = 0
+  for (const personaId of personaIds) {
+    const userId = await getBotUser(personaId)
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.like.create({ data: { userId, postId } })
+        const updated = await tx.post.update({
+          where: { id: postId },
+          data: { likeCount: { increment: 1 } },
+          select: { likeCount: true, authorId: true },
+        })
+        await tx.user.update({
+          where: { id: updated.authorId },
+          data: { receivedLikes: { increment: 1 } },
+        })
+        if (updated.likeCount >= 10) {
+          await tx.post.updateMany({
+            where: { id: postId, promotionLevel: 'NORMAL' },
+            data: { promotionLevel: 'HOT' },
+          })
+        }
+      })
+      liked++
+    } catch {
+      continue
+    }
+  }
+  return liked
+}
+
+/** 일반 SHEET 글 engagement 파동 처리 (댓글 3개 + 좋아요 5개, Haiku) */
+export async function processSheetEngagementWaves(): Promise<void> {
+  const now = new Date()
+
+  const pendingWaves = await prisma.botLog.findMany({
+    where: {
+      action: { in: ['SHEET_ENGAGE_COMMENT_PENDING', 'SHEET_ENGAGE_LIKE_PENDING'] },
+      status: 'PENDING',
+    },
+    select: { id: true, action: true, details: true },
+  })
+
+  const dueWaves = pendingWaves.filter(w => {
+    try {
+      const d = JSON.parse(w.details as string) as { scheduledAt: string }
+      return new Date(d.scheduledAt) <= now
+    } catch { return false }
+  })
+
+  for (const wave of dueWaves) {
+    const data = JSON.parse(wave.details as string) as {
+      postId: string; scheduledAt: string; personaIds: string[]
+    }
+
+    if (wave.action === 'SHEET_ENGAGE_LIKE_PENDING') {
+      const liked = await processViralLikeWave(data.postId, data.personaIds)
+      console.log(`[SheetEngage] 일반 좋아요 ${liked}개 투입 (postId=${data.postId.slice(0, 8)})`)
+    } else {
+      const post = await prisma.post.findUnique({
+        where: { id: data.postId },
+        select: { title: true, content: true },
+      })
+      if (!post) continue
+
+      let inserted = 0
+      for (const personaId of data.personaIds) {
+        const authorId = await getBotUser(personaId)
+        const todayCommentCount = await prisma.comment.count({
+          where: { authorId, createdAt: { gte: startOfKstDay() }, post: { source: 'SHEET' } },
+        })
+        if (todayCommentCount >= 3) continue
+
+        const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
+        if (existing) continue
+
+        const commentText = await generateComment(personaId, post.title, post.content)
+        if (!commentText) continue
+
+        await prisma.$transaction([
+          prisma.comment.create({ data: { postId: data.postId, authorId, content: commentText } }),
+          prisma.post.update({
+            where: { id: data.postId },
+            data: { commentCount: { increment: 1 }, lastEngagedAt: now },
+          }),
+        ])
+        inserted++
+      }
+      console.log(`[SheetEngage] 일반 댓글 ${inserted}개 투입 (postId=${data.postId.slice(0, 8)})`)
+    }
+
+    await prisma.botLog.update({ where: { id: wave.id }, data: { status: 'SUCCESS' } })
+  }
+}
+
+/** 화제성 SHEET 글 파동 처리 (WAVE_L 좋아요 + WAVE_1/2/3 댓글, Sonnet) */
+export async function processPendingSheetCommentWaves(): Promise<void> {
+  const now = new Date()
+
+  // 일일 상한 체크 (화제성 글 5건 × 4파동 = 20)
+  const todayViralCount = await prisma.botLog.count({
+    where: {
+      action: { in: ['SHEET_LIKE_WAVE_PENDING', 'SHEET_COMMENT_WAVE_PENDING'] },
+      createdAt: { gte: startOfKstDay() },
+    },
+  })
+  if (todayViralCount > 20) {
+    console.log('[SheetViral] 일일 상한 초과 — 처리 스킵')
+    return
+  }
+
+  const pendingWaves = await prisma.botLog.findMany({
+    where: {
+      action: { in: ['SHEET_LIKE_WAVE_PENDING', 'SHEET_COMMENT_WAVE_PENDING'] },
+      status: 'PENDING',
+    },
+    select: { id: true, action: true, details: true },
+  })
+
+  const dueWaves = pendingWaves.filter(w => {
+    try {
+      const d = JSON.parse(w.details as string) as { scheduledAt: string }
+      return new Date(d.scheduledAt) <= now
+    } catch { return false }
+  })
+
+  for (const wave of dueWaves) {
+    const data = JSON.parse(wave.details as string) as {
+      postId: string
+      scheduledAt: string
+      waveType?: 'empathy' | 'critical' | 'reversal'
+      personaIds: string[]
+      keyTerms?: string[]
+      rawContent?: string
+    }
+
+    const post = await prisma.post.findUnique({
+      where: { id: data.postId },
+      select: { title: true, content: true },
+    })
+    if (!post) continue
+
+    if (wave.action === 'SHEET_LIKE_WAVE_PENDING') {
+      const liked = await processViralLikeWave(data.postId, data.personaIds)
+      console.log(`[SheetViral] WAVE_L 좋아요 ${liked}개 투입 → HOT 달성 시도 (postId=${data.postId.slice(0, 8)})`)
+    } else {
+      const waveType = data.waveType ?? 'empathy'
+      const rawContent = data.rawContent ?? post.content ?? ''
+      const keyTerms = data.keyTerms ?? []
+      const cap = 20
+
+      const botCount = await prisma.comment.count({
+        where: { postId: data.postId, author: { email: { endsWith: '@unao.bot' } } },
+      })
+
+      let inserted = 0
+      for (const personaId of data.personaIds) {
+        if (botCount + inserted >= cap) break
+
+        const authorId = await getBotUser(personaId)
+        const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
+        if (existing) continue
+
+        const commentText = await generateSheetViralComment(
+          personaId,
+          post.title,
+          rawContent,
+          waveType,
+          keyTerms,
+        )
+        if (!commentText || commentText.length < 5) continue
+
+        await prisma.$transaction([
+          prisma.comment.create({ data: { postId: data.postId, authorId, content: commentText } }),
+          prisma.post.update({
+            where: { id: data.postId },
+            data: { commentCount: { increment: 1 }, lastEngagedAt: now },
+          }),
+        ])
+        inserted++
+      }
+      console.log(`[SheetViral] ${waveType} 파동 댓글 ${inserted}개 투입 (postId=${data.postId.slice(0, 8)})`)
+    }
+
+    await prisma.botLog.update({ where: { id: wave.id }, data: { status: 'SUCCESS' } })
+  }
 }
 
 export async function main() {

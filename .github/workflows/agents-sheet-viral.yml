@@ -1,0 +1,43 @@
+name: "Agents — Sheet Viral Waves"
+
+on:
+  workflow_dispatch:
+
+  # 30분마다 실행 (화제성 파동 최대 30분 내 처리)
+  schedule:
+    - cron: "*/30 * * * *"
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+  SLACK_CHANNEL_DASHBOARD: ${{ secrets.SLACK_CHANNEL_DASHBOARD }}
+  SLACK_CHANNEL_REPORT: ${{ secrets.SLACK_CHANNEL_REPORT }}
+  SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}
+  SLACK_CHANNEL_SYSTEM: ${{ secrets.SLACK_CHANNEL_SYSTEM }}
+  SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
+  SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
+
+jobs:
+  viral-waves:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Run Sheet Viral Waves
+        run: cd agents && npx tsx cron/runner.ts seed viral-waves

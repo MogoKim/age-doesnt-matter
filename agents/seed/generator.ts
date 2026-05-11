@@ -869,6 +869,69 @@ export async function generateComment(
   return stripMarkdown(comment)
 }
 
+/** 시트 화제성 파동 댓글 생성 — Sonnet 모델, 본문 맥락 반영, 키워드 검증 포함 */
+export async function generateSheetViralComment(
+  personaId: string,
+  postTitle: string,
+  rawContent: string,
+  waveType: 'empathy' | 'critical' | 'reversal',
+  keyTerms: string[],
+): Promise<string> {
+  const p = getPersona(personaId)
+
+  const WAVE_PROMPTS = {
+    empathy: `이 글에서 가장 감정이입되는 부분에 구체적으로 공감해주세요.
+글의 상황(인물명/사건)을 직접 언급하며 반응하세요.
+따뜻하되 과하게 칭찬하지 말고, 본인 경험 한 줄 곁들이세요.`,
+    critical: `이 글에서 한 가지만 솔직하게 다른 시각으로 봐주세요.
+"근데 저는 솔직히..." "이게 꼭 맞는 건지 모르겠어요" 수준.
+공격적이지 않게, 조심스럽게. 글의 구체적 상황을 언급하며.`,
+    reversal: `이 글을 읽으며 묵직하게 느낀 감정이나 비슷한 경험을 짧게 써주세요.
+결론 짓지 말고 여운을 남기세요.
+"사실은 저도..." "이런 게 어디 한두 집 일이겠어요" 수준.`,
+  }
+
+  const systemPrompt = `당신은 이 글을 읽은 50~60대 한국 여성입니다.
+글에서 구체적으로 언급된 상황(인물, 사건, 감정 포인트)을 댓글에 반드시 반영하세요.
+"저도 비슷한 경험이 있어요" 같은 막연한 공감은 금지.
+글에서 구체적 단어가 나왔다면 댓글에도 포함하세요.
+
+[자연스러운 말투 지시]
+- 문장이 끊겨도 됩니다 (짧은 반응도 OK)
+- 가끔 ㅎ ㅋ ㅠ 이모티콘 자연스럽게 사용
+- 완벽한 문장 구조 피하기 (실제 댓글은 비문이 많음)
+- 1문장~3문장 사이, 랜덤 길이
+
+[페르소나] ${p.nickname} (${p.age}세, ${p.personality.slice(0, 80)})
+
+[댓글 방향]
+${WAVE_PROMPTS[waveType]}`
+
+  const maxAttempts = 2
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const response = await client.messages.create({
+      model: process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6',
+      max_tokens: 200,
+      system: getKstContext() + '\n\n' + systemPrompt,
+      messages: [{
+        role: 'user',
+        content: `다음 글에 댓글을 달아주세요.\n\n제목: ${postTitle}\n\n본문:\n${rawContent.slice(0, 1500)}`,
+      }],
+    })
+
+    const comment = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+    const cleaned = stripMarkdown(comment)
+
+    // 키워드 검증: 핵심 단어 1개 이상 포함 여부
+    const hasKeyTerm = keyTerms.length === 0 || keyTerms.some(term => cleaned.includes(term))
+    if (hasKeyTerm || attempt === maxAttempts - 1) {
+      return cleaned
+    }
+  }
+
+  return ''
+}
+
 /** 대댓글(답글) 생성 */
 export async function generateReply(
   personaId: string,

@@ -27,12 +27,15 @@ export interface SheetRow {
 export interface SheetTab {
   tabName: string
   boardType: 'STORY' | 'HUMOR'
+  isFeatured: boolean  // _화제성 탭: 즉각 HOT 파이프라인 발동
   rows: SheetRow[]
 }
 
-const TAB_TO_BOARD: Record<string, 'STORY' | 'HUMOR'> = {
-  '사는이야기': 'STORY',
-  '활력충전소': 'HUMOR',
+const TAB_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR'; isFeatured: boolean }> = {
+  '사는이야기': { boardType: 'STORY', isFeatured: false },
+  '웃음방': { boardType: 'HUMOR', isFeatured: false },
+  '사는이야기_화제성': { boardType: 'STORY', isFeatured: true },
+  '웃음방_화제성': { boardType: 'HUMOR', isFeatured: true },
 }
 
 function getSheetId(): string {
@@ -48,14 +51,14 @@ function getSheets() {
 }
 
 /**
- * 두 탭(사는이야기/활력충전소)에서 PENDING 행 읽기
+ * 4개 탭(사는이야기/웃음방/사는이야기_화제성/웃음방_화제성)에서 PENDING 행 읽기
  */
 export async function readPendingRows(): Promise<SheetTab[]> {
   const sheets = getSheets()
   const spreadsheetId = getSheetId()
   const tabs: SheetTab[] = []
 
-  for (const [tabName, boardType] of Object.entries(TAB_TO_BOARD)) {
+  for (const [tabName, { boardType, isFeatured }] of Object.entries(TAB_TO_BOARD)) {
     const range = `${tabName}!A:J`
     const res = await sheets.spreadsheets.values.get({ spreadsheetId, range })
     const rawRows = res.data.values ?? []
@@ -88,7 +91,7 @@ export async function readPendingRows(): Promise<SheetTab[]> {
     }
 
     if (rows.length > 0) {
-      tabs.push({ tabName, boardType, rows })
+      tabs.push({ tabName, boardType, isFeatured, rows })
     }
   }
 
