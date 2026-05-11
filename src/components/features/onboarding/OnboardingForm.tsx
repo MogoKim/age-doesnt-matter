@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { checkNickname, completeOnboarding } from '@/lib/actions/onboarding'
 import { gtmSignUp, sendGtmEvent, waitForGtagReady } from '@/lib/gtm'
+import { trackEvent } from '@/lib/track'
 
 // ── 닉네임 유효성 검사 ──
 const NICKNAME_REGEX = /^[가-힣a-zA-Z0-9]+$/
@@ -177,6 +178,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     localStorage.setItem('signup_welcome_toast', '1')
     const signupVariant = localStorage.getItem('signup_variant') ?? undefined
     gtmSignUp('kakao', signupVariant)
+    trackEvent('sign_up', { method: 'kakao' })
     // gtag.js 로드 완료 대기 — _gtagReady=true 확인 후 navigate
     // window.gtag 존재 체크는 부족 (GTM stub이 미리 생성됨)
     await waitForGtagReady()

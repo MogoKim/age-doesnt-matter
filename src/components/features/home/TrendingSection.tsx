@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import HomeCardLink from '@/components/features/home/HomeCardLink'
 import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
@@ -17,18 +17,21 @@ export default function TrendingSection({ posts }: Props) {
           <span className="text-xl">🔥</span>
           지금 뜨는 이야기
         </h2>
-        <Link href="/best" className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
+        <HomeCardLink href="/best" className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary" section="trending" position={-1} contentId="" action="more">
           더보기 →
-        </Link>
+        </HomeCardLink>
       </div>
       {/* 모바일: 1열 / 데스크탑: 2열 그리드 */}
       <ol className="list-none m-0 px-4 lg:px-0 lg:grid lg:grid-cols-2 lg:gap-x-8">
         {posts.map((post, index) => (
           <li key={post.id} className="lg:border-b lg:border-border lg:last:border-b-0">
-            <Link
+            <HomeCardLink
               href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
               prefetch={false}
               className="flex items-start gap-3 py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:border-b-0 lg:active:mx-0 lg:active:px-0"
+              section="trending"
+              position={index}
+              contentId={post.id}
             >
               <span className="text-body font-bold text-primary-text min-w-[24px] shrink-0 leading-[1.4]">{index + 1}</span>
               <div className="flex-1 min-w-0">
@@ -39,7 +42,7 @@ export default function TrendingSection({ posts }: Props) {
                   <span className="bg-background px-2 py-0.5 rounded text-caption text-muted-foreground">{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
                 </div>
               </div>
-            </Link>
+            </HomeCardLink>
           </li>
         ))}
       </ol>

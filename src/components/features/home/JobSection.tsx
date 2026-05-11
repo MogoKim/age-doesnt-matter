@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import HomeCardLink from '@/components/features/home/HomeCardLink'
 import { formatSalary } from '@/lib/format'
 
 export interface JobCardData {
@@ -25,18 +25,21 @@ export default function JobSection({ jobs }: Props) {
           <span className="text-xl">💼</span>
           오늘의 추천 일자리
         </h2>
-        <Link href="/jobs" prefetch={false} className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary">
+        <HomeCardLink href="/jobs" prefetch={false} className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary" section="jobs" position={-1} contentId="" action="more">
           전체보기 →
-        </Link>
+        </HomeCardLink>
       </div>
       <div className="relative">
         <div className="overflow-x-auto [-webkit-overflow-scrolling:touch] [scroll-snap-type:x_mandatory] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 pr-12 flex gap-3 lg:overflow-x-visible lg:[scroll-snap-type:none] lg:px-0 lg:pr-0 lg:grid lg:grid-cols-4 lg:gap-4">
-        {jobs.map((job) => (
-          <Link
+        {jobs.map((job, index) => (
+          <HomeCardLink
             href={`/jobs/${job.id}`}
             prefetch={false}
             key={job.id}
             className="shrink-0 w-[220px] lg:w-auto bg-card rounded-xl p-4 lg:p-5 border border-border [scroll-snap-align:start] lg:[scroll-snap-align:none] cursor-pointer transition-shadow no-underline text-inherit block active:bg-background active:shadow-md lg:hover:shadow-md lg:hover:-translate-y-0.5 lg:hover:transition-all"
+            section="jobs"
+            position={index}
+            contentId={job.id}
           >
             <div className="flex gap-1.5 flex-wrap mb-2.5">
               {job.isUrgent && (
@@ -55,7 +58,7 @@ export default function JobSection({ jobs }: Props) {
               <span className="text-primary-text font-bold">{formatSalary(job.salary)}</span>
             </div>
             {job.highlight && <p className="text-caption text-muted-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis">{job.highlight}</p>}
-          </Link>
+          </HomeCardLink>
         ))}
         </div>
         {/* 스크롤 힌트 — 우측 페이드 그래디언트 (모바일만) */}

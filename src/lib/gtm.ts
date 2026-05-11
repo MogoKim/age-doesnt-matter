@@ -302,6 +302,16 @@ export function gtmPwaInstall(trigger: string, platform: string, outcome: 'accep
   sendEvent('pwa_install', { trigger, platform, outcome })
 }
 
+/** 홈 카드/더보기 클릭 추적 */
+export function gtmHomeCardClick(
+  section: 'trending' | 'community' | 'magazine' | 'jobs' | 'life2',
+  position: number,
+  contentId: string,
+  action: 'card' | 'more' = 'card',
+): void {
+  sendEvent('home_card_click', { section, position, content_id: contentId, action })
+}
+
 /** PWA 하단 배너 액션 */
 export function gtmPwaBannerAction(action: 'shown' | 'install' | 'dismissed'): void {
   sendEvent('pwa_banner', { action })

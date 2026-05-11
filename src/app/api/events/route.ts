@@ -13,7 +13,7 @@ interface EventPayload {
 const BOT_UA_PATTERNS = [
   /googlebot/i, /bingbot/i, /yandex/i, /baidu/i,
   /facebookexternalhit/i, /twitterbot/i,
-  /node-fetch/i, /python-requests/i, /axios/i,
+  /^node\b/i, /node-fetch/i, /python-requests/i, /axios/i,
   /HeadlessChrome/i, /Playwright/i,
   /curl/i, /wget/i,
 ]
