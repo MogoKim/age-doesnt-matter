@@ -202,6 +202,7 @@ scraped/{postKey}/{index}.{ext}
 |------|---------|------|
 | 2026-04-27 | Feature 문서 최초 생성 (코드 딥다이브 기반, external-content.md 마이그레이션) | Feature Lifecycle 도입 |
 | 2026-05-11 | 4탭 구조 + 화제성 파이프라인 구축: PostSource.SHEET 추가, 스크래퍼봇 BI~BW 15명 신설, 좋아요·댓글 파동(WAVE_L/1/2/3) 자동화, 시드봇 SHEET 글 접근 차단 | 창업자 직접 발굴 화제글 → 우나어 즉각 HOT 달성 자동화 |
+| 2026-05-11 | FAILED 행 스마트 재시도 로직: 게시글은 있으나 파동 BotLog 0개인 경우 B~J 공백 처리 시 파동 재예약 → PUBLISHED 자동 처리 | 창업자가 FAILED 행을 PENDING으로 초기화했을 때 HOT 달성까지 완전 자동화 |
 
 ---
 

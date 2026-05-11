@@ -25,6 +25,13 @@ import { transformContent, transformRawContent, classifyCategory } from './conte
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+const WAVE_PERSONAS: Record<string, string[]> = {
+  like:     ['BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR'],
+  empathy:  ['BS', 'BT', 'BU', 'BV', 'BW'],
+  critical: ['V', 'W', 'AB', 'Y', 'AA'],
+  reversal: ['AE', 'P', 'AD', 'BG', 'BH'],
+}
+
 // ── 페르소나 5명 매핑 ──
 
 interface PersonaMapping {
@@ -260,17 +267,104 @@ async function main() {
             // PROCESSING 상태로 업데이트
             await updateRow(tab.tabName, row.rowIndex, { status: 'PROCESSING' })
 
-            // 중복 체크 — 삭제된 게시글은 재활용(update), 활성 게시글은 스킵
+            // 중복 체크 — 삭제된 게시글은 재활용(update), 활성 게시글은 파동 유무 확인 후 처리
             const existingActive = await prisma.post.findFirst({
               where: { sourceUrl: row.sourceUrl, status: { not: 'DELETED' } },
-              select: { id: true },
+              select: { id: true, title: true, content: true },
             })
             if (existingActive) {
+              // 파동 BotLog 존재 여부 확인 (PENDING + SUCCESS 전체 — status 필터 없음)
+              const waveCount = await prisma.botLog.count({
+                where: {
+                  action: {
+                    in: [
+                      'SHEET_LIKE_WAVE_PENDING',
+                      'SHEET_COMMENT_WAVE_PENDING',
+                      'SHEET_ENGAGE_COMMENT_PENDING',
+                      'SHEET_ENGAGE_LIKE_PENDING',
+                    ],
+                  },
+                  details: { contains: existingActive.id },
+                },
+              })
+
+              if (waveCount === 0) {
+                // 파동 없음 → 재예약 (FAILED 후 B~J 공백 재시도 케이스)
+                const retryNow = new Date()
+                const boardSlug = tab.boardType === 'STORY' ? 'stories' : 'humor'
+                const retryPostUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${boardSlug}/${existingActive.id}`
+
+                if (tab.isFeatured) {
+                  const keyTerms = extractKeyTerms(existingActive.title)
+                  const rawContent = (existingActive.content ?? '').slice(0, 2000)
+                  const retryWaves = [
+                    { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 2 },
+                    { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 5 },
+                    { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 35 },
+                    { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 65 },
+                  ]
+                  for (const wave of retryWaves) {
+                    await prisma.botLog.create({
+                      data: {
+                        botType: 'SEED',
+                        action: wave.action,
+                        status: 'PENDING',
+                        details: JSON.stringify({
+                          postId: existingActive.id,
+                          waveType: wave.waveType,
+                          scheduledAt: new Date(retryNow.getTime() + wave.delayMin * 60 * 1000).toISOString(),
+                          personaIds: WAVE_PERSONAS[wave.waveType] ?? [],
+                          rawContent,
+                          keyTerms,
+                        }),
+                      },
+                    })
+                  }
+                  console.log(`  → [재시도] 화제성 파동 4개 재예약 → PUBLISHED`)
+                } else {
+                  await prisma.botLog.create({
+                    data: {
+                      botType: 'SEED',
+                      action: 'SHEET_ENGAGE_COMMENT_PENDING',
+                      status: 'PENDING',
+                      details: JSON.stringify({
+                        postId: existingActive.id,
+                        scheduledAt: new Date(retryNow.getTime() + 40 * 60 * 1000).toISOString(),
+                        personaIds: ['BI', 'BJ', 'BK'],
+                      }),
+                    },
+                  })
+                  await prisma.botLog.create({
+                    data: {
+                      botType: 'SEED',
+                      action: 'SHEET_ENGAGE_LIKE_PENDING',
+                      status: 'PENDING',
+                      details: JSON.stringify({
+                        postId: existingActive.id,
+                        scheduledAt: new Date(retryNow.getTime() + 90 * 60 * 1000).toISOString(),
+                        personaIds: ['BL', 'BM', 'BN', 'BO', 'BP'],
+                      }),
+                    },
+                  })
+                  console.log(`  → [재시도] 일반 engagement 파동 2개 재예약 → PUBLISHED`)
+                }
+
+                await updateRow(tab.tabName, row.rowIndex, {
+                  status: 'PUBLISHED',
+                  postUrl: retryPostUrl,
+                  error: '',
+                  publishedAt: kstNow(),
+                })
+                totalPublished++
+                continue
+              }
+
+              // 파동 이미 존재 → 중복 스킵
               await updateRow(tab.tabName, row.rowIndex, {
                 status: 'SKIPPED',
                 error: '이미 게시됨',
               })
-              console.log(`  → SKIPPED (중복)`)
+              console.log(`  → SKIPPED (중복, 파동 ${waveCount}개 기존 존재)`)
               continue
             }
             const existingDeleted = await prisma.post.findFirst({
@@ -348,12 +442,6 @@ async function main() {
             if (tab.isFeatured) {
               // 화제성 글: WAVE_L(좋아요) + WAVE_1/2/3(댓글) 4파동 예약
               const keyTerms = extractKeyTerms(title)
-              const WAVE_PERSONAS: Record<string, string[]> = {
-                like:     ['BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR'],
-                empathy:  ['BS', 'BT', 'BU', 'BV', 'BW'],
-                critical: ['V', 'W', 'AB', 'Y', 'AA'],
-                reversal: ['AE', 'P', 'AD', 'BG', 'BH'],
-              }
               const waves = [
                 { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 2 },
                 { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 5 },
