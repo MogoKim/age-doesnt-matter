@@ -17,12 +17,17 @@
  * Slack 채널: #매거진 (C0ARZET1X63)
  */
 
+import { config as loadDotenv } from 'dotenv'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 import { WebClient } from '@slack/web-api'
-// R2 + @aws-sdk를 Playwright 전 시작 시점에 로드 → 이후 dynamic import가 cache hit 반환
-import '../../src/lib/r2.js'
+
+// launchd는 .env.local을 source할 수 없으므로 코드 내에서 직접 로드
+// static import는 module body보다 먼저 실행되므로 dotenv는 반드시 dynamic import 이전에 위치
+loadDotenv({ path: new URL('../../.env.local', import.meta.url).pathname })
+// R2 + @aws-sdk: dotenv 로드 이후 캐시 워밍 (S3Client가 환경변수를 올바르게 읽도록)
+await import('../../src/lib/r2.js')
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 

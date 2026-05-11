@@ -105,11 +105,19 @@ export default async function PostDetailPage({ params }: PageProps) {
     { name: board.displayName, path: `/community/${boardSlug}` },
     { name: post.title, path: `/community/${boardSlug}/${canonicalSlug}` },
   ])
+  const firstContentImage = post.content
+    ? (post.content.match(/<img[^>]+src="([^"]+)"/)?.[1] ?? null)
+    : null
+  const ogImage = post.thumbnailUrl || firstContentImage || `${BASE_URL}/icon-1024.png`
+  const contentText = post.content
+    ? post.content.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 150)
+    : ''
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: post.title,
-    description: post.preview || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티',
+    description: contentText || post.preview || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티',
+    image: ogImage,
     url,
     datePublished: post.createdAt,
     dateModified: post.updatedAt,
