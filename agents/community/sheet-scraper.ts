@@ -343,11 +343,17 @@ async function main() {
             const boardSlug = tab.boardType === 'STORY' ? 'stories' : 'humor'
             const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${boardSlug}/${post.id}`
 
-            // BotLog 파동 예약
+            // BotLog 파동 예약 — details는 scheduler가 JSON.parse()로 읽는 구조
             const now = new Date()
             if (tab.isFeatured) {
               // 화제성 글: WAVE_L(좋아요) + WAVE_1/2/3(댓글) 4파동 예약
               const keyTerms = extractKeyTerms(title)
+              const WAVE_PERSONAS: Record<string, string[]> = {
+                like:     ['BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR'],
+                empathy:  ['BS', 'BT', 'BU', 'BV', 'BW'],
+                critical: ['V', 'W', 'AB', 'Y', 'AA'],
+                reversal: ['AE', 'P', 'AD', 'BG', 'BH'],
+              }
               const waves = [
                 { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 2 },
                 { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 5 },
@@ -355,19 +361,20 @@ async function main() {
                 { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 65 },
               ]
               for (const wave of waves) {
+                const scheduledAt = new Date(now.getTime() + wave.delayMin * 60 * 1000)
                 await prisma.botLog.create({
                   data: {
                     botType: 'SEED',
                     action: wave.action,
                     status: 'PENDING',
-                    details: `${tab.tabName} 화제성 파동: ${wave.waveType}`,
-                    scheduledAt: new Date(now.getTime() + wave.delayMin * 60 * 1000),
-                    logData: {
+                    details: JSON.stringify({
                       postId: post.id,
                       waveType: wave.waveType,
+                      scheduledAt: scheduledAt.toISOString(),
+                      personaIds: WAVE_PERSONAS[wave.waveType] ?? [],
                       rawContent: content.slice(0, 2000),
                       keyTerms,
-                    },
+                    }),
                   },
                 })
               }
@@ -379,9 +386,11 @@ async function main() {
                   botType: 'SEED',
                   action: 'SHEET_ENGAGE_COMMENT_PENDING',
                   status: 'PENDING',
-                  details: `${tab.tabName} 일반 engagement 댓글`,
-                  scheduledAt: new Date(now.getTime() + 40 * 60 * 1000),
-                  logData: { postId: post.id, waveType: 'general' },
+                  details: JSON.stringify({
+                    postId: post.id,
+                    scheduledAt: new Date(now.getTime() + 40 * 60 * 1000).toISOString(),
+                    personaIds: ['BI', 'BJ', 'BK'],
+                  }),
                 },
               })
               await prisma.botLog.create({
@@ -389,9 +398,11 @@ async function main() {
                   botType: 'SEED',
                   action: 'SHEET_ENGAGE_LIKE_PENDING',
                   status: 'PENDING',
-                  details: `${tab.tabName} 일반 engagement 좋아요`,
-                  scheduledAt: new Date(now.getTime() + 90 * 60 * 1000),
-                  logData: { postId: post.id, waveType: 'general' },
+                  details: JSON.stringify({
+                    postId: post.id,
+                    scheduledAt: new Date(now.getTime() + 90 * 60 * 1000).toISOString(),
+                    personaIds: ['BL', 'BM', 'BN', 'BO', 'BP'],
+                  }),
                 },
               })
             }

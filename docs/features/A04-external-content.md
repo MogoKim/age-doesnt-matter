@@ -211,3 +211,4 @@ scraped/{postKey}/{index}.{ext}
 |------|------|------|------|
 | 2026-04 | GHA cron 미실행 | agents-community.yml 조건 오류 | cron 조건 수정 완료 |
 | 2026-04 | Playwright chromium 크래시 (GHA) | ubuntu-latest chromium 버전 불일치 | `--with-deps` 플래그 추가 + 버전 고정 |
+| 2026-05-11 | 파동 BotLog 생성 실패 (13건 FAILED) | ① BotStatus enum에 PENDING 없음 ② sheet-scraper details 구조 불일치 (string vs JSON) ③ scheduledAt 필드 BotLog 스키마에 없음 | schema.prisma BotStatus.PENDING 추가 + sheet-scraper details → JSON.stringify + personaIds 포함 |

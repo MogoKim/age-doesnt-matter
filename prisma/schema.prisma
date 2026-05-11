@@ -156,6 +156,7 @@ enum BotStatus {
   SUCCESS
   PARTIAL
   FAILED
+  PENDING
   SKIP
 }
 
