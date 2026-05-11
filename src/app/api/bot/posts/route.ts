@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateBot } from '@/lib/bot-auth'
 import { sanitizeHtml } from '@/lib/sanitize'
+import { generateCommunitySlug } from '@/lib/seo/slug'
 
 /** POST /api/bot/posts — 유머/이야기 발행 */
 export async function POST(req: NextRequest) {
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'boardType은 STORY, HUMOR, LIFE2 중 하나' }, { status: 400 })
     }
 
+    const slug = await generateCommunitySlug(title)
     const post = await prisma.post.create({
       data: {
         title,
@@ -33,6 +35,7 @@ export async function POST(req: NextRequest) {
         status: 'PUBLISHED',
         publishedAt: new Date(),
         thumbnailUrl,
+        slug,
       },
     })
 
