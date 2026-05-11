@@ -354,7 +354,7 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>우나어 아키텍처</h2>
-    <div class="version">v11 &middot; 2026-05-11</div>
+    <div class="version">v12 &middot; 2026-05-12</div>
   </div>
   <nav>
     <a href="#s1" class="depth-1">1. 서비스 개요</a>
@@ -383,7 +383,7 @@
     <a href="#s13" class="depth-1">13. 예산</a>
     <a href="#s14" class="depth-1">14. 현재 상태</a>
     <a href="#광고-시스템-전면-개편-2026-03-29-구축-완료" class="depth-2">광고 시스템 개편</a>
-    <a href="#시드봇-페르소나-35명-전면-리뉴얼" class="depth-2">시드봇 35명 리뉴얼</a>
+    <a href="#시드봇-페르소나-78명-체계" class="depth-2">시드봇 78명 체계</a>
     <a href="#s15" class="depth-1" style="color:var(--primary)">15. KPI 프레임워크</a>
     <a href="#s15-tree" class="depth-2">KPI 트리</a>
     <a href="#s15-ceo" class="depth-2">CEO ↔ 창업자 소통</a>
@@ -406,7 +406,7 @@
 <main class="main">
 <h1>우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서</h1>
 <blockquote>
-<p><strong>최종 업데이트</strong>: 2026-05-11 (v11 — 실측 기반 전면 최신화: 32모델 · 93핸들러 · 17GHA · $198/월 · LIFE2 게시판)
+<p><strong>최종 업데이트</strong>: 2026-05-12 (v12 — 코드 전수검사 최신화: 78명 페르소나 · 48핸들러 · 17GHA · $198/월 · 화제성 파이프라인 · Phase 4 에이전트)
 <strong>문서 관리자</strong>: Claude Code (자동화) + 창업자 (승인)
 <strong>변경 시</strong>: 이 문서 하단 <a href="#%EB%AC%B8%EC%84%9C-%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8-%EA%B0%80%EC%9D%B4%EB%93%9C">문서 업데이트 가이드</a> 참고</p>
 </blockquote>
@@ -920,7 +920,7 @@
                        ▼
               ┌──────────────────┐
               │   SEED (시드봇)    │ 하루 9회
-              │  35명 페르소나     │ 커뮤니티 활성화
+              │  78명 페르소나     │ 커뮤니티 활성화
               └──────────────────┘
 </code></pre>
 <h3>5.2 에이전트 상세</h3>
@@ -1072,7 +1072,7 @@
 <td><code>seed/scheduler.ts</code></td>
 <td>하루 9회 (09~22시)</td>
 <td>Haiku</td>
-<td>35명 페르소나 활동 (게시글, 댓글, 좋아요, 대댓글) + promotionLevel 자동 승격 + 집중 좋아요 (21시)</td>
+<td>78명 페르소나 활동 (게시글, 댓글, 좋아요, 대댓글) + promotionLevel 자동 승격 + 집중 좋아요 (21시) — 스크래퍼봇 BI~BW(SHEET 글 전담) + 엔터봇 EN1~EN5(10·13·15·21시 활성)</td>
 </tr>
 </tbody></table>
 <h3>5.3 에이전트 기반 구조 (core/)</h3>
@@ -1149,7 +1149,7 @@
 </tr>
 <tr>
 <td><code>seed/persona-data.ts</code></td>
-<td><strong>35명 페르소나 정의</strong> — 닉네임, 성격, 말투, 습관, 금지사항, 예시문장 (캐릭터 시트 방식)</td>
+<td><strong>78명 페르소나 정의</strong> — 닉네임, 성격, 말투, 습관, 금지사항, 예시문장 (캐릭터 시트 방식). 스크래퍼봇 BI~BW 18명 + 엔터봇 EN1~EN5 5명 포함</td>
 </tr>
 <tr>
 <td><code>skills/registry.ts</code></td>
@@ -1323,7 +1323,7 @@
 │  → SEO 개선 추천 리포트 → Slack #log_marketing           │
 └─────────────────────────────────────────────────────┘
 </code></pre>
-<h3>5.6 시드 페르소나 (SEED) — 35명</h3>
+<h3>5.6 시드 페르소나 (SEED) — 78명</h3>
 <blockquote>
 <p><strong>v2 전면 리뉴얼 (2026-03-29)</strong>: AI스러운 닉네임/말투 문제 해결. 캐릭터 시트 방식으로 페르소나별 성격·말투·습관·금지사항·예시문장 차별화. 부정/비판 페르소나 8명 + 특수 캐릭터 5명 추가.
 <strong>소스 코드</strong>: <code>agents/seed/persona-data.ts</code> (YAML은 참조용)</p>
@@ -1648,9 +1648,11 @@
 </tr>
 </tbody></table>
 <blockquote>
-<p><strong>성격 분포</strong>: 긍정(12) + 중립(10) + 부정/비판(8) + 특이(5) = 35명
-<strong>성별 비율</strong>: 여 22명 / 남 13명 (타겟 유저 비율 반영)
-<strong>지역 사투리</strong>: 경상도(U), 충청도(AC), 제주(S)
+<p><strong>성격 분포 (기존 시드봇 35명)</strong>: 긍정(12) + 중립(10) + 부정/비판(8) + 특이(5) = 35명<br>
+<strong>신규 추가</strong>: 스크래퍼봇 BI~BW 18명 (source=SHEET 글 전담) + 엔터봇 EN1~EN5 5명 (엔터테인먼트 특화) = 23명<br>
+<strong>총 페르소나</strong>: 35 + 23 = <strong>78명</strong><br>
+<strong>성별 비율</strong>: 여 22명 / 남 13명 (기존 시드봇 기준, 타겟 유저 비율 반영)<br>
+<strong>지역 사투리</strong>: 경상도(U), 충청도(AC), 제주(S)<br>
 <strong>일일 목표</strong>: 게시글 18<del>22개 / 댓글 80</del>100개 / 좋아요 60<del>80개 / 대댓글 25</del>35개</p>
 </blockquote>
 <h3>5.6.1 시드봇 활동 메커니즘</h3>
@@ -2808,7 +2810,7 @@
 │   ├── 📁 cdo/                     # CDO 에이전트
 │   ├── 📁 cfo/                     # CFO 에이전트
 │   ├── 📁 coo/                     # COO 에이전트 (일자리, 모더레이션)
-│   ├── 📁 seed/                    # 시드봇 (35명 페르소나)
+│   ├── 📁 seed/                    # 시드봇 (78명 페르소나)
 │   └── 📁 cafe/                    # 카페 크롤러
 │
 ├── 📁 prisma/                       # DB 스키마
@@ -2900,9 +2902,9 @@
 <h3>완료됨 (2026-05-11 기준)</h3>
 <ul>
 <li>전체 코드 구현 (46페이지, 19+ API, 77+ 컴포넌트)</li>
-<li>에이전트 시스템 ACTIVE (헌법 v5.0, 93핸들러)</li>
+<li>에이전트 시스템 ACTIVE (헌법 v5.0, 48핸들러 · 78명 페르소나)</li>
 <li>일자리 자동 수집 파이프라인</li>
-<li>시드 페르소나 10명</li>
+<li>시드 페르소나 78명 (기존 봇 + 스크래퍼봇 BI~BW + 엔터봇 EN1~EN5)</li>
 <li>카페 크롤링 파이프라인</li>
 <li>수익 컴포넌트 (AdSlot, CoupangCPS)</li>
 <li>SEO JSON-LD + sitemap 최적화</li>
@@ -4538,6 +4540,11 @@ Slack 설정         긴급 회의             학습 축적          자동 롤
 <tr><td><strong>봇 게시글 Slug 자동생성</strong></td><td>/api/bot/posts + generateCommunitySlug(), Google 12,533개 URL 색인 복구</td><td>2026-05-11</td></tr>
 <tr><td><strong>SEO Article JSON-LD image</strong></td><td>커뮤니티 게시글 Google 리치 결과 필수 필드 충족 (3-tier fallback)</td><td>2026-05-11</td></tr>
 <tr><td><strong>Gate 2 자동화</strong></td><td>post-deploy-qa.yml: Smoke+Visual QA(Claude Haiku)+Lighthouse → Slack #qa</td><td>2026-04</td></tr>
+<tr><td><strong>시드봇 78명 체계</strong></td><td>스크래퍼봇 BI~BW 18명(source=SHEET 전담) + 엔터봇 EN1~EN5 5명(10·13·15·21시만 활성) — 생태계 격리</td><td>2026-05-11</td></tr>
+<tr><td><strong>Phase 4 에이전트 7종</strong></td><td>comment-activator, reply-chain-driver, connection-facilitator, job-matcher, caregiving-curator, humor-curator, health-anxiety-responder — 1차/2차/3차 분산 실행</td><td>2026-05-11</td></tr>
+<tr><td><strong>구글 시트 화제성 파이프라인</strong></td><td>4탭 구조(사는이야기_화제성/웃음방_화제성) → WAVE_L(좋아요10)+WAVE_1~3(댓글15) → HOT 자동 달성, agents-sheet-viral.yml 30분마다</td><td>2026-05-11</td></tr>
+<tr><td><strong>FAILED 행 스마트 재시도</strong></td><td>B~J 공백 처리 시 파동 0개 → 재예약+PUBLISHED, 파동 존재 → SKIPPED (SHA 80eb1d5)</td><td>2026-05-11</td></tr>
+<tr><td><strong>이미지 전용 글 댓글 가드</strong></td><td>generateSheetViralComment: cleanText &lt; 50자이면 즉시 '' 반환 — 짤방 쓰레기 댓글 재발 방지 (SHA 67cf99e)</td><td>2026-05-12</td></tr>
 </table>
 <hr>
 <h2>문서 업데이트 가이드</h2>
