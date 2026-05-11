@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>API 비용 & 에이전트 전수 감사 보고서</title>
+  <title>우나어 비용 감사 대시보드</title>
   <style>
     :root {
       --primary: #FF6F61;
@@ -21,6 +21,7 @@
       --gray-50: #f9fafb;
       --gray-100: #f3f4f6;
       --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
       --gray-500: #6b7280;
       --gray-700: #374151;
       --gray-900: #111827;
@@ -43,16 +44,30 @@
       padding: 40px 48px;
     }
 
-    .header h1 {
-      font-size: 26px;
-      font-weight: 700;
-      margin-bottom: 8px;
+    .header h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+    .header .subtitle { color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 20px; }
+
+    .header-stats {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      margin-top: 16px;
     }
 
-    .header p {
-      color: rgba(255,255,255,0.6);
-      font-size: 13px;
+    .header-stat .val {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
     }
+
+    .header-stat .lbl {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 4px;
+    }
+
+    .header-stat .val.green { color: #4ade80; }
+    .header-stat .val.yellow { color: #facc15; }
 
     .container {
       max-width: 1200px;
@@ -60,49 +75,47 @@
       padding: 32px 24px;
     }
 
-    /* 핵심 요약 카드 */
-    .summary-grid {
+    /* 서비스 카드 그리드 */
+    .service-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 16px;
       margin-bottom: 32px;
     }
 
-    .summary-card {
+    .service-card {
       background: white;
       border-radius: 12px;
       padding: 20px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-      border-left: 4px solid var(--gray-200);
+      border-top: 4px solid var(--gray-200);
     }
 
-    .summary-card.red   { border-left-color: var(--red); }
-    .summary-card.orange{ border-left-color: var(--orange); }
-    .summary-card.green { border-left-color: var(--green); }
-    .summary-card.blue  { border-left-color: var(--blue); }
+    .service-card.tier-red    { border-top-color: var(--red); }
+    .service-card.tier-orange { border-top-color: var(--orange); }
+    .service-card.tier-green  { border-top-color: var(--green); }
 
-    .summary-card .label {
-      font-size: 12px;
+    .service-card .svc-name {
+      font-size: 13px;
+      font-weight: 600;
       color: var(--gray-500);
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      margin-bottom: 8px;
     }
 
-    .summary-card .value {
-      font-size: 22px;
-      font-weight: 700;
-      line-height: 1.2;
+    .service-card .svc-cost {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1;
     }
 
-    .summary-card .value.red    { color: var(--red); }
-    .summary-card .value.green  { color: var(--green); }
-    .summary-card .value.orange { color: var(--orange); }
+    .service-card.tier-red    .svc-cost { color: var(--red); }
+    .service-card.tier-orange .svc-cost { color: var(--orange); }
+    .service-card.tier-green  .svc-cost { color: var(--green); }
 
-    .summary-card .note {
-      font-size: 12px;
-      color: var(--gray-500);
-      margin-top: 4px;
+    .service-card .svc-note {
+      font-size: 11px;
+      color: var(--gray-400);
+      margin-top: 6px;
     }
 
     /* 섹션 */
@@ -115,32 +128,19 @@
     }
 
     .section-header {
-      padding: 20px 24px;
+      padding: 18px 24px;
       border-bottom: 1px solid var(--gray-100);
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
-    .section-header h2 {
-      font-size: 17px;
-      font-weight: 700;
-    }
-
-    .section-icon {
-      font-size: 20px;
-    }
-
-    .section-body {
-      padding: 24px;
-    }
+    .section-header h2 { font-size: 17px; font-weight: 700; }
+    .section-icon { font-size: 20px; }
+    .section-body { padding: 24px; }
 
     /* 테이블 */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
 
     th {
       background: var(--gray-50);
@@ -160,18 +160,11 @@
       vertical-align: top;
     }
 
-    tr:last-child td {
-      border-bottom: none;
-    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--gray-50); }
 
-    tr:hover td {
-      background: var(--gray-50);
-    }
-
-    .highlight-row td {
-      background: var(--primary-light);
-      font-weight: 600;
-    }
+    .highlight-row td { background: var(--primary-light); font-weight: 600; }
+    .total-row td { background: #f0fdf4; font-weight: 700; }
 
     /* 배지 */
     .badge {
@@ -210,6 +203,7 @@
     .alert-orange { background: var(--orange-light); border-left: 4px solid var(--orange); }
     .alert-blue   { background: var(--blue-light);   border-left: 4px solid var(--blue); }
     .alert-green  { background: var(--green-light);  border-left: 4px solid var(--green); }
+    .alert-yellow { background: var(--yellow-light); border-left: 4px solid var(--yellow); }
 
     /* 코드 블록 */
     pre {
@@ -232,39 +226,129 @@
       font-size: 13px;
     }
 
-    /* API 카드 */
-    .api-card {
-      border: 1px solid var(--gray-200);
-      border-radius: 10px;
-      margin-bottom: 20px;
+    /* Vercel 비교 바 */
+    .comparison-bar-wrap {
+      margin: 20px 0;
+    }
+
+    .comparison-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .comparison-label {
+      width: 80px;
+      font-size: 13px;
+      color: var(--gray-700);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .comparison-bar-bg {
+      flex: 1;
+      background: var(--gray-100);
+      border-radius: 6px;
+      height: 32px;
+      position: relative;
       overflow: hidden;
     }
 
-    .api-card-header {
-      background: var(--gray-50);
-      padding: 14px 18px;
+    .comparison-bar-fill {
+      height: 100%;
+      border-radius: 6px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      border-bottom: 1px solid var(--gray-200);
-    }
-
-    .api-card-header h3 {
-      font-size: 15px;
+      padding: 0 12px;
+      font-size: 13px;
       font-weight: 700;
-      flex: 1;
+      color: white;
+      transition: width 0.4s ease;
     }
 
-    .api-card-body {
-      padding: 18px;
+    .bar-april { background: var(--red); width: 100%; }
+    .bar-may   { background: var(--green); width: 7.8%; }
+
+    .comparison-amount {
+      width: 60px;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: right;
+      flex-shrink: 0;
     }
+
+    /* 무료 서비스 그리드 */
+    .free-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .free-card {
+      background: var(--green-light);
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .free-card .free-name {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .free-card .free-cost {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--green);
+    }
+
+    .free-card .free-note {
+      font-size: 11px;
+      color: #15803d;
+      margin-top: 4px;
+    }
+
+    /* 절감 포인트 */
+    .saving-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .saving-item {
+      display: flex;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      align-items: flex-start;
+    }
+
+    .saving-item.priority-high  { border-left: 4px solid var(--orange); }
+    .saving-item.priority-mid   { border-left: 4px solid var(--blue); }
+
+    .saving-badge {
+      background: var(--orange-light);
+      color: var(--orange);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 99px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .saving-badge.mid { background: var(--blue-light); color: var(--blue); }
+
+    .saving-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .saving-item p  { font-size: 13px; color: var(--gray-500); line-height: 1.6; }
+
+    /* 장애 테이블 */
+    .impact-critical td:first-child { font-weight: 700; color: var(--red); }
+    .impact-major    td:first-child { font-weight: 700; color: var(--orange); }
 
     /* 우선순위 */
-    .priority-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+    .priority-list { display: flex; flex-direction: column; gap: 12px; }
 
     .priority-item {
       display: flex;
@@ -292,81 +376,6 @@
     .priority-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
     .priority-item p  { font-size: 13px; color: var(--gray-500); }
 
-    /* 체크리스트 */
-    .checklist {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .checklist li {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      font-size: 14px;
-    }
-
-    .checklist li::before {
-      content: '☐';
-      font-size: 18px;
-      color: var(--gray-400);
-      flex-shrink: 0;
-      line-height: 1.2;
-    }
-
-    /* 3단계 로드맵 */
-    .roadmap {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-
-    @media (max-width: 768px) {
-      .roadmap { grid-template-columns: 1fr; }
-      .summary-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    .roadmap-col {
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid var(--gray-200);
-    }
-
-    .roadmap-col-header {
-      padding: 12px 16px;
-      font-weight: 700;
-      font-size: 14px;
-      color: white;
-    }
-
-    .roadmap-col.short  .roadmap-col-header { background: var(--red); }
-    .roadmap-col.mid    .roadmap-col-header { background: var(--orange); }
-    .roadmap-col.long   .roadmap-col-header { background: var(--blue); }
-
-    .roadmap-col-body { padding: 12px 16px; }
-
-    .roadmap-item {
-      padding: 8px 0;
-      border-bottom: 1px solid var(--gray-100);
-      font-size: 13px;
-    }
-
-    .roadmap-item:last-child { border-bottom: none; }
-    .roadmap-item strong { display: block; font-size: 13px; margin-bottom: 2px; }
-    .roadmap-item span { color: var(--gray-500); font-size: 12px; }
-
-    /* 장애 영향 테이블 강조 */
-    .impact-critical td:first-child { font-weight: 700; color: var(--red); }
-    .impact-major    td:first-child { font-weight: 700; color: var(--orange); }
-
-    .footer {
-      text-align: center;
-      color: var(--gray-500);
-      font-size: 12px;
-      padding: 24px;
-    }
-
     h3.subsection {
       font-size: 15px;
       font-weight: 700;
@@ -377,225 +386,444 @@
 
     h3.subsection:first-child { margin-top: 0; }
 
-    .tag { font-size: 11px; background: var(--gray-100); color: var(--gray-500); padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .info-box {
+      background: var(--gray-50);
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 13px;
+    }
+
+    .info-box .info-label {
+      font-size: 11px;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .info-box .info-val {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+
+    .info-box .info-sub {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-top: 4px;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--gray-500);
+      font-size: 12px;
+      padding: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .service-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col { grid-template-columns: 1fr; }
+      .header { padding: 24px; }
+      .header-stats { gap: 20px; }
+      .header-stat .val { font-size: 24px; }
+    }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>API 비용 & 에이전트 전수 감사 보고서</h1>
-  <p>최초 작성: 2026-04-16 &nbsp;|&nbsp; 다음 업데이트: 분기별 또는 신규 API 추가 시</p>
+  <h1>우나어 비용 감사 대시보드</h1>
+  <p class="subtitle">실측 기준: 2026-05-11 &nbsp;|&nbsp; 10개 서비스 직접 확인 완료</p>
+
+  <div class="header-stats">
+    <div class="header-stat">
+      <div class="val">~$87</div>
+      <div class="lbl">5월 월 총비용 (실측)</div>
+    </div>
+    <div class="header-stat">
+      <div class="val green">-$258</div>
+      <div class="lbl">4월 대비 절감 (Vercel 최적화)</div>
+    </div>
+    <div class="header-stat">
+      <div class="val yellow">$7.72</div>
+      <div class="lbl">Anthropic 잔액 (2026-05-11)</div>
+    </div>
+    <div class="header-stat">
+      <div class="val">~$345</div>
+      <div class="lbl">4월 월 총비용 (최적화 전)</div>
+    </div>
+  </div>
 </div>
 
 <div class="container">
 
-  <!-- 핵심 요약 -->
-  <div class="summary-grid">
-    <div class="summary-card red">
-      <div class="label">월 예상 비용</div>
-      <div class="value red">$80~105</div>
-      <div class="note">🔴 헌법 한도 $50 초과</div>
+  <!-- 서비스별 비용 카드 -->
+  <div class="service-grid">
+    <div class="service-card tier-red">
+      <div class="svc-name">🔴 Anthropic Claude</div>
+      <div class="svc-cost">~$55</div>
+      <div class="svc-note">$11 재충전 × ~5회/월</div>
     </div>
-    <div class="summary-card orange">
-      <div class="label">일일 Claude 호출</div>
-      <div class="value orange">~80회</div>
-      <div class="note">일 $3.77 소비</div>
+    <div class="service-card tier-orange">
+      <div class="svc-name">🟡 Vercel Pro</div>
+      <div class="svc-cost">~$22</div>
+      <div class="svc-note">Base $20 + 사용 $1.92</div>
     </div>
-    <div class="summary-card green">
-      <div class="label">실제 작동 에이전트</div>
-      <div class="value green">54개</div>
-      <div class="note">크론 자동 실행</div>
+    <div class="service-card tier-orange">
+      <div class="svc-name">🟡 Google Gemini</div>
+      <div class="svc-cost">~$8</div>
+      <div class="svc-note">₩11,000/월 구독</div>
     </div>
-    <div class="summary-card orange">
-      <div class="label">고아 에이전트</div>
-      <div class="value orange">8개</div>
-      <div class="note">코드만 있고 실행 안 됨</div>
+    <div class="service-card tier-green">
+      <div class="svc-name">🟢 OpenAI</div>
+      <div class="svc-cost">~$1.5</div>
+      <div class="svc-note">5월 $0.12 / $20 한도</div>
     </div>
-    <div class="summary-card red">
-      <div class="label">CFO 자동 차단</div>
-      <div class="value red">미구현</div>
-      <div class="note">정책 있음, 코드 없음</div>
+    <div class="service-card tier-green">
+      <div class="svc-name">🟢 Supabase</div>
+      <div class="svc-cost">$0</div>
+      <div class="svc-note">Free Plan 확인 완료</div>
     </div>
-    <div class="summary-card blue">
-      <div class="label">환경변수 미사용</div>
-      <div class="value" style="color:var(--blue)">15/68개</div>
-      <div class="note">선언만 됨</div>
-    </div>
-  </div>
-
-  <!-- 섹션 1: API 전체 목록 -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">💳</span>
-      <h2>1. 외부 AI/유료 API 전체 목록</h2>
-    </div>
-    <div class="section-body">
-
-      <!-- Claude -->
-      <div class="api-card">
-        <div class="api-card-header">
-          <h3>① Anthropic Claude</h3>
-          <span class="badge badge-red">가장 비싼 항목</span>
-        </div>
-        <div class="api-card-body">
-          <table>
-            <thead>
-              <tr><th>모델</th><th>환경변수</th><th>용도</th><th>일 실행</th><th>일비용</th><th>월비용</th></tr>
-            </thead>
-            <tbody>
-              <tr><td><code>claude-haiku-4-5</code></td><td>CLAUDE_MODEL_LIGHT</td><td>모니터링·데이터 집계</td><td>~50회</td><td>$0.40</td><td>$12</td></tr>
-              <tr><td><code>claude-sonnet-4-6</code></td><td>CLAUDE_MODEL_HEAVY</td><td>콘텐츠 생성·분석</td><td>~28회</td><td>$2.80</td><td>$84</td></tr>
-              <tr><td><code>claude-opus-4-6</code></td><td>CLAUDE_MODEL_STRATEGIC</td><td>주간 전략 (월 2~3회)</td><td>0.1회</td><td>$0.57</td><td>$17</td></tr>
-              <tr class="highlight-row"><td colspan="3"><strong>합계</strong></td><td>~80회</td><td>$3.77</td><td>$74~90</td></tr>
-            </tbody>
-          </table>
-          <div class="alert alert-red" style="margin-top:16px">
-            <span class="alert-icon">⚡</span>
-            <div class="alert-content">
-              <strong>크레딧 부족 시:</strong>
-              <code>400 "Your credit balance is too low to access the Anthropic API"</code><br>
-              → BaseAgent catch → BotLog FAILED + Slack #긴급 → 콘텐츠 생성 중단 → 재시도 없음
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- OpenAI -->
-      <div class="api-card">
-        <div class="api-card-header">
-          <h3>② OpenAI (DALL-E 3 + Whisper)</h3>
-          <span class="badge badge-blue">수동 실행만</span>
-        </div>
-        <div class="api-card-body">
-          <table>
-            <thead>
-              <tr><th>서비스</th><th>환경변수</th><th>용도</th><th>실행 빈도</th><th>단가</th><th>월비용</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>DALL-E 3</td><td>OPENAI_API_KEY</td><td>매거진 이미지 생성</td><td>로컬 수동만</td><td>$0.04~0.08/장</td><td>~$5</td></tr>
-              <tr><td><strong>Whisper</strong> <code>whisper-1</code></td><td>OPENAI_API_KEY</td><td><strong>자막 생성</strong> (subtitle.ts)</td><td>수동만</td><td>$0.006/분</td><td>~$1</td></tr>
-            </tbody>
-          </table>
-          <div class="alert alert-orange" style="margin-top:16px">
-            <span class="alert-icon">⚠️</span>
-            <div class="alert-content">
-              <strong>Whisper 주의:</strong> 현재 수동 실행이지만 video-director 자동화 시 비용 급증 가능. 10분짜리 영상 = $0.06/편.
-            </div>
-          </div>
-          <p style="font-size:13px; color:var(--gray-500); margin-top:8px">DALL-E 429 오류 → MAX_ATTEMPTS=3 재시도 ✅ | 플랫폼: platform.openai.com (Anthropic과 별도 관리)</p>
-        </div>
-      </div>
-
-      <!-- Gemini -->
-      <div class="api-card">
-        <div class="api-card-header">
-          <h3>③ Google Gemini (TTS + 스크래핑)</h3>
-          <span class="badge badge-blue">수동 실행만</span>
-        </div>
-        <div class="api-card-body">
-          <table>
-            <thead>
-              <tr><th>서비스</th><th>환경변수</th><th>용도</th><th>비용</th></tr>
-            </thead>
-            <tbody>
-              <tr><td><strong>Gemini TTS</strong> <code>gemini-2.5-flash-preview-tts</code></td><td>GEMINI_API_KEY</td><td>영상 나레이션 음성 생성</td><td>$0.10/1M chars</td></tr>
-              <tr><td>Gemini Imagen (스크래핑)</td><td>GEMINI_API_KEY</td><td>Graphic Designer 이미지</td><td>무료 (Google One 구독)</td></tr>
-            </tbody>
-          </table>
-          <div class="alert alert-green" style="margin-top:16px">
-            <span class="alert-icon">💡</span>
-            <div class="alert-content">
-              <strong>TTS 비용 예시:</strong> 60초 나레이션 ≈ 300자 → $0.00003/편. 월 100편도 $0.003. 현재 무시 가능한 수준.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SNS -->
-      <div class="api-card">
-        <div class="api-card-header">
-          <h3>⑧ SNS APIs</h3>
-          <span class="badge badge-green">무료</span>
-        </div>
-        <div class="api-card-body">
-          <table>
-            <thead>
-              <tr><th>플랫폼</th><th>실행 빈도</th><th>상태</th><th>주의</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Instagram</td><td>하루 3회</td><td><span class="badge badge-green">✅ 활성</span></td><td>60일마다 토큰 갱신</td></tr>
-              <tr><td>Threads</td><td>하루 3회</td><td><span class="badge badge-green">✅ 활성 (자동 갱신)</span></td><td>60일</td></tr>
-              <tr><td><strong>Facebook</strong></td><td>—</td><td><span class="badge badge-red">🔴 비활성</span></td><td><code>FACEBOOK_POSTING_ENABLED !== 'true'</code>로 코드 차단</td></tr>
-              <tr><td>X (Twitter)</td><td>하루 2회</td><td><span class="badge badge-green">✅ 활성</span></td><td>재시도 로직 없음 ⚠️</td></tr>
-              <tr><td><strong>Band</strong></td><td>—</td><td><span class="badge badge-yellow">🟡 심사중</span></td><td>API 심사중 — DISPATCH ONLY</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 기타 -->
-      <div class="api-card">
-        <div class="api-card-header">
-          <h3>기타 API</h3>
-        </div>
-        <div class="api-card-body">
-          <table>
-            <thead>
-              <tr><th>API</th><th>용도</th><th>비용</th><th>비고</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Perplexity AI</td><td>트렌드 리서치</td><td><span class="badge badge-orange">미추적</span></td><td>Claude 폴백 있음 ✅</td></tr>
-              <tr><td>Cloudflare R2</td><td>이미지/영상 저장</td><td>$0~5/월</td><td>트래픽 따라 변동</td></tr>
-              <tr><td>Google GA4</td><td>트래픽 분석</td><td>무료</td><td>일 1천만 행 한도</td></tr>
-              <tr><td>Google Indexing</td><td>새 글 즉시 색인</td><td>무료</td><td>⚠️ <strong>일 200회 한도</strong></td></tr>
-              <tr><td>Unsplash</td><td>매거진 사진</td><td>무료</td><td>월 50회 (초과 시 DALL-E)</td></tr>
-              <tr><td>Coupang 파트너스</td><td>제휴 광고 링크</td><td>무료</td><td>HMAC-SHA256 인증</td></tr>
-              <tr><td>Kakao OAuth</td><td>회원 로그인</td><td>무료</td><td>—</td></tr>
-              <tr><td>Slack</td><td>에이전트 알림</td><td>무료</td><td>6채널 운영</td></tr>
-              <tr><td>Bot API Keys (4종)</td><td>JOB / HUMOR / STORY / SEED</td><td>무료</td><td>내부 API 인증</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
+    <div class="service-card tier-green">
+      <div class="svc-name">🟢 도메인 + 기타</div>
+      <div class="svc-cost">~$1.5</div>
+      <div class="svc-note">연간 환산 ~$18/년</div>
     </div>
   </div>
 
-  <!-- 섹션 2: 월 비용 요약 -->
+  <!-- 월 비용 요약 테이블 -->
   <div class="section">
     <div class="section-header">
       <span class="section-icon">📊</span>
-      <h2>2. 월 비용 전체 요약</h2>
+      <h2>1. 월 비용 전체 요약 (실측)</h2>
     </div>
     <div class="section-body">
       <table>
         <thead>
-          <tr><th>API</th><th>월 비용</th><th>관리 위치</th><th>비고</th></tr>
+          <tr><th>구분</th><th>서비스</th><th>5월 실측</th><th>4월 비교</th><th>관리 위치</th></tr>
         </thead>
         <tbody>
-          <tr class="impact-critical"><td>Anthropic Claude</td><td><strong>$74~90</strong></td><td>console.anthropic.com</td><td>가장 큰 항목</td></tr>
-          <tr><td>OpenAI DALL-E</td><td>~$5</td><td>platform.openai.com</td><td>수동 실행만</td></tr>
-          <tr><td>OpenAI Whisper</td><td>~$1</td><td>platform.openai.com</td><td>수동 실행만</td></tr>
-          <tr><td>Gemini TTS</td><td>~$0</td><td>—</td><td>수동, 현재 무시 가능</td></tr>
-          <tr><td>Perplexity</td><td><span class="badge badge-orange">미추적</span></td><td>—</td><td>확인 필요</td></tr>
-          <tr><td>Cloudflare R2</td><td>$0~5</td><td>dash.cloudflare.com</td><td>트래픽 따라</td></tr>
-          <tr><td>나머지 모두</td><td>$0</td><td>—</td><td>무료</td></tr>
-          <tr class="highlight-row"><td>총합 추정</td><td>$80~105/월</td><td>—</td><td>🔴 헌법 한도 $50 초과</td></tr>
+          <tr>
+            <td rowspan="3" style="font-weight:600; color:var(--gray-700)">AI API</td>
+            <td>Anthropic Claude</td>
+            <td><strong>~$55</strong> <span class="badge badge-red">최대 항목</span></td>
+            <td>비슷</td>
+            <td>console.anthropic.com</td>
+          </tr>
+          <tr>
+            <td>Google Gemini</td>
+            <td>~$8 (₩11,000)</td>
+            <td>비슷</td>
+            <td>월 구독</td>
+          </tr>
+          <tr>
+            <td>OpenAI DALL-E</td>
+            <td>~$1.5</td>
+            <td>비슷</td>
+            <td>platform.openai.com</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600; color:var(--gray-700)">인프라</td>
+            <td>Vercel Pro</td>
+            <td>~$22 <span class="badge badge-green">✅ 최적화 완료</span></td>
+            <td><strong style="color:var(--red)">~$280</strong></td>
+            <td>vercel.com/dashboard</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600; color:var(--gray-700)">무료 확인</td>
+            <td>Supabase / Upstash / Resend / Cloudflare / Slack</td>
+            <td>$0</td>
+            <td>$0</td>
+            <td>각 콘솔 직접 확인</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600; color:var(--gray-700)">기타</td>
+            <td>도메인 (age-doesnt-matter.com)</td>
+            <td>~$1.5</td>
+            <td>비슷</td>
+            <td>연간 환산</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="2"><strong>5월 합계</strong></td>
+            <td><strong>~$87/월</strong></td>
+            <td><strong>~$345/월</strong></td>
+            <td>💚 월 $258 절감</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="alert alert-green" style="margin-top:16px">
+        <span class="alert-icon">✅</span>
+        <div class="alert-content">
+          <strong>Vercel 최적화 효과 (ignoreCommand + Standard 머신)</strong>
+          4월 $280 → 5월 $22. 단 한 번의 설정 변경으로 월 $258 절감. 연간 환산 $3,096 절감 효과.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Anthropic 상세 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🤖</span>
+      <h2>2. Anthropic Claude — 상세 분석</h2>
+    </div>
+    <div class="section-body">
+
+      <div class="two-col" style="margin-bottom:24px">
+        <div class="info-box">
+          <div class="info-label">현재 잔액 (2026-05-11)</div>
+          <div class="info-val" style="color:var(--yellow)">$7.72</div>
+          <div class="info-sub">⚡ 약 4일치 잔액 — 이르면 5/13~14 재충전 예정</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">자동충전 설정</div>
+          <div class="info-val">잔액 $5 이하 → $15 충전</div>
+          <div class="info-sub">월 ~5회 재충전 = ~$55/월 소비</div>
+        </div>
+      </div>
+
+      <h3 class="subsection">청구 이력 (실측)</h3>
+      <table>
+        <thead>
+          <tr><th>날짜</th><th>유형</th><th>금액</th><th>비고</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2026-05-08</td><td>월별 청구서 (자동충전)</td><td><strong>$11.00</strong></td><td>잔액 $5 이하 → 충전</td></tr>
+          <tr><td>2026-05-02</td><td>월별 청구서 (자동충전)</td><td><strong>$11.02</strong></td><td>잔액 $5 이하 → 충전</td></tr>
+          <tr><td>2026-04-26</td><td>월별 청구서 (자동충전)</td><td><strong>$11.04</strong></td><td>잔액 $5 이하 → 충전</td></tr>
+          <tr><td>2026-04-16</td><td>크레딧 부여</td><td>$27.50</td><td>Anthropic 프로모션</td></tr>
+          <tr><td>2026-03-24</td><td>크레딧 부여</td><td>$27.50</td><td>Anthropic 프로모션</td></tr>
+          <tr><td>2026-03-23</td><td>크레딧 부여</td><td>$5.50</td><td>Anthropic 프로모션</td></tr>
+        </tbody>
+      </table>
+
+      <div class="alert alert-orange" style="margin-top:16px">
+        <span class="alert-icon">⚡</span>
+        <div class="alert-content">
+          <strong>크레딧 소진 시:</strong> <code>400 "Your credit balance is too low to access the Anthropic API"</code><br>
+          → BaseAgent catch → BotLog FAILED + Slack #긴급 → 콘텐츠 생성 전체 중단. 재시도 없음.
+        </div>
+      </div>
+
+      <h3 class="subsection">에이전트 모델 분포 (3-tier)</h3>
+      <table>
+        <thead>
+          <tr><th>등급</th><th>모델</th><th>환경변수</th><th>용도</th><th>일 실행 횟수</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="badge badge-gray">Light</span></td><td><code>claude-haiku-4-5</code></td><td>CLAUDE_MODEL_LIGHT</td><td>모니터링, 데이터 집계, 단순 판단</td><td>~50회</td></tr>
+          <tr><td><span class="badge badge-orange">Heavy</span></td><td><code>claude-sonnet-4-6</code></td><td>CLAUDE_MODEL_HEAVY</td><td>콘텐츠 생성, 분석, 의사결정</td><td>~28회</td></tr>
+          <tr><td><span class="badge badge-red">Strategic</span></td><td><code>claude-opus-4-7</code></td><td>CLAUDE_MODEL_STRATEGIC</td><td>주간 전략, 아키텍처 리뷰</td><td>월 2~3회</td></tr>
+          <tr class="highlight-row"><td colspan="3"><strong>합계 (일 ~80회)</strong></td><td>월 $55 예상 소비</td><td>일 ~$1.83</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- 섹션 3: API 장애 영향 -->
+  <!-- Vercel 최적화 성과 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">⚡</span>
+      <h2>3. Vercel 최적화 성과 — $280 → $22</h2>
+    </div>
+    <div class="section-body">
+      <div class="comparison-bar-wrap">
+        <div class="comparison-row">
+          <div class="comparison-label">4월 (최적화 전)</div>
+          <div class="comparison-bar-bg">
+            <div class="comparison-bar-fill bar-april">$280</div>
+          </div>
+          <div class="comparison-amount" style="color:var(--red)">$280</div>
+        </div>
+        <div class="comparison-row">
+          <div class="comparison-label">5월 (최적화 후)</div>
+          <div class="comparison-bar-bg">
+            <div class="comparison-bar-fill bar-may">$22</div>
+          </div>
+          <div class="comparison-amount" style="color:var(--green)">$22</div>
+        </div>
+      </div>
+
+      <h3 class="subsection">5월 청구 상세</h3>
+      <table>
+        <thead>
+          <tr><th>항목</th><th>금액</th><th>비고</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Pro Plan (Base)</td><td>$20.00</td><td>월 고정</td></tr>
+          <tr><td>Fluid Provisioned Memory</td><td>~$1.90</td><td>SSR 서버 메모리 사용량</td></tr>
+          <tr><td>Edge Network / 기타</td><td>~$0.02</td><td>무시 가능</td></tr>
+          <tr class="total-row"><td><strong>합계</strong></td><td><strong>~$21.92</strong></td><td>4월 대비 -$258 절감</td></tr>
+        </tbody>
+      </table>
+
+      <div class="alert alert-blue" style="margin-top:16px">
+        <span class="alert-icon">ℹ️</span>
+        <div class="alert-content">
+          <strong>최적화 방법:</strong> <code>vercel.json</code> ignoreCommand 설정 + Standard 머신 사용.<br>
+          4월 폭증 원인: Fluid Memory 과도 사용 + 매 커밋마다 전체 빌드 트리거.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OpenAI 상세 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🎨</span>
+      <h2>4. OpenAI DALL-E — 실측 상세</h2>
+    </div>
+    <div class="section-body">
+      <div class="two-col">
+        <div class="info-box">
+          <div class="info-label">4/1~5/11 누계 spend</div>
+          <div class="info-val">$2.13</div>
+          <div class="info-sub">5월 분 $0.12 / $20 한도 설정</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">이미지 생성 (DALL-E)</div>
+          <div class="info-val">43장</div>
+          <div class="info-sub">Responses/Chat: 971회, 1.21M 입력 토큰</div>
+        </div>
+      </div>
+      <div class="alert alert-yellow" style="margin-top:16px">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-content">
+          <strong>DALL-E 사용 현황:</strong> <code>agents/cafe/image-generator.ts</code>는 비활성화 완료.<br>
+          그러나 <code>agents/cmo/card-news/image-gen.ts</code>는 <strong>여전히 DALL-E 호출 중</strong> (매일 15:00 KST 카드뉴스 생성 시).
+          현재 월 ~$1.5 수준으로 낮지만 절감 가능 항목.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 무료 서비스 확인 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">✅</span>
+      <h2>5. 무료 확인 완료 서비스 (10개 직접 확인)</h2>
+    </div>
+    <div class="section-body">
+      <div class="free-grid">
+        <div class="free-card">
+          <div class="free-name">Supabase</div>
+          <div class="free-cost">$0</div>
+          <div class="free-note">Free Plan, 청구서 $0.00 확인</div>
+        </div>
+        <div class="free-card">
+          <div class="free-name">Upstash Redis</div>
+          <div class="free-cost">$0</div>
+          <div class="free-note">Free Tier, 25K cmds/일, $0.00</div>
+        </div>
+        <div class="free-card">
+          <div class="free-name">Resend</div>
+          <div class="free-cost">$0</div>
+          <div class="free-note">Free 3K 이메일/월, $0/mo</div>
+        </div>
+        <div class="free-card">
+          <div class="free-name">Cloudflare R2</div>
+          <div class="free-cost">$0</div>
+          <div class="free-note">이미지/영상 저장, 무료</div>
+        </div>
+        <div class="free-card">
+          <div class="free-name">Slack</div>
+          <div class="free-cost">$0</div>
+          <div class="free-note">무료 플랜, 6채널 운영</div>
+        </div>
+        <div class="free-card">
+          <div class="free-name">Perplexity</div>
+          <div class="free-cost">$0</div>
+          <div class="free-note">미사용 — 비용 없음</div>
+        </div>
+      </div>
+      <p style="font-size:13px; color:var(--gray-500); margin-top:16px">
+        + ChatGPT Plus 미구독 ($0) | 카카오 OAuth 무료 | Google GA4 무료 | Google Indexing API 무료 (일 200회 한도)
+      </p>
+    </div>
+  </div>
+
+  <!-- 비용 절감 포인트 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">💡</span>
+      <h2>6. 비용 절감 추가 포인트</h2>
+    </div>
+    <div class="section-body">
+      <div class="saving-list">
+        <div class="saving-item priority-high">
+          <div>
+            <div class="saving-badge">즉시 가능 — ~$1.5/월 절감</div>
+          </div>
+          <div>
+            <h4>DALL-E 카드뉴스 비활성화</h4>
+            <p>
+              <code>agents/cmo/card-news/image-gen.ts</code>에서 DALL-E 호출이 남아있음.
+              Cafe 이미지 생성기처럼 Gemini Playwright 이관 또는 Unsplash 폴백으로 전환하면
+              OpenAI 비용 거의 0으로 감소. 현재 월 ~$1.5 소비 중.
+            </p>
+          </div>
+        </div>
+        <div class="saving-item priority-high">
+          <div>
+            <div class="saving-badge">즉시 가능 — 충전 빈도 감소</div>
+          </div>
+          <div>
+            <h4>Anthropic 자동충전 금액 $15 → $50 상향</h4>
+            <p>
+              현재 잔액 $5 이하 → $15 충전 (5~6일마다 충전, 월 ~5회).
+              $5 이하 → $50 충전으로 변경 시 한 번 충전으로 약 25일 사용 가능.
+              충전 빈도 감소로 관리 부담 줄어듦. 비용 자체는 동일.
+              설정: console.anthropic.com → Billing → Auto-recharge.
+            </p>
+          </div>
+        </div>
+        <div class="saving-item priority-mid">
+          <div>
+            <div class="saving-badge mid">중기 검토</div>
+          </div>
+          <div>
+            <h4>Gemini 구독 vs 실제 TTS 사용량 비교</h4>
+            <p>
+              ₩11,000/월(~$8) 구독 중. 주 사용: 영상 나레이션 TTS (수동 실행).
+              Gemini TTS API 단가는 $0.10/1M chars — 60초 나레이션 약 300자 = $0.00003/편.
+              월 100편도 $0.003. 구독 필요성 재검토 권장.
+              (단, Gemini Imagen 스크래핑을 Google One 구독으로 사용 중이면 유지 필요)
+            </p>
+          </div>
+        </div>
+        <div class="saving-item priority-mid">
+          <div>
+            <div class="saving-badge mid">중기 검토 — ~$15/월 절감 가능</div>
+          </div>
+          <div>
+            <h4>단순 에이전트 Sonnet → Haiku 다운그레이드</h4>
+            <p>
+              단순 판단/집계 작업 에이전트 일부를 Haiku로 전환.
+              Haiku는 Sonnet 대비 약 10분의 1 비용.
+              BotLog 분석으로 Haiku 전환 가능 태스크 식별 후 순차 적용.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API 장애 영향 -->
   <div class="section">
     <div class="section-header">
       <span class="section-icon">🚨</span>
-      <h2>3. API 장애 시 상세 영향</h2>
+      <h2>7. API 장애 시 영향도</h2>
     </div>
     <div class="section-body">
       <div class="alert alert-blue" style="margin-bottom:20px">
         <span class="alert-icon">ℹ️</span>
-        <div class="alert-content">각 API가 <strong>완전히 중단</strong>되면 어떤 일이 벌어지는지 정리. 우선순위 높은 항목부터 확인.</div>
+        <div class="alert-content">각 API가 완전히 중단되면 어떤 일이 벌어지는지 정리. 우선순위 높은 항목부터 확인.</div>
       </div>
       <table>
         <thead>
@@ -617,6 +845,13 @@
             <td><span class="badge badge-red">❌ 충전 필요</span></td>
           </tr>
           <tr class="impact-major">
+            <td>Vercel (배포)</td>
+            <td>신규 배포 불가. 기존 서비스는 CDN 캐시로 유지</td>
+            <td>코드 배포 중단</td>
+            <td>현행 서비스는 정상. 신기능 불가</td>
+            <td><span class="badge badge-green">✅ CDN 캐시</span></td>
+          </tr>
+          <tr class="impact-major">
             <td>Slack</td>
             <td>알림 전송 실패. 에이전트는 계속 실행됨</td>
             <td>오류 발생해도 모름 — 모니터링 블라인드</td>
@@ -626,7 +861,7 @@
           <tr>
             <td>Cloudflare R2</td>
             <td>이미지/영상 업로드 실패. 기존 이미지는 정상</td>
-            <td>신규 매거진 이미지 없음, 프로필 사진 업로드 불가</td>
+            <td>신규 매거진 이미지 없음, 프로필 업로드 불가</td>
             <td>매거진 이미지 깨짐 (신규 글만)</td>
             <td><span class="badge badge-red">❌</span></td>
           </tr>
@@ -652,25 +887,18 @@
             <td><span class="badge badge-red">❌</span></td>
           </tr>
           <tr>
+            <td>Upstash Redis</td>
+            <td>Rate limit 체크 실패 → 에이전트 실행 가능성</td>
+            <td>API 중복 호출 위험</td>
+            <td>이상 없으나 내부 안전장치 해제</td>
+            <td><span class="badge badge-orange">⚠️ 부분</span></td>
+          </tr>
+          <tr>
             <td>OpenAI DALL-E</td>
-            <td>이미지 생성 실패 → Unsplash 폴백</td>
-            <td>매거진 이미지 품질 하락</td>
-            <td>이미지가 일관성 없어짐</td>
-            <td><span class="badge badge-green">✅ Unsplash 폴백</span></td>
-          </tr>
-          <tr>
-            <td>Perplexity AI</td>
-            <td>트렌드 리서치 실패</td>
-            <td>Claude만으로 트렌드 생성</td>
-            <td>매거진 주제가 덜 트렌디</td>
-            <td><span class="badge badge-green">✅ Claude 폴백</span></td>
-          </tr>
-          <tr>
-            <td>Google GA4</td>
-            <td>CDO/CEO 리포트 데이터 없음</td>
-            <td>KPI 대시보드 공백</td>
-            <td>Slack 리포트에 데이터 없음</td>
-            <td><span class="badge badge-green">✅ null 폴백</span></td>
+            <td>카드뉴스 이미지 생성 실패</td>
+            <td>카드뉴스 이미지 없음</td>
+            <td>SNS 카드뉴스 품질 하락</td>
+            <td><span class="badge badge-gray">수동 대응</span></td>
           </tr>
           <tr>
             <td>Kakao OAuth</td>
@@ -680,23 +908,23 @@
             <td><span class="badge badge-red">❌ 카카오 측 복구 필요</span></td>
           </tr>
           <tr>
-            <td>Whisper / Gemini TTS</td>
-            <td>영상 자막/나레이션 생성 실패 (수동이라 즉각 영향 없음)</td>
-            <td>무음 또는 자막 없는 영상</td>
+            <td>Gemini TTS</td>
+            <td>영상 나레이션 생성 실패 (수동이라 즉각 영향 없음)</td>
+            <td>무음 영상</td>
             <td>영상 품질 하락</td>
             <td><span class="badge badge-gray">수동 프로세스</span></td>
           </tr>
           <tr>
             <td>Facebook / Band</td>
-            <td colspan="4" style="color:var(--gray-500)">현재 비활성화 상태 — 영향 없음</td>
+            <td colspan="4" style="color:var(--gray-500)">현재 비활성화 상태 — 영향 없음 (Facebook 코드 차단, Band API 심사중)</td>
           </tr>
         </tbody>
       </table>
 
       <h3 class="subsection" style="margin-top:24px">장애 우선순위 (빠른 조치 순서)</h3>
       <div class="priority-list">
-        <div class="priority-item p1"><div class="num">1</div><div><h4>🔴 DB 장애</h4><p>서비스 완전 마비 → 즉시 조치 (Supabase 상태 확인)</p></div></div>
-        <div class="priority-item p1"><div class="num">2</div><div><h4>🔴 Claude 크레딧 소진</h4><p>콘텐츠 생성 전체 중단 → 즉시 충전 (console.anthropic.com)</p></div></div>
+        <div class="priority-item p1"><div class="num">1</div><div><h4>🔴 DB 장애</h4><p>서비스 완전 마비 → 즉시 조치 (status.supabase.com 확인)</p></div></div>
+        <div class="priority-item p1"><div class="num">2</div><div><h4>🔴 Claude 크레딧 소진</h4><p>콘텐츠 생성 전체 중단 → 즉시 충전 (console.anthropic.com → Billing)</p></div></div>
         <div class="priority-item p2"><div class="num">3</div><div><h4>🟠 Slack 장애</h4><p>모니터링 블라인드 → GitHub Actions 로그로 대체 확인</p></div></div>
         <div class="priority-item p2"><div class="num">4</div><div><h4>🟠 SNS API 장애</h4><p>채널 침묵 → 다음 날까지 허용 가능. 수동 포스팅으로 대체</p></div></div>
         <div class="priority-item p3"><div class="num">5</div><div><h4>🔵 나머지</h4><p>폴백 있거나 영향 제한적 → 모니터링 후 순차 처리</p></div></div>
@@ -704,110 +932,11 @@
     </div>
   </div>
 
-  <!-- 섹션 4: CFO 공백 -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">🔓</span>
-      <h2>4. CFO 자동 차단 미구현 — 구조적 공백</h2>
-    </div>
-    <div class="section-body">
-      <div class="alert alert-red">
-        <span class="alert-icon">🚨</span>
-        <div class="alert-content">
-          <strong>헌법에는 "$50 초과 시 즉시 잠금" 정책이 있지만 cost-tracker.ts에 실제 구현 코드가 없다.</strong>
-          $50 초과해도 에이전트는 계속 실행된다. 정책은 선언문일 뿐, 집행자가 없다.
-        </div>
-      </div>
-      <h3 class="subsection">실제 발생한 일</h3>
-      <p style="font-size:14px; line-height:1.8">일 $3.77 소비 × 7일 = $26.39 → $27.50 grant 소진 → <strong>-$0.17 초과 → Claude API 중단</strong><br>
-      CFO는 감지했겠지만 자동으로 아무것도 하지 않았다.</p>
-
-      <h3 class="subsection">해결: cost-tracker.ts에 추가해야 할 코드</h3>
-      <pre>if (monthlyCost &gt;= MONTHLY_HARD_LIMIT) {
-  await db.systemSetting.upsert({
-    where: { key: 'automation_status' },
-    update: { value: 'LOCKED' },
-    create: { key: 'automation_status', value: 'LOCKED' }
-  });
-  await notifySlack('system',
-    `🚨 월 비용 $${monthlyCost} 초과 → 에이전트 자동 잠금`
-  );
-}</pre>
-    </div>
-  </div>
-
-  <!-- 섹션 5: 지속가능한 관리 -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">🗺️</span>
-      <h2>5. 지속가능한 비용 관리 로드맵</h2>
-    </div>
-    <div class="section-body">
-      <div class="roadmap">
-        <div class="roadmap-col short">
-          <div class="roadmap-col-header">단기 — 지금 당장 (1주)</div>
-          <div class="roadmap-col-body">
-            <div class="roadmap-item">
-              <strong>Auto-reload $10 → $50</strong>
-              <span>console.anthropic.com → Billing. 2.5일 → 12.5일 버퍼 확보</span>
-            </div>
-            <div class="roadmap-item">
-              <strong>Perplexity 비용 확인</strong>
-              <span>Perplexity 콘솔에서 월 청구액 조회</span>
-            </div>
-            <div class="roadmap-item">
-              <strong>Facebook 상태 정리</strong>
-              <span>활성화 예정 없으면 관련 env 주석 처리</span>
-            </div>
-          </div>
-        </div>
-        <div class="roadmap-col mid">
-          <div class="roadmap-col-header">중기 — 1개월 이내</div>
-          <div class="roadmap-col-body">
-            <div class="roadmap-item">
-              <strong>CFO 자동 차단 구현</strong>
-              <span>cost-tracker.ts에 LOCKED 로직 추가. 작업 1시간</span>
-            </div>
-            <div class="roadmap-item">
-              <strong>Sonnet 일부 → Haiku</strong>
-              <span>단순 작업 에이전트 다운그레이드 → ~$15/월 절감</span>
-            </div>
-            <div class="roadmap-item">
-              <strong>Opus 격주 실행</strong>
-              <span>weekly-report, social-strategy 격주로 → ~$8/월 절감</span>
-            </div>
-            <div class="roadmap-item">
-              <strong>X 재시도 로직</strong>
-              <span>429 에러 시 exponential backoff. 작업 30분</span>
-            </div>
-          </div>
-        </div>
-        <div class="roadmap-col long">
-          <div class="roadmap-col-header">장기 — 분기별</div>
-          <div class="roadmap-col-body">
-            <div class="roadmap-item">
-              <strong>월 $50 이하 유지 목표</strong>
-              <span>Haiku 전환 + Opus 최소화로 헌법 한도 준수</span>
-            </div>
-            <div class="roadmap-item">
-              <strong>일별 비용 대시보드</strong>
-              <span>CFO → Slack #리포트에 일별 비용 표 자동 발송</span>
-            </div>
-            <div class="roadmap-item">
-              <strong>Band API 활성화</strong>
-              <span>심사 통과 후 즉시 크론 연결 (50~60대 주 플랫폼)</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 섹션 6: 비상 정지 -->
+  <!-- 비상 정지 -->
   <div class="section">
     <div class="section-header">
       <span class="section-icon">🛑</span>
-      <h2>6. 비상 정지 방법</h2>
+      <h2>8. 비상 정지 방법</h2>
     </div>
     <div class="section-body">
       <div class="alert alert-orange" style="margin-bottom:16px">
@@ -815,9 +944,8 @@
         <div class="alert-content"><strong>비용 폭주 또는 심각한 장애 발생 시 즉시 실행</strong></div>
       </div>
       <pre># 1. 에이전트 전체 잠금 (모니터링 5개만 유지)
-# agents/core/constitution.yaml 수정:
-automation_status: "LOCKED"
-# → $74/월 → $1/월 즉시 전환
+# DB에서 automation_status = 'LOCKED' 설정
+# → Claude API 호출 거의 없음. $55/월 → ~$0/월 즉시 전환
 
 # 2. 개별 workflow 비활성화
 gh workflow disable agents-daily.yml
@@ -830,33 +958,26 @@ gh workflow list</pre>
       <p style="font-size:13px; color:var(--gray-500); margin-top:8px">
         <strong>LOCKED 시 유지되는 에이전트:</strong> cto:health-check / error-monitor / security-audit / qa-verify / cdo:anomaly-detector
       </p>
-    </div>
-  </div>
 
-  <!-- 섹션 7: 주간 체크리스트 -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">✅</span>
-      <h2>7. 주간 모니터링 체크리스트</h2>
-    </div>
-    <div class="section-body">
-      <p style="font-size:13px; color:var(--gray-500); margin-bottom:16px">매주 월요일 (Arch Review 실행 시)</p>
-      <ul class="checklist">
-        <li>Anthropic 크레딧 잔액 &gt; $30 (console.anthropic.com/billing)</li>
-        <li>OpenAI 크레딧 잔액 &gt; $5 (platform.openai.com/billing)</li>
-        <li>BotLog CAFE_CRAWLER 성공률 ≥ 80%</li>
-        <li>TrendAnalyzer hotTopics ≥ 5개 (일주일 평균)</li>
-        <li>매거진 발행 ≥ 1건/주 (점수 미달 갭 없는지)</li>
-        <li>API 월 누적 비용 &lt; $40 (경고 임계값)</li>
-        <li>X / Threads / Instagram 토큰 만료 확인 (Meta 60일)</li>
-        <li>페르소나 글 다양성 확인 (한 페르소나 과도 반복 없는지)</li>
-        <li>Perplexity 월 청구액 확인</li>
-      </ul>
+      <h3 class="subsection">주간 확인 체크리스트</h3>
+      <table>
+        <thead>
+          <tr><th>확인 항목</th><th>기준값</th><th>위치</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Anthropic 크레딧 잔액</td><td>&gt; $10 유지 권장</td><td>console.anthropic.com/billing</td></tr>
+          <tr><td>Vercel 청구 월누계</td><td>&lt; $30 정상 / $50+ 이상</td><td>vercel.com/dashboard/usage</td></tr>
+          <tr><td>OpenAI 청구 월누계</td><td>&lt; $5 정상</td><td>platform.openai.com/billing</td></tr>
+          <tr><td>Upstash Redis 커맨드 사용량</td><td>&lt; 25K/일 (무료 한도)</td><td>console.upstash.com</td></tr>
+          <tr><td>SNS 토큰 만료 확인</td><td>Instagram/Threads 60일 주기</td><td>Meta for Developers</td></tr>
+          <tr><td>BotLog CAFE_CRAWLER 성공률</td><td>≥ 80%</td><td>Slack #운영 또는 어드민</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
   <div class="footer">
-    <p>docs/api-cost-audit.md | 다음 업데이트: 신규 API 추가 시 또는 분기별 비용 검토 시</p>
+    <p>docs/api-cost-audit.html &nbsp;|&nbsp; 실측 기준: 2026-05-11 &nbsp;|&nbsp; 다음 업데이트: 신규 서비스 추가 시 또는 분기별 비용 검토 시</p>
   </div>
 
 </div>
