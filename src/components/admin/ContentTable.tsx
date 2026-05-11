@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { adminUpdatePostStatus, adminTogglePin, adminBulkAction, adminSetPostPromotionLevel } from '@/lib/actions/admin'
+import { adminUpdatePostStatus, adminTogglePin, adminBulkAction, adminSetPostPromotionLevel, adminToggleFeatured } from '@/lib/actions/admin'
 import type { PromotionLevel } from '@/generated/prisma/client'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 
@@ -37,6 +37,7 @@ interface Post {
   source: string
   promotionLevel: string
   isPinned: boolean
+  isFeatured: boolean
   viewCount: number
   likeCount: number
   commentCount: number
@@ -229,6 +230,7 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
                   </td>
                   <td className="max-w-xs truncate px-3 py-3 font-medium text-zinc-900">
                     {post.isPinned && <span className="mr-1">📌</span>}
+                    {post.isFeatured && <span className="mr-1">⭐</span>}
                     {PROMOTION_BADGE[post.promotionLevel]}
                     {SOURCE_BADGE[post.source]}
                     {post.title}
@@ -257,6 +259,14 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
                           startTransition(() => adminTogglePin(post.id, !post.isPinned))
                         }
                         disabled={isPending}
+                      />
+                      <ActionButton
+                        label={post.isFeatured ? '⭐해제' : '⭐집중'}
+                        onClick={() =>
+                          startTransition(() => adminToggleFeatured(post.id, !post.isFeatured))
+                        }
+                        disabled={isPending}
+                        variant={post.isFeatured ? 'warning' : 'default'}
                       />
                       {post.status === 'PUBLISHED' ? (
                         <>

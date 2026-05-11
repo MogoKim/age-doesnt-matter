@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
-import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP } from './generator.js'
+import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP, generateKillerPost, generateKillerComments } from './generator.js'
 import { scheduleChainFromPost } from './controversy-chain.js'
 import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
 import type { ControversyTopic } from '../core/intelligence.js'
@@ -714,16 +714,252 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
  * 집중 좋아요 라운드 — HOT 문턱(10) 근처 글에 좋아요 집중 투입
  * 하루 최대 2-3개 글만 타겟 → 자연스러움 유지
  */
+export async function runKillerPostCycle(): Promise<void> {
+  // 7일 이내 사용한 CafePost ID 조회
+  const recentLogs = await prisma.botLog.findMany({
+    where: {
+      action: 'KILLER_POST_GENERATED',
+      createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+    },
+    select: { details: true, createdAt: true },
+  })
+
+  const usedCafePostIds = recentLogs
+    .map(l => {
+      try { return (JSON.parse(l.details as string) as { cafePostId: string }).cafePostId }
+      catch { return null }
+    })
+    .filter((id): id is string => id !== null)
+
+  // 오늘 이미 2개 이상 생성됐으면 스킵
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const todayKillerCount = recentLogs.filter(l => new Date(l.createdAt) >= todayStart).length
+  if (todayKillerCount >= 2) {
+    console.log('[KillerPost] 오늘 이미 2개 생성됨 — 스킵')
+    return
+  }
+
+  // 후보 선택: qualityScore≥7, viralType 있음, 3일 이내, 미사용
+  const candidate = await prisma.cafePost.findFirst({
+    where: {
+      isUsable: true,
+      aiAnalyzed: true,
+      qualityScore: { gte: 7 },
+      viralType: { not: null },
+      crawledAt: { gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+      id: { notIn: usedCafePostIds },
+    },
+    select: { id: true, title: true, content: true, desireCategory: true, topComments: true },
+    orderBy: { qualityScore: 'desc' },
+  })
+
+  if (!candidate) {
+    console.log('[KillerPost] 적합한 CafePost 없음')
+    return
+  }
+
+  const killerPersonaId = pickKillerPersona(candidate.desireCategory)
+  const userId = await getBotUser(killerPersonaId)
+
+  const { title, content, boardType } = await generateKillerPost(candidate, killerPersonaId)
+  const htmlContent = `<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
+
+  const newPost = await prisma.post.create({
+    data: {
+      title,
+      content: htmlContent,
+      summary: content.replace(/\n/g, ' ').slice(0, 150),
+      boardType: boardType as 'STORY' | 'HUMOR' | 'LIFE2',
+      authorId: userId,
+      source: 'BOT',
+      status: 'PUBLISHED',
+      publishedAt: new Date(),
+      isFeatured: true,
+      featuredAt: new Date(),
+      cafePostId: candidate.id,
+    },
+    select: { id: true },
+  })
+
+  console.log(`[KillerPost] 생성 완료: "${title}" (postId=${newPost.id})`)
+
+  await safeBotLog({
+    botType: 'SEED',
+    action: 'KILLER_POST_GENERATED',
+    status: 'SUCCESS',
+    details: JSON.stringify({
+      postId: newPost.id,
+      cafePostId: candidate.id,
+      personaId: killerPersonaId,
+      date: new Date().toISOString().slice(0, 10),
+    }),
+  })
+
+  // 댓글 파동 3개 예약 (10분, 1시간, 3시간 후)
+  const now = new Date()
+  await prisma.botLog.createMany({
+    data: [
+      {
+        botType: 'SEED',
+        action: 'KILLER_COMMENT_WAVE_PENDING',
+        status: 'PENDING',
+        details: JSON.stringify({
+          postId: newPost.id,
+          cafePostId: candidate.id,
+          wave: 1, personaCount: 3,
+          scheduledAt: new Date(now.getTime() + 10 * 60 * 1000).toISOString(),
+        }),
+      },
+      {
+        botType: 'SEED',
+        action: 'KILLER_COMMENT_WAVE_PENDING',
+        status: 'PENDING',
+        details: JSON.stringify({
+          postId: newPost.id,
+          cafePostId: candidate.id,
+          wave: 2, personaCount: 4,
+          scheduledAt: new Date(now.getTime() + 60 * 60 * 1000).toISOString(),
+        }),
+      },
+      {
+        botType: 'SEED',
+        action: 'KILLER_COMMENT_WAVE_PENDING',
+        status: 'PENDING',
+        details: JSON.stringify({
+          postId: newPost.id,
+          cafePostId: candidate.id,
+          wave: 3, personaCount: 3,
+          scheduledAt: new Date(now.getTime() + 3 * 60 * 60 * 1000).toISOString(),
+        }),
+      },
+    ],
+  })
+}
+
+function pickKillerPersona(desireCategory: string | null): string {
+  const desireToHeavy: Record<string, string[]> = {
+    HEALTH:   ['A', 'H'],
+    FAMILY:   ['E'],
+    MONEY:    ['B'],
+    CARE:     ['AJ'],
+    RETIRE:   ['G'],
+    HOBBY:    ['M', 'F'],
+    MEANING:  ['I'],
+    FOOD:     ['J'],
+    RELATION: ['A'],
+    JOB:      ['B'],
+    HUMOR:    ['G'],
+    ENTERTAIN:['G'],
+    FREEDOM:  ['G'],
+  }
+  const candidates = desireToHeavy[desireCategory ?? ''] ?? ['A', 'E', 'H']
+  return candidates[Math.floor(Math.random() * candidates.length)]
+}
+
+export async function processPendingKillerCommentWaves(): Promise<void> {
+  const now = new Date()
+
+  const pendingWaves = await prisma.botLog.findMany({
+    where: {
+      action: 'KILLER_COMMENT_WAVE_PENDING',
+      status: 'PENDING',
+    },
+    select: { id: true, details: true },
+  })
+
+  const dueWaves = pendingWaves.filter(w => {
+    try {
+      const d = JSON.parse(w.details as string) as { scheduledAt: string }
+      return new Date(d.scheduledAt) <= now
+    } catch { return false }
+  })
+
+  for (const wave of dueWaves) {
+    const data = JSON.parse(wave.details as string) as {
+      postId: string; cafePostId: string; wave: number; personaCount: number
+    }
+
+    const cafePost = await prisma.cafePost.findUnique({
+      where: { id: data.cafePostId },
+      select: { id: true, title: true, topComments: true },
+    })
+    if (!cafePost) continue
+
+    const personaIds = pickKillerCommentPersonas(data.wave, data.personaCount)
+    const comments = await generateKillerComments(cafePost, personaIds)
+
+    const post = await prisma.post.findUnique({
+      where: { id: data.postId },
+      select: { isFeatured: true },
+    })
+    const cap = post?.isFeatured ? 10 : 3
+
+    const botCount = await prisma.comment.count({
+      where: { postId: data.postId, author: { email: { endsWith: '@unao.bot' } } },
+    })
+
+    let inserted = 0
+    for (const { personaId, content } of comments) {
+      if (!content || content.length < 5) continue
+      if (botCount + inserted >= cap) break
+
+      const authorId = await getBotUser(personaId)
+      const existing = await prisma.comment.findFirst({
+        where: { postId: data.postId, authorId },
+      })
+      if (existing) continue
+
+      await prisma.$transaction([
+        prisma.comment.create({ data: { postId: data.postId, authorId, content } }),
+        prisma.post.update({
+          where: { id: data.postId },
+          data: { commentCount: { increment: 1 }, lastEngagedAt: now },
+        }),
+      ])
+      inserted++
+    }
+
+    await prisma.botLog.update({
+      where: { id: wave.id },
+      data: { status: 'SUCCESS' },
+    })
+
+    if (inserted > 0) {
+      console.log(`[KillerPost] 파동${data.wave} 댓글 ${inserted}개 투입 완료 (postId=${data.postId.slice(0, 8)})`)
+    }
+  }
+}
+
+function pickKillerCommentPersonas(wave: number, count: number): string[] {
+  const groups = [
+    ['A', 'E', 'K'],
+    ['BF', 'BC', 'W', 'Y'],
+    ['BG', 'U', 'BH'],
+  ]
+  return groups[(wave - 1) % groups.length].slice(0, count)
+}
+
 async function focusedLikeRound(): Promise<number> {
   const nearHot = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
-      promotionLevel: 'NORMAL',
-      likeCount: { gte: 5, lt: 10 },
-      createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+      promotionLevel: { not: 'HALL_OF_FAME' },
+      OR: [
+        {
+          isFeatured: true,
+          createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+        },
+        {
+          isFeatured: false,
+          promotionLevel: 'NORMAL',
+          likeCount: { gte: 5, lt: 10 },
+          createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+        },
+      ],
     },
-    orderBy: { likeCount: 'desc' },
-    take: 3,
+    orderBy: [{ isFeatured: 'desc' }, { likeCount: 'desc' }],
+    take: 5,
     select: { id: true, authorId: true, likeCount: true },
   })
 
@@ -773,6 +1009,10 @@ export async function main() {
   const now = new Date()
   const kstHour = (now.getUTCHours() + 9) % 24
   const hour = kstHour.toString().padStart(2, '0')
+
+  // 매 시간 실행 시작에 댓글 파동 처리
+  await processPendingKillerCommentWaves()
+
   const activities = await buildDailySchedule(hour)
 
   if (!activities || activities.length === 0) {
@@ -794,9 +1034,9 @@ export async function main() {
     }
   }
 
-  // 21시: 집중 좋아요 라운드
+  // 14시, 21시: 집중 좋아요 라운드
   let focusedCount = 0
-  if (hour === '21') {
+  if (hour === '14' || hour === '21') {
     focusedCount = await focusedLikeRound()
     if (focusedCount > 0) {
       console.log(`[Seed] 집중 좋아요 ${focusedCount}개 투입 완료`)

@@ -320,8 +320,12 @@ function buildTrendContext(
 내용 직접 인용은 금지, 말투와 어휘 스타일만 따라하세요.`
 }
 
-/** 상위 10명 페르소나 — Sonnet 사용 (글 품질 우선, 월 $3~5 추가) */
-const HEAVY_PERSONAS = new Set(['A', 'E', 'H', 'B', 'M', 'F', 'I', 'G', 'J', 'AJ'])
+/** 상위 18명 페르소나 — Sonnet 사용 (글 품질 우선 + 킬러 댓글 논란형 포함) */
+const HEAVY_PERSONAS = new Set([
+  'A', 'E', 'H', 'B', 'M', 'F', 'I', 'G', 'J', 'AJ',  // 기존 10명
+  'BF', 'BG', 'BH', 'BC', 'BD',                         // 논란/반전형 5명
+  'U', 'V', 'W',                                          // 황당/현실형 3명
+])
 
 function getModelForPersona(personaId: string): string {
   return HEAVY_PERSONAS.has(personaId)
@@ -426,11 +430,19 @@ function extractTopicKeywords(titles: string[]): string[] {
     .map(([word]) => word)
 }
 
-/** 글 길이 다양화 — 짧은/보통 글 랜덤 선택 (300자 초과 옵션 제거 — 에세이 구조 유발) */
+/** 글 길이 다양화 — 짧은/보통/긴 글 랜덤 선택 (HEAVY 페르소나는 30% 확률로 에세이형 가능) */
 const POST_LENGTHS = [
   { instruction: '60~120자, 짧고 가벼운 1문단', maxTokens: 350 },
   { instruction: '150~280자, 2~3문장으로 나눠서', maxTokens: 700 },
+  { instruction: '280~450자, 에세이형 3~4문단, 구체적 상황 묘사 포함', maxTokens: 1100 },
 ]
+
+function pickPostLength(personaId: string) {
+  if (HEAVY_PERSONAS.has(personaId) && Math.random() < 0.30) {
+    return POST_LENGTHS[2]
+  }
+  return POST_LENGTHS[Math.floor(Math.random() * 2)]
+}
 
 /** 페르소나별 강화된 시스템 프롬프트 생성 */
 // 클러스터별 오타/표현 패턴 (wgang + dlxogns01 실제 게시물 40개 분석 기반)
@@ -564,7 +576,7 @@ export async function generatePost(
   }
   const boardCategories = categoryMap[board] ?? ['기타']
 
-  const length = POST_LENGTHS[Math.floor(Math.random() * POST_LENGTHS.length)]
+  const length = pickPostLength(personaId)
 
   // 오늘의 CafeTrend 심리 프로파일 주입
   const trend = await getLatestTrend()
@@ -658,6 +670,7 @@ export async function generatePost(
       content: `오늘 "${topic}" 주제로 커뮤니티 글 하나만 써줘.${entertainHint}${recentHint}${exampleBlock}${controversyBlock}${variationBlock}
 
 글이 시작되는 순간이 중요해: 지금 막 어떤 일이 있었거나 어떤 생각이 떠올라서 바로 그 장면부터 써줘. "오늘", "아까", "방금", "요즘"으로 바로 시작.
+제목도 반드시 "오늘", "아까", "진짜", "어휴", "요즘", "방금"으로 시작하는 현장감 있는 구어체로.
 첫 줄에 제목 (구어체, 15~25자), 빈 줄 하나, 그 다음 본문 (${length.instruction}).
 제목/카테고리/본문 레이블 붙이지 말 것.`,
     }],
@@ -679,6 +692,127 @@ export async function generatePost(
     category: validCategory,
     variationType,
   }
+}
+
+/** 킬러 포스트 생성 — CafePost 원문 95% 유지, 어미·익명화 5%만 변형 */
+export async function generateKillerPost(
+  cafePost: {
+    id: string
+    title: string
+    content: string
+    desireCategory: string | null
+  },
+  personaId: string,
+): Promise<{ title: string; content: string; boardType: string; cafePostId: string }> {
+  const p = getPersona(personaId)
+  const trend = await getLatestTrend()
+  const trendContext = buildTrendContext(trend, personaId, p)
+  const system = getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'post') + trendContext
+
+  const userMessage = `아래 원문을 우나어 커뮤니티에 내 이름으로 올릴 수 있게 옮겨줘.
+이 글을 쓴 사람인 것처럼 자연스럽게.
+
+[원문 제목]: ${cafePost.title}
+[원문 본문]:
+${cafePost.content}
+
+■ 반드시 유지 (95%):
+  - 이야기 전개 순서와 구조 (앞뒤 바꾸기 금지)
+  - 갈등·배신·황당함·억울함·반전 포인트 (이게 핵심)
+  - 감정 흐름의 아크 (분노→허탈, 기대→실망 등)
+  - 결말과 현재 감정 상태
+  - 핵심 대사, 상황 묘사, 숫자/금액 등 구체적 사실
+
+■ 바꿔도 되는 것 (5%):
+  - 첫 문장 시작 표현 1개 ("오늘", "아까", "진짜", "어휴")
+  - 지명·인명·직장명 → 익명화 ("OO구", "남편", "회사")
+  - 페르소나 말투 어미 1~2개 교체
+
+■ 절대 금지:
+  - 새 에피소드·반전 추가 금지
+  - 교훈·조언·맺음말 새로 붙이기 금지
+  - 내용 압축·요약 금지 (원문과 비슷한 분량 유지)
+  - AI답게 정리·구조화 금지
+
+출력: 제목(15~25자) → 빈줄 → 본문. 레이블 없음.`
+
+  const response = await client.messages.create({
+    model: process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-5',
+    max_tokens: 1500,
+    system,
+    messages: [{ role: 'user', content: userMessage }],
+  })
+
+  const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+  const lines = raw.split('\n')
+  const title = stripMarkdown(lines[0].replace(/^[#*\-•]+\s*/, '').trim()).slice(0, 50)
+  const content = lines.slice(2).join('\n').trim()
+  const boardType = killerDesireToBoardType(cafePost.desireCategory)
+
+  return { title, content, boardType, cafePostId: cafePost.id }
+}
+
+function killerDesireToBoardType(desire: string | null): string {
+  if (desire === 'HUMOR' || desire === 'ENTERTAIN') return 'HUMOR'
+  return 'STORY'
+}
+
+/** 킬러 댓글 생성 — CafePost topComments 99% 유지, 어미 1개만 변형 */
+export async function generateKillerComments(
+  cafePost: {
+    id: string
+    title: string
+    topComments: unknown
+  },
+  personaIds: string[],
+): Promise<Array<{ personaId: string; content: string }>> {
+  const rawComments = (cafePost.topComments as Array<{
+    content: string
+    likeCount?: number
+  }> | null) ?? []
+
+  if (rawComments.length === 0) return []
+
+  const topN = rawComments
+    .sort((a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0))
+    .slice(0, Math.min(personaIds.length, 10))
+
+  const userMessage = `아래 원문 댓글들을 각각 다른 사람이 쓴 것처럼 99% 그대로 옮겨줘.
+
+[글 제목]: ${cafePost.title}
+[원문 댓글 ${topN.length}개]:
+${topN.map((c, i) => `${i + 1}. ${c.content}`).join('\n')}
+
+■ 유지 (99%):
+  - 댓글 핵심 내용, 공감/반감 방향
+  - 논란 포인트, 핵심 단어, 감탄사
+
+■ 바꿔도 되는 것 (1% 이내, 댓글 1개당 1가지만):
+  - 어미 1개 교체 (-아 → -아요, -네 → -네요)
+  - 감탄사 1개 교체 (ㅠㅠ↔ㅜㅜ, 어머→아이고, 진짜→정말)
+
+■ 절대 금지: 내용 추가, 공감 방향 변경, 새 의견 삽입, 압축
+
+출력: 번호 없이 변환된 댓글만, 한 줄씩, 정확히 ${topN.length}줄`
+
+  const response = await client.messages.create({
+    model: process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5',
+    max_tokens: 600,
+    system: '댓글을 최소한만 변형하여 자연스럽게 옮겨 쓰는 역할. 내용 추가 절대 금지.',
+    messages: [{ role: 'user', content: userMessage }],
+  })
+
+  const lines = (response.content[0].type === 'text' ? response.content[0].text : '')
+    .trim()
+    .split('\n')
+    .map(l => l.replace(/^\d+\.\s*/, '').trim())
+    .filter(l => l.length > 0)
+    .slice(0, topN.length)
+
+  return lines.map((content, i) => ({
+    personaId: personaIds[i] ?? personaIds[0],
+    content,
+  }))
 }
 
 /** 댓글 생성 */

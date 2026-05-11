@@ -373,6 +373,11 @@ model Post {
   isControversySeed  Boolean  @default(false)  // DNA 기반 변주 시드글 여부
   controversyChainId String?                    // 같은 논쟁 스레드 UUID
 
+  // 킬러 컨텐츠 마킹
+  isFeatured    Boolean   @default(false)  // 어드민/자동 마킹 → 집중 지원 대상
+  featuredAt    DateTime?                   // 마킹 시각
+  cafePostId    String?                     // 원문 CafePost ID (킬러 글만)
+
   // 관계
   author        User           @relation(fields: [authorId], references: [id])
   jobDetail     JobDetail?

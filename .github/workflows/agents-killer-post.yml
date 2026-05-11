@@ -1,0 +1,35 @@
+name: Agents — Killer Post
+on:
+  schedule:
+    # 09:10 KST = 00:10 UTC — 아침 DEEP 크롤링(08:30) 완료 후 킬러 포스트 생성
+    - cron: "10 0 * * *"
+    # 21:10 KST = 12:10 UTC — 저녁 DEEP 크롤링(20:00) 완료 후 킬러 포스트 생성
+    - cron: "10 12 * * *"
+  workflow_dispatch:
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+  SLACK_CHANNEL_DASHBOARD: ${{ secrets.SLACK_CHANNEL_DASHBOARD }}
+  SLACK_CHANNEL_REPORT: ${{ secrets.SLACK_CHANNEL_REPORT }}
+  SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}
+  SLACK_CHANNEL_SYSTEM: ${{ secrets.SLACK_CHANNEL_SYSTEM }}
+  SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
+  SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
+
+jobs:
+  killer-post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+      - run: cd agents && npx tsx cron/runner.ts seed killer-post

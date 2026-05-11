@@ -46,6 +46,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cdo:kpi-collector': () => import('../cdo/kpi-collector.js').then(() => {}),
   'cdo:anomaly-detector': () => import('../cdo/anomaly-detector.js').then(() => {}),
   'seed:scheduler': () => import('../seed/scheduler.js').then(m => m.main()),
+  'seed:killer-post': () => import('../seed/scheduler.js').then(m => m.runKillerPostCycle()),
   'seed:micro': () => import('../seed/micro-scheduler.js').then(m => m.main()),
   // LOCAL ONLY — run-pipeline.ts는 네이버 크롤링 통합 파이프라인, launchd로 로컬 실행
   // GitHub Actions 실행 불가 (네이버 IP 차단 + headless 탐지). 수동 실행만.

@@ -160,6 +160,33 @@ export async function adminTogglePin(postId: string, isPinned: boolean) {
   revalidatePath('/admin/content')
 }
 
+export async function adminToggleFeatured(postId: string, isFeatured: boolean) {
+  const admin = await requireAdmin()
+
+  const existing = await prisma.post.findUnique({ where: { id: postId } })
+
+  await prisma.post.update({
+    where: { id: postId },
+    data: {
+      isFeatured,
+      featuredAt: isFeatured ? new Date() : null,
+    },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: isFeatured ? 'POST_FEATURED_ON' : 'POST_FEATURED_OFF',
+      targetType: 'POST',
+      targetId: postId,
+      before: existing ? JSON.stringify({ isFeatured: existing.isFeatured }) : undefined,
+      after: JSON.stringify({ isFeatured }),
+    },
+  })
+
+  revalidatePath('/admin/content')
+}
+
 export async function adminBulkAction(
   postIds: string[],
   action: 'HIDDEN' | 'DELETED'

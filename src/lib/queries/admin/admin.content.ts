@@ -41,6 +41,7 @@ export async function getContentList(options: ContentListOptions = {}) {
       source: true,
       promotionLevel: true,
       isPinned: true,
+      isFeatured: true,
       viewCount: true,
       likeCount: true,
       commentCount: true,
