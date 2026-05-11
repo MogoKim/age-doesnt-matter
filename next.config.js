@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  poweredByHeader: false,
   env: {
     NEXT_PUBLIC_BUILD_VERSION: (() => {
       const date = new Date().toISOString().slice(0, 10).replace(/-/g, '.')

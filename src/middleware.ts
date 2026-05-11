@@ -43,7 +43,7 @@ function addAnonSession(response: NextResponse, request: NextRequest): NextRespo
 
 // Edge function 인스턴스 내 CUID→slug 캐시 (TTL 60초)
 const slugCache = new Map<string, { slug: string | null; expiresAt: number }>()
-const SLUG_CACHE_TTL_MS = 300_000
+const SLUG_CACHE_TTL_MS = 3_600_000  // 1시간 — slug는 생성 후 불변
 
 async function resolveSlug(cuid: string): Promise<string | null> {
   const now = Date.now()

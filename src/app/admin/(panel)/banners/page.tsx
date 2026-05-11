@@ -1,8 +1,14 @@
 import type { Metadata } from 'next'
 import type { AdSlot } from '@/generated/prisma/client'
 import { getBannerList, getAdBannerList, getGuestPromoSettings, getMemberPromoSettings } from '@/lib/queries/admin'
-import BannerManager from '@/components/admin/BannerManager'
-import AdBannerTable from '@/components/admin/AdBannerTable'
+import dynamic from 'next/dynamic'
+
+const BannerManager = dynamic(() => import('@/components/admin/BannerManager'), {
+  loading: () => <div className="h-64 animate-pulse rounded bg-zinc-100" />,
+})
+const AdBannerTable = dynamic(() => import('@/components/admin/AdBannerTable'), {
+  loading: () => <div className="h-40 animate-pulse rounded bg-zinc-100" />,
+})
 import TopPromoBannerPanel from '@/components/admin/TopPromoBannerPanel'
 
 export const metadata: Metadata = { title: '배너·광고 관리' }

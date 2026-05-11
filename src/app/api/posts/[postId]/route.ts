@@ -24,7 +24,10 @@ export async function GET(
         ])
       : [false, false]
 
-    return NextResponse.json({ ...post, isLiked, isScrapped })
+    return NextResponse.json(
+      { ...post, isLiked, isScrapped },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    )
   } catch (error) {
     return handleApiError(error)
   }

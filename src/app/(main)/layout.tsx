@@ -4,10 +4,13 @@ import { auth } from '@/lib/auth'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
 import OfflineBanner from '@/components/common/OfflineBanner'
-import { PushPermissionToast } from '@/components/common/PushPermissionToast'
 import { WelcomeToast } from '@/components/common/WelcomeToast'
 
 // 무거운 클라이언트 컴포넌트 — 초기 번들 제외
+const PushPermissionToast = dynamic(
+  () => import('@/components/common/PushPermissionToast').then(m => ({ default: m.PushPermissionToast })),
+  { loading: () => null, ssr: false },
+)
 const PopupRenderer = dynamic(
   () => import('@/components/common/PopupRenderer'),
   { loading: () => null },

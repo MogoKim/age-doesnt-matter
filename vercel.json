@@ -1,3 +1,8 @@
 {
-  "ignoreCommand": "git diff HEAD^ HEAD --name-only | grep -qE \"^(src/|public/|next\\.config\\.(js|ts|mjs)|package\\.json|package-lock\\.json|prisma/|tsconfig\\.json|tailwind\\.config\\.(ts|js)|postcss\\.config\\.(js|mjs|cjs))\" && exit 1 || exit 0"
+  "ignoreCommand": "git diff HEAD^ HEAD --name-only | grep -qE \"^(src/|public/|next\\.config\\.(js|ts|mjs)|package\\.json|package-lock\\.json|prisma/|tsconfig\\.json|tailwind\\.config\\.(ts|js)|postcss\\.config\\.(js|mjs|cjs))\" && exit 1 || exit 0",
+  "functions": {
+    "src/app/api/admin/**": {
+      "maxDuration": 60
+    }
+  }
 }

@@ -11,7 +11,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const popups = await getActivePopups(path)
-    return NextResponse.json({ popups })
+    return NextResponse.json(
+      { popups },
+      { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } },
+    )
   } catch {
     return NextResponse.json({ popups: [] })
   }

@@ -119,8 +119,8 @@ export default async function MagazinePage({
             {rest.length > 0 && (
               <>
                 <div className="grid grid-cols-2 gap-3 mt-4 lg:grid-cols-4">
-                  {rest.slice(0, 8).map((post) => (
-                    <MagazineCard key={post.id} post={post} />
+                  {rest.slice(0, 8).map((post, index) => (
+                    <MagazineCard key={post.id} post={post} priority={index < 2} />
                   ))}
                 </div>
                 <div className="my-4">
@@ -185,7 +185,7 @@ function FeaturedCard({ post }: { post: PostSummary }) {
   )
 }
 
-function MagazineCard({ post }: { post: PostSummary }) {
+function MagazineCard({ post, priority }: { post: PostSummary; priority?: boolean }) {
   return (
     <Link
       href={`/magazine/${post.slug ?? post.id}`}
@@ -199,6 +199,7 @@ function MagazineCard({ post }: { post: PostSummary }) {
             fill
             className="object-cover"
             sizes="(max-width: 1024px) 50vw, 25vw"
+            priority={priority}
           />
         </div>
       ) : (

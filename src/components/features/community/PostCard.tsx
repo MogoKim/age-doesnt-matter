@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import Link from 'next/link'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from './utils'
@@ -8,7 +9,7 @@ interface PostCardProps {
   boardSlug: string
 }
 
-export default function PostCard({ post, boardSlug }: PostCardProps) {
+function PostCard({ post, boardSlug }: PostCardProps) {
   return (
     <Link
       href={`/community/${boardSlug}/${post.slug ?? post.id}`}
@@ -55,3 +56,7 @@ export default function PostCard({ post, boardSlug }: PostCardProps) {
     </Link>
   )
 }
+
+export default memo(PostCard, (prev, next) =>
+  prev.post.id === next.post.id && prev.boardSlug === next.boardSlug,
+)

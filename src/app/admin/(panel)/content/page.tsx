@@ -1,8 +1,12 @@
 import type { Metadata } from 'next'
 import { getContentList } from '@/lib/queries/admin'
 import type { BoardType, PostSource, PostStatus } from '@/generated/prisma/client'
-import ContentTable from '@/components/admin/ContentTable'
+import nextDynamic from 'next/dynamic'
 import ExpireJobsButton from '@/components/admin/ExpireJobsButton'
+
+const ContentTable = nextDynamic(() => import('@/components/admin/ContentTable'), {
+  loading: () => <div className="h-64 animate-pulse rounded bg-zinc-100" />,
+})
 
 export const metadata: Metadata = { title: '콘텐츠 관리' }
 export const dynamic = 'force-dynamic'

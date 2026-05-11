@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
 import { GRADE_INFO } from '@/lib/grade'
@@ -153,7 +154,7 @@ export async function searchAll(
 
 /* ── 인기 검색어 (최근 7일 기준 EventLog 집계) ── */
 
-export async function getPopularKeywords(limit = 10): Promise<string[]> {
+async function _getPopularKeywords(limit = 10): Promise<string[]> {
   const rows = await prisma.eventLog.groupBy({
     by: ['properties'],
     where: {
@@ -172,6 +173,12 @@ export async function getPopularKeywords(limit = 10): Promise<string[]> {
     })
     .filter((v): v is string => v !== null)
 }
+
+export const getPopularKeywords = unstable_cache(
+  _getPopularKeywords,
+  ['popular-keywords'],
+  { revalidate: 3600 },
+)
 
 /* ── 검색 이벤트 로깅 ── */
 
