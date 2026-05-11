@@ -16,13 +16,14 @@ on:
           - sheet-scrape
 
   # 매일 09:00, 13:30, 20:30 KST — 카페 트렌드 분석 + 콘텐츠 큐레이션
-  # 매일 11:00, 21:00 KST — 시트 스크래퍼 (펨코/오유/네이트판)
+  # 매일 10:30, 14:00, 21:00 KST — 시트 스크래퍼 (오유/네이트판, 펨코 로컬만)
   # 매일 09:30 KST — DailyBrief 생성 모니터
   schedule:
     - cron: "0 0 * * *"   # 09:00 KST (08:30 딥크롤 30분 후)
     - cron: "30 4 * * *"  # 13:30 KST (12:55 딥크롤 35분 후)
     - cron: "30 11 * * *" # 20:30 KST (20:00 딥크롤 30분 후)
-    - cron: "0 2 * * *"   # 11:00 KST — sheet-scrape
+    - cron: "30 1 * * *"  # 10:30 KST — sheet-scrape
+    - cron: "0 5 * * *"   # 14:00 KST — sheet-scrape
     - cron: "0 12 * * *"  # 21:00 KST — sheet-scrape
     - cron: "30 0 * * *"  # 09:30 KST — brief-monitor
 
@@ -118,7 +119,7 @@ jobs:
   sheet-scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'sheet-scrape' || github.event_name == 'schedule' }}
+    if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'sheet-scrape' || (github.event_name == 'schedule' && (github.event.schedule == '30 1 * * *' || github.event.schedule == '0 5 * * *' || github.event.schedule == '0 12 * * *')) }}
 
     steps:
       - uses: actions/checkout@v4
