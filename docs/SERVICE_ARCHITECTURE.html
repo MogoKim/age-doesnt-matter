@@ -354,7 +354,7 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>우나어 아키텍처</h2>
-    <div class="version">v9 &middot; 2026-03-29</div>
+    <div class="version">v11 &middot; 2026-05-11</div>
   </div>
   <nav>
     <a href="#s1" class="depth-1">1. 서비스 개요</a>
@@ -398,6 +398,7 @@
     <a href="#s18-emergency" class="depth-2">긴급 회의</a>
     <a href="#s18-example" class="depth-2">전체 흐름 예시</a>
     <a href="#s19" class="depth-1" style="color:var(--primary)">19. 갭 분석</a>
+    <a href="#s20" class="depth-1" style="color:var(--primary)">20. v10 이후 주요 기능</a>
     <a href="#s-update" class="depth-1">문서 업데이트 가이드</a>
   </nav>
 </aside>
@@ -405,7 +406,7 @@
 <main class="main">
 <h1>우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서</h1>
 <blockquote>
-<p><strong>최종 업데이트</strong>: 2026-03-29 (v9 — 시드봇 35명 리뉴얼 + 82cook 크롤러 + 광고 슬롯 전면 개편)
+<p><strong>최종 업데이트</strong>: 2026-05-11 (v11 — 실측 기반 전면 최신화: 32모델 · 93핸들러 · 17GHA · $198/월 · LIFE2 게시판)
 <strong>문서 관리자</strong>: Claude Code (자동화) + 창업자 (승인)
 <strong>변경 시</strong>: 이 문서 하단 <a href="#%EB%AC%B8%EC%84%9C-%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8-%EA%B0%80%EC%9D%B4%EB%93%9C">문서 업데이트 가이드</a> 참고</p>
 </blockquote>
@@ -610,7 +611,7 @@
 └──────────────────────────┬──────────────────────────────┘
                            ▼
 ┌─────────────────────────────────────────────────────────┐
-│  Vercel (Hobby Plan)                                     │
+│  Vercel (Pro Plan)                                       │
 │  ┌─────────────┐  ┌──────────────┐  ┌───────────────┐  │
 │  │ Next.js SSR  │  │ API Routes   │  │ Middleware     │  │
 │  │ (App Router) │  │ /api/*       │  │ (인증 체크)    │  │
@@ -1064,7 +1065,7 @@
 <td><code>coo/content-scheduler.ts</code></td>
 <td>매일 14:00</td>
 <td>Haiku</td>
-<td>에디터스 픽 + 시드 콘텐츠 편성</td>
+<td>에디터스 픽 + 시드 콘텐츠 편성 + Gemini 커버 이미지 (IMAGE_GENERATOR=gemini)<br><small>⚠️ 매거진 커버는 Gemini API. DALL-E는 CMO SNS 카드뉴스 전용(~$1.5/월).</small></td>
 </tr>
 <tr>
 <td><strong>SEED</strong></td>
@@ -1088,7 +1089,7 @@
 </tr>
 <tr>
 <td><code>core/constitution.yaml</code></td>
-<td><strong>회사 헌법</strong> — 모든 에이전트 System Prompt에 주입. 서비스 정체성, 가드레일, 콘텐츠 정책</td>
+<td><strong>회사 헌법 v5.0</strong> — 모든 에이전트 System Prompt에 주입. 서비스 정체성, 가드레일, 콘텐츠 정책. 6개 파일 구조 (core/audience/ops/infra/strategy)</td>
 </tr>
 <tr>
 <td><code>core/types.ts</code></td>
@@ -1727,7 +1728,8 @@
 </tr>
 </tbody></table>
 <hr>
-<h2>6. GitHub Actions 워크플로우</h2>
+<h2>6. GitHub Actions 워크플로우 (17개)</h2>
+<p><small>⚠️ 추가로 창업자 MacBook에서 5개 로컬 launchd 프로세스 실행 중 (카페 크롤러, 매거진 커버 생성 등).</small></p>
 <h3>6.1 CI/CD</h3>
 <table>
 <thead>
@@ -1923,6 +1925,13 @@
 <td><code>ads-partners.coupang.com</code></td>
 <td>아웃바운드</td>
 <td>다이나믹 배너, 검색 위젯, CPS API</td>
+</tr>
+<tr><td><strong>Google Gemini API</strong></td><td><code>generativelanguage.googleapis.com</code></td><td>아웃바운드</td><td>매거진 커버 이미지 생성 (IMAGE_GENERATOR=gemini)</td></tr>
+<tr>
+<td><strong>OpenAI DALL-E</strong></td>
+<td><code>api.openai.com</code></td>
+<td>아웃바운드</td>
+<td>CMO SNS 카드뉴스 이미지 생성 (~$1.5/월)</td>
 </tr>
 </tbody></table>
 <h3>7.1 Slack 운영 채널 아키텍처</h3>
@@ -2377,7 +2386,7 @@
 </tbody></table>
 <hr>
 <h2>10. 페이지 구조</h2>
-<h3>10.1 사용자 페이지 (47개)</h3>
+<h3>10.1 사용자 페이지 (46개)</h3>
 <table>
 <thead>
 <tr>
@@ -2427,7 +2436,7 @@
 </tr>
 <tr>
 <td><code>/community/[boardSlug]</code></td>
-<td>게시판 (stories, humor, weekly)</td>
+<td>게시판 (stories, humor, weekly, life2)</td>
 </tr>
 <tr>
 <td><code>/community/[boardSlug]/[postId]</code></td>
@@ -2803,7 +2812,7 @@
 │   └── 📁 cafe/                    # 카페 크롤러
 │
 ├── 📁 prisma/                       # DB 스키마
-│   ├── schema.prisma               # 22개 모델, 20개 Enum
+│   ├── schema.prisma               # 32개 모델, 20개 Enum
 │   ├── seed.ts                     # 시드 데이터
 │   └── 📁 migrations/             # 마이그레이션 히스토리
 │
@@ -2816,7 +2825,7 @@
 │   ├── manifest.json               # PWA 매니페스트
 │   └── sw.js                       # 서비스 워커
 │
-├── 📁 .github/workflows/           # CI/CD + 에이전트 크론 (9개)
+├── 📁 .github/workflows/           # CI/CD + 에이전트 크론 (17개)
 │
 ├── 📁 docs/                         # 문서
 │   ├── 📁 prd/                     # PRD 문서 (A~G)
@@ -2833,6 +2842,7 @@
 </code></pre>
 <hr>
 <h2>13. 예산</h2>
+<div class="card card-warning"><strong>⚠️ 실측 기준</strong>: 이전 문서($49.5/월)는 Claude Max 구독 $110 누락으로 4배 과소계상이었음 (docs/api-cost-audit.md)</div>
 <table>
 <thead>
 <tr>
@@ -2841,20 +2851,24 @@
 </tr>
 </thead>
 <tbody><tr>
-<td>에이전트 AI (7 C-level + SEED)</td>
-<td>~$15 (최적화 후)</td>
+<td>Claude Max 구독</td>
+<td>$110/월 (5x 플랜)</td>
 </tr>
 <tr>
-<td>일자리 스크래퍼 AI</td>
-<td>~$3</td>
+<td>Anthropic API</td>
+<td>~$55/월 ($11 자동충전 × 5회/월)</td>
 </tr>
 <tr>
-<td>SNS 자동화 AI (텍스트+카드뉴스+채널시딩+지식iN)</td>
-<td>~$5</td>
+<td>Vercel Pro</td>
+<td>~$22/월 (Pro Plan)</td>
 </tr>
 <tr>
-<td>Vercel Hosting</td>
-<td>$0 (Hobby)</td>
+<td>Google Gemini API</td>
+<td>~$8/월 (매거진 커버 이미지)</td>
+</tr>
+<tr>
+<td>OpenAI DALL-E</td>
+<td>~$1.5/월 (CMO SNS 카드뉴스)</td>
 </tr>
 <tr>
 <td>Supabase DB</td>
@@ -2862,35 +2876,31 @@
 </tr>
 <tr>
 <td>GitHub Actions</td>
-<td>$0 (Free 2,000분/월)</td>
+<td>$0 (Free)</td>
 </tr>
 <tr>
 <td>Cloudflare R2</td>
-<td>$0 (Free tier)</td>
-</tr>
-<tr>
-<td>Cloudflare DNS</td>
-<td>$0</td>
+<td>$0 (Free)</td>
 </tr>
 <tr>
 <td>도메인 (가비아)</td>
-<td>~$1.5 (연 $18)</td>
+<td>~$1.5/월 (연 $18)</td>
 </tr>
 <tr>
 <td><strong>합계</strong></td>
-<td><strong>~$24.5/월</strong></td>
+<td><strong>~$198/월 (실측 기준)</strong></td>
 </tr>
 <tr>
-<td><strong>예산 상한</strong></td>
-<td><strong>$50/월</strong></td>
+<td><strong>에이전트 예산 상한</strong></td>
+<td><strong>$50/월 (API 비용만)</strong></td>
 </tr>
 </tbody></table>
 <hr>
 <h2>14. 현재 상태 &amp; 남은 작업</h2>
-<h3>완료됨</h3>
+<h3>완료됨 (2026-05-11 기준)</h3>
 <ul>
-<li>전체 코드 구현 (47페이지, 19+ API, 77+ 컴포넌트)</li>
-<li>에이전트 시스템 ACTIVE</li>
+<li>전체 코드 구현 (46페이지, 19+ API, 77+ 컴포넌트)</li>
+<li>에이전트 시스템 ACTIVE (헌법 v5.0, 93핸들러)</li>
 <li>일자리 자동 수집 파이프라인</li>
 <li>시드 페르소나 10명</li>
 <li>카페 크롤링 파이프라인</li>
@@ -4330,7 +4340,7 @@ Step 5 — 창업자 승인 후에만 지시 전달
 <pre><code>┌────────────────────────────────────────────────────────────────┐
 │                    아키텍처 성숙도 맵                             │
 │                                                                 │
-│  ████████████  코드 (47페이지, 77+컴포넌트)          ✅ 완료     │
+│  ████████████  코드 (46페이지, 77+컴포넌트)          ✅ 완료     │
 │  ████████████  에이전트 (7 C-level + SEED + CAFE)   ✅ 완료     │
 │  ████████████  CI/CD (빌드, 린트, 타입체크)          ✅ 완료     │
 │  ████████░░░░  QA (Preview 있으나 체크리스트 없음)    ⚠️ 부분    │
@@ -4507,6 +4517,28 @@ Slack 설정         긴급 회의             학습 축적          자동 롤
 창업자 작업        개발 작업             개발 작업          개발 작업
 ~1일              ~1주                  ~1주               ~2주
 </code></pre>
+<hr>
+<h2 id="s20"><span class="num">20.</span> v10 이후 주요 기능 (2026-04~05)</h2>
+<p>v10 문서(2026-03-30) 이후 실제 배포된 기능 목록</p>
+<table>
+<tr><th>기능</th><th>핵심 구성</th><th>배포 시점</th></tr>
+<tr><td><strong>킬러포스트 시스템</strong></td><td><code>seed:killer-post</code>, Post.isFeatured/featuredAt, agents-killer-post.yml (2회/일)</td><td>2026-04</td></tr>
+<tr><td><strong>바이럴 파동 감지</strong></td><td><code>seed:viral-waves</code>, 30분 주기, agents-sheet-viral.yml</td><td>2026-04</td></tr>
+<tr><td><strong>구글 시트 파이프라인</strong></td><td><code>community:sheet-scrape</code>, PostSource.SHEET, 4탭 화제성 수집</td><td>2026-05</td></tr>
+<tr><td><strong>LIFE2 게시판</strong></td><td>BoardType.LIFE2 (인생 2막), 커뮤니티 신규 탭</td><td>2026-04</td></tr>
+<tr><td><strong>비회원 좋아요/댓글</strong></td><td>GuestLike 모델 (fingerprint 기반), 비회원 참여 허용</td><td>2026-05-01</td></tr>
+<tr><td><strong>상단 팝업/띠배너</strong></td><td>Popup 모델 (3타입 × 7타겟), /admin/popups 관리</td><td>2026-04</td></tr>
+<tr><td><strong>동영상 업로드</strong></td><td>/api/uploads/video/*, R2 presign, TipTap 에디터 통합</td><td>2026-04</td></tr>
+<tr><td><strong>PWA 푸시알림</strong></td><td>PushSubscription + VAPID, /admin/push, 웹 푸시 발송</td><td>2026-04</td></tr>
+<tr><td><strong>어드민 승인 큐</strong></td><td>AdminQueue (5타입), /admin/queue</td><td>2026-04</td></tr>
+<tr><td><strong>Gemini 이미지 생성</strong></td><td>launchd IMAGE_GENERATOR=gemini, 매거진 커버 3회/일</td><td>2026-04</td></tr>
+<tr><td><strong>헌법 v5.0</strong></td><td>6개 파일 분리 (core/audience/ops/infra/strategy), Opus 4.7 전략 모델</td><td>2026-04</td></tr>
+<tr><td><strong>BaseAgent Prompt Caching</strong></td><td>cache_control: ephemeral (Line 144), constitution 토큰 90% 절감</td><td>2026-04</td></tr>
+<tr><td><strong>GHA 17개 체계</strong></td><td>agents-sheet-viral/killer-post/weekly + post-deploy-qa + quarantine-check</td><td>2026-04~05</td></tr>
+<tr><td><strong>봇 게시글 Slug 자동생성</strong></td><td>/api/bot/posts + generateCommunitySlug(), Google 12,533개 URL 색인 복구</td><td>2026-05-11</td></tr>
+<tr><td><strong>SEO Article JSON-LD image</strong></td><td>커뮤니티 게시글 Google 리치 결과 필수 필드 충족 (3-tier fallback)</td><td>2026-05-11</td></tr>
+<tr><td><strong>Gate 2 자동화</strong></td><td>post-deploy-qa.yml: Smoke+Visual QA(Claude Haiku)+Lighthouse → Slack #qa</td><td>2026-04</td></tr>
+</table>
 <hr>
 <h2>문서 업데이트 가이드</h2>
 <h3>이 문서를 언제 업데이트해야 하는가?</h3>

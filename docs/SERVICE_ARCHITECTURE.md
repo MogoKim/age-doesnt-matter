@@ -1,6 +1,6 @@
 # 우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서
 
-> **최종 업데이트**: 2026-03-30 (v10 — 헌법 v4.0 + 50명 페르소나 + 매거진 v2 + 13개 신규 에이전트)
+> **최종 업데이트**: 2026-05-11 (v11 — 실측 기반 전면 최신화: 32모델 · 93핸들러 · 17GHA · $198/월 · LIFE2 게시판)
 > **문서 관리자**: Claude Code (자동화) + 창업자 (승인)
 > **변경 시**: 이 문서 하단 [문서 업데이트 가이드](#문서-업데이트-가이드) 참고
 
@@ -47,8 +47,9 @@
 | **CSS** | Tailwind CSS + shadcn/ui | - |
 | **폰트** | Pretendard Variable (next/font/local) | - |
 | **스토리지** | Cloudflare R2 (이미지) | - |
-| **AI** | Anthropic Claude (Opus 4.6 / Sonnet 4.6 / Haiku 4.5) | 3-tier |
-| **배포** | Vercel (Hobby Plan) | - |
+| **AI** | Anthropic Claude (Opus 4.7 / Sonnet 4.6 / Haiku 4.5) | 3-tier |
+| **이미지 생성** | Google Gemini (매거진 커버) + OpenAI DALL-E (SNS 카드뉴스) | 용도별 분리 |
+| **배포** | Vercel (Pro Plan) | - |
 | **CI/CD** | GitHub Actions | - |
 | **운영 커뮤니케이션** | Slack (Bot + Webhook) | - |
 | **애널리틱스** | Google Tag Manager + GA4 | - |
@@ -87,7 +88,7 @@
 └──────────────────────────┬──────────────────────────────┘
                            ▼
 ┌─────────────────────────────────────────────────────────┐
-│  Vercel (Hobby Plan)                                     │
+│  Vercel (Pro Plan)                                       │
 │  ┌─────────────┐  ┌──────────────┐  ┌───────────────┐  │
 │  │ Next.js SSR  │  │ API Routes   │  │ Middleware     │  │
 │  │ (App Router) │  │ /api/*       │  │ (인증 체크)    │  │
@@ -134,9 +135,13 @@
 | `AUTH_SECRET` | NextAuth 세션 암호화 | 인증 |
 | `KAKAO_CLIENT_ID` / `SECRET` | 카카오 OAuth | 로그인 |
 | `ANTHROPIC_API_KEY` | Claude API | 에이전트 |
-| `CLAUDE_MODEL_STRATEGIC` | 전략 모델 (claude-opus-4-6) | 에이전트 (주간 전략) |
+| `CLAUDE_MODEL_STRATEGIC` | 전략 모델 (claude-opus-4-7) | 에이전트 (주간 전략) |
 | `CLAUDE_MODEL_HEAVY` | 전략 판단 모델 (claude-sonnet-4-6) | 에이전트 |
 | `CLAUDE_MODEL_LIGHT` | 빠른 작업 모델 (claude-haiku-4-5) | 에이전트 |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Gemini API 키 | 매거진 커버 이미지 생성 |
+| `OPENAI_API_KEY` | OpenAI API 키 | CMO SNS 카드뉴스 (DALL-E) |
+| `IMAGE_GENERATOR` | 이미지 생성기 선택 (`gemini` \| `chatgpt`) | 매거진 로컬 실행 시 launchd 환경변수 |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | PWA 푸시 알림 키 | PushSubscription |
 | `SLACK_BOT_TOKEN` | Slack 봇 토큰 | 에이전트 운영 채널 |
 | `SLACK_SIGNING_SECRET` | Slack 서명 시크릿 | Webhook 검증 |
 | `SLACK_CHANNEL_*` | 채널별 ID (14개) | 각 채널 메시지 발송 |
@@ -160,7 +165,7 @@
 
 ## 4. 데이터베이스 스키마
 
-### 4.1 전체 모델 맵
+### 4.1 전체 모델 맵 (32개)
 
 ```
 ┌── 사용자 ──────────────────────┐
@@ -171,31 +176,37 @@
 └────────────────────────────────┘
 
 ┌── 콘텐츠 ──────────────────────┐
-│ Post          게시글 (5개 보드)   │
+│ Post          게시글 (6개 보드)   │
 │ JobDetail     일자리 상세 (1:1)  │
 │ Comment       댓글 (대댓글 지원)  │
 │ DraftPost     임시저장            │
 └────────────────────────────────┘
 
 ┌── 상호작용 ────────────────────┐
-│ Like          좋아요             │
+│ Like          좋아요 (회원)      │
+│ GuestLike     좋아요 (비회원, fingerprint 기반) │  ← v11 신규
 │ Scrap         스크랩             │
 │ Report        신고               │
 │ Notification  알림               │
+│ PostView      게시글 조회 기록    │  ← v11 신규
 └────────────────────────────────┘
 
 ┌── 운영 ────────────────────────┐
 │ BoardConfig   게시판 설정         │
 │ BannedWord    금칙어              │
-│ Banner        프로모션 배너        │
+│ Banner        프로모션 배너 (그라디언트 지원) │
 │ AdBanner      광고 배너           │
 │ CpsLink       쿠팡 CPS 링크      │
+│ Popup         팝업/띠배너 (3타입×7타겟) │  ← v11 신규
+│ Setting       시스템 설정 키-값   │  ← v11 신규
+│ AdminQueue    어드민 수동 처리 큐  │  ← v11 신규
 └────────────────────────────────┘
 
 ┌── 분석·로그 ───────────────────┐
 │ BotLog        봇 실행 로그       │
 │ EventLog      분석 이벤트         │
 │ AdminAuditLog 어드민 감사 로그    │
+│ DailyBrief    CEO 일일 브리핑 저장 │  ← v11 신규
 └────────────────────────────────┘
 
 ┌── 카페 인텔리전스 ──────────────┐
@@ -209,22 +220,31 @@
 │ SocialExperiment A/B 실험 관리   │
 │ ChannelDraft     채널 홍보 초안   │
 └────────────────────────────────┘
+
+┌── PWA 알림 ────────────────────┐
+│ PushSubscription PWA 푸시 구독 정보 │  ← v11 신규
+└────────────────────────────────┘
 ```
 
-### 4.2 핵심 Enum 값
+### 4.2 핵심 Enum 값 (27개)
 
-| Enum | 값 |
-|------|-----|
-| **BoardType** | JOB, STORY, HUMOR, MAGAZINE, WEEKLY |
-| **Grade** | SPROUT(새싹) → REGULAR(단골) → VETERAN(베테랑) → WARM_NEIGHBOR(따뜻한이웃) |
-| **PostStatus** | DRAFT, PUBLISHED, HIDDEN, DELETED |
-| **PostSource** | USER, BOT, ADMIN |
-| **PromotionLevel** | NORMAL, HOT, HALL_OF_FAME |
-| **AdSlot** | HERO, HOME_INLINE, SIDEBAR, LIST_INLINE, POST_BOTTOM, MOBILE_STICKY, MAGAZINE_CPS |
-| **BotType** | JOB, HUMOR, STORY, THREAD, CEO, CTO, CMO, CPO, CDO, CFO, COO, SEED, CAFE_CRAWLER |
-| **SocialPlatform** | THREADS, X, INSTAGRAM, FACEBOOK, BAND |
-| **SocialPostStatus** | DRAFT, QUEUED, APPROVED, POSTED, FAILED |
-| **ExperimentStatus** | PLANNING, ACTIVE, COMPLETED, ANALYZED |
+| Enum | 값 | 비고 |
+|------|-----|------|
+| **BoardType** | JOB, STORY, HUMOR, MAGAZINE, WEEKLY(숨김), **LIFE2** | LIFE2: 인생 2막 ← v11 신규 |
+| **Grade** | SPROUT(새싹) → REGULAR(단골) → WARM_NEIGHBOR(따뜻한이웃) → HONORARY(명예우나어인) | VETERAN 제거, HONORARY 추가 ← v11 |
+| **PostStatus** | DRAFT, PUBLISHED, SEO_ONLY, HIDDEN, DELETED | SEO_ONLY 추가 |
+| **PostSource** | USER, BOT, ADMIN, **SHEET** | SHEET: 구글 시트 스크래퍼 ← v11 신규 |
+| **BotStatus** | SUCCESS, PARTIAL, FAILED, **PENDING**, **SKIP** | PENDING/SKIP ← v11 신규 |
+| **PromotionLevel** | NORMAL, HOT(공감 10+), HALL_OF_FAME(공감 50+) | |
+| **AdSlot** | HERO, HOME_INLINE, HOME_SECTION_GAP, SIDEBAR, LIST_INLINE, POST_BOTTOM, POST_INLINE, MOBILE_STICKY, MAGAZINE_CPS | |
+| **BotType** | JOB, HUMOR, STORY, THREAD, CEO, CTO, CMO, CPO, CDO, CFO, COO, SEED, CAFE_CRAWLER, QA | QA 추가 |
+| **SocialPlatform** | THREADS, X, INSTAGRAM, FACEBOOK, BAND | |
+| **SocialPostStatus** | DRAFT, QUEUED, APPROVED, POSTED, FAILED | |
+| **ExperimentStatus** | PLANNING, ACTIVE, COMPLETED, ANALYZED | |
+| **PopupType** | BOTTOM_SHEET, FULLSCREEN, CENTER | ← v11 신규 |
+| **PopupTarget** | ALL, HOME, COMMUNITY, LIFE2, JOBS, MAGAZINE, CUSTOM | ← v11 신규 |
+| **AdminQueueType** | CONTENT_PUBLISH, AGENT_EVOLUTION, SCHEMA_CHANGE, BUDGET_CHANGE, SYSTEM_ACTION | ← v11 신규 |
+| **AdminQueueStatus** | PENDING, APPROVED, REJECTED, EXPIRED | ← v11 신규 |
 
 ### 4.3 주요 관계
 
@@ -325,12 +345,39 @@
 | **CPO** | `cpo/persona-diversity-checker.ts` | 수요일 09:00 (주간) | Haiku | 5대 페르소나 콘텐츠 분포 균형 체크 |
 | **Strategist** | `strategist/user-deep-analysis.ts` | 수동 | Opus | 사용자 심층 분석 — 페르소나/미션/비전 검증 |
 
+#### 신규 에이전트 (v11 — 2026-04~05 추가)
+
+| 에이전트 | 파일 | 스케줄 | AI 모델 | 역할 |
+|---------|------|--------|---------|------|
+| **SEED** | `seed/killer-post-generator.ts` | 00:10, 13:10 KST (2회/일) | Sonnet | 화제성 킬러포스트 생성 (isFeatured=true, agents-killer-post.yml) |
+| **SEED** | `seed/viral-wave-detector.ts` | 30분마다 | Haiku | 바이럴 파동 감지 + 파동 확산 콘텐츠 생성 (agents-sheet-viral.yml) |
+| **COMMUNITY** | `community/sheet-scraper.ts` | 30분마다 | Haiku | 구글 시트 4탭 화제성 파이프라인 스크래핑 → PostSource.SHEET |
+| **COMMUNITY** | `community/fmkorea-scraper.ts` | 30분마다 | Haiku | FM코리아 게시판 스크래핑 (agents-sheet-viral.yml) |
+| **COO** | `coo/controversy-chain.ts` | 매일 22:00 | Sonnet | 논쟁 체인 자동화 (댓글 논쟁 구조 생성) |
+| **CTO** | `cto/arch-reviewer.ts` | 월/수/목/금 (주간) | Opus | 아키텍처 자동 리뷰 (agents-weekly.yml) |
+| **CTO** | `cto/garbage-collector.ts` | 매일 22:00 | Haiku | 저품질/스팸 콘텐츠 자동 정리 |
+| **CMO** | `cmo/band-manager.ts` | DISPATCH ONLY | Haiku | Band 게시글 관리 (API 심사 통과 후 활성화) |
+| **CMO** | `cmo/jisik-answerer.ts` | 14:30 KST (로컬 launchd) | Sonnet | 지식iN 자동 답변 (로컬 전용, Playwright) |
+| **CMO** | `cmo/threads-token-refresher.ts` | 주간 | Haiku | Threads 60일 토큰 자동 갱신 |
+| **DESIGN** | `design/ads-loop.ts` | DISPATCH ONLY | Sonnet | 광고 소재 생성 루프 (agents-design.yml) |
+| **STRATEGIST** | `strategist/user-deep-analysis.ts` 확장 | 수동 | Opus | 사용자 심층 분석 v2 |
+| **QA** | `qa/content-auditor.ts` | 주간 | Haiku | 콘텐츠 품질 감사 |
+| **QA** | `qa/code-gate.ts` | PR 트리거 | Haiku | Gate 1 코드 검증 |
+| **QA** | `qa/deploy-auditor.ts` | deployment 트리거 | Haiku | Gate 2 배포 검증 |
+
+> **총 핸들러 수**: **93개** (`agents/cron/runner.ts` HANDLERS 맵 실측, MONITORING_TASKS 6개 별도 포함)
+
 ### 5.3 에이전트 기반 구조 (core/)
 
 | 파일 | 역할 |
 |------|------|
-| `core/agent.ts` | **BaseAgent** 추상 클래스 — 모든 에이전트가 상속. AI 호출, 로깅, 에러 처리 |
-| `core/constitution.yaml` | **회사 헌법 v4.0** — 모든 에이전트 System Prompt에 주입. 서비스 정체성, 가드레일, 콘텐츠 정책 |
+| `core/agent.ts` | **BaseAgent** 추상 클래스 — 모든 에이전트가 상속. AI 호출, 로깅, 에러 처리. **Prompt Caching 구현됨** (Line 144, `cache_control: {type: 'ephemeral'}`) |
+| `core/constitution.yaml` | **회사 헌법 v5.0** — 6개 파일로 분리 (constitution.yaml + core / audience / ops / infra / strategy). 모든 에이전트 System Prompt에 주입 |
+| `core/constitution/core.yaml` | 서비스 정체성, 절대 금지 사항, 모델 정책 |
+| `core/constitution/audience.yaml` | 5대 페르소나 정의, 타겟 사용자 가드레일 |
+| `core/constitution/ops.yaml` | 운영 정책, 콘텐츠 기준, 트렌딩 정책 |
+| `core/constitution/infra.yaml` | 인프라 및 비용 정책, DB write 규칙 |
+| `core/constitution/strategy.yaml` | SNS 전략, 성장 루프, 실험 정책 |
 | `core/types.ts` | 타입 정의 (AgentResult, AgentConfig, NotifyPayload 등) |
 | `core/db.ts` | Prisma 클라이언트 초기화 |
 | `core/notifier.ts` | Slack + 어드민큐 알림 |
@@ -403,12 +450,18 @@ CafeTrend → card-news/generator.ts
 ### 5.5.2 매거진 자동 발행 (v2)
 
 ```
-매거진 모닝 (09:45 KST) / 매거진 자동 (16:00 KST) / 매거진 이브닝 (19:30 KST)
+로컬 launchd (KST 기준):
+  com.unaeo.magazine-morning.plist   → 01:00 KST (SESSION_TIME=morning)
+  com.unaeo.magazine-afternoon.plist → 06:00 KST (SESSION_TIME=afternoon)
+  com.unaeo.magazine-late.plist      → 08:00 KST (SESSION_TIME=late)
   └→ cafe/magazine-generator.ts
       ├→ CafeTrend 기반 매거진 토픽 선정
-      ├→ Claude 본문 생성 + DALL-E 커버 이미지
+      ├→ Claude 본문 생성 + **Gemini 커버 이미지** (IMAGE_GENERATOR=gemini)
       └→ Post(MAGAZINE) DB 저장 + Slack 알림
 ```
+
+> **⚠️ 이미지 생성기**: 매거진 커버는 **Gemini API** (launchd `IMAGE_GENERATOR=gemini` 환경변수).  
+> DALL-E는 **CMO SNS 카드뉴스 전용** (~$1.5/월, 소량 사용).
 
 ### 5.6 시드 페르소나 (SEED) — 50명
 
@@ -453,50 +506,69 @@ CafeTrend → card-news/generator.ts
 |------|------|
 | **캐릭터 시트 프롬프트** | 페르소나별 성격/습관/금지사항/예시문장을 System Prompt에 주입 → Haiku가 개성 있는 글 생성 |
 | **mood 기반 댓글** | positive/neutral/negative/mixed에 따라 댓글 톤 차별화 |
-| **마이크로 스케줄러** | 메인(12회)과 별도 시간대(4회)에 댓글/대댓글/좋아요 전용 활동 → 하루 16회 |
+| **마이크로 스케줄러** | 메인(12회)과 별도 시간대(6회: 23,3,9,14,15,16시 UTC)에 댓글/대댓글/좋아요 전용 활동 → 하루 18회 |
 | **promotionLevel 자동 승격** | 좋아요 시 likeCount 체크 → 10+ HOT, 50+ HALL_OF_FAME 자동 승격 |
 | **집중 좋아요 (21시)** | 48시간 내 likeCount 5~9인 글(HOT 근접) 최대 3개에 7명 봇 집중 투입 |
 | **글 길이 다양화** | 3단계 랜덤: 짧은(60~120자) / 보통(150~300자) / 긴(400~600자) |
 | **크로스보드 댓글** | 기본 보드 외 다른 게시판에도 댓글 활동 (HUMOR, WEEKLY) |
 
-### 5.7 에이전트 규칙 (헌법 v4.0 핵심)
+### 5.7 에이전트 규칙 (헌법 v5.0 핵심)
 
 | 규칙 | 내용 |
 |------|------|
-| **DB 쓰기** | COO 에이전트만 가능, 나머지 읽기 전용 |
+| **DB 쓰기** | COO · QA · SEED 에이전트만 가능, 나머지 읽기 전용 |
 | **비용 상한** | $50/월, $40 도달 시 경고, 초과 시 즉시 중단 |
 | **승인 필요** | UI/UX 변경, DB 스키마 변경, 새 에이전트 추가, 자동화 시작/중단 |
 | **헌법 수정** | 창업자 승인 없이 수정 불가 |
 | **콘텐츠 금지** | 정치, 혐오, 도박, 성인콘텐츠 (ABSOLUTE_ZERO) |
-| **모델 정책** | strategic=Opus(주간 전략 1-2회) / heavy=Sonnet(고객 대면) / light=Haiku(데이터·모니터링) |
-| **자동화 상태** | ACTIVE (2026-03-24 승인), 1클릭 긴급 중지 가능 |
+| **모델 정책** | strategic=**Opus 4.7**(주간 전략 1-2회) / heavy=Sonnet 4.6(고객 대면) / light=Haiku 4.5(데이터·모니터링) |
+| **자동화 상태** | ACTIVE (2026-03-24 승인), EMERGENCY_STOP DB 플래그 + 1클릭 긴급 중지 가능 |
+| **MONITORING_TASKS** | 6개 태스크는 EMERGENCY_STOP 상태에서도 계속 실행 (cto:qa-verify, cafe:session-refresh 등) |
 
 ---
 
 ## 6. GitHub Actions 워크플로우
 
-### 6.1 CI/CD
+> **총 워크플로우**: **17개** (.github/workflows/ 실측)
+
+### 6.1 CI/CD (4개)
 
 | 파일 | 트리거 | 내용 |
 |------|--------|------|
 | `ci.yml` | PR, push to main | Lint → Typecheck → Test → Build (E2E: webServer 자동 시작) |
 | `lighthouse.yml` | PR, push to main | Lighthouse 접근성 감사 |
+| `post-deploy-qa.yml` | deployment_status | Gate 2: Smoke+Visual QA(Claude Haiku)+Lighthouse → Slack #qa |
+| `run-script.yml` | workflow_dispatch | 일회성 스크립트 수동 실행 |
 
-### 6.2 에이전트 크론
+### 6.2 에이전트 크론 (13개)
 
 | 파일 | 스케줄 (KST) | 에이전트 |
 |------|-------------|---------|
-| `agents-daily.yml` | 06~23시 (30+ 크론) | CEO, CMO, CPO, COO, CDO, CFO, CTO + 13개 신규 에이전트 |
-| `agents-weekly.yml` | 월/수/금 09:00 | CMO(source-expander, content-gap-finder), CPO(persona-diversity-checker) |
+| `agents-daily.yml` | 06~23시 (30+ 크론) | CEO, CMO, CPO, COO, CDO, CFO, CTO + 13개 신규 에이전트 + controversy-chain, garbage-collector |
+| `agents-weekly.yml` | 월/수/목/금 09:00 | CMO(source-expander, content-gap-finder), CPO(persona-diversity-checker), **CTO(arch-review, weekly-report)**, strategist |
 | `agents-hourly.yml` | 2시간마다 | CTO(헬스체크, 에러감시), CDO(이상감지) |
 | `agents-jobs.yml` | 12, 16, 20시 | COO(일자리 수집) |
 | `agents-moderation.yml` | 09, 15, 21시 | COO(모더레이션) |
 | `agents-seed.yml` | 09~22시 (12회) | SEED(시드 콘텐츠 + 댓글 + 좋아요) |
-| `agents-seed-micro.yml` | 08, 12, 18, 23시 (4회) | SEED(마이크로 — 댓글/대댓글/좋아요 전용) |
+| `agents-seed-micro.yml` | **23,3,9,14,15,16시 (6회)** | SEED(마이크로 — 댓글/대댓글/좋아요 전용) |
 | `agents-social.yml` | 09/11/11:30/12/20시 + 주간 | CMO(텍스트포스팅·카드뉴스·채널시딩·지식iN·SEO·메트릭·리뷰·전략·토큰갱신) |
 | `agents-cafe.yml` | 09, 13, 19시 | CAFE(네이버 카페 3곳 + 82cook 크롤링) |
+| **`agents-sheet-viral.yml`** | **매 30분** | SEED(viral-waves), COMMUNITY(sheet-scrape, fmkorea-scrape) |
+| **`agents-killer-post.yml`** | **00:10, 13:10 KST (2회)** | SEED(killer-post-generator) — 화제성 킬러포스트 |
+| **`agents-design.yml`** | workflow_dispatch | DESIGN(ads-loop) — 광고 소재 생성 (수동 실행) |
+| **`quarantine-check.yml`** | 매주 월요일 00:00 UTC | 격리 항목 기한 초과 점검 |
 
-### 6.3 전체 타임라인 (KST)
+### 6.3 로컬 launchd 프로세스 (5개 — 창업자 맥북 상시 가동)
+
+| plist 파일 | KST 실행 시각 | 환경변수 | 역할 |
+|-----------|-------------|---------|------|
+| `com.unaeo.magazine-morning.plist` | 01:00 | `IMAGE_GENERATOR=gemini`, `SESSION_TIME=morning` | 매거진 모닝 발행 (Gemini 커버 이미지) |
+| `com.unaeo.magazine-afternoon.plist` | 06:00 | `IMAGE_GENERATOR=gemini`, `SESSION_TIME=afternoon` | 매거진 오후 발행 |
+| `com.unaeo.magazine-late.plist` | 08:00 | `IMAGE_GENERATOR=gemini`, `SESSION_TIME=late` | 매거진 레이트 발행 |
+| `com.unaeo.session-refresh.plist` | 02:00 | — | 카카오 NID_SES 세션 갱신 |
+| `com.unaeo.jisik-answerer.plist` | 14:30 | — | 지식iN 자동 답변 (Playwright, 로컬 전용) |
+
+### 6.4 전체 타임라인 (KST)
 
 ```
 06:00      CTO 보안감사
@@ -560,7 +632,8 @@ CafeTrend → card-news/generator.ts
 | **50plus.or.kr** | 웹 크롤링 | 아웃바운드 | 일자리 수집 |
 | **82cook.com** | 웹 크롤링 (Playwright headless) | 아웃바운드 | 커뮤니티 콘텐츠 수집 (자유게시판 bn=15, 공개) |
 | **Coupang Partners** | `ads-partners.coupang.com` | 아웃바운드 | 다이나믹 배너, 검색 위젯, CPS API |
-| **OpenAI DALL-E** | `api.openai.com` | 아웃바운드 | 매거진 커버 이미지 생성 |
+| **Google Gemini API** | `generativelanguage.googleapis.com` | 아웃바운드 | 매거진 커버 이미지 생성 (IMAGE_GENERATOR=gemini) |
+| **OpenAI DALL-E** | `api.openai.com` | 아웃바운드 | CMO SNS 카드뉴스 이미지 생성 (~$1.5/월) |
 
 ### 7.1 Slack 운영 채널
 
@@ -635,13 +708,15 @@ Slack Workspace: 우나어-ops (14개 채널)
 
 ## 10. 페이지 구조
 
-### 10.1 사용자 페이지 (47개)
+### 10.1 사용자 페이지 (46개)
 
 | 경로 | 설명 |
 |------|------|
 | `/` | 홈 (히어로 슬라이더, 일자리, 커뮤니티, 매거진, 트렌딩) |
+| `/landing` | 랜딩 페이지 (SEO/광고 유입용) ← v11 신규 |
 | `/about` | 서비스 소개 |
 | `/login` | 카카오 로그인 |
+| `/auth/error` | 인증 오류 처리 ← v11 신규 |
 | `/onboarding` | 신규 회원 온보딩 (닉네임, 관심사) |
 | `/jobs` | 일자리 목록 (필터, 퀵태그) |
 | `/jobs/[id]` | 일자리 상세 (JSON-LD, Pick포인트, Q&A) |
@@ -649,8 +724,8 @@ Slack Workspace: 우나어-ops (14개 채널)
 | `/magazine/[id]` | 매거진 상세 |
 | `/best` | 인기글 |
 | `/search` | 통합 검색 |
-| `/community/[boardSlug]` | 게시판 (stories, humor, weekly) |
-| `/community/[boardSlug]/[postId]` | 게시글 상세 |
+| `/community/[boardSlug]` | 게시판 (stories, humor, life2, weekly) |
+| `/community/[boardSlug]/[postId]` | 게시글 상세 (Article JSON-LD + BreadcrumbList) |
 | `/community/[boardSlug]/[postId]/edit` | 게시글 수정 |
 | `/community/write` | 글쓰기 (TipTap 에디터) |
 | `/my` | 마이페이지 |
@@ -664,7 +739,9 @@ Slack Workspace: 우나어-ops (14개 채널)
 | `/privacy` | 개인정보처리방침 |
 | `/rules` | 커뮤니티 규칙 |
 | `/contact` | 문의 |
-| `/offline` | 오프라인 안내 |
+| `/offline` | PWA 오프라인 안내 ← v11 신규 |
+| `/dev/components` | 개발자 컴포넌트 쇼케이스 ← v11 신규 |
+| `/dev/qa-report` | QA 리포트 뷰어 ← v11 신규 |
 
 ### 10.2 어드민 페이지
 
@@ -678,15 +755,21 @@ Slack Workspace: 우나어-ops (14개 채널)
 | `/admin/analytics` | 분석 |
 | `/admin/banners` | 배너 관리 |
 | `/admin/settings` | 설정 (게시판, 금칙어, 광고) |
+| `/admin/queue` | AdminQueue 수동 처리 큐 ← v11 신규 |
+| `/admin/daily-brief` | DailyBrief CEO 브리핑 열람 ← v11 신규 |
+| `/admin/agents` | 에이전트 상태 대시보드 ← v11 신규 |
+| `/admin/push` | PWA 푸시알림 발송 ← v11 신규 |
+| `/admin/popups` | 팝업·띠배너 관리 ← v11 신규 |
 
-### 10.3 API 라우트 (17+개)
+### 10.3 API 라우트 (35+개)
 
 | 엔드포인트 | 메서드 | 용도 |
 |-----------|--------|------|
 | `/api/auth/[...nextauth]` | * | NextAuth 핸들러 |
-| `/api/health` | GET | 헬스체크 |
+| `/api/health` | GET | 헬스체크 (DB + Slack 토큰 + Claude API 키) |
 | `/api/posts` | GET, POST | 게시글 목록/생성 |
 | `/api/posts/[postId]` | GET, PATCH, DELETE | 게시글 CRUD |
+| `/api/posts/[postId]/view` | POST | 게시글 조회수 기록 (PostView) ← v11 신규 |
 | `/api/comments` | GET, POST | 댓글 CRUD |
 | `/api/drafts/[id]` | GET, PUT, DELETE | 임시저장 |
 | `/api/best` | GET | 인기글 |
@@ -694,12 +777,20 @@ Slack Workspace: 우나어-ops (14개 채널)
 | `/api/magazine` | GET | 매거진 |
 | `/api/search` | GET | 통합 검색 |
 | `/api/notifications` | GET, PATCH | 알림 |
-| `/api/uploads` | POST | 이미지 업로드 (R2) |
+| `/api/uploads` | POST | 이미지 업로드 (R2 presign) |
+| `/api/uploads/video/presign` | POST | 동영상 presign URL ← v11 신규 |
+| `/api/uploads/video` | POST | 동영상 업로드 (R2) ← v11 신규 |
 | `/api/ad-click` | POST | 광고 클릭 추적 |
 | `/api/events` | POST | 분석 이벤트 로깅 |
 | `/api/slack` | POST | Slack Events + 커맨드 |
 | `/api/threads/auth` | GET | Threads OAuth 시작 |
 | `/api/threads/callback` | GET | Threads OAuth 콜백 |
+| `/api/popups` | GET, POST, PATCH, DELETE | 팝업/띠배너 CRUD ← v11 신규 |
+| `/api/push/subscribe` | POST | PWA 푸시 구독 등록 ← v11 신규 |
+| `/api/user/pwa-status` | GET | PWA 설치 상태 조회 ← v11 신규 |
+| `/api/admin/check-post` | POST | 어드민 게시글 검증 ← v11 신규 |
+| `/api/admin/revalidate-deleted` | POST | 삭제 캐시 무효화 ← v11 신규 |
+| `/api/admin/uploads/presign` | POST | 어드민 파일 업로드 presign ← v11 신규 |
 | `/api/bot/*` | * | 봇 API (check, jobs, posts, logs) |
 
 ---
@@ -770,7 +861,7 @@ Slack Workspace: 우나어-ops (14개 채널)
 ├── 📁 prisma/                       # DB 스키마 + 마이그레이션
 ├── 📁 scripts/                      # 유틸리티 스크립트
 ├── 📁 public/                       # 정적 파일 (logo, manifest, sw.js)
-├── 📁 .github/workflows/           # CI/CD + 에이전트 크론 (10개)
+├── 📁 .github/workflows/           # CI/CD + 에이전트 크론 (17개)
 ├── 📁 docs/                         # 문서 (prd/, reports/, 이 문서)
 ├── 📁 e2e/                          # E2E 테스트
 ├── CLAUDE.md                        # Claude Code 지시사항
@@ -781,36 +872,38 @@ Slack Workspace: 우나어-ops (14개 채널)
 
 ## 13. 예산
 
-| 항목 | 월 비용 |
-|------|--------|
-| 기존 에이전트 AI (7 C-level + SEED) | ~$15 |
-| 일자리 스크래퍼 AI | ~$3 |
-| SNS 자동화 AI (텍스트+카드뉴스+채널시딩+지식iN) | ~$5 |
-| 신규 에이전트 13개 (daily 13 + weekly 3) | ~$8 |
-| 매거진 v2 (모닝+자동+이브닝, DALL-E 커버) | ~$12 |
-| Strategist (Opus, 수동/주간) | ~$5 |
-| Vercel Hosting | $0 (Hobby) |
-| Supabase DB | $0 (Free tier) |
-| GitHub Actions | $0 (Free 2,000분/월) |
-| Cloudflare R2 + DNS | $0 (Free tier) |
-| 도메인 (가비아) | ~$1.5 (연 $18) |
-| **합계** | **~$49.5/월** |
-| **예산 상한** | **$50/월** |
+> **실측 기준 (2026-05, docs/api-cost-audit.md)** — 이전 문서($49.5/월)는 4배 과소계상이었음
+
+| 항목 | 월 비용 | 비고 |
+|------|--------|------|
+| **Claude Max 구독** | **$110** | 5x 플랜 (claude.ai 집중 사용) |
+| **Anthropic API** | **~$55** | $11 자동충전 × 5회/월 (93개 핸들러 실행) |
+| **Vercel Pro** | **~$22** | Pro Plan (Hobby에서 업그레이드) |
+| **Google Gemini API** | **~$8** | 매거진 커버 이미지 생성 (3회/일) |
+| **OpenAI DALL-E** | **~$1.5** | CMO SNS 카드뉴스 이미지 (소량) |
+| Supabase DB | $0 | Free tier |
+| GitHub Actions | $0 | Free 2,000분/월 |
+| Cloudflare R2 + DNS | $0 | Free tier |
+| 도메인 (가비아) | ~$1.5 | 연 $18, 만기 2027-04-25 |
+| **합계** | **~$198/월** | 실측 기준 |
+| **에이전트 예산 상한** | **$50/월** | constitution.yaml 설정값 (API 비용만 해당) |
 
 ---
 
 ## 14. 현재 상태 & 남은 작업
 
-### 완료됨 (3/30 기준)
+### 완료됨 (2026-05-11 기준)
 
 #### 인프라 & 기본 기능
-- 전체 코드 구현 (47페이지, 19+ API, 77+ 컴포넌트)
-- 에이전트 시스템 ACTIVE (헌법 v4.0)
+- 전체 코드 구현 (46페이지, 35+ API, 77+ 컴포넌트)
+- 에이전트 시스템 ACTIVE (헌법 v5.0, 93핸들러)
 - 일자리 자동 수집 파이프라인 (Waterfall 4단계)
 - 카페 크롤링 파이프라인 (네이버 3곳 + 82cook)
 - 수익 컴포넌트 (AdSense pub: ca-pub-4117999106913048 + Coupang Partners)
 - SEO JSON-LD + sitemap + Breadcrumbs + 동적 OG 이미지
 - GTM + GA4 애널리틱스 기반 (15개 커스텀 이벤트)
+- PWA (서비스 워커 + 푸시알림 + 오프라인 페이지)
+- Gate 1 (CI: tsc+lint+build) + Gate 2 (post-deploy: Smoke+Visual QA+Lighthouse)
 
 #### SNS 마케팅 시스템
 - SNS 바이럴 마케팅 실험 시스템 (A/B 테스트 8주 로드맵)
@@ -819,39 +912,41 @@ Slack Workspace: 우나어-ops (14개 채널)
 
 #### 커뮤니티 활성화
 - 시드봇 50명 페르소나 (캐릭터 시트 방식, mood 기반 댓글)
-- 마이크로 스케줄러 (메인 12회 + 마이크로 4회)
+- 마이크로 스케줄러 (메인 12회 + 마이크로 6회)
 - promotionLevel 자동 승격 + 집중 좋아요
+- 비회원 좋아요/댓글 (GuestLike, fingerprint 기반)
 
-#### 3/30 신규 완료
-- 헌법 v4.0 (5대 페르소나 + 모델 정책 + 트렌딩 정책 + SNS 전략 + 보안)
-- 50명 페르소나 확장 (P1-P5 전용 15명 추가: AJ-AX)
-- 매거진 v2 (모닝/자동/이브닝 3회 발행 + DALL-E 커버 이미지)
-- 13개 신규 에이전트 (페르소나별 큐레이션 + 커뮤니티 활성화 + 주간 분석)
-- ESLint 19개 에러 수정 + AdSense pub ID 교체
-- CI E2E 테스트 webServer 자동 시작
-- Strategist: 사용자 심층 분석 에이전트 (Opus 기반)
-- 트렌딩 시스템 DB 마이그레이션 (trendingScore + lastEngagedAt)
-- CLAUDE_MODEL_STRATEGIC 워크플로우 env 연결
+#### 4~5월 신규 완료
+- 헌법 v5.0 (6개 파일 분리 + Opus 4.7 전략 모델)
+- BaseAgent Prompt Caching 구현 (constitution 토큰 90% 절감)
+- LIFE2 게시판 (인생 2막) + PostSource.SHEET 추가
+- 킬러포스트 시스템 (seed:killer-post, 2회/일, Post.isFeatured)
+- 바이럴 파동 감지/생성 (seed:viral-waves, 30분 주기)
+- 구글 시트 4탭 화제성 파이프라인 (community:sheet-scrape)
+- GHA 17개 체계 (agents-sheet-viral, agents-killer-post, agents-weekly 확장 등)
+- launchd 5개 plist (magazine×3, session-refresh, jisik-answerer)
+- 매거진 이미지 생성기 DALL-E → Gemini 교체 (launchd 환경변수)
+- AdminQueue + Popup + PushSubscription + PostView 모델 추가
+- 봇 게시글 Slug 자동생성 (Google 12,533개 URL 색인 복구)
+- 어드민 패널 확장 (queue, daily-brief, agents, push, popups)
+- Vercel Pro 업그레이드 + 실측 비용 $198/월 확인
 
 ### 창업자 대기 작업
-- [ ] 도메인 만기 연장 (2026-04-25)
-- [ ] 커스텀 도메인 연결 (Cloudflare → Vercel)
-- [ ] Slack Workspace + App 설정
-- [x] GitHub Actions secrets 설정 (Meta 토큰 완료)
+- [x] 도메인 만기 연장 (2027-04-25까지 갱신 완료)
+- [x] GitHub Actions secrets 설정 완료
 - [x] Threads OAuth 토큰 발급 완료
 - [x] Google AdSense 등록 완료 (13곳 배치)
 - [x] 쿠팡 파트너스 가입 완료
+- [x] Vercel Pro 업그레이드 완료
+- [ ] Band API 등록 완료 + 토큰 발급 (심사 중)
 - [ ] Facebook `pages_manage_posts` 권한 추가
-- [ ] X (Twitter) 개발자 토큰 발급
-- [ ] Band API 등록 완료 + 토큰 발급
-- [ ] GA4 계정/속성 생성 → 측정 ID 발급
-- [ ] GTM 컨테이너 생성 → 컨테이너 ID 발급
 
 ### 향후 확장 (Phase 3+)
 - CEO 자동 의사결정 프레임워크
 - CDO 퍼널 분석기 (GA4 데이터 연동)
 - 카카오톡 채널 / YouTube Shorts 확장
-- 카드뉴스 팀 에이전트 토론 구조
+- Next.js 14 → 16 단계적 마이그레이션
+- AI 에이전트 Evals 도입 (LLM-as-judge, 품질 측정)
 
 ---
 
@@ -938,14 +1033,17 @@ EXPERIMENT(설계) → EXECUTE(실행) → ⛔ Gate 2(사용자 피드백) → R
 | CI 빌드 검증 (ci.yml) | ✅ |
 | Lighthouse 접근성 (lighthouse.yml) | ✅ |
 | E2E Playwright (CI webServer 자동 시작) | ✅ |
-| Preview QA (Vercel PR Preview URL) | ⚠️ URL 있으나 체크리스트 없음 |
-| 배포 후 스모크 테스트 | ❌ 미구축 |
-| 에이전트 프롬프트 QA | ❌ 미구축 |
+| 배포 후 Gate 2 (post-deploy-qa.yml) | ✅ Smoke + Visual QA(Claude Haiku) + Lighthouse |
+| 크론 연결 검증 (check-cron-links.ts) | ✅ /done 자동 실행 |
+| 에이전트 프롬프트 QA | ⚠️ BotLog 기반 에러율 모니터링만 (eval 미구축) |
 
-### 목표 파이프라인
+### QA 레이어 구조
 
 ```
-개발(로컬) → PR 검증(CI: lint+type+test+build) → Preview(QA) → 프로덕션(배포)
+Layer 0: 코드 편집 후 → auto-typecheck.sh (Hook, 즉시)
+Layer 1: /done → Gate 1 (tsc + cron-links + build)
+Layer 2: CI (PR/push) → lint+type+test+build+E2E
+Layer 3: 배포 후 → Smoke+Visual QA+Lighthouse → Slack #qa
 ```
 
 ---
@@ -975,35 +1073,63 @@ EXPERIMENT(설계) → EXECUTE(실행) → ⛔ Gate 2(사용자 피드백) → R
 
 ## 19. 아키텍처 갭 분석
 
-### 성숙도 맵
+### 성숙도 맵 (v11 — 2026-05-11)
 
 ```
-████████████  코드 (47페이지, 77+컴포넌트)              ✅ 완료
-████████████  에이전트 (7 C-level + 13 신규 + SEED 50명) ✅ 완료
-████████████  CI/CD (빌드, 린트, 타입체크, E2E)          ✅ 완료
-████████████  SNS 실험 관리 + 학습 축적                  ✅ 완료
-████████████  매거진 v2 (3회/일 + DALL-E)               ✅ 완료
-████████░░░░  QA (Preview 있으나 체크리스트 없음)         ⚠️ 부분
-████████░░░░  모니터링 (GTM+GA4 구축, 대시보드 미설정)    ⚠️ 부분
-████░░░░░░░░  에이전트 협업 (메시지 버스 부분 구축)       ⚠️ 부분
-████░░░░░░░░  운영 채널 (Slack 설정 대기)                ⚠️ 대기
-██░░░░░░░░░░  KPI 프레임워크 (목표 테이블 미구축)         ❌ 미구축
-██░░░░░░░░░░  성장 루프 (Gate 체계 설계만)               ❌ 미구축
+████████████  코드 (46페이지, 35+API, 77+컴포넌트)         ✅ 완료
+████████████  에이전트 (93핸들러, 헌법 v5.0, Prompt Caching) ✅ 완료
+████████████  CI/CD (Gate 1 + Gate 2 + E2E)               ✅ 완료
+████████████  SNS 실험 관리 + 학습 축적                     ✅ 완료
+████████████  매거진 v2 (3회/일 + Gemini 커버)              ✅ 완료
+████████████  PWA (서비스워커 + 푸시알림 + 오프라인)          ✅ 완료
+████████████  킬러포스트 + 바이럴파동 파이프라인               ✅ 완료
+████████░░░░  QA (Gate 2 구축, AI Evals 미구축)            ⚠️ 부분
+████████░░░░  모니터링 (GTM+GA4 구축, 대시보드 미설정)        ⚠️ 부분
+████████░░░░  에이전트 협업 (메시지 버스 부분 구축)            ⚠️ 부분
+████████░░░░  SEO (JSON-LD 완성, Search Console 색인 복구 중) ⚠️ 진행중
+████░░░░░░░░  KPI 프레임워크 (목표 테이블 미구축)             ❌ 미구축
+████░░░░░░░░  성장 루프 (Gate 체계 설계만)                   ❌ 미구축
 ```
 
 ### 우선순위별 갭
 
 | 우선순위 | 갭 | 필요한 것 | 담당 |
 |---------|-----|----------|------|
-| **P0** | 도메인 연결 | Cloudflare → Vercel CNAME | 창업자 |
-| **P0** | Slack Workspace | Slack App + 채널 생성 | 창업자 |
-| **P1** | 배포 후 스모크 | CTO deploy-verifier.ts | 개발 |
+| **P1** | AI 에이전트 Evals | LLM-as-judge (Haiku) 품질 측정 | 개발 |
 | **P1** | KPI 목표 테이블 | KpiTarget 모델 + CEO 리포트 | 개발 |
-| **P1** | 에이전트 메시지 버스 | AgentMessage 테이블 | 개발 |
+| **P1** | 에이전트 메시지 버스 | AgentMessage 테이블 완성 | 개발 |
 | **P2** | 회고 자동화 | CEO retrospective.ts | 개발 |
-| **P2** | 에이전트 프롬프트 QA | prompt-qa.ts 비교 도구 | 개발 |
+| **P2** | Prisma 트랜잭션 | comment-activator 원자성 보장 | 개발 |
+| **P2** | CFO 하드스톱 | 예산 초과 시 에이전트 강제 중단 | 개발 |
 | **P3** | 퍼널 분석 | CDO funnel-analyzer.ts | 개발 |
-| **P3** | 자동 롤백 | 에러율 기반 자동 롤백 | 개발 |
+| **P3** | Next.js 16 마이그레이션 | 14→15→16 단계적 업그레이드 | 개발 |
+| **P3** | 분산 락 | @upstash/redis 기반 Race Condition 방지 | 개발 |
+| **P4** | Band API 활성화 | 심사 승인 후 cmo:band-manager DISPATCH 해제 | 창업자 |
+
+---
+
+## 20. v10 이후 주요 기능 (2026-04~05)
+
+> v10 문서(2026-03-30) 이후 실제 배포된 기능 목록
+
+| 기능 | 핵심 구성 | 배포 시점 |
+|------|---------|---------|
+| **킬러포스트 시스템** | `seed:killer-post`, Post.isFeatured/featuredAt, agents-killer-post.yml (2회/일) | 2026-04 |
+| **바이럴 파동 감지** | `seed:viral-waves`, 30분 주기, agents-sheet-viral.yml | 2026-04 |
+| **구글 시트 파이프라인** | `community:sheet-scrape`, PostSource.SHEET, 4탭 화제성 수집 | 2026-05 |
+| **LIFE2 게시판** | BoardType.LIFE2 (인생 2막), 커뮤니티 신규 탭 | 2026-04 |
+| **비회원 좋아요/댓글** | GuestLike 모델 (fingerprint 기반), 비회원 참여 허용 | 2026-05-01 |
+| **상단 팝업/띠배너** | Popup 모델 (3타입 × 7타겟), `/admin/popups` 관리 | 2026-04 |
+| **동영상 업로드** | `/api/uploads/video/*`, R2 presign, TipTap 에디터 통합 | 2026-04 |
+| **PWA 푸시알림** | PushSubscription + VAPID, `/admin/push`, 웹 푸시 발송 | 2026-04 |
+| **어드민 승인 큐** | AdminQueue (5타입: CONTENT_PUBLISH/AGENT_EVOLUTION/등), `/admin/queue` | 2026-04 |
+| **Gemini 이미지 생성** | launchd `IMAGE_GENERATOR=gemini`, 매거진 커버 3회/일 Gemini 전환 | 2026-04 |
+| **헌법 v5.0** | 6개 파일 분리 (core/audience/ops/infra/strategy), Opus 4.7 전략 모델 | 2026-04 |
+| **BaseAgent Prompt Caching** | `cache_control: {type: 'ephemeral'}` (Line 144), constitution 토큰 90% 절감 | 2026-04 |
+| **GHA 17개 체계** | agents-sheet-viral/killer-post/weekly 확장 + post-deploy-qa + quarantine-check | 2026-04~05 |
+| **봇 게시글 Slug 자동생성** | `/api/bot/posts` + `generateCommunitySlug()`, Google 12,533개 URL 색인 복구 | 2026-05-11 |
+| **SEO Article JSON-LD image 필드** | 커뮤니티 게시글 Google 리치 결과 필수 필드 충족 (3-tier fallback) | 2026-05-11 |
+| **Gate 2 자동화** | post-deploy-qa.yml: Smoke+Visual QA(Claude Haiku)+Lighthouse → Slack #qa | 2026-04 |
 
 ---
 
