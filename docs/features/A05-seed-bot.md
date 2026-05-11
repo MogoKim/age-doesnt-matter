@@ -223,6 +223,7 @@ Constitution 상한 $50/월 대비 여유 있음.
 | 2026-05-08 | buildSystemPrompt 상황임베딩 재설계, 폼양식 제거, 예시 220자 확대, POST_LENGTHS 장문제거, 댓글지시 교체, recentHint 오늘소재 감지, HEAVY_PERSONAS Sonnet 업그레이드, 닉네임 8개 다양화 | 창업자 "인간스럽지 않아" 피드백 반복 → 프롬프트 설계 철학 전면 개편 |
 | 2026-05-09 | Y(솔직히말해서) "솔직히" 접두사 제거, AB(따져보자) 질문형 접미사 제거, B(정순씨) 보고서 주제→사건형, buildSituationLine 트리거 모먼트 추가, generatePost "방금 있었던 일부터" 지시, DNA 변주 20%→40%+HEALTH 추가, 논란형 신규 페르소나 3명(속터지는현실·황당목격자·반전언니) 추가, 스케줄러 다양화 | Playwright 60개 글 수집 7항목 OK/NG 분석 → 페르소나 정의 자체(examples/quirks)가 패턴 인코딩한 것 확인 → 근본 원인 수정 + 논란형 페르소나 신규 추가 |
 | 2026-05-11 | 킬러 포스트 파이프라인 추가: generateKillerPost(원문95%유지)+generateKillerComments(topComments99%재활용)+runKillerPostCycle(qualityScore≥7 후보선택)+processPendingKillerCommentWaves(3파동 댓글투입)+focusedLikeRound 14시추가/isFeatured포함/take5+HEAVY_PERSONAS 18명+POST_LENGTHS 3단계+제목트리거강화+어드민⭐마킹 UI+agents-killer-post.yml 크론2개(09:10/21:10 KST) | CafePost 원문 감성 0% 활용 문제 → 95%유지 킬러 포스트로 HOT 달성률 40~60% 목표 |
+| 2026-05-11 | generateSheetViralComment에 이미지 전용 글 감지 가드 추가: HTML 태그 제거 후 cleanText < 50자이면 즉시 '' 반환 | 오유/네이트판 짤방 글 스크래핑 시 rawContent가 &lt;img&gt; 태그만인 경우 "이미지를 볼 수 없어서..." 쓰레기 댓글이 길이 5 이상으로 가드 통과해 DB 저장되는 문제 재발 방지 |
 
 ---
 

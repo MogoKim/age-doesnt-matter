@@ -877,6 +877,13 @@ export async function generateSheetViralComment(
   waveType: 'empathy' | 'critical' | 'reversal',
   keyTerms: string[],
 ): Promise<string> {
+  // ── 이미지 전용 글 감지: HTML 태그 제거 후 텍스트 50자 미만이면 AI 호출 스킵 ──
+  const cleanText = rawContent.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+  if (cleanText.length < 50) {
+    console.log(`  [SheetViral] 본문 텍스트 부족 (${cleanText.length}자) — 이미지 전용 글 댓글 스킵`)
+    return ''
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
   const p = getPersona(personaId)
 
   const WAVE_PROMPTS = {
