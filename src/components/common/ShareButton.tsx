@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { shareToKakao, copyShareLink } from '@/lib/kakao-share'
+import { shareToKakao, copyShareLink, KakaoUnavailableError } from '@/lib/kakao-share'
 import { useToast } from '@/components/common/Toast'
 import { IconShare, IconKakao, IconCopy } from '@/components/icons'
 
@@ -20,8 +20,13 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
     try {
       await shareToKakao({ title, description, imageUrl, url })
       setOpen(false)
-    } catch {
-      toast('카카오톡 공유에 실패했어요', 'error')
+    } catch (e) {
+      if (e instanceof KakaoUnavailableError) {
+        toast('링크가 복사됐어요', 'success')
+        setOpen(false)
+      } else {
+        toast('카카오톡 공유에 실패했어요', 'error')
+      }
     }
   }
 

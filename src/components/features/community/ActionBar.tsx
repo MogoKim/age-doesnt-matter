@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap, incrementShareCount } from '@/lib/actions/likes'
 import { toggleGuestPostLike } from '@/lib/actions/guest-likes'
 import { useToast } from '@/components/common/Toast'
-import { shareToKakao, copyShareLink } from '@/lib/kakao-share'
+import { shareToKakao, copyShareLink, KakaoUnavailableError } from '@/lib/kakao-share'
 import { gtmLike, gtmShare } from '@/lib/gtm'
 import { IconHeart, IconBookmark, IconShare, IconFlag, IconKakao, IconCopy } from '@/components/icons'
 import ReportModal from './ReportModal'
@@ -117,8 +117,15 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
       gtmShare('kakao', 'post', postId)
       void incrementShareCount(postId)
       setShowShareMenu(false)
-    } catch {
-      toast('공유에 실패했어요', 'error')
+    } catch (e) {
+      if (e instanceof KakaoUnavailableError) {
+        gtmShare('copy_link', 'post', postId)
+        void incrementShareCount(postId)
+        toast('링크가 복사됐어요', 'success')
+        setShowShareMenu(false)
+      } else {
+        toast('공유에 실패했어요', 'error')
+      }
     }
   }
 

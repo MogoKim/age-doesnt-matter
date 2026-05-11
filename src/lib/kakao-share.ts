@@ -37,30 +37,49 @@ interface KakaoShareOptions {
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
 
-let isLoading = false
+/** SDK 미초기화/로드 실패 시 링크 복사로 대체됐음을 알리는 에러 */
+export class KakaoUnavailableError extends Error {
+  readonly copiedUrl: string
+  constructor(url: string) {
+    super('KAKAO_UNAVAILABLE')
+    this.copiedUrl = url
+  }
+}
+
+// Fix A: Singleton Promise — 동시 호출 시 하나의 Promise 공유 (isLoading 레이스 컨디션 제거)
+let sdkPromise: Promise<void> | null = null
 
 async function ensureKakaoSDK(): Promise<void> {
   if (typeof window === 'undefined') return
-
   if (window.Kakao?.isInitialized()) return
 
-  if (!isLoading) {
-    isLoading = true
-    await new Promise<void>((resolve, reject) => {
-      const script = document.createElement('script')
-      script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js'
-      script.integrity = 'sha384-DKYJZ8NLiK8MN4/C5P2ezmFnkrysYIcIJf/rKaAvTEi4wFJSkmSm3JRBY/je6yX'
-      script.crossOrigin = 'anonymous'
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error('Kakao SDK 로드 실패'))
-      document.head.appendChild(script)
-    })
+  if (!sdkPromise) {
+    sdkPromise = (async () => {
+      // 이미 script 태그 삽입된 경우 로드 생략
+      if (!document.querySelector('script[src*="kakao_js_sdk"]')) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script')
+          script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js'
+          script.integrity = 'sha384-DKYJZ8NLiK8MN4/C5P2ezmFnkrysYIcIJf/rKaAvTEi4wFJSkmSm3JRBY/je6yX'
+          script.crossOrigin = 'anonymous'
+          script.onload = () => resolve()
+          script.onerror = () => reject(new Error('Kakao SDK 로드 실패'))
+          document.head.appendChild(script)
+        })
+      }
 
-    const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY
-    if (kakaoKey && window.Kakao && !window.Kakao.isInitialized()) {
-      window.Kakao.init(kakaoKey)
-    }
+      const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY
+      if (kakaoKey && window.Kakao && !window.Kakao.isInitialized()) {
+        window.Kakao.init(kakaoKey)
+      }
+    })().catch((err) => {
+      // Fix B: 에러 시 sdkPromise 리셋 → 재시도 가능
+      sdkPromise = null
+      throw err
+    })
   }
+
+  await sdkPromise
 }
 
 interface SharePostParams {
@@ -71,48 +90,52 @@ interface SharePostParams {
 }
 
 export async function shareToKakao(params: SharePostParams): Promise<void> {
-  await ensureKakaoSDK()
+  const fullUrl = params.url.startsWith('http') ? params.url : `${APP_URL}${params.url}`
 
-  if (!window.Kakao?.isInitialized()) {
-    const baseUrl = APP_URL
-    const fullUrl = params.url.startsWith('http') ? params.url : `${baseUrl}${params.url}`
-    // 카카오 SDK 미초기화 시 Web Share API로 대체
-    if (navigator.share) {
-      await navigator.share({
-        title: params.title,
-        text: params.description,
-        url: fullUrl,
-      })
-      return
-    }
-    // 클립보드 복사 대체
-    await navigator.clipboard.writeText(fullUrl)
-    return
+  try {
+    await ensureKakaoSDK()
+  } catch {
+    // SDK 로드 실패 → 링크 복사 후 KakaoUnavailableError throw (호출부에서 토스트 처리)
+    await copyToClipboardSilent(fullUrl)
+    throw new KakaoUnavailableError(fullUrl)
   }
 
-  const baseUrl = APP_URL
+  if (!window.Kakao?.isInitialized()) {
+    // SDK 로드됐지만 JS 키 미설정 → 링크 복사 대체
+    await copyToClipboardSilent(fullUrl)
+    throw new KakaoUnavailableError(fullUrl)
+  }
 
+  // Fix C: navigator.share 제거 — 데스크탑에서 AbortError 유발하던 폴백 삭제
   window.Kakao.Share.sendDefault({
     objectType: 'feed',
     content: {
       title: params.title,
       description: params.description,
-      imageUrl: params.imageUrl || `${baseUrl}/og-image.png`,
+      imageUrl: params.imageUrl || `${APP_URL}/og-image.png`,
       link: {
-        mobileWebUrl: `${baseUrl}${params.url}`,
-        webUrl: `${baseUrl}${params.url}`,
+        mobileWebUrl: fullUrl,
+        webUrl: fullUrl,
       },
     },
     buttons: [
       {
         title: '자세히 보기',
         link: {
-          mobileWebUrl: `${baseUrl}${params.url}`,
-          webUrl: `${baseUrl}${params.url}`,
+          mobileWebUrl: fullUrl,
+          webUrl: fullUrl,
         },
       },
     ],
   })
+}
+
+async function copyToClipboardSilent(url: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(url)
+  } catch {
+    // clipboard 접근 불가 시 무시
+  }
 }
 
 /**
