@@ -358,7 +358,7 @@ guardrails:
 # 8-1. 모델 정책
 # ──────────────────────────────────────────
 model_policy:
-  strategic: "claude-opus — 주간 전략 수립, 실험 설계 (주 1-2회)"
+  strategic: "claude-opus-4-7 — 주간 전략 수립, 실험 설계 (주 1-2회)"
   heavy: "claude-sonnet — 고객 대면 콘텐츠, 분석, 일자리 가공 (일 1-3회)"
   light: "claude-haiku — 데이터 집계, 모니터링, 헬스체크 (빈번 실행)"
   rule: "고객이 보는 결과물 = heavy 이상, 내부 운영 = light, 매거진 = heavy (주1 Opus 특집호)"

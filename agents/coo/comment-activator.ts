@@ -97,24 +97,27 @@ async function main() {
 
           const commentText = await generateComment(personaId, post.title, post.content)
 
-          await prisma.comment.create({
-            data: {
-              postId: post.id,
-              authorId: botUserId,
-              content: commentText,
-              status: 'ACTIVE',
-            },
-          })
+          // comment 생성 + commentCount 증가를 원자적으로 처리 (F-6 Prisma 트랜잭션)
+          await prisma.$transaction([
+            prisma.comment.create({
+              data: {
+                postId: post.id,
+                authorId: botUserId,
+                content: commentText,
+                status: 'ACTIVE',
+              },
+            }),
+            prisma.post.update({
+              where: { id: post.id },
+              data: { commentCount: { increment: 1 } },
+            }),
+          ])
 
           commentsAdded++
           activatedCount++
         }
 
         if (commentsAdded > 0) {
-          await prisma.post.update({
-            where: { id: post.id },
-            data: { commentCount: { increment: commentsAdded } },
-          })
           postCount++
         }
 

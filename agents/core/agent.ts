@@ -43,7 +43,7 @@ function loadConstitution(modules?: ConstitutionModule[]): string {
   }
 }
 
-const MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-6'
+const MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-7'
 const MODEL_HEAVY = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const MODEL_LIGHT = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 
@@ -108,13 +108,8 @@ export abstract class BaseAgent {
     }
   }
 
-  protected getSystemPrompt(): string {
-    const base = `당신은 "우리 나이가 어때서" 커뮤니티의 ${this.config.role}입니다.
-아래 회사 헌법을 항상 준수하세요:
-
-${this.constitutionText}
-
-당신의 역할: ${this.config.role}
+  private getSystemSuffix(): string {
+    const base = `당신의 역할: ${this.config.role}
 담당 업무: ${this.config.tasks}
 
 규칙:
@@ -128,11 +123,31 @@ ${this.constitutionText}
     return base + `\n## 과거 실행에서 학습한 교훈\n${this.lessons}\n`
   }
 
+  protected getSystemPrompt(): string {
+    return `당신은 "우리 나이가 어때서" 커뮤니티의 ${this.config.role}입니다.
+아래 회사 헌법을 항상 준수하세요:
+
+${this.constitutionText}
+
+` + this.getSystemSuffix()
+  }
+
   protected async chat(userMessage: string, maxTokens?: number): Promise<string> {
+    // 헌법(~6,250 토큰)을 캐시 블록으로 분리 — 90% API 비용 절감 (Anthropic Prompt Caching)
     const response = await this.client.messages.create({
       model: this.model,
       max_tokens: maxTokens ?? 1024,
-      system: this.getSystemPrompt(),
+      system: [
+        {
+          type: 'text',
+          text: this.constitutionText,
+          cache_control: { type: 'ephemeral' },
+        },
+        {
+          type: 'text',
+          text: `당신은 "우리 나이가 어때서" 커뮤니티의 ${this.config.role}입니다.\n\n` + this.getSystemSuffix(),
+        },
+      ],
       messages: [{ role: 'user', content: userMessage }],
     })
 
