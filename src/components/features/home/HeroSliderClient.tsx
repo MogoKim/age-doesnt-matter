@@ -71,19 +71,18 @@ export default function HeroSliderClient({ slides }: Props) {
   if (slides.length === 0) return null
 
   return (
-    <div className="w-full">
-      <section
-        className="w-full relative overflow-hidden [aspect-ratio:3/2] lg:[aspect-ratio:8/3]"
-        style={{ minHeight: 200 }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        onFocus={() => setPaused(true)}
-        onBlur={() => setPaused(false)}
-        aria-label="홈 배너 슬라이더"
-        aria-roledescription="carousel"
-      >
+    <section
+      className="w-full relative overflow-hidden [aspect-ratio:5/2] lg:[aspect-ratio:8/3]"
+      style={{ minHeight: 200 }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+      aria-label="홈 배너 슬라이더"
+      aria-roledescription="carousel"
+    >
         {slides.map((slide, index) => (
           <div
             key={slide.id}
@@ -182,12 +181,10 @@ export default function HeroSliderClient({ slides }: Props) {
             </button>
           </>
         )}
-      </section>
-
-      {/* 인디케이터 dots */}
+      {/* 인디케이터 dots — 이미지 위 absolute 하단 */}
       {slides.length > 1 && (
         <div
-          className="flex justify-center items-center gap-1.5 py-2 bg-background"
+          className="absolute bottom-2 left-0 right-0 flex justify-center items-center gap-1.5 z-10"
           role="tablist"
           aria-label="슬라이드 선택"
         >
@@ -205,14 +202,14 @@ export default function HeroSliderClient({ slides }: Props) {
                 className={cn(
                   'block rounded-full transition-all duration-300',
                   index === current
-                    ? 'w-5 h-2 bg-primary'
-                    : 'w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    ? 'w-5 h-2 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.5)]'
+                    : 'w-2 h-2 bg-white/60 hover:bg-white/80 shadow-[0_1px_2px_rgba(0,0,0,0.4)]'
                 )}
               />
             </button>
           ))}
         </div>
       )}
-    </div>
+    </section>
   )
 }

@@ -13,7 +13,6 @@ import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
 import CommunitySection from '@/components/features/home/CommunitySection'
-import IdentitySection from '@/components/features/home/IdentitySection'
 import Life2Section from '@/components/features/home/Life2Section'
 import HomeSidebar from '@/components/features/home/HomeSidebar'
 import PersonalGreeting from '@/components/features/home/PersonalGreeting'
@@ -82,7 +81,7 @@ function SectionSkeleton({ h = 'h-[200px]' }: { h?: string }) {
 
 function HeroSkeleton() {
   return (
-    <div className="w-full [aspect-ratio:3/2] lg:[aspect-ratio:8/3] animate-pulse bg-gradient-to-br from-primary/20 to-primary/10" />
+    <div className="w-full [aspect-ratio:5/2] lg:[aspect-ratio:8/3] animate-pulse bg-gradient-to-br from-primary/20 to-primary/10" />
   )
 }
 
@@ -199,8 +198,6 @@ export default async function HomePage() {
           <Suspense fallback={<HeroSkeleton />}>
             <HeroSlider />
           </Suspense>
-
-          <IdentitySection />
 
           <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
             <div>
