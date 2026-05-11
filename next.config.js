@@ -10,6 +10,7 @@ const nextConfig = {
   },
   images: {
     formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 86400,  // 24시간 — R2 이미지는 URL별 고유 (교체 시 URL 변경)
     remotePatterns: [
       {
         protocol: 'https',
@@ -43,6 +44,13 @@ const nextConfig = {
   },
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg', 'bcrypt', 'sharp'],
+    // dynamic 페이지 클라이언트 라우터 캐시 30초 — 재방문 시 서버 왕복 제거
+    // static 페이지 300초 — /contact, /faq 등 불변 콘텐츠
+    // Server Action revalidatePath/revalidateTag 호출 시 즉시 무효화됨
+    staleTimes: {
+      dynamic: 30,
+      static: 300,
+    },
   },
   async redirects() {
     return [
