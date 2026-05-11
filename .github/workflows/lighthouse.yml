@@ -2,8 +2,7 @@ name: Lighthouse CI
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+  # push 트리거 제거 — post-deploy-qa.yml이 배포 완료 후 실제 프로덕션 URL로 Lighthouse 실행함
 
 env:
   DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy

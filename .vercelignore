@@ -1,0 +1,9 @@
+docs/
+.claude/
+.bkit/
+.omc/
+memory/
+scripts/
+agents/
+.github/
+*.log

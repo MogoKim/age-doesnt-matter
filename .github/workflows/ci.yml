@@ -46,12 +46,12 @@ jobs:
               - '.bkit/**'
               - '.omc/**'
 
-  # Step 2: 코드 품질 게이트 (docs-only 변경이면 스킵)
+  # Step 2: 코드 품질 게이트 (docs-only 또는 agents-only 변경이면 스킵)
   quality:
     name: Lint → Typecheck → Test → Build
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: needs.detect-changes.outputs.docs-only != 'true'
+    if: needs.detect-changes.outputs.docs-only != 'true' && !(needs.detect-changes.outputs.agents == 'true' && needs.detect-changes.outputs.frontend != 'true' && needs.detect-changes.outputs.prisma != 'true' && needs.detect-changes.outputs.admin != 'true')
     steps:
       - uses: actions/checkout@v4
         with:
@@ -142,11 +142,11 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # Step 5: 에이전트 크론 연결 검증 — agents/** 변경 시
+  # Step 5: 에이전트 크론 연결 검증 — agents/** 변경 시 (quality와 독립 실행)
   agents-check:
     name: 에이전트 크론 연결 검증
     runs-on: ubuntu-latest
-    needs: [quality, detect-changes]
+    needs: [detect-changes]
     if: needs.detect-changes.outputs.agents == 'true'
     steps:
       - uses: actions/checkout@v4
