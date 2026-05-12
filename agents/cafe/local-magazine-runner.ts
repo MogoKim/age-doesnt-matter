@@ -5,13 +5,12 @@
  * // LOCAL ONLY — launchd (macOS) 전용, GitHub Actions 실행 불가
  *
  * 환경변수 (launchd plist에서 설정):
- *   SESSION_TIME=morning|evening
+ *   SESSION_TIME=morning|late
  *   IMAGE_GENERATOR=gemini|chatgpt
  *
  * 스케줄:
- *   morning (10:00 KST) — Gemini Imagen, 결과 JSON 저장
- *   afternoon (15:00 KST) — Gemini Imagen, 결과 JSON 저장
- *   late (17:00 KST) — Gemini Imagen, 오전+오후 합산 Slack 알림
+ *   morning (11:00 KST) — Gemini Imagen, 결과 JSON 저장
+ *   late    (14:00 KST) — Gemini Imagen, 오전 결과 합산 Slack 알림
  *
  * 결과 파일: agents/cafe/.magazine-daily-YYYYMMDD.json (gitignore 포함)
  * Slack 채널: #매거진 (C0ARZET1X63)
@@ -105,16 +104,16 @@ function formatSuccessMessage(status: DailyStatus): string {
   const dateStr = `${kstDate.getMonth() + 1}/${kstDate.getDate()}`
 
   const morningSection = status.morningDone && status.morningArticles.length > 0
-    ? `📰 *오전 (12:30)*\n${status.morningArticles.map(a =>
+    ? `📰 *오전 (11:00)*\n${status.morningArticles.map(a =>
         `• ${a.title} — ${a.category}\n  이미지: ${a.engine === 'gemini' ? 'Gemini Imagen' : 'ChatGPT'} × 2장`
       ).join('\n')}`
-    : `📰 *오전 (12:30)*\n• 발행 없음`
+    : `📰 *오전 (11:00)*\n• 발행 없음`
 
   const eveningSection = status.eveningDone && status.eveningArticles.length > 0
-    ? `📰 *저녁 (21:00)*\n${status.eveningArticles.map(a =>
+    ? `📰 *저녁 (14:00)*\n${status.eveningArticles.map(a =>
         `• ${a.title} — ${a.category}\n  이미지: ${a.engine === 'gemini' ? 'Gemini Imagen' : 'ChatGPT'} × 2장`
       ).join('\n')}`
-    : `📰 *저녁 (21:00)*\n• 발행 없음`
+    : `📰 *저녁 (14:00)*\n• 발행 없음`
 
   const totalCount = status.morningArticles.length + status.eveningArticles.length
 
@@ -122,7 +121,7 @@ function formatSuccessMessage(status: DailyStatus): string {
 }
 
 function formatFailureMessage(session: 'morning' | 'evening', engine: string, stage: string, error: string): string {
-  const sessionLabel = session === 'morning' ? '오전 (12:30)' : '저녁 (21:00)'
+  const sessionLabel = session === 'morning' ? '오전 (11:00)' : '저녁 (14:00)'
   return `❌ *매거진 발행 실패 — ${sessionLabel} 세션*\n단계: ${stage}\n엔진: ${engine}\n원인: ${error}\n→ 이번 회차 건너뜀`
 }
 

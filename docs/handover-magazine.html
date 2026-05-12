@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>매거진 시스템 인수인계서 — 우나어</title>
+  <style>
+    :root {
+      --primary: #FF6F61;
+      --primary-dark: #E85D50;
+      --bg: #F8F7F5;
+      --surface: #FFFFFF;
+      --border: #E5E2DC;
+      --text: #1A1A1A;
+      --text-muted: #6B6661;
+      --green: #22C55E;
+      --yellow: #F59E0B;
+      --red: #EF4444;
+      --blue: #3B82F6;
+      --code-bg: #F1F0ED;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Menlo', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Pretendard Variable', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* ── 헤더 ── */
+    .page-header {
+      background: var(--primary);
+      color: white;
+      padding: 48px 40px 36px;
+    }
+    .page-header .label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.75;
+      margin-bottom: 12px;
+    }
+    .page-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .page-header .meta {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    /* ── 상태 대시보드 ── */
+    .status-bar {
+      background: #1A1A1A;
+      color: white;
+      padding: 20px 40px;
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot.yellow { background: var(--yellow); }
+    .dot.red { background: var(--red); }
+
+    /* ── 레이아웃 ── */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 40px 80px;
+    }
+
+    /* ── 섹션 ── */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      background: var(--primary);
+      color: white;
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 20px 0 10px;
+      color: var(--text);
+    }
+    h3:first-of-type { margin-top: 0; }
+
+    p { margin-bottom: 10px; }
+    p:last-child { margin-bottom: 0; }
+
+    /* ── 코드 블록 ── */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+    code {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    /* ── 테이블 ── */
+    .table-wrap { overflow-x: auto; margin: 12px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th {
+      background: var(--code-bg);
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #FAFAF9; }
+
+    /* ── 뱃지 ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge.green { background: #DCFCE7; color: #15803D; }
+    .badge.yellow { background: #FEF9C3; color: #A16207; }
+    .badge.red { background: #FEE2E2; color: #B91C1C; }
+    .badge.gray { background: #F3F4F6; color: #4B5563; }
+    .badge.blue { background: #DBEAFE; color: #1D4ED8; }
+
+    /* ── 플로우 다이어그램 ── */
+    .flow {
+      background: #F8F7F5;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 2;
+    }
+    .flow .indent { margin-left: 20px; color: var(--text-muted); }
+    .flow .arrow { color: var(--primary); font-weight: 700; }
+    .flow .step { color: var(--text); }
+    .flow .note { color: var(--text-muted); font-style: italic; }
+
+    /* ── 경고 박스 ── */
+    .alert {
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 12px 0;
+      font-size: 14px;
+    }
+    .alert.warn {
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      border-left: 4px solid var(--yellow);
+    }
+    .alert.danger {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-left: 4px solid var(--red);
+    }
+    .alert.info {
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      border-left: 4px solid var(--blue);
+    }
+    .alert .alert-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    /* ── 파일 트리 ── */
+    .tree {
+      background: #1A1A1A;
+      color: #E5E7EB;
+      border-radius: 8px;
+      padding: 20px 24px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.9;
+    }
+    .tree .dir { color: #60A5FA; }
+    .tree .file { color: #D1FAE5; }
+    .tree .comment { color: #6B7280; }
+
+    /* ── 이슈 그리드 ── */
+    .issue-grid {
+      display: grid;
+      gap: 12px;
+      margin: 12px 0;
+    }
+    .issue-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .issue-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .issue-title { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+    .issue-desc { font-size: 13px; color: var(--text-muted); }
+
+    /* ── 체크리스트 ── */
+    .checklist { list-style: none; margin: 10px 0; }
+    .checklist li {
+      display: flex;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .checklist li:last-child { border-bottom: none; }
+    .checklist .ck { flex-shrink: 0; }
+
+    /* ── 우선순위 태그 ── */
+    .p-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .p-tag.p1 { background: #FEE2E2; color: #B91C1C; }
+    .p-tag.p2 { background: #FEF9C3; color: #A16207; }
+    .p-tag.p3 { background: #F3F4F6; color: #4B5563; }
+    .p-tag.done { background: #DCFCE7; color: #15803D; }
+
+    /* ── 푸터 ── */
+    footer {
+      text-align: center;
+      padding: 32px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 680px) {
+      .page-header { padding: 32px 20px 24px; }
+      .status-bar { padding: 16px 20px; gap: 16px; }
+      .container { padding: 24px 16px 60px; }
+      .section { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── 헤더 ── -->
+<div class="page-header">
+  <div class="label">우리 나이가 어때서 · 내부 문서 · v1.0</div>
+  <h1>📰 매거진 시스템 인수인계서</h1>
+  <div class="meta">작성일: 2026-05-12 &nbsp;|&nbsp; 대상: age-doesnt-matter.com 매거진 전 영역 &nbsp;|&nbsp; 코드 전수검사 + 실측 로그 기반</div>
+</div>
+
+<!-- ── 실시간 상태 대시보드 ── -->
+<div class="status-bar">
+  <div class="status-item"><span class="dot green"></span> 자동화 가동 중</div>
+  <div class="status-item"><span class="dot green"></span> launchd 11:00 / 14:00 KST</div>
+  <div class="status-item"><span class="dot green"></span> Gemini Imagen 정상</div>
+  <div class="status-item"><span class="dot green"></span> R2 업로드 정상</div>
+  <div class="status-item"><span class="dot green"></span> Slack #magazine 봇 초대 완료</div>
+  <div class="status-item"><span class="dot yellow"></span> Coupang API 401 (비필수)</div>
+</div>
+
+<div class="container">
+
+  <!-- ══ 1. 시스템 개요 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">시스템 개요</div>
+    </div>
+
+    <p>매거진은 <strong>AI 완전 자동 발행</strong> 시스템입니다. 사람 개입 없이 하루 2회 기사를 생성·발행합니다.</p>
+
+    <div class="flow" style="margin: 16px 0;">
+      <div><span class="step">launchd (macOS 스케줄러)</span></div>
+      <div class="indent"><span class="arrow">└─</span> <strong>11:00 KST</strong> (morning 세션) → 기사 생성 + DB 발행 + JSON 저장</div>
+      <div class="indent"><span class="arrow">└─</span> <strong>14:00 KST</strong> (late 세션) &nbsp;&nbsp; → 기사 생성 + Slack 통합 알림 + JSON 삭제</div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>항목</th><th>값</th></tr>
+        <tr><td>DB 테이블</td><td><code>Post</code> (boardType = 'MAGAZINE')</td></tr>
+        <tr><td>봇 작성자</td><td>editorUserId — 매거진 전용 봇 계정 (정순씨)</td></tr>
+        <tr><td>Slack 채널</td><td>#magazine (C0ARZET1X63) — 일일 발행 알림</td></tr>
+        <tr><td>일일 최대 발행</td><td>3편 (hardcoded)</td></tr>
+        <tr><td>이미지 엔진</td><td>Gemini Imagen (Playwright 스크래퍼) → Unsplash 폴백</td></tr>
+        <tr><td>기사 생성 모델</td><td>Claude Sonnet (월~토) / Claude Opus (일)</td></tr>
+        <tr><td>실행 환경</td><td>macOS 전용 (launchd + Playwright) — GitHub Actions 비활성</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 2. 파일 구조 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">파일 구조</div>
+    </div>
+
+    <div class="tree">
+      <div><span class="dir">agents/cafe/</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">local-magazine-runner.ts</span> &nbsp;&nbsp;&nbsp;<span class="comment"># launchd 진입점 (오케스트레이터)</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">magazine-generator.ts</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 기사 선정 + 생성 + DB 발행</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">image-generator.ts</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 이미지 라우팅 (Gemini → Unsplash → null)</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">local-image-generator.ts</span> &nbsp;<span class="comment"># Playwright 기반 Gemini/ChatGPT 스크래퍼</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">cps-matcher.ts</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Coupang CPS 상품 매칭 (선택적)</span></div>
+      <div>&nbsp;&nbsp;└── <span class="file">preload-eagain-retry.cjs</span> &nbsp;<span class="comment"># EAGAIN 에러 방어 (Node.js 파일시스템)</span></div>
+      <div>&nbsp;</div>
+      <div><span class="dir">agents/magazine/</span></div>
+      <div>&nbsp;&nbsp;└── <span class="file">series-plan.ts</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 48개 시리즈 연간 계획</span></div>
+      <div>&nbsp;</div>
+      <div><span class="dir">scripts/</span></div>
+      <div>&nbsp;&nbsp;└── <span class="file">launchd-alert.sh</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 실패 시 Slack #알림-시스템 전송 래퍼</span></div>
+      <div>&nbsp;</div>
+      <div><span class="dir">~/Library/LaunchAgents/</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">com.unaeo.magazine-morning.plist</span> &nbsp;&nbsp;<span class="comment"># 11:00 KST ✅ ACTIVE</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">com.unaeo.magazine-late.plist</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 14:00 KST ✅ ACTIVE</span></div>
+      <div>&nbsp;&nbsp;└── <span class="file">com.unaeo.magazine-afternoon.plist</span> <span class="comment"># ⛔ INACTIVE (파일만 보존)</span></div>
+      <div>&nbsp;</div>
+      <div><span class="dir">src/app/(main)/magazine/</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">page.tsx</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 목록 페이지</span></div>
+      <div>&nbsp;&nbsp;└── <span class="file">[id]/page.tsx</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 상세 페이지 (JSON-LD, og 태그)</span></div>
+      <div>&nbsp;</div>
+      <div><span class="dir">src/lib/queries/posts/</span></div>
+      <div>&nbsp;&nbsp;└── <span class="file">posts.magazine.ts</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># getMagazineList, getRelatedMagazinePosts</span></div>
+      <div>&nbsp;</div>
+      <div><span class="dir">logs/</span> <span class="comment">(gitignore)</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">magazine-morning.log</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 11:00 실행 로그</span></div>
+      <div>&nbsp;&nbsp;└── <span class="file">magazine-late.log</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 14:00 실행 로그</span></div>
+    </div>
+  </div>
+
+  <!-- ══ 3. 실행 파이프라인 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">실행 파이프라인 (코드 흐름)</div>
+    </div>
+
+    <h3>3-1. 전체 흐름</h3>
+    <div class="flow">
+      <div>launchd 트리거 (11:00 or 14:00 KST)</div>
+      <div class="indent"><span class="arrow">→</span> launchd-alert.sh <span class="note">(래퍼: 실패 시 #알림-시스템 Slack)</span></div>
+      <div class="indent"><span class="arrow">→</span> tsx local-magazine-runner.ts</div>
+      <div class="indent" style="margin-left:40px;"><span class="arrow">1.</span> dotenv 로드 (.env.local) <span class="note">← 반드시 최우선</span></div>
+      <div class="indent" style="margin-left:40px;"><span class="arrow">2.</span> R2 dynamic import <span class="note">(dotenv 이후 — S3Client 초기화 보장)</span></div>
+      <div class="indent" style="margin-left:40px;"><span class="arrow">3.</span> SESSION_TIME 정규화: late → evening, 나머지 → morning</div>
+      <div class="indent" style="margin-left:40px;"><span class="arrow">4.</span> magazine-generator.ts 호출 → articles[] 반환</div>
+      <div class="indent" style="margin-left:40px;"><span class="arrow">5.</span> daily JSON 관리</div>
+      <div class="indent" style="margin-left:60px;">morning: morningArticles 저장</div>
+      <div class="indent" style="margin-left:60px;">evening: eveningArticles 추가 → Slack 전송 → 파일 삭제</div>
+    </div>
+
+    <h3>3-2. 기사 선정 우선순위 (magazine-generator.ts)</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>순위</th><th>소스</th><th>score</th><th>조건</th></tr>
+        <tr><td>1순위</td><td>시리즈 연재 편</td><td>10</td><td>월요일만 (dayOfWeek === 1)</td></tr>
+        <tr><td>2순위</td><td>GEO 시드 주제</td><td>7~10</td><td>지오시드 에이전트 결과</td></tr>
+        <tr><td>3순위</td><td>트렌드 분석 주제</td><td>7~9</td><td>카페 트렌드 에이전트 결과</td></tr>
+        <tr><td>4순위</td><td>욕망 지도 폴백</td><td>7</td><td>1~3 모두 없을 때 (HEALTH/MONEY/RELATIONSHIP 등)</td></tr>
+      </table>
+    </div>
+    <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">필터: score ≥ 7점 &nbsp;+&nbsp; isSimilarTitle() 통과 (최근 30일 제목 첫 3단어 중 2개 미만 겹침) &nbsp;+&nbsp; 일일 3편 한도 미초과</p>
+
+    <h3>3-3. 기사 생성 모델</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>요일</th><th>모델</th><th>이유</th></tr>
+        <tr><td>월~토</td><td><code>claude-sonnet-4-6</code> (HEAVY)</td><td>일반 기사 — 비용 효율</td></tr>
+        <tr><td>일요일</td><td><code>claude-opus-4-6</code> (STRATEGIC)</td><td>주간 심층 기획 기사</td></tr>
+      </table>
+    </div>
+
+    <h3>3-4. 이미지 생성 흐름</h3>
+    <div class="flow">
+      <div>IMAGE_GENERATOR=gemini (plist 환경변수)</div>
+      <div class="indent"><span class="arrow">→</span> local-image-generator.ts</div>
+      <div class="indent" style="margin-left:40px;"><span class="arrow">→</span> gemini-scraper (Playwright, Chrome ~/.chrome-gemini-profile)</div>
+      <div class="indent" style="margin-left:60px;"><span class="arrow">성공:</span> buffer → R2 업로드 → pub-*.r2.dev URL 반환</div>
+      <div class="indent" style="margin-left:60px;"><span class="arrow">실패/타임아웃(120초):</span> null 반환</div>
+      <div class="indent"><span class="arrow">→</span> Unsplash 폴백 (PERSON_REAL / FOOD_PHOTO / SCENE_PHOTO / OBJECT_PHOTO만)</div>
+      <div class="indent" style="margin-left:40px;"><span class="arrow">→</span> fetchUnsplashPhoto() → R2 업로드 (2회 재시도) → URL</div>
+      <div class="indent" style="margin-left:40px;"><span class="arrow">실패:</span> null</div>
+      <div class="indent"><span class="arrow">→</span> null 최종 반환 → 히어로 이미지 없음 → <strong>기사 발행 보류</strong></div>
+    </div>
+
+    <div class="table-wrap" style="margin-top:12px;">
+      <table>
+        <tr><th>이미지 타입</th><th>처리</th></tr>
+        <tr><td>PERSON_REAL</td><td>한국 여성 4050 실사 Gemini 프롬프트</td></tr>
+        <tr><td>FOOD_PHOTO / SCENE_PHOTO / OBJECT_PHOTO</td><td>카테고리별 Gemini 프롬프트 → Unsplash 폴백</td></tr>
+        <tr><td>ILLUSTRATION</td><td><span class="badge red">비활성</span> DALL-E 연동 주석 처리 — 히어로 없으면 발행 보류</td></tr>
+      </table>
+    </div>
+
+    <h3>3-5. DB 발행 (publishMagazine)</h3>
+    <pre><code>prisma.post.create({
+  boardType:      'MAGAZINE',
+  source:         'BOT',
+  status:         'PUBLISHED',
+  slug,           // 한글 키워드 기반 유니크 (slug 충돌 시 '-2' 접미사)
+  seoTitle,       // og:title 소스
+  seoDescription, // og:description 소스
+  thumbnailUrl,   // R2 URL (og:image 소스) — null이면 발행 보류
+  seriesId,       // 시리즈 편일 때만
+  seriesOrder,    // 1, 2, 3 ...
+  seriesCount,    // 시리즈 총 편수
+})</code></pre>
+  </div>
+
+  <!-- ══ 4. 스케줄 설정 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">스케줄 설정</div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>plist 파일</th><th>실행 시각</th><th>SESSION_TIME</th><th>역할</th><th>상태</th></tr>
+        <tr>
+          <td><code>magazine-morning</code></td>
+          <td><strong>11:00 KST</strong></td>
+          <td>morning</td>
+          <td>기사 생성 + JSON 저장, Slack 없음</td>
+          <td><span class="badge green">✅ ACTIVE</span></td>
+        </tr>
+        <tr>
+          <td><code>magazine-late</code></td>
+          <td><strong>14:00 KST</strong></td>
+          <td>late (→ evening)</td>
+          <td>기사 생성 + Slack 통합 알림 + JSON 삭제</td>
+          <td><span class="badge green">✅ ACTIVE</span></td>
+        </tr>
+        <tr>
+          <td><code>magazine-afternoon</code></td>
+          <td>—</td>
+          <td>—</td>
+          <td>파일 보존 (복구용)</td>
+          <td><span class="badge gray">⛔ INACTIVE</span></td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>plist 공통 구조</h3>
+    <pre><code>ProgramArguments:
+  /bin/bash
+  → scripts/launchd-alert.sh  magazine-{name}
+  → node_modules/.bin/tsx
+  → agents/cafe/local-magazine-runner.ts
+
+EnvironmentVariables:
+  PATH:            .../node_modules/.bin:/...nvm.../bin:/usr/local/bin:...
+  HOME:            /Users/yanadoo
+  SESSION_TIME:    morning | late
+  IMAGE_GENERATOR: gemini
+  NODE_OPTIONS:    --require .../preload-eagain-retry.cjs
+
+StandardOutPath: logs/magazine-{name}.log  (stderr도 동일)</code></pre>
+
+    <h3>스케줄 변경 방법</h3>
+    <pre><code># 1. unload → plist Hour 수정 → load
+launchctl unload ~/Library/LaunchAgents/com.unaeo.magazine-morning.plist
+# (Hour 값 편집)
+launchctl load  ~/Library/LaunchAgents/com.unaeo.magazine-morning.plist
+
+# 확인
+launchctl list | grep magazine
+/usr/libexec/PlistBuddy -c "Print :StartCalendarInterval:Hour" \
+  ~/Library/LaunchAgents/com.unaeo.magazine-morning.plist</code></pre>
+
+    <div class="alert info">
+      <div class="alert-title">⚠️ 시간대 주의</div>
+      macOS 시스템 시간대가 KST로 설정되어 있어 plist <code>Hour</code> 값 = KST 시각 그대로 입력 (UTC 변환 불필요)
+    </div>
+  </div>
+
+  <!-- ══ 5. 일일 상태 파일 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div class="section-title">일일 상태 파일</div>
+    </div>
+
+    <p><strong>경로</strong>: <code>agents/cafe/.magazine-daily-YYYY-MM-DD.json</code> &nbsp;<span class="badge gray">gitignore</span></p>
+    <p>morning 세션과 evening 세션 간 결과를 공유하는 임시 상태 파일입니다.</p>
+
+    <pre><code>{
+  "date": "2026-05-12",
+  "morningDone": true,
+  "morningArticles": [
+    {
+      "title": "베란다 상추 한 잎의 위로",
+      "category": "요리",
+      "postId": "cmoy0n9s100071r2y3p2xb0xm",
+      "engine": "gemini"
+    }
+  ],
+  "eveningDone": false,
+  "eveningArticles": []
+}</code></pre>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>세션</th><th>동작</th></tr>
+        <tr><td>morning (11:00)</td><td>morningDone = true, morningArticles 저장 → Slack 없음</td></tr>
+        <tr><td>evening / late (14:00)</td><td>eveningDone = true, eveningArticles 추가 → Slack 전송 → <strong>파일 삭제</strong></td></tr>
+      </table>
+    </div>
+
+    <div class="alert warn">
+      <div class="alert-title">stale 파일 주의</div>
+      evening 세션 실패 시 당일 JSON 파일이 삭제되지 않고 남습니다. 다음 날 morning 세션은 오늘 날짜로 새 파일을 생성하므로 무해하지만, 수동 정리가 필요할 수 있습니다.
+    </div>
+  </div>
+
+  <!-- ══ 6. 프론트엔드 구조 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <div class="section-title">프론트엔드 구조</div>
+    </div>
+
+    <h3>목록 페이지 (/magazine)</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>항목</th><th>내용</th></tr>
+        <tr><td>캐시</td><td>60초 (검색/카테고리 필터 시 bypass)</td></tr>
+        <tr><td>레이아웃</td><td>Featured 카드 1건 + 광고 슬롯 + Grid (나머지)</td></tr>
+        <tr><td>광고</td><td>8번째 카드 뒤 쿠팡 배너</td></tr>
+        <tr><td>JSON-LD</td><td>CollectionPage</td></tr>
+      </table>
+    </div>
+
+    <h3>상세 페이지 (/magazine/[id])</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>항목</th><th>내용</th></tr>
+        <tr><td>SSG</td><td>상위 50건 사전 생성 (viewCount DESC)</td></tr>
+        <tr><td>URL</td><td>Slug 기반 canonical (<code>/magazine/{slug}</code>)</td></tr>
+        <tr><td>리다이렉트</td><td>id로 접근 → slug로 308 permanent redirect</td></tr>
+      </table>
+    </div>
+
+    <h3>SEO 메타 태그 소스</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>태그</th><th>소스 필드</th><th>fallback</th></tr>
+        <tr><td>og:title</td><td><code>seoTitle</code></td><td><code>title</code></td></tr>
+        <tr><td>og:description</td><td><code>seoDescription</code></td><td>본문 첫 150자 → <code>preview</code></td></tr>
+        <tr><td>og:image</td><td><code>thumbnailUrl</code> (R2 URL 직접)</td><td>본문 첫 img src → /logo.png</td></tr>
+        <tr><td>canonical</td><td><code>/magazine/{slug}</code></td><td><code>/magazine/{id}</code></td></tr>
+      </table>
+    </div>
+
+    <h3>JSON-LD 3종</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>타입</th><th>포함 필드</th><th>상태</th></tr>
+        <tr><td>Article</td><td>headline, description, datePublished, publisher, author, image</td><td><span class="badge green">✅ 구현</span></td></tr>
+        <tr><td>BreadcrumbList</td><td>홈 &gt; 매거진 &gt; 글 제목 (3단계)</td><td><span class="badge green">✅ 구현</span></td></tr>
+        <tr><td>FAQPage</td><td><code>&lt;!-- FAQ_START/END --&gt;</code> 마커 기반 Q&amp;A 추출</td><td><span class="badge green">✅ 구현</span></td></tr>
+      </table>
+    </div>
+
+    <div class="alert warn">
+      <div class="alert-title">Article JSON-LD 누락 필드 (미구현)</div>
+      <code>inLanguage: 'ko'</code> / <code>articleSection</code> (카테고리) / <code>keywords</code> / <code>wordCount</code><br/>
+      → 파일: <code>src/app/(main)/magazine/[id]/page.tsx</code> &nbsp;|&nbsp; 예상 공수: 15분
+    </div>
+  </div>
+
+  <!-- ══ 7. 이미지 처리 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <div class="section-title">이미지 처리 (sanitize.ts)</div>
+    </div>
+
+    <div class="flow">
+      <div>post.content (DB HTML)</div>
+      <div class="indent"><span class="arrow">→</span> sanitizeMagazineHtml() &nbsp;&nbsp;<span class="note">XSS 방지 + 마크다운 아티팩트 제거</span></div>
+      <div class="indent"><span class="arrow">→</span> proxyMagazineImages() &nbsp;&nbsp;&nbsp;<span class="note">R2/Unsplash → /_next/image 프록시</span></div>
+      <div class="indent"><span class="arrow">→</span> dangerouslySetInnerHTML</div>
+    </div>
+
+    <h3>proxyMagazineImages() 처리 URL 패턴</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>패턴</th><th>설명</th></tr>
+        <tr><td><code>*.r2.dev</code></td><td>Cloudflare R2 공개 URL</td></tr>
+        <tr><td><code>*.r2.cloudflarestorage.com</code></td><td>R2 내부 URL</td></tr>
+        <tr><td><code>img.age-doesnt-matter.com</code></td><td>R2 커스텀 도메인</td></tr>
+        <tr><td><code>images.unsplash.com</code></td><td>Unsplash 원본 (폴백 경로)</td></tr>
+      </table>
+    </div>
+
+    <div class="alert warn">
+      <div class="alert-title">og:image는 프록시 미적용</div>
+      DB <code>thumbnailUrl</code> 값을 그대로 사용. <strong>반드시 R2 URL이어야 정상 표시</strong>됩니다.<br/>
+      Unsplash raw URL이 저장된 구형 기사는 og:image가 깨질 수 있습니다.
+    </div>
+  </div>
+
+  <!-- ══ 8. 시리즈 연재 계획 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <div class="section-title">시리즈 연재 계획</div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>항목</th><th>값</th></tr>
+        <tr><td>규모</td><td>48개 시리즈 × 5편 = 240편 연간 계획</td></tr>
+        <tr><td>파일</td><td><code>agents/magazine/series-plan.ts</code></td></tr>
+        <tr><td>발행 조건</td><td>월요일만 (<code>getActiveSeriesToday</code> — dayOfWeek === 1)</td></tr>
+      </table>
+    </div>
+
+    <h3>2026년 시리즈 (일부)</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>분기</th><th>시리즈명</th><th>카테고리</th></tr>
+        <tr><td>Q1</td><td>50대 갱년기 완벽 가이드</td><td>건강</td></tr>
+        <tr><td>Q1</td><td>국민연금 완전 정복</td><td>재테크</td></tr>
+        <tr><td>Q1</td><td>중년에 진짜 친구 만들기</td><td>관계</td></tr>
+        <tr><td>Q1</td><td>50대 건강 식단 기본기</td><td>요리</td></tr>
+        <tr><td>Q2</td><td>퇴직 후 6개월 생존 가이드</td><td>은퇴준비</td></tr>
+        <tr><td>Q2</td><td>50대 재취업 성공 스토리</td><td>일자리</td></tr>
+        <tr><td>Q2</td><td>자녀 떠난 집, 나만의 공간</td><td>생활</td></tr>
+        <tr><td>Q3</td><td>50대 무릎·관절 완전 가이드</td><td>건강</td></tr>
+        <tr><td>Q3</td><td>우리 또래 국내여행 추천</td><td>여행</td></tr>
+        <tr><td>Q4</td><td>50대 가을·겨울 스타일링</td><td>패션</td></tr>
+        <tr><td>Q4</td><td>연말 노후 준비 점검</td><td>재테크</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 9. 환경변수 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <div class="section-title">환경변수 (필수)</div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>변수명</th><th>용도</th><th>출처</th></tr>
+        <tr><td><code>ANTHROPIC_API_KEY</code></td><td>Claude API (기사 생성)</td><td>.env.local</td></tr>
+        <tr><td><code>DATABASE_URL</code></td><td>Prisma DB 연결</td><td>.env.local</td></tr>
+        <tr><td><code>SLACK_BOT_TOKEN</code></td><td>Slack 알림 전송</td><td>.env.local</td></tr>
+        <tr><td><code>SLACK_CHANNEL_MAGAZINE</code></td><td>발행 알림 채널 ID</td><td>.env.local (기본: C0ARZET1X63)</td></tr>
+        <tr><td><code>SLACK_CHANNEL_ALERT_SYSTEM</code></td><td>launchd 실패 알림 채널</td><td>.env.local</td></tr>
+        <tr><td><code>SESSION_TIME</code></td><td>morning / late</td><td>plist EnvironmentVariables</td></tr>
+        <tr><td><code>IMAGE_GENERATOR</code></td><td>gemini / chatgpt</td><td>plist EnvironmentVariables</td></tr>
+        <tr><td><code>CLOUDFLARE_ACCOUNT_ID</code></td><td>R2 업로드</td><td>.env.local</td></tr>
+        <tr><td><code>CLOUDFLARE_R2_ACCESS_KEY</code></td><td>R2 인증</td><td>.env.local</td></tr>
+        <tr><td><code>CLOUDFLARE_R2_SECRET_KEY</code></td><td>R2 인증</td><td>.env.local</td></tr>
+        <tr><td><code>CLOUDFLARE_R2_BUCKET</code></td><td>R2 버킷명</td><td>.env.local</td></tr>
+        <tr><td><code>NEXT_PUBLIC_R2_PUBLIC_URL</code></td><td>R2 공개 URL 프리픽스</td><td>.env.local</td></tr>
+        <tr><td><code>UNSPLASH_ACCESS_KEY</code></td><td>Unsplash 이미지 폴백</td><td>.env.local</td></tr>
+        <tr><td><code>COUPANG_ACCESS_KEY</code></td><td>CPS 딥링크 생성 (선택적)</td><td>.env.local</td></tr>
+        <tr><td><code>COUPANG_SECRET_KEY</code></td><td>CPS 딥링크 생성 (선택적)</td><td>.env.local</td></tr>
+      </table>
+    </div>
+
+    <div class="alert warn">
+      <div class="alert-title">dotenv 로딩 순서 — 절대 변경 금지</div>
+      <code>local-magazine-runner.ts</code>에서 <code>loadDotenv()</code>는 반드시 <code>await import('../../src/lib/r2.js')</code> 이전에 위치해야 합니다.<br/>
+      <code>src/lib/r2.ts</code>가 모듈 레벨에서 <code>process.env.CLOUDFLARE_ACCOUNT_ID</code>를 읽고 S3Client를 초기화하기 때문입니다.
+    </div>
+  </div>
+
+  <!-- ══ 10. 로그 위치 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <div class="section-title">로그 위치 및 확인 방법</div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>로그</th><th>경로</th><th>비고</th></tr>
+        <tr><td>morning 실행</td><td><code>logs/magazine-morning.log</code></td><td>plist StandardOutPath + stderr 합산</td></tr>
+        <tr><td>late 실행</td><td><code>logs/magazine-late.log</code></td><td>plist StandardOutPath + stderr 합산</td></tr>
+        <tr><td>일일 상태</td><td><code>agents/cafe/.magazine-daily-YYYY-MM-DD.json</code></td><td>세션 간 중간 상태, 저녁 후 자동 삭제</td></tr>
+      </table>
+    </div>
+
+    <pre><code># 실시간 로그 확인
+tail -f logs/magazine-morning.log
+tail -f logs/magazine-late.log
+
+# 오늘 발행 현황
+cat agents/cafe/.magazine-daily-$(date +%Y-%m-%d).json
+
+# launchd 상태 (PID | 종료코드 | 레이블)
+launchctl list | grep magazine
+
+# 수동 실행 (테스트)
+launchctl start com.unaeo.magazine-morning
+launchctl start com.unaeo.magazine-late</code></pre>
+  </div>
+
+  <!-- ══ 11. 알려진 이슈 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <div class="section-title">알려진 이슈 및 제약</div>
+    </div>
+
+    <h3>운영 이슈</h3>
+    <div class="issue-grid">
+      <div class="issue-card">
+        <div class="issue-icon">✅</div>
+        <div>
+          <div class="issue-title">Slack 봇 #magazine 채널 초대</div>
+          <div class="issue-desc">2026-05-12 완료. 봇(@agedoesntmatter)이 채널에 정상 입장. 14:00 알림 수신 예정.</div>
+        </div>
+      </div>
+      <div class="issue-card">
+        <div class="issue-icon">⚠️</div>
+        <div>
+          <div class="issue-title">Gemini 로그인 세션 만료 (간헐적)</div>
+          <div class="issue-desc">Chrome 프로필(~/.chrome-gemini-profile) 세션 만료 시 Unsplash 폴백으로 처리. 기사 발행에 영향 없음. 장기 미로그인 시 Unsplash URL 비율 증가.</div>
+        </div>
+      </div>
+      <div class="issue-card">
+        <div class="issue-icon">⚠️</div>
+        <div>
+          <div class="issue-title">Claude API 타임아웃 (간헐적)</div>
+          <div class="issue-desc">3번째 기사 생성 중 간헐적 발생. try-catch로 감싸져 있어 해당 기사만 건너뜀.</div>
+        </div>
+      </div>
+      <div class="issue-card">
+        <div class="issue-icon">⚠️</div>
+        <div>
+          <div class="issue-title">Coupang API 401</div>
+          <div class="issue-desc">CPS 딥링크 생성 실패. <strong>기사 발행에 영향 없음</strong> (별도 try-catch). 상품 링크 삽입 기능만 비활성 상태.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>구조적 제약</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>항목</th><th>내용</th></tr>
+        <tr><td>일일 한도</td><td>3편 hardcoded (<code>magazine-generator.ts:318</code>)</td></tr>
+        <tr><td>macOS 전용</td><td>launchd + Playwright Chrome — Linux/GitHub Actions 실행 불가</td></tr>
+        <tr><td>GHA 비활성</td><td><code>agents-daily.yml</code> 150-152행 주석 처리 (로컬 전담)</td></tr>
+        <tr><td>ILLUSTRATION 폴백 없음</td><td>DALL-E 연동 주석 처리 → 히어로 없으면 발행 보류</td></tr>
+        <tr><td>히어로 이미지 필수</td><td><code>thumbnailUrl</code> null이면 기사 발행 보류 (<code>magazine-generator.ts:455</code>)</td></tr>
+      </table>
+    </div>
+
+    <h3>SEO 미완성 항목</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>항목</th><th>상태</th><th>파일</th></tr>
+        <tr><td>Article JSON-LD <code>inLanguage</code></td><td><span class="badge red">❌ 미구현</span></td><td><code>src/app/(main)/magazine/[id]/page.tsx</code></td></tr>
+        <tr><td>Article JSON-LD <code>keywords</code></td><td><span class="badge red">❌ 미구현</span></td><td>동일</td></tr>
+        <tr><td>Article JSON-LD <code>wordCount</code></td><td><span class="badge red">❌ 미구현</span></td><td>동일</td></tr>
+        <tr><td>Article JSON-LD <code>articleSection</code></td><td><span class="badge red">❌ 미구현</span></td><td>동일</td></tr>
+        <tr><td>구형 글 FAQPage JSON-LD</td><td><span class="badge red">❌ 5/5 이전 글</span></td><td>재발행 필요</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 12. 운영 체크리스트 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <div class="section-title">일상 운영 체크리스트</div>
+    </div>
+
+    <pre><code># ① 오늘 발행 현황
+cat agents/cafe/.magazine-daily-$(date +%Y-%m-%d).json
+
+# ② 최근 실행 로그 (50줄)
+tail -50 logs/magazine-morning.log
+tail -50 logs/magazine-late.log
+
+# ③ launchd 상태 (PID | 종료코드 | 레이블)
+launchctl list | grep magazine
+# 정상: -  0  com.unaeo.magazine-morning  (- = 실행 안 중, 0 = 마지막 성공)
+
+# ④ 최근 3일 발행 편수 (Supabase 콘솔 SQL)
+SELECT DATE("publishedAt"), COUNT(*) as cnt
+FROM "Post"
+WHERE "boardType" = 'MAGAZINE' AND "source" = 'BOT'
+GROUP BY DATE("publishedAt")
+ORDER BY 1 DESC
+LIMIT 3;</code></pre>
+  </div>
+
+  <!-- ══ 13. 장애 대응 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">13</div>
+      <div class="section-title">장애 대응</div>
+    </div>
+
+    <h3>🔴 하루 종일 0편 발행된 경우</h3>
+    <pre><code># 1. launchd 상태 확인
+launchctl list | grep magazine
+
+# 2. 로그 확인
+tail -50 logs/magazine-morning.log
+
+# 3. 종료코드별 원인
+exit 127 / "can't open input file"
+  → launchd TCC 이슈 → plist ProgramArguments 재확인 (tsx 직접 경로)
+
+"[R2] CLOUDFLARE_ACCOUNT_ID 미설정"
+  → dotenv 로드 순서 문제 → local-magazine-runner.ts 상단 확인
+
+"not_in_channel"
+  → 봇이 #magazine 채널에 없음 → /invite @agedoesntmatter
+
+# 4. 수동 실행
+SESSION_TIME=morning IMAGE_GENERATOR=gemini \
+  npx tsx agents/cafe/local-magazine-runner.ts</code></pre>
+
+    <h3>🟡 Gemini 로그인 만료 시</h3>
+    <pre><code># 1. Gemini 프로필로 Chrome 열기
+open -a "Google Chrome" --args \
+  --user-data-dir=$HOME/.chrome-gemini-profile
+
+# 2. gemini.google.com 로그인
+# 3. Chrome 종료
+# 4. 다음 스케줄 자동 실행 (또는 수동 실행)</code></pre>
+
+    <h3>🟡 이미지 없어서 발행 보류 반복 시</h3>
+    <pre><code># 로그에서 확인
+grep "이미지 수급 불가\|이미지 없음" logs/magazine-morning.log
+
+# 조치: Gemini 로그인 갱신 우선
+# 또는 plist IMAGE_GENERATOR 제거 후 DALL-E API 폴백 복구
+# (OPENAI_API_KEY 필요, DALL-E 주석 해제 필요)</code></pre>
+  </div>
+
+  <!-- ══ 14. 코드 변경 주의사항 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">14</div>
+      <div class="section-title">코드 변경 시 주의사항</div>
+    </div>
+
+    <div class="alert danger">
+      <div class="alert-title">local-magazine-runner.ts — dotenv 로드 순서 절대 변경 금지</div>
+      <code>loadDotenv()</code>는 <strong>모든 static import 이후, R2 dynamic import 이전</strong> 위치 유지 필수.<br/>
+      <code>await import('../../src/lib/r2.js')</code>는 top-level await — ESM 전용.
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>파일</th><th>변경 시 주의사항</th></tr>
+        <tr>
+          <td><code>local-magazine-runner.ts</code></td>
+          <td>dotenv 순서 유지 / SESSION_TIME 분기 로직 (<code>late → evening</code>) 보존</td>
+        </tr>
+        <tr>
+          <td><code>magazine-generator.ts</code></td>
+          <td><code>isSimilarTitle()</code> 변경 시 중복 발행 위험 / 일일 3편 한도 변경 시 비용 영향 계산 필수 (Sonnet 약 $0.03/편)</td>
+        </tr>
+        <tr>
+          <td><code>plist 파일</code></td>
+          <td>반드시 <code>unload → 수정 → load</code> 순서 / Hour 값 = KST 시각 그대로 / 새 plist 추가 시 agents-daily.yml에 <code>// LOCAL ONLY</code> 주석 명시</td>
+        </tr>
+        <tr>
+          <td><code>sanitize.ts</code></td>
+          <td><code>proxyMagazineImages()</code>는 <code>&lt;img&gt;</code> 태그만 처리 — og:image meta 태그 미처리. 새 이미지 소스 추가 시 패턴 배열에 추가 필요.</td>
+        </tr>
+        <tr>
+          <td><code>src/lib/r2.ts</code></td>
+          <td>모듈 레벨에서 env 읽음. static import 시점에 이미 S3Client 초기화 완료 → dotenv 이후 dynamic import 필수.</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 15. 향후 개선 과제 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">15</div>
+      <div class="section-title">향후 개선 과제</div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>우선순위</th><th>과제</th><th>예상 공수</th><th>상태</th></tr>
+        <tr>
+          <td><span class="p-tag done">✅ 완료</span></td>
+          <td>Slack 봇 #magazine 채널 초대</td>
+          <td>—</td>
+          <td>2026-05-12 완료</td>
+        </tr>
+        <tr>
+          <td><span class="p-tag p2">P2</span></td>
+          <td>Coupang API 키 갱신</td>
+          <td>30분</td>
+          <td>기사 발행 무영향 — 언제든 가능</td>
+        </tr>
+        <tr>
+          <td><span class="p-tag p2">P2</span></td>
+          <td>Article JSON-LD 필드 보강 (<code>inLanguage</code>, <code>keywords</code>, <code>wordCount</code>, <code>articleSection</code>)</td>
+          <td>15분</td>
+          <td><code>src/app/(main)/magazine/[id]/page.tsx</code></td>
+        </tr>
+        <tr>
+          <td><span class="p-tag p2">P2</span></td>
+          <td>구형 글(5/5 이전) FAQPage JSON-LD 재생성</td>
+          <td>1~2시간</td>
+          <td>창업자 결정 후 재발행</td>
+        </tr>
+        <tr>
+          <td><span class="p-tag p2">P2</span></td>
+          <td>Gemini 로그인 체크 자동화 (세션 만료 사전 감지)</td>
+          <td>30분</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><span class="p-tag p3">P3</span></td>
+          <td>ILLUSTRATION 타입 DALL-E 폴백 재활성화</td>
+          <td>1시간</td>
+          <td>OPENAI_API_KEY 필요</td>
+        </tr>
+        <tr>
+          <td><span class="p-tag p3">P3</span></td>
+          <td>매거진 발행 Admin 대시보드</td>
+          <td>3시간</td>
+          <td>일별 발행 현황 UI</td>
+        </tr>
+        <tr>
+          <td><span class="p-tag p3">P3</span></td>
+          <td>구형 기사 thumbnailUrl Unsplash → R2 재업로드 스크립트</td>
+          <td>1시간</td>
+          <td>DB에 Unsplash raw URL 저장된 기사 대상</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  우리 나이가 어때서 (age-doesnt-matter.com) &nbsp;·&nbsp; 매거진 시스템 인수인계서 &nbsp;·&nbsp; 2026-05-12
+</footer>
+
+</body>
+</html>

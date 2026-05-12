@@ -447,7 +447,7 @@
 <main class="main">
 <h1>우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서</h1>
 <blockquote>
-<p><strong>최종 업데이트</strong>: 2026-05-12 (v12 — 코드 전수검사 최신화: 78명 페르소나 · 48핸들러 · 17GHA · $198/월 · 화제성 파이프라인 · Phase 4 에이전트)
+<p><strong>최종 업데이트</strong>: 2026-05-12 (v12 — 코드 전수검사 최신화: 78명 페르소나 · 69핸들러 · 17GHA · $198/월 · 화제성 파이프라인 · Phase 4 에이전트)
 <strong>문서 관리자</strong>: Claude Code (자동화) + 창업자 (승인)
 <strong>변경 시</strong>: 이 문서 하단 <a href="#%EB%AC%B8%EC%84%9C-%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8-%EA%B0%80%EC%9D%B4%EB%93%9C">문서 업데이트 가이드</a> 참고</p>
 </blockquote>
@@ -577,7 +577,7 @@
 </tr>
 <tr>
 <td><strong>AI</strong></td>
-<td><span class="tip" data-tip="Anthropic의 Claude 모델 3단계 운용 전략. Opus 4.7: 최고 추론력, 주간 전략 분석(1~2회/일). Sonnet 4.6: 균형형, 콘텐츠 생성·고객 대면(다수). Haiku 4.5: 초고속·저비용, 모니터링·분류·댓글(93핸들러 대부분).">Anthropic Claude (Opus 4.7 / Sonnet 4.6 / Haiku 4.5)</span></td>
+<td><span class="tip" data-tip="Anthropic의 Claude 모델 3단계 운용 전략. Opus 4.7: 최고 추론력, 주간 전략 분석(1~2회/일). Sonnet 4.6: 균형형, 콘텐츠 생성·고객 대면(다수). Haiku 4.5: 초고속·저비용, 모니터링·분류·댓글(69핸들러 대부분).">Anthropic Claude (Opus 4.7 / Sonnet 4.6 / Haiku 4.5)</span></td>
 <td>3-tier</td>
 </tr>
 <tr>
@@ -1062,6 +1062,27 @@
 <td>주간 전략 설계 — 실험 로드맵 + 트렌드 교차 참조</td>
 </tr>
 <tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/caregiving-curator.ts</code></td>
+<td>매일 10:15 KST</td>
+<td>Sonnet</td>
+<td>간병·요양 토픽 큐레이션 — 우나어 타겟 고민 대응 콘텐츠 생성</td>
+</tr>
+<tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/health-anxiety-responder.ts</code></td>
+<td>매일 10:45 KST</td>
+<td>Sonnet</td>
+<td>건강 불안 토픽 응답 큐레이션 — 건강·의료 관련 공감 콘텐츠 생성</td>
+</tr>
+<tr>
+<td><strong>CMO</strong></td>
+<td><code>cmo/humor-curator.ts</code></td>
+<td>매일 11:15 KST</td>
+<td>Sonnet</td>
+<td>유머·웃음 토픽 큐레이션 — 50+세대 공감 유머 콘텐츠 생성</td>
+</tr>
+<tr>
 <td><strong>CPO</strong></td>
 <td><code>cpo/ux-analyzer.ts</code></td>
 <td>매일 11:00</td>
@@ -1116,6 +1137,13 @@
 <td>하루 9회 (09~22시)</td>
 <td>Haiku</td>
 <td>78명 페르소나 활동 (게시글, 댓글, 좋아요, 대댓글) + promotionLevel 자동 승격 + 집중 좋아요 (21시) — 스크래퍼봇 BI~BW(SHEET 글 전담) + 엔터봇 EN1~EN5(10·13·15·21시 활성)</td>
+</tr>
+<tr>
+<td><strong>SEED</strong></td>
+<td><code>seed/controversy-chain.ts</code></td>
+<td>agents-seed.yml 연동 (다회/일)</td>
+<td>Sonnet</td>
+<td>논쟁 체인 자동 실행 — 화제 게시물에 반론→재반론→결말 5단계 댓글 구조 생성</td>
 </tr>
 </tbody></table>
 <h3>5.3 에이전트 기반 구조 (core/)</h3>
@@ -2945,7 +2973,7 @@
 <h3>완료됨 (2026-05-11 기준)</h3>
 <ul>
 <li>전체 코드 구현 (46페이지, 19+ API, 77+ 컴포넌트)</li>
-<li>에이전트 시스템 ACTIVE (헌법 v5.0, 48핸들러 · 78명 페르소나)</li>
+<li>에이전트 시스템 ACTIVE (헌법 v5.0, 69핸들러 · 78명 페르소나)</li>
 <li>일자리 자동 수집 파이프라인</li>
 <li>시드 페르소나 78명 (기존 봇 + 스크래퍼봇 BI~BW + 엔터봇 EN1~EN5)</li>
 <li>카페 크롤링 파이프라인</li>

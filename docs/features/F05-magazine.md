@@ -130,6 +130,7 @@
 | 2026-04-29 | 상세 H2 제목 중복 제거 / CSP GA4 도메인 추가 / favicon.ico 복구 / CPS 섹션 홀딩(CPS_ENABLED=false) / 썸네일=히어로 이미지 직접 사용 / seoTitle 50자 / maxArticles 3 / CafeTrend 없을 때 욕망지도 폴백 / 목록 카드 preview 표시 | Playwright 전방위 검수 후 기획-현실 갭 P0~P2 수정 |
 | 2026-05-02 | MagazineSection.tsx Link에 `prefetch={false}` + `article.slug ?? article.id` 적용 | 홈 리스트 진입 시 동시 prefetch 폭격으로 DB connection pool 포화 → 버퍼링 해소 |
 | 2026-05-04 | launchd plist ProgramArguments → `scripts/run-magazine.sh` 래퍼 스크립트로 교체 | afternoon/late exit 127 — plist PATH에 nvm node 경로 미포함 (`env: node: No such file or directory`) |
+| 2026-05-12 | local-magazine-runner.ts SESSION_TIME `afternoon`→`late`, 스케줄 오전 11:00/저녁 14:00 KST로 조정 | 매거진 발행 시간 최적화 (기존 12:30/21:00→11:00/14:00) |
 
 ---
 
