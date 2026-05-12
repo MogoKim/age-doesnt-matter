@@ -1121,14 +1121,15 @@ export async function processSheetEngagementWaves(): Promise<void> {
 export async function processPendingSheetCommentWaves(): Promise<void> {
   const now = new Date()
 
-  // 일일 상한 체크 (화제성 글 5건 × 4파동 = 20)
+  // 일일 상한 체크 — PENDING 건만 카운트 (SUCCESS 처리된 파동은 제외)
   const todayViralCount = await prisma.botLog.count({
     where: {
       action: { in: ['SHEET_LIKE_WAVE_PENDING', 'SHEET_COMMENT_WAVE_PENDING'] },
+      status: 'PENDING',
       createdAt: { gte: startOfKstDay() },
     },
   })
-  if (todayViralCount > 20) {
+  if (todayViralCount > 50) {
     console.log('[SheetViral] 일일 상한 초과 — 처리 스킵')
     return
   }
@@ -1192,7 +1193,10 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
           waveType,
           keyTerms,
         )
-        if (!commentText || commentText.length < 5) continue
+        if (!commentText || commentText.length < 5) {
+          console.log(`  [SheetViral] ⚠️ 댓글 스킵 — 빈값 또는 5자 미만 (persona=${personaId}, post=${data.postId.slice(0, 8)})`)
+          continue
+        }
 
         await prisma.$transaction([
           prisma.comment.create({ data: { postId: data.postId, authorId, content: commentText } }),
