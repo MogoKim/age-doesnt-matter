@@ -14,10 +14,14 @@
     <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/local-magazine-runner.ts</string>
   </array>
 
+  <key>WorkingDirectory</key>
+  <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
+
+  <!-- 11:00 KST (오전 매거진 발행, IMAGE_GENERATOR=gemini) -->
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key>
-    <integer>1</integer>
+    <integer>2</integer>
     <key>Minute</key>
     <integer>0</integer>
   </dict>
