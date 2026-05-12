@@ -54,14 +54,14 @@ export default function FAB({ isLoggedIn = false }: FABProps) {
   return (
     <>
       {isLoggedIn ? (
-        <Link href={`/community/write?board=${board}`} className={fabClassName} aria-label="글쓰기">
-          <IconWrite size={20} />
-          <span className={labelClassName}>글쓰기</span>
+        <Link href={`/community/write?board=${board}`} className={fabClassName} style={{ color: 'white' }} aria-label="글쓰기">
+          <IconWrite size={20} className="text-white" />
+          <span className={labelClassName} style={{ color: 'white' }}>글쓰기</span>
         </Link>
       ) : (
-        <button className={fabClassName} onClick={() => setShowLoginPrompt(true)} aria-label="글쓰기">
-          <IconWrite size={20} />
-          <span className={labelClassName}>글쓰기</span>
+        <button className={fabClassName} style={{ color: 'white' }} onClick={() => setShowLoginPrompt(true)} aria-label="글쓰기">
+          <IconWrite size={20} className="text-white" />
+          <span className={labelClassName} style={{ color: 'white' }}>글쓰기</span>
         </button>
       )}
 
