@@ -345,6 +345,47 @@
   }
 
   .top-btn.show { opacity: 1; }
+
+  /* ── Tooltip ── */
+  .tip {
+    position: relative;
+    cursor: help;
+    border-bottom: 1px dotted var(--primary);
+    display: inline-block;
+  }
+  .tip::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 10px);
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    white-space: normal;
+    width: 300px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s;
+    z-index: 9999;
+  }
+  .tip::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    bottom: calc(100% + 4px);
+    border: 6px solid transparent;
+    border-top-color: #1e1e2e;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s;
+    z-index: 9999;
+  }
+  .tip:hover::after,
+  .tip:hover::before { opacity: 1; }
 </style>
 </head>
 <body>
@@ -484,6 +525,7 @@
 <hr>
 <h2>2. 기술 스택</h2>
 <h3>2.1 핵심 스택</h3>
+<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:8px;">💡 기술명에 마우스를 올리면 설명이 나타납니다.</p>
 <table>
 <thead>
 <tr>
@@ -492,69 +534,70 @@
 <th>버전</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td><strong>프레임워크</strong></td>
-<td>Next.js (App Router)</td>
+<td><span class="tip" data-tip="React 기반 풀스택 프레임워크. 서버 컴포넌트(RSC)로 서버에서 직접 렌더링, 파일 기반 라우팅, SSR·SSG·ISR 모두 지원. App Router(Next.js 13+)는 layouts·loading·server actions를 내장해 별도 라이브러리 없이 풀스택 개발 가능.">Next.js (App Router)</span></td>
 <td>14.2.35</td>
 </tr>
 <tr>
 <td><strong>언어</strong></td>
-<td>TypeScript (strict)</td>
+<td><span class="tip" data-tip="JavaScript의 정적 타입 슈퍼셋. strict 모드는 가장 엄격한 타입 검사를 활성화(noImplicitAny, strictNullChecks, strictFunctionTypes 등). 런타임 전 오류를 컴파일 타임에 잡아 안정성 향상.">TypeScript (strict)</span></td>
 <td>5.9.3</td>
 </tr>
 <tr>
 <td><strong>DB</strong></td>
-<td>Supabase PostgreSQL</td>
+<td><span class="tip" data-tip="PostgreSQL 기반 오픈소스 Firebase 대안. 실시간 구독(Realtime), Row-Level Security(RLS), REST·GraphQL API 자동 생성 제공. 트랜잭션 풀러(포트 6543)로 서버리스 환경 커넥션 관리.">Supabase PostgreSQL</span></td>
 <td>-</td>
 </tr>
 <tr>
 <td><strong>ORM</strong></td>
-<td>Prisma</td>
+<td><span class="tip" data-tip="Node.js·TypeScript용 차세대 ORM. schema.prisma로 DB 스키마 정의 → 타입 안전 쿼리 자동 생성. 마이그레이션 자동화, Prisma Studio 시각화, Raw SQL 없이 안전한 DB 접근 보장.">Prisma</span></td>
 <td>7.5.0</td>
 </tr>
 <tr>
 <td><strong>인증</strong></td>
-<td>NextAuth v5 (카카오 전용)</td>
+<td><span class="tip" data-tip="Next.js 전용 인증 라이브러리(Auth.js v5). OAuth 2.0, JWT·세션 관리 내장. 현재 카카오 소셜 로그인 전용으로 구성. providerId·닉네임·프로필만 수집해 가입 허들 최소화.">NextAuth v5 (카카오 전용)</span></td>
 <td>beta.30</td>
 </tr>
 <tr>
 <td><strong>CSS</strong></td>
-<td>Tailwind CSS + shadcn/ui</td>
+<td><span class="tip" data-tip="Tailwind CSS: 유틸리티 퍼스트 CSS 프레임워크. 클래스 조합으로 빠른 스타일링, PurgeCSS로 번들 최소화. shadcn/ui: Radix UI 기반 접근성(a11y) 준수 컴포넌트 컬렉션. 복사-붙여넣기 방식으로 커스터마이징 자유도 최대.">Tailwind CSS + shadcn/ui</span></td>
 <td>-</td>
 </tr>
 <tr>
 <td><strong>폰트</strong></td>
-<td>Pretendard Variable (next/font/local)</td>
+<td><span class="tip" data-tip="한국 오픈소스 산세리프 폰트. Variable 폰트로 파일 1개에 100~900 모든 굵기 포함. next/font/local로 외부 요청 없이 로컬 최적화 로딩, CLS(누적 레이아웃 이동) 방지.">Pretendard Variable (next/font/local)</span></td>
 <td>-</td>
 </tr>
 <tr>
 <td><strong>스토리지</strong></td>
-<td>Cloudflare R2 (이미지)</td>
+<td><span class="tip" data-tip="Cloudflare의 S3 호환 객체 스토리지. 이그레스(다운로드) 비용 0원이 핵심 장점. S3 API 완전 호환으로 AWS SDK 그대로 사용. 사용자 업로드·매거진 커버·카드뉴스 이미지 저장.">Cloudflare R2 (이미지)</span></td>
 <td>-</td>
 </tr>
 <tr>
 <td><strong>AI</strong></td>
-<td>Anthropic Claude (Opus 4.6 / Sonnet 4.6 / Haiku 4.5)</td>
+<td><span class="tip" data-tip="Anthropic의 Claude 모델 3단계 운용 전략. Opus 4.7: 최고 추론력, 주간 전략 분석(1~2회/일). Sonnet 4.6: 균형형, 콘텐츠 생성·고객 대면(다수). Haiku 4.5: 초고속·저비용, 모니터링·분류·댓글(93핸들러 대부분).">Anthropic Claude (Opus 4.7 / Sonnet 4.6 / Haiku 4.5)</span></td>
 <td>3-tier</td>
 </tr>
 <tr>
 <td><strong>배포</strong></td>
-<td>Vercel (Hobby Plan)</td>
+<td><span class="tip" data-tip="Next.js 제작사의 서버리스 배포 플랫폼. Edge Network CDN으로 전 세계 저지연 응답. PR마다 자동 Preview URL 생성, 서버리스 함수·Edge Runtime 내장. Pro 플랜으로 팀 기능·우선 지원 포함.">Vercel (Pro Plan)</span></td>
 <td>-</td>
 </tr>
 <tr>
 <td><strong>CI/CD</strong></td>
-<td>GitHub Actions</td>
+<td><span class="tip" data-tip="GitHub 내장 CI/CD 자동화. YAML 워크플로우 17개로 에이전트 크론 스케줄·배포 QA 실행. Push·PR 트리거로 lint·타입체크·빌드·E2E 자동 검증. 무료 2,000분/월 (현재 사용량 내).">GitHub Actions</span></td>
 <td>-</td>
 </tr>
 <tr>
 <td><strong>운영 커뮤니케이션</strong></td>
-<td>Slack (Bot + Webhook)</td>
+<td><span class="tip" data-tip="팀 메신저 + API 플랫폼. Bot은 양방향 커맨드(/status·/stop·/approve), Webhook은 단방향 알림 발송. 14개 채널로 에이전트 운영(긴급·시스템·KPI·로그·승인 분리). 창업자 ↔ AI C-level 소통의 핵심.">Slack (Bot + Webhook)</span></td>
 <td>-</td>
 </tr>
 <tr>
 <td><strong>애널리틱스</strong></td>
-<td>Google Tag Manager + GA4</td>
+<td><span class="tip" data-tip="GTM(Google Tag Manager): 코드 수정 없이 태그·픽셀·이벤트를 웹 UI에서 관리. GA4(Google Analytics 4): 이벤트 기반 차세대 애널리틱스. GTM 경유로 GA4 데이터 수집, 15개 커스텀 이벤트 정의.">Google Tag Manager + GA4</span></td>
 <td>-</td>
 </tr>
 </tbody></table>
