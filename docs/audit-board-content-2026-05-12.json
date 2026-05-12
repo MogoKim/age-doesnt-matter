@@ -1,0 +1,1714 @@
+{
+  "generatedAt": "2026-05-12T06:05:28.399Z",
+  "target": "https://age-doesnt-matter.com",
+  "limit": 30,
+  "bodyMinLength": 50,
+  "summaries": [
+    {
+      "label": "사는이야기",
+      "board": "STORY",
+      "totalPosts": 30,
+      "checkedPosts": 30,
+      "passCount": 0,
+      "failCount": 6,
+      "warnCount": 24,
+      "rc2Suspects": 1,
+      "passRate": 0
+    }
+  ],
+  "details": [
+    {
+      "board": "STORY",
+      "label": "사는이야기",
+      "slug": "stories",
+      "totalPosts": 30,
+      "checkedPosts": 30,
+      "passCount": 0,
+      "failCount": 6,
+      "warnCount": 24,
+      "rc2Suspects": 1,
+      "results": [
+        {
+          "postId": "cmp26tjkm0000zl3f8yntibi7",
+          "title": "우리 또래 건강 고민, 함께 나눠요",
+          "url": "/community/stories/cmp26tjkm0000zl3f8yntibi7",
+          "board": "사는이야기",
+          "apiTitleLength": 19,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "```json { \"title\": \"나이 드니까 더 무서워지는 것들, 저만 그런 거 아니죠?\", \"content\": \"\n\n갱년기 지나고 나서 갑자기 여기저기 더 신경 쓰이더라고요. 몸도 그렇고, 관계도 그렇고, 나중에 혼자 아프면 어쩌나 싶은 것도요. 비슷한 또래 분들이 카페에서 많이 털어놓으시는 걱정들, 저도 똑같이 했던 것들이라 한번 같이 얘기해보고 싶",
+          "bodyLength": 1363,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWfQ6Zhn0AiIY5FJ2PXgOb3Yk2EvQE1aF6tMduoRklqt5DKN_zCNppMDlNDNPf9-c8K3y8uIa5YStZpbeBBJT6h6CjjIDE_lkSLSNjN_-um13WjPZzvO7Brn7hNp2zmoaRr6IK6qg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWfQ6Zhn0AiIY5FJ2PXgOb3Yk2EvQE1aF6tMduoRklqt5DKN_zCNppMDlNDNPf9-c8K3y8uIa5YStZpbeBBJT6h6CjjIDE_lkSLSNjN_-um13WjPZzvO7Brn7hNp2zmoaRr6IK6qg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWfQ6Zhn0AiIY5FJ2PXgOb3Yk2EvQE1aF6tMduoRklqt5DKN_zCNppMDlNDNPf9-c8K3y8uIa5YStZpbeBBJT6h6CjjIDE_lkSLSNjN_-um13WjPZzvO7Brn7hNp2zmoaRr6IK6qg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVefkDRcv7QPnAqc7TeElUVYww5qvajqp13siguVnziGvgOirk_8QXv5j-d8l-BwbYvYB8XWSGuAUnvn-I7d8Tb6l7_vT4BhIGJubek6SWqavvMrbEVlukOaI9nqj0vcxnhxHiAxw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWfQ6Zhn0AiIY5FJ2PXgOb3Yk2EvQE1aF6tMduoRklqt5DKN_zCNppMDlNDNPf9-c8K3y8uIa5YStZpbeBBJT6h6CjjIDE_lkSLSNjN_-um13WjPZzvO7Brn7hNp2zmoaRr6IK6qg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWfQ6Zhn0AiIY5FJ2PXgOb3Yk2EvQE1aF6tMduoRklqt5DKN_zCNppMDlNDNPf9-c8K3y8uIa5YStZpbeBBJT6h6CjjIDE_lkSLSNjN_-um13WjPZzvO7Brn7hNp2zmoaRr6IK6qg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWfQ6Zhn0AiIY5FJ2PXgOb3Yk2EvQE1aF6tMduoRklqt5DKN_zCNppMDlNDNPf9-c8K3y8uIa5YStZpbeBBJT6h6CjjIDE_lkSLSNjN_-um13WjPZzvO7Brn7hNp2zmoaRr6IK6qg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWfQ6Zhn0AiIY5FJ2PXgOb3Yk2EvQE1aF6tMduoRklqt5DKN_zCNppMDlNDNPf9-c8K3y8uIa5YStZpbeBBJT6h6CjjIDE_lkSLSNjN_-um13WjPZzvO7Brn7hNp2zmoaRr6IK6qg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWk3AnCr7E-hEEmJ3kTvYxo6dlYFvlEHzFxOJ9_vNuqZ4vI3YRELiH7JXOkCImewDCgxX5XqnxnkPZT2seutOyOnmRgSvrx-xpruh0Vfn4mPqfWHLAAZGBsb-okSBADwS_shThxhA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWfQ6Zhn0AiIY5FJ2PXgOb3Yk2EvQE1aF6tMduoRklqt5DKN_zCNppMDlNDNPf9-c8K3y8uIa5YStZpbeBBJT6h6CjjIDE_lkSLSNjN_-um13WjPZzvO7Brn7hNp2zmoaRr6IK6qg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 10건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp262vy50005j53f4zezxmfb",
+          "title": "딸때문에 고민",
+          "url": "/community/stories/cmp262vy50005j53f4zezxmfb",
+          "board": "사는이야기",
+          "apiTitleLength": 7,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "제 딸 나이가 올해 25인데\nSUV차를 사달라고 하네요\n\n제 형편도 어렵고 빚은 점점 쌓여가 2억 이상의 빚을 지고 있는데 딸의 이 한마디 때문에 마음에 부담을 안고 살고 있습니다.\n\n이 녀석이 어릴때 사달라고 졸랐던건 모두 해줬는데\n성인이 되어도 그 버릇은 고쳐지지 않고,\n최근 직장에 다니고 있는데 돈은 보내주지 못할 망정 몸이 다 망가졌니 힘들다느니하면",
+          "bodyLength": 377,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Connecting to 'https://csi.gstatic.com/csi?v=2&s=pagead&action=csi_pagead&dmc=8&top=1&puid=1~mp286sur&ctx=0&met.1=24.56e' violates the following Content Security Policy directive: \"connect-src 'self' https://kauth.kakao.com https://kapi.kakao.com https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://*.r2.cloudflarestorage.com https://*.r2.dev https://fundingchoicesmessages.google.com https://stats.g.doubleclick.net https://challenges.cloudflare.com https://www.google.com\". The action has been blocked.",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWzPlXk0McmecyFHrn6tSwdlsHvZ1IdToYHrrtOHpwR5Bc3gmDG-FPgjByQhVArVW9vdsdggZOWHUrg_rpZOg0Tsb44DUy4-yRmB2GpdAzjcTTAt0KDlLv8GTKSwvnkidPTAxRbDw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWzPlXk0McmecyFHrn6tSwdlsHvZ1IdToYHrrtOHpwR5Bc3gmDG-FPgjByQhVArVW9vdsdggZOWHUrg_rpZOg0Tsb44DUy4-yRmB2GpdAzjcTTAt0KDlLv8GTKSwvnkidPTAxRbDw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWzPlXk0McmecyFHrn6tSwdlsHvZ1IdToYHrrtOHpwR5Bc3gmDG-FPgjByQhVArVW9vdsdggZOWHUrg_rpZOg0Tsb44DUy4-yRmB2GpdAzjcTTAt0KDlLv8GTKSwvnkidPTAxRbDw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 3건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp262ovu0001j53ffz357ora",
+          "title": "우울증..언젠간 없어지겠죠?",
+          "url": "/community/stories/cmp262ovu0001j53ffz357ora",
+          "board": "사는이야기",
+          "apiTitleLength": 15,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "가족도 친구도 털어놓을데가 없다보니\n자꾸 여기에 글을 남기게 되네요..\n\n혹시 지금 우울증, 불안장애, 공황치료받으시는 분들\n어떻게 이겨내나가고 계신가요?\n\n약물치료한지 1년이 훌쩍넘었는데..\n\n자꾸 불안한 생각이나 상상이 한번 들면\n그 생각이 사실이 아니라는것을 확인하기 전까지는\n잠을 못잘정도로 잠식됩니다..\n\n저도 제가 너무 답답하고\n이 상황에서 벗어나",
+          "bodyLength": 207,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXmN65xBsCels8g9Kuo3YzGnXmAVEfi8GTLw2OBUbXJaKrDUi7z2LqSG2ULxHc8WsAuFcSn7YSC0zK10qpDCao7YDUUR1xNLPtebCb5YK6L-MF7cBTwquOiQlKJ9S3uXyPlJZqxVA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWzPlXk0McmecyFHrn6tSwdlsHvZ1IdToYHrrtOHpwR5Bc3gmDG-FPgjByQhVArVW9vdsdggZOWHUrg_rpZOg0Tsb44DUy4-yRmB2GpdAzjcTTAt0KDlLv8GTKSwvnkidPTAxRbDw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWzPlXk0McmecyFHrn6tSwdlsHvZ1IdToYHrrtOHpwR5Bc3gmDG-FPgjByQhVArVW9vdsdggZOWHUrg_rpZOg0Tsb44DUy4-yRmB2GpdAzjcTTAt0KDlLv8GTKSwvnkidPTAxRbDw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWzPlXk0McmecyFHrn6tSwdlsHvZ1IdToYHrrtOHpwR5Bc3gmDG-FPgjByQhVArVW9vdsdggZOWHUrg_rpZOg0Tsb44DUy4-yRmB2GpdAzjcTTAt0KDlLv8GTKSwvnkidPTAxRbDw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWzPlXk0McmecyFHrn6tSwdlsHvZ1IdToYHrrtOHpwR5Bc3gmDG-FPgjByQhVArVW9vdsdggZOWHUrg_rpZOg0Tsb44DUy4-yRmB2GpdAzjcTTAt0KDlLv8GTKSwvnkidPTAxRbDw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWzPlXk0McmecyFHrn6tSwdlsHvZ1IdToYHrrtOHpwR5Bc3gmDG-FPgjByQhVArVW9vdsdggZOWHUrg_rpZOg0Tsb44DUy4-yRmB2GpdAzjcTTAt0KDlLv8GTKSwvnkidPTAxRbDw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVWKIhTsqdz3sDPvcSZR_7NIUyPCc3jyzvWe-HdWnwFRwJKX2Dibu-6jb4przSbBPprnZvKk9Q_OuB6G0oqCITymrIEbX9BGyAi1jbJkjQbXxpaPHZzWbYQ_P4xHU6rWFgE3nqn_A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Failed to load resource: the server responded with a status of 401 ()",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-opqcmRzXvXDZjxhcOq97rb' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-opqcmRzXvXDZjxhcOq97rb' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "%c%d font-size:0;color:transparent NaN",
+            "%c%d font-size:0;color:transparent NaN",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVwSQnTb5r0H-Sq8i8aXnY6ni4BxnqtJHc1WP7NyezcHVIzf3ryOhTPO65NgSMmhrtPJ_CJQrraa-idUD1Cl-7ZTr3QvhoVS1rCVk7tLd_X7H7tvN81irULvEqfubcFL7aGlkOhAA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVwSQnTb5r0H-Sq8i8aXnY6ni4BxnqtJHc1WP7NyezcHVIzf3ryOhTPO65NgSMmhrtPJ_CJQrraa-idUD1Cl-7ZTr3QvhoVS1rCVk7tLd_X7H7tvN81irULvEqfubcFL7aGlkOhAA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVwSQnTb5r0H-Sq8i8aXnY6ni4BxnqtJHc1WP7NyezcHVIzf3ryOhTPO65NgSMmhrtPJ_CJQrraa-idUD1Cl-7ZTr3QvhoVS1rCVk7tLd_X7H7tvN81irULvEqfubcFL7aGlkOhAA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 25건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp25sv0r0000zk3frz0bbsse",
+          "title": "자식이 보호자가 되는 날, 미리 준비하는 법",
+          "url": "/community/stories/cmp25sv0r0000zk3frz0bbsse",
+          "board": "사는이야기",
+          "apiTitleLength": 24,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "병원에서 의사결정권을 자식에게 물어본다는 거, 알고 계세요?\n\n카페에서 만난 분들 글을 읽다 보니 공통된 이야기가 자꾸만 보여요. 부모님 입원하면 병원에서 자식을 찾아요. 치매, 거동 불편, 인지 저하... 어떤 이유로든 결국 자식이 부모님의 의사결정을 대신하게 된다는 거죠. 저희 어머니 때도 그랬어요. 수술 동의서, 요양원 선택, 생활보조기구 결정... ",
+          "bodyLength": 764,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXTj-VhWn6IalxC2USU7TY10mvQCo4c0ovZj7jA8KH33JEr76BPdY4I65zCrl0Zf1CKig07qwIAfN2kl5e_KFwMCMXPU2VaFAWVclHWB1McR--iuLrZP_1f6k2rxrkpu39KkZHJXw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-j36MEDBg9DGVEqXQmbbL8L' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-j36MEDBg9DGVEqXQmbbL8L' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVwSQnTb5r0H-Sq8i8aXnY6ni4BxnqtJHc1WP7NyezcHVIzf3ryOhTPO65NgSMmhrtPJ_CJQrraa-idUD1Cl-7ZTr3QvhoVS1rCVk7tLd_X7H7tvN81irULvEqfubcFL7aGlkOhAA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVwSQnTb5r0H-Sq8i8aXnY6ni4BxnqtJHc1WP7NyezcHVIzf3ryOhTPO65NgSMmhrtPJ_CJQrraa-idUD1Cl-7ZTr3QvhoVS1rCVk7tLd_X7H7tvN81irULvEqfubcFL7aGlkOhAA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVwSQnTb5r0H-Sq8i8aXnY6ni4BxnqtJHc1WP7NyezcHVIzf3ryOhTPO65NgSMmhrtPJ_CJQrraa-idUD1Cl-7ZTr3QvhoVS1rCVk7tLd_X7H7tvN81irULvEqfubcFL7aGlkOhAA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVwSQnTb5r0H-Sq8i8aXnY6ni4BxnqtJHc1WP7NyezcHVIzf3ryOhTPO65NgSMmhrtPJ_CJQrraa-idUD1Cl-7ZTr3QvhoVS1rCVk7tLd_X7H7tvN81irULvEqfubcFL7aGlkOhAA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWXs7oU5Ec9_BeXdVwcj49Bfb8NypDwFSme9y6yPMD-26VXYb9t1CWZR9iinDMkTQeKq3rZMJie32OOH1P06crwMTvLDzeSvNMJx7Wu3X6OpzHm5pEwU9irjlE5gR-AgVp8j3iKRg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVwSQnTb5r0H-Sq8i8aXnY6ni4BxnqtJHc1WP7NyezcHVIzf3ryOhTPO65NgSMmhrtPJ_CJQrraa-idUD1Cl-7ZTr3QvhoVS1rCVk7tLd_X7H7tvN81irULvEqfubcFL7aGlkOhAA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Connecting to 'https://csi.gstatic.com/csi?v=2&s=pagead&action=csi_pagead&dmc=8&top=1&puid=1~mp2870k7&c=3324081703473708&e=95386813%2C42533293%2C95390681%2C31061691%2C31061693&ctx=1&met.3=1001.5li__1~112.5nj_1~990.5uu_3__2~113.66v&met.7=CBsQCMABn93CkQc~CBsQByDjNcABtZGw9AI~CBsQByDjNTgBwAHX3OD1Dw~CBsQByDjNTgCwAHX3OD1Dw~CBsQByDkNcABhrSY6wg~CBsQByDkNcABuc7A6w4~CBsQByDkNcAB69Kc8As~CBsQCiDkNcABxLSI6Qw~CBsQCiDkNcAB45Ps6AE~CBsQCiDkNcAB8r-wuQs~CBsQCiDkNcABmdiy3As~CBsQCiDkNcAB1qvX5QU~CBsQCiDkNcABhYfb1w0~CBsQCiDkNcABvcnfwAY~CBsQCiD...CBsQBSCiQDhPwAHLm8vSBA~CBwQChgBILdDKLdDMO5DODdot0Nw7kOwAQG4AQHAAbLe8vsL~CD8QDRgBILdDKLdDMIREOE3AAfHV9uAE~CD8QChgBILdDKLdDMIVEOE5ot0NwhUSwAQG4AQHAAYyWk_YM~CD8QDRgBIPFDKPFDMMREOFTAAfHV9uAE~CD8QDRgBIIZEKIZEMNNEOE3AAfHV9uAE~CBsQBiDxQzhiwAG_iLmSCQ~CD8QDRgBIIZEKIZEMNdEOFHAAfHV9uAE~CD8QChgBIIZEKIZEMOZEOF9ohkRw5kSwAQG4AQHAAeP20fQD~CD8QDRgBIOdEKOdEMLpFOFPAAcHrzb0O~CD8QDRgBIOdEKOdEMLpFOFPAAfHV9uAE&met.1=1.mp286uwo~6.y~7.y~8.y~9.y~10.y~12.y~13.5b0~14.643~15.5b7~16.645~17.645~18.645~19.66v~20.66v~21.66v~22.5bo~23.5bo' violates the following Content Security Policy directive: \"connect-src 'self' https://kauth.kakao.com https://kapi.kakao.com https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://*.r2.cloudflarestorage.com https://*.r2.dev https://fundingchoicesmessages.google.com https://stats.g.doubleclick.net https://challenges.cloudflare.com https://www.google.com\". The action has been blocked.",
+            "%c%d font-size:0;color:transparent NaN",
+            "%c%d font-size:0;color:transparent NaN",
+            "Failed to load resource: the server responded with a status of 401 ()",
+            "Connecting to 'https://csi.gstatic.com/csi?v=2&s=pagead&action=csi_pagead&dmc=8&top=1&puid=2~mp2871y4&c=3324081703473708&e=95386813%2C42533293%2C95390681%2C31061691%2C31061693&ctx=1&met.1=24.867' violates the following Content Security Policy directive: \"connect-src 'self' https://kauth.kakao.com https://kapi.kakao.com https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://*.r2.cloudflarestorage.com https://*.r2.dev https://fundingchoicesmessages.google.com https://stats.g.doubleclick.net https://challenges.cloudflare.com https://www.google.com\". The action has been blocked.",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX6mqQZnYiYJ4RgYsc9IAvTuZUqCdSnkdAeJQwZFjL8iSWvLCGNbfVyuUbbcsp2u361JLnVqXpxw123nXmKRUesaCmPO3pO1jX46ZY85SvA0e1wApz_HKcSXge7CaOzao9XKCtsYQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX6mqQZnYiYJ4RgYsc9IAvTuZUqCdSnkdAeJQwZFjL8iSWvLCGNbfVyuUbbcsp2u361JLnVqXpxw123nXmKRUesaCmPO3pO1jX46ZY85SvA0e1wApz_HKcSXge7CaOzao9XKCtsYQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX6mqQZnYiYJ4RgYsc9IAvTuZUqCdSnkdAeJQwZFjL8iSWvLCGNbfVyuUbbcsp2u361JLnVqXpxw123nXmKRUesaCmPO3pO1jX46ZY85SvA0e1wApz_HKcSXge7CaOzao9XKCtsYQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 25건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp23tlwi0001173fs2dsx1qc",
+          "title": "키울 때는 아무렇게나 막 키워놓고서 이제 와서",
+          "url": "/community/stories/cmp23tlwi0001173fs2dsx1qc",
+          "board": "사는이야기",
+          "apiTitleLength": 25,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "어릴 때 반마다 고아원에 살면서 학교를 다니는 친구들이 있었지요. 근데 우리 남매는 그 아이들보다 더 못하게 자랐어요. 방임, 방치, 폭행, 폭력. 그리고 항상 부부싸움에 노출되어 있었고요. 싸우고 나서 엄마가 집을 나가기라도 하면 어린 제가 새벽 다섯시에 일어나서 도시락 7개를 싸고, 미운 아빠 밥상에 다른 형제들 밥상까지 차려주고 다 치우고 등교를 했어",
+          "bodyLength": 1344,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVRBM-iH11ShpwUlK1e3iDIfOG-nYfJb9AdX5w9ISAXn_6To77-PHbthqo_PmAAIgheqGq7tZv1JC1W0X7N82ibpUu2LM1jJyfJFyFQRn6k7qPnV5xmWgrmASY1HglOFLzPPpRyhw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-NyRkMVxmyu5HXnbr4IZWfZ' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-NyRkMVxmyu5HXnbr4IZWfZ' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX6mqQZnYiYJ4RgYsc9IAvTuZUqCdSnkdAeJQwZFjL8iSWvLCGNbfVyuUbbcsp2u361JLnVqXpxw123nXmKRUesaCmPO3pO1jX46ZY85SvA0e1wApz_HKcSXge7CaOzao9XKCtsYQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX6mqQZnYiYJ4RgYsc9IAvTuZUqCdSnkdAeJQwZFjL8iSWvLCGNbfVyuUbbcsp2u361JLnVqXpxw123nXmKRUesaCmPO3pO1jX46ZY85SvA0e1wApz_HKcSXge7CaOzao9XKCtsYQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX6mqQZnYiYJ4RgYsc9IAvTuZUqCdSnkdAeJQwZFjL8iSWvLCGNbfVyuUbbcsp2u361JLnVqXpxw123nXmKRUesaCmPO3pO1jX46ZY85SvA0e1wApz_HKcSXge7CaOzao9XKCtsYQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX6mqQZnYiYJ4RgYsc9IAvTuZUqCdSnkdAeJQwZFjL8iSWvLCGNbfVyuUbbcsp2u361JLnVqXpxw123nXmKRUesaCmPO3pO1jX46ZY85SvA0e1wApz_HKcSXge7CaOzao9XKCtsYQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWjT-_C7iaRCkFCIxevvdF3nf7XU7j7cqH7HwS6YoV7oH3wQ34sq6-KTbQR05S8ZTsaxzJfpiMhl7gx_yjh4tRCLZsQmiJL7oJWPyBltODTvixUA0NUsv9tkaFDxd11c_2d3cjBwA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWjT-_C7iaRCkFCIxevvdF3nf7XU7j7cqH7HwS6YoV7oH3wQ34sq6-KTbQR05S8ZTsaxzJfpiMhl7gx_yjh4tRCLZsQmiJL7oJWPyBltODTvixUA0NUsv9tkaFDxd11c_2d3cjBwA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWjT-_C7iaRCkFCIxevvdF3nf7XU7j7cqH7HwS6YoV7oH3wQ34sq6-KTbQR05S8ZTsaxzJfpiMhl7gx_yjh4tRCLZsQmiJL7oJWPyBltODTvixUA0NUsv9tkaFDxd11c_2d3cjBwA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVaane1eW7EYI3ubmVK4Y6xXRdba0AltNDu4YFjphyOr9fkPjHV27Xmh1k8vWFMj-Hk8SV-pawRnZ6X7Gi-OKrHpI--2uPb-cjbqduHpKoilHELQW5v0ZVmpQ8pIFwpk8KGvgHMpA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 19건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp1egmlk00013g3fqbie5s2l",
+          "title": "어젯밤에 진짜 황당한 일이 있었어요.",
+          "url": "/community/stories/cmp1egmlk00013g3fqbie5s2l",
+          "board": "사는이야기",
+          "apiTitleLength": 20,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "자고 있는데 카톡이 깨톡깨톡 울리는 거예요. 젠장, 잠이 싹 달아나버렸지 뭐예요.\n\n큰아들이 어버이날 선물이라면서 좋냐고 물어보는 거예요.\n\n선물이고 나발이고 잠이 깨서 확 돌아버리겠더라고요. 한번 깨면 저는 다시 못 자거든요. 그렇다고 공부를 하겠어요? 눈도 침침한데. 그렇다고 라면을 끓여 먹겠어요? 위도 안 좋은데. 이? 이? 이이?\n\n제가 심사가 뒤틀",
+          "bodyLength": 1014,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWjT-_C7iaRCkFCIxevvdF3nf7XU7j7cqH7HwS6YoV7oH3wQ34sq6-KTbQR05S8ZTsaxzJfpiMhl7gx_yjh4tRCLZsQmiJL7oJWPyBltODTvixUA0NUsv9tkaFDxd11c_2d3cjBwA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWjT-_C7iaRCkFCIxevvdF3nf7XU7j7cqH7HwS6YoV7oH3wQ34sq6-KTbQR05S8ZTsaxzJfpiMhl7gx_yjh4tRCLZsQmiJL7oJWPyBltODTvixUA0NUsv9tkaFDxd11c_2d3cjBwA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWjT-_C7iaRCkFCIxevvdF3nf7XU7j7cqH7HwS6YoV7oH3wQ34sq6-KTbQR05S8ZTsaxzJfpiMhl7gx_yjh4tRCLZsQmiJL7oJWPyBltODTvixUA0NUsv9tkaFDxd11c_2d3cjBwA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWjT-_C7iaRCkFCIxevvdF3nf7XU7j7cqH7HwS6YoV7oH3wQ34sq6-KTbQR05S8ZTsaxzJfpiMhl7gx_yjh4tRCLZsQmiJL7oJWPyBltODTvixUA0NUsv9tkaFDxd11c_2d3cjBwA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXOt_8OIM5w2JoFZagpx_EuBesQSBJRHamC_BUaeZd-kIVVcqHM2IjfXNCXLH6LrAOszVg36l7OWN9gXBVBHvsApbzZRQMGFWGY92STcF56szz4L0yoD1TdFRRd4K2AHpBYLD-jSA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWjT-_C7iaRCkFCIxevvdF3nf7XU7j7cqH7HwS6YoV7oH3wQ34sq6-KTbQR05S8ZTsaxzJfpiMhl7gx_yjh4tRCLZsQmiJL7oJWPyBltODTvixUA0NUsv9tkaFDxd11c_2d3cjBwA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-Upi3MdJQqownhTjvyYkAqd' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-Upi3MdJQqownhTjvyYkAqd' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "%c%d font-size:0;color:transparent NaN",
+            "%c%d font-size:0;color:transparent NaN",
+            "Failed to load resource: the server responded with a status of 401 ()",
+            "Connecting to 'https://csi.gstatic.com/csi?v=2&s=pagead&action=csi_pagead&dmc=8&top=1&puid=1~mp28761m&ctx=0&met.1=24.3io' violates the following Content Security Policy directive: \"connect-src 'self' https://kauth.kakao.com https://kapi.kakao.com https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://*.r2.cloudflarestorage.com https://*.r2.dev https://fundingchoicesmessages.google.com https://stats.g.doubleclick.net https://challenges.cloudflare.com https://www.google.com\". The action has been blocked.",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVNSBtrjMRu90KD7gKHlCl3O2TgFXNbLdwihD3KwbG6NGSE4QbhoDvRIHLRlVaoosM40qcrqUiUgX7ozmFOzZCQGVUOAZAZmndZmLQqlAnvjGaeik8pexf3rR2hngJ2oLIxIZujQw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVNSBtrjMRu90KD7gKHlCl3O2TgFXNbLdwihD3KwbG6NGSE4QbhoDvRIHLRlVaoosM40qcrqUiUgX7ozmFOzZCQGVUOAZAZmndZmLQqlAnvjGaeik8pexf3rR2hngJ2oLIxIZujQw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVNSBtrjMRu90KD7gKHlCl3O2TgFXNbLdwihD3KwbG6NGSE4QbhoDvRIHLRlVaoosM40qcrqUiUgX7ozmFOzZCQGVUOAZAZmndZmLQqlAnvjGaeik8pexf3rR2hngJ2oLIxIZujQw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX9noWI24CFeTq1GqTxr3_Q_3KIR-Bitsy0yS5Cs20K-veuovJbAXxxjY-D-a993KhZzmaRMIRmYIltMsAg63fc2G3TxcCkobmIfmYUvvyKCduenwNe5hCJ_JG2eFg3A_EQtjMeDg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVNSBtrjMRu90KD7gKHlCl3O2TgFXNbLdwihD3KwbG6NGSE4QbhoDvRIHLRlVaoosM40qcrqUiUgX7ozmFOzZCQGVUOAZAZmndZmLQqlAnvjGaeik8pexf3rR2hngJ2oLIxIZujQw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVNSBtrjMRu90KD7gKHlCl3O2TgFXNbLdwihD3KwbG6NGSE4QbhoDvRIHLRlVaoosM40qcrqUiUgX7ozmFOzZCQGVUOAZAZmndZmLQqlAnvjGaeik8pexf3rR2hngJ2oLIxIZujQw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVNSBtrjMRu90KD7gKHlCl3O2TgFXNbLdwihD3KwbG6NGSE4QbhoDvRIHLRlVaoosM40qcrqUiUgX7ozmFOzZCQGVUOAZAZmndZmLQqlAnvjGaeik8pexf3rR2hngJ2oLIxIZujQw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVNSBtrjMRu90KD7gKHlCl3O2TgFXNbLdwihD3KwbG6NGSE4QbhoDvRIHLRlVaoosM40qcrqUiUgX7ozmFOzZCQGVUOAZAZmndZmLQqlAnvjGaeik8pexf3rR2hngJ2oLIxIZujQw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVNSBtrjMRu90KD7gKHlCl3O2TgFXNbLdwihD3KwbG6NGSE4QbhoDvRIHLRlVaoosM40qcrqUiUgX7ozmFOzZCQGVUOAZAZmndZmLQqlAnvjGaeik8pexf3rR2hngJ2oLIxIZujQw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVr7ArFf1v5hd6KhwmBqv1Pyyhup6sTT5Hmk7UU6rHPsTZMvB-_dh62FwmaWhFgleW7eYC6da0689VThS1mlHL59fx8ltygsllPAlTK2g33Iyw97YZkab8ldOZ4KOjZmnDchyp5Kg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 29건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp1dyfdp0004zm3fyrbzw1js",
+          "title": "새벽 3시에 또 깼는데 이번엔 왠지 더 외로워",
+          "url": "/community/stories/cmp1dyfdp0004zm3fyrbzw1js",
+          "board": "사는이야기",
+          "apiTitleLength": 25,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "새벽 3시에 또 잠이 깼어요. 밤중에 일어나는 건 이제 익숙해진 일이지만 오늘은 자꾸만 갱년기 때문인가 싶기도 하고, 그냥 이 나이가 되니까 이런 건가 싶기도 해요. 누워서 천장만 바라봤어요. 부모님 생각도 나고, 보험료 낼 날도 생각나고, 텃밭에 뭘 심어야 하나도 자꾸 떠올라요. 낮에는 괜찮은데 이 시간이 되면 자꾸만 뭔가 부족한 느낌이 들어요. 일어나서",
+          "bodyLength": 257,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "%c%d font-size:0;color:transparent NaN",
+            "%c%d font-size:0;color:transparent NaN",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-gq5R227HeeYKoHhk1o1wgt' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-gq5R227HeeYKoHhk1o1wgt' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 14건: %c%d font-size:0;color:transparent NaN"
+            }
+          ]
+        },
+        {
+          "postId": "cmp1dyazi0002zm3fqg75dao8",
+          "title": "오늘 처음으로 혼자 밥 먹었어요",
+          "url": "/community/stories/cmp1dyazi0002zm3fqg75dao8",
+          "board": "사는이야기",
+          "apiTitleLength": 17,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "결혼하고 30년 넘게 매일 밥상 차렸는데 오늘 저녁에 처음으로 제 것만 챙겨 먹었어요. 남편은 친구 만나러 나가고 애들도 각자 약속 있다고 나갔더니 집이 너무 조용하더라고요.\n\n냉장고 뒤져서 김치하고 계란 하나 풀어서 후다닥 먹고 설거지하는데 뭔가 허전하면서도 이게 편하네 싶은 마음도 들고 그랬어요. 근데 밥 먹으면서 텔레비전 켜놓고 보니까 또 심심하더라고",
+          "bodyLength": 218,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUUaSu--DbMxwjFkjDH7PfI-0-gJM9C6H7lJpK78xsnFhIsB0rku5BfLX4CkNYS0y8v6QrqkyAowpHf3Z6Re-0qOHljgFwcSo2cP-w10Q3_TNL0lcIyZScq7m93jc1QSOib59Cx8w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUUaSu--DbMxwjFkjDH7PfI-0-gJM9C6H7lJpK78xsnFhIsB0rku5BfLX4CkNYS0y8v6QrqkyAowpHf3Z6Re-0qOHljgFwcSo2cP-w10Q3_TNL0lcIyZScq7m93jc1QSOib59Cx8w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUUaSu--DbMxwjFkjDH7PfI-0-gJM9C6H7lJpK78xsnFhIsB0rku5BfLX4CkNYS0y8v6QrqkyAowpHf3Z6Re-0qOHljgFwcSo2cP-w10Q3_TNL0lcIyZScq7m93jc1QSOib59Cx8w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUtO0__pWU42hZo_YeJn04-EA2WfLnPP1DsK__3uYHXlASI5SX-W3mUaJHAGi8QbWCEnFy052xiE_Fcaya_d8iPRW4aHaWy7slvNfLKOdYTGQ7khtLKtawMlz9pz18AY6VBhiSaaQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-4NlYvklEt1kO1MKam3Q2Kg' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-4NlYvklEt1kO1MKam3Q2Kg' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWTN6-OKaSPU5TQTtKmcttEeXOjNVkCuDKvGrGSqBgfNJRRr5UXDi44FwdCo2SDB2EE38GIrLzKsixGYUIfP0SxBzmbCzEqt-P8W4UtoHGiLxQDT4L4SSCCyu3UcZZi-DD4UP2Nnw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWTN6-OKaSPU5TQTtKmcttEeXOjNVkCuDKvGrGSqBgfNJRRr5UXDi44FwdCo2SDB2EE38GIrLzKsixGYUIfP0SxBzmbCzEqt-P8W4UtoHGiLxQDT4L4SSCCyu3UcZZi-DD4UP2Nnw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWTN6-OKaSPU5TQTtKmcttEeXOjNVkCuDKvGrGSqBgfNJRRr5UXDi44FwdCo2SDB2EE38GIrLzKsixGYUIfP0SxBzmbCzEqt-P8W4UtoHGiLxQDT4L4SSCCyu3UcZZi-DD4UP2Nnw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 17건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp1a8k8t0005z33fwur3z5z0",
+          "title": "요즘 혼자인 것 같기도 하고~ 사람 만나는 것도 힘들고",
+          "url": "/community/stories/cmp1a8k8t0005z33fwur3z5z0",
+          "board": "사는이야기",
+          "apiTitleLength": 30,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "요즘 자꾸 혼자라는 생각이 드네요~ 친구들이 그리운데 연락하기도 쉽지 않고~ 예전처럼 자주 만날 수도 없잖아요. 저도 그런 기분 있었는데 말이에요. 예전엔 친구들이랑 시장에도 자주 가고 커피숍에서 오래 앉아서 수다떨고 그랬는데~ 요즘은 그마저도 피곤한 거 있죠. 아 맞다, 지난주에 친구한테 연락했더니 자기도 바쁘고 피곤하대더라고요.\n\n사람 만나는 게 좋기도",
+          "bodyLength": 379,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXFJEkRGqkZnhBOtolcIt39a8Sy5YUEsaKpTf7ly7ynkmlmoPi6dXb7-RcEYzUejM3ag1rFMw7PBBFbflry1t5MNf7NZIljMmw9UvMLZc_udZWro5SNS16KNs508cPmbWRiFGnr8A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWyPSR2tLfHYUu-f5gXeW2a0CoMmWTXeXve7p0c9tzEi_fRuBBZgxCVJzrw48f_vRsX8UWvfzSkMrCD9xxWHN6dTnboRHS5jgRxuRiFBe-22zII0JrZ828_q05miiGojlGnfMRpQQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWyPSR2tLfHYUu-f5gXeW2a0CoMmWTXeXve7p0c9tzEi_fRuBBZgxCVJzrw48f_vRsX8UWvfzSkMrCD9xxWHN6dTnboRHS5jgRxuRiFBe-22zII0JrZ828_q05miiGojlGnfMRpQQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWyPSR2tLfHYUu-f5gXeW2a0CoMmWTXeXve7p0c9tzEi_fRuBBZgxCVJzrw48f_vRsX8UWvfzSkMrCD9xxWHN6dTnboRHS5jgRxuRiFBe-22zII0JrZ828_q05miiGojlGnfMRpQQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUaUWhPtoeU9ecd5cpNQJOsXy6CpkRTyYZKll6Tuw5vmW_SlE_eInd4XvsmMEQkcFcGXlhX1-0hSD-tvsKUBpH3UjxNK_6YvOgkIw2HrQmXRNfdb6vovwC0kqDGAKb2SsA4TIpQ9w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 5건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp1a8fgs0003z33fmu8a5yx0",
+          "title": "갱년기 정말 힘들어요!! 생리불순·오십견·온몸통증 다 왔어요!!",
+          "url": "/community/stories/cmp1a8fgs0003z33fmu8a5yx0",
+          "board": "사는이야기",
+          "apiTitleLength": 35,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "요즘 정말 힘들어요!! 생리불순에 어깨가 뻣뻣하고 온몸이 쑤셔서 병원을 다녔는데, 의사선생님이 갱년기라고 하시더라고요. 사진으로는 이 느낌이 안 나요!! 실제로는 아침에 일어날 때마다 온몸이 아파서 한참을 누워만 있어요. 저도 비슷한 증상으로 작년에 고생했는데, 정말 혼자가 아니구나 싶으면서 위로가 됐어요!!\n\n오십견 때문에 팔을 들 수가 없어서 머리도 감",
+          "bodyLength": 422,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            }
+          ]
+        },
+        {
+          "postId": "cmp1a8ai50001z33fr5559c6i",
+          "title": "여행 직전 또 터졌어!! 이 녀석 진짜 예의가 없네요 ㅠㅠ",
+          "url": "/community/stories/cmp1a8ai50001z33fr5559c6i",
+          "board": "사는이야기",
+          "apiTitleLength": 32,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "도대체 왜 여행 가려고 하면 항상 이럴까요!! 짐도 다 쌌고 내일 떠나기로 했는데 어제 밤부터 시작했어요 ㅠㅠ 정말 예의도 눈치도 없는 녀석이에요!! 저도 비슷한 일이 많았는데, 휴가 계획을 짜놓고 설레다가 바로 그 다음 날이 되면 항상 터지곤 했어요. 진짜 미칠 노릇이에요!!\n\n어제 예쁜 옷도 다 코디 해놓고 들뜬 마음으로 잠자리 들었는데 새벽에 깜짝 놀",
+          "bodyLength": 370,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVFXWo1nJ6HITOUM41gLA9_RnVz6G_PC6OHkXb6m13Xe5V8Tsx-Ny-2_vDwjhjCTBTmYzV9J3GbHuh2uRqer9G6Ck6drMh5sL08yhXerNYfJLTbaYMHBwKwYAEO5lE6udgNS3Cx6A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVFXWo1nJ6HITOUM41gLA9_RnVz6G_PC6OHkXb6m13Xe5V8Tsx-Ny-2_vDwjhjCTBTmYzV9J3GbHuh2uRqer9G6Ck6drMh5sL08yhXerNYfJLTbaYMHBwKwYAEO5lE6udgNS3Cx6A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVFXWo1nJ6HITOUM41gLA9_RnVz6G_PC6OHkXb6m13Xe5V8Tsx-Ny-2_vDwjhjCTBTmYzV9J3GbHuh2uRqer9G6Ck6drMh5sL08yhXerNYfJLTbaYMHBwKwYAEO5lE6udgNS3Cx6A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWNB3vMxA173ZgpZj2TOlQpi3tiQtqHworZOYRO7WVwKuuC1pWuorOm6oDjtMlnFxnDheqgIlPYHCtKOc15pxUeyZxPe1YhJocq6ZLsRlpKLz3LLjECJZlVE8uqSWP8HiX2zZ-w9A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-wt8P741raiIHvCoAwtmxnb' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-wt8P741raiIHvCoAwtmxnb' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVFXWo1nJ6HITOUM41gLA9_RnVz6G_PC6OHkXb6m13Xe5V8Tsx-Ny-2_vDwjhjCTBTmYzV9J3GbHuh2uRqer9G6Ck6drMh5sL08yhXerNYfJLTbaYMHBwKwYAEO5lE6udgNS3Cx6A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVFXWo1nJ6HITOUM41gLA9_RnVz6G_PC6OHkXb6m13Xe5V8Tsx-Ny-2_vDwjhjCTBTmYzV9J3GbHuh2uRqer9G6Ck6drMh5sL08yhXerNYfJLTbaYMHBwKwYAEO5lE6udgNS3Cx6A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Failed to load resource: the server responded with a status of 401 ()",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVFXWo1nJ6HITOUM41gLA9_RnVz6G_PC6OHkXb6m13Xe5V8Tsx-Ny-2_vDwjhjCTBTmYzV9J3GbHuh2uRqer9G6Ck6drMh5sL08yhXerNYfJLTbaYMHBwKwYAEO5lE6udgNS3Cx6A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVFXWo1nJ6HITOUM41gLA9_RnVz6G_PC6OHkXb6m13Xe5V8Tsx-Ny-2_vDwjhjCTBTmYzV9J3GbHuh2uRqer9G6Ck6drMh5sL08yhXerNYfJLTbaYMHBwKwYAEO5lE6udgNS3Cx6A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVFXWo1nJ6HITOUM41gLA9_RnVz6G_PC6OHkXb6m13Xe5V8Tsx-Ny-2_vDwjhjCTBTmYzV9J3GbHuh2uRqer9G6Ck6drMh5sL08yhXerNYfJLTbaYMHBwKwYAEO5lE6udgNS3Cx6A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVqjInnISiyOSUQyLE6tdDgsdS_dP5jyukdgUOw67CIyAbeVyPn9o4JUT2sUfeSCGUiMrANBZdq3abFtQUkm4ijdk9yJ3ziLb8LMLdPAEkZFSIi7GCK7uzbtmyBX_Xry8Jd6teZNQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "%c%d font-size:0;color:transparent NaN",
+            "%c%d font-size:0;color:transparent NaN",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 25건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp19uogd00051x3fxlrhrr7x",
+          "title": "친구가 자꾸만 그리운데, 사람은 왜 이렇게 피곤할까요!!",
+          "url": "/community/stories/cmp19uogd00051x3fxlrhrr7x",
+          "board": "사는이야기",
+          "apiTitleLength": 31,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "요즘 혼자라는 생각이 자꾸 들어요!! 친구들이 자꾸 그리운데 막상 만나려고 하면 피곤하고... 이게 뭐하는 건지 모르겠어요. 저도 예전엔 안 그랬는데 나이가 들수록 이런 기분이 들더라고요!! 😔\n\n사람관계가 점점 복잡해지는 것 같아요. 깊은 대화는 하고 싶은데 자꾸만 예의바른 얘기만 하게 되고, 마음 놓고 웃을 수 있는 친구도 점점 줄어들더라니까요. 저도",
+          "bodyLength": 381,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX26K8CmOilw7QPPiBotv5VNO7sBYPREvf1v4fjNg5QxEU9She8I5HQWvlD0iZG7XLPbVYK6hIXoLPjzIRQht6G_DmUKir0FrtCQi2rUbA0dO5m1R4qiman0JuY-LGC4FWp1PKs3Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX26K8CmOilw7QPPiBotv5VNO7sBYPREvf1v4fjNg5QxEU9She8I5HQWvlD0iZG7XLPbVYK6hIXoLPjzIRQht6G_DmUKir0FrtCQi2rUbA0dO5m1R4qiman0JuY-LGC4FWp1PKs3Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX26K8CmOilw7QPPiBotv5VNO7sBYPREvf1v4fjNg5QxEU9She8I5HQWvlD0iZG7XLPbVYK6hIXoLPjzIRQht6G_DmUKir0FrtCQi2rUbA0dO5m1R4qiman0JuY-LGC4FWp1PKs3Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUzMwu0dgIRAahhNycIw4cO7Jl1fl2ajFyawD0noKK44QVqrH-hNHNMmlxAsD3t2jKQUQMJKIjCA6pcHNVhqODWbBB9KVbAWdDgidIB_BKvElFQmUKK8OmyLTMczTyGv_fZjw6ctw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUAI17YTrVh2hEayZpNyUx3W04vvIDBTBATTuBtau9oUiFf9LEL-Shexu4q8AdSPkWE5U41qdSCBDULfVj1S6ytkuEc0UQx33i3cCDgil3iYrNvFi9hSvf9VuKqBvNK4l3KzOR3pQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUAI17YTrVh2hEayZpNyUx3W04vvIDBTBATTuBtau9oUiFf9LEL-Shexu4q8AdSPkWE5U41qdSCBDULfVj1S6ytkuEc0UQx33i3cCDgil3iYrNvFi9hSvf9VuKqBvNK4l3KzOR3pQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUAI17YTrVh2hEayZpNyUx3W04vvIDBTBATTuBtau9oUiFf9LEL-Shexu4q8AdSPkWE5U41qdSCBDULfVj1S6ytkuEc0UQx33i3cCDgil3iYrNvFi9hSvf9VuKqBvNK4l3KzOR3pQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUNeMJQDLVNqu-tELrVrEdW-uAcPfVQfUm-axGalwo8K2dFfmw5CpGqQVtagy0EvLnG8RwKNb-dF_gbIn-0ivLWsL5aG-Kf5eE3WsVSJ4S9zHe3goEIkwaA_w4M8Cbf6wjX0gms3w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 8건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp19ukc000031x3fn47qpxdl",
+          "title": "갱년기 신체 증상 총집합 — 생리불순·오십견·온몸통증",
+          "url": "/community/stories/cmp19ukc000031x3fn47qpxdl",
+          "board": "사는이야기",
+          "apiTitleLength": 29,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "요즘 저도 생리가 불규칙해져서 고생이 많아요~ 언제 올지 몰라서 항상 준비물을 챙겨다니는데 정말 짜증나더라고요. 얼마 전엔 한 달을 안 하다가 갑자기 또 하고~ 이런 식으로 반복되니까 몸이 혼란스러운 거 있죠. 병원에 가봤더니 다 갱년기 때문이래요 😅\n\n아 맞다, 요즘 어깨랑 팔이 너무 아파서 병원 갔는데 오십견이래요~ 옷 입을 때도 힘들고, 짐을 들 때",
+          "bodyLength": 354,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUAI17YTrVh2hEayZpNyUx3W04vvIDBTBATTuBtau9oUiFf9LEL-Shexu4q8AdSPkWE5U41qdSCBDULfVj1S6ytkuEc0UQx33i3cCDgil3iYrNvFi9hSvf9VuKqBvNK4l3KzOR3pQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUAI17YTrVh2hEayZpNyUx3W04vvIDBTBATTuBtau9oUiFf9LEL-Shexu4q8AdSPkWE5U41qdSCBDULfVj1S6ytkuEc0UQx33i3cCDgil3iYrNvFi9hSvf9VuKqBvNK4l3KzOR3pQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUAI17YTrVh2hEayZpNyUx3W04vvIDBTBATTuBtau9oUiFf9LEL-Shexu4q8AdSPkWE5U41qdSCBDULfVj1S6ytkuEc0UQx33i3cCDgil3iYrNvFi9hSvf9VuKqBvNK4l3KzOR3pQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUAI17YTrVh2hEayZpNyUx3W04vvIDBTBATTuBtau9oUiFf9LEL-Shexu4q8AdSPkWE5U41qdSCBDULfVj1S6ytkuEc0UQx33i3cCDgil3iYrNvFi9hSvf9VuKqBvNK4l3KzOR3pQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 4건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp19uapt00011x3fhm7bsjes",
+          "title": "여행 가려니까 또 터졌네요 ㅠㅠ",
+          "url": "/community/stories/cmp19uapt00011x3fhm7bsjes",
+          "board": "사는이야기",
+          "apiTitleLength": 17,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "맞아요~ 저도 그런 적 있어요. 딱 여행 가기로 마음먹으면 신호가 오더라고요. 정말 짜증나죠. 그 글 읽으면서 완전 공감했어요. 51세라니 저와 비슷한 나이대신데, 저도 한참을 기다리고 있답니다 ㅠㅠ\n\n예의 없다는 표현 진짜 공감됩니다. 예쁜 옷 코디해놓고 설레서 짐 싸고 있으면 갑자기 그런 일이 터지니까요. 저도 지난해 제주 여행 앞두고 그랬는데, 약국에",
+          "bodyLength": 334,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWUoMzMQnYBJPWAf01duki0JI89xETgwMA53vC9WfozW7oQp-6h_F2qsZ1qSiYsrWxgsfrD8dN4Jay9zAwECi7ObJzmzkLNz6tE-BcUjY0gnIz0S9CRFhctAxFMztVzoVRxrqzm4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWUoMzMQnYBJPWAf01duki0JI89xETgwMA53vC9WfozW7oQp-6h_F2qsZ1qSiYsrWxgsfrD8dN4Jay9zAwECi7ObJzmzkLNz6tE-BcUjY0gnIz0S9CRFhctAxFMztVzoVRxrqzm4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWUoMzMQnYBJPWAf01duki0JI89xETgwMA53vC9WfozW7oQp-6h_F2qsZ1qSiYsrWxgsfrD8dN4Jay9zAwECi7ObJzmzkLNz6tE-BcUjY0gnIz0S9CRFhctAxFMztVzoVRxrqzm4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVCK4-q6pxtkc2HzWVQrJukIMwEiV3TySEEmTF-BkBcGGzHzRzaryi77_q2EzpklROPwBzBJXNxNdUqrBLpGYpFB7ILn9ufZ0LoNgUg1yRUzmG958vptLJ1g7jH4oawxetGDh_eGg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-2yfG8eWBxFBSRX7ezIJPQn' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-2yfG8eWBxFBSRX7ezIJPQn' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWUoMzMQnYBJPWAf01duki0JI89xETgwMA53vC9WfozW7oQp-6h_F2qsZ1qSiYsrWxgsfrD8dN4Jay9zAwECi7ObJzmzkLNz6tE-BcUjY0gnIz0S9CRFhctAxFMztVzoVRxrqzm4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWUoMzMQnYBJPWAf01duki0JI89xETgwMA53vC9WfozW7oQp-6h_F2qsZ1qSiYsrWxgsfrD8dN4Jay9zAwECi7ObJzmzkLNz6tE-BcUjY0gnIz0S9CRFhctAxFMztVzoVRxrqzm4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 16건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp16v47d000lks2y6ptrui38",
+          "title": "8년 동안 암 수술 5번, 도망간 남편... 그리고 어제 6번째 수술 날짜를 받았습니다.",
+          "url": "/community/stories/cmp16v47d000lks2y6ptrui38",
+          "board": "사는이야기",
+          "apiTitleLength": 49,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "안녕하세요.\n\n 50이라는 나이에 참 많은 파도를 넘으며 살고 있는 여자입니다. \n\n어제 병원에서 6번째 암 수술 날짜를 받고 돌아왔습니다. \n\n텅 빈 집에 혼자 가만히 앉아있는데, 참 많은 감정이 스쳐 지나가 답답한 마음에 이곳에 하소연해 봅니다.\n\n지난 8년, 5번의 암 수술과 독한 항암을 견뎠습니다. \n\n그 길고 고통스러운 과정 속에서, 제 곁을 지키",
+          "bodyLength": 818,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWezfxrU7zo06EvjrGw8_WmuV474KmtdbcjsuQn6iazWUodpj95LPv92JMvqRS2u8s1lB0FpXA9LOJIh_smOk-V2vimrVC_bckVfJk2pHIYIOKqDilVlk6Ymjk8tvcr0VCEL2EBXw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWezfxrU7zo06EvjrGw8_WmuV474KmtdbcjsuQn6iazWUodpj95LPv92JMvqRS2u8s1lB0FpXA9LOJIh_smOk-V2vimrVC_bckVfJk2pHIYIOKqDilVlk6Ymjk8tvcr0VCEL2EBXw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWezfxrU7zo06EvjrGw8_WmuV474KmtdbcjsuQn6iazWUodpj95LPv92JMvqRS2u8s1lB0FpXA9LOJIh_smOk-V2vimrVC_bckVfJk2pHIYIOKqDilVlk6Ymjk8tvcr0VCEL2EBXw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxURZ5moiT35Cx_GOPyaZ-TMsF13NEGZJjIFYthCwtDRKL45alzkqT_4Hvt4G5RFTiHlLc9MXQ4qhFriC5z_OnNrKhJ8VzYK2qXUyUWtd2unN4y5vcFqN0yYwXrZm3PZCTnaxluYgA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 6건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp16ufy60009ks2ydu1ryz2w",
+          "title": "지쳐요",
+          "url": "/community/stories/cmp16ufy60009ks2ydu1ryz2w",
+          "board": "사는이야기",
+          "apiTitleLength": 3,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "작년 11월부터 하루하루가 지옥입니다.\n나이 먹고 갈 곳도 없고 도움 청할 곳도 없습니다.\n혼자라는 게 무섭습니다.\n앞이 막막합니다. 힘이 듭니다",
+          "bodyLength": 81,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxU6_a05J0_OQrC1Hr8OMHt19e6V2NdGtCbFIlV_0MjWtE4J9iEZq5sRny--NOdk_tZEikb5-JVszTDLljbybJ1tyYgeWepRQH-HX3FIur_JO9GojuT1We_qauzbsfyAgT-UpPK4-w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxU6_a05J0_OQrC1Hr8OMHt19e6V2NdGtCbFIlV_0MjWtE4J9iEZq5sRny--NOdk_tZEikb5-JVszTDLljbybJ1tyYgeWepRQH-HX3FIur_JO9GojuT1We_qauzbsfyAgT-UpPK4-w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxU6_a05J0_OQrC1Hr8OMHt19e6V2NdGtCbFIlV_0MjWtE4J9iEZq5sRny--NOdk_tZEikb5-JVszTDLljbybJ1tyYgeWepRQH-HX3FIur_JO9GojuT1We_qauzbsfyAgT-UpPK4-w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWBohBeeerUqx4J2WZqPx6fnGfBy09U9x_4-4sfXWXUTHC0qn7uK4o3wf_rUEdWY2Sg2po8NizDgV5eZC99_5M2OZfmf7ksFMUIFSIj731Pe6BaYz-OWZirlXSendJH9rAFsu_EKg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Failed to load resource: the server responded with a status of 401 ()",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 5건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp16ucjc0007ks2ylgi820xg",
+          "title": "요즘애들 이런가요?…",
+          "url": "/community/stories/cmp16ucjc0007ks2ylgi820xg",
+          "board": "사는이야기",
+          "apiTitleLength": 11,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "제가 결혼 안 한 오십 대 미혼이거든요. 비록 아이를 직접 낳아보지는 않았지만요, 언니 둘에 오빠 둘, 그 조카 여덟 명을 아주 정성껏 대리 육아를 해왔어요. 그래서 저는 제가 아이들에 대해서는 참 잘 안다고 생각을 했었죠. 조카들이 이제는 다 커서 이십 대, 삼십 대가 되었거든요.\n그동안 우리 형제들이 부모님을 순번 정해가며 정성껏 모셨어요. 지금은 두 ",
+          "bodyLength": 833,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUiLQQlaXo7OYow5b7Ybf61tABjUiw8DEvSMArroyEnSs8pRcZVm5PqpZDx7wG37bKdJHyWQJU-rdmoJYWROEYSFERGMQ_rcugnTLvHzHfW-AOgtcx5sHIaPlXpitNCp0kX3N7k6w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUiLQQlaXo7OYow5b7Ybf61tABjUiw8DEvSMArroyEnSs8pRcZVm5PqpZDx7wG37bKdJHyWQJU-rdmoJYWROEYSFERGMQ_rcugnTLvHzHfW-AOgtcx5sHIaPlXpitNCp0kX3N7k6w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUiLQQlaXo7OYow5b7Ybf61tABjUiw8DEvSMArroyEnSs8pRcZVm5PqpZDx7wG37bKdJHyWQJU-rdmoJYWROEYSFERGMQ_rcugnTLvHzHfW-AOgtcx5sHIaPlXpitNCp0kX3N7k6w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXShukxTG_naxM-aggVoeG_zKxSeOfwtCDlhd_YRLFVTe9tKSXFuYJ74d6iXOUOWTEX61VNHB0i7GMayAdXH_2ND9713SslmZlvsHUYgZRT1zfUNOuTSaDcLMg7WUsvAWwX08XuZA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 4건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp16u97b0005ks2yxtwv55e8",
+          "title": "폐경되면 장점이 더 큰가요? 단점이 더 큰가요?",
+          "url": "/community/stories/cmp16u97b0005ks2yxtwv55e8",
+          "board": "사는이야기",
+          "apiTitleLength": 26,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "생리 안해서 편해지는 확실한 장점이 있지만, 우울감 등 단점이 더 클 수도 있어서요~",
+          "bodyLength": 47,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUTj50tBoh4pbIB1DxmCqkdbX7QqcF6fngL9EObk7uaJswNqRoHeEh1Brhkcz2w68ZgGNeBDE6Rh74htu8vw5dAcsVAw399mgCIuXvPQ39a-HYWxPXCFK8mazkjHpVpTIG6OW6aRg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUTj50tBoh4pbIB1DxmCqkdbX7QqcF6fngL9EObk7uaJswNqRoHeEh1Brhkcz2w68ZgGNeBDE6Rh74htu8vw5dAcsVAw399mgCIuXvPQ39a-HYWxPXCFK8mazkjHpVpTIG6OW6aRg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUTj50tBoh4pbIB1DxmCqkdbX7QqcF6fngL9EObk7uaJswNqRoHeEh1Brhkcz2w68ZgGNeBDE6Rh74htu8vw5dAcsVAw399mgCIuXvPQ39a-HYWxPXCFK8mazkjHpVpTIG6OW6aRg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXcW2G4adxxvTxT3df4x02RPrubqAGiO2ae5-tu_mk4g3KmssZoDk33qnyFsRWc9Dg920EIZqfqfdDUwPaJ4TSS0DHqCarWtiglZZ1alzcg-D41DJQ_N2uWr3yXpa5CIfzSLUwU8Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "%c%d font-size:0;color:transparent NaN",
+            "%c%d font-size:0;color:transparent NaN",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "FAIL",
+              "message": "RC-2: 본문 47자 (기준 50자)"
+            },
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 6건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp16u5lp0003ks2yulmrsrwc",
+          "title": "남편 환갑 벌써?",
+          "url": "/community/stories/cmp16u5lp0003ks2yulmrsrwc",
+          "board": "사는이야기",
+          "apiTitleLength": 9,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "33살, 26살에 결혼해서\n벌써 남편이 환갑이 되었네요\n7살 차이, \n엄청 큰줄 알았는데\n막상 살아보니\n지나나나 철없기는 마찬가지,\n\n맨날 축구 보는거 같이 봐주면 옆에서 해설하느라,\n20년 산 동네 빵집 이름은 몰라도\n맨시티 선수들 신발만 보고도 이름 좔좔,\n저 감독, 이 감독 논평해 가며 아주 본인이\n구단주 된거마냥\n쟤 저러다 또 쫒겨난다,\n쟤 후반전에",
+          "bodyLength": 394,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVyglqQaAvKNSiCKWoVFx7QvNdFhN5IrxzRKss8TWfBRG_wCpQmKzX0IqJUVBVW_GV-2ZlChQ-SYvvhVSja6iUW4zpZMXk0BI6n1oqTADKuJFhLGLa2FSZJv5QRgaoimg9S8kToQg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVyglqQaAvKNSiCKWoVFx7QvNdFhN5IrxzRKss8TWfBRG_wCpQmKzX0IqJUVBVW_GV-2ZlChQ-SYvvhVSja6iUW4zpZMXk0BI6n1oqTADKuJFhLGLa2FSZJv5QRgaoimg9S8kToQg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVyglqQaAvKNSiCKWoVFx7QvNdFhN5IrxzRKss8TWfBRG_wCpQmKzX0IqJUVBVW_GV-2ZlChQ-SYvvhVSja6iUW4zpZMXk0BI6n1oqTADKuJFhLGLa2FSZJv5QRgaoimg9S8kToQg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVsFMB-2_XHmUTOcChpKx2xNAqgAo6bCKTTvWzeN4NhggxcpyKUVDFgf5Rc_mAaqTgsWoVKVqMqCa8u0P6dlU7w9YGKibNueXGWN-nRLKG4Diigv9Pv9VpnaDs-AfhxzXNx6TOilA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxW-dIvdm6EtZ8qd12l-kcnau1CM-97zGY-Ge0SHuuDDr_Mzuz98Y7blJmII2aFksG-vcBl-EPWvpFBTkDBQndLVh9vsY7pEll7m6PzG_IOh4yJ-yBZxdOHV1dAIPCAwGmnliE-lfw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxW-dIvdm6EtZ8qd12l-kcnau1CM-97zGY-Ge0SHuuDDr_Mzuz98Y7blJmII2aFksG-vcBl-EPWvpFBTkDBQndLVh9vsY7pEll7m6PzG_IOh4yJ-yBZxdOHV1dAIPCAwGmnliE-lfw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxW-dIvdm6EtZ8qd12l-kcnau1CM-97zGY-Ge0SHuuDDr_Mzuz98Y7blJmII2aFksG-vcBl-EPWvpFBTkDBQndLVh9vsY7pEll7m6PzG_IOh4yJ-yBZxdOHV1dAIPCAwGmnliE-lfw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVD0jqkTGAZCBPczkWYYQFhwlx9Aa8h3-IAd4PsJ3WIOTDSJ-sh-B1-7SOv4rlTphsatlcM80qjDS3rtLgnYDy74upissSneN8Sot6uFWuuCaACclIRGvZHaA40NATbhFxVBxyHmA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 8건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp16u2b90001ks2yndcaiz3a",
+          "title": "환갑 넘어서 도전했는데 대박난 신인모델...",
+          "url": "/community/stories/cmp16u2b90001ks2yndcaiz3a",
+          "board": "사는이야기",
+          "apiTitleLength": 24,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "확실히 젊은 모델들이 갖지 못한 세월의 흔적들이 큰 경쟁력이 되네요...\n\n\n나이가 무슨 상관이겠습니까!! 도전이 멋지네요 ㅠㅠ",
+          "bodyLength": 71,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 1,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxW-dIvdm6EtZ8qd12l-kcnau1CM-97zGY-Ge0SHuuDDr_Mzuz98Y7blJmII2aFksG-vcBl-EPWvpFBTkDBQndLVh9vsY7pEll7m6PzG_IOh4yJ-yBZxdOHV1dAIPCAwGmnliE-lfw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxW-dIvdm6EtZ8qd12l-kcnau1CM-97zGY-Ge0SHuuDDr_Mzuz98Y7blJmII2aFksG-vcBl-EPWvpFBTkDBQndLVh9vsY7pEll7m6PzG_IOh4yJ-yBZxdOHV1dAIPCAwGmnliE-lfw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxW-dIvdm6EtZ8qd12l-kcnau1CM-97zGY-Ge0SHuuDDr_Mzuz98Y7blJmII2aFksG-vcBl-EPWvpFBTkDBQndLVh9vsY7pEll7m6PzG_IOh4yJ-yBZxdOHV1dAIPCAwGmnliE-lfw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxW-dIvdm6EtZ8qd12l-kcnau1CM-97zGY-Ge0SHuuDDr_Mzuz98Y7blJmII2aFksG-vcBl-EPWvpFBTkDBQndLVh9vsY7pEll7m6PzG_IOh4yJ-yBZxdOHV1dAIPCAwGmnliE-lfw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXjEFVX1abiPYCNB8m5mTmZvpuSo7EBBt3VlAABJ9_zPDKOomjMEBTXAcqa-3Aic9gVn6LFvttROV__HJrHfumqGldt-d0hE7EnFB0AX59aeygoXIR6m2Hy_V6MgA7xTtU5IdlAVA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxW-dIvdm6EtZ8qd12l-kcnau1CM-97zGY-Ge0SHuuDDr_Mzuz98Y7blJmII2aFksG-vcBl-EPWvpFBTkDBQndLVh9vsY7pEll7m6PzG_IOh4yJ-yBZxdOHV1dAIPCAwGmnliE-lfw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to font at 'https://fonts.gstatic.com/s/roboto/v48/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2' from origin 'https://www.youtube-nocookie.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 7건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp14hv4h0005y62ytwot9qse",
+          "title": "** 연금계좌에 담으면 안 되는 ETF 있다고? 저도 깜짝 놀랐어요",
+          "url": "/community/stories/cmp14hv4h0005y62ytwot9qse",
+          "board": "사는이야기",
+          "apiTitleLength": 37,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "**\n\n맞아요~ 저도 최근에 이 얘기 듣고 깜짝 놀랐어요. Kodex 200이나 Kodex 200타겟커버드콜 같은 ETF를 연금저축이나 IRP에 넣으면 오히려 세금을 더 낸다니까요. 처음엔 반신반의했는데 알아보니 정말 그러더라고요.\n\n연금계좌의 함정이 정말 생각보다 깊더라니까요. 계좌 안의 모든 수익이 매매차익이든 배당이든 상관없이 인출할 때는 다 연금소득",
+          "bodyLength": 399,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUjwdTUJ7m9BNfTVGTuaKlT4SR8rXEt_cLjaK7kzE2AlZghM7Qd-_HCqEsBC2OoscFTgeumiD1xr8hy07AlhEhLNLjCh4AUInOIvRXM7yL2zB2TfRo5i94LSW7aJ0JPDiLjTSqHFA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUjwdTUJ7m9BNfTVGTuaKlT4SR8rXEt_cLjaK7kzE2AlZghM7Qd-_HCqEsBC2OoscFTgeumiD1xr8hy07AlhEhLNLjCh4AUInOIvRXM7yL2zB2TfRo5i94LSW7aJ0JPDiLjTSqHFA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUjwdTUJ7m9BNfTVGTuaKlT4SR8rXEt_cLjaK7kzE2AlZghM7Qd-_HCqEsBC2OoscFTgeumiD1xr8hy07AlhEhLNLjCh4AUInOIvRXM7yL2zB2TfRo5i94LSW7aJ0JPDiLjTSqHFA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVbLQ6m88_wOmYZIyjEeaojT7jd0kZx_3u0_in7HXFn1UVIdu6Ng9rnCQGIEUV-6FOES1s_6TWUQbNgayUM5ZgInFGH6TE-bzl7pQLGaf1LMinRyDwMcjzP84q-H_4N_k2iGcfZNA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Failed to load resource: the server responded with a status of 401 ()",
+            "%c%d font-size:0;color:transparent NaN",
+            "%c%d font-size:0;color:transparent NaN",
+            "Access to XMLHttpRequest at 'https://jnn-pa.googleapis.com/$rpc/google.internal.waa.v1.Waa/GenerateIT' from origin 'https://www.youtube-nocookie.com' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Access to XMLHttpRequest at 'https://jnn-pa.googleapis.com/$rpc/google.internal.waa.v1.Waa/GenerateIT' from origin 'https://www.youtube-nocookie.com' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+            "Failed to load resource: net::ERR_FAILED",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-d28ACjtWY7QosS8eIuLP44' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-d28ACjtWY7QosS8eIuLP44' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUjwdTUJ7m9BNfTVGTuaKlT4SR8rXEt_cLjaK7kzE2AlZghM7Qd-_HCqEsBC2OoscFTgeumiD1xr8hy07AlhEhLNLjCh4AUInOIvRXM7yL2zB2TfRo5i94LSW7aJ0JPDiLjTSqHFA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUjwdTUJ7m9BNfTVGTuaKlT4SR8rXEt_cLjaK7kzE2AlZghM7Qd-_HCqEsBC2OoscFTgeumiD1xr8hy07AlhEhLNLjCh4AUInOIvRXM7yL2zB2TfRo5i94LSW7aJ0JPDiLjTSqHFA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUjwdTUJ7m9BNfTVGTuaKlT4SR8rXEt_cLjaK7kzE2AlZghM7Qd-_HCqEsBC2OoscFTgeumiD1xr8hy07AlhEhLNLjCh4AUInOIvRXM7yL2zB2TfRo5i94LSW7aJ0JPDiLjTSqHFA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUjwdTUJ7m9BNfTVGTuaKlT4SR8rXEt_cLjaK7kzE2AlZghM7Qd-_HCqEsBC2OoscFTgeumiD1xr8hy07AlhEhLNLjCh4AUInOIvRXM7yL2zB2TfRo5i94LSW7aJ0JPDiLjTSqHFA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://jnn-pa.googleapis.com/$rpc/google.internal.waa.v1.Waa/GenerateIT' from origin 'https://www.youtube-nocookie.com' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUjwdTUJ7m9BNfTVGTuaKlT4SR8rXEt_cLjaK7kzE2AlZghM7Qd-_HCqEsBC2OoscFTgeumiD1xr8hy07AlhEhLNLjCh4AUInOIvRXM7yL2zB2TfRo5i94LSW7aJ0JPDiLjTSqHFA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVI5IySZExkFVhj2_bVSuMNEbxmYYW_DtEzGhlDQLUR8qH9fddSp1el98neWmK5h-PvS64ctGUsQ4AcOsntSwoGnamCzWziH-WhuUv_8JWcsj6JNLnJ6lPCojsEZmZLhCi47y438A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://jnn-pa.googleapis.com/$rpc/google.internal.waa.v1.Waa/GenerateIT' from origin 'https://www.youtube-nocookie.com' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Connecting to 'https://csi.gstatic.com/csi?v=2&s=pagead&action=csi_pagead&dmc=8&top=1&puid=1~mp287tlc&ctx=0&met.1=24.3rl' violates the following Content Security Policy directive: \"connect-src 'self' https://kauth.kakao.com https://kapi.kakao.com https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://*.r2.cloudflarestorage.com https://*.r2.dev https://fundingchoicesmessages.google.com https://stats.g.doubleclick.net https://challenges.cloudflare.com https://www.google.com\". The action has been blocked.",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 29건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp14hr530003y62y5n6ys1wn",
+          "title": "요즘 밤에 땀이 줄줄인데 갱년기 맞나봐요~",
+          "url": "/community/stories/cmp14hr530003y62y5n6ys1wn",
+          "board": "사는이야기",
+          "apiTitleLength": 23,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "어제도 밤중에 깬 횟수가 세 번이더라고요~ 땀이 흥건해서 잠옷을 갈아입을 정도예요 😅 병원 가서 물어봤더니 갱년기 증상 중 하나래요 아 정말 이게 뭐하는 일인지~ 저도 요즘 자꾸 한기가 들다가도 갑자기 열이 확 올라오고 그래요 밤에 자다가 깨서 이불을 걷었다 덮었다 반복하니까 수면이 깊지가 않아서 낮에 피곤하더라고요\n\n아 맞다 좋은 거 알았어요~ 저는 생",
+          "bodyLength": 404,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUS92yZ2ZPf38M_rPLrbFwgT5rBuvj68GP8VPgUxtcqFQX_z7U2O0FROJSjhIPs03O26oC1_1ywZj2tHjpbUWcote9o2snDPZSGKPtC-phVThMsY0ilkjWS3GnpCxGTlyZgIKeAqw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUS92yZ2ZPf38M_rPLrbFwgT5rBuvj68GP8VPgUxtcqFQX_z7U2O0FROJSjhIPs03O26oC1_1ywZj2tHjpbUWcote9o2snDPZSGKPtC-phVThMsY0ilkjWS3GnpCxGTlyZgIKeAqw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUS92yZ2ZPf38M_rPLrbFwgT5rBuvj68GP8VPgUxtcqFQX_z7U2O0FROJSjhIPs03O26oC1_1ywZj2tHjpbUWcote9o2snDPZSGKPtC-phVThMsY0ilkjWS3GnpCxGTlyZgIKeAqw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUDP-fIV4Jm2e-QM82ozQxk5VqM00LYa7bQM7e-nGBS2TyRsWSZVAOnYztVlMWWbqWzj5WtWj7AvG-OBnJGt3O2IPAebtx8jc6fLPPAQ9mQZoYjo7If3bJMBdFvuilcZnkfkFPekQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 4건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp14hltw0001y62y4drf5n5h",
+          "title": "혼자 떠나는 당일치기 여행!! 진짜 최고예요!!",
+          "url": "/community/stories/cmp14hltw0001y62y4drf5n5h",
+          "board": "사는이야기",
+          "apiTitleLength": 26,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "요즘 혼자 당일치기 다니는 게 진짜 미쳤어요!! 😍 저도 처음엔 혼자 가는 게 어색했는데, 한 번 맛을 들으니까 자유로움이 최고더라고요!! 아무 일정 없이 가고 싶은 때 가고, 맛있는 걸로 밥 먹고, 풍경 좋은 곳에서 한참 멍 때리고... 이게 바로 진정한 휴식이에요!!\n\n저는 최근에 강릉 경포대 쪽으로 당일치기 다녀왔는데, 아침 8시쯤 출발해서 해변 드",
+          "bodyLength": 428,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUOAsGsF-J_wi1xP4XdpR9Bc2XRj4uAyb8z5q8pbvpkBOXdwjlSB0j2gUTIBoMTTg1zb6Y87JBw9Eg0O44YfOvjz58d02z7mEp094zbqqWlMkFk2c3kLE9AldJW2qD4TA5Z2fu4XQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUOAsGsF-J_wi1xP4XdpR9Bc2XRj4uAyb8z5q8pbvpkBOXdwjlSB0j2gUTIBoMTTg1zb6Y87JBw9Eg0O44YfOvjz58d02z7mEp094zbqqWlMkFk2c3kLE9AldJW2qD4TA5Z2fu4XQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUOAsGsF-J_wi1xP4XdpR9Bc2XRj4uAyb8z5q8pbvpkBOXdwjlSB0j2gUTIBoMTTg1zb6Y87JBw9Eg0O44YfOvjz58d02z7mEp094zbqqWlMkFk2c3kLE9AldJW2qD4TA5Z2fu4XQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXCMEqDVbL7h5QWmNxh1cvlvVDeQazr-9KOe_DHz16hmYS2NczqyYCvUVn1cQ7CP6N7yll8qYUyMWNRlmCCu9K-8CIdLot6FgyCgxVhcYAnZ5B8tHOqjVE441plnBEx-U1eLS4YQw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 6건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp0s1b3k0000z23fmjbcwi67",
+          "title": "나이 드니까 더 무서운 것들, 저만 그런 게 아니었네요",
+          "url": "/community/stories/cmp0s1b3k0000z23fmjbcwi67",
+          "board": "사는이야기",
+          "apiTitleLength": 30,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 429,
+          "bodyText": "갱년기 지나고 나서 오히려 더 걱정이 많아졌어요. 몸도 그렇고, 부모님 보면서 '나도 저렇게 되면 어쩌지' 싶고. 비슷한 고민 하시는 분들 많을 것 같아서 솔직하게 얘기해볼게요.\n\nQ. 갱년기 끝나고도 왜 이렇게 사람 만나기가 귀찮을까요?\n\n아, 이거 저도 진짜 많이 느꼈어요. 친한 친구도 보기 싫어지는 날이 있더라고요. 처음엔 제가 이상한 줄 알았는데, ",
+          "bodyLength": 958,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Failed to load resource: the server responded with a status of 429 ()",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWXClrEc179bCd2W_yaNS0S0fKa6CEJgw1yYI2wdf06nUQ5DtZM1-iWYzVaZ1Qx6L9agjwtZEglwNmkG2Et1rBPJtU4XU9EpgCOnewSNgXd4tCMS5MfF_9fyfuPEdvTK39EtWQukQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWXClrEc179bCd2W_yaNS0S0fKa6CEJgw1yYI2wdf06nUQ5DtZM1-iWYzVaZ1Qx6L9agjwtZEglwNmkG2Et1rBPJtU4XU9EpgCOnewSNgXd4tCMS5MfF_9fyfuPEdvTK39EtWQukQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWXClrEc179bCd2W_yaNS0S0fKa6CEJgw1yYI2wdf06nUQ5DtZM1-iWYzVaZ1Qx6L9agjwtZEglwNmkG2Et1rBPJtU4XU9EpgCOnewSNgXd4tCMS5MfF_9fyfuPEdvTK39EtWQukQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxU0X-L8KhwVzCj_oXbUC4-Jatkf7xzPkVNa4Wu9xP4dmzcRV6dEBaHpOuK9L-PDIUqFaP1mEnkr11iRY6RmQZGqLHjjfqdfGmzHJjBkYcul6XUhrc3-p6KkM_n7iFgZvEvqhfApzA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "%c%d font-size:0;color:transparent NaN",
+            "%c%d font-size:0;color:transparent NaN",
+            "Failed to load resource: the server responded with a status of 401 ()",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWXClrEc179bCd2W_yaNS0S0fKa6CEJgw1yYI2wdf06nUQ5DtZM1-iWYzVaZ1Qx6L9agjwtZEglwNmkG2Et1rBPJtU4XU9EpgCOnewSNgXd4tCMS5MfF_9fyfuPEdvTK39EtWQukQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWXClrEc179bCd2W_yaNS0S0fKa6CEJgw1yYI2wdf06nUQ5DtZM1-iWYzVaZ1Qx6L9agjwtZEglwNmkG2Et1rBPJtU4XU9EpgCOnewSNgXd4tCMS5MfF_9fyfuPEdvTK39EtWQukQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWXClrEc179bCd2W_yaNS0S0fKa6CEJgw1yYI2wdf06nUQ5DtZM1-iWYzVaZ1Qx6L9agjwtZEglwNmkG2Et1rBPJtU4XU9EpgCOnewSNgXd4tCMS5MfF_9fyfuPEdvTK39EtWQukQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWXClrEc179bCd2W_yaNS0S0fKa6CEJgw1yYI2wdf06nUQ5DtZM1-iWYzVaZ1Qx6L9agjwtZEglwNmkG2Et1rBPJtU4XU9EpgCOnewSNgXd4tCMS5MfF_9fyfuPEdvTK39EtWQukQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-y7K7vqjojVLlYxyW8NT7Nk' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-y7K7vqjojVLlYxyW8NT7Nk' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxV_WFSrdYWAPUFdTsWfURCBBGLsfVJbAi1p2vVQzRupsRX03s97mlS8Lx1jCi3ZwE3cD8vBsH_tdlAjv9PjZjJ1yrohTQNRBwEKFMldbfEmuVna6kBtZpx2IsoPsreALSMzmD7izQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWXClrEc179bCd2W_yaNS0S0fKa6CEJgw1yYI2wdf06nUQ5DtZM1-iWYzVaZ1Qx6L9agjwtZEglwNmkG2Et1rBPJtU4XU9EpgCOnewSNgXd4tCMS5MfF_9fyfuPEdvTK39EtWQukQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXZ-CmRI03e0wuUZXXvpYnDCkHJ7SZ60Le_L_4LKQE_6i2K-Z_2lF1T2RGYjo3SUR0saPFZj91wux4JU3qhX9iXccQ54mtI68LOd7euUzybSJYtgZLAyjS6TOX6VahusQ7aQyivEw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXZ-CmRI03e0wuUZXXvpYnDCkHJ7SZ60Le_L_4LKQE_6i2K-Z_2lF1T2RGYjo3SUR0saPFZj91wux4JU3qhX9iXccQ54mtI68LOd7euUzybSJYtgZLAyjS6TOX6VahusQ7aQyivEw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXZ-CmRI03e0wuUZXXvpYnDCkHJ7SZ60Le_L_4LKQE_6i2K-Z_2lF1T2RGYjo3SUR0saPFZj91wux4JU3qhX9iXccQ54mtI68LOd7euUzybSJYtgZLAyjS6TOX6VahusQ7aQyivEw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXdVsnd8MpaSPTDyscWAgabCHuK_v8OMDcBSS7T6mW4mWzAIv4dhtaR1vhhW0McqMstsh7wjcEXuGTzmrtzx2OFplqcffwTbhw4EUYlVPwdF706tyTMDfGwcwg9lEesy1c1Dh7Osw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXZ-CmRI03e0wuUZXXvpYnDCkHJ7SZ60Le_L_4LKQE_6i2K-Z_2lF1T2RGYjo3SUR0saPFZj91wux4JU3qhX9iXccQ54mtI68LOd7euUzybSJYtgZLAyjS6TOX6VahusQ7aQyivEw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXZ-CmRI03e0wuUZXXvpYnDCkHJ7SZ60Le_L_4LKQE_6i2K-Z_2lF1T2RGYjo3SUR0saPFZj91wux4JU3qhX9iXccQ54mtI68LOd7euUzybSJYtgZLAyjS6TOX6VahusQ7aQyivEw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXZ-CmRI03e0wuUZXXvpYnDCkHJ7SZ60Le_L_4LKQE_6i2K-Z_2lF1T2RGYjo3SUR0saPFZj91wux4JU3qhX9iXccQ54mtI68LOd7euUzybSJYtgZLAyjS6TOX6VahusQ7aQyivEw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXZ-CmRI03e0wuUZXXvpYnDCkHJ7SZ60Le_L_4LKQE_6i2K-Z_2lF1T2RGYjo3SUR0saPFZj91wux4JU3qhX9iXccQ54mtI68LOd7euUzybSJYtgZLAyjS6TOX6VahusQ7aQyivEw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Failed to load resource: the server responded with a status of 429 ()",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVEB_YpoAVrD2RYD0m5fBogAoM1oS8y3JEKEZ00nRi90d6-354rMu2yDdF9bal-cgcrMvV_bmYDYLuioIC1jQgIyxBYAHwREg9ooC8Y4e3b9aivjN6GJ8nFABC22UUyo9GSw2pmZQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXZ-CmRI03e0wuUZXXvpYnDCkHJ7SZ60Le_L_4LKQE_6i2K-Z_2lF1T2RGYjo3SUR0saPFZj91wux4JU3qhX9iXccQ54mtI68LOd7euUzybSJYtgZLAyjS6TOX6VahusQ7aQyivEw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "FAIL",
+              "message": "HTTP 429"
+            },
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 37건: Failed to load resource: the server responded with a status of 429 ()"
+            }
+          ]
+        },
+        {
+          "postId": "cmp0qqxxa0000u63f7wipd7me",
+          "title": "자식이 보호자가 되는 날, 준비할 것들",
+          "url": "/community/stories/cmp0qqxxa0000u63f7wipd7me",
+          "board": "사는이야기",
+          "apiTitleLength": 21,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "병원에서 결정권을 묻는 순간이 온다\n\n부모님이 입원하면 생각보다 빨리 온다. 의료진이 자꾸 자식을 찾는 거다. 경제적으로 준비해도, 인지능력이 있어도 '법적 보호자'는 결국 자식이 돼버린다. 저희 어머니 때도 그랬어요. 치매 초기라 본인이 느낌은 있는데 병원에서 동의서는 제 서명을 원하더라고요. 서류 결정부터 시작해 건강 관리, 요양원 방문, 돈 문제까지.",
+          "bodyLength": 775,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Connecting to 'https://csi.gstatic.com/csi?v=2&s=pagead&action=csi_pagead&dmc=8&top=1&puid=1~mp2880o8&ctx=0&met.1=24.3ed' violates the following Content Security Policy directive: \"connect-src 'self' https://kauth.kakao.com https://kapi.kakao.com https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://*.r2.cloudflarestorage.com https://*.r2.dev https://fundingchoicesmessages.google.com https://stats.g.doubleclick.net https://challenges.cloudflare.com https://www.google.com\". The action has been blocked.",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWv-1dpC8YbBgU7hz7xYEpJo2okvLWH80aLoI9D5W07L1zl9Iyq_ZB8jZYus7NWCbMD9Qf4uWOPqZ9d0NYiOyxTXVIAlsnFigjDcrVkzgI0PFUm54EO_uXwl-RwSFkHlF1xPKdCuw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWv-1dpC8YbBgU7hz7xYEpJo2okvLWH80aLoI9D5W07L1zl9Iyq_ZB8jZYus7NWCbMD9Qf4uWOPqZ9d0NYiOyxTXVIAlsnFigjDcrVkzgI0PFUm54EO_uXwl-RwSFkHlF1xPKdCuw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWv-1dpC8YbBgU7hz7xYEpJo2okvLWH80aLoI9D5W07L1zl9Iyq_ZB8jZYus7NWCbMD9Qf4uWOPqZ9d0NYiOyxTXVIAlsnFigjDcrVkzgI0PFUm54EO_uXwl-RwSFkHlF1xPKdCuw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 3건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp0qj7kq001hxn3fhwvyfacz",
+          "title": "명절 상차림은 이제 나 혼자만 하는 게 아닌데...",
+          "url": "/community/stories/cmp0qj7kq001hxn3fhwvyfacz",
+          "board": "사는이야기",
+          "apiTitleLength": 28,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 200,
+          "bodyText": "아까 전화로 명절 계획 얘기하다가 속으로만 삭혔어요. 며느리가 \"요즘엔 다 함께 챙기는 거 아니냐\"고 했거든요. 맞는 말이죠. 근데... 그렇다면서도 왜 자기는 손도 하나 거들 생각을 안 하는 건지. 남편이 뭐라고 해도 속만 끓이고 있어요. 제가 너무 욕심 많은 건가요, 아니면 여러분들은 어떻게 하세요.",
+          "bodyLength": 170,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxV-Gx9xgQxg4zmZYFEOsEgu0mFdYx7SXu9gPfbZOusv0tSksUKtZcZ4WG6JtGRe-CPIn4j2GVYlOGT7UQK4-SitBo_ZzZXW6ziefK_eJJ4qGNC6za5ty8767Nl3hAap1QVrSdBqnA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n"
+          ],
+          "issues": [
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 1건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp0qhmkd000gxn3f8taa3iam",
+          "title": "제 화낸 게 자식 탓만은 아닌 것 같은데 자꾸만 자책이 돼요",
+          "url": "/community/stories/cmp0qhmkd000gxn3f8taa3iam",
+          "board": "사는이야기",
+          "apiTitleLength": 33,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 429,
+          "bodyText": "아까 우리 둘째가 또 계좌에서 돈을 빼갔다는 거예요. 이번 달만 해도 벌써 세 번째라더라고요. 영수증을 보니 옷이고 악세사리고 자기 취향대로 막 사는 거 있잖아요. 남편이는 \"저 정도면 괜찮지 않냐\"며 쌌는데 제 화가 턱 막혔어요. 자기 월급도 있으면서 왜 자꾸 우리 통장을 건드리는지 모르겠다고 큰소리쳤거든요.\n\n근데 밤새 생각해보니까 제가 그 나이 때는 ",
+          "bodyLength": 377,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Failed to load resource: the server responded with a status of 429 ()",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXn_QsZdnw6NRfVp8rBx1htBr7I9F9X95FwH1VDjKzMtXh1lBLnVjUcmsi-0Dkk8MvUYhH4GW8P5auuUx9luFU6gpsL1A4HsWTbp9HK2wBG_j12k13yPdGCJb6UAjJPHeJYmG0l4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXn_QsZdnw6NRfVp8rBx1htBr7I9F9X95FwH1VDjKzMtXh1lBLnVjUcmsi-0Dkk8MvUYhH4GW8P5auuUx9luFU6gpsL1A4HsWTbp9HK2wBG_j12k13yPdGCJb6UAjJPHeJYmG0l4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXn_QsZdnw6NRfVp8rBx1htBr7I9F9X95FwH1VDjKzMtXh1lBLnVjUcmsi-0Dkk8MvUYhH4GW8P5auuUx9luFU6gpsL1A4HsWTbp9HK2wBG_j12k13yPdGCJb6UAjJPHeJYmG0l4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUOZLOi7PvLG2kiWHlUCUV0_8Posy0KLnnD5LwL-azchu_jLBwU9YE8jOHfGbXcJYpqTHC4CuHEFUaFMAyc_9sr8uXXg8DCDDz492TeBVZvg_GktqHVs-dRFV2_SQTHZ0e48nVh9w==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-YOEpsDxmfn9jdfyqnRt3PY' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-YOEpsDxmfn9jdfyqnRt3PY' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "%c%d font-size:0;color:transparent NaN",
+            "%c%d font-size:0;color:transparent NaN",
+            "Failed to load resource: the server responded with a status of 401 ()",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXn_QsZdnw6NRfVp8rBx1htBr7I9F9X95FwH1VDjKzMtXh1lBLnVjUcmsi-0Dkk8MvUYhH4GW8P5auuUx9luFU6gpsL1A4HsWTbp9HK2wBG_j12k13yPdGCJb6UAjJPHeJYmG0l4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXn_QsZdnw6NRfVp8rBx1htBr7I9F9X95FwH1VDjKzMtXh1lBLnVjUcmsi-0Dkk8MvUYhH4GW8P5auuUx9luFU6gpsL1A4HsWTbp9HK2wBG_j12k13yPdGCJb6UAjJPHeJYmG0l4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXn_QsZdnw6NRfVp8rBx1htBr7I9F9X95FwH1VDjKzMtXh1lBLnVjUcmsi-0Dkk8MvUYhH4GW8P5auuUx9luFU6gpsL1A4HsWTbp9HK2wBG_j12k13yPdGCJb6UAjJPHeJYmG0l4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXn_QsZdnw6NRfVp8rBx1htBr7I9F9X95FwH1VDjKzMtXh1lBLnVjUcmsi-0Dkk8MvUYhH4GW8P5auuUx9luFU6gpsL1A4HsWTbp9HK2wBG_j12k13yPdGCJb6UAjJPHeJYmG0l4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxX7zX93h1Tb4hNMFj7RmiTBnopumLNM9DqEjgoT3Qoup1eTAvXk8ZczU38Z_XTxD7zgnzpfZe40du3xupZLJd7cbyITwpUbJFERl4wjRXScRelQbEe8MkVdBCm3dahLjeXEuqzNVw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXn_QsZdnw6NRfVp8rBx1htBr7I9F9X95FwH1VDjKzMtXh1lBLnVjUcmsi-0Dkk8MvUYhH4GW8P5auuUx9luFU6gpsL1A4HsWTbp9HK2wBG_j12k13yPdGCJb6UAjJPHeJYmG0l4Q==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Connecting to 'https://csi.gstatic.com/csi?v=2&s=pagead&action=csi_pagead&dmc=8&top=1&puid=1~mp288457&ctx=0&met.1=24.26e' violates the following Content Security Policy directive: \"connect-src 'self' https://kauth.kakao.com https://kapi.kakao.com https://api.telegram.org https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://ads-partners.coupang.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://*.r2.cloudflarestorage.com https://*.r2.dev https://fundingchoicesmessages.google.com https://stats.g.doubleclick.net https://challenges.cloudflare.com https://www.google.com\". The action has been blocked.",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Failed to load resource: the server responded with a status of 429 ()",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVyZ00ZcB0YvrssF3idS4Hr26uOp7u_dlZM69DTYn2whJJMvos_hSI2ctJ5IsjtBFvCMlfKOkoIOuA1EC4VmVcSHq1Ofn6aykp3HKZTWptunr4IOya1WHsMTAj3LN7Pvvq9p1A-Ag==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVyZ00ZcB0YvrssF3idS4Hr26uOp7u_dlZM69DTYn2whJJMvos_hSI2ctJ5IsjtBFvCMlfKOkoIOuA1EC4VmVcSHq1Ofn6aykp3HKZTWptunr4IOya1WHsMTAj3LN7Pvvq9p1A-Ag==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVyZ00ZcB0YvrssF3idS4Hr26uOp7u_dlZM69DTYn2whJJMvos_hSI2ctJ5IsjtBFvCMlfKOkoIOuA1EC4VmVcSHq1Ofn6aykp3HKZTWptunr4IOya1WHsMTAj3LN7Pvvq9p1A-Ag==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWSrAiTFAw8VslA6FCGHmXmc5qZADnBYddBUjvTBJ3PPd_zNh9h7oNqKc_YHcan0CYJlVTg341p2FPaZfKPVJQrlDD9peKjSz4BxG9vXEuXYUKbOP7VnZlmJQpZZ63ldcUDN8a4vg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVyZ00ZcB0YvrssF3idS4Hr26uOp7u_dlZM69DTYn2whJJMvos_hSI2ctJ5IsjtBFvCMlfKOkoIOuA1EC4VmVcSHq1Ofn6aykp3HKZTWptunr4IOya1WHsMTAj3LN7Pvvq9p1A-Ag==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVyZ00ZcB0YvrssF3idS4Hr26uOp7u_dlZM69DTYn2whJJMvos_hSI2ctJ5IsjtBFvCMlfKOkoIOuA1EC4VmVcSHq1Ofn6aykp3HKZTWptunr4IOya1WHsMTAj3LN7Pvvq9p1A-Ag==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVyZ00ZcB0YvrssF3idS4Hr26uOp7u_dlZM69DTYn2whJJMvos_hSI2ctJ5IsjtBFvCMlfKOkoIOuA1EC4VmVcSHq1Ofn6aykp3HKZTWptunr4IOya1WHsMTAj3LN7Pvvq9p1A-Ag==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVyZ00ZcB0YvrssF3idS4Hr26uOp7u_dlZM69DTYn2whJJMvos_hSI2ctJ5IsjtBFvCMlfKOkoIOuA1EC4VmVcSHq1Ofn6aykp3HKZTWptunr4IOya1WHsMTAj3LN7Pvvq9p1A-Ag==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVyZ00ZcB0YvrssF3idS4Hr26uOp7u_dlZM69DTYn2whJJMvos_hSI2ctJ5IsjtBFvCMlfKOkoIOuA1EC4VmVcSHq1Ofn6aykp3HKZTWptunr4IOya1WHsMTAj3LN7Pvvq9p1A-Ag==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxU17pvGlP9nuo4Jmr36wERFYC-DMktRUXNQaZMGU9BdNmpxTxJIH_AdzJaf3DkO3c827gXUuT8HMmCsS60NY3eprVNymAsaT9D5Nf1L25-Flc05bvOvubWiDVBHYWrU3eYBMZ1MhQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "FAIL",
+              "message": "HTTP 429"
+            },
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 37건: Failed to load resource: the server responded with a status of 429 ()"
+            }
+          ]
+        },
+        {
+          "postId": "cmp0qhce9000cxn3fo1b8ijx1",
+          "title": "올리브영 같은 제품 쿠팡이랑 가격 확인해봤어요",
+          "url": "/community/stories/cmp0qhce9000cxn3fo1b8ijx1",
+          "board": "사는이야기",
+          "apiTitleLength": 25,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 429,
+          "bodyText": "요즘 쓰던 비타민 C 세럼이 떨어져서 어디서 살까 싶었는데, 같은 제품 올리브영이랑 쿠팡에 올라와 있더라고요. 직접 확인해봤습니다.\n\n올리브영: 38,000원 (배송료 무료, 도착 2~3일)\n쿠팡: 35,500원 (프라임 배송, 당일 도착 가능)\n\n결론은 가격은 쿠팡이 2,500원 싸지만, 올리브영이 세럼 류는 차라리 직접 가서 스킨케어 상담받고 구매하는 ",
+          "bodyLength": 263,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Failed to load resource: the server responded with a status of 401 ()",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "%c%d font-size:0;color:transparent NaN",
+            "%c%d font-size:0;color:transparent NaN",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-ltIe3WF84Zc3eMMtDDcHiT' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-ltIe3WF84Zc3eMMtDDcHiT' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Failed to load resource: the server responded with a status of 429 ()"
+          ],
+          "issues": [
+            {
+              "level": "FAIL",
+              "message": "HTTP 429"
+            },
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 16건: Failed to load resource: the server responded with a status of 401 ()"
+            }
+          ]
+        },
+        {
+          "postId": "cmp0qh7s4000axn3fobqc7cb9",
+          "title": "혼자 사는 언니들 봤는데 정말 대단하더라...",
+          "url": "/community/stories/cmp0qh7s4000axn3fobqc7cb9",
+          "board": "사는이야기",
+          "apiTitleLength": 25,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 429,
+          "bodyText": "방금 아파트 엘리베이터에서 우리 동네 혼자 사는 언니 만났는데, 짐을 혼자 들고 계시더라고요. 그 모습을 보다가 자꾸만 생각이 들어요. 혹시 아프면 누가 챙겨주지? 밤에 뭔가 위급한 일 생기면 어쩌지? 우리 남편도 자주 출장을 가긴 하는데, 그때도 은근 불안한데 완전히 혼자면 얼마나 무섭겠어요. 그 언니는 아무렇지도 않게 웃고 계셨는데... 마음속으로는 얼",
+          "bodyLength": 260,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWUueG_CrKfuEFdEZ2J1eyjoafP1u4wNER_u6RCpficTFShPRI-lMO4E05fNwwbkig7m3ogU2itUy2282chmi7PbGXhs-ZE7uOlafr9auausiq1WhQ9PNpnUclKnASyOa06V-pdKA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWUueG_CrKfuEFdEZ2J1eyjoafP1u4wNER_u6RCpficTFShPRI-lMO4E05fNwwbkig7m3ogU2itUy2282chmi7PbGXhs-ZE7uOlafr9auausiq1WhQ9PNpnUclKnASyOa06V-pdKA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWUueG_CrKfuEFdEZ2J1eyjoafP1u4wNER_u6RCpficTFShPRI-lMO4E05fNwwbkig7m3ogU2itUy2282chmi7PbGXhs-ZE7uOlafr9auausiq1WhQ9PNpnUclKnASyOa06V-pdKA==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxVdkhW6_88L7dj3lc6jmlOpLt4BCgO-Mok_Jq8IK_w99knwtada6b-zpEBrkj10hB9n6oA_rnPRfNt8RV4K5fHafqjlx5Q_9Yi1rb5uBvZ0PPuMGs8U04BnbROeAjwqVHSS4aryJQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Failed to load resource: the server responded with a status of 429 ()",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXJDEUUXrnJsU9MQ6_ZZteD47T-tcnRN4aK3KbWqFzXtGLUOvZWj-JnkmxJ4V9HoGVJyew9sEgXfYEd583rcfLrQedr_CmyhNt4f99ai4Guxa7NI2hUDFN_jpJvmirW5u1Cv3UtrQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXJDEUUXrnJsU9MQ6_ZZteD47T-tcnRN4aK3KbWqFzXtGLUOvZWj-JnkmxJ4V9HoGVJyew9sEgXfYEd583rcfLrQedr_CmyhNt4f99ai4Guxa7NI2hUDFN_jpJvmirW5u1Cv3UtrQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXJDEUUXrnJsU9MQ6_ZZteD47T-tcnRN4aK3KbWqFzXtGLUOvZWj-JnkmxJ4V9HoGVJyew9sEgXfYEd583rcfLrQedr_CmyhNt4f99ai4Guxa7NI2hUDFN_jpJvmirW5u1Cv3UtrQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "FAIL",
+              "message": "HTTP 429"
+            },
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 8건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        },
+        {
+          "postId": "cmp0qh3k40008xn3fae7mhnq7",
+          "title": "같이 배우는 분들이 정말 좋아요",
+          "url": "/community/stories/cmp0qh3k40008xn3fae7mhnq7",
+          "board": "사는이야기",
+          "apiTitleLength": 17,
+          "apiAuthorPresent": true,
+          "apiCreatedAtValid": true,
+          "httpStatus": 429,
+          "bodyText": "요즘 남편이 퇴직하고 나서 둘 다 동네 평생학습관에 등록했는데, 거기서 만난 분들이 참 좋으신 분들이에요. 저는 영어 수업 듣고 있는데, 같은 반 할머니들이 자꾸 격려를 해주시더라고요. 모르는 것도 티 안 내고 물어볼 수 있고, 다들 처음 배우는 거라 서로 응원하는 분위기가 참 좋아요.\n\n남편도 스마트폰 강좌 들으면서 새로운 친구들이 생겼다고 좋아하고 있어",
+          "bodyLength": 278,
+          "hasFallbackTitle": false,
+          "brokenImages": 0,
+          "totalImages": 0,
+          "authorVisible": false,
+          "timestampVisible": false,
+          "consoleErrors": [
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXo5d9IScVnynGPorOGht92reHH5lZFmBk2mvh6AN2Yb8FlKJyTIMtXvpJ6J8pK7LYbzBzk6d0SowsGzmU6KKX38iqot6Qbua6LuWOOEiJ2edmSbxd3kbxdecYmmJIlwZa8VuGErw==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXJDEUUXrnJsU9MQ6_ZZteD47T-tcnRN4aK3KbWqFzXtGLUOvZWj-JnkmxJ4V9HoGVJyew9sEgXfYEd583rcfLrQedr_CmyhNt4f99ai4Guxa7NI2hUDFN_jpJvmirW5u1Cv3UtrQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXJDEUUXrnJsU9MQ6_ZZteD47T-tcnRN4aK3KbWqFzXtGLUOvZWj-JnkmxJ4V9HoGVJyew9sEgXfYEd583rcfLrQedr_CmyhNt4f99ai4Guxa7NI2hUDFN_jpJvmirW5u1Cv3UtrQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXJDEUUXrnJsU9MQ6_ZZteD47T-tcnRN4aK3KbWqFzXtGLUOvZWj-JnkmxJ4V9HoGVJyew9sEgXfYEd583rcfLrQedr_CmyhNt4f99ai4Guxa7NI2hUDFN_jpJvmirW5u1Cv3UtrQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXJDEUUXrnJsU9MQ6_ZZteD47T-tcnRN4aK3KbWqFzXtGLUOvZWj-JnkmxJ4V9HoGVJyew9sEgXfYEd583rcfLrQedr_CmyhNt4f99ai4Guxa7NI2hUDFN_jpJvmirW5u1Cv3UtrQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxUR5NATHIuPlc-jPFVa28UqgKmeKP6mIyQKCBN_lCTQHDEohghdsvVWq3NOX5KQZbaiVkRthnVRCe5blbOHAt0Rzopz8cntYi4hEybd4dCGtba2C5tJOtmZUv7CjCpYrWzKXdbW1A==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXJDEUUXrnJsU9MQ6_ZZteD47T-tcnRN4aK3KbWqFzXtGLUOvZWj-JnkmxJ4V9HoGVJyew9sEgXfYEd583rcfLrQedr_CmyhNt4f99ai4Guxa7NI2hUDFN_jpJvmirW5u1Cv3UtrQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedHTML' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "This document requires 'TrustedScriptURL' assignment. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-RiKmv1PYDIFmvk2WOWbg84' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-RiKmv1PYDIFmvk2WOWbg84' 'unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-eJGI0Ik4oYe/PKLDOt4wcN76wYs8h+Ew05pMzdY6xG8='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "This document requires 'TrustedScript' assignment. The action has been blocked.",
+            "%c%d font-size:0;color:transparent NaN",
+            "%c%d font-size:0;color:transparent NaN",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Permissions policy violation: xr-spatial-tracking is not allowed in this document.",
+            "Failed to load resource: the server responded with a status of 401 ()",
+            "Framing 'https://partners.coupangcdn.com/' violates the following Content Security Policy directive: \"frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.googletagmanager.com https://tpc.googlesyndication.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://*.adtrafficquality.google https://coupa.ng https://ads-partners.coupang.com https://challenges.cloudflare.com\". The request has been blocked.\n",
+            "Failed to load resource: the server responded with a status of 429 ()",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXXEboXk_6GdF1Y0F-Z4N4ScnUkN69GmDoQ8kU9-ShoTeexnvtVnQBZBsBE5oZAoS9XFvzW-FTkg_xk65zob4RnWdEj_8i8sCMQjqK49IRn6tVzFuNcQVtBBq-NLb1P8vJO-HSfIQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXXEboXk_6GdF1Y0F-Z4N4ScnUkN69GmDoQ8kU9-ShoTeexnvtVnQBZBsBE5oZAoS9XFvzW-FTkg_xk65zob4RnWdEj_8i8sCMQjqK49IRn6tVzFuNcQVtBBq-NLb1P8vJO-HSfIQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXXEboXk_6GdF1Y0F-Z4N4ScnUkN69GmDoQ8kU9-ShoTeexnvtVnQBZBsBE5oZAoS9XFvzW-FTkg_xk65zob4RnWdEj_8i8sCMQjqK49IRn6tVzFuNcQVtBBq-NLb1P8vJO-HSfIQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxW4rezJnoXNL-Gvn7v6AWHGAzVmL_k_ufhviajuwdaGSvZt9vnMPWDoQvVP3c6JOcSmOER4BjTY2fGYNhcRBOCLRblyaQ5O3VHNweCo0zPB6dqbm7LWiBTaCFj96ZpymcB5wX0HmQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXXEboXk_6GdF1Y0F-Z4N4ScnUkN69GmDoQ8kU9-ShoTeexnvtVnQBZBsBE5oZAoS9XFvzW-FTkg_xk65zob4RnWdEj_8i8sCMQjqK49IRn6tVzFuNcQVtBBq-NLb1P8vJO-HSfIQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXXEboXk_6GdF1Y0F-Z4N4ScnUkN69GmDoQ8kU9-ShoTeexnvtVnQBZBsBE5oZAoS9XFvzW-FTkg_xk65zob4RnWdEj_8i8sCMQjqK49IRn6tVzFuNcQVtBBq-NLb1P8vJO-HSfIQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXXEboXk_6GdF1Y0F-Z4N4ScnUkN69GmDoQ8kU9-ShoTeexnvtVnQBZBsBE5oZAoS9XFvzW-FTkg_xk65zob4RnWdEj_8i8sCMQjqK49IRn6tVzFuNcQVtBBq-NLb1P8vJO-HSfIQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXXEboXk_6GdF1Y0F-Z4N4ScnUkN69GmDoQ8kU9-ShoTeexnvtVnQBZBsBE5oZAoS9XFvzW-FTkg_xk65zob4RnWdEj_8i8sCMQjqK49IRn6tVzFuNcQVtBBq-NLb1P8vJO-HSfIQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxXXEboXk_6GdF1Y0F-Z4N4ScnUkN69GmDoQ8kU9-ShoTeexnvtVnQBZBsBE5oZAoS9XFvzW-FTkg_xk65zob4RnWdEj_8i8sCMQjqK49IRn6tVzFuNcQVtBBq-NLb1P8vJO-HSfIQ==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED",
+            "Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWxWVS3xLVAZ2100bg8xMbw-eXpgIWIn-vsmLB07R8VATDd2rxz_vb9L-kXLw0pEt3AjrwjkggdFnwRkYcqbtwGJDzeMRCVrK5s9Qaz15x29j8T2zlhoq6kBaCFMpciSvnrBX3YTzVg==' from origin 'https://age-doesnt-matter.com' has been blocked by CORS policy: Request header field x-bot-type is not allowed by Access-Control-Allow-Headers in preflight response.",
+            "Failed to load resource: net::ERR_FAILED"
+          ],
+          "issues": [
+            {
+              "level": "FAIL",
+              "message": "HTTP 429"
+            },
+            {
+              "level": "WARN",
+              "message": "작성자 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "타임스탬프 미표시"
+            },
+            {
+              "level": "WARN",
+              "message": "JS 오류 33건: Access to XMLHttpRequest at 'https://fundingchoicesmessages.google.com/el/AGSKWx"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -126,7 +126,7 @@ export default defineConfig({
     // 10. 전체 페이지 렌더링 + 성능 감사 (데스크탑)
     {
       name: 'qa-audit',
-      testMatch: /qa\/(18|19|20)-.*\.spec\.ts/,
+      testMatch: /qa\/(18|19|20|25)-.*\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
