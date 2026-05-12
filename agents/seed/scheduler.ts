@@ -338,12 +338,31 @@ const SCHEDULE: Record<string, Activity[]> = {
 }
 
 async function getRandomPosts(board: string, limit: number) {
-  return prisma.post.findMany({
-    where: { boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2', status: 'PUBLISHED', source: { not: 'SHEET' } },
-    orderBy: { createdAt: 'desc' },
-    take: Math.min(limit * 5, 200),  // Fix 14: 봇 댓글 3개 cap 대응
-    select: { id: true, title: true, content: true, authorId: true },
+  const baseWhere = {
+    boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2',
+    status: 'PUBLISHED' as const,
+    source: { not: 'SHEET' as const },
+  }
+  const sel = { id: true, title: true, content: true, authorId: true }
+
+  // 48시간 이내 + 댓글 2개 미만 글 우선 — 신규 게시글 댓글 확보
+  const priorityPosts = await prisma.post.findMany({
+    where: { ...baseWhere, publishedAt: { gte: new Date(Date.now() - 48 * 3600 * 1000) }, commentCount: { lt: 2 } },
+    orderBy: { publishedAt: 'desc' },
+    take: 20,
+    select: sel,
   })
+
+  // 기존 방식으로 보완 (최신순 limit*5)
+  const supplemental = await prisma.post.findMany({
+    where: baseWhere,
+    orderBy: { createdAt: 'desc' },
+    take: Math.min(limit * 5, 200),
+    select: sel,
+  })
+
+  const priorityIds = new Set(priorityPosts.map(p => p.id))
+  return [...priorityPosts, ...supplemental.filter(p => !priorityIds.has(p.id))]
 }
 
 /** 댓글이 달린 글에서 대댓글 타겟 찾기 */
@@ -476,7 +495,7 @@ async function runActivity(activity: Activity): Promise<void> {
           author: { email: { endsWith: '@unao.bot' } },
         },
       })
-      if (botCommentCount >= 3) continue
+      if (botCommentCount >= 5) continue
 
       const commentText = await generateComment(activity.personaId, post.title, post.content)
       if (commentText) {

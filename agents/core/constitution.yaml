@@ -347,6 +347,20 @@ guardrails:
     - "사용자 개인정보 외부 전송 절대 금지"
     - "에이전트가 직접 에이전트 생성 불가"
     - "대량 삭제·차단 등 파괴적 액션 절대 금지"
+
+# ──────────────────────────────────────────
+# 9. 댓글 정책 (Comment Policy)
+# ──────────────────────────────────────────
+comment_policy:
+  bot_comment_cap_per_post: 5        # 게시글당 봇 댓글 최대 5개 (2026-05-12 창업자 승인, 기존 3개에서 상향)
+  new_post_priority_hours: 48        # 발행 후 48시간 이내 글 우선 타겟
+  min_comments_guarantee: 2          # 모든 BOT 게시글 최소 2개 댓글 목표
+
+  image_only_post_policy:            # 이미지 전용 게시글 정책 (2026-05-12 창업자 확정)
+    definition: "source='SHEET' AND 본문 50자 미만"
+    status: "의도적 상태 — 텍스트 없는 이미지 전용 콘텐츠"
+    action: skip                     # 댓글 미달이어도 보완·삭제·판단 절대 금지
+    rationale: "창업자가 의도적으로 이미지만 올린 콘텐츠. Claude가 임의 판단·수정 불가."
     - "자동화 콘텐츠 발행은 automation_status: ACTIVE 상태에서만 가능"
 
   emergency:
