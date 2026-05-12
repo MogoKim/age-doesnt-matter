@@ -25,6 +25,7 @@ export default function CategorySearchBar() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
     const params = new URLSearchParams(searchParams.toString())
+    params.delete('page')
     if (query.trim()) {
       params.set('q', query.trim())
       params.set('sf', field)
@@ -39,6 +40,7 @@ export default function CategorySearchBar() {
     const params = new URLSearchParams(searchParams.toString())
     params.delete('q')
     params.delete('sf')
+    params.delete('page')
     setQuery('')
     setField('title')
     router.push(`${pathname}?${params.toString()}`)

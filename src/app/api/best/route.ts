@@ -13,9 +13,10 @@ export async function GET(request: NextRequest) {
     const rawSort = searchParams.get('sort') ?? 'recent'
     const sort: 'recent' | 'likes' = rawSort === 'likes' ? 'likes' : 'recent'
     const { cursor, limit } = parsePaginationParams(searchParams)
+    const skip = parseInt(searchParams.get('skip') ?? '0', 10) || 0
 
     if (type === 'fame') {
-      const result = await getHallOfFamePosts({ cursor, limit })
+      const result = await getHallOfFamePosts({ skip, limit })
       return NextResponse.json(result, {
       headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
     })

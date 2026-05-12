@@ -22,34 +22,41 @@ export async function getTrendingPosts(limit = 5): Promise<PostSummary[]> {
 
 /* ── 일간 인기글 (Trending) ── */
 
-export async function getDailyTrendingPosts(limit = 10, q?: string, sf?: SearchField): Promise<PostSummary[]> {
-  const rows = await prisma.post.findMany({
-    where: {
-      status: 'PUBLISHED',
-      createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-      ...buildTextSearch(q, sf),
-    },
-    select: postSelect,
-    orderBy: [{ trendingScore: 'desc' }],
-    take: limit,
-  })
-  return rows.map(toPostSummary)
+export async function getDailyTrendingPosts(
+  options?: { skip?: number; limit?: number; q?: string; sf?: SearchField },
+): Promise<{ posts: PostSummary[]; total: number }> {
+  const { skip = 0, limit = 12, q, sf } = options ?? {}
+  const where = {
+    status: 'PUBLISHED' as const,
+    createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    ...buildTextSearch(q, sf),
+  }
+  const [rows, total] = await Promise.all([
+    prisma.post.findMany({ where, select: postSelect, orderBy: [{ trendingScore: 'desc' }], skip, take: limit }),
+    prisma.post.count({ where }),
+  ])
+  return { posts: rows.map(toPostSummary), total }
 }
 
 /* ── 주간 인기글 (Trending) ── */
 
-export async function getWeeklyTrendingPosts(limit = 10, q?: string, sf?: SearchField): Promise<PostSummary[]> {
-  const rows = await prisma.post.findMany({
-    where: {
-      status: 'PUBLISHED',
-      createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-      ...buildTextSearch(q, sf),
-    },
-    select: postSelect,
-    orderBy: [{ trendingScore: 'desc' }],
-    take: limit,
-  })
-  return rows.map(toPostSummary)
+export async function getWeeklyTrendingPosts(
+  options?: { skip?: number; limit?: number; q?: string; sf?: SearchField },
+): Promise<{ posts: PostSummary[]; total: number }> {
+  const MAX_WEEKLY = 60
+  const { skip = 0, limit = 12, q, sf } = options ?? {}
+  const effectiveSkip = Math.min(skip, MAX_WEEKLY)
+  const effectiveTake = Math.max(0, Math.min(limit, MAX_WEEKLY - effectiveSkip))
+  const where = {
+    status: 'PUBLISHED' as const,
+    createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+    ...buildTextSearch(q, sf),
+  }
+  const [rows, rawTotal] = await Promise.all([
+    prisma.post.findMany({ where, select: postSelect, orderBy: [{ trendingScore: 'desc' }], skip: effectiveSkip, take: effectiveTake }),
+    prisma.post.count({ where }),
+  ])
+  return { posts: rows.map(toPostSummary), total: Math.min(rawTotal, MAX_WEEKLY) }
 }
 
 /* ── 이달의 인기글 (월간 베스트) ── */
@@ -129,25 +136,20 @@ export async function getHotPosts(
 /* ── 베스트: 명예의 전당 (공감 50+) ── */
 
 export async function getHallOfFamePosts(
-  options?: { cursor?: string; limit?: number; q?: string; sf?: SearchField },
-): Promise<{ posts: PostSummary[]; hasMore: boolean }> {
-  const limit = options?.limit ?? 10
-
-  const rows = await prisma.post.findMany({
-    where: {
-      status: 'PUBLISHED',
-      boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] as BoardType[] },
-      promotionLevel: 'HALL_OF_FAME',
-      ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
-      ...buildTextSearch(options?.q, options?.sf),
-    },
-    select: postSelect,
-    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
-    take: limit + 1,
-  })
-
-  const hasMore = rows.length > limit
-  return { posts: rows.slice(0, limit).map(toPostSummary), hasMore }
+  options?: { skip?: number; limit?: number; q?: string; sf?: SearchField },
+): Promise<{ posts: PostSummary[]; total: number }> {
+  const { skip = 0, limit = 12, q, sf } = options ?? {}
+  const where = {
+    status: 'PUBLISHED' as const,
+    boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] as BoardType[] },
+    promotionLevel: 'HALL_OF_FAME' as PromotionLevel,
+    ...buildTextSearch(q, sf),
+  }
+  const [rows, total] = await Promise.all([
+    prisma.post.findMany({ where, select: postSelect, orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }], skip, take: limit }),
+    prisma.post.count({ where }),
+  ])
+  return { posts: rows.map(toPostSummary), total }
 }
 
 // ── 관심사 기반 추천글 (온보딩 완료 후 표시) ──

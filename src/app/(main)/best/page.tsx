@@ -8,9 +8,9 @@ import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import CategorySearchBar from '@/components/features/community/CategorySearchBar'
+import PaginationBar from '@/components/features/best/PaginationBar'
 import FeedAd from '@/components/ad/FeedAd'
 import CoupangBanner from '@/components/ad/CoupangBanner'
-import ResponsiveAd from '@/components/ad/ResponsiveAd'
 
 export const metadata: Metadata = {
   title: '인기글',
@@ -18,19 +18,21 @@ export const metadata: Metadata = {
   alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/best` },
 }
 
+const LIMIT = 12
+
 const getCachedDaily = unstable_cache(
-  () => getDailyTrendingPosts(10),
-  ['best-daily'],
+  () => getDailyTrendingPosts({ limit: LIMIT }),
+  ['best-daily-p1'],
   { revalidate: 60 }
 )
 const getCachedWeekly = unstable_cache(
-  () => getWeeklyTrendingPosts(10),
-  ['best-weekly'],
+  () => getWeeklyTrendingPosts({ limit: LIMIT }),
+  ['best-weekly-p1'],
   { revalidate: 60 }
 )
 const getCachedFame = unstable_cache(
-  () => getHallOfFamePosts({ limit: 10 }),
-  ['best-fame'],
+  () => getHallOfFamePosts({ limit: LIMIT }),
+  ['best-fame-p1'],
   { revalidate: 60 }
 )
 
@@ -44,34 +46,42 @@ const TABS: Array<{ key: TabType; label: string; emoji: string }> = [
 export default async function BestPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; q?: string; sf?: string }>
+  searchParams: Promise<{ tab?: string; q?: string; sf?: string; page?: string }>
 }) {
   const params = await searchParams
   const currentTab = (TABS.find((t) => t.key === params.tab)?.key ?? 'daily') as TabType
   const q = params.q?.trim() || undefined
-  const sf = params.sf === 'title' || params.sf === 'content' ? params.sf : ('both' as const)
+  const sf = (params.sf === 'both' || params.sf === 'content') ? params.sf : ('title' as const)
+  const page = Math.max(1, parseInt(params.page ?? '1', 10) || 1)
+  const skip = (page - 1) * LIMIT
 
   let posts: PostSummary[]
+  let total: number
+
   if (currentTab === 'daily') {
-    posts = q
-      ? await getDailyTrendingPosts(10, q, sf).catch(() => [] as PostSummary[])
-      : await getCachedDaily().catch(() => [] as PostSummary[])
-  } else if (currentTab === 'weekly') {
-    posts = q
-      ? await getWeeklyTrendingPosts(10, q, sf).catch(() => [] as PostSummary[])
-      : await getCachedWeekly().catch(() => [] as PostSummary[])
-  } else {
-    const result = q
-      ? await getHallOfFamePosts({ limit: 10, q, sf }).catch(() => ({ posts: [] as PostSummary[] }))
-      : await getCachedFame().catch(() => ({ posts: [] as PostSummary[] }))
+    const result = (page === 1 && !q)
+      ? await getCachedDaily().catch(() => ({ posts: [] as PostSummary[], total: 0 }))
+      : await getDailyTrendingPosts({ skip, limit: LIMIT, q, sf }).catch(() => ({ posts: [] as PostSummary[], total: 0 }))
     posts = result.posts
+    total = result.total
+  } else if (currentTab === 'weekly') {
+    const result = (page === 1 && !q)
+      ? await getCachedWeekly().catch(() => ({ posts: [] as PostSummary[], total: 0 }))
+      : await getWeeklyTrendingPosts({ skip, limit: LIMIT, q, sf }).catch(() => ({ posts: [] as PostSummary[], total: 0 }))
+    posts = result.posts
+    total = result.total
+  } else {
+    const result = (page === 1 && !q)
+      ? await getCachedFame().catch(() => ({ posts: [] as PostSummary[], total: 0 }))
+      : await getHallOfFamePosts({ skip, limit: LIMIT, q, sf }).catch(() => ({ posts: [] as PostSummary[], total: 0 }))
+    posts = result.posts
+    total = result.total
   }
 
-  const emptyMessages: Record<TabType, string> = {
-    daily: '오늘은 아직 인기글이 없어요. 글에 공감을 눌러보세요!',
-    weekly: '이번 주 인기글이 아직 없어요. 좋은 글을 올려보세요!',
-    fame: '공감 50개 이상 달성한 글이 명예의 전당에 올라가요!',
-  }
+  const totalPages = Math.ceil(total / LIMIT)
+
+  const currentTabMeta = TABS.find((t) => t.key === currentTab)!
+  const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,7 +93,7 @@ export default async function BestPage({
           {TABS.map((tab) => (
             <Link
               key={tab.key}
-              href={`/best?tab=${tab.key}`}
+              href={`/best?tab=${tab.key}${qSuffix}`}
               className={`
                 flex items-center gap-1.5 px-4 py-3 rounded-xl text-body font-bold
                 no-underline transition-colors min-h-[52px] whitespace-nowrap flex-shrink-0
@@ -100,11 +110,18 @@ export default async function BestPage({
         </div>
       </nav>
 
+      {/* 검색창 — 탭 바로 아래 */}
+      <div className="px-4 pb-3">
+        <Suspense fallback={null}>
+          <CategorySearchBar />
+        </Suspense>
+      </div>
+
       {/* 게시글 목록 */}
-      <section className="px-4 py-4">
+      <section className="px-4 pb-8">
         <h2 className="text-title font-bold text-foreground mb-4 flex items-center gap-2">
-          {TABS.find((t) => t.key === currentTab)?.emoji}{' '}
-          {TABS.find((t) => t.key === currentTab)?.label}
+          {currentTabMeta.emoji} {currentTabMeta.label}
+          {total > 0 && <span className="text-caption font-normal text-muted-foreground ml-1">총 {total}개</span>}
         </h2>
 
         {posts.length > 0 ? (
@@ -112,27 +129,58 @@ export default async function BestPage({
             {posts.map((post, idx) => (
               <div key={post.id}>
                 <BestPostCard post={post} />
-                {idx === 2 && (
-                  <div className="mt-3"><FeedAd /></div>
-                )}
-                {idx === 5 && (
-                  <div className="mt-3"><ResponsiveAd mobile={<CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" />} desktop={null} /></div>
-                )}
-                {idx === 8 && (
-                  <div className="mt-3"><FeedAd /></div>
-                )}
+                {idx === 4 && <div className="mt-3"><FeedAd /></div>}
+                {idx === 9 && <div className="mt-3"><CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" /></div>}
               </div>
             ))}
           </div>
+        ) : currentTab === 'fame' && !q ? (
+          <FameEmptyState />
         ) : (
-          <EmptyState message={q ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.` : emptyMessages[currentTab]} />
+          <EmptyState message={q ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.` : getEmptyMessage(currentTab)} />
         )}
 
-        {/* 검색 */}
-        <Suspense fallback={null}>
-          <CategorySearchBar />
-        </Suspense>
+        <PaginationBar
+          currentPage={page}
+          totalPages={totalPages}
+          buildHref={(p) => `/best?tab=${currentTab}&page=${p}${qSuffix}`}
+        />
       </section>
+    </div>
+  )
+}
+
+function getEmptyMessage(tab: TabType): string {
+  if (tab === 'daily') return '오늘은 아직 인기글이 없어요. 글에 공감을 눌러보세요!'
+  if (tab === 'weekly') return '이번 주 인기글이 아직 없어요. 좋은 글을 올려보세요!'
+  return '아직 명예의 전당 글이 없어요.'
+}
+
+function FameEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center p-10 text-center bg-card rounded-2xl border-2 border-dashed border-border gap-4">
+      <p className="text-4xl">👑</p>
+      <div>
+        <p className="text-body font-bold text-foreground mb-1">아직 명예의 전당이 비어있어요!</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          공감 + 댓글 합계 50개를 달성한 글이 이곳에 입성합니다.<br />
+          지금 인기글에 공감을 눌러보세요! 🔥
+        </p>
+      </div>
+      <Link
+        href="/best?tab=daily"
+        className="inline-flex items-center gap-1.5 h-[52px] px-6 rounded-xl bg-primary text-white font-bold text-base no-underline transition-colors hover:bg-primary/90"
+      >
+        🔥 HOT 게시글 보러가기 →
+      </Link>
+    </div>
+  )
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
+      <p className="text-body text-muted-foreground leading-relaxed">{message}</p>
     </div>
   )
 }
@@ -181,13 +229,5 @@ function BestPostCard({ post }: { post: PostSummary }) {
         <span>{formatTimeAgo(post.createdAt)}</span>
       </div>
     </Link>
-  )
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-      <p className="text-body text-muted-foreground leading-relaxed">{message}</p>
-    </div>
   )
 }

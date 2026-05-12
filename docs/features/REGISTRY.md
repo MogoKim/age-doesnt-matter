@@ -74,7 +74,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | RELATION+HEALTH | P1·P2·P5 | [F04](F04-community.md) | ACTIVE | 2026-05-11 |
 | F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-10 |
 | F06 | 일자리 게시판 | `src/app/(main)/jobs/` | 자동수집(A03) + 사용자 탐색 | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
-| F07 | 베스트 탭 | `src/app/(main)/best/` | trendingScore 상위 | RELATION | P3 | `docs/specs/05-best.md` | ACTIVE | 2026-05-12 |
+| F07 | 베스트 탭 | `src/app/(main)/best/` | trendingScore 상위 | RELATION | P3 | [F07](F07-best-tab.md) | ACTIVE | 2026-05-12 |
 | F08 | 검색 | `src/app/(main)/search/` | 사용자 검색 | ALL | ALL | `docs/specs/04-search.md` | ACTIVE | 2026-05-02 |
 | F09 | 어드민 패널 | `src/app/(admin)/` | 운영자 접근 | INFRA | — | `docs/specs/09-admin.md` | ACTIVE | 2026-05-12 |
 | F10 | 최상단 띠 배너 | `src/components/layouts/TopPromoBanner.tsx` + `TopPromoBannerClient.tsx` + `src/components/admin/TopPromoBannerPanel.tsx` | DB Setting 테이블 (어드민 관리) | RELATION | ALL | [F10](F10-top-promo-banner.md) | ACTIVE | 2026-04-29 |
