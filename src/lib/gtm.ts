@@ -76,6 +76,7 @@ export async function waitForGtagReady(timeoutMs = 2000): Promise<void> {
 /** gtag()로 GA4에 직접 이벤트 전송. gtag 미로드 시 큐에 보관. */
 function sendEvent(eventName: string, params?: Record<string, unknown>): void {
   if (typeof window === 'undefined') return
+  if (navigator.webdriver) return
   if (_gtagReady && window.gtag) {
     window.gtag('event', eventName, params)
   } else {

@@ -94,7 +94,8 @@ export default function RootLayout({
 }) {
   const initialFontSize = getInitialFontSize()
   const fontSizeAttr = initialFontSize !== 'NORMAL' ? initialFontSize : undefined
-  const isBot = headers().has('x-bot-type')
+  const headersList = headers()
+  const isBot = headersList.has('x-bot-type') || /HeadlessChrome/i.test(headersList.get('user-agent') ?? '')
   return (
     <html lang="ko" className={pretendard.variable} {...(fontSizeAttr ? { 'data-font-size': fontSizeAttr } : {})}>
       <head>
