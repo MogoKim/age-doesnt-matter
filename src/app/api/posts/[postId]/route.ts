@@ -1,14 +1,17 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getPostDetail } from '@/lib/queries/posts'
 import { handleApiError } from '@/lib/api-utils'
+import { checkApiRateLimit } from '@/lib/api-rate-limit'
 
 export async function GET(
-  _request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ postId: string }> },
 ) {
   try {
+    const rl = await checkApiRateLimit(request, 'post-detail', { max: 100, windowMs: 60_000 })
+    if (rl) return rl
     const { postId } = await params
     const [session, post] = await Promise.all([auth(), getPostDetail(postId)])
 

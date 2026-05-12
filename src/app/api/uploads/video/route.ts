@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { uploadToR2 } from '@/lib/r2'
 import { randomUUID } from 'crypto'
-import { rateLimit } from '@/lib/rate-limit'
+import { rateLimitDistributed } from '@/lib/rate-limit'
 
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB (Vercel 요청 크기 제한)
 const ALLOWED_TYPES = ['video/mp4', 'video/quicktime', 'video/webm']
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   }
 
   // Rate limit: 1분에 5회
-  const rl = rateLimit(`upload-video:${session.user.id}`, { max: 5, windowMs: 60_000 })
+  const rl = await rateLimitDistributed(`upload-video:${session.user.id}`, { max: 5, windowMs: 60_000 })
   if (!rl.success) {
     return NextResponse.json({ error: '업로드 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.' }, { status: 429 })
   }

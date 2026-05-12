@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { getPresignedUploadUrl } from '@/lib/r2'
 import { randomUUID } from 'crypto'
-import { rateLimit } from '@/lib/rate-limit'
+import { rateLimitDistributed } from '@/lib/rate-limit'
 
 const ALLOWED_EXTS: Record<string, string> = {
   mp4: 'video/mp4',
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
   }
 
-  const rl = rateLimit(`upload-video:${session.user.id}`, { max: 5, windowMs: 60_000 })
+  const rl = await rateLimitDistributed(`upload-video:${session.user.id}`, { max: 5, windowMs: 60_000 })
   if (!rl.success) {
     return NextResponse.json({ error: '업로드 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.' }, { status: 429 })
   }

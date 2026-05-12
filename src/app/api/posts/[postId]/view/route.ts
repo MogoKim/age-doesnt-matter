@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { checkApiRateLimit } from '@/lib/api-rate-limit'
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ postId: string }> },
 ) {
+  const rl = await checkApiRateLimit(req, 'post-view', { max: 60, windowMs: 60_000 })
+  if (rl) return rl
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ ok: true })
 
