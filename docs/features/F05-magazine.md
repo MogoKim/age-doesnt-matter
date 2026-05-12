@@ -1,6 +1,6 @@
 # 매거진 운영 기획서 (F05 + A02)
 
-> 최초 작성: 2026-04-27 | 최근 수정: 2026-04-27
+> 최초 작성: 2026-04-27 | 최근 수정: 2026-05-12
 
 ---
 
@@ -125,6 +125,7 @@
 | 2026-04-27 | Feature 문서 최초 생성 | Feature Lifecycle 도입 |
 | 2026-04-27 | launchd npx 경로 수정 (nvm 경로로 변경) + Full Disk Access 부여 | `/usr/local/bin/npx` 존재하지 않아 exit 127 |
 | 2026-04-27 | MagazineFilter 활성탭 `text-foreground` → `text-white` | bg-primary 위 text-foreground WCAG 컨트라스트 위반 수정 |
+| 2026-05-12 | FeaturedCard·grid 레이아웃 제거, getMagazineListPage 번호 페이지네이션(12개) 전환, 수평 MagazineCard + PostListWithAds 적용 | 게시판 UX 패턴 통일 |
 | 2026-04-28 | SESSION_TIME 정규화 (afternoon/late → morning/evening) + notifySlack 문자열→NotifyPayload 수정 + PERSON_REAL unsplashQuery 허용 + gemini-scraper 타임아웃 스크린샷 추가 | 매거진 발행 0건 원인 4개 수정 (SESSION_TIME 불일치, Slack invalid_blocks, Unsplash 폴백 차단, 디버그 강화) |
 | 2026-05-10 | magazine/page.tsx CollectionPage Schema 추가 (publisher + about 6개 토픽 + audience) | SEO 구글이 매거진 섹션을 콘텐츠 허브로 인식하도록 |
 | 2026-04-29 | 상세 H2 제목 중복 제거 / CSP GA4 도메인 추가 / favicon.ico 복구 / CPS 섹션 홀딩(CPS_ENABLED=false) / 썸네일=히어로 이미지 직접 사용 / seoTitle 50자 / maxArticles 3 / CafeTrend 없을 때 욕망지도 폴백 / 목록 카드 preview 표시 | Playwright 전방위 검수 후 기획-현실 갭 P0~P2 수정 |

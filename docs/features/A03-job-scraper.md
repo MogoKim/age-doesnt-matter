@@ -176,6 +176,7 @@ gh run list --workflow=agents-jobs.yml --limit=10
 |------|---------|------|
 | 2026-04-21 | 운영 기획서 최초 작성 | 운영 문서 관리 체계 도입 |
 | 2026-04-27 | Feature Lifecycle 포맷 마이그레이션 — AI 모델 Haiku→Sonnet 수정, BotLog/비용/환경변수/Slack 상세 추가 | Feature Lifecycle 거버넌스 |
+| 2026-05-12 | getJobListPage 번호 페이지네이션(12개) 전환, PostListWithAds\<JobCardItem\> 제네릭 적용, FeedAd/CoupangBanner→공통 광고 패턴 통일 | 게시판 UX 패턴 통일 |
 
 ---
 

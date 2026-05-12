@@ -1,42 +1,61 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { unstable_cache } from 'next/cache'
+import nextDynamic from 'next/dynamic'
+import { getJobListPage, type JobCardItem } from '@/lib/queries/posts'
+import { formatTimeAgo } from '@/components/features/community/utils'
+import { formatSalary } from '@/lib/format'
+import JobFilterButton from '@/components/features/jobs/JobFilterButton'
+import PostListWithAds from '@/components/features/common/PostListWithAds'
+import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
+import BoardViewTracker from '@/components/features/community/BoardViewTracker'
+
+const JobQuickTags = nextDynamic(() => import('@/components/features/jobs/JobQuickTags'))
+
+export const dynamic = 'force-dynamic'
+
+const LIMIT = 12
 
 export const metadata: Metadata = {
   title: '내 일 찾기',
   description: '50·60대 맞춤 일자리 정보, 나이 무관 채용공고',
   alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/jobs` },
 }
-import { getJobList, type JobCardItem } from '@/lib/queries/posts'
-import { formatTimeAgo } from '@/components/features/community/utils'
-import { formatSalary } from '@/lib/format'
-import JobFilterButton from '@/components/features/jobs/JobFilterButton'
-import dynamic from 'next/dynamic'
-const JobQuickTags = dynamic(() => import('@/components/features/jobs/JobQuickTags'))
-import CategorySearchBar from '@/components/features/community/CategorySearchBar'
-import FeedAd from '@/components/ad/FeedAd'
-import CoupangBanner from '@/components/ad/CoupangBanner'
-import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 
 interface PageProps {
-  searchParams: Promise<{ region?: string; tags?: string; q?: string; sf?: string }>
+  searchParams: Promise<{ region?: string; tags?: string; q?: string; sf?: string; page?: string }>
 }
 
-export const revalidate = 120
-
 export default async function JobsPage({ searchParams }: PageProps) {
-  const { region, tags: tagsParam, q: rawQ, sf: rawSf } = await searchParams
+  const { region, tags: tagsParam, q: rawQ, sf: rawSf, page: rawPage } = await searchParams
   const tags = tagsParam?.split(',').filter(Boolean)
   const q = rawQ?.trim() || undefined
   const sf = rawSf === 'title' || rawSf === 'content' ? rawSf : ('both' as const)
+  const page = Math.max(1, parseInt(rawPage ?? '1', 10) || 1)
+  const skip = (page - 1) * LIMIT
 
-  const { jobs } = await getJobList({ region, tags, limit: 20, q, sf })
+  let jobs: JobCardItem[]
+  let total: number
+
+  if (q || region || (tags && tags.length > 0) || page > 1) {
+    ;({ jobs, total } = await getJobListPage({ region, tags, skip, limit: LIMIT, q, sf }))
+  } else {
+    const getCached = unstable_cache(
+      () => getJobListPage({ skip: 0, limit: LIMIT }),
+      ['jobs-list-page1'],
+      { revalidate: 120 },
+    )
+    ;({ jobs, total } = await getCached())
+  }
 
   const hasFilters = !!region || (tags && tags.length > 0)
+  const regionSuffix = region ? `&region=${encodeURIComponent(region)}` : ''
+  const tagsSuffix = tags && tags.length > 0 ? `&tags=${encodeURIComponent(tags.join(','))}` : ''
+  const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''
 
   return (
     <div className="min-h-screen bg-background">
-      {/* GA4 게시판 조회 이벤트 */}
       <BoardViewTracker boardType="JOB" boardSlug="jobs" />
       <div className="px-4 py-6 max-w-[960px] mx-auto">
         {/* 헤더 */}
@@ -75,15 +94,11 @@ export default async function JobsPage({ searchParams }: PageProps) {
 
         {/* 일자리 목록 */}
         {jobs.length > 0 ? (
-          <div className="space-y-3">
-            {jobs.map((job, idx) => (
-              <div key={job.id}>
-                <JobCard job={job} />
-                {(idx + 1) % 8 === 4 && <FeedAd />}
-                {(idx + 1) % 8 === 0 && <div className="mt-3"><CoupangBanner preset="mobile" className="rounded-xl overflow-hidden" /></div>}
-              </div>
-            ))}
-          </div>
+          <PostListWithAds
+            items={jobs}
+            renderCard={(job) => <JobCard job={job} />}
+            className="space-y-3"
+          />
         ) : (
           <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
             <p className="text-body text-muted-foreground leading-relaxed">
@@ -98,10 +113,12 @@ export default async function JobsPage({ searchParams }: PageProps) {
           </div>
         )}
 
-        {/* 검색 */}
-        <Suspense fallback={null}>
-          <CategorySearchBar />
-        </Suspense>
+        <BoardPaginationFooter
+          total={total}
+          page={page}
+          pageSize={LIMIT}
+          buildHref={(p) => `/jobs?page=${p}${regionSuffix}${tagsSuffix}${qSuffix}`}
+        />
       </div>
     </div>
   )

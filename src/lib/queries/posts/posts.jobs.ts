@@ -124,6 +124,79 @@ export async function getJobList(
   return { jobs, hasMore }
 }
 
+/* ── 일자리 목록 (번호 페이지네이션) ── */
+
+export interface JobListPageOptions {
+  region?: string
+  tags?: string[]
+  skip?: number
+  limit?: number
+  q?: string
+  sf?: SearchField
+}
+
+export async function getJobListPage(
+  options?: JobListPageOptions,
+): Promise<{ jobs: JobCardItem[]; total: number }> {
+  const limit = options?.limit ?? 12
+  const skip = options?.skip ?? 0
+
+  const where = {
+    status: 'PUBLISHED' as const,
+    boardType: 'JOB' as const,
+    ...(options?.region
+      ? { jobDetail: { region: { contains: options.region, mode: 'insensitive' as const } } }
+      : {}),
+    ...(options?.tags && options.tags.length > 0
+      ? { jobDetail: { quickTags: { hasSome: options.tags } } }
+      : {}),
+    ...buildTextSearch(options?.q, options?.sf),
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.post.findMany({
+      where,
+      select: {
+        ...postSelect,
+        jobDetail: {
+          select: {
+            company: true,
+            salary: true,
+            workHours: true,
+            workDays: true,
+            location: true,
+            region: true,
+            quickTags: true,
+          },
+        },
+      },
+      orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+      skip,
+      take: limit,
+    }),
+    prisma.post.count({ where }),
+  ])
+
+  const jobs: JobCardItem[] = rows.map((post) => ({
+    id: post.id,
+    title: post.title,
+    company: post.jobDetail?.company ?? '',
+    location: post.jobDetail?.location ?? '',
+    region: post.jobDetail?.region ?? '',
+    salary: post.jobDetail?.salary ?? '',
+    workHours: post.jobDetail?.workHours ?? null,
+    workDays: post.jobDetail?.workDays ?? null,
+    tags: post.jobDetail?.quickTags ?? [],
+    highlight: post.summary ?? '',
+    isUrgent: post.promotionLevel === 'HOT',
+    viewCount: post.viewCount,
+    commentCount: post.commentCount,
+    createdAt: post.createdAt.toISOString(),
+  }))
+
+  return { jobs, total }
+}
+
 /* ── 일자리 상세 ── */
 
 export interface JobDetailItem {

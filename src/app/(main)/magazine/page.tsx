@@ -3,17 +3,19 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
-import { getMagazineList } from '@/lib/queries/posts'
+import nextDynamic from 'next/dynamic'
+import { getMagazineListPage } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
-import CategorySearchBar from '@/components/features/community/CategorySearchBar'
-import dynamic from 'next/dynamic'
-const MagazineFilter = dynamic(() => import('@/components/features/magazine/MagazineFilter'))
-import FeedAd from '@/components/ad/FeedAd'
-import CoupangBanner from '@/components/ad/CoupangBanner'
+import PostListWithAds from '@/components/features/common/PostListWithAds'
+import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 
-export const revalidate = 60
+const MagazineFilter = nextDynamic(() => import('@/components/features/magazine/MagazineFilter'))
+
+export const dynamic = 'force-dynamic'
+
+const LIMIT = 12
 
 export const metadata: Metadata = {
   title: '매거진',
@@ -27,12 +29,6 @@ export const metadata: Metadata = {
     images: [{ url: '/icon-1024.png', width: 1024, height: 1024, alt: '우나어' }],
   },
 }
-
-const getCachedMagazine = unstable_cache(
-  () => getMagazineList({ limit: 20 }),
-  ['magazine-list'],
-  { revalidate: 60 }
-)
 
 const magazineCollectionPageJsonLd = {
   '@context': 'https://schema.org',
@@ -65,19 +61,31 @@ const magazineCollectionPageJsonLd = {
 export default async function MagazinePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sf?: string; category?: string }>
+  searchParams: Promise<{ q?: string; sf?: string; category?: string; page?: string }>
 }) {
-  const { q: rawQ, sf: rawSf, category: rawCategory } = await searchParams
+  const { q: rawQ, sf: rawSf, category: rawCategory, page: rawPage } = await searchParams
   const q = rawQ?.trim() || undefined
   const sf = rawSf === 'title' || rawSf === 'content' ? rawSf : ('both' as const)
   const category = rawCategory && rawCategory !== '전체' ? rawCategory : undefined
+  const page = Math.max(1, parseInt(rawPage ?? '1', 10) || 1)
+  const skip = (page - 1) * LIMIT
 
-  const { posts } = q || category
-    ? await getMagazineList({ limit: 20, q, sf, category })
-    : await getCachedMagazine()
+  let posts: PostSummary[]
+  let total: number
 
-  const featured = posts[0]
-  const rest = posts.slice(1)
+  if (q || category || page > 1) {
+    ;({ posts, total } = await getMagazineListPage({ category, skip, limit: LIMIT, q, sf }))
+  } else {
+    const getCached = unstable_cache(
+      () => getMagazineListPage({ skip: 0, limit: LIMIT }),
+      ['magazine-list-page1'],
+      { revalidate: 60 },
+    )
+    ;({ posts, total } = await getCached())
+  }
+
+  const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''
+  const categorySuffix = category ? `&category=${encodeURIComponent(category)}` : ''
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,103 +93,51 @@ export default async function MagazinePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(magazineCollectionPageJsonLd) }}
       />
-      {/* GA4 게시판 조회 이벤트 */}
       <BoardViewTracker boardType="MAGAZINE" boardSlug="magazine" />
       <div className="px-4 py-6">
         <h1 className="text-title font-bold text-foreground mb-4 flex items-center gap-2">
           📖 매거진
         </h1>
 
-        {/* 카테고리 탭 */}
         <Suspense fallback={null}>
           <MagazineFilter currentCategory={rawCategory} />
         </Suspense>
 
         {posts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-            <p className="text-body text-muted-foreground leading-relaxed">
-              {q
-                ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.`
-                : category
-                  ? `${category} 카테고리 매거진이 아직 없어요. 곧 올라올 거예요!`
-                  : '아직 매거진이 없어요. 곧 유익한 글이 올라올 거예요!'}
-            </p>
-          </div>
+          <>
+            <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-4">
+              <p className="text-body text-muted-foreground leading-relaxed">
+                {q
+                  ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.`
+                  : category
+                    ? `${category} 카테고리 매거진이 아직 없어요. 곧 올라올 거예요!`
+                    : '아직 매거진이 없어요. 곧 유익한 글이 올라올 거예요!'}
+              </p>
+            </div>
+            <BoardPaginationFooter
+              total={total}
+              page={page}
+              pageSize={LIMIT}
+              buildHref={(p) => `/magazine?page=${p}${categorySuffix}${qSuffix}`}
+            />
+          </>
         ) : (
           <>
-            {/* 최신 1건: 대형 카드 */}
-            {featured && <FeaturedCard post={featured} />}
-
-            {/* 피처 카드 아래 광고 */}
-            <FeedAd />
-
-            {/* 나머지: 2열 그리드 (8번째 카드 뒤 광고 삽입) */}
-            {rest.length > 0 && (
-              <>
-                <div className="grid grid-cols-2 gap-3 mt-4 lg:grid-cols-4">
-                  {rest.slice(0, 8).map((post, index) => (
-                    <MagazineCard key={post.id} post={post} priority={index < 2} />
-                  ))}
-                </div>
-                <div className="my-4">
-                  <CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" />
-                </div>
-                {rest.length > 8 && (
-                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    {rest.slice(8).map((post) => (
-                      <MagazineCard key={post.id} post={post} />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
+            <PostListWithAds
+              items={posts}
+              renderCard={(post, index) => <MagazineCard post={post} priority={index === 0} />}
+              className="flex flex-col gap-4 mt-4"
+            />
+            <BoardPaginationFooter
+              total={total}
+              page={page}
+              pageSize={LIMIT}
+              buildHref={(p) => `/magazine?page=${p}${categorySuffix}${qSuffix}`}
+            />
           </>
         )}
-
-        {/* 검색 */}
-        <Suspense fallback={null}>
-          <CategorySearchBar />
-        </Suspense>
       </div>
     </div>
-  )
-}
-
-function FeaturedCard({ post }: { post: PostSummary }) {
-  return (
-    <Link
-      href={`/magazine/${post.slug ?? post.id}`}
-      className="block bg-card rounded-2xl border border-border overflow-hidden no-underline transition-all hover:border-primary/30 hover:shadow-md"
-    >
-      {post.thumbnailUrl ? (
-        <div className="relative w-full h-48 lg:h-64">
-          <Image
-            src={post.thumbnailUrl}
-            alt={post.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 1024px) 100vw, 800px"
-            priority
-          />
-        </div>
-      ) : (
-        <div className="w-full h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-4xl lg:h-64">
-          📖
-        </div>
-      )}
-      <div className="p-4">
-        {post.category && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-foreground text-caption font-bold mb-2">
-            {post.category}
-          </span>
-        )}
-        <h3 className="text-title font-bold text-foreground m-0 mb-2 line-clamp-2">{post.title}</h3>
-        <div className="flex items-center gap-3 text-caption text-muted-foreground">
-          <span>👁 {post.viewCount}</span>
-          <span>{formatTimeAgo(post.createdAt)}</span>
-        </div>
-      </div>
-    </Link>
   )
 }
 
@@ -189,25 +145,25 @@ function MagazineCard({ post, priority }: { post: PostSummary; priority?: boolea
   return (
     <Link
       href={`/magazine/${post.slug ?? post.id}`}
-      className="block bg-card rounded-xl border border-border overflow-hidden no-underline transition-all hover:border-primary/30"
+      className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border overflow-hidden no-underline transition-all hover:border-primary/30 min-h-[52px]"
     >
       {post.thumbnailUrl ? (
-        <div className="relative w-full h-28 lg:h-36">
+        <div className="relative flex-shrink-0 w-24 h-20 rounded-lg overflow-hidden">
           <Image
             src={post.thumbnailUrl}
             alt={post.title}
             fill
             className="object-cover"
-            sizes="(max-width: 1024px) 50vw, 25vw"
+            sizes="96px"
             priority={priority}
           />
         </div>
       ) : (
-        <div className="w-full h-28 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-2xl lg:h-36">
+        <div className="flex-shrink-0 w-24 h-20 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-2xl">
           📖
         </div>
       )}
-      <div className="p-3">
+      <div className="flex-1 min-w-0">
         {post.category && (
           <span className="text-caption text-primary-text font-bold">{post.category}</span>
         )}

@@ -37,6 +37,35 @@ export async function getPostsByBoard(
   return { posts, hasMore }
 }
 
+/* ── 게시판별 목록 (번호 페이지네이션) ── */
+
+export async function getPostsByBoardPage(
+  boardType: BoardType,
+  options?: { category?: string; skip?: number; limit?: number; sort?: 'latest' | 'likes'; q?: string; sf?: SearchField },
+): Promise<{ posts: PostSummary[]; total: number }> {
+  const limit = options?.limit ?? 12
+  const skip = options?.skip ?? 0
+  const sort = options?.sort ?? 'latest'
+
+  const where = {
+    boardType,
+    status: 'PUBLISHED' as const,
+    ...(options?.category && options.category !== '전체' ? { category: options.category } : {}),
+    ...buildTextSearch(options?.q, options?.sf),
+  }
+
+  const orderBy = sort === 'likes'
+    ? [{ isPinned: 'desc' as const }, { likeCount: 'desc' as const }, { createdAt: 'desc' as const }]
+    : [{ isPinned: 'desc' as const }, { createdAt: 'desc' as const }]
+
+  const [rows, total] = await Promise.all([
+    prisma.post.findMany({ where, select: postSelect, orderBy, skip, take: limit }),
+    prisma.post.count({ where }),
+  ])
+
+  return { posts: rows.map(toPostSummary), total }
+}
+
 /* ── 최신 커뮤니티 글 ── */
 
 export async function getLatestCommunityPosts(limit = 5): Promise<PostSummary[]> {

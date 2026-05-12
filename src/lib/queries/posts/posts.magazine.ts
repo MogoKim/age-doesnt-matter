@@ -139,3 +139,27 @@ export async function getMagazineList(
   const hasMore = rows.length > limit
   return { posts: rows.slice(0, limit).map(toPostSummary), hasMore }
 }
+
+/* ── 매거진 목록 (번호 페이지네이션) ── */
+
+export async function getMagazineListPage(
+  options?: { category?: string; skip?: number; limit?: number; q?: string; sf?: SearchField },
+): Promise<{ posts: PostSummary[]; total: number }> {
+  const limit = options?.limit ?? 12
+  const skip = options?.skip ?? 0
+
+  const where = {
+    boardType: 'MAGAZINE' as const,
+    status: 'PUBLISHED' as const,
+    NOT: { content: '' },
+    ...(options?.category && options.category !== '전체' ? { category: options.category } : {}),
+    ...buildTextSearch(options?.q, options?.sf),
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.post.findMany({ where, select: postSelect, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+    prisma.post.count({ where }),
+  ])
+
+  return { posts: rows.map(toPostSummary), total }
+}

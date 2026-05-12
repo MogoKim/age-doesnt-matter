@@ -4,25 +4,24 @@ import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
 
 import { getBoardConfig } from '@/lib/queries/boards'
-import { getPostsByBoard } from '@/lib/queries/posts'
+import { getPostsByBoardPage } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
 import type { BoardType } from '@/generated/prisma/client'
 import type { SearchField } from '@/lib/queries/posts/posts.base'
 import BoardFilter from '@/components/features/community/BoardFilter'
 import PostCard from '@/components/features/community/PostCard'
-import LoadMoreButton from '@/components/features/community/LoadMoreButton'
 import SortToggle from '@/components/features/community/SortToggle'
-import CategorySearchBar from '@/components/features/community/CategorySearchBar'
-import FeedAd from '@/components/ad/FeedAd'
-import CoupangBanner from '@/components/ad/CoupangBanner'
-import ResponsiveAd from '@/components/ad/ResponsiveAd'
+import PostListWithAds from '@/components/features/common/PostListWithAds'
+import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 import PwaInlineBanner from '@/components/common/PwaInlineBanner'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 
+const LIMIT = 12
+
 interface PageProps {
   params: Promise<{ boardSlug: string }>
-  searchParams: Promise<{ category?: string; sort?: string; q?: string; sf?: string }>
+  searchParams: Promise<{ category?: string; sort?: string; q?: string; sf?: string; page?: string }>
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -93,61 +92,62 @@ interface PostListContainerProps {
   sortOption: 'latest' | 'likes'
   q: string | undefined
   sf: SearchField
+  page: number
 }
 
-async function PostListContainer({ boardType, boardSlug, category, sortOption, q, sf }: PostListContainerProps) {
-  let posts: PostSummary[]
-  let hasMore: boolean
+async function PostListContainer({ boardType, boardSlug, category, sortOption, q, sf, page }: PostListContainerProps) {
+  const skip = (page - 1) * LIMIT
 
-  if (q) {
-    ;({ posts, hasMore } = await getPostsByBoard(boardType, { category, sort: sortOption, limit: 20, q, sf }))
+  let posts: PostSummary[]
+  let total: number
+
+  if (q || page > 1) {
+    ;({ posts, total } = await getPostsByBoardPage(boardType, { category, sort: sortOption, skip, limit: LIMIT, q, sf }))
   } else {
     const getCachedPosts = unstable_cache(
-      () => getPostsByBoard(boardType, { category, sort: sortOption, limit: 20 }),
-      [`board-${boardType}-${category ?? 'all'}-${sortOption}`],
+      () => getPostsByBoardPage(boardType, { category, sort: sortOption, skip: 0, limit: LIMIT }),
+      [`board-page-${boardType}-${category ?? 'all'}-${sortOption}`],
       { revalidate: 30 },
     )
-    ;({ posts, hasMore } = await getCachedPosts())
+    ;({ posts, total } = await getCachedPosts())
   }
 
-  const lastId = posts.length > 0 ? posts[posts.length - 1].id : undefined
+  const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''
+  const sortSuffix = sortOption === 'likes' ? '&sort=likes' : ''
+  const categorySuffix = category && category !== '전체' ? `&category=${encodeURIComponent(category)}` : ''
 
   if (posts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
-        <div className="text-[56px] mb-4">📝</div>
-        <p className="text-sm text-muted-foreground leading-[1.8]">
-          {q ? `"${q}" 검색 결과가 없어요.` : '아직 작성된 글이 없어요.'}<br />
-          {q ? '다른 검색어를 입력해 보세요.' : '첫 번째 글을 남겨보세요!'}
-        </p>
-      </div>
+      <>
+        <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
+          <div className="text-[56px] mb-4">📝</div>
+          <p className="text-sm text-muted-foreground leading-[1.8]">
+            {q ? `"${q}" 검색 결과가 없어요.` : '아직 작성된 글이 없어요.'}<br />
+            {q ? '다른 검색어를 입력해 보세요.' : '첫 번째 글을 남겨보세요!'}
+          </p>
+        </div>
+        <BoardPaginationFooter
+          total={total}
+          page={page}
+          pageSize={LIMIT}
+          buildHref={(p) => `/community/${boardSlug}?page=${p}${sortSuffix}${categorySuffix}${qSuffix}`}
+        />
+      </>
     )
   }
 
   return (
     <>
-      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6">
-        {posts.map((post, idx) => (
-          <div key={post.id}>
-            <PostCard post={post} boardSlug={boardSlug} />
-            {(idx + 1) % 3 === 0 && (idx + 1) % 6 !== 0 && (
-              <div className="mt-4"><FeedAd /></div>
-            )}
-            {(idx + 1) % 6 === 0 && (
-              <div className="mt-4"><ResponsiveAd mobile={<CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" />} desktop={null} /></div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <LoadMoreButton
-        boardSlug={boardSlug}
-        boardType={boardType}
-        category={category}
-        initialHasMore={hasMore}
-        initialLastId={lastId}
-        q={q}
-        sf={sf}
+      <PostListWithAds
+        items={posts}
+        renderCard={(post) => <PostCard post={post} boardSlug={boardSlug} />}
+        className="flex flex-col gap-4"
+      />
+      <BoardPaginationFooter
+        total={total}
+        page={page}
+        pageSize={LIMIT}
+        buildHref={(p) => `/community/${boardSlug}?page=${p}${sortSuffix}${categorySuffix}${qSuffix}`}
       />
     </>
   )
@@ -158,7 +158,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function BoardListPage({ params, searchParams }: PageProps) {
   const { boardSlug } = await params
-  const { category, sort, q: rawQ, sf: rawSf } = await searchParams
+  const { category, sort, q: rawQ, sf: rawSf, page: rawPage } = await searchParams
 
   const board = await getBoardConfig(boardSlug)
   if (!board) notFound()
@@ -166,6 +166,7 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
   const q = rawQ?.trim() || undefined
   const sf = rawSf === 'title' || rawSf === 'content' ? rawSf : ('both' as const)
   const sortOption = sort === 'likes' ? ('likes' as const) : ('latest' as const)
+  const page = Math.max(1, parseInt(rawPage ?? '1', 10) || 1)
 
   const boardFaqJsonLd = getBoardFaqJsonLd(boardSlug)
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -204,7 +205,7 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
         </Suspense>
       </div>
 
-      {/* 게시글 목록 — 스트리밍 (board header와 독립적으로 로드) */}
+      {/* 게시글 목록 + 페이지네이션 + 검색 — 스트리밍 */}
       <Suspense fallback={<PostListSkeleton />}>
         <PostListContainer
           boardType={board.boardType}
@@ -213,12 +214,8 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
           sortOption={sortOption}
           q={q}
           sf={sf}
+          page={page}
         />
-      </Suspense>
-
-      {/* 검색 */}
-      <Suspense fallback={null}>
-        <CategorySearchBar />
       </Suspense>
     </div>
   )

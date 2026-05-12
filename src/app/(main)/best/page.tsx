@@ -1,16 +1,13 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
 import { getDailyTrendingPosts, getWeeklyTrendingPosts, getHallOfFamePosts } from '@/lib/queries/posts'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
-import CategorySearchBar from '@/components/features/community/CategorySearchBar'
-import PaginationBar from '@/components/features/best/PaginationBar'
-import FeedAd from '@/components/ad/FeedAd'
-import CoupangBanner from '@/components/ad/CoupangBanner'
+import PostListWithAds from '@/components/features/common/PostListWithAds'
+import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 
 export const metadata: Metadata = {
   title: '인기글',
@@ -78,8 +75,6 @@ export default async function BestPage({
     total = result.total
   }
 
-  const totalPages = Math.ceil(total / LIMIT)
-
   const currentTabMeta = TABS.find((t) => t.key === currentTab)!
   const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''
 
@@ -110,13 +105,6 @@ export default async function BestPage({
         </div>
       </nav>
 
-      {/* 검색창 — 탭 바로 아래 */}
-      <div className="px-4 pb-3">
-        <Suspense fallback={null}>
-          <CategorySearchBar />
-        </Suspense>
-      </div>
-
       {/* 게시글 목록 */}
       <section className="px-4 pb-8">
         <h2 className="text-title font-bold text-foreground mb-4 flex items-center gap-2">
@@ -125,24 +113,21 @@ export default async function BestPage({
         </h2>
 
         {posts.length > 0 ? (
-          <div className="space-y-3">
-            {posts.map((post, idx) => (
-              <div key={post.id}>
-                <BestPostCard post={post} />
-                {idx === 4 && <div className="mt-3"><FeedAd /></div>}
-                {idx === 9 && <div className="mt-3"><CoupangBanner preset="mobile" className="rounded-2xl overflow-hidden" /></div>}
-              </div>
-            ))}
-          </div>
+          <PostListWithAds
+            items={posts}
+            renderCard={(post) => <BestPostCard post={post} />}
+            className="space-y-3"
+          />
         ) : currentTab === 'fame' && !q ? (
           <FameEmptyState />
         ) : (
           <EmptyState message={q ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.` : getEmptyMessage(currentTab)} />
         )}
 
-        <PaginationBar
-          currentPage={page}
-          totalPages={totalPages}
+        <BoardPaginationFooter
+          total={total}
+          page={page}
+          pageSize={LIMIT}
           buildHref={(p) => `/best?tab=${currentTab}&page=${p}${qSuffix}`}
         />
       </section>
