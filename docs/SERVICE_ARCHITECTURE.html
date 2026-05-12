@@ -1785,14 +1785,14 @@
 </tr>
 </thead>
 <tbody><tr>
-<td><code>ci.yml</code></td>
-<td>PR, push to main</td>
-<td>Lint → Typecheck → Test → Build</td>
+<td><code><span class="tip" data-tip="메인 품질 게이트. PR 생성 또는 main push 시 자동 실행되는 4단계 파이프라인. 하나라도 실패하면 Vercel 배포가 차단됨.">ci.yml</span></code></td>
+<td><span class="tip" data-tip="GitHub Pull Request를 열거나 커밋을 추가할 때, 또는 main 브랜치에 직접 push할 때 GitHub Actions가 자동으로 워크플로우를 실행함.">PR, push to main</span></td>
+<td><span class="tip" data-tip="① ESLint — 코드 스타일·잠재 버그 검사 ② tsc --noEmit — TypeScript 타입 안전성 확인 ③ Vitest — 단위 테스트 138개 assertions ④ next build — 프로덕션 번들 빌드 성공 여부. 4단계 순차 실행, 중간 실패 시 이후 단계 스킵.">Lint → Typecheck → Test → Build</span></td>
 </tr>
 <tr>
-<td><code>lighthouse.yml</code></td>
-<td>PR, push to main</td>
-<td>Lighthouse 접근성 감사</td>
+<td><code><span class="tip" data-tip="Google Lighthouse 자동 성능·접근성 감사. 50-60대 시니어 사용자 대상 서비스 특성상 접근성 점수를 CI에서 강제 검증함. 접근성 기준 미달 시 PR merge 경고.">lighthouse.yml</span></code></td>
+<td><span class="tip" data-tip="GitHub Pull Request를 열거나 커밋을 추가할 때, 또는 main 브랜치에 직접 push할 때 GitHub Actions가 자동으로 워크플로우를 실행함.">PR, push to main</span></td>
+<td><span class="tip" data-tip="Lighthouse CI가 배포 URL을 크롤링해 성능(Performance)·접근성(Accessibility)·SEO·Best Practices 4개 항목을 자동 점수화. 접근성 90점 미만이면 PR 체크에 경고 표시.">Lighthouse 접근성 감사</span></td>
 </tr>
 </tbody></table>
 <h3>6.2 에이전트 크론</h3>
