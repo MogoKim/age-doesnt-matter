@@ -133,8 +133,11 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AN', type: 'comment', board: 'STORY', count: 2 },  // 약국단골
   ],
 
-  '14': [
-    // 글쓰기 — 오후 활동
+  // '14': 크론 없음 — 전체 항목 15시로 통합 (2026-05-12, content-scheduler 충돌 방지)
+
+  // ── 오후 자체 활동 (구 14시 포함) ──
+  '15': [
+    // 글쓰기 — 구 14시 오후 활동 (11개)
     { personaId: 'B', type: 'post', board: 'LIFE2' },           // 정호씨 은퇴/재테크 정보
     { personaId: 'H', type: 'post' },                          // 매일걷기 건강 데이터
     { personaId: 'N', type: 'post' },                          // 알뜰맘 살림 팁
@@ -143,13 +146,23 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AZ', type: 'post', board: 'LIFE2' },         // 돈공부중 재테크 현실
     { personaId: 'AA', type: 'post' },                         // 어휴답답 한탄 (부정)
     { personaId: 'AG', type: 'post' },                         // 비교분석왕 비교 리뷰
-    { personaId: 'Y', type: 'post', board: 'LIFE2' },         // 솔직히말해서 현실 팩폭 (15시 cron 불안정으로 이동)
-    { personaId: 'AB', type: 'post', board: 'LIFE2' },        // 따져보자 토론 주제 (15시 cron 불안정으로 이동)
-    { personaId: 'BF', type: 'post' },                         // 속터지는현실 억울형 에피소드 (15시 cron 불안정으로 이동)
+    { personaId: 'Y', type: 'post', board: 'LIFE2' },          // 솔직히말해서 현실 팩폭
+    { personaId: 'AB', type: 'post', board: 'LIFE2' },         // 따져보자 토론 주제
+    { personaId: 'BF', type: 'post' },                         // 속터지는현실 억울형 에피소드
+    // 글쓰기 — 감성 + 논쟁 (기존 15시)
+    { personaId: 'P', type: 'post' },                          // 오후세시 감성 에세이
+    { personaId: 'Z', type: 'post' },                          // 혼자잘산다 자조 유머
+    { personaId: 'AD', type: 'post' },                         // 그때그시절 회고
+    { personaId: 'BA', type: 'post', board: 'LIFE2' },         // 은퇴D100 은퇴 준비 현실
+    { personaId: 'BD', type: 'post' },                         // 고부갈등맘 서운함 토로
     // 댓글
     { personaId: 'J', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'S', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'AA', type: 'comment', board: 'STORY', count: 1 },  // 어휴답답 한탄 댓글
+    { personaId: 'K', type: 'comment', board: 'STORY', count: 2 },
+    { personaId: 'R', type: 'comment', board: 'HUMOR', count: 2 },
+    { personaId: 'AB', type: 'comment', board: 'STORY', count: 2 },  // 따져보자 반론
+    { personaId: 'Z', type: 'comment', board: 'STORY', count: 1 },   // 혼자잘산다 한마디
     // 대댓글
     { personaId: 'E', type: 'reply', board: 'STORY', count: 2 },
     { personaId: 'W', type: 'reply', board: 'STORY', count: 1 },   // 참나진짜 반박 답글
@@ -160,22 +173,6 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'AG', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'Y', type: 'like', board: 'LIFE2', count: 2 },   // 솔직히말해서 LIFE2 공감
     { personaId: 'H', type: 'like', board: 'LIFE2', count: 2 },   // 매일걷기 LIFE2 공감
-  ],
-
-  // ── 오후 자체 활동 ──
-  '15': [
-    // 글쓰기 — 감성 + 논쟁
-    { personaId: 'P', type: 'post' },                          // 오후세시 감성 에세이
-    { personaId: 'Z', type: 'post' },                          // 혼자잘산다 자조 유머
-    { personaId: 'AD', type: 'post' },                         // 그때그시절 회고
-    { personaId: 'BA', type: 'post', board: 'LIFE2' },        // 은퇴D100 은퇴 준비 현실
-    { personaId: 'BD', type: 'post' },                         // 고부갈등맘 서운함 토로
-    // 댓글
-    { personaId: 'K', type: 'comment', board: 'STORY', count: 2 },
-    { personaId: 'R', type: 'comment', board: 'HUMOR', count: 2 },
-    { personaId: 'AB', type: 'comment', board: 'STORY', count: 2 },  // 따져보자 반론
-    { personaId: 'Z', type: 'comment', board: 'STORY', count: 1 },   // 혼자잘산다 한마디
-    // 좋아요
     { personaId: 'P', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'G', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'Z', type: 'like', board: 'STORY', count: 2 },
@@ -585,7 +582,7 @@ async function runActivity(activity: Activity): Promise<void> {
 // ── 논쟁 체인 헬퍼 (Fix 13-E) ──
 
 function buildControversyChain(seed: ControversyTopic, hour: string): Activity[] {
-  if (hour === '14') {
+  if (hour === '15') {
     const authorMap: Record<string, string> = {
       family_conflict: 'BD', social_anger: 'W',
       dignity_hurt: 'Y', money_stress: 'AZ',
@@ -719,7 +716,7 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
   }
 
   // midDayPatch 조정 (점심 이후 시간대)
-  const patchHours = ['13', '14', '15']
+  const patchHours = ['13', '15']
   if (brief.midDayPatch && patchHours.includes(hour)) {
     const patch = brief.midDayPatch
     for (const { personaId, delta } of patch.adjustedPersonas) {
@@ -1267,7 +1264,7 @@ export async function main() {
 
   // 14시, 21시: 집중 좋아요 라운드
   let focusedCount = 0
-  if (hour === '14' || hour === '21') {
+  if (hour === '15' || hour === '21') {
     focusedCount = await focusedLikeRound()
     if (focusedCount > 0) {
       console.log(`[Seed] 집중 좋아요 ${focusedCount}개 투입 완료`)
