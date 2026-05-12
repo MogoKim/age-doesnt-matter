@@ -94,7 +94,7 @@ export default async function MagazinePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(magazineCollectionPageJsonLd) }}
       />
       <BoardViewTracker boardType="MAGAZINE" boardSlug="magazine" />
-      <div className="px-4 py-6">
+      <div className="max-w-[960px] mx-auto px-4 py-6">
         <h1 className="text-title font-bold text-foreground mb-4 flex items-center gap-2">
           📖 매거진
         </h1>
@@ -126,7 +126,7 @@ export default async function MagazinePage({
             <PostListWithAds
               items={posts}
               renderCard={(post, index) => <MagazineCard post={post} priority={index === 0} />}
-              className="flex flex-col gap-4 mt-4"
+              className="space-y-3 mt-4"
             />
             <BoardPaginationFooter
               total={total}

@@ -73,7 +73,7 @@ function getBoardFaqJsonLd(boardSlug: string): object | null {
 
 function PostListSkeleton() {
   return (
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6">
+    <div className="space-y-3">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="bg-card rounded-xl p-5 border border-border animate-pulse">
           <div className="h-4 bg-muted rounded w-3/4 mb-3" />
@@ -141,7 +141,7 @@ async function PostListContainer({ boardType, boardSlug, category, sortOption, q
       <PostListWithAds
         items={posts}
         renderCard={(post) => <PostCard post={post} boardSlug={boardSlug} />}
-        className="flex flex-col gap-4"
+        className="space-y-3"
       />
       <BoardPaginationFooter
         total={total}
@@ -175,7 +175,7 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
   ])
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 pt-4 pb-6 md:px-6 md:pt-4 md:pb-8 lg:px-8 lg:pt-6 lg:pb-12">
+    <div className="max-w-[960px] mx-auto px-4 pt-4 pb-6 md:px-6 md:pt-4 md:pb-8">
       {boardFaqJsonLd && (
         <script
           type="application/ld+json"

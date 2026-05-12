@@ -75,7 +75,6 @@ export default async function BestPage({
     total = result.total
   }
 
-  const currentTabMeta = TABS.find((t) => t.key === currentTab)!
   const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''
 
   return (
@@ -83,7 +82,7 @@ export default async function BestPage({
       <h1 className="sr-only">인기글 — 우나어 베스트</h1>
 
       {/* 탭 네비게이션 */}
-      <nav className="px-4 pt-4 pb-2">
+      <nav className="max-w-[960px] mx-auto px-4 pt-4 pb-2">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {TABS.map((tab) => (
             <Link
@@ -106,12 +105,7 @@ export default async function BestPage({
       </nav>
 
       {/* 게시글 목록 */}
-      <section className="px-4 pb-8">
-        <h2 className="text-title font-bold text-foreground mb-4 flex items-center gap-2">
-          {currentTabMeta.emoji} {currentTabMeta.label}
-          {total > 0 && <span className="text-caption font-normal text-muted-foreground ml-1">총 {total}개</span>}
-        </h2>
-
+      <section className="max-w-[960px] mx-auto px-4 pb-8">
         {posts.length > 0 ? (
           <PostListWithAds
             items={posts}
