@@ -174,7 +174,7 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
   ])
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-12">
+    <div className="max-w-[1200px] mx-auto px-4 pt-4 pb-6 md:px-6 md:pt-4 md:pb-8 lg:px-8 lg:pt-6 lg:pb-12">
       {boardFaqJsonLd && (
         <script
           type="application/ld+json"
@@ -187,11 +187,7 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
       />
       {/* GA4 게시판 조회 이벤트 */}
       <BoardViewTracker boardType={board.boardType} boardSlug={boardSlug} />
-      {/* 게시판 헤더 — getBoardConfig만 필요, 즉시 표시 */}
-      <div className="mb-6 p-6 bg-card rounded-2xl border-l-4 border-l-primary shadow-sm">
-        <h1 className="text-xl font-bold text-foreground m-0 mb-1">{board.displayName}</h1>
-        <p className="text-body text-muted-foreground m-0">{board.description}</p>
-      </div>
+      <h1 className="sr-only">{board.displayName}</h1>
 
       {/* PWA 인라인 배너 (미설치 + 비차단 환경에서만 노출) */}
       <PwaInlineBanner />

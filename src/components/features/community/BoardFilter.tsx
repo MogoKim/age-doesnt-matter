@@ -28,7 +28,7 @@ export default function BoardFilter({ categories, boardSlug }: BoardFilterProps)
   }
 
   return (
-    <div className="flex gap-2 overflow-x-auto py-2 pb-4 mb-6 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="카테고리 필터">
+    <div className="flex gap-2 overflow-x-auto py-2 pb-4 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="카테고리 필터">
       {categories.map((cat) => (
         <button
           key={cat}
