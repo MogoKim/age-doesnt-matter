@@ -1,6 +1,16 @@
 export const revalidate = 86400
 
+import type { Metadata } from 'next'
 import { FaqAccordion } from '@/components/common/FaqAccordion'
+
+export const metadata: Metadata = {
+  title: '자주 묻는 질문 | 우리 나이가 어때서',
+  description: '우나어 서비스 이용 방법, 가입, 게시판, 알림 설정 등 자주 묻는 질문과 답변을 확인하세요.',
+  openGraph: {
+    title: '자주 묻는 질문 | 우리 나이가 어때서',
+    description: '우나어 서비스 이용 방법, 가입, 게시판, 알림 설정 등 자주 묻는 질문과 답변을 확인하세요.',
+  },
+}
 import type { FaqItem } from '@/components/common/FaqAccordion'
 import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 
