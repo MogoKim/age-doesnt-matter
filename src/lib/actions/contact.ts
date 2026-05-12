@@ -3,6 +3,7 @@
 import { Resend } from 'resend'
 import { headers } from 'next/headers'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { CONTACT_EMAIL } from '@/lib/env'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -39,7 +40,7 @@ export async function submitContact(data: ContactData): Promise<{ error?: string
   const typeLabel = data.type === 'service' ? '서비스 문의' : '제휴·광고 문의'
   const { error } = await resend.emails.send({
     from: 'noreply@age-doesnt-matter.com',
-    to: 'korea.age.not.matter@gmail.com',
+    to: CONTACT_EMAIL,
     subject: `[우나어 문의] ${typeLabel}`,
     text: [
       `유형: ${typeLabel}`,
