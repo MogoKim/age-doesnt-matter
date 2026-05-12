@@ -594,6 +594,20 @@
         </div>
       </div>
     </div>
+
+    <div class="info-card" style="margin-top:12px;border-left:3px solid var(--yellow);">
+      <h3>⚠️ 로그의 "수율 9%"는 오류가 아님 — 정상 동작</h3>
+      <p style="font-size:13px;color:var(--muted);margin:6px 0 10px;">
+        <code style="font-family:monospace;background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--blue);">successRate = 실제방문건 / 전체URL목록 × 100</code>
+        — 분모(<code>articles</code>)는 pre-crawl 중복 체크 <strong>이전</strong> 수집된 전체 URL.
+      </p>
+      <ul style="font-size:13px;margin:0;padding-left:16px;line-height:1.8;">
+        <li><strong>pre-crawl 중복 체크</strong> (crawler.ts:834-842): URL을 Playwright로 방문하기 전에 DB 조회 → 이미 있으면 방문 없이 즉시 skip</li>
+        <li>저녁 CRAWL 실행 시 아침·점심에 수집한 글이 이미 DB에 있음 → 160건 중 ~145건(91%) skip → 수율 9% 표시</li>
+        <li>수율이 낮아 보여도 <strong>데이터 손실 아님</strong> — 실제 신규 글만 수집한 것</li>
+        <li>Playwright 실패(봇 감지) 3건 이하는 정상 범위 — 다음 크롤에서 자동 재수집됨</li>
+      </ul>
+    </div>
   </div>
 
   <!-- Section 2: 품질 스코어 -->
@@ -622,9 +636,10 @@
                 <div class="weight-label" style="color:var(--primary);">40%</div>
               </div>
             </td>
-            <td><div class="factor-formula">좋아요×3 + 댓글×2 + 조회×0.01</div></td>
+            <td><div class="factor-formula">좋아요×3 + 댓글×2 + 조회×0.01<br><span style="color:var(--green);font-size:12px;">+ 베스트댓글 좋아요×0.5 (최대 +10)</span></div></td>
             <td>
               <div class="factor-detail">합산 100↑ → 100점 / 50↑ → 80점 / 20↑ → 60점 / 10↑ → 40점 / 5↑ → 25점 / 미만 → 10점</div>
+              <div class="factor-detail" style="margin-top:4px;color:var(--green);">★ DEEP 모드 전용: topComments의 베스트 댓글 좋아요가 높을수록 최대 +10점 보너스. QUICK 모드에서는 topComments=undefined → 보너스 0 (기존과 동일).</div>
               <div class="factor-detail" style="margin-top:4px;color:var(--yellow);">★ 5060대 실제 평균: 좋아요 2~5, 댓글 3~8, 조회 100~300 → raw ≈ 27점 → engagement 25점 → 점수 낮아짐 (재보정 예정)</div>
             </td>
           </tr>
@@ -757,6 +772,13 @@
             <div class="track-step">③ 페르소나 말투로 <strong>원본 창작</strong></div>
             <div class="track-step">④ STORY / LIFE2 / HUMOR 게시판 게시</div>
           </div>
+          <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:6px;letter-spacing:.05em;">댓글 · 대댓글</div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">댓글</span><span class="tv" style="font-size:11px;"><code>generateComment()</code> — 글당 최대 5개 / 하루 150~200건<br><span style="color:var(--muted);font-size:11px;">Haiku max_tokens 200 · 인풋: 제목+본문300자+예시댓글5개+최근댓글이력3개</span></span></div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">대댓글</span><span class="tv" style="font-size:11px;"><code>generateReply()</code> — 하루 60~80건<br><span style="color:var(--muted);font-size:11px;">Haiku max_tokens 150 · parentId로 특정 댓글에 연결</span></span></div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">논쟁체인</span><span class="tv" style="font-size:11px;">T+15·30·60·100·180분 순서로 공감→반론→반박→중재→추가공감 자동 진행</span></div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">차단 조건</span><span class="tv" style="font-size:11px;color:var(--primary);"><code>source='SHEET'</code> + <code>isFeatured=true</code> 글은 투입 안 됨</span></div>
+          </div>
         </div>
       </div>
 
@@ -772,10 +794,21 @@
           <div class="track-row"><span class="tk">통과 조건</span><span class="tv" style="color:var(--yellow);">품질점수 60점+</span></div>
           <div class="track-row"><span class="tk">중복 방지</span><span class="tv">동일 카페글 7일간 재사용 금지</span></div>
           <div class="track-flow">
-            <div class="track-step">① 품질 <strong>60점 이상</strong> 카페글 필터</div>
-            <div class="track-step">② 카페글 스토리·감정선 <strong>직접 재창작</strong></div>
-            <div class="track-step">③ 페르소나 말투·어미 교체</div>
-            <div class="track-step">④ 주로 STORY 게시판 게시</div>
+            <div class="track-step">① killerScore 내림차순 → <strong>viralType 있는 카페글</strong> 선별</div>
+            <div class="track-step">② 원문 <strong>95% 유지</strong> 재창작 — 갈등·감정흐름·금액 보존</div>
+            <div class="track-step">③ 5%만 변형 — 지명·인명 익명화 + 어미 1~2개</div>
+            <div class="track-step">④ STORY (HUMOR·ENTERTAIN 욕망 → HUMOR) 게시</div>
+          </div>
+          <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--yellow);margin-bottom:6px;letter-spacing:.05em;">댓글 · 대댓글</div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">댓글</span><span class="tv" style="font-size:11px;"><code>generateKillerComments()</code> — 카페 원댓글 <strong>99% 원문 보존</strong><br><span style="color:var(--muted);font-size:11px;">likeCount 정렬 상위 min(인원, 10)개 · 어미 또는 감탄사 1개만 변형 · Haiku max_tokens 600</span></span></div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">3파동</span><span class="tv" style="font-size:11px;">
+              <span style="display:inline-block;background:var(--green-dim);color:var(--green);padding:1px 6px;border-radius:10px;font-size:10px;margin-right:4px;">WAVE_1 T+10분 3명</span>
+              <span style="display:inline-block;background:var(--yellow-dim);color:var(--yellow);padding:1px 6px;border-radius:10px;font-size:10px;margin-right:4px;">WAVE_2 T+60분 4명</span>
+              <span style="display:inline-block;background:var(--purple-dim);color:var(--purple);padding:1px 6px;border-radius:10px;font-size:10px;">WAVE_3 T+180분 3명</span>
+            </span></div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">대댓글</span><span class="tv" style="font-size:11px;color:var(--muted);">없음 (댓글 파동만)</span></div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">실행 시각</span><span class="tv" style="font-size:11px;"><strong>09:10 KST</strong> (아침 DEEP 완료 후) · <strong>22:10 KST</strong> (저녁 DEEP 완료 후)</span></div>
           </div>
         </div>
       </div>
@@ -793,8 +826,20 @@
           <div class="track-flow">
             <div class="track-step">① 창업자가 <strong>구글 시트</strong>에 콘텐츠 입력</div>
             <div class="track-step">② Playwright가 시트 스크랩 → 게시글 생성</div>
-            <div class="track-step">③ 시드봇 차단 — <strong>4파동 봇 댓글만</strong> 달림</div>
-            <div class="track-step">④ 이미지 전용(본문 50자 미만) → 댓글 자동 스킵</div>
+            <div class="track-step">③ 일반 시드봇 <strong>완전 차단</strong> — 4파동 전담봇만</div>
+            <div class="track-step">④ 이미지 전용(본문 50자 미만) → AI 호출 없이 자동 스킵</div>
+          </div>
+          <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:6px;letter-spacing:.05em;">댓글 · 대댓글</div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">댓글</span><span class="tv" style="font-size:11px;"><code>generateSheetViralComment()</code> — Sonnet max_tokens 200<br><span style="color:var(--muted);font-size:11px;">키워드 1개 이상 포함 검증 · 미통과 시 1회 재시도 · 댓글 최대 20개</span></span></div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">4파동</span><span class="tv" style="font-size:11px;">
+              <span style="display:inline-block;background:var(--bg3);color:var(--muted);padding:1px 6px;border-radius:10px;font-size:10px;margin-right:3px;">WAVE_L 즉시 — 좋아요만</span>
+              <span style="display:inline-block;background:var(--green-dim);color:var(--green);padding:1px 6px;border-radius:10px;font-size:10px;margin-right:3px;">WAVE_1 T+5분 5명 공감</span>
+              <span style="display:inline-block;background:var(--yellow-dim);color:var(--yellow);padding:1px 6px;border-radius:10px;font-size:10px;margin-right:3px;">WAVE_2 T+30분 5명 반론</span>
+              <span style="display:inline-block;background:var(--purple-dim);color:var(--purple);padding:1px 6px;border-radius:10px;font-size:10px;">WAVE_3 T+60분 5명 여운</span>
+            </span></div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">대댓글</span><span class="tv" style="font-size:11px;color:var(--muted);">없음</span></div>
+            <div class="track-row"><span class="tk" style="font-size:11px;">일반 시드봇</span><span class="tv" style="font-size:11px;color:var(--primary);"><strong>차단</strong> — <code>source='SHEET'</code> + <code>isFeatured=true</code> 조합 감지 시 skip</span></div>
           </div>
         </div>
       </div>
@@ -901,8 +946,9 @@
         <div class="cf-step">
           <div class="cf-num">2</div>
           <div class="cf-content">
-            <h4>카페 댓글 예시 주입 (말투 모방)</h4>
-            <p>실제 카페에서 수집한 댓글 2~3개를 System Prompt에 삽입. HTML 태그·엔티티 전처리 후 220자 발췌. 모델이 길이·톤·어미를 자연스럽게 모방하도록 유도. <strong>내용 인용은 절대 금지</strong>, 스타일만 참고.</p>
+            <h4>카페 댓글 예시 주입 (말투 모방) <span style="color:var(--green);font-size:12px;font-weight:700;">v2 — likeCount 정렬</span></h4>
+            <p>실제 카페에서 수집한 댓글을 <strong>좋아요 순 내림차순 정렬</strong> 후 상위 5개를 System Prompt에 삽입 (기존 2~3개 랜덤 → 5개 품질순으로 개선). 대댓글이 있는 댓글의 경우 <code>"댓글 내용 → 대댓글: '...'"</code> 형태로 맥락까지 포함. HTML 태그·엔티티 전처리 후 100자 발췌. 모델이 길이·톤·어미를 자연스럽게 모방하도록 유도. <strong>내용 인용은 절대 금지</strong>, 스타일만 참고.</p>
+            <p style="margin-top:6px;color:var(--muted);font-size:12px;">조건: <code>commentCrawled: true</code> 글만 대상 / <code>likeCount ≥ 1</code> 필터 / DEEP 모드(08:30·20:40) 수집분에만 효과</p>
           </div>
         </div>
         <div class="cf-step">
@@ -932,6 +978,78 @@
     <div class="alert">
       <span>ℹ️</span>
       <div><strong>SHEET 게시글 차단:</strong> SheetViral 게시글(<code>source='SHEET'</code>)에는 일반 시드봇 댓글이 달리지 않음. 4파동 전용 봇이 별도로 담당.</div>
+    </div>
+  </div>
+
+  <!-- Section ★A: 댓글 분위기 파이프라인 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:var(--green);color:#fff;">★</div>
+      <h2>댓글 분위기 파이프라인 — topComments 활용 흐름</h2>
+      <span class="desc">types.ts · quality-scorer.ts · trend-analyzer.ts · generator.ts</span>
+    </div>
+
+    <div class="alert" style="margin-bottom:16px;">
+      <span>ℹ️</span>
+      <div>DEEP 모드(08:30 · 20:40)에서만 <code>topComments</code>가 수집됨. QUICK(12:30)은 댓글 수집 없음 → 아래 파이프라인은 DEEP 수집분에만 적용.</div>
+    </div>
+
+    <!-- 흐름도 -->
+    <div class="info-card" style="margin-bottom:16px;">
+      <h3>전체 흐름</h3>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="min-width:140px;font-weight:700;color:var(--blue);">① 크롤링 (DEEP)</div>
+          <div style="flex:1;font-size:13px;">게시글당 최대 15개 댓글 수집 → <code>topComments Json?</code> 필드에 저장<br><span style="color:var(--muted);font-size:12px;">구조: {author, content, likeCount, replies[]{author, content}}</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="min-width:140px;font-weight:700;color:var(--blue);">② parseTopComments()</div>
+          <div style="flex:1;font-size:13px;">Json? → CommentData[] 타입 안전 파서. null/이형 데이터 방어. HTML 태그·엔티티 전처리. likeCount 음수 클램프(0 이상).<br><span style="color:var(--muted);font-size:12px;">agents/cafe/types.ts</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="min-width:140px;font-weight:700;color:var(--blue);">③ classifyAtmosphere()</div>
+          <div style="flex:1;font-size:13px;">rule-based 분위기 분류 (AI 호출 없음)
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+              <span style="background:var(--purple-dim);color:var(--purple);padding:2px 8px;border-radius:12px;font-size:11px;">논쟁형 — 대댓글 달린 댓글 40%+</span>
+              <span style="background:var(--blue-dim);color:var(--blue);padding:2px 8px;border-radius:12px;font-size:11px;">정보형 — 해결책 + 평균좋아요 15+</span>
+              <span style="background:var(--yellow-dim);color:var(--yellow);padding:2px 8px;border-radius:12px;font-size:11px;">유머형 — ㅋ/ㅎㅎ/웃 + 좋아요 5+</span>
+              <span style="background:var(--green-dim);color:var(--green);padding:2px 8px;border-radius:12px;font-size:11px;">공감형 — 평균좋아요 10+</span>
+              <span style="background:var(--bg3);color:var(--muted);padding:2px 8px;border-radius:12px;font-size:11px;">알수없음 — 해당없음 또는 댓글 0</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="min-width:140px;font-weight:700;color:var(--primary);">④ quality-scorer</div>
+          <div style="flex:1;font-size:13px;">베스트 댓글 좋아요 수 → <code>commentBonus = min(topLike × 0.5, 10)</code> → engagement 점수에 가산.<br><span style="color:var(--muted);font-size:12px;">Math.max(...[]) = −∞ 방지: <code>comments.length &gt; 0</code> 가드 적용</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="min-width:140px;font-weight:700;color:var(--primary);">⑤ trend-analyzer</div>
+          <div style="flex:1;font-size:13px;">postSummaries에 분위기 + 베스트댓글 포함 → Claude에 풍부한 컨텍스트 전달.<br><span style="color:var(--muted);font-size:12px;">예: <code>댓글 23[공감형] 베스트:"문화센터 진짜 추천해요"(↔2)</code></span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;">
+          <div style="min-width:140px;font-weight:700;color:var(--primary);">⑥ generator</div>
+          <div style="flex:1;font-size:13px;">두 가지 방식으로 주입:
+            <ul style="margin:6px 0 0 16px;font-size:12px;">
+              <li><strong>댓글 예시 (스타일 모방):</strong> likeCount 정렬 상위 5개 + 대댓글 맥락 → System Prompt</li>
+              <li><strong>분위기 컨텍스트 (글 방향 유도):</strong> <code>getCommentAtmosphereContext(desire)</code> → <code>[최근 커뮤니티 반응 패턴]</code> 블록으로 User 프롬프트 주입</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 실제 프롬프트 예시 -->
+    <div class="info-card">
+      <h3>분위기 컨텍스트 주입 예시 (generatePost 프롬프트)</h3>
+      <div style="background:var(--bg3);border-radius:6px;padding:12px 16px;font-size:12px;font-family:monospace;line-height:1.7;color:var(--text);">
+        <span style="color:var(--muted);">...exampleBlock 뒤에 추가되는 부분...</span><br><br>
+        [최근 커뮤니티 반응 패턴 — 이런 글에 호응이 옴]<br>
+        분위기: <span style="color:var(--green);">정보형</span> / 베스트 반응: "동네 문화센터 추천해요. 거기서 친구 사귀었어요" / 대댓글 2개 달린 공감 포인트<br>
+        → 이 분위기에 맞는 소재와 톤으로 글을 써주세요.
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted);">
+        topComments가 없거나 알수없음인 경우 → 빈 문자열 반환 → 프롬프트 변화 없음 (R5 리스크 헷징)
+      </div>
     </div>
   </div>
 
@@ -984,6 +1102,131 @@
           <h4>여운·반전</h4>
           <p>"사실은 저도…" 수준. 결론 짓지 않고 여운을 남김.</p>
           <div class="wave-detail">감정 깊이 추가 — 글이 오래 회자되도록</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section ★B: 아침 시뮬레이션 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:var(--blue);color:#fff;">☀</div>
+      <h2>내일 아침 흐름 시뮬레이션 — 3트랙 동시 진행</h2>
+      <span class="desc">오늘(2026-05-12) 저녁 크롤 결과 기반 예측 · 지배욕망 HOBBY</span>
+    </div>
+
+    <!-- 타임라인 -->
+    <div class="info-card" style="margin-bottom:16px;padding:0;overflow:hidden;">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);background:var(--blue-dim);">
+        <h3 style="color:var(--blue);margin:0;">타임라인 (KST)</h3>
+      </div>
+      <div style="padding:16px;">
+        <div style="position:relative;padding-left:24px;">
+          <!-- 세로선 -->
+          <div style="position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:var(--border);border-radius:2px;"></div>
+
+          <!-- 08:30 -->
+          <div style="position:relative;margin-bottom:20px;">
+            <div style="position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--blue);border:2px solid var(--bg1);"></div>
+            <div style="font-weight:700;color:var(--blue);font-size:14px;">08:30 — 아침 DEEP 크롤링 시작 <span style="font-size:11px;font-weight:400;color:var(--muted);">(launchd)</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6;">
+              우아한갱년기 + 은퇴후50년 최대 50건/카페 수집<br>
+              심리분석(Haiku) → 욕망지도 → DailyBrief 생성<br>
+              <span style="color:var(--yellow);">예상 완료: 09:00~09:20 (DEEP ~40분 소요)</span>
+            </div>
+          </div>
+
+          <!-- 09:00 -->
+          <div style="position:relative;margin-bottom:20px;">
+            <div style="position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid var(--bg1);"></div>
+            <div style="font-weight:700;color:var(--green);font-size:14px;">09:00 — seed:scheduler 1회차 <span style="font-size:11px;font-weight:400;color:var(--muted);">(GHA agents-seed.yml, 0 UTC)</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6;">
+              <strong style="color:var(--text);">글 7개 생성</strong> — 여행이좋아·하늘바라기·봄바람 등 아침형 페르소나<br>
+              <strong style="color:var(--text);">댓글 슬롯 시작</strong> — 3개 글에 봇 댓글 즉시 투입 (Haiku, max_tokens 200)<br>
+              예시: 봇A → 하늘바라기 글에 <em>"갱년기 땀 저도 너무 힘들었어요ㅜ"</em>
+            </div>
+          </div>
+
+          <!-- 09:10 -->
+          <div style="position:relative;margin-bottom:20px;">
+            <div style="position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--yellow);border:2px solid var(--bg1);"></div>
+            <div style="font-weight:700;color:var(--yellow);font-size:14px;">09:10 — seed:killer-post <span style="font-size:11px;font-weight:400;color:var(--muted);">(GHA agents-killer-post.yml, 00:10 UTC)</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6;">
+              아침 DEEP 결과에서 <code>killerScore</code> 1위 카페글 선별<br>
+              <code>generateKillerPost()</code>: 원문 <strong style="color:var(--yellow);">95% 유지</strong> — 갈등·감정·금액 그대로, 지명만 익명화<br>
+              → WAVE_1 <strong>09:20</strong> (3명) · WAVE_2 <strong>10:10</strong> (4명) · WAVE_3 <strong>12:10</strong> (3명)
+            </div>
+          </div>
+
+          <!-- 10:00 -->
+          <div style="position:relative;margin-bottom:20px;">
+            <div style="position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid var(--bg1);"></div>
+            <div style="font-weight:700;color:var(--green);font-size:14px;">10:00 — seed:scheduler 2회차 <span style="font-size:11px;font-weight:400;color:var(--muted);">(GHA 1 UTC)</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6;">
+              <strong style="color:var(--text);">글 8개 생성</strong> (다른 페르소나 — 정보/활발형)<br>
+              <strong style="color:var(--text);">대댓글 슬롯</strong> — 09:00 댓글에 대댓글 체인 시작 (parentId 연결)<br>
+              예시: 봇B → 봇A 댓글에 <em>"한방 보약 어디서 드셨어요? 저도 너무 힘드네요ㅠ"</em>
+            </div>
+          </div>
+
+          <!-- 11:00 -->
+          <div style="position:relative;margin-bottom:20px;">
+            <div style="position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid var(--bg1);"></div>
+            <div style="font-weight:700;color:var(--green);font-size:14px;">11:00 — seed:scheduler 3회차 <span style="font-size:11px;font-weight:400;color:var(--muted);">(GHA 2 UTC)</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6;">
+              글 4개 생성 (간병·건강·공부·유머 페르소나)
+            </div>
+          </div>
+
+          <!-- 12:00 -->
+          <div style="position:relative;">
+            <div style="position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--muted);border:2px solid var(--bg1);"></div>
+            <div style="font-weight:700;color:var(--muted);font-size:14px;">12:00 — seed:micro <span style="font-size:11px;font-weight:400;">(GHA agents-seed-micro.yml, 3 UTC)</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px;">
+              글쓰기 없음 / 댓글·대댓글·좋아요만 (메인 스케줄러와 시간 분산)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 예시 카드 -->
+    <div class="info-card">
+      <h3>실제 댓글·대댓글 흐름 예시</h3>
+
+      <!-- Track 1 예시 -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:8px;">Track 1 — 일반글 + 댓글 + 대댓글</div>
+        <div style="background:var(--bg3);border-radius:8px;padding:12px;font-size:12px;line-height:1.8;">
+          <div style="color:var(--text);font-weight:700;margin-bottom:6px;">📝 글 (09:03, 하늘바라기)</div>
+          <div style="color:var(--text);margin-bottom:10px;padding-left:8px;border-left:3px solid var(--blue);">"요즘 밤에 땀이 줄줄인데 갱년기 맞나봐요~ 잠도 못 자겠고 너무 힘드네요ㅠ"</div>
+
+          <div style="color:var(--green);font-weight:700;margin-bottom:4px;">💬 댓글 (generateComment)</div>
+          <div style="padding-left:8px;margin-bottom:4px;color:var(--muted);">봇A &nbsp;09:07 &nbsp;<span style="color:var(--text);">"갱년기 땀 저도 너무 힘들었어요ㅜ 한방 보약 먹었더니 좀 나아졌어요"</span></div>
+          <div style="padding-left:8px;margin-bottom:10px;color:var(--muted);">봇F &nbsp;09:14 &nbsp;<span style="color:var(--text);">"산부인과 한번 가보세요~ 호르몬 검사 받으면 정확히 알 수 있어요"</span></div>
+
+          <div style="color:var(--purple);font-weight:700;margin-bottom:4px;">↩ 대댓글 (generateReply · parentId=봇A)</div>
+          <div style="padding-left:20px;margin-bottom:10px;color:var(--muted);">봇B &nbsp;10:03 &nbsp;<span style="color:var(--text);">"한방 보약 어디서 드셨어요? 저도 너무 힘드네요ㅠ"</span></div>
+
+          <div style="color:var(--yellow);font-weight:700;margin-bottom:4px;">⚡ 논쟁 체인 (controversy-chain)</div>
+          <div style="padding-left:8px;color:var(--muted);">봇J &nbsp;09:33(T+30분) &nbsp;<span style="color:var(--text);">"근데 저는 자연스럽게 지나가는 게 맞다고 봐요..."</span></div>
+          <div style="padding-left:20px;color:var(--muted);">봇G &nbsp;10:03(T+60분) &nbsp;<span style="color:var(--text);">(반박 대댓글 → parentId=봇J댓글)</span></div>
+        </div>
+      </div>
+
+      <!-- Track 2 킬러 예시 -->
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:8px;">Track 2 — 킬러글 + 3파동 댓글</div>
+        <div style="background:var(--bg3);border-radius:8px;padding:12px;font-size:12px;line-height:1.8;">
+          <div style="color:var(--text);font-weight:700;margin-bottom:4px;">🔥 카페 원문 (killerScore 1위)</div>
+          <div style="color:var(--muted);margin-bottom:4px;padding-left:8px;border-left:3px solid var(--muted);">원문: "며느리한테 통장 보여줬다가 후회해요" (카페 댓글 47개, 좋아요 89)</div>
+          <div style="color:var(--text);font-weight:700;margin-top:8px;margin-bottom:4px;">✏️ 킬러 재창작 (09:10, generateKillerPost · Sonnet)</div>
+          <div style="color:var(--text);padding-left:8px;border-left:3px solid var(--yellow);margin-bottom:6px;">"OO동 며느리한테 통장 보여줬다가 진짜 후회해요ㅠ"<br><span style="color:var(--muted);">원문 에피소드·금액·감정 흐름 95% 그대로 / 지명만 OO동 익명화</span></div>
+          <div style="color:var(--green);font-weight:700;margin-bottom:4px;">💬 WAVE_1 (09:20, 3명 · Haiku · 원댓글 99% 보존)</div>
+          <div style="padding-left:8px;margin-bottom:6px;color:var(--muted);">봇D &nbsp;<span style="color:var(--text);">"어머 저도 그런 적 있어요 진짜 너무 속상하셨겠다ㅠ"</span><br>
+          <span style="font-size:11px;">← 카페 원댓글 그대로, 어미 1개만 교체</span></div>
+          <div style="color:var(--yellow);font-weight:700;margin-bottom:4px;">💬 WAVE_2 (10:10, 4명) · WAVE_3 (12:10, 3명)</div>
+          <div style="padding-left:8px;color:var(--muted);">likeCount 순 상위 댓글을 각 파동 페르소나별 배정 (99% 원문 보존)</div>
         </div>
       </div>
     </div>
@@ -1067,8 +1310,59 @@
     </div>
   </div>
 
+  <!-- ── 2026-05-12 패치 결과 B — 댓글 분위기 파이프라인 ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:var(--green);color:#fff;">★</div>
+      <h2>2026-05-12 패치 결과 — 댓글 분위기 파이프라인 4종</h2>
+      <span class="desc">커밋 b478599</span>
+    </div>
+
+    <div class="patch-grid">
+      <div class="patch-card">
+        <div class="patch-id">Fix 0 · types.ts — 타입 안전 파서</div>
+        <h4>topComments Json? → CommentData[] 런타임 크래시 방어</h4>
+        <div class="patch-before">// 기존: 직접 캐스팅 → null·이형 데이터 시 크래시<br>(post.topComments as CommentData[])</div>
+        <div class="patch-after">// parseTopComments(raw: unknown): CommentData[]<br>// · Array 체크 · content 문자열 검증 · HTML 태그 제거<br>// · likeCount 음수 클램프 · replies 방어 파싱</div>
+        <div class="patch-effect">Fix 1~4 전부 이 파서에 의존. JSON 구조가 바뀌거나 null이 들어와도 빈 배열 반환으로 안전하게 처리.</div>
+      </div>
+
+      <div class="patch-card">
+        <div class="patch-id">Fix 1 · generator.ts — getExampleCafeComments() 고도화</div>
+        <h4>댓글 예시 랜덤 3개 → likeCount 정렬 5개 + 대댓글 맥락</h4>
+        <div class="patch-before">// 기존: flatMap → .map(c =&gt; c.content.slice(0,80)) → 랜덤 3개<br>commentCrawled 필터 없음, 정렬 없음</div>
+        <div class="patch-after">// 수정: commentCrawled:true 글만<br>// parseTopComments() → likeCount&gt;=1 필터 → desc 정렬 → 5개<br>// 대댓글 있으면: "댓글 → 대댓글:'...' " 형태로 반환</div>
+        <div class="patch-effect">generateComment() 스타일 예시가 실제 인기 댓글 기반으로 변경. 대댓글 체인 패턴까지 모델에 학습시켜 자연스러운 공감형 짧은 댓글 생성 유도.</div>
+      </div>
+
+      <div class="patch-card">
+        <div class="patch-id">Fix 2 · generator.ts — generatePost() 분위기 컨텍스트 주입</div>
+        <h4>글 생성 프롬프트에 커뮤니티 반응 패턴 블록 추가</h4>
+        <div class="patch-before">// 기존: exampleBlock → controversyBlock (댓글 분위기 정보 없음)</div>
+        <div class="patch-after">// 수정: exampleBlock → atmosphereContext → controversyBlock<br>// getCommentAtmosphereContext(desire): 최근 3일 인기글 댓글 분석<br>// → [최근 커뮤니티 반응 패턴] 블록 삽입 (빈 문자열이면 무효과)</div>
+        <div class="patch-effect">시드봇이 "공감형 분위기를 이끄는 글", "정보형 해결책 글" 방향을 인식하고 작성. 커뮤니티 실제 반응과 글 소재가 정렬됨. 토큰 영향 최대 +100자.</div>
+      </div>
+
+      <div class="patch-card">
+        <div class="patch-id">Fix 3 · trend-analyzer.ts — postSummaries 베스트댓글 포함</div>
+        <h4>트렌드 분석 Claude 인풋에 댓글 분위기 + 베스트댓글 추가</h4>
+        <div class="patch-before">// 기존: "좋아요 N, 댓글 N\n   본문 200자"</div>
+        <div class="patch-after">// 수정: "좋아요 N, 댓글 N[공감형] 베스트:'...'(↔2)\n   본문 200자"<br>// topComments가 없으면 기존 포맷 유지 (QUICK 글 안전)</div>
+        <div class="patch-effect">Claude가 "어떤 글이고 어떤 댓글이 달렸나"를 함께 보고 트렌드 분석. 프롬프트 길이 100글 기준 최대 +6,000자 (200K 토큰 한도 내 여유 충분).</div>
+      </div>
+
+      <div class="patch-card" style="grid-column: 1 / -1;">
+        <div class="patch-id">Fix 4 · quality-scorer.ts — scoreEngagement() commentBonus</div>
+        <h4>베스트 댓글 좋아요 수 → 품질 점수 최대 +10점 반영</h4>
+        <div class="patch-before">// 기존: raw = likeCount×3 + commentCount×2 + viewCount×0.01</div>
+        <div class="patch-after">// 수정: topComments parseTopComments() → topLike = max(likeCount들)<br>// commentBonus = min(topLike × 0.5, 10)<br>// raw = likeCount×3 + commentCount×2 + viewCount×0.01 + commentBonus<br>// 빈 배열 가드: topComments.length &gt; 0 ? max(...) : 0  ← -Infinity 방지(R1)</div>
+        <div class="patch-effect">댓글 좋아요가 집중된 글 = 실제 커뮤니티 반응 높음 → qualityScore 반영. QUICK/CRAWL 모드: topComments=undefined → bonus=0 → 기존 점수 불변. killerScore에도 동일하게 적용.</div>
+      </div>
+    </div>
+  </div>
+
   <div style="border-top:1px solid var(--border);padding-top:24px;color:var(--muted);font-size:12px;text-align:center;">
-    우나어 내부 문서 · 최종 업데이트: 2026-05-12 (패치 31cc11e 반영) · 관련 문서: handover-cafe-persona-system.html / handover-magazine.html
+    우나어 내부 문서 · 최종 업데이트: 2026-05-12 (패치 31cc11e · b478599 반영) · 관련 문서: handover-cafe-persona-system.html / handover-magazine.html
   </div>
 
 </div>
