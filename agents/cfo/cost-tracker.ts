@@ -68,17 +68,15 @@ class CFOCostTracker extends BaseAgent {
     const dalleCost = dalleImageCount * DALLE_COST_PER_IMAGE
     estimatedCost += dalleCost
 
-    // 4. 예산 경고 / 하드스톱
+    // 4. 비용 알림 (추적 전용 — 하드스톱 없음)
     if (estimatedCost >= MONTHLY_BUDGET_USD) {
       await notifySlack({
         level: 'critical',
         agent: 'CFO',
-        title: `🚨 월간 예산 초과 — 에이전트 중단: $${estimatedCost.toFixed(2)} / $${MONTHLY_BUDGET_USD}`,
-        body: `예산 상한($${MONTHLY_BUDGET_USD})을 초과했습니다. 에이전트 실행을 즉시 중단합니다.\n에이전트 실행 ${agentRuns}회`,
+        title: `⚠️ 월간 비용 기준 초과 — 추적 계속: $${estimatedCost.toFixed(2)} / $${MONTHLY_BUDGET_USD}`,
+        body: `비용 기준($${MONTHLY_BUDGET_USD})을 초과했습니다. 에이전트는 계속 실행됩니다.\n에이전트 실행 ${agentRuns}회`,
       })
-      throw new Error(`[CFO] 월간 예산 초과: $${estimatedCost.toFixed(2)} > $${MONTHLY_BUDGET_USD} — 에이전트 중단`)
-    }
-    if (estimatedCost >= WARNING_THRESHOLD_USD) {
+    } else if (estimatedCost >= WARNING_THRESHOLD_USD) {
       await notifySlack({
         level: 'critical',
         agent: 'CFO',
