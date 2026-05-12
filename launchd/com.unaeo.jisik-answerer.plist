@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.unaeo.jisik-answerer</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/launchd-alert.sh</string>
+    <string>jisik-answerer</string>
+    <string>/bin/bash</string>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/run-jisik.sh</string>
+  </array>
+
+  <!-- 매일 14:30 KST 실행 (로컬 시간 기준) -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>14</integer>
+    <key>Minute</key>
+    <integer>30</integer>
+  </dict>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/yanadoo/Library/Logs/jisik-answerer.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/yanadoo/Library/Logs/jisik-answerer-error.log</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

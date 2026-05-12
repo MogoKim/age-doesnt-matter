@@ -3,39 +3,44 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.unaeo.session-refresh</string>
+    <string>com.unao.fmkorea-scraper</string>
 
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/launchd-alert.sh</string>
-        <string>session-refresh</string>
+        <string>fmkorea-scraper</string>
         <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx</string>
         <string>tsx</string>
-        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/session-manager.ts</string>
+        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/community/run-local-fmkorea.ts</string>
     </array>
 
     <key>WorkingDirectory</key>
     <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
 
-    <!-- 매일 02:00 KST — macOS 로컬시간 기준 (시스템 시간대: Asia/Seoul) -->
-    <!-- NID_SES 5일 이내 만료 시에만 실제 갱신, 항상 만료일 체크 + NID_AUT 경보 -->
     <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>2</integer>
-        <key>Minute</key>
-        <integer>0</integer>
-    </dict>
-
-    <key>RunAtLoad</key>
-    <false/>
+    <array>
+        <!-- 11:30 KST (오전 — GA 11:00 이후) -->
+        <dict>
+            <key>Hour</key>
+            <integer>11</integer>
+            <key>Minute</key>
+            <integer>30</integer>
+        </dict>
+        <!-- 21:30 KST (저녁 — GA 21:00 이후) -->
+        <dict>
+            <key>Hour</key>
+            <integer>21</integer>
+            <key>Minute</key>
+            <integer>30</integer>
+        </dict>
+    </array>
 
     <key>StandardOutPath</key>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/session-refresh.log</string>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/fmkorea-scraper.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/session-refresh-error.log</string>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/fmkorea-scraper-error.log</string>
 
     <key>EnvironmentVariables</key>
     <dict>

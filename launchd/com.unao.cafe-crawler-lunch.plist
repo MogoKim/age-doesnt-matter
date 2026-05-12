@@ -3,39 +3,36 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.unaeo.session-refresh</string>
+    <string>com.unao.cafe-crawler-lunch</string>
 
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/launchd-alert.sh</string>
-        <string>session-refresh</string>
+        <string>cafe-crawler-lunch</string>
         <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx</string>
         <string>tsx</string>
-        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/session-manager.ts</string>
+        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/run-pipeline.ts</string>
+        <string>quick</string>
     </array>
 
     <key>WorkingDirectory</key>
     <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
 
-    <!-- 매일 02:00 KST — macOS 로컬시간 기준 (시스템 시간대: Asia/Seoul) -->
-    <!-- NID_SES 5일 이내 만료 시에만 실제 갱신, 항상 만료일 체크 + NID_AUT 경보 -->
+    <!-- 12:55 KST (오후 딥다이브: 크롤 + 심리분석 + 욕망지도 생성) -->
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
-        <integer>2</integer>
+        <integer>12</integer>
         <key>Minute</key>
-        <integer>0</integer>
+        <integer>55</integer>
     </dict>
 
-    <key>RunAtLoad</key>
-    <false/>
-
     <key>StandardOutPath</key>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/session-refresh.log</string>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler-lunch.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/session-refresh-error.log</string>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler-lunch-error.log</string>
 
     <key>EnvironmentVariables</key>
     <dict>

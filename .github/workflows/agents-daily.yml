@@ -69,6 +69,8 @@ on:
     - cron: "0 22 * * 0"
     # job-scraper 크론 제거: agents-jobs.yml에서 전담 (12:00/16:00/20:00 KST 3회)
     # 이전: "0 4 * * *" (13:00 KST), "0 10 * * *" (19:00 KST) — 중복 실행 제거
+    # 13:00 KST = 04:00 UTC — CMO 카드뉴스 생성 (A07)
+    - cron: "0 4 * * *"
   workflow_dispatch:
     inputs:
       agent:
@@ -204,6 +206,8 @@ jobs:
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=qa-verify" >> $GITHUB_OUTPUT ;;
               "20 23 * * *")
                 echo "agent=qa" >> $GITHUB_OUTPUT; echo "task=content-audit" >> $GITHUB_OUTPUT ;;
+              "0 4 * * *")
+                echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=card-news-generator" >> $GITHUB_OUTPUT ;;
               *)
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
             esac

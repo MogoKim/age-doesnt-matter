@@ -104,6 +104,8 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cmo:social-poster-visual': () => import('../cmo/social-poster-visual.js').then(() => {}),
   'cmo:threads-token-refresh': () => import('../cmo/platforms/threads-token-refresh.js').then(() => {}),
   'cmo:jisik-answerer': () => import('../cmo/jisik-answerer.js').then(() => {}),
+  // agents-daily.yml 13:00 KST (04:00 UTC) — A07 카드뉴스 생성 (DALL-E 이미지 포함)
+  'cmo:card-news-generator': () => import('../cmo/card-news/generator.js').then(() => {}),
   // DISPATCH ONLY — 로컬 전용 (네이버 IP 차단 + headless 탐지)
   // 실행: npx tsx agents/cmo/jisik-answerer.ts
 
