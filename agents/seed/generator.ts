@@ -391,16 +391,19 @@ async function getLatestEntertainPost(): Promise<{ title: string; content: strin
 /** AI 응답에서 마크다운 문법 제거 */
 function stripMarkdown(text: string): string {
   return text
-    .replace(/#{1,6}\s?/g, '')         // ## headings
-    .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold**
-    .replace(/\*(.+?)\*/g, '$1')       // *italic*
-    .replace(/__(.+?)__/g, '$1')       // __bold__
-    .replace(/_(.+?)_/g, '$1')         // _italic_
-    .replace(/~~(.+?)~~/g, '$1')       // ~~strike~~
-    .replace(/`(.+?)`/g, '$1')         // `code`
-    .replace(/^[-*+]\s/gm, '')         // list bullets
+    .replace(/```[\s\S]*?```/g, '')          // ```code blocks```
+    .replace(/#{1,6}\s?/g, '')               // ## headings
+    .replace(/\*\*([\s\S]+?)\*\*/g, '$1')     // **bold** (줄바꿈 포함)
+    .replace(/\*([\s\S]+?)\*/g, '$1')         // *italic*
+    .replace(/__([\s\S]+?)__/g, '$1')         // __bold__
+    .replace(/_([\s\S]+?)_/g, '$1')           // _italic_
+    .replace(/~~([\s\S]+?)~~/g, '$1')         // ~~strike~~
+    .replace(/`(.+?)`/g, '$1')               // `code`
+    .replace(/^[-*+]\s/gm, '')               // list bullets
+    .replace(/^\d+\.\s/gm, '')               // 1. numbered lists
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [link](url)
-    .replace(/\*+/g, '')                     // 나머지 * /** 일괄 제거
+    .replace(/\*+/g, '')                     // 나머지 * 일괄 제거
+    .replace(/_{2,}/g, '')                   // 나머지 __ 일괄 제거
     .trim()
 }
 

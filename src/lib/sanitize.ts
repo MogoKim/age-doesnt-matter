@@ -30,6 +30,28 @@ export function sanitizeHtml(dirty: string): string {
 }
 
 /**
+ * 봇 생성 평문에서 마크다운 문법 제거 — bot/posts API 2차 방어선
+ * generator.ts stripMarkdown() 이후에도 잔존할 수 있는 패턴 정리.
+ * HTML 태그 없는 평문 기준 — sanitizeHtml() 호출 전 사용.
+ */
+export function stripMarkdownSyntax(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/#{1,6}\s?/g, '')
+    .replace(/\*\*([\s\S]+?)\*\*/g, '$1')
+    .replace(/\*([\s\S]+?)\*/g, '$1')
+    .replace(/__([\s\S]+?)__/g, '$1')
+    .replace(/_([\s\S]+?)_/g, '$1')
+    .replace(/~~([\s\S]+?)~~/g, '$1')
+    .replace(/`(.+?)`/g, '$1')
+    .replace(/^[-*+]\s/gm, '')
+    .replace(/^\d+\.\s/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\*+/g, '')
+    .replace(/_{2,}/g, '')
+}
+
+/**
  * 매거진 전용 새니타이제이션 — 봇 생성 콘텐츠이므로 인라인 스타일 허용
  * 사용자 입력(댓글/게시글)에는 절대 사용 금지
  */
