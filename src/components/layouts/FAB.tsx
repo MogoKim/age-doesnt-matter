@@ -41,7 +41,7 @@ export default function FAB({ isLoggedIn = false }: FABProps) {
   const fabClassName = cn(
     'group fixed bottom-6 right-6 z-[97] flex items-center gap-2 h-[52px] px-6 bg-primary text-white rounded-full shadow-[0_4px_20px_rgba(255,111,97,0.30)] text-body font-bold cursor-pointer transition-all duration-200 no-underline [-webkit-tap-highlight-color:transparent] active:scale-95',
     'lg:bottom-8 lg:right-8 lg:h-14 lg:w-14 lg:p-0 lg:justify-center lg:hover:w-auto lg:hover:px-6',
-    collapsed && 'px-4 w-[52px] justify-center'
+    collapsed && 'px-4 w-[52px] justify-center gap-0'
   )
 
   const labelClassName = cn(
@@ -54,12 +54,12 @@ export default function FAB({ isLoggedIn = false }: FABProps) {
     <>
       {isLoggedIn ? (
         <Link href={`/community/write?board=${board}`} className={fabClassName} style={{ color: 'white' }} aria-label="글쓰기">
-          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          <svg width={collapsed ? 28 : 22} height={collapsed ? 28 : 22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={collapsed ? 3.5 : 2.5} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           <span className={labelClassName} style={{ color: 'white' }}>글쓰기</span>
         </Link>
       ) : (
         <button className={fabClassName} style={{ color: 'white' }} onClick={() => setShowLoginPrompt(true)} aria-label="글쓰기">
-          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          <svg width={collapsed ? 28 : 22} height={collapsed ? 28 : 22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={collapsed ? 3.5 : 2.5} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           <span className={labelClassName} style={{ color: 'white' }}>글쓰기</span>
         </button>
       )}
