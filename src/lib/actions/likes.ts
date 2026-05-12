@@ -46,9 +46,17 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
   // 삭제/숨김된 글에는 좋아요 불가
   const targetPost = await prisma.post.findUnique({
     where: { id: postId, status: 'PUBLISHED' },
-    select: { id: true, authorId: true },
+    select: { id: true, authorId: true, boardType: true },
   })
   if (!targetPost) return { error: '존재하지 않는 게시글입니다' }
+
+  // BoardConfig에서 승격 임계값 읽기 (없으면 기본값 폴백)
+  const boardConfig = await prisma.boardConfig.findUnique({
+    where: { boardType: targetPost.boardType },
+    select: { hotThreshold: true, fameThreshold: true },
+  }).catch(() => null)
+  const hotThreshold = boardConfig?.hotThreshold ?? 10
+  const fameThreshold = boardConfig?.fameThreshold ?? 50
 
   // 추가 경로: 모든 카운터 업데이트 + 알림 + 승격을 단일 트랜잭션으로
   const authorId = await prisma.$transaction(async (tx) => {
@@ -65,13 +73,13 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
 
     const newCount = updatedPost.likeCount
 
-    // HOT / HALL_OF_FAME 승격 (트랜잭션 내)
-    if (newCount >= 50) {
+    // HOT / HALL_OF_FAME 승격 (트랜잭션 내 — 임계값은 BoardConfig에서 읽음)
+    if (newCount >= fameThreshold) {
       await tx.post.updateMany({
         where: { id: postId, promotionLevel: { in: ['NORMAL', 'HOT'] } },
         data: { promotionLevel: 'HALL_OF_FAME' },
       })
-    } else if (newCount >= 10) {
+    } else if (newCount >= hotThreshold) {
       await tx.post.updateMany({
         where: { id: postId, promotionLevel: 'NORMAL' },
         data: { promotionLevel: 'HOT' },

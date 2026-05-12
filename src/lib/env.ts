@@ -18,7 +18,7 @@ function optionalEnv(key: string, fallback: string): string {
 export const DATABASE_URL = requireEnv('DATABASE_URL')
 
 /** NextAuth */
-export const NEXTAUTH_SECRET = requireEnv('NEXTAUTH_SECRET')
+export const NEXTAUTH_SECRET = requireEnv('AUTH_SECRET')
 export const KAKAO_CLIENT_ID = requireEnv('KAKAO_CLIENT_ID')
 export const KAKAO_CLIENT_SECRET = requireEnv('KAKAO_CLIENT_SECRET')
 

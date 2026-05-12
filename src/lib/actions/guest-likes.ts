@@ -46,9 +46,16 @@ export async function toggleGuestPostLike(postId: string): Promise<GuestLikeResu
 
   const targetPost = await prisma.post.findUnique({
     where: { id: postId, status: 'PUBLISHED' },
-    select: { id: true },
+    select: { id: true, boardType: true },
   })
   if (!targetPost) return { error: '존재하지 않는 게시글입니다' }
+
+  const boardConfig = await prisma.boardConfig.findUnique({
+    where: { boardType: targetPost.boardType },
+    select: { hotThreshold: true, fameThreshold: true },
+  }).catch(() => null)
+  const hotThreshold = boardConfig?.hotThreshold ?? 10
+  const fameThreshold = boardConfig?.fameThreshold ?? 50
 
   await prisma.$transaction(async (tx) => {
     await tx.guestLike.create({ data: { postId, ipHash, cookieId } })
@@ -60,12 +67,12 @@ export async function toggleGuestPostLike(postId: string): Promise<GuestLikeResu
     })
 
     const newCount = updatedPost.likeCount
-    if (newCount >= 50) {
+    if (newCount >= fameThreshold) {
       await tx.post.updateMany({
         where: { id: postId, promotionLevel: { in: ['NORMAL', 'HOT'] } },
         data: { promotionLevel: 'HALL_OF_FAME' },
       })
-    } else if (newCount >= 10) {
+    } else if (newCount >= hotThreshold) {
       await tx.post.updateMany({
         where: { id: postId, promotionLevel: 'NORMAL' },
         data: { promotionLevel: 'HOT' },
