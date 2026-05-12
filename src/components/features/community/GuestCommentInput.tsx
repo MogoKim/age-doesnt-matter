@@ -54,7 +54,8 @@ export default function GuestCommentInput({
 
     const tryRender = () => {
       if (!window.turnstile || !turnstileRef.current || widgetIdRef.current) return
-      const siteKey = process.env.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY ?? '1x00000000000000000000AA'
+      const siteKey = process.env.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY
+      if (!siteKey) return
       widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
         sitekey: siteKey,
         size: 'compact',
