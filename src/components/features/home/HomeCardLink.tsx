@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { gtmHomeCardClick } from '@/lib/gtm'
 import type { ComponentProps } from 'react'
 
-type Section = 'trending' | 'community' | 'magazine' | 'jobs' | 'life2'
+type Section = 'trending' | 'community' | 'magazine' | 'jobs' | 'life2' | 'stories-hot' | 'humor-hot'
 
 interface Props extends Omit<ComponentProps<typeof Link>, 'onClick'> {
   section: Section

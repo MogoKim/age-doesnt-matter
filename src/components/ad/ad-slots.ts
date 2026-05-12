@@ -75,4 +75,20 @@ export const COUPANG = {
     height: 100,
   },
 
+  /** 홈 쿠팡 2번 — PC 리더보드 (728x90) */
+  HOME2_PC: {
+    href: 'https://link.coupang.com/a/dGPx1729EO',
+    imgSrc: 'https://ads-partners.coupang.com/banners/882049?subId=&traceId=V0-301-5f9bd61900e673c0-I882049&w=728&h=90',
+    width: 728,
+    height: 90,
+  },
+
+  /** 홈 쿠팡 2번 — 모바일 배너 (320x100) */
+  HOME2_MOBILE: {
+    href: 'https://link.coupang.com/a/dGQkTHP8fY',
+    imgSrc: 'https://ads-partners.coupang.com/banners/882049?subId=&traceId=V0-301-5f9bd61900e673c0-I882049&w=320&h=100',
+    width: 320,
+    height: 100,
+  },
+
 } as const

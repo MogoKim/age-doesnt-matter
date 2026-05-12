@@ -305,7 +305,7 @@ export function gtmPwaInstall(trigger: string, platform: string, outcome: 'accep
 
 /** 홈 카드/더보기 클릭 추적 */
 export function gtmHomeCardClick(
-  section: 'trending' | 'community' | 'magazine' | 'jobs' | 'life2',
+  section: 'trending' | 'community' | 'magazine' | 'jobs' | 'life2' | 'stories-hot' | 'humor-hot',
   position: number,
   contentId: string,
   action: 'card' | 'more' = 'card',

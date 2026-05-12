@@ -10,7 +10,7 @@ export async function getTrendingPosts(limit = 5): Promise<PostSummary[]> {
   const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
-      createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+      createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
     },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],

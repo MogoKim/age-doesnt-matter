@@ -5,29 +5,24 @@ import { auth } from '@/lib/auth'
 import HeroSlider from '@/components/features/home/HeroSlider'
 import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
+import StoriesSection from '@/components/features/home/StoriesSection'
+import HumorSection from '@/components/features/home/HumorSection'
 import FeedAd from '@/components/ad/FeedAd'
-import CoupangBanner from '@/components/ad/CoupangBanner'
-import CoupangCarousel from '@/components/ad/CoupangCarousel'
 import ResponsiveAd from '@/components/ad/ResponsiveAd'
-import AdSenseUnit from '@/components/ad/AdSenseUnit'
-import { ADSENSE } from '@/components/ad/ad-slots'
+import CoupangHome1 from '@/components/ad/CoupangHome1'
+import CoupangHome2 from '@/components/ad/CoupangHome2'
 import MagazineSection from '@/components/features/home/MagazineSection'
-import CommunitySection from '@/components/features/home/CommunitySection'
-import Life2Section from '@/components/features/home/Life2Section'
-import HomeSidebar from '@/components/features/home/HomeSidebar'
 import PersonalGreeting from '@/components/features/home/PersonalGreeting'
 import MyActivity from '@/components/features/home/MyActivity'
-import ActivityPulse from '@/components/features/home/ActivityPulse'
 import SignupCard from '@/components/features/home/SignupCard'
 import HomeFaqSection from '@/components/features/home/HomeFaqSection'
 import {
   getLatestJobs,
   getTrendingPosts,
   getLatestMagazinePosts,
-  getLatestCommunityPosts,
-  getLatestLife2Posts,
+  getHomeBoardHotPosts,
 } from '@/lib/queries/posts'
-import { getUserCounts, getActivityPulseData } from '@/lib/queries/home'
+import { getUserCounts } from '@/lib/queries/home'
 
 export const metadata: Metadata = {
   title: '우리 나이가 어때서 — 5060 세대 커뮤니티',
@@ -52,19 +47,14 @@ const getCachedMagazine = unstable_cache(
   ['home-magazine'],
   { revalidate: 60 }
 )
-const getCachedCommunity = unstable_cache(
-  () => getLatestCommunityPosts(5),
-  ['home-community'],
+const getCachedStoriesRaw = unstable_cache(
+  () => getHomeBoardHotPosts('STORY', 10),
+  ['home-stories-hot'],
   { revalidate: 60 }
 )
-const getCachedLife2 = unstable_cache(
-  () => getLatestLife2Posts(5),
-  ['home-life2'],
-  { revalidate: 60 }
-)
-const getCachedActivityPulse = unstable_cache(
-  () => getActivityPulseData(),
-  ['home-activity-pulse'],
+const getCachedHumorRaw = unstable_cache(
+  () => getHomeBoardHotPosts('HUMOR', 10),
+  ['home-humor-hot'],
   { revalidate: 60 }
 )
 // 회원 활동 카운트: 알림 배지 수치 → 10s 지연 허용 (매 요청 3× DB count 제거)
@@ -76,7 +66,7 @@ const getCachedUserCounts = unstable_cache(
 
 /* ── Suspense 스켈레톤 ── */
 function SectionSkeleton({ h = 'h-[200px]' }: { h?: string }) {
-  return <div className={`${h} animate-pulse bg-muted/50 rounded-2xl mx-4 my-3`} />
+  return <div className={`${h} animate-pulse bg-muted/50 rounded-2xl mx-4 my-3 lg:mx-0`} />
 }
 
 function HeroSkeleton() {
@@ -87,19 +77,29 @@ function HeroSkeleton() {
 
 /* ── 섹션별 async 서버 컴포넌트 (독립 스트리밍) ── */
 
-async function TrendingWrapper() {
-  const posts = await getCachedTrending()
-  return <TrendingSection posts={posts} />
-}
+// 지금뜨는이야기 + 사는이야기 + 웃음방을 하나의 Suspense로 묶어 trendingIds 중복 제거 보장
+async function HotContentSections() {
+  const trendingPosts = await getCachedTrending()
+  const trendingIds = new Set(trendingPosts.map((p) => p.id))
 
-async function CommunityWrapper() {
-  const posts = await getCachedCommunity()
-  return <CommunitySection posts={posts} />
-}
+  const [storiesRaw, humorRaw] = await Promise.all([
+    getCachedStoriesRaw(),
+    getCachedHumorRaw(),
+  ])
 
-async function Life2Wrapper() {
-  const posts = await getCachedLife2()
-  return <Life2Section posts={posts} />
+  const storiesPosts = storiesRaw.filter((p) => !trendingIds.has(p.id)).slice(0, 5)
+  const humorPosts = humorRaw.filter((p) => !trendingIds.has(p.id)).slice(0, 5)
+
+  return (
+    <>
+      <TrendingSection posts={trendingPosts} />
+      <ResponsiveAd mobile={<FeedAd />} desktop={null} />
+      <StoriesSection posts={storiesPosts} />
+      <CoupangHome1 className="my-4 mx-4 lg:mx-0 rounded-2xl overflow-hidden" />
+      <HumorSection posts={humorPosts} />
+      <ResponsiveAd mobile={<FeedAd />} desktop={null} />
+    </>
+  )
 }
 
 async function MagazineWrapper() {
@@ -112,35 +112,29 @@ async function JobWrapper() {
   return <JobSection jobs={jobs} />
 }
 
-async function ActivityWrapper() {
-  // auth()는 NextAuth v5 request memoization → 이미 page level에서 호출한 것과 동일 결과 (DB 1번)
-  const [session, activityPulse] = await Promise.all([auth(), getCachedActivityPulse()])
-  const myCounts = session?.user?.id ? await getCachedUserCounts(session.user.id) : null
-  if (myCounts) {
-    return (
-      <>
-        <MyActivity
-          todayPosts={myCounts.todayPosts}
-          newComments={myCounts.newComments}
-          receivedLikes={myCounts.receivedLikes}
-        />
-        <ActivityPulse activeCount={activityPulse.activeCount} recentActivities={activityPulse.recentActivities} />
-      </>
-    )
-  }
-  return <ActivityPulse activeCount={activityPulse.activeCount} recentActivities={activityPulse.recentActivities} />
-}
-
-async function HomeSidebarWrapper() {
-  // getCachedCommunity는 unstable_cache → CommunityWrapper와 캐시 공유 (DB 쿼리 1번)
-  const posts = await getCachedCommunity()
-  return <HomeSidebar posts={posts} />
-}
-
 async function PersonalGreetingWrapper() {
   const session = await auth()
   if (!session?.user?.nickname) return null
   return <PersonalGreeting nickname={session.user.nickname} />
+}
+
+async function MyActivityWrapper() {
+  const session = await auth()
+  if (!session?.user?.id) return null
+  const counts = await getCachedUserCounts(session.user.id)
+  return (
+    <MyActivity
+      todayPosts={counts.todayPosts}
+      newComments={counts.newComments}
+      receivedLikes={counts.receivedLikes}
+    />
+  )
+}
+
+async function HomeFaqWrapper() {
+  const session = await auth()
+  if (session?.user) return null
+  return <HomeFaqSection />
 }
 
 async function SignupCardWrapper() {
@@ -194,72 +188,45 @@ export default async function HomePage() {
         />
         <h1 className="sr-only">우리 나이가 어때서 — 5060 세대 커뮤니티</h1>
         <div className="max-w-[1200px] mx-auto">
-          {/* HeroSlider — Suspense로 감싸 banners 쿼리 블로킹 제거 */}
           <Suspense fallback={<HeroSkeleton />}>
             <HeroSlider />
           </Suspense>
 
-          <div className="block lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:px-8">
-            <div>
-              {/* 회원 전용 인사 카드 — auth() 비동기 처리로 cold-start 블로킹 해소 */}
-              <Suspense fallback={null}>
-                <PersonalGreetingWrapper />
-              </Suspense>
+          <div className="lg:px-8">
+            {/* 회원 전용 인사 카드 */}
+            <Suspense fallback={null}>
+              <PersonalGreetingWrapper />
+            </Suspense>
 
-              <Suspense fallback={<SectionSkeleton />}>
-                <TrendingWrapper />
-              </Suspense>
+            {/* 지금뜨는이야기 + 사는이야기 + 웃음방 (trendingIds 중복 제거로 단일 Suspense) */}
+            <Suspense fallback={<SectionSkeleton h="h-[600px]" />}>
+              <HotContentSections />
+            </Suspense>
 
-              <Suspense fallback={<SectionSkeleton />}>
-                <CommunityWrapper />
-              </Suspense>
+            <Suspense fallback={<SectionSkeleton />}>
+              <MagazineWrapper />
+            </Suspense>
 
-              {/* HOME_SECTION 광고 — CommunitySection 이후로 이동 (LCP critical path 제외) */}
-              <AdSenseUnit
-                slotId={ADSENSE.HOME_SECTION}
-                format="horizontal"
-                className="my-4 rounded-2xl overflow-hidden"
-              />
+            {/* 쿠팡 2번 — 모바일=320×100 / PC=728×90 */}
+            <CoupangHome2 className="my-4 mx-4 lg:mx-0 rounded-2xl overflow-hidden" />
 
-              <ResponsiveAd
-                mobile={<CoupangBanner preset="mobile" className="my-4 rounded-2xl overflow-hidden" />}
-                desktop={null}
-              />
+            <Suspense fallback={<SectionSkeleton h="h-[280px]" />}>
+              <JobWrapper />
+            </Suspense>
 
-              <Suspense fallback={<SectionSkeleton />}>
-                <Life2Wrapper />
-              </Suspense>
+            {/* 회원 전용 나의 활동 */}
+            <Suspense fallback={null}>
+              <MyActivityWrapper />
+            </Suspense>
 
-              {/* IN_FEED 광고 — Life2Section 다음 */}
-              <FeedAd />
+            {/* 비회원 전용 FAQ */}
+            <Suspense fallback={null}>
+              <HomeFaqWrapper />
+            </Suspense>
 
-              <Suspense fallback={<SectionSkeleton />}>
-                <MagazineWrapper />
-              </Suspense>
-
-              {/* CoupangCarousel — MagazineSection 다음 (모바일만) */}
-              <div className="block lg:hidden">
-                <CoupangCarousel className="my-4 rounded-2xl overflow-hidden" />
-              </div>
-
-              <Suspense fallback={<SectionSkeleton h="h-[280px]" />}>
-                <JobWrapper />
-              </Suspense>
-
-              <Suspense fallback={<SectionSkeleton h="h-[120px]" />}>
-                <ActivityWrapper />
-              </Suspense>
-
-              <HomeFaqSection />
-
-              {/* 비회원 가입 유도 카드 */}
-              <Suspense fallback={null}>
-                <SignupCardWrapper />
-              </Suspense>
-            </div>
-
-            <Suspense fallback={<div className="hidden lg:block" />}>
-              <HomeSidebarWrapper />
+            {/* 비회원 전용 가입 유도 카드 */}
+            <Suspense fallback={null}>
+              <SignupCardWrapper />
             </Suspense>
           </div>
         </div>
