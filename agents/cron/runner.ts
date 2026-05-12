@@ -121,6 +121,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // NID_AUT(~1년)로 headless Playwright naver.com 접속 → 새 NID_SES 획득
   // 실패 시: SESSION_HALTED 플래그 + #대시보드/#시스템/#qa 3채널 긴급 알림
   'cafe:session-refresh': () => import('../cafe/session-manager.js').then(async m => { await m.ensureSession() }),
+  // LOCAL ONLY — 10:00/17:00 KST launchd, 매거진 콘텐츠 → 네이버 블로그 자동 발행
+  // BLOG_HALTED 플래그 시 전면 차단. 수동 복구: npx tsx agents/naver-blog/export-blog-cookies.ts
+  'naver-blog:post': () => import('../naver-blog/poster.js').then(async m => { await m.runPoster() }),
 }
 
 function getAutomationStatus(): string {

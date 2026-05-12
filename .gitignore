@@ -8,6 +8,15 @@ agents/node_modules
 agents/cafe/storage-state.json
 agents/cafe/storage-state-jisik.json
 
+# naver blog poster (sensitive — cookies, queue state, temp files)
+agents/naver-blog/blog-storage-state.json
+agents/naver-blog/queue.json
+agents/naver-blog/.blog-halted
+agents/naver-blog/.blog-posting.lock
+agents/naver-blog/temp/
+agents/naver-blog/session-backups/
+agents/naver-blog/dry-run-screenshots/
+
 # testing
 /coverage
 /test-results/
