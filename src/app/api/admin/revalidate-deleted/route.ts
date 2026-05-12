@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
+import { getAdminSession } from '@/lib/admin-auth'
 
 const BOARD_PATHS: Record<string, string> = {
   STORY: '/community/stories',
@@ -12,9 +13,9 @@ const BOARD_PATHS: Record<string, string> = {
 }
 
 // DELETED/HIDDEN 글 전체 캐시 강제 무효화
-export async function POST(req: Request) {
-  const secret = req.headers.get('x-admin-secret')
-  if (secret !== process.env.AUTH_SECRET) {
+export async function POST() {
+  const session = await getAdminSession()
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

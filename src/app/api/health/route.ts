@@ -11,7 +11,7 @@ export async function GET() {
 
   // DB 연결 확인
   try {
-    await prisma.$queryRawUnsafe('SELECT 1')
+    await prisma.$queryRaw`SELECT 1`
     checks.database = 'ok'
   } catch (e) {
     checks.database = 'error'

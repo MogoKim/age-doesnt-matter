@@ -1,6 +1,14 @@
 /// <reference lib="webworker" />
 
 const CACHE_NAME = 'unao-v1'
+
+// VAPID 키 — ServiceWorkerRegister.tsx에서 postMessage로 주입받음
+let vapidPublicKey = null
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SET_VAPID_KEY' && event.data.key) {
+    vapidPublicKey = event.data.key
+  }
+})
 const OFFLINE_URL = '/offline'
 
 // 프리캐시할 정적 리소스
@@ -102,7 +110,7 @@ self.addEventListener('pushsubscriptionchange', (event) => {
   event.waitUntil(
     self.registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: self.VAPID_PUBLIC_KEY,
+      applicationServerKey: vapidPublicKey,
     }).then((sub) =>
       fetch('/api/push/subscribe', {
         method: 'POST',

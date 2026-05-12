@@ -43,6 +43,10 @@ on:
     # Threads 토큰 갱신
     - cron: "0 1 * * 3"    # 수 10:00 KST — threads token refresh
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   social-poster:
     runs-on: ubuntu-latest

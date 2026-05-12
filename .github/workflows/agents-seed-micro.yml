@@ -18,6 +18,10 @@ env:
   SLACK_CHANNEL_SYSTEM: ${{ secrets.SLACK_CHANNEL_SYSTEM }}
   SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
   SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   seed-micro:
     runs-on: ubuntu-latest

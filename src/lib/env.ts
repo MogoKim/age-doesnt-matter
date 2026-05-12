@@ -90,6 +90,34 @@ export const CLAUDE_MODEL_LIGHT = optionalEnv('CLAUDE_MODEL_LIGHT', 'claude-haik
 export const OPENAI_API_KEY = optionalEnv('OPENAI_API_KEY', '')
 export const GEMINI_API_KEY = optionalEnv('GEMINI_API_KEY', '')
 
+/** Cloudflare Turnstile (봇 차단 — 미설정 시 테스트 키 폴백으로 봇 통과됨, 반드시 Production 설정 필요) */
+export const NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY = optionalEnv('NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY', '')
+export const CF_TURNSTILE_SECRET_KEY = optionalEnv('CF_TURNSTILE_SECRET_KEY', '')
+
+/** Web Push / VAPID (푸시 알림 — 미설정 시 pushsubscriptionchange 갱신 실패) */
+export const NEXT_PUBLIC_VAPID_PUBLIC_KEY = optionalEnv('NEXT_PUBLIC_VAPID_PUBLIC_KEY', '')
+export const VAPID_PRIVATE_KEY = optionalEnv('VAPID_PRIVATE_KEY', '')
+export const VAPID_SUBJECT = optionalEnv('VAPID_SUBJECT', '')
+
+/** Upstash Redis (Rate Limit — 미설정 시 in-memory 폴백으로 서버리스 환경에서 무효) */
+export const UPSTASH_REDIS_REST_URL = optionalEnv('UPSTASH_REDIS_REST_URL', '')
+export const UPSTASH_REDIS_REST_TOKEN = optionalEnv('UPSTASH_REDIS_REST_TOKEN', '')
+
+/** Email */
+export const RESEND_API_KEY = optionalEnv('RESEND_API_KEY', '')
+export const CONTACT_EMAIL = optionalEnv('CONTACT_EMAIL', 'korea.age.not.matter@gmail.com')
+
+/** Feature Flags */
+export const FEATURE_PUSH_TOAST = optionalEnv('FEATURE_PUSH_TOAST', 'false')
+export const FEATURE_TWA = optionalEnv('FEATURE_TWA', 'false')
+export const FEATURE_WEB_PUSH = optionalEnv('FEATURE_WEB_PUSH', 'false')
+
+/** Guest Like */
+export const GUEST_LIKE_SALT = optionalEnv('GUEST_LIKE_SALT', '')
+
+/** Slack Admin */
+export const SLACK_ADMIN_USER_IDS = optionalEnv('SLACK_ADMIN_USER_IDS', '')
+
 /** App */
 export const NEXT_PUBLIC_APP_URL = optionalEnv('NEXT_PUBLIC_APP_URL', 'https://www.age-doesnt-matter.com')
 export const NODE_ENV = optionalEnv('NODE_ENV', 'development')
