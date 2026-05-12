@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
+import { checkAndPromotePost } from '@/lib/actions/promotion'
 import type { PostStatus, PromotionLevel } from '@/generated/prisma/client'
 
 async function requireAdmin() {
@@ -61,6 +62,37 @@ export async function adminSetPostPromotionLevel(postId: string, level: Promotio
   revalidateServicePaths(existing?.boardType, postId)
   revalidatePath('/admin/content')
   revalidatePath('/best')
+}
+
+export async function adminSetPostLikeCount(postId: string, likeCount: number) {
+  const admin = await requireAdmin()
+  if (!Number.isInteger(likeCount) || likeCount < 0) {
+    throw new Error('유효하지 않은 좋아요 수입니다.')
+  }
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { likeCount: true, commentCount: true, boardType: true },
+  })
+  if (!post) throw new Error('게시글을 찾을 수 없습니다.')
+
+  await prisma.post.update({ where: { id: postId }, data: { likeCount } })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'POST_LIKE_COUNT_SET',
+      targetType: 'POST',
+      targetId: postId,
+      before: JSON.stringify({ likeCount: post.likeCount }),
+      after: JSON.stringify({ likeCount }),
+    },
+  })
+
+  void checkAndPromotePost(postId, post.boardType, likeCount, post.commentCount).catch(() => {})
+
+  revalidateServicePaths(post.boardType, postId)
+  revalidatePath('/admin/content')
 }
 
 export async function adminBulkDeleteExpiredJobs() {

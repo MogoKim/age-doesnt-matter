@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { checkBannedWords } from '@/lib/banned-words'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { checkAndPromote } from '@/lib/grade'
+import { checkAndPromotePost } from '@/lib/actions/promotion'
 import { pushService } from '@/lib/push/service'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 
@@ -41,7 +42,7 @@ export async function createComment(
   // 게시글 존재 확인
   const post = await prisma.post.findUnique({
     where: { id: postId, status: 'PUBLISHED' },
-    select: { id: true, boardType: true, authorId: true },
+    select: { id: true, boardType: true, authorId: true, likeCount: true },
   })
   if (!post) {
     return { error: '존재하지 않는 게시글입니다' }
@@ -66,7 +67,7 @@ export async function createComment(
 
   const safeContent = sanitizeHtml(trimmed)
 
-  await prisma.$transaction([
+  const [, updatedPost] = await prisma.$transaction([
     prisma.comment.create({
       data: {
         postId,
@@ -78,6 +79,7 @@ export async function createComment(
     prisma.post.update({
       where: { id: postId },
       data: { commentCount: { increment: 1 } },
+      select: { commentCount: true },
     }),
     prisma.user.update({
       where: { id: session.user.id },
@@ -85,6 +87,7 @@ export async function createComment(
     }),
   ])
   void checkAndPromote(session.user.id).catch(() => {})
+  void checkAndPromotePost(postId, post.boardType, post.likeCount, updatedPost.commentCount).catch(() => {})
 
   // lastEngagedAt 업데이트
   await prisma.post.update({

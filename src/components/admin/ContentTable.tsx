@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { adminUpdatePostStatus, adminTogglePin, adminBulkAction, adminSetPostPromotionLevel, adminToggleFeatured } from '@/lib/actions/admin'
+import { adminUpdatePostStatus, adminTogglePin, adminBulkAction, adminSetPostPromotionLevel, adminToggleFeatured, adminSetPostLikeCount } from '@/lib/actions/admin'
 import type { PromotionLevel } from '@/generated/prisma/client'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 
@@ -245,7 +245,9 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
                       {statusBadge.label}
                     </span>
                   </td>
-                  <td className="px-3 py-3 text-center text-zinc-600">{post.likeCount}</td>
+                  <td className="px-3 py-3 text-center">
+                    <LikeCountCell postId={post.id} initialCount={post.likeCount} />
+                  </td>
                   <td className="px-3 py-3 text-center text-zinc-600">{post.commentCount}</td>
                   <td className="px-3 py-3 text-center text-zinc-600">{post.viewCount}</td>
                   <td className="whitespace-nowrap px-3 py-3 text-zinc-500">
@@ -395,6 +397,54 @@ function ActionButton({
       className={`rounded-md px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 min-h-[44px] ${variants[variant]}`}
     >
       {label}
+    </button>
+  )
+}
+
+function LikeCountCell({ postId, initialCount }: { postId: string; initialCount: number }) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(String(initialCount))
+  const [isPending, startTransition] = useTransition()
+
+  function commit() {
+    const n = parseInt(value, 10)
+    if (!Number.isInteger(n) || n < 0 || n === initialCount) {
+      setValue(String(initialCount))
+      setEditing(false)
+      return
+    }
+    startTransition(async () => {
+      await adminSetPostLikeCount(postId, n)
+      setEditing(false)
+    })
+  }
+
+  if (editing) {
+    return (
+      <input
+        type="number"
+        min={0}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit()
+          if (e.key === 'Escape') { setValue(String(initialCount)); setEditing(false) }
+        }}
+        disabled={isPending}
+        autoFocus
+        className="w-16 rounded border border-zinc-300 px-1 py-0.5 text-center text-sm focus:outline-none focus:ring-1 focus:ring-[#FF6F61]"
+      />
+    )
+  }
+
+  return (
+    <button
+      onClick={() => setEditing(true)}
+      title="클릭하여 편집"
+      className="rounded px-2 py-0.5 text-zinc-600 hover:bg-zinc-100 hover:text-[#FF6F61]"
+    >
+      {initialCount}
     </button>
   )
 }

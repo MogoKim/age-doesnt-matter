@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers'
 import { createHash, randomUUID } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { checkAndPromotePost } from '@/lib/actions/promotion'
 
 interface GuestLikeResult {
   error?: string
@@ -46,18 +47,11 @@ export async function toggleGuestPostLike(postId: string): Promise<GuestLikeResu
 
   const targetPost = await prisma.post.findUnique({
     where: { id: postId, status: 'PUBLISHED' },
-    select: { id: true, boardType: true },
+    select: { id: true, boardType: true, commentCount: true },
   })
   if (!targetPost) return { error: '존재하지 않는 게시글입니다' }
 
-  const boardConfig = await prisma.boardConfig.findUnique({
-    where: { boardType: targetPost.boardType },
-    select: { hotThreshold: true, fameThreshold: true },
-  }).catch(() => null)
-  const hotThreshold = boardConfig?.hotThreshold ?? 10
-  const fameThreshold = boardConfig?.fameThreshold ?? 50
-
-  await prisma.$transaction(async (tx) => {
+  const newLikeCount = await prisma.$transaction(async (tx) => {
     await tx.guestLike.create({ data: { postId, ipHash, cookieId } })
 
     const updatedPost = await tx.post.update({
@@ -66,19 +60,12 @@ export async function toggleGuestPostLike(postId: string): Promise<GuestLikeResu
       select: { likeCount: true },
     })
 
-    const newCount = updatedPost.likeCount
-    if (newCount >= fameThreshold) {
-      await tx.post.updateMany({
-        where: { id: postId, promotionLevel: { in: ['NORMAL', 'HOT'] } },
-        data: { promotionLevel: 'HALL_OF_FAME' },
-      })
-    } else if (newCount >= hotThreshold) {
-      await tx.post.updateMany({
-        where: { id: postId, promotionLevel: 'NORMAL' },
-        data: { promotionLevel: 'HOT' },
-      })
-    }
+    return updatedPost.likeCount
   })
+
+  void checkAndPromotePost(postId, targetPost.boardType, newLikeCount, targetPost.commentCount).catch(
+    (e) => console.error('[guest-likes] post promote 실패:', e),
+  )
 
   revalidatePath('/community')
   return { toggled: true }

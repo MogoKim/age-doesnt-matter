@@ -38,7 +38,7 @@ const _getBoardConfigCached = unstable_cache(
     }
   },
   ['board-config'],
-  { revalidate: 3600 },
+  { revalidate: 3600, tags: ['board-config'] },
 )
 
 export const getBoardConfig = cache((slug: string) => _getBoardConfigCached(slug))

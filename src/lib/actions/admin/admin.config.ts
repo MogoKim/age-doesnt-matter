@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
+import { retroactivePromotionUpdate } from '@/lib/actions/promotion'
 import type { BannedWordCategory, Grade } from '@/generated/prisma/client'
 
 async function requireAdmin() {
@@ -104,7 +105,21 @@ export async function adminUpdateBoardConfig(
     },
   })
 
+  // board-config 캐시 즉시 무효화
+  revalidateTag('board-config')
   revalidatePath('/admin/settings')
+
+  // 임계값 변경 시 기존 게시글 즉시 소급 재평가 (비동기, 비블로킹)
+  if (data.hotThreshold !== undefined || data.fameThreshold !== undefined) {
+    const updated = await prisma.boardConfig.findUnique({ where: { id: configId } })
+    if (updated?.boardType) {
+      void retroactivePromotionUpdate(
+        updated.boardType,
+        updated.hotThreshold,
+        updated.fameThreshold,
+      )
+    }
+  }
 }
 
 // ─── 최상단 띠 배너 설정 ───

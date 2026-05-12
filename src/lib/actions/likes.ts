@@ -3,6 +3,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkAndPromote } from '@/lib/grade'
+import { checkAndPromotePost } from '@/lib/actions/promotion'
 
 interface ToggleResult {
   error?: string
@@ -46,20 +47,12 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
   // 삭제/숨김된 글에는 좋아요 불가
   const targetPost = await prisma.post.findUnique({
     where: { id: postId, status: 'PUBLISHED' },
-    select: { id: true, authorId: true, boardType: true },
+    select: { id: true, authorId: true, boardType: true, commentCount: true },
   })
   if (!targetPost) return { error: '존재하지 않는 게시글입니다' }
 
-  // BoardConfig에서 승격 임계값 읽기 (없으면 기본값 폴백)
-  const boardConfig = await prisma.boardConfig.findUnique({
-    where: { boardType: targetPost.boardType },
-    select: { hotThreshold: true, fameThreshold: true },
-  }).catch(() => null)
-  const hotThreshold = boardConfig?.hotThreshold ?? 10
-  const fameThreshold = boardConfig?.fameThreshold ?? 50
-
-  // 추가 경로: 모든 카운터 업데이트 + 알림 + 승격을 단일 트랜잭션으로
-  const authorId = await prisma.$transaction(async (tx) => {
+  // 추가 경로: 모든 카운터 업데이트 + 알림을 단일 트랜잭션으로
+  const { authorId, newLikeCount } = await prisma.$transaction(async (tx) => {
     await tx.like.create({ data: { userId, postId } })
 
     const updatedPost = await tx.post.update({
@@ -72,19 +65,6 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
     })
 
     const newCount = updatedPost.likeCount
-
-    // HOT / HALL_OF_FAME 승격 (트랜잭션 내 — 임계값은 BoardConfig에서 읽음)
-    if (newCount >= fameThreshold) {
-      await tx.post.updateMany({
-        where: { id: postId, promotionLevel: { in: ['NORMAL', 'HOT'] } },
-        data: { promotionLevel: 'HALL_OF_FAME' },
-      })
-    } else if (newCount >= hotThreshold) {
-      await tx.post.updateMany({
-        where: { id: postId, promotionLevel: 'NORMAL' },
-        data: { promotionLevel: 'HOT' },
-      })
-    }
 
     if (updatedPost.authorId !== userId) {
       // 글 작성자 receivedLikes 증가
@@ -110,15 +90,18 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
       }
     }
 
-    return updatedPost.authorId
+    return { authorId: updatedPost.authorId, newLikeCount: newCount }
   })
 
-  // 등급 승격은 트랜잭션 외부 (실패해도 핵심 데이터 영향 없음)
+  // 등급 승격 + 게시글 승격은 트랜잭션 외부 (실패해도 핵심 데이터 영향 없음)
   if (authorId !== userId) {
     void checkAndPromote(authorId).catch((e) =>
       console.error('[likes] grade promote 실패:', e),
     )
   }
+  void checkAndPromotePost(postId, targetPost.boardType, newLikeCount, targetPost.commentCount).catch(
+    (e) => console.error('[likes] post promote 실패:', e),
+  )
 
   return { toggled: true }
 }

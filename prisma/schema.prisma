@@ -113,6 +113,8 @@ enum NotificationType {
   GRADE_UP
   SYSTEM
   CONTENT_HIDDEN
+  HOT_POST
+  HALL_OF_FAME
 }
 
 enum AdType {
