@@ -147,6 +147,7 @@ logs/cafe-crawler-error.log  (stderr)
 | 2026-04-27 | Feature 문서 최초 생성 (코드 딥다이브 기반) | Feature Lifecycle 도입 |
 | 2026-04-27 | npx 경로 `/usr/local/bin/npx` → nvm 경로로 수정 | launchd exit 127 |
 | 2026-04-27 | `/bin/zsh` Full Disk Access 추가 | .env.local Documents 폴더 접근 차단 |
+| 2026-05-12 | 실패 알림 래퍼 스크립트 추가 (`scripts/launchd-alert.sh`) — 9개 plist 전체 적용 | 에이전트 실패 시 최대 13시간 무음 장애 방지 |
 
 ---
 
