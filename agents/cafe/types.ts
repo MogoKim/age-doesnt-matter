@@ -114,3 +114,41 @@ export interface CuratedContent {
   sourceTopic: string  // 원본 트렌드 주제
   sourcePostIds: string[] // 참고한 CafePost IDs
 }
+
+// ── 댓글 분석 유틸 ──
+
+/** topComments Json? → CommentData[] 안전 파싱 (null/이형 데이터 방어) */
+export function parseTopComments(raw: unknown): CommentData[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .filter(c => typeof c?.content === 'string' && c.content.length > 0)
+    .map(c => ({
+      author:    String(c.author ?? '익명'),
+      content:   String(c.content).replace(/<[^>]+>/g, '').replace(/&[a-zA-Z]+;/g, '').trim(),
+      likeCount: typeof c.likeCount === 'number' ? Math.max(0, c.likeCount) : 0,
+      replies:   Array.isArray(c.replies)
+        ? c.replies
+            .filter((r: unknown) => typeof (r as { content?: unknown })?.content === 'string' && (r as { content: string }).content.length > 0)
+            .map((r: { author?: unknown; content: string }) => ({
+              author:  String(r.author ?? '익명'),
+              content: String(r.content).replace(/<[^>]+>/g, '').trim(),
+            }))
+        : [],
+    }))
+}
+
+export type CommentAtmosphere = '공감형' | '논쟁형' | '정보형' | '유머형' | '알수없음'
+
+/** 댓글 분위기 분류 (rule-based, AI 호출 없음) */
+export function classifyCommentAtmosphere(comments: CommentData[]): CommentAtmosphere {
+  if (comments.length === 0) return '알수없음'
+  const avgLike   = comments.reduce((s, c) => s + c.likeCount, 0) / comments.length
+  const replyRate = comments.filter(c => c.replies.length >= 2).length / comments.length
+  const hasInfo   = comments.some(c => /추천|방법|해보|어디/.test(c.content))
+  const hasLaugh  = comments.some(c => /ㅋ|ㅎㅎ|웃/.test(c.content))
+  if (replyRate >= 0.4)        return '논쟁형'
+  if (hasInfo && avgLike > 15) return '정보형'
+  if (hasLaugh && avgLike > 5) return '유머형'
+  if (avgLike > 10)            return '공감형'
+  return '알수없음'
+}

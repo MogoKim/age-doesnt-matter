@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../core/db.js'
 import { getPersona, getAllPersonaIds, type Persona } from './persona-data.js'
 import type { ControversyTopic } from '../core/intelligence.js'
+import { parseTopComments, classifyCommentAtmosphere } from '../cafe/types.js'
 
 // ── 욕망 카테고리 → 적합 페르소나 매핑 (v8 — 12카테고리 55명 완전매핑, EN1~EN5 제외) ──
 export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint: string }> = {
@@ -93,28 +94,61 @@ async function getExampleCafePosts(desire: string | null): Promise<string[]> {
   }
 }
 
-/** 댓글 스타일 예시 — CafePost.topComments에서 실제 댓글 발췌 (Fix 5) */
+/** 댓글 스타일 예시 — likeCount 정렬 + 대댓글 포함 (베스트 댓글 5개) */
 async function getExampleCafeComments(desire: string | null): Promise<string[]> {
   try {
     const posts = await prisma.cafePost.findMany({
       where: {
         isUsable: true,
         aiAnalyzed: true,
+        commentCrawled: true,
         ...(desire ? { desireCategory: desire } : {}),
         crawledAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
       },
       select: { topComments: true },
-      orderBy: { crawledAt: 'desc' },
+      orderBy: [{ commentCount: 'desc' }, { crawledAt: 'desc' }],
       take: 10,
     })
     return posts
-      .flatMap(p => (p.topComments as Array<{ content: string }> | null) ?? [])
-      .map(c => c.content.slice(0, 80))
-      .filter(s => s.length > 10)
-      .slice(0, 3)
+      .flatMap(p => parseTopComments(p.topComments))
+      .filter(c => c.likeCount >= 1 && c.content.length > 10)
+      .sort((a, b) => b.likeCount - a.likeCount)
+      .slice(0, 5)
+      .map(c => {
+        const reply = c.replies[0]?.content.slice(0, 50) ?? null
+        return reply
+          ? `${c.content.slice(0, 90)} → 대댓글: "${reply}"`
+          : c.content.slice(0, 100)
+      })
   } catch {
     return []
   }
+}
+
+/** 최근 인기글 댓글 분위기 → 시드봇 글 방향성 컨텍스트 */
+async function getCommentAtmosphereContext(desire: string | null): Promise<string> {
+  try {
+    const posts = await prisma.cafePost.findMany({
+      where: {
+        isUsable: true,
+        commentCrawled: true,
+        commentCount: { gte: 5 },
+        ...(desire ? { desireCategory: desire } : {}),
+        crawledAt: { gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+      },
+      select: { topComments: true, commentCount: true },
+      orderBy: { commentCount: 'desc' },
+      take: 3,
+    })
+    if (!posts.length) return ''
+    const all = posts.flatMap(p => parseTopComments(p.topComments))
+    const atmosphere = classifyCommentAtmosphere(all)
+    if (atmosphere === '알수없음') return ''
+    const best = all.sort((a, b) => b.likeCount - a.likeCount)[0]
+    if (!best) return ''
+    const replyHint = best.replies.length > 0 ? ` / 대댓글 ${best.replies.length}개 달린 공감 포인트` : ''
+    return `\n\n[최근 커뮤니티 반응 패턴 — 이런 글에 호응이 옴]\n분위기: ${atmosphere} / 베스트 반응: "${best.content.slice(0, 70)}"${replyHint}\n→ 이 분위기에 맞는 소재와 톤으로 글을 써주세요.`
+  } catch { return '' }
 }
 
 /** 페르소나의 주담당 욕망 카테고리 조회 */
@@ -641,6 +675,8 @@ export async function generatePost(
     ? `\n\n[실제 우갱 회원 글 말투 — 이 스타일로 쓰세요, 내용 인용 절대 금지]\n` +
       examples.map(e => `"${e}"`).join('\n')
     : ''
+  // 댓글 분위기 컨텍스트 — DEEP 모드 글 있을 때만 채워짐
+  const atmosphereContext = await getCommentAtmosphereContext(desire)
 
   // 변주 엔진 — FAMILY/RELATION/CARE/HEALTH 페르소나 + 40% 확률 (controversySeed 없을 때만)
   const DNA_ELIGIBLE_DESIRES = ['FAMILY', 'RELATION', 'CARE', 'HEALTH']
@@ -670,7 +706,7 @@ export async function generatePost(
     system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'post') + trendContext,
     messages: [{
       role: 'user',
-      content: `오늘 "${topic}" 주제로 커뮤니티 글 하나만 써줘.${entertainHint}${recentHint}${exampleBlock}${controversyBlock}${variationBlock}
+      content: `오늘 "${topic}" 주제로 커뮤니티 글 하나만 써줘.${entertainHint}${recentHint}${exampleBlock}${atmosphereContext}${controversyBlock}${variationBlock}
 
 글이 시작되는 순간이 중요해: 지금 막 어떤 일이 있었거나 어떤 생각이 떠올라서 바로 그 장면부터 써줘. "오늘", "아까", "방금", "요즘"으로 바로 시작.
 제목도 반드시 "오늘", "아까", "진짜", "어휴", "요즘", "방금"으로 시작하는 현장감 있는 구어체로.

@@ -10,6 +10,7 @@
  */
 
 import type { RawCafePost } from './types.js'
+import { parseTopComments } from './types.js'
 
 interface QualityFactors {
   engagement: number   // 0-100
@@ -29,8 +30,12 @@ const WEIGHTS = {
 
 /** 참여도 점수 (30%) */
 function scoreEngagement(post: RawCafePost): number {
-  // 가중 합산: 좋아요×3 + 댓글×2 + 조회×0.01
-  const raw = post.likeCount * 3 + post.commentCount * 2 + post.viewCount * 0.01
+  // 베스트 댓글 좋아요 보너스 (DEEP 모드 글에만 효과, 최대 +10)
+  const topComments = parseTopComments(post.topComments)
+  const topLike = topComments.length > 0 ? Math.max(...topComments.map(c => c.likeCount)) : 0
+  const commentBonus = Math.min(topLike * 0.5, 10)
+
+  const raw = post.likeCount * 3 + post.commentCount * 2 + post.viewCount * 0.01 + commentBonus
 
   // 구간별 점수 (50-60대 카페 기준 현실적 수치)
   if (raw >= 100) return 100

@@ -8,6 +8,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import type { TrendAnalysis } from './types.js'
+import { parseTopComments, classifyCommentAtmosphere } from './types.js'
 import type { ControversyTopic } from '../core/intelligence.js'
 import { calcControversyScore } from './psych-analyzer.js'
 
@@ -161,9 +162,15 @@ function aggregatePsychData(posts: Awaited<ReturnType<typeof getTodayPosts>>) {
 
 /** Claude에게 트렌드 분석 요청 */
 async function analyzeTrends(posts: Awaited<ReturnType<typeof getTodayPosts>>): Promise<TrendAnalysis> {
-  const postSummaries = posts.map((p, i) =>
-    `[${i + 1}] (${sanitizeForApi(p.cafeName)}/${sanitizeForApi(p.boardCategory ?? p.category ?? '일반')}) [품질${Math.round(p.qualityScore)}] "${sanitizeForApi(p.title)}" — 좋아요 ${p.likeCount}, 댓글 ${p.commentCount}\n   ${sanitizeForApi(p.content.slice(0, 200))}`,
-  ).join('\n\n')
+  const postSummaries = posts.map((p, i) => {
+    const topComms = parseTopComments(p.topComments)
+    const best = [...topComms].sort((a, b) => b.likeCount - a.likeCount)[0]
+    const atmos = classifyCommentAtmosphere(topComms)
+    const commentStr = best
+      ? `댓글 ${p.commentCount}[${atmos}] 베스트:"${sanitizeForApi(best.content.slice(0, 40))}"${best.replies.length > 0 ? `(↔${best.replies.length})` : ''}`
+      : `댓글 ${p.commentCount}`
+    return `[${i + 1}] (${sanitizeForApi(p.cafeName)}/${sanitizeForApi(p.boardCategory ?? p.category ?? '일반')}) [품질${Math.round(p.qualityScore)}] "${sanitizeForApi(p.title)}" — 좋아요 ${p.likeCount}, ${commentStr}\n   ${sanitizeForApi(p.content.slice(0, 200))}`
+  }).join('\n\n')
 
   const kstHour = new Date(Date.now() + 9 * 60 * 60 * 1000).getUTCHours()
   const timeHint = (kstHour >= 20 || kstHour <= 4)
