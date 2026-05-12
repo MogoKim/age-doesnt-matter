@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { IconWrite } from '@/components/icons'
 import LoginPromptModal from '@/components/features/auth/LoginPromptModal'
 
 const FAB_PAGES = ['/community/stories', '/community/humor', '/community/life2']
@@ -55,12 +54,12 @@ export default function FAB({ isLoggedIn = false }: FABProps) {
     <>
       {isLoggedIn ? (
         <Link href={`/community/write?board=${board}`} className={fabClassName} style={{ color: 'white' }} aria-label="글쓰기">
-          <IconWrite size={20} className="text-white" />
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           <span className={labelClassName} style={{ color: 'white' }}>글쓰기</span>
         </Link>
       ) : (
         <button className={fabClassName} style={{ color: 'white' }} onClick={() => setShowLoginPrompt(true)} aria-label="글쓰기">
-          <IconWrite size={20} className="text-white" />
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           <span className={labelClassName} style={{ color: 'white' }}>글쓰기</span>
         </button>
       )}
