@@ -138,3 +138,4 @@ GA4 실시간 → 이벤트 → `home_card_click` 에서 확인 가능.
 | 2026-05-11 | F03-hero-banner.md → F03-home-page.md 확장 (REGISTRY PATH MAP hero*→home*) | 홈 섹션 19개 컴포넌트 모두 F03으로 통합 관리 |
 | 2026-05-11 | 히어로 aspect-ratio 3/2→5/2, dots 이미지 내부 배치, IdentitySection 제거 | 홈 첫 화면 이탈률 63.9% 개선 — 모바일 첫 화면에 "지금 뜨는 이야기" 노출 |
 | 2026-05-12 | 홈 섹션 전면 재편 — CommunitySection·Life2Section·ActivityPulse·HomeSidebar 제거, StoriesSection·HumorSection 신규(24h/7d likeCount top5, trendingIds 제외), CoupangHome1·CoupangHome2 신규, 구글애즈 FeedAd 2종, HomeFaqSection/SignupCard 비회원 전용·MyActivity 회원 전용으로 조건 분기, getTrendingPosts 48h→24h | 홈 콘텐츠 가시성 강화 — 게시판별 핫 글 노출 구조 + 광고 재배치 |
+| 2026-05-12 | 쿠팡 홈 carousel 390×150으로 교체 — CoupangHome1(id=976335)·CoupangHome2(id=988412) 신규 슬롯, insertAdjacentElement 방식으로 렌더링 버그 수정 | carousel이 React useEffect 내 appendChild로 DOM 주입 시 PartnersCoupang.G 렌더링 타겟 인식 실패 → afterend 형제 삽입으로 수정 |
