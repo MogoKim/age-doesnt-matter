@@ -85,7 +85,7 @@ async function getExampleCafePosts(desire: string | null): Promise<string[]> {
     })
     // 실제 글에서 자연스러운 첫 220자 발췌 (줄바꿈 제거, 빈 문장 제외) — 100자는 스타일 전달 불충분
     return posts
-      .map(p => p.content.replace(/\n+/g, ' ').trim().slice(0, 220))
+      .map(p => p.content.replace(/<[^>]+>/g, '').replace(/&[a-zA-Z]+;/g, '').replace(/\n+/g, ' ').trim().slice(0, 220))
       .filter(s => s.length > 20)
       .slice(0, 5)
   } catch {

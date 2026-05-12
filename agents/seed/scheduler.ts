@@ -756,8 +756,11 @@ export async function runKillerPostCycle(): Promise<void> {
     .filter((id): id is string => id !== null)
 
   // 오늘 이미 2개 이상 생성됐으면 스킵
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
+  // KST 자정 = UTC 전날 15:00 (setHours는 UTC 기준 아니므로 UTC 명시)
+  const _now = new Date()
+  const todayStart = new Date(_now)
+  todayStart.setUTCHours(15, 0, 0, 0)
+  if (todayStart > _now) todayStart.setUTCDate(todayStart.getUTCDate() - 1)
   const todayKillerCount = recentLogs.filter(l => new Date(l.createdAt) >= todayStart).length
   if (todayKillerCount >= 2) {
     console.log('[KillerPost] 오늘 이미 2개 생성됨 — 스킵')

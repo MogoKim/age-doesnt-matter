@@ -51,6 +51,7 @@ async function getTodayPosts() {
     where: {
       crawledAt: { gte: todayStart },
       qualityScore: { gte: 30 }, // 최소 품질 점수 이상만 분석
+      postedAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) }, // 14일 이내 원본 포스팅만 (날짜 파싱 실패 글 오염 차단)
     },
     orderBy: { qualityScore: 'desc' },
     take: 100,

@@ -297,6 +297,7 @@ export async function main(): Promise<MagazineRunResult[]> {
   const imageEngine = process.env.IMAGE_GENERATOR
   if (!imageEngine) {
     console.log('[MagazineGenerator] IMAGE_GENERATOR 미설정 — 클라우드 환경, 발행 스킵')
+    await notifySlack({ level: 'important', agent: 'MAGAZINE_GENERATOR', title: '⚠️ IMAGE_GENERATOR 미설정', body: '발행 불가 — 로컬 환경 환경변수 점검 필요' })
     await disconnect()
     return []
   }
@@ -317,6 +318,7 @@ export async function main(): Promise<MagazineRunResult[]> {
   })
   if (todayPublished >= 3) {
     console.log(`[MagazineGenerator] 오늘 이미 ${todayPublished}편 발행됨 — 일일 최대 3편 초과, 스킵`)
+    await notifySlack({ level: 'info', agent: 'MAGAZINE_GENERATOR', title: 'ℹ️ 일일 한도 도달', body: `오늘 ${todayPublished}편 발행 완료 — 이후 실행 스킵` })
     await disconnect()
     return []
   }
