@@ -94,8 +94,25 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 07:00·12:00·15:00 KST | GHA | RELATION | — | [A06](A06-sns-posting.md) | ACTIVE | 2026-04-27 |
 | A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 11:00 KST | GHA | RELATION | — | [A07](A07-card-news.md) | ACTIVE | 2026-04-27 |
 | A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | HEALTH+MONEY | P2·P4 | - | ACTIVE | 2026-04-05 |
-| A09 | SEO 최적화 | `agents/cmo/seo-optimizer.ts` | GHA 일 08:00 KST (크론 미연결) | GHA | INFRA | — | [A09](A09-seo-optimizer.md) | ACTIVE | 2026-04-27 |
+| A09 | SEO 최적화 | `agents/cmo/seo-optimizer.ts` | GHA 월 08:00 KST (매주 일요일 23:00 UTC) | GHA | INFRA | — | [A09](A09-seo-optimizer.md) | ACTIVE | 2026-05-12 |
 | A10 | 채널 시딩 | `agents/cmo/channel-seeder.ts` | GHA 11:30 KST | GHA | RELATION | — | [A10](A10-channel-seeder.md) | ACTIVE | 2026-04-27 |
+| A11 | CEO SNS 브리핑 | `agents/ceo/morning-sns-briefing.ts` | GHA 10:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A12 | CEO 승인 리마인더 | `agents/cron/approval-reminder.ts` | GHA 09:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A13 | CTO 아키텍처 리뷰 | `agents/cto/arch-review.ts` | GHA 월 09:30 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A14 | CTO 가비지 컬렉션 | `agents/cto/garbage-collect.ts` | GHA 월 09:30 KST (arch-review 직후) | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A15 | CTO QA 검증 | `agents/cto/qa-verifier.ts` | GHA 주간 | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A16 | COO 커넥션 퍼실리테이터 | `agents/coo/connection-facilitator.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
+| A17 | COO 일자리 매처 | `agents/coo/job-matcher.ts` | GHA 일간 | GHA | MONEY | P4 | — | ACTIVE | 2026-05-12 |
+| A18 | COO 댓글 활성화 | `agents/coo/comment-activator.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
+| A19 | COO 답글 체인 드라이버 | `agents/coo/reply-chain-driver.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
+| A20 | CPO 페르소나 다양성 체커 | `agents/cpo/persona-diversity-checker.ts` | GHA 주간 | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A21 | CDO 참여 최적화 | `agents/cdo/engagement-optimizer.ts` | GHA 일간 | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A22 | Strategist 사용자 딥 분석 | `agents/strategist/user-deep-analysis.ts` | GHA 목 09:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A23 | Seed 킬러 포스트 | `agents/seed/scheduler.ts` (killer-post) | GHA 09:10·22:10 KST | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
+| A24 | Seed 바이럴 웨이브 | `agents/seed/scheduler.ts` (viral-waves) | GHA 하루 16회 (seed 동일) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
+| A25 | 논란 체인 | `agents/seed/controversy-chain.ts` | GHA 하루 16회 (seed 동일) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
+| A26 | Design 광고 루프 | `agents/marketing-loop/creative-optimizer.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
+| A27 | QA 코드 게이트 | `agents/qa/pre-deploy-gate.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 
 ---
 
