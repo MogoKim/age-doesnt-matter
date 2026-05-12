@@ -204,6 +204,7 @@
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
 | 2026-04-27 | Feature 문서 최초 생성 (코드 딥다이브 기반) | Feature Lifecycle 도입 |
+| 2026-05-12 | quality-scorer.ts에 `calculateKillerScore()` 추가 + crawler.ts killerScore 저장 | 화제성글 후보 선별 고도화 (참여도 55%, 최신성 5%) |
 
 ---
 

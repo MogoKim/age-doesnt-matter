@@ -21,7 +21,7 @@ import { notifySlack } from '../core/notifier.js'
 import { ensureSession, SESSION_HALTED_FLAG } from './session-manager.js'
 import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS } from './config.js'
 import type { RawCafePost, CafeConfig, ContentCategory, CommentData } from './types.js'
-import { calculateQualityScore } from './quality-scorer.js'
+import { calculateQualityScore, calculateKillerScore } from './quality-scorer.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const STORAGE_STATE_PATH = resolve(__dirname, 'storage-state.json')
@@ -732,6 +732,7 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
 
       // 3. 품질 점수 계산
       const qualityScore = calculateQualityScore(post)
+      const killerScore = calculateKillerScore(post)
       if (qualityScore < QUALITY_THRESHOLDS.minSave) {
         continue
       }
@@ -755,6 +756,7 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
           boardName: post.boardName,
           boardCategory: post.boardCategory,
           qualityScore,
+          killerScore,
           isUsable: qualityScore >= QUALITY_THRESHOLDS.minUsable,
           likeCount: post.likeCount,
           commentCount: post.commentCount,

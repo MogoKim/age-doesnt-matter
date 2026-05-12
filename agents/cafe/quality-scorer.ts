@@ -110,6 +110,17 @@ function scoreRecency(post: RawCafePost): number {
   return 5                          // 오래된 글
 }
 
+/** 화제성글(킬러) 전용 품질 점수 — 참여도 극대화, 최신성 최소화 */
+export function calculateKillerScore(post: RawCafePost): number {
+  const score =
+    scoreEngagement(post)    * 0.55 +
+    scoreContentLength(post) * 0.20 +
+    scoreMedia(post)         * 0.05 +
+    scoreBoardPriority(post) * 0.15 +
+    scoreRecency(post)       * 0.05
+  return Math.round(score)
+}
+
 /** 종합 품질 점수 계산 (0-100) */
 export function calculateQualityScore(post: RawCafePost): number {
   const factors: QualityFactors = {

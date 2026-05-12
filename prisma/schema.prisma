@@ -834,6 +834,7 @@ model CafePost {
   boardName     String?  // config에서 설정한 게시판명
   boardCategory String?  // config에서 설정한 카테고리 (health, hobby, food 등)
   qualityScore  Float    @default(0) // 다중 요소 품질 점수 (0-100)
+  killerScore   Float    @default(0) // 화제성글 전용 품질 점수 (참여도 가중, 최신성 최소)
   likeCount    Int      @default(0)
   commentCount Int      @default(0)
   viewCount    Int      @default(0)

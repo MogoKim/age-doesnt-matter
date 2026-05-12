@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우나어 — 네이버 카페 파이프라인 핸드오버</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --bg3: #22263a;
+    --border: #2e3347;
+    --text: #e8eaf0;
+    --muted: #8b92a8;
+    --primary: #FF6F61;
+    --primary-dim: rgba(255,111,97,0.15);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.12);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+    --yellow: #fbbf24;
+    --yellow-dim: rgba(251,191,36,0.12);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.12);
+    --teal: #2dd4bf;
+    --teal-dim: rgba(45,212,191,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  /* ── Layout ── */
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* ── Header ── */
+  .doc-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+  }
+  .doc-header .badge {
+    display: inline-block;
+    background: var(--primary-dim);
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+  .doc-header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .doc-header p {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* ── Stat Cards ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 56px;
+  }
+  @media (max-width: 700px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 18px;
+  }
+  .stat-card .label { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-card .value { font-size: 26px; font-weight: 800; color: var(--text); }
+  .stat-card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 60px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--primary-dim);
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-header h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .section-header .desc {
+    font-size: 13px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  /* ── Info Cards ── */
+  .info-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 12px;
+  }
+  .info-card h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+  .info-card p, .info-card li {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+  .info-card ul { padding-left: 18px; }
+  .info-card li + li { margin-top: 4px; }
+
+  /* ── Cafe Cards ── */
+  .cafe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .cafe-grid { grid-template-columns: 1fr; } }
+  .cafe-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+  }
+  .cafe-card .cafe-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--teal);
+    background: var(--teal-dim);
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .cafe-card h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+  .cafe-card .cafe-id { font-size: 12px; color: var(--muted); font-family: monospace; margin-bottom: 12px; }
+  .cafe-card .meta-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .cafe-card .meta-item { font-size: 12px; color: var(--muted); }
+  .cafe-card .meta-item strong { color: var(--text); font-weight: 700; display: block; font-size: 14px; }
+
+  /* ── Mode Pills ── */
+  .mode-row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .mode-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    flex: 1; min-width: 160px;
+  }
+  .mode-pill .mode-name { font-size: 13px; font-weight: 700; }
+  .mode-pill .mode-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .mode-pill .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Quality Score Table ── */
+  .score-table { width: 100%; border-collapse: collapse; }
+  .score-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .score-table td {
+    padding: 14px 14px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .score-table tr:last-child td { border-bottom: none; }
+  .score-table .factor-name { font-weight: 700; color: var(--text); white-space: nowrap; }
+  .score-table .factor-formula { font-family: monospace; font-size: 13px; color: var(--blue); }
+  .score-table .factor-detail { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .weight-bar { display: flex; align-items: center; gap: 10px; }
+  .weight-track {
+    flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden;
+  }
+  .weight-fill { height: 100%; border-radius: 3px; }
+  .weight-label { font-size: 12px; font-weight: 700; width: 36px; text-align: right; flex-shrink: 0; }
+
+  .threshold-row {
+    display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;
+  }
+  .threshold-pill {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  .threshold-pill .t-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+  .threshold-pill .t-value { font-size: 18px; font-weight: 800; }
+
+  /* ── 3-Track Cards ── */
+  .track-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 700px) { .track-grid { grid-template-columns: 1fr; } }
+  .track-card {
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .track-header {
+    padding: 14px 18px 12px;
+  }
+  .track-header .track-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .track-header h3 { font-size: 16px; font-weight: 800; }
+  .track-body {
+    padding: 16px 18px 18px;
+    background: var(--bg2);
+  }
+  .track-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .track-row:last-child { border-bottom: none; }
+  .track-row .tk { color: var(--muted); }
+  .track-row .tv { color: var(--text); font-weight: 600; text-align: right; }
+  .track-flow {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .track-step {
+    background: var(--bg3);
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    position: relative;
+  }
+  .track-step strong { color: var(--text); }
+
+  /* ── Persona ── */
+  .persona-cats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 600px) { .persona-cats { grid-template-columns: repeat(2, 1fr); } }
+  .persona-cat {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .persona-cat .cat-emoji { font-size: 18px; display: block; margin-bottom: 4px; }
+  .persona-cat .cat-name { font-weight: 700; display: block; font-size: 13px; }
+  .persona-cat .cat-sub { font-size: 11px; color: var(--muted); }
+
+  .persona-example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 600px) { .persona-example-grid { grid-template-columns: 1fr; } }
+  .persona-ex-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .persona-ex-card .pname { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+  .persona-ex-card .pinfo { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .persona-ex-card .prow { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; }
+  .persona-ex-card .pk { font-size: 11px; color: var(--muted); width: 56px; flex-shrink: 0; padding-top: 1px; font-weight: 600; }
+  .persona-ex-card .pv { font-size: 13px; color: var(--text); line-height: 1.6; }
+  .persona-ex-card .ptag {
+    display: inline-block;
+    background: var(--primary-dim);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* ── Comment System ── */
+  .comment-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 16px;
+  }
+  .cf-step {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .cf-step:last-child { border-bottom: none; }
+  .cf-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .cf-content h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .cf-content p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .cf-content code {
+    font-family: monospace;
+    background: var(--bg3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--blue);
+  }
+
+  /* ── Wave Flow ── */
+  .wave-flow { display: flex; gap: 0; flex-wrap: wrap; }
+  .wave-item {
+    flex: 1; min-width: 200px;
+    position: relative;
+  }
+  .wave-item::after {
+    content: '→';
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 16px;
+    z-index: 1;
+  }
+  .wave-item:last-child::after { display: none; }
+  .wave-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin: 0 16px 0 0;
+  }
+  .wave-item:last-child .wave-card { margin-right: 0; }
+  .wave-tag {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .wave-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .wave-card p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .wave-card .wave-detail {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--bg3);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 750px) {
+    .wave-flow { flex-direction: column; }
+    .wave-item::after { content: '↓'; right: auto; left: 50%; top: auto; bottom: -18px; transform: translateX(-50%); }
+    .wave-card { margin: 0 0 32px 0; }
+  }
+
+  /* ── Reply Section ── */
+  .reply-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 600px) { .reply-compare { grid-template-columns: 1fr; } }
+  .compare-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .compare-card h4 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .compare-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+  .compare-row .ck { color: var(--muted); }
+  .compare-row .cv { color: var(--text); font-weight: 600; }
+
+  /* ── Tag ── */
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* ── Alert ── */
+  .alert {
+    background: var(--yellow-dim);
+    border: 1px solid rgba(251,191,36,0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--yellow);
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  /* ── Pipeline Flow (top-level) ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    padding: 20px 0;
+    flex-wrap: nowrap;
+  }
+  .pipe-step {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: center;
+  }
+  .pipe-step .ps-sub { font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+  .pipe-arrow {
+    color: var(--muted);
+    font-size: 18px;
+    padding: 0 8px;
+    flex-shrink: 0;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="doc-header">
+    <div class="badge">우나어 내부 문서 · 2026-05-12</div>
+    <h1>네이버 카페 크롤링 → 콘텐츠 파이프라인</h1>
+    <p>딥 크롤링 · 품질 스코어링 · 글 생성 3트랙 · 댓글 · 대댓글 전체 구조</p>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="label">수집 카페</div>
+      <div class="value">2곳</div>
+      <div class="sub">우아한갱년기 · 은퇴후50년</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">하루 수집량</div>
+      <div class="value">~160건</div>
+      <div class="sub">3회 실행 (오전·점심·저녁)</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">페르소나</div>
+      <div class="value">60명</div>
+      <div class="sub">12가지 욕망 카테고리</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">댓글 상한</div>
+      <div class="value">5개</div>
+      <div class="sub">게시글당 봇 댓글 최대</div>
+    </div>
+  </div>
+
+  <!-- Top-level Pipeline -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">↗</div>
+      <h2>전체 파이프라인 흐름</h2>
+    </div>
+    <div class="pipeline">
+      <div class="pipe-step">카페 크롤<div class="ps-sub">Playwright</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">품질 스코어<div class="ps-sub">0~100점</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">트렌드 분석<div class="ps-sub">Sonnet</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">페르소나 매칭<div class="ps-sub">욕망 카테고리</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">글 생성<div class="ps-sub">3트랙</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">게시<div class="ps-sub">BOT / SHEET</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">댓글 · 대댓글<div class="ps-sub">파동 연출</div></div>
+    </div>
+  </div>
+
+  <!-- Section 1: 크롤링 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>네이버 카페 딥 크롤링</h2>
+      <span class="desc">agents/cafe/crawler.ts</span>
+    </div>
+
+    <div class="cafe-grid" style="margin-bottom:16px;">
+      <div class="cafe-card">
+        <span class="cafe-tag">카페 A</span>
+        <h3>우아한갱년기</h3>
+        <div class="cafe-id">cafe.naver.com/wgang</div>
+        <div class="meta-row">
+          <div class="meta-item"><strong>주 타겟</strong>건강·갱년기·가족</div>
+          <div class="meta-item"><strong>회원 성향</strong>50~60대 여성, 고밀도 감정글</div>
+        </div>
+      </div>
+      <div class="cafe-card">
+        <span class="cafe-tag">카페 B</span>
+        <h3>은퇴후50년</h3>
+        <div class="cafe-id">cafe.naver.com/dlxogns01</div>
+        <div class="meta-row">
+          <div class="meta-item"><strong>주 타겟</strong>은퇴·재취업·노후 자산</div>
+          <div class="meta-item"><strong>회원 성향</strong>50~70대, 인생 2막 고민</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>크롤링 방식 — 기술 상세</h3>
+      <ul>
+        <li><strong>인증:</strong> 쿠키 파일 기반 (로그인 세션 export → 재사용). 세션 만료 시 재로그인 자동화.</li>
+        <li><strong>브라우저:</strong> Playwright <code>headless: false</code> — 봇 감지 우회를 위해 실제 브라우저 구동</li>
+        <li><strong>수집 범위:</strong> 글 제목·본문·작성자·좋아요수·댓글수·조회수·날짜·이미지URL·댓글 목록</li>
+        <li><strong>게시판:</strong> 카페별 주요 게시판 다중 수집 (인기글 포함)</li>
+      </ul>
+    </div>
+
+    <div class="mode-row">
+      <div class="mode-pill">
+        <div class="dot" style="background:var(--green);"></div>
+        <div>
+          <div class="mode-name">QUICK 모드</div>
+          <div class="mode-desc">최신 글 빠르게 확인. 오전·점심 실행. 변경 여부 확인 용도.</div>
+        </div>
+      </div>
+      <div class="mode-pill">
+        <div class="dot" style="background:var(--blue);"></div>
+        <div>
+          <div class="mode-name">DEEP 모드</div>
+          <div class="mode-desc">전체 게시판 풀 수집. 저녁 1회 실행. 트렌드 분석 인풋 생성.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: 품질 스코어 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>품질 스코어 — 5개 지표 (0~100점)</h2>
+      <span class="desc">agents/cafe/quality-scorer.ts</span>
+    </div>
+
+    <div class="info-card" style="padding:0; overflow:hidden;">
+      <table class="score-table">
+        <thead>
+          <tr>
+            <th>지표</th>
+            <th>가중치</th>
+            <th>계산 방식 · 기준점</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="factor-name">참여도 Engagement</div>
+              <div class="weight-bar" style="margin-top:6px;">
+                <div class="weight-track"><div class="weight-fill" style="width:40%;background:var(--primary);"></div></div>
+                <div class="weight-label" style="color:var(--primary);">40%</div>
+              </div>
+            </td>
+            <td><div class="factor-formula">좋아요×3 + 댓글×2 + 조회×0.01</div></td>
+            <td>
+              <div class="factor-detail">합산 100↑ → 100점 / 50↑ → 80점 / 20↑ → 60점 / 10↑ → 40점 / 5↑ → 25점 / 미만 → 10점</div>
+              <div class="factor-detail" style="margin-top:4px;color:var(--yellow);">★ 가중치 가장 높음 — 실제 반응 있는 글 우대</div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="factor-name">콘텐츠 길이</div>
+              <div class="weight-bar" style="margin-top:6px;">
+                <div class="weight-track"><div class="weight-fill" style="width:20%;background:var(--blue);"></div></div>
+                <div class="weight-label" style="color:var(--blue);">20%</div>
+              </div>
+            </td>
+            <td><div class="factor-formula">본문 글자수 (chars)</div></td>
+            <td>
+              <div class="factor-detail">1500자↑ → 100점 / 800자↑ → 80점 / 500자↑ → 60점 / 200자↑ → 40점 / 100자↑ → 20점 / 미만 → 5점</div>
+              <div class="factor-detail" style="margin-top:4px;">짧은 제목만 있는 글은 사실상 탈락</div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="factor-name">게시판 우선도</div>
+              <div class="weight-bar" style="margin-top:6px;">
+                <div class="weight-track"><div class="weight-fill" style="width:20%;background:var(--green);"></div></div>
+                <div class="weight-label" style="color:var(--green);">20%</div>
+              </div>
+            </td>
+            <td><div class="factor-formula">게시판 카테고리 분류</div></td>
+            <td>
+              <div class="factor-detail">인기/베스트 → 100점 / 건강·취업·금융 → 90점 / 취미·음식·웃음 → 85점 / 일상·자유 → 50점 / 기타 → 40점</div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="factor-name">최신성 Recency</div>
+              <div class="weight-bar" style="margin-top:6px;">
+                <div class="weight-track"><div class="weight-fill" style="width:15%;background:var(--yellow);"></div></div>
+                <div class="weight-label" style="color:var(--yellow);">15%</div>
+              </div>
+            </td>
+            <td><div class="factor-formula">게시 후 경과 시간 (시간)</div></td>
+            <td>
+              <div class="factor-detail">12시간내 → 100점 / 24시간 → 80점 / 48시간 → 60점 / 72시간 → 40점 / 1주내 → 20점 / 이상 → 5점</div>
+              <div class="factor-detail" style="margin-top:4px;color:var(--primary);">날짜 파싱 실패 시 강제 0점 (오래된 글로 위장 방지)</div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="factor-name">미디어 Media</div>
+              <div class="weight-bar" style="margin-top:6px;">
+                <div class="weight-track"><div class="weight-fill" style="width:5%;background:var(--purple);"></div></div>
+                <div class="weight-label" style="color:var(--purple);">5%</div>
+              </div>
+            </td>
+            <td><div class="factor-formula">이미지수 + 영상수</div></td>
+            <td>
+              <div class="factor-detail">영상+이미지3장 → 100점 / 영상만 → 80점 / 이미지3장 → 80점 / 이미지1장 → 50점 / 텍스트전용 → 10점</div>
+              <div class="factor-detail" style="margin-top:4px;color:var(--muted);">★ 의도적으로 낮은 비중 — 감정글(텍스트전용) 불이익 최소화</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="threshold-row">
+      <div class="threshold-pill">
+        <div class="t-label">저장 기준 (minSave)</div>
+        <div class="t-value" style="color:var(--blue);">30점 이상</div>
+      </div>
+      <div class="threshold-pill">
+        <div class="t-label">화제성글 후보 (minUsable)</div>
+        <div class="t-value" style="color:var(--yellow);">60점 이상</div>
+      </div>
+      <div class="threshold-pill">
+        <div class="t-label">30점 미만</div>
+        <div class="t-value" style="color:var(--muted);">DB 저장 안 함</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: 글 생성 3트랙 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>글 생성 — 3트랙 비교</h2>
+    </div>
+
+    <div class="track-grid">
+      <!-- Track 1 -->
+      <div class="track-card">
+        <div class="track-header" style="background:var(--blue-dim);">
+          <div class="track-label" style="color:var(--blue);">Track 1</div>
+          <h3>일반글</h3>
+        </div>
+        <div class="track-body">
+          <div class="track-row">
+            <span class="tk">하루 수량</span>
+            <span class="tv">25 ~ 30건</span>
+          </div>
+          <div class="track-row">
+            <span class="tk">AI 모델</span>
+            <span class="tv">Haiku (일부 Sonnet)</span>
+          </div>
+          <div class="track-row">
+            <span class="tk">소스 태그</span>
+            <span class="tv"><code style="font-family:monospace;font-size:12px;background:var(--bg3);padding:2px 6px;border-radius:4px;">BOT</code></span>
+          </div>
+          <div class="track-row">
+            <span class="tk">카페글 사용</span>
+            <span class="tv">트렌드 힌트만</span>
+          </div>
+          <div class="track-flow">
+            <div class="track-step">① 카페 크롤 결과 → <strong>트렌드 주제 추출</strong></div>
+            <div class="track-step">② 욕망 카테고리 기반 <strong>페르소나 매칭</strong></div>
+            <div class="track-step">③ 페르소나 말투로 <strong>원본 창작</strong> (카페 내용 인용 금지)</div>
+            <div class="track-step">④ STORY / LIFE2 / HUMOR 게시판 게시</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Track 2 -->
+      <div class="track-card">
+        <div class="track-header" style="background:var(--yellow-dim);">
+          <div class="track-label" style="color:var(--yellow);">Track 2</div>
+          <h3>화제성글 (킬러)</h3>
+        </div>
+        <div class="track-body">
+          <div class="track-row">
+            <span class="tk">하루 수량</span>
+            <span class="tv" style="color:var(--yellow);">최대 2건</span>
+          </div>
+          <div class="track-row">
+            <span class="tk">AI 모델</span>
+            <span class="tv" style="color:var(--yellow);">Sonnet (품질 중시)</span>
+          </div>
+          <div class="track-row">
+            <span class="tk">소스 태그</span>
+            <span class="tv"><code style="font-family:monospace;font-size:12px;background:var(--bg3);padding:2px 6px;border-radius:4px;">BOT</code></span>
+          </div>
+          <div class="track-row">
+            <span class="tk">통과 조건</span>
+            <span class="tv" style="color:var(--yellow);">품질점수 60점+</span>
+          </div>
+          <div class="track-row">
+            <span class="tk">중복 방지</span>
+            <span class="tv">동일 카페글 7일간 재사용 금지</span>
+          </div>
+          <div class="track-flow">
+            <div class="track-step">① 품질 <strong>60점 이상</strong> 카페글 필터</div>
+            <div class="track-step">② 카페글 스토리·감정선 <strong>직접 재창작</strong></div>
+            <div class="track-step">③ 페르소나 말투·어미 교체 (내용 골격은 유지)</div>
+            <div class="track-step">④ 주로 STORY 게시판 게시</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Track 3 -->
+      <div class="track-card">
+        <div class="track-header" style="background:var(--green-dim);">
+          <div class="track-label" style="color:var(--green);">Track 3</div>
+          <h3>SheetViral</h3>
+        </div>
+        <div class="track-body">
+          <div class="track-row">
+            <span class="tk">하루 수량</span>
+            <span class="tv">시트 입력분</span>
+          </div>
+          <div class="track-row">
+            <span class="tk">AI 모델</span>
+            <span class="tv">댓글만 Sonnet</span>
+          </div>
+          <div class="track-row">
+            <span class="tk">소스 태그</span>
+            <span class="tv"><code style="font-family:monospace;font-size:12px;background:var(--bg3);padding:2px 6px;border-radius:4px;">SHEET</code></span>
+          </div>
+          <div class="track-row">
+            <span class="tk">글 생성</span>
+            <span class="tv">창업자 직접 입력</span>
+          </div>
+          <div class="track-flow">
+            <div class="track-step">① 창업자가 <strong>구글 시트</strong>에 콘텐츠 입력 (PENDING)</div>
+            <div class="track-step">② Playwright가 시트 스크랩 → 게시글 생성</div>
+            <div class="track-step">③ 시드봇 차단 — <strong>4파동 봇 댓글만</strong> 달림</div>
+            <div class="track-step">④ 이미지 전용(본문 50자 미만) → 댓글 자동 스킵</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert">
+      <span>⚠️</span>
+      <div><strong>SHEET 이미지 전용 정책:</strong> source='SHEET' + 본문 50자 미만인 게시글은 창업자가 의도한 이미지 전용 콘텐츠입니다. 댓글 수 무관하게 어떤 자동 조치도 금지.</div>
+    </div>
+  </div>
+
+  <!-- Section 4: 페르소나 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>페르소나 구조 — 60명 × 12 욕망 카테고리</h2>
+      <span class="desc">agents/seed/persona-data.ts</span>
+    </div>
+
+    <div class="persona-cats" style="margin-bottom:20px;">
+      <div class="persona-cat"><span class="cat-emoji">🏋️</span><span class="cat-name">HEALTH</span><span class="cat-sub">건강·갱년기</span></div>
+      <div class="persona-cat"><span class="cat-emoji">👨‍👩‍👧</span><span class="cat-name">FAMILY</span><span class="cat-sub">자녀·부모·손자</span></div>
+      <div class="persona-cat"><span class="cat-emoji">💰</span><span class="cat-name">MONEY</span><span class="cat-sub">재테크·부동산</span></div>
+      <div class="persona-cat"><span class="cat-emoji">🌅</span><span class="cat-name">RETIRE</span><span class="cat-sub">은퇴·노후 준비</span></div>
+      <div class="persona-cat"><span class="cat-emoji">💼</span><span class="cat-name">JOB</span><span class="cat-sub">재취업·창업</span></div>
+      <div class="persona-cat"><span class="cat-emoji">🤝</span><span class="cat-name">RELATION</span><span class="cat-sub">부부·인간관계</span></div>
+      <div class="persona-cat"><span class="cat-emoji">🎨</span><span class="cat-name">HOBBY</span><span class="cat-sub">취미·문화생활</span></div>
+      <div class="persona-cat"><span class="cat-emoji">🙏</span><span class="cat-name">MEANING</span><span class="cat-sub">삶의 의미·종교</span></div>
+      <div class="persona-cat"><span class="cat-emoji">😂</span><span class="cat-name">HUMOR</span><span class="cat-sub">유머·웃음</span></div>
+      <div class="persona-cat"><span class="cat-emoji">🍳</span><span class="cat-name">FOOD</span><span class="cat-sub">요리·맛집</span></div>
+      <div class="persona-cat"><span class="cat-emoji">✈️</span><span class="cat-name">FREEDOM</span><span class="cat-sub">여행·자유</span></div>
+      <div class="persona-cat"><span class="cat-emoji">❤️</span><span class="cat-name">CARE</span><span class="cat-sub">간병·돌봄</span></div>
+    </div>
+
+    <div class="persona-example-grid">
+      <div class="persona-ex-card">
+        <div class="pname">박복순 <span style="font-size:13px;font-weight:400;color:var(--muted);">· 페르소나 A</span></div>
+        <div class="pinfo">62세 · 여성 · 서울 · HEALTH</div>
+        <div class="prow"><span class="pk">성격</span><span class="pv">따뜻하고 공감 잘 해줌. 건강 정보에 예민. 자식 걱정이 많음.</span></div>
+        <div class="prow"><span class="pk">말투</span><span class="pv">~하더라고요, ~같아요, 정말이지 ㅠㅠ, 우리 나이에</span></div>
+        <div class="prow"><span class="pk">욕망</span><span class="ptag">HEALTH</span></div>
+        <div class="prow"><span class="pk">예시</span><span class="pv">"저도 무릎이 좀 안 좋아서요... 수술 생각해봤는데 무서워서 ㅠ"</span></div>
+      </div>
+      <div class="persona-ex-card">
+        <div class="pname">최참나 <span style="font-size:13px;font-weight:400;color:var(--muted);">· 페르소나 W</span></div>
+        <div class="pinfo">57세 · 여성 · 경기도 · RELATION</div>
+        <div class="prow"><span class="pk">성격</span><span class="pv">직설적. 답답한 거 못 참음. 공감 위주보다 팩트 제시 스타일.</span></div>
+        <div class="prow"><span class="pk">말투</span><span class="pv">참나, 솔직히 말하면, 그러니까 문제가, 아니 근데</span></div>
+        <div class="prow"><span class="pk">욕망</span><span class="ptag">RELATION</span></div>
+        <div class="prow"><span class="pk">예시</span><span class="pv">"솔직히 그건 상대방도 좀 이상한 거 아니에요? 참나진짜"</span></div>
+      </div>
+    </div>
+
+    <div class="info-card" style="margin-top:14px;">
+      <h3>페르소나 속성 구조</h3>
+      <ul>
+        <li><strong>nickname</strong> — 실제처럼 보이는 한국 이름 또는 별명</li>
+        <li><strong>age</strong> — 50~70대 분포, 욕망 카테고리에 따라 편차</li>
+        <li><strong>gender</strong> — 대부분 여성 (타겟 커뮤니티 구성 반영)</li>
+        <li><strong>personality</strong> — 2~3줄 성격 설명 (Claude System Prompt에 주입)</li>
+        <li><strong>speech_patterns</strong> — 말투 어미·구분자 목록 (예: ["~하더라고요", "정말이지", "ㅠㅠ"])</li>
+        <li><strong>examples</strong> — 실제 발화 예시 2~3개 (모델이 스타일 모방할 기준)</li>
+        <li><strong>desire</strong> — 12개 카테고리 중 1개 배정 (어떤 게시판·주제에 글을 쓸지 결정)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Section 5: 댓글 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>댓글 생성 시스템</h2>
+      <span class="desc">agents/seed/generator.ts · generateComment()</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+      <div class="info-card" style="margin:0;">
+        <h3 style="color:var(--blue);">게시글당 상한</h3>
+        <div style="font-size:28px;font-weight:800;margin:8px 0;">5개</div>
+        <div style="font-size:12px;color:var(--muted);">봇 계정(@unao.bot) 댓글만 카운트<br>일반 유저 댓글과 별도 집계</div>
+      </div>
+      <div class="info-card" style="margin:0;">
+        <h3 style="color:var(--green);">AI 모델</h3>
+        <div style="font-size:18px;font-weight:800;margin:8px 0;">Haiku</div>
+        <div style="font-size:12px;color:var(--muted);">페르소나별 일부 Sonnet<br>max_tokens: 200</div>
+      </div>
+      <div class="info-card" style="margin:0;">
+        <h3 style="color:var(--yellow);">하루 목표</h3>
+        <div style="font-size:28px;font-weight:800;margin:8px 0;">150~200</div>
+        <div style="font-size:12px;color:var(--muted);">댓글 총 발생 건수<br>게시판별 배분</div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>댓글 생성 단계 — 상세</h3>
+      <div class="comment-flow">
+        <div class="cf-step">
+          <div class="cf-num">1</div>
+          <div class="cf-content">
+            <h4>게시글 인풋 준비</h4>
+            <p>게시글 제목 전체 + 본문 앞 <code>300자</code>만 사용. 전체 본문은 비용·토큰 절약을 위해 truncate.</p>
+          </div>
+        </div>
+        <div class="cf-step">
+          <div class="cf-num">2</div>
+          <div class="cf-content">
+            <h4>카페 댓글 예시 주입 (말투 모방)</h4>
+            <p>실제 우아한갱년기 카페에서 수집한 댓글 2~3개를 System Prompt에 삽입. 모델이 길이·톤·어미를 자연스럽게 모방하도록 유도. <strong>내용 인용은 절대 금지</strong>, 스타일만 참고.</p>
+          </div>
+        </div>
+        <div class="cf-step">
+          <div class="cf-num">3</div>
+          <div class="cf-content">
+            <h4>최근 댓글 이력 조회 (반복 방지)</h4>
+            <p>해당 페르소나가 최근 단 댓글 <code>3개</code> 조회 → 첫 문장·표현이 겹치지 않도록 System Prompt에 추가. "최근 단 댓글들 — 다른 첫 문장으로 시작하세요" 형식으로 주입.</p>
+          </div>
+        </div>
+        <div class="cf-step">
+          <div class="cf-num">4</div>
+          <div class="cf-content">
+            <h4>트렌드 말투 주입</h4>
+            <p>오늘의 트렌드 분석 결과 중 <strong>어휘·말투 스타일</strong>을 추가 주입. 현재 커뮤니티에서 유행하는 표현을 반영해 동시대감 부여.</p>
+          </div>
+        </div>
+        <div class="cf-step">
+          <div class="cf-num">5</div>
+          <div class="cf-content">
+            <h4>생성 후 필터링</h4>
+            <p>마크다운 기호(<code>** * # _ ~ `</code>) 전면 제거 (stripMarkdown). 줄바꿈 제거. 최종 1~3문장 짧은 공감·경험 공유 형태.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert">
+      <span>ℹ️</span>
+      <div><strong>SHEET 게시글 차단:</strong> SheetViral 게시글(<code>source='SHEET'</code>)에는 일반 시드봇 댓글이 달리지 않음. 4파동 전용 봇이 별도로 담당.</div>
+    </div>
+  </div>
+
+  <!-- Section 6: SheetViral 4파동 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>SheetViral — 4파동 댓글 연출</h2>
+      <span class="desc">generator.ts · generateSheetViralComment()</span>
+    </div>
+
+    <div class="info-card" style="margin-bottom:16px;">
+      <h3>공통 설정</h3>
+      <ul>
+        <li><strong>모델:</strong> Sonnet (일반 댓글보다 한 단계 위 — 글의 구체적 맥락 반영 필수)</li>
+        <li><strong>이미지 전용 자동 스킵:</strong> 본문 HTML 태그 제거 후 50자 미만 → AI 호출 없이 반환 ''</li>
+        <li><strong>키워드 검증:</strong> 게시글 핵심 단어 최소 1개 댓글에 포함됐는지 확인, 미통과 시 1회 재시도</li>
+        <li><strong>공통 지시:</strong> "저도 비슷한 경험이 있어요" 같은 막연한 공감 금지 — 글에서 구체적 상황(인물·사건·감정)을 반드시 언급</li>
+      </ul>
+    </div>
+
+    <div class="wave-flow">
+      <div class="wave-item">
+        <div class="wave-card">
+          <div class="wave-tag" style="background:rgba(139,146,168,0.15);color:var(--muted);">WAVE_L</div>
+          <h4>좋아요 클릭</h4>
+          <p>AI 생성 없음. 봇 계정이 공감 버튼 클릭만 수행.</p>
+          <div class="wave-detail">초기 참여 지표 생성 — 게시글에 반응이 있다는 신호</div>
+        </div>
+      </div>
+      <div class="wave-item">
+        <div class="wave-card">
+          <div class="wave-tag" style="background:var(--green-dim);color:var(--green);">WAVE_1 · empathy</div>
+          <h4>구체적 공감</h4>
+          <p>글의 상황(인물명·사건)을 직접 언급하며 따뜻하게 반응. 본인 경험 한 줄 곁들임.</p>
+          <div class="wave-detail">"과하게 칭찬하지 말고, 자연스럽게"</div>
+        </div>
+      </div>
+      <div class="wave-item">
+        <div class="wave-card">
+          <div class="wave-tag" style="background:var(--yellow-dim);color:var(--yellow);">WAVE_2 · critical</div>
+          <h4>다른 시각</h4>
+          <p>"근데 저는 솔직히…" 수준의 조심스러운 이의. 공격적이지 않게, 글의 구체적 상황을 언급하며.</p>
+          <div class="wave-detail">논쟁·댓글 체인 유도 — 자연스러운 토론 분위기</div>
+        </div>
+      </div>
+      <div class="wave-item">
+        <div class="wave-card">
+          <div class="wave-tag" style="background:var(--purple-dim);color:var(--purple);">WAVE_3 · reversal</div>
+          <h4>여운·반전</h4>
+          <p>"사실은 저도…" "이런 게 어디 한두 집 일이겠어요" 수준. 결론 짓지 않고 여운을 남김.</p>
+          <div class="wave-detail">감정 깊이 추가 — 글이 오래 회자되도록</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: 대댓글 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>대댓글 (답글) 시스템</h2>
+      <span class="desc">generator.ts · generateReply()</span>
+    </div>
+
+    <div class="reply-compare">
+      <div class="compare-card">
+        <h4>댓글 vs 대댓글 — 주요 차이</h4>
+        <div class="compare-row"><span class="ck">인풋</span><span class="cv">댓글: 게시글 본문 / 대댓글: 기존 댓글 내용</span></div>
+        <div class="compare-row"><span class="ck">max_tokens</span><span class="cv">댓글 200 / 대댓글 150 (더 짧게)</span></div>
+        <div class="compare-row"><span class="ck">구조</span><span class="cv">대댓글은 parentId 있음 (특정 댓글에 연결)</span></div>
+        <div class="compare-row"><span class="ck">목적</span><span class="cv">댓글: 글 반응 / 대댓글: 대화 체인 연장</span></div>
+      </div>
+      <div class="compare-card">
+        <h4>운영 수치</h4>
+        <div class="compare-row"><span class="ck">하루 목표</span><span class="cv" style="color:var(--green);">60 ~ 80건</span></div>
+        <div class="compare-row"><span class="ck">세션별 배분</span><span class="cv">오전·점심·저녁·새벽 분산</span></div>
+        <div class="compare-row"><span class="ck">트렌드 주입</span><span class="cv">댓글과 동일 (말투 어휘 모방)</span></div>
+        <div class="compare-row"><span class="ck">마크다운</span><span class="cv">전면 금지 (stripMarkdown)</span></div>
+        <div class="compare-row"><span class="ck">SheetViral</span><span class="cv">차단 안 됨 (일반 대댓글 가능)</span></div>
+      </div>
+    </div>
+
+    <div class="info-card" style="margin-top:14px;">
+      <h3>대댓글 타겟 선정 방식</h3>
+      <ul>
+        <li>댓글이 달린 게시글 중 대댓글이 없는 댓글을 우선 타겟</li>
+        <li>같은 페르소나가 자기 댓글에 답글 다는 것 방지 (타 페르소나 댓글에만)</li>
+        <li>오전에 달린 댓글 → 점심·저녁 대댓글 / 저녁 댓글 → 새벽·다음날 오전 대댓글</li>
+        <li>체인 대화 유도: 특정 글에 2~3개 연속 대댓글로 "토론 중인 느낌" 연출</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid var(--border);padding-top:24px;color:var(--muted);font-size:12px;text-align:center;">
+    우나어 내부 문서 · 최종 업데이트: 2026-05-12 · 기존 문서(handover-cafe-persona-system.html, scraper-system-plan.html)는 별도 보관
+  </div>
+
+</div>
+</body>
+</html>

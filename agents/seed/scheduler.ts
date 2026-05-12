@@ -742,11 +742,11 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
  * 하루 최대 2-3개 글만 타겟 → 자연스러움 유지
  */
 export async function runKillerPostCycle(): Promise<void> {
-  // 7일 이내 사용한 CafePost ID 조회
+  // 30일 이내 사용한 CafePost ID 조회 (재사용 방지 강화)
   const recentLogs = await prisma.botLog.findMany({
     where: {
       action: 'KILLER_POST_GENERATED',
-      createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
     },
     select: { details: true, createdAt: true },
   })
@@ -767,18 +767,21 @@ export async function runKillerPostCycle(): Promise<void> {
     return
   }
 
-  // 후보 선택: qualityScore≥7, viralType 있음, 3일 이내, 미사용
+  // 후보 선택: isUsable(60점+), viralType 있음, 14일 이내, 참여도 직접 필터, 미사용
   const candidate = await prisma.cafePost.findFirst({
     where: {
       isUsable: true,
       aiAnalyzed: true,
-      qualityScore: { gte: 7 },
       viralType: { not: null },
-      crawledAt: { gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+      crawledAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
+      OR: [
+        { likeCount: { gte: 3 } },
+        { commentCount: { gte: 2 } },
+      ],
       id: { notIn: usedCafePostIds },
     },
     select: { id: true, title: true, content: true, desireCategory: true, topComments: true },
-    orderBy: { qualityScore: 'desc' },
+    orderBy: { killerScore: 'desc' },
   })
 
   if (!candidate) {
