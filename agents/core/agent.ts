@@ -53,6 +53,7 @@ export abstract class BaseAgent {
   protected config: AgentConfig
   private lessons = ''
   private constitutionText: string
+  private _tokenLog = ''
 
   constructor(config: AgentConfig) {
     this.client = new Anthropic()
@@ -141,7 +142,7 @@ ${this.constitutionText}
         {
           type: 'text',
           text: this.constitutionText,
-          cache_control: { type: 'ephemeral' },
+          cache_control: { type: 'ephemeral', ttl: '1h' },
         },
         {
           type: 'text',
@@ -151,6 +152,8 @@ ${this.constitutionText}
       messages: [{ role: 'user', content: userMessage }],
     })
 
+    const u = response.usage as unknown as Record<string, number>
+    this._tokenLog += (this._tokenLog ? ' | ' : '') + `in:${u.input_tokens} out:${u.output_tokens}${u.cache_read_input_tokens ? ` hit:${u.cache_read_input_tokens}` : ''}`
     const block = response.content[0]
     if (block.type === 'text') return block.text
     return JSON.stringify(block)
@@ -200,10 +203,11 @@ ${this.constitutionText}
     } catch { /* ignore */ }
 
     try {
+      this._tokenLog = ''
       const result = await this.run()
       const durationMs = Date.now() - start
 
-      await this.log('run', 'SUCCESS', result.summary, undefined, durationMs)
+      await this.log('run', 'SUCCESS', `${result.summary}${this._tokenLog ? ` [tokens: ${this._tokenLog}]` : ''}`, undefined, durationMs)
 
       return { ...result, durationMs, timestamp: new Date().toISOString() }
     } catch (err) {
