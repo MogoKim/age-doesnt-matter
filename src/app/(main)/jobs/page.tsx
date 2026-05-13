@@ -61,16 +61,16 @@ export default async function JobsPage({ searchParams }: PageProps) {
         {/* sr-only h1 */}
         <h1 className="sr-only">내 일 찾기</h1>
 
-        {/* 퀵태그 + 필터 버튼 한 행 — 태그만 스크롤, 필터▼ 우측 고정 */}
+        {/* 필터 버튼 + 퀵태그 한 행 — 필터▼ 좌측 고정, 태그만 스크롤 */}
         <div className="flex items-center gap-2 mb-4">
+          <Suspense fallback={null}>
+            <JobFilterButton />
+          </Suspense>
           <div className="flex-1 min-w-0 overflow-x-auto [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <Suspense fallback={null}>
               <JobQuickTags />
             </Suspense>
           </div>
-          <Suspense fallback={null}>
-            <JobFilterButton />
-          </Suspense>
         </div>
 
         {/* 활성 필터 표시 */}
