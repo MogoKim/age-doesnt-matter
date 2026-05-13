@@ -7,7 +7,7 @@ import { getLastNoon } from '@/lib/utils/trending'
 
 /* ── 인기 게시글 (Trending) ── */
 
-export async function getTrendingPosts(limit = 5): Promise<PostSummary[]> {
+async function _getTrendingPosts(limit = 5): Promise<PostSummary[]> {
   const noon = getLastNoon()
   const prevNoon = new Date(noon.getTime() - 24 * 60 * 60 * 1000)
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -60,6 +60,11 @@ export async function getTrendingPosts(limit = 5): Promise<PostSummary[]> {
   })
   return rows4.map(toPostSummary)
 }
+export const getTrendingPosts = unstable_cache(
+  _getTrendingPosts,
+  ['trending-posts'],
+  { revalidate: 60 },
+)
 
 /* ── 일간 인기글 (Trending) ── */
 

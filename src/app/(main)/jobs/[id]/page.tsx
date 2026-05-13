@@ -7,7 +7,11 @@ import { auth } from '@/lib/auth'
 import { getJobDetailPublic, type JobDetailPublicItem } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
 import { prisma } from '@/lib/prisma'
-import ActionBar from '@/components/features/community/ActionBar'
+import dynamic from 'next/dynamic'
+const ActionBar = dynamic(
+  () => import('@/components/features/community/ActionBar'),
+  { loading: () => <div className="h-12" />, ssr: false },
+)
 import CommentSection from '@/components/features/community/CommentSection'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { formatSalary } from '@/lib/format'
@@ -125,11 +129,14 @@ function JobPostingJsonLd({ job }: { job: JobDetailPublicItem }) {
 
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params
-  const session = await auth()
-  const userId = session?.user?.id
-
-  const [jobPublic, isLiked, isScrapped] = await Promise.all([
+  const [session, jobPublic] = await Promise.all([
+    auth(),
     getJobDetailPublic(id),
+  ])
+  if (!jobPublic) notFound()
+
+  const userId = session?.user?.id
+  const [isLiked, isScrapped] = await Promise.all([
     userId
       ? prisma.like.findUnique({ where: { userId_postId: { userId, postId: id } }, select: { id: true } }).then(r => !!r)
       : Promise.resolve(false),
@@ -137,7 +144,6 @@ export default async function JobDetailPage({ params }: PageProps) {
       ? prisma.scrap.findUnique({ where: { userId_postId: { userId, postId: id } }, select: { id: true } }).then(r => !!r)
       : Promise.resolve(false),
   ])
-  if (!jobPublic) notFound()
   const job = { ...jobPublic, isLiked, isScrapped }
 
   prisma.post.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {})

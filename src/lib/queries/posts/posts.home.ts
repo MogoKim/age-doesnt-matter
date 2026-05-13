@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
@@ -5,7 +6,7 @@ import { postSelect, toPostSummary } from './posts.base'
 import { getLastNoon } from '@/lib/utils/trending'
 
 // 정오 기준 + engagement gate → 3단계 fallback (빈 섹션 방지)
-export async function getHomeBoardHotPosts(boardType: BoardType, limit = 10): Promise<PostSummary[]> {
+async function _getHomeBoardHotPosts(boardType: BoardType, limit = 10): Promise<PostSummary[]> {
   const noon = getLastNoon()
   const prevNoon = new Date(noon.getTime() - 24 * 60 * 60 * 1000)
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -51,3 +52,8 @@ export async function getHomeBoardHotPosts(boardType: BoardType, limit = 10): Pr
   })
   return rows3.map(toPostSummary)
 }
+export const getHomeBoardHotPosts = unstable_cache(
+  _getHomeBoardHotPosts,
+  ['home-board-hot-posts'],
+  { revalidate: 60 },
+)

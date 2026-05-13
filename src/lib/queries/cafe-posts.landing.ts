@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 
 type DesireT = 'relation' | 'health' | 'money' | 'freedom'
@@ -9,7 +10,7 @@ const DESIRE_MAP: Record<DesireT, string[]> = {
   freedom:  ['FREEDOM', 'RELATION'],
 }
 
-export async function getLandingCafePosts(t: string) {
+async function _getLandingCafePosts(t: string) {
   const categories = DESIRE_MAP[t as DesireT] ?? DESIRE_MAP.relation
 
   return prisma.cafePost.findMany({
@@ -35,3 +36,8 @@ export async function getLandingCafePosts(t: string) {
     },
   })
 }
+export const getLandingCafePosts = unstable_cache(
+  _getLandingCafePosts,
+  ['landing-cafe-posts'],
+  { revalidate: 60 },
+)

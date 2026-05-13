@@ -1,10 +1,11 @@
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { PostSummary } from '@/types/api'
 import { postSelect, toPostSummary, buildTextSearch, SearchField } from './posts.base'
 
 /* ── 관련 매거진 (내부 링크용) ── */
 
-export async function getRelatedMagazinePosts(
+async function _getRelatedMagazinePosts(
   category: string | null,
   excludeId: string,
   limit = 3,
@@ -96,10 +97,15 @@ export async function getRelatedMagazinePosts(
   })
   return rows.map(toPostSummary)
 }
+export const getRelatedMagazinePosts = unstable_cache(
+  _getRelatedMagazinePosts,
+  ['related-magazine-posts'],
+  { revalidate: 300 },
+)
 
 /* ── 매거진 최신글 ── */
 
-export async function getLatestMagazinePosts(limit = 4): Promise<PostSummary[]> {
+async function _getLatestMagazinePosts(limit = 4): Promise<PostSummary[]> {
   const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
@@ -112,6 +118,11 @@ export async function getLatestMagazinePosts(limit = 4): Promise<PostSummary[]> 
 
   return rows.map(toPostSummary)
 }
+export const getLatestMagazinePosts = unstable_cache(
+  _getLatestMagazinePosts,
+  ['latest-magazine-posts'],
+  { revalidate: 60 },
+)
 
 /* ── 매거진 목록 (카테고리 필터) ── */
 

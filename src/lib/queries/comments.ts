@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { GRADE_INFO } from '@/lib/grade'
 import type { CommentItem, UserSummary, Grade } from '@/types/api'
@@ -19,7 +20,7 @@ function toUserSummary(user: {
 }
 
 /** 게시글의 댓글 목록 조회 (트리 구조) */
-export async function getCommentsByPostId(
+async function _getCommentsByPostId(
   postId: string,
   userId?: string,
   sort: 'latest' | 'oldest' = 'latest',
@@ -96,3 +97,8 @@ export async function getCommentsByPostId(
     .filter((r) => r.status !== 'HIDDEN' || r.replies.length > 0)
     .map(toComment)
 }
+export const getCommentsByPostId = unstable_cache(
+  _getCommentsByPostId,
+  ['comments-by-post'],
+  { revalidate: 30, tags: ['comments-by-post'] },
+)

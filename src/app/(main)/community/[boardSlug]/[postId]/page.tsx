@@ -8,7 +8,11 @@ import { prisma } from '@/lib/prisma'
 import { getBoardConfig } from '@/lib/queries/boards'
 import { getPostDetail, getPostMeta } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
-import ActionBar from '@/components/features/community/ActionBar'
+import dynamic from 'next/dynamic'
+const ActionBar = dynamic(
+  () => import('@/components/features/community/ActionBar'),
+  { loading: () => <div className="h-12" />, ssr: false },
+)
 import PostDeleteButton from '@/components/features/community/PostDeleteButton'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'

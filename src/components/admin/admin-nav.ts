@@ -17,6 +17,7 @@ export const adminNavItems: NavItem[] = [
   { label: '데이터 분석', icon: '📈', href: '/admin/analytics' },
   { label: '푸시 관리', icon: '🔔', href: '/admin/push' },
   { label: '감사 로그', icon: '📋', href: '/admin/audit-log' },
+  { label: 'Naver 블로그', icon: '📤', href: '/admin/naver-blog' },
   { label: '설정', icon: '⚙️', href: '/admin/settings' },
 ]
 
@@ -33,5 +34,6 @@ export const adminPageTitles: Record<string, string> = {
   '/admin/analytics': '데이터 분석',
   '/admin/push': '푸시 관리',
   '/admin/audit-log': '감사 로그',
+  '/admin/naver-blog': 'Naver 블로그',
   '/admin/settings': '설정',
 }

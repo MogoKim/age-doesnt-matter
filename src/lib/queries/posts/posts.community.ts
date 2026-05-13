@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
@@ -68,7 +69,7 @@ export async function getPostsByBoardPage(
 
 /* ── 최신 커뮤니티 글 ── */
 
-export async function getLatestCommunityPosts(limit = 5): Promise<PostSummary[]> {
+async function _getLatestCommunityPosts(limit = 5): Promise<PostSummary[]> {
   const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
@@ -81,10 +82,15 @@ export async function getLatestCommunityPosts(limit = 5): Promise<PostSummary[]>
 
   return rows.map(toPostSummary)
 }
+export const getLatestCommunityPosts = unstable_cache(
+  _getLatestCommunityPosts,
+  ['latest-community-posts'],
+  { revalidate: 60 },
+)
 
 /* ── 2막 준비 최신글 ── */
 
-export async function getLatestLife2Posts(limit = 5): Promise<PostSummary[]> {
+async function _getLatestLife2Posts(limit = 5): Promise<PostSummary[]> {
   const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
@@ -96,6 +102,11 @@ export async function getLatestLife2Posts(limit = 5): Promise<PostSummary[]> {
   })
   return rows.map(toPostSummary)
 }
+export const getLatestLife2Posts = unstable_cache(
+  _getLatestLife2Posts,
+  ['latest-life2-posts'],
+  { revalidate: 60 },
+)
 
 /* ── 최근 활동 피드 (홈페이지용) ── */
 
@@ -108,7 +119,7 @@ export interface RecentActivity {
   timeAgo: string
 }
 
-export async function getRecentActivities(limit = 8): Promise<RecentActivity[]> {
+async function _getRecentActivities(limit = 8): Promise<RecentActivity[]> {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
   // 최근 댓글, 좋아요, 글을 병렬 조회
@@ -200,6 +211,11 @@ export async function getRecentActivities(limit = 8): Promise<RecentActivity[]> 
     timeAgo: formatTimeAgoFromMs(now - _sortTime.getTime()),
   }))
 }
+export const getRecentActivities = unstable_cache(
+  _getRecentActivities,
+  ['recent-activities'],
+  { revalidate: 60 },
+)
 
 function formatTimeAgoFromMs(ms: number): string {
   const minutes = Math.floor(ms / 60000)

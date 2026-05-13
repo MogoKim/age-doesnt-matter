@@ -5,7 +5,7 @@ import { postSelect, buildTextSearch, SearchField } from './posts.base'
 
 /* ── 일자리 (홈용 간략) ── */
 
-export async function getLatestJobs(limit = 5) {
+async function _getLatestJobs(limit = 5) {
   const rows = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
@@ -37,6 +37,11 @@ export async function getLatestJobs(limit = 5) {
     isUrgent: post.promotionLevel === 'HOT',
   }))
 }
+export const getLatestJobs = unstable_cache(
+  _getLatestJobs,
+  ['latest-jobs'],
+  { revalidate: 60 },
+)
 
 /* ── 일자리 목록 (필터 지원) ── */
 

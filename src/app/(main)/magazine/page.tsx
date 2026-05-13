@@ -123,7 +123,7 @@ export default async function MagazinePage({
           <>
             <PostListWithAds
               items={posts}
-              renderCard={(post, index) => <MagazineCard post={post} priority={index === 0} />}
+              renderCard={(post, index) => <MagazineCard post={post} priority={index < 2} />}
               className="space-y-3 mt-4"
             />
             <BoardPaginationFooter

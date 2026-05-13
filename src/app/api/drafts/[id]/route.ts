@@ -30,12 +30,15 @@ export async function GET(
     return NextResponse.json({ error: '임시저장을 찾을 수 없습니다' }, { status: 404 })
   }
 
-  return NextResponse.json({
-    id: draft.id,
-    boardSlug: draft.boardSlug,
-    category: draft.category,
-    title: draft.title,
-    content: draft.content,
-    updatedAt: draft.updatedAt,
-  })
+  return NextResponse.json(
+    {
+      id: draft.id,
+      boardSlug: draft.boardSlug,
+      category: draft.category,
+      title: draft.title,
+      content: draft.content,
+      updatedAt: draft.updatedAt,
+    },
+    { headers: { 'Cache-Control': 'private, no-store' } },
+  )
 }

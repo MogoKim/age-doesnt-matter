@@ -101,7 +101,6 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://img.age-doesnt-matter.com" />
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://img.age-doesnt-matter.com" />
         {!isBot && <GTMScript />}
         <Script
           async

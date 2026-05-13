@@ -1102,3 +1102,35 @@ model Setting {
   value     String   @default("")
   updatedAt DateTime @updatedAt
 }
+
+// ── 네이버 블로그 수동 발행 큐 ──
+
+enum NaverBlogQueueStatus {
+  PENDING
+  READY_FOR_MANUAL
+  POSTED
+  FAILED
+  EXPIRED
+}
+
+model NaverBlogQueue {
+  queueId            String               @id @default(cuid())
+  magazinePostId     String
+  title              String
+  category           String
+  targetTime         DateTime
+  status             NaverBlogQueueStatus @default(PENDING)
+  naverBlogUrl       String?
+  retryCount         Int                  @default(0)
+  lastAttemptAt      DateTime?
+  expiredReason      String?
+  transformedContent Json?
+  imageUrls          String[]
+
+  queuedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([magazinePostId])
+}

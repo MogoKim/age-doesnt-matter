@@ -33,7 +33,10 @@ export async function GET(request: Request) {
 
   try {
     const { uploadUrl, publicUrl } = await getPresignedUploadUrl(key, contentType)
-    return NextResponse.json({ uploadUrl, key, publicUrl })
+    return NextResponse.json(
+      { uploadUrl, key, publicUrl },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    )
   } catch (err) {
     console.error('[API/uploads/video/presign] 실패:', err)
     return NextResponse.json({ error: '업로드 준비에 실패했어요', detail: String(err) }, { status: 500 })

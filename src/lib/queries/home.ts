@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 
 // BoardType → URL 접두사 (my.ts의 BOARD_URL_PREFIX와 동일)
@@ -15,11 +16,7 @@ export interface ActivityPulseData {
   recentActivities: Array<{ title: string; href: string }>
 }
 
-/**
- * 홈 ActivityPulse용 — 최근 1시간 게시글 현황
- * unstable_cache 60초 권장 (page.tsx에서 래핑)
- */
-export async function getActivityPulseData(): Promise<ActivityPulseData> {
+async function _getActivityPulseData(): Promise<ActivityPulseData> {
   try {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
     const [activeCount, recentPosts] = await Promise.all([
@@ -44,6 +41,11 @@ export async function getActivityPulseData(): Promise<ActivityPulseData> {
     return { activeCount: 0, recentActivities: [] }
   }
 }
+export const getActivityPulseData = unstable_cache(
+  _getActivityPulseData,
+  ['activity-pulse-data'],
+  { revalidate: 60 },
+)
 
 export interface UserCounts {
   todayPosts: number

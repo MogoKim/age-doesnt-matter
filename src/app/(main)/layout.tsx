@@ -3,8 +3,14 @@ import dynamic from 'next/dynamic'
 import { auth } from '@/lib/auth'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
-import OfflineBanner from '@/components/common/OfflineBanner'
-import { WelcomeToast } from '@/components/common/WelcomeToast'
+const OfflineBanner = dynamic(
+  () => import('@/components/common/OfflineBanner'),
+  { loading: () => null, ssr: false },
+)
+const WelcomeToast = dynamic(
+  () => import('@/components/common/WelcomeToast').then(m => ({ default: m.WelcomeToast })),
+  { loading: () => null, ssr: false },
+)
 
 // 무거운 클라이언트 컴포넌트 — 초기 번들 제외
 const PushPermissionToast = dynamic(

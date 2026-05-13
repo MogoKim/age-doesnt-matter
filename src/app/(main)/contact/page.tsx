@@ -1,6 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import ContactForm from '@/components/features/contact/ContactForm'
+import dynamic from 'next/dynamic'
+
+const ContactForm = dynamic(
+  () => import('@/components/features/contact/ContactForm'),
+  { loading: () => <div className="h-48 animate-pulse rounded bg-zinc-100" />, ssr: false },
+)
 
 export const revalidate = 604800 // 7일 — 문의 안내는 거의 불변
 

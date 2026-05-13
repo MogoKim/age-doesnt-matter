@@ -26,9 +26,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ? params.tab
     : 'all') as SearchTab
 
+  const popularKeywords = await getPopularKeywords()
+
   // 쿼리 없으면 초기 화면 (최근검색어 + 인기검색어)
   if (!query) {
-    const popularKeywords = await getPopularKeywords()
     return (
       <div className="min-h-screen bg-background overflow-x-hidden">
         <h1 className="sr-only">검색</h1>
@@ -43,8 +44,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     searchAll(query, { tab }),
     logSearchEvent(query, session?.user?.id),
   ])
-
-  const popularKeywords = await getPopularKeywords()
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
