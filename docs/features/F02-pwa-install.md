@@ -68,6 +68,7 @@
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
 | 2026-04-27 | Feature 문서 최초 생성 | Feature Lifecycle 도입 |
+| 2026-05-13 | AddToHomeScreen·PwaInlineBanner·FooterPwaButton useEffect에 `NEXT_PUBLIC_PWA_INSTALL_ENABLED !== 'true'` 가드 추가 — 잠정 홀드 처리 | PWA 설치 유도 전략 재검토 결정. env var 하나로 재활성화 가능하도록 코드 보존 |
 
 ---
 

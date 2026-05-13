@@ -11,6 +11,7 @@ export default function PwaInlineBanner() {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_PWA_INSTALL_ENABLED !== 'true') return
     const env = detectEnv()
     if ((BLOCKED_ENVS as readonly string[]).includes(env)) return
     if (localStorage.getItem(KEY_INSTALLED) === '1') return

@@ -263,6 +263,7 @@ export default function AddToHomeScreen() {
 
   // 마운트: 환경 감지 + 설치 상태 확인 + 세션 카운트 증가 + 이벤트 등록
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_PWA_INSTALL_ENABLED !== 'true') return
     const env = detectEnv()
     envRef.current = env
 
@@ -347,6 +348,7 @@ export default function AddToHomeScreen() {
 
   // 페이지 변경 시: 제외 페이지가 아니면 13초 타이머 시작 + 가입 후 페이지 카운터
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_PWA_INSTALL_ENABLED !== 'true') return
     if (timerRef.current) clearTimeout(timerRef.current)
 
     const isExcluded = EXCLUDED_PATHS.some(p => pathname.startsWith(p))
@@ -381,6 +383,7 @@ export default function AddToHomeScreen() {
   // 배너 표시 조건 판단
   // canNativeInstall 변경 시 재평가 (beforeinstallprompt는 비동기 도착)
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_PWA_INSTALL_ENABLED !== 'true') return
     if (!pwaStatus) return
     const env = envRef.current
 

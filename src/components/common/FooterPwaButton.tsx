@@ -9,6 +9,7 @@ export default function FooterPwaButton() {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_PWA_INSTALL_ENABLED !== 'true') return
     const env = detectEnv()
     if (!(BLOCKED_ENVS as readonly string[]).includes(env)) {
       setShow(true)
