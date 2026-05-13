@@ -18,7 +18,7 @@ import SignupCard from '@/components/features/home/SignupCard'
 import HomeFaqSection from '@/components/features/home/HomeFaqSection'
 import {
   getLatestJobs,
-  getTrendingPosts,
+  getTrendingCommunityPosts,
   getLatestMagazinePosts,
   getHomeBoardHotPosts,
 } from '@/lib/queries/posts'
@@ -38,8 +38,8 @@ const getCachedJobs = unstable_cache(
   { revalidate: 60 }
 )
 const getCachedTrending = unstable_cache(
-  () => getTrendingPosts(5),
-  ['home-trending'],
+  () => getTrendingCommunityPosts(5),
+  ['home-trending-community'],
   { revalidate: 60 }
 )
 const getCachedMagazine = unstable_cache(

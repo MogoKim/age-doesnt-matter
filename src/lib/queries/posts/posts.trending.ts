@@ -66,6 +66,77 @@ export const getTrendingPosts = unstable_cache(
   { revalidate: 60 },
 )
 
+/* ── 홈 커뮤니티 인기글 (STORY + HUMOR + LIFE2만) ── */
+
+const COMMUNITY_BOARDS: BoardType[] = ['STORY', 'HUMOR', 'LIFE2']
+
+async function _getTrendingCommunityPosts(limit = 5): Promise<PostSummary[]> {
+  const noon = getLastNoon()
+  const prevNoon = new Date(noon.getTime() - 24 * 60 * 60 * 1000)
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+  // 1차: 현재 정오 사이클 + engagement gate
+  const rows1 = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      boardType: { in: COMMUNITY_BOARDS },
+      createdAt: { gte: noon },
+      OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
+    },
+    select: postSelect,
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  if (rows1.length >= limit) return rows1.map(toPostSummary)
+
+  // 2차: 이전 정오 사이클까지 확장 + engagement gate
+  const rows2 = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      boardType: { in: COMMUNITY_BOARDS },
+      createdAt: { gte: prevNoon },
+      OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
+    },
+    select: postSelect,
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  if (rows2.length > 0) return rows2.map(toPostSummary)
+
+  // 3차: 7일 + HOT/HALL_OF_FAME fallback
+  const rows3 = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      boardType: { in: COMMUNITY_BOARDS },
+      createdAt: { gte: sevenDaysAgo },
+      promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] as PromotionLevel[] },
+    },
+    select: postSelect,
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  if (rows3.length > 0) return rows3.map(toPostSummary)
+
+  // 4차: fallback — engagement 무시, trendingScore desc
+  const rows4 = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      boardType: { in: COMMUNITY_BOARDS },
+      createdAt: { gte: sevenDaysAgo },
+    },
+    select: postSelect,
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  return rows4.map(toPostSummary)
+}
+
+export const getTrendingCommunityPosts = unstable_cache(
+  _getTrendingCommunityPosts,
+  ['trending-community-posts'],
+  { revalidate: 60 },
+)
+
 /* ── 일간 인기글 (Trending) ── */
 
 export async function getDailyTrendingPosts(
