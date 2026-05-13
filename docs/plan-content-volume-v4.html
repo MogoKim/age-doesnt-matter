@@ -233,7 +233,7 @@
       <tr><td><strong>댓글 파동 — 화제성글</strong></td><td class="v-old">10분 / 1시간 / 3시간</td><td class="v-new">1분(2) · 5분(6) · 30분(5) · 1시간(3) = 16개</td></tr>
       <tr><td><strong>서브카테고리 배정</strong></td><td class="v-old">categoryMap 무작위 선택</td><td class="v-new">desireCategory → 서브카테고리 자동 매핑</td></tr>
       <tr><td><strong>욕망 카테고리</strong></td><td class="v-old">13개</td><td class="v-new">20개 (BEAUTY / DIGITAL / NOSTALGIA / PRIDE / GRIEF / TRAVEL / FOOD 추가)</td></tr>
-      <tr><td><strong>페르소나 구조</strong></td><td class="v-old">통합 (~50명)</td><td class="v-new">글 전문 35명 + 댓글 전문 15명 분리</td></tr>
+      <tr><td><strong>페르소나 구조</strong></td><td class="v-old">통합 (~50명 추정)</td><td class="v-new">79명 전체 — 역할 기반 스케줄 배정 (글/댓글/좋아요 겸업, scheduler.ts 시간대별 명시)</td></tr>
     </tbody>
   </table>
 </div>
@@ -281,7 +281,7 @@
 
   <h3 style="font-size:14px;color:var(--muted);margin:20px 0 10px;">공지 처리 정책</h3>
   <div class="callout yellow">
-    <strong>별도 필터 로직 불필요.</strong> 공지·필독 글은 본문 내용이 이벤트·홍보 성격이라 qualityScore가 낮게 산출되어 isUsable(40점) 기준에서 자연 탈락한다. 다만 <strong>제목에 "[공지]", "필독", "이벤트 당첨" 패턴이 있으면 수집 자체를 스킵</strong>하는 최소한의 문자열 필터는 두어 불필요한 본문 진입을 방지한다.
+    <strong>별도 필터 로직 불필요.</strong> 공지·필독 글은 본문 내용이 이벤트·홍보 성격이라 qualityScore가 낮게 산출되어 isUsable(30점) 기준에서 자연 탈락한다. 다만 <strong>제목에 "[공지]", "필독", "이벤트 당첨" 패턴이 있으면 수집 자체를 스킵</strong>하는 최소한의 문자열 필터는 두어 불필요한 본문 진입을 방지한다.
   </div>
 </div>
 
@@ -301,8 +301,9 @@
     </div>
     <div class="card">
       <div class="card-tag" style="background:var(--green-dim);color:var(--green);">원칙 2 — 수집 시간 창</div>
-      <h3>최근 14일 이내만 수집</h3>
-      <p>작성일이 14일 초과한 글은 수집하지 않는다. 오래된 글은 인게이지먼트가 고정되어 화제성 선별 의미가 없고, DB 용량 낭비.</p>
+      <h3>최근 2일 이내만 수집</h3>
+      <p>작성일이 2일 초과한 글은 수집하지 않는다. 오래된 글은 인게이지먼트가 고정되어 화제성 선별 의미가 없고, DB 용량 낭비.</p>
+      <p style="margin-top:8px;color:var(--yellow);">⚠ 날짜 오염 필터: 제목·본문에 특정 날짜(예: "23일", "일요일")가 명시된 글은 오늘 날짜와 다를 경우 발행 스킵. 문맥상 시제 불일치 방지.</p>
     </div>
     <div class="card">
       <div class="card-tag" style="background:var(--yellow-dim);color:var(--yellow);">원칙 3 — 재크롤 갱신</div>
@@ -377,11 +378,12 @@
       <p><strong style="color:var(--text);">목적:</strong> 게시판에 글이 꾸준히 올라오게 만들어 커뮤니티 활성도 유지. 자연스러운 일상 대화처럼 보여야 함.</p>
       <p style="margin-top:8px;"><strong style="color:var(--text);">선별 기준 (AND 조건):</strong></p>
       <ul>
-        <li>isUsable = true (qualityScore ≥ 40)</li>
+        <li>isUsable = true (qualityScore ≥ 30)</li>
         <li>desireCategory NOT NULL</li>
-        <li>최근 14일 이내 게시</li>
-        <li>본문 100자 이상</li>
+        <li>최근 2일 이내 게시</li>
+        <li>본문 50자 이상</li>
         <li>화제성 조건 미충족</li>
+        <li>제목·본문 날짜 오염 없음</li>
       </ul>
       <p style="margin-top:8px;"><strong style="color:var(--text);">발행:</strong> 75건/일 중 대부분. 09~23시 매 시간 배분.</p>
     </div>
@@ -528,12 +530,12 @@
           <span class="sub-tag">건강·갱년기</span>
           <span class="sub-tag">가족·자녀</span>
           <span class="sub-tag">감정·고민</span>
-          <span class="sub-tag">일상·수다</span>
-          <span class="sub-tag new">외모·뷰티 ✦</span>
-          <span class="sub-tag new">음식·요리 ✦</span>
-          <span class="sub-tag new">추억·옛날 ✦</span>
+          <span class="sub-tag">외모·뷰티·다이어트</span>
+          <span class="sub-tag">일상·여행</span>
+          <span class="sub-tag">음식·요리</span>
+          <span class="sub-tag">기타</span>
         </div>
-        <div class="bcard-note">매핑: HEALTH·FAMILY·DIGNITY·CARE·GRIEF·RELATION·MEANING → 사는이야기<br>BEAUTY·FOOD·NOSTALGIA → 사는이야기 (신규 욕망 카테고리)</div>
+        <div class="bcard-note">매핑: HEALTH → 건강·갱년기 / FAMILY → 가족·자녀 / DIGNITY·CARE·GRIEF → 감정·고민<br>BEAUTY → 외모·뷰티·다이어트 / FOOD → 음식·요리 / RELATION·MEANING·LEGACY·FREEDOM·TRAVEL → 일상·여행</div>
       </div>
     </div>
 
@@ -553,11 +555,10 @@
           <span class="sub-tag">재테크·연금</span>
           <span class="sub-tag">재취업·부업</span>
           <span class="sub-tag">취미·여가</span>
-          <span class="sub-tag new">여행 ✦</span>
-          <span class="sub-tag new">디지털·배움 ✦</span>
-          <span class="sub-tag new">자랑·성취 ✦</span>
+          <span class="sub-tag">자랑·성취</span>
+          <span class="sub-tag">기타</span>
         </div>
-        <div class="bcard-note">매핑: RETIRE·MONEY·JOB·HOBBY·FREEDOM → 2막준비<br>TRAVEL·DIGITAL·PRIDE → 2막준비 (신규)</div>
+        <div class="bcard-note">매핑: RETIRE → 은퇴·노후설계 / MONEY → 재테크·연금 / JOB → 재취업·부업<br>HOBBY·DIGITAL → 취미·여가 / PRIDE → 자랑·성취</div>
       </div>
     </div>
 
@@ -575,10 +576,10 @@
         <div class="sub-list">
           <span class="sub-tag">유머·웃음</span>
           <span class="sub-tag">엔터·TV</span>
-          <span class="sub-tag new">추억·옛날이야기 ✦</span>
+          <span class="sub-tag">추억·옛날이야기</span>
           <span class="sub-tag">기타</span>
         </div>
-        <div class="bcard-note">매핑: ENTERTAIN·PRIDE(자랑류) → 웃음방<br>NOSTALGIA 일부 → 웃음방</div>
+        <div class="bcard-note">매핑: ENTERTAIN → 엔터·TV / NOSTALGIA → 추억·옛날이야기<br>나머지 유머·웃음류 → 유머·웃음</div>
       </div>
     </div>
 
@@ -599,6 +600,7 @@
           <span class="sub-tag">생활정보</span>
           <span class="sub-tag">감성에세이</span>
           <span class="sub-tag new">문화·여행 ✦</span>
+          <span class="sub-tag">기타</span>
         </div>
         <div class="bcard-note">시드봇 직접 발행 X. content-curator가 hotTopics 기반으로 발행.<br>desireCategory 전체 대상, 정보성 콘텐츠 위주.</div>
       </div>
@@ -656,18 +658,17 @@
       <tr><td>HEALTH</td><td>사는이야기</td><td>건강·갱년기</td></tr>
       <tr><td>FAMILY</td><td>사는이야기</td><td>가족·자녀</td></tr>
       <tr><td>DIGNITY / CARE / GRIEF</td><td>사는이야기</td><td>감정·고민</td></tr>
-      <tr><td>RELATION / MEANING / LEGACY / FREEDOM</td><td>사는이야기</td><td>일상·수다</td></tr>
-      <tr><td>BEAUTY</td><td>사는이야기</td><td>외모·뷰티</td></tr>
+      <tr><td>BEAUTY</td><td>사는이야기</td><td>외모·뷰티·다이어트</td></tr>
       <tr><td>FOOD</td><td>사는이야기</td><td>음식·요리</td></tr>
-      <tr><td>NOSTALGIA</td><td>사는이야기 / 웃음방</td><td>추억·옛날</td></tr>
+      <tr><td>RELATION / MEANING / LEGACY / FREEDOM / TRAVEL</td><td>사는이야기</td><td>일상·여행</td></tr>
       <tr><td>RETIRE</td><td>2막준비</td><td>은퇴·노후설계</td></tr>
       <tr><td>MONEY</td><td>2막준비</td><td>재테크·연금</td></tr>
-      <tr><td>JOB</td><td>내일찾기 / 2막준비</td><td>재취업·부업</td></tr>
-      <tr><td>HOBBY</td><td>2막준비</td><td>취미·여가</td></tr>
-      <tr><td>TRAVEL</td><td>2막준비</td><td>여행</td></tr>
-      <tr><td>DIGITAL</td><td>2막준비</td><td>디지털·배움</td></tr>
-      <tr><td>PRIDE</td><td>2막준비 / 웃음방</td><td>자랑·성취</td></tr>
+      <tr><td>JOB</td><td>내일찾기</td><td>재취업·부업 <em style="color:var(--muted)">(커뮤니티 글 기반)</em></td></tr>
+      <tr><td>HOBBY / DIGITAL</td><td>2막준비</td><td>취미·여가</td></tr>
+      <tr><td>PRIDE</td><td>2막준비</td><td>자랑·성취</td></tr>
+      <tr><td>NOSTALGIA</td><td>웃음방</td><td>추억·옛날이야기</td></tr>
       <tr><td>ENTERTAIN</td><td>웃음방</td><td>엔터·TV</td></tr>
+      <tr><td>나머지 (매핑 없음)</td><td>사는이야기</td><td>기타</td></tr>
     </tbody>
   </table>
 </div>
@@ -781,7 +782,7 @@
     </div>
     <div class="pitem"><span class="pf">agents/cafe/psych-analyzer.ts</span><span class="pd">욕망 7개 추가: BEAUTY·DIGITAL·NOSTALGIA·PRIDE·GRIEF·TRAVEL·FOOD <span class="chip chip-new">신규</span></span></div>
     <div class="pitem"><span class="pf">agents/seed/generator.ts</span><span class="pd">DESIRE_TO_SUBCATEGORY 매핑 테이블: 20개 욕망 → 게시판별 서브카테고리 <span class="chip chip-new">신규</span></span></div>
-    <div class="pitem"><span class="pf">agents/seed/persona-data.ts</span><span class="pd">글 전문 35명 + 댓글 전문 15명 역할 분리. primaryDesire 20개 기준 재배정 <span class="chip chip-chg">변경</span></span></div>
+    <div class="pitem"><span class="pf">agents/seed/persona-data.ts</span><span class="pd">79명 페르소나 primaryDesire 20개 기준 재배정. 역할은 scheduler.ts에서 시간대별 post/comment/like 명시 <span class="chip chip-chg">변경</span></span></div>
   </div>
 </div>
 
