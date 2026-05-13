@@ -436,6 +436,79 @@
     </div>
   </div>
 
+  <!-- ── 파이프라인 단계별 역할 FAQ ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">💡</div>
+      <h2>파이프라인 각 단계 — 왜 필요한가?</h2>
+      <span class="desc">자주 묻는 질문</span>
+    </div>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:14px;">Q. 왜 아침에만 전체 파이프라인을 돌리나요? 점심·저녁은 왜 일부만 하나요?</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left;padding:8px 12px;color:var(--muted);font-weight:600;">스케줄</th>
+            <th style="text-align:left;padding:8px 12px;color:var(--muted);font-weight:600;">실행 단계</th>
+            <th style="text-align:left;padding:8px 12px;color:var(--muted);font-weight:600;">이유</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 12px;"><span style="color:var(--primary);font-weight:700;">08:30 DEEP</span></td>
+            <td style="padding:10px 12px;color:var(--muted);">크롤→심리분석→트렌드→DailyBrief→큐레이션 <strong style="color:var(--text);">(6단계)</strong></td>
+            <td style="padding:10px 12px;color:var(--muted);">하루 한 번 완전 분석. 오늘의 욕망 지도 생성.</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 12px;"><span style="color:var(--blue);font-weight:700;">12:55 QUICK</span></td>
+            <td style="padding:10px 12px;color:var(--muted);">크롤(제목만)→트렌드 경량→DailyBrief 미세보정 <strong style="color:var(--text);">(3단계)</strong></td>
+            <td style="padding:10px 12px;color:var(--muted);"><strong style="color:var(--blue);">심리분석 스킵</strong> — 아침 데이터로 충분. Claude AI 비용 약 50% 절감.</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 12px;"><span style="color:var(--green);font-weight:700;">20:40 CRAWL</span></td>
+            <td style="padding:10px 12px;color:var(--muted);">크롤링만 <strong style="color:var(--text);">(1단계)</strong></td>
+            <td style="padding:10px 12px;color:var(--muted);">내일 아침 DEEP 인풋 쌓기. AI 비용 0원. 저녁 재분석해도 당일 결과 동일.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">② 심리분석 (psych-analyzer.ts)</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">크롤링된 글마다 욕망 태그를 붙임</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">
+          각 글에 <code style="font-size:12px;background:var(--bg3);padding:1px 5px;border-radius:3px;">desireCategory</code> (HEALTH/FAMILY/MONEY 등 13가지),
+          <code style="font-size:12px;background:var(--bg3);padding:1px 5px;border-radius:3px;">emotionTags</code> (ANXIOUS/LONELY 등),
+          <code style="font-size:12px;background:var(--bg3);padding:1px 5px;border-radius:3px;">urgencyLevel</code> (1-5) 태깅.<br><br>
+          <strong style="color:var(--text);">이게 없으면</strong> 욕망 분포 계산 불가 → DailyBrief 생성 불가.
+        </div>
+      </div>
+
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">③ 트렌드분석 (trend-analyzer.ts)</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">오늘 글 100개를 Claude Sonnet으로 집계</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">
+          <code style="font-size:12px;background:var(--bg3);padding:1px 5px;border-radius:3px;">hotTopics</code> (오늘 뭐가 화제인지),
+          <code style="font-size:12px;background:var(--bg3);padding:1px 5px;border-radius:3px;">desireMap</code> (욕망 분포),
+          <code style="font-size:12px;background:var(--bg3);padding:1px 5px;border-radius:3px;">magazineTopics</code> (매거진 주제 추천) 생성.<br><br>
+          <strong style="color:var(--text);">이게 없으면</strong> DailyBrief를 만들 데이터 없음.
+        </div>
+      </div>
+
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">⑤ 큐레이션 (content-curator.ts)</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">카페 인기 주제로 우나어 게시글 자동 발행</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">
+          hotTopics 상위 3개 선택 → 주제에 맞는 페르소나 매칭 → AI로 글 생성 → 우나어 게시판 직접 게시.<br>
+          <strong style="color:var(--yellow);">"반반이 방식"</strong>: 원본 카페 글 50% + 페르소나 개인 경험 50% 합성.<br><br>
+          결과: 매일 3개 새 글 자동 발행.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── DailyBrief — 에이전트 공통 인풋 ── -->
   <div class="section">
     <div class="section-header">
@@ -482,6 +555,91 @@
           DailyBrief가 없으면 → 모든 에이전트가 기본값(HEALTH 주제)으로 고정 실행.<br>
           아침 DEEP에서만 1회 생성하는 이유: 같은 날 저녁에 재생성해도 결과 동일.
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DailyBrief 상세 + 확인 방법 + 카페 비중 FAQ ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">🔍</div>
+      <h2>DailyBrief 상세 · 확인 방법 · 카페 비중</h2>
+      <span class="desc">운영 검증용</span>
+    </div>
+
+    <!-- DailyBrief 생성 결과 구조 -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;">DailyBrief 생성 결과 — 실제 데이터 구조</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:14px;">
+        매일 08:30 DEEP 완료 후 <code style="font-size:12px;background:var(--bg3);padding:1px 5px;border-radius:3px;">DailyBrief</code> 테이블 + <code style="font-size:12px;background:var(--bg3);padding:1px 5px;border-radius:3px;">agents/core/today-brief.json</code> 파일 두 곳에 저장.
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:14px 16px;font-size:12px;font-family:monospace;color:var(--muted);line-height:1.8;">
+        {<br>
+        &nbsp;&nbsp;<span style="color:var(--blue);">"date"</span>: <span style="color:var(--green);">"2026-05-13"</span>,<br>
+        &nbsp;&nbsp;<span style="color:var(--blue);">"mode"</span>: <span style="color:var(--green);">"deep"</span>, <span style="color:var(--muted);font-size:11px;">// "deep" | "quick_update" | "fallback_yesterday"</span><br>
+        &nbsp;&nbsp;<span style="color:var(--blue);">"dominantDesire"</span>: <span style="color:var(--green);">"HEALTH"</span>,<br>
+        &nbsp;&nbsp;<span style="color:var(--blue);">"desireRanking"</span>: [{ <span style="color:var(--blue);">"category"</span>: <span style="color:var(--green);">"HEALTH"</span>, <span style="color:var(--blue);">"percent"</span>: 35 }, ...],<br>
+        &nbsp;&nbsp;<span style="color:var(--blue);">"personaQuotas"</span>: { <span style="color:var(--green);">"A"</span>: { <span style="color:var(--blue);">"quotaMultiplier"</span>: 1.3, <span style="color:var(--blue);">"shouldBoost"</span>: true }, ... },<br>
+        &nbsp;&nbsp;<span style="color:var(--blue);">"contentDirective"</span>: { <span style="color:var(--blue);">"primaryTheme"</span>: <span style="color:var(--green);">"건강 불안 공감"</span>, <span style="color:var(--blue);">"avoidTopics"</span>: [...] },<br>
+        &nbsp;&nbsp;<span style="color:var(--blue);">"urgentTopics"</span>: [{ <span style="color:var(--blue);">"topic"</span>: <span style="color:var(--green);">"갱년기 증상"</span>, <span style="color:var(--blue);">"urgencyAvg"</span>: 4.2 }, ...]<br>
+        }
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--muted);">
+        <strong style="color:var(--yellow);">mode 판독법:</strong>
+        <span style="color:var(--green);">"deep"</span> = 정상 &nbsp;|&nbsp;
+        <span style="color:var(--blue);">"quick_update"</span> = 점심 경량 업데이트 &nbsp;|&nbsp;
+        <span style="color:var(--red);">"fallback_yesterday"</span> = 오늘 크롤링 실패 → 어제 데이터 대체 중 (경고!)
+      </div>
+    </div>
+
+    <!-- 확인 방법 3가지 -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:16px;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;">
+        <div style="font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">방법 1 — 파일 직접 확인 (가장 빠름)</div>
+        <div style="background:var(--bg3);border-radius:6px;padding:10px 12px;font-size:12px;font-family:monospace;color:var(--green);">
+          cat agents/core/today-brief.json
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px;">오늘 생성됐으면 파일에 내용 있음. 없거나 어제 날짜면 생성 실패.</div>
+      </div>
+
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;">
+        <div style="font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">방법 2 — DB 조회</div>
+        <div style="background:var(--bg3);border-radius:6px;padding:10px 12px;font-size:12px;font-family:monospace;color:var(--green);line-height:1.8;">
+          SELECT date, mode, dominantDesire, createdAt<br>
+          FROM "DailyBrief"<br>
+          WHERE date = CURRENT_DATE;
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px;">행이 없으면 미생성. mode 컬럼으로 정상 여부 확인.</div>
+      </div>
+
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;">
+        <div style="font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">방법 3 — Slack 채널</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.8;">
+          ✅ 정상: <strong style="color:var(--text);">#대시보드</strong> 채널 "오늘의 욕망 지도" 메시지<br>
+          ⚠️ 이상: <strong style="color:var(--text);">#시스템</strong> 채널 "fallback 운영 중"<br>
+          ❌ 실패: <strong style="color:var(--text);">#대시보드</strong> 채널 "DailyBrief 미생성" CRITICAL<br><br>
+          <span style="font-size:12px;">09:30 KST에 brief-monitor가 자동으로 채널에 상태 전송.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 카페 비중 FAQ -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:12px;">Q. 왜 우아한갱년기만 비중이 높은가요?</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:14px;">
+        <strong style="color:var(--text);">코드상 동등합니다.</strong> 두 카페 모두 <code style="font-size:12px;background:var(--bg3);padding:1px 5px;border-radius:3px;">maxPostsPerCafe: 80건/일</code> 동일 설정 (config.ts).
+        단, 우아한갱년기(40-50대 여성)가 실제 카페 활동이 더 활성화되어 있어 수집 글 품질 통과율이 높을 수 있음.
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;">실제 수집 건수 확인 SQL:</div>
+      <div style="background:var(--bg3);border-radius:6px;padding:12px 14px;font-size:12px;font-family:monospace;color:var(--green);line-height:1.8;">
+        SELECT cafeId, COUNT(*) as 수집건수,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; COUNT(*) FILTER (WHERE aiAnalyzed=true) as 분석완료<br>
+        FROM "CafePost"<br>
+        WHERE DATE(crawledAt) = CURRENT_DATE<br>
+        GROUP BY cafeId;
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:10px;">
+        cafeId: <strong style="color:var(--text);">wgang</strong> = 우아한갱년기 &nbsp;|&nbsp; <strong style="color:var(--text);">dlxogns01</strong> = 은퇴 후 50년
       </div>
     </div>
   </div>
