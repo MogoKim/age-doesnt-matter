@@ -410,7 +410,8 @@ async function main() {
     HUMOR:    ['웃긴', '황당', '유머', '재미', '웃음', '황당'],
   }
 
-  function guessDesire(topicStr: string): string {
+  function guessDesire(topicStr: string | null | undefined): string {
+    if (!topicStr) return 'GENERAL'
     const lower = topicStr.toLowerCase()
     for (const [cat, keywords] of Object.entries(DESIRE_KEYWORDS)) {
       if (keywords.some(kw => lower.includes(kw))) return cat
