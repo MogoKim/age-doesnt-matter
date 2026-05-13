@@ -2,25 +2,52 @@ import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
 import { postSelect, toPostSummary } from './posts.base'
+import { getLastNoon } from '@/lib/utils/trending'
 
-async function queryByBoard(boardType: BoardType, since: Date, limit: number): Promise<PostSummary[]> {
-  const rows = await prisma.post.findMany({
-    where: { status: 'PUBLISHED', boardType, createdAt: { gte: since } },
+// 정오 기준 + engagement gate → 3단계 fallback (빈 섹션 방지)
+export async function getHomeBoardHotPosts(boardType: BoardType, limit = 10): Promise<PostSummary[]> {
+  const noon = getLastNoon()
+  const prevNoon = new Date(noon.getTime() - 24 * 60 * 60 * 1000)
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+  // 1차: 현재 정오 사이클 + engagement gate
+  const rows1 = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      boardType,
+      createdAt: { gte: noon },
+      OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
+    },
     select: postSelect,
-    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
     take: limit,
   })
-  return rows.map(toPostSummary)
-}
+  if (rows1.length >= 5) return rows1.map(toPostSummary)
 
-// 24h top5 → 5개 미만이면 7일로 자동 확대
-export async function getHomeBoardHotPosts(boardType: BoardType, limit = 10): Promise<PostSummary[]> {
-  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  // 2차: 이전 정오 사이클까지 확장 + engagement gate
+  const rows2 = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      boardType,
+      createdAt: { gte: prevNoon },
+      OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
+    },
+    select: postSelect,
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  if (rows2.length > 0) return rows2.map(toPostSummary)
 
-  const posts = await queryByBoard(boardType, since24h, limit)
-  if (posts.length < 5) {
-    return queryByBoard(boardType, since7d, limit)
-  }
-  return posts
+  // 3차: 7일 fallback (engagement 무시)
+  const rows3 = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      boardType,
+      createdAt: { gte: sevenDaysAgo },
+    },
+    select: postSelect,
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  return rows3.map(toPostSummary)
 }

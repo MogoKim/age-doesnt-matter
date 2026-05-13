@@ -3,21 +3,62 @@ import { prisma } from '@/lib/prisma'
 import type { BoardType, PromotionLevel } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
 import { postSelect, toPostSummary, buildTextSearch, SearchField } from './posts.base'
+import { getLastNoon } from '@/lib/utils/trending'
 
 /* ── 인기 게시글 (Trending) ── */
 
 export async function getTrendingPosts(limit = 5): Promise<PostSummary[]> {
-  const rows = await prisma.post.findMany({
+  const noon = getLastNoon()
+  const prevNoon = new Date(noon.getTime() - 24 * 60 * 60 * 1000)
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+  // 1차: 현재 정오 사이클 + engagement gate
+  const rows1 = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
-      createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      createdAt: { gte: noon },
+      OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
     },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
     take: limit,
   })
+  if (rows1.length >= limit) return rows1.map(toPostSummary)
 
-  return rows.map(toPostSummary)
+  // 2차: 이전 정오 사이클까지 확장 + engagement gate
+  const rows2 = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      createdAt: { gte: prevNoon },
+      OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
+    },
+    select: postSelect,
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  if (rows2.length > 0) return rows2.map(toPostSummary)
+
+  // 3차: 7일 + HOT/HALL_OF_FAME fallback
+  const rows3 = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      createdAt: { gte: sevenDaysAgo },
+      promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] as PromotionLevel[] },
+    },
+    select: postSelect,
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  if (rows3.length > 0) return rows3.map(toPostSummary)
+
+  // 4차: fallback — engagement 무시, trendingScore desc
+  const rows4 = await prisma.post.findMany({
+    where: { status: 'PUBLISHED', createdAt: { gte: sevenDaysAgo } },
+    select: postSelect,
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
+  })
+  return rows4.map(toPostSummary)
 }
 
 /* ── 일간 인기글 (Trending) ── */

@@ -7,6 +7,7 @@ import { checkBannedWords } from '@/lib/banned-words'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { checkAndPromote } from '@/lib/grade'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
+import { calculateTrendingScore } from '@/lib/utils/trending'
 import { pushService } from '@/lib/push/service'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 
@@ -89,11 +90,19 @@ export async function createComment(
   void checkAndPromote(session.user.id).catch(() => {})
   void checkAndPromotePost(postId, post.boardType, post.likeCount, updatedPost.commentCount).catch(() => {})
 
-  // lastEngagedAt 업데이트
-  await prisma.post.update({
-    where: { id: postId },
-    data: { lastEngagedAt: new Date() },
-  }).catch(() => {})
+  // lastEngagedAt + trendingScore 업데이트 (fire-and-forget)
+  void (async () => {
+    const p = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { likeCount: true, commentCount: true, viewCount: true },
+    })
+    if (!p) return
+    const score = calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount)
+    await prisma.post.update({
+      where: { id: postId },
+      data: { lastEngagedAt: new Date(), trendingScore: score },
+    })
+  })().catch(() => {})
 
   // 알림 생성 (본인에게는 보내지 않음)
   const commentAuthor = await prisma.user.findUnique({

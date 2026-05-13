@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkAndPromote } from '@/lib/grade'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
+import { calculateTrendingScore } from '@/lib/utils/trending'
 
 interface ToggleResult {
   error?: string
@@ -102,6 +103,15 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
   void checkAndPromotePost(postId, targetPost.boardType, newLikeCount, targetPost.commentCount).catch(
     (e) => console.error('[likes] post promote 실패:', e),
   )
+  void (async () => {
+    const p = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { likeCount: true, commentCount: true, viewCount: true },
+    })
+    if (!p) return
+    const score = calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount)
+    await prisma.post.update({ where: { id: postId }, data: { trendingScore: score } })
+  })().catch(() => {})
 
   return { toggled: true }
 }

@@ -5,6 +5,7 @@ import { createHash, randomUUID } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
+import { calculateTrendingScore } from '@/lib/utils/trending'
 
 interface GuestLikeResult {
   error?: string
@@ -66,6 +67,15 @@ export async function toggleGuestPostLike(postId: string): Promise<GuestLikeResu
   void checkAndPromotePost(postId, targetPost.boardType, newLikeCount, targetPost.commentCount).catch(
     (e) => console.error('[guest-likes] post promote 실패:', e),
   )
+  void (async () => {
+    const p = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { likeCount: true, commentCount: true, viewCount: true },
+    })
+    if (!p) return
+    const score = calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount)
+    await prisma.post.update({ where: { id: postId }, data: { trendingScore: score } })
+  })().catch(() => {})
 
   revalidatePath('/community')
   return { toggled: true }
