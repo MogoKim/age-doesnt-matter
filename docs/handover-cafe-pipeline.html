@@ -1385,8 +1385,85 @@ function guessDesire(topicStr: string | null | undefined): string {
     </div>
   </div>
 
+  <!-- ── 2026-05-13 딥 크롤링 버그 전수조사 패치 ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:#c0392b;color:#fff;">★</div>
+      <h2>2026-05-13 딥 크롤링 파이프라인 버그 전수조사 — 7종 수정</h2>
+      <span class="desc">커밋 e672ff4 + launchd 현장 적용 (B5·B6·B7)</span>
+    </div>
+
+    <div class="patch-grid">
+      <div class="patch-card">
+        <div class="patch-id">B1 · run-pipeline.ts — runCrawlWithRetry() Chromium 정리</div>
+        <h4>재시도 3회차 net::ERR_INTERNET_DISCONNECTED — 고아 Chromium 프로세스 누적</h4>
+        <div class="patch-before">// 기존: 재시도 간 Chromium 정리 없음
+await new Promise(r =&gt; setTimeout(r, CRAWL_RETRY_WAIT_MS))</div>
+        <div class="patch-after">// 수정: attempt &gt; 1 시 고아 Chromium 강제 종료 후 5초 대기
+if (attempt &gt; 1) {
+  try { execSync('pkill -9 -f "Chromium" 2&gt;/dev/null; true', { stdio: 'ignore' }) } catch {}
+  await new Promise(r =&gt; setTimeout(r, 5_000))
+}
+await new Promise(r =&gt; setTimeout(r, CRAWL_RETRY_WAIT_MS))</div>
+        <div class="patch-effect">3회 재시도 × Chromium 프로세스 누적 → 메모리/소켓 고갈 → 3회차 ERR_INTERNET_DISCONNECTED (실제 인터넷 끊김 아님). 재시도 전 pkill로 고아 프로세스 정리 → 3회차도 정상 크롤.</div>
+      </div>
+
+      <div class="patch-card">
+        <div class="patch-id">B2 · psych-analyzer.ts:168 — max_tokens 2000→3500</div>
+        <h4>Haiku 응답 JSON 잘림 — 배치 5개 분석 중 ageSignal에서 절단</h4>
+        <div class="patch-before">// 기존: max_tokens: 2000
+// 입력 2600 tokens + 응답 필요 ~1750 tokens → 2000 한도로 매일 잘림</div>
+        <div class="patch-after">// 수정: max_tokens: 3500
+// 비용 영향: Haiku $1.25/1M × 추가 1500 tokens × 일 3배치 ≈ $0.002/월</div>
+        <div class="patch-effect">매일 반복되던 "[PsychAnalyzer] JSON 파싱 실패" 에러 해소. 배치 5개 전체 정상 분석.</div>
+      </div>
+
+      <div class="patch-card">
+        <div class="patch-id">B3 · psych-analyzer.ts:244 — consecutiveFails break→reset</div>
+        <h4>3회 연속 실패 시 나머지 글 포기(break) → Slack 경고 후 계속 처리</h4>
+        <div class="patch-before">// 기존: break — i=0,1,2 실패 시 i=3,4 글 영구 미처리 → DB에 psychResult=null 누적
+if (consecutiveFails &gt;= 3) {
+  await notifySlack({ ... })
+  break
+}</div>
+        <div class="patch-after">// 수정: consecutiveFails 리셋 — 경고 발송 후 계속 진행
+if (consecutiveFails &gt;= 3) {
+  await notifySlack({ level: 'warning', ... })
+  consecutiveFails = 0  // break 제거
+}</div>
+        <div class="patch-effect">누적 psychResult=null 레코드 방지. content-curator null.toLowerCase() 크래시 근본 원인 차단.</div>
+      </div>
+
+      <div class="patch-card">
+        <div class="patch-id">B4 · agents-cafe.yml — brief-fallback job prisma generate 누락</div>
+        <h4>GHA brief-fallback SKIP enum 인식 불가 → PrismaClientValidationError</h4>
+        <div class="patch-before">// 기존: brief-fallback job에 agents/ prisma generate 없음
+- run: cd agents &amp;&amp; npm ci
+# → agents/ 전용 @prisma/client 미갱신 → BotStatus.SKIP 없음 → ValidationError</div>
+        <div class="patch-after">// 수정: cd agents &amp;&amp; npx prisma generate 추가
+- run: cd agents &amp;&amp; npm ci
+- run: cd agents &amp;&amp; npx prisma generate   ← 신규 추가</div>
+        <div class="patch-effect">2026-05-07·08 반복되던 GHA brief-fallback 실패 해소. agents/ 전용 Prisma client 재생성으로 SKIP enum 정상 인식.</div>
+      </div>
+
+      <div class="patch-card" style="grid-column: 1 / -1;">
+        <div class="patch-id">B5·B6·B7 · launchd plist 4개 — caffeinate 추가 + evening 시간 수정 + 실행권한</div>
+        <h4>Mac 수면 중 크롤링 중단 + evening plist 11:40 KST 오기 + launchd-alert.sh 권한 없음</h4>
+        <div class="patch-before">// B5: launchd-alert.sh 실행 권한 없음 → exit 126 (Operation not permitted) — 4개 plist 전부
+// B6: cafe-crawler-evening.plist Hour=11 (11:40 KST) — 주석은 20:40 KST (오기)
+// B7: 4개 plist 모두 caffeinate 없음 → Mac 화면보호기·배터리 절전 시 네트워크 끊김 위험</div>
+        <div class="patch-after">// B5: chmod +x scripts/launchd-alert.sh → 4개 exit 126 → 0
+// B6: cafe-crawler-evening.plist Hour=11 → Hour=20 (20:40 KST 정상 복구)
+// B7: ProgramArguments 앞에 /usr/bin/caffeinate -i 추가
+//     대상: cafe-crawler-morning / lunch / evening / fmkorea-scraper
+// 적용: launchctl unload → load 4개 → launchctl list 전체 exit 0 확인</div>
+        <div class="patch-effect">저녁 크롤링이 오전 11:40에 잘못 실행되던 버그 수정 → 2026-05-13부터 20:40 KST 정상 실행. Mac 절전 중 크롤링 네트워크 단절 방지. launchd 알림 정상 작동.</div>
+      </div>
+    </div>
+  </div>
+
   <div style="border-top:1px solid var(--border);padding-top:24px;color:var(--muted);font-size:12px;text-align:center;">
-    우나어 내부 문서 · 최종 업데이트: 2026-05-13 (패치 31cc11e · b478599 · 126cd28 반영) · 관련 문서: handover-cafe-persona-system.html / handover-magazine.html
+    우나어 내부 문서 · 최종 업데이트: 2026-05-13 (패치 31cc11e · b478599 · 126cd28 · e672ff4 반영) · 관련 문서: handover-cafe-persona-system.html / handover-magazine.html
   </div>
 
 </div>
