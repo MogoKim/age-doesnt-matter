@@ -89,11 +89,11 @@ export default async function BestPage({
               key={tab.key}
               href={`/best?tab=${tab.key}${qSuffix}`}
               className={`
-                flex items-center gap-1.5 px-4 py-3 rounded-xl text-body font-bold
+                flex items-center gap-1.5 px-4 py-3 rounded-full text-body font-bold
                 no-underline transition-colors min-h-[52px] whitespace-nowrap flex-shrink-0
                 ${currentTab === tab.key
-                  ? 'bg-primary text-white'
-                  : 'bg-card border border-border text-muted-foreground hover:border-primary/30'
+                  ? 'bg-primary text-white border-2 border-primary'
+                  : 'bg-card border-2 border-border text-muted-foreground hover:border-primary/30'
                 }
               `}
             >

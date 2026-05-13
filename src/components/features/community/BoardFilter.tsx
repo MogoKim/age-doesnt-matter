@@ -34,10 +34,10 @@ export default function BoardFilter({ categories, boardSlug }: BoardFilterProps)
           key={cat}
           aria-pressed={currentCategory === cat}
           className={cn(
-            'shrink-0 px-5 py-2.5 rounded-full border-2 text-caption font-medium cursor-pointer transition-all min-h-[52px] flex items-center whitespace-nowrap shadow-sm',
+            'shrink-0 px-5 py-2.5 rounded-full border-2 text-caption font-medium cursor-pointer transition-all min-h-[52px] flex items-center whitespace-nowrap',
             currentCategory === cat
-              ? 'bg-primary text-white border-primary font-bold shadow-[0_2px_8px_rgba(255,111,97,0.3)]'
-              : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary hover:bg-primary/5 hover:-translate-y-px hover:shadow-[0_2px_6px_rgba(255,111,97,0.15)]',
+              ? 'bg-primary text-white border-primary font-bold'
+              : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary hover:bg-primary/5',
             isPending && 'opacity-60',
           )}
           onClick={() => handleSelect(cat)}

@@ -58,20 +58,16 @@ export default async function JobsPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-background">
       <BoardViewTracker boardType="JOB" boardSlug="jobs" />
       <div className="px-4 py-6 max-w-[960px] mx-auto">
-        {/* 헤더 */}
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            내 일 찾기
-          </h1>
-          <Suspense fallback={null}>
-            <JobFilterButton />
-          </Suspense>
-        </div>
+        {/* sr-only h1 */}
+        <h1 className="sr-only">내 일 찾기</h1>
 
-        {/* 퀵 태그 */}
-        <div className="mb-4">
+        {/* 퀵태그 + 필터 버튼 한 행 */}
+        <div className="flex items-center gap-2 mb-4 overflow-x-auto [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Suspense fallback={null}>
             <JobQuickTags />
+          </Suspense>
+          <Suspense fallback={null}>
+            <JobFilterButton />
           </Suspense>
         </div>
 

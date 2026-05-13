@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useCallback } from 'react'
+import { cn } from '@/lib/utils'
 
 const QUICK_TAGS = ['나이무관', '초보환영', '오전', '오후', '주3일', '주5일']
 
@@ -32,17 +33,18 @@ export default function JobQuickTags() {
   )
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+    <div className="flex gap-2">
       {QUICK_TAGS.map((tag) => {
         const isActive = activeTags.includes(tag)
         return (
           <button
             key={tag}
-            className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
+            className={cn(
+              'shrink-0 px-5 py-2.5 rounded-full border-2 text-caption font-medium min-h-[52px] cursor-pointer transition-all',
               isActive
-                ? 'bg-primary text-white border-primary'
-                : 'bg-card text-muted-foreground border-border hover:border-primary/30'
-            }`}
+                ? 'bg-primary text-white border-primary font-bold'
+                : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary hover:bg-primary/5',
+            )}
             onClick={() => toggleTag(tag)}
           >
             {tag}

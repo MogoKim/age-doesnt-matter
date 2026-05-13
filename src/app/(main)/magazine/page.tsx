@@ -95,9 +95,7 @@ export default async function MagazinePage({
       />
       <BoardViewTracker boardType="MAGAZINE" boardSlug="magazine" />
       <div className="max-w-[960px] mx-auto px-4 py-6">
-        <h1 className="text-title font-bold text-foreground mb-4 flex items-center gap-2">
-          📖 매거진
-        </h1>
+        <h1 className="sr-only">매거진</h1>
 
         <Suspense fallback={null}>
           <MagazineFilter currentCategory={rawCategory} />
