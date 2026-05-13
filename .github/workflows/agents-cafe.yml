@@ -96,6 +96,7 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
+      - run: cd agents && npx prisma generate
 
       - name: Run DailyBrief Fallback (Mac 미실행 시 fallback_yesterday 자동 생성)
         run: cd agents && npx tsx cron/runner.ts cafe_crawler daily-brief-fallback

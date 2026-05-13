@@ -165,7 +165,7 @@ async function callAnalyzeApi(posts: PostForAnalysis[]): Promise<PsychResult[] |
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 2000,
+    max_tokens: 3500,
     system: SYSTEM_PROMPT,
     messages: [{
       role: 'user',
@@ -241,15 +241,15 @@ export async function analyzeBatch(posts: PostForAnalysis[]): Promise<PsychResul
       consecutiveFails++
     }
 
-    // 3회 연속 실패 시 Slack 경고 후 중단
+    // 3회 연속 실패 시 Slack 경고 후 리셋 (break 제거 — 나머지 글도 처리)
     if (consecutiveFails >= 3) {
       await notifySlack({
         level: 'warning',
         agent: 'PSYCH_ANALYZER',
         title: 'AI 분석 3회 연속 실패',
-        body: `개별 재시도 중 ${consecutiveFails}회 실패 — 글 "${post.title.slice(0, 30)}" 주변`,
+        body: `개별 재시도 중 ${consecutiveFails}회 실패 — 글 "${post.title.slice(0, 30)}" 주변. 계속 처리 중`,
       })
-      break
+      consecutiveFails = 0
     }
   }
 

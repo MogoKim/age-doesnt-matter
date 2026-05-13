@@ -21,7 +21,7 @@
  *   npx tsx agents/cafe/run-pipeline.ts all      # 수동 전체 실행
  *   npx tsx agents/cafe/run-pipeline.ts crawl    # 단계별 실행
  */
-import { execFileSync } from 'child_process'
+import { execFileSync, execSync } from 'child_process'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { readFileSync, existsSync, writeFileSync, rmSync } from 'fs'
@@ -137,6 +137,9 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
 
   for (let attempt = 1; attempt <= CRAWL_MAX_RETRIES; attempt++) {
     if (attempt > 1) {
+      // 고아 Chromium 프로세스 강제 정리 (메모리 누수 → ERR_INTERNET_DISCONNECTED 방지)
+      try { execSync('pkill -9 -f "Chromium" 2>/dev/null; true', { stdio: 'ignore' }) } catch {}
+      await new Promise(r => setTimeout(r, 5_000))
       console.log(`[Pipeline] ${label} — ${CRAWL_RETRY_WAIT_MS / 1000}초 후 재시도 (${attempt}/${CRAWL_MAX_RETRIES})`)
       await new Promise(r => setTimeout(r, CRAWL_RETRY_WAIT_MS))
     }
