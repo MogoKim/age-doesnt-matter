@@ -105,7 +105,7 @@ interface TechDebtMetrics {
 function countTechDebt(): TechDebtMetrics {
   try {
     const grepAny = execSync(
-      `grep -r ": any" ${join(ROOT, 'src')} --include="*.ts" 2>/dev/null | wc -l`,
+      `grep -r ": any" ${join(ROOT, 'src')} --include="*.ts" 2>/dev/null | grep -v "generated/" | wc -l`,
       { encoding: 'utf-8' },
     ).trim()
 

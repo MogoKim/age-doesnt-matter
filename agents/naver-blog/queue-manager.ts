@@ -54,15 +54,24 @@ const FROM_DB: Record<string, QueueStatus> = {
 
 // ── DB 접근 헬퍼 ──
 
-// prisma.naverBlogQueue 프록시 반환 — agents/core/db.ts는 tsc 제외 대상
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function q(): Promise<any> {
-  const { prisma } = await import('../core/db.js')
-  return (prisma as Record<string, unknown>).naverBlogQueue
+// agents/core/db.ts는 tsc 제외 대상이라 Prisma delegate 타입을 직접 참조할 수 없으므로
+// 사용하는 메서드만 선언한 최소 인터페이스로 any 없이 타입 안전성 확보
+interface NaverBlogQueueDelegate {
+  findFirst(args: unknown): Promise<Record<string, unknown> | null>
+  findMany(args: unknown): Promise<Record<string, unknown>[]>
+  create(args: unknown): Promise<Record<string, unknown>>
+  update(args: unknown): Promise<Record<string, unknown>>
+  updateMany(args: unknown): Promise<{ count: number }>
+  count(args?: unknown): Promise<number>
+  delete(args: unknown): Promise<Record<string, unknown>>
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function toItem(row: any): QueueItem {
+async function q(): Promise<NaverBlogQueueDelegate> {
+  const { prisma } = await import('../core/db.js')
+  return (prisma as Record<string, unknown>).naverBlogQueue as NaverBlogQueueDelegate
+}
+
+function toItem(row: Record<string, unknown>): QueueItem {
   return {
     queueId: row.queueId as string,
     magazinePostId: row.magazinePostId as string,
@@ -252,8 +261,7 @@ export async function getReadyForManualItems(): Promise<QueueItem[]> {
     where: { status: 'READY_FOR_MANUAL' },
     orderBy: { targetTime: 'asc' },
   })
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (rows as any[]).map(toItem)
+  return rows.map(toItem)
 }
 
 export async function isQueueReadable(): Promise<boolean> {
