@@ -863,10 +863,87 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
   return saved
 }
 
+// ─── 재크롤 갱신 (7일 이내 글 like/comment/view 최신화) ───────────────────
+
+export async function refreshRecentPosts(): Promise<number> {
+  const cutoff7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+  const posts = await prisma.cafePost.findMany({
+    where: { createdAt: { gte: cutoff7d }, postUrl: { not: '' } },
+    select: { id: true, postUrl: true, commentCount: true, likeCount: true },
+    orderBy: { commentCount: 'desc' },
+    take: 50,
+  })
+
+  if (posts.length === 0) {
+    console.log('[CafeCrawler] 재크롤: 7일 이내 게시글 없음')
+    return 0
+  }
+
+  console.log(`[CafeCrawler] 재크롤: ${posts.length}건 지표 갱신 시작`)
+  const { context } = await launchBrowser()
+  const page = await context.newPage()
+  let updated = 0
+
+  for (const post of posts) {
+    try {
+      await page.goto(post.postUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
+      await page.waitForTimeout(800)
+
+      const newLikeCount = await safeNumber(page, [
+        '.like_article .u_cnt', '.sympathy_count', '.like_article em',
+        '.u_likeit_list_count .u_cnt', '.LikeButton .count',
+      ])
+      const newCommentCount = await safeNumber(page, [
+        '.comment_count', '.comment_info_count .num', '.CommentCount',
+        '.reply_count', '.num_comment .num',
+      ])
+      const newViewCount = await safeNumber(page, [
+        '.article_info .count', '.article_viewer_head .count', '.count', '.info_count .num',
+      ])
+
+      if (newCommentCount !== post.commentCount || newLikeCount !== post.likeCount) {
+        const commentScore = Math.min(newCommentCount * 10, 100) * 0.55
+        const likeScore = Math.min(newLikeCount * 20, 100) * 0.35
+        const newKillerScore = Math.round(commentScore + likeScore)
+
+        await prisma.cafePost.update({
+          where: { id: post.id },
+          data: {
+            likeCount: newLikeCount,
+            commentCount: newCommentCount,
+            viewCount: newViewCount,
+            killerScore: newKillerScore,
+          },
+        })
+        updated++
+        console.log(`[CafeCrawler] 갱신: 댓글 ${post.commentCount}→${newCommentCount} 좋아요 ${post.likeCount}→${newLikeCount}`)
+      }
+    } catch (err) {
+      console.warn(`[CafeCrawler] 재크롤 실패: ${post.postUrl}`, err)
+    }
+  }
+
+  await context.close()
+  console.log(`[CafeCrawler] 재크롤 완료: ${updated}건 갱신 / ${posts.length}건 확인`)
+  return updated
+}
+
 // ─── 메인 실행 ─────────────────────────────────────────
 
 async function main() {
   const crawlMode = process.env.CRAWL_MODE ?? 'deep'
+
+  // ── REFRESH 모드: 7일 이내 게시글 지표 갱신 ──
+  if (crawlMode === 'refresh') {
+    const updated = await refreshRecentPosts()
+    await prisma.botLog.create({
+      data: { botType: 'CAFE_CRAWLER', action: 'CAFE_CRAWL', status: 'SUCCESS', details: JSON.stringify({ mode: 'refresh', updated }), itemCount: updated },
+    })
+    await disconnect()
+    return
+  }
+
   const isQuickMode = crawlMode === 'quick'
   const isCrawlOnly = crawlMode === 'crawl-only'  // 전체글보기 전용 (P0 신규)
   const includeComments = !isQuickMode  // DEEP/CRAWL-ONLY 모드만 댓글 수집

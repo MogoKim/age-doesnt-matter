@@ -508,6 +508,13 @@ const DESIRE_TO_SUBCATEGORY: Record<string, string> = {
   MEANING: '일상',
   HUMOR: '일상',
   ENTERTAIN: '일상',
+  BEAUTY: '일상',
+  DIGITAL: '일상',
+  FOOD: '일상',
+  SPIRITUAL: '일상',
+  HOUSING: '일상',
+  FASHION: '일상',
+  PET: '일상',
   GENERAL: '일상',
 }
 
@@ -690,6 +697,13 @@ async function main() {
     HOBBY:    ['취미', '여행', '등산', '요리', '텃밭', '독서', '공예'],
     MEANING:  ['삶', '의미', '행복', '감사', '성찰', '기억', '회고'],
     HUMOR:    ['웃긴', '황당', '유머', '재미', '웃음', '황당'],
+    BEAUTY:   ['피부', '미용', '성형', '뷰티', '보톡스', '화장품', '피부과', '안티에이징'],
+    DIGITAL:  ['스마트폰', '앱', '유튜브', '카카오', '키오스크', 'SNS', '유튜버', '인터넷'],
+    FOOD:     ['맛집', '요리', '음식', '식당', '레시피', '먹방', '건강식', '식단'],
+    SPIRITUAL:['종교', '기도', '사주', '운세', '교회', '절', '성당', '명상', '불교'],
+    HOUSING:  ['집', '이사', '인테리어', '전세', '월세', '아파트', '청약', '주거'],
+    FASHION:  ['옷', '패션', '스타일', '코디', '쇼핑', '명품', '브랜드'],
+    PET:      ['강아지', '고양이', '반려견', '반려묘', '동물병원', '펫', '반려동물'],
   }
 
   function guessDesire(topicStr: string | null | undefined): string {

@@ -235,6 +235,8 @@ function selectPersonalizedTopic(
     RETIRE: 'money', JOB: 'money', RELATION: 'relation',
     HOBBY: 'hobby', MEANING: 'meaning', HUMOR: 'humor', ENTERTAIN: 'humor',
     FOOD: 'hobby', FREEDOM: 'meaning', CARE: 'health',
+    BEAUTY: 'hobby', DIGITAL: 'meaning', SPIRITUAL: 'meaning',
+    HOUSING: 'money', FASHION: 'hobby', PET: 'relation',
   }
   const personaDesire = getPersonaDesire(personaId)
   const myArea = personaDesire ? desireToArea[personaDesire] : null

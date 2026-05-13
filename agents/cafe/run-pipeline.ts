@@ -289,6 +289,9 @@ export async function main(stepOverride?: string) {
       process.env.CRAWL_MODE = 'crawl-only'
       await runCrawlWithRetry('crawler.ts', '전체글보기 크롤링 (증분)')
       await checkCookieExpiry()
+      // 재크롤: 7일 이내 게시글 like/comment/view 최신화
+      process.env.CRAWL_MODE = 'refresh'
+      await run('crawler.ts', '재크롤: 최근 7일 게시글 지표 갱신')
     }
 
     // ── FULL 모드 (11:30 KST) — 크롤 + 심리분석 + 트렌드 + 브리프 + 큐레이션 ──

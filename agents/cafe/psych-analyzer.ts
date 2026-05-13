@@ -4,7 +4,7 @@
  *
  * 크롤링된 CafePost를 Claude Haiku로 배치 분석:
  *   - emotionTags: 감정 상태 10개 (ANXIOUS, LONELY, ANGRY, HOPEFUL, RESIGNED, GRATEFUL, PROUD, JEALOUS, CONFUSED, NOSTALGIC)
- *   - desireCategory: 욕망 카테고리 13개 (HEALTH, FAMILY, MONEY, RETIRE, JOB, RELATION, HOBBY, MEANING, DIGNITY, LEGACY, CARE, FREEDOM, ENTERTAIN)
+ *   - desireCategory: 욕망 카테고리 20개 (HEALTH, FAMILY, MONEY, RETIRE, JOB, RELATION, HOBBY, MEANING, DIGNITY, LEGACY, CARE, FREEDOM, ENTERTAIN, BEAUTY, DIGITAL, FOOD, SPIRITUAL, HOUSING, FASHION, PET)
  *   - desireType: 욕망 유형 (big_desire, need, want, demerit)
  *   - communitySignal: 글 쓴 이유 (question, complaint, confession, recommendation, celebration)
  *   - ageSignal: 추론 연령대 (50s, 60s, 70s+, unknown)
@@ -41,7 +41,7 @@ const isBackfill = process.argv.includes('--backfill')
 export interface PsychResult {
   index: number
   emotionTags: string[]     // ["ANXIOUS", "LONELY"] — 최대 3개
-  desireCategory: string    // "HEALTH" | "FAMILY" | "MONEY" | "RETIRE" | "JOB" | "RELATION" | "HOBBY" | "MEANING" | "DIGNITY" | "LEGACY" | "CARE" | "FREEDOM" | "ENTERTAIN"
+  desireCategory: string    // "HEALTH" | "FAMILY" | "MONEY" | "RETIRE" | "JOB" | "RELATION" | "HOBBY" | "MEANING" | "DIGNITY" | "LEGACY" | "CARE" | "FREEDOM" | "ENTERTAIN" | "BEAUTY" | "DIGITAL" | "FOOD" | "SPIRITUAL" | "HOUSING" | "FASHION" | "PET"
   desireType: string        // "big_desire" | "need" | "want" | "demerit"
   communitySignal: string   // "question" | "complaint" | "confession" | "recommendation" | "celebration"
   ageSignal: string         // "50s" | "60s" | "70s+" | "unknown"
@@ -89,6 +89,13 @@ LEGACY: 자식에게 남기기/기억되고 싶다/내가 죽으면
 CARE: 돌봄/간병/부모돌봄/배우자돌봄/내가 아프면 누가
 FREEDOM: 자유/독립/나만의 시간/혼자 있고 싶다/남편에서 벗어나
 ENTERTAIN: 연예/드라마/팬덤/임영웅/트로트/넷플릭스/콘서트/연예인
+BEAUTY: 뷰티/피부관리/미용/성형/피부과/보톡스/안티에이징/화장품
+DIGITAL: 스마트폰/앱/유튜브/SNS/키오스크/디지털기기/인터넷 활용
+FOOD: 음식/요리/맛집/건강식/식단/다이어트 식이 (먹는 것 자체)
+SPIRITUAL: 종교/기도/명상/사주/운세/절/교회/성당/불교/기독교
+HOUSING: 집/이사/인테리어/전세/월세/노후 주거/아파트/청약
+FASHION: 옷/패션/스타일/코디/쇼핑/명품/브랜드/옷 추천
+PET: 반려동물/강아지/고양이/동물병원/펫시터/반려견/반려묘
 
 [욕망 유형 (desireType) — 하나 선택]
 big_desire: 궁극적으로 원하는 상태 ("건강하게 살고 싶다")
