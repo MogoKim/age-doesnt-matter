@@ -224,5 +224,5 @@ export const QUALITY_THRESHOLDS = {
   /** 이 점수 미만은 DB 저장 안 함 */
   minSave: 20,
   /** 이 점수 이상은 isUsable = true */
-  minUsable: 60,
+  minUsable: 30,
 }

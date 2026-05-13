@@ -8,7 +8,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
-import type { CuratedContent, TrendAnalysis } from './types.js'
+import type { CuratedContent } from './types.js'
+import { loadTodayBrief } from './daily-brief.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
@@ -246,10 +247,22 @@ function matchPersona(topic: string): PersonaMatch {
   return bestMatch
 }
 
-/** 참고용 원본 글 가져오기 (qualityScore >= 50, 부분 단어 매칭) */
+const DESIRE_TO_SUBCATEGORY: Record<string, string> = {
+  HEALTH: '건강',
+  FAMILY: '자녀',
+  MONEY: '일상',
+  RETIRE: '일상',
+  RELATION: '고민',
+  HOBBY: '일상',
+  MEANING: '일상',
+  HUMOR: '일상',
+  ENTERTAIN: '일상',
+  GENERAL: '일상',
+}
+
+/** 참고용 원본 글 가져오기 (qualityScore >= 30, 48h 이내, killerScore 우선) */
 async function getReferencePosts(topic: string, limit: number) {
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
+  const cutoff48h = new Date(Date.now() - 48 * 60 * 60 * 1000)
 
   // 첫 단어 추출 (예: "갱년기 신체 증상" → "갱년기")
   const firstWord = topic.split(/[\s·,]+/)[0]
@@ -258,24 +271,26 @@ async function getReferencePosts(topic: string, limit: number) {
 
   return prisma.cafePost.findMany({
     where: {
-      qualityScore: { gte: 50 },
-      crawledAt: { gte: todayStart },
+      qualityScore: { gte: 30 },
+      usedAt: null,
+      postedAt: { gte: cutoff48h },
       OR: [
         { title: { contains: firstWord, mode: 'insensitive' } },
         { topics: { hasSome: topicWords } },
       ],
     },
-    orderBy: { likeCount: 'desc' },
+    orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: limit,
     select: { id: true, title: true, content: true, cafeName: true },
   })
 }
 
-/** 큐레이션된 글 생성 (반반이 방식) */
+/** 큐레이션된 글 생성 */
 async function generateCuratedPost(
   persona: PersonaMatch,
   topic: string,
-  referencePosts: { title: string; content: string; cafeName: string }[],
+  referencePosts: { id: string; title: string; content: string; cafeName: string }[],
+  desireCat?: string,
 ): Promise<CuratedContent | null> {
   const references = referencePosts.map((p, i) =>
     `인기글 ${i + 1} (${p.cafeName}): "${sanitizeForApi(p.title)}"\n${sanitizeForApi(p.content.slice(0, 400))}`,
@@ -340,20 +355,20 @@ ${references ? `[인기 카페 글 — 반반이 방식으로 참고]\n${referen
     title: stripMarkdown(titleMatch[1].trim()),
     content: stripMarkdown(bodyMatch[1].trim()),
     boardType: persona.board,
-    category: validCategories.includes(category ?? '') ? category : '일상',
+    category: (desireCat ? DESIRE_TO_SUBCATEGORY[desireCat] : null) ?? (validCategories.includes(category ?? '') ? category : '일상'),
     sourceTopic: topic,
-    sourcePostIds: referencePosts.map(() => 'ref'),
+    sourcePostIds: referencePosts.map(p => p.id),
   }
 }
 
-/** 큐레이션 글을 DB에 게시 */
-async function publishCuratedContent(curated: CuratedContent): Promise<void> {
+/** 큐레이션 글을 DB에 게시, 생성된 postId 반환 */
+async function publishCuratedContent(curated: CuratedContent): Promise<string | null> {
   const userId = await getBotUser(curated.personaId)
 
   const htmlContent = `<p>${curated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
   const summary = curated.content.replace(/\n/g, ' ').slice(0, 150).trim()
 
-  await prisma.post.create({
+  const post = await prisma.post.create({
     data: {
       title: curated.title,
       content: htmlContent,
@@ -366,6 +381,33 @@ async function publishCuratedContent(curated: CuratedContent): Promise<void> {
       publishedAt: new Date(),
     },
   })
+
+  // 참조한 원본 카페글에 usedAt 기록
+  if (curated.sourcePostIds.length > 0) {
+    await prisma.cafePost.updateMany({
+      where: { id: { in: curated.sourcePostIds } },
+      data: { usedAt: new Date() },
+    })
+  }
+
+  return post.id
+}
+
+/** 댓글 파동 큐 등록 (wave1: +1분, wave2: +5분, wave3: +30분, wave4: +60분) */
+async function enqueueCommentWave(postId: string, cafePostId: string, authorPersonaId: string) {
+  const now = new Date()
+  await prisma.commentWaveQueue.create({
+    data: {
+      postId,
+      cafePostId,
+      authorPersonaId,
+      wave1At: new Date(now.getTime() + 60_000),
+      wave2At: new Date(now.getTime() + 300_000),
+      wave3At: new Date(now.getTime() + 1_800_000),
+      wave4At: new Date(now.getTime() + 3_600_000),
+      expiresAt: new Date(now.getTime() + 216_000_000), // 60시간
+    },
+  })
 }
 
 /** 메인 실행 */
@@ -373,26 +415,14 @@ async function main() {
   console.log('[ContentCurator] 시작 — 트렌드 기반 콘텐츠 큐레이션')
   const startTime = Date.now()
 
-  // 1) 오늘의 트렌드 분석 결과 조회
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const trend = await prisma.cafeTrend.findUnique({
-    where: { date_period: { date: today, period: 'daily' } },
-  })
-
-  if (!trend) {
-    console.log('[ContentCurator] 오늘 트렌드 분석 없음 — 크롤링/분석 먼저 실행 필요')
-    await disconnect()
-    return
-  }
-
-  const hotTopics = trend.hotTopics as unknown as TrendAnalysis['hotTopics']
+  // 1) 핫토픽 조회 (오늘 트렌드 → 어제 → 최근 순으로 fallback)
+  const { hotTopics, desireMap: trendDesireMap, source: briefSource } = await loadTodayBrief()
   if (!hotTopics || hotTopics.length === 0) {
-    console.log('[ContentCurator] 핫토픽 없음 — 스킵')
+    console.log(`[ContentCurator] 핫토픽 없음 (source: ${briefSource}) — 트렌드 분석 먼저 필요`)
     await disconnect()
     return
   }
+  console.log(`[ContentCurator] 핫토픽 ${hotTopics.length}개 로드 (source: ${briefSource})`)
 
   // 2) 카테고리 다양화 — desireMap 기반으로 HEALTH 독점 방지
   const maxPosts = 3
@@ -420,7 +450,7 @@ async function main() {
   }
 
   // desireMap 기반 다양화: 카테고리별 1개씩 선택
-  const desireMap = trend.desireMap as Record<string, number> | null
+  const desireMap = trendDesireMap
   const topDesires = desireMap
     ? Object.entries(desireMap).sort(([, a], [, b]) => b - a).map(([k]) => k)
     : []
@@ -453,16 +483,23 @@ async function main() {
   }
 
   for (const topicStr of selectedTopics) {
+    const desireCat = guessDesire(topicStr)
     const persona = matchPersona(topicStr)
     const refs = await getReferencePosts(topicStr, 3)
 
-    console.log(`[ContentCurator] "${topicStr}" → ${persona.nickname} (참고글 ${refs.length}개)`)
+    console.log(`[ContentCurator] "${topicStr}" (${desireCat}) → ${persona.nickname} (참고글 ${refs.length}개)`)
 
-    const curated = await generateCuratedPost(persona, topicStr, refs)
+    const curated = await generateCuratedPost(persona, topicStr, refs, desireCat)
     if (curated) {
-      await publishCuratedContent(curated)
+      const postId = await publishCuratedContent(curated)
       publishedCount++
       console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
+      // 댓글 파동 큐 등록 (refs[0]가 있는 경우)
+      if (postId && refs[0]?.id) {
+        await enqueueCommentWave(postId, refs[0].id, persona.id).catch(err =>
+          console.warn('[ContentCurator] wave 큐 등록 실패 (무시):', err),
+        )
+      }
     }
   }
 

@@ -284,6 +284,38 @@ export async function main(stepOverride?: string) {
       await reportPipelineStage('curate')
     }
 
+    // ── CRAWL-ONLY 모드 (08:30 KST) — 전체글보기 크롤만, AI 분석 없음 ──
+    else if (step === 'crawl-only') {
+      process.env.CRAWL_MODE = 'crawl-only'
+      await runCrawlWithRetry('crawler.ts', '전체글보기 크롤링 (증분)')
+      await checkCookieExpiry()
+    }
+
+    // ── FULL 모드 (11:30 KST) — 크롤 + 심리분석 + 트렌드 + 브리프 + 큐레이션 ──
+    else if (step === 'full') {
+      process.env.CRAWL_MODE = 'crawl-only'
+      await runCrawlWithRetry('crawler.ts', '1단계: 전체글보기 크롤링 (증분)')
+      await checkCookieExpiry()
+      await reportPipelineStage('crawl')
+      await run('psych-analyzer.ts', '2단계: AI 심리 분석')
+      await reportPipelineStage('psych')
+      await run('trend-analyzer.ts', '3단계: 트렌드 분석')
+      await reportPipelineStage('trend')
+      await run('daily-brief.ts', '4단계: DailyBrief 생성')
+      await reportPipelineStage('brief')
+      await run('content-curator.ts', '5단계: 콘텐츠 큐레이션')
+      await reportPipelineStage('curate')
+    }
+
+    // ── CRAWL-CURATE 모드 (15:30/21:30 KST) — 크롤 + 큐레이션 (11:30 브리프 재활용) ──
+    else if (step === 'crawl-curate') {
+      process.env.CRAWL_MODE = 'crawl-only'
+      await runCrawlWithRetry('crawler.ts', '1단계: 전체글보기 크롤링 (증분)')
+      await checkCookieExpiry()
+      await run('content-curator.ts', '2단계: 콘텐츠 큐레이션 (11:30 브리프 재활용)')
+      await reportPipelineStage('curate')
+    }
+
     // ── 단계별 실행 ──
     else {
       if (step === 'crawl') { await runCrawlWithRetry('crawler.ts', '카페 크롤링'); await checkCookieExpiry() }

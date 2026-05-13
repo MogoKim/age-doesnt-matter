@@ -3,7 +3,7 @@
 > 모든 기능의 단일 진실의 원천.
 > **Claude가 /done 실행 시 자동 업데이트한다. 수동으로 편집하지 마라.**
 
-마지막 갱신: 2026-04-30 (CMA 충족욕망·타겟페르소나 컬럼 전수 매핑)
+마지막 갱신: 2026-05-13 (V6 P1 — 파이프라인 4회 구조 + 댓글 파동 A29 신규)
 
 ---
 
@@ -42,7 +42,8 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | `src/app/(main)/best*` | F07 |
 | `src/app/(main)/search*` | F08 |
 | `src/app/(admin)*` | F09 |
-| `agents/cafe/crawler*`, `agents/cafe/psych*`, `agents/cafe/trend*`, `agents/cafe/daily-brief*` | A01 |
+| `agents/cafe/crawler*`, `agents/cafe/psych*`, `agents/cafe/trend*`, `agents/cafe/daily-brief*`, `agents/cafe/content-curator*`, `agents/cafe/run-pipeline*` | A01 |
+| `agents/cafe/wave-processor*`, `src/app/api/internal/comment-wave*` | A29 |
 | `agents/cafe/local-magazine*`, `agents/cafe/magazine-generator*`, `agents/cafe/image-generator*`, `agents/cafe/thumbnail*` | A02 |
 | `agents/coo/job-scraper*` | A03 |
 | `agents/community/fmkorea*`, `agents/cmo/sheet-scraper*` | A04 |
@@ -87,7 +88,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 스케줄/트리거 | 실행환경 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|-------------|---------|---------|------------|------|------|---------|
-| A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` | launchd 08:30·12:30·20:40 KST (DEEP/QUICK/ALL) | LOCAL_ONLY | INFRA | — | [A01](A01-cafe-crawler.md) | ACTIVE | 2026-05-13 |
+| A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` + `content-curator.ts` + `run-pipeline.ts` | launchd 08:30·11:30·15:30·21:30 KST (crawl-only/full/crawl-curate×2) | LOCAL_ONLY | INFRA | — | [A01](A01-cafe-crawler.md) | ACTIVE | 2026-05-13 |
 | A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 11:00, 14:00 KST | LOCAL_ONLY | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-13 |
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/cmo/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | GHA 11:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | RELATION | P1·P3 | [A04](A04-external-content.md) | ACTIVE | 2026-05-13 |
@@ -115,6 +116,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A26 | Design 광고 루프 | `agents/marketing-loop/creative-optimizer.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A27 | QA 코드 게이트 | `agents/qa/pre-deploy-gate.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A28 | 네이버 블로그 수동 발행 큐 | `agents/naver-blog/*`, `src/app/admin/(panel)/naver-blog/*` | LOCAL 12:30/18:30 KST | LOCAL_ONLY | GROWTH | — | Gemini 이미지 포함 | ACTIVE | 2026-05-13 |
+| A29 | 댓글 파동 프로세서 | `agents/cafe/wave-processor.ts` + `src/app/api/internal/comment-wave/route.ts` | GHA `*/5 * * * *` (wave1~4 순차) / content-curator 발행 즉시 API 호출 | GHA+API | RELATION | ALL | [A29](A29-comment-wave.md) | ACTIVE | 2026-05-13 |
 
 ---
 
@@ -133,7 +135,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드/설정 위치 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|--------------|---------|------------|------|------|---------|
-| I01 | launchd 로컬 스케줄러 | `~/Library/LaunchAgents/com.unaeo.*.plist` | INFRA | — | [I01](I01-launchd-scheduler.md) | ACTIVE | 2026-05-12 |
+| I01 | launchd 로컬 스케줄러 | `~/Library/LaunchAgents/com.unaeo.*.plist` | INFRA | — | [I01](I01-launchd-scheduler.md) | ACTIVE | 2026-05-13 |
 | I02 | Upstash Redis 레이트리밋 | `src/lib/rate-limit.ts` | INFRA | — | [I02](I02-redis-ratelimit.md) | ACTIVE | 2026-04-27 |
 | I03 | Cloudflare R2 이미지 저장소 | `src/lib/r2.ts` + `agents/core/r2.ts` | INFRA | — | [I03](I03-r2-storage.md) | ACTIVE | 2026-04-27 |
 | I04 | Google Indexing API | 발행 시 자동 호출 | INFRA | — | [I04](I04-google-indexing.md) | ACTIVE | 2026-04-27 |

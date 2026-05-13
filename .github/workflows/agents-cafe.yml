@@ -15,17 +15,19 @@ on:
           - external
           - sheet-scrape
 
-  # 매일 09:00, 13:30, 20:30 KST — 카페 트렌드 분석 + 콘텐츠 큐레이션
+  # 매일 13:30, 20:30 KST — 큐레이션 스마트 fallback (plist 미실행 시 보완, runner.ts skip 내장)
+  # 매일 09:00, 09:30 KST — brief-fallback, brief-monitor
   # 매일 10:30, 14:00, 21:00 KST — 시트 스크래퍼 (오유/네이트판, 펨코 로컬만)
-  # 매일 09:30 KST — DailyBrief 생성 모니터
+  # 5분마다 — 댓글 파동 처리 (wave1~4)
   schedule:
-    - cron: "0 0 * * *"   # 09:00 KST (08:30 딥크롤 30분 후)
-    - cron: "30 4 * * *"  # 13:30 KST (12:55 딥크롤 35분 후)
-    - cron: "30 11 * * *" # 20:30 KST (20:00 딥크롤 30분 후)
+    - cron: "30 4 * * *"  # 13:30 KST — curate 스마트 fallback
+    - cron: "30 11 * * *" # 20:30 KST — curate 스마트 fallback
+    - cron: "0 0 * * *"   # 09:00 KST — brief-fallback
+    - cron: "30 0 * * *"  # 09:30 KST — brief-monitor
     - cron: "30 1 * * *"  # 10:30 KST — sheet-scrape
     - cron: "0 5 * * *"   # 14:00 KST — sheet-scrape
     - cron: "0 12 * * *"  # 21:00 KST — sheet-scrape
-    - cron: "30 0 * * *"  # 09:30 KST — brief-monitor
+    - cron: "*/5 * * * *" # 5분마다 — 댓글 파동 처리
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -57,6 +59,9 @@ jobs:
   analyze-and-curate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # 13:30/20:30 KST 스마트 fallback (plist 11:30 FULL 미실행 시 보완)
+    # runner.ts 내장 skip: 당일 CONTENT_CURATE ≥1건이면 자동 skip
+    if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'analyze' || github.event.inputs.step == 'curate' || (github.event_name == 'schedule' && (github.event.schedule == '30 4 * * *' || github.event.schedule == '30 11 * * *')) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -70,13 +75,7 @@ jobs:
       - run: npx prisma generate
       - run: cd agents && npm ci
 
-      - name: Run Trend Analyzer
-        # 20:30 KST 딥크롤 결과만 분석 (09:00/13:30 scheduled는 curate만 실행 — 중복 비용 제거)
-        if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'analyze' || (github.event_name == 'schedule' && github.event.schedule == '30 11 * * *') }}
-        run: cd agents && npx tsx cron/runner.ts cafe_crawler trend-analysis
-
-      - name: Run Content Curator
-        if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'curate' || github.event_name == 'schedule' }}
+      - name: Run Content Curator (스마트 fallback — 당일 발행 ≥1건이면 runner.ts에서 자동 skip)
         run: cd agents && npx tsx cron/runner.ts cafe_crawler content-curate
 
   brief-fallback:
@@ -145,3 +144,24 @@ jobs:
         run: cd agents && npx tsx cron/runner.ts community sheet-scrape
         env:
           SHEET_SCRAPER_EXCLUDE_SITE: fmkorea
+
+  wave-process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # 5분마다 댓글 파동 처리 (wave1~4)
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '*/5 * * * *' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Process Comment Waves (wave1~4 순차 댓글 게시)
+        run: cd agents && npx tsx cron/runner.ts cafe_crawler wave-process

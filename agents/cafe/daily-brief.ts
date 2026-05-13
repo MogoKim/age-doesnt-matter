@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import type { DailyIntelligenceBrief, DesireRankItem, UrgentTopic, PersonaQuota, ContentDirective, DataSourceBias, ControversyTopic } from '../core/intelligence.js'
+import type { TrendAnalysis } from './types.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BRIEF_PATH = resolve(__dirname, '../core/today-brief.json')
@@ -601,6 +602,58 @@ async function applyMidDayPatch(): Promise<void> {
     title: '오후 분위기 변화 감지',
     body: `*변화:* ${shifts.join(', ')}\n*조정 페르소나:* ${adjustedPersonas.length}명`,
   })
+}
+
+// ── 오늘 핫토픽 로드 (crawl-curate 모드에서 11:30 브리프 재활용) ──
+
+export async function loadTodayBrief(): Promise<{
+  hotTopics: TrendAnalysis['hotTopics']
+  desireMap: Record<string, number> | null
+  source: string
+}> {
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+
+  // 1순위: 오늘 CafeTrend
+  const todayTrend = await prisma.cafeTrend.findUnique({
+    where: { date_period: { date: todayStart, period: 'daily' } },
+  })
+  if (todayTrend?.hotTopics) {
+    return {
+      hotTopics: todayTrend.hotTopics as unknown as TrendAnalysis['hotTopics'],
+      desireMap: todayTrend.desireMap as Record<string, number> | null,
+      source: 'today_trend',
+    }
+  }
+
+  // 2순위: 어제 CafeTrend (11:30 FULL 미실행 시 fallback)
+  const yesterdayStart = new Date(todayStart)
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1)
+  const yesterdayTrend = await prisma.cafeTrend.findUnique({
+    where: { date_period: { date: yesterdayStart, period: 'daily' } },
+  })
+  if (yesterdayTrend?.hotTopics) {
+    return {
+      hotTopics: yesterdayTrend.hotTopics as unknown as TrendAnalysis['hotTopics'],
+      desireMap: yesterdayTrend.desireMap as Record<string, number> | null,
+      source: 'yesterday_trend',
+    }
+  }
+
+  // 3순위: 가장 최근 CafeTrend
+  const recentTrend = await prisma.cafeTrend.findFirst({
+    where: { period: 'daily' },
+    orderBy: { date: 'desc' },
+  })
+  if (recentTrend?.hotTopics) {
+    return {
+      hotTopics: recentTrend.hotTopics as unknown as TrendAnalysis['hotTopics'],
+      desireMap: recentTrend.desireMap as Record<string, number> | null,
+      source: 'recent_trend',
+    }
+  }
+
+  return { hotTopics: [], desireMap: null, source: 'empty' }
 }
 
 // ── 메인 ──
