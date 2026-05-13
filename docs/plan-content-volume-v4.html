@@ -6,683 +6,813 @@
 <title>우나어 — 콘텐츠 볼륨 V4 기획서</title>
 <style>
   :root {
-    --bg: #0f1117; --bg2: #1a1d27; --bg3: #22263a;
-    --border: #2e3347; --text: #e8eaf0; --muted: #8b92a8;
-    --primary: #FF6F61; --primary-dim: rgba(255,111,97,0.15);
-    --green: #4ade80; --green-dim: rgba(74,222,128,0.12);
-    --blue: #60a5fa; --blue-dim: rgba(96,165,250,0.12);
-    --yellow: #fbbf24; --yellow-dim: rgba(251,191,36,0.12);
-    --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.12);
-    --teal: #2dd4bf; --teal-dim: rgba(45,212,191,0.12);
-    --red: #f87171; --red-dim: rgba(248,113,113,0.12);
-    --orange: #fb923c;
+    --bg:#0f1117;--bg2:#1a1d27;--bg3:#22263a;--border:#2e3347;--text:#e8eaf0;--muted:#8b92a8;
+    --primary:#FF6F61;--primary-dim:rgba(255,111,97,0.15);
+    --green:#4ade80;--green-dim:rgba(74,222,128,0.12);
+    --blue:#60a5fa;--blue-dim:rgba(96,165,250,0.12);
+    --yellow:#fbbf24;--yellow-dim:rgba(251,191,36,0.12);
+    --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.12);
+    --teal:#2dd4bf;--teal-dim:rgba(45,212,191,0.12);
+    --red:#f87171;--red-dim:rgba(248,113,113,0.12);
+    --orange:#fb923c;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system,'Pretendard','Apple SD Gothic Neo',sans-serif; background:var(--bg); color:var(--text); line-height:1.7; font-size:15px; }
-  .wrap { max-width:1080px; margin:0 auto; padding:48px 24px 80px; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,'Pretendard','Apple SD Gothic Neo',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px;}
+  .wrap{max-width:1100px;margin:0 auto;padding:48px 24px 80px;}
 
-  .doc-header { border-bottom:1px solid var(--border); padding-bottom:32px; margin-bottom:48px; }
-  .badge { display:inline-block; font-size:12px; font-weight:700; letter-spacing:0.08em; padding:4px 10px; border-radius:4px; margin-bottom:14px; text-transform:uppercase; }
-  .badge-primary { background:var(--primary-dim); color:var(--primary); }
-  .badge-green { background:var(--green-dim); color:var(--green); }
-  .badge-blue { background:var(--blue-dim); color:var(--blue); }
-  .badge-yellow { background:var(--yellow-dim); color:var(--yellow); }
-  .badge-purple { background:var(--purple-dim); color:var(--purple); }
-  .badge-teal { background:var(--teal-dim); color:var(--teal); }
-  .badge-red { background:var(--red-dim); color:var(--red); }
-  .doc-header h1 { font-size:28px; font-weight:800; margin-bottom:8px; }
-  .doc-header p { color:var(--muted); font-size:14px; }
+  /* Header */
+  .doc-header{border-bottom:1px solid var(--border);padding-bottom:32px;margin-bottom:48px;}
+  .badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:3px 9px;border-radius:4px;text-transform:uppercase;}
+  .badge-v{background:var(--primary-dim);color:var(--primary);}
+  .badge-ok{background:var(--green-dim);color:var(--green);}
+  .doc-header h1{font-size:28px;font-weight:800;margin:12px 0 8px;}
+  .doc-header p{color:var(--muted);font-size:14px;}
 
-  .section { margin-bottom:56px; }
-  .section-header { display:flex; align-items:center; gap:14px; margin-bottom:24px; }
-  .section-num { width:36px; height:36px; border-radius:10px; background:var(--bg3); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; flex-shrink:0; }
-  .section-header h2 { font-size:18px; font-weight:800; }
-  .section-header .desc { font-size:13px; color:var(--muted); margin-left:auto; }
+  /* Section */
+  .section{margin-bottom:56px;}
+  .section-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+  .s-num{width:36px;height:36px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;}
+  .section-header h2{font-size:18px;font-weight:800;}
+  .section-header .desc{font-size:12px;color:var(--muted);margin-left:auto;}
 
-  .callout { border-left:3px solid var(--primary); background:var(--bg2); border-radius:0 10px 10px 0; padding:16px 20px; margin-bottom:16px; font-size:13px; color:var(--muted); line-height:1.8; }
-  .callout strong { color:var(--text); }
-  .callout.green { border-color:var(--green); }
-  .callout.blue { border-color:var(--blue); }
-  .callout.yellow { border-color:var(--yellow); }
-  .callout.teal { border-color:var(--teal); }
-  .callout.red { border-color:var(--red); }
+  /* Callout */
+  .callout{border-left:3px solid var(--primary);background:var(--bg2);border-radius:0 10px 10px 0;padding:15px 20px;margin-bottom:14px;font-size:13px;color:var(--muted);line-height:1.8;}
+  .callout strong{color:var(--text);}
+  .callout.green{border-color:var(--green);}
+  .callout.blue{border-color:var(--blue);}
+  .callout.yellow{border-color:var(--yellow);}
+  .callout.teal{border-color:var(--teal);}
+  .callout.red{border-color:var(--red);}
+  .callout.purple{border-color:var(--purple);}
 
-  .compare-table { width:100%; border-collapse:collapse; font-size:13px; }
-  .compare-table th { background:var(--bg3); padding:10px 14px; text-align:left; color:var(--muted); font-weight:600; border-bottom:1px solid var(--border); }
-  .compare-table td { padding:11px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
-  .compare-table tr:last-child td { border-bottom:none; }
-  .val-old { color:var(--red); }
-  .val-new { color:var(--green); font-weight:700; }
-  .val-same { color:var(--muted); }
+  /* Tables */
+  .tbl{width:100%;border-collapse:collapse;font-size:13px;}
+  .tbl th{background:var(--bg3);padding:9px 13px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);}
+  .tbl td{padding:10px 13px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .tbl tr:last-child td{border-bottom:none;}
+  .v-old{color:var(--red);}
+  .v-new{color:var(--green);font-weight:700;}
+  .v-same{color:var(--muted);}
 
-  .item-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
-  .item-card { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:20px 22px; }
-  .item-tag { display:inline-block; font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding:3px 8px; border-radius:4px; margin-bottom:10px; }
-  .item-card h3 { font-size:15px; font-weight:800; margin-bottom:10px; }
-  .item-card p, .item-card ul { font-size:13px; color:var(--muted); line-height:1.85; }
-  .item-card ul { padding-left:16px; }
-  .item-card code { font-family:monospace; font-size:12px; background:var(--bg3); padding:1px 5px; border-radius:3px; color:var(--teal); }
+  /* Cards */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px 22px;}
+  .card-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:4px;margin-bottom:10px;}
+  .card h3{font-size:15px;font-weight:800;margin-bottom:10px;}
+  .card p,.card ul,.card ol{font-size:13px;color:var(--muted);line-height:1.85;}
+  .card ul,.card ol{padding-left:16px;}
+  .card li{margin-bottom:2px;}
+  .card code{font-family:monospace;font-size:11px;background:var(--bg3);padding:1px 5px;border-radius:3px;color:var(--teal);}
 
-  .stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:24px; }
-  .stat-box { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:16px 18px; text-align:center; }
-  .stat-box .lbl { font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; margin-bottom:6px; }
-  .stat-box .num { font-size:26px; font-weight:900; }
-  .stat-box .sub { font-size:11px; color:var(--muted); margin-top:4px; }
+  /* Stats */
+  .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+  .stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;text-align:center;}
+  .stat .lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:6px;}
+  .stat .num{font-size:26px;font-weight:900;}
+  .stat .sub{font-size:11px;color:var(--muted);margin-top:4px;}
 
-  .arch-box { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:24px; font-family:monospace; font-size:13px; line-height:2; }
-  .arch-box .comment { color:var(--muted); }
-  .arch-box .highlight { color:var(--green); font-weight:700; }
-  .arch-box .removed { color:var(--red); text-decoration:line-through; opacity:0.6; }
-  .arch-box .arrow { color:var(--muted); }
+  /* Priority blocks */
+  .pblock{border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden;}
+  .pblock-hd{display:flex;align-items:center;gap:12px;padding:13px 18px;background:var(--bg3);border-bottom:1px solid var(--border);}
+  .p-lbl{font-size:11px;font-weight:800;letter-spacing:0.08em;padding:3px 10px;border-radius:4px;}
+  .pblock-hd h3{font-size:14px;font-weight:800;}
+  .pblock-hd .eff{font-size:11px;color:var(--muted);margin-left:auto;}
+  .pitem{padding:11px 18px;border-bottom:1px solid var(--border);font-size:13px;display:flex;gap:10px;align-items:flex-start;}
+  .pitem:last-child{border-bottom:none;}
+  .pitem .pf{color:var(--teal);font-family:monospace;font-size:11px;flex-shrink:0;min-width:150px;padding-top:1px;}
+  .pitem .pd{color:var(--text);}
+  .chip{display:inline-block;font-size:10px;font-weight:800;padding:1px 6px;border-radius:3px;margin-left:5px;}
+  .chip-new{background:var(--green-dim);color:var(--green);}
+  .chip-chg{background:var(--primary-dim);color:var(--primary);}
+  .chip-del{background:var(--red-dim);color:var(--red);}
+  .chip-same{background:var(--bg3);color:var(--muted);}
 
-  .schedule-table { width:100%; border-collapse:collapse; font-size:13px; }
-  .schedule-table th { background:var(--bg3); padding:10px 14px; text-align:left; color:var(--muted); font-weight:600; border-bottom:1px solid var(--border); }
-  .schedule-table td { padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
-  .schedule-table tr:last-child td { border-bottom:none; }
-  .time-chip { display:inline-block; background:var(--primary-dim); color:var(--primary); font-size:12px; font-weight:800; padding:3px 10px; border-radius:6px; }
+  /* Wave */
+  .wave-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;}
+  .wave-title{font-size:13px;font-weight:800;margin-bottom:14px;}
+  .wave-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .wave-time{font-size:11px;color:var(--muted);width:70px;flex-shrink:0;font-weight:700;}
+  .wbar{height:22px;border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:11px;font-weight:800;min-width:28px;}
+  .wbar.c1{background:var(--blue-dim);color:var(--blue);}
+  .wbar.c2{background:var(--green-dim);color:var(--green);}
+  .wbar.c3{background:var(--yellow-dim);color:var(--yellow);}
+  .wbar.c4{background:var(--purple-dim);color:var(--purple);}
 
-  .wave-box { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:20px; }
-  .wave-title { font-size:13px; font-weight:800; margin-bottom:14px; }
-  .wave-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-  .wave-time { font-size:11px; color:var(--muted); width:70px; flex-shrink:0; font-weight:700; }
-  .wave-bar { height:22px; border-radius:4px; display:flex; align-items:center; padding:0 8px; font-size:11px; font-weight:800; min-width:32px; }
-  .wave-bar.c1 { background:var(--blue-dim); color:var(--blue); }
-  .wave-bar.c2 { background:var(--green-dim); color:var(--green); }
-  .wave-bar.c3 { background:var(--yellow-dim); color:var(--yellow); }
-  .wave-bar.c4 { background:var(--purple-dim); color:var(--purple); }
+  /* Board cards */
+  .board-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;}
+  .bcard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .bcard-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .bcard-num{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;}
+  .bcard-name{font-size:15px;font-weight:800;}
+  .bcard-enum{font-size:10px;font-family:monospace;color:var(--muted);margin-top:1px;}
+  .bcard-body{padding:14px 18px;}
+  .bcard-desc{font-size:12px;color:var(--muted);margin-bottom:10px;}
+  .sub-list{display:flex;flex-wrap:wrap;gap:6px;}
+  .sub-tag{font-size:11px;background:var(--bg3);border:1px solid var(--border);color:var(--muted);padding:3px 9px;border-radius:100px;}
+  .sub-tag.new{background:var(--primary-dim);border-color:var(--primary);color:var(--primary);}
+  .bcard-note{font-size:11px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
 
-  .desire-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; }
-  .desire-tag { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; }
-  .desire-tag .d-id { font-size:10px; font-weight:800; color:var(--muted); letter-spacing:0.08em; }
-  .desire-tag .d-name { font-size:13px; font-weight:800; margin:2px 0; }
-  .desire-tag .d-kw { font-size:11px; color:var(--muted); }
-  .desire-tag.new-cat { border-color:var(--primary); background:var(--primary-dim); }
-  .desire-tag.new-cat .d-id { color:var(--primary); }
+  /* Flow */
+  .flow{display:flex;gap:0;overflow-x:auto;}
+  .flow-step{flex:1;min-width:110px;background:var(--bg2);border:1px solid var(--border);padding:12px 14px;text-align:center;position:relative;}
+  .flow-step:not(:last-child)::after{content:'→';position:absolute;right:-10px;top:50%;transform:translateY(-50%);color:var(--muted);z-index:1;}
+  .flow-step:first-child{border-radius:10px 0 0 10px;}
+  .flow-step:last-child{border-radius:0 10px 10px 0;}
+  .flow-step .fn{font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:700;}
+  .flow-step .ft{font-size:12px;font-weight:800;}
+  .flow-step .fs{font-size:10px;color:var(--muted);margin-top:3px;}
+  .flow-step.fa{background:var(--blue-dim);border-color:var(--blue);}
+  .flow-step.fb{background:var(--green-dim);border-color:var(--green);}
 
-  .priority-block { border:1px solid var(--border); border-radius:12px; margin-bottom:16px; overflow:hidden; }
-  .priority-header { display:flex; align-items:center; gap:12px; padding:14px 18px; background:var(--bg3); border-bottom:1px solid var(--border); }
-  .priority-label { font-size:11px; font-weight:800; letter-spacing:0.08em; padding:3px 10px; border-radius:4px; }
-  .priority-header h3 { font-size:14px; font-weight:800; }
-  .priority-header .eff { font-size:11px; color:var(--muted); margin-left:auto; }
-  .priority-item { padding:12px 18px; border-bottom:1px solid var(--border); font-size:13px; display:flex; gap:10px; align-items:flex-start; }
-  .priority-item:last-child { border-bottom:none; }
-  .priority-item .pi-file { color:var(--teal); font-family:monospace; font-size:12px; flex-shrink:0; min-width:140px; }
-  .priority-item .pi-desc { color:var(--text); }
-  .pi-new { color:var(--green); font-size:10px; font-weight:800; background:var(--green-dim); padding:1px 6px; border-radius:3px; margin-left:6px; }
-  .pi-changed { color:var(--primary); font-size:10px; font-weight:800; background:var(--primary-dim); padding:1px 6px; border-radius:3px; margin-left:6px; }
-  .pi-same { color:var(--muted); font-size:10px; font-weight:800; background:var(--bg3); padding:1px 6px; border-radius:3px; margin-left:6px; }
+  code.il{font-family:monospace;font-size:12px;background:var(--bg3);padding:2px 6px;border-radius:3px;color:var(--teal);}
 
-  .ratio-bar { display:flex; height:28px; border-radius:8px; overflow:hidden; margin:12px 0; }
-  .ratio-sa { background:var(--blue); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#0f1117; }
-  .ratio-2m { background:var(--green); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#0f1117; }
-  .ratio-ww { background:var(--yellow); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#0f1117; }
+  .ratio-bar{display:flex;height:28px;border-radius:8px;overflow:hidden;margin:12px 0;}
+  .r-story{background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#0f1117;}
+  .r-life2{background:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#0f1117;}
+  .r-humor{background:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#0f1117;}
 
-  code.inline { font-family:monospace; font-size:12px; background:var(--bg3); padding:2px 6px; border-radius:3px; color:var(--teal); }
-  table.small { width:100%; border-collapse:collapse; font-size:12px; }
-  table.small th { background:var(--bg3); padding:8px 12px; text-align:left; color:var(--muted); font-weight:600; border-bottom:1px solid var(--border); }
-  table.small td { padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
-  table.small tr:last-child td { border-bottom:none; }
-
-  .verified-badge { display:inline-flex; align-items:center; gap:5px; background:var(--green-dim); color:var(--green); font-size:11px; font-weight:700; padding:3px 8px; border-radius:4px; }
+  .arch-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;font-family:monospace;font-size:12px;line-height:2;}
+  .arch-box .rem{color:var(--red);text-decoration:line-through;opacity:0.6;}
+  .arch-box .add{color:var(--green);font-weight:700;}
+  .arch-box .cmt{color:var(--muted);}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<!-- Header -->
+<!-- ══ HEADER ══ -->
 <div class="doc-header">
-  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
-    <span class="badge badge-primary">PLANNING DOC V4</span>
-    <span class="verified-badge">✓ Playwright 실증 기반</span>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <span class="badge badge-v">PLANNING DOC V4</span>
+    <span class="badge badge-ok">✓ Playwright 실증</span>
+    <span class="badge" style="background:var(--yellow-dim);color:var(--yellow);">최종 개발 기준</span>
   </div>
   <h1>우나어 콘텐츠 볼륨 V4 기획서</h1>
-  <p>작성일: 2026-05-13 &nbsp;|&nbsp; 상태: 검토 중 (개발 미착수)</p>
-  <p style="margin-top:8px; color:var(--primary);">
-    V3 기반 + 크롤링 아키텍처 전면 교체 — 게시판별 순회 폐지 → 전체글보기(/menus/0) 단일 크롤로 통합
-  </p>
+  <p>작성일: 2026-05-13 &nbsp;|&nbsp; 버전: V4 (V2·V3 통합 + 전체글보기 크롤 전환 + 게시판 재설계)</p>
+  <p style="margin-top:6px;color:var(--primary);">V4 = 최종 개발 기준 문서. 개발은 이 문서 기준으로만 진행.</p>
 </div>
 
-<!-- 01 V4 핵심 변경 — V3와의 차이 -->
+<!-- ══ 01 목적 & 배경 ══ -->
 <div class="section">
   <div class="section-header">
-    <div class="section-num" style="color:var(--primary)">01</div>
-    <h2>V4 핵심 변경 — V3 대비 달라지는 것</h2>
-    <span class="desc">V3의 나머지는 전부 유지</span>
+    <div class="s-num" style="color:var(--primary)">01</div>
+    <h2>목적 &amp; 배경 — 왜 V4가 필요한가</h2>
   </div>
 
-  <div class="callout green">
-    <strong>발견 계기:</strong> 네이버 카페 두 곳 모두 <code class="inline">/menus/0?viewType=L</code> URL(전체글보기)에서 전체 게시판 글을 최신순으로 통합 제공한다는 것을 Playwright로 직접 확인. 게시판명(boardName)도 각 글에 정확히 포함되어 있어 기존 분류 체계 유지 가능.
+  <div class="callout red">
+    <strong>현재 시스템의 핵심 문제 4가지:</strong> 지금 운영 중인 시스템은 하루 25~30건을 발행하지만, 콘텐츠 품질과 인게이지먼트 모두 목표치에 미치지 못한다. 이를 해결하지 않으면 커뮤니티 신뢰도가 저하되고 자동화 효과가 반감된다.
   </div>
 
-  <table class="compare-table" style="margin-top:16px;">
+  <div class="grid">
+    <div class="card">
+      <div class="card-tag" style="background:var(--red-dim);color:var(--red);">문제 ①</div>
+      <h3>발행량 부족 + 인풋 낭비</h3>
+      <p>현재 게시판 30~40개를 하나하나 돌며 크롤한다. 설정 유지 비용이 크고, 새 게시판이 생기면 자동 누락된다. isUsable 기준(60점)을 통과하는 글이 14.6%뿐이라 하루 발행 인풋이 턱없이 부족하다. 목표 75건/일 달성 불가.</p>
+    </div>
+    <div class="card">
+      <div class="card-tag" style="background:var(--red-dim);color:var(--red);">문제 ②</div>
+      <h3>AI 티나는 콘텐츠</h3>
+      <p>현재 '반반이 방식': 원문 50% + 페르소나 경험 50% 합성. 실제 카페 글과 너무 달라 인위적으로 보이고, 독자들이 위화감을 느껴 이탈한다. 커뮤니티 신뢰도 저하의 직접 원인.</p>
+    </div>
+    <div class="card">
+      <div class="card-tag" style="background:var(--red-dim);color:var(--red);">문제 ③</div>
+      <h3>초기 인게이지먼트 없음</h3>
+      <p>글 올린 후 첫 댓글이 10분 후. 네이버·우나어 알고리즘은 게시 직후 반응 속도에 민감하다. 1분 내 반응이 없으면 '활성 글'로 분류되지 않아 추천에 걸리지 않는다.</p>
+    </div>
+    <div class="card">
+      <div class="card-tag" style="background:var(--red-dim);color:var(--red);">문제 ④</div>
+      <h3>서브카테고리 랜덤 배정</h3>
+      <p>현재 <code>categoryMap</code>에서 무작위 선택. 게시글의 실제 내용과 카테고리가 불일치하는 경우 발생. UX 저하 + 검색 정확도 감소. DB에 서브카테고리 메타데이터도 없어 통계 불가.</p>
+    </div>
+    <div class="card">
+      <div class="card-tag" style="background:var(--red-dim);color:var(--red);">문제 ⑤</div>
+      <h3>아침 크롤 타이밍 미스매치</h3>
+      <p>08:30 크롤은 00~08:30 새벽 글을 수집한다. 이 글들은 인게이지먼트가 거의 0에 가깝다. 화제성 기준(commentCount ≥ 2)을 통과하는 글이 극소수 → 화제성 발행 풀이 텅 빈다.</p>
+    </div>
+    <div class="card">
+      <div class="card-tag" style="background:var(--primary-dim);color:var(--primary);">V4 목표</div>
+      <h3>V4로 해결하는 것</h3>
+      <ul>
+        <li>전체글보기 단일 크롤 → 설정 단순화 + 새벽글 자동 커버</li>
+        <li>isUsable 40으로 완화 → 발행 인풋 2.7배</li>
+        <li>원문 90% 보존 → AI 티 제거</li>
+        <li>댓글 파동 1분 이내 첫 반응</li>
+        <li>desireCategory 기반 서브카테고리 자동 배정</li>
+        <li>11:30 크롤로 타이밍 최적화</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 02 기존 → V4 변경 요약 ══ -->
+<div class="section">
+  <div class="section-header">
+    <div class="s-num" style="color:var(--blue)">02</div>
+    <h2>기존(현재 운영) → V4 변경 전체 요약</h2>
+    <span class="desc">현재 운영 기준</span>
+  </div>
+
+  <table class="tbl">
     <thead>
-      <tr><th>항목</th><th>V3 기획</th><th>V4 기획 (변경)</th></tr>
+      <tr><th>항목</th><th>현재 운영 중 (V1)</th><th>V4 목표</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td><strong>크롤링 방식</strong></td>
-        <td class="val-old">게시판 30~40개 URL 순회</td>
-        <td class="val-new">전체글보기(/menus/0) 단일 URL <span class="pi-new">핵심변경</span></td>
-      </tr>
-      <tr>
-        <td><strong>크롤 횟수</strong></td>
-        <td class="val-old">5회 (01:30 DAWN 포함)</td>
-        <td class="val-new">4회 (01:30 제거 — 전체글로 새벽글 자동 커버)</td>
-      </tr>
-      <tr>
-        <td><strong>새벽글 처리</strong></td>
-        <td class="val-old">01:30 별도 크롤 필요</td>
-        <td class="val-new">08:30 전체글보기에서 자동 수집</td>
-      </tr>
-      <tr>
-        <td><strong>config.ts 게시판 설정</strong></td>
-        <td class="val-old">카페당 30~40개 게시판 URL 관리</td>
-        <td class="val-new">카페당 URL 1개 (menus/0) + 공지 필터만</td>
-      </tr>
-      <tr>
-        <td><strong>중복 수집 방지</strong></td>
-        <td class="val-old">게시판별 lastCrawledAt 기준</td>
-        <td class="val-new">articleId 기반 (순차 정수 — 이미 있으면 스킵)</td>
-      </tr>
-      <tr>
-        <td><strong>공지/필독 처리</strong></td>
-        <td class="val-old">게시판별로 다름</td>
-        <td class="val-new">전체글보기에서 일괄 필터 (뱃지 감지)</td>
-      </tr>
-      <tr>
-        <td><strong>나머지 전체</strong></td>
-        <td class="val-same">—</td>
-        <td class="val-same">V3와 동일 유지 (원문 90%, 댓글 파동, 욕망 20개 등)</td>
-      </tr>
+      <tr><td><strong>크롤 방식</strong></td><td class="v-old">게시판 30~40개 URL 개별 순회</td><td class="v-new">/menus/0 전체글보기 단일 URL <span class="chip chip-chg">핵심</span></td></tr>
+      <tr><td><strong>크롤 횟수/시각</strong></td><td class="v-old">3회: 08:30 / 12:55 / 20:40</td><td class="v-new">4회: 08:30 / 11:30(분석) / 15:30 / 21:30</td></tr>
+      <tr><td><strong>아침 크롤 분석 시각</strong></td><td class="v-old">08:30 크롤 직후 분석</td><td class="v-new">11:30 (인게이지먼트 충분히 쌓인 후)</td></tr>
+      <tr><td><strong>중복 방지</strong></td><td class="v-old">lastCrawledAt 기준 (불완전)</td><td class="v-new">articleId 기반 (순차 증가 ID 비교)</td></tr>
+      <tr><td><strong>품질 기준 minSave</strong></td><td class="v-old">30점</td><td class="v-new">20점</td></tr>
+      <tr><td><strong>품질 기준 isUsable</strong></td><td class="v-old">60점 (통과율 14.6%)</td><td class="v-new">40점 (예상 통과율 ~40%)</td></tr>
+      <tr><td><strong>일일 발행량</strong></td><td class="v-old">25~30건</td><td class="v-new">75건 (09~23시 매 시간 5건)</td></tr>
+      <tr><td><strong>큐레이션 실행</strong></td><td class="v-old">아침 1회 (3건/일)</td><td class="v-new">4회 모두 실행 (최대 12건/일)</td></tr>
+      <tr><td><strong>원문 보존율 (일반글)</strong></td><td class="v-old">50% (반반이 방식)</td><td class="v-new">90% (수미상관 방식)</td></tr>
+      <tr><td><strong>원문 보존율 (화제성글)</strong></td><td class="v-old">50%</td><td class="v-new">95%</td></tr>
+      <tr><td><strong>댓글 보존율</strong></td><td class="v-old">AI 완전 생성</td><td class="v-new">90% 원문 기반 말투 변환</td></tr>
+      <tr><td><strong>제목 처리</strong></td><td class="v-old">AI 새로 생성</td><td class="v-new">원문 반영하되 약간 변형 (SEO + 감정 포인트)</td></tr>
+      <tr><td><strong>댓글 파동 — 일반글</strong></td><td class="v-old">10분 / 1시간 / 3시간</td><td class="v-new">1분(1) · 5분(3) · 30분(3) · 1시간(1) = 8개</td></tr>
+      <tr><td><strong>댓글 파동 — 화제성글</strong></td><td class="v-old">10분 / 1시간 / 3시간</td><td class="v-new">1분(2) · 5분(6) · 30분(5) · 1시간(3) = 16개</td></tr>
+      <tr><td><strong>서브카테고리 배정</strong></td><td class="v-old">categoryMap 무작위 선택</td><td class="v-new">desireCategory → 서브카테고리 자동 매핑</td></tr>
+      <tr><td><strong>욕망 카테고리</strong></td><td class="v-old">13개</td><td class="v-new">20개 (BEAUTY / DIGITAL / NOSTALGIA / PRIDE / GRIEF / TRAVEL / FOOD 추가)</td></tr>
+      <tr><td><strong>페르소나 구조</strong></td><td class="v-old">통합 (~50명)</td><td class="v-new">글 전문 35명 + 댓글 전문 15명 분리</td></tr>
     </tbody>
   </table>
 </div>
 
-<!-- 02 전체글보기 실증 분석 -->
+<!-- ══ 03 전체글보기 크롤 아키텍처 ══ -->
 <div class="section">
   <div class="section-header">
-    <div class="section-num" style="color:var(--teal)">02</div>
-    <h2>전체글보기 실증 분석 <span class="verified-badge" style="font-size:12px;">✓ Playwright 직접 확인</span></h2>
-    <span class="desc">cafe.naver.com/f-e/cafes/{cafeId}/menus/0</span>
+    <div class="s-num" style="color:var(--teal)">03</div>
+    <h2>전체글보기 크롤 아키텍처 <span class="badge badge-ok" style="font-size:11px;margin-left:8px;">✓ Playwright 실증</span></h2>
   </div>
 
-  <div class="item-grid">
-    <div class="item-card">
-      <div class="item-tag" style="background:var(--green-dim);color:var(--green)">✅ 확인됨</div>
-      <h3>게시판명 정확히 포함</h3>
-      <p>각 글 항목에 게시판 링크가 완전한 이름으로 포함됨. 잘리지 않음.</p>
-      <ul style="margin-top:10px;">
-        <li>"자유 주제" → /menus/34</li>
-        <li>"갱년기 몸 증상" → /menus/8</li>
-        <li>"딸아들 이야기" → /menus/5</li>
-        <li>"가입인사" → /menus/43</li>
-      </ul>
-    </div>
-    <div class="item-card">
-      <div class="item-tag" style="background:var(--green-dim);color:var(--green)">✅ 확인됨</div>
-      <h3>articleId 순차 증가</h3>
-      <p>글 ID가 순차적으로 증가하는 정수. DB에 수집된 최대 ID 저장 후 비교 → 중복 방지가 단순해짐.</p>
-      <p style="margin-top:8px; font-family:monospace; font-size:12px; color:var(--teal);">
-        420293 → 420292 → 420290 → ...
-      </p>
-    </div>
-    <div class="item-card">
-      <div class="item-tag" style="background:var(--green-dim);color:var(--green)">✅ 확인됨</div>
-      <h3>로그인 없이 목록 열람 가능</h3>
-      <p>전체글보기 목록은 비로그인 상태에서도 완전히 렌더링됨. 본문 진입 시 로그인 필요 여부는 별도 확인 필요.</p>
-    </div>
-    <div class="item-card">
-      <div class="item-tag" style="background:var(--yellow-dim);color:var(--yellow)">⚠ 처리 필요</div>
-      <h3>공지/필독 상단 고정</h3>
-      <p>필독 2개 + 공지 6개 = 상단 8개 고정. 게시판명 셀에 "공지"/"필독" 텍스트가 있어 CSS selector로 쉽게 필터링 가능.</p>
-    </div>
-    <div class="item-card">
-      <div class="item-tag" style="background:var(--yellow-dim);color:var(--yellow)">⚠ 주의</div>
-      <h3>좋아요수 목록에 없음</h3>
-      <p>목록에는 <strong>조회수·댓글수만</strong> 표시. 좋아요수(likeCount)는 본문 진입 시에만 수집 가능.</p>
-      <p style="margin-top:8px;"><strong>대응:</strong> 화제성 기준을 <code>commentCount ≥ 5</code>로 조정. DEEP 크롤 시 본문 진입하면 likeCount도 함께 수집.</p>
-    </div>
-    <div class="item-card">
-      <div class="item-tag" style="background:var(--blue-dim);color:var(--blue)">ℹ 참고</div>
-      <h3>페이지당 15개 (UI 고정)</h3>
-      <p>현재 UI에서 15개씩 표시. 크롤러는 페이지를 넘기며 원하는 수만큼 수집 가능. 페이지네이션은 버튼 방식(JavaScript).</p>
+  <div class="callout green">
+    <strong>검증 완료:</strong> <code class="il">https://cafe.naver.com/f-e/cafes/{cafeId}/menus/0?viewType=L</code> URL에서 전체 게시판 글이 최신순 통합 제공됨. 게시판명·articleId·댓글수·조회수 모두 확인. 비로그인 상태에서 목록 열람 가능.
+  </div>
+
+  <h3 style="font-size:14px;color:var(--muted);margin:16px 0 10px;">왜 비로그인 열람이 중요한가</h3>
+  <div class="callout blue">
+    <strong>크롤러 안정성 직결:</strong> 네이버 로그인은 2FA·보안 정책이 복잡해 자동화가 어렵고 세션이 수시로 만료된다. 로그인 없이 목록 접근이 가능하다는 것은 크롤러가 <strong>인증 관리 없이 24/7 무중단 실행 가능</strong>함을 의미한다. 세션 만료로 인한 크롤 실패 리스크 0.
+  </div>
+
+  <h3 style="font-size:14px;color:var(--muted);margin:16px 0 10px;">기존 → V4 코드 변화</h3>
+  <div class="arch-box" style="margin-bottom:16px;">
+    <span class="cmt">// Before: 게시판 40개 URL 순회</span><br>
+    <span class="rem">for (const board of CAFE_CONFIGS[0].boards) {</span><br>
+    <span class="rem">&nbsp;&nbsp;await crawlBoard(board.menuId, board.maxPages)</span><br>
+    <span class="rem">}</span><br><br>
+    <span class="cmt">// After: 전체글보기 단일 URL</span><br>
+    <span class="add">await crawlAllArticles(cafeId, { maxArticles: 200, stopOnExisting: true })</span>
+  </div>
+
+  <h3 style="font-size:14px;color:var(--muted);margin:16px 0 10px;">DEEP 크롤 플로우 — 목록에서 본문까지</h3>
+  <div style="overflow-x:auto;">
+    <div class="flow" style="min-width:700px;">
+      <div class="flow-step fa"><div class="fn">Step 1</div><div class="ft">전체글보기 목록</div><div class="fs">제목·게시판명<br>댓글수·조회수<br>articleId</div></div>
+      <div class="flow-step"><div class="fn">Step 2</div><div class="ft">중복 필터</div><div class="fs">DB articleId<br>비교 → skip</div></div>
+      <div class="flow-step fa"><div class="fn">Step 3</div><div class="ft">본문 진입</div><div class="fs">각 글 클릭<br>개별 URL로</div></div>
+      <div class="flow-step fb"><div class="fn">Step 4</div><div class="ft">상세 수집</div><div class="fs">본문·이미지<br>좋아요·댓글<br>대댓글</div></div>
+      <div class="flow-step"><div class="fn">Step 5</div><div class="ft">DB 저장</div><div class="fs">CafePost<br>qualityScore<br>계산</div></div>
     </div>
   </div>
 
   <div class="callout" style="margin-top:16px;">
-    <strong>URL 구조 (확인됨):</strong><br>
-    목록: <code class="inline">https://cafe.naver.com/f-e/cafes/{cafeId}/menus/0?viewType=L</code><br>
-    개별 글: <code class="inline">https://cafe.naver.com/f-e/cafes/{cafeId}/articles/{articleId}?boardtype=L&referrerAllArticles=true</code>
+    <strong>본문 진입에서 수집하는 것:</strong> 제목(정확한 버전) · 본문 HTML · 이미지 URL 목록 · 좋아요(공감)수 · 조회수(정확값) · 댓글 목록(작성자, 내용, 좋아요수) · 대댓글 목록(작성자, 내용). 목록 단계에서는 좋아요수가 없으므로 화제성 판단을 위해 본문 진입은 필수.
+  </div>
+
+  <h3 style="font-size:14px;color:var(--muted);margin:20px 0 10px;">공지 처리 정책</h3>
+  <div class="callout yellow">
+    <strong>별도 필터 로직 불필요.</strong> 공지·필독 글은 본문 내용이 이벤트·홍보 성격이라 qualityScore가 낮게 산출되어 isUsable(40점) 기준에서 자연 탈락한다. 다만 <strong>제목에 "[공지]", "필독", "이벤트 당첨" 패턴이 있으면 수집 자체를 스킵</strong>하는 최소한의 문자열 필터는 두어 불필요한 본문 진입을 방지한다.
   </div>
 </div>
 
-<!-- 03 새 크롤링 아키텍처 -->
+<!-- ══ 04 중복 수집 정책 ══ -->
 <div class="section">
   <div class="section-header">
-    <div class="section-num" style="color:var(--blue)">03</div>
-    <h2>새 크롤링 아키텍처</h2>
-    <span class="desc">config.ts 게시판 설정 전면 교체</span>
+    <div class="s-num" style="color:var(--purple)">04</div>
+    <h2>중복 수집 방지 정책 — 상세</h2>
   </div>
 
-  <h3 style="font-size:14px; color:var(--muted); margin-bottom:12px;">Before (V3 이하) — 게시판별 순회</h3>
-  <div class="arch-box" style="margin-bottom:16px;">
-    <span class="removed">CAFE_CONFIGS[0].boards = [</span><br>
-    <span class="removed">&nbsp;&nbsp;{ name: '갱년기 몸 증상', menuId: 8, maxPages: 3, priority: 'high' },</span><br>
-    <span class="removed">&nbsp;&nbsp;{ name: '갱년기 마음 증상', menuId: 9, maxPages: 2, priority: 'high' },</span><br>
-    <span class="removed">&nbsp;&nbsp;{ name: '혼잣말 반말일기', menuId: 12, maxPages: 1, priority: 'medium' },</span><br>
-    <span class="removed">&nbsp;&nbsp;... 총 30~40개 게시판 반복</span><br>
-    <span class="removed">]</span><br>
-    <br>
-    <span class="comment">// → 게시판마다 URL 순회, 설정 관리 복잡, 새 게시판 추가 누락 위험</span>
-  </div>
-
-  <h3 style="font-size:14px; color:var(--green); margin-bottom:12px;">After (V4) — 전체글보기 단일 URL</h3>
-  <div class="arch-box">
-    <span class="highlight">CAFE_CONFIGS[0] = {</span><br>
-    <span class="highlight">&nbsp;&nbsp;cafeId: '29349320',</span><br>
-    <span class="highlight">&nbsp;&nbsp;cafeName: '우아한갱년기',</span><br>
-    <span class="highlight">&nbsp;&nbsp;allArticlesUrl: '/f-e/cafes/29349320/menus/0',</span>&nbsp;&nbsp;<span class="comment">// 전체글보기</span><br>
-    <span class="highlight">&nbsp;&nbsp;maxArticlesPerCrawl: 200,</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">// 한 번에 수집할 글 수</span><br>
-    <span class="highlight">&nbsp;&nbsp;skipIfArticleIdExists: true,</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">// articleId 중복 방지</span><br>
-    <span class="highlight">&nbsp;&nbsp;filterNotice: true,</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">// 공지/필독 자동 제거</span><br>
-    <span class="highlight">}</span><br>
-    <br>
-    <span class="comment">// → 게시판 설정 불필요, 신규 게시판 자동 포함, 유지보수 0</span>
-  </div>
-
-  <div class="callout blue" style="margin-top:16px;">
-    <strong>articleId 중복 방지 로직:</strong> 크롤러가 글 목록을 순회하다가 DB에 이미 존재하는 articleId를 만나면 이전 회차에서 수집 완료된 지점으로 간주하고 중단. 순차 증가 구조이므로 전체 DB 조회 없이 <code class="inline">MAX(articleId)</code> 하나만 비교하면 됨.
+  <div class="grid">
+    <div class="card">
+      <div class="card-tag" style="background:var(--blue-dim);color:var(--blue);">원칙 1 — articleId 비교</div>
+      <h3>이미 수집한 글 스킵</h3>
+      <p>크롤 시작 전 DB에서 해당 카페의 <code>MAX(articleId)</code>를 조회한다. 목록 순회 중 이 값 이하의 articleId를 만나면 <strong>이후 모든 글은 이미 수집됨</strong>으로 판단하고 중단.</p>
+      <p style="margin-top:8px;color:var(--yellow);">⚠ 주의: 글 삭제 시 articleId가 불연속일 수 있음. 연속 3개 이상 이미 있으면 중단.</p>
+    </div>
+    <div class="card">
+      <div class="card-tag" style="background:var(--green-dim);color:var(--green);">원칙 2 — 수집 시간 창</div>
+      <h3>최근 14일 이내만 수집</h3>
+      <p>작성일이 14일 초과한 글은 수집하지 않는다. 오래된 글은 인게이지먼트가 고정되어 화제성 선별 의미가 없고, DB 용량 낭비.</p>
+    </div>
+    <div class="card">
+      <div class="card-tag" style="background:var(--yellow-dim);color:var(--yellow);">원칙 3 — 재크롤 갱신</div>
+      <h3>같은 글, 데이터 갱신</h3>
+      <p>이미 DB에 있는 글이라도 수집 후 <strong>7일 이내</strong>라면 likeCount·commentCount·topComments를 갱신한다. 인게이지먼트가 시간에 따라 변하기 때문. 8일 이후는 고정값 유지.</p>
+    </div>
+    <div class="card">
+      <div class="card-tag" style="background:var(--purple-dim);color:var(--purple);">원칙 4 — 발행 중복 방지</div>
+      <h3>같은 글 두 번 발행 금지</h3>
+      <p>content-curator가 CafePost를 선택할 때 <code>usedAt IS NULL</code> 조건 필수. 발행 완료 시 <code>usedAt = NOW()</code> 기록. 동일 원문이 중복 발행되는 것 방지.</p>
+    </div>
   </div>
 </div>
 
-<!-- 04 크롤 스케줄 4회 -->
+<!-- ══ 05 크롤 스케줄 ══ -->
 <div class="section">
   <div class="section-header">
-    <div class="section-num" style="color:var(--green)">04</div>
-    <h2>크롤 스케줄 — 4회로 확정</h2>
-    <span class="desc">01:30 새벽 크롤 불필요 (전체글로 자동 커버)</span>
+    <div class="s-num" style="color:var(--green)">05</div>
+    <h2>크롤 스케줄 — 4회 확정</h2>
   </div>
 
-  <div class="callout green">
-    <strong>왜 01:30이 필요 없나:</strong> 08:30에 전체글보기를 크롤하면 00:00~08:30 사이에 올라온 새벽 글이 전부 포함된다. 게시판별 순회에서는 페이지 수 제한으로 누락될 수 있었지만, 전체글보기는 최신순 통합 목록이라 새벽 글이 그대로 보인다.
-  </div>
-
-  <table class="schedule-table" style="margin-top:16px;">
-    <thead>
-      <tr><th>회차</th><th>시각 (KST)</th><th>모드</th><th>실행 내용</th><th>수집 대상</th></tr>
-    </thead>
+  <table class="tbl">
+    <thead><tr><th>회차</th><th>시각 (KST)</th><th>모드</th><th>실행 단계</th><th>수집 대상</th></tr></thead>
     <tbody>
       <tr>
         <td><strong>1회차</strong></td>
-        <td><span class="time-chip">08:30</span></td>
-        <td><strong>DEEP</strong></td>
-        <td>전체글보기 크롤 (댓글 포함)</td>
-        <td>전날 21:30 이후 ~ 당일 08:30 글 (새벽글 포함)</td>
+        <td><strong style="color:var(--primary)">08:30</strong></td>
+        <td>DEEP</td>
+        <td>전체글보기 크롤 (본문+댓글) → DB 저장</td>
+        <td>전날 21:30 이후 ~ 새벽·아침 글 (새벽글 자동 포함)</td>
       </tr>
       <tr>
-        <td><strong>2회차</strong></td>
-        <td><span class="time-chip">11:30</span></td>
-        <td><strong>DEEP + 분석</strong></td>
-        <td>전체글보기 크롤 → 심리분석 → 트렌드 → DailyBrief → 큐레이션</td>
-        <td>08:30 이후 신규 글 + 인게이지먼트 쌓인 오전 글</td>
+        <td><strong>2회차 ★</strong></td>
+        <td><strong style="color:var(--primary)">11:30</strong></td>
+        <td>DEEP + <strong>분석</strong></td>
+        <td>크롤 → 심리분석 → 트렌드 → DailyBrief → 큐레이션</td>
+        <td>오전 글 (충분한 인게이지먼트 쌓임)</td>
       </tr>
       <tr>
         <td><strong>3회차</strong></td>
-        <td><span class="time-chip">15:30</span></td>
-        <td><strong>DEEP</strong></td>
+        <td><strong style="color:var(--primary)">15:30</strong></td>
+        <td>DEEP</td>
         <td>전체글보기 크롤 → 큐레이션</td>
-        <td>11:30 이후 오후 신규 글</td>
+        <td>오후 신규 글</td>
       </tr>
       <tr>
         <td><strong>4회차</strong></td>
-        <td><span class="time-chip">21:30</span></td>
-        <td><strong>DEEP</strong></td>
+        <td><strong style="color:var(--primary)">21:30</strong></td>
+        <td>DEEP</td>
         <td>전체글보기 크롤 → 큐레이션</td>
-        <td>저녁 신규 글 + 내일 아침 분석 인풋 확보</td>
+        <td>저녁 글 + 내일 아침 인풋 확보</td>
       </tr>
     </tbody>
   </table>
 
-  <div class="callout" style="margin-top:16px;">
-    <strong>심리분석·트렌드·DailyBrief는 11:30에만:</strong> 하루 방향을 오전 글 인게이지먼트가 충분히 쌓인 후(11:30) 분석하여 정확도 확보. 비용 효율 유지. 나머지 3회는 크롤 + 큐레이션만.
+  <div class="callout" style="margin-top:12px;">
+    <strong>심리분석·트렌드·DailyBrief는 11:30에만:</strong> 오전 글들이 2~5시간 인게이지먼트를 쌓은 후 분석 → hotTopics 정확도 최고. Claude Haiku × 배치 분석 비용 절감. 나머지 3회는 크롤 + 큐레이션만.
   </div>
 </div>
 
-<!-- 05 발행 스케줄 (V3 유지) -->
+<!-- ══ 06 일반글 vs 화제성글 정의 ══ -->
 <div class="section">
   <div class="section-header">
-    <div class="section-num" style="color:var(--blue)">05</div>
-    <h2>발행 스케줄 — 09~23시 매 시간 5건 (V3 유지)</h2>
+    <div class="s-num" style="color:var(--red)">06</div>
+    <h2>일반글 vs 화제성글 — 정확한 정의</h2>
   </div>
 
-  <div class="stat-row">
-    <div class="stat-box"><div class="lbl">일일 발행</div><div class="num" style="color:var(--green)">75건</div><div class="sub">09~23시 × 5건/시</div></div>
-    <div class="stat-box"><div class="lbl">크롤 수집</div><div class="num" style="color:var(--blue)">~800건</div><div class="sub">4회 × 200건</div></div>
-    <div class="stat-box"><div class="lbl">isUsable 통과</div><div class="num" style="color:var(--yellow)">~320건</div><div class="sub">40% 통과율 기준</div></div>
-    <div class="stat-box"><div class="lbl">큐레이션 발행</div><div class="num" style="color:var(--teal)">최대 12건</div><div class="sub">4회 × 3건</div></div>
-  </div>
-
-  <div class="ratio-bar">
-    <div class="ratio-sa" style="width:50%">사는이야기 50%</div>
-    <div class="ratio-2m" style="width:35%">2막준비 35%</div>
-    <div class="ratio-ww" style="width:15%">웃음방 15%</div>
-  </div>
-  <p style="font-size:12px; color:var(--muted);">홀수/짝수시 교차 배분 (3:1:1 / 3:2:0) — GHA cron: <code class="inline">0 0-14 * * *</code></p>
-</div>
-
-<!-- 06 화제성글 구분 기준 (V3 유지 + commentCount 조정) -->
-<div class="section">
-  <div class="section-header">
-    <div class="section-num" style="color:var(--purple)">06</div>
-    <h2>화제성글 구분 기준 — commentCount 기준 상향</h2>
-    <span class="desc">likeCount 목록 미노출 보완</span>
-  </div>
-
-  <div class="item-grid">
-    <div class="item-card">
-      <div class="item-tag" style="background:var(--red-dim);color:var(--red)">화제성글 (KILLER)</div>
-      <h3>선별 기준 (V4 조정)</h3>
+  <div class="grid">
+    <div class="card">
+      <div class="card-tag" style="background:var(--blue-dim);color:var(--blue);">일반글 REGULAR</div>
+      <h3>커뮤니티 활성화 콘텐츠</h3>
+      <p><strong style="color:var(--text);">목적:</strong> 게시판에 글이 꾸준히 올라오게 만들어 커뮤니티 활성도 유지. 자연스러운 일상 대화처럼 보여야 함.</p>
+      <p style="margin-top:8px;"><strong style="color:var(--text);">선별 기준 (AND 조건):</strong></p>
       <ul>
-        <li>viralType NOT NULL</li>
-        <li><strong style="color:var(--primary)">commentCount ≥ 5</strong> (V3의 ≥2에서 상향 — likeCount 목록 미노출 보완)</li>
+        <li>isUsable = true (qualityScore ≥ 40)</li>
+        <li>desireCategory NOT NULL</li>
+        <li>최근 14일 이내 게시</li>
+        <li>본문 100자 이상</li>
+        <li>화제성 조건 미충족</li>
+      </ul>
+      <p style="margin-top:8px;"><strong style="color:var(--text);">발행:</strong> 75건/일 중 대부분. 09~23시 매 시간 배분.</p>
+    </div>
+    <div class="card">
+      <div class="card-tag" style="background:var(--red-dim);color:var(--red);">화제성글 KILLER</div>
+      <h3>강한 반응 유도 콘텐츠</h3>
+      <p><strong style="color:var(--text);">목적:</strong> 댓글·좋아요를 폭발적으로 끌어내어 플랫폼 알고리즘 활성화. 갈등·공감·반전이 있는 글이어야 함.</p>
+      <p style="margin-top:8px;"><strong style="color:var(--text);">선별 기준 (AND 조건):</strong></p>
+      <ul>
+        <li>viralType NOT NULL (BETRAYAL/INJUSTICE/CONTROVERSY/REVERSAL/EMPATHY)</li>
+        <li>commentCount ≥ 5 <em style="color:var(--muted)">(좋아요 목록 미노출 보완)</em></li>
         <li>qualityScore ≥ 50</li>
         <li>최근 7일 이내</li>
         <li>본문 150자 이상</li>
         <li>DEEP 크롤 후 likeCount도 추가 확인</li>
       </ul>
-    </div>
-    <div class="item-card">
-      <div class="item-tag" style="background:var(--blue-dim);color:var(--blue)">일반글 (REGULAR)</div>
-      <h3>선별 기준 (V3 유지)</h3>
-      <ul>
-        <li>isUsable = true (qualityScore ≥ 40)</li>
-        <li>화제성 조건 미충족</li>
-        <li>최근 14일 이내</li>
-        <li>desireCategory NOT NULL</li>
-      </ul>
+      <p style="margin-top:8px;"><strong style="color:var(--text);">발행:</strong> 큐레이션 경로. 최대 12건/일 (4회 × 3건). prime time 우선 배정.</p>
     </div>
   </div>
-</div>
 
-<!-- 07 원문 보존 90% (V3 유지) -->
-<div class="section">
-  <div class="section-header">
-    <div class="section-num" style="color:var(--green)">07</div>
-    <h2>원문 보존 90% — 수미상관 방식 (V3 유지)</h2>
-  </div>
-
-  <table class="small">
-    <thead><tr><th>유형</th><th>제목</th><th>본문</th><th>SEO</th></tr></thead>
+  <h3 style="font-size:14px;color:var(--muted);margin:20px 0 12px;">제목 처리 정책 — 약간 변형 허용</h3>
+  <table class="tbl">
+    <thead><tr><th>유형</th><th>제목 변형 방향</th><th>원칙</th><th>예시</th></tr></thead>
     <tbody>
       <tr>
         <td><strong>일반글</strong></td>
-        <td>원본 + 검색 키워드 1개</td>
-        <td>첫 문장 공감 1줄 + 원문 90% + 끝 문장 질문 1줄</td>
-        <td>제목 키워드로 네이버 VIEW 탭 노출</td>
+        <td>SEO 키워드 1개 추가 또는 구어체 → 검색어 형태로 정리</td>
+        <td>원문 핵심 단어 반드시 유지. 검색에 유리한 형태로만 조정.</td>
+        <td>"갱년기인지 우울증인지 모르겠어요" → "갱년기 우울증 증상, 구분하는 방법 아시나요"</td>
       </tr>
       <tr>
         <td><strong>화제성글</strong></td>
-        <td>갈등 키워드 강조 (최소 변경)</td>
-        <td>원문 95% 그대로</td>
-        <td>제목 최소 변경</td>
-      </tr>
-      <tr>
-        <td><strong>댓글</strong></td>
-        <td>—</td>
-        <td>topComments 원문 + 말투 변환만</td>
-        <td>—</td>
+        <td>갈등·감정 포인트 전면에 배치. 클릭 유도 의문형으로 약간 변형.</td>
+        <td>원문의 핵심 갈등 상황은 반드시 반영. 과장 금지.</td>
+        <td>"며느리가 너무해요" → "며느리한테 이런 말 들었는데, 제가 이상한건가요?"</td>
       </tr>
     </tbody>
   </table>
 </div>
 
-<!-- 08 댓글 파동 (V3 유지) -->
+<!-- ══ 07 원문 보존 90% ══ -->
 <div class="section">
   <div class="section-header">
-    <div class="section-num" style="color:var(--yellow)">08</div>
-    <h2>댓글 파동 (V3 유지)</h2>
+    <div class="s-num" style="color:var(--green)">07</div>
+    <h2>원문 보존 — 수미상관 방식</h2>
   </div>
 
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-    <div class="wave-box">
-      <div class="wave-title">일반글 (총 8개)</div>
-      <div class="wave-row"><div class="wave-time">1분 이내</div><div class="wave-bar c1" style="width:60px">1개</div></div>
-      <div class="wave-row"><div class="wave-time">5분 이내</div><div class="wave-bar c2" style="width:140px">3개</div></div>
-      <div class="wave-row"><div class="wave-time">30분 이내</div><div class="wave-bar c3" style="width:140px">3개</div></div>
-      <div class="wave-row"><div class="wave-time">1시간 이내</div><div class="wave-bar c4" style="width:60px">1개</div></div>
+  <div class="grid">
+    <div class="card">
+      <div class="card-tag" style="background:var(--blue-dim);color:var(--blue);">일반글 — 90%</div>
+      <h3>구조</h3>
+      <ol>
+        <li><strong>제목:</strong> 약간 변형 (SEO)</li>
+        <li><strong>첫 문장:</strong> 페르소나 공감 1줄</li>
+        <li><strong>본문:</strong> 원문 그대로 90%</li>
+        <li><strong>마지막 문장:</strong> 페르소나 질문·여운 1줄</li>
+      </ol>
+      <p style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;font-style:italic;">"저도 비슷한 상황이라 공유해요.<br>[원문 그대로]<br>혹시 다른 분들은 어떻게 하셨어요?"</p>
     </div>
-    <div class="wave-box">
-      <div class="wave-title">화제성글 (총 16개)</div>
-      <div class="wave-row"><div class="wave-time">1분 이내</div><div class="wave-bar c1" style="width:80px">2개</div></div>
-      <div class="wave-row"><div class="wave-time">5분 이내</div><div class="wave-bar c2" style="width:200px">6개</div></div>
-      <div class="wave-row"><div class="wave-time">30분 이내</div><div class="wave-bar c3" style="width:170px">5개</div></div>
-      <div class="wave-row"><div class="wave-time">1시간 이내</div><div class="wave-bar c4" style="width:100px">3개</div></div>
+    <div class="card">
+      <div class="card-tag" style="background:var(--red-dim);color:var(--red);">화제성글 — 95%</div>
+      <h3>구조</h3>
+      <ol>
+        <li><strong>제목:</strong> 갈등 포인트 강조 변형</li>
+        <li><strong>첫 문장:</strong> 없거나 1줄 도입</li>
+        <li><strong>본문:</strong> 원문 95% 그대로</li>
+        <li><strong>마지막:</strong> 변경 없음</li>
+      </ol>
+      <p style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">화제성글은 원문 자체가 강력한 콘텐츠. 수정 최소화가 반응 극대화.</p>
+    </div>
+    <div class="card">
+      <div class="card-tag" style="background:var(--green-dim);color:var(--green);">댓글 — 90%</div>
+      <h3>구조</h3>
+      <ol>
+        <li>topComments 원문 사용</li>
+        <li>어미·말투만 변환 (~해요 → ~하더라고요)</li>
+        <li>고유명사·수치 100% 유지</li>
+        <li>글쓴이 페르소나 제외 필수</li>
+      </ol>
+      <p style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">실제 카페 반응 그대로 → 공감도 자연스러움.</p>
     </div>
   </div>
 </div>
 
-<!-- 09 욕망 20개 (V3 유지) -->
+<!-- ══ 08 댓글 파동 ══ -->
 <div class="section">
   <div class="section-header">
-    <div class="section-num" style="color:var(--orange)">09</div>
-    <h2>욕망 카테고리 20개 (V3 유지)</h2>
+    <div class="s-num" style="color:var(--yellow)">08</div>
+    <h2>댓글 파동 — 1분 이내 첫 반응</h2>
   </div>
 
-  <h3 style="font-size:13px; color:var(--muted); margin-bottom:10px;">기존 13개</h3>
-  <div class="desire-grid">
-    <div class="desire-tag"><div class="d-id">HEALTH</div><div class="d-name">건강·갱년기</div><div class="d-kw">증상/병원/약</div></div>
-    <div class="desire-tag"><div class="d-id">FAMILY</div><div class="d-name">가족</div><div class="d-kw">자녀/남편/손주</div></div>
-    <div class="desire-tag"><div class="d-id">MONEY</div><div class="d-name">돈·재테크</div><div class="d-kw">연금/보험/절약</div></div>
-    <div class="desire-tag"><div class="d-id">RETIRE</div><div class="d-name">은퇴·인생2막</div><div class="d-kw">퇴직/노후</div></div>
-    <div class="desire-tag"><div class="d-id">JOB</div><div class="d-name">일자리·부업</div><div class="d-kw">재취업/자격증</div></div>
-    <div class="desire-tag"><div class="d-id">RELATION</div><div class="d-name">관계·소통</div><div class="d-kw">외로움/친구</div></div>
-    <div class="desire-tag"><div class="d-id">HOBBY</div><div class="d-name">취미·여가</div><div class="d-kw">귀농/등산</div></div>
-    <div class="desire-tag"><div class="d-id">MEANING</div><div class="d-name">삶의 의미</div><div class="d-kw">철학/감사</div></div>
-    <div class="desire-tag"><div class="d-id">DIGNITY</div><div class="d-name">존중·자존감</div><div class="d-kw">고부갈등/차별</div></div>
-    <div class="desire-tag"><div class="d-id">LEGACY</div><div class="d-name">남기기</div><div class="d-kw">자식에게/기억</div></div>
-    <div class="desire-tag"><div class="d-id">CARE</div><div class="d-name">돌봄·간병</div><div class="d-kw">부모/배우자 돌봄</div></div>
-    <div class="desire-tag"><div class="d-id">FREEDOM</div><div class="d-name">자유·독립</div><div class="d-kw">나만의 시간</div></div>
-    <div class="desire-tag"><div class="d-id">ENTERTAIN</div><div class="d-name">연예·드라마</div><div class="d-kw">임영웅/트로트</div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="wave-box">
+      <div class="wave-title">일반글 댓글 파동 (총 8개)</div>
+      <div class="wave-row"><div class="wave-time">1분 이내</div><div class="wbar c1" style="width:50px">1개</div><span style="font-size:11px;color:var(--muted);margin-left:6px;">댓글 전문 페르소나 투입</span></div>
+      <div class="wave-row"><div class="wave-time">5분 이내</div><div class="wbar c2" style="width:130px">3개</div></div>
+      <div class="wave-row"><div class="wave-time">30분 이내</div><div class="wbar c3" style="width:130px">3개</div></div>
+      <div class="wave-row"><div class="wave-time">1시간 이내</div><div class="wbar c4" style="width:50px">1개</div></div>
+    </div>
+    <div class="wave-box">
+      <div class="wave-title">화제성글 댓글 파동 (총 16개)</div>
+      <div class="wave-row"><div class="wave-time">1분 이내</div><div class="wbar c1" style="width:80px">2개</div></div>
+      <div class="wave-row"><div class="wave-time">5분 이내</div><div class="wbar c2" style="width:190px">6개</div></div>
+      <div class="wave-row"><div class="wave-time">30분 이내</div><div class="wbar c3" style="width:160px">5개</div></div>
+      <div class="wave-row"><div class="wave-time">1시간 이내</div><div class="wbar c4" style="width:100px">3개</div></div>
+    </div>
   </div>
-
-  <h3 style="font-size:13px; color:var(--primary); margin:16px 0 10px;">신규 추가 7개</h3>
-  <div class="desire-grid">
-    <div class="desire-tag new-cat"><div class="d-id">BEAUTY ✦</div><div class="d-name">외모·뷰티·다이어트</div><div class="d-kw">안티에이징/화장품/패션</div></div>
-    <div class="desire-tag new-cat"><div class="d-id">DIGITAL ✦</div><div class="d-name">디지털·스마트폰</div><div class="d-kw">키오스크/앱/SNS</div></div>
-    <div class="desire-tag new-cat"><div class="d-id">NOSTALGIA ✦</div><div class="d-name">추억·옛날</div><div class="d-kw">고향/동창/그때 그 시절</div></div>
-    <div class="desire-tag new-cat"><div class="d-id">PRIDE ✦</div><div class="d-name">자랑·성취</div><div class="d-kw">자식자랑/손주자랑</div></div>
-    <div class="desire-tag new-cat"><div class="d-id">GRIEF ✦</div><div class="d-name">상실·사별</div><div class="d-kw">사별/빈둥지</div></div>
-    <div class="desire-tag new-cat"><div class="d-id">TRAVEL ✦</div><div class="d-name">여행</div><div class="d-kw">국내/해외여행</div></div>
-    <div class="desire-tag new-cat"><div class="d-id">FOOD ✦</div><div class="d-name">음식·요리</div><div class="d-kw">반찬/맛집/식단</div></div>
+  <div class="callout" style="margin-top:12px;">
+    <strong>규칙:</strong> 글 작성 페르소나는 댓글 파동에서 제외. 댓글 전문 15명 우선 투입. 각 wave 내 동일 페르소나 중복 금지. 1시간 이후 글쓴이 페르소나가 댓글 2~3개에 감사 대댓글.
   </div>
 </div>
 
-<!-- 10 게시판 6개 (V3 유지) -->
+<!-- ══ 09 게시판 & 서비스 카테고리 ══ -->
 <div class="section">
   <div class="section-header">
-    <div class="section-num" style="color:var(--teal)">10</div>
-    <h2>게시판 6개 단순화 (V3 유지)</h2>
+    <div class="s-num" style="color:var(--teal)">09</div>
+    <h2>게시판 &amp; 서비스 카테고리 (서브카테고리) 재설계</h2>
+    <span class="desc">기존 게시판 유지 + 서브카테고리 desireCategory 기반 자동 배정</span>
   </div>
 
-  <table class="small">
-    <thead><tr><th>#</th><th>게시판명</th><th>성격</th><th>비율</th></tr></thead>
+  <div class="callout yellow">
+    <strong>현재 문제:</strong> <code class="il">categoryMap</code>에서 무작위 선택. 게시글 내용과 카테고리 불일치 빈번. DB에 서브카테고리 메타데이터 없어 통계·필터 불가.<br>
+    <strong>V4 해결:</strong> 심리분석에서 태깅된 <code class="il">desireCategory</code>를 게시판별 서브카테고리로 자동 매핑. 누락 없이 정확하게 배정.
+  </div>
+
+  <div class="callout blue" style="margin-bottom:20px;">
+    <strong>베스트 게시판:</strong> promotionLevel = 'HALL_OF_FAME'(좋아요 50+) 또는 'HOT'(좋아요 10+) 글을 자동 노출하는 큐레이션 공간. 시드봇이 직접 발행하는 게시판이 아님. 설계 변경 없음.
+  </div>
+
+  <div class="board-grid">
+
+    <!-- 사는이야기 -->
+    <div class="bcard">
+      <div class="bcard-hd">
+        <div class="bcard-num" style="background:var(--blue-dim);color:var(--blue);">①</div>
+        <div>
+          <div class="bcard-name">사는이야기</div>
+          <div class="bcard-enum">BoardType: STORY &nbsp;|&nbsp; 발행 비율: 50%</div>
+        </div>
+      </div>
+      <div class="bcard-body">
+        <div class="bcard-desc">일상·건강·가족 이야기. 가장 많이 올라가는 메인 게시판.</div>
+        <div class="sub-list">
+          <span class="sub-tag">건강·갱년기</span>
+          <span class="sub-tag">가족·자녀</span>
+          <span class="sub-tag">감정·고민</span>
+          <span class="sub-tag">일상·수다</span>
+          <span class="sub-tag new">외모·뷰티 ✦</span>
+          <span class="sub-tag new">음식·요리 ✦</span>
+          <span class="sub-tag new">추억·옛날 ✦</span>
+        </div>
+        <div class="bcard-note">매핑: HEALTH·FAMILY·DIGNITY·CARE·GRIEF·RELATION·MEANING → 사는이야기<br>BEAUTY·FOOD·NOSTALGIA → 사는이야기 (신규 욕망 카테고리)</div>
+      </div>
+    </div>
+
+    <!-- 2막준비 -->
+    <div class="bcard">
+      <div class="bcard-hd">
+        <div class="bcard-num" style="background:var(--green-dim);color:var(--green);">②</div>
+        <div>
+          <div class="bcard-name">2막준비</div>
+          <div class="bcard-enum">BoardType: LIFE2 &nbsp;|&nbsp; 발행 비율: 35%</div>
+        </div>
+      </div>
+      <div class="bcard-body">
+        <div class="bcard-desc">은퇴·재테크·재취업·노후 계획. 정보와 경험을 나누는 공간.</div>
+        <div class="sub-list">
+          <span class="sub-tag">은퇴·노후설계</span>
+          <span class="sub-tag">재테크·연금</span>
+          <span class="sub-tag">재취업·부업</span>
+          <span class="sub-tag">취미·여가</span>
+          <span class="sub-tag new">여행 ✦</span>
+          <span class="sub-tag new">디지털·배움 ✦</span>
+          <span class="sub-tag new">자랑·성취 ✦</span>
+        </div>
+        <div class="bcard-note">매핑: RETIRE·MONEY·JOB·HOBBY·FREEDOM → 2막준비<br>TRAVEL·DIGITAL·PRIDE → 2막준비 (신규)</div>
+      </div>
+    </div>
+
+    <!-- 웃음방 -->
+    <div class="bcard">
+      <div class="bcard-hd">
+        <div class="bcard-num" style="background:var(--yellow-dim);color:var(--yellow);">③</div>
+        <div>
+          <div class="bcard-name">웃음방</div>
+          <div class="bcard-enum">BoardType: HUMOR &nbsp;|&nbsp; 발행 비율: 15%</div>
+        </div>
+      </div>
+      <div class="bcard-body">
+        <div class="bcard-desc">유머·재미·힐링. 가볍게 웃고 공감하는 공간.</div>
+        <div class="sub-list">
+          <span class="sub-tag">유머·웃음</span>
+          <span class="sub-tag">엔터·TV</span>
+          <span class="sub-tag new">추억·옛날이야기 ✦</span>
+          <span class="sub-tag">기타</span>
+        </div>
+        <div class="bcard-note">매핑: ENTERTAIN·PRIDE(자랑류) → 웃음방<br>NOSTALGIA 일부 → 웃음방</div>
+      </div>
+    </div>
+
+    <!-- 매거진 -->
+    <div class="bcard">
+      <div class="bcard-hd">
+        <div class="bcard-num" style="background:var(--purple-dim);color:var(--purple);">④</div>
+        <div>
+          <div class="bcard-name">매거진</div>
+          <div class="bcard-enum">BoardType: MAGAZINE &nbsp;|&nbsp; 큐레이터 전용</div>
+        </div>
+      </div>
+      <div class="bcard-body">
+        <div class="bcard-desc">정보성 큐레이션 콘텐츠. SEO slug + 시리즈 지원. 네이버 블로그 자동 발행 연동.</div>
+        <div class="sub-list">
+          <span class="sub-tag">건강정보</span>
+          <span class="sub-tag">재테크정보</span>
+          <span class="sub-tag">생활정보</span>
+          <span class="sub-tag">감성에세이</span>
+          <span class="sub-tag new">문화·여행 ✦</span>
+        </div>
+        <div class="bcard-note">시드봇 직접 발행 X. content-curator가 hotTopics 기반으로 발행.<br>desireCategory 전체 대상, 정보성 콘텐츠 위주.</div>
+      </div>
+    </div>
+
+    <!-- 내일찾기 (JOB) -->
+    <div class="bcard">
+      <div class="bcard-hd">
+        <div class="bcard-num" style="background:var(--teal-dim);color:var(--teal);">⑤</div>
+        <div>
+          <div class="bcard-name">내일찾기</div>
+          <div class="bcard-enum">BoardType: JOB &nbsp;|&nbsp; 별도 발행 로직</div>
+        </div>
+      </div>
+      <div class="bcard-body">
+        <div class="bcard-desc">일자리·자격증·창업 정보. 실용 정보 위주로 구성.</div>
+        <div class="sub-list">
+          <span class="sub-tag">채용공고</span>
+          <span class="sub-tag">자격증·교육</span>
+          <span class="sub-tag">창업·사업</span>
+          <span class="sub-tag new">봉사·활동 ✦</span>
+        </div>
+        <div class="bcard-note">매핑: JOB desireCategory → 내일찾기<br>실제 채용정보는 외부 소스 필요 (별도 기획). 현재는 JOB 욕망 글만 발행.</div>
+      </div>
+    </div>
+
+    <!-- 베스트 -->
+    <div class="bcard">
+      <div class="bcard-hd">
+        <div class="bcard-num" style="background:var(--primary-dim);color:var(--primary);">★</div>
+        <div>
+          <div class="bcard-name">베스트</div>
+          <div class="bcard-enum">자동 노출 — 발행 게시판 아님</div>
+        </div>
+      </div>
+      <div class="bcard-body">
+        <div class="bcard-desc">promotionLevel = HALL_OF_FAME(좋아요 50+) 또는 HOT(좋아요 10+) 글을 알고리즘이 자동 선정해 노출. 설계 변경 없음.</div>
+        <div class="sub-list">
+          <span class="sub-tag">알고리즘 자동</span>
+        </div>
+        <div class="bcard-note">시드봇이 발행하는 공간이 아님. 잘 발행된 글이 자연스럽게 베스트에 올라가는 구조.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <h3 style="font-size:14px;color:var(--muted);margin:24px 0 12px;">서브카테고리 자동 매핑 로직 (desireCategory → 서브카테고리)</h3>
+  <div class="callout teal">
+    <strong>구현 방식:</strong> <code class="il">DESIRE_TO_SUBCATEGORY</code> 매핑 테이블을 코드에 정의. content-curator·scheduler가 글 발행 시 <code class="il">desireCategory</code> 값을 보고 해당 게시판의 서브카테고리를 자동 결정. 기존 random 선택 로직 완전 폐기.
+  </div>
+
+  <table class="tbl">
+    <thead><tr><th>desireCategory</th><th>배정 게시판</th><th>서브카테고리</th></tr></thead>
     <tbody>
-      <tr><td>1</td><td><strong>사는이야기</strong></td><td>일상·건강·가족·이런 일 있었어요</td><td>50%</td></tr>
-      <tr><td>2</td><td><strong>2막준비</strong></td><td>은퇴·재테크·재취업·노후 계획</td><td>35%</td></tr>
-      <tr><td>3</td><td><strong>정보마당</strong></td><td>꿀팁·추천·정보 공유·리뷰</td><td>—</td></tr>
-      <tr><td>4</td><td><strong>공감방</strong></td><td>고민·위로·속얘기·털어놓기</td><td>—</td></tr>
-      <tr><td>5</td><td><strong>웃음방</strong></td><td>유머·재미·짤·힐링</td><td>15%</td></tr>
-      <tr><td>6</td><td><strong>자유게시판</strong></td><td>그 외 뭐든 — 서브카테고리 전부 흡수</td><td>—</td></tr>
+      <tr><td>HEALTH</td><td>사는이야기</td><td>건강·갱년기</td></tr>
+      <tr><td>FAMILY</td><td>사는이야기</td><td>가족·자녀</td></tr>
+      <tr><td>DIGNITY / CARE / GRIEF</td><td>사는이야기</td><td>감정·고민</td></tr>
+      <tr><td>RELATION / MEANING / LEGACY / FREEDOM</td><td>사는이야기</td><td>일상·수다</td></tr>
+      <tr><td>BEAUTY</td><td>사는이야기</td><td>외모·뷰티</td></tr>
+      <tr><td>FOOD</td><td>사는이야기</td><td>음식·요리</td></tr>
+      <tr><td>NOSTALGIA</td><td>사는이야기 / 웃음방</td><td>추억·옛날</td></tr>
+      <tr><td>RETIRE</td><td>2막준비</td><td>은퇴·노후설계</td></tr>
+      <tr><td>MONEY</td><td>2막준비</td><td>재테크·연금</td></tr>
+      <tr><td>JOB</td><td>내일찾기 / 2막준비</td><td>재취업·부업</td></tr>
+      <tr><td>HOBBY</td><td>2막준비</td><td>취미·여가</td></tr>
+      <tr><td>TRAVEL</td><td>2막준비</td><td>여행</td></tr>
+      <tr><td>DIGITAL</td><td>2막준비</td><td>디지털·배움</td></tr>
+      <tr><td>PRIDE</td><td>2막준비 / 웃음방</td><td>자랑·성취</td></tr>
+      <tr><td>ENTERTAIN</td><td>웃음방</td><td>엔터·TV</td></tr>
     </tbody>
   </table>
 </div>
 
-<!-- 11 개발 우선순위 -->
+<!-- ══ 10 발행 스케줄 ══ -->
 <div class="section">
   <div class="section-header">
-    <div class="section-num" style="color:var(--primary)">11</div>
+    <div class="s-num" style="color:var(--blue)">10</div>
+    <h2>발행 스케줄 — 09~23시 매 시간 5건</h2>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="lbl">일일 발행</div><div class="num" style="color:var(--green)">75건</div><div class="sub">09~23시 × 5건/시</div></div>
+    <div class="stat"><div class="lbl">사는이야기</div><div class="num" style="color:var(--blue)">~38건</div><div class="sub">50%</div></div>
+    <div class="stat"><div class="lbl">2막준비</div><div class="num" style="color:var(--green)">~26건</div><div class="sub">35%</div></div>
+    <div class="stat"><div class="lbl">웃음방</div><div class="num" style="color:var(--yellow)">~11건</div><div class="sub">15%</div></div>
+    <div class="stat"><div class="lbl">GHA cron</div><div class="num" style="color:var(--purple)">15회</div><div class="sub">UTC 0~14시</div></div>
+  </div>
+
+  <div class="ratio-bar">
+    <div class="r-story" style="width:50%">사는이야기 50%</div>
+    <div class="r-life2" style="width:35%">2막준비 35%</div>
+    <div class="r-humor" style="width:15%">웃음방 15%</div>
+  </div>
+  <p style="font-size:12px;color:var(--muted);">홀수시 3:1:1 / 짝수시 3:2:0 교차 배분. GHA cron: <code class="il">0 0-14 * * *</code></p>
+</div>
+
+<!-- ══ 11 욕망 카테고리 20개 ══ -->
+<div class="section">
+  <div class="section-header">
+    <div class="s-num" style="color:var(--orange)">11</div>
+    <h2>욕망 카테고리 확장 — 13 → 20개</h2>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">HEALTH</div><div style="font-size:13px;font-weight:800;">건강·갱년기</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">FAMILY</div><div style="font-size:13px;font-weight:800;">가족·자녀</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">MONEY</div><div style="font-size:13px;font-weight:800;">돈·재테크</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">RETIRE</div><div style="font-size:13px;font-weight:800;">은퇴·인생2막</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">JOB</div><div style="font-size:13px;font-weight:800;">일자리·부업</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">RELATION</div><div style="font-size:13px;font-weight:800;">관계·소통</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">HOBBY</div><div style="font-size:13px;font-weight:800;">취미·여가</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">MEANING</div><div style="font-size:13px;font-weight:800;">삶의 의미</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">DIGNITY</div><div style="font-size:13px;font-weight:800;">존중·자존감</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">LEGACY</div><div style="font-size:13px;font-weight:800;">남기기</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">CARE</div><div style="font-size:13px;font-weight:800;">돌봄·간병</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">FREEDOM</div><div style="font-size:13px;font-weight:800;">자유·독립</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--muted);">ENTERTAIN</div><div style="font-size:13px;font-weight:800;">연예·드라마</div></div>
+    <div style="background:var(--primary-dim);border:1px solid var(--primary);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--primary);">BEAUTY ✦ NEW</div><div style="font-size:13px;font-weight:800;">외모·뷰티·다이어트</div></div>
+    <div style="background:var(--primary-dim);border:1px solid var(--primary);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--primary);">DIGITAL ✦ NEW</div><div style="font-size:13px;font-weight:800;">디지털·스마트폰</div></div>
+    <div style="background:var(--primary-dim);border:1px solid var(--primary);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--primary);">NOSTALGIA ✦ NEW</div><div style="font-size:13px;font-weight:800;">추억·옛날</div></div>
+    <div style="background:var(--primary-dim);border:1px solid var(--primary);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--primary);">PRIDE ✦ NEW</div><div style="font-size:13px;font-weight:800;">자랑·성취</div></div>
+    <div style="background:var(--primary-dim);border:1px solid var(--primary);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--primary);">GRIEF ✦ NEW</div><div style="font-size:13px;font-weight:800;">상실·사별</div></div>
+    <div style="background:var(--primary-dim);border:1px solid var(--primary);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--primary);">TRAVEL ✦ NEW</div><div style="font-size:13px;font-weight:800;">여행</div></div>
+    <div style="background:var(--primary-dim);border:1px solid var(--primary);border-radius:8px;padding:10px 14px;"><div style="font-size:10px;font-weight:800;color:var(--primary);">FOOD ✦ NEW</div><div style="font-size:13px;font-weight:800;">음식·요리</div></div>
+  </div>
+</div>
+
+<!-- ══ 12 개발 우선순위 ══ -->
+<div class="section">
+  <div class="section-header">
+    <div class="s-num" style="color:var(--primary)">12</div>
     <h2>개발 우선순위 P0 → P3</h2>
     <span class="desc">창업자 승인 후 P0부터 순차 착수</span>
   </div>
 
-  <div class="priority-block">
-    <div class="priority-header">
-      <span class="priority-label" style="background:var(--red-dim);color:var(--red)">P0</span>
+  <div class="pblock">
+    <div class="pblock-hd">
+      <span class="p-lbl" style="background:var(--red-dim);color:var(--red)">P0</span>
       <h3>크롤링 아키텍처 전환 — 가장 먼저</h3>
-      <span class="eff">예상 소요: 1~2일 | 효과: 코드 단순화 + 새벽글 자동 커버</span>
+      <span class="eff">1~2일 | 코드 단순화 + 새벽글 자동 커버</span>
     </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/cafe/config.ts</span>
-      <span class="pi-desc">게시판 30~40개 설정 제거 → allArticlesUrl, maxArticlesPerCrawl, filterNotice 구조로 교체 <span class="pi-new">핵심</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/cafe/crawler.ts</span>
-      <span class="pi-desc">게시판 순회 로직 제거 → /menus/0 단일 페이지네이션 크롤 구현 <span class="pi-new">핵심</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/cafe/crawler.ts</span>
-      <span class="pi-desc">articleId 중복 체크: DB MAX(articleId) 조회 → 해당 ID 이하 스킵 <span class="pi-new">신규</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/cafe/crawler.ts</span>
-      <span class="pi-desc">공지/필독 필터: 게시판명 셀에 "공지"/"필독" 텍스트 있으면 스킵 <span class="pi-new">신규</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">plist (LaunchAgents)</span>
-      <span class="pi-desc">크롤 스케줄 4회로 확정: 08:30 / 11:30 / 15:30 / 21:30 (01:30 제거) <span class="pi-changed">변경</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/cafe/config.ts</span>
-      <span class="pi-desc">QUALITY_THRESHOLDS: minSave 30→20, minUsable 60→40 <span class="pi-changed">변경</span></span>
-    </div>
+    <div class="pitem"><span class="pf">agents/cafe/config.ts</span><span class="pd">게시판 30~40개 설정 제거 → allArticlesUrl·maxArticlesPerCrawl 구조로 교체 <span class="chip chip-chg">핵심</span></span></div>
+    <div class="pitem"><span class="pf">agents/cafe/crawler.ts</span><span class="pd">/menus/0 단일 페이지네이션 크롤 구현. 공지 문자열 필터([공지], 필독) 추가 <span class="chip chip-new">신규</span></span></div>
+    <div class="pitem"><span class="pf">agents/cafe/crawler.ts</span><span class="pd">articleId 중복 방지: MAX(articleId) 조회 + 연속 3개 기존 ID 시 중단 <span class="chip chip-new">신규</span></span></div>
+    <div class="pitem"><span class="pf">agents/cafe/crawler.ts</span><span class="pd">7일 이내 재크롤 시 likeCount·commentCount·topComments 갱신 로직 <span class="chip chip-new">신규</span></span></div>
+    <div class="pitem"><span class="pf">agents/cafe/config.ts</span><span class="pd">QUALITY_THRESHOLDS: minSave 30→20, isUsable 60→40 <span class="chip chip-chg">변경</span></span></div>
+    <div class="pitem"><span class="pf">plist (LaunchAgents)</span><span class="pd">크롤 4회 확정: 08:30 / 11:30 / 15:30 / 21:30 (기존 3회에서 변경) <span class="chip chip-chg">변경</span></span></div>
+    <div class="pitem"><span class="pf">agents/cafe/run-pipeline.ts</span><span class="pd">15:30·21:30 후 큐레이션 실행 추가. 11:30만 심리분석+트렌드+DailyBrief <span class="chip chip-chg">변경</span></span></div>
   </div>
 
-  <div class="priority-block">
-    <div class="priority-header">
-      <span class="priority-label" style="background:rgba(251,146,60,0.15);color:#fb923c">P1</span>
-      <h3>발행 스케줄 + 원문 보존 90%</h3>
-      <span class="eff">예상 소요: 2~3일 | 효과: 75건/일 달성 + AI 티 제거</span>
+  <div class="pblock">
+    <div class="pblock-hd">
+      <span class="p-lbl" style="background:rgba(251,146,60,0.15);color:#fb923c">P1</span>
+      <h3>원문 보존 + 제목 변형 + 발행 스케줄</h3>
+      <span class="eff">2~3일 | 75건/일 달성 + AI 티 제거</span>
     </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/cafe/content-curator.ts</span>
-      <span class="pi-desc">반반이 방식(50%) → 수미상관 방식(90%) 프롬프트 변경 <span class="pi-changed">변경</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/cafe/content-curator.ts</span>
-      <span class="pi-desc">화제성 기준: commentCount ≥ 5로 상향 (likeCount 목록 미노출 보완) <span class="pi-changed">변경</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/cafe/content-curator.ts</span>
-      <span class="pi-desc">SEO 제목 최적화: desireCategory별 검색 키워드 삽입 <span class="pi-new">신규</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">.github/workflows/agents-seed.yml</span>
-      <span class="pi-desc">GHA cron → "0 0-14 * * *" (09~23 KST 매 시간) <span class="pi-changed">변경</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/seed/scheduler.ts</span>
-      <span class="pi-desc">시간대별 게시판 비율 테이블 (홀수 3:1:1 / 짝수 3:2:0) <span class="pi-new">신규</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/cafe/run-pipeline.ts</span>
-      <span class="pi-desc">15:30, 21:30 크롤 후 큐레이션 실행 추가 (현재 아침만) <span class="pi-changed">변경</span></span>
-    </div>
+    <div class="pitem"><span class="pf">agents/cafe/content-curator.ts</span><span class="pd">반반이(50%) → 수미상관(90%) 방식 프롬프트 변경 <span class="chip chip-chg">변경</span></span></div>
+    <div class="pitem"><span class="pf">agents/cafe/content-curator.ts</span><span class="pd">제목 변형 프롬프트: 일반글(SEO 키워드 추가) / 화제성글(갈등 포인트 강조) <span class="chip chip-new">신규</span></span></div>
+    <div class="pitem"><span class="pf">agents/cafe/content-curator.ts</span><span class="pd">화제성 기준 상향: commentCount ≥ 5 (기존 ≥2) <span class="chip chip-chg">변경</span></span></div>
+    <div class="pitem"><span class="pf">agents/seed/generator.ts</span><span class="pd">서브카테고리 random → DESIRE_TO_SUBCATEGORY 매핑 테이블로 교체 <span class="chip chip-chg">변경</span></span></div>
+    <div class="pitem"><span class="pf">.github/workflows/agents-seed.yml</span><span class="pd">GHA cron → "0 0-14 * * *" (09~23 KST 매 시간) <span class="chip chip-chg">변경</span></span></div>
+    <div class="pitem"><span class="pf">agents/seed/scheduler.ts</span><span class="pd">시간대별 게시판 비율 테이블 (홀수 3:1:1 / 짝수 3:2:0) <span class="chip chip-new">신규</span></span></div>
   </div>
 
-  <div class="priority-block">
-    <div class="priority-header">
-      <span class="priority-label" style="background:var(--yellow-dim);color:var(--yellow)">P2</span>
-      <h3>댓글 파동 + 댓글 원문 보존</h3>
-      <span class="eff">예상 소요: 2일 | 효과: 초기 인게이지먼트 강화</span>
+  <div class="pblock">
+    <div class="pblock-hd">
+      <span class="p-lbl" style="background:var(--yellow-dim);color:var(--yellow)">P2</span>
+      <h3>댓글 파동 재편 + 댓글 원문 보존</h3>
+      <span class="eff">2일 | 초기 인게이지먼트 강화</span>
     </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/seed/scheduler.ts</span>
-      <span class="pi-desc">일반글 댓글 파동: 1분(1) · 5분(3) · 30분(3) · 1시간(1) <span class="pi-changed">변경</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/seed/scheduler.ts</span>
-      <span class="pi-desc">화제성글 댓글 파동: 1분(2) · 5분(6) · 30분(5) · 1시간(3) <span class="pi-changed">변경</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/cafe/content-curator.ts</span>
-      <span class="pi-desc">댓글 원문 90%: topComments 기반 말투 변환 로직 <span class="pi-new">신규</span></span>
-    </div>
+    <div class="pitem"><span class="pf">agents/seed/scheduler.ts</span><span class="pd">일반글 파동: 1분(1)·5분(3)·30분(3)·1시간(1) = 8개 <span class="chip chip-chg">변경</span></span></div>
+    <div class="pitem"><span class="pf">agents/seed/scheduler.ts</span><span class="pd">화제성글 파동: 1분(2)·5분(6)·30분(5)·1시간(3) = 16개 <span class="chip chip-chg">변경</span></span></div>
+    <div class="pitem"><span class="pf">agents/cafe/content-curator.ts</span><span class="pd">댓글 원문 90%: topComments 기반 말투 변환 로직 <span class="chip chip-new">신규</span></span></div>
   </div>
 
-  <div class="priority-block">
-    <div class="priority-header">
-      <span class="priority-label" style="background:var(--blue-dim);color:var(--blue)">P3</span>
-      <h3>욕망 20개 + 게시판 6개 + 페르소나 구조</h3>
-      <span class="eff">예상 소요: 3~4일 | 효과: 타겟팅 정확도 + 시스템 단순화</span>
+  <div class="pblock">
+    <div class="pblock-hd">
+      <span class="p-lbl" style="background:var(--blue-dim);color:var(--blue)">P3</span>
+      <h3>욕망 20개 + 페르소나 구조 분리</h3>
+      <span class="eff">3~4일 | 타겟팅 정확도 향상</span>
     </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/cafe/psych-analyzer.ts</span>
-      <span class="pi-desc">욕망 7개 추가: BEAUTY / DIGITAL / NOSTALGIA / PRIDE / GRIEF / TRAVEL / FOOD <span class="pi-new">신규</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/seed/scheduler.ts</span>
-      <span class="pi-desc">게시판 6개로 단순화 (사는이야기/2막준비/정보마당/공감방/웃음방/자유게시판) <span class="pi-changed">변경</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">agents/seed/persona-data.ts</span>
-      <span class="pi-desc">글 전문 35명 + 댓글 전문 15명 역할 분리 <span class="pi-changed">변경</span></span>
-    </div>
-    <div class="priority-item">
-      <span class="pi-file">UI (별도 PRD)</span>
-      <span class="pi-desc">게시판 탭 6개 재편 — 별도 설계 후 진행 <span class="pi-same">추후</span></span>
-    </div>
+    <div class="pitem"><span class="pf">agents/cafe/psych-analyzer.ts</span><span class="pd">욕망 7개 추가: BEAUTY·DIGITAL·NOSTALGIA·PRIDE·GRIEF·TRAVEL·FOOD <span class="chip chip-new">신규</span></span></div>
+    <div class="pitem"><span class="pf">agents/seed/generator.ts</span><span class="pd">DESIRE_TO_SUBCATEGORY 매핑 테이블: 20개 욕망 → 게시판별 서브카테고리 <span class="chip chip-new">신규</span></span></div>
+    <div class="pitem"><span class="pf">agents/seed/persona-data.ts</span><span class="pd">글 전문 35명 + 댓글 전문 15명 역할 분리. primaryDesire 20개 기준 재배정 <span class="chip chip-chg">변경</span></span></div>
   </div>
 </div>
 
-<!-- 12 버전별 진화 요약 -->
+<!-- ══ 13 예상 효과 ══ -->
 <div class="section">
   <div class="section-header">
-    <div class="section-num" style="color:var(--muted)">12</div>
-    <h2>버전별 진화 요약</h2>
+    <div class="s-num" style="color:var(--green)">13</div>
+    <h2>V4 완료 후 예상 지표</h2>
   </div>
 
-  <table class="small">
-    <thead><tr><th>버전</th><th>핵심 변경</th><th>상태</th></tr></thead>
-    <tbody>
-      <tr>
-        <td><strong>V1</strong></td>
-        <td>현재 운영 중 — 25~30건/일, 게시판별 순회, 반반이 방식</td>
-        <td style="color:var(--green)">운영 중</td>
-      </tr>
-      <tr>
-        <td><strong>V2</strong></td>
-        <td>품질 기준 완화 + 75건/일 + 원문 90% + 댓글 파동 초안</td>
-        <td style="color:var(--muted)">기획 완료</td>
-      </tr>
-      <tr>
-        <td><strong>V3</strong></td>
-        <td>크롤 타이밍 최적화(11:30) + 욕망 20개 + 게시판 6개 + SEO</td>
-        <td style="color:var(--muted)">기획 완료</td>
-      </tr>
-      <tr>
-        <td><strong>V4</strong></td>
-        <td>전체글보기 단일 크롤 + articleId 중복방지 + 크롤 4회 확정 (현재 문서)</td>
-        <td style="color:var(--yellow)">검토 중</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="callout green" style="margin-top:16px;">
-    <strong>V4 = 최종 확정 버전.</strong> V2/V3에서 논의된 모든 내용이 V4에 통합됨. 개발은 V4 기준으로 진행.
+  <div class="stat-row">
+    <div class="stat"><div class="lbl">일일 발행량</div><div class="num" style="color:var(--green)">75건</div><div class="sub">현재 25~30건 대비 3배</div></div>
+    <div class="stat"><div class="lbl">발행 인풋 통과율</div><div class="num" style="color:var(--blue)">~40%</div><div class="sub">현재 14.6% → 2.7배</div></div>
+    <div class="stat"><div class="lbl">큐레이션 발행</div><div class="num" style="color:var(--teal)">최대 12건</div><div class="sub">현재 3건/일</div></div>
+    <div class="stat"><div class="lbl">첫 댓글 반응</div><div class="num" style="color:var(--yellow)">1분</div><div class="sub">현재 10분 → 10배 빠름</div></div>
+    <div class="stat"><div class="lbl">욕망 카테고리</div><div class="num" style="color:var(--orange)">20개</div><div class="sub">13개에서 확장</div></div>
+    <div class="stat"><div class="lbl">크롤 config</div><div class="num" style="color:var(--primary)">1개</div><div class="sub">카페당 (기존 40개)</div></div>
   </div>
 </div>
 
 <!-- Footer -->
-<div style="border-top:1px solid var(--border); padding-top:24px; margin-top:32px; font-size:12px; color:var(--muted);">
-  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+<div style="border-top:1px solid var(--border);padding-top:24px;margin-top:32px;font-size:12px;color:var(--muted);">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
     <div>
       <strong style="color:var(--text);">우나어 — age-doesnt-matter.com</strong><br>
-      V4 기획서 | 작성: 2026-05-13 | 상태: <span style="color:var(--yellow);">검토 중 (개발 미착수)</span>
+      V4 기획서 (최종) | 2026-05-13 | 상태: <span style="color:var(--yellow);">검토 중</span>
     </div>
     <div style="text-align:right;">
-      전체글보기 실증: Playwright 직접 확인 (cafe.naver.com/f-e/cafes/29349320/menus/0)<br>
-      관련 문서: plan-content-volume-v2.html · v3.html<br>
-      개발 시작: 창업자 승인 후 P0(크롤 아키텍처 전환)부터
+      실증: Playwright (cafe.naver.com/f-e/cafes/29349320/menus/0)<br>
+      코드 분석: prisma/schema.prisma · generator.ts · scheduler.ts<br>
+      개발 시작: 창업자 승인 후 P0부터
     </div>
   </div>
 </div>
