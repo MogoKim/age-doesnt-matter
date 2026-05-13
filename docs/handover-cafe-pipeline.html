@@ -290,7 +290,7 @@
 
   <!-- Header -->
   <div class="doc-header">
-    <div class="badge">우나어 내부 문서 · 2026-05-12 패치 반영</div>
+    <div class="badge">우나어 내부 문서 · 2026-05-13 패치 반영</div>
     <h1>네이버 카페 크롤링 → 콘텐츠 파이프라인</h1>
     <p>크롤링 구조 · 시간대별 스케줄 · DailyBrief · 품질 스코어 · 글 생성 3트랙 · 댓글 파동</p>
   </div>
@@ -1361,8 +1361,32 @@
     </div>
   </div>
 
+  <!-- ── 2026-05-13 패치 결과 ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:#e67e22;color:#fff;">★</div>
+      <h2>2026-05-13 패치 결과 — ContentCurator null 크래시</h2>
+      <span class="desc">커밋 126cd28</span>
+    </div>
+
+    <div class="patch-grid">
+      <div class="patch-card" style="grid-column: 1 / -1;">
+        <div class="patch-id">Fix · content-curator.ts:414 — guessDesire() null guard</div>
+        <h4>CafePost.topic이 null일 때 .toLowerCase() 런타임 크래시</h4>
+        <div class="patch-before">// 기존: topicStr 항상 string 가정 → null이면 TypeError
+function guessDesire(topicStr: string): string {
+  const lower = topicStr.toLowerCase()  // TypeError: Cannot read properties of null</div>
+        <div class="patch-after">// 수정: null/undefined 얼리 리턴으로 방어
+function guessDesire(topicStr: string | null | undefined): string {
+  if (!topicStr) return 'GENERAL'
+  const lower = topicStr.toLowerCase()</div>
+        <div class="patch-effect">08:32 아침 크롤링 중 content-curator.ts:414 TypeError → 6단계 파이프라인 완주 불능 발생. DB에 topic=null 레코드가 있을 때 guessDesire() 호출 시 크래시. null guard 추가로 topic 없는 CafePost는 욕망 GENERAL로 안전하게 처리.</div>
+      </div>
+    </div>
+  </div>
+
   <div style="border-top:1px solid var(--border);padding-top:24px;color:var(--muted);font-size:12px;text-align:center;">
-    우나어 내부 문서 · 최종 업데이트: 2026-05-12 (패치 31cc11e · b478599 반영) · 관련 문서: handover-cafe-persona-system.html / handover-magazine.html
+    우나어 내부 문서 · 최종 업데이트: 2026-05-13 (패치 31cc11e · b478599 · 126cd28 반영) · 관련 문서: handover-cafe-persona-system.html / handover-magazine.html
   </div>
 
 </div>
