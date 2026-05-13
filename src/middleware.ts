@@ -113,7 +113,7 @@ export default async function middleware(request: NextRequest) {
       const slug = await resolveSlug(segment)
       if (slug) {
         return addAnonSession(
-          NextResponse.redirect(new URL(`/magazine/${slug}`, request.url), 308),
+          NextResponse.redirect(new URL(`/magazine/${slug}`, request.url), 301),
           request,
         )
       }
@@ -128,7 +128,7 @@ export default async function middleware(request: NextRequest) {
       const slug = await resolveSlug(decoded)
       if (slug) {
         return addAnonSession(
-          NextResponse.redirect(new URL(`/community/${communityMatch[1]}/${slug}`, request.url), 308),
+          NextResponse.redirect(new URL(`/community/${communityMatch[1]}/${slug}`, request.url), 301),
           request,
         )
       }

@@ -176,6 +176,9 @@ export default async function MagazineDetailPage({ params }: PageProps) {
 
   // JSON-LD 구조화 데이터
   const canonicalSlug = post.slug ?? id
+  const plainText = post.content
+    ? post.content.replace(/<[^>]*>/g, '').replace(/\s+/g, '')
+    : ''
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -184,6 +187,10 @@ export default async function MagazineDetailPage({ params }: PageProps) {
     url: `${BASE_URL}/magazine/${canonicalSlug}`,
     datePublished: post.createdAt,
     dateModified: post.updatedAt,
+    inLanguage: 'ko-KR',
+    articleSection: post.category ?? '라이프스타일',
+    keywords: post.seoTitle ?? post.title,
+    ...(plainText.length > 0 ? { wordCount: plainText.length } : {}),
     publisher: {
       '@type': 'Organization',
       name: '우리 나이가 어때서',

@@ -72,7 +72,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F02 | PWA 설치 유도 | `src/components/common/AddToHomeScreen.tsx` | 4단계 트리거 (13s/3페이지/행동/주간) | RELATION+HEALTH | P1·P2 | [F02](F02-pwa-install.md) | ACTIVE | 2026-05-13 |
 | F03 | 홈 페이지 | `src/components/features/home/` (21개 컴포넌트) | 홈 방문 | RELATION | P1·P2·P3 | [F03](F03-home-page.md) | ACTIVE | 2026-05-13 |
 | F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | RELATION+HEALTH | P1·P2·P5 | [F04](F04-community.md) | ACTIVE | 2026-05-13 |
-| F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-12 |
+| F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-13 |
 | F06 | 일자리 게시판 | `src/app/(main)/jobs/` | 자동수집(A03) + 사용자 탐색 | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-05-12 |
 | F07 | 베스트 탭 | `src/app/(main)/best/` | trendingScore 상위 | RELATION | P3 | [F07](F07-best-tab.md) | ACTIVE | 2026-05-12 |
 | F08 | 검색 | `src/app/(main)/search/` | 사용자 검색 | ALL | ALL | `docs/specs/04-search.md` | ACTIVE | 2026-05-02 |
@@ -88,7 +88,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | ID | 기능명 | 코드 위치 | 스케줄/트리거 | 실행환경 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|-------------|---------|---------|------------|------|------|---------|
 | A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` | launchd 08:30·12:30·20:40 KST (DEEP/QUICK/ALL) | LOCAL_ONLY | INFRA | — | [A01](A01-cafe-crawler.md) | ACTIVE | 2026-05-12 |
-| A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 11:00, 14:00 KST | LOCAL_ONLY | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-12 |
+| A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 11:00, 14:00 KST | LOCAL_ONLY | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-13 |
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/cmo/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | GHA 11:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | RELATION | P1·P3 | [A04](A04-external-content.md) | ACTIVE | 2026-05-13 |
 | A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | ACTIVE | 2026-05-12 |
@@ -114,7 +114,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A25 | 논란 체인 | `agents/seed/controversy-chain.ts` | GHA 하루 16회 (seed 동일) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
 | A26 | Design 광고 루프 | `agents/marketing-loop/creative-optimizer.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A27 | QA 코드 게이트 | `agents/qa/pre-deploy-gate.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
-| A28 | 네이버 블로그 자동 포스터 | `agents/naver-blog/*` | LOCAL 10:00/17:00 KST | LOCAL_ONLY | GROWTH | — | ~$0.28/월 | ACTIVE | 2026-05-12 |
+| A28 | 네이버 블로그 수동 발행 큐 | `agents/naver-blog/*`, `src/app/admin/(panel)/naver-blog/*` | LOCAL 12:30/18:30 KST | LOCAL_ONLY | GROWTH | — | Gemini 이미지 포함 | ACTIVE | 2026-05-13 |
 
 ---
 

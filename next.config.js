@@ -54,6 +54,8 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // www → non-www 권위 통합 (SEO: GSC 도메인 분열 방지)
+      { source: '/:path*', has: [{ type: 'host', value: 'www.age-doesnt-matter.com' }], destination: 'https://age-doesnt-matter.com/:path*', permanent: true },
       // 아임웹 레거시 경로 → 현재 경로 301 영구 리다이렉트
       { source: '/Humor',          destination: '/community/humor',  permanent: true },
       { source: '/Humor/:path*',   destination: '/community/humor',  permanent: true },
