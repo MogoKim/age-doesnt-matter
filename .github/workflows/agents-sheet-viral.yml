@@ -3,9 +3,9 @@ name: "Agents — Sheet Viral Waves"
 on:
   workflow_dispatch:
 
-  # 30분마다 실행 (화제성 파동 최대 30분 내 처리)
+  # 5분마다 실행 (파동 타이밍: +1분/+3분/+6분/+10분 — 글 발행 후 최대 15분 내 전부 완료)
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/5 * * * *"
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}

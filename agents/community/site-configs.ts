@@ -13,6 +13,11 @@ export interface SiteConfig {
     images: string       // content 내부 img
     removeElements: string[] // 제거할 요소 (광고, 네비 등)
   }
+  // 원본 댓글 수집 셀렉터 (removeElements 실행 전에 먼저 읽음)
+  commentSelectors?: {
+    item: string   // 개별 댓글 컨테이너
+    text: string   // 댓글 텍스트 요소
+  }
   headless: boolean
   minDelay: number       // ms — 페이지 로드 후 대기
   cloudflareProtected: boolean
@@ -35,6 +40,10 @@ export const SITE_CONFIGS: SiteConfig[] = [
         '.document_address', '.fm_vote', '.fm_btn_area',
       ],
     },
+    commentSelectors: {
+      item: '.comment_area .list_item',
+      text: '.xe_content',
+    },
     headless: true,
     minDelay: 3000,
     cloudflareProtected: true,
@@ -54,6 +63,10 @@ export const SITE_CONFIGS: SiteConfig[] = [
         '.board_icon_mini', '.list_memo_count_span',
       ],
     },
+    commentSelectors: {
+      item: '.view_comment_list li',
+      text: '.memo_text_wrap',
+    },
     headless: true,
     minDelay: 2000,
     cloudflareProtected: false,
@@ -72,6 +85,10 @@ export const SITE_CONFIGS: SiteConfig[] = [
         'ins', '.ad_area', '.comment_area', '.cmt_tit',
         '.emblem',
       ],
+    },
+    commentSelectors: {
+      item: '.comment_area .comment_item',
+      text: '.comment_cont',
     },
     headless: true,
     minDelay: 2000,

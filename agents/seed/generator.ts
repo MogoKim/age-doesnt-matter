@@ -915,6 +915,7 @@ export async function generateSheetViralComment(
   rawContent: string,
   waveType: 'empathy' | 'critical' | 'reversal',
   keyTerms: string[],
+  sourceComments: string[] = [],
 ): Promise<string> {
   // ── 이미지 전용 글 감지: HTML 태그 제거 후 텍스트 50자 미만이면 AI 호출 스킵 ──
   const cleanText = rawContent.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
@@ -953,6 +954,10 @@ export async function generateSheetViralComment(
 [댓글 방향]
 ${WAVE_PROMPTS[waveType]}`
 
+  const commentContext = sourceComments.length > 0
+    ? `\n\n[원본 커뮤니티 댓글 분위기 참고 — 상스러운 표현은 순화하고, 50~60대 말투로 재작성]\n${sourceComments.slice(0, 5).join('\n')}`
+    : ''
+
   const maxAttempts = 2
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const response = await client.messages.create({
@@ -961,7 +966,7 @@ ${WAVE_PROMPTS[waveType]}`
       system: getKstContext() + '\n\n' + systemPrompt,
       messages: [{
         role: 'user',
-        content: `다음 글에 댓글을 달아주세요.\n\n제목: ${postTitle}\n\n본문:\n${rawContent.slice(0, 1500)}`,
+        content: `다음 글에 댓글을 달아주세요.${commentContext}\n\n제목: ${postTitle}\n\n본문:\n${rawContent.slice(0, 1500)}`,
       }],
     })
 

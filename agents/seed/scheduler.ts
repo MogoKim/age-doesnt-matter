@@ -1179,6 +1179,7 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
       personaIds: string[]
       keyTerms?: string[]
       rawContent?: string
+      sourceComments?: string[]
     }
 
     const post = await prisma.post.findUnique({
@@ -1194,6 +1195,7 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
       const waveType = data.waveType ?? 'empathy'
       const rawContent = data.rawContent ?? post.content ?? ''
       const keyTerms = data.keyTerms ?? []
+      const sourceComments = data.sourceComments ?? []
       const cap = 20
 
       const botCount = await prisma.comment.count({
@@ -1214,6 +1216,7 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
           rawContent,
           waveType,
           keyTerms,
+          sourceComments,
         )
         if (!commentText || commentText.length < 5) {
           console.log(`  [SheetViral] ⚠️ 댓글 스킵 — 빈값 또는 5자 미만 (persona=${personaId}, post=${data.postId.slice(0, 8)})`)

@@ -106,6 +106,7 @@ interface ScrapeResult {
   thumbnailUrl: string | null
   imageCount: number
   videoCount: number
+  sourceComments: string[] // 원본 사이트 댓글 (파동 댓글 생성 분위기 참고용)
 }
 
 async function scrapePage(
@@ -140,6 +141,23 @@ async function scrapePage(
     const rawContent = await extractHtml(page, siteConfig.selectors.content)
     if (!rawContent) throw new Error('본문 추출 실패')
 
+    // 원본 댓글 수집 (removeElements 실행 전 — 최대 10개)
+    const sourceComments: string[] = []
+    if (siteConfig.commentSelectors) {
+      try {
+        const items = await page.$$(siteConfig.commentSelectors.item)
+        for (const item of items.slice(0, 10)) {
+          try {
+            const text = await item.$eval(
+              siteConfig.commentSelectors.text,
+              (el: Element) => el.textContent?.trim() ?? '',
+            )
+            if (text.length > 5) sourceComments.push(text)
+          } catch { continue }
+        }
+      } catch { /* 댓글 수집 실패해도 스크래핑 계속 */ }
+    }
+
     // 콘텐츠 변환
     const transformed = transformContent(rawContent, url, siteConfig, boardType)
 
@@ -152,7 +170,7 @@ async function scrapePage(
       postKey,
     )
 
-    return { title, content: finalContent, thumbnailUrl, imageCount, videoCount }
+    return { title, content: finalContent, thumbnailUrl, imageCount, videoCount, sourceComments }
   } finally {
     await page.close()
   }
@@ -298,10 +316,10 @@ async function main() {
                   const keyTerms = extractKeyTerms(existingActive.title)
                   const rawContent = (existingActive.content ?? '').slice(0, 2000)
                   const retryWaves = [
-                    { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 2 },
-                    { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 5 },
-                    { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 35 },
-                    { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 65 },
+                    { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 1 },
+                    { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 3 },
+                    { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 6 },
+                    { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 10 },
                   ]
                   for (const wave of retryWaves) {
                     await prisma.botLog.create({
@@ -329,7 +347,7 @@ async function main() {
                       status: 'PENDING',
                       details: JSON.stringify({
                         postId: existingActive.id,
-                        scheduledAt: new Date(retryNow.getTime() + 40 * 60 * 1000).toISOString(),
+                        scheduledAt: new Date(retryNow.getTime() + 2 * 60 * 1000).toISOString(),
                         personaIds: ['BI', 'BJ', 'BK'],
                       }),
                     },
@@ -341,7 +359,7 @@ async function main() {
                       status: 'PENDING',
                       details: JSON.stringify({
                         postId: existingActive.id,
-                        scheduledAt: new Date(retryNow.getTime() + 90 * 60 * 1000).toISOString(),
+                        scheduledAt: new Date(retryNow.getTime() + 6 * 60 * 1000).toISOString(),
                         personaIds: ['BL', 'BM', 'BN', 'BO', 'BP'],
                       }),
                     },
@@ -387,6 +405,7 @@ async function main() {
             let thumbnailUrl: string | null = null
             let imageCount = 0
             let videoCount = 0
+            let sourceComments: string[] = []
 
             if (row.rawContent) {
               // 수동 붙여넣기 모드
@@ -401,6 +420,7 @@ async function main() {
               thumbnailUrl = result.thumbnailUrl
               imageCount = result.imageCount
               videoCount = result.videoCount
+              sourceComments = result.sourceComments
             }
 
             // 카테고리 결정 (창업자 지정 우선, 아니면 게시판별 자동 분류)
@@ -440,13 +460,13 @@ async function main() {
             // BotLog 파동 예약 — details는 scheduler가 JSON.parse()로 읽는 구조
             const now = new Date()
             if (tab.isFeatured) {
-              // 화제성 글: WAVE_L(좋아요) + WAVE_1/2/3(댓글) 4파동 예약
+              // 화제성 글: WAVE_L(좋아요+1분) + WAVE_1(공감+3분) + WAVE_2(비판+6분) + WAVE_3(역전+10분)
               const keyTerms = extractKeyTerms(title)
               const waves = [
-                { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 2 },
-                { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 5 },
-                { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 35 },
-                { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 65 },
+                { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 1 },
+                { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 3 },
+                { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 6 },
+                { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 10 },
               ]
               for (const wave of waves) {
                 const scheduledAt = new Date(now.getTime() + wave.delayMin * 60 * 1000)
@@ -462,13 +482,14 @@ async function main() {
                       personaIds: WAVE_PERSONAS[wave.waveType] ?? [],
                       rawContent: content.slice(0, 2000),
                       keyTerms,
+                      sourceComments,
                     }),
                   },
                 })
               }
-              console.log(`  → 화제성 파동 4개 예약 (WAVE_L+1+2+3)`)
+              console.log(`  → 화제성 파동 4개 예약 (WAVE_L+1+2+3, 댓글 분위기 ${sourceComments.length}개 수집)`)
             } else {
-              // 일반 스크래퍼 글: engagement 파동 2개 예약 (댓글 +40분, 좋아요 +90분)
+              // 일반 스크래퍼 글: engagement 파동 2개 예약 (댓글 +2분, 좋아요 +6분)
               await prisma.botLog.create({
                 data: {
                   botType: 'SEED',
@@ -476,8 +497,9 @@ async function main() {
                   status: 'PENDING',
                   details: JSON.stringify({
                     postId: post.id,
-                    scheduledAt: new Date(now.getTime() + 40 * 60 * 1000).toISOString(),
+                    scheduledAt: new Date(now.getTime() + 2 * 60 * 1000).toISOString(),
                     personaIds: ['BI', 'BJ', 'BK'],
+                    sourceComments,
                   }),
                 },
               })
@@ -488,7 +510,7 @@ async function main() {
                   status: 'PENDING',
                   details: JSON.stringify({
                     postId: post.id,
-                    scheduledAt: new Date(now.getTime() + 90 * 60 * 1000).toISOString(),
+                    scheduledAt: new Date(now.getTime() + 6 * 60 * 1000).toISOString(),
                     personaIds: ['BL', 'BM', 'BN', 'BO', 'BP'],
                   }),
                 },
