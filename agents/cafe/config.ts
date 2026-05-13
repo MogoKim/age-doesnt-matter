@@ -61,6 +61,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     name: '우아한 갱년기',
     url: 'https://cafe.naver.com/wgang',
     numericId: 29349320,
+    allArticlesUrl: 'https://cafe.naver.com/f-e/cafes/29349320/menus/0?viewType=L',
     boards: [
       // ── 인기글 (커뮤니티 검증 최고품질 — 2026-04-08 추가) ──
       { name: '인기글', menuId: 0, isPopular: true, maxPages: 2, priority: 'high', category: 'general' },
@@ -111,6 +112,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     name: '은퇴 후 50년',
     url: 'https://cafe.naver.com/dlxogns01',
     numericId: 23676262,
+    allArticlesUrl: 'https://cafe.naver.com/f-e/cafes/23676262/menus/0?viewType=L',
     boards: [
       // ── 인기글 (베스트 게시판 menuId=107 — wgang과 달리 일반 게시판 방식으로 접근) ──
       { name: '인기글', menuId: 107, maxPages: 2, priority: 'high', category: 'general' },
@@ -220,7 +222,7 @@ export const TOPIC_BLACKLIST = [
 /** 품질 점수 기준 */
 export const QUALITY_THRESHOLDS = {
   /** 이 점수 미만은 DB 저장 안 함 */
-  minSave: 30,
+  minSave: 20,
   /** 이 점수 이상은 isUsable = true */
   minUsable: 60,
 }

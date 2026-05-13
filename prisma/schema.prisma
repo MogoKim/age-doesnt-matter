@@ -873,11 +873,41 @@ model CafePost {
   topComments    Json?    // [{author: string, content: string, likeCount: number}]
   commentCrawled Boolean  @default(false) // 댓글 내용 크롤링 완료 여부
 
+  // 전체글보기 dedup + 큐레이션 추적
+  articleId      Int?      // 네이버 게시글 순차 번호 (전체글보기 dedup용)
+  usedAt         DateTime? // 큐레이션 참조 시각 (NULL = 미사용)
+
+  @@unique([cafeId, articleId])
   @@index([cafeId, crawledAt(sort: Desc)])
   @@index([crawledAt(sort: Desc)])
   @@index([isUsable, crawledAt(sort: Desc)])
   @@index([aiAnalyzed, crawledAt(sort: Desc)])
   @@index([desireCategory, urgencyLevel])
+  @@index([usedAt])
+}
+
+/// 댓글 파동 큐 (발행 후 1분/5분/30분/60분 순차 댓글 작성)
+model CommentWaveQueue {
+  id              String    @id @default(cuid())
+  postId          String    // 우나어 게시글 ID
+  cafePostId      String    // 참조한 원본 CafePost ID
+  authorPersonaId String    // 발행 페르소나 (wave에서 제외)
+  wave1At         DateTime  // 발행 + 1분
+  wave2At         DateTime  // 발행 + 5분
+  wave3At         DateTime  // 발행 + 30분
+  wave4At         DateTime  // 발행 + 60분
+  wave1Done       Boolean   @default(false)
+  wave2Done       Boolean   @default(false)
+  wave3Done       Boolean   @default(false)
+  wave4Done       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime  // createdAt + 60h (TTL — 초과 시 자동 정리)
+
+  @@index([wave1Done, wave1At])
+  @@index([wave2Done, wave2At])
+  @@index([wave3Done, wave3At])
+  @@index([wave4Done, wave4At])
+  @@index([expiresAt])
 }
 
 /// 일별 트렌드 분석 결과

@@ -476,6 +476,81 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
   return limited
 }
 
+// ─── 전체글보기 URL 수집 (V6 — allArticles 방식) ──────────
+
+const ALL_ARTICLES_MAX_PAGES = 14 // 페이지당 15건 × 14 = 210건 상한
+
+/**
+ * 전체글보기에서 신규 글 URL 수집 (MAX(articleId) 기준 증분 크롤)
+ * - DB에 없는 articleId만 반환
+ * - 첫 실행 시 최대 ALL_ARTICLES_MAX_PAGES 페이지 수집
+ */
+async function collectAllArticleUrls(playwrightPage: Page, cafe: CafeConfig): Promise<ArticleInfo[]> {
+  if (!cafe.allArticlesUrl) return []
+
+  // DB에서 이 카페의 최신 articleId 조회
+  const latest = await prisma.cafePost.findFirst({
+    where: { cafeId: cafe.id, articleId: { not: null } },
+    orderBy: { articleId: 'desc' },
+    select: { articleId: true },
+  })
+  const maxKnownId = latest?.articleId ?? 0
+  console.log(`[CafeCrawler] ${cafe.name} — 전체글보기 크롤 시작. DB MAX articleId: ${maxKnownId}`)
+
+  const collected: ArticleInfo[] = []
+  let pageNum = 1
+
+  while (pageNum <= ALL_ARTICLES_MAX_PAGES) {
+    const url = `${cafe.allArticlesUrl}&page=${pageNum}`
+    try {
+      await playwrightPage.goto(url, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
+      await sleep(randomDelay(2000))
+
+      const links = await playwrightPage.locator('a[href*="/articles/"]').all()
+      const pageIds: number[] = []
+      const pageArticles: ArticleInfo[] = []
+
+      for (const link of links) {
+        const href = await link.getAttribute('href')
+        if (!href) continue
+        const match = href.match(/\/articles\/(\d+)/)
+        if (!match) continue
+        const id = parseInt(match[1])
+        pageIds.push(id)
+        if (id <= maxKnownId) continue // 이미 DB에 있음
+        if (collected.some(a => a.articleId === match[1])) continue
+        pageArticles.push({
+          articleId: match[1],
+          newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${match[1]}`,
+          oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${match[1]}`,
+          boardName: null,
+          boardCategory: null,
+        })
+      }
+
+      if (pageIds.length === 0) break
+
+      const maxOnPage = Math.max(...pageIds)
+      collected.push(...pageArticles)
+      console.log(`[CafeCrawler] ${cafe.name} p${pageNum}: ${pageArticles.length}건 신규, maxId=${maxOnPage}`)
+
+      // 이 페이지의 최대 articleId가 이미 DB에 있으면 → 더 이상 신규 없음
+      if (maxOnPage <= maxKnownId) break
+      // 이 페이지에서 새 글이 하나도 없으면 중단 (공지글만 남은 경우)
+      if (pageArticles.length === 0) break
+
+      pageNum++
+      await sleep(randomDelay(CRAWL_LIMITS.delayBetweenPages))
+    } catch (err) {
+      console.warn(`[CafeCrawler] ${cafe.name} p${pageNum} 실패:`, err)
+      break
+    }
+  }
+
+  console.log(`[CafeCrawler] ${cafe.name} — 전체글보기 완료: ${collected.length}건 신규 수집 (${pageNum}페이지)`)
+  return collected
+}
+
 // ─── 신 형식 크롤링 (f-e URL — iframe 불필요) ─────────────
 
 /** 신 형식 URL에서 글 상세 크롤링 — cafe_main iframe 안에서 콘텐츠 추출 */
@@ -703,12 +778,19 @@ async function buildPostFromTarget(
 
 /** 개별 글 크롤링 — 신 형식 먼저 시도, 실패 시 구 형식으로 폴백 */
 async function crawlPost(page: Page, article: ArticleInfo, cafe: CafeConfig, includeComments = false): Promise<RawCafePost | null> {
+  const numericArticleId = parseInt(article.articleId)
+
   // 1차: 신 형식 (직접 렌더링, 성공률 높음)
   const result = await crawlNewFormat(page, article, cafe, includeComments)
-  if (result) return result
+  if (result) {
+    result.articleId = numericArticleId
+    return result
+  }
 
   // 2차: 구 형식 (iframe 기반, 폴백)
-  return crawlOldFormat(page, article, cafe, includeComments)
+  const fallback = await crawlOldFormat(page, article, cafe, includeComments)
+  if (fallback) fallback.articleId = numericArticleId
+  return fallback
 }
 
 // ─── DB 저장 ─────────────────────────────────────────
@@ -766,6 +848,8 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
           videoUrls: post.videoUrls,
           thumbnailUrl: post.thumbnailUrl,
           mediaCount: post.imageUrls.length + post.videoUrls.length,
+          // 전체글보기 dedup 필드
+          articleId: post.articleId ?? null,
           // DEEP 모드: 댓글 데이터
           topComments: post.topComments ? JSON.parse(JSON.stringify(post.topComments)) : undefined,
           commentCrawled: (post.topComments?.length ?? 0) > 0,
@@ -784,9 +868,10 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
 async function main() {
   const crawlMode = process.env.CRAWL_MODE ?? 'deep'
   const isQuickMode = crawlMode === 'quick'
-  const includeComments = !isQuickMode  // DEEP 모드만 댓글 수집
+  const isCrawlOnly = crawlMode === 'crawl-only'  // 전체글보기 전용 (P0 신규)
+  const includeComments = !isQuickMode  // DEEP/CRAWL-ONLY 모드만 댓글 수집
 
-  console.log(`[CafeCrawler] 시작 — 모드: ${isQuickMode ? 'QUICK (HIGH 게시판 1페이지, 댓글 없음)' : 'DEEP (전체 게시판, 댓글 포함)'}`)
+  console.log(`[CafeCrawler] 시작 — 모드: ${isCrawlOnly ? 'CRAWL-ONLY (전체글보기, 댓글 포함)' : isQuickMode ? 'QUICK (HIGH 게시판 1페이지, 댓글 없음)' : 'DEEP (전체 게시판, 댓글 포함)'}`)
   const startTime = Date.now()
 
   let totalCollected = 0
@@ -816,8 +901,10 @@ async function main() {
 
       console.log(`\n[CafeCrawler] === ${cafe.name} (${cafe.id}, #${cafe.numericId}) ===`)
 
-      // 1) 글 URL 수집
-      const articles = await collectPostUrls(page, cafe, isQuickMode)
+      // 1) 글 URL 수집 — crawl-only: 전체글보기 / 그 외: board 루프
+      const articles = isCrawlOnly && !cafe.legacyCrawler
+        ? await collectAllArticleUrls(page, cafe)
+        : await collectPostUrls(page, cafe, isQuickMode)
       totalUrls += articles.length
 
       // 2) 각 글 상세 크롤링 (연속 실패 5회 시 차단 의심 → 카페 스킵)
@@ -881,11 +968,12 @@ async function main() {
     await prisma.botLog.create({
       data: {
         botType: 'CAFE_CRAWLER',
-        action: 'CAFE_CRAWL',
+        action: isCrawlOnly ? 'CAFE_CRAWL_ALLARTICLES' : 'CAFE_CRAWL',
         status: totalSaved > 0 ? 'SUCCESS' : 'PARTIAL',
         collectedCount: totalCollected,
         publishedCount: totalSaved,
         details: JSON.stringify({
+          mode: crawlMode,
           cafes: CAFE_CONFIGS.map(c => c.id),
           collected: totalCollected,
           saved: totalSaved,

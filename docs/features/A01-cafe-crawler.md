@@ -206,6 +206,7 @@
 | 2026-04-27 | Feature 문서 최초 생성 (코드 딥다이브 기반) | Feature Lifecycle 도입 |
 | 2026-05-12 | quality-scorer.ts에 `calculateKillerScore()` 추가 + crawler.ts killerScore 저장 | 화제성글 후보 선별 고도화 (참여도 55%, 최신성 5%) |
 | 2026-05-12 | types.ts에 `parseTopComments()`+`classifyCommentAtmosphere()` 추가, quality-scorer.ts 베스트댓글 likeCount 보너스(최대+10), trend-analyzer.ts postSummaries에 댓글 분위기·베스트댓글 포함 | 댓글 분위기 파이프라인 연결 — 수집된 topComments가 qualityScore·트렌드 분석에 실질 반영 |
+| 2026-05-13 | V6 P0: schema.prisma에 CafePost.articleId+usedAt 추가, CommentWaveQueue 신규 테이블, migration SQL 작성. crawler.ts에 `collectAllArticleUrls()` 신규 + `crawl-only` 모드 + articleId 저장. config.ts에 allArticlesUrl(wgang/dlxogns01) + minSave 20. types.ts에 allArticlesUrl/legacyCrawler/articleId 필드. runner.ts에 content-curate GHA 스마트 fallback | 전체글보기 기반 증분 크롤(57개 board→2개 URL), 댓글 파동 큐 인프라, GHA 이중 발행 방지 |
 
 ---
 
