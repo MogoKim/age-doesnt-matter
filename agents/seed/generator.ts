@@ -233,7 +233,7 @@ function selectPersonalizedTopic(
   const desireToArea: Record<string, string> = {
     HEALTH: 'health', FAMILY: 'family', MONEY: 'money',
     RETIRE: 'money', JOB: 'money', RELATION: 'relation',
-    HOBBY: 'hobby', MEANING: 'meaning', HUMOR: 'humor',
+    HOBBY: 'hobby', MEANING: 'meaning', HUMOR: 'humor', ENTERTAIN: 'humor',
     FOOD: 'hobby', FREEDOM: 'meaning', CARE: 'health',
   }
   const personaDesire = getPersonaDesire(personaId)

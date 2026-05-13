@@ -208,6 +208,7 @@
 | 2026-05-12 | types.ts에 `parseTopComments()`+`classifyCommentAtmosphere()` 추가, quality-scorer.ts 베스트댓글 likeCount 보너스(최대+10), trend-analyzer.ts postSummaries에 댓글 분위기·베스트댓글 포함 | 댓글 분위기 파이프라인 연결 — 수집된 topComments가 qualityScore·트렌드 분석에 실질 반영 |
 | 2026-05-13 | V6 P0: schema.prisma에 CafePost.articleId+usedAt 추가, CommentWaveQueue 신규 테이블, migration SQL 작성. crawler.ts에 `collectAllArticleUrls()` 신규 + `crawl-only` 모드 + articleId 저장. config.ts에 allArticlesUrl(wgang/dlxogns01) + minSave 20. types.ts에 allArticlesUrl/legacyCrawler/articleId 필드. runner.ts에 content-curate GHA 스마트 fallback | 전체글보기 기반 증분 크롤(57개 board→2개 URL), 댓글 파동 큐 인프라, GHA 이중 발행 방지 |
 | 2026-05-13 | V6 P1: run-pipeline.ts에 crawl-only/full/crawl-curate 3개 모드 신설. daily-brief.ts에 `loadTodayBrief()` 추가(오늘→어제→최근 fallback). content-curator.ts에 usedAt 기록+loadTodayBrief() 호출+DESIRE_TO_SUBCATEGORY 매핑+killerScore 정렬+48h 날짜 필터. config.ts minUsable 60→30. plist 4회 구조로 재편(08:30 crawl-only / 11:30 full / 15:30 crawl-curate / 21:30 crawl-curate). wave-processor.ts 신규(GHA `*/5 * * * *`). GHA wave-process job + 스마트 fallback skip 로직 추가 | 큐레이션 3건→9건/일, 첫 댓글 10분→1분, isUsable 통과율 14.6%→~40% 목표 |
+| 2026-05-13 | V6 P2: content-curator.ts 수미상관 90% 프롬프트 교체(반반이→원본 90% 보존, 첫문장/마지막만 페르소나). 큐레이션 페르소나 19명→50명(STORY 25/LIFE2 18/HUMOR 7). wave-processor.ts 댓글 원문 90% 보존+COMMENTER_PERSONA_IDS 50명 확장. generator.ts ENTERTAIN 욕망 desireToArea 매핑 추가 | AI 티 감소, LIFE2 게시글 비율 확보, 댓글 자연스러움 향상 |
 
 ---
 
