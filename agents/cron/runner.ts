@@ -194,20 +194,18 @@ async function main() {
     process.exit(0)
   }
 
-  // GHA 스마트 fallback: content-curate는 Mac launchd가 이미 실행한 경우 스킵
-  // 참조: V6 Plan P0-5 — BotLog CONTENT_CURATE 오늘치 존재 시 GHA 이중 발행 방지
+  // 1시간 이내 중복 방지: hourly 큐레이션이 연속 실행되는 것을 막되, 다음 시간 실행은 허용
   if (key === 'cafe_crawler:content-curate') {
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-    const curatedToday = await prisma.botLog.count({
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+    const recentLog = await prisma.botLog.findFirst({
       where: {
         botType: 'CAFE_CRAWLER',
         action: 'CONTENT_CURATE',
-        createdAt: { gte: todayStart },
+        createdAt: { gte: oneHourAgo },
       },
     })
-    if (curatedToday > 0) {
-      console.log(`[Runner] cafe_crawler:content-curate 스킵 — 오늘 이미 ${curatedToday}건 발행 (Mac launchd 정상 실행됨)`)
+    if (recentLog) {
+      console.log(`[Runner] cafe_crawler:content-curate 스킵 — 1시간 이내 이미 실행됨 (${recentLog.createdAt.toISOString()})`)
       await disconnect()
       process.exit(0)
     }
