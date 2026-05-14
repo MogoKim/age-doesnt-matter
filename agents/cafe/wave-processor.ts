@@ -93,15 +93,21 @@ async function processWave(
   // Claude Haiku로 댓글 생성
   const commentText = await generateComment(post.title, refComment)
 
-  // 댓글 DB 저장
-  await prisma.comment.create({
-    data: {
-      postId: queue.postId,
-      authorId: userId,
-      content: commentText,
-      status: 'ACTIVE',
-    },
-  })
+  // 댓글 DB 저장 + Post.commentCount 동기화 (목록 표시 정확도)
+  await prisma.$transaction([
+    prisma.comment.create({
+      data: {
+        postId: queue.postId,
+        authorId: userId,
+        content: commentText,
+        status: 'ACTIVE',
+      },
+    }),
+    prisma.post.update({
+      where: { id: queue.postId },
+      data: { commentCount: { increment: 1 } },
+    }),
+  ])
 
   // wave 완료 마킹
   const doneField = `wave${waveNum}Done` as WaveDoneKey

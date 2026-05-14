@@ -34,6 +34,8 @@ function stripMarkdown(text: string): string {
     .replace(/`(.+?)`/g, '$1')
     .replace(/^[-*+]\s/gm, '')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^\*+\s*/gm, '')
+    .replace(/\*+/g, '')
     .trim()
 }
 
@@ -760,9 +762,9 @@ async function main() {
       const postId = await publishCuratedContent(curated)
       publishedCount++
       console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
-      // 댓글 파동 큐 등록 (refs[0]가 있는 경우)
-      if (postId && refs[0]?.id) {
-        await enqueueCommentWave(postId, refs[0].id, persona.id).catch(err =>
+      // 댓글 파동 큐 등록 (postId만 있으면 등록, cafePostId 없으면 fallback 댓글 생성)
+      if (postId) {
+        await enqueueCommentWave(postId, refs[0]?.id ?? '', persona.id).catch(err =>
           console.warn('[ContentCurator] wave 큐 등록 실패 (무시):', err),
         )
       }
