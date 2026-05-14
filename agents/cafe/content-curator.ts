@@ -524,29 +524,40 @@ const DESIRE_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR' | 'LIFE2' |
   GENERAL:   { boardType: 'STORY', category: '자유수다' },
 }
 
-/** 참고용 원본 글 가져오기 (qualityScore >= 30, 48h 이내, killerScore 우선) */
-async function getReferencePosts(topic: string, limit: number) {
-  const cutoff48h = new Date(Date.now() - 48 * 60 * 60 * 1000)
-
-  // 첫 단어 추출 (예: "갱년기 신체 증상" → "갱년기")
-  const firstWord = topic.split(/[\s·,]+/)[0]
-  // 2글자 이상 단어 목록
+/** 참고용 원본 글 가져오기 — 3단계 fallback (B19+B24)
+ * 1단계: 48h + 키워드 / 2단계: 7일 + 키워드 / 3단계: 7일 + desireCategory만
+ */
+async function getReferencePosts(topic: string, desireCat: string, limit: number) {
+  const base = { isUsable: true, usedAt: null }
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
+  const firstWord = topicWords[0] ?? topic
+  const selectFields = { id: true, title: true, content: true, cafeName: true } as const
 
-  return prisma.cafePost.findMany({
-    where: {
-      qualityScore: { gte: 30 },
-      usedAt: null,
-      postedAt: { gte: cutoff48h },
-      OR: [
-        { title: { contains: firstWord, mode: 'insensitive' } },
-        { topics: { hasSome: topicWords } },
-      ],
-    },
+  // 1단계: 48h + 키워드
+  const cutoff48h = new Date(Date.now() - 48 * 3600_000)
+  const stage1 = await prisma.cafePost.findMany({
+    where: { ...base, postedAt: { gte: cutoff48h }, OR: [{ title: { contains: firstWord, mode: 'insensitive' } }, { topics: { hasSome: topicWords } }] },
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
-    take: limit,
-    select: { id: true, title: true, content: true, cafeName: true },
+    take: limit, select: selectFields,
   })
+  if (stage1.length >= limit) return stage1
+
+  // 2단계: 7일 + 키워드
+  const cutoff7d = new Date(Date.now() - 7 * 24 * 3600_000)
+  const stage2 = await prisma.cafePost.findMany({
+    where: { ...base, postedAt: { gte: cutoff7d }, OR: [{ title: { contains: firstWord, mode: 'insensitive' } }, { topics: { hasSome: topicWords } }] },
+    orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
+    take: limit, select: selectFields,
+  })
+  if (stage2.length >= limit) return stage2
+
+  // 3단계: 7일 + desireCategory만 (키워드 없이)
+  const stage3 = await prisma.cafePost.findMany({
+    where: { ...base, postedAt: { gte: cutoff7d }, ...(desireCat !== 'GENERAL' ? { desireCategory: desireCat } : {}) },
+    orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
+    take: limit, select: selectFields,
+  })
+  return stage3
 }
 
 /** 큐레이션된 글 생성 */
@@ -756,7 +767,7 @@ async function main() {
   for (const topicStr of selectedTopics) {
     const desireCat = guessDesire(topicStr)
     const persona = matchPersona(topicStr)
-    const refs = await getReferencePosts(topicStr, 3)
+    const refs = await getReferencePosts(topicStr, desireCat, 3)
 
     console.log(`[ContentCurator] "${topicStr}" (${desireCat}) → ${persona.nickname} (참고글 ${refs.length}개)`)
 
