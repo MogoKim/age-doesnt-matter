@@ -14,7 +14,10 @@ env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   DIRECT_URL: ${{ secrets.DIRECT_URL }}
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
   CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}
 
 jobs:
   wave-process:
@@ -35,3 +38,6 @@ jobs:
 
       - name: Process Comment Waves (wave1~4 순차 댓글 게시)
         run: cd agents && npx tsx cron/runner.ts cafe_crawler wave-process
+
+      - name: Process User Post Waves (회원 글 댓글 파동)
+        run: cd agents && npx tsx cron/runner.ts cafe_crawler user-post-wave-process

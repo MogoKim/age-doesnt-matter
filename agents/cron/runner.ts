@@ -60,6 +60,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cafe_crawler:magazine-generate': () => import('../cafe/magazine-generator.js').then(async m => { await m.main() }),
   'cafe_crawler:content-curate': () => import('../cafe/content-curator.js').then(() => {}),
   'cafe_crawler:wave-process': () => import('../cafe/wave-processor.js').then(m => m.main()),
+  'cafe_crawler:user-post-wave-process': () => import('../cafe/user-post-wave-processor.js').then(m => m.main()),
   'cafe_crawler:brief-monitor': () => import('../cafe/brief-monitor.js').then(() => {}),
   // GHA 안전망 — Mac launchd 미실행 시 fallback_yesterday 자동 생성 (09:00 KST, 0 0 * * * UTC)
   'cafe_crawler:daily-brief-fallback': () => import('../cafe/daily-brief.js').then(async m => { await m.runFallbackBrief() }),
