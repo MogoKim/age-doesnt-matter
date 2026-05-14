@@ -3,9 +3,8 @@ import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
 import { getAccumulatedHotPosts, getHallOfFamePosts } from '@/lib/queries/posts'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
-import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 import type { PostSummary } from '@/types/api'
-import { formatTimeAgo } from '@/components/features/community/utils'
+import PostCard from '@/components/features/community/PostCard'
 import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 
@@ -97,7 +96,13 @@ export default async function BestPage({
         {posts.length > 0 ? (
           <PostListWithAds
             items={posts}
-            renderCard={(post) => <BestPostCard post={post} showHotTimestamp={currentTab === 'hot'} />}
+            renderCard={(post) => (
+              <PostCard
+                post={post}
+                boardSlug={BOARD_TYPE_TO_SLUG[post.boardType] ?? 'stories'}
+                showBoardBadge={true}
+              />
+            )}
             className="space-y-3"
           />
         ) : currentTab === 'fame' && !q ? (
@@ -148,63 +153,5 @@ function EmptyState({ message }: { message: string }) {
     <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
       <p className="text-body text-muted-foreground leading-relaxed">{message}</p>
     </div>
-  )
-}
-
-function BestPostCard({
-  post,
-  showHotTimestamp = false,
-}: {
-  post: PostSummary
-  showHotTimestamp?: boolean
-}) {
-  const boardSlug = BOARD_TYPE_TO_SLUG[post.boardType] ?? 'stories'
-  const boardLabel = BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType
-
-  return (
-    <Link
-      href={`/community/${boardSlug}/${post.slug ?? post.id}`}
-      prefetch={false}
-      className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 min-h-[52px]"
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-foreground text-caption font-bold">
-          {boardLabel}
-        </span>
-        {post.promotionLevel === 'HOT' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caption font-bold bg-gradient-to-br from-[var(--gradient-hot-from)] to-[var(--gradient-hot-to)] text-white">
-            🔥 HOT
-          </span>
-        )}
-        {post.promotionLevel === 'HALL_OF_FAME' && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caption font-bold bg-gradient-to-br from-[var(--gradient-fame-from)] to-[var(--gradient-fame-to)] text-white">
-            👑 FAME
-          </span>
-        )}
-      </div>
-
-      <h3 className="text-body font-bold text-foreground m-0 mb-1 line-clamp-2">
-        {post.title}
-      </h3>
-
-      {post.preview && (
-        <p className="text-sm text-muted-foreground m-0 line-clamp-1 leading-relaxed mb-2">
-          {post.preview}
-        </p>
-      )}
-
-      <div className="flex items-center gap-3 text-caption text-muted-foreground">
-        <span>{post.author.gradeEmoji} {post.author.nickname}</span>
-        <span>❤️ {post.likeCount}</span>
-        <span>💬 {post.commentCount}</span>
-        <span>👁 {post.viewCount}</span>
-        <span>{formatTimeAgo(post.createdAt)}</span>
-        {showHotTimestamp && post.hotPromotedAt && (
-          <span className="text-primary font-medium">
-            🔥 {formatTimeAgo(post.hotPromotedAt)} 인기글 됐어요
-          </span>
-        )}
-      </div>
-    </Link>
   )
 }
