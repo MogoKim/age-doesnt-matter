@@ -6,13 +6,15 @@
  * 실행 모드:
  *   deep    (08:30 KST) — 전체 크롤 + 댓글 + AI 심리 분석 + 풀 트렌드 생성
  *   quick   (12:30 KST) — 빠른 크롤 (제목/조회수만) + 경량 트렌드 업데이트
- *   all     — deep + curate (기본, 수동 실행용)
+ *   all     — deep (기본, 수동 실행용)
+ *
+ * 큐레이션: agents-cafe-hourly-curation.yml (GHA hourly, 09~23시 KST, 5건/시간)
+ * run-pipeline.ts에서 content-curator.ts 호출 제거됨 (2026-05-14)
  *
  * 단계별 실행:
  *   crawl    — 크롤링만
  *   analyze  — 심리 분석만 (psych-analyzer)
  *   trend    — 트렌드 분석만 (trend-analyzer)
- *   curate   — 큐레이션만
  *   external — 외부 크롤링만 (82cook)
  *
  * 사용법:
@@ -253,8 +255,7 @@ export async function main(stepOverride?: string) {
       await reportPipelineStage('trend')
       await run('daily-brief.ts', '5단계: 욕망 지도 → DailyIntelligenceBrief 생성')
       await reportPipelineStage('brief')
-      await run('content-curator.ts', '6단계: 콘텐츠 큐레이션')
-      await reportPipelineStage('curate')
+      // 큐레이션은 agents-cafe-hourly-curation.yml (GHA hourly)에서 처리
     }
 
     // ── QUICK 모드 (12:30 KST) — 빠른 크롤 + 경량 트렌드 업데이트 + midDayPatch ──
@@ -280,8 +281,7 @@ export async function main(stepOverride?: string) {
       await reportPipelineStage('trend')
       await run('daily-brief.ts', '5단계: DailyIntelligenceBrief 생성')
       await reportPipelineStage('brief')
-      await run('content-curator.ts', '6단계: 콘텐츠 큐레이션')
-      await reportPipelineStage('curate')
+      // 큐레이션은 agents-cafe-hourly-curation.yml (GHA hourly)에서 처리
     }
 
     // ── CRAWL-ONLY 모드 (08:30 KST) — 전체글보기 크롤만, AI 분석 없음 ──
@@ -309,17 +309,15 @@ export async function main(stepOverride?: string) {
       await reportPipelineStage('trend')
       await run('daily-brief.ts', '4단계: DailyBrief 생성')
       await reportPipelineStage('brief')
-      await run('content-curator.ts', '5단계: 콘텐츠 큐레이션')
-      await reportPipelineStage('curate')
+      // 큐레이션은 agents-cafe-hourly-curation.yml (GHA hourly)에서 처리
     }
 
-    // ── CRAWL-CURATE 모드 (15:30/21:30 KST) — 크롤 + 큐레이션 (11:30 브리프 재활용) ──
+    // ── CRAWL-CURATE 모드 — 크롤만 (큐레이션은 GHA hourly에서 처리) ──
     else if (step === 'crawl-curate') {
       process.env.CRAWL_MODE = 'crawl-only'
       await runCrawlWithRetry('crawler.ts', '1단계: 전체글보기 크롤링 (증분)')
       await checkCookieExpiry()
-      await run('content-curator.ts', '2단계: 콘텐츠 큐레이션 (11:30 브리프 재활용)')
-      await reportPipelineStage('curate')
+      // 큐레이션은 agents-cafe-hourly-curation.yml (GHA hourly)에서 처리
     }
 
     // ── 단계별 실행 ──
@@ -327,8 +325,8 @@ export async function main(stepOverride?: string) {
       if (step === 'crawl') { await runCrawlWithRetry('crawler.ts', '카페 크롤링'); await checkCookieExpiry() }
       if (step === 'analyze') await run('psych-analyzer.ts', 'AI 심리 분석')
       if (step === 'trend') await run('trend-analyzer.ts', '트렌드 분석')
-      if (step === 'curate') await run('content-curator.ts', '콘텐츠 큐레이션')
       if (step === 'external') await run('external-crawler.ts', '외부 크롤링 (비활성)')
+      // curate 단계 제거됨 — agents-cafe-hourly-curation.yml (GHA hourly)에서 처리
     }
   } finally {
     // 락파일 항상 삭제
