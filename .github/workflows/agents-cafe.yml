@@ -1,27 +1,23 @@
-name: "Agents — Cafe Trend & Curate"
+name: "Agents — Cafe Brief & Sheet"
 
 on:
   workflow_dispatch:
     inputs:
       step:
-        description: "실행 단계 (analyze / curate / external / sheet-scrape / all)"
+        description: "실행 단계 (external / sheet-scrape / all)"
         required: true
         default: "all"
         type: choice
         options:
           - all
-          - analyze
-          - curate
           - external
           - sheet-scrape
 
-  # 매일 13:30, 20:30 KST — 큐레이션 스마트 fallback (plist 미실행 시 보완, runner.ts skip 내장)
   # 매일 09:00, 09:30 KST — brief-fallback, brief-monitor
   # 매일 10:30, 14:00, 21:00 KST — 시트 스크래퍼 (오유/네이트판, 펨코 로컬만)
+  # 큐레이션(5건/시간) → agents-cafe-hourly-curation.yml (09~23시 KST, 별도 워크플로우)
   # 댓글 파동(wave1~4) → agents-cafe-wave.yml (별도 concurrency group)
   schedule:
-    - cron: "30 4 * * *"  # 13:30 KST — curate 스마트 fallback
-    - cron: "30 11 * * *" # 20:30 KST — curate 스마트 fallback
     - cron: "0 0 * * *"   # 09:00 KST — brief-fallback
     - cron: "30 0 * * *"  # 09:30 KST — brief-monitor
     - cron: "30 1 * * *"  # 10:30 KST — sheet-scrape
@@ -55,28 +51,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  analyze-and-curate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    # 13:30/20:30 KST 스마트 fallback (plist 11:30 FULL 미실행 시 보완)
-    # runner.ts 내장 skip: 당일 CONTENT_CURATE ≥1건이면 자동 skip
-    if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'analyze' || github.event.inputs.step == 'curate' || (github.event_name == 'schedule' && (github.event.schedule == '30 4 * * *' || github.event.schedule == '30 11 * * *')) }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "npm"
-
-      - run: npm ci
-      - run: npx prisma generate
-      - run: cd agents && npm ci
-
-      - name: Run Content Curator (스마트 fallback — 당일 발행 ≥1건이면 runner.ts에서 자동 skip)
-        run: cd agents && npx tsx cron/runner.ts cafe_crawler content-curate
-
   brief-fallback:
     runs-on: ubuntu-latest
     timeout-minutes: 5
