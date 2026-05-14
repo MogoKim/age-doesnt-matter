@@ -122,6 +122,28 @@ interface TipTapEditorProps {
   bottomBarHeight?: number
 }
 
+function uploadWithProgress(
+  url: string,
+  file: File,
+  onProgress: (pct: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
+    })
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 400) resolve()
+      else reject(new Error(`Upload failed: ${xhr.status}`))
+    })
+    xhr.addEventListener('error', () => reject(new Error('Network error')))
+    xhr.addEventListener('abort', () => reject(new Error('Upload aborted')))
+    xhr.open('PUT', url)
+    xhr.setRequestHeader('Content-Type', file.type)
+    xhr.send(file)
+  })
+}
+
 export default function TipTapEditor({
   content,
   onChange,
@@ -133,6 +155,7 @@ export default function TipTapEditor({
   const [youtubeError, setYoutubeError] = useState('')
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [mediaError, setMediaError] = useState('')
   const [debugVals, setDebugVals] = useState({ innerH: 0, vpH: 0, offsetTop: 0, kbH: 0, toolbarBottom: '' })
 
@@ -345,17 +368,16 @@ export default function TipTapEditor({
             const { uploadUrl, publicUrl } = await presignRes.json() as { uploadUrl: string; publicUrl: string }
 
             // 3. R2에 직접 PUT 업로드
-            const uploadRes = await fetch(uploadUrl, {
-              method: 'PUT',
-              body: file,
-              headers: { 'Content-Type': mimeType },
-            })
-            if (!uploadRes.ok) {
+            setUploadProgress(0)
+            try {
+              await uploadWithProgress(uploadUrl, file, setUploadProgress)
+            } catch {
               setMediaError('사진 업로드에 실패했어요. 잠시 후 다시 시도해 주세요')
-              console.error('[upload/image] R2 PUT 실패:', uploadRes.status)
               removeImageNode(editor, blobUrl)
               URL.revokeObjectURL(blobUrl)
               return
+            } finally {
+              setUploadProgress(null)
             }
 
             // 4. blob URL → CDN URL로 교체 (/_next/image 프록시, R2 직접 접근 우회)
@@ -444,15 +466,14 @@ export default function TipTapEditor({
         const { uploadUrl, publicUrl } = await presignRes.json() as { uploadUrl: string; publicUrl: string }
 
         // 2. R2에 직접 PUT 업로드
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: { 'Content-Type': file.type },
-        })
-        if (!uploadRes.ok) {
+        setUploadProgress(0)
+        try {
+          await uploadWithProgress(uploadUrl, file, setUploadProgress)
+        } catch {
           setMediaError('동영상 업로드에 실패했어요. Wi-Fi 연결 후 다시 시도해 주세요')
-          console.error('[upload/video] R2 직접 업로드 실패:', uploadRes.status)
           return
+        } finally {
+          setUploadProgress(null)
         }
 
         // 3. 에디터에 삽입 + 커서 위치로 스크롤
@@ -778,7 +799,8 @@ export default function TipTapEditor({
           <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 shadow-md">
             <span className="text-lg">⏳</span>
             <span className="text-caption font-medium text-foreground">
-              {isUploadingImage ? '사진 업로드 중...' : '동영상 업로드 중...'}
+              {isUploadingImage ? '사진 업로드 중' : '동영상 업로드 중'}
+              {uploadProgress !== null ? ` ${uploadProgress}%` : '...'}
             </span>
           </div>
         </div>

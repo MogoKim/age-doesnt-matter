@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useState, useTransition, useRef, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -9,8 +10,8 @@ import { useToast } from '@/components/common/Toast'
 import { shareToKakao, copyShareLink, KakaoUnavailableError } from '@/lib/kakao-share'
 import { gtmLike, gtmShare } from '@/lib/gtm'
 import { IconHeart, IconBookmark, IconShare, IconFlag, IconKakao, IconCopy } from '@/components/icons'
-import ReportModal from './ReportModal'
-import LoginPromptModal from '@/components/features/auth/LoginPromptModal'
+const ReportModal = dynamic(() => import('./ReportModal'))
+const LoginPromptModal = dynamic(() => import('@/components/features/auth/LoginPromptModal'))
 
 interface ActionBarProps {
   postId: string

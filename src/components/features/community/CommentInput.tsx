@@ -10,9 +10,10 @@ interface CommentInputProps {
   parentId?: string
   onCancel?: () => void
   placeholder?: string
+  onOptimisticAdd?: (content: string) => void
 }
 
-export default function CommentInput({ postId, parentId, onCancel, placeholder }: CommentInputProps) {
+export default function CommentInput({ postId, parentId, onCancel, placeholder, onOptimisticAdd }: CommentInputProps) {
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -20,6 +21,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder }
   function handleSubmit() {
     if (!value.trim() || isPending) return
     setError('')
+    onOptimisticAdd?.(value)
 
     startTransition(async () => {
       const result = await createComment(postId, value, parentId)

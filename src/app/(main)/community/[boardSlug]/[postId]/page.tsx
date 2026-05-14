@@ -11,7 +11,7 @@ import { getCommentsByPostId } from '@/lib/queries/comments'
 import dynamic from 'next/dynamic'
 const ActionBar = dynamic(
   () => import('@/components/features/community/ActionBar'),
-  { loading: () => <div className="h-12" />, ssr: false },
+  { loading: () => <div className="h-12 bg-muted/30 rounded-xl animate-pulse" /> },
 )
 import PostDeleteButton from '@/components/features/community/PostDeleteButton'
 import CommentSection from '@/components/features/community/CommentSection'
@@ -69,9 +69,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-async function CommentsLoader({ postId, userId }: { postId: string; userId?: string }) {
+async function CommentsLoader({ postId, userId, currentUser }: {
+  postId: string
+  userId?: string
+  currentUser?: { id: string; nickname: string; grade: string; profileImage: string | null }
+}) {
   const comments = await getCommentsByPostId(postId, userId)
-  return <CommentSection postId={postId} comments={comments} isLoggedIn={!!userId} />
+  return <CommentSection postId={postId} comments={comments} isLoggedIn={!!userId} currentUser={currentUser} />
 }
 
 export default async function PostDetailPage({ params, searchParams }: PageProps) {
@@ -229,7 +233,7 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
           <div className="h-20 bg-muted rounded-xl animate-pulse" />
         </div>
       }>
-        <CommentsLoader postId={resolvedId} userId={userId} />
+        <CommentsLoader postId={resolvedId} userId={userId} currentUser={userId ? session?.user : undefined} />
       </Suspense>
 
       {/* 하단 연속 읽기 */}

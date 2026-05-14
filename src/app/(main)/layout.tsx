@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import dynamic from 'next/dynamic'
+import { AppProgressBar as ProgressBar } from 'next-nprogress-bar'
 import { auth } from '@/lib/auth'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
@@ -50,6 +51,9 @@ export default async function MainGroupLayout({
       </Suspense>
       <PopupRenderer />
       <PushPermissionToast />
+      <Suspense fallback={null}>
+        <ProgressBar height="2px" color="#FF6F61" options={{ showSpinner: false }} shallowRouting />
+      </Suspense>
     </FontSizeProvider>
   )
 }

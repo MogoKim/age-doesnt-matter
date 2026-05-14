@@ -48,12 +48,14 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     return { error: '본문은 10자 이상 입력해 주세요' }
   }
 
-  // 금지어 검사
-  const bannedInTitle = await checkBannedWords(title)
+  // 금지어 검사 (병렬)
+  const [bannedInTitle, bannedInContent] = await Promise.all([
+    checkBannedWords(title),
+    checkBannedWords(content),
+  ])
   if (bannedInTitle) {
     return { error: `제목에 사용할 수 없는 표현이 포함되어 있습니다.` }
   }
-  const bannedInContent = await checkBannedWords(content)
   if (bannedInContent) {
     return { error: `본문에 사용할 수 없는 표현이 포함되어 있습니다.` }
   }

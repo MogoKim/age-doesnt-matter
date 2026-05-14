@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { authConfig } from '@/lib/auth.config'
 import { logAuthFailure } from '@/lib/auth-monitor'
 
-const TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000
+const TOKEN_REFRESH_WINDOW_MS = 30 * 60 * 1000
 
 /**
  * 전체 auth 설정 (서버 전용 — Prisma DB 접근 포함)

@@ -10,7 +10,7 @@ import { prisma } from '@/lib/prisma'
 import dynamic from 'next/dynamic'
 const ActionBar = dynamic(
   () => import('@/components/features/community/ActionBar'),
-  { loading: () => <div className="h-12" />, ssr: false },
+  { loading: () => <div className="h-12 bg-muted/30 rounded-xl animate-pulse" /> },
 )
 import CommentSection from '@/components/features/community/CommentSection'
 import { sanitizeHtml } from '@/lib/sanitize'

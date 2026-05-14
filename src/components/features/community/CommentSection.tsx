@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useOptimistic, useCallback } from 'react'
 import type { CommentItem as CommentItemType } from '@/types/api'
+import { GRADE_INFO } from '@/lib/grade'
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
@@ -10,6 +11,7 @@ interface CommentSectionProps {
   postId: string
   comments: CommentItemType[]
   isLoggedIn?: boolean
+  currentUser?: { id: string; nickname: string; grade: string; profileImage: string | null }
 }
 
 function sortComments(comments: CommentItemType[], sort: 'latest' | 'likes'): CommentItemType[] {
@@ -20,10 +22,27 @@ function sortComments(comments: CommentItemType[], sort: 'latest' | 'likes'): Co
   return sorted
 }
 
-export default function CommentSection({ postId, comments, isLoggedIn }: CommentSectionProps) {
+export default function CommentSection({ postId, comments, isLoggedIn, currentUser }: CommentSectionProps) {
   const [sort, setSort] = useState<'latest' | 'likes'>('latest')
+  const [optimisticComments, addOptimisticComment] = useOptimistic(
+    comments,
+    (state: CommentItemType[], newComment: CommentItemType) => [newComment, ...state],
+  )
 
-  const totalCount = comments.reduce(
+  const handleOptimisticAdd = useCallback((content: string) => {
+    if (!currentUser) return
+    const gradeEmoji = GRADE_INFO[currentUser.grade as keyof typeof GRADE_INFO]?.emoji ?? '🌱'
+    addOptimisticComment({
+      id: `temp-${Date.now()}`,
+      content,
+      author: { id: currentUser.id, nickname: currentUser.nickname, grade: currentUser.grade as never, gradeEmoji, profileImage: currentUser.profileImage },
+      likeCount: 0, isLiked: false, isDeleted: false, isOwn: true, canEdit: true,
+      createdAt: new Date().toISOString(),
+      replies: [],
+    })
+  }, [currentUser, addOptimisticComment])
+
+  const totalCount = optimisticComments.reduce(
     (sum, c) => sum + 1 + c.replies.length,
     0,
   )
@@ -35,7 +54,7 @@ export default function CommentSection({ postId, comments, isLoggedIn }: Comment
       .slice(0, 3),
   [comments])
 
-  const sorted = useMemo(() => sortComments(comments, sort), [comments, sort])
+  const sorted = useMemo(() => sortComments(optimisticComments, sort), [optimisticComments, sort])
 
   return (
     <section className="mb-12">
@@ -97,7 +116,7 @@ export default function CommentSection({ postId, comments, isLoggedIn }: Comment
       )}
 
       {isLoggedIn ? (
-        <CommentInput postId={postId} />
+        <CommentInput postId={postId} onOptimisticAdd={currentUser ? handleOptimisticAdd : undefined} />
       ) : (
         <GuestCommentInput postId={postId} />
       )}
