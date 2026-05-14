@@ -8,6 +8,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { getBotUser } from '../seed/generator.js'
 import { getAllPersonaIds } from '../seed/persona-data.js'
+import { sendSlackMessage } from '../core/notifier.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
@@ -141,6 +142,7 @@ export async function main() {
   const now = new Date()
   console.log('[WaveProcessor] 댓글 파동 처리 시작')
   let processed = 0
+  let failed = 0
 
   // 만료 항목 정리
   const expired = await prisma.commentWaveQueue.deleteMany({
@@ -168,7 +170,9 @@ export async function main() {
         await processWave(queue, waveNum)
         processed++
       } catch (err) {
+        failed++
         console.error(`[WaveProcessor] wave${waveNum} 오류 (id=${queue.id}):`, err)
+        await sendSlackMessage('QA', `[WaveProcessor] wave${waveNum} 오류 (id=${queue.id}): ${String(err).slice(0, 100)}`)
       }
     }
   }
@@ -177,14 +181,14 @@ export async function main() {
     data: {
       botType: 'CAFE_CRAWLER',
       action: 'WAVE_PROCESS',
-      status: 'SUCCESS',
-      details: JSON.stringify({ processed }),
+      status: failed === 0 ? 'SUCCESS' : processed > 0 ? 'PARTIAL' : 'FAILED',
+      details: JSON.stringify({ processed, failed }),
       itemCount: processed,
     },
   })
 
   await disconnect()
-  console.log(`[WaveProcessor] 완료 — ${processed}건 처리`)
+  console.log(`[WaveProcessor] 완료 — ${processed}건 처리, ${failed}건 실패`)
 }
 
 if (process.argv[1]?.endsWith('wave-processor.ts') || process.argv[1]?.endsWith('wave-processor.js')) {
