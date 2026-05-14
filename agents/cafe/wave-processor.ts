@@ -76,6 +76,17 @@ async function processWave(
     return
   }
 
+  // 중복 댓글 방지 — 동시 실행 또는 재시도 시 같은 페르소나가 이미 댓글 달았으면 스킵
+  const existingComment = await prisma.comment.findFirst({
+    where: { postId: queue.postId, authorId: userId },
+  })
+  if (existingComment) {
+    const doneFieldEarly = `wave${waveNum}Done` as WaveDoneKey
+    await prisma.commentWaveQueue.update({ where: { id: queue.id }, data: { [doneFieldEarly]: true } })
+    console.warn(`[WaveProcessor] wave${waveNum}: 중복 댓글 스킵 (postId=${queue.postId}, persona=${personaId})`)
+    return
+  }
+
   // 포스트 제목 조회
   const post = await prisma.post.findUnique({
     where: { id: queue.postId },
