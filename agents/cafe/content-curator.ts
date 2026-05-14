@@ -500,24 +500,28 @@ function matchPersona(topic: string): PersonaMatch {
   return bestMatch
 }
 
-const DESIRE_TO_SUBCATEGORY: Record<string, string> = {
-  HEALTH: '건강',
-  FAMILY: '자녀',
-  MONEY: '일상',
-  RETIRE: '일상',
-  RELATION: '고민',
-  HOBBY: '일상',
-  MEANING: '일상',
-  HUMOR: '일상',
-  ENTERTAIN: '일상',
-  BEAUTY: '일상',
-  DIGITAL: '일상',
-  FOOD: '일상',
-  SPIRITUAL: '일상',
-  HOUSING: '일상',
-  FASHION: '일상',
-  PET: '일상',
-  GENERAL: '일상',
+// 욕망 → boardType + category 통합 매핑 (B21/B23/B26 통합 수정)
+// generator.ts categoryMap과 반드시 일치: STORY=['건강','가족','취미','고민','자유수다'] HUMOR=['유머·웃음','엔터·TV','추천·리뷰','기타'] LIFE2=['은퇴준비','재테크·연금','보험','주거·이사']
+const DESIRE_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR' | 'LIFE2' | 'JOB'; category: string }> = {
+  HEALTH:    { boardType: 'STORY', category: '건강' },
+  BEAUTY:    { boardType: 'STORY', category: '건강' },
+  FAMILY:    { boardType: 'STORY', category: '가족' },
+  RELATION:  { boardType: 'STORY', category: '고민' },
+  MEANING:   { boardType: 'STORY', category: '고민' },
+  SPIRITUAL: { boardType: 'STORY', category: '고민' },
+  HOBBY:     { boardType: 'STORY', category: '취미' },
+  FOOD:      { boardType: 'STORY', category: '취미' },
+  FASHION:   { boardType: 'STORY', category: '취미' },
+  DIGITAL:   { boardType: 'STORY', category: '취미' },
+  PET:       { boardType: 'STORY', category: '취미' },
+  FREEDOM:   { boardType: 'STORY', category: '자유수다' },
+  MONEY:     { boardType: 'LIFE2', category: '재테크·연금' },
+  RETIRE:    { boardType: 'LIFE2', category: '은퇴준비' },
+  HOUSING:   { boardType: 'LIFE2', category: '주거·이사' },
+  JOB:       { boardType: 'JOB',   category: '전체' },
+  HUMOR:     { boardType: 'HUMOR', category: '유머·웃음' },
+  ENTERTAIN: { boardType: 'HUMOR', category: '엔터·TV' },
+  GENERAL:   { boardType: 'STORY', category: '자유수다' },
 }
 
 /** 참고용 원본 글 가져오기 (qualityScore >= 30, 48h 이내, killerScore 우선) */
@@ -586,8 +590,7 @@ ${examplesStr}
 - 마크다운 문법(**, ##, *, _ 등) 금지. 순수 텍스트만.
 - 정치/종교/혐오/광고 금지
 - 오프라인 모임 모집 글 금지 ("같이 걸어요", "이번 수요일 모여요" 등)
-- "어떤 드라마", "어느 식당" 식으로 추상적으로 쓰지 말 것 → 반드시 실제 이름 특정
-- 카테고리: 일상, 건강, 고민, 자녀, 기타 중 하나 선택`,
+- "어떤 드라마", "어느 식당" 식으로 추상적으로 쓰지 말 것 → 반드시 실제 이름 특정`,
     messages: [{
       role: 'user',
       content: `"${topic}" 주제로 글을 써주세요.
@@ -596,27 +599,25 @@ ${references ? `[원본 카페 글 — 수미상관으로 재가공]\n${referenc
 
 응답 형식:
 제목: (15~30자, 당신 말투로)
-카테고리: (일상/건강/고민/자녀/기타)
 본문: (150~400자, 문단 2~3개)`,
     }],
   })
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
   const titleMatch = text.match(/제목:\s*(.+)/)
-  const categoryMatch = text.match(/카테고리:\s*(.+)/)
   const bodyMatch = text.match(/본문:\s*([\s\S]+)/)
 
   if (!titleMatch || !bodyMatch) return null
 
-  const validCategories = ['일상', '건강', '고민', '자녀', '기타']
-  const category = categoryMatch?.[1]?.trim()
+  // boardType + category는 DESIRE_TO_BOARD에서 결정 (B21/B23/B26 통합 수정)
+  const boardInfo = DESIRE_TO_BOARD[desireCat ?? 'GENERAL'] ?? DESIRE_TO_BOARD['GENERAL']
 
   return {
     personaId: persona.id,
     title: stripMarkdown(titleMatch[1].trim()),
     content: stripMarkdown(bodyMatch[1].trim()),
-    boardType: persona.board,
-    category: (desireCat ? DESIRE_TO_SUBCATEGORY[desireCat] : null) ?? (validCategories.includes(category ?? '') ? category : '일상'),
+    boardType: boardInfo.boardType,
+    category: boardInfo.category,
     sourceTopic: topic,
     sourcePostIds: referencePosts.map(p => p.id),
   }
@@ -634,7 +635,7 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
       title: curated.title,
       content: htmlContent,
       summary,
-      boardType: curated.boardType as 'STORY' | 'HUMOR',
+      boardType: curated.boardType as 'STORY' | 'HUMOR' | 'LIFE2' | 'JOB',
       category: curated.category ?? '일상',
       authorId: userId,
       source: 'BOT',
