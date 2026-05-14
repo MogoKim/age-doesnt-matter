@@ -864,7 +864,7 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
           // 전체글보기 dedup 필드
           articleId: post.articleId ?? null,
           // DEEP 모드: 댓글 데이터
-          topComments: post.topComments ? JSON.parse(JSON.stringify(post.topComments)) : undefined,
+          topComments: post.topComments ?? undefined,
           commentCrawled: (post.topComments?.length ?? 0) > 0,
         },
       })
