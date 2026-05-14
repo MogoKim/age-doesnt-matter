@@ -703,6 +703,22 @@ async function main() {
   const maxPosts = 3
   let publishedCount = 0
 
+  // 오늘 이미 발행된 욕망 집계 — 시간당 동일 욕망 반복 방지 (B20)
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const todayUsedPosts = await prisma.cafePost.findMany({
+    where: { usedAt: { gte: todayStart } },
+    select: { desireCategory: true },
+  })
+  const desireUsedCount: Record<string, number> = {}
+  for (const { desireCategory } of todayUsedPosts) {
+    const key = desireCategory ?? 'GENERAL'
+    desireUsedCount[key] = (desireUsedCount[key] ?? 0) + 1
+  }
+  // 욕망별 하루 최대 발행 수 (75건/일 기준 30%/15%/8%)
+  const MAX_PER_DESIRE: Partial<Record<string, number>> = { HEALTH: 22, FAMILY: 11, MONEY: 6 }
+  const DEFAULT_MAX_DESIRE = 6
+
   // 욕망 카테고리 키워드 매핑 (hotTopic 분류용)
   const DESIRE_KEYWORDS: Record<string, string[]> = {
     HEALTH:   ['건강', '병원', '약', '증상', '통증', '다이어트', '운동', '혈압', '당뇨', '갱년기', '검진'],
@@ -731,6 +747,10 @@ async function main() {
     return 'GENERAL'
   }
 
+  function isDesireExhausted(desire: string): boolean {
+    return (desireUsedCount[desire] ?? 0) >= (MAX_PER_DESIRE[desire] ?? DEFAULT_MAX_DESIRE)
+  }
+
   // desireMap 기반 다양화: 카테고리별 1개씩 선택
   const desireMap = trendDesireMap
   const topDesires = desireMap
@@ -741,18 +761,20 @@ async function main() {
   const selectedTopics: string[] = []
   const usedCategories = new Set<string>()
 
-  // 1순위: desireMap 순서대로 카테고리별 첫 번째 hotTopic
+  // 1순위: desireMap 순서대로 카테고리별 첫 번째 hotTopic (소진된 욕망 제외)
   for (const desire of topDesires) {
     if (selectedTopics.length >= maxPosts) break
+    if (isDesireExhausted(desire)) continue
     const match = categorizedTopics.find(t => t.desireCategory === desire && !usedCategories.has(desire))
     if (match) {
       selectedTopics.push(match.topic)
       usedCategories.add(desire)
     }
   }
-  // 2순위: 미달 시 나머지 hotTopics에서 카테고리 중복 없이 채움
+  // 2순위: 미달 시 나머지 hotTopics에서 카테고리 중복 없이 채움 (소진된 욕망 제외)
   for (const t of categorizedTopics) {
     if (selectedTopics.length >= maxPosts) break
+    if (isDesireExhausted(t.desireCategory)) continue
     if (!usedCategories.has(t.desireCategory) && !selectedTopics.includes(t.topic)) {
       selectedTopics.push(t.topic)
       usedCategories.add(t.desireCategory)
@@ -766,6 +788,12 @@ async function main() {
 
   for (const topicStr of selectedTopics) {
     const desireCat = guessDesire(topicStr)
+    // 하루 한도 소진된 욕망은 스킵 (B20)
+    if (isDesireExhausted(desireCat)) {
+      console.log(`[ContentCurator] "${topicStr}" (${desireCat}) 오늘 한도 초과 — 스킵`)
+      continue
+    }
+
     const persona = matchPersona(topicStr)
     const refs = await getReferencePosts(topicStr, desireCat, 3)
 
@@ -775,6 +803,7 @@ async function main() {
     if (curated) {
       const postId = await publishCuratedContent(curated)
       publishedCount++
+      desireUsedCount[desireCat] = (desireUsedCount[desireCat] ?? 0) + 1
       console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
       // 댓글 파동 큐 등록 — refs 없어도 등록 (wave-processor가 fallback 댓글 생성)
       if (postId) {
