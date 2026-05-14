@@ -3,7 +3,7 @@
 > 모든 기능의 단일 진실의 원천.
 > **Claude가 /done 실행 시 자동 업데이트한다. 수동으로 편집하지 마라.**
 
-마지막 갱신: 2026-05-13 (V6 P1 — 파이프라인 4회 구조 + 댓글 파동 A29 신규)
+마지막 갱신: 2026-05-14 (A28 운영 가이드 토글 UI 추가)
 
 ---
 
@@ -115,7 +115,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A25 | 논란 체인 | `agents/seed/controversy-chain.ts` | GHA 하루 16회 (seed 동일) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
 | A26 | Design 광고 루프 | `agents/marketing-loop/creative-optimizer.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A27 | QA 코드 게이트 | `agents/qa/pre-deploy-gate.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
-| A28 | 네이버 블로그 수동 발행 큐 | `agents/naver-blog/*`, `src/app/admin/(panel)/naver-blog/*` | LOCAL 12:30/18:30 KST | LOCAL_ONLY | GROWTH | — | Gemini 이미지 포함 | ACTIVE | 2026-05-13 |
+| A28 | 네이버 블로그 수동 발행 큐 | `agents/naver-blog/*`, `src/app/admin/(panel)/naver-blog/*` | LOCAL 12:30/18:30 KST | LOCAL_ONLY | GROWTH | — | Gemini 이미지 포함 | ACTIVE | 2026-05-14 |
 | A29 | 댓글 파동 프로세서 | `agents/cafe/wave-processor.ts` + `src/app/api/internal/comment-wave/route.ts` | GHA `*/5 * * * *` (wave1~4 순차) / content-curator 발행 즉시 API 호출 | GHA+API | RELATION | ALL | [A29](A29-comment-wave.md) | ACTIVE | 2026-05-13 |
 
 ---
