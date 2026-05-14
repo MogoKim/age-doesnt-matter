@@ -1,0 +1,37 @@
+name: "Agents — Cafe Comment Wave"
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # 5분마다 — 댓글 파동 처리 (wave1~4)
+  workflow_dispatch: {}
+
+# agents-cafe.yml과 독립 concurrency group → 큐레이션/크론 실행 중에도 5분 간격 보장
+concurrency:
+  group: cafe-comment-wave
+  cancel-in-progress: false
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+
+jobs:
+  wave-process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Process Comment Waves (wave1~4 순차 댓글 게시)
+        run: cd agents && npx tsx cron/runner.ts cafe_crawler wave-process

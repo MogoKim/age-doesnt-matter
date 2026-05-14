@@ -18,7 +18,7 @@ on:
   # 매일 13:30, 20:30 KST — 큐레이션 스마트 fallback (plist 미실행 시 보완, runner.ts skip 내장)
   # 매일 09:00, 09:30 KST — brief-fallback, brief-monitor
   # 매일 10:30, 14:00, 21:00 KST — 시트 스크래퍼 (오유/네이트판, 펨코 로컬만)
-  # 5분마다 — 댓글 파동 처리 (wave1~4)
+  # 댓글 파동(wave1~4) → agents-cafe-wave.yml (별도 concurrency group)
   schedule:
     - cron: "30 4 * * *"  # 13:30 KST — curate 스마트 fallback
     - cron: "30 11 * * *" # 20:30 KST — curate 스마트 fallback
@@ -27,7 +27,6 @@ on:
     - cron: "30 1 * * *"  # 10:30 KST — sheet-scrape
     - cron: "0 5 * * *"   # 14:00 KST — sheet-scrape
     - cron: "0 12 * * *"  # 21:00 KST — sheet-scrape
-    - cron: "*/5 * * * *" # 5분마다 — 댓글 파동 처리
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -144,24 +143,3 @@ jobs:
         run: cd agents && npx tsx cron/runner.ts community sheet-scrape
         env:
           SHEET_SCRAPER_EXCLUDE_SITE: fmkorea
-
-  wave-process:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    # 5분마다 댓글 파동 처리 (wave1~4)
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '*/5 * * * *' }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "npm"
-
-      - run: npm ci
-      - run: npx prisma generate
-      - run: cd agents && npm ci
-
-      - name: Process Comment Waves (wave1~4 순차 댓글 게시)
-        run: cd agents && npx tsx cron/runner.ts cafe_crawler wave-process

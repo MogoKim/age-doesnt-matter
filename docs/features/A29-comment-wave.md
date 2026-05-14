@@ -125,3 +125,4 @@ CommentWaveQueue {
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
 | 2026-05-13 | 신규 생성 (V6 P1) | 큐레이션 발행 후 초기 인게이지먼트 자동화 |
+| 2026-05-14 | agents-cafe-wave.yml 분리 — 독립 concurrency group(cafe-comment-wave) | agents-cafe.yml과 같은 그룹으로 묶여 평균 87분 1회만 실행되던 문제 해결 |
