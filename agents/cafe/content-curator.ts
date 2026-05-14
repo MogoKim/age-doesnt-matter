@@ -6,7 +6,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
-import { notifySlack } from '../core/notifier.js'
+import { notifySlack, sendSlackMessage } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
 import type { CuratedContent } from './types.js'
 import { loadTodayBrief } from './daily-brief.js'
@@ -763,11 +763,15 @@ async function main() {
       const postId = await publishCuratedContent(curated)
       publishedCount++
       console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
-      // 댓글 파동 큐 등록 (postId만 있으면 등록, cafePostId 없으면 fallback 댓글 생성)
+      // 댓글 파동 큐 등록 — refs 없어도 등록 (wave-processor가 fallback 댓글 생성)
       if (postId) {
-        await enqueueCommentWave(postId, refs[0]?.id ?? '', persona.id).catch(err =>
-          console.warn('[ContentCurator] wave 큐 등록 실패 (무시):', err),
-        )
+        if (refs.length === 0) {
+          await sendSlackMessage('QA', `[큐레이션] wave 등록: refs 없음 fallback 모드 (topic=${topicStr})`)
+        }
+        await enqueueCommentWave(postId, refs[0]?.id ?? '', persona.id).catch(async (err) => {
+          await sendSlackMessage('QA', `[큐레이션] wave 등록 실패: ${String(err).slice(0, 100)}`)
+          console.error('[ContentCurator] wave 큐 등록 실패:', err)
+        })
       }
     }
   }
