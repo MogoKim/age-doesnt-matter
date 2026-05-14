@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useOptimistic, useCallback } from 'react'
 import type { CommentItem as CommentItemType } from '@/types/api'
+import type { Grade } from '@/generated/prisma/client'
 import { GRADE_INFO } from '@/lib/grade'
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
@@ -11,7 +12,7 @@ interface CommentSectionProps {
   postId: string
   comments: CommentItemType[]
   isLoggedIn?: boolean
-  currentUser?: { id: string; nickname: string; grade: string; profileImage: string | null }
+  currentUser?: { id: string; nickname: string; grade: Grade; profileImage: string | null }
 }
 
 function sortComments(comments: CommentItemType[], sort: 'latest' | 'likes'): CommentItemType[] {
@@ -35,7 +36,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
     addOptimisticComment({
       id: `temp-${Date.now()}`,
       content,
-      author: { id: currentUser.id, nickname: currentUser.nickname, grade: currentUser.grade as never, gradeEmoji, profileImage: currentUser.profileImage },
+      author: { id: currentUser.id, nickname: currentUser.nickname, grade: currentUser.grade, gradeEmoji, profileImage: currentUser.profileImage },
       likeCount: 0, isLiked: false, isDeleted: false, isOwn: true, canEdit: true,
       createdAt: new Date().toISOString(),
       replies: [],

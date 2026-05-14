@@ -345,8 +345,8 @@ export default function TipTapEditor({
       setIsUploadingImage(true)
       setMediaError('')
       try {
-        // 각 파일 병렬 처리: 즉시 로컬 프리뷰 삽입 → 백그라운드 업로드 → URL 교체
-        await Promise.all(files.map(async (file) => {
+        // 파일 순차 처리: 즉시 로컬 프리뷰 삽입 → 업로드 → URL 교체 (progress state 충돌 방지)
+        for (const file of files) {
           const mimeType = file.type || 'image/jpeg'
 
           // 1. 즉시 blob URL로 프리뷰 삽입 (업로드 완료 전 사용자가 바로 볼 수 있음)
@@ -389,7 +389,7 @@ export default function TipTapEditor({
             URL.revokeObjectURL(blobUrl)
             throw err
           }
-        }))
+        }
       } catch (err) {
         setMediaError('인터넷 연결을 확인하고 다시 시도해 주세요')
         console.error('[upload/image] 예외:', err)

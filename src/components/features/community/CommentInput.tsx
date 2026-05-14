@@ -21,9 +21,9 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
   function handleSubmit() {
     if (!value.trim() || isPending) return
     setError('')
-    onOptimisticAdd?.(value)
 
     startTransition(async () => {
+      onOptimisticAdd?.(value)
       const result = await createComment(postId, value, parentId)
       if (result.error) {
         setError(result.error)

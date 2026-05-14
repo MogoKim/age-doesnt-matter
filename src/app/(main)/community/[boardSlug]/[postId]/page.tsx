@@ -72,7 +72,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 async function CommentsLoader({ postId, userId, currentUser }: {
   postId: string
   userId?: string
-  currentUser?: { id: string; nickname: string; grade: string; profileImage: string | null }
+  currentUser?: { id: string; nickname: string; grade: import('@/generated/prisma/client').Grade; profileImage: string | null }
 }) {
   const comments = await getCommentsByPostId(postId, userId)
   return <CommentSection postId={postId} comments={comments} isLoggedIn={!!userId} currentUser={currentUser} />
