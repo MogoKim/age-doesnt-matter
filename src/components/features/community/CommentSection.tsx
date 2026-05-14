@@ -28,10 +28,31 @@ export default function CommentSection({ postId, comments, isLoggedIn }: Comment
     0,
   )
 
+  const bestComments = useMemo(() =>
+    comments
+      .filter(c => c.likeCount >= 1)
+      .sort((a, b) => b.likeCount - a.likeCount)
+      .slice(0, 3),
+  [comments])
+
   const sorted = useMemo(() => sortComments(comments, sort), [comments, sort])
 
   return (
     <section className="mb-12">
+      {bestComments.length > 0 && (
+        <div className="mb-6 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+          <p className="text-caption font-bold text-primary mb-2">인기 댓글</p>
+          {bestComments.map((comment) => (
+            <CommentItemComponent
+              key={`best-${comment.id}`}
+              comment={comment}
+              postId={postId}
+              isLoggedIn={isLoggedIn}
+              isBest
+            />
+          ))}
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-foreground">
         <h3 className="text-lg font-medium text-foreground m-0">
           💬 댓글 <span className="text-primary font-bold">{totalCount}</span>

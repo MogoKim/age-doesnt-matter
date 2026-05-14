@@ -19,7 +19,9 @@ import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
+import CoupangBanner from '@/components/ad/CoupangBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
+import JobListBottom from '@/components/features/jobs/JobListBottom'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -267,6 +269,12 @@ export default async function JobDetailPage({ params }: PageProps) {
         </div>
       }>
         <JobCommentsLoader postId={id} userId={userId} />
+      </Suspense>
+
+      {/* 쿠팡 배너 + 다른 일자리 */}
+      <CoupangBanner preset="mobile" className="my-6 rounded-2xl overflow-hidden" />
+      <Suspense fallback={<div className="h-[300px] animate-pulse bg-muted/50 rounded-2xl" />}>
+        <JobListBottom excludeJobId={id} />
       </Suspense>
     </div>
   )

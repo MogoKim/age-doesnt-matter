@@ -19,6 +19,8 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeHtml, proxyR2Images } from '@/lib/sanitize'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
+import CoupangBanner from '@/components/ad/CoupangBanner'
+import PostListBottom from '@/components/features/community/PostListBottom'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
@@ -27,6 +29,7 @@ import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 
 interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
+  searchParams: Promise<{ from?: string }>
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
@@ -71,8 +74,9 @@ async function CommentsLoader({ postId, userId }: { postId: string; userId?: str
   return <CommentSection postId={postId} comments={comments} isLoggedIn={!!userId} />
 }
 
-export default async function PostDetailPage({ params }: PageProps) {
-  const { boardSlug, postId } = await params
+export default async function PostDetailPage({ params, searchParams }: PageProps) {
+  const [{ boardSlug, postId }, { from }] = await Promise.all([params, searchParams])
+  const isTrending = from === 'trending'
 
   const [board, session, post] = await Promise.all([
     getBoardConfig(boardSlug),
@@ -226,6 +230,18 @@ export default async function PostDetailPage({ params }: PageProps) {
         </div>
       }>
         <CommentsLoader postId={resolvedId} userId={userId} />
+      </Suspense>
+
+      {/* 하단 연속 읽기 */}
+      <CoupangBanner preset="mobile" className="my-6 rounded-2xl overflow-hidden" />
+      <Suspense fallback={<div className="h-[300px] animate-pulse bg-muted/50 rounded-2xl" />}>
+        <PostListBottom
+          boardType={board.boardType}
+          boardSlug={boardSlug}
+          excludePostId={resolvedId}
+          displayName={board.displayName}
+          mode={isTrending ? 'trending' : 'latest'}
+        />
       </Suspense>
     </div>
   )

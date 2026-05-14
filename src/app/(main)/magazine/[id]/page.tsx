@@ -169,7 +169,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   // isLiked/isScrapped를 별도로 병렬 조회 (getPostDetail은 userId 없이 호출했으므로)
   const [cpsLinks, relatedPosts, isLiked, isScrapped] = await Promise.all([
     CPS_ENABLED ? getCpsLinks(resolvedId) : Promise.resolve([] as Awaited<ReturnType<typeof getCpsLinks>>),
-    getRelatedMagazinePosts(post.category ?? null, resolvedId, 3, undefined, post.seriesId ?? null),
+    getRelatedMagazinePosts(post.category ?? null, resolvedId, 5, undefined, post.seriesId ?? null),
     userId
       ? prisma.like.findUnique({ where: { userId_postId: { userId, postId: resolvedId } }, select: { id: true } }).then(r => !!r)
       : Promise.resolve(false),

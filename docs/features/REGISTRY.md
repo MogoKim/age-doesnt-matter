@@ -3,7 +3,7 @@
 > 모든 기능의 단일 진실의 원천.
 > **Claude가 /done 실행 시 자동 업데이트한다. 수동으로 편집하지 마라.**
 
-마지막 갱신: 2026-05-14 (A28 운영 가이드 토글 UI 추가)
+마지막 갱신: 2026-05-14 (게시글 하단 연속읽기 + BEST 댓글 시스템)
 
 ---
 
@@ -71,10 +71,10 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 |----|--------|----------|--------|---------|------------|------|------|---------|
 | F01 | 회원가입 유도 배너 | `src/components/common/SignupPromptBanner.tsx` | 20초 체류 + 50% 스크롤 | RELATION | ALL | [F01](F01-signup-prompt.md) | ACTIVE | 2026-04-27 |
 | F02 | PWA 설치 유도 | `src/components/common/AddToHomeScreen.tsx` | 4단계 트리거 (13s/3페이지/행동/주간) | RELATION+HEALTH | P1·P2 | [F02](F02-pwa-install.md) | ACTIVE | 2026-05-13 |
-| F03 | 홈 페이지 | `src/components/features/home/` (21개 컴포넌트) | 홈 방문 | RELATION | P1·P2·P3 | [F03](F03-home-page.md) | ACTIVE | 2026-05-13 |
-| F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | RELATION+HEALTH | P1·P2·P5 | [F04](F04-community.md) | ACTIVE | 2026-05-13 |
-| F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-13 |
-| F06 | 일자리 게시판 | `src/app/(main)/jobs/` | 자동수집(A03) + 사용자 탐색 | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-05-12 |
+| F03 | 홈 페이지 | `src/components/features/home/` (21개 컴포넌트) | 홈 방문 | RELATION | P1·P2·P3 | [F03](F03-home-page.md) | ACTIVE | 2026-05-14 |
+| F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | RELATION+HEALTH | P1·P2·P5 | [F04](F04-community.md) | ACTIVE | 2026-05-14 |
+| F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-14 |
+| F06 | 일자리 게시판 | `src/app/(main)/jobs/` | 자동수집(A03) + 사용자 탐색 | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-05-14 |
 | F07 | 베스트 탭 | `src/app/(main)/best/` | trendingScore 상위 | RELATION | P3 | [F07](F07-best-tab.md) | ACTIVE | 2026-05-12 |
 | F08 | 검색 | `src/app/(main)/search/` | 사용자 검색 | ALL | ALL | `docs/specs/04-search.md` | ACTIVE | 2026-05-02 |
 | F09 | 어드민 패널 | `src/app/(admin)/` + `src/app/admin/(panel)/content/[id]/` | 운영자 접근 | INFRA | — | `docs/specs/09-admin.md` | ACTIVE | 2026-05-14 |

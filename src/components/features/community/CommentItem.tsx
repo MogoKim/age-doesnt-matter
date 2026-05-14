@@ -18,9 +18,10 @@ interface CommentItemProps {
   postId: string
   isReply?: boolean
   isLoggedIn?: boolean
+  isBest?: boolean
 }
 
-function CommentItem({ comment, postId, isReply = false, isLoggedIn = false }: CommentItemProps) {
+function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isBest = false }: CommentItemProps) {
   const { toast } = useToast()
   const [isLiked, setIsLiked] = useState(comment.isLiked)
   const [likeCount, setLikeCount] = useState(comment.likeCount)
@@ -121,6 +122,11 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false }: C
       )}
     >
       <div className="flex items-center gap-1.5 mb-1.5">
+        {isBest && (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary text-white leading-none shrink-0">
+            BEST
+          </span>
+        )}
         {comment.isGuest ? (
           <>
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-caption bg-muted text-muted-foreground font-medium leading-none">비회원</span>
@@ -273,5 +279,6 @@ export default memo(CommentItem, (prev, next) =>
   prev.comment.replies.length === next.comment.replies.length &&
   prev.postId === next.postId &&
   prev.isReply === next.isReply &&
-  prev.isLoggedIn === next.isLoggedIn
+  prev.isLoggedIn === next.isLoggedIn &&
+  prev.isBest === next.isBest
 )
