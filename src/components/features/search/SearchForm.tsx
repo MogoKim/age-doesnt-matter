@@ -47,18 +47,31 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
   function saveToRecent(keyword: string) {
     const updated = [keyword, ...recentSearches.filter((s) => s !== keyword)].slice(0, MAX_RECENT)
     setRecentSearches(updated)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    } catch (e) {
+      // iOS Safari 개인정보 보호 모드: QuotaExceededError 무시 (UI 상태는 유지)
+      console.warn('[search] localStorage 저장 실패:', e)
+    }
   }
 
   function removeRecent(keyword: string) {
     const updated = recentSearches.filter((s) => s !== keyword)
     setRecentSearches(updated)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    } catch (e) {
+      console.warn('[search] localStorage 저장 실패:', e)
+    }
   }
 
   function clearAllRecent() {
     setRecentSearches([])
-    localStorage.removeItem(STORAGE_KEY)
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch (e) {
+      console.warn('[search] localStorage 삭제 실패:', e)
+    }
   }
 
   function handleSubmit(e: FormEvent) {

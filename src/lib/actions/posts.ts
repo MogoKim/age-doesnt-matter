@@ -44,7 +44,9 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     return { error: '제목은 2~40자로 입력해 주세요' }
   }
 
-  if (stripHtmlTags(content).trim().length < 10) {
+  // 이미지/동영상 전용 게시글 허용 — 클라이언트 hasMedia 검증과 일치
+  const hasMedia = /<(?:img|video)\s[^>]*src\s*=/i.test(content)
+  if (!hasMedia && stripHtmlTags(content).trim().length < 10) {
     return { error: '본문은 10자 이상 입력해 주세요' }
   }
 
@@ -173,7 +175,9 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
   if (title.length < 2 || title.length > 40) {
     return { error: '제목은 2~40자로 입력해 주세요' }
   }
-  if (stripHtmlTags(content).trim().length < 10) {
+  // 이미지/동영상 전용 게시글 허용 — 클라이언트 hasMedia 검증과 일치
+  const hasMedia = /<(?:img|video)\s[^>]*src\s*=/i.test(content)
+  if (!hasMedia && stripHtmlTags(content).trim().length < 10) {
     return { error: '본문은 10자 이상 입력해 주세요' }
   }
 

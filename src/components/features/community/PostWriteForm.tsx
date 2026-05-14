@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect, useCallback } from 'react'
+import { useState, useTransition, useEffect, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -110,6 +110,9 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // iOS Safari 개인정보 보호 모드: QuotaExceededError 시 반복 토스트 방지
+  const draftSaveFailedRef = useRef(false)
+
   // 자동 임시저장 — localStorage (30초마다)
   const saveLocalDraft = useCallback(() => {
     if (!title && !content) return
@@ -120,8 +123,14 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         title,
         content,
       }))
-    } catch { /* ignore */ }
-  }, [selectedBoard, selectedCategory, title, content])
+    } catch (e) {
+      console.warn('[draft] localStorage 저장 실패:', e)
+      if (!draftSaveFailedRef.current) {
+        draftSaveFailedRef.current = true
+        toast('임시저장에 실패했어요 — 브라우저 저장공간이 가득 찼을 수 있어요', 'error')
+      }
+    }
+  }, [selectedBoard, selectedCategory, title, content, toast])
 
   useEffect(() => {
     if (!draftLoaded || isEditMode) return
@@ -209,6 +218,8 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       setDrafts((prev) => prev.filter((d) => d.id !== draftId))
       if (currentDraftId === draftId) setCurrentDraftId(null)
       toast('삭제했어요', 'success')
+    } else {
+      toast('삭제에 실패했어요. 잠시 후 다시 시도해 주세요', 'error')
     }
   }
 
@@ -224,7 +235,14 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       })
       clearDraft()
     }
-    router.back()
+    // router.back() 제거 — 구글/카카오 직접 진입 유저가 외부로 이탈하는 버그 방지
+    if (isEditMode && editData) {
+      router.push(`/community/${editData.boardSlug}/${editData.postId}`)
+    } else if (selectedBoard) {
+      router.push(`/community/${selectedBoard}`)
+    } else {
+      router.push('/community')
+    }
   }
 
   function handleSubmit() {
@@ -271,7 +289,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       <button
         type="button"
         onClick={handleCancel}
-        className="min-w-[44px] h-[52px] flex items-center justify-start text-body text-muted-foreground"
+        className="min-w-[52px] h-[52px] flex items-center justify-start text-body text-muted-foreground"
       >
         취소
       </button>
@@ -283,7 +301,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         onClick={handleSubmit}
         disabled={!canSubmit || isPending}
         className={cn(
-          'min-w-[44px] h-[52px] flex items-center justify-end text-body font-bold transition-colors',
+          'min-w-[52px] h-[52px] flex items-center justify-end text-body font-bold transition-colors',
           canSubmit && !isPending ? 'text-primary' : 'text-muted-foreground opacity-50'
         )}
       >
@@ -409,9 +427,9 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       </div>
 
       {/* 본문 입력 (TipTap 에디터) */}
-      {/* 키보드 없을 때: 툴바(48px) + CTA(56px) + 여유 = pb-[116px] */}
-      {/* 키보드 있을 때: 툴바(48px) + 여유 = pb-[60px] */}
-      <div className={cn('mb-6', isKeyboardOpen ? 'pb-[60px]' : 'pb-[116px]')}>
+      {/* 키보드 없을 때: 툴바(56px) + CTA(56px) + 여유 = pb-[124px] */}
+      {/* 키보드 있을 때: 툴바(56px) + 여유 = pb-[68px] */}
+      <div className={cn('mb-6', isKeyboardOpen ? 'pb-[68px]' : 'pb-[124px]')}>
         <TipTapEditor
           content={content}
           onChange={setContent}

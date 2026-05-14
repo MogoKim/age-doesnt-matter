@@ -167,6 +167,40 @@ export default defineConfig({
       },
     },
 
+    // 14-a. 글쓰기 UX — iPhone 16 Pro (402×874, DPR3, Chromium + iOS UA)
+    // WebKit 미설치 환경을 위해 Chromium으로 렌더링, 뷰포트/UA만 iOS 기준 적용
+    {
+      name: 'qa-write-iphone16pro',
+      testMatch: /qa\/21-write-devices.*\.spec\.ts/,
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 402, height: 874 },
+        deviceScaleFactor: 3,
+        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+        baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
+        storageState: USER_AUTH,
+        screenshot: 'on',
+        hasTouch: true,
+        isMobile: true,
+      },
+    },
+    // 14-b. 글쓰기 UX — Samsung Galaxy S24 Ultra (412×915, DPR3.5, Chrome Android)
+    {
+      name: 'qa-write-s24ultra',
+      testMatch: /qa\/21-write-devices.*\.spec\.ts/,
+      use: {
+        ...devices['Galaxy S24'],
+        viewport: { width: 412, height: 915 },
+        deviceScaleFactor: 3.5,
+        userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-S928U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+        baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
+        storageState: USER_AUTH,
+        screenshot: 'on',
+        hasTouch: true,
+        isMobile: true,
+      },
+    },
+
     // 14. SignupPromptBanner GTM 이벤트 검증 (비로그인, 모바일, E2E_BASE_URL 권장)
     {
       name: 'signup-banner',

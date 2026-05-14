@@ -11,6 +11,7 @@ const SANITIZE_OPTIONS: sanitize.IOptions = {
     'img', 'hr', 'div', 'iframe',
     'video', 'source',
     'figure', 'figcaption', 'aside',
+    'span', // TipTap TextStyle(글자크기) — FontSizeExtension이 <span style="font-size:Npx"> 생성
   ],
   allowedAttributes: {
     a: ['href', 'target', 'rel'],
@@ -21,6 +22,13 @@ const SANITIZE_OPTIONS: sanitize.IOptions = {
     div: ['class', 'data-youtube-video'],
     aside: ['class'],
     figure: ['class'],
+    span: ['style'], // font-size 스타일만 allowedStyles에서 허용
+  },
+  allowedStyles: {
+    span: {
+      // TipTap FONT_SIZES(22px, 28px) 기준 — url() 포함 값 차단으로 CSS 인젝션 방지
+      'font-size': [/^\d+(\.\d+)?(px|em|rem)$/],
+    },
   },
   allowedIframeHostnames: ['www.youtube.com', 'youtube.com', 'www.youtube-nocookie.com'],
 }

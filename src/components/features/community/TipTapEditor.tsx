@@ -12,7 +12,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024  // 10MB/장
-const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024  // 50MB (힌트 텍스트와 통일)
 const MAX_IMAGE_COUNT = 6  // 이미지 최대 6장
 const MAX_VIDEO_DURATION = 120  // 영상 최대 2분(120초)
 
@@ -180,6 +180,10 @@ export default function TipTapEditor({
       toolbar.style.bottom = `calc(${bottomBarHeight}px + env(safe-area-inset-bottom, 0px))`
     }
   }, [bottomBarHeight])
+  // unmount 후 비동기 setState 호출 방지 (React 18: dev console 경고 → 업로드 중 페이지 이탈 시 무해하게 무시)
+  const mountedRef = useRef(true)
+  useEffect(() => () => { mountedRef.current = false }, [])
+
   // ?vpdebug=1 URL 파라미터로 디버그 overlay 활성화 (실기기 수치 확인용)
   const showDebug = typeof window !== 'undefined' && window.location.search.includes('vpdebug=1')
 
@@ -391,10 +395,10 @@ export default function TipTapEditor({
           }
         }
       } catch (err) {
-        setMediaError('인터넷 연결을 확인하고 다시 시도해 주세요')
+        if (mountedRef.current) setMediaError('인터넷 연결을 확인하고 다시 시도해 주세요')
         console.error('[upload/image] 예외:', err)
       } finally {
-        setIsUploadingImage(false)
+        if (mountedRef.current) setIsUploadingImage(false)
         e.target.value = ''
       }
     },
@@ -416,9 +420,9 @@ export default function TipTapEditor({
         return
       }
 
-      // 크기 제한 (100MB)
+      // 크기 제한 (50MB)
       if (file.size > MAX_VIDEO_SIZE) {
-        setMediaError('동영상 크기가 너무 커요. 100MB 이하로 선택해 주세요')
+        setMediaError('동영상 크기가 너무 커요. 50MB 이하로 선택해 주세요')
         e.target.value = ''
         return
       }
@@ -435,10 +439,12 @@ export default function TipTapEditor({
       try {
         const duration = await new Promise<number>((resolve, reject) => {
           const videoEl = document.createElement('video')
+          videoEl.style.display = 'none'
+          document.body.appendChild(videoEl)  // 일부 브라우저: DOM 미추가 시 onloadedmetadata 미발화
           videoEl.preload = 'metadata'
           const objUrl = URL.createObjectURL(file)
-          videoEl.onloadedmetadata = () => { URL.revokeObjectURL(objUrl); resolve(videoEl.duration) }
-          videoEl.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('메타데이터 로드 실패')) }
+          videoEl.onloadedmetadata = () => { document.body.removeChild(videoEl); URL.revokeObjectURL(objUrl); resolve(videoEl.duration) }
+          videoEl.onerror = () => { document.body.removeChild(videoEl); URL.revokeObjectURL(objUrl); reject(new Error('메타데이터 로드 실패')) }
           videoEl.src = objUrl
         })
         if (duration > MAX_VIDEO_DURATION) {
@@ -484,9 +490,9 @@ export default function TipTapEditor({
           .run()
         scrollCursorIntoView(editor)
       } catch {
-        setMediaError('인터넷 연결을 확인하고 다시 시도해 주세요')
+        if (mountedRef.current) setMediaError('인터넷 연결을 확인하고 다시 시도해 주세요')
       } finally {
-        setIsUploadingVideo(false)
+        if (mountedRef.current) setIsUploadingVideo(false)
         e.target.value = ''
       }
     },
@@ -528,9 +534,10 @@ export default function TipTapEditor({
           {/* 인용구 */}
           <button
             type="button"
+            aria-label="인용구"
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             className={cn(
-              'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body transition-colors',
+              'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-body transition-colors',
               editor.isActive('blockquote') ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted',
             )}
           >
@@ -540,9 +547,10 @@ export default function TipTapEditor({
           {/* 굵게 */}
           <button
             type="button"
+            aria-label="굵게"
             onClick={() => editor.chain().focus().toggleBold().run()}
             className={cn(
-              'flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-body font-bold transition-colors',
+              'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-body font-bold transition-colors',
               editor.isActive('bold') ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted',
             )}
           >
@@ -567,7 +575,7 @@ export default function TipTapEditor({
                   }
                 }}
                 className={cn(
-                  'flex items-center justify-center min-h-[44px] min-w-[36px] rounded-xl transition-colors font-medium',
+                  'flex items-center justify-center min-h-[52px] min-w-[44px] rounded-xl transition-colors font-medium',
                   isActive ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted',
                 )}
                 style={{ fontSize: size ?? '16px' }}
@@ -585,7 +593,7 @@ export default function TipTapEditor({
             onClick={() => { setMediaError(''); fileInputRef.current?.click() }}
             disabled={isUploadingImage}
             title="사진 추가"
-            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-xl transition-colors text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-xl transition-colors text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isUploadingImage ? '⏳' : '📷'}
           </button>
@@ -596,7 +604,7 @@ export default function TipTapEditor({
             onClick={() => { setMediaError(''); setVideoSheet('picking') }}
             disabled={isUploadingVideo}
             title="동영상 추가"
-            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-xl transition-colors text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-xl transition-colors text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isUploadingVideo ? '⏳' : '🎬'}
           </button>
