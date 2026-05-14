@@ -7,19 +7,14 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { getBotUser } from '../seed/generator.js'
+import { getAllPersonaIds } from '../seed/persona-data.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
 
-// 큐레이션 페르소나 (글쓴이 제외 후 랜덤 선택)
-const COMMENTER_PERSONA_IDS = [
-  'A', 'B', 'C', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
-  'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-  'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC',
-  'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM',
-  'AN', 'AO', 'AP', 'AQ', 'AR', 'AS', 'AT',
-  'AU', 'AV', 'AW', 'AX', 'AY',
-]
+// 큐레이션 페르소나 — persona-data.ts에서 자동 생성 (EN/N계열 특수 페르소나 제외)
+const COMMENTER_PERSONA_IDS = getAllPersonaIds()
+  .filter(id => !id.startsWith('EN') && !/^N\d/.test(id))
 
 type WaveNum = 1 | 2 | 3 | 4
 type WaveDoneKey = 'wave1Done' | 'wave2Done' | 'wave3Done' | 'wave4Done'
