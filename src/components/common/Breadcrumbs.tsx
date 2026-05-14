@@ -1,7 +1,4 @@
-'use client'
-
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 interface BreadcrumbItem {
   label: string
@@ -15,8 +12,6 @@ interface BreadcrumbsProps {
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
 
 export default function Breadcrumbs({ items }: BreadcrumbsProps) {
-  const router = useRouter()
-
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -34,15 +29,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* 모바일: 뒤로가기 버튼 */}
-      <button
-        type="button"
-        onClick={() => router.back()}
-        className="flex items-center gap-1 min-h-[52px] px-1 text-caption text-muted-foreground mb-2 lg:hidden hover:text-primary transition-colors"
-        aria-label="뒤로가기"
-      >
-        ← 뒤로가기
-      </button>
+      {/* 모바일 뒤로가기는 page.tsx의 하드링크가 담당 (router.back() 외부 이탈 버그 방지) */}
       {/* 데스크탑: breadcrumb 경로 */}
       <nav aria-label="breadcrumb" className="mb-4 hidden lg:block">
         <ol className="flex flex-wrap items-center gap-1 text-caption text-muted-foreground">

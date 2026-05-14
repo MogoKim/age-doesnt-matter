@@ -78,6 +78,15 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
   const [{ boardSlug, postId }, { from }] = await Promise.all([params, searchParams])
   const isTrending = from === 'trending'
 
+  // from 파라미터: PostCard가 진입 경로를 URL에 담아 전달. router.back() 대신
+  // 하드링크를 사용하므로 외부 사이트(구글/카카오)로 이탈하지 않음.
+  type BackSource = 'best' | 'trending'
+  const BACK_CONFIG: Record<BackSource, { label: string; href: string }> = {
+    best:     { label: '인기글', href: '/best' },
+    trending: { label: '홈',    href: '/'     },
+  }
+  const source = (from && from in BACK_CONFIG) ? from as BackSource : undefined
+
   const [board, session, post] = await Promise.all([
     getBoardConfig(boardSlug),
     auth(),
@@ -85,6 +94,9 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
   ])
   if (!board) notFound()
   if (!post) notFound()
+
+  const backHref  = source ? BACK_CONFIG[source].href  : `/community/${boardSlug}`
+  const backLabel = source ? BACK_CONFIG[source].label : board.displayName
 
   // CUID로 접근했는데 slug가 있으면 slug URL로 308 영구 redirect
   if (post.slug && postId !== post.slug) {
@@ -162,8 +174,9 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
 
       {/* 뒤로가기 */}
       <div className="flex items-center justify-between">
-        <Link href={`/community/${boardSlug}`} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5">
-          ← {board.displayName}
+        {/* lg:hidden: 데스크탑은 Breadcrumbs의 breadcrumb nav가 내비게이션 담당 */}
+        <Link href={backHref} className="lg:hidden inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5">
+          ← {backLabel}
         </Link>
         {isOwnPost && (
           <div className="flex items-center gap-1">

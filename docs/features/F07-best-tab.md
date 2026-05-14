@@ -36,3 +36,4 @@ HOT/HALL_OF_FAME 승격 게시글을 탭별로 모아보는 베스트 페이지.
 | 2026-05-12 | 섹션 h2(이모지+탭명+총N개) 제거, nav·section에 max-w-[960px] 추가 | 6개 게시판 레이아웃 통일 |
 | 2026-05-14 | 3탭→2탭 개편: "뜨는 이야기" 🔥 + "명예의 전당" 👑 / DB hotPromotedAt 필드 추가(영구 누적) / getAccumulatedHotPosts 신규 / fameThreshold 50→30 / BestPostCard hotPromotedAt 타임스탬프 / 시드봇 6개 경로 보정 / API route 정합성 수정 | 인기글이 된 정확한 시각 기반 영구 누적 구조 — 강등돼도 뜨는이야기 탭에 영구 잔류 |
 | 2026-05-14 | BestPostCard 제거 → PostCard 공유 (showBoardBadge=true) / "🔥 N시간 전 인기글 됐어요" 텍스트 제거 / 이모지 아이콘→SVG outline / 1행 메타→2행 메타 | 베스트·커뮤니티 카드 UI 통일 |
+| 2026-05-14 | PostCard에 fromParam="best" 전달 추가 — 베스트에서 진입한 게시글 상세 뒤로가기 → /best | 진입경로 맥락화 내비게이션 |
