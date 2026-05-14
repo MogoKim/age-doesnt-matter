@@ -146,8 +146,8 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 배치 위치 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|---------|---------|------------|------|------|---------|
-| R01 | AdSense 광고 | `src/components/ad/AdSenseUnit.tsx` | 홈·매거진·커뮤니티·일자리·검색·베스트 | INFRA | — | [R01](R01-adsense.md) | ACTIVE | 2026-04-27 |
-| R02 | 쿠팡 파트너스 CPS | `src/components/ad/CoupangBanner.tsx` + `agents/cafe/cps-matcher.ts` | 매거진 상세·목록·전 페이지 배너 | MONEY | P2·P4 | [R02](R02-coupang-cps.md) | ACTIVE | 2026-04-27 |
+| R01 | AdSense 광고 | `src/components/ad/AdSenseUnit.tsx` | 홈·매거진·커뮤니티·일자리·검색·베스트 | INFRA | — | [R01](R01-adsense.md) | ACTIVE | 2026-05-14 |
+| R02 | 쿠팡 파트너스 CPS | `src/components/ad/CoupangBanner.tsx` + `agents/cafe/cps-matcher.ts` | 매거진 상세·목록·전 페이지 배너 | MONEY | P2·P4 | [R02](R02-coupang-cps.md) | ACTIVE | 2026-05-14 |
 
 ---
 

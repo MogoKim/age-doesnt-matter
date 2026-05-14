@@ -166,6 +166,7 @@ pathname 변경 감지 (useEffect)
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
 | 2026-04-27 | Feature 문서 최초 생성 (코드 딥다이브 기반, specs/10-advertising.md 마이그레이션) | Feature Lifecycle 도입 |
+| 2026-05-14 | AdSenseUnit에 `fixedWidth`/`fixedHeight` prop 추가 + 홈 데스크탑 728×90(슬롯 3367428779)·728×250(슬롯 7055392341) 배치 신규 추가 | 홈 데스크탑 UI 전면 재설계 |
 
 ---
 

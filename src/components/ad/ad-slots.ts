@@ -21,6 +21,12 @@ export const ADSENSE = {
   /** PC 사이드바 — 디스플레이 광고 (데스크탑 전용 우측 사이드바) */
   PC_SIDEBAR: '4568825260',
 
+  /** 데스크탑 728×90 띠배너 (TrendingSection 아래) */
+  DESKTOP_LEADERBOARD: '3367428779',
+
+  /** 데스크탑 728×250 하단 배너 (SignupCard 아래) */
+  DESKTOP_BOTTOM: '7055392341',
+
 } as const
 
 // ── Coupang Partners ──
@@ -80,5 +86,13 @@ export const COUPANG = {
 
   /** 홈 2번 carousel — 매거진 다음 (390×150) */
   HOME2_CAROUSEL: { id: 988412, width: 390, height: 150 },
+
+  /** 데스크탑 728×90 배너 — Stories|Humor 아래 */
+  DESKTOP_BANNER: {
+    id: 882058,
+    iframeSrc: 'https://ads-partners.coupang.com/widgets.html?id=882058&template=banner&trackingCode=AF3181348&subId=&width=728&height=90',
+    width: 728,
+    height: 90,
+  },
 
 } as const

@@ -11,6 +11,9 @@ import FeedAd from '@/components/ad/FeedAd'
 import ResponsiveAd from '@/components/ad/ResponsiveAd'
 import CoupangHome1 from '@/components/ad/CoupangHome1'
 import CoupangHome2 from '@/components/ad/CoupangHome2'
+import AdSenseUnit from '@/components/ad/AdSenseUnit'
+import CoupangDesktopBanner from '@/components/ad/CoupangDesktopBanner'
+import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
 import PersonalGreeting from '@/components/features/home/PersonalGreeting'
 import MyActivity from '@/components/features/home/MyActivity'
@@ -93,11 +96,40 @@ async function HotContentSections() {
   return (
     <>
       <TrendingSection posts={trendingPosts} />
-      <ResponsiveAd mobile={<FeedAd />} desktop={null} />
-      <StoriesSection posts={storiesPosts} />
-      <CoupangHome1 className="my-4 mx-4 lg:mx-0 rounded-2xl overflow-hidden" />
-      <HumorSection posts={humorPosts} />
-      <ResponsiveAd mobile={<FeedAd />} desktop={null} />
+
+      {/* 모바일: IN_FEED / 데스크탑: AdSense 728×90 */}
+      <ResponsiveAd
+        mobile={<FeedAd />}
+        desktop={
+          <AdSenseUnit
+            slotId={ADSENSE.DESKTOP_LEADERBOARD}
+            fixedWidth={728}
+            fixedHeight={90}
+            className="my-4 rounded-2xl overflow-hidden"
+          />
+        }
+      />
+
+      {/* 모바일: 세로 배치 기존 완전 유지 */}
+      <div className="block lg:hidden">
+        <StoriesSection posts={storiesPosts} />
+        <CoupangHome1 className="my-4 mx-4 rounded-2xl overflow-hidden" />
+        <HumorSection posts={humorPosts} />
+      </div>
+
+      {/* 데스크탑: 2-column 나란히 */}
+      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-8 lg:mt-4">
+        <StoriesSection posts={storiesPosts} />
+        <HumorSection posts={humorPosts} />
+      </div>
+
+      {/* 모바일: IN_FEED / 데스크탑: 쿠팡 728×90 */}
+      <ResponsiveAd
+        mobile={<FeedAd />}
+        desktop={
+          <CoupangDesktopBanner className="my-4 rounded-2xl overflow-hidden" />
+        }
+      />
     </>
   )
 }
@@ -207,8 +239,11 @@ export default async function HomePage() {
               <MagazineWrapper />
             </Suspense>
 
-            {/* 쿠팡 2번 — 모바일=320×100 / PC=728×90 */}
-            <CoupangHome2 className="my-4 mx-4 lg:mx-0 rounded-2xl overflow-hidden" />
+            {/* 쿠팡 2번 — 모바일 전용 390×150 */}
+            <ResponsiveAd
+              mobile={<CoupangHome2 className="my-4 mx-4 rounded-2xl overflow-hidden" />}
+              desktop={null}
+            />
 
             <Suspense fallback={<SectionSkeleton h="h-[280px]" />}>
               <JobWrapper />
@@ -228,6 +263,19 @@ export default async function HomePage() {
             <Suspense fallback={null}>
               <SignupCardWrapper />
             </Suspense>
+
+            {/* 데스크탑 전용 하단 AdSense 728×250 (회원/비회원 공통) */}
+            <ResponsiveAd
+              mobile={null}
+              desktop={
+                <AdSenseUnit
+                  slotId={ADSENSE.DESKTOP_BOTTOM}
+                  fixedWidth={728}
+                  fixedHeight={250}
+                  className="my-6 rounded-2xl overflow-hidden mx-auto"
+                />
+              }
+            />
           </div>
         </div>
       </div>

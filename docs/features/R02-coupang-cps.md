@@ -214,6 +214,7 @@ COUPANG_ACCESS_KEY 미설정
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
 | 2026-04-27 | Feature 문서 최초 생성 (코드 딥다이브 기반, specs/10-advertising.md 마이그레이션) | Feature Lifecycle 도입 |
+| 2026-05-14 | CoupangDesktopBanner.tsx 신규 생성 + ad-slots.ts DESKTOP_BANNER(id=882058, 728×90) 추가 → 홈 데스크탑 쿠팡 배너 배치 | 홈 데스크탑 UI 전면 재설계 |
 
 ---
 

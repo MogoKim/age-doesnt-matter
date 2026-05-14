@@ -16,6 +16,9 @@ interface AdSenseUnitProps {
   /** 인피드 레이아웃 키 (피드 사이용) */
   layoutKey?: string
   className?: string
+  /** 고정 사이즈 (데스크탑 전용 광고에 사용, 반응형 무시) */
+  fixedWidth?: number
+  fixedHeight?: number
 }
 
 declare global {
@@ -51,6 +54,8 @@ export default function AdSenseUnit({
   layout,
   layoutKey,
   className,
+  fixedWidth,
+  fixedHeight,
 }: AdSenseUnitProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [showFallback, setShowFallback] = useState(false)
@@ -70,7 +75,11 @@ export default function AdSenseUnit({
     ins.setAttribute('data-ad-slot', slotId)
     ins.setAttribute('data-ad-format', format)
 
-    if (layout === 'in-article') {
+    if (fixedWidth && fixedHeight) {
+      ins.style.display = 'inline-block'
+      ins.style.width = `${fixedWidth}px`
+      ins.style.height = `${fixedHeight}px`
+    } else if (layout === 'in-article') {
       ins.style.display = 'block'
       ins.style.textAlign = 'center'
       ins.setAttribute('data-ad-layout', 'in-article')
@@ -78,7 +87,7 @@ export default function AdSenseUnit({
       ins.style.display = 'block'
     }
 
-    if (responsive && !layout && !layoutKey) {
+    if (responsive && !layout && !layoutKey && !fixedWidth) {
       ins.setAttribute('data-full-width-responsive', 'true')
     }
     if (layoutKey) {
@@ -110,7 +119,7 @@ export default function AdSenseUnit({
     return () => {
       observer.disconnect()
     }
-  }, [slotId, format, responsive, layout, layoutKey])
+  }, [slotId, format, responsive, layout, layoutKey, fixedWidth, fixedHeight])
 
   return (
     <aside
@@ -121,7 +130,7 @@ export default function AdSenseUnit({
       <span className="absolute top-2 right-3 text-caption text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border z-10">
         광고
       </span>
-      <div ref={containerRef} style={{ minHeight: FORMAT_MIN_HEIGHT[format] ?? 90 }} />
+      <div ref={containerRef} style={{ minHeight: fixedHeight ?? FORMAT_MIN_HEIGHT[format] ?? 90 }} />
       {showFallback && (
         <CoupangBanner preset="mobile" className="mt-2" />
       )}
