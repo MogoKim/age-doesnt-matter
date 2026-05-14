@@ -421,6 +421,12 @@ async function runActivity(activity: Activity): Promise<void> {
   const userId = await getBotUser(activity.personaId)
 
   if (activity.type === 'post') {
+    // ENABLE_SEED_POSTS=false 시 글 생성 중단 (댓글/좋아요는 계속 실행)
+    if (process.env.ENABLE_SEED_POSTS === 'false') {
+      console.log(`[Seed] 글 생성 스킵 (ENABLE_SEED_POSTS=false): ${activity.personaId}`)
+      return
+    }
+
     // Fix 6: 하루 최대 2회 제한
     const todayCount = await getTodayPostCount(activity.personaId)
     if (todayCount >= 2) {
