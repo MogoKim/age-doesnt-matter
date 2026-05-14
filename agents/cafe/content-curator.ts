@@ -721,6 +721,10 @@ async function main() {
     return
   }
   console.log(`[ContentCurator] 핫토픽 ${hotTopics.length}개 로드 (source: ${briefSource})`)
+  // DailyBrief fallback 경고 (B12) — 오늘 데이터 없음 → 욕망 신뢰도 낮음
+  if (briefSource === 'yesterday_trend' || briefSource === 'recent_trend') {
+    await sendSlackMessage('SYSTEM', `[큐레이션] DailyBrief fallback 모드 (source=${briefSource}) — 오늘 트렌드 없음, 욕망 데이터 신뢰도 낮음`)
+  }
 
   // 2) 카테고리 다양화 — desireMap 기반으로 HEALTH 독점 방지
   const maxPosts = 3
