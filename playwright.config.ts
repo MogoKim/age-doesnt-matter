@@ -201,6 +201,25 @@ export default defineConfig({
       },
     },
 
+    // 17. iOS Safari WebKit — iPhone 16 Pro (390×844, DPR3)
+    // 진짜 WebKit 엔진 사용 — Chromium 에뮬레이션과 달리 iOS Safari 전용 버그 감지
+    // 설치: npx playwright install webkit
+    // 요청 언어: "iPhone으로", "iOS로", "Safari로", "WebKit으로"
+    {
+      name: 'qa-ios-webkit',
+      testMatch: /qa\/(18|19|21-write-devices).*\.spec\.ts/,
+      use: {
+        browserName: 'webkit',
+        viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 3,
+        isMobile: true,
+        hasTouch: true,
+        baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
+        storageState: USER_AUTH,
+        screenshot: 'on',
+      },
+    },
+
     // 14. SignupPromptBanner GTM 이벤트 검증 (비로그인, 모바일, E2E_BASE_URL 권장)
     {
       name: 'signup-banner',

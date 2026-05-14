@@ -575,7 +575,7 @@ export default function TipTapEditor({
                   }
                 }}
                 className={cn(
-                  'flex items-center justify-center min-h-[52px] min-w-[44px] rounded-xl transition-colors font-medium',
+                  'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl transition-colors font-medium',
                   isActive ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted',
                 )}
                 style={{ fontSize: size ?? '16px' }}

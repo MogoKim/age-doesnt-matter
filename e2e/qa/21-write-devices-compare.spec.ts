@@ -170,7 +170,7 @@ test('03 카테고리 선택 + 제목 + 본문 입력 흐름', async ({ page, vi
   // 등록하기 버튼 활성화 여부
   const submitBtn = page.locator('button', { hasText: '등록하기' }).last()
   const isEnabled = await submitBtn.isEnabled().catch(() => false)
-  const box = await submitBtn.boundingBox()
+  const box = await submitBtn.boundingBox().catch(() => null)
   console.log(`[INFO] 등록하기 버튼: ${isEnabled ? '✅ 활성화' : '❌ 비활성'} | ${box?.width?.toFixed(0)}×${box?.height?.toFixed(0)}px`)
   console.log(`[INFO] 뷰포트 ${viewport!.width}×${viewport!.height} 기준 버튼 위치: y=${box?.y?.toFixed(0)}px`)
 })

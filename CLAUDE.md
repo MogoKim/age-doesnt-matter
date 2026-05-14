@@ -104,6 +104,12 @@
 - "코드 리뷰", "PR 전 확인" → `/code-review`
 - DB 마이그레이션, force push, 에이전트 구조 변경, rm -rf → `/careful`
 - "회고", "주간 리뷰" → `/retro`
+- "iPhone으로", "iOS로", "Safari로", "WebKit으로" → `npx playwright test --project=qa-ios-webkit` (WebKit 엔진)
+- "갤럭시로", "안드로이드로" → MCP Chromium 412×915 또는 `--project=qa-write-s24ultra`
+- "전체 QA", "QA 풀로", "모바일 QA 전체" → `--project=qa-ios-webkit --project=qa-write-s24ultra --project=qa-audit`
+- "모바일 QA" → `--project=qa-ios-webkit --project=qa-write-s24ultra`
+- "두 기기 비교" → `--project=qa-ios-webkit --project=qa-write-s24ultra`
+- "Capacitor 개발", "앱 빌드", "Android Studio" → `/careful` + `/plan-eng-review` 먼저 실행
 
 ## 디렉토리 구조 (주요)
 - `/src/app/` — Next.js App Router 페이지 + API 라우트

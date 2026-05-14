@@ -74,7 +74,7 @@ export default function TopPromoBannerClient({
       <button
         type="button"
         onClick={handleDismiss}
-        className="shrink-0 flex items-center justify-center w-[44px] h-[44px] rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors [-webkit-tap-highlight-color:transparent]"
+        className="shrink-0 flex items-center justify-center w-[52px] h-[52px] rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors [-webkit-tap-highlight-color:transparent]"
         aria-label="배너 닫기"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">

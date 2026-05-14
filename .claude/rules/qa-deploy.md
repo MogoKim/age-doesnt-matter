@@ -59,6 +59,21 @@ description: 배포 QA 규칙 — 광고/에이전트/워크플로우 변경 시
 ## 서비스 코드 변경 시 (src/app/(main)/, src/components/, prisma/)
 - 어드민 영향도 한 줄 명시 ("어드민 영향: 없음" 또는 구체 내용)
 
+## 모바일 QA 요청 언어 프로토콜
+
+창업자 발화 → Claude 실행 방식:
+
+| 발화 | 실행 명령 | 엔진 |
+|------|---------|------|
+| "전체 QA 해줘", "QA 풀로 돌려줘" | `--project=qa-ios-webkit --project=qa-write-s24ultra --project=qa-audit` | WebKit + Chromium + Desktop |
+| "모바일 QA 해줘", "두 기기 비교" | `--project=qa-ios-webkit --project=qa-write-s24ultra` | WebKit + Chromium |
+| "iPhone으로", "iOS로", "Safari로" | `--project=qa-ios-webkit` | **WebKit (진짜 Safari 엔진)** |
+| "갤럭시로", "안드로이드로" | MCP 412×915 Chromium 또는 `--project=qa-write-s24ultra` | Chromium |
+| "데스크탑으로", "PC로" | MCP 1440px Chromium 또는 `--project=qa-audit` | Chromium Desktop |
+
+MCP Playwright 한계: `mcp__playwright__*` 도구는 Chromium만 지원.
+WebKit 테스트는 반드시 spec 파일 실행 방식으로만 가능.
+
 ## 배포 후 프로덕션 검증 (커밋+푸시 후)
 - `npm run smoke-test -- --url https://age-doesnt-matter.com` 실행
 - 에이전트 변경 시: `gh run list --workflow=해당워크플로우.yml --limit=3`으로 최근 실행 확인
