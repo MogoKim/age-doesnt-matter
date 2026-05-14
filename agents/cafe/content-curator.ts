@@ -467,8 +467,30 @@ const PERSONAS: PersonaMatch[] = [
   },
 ]
 
+// 욕망별 우선 페르소나 (매칭 실패 시 폴백용)
+const DESIRE_PERSONA_MAP: Record<string, string[]> = {
+  HEALTH:    ['H', 'A'],
+  FAMILY:    ['L', 'E'],
+  MONEY:     ['B', 'A'],
+  RETIRE:    ['B', 'A'],
+  RELATION:  ['E', 'A'],
+  MEANING:   ['E', 'I'],
+  HOBBY:     ['F', 'G'],
+  HUMOR:     ['C', 'AY'],
+  ENTERTAIN: ['C', 'I'],
+  BEAUTY:    ['K', 'A'],
+  DIGITAL:   ['A', 'E'],
+  FOOD:      ['J', 'A'],
+  SPIRITUAL: ['I', 'E'],
+  HOUSING:   ['B', 'A'],
+  FASHION:   ['K', 'A'],
+  PET:       ['A', 'E'],
+  FREEDOM:   ['A', 'E'],
+  GENERAL:   ['A', 'E', 'G'],
+}
+
 /** 트렌드 주제에 가장 적합한 페르소나 매칭 */
-function matchPersona(topic: string): PersonaMatch {
+function matchPersona(topic: string, desireCat?: string): PersonaMatch {
   const topicLower = topic.toLowerCase()
 
   // 토픽 키워드와 페르소나 관심사 매칭
@@ -491,10 +513,11 @@ function matchPersona(topic: string): PersonaMatch {
     }
   }
 
-  // 매칭 안 되면 랜덤 (A, E 중심 — 범용성 높음)
+  // 매칭 안 되면 욕망 카테고리 기반 폴백 (B13 — A/E/G 편중 제거)
   if (bestScore === 0) {
-    const generalPersonas = PERSONAS.filter(p => ['A', 'E', 'G'].includes(p.id))
-    bestMatch = generalPersonas[Math.floor(Math.random() * generalPersonas.length)]
+    const fallbackIds = DESIRE_PERSONA_MAP[desireCat ?? 'GENERAL'] ?? DESIRE_PERSONA_MAP['GENERAL']
+    const fallbackId = fallbackIds[Math.floor(Math.random() * fallbackIds.length)]
+    bestMatch = PERSONAS.find(p => p.id === fallbackId) ?? PERSONAS[0]
   }
 
   return bestMatch
@@ -804,7 +827,7 @@ async function main() {
       continue
     }
 
-    const persona = matchPersona(topicStr)
+    const persona = matchPersona(topicStr, desireCat)
     const refs = await getReferencePosts(topicStr, desireCat, 3)
 
     console.log(`[ContentCurator] "${topicStr}" (${desireCat}) → ${persona.nickname} (참고글 ${refs.length}개)`)
