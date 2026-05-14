@@ -299,6 +299,9 @@ export async function main(stepOverride?: string) {
       process.env.CRAWL_MODE = 'crawl-only'
       await runCrawlWithRetry('crawler.ts', '1단계: 전체글보기 크롤링 (증분)')
       await checkCookieExpiry()
+      // 재크롤: 7일 이내 게시글 지표 최신화 (B8)
+      process.env.CRAWL_MODE = 'refresh'
+      await run('crawler.ts', '1-b단계: 최근 7일 게시글 지표 갱신')
       await reportPipelineStage('crawl')
       await run('psych-analyzer.ts', '2단계: AI 심리 분석')
       await reportPipelineStage('psych')
