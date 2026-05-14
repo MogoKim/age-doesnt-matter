@@ -26,7 +26,6 @@ export default function MagazineSection({ posts }: Props) {
         {posts.map((article, index) => (
           <HomeCardLink
             href={`/magazine/${article.slug ?? article.id}`}
-            prefetch={false}
             key={article.id}
             className="shrink-0 w-[200px] lg:w-auto bg-card rounded-xl overflow-hidden border border-border no-underline text-inherit block active:opacity-95 [scroll-snap-align:start] lg:hover:shadow-md lg:hover:-translate-y-0.5 lg:hover:transition-all"
             section="magazine"

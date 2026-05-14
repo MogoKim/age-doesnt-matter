@@ -115,7 +115,7 @@ export async function createComment(
 
   if (parentId && parentAuthorId && parentAuthorId !== session.user.id) {
     // 대댓글 → 부모 댓글 작성자에게 알림
-    await prisma.notification.create({
+    void prisma.notification.create({
       data: {
         userId: parentAuthorId,
         type: 'COMMENT',
@@ -132,7 +132,7 @@ export async function createComment(
     }, 'comment').catch(() => {})
   } else if (post.authorId !== session.user.id) {
     // 댓글 → 게시글 작성자에게 알림
-    await prisma.notification.create({
+    void prisma.notification.create({
       data: {
         userId: post.authorId,
         type: 'COMMENT',

@@ -85,6 +85,8 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         setIsLiked(prevLiked)
         setLikes(prevLikes)
         toast(result.error, 'error')
+      } else if (willLike) {
+        toast('공감했어요 ❤️', 'success')
       }
     })
   }, [isLoggedIn, isPending, isLiked, likes, postId, toast])

@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { createComment } from '@/lib/actions/comments'
 import { gtmCommentCreate } from '@/lib/gtm'
 import { setPushToastTrigger } from '@/components/common/PushPermissionToast'
+import { useToast } from '@/components/common/Toast'
 
 interface CommentInputProps {
   postId: string
@@ -14,6 +15,7 @@ interface CommentInputProps {
 }
 
 export default function CommentInput({ postId, parentId, onCancel, placeholder, onOptimisticAdd }: CommentInputProps) {
+  const { toast } = useToast()
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -31,6 +33,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
         gtmCommentCreate(parentId ? 'reply' : 'comment')
         window.dispatchEvent(new CustomEvent('pwa-prompt', { detail: 'engagement' }))
         setPushToastTrigger('comment')
+        toast('댓글이 등록됐어요! 💬', 'success')
         setValue('')
         onCancel?.()
       }

@@ -25,6 +25,10 @@ const SignupPromptBanner = dynamic(
   () => import('@/components/common/SignupPromptBanner').then(m => ({ default: m.SignupPromptBanner })),
   { loading: () => null },
 )
+const ProgressBar = dynamic(
+  () => import('@/components/common/ProgressBar'),
+  { ssr: false },
+)
 export default async function MainGroupLayout({
   children,
 }: {
@@ -39,6 +43,7 @@ export default async function MainGroupLayout({
 
   return (
     <FontSizeProvider fontSize={fontSize}>
+      <ProgressBar />
       <WelcomeToast />
       <OfflineBanner />
       <MainLayout isLoggedIn={isLoggedIn} nickname={nickname}>

@@ -6,13 +6,9 @@ import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getBoardConfig } from '@/lib/queries/boards'
-import { getPostDetail, getPostMeta } from '@/lib/queries/posts'
+import { getPostDetail } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
-import dynamic from 'next/dynamic'
-const ActionBar = dynamic(
-  () => import('@/components/features/community/ActionBar'),
-  { loading: () => <div className="h-12 bg-muted/30 rounded-xl animate-pulse" /> },
-)
+import ActionBar from '@/components/features/community/ActionBar'
 import PostDeleteButton from '@/components/features/community/PostDeleteButton'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
@@ -36,7 +32,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matt
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { boardSlug, postId } = await params
-  const post = await getPostMeta(postId)
+  const post = await getPostDetail(postId)
   if (!post) return {}
 
   // CUID로 접근 시 streaming 시작 전에 308 redirect
@@ -46,7 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const canonicalId = post.slug ?? postId
   const url = `${BASE_URL}/community/${boardSlug}/${canonicalId}`
-  const description = post.summary || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티'
+  const description = post.preview || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티'
 
   return {
     title: post.seoTitle ?? post.title,

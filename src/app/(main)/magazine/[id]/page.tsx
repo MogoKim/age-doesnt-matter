@@ -10,11 +10,7 @@ import { getCommentsByPostId } from '@/lib/queries/comments'
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
-import dynamic from 'next/dynamic'
-const ActionBar = dynamic(
-  () => import('@/components/features/community/ActionBar'),
-  { loading: () => <div className="h-12 bg-muted/30 rounded-xl animate-pulse" /> },
-)
+import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'

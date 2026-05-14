@@ -53,5 +53,5 @@ export const getActiveBanners = unstable_cache(
     return banners
   },
   ['hero-banners'],
-  { revalidate: 60 },
+  { revalidate: 300 },
 )
