@@ -1164,3 +1164,35 @@ model NaverBlogQueue {
   @@index([status, createdAt(sort: Desc)])
   @@index([magazinePostId])
 }
+
+// 실제 회원 글 발행 후 자동 댓글 파동 (user-post-wave-processor.ts)
+// wave1: +1분 1건 / wave2: +10분 2건 / wave3: +30분 3건 / wave4: +60분 3건
+model UserPostWaveQueue {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String   // 글쓴이 userId (wave에서 제외)
+
+  wave1At   DateTime // 발행 +1분
+  wave2At   DateTime // 발행 +10분
+  wave3At   DateTime // 발행 +30분
+  wave4At   DateTime // 발행 +60분
+
+  wave1Count Int @default(1)
+  wave2Count Int @default(2)
+  wave3Count Int @default(3)
+  wave4Count Int @default(3)
+
+  wave1Done Boolean @default(false)
+  wave2Done Boolean @default(false)
+  wave3Done Boolean @default(false)
+  wave4Done Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime // +24h TTL
+
+  @@index([wave1Done, wave1At])
+  @@index([wave2Done, wave2At])
+  @@index([wave3Done, wave3At])
+  @@index([wave4Done, wave4At])
+  @@index([expiresAt])
+}
