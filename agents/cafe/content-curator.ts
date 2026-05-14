@@ -630,29 +630,31 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
   const htmlContent = `<p>${curated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
   const summary = curated.content.replace(/\n/g, ' ').slice(0, 150).trim()
 
-  const post = await prisma.post.create({
-    data: {
-      title: curated.title,
-      content: htmlContent,
-      summary,
-      boardType: curated.boardType as 'STORY' | 'HUMOR' | 'LIFE2' | 'JOB',
-      category: curated.category ?? '일상',
-      authorId: userId,
-      source: 'BOT',
-      status: 'PUBLISHED',
-      publishedAt: new Date(),
-    },
+  // post 생성 + cafePost usedAt 마킹을 트랜잭션으로 묶어 원자성 보장
+  const postId = await prisma.$transaction(async (tx) => {
+    const post = await tx.post.create({
+      data: {
+        title: curated.title,
+        content: htmlContent,
+        summary,
+        boardType: curated.boardType as 'STORY' | 'HUMOR' | 'LIFE2' | 'JOB',
+        category: curated.category ?? '자유수다',
+        authorId: userId,
+        source: 'BOT',
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
+      },
+    })
+    if (curated.sourcePostIds.length > 0) {
+      await tx.cafePost.updateMany({
+        where: { id: { in: curated.sourcePostIds } },
+        data: { usedAt: new Date() },
+      })
+    }
+    return post.id
   })
 
-  // 참조한 원본 카페글에 usedAt 기록
-  if (curated.sourcePostIds.length > 0) {
-    await prisma.cafePost.updateMany({
-      where: { id: { in: curated.sourcePostIds } },
-      data: { usedAt: new Date() },
-    })
-  }
-
-  return post.id
+  return postId
 }
 
 /** 댓글 파동 큐 등록 (wave1: +1분, wave2: +5분, wave3: +30분, wave4: +60분) */
