@@ -751,11 +751,20 @@ async function main() {
     return (desireUsedCount[desire] ?? 0) >= (MAX_PER_DESIRE[desire] ?? DEFAULT_MAX_DESIRE)
   }
 
-  // desireMap 기반 다양화: 카테고리별 1개씩 선택
-  const desireMap = trendDesireMap
-  const topDesires = desireMap
-    ? Object.entries(desireMap).sort(([, a], [, b]) => b - a).map(([k]) => k)
-    : []
+  // desireMap 기반 다양화: HEALTH 30% 상한 적용 후 재정규화 (B10 — 구조적 편중 완화)
+  const DESIRE_CAPS: Partial<Record<string, number>> = { HEALTH: 30 }
+  const rawDesireMap = trendDesireMap ?? {}
+  const cappedMap: Record<string, number> = {}
+  let totalPct = 0
+  for (const [d, pct] of Object.entries(rawDesireMap)) {
+    cappedMap[d] = Math.min(Number(pct), DESIRE_CAPS[d] ?? 100)
+    totalPct += cappedMap[d]
+  }
+  const desireMap: Record<string, number> = {}
+  for (const d of Object.keys(cappedMap)) {
+    desireMap[d] = totalPct > 0 ? (cappedMap[d] / totalPct) * 100 : 0
+  }
+  const topDesires = Object.entries(desireMap).sort(([, a], [, b]) => b - a).map(([k]) => k)
 
   const categorizedTopics = hotTopics.map(t => ({ ...t, desireCategory: guessDesire(t.topic) }))
   const selectedTopics: string[] = []
