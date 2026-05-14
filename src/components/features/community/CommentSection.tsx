@@ -3,7 +3,10 @@
 import { useState, useMemo, useOptimistic, useCallback } from 'react'
 import type { CommentItem as CommentItemType } from '@/types/api'
 import type { Grade } from '@/generated/prisma/client'
-import { GRADE_INFO } from '@/lib/grade'
+
+const GRADE_EMOJI: Record<string, string> = {
+  SPROUT: '🌱', REGULAR: '🌿', WARM_NEIGHBOR: '☀️', HONORARY: '🏅',
+}
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
@@ -32,7 +35,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
 
   const handleOptimisticAdd = useCallback((content: string) => {
     if (!currentUser) return
-    const gradeEmoji = GRADE_INFO[currentUser.grade as keyof typeof GRADE_INFO]?.emoji ?? '🌱'
+    const gradeEmoji = GRADE_EMOJI[currentUser.grade] ?? '🌱'
     addOptimisticComment({
       id: `temp-${Date.now()}`,
       content,
