@@ -727,7 +727,7 @@ async function main() {
   }
 
   // 2) 카테고리 다양화 — desireMap 기반으로 HEALTH 독점 방지
-  const maxPosts = 3
+  const maxPosts = 5
   let publishedCount = 0
 
   // 오늘 이미 발행된 욕망 집계 — 시간당 동일 욕망 반복 방지 (B20)
