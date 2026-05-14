@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v7</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v7.1</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -74,72 +74,26 @@
     border: 1px solid rgba(255,111,97,0.3);
     margin-bottom: 20px;
   }
-  .cover h1 {
-    font-size: 30px; font-weight: 800;
-    color: var(--text);
-    margin-bottom: 10px;
-    line-height: 1.3;
-  }
-  .cover .subtitle {
-    font-size: 15px;
-    color: var(--muted);
-    margin-bottom: 36px;
-    max-width: 680px;
-    line-height: 1.7;
-  }
-  .cover-meta {
-    display: flex; gap: 32px; flex-wrap: wrap;
-    padding-top: 28px;
-    border-top: 1px solid var(--border);
-  }
-  .cover-meta-item .label {
-    font-size: 11px; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--sub);
-    font-weight: 600; margin-bottom: 3px;
-  }
+  .cover h1 { font-size: 30px; font-weight: 800; color: var(--text); margin-bottom: 10px; line-height: 1.3; }
+  .cover .subtitle { font-size: 15px; color: var(--muted); margin-bottom: 36px; max-width: 680px; line-height: 1.7; }
+  .cover-meta { display: flex; gap: 32px; flex-wrap: wrap; padding-top: 28px; border-top: 1px solid var(--border); }
+  .cover-meta-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); font-weight: 600; margin-bottom: 3px; }
   .cover-meta-item .value { font-size: 13px; color: var(--muted); font-weight: 500; }
   .cover-meta-item .value.ok { color: var(--green); }
   .cover-meta-item .value.warn { color: var(--yellow); }
 
   /* ── Status Box ── */
-  .status-box {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px 28px;
-    margin-bottom: 36px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px 32px;
-    align-items: center;
-  }
-  .status-box .sb-title {
-    font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--sub);
-    width: 100%; margin-bottom: -4px;
-  }
-  .status-item {
-    display: flex; align-items: center; gap: 7px;
-    font-size: 13px; color: var(--muted);
-  }
+  .status-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px 28px; margin-bottom: 36px; display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; }
+  .status-box .sb-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); width: 100%; margin-bottom: -4px; }
+  .status-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .status-dot.on { background: var(--green); box-shadow: 0 0 6px rgba(74,222,128,0.5); }
   .status-dot.off { background: var(--red); }
   .status-dot.warn { background: var(--yellow); }
 
   /* ── TOC ── */
-  .toc {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 28px 32px;
-    margin-bottom: 52px;
-  }
-  .toc h2 {
-    font-size: 13px; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--sub);
-    font-weight: 700; margin-bottom: 18px;
-  }
+  .toc { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 28px 32px; margin-bottom: 52px; }
+  .toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); font-weight: 700; margin-bottom: 18px; }
   .toc ol { columns: 2; column-gap: 40px; list-style: decimal inside; }
   .toc li { font-size: 13.5px; color: var(--muted); padding: 4px 0; break-inside: avoid; }
   .toc li a { color: var(--muted); }
@@ -147,60 +101,23 @@
 
   /* ── Section ── */
   .section { margin-bottom: 64px; }
-  .section-header {
-    display: flex; align-items: center; gap: 12px;
-    margin-bottom: 28px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--border);
-  }
-  .section-num {
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    background: var(--primary-dim);
-    border: 1px solid rgba(255,111,97,0.3);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 800; color: var(--primary);
-    flex-shrink: 0;
-  }
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+  .section-num { width: 32px; height: 32px; border-radius: 8px; background: var(--primary-dim); border: 1px solid rgba(255,111,97,0.3); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
   .section h2 { font-size: 20px; font-weight: 700; color: var(--text); }
   .section h3 { font-size: 16px; font-weight: 700; color: var(--text); margin: 28px 0 14px; }
   .section h4 { font-size: 14px; font-weight: 700; color: var(--muted); margin: 20px 0 10px; }
 
   /* ── Business Lead ── */
-  .biz-lead {
-    background: var(--bg2);
-    border-left: 3px solid var(--primary);
-    border-radius: 0 8px 8px 0;
-    padding: 16px 20px;
-    margin-bottom: 24px;
-    font-size: 14.5px;
-    color: var(--muted);
-    line-height: 1.8;
-  }
+  .biz-lead { background: var(--bg2); border-left: 3px solid var(--primary); border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 24px; font-size: 14.5px; color: var(--muted); line-height: 1.8; }
 
-  /* ── Narrative (자연어 설명) ── */
-  .narrative {
-    font-size: 14.5px;
-    color: var(--muted);
-    line-height: 1.85;
-    margin-bottom: 20px;
-  }
+  /* ── Narrative ── */
+  .narrative { font-size: 14.5px; color: var(--muted); line-height: 1.85; margin-bottom: 20px; }
   .narrative strong { color: var(--text); }
   .narrative p { margin-bottom: 14px; }
 
   /* ── Cards ── */
-  .card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 22px 24px;
-    margin-bottom: 12px;
-  }
-  .card-title {
-    font-size: 12px; font-weight: 700;
-    color: var(--muted); text-transform: uppercase;
-    letter-spacing: 0.06em; margin-bottom: 8px;
-  }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 22px 24px; margin-bottom: 12px; }
+  .card-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
   .card-value { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1.2; }
   .card-sub { font-size: 12px; color: var(--sub); margin-top: 6px; line-height: 1.5; }
   .card.green { border-color: rgba(74,222,128,0.25); background: linear-gradient(135deg, var(--bg2), var(--green-dim)); }
@@ -216,38 +133,19 @@
   .card.teal { border-color: rgba(45,212,191,0.25); background: linear-gradient(135deg, var(--bg2), var(--teal-dim)); }
   .card.teal .card-value { color: var(--teal); }
 
-  .metric-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 12px;
-    margin-bottom: 28px;
-  }
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 28px; }
 
   /* ── Table ── */
   .table-wrap { overflow-x: auto; margin-bottom: 24px; }
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  th {
-    background: var(--bg3); color: var(--muted);
-    font-weight: 600; font-size: 12px; text-transform: uppercase;
-    letter-spacing: 0.05em; padding: 10px 14px;
-    text-align: left; border-bottom: 1px solid var(--border);
-  }
+  th { background: var(--bg3); color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
   td { padding: 10px 14px; border-bottom: 1px solid rgba(46,51,71,0.6); vertical-align: top; color: var(--text); }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: rgba(255,255,255,0.02); }
-  code {
-    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
-    font-size: 12.5px; background: var(--bg3);
-    border: 1px solid var(--border); border-radius: 4px;
-    padding: 1px 6px; color: var(--teal);
-  }
+  code { font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace; font-size: 12.5px; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; color: var(--teal); }
 
   /* ── Alert ── */
-  .alert {
-    border-radius: 8px; padding: 16px 18px;
-    margin-bottom: 16px; border: 1px solid;
-    font-size: 13.5px; line-height: 1.65;
-  }
+  .alert { border-radius: 8px; padding: 16px 18px; margin-bottom: 16px; border: 1px solid; font-size: 13.5px; line-height: 1.65; }
   .alert strong { display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
   .alert.warn { background: var(--yellow-dim); border-color: rgba(251,191,36,0.3); color: var(--text); }
   .alert.warn strong { color: var(--yellow); }
@@ -258,36 +156,17 @@
   .alert.info { background: var(--blue-dim); border-color: rgba(96,165,250,0.3); color: var(--text); }
   .alert.info strong { color: var(--blue); }
 
-  /* ── Timeline (스케줄) ── */
+  /* ── Timeline ── */
   .timeline { position: relative; padding-left: 28px; }
-  .timeline::before {
-    content: ''; position: absolute;
-    left: 6px; top: 8px; bottom: 8px;
-    width: 2px; background: var(--border);
-  }
-  .tl-item {
-    position: relative; margin-bottom: 0;
-    padding: 16px 0 16px 20px;
-    border-bottom: 1px solid rgba(42,48,66,0.4);
-  }
+  .timeline::before { content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
+  .tl-item { position: relative; margin-bottom: 0; padding: 16px 0 16px 20px; border-bottom: 1px solid rgba(42,48,66,0.4); }
   .tl-item:last-child { border-bottom: none; }
-  .tl-item::before {
-    content: ''; position: absolute;
-    left: -22px; top: 24px;
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--bg3); border: 2px solid var(--border);
-  }
+  .tl-item::before { content: ''; position: absolute; left: -22px; top: 24px; width: 10px; height: 10px; border-radius: 50%; background: var(--bg3); border: 2px solid var(--border); }
   .tl-item.plist::before { border-color: var(--primary); background: var(--primary-dim); }
   .tl-item.gha::before { border-color: var(--blue); background: var(--blue-dim); }
   .tl-item.cron::before { border-color: var(--teal); background: var(--teal-dim); }
   .tl-time { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
-  .tl-label {
-    display: inline-block; font-size: 10px; font-weight: 700;
-    padding: 1px 7px; border-radius: 3px;
-    text-transform: uppercase; letter-spacing: 0.06em;
-    margin-left: 8px; vertical-align: middle;
-  }
+  .tl-label { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; margin-left: 8px; vertical-align: middle; }
   .label-plist { background: var(--primary-dim); color: var(--primary); }
   .label-gha { background: var(--blue-dim); color: var(--blue); }
   .label-cron { background: var(--teal-dim); color: var(--teal); }
@@ -295,45 +174,17 @@
   .tl-detail { font-size: 13px; color: var(--muted); line-height: 1.7; }
 
   /* ── Runbook ── */
-  .runbook {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 12px; overflow: hidden; margin-bottom: 20px;
-  }
-  .runbook-header {
-    padding: 14px 20px; background: var(--bg3);
-    border-bottom: 1px solid var(--border);
-    font-size: 13px; font-weight: 700;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .runbook-step {
-    padding: 14px 20px; border-bottom: 1px solid rgba(42,48,66,0.5);
-    font-size: 13px; color: var(--muted);
-    display: flex; gap: 12px; align-items: flex-start;
-  }
+  .runbook { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+  .runbook-header { padding: 14px 20px; background: var(--bg3); border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .runbook-step { padding: 14px 20px; border-bottom: 1px solid rgba(42,48,66,0.5); font-size: 13px; color: var(--muted); display: flex; gap: 12px; align-items: flex-start; }
   .runbook-step:last-child { border-bottom: none; }
-  .runbook-step-num {
-    width: 22px; height: 22px; border-radius: 50%;
-    background: var(--bg3); border: 1px solid var(--border);
-    font-size: 11px; font-weight: 700; color: var(--sub);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; margin-top: 1px;
-  }
+  .runbook-step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--sub); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
 
   /* ── Pre/Code block ── */
-  pre {
-    background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 8px; padding: 16px 18px;
-    overflow-x: auto;
-    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
-    font-size: 12.5px; line-height: 1.6;
-    color: var(--teal); margin-bottom: 16px;
-  }
+  pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace; font-size: 12.5px; line-height: 1.6; color: var(--teal); margin-bottom: 16px; }
 
   /* ── Chips ── */
-  .chip {
-    display: inline-block; font-size: 11.5px; font-weight: 600;
-    padding: 3px 10px; border-radius: 20px; border: 1px solid; margin: 2px;
-  }
+  .chip { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid; margin: 2px; }
   .chip.green { background: var(--green-dim); color: var(--green); border-color: rgba(74,222,128,0.3); }
   .chip.blue { background: var(--blue-dim); color: var(--blue); border-color: rgba(96,165,250,0.3); }
   .chip.yellow { background: var(--yellow-dim); color: var(--yellow); border-color: rgba(251,191,36,0.3); }
@@ -343,60 +194,22 @@
   .chip.red { background: var(--red-dim); color: var(--red); border-color: rgba(248,113,113,0.3); }
   .chip.muted { background: rgba(139,146,168,0.1); color: var(--muted); border-color: var(--border); }
 
-  /* ── Tooltip (Hover) ── */
-  .tooltip {
-    position: relative;
-    display: inline;
-    border-bottom: 1px dashed var(--muted);
-    cursor: help;
-  }
-  .tooltip .tooltip-text {
-    visibility: hidden; opacity: 0;
-    background: var(--bg3); border: 1px solid var(--border);
-    color: var(--text); font-size: 12px; line-height: 1.65;
-    padding: 10px 14px; border-radius: 8px;
-    position: absolute; z-index: 100;
-    bottom: 130%; left: 50%; transform: translateX(-50%);
-    min-width: 220px; max-width: 340px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-    transition: opacity 0.18s;
-    pointer-events: none;
-    white-space: normal;
-    font-weight: normal;
-    font-style: normal;
-  }
+  /* ── Tooltip ── */
+  .tooltip { position: relative; display: inline; border-bottom: 1px dashed var(--muted); cursor: help; }
+  .tooltip .tooltip-text { visibility: hidden; opacity: 0; background: var(--bg3); border: 1px solid var(--border); color: var(--text); font-size: 12px; line-height: 1.65; padding: 10px 14px; border-radius: 8px; position: absolute; z-index: 100; bottom: 130%; left: 50%; transform: translateX(-50%); min-width: 220px; max-width: 340px; box-shadow: 0 6px 20px rgba(0,0,0,0.5); transition: opacity 0.18s; pointer-events: none; white-space: normal; font-weight: normal; font-style: normal; }
   .tooltip:hover .tooltip-text { visibility: visible; opacity: 1; }
 
   /* ── Monitor Box ── */
-  .monitor-box {
-    background: var(--bg2);
-    border: 1px solid rgba(96,165,250,0.25);
-    border-radius: 10px;
-    padding: 16px 20px;
-    margin-top: 20px;
-    margin-bottom: 8px;
-  }
-  .monitor-box .monitor-title {
-    font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--blue); margin-bottom: 10px;
-  }
+  .monitor-box { background: var(--bg2); border: 1px solid rgba(96,165,250,0.25); border-radius: 10px; padding: 16px 20px; margin-top: 20px; margin-bottom: 8px; }
+  .monitor-box .monitor-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); margin-bottom: 10px; }
   .monitor-box ul { margin: 0; padding-left: 18px; }
   .monitor-box li { font-size: 13px; color: var(--muted); line-height: 1.75; }
 
   /* ── Wave Step ── */
   .wave-steps { margin: 12px 0 20px; }
-  .wave-step {
-    display: flex; align-items: flex-start; gap: 16px;
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(42,48,66,0.4);
-  }
+  .wave-step { display: flex; align-items: flex-start; gap: 16px; padding: 12px 0; border-bottom: 1px solid rgba(42,48,66,0.4); }
   .wave-step:last-child { border-bottom: none; }
-  .wave-badge {
-    min-width: 80px; text-align: center;
-    font-size: 12px; font-weight: 700;
-    padding: 4px 10px; border-radius: 6px;
-    flex-shrink: 0;
-  }
+  .wave-badge { min-width: 80px; text-align: center; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; flex-shrink: 0; }
   .wave-badge.w1 { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
   .wave-badge.w2 { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(96,165,250,0.3); }
   .wave-badge.w3 { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(167,139,250,0.3); }
@@ -407,27 +220,91 @@
   /* ── Utility ── */
   .flex-row { display: flex; gap: 12px; flex-wrap: wrap; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .mt8 { margin-top: 8px; }
-  .mt16 { margin-top: 16px; }
-  .mt24 { margin-top: 24px; }
-  .mb8 { margin-bottom: 8px; }
-  .mb16 { margin-bottom: 16px; }
-  .mb24 { margin-bottom: 24px; }
-  .text-muted { color: var(--muted); }
-  .text-green { color: var(--green); }
-  .text-yellow { color: var(--yellow); }
-  .text-red { color: var(--red); }
-  .text-blue { color: var(--blue); }
-  .text-primary { color: var(--primary); }
-  .text-teal { color: var(--teal); }
+  .mt8 { margin-top: 8px; } .mt16 { margin-top: 16px; } .mt24 { margin-top: 24px; }
+  .mb8 { margin-bottom: 8px; } .mb16 { margin-bottom: 16px; } .mb24 { margin-bottom: 24px; }
+  .text-muted { color: var(--muted); } .text-green { color: var(--green); } .text-yellow { color: var(--yellow); }
+  .text-red { color: var(--red); } .text-blue { color: var(--blue); } .text-primary { color: var(--primary); } .text-teal { color: var(--teal); }
 
   /* ── Footer ── */
-  .footer {
-    margin-top: 72px; padding-top: 24px;
-    border-top: 1px solid var(--border);
-    font-size: 12px; color: var(--sub);
-    text-align: center; line-height: 1.8;
-  }
+  .footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 12px; color: var(--sub); text-align: center; line-height: 1.8; }
+
+  /* ══════════════════════════════════
+     V7.1 신규 컴포넌트
+  ══════════════════════════════════ */
+
+  /* Why Cards (섹션1) */
+  .why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0 28px; }
+  .why-card { border-radius: 12px; padding: 24px 20px; }
+  .why-card-icon { font-size: 26px; margin-bottom: 12px; }
+  .why-card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+  .why-card-body { font-size: 13px; color: var(--muted); line-height: 1.8; }
+  .why-card.problem { background: var(--red-dim); border: 1px solid rgba(248,113,113,0.3); }
+  .why-card.solution { background: var(--primary-dim); border: 1px solid rgba(255,111,97,0.3); }
+  .why-card.goal { background: var(--green-dim); border: 1px solid rgba(74,222,128,0.3); }
+  .quote-card { background: var(--bg2); border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 0 10px 10px 0; padding: 20px 24px; margin: 20px 0; font-size: 15px; color: var(--text); line-height: 1.7; font-style: italic; }
+
+  /* Flow Diagram (섹션5) */
+  .flow-diagram { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 16px 0; }
+  .flow-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; color: var(--text); }
+  .flow-label { font-size: 11px; color: var(--muted); display: block; margin-top: 3px; }
+  .flow-arrow { color: var(--sub); font-size: 18px; flex-shrink: 0; }
+
+  /* Score Compare (섹션6) */
+  .score-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .score-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .score-card-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 14px; text-align: center; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .score-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(42,48,66,0.4); font-size: 13.5px; color: var(--muted); }
+  .score-row:last-child { border-bottom: none; }
+  .score-pct { font-weight: 700; font-size: 14px; }
+  .score-pct.up { color: var(--green); }
+  .score-pct.down { color: var(--sub); }
+  .score-pct.same { color: var(--blue); }
+  .score-card-tag { font-size: 11px; text-align: center; color: var(--sub); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+
+  /* Threshold Bar (섹션6) */
+  .threshold-bar { display: flex; border-radius: 8px; overflow: hidden; margin: 16px 0; }
+  .threshold-zone { padding: 12px 16px; font-size: 13px; text-align: center; }
+  .zone-red { background: #ff444420; color: #ff6666; flex: 0 0 20%; }
+  .zone-yellow { background: #facc1520; color: #facc15; flex: 0 0 10%; }
+  .zone-green { background: #4ade8020; color: #4ade80; flex: 1; }
+  .zone-label { font-size: 10px; opacity: 0.75; display: block; margin-top: 3px; }
+
+  /* Chip Grid (섹션7 — 욕망 키워드) */
+  .chip-grid { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 16px; }
+  .chip-cat { display: inline-flex; align-items: center; font-size: 12px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  .chip-cat.health { background: #ff666620; color: #ff9999; }
+  .chip-cat.family { background: #a855f720; color: #c084fc; }
+  .chip-cat.money { background: #22c55e20; color: #4ade80; }
+  .chip-cat.retire { background: #fb923c20; color: #fb923c; }
+  .chip-cat.job { background: #f9731620; color: #fdba74; }
+  .chip-cat.relation { background: #60a5fa20; color: #60a5fa; }
+  .chip-cat.hobby { background: #2dd4bf20; color: #2dd4bf; }
+  .chip-cat.beauty { background: #f472b620; color: #f9a8d4; }
+  .chip-cat.housing { background: #818cf820; color: #a5b4fc; }
+  .chip-cat.humor { background: #fde04720; color: #fde047; }
+  .chip-cat.spiritual { background: rgba(139,146,168,0.12); color: #8b92a8; }
+  .chip-cat.freedom { background: #2dd4bf15; color: #5eead4; }
+  .chip-cat.food { background: #22c55e15; color: #86efac; }
+  .chip-cat.digital { background: #60a5fa15; color: #7dd3fc; }
+  .chip-cat.pet { background: #fbbf2420; color: #fbbf24; }
+  .chip-cat.meaning { background: #a78bfa20; color: #c4b5fd; }
+  .chip-cat.entertain { background: #fbbf2415; color: #fde68a; }
+  .chip-cat.general { background: rgba(139,146,168,0.08); color: var(--sub); }
+
+  /* Board Group Tree (섹션7) */
+  .board-group { margin-bottom: 14px; }
+  .board-header { font-size: 13px; font-weight: 700; padding: 8px 14px; border-radius: 8px 8px 0 0; }
+  .board-header.story { background: #3b82f630; color: #60a5fa; }
+  .board-header.life2 { background: #22c55e30; color: #4ade80; }
+  .board-header.humor { background: #facc1530; color: #fde047; }
+  .board-header.job { background: #f9731630; color: #fb923c; }
+  .board-subs { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; background: var(--bg2); border-radius: 0 0 8px 8px; border: 1px solid var(--border); border-top: none; }
+
+  /* Preservation Bar (섹션8) */
+  .preservation-bar { display: flex; border-radius: 10px; overflow: hidden; margin: 16px 0; min-height: 54px; }
+  .pres-persona { background: var(--primary-dim); color: var(--primary); flex: 0 0 auto; padding: 12px 16px; display: flex; align-items: center; font-size: 13px; font-weight: 700; border-right: 1px solid rgba(255,111,97,0.3); white-space: nowrap; }
+  .pres-original { background: var(--bg2); color: var(--muted); flex: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; text-align: center; padding: 12px; }
+  .pres-persona-end { background: var(--primary-dim); color: var(--primary); flex: 0 0 auto; padding: 12px 16px; display: flex; align-items: center; font-size: 13px; font-weight: 700; border-left: 1px solid rgba(255,111,97,0.3); white-space: nowrap; }
 
   @media (max-width: 768px) {
     .cover { padding: 32px 24px; }
@@ -435,6 +312,10 @@
     .toc ol { columns: 1; }
     .grid-2 { grid-template-columns: 1fr; }
     .metric-grid { grid-template-columns: repeat(2, 1fr); }
+    .why-grid { grid-template-columns: 1fr; }
+    .score-compare { grid-template-columns: 1fr; }
+    .preservation-bar { flex-direction: column; min-height: auto; }
+    .pres-persona, .pres-persona-end { border-right: none; border-left: none; border-bottom: 1px solid rgba(255,111,97,0.2); }
   }
 </style>
 </head>
@@ -443,33 +324,18 @@
 
   <!-- ── Cover ── -->
   <div class="cover">
-    <div class="cover-badge">핸드오버 문서 v7 · 2026-05-14</div>
+    <div class="cover-badge">핸드오버 문서 v7.1 · 2026-05-14</div>
     <h1>우나어 네이버 카페 파이프라인<br>운영 핸드오버 가이드</h1>
     <p class="subtitle">
-      GHA 시간당 큐레이션 75건/일 + 회원글 댓글 파동 신설 + 시드봇 글 생성 중단.<br>
-      이 문서는 파이프라인이 어떻게 돌아가고, 앞으로 어떻게 발전할지를 담은 창업자용 완전 인수인계 자료입니다.
+      왜 네이버를 크롤하는가, 왜 댓글을 다는가 — 근본 목적부터 기술 상세까지.<br>
+      GHA 시간당 큐레이션 75건/일 + 회원글 댓글 파동 + 코드 검증 완료 기준.
     </p>
     <div class="cover-meta">
-      <div class="cover-meta-item">
-        <div class="label">버전</div>
-        <div class="value ok">V7 (2026-05-14 기준)</div>
-      </div>
-      <div class="cover-meta-item">
-        <div class="label">수집 카페</div>
-        <div class="value">2개 (wgang · dlxogns01)</div>
-      </div>
-      <div class="cover-meta-item">
-        <div class="label">큐레이션</div>
-        <div class="value ok">75건/일 (GHA 매시간)</div>
-      </div>
-      <div class="cover-meta-item">
-        <div class="label">총 일 활동량</div>
-        <div class="value ok">~454건 (댓글+대댓글+좋아요)</div>
-      </div>
-      <div class="cover-meta-item">
-        <div class="label">실행 환경</div>
-        <div class="value warn">Mac LOCAL + GitHub Actions</div>
-      </div>
+      <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">V7.1 (2026-05-14 기준)</div></div>
+      <div class="cover-meta-item"><div class="label">수집 카페</div><div class="value">2개 (wgang · dlxogns01)</div></div>
+      <div class="cover-meta-item"><div class="label">큐레이션</div><div class="value ok">75건/일 (GHA 매시간)</div></div>
+      <div class="cover-meta-item"><div class="label">총 일 활동량</div><div class="value ok">~454건 (댓글+대댓글+좋아요)</div></div>
+      <div class="cover-meta-item"><div class="label">실행 환경</div><div class="value warn">Mac LOCAL + GitHub Actions</div></div>
     </div>
   </div>
 
@@ -480,82 +346,112 @@
     <div class="status-item"><div class="status-dot on"></div>GHA 시간당 큐레이션 (09~23시, 75건/일)</div>
     <div class="status-item"><div class="status-dot on"></div>댓글 파동 (*/5분 24시간)</div>
     <div class="status-item"><div class="status-dot on"></div>시드봇 댓글·대댓글·좋아요</div>
-    <div class="status-item"><div class="status-dot on"></div>회원글 댓글 파동 (신규)</div>
+    <div class="status-item"><div class="status-dot on"></div>회원글 댓글 파동</div>
     <div class="status-item"><div class="status-dot off"></div>시드봇 글 생성 중단 (ENABLE_SEED_POSTS=false)</div>
-    <div class="status-item"><div class="status-dot warn"></div>댓글 수집 미복구 (알려진 이슈)</div>
+    <div class="status-item"><div class="status-dot warn"></div>댓글 수집 미복구 (알려진 이슈 B1)</div>
   </div>
 
   <!-- ── TOC ── -->
   <div class="toc">
     <h2>목차</h2>
     <ol>
-      <li><a href="#purpose">목적과 배경</a></li>
+      <li><a href="#why">왜 이 파이프라인인가 — 근본 목적</a></li>
       <li><a href="#metrics">현재 가동 현황</a></li>
       <li><a href="#flow">파이프라인 흐름 — 하루가 어떻게 돌아가나</a></li>
       <li><a href="#schedule">스케줄 타임라인</a></li>
-      <li><a href="#curation">큐레이션 시스템</a></li>
+      <li><a href="#crawl">크롤 시스템 상세</a></li>
+      <li><a href="#quality">품질 점수 시스템</a></li>
+      <li><a href="#curation">큐레이션 &amp; 카테고리 매핑</a></li>
+      <li><a href="#preservation">원문 보존 — 수미상관 방식</a></li>
       <li><a href="#wave">댓글 파동 시스템</a></li>
       <li><a href="#persona">페르소나 생태계 (79명)</a></li>
       <li><a href="#cafes">수집 대상 카페 상세</a></li>
-      <li><a href="#cookie">쿠키 만료 대응</a></li>
-      <li><a href="#cost">비용 분석 · 알려진 이슈 · 앞으로</a></li>
+      <li><a href="#ops">쿠키 만료 · 비용 · 이슈 · 로드맵</a></li>
     </ol>
   </div>
 
-  <!-- ── 1. 목적과 배경 ── -->
-  <div class="section" id="purpose">
+  <!-- ── 1. 왜 이 파이프라인인가 ── -->
+  <div class="section" id="why">
     <div class="section-header">
       <div class="section-num">1</div>
-      <h2>목적과 배경</h2>
+      <h2>왜 이 파이프라인인가 — 근본 목적</h2>
+    </div>
+
+    <div class="why-grid">
+      <div class="why-card problem">
+        <div class="why-card-icon">🪺</div>
+        <div class="why-card-title">문제 — 빈 커뮤니티의 닭-달걀</div>
+        <div class="why-card-body">
+          커뮤니티는 사람이 있어야 사람이 온다. 그런데 처음엔 아무도 없다.<br><br>
+          글도 없고, 댓글도 없고, 반응도 없는 곳엔 첫 회원도 오지 않는다. 어렵게 온 회원이 글을 올려도 아무도 반응하지 않으면 다시 오지 않는다.
+        </div>
+      </div>
+      <div class="why-card solution">
+        <div class="why-card-icon">🔁</div>
+        <div class="why-card-title">해법 — 진짜 이야기로 채우기</div>
+        <div class="why-card-body">
+          네이버 우아한갱년기(280만 회원), 은퇴후50년에는 하루 수백 건의 진짜 50·60대 이야기가 올라온다.<br><br>
+          이 이야기를 가져와 살짝 손보면 AI가 만든 글과 달리 실제 경험과 감정이 담긴 콘텐츠가 된다.
+        </div>
+      </div>
+      <div class="why-card goal">
+        <div class="why-card-icon">✨</div>
+        <div class="why-card-title">목표 — "사람 있네"의 순간</div>
+        <div class="why-card-body">
+          진짜 회원 1,000명이 자생적으로 활동하는 날까지, 페르소나 79명이 그 자리를 따뜻하게 채운다.<br><br>
+          첫 회원이 글을 올리면 1분 안에 댓글이 달린다. 방문자가 보기엔 살아있는 커뮤니티다.
+        </div>
+      </div>
     </div>
 
     <div class="biz-lead">
       우나어는 50·60대의 <strong>외로움·건강 염려·재정 불안·인생 2막</strong>을 중심으로 설계된 AI 운영 커뮤니티입니다.
-      초기 커뮤니티가 텅 비어있으면 아무도 오지 않기 때문에, AI가 운영하는 79명의 가상 페르소나가
-      실제 사람처럼 활동하며 커뮤니티에 생기를 불어넣고 있습니다.
+      네이버 카페 파이프라인은 이 커뮤니티를 살아있게 만드는 <strong>핵심 인프라</strong>입니다.
     </div>
 
     <div class="narrative">
       <p>
-        <strong>네이버 카페 크롤링이 왜 필요한가요?</strong><br>
-        AI 페르소나가 "오늘 50대가 무슨 얘기를 하는지" 모르면 엉뚱한 글을 쓰게 됩니다.
-        실제 50·60대가 네이버 카페에 올린 글을 매일 수집해서, 그날의 관심사·감정·욕망을 파악하고
-        그것을 기반으로 큐레이션 글과 댓글을 생성합니다.
-        단순 콘텐츠 복사가 아니라 <strong>욕망 인텔리전스 시스템의 핵심 데이터 소스</strong>입니다.
+        <strong>왜 네이버 카페를 크롤하는가?</strong><br>
+        AI가 직접 글을 쓰면 "AI 냄새"가 납니다. 아무리 잘 써도 실제 경험에서 나오는 구체성이 없습니다.
+        반면 네이버 카페에서 50대 주부가 갱년기 증상으로 고생한 이야기, 퇴직 후 재취업에 성공한 경험 — 이건 진짜입니다.
+        이 원본 글을 90%는 그대로 두고 첫·끝 문장만 페르소나 말투로 바꾸면, 진짜 사람이 쓴 것과 구분이 안 됩니다.
       </p>
       <p>
-        <strong>V6에서 V7로 무엇이 달라졌나요?</strong><br>
-        V6까지는 하루 9건(3회×3건)의 큐레이션을 Mac plist가 직접 발행했습니다.
-        V7에서는 GHA(GitHub 서버)가 <strong>매시간 5건 × 15번 = 75건/일</strong>을 발행하도록 완전히 전환했습니다.
-        또한 실제 회원이 글을 올리면 자동으로 댓글이 달리는 "회원글 댓글 파동" 기능이 새로 추가되었고,
-        AI가 만들어낸 원본 0%짜리 글쓰기는 중단했습니다.
+        <strong>왜 댓글과 대댓글을 다는가?</strong><br>
+        글만 있고 반응이 없으면 "죽은 커뮤니티"입니다. 특히 처음 온 회원이 글을 올렸을 때 아무도 반응하지 않으면
+        그 회원은 영원히 떠납니다. 페르소나가 1분 안에 공감 댓글을 달아주면 그 회원은 "여기 사람들이 반응하네"라고 느낍니다.
+        이것이 <strong>초기 커뮤니티에서 가장 중요한 리텐션 메커니즘</strong>입니다.
       </p>
     </div>
 
-    <div class="grid-2">
+    <div class="quote-card">
+      "우나어가 1,000명의 진짜 회원을 갖는 그날까지, 79명의 페르소나가 그 자리를 채운다."
+    </div>
+
+    <div class="grid-2 mt16">
       <div class="card">
-        <div class="card-title">데이터 흐름 요약</div>
+        <div class="card-title">크롤→발행 핵심 흐름</div>
         <div class="narrative mt8" style="font-size:13px;">
-          <p style="margin:0;">
-            네이버 카페 2곳에서 글 수집<br>
-            → 품질 점수 계산 (30점 이상만 보관)<br>
-            → Claude AI가 욕망·감정 분류<br>
-            → 오늘의 DailyBrief 생성 (욕망 지도)<br>
-            → 매시간 5건 큐레이션 글로 발행<br>
-            → 발행 직후 댓글 파동 자동 시작
+          <p style="margin:0; line-height:2;">
+            네이버 카페 원본 수집<br>
+            → 품질 점수 ≥30점만 보관<br>
+            → 욕망 분류 (건강/가족/재테크…)<br>
+            → DailyBrief (오늘의 욕망 지도)<br>
+            → 매시간 5건 재가공 발행<br>
+            → 발행 즉시 댓글 파동 시작
           </p>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Before → After 핵심 변화</div>
+        <div class="card-title">V6 → V7 핵심 변화</div>
         <div class="table-wrap mt8">
           <table>
             <tbody>
-              <tr><td style="color:var(--sub); font-size:12px;">큐레이션</td><td>9건/일 → <strong class="text-green">75건/일</strong></td></tr>
-              <tr><td style="color:var(--sub); font-size:12px;">큐레이션 주체</td><td>Mac plist → <strong class="text-blue">GHA 매시간</strong></td></tr>
-              <tr><td style="color:var(--sub); font-size:12px;">시드봇 글</td><td>56건/일 → <strong class="text-red">0건 (중단)</strong></td></tr>
-              <tr><td style="color:var(--sub); font-size:12px;">회원글 파동</td><td>없음 → <strong class="text-primary">9건/글 (신규)</strong></td></tr>
-              <tr><td style="color:var(--sub); font-size:12px;">총 일 활동</td><td>210건 → <strong class="text-green">~454건</strong></td></tr>
+              <tr><td style="color:var(--sub);font-size:12px;">큐레이션</td><td>9건/일 → <strong class="text-green">75건/일</strong></td></tr>
+              <tr><td style="color:var(--sub);font-size:12px;">큐레이션 주체</td><td>Mac plist → <strong class="text-blue">GHA 매시간</strong></td></tr>
+              <tr><td style="color:var(--sub);font-size:12px;">시드봇 글</td><td>56건/일 → <strong class="text-red">0건 (중단)</strong></td></tr>
+              <tr><td style="color:var(--sub);font-size:12px;">회원글 파동</td><td>없음 → <strong class="text-primary">9건/글 (신규)</strong></td></tr>
+              <tr><td style="color:var(--sub);font-size:12px;">총 일 활동</td><td>210건 → <strong class="text-green">~454건</strong></td></tr>
             </tbody>
           </table>
         </div>
@@ -599,16 +495,16 @@
       </div>
       <div class="card blue">
         <div class="card-title">
-          <span class="tooltip">isUsable<span class="tooltip-text">qualityScore(품질 점수) 30점 이상인 글에 붙는 '큐레이션 사용 가능' 표시. 크롤된 글 중 약 80%가 여기 해당됩니다.</span></span>
+          <span class="tooltip">isUsable<span class="tooltip-text">qualityScore(품질 점수) 30점 이상인 글에 붙는 '큐레이션 사용 가능' 표시.</span></span>
           통과율
         </div>
         <div class="card-value">~80%</div>
-        <div class="card-sub">qualityScore ≥ 30 기준 (V6 14% → 개선)</div>
+        <div class="card-sub">qualityScore ≥ 30 기준</div>
       </div>
       <div class="card yellow">
         <div class="card-title">시드봇 글 생성</div>
         <div class="card-value">0건</div>
-        <div class="card-sub">ENABLE_SEED_POSTS=false로 중단<br>재개 시 Secrets 값만 변경</div>
+        <div class="card-sub">scheduler.ts에서 ENABLE_SEED_POSTS=false<br>재개 시 Secrets 값만 변경</div>
       </div>
       <div class="card purple">
         <div class="card-title">회원글 파동</div>
@@ -636,33 +532,26 @@
     </div>
 
     <div class="biz-lead">
-      카페 글을 수집해서 품질을 판단하고, 매시간 우나어에 발행되는 콘텐츠의 원재료를 만듭니다.
-      Mac과 GHA(GitHub 서버)가 각자 역할을 분담합니다.
+      Mac과 GHA(GitHub 서버)가 역할을 분담합니다. Mac은 크롤링·분석, GHA는 큐레이션·댓글을 담당합니다.
     </div>
 
     <h3>Mac이 하는 일 (크롤링 + 분석)</h3>
     <div class="narrative">
       <p>
         <strong>매일 08:30 — 아침 크롤링</strong><br>
-        Mac이 자동으로 깨어나 네이버 우아한갱년기, 은퇴후50년 카페를 방문합니다.
-        어제 마지막으로 수집한 글 이후에 올라온 최신 글을 수집합니다 (보통 100~120건).
-        각 글에
-        <span class="tooltip">품질 점수(qualityScore)<span class="tooltip-text">참여도(좋아요+댓글) 40% + 본문 길이 20% + 게시판 중요도 20% + 이미지 유무 5% + 최신성 15%로 계산. 30점 이상이면 큐레이션 원본으로 쓸 수 있습니다.</span></span>를
-        매기고, 20점 미만은 즉시 버리고 30점 이상만 "큐레이션 가능"으로 표시해서 저장합니다.
-        AI를 전혀 사용하지 않아 비용이 없고, 약 20분 걸립니다.
+        Mac이 자동으로 깨어나 우아한갱년기, 은퇴후50년 카페를 방문합니다.
+        어제 마지막으로 수집한 글 이후에 올라온 최신 글만 수집합니다 (보통 100~120건).
+        각 글에 <span class="tooltip">품질 점수(qualityScore)<span class="tooltip-text">참여도 40% + 본문 길이 20% + 게시판 중요도 20% + 이미지 유무 5% + 최신성 15%로 계산. 30점 이상이면 큐레이션 원본으로 쓸 수 있습니다.</span></span>를 매기고, 20점 미만은 버리고 30점 이상만 "큐레이션 가능"으로 표시합니다. AI를 사용하지 않아 비용 $0, 약 20분 소요.
       </p>
       <p>
-        <strong>매일 11:30 — 풀 파이프라인 (하루에 한 번만)</strong><br>
-        오전 크롤로 수집한 글 전체를 Claude Haiku(가벼운 AI)로 심리 분석합니다.
-        각 글이 어떤 욕망(건강·가족·돈·은퇴 등)에 해당하는지 분류합니다.
-        그 결과를 Claude Sonnet(더 강한 AI)이 종합해서 "<span class="tooltip">DailyBrief<span class="tooltip-text">매일 생성되는 "오늘의 50·60대 욕망 지도". "오늘 건강 이야기가 42%, 가족 이야기가 18%..." 같은 형태로 만들어지며, 이 날의 큐레이션 주제 선택에 활용됩니다.</span></span>"를 만듭니다.
-        이 브리프가 그날 09~23시 매시간 큐레이션의 방향을 결정합니다.
-        완료 후 Slack #대시보드에 요약이 전송됩니다.
+        <strong>매일 11:30 — 풀 파이프라인 (하루에 한 번)</strong><br>
+        수집한 글을 Claude Haiku로 심리 분석해 욕망(건강·가족·돈·은퇴 등)을 분류합니다.
+        그 결과를 Claude Sonnet이 종합해서 "<span class="tooltip">DailyBrief<span class="tooltip-text">매일 생성되는 "오늘의 50·60대 욕망 지도". 이 날의 큐레이션 주제 선택에 활용됩니다.</span></span>"를 만듭니다.
+        큐레이션은 하지 않습니다 — GHA 매시간 실행이 담당합니다. AI 비용 발생, 40~60분 소요.
       </p>
       <p>
         <strong>15:30 · 21:30 — 오후/저녁 추가 크롤</strong><br>
-        낮 동안 새로 올라온 글을 추가 수집합니다. 분석이나 큐레이션은 하지 않습니다.
-        낮 동안 쌓인 새 원본들이 다음날 큐레이션 원본 풀에 추가됩니다.
+        낮·저녁 동안 새로 올라온 글을 추가 수집합니다. 분석이나 큐레이션은 하지 않습니다.
       </p>
     </div>
 
@@ -670,34 +559,26 @@
     <div class="narrative">
       <p>
         <strong>09:00~23:00 — 매시간 정각, 큐레이션 5건 발행</strong><br>
-        GitHub 서버가 자동으로 깨어나 DB에서 품질 좋은 원본 글 5건을 고릅니다.
-        이때
-        <span class="tooltip">킬러 포스트(killerScore≥70)<span class="tooltip-text">참여도가 특히 높은 화제 글. killerScore는 참여도 55% + 본문 길이 20% + 게시판 중요도 15% + 이미지 5% + 최신성 5%로 계산. 70점 이상이면 매시간 큐레이션에 우선 삽입(최대 2건)됩니다.</span></span>가
-        있으면 먼저 선택합니다. Claude Sonnet이 각 글을 페르소나 말투로 재가공해서
-        우나어 STORY·LIFE2·HUMOR·JOB 게시판에 발행합니다.
-        한 욕망에 편중되지 않도록 건강 상한 22건/일, 가족 11건/일 등 하드캡을 적용합니다.
+        GitHub 서버가 DB에서 품질 좋은 원본 글 5건을 고릅니다.
+        <span class="tooltip">킬러 포스트(killerScore≥70)<span class="tooltip-text">참여도가 특히 높은 화제 글. 70점 이상이면 매시간 큐레이션에 우선 삽입(최대 2건)됩니다.</span></span>가
+        있으면 먼저 선택합니다. Claude Sonnet이 각 글을 페르소나 말투로 재가공해서 발행합니다.
+        욕망별 하드캡을 적용해 HEALTH 상한 22건/일 등 편중을 방지합니다.
       </p>
       <p>
         <strong>24시간 내내, 5분마다 — 댓글 파동 처리</strong><br>
-        발행된 글에 예약된 댓글들을 때가 되면 자동으로 게시합니다.
-        "발행 후 5분 된 wave2", "발행 후 30분 된 wave3" 등을 5분마다 체크해서 처리합니다.
+        예약된 댓글들을 때가 되면 자동으로 게시합니다. 큐레이션 파동과 회원글 파동 모두 처리합니다.
       </p>
       <p>
         <strong>09:00 · 09:30 — DailyBrief 보험</strong><br>
-        09:00에 Mac이 꺼져서 브리프가 없으면 GHA가 어제 브리프를 복사하거나 새로 만듭니다.
-        09:30에는 브리프가 정상 생성됐는지 감시하고, 없으면 Slack에 경고를 보냅니다.
-      </p>
-      <p>
-        <strong>10:30 · 14:00 · 21:00 — 외부 커뮤니티 트렌드 수집</strong><br>
-        펨코 등 다른 커뮤니티의 인기글을 수집해서 에디터팀이 큐레이션 주제 선택에 참고할 수 있게 합니다.
+        09:00에 Mac 꺼짐으로 브리프가 없으면 GHA가 어제 브리프를 복사하거나 새로 만듭니다.
+        09:30에는 브리프가 정상인지 감시하고 없으면 Slack에 경고를 보냅니다.
       </p>
     </div>
 
     <div class="alert info">
       <strong>Mac이 꺼져도 괜찮나요?</strong>
       네. Mac이 꺼지면 크롤(원본 수집)만 못 하고, 큐레이션·댓글·시드봇 활동은 GHA가 계속 처리합니다.
-      며칠 크롤을 못 해도 DB에 쌓인 원본으로 큐레이션을 계속할 수 있습니다.
-      다만 오래 꺼지면 원본 풀이 줄어들 수 있습니다.
+      DB에 쌓인 원본으로 큐레이션을 계속할 수 있습니다.
     </div>
   </div>
 
@@ -716,36 +597,25 @@
             <div class="tl-item plist">
               <div class="tl-time">08:30 <span class="tl-label label-plist">plist</span></div>
               <div class="tl-mode">아침 크롤 (crawl-only)</div>
-              <div class="tl-detail">
-                우아한갱년기 + 은퇴후50년 최신 글 수집<br>
-                품질 점수 20점 미만 즉시 제거, 30점 이상만 저장<br>
-                AI 비용 없음 · 약 20분 소요
-              </div>
+              <div class="tl-detail">전체글보기 증분 수집 · 품질 점수 계산 · AI 비용 $0 · ~20분</div>
             </div>
             <div class="tl-item plist">
               <div class="tl-time">11:30 <span class="tl-label label-plist">plist</span></div>
               <div class="tl-mode">풀 파이프라인 (full) — 하루 한 번</div>
               <div class="tl-detail">
                 크롤 → 심리분석(Haiku) → 트렌드분석(Sonnet) → <span class="tooltip">DailyBrief<span class="tooltip-text">오늘의 욕망 지도. 매시간 큐레이션이 이 브리프를 보고 주제를 선택합니다.</span></span> 생성<br>
-                큐레이션은 하지 않음 (GHA 매시간 담당)<br>
-                AI 비용 발생 · 40~60분 소요
+                큐레이션 없음 (GHA 매시간 담당) · AI 비용 발생 · 40~60분
               </div>
             </div>
             <div class="tl-item plist">
               <div class="tl-time">15:30 <span class="tl-label label-plist">plist</span></div>
               <div class="tl-mode">오후 크롤 (crawl-only)</div>
-              <div class="tl-detail">
-                낮 사이 올라온 새 글 추가 수집<br>
-                AI 비용 없음 · 약 20분 소요
-              </div>
+              <div class="tl-detail">낮 사이 올라온 새 글 추가 수집 · AI 비용 $0 · ~20분</div>
             </div>
             <div class="tl-item plist">
               <div class="tl-time">21:30 <span class="tl-label label-plist">plist</span></div>
               <div class="tl-mode">저녁 크롤 (crawl-only)</div>
-              <div class="tl-detail">
-                저녁 시간대 새 글 추가 수집<br>
-                AI 비용 없음 · 약 20분 소요
-              </div>
+              <div class="tl-detail">저녁 시간대 새 글 추가 수집 · AI 비용 $0 · ~20분</div>
             </div>
           </div>
         </div>
@@ -758,7 +628,7 @@
             <div class="tl-item gha">
               <div class="tl-time">09:00 <span class="tl-label label-gha">GHA</span></div>
               <div class="tl-mode">DailyBrief 대비 + 큐레이션 1회차</div>
-              <div class="tl-detail">Mac이 꺼졌으면 어제 브리프 복사 또는 새 생성<br>큐레이션 첫 5건 발행</div>
+              <div class="tl-detail">Mac이 꺼졌으면 어제 브리프 복사 또는 새 생성 · 큐레이션 첫 5건 발행</div>
             </div>
             <div class="tl-item gha">
               <div class="tl-time">09:30 <span class="tl-label label-gha">GHA</span></div>
@@ -768,12 +638,9 @@
             <div class="tl-item gha">
               <div class="tl-time">10:00~23:00 <span class="tl-label label-gha">GHA</span></div>
               <div class="tl-mode">
-                <span class="tooltip">큐레이션 14회차<span class="tooltip-text">09:00 포함 총 15회. 매시간 정각마다 GHA가 깨어나 DB에서 좋은 원본 5건을 골라 Claude Sonnet으로 재가공 후 우나어에 발행합니다.</span></span>
+                <span class="tooltip">큐레이션 14회차<span class="tooltip-text">09:00 포함 총 15회 × 5건 = 75건/일. 매시간 정각마다 GHA가 깨어나 DB에서 좋은 원본 5건을 골라 Claude Sonnet으로 재가공 후 발행합니다.</span></span>
               </div>
-              <div class="tl-detail">
-                매 정각 자동 실행 → 각 5건 발행<br>
-                10 · 11 · 12 · 13 · 14 · 15 · 16 · 17 · 18 · 19 · 20 · 21 · 22 · 23시
-              </div>
+              <div class="tl-detail">매 정각 자동 실행 → 각 5건 발행 (10·11·12·13·14·15·16·17·18·19·20·21·22·23시)</div>
             </div>
             <div class="tl-item gha">
               <div class="tl-time">10:30 · 14:00 · 21:00 <span class="tl-label label-gha">GHA</span></div>
@@ -783,9 +650,9 @@
             <div class="tl-item cron">
               <div class="tl-time">*/5분 (24시간) <span class="tl-label label-cron">GHA cron</span></div>
               <div class="tl-mode">
-                <span class="tooltip">댓글 파동 처리<span class="tooltip-text">CommentWaveQueue(댓글 예약 대기열)를 5분마다 확인해서 "지금 게시할 차례가 된 댓글"을 우나어 게시글에 달아줍니다.</span></span>
+                <span class="tooltip">댓글 파동 처리<span class="tooltip-text">CommentWaveQueue와 UserPostWaveQueue를 5분마다 확인해서 "지금 게시할 차례가 된 댓글"을 달아줍니다.</span></span>
               </div>
-              <div class="tl-detail">큐레이션 파동(wave2~4) + 회원글 파동(wave1~4) 처리</div>
+              <div class="tl-detail">큐레이션 파동(wave1~4) + 회원글 파동(wave1~4) 처리</div>
             </div>
           </div>
         </div>
@@ -798,100 +665,390 @@
     </div>
   </div>
 
-  <!-- ── 5. 큐레이션 시스템 ── -->
-  <div class="section" id="curation">
+  <!-- ── 5. 크롤 시스템 상세 ── -->
+  <div class="section" id="crawl">
     <div class="section-header">
       <div class="section-num">5</div>
-      <h2>큐레이션 시스템</h2>
+      <h2>크롤 시스템 상세</h2>
     </div>
 
     <div class="biz-lead">
-      네이버 카페의 인기 원본 글을 우나어 페르소나가 직접 쓴 것처럼 재가공해서 매시간 발행합니다.
-      실제 회원이 쓴 것과 구분이 안 될 만큼 자연스러운 글을 만드는 것이 목표입니다.
+      Playwright 브라우저가 네이버 카페 "전체글보기" 페이지에서 새 글만 증분 수집합니다.
+      매일 ~100건의 새 원본이 DB에 쌓입니다.
     </div>
 
-    <h3>어떻게 글이 선택되나요</h3>
+    <h3>5-A. 전체글보기 증분 크롤 플로우</h3>
+    <div class="flow-diagram">
+      <div class="flow-box">Playwright 시작<span class="flow-label">NID 쿠키 로드</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box"><span class="tooltip">전체글보기 URL<span class="tooltip-text">카페 내 모든 게시판 글이 최신순으로 한 곳에 모이는 단일 스트림. 개별 게시판 21~25개를 순회하지 않고 이 URL 하나로 전체를 수집합니다. 게시판 추가·삭제에도 무관하게 동작.</span></span> 접근<span class="flow-label">allArticlesUrl</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">MAX(articleId) 확인<span class="flow-label">DB에서 마지막 수집 번호</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">새 글만 수집<span class="flow-label">증분 — 이후 번호만</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box"><span class="tooltip">cafe_main iframe<span class="tooltip-text">네이버 카페 특유의 프레임 구조. 본문이 cafe_main이라는 iframe 안에 있어 Playwright가 자동으로 frame switching을 해줍니다.</span></span> 본문 추출<span class="flow-label">iframe 자동 탐색</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">품질 점수 계산<span class="flow-label">qualityScore 산출</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">DB 저장<span class="flow-label">20점 미만 제외</span></div>
+    </div>
+
     <div class="narrative">
       <p>
-        매시간 GHA가 깨어나면 먼저 오늘 브리프(욕망 지도)를 참고해서 "이 시간에 어떤 주제의 글을 올릴까" 방향을 잡습니다.
-        그 다음 DB에서 조건에 맞는 원본 글을 고릅니다.
+        <strong>두 카페의 전체글보기 URL</strong><br>
+        우아한갱년기: <code>cafe.naver.com/f-e/cafes/29349320/menus/0?viewType=L</code><br>
+        은퇴후50년: <code>cafe.naver.com/f-e/cafes/23676262/menus/0?viewType=L</code>
       </p>
       <p>
-        <strong>우선 선택 — <span class="tooltip">킬러 포스트<span class="tooltip-text">killerScore 70점 이상인 화제 글. 좋아요·댓글이 특히 많은 글로, 매시간 최대 2건 우선 선택됩니다. 화제가 된 글을 빠르게 우나어로 이식해서 초기 반응을 확보하는 전략입니다.</span></span></strong><br>
-        좋아요·댓글이 특히 많은 화제 글(killerScore 70점 이상)이 있으면 먼저 선택합니다 (최대 2건).
-      </p>
-      <p>
-        <strong>욕망별 분산 — 한 주제가 독점하지 않게</strong><br>
-        건강(HEALTH) 글이 너무 많아지지 않도록 하루 22건 상한을 둡니다.
-        가족 11건, 재테크 6건 등 욕망별 상한을 두어 다양한 주제가 골고루 올라오게 합니다.
-      </p>
-      <p>
-        <strong><span class="tooltip">3단계 원본 탐색<span class="tooltip-text">좋은 원본이 없을 때 범위를 자동으로 넓히는 안전장치. 1단계에서 원본 없으면 2단계, 2단계에서 없으면 3단계로 자동 이동합니다. 콘텐츠 고갈 방지용입니다.</span></span> — 원본이 없을 때</strong><br>
-        먼저 48시간 내 글+키워드로 검색 → 없으면 7일 내 글+키워드 → 없으면 7일 내 같은 욕망의 모든 글.
-        이렇게 해서 원본 고갈로 발행을 못 하는 상황을 방지합니다.
+        매번 처음부터 다 읽는 게 아닙니다. DB에 저장된 가장 큰 articleId 이후의 새 글만 수집합니다.
+        하루에 새로 올라오는 글 ~100~120건만 처리합니다.
       </p>
     </div>
 
-    <h3>글이 어떤 게시판에 올라가나요</h3>
-    <div class="narrative">
-      <p>
-        원본 글이 어떤 욕망에 해당하는지에 따라 자동으로 게시판이 결정됩니다.
-        건강·가족·취미·고민·자유 주제는 "이야기방(STORY)"에,
-        재테크·은퇴·주거 주제는 "라이프2(LIFE2)"에,
-        유머·엔터 주제는 "유머(HUMOR)"에,
-        취업 주제는 "일자리(JOB)"에 발행됩니다.
-        서브카테고리(건강, 가족, 취미, 고민, 재테크·연금, 은퇴준비 등)도 자동으로 설정됩니다.
-      </p>
+    <h3>5-B. 중복 수집 방지</h3>
+    <div class="flow-diagram">
+      <div class="flow-box">크롤된 글 URL<span class="flow-label">postUrl</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">DB <span class="tooltip">postUrl<span class="tooltip-text">DB의 CafePost 테이블에 postUrl unique 제약이 걸려있습니다. 네이버 게시글 고유 URL 기준으로 중복 체크합니다. naverPostId가 아닌 postUrl이 기준입니다. (crawler.ts L836)</span></span> 조회<span class="flow-label">unique 제약</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box" style="border-color:rgba(248,113,113,0.4); color:var(--red);">이미 있음 → 스킵<span class="flow-label">continue</span></div>
+    </div>
+    <div class="flow-diagram">
+      <div class="flow-box">크롤된 글 URL<span class="flow-label">postUrl</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">DB postUrl 조회</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box" style="border-color:rgba(74,222,128,0.4); color:var(--green);">없음 → 저장 진행<span class="flow-label">새 글</span></div>
+    </div>
+    <div class="narrative" style="font-size:13px;">
+      <p>동일 URL은 DB 레벨에서 구조적으로 중복 저장 불가합니다. 재크롤 시에도 안전합니다.</p>
     </div>
 
+    <h3>5-C. Playwright 안전장치</h3>
     <div class="table-wrap">
       <table>
-        <thead>
-          <tr><th>욕망</th><th>게시판</th><th>카테고리</th></tr>
-        </thead>
+        <thead><tr><th>안전장치</th><th>이유</th></tr></thead>
         <tbody>
-          <tr><td>건강, 뷰티</td><td>이야기방 (STORY)</td><td>건강</td></tr>
-          <tr><td>가족, 돌봄</td><td>이야기방 (STORY)</td><td>가족</td></tr>
-          <tr><td>인간관계, 의미, 정신</td><td>이야기방 (STORY)</td><td>고민</td></tr>
-          <tr><td>취미, 음식, 패션, 디지털, 반려</td><td>이야기방 (STORY)</td><td>취미</td></tr>
-          <tr><td>자유, 일상</td><td>이야기방 (STORY)</td><td>자유수다</td></tr>
-          <tr><td>재테크, 연금</td><td>라이프2 (LIFE2)</td><td>재테크·연금</td></tr>
-          <tr><td>은퇴 준비</td><td>라이프2 (LIFE2)</td><td>은퇴준비</td></tr>
-          <tr><td>주거, 이사</td><td>라이프2 (LIFE2)</td><td>주거·이사</td></tr>
-          <tr><td>일자리</td><td>일자리 (JOB)</td><td>전체</td></tr>
-          <tr><td>유머</td><td>유머 (HUMOR)</td><td>유머·웃음</td></tr>
-          <tr><td>엔터테인먼트, TV</td><td>유머 (HUMOR)</td><td>엔터·TV</td></tr>
+          <tr>
+            <td><span class="tooltip">headless=false<span class="tooltip-text">브라우저 화면을 띄운 채 실행. 네이버는 headless 브라우저를 봇으로 감지해 차단하기 때문에 headless를 끕니다.</span></span></td>
+            <td>네이버 봇 감지 회피</td>
+          </tr>
+          <tr>
+            <td><span class="tooltip">NID_AUT / NID_SES 쿠키<span class="tooltip-text">네이버 로그인 상태를 유지하는 인증 쿠키. .env.local의 NAVER_COOKIES에서 로드합니다. 만료 시 크롤 전면 중단 → 섹션 12 런북 참조.</span></span></td>
+            <td>로그인 상태 유지 (비공개 게시판 접근)</td>
+          </tr>
+          <tr>
+            <td>cafe_main iframe 자동 탐색</td>
+            <td>네이버 카페 특유의 iframe 구조 처리</td>
+          </tr>
+          <tr>
+            <td><span class="tooltip">연속 실패 5회 → 카페 스킵<span class="tooltip-text">한 카페에서 본문 수집이 5번 연속 실패하면 해당 카페를 스킵하고 다음 카페로 넘어갑니다. 네이버 임시 차단 감지 시 전체 크롤 중단 방지. (crawler.ts L1000-1009)</span></span></td>
+            <td>네이버 차단 감지 시 자동 중단</td>
+          </tr>
         </tbody>
       </table>
     </div>
+  </div>
 
-    <div class="monitor-box">
-      <div class="monitor-title">창업자 모니터링 — 큐레이션 품질 확인</div>
-      <ul>
-        <li>욕망 다양성: HEALTH(건강)만 계속 올라온다면 욕망 분산 로직에 문제가 있는 것</li>
-        <li>글의 자연스러움: "AI가 쓴 것 같다"는 느낌이 든다면 페르소나 매핑 점검 필요</li>
-        <li>발행 게시판: 재테크 글이 이야기방에 올라온다면 DESIRE_TO_BOARD 매핑 오류</li>
-      </ul>
+  <!-- ── 6. 품질 점수 시스템 ── -->
+  <div class="section" id="quality">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>품질 점수 시스템</h2>
+    </div>
+
+    <div class="biz-lead">
+      두 가지 점수로 원본 글을 평가합니다. <strong>qualityScore</strong>는 "큐레이션에 쓸 수 있는 글인가", <strong>killerScore</strong>는 "지금 카페에서 화제인 글인가"를 측정합니다.
+    </div>
+
+    <h3>6-A. qualityScore vs killerScore 비교</h3>
+    <div class="score-compare">
+      <div class="score-card">
+        <div class="score-card-title">qualityScore — 큐레이션 기준점</div>
+        <div class="score-row"><span>참여도 (좋아요+댓글)</span><span class="score-pct same">40%</span></div>
+        <div class="score-row"><span>본문 길이</span><span class="score-pct same">20%</span></div>
+        <div class="score-row"><span>게시판 중요도</span><span class="score-pct same">20%</span></div>
+        <div class="score-row"><span>최신성</span><span class="score-pct same">15%</span></div>
+        <div class="score-row"><span>이미지 유무</span><span class="score-pct same">5%</span></div>
+        <div class="score-card-tag">"균형잡힌 품질 — 큐레이션 원본으로 쓸 수 있는가"</div>
+      </div>
+      <div class="score-card">
+        <div class="score-card-title">killerScore — 화제성 탐지</div>
+        <div class="score-row"><span>참여도 (좋아요+댓글)</span><span class="score-pct up">55% ↑</span></div>
+        <div class="score-row"><span>본문 길이</span><span class="score-pct same">20%</span></div>
+        <div class="score-row"><span>게시판 중요도</span><span class="score-pct down">15% ↓</span></div>
+        <div class="score-row"><span>최신성</span><span class="score-pct down">5% ↓↓</span></div>
+        <div class="score-row"><span>이미지 유무</span><span class="score-pct same">5%</span></div>
+        <div class="score-card-tag">"지금 카페에서 좋아요·댓글이 폭발하는 글 탐지"</div>
+      </div>
+    </div>
+
+    <div class="narrative">
+      <p>
+        두 점수의 차이는 <strong>참여도 가중치와 최신성 가중치</strong>입니다.
+        qualityScore는 최신성(15%)과 게시판 중요도(20%)를 고려해 균형잡힌 품질을 측정합니다.
+        killerScore는 참여도(55%)를 최우선으로 두어 "요즘 카페에서 실제로 화제인 글"을 잡아냅니다.
+        killerScore가 70 이상인 글은 매시간 큐레이션 선택 시 최우선(최대 2건)으로 삽입됩니다.
+      </p>
+    </div>
+
+    <h3>6-B. 두 단계 임계값</h3>
+    <div class="threshold-bar">
+      <div class="threshold-zone zone-red">
+        0 ~ 19<span class="zone-label">DB 저장 안 함<br>(minSave=20 미달)</span>
+      </div>
+      <div class="threshold-zone zone-yellow" style="flex: 0 0 15%;">
+        20 ~ 29<span class="zone-label">저장만<br>큐레이션 불가</span>
+      </div>
+      <div class="threshold-zone zone-green">
+        30 이상<span class="zone-label">isUsable=true<br>큐레이션 사용 가능 (minUsable=30)</span>
+      </div>
+    </div>
+
+    <div class="narrative" style="font-size:13px;">
+      <p>
+        수집된 글 100건 중 약 20건은 품질이 낮아 DB에 저장 자체가 되지 않습니다 (스팸·단문 등).
+        저장된 80건 중 대부분(약 80%)이 30점 이상으로 큐레이션에 사용 가능합니다.
+        20~29점 글은 분석 데이터로만 보관됩니다.
+      </p>
+    </div>
+
+    <div class="alert info">
+      <strong>코드 출처 확인</strong>
+      qualityScore 가중치: <code>quality-scorer.ts L23-29</code> · killerScore 가중치: <code>quality-scorer.ts L119-127</code><br>
+      임계값: <code>config.ts L225(minSave=20), L227(minUsable=30)</code>
     </div>
   </div>
 
-  <!-- ── 6. 댓글 파동 ── -->
+  <!-- ── 7. 큐레이션 & 카테고리 매핑 ── -->
+  <div class="section" id="curation">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>큐레이션 &amp; 카테고리 매핑</h2>
+    </div>
+
+    <div class="biz-lead">
+      매시간 GHA가 원본 글 5건을 선택하고 Claude Sonnet으로 재가공해 우나어에 발행합니다.
+      원본 글의 욕망 카테고리에 따라 게시판과 서브카테고리가 자동 결정됩니다.
+    </div>
+
+    <h3>7-A. 글 선택 로직</h3>
+    <div class="narrative">
+      <p>
+        <strong>1단계 — 킬러 포스트 우선</strong><br>
+        <span class="tooltip">killerScore ≥ 70<span class="tooltip-text">참여도가 특히 높은 화제 글. 화제가 된 글을 빠르게 우나어로 이식해서 초기 반응을 확보하는 전략입니다. (content-curator.ts L826-838)</span></span>인 글이 있으면 최대 2건을 먼저 선택합니다.
+      </p>
+      <p>
+        <strong>2단계 — 욕망별 분산 (하드캡)</strong><br>
+        건강(HEALTH) 글이 독점하지 않도록 하루 22건 상한을 둡니다.
+        가족(FAMILY) 11건, 재테크·은퇴·주거·유머 각 6건의 상한을 두어 다양한 주제가 골고루 올라오게 합니다.
+      </p>
+      <p>
+        <strong>3단계 — 원본 탐색 (자동 범위 확장)</strong><br>
+        원본이 없을 때 자동으로 범위를 넓힙니다:
+        48시간+키워드 → 없으면 7일+키워드 → 없으면 7일+욕망카테고리 전체.
+        원본 고갈로 발행을 못 하는 상황을 구조적으로 방지합니다.
+      </p>
+    </div>
+
+    <h3>7-B. 욕망 → 게시판 자동 매핑</h3>
+    <div class="grid-2">
+      <div>
+        <div class="board-group">
+          <div class="board-header story">이야기방 (STORY)</div>
+          <div class="board-subs">
+            <span class="chip-cat health">건강 → 건강</span>
+            <span class="chip-cat beauty">뷰티 → 건강</span>
+            <span class="chip-cat family">가족 → 가족</span>
+            <span class="chip-cat relation">인간관계 → 고민</span>
+            <span class="chip-cat meaning">의미 → 고민</span>
+            <span class="chip-cat spiritual">정신·종교 → 고민</span>
+            <span class="chip-cat hobby">취미 → 취미</span>
+            <span class="chip-cat food">음식 → 취미</span>
+            <span class="chip-cat beauty">패션 → 취미</span>
+            <span class="chip-cat digital">디지털 → 취미</span>
+            <span class="chip-cat pet">반려동물 → 취미</span>
+            <span class="chip-cat freedom">자유 → 자유수다</span>
+            <span class="chip-cat general">일상 → 자유수다</span>
+          </div>
+        </div>
+        <div class="board-group">
+          <div class="board-header life2">라이프2 (LIFE2)</div>
+          <div class="board-subs">
+            <span class="chip-cat money">재테크 → 재테크·연금</span>
+            <span class="chip-cat retire">은퇴 → 은퇴준비</span>
+            <span class="chip-cat housing">주거 → 주거·이사</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="board-group">
+          <div class="board-header job">내일찾기 (JOB)</div>
+          <div class="board-subs">
+            <span class="chip-cat job">일자리 → 전체</span>
+          </div>
+        </div>
+        <div class="board-group">
+          <div class="board-header humor">유머 (HUMOR)</div>
+          <div class="board-subs">
+            <span class="chip-cat humor">유머 → 유머·웃음</span>
+            <span class="chip-cat entertain">엔터·TV → 엔터·TV</span>
+          </div>
+        </div>
+        <div class="alert info mt16" style="font-size:12.5px;">
+          <strong>욕망 자동 감지</strong>
+          <code>guessDesire()</code> 함수가 글 제목·주제에서 키워드를 탐지해 욕망을 자동 판단합니다. 매칭 안 되면 GENERAL → 자유수다 분류.
+        </div>
+      </div>
+    </div>
+
+    <h3>7-C. 욕망별 키워드 감지</h3>
+    <div class="narrative" style="font-size:13px; margin-bottom:8px;">
+      <p>아래 키워드가 제목/본문에 포함되면 해당 욕망으로 자동 분류됩니다.</p>
+    </div>
+
+    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:18px 20px;">
+      <div style="margin-bottom:12px;">
+        <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">HEALTH (건강)</span>
+        <div class="chip-grid">
+          <span class="chip-cat health">건강</span><span class="chip-cat health">병원</span><span class="chip-cat health">약</span><span class="chip-cat health">증상</span><span class="chip-cat health">통증</span><span class="chip-cat health">다이어트</span><span class="chip-cat health">갱년기</span><span class="chip-cat health">수술</span><span class="chip-cat health">검진</span><span class="chip-cat health">혈압</span>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">FAMILY (가족)</span>
+        <div class="chip-grid">
+          <span class="chip-cat family">자녀</span><span class="chip-cat family">아들</span><span class="chip-cat family">딸</span><span class="chip-cat family">남편</span><span class="chip-cat family">며느리</span><span class="chip-cat family">손주</span><span class="chip-cat family">부모님</span><span class="chip-cat family">결혼</span>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">MONEY (재테크)</span>
+        <div class="chip-grid">
+          <span class="chip-cat money">재테크</span><span class="chip-cat money">연금</span><span class="chip-cat money">투자</span><span class="chip-cat money">부동산</span><span class="chip-cat money">절약</span><span class="chip-cat money">주식</span><span class="chip-cat money">저축</span>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">RETIRE (은퇴)</span>
+        <div class="chip-grid">
+          <span class="chip-cat retire">은퇴</span><span class="chip-cat retire">퇴직</span><span class="chip-cat retire">노후</span><span class="chip-cat retire">인생2막</span><span class="chip-cat retire">제2의인생</span>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">JOB (일자리)</span>
+        <div class="chip-grid">
+          <span class="chip-cat job">취업</span><span class="chip-cat job">일자리</span><span class="chip-cat job">알바</span><span class="chip-cat job">파트타임</span><span class="chip-cat job">재취업</span><span class="chip-cat job">구직</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:32px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:200px;">
+          <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">RELATION / HOBBY / HUMOR</span>
+          <div class="chip-grid">
+            <span class="chip-cat relation">인간관계</span><span class="chip-cat relation">외로움</span><span class="chip-cat relation">갈등</span>
+            <span class="chip-cat hobby">여행</span><span class="chip-cat hobby">등산</span><span class="chip-cat hobby">독서</span>
+            <span class="chip-cat humor">유머</span><span class="chip-cat humor">웃음</span><span class="chip-cat entertain">드라마</span>
+          </div>
+        </div>
+        <div style="flex:1; min-width:200px;">
+          <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">BEAUTY / FOOD / PET / DIGITAL</span>
+          <div class="chip-grid">
+            <span class="chip-cat beauty">피부</span><span class="chip-cat beauty">화장</span>
+            <span class="chip-cat food">맛집</span><span class="chip-cat food">요리</span>
+            <span class="chip-cat pet">강아지</span><span class="chip-cat pet">고양이</span>
+            <span class="chip-cat digital">스마트폰</span><span class="chip-cat digital">유튜브</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>7-D. 욕망별 하드캡 (일일 상한)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>욕망</th><th>게시판</th><th>일일 상한</th><th>이유</th></tr></thead>
+        <tbody>
+          <tr><td>HEALTH (건강)</td><td>이야기방</td><td class="text-primary"><strong>22건</strong></td><td>원본 데이터 최다 — 편중 방지</td></tr>
+          <tr><td>FAMILY (가족)</td><td>이야기방</td><td class="text-blue"><strong>11건</strong></td><td>두 번째로 많은 욕망</td></tr>
+          <tr><td>MONEY, RETIRE, HOUSING</td><td>라이프2</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한</td></tr>
+          <tr><td>JOB</td><td>내일찾기</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한</td></tr>
+          <tr><td>HUMOR, ENTERTAIN</td><td>유머</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한</td></tr>
+          <tr><td>나머지 욕망</td><td>이야기방</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한 (DEFAULT_MAX_DESIRE)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 8. 원문 보존 — 수미상관 ── -->
+  <div class="section" id="preservation">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>원문 보존 — 수미상관 방식</h2>
+    </div>
+
+    <div class="biz-lead">
+      AI가 글을 새로 쓰지 않습니다. 원본의 <strong>첫 문장과 마지막 문장만</strong> 페르소나 말투로 바꾸고, 나머지 90%는 원문 그대로입니다.
+    </div>
+
+    <h3>글 구조 시각화</h3>
+    <div class="preservation-bar">
+      <div class="pres-persona">첫 문장<br><small style="font-weight:400; font-size:11px;">페르소나 말투</small></div>
+      <div class="pres-original">원문 90% 그대로<br><small style="color:var(--sub); font-size:12px;">고유명사 · 수치 · 경험 내용 100% 유지</small></div>
+      <div class="pres-persona-end">끝 문장<br><small style="font-weight:400; font-size:11px;">페르소나 말투</small></div>
+    </div>
+
+    <div class="narrative">
+      <p>
+        <strong>왜 수미상관인가?</strong><br>
+        순수 AI 생성(원본 0%)은 두 가지 문제가 있습니다. 첫째, "AI 냄새"가 납니다.
+        둘째, 실제 경험에서 나오는 구체적인 수치, 병원 이름, 지역명 같은 정보가 없어 신뢰도가 낮습니다.
+      </p>
+      <p>
+        원본 글의 90%를 그대로 살리면 실제 사람의 경험이 담긴 구체적인 이야기가 전달됩니다.
+        여기에 해당 페르소나의 말투로 시작하고 끝내면, 우나어 회원이 직접 쓴 것처럼 자연스러워집니다.
+      </p>
+      <p>
+        <strong>보존 원칙</strong><br>
+        고유명사(병원명, 지역, 브랜드), 구체적 수치(혈당 120, 체중 65kg), 날짜, 가격 — 모두 100% 원문 그대로.
+        오직 첫 문장("~더라고요", "요즘 들어서...")과 끝 문장("같이 해요!", "한번 해보세요 여러분!") 만 페르소나 색으로 입힙니다.
+      </p>
+    </div>
+
+    <div class="grid-2 mt16">
+      <div class="card">
+        <div class="card-title">Before — 순수 AI 생성</div>
+        <div class="narrative mt8" style="font-size:13px;">
+          <p style="color:var(--red);">"갱년기 증상으로 많은 분들이 힘드실 것 같습니다. 전문가 상담을 권장하며, 건강한 생활 습관이 중요합니다."</p>
+          <p style="color:var(--sub); margin:0; font-size:12px;">→ AI 냄새 남, 구체성 없음, 신뢰도 낮음</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">After — 수미상관 방식</div>
+        <div class="narrative mt8" style="font-size:13px;">
+          <p style="color:var(--primary);">"언니들, 저도 요즘 너무 힘들더라구요 ㅠㅠ"</p>
+          <p style="color:var(--muted);">"3달 전부터 갑자기 얼굴이 화끈화끈하고... [원문 그대로] ...분당 서울대병원에서 여성호르몬 검사 받았는데..."</p>
+          <p style="color:var(--primary); margin:0;">"우리 같이 이겨내요! 화이팅 🙌"</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert ok mt8">
+      <strong>코드 출처</strong>
+      수미상관 프롬프트: <code>content-curator.ts L615-620</code> — "원본 90% 보존, 첫/끝 문장만 페르소나 말투로 변환"
+    </div>
+  </div>
+
+  <!-- ── 9. 댓글 파동 시스템 ── -->
   <div class="section" id="wave">
     <div class="section-header">
-      <div class="section-num">6</div>
+      <div class="section-num">9</div>
       <h2>댓글 파동 시스템</h2>
     </div>
 
     <div class="biz-lead">
       글이 올라오면 즉시 "반응이 있는 글"처럼 만들어 알고리즘 활성화를 유도합니다.
-      첫 댓글이 1분 안에 달려야 활발한 글로 인식됩니다.
       두 가지 파동 시스템이 운영됩니다: 큐레이션 글용과 실제 회원 글용.
     </div>
 
     <h3>A. 큐레이션 댓글 파동 (4건/글)</h3>
-    <div class="narrative">
-      <p>GHA가 큐레이션 글을 발행하는 순간, 동시에 댓글 4건의 예약이 생성됩니다.</p>
-    </div>
+    <div class="narrative"><p>GHA가 큐레이션 글을 발행하는 순간, 동시에 댓글 4건의 예약이 생성됩니다.</p></div>
     <div class="wave-steps">
       <div class="wave-step">
         <div class="wave-badge w1">+1분</div>
@@ -903,31 +1060,24 @@
       <div class="wave-step">
         <div class="wave-badge w2">+5분</div>
         <div class="wave-content">
-          <strong>댓글 1건</strong> — 다른 페르소나가 질문이나 동의 댓글을 답니다.<br>
-          GHA */5분 크론이 처리합니다.
+          <strong>댓글 1건</strong> — 다른 페르소나가 질문이나 동의 댓글을 답니다.
         </div>
       </div>
       <div class="wave-step">
         <div class="wave-badge w3">+30분</div>
-        <div class="wave-content">
-          <strong>댓글 1건</strong> — 또 다른 페르소나가 자신의 경험을 공유하는 댓글을 답니다.
-        </div>
+        <div class="wave-content"><strong>댓글 1건</strong> — 또 다른 페르소나가 자신의 경험을 공유하는 댓글을 답니다.</div>
       </div>
       <div class="wave-step">
         <div class="wave-badge w4">+60분</div>
         <div class="wave-content">
           <strong>댓글 1건</strong> — 응원이나 추가 공감 댓글로 마무리됩니다.<br>
-          총 4건의 댓글 → 75건/일 큐레이션 × 4건 = <strong>300건/일 댓글</strong>
+          총 4건 × 75건/일 = <strong>300건/일 댓글</strong>
         </div>
       </div>
     </div>
 
-    <div class="narrative">
-      <p style="font-size:13px; color:var(--sub);">
-        ※ 글을 쓴 페르소나는 자기 글에 댓글 달지 않습니다.
-        79명 페르소나 중 글쓴이를 제외한 최대 ~69명 풀에서 랜덤 선택합니다.
-        한 게시글에 같은 페르소나가 두 번 댓글 달지 않도록 중복 방지가 적용됩니다.
-      </p>
+    <div class="narrative" style="font-size:13px; color:var(--sub);">
+      ※ 글을 쓴 페르소나는 자기 글에 댓글 달지 않습니다. 79명 중 글쓴이 제외 풀에서 랜덤 선택, 같은 게시글에 동일 페르소나 중복 댓글 방지. TTL = 발행 후 +60h (CommentWaveQueue).
     </div>
 
     <h3>B. 회원글 댓글 파동 (9건/글) — 신규</h3>
@@ -953,7 +1103,7 @@
       </div>
       <div class="wave-step">
         <div class="wave-badge w4">+60분</div>
-        <div class="wave-content"><strong>댓글 3건</strong> — 추가 공감 및 응원으로 마무리<br>총 9건 댓글로 "활발한 글"처럼 보이게 됩니다</div>
+        <div class="wave-content"><strong>댓글 3건</strong> — 추가 공감 및 응원으로 마무리. 총 9건.</div>
       </div>
     </div>
 
@@ -964,35 +1114,33 @@
     </div>
   </div>
 
-  <!-- ── 7. 페르소나 생태계 ── -->
+  <!-- ── 10. 페르소나 생태계 ── -->
   <div class="section" id="persona">
     <div class="section-header">
-      <div class="section-num">7</div>
+      <div class="section-num">10</div>
       <h2>페르소나 생태계 (79명)</h2>
     </div>
 
     <div class="biz-lead">
       79명의 가상 페르소나가 50·60대 실제 사람처럼 우나어에서 활동합니다.
-      이들은 실제 우나어 DB에 봇 계정으로 존재하며, 각자 이름·나이·관심사·말투가 다릅니다.
+      각자 이름·나이·관심사·말투가 다르며, 실제 우나어 DB에 봇 계정으로 존재합니다.
     </div>
 
-    <h3>V7에서 달라진 역할</h3>
+    <h3>V7 현재 역할</h3>
     <div class="table-wrap">
       <table>
-        <thead>
-          <tr><th>활동</th><th>V6 이전</th><th>V7 현재</th><th>이유</th></tr>
-        </thead>
+        <thead><tr><th>활동</th><th>V6 이전</th><th>V7 현재</th><th>이유</th></tr></thead>
         <tbody>
           <tr>
             <td>글 쓰기</td>
             <td class="text-yellow">56건/일</td>
             <td class="text-red"><strong>0건 (중단)</strong></td>
-            <td>큐레이션 75건으로 충분. AI가 만든 글은 원본 0%라 품질 리스크 있음</td>
+            <td>큐레이션 75건으로 충분. AI 원본 0% 글은 품질 리스크</td>
           </tr>
           <tr>
             <td>큐레이션 댓글</td>
-            <td class="text-muted">~4건/글 × 9건 = 36건</td>
-            <td class="text-green"><strong>4건/글 × 75건 = 300건</strong></td>
+            <td class="text-muted">~36건</td>
+            <td class="text-green"><strong>300건/일</strong></td>
             <td>큐레이션 증가로 자연 증가</td>
           </tr>
           <tr>
@@ -1020,14 +1168,12 @@
     <div class="narrative">
       <p>
         <strong>글 쓰기 중단은 언제 재개할 수 있나요?</strong><br>
-        GitHub Secrets에서 <code>ENABLE_SEED_POSTS</code> 값을 <code>true</code>로 바꾸면 즉시 재개됩니다.
-        현재는 큐레이션 75건/일로 콘텐츠가 충분하고, AI가 만든 글이 원본 0%라
-        "AI가 쓴 것 같다"는 품질 리스크를 제거하기 위해 중단한 것입니다.
+        GitHub Secrets에서 <code>ENABLE_SEED_POSTS</code> 값을 <code>true</code>로 바꾸면 됩니다.
+        단, 이 값은 scheduler.ts 코드 내부(L424-426)에서 체크합니다. GHA 워크플로우 자체를 수정하는 게 아닙니다.
       </p>
       <p>
         <strong>79명 중 누가 댓글을 다나요?</strong><br>
-        큐레이션·회원글 파동에서 댓글 작성자는 매번 랜덤으로 선택됩니다.
-        단, 글을 직접 쓴 페르소나는 자기 글에 댓글 달지 않도록 자동 제외됩니다.
+        매번 랜덤으로 선택됩니다. 글쓴이는 자기 글에 댓글을 달지 않도록 자동 제외됩니다.
         특수 계정(EN1~EN5, N1~N5 계열)은 댓글 파동에서 제외됩니다.
       </p>
     </div>
@@ -1044,10 +1190,10 @@
     </div>
   </div>
 
-  <!-- ── 8. 카페 수집 상세 ── -->
+  <!-- ── 11. 카페 수집 상세 ── -->
   <div class="section" id="cafes">
     <div class="section-header">
-      <div class="section-num">8</div>
+      <div class="section-num">11</div>
       <h2>수집 대상 카페 상세</h2>
     </div>
 
@@ -1074,41 +1220,23 @@
       </div>
     </div>
 
-    <h3>어떻게 수집하나요</h3>
-    <div class="narrative">
-      <p>
-        각 카페의
-        <span class="tooltip">전체글보기 URL<span class="tooltip-text">카페 내 모든 게시판 글이 최신순으로 한 곳에 모이는 페이지. 개별 게시판을 하나씩 돌지 않고 이 한 페이지만 보면 카페 전체 최신 글을 스트림으로 수집할 수 있습니다.</span></span>
-        한 개씩만 크롤합니다.
-        이전에는 57개 게시판 URL을 하나씩 돌며 수집했지만,
-        V6부터는 "전체글보기" 단 2개 URL로 전환해서 훨씬 빠르고 효율적으로 수집합니다.
-      </p>
-      <p>
-        수집 방식은 <strong>증분 크롤링</strong>입니다.
-        "지난번에 마지막으로 저장한 글 번호"를 DB에서 확인하고,
-        그 이후에 올라온 새 글만 수집합니다.
-        이미 저장한 글은 다시 수집하지 않아서 중복이 없습니다.
-      </p>
-    </div>
-
     <div class="alert info">
-      <strong>articleId 기반 증분 크롤링</strong>
-      네이버가 각 게시글에 순차 번호(articleId)를 부여합니다.
-      DB에서 카페별 최대 번호를 확인하고, 그 이후 번호만 새로 수집합니다.
-      중복 수집이 구조적으로 불가능합니다.
+      <strong>전체글보기 방식으로 전환 (V6~)</strong>
+      이전에는 57개 게시판 URL을 하나씩 돌았습니다. V6부터는 "전체글보기" 단 2개 URL로 전환했습니다.
+      게시판 추가·삭제에 무관하고 훨씬 빠릅니다. 중복은 postUrl unique 제약으로 구조적 방지.
     </div>
   </div>
 
-  <!-- ── 9. 쿠키 만료 대응 ── -->
-  <div class="section" id="cookie">
+  <!-- ── 12. 쿠키 만료 · 비용 · 이슈 · 로드맵 ── -->
+  <div class="section" id="ops">
     <div class="section-header">
-      <div class="section-num">9</div>
-      <h2>쿠키 만료 대응 — 크롤링 중단 시 대처</h2>
+      <div class="section-num">12</div>
+      <h2>쿠키 만료 · 비용 · 알려진 이슈 · 로드맵</h2>
     </div>
 
+    <h3>12-A. 쿠키 만료 대응</h3>
     <div class="biz-lead">
-      네이버 카페 크롤링에는 로그인 쿠키가 필요합니다. 쿠키가 만료되면 크롤이 중단됩니다.
-      Slack #시스템에 긴급 알림이 옵니다. 아래 5단계로 5분 안에 복구할 수 있습니다.
+      네이버 카페 크롤링에는 로그인 쿠키가 필요합니다. NID_AUT가 만료되면 크롤이 중단되고 Slack #시스템에 긴급 알림이 옵니다.
     </div>
 
     <div class="grid-2 mb24">
@@ -1133,122 +1261,47 @@
         <span style="font-size:16px;">🍪</span>
         NID_AUT 만료 시 — 쿠키 수동 갱신 (5분 작업)
       </div>
-      <div class="runbook-step">
-        <div class="runbook-step-num">1</div>
-        <div>Chrome 브라우저에서 네이버에 로그인합니다 (wgang 카페에 접근 가능한 계정)</div>
-      </div>
-      <div class="runbook-step">
-        <div class="runbook-step-num">2</div>
-        <div>F12(개발자 도구) → Application → Cookies → naver.com 에서 <code>NID_AUT</code>와 <code>NID_SES</code> 값을 복사합니다</div>
-      </div>
-      <div class="runbook-step">
-        <div class="runbook-step-num">3</div>
-        <div><code>.env.local</code> 파일의 <code>NAVER_COOKIES</code> 값을 업데이트합니다</div>
-      </div>
-      <div class="runbook-step">
-        <div class="runbook-step-num">4</div>
-        <div>GitHub Secrets의 <code>NAVER_COOKIES</code>도 동일하게 업데이트합니다</div>
-      </div>
-      <div class="runbook-step">
-        <div class="runbook-step-num">5</div>
-        <div>터미널에서 테스트 실행: <code>npx tsx agents/cafe/run-pipeline.ts crawl-only</code></div>
-      </div>
-      <div class="runbook-step">
-        <div class="runbook-step-num">6</div>
-        <div>Slack #리포트에서 "CAFE_CRAWL SUCCESS" 메시지 확인하면 완료</div>
-      </div>
+      <div class="runbook-step"><div class="runbook-step-num">1</div><div>Chrome 브라우저에서 네이버에 로그인합니다 (wgang 카페에 접근 가능한 계정)</div></div>
+      <div class="runbook-step"><div class="runbook-step-num">2</div><div>F12(개발자 도구) → Application → Cookies → naver.com 에서 <code>NID_AUT</code>와 <code>NID_SES</code> 값을 복사합니다</div></div>
+      <div class="runbook-step"><div class="runbook-step-num">3</div><div><code>.env.local</code> 파일의 <code>NAVER_COOKIES</code> 값을 업데이트합니다</div></div>
+      <div class="runbook-step"><div class="runbook-step-num">4</div><div>GitHub Secrets의 <code>NAVER_COOKIES</code>도 동일하게 업데이트합니다</div></div>
+      <div class="runbook-step"><div class="runbook-step-num">5</div><div>터미널에서 테스트: <code>npx tsx agents/cafe/run-pipeline.ts crawl-only</code></div></div>
+      <div class="runbook-step"><div class="runbook-step-num">6</div><div>Slack #리포트에서 "CAFE_CRAWL SUCCESS" 메시지 확인하면 완료</div></div>
     </div>
 
     <h3>plist 미실행 시 (Mac 재부팅 후)</h3>
-    <div class="narrative">
-      <p>
-        Mac을 재부팅하면 plist가 다시 로드되어야 합니다.
-        아침 08:30에 크롤이 안 됐다면 터미널에서 아래 명령어를 실행하세요:
-      </p>
-    </div>
     <pre>launchctl unload ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist
 launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
-  </div>
 
-  <!-- ── 10. 비용 + 앞으로 ── -->
-  <div class="section" id="cost">
-    <div class="section-header">
-      <div class="section-num">10</div>
-      <h2>비용 분석 · 알려진 이슈 · 앞으로</h2>
-    </div>
-
-    <h3>월간 AI 비용 (V7 기준)</h3>
+    <h3>12-B. 월간 AI 비용 (V7 기준)</h3>
     <div class="table-wrap">
       <table>
-        <thead>
-          <tr><th>항목</th><th>모델</th><th>설명</th><th>월간 비용</th></tr>
-        </thead>
+        <thead><tr><th>항목</th><th>모델</th><th>설명</th><th>월간 비용</th></tr></thead>
         <tbody>
-          <tr>
-            <td>심리분석</td>
-            <td>Claude Haiku</td>
-            <td>하루 1회, 글 ~50건 분석</td>
-            <td class="text-green">~$7</td>
-          </tr>
-          <tr>
-            <td>트렌드 분석</td>
-            <td>Claude Sonnet</td>
-            <td>하루 1회 (11:30)</td>
-            <td class="text-green">~$90</td>
-          </tr>
-          <tr>
-            <td>DailyBrief 생성</td>
-            <td>Claude Sonnet</td>
-            <td>하루 1회 (11:30)</td>
-            <td class="text-green">~$26</td>
-          </tr>
-          <tr>
-            <td>큐레이션 75건/일</td>
-            <td>Claude Sonnet</td>
-            <td>매시간 5건 × 15회 × 30일</td>
-            <td class="text-yellow">~$81</td>
-          </tr>
-          <tr>
-            <td>회원글 댓글 파동</td>
-            <td>Claude Haiku</td>
-            <td>회원글 발행 시 (소량)</td>
-            <td class="text-green">~$2</td>
-          </tr>
-          <tr>
-            <td>Playwright 크롤링</td>
-            <td>—</td>
-            <td>AI 미사용</td>
-            <td class="text-green">$0</td>
-          </tr>
-          <tr>
-            <td>GitHub Actions</td>
-            <td>—</td>
-            <td>Public repo 무제한 무료</td>
-            <td class="text-green">$0</td>
-          </tr>
-          <tr style="background:var(--bg3);">
-            <td><strong>합계</strong></td>
-            <td></td>
-            <td></td>
-            <td><strong class="text-primary">~$206/월</strong></td>
-          </tr>
+          <tr><td>심리분석</td><td>Claude Haiku</td><td>하루 1회, 글 ~50건 분석</td><td class="text-green">~$7</td></tr>
+          <tr><td>트렌드 분석</td><td>Claude Sonnet</td><td>하루 1회 (11:30)</td><td class="text-green">~$90</td></tr>
+          <tr><td>DailyBrief 생성</td><td>Claude Sonnet</td><td>하루 1회 (11:30)</td><td class="text-green">~$26</td></tr>
+          <tr><td>큐레이션 75건/일</td><td>Claude Sonnet</td><td>매시간 5건 × 15회 × 30일</td><td class="text-yellow">~$81</td></tr>
+          <tr><td>회원글 댓글 파동</td><td>Claude Haiku</td><td>회원글 발행 시 (소량)</td><td class="text-green">~$2</td></tr>
+          <tr><td>Playwright 크롤링</td><td>—</td><td>AI 미사용</td><td class="text-green">$0</td></tr>
+          <tr><td>GitHub Actions</td><td>—</td><td>Public repo 무제한 무료</td><td class="text-green">$0</td></tr>
+          <tr style="background:var(--bg3);"><td><strong>합계</strong></td><td></td><td></td><td><strong class="text-primary">~$206/월</strong></td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="alert warn">
       <strong>비용 기준</strong>
-      Claude Sonnet: $3/1M input + $15/1M output. 큐레이션 1건당 약 $0.035 (input 7,100 토큰 + output 920 토큰).
-      월 $200 초과 시 Anthropic 대시보드에서 사용량 확인하세요.
+      Claude Sonnet: $3/1M input + $15/1M output. 큐레이션 1건당 약 $0.035. 월 $200 초과 시 Anthropic 대시보드에서 확인하세요.
     </div>
 
-    <h3>알려진 이슈</h3>
+    <h3>12-C. 알려진 이슈</h3>
     <div class="card" style="border-color:rgba(251,191,36,0.3);">
       <div class="card-title" style="color:var(--yellow);">⚠️ 댓글 수집 0% (B1 — 미복구)</div>
       <div class="narrative mt8" style="font-size:13.5px;">
         <p>
           네이버 카페에서 원본 글의 <strong>댓글(topComments)을 수집하지 못하고 있습니다.</strong>
-          네이버 DOM 구조 변경으로 댓글 위치를 찾는 코드가 맞지 않아 생긴 문제입니다.
+          네이버 DOM 구조 변경으로 댓글 위치를 찾는 셀렉터가 맞지 않아 생긴 문제입니다.
         </p>
         <p>
           <strong>서비스 영향:</strong> 없습니다. 큐레이션 글 본문에는 댓글이 필요하지 않으며,
@@ -1260,12 +1313,10 @@ launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
       </div>
     </div>
 
-    <h3 class="mt24">앞으로 할 것 (로드맵)</h3>
+    <h3 class="mt24">12-D. 앞으로 할 것 (로드맵)</h3>
     <div class="table-wrap">
       <table>
-        <thead>
-          <tr><th>Phase</th><th>내용</th><th>우선순위</th></tr>
-        </thead>
+        <thead><tr><th>Phase</th><th>내용</th><th>우선순위</th></tr></thead>
         <tbody>
           <tr>
             <td><strong>Phase 6</strong></td>
@@ -1287,16 +1338,17 @@ launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
     </div>
 
     <div class="alert ok mt16">
-      <strong>V7 완료 기준 (2026-05-14)</strong>
-      26개 버그 수정 완료 · GHA hourly 75건/일 큐레이션 운영 중 · 회원글 댓글 파동 신설 ·
-      시드봇 글 생성 중단 · DESIRE_TO_BOARD 매핑 통합으로 올바른 게시판 발행 보장.
+      <strong>V7.1 완료 기준 (2026-05-14)</strong>
+      실제 코드 딥다이브 검증 완료 · GHA hourly 75건/일 큐레이션 운영 중 · 회원글 댓글 파동 신설 ·
+      시드봇 글 생성 중단 · DESIRE_TO_BOARD 19개 욕망 매핑 · 수미상관 방식 원문 90% 보존 ·
+      postUrl 기반 중복 방지 · qualityScore/killerScore 이중 점수 체계 확인.
     </div>
   </div>
 
   <!-- ── Footer ── -->
   <div class="footer">
-    <p>우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 문서 v7</p>
-    <p>최종 업데이트: 2026-05-14 | GHA hourly 75건/일 + 회원글 파동 + 시드봇 글 중단</p>
+    <p>우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 문서 v7.1</p>
+    <p>최종 업데이트: 2026-05-14 | 코드 검증 완료 · GHA hourly 75건/일 + 회원글 파동 + 수미상관 90%</p>
     <p>문의: mogoyongseok@gmail.com | GitHub: MogoKim/age-doesnt-matter</p>
   </div>
 
