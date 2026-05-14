@@ -40,12 +40,19 @@ export async function adminSetPostPromotionLevel(postId: string, level: Promotio
 
   const existing = await prisma.post.findUnique({
     where: { id: postId },
-    select: { promotionLevel: true, boardType: true },
+    select: { promotionLevel: true, boardType: true, hotPromotedAt: true },
   })
 
+  // 어드민 수동 설정도 hotPromotedAt 불변성 규칙을 따른다.
+  // NORMAL 강등 시 hotPromotedAt 건드리지 않음 — 뜨는이야기 영구 잔류 유지.
   await prisma.post.update({
     where: { id: postId },
-    data: { promotionLevel: level },
+    data: {
+      promotionLevel: level,
+      ...(level !== 'NORMAL' && !existing?.hotPromotedAt
+        ? { hotPromotedAt: new Date() }
+        : {}),
+    },
   })
 
   await prisma.adminAuditLog.create({

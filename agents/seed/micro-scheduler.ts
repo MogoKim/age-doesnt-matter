@@ -259,6 +259,12 @@ async function runMicroActivity(activity: MicroActivity): Promise<void> {
               data: { promotionLevel: 'HOT' },
             }).catch(() => {})
           }
+          // hotPromotedAt 보정: micro-scheduler는 promotionLevel을 직접 쓰므로
+          // 방금 승격된 글의 hotPromotedAt 누락을 보정. 이미 설정된 글은 WHERE로 자동 제외.
+          await prisma.post.updateMany({
+            where: { id: target.id, promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] }, hotPromotedAt: null },
+            data: { hotPromotedAt: new Date() },
+          }).catch(() => {})
         }
         console.log(`[Micro] ${activity.personaId} liked post ${target.id.slice(0, 8)}`)
       } catch {

@@ -27,7 +27,7 @@ export async function checkAndPromotePost(
 ): Promise<void> {
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { promotionLevel: true, authorId: true },
+    select: { promotionLevel: true, authorId: true, hotPromotedAt: true },
   })
   if (!post) return
 
@@ -39,12 +39,23 @@ export async function checkAndPromotePost(
     .catch(() => null)
 
   const hotThreshold = boardConfig?.hotThreshold ?? 10
-  const fameThreshold = boardConfig?.fameThreshold ?? 50
+  const fameThreshold = boardConfig?.fameThreshold ?? 30
   const newLevel = computeLevel(likeCount + commentCount, hotThreshold, fameThreshold)
 
   if (post.promotionLevel === newLevel) return
 
-  await prisma.post.update({ where: { id: postId }, data: { promotionLevel: newLevel } })
+  // hotPromotedAt은 최초 HOT/HALL_OF_FAME 달성 시각을 영구 기록한다.
+  // 재승격·강등 어떤 경우에도 덮어쓰지 않는다.
+  // 이 불변성이 "뜨는 이야기" 영구 잔류 구조의 근거.
+  await prisma.post.update({
+    where: { id: postId },
+    data: {
+      promotionLevel: newLevel,
+      ...(newLevel !== 'NORMAL' && !post.hotPromotedAt
+        ? { hotPromotedAt: new Date() }
+        : {}),
+    },
+  })
 
   const isPromotion =
     (post.promotionLevel === 'NORMAL' && newLevel !== 'NORMAL') ||
@@ -86,6 +97,7 @@ export async function retroactivePromotionUpdate(
       commentCount: true,
       promotionLevel: true,
       authorId: true,
+      hotPromotedAt: true,
     },
   })
 
@@ -94,20 +106,31 @@ export async function retroactivePromotionUpdate(
     newLevel: PromotionLevel
     oldLevel: PromotionLevel
     authorId: string
+    hotPromotedAt: Date | null
   }[] = []
 
   for (const post of posts) {
     const newLevel = computeLevel(post.likeCount + post.commentCount, hotThreshold, fameThreshold)
     if (newLevel !== post.promotionLevel) {
-      toUpdate.push({ id: post.id, newLevel, oldLevel: post.promotionLevel, authorId: post.authorId })
+      toUpdate.push({ id: post.id, newLevel, oldLevel: post.promotionLevel, authorId: post.authorId, hotPromotedAt: post.hotPromotedAt })
     }
   }
 
   if (toUpdate.length === 0) return { updated: 0, promoted: 0 }
 
+  // hotPromotedAt 불변성 규칙: 최초 HOT/HALL_OF_FAME 달성 시각 영구 보존.
+  // 재승격·강등 어떤 경우에도 덮어쓰지 않는다.
   await prisma.$transaction(
-    toUpdate.map(({ id, newLevel }) =>
-      prisma.post.update({ where: { id }, data: { promotionLevel: newLevel } }),
+    toUpdate.map(({ id, newLevel, hotPromotedAt }) =>
+      prisma.post.update({
+        where: { id },
+        data: {
+          promotionLevel: newLevel,
+          ...(newLevel !== 'NORMAL' && !hotPromotedAt
+            ? { hotPromotedAt: new Date() }
+            : {}),
+        },
+      }),
     ),
   )
 

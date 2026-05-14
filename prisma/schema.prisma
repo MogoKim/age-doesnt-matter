@@ -352,6 +352,8 @@ model Post {
   // 트렌딩 시스템
   trendingScore  Float          @default(0)
   lastEngagedAt  DateTime?
+  hotPromotedAt  DateTime?
+  // HOT/HALL_OF_FAME 최초 달성 시각. 강등돼도 절대 초기화 안 함.
 
   // SEO
   seoTitle       String?
@@ -396,6 +398,7 @@ model Post {
 
   @@index([boardType, status, createdAt(sort: Desc)])
   @@index([boardType, status, promotionLevel, createdAt(sort: Desc)])
+  @@index([boardType, status, hotPromotedAt(sort: Desc)])
   @@index([status, trendingScore(sort: Desc)])
   @@index([boardType, status, trendingScore(sort: Desc)])
   @@index([authorId])

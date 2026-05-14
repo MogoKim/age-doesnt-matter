@@ -59,13 +59,16 @@ class COOTrendingScorer extends BaseAgent {
     const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000)
 
     // 케이스 A: HOT + lastEngagedAt < 72시간 전 + createdAt < 7일 전
+    // HOT 강등 시 hotPromotedAt 건드리지 않음 — 의도된 동작.
+    // 강등된 글도 뜨는이야기 탭에 영구 잔류해야 하기 때문.
+    // (hotPromotedAt 불변성 규칙 → src/lib/actions/promotion.ts 참조)
     const demotedA = await prisma.post.updateMany({
       where: {
         promotionLevel: 'HOT',
         createdAt: { lt: sevenDaysAgo },
         lastEngagedAt: { lt: seventyTwoHoursAgo },
       },
-      data: { promotionLevel: 'NORMAL' },
+      data: { promotionLevel: 'NORMAL' },  // hotPromotedAt 미포함 — 의도된 동작
     })
 
     // 케이스 B: HOT + createdAt < 30일 전 + lastEngagedAt < 14일 전

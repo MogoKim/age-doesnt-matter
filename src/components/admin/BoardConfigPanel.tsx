@@ -181,7 +181,7 @@ export default function BoardConfigPanel({ configs }: BoardConfigPanelProps) {
                     <label className="mb-1 block text-xs font-medium text-zinc-600">명예의전당 추천컷 <HelpTip text={HELP.BOARD_FAME_THRESHOLD} /></label>
                     <input
                       type="number"
-                      value={editData?.fameThreshold ?? 50}
+                      value={editData?.fameThreshold ?? 30}
                       onChange={(e) => setEditData(editData ? { ...editData, fameThreshold: Number(e.target.value) } : null)}
                       className="h-9 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
                     />

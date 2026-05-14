@@ -104,6 +104,7 @@ export interface PostSummary {
   commentCount: number
   viewCount: number
   promotionLevel: PromotionLevel
+  hotPromotedAt?: string | null  // 뜨는이야기 탭 전용. optional — 기존 소비 파일 영향 없음.
   isPinned?: boolean
   createdAt: string
   slug?: string | null

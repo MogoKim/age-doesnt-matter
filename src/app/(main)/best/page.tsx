@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
-import { getDailyTrendingPosts, getWeeklyTrendingPosts, getHallOfFamePosts } from '@/lib/queries/posts'
+import { getAccumulatedHotPosts, getHallOfFamePosts } from '@/lib/queries/posts'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 import type { PostSummary } from '@/types/api'
@@ -17,14 +17,9 @@ export const metadata: Metadata = {
 
 const LIMIT = 12
 
-const getCachedDaily = unstable_cache(
-  () => getDailyTrendingPosts({ limit: LIMIT }),
-  ['best-daily-p1'],
-  { revalidate: 60 }
-)
-const getCachedWeekly = unstable_cache(
-  () => getWeeklyTrendingPosts({ limit: LIMIT }),
-  ['best-weekly-p1'],
+const getCachedHot = unstable_cache(
+  () => getAccumulatedHotPosts({ limit: LIMIT }),
+  ['best-hot-p1'],
   { revalidate: 60 }
 )
 const getCachedFame = unstable_cache(
@@ -33,11 +28,10 @@ const getCachedFame = unstable_cache(
   { revalidate: 60 }
 )
 
-type TabType = 'daily' | 'weekly' | 'fame'
+type TabType = 'hot' | 'fame'
 const TABS: Array<{ key: TabType; label: string; emoji: string }> = [
-  { key: 'daily', label: '오늘의 인기', emoji: '🔥' },
-  { key: 'weekly', label: '이번주 인기', emoji: '📈' },
-  { key: 'fame', label: '명예의 전당', emoji: '👑' },
+  { key: 'hot',  label: '뜨는 이야기', emoji: '🔥' },
+  { key: 'fame', label: '명예의 전당',  emoji: '👑' },
 ]
 
 export default async function BestPage({
@@ -46,7 +40,7 @@ export default async function BestPage({
   searchParams: Promise<{ tab?: string; q?: string; sf?: string; page?: string }>
 }) {
   const params = await searchParams
-  const currentTab = (TABS.find((t) => t.key === params.tab)?.key ?? 'daily') as TabType
+  const currentTab = (TABS.find((t) => t.key === params.tab)?.key ?? 'hot') as TabType
   const q = params.q?.trim() || undefined
   const sf = (params.sf === 'both' || params.sf === 'content') ? params.sf : ('title' as const)
   const page = Math.max(1, parseInt(params.page ?? '1', 10) || 1)
@@ -55,16 +49,10 @@ export default async function BestPage({
   let posts: PostSummary[]
   let total: number
 
-  if (currentTab === 'daily') {
+  if (currentTab === 'hot') {
     const result = (page === 1 && !q)
-      ? await getCachedDaily().catch(() => ({ posts: [] as PostSummary[], total: 0 }))
-      : await getDailyTrendingPosts({ skip, limit: LIMIT, q, sf }).catch(() => ({ posts: [] as PostSummary[], total: 0 }))
-    posts = result.posts
-    total = result.total
-  } else if (currentTab === 'weekly') {
-    const result = (page === 1 && !q)
-      ? await getCachedWeekly().catch(() => ({ posts: [] as PostSummary[], total: 0 }))
-      : await getWeeklyTrendingPosts({ skip, limit: LIMIT, q, sf }).catch(() => ({ posts: [] as PostSummary[], total: 0 }))
+      ? await getCachedHot().catch(() => ({ posts: [] as PostSummary[], total: 0 }))
+      : await getAccumulatedHotPosts({ skip, limit: LIMIT, q, sf }).catch(() => ({ posts: [] as PostSummary[], total: 0 }))
     posts = result.posts
     total = result.total
   } else {
@@ -109,7 +97,7 @@ export default async function BestPage({
         {posts.length > 0 ? (
           <PostListWithAds
             items={posts}
-            renderCard={(post) => <BestPostCard post={post} />}
+            renderCard={(post) => <BestPostCard post={post} showHotTimestamp={currentTab === 'hot'} />}
             className="space-y-3"
           />
         ) : currentTab === 'fame' && !q ? (
@@ -130,8 +118,7 @@ export default async function BestPage({
 }
 
 function getEmptyMessage(tab: TabType): string {
-  if (tab === 'daily') return '오늘은 아직 인기글이 없어요. 글에 공감을 눌러보세요!'
-  if (tab === 'weekly') return '이번 주 인기글이 아직 없어요. 좋은 글을 올려보세요!'
+  if (tab === 'hot') return '아직 뜨는 이야기가 없어요. 인기글에 공감을 눌러보세요!'
   return '아직 명예의 전당 글이 없어요.'
 }
 
@@ -142,15 +129,15 @@ function FameEmptyState() {
       <div>
         <p className="text-body font-bold text-foreground mb-1">아직 명예의 전당이 비어있어요!</p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          공감 + 댓글 합계 50개를 달성한 글이 이곳에 입성합니다.<br />
+          공감 + 댓글 합계 30개를 달성한 글이 이곳에 입성합니다.<br />
           지금 인기글에 공감을 눌러보세요! 🔥
         </p>
       </div>
       <Link
-        href="/best?tab=daily"
+        href="/best?tab=hot"
         className="inline-flex items-center gap-1.5 h-[52px] px-6 rounded-xl bg-primary text-white font-bold text-base no-underline transition-colors hover:bg-primary/90"
       >
-        🔥 HOT 게시글 보러가기 →
+        🔥 뜨는 이야기 보러가기 →
       </Link>
     </div>
   )
@@ -164,7 +151,13 @@ function EmptyState({ message }: { message: string }) {
   )
 }
 
-function BestPostCard({ post }: { post: PostSummary }) {
+function BestPostCard({
+  post,
+  showHotTimestamp = false,
+}: {
+  post: PostSummary
+  showHotTimestamp?: boolean
+}) {
   const boardSlug = BOARD_TYPE_TO_SLUG[post.boardType] ?? 'stories'
   const boardLabel = BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType
 
@@ -206,6 +199,11 @@ function BestPostCard({ post }: { post: PostSummary }) {
         <span>💬 {post.commentCount}</span>
         <span>👁 {post.viewCount}</span>
         <span>{formatTimeAgo(post.createdAt)}</span>
+        {showHotTimestamp && post.hotPromotedAt && (
+          <span className="text-primary font-medium">
+            🔥 {formatTimeAgo(post.hotPromotedAt)} 인기글 됐어요
+          </span>
+        )}
       </div>
     </Link>
   )

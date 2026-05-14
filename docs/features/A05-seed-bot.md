@@ -225,6 +225,7 @@ Constitution 상한 $50/월 대비 여유 있음.
 | 2026-05-11 | 킬러 포스트 파이프라인 추가: generateKillerPost(원문95%유지)+generateKillerComments(topComments99%재활용)+runKillerPostCycle(qualityScore≥7 후보선택)+processPendingKillerCommentWaves(3파동 댓글투입)+focusedLikeRound 14시추가/isFeatured포함/take5+HEAVY_PERSONAS 18명+POST_LENGTHS 3단계+제목트리거강화+어드민⭐마킹 UI+agents-killer-post.yml 크론2개(09:10/21:10 KST) | CafePost 원문 감성 0% 활용 문제 → 95%유지 킬러 포스트로 HOT 달성률 40~60% 목표 |
 | 2026-05-11 | generateSheetViralComment에 이미지 전용 글 감지 가드 추가: HTML 태그 제거 후 cleanText < 50자이면 즉시 '' 반환 | 오유/네이트판 짤방 글 스크래핑 시 rawContent가 &lt;img&gt; 태그만인 경우 "이미지를 볼 수 없어서..." 쓰레기 댓글이 길이 5 이상으로 가드 통과해 DB 저장되는 문제 재발 방지 |
 | 2026-05-12 | generator.ts: `getExampleCafeComments()` likeCount 정렬+대댓글 포함으로 개선, `getCommentAtmosphereContext()` 신규 추가→generatePost() 프롬프트 주입 | 댓글 분위기(공감형/논쟁형/정보형)를 시드봇 글 방향성에 반영 |
+| 2026-05-14 | micro-scheduler.ts + scheduler.ts 3개 함수에 hotPromotedAt 보정 cleanup 추가 — promotionLevel 직접 updateMany 후 hotPromotedAt=null인 HOT/HALL_OF_FAME 글 사후 보정 | 뜨는이야기 탭 구조를 위해 시드봇이 직접 쓰는 promotionLevel 경로 6개에 hotPromotedAt 누락 보정 필요 |
 
 ---
 

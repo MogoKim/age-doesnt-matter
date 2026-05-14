@@ -75,7 +75,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | RELATION+HEALTH | P1·P2·P5 | [F04](F04-community.md) | ACTIVE | 2026-05-14 |
 | F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-14 |
 | F06 | 일자리 게시판 | `src/app/(main)/jobs/` | 자동수집(A03) + 사용자 탐색 | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-05-14 |
-| F07 | 베스트 탭 | `src/app/(main)/best/` | trendingScore 상위 | RELATION | P3 | [F07](F07-best-tab.md) | ACTIVE | 2026-05-12 |
+| F07 | 베스트 탭 | `src/app/(main)/best/` | hotPromotedAt 기반 누적 | RELATION | P3 | [F07](F07-best-tab.md) | ACTIVE | 2026-05-14 |
 | F08 | 검색 | `src/app/(main)/search/` | 사용자 검색 | ALL | ALL | `docs/specs/04-search.md` | ACTIVE | 2026-05-02 |
 | F09 | 어드민 패널 | `src/app/(admin)/` + `src/app/admin/(panel)/content/[id]/` | 운영자 접근 | INFRA | — | `docs/specs/09-admin.md` | ACTIVE | 2026-05-14 |
 | F10 | 최상단 띠 배너 | `src/components/layouts/TopPromoBanner.tsx` + `TopPromoBannerClient.tsx` + `src/components/admin/TopPromoBannerPanel.tsx` | DB Setting 테이블 (어드민 관리) | RELATION | ALL | [F10](F10-top-promo-banner.md) | ACTIVE | 2026-04-29 |
@@ -92,7 +92,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 11:00, 14:00 KST | LOCAL_ONLY | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-13 |
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/cmo/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | GHA 11:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | RELATION | P1·P3 | [A04](A04-external-content.md) | ACTIVE | 2026-05-13 |
-| A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | ACTIVE | 2026-05-12 |
+| A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | ACTIVE | 2026-05-14 |
 | A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 07:00·12:00·15:00 KST | GHA | RELATION | — | [A06](A06-sns-posting.md) | ACTIVE | 2026-04-27 |
 | A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 13:00 KST | GHA | RELATION | — | [A07](A07-card-news.md) | ACTIVE | 2026-05-12 |
 | A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | HEALTH+MONEY | P2·P4 | - | ACTIVE | 2026-04-05 |

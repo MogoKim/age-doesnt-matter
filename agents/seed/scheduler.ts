@@ -577,6 +577,12 @@ async function runActivity(activity: Activity): Promise<void> {
             })
           }
         })
+        // hotPromotedAt 보정: $transaction 내부에서 tx.updateMany로 promotionLevel 씀.
+        // 트랜잭션 외부에서 별도 보정 (tx 아닌 prisma 사용). 이미 설정된 글은 WHERE로 자동 제외.
+        await prisma.post.updateMany({
+          where: { id: target.id, promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] }, hotPromotedAt: null },
+          data: { hotPromotedAt: new Date() },
+        }).catch(() => {})
         console.log(`[Seed] ${activity.personaId} liked post ${target.id.slice(0, 8)}`)
       } catch {
         // unique constraint 위반 시 무시
@@ -1035,6 +1041,12 @@ async function focusedLikeRound(): Promise<number> {
         where: { id: post.id, promotionLevel: 'NORMAL' },
         data: { promotionLevel: 'HOT' },
       }).catch(() => {})
+      // hotPromotedAt 보정: boostNearHotPosts 직접 promotionLevel 쓰기 보정.
+      // 이미 설정된 글은 WHERE 조건으로 자동 제외.
+      await prisma.post.updateMany({
+        where: { promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] }, hotPromotedAt: null },
+        data: { hotPromotedAt: new Date() },
+      }).catch(() => {})
       console.log(`[Seed] 집중 좋아요로 HOT 승격: ${post.id.slice(0, 8)} (${updated.likeCount}개)`)
     }
   }
@@ -1073,6 +1085,12 @@ async function processViralLikeWave(postId: string, personaIds: string[]): Promi
           })
         }
       })
+      // hotPromotedAt 보정: processViralLikeWave tx 외부 보정.
+      // 트랜잭션 완료 후 prisma(tx 아님)로 실행. 이미 설정된 글은 WHERE로 자동 제외.
+      await prisma.post.updateMany({
+        where: { id: postId, promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] }, hotPromotedAt: null },
+        data: { hotPromotedAt: new Date() },
+      }).catch(() => {})
       liked++
     } catch {
       continue

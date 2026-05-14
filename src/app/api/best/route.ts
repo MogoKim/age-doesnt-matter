@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getHotPosts, getHallOfFamePosts } from '@/lib/queries/posts'
+import { getAccumulatedHotPosts, getHallOfFamePosts } from '@/lib/queries/posts'
 import { handleApiError, parsePaginationParams } from '@/lib/api-utils'
 import { checkApiRateLimit } from '@/lib/api-rate-limit'
 
@@ -10,19 +10,18 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl
     const type = searchParams.get('type') ?? 'hot' // hot | fame
-    const rawSort = searchParams.get('sort') ?? 'recent'
-    const sort: 'recent' | 'likes' = rawSort === 'likes' ? 'likes' : 'recent'
-    const { cursor, limit } = parsePaginationParams(searchParams)
+    const { limit } = parsePaginationParams(searchParams)
     const skip = parseInt(searchParams.get('skip') ?? '0', 10) || 0
 
     if (type === 'fame') {
       const result = await getHallOfFamePosts({ skip, limit })
       return NextResponse.json(result, {
-      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
-    })
+        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+      })
     }
 
-    const result = await getHotPosts({ sort, cursor, limit })
+    // type=hot: 영구 누적 인기글 (hotPromotedAt IS NOT NULL), offset pagination
+    const result = await getAccumulatedHotPosts({ skip, limit })
     return NextResponse.json(result, {
       headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
     })

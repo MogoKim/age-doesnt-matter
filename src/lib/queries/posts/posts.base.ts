@@ -71,6 +71,7 @@ export function toPostSummary(
     createdAt: Date
     slug?: string | null
     author: { id: string; nickname: string; grade: string; profileImage: string | null } | null
+    hotPromotedAt?: Date | null  // optional — 기존 7개 호출부 무변경
   },
 ): PostSummary {
   return {
@@ -85,6 +86,7 @@ export function toPostSummary(
     commentCount: post.commentCount,
     viewCount: post.viewCount,
     promotionLevel: toPromotionLevel(post.promotionLevel),
+    hotPromotedAt: post.hotPromotedAt?.toISOString() ?? null,
     isPinned: post.isPinned ?? false,
     createdAt: post.createdAt.toISOString(),
     slug: post.slug ?? null,

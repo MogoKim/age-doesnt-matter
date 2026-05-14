@@ -328,3 +328,37 @@ export async function getInterestBasedPosts(
     authorNickname: p.author?.nickname ?? '탈퇴한 회원',
   }))
 }
+
+/* ── 누적 인기글 (뜨는 이야기 탭) ── */
+
+// postSelect 공통 확장 금지 (21개 파일 영향 방지). 이 쿼리에만 로컬 확장.
+const hotPostSelect = { ...postSelect, hotPromotedAt: true } as const
+
+export async function getAccumulatedHotPosts(
+  options?: { skip?: number; limit?: number; q?: string; sf?: SearchField },
+): Promise<{ posts: PostSummary[]; total: number }> {
+  const { skip = 0, limit = 12, q, sf } = options ?? {}
+  const where = {
+    status: 'PUBLISHED' as const,
+    boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] as BoardType[] },
+    hotPromotedAt: { not: null },
+    ...buildTextSearch(q, sf),
+  }
+  const [rows, total] = await Promise.all([
+    prisma.post.findMany({
+      where,
+      select: hotPostSelect,
+      orderBy: [{ hotPromotedAt: 'desc' }],
+      skip,
+      take: limit,
+    }),
+    prisma.post.count({ where }),
+  ])
+  return {
+    posts: rows.map((r) => ({
+      ...toPostSummary(r),
+      hotPromotedAt: r.hotPromotedAt?.toISOString() ?? null,
+    })),
+    total,
+  }
+}
