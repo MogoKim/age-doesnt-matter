@@ -25,27 +25,36 @@ type WaveNum = 1 | 2 | 3 | 4
 type WaveDoneKey = 'wave1Done' | 'wave2Done' | 'wave3Done' | 'wave4Done'
 type WaveAtKey = 'wave1At' | 'wave2At' | 'wave3At' | 'wave4At'
 
-async function generateComment(postTitle: string, refComment?: string): Promise<string> {
+// wave별 댓글 유형 강제 — fallback(refComment 없음) 시 획일화 방지
+const WAVE_COMMENT_TYPES: Record<WaveNum, string> = {
+  1: '공감형 — 글쓴이와 같은 감정을 공유하는 한마디 (예: "저도 비슷한 경험이 있어요")',
+  2: '질문형 — 글 내용에 대해 궁금한 점을 물어보는 댓글 (예: "혹시 ~해보셨나요?")',
+  3: '경험공유형 — 본인의 비슷한 경험을 짧게 공유 (예: "저는 ~해서 많이 나아졌어요")',
+  4: '응원형 — 따뜻하게 격려하는 한마디 (예: "힘내세요! 곧 좋아질 거예요")',
+}
+
+async function generateComment(postTitle: string, waveNum: WaveNum, refComment?: string): Promise<string> {
+  const waveType = WAVE_COMMENT_TYPES[waveNum]
   const content = refComment
     ? `아래 원본 댓글을 참고해 새 댓글을 작성하세요.
 원본 댓글: "${refComment.slice(0, 150)}"
 글 제목: "${postTitle}"
 
 규칙:
-- 원본 댓글의 내용(고유명사·수치·핵심 표현)을 90% 유지하세요
-- 어미·말투만 자연스럽게 변환 (경어 또는 반말)
+- 댓글 유형: ${waveType}
+- 원본의 핵심 주제(고유명사·수치)만 유지, 표현은 자유롭게
 - 40~80자 이내, 순수 텍스트만, 마크다운/이모지 금지
 - 접두사 없이 댓글 내용만 출력
 
 댓글:`
-    : `50-60대 여성 커뮤니티 회원으로서 아래 글에 짧은 공감 댓글을 써주세요.
+    : `50-60대 여성 커뮤니티 회원으로서 아래 글에 짧은 댓글을 써주세요.
 글 제목: "${postTitle}"
 
 규칙:
+- 댓글 유형: ${waveType}
 - 40~80자 이내, 순수 텍스트만
 - 마크다운/이모지 금지
 - 자연스러운 구어체 (경어 또는 반말)
-- 공감, 응원, 질문 중 하나
 
 댓글:`
 
@@ -88,10 +97,13 @@ async function processWave(
     select: { topComments: true },
   })
   const topComments = cafePost?.topComments as { content: string }[] | null
-  const refComment = topComments?.[Math.floor(Math.random() * (topComments?.length ?? 0))]?.content
+  // wave 번호 기반 인덱스 분산 — wave1~4가 서로 다른 원본 댓글 참조
+  const len = topComments?.length ?? 0
+  const idx = len > 0 ? ((waveNum - 1) * Math.ceil(len / 4)) % len : 0
+  const refComment = len > 0 ? topComments![idx]?.content : undefined
 
-  // Claude Haiku로 댓글 생성
-  const commentText = await generateComment(post.title, refComment)
+  // Claude Haiku로 댓글 생성 (wave별 유형 강제)
+  const commentText = await generateComment(post.title, waveNum, refComment)
 
   // 댓글 DB 저장 + Post.commentCount 동기화 (목록 표시 정확도)
   await prisma.$transaction([

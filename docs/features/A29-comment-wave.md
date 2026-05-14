@@ -126,3 +126,4 @@ CommentWaveQueue {
 |------|---------|------|
 | 2026-05-13 | 신규 생성 (V6 P1) | 큐레이션 발행 후 초기 인게이지먼트 자동화 |
 | 2026-05-14 | agents-cafe-wave.yml 분리 — 독립 concurrency group(cafe-comment-wave) | agents-cafe.yml과 같은 그룹으로 묶여 평균 87분 1회만 실행되던 문제 해결 |
+| 2026-05-14 | WAVE_COMMENT_TYPES 상수 추가(공감/질문/경험공유/응원). generateComment에 waveNum 파라미터 추가 + wave별 유형 강제. topComments 인덱스 wave 번호 기반 분산 | topComments 없을 때 3개 wave 모두 공감형 수렴하는 획일화 방지 |

@@ -210,6 +210,7 @@
 | 2026-05-13 | V6 P1: run-pipeline.ts에 crawl-only/full/crawl-curate 3개 모드 신설. daily-brief.ts에 `loadTodayBrief()` 추가(오늘→어제→최근 fallback). content-curator.ts에 usedAt 기록+loadTodayBrief() 호출+DESIRE_TO_SUBCATEGORY 매핑+killerScore 정렬+48h 날짜 필터. config.ts minUsable 60→30. plist 4회 구조로 재편(08:30 crawl-only / 11:30 full / 15:30 crawl-curate / 21:30 crawl-curate). wave-processor.ts 신규(GHA `*/5 * * * *`). GHA wave-process job + 스마트 fallback skip 로직 추가 | 큐레이션 3건→9건/일, 첫 댓글 10분→1분, isUsable 통과율 14.6%→~40% 목표 |
 | 2026-05-13 | V6 P2: content-curator.ts 수미상관 90% 프롬프트 교체(반반이→원본 90% 보존, 첫문장/마지막만 페르소나). 큐레이션 페르소나 19명→50명(STORY 25/LIFE2 18/HUMOR 7). wave-processor.ts 댓글 원문 90% 보존+COMMENTER_PERSONA_IDS 50명 확장. generator.ts ENTERTAIN 욕망 desireToArea 매핑 추가 | AI 티 감소, LIFE2 게시글 비율 확보, 댓글 자연스러움 향상 |
 | 2026-05-13 | V6 P3: psych-analyzer.ts 욕망 카테고리 13→20개 확장(BEAUTY/DIGITAL/FOOD/SPIRITUAL/HOUSING/FASHION/PET 추가). content-curator.ts DESIRE_TO_SUBCATEGORY+guessDesire 키워드 7개 연동. generator.ts desireToArea 6개 추가. persona-data.ts BX(말티즈엄마) 79번째 추가. crawler.ts refreshRecentPosts()+refresh 모드 신설. run-pipeline.ts crawl-only에 재크롤 갱신 연결 | 욕망 인텔리전스 정밀도 향상, 페르소나 79명 목표 달성, 7일 이내 게시글 지표 자동 갱신 |
+| 2026-05-14 | crawler.ts `buildPostFromTarget`에 `mainPage?: Page` 파라미터 추가. extractComments를 메인 페이지(iframe 외부)에서 먼저 시도 → 빈 배열이면 iframe(target) 재시도. 대기시간 1.5초→3초 + waitForSelector 추가 | 신형식 네이버 카페 댓글이 cafe_main iframe 외부에 렌더링되어 7일간 수집 0%였던 근본 원인 수정 |
 
 ---
 

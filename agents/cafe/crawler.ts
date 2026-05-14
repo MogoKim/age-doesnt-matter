@@ -226,8 +226,11 @@ async function extractComments(
 ): Promise<CommentData[]> {
   const comments: CommentData[] = []
 
-  // 댓글 렌더링 대기 (동적 로드)
-  await sleep(randomDelay(1500, 0.8, 1.3))
+  // 댓글 렌더링 대기 (동적 로드 — 신형식은 메인 페이지에서 지연 렌더링)
+  await sleep(randomDelay(3000, 0.8, 1.3))
+  try {
+    await target.waitForSelector('.u_cbox_comment, .CommentItem, .comment_item', { timeout: 5000 })
+  } catch { /* 댓글 없으면 그냥 진행 */ }
 
   // 네이버 카페 신/구 형식 댓글 컨테이너 셀렉터
   const containerSelectors = [
@@ -589,7 +592,7 @@ async function crawlNewFormat(page: Page, article: ArticleInfo, cafe: CafeConfig
 
     if (!title) return null
 
-    return await buildPostFromTarget(target, article.newFormatUrl, cafe, title, article.boardName, article.boardCategory, includeComments)
+    return await buildPostFromTarget(target, article.newFormatUrl, cafe, title, article.boardName, article.boardCategory, includeComments, page)
   } catch (err) {
     console.warn(`[CafeCrawler] 신형식 실패: ${article.articleId}`, err instanceof Error ? err.message : '')
     return null
@@ -628,7 +631,7 @@ async function crawlOldFormat(page: Page, article: ArticleInfo, cafe: CafeConfig
 
     if (!title) return null
 
-    return await buildPostFromTarget(cafeFrame, article.oldFormatUrl, cafe, title, article.boardName, article.boardCategory, includeComments)
+    return await buildPostFromTarget(cafeFrame, article.oldFormatUrl, cafe, title, article.boardName, article.boardCategory, includeComments, page)
   } catch {
     return null
   }
@@ -645,6 +648,7 @@ async function buildPostFromTarget(
   boardName?: string | null,
   boardCategory?: ContentCategory | null,
   includeComments = false,
+  mainPage?: Page,
 ): Promise<RawCafePost | null> {
   if (!title || title.length < 2) return null
 
@@ -744,7 +748,16 @@ async function buildPostFromTarget(
   const media = await extractMedia(target)
 
   // DEEP 모드: 댓글 추출 (최대 15개 + 대댓글)
-  const topComments = includeComments ? await extractComments(target, 15) : undefined
+  // 신형식 네이버 카페는 댓글이 cafe_main iframe 외부(메인 페이지)에 렌더링됨
+  // → mainPage에서 먼저 시도, 빈 배열이면 target(iframe)에서 재시도
+  let topComments: CommentData[] | undefined = undefined
+  if (includeComments) {
+    const commentTarget = mainPage ?? target
+    topComments = await extractComments(commentTarget, 15)
+    if (topComments.length === 0 && mainPage && commentTarget !== target) {
+      topComments = await extractComments(target, 15)
+    }
+  }
 
   const mediaInfo = media.imageUrls.length + media.videoUrls.length > 0
     ? ` 이미지=${media.imageUrls.length} 동영상=${media.videoUrls.length}`
