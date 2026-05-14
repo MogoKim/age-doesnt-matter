@@ -1,0 +1,59 @@
+name: "Agents — Cafe Hourly Curation (09~23시 KST)"
+
+on:
+  schedule:
+    - cron: "0 0 * * *"   # 09:00 KST
+    - cron: "0 1 * * *"   # 10:00 KST
+    - cron: "0 2 * * *"   # 11:00 KST
+    - cron: "0 3 * * *"   # 12:00 KST
+    - cron: "0 4 * * *"   # 13:00 KST
+    - cron: "0 5 * * *"   # 14:00 KST
+    - cron: "0 6 * * *"   # 15:00 KST
+    - cron: "0 7 * * *"   # 16:00 KST
+    - cron: "0 8 * * *"   # 17:00 KST
+    - cron: "0 9 * * *"   # 18:00 KST
+    - cron: "0 10 * * *"  # 19:00 KST
+    - cron: "0 11 * * *"  # 20:00 KST
+    - cron: "0 12 * * *"  # 21:00 KST
+    - cron: "0 13 * * *"  # 22:00 KST
+    - cron: "0 14 * * *"  # 23:00 KST
+  workflow_dispatch:
+
+# 동시 실행 금지 — 이전 실행 완료 후 다음 큐레이션 실행
+concurrency:
+  group: cafe-hourly-curation
+  cancel-in-progress: false
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}
+  SLACK_CHANNEL_REPORT: ${{ secrets.SLACK_CHANNEL_REPORT }}
+  SLACK_CHANNEL_SYSTEM: ${{ secrets.SLACK_CHANNEL_SYSTEM }}
+  SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
+  NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
+
+jobs:
+  curate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Run Content Curator (시간당 5건 — runner.ts 1h 중복 방지 내장)
+        run: cd agents && npx tsx cron/runner.ts cafe_crawler content-curate

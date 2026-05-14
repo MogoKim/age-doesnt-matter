@@ -2,7 +2,7 @@ name: "Agents — Cafe Comment Wave"
 
 on:
   schedule:
-    - cron: "*/5 * * * *" # 5분마다 — 댓글 파동 처리 (wave1~4)
+    - cron: "*/5 * * * *" # 5분마다 — GHA 최소 간격 (wave1 최대 5분 지연 허용)
   workflow_dispatch: {}
 
 # agents-cafe.yml과 독립 concurrency group → 큐레이션/크론 실행 중에도 5분 간격 보장
