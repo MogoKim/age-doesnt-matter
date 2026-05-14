@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.unao.cafe-crawler-morning</string>
+    <string>com.unao.cafe-crawler-afternoon</string>
 
     <key>ProgramArguments</key>
     <array>
@@ -11,30 +11,30 @@
              launchd에서 ~/Documents/ 접근 불가. node는 TCC 승인됨. -->
         <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/node</string>
         <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/launchd-wrapper.mjs</string>
-        <string>cafe-crawler-morning</string>
+        <string>cafe-crawler-afternoon</string>
         <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx</string>
         <string>tsx</string>
         <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/run-pipeline.ts</string>
         <string>crawl-only</string>
     </array>
 
-    <key>WorkingDirectory</key>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
-
-    <!-- 08:30 KST (CRAWL-ONLY: 전체글보기 증분 크롤만, AI 분석 없음) -->
+    <!-- 15:30 KST (CRAWL-ONLY: 전체글보기 크롤만, 큐레이션은 GHA hourly) -->
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
-        <integer>8</integer>
+        <integer>15</integer>
         <key>Minute</key>
         <integer>30</integer>
     </dict>
 
+    <key>WorkingDirectory</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
+
     <key>StandardOutPath</key>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler.log</string>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler-afternoon.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler-error.log</string>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler-afternoon-error.log</string>
 
     <key>EnvironmentVariables</key>
     <dict>

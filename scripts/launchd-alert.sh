@@ -8,8 +8,14 @@
 LABEL="$1"
 shift
 
-# 원본 명령 실행
-"$@"
+# launchd → bash (TCC OK) → caffeinate (Mac 슬립 방지)
+# caffeinate를 plist ProgramArguments 최상위에 두면 bash가 caffeinate의
+# TCC security context를 상속받아 Documents/ getcwd() 실패(126)로 크롤러 실행 불가.
+# 해결: plist는 /bin/bash 직접 실행, caffeinate는 이 스크립트 내부에서 래핑.
+cd /Users/yanadoo/Documents/New_Claude_agenotmatter || exit 1
+
+# caffeinate -i 로 Mac 슬립 방지하면서 원본 명령 실행
+caffeinate -i "$@"
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then

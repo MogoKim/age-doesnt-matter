@@ -7,25 +7,27 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/bin/bash</string>
-        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/launchd-alert.sh</string>
+        <!-- node 사용 이유: /bin/bash는 kTCCServiceSystemPolicyDocumentsFolder TCC 미승인 →
+             launchd에서 ~/Documents/ 접근 불가. node는 TCC 승인됨. -->
+        <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/node</string>
+        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/launchd-wrapper.mjs</string>
         <string>cafe-crawler-lunch</string>
         <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx</string>
         <string>tsx</string>
         <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/run-pipeline.ts</string>
-        <string>quick</string>
+        <string>full</string>
     </array>
 
     <key>WorkingDirectory</key>
     <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
 
-    <!-- 12:55 KST (오후 딥다이브: 크롤 + 심리분석 + 욕망지도 생성) -->
+    <!-- 11:30 KST (FULL: 크롤 + 심리분석 + 트렌드 + 브리프, 큐레이션은 GHA hourly) -->
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
-        <integer>12</integer>
+        <integer>11</integer>
         <key>Minute</key>
-        <integer>55</integer>
+        <integer>30</integer>
     </dict>
 
     <key>StandardOutPath</key>
