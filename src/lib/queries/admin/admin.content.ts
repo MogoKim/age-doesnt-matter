@@ -58,6 +58,36 @@ export async function getContentList(options: ContentListOptions = {}) {
   return { posts, hasMore }
 }
 
+export async function getAdminPostDetail(id: string) {
+  return prisma.post.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      boardType: true,
+      category: true,
+      title: true,
+      content: true,
+      status: true,
+      source: true,
+      createdAt: true,
+      author: { select: { id: true, nickname: true } },
+      comments: {
+        where: { status: { not: 'DELETED' } },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          content: true,
+          status: true,
+          createdAt: true,
+          parentId: true,
+          author: { select: { nickname: true } },
+          guestNickname: true,
+        },
+      },
+    },
+  })
+}
+
 // ─── 콘텐츠 액션 ───
 
 export async function updatePostStatus(postId: string, status: PostStatus) {

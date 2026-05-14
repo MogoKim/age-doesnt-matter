@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { adminUpdatePostStatus, adminTogglePin, adminBulkAction, adminSetPostPromotionLevel, adminToggleFeatured, adminSetPostLikeCount } from '@/lib/actions/admin'
 import type { PromotionLevel } from '@/generated/prisma/client'
@@ -233,7 +234,12 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
                     {post.isFeatured && <span className="mr-1">⭐</span>}
                     {PROMOTION_BADGE[post.promotionLevel]}
                     {SOURCE_BADGE[post.source]}
-                    {post.title}
+                    <Link
+                      href={`/admin/content/${post.id}`}
+                      className="hover:text-[#FF6F61] hover:underline"
+                    >
+                      {post.title}
+                    </Link>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-zinc-600">
                     {post.author.nickname}

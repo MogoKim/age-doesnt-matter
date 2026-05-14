@@ -268,3 +268,64 @@ export async function adminBulkAction(
 
   revalidatePath('/admin/content')
 }
+
+export async function adminUpdatePostContent(
+  postId: string,
+  data: { title: string; content: string }
+) {
+  await requireAdmin()
+  const trimmedTitle = data.title.trim()
+  if (!trimmedTitle) throw new Error('제목은 비워둘 수 없습니다')
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { boardType: true },
+  })
+  if (!post) throw new Error('게시글을 찾을 수 없습니다')
+
+  await prisma.post.update({
+    where: { id: postId },
+    data: { title: trimmedTitle, content: data.content },
+  })
+
+  revalidatePath(`/admin/content/${postId}`)
+  revalidateServicePaths(post.boardType, postId)
+}
+
+export async function adminUpdateComment(commentId: string, content: string) {
+  await requireAdmin()
+  const trimmed = content.trim()
+  if (!trimmed) throw new Error('댓글 내용은 비워둘 수 없습니다')
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { postId: true, post: { select: { boardType: true } } },
+  })
+  if (!comment) throw new Error('댓글을 찾을 수 없습니다')
+
+  await prisma.comment.update({ where: { id: commentId }, data: { content: trimmed } })
+
+  revalidatePath(`/admin/content/${comment.postId}`)
+  const boardPath = BOARD_PATHS[comment.post.boardType]
+  if (boardPath) revalidatePath(`${boardPath}/${comment.postId}`)
+}
+
+export async function adminDeleteComment(commentId: string) {
+  await requireAdmin()
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { postId: true, status: true, post: { select: { boardType: true } } },
+  })
+  if (!comment || comment.status === 'DELETED') return
+
+  await prisma.$transaction([
+    prisma.comment.update({ where: { id: commentId }, data: { status: 'DELETED' } }),
+    prisma.post.update({ where: { id: comment.postId }, data: { commentCount: { decrement: 1 } } }),
+  ])
+
+  revalidatePath('/admin/content')
+  revalidatePath(`/admin/content/${comment.postId}`)
+  const boardPath = BOARD_PATHS[comment.post.boardType]
+  if (boardPath) revalidatePath(`${boardPath}/${comment.postId}`)
+}
