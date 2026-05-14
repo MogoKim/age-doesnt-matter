@@ -819,6 +819,20 @@ async function main() {
     if (!selectedTopics.includes(t.topic)) selectedTopics.push(t.topic)
   }
 
+  // killerScore 우선 삽입 (B3) — 화제성 높은 글 제목을 최우선 주제로
+  const killerPosts = await prisma.cafePost.findMany({
+    where: { killerScore: { gte: 70 }, isUsable: true, usedAt: null },
+    orderBy: { killerScore: 'desc' },
+    take: 2,
+    select: { title: true },
+  })
+  if (killerPosts.length > 0) {
+    const killerTopics = killerPosts.map(p => p.title).filter(Boolean)
+    const merged = [...killerTopics, ...selectedTopics.filter(t => !killerTopics.includes(t))].slice(0, maxPosts)
+    selectedTopics.splice(0, selectedTopics.length, ...merged)
+    console.log(`[ContentCurator] 킬러글 우선 삽입: ${killerTopics.length}건`)
+  }
+
   for (const topicStr of selectedTopics) {
     const desireCat = guessDesire(topicStr)
     // 하루 한도 소진된 욕망은 스킵 (B20)
