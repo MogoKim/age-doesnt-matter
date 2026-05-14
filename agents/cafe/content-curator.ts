@@ -785,7 +785,7 @@ async function main() {
     data: {
       botType: 'CAFE_CRAWLER',
       action: 'CONTENT_CURATE',
-      status: publishedCount > 0 ? 'SUCCESS' : 'PARTIAL',
+      status: publishedCount >= maxPosts ? 'SUCCESS' : publishedCount > 0 ? 'PARTIAL' : 'FAILED',
       details: JSON.stringify({
         topicsUsed: selectedTopics,
         published: publishedCount,
