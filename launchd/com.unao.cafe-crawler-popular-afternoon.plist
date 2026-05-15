@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.unao.cafe-crawler-popular-afternoon</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <!-- node 사용 이유: /bin/bash는 kTCCServiceSystemPolicyDocumentsFolder TCC 미승인 →
+             launchd에서 ~/Documents/ 접근 불가. node는 TCC 승인됨. -->
+        <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/node</string>
+        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/launchd-wrapper.mjs</string>
+        <string>cafe-crawler-popular-afternoon</string>
+        <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx</string>
+        <string>tsx</string>
+        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/popular-sync.ts</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
+
+    <!-- 16:00 KST (popular-sync: 인기글 수집 → GHA popular-curate 16:15에 발행) -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>16</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler-popular-afternoon.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/cafe-crawler-popular-afternoon-error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+        <key>HOME</key>
+        <string>/Users/yanadoo</string>
+    </dict>
+</dict>
+</plist>

@@ -1,21 +1,10 @@
-// LOCAL ONLY — 카페 콘텐츠 큐레이션은 크롤링 데이터 의존, 로컬 실행
-/**
- * 콘텐츠 큐레이터
- * 카페 트렌드 분석 결과를 기반으로 우나어 페르소나가 쓸 글/댓글을 생성
- * 원본 복붙 X → 주제와 감정만 참고해 오리지널 콘텐츠 작성
+/** popular-curator.ts 전용 공유 상수 + 순수 함수
+ * content-curator.ts는 module-level auto-run(main().catch)이 있어 import 불가 (BUG-3).
+ * 이 파일에는 side-effect 없는 순수 함수와 상수만 포함.
  */
-import Anthropic from '@anthropic-ai/sdk'
-import { prisma, disconnect } from '../core/db.js'
-import { notifySlack, sendSlackMessage } from '../core/notifier.js'
-import { getBotUser } from '../seed/generator.js'
-import type { CuratedContent } from './types.js'
-import { loadTodayBrief } from './daily-brief.js'
 
-const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
-const client = new Anthropic()
-
-/** 네이버 카페 텍스트의 lone surrogate 문자 제거 (Anthropic API JSON 직렬화 오류 방지) */
-function sanitizeForApi(text: string): string {
+/** 네이버 카페 텍스트의 lone surrogate 문자 제거 */
+export function sanitizeForApi(text: string): string {
   return text
     .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
     .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
@@ -23,7 +12,7 @@ function sanitizeForApi(text: string): string {
 }
 
 /** AI 응답에서 마크다운 문법 제거 */
-function stripMarkdown(text: string): string {
+export function stripMarkdown(text: string): string {
   return text
     .replace(/#{1,6}\s?/g, '')
     .replace(/\*\*(.+?)\*\*/g, '$1')
@@ -39,8 +28,8 @@ function stripMarkdown(text: string): string {
     .trim()
 }
 
-/** KST 현재 날짜/요일/시간대 (GitHub Actions UTC 보정) */
-function getKstContext(): string {
+/** KST 현재 날짜/요일/시간대 */
+export function getKstContext(): string {
   const kst = new Date(Date.now() + 9 * 60 * 60 * 1000)
   const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
   const day = days[kst.getUTCDay()]
@@ -49,8 +38,7 @@ function getKstContext(): string {
   return `[KST 현재] ${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 ${day} ${timeSlot}\n글에서 날짜/요일/시간대를 언급할 때 반드시 위 기준으로 쓰세요.`
 }
 
-/** 페르소나별 적합 매칭 */
-interface PersonaMatch {
+export interface PersonaMatch {
   id: string
   nickname: string
   board: string
@@ -61,7 +49,7 @@ interface PersonaMatch {
   examples: string[]
 }
 
-const PERSONAS: PersonaMatch[] = [
+export const PERSONAS: PersonaMatch[] = [
   {
     id: 'A', nickname: '하늘바라기', board: 'STORY',
     style: '일상 수다, 시장 이야기, 동네 소식',
@@ -467,8 +455,7 @@ const PERSONAS: PersonaMatch[] = [
   },
 ]
 
-// 욕망별 우선 페르소나 (매칭 실패 시 폴백용)
-const DESIRE_PERSONA_MAP: Record<string, string[]> = {
+export const DESIRE_PERSONA_MAP: Record<string, string[]> = {
   HEALTH:    ['H', 'A'],
   FAMILY:    ['L', 'E'],
   MONEY:     ['B', 'A'],
@@ -489,43 +476,7 @@ const DESIRE_PERSONA_MAP: Record<string, string[]> = {
   GENERAL:   ['A', 'E', 'G'],
 }
 
-/** 트렌드 주제에 가장 적합한 페르소나 매칭 */
-function matchPersona(topic: string, desireCat?: string): PersonaMatch {
-  const topicLower = topic.toLowerCase()
-
-  // 토픽 키워드와 페르소나 관심사 매칭
-  let bestMatch = PERSONAS[0]
-  let bestScore = 0
-
-  for (const persona of PERSONAS) {
-    let score = 0
-    for (const t of persona.topics) {
-      if (topicLower.includes(t) || t.includes(topicLower)) {
-        score += 2
-      }
-    }
-    // 스타일 매칭
-    if (persona.style.toLowerCase().includes(topicLower)) score += 1
-
-    if (score > bestScore) {
-      bestScore = score
-      bestMatch = persona
-    }
-  }
-
-  // 매칭 안 되면 욕망 카테고리 기반 폴백 (B13 — A/E/G 편중 제거)
-  if (bestScore === 0) {
-    const fallbackIds = DESIRE_PERSONA_MAP[desireCat ?? 'GENERAL'] ?? DESIRE_PERSONA_MAP['GENERAL']
-    const fallbackId = fallbackIds[Math.floor(Math.random() * fallbackIds.length)]
-    bestMatch = PERSONAS.find(p => p.id === fallbackId) ?? PERSONAS[0]
-  }
-
-  return bestMatch
-}
-
-// 욕망 → boardType + category 통합 매핑 (B21/B23/B26 통합 수정)
-// generator.ts categoryMap과 반드시 일치: STORY=['건강','가족','취미','고민','자유수다'] HUMOR=['유머·웃음','엔터·TV','추천·리뷰','기타'] LIFE2=['은퇴준비','재테크·연금','보험','주거·이사']
-const DESIRE_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR' | 'LIFE2' | 'JOB'; category: string }> = {
+export const DESIRE_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR' | 'LIFE2' | 'JOB'; category: string }> = {
   HEALTH:    { boardType: 'STORY', category: '건강' },
   BEAUTY:    { boardType: 'STORY', category: '건강' },
   FAMILY:    { boardType: 'STORY', category: '가족' },
@@ -547,370 +498,55 @@ const DESIRE_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR' | 'LIFE2' |
   GENERAL:   { boardType: 'STORY', category: '자유수다' },
 }
 
-/** 참고용 원본 글 가져오기 — 3단계 fallback (B19+B24)
- * 1단계: 48h + 키워드 / 2단계: 7일 + 키워드 / 3단계: 7일 + desireCategory만
- */
-async function getReferencePosts(topic: string, desireCat: string, limit: number) {
-  const base = { isUsable: true, usedAt: null, isPopular: false }
-  const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
-  const firstWord = topicWords[0] ?? topic
-  const selectFields = { id: true, title: true, content: true, cafeName: true } as const
-
-  // 1단계: 48h + 키워드
-  const cutoff48h = new Date(Date.now() - 48 * 3600_000)
-  const stage1 = await prisma.cafePost.findMany({
-    where: { ...base, postedAt: { gte: cutoff48h }, OR: [{ title: { contains: firstWord, mode: 'insensitive' } }, { topics: { hasSome: topicWords } }] },
-    orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
-    take: limit, select: selectFields,
-  })
-  if (stage1.length >= limit) return stage1
-
-  // 2단계: 7일 + 키워드
-  const cutoff7d = new Date(Date.now() - 7 * 24 * 3600_000)
-  const stage2 = await prisma.cafePost.findMany({
-    where: { ...base, postedAt: { gte: cutoff7d }, OR: [{ title: { contains: firstWord, mode: 'insensitive' } }, { topics: { hasSome: topicWords } }] },
-    orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
-    take: limit, select: selectFields,
-  })
-  if (stage2.length >= limit) return stage2
-
-  // 3단계: 7일 + desireCategory만 (키워드 없이)
-  const stage3 = await prisma.cafePost.findMany({
-    where: { ...base, postedAt: { gte: cutoff7d }, ...(desireCat !== 'GENERAL' ? { desireCategory: desireCat } : {}) },
-    orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
-    take: limit, select: selectFields,
-  })
-  return stage3
+const DESIRE_KEYWORDS: Record<string, string[]> = {
+  HEALTH:   ['건강', '병원', '약', '증상', '통증', '다이어트', '운동', '혈압', '당뇨', '갱년기', '검진'],
+  FAMILY:   ['자녀', '아들', '딸', '남편', '며느리', '손주', '부모', '시어머니', '가족', '부부'],
+  MONEY:    ['돈', '재테크', '연금', '절약', '투자', '부동산', '물가', '주식', '적금', '노후'],
+  RETIRE:   ['은퇴', '퇴직', '노후', '일자리', '재취업', '인생2막', '정년'],
+  RELATION: ['친구', '모임', '갈등', '화해', '관계', '이웃', '섭섭'],
+  HOBBY:    ['취미', '여행', '등산', '텃밭', '독서', '공예', '수영', '골프', '바둑', '자전거', '캠핑', '낚시', '뜨개질', '서예', '그림', '꽃꽂이'],
+  MEANING:  ['삶', '의미', '행복', '감사', '성찰', '기억', '회고'],
+  HUMOR:    ['웃긴', '황당', '유머', '재미', '웃음'],
+  ENTERTAIN:['드라마', '예능', '연예인', '배우', '아이돌', 'TV', '방송', '넷플릭스', '유튜브'],
+  BEAUTY:   ['피부', '미용', '성형', '뷰티', '보톡스', '화장품', '피부과', '안티에이징'],
+  DIGITAL:  ['스마트폰', '앱', '유튜브', '카카오', '키오스크', 'SNS', '유튜버', '인터넷'],
+  FOOD:     ['맛집', '요리', '음식', '식당', '레시피', '먹방', '건강식', '식단'],
+  SPIRITUAL:['종교', '기도', '사주', '운세', '교회', '절', '성당', '명상', '불교'],
+  HOUSING:  ['집', '이사', '인테리어', '전세', '월세', '아파트', '청약', '주거'],
+  FASHION:  ['옷', '패션', '스타일', '코디', '쇼핑', '명품', '브랜드'],
+  PET:      ['강아지', '고양이', '반려견', '반려묘', '동물병원', '펫', '반려동물'],
 }
 
-/** 큐레이션된 글 생성 */
-async function generateCuratedPost(
-  persona: PersonaMatch,
-  topic: string,
-  referencePosts: { id: string; title: string; content: string; cafeName: string }[],
-  desireCat?: string,
-): Promise<CuratedContent | null> {
-  const references = referencePosts.map((p, i) =>
-    `인기글 ${i + 1} (${p.cafeName}): "${sanitizeForApi(p.title)}"\n${sanitizeForApi(p.content.slice(0, 400))}`,
-  ).join('\n\n')
+/** 트렌드 주제에 가장 적합한 페르소나 매칭 */
+export function matchPersona(topic: string, desireCat?: string): PersonaMatch {
+  const topicLower = topic.toLowerCase()
+  let bestMatch = PERSONAS[0]
+  let bestScore = 0
 
-  const quirksStr = persona.quirks.map(q => `- ${q}`).join('\n')
-  const examplesStr = persona.examples.map(e => `"${e}"`).join('\n')
-
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 900,
-    system: `${getKstContext()}
-
-당신은 "${persona.nickname}" (50~60대 커뮤니티 회원)입니다.
-성격/스타일: ${persona.style}
-말투: ${persona.patterns.join(', ')}
-
-[글쓰기 습관 — 반드시 지킬 것]
-${quirksStr}
-
-[당신이 실제로 쓰는 글 예시 — 이 톤과 스타일을 유지하세요]
-${examplesStr}
-
-[수미상관 방식으로 글 쓰기 — 원본 90% 보존]
-- 원본 카페 글의 핵심 내용(상황·사건·수치·정보)을 90% 그대로 살리세요
-- 첫 문장: 당신 "${persona.nickname}" 말투로 시작 (공감·감탄·질문 중 하나)
-- 마지막 문장: 당신 말투로 자연스럽게 마무리 (응원·공감·경험 한 줄)
-- 중간 내용: 원본의 핵심 정보를 자신의 말투로 자연스럽게 전달 (재구성·재해석 금지)
-- 식당명·연예인명·프로그램명·지역명·음식명·수치 등 고유명사는 반드시 원본 그대로 사용
-
-[절대 하지 않는 것]
-- "시니어", "액티브 시니어" 표현 금지
-- 마크다운 문법(**, ##, *, _ 등) 금지. 순수 텍스트만.
-- 정치/종교/혐오/광고 금지
-- 오프라인 모임 모집 글 금지 ("같이 걸어요", "이번 수요일 모여요" 등)
-- "어떤 드라마", "어느 식당" 식으로 추상적으로 쓰지 말 것 → 반드시 실제 이름 특정`,
-    messages: [{
-      role: 'user',
-      content: `"${topic}" 주제로 글을 써주세요.
-
-${references ? `[원본 카페 글 — 수미상관으로 재가공]\n${references}` : ''}
-
-응답 형식:
-제목: (15~30자, 당신 말투로)
-본문: (150~400자, 문단 2~3개)`,
-    }],
-  })
-
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
-  const titleMatch = text.match(/제목:\s*(.+)/)
-  const bodyMatch = text.match(/본문:\s*([\s\S]+)/)
-
-  if (!titleMatch || !bodyMatch) return null
-
-  // boardType + category는 DESIRE_TO_BOARD에서 결정 (B21/B23/B26 통합 수정)
-  const boardInfo = DESIRE_TO_BOARD[desireCat ?? 'GENERAL'] ?? DESIRE_TO_BOARD['GENERAL']
-
-  return {
-    personaId: persona.id,
-    title: stripMarkdown(titleMatch[1].trim()),
-    content: stripMarkdown(bodyMatch[1].trim()),
-    boardType: boardInfo.boardType,
-    category: boardInfo.category,
-    sourceTopic: topic,
-    sourcePostIds: referencePosts.map(p => p.id),
+  for (const persona of PERSONAS) {
+    let score = 0
+    for (const t of persona.topics) {
+      if (topicLower.includes(t) || t.includes(topicLower)) score += 2
+    }
+    if (persona.style.toLowerCase().includes(topicLower)) score += 1
+    if (score > bestScore) { bestScore = score; bestMatch = persona }
   }
+
+  if (bestScore === 0) {
+    const fallbackIds = DESIRE_PERSONA_MAP[desireCat ?? 'GENERAL'] ?? DESIRE_PERSONA_MAP['GENERAL']
+    const fallbackId = fallbackIds[Math.floor(Math.random() * fallbackIds.length)]
+    bestMatch = PERSONAS.find(p => p.id === fallbackId) ?? PERSONAS[0]
+  }
+
+  return bestMatch
 }
 
-/** 큐레이션 글을 DB에 게시, 생성된 postId 반환 */
-async function publishCuratedContent(curated: CuratedContent): Promise<string | null> {
-  const userId = await getBotUser(curated.personaId)
-
-  const htmlContent = `<p>${curated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
-  const summary = curated.content.replace(/\n/g, ' ').slice(0, 150).trim()
-
-  // post 생성 + cafePost usedAt 마킹을 트랜잭션으로 묶어 원자성 보장
-  const postId = await prisma.$transaction(async (tx) => {
-    const post = await tx.post.create({
-      data: {
-        title: curated.title,
-        content: htmlContent,
-        summary,
-        boardType: curated.boardType as 'STORY' | 'HUMOR' | 'LIFE2' | 'JOB',
-        category: curated.category ?? '자유수다',
-        authorId: userId,
-        source: 'BOT',
-        status: 'PUBLISHED',
-        publishedAt: new Date(),
-      },
-    })
-    if (curated.sourcePostIds.length > 0) {
-      await tx.cafePost.updateMany({
-        where: { id: { in: curated.sourcePostIds } },
-        data: { usedAt: new Date() },
-      })
-    }
-    return post.id
-  })
-
-  return postId
+/** 글 제목으로 욕망 카테고리 추론 */
+export function guessDesire(topicStr: string | null | undefined): string {
+  if (!topicStr) return 'GENERAL'
+  const lower = topicStr.toLowerCase()
+  for (const [cat, keywords] of Object.entries(DESIRE_KEYWORDS)) {
+    if (keywords.some(kw => lower.includes(kw))) return cat
+  }
+  return 'GENERAL'
 }
-
-/** 댓글 파동 큐 등록 (wave1: +1분, wave2: +5분, wave3: +30분, wave4: +60분) */
-async function enqueueCommentWave(postId: string, cafePostId: string, authorPersonaId: string) {
-  const now = new Date()
-  await prisma.commentWaveQueue.create({
-    data: {
-      postId,
-      cafePostId,
-      authorPersonaId,
-      wave1At: new Date(now.getTime() + 60_000),
-      wave2At: new Date(now.getTime() + 300_000),
-      wave3At: new Date(now.getTime() + 1_800_000),
-      wave4At: new Date(now.getTime() + 3_600_000),
-      expiresAt: new Date(now.getTime() + 216_000_000), // 60시간
-    },
-  })
-}
-
-/** 메인 실행 */
-async function main() {
-  console.log('[ContentCurator] 시작 — 트렌드 기반 콘텐츠 큐레이션')
-  const startTime = Date.now()
-
-  // 1) 핫토픽 조회 (오늘 트렌드 → 어제 → 최근 순으로 fallback)
-  const { hotTopics, desireMap: trendDesireMap, source: briefSource } = await loadTodayBrief()
-  if (!hotTopics || hotTopics.length === 0) {
-    console.log(`[ContentCurator] 핫토픽 없음 (source: ${briefSource}) — 트렌드 분석 먼저 필요`)
-    await disconnect()
-    return
-  }
-  console.log(`[ContentCurator] 핫토픽 ${hotTopics.length}개 로드 (source: ${briefSource})`)
-  // DailyBrief fallback 경고 (B12) — 오늘 데이터 없음 → 욕망 신뢰도 낮음
-  if (briefSource === 'yesterday_trend' || briefSource === 'recent_trend') {
-    await sendSlackMessage('SYSTEM', `[큐레이션] DailyBrief fallback 모드 (source=${briefSource}) — 오늘 트렌드 없음, 욕망 데이터 신뢰도 낮음`)
-  }
-
-  // 2) 카테고리 다양화 — desireMap 기반으로 HEALTH 독점 방지
-  const maxPosts = 5
-  let publishedCount = 0
-
-  // 오늘 이미 발행된 욕망 집계 — 시간당 동일 욕망 반복 방지 (B20)
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  const todayUsedPosts = await prisma.cafePost.findMany({
-    where: { usedAt: { gte: todayStart } },
-    select: { desireCategory: true },
-  })
-  const desireUsedCount: Record<string, number> = {}
-  for (const { desireCategory } of todayUsedPosts) {
-    const key = desireCategory ?? 'GENERAL'
-    desireUsedCount[key] = (desireUsedCount[key] ?? 0) + 1
-  }
-  // 욕망별 하루 최대 발행 수 (75건/일 기준 30%/15%/8%)
-  const MAX_PER_DESIRE: Partial<Record<string, number>> = { HEALTH: 22, FAMILY: 11, MONEY: 6 }
-  const DEFAULT_MAX_DESIRE = 6
-
-  // 욕망 카테고리 키워드 매핑 (hotTopic 분류용)
-  const DESIRE_KEYWORDS: Record<string, string[]> = {
-    HEALTH:   ['건강', '병원', '약', '증상', '통증', '다이어트', '운동', '혈압', '당뇨', '갱년기', '검진'],
-    FAMILY:   ['자녀', '아들', '딸', '남편', '며느리', '손주', '부모', '시어머니', '가족', '부부'],
-    MONEY:    ['돈', '재테크', '연금', '절약', '투자', '부동산', '물가', '주식', '적금', '노후'],
-    RETIRE:   ['은퇴', '퇴직', '노후', '일자리', '재취업', '인생2막', '정년'],
-    RELATION: ['친구', '모임', '갈등', '화해', '관계', '이웃', '섭섭'],
-    HOBBY:    ['취미', '여행', '등산', '텃밭', '독서', '공예', '수영', '골프', '바둑', '자전거', '캠핑', '낚시', '뜨개질', '서예', '그림', '꽃꽂이'],
-    MEANING:  ['삶', '의미', '행복', '감사', '성찰', '기억', '회고'],
-    HUMOR:    ['웃긴', '황당', '유머', '재미', '웃음', '황당'],
-    ENTERTAIN:['드라마', '예능', '연예인', '배우', '아이돌', 'TV', '방송', '넷플릭스', '유튜브'],
-    BEAUTY:   ['피부', '미용', '성형', '뷰티', '보톡스', '화장품', '피부과', '안티에이징'],
-    DIGITAL:  ['스마트폰', '앱', '유튜브', '카카오', '키오스크', 'SNS', '유튜버', '인터넷'],
-    FOOD:     ['맛집', '요리', '음식', '식당', '레시피', '먹방', '건강식', '식단'],
-    SPIRITUAL:['종교', '기도', '사주', '운세', '교회', '절', '성당', '명상', '불교'],
-    HOUSING:  ['집', '이사', '인테리어', '전세', '월세', '아파트', '청약', '주거'],
-    FASHION:  ['옷', '패션', '스타일', '코디', '쇼핑', '명품', '브랜드'],
-    PET:      ['강아지', '고양이', '반려견', '반려묘', '동물병원', '펫', '반려동물'],
-  }
-
-  function guessDesire(topicStr: string | null | undefined): string {
-    if (!topicStr) return 'GENERAL'
-    const lower = topicStr.toLowerCase()
-    for (const [cat, keywords] of Object.entries(DESIRE_KEYWORDS)) {
-      if (keywords.some(kw => lower.includes(kw))) return cat
-    }
-    return 'GENERAL'
-  }
-
-  function isDesireExhausted(desire: string): boolean {
-    return (desireUsedCount[desire] ?? 0) >= (MAX_PER_DESIRE[desire] ?? DEFAULT_MAX_DESIRE)
-  }
-
-  // desireMap 기반 다양화: HEALTH 30% 상한 적용 후 재정규화 (B10 — 구조적 편중 완화)
-  const DESIRE_CAPS: Partial<Record<string, number>> = { HEALTH: 30 }
-  const rawDesireMap = trendDesireMap ?? {}
-  const cappedMap: Record<string, number> = {}
-  let totalPct = 0
-  for (const [d, pct] of Object.entries(rawDesireMap)) {
-    cappedMap[d] = Math.min(Number(pct), DESIRE_CAPS[d] ?? 100)
-    totalPct += cappedMap[d]
-  }
-  const desireMap: Record<string, number> = {}
-  for (const d of Object.keys(cappedMap)) {
-    desireMap[d] = totalPct > 0 ? (cappedMap[d] / totalPct) * 100 : 0
-  }
-  const topDesires = Object.entries(desireMap).sort(([, a], [, b]) => b - a).map(([k]) => k)
-
-  const categorizedTopics = hotTopics.map(t => ({ ...t, desireCategory: guessDesire(t.topic) }))
-  const selectedTopics: string[] = []
-  const usedCategories = new Set<string>()
-
-  // 1순위: desireMap 순서대로 카테고리별 첫 번째 hotTopic (소진된 욕망 제외)
-  for (const desire of topDesires) {
-    if (selectedTopics.length >= maxPosts) break
-    if (isDesireExhausted(desire)) continue
-    const match = categorizedTopics.find(t => t.desireCategory === desire && !usedCategories.has(desire))
-    if (match) {
-      selectedTopics.push(match.topic)
-      usedCategories.add(desire)
-    }
-  }
-  // 2순위: 미달 시 나머지 hotTopics에서 카테고리 중복 없이 채움 (소진된 욕망 제외)
-  for (const t of categorizedTopics) {
-    if (selectedTopics.length >= maxPosts) break
-    if (isDesireExhausted(t.desireCategory)) continue
-    if (!usedCategories.has(t.desireCategory) && !selectedTopics.includes(t.topic)) {
-      selectedTopics.push(t.topic)
-      usedCategories.add(t.desireCategory)
-    }
-  }
-  // 3순위: 폴백 — 원래 hotTopics 순서
-  for (const t of hotTopics) {
-    if (selectedTopics.length >= maxPosts) break
-    if (!selectedTopics.includes(t.topic)) selectedTopics.push(t.topic)
-  }
-
-  // 01:15 KST 특별 슬롯: 저녁/새벽 감성글 우선 정렬 (killerScore 블록 이전 배치)
-  // kstHour = (getUTCHours() + 9) % 24 → UTC 16시 = (16+9)%24 = 1 = KST 01시
-  const kstHour = (new Date().getUTCHours() + 9) % 24
-  const DAWN_DESIRES = ['MEANING', 'SPIRITUAL', 'RELATION', 'FAMILY']
-  if (kstHour === 1) {
-    selectedTopics.sort((a, b) => {
-      const aIsDawn = DAWN_DESIRES.includes(guessDesire(a))
-      const bIsDawn = DAWN_DESIRES.includes(guessDesire(b))
-      return (bIsDawn ? 1 : 0) - (aIsDawn ? 1 : 0)
-    })
-  }
-
-  // killerScore 우선 삽입 (B3) — 화제성 높은 글 제목을 최우선 주제로
-  const killerPosts = await prisma.cafePost.findMany({
-    where: { killerScore: { gte: 70 }, isUsable: true, usedAt: null, isPopular: false },
-    orderBy: { killerScore: 'desc' },
-    take: 2,
-    select: { title: true },
-  })
-  if (killerPosts.length > 0) {
-    const killerTopics = killerPosts.map(p => p.title).filter(Boolean)
-    const merged = [...killerTopics, ...selectedTopics.filter(t => !killerTopics.includes(t))].slice(0, maxPosts)
-    selectedTopics.splice(0, selectedTopics.length, ...merged)
-    console.log(`[ContentCurator] 킬러글 우선 삽입: ${killerTopics.length}건`)
-  }
-
-  for (const topicStr of selectedTopics) {
-    const desireCat = guessDesire(topicStr)
-    // 하루 한도 소진된 욕망은 스킵 (B20)
-    if (isDesireExhausted(desireCat)) {
-      console.log(`[ContentCurator] "${topicStr}" (${desireCat}) 오늘 한도 초과 — 스킵`)
-      continue
-    }
-
-    const persona = matchPersona(topicStr, desireCat)
-    const refs = await getReferencePosts(topicStr, desireCat, 3)
-
-    console.log(`[ContentCurator] "${topicStr}" (${desireCat}) → ${persona.nickname} (참고글 ${refs.length}개)`)
-
-    const curated = await generateCuratedPost(persona, topicStr, refs, desireCat)
-    if (curated) {
-      const postId = await publishCuratedContent(curated)
-      publishedCount++
-      desireUsedCount[desireCat] = (desireUsedCount[desireCat] ?? 0) + 1
-      console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
-      // 댓글 파동 큐 등록 — refs 없어도 등록 (wave-processor가 fallback 댓글 생성)
-      if (postId) {
-        if (refs.length === 0) {
-          await sendSlackMessage('QA', `[큐레이션] wave 등록: refs 없음 fallback 모드 (topic=${topicStr})`)
-        }
-        await enqueueCommentWave(postId, refs[0]?.id ?? '', persona.id).catch(async (err) => {
-          await sendSlackMessage('QA', `[큐레이션] wave 등록 실패: ${String(err).slice(0, 100)}`)
-          console.error('[ContentCurator] wave 큐 등록 실패:', err)
-        })
-      }
-    }
-  }
-
-  const durationMs = Date.now() - startTime
-
-  // BotLog
-  await prisma.botLog.create({
-    data: {
-      botType: 'CAFE_CRAWLER',
-      action: 'CONTENT_CURATE',
-      status: publishedCount >= maxPosts ? 'SUCCESS' : publishedCount > 0 ? 'PARTIAL' : 'FAILED',
-      details: JSON.stringify({
-        topicsUsed: selectedTopics,
-        published: publishedCount,
-      }),
-      itemCount: publishedCount,
-      executionTimeMs: durationMs,
-    },
-  })
-
-  await notifySlack({
-    level: 'info',
-    agent: 'CONTENT_CURATOR',
-    title: '트렌드 기반 콘텐츠 게시',
-    body: `핫토픽 ${hotTopics.length}개 중 ${publishedCount}개 글 게시`,
-  })
-
-  console.log(`[ContentCurator] 완료 — ${publishedCount}개 게시, ${Math.round(durationMs / 1000)}초`)
-  await disconnect()
-}
-
-main().catch(async (err) => {
-  console.error('[ContentCurator] 치명적 오류:', err)
-  await disconnect()
-  process.exit(1)
-})

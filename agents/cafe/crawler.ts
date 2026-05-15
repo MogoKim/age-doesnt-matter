@@ -554,6 +554,50 @@ async function collectAllArticleUrls(playwrightPage: Page, cafe: CafeConfig): Pr
   return collected
 }
 
+// ─── 인기글 탭 URL 수집 (popular-sync 전용) ──────────────
+
+/** 인기글 탭에서 articleId 목록 수집 */
+async function collectPopularArticleUrls(page: Page, cafe: CafeConfig): Promise<ArticleInfo[]> {
+  const popularBoard = cafe.boards.find(b => b.name.includes('인기글'))
+  if (!popularBoard) {
+    console.log(`[PopularSync] ${cafe.name}: 인기글 게시판 없음 — 스킵`)
+    return []
+  }
+
+  const boardUrl = popularBoard.isPopular
+    ? `${cafe.url}?iframe_url_utf8=%2FCommunityReadTop.nhn%3Fclubid%3D${cafe.numericId}`
+    : `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/${popularBoard.menuId}`
+  const selector = popularBoard.isPopular ? 'a[href*="articleid"]' : 'a[href*="/articles/"]'
+
+  console.log(`[PopularSync] ${cafe.name}: 인기글 탭 수집 시작`)
+  await page.goto(boardUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
+  await sleep(randomDelay(3000, 0.8, 1.5))
+
+  const links = await page.locator(selector).all()
+  const collectedMap = new Map<string, ArticleInfo>()
+
+  for (const link of links) {
+    const href = await link.getAttribute('href')
+    if (!href) continue
+    const match = popularBoard.isPopular
+      ? href.match(/articleid=(\d+)/)
+      : href.match(/\/articles\/(\d+)/)
+    if (match && !collectedMap.has(match[1])) {
+      collectedMap.set(match[1], {
+        articleId: match[1],
+        newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${match[1]}`,
+        oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${match[1]}`,
+        boardName: popularBoard.name,
+        boardCategory: popularBoard.category,
+      })
+    }
+  }
+
+  const articles = Array.from(collectedMap.values())
+  console.log(`[PopularSync] ${cafe.name}: 인기글 ${articles.length}건 수집`)
+  return articles
+}
+
 // ─── 신 형식 크롤링 (f-e URL — iframe 불필요) ─────────────
 
 /** 신 형식 URL에서 글 상세 크롤링 — cafe_main iframe 안에서 콘텐츠 추출 */
@@ -940,6 +984,91 @@ export async function refreshRecentPosts(): Promise<number> {
   await context.close()
   console.log(`[CafeCrawler] 재크롤 완료: ${updated}건 갱신 / ${posts.length}건 확인`)
   return updated
+}
+
+// ─── 인기글 동기화 (popular-sync 전용 — 락파일 없음) ────────
+
+export async function syncPopularPosts(page: Page, cafe: CafeConfig): Promise<{ updated: number; created: number }> {
+  let updated = 0
+  let created = 0
+
+  // Step 0: 해당 카페 isPopular 전체 리셋 (어제 마킹 초기화)
+  await prisma.cafePost.updateMany({
+    where: { cafeId: cafe.id },
+    data: { isPopular: false },
+  })
+
+  const articles = await collectPopularArticleUrls(page, cafe)
+  if (articles.length === 0) return { updated, created }
+
+  for (const article of articles) {
+    try {
+      const numericId = parseInt(article.articleId)
+      const existing = await prisma.cafePost.findFirst({
+        where: { articleId: numericId, cafeId: cafe.id },
+      })
+
+      if (existing) {
+        // Case A: DB에 있는 글 → 재크롤 → killerScore 갱신 + isPopular=true
+        const crawled = await crawlPost(page, article, cafe, false)
+        if (!crawled) continue // 삭제/비공개 → 스킵
+        const newKillerScore = calculateKillerScore(crawled)
+        await prisma.cafePost.update({
+          where: { id: existing.id },
+          data: {
+            viewCount: crawled.viewCount,
+            likeCount: crawled.likeCount,
+            commentCount: crawled.commentCount,
+            killerScore: newKillerScore,
+            isPopular: true,
+            popularUpdatedAt: new Date(),
+          },
+        })
+        updated++
+        console.log(`[PopularSync] ${cafe.name} A-${article.articleId}: killerScore=${newKillerScore} 갱신`)
+      } else {
+        // Case B: DB 없는 글 → /popular 탭 존재 자체가 품질 보증 → isUsable=true로 저장
+        const crawled = await crawlPost(page, article, cafe, false)
+        if (!crawled) continue // 삭제/비공개 → 스킵
+        const qualityScore = calculateQualityScore(crawled)
+        const killerScore = calculateKillerScore(crawled)
+        await prisma.cafePost.create({
+          data: {
+            cafeId: crawled.cafeId,
+            cafeName: crawled.cafeName,
+            postUrl: crawled.postUrl,
+            title: crawled.title,
+            content: crawled.content,
+            author: crawled.author,
+            category: crawled.category,
+            boardName: crawled.boardName,
+            boardCategory: crawled.boardCategory,
+            qualityScore,
+            killerScore,
+            isUsable: true,
+            isPopular: true,
+            popularUpdatedAt: new Date(),
+            likeCount: crawled.likeCount,
+            commentCount: crawled.commentCount,
+            viewCount: crawled.viewCount,
+            postedAt: crawled.postedAt,
+            imageUrls: crawled.imageUrls,
+            videoUrls: crawled.videoUrls,
+            thumbnailUrl: crawled.thumbnailUrl ?? null,
+            mediaCount: crawled.imageUrls.length + crawled.videoUrls.length,
+            articleId: crawled.articleId ?? null,
+          },
+        })
+        created++
+        console.log(`[PopularSync] ${cafe.name} B-${article.articleId}: 신규 저장 (killerScore=${killerScore})`)
+      }
+    } catch (err) {
+      console.warn(`[PopularSync] ${cafe.name} article ${article.articleId} 처리 실패 (스킵):`, err)
+    }
+  }
+
+  console.log(`[PopularSync] ${cafe.name}: 업데이트 ${updated}건, 신규 ${created}건`)
+  return { updated, created }
 }
 
 // ─── 메인 실행 ─────────────────────────────────────────

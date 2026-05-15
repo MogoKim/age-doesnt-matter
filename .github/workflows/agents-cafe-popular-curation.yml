@@ -1,0 +1,47 @@
+name: "Agents — Cafe Popular Curation (10:50 / 16:15 / 21:30 KST)"
+
+on:
+  schedule:
+    - cron: "50 1 * * *"   # 10:50 KST — popular-sync 10:30 완료 20분 후
+    - cron: "15 7 * * *"   # 16:15 KST — popular-sync 16:00 완료 15분 후
+    - cron: "30 12 * * *"  # 21:30 KST — popular-sync 21:15 완료 15분 후
+  workflow_dispatch:
+
+# regular curate와 동일 concurrency group — 동시 실행 방지 (queuing)
+concurrency:
+  group: cafe-hourly-curation
+  cancel-in-progress: false
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}
+  SLACK_CHANNEL_REPORT: ${{ secrets.SLACK_CHANNEL_REPORT }}
+  SLACK_CHANNEL_SYSTEM: ${{ secrets.SLACK_CHANNEL_SYSTEM }}
+  SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
+  NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
+
+jobs:
+  popular-curate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Run Popular Curator (인기글 5건/슬롯)
+        run: cd agents && npx tsx cron/runner.ts cafe_crawler popular-curate

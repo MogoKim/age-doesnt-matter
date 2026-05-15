@@ -59,6 +59,8 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // 매거진: 로컬 launchd(12:30/21:00 KST) + GitHub Actions(16:00 KST) 이중 발행
   'cafe_crawler:magazine-generate': () => import('../cafe/magazine-generator.js').then(async m => { await m.main() }),
   'cafe_crawler:content-curate': () => import('../cafe/content-curator.js').then(() => {}),
+  'cafe_crawler:popular-curate': () => import('../cafe/popular-curator.js').then(() => {}),
+  'cafe_crawler:popular-sync': () => import('../cafe/popular-sync.js').then(() => {}), // DISPATCH ONLY — Mac launchd 전용. GHA 실행 불가 (네이버 Playwright).
   'cafe_crawler:wave-process': () => import('../cafe/wave-processor.js').then(m => m.main()),
   'cafe_crawler:user-post-wave-process': () => import('../cafe/user-post-wave-processor.js').then(m => m.main()),
   'cafe_crawler:brief-monitor': () => import('../cafe/brief-monitor.js').then(() => {}),
