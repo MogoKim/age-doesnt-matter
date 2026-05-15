@@ -162,7 +162,7 @@ export default function HeroSliderClient({ slides }: Props) {
             <button
               type="button"
               onClick={goPrev}
-              className="hidden lg:flex absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/35 transition-colors z-10"
+              className="hidden lg:flex absolute left-3 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/35 transition-colors z-10"
               aria-label="이전 슬라이드"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -172,7 +172,7 @@ export default function HeroSliderClient({ slides }: Props) {
             <button
               type="button"
               onClick={goNext}
-              className="hidden lg:flex absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/35 transition-colors z-10"
+              className="hidden lg:flex absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/35 transition-colors z-10"
               aria-label="다음 슬라이드"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">

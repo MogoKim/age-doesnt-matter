@@ -86,7 +86,7 @@ export default function GNB({ isLoggedIn = false, nickname, unreadCount = 0 }: G
               onChange={(e) => { setQuery(e.target.value); setSearchError('') }}
               aria-label="통합검색"
             />
-            <button type="submit" className="icon-hover flex items-center justify-center w-[44px] h-[44px] rounded-lg text-muted-foreground hover:text-primary-text" aria-label="검색">
+            <button type="submit" className="icon-hover flex items-center justify-center w-[48px] h-[48px] rounded-lg text-muted-foreground hover:text-primary-text" aria-label="검색">
               <IconSearch size={18} />
             </button>
           </form>
@@ -103,7 +103,7 @@ export default function GNB({ isLoggedIn = false, nickname, unreadCount = 0 }: G
           {isLoggedIn ? (
             <>
               <NotificationBadge initialCount={unreadCount} />
-              <Link href="/my" className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-muted-foreground no-underline hover:text-foreground ml-1" aria-label={nickname ? `${nickname} — 내 페이지` : '내 페이지'} title={nickname}>
+              <Link href="/my" className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-muted-foreground no-underline hover:text-foreground ml-1" aria-label={nickname ? `${nickname} — 내 페이지` : '내 페이지'} title={nickname}>
                 <IconUser size={18} />
               </Link>
             </>

@@ -27,7 +27,7 @@ export default function PersonalGreeting({ nickname }: Props) {
         </div>
         <Link
           href="/community/stories"
-          className="shrink-0 inline-flex items-center justify-center px-4 h-[48px] rounded-xl bg-primary text-white font-semibold text-caption no-underline hover:opacity-90 active:scale-95 whitespace-nowrap"
+          className="shrink-0 inline-flex items-center justify-center px-4 h-[52px] rounded-xl bg-primary text-white font-semibold text-caption no-underline hover:opacity-90 active:scale-95 whitespace-nowrap"
         >
           둘러보기
         </Link>

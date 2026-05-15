@@ -14,7 +14,6 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   '/blog':       '/magazine',
   '/write_1st':  '/community/write',
   '/write':      '/community/write',
-  '/faq':        '/about',
 }
 
 // CUID 패턴: 소문자 알파벳+숫자 20~30자 (한글/하이픈 포함 slug와 겹치지 않음)
