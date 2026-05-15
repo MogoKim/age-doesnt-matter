@@ -878,8 +878,12 @@ model CafePost {
   commentCrawled Boolean  @default(false) // 댓글 내용 크롤링 완료 여부
 
   // 전체글보기 dedup + 큐레이션 추적
-  articleId      Int?      // 네이버 게시글 순차 번호 (전체글보기 dedup용)
-  usedAt         DateTime? // 큐레이션 참조 시각 (NULL = 미사용)
+  articleId        Int?      // 네이버 게시글 순차 번호 (전체글보기 dedup용)
+  usedAt           DateTime? // 큐레이션 참조 시각 (NULL = 미사용)
+
+  // 인기글 동기화 (popular-sync)
+  isPopular        Boolean   @default(false) // /popular 탭 수집 후 마킹 (매 sync 시작 시 리셋)
+  popularUpdatedAt DateTime?                 // 마지막 popular-sync 갱신 시각
 
   @@unique([cafeId, articleId])
   @@index([cafeId, crawledAt(sort: Desc)])
