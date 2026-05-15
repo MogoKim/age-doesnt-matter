@@ -1222,22 +1222,26 @@ async function main() {
 
 // 전체 실행 90분 안전망 — 정상 DEEP 크롤 40-50분의 2배 여유
 // context.close() 10초 fix가 핵심이므로 이 timeout은 backup
-const TOTAL_TIMEOUT_MS = 90 * 60 * 1000
-
-Promise.race([
-  main(),
-  new Promise<void>((_, reject) =>
-    setTimeout(() => reject(new Error('CRAWL_TOTAL_TIMEOUT_90MIN')), TOTAL_TIMEOUT_MS)
-  ),
-]).catch(async (err) => {
-  console.error('[CafeCrawler] 치명적 오류:', err)
-  const isTimeout = err instanceof Error && err.message.includes('TIMEOUT')
-  await notifySlack({
-    level: 'critical',
-    agent: 'CAFE_CRAWLER',
-    title: isTimeout ? '카페 크롤링 90분 타임아웃 — 강제 종료' : '카페 크롤링 실패',
-    body: err instanceof Error ? err.message : String(err),
+// popular-sync.ts 등이 syncPopularPosts를 import할 때 main()이 실행되지 않도록 가드
+// run-pipeline.ts는 execFileSync로 subprocess 실행하므로 isDirectRun=true가 됨
+const isDirectRun = Boolean(process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]))
+if (isDirectRun) {
+  const TOTAL_TIMEOUT_MS = 90 * 60 * 1000
+  Promise.race([
+    main(),
+    new Promise<void>((_, reject) =>
+      setTimeout(() => reject(new Error('CRAWL_TOTAL_TIMEOUT_90MIN')), TOTAL_TIMEOUT_MS)
+    ),
+  ]).catch(async (err) => {
+    console.error('[CafeCrawler] 치명적 오류:', err)
+    const isTimeout = err instanceof Error && err.message.includes('TIMEOUT')
+    await notifySlack({
+      level: 'critical',
+      agent: 'CAFE_CRAWLER',
+      title: isTimeout ? '카페 크롤링 90분 타임아웃 — 강제 종료' : '카페 크롤링 실패',
+      body: err instanceof Error ? err.message : String(err),
+    })
+    await Promise.race([disconnect(), new Promise(r => setTimeout(r, 5000))])
+    process.exit(1)
   })
-  await Promise.race([disconnect(), new Promise(r => setTimeout(r, 5000))])
-  process.exit(1)
-})
+}
