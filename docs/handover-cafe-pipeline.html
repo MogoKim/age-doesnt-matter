@@ -548,11 +548,19 @@
         <strong>매일 11:30 — 풀 파이프라인 (하루에 한 번)</strong><br>
         수집한 글을 Claude Haiku로 심리 분석해 욕망(건강·가족·돈·은퇴 등)을 분류합니다.
         그 결과를 Claude Sonnet이 종합해서 "<span class="tooltip">DailyBrief<span class="tooltip-text">매일 생성되는 "오늘의 50·60대 욕망 지도". 이 날의 큐레이션 주제 선택에 활용됩니다.</span></span>"를 만듭니다.
-        큐레이션은 하지 않습니다 — GHA 매시간 실행이 담당합니다. AI 비용 발생, 40~60분 소요.
+        <strong>큐레이션은 하지 않습니다</strong> — GHA 매시간 실행이 담당합니다. AI 비용 발생, 40~60분 소요.
       </p>
+      <div class="alert info" style="margin:8px 0 12px;">
+        <strong>왜 11:30 크롤러에서 큐레이션을 안 하나요?</strong><br>
+        크롤러(Mac)와 큐레이션(GHA 서버)을 <strong>의도적으로 분리</strong>해 설계했습니다.
+        Mac이 꺼지거나 재시작되면 크롤러가 멈추는데, 만약 큐레이션까지 묶으면 Mac이 죽을 때 우나어 게시글 발행도 같이 멈춥니다.
+        GHA 서버는 Mac과 무관하게 항상 돌아가므로, 큐레이션·댓글·시드봇을 GHA에 위임하면 <strong>Mac 꺼짐 → 발행 중단 리스크가 제거</strong>됩니다.
+        크롤러는 "재료 창고 채우기", GHA hourly는 "요리해서 상에 올리기"로 역할을 나눈 겁니다.
+      </div>
       <p>
         <strong>15:30 · 21:30 — 오후/저녁 추가 크롤</strong><br>
-        낮·저녁 동안 새로 올라온 글을 추가 수집합니다. 분석이나 큐레이션은 하지 않습니다.
+        낮·저녁 동안 새로 올라온 글을 추가 수집해 DB에 쌓습니다. 분석·큐레이션은 하지 않습니다.
+        이 시간에도 GHA hourly-curation은 독립적으로 매시간 돌고 있어서, 방금 수집된 글이 DB에 들어오면 다음 시간 큐레이션에 자동으로 포함됩니다.
       </p>
     </div>
 
@@ -576,7 +584,48 @@
       </p>
     </div>
 
-    <div class="alert info">
+    <div class="card mt16" style="border-color:rgba(99,102,241,0.3); background:rgba(99,102,241,0.05);">
+      <div class="card-title" style="color:#818cf8; margin-bottom:14px;">🔄 크롤 → 큐레이션 → 발행 전체 플로우</div>
+      <div class="flow-diagram" style="flex-wrap:wrap; align-items:flex-start; gap:6px;">
+        <div class="flow-box" style="min-width:130px;">
+          <span class="flow-label">Mac launchd (4회/일)</span>
+          크롤러 실행
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box" style="min-width:150px;">
+          <span class="flow-label">즉시 (저장 시)</span>
+          qualityScore 계산<br>
+          <span style="font-size:11px; color:var(--muted);">≥30: isUsable=true<br>20~29: 보관만<br>&lt;20: 버림</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box" style="min-width:150px; border-color:rgba(74,222,128,0.4);">
+          <span class="flow-label">GHA hourly (09~23시 매시간)</span>
+          isUsable=true 5건 선별<br>
+          <span style="font-size:11px; color:var(--muted);">killerScore≥70 우선<br>욕망별 하드캡 적용</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box" style="min-width:140px; border-color:rgba(74,222,128,0.4);">
+          <span class="flow-label">Claude Haiku/Sonnet</span>
+          수미상관 재작성<br>
+          <span style="font-size:11px; color:var(--muted);">첫·끝 문장 페르소나 말투<br>본문 90% 원문 유지</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box" style="min-width:130px; border-color:rgba(250,204,21,0.4);">
+          <span class="flow-label">페르소나 계정</span>
+          우나어에 게시글 발행
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box" style="min-width:130px; border-color:rgba(251,146,60,0.4);">
+          <span class="flow-label">5분마다 (24시간)</span>
+          CommentWave 댓글 순차 게시
+        </div>
+      </div>
+      <p style="font-size:12px; color:var(--muted); margin:10px 0 0;">
+        ⚡ 크롤러(재료 창고)와 큐레이션(요리·발행)은 완전히 독립. Mac이 꺼져도 DB에 쌓인 글로 큐레이션·발행은 계속됩니다.
+      </p>
+    </div>
+
+    <div class="alert info" style="margin-top:16px;">
       <strong>Mac이 꺼져도 괜찮나요?</strong>
       네. Mac이 꺼지면 크롤(원본 수집)만 못 하고, 큐레이션·댓글·시드봇 활동은 GHA가 계속 처리합니다.
       DB에 쌓인 원본으로 큐레이션을 계속할 수 있습니다.
