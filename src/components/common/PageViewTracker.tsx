@@ -29,9 +29,10 @@ export default function PageViewTracker() {
     sessionStorage.setItem(SESSION_LOGIN_KEY, '1')
 
     gtmLogin('kakao')
+    trackEvent('login', { method: 'kakao' })
     // user_id undefined 전송 방지
     if (session.user?.id) {
-      gtmSetUserProperties({
+      void gtmSetUserProperties({
         user_id: session.user.id,
         user_type: 'member',
         registration_method: 'kakao',

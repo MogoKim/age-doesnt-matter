@@ -9,6 +9,7 @@ import { toggleGuestPostLike } from '@/lib/actions/guest-likes'
 import { useToast } from '@/components/common/Toast'
 import { shareToKakao, copyShareLink, KakaoUnavailableError } from '@/lib/kakao-share'
 import { gtmLike, gtmShare } from '@/lib/gtm'
+import { trackEvent } from '@/lib/track'
 import { IconHeart, IconBookmark, IconShare, IconFlag, IconKakao, IconCopy } from '@/components/icons'
 const ReportModal = dynamic(() => import('./ReportModal'))
 const LoginPromptModal = dynamic(() => import('@/components/features/auth/LoginPromptModal'))
@@ -59,6 +60,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
           toast(result.error, 'error')
         } else {
           gtmLike('post', postId)
+          trackEvent('like', { content_type: 'post', content_id: postId })
           toast('공감했어요! 회원가입하면 더 많은 활동을 즐길 수 있어요')
         }
       })
@@ -76,6 +78,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
       setHeartAnimating(true)
       setTimeout(() => setHeartAnimating(false), 350)
       gtmLike('post', postId)
+      trackEvent('like', { content_type: 'post', content_id: postId })
     }
 
     startTransition(async () => {

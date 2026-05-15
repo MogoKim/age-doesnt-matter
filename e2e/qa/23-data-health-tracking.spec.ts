@@ -236,9 +236,10 @@ test.describe('/api/events API 기본 동작', () => {
    * api/events/route.ts의 eventName 유효성 검사 로직 검증
    */
   test('T8: 유효한 eventName→200, 빈/긴 eventName→400 @data-health', async ({ request }) => {
-    // 정상
+    // 정상 (x-bot-type 헤더로 EventLog isBot=true 기록 — 실사용자 지표 오염 방지)
     const ok = await request.post('/api/events', {
       data: { eventName: 'qa_smoke_test', path: '/qa' },
+      headers: { 'x-bot-type': 'e2e-test' },
     })
     expect(ok.status(), '/api/events 정상 요청이 200이 아님').toBe(200)
     const okBody = await ok.json() as Record<string, unknown>

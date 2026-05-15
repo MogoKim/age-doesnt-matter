@@ -2,6 +2,7 @@
 
 import { signIn } from 'next-auth/react'
 import { sendGtmEvent, getStoredUtm } from '@/lib/gtm'
+import { trackEvent } from '@/lib/track'
 
 interface Props {
   callbackUrl?: string
@@ -25,6 +26,7 @@ export default function KakaoSignupButton({ callbackUrl = '/', className, style,
     if (gtmFrom) {
       sendGtmEvent('kakao_button_click', { from: gtmFrom, ...getStoredUtm() })
     }
+    trackEvent('kakao_button_click', { from: gtmFrom ?? 'unknown' })
     await signIn('kakao', { callbackUrl: safeCallbackUrl(callbackUrl) })
   }
 

@@ -105,12 +105,14 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
   // 가입 퍼널 추적 — Step 1 진입 (컴포넌트 첫 마운트 시)
   useEffect(() => {
     sendGtmEvent('signup_step', { step: 1, step_name: 'nickname' })
+    trackEvent('signup_step', { step: 1, step_name: 'nickname' })
   }, [])
 
   // 가입 퍼널 추적 — Step 2 진입
   useEffect(() => {
     if (step === 2) {
       sendGtmEvent('signup_step', { step: 2, step_name: 'terms' })
+      trackEvent('signup_step', { step: 2, step_name: 'terms' })
     }
   }, [step])
 
@@ -123,6 +125,10 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     const handleUnload = () => {
       if (!localStorage.getItem('signup_completed_at')) {
         sendGtmEvent('signup_abandoned', {
+          abandoned_at_step: stepRef.current,
+          time_spent_ms: Date.now() - startTime,
+        })
+        trackEvent('signup_abandoned', {
           abandoned_at_step: stepRef.current,
           time_spent_ms: Date.now() - startTime,
         })
@@ -165,6 +171,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
         setSubmitError(result.error)
       } else {
         sendGtmEvent('signup_step', { step: 3, step_name: 'welcome' })
+        trackEvent('signup_step', { step: 3, step_name: 'welcome' })
         setStep(3)
       }
     })

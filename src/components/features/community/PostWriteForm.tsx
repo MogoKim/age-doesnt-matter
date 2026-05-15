@@ -8,6 +8,7 @@ import { createPost, updatePost } from '@/lib/actions/posts'
 import { deleteDraft as deleteDraftAction } from '@/lib/actions/drafts'
 import { useToast } from '@/components/common/Toast'
 import { gtmPostCreate, sendGtmEvent } from '@/lib/gtm'
+import { trackEvent } from '@/lib/track'
 import BottomSheet from '@/components/ui/BottomSheet'
 import { ChevronDown } from 'lucide-react'
 
@@ -176,6 +177,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         board_type: selectedBoard,
         has_draft: !!(title || content),
       })
+      trackEvent('post_create_started', { board_type: selectedBoard })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -275,6 +277,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       } else {
         if (!isEditMode) {
           gtmPostCreate(selectedBoard, selectedCategory)
+          trackEvent('post_create', { board_type: selectedBoard, category: selectedCategory })
           window.dispatchEvent(new CustomEvent('pwa-prompt', { detail: 'engagement' }))
         }
         clearDraft()

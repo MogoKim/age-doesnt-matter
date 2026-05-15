@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { sendGtmEvent } from '@/lib/gtm'
+import { trackEvent } from '@/lib/track'
 
 interface GTMEventOnMountProps {
   event: string
@@ -17,6 +18,7 @@ interface GTMEventOnMountProps {
 export default function GTMEventOnMount({ event, data }: GTMEventOnMountProps) {
   useEffect(() => {
     sendGtmEvent(event, data)
+    trackEvent(event, data)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

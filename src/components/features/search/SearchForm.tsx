@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { IconSearch } from '@/components/icons'
 import { gtmSearch } from '@/lib/gtm'
+import { trackEvent } from '@/lib/track'
 
 const STORAGE_KEY = 'una-recent-searches'
 const MAX_RECENT = 10
@@ -80,6 +81,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
     if (q.length < 2) return
     saveToRecent(q)
     gtmSearch(q)
+    trackEvent('search', { search_term: q })
     router.push(`/search?q=${encodeURIComponent(q)}`)
   }
 
@@ -87,6 +89,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
     setQuery(keyword)
     saveToRecent(keyword)
     gtmSearch(keyword)
+    trackEvent('search', { search_term: keyword })
     router.push(`/search?q=${encodeURIComponent(keyword)}`)
   }
 

@@ -247,23 +247,6 @@ export function gtmShare(method: string, contentType: string, contentId: string)
   })
 }
 
-/** 일자리 상세 조회 */
-export function gtmJobView(jobId: string, jobTitle: string): void {
-  sendEvent('job_view', {
-    job_id: jobId,
-    job_title: jobTitle,
-  })
-}
-
-/** 매거진 상세 조회 */
-export function gtmMagazineView(articleId: string, articleTitle: string, category: string): void {
-  sendEvent('magazine_view', {
-    article_id: articleId,
-    article_title: articleTitle,
-    category,
-  })
-}
-
 /** 광고 클릭 */
 export function gtmAdClick(adSlot: string, adType: string): void {
   sendEvent('ad_click', {
@@ -318,16 +301,17 @@ export function gtmPwaBannerAction(action: 'shown' | 'install' | 'dismissed'): v
   sendEvent('pwa_banner', { action })
 }
 
-/** 사용자 속성 설정 (로그인 후) */
-export function gtmSetUserProperties(props: {
+/** 사용자 속성 설정 (로그인 후) — async: gtag 레이스컨디션 방지 */
+export async function gtmSetUserProperties(props: {
   user_id?: string
   user_type?: 'member' | 'guest'
   registration_method?: string
-}): void {
-  if (typeof window === 'undefined' || !window.gtag) return
+}): Promise<void> {
+  if (typeof window === 'undefined') return
+  await waitForGtagReady(2000)
+  if (!window.gtag) return
   const { user_id, ...userProps } = props
   // user_id는 GA4 User Explorer 연동을 위해 user_properties와 별도 설정
-  // user_properties에 포함하면 커스텀 속성으로만 저장돼 User Explorer 미작동
   if (user_id) {
     window.gtag('set', { user_id })
   }

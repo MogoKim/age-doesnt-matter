@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { verifyAdminToken } from '@/lib/admin-auth'
+import { BOT_UA_PATTERN } from '@/lib/bot-patterns'
 
 // 로그인이 필요한 경로
 const PROTECTED_PATHS = ['/my', '/community/write']
@@ -19,24 +20,21 @@ const LEGACY_REDIRECTS: Record<string, string> = {
 // CUID 패턴: 소문자 알파벳+숫자 20~30자 (한글/하이픈 포함 slug와 겹치지 않음)
 const CUID_PATTERN = /^[a-z0-9]{20,30}$/
 
-// 봇 UA 패턴 — 세션 쿠키 미발급 대상
-const BOT_UA_QUICK = /googlebot|bingbot|yandex|HeadlessChrome|Playwright|node-fetch|python|curl|wget/i
-
 // 비회원 익명 세션 쿠키 — EventLog.sessionId에 저장해 비회원 동선 추적
 // 봇(크롤러/E2E/자동화)에는 발급하지 않아 세션 오염 방지
+// maxAge 30일 슬라이딩 윈도우 — 방문마다 갱신해 "365일 = 1세션" 왜곡 방지
 function addAnonSession(response: NextResponse, request: NextRequest): NextResponse {
   const ua = request.headers.get('user-agent') ?? ''
-  if (BOT_UA_QUICK.test(ua)) return response
+  if (request.headers.has('x-bot-type') || BOT_UA_PATTERN.test(ua)) return response
 
-  if (!request.cookies.get('_anon_sid')) {
-    response.cookies.set('_anon_sid', crypto.randomUUID(), {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 365,
-      secure: process.env.NODE_ENV === 'production',
-    })
-  }
+  const existingSid = request.cookies.get('_anon_sid')?.value
+  response.cookies.set('_anon_sid', existingSid ?? crypto.randomUUID(), {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 30,
+    secure: process.env.NODE_ENV === 'production',
+  })
   return response
 }
 
