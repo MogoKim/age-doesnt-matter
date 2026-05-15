@@ -2459,7 +2459,7 @@
 </tbody></table>
 <hr>
 <h2>10. 페이지 구조</h2>
-<h3>10.1 사용자 페이지 (46개)</h3>
+<h3>10.1 사용자 페이지 (30개)</h3>
 <table>
 <thead>
 <tr>
@@ -2571,6 +2571,22 @@
 <td><code>/offline</code></td>
 <td>오프라인 안내</td>
 </tr>
+<tr>
+<td><code>/grade</code></td>
+<td>회원 등급 안내 (활동 레벨, 혜택)</td>
+</tr>
+<tr>
+<td><code>/landing</code></td>
+<td>랜딩 페이지 (비회원 유입, 서비스 소개)</td>
+</tr>
+<tr>
+<td><code>/community</code></td>
+<td>커뮤니티 인덱스 → <code>/community/stories</code> 리다이렉트</td>
+</tr>
+<tr>
+<td><code>/auth/error</code></td>
+<td>로그인·인증 에러 처리 (NextAuth)</td>
+</tr>
 </tbody></table>
 <h3>10.2 어드민 페이지</h3>
 <table>
@@ -2586,31 +2602,67 @@
 </tr>
 <tr>
 <td><code>/admin</code></td>
-<td>대시보드</td>
+<td>대시보드 (KPI, 봇 상태, 자동화 현황, 긴급 알림)</td>
 </tr>
 <tr>
-<td><code>/admin/members</code></td>
-<td>회원 관리</td>
-</tr>
-<tr>
-<td><code>/admin/content</code></td>
-<td>콘텐츠 관리</td>
-</tr>
-<tr>
-<td><code>/admin/reports</code></td>
-<td>신고 관리</td>
+<td><code>/admin/agents</code></td>
+<td>봇/에이전트 실행 로그</td>
 </tr>
 <tr>
 <td><code>/admin/analytics</code></td>
-<td>분석</td>
+<td>분석 (방문·가입·게시 통계)</td>
+</tr>
+<tr>
+<td><code>/admin/audit-log</code></td>
+<td>관리자 행동 감사 로그</td>
 </tr>
 <tr>
 <td><code>/admin/banners</code></td>
-<td>배너 관리</td>
+<td>배너·광고 슬롯·프로모션 관리</td>
+</tr>
+<tr>
+<td><code>/admin/content</code></td>
+<td>콘텐츠 목록 관리</td>
+</tr>
+<tr>
+<td><code>/admin/content/[id]</code></td>
+<td>콘텐츠 상세 편집</td>
+</tr>
+<tr>
+<td><code>/admin/daily-brief</code></td>
+<td>데일리 브리프 관리</td>
+</tr>
+<tr>
+<td><code>/admin/members</code></td>
+<td>회원 목록·상태·등급 관리</td>
+</tr>
+<tr>
+<td><code>/admin/naver-blog</code></td>
+<td>네이버 블로그 크롤링 큐 관리</td>
+</tr>
+<tr>
+<td><code>/admin/naver-blog/[queueId]</code></td>
+<td>크롤링 큐 상세</td>
+</tr>
+<tr>
+<td><code>/admin/popups</code></td>
+<td>팝업 생성·수정·노출 관리</td>
+</tr>
+<tr>
+<td><code>/admin/push</code></td>
+<td>푸시 알림 브로드캐스트</td>
+</tr>
+<tr>
+<td><code>/admin/queue</code></td>
+<td>에이전트 승인 큐</td>
+</tr>
+<tr>
+<td><code>/admin/reports</code></td>
+<td>신고 목록·처리</td>
 </tr>
 <tr>
 <td><code>/admin/settings</code></td>
-<td>설정 (게시판, 금칙어, 광고)</td>
+<td>설정 (게시판·금칙어·광고)</td>
 </tr>
 </tbody></table>
 <h3>10.3 API 라우트 (17+개)</h3>
