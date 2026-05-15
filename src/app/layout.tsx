@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import Script from 'next/script'
 import { cookies, headers } from 'next/headers'
 import { GTMScript, GTMNoScript } from '@/components/common/GoogleTagManager'
-import { BOT_UA_PATTERN } from '@/lib/bot-patterns'
+import { BOT_UA_PATTERN, BOT_IP_PATTERN } from '@/lib/bot-patterns'
 import { ToastProvider } from '@/components/common/Toast'
 import AuthProvider from '@/components/common/AuthProvider'
 import './globals.css'
@@ -96,7 +96,8 @@ export default function RootLayout({
   const initialFontSize = getInitialFontSize()
   const fontSizeAttr = initialFontSize !== 'NORMAL' ? initialFontSize : undefined
   const headersList = headers()
-  const isBot = headersList.has('x-bot-type') || BOT_UA_PATTERN.test(headersList.get('user-agent') ?? '')
+  const ip = headersList.get('x-real-ip') ?? headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? ''
+  const isBot = headersList.has('x-bot-type') || BOT_UA_PATTERN.test(headersList.get('user-agent') ?? '') || (ip !== '' && BOT_IP_PATTERN.test(ip))
   return (
     <html lang="ko" className={pretendard.variable} {...(fontSizeAttr ? { 'data-font-size': fontSizeAttr } : {})}>
       <head>
