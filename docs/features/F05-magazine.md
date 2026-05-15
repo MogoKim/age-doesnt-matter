@@ -1,6 +1,6 @@
 # 매거진 운영 기획서 (F05 + A02)
 
-> 최초 작성: 2026-04-27 | 최근 수정: 2026-05-12
+> 최초 작성: 2026-04-27 | 최근 수정: 2026-05-15
 
 ---
 
@@ -32,10 +32,10 @@
 09:00 KST — GHA 폴백
   daily-brief-fallback.ts → Mac 미실행 시 어제 DailyBrief 복사
 
-15:00 KST — Mac launchd (SESSION_TIME=morning, IMAGE_GENERATOR=gemini)
+11:00 KST — Mac launchd (SESSION_TIME=morning, IMAGE_GENERATOR=gemini)
   local-magazine-runner.ts → magazine-generator.ts → 1~2편 발행
 
-17:00 KST — Mac launchd (SESSION_TIME=late, IMAGE_GENERATOR=gemini)
+14:00 KST — Mac launchd (SESSION_TIME=late, IMAGE_GENERATOR=gemini)
   local-magazine-runner.ts → magazine-generator.ts → 최종 Slack 알림
 ```
 
@@ -66,9 +66,11 @@
 | 2 | Unsplash | API (FOOD/SCENE/OBJECT만) | $0 |
 | 3 | DALL-E 3 | OpenAI API (현재 비활성) | $0.04/장 |
 
-### 카테고리 (8개)
+### 카테고리 (12개)
 
-건강 / 재테크 / 은퇴준비 / 일자리 / 생활 / 여행 / 문화 / 요리
+건강 / 재테크 / 은퇴준비 / 일자리 / 생활 / 여행 / 문화 / 요리 / 관계 / 취미 / 패션 / 집꾸미기
+
+> 기본 8개(magazine-generator.ts)에 시리즈 전용 4개(series-plan.ts) 추가
 
 ### 연간 시리즈 계획
 
@@ -79,7 +81,7 @@
 ### SEO 처리
 
 - slug 자동 생성 (한글 키워드 기반)
-- CUID 접근 시 slug로 308 영구 리다이렉트
+- CUID 접근 시 slug로 301 영구 리다이렉트 (2026-05-13 308→301 변경)
 - Article + FAQ + Breadcrumb JSON-LD 자동 생성
 - 발행 즉시 Google Indexing API 요청
 
@@ -87,7 +89,7 @@
 
 | 위치 | 광고 |
 |------|------|
-| 목록 FeaturedCard 아래 | AdSense IN_FEED (5592036395) |
+| 목록 4번째 카드 아래 (index=3) | AdSense IN_FEED (5592036395) |
 | 목록 8번째 카드 아래 | 쿠팡 배너 320×100 |
 | 상세 본문 아래 | AdSense IN_ARTICLE (2965873058) |
 | 상세 CPS 아래 | 쿠팡 검색 위젯 iframe |
@@ -105,7 +107,8 @@
 - CPS 매칭: `agents/cafe/cps-matcher.ts`
 - 목록 페이지: `src/app/(main)/magazine/page.tsx`
 - 상세 페이지: `src/app/(main)/magazine/[id]/page.tsx`
-- launchd plists: `~/Library/LaunchAgents/com.unaeo.magazine-*.plist`
+- launchd plists 소스: `launchd/com.unaeo.magazine-{morning,late}.plist`
+- launchd plists 실행: `~/Library/LaunchAgents/com.unaeo.magazine-{morning,late}.plist`
 - DB 모델: `prisma/schema.prisma` — Post (boardType=MAGAZINE), CpsLink, CafeTrend, DailyBrief
 
 ---
@@ -136,6 +139,7 @@
 | 2026-05-12 | 카드 gap `flex flex-col gap-4 mt-4`→`space-y-3 mt-4`, 컨테이너 max-w-[960px] 추가 | 6개 게시판 레이아웃 통일 |
 | 2026-05-13 | plist Hour 값 수정 (morning: 2→11, late: 5→14 KST) + afternoon plist 제거 | Mac timezone=KST인데 Hour를 UTC로 잘못 설정해 02:00/05:00 KST에 잘못 실행되던 문제 수정 |
 | 2026-05-14 | getRelatedMagazinePosts limit 3→5 — 상세 하단 추천글 5개로 확장 | 연속읽기 흐름 강화 |
+| 2026-05-15 | 기획서 실제 코드 동기화: 스케줄 15:00/17:00→11:00/14:00 KST, 카테고리 8→12개, SEO 308→301, 광고위치 명확화, launchd 소스경로 추가, launchd 소스파일 Hour 값 수정(2→11, 5→14), afternoon plist 삭제 | 딥다이브 검수 결과 기획서-코드 불일치 수정 |
 
 ---
 
