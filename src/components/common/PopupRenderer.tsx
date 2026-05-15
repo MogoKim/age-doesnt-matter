@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 interface PopupData {
   id: string
@@ -240,7 +241,7 @@ function PopupBody({ popup, onClick }: { popup: PopupData; onClick: () => void }
       {popup.content && (
         <div
           className="text-body text-foreground leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: popup.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(popup.content) }}
         />
       )}
     </div>

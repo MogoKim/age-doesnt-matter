@@ -40,6 +40,11 @@ const ACTION_LABELS: Record<string, string> = {
   ADMIN_QUEUE_APPROVE: '에이전트 큐 승인',
   ADMIN_QUEUE_REJECT: '에이전트 큐 거부',
   AUTOMATION_TOGGLE: '자동화 ON/OFF',
+  POPUP_CREATE: '팝업 생성',
+  POPUP_UPDATE: '팝업 수정',
+  POPUP_ACTIVATE: '팝업 활성화',
+  POPUP_DEACTIVATE: '팝업 비활성화',
+  POPUP_DELETE: '팝업 삭제',
 }
 
 interface AuditLog {

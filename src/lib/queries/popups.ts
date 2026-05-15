@@ -58,6 +58,8 @@ function matchesPath(popup: PopupData, path: string): boolean {
       return path.startsWith('/jobs')
     case 'MAGAZINE':
       return path.startsWith('/magazine')
+    case 'LIFE2':
+      return path.startsWith('/life2')
     case 'CUSTOM':
       return popup.targetPaths.some((tp) => path.startsWith(tp))
     default:

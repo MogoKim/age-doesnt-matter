@@ -23,6 +23,21 @@ const TARGET_LABELS: Record<string, string> = {
   CUSTOM: '커스텀 경로',
 }
 
+function getPopupStatus(popup: Popup): 'LIVE' | 'PENDING' | 'EXPIRED' | 'INACTIVE' {
+  if (!popup.isActive) return 'INACTIVE'
+  const now = new Date()
+  if (new Date(popup.startDate) > now) return 'PENDING'
+  if (new Date(popup.endDate) < now) return 'EXPIRED'
+  return 'LIVE'
+}
+
+const STATUS_MAP: Record<string, { label: string; cls: string }> = {
+  LIVE:     { label: '노출중',  cls: 'bg-green-100 text-green-700' },
+  PENDING:  { label: '대기중',  cls: 'bg-blue-100 text-blue-700' },
+  EXPIRED:  { label: '만료됨',  cls: 'bg-orange-100 text-orange-700' },
+  INACTIVE: { label: '비활성', cls: 'bg-gray-100 text-gray-500' },
+}
+
 interface Props {
   popups: Popup[]
 }
@@ -33,12 +48,24 @@ export default function PopupManager({ popups }: Props) {
   const [isPending, startTransition] = useTransition()
 
   function handleToggle(id: string, isActive: boolean) {
-    startTransition(() => togglePopupActive(id, !isActive))
+    startTransition(async () => {
+      try {
+        await togglePopupActive(id, !isActive)
+      } catch (err) {
+        alert(err instanceof Error ? err.message : '상태 변경에 실패했습니다.')
+      }
+    })
   }
 
   function handleDelete(id: string) {
-    if (!confirm('정말 삭제하시겠습니까?')) return
-    startTransition(() => deletePopup(id))
+    if (!confirm('이 팝업을 삭제하시겠습니까? 되돌릴 수 없습니다.')) return
+    startTransition(async () => {
+      try {
+        await deletePopup(id)
+      } catch (err) {
+        alert(err instanceof Error ? err.message : '삭제에 실패했습니다.')
+      }
+    })
   }
 
   return (
@@ -82,25 +109,36 @@ export default function PopupManager({ popups }: Props) {
                 <td className="p-3 text-muted-foreground">{TYPE_LABELS[popup.type] ?? popup.type}</td>
                 <td className="p-3 text-muted-foreground">{TARGET_LABELS[popup.target] ?? popup.target}</td>
                 <td className="p-3 text-muted-foreground text-xs">
-                  {new Date(popup.startDate).toLocaleDateString('ko-KR')} ~{' '}
-                  {new Date(popup.endDate).toLocaleDateString('ko-KR')}
+                  <div className="whitespace-nowrap">
+                    {new Date(popup.startDate).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  <div className="whitespace-nowrap text-zinc-400">
+                    ~ {new Date(popup.endDate).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </td>
                 <td className="p-3 text-center text-muted-foreground">
                   {popup.impressions} / {popup.clicks}
                 </td>
                 <td className="p-3 text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleToggle(popup.id, popup.isActive)}
-                    disabled={isPending}
-                    className={`px-3 py-2 rounded-md text-sm font-medium ${
-                      popup.isActive
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-500'
-                    }`}
-                  >
-                    {popup.isActive ? '활성' : '비활성'}
-                  </button>
+                  {(() => {
+                    const st = getPopupStatus(popup)
+                    const { label, cls } = STATUS_MAP[st]
+                    return (
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cls}`}>
+                          {label}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleToggle(popup.id, popup.isActive)}
+                          disabled={isPending}
+                          className="text-xs text-zinc-400 hover:text-zinc-700 underline disabled:opacity-40"
+                        >
+                          {popup.isActive ? '끄기' : '켜기'}
+                        </button>
+                      </div>
+                    )
+                  })()}
                 </td>
                 <td className="p-3 text-center">
                   <button
@@ -171,12 +209,16 @@ function PopupForm({ popup, onDone }: { popup?: Popup; onDone: () => void }) {
     }
 
     startTransition(async () => {
-      if (popup) {
-        await updatePopup(popup.id, data)
-      } else {
-        await createPopup(data)
+      try {
+        if (popup) {
+          await updatePopup(popup.id, data)
+        } else {
+          await createPopup(data)
+        }
+        onDone()
+      } catch (err) {
+        alert(err instanceof Error ? err.message : '저장에 실패했습니다. 다시 시도해주세요.')
       }
-      onDone()
     })
   }
 
@@ -251,11 +293,11 @@ function PopupForm({ popup, onDone }: { popup?: Popup; onDone: () => void }) {
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
-          <span className="text-sm font-medium">시작일</span>
+          <span className="text-sm font-medium">시작일 <span className="text-xs text-gray-400">(UTC 기준)</span></span>
           <input name="startDate" type="datetime-local" defaultValue={popup?.startDate ? new Date(popup.startDate).toISOString().slice(0, 16) : ''} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" required />
         </label>
         <label className="block">
-          <span className="text-sm font-medium">종료일</span>
+          <span className="text-sm font-medium">종료일 <span className="text-xs text-gray-400">(UTC 기준)</span></span>
           <input name="endDate" type="datetime-local" defaultValue={popup?.endDate ? new Date(popup.endDate).toISOString().slice(0, 16) : ''} className="mt-1 block w-full border rounded-lg px-3 py-2 text-sm" required />
         </label>
       </div>

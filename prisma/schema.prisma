@@ -181,6 +181,7 @@ enum AuditTargetType {
   BOT
   AGENT
   ADMIN_QUEUE
+  POPUP
 }
 
 enum AdminQueueType {
