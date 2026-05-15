@@ -229,7 +229,13 @@ async function processQueueItem(item: QueueItem): Promise<void> {
   try {
     imageUrls = await generateBlogImages(post, blogContent.imagePrompts)
   } catch (err) {
-    console.warn(`[Poster] 이미지 생성 전체 실패 — 이미지 없이 진행: ${err instanceof Error ? err.message : err}`)
+    console.warn(`[Poster] 이미지 생성 전체 실패 — 항목 FAILED 처리: ${err instanceof Error ? err.message : err}`)
+    await markFailed(item.queueId, '이미지 생성 완전 실패')
+    return
+  }
+  if (imageUrls.length === 0) {
+    await markFailed(item.queueId, '이미지 0개 — 최소 1개 필요')
+    return
   }
 
   if (DRY_RUN) {
@@ -241,14 +247,22 @@ async function processQueueItem(item: QueueItem): Promise<void> {
   }
 
   // 4. 수동 발행 대기 상태로 전환
-  await markReadyForManual(item.queueId, blogContent, imageUrls)
+  try {
+    await markReadyForManual(item.queueId, blogContent, imageUrls)
+  } catch (err) {
+    console.error(`[Poster] DB 저장 실패:`, err instanceof Error ? err.message : err)
+    await markFailed(item.queueId, 'READY_FOR_MANUAL 저장 실패')
+    return
+  }
 
   // 5. Slack 알림
-  await sendSlackMessage({
-    channel: process.env.SLACK_CHANNEL_MAGAZINE ?? '',
-    level: 'info',
-    message: `📝 *Naver 발행 대기*\n"${item.title}"\n🖼️ 이미지 ${imageUrls.length}개 준비\n→ /admin/naver-blog 에서 복붙 발행 후 완료 처리`,
-  })
+  try {
+    await sendSlackMessage({
+      channel: process.env.SLACK_CHANNEL_MAGAZINE ?? '',
+      level: 'info',
+      message: `📝 *Naver 발행 대기*\n"${item.title}"\n🖼️ 이미지 ${imageUrls.length}개 준비\n→ /admin/naver-blog 에서 복붙 발행 후 완료 처리`,
+    })
+  } catch { /* Slack 실패는 비치명적 */ }
 }
 
 // ── 메인 발행 루프 ──

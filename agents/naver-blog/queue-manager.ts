@@ -101,7 +101,7 @@ export async function addToQueue(item: {
   const existing = await queue.findFirst({
     where: {
       magazinePostId: item.magazinePostId,
-      status: { in: ['PENDING', 'POSTED', 'READY_FOR_MANUAL'] },
+      status: { in: ['PENDING', 'POSTED', 'READY_FOR_MANUAL', 'FAILED'] },
     },
   })
   if (existing) {
