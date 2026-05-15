@@ -223,10 +223,16 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
                   <td className="px-3 py-3 text-center text-zinc-600">{user.commentCount}</td>
                   <td className="px-3 py-3 text-center text-zinc-600">{user.receivedLikes}</td>
                   <td className="whitespace-nowrap px-3 py-3 text-zinc-500">
-                    {new Date(user.lastLoginAt).toLocaleDateString('ko-KR')}
+                    <div>{new Date(user.lastLoginAt).toLocaleDateString('ko-KR')}</div>
+                    <div className="text-xs text-zinc-400">
+                      {new Date(user.lastLoginAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-zinc-500">
-                    {new Date(user.createdAt).toLocaleDateString('ko-KR')}
+                    <div>{new Date(user.createdAt).toLocaleDateString('ko-KR')}</div>
+                    <div className="text-xs text-zinc-400">
+                      {new Date(user.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </td>
                   <td className="px-3 py-3">
                     <div className="relative flex items-center justify-center">
@@ -277,7 +283,7 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
             })}
             {users.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-12 text-center text-sm text-zinc-500">
+                <td colSpan={11} className="px-4 py-12 text-center text-sm text-zinc-500">
                   회원이 없습니다.
                 </td>
               </tr>

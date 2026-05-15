@@ -100,8 +100,8 @@ export async function adminUpdateBoardConfig(
       action: 'BOARD_CONFIG_UPDATE',
       targetType: 'BOARD_CONFIG',
       targetId: configId,
-      before: existingConfig ? JSON.stringify(existingConfig) : undefined,
-      after: JSON.parse(JSON.stringify(data)),
+      before: existingConfig ?? undefined,
+      after: data,
     },
   })
 

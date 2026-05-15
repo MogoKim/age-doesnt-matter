@@ -116,8 +116,8 @@ export async function adminUpdateUserStatus(
       action: `USER_${status}`,
       targetType: 'USER',
       targetId: userId,
-      before: existingUser ? JSON.stringify({ status: existingUser.status, suspendedUntil: existingUser.suspendedUntil }) : undefined,
-      after: JSON.stringify(data),
+      before: existingUser ? { status: existingUser.status, suspendedUntil: existingUser.suspendedUntil } : undefined,
+      after: data as Record<string, string | number | boolean | Date | null>,
       note: suspendDays ? `${suspendDays}일 정지` : undefined,
     },
   })
@@ -141,7 +141,7 @@ export async function adminUpdateUserGrade(userId: string, grade: Grade) {
       action: 'USER_GRADE_CHANGE',
       targetType: 'USER',
       targetId: userId,
-      before: existingUser ? JSON.stringify({ grade: existingUser.grade }) : undefined,
+      before: existingUser ? { grade: existingUser.grade } : undefined,
       after: { grade },
     },
   })

@@ -167,19 +167,23 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
         ))}
       </div>
 
-      {/* 운영 가이드 */}
-      <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800 space-y-1.5">
-        <p className="font-semibold">📋 히어로 배너 운영 가이드 (담당자 필독)</p>
-        <ul className="space-y-1 list-none pl-0 text-blue-700">
-          <li>• 최대 <strong>5장</strong> 동시 노출 가능 — 표시순서 숫자가 낮을수록 먼저 표시</li>
-          <li>• 배너 배경은 <strong>그라디언트 컬러</strong>로 설정 (이미지 없음)</li>
-          <li>• 시작/종료일을 비워두면 <strong>항상 노출</strong>됩니다</li>
-          <li>• <strong>노출 조건</strong>: 활성화 AND 현재 날짜가 시작일~종료일 사이</li>
-          <li>• 배너가 없으면 폴백 슬라이드가 자동 표시됩니다</li>
-        </ul>
-      </div>
+      {/* 운영 가이드 — 히어로 탭 전용 */}
+      {activeTab === 'hero' && (
+        <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800 space-y-1.5">
+          <p className="font-semibold">📋 히어로 배너 운영 가이드 (담당자 필독)</p>
+          <ul className="space-y-1 list-none pl-0 text-blue-700">
+            <li>• 최대 <strong>5장</strong> 동시 노출 가능 — 표시순서 숫자가 낮을수록 먼저 표시</li>
+            <li>• 배너 배경은 <strong>그라디언트 컬러</strong>로 설정 (이미지 없음)</li>
+            <li>• 시작/종료일을 비워두면 <strong>항상 노출</strong>됩니다</li>
+            <li>• <strong>노출 조건</strong>: 활성화 AND 현재 날짜가 시작일~종료일 사이</li>
+            <li>• 배너가 없으면 폴백 슬라이드가 자동 표시됩니다</li>
+          </ul>
+        </div>
+      )}
 
-      {/* 추가 버튼 */}
+      {/* 추가 버튼 + 폼 — 히어로 탭 전용 */}
+      {activeTab === 'hero' && (
+        <>
       <div className="flex items-center justify-between">
         <p className="text-sm text-zinc-500">
           히어로 배너 최대 5장. 표시순서(낮은 숫자가 먼저)로 정렬됩니다.
@@ -396,8 +400,11 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
           </div>
         </form>
       )}
+        </>
+      )}
 
-      {/* 배너 리스트 */}
+      {/* 배너 리스트 — 히어로 탭 전용 */}
+      {activeTab === 'hero' && (
       <div className="space-y-3">
         {banners.map((banner) => {
           const active = isActiveNow(banner)
@@ -448,8 +455,9 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                       : 'bg-zinc-100 text-zinc-500 hover:bg-green-50 hover:text-green-700'
                   }`}
                 >
-                  {banner.isActive ? '● 활성' : '○ 비활성'} <HelpTip text={HELP.BANNER_ACTIVE} />
+                  {banner.isActive ? '● 활성' : '○ 비활성'}
                 </button>
+                <HelpTip text={HELP.BANNER_ACTIVE} />
                 <button
                   onClick={() => startEdit(banner)}
                   className="rounded px-2 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-100"
@@ -473,6 +481,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
           </div>
         )}
       </div>
+      )}
     </>
   )
 }

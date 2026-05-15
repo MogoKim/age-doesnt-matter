@@ -61,8 +61,8 @@ export async function adminSetPostPromotionLevel(postId: string, level: Promotio
       action: 'PROMOTION_LEVEL_CHANGE',
       targetType: 'POST',
       targetId: postId,
-      before: existing ? JSON.stringify({ promotionLevel: existing.promotionLevel }) : undefined,
-      after: JSON.stringify({ promotionLevel: level }),
+      before: existing ? { promotionLevel: existing.promotionLevel } : undefined,
+      after: { promotionLevel: level },
     },
   })
 
@@ -91,8 +91,8 @@ export async function adminSetPostLikeCount(postId: string, likeCount: number) {
       action: 'POST_LIKE_COUNT_SET',
       targetType: 'POST',
       targetId: postId,
-      before: JSON.stringify({ likeCount: post.likeCount }),
-      after: JSON.stringify({ likeCount }),
+      before: { likeCount: post.likeCount },
+      after: { likeCount },
     },
   })
 
@@ -129,7 +129,7 @@ export async function adminBulkDeleteExpiredJobs() {
       action: 'BULK_EXPIRE_JOBS',
       targetType: 'POST',
       targetId: 'bulk',
-      after: JSON.stringify({ count: ids.length, ids }),
+      after: { count: ids.length, ids },
       note: `만료 일자리 ${ids.length}건 숨김 처리`,
     },
   })
@@ -165,8 +165,8 @@ export async function adminUpdatePostStatus(postId: string, status: PostStatus) 
       action: `POST_${status}`,
       targetType: 'POST',
       targetId: postId,
-      before: existing ? JSON.stringify({ status: existing.status }) : undefined,
-      after: JSON.stringify({ status }),
+      before: existing ? { status: existing.status } : undefined,
+      after: { status },
     },
   })
 
@@ -190,8 +190,8 @@ export async function adminTogglePin(postId: string, isPinned: boolean) {
       action: isPinned ? 'POST_PIN' : 'POST_UNPIN',
       targetType: 'POST',
       targetId: postId,
-      before: existing ? JSON.stringify({ isPinned: existing.isPinned }) : undefined,
-      after: JSON.stringify({ isPinned }),
+      before: existing ? { isPinned: existing.isPinned } : undefined,
+      after: { isPinned },
     },
   })
 
@@ -218,8 +218,8 @@ export async function adminToggleFeatured(postId: string, isFeatured: boolean) {
       action: isFeatured ? 'POST_FEATURED_ON' : 'POST_FEATURED_OFF',
       targetType: 'POST',
       targetId: postId,
-      before: existing ? JSON.stringify({ isFeatured: existing.isFeatured }) : undefined,
-      after: JSON.stringify({ isFeatured }),
+      before: existing ? { isFeatured: existing.isFeatured } : undefined,
+      after: { isFeatured },
     },
   })
 

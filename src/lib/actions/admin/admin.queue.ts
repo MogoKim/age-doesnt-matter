@@ -32,8 +32,8 @@ export async function adminApproveQueueItem(queueId: string) {
       action: 'ADMIN_QUEUE_APPROVE',
       targetType: 'ADMIN_QUEUE',
       targetId: queueId,
-      before: JSON.stringify({ status: 'PENDING' }),
-      after: JSON.stringify({ status: 'APPROVED' }),
+      before: { status: 'PENDING' },
+      after: { status: 'APPROVED' },
     },
   })
 
@@ -66,8 +66,8 @@ export async function adminRejectQueueItem(queueId: string, reason?: string) {
       action: 'ADMIN_QUEUE_REJECT',
       targetType: 'ADMIN_QUEUE',
       targetId: queueId,
-      before: JSON.stringify({ status: 'PENDING' }),
-      after: JSON.stringify({ status: 'REJECTED', reason }),
+      before: { status: 'PENDING' },
+      after: { status: 'REJECTED', reason },
       note: reason,
     },
   })

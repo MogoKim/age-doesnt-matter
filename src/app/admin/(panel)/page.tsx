@@ -55,16 +55,12 @@ export default async function AdminDashboardPage() {
       <AdminQuickStart />
 
       {/* KPI 카드 */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <KpiCard label="오늘 방문" value={stats.todayUsers} icon="👁️" />
-        <KpiCard label="오늘 가입" value={stats.todaySignups} icon="🆕" />
-        <KpiCard label="오늘 글" value={stats.todayPosts} icon="📝" prefix="+" />
-        <KpiCard label="오늘 댓글" value={stats.todayComments} icon="💬" prefix="+" />
-      </div>
-
-      {/* 푸시 구독 KPI */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-        <KpiCard label="푸시 구독자" value={stats.pushSubCount} icon="🔔" />
+        <KpiCard label="오늘 가입" value={stats.todaySignups} icon="🆕" href="/admin/members" />
+        <KpiCard label="오늘 글" value={stats.todayPosts} icon="📝" prefix="+" href="/admin/content" />
+        <KpiCard label="오늘 댓글" value={stats.todayComments} icon="💬" prefix="+" href="/admin/content" />
+        <KpiCard label="푸시 구독자" value={stats.pushSubCount} icon="🔔" href="/admin/push" />
       </div>
 
       {/* 욕망 지도 위젯 */}
@@ -178,14 +174,16 @@ function KpiCard({
   value,
   icon,
   prefix = '',
+  href,
 }: {
   label: string
   value: number
   icon: string
   prefix?: string
+  href?: string
 }) {
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5">
+  const inner = (
+    <div className={`rounded-xl border border-zinc-200 bg-white p-5 ${href ? 'transition-colors hover:border-zinc-300 hover:bg-zinc-50' : ''}`}>
       <div className="flex items-center justify-between">
         <span className="text-sm text-zinc-500">{label}</span>
         <span className="text-lg">{icon}</span>
@@ -195,4 +193,6 @@ function KpiCard({
       </p>
     </div>
   )
+  if (href) return <Link href={href} className="block no-underline">{inner}</Link>
+  return inner
 }

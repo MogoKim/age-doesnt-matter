@@ -1,6 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { adminProcessReport } from '@/lib/actions/admin'
 import type { ReportAction } from '@/generated/prisma/client'
@@ -123,14 +124,24 @@ export default function ReportTable({ reports, hasMore, currentStatus }: ReportT
                   </td>
                   <td className="max-w-xs truncate px-3 py-3 text-zinc-900">
                     {report.post ? (
-                      <span>📝 {report.post.title}</span>
+                      <Link href={`/admin/content/${report.post.id}`} className="hover:text-[#FF6F61] hover:underline">
+                        📝 {report.post.title}
+                      </Link>
                     ) : report.comment ? (
                       <span>💬 {report.comment.content.slice(0, 50)}</span>
                     ) : (
                       '-'
                     )}
                   </td>
-                  <td className="px-3 py-3 text-zinc-600">{report.reporter?.nickname ?? '비회원'}</td>
+                  <td className="px-3 py-3 text-zinc-600">
+                    {report.reporter ? (
+                      <Link href={`/admin/members?search=${encodeURIComponent(report.reporter.nickname)}`} className="hover:text-[#FF6F61] hover:underline">
+                        {report.reporter.nickname}
+                      </Link>
+                    ) : (
+                      <span className="text-zinc-400">비회원</span>
+                    )}
+                  </td>
                   <td className="max-w-xs truncate px-3 py-3 text-zinc-500">
                     {report.description || '-'}
                   </td>
@@ -140,7 +151,10 @@ export default function ReportTable({ reports, hasMore, currentStatus }: ReportT
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-zinc-500">
-                    {new Date(report.createdAt).toLocaleDateString('ko-KR')}
+                    <div>{new Date(report.createdAt).toLocaleDateString('ko-KR')}</div>
+                    <div className="text-xs text-zinc-400">
+                      {new Date(report.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </td>
                   <td className="px-3 py-3">
                     {report.status === 'PENDING' || report.status === 'REVIEWED' ? (

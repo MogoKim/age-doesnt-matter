@@ -75,8 +75,8 @@ export async function adminProcessReport(
       action: `REPORT_${action}`,
       targetType: 'REPORT',
       targetId: reportId,
-      before: existingReport ? JSON.stringify({ status: existingReport.status, action: existingReport.action }) : undefined,
-      after: JSON.stringify({ status: 'RESOLVED', action }),
+      before: existingReport ? { status: existingReport.status, action: existingReport.action } : undefined,
+      after: { status: 'RESOLVED', action },
     },
   })
 

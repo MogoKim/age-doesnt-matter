@@ -134,8 +134,8 @@ export async function adminUpdateBanner(
       action: 'BANNER_UPDATE',
       targetType: 'BANNER',
       targetId: bannerId,
-      before: existing ? JSON.stringify(existing) : undefined,
-      after: JSON.stringify(data),
+      before: existing ?? undefined,
+      after: data,
     },
   })
 
@@ -239,8 +239,8 @@ export async function adminUpdateAdBanner(
       action: 'AD_UPDATE',
       targetType: 'AD',
       targetId: adId,
-      before: existing ? JSON.stringify(existing) : undefined,
-      after: JSON.stringify(data),
+      before: existing ?? undefined,
+      after: data,
     },
   })
 
