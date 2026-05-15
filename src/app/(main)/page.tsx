@@ -82,13 +82,12 @@ function HeroSkeleton() {
 
 // 지금뜨는이야기 + 사는이야기 + 웃음방을 하나의 Suspense로 묶어 trendingIds 중복 제거 보장
 async function HotContentSections() {
-  const trendingPosts = await getCachedTrending()
-  const trendingIds = new Set(trendingPosts.map((p) => p.id))
-
-  const [storiesRaw, humorRaw] = await Promise.all([
+  const [trendingPosts, storiesRaw, humorRaw] = await Promise.all([
+    getCachedTrending(),
     getCachedStoriesRaw(),
     getCachedHumorRaw(),
   ])
+  const trendingIds = new Set(trendingPosts.map((p) => p.id))
 
   const storiesPosts = storiesRaw.filter((p) => !trendingIds.has(p.id)).slice(0, 5)
   const humorPosts = humorRaw.filter((p) => !trendingIds.has(p.id)).slice(0, 5)

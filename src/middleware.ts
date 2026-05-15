@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { Redis } from '@upstash/redis'
 import { verifyAdminToken } from '@/lib/admin-auth'
 import { BOT_UA_PATTERN } from '@/lib/bot-patterns'
 
@@ -38,15 +39,28 @@ function addAnonSession(response: NextResponse, request: NextRequest): NextRespo
   return response
 }
 
-// Edge function 인스턴스 내 CUID→slug 캐시 (TTL 60초)
-const slugCache = new Map<string, { slug: string | null; expiresAt: number }>()
-const SLUG_CACHE_TTL_MS = 3_600_000  // 1시간 — slug는 생성 후 불변
+// Upstash Redis: Edge 인스턴스 간 공유 캐시 — Map 방식은 콜드스타트마다 초기화됨
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+})
+const SLUG_REDIS_TTL_S = 86400   // 24시간 — slug는 생성 후 불변
+const SLUG_REDIS_PREFIX = 'slug:'
 
 async function resolveSlug(cuid: string): Promise<string | null> {
-  const now = Date.now()
-  const cached = slugCache.get(cuid)
-  if (cached && cached.expiresAt > now) return cached.slug
+  const key = `${SLUG_REDIS_PREFIX}${cuid}`
 
+  // 1. Redis 공유 캐시 조회
+  try {
+    const cached = await redis.get<string>(key)
+    if (cached !== null && cached !== undefined) {
+      return cached === '' ? null : cached  // '' = "slug 없음" sentinel
+    }
+  } catch {
+    // Redis 장애 시 Supabase API로 fallback
+  }
+
+  // 2. Supabase REST API (캐시 miss 또는 Redis 장애 시)
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/Post` +
@@ -59,12 +73,12 @@ async function resolveSlug(cuid: string): Promise<string | null> {
       },
     )
     if (!res.ok) {
-      slugCache.set(cuid, { slug: null, expiresAt: now + SLUG_CACHE_TTL_MS })
+      redis.set(key, '', { ex: SLUG_REDIS_TTL_S }).catch(() => {})
       return null
     }
     const data = (await res.json()) as { slug: string }[]
     const slug = data[0]?.slug ?? null
-    slugCache.set(cuid, { slug, expiresAt: now + SLUG_CACHE_TTL_MS })
+    redis.set(key, slug ?? '', { ex: SLUG_REDIS_TTL_S }).catch(() => {})
     return slug
   } catch {
     return null

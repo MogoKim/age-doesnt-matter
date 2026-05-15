@@ -19,7 +19,7 @@ const PushPermissionToast = dynamic(
 )
 const PopupRenderer = dynamic(
   () => import('@/components/common/PopupRenderer'),
-  { loading: () => null },
+  { loading: () => null, ssr: false },
 )
 const SignupPromptBanner = dynamic(
   () => import('@/components/common/SignupPromptBanner').then(m => ({ default: m.SignupPromptBanner })),

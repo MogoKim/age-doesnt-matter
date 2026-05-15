@@ -42,7 +42,7 @@ function createPrismaClient() {
     database: parsed.database,
     ssl: isProduction ? { rejectUnauthorized: false } : undefined,
     // 서버리스 환경: Supabase 무료 티어 제한 대응 (직접 연결 ~60개 / PgBouncer 경유)
-    max: 5,
+    max: 10,
     // 55초: Vercel Lambda warm 유지 시간(>60초) 내에서 pg 연결 재사용
     // PgBouncer transaction mode → idle 연결이 PostgreSQL 슬롯 점유 없음
     idleTimeoutMillis: isProduction ? 55000 : 30000,
