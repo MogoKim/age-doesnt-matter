@@ -2,13 +2,13 @@ name: Agents — Daily
 on:
   schedule:
     # 09:00 KST = 00:00 UTC — CEO 모닝 사이클
-    - cron: "0 0 * * *"
+    - cron: "11 0 * * *"
     # 10:00 KST = 01:00 UTC — CMO 트렌드 (화~일) / CEO 주간 리포트 (월)
-    - cron: "0 1 * * *"
+    - cron: "11 1 * * *"
     # 11:00 KST = 02:00 UTC — CPO UX 분석
-    - cron: "0 2 * * *"
+    - cron: "11 2 * * *"
     # 14:00 KST = 05:00 UTC — COO 콘텐츠
-    - cron: "0 5 * * *"
+    - cron: "11 5 * * *"
     # 09:45 KST = 00:45 UTC — 매거진 모닝 발행 (로컬 launchd로 전환 — 비활성화)
     # - cron: "45 0 * * *"
     # 16:00 KST = 07:00 UTC — launchd 10:00/15:00/17:00 KST로 이관 완료, GHA 비활성화
@@ -16,21 +16,21 @@ on:
     # 19:30 KST = 10:30 UTC — 매거진 이브닝 발행 (로컬 launchd로 전환 — 비활성화)
     # - cron: "30 10 * * *"
     # 22:00 KST = 13:00 UTC — CDO KPI
-    - cron: "0 13 * * *"
+    - cron: "11 13 * * *"
     # 08:30 KST = 23:30 UTC (전날) — CEO SNS 일일 브리핑
     - cron: "30 23 * * *"
     # 09:30 KST = 00:30 UTC — 승인 대기 리마인더 + 만료 처리
     - cron: "30 0 * * *"
     # 12:00 KST = 03:00 UTC — COO 트렌딩 스코어 (화~일) / CPO 사용자 여정 (월)
-    - cron: "0 3 * * *"
+    - cron: "11 3 * * *"
     # 18:00 KST = 09:00 UTC — COO 트렌딩 스코어 (2차)
-    - cron: "0 9 * * *"
+    - cron: "11 9 * * *"
     # 06:00 KST = 21:00 UTC (전날) — CTO 보안 감사
-    - cron: "0 21 * * *"
+    - cron: "11 21 * * *"
     # 11:30 KST = 02:30 UTC (월요일) — CPO 기능 사용률
     - cron: "30 2 * * 1"
     # 23:00 KST = 14:00 UTC — CFO 비용
-    - cron: "0 14 * * *"
+    - cron: "11 14 * * *"
     # 23:30 KST = 14:30 UTC — CFO 수익 추적
     - cron: "30 14 * * *"
     # ─── Phase 4 신규 에이전트 ───
@@ -51,13 +51,13 @@ on:
     # 14:30 KST = 05:30 UTC — COO 댓글 활성화 (2차)
     - cron: "30 5 * * *"
     # 15:00 KST = 06:00 UTC — COO 느슨한 연결 촉진 (2차)
-    - cron: "0 6 * * *"
+    - cron: "11 6 * * *"
     # 18:30 KST = 09:30 UTC — COO 대댓글 체인 (2차)
     - cron: "30 9 * * *"
     # 20:00 KST = 11:00 UTC — COO 댓글 활성화 (3차)
-    - cron: "0 11 * * *"
+    - cron: "11 11 * * *"
     # 07:00 KST = 22:00 UTC (전날) — CTO 크롤링 헬스
-    - cron: "0 22 * * *"
+    - cron: "11 22 * * *"
     # 22:30 KST = 13:30 UTC — CDO 참여 최적화
     - cron: "30 13 * * *"
     # 23:45 KST = 14:45 UTC — CTO QA 크론 실행 감사
@@ -66,11 +66,11 @@ on:
     # 08:20 KST = 23:20 UTC (전날) — QA 콘텐츠 감사
     - cron: "20 23 * * *"
     # 07:00 KST 월요일 = 22:00 UTC (일요일) — CTO 주간 아키텍처 리뷰
-    - cron: "0 22 * * 0"
+    - cron: "11 22 * * 0"
     # job-scraper 크론 제거: agents-jobs.yml에서 전담 (12:00/16:00/20:00 KST 3회)
     # 이전: "0 4 * * *" (13:00 KST), "0 10 * * *" (19:00 KST) — 중복 실행 제거
     # 13:00 KST = 04:00 UTC — CMO 카드뉴스 생성 (A07)
-    - cron: "0 4 * * *"
+    - cron: "11 4 * * *"
   workflow_dispatch:
     inputs:
       agent:
@@ -134,26 +134,26 @@ jobs:
             CRON="${{ github.event.schedule }}"
             DOW=$(date -u +%u)  # 1=Monday
             case "$CRON" in
-              "0 0 * * *")
+              "11 0 * * *")
                 echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-cycle" >> $GITHUB_OUTPUT ;;
-              "0 1 * * *")
+              "11 1 * * *")
                 if [ "$DOW" = "1" ]; then
                   echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=weekly-report" >> $GITHUB_OUTPUT
                 else
                   echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=trend-analyzer" >> $GITHUB_OUTPUT
                 fi
                 ;;
-              "0 2 * * *")
+              "11 2 * * *")
                 echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=ux-analyzer" >> $GITHUB_OUTPUT ;;
-              "0 5 * * *")
+              "11 5 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;
               # "45 0 * * *") magazine-morning — 로컬 launchd로 전환
               # "0 7 * * *") — launchd 이관 완료, GHA 비활성화
               # echo "agent=cafe_crawler" >> $GITHUB_OUTPUT; echo "task=magazine-generate" >> $GITHUB_OUTPUT ;;
               # "30 10 * * *") magazine-evening — 로컬 launchd로 전환
-              "0 13 * * *")
+              "11 13 * * *")
                 echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=kpi-collector" >> $GITHUB_OUTPUT ;;
-              "0 14 * * *")
+              "11 14 * * *")
                 echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=cost-tracker" >> $GITHUB_OUTPUT ;;
               "30 14 * * *")
                 echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=revenue-tracker" >> $GITHUB_OUTPUT ;;
@@ -161,16 +161,16 @@ jobs:
                 echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=approval-reminder" >> $GITHUB_OUTPUT ;;
               "30 23 * * *")
                 echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-sns-briefing" >> $GITHUB_OUTPUT ;;
-              "0 3 * * *")
+              "11 3 * * *")
                 if [ "$DOW" = "1" ]; then
                   echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=journey-analyzer" >> $GITHUB_OUTPUT
                 else
                   echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT
                 fi
                 ;;
-              "0 9 * * *")
+              "11 9 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;
-              "0 21 * * *")
+              "11 21 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=security-audit" >> $GITHUB_OUTPUT ;;
               "30 2 * * 1")
                 echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=feature-tracker" >> $GITHUB_OUTPUT ;;
@@ -190,15 +190,15 @@ jobs:
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=reply-chain-driver" >> $GITHUB_OUTPUT ;;
               "30 5 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=comment-activator" >> $GITHUB_OUTPUT ;;
-              "0 6 * * *")
+              "11 6 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=connection-facilitator" >> $GITHUB_OUTPUT ;;
               "30 9 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=reply-chain-driver" >> $GITHUB_OUTPUT ;;
-              "0 11 * * *")
+              "11 11 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=comment-activator" >> $GITHUB_OUTPUT ;;
-              "0 22 * * 0")
+              "11 22 * * 0")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=arch-review" >> $GITHUB_OUTPUT ;;
-              "0 22 * * *")
+              "11 22 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=crawler-health" >> $GITHUB_OUTPUT ;;
               "30 13 * * *")
                 echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=engagement-optimizer" >> $GITHUB_OUTPUT ;;
@@ -206,7 +206,7 @@ jobs:
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=qa-verify" >> $GITHUB_OUTPUT ;;
               "20 23 * * *")
                 echo "agent=qa" >> $GITHUB_OUTPUT; echo "task=content-audit" >> $GITHUB_OUTPUT ;;
-              "0 4 * * *")
+              "11 4 * * *")
                 echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=card-news-generator" >> $GITHUB_OUTPUT ;;
               *)
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;

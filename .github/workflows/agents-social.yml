@@ -23,25 +23,25 @@ on:
           - test-post
   schedule:
     # 구글 애즈 일일 성과 리포트
-    - cron: "0 0 * * *"    # 09:00 KST — 전일 성과 리포트
+    - cron: "17 0 * * *"   # 09:17 KST — 전일 성과 리포트
     # 텍스트 게시 (Threads/X) — 황금 시간대
-    - cron: "0 22 * * *"   # 07:00 KST — 아침 황금시간
-    - cron: "0 3 * * *"    # 12:00 KST — 점심 황금시간
+    - cron: "17 22 * * *"  # 07:17 KST — 아침 황금시간
+    - cron: "17 3 * * *"   # 12:17 KST — 점심 황금시간
     # 카드뉴스 v2 게시 (IG/FB/Threads) — 오후 황금시간
-    - cron: "0 6 * * *"    # 15:00 KST — 오후 황금시간
+    - cron: "17 6 * * *"   # 15:17 KST — 오후 황금시간
     # 채널 시딩 (카카오/지식인/커뮤니티 초안)
-    - cron: "30 2 * * *"   # 11:30 KST — 채널 초안
+    - cron: "30 2 * * *"   # 11:30 KST — 채널 초안 (비정각 유지)
     # 메트릭 수집
-    - cron: "0 11 * * *"   # 20:00 KST — 성과 수집
-    # 3일 주기 리뷰 (월+목)
-    - cron: "0 1 * * 1,4"    # 월+목 10:00 KST — reviewer
-    - cron: "15 1 * * 1,4"   # 월+목 10:15 KST — strategy
+    - cron: "17 11 * * *"  # 20:17 KST — 성과 수집
+    # 3일 주기 리뷰 (월+목) — reviewer는 strategy(10:15) 앞에 와야 해서 +7분
+    - cron: "7 1 * * 1,4"    # 월+목 10:07 KST — reviewer
+    - cron: "15 1 * * 1,4"   # 월+목 10:15 KST — strategy (비정각 유지)
     # 주간 SEO
-    - cron: "0 23 * * 0"   # 월 08:00 KST — SEO 모니터
+    - cron: "17 23 * * 0"  # 월 08:17 KST — SEO 모니터
     # 지식인 답변 초안 (주 3회: 화/목/토)
-    - cron: "0 3 * * 2,4,6" # 12:00 KST — knowledge-responder
+    - cron: "17 3 * * 2,4,6" # 12:17 KST — knowledge-responder
     # Threads 토큰 갱신
-    - cron: "0 1 * * 3"    # 수 10:00 KST — threads token refresh
+    - cron: "17 1 * * 3"   # 수 10:17 KST — threads token refresh
 
 concurrency:
   group: ${{ github.workflow }}
@@ -53,7 +53,7 @@ jobs:
     timeout-minutes: 5
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-poster' ||
-      github.event_name == 'schedule' && (github.event.schedule == '0 22 * * *' || github.event.schedule == '0 3 * * *')
+      github.event_name == 'schedule' && (github.event.schedule == '17 22 * * *' || github.event.schedule == '17 3 * * *')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -89,7 +89,7 @@ jobs:
     timeout-minutes: 5
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-metrics' ||
-      github.event_name == 'schedule' && github.event.schedule == '0 11 * * *'
+      github.event_name == 'schedule' && github.event.schedule == '17 11 * * *'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -121,7 +121,7 @@ jobs:
     timeout-minutes: 5
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-reviewer' ||
-      github.event_name == 'schedule' && github.event.schedule == '0 1 * * 1,4'
+      github.event_name == 'schedule' && github.event.schedule == '7 1 * * 1,4'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -178,7 +178,7 @@ jobs:
     timeout-minutes: 3
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'threads-token-refresh' ||
-      github.event_name == 'schedule' && github.event.schedule == '0 1 * * 3'
+      github.event_name == 'schedule' && github.event.schedule == '17 1 * * 3'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -207,7 +207,7 @@ jobs:
     timeout-minutes: 10
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-poster-visual' ||
-      github.event_name == 'schedule' && github.event.schedule == '0 6 * * *'
+      github.event_name == 'schedule' && github.event.schedule == '17 6 * * *'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -281,7 +281,7 @@ jobs:
     timeout-minutes: 5
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'knowledge-responder' ||
-      github.event_name == 'schedule' && github.event.schedule == '0 3 * * 2,4,6'
+      github.event_name == 'schedule' && github.event.schedule == '17 3 * * 2,4,6'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -309,7 +309,7 @@ jobs:
     timeout-minutes: 5
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'seo-optimizer' ||
-      github.event_name == 'schedule' && github.event.schedule == '0 23 * * 0'
+      github.event_name == 'schedule' && github.event.schedule == '17 23 * * 0'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
