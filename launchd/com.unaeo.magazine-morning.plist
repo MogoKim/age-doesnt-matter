@@ -7,10 +7,14 @@
 
   <key>ProgramArguments</key>
   <array>
-    <string>/bin/bash</string>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/launchd-alert.sh</string>
+    <!-- node 사용 이유: /bin/bash는 kTCCServiceSystemPolicyDocumentsFolder TCC 미승인 →
+         launchd에서 ~/Documents/ 접근 불가 (Operation not permitted, exit 126).
+         node(/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/node)는 TCC 승인됨. -->
+    <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/node</string>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/launchd-wrapper.mjs</string>
     <string>magazine-morning</string>
-    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/node_modules/.bin/tsx</string>
+    <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx</string>
+    <string>tsx</string>
     <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/local-magazine-runner.ts</string>
   </array>
 
