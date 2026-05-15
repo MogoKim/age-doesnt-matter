@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우나어 — 외부 콘텐츠 스크래퍼 운영 가이드</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1f2533;
+    --border: #2a3042;
+    --text: #e6eaf4;
+    --muted: #8b92a8;
+    --sub: #5a6070;
+    --primary: #FF6F61;
+    --primary-dim: rgba(255,111,97,0.14);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.11);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.11);
+    --yellow: #fbbf24;
+    --yellow-dim: rgba(251,191,36,0.11);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.11);
+    --teal: #2dd4bf;
+    --teal-dim: rgba(45,212,191,0.11);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.11);
+    --orange: #fb923c;
+    --orange-dim: rgba(251,146,60,0.11);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 14.5px;
+  }
+
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 56px 28px 100px; }
+
+  /* Cover */
+  .cover {
+    background: linear-gradient(135deg, #0a1208 0%, #101820 50%, #0d1117 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 52px 48px 44px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 360px; height: 360px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(96,165,250,0.10) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: var(--blue-dim);
+    color: var(--blue);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 4px;
+    border: 1px solid rgba(96,165,250,0.3);
+    margin-bottom: 20px;
+  }
+  .cover h1 { font-size: 30px; font-weight: 800; color: var(--text); margin-bottom: 10px; line-height: 1.3; }
+  .cover .subtitle { font-size: 15px; color: var(--muted); margin-bottom: 36px; max-width: 720px; line-height: 1.7; }
+  .cover-meta { display: flex; gap: 32px; flex-wrap: wrap; padding-top: 28px; border-top: 1px solid var(--border); }
+  .cover-meta-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); font-weight: 600; margin-bottom: 3px; }
+  .cover-meta-item .val { font-size: 14px; font-weight: 600; color: var(--text); }
+
+  /* Status bar */
+  .status-bar {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 40px;
+  }
+  .status-chip {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12.5px; font-weight: 600;
+    padding: 5px 12px; border-radius: 20px;
+  }
+  .chip-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+  .chip-blue  { background: var(--blue-dim);  color: var(--blue);  border: 1px solid rgba(96,165,250,0.2); }
+  .chip-yellow{ background: var(--yellow-dim);color: var(--yellow);border: 1px solid rgba(251,191,36,0.2); }
+  .chip-orange{ background: var(--orange-dim);color: var(--orange);border: 1px solid rgba(251,146,60,0.2); }
+  .chip-purple{ background: var(--purple-dim);color: var(--purple);border: 1px solid rgba(167,139,250,0.2); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot-green { background: var(--green); }
+  .dot-blue  { background: var(--blue); }
+  .dot-yellow{ background: var(--yellow); }
+  .dot-orange{ background: var(--orange); }
+  .dot-purple{ background: var(--purple); }
+
+  /* Sections */
+  .section { margin-bottom: 48px; }
+  .section-label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--sub);
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  h2 {
+    font-size: 20px; font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+  h3 {
+    font-size: 15px; font-weight: 700;
+    color: var(--blue);
+    margin: 24px 0 10px;
+  }
+  p { color: var(--muted); margin-bottom: 12px; }
+  strong { color: var(--text); }
+
+  /* Card */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--sub);
+    margin-bottom: 14px;
+  }
+
+  /* Big callout — "핵심" */
+  .callout {
+    background: var(--green-dim);
+    border: 1px solid rgba(74,222,128,0.25);
+    border-left: 4px solid var(--green);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+  }
+  .callout.blue {
+    background: var(--blue-dim);
+    border-color: rgba(96,165,250,0.25);
+    border-left-color: var(--blue);
+  }
+  .callout.yellow {
+    background: var(--yellow-dim);
+    border-color: rgba(251,191,36,0.25);
+    border-left-color: var(--yellow);
+  }
+  .callout.red {
+    background: var(--red-dim);
+    border-color: rgba(248,113,113,0.25);
+    border-left-color: var(--red);
+  }
+  .callout.orange {
+    background: var(--orange-dim);
+    border-color: rgba(251,146,60,0.25);
+    border-left-color: var(--orange);
+  }
+  .callout p { margin: 0; color: var(--text); font-size: 14.5px; line-height: 1.7; }
+  .callout strong { color: inherit; }
+
+  /* Tables */
+  .tbl-wrap { overflow-x: auto; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th {
+    background: var(--bg3);
+    color: var(--muted);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.07em; text-transform: uppercase;
+    padding: 9px 14px;
+    text-align: left; border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(42,48,66,0.6);
+    color: var(--muted);
+    vertical-align: top;
+  }
+  td strong { color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Code blocks */
+  pre {
+    background: #090d13;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.7;
+    margin-bottom: 16px;
+    color: #c9d1d9;
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  }
+  code {
+    background: var(--bg3);
+    color: var(--teal);
+    padding: 2px 6px; border-radius: 4px;
+    font-size: 12.5px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  pre code { background: none; color: inherit; padding: 0; border-radius: 0; font-size: inherit; }
+
+  /* Flow steps */
+  .flow {
+    display: flex; flex-direction: column; gap: 0;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .flow-step {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .flow-step:last-child { border-bottom: none; }
+  .flow-num {
+    flex-shrink: 0;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+  }
+  .flow-num.green  { background: var(--green-dim);  border-color: rgba(74,222,128,0.3);  color: var(--green); }
+  .flow-num.blue   { background: var(--blue-dim);   border-color: rgba(96,165,250,0.3);   color: var(--blue); }
+  .flow-num.yellow { background: var(--yellow-dim); border-color: rgba(251,191,36,0.3);  color: var(--yellow); }
+  .flow-num.orange { background: var(--orange-dim); border-color: rgba(251,146,60,0.3);  color: var(--orange); }
+  .flow-num.purple { background: var(--purple-dim); border-color: rgba(167,139,250,0.3); color: var(--purple); }
+  .flow-content .title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .flow-content .desc  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* Score pills */
+  .score-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .score-pill {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 20px; border-radius: 10px;
+    min-width: 110px; text-align: center;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .score-pill .score { font-size: 22px; font-weight: 800; }
+  .score-pill .label { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .sp-green  { border-color: rgba(74,222,128,0.3); }  .sp-green  .score { color: var(--green); }
+  .sp-yellow { border-color: rgba(251,191,36,0.3); }  .sp-yellow .score { color: var(--yellow); }
+  .sp-orange { border-color: rgba(251,146,60,0.3); }  .sp-orange .score { color: var(--orange); }
+  .sp-red    { border-color: rgba(248,113,113,0.3); } .sp-red    .score { color: var(--red); }
+
+  /* Persona cards */
+  .persona-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .persona-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    transition: border-color .15s;
+  }
+  .persona-card:hover { border-color: var(--primary); }
+  .persona-card .nickname { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+  .persona-card .code { font-size: 11px; color: var(--sub); margin-bottom: 8px; }
+  .persona-card .desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+  /* Schedule timeline */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .tl-item {
+    display: flex; gap: 20px; align-items: flex-start;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tl-item:last-child { border-bottom: none; }
+  .tl-time { flex-shrink: 0; width: 72px; font-size: 15px; font-weight: 800; color: var(--primary); }
+  .tl-body .title { font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .tl-body .note  { font-size: 12.5px; color: var(--muted); }
+
+  /* Status table badges */
+  .badge {
+    display: inline-block;
+    font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+  .badge-green  { background: var(--green-dim);  color: var(--green); }
+  .badge-blue   { background: var(--blue-dim);   color: var(--blue); }
+  .badge-yellow { background: var(--yellow-dim); color: var(--yellow); }
+  .badge-red    { background: var(--red-dim);    color: var(--red); }
+  .badge-orange { background: var(--orange-dim); color: var(--orange); }
+  .badge-sub    { background: var(--bg3);        color: var(--sub); }
+
+  /* KPI grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .kpi-card .kpi-val { font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+  .kpi-card .kpi-label { font-size: 12px; color: var(--muted); }
+
+  /* Two-col grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* Numbered list */
+  .num-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .num-list li {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px;
+  }
+  .num-list .n {
+    flex-shrink: 0;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--primary-dim); color: var(--primary);
+    font-size: 11px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .num-list .t { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+  .num-list .t strong { color: var(--text); }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+  ul { padding-left: 20px; color: var(--muted); }
+  ul li { margin-bottom: 4px; }
+  ul li strong { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Cover -->
+  <div class="cover">
+    <div class="cover-badge">운영 가이드 — 창업자용</div>
+    <h1>외부 콘텐츠 스크래퍼<br>운영 가이드</h1>
+    <div class="subtitle">
+      URL 하나만 넣으면 끝 — AI가 판단하고, 봇이 올리고, 파동이 HOT을 만든다.<br>
+      이 문서는 스크래퍼가 왜 존재하고 어떻게 움직이는지를 처음부터 끝까지 설명한다.
+    </div>
+    <div class="cover-meta">
+      <div class="cover-meta-item"><div class="label">작성일</div><div class="val">2026-05-15</div></div>
+      <div class="cover-meta-item"><div class="label">대상</div><div class="val">창업자 (비기술 독자)</div></div>
+      <div class="cover-meta-item"><div class="label">스케줄</div><div class="val">5회/일 (GHA) + 2회/일 (로컬)</div></div>
+      <div class="cover-meta-item"><div class="label">AI 모델</div><div class="val">Claude Haiku</div></div>
+      <div class="cover-meta-item"><div class="label">월 비용</div><div class="val">~$0.73</div></div>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-chip chip-green"><div class="dot dot-green"></div>오유·네이트판 GHA 정상</div>
+    <div class="status-chip chip-green"><div class="dot dot-green"></div>펨코 로컬 Mac 정상</div>
+    <div class="status-chip chip-blue"><div class="dot dot-blue"></div>AI 품질 필터 활성</div>
+    <div class="status-chip chip-orange"><div class="dot dot-orange"></div>화제성 파동 시스템 정상</div>
+    <div class="status-chip chip-purple"><div class="dot dot-purple"></div>Google Sheets 연동 정상</div>
+  </div>
+
+  <!-- 1. 배경 -->
+  <div class="section">
+    <div class="section-label">01 — 배경</div>
+    <h2>왜 만들었는가</h2>
+
+    <div class="callout blue">
+      <p>우나어는 50~60대 여성이 공감하는 콘텐츠로 채워져야 한다.<br>
+      그런데 <strong>초기에는 사용자가 없으니 게시글이 없고, 게시글이 없으니 사용자가 안 온다.</strong><br>
+      이 악순환을 끊기 위해 외부 커뮤니티에서 좋은 글을 가져와 자동으로 올리는 시스템을 만들었다.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>수집 사이트</th><th>특징</th><th>처리 방식</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>오늘의유머 (오유)</strong></td><td>50~60대가 많이 보는 유머·생활 커뮤니티</td><td>GitHub Actions (클라우드)</td></tr>
+          <tr><td><strong>네이트판</strong></td><td>40~60대 여성 비율 높음. 연애·가족·일상</td><td>GitHub Actions (클라우드)</td></tr>
+          <tr><td><strong>펨코 (fmkorea)</strong></td><td>다양한 연령대. 유머·시사·연예 선별</td><td>창업자 Mac (로컬 전용)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 2. 목적/목표 -->
+  <div class="section">
+    <div class="section-label">02 — 목적 &amp; 목표</div>
+    <h2>무엇을 위해, 어디까지</h2>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">목적 — 3단계</div>
+        <div class="flow">
+          <div class="flow-step">
+            <div class="flow-num green">단</div>
+            <div class="flow-content">
+              <div class="title">단기 — 콘텐츠 채우기</div>
+              <div class="desc">사이트가 비어 보이지 않도록 다양한 글 공급</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num blue">중</div>
+            <div class="flow-content">
+              <div class="title">중기 — 검색 유입 유도</div>
+              <div class="desc">공감 콘텐츠 축적 → 검색 노출 → 실제 사용자 유입</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num yellow">장</div>
+            <div class="flow-content">
+              <div class="title">장기 — 스크래퍼 의존도 감소</div>
+              <div class="desc">사용자가 직접 쓰기 시작하면 자연스럽게 줄인다</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">운영 KPI</div>
+        <div class="kpi-grid" style="grid-template-columns:1fr 1fr; margin-bottom:0;">
+          <div class="kpi-card"><div class="kpi-val">5회</div><div class="kpi-label">하루 실행 횟수 (GHA)</div></div>
+          <div class="kpi-card"><div class="kpi-val">15~40</div><div class="kpi-label">하루 처리 시도 건수</div></div>
+          <div class="kpi-card" style="margin-top:0;"><div class="kpi-val">70~80%</div><div class="kpi-label">실제 게시율</div></div>
+          <div class="kpi-card" style="margin-top:0;"><div class="kpi-val">10분</div><div class="kpi-label">화제성 파동 완료 시간</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 창업자가 하는 일 -->
+  <div class="section">
+    <div class="section-label">03 — 창업자 역할</div>
+    <h2>창업자가 하는 일 — 이게 전부다</h2>
+
+    <div class="callout">
+      <p><strong>A열에 URL만 넣으면 끝. 나머지는 전부 자동이다.</strong><br>
+      창업자가 "이 글 좋다"고 판단한 URL을 Google Sheets에 붙여넣으면, AI가 판단하고, 봇이 올리고, 파동이 HOT을 만든다.</p>
+    </div>
+
+    <h3>Google Sheets 탭 구조</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>탭 이름</th><th>어디에 올라가는가</th><th>파동 강도</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>사는이야기</strong></td><td>우나어 사는이야기 게시판</td><td>약한 파동 (일반)</td></tr>
+          <tr><td><strong>웃음방</strong></td><td>우나어 웃음방 게시판</td><td>약한 파동 (일반)</td></tr>
+          <tr><td><strong>사는이야기_화제성</strong></td><td>사는이야기 + <span class="badge badge-orange">HOT 탭 자동 승격</span></td><td><strong>강한 파동 — 1분 이내 시작</strong></td></tr>
+          <tr><td><strong>웃음방_화제성</strong></td><td>웃음방 + <span class="badge badge-orange">HOT 탭 자동 승격</span></td><td><strong>강한 파동 — 1분 이내 시작</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>입력 방법</h3>
+    <div class="callout yellow">
+      <p><strong>A열에 URL만 넣으면 된다.</strong> B열 상태(Status)는 자동으로 PENDING이 된다.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>열</th><th>내용</th><th>필수 여부</th><th>예시</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>A열</strong></td><td>원본 URL</td><td><span class="badge badge-red">필수</span></td><td>https://www.todayhumor.co.kr/...</td></tr>
+          <tr><td>B열</td><td>처리 상태 (자동)</td><td><span class="badge badge-sub">자동</span></td><td>PENDING → PUBLISHED</td></tr>
+          <tr><td>C열</td><td>제목 직접 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>비워두면 AI가 판단</td></tr>
+          <tr><td>D열</td><td>카테고리 직접 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>유머, 건강, 일상, 요리, 여행</td></tr>
+          <tr><td>E열</td><td>게시자 닉네임 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>ㅋㅋ요정, 봄바람, 매일걷기 등</td></tr>
+          <tr><td>F열</td><td>게시 완료 URL (자동)</td><td><span class="badge badge-sub">자동</span></td><td>PUBLISHED 후 자동 기록</td></tr>
+          <tr><td>G열</td><td>에러 또는 필터 사유 (자동)</td><td><span class="badge badge-sub">자동</span></td><td>관련성 낮음 (점수: 4/10) 등</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. 자동 처리 흐름 -->
+  <div class="section">
+    <div class="section-label">04 — 자동 흐름</div>
+    <h2>URL을 넣으면 A to Z 무슨 일이 일어나는가</h2>
+
+    <h3>실행 시간표 (GHA — 하루 5회)</h3>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-time">07:30</div>
+          <div class="tl-body">
+            <div class="title">아침 실행</div>
+            <div class="note">전날 밤 또는 새벽에 입력한 URL 처리</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-time">09:00</div>
+          <div class="tl-body">
+            <div class="title">오전 실행</div>
+            <div class="note">아침 입력분 처리</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-time">12:00</div>
+          <div class="tl-body">
+            <div class="title">점심 실행</div>
+            <div class="note">오전 중 입력분 처리 — 가장 빠른 반영</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-time">15:00</div>
+          <div class="tl-body">
+            <div class="title">오후 실행</div>
+            <div class="note">점심 입력분 처리</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-time">21:00</div>
+          <div class="tl-body">
+            <div class="title">저녁 실행</div>
+            <div class="note">오후~저녁 입력분 처리</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-bottom:20px;">
+      <strong>예시</strong>: 창업자가 오전 10시에 URL 5개를 넣으면 → <strong>12:00 KST</strong>에 자동 처리된다.
+    </p>
+
+    <h3>자동 처리 단계 (전체 흐름)</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-num blue">1</div>
+        <div class="flow-content">
+          <div class="title">PENDING 상태 URL 감지</div>
+          <div class="desc">시트에서 B열 = PENDING인 행만 가져온다. 처리 시작 시 즉시 PROCESSING으로 변경 (중복 처리 방지)</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num yellow">2</div>
+        <div class="flow-content">
+          <div class="title">AI 관련성 판단 (Claude Haiku)</div>
+          <div class="desc">50~60대 여성 관련성 0~10점 측정 → 6점 미만이면 <span class="badge badge-yellow">SKIPPED_LOW_SCORE</span>로 처리하고 G열에 사유 기록. 다음 URL로 넘어감</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num yellow">3</div>
+        <div class="flow-content">
+          <div class="title">AI 카테고리 분류 + 제목 최적화</div>
+          <div class="desc">카테고리 자동 분류 (유머/일상/건강/요리/여행/기타). 제목이 너무 짧거나 ㅋㅋ 등 특수문자만이면 더 나은 제목으로 자동 개선</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num green">4</div>
+        <div class="flow-content">
+          <div class="title">Playwright 브라우저로 원본 접속</div>
+          <div class="desc">해당 URL에 자동으로 접속해 본문 글 추출, 이미지 추출, 원본 댓글 최대 10개 수집 (파동 댓글 생성 시 참고)</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num green">5</div>
+        <div class="flow-content">
+          <div class="title">이미지 R2 클라우드에 자동 업로드</div>
+          <div class="desc">외부 도메인 이미지를 우나어 서버(Cloudflare R2)에 재업로드. 원본 도메인 차단 시에도 이미지 정상 표시됨</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num green">6</div>
+        <div class="flow-content">
+          <div class="title">우나어 사이트에 게시글 자동 생성</div>
+          <div class="desc">5명의 AI 페르소나 중 카테고리에 맞는 1명이 게시자로 표시. 출처 URL 포함. boardType은 시트 탭에서 결정</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num orange">7</div>
+        <div class="flow-content">
+          <div class="title">화제성 탭이면 — 즉시 파동 시작</div>
+          <div class="desc">
+            +1분: 좋아요 10명 자동 클릭 &nbsp;|&nbsp;
+            +3분: 공감 댓글 5개 자동 생성<br>
+            +6분: 반박/다른 의견 댓글 3개 &nbsp;|&nbsp;
+            +10분: 반전·마무리 댓글 5개<br>
+            → HOT 탭 자동 승격
+          </div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num blue">8</div>
+        <div class="flow-content">
+          <div class="title">시트 상태 업데이트 + Slack 알림</div>
+          <div class="desc">성공 → F열에 게시글 URL + <span class="badge badge-green">PUBLISHED</span>. 실패 → G열에 에러 + <span class="badge badge-red">FAILED</span>. Slack #로그 채널에 결과 전송</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. AI 역할 -->
+  <div class="section">
+    <div class="section-label">05 — AI 역할</div>
+    <h2>AI가 하는 3가지 판단</h2>
+
+    <p>2026-05-15부터 Claude Haiku AI가 스크래퍼에 추가됐다. 이전에는 단순 키워드 매칭이었지만, 이제는 AI가 문맥을 이해해서 판단한다.</p>
+
+    <h3>판단 1 — 관련성 점수 (0~10점)</h3>
+    <p>창업자가 URL을 넣어도 AI가 먼저 "이 글이 우리 타겟에 맞는가"를 본다.</p>
+
+    <div class="score-row">
+      <div class="score-pill sp-green"><div class="score">9~10</div><div class="label">50~60대 여성이<br>바로 공유할 것</div></div>
+      <div class="score-pill sp-green"><div class="score">7~8</div><div class="label">우리 또래면<br>공감할 것</div></div>
+      <div class="score-pill sp-yellow"><div class="score">6</div><div class="label">관련 있긴 하지만<br>(임계값 — 게시됨)</div></div>
+      <div class="score-pill sp-red"><div class="score">5↓</div><div class="label">20대 타겟이거나<br>우리와 무관 → <strong>SKIP</strong></div></div>
+    </div>
+
+    <div class="callout yellow">
+      <p><strong>AI도 실수할 수 있다.</strong> 좋은 글인데 SKIPPED됐다면 → D열에 카테고리를 직접 지정하고 B열을 다시 PENDING으로 바꾸면 재처리된다.</p>
+    </div>
+
+    <h3>판단 2 — 카테고리 분류</h3>
+    <div class="grid2">
+      <div class="callout red" style="margin-bottom:0;">
+        <p><strong>기존 키워드 방식의 문제</strong><br>
+        "남편이 웃음을 잃었어요" → 웃음방(HUMOR)으로 잘못 분류<br>
+        "건강한 유머 생활" → 건강? 유머? 딕셔너리 순서대로 결정</p>
+      </div>
+      <div class="callout green" style="margin-bottom:0;">
+        <p><strong>AI 분류 (문맥 이해)</strong><br>
+        "남편이 웃음을 잃었어요" → 사는이야기(고민)으로 정확 분류<br>
+        창업자가 D열에 직접 지정했으면 그걸 우선 따름</p>
+      </div>
+    </div>
+    <br>
+
+    <h3>판단 3 — 제목 최적화 (조건부)</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>조건</th><th>처리</th><th>예시</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>제목 10자 미만 또는 특수문자만</td>
+            <td>AI가 더 나은 제목 자동 생성 (최대 25자)</td>
+            <td>"ㅋㅋㅋ" → "남편 자신감이 너무 넘쳐서 웃음 터진 일"</td>
+          </tr>
+          <tr>
+            <td>제목이 충분한 경우</td>
+            <td>원본 제목 그대로 유지</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>창업자가 C열에 직접 입력</td>
+            <td>창업자 제목 최우선 적용</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <p><strong>AI 실패 보험:</strong> Claude API가 오류가 나면 AI 필터 전체를 건너뛰고 기존 키워드 방식으로 자동 게시한다. AI 실패 때문에 글이 안 올라가는 일은 없다.</p>
+    </div>
+  </div>
+
+  <!-- 6. 5명 페르소나 -->
+  <div class="section">
+    <div class="section-label">06 — AI 페르소나</div>
+    <h2>5명의 AI 게시자 — 누가 글을 올리는가</h2>
+
+    <p>스크래퍼가 올린 글은 실제 사람처럼 보이는 5명의 봇 계정이 게시자로 표시된다. 카테고리에 맞는 페르소나가 자동으로 선택된다.</p>
+
+    <div class="persona-grid">
+      <div class="persona-card">
+        <div class="nickname">ㅋㅋ요정</div>
+        <div class="code">코드 C</div>
+        <div class="desc">유머·웃음 특화. 웃기고 가벼운 글 담당</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">봄바람</div>
+        <div class="code">코드 E</div>
+        <div class="desc">따뜻하고 공감 잘 함. 일상·고민 이야기 담당</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">매일걷기</div>
+        <div class="code">코드 H</div>
+        <div class="desc">건강·운동에 관심 많음. 건강 이야기 담당</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">한페이지</div>
+        <div class="code">코드 I</div>
+        <div class="desc">감성적·차분함. 힐링·책·문화 이야기 담당</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">오후세시</div>
+        <div class="code">코드 P</div>
+        <div class="desc">만능형. 여유·일상·기타 모든 분야 담당</div>
+      </div>
+    </div>
+
+    <p>이 5명은 게시글 올리기 + 화제성 파동 댓글 쓰기 모두 담당한다. 원본 댓글에서 분위기를 파악해 비슷한 톤으로 댓글을 생성한다.</p>
+  </div>
+
+  <!-- 7. 펨코 왜 다른가 -->
+  <div class="section">
+    <div class="section-label">07 — 펨코 예외</div>
+    <h2>펨코는 왜 창업자 Mac에서만 처리되는가</h2>
+
+    <div class="callout orange">
+      <p><strong>펨코(fmkorea)는 Cloudflare 보안 시스템이 걸려 있다.</strong><br>
+      미국에 있는 GitHub Actions 서버에서 접속하면 자동으로 차단된다.<br>
+      <strong>한국 IP + 실제 컴퓨터</strong>에서만 정상 접속이 가능하다.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>항목</th><th>오유·네이트판</th><th>펨코</th></tr></thead>
+        <tbody>
+          <tr><td>실행 서버</td><td>GitHub 클라우드 (미국)</td><td><strong>창업자 Mac</strong></td></tr>
+          <tr><td>실행 시간</td><td>07:30·09:00·12:00·15:00·21:00 KST</td><td>11:30·21:30 KST</td></tr>
+          <tr><td>자동화 여부</td><td>완전 자동 (Mac 꺼져 있어도 됨)</td><td><strong>Mac이 켜져 있어야 실행됨</strong></td></tr>
+          <tr><td>입력 방식</td><td>Google Sheets URL 입력</td><td>Google Sheets URL 입력</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout red">
+      <p><strong>주의:</strong> 펨코 글 처리는 창업자 Mac이 해당 시간(11:30, 21:30 KST)에 켜져 있고 인터넷 연결이 돼 있어야 한다. Mac이 꺼져 있으면 그 회차는 건너뜀.</p>
+    </div>
+  </div>
+
+  <!-- 8. 시트 상태값 -->
+  <div class="section">
+    <div class="section-label">08 — 시트 상태값</div>
+    <h2>B열 상태로 결과 확인하기</h2>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>상태값</th><th>의미</th><th>창업자가 할 일</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-blue">PENDING</span></td>
+            <td>처리 대기 중</td>
+            <td>없음 (다음 실행 시간에 자동 처리)</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-sub">PROCESSING</span></td>
+            <td>지금 처리 중</td>
+            <td>없음 (잠시 기다리면 됨)</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-green">PUBLISHED</span></td>
+            <td>게시 완료</td>
+            <td>F열에서 게시글 URL 확인 가능</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-red">FAILED</span></td>
+            <td>스크래핑 실패</td>
+            <td>G열 에러 메시지 확인 → PENDING으로 바꾸면 재시도</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-sub">SKIPPED</span></td>
+            <td>중복 URL (이미 올라간 글)</td>
+            <td>없음 (이미 존재)</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-yellow">SKIPPED_LOW_SCORE</span></td>
+            <td>AI가 관련성 낮다고 판단</td>
+            <td>G열에서 점수 확인. 억지로 올리고 싶으면 PENDING으로 바꾸면 됨</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 9. 운영 정책 -->
+  <div class="section">
+    <div class="section-label">09 — 운영 정책</div>
+    <h2>이것만 지키면 된다</h2>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title" style="color: var(--green);">✅ 넣으면 좋은 글</div>
+        <ul>
+          <li>50~60대 여성이 "이거 나 얘기잖아!" 할 것 같은 글</li>
+          <li>유머·건강·요리·여행·가족·부부 관련</li>
+          <li>공감 댓글이 많이 달린 원본 글 (HOT 탭 글)</li>
+          <li>화제성 탭: 정말 반응 좋을 것 같은 글만</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color: var(--red);">❌ 피해야 할 것</div>
+        <ul>
+          <li>정치·종교·혐오 관련 → AI가 필터링하지만 창업자도 주의</li>
+          <li>너무 젊은 타겟 글 (10~20대 주제) → AI가 걸러냄</li>
+          <li>같은 URL 두 번 입력 → SKIPPED 처리됨 (중복 방지)</li>
+          <li>"시니어", "어르신", "노인" 표현이 많은 글</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <p><strong>화제성 탭 사용 기준:</strong> 파동 댓글·좋아요 비용이 더 들기 때문에 정말 좋은 글만 사용하는 것이 효율적이다. 하루 1~3개 정도가 적당하다.</p>
+    </div>
+  </div>
+
+  <!-- 10. 비용 -->
+  <div class="section">
+    <div class="section-label">10 — 비용</div>
+    <h2>월 비용 — 약 $0.73</h2>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>항목</th><th>비용</th><th>비고</th></tr></thead>
+        <tbody>
+          <tr><td>Playwright 크롤링</td><td><strong>무료</strong></td><td>오픈소스 브라우저 자동화</td></tr>
+          <tr><td>Google Sheets API</td><td><strong>무료</strong></td><td>쿼터 범위 내</td></tr>
+          <tr><td><strong>Claude Haiku AI 필터</strong></td><td><strong>~$0.68/월</strong></td><td>25건/일 × 30일 기준</td></tr>
+          <tr><td>R2 이미지 저장</td><td>~$0.05/월</td><td>Cloudflare R2</td></tr>
+          <tr><td>GitHub Actions 실행</td><td><strong>무료</strong></td><td>월 2,000분 한도 내 여유 있음</td></tr>
+          <tr>
+            <td><strong>합계</strong></td>
+            <td><strong>~$0.73/월</strong></td>
+            <td>월 1달러 미만 — 무시 가능한 수준</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 11. 현재 운영 현황 -->
+  <div class="section">
+    <div class="section-label">11 — 현재 운영 현황</div>
+    <h2>2026-05-15 기준 상태</h2>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>항목</th><th>상태</th><th>세부 내용</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>오유·네이트판 GHA 자동화</td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>5회/일, agents-scraper.yml</td>
+          </tr>
+          <tr>
+            <td>펨코 로컬 Mac 자동화</td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>2회/일 (11:30·21:30 KST), launchd</td>
+          </tr>
+          <tr>
+            <td>AI 품질 필터</td>
+            <td><span class="badge badge-blue">✅ 신규 적용</span></td>
+            <td>2026-05-15부터 Claude Haiku 적용</td>
+          </tr>
+          <tr>
+            <td>화제성 파동 시스템</td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>+1/+3/+6/+10분 자동 실행</td>
+          </tr>
+          <tr>
+            <td>Google Sheets 연동</td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>4탭 구조 (사는이야기/웃음방 × 일반/화제성)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 12. 창업자가 기억할 3가지 -->
+  <div class="section">
+    <div class="section-label">12 — 핵심 요약</div>
+    <h2>창업자가 기억할 3가지</h2>
+
+    <ul class="num-list">
+      <li>
+        <div class="n">1</div>
+        <div class="t">
+          <strong>A열에 URL 넣으면 끝. 나머지는 자동.</strong><br>
+          다음 정각 실행 시간(07:30·09:00·12:00·15:00·21:00)에 알아서 처리된다.
+        </div>
+      </li>
+      <li>
+        <div class="n">2</div>
+        <div class="t">
+          <strong>B열 상태가 SKIPPED_LOW_SCORE면 → AI가 관련성 낮다고 판단한 것.</strong><br>
+          억지로 올리고 싶으면 PENDING으로 바꾸면 된다. G열에 점수와 사유가 적혀 있다.
+        </div>
+      </li>
+      <li>
+        <div class="n">3</div>
+        <div class="t">
+          <strong>펨코 글 처리는 Mac이 켜져 있어야 한다.</strong><br>
+          오유·네이트판은 Mac 꺼져 있어도 GitHub에서 알아서 처리한다.
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 부록 -->
+  <div class="section">
+    <div class="section-label">부록 — 기술 참고용</div>
+    <h2>기술 스택 (참고용)</h2>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>구성요소</th><th>역할</th></tr></thead>
+        <tbody>
+          <tr><td><code>agents/community/sheet-scraper.ts</code></td><td>핵심 스크래퍼 코드 (AI 필터 포함)</td></tr>
+          <tr><td><code>agents/community/site-configs.ts</code></td><td>오유·네이트판·펨코 크롤링 설정</td></tr>
+          <tr><td><code>agents/community/content-transformer.ts</code></td><td>본문 HTML 정제</td></tr>
+          <tr><td><code>agents/community/image-pipeline.ts</code></td><td>이미지 R2 업로드</td></tr>
+          <tr><td><code>agents/community/sheets-client.ts</code></td><td>Google Sheets 읽기/쓰기</td></tr>
+          <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>GHA 자동 실행 스케줄 (5회/일)</td></tr>
+          <tr><td>Claude Haiku</td><td>AI 관련성 판단·카테고리 분류·제목 최적화</td></tr>
+          <tr><td>Cloudflare R2</td><td>이미지 영구 저장 (<code>scraped/{postKey}/{index}.ext</code>)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
