@@ -195,18 +195,18 @@ async function main() {
     process.exit(0)
   }
 
-  // 1시간 이내 중복 방지: hourly 큐레이션이 연속 실행되는 것을 막되, 다음 시간 실행은 허용
+  // 25분 이내 중복 방지 (45분 간격 스케줄용): 이중발화 차단, 정상 순차 실행 허용
   if (key === 'cafe_crawler:content-curate') {
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+    const dedupCutoff = new Date(Date.now() - 25 * 60 * 1000)
     const recentLog = await prisma.botLog.findFirst({
       where: {
         botType: 'CAFE_CRAWLER',
         action: 'CONTENT_CURATE',
-        createdAt: { gte: oneHourAgo },
+        createdAt: { gte: dedupCutoff },
       },
     })
     if (recentLog) {
-      console.log(`[Runner] cafe_crawler:content-curate 스킵 — 1시간 이내 이미 실행됨 (${recentLog.createdAt.toISOString()})`)
+      console.log(`[Runner] cafe_crawler:content-curate 스킵 — 25분 이내 이미 실행됨 (${recentLog.createdAt.toISOString()})`)
       await disconnect()
       process.exit(0)
     }

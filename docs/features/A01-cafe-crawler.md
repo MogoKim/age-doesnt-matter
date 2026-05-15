@@ -212,6 +212,7 @@
 | 2026-05-13 | V6 P3: psych-analyzer.ts 욕망 카테고리 13→20개 확장(BEAUTY/DIGITAL/FOOD/SPIRITUAL/HOUSING/FASHION/PET 추가). content-curator.ts DESIRE_TO_SUBCATEGORY+guessDesire 키워드 7개 연동. generator.ts desireToArea 6개 추가. persona-data.ts BX(말티즈엄마) 79번째 추가. crawler.ts refreshRecentPosts()+refresh 모드 신설. run-pipeline.ts crawl-only에 재크롤 갱신 연결 | 욕망 인텔리전스 정밀도 향상, 페르소나 79명 목표 달성, 7일 이내 게시글 지표 자동 갱신 |
 | 2026-05-14 | crawler.ts `buildPostFromTarget`에 `mainPage?: Page` 파라미터 추가. extractComments를 메인 페이지(iframe 외부)에서 먼저 시도 → 빈 배열이면 iframe(target) 재시도. 대기시간 1.5초→3초 + waitForSelector 추가 | 신형식 네이버 카페 댓글이 cafe_main iframe 외부에 렌더링되어 7일간 수집 0%였던 근본 원인 수정 |
 | 2026-05-15 | content-curator.ts DESIRE_KEYWORDS HOBBY에서 '요리' 제거 + 수영·골프·바둑·자전거·캠핑·낚시·뜨개질·서예·그림·꽃꽂이 10개 추가 | '요리' 키워드가 HOBBY→FOOD 순서 탐색에서 음식 글을 HOBBY로 잘못 분류. 취미 키워드 확장으로 GENERAL 분류 비율 감소 목표 |
+| 2026-05-15 | 크롤 7회/일로 확장(07:40·09:30·11:30·14:30·17:30·21:30·00:30), GHA 큐레이션 45분 간격 20슬롯 100건/일 전환. runner.ts dedup 60분→25분. content-curator.ts 01:15 KST 새벽 감성글 우선 정렬(MEANING/SPIRITUAL/RELATION/FAMILY) 추가 | 07:00대 아침 콘텐츠 공백 해소, 저녁/새벽 감성글 발행, 발행량 75→100건/일 목표 |
 
 ---
 

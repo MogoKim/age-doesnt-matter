@@ -21,13 +21,13 @@
     <key>WorkingDirectory</key>
     <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
 
-    <!-- 08:30 KST (CRAWL-ONLY: 전체글보기 증분 크롤만, AI 분석 없음) -->
+    <!-- 07:40 KST (CRAWL-ONLY: 07:00대 아침 글 수집, AI 분석 없음) -->
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
-        <integer>8</integer>
+        <integer>7</integer>
         <key>Minute</key>
-        <integer>30</integer>
+        <integer>40</integer>
     </dict>
 
     <key>StandardOutPath</key>

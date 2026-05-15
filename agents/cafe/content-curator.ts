@@ -823,6 +823,18 @@ async function main() {
     if (!selectedTopics.includes(t.topic)) selectedTopics.push(t.topic)
   }
 
+  // 01:15 KST 특별 슬롯: 저녁/새벽 감성글 우선 정렬 (killerScore 블록 이전 배치)
+  // kstHour = (getUTCHours() + 9) % 24 → UTC 16시 = (16+9)%24 = 1 = KST 01시
+  const kstHour = (new Date().getUTCHours() + 9) % 24
+  const DAWN_DESIRES = ['MEANING', 'SPIRITUAL', 'RELATION', 'FAMILY']
+  if (kstHour === 1) {
+    selectedTopics.sort((a, b) => {
+      const aIsDawn = DAWN_DESIRES.includes(guessDesire(a))
+      const bIsDawn = DAWN_DESIRES.includes(guessDesire(b))
+      return (bIsDawn ? 1 : 0) - (aIsDawn ? 1 : 0)
+    })
+  }
+
   // killerScore 우선 삽입 (B3) — 화제성 높은 글 제목을 최우선 주제로
   const killerPosts = await prisma.cafePost.findMany({
     where: { killerScore: { gte: 70 }, isUsable: true, usedAt: null },

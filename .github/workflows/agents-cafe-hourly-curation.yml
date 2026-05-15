@@ -1,22 +1,27 @@
-name: "Agents — Cafe Hourly Curation (09~23시 KST)"
+name: "Agents — Cafe Hourly Curation (08:20~01:15 KST, 45분 간격, 100건/일)"
 
 on:
   schedule:
-    - cron: "7 0 * * *"   # 09:00 KST
-    - cron: "7 1 * * *"   # 10:00 KST
-    - cron: "7 2 * * *"   # 11:00 KST
-    - cron: "7 3 * * *"   # 12:00 KST
-    - cron: "7 4 * * *"   # 13:00 KST
-    - cron: "7 5 * * *"   # 14:00 KST
-    - cron: "7 6 * * *"   # 15:00 KST
-    - cron: "7 7 * * *"   # 16:00 KST
-    - cron: "7 8 * * *"   # 17:00 KST
-    - cron: "7 9 * * *"   # 18:00 KST
-    - cron: "7 10 * * *"  # 19:00 KST
-    - cron: "7 11 * * *"  # 20:00 KST
-    - cron: "7 12 * * *"  # 21:00 KST
-    - cron: "7 13 * * *"  # 22:00 KST
-    - cron: "7 14 * * *"  # 23:00 KST
+    - cron: "20 23 * * *"  # 08:20 KST (07:40 크롤 완료 후 첫 슬롯)
+    - cron: "5 0 * * *"    # 09:05 KST
+    - cron: "50 0 * * *"   # 09:50 KST
+    - cron: "35 1 * * *"   # 10:35 KST (09:30 크롤 반영 시작)
+    - cron: "20 2 * * *"   # 11:20 KST
+    - cron: "5 3 * * *"    # 12:05 KST
+    - cron: "50 3 * * *"   # 12:50 KST
+    - cron: "35 4 * * *"   # 13:35 KST (11:30 full 크롤 반영 시작)
+    - cron: "20 5 * * *"   # 14:20 KST
+    - cron: "5 6 * * *"    # 15:05 KST
+    - cron: "50 6 * * *"   # 15:50 KST (14:30 크롤 반영)
+    - cron: "35 7 * * *"   # 16:35 KST
+    - cron: "20 8 * * *"   # 17:20 KST
+    - cron: "5 9 * * *"    # 18:05 KST (17:30 크롤 반영)
+    - cron: "50 9 * * *"   # 18:50 KST
+    - cron: "35 10 * * *"  # 19:35 KST
+    - cron: "20 11 * * *"  # 20:20 KST
+    - cron: "5 12 * * *"   # 21:05 KST
+    - cron: "50 12 * * *"  # 21:50 KST (마지막 일반 슬롯)
+    - cron: "15 16 * * *"  # 01:15 KST (저녁/새벽 감성글 특별 슬롯, 00:30 크롤 완료 후)
   workflow_dispatch:
 
 # 동시 실행 금지 — 이전 실행 완료 후 다음 큐레이션 실행
@@ -55,5 +60,5 @@ jobs:
       - run: npx prisma generate
       - run: cd agents && npm ci
 
-      - name: Run Content Curator (시간당 5건 — runner.ts 1h 중복 방지 내장)
+      - name: Run Content Curator (45분 간격 5건 — runner.ts 25분 중복 방지 내장)
         run: cd agents && npx tsx cron/runner.ts cafe_crawler content-curate
