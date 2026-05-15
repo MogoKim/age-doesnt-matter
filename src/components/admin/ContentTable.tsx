@@ -22,6 +22,7 @@ const SOURCE_BADGE: Record<string, string> = {
   USER: '',
   BOT: '🤖',
   ADMIN: '👑',
+  SHEET: '📋',
 }
 
 const PROMOTION_BADGE: Record<string, string> = {
@@ -42,6 +43,7 @@ interface Post {
   viewCount: number
   likeCount: number
   commentCount: number
+  reportCount: number
   createdAt: Date
   author: { id: string; nickname: string }
 }
@@ -54,6 +56,7 @@ interface ContentTableProps {
     status?: string
     source?: string
     search?: string
+    sort?: string
   }
 }
 
@@ -141,6 +144,18 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
           <option value="USER">유저</option>
           <option value="BOT">봇</option>
           <option value="ADMIN">관리자</option>
+          <option value="SHEET">스크래퍼</option>
+        </select>
+
+        <select
+          value={filters.sort || ''}
+          onChange={(e) => updateFilter('sort', e.target.value)}
+          className="h-10 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
+        >
+          <option value="">최신순</option>
+          <option value="likes">공감순</option>
+          <option value="comments">댓글순</option>
+          <option value="views">조회순</option>
         </select>
 
         <form onSubmit={handleSearch} className="flex gap-2">
@@ -201,6 +216,7 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
               <th className="px-3 py-3 text-center font-medium text-zinc-600">❤️</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">💬</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">👁️</th>
+              <th className="px-3 py-3 text-center font-medium text-zinc-600">🚨</th>
               <th className="px-3 py-3 text-left font-medium text-zinc-600">등록일</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">액션</th>
             </tr>
@@ -213,7 +229,8 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
                   key={post.id}
                   className={cn(
                     'border-b border-zinc-100 transition-colors hover:bg-zinc-50',
-                    selected.has(post.id) && 'bg-blue-50'
+                    selected.has(post.id) && 'bg-blue-50',
+                    post.source === 'BOT' && !selected.has(post.id) && 'bg-slate-50'
                   )}
                 >
                   <td className="px-4 py-3">
@@ -242,7 +259,17 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
                     </Link>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-zinc-600">
-                    {post.author.nickname}
+                    <Link
+                      href={`/admin/members?search=${encodeURIComponent(post.author.nickname)}`}
+                      className="hover:text-[#FF6F61] hover:underline"
+                    >
+                      {post.author.nickname}
+                    </Link>
+                    {post.source !== 'USER' && (
+                      <span className="ml-1 rounded bg-zinc-200 px-1 py-0.5 text-[10px] font-medium text-zinc-500">
+                        {post.source === 'BOT' ? '봇' : post.source === 'ADMIN' ? '관리자' : '스크래퍼'}
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-center">
                     <span
@@ -256,8 +283,16 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
                   </td>
                   <td className="px-3 py-3 text-center text-zinc-600">{post.commentCount}</td>
                   <td className="px-3 py-3 text-center text-zinc-600">{post.viewCount}</td>
+                  <td className="px-3 py-3 text-center">
+                    <span className={post.reportCount > 0 ? 'font-semibold text-red-600' : 'text-zinc-400'}>
+                      {post.reportCount}
+                    </span>
+                  </td>
                   <td className="whitespace-nowrap px-3 py-3 text-zinc-500">
-                    {new Date(post.createdAt).toLocaleDateString('ko-KR')}
+                    <div>{new Date(post.createdAt).toLocaleDateString('ko-KR')}</div>
+                    <div className="text-xs text-zinc-400">
+                      {new Date(post.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex items-center justify-center gap-1">
@@ -349,7 +384,7 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
             })}
             {posts.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-12 text-center text-sm text-zinc-500">
+                <td colSpan={11} className="px-4 py-12 text-center text-sm text-zinc-500">
                   콘텐츠가 없습니다.
                 </td>
               </tr>

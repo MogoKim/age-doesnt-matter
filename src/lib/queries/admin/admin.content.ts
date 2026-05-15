@@ -3,6 +3,8 @@ import type { BoardType, PostSource, PostStatus } from '@/generated/prisma/clien
 
 // ─── 콘텐츠 관리 ───
 
+export type ContentSortType = 'latest' | 'likes' | 'comments' | 'views'
+
 export interface ContentListOptions {
   boardType?: BoardType
   status?: PostStatus
@@ -10,10 +12,16 @@ export interface ContentListOptions {
   search?: string
   cursor?: string
   limit?: number
+  sort?: ContentSortType
 }
 
 export async function getContentList(options: ContentListOptions = {}) {
-  const { boardType, status, source, search, cursor, limit = 20 } = options
+  const { boardType, status, source, search, cursor, limit = 20, sort } = options
+
+  // sort가 없거나 'latest'면 기본 cursor 페이지네이션 모드
+  const isDefaultSort = !sort || sort === 'latest'
+  // 비기본 정렬은 cursor 페이지네이션 불가 → limit 100으로 한 번만 조회
+  const effectiveLimit = isDefaultSort ? limit : 100
 
   const where = {
     ...(boardType && { boardType }),
@@ -26,13 +34,20 @@ export async function getContentList(options: ContentListOptions = {}) {
         { author: { nickname: { contains: search, mode: 'insensitive' as const } } },
       ],
     }),
-    ...(cursor && { createdAt: { lt: new Date(cursor) } }),
+    // cursor는 기본 정렬(최신순)일 때만 유효
+    ...(isDefaultSort && cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
   }
+
+  const orderBy =
+    sort === 'likes'    ? { likeCount: 'desc' as const }    :
+    sort === 'comments' ? { commentCount: 'desc' as const }  :
+    sort === 'views'    ? { viewCount: 'desc' as const }     :
+    { createdAt: 'desc' as const }
 
   const posts = await prisma.post.findMany({
     where,
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1,
+    orderBy,
+    take: effectiveLimit + 1,
     select: {
       id: true,
       boardType: true,
@@ -45,6 +60,7 @@ export async function getContentList(options: ContentListOptions = {}) {
       viewCount: true,
       likeCount: true,
       commentCount: true,
+      reportCount: true,
       createdAt: true,
       author: {
         select: { id: true, nickname: true },
@@ -52,8 +68,9 @@ export async function getContentList(options: ContentListOptions = {}) {
     },
   })
 
-  const hasMore = posts.length > limit
-  if (hasMore) posts.pop()
+  // 비기본 정렬이면 더보기 없음 (cursor 페이지네이션 불가)
+  const hasMore = isDefaultSort && posts.length > effectiveLimit
+  if (posts.length > effectiveLimit) posts.pop()
 
   return { posts, hasMore }
 }

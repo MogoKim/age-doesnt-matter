@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getContentList } from '@/lib/queries/admin'
+import type { ContentSortType } from '@/lib/queries/admin/admin.content'
 import type { BoardType, PostSource, PostStatus } from '@/generated/prisma/client'
 import nextDynamic from 'next/dynamic'
 import ExpireJobsButton from '@/components/admin/ExpireJobsButton'
@@ -11,6 +12,11 @@ const ContentTable = nextDynamic(() => import('@/components/admin/ContentTable')
 export const metadata: Metadata = { title: '콘텐츠 관리' }
 export const dynamic = 'force-dynamic'
 
+const VALID_SORTS: ContentSortType[] = ['latest', 'likes', 'comments', 'views']
+function parseSort(s?: string): ContentSortType | undefined {
+  return VALID_SORTS.includes(s as ContentSortType) ? (s as ContentSortType) : undefined
+}
+
 interface Props {
   searchParams: Promise<{
     board?: string
@@ -18,6 +24,7 @@ interface Props {
     source?: string
     search?: string
     cursor?: string
+    sort?: string
   }>
 }
 
@@ -29,6 +36,7 @@ export default async function AdminContentPage({ searchParams }: Props) {
     source: params.source as PostSource | undefined,
     search: params.search,
     cursor: params.cursor,
+    sort: parseSort(params.sort),
   })
 
   return (
@@ -50,6 +58,7 @@ export default async function AdminContentPage({ searchParams }: Props) {
           status: params.status,
           source: params.source,
           search: params.search,
+          sort: params.sort,
         }}
       />
     </div>
