@@ -6,14 +6,16 @@
  *   npx tsx agents/community/sheet-scraper.ts              # 전체 사이트
  *   npx tsx agents/community/sheet-scraper.ts --site fmkorea  # 펨코만 (로컬)
  *
- * 크론: community:sheet-scrape (runner.ts) — GA에서 실행
+ * 크론: community:sheet-scrape (runner.ts) — agents-scraper.yml (5회/일)
  * 로컬: run-local-fmkorea.ts → launchd — Mac에서 펨코 전용 실행
- * 스케줄: GA 11:00/21:00 KST (오유/네이트판) + 로컬 11:30/21:30 KST (펨코)
+ * 스케줄: GA 07:30/09:00/12:00/15:00/21:00 KST (오유/네이트판) + 로컬 11:30/21:30 KST (펨코)
  *
  * 환경변수:
  *   SHEET_SCRAPER_EXCLUDE_SITE — GA에서 펨코 제외용 (예: fmkorea)
+ *   SHEET_SCRAPER_AI_FILTER    — "true"이면 Haiku로 관련성 점수/카테고리/제목 최적화 실행
  */
 
+import Anthropic from '@anthropic-ai/sdk'
 import { chromium, type BrowserContext, type Page } from 'playwright'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
@@ -24,6 +26,65 @@ import { processContentMedia } from './image-pipeline.js'
 import { transformContent, transformRawContent, classifyCategory } from './content-transformer.js'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+const client = new Anthropic()
+
+// -- AI 품질 필터 (SHEET_SCRAPER_AI_FILTER=true 시 활성화) --
+
+interface AiFilterResult {
+  relevanceScore: number   // 0~10: 50~60대 여성 공감도
+  category: string | null  // AI 분류 카테고리 (null이면 keyword fallback 사용)
+  optimizedTitle: string | null // 개선 제목 (조건부: 원본 충분하면 null)
+}
+
+async function aiQualityFilter(title: string, content: string): Promise<AiFilterResult> {
+  try {
+    const response = await client.messages.create({
+      model: process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5',
+      max_tokens: 200,
+      messages: [{
+        role: 'user',
+        content: `다음 글을 분석하세요. 대상: 50~60대 한국 여성 커뮤니티 "우리 나이가 어때서".
+
+제목: ${title.slice(0, 50)}
+본문: ${content.slice(0, 300)}
+
+JSON으로만 응답 (다른 텍스트 없음):
+{
+  "relevanceScore": 0~10 정수,
+  "category": "유머|일상|건강|요리|여행|기타",
+  "optimizedTitle": "개선 제목(25자 이내) 또는 null"
+}
+
+relevanceScore 기준:
+- 10: 50~60대 여성이 바로 공유할 것
+- 7: 우리 또래 공감 가능
+- 4: 관련 있지만 타겟층 불명확
+- 0: 20대 타겟/정치/혐오/무관
+
+optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 개선안 제시. 나머지는 null.
+절대 금지 단어: 시니어, 어르신, 노인`,
+      }],
+    })
+
+    const text = response.content[0].type === 'text' ? response.content[0].text : '{}'
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    const parsed = JSON.parse(jsonMatch?.[0] ?? '{}') as {
+      relevanceScore?: number
+      category?: string
+      optimizedTitle?: string | null
+    }
+
+    return {
+      relevanceScore: typeof parsed.relevanceScore === 'number' ? parsed.relevanceScore : 7,
+      category: typeof parsed.category === 'string' ? parsed.category : null,
+      optimizedTitle: typeof parsed.optimizedTitle === 'string' ? parsed.optimizedTitle : null,
+    }
+  } catch (err) {
+    // AI 실패 → keyword fallback, 게시 차단 없음
+    console.warn('[aiQualityFilter] 실패 — keyword fallback 사용:', err instanceof Error ? err.message : err)
+    return { relevanceScore: 7, category: null, optimizedTitle: null }
+  }
+}
 
 const WAVE_PERSONAS: Record<string, string[]> = {
   like:     ['BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR'],
@@ -424,7 +485,33 @@ async function main() {
             }
 
             // 카테고리 결정 (창업자 지정 우선, 아니면 게시판별 자동 분류)
-            const category = row.category || classifyCategory(title, content, tab.boardType)
+            let category = row.category || classifyCategory(title, content, tab.boardType)
+            let finalTitle = title
+
+            // AI 품질 필터 (SHEET_SCRAPER_AI_FILTER=true 시 활성화)
+            if (process.env.SHEET_SCRAPER_AI_FILTER === 'true') {
+              const aiResult = await aiQualityFilter(title, content)
+
+              // 관련성 낮으면 건너뜀 (50~60대 여성 공감도 6점 미만)
+              if (aiResult.relevanceScore < 6) {
+                await updateRow(tab.tabName, row.rowIndex, {
+                  status: 'SKIPPED_LOW_SCORE',
+                  error: `관련성 낮음 (점수: ${aiResult.relevanceScore}/10) — 50~60대 공감도 부족`,
+                }).catch((e) => console.error('[sheet-scraper] updateRow 실패 (SKIPPED_LOW_SCORE):', e))
+                totalSkippedFilter++
+                continue
+              }
+
+              // AI 카테고리 반영 (창업자 미지정 시만)
+              if (!row.category && aiResult.category) {
+                category = aiResult.category
+              }
+
+              // 제목 최적화 (AI가 개선안 제시한 경우만)
+              if (aiResult.optimizedTitle) {
+                finalTitle = aiResult.optimizedTitle
+              }
+            }
 
             // 페르소나 선택
             const persona = pickPersona(category, tab.boardType, row.persona)
@@ -432,7 +519,7 @@ async function main() {
 
             // 게시 (삭제된 게시글 재활용 또는 신규 생성)
             const postData = {
-              title,
+              title: finalTitle,
               content,
               boardType: tab.boardType,
               category,

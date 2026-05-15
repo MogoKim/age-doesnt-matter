@@ -1,28 +1,26 @@
-name: "Agents — Cafe Brief & Sheet"
+name: "Agents — Cafe Brief"
 
 on:
   workflow_dispatch:
     inputs:
       step:
-        description: "실행 단계 (external / sheet-scrape / all)"
+        description: "실행 단계 (brief-fallback / brief-monitor / all)"
         required: true
         default: "all"
         type: choice
         options:
           - all
-          - external
-          - sheet-scrape
+          - brief-fallback
+          - brief-monitor
 
-  # 매일 09:00, 09:30 KST — brief-fallback, brief-monitor
-  # 매일 10:30, 14:00, 21:00 KST — 시트 스크래퍼 (오유/네이트판, 펨코 로컬만)
+  # 매일 09:03 KST — brief-fallback
+  # 매일 09:30 KST — brief-monitor
+  # 시트 스크래퍼 → agents-scraper.yml (별도 워크플로우, 5회/일)
   # 큐레이션(5건/시간) → agents-cafe-hourly-curation.yml (09~23시 KST, 별도 워크플로우)
   # 댓글 파동(wave1~4) → agents-cafe-wave.yml (별도 concurrency group)
   schedule:
     - cron: "3 0 * * *"    # 09:03 KST — brief-fallback
-    - cron: "30 0 * * *"  # 09:30 KST — brief-monitor
-    - cron: "30 1 * * *"  # 10:30 KST — sheet-scrape
-    - cron: "9 5 * * *"   # 14:09 KST — sheet-scrape
-    - cron: "13 12 * * *" # 21:13 KST — sheet-scrape
+    - cron: "30 0 * * *"   # 09:30 KST — brief-monitor
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -54,8 +52,8 @@ jobs:
   brief-fallback:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # 09:00 KST (0 0 * * * UTC) — Mac launchd(08:45 KST) 실행 여부 확인 후 없으면 fallback_yesterday 생성
-    if: ${{ github.event.inputs.step == 'all' || (github.event_name == 'schedule' && github.event.schedule == '3 0 * * *') }}
+    # 09:03 KST (3 0 * * * UTC) — Mac launchd(08:45 KST) 실행 여부 확인 후 없으면 fallback_yesterday 생성
+    if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'brief-fallback' || (github.event_name == 'schedule' && github.event.schedule == '3 0 * * *') }}
 
     steps:
       - uses: actions/checkout@v4
@@ -76,7 +74,7 @@ jobs:
   brief-monitor:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: ${{ github.event.inputs.step == 'all' || (github.event_name == 'schedule' && github.event.schedule == '30 0 * * *') }}
+    if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'brief-monitor' || (github.event_name == 'schedule' && github.event.schedule == '30 0 * * *') }}
 
     steps:
       - uses: actions/checkout@v4
@@ -93,27 +91,4 @@ jobs:
       - name: Run DailyBrief Monitor
         run: cd agents && npx tsx cron/runner.ts cafe_crawler brief-monitor
 
-  sheet-scrape:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    if: ${{ github.event.inputs.step == 'all' || github.event.inputs.step == 'sheet-scrape' || (github.event_name == 'schedule' && (github.event.schedule == '30 1 * * *' || github.event.schedule == '9 5 * * *' || github.event.schedule == '13 12 * * *')) }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "npm"
-
-      - run: npm ci
-      - run: npx prisma generate
-      - run: cd agents && npm ci
-
-      - name: Install Playwright Chromium
-        run: cd agents && npx playwright install chromium --with-deps
-
-      - name: Run Sheet Scraper (펨코 제외 — 로컬 Mac에서 처리)
-        run: cd agents && npx tsx cron/runner.ts community sheet-scrape
-        env:
-          SHEET_SCRAPER_EXCLUDE_SITE: fmkorea
+  # sheet-scrape → agents-scraper.yml 로 이전됨 (2026-05-15)

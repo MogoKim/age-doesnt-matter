@@ -1,0 +1,67 @@
+name: "Agents — Community Scraper"
+
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: "실행 단계 (sheet-scrape)"
+        required: true
+        default: "sheet-scrape"
+        type: choice
+        options:
+          - sheet-scrape
+
+  # 오유/네이트판 — 5회/일 (펨코는 로컬 Mac launchd 전용, Cloudflare 차단)
+  # 로컬 펨코 스케줄: 11:30 KST + 21:30 KST (GHA와 30분 이상 간격, 사이트 분리로 충돌 없음)
+  schedule:
+    - cron: "30 22 * * *"  # 07:30 KST
+    - cron: "0 0 * * *"    # 09:00 KST
+    - cron: "0 3 * * *"    # 12:00 KST
+    - cron: "0 6 * * *"    # 15:00 KST
+    - cron: "0 12 * * *"   # 21:00 KST
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
+  SHEETS_SCRAPER_ID: ${{ secrets.SHEETS_SCRAPER_ID }}
+  GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_R2_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
+  CLOUDFLARE_R2_SECRET_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}
+  CLOUDFLARE_R2_BUCKET: ${{ secrets.CLOUDFLARE_R2_BUCKET }}
+  NEXT_PUBLIC_R2_PUBLIC_URL: ${{ secrets.NEXT_PUBLIC_R2_PUBLIC_URL }}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  sheet-scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.step == 'sheet-scrape' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Install Playwright Chromium
+        run: cd agents && npx playwright install chromium --with-deps
+
+      - name: Run Sheet Scraper (펨코 제외 — 로컬 Mac에서 처리)
+        run: cd agents && npx tsx cron/runner.ts community sheet-scrape
+        env:
+          SHEET_SCRAPER_EXCLUDE_SITE: fmkorea
+          SHEET_SCRAPER_AI_FILTER: "true"
