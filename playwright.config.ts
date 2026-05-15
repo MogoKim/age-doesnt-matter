@@ -207,13 +207,43 @@ export default defineConfig({
     // 요청 언어: "iPhone으로", "iOS로", "Safari로", "WebKit으로"
     {
       name: 'qa-ios-webkit',
-      testMatch: /qa\/(18|19|21-write-devices).*\.spec\.ts/,
+      testMatch: /qa\/(18|19|21-write-devices|2[6-9]).*\.spec\.ts/,
       use: {
         browserName: 'webkit',
         viewport: { width: 390, height: 844 },
         deviceScaleFactor: 3,
         isMobile: true,
         hasTouch: true,
+        baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
+        storageState: USER_AUTH,
+        screenshot: 'on',
+      },
+    },
+
+    // 18. 전체 클릭 감사 — Galaxy S24 Ultra (412×915, DPR3.5, Chromium Android)
+    {
+      name: 'qa-galaxy',
+      testMatch: /qa\/2[6-9]-.*\.spec\.ts/,
+      use: {
+        ...devices['Galaxy S24'],
+        viewport: { width: 412, height: 915 },
+        deviceScaleFactor: 3.5,
+        userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-S928U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+        baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
+        storageState: USER_AUTH,
+        screenshot: 'on',
+        hasTouch: true,
+        isMobile: true,
+      },
+    },
+
+    // 19. 전체 클릭 감사 — Desktop Chrome 1440×900 (user.json)
+    {
+      name: 'qa-audit-user-full',
+      testMatch: /qa\/2[6-9]-.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 900 },
         baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
         storageState: USER_AUTH,
         screenshot: 'on',

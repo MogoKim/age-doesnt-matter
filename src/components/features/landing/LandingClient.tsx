@@ -45,7 +45,7 @@ function SignupModal({ onClose }: { onClose: () => void }) {
 
         <button
           onClick={onClose}
-          className="w-full mt-3 h-[44px] text-sm rounded-xl"
+          className="w-full mt-3 h-[52px] text-sm rounded-xl"
           style={{ color: '#aaa' }}
         >
           닫기
@@ -95,14 +95,14 @@ function PostCard({ post, onAction }: { post: Post; onAction: (action: 'like' | 
       <div className="flex gap-2">
         <button
           onClick={() => onAction('like')}
-          className="flex-1 h-[44px] rounded-xl text-[14px] font-semibold border transition-colors"
+          className="flex-1 h-[52px] rounded-xl text-[14px] font-semibold border transition-colors"
           style={{ borderColor: '#FF6F61', color: '#FF6F61' }}
         >
           공감하기
         </button>
         <button
           onClick={() => onAction('comment')}
-          className="flex-1 h-[44px] rounded-xl text-[14px] font-semibold border transition-colors"
+          className="flex-1 h-[52px] rounded-xl text-[14px] font-semibold border transition-colors"
           style={{ borderColor: '#ddd', color: '#666' }}
         >
           댓글 달기

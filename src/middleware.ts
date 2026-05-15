@@ -84,6 +84,11 @@ export default async function middleware(request: NextRequest) {
     }
   }
 
+  // ── /community 인덱스 → /community/stories (RSC redirect보다 먼저 처리) ──
+  if (pathname === '/community') {
+    return NextResponse.redirect(new URL('/community/stories', request.url), { status: 301 })
+  }
+
   // ── 어드민 라우트 처리 ──
   if (pathname.startsWith('/admin')) {
     if (pathname === '/admin/login') {
