@@ -94,8 +94,8 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/cmo/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | GHA 11:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | RELATION | P1·P3 | [A04](A04-external-content.md) | ACTIVE | 2026-05-13 |
 | A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | ACTIVE | 2026-05-14 |
 | A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 07:00·12:00·15:00 KST | GHA | RELATION | — | [A06](A06-sns-posting.md) | ACTIVE | 2026-04-27 |
-| A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 13:00 KST | GHA | RELATION | — | [A07](A07-card-news.md) | ACTIVE | 2026-05-12 |
-| A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | HEALTH+MONEY | P2·P4 | - | ACTIVE | 2026-04-05 |
+| A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 13:00 KST | GHA | RELATION | — | [A07](A07-card-news.md) | ARCHIVED | 2026-05-15 |
+| A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | HEALTH+MONEY | P2·P4 | - | ARCHIVED | 2026-05-15 |
 | A09 | SEO 최적화 | `agents/cmo/seo-optimizer.ts` | GHA 월 08:00 KST (매주 일요일 23:00 UTC) | GHA | INFRA | — | [A09](A09-seo-optimizer.md) | ACTIVE | 2026-05-12 |
 | A10 | 채널 시딩 | `agents/cmo/channel-seeder.ts` | GHA 11:30 KST | GHA | RELATION | — | [A10](A10-channel-seeder.md) | ACTIVE | 2026-04-27 |
 | A11 | CEO SNS 브리핑 | `agents/ceo/morning-sns-briefing.ts` | GHA 10:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
@@ -157,3 +157,5 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | ID | 기능명 | 제거일 | 제거 사유 |
 |----|--------|--------|---------|
 | A99 | GHA 매거진 크론 | 2026-04-10 | launchd 로컬 이관 (Playwright 이미지 생성 로컬 전용) |
+| A07 | 카드뉴스 생성 | 2026-05-15 | 창업자 지시: 카드뉴스 중단. 코드(card-news/ 폴더) 삭제, GHA cron 제거 |
+| A08 | 지식인 답변 | 2026-05-15 | 창업자 지시: 지식인 완전 중단. knowledge-responder.ts + jisik-answerer.ts 삭제, GHA cron 제거 |

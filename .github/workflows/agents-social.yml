@@ -22,24 +22,24 @@ on:
           - test-validate
           - test-post
   schedule:
-    # 구글 애즈 일일 성과 리포트
-    - cron: "17 0 * * *"   # 09:17 KST — 전일 성과 리포트
-    # 텍스트 게시 (Threads/X) — 황금 시간대
+    # google-ads-report cron 제거 — DISPATCH ONLY (패키지 미설치, refresh_token 미설정)
+    # - cron: "17 0 * * *"   # 09:17 KST — 전일 성과 리포트 (2026-05-15 제거)
+    # 텍스트 게시 (Threads) — 황금 시간대
     - cron: "17 22 * * *"  # 07:17 KST — 아침 황금시간
     - cron: "17 3 * * *"   # 12:17 KST — 점심 황금시간
-    # 카드뉴스 v2 게시 (IG/FB/Threads) — 오후 황금시간
-    - cron: "17 6 * * *"   # 15:17 KST — 오후 황금시간
-    # 채널 시딩 (카카오/지식인/커뮤니티 초안)
-    - cron: "30 2 * * *"   # 11:30 KST — 채널 초안 (비정각 유지)
+    # 카드뉴스 v2 게시 — 중단 2026-05-15
+    # - cron: "17 6 * * *"   # 15:17 KST — 오후 황금시간 (카드뉴스 중단)
+    # 채널 시딩 — 중단 2026-05-15
+    # - cron: "30 2 * * *"   # 11:30 KST — 채널 초안 (초기 시딩 완료)
     # 메트릭 수집
     - cron: "17 11 * * *"  # 20:17 KST — 성과 수집
-    # 3일 주기 리뷰 (월+목) — reviewer는 strategy(10:15) 앞에 와야 해서 +7분
-    - cron: "7 1 * * 1,4"    # 월+목 10:07 KST — reviewer
-    - cron: "15 1 * * 1,4"   # 월+목 10:15 KST — strategy (비정각 유지)
+    # SNS 리뷰/전략 — 중단 2026-05-15 (Threads 단독 운영, 데이터 부족)
+    # - cron: "7 1 * * 1,4"    # 월+목 10:07 KST — reviewer (중단)
+    # - cron: "15 1 * * 1,4"   # 월+목 10:15 KST — strategy (중단)
     # 주간 SEO
     - cron: "17 23 * * 0"  # 월 08:17 KST — SEO 모니터
-    # 지식인 답변 초안 (주 3회: 화/목/토)
-    - cron: "17 3 * * 2,4,6" # 12:17 KST — knowledge-responder
+    # 지식인 답변 초안 — 삭제 2026-05-15
+    # - cron: "17 3 * * 2,4,6" # 12:17 KST — knowledge-responder (삭제)
     # Threads 토큰 갱신
     - cron: "17 1 * * 3"   # 수 10:17 KST — threads token refresh
 
@@ -119,9 +119,9 @@ jobs:
   social-reviewer:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # DISPATCH ONLY — 중단 2026-05-15 (Threads 단독 운영, 데이터 부족)
     if: >-
-      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-reviewer' ||
-      github.event_name == 'schedule' && github.event.schedule == '7 1 * * 1,4'
+      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-reviewer'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -147,9 +147,9 @@ jobs:
   social-strategy:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # DISPATCH ONLY — 중단 2026-05-15 (Threads 단독 운영, 데이터 부족)
     if: >-
-      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-strategy' ||
-      github.event_name == 'schedule' && github.event.schedule == '15 1 * * 1,4'
+      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-strategy'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -205,9 +205,9 @@ jobs:
   social-poster-visual:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # DISPATCH ONLY — 중단 2026-05-15 (카드뉴스 중단)
     if: >-
-      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-poster-visual' ||
-      github.event_name == 'schedule' && github.event.schedule == '17 6 * * *'
+      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-poster-visual'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -251,9 +251,9 @@ jobs:
   channel-seeder:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # DISPATCH ONLY — 중단 2026-05-15 (초기 시딩 완료)
     if: >-
-      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'channel-seeder' ||
-      github.event_name == 'schedule' && github.event.schedule == '30 2 * * *'
+      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'channel-seeder'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -279,9 +279,9 @@ jobs:
   knowledge-responder:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # DISPATCH ONLY — 삭제 예정 2026-05-15 (지식인 운영 중단)
     if: >-
-      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'knowledge-responder' ||
-      github.event_name == 'schedule' && github.event.schedule == '17 3 * * 2,4,6'
+      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'knowledge-responder'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

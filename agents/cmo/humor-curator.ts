@@ -1,3 +1,4 @@
+// DISPATCH ONLY — cron 중단 2026-05-15 (창업자 지시: Slack 알림만, 실용 가치 없음)
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'

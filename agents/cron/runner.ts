@@ -77,9 +77,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'ceo:morning-sns-briefing': () => import('../ceo/morning-sns-briefing.js').then(() => {}),
   'ceo:approval-reminder': () => import('./approval-reminder.js').then(() => {}),
   'strategist:user-deep-analysis': () => import('../strategist/user-deep-analysis.js').then(() => {}),
-  'cmo:caregiving-curator': () => import('../cmo/caregiving-curator.js').then(() => {}),
+  'cmo:caregiving-curator': () => import('../cmo/caregiving-curator.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-15 (Slack 알림만, 실용 가치 없음)
   'cmo:health-anxiety-responder': () => import('../cmo/health-anxiety-responder.js').then(() => {}),
-  'cmo:humor-curator': () => import('../cmo/humor-curator.js').then(() => {}),
+  'cmo:humor-curator': () => import('../cmo/humor-curator.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-15 (Slack 알림만, 실용 가치 없음)
   'cmo:content-gap-finder': () => import('../cmo/content-gap-finder.js').then(() => {}),
   'cmo:band-manager': () => import('../cmo/band-manager.js').then(() => {}),
   'cmo:source-expander': () => import('../cmo/source-expander.js').then(() => {}),
@@ -103,15 +103,12 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // launchd: com.unao.fmkorea-scraper.plist (11:30, 21:30 KST)
   'community:fmkorea-scrape': () => import('../community/run-local-fmkorea.js').then(() => {}),
   'cmo:channel-seeder': () => import('../cmo/channel-seeder.js').then(() => {}),
-  'cmo:knowledge-responder': () => import('../cmo/knowledge-responder.js').then(() => {}),
+  // cmo:knowledge-responder — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
+  // cmo:jisik-answerer — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
+  // cmo:card-news-generator — 삭제됨 2026-05-15 (카드뉴스 중단, 코드 삭제)
+  // cmo:social-poster-visual — 삭제됨 2026-05-15 (카드뉴스 SNS 게시 중단, 코드 삭제)
   'cmo:seo-optimizer': () => import('../cmo/seo-optimizer.js').then(() => {}),
-  'cmo:social-poster-visual': () => import('../cmo/social-poster-visual.js').then(() => {}),
   'cmo:threads-token-refresh': () => import('../cmo/platforms/threads-token-refresh.js').then(() => {}),
-  'cmo:jisik-answerer': () => import('../cmo/jisik-answerer.js').then(() => {}),
-  // agents-daily.yml 13:00 KST (04:00 UTC) — A07 카드뉴스 생성 (DALL-E 이미지 포함)
-  'cmo:card-news-generator': () => import('../cmo/card-news/generator.js').then(() => {}),
-  // DISPATCH ONLY — 로컬 전용 (네이버 IP 차단 + headless 탐지)
-  // 실행: npx tsx agents/cmo/jisik-answerer.ts
 
   // Design 에이전트 (LOCAL ONLY — Gemini API + Playwright)
   // LOCAL ONLY — 이미지 생성 비용 발생, 인터랙티브 세션 전용
