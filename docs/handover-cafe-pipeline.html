@@ -898,23 +898,51 @@
       원본 글의 욕망 카테고리에 따라 게시판과 서브카테고리가 자동 결정됩니다.
     </div>
 
-    <h3>7-A. 글 선택 로직</h3>
-    <div class="narrative">
-      <p>
-        <strong>1단계 — 킬러 포스트 우선</strong><br>
-        <span class="tooltip">killerScore ≥ 70<span class="tooltip-text">참여도가 특히 높은 화제 글. 화제가 된 글을 빠르게 우나어로 이식해서 초기 반응을 확보하는 전략입니다. (content-curator.ts L826-838)</span></span>인 글이 있으면 최대 2건을 먼저 선택합니다.
-      </p>
-      <p>
-        <strong>2단계 — 욕망별 분산 (하드캡)</strong><br>
-        건강(HEALTH) 글이 독점하지 않도록 하루 22건 상한을 둡니다.
-        가족(FAMILY) 11건, 재테크·은퇴·주거·유머 각 6건의 상한을 두어 다양한 주제가 골고루 올라오게 합니다.
-      </p>
-      <p>
-        <strong>3단계 — 원본 탐색 (자동 범위 확장)</strong><br>
-        원본이 없을 때 자동으로 범위를 넓힙니다:
-        48시간+키워드 → 없으면 7일+키워드 → 없으면 7일+욕망카테고리 전체.
-        원본 고갈로 발행을 못 하는 상황을 구조적으로 방지합니다.
-      </p>
+    <h3>7-A. 매시간 5건 선별 — 4단계 우선순위</h3>
+
+    <!-- 4단계 플로우 -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0;">
+      <div class="card" style="border-color:rgba(250,204,21,0.4); background:rgba(250,204,21,0.04);">
+        <div style="font-size:11px; font-weight:700; color:var(--yellow); margin-bottom:6px; letter-spacing:0.05em;">① KILLER — 최대 2건</div>
+        <div style="font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px;">killerScore ≥ 70 화제글 우선 삽입</div>
+        <div style="font-size:12px; color:var(--muted);">참여도 55% 가중치 점수 — "지금 사람들이 열광하는 글"을 빠르게 이식. <strong>상한 2건:</strong> 5건 전부 killer로 채우면 매시간 동일 주제(주로 건강·가족)가 반복 노출되어 다양성이 무너짐.</div>
+      </div>
+      <div class="card" style="border-color:rgba(96,165,250,0.4); background:rgba(96,165,250,0.04);">
+        <div style="font-size:11px; font-weight:700; color:var(--blue); margin-bottom:6px; letter-spacing:0.05em;">② BRIEF — 나머지 3건</div>
+        <div style="font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px;">DailyBrief(욕망 지도) 기반 주제 결정</div>
+        <div style="font-size:12px; color:var(--muted);">11:30 풀 파이프라인이 생성한 "오늘의 욕망 지도"를 보고 아직 덜 다룬 주제를 우선 선택. 매일 조금씩 다른 주제 비중이 나오는 이유.</div>
+      </div>
+      <div class="card" style="border-color:rgba(74,222,128,0.4); background:rgba(74,222,128,0.04);">
+        <div style="font-size:11px; font-weight:700; color:var(--green); margin-bottom:6px; letter-spacing:0.05em;">③ FALLBACK — 3단계 원본 탐색</div>
+        <div style="font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px;">원본 없으면 범위 자동 확장</div>
+        <div style="font-size:12px; color:var(--muted);">
+          <span style="display:block; padding:2px 0;">📌 1차: <strong>48시간</strong> + 키워드 매칭</span>
+          <span style="display:block; padding:2px 0;">📌 2차: <strong>7일</strong> + 키워드 매칭</span>
+          <span style="display:block; padding:2px 0;">📌 3차: <strong>7일</strong> + 카테고리만 (키워드 완화)</span>
+          최신 글 우선, 없으면 점점 과거로.
+        </div>
+      </div>
+      <div class="card" style="border-color:rgba(251,146,60,0.4); background:rgba(251,146,60,0.04);">
+        <div style="font-size:11px; font-weight:700; color:var(--orange,#fb923c); margin-bottom:6px; letter-spacing:0.05em;">④ HARDCAP — 욕망별 하루 상한</div>
+        <div style="font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px;">특정 욕망 편중 차단</div>
+        <div style="font-size:12px; color:var(--muted);">
+          HEALTH <strong>22건</strong> · FAMILY <strong>11건</strong> · 나머지 각 <strong>6건</strong>/일<br>
+          상한 초과 → 그 시간 해당 욕망 건너뜀 → 다른 주제 강제 선택.<br>
+          하루 총 75건(15시간 × 5건) 기준.
+        </div>
+      </div>
+    </div>
+
+    <!-- HEALTH 편중 경고 -->
+    <div class="alert warn mt8">
+      <strong>⚠️ 설계 한계: 원본 데이터 자체가 HEALTH 편중</strong><br>
+      우아한갱년기는 건강 주제가 60%+를 차지합니다. 하드캡 22건으로 HEALTH 과다 발행은 막지만,
+      PET·BEAUTY·FASHION 같은 카테고리는 <strong>원본 글 자체가 DB에 적어서</strong> 하드캡(6건)에
+      한참 못 미치게 발행될 수 있습니다. 보호 장치는 있으나 데이터 부족은 보완 불가.<br>
+      <span style="font-size:12px; color:var(--muted); margin-top:6px; display:block;">
+        📅 <strong>2026-05-22 이후 확인:</strong> CuratedContent 욕망별 발행 비중 쿼리 돌려서
+        하드캡 조정 또는 소스 카페 추가 여부 결정. (Claude에게 "큐레이션 욕망 분포 분석해줘" 요청)
+      </span>
     </div>
 
     <h3>7-B. 욕망 → 게시판 자동 매핑</h3>
