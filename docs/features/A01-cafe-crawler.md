@@ -211,6 +211,7 @@
 | 2026-05-13 | V6 P2: content-curator.ts 수미상관 90% 프롬프트 교체(반반이→원본 90% 보존, 첫문장/마지막만 페르소나). 큐레이션 페르소나 19명→50명(STORY 25/LIFE2 18/HUMOR 7). wave-processor.ts 댓글 원문 90% 보존+COMMENTER_PERSONA_IDS 50명 확장. generator.ts ENTERTAIN 욕망 desireToArea 매핑 추가 | AI 티 감소, LIFE2 게시글 비율 확보, 댓글 자연스러움 향상 |
 | 2026-05-13 | V6 P3: psych-analyzer.ts 욕망 카테고리 13→20개 확장(BEAUTY/DIGITAL/FOOD/SPIRITUAL/HOUSING/FASHION/PET 추가). content-curator.ts DESIRE_TO_SUBCATEGORY+guessDesire 키워드 7개 연동. generator.ts desireToArea 6개 추가. persona-data.ts BX(말티즈엄마) 79번째 추가. crawler.ts refreshRecentPosts()+refresh 모드 신설. run-pipeline.ts crawl-only에 재크롤 갱신 연결 | 욕망 인텔리전스 정밀도 향상, 페르소나 79명 목표 달성, 7일 이내 게시글 지표 자동 갱신 |
 | 2026-05-14 | crawler.ts `buildPostFromTarget`에 `mainPage?: Page` 파라미터 추가. extractComments를 메인 페이지(iframe 외부)에서 먼저 시도 → 빈 배열이면 iframe(target) 재시도. 대기시간 1.5초→3초 + waitForSelector 추가 | 신형식 네이버 카페 댓글이 cafe_main iframe 외부에 렌더링되어 7일간 수집 0%였던 근본 원인 수정 |
+| 2026-05-15 | content-curator.ts DESIRE_KEYWORDS HOBBY에서 '요리' 제거 + 수영·골프·바둑·자전거·캠핑·낚시·뜨개질·서예·그림·꽃꽂이 10개 추가 | '요리' 키워드가 HOBBY→FOOD 순서 탐색에서 음식 글을 HOBBY로 잘못 분류. 취미 키워드 확장으로 GENERAL 분류 비율 감소 목표 |
 
 ---
 
