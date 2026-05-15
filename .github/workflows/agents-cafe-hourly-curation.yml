@@ -2,21 +2,21 @@ name: "Agents — Cafe Hourly Curation (09~23시 KST)"
 
 on:
   schedule:
-    - cron: "0 0 * * *"   # 09:00 KST
-    - cron: "0 1 * * *"   # 10:00 KST
-    - cron: "0 2 * * *"   # 11:00 KST
-    - cron: "0 3 * * *"   # 12:00 KST
-    - cron: "0 4 * * *"   # 13:00 KST
-    - cron: "0 5 * * *"   # 14:00 KST
-    - cron: "0 6 * * *"   # 15:00 KST
-    - cron: "0 7 * * *"   # 16:00 KST
-    - cron: "0 8 * * *"   # 17:00 KST
-    - cron: "0 9 * * *"   # 18:00 KST
-    - cron: "0 10 * * *"  # 19:00 KST
-    - cron: "0 11 * * *"  # 20:00 KST
-    - cron: "0 12 * * *"  # 21:00 KST
-    - cron: "0 13 * * *"  # 22:00 KST
-    - cron: "0 14 * * *"  # 23:00 KST
+    - cron: "7 0 * * *"   # 09:00 KST
+    - cron: "7 1 * * *"   # 10:00 KST
+    - cron: "7 2 * * *"   # 11:00 KST
+    - cron: "7 3 * * *"   # 12:00 KST
+    - cron: "7 4 * * *"   # 13:00 KST
+    - cron: "7 5 * * *"   # 14:00 KST
+    - cron: "7 6 * * *"   # 15:00 KST
+    - cron: "7 7 * * *"   # 16:00 KST
+    - cron: "7 8 * * *"   # 17:00 KST
+    - cron: "7 9 * * *"   # 18:00 KST
+    - cron: "7 10 * * *"  # 19:00 KST
+    - cron: "7 11 * * *"  # 20:00 KST
+    - cron: "7 12 * * *"  # 21:00 KST
+    - cron: "7 13 * * *"  # 22:00 KST
+    - cron: "7 14 * * *"  # 23:00 KST
   workflow_dispatch:
 
 # 동시 실행 금지 — 이전 실행 완료 후 다음 큐레이션 실행

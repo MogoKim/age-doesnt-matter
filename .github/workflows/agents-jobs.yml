@@ -2,11 +2,11 @@ name: Agents — Job Scraper
 on:
   schedule:
     # 12:00 KST = 03:00 UTC
-    - cron: "0 3 * * *"
+    - cron: "9 3 * * *"
     # 16:00 KST = 07:00 UTC
-    - cron: "0 7 * * *"
+    - cron: "9 7 * * *"
     # 20:00 KST = 11:00 UTC
-    - cron: "0 11 * * *"
+    - cron: "9 11 * * *"
   workflow_dispatch:
 
 env:

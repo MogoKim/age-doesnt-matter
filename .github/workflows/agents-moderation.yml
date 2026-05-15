@@ -2,7 +2,7 @@ name: Agents — Moderation
 on:
   schedule:
     # 하루 3회: 09, 15, 21 KST = 00, 06, 12 UTC
-    - cron: "0 0,6,12 * * *"
+    - cron: "13 0,6,12 * * *"
   workflow_dispatch:
 
 env:
