@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v8.0</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v9.0</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -324,17 +324,17 @@
 
   <!-- ── Cover ── -->
   <div class="cover">
-    <div class="cover-badge">핸드오버 문서 v8.0 · 2026-05-15</div>
+    <div class="cover-badge">핸드오버 문서 v9.0 · 2026-05-15</div>
     <h1>우나어 네이버 카페 파이프라인<br>운영 핸드오버 가이드</h1>
     <p class="subtitle">
       왜 네이버를 크롤하는가, 왜 댓글을 다는가 — 근본 목적부터 기술 상세까지.<br>
-      GHA 45분 간격 큐레이션 100건/일 + 크롤 7회/일 + 새벽 감성글 01:15 슬롯 + 회원글 댓글 파동.
+      GHA 큐레이션 115건/일 (Regular 100 + Popular 15) + 크롤 10회/일 + 새벽 감성글 01:15 슬롯 + 회원글 댓글 파동.
     </p>
     <div class="cover-meta">
-      <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">V8.0 (2026-05-15 기준)</div></div>
+      <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">V9.0 (2026-05-15 기준)</div></div>
       <div class="cover-meta-item"><div class="label">수집 카페</div><div class="value">2개 (wgang · dlxogns01)</div></div>
-      <div class="cover-meta-item"><div class="label">큐레이션</div><div class="value ok">100건/일 (GHA 45분 간격)</div></div>
-      <div class="cover-meta-item"><div class="label">크롤</div><div class="value ok">7회/일 (07:40~00:30)</div></div>
+      <div class="cover-meta-item"><div class="label">큐레이션</div><div class="value ok">115건/일 (Regular 100 + Popular 15)</div></div>
+      <div class="cover-meta-item"><div class="label">Mac plist</div><div class="value ok">10종 (크롤 7 + popular-sync 3)</div></div>
       <div class="cover-meta-item"><div class="label">총 일 활동량</div><div class="value ok">~554건 (댓글+대댓글+좋아요)</div></div>
       <div class="cover-meta-item"><div class="label">실행 환경</div><div class="value warn">Mac LOCAL + GitHub Actions</div></div>
     </div>
@@ -342,16 +342,17 @@
 
   <!-- ── 현재 가동 상태 박스 ── -->
   <div class="status-box">
-    <div class="sb-title">현재 가동 중 (2026-05-15 기준 · V8.0)</div>
-    <div class="status-item"><div class="status-dot on"></div>Mac plist 7종 (크롤 07:40 · 09:30 · 11:30 · 14:30 · 17:30 · 21:30 · 00:30)</div>
-    <div class="status-item"><div class="status-dot on"></div>GHA 45분 간격 큐레이션 (08:20~01:15 KST, 20슬롯, 100건/일)</div>
+    <div class="sb-title">현재 가동 중 (2026-05-15 기준 · V9.0)</div>
+    <div class="status-item"><div class="status-dot on"></div>Mac plist 10종 (크롤 7종 + popular-sync 3종 10:30/16:00/21:15)</div>
+    <div class="status-item"><div class="status-dot on"></div>GHA Regular 큐레이션 (08:20~01:15 KST, 20슬롯, 100건/일)</div>
+    <div class="status-item"><div class="status-dot on"></div>GHA Popular 큐레이션 (10:50/16:15/21:30 KST, 3슬롯, 15건/일) — 신규 A30</div>
     <div class="status-item"><div class="status-dot on"></div>01:15 KST 새벽 감성글 특별 슬롯 (MEANING·SPIRITUAL·RELATION·FAMILY 우선)</div>
     <div class="status-item"><div class="status-dot on"></div>댓글 파동 (*/5분 24시간)</div>
     <div class="status-item"><div class="status-dot on"></div>시드봇 댓글·대댓글·좋아요</div>
     <div class="status-item"><div class="status-dot on"></div>회원글 댓글 파동</div>
     <div class="status-item"><div class="status-dot off"></div>시드봇 글 생성 중단 (ENABLE_SEED_POSTS=false)</div>
     <div class="status-item"><div class="status-dot on"></div>댓글 수집 복구 완료 (B1 해결 — 2026-05-14)</div>
-    <div class="status-item"><div class="status-dot on"></div>크롤 7회/일 + 100건/일 전환 완료 (V8.0 — 2026-05-15)</div>
+    <div class="status-item"><div class="status-dot on"></div>인기글 파이프라인 (A30) 신규 — 115건/일 체제 전환 완료 (V9.0 — 2026-05-15)</div>
   </div>
 
   <!-- ── TOC ── -->
@@ -363,6 +364,7 @@
       <li><a href="#flow">파이프라인 흐름 — 하루가 어떻게 돌아가나</a></li>
       <li><a href="#schedule">스케줄 타임라인</a></li>
       <li><a href="#crawl">크롤 시스템 상세</a></li>
+      <li><a href="#popular-sync">Popular-Sync 시스템 (A30) — 인기글 파이프라인 <span style="color:var(--orange); font-size:11px;">★ 신규</span></a></li>
       <li><a href="#quality">품질 점수 시스템</a></li>
       <li><a href="#curation">큐레이션 &amp; 카테고리 매핑</a></li>
       <li><a href="#preservation">원문 보존 — 수미상관 방식</a></li>
@@ -460,6 +462,21 @@
           </table>
         </div>
       </div>
+      <div class="card" style="border-color:rgba(251,146,60,0.3); background:var(--orange-dim);">
+        <div class="card-title" style="color:var(--orange);">V8 → V9 핵심 변화 (2026-05-15) — 인기글 파이프라인 A30</div>
+        <div class="table-wrap mt8">
+          <table>
+            <tbody>
+              <tr><td style="color:var(--sub);font-size:12px;">총 큐레이션</td><td>100건/일 → <strong class="text-green">115건/일</strong> (Regular 100 + Popular 15)</td></tr>
+              <tr><td style="color:var(--sub);font-size:12px;">GHA 슬롯</td><td>20슬롯 → <strong class="text-orange">23슬롯</strong> (popular-curate 3슬롯 신규)</td></tr>
+              <tr><td style="color:var(--sub);font-size:12px;">Mac plist</td><td>7종 → <strong class="text-orange">10종</strong> (popular-sync 3종 신규)</td></tr>
+              <tr><td style="color:var(--sub);font-size:12px;">popular-sync</td><td>없음 → <strong class="text-orange">10:30 / 16:00 / 21:15 KST</strong> (카페 /popular 탭 수집)</td></tr>
+              <tr><td style="color:var(--sub);font-size:12px;">popular-curate</td><td>없음 → <strong class="text-orange">10:50 / 16:15 / 21:30 KST</strong> (5건/슬롯 발행)</td></tr>
+              <tr><td style="color:var(--sub);font-size:12px;">신규 DB 컬럼</td><td>CafePost.isPopular / popularUpdatedAt 추가</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -478,10 +495,10 @@
     <div class="metric-grid">
       <div class="card green">
         <div class="card-title">큐레이션 발행</div>
-        <div class="card-value">100건/일</div>
+        <div class="card-value">115건/일</div>
         <div class="card-sub">
-          <span class="tooltip">45분 간격 5건 × 20회<span class="tooltip-text">GHA(GitHub 서버)가 08:20~01:15 KST, 45분 간격으로 Claude AI를 호출해 원본 글을 재가공·발행합니다. Mac이 꺼져있어도 동작합니다.</span></span>
-          (08:20~01:15 KST)
+          <span class="tooltip">Regular 100 + Popular 15<span class="tooltip-text">Regular: GHA 45분 간격 5건×20슬롯(08:20~01:15 KST). Popular: /popular 탭 sync 후 5건×3슬롯(10:50/16:15/21:30 KST). Mac이 꺼져있어도 GHA 동작.</span></span>
+          (GHA 23슬롯)
         </div>
       </div>
       <div class="card primary">
@@ -660,11 +677,11 @@
       <h2>스케줄 타임라인 (KST 기준)</h2>
     </div>
 
-    <!-- Mac plist 7종 -->
-    <h3 style="margin-bottom:12px; color:var(--primary);">Mac plist (LOCAL) — 창업자 Mac에서 실행 · 7종</h3>
+    <!-- Mac plist 10종 -->
+    <h3 style="margin-bottom:12px; color:var(--primary);">Mac plist (LOCAL) — 창업자 Mac에서 실행 · 10종</h3>
     <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">
       launchd가 Mac 로컬 시간(KST)을 직접 읽어 실행합니다. Mac이 켜져 있어야 동작합니다.
-      크롤 완료 소요시간 ~20~34분 (crawl-only) / 82~102분 (full).
+      크롤 완료 소요시간 ~20~34분 (crawl-only) / 82~102분 (full). popular-sync는 10분 하드 타임아웃.
     </p>
     <div style="overflow-x:auto; margin-bottom:32px;">
       <table style="width:100%; border-collapse:collapse; font-size:13px;">
@@ -727,14 +744,35 @@
             <td style="padding:10px 14px; color:var(--muted);">00:50~01:04</td>
             <td style="padding:10px 14px; color:var(--purple); font-weight:600;">01:15 특별 슬롯 (11분 여유)</td>
           </tr>
+          <tr style="border-top:2px solid var(--border); background:rgba(251,146,60,0.05);">
+            <td style="padding:10px 14px; color:var(--orange); font-weight:700;">10:30 ★</td>
+            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">popular-sync</td>
+            <td style="padding:10px 14px; color:var(--text);">wgang·dlxogns01 /popular 탭 수집 → <strong>isPopular=true 마킹, killerScore 재계산</strong></td>
+            <td style="padding:10px 14px; color:var(--muted);">10:40 (10분 하드타임아웃)</td>
+            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">10:50 GHA popular-curate</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border); background:rgba(251,146,60,0.05);">
+            <td style="padding:10px 14px; color:var(--orange); font-weight:700;">16:00 ★</td>
+            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">popular-sync</td>
+            <td style="padding:10px 14px; color:var(--text);">오후 인기글 재수집 — isPopular 리셋 후 재마킹</td>
+            <td style="padding:10px 14px; color:var(--muted);">16:10 (10분 하드타임아웃)</td>
+            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">16:15 GHA popular-curate</td>
+          </tr>
+          <tr style="background:rgba(251,146,60,0.05);">
+            <td style="padding:10px 14px; color:var(--orange); font-weight:700;">21:15 ★</td>
+            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">popular-sync</td>
+            <td style="padding:10px 14px; color:var(--text);">저녁 인기글 재수집 — 21:25 전 완료 → 21:30 crawl-only 간섭 없음</td>
+            <td style="padding:10px 14px; color:var(--muted);">21:25 (10분 하드타임아웃)</td>
+            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">21:30 GHA popular-curate</td>
+          </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- GHA 20슬롯 -->
-    <h3 style="margin-bottom:12px; color:var(--teal);">GitHub Actions (GHA) — 서버에서 자동 실행 · 큐레이션 20슬롯</h3>
+    <!-- GHA 23슬롯 -->
+    <h3 style="margin-bottom:12px; color:var(--teal);">GitHub Actions (GHA) — 서버에서 자동 실행 · 큐레이션 23슬롯</h3>
     <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">
-      Mac과 무관하게 GitHub 서버에서 실행됩니다. 45분 간격, 1회당 5건 발행 → <strong style="color:var(--text);">하루 총 100건</strong>.
+      Mac과 무관하게 GitHub 서버에서 실행됩니다. Regular: 45분 간격 5건×20슬롯(100건/일). Popular: popular-sync 완료 후 5건×3슬롯(15건/일). → <strong style="color:var(--text);">하루 총 115건</strong>.
       runner.ts가 25분 이내 중복 실행을 차단합니다 (이중발화 방지).
     </p>
     <div style="overflow-x:auto; margin-bottom:24px;">
@@ -848,6 +886,35 @@
             <td style="padding:8px 12px; color:var(--text);">
               <strong style="color:var(--purple);">심야 감성글 특별 슬롯</strong> — 00:30 크롤 완료 후 11분 여유<br>
               <span style="color:var(--muted); font-size:12px;">content-curator.ts가 KST 01시 감지 → MEANING/SPIRITUAL/RELATION/FAMILY 우선 정렬</span>
+            </td>
+          </tr>
+          <tr style="background:var(--bg3);">
+            <td colspan="3" style="padding:8px 12px; color:var(--orange); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em;">
+              ── Popular Track (A30) — 3슬롯 · popular-sync 완료 직후 실행 ──
+            </td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border); background:rgba(251,146,60,0.05);">
+            <td style="padding:8px 12px; text-align:center; color:var(--sub);">P1</td>
+            <td style="padding:8px 12px; color:var(--orange); font-weight:700;">10:50 ★</td>
+            <td style="padding:8px 12px; color:var(--text);">
+              <strong style="color:var(--orange);">popular-curate 오전</strong> — 10:30 popular-sync 완료 후 20분<br>
+              <span style="color:var(--muted); font-size:12px;">isPopular=true 글 5건 AI 재가공 발행. agents-cafe-popular-curation.yml</span>
+            </td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border); background:rgba(251,146,60,0.05);">
+            <td style="padding:8px 12px; text-align:center; color:var(--sub);">P2</td>
+            <td style="padding:8px 12px; color:var(--orange); font-weight:700;">16:15 ★</td>
+            <td style="padding:8px 12px; color:var(--text);">
+              <strong style="color:var(--orange);">popular-curate 오후</strong> — 16:00 popular-sync 완료 후 15분<br>
+              <span style="color:var(--muted); font-size:12px;">isPopular=true 글 5건 AI 재가공 발행</span>
+            </td>
+          </tr>
+          <tr style="background:rgba(251,146,60,0.05);">
+            <td style="padding:8px 12px; text-align:center; color:var(--sub);">P3</td>
+            <td style="padding:8px 12px; color:var(--orange); font-weight:700;">21:30 ★</td>
+            <td style="padding:8px 12px; color:var(--text);">
+              <strong style="color:var(--orange);">popular-curate 저녁</strong> — 21:15 popular-sync 완료 후 15분<br>
+              <span style="color:var(--muted); font-size:12px;">21:30 crawl-only plist와 concurrency group 공유 → 동시 실행 방지</span>
             </td>
           </tr>
         </tbody>
@@ -985,10 +1052,137 @@
     </div>
   </div>
 
-  <!-- ── 6. 품질 점수 시스템 ── -->
-  <div class="section" id="quality">
+  <!-- ── 6. Popular-Sync 시스템 (A30) ── -->
+  <div class="section" id="popular-sync">
     <div class="section-header">
       <div class="section-num">6</div>
+      <h2>Popular-Sync 시스템 (A30) — 인기글 파이프라인</h2>
+    </div>
+
+    <div class="biz-lead">
+      네이버 카페 실시간 인기글을 하루 3회 별도 수집해 우나어에 발행합니다.
+      <strong>killerScore 과소평가 문제를 근본 해결</strong>한 독립 트랙입니다.
+    </div>
+
+    <!-- 배경: killerScore 과소평가 문제 -->
+    <h3 style="margin-bottom:12px; color:var(--orange);">배경 — killerScore 과소평가 문제</h3>
+    <div class="card" style="border-color:rgba(251,146,60,0.3); background:var(--orange-dim); margin-bottom:24px;">
+      <div class="narrative" style="font-size:13.5px;">
+        <p><strong>Regular 크롤의 한계:</strong> 크롤 시점(11:22)에 수집된 글은 당시 조회수·좋아요로 killerScore가 낮게 기록됩니다.</p>
+        <p style="margin:8px 0 0;">
+          예) 11:22 게시글 A 올라옴 → 11:30 크롤 시 viewCount=12, likeCount=1 → killerScore=낮음 → "저점수 글"로 DB 저장<br>
+          → 14:30 A가 카페에서 오늘 가장 핫한 글이 됨 (viewCount=1,200, likeCount=47)<br>
+          → 하지만 DB에는 killerScore=낮음 → 큐레이션 제외<br>
+          → <strong style="color:var(--orange);">진짜 핫한 글이 우나어에 안 나온다.</strong>
+        </p>
+      </div>
+    </div>
+
+    <!-- 해결: /popular 탭 3회 sync -->
+    <h3 style="margin-bottom:12px; color:var(--orange);">해결 — /popular 탭 하루 3회 sync</h3>
+    <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">
+      네이버 카페 <code>/popular</code> 탭 = 실시간 인기 상위글. 이 페이지를 하루 3회(10:30/16:00/21:15 KST) 별도 크롤:
+    </p>
+    <div class="card-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+      <div class="card" style="border-color:rgba(251,146,60,0.3);">
+        <div class="card-title" style="color:var(--orange);">Case A — 이미 DB에 있는 글</div>
+        <div class="narrative mt8" style="font-size:13px;">
+          viewCount / likeCount / commentCount 재수집 → killerScore 재계산 → isPopular=true 마킹
+        </div>
+      </div>
+      <div class="card" style="border-color:rgba(251,191,36,0.3);">
+        <div class="card-title" style="color:var(--yellow);">Case B — DB에 없는 글</div>
+        <div class="narrative mt8" style="font-size:13px;">
+          qualityScore 기준 무시하고 전체 수집 → isPopular=true (인기글 자체가 품질 보증)
+        </div>
+      </div>
+    </div>
+
+    <!-- 설계 핵심 결정 (4가지 버그 방지) -->
+    <h3 style="margin-bottom:12px; color:var(--orange);">설계 핵심 결정 — 4가지 버그 방지</h3>
+    <div class="table-wrap" style="margin-bottom:24px;">
+      <table>
+        <thead><tr><th>버그</th><th>문제</th><th>해결</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong class="text-orange">BUG-1</strong></td>
+            <td>popular-sync가 run-pipeline.ts 경유 시 락파일 공유 → 21:30 crawl-only가 스킵됨</td>
+            <td><code>popular-sync.ts</code>는 run-pipeline.ts 미사용 → 락파일 없음 → 충돌 없음</td>
+          </tr>
+          <tr>
+            <td><strong class="text-orange">BUG-2</strong></td>
+            <td>content-curator.ts가 isPopular=true 글을 Regular 큐레이션에 먼저 사용</td>
+            <td>content-curator.ts 2곳에 <code>isPopular: false</code> 필터 추가 → 인기글 선취 차단</td>
+          </tr>
+          <tr>
+            <td><strong class="text-orange">BUG-3</strong></td>
+            <td>popular-curator.ts가 content-curator.ts import → auto-run 이중실행</td>
+            <td>popular-curator.ts는 독립 파일 — content-curator.ts import 안 함</td>
+          </tr>
+          <tr>
+            <td><strong class="text-orange">BUG-4</strong></td>
+            <td>스키마+코드 동시 커밋 → GHA 배포 중 런타임 에러</td>
+            <td>Commit A(스키마) → 창업자 migrate → Commit B(코드) 순서 엄수</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 추가 설계 -->
+    <div class="card" style="margin-bottom:24px;">
+      <div class="card-title">추가 설계 원칙</div>
+      <ul class="narrative mt8" style="font-size:13.5px; padding-left:20px; line-height:2;">
+        <li>매 sync 시작 시 해당 카페 isPopular <strong>전체 리셋</strong> → 전날 인기글 누적 방지</li>
+        <li>GHA concurrency group: <code>cafe-hourly-curation</code> 공유 → popular + regular 동시 실행 방지</li>
+        <li>popular-sync <strong>10분 하드 타임아웃</strong> — 21:25 전 강제 종료 → 21:30 crawl-only 보장</li>
+        <li>popular-curator.ts: Haiku 모델, 5건/슬롯, 일 3슬롯 → content-curator 대비 +15% 비용</li>
+      </ul>
+    </div>
+
+    <!-- 신규 파일 & DB 스키마 -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+      <div class="card">
+        <div class="card-title">신규 파일</div>
+        <pre style="margin-top:8px; font-size:12px; line-height:1.8; background:var(--bg); padding:12px; border-radius:8px; overflow-x:auto;">agents/cafe/popular-sync.ts
+  Mac launchd 전용, standalone, 락파일 없음
+
+agents/cafe/popular-curator.ts
+  GHA auto-run, content-curator 미import
+
+agents/cafe/curator-shared.ts
+  순수함수+상수 (PERSONAS 52명,
+  matchPersona, guessDesire)
+
+.github/workflows/
+  agents-cafe-popular-curation.yml
+
+launchd/
+  com.unao.cafe-crawler-popular-morning.plist
+  com.unao.cafe-crawler-popular-afternoon.plist
+  com.unao.cafe-crawler-popular-evening.plist</pre>
+      </div>
+      <div class="card">
+        <div class="card-title">DB 스키마 (Prisma)</div>
+        <pre style="margin-top:8px; font-size:12px; line-height:1.8; background:var(--bg); padding:12px; border-radius:8px;">model CafePost {
+  ...
+  isPopular        Boolean
+                   @default(false)
+  popularUpdatedAt DateTime?
+  ...
+}</pre>
+        <div class="narrative mt8" style="font-size:13px; color:var(--muted);">
+          isPopular: popular-sync 마킹<br>
+          popularUpdatedAt: 마지막 sync 시각<br>
+          마이그레이션: <code>069a692</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. 품질 점수 시스템 ── -->
+  <div class="section" id="quality">
+    <div class="section-header">
+      <div class="section-num">7</div>
       <h2>품질 점수 시스템</h2>
     </div>
 
@@ -1058,7 +1252,7 @@
   <!-- ── 7. 큐레이션 & 카테고리 매핑 ── -->
   <div class="section" id="curation">
     <div class="section-header">
-      <div class="section-num">7</div>
+      <div class="section-num">8</div>
       <h2>큐레이션 &amp; 카테고리 매핑</h2>
     </div>
 
@@ -1241,7 +1435,7 @@
   <!-- ── 8. 원문 보존 — 수미상관 ── -->
   <div class="section" id="preservation">
     <div class="section-header">
-      <div class="section-num">8</div>
+      <div class="section-num">9</div>
       <h2>원문 보존 — 수미상관 방식</h2>
     </div>
 
@@ -1300,7 +1494,7 @@
   <!-- ── 9. 댓글 파동 시스템 ── -->
   <div class="section" id="wave">
     <div class="section-header">
-      <div class="section-num">9</div>
+      <div class="section-num">10</div>
       <h2>댓글 파동 시스템</h2>
     </div>
 
@@ -1379,7 +1573,7 @@
   <!-- ── 10. 페르소나 생태계 ── -->
   <div class="section" id="persona">
     <div class="section-header">
-      <div class="section-num">10</div>
+      <div class="section-num">11</div>
       <h2>페르소나 생태계 (79명)</h2>
     </div>
 
@@ -1455,7 +1649,7 @@
   <!-- ── 11. 카페 수집 상세 ── -->
   <div class="section" id="cafes">
     <div class="section-header">
-      <div class="section-num">11</div>
+      <div class="section-num">12</div>
       <h2>수집 대상 카페 상세</h2>
     </div>
 
@@ -1492,11 +1686,11 @@
   <!-- ── 12. 쿠키 만료 · 비용 · 이슈 · 로드맵 ── -->
   <div class="section" id="ops">
     <div class="section-header">
-      <div class="section-num">12</div>
+      <div class="section-num">13</div>
       <h2>쿠키 만료 · 비용 · 알려진 이슈 · 로드맵</h2>
     </div>
 
-    <h3>12-A. 쿠키 만료 대응</h3>
+    <h3>13-A. 쿠키 만료 대응</h3>
     <div class="biz-lead">
       네이버 카페 크롤링에는 로그인 쿠키가 필요합니다. NID_AUT가 만료되면 크롤이 중단되고 Slack #시스템에 긴급 알림이 옵니다.
     </div>
@@ -1535,7 +1729,7 @@
     <pre>launchctl unload ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist
 launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
 
-    <h3>12-B. 월간 AI 비용 (V8 기준)</h3>
+    <h3>13-B. 월간 AI 비용 (V9 기준)</h3>
     <div class="table-wrap">
       <table>
         <thead><tr><th>항목</th><th>모델</th><th>설명</th><th>월간 비용</th></tr></thead>
@@ -1543,11 +1737,12 @@ launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
           <tr><td>심리분석</td><td>Claude Haiku</td><td>하루 1회, 글 ~50건 분석</td><td class="text-green">~$7</td></tr>
           <tr><td>트렌드 분석</td><td>Claude Sonnet</td><td>하루 1회 (11:30)</td><td class="text-green">~$90</td></tr>
           <tr><td>DailyBrief 생성</td><td>Claude Sonnet</td><td>하루 1회 (11:30)</td><td class="text-green">~$26</td></tr>
-          <tr><td>큐레이션 100건/일</td><td>Claude Sonnet</td><td>45분 간격 5건 × 20회 × 30일</td><td class="text-yellow">~$108</td></tr>
+          <tr><td>Regular 큐레이션 100건/일</td><td>Claude Sonnet</td><td>45분 간격 5건 × 20회 × 30일</td><td class="text-yellow">~$108</td></tr>
+          <tr style="background:rgba(251,146,60,0.05);"><td><strong style="color:var(--orange);">Popular 큐레이션 15건/일</strong></td><td>Claude Haiku</td><td>popular-curate 5건 × 3슬롯 × 30일 <span style="color:var(--orange); font-size:11px;">★ 신규 A30</span></td><td class="text-green">~$3</td></tr>
           <tr><td>회원글 댓글 파동</td><td>Claude Haiku</td><td>회원글 발행 시 (소량)</td><td class="text-green">~$2</td></tr>
           <tr><td>Playwright 크롤링</td><td>—</td><td>AI 미사용</td><td class="text-green">$0</td></tr>
           <tr><td>GitHub Actions</td><td>—</td><td>Public repo 무제한 무료</td><td class="text-green">$0</td></tr>
-          <tr style="background:var(--bg3);"><td><strong>합계</strong></td><td></td><td></td><td><strong class="text-primary">~$233/월</strong></td></tr>
+          <tr style="background:var(--bg3);"><td><strong>합계</strong></td><td></td><td></td><td><strong class="text-primary">~$236/월</strong></td></tr>
         </tbody>
       </table>
     </div>
@@ -1557,7 +1752,7 @@ launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
       Claude Sonnet: $3/1M input + $15/1M output. 큐레이션 1건당 약 $0.035. 월 $200 초과 시 Anthropic 대시보드에서 확인하세요.
     </div>
 
-    <h3>12-C. 알려진 이슈</h3>
+    <h3>13-C. 알려진 이슈</h3>
     <div class="card" style="border-color:rgba(74,222,128,0.3); background:var(--green-dim);">
       <div class="card-title" style="color:var(--green);">✅ 댓글 수집 복구 완료 (B1 — 2026-05-14 해결)</div>
       <div class="narrative mt8" style="font-size:13.5px;">
@@ -1583,7 +1778,7 @@ launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
       </div>
     </div>
 
-    <h3 class="mt24">12-D. 앞으로 할 것 (로드맵)</h3>
+    <h3 class="mt24">13-D. 앞으로 할 것 (로드맵)</h3>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Phase</th><th>내용</th><th>우선순위</th></tr></thead>
@@ -1613,12 +1808,19 @@ launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
       첫 발행 09:07→08:20 KST · runner.ts dedup 60분→25분 (45분 간격 대응) ·
       01:15 KST 심야 감성글 특별 슬롯 (MEANING/SPIRITUAL/RELATION/FAMILY 우선 정렬) · 새벽 크롤 00:30 신규 추가.
     </div>
+    <div class="alert" style="background:rgba(251,146,60,0.08); border-color:rgba(251,146,60,0.4); margin-top:12px;">
+      <strong style="color:var(--orange);">V9.0 완료 기준 (2026-05-15)</strong>
+      V8.0 모든 항목 포함 · popular-sync 3슬롯 신규 (10:30/16:00/21:15 KST, Mac launchd) ·
+      popular-curate 3슬롯 신규 GHA (10:50/16:15/21:30 KST) · Mac plist 7→10종 ·
+      GHA 큐레이션 20→23슬롯, 100→115건/일 (Regular 100 + Popular 15) ·
+      DB: CafePost.isPopular / popularUpdatedAt 신규 컬럼 · curator-shared.ts (순수함수 공유) · BUG-1~4 설계 결정 반영.
+    </div>
   </div>
 
   <!-- ── Footer ── -->
   <div class="footer">
-    <p>우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 문서 v8.0</p>
-    <p>최종 업데이트: 2026-05-15 | 크롤 7회/일 · GHA 45분 간격 20슬롯 100건/일 · 01:15 심야 감성글 슬롯 · runner.ts dedup 25분</p>
+    <p>우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 문서 v9.0</p>
+    <p>최종 업데이트: 2026-05-15 | 크롤 7회/일 + popular-sync 3회/일 · GHA 23슬롯 115건/일 (Regular 100 + Popular 15) · 01:15 심야 감성글 슬롯 · Mac plist 10종</p>
     <p>문의: mogoyongseok@gmail.com | GitHub: MogoKim/age-doesnt-matter</p>
   </div>
 
