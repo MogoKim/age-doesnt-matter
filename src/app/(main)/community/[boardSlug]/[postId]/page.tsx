@@ -31,7 +31,8 @@ interface PageProps {
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { boardSlug, postId } = await params
+  const { boardSlug, postId: rawPostId } = await params
+  const postId = decodeURIComponent(rawPostId)
   const post = await getPostDetail(postId)
   if (!post) return {}
 
@@ -75,7 +76,8 @@ async function CommentsLoader({ postId, userId, currentUser }: {
 }
 
 export default async function PostDetailPage({ params, searchParams }: PageProps) {
-  const [{ boardSlug, postId }, { from }] = await Promise.all([params, searchParams])
+  const [{ boardSlug, postId: rawPostId }, { from }] = await Promise.all([params, searchParams])
+  const postId = decodeURIComponent(rawPostId)
   const isTrending = from === 'trending'
 
   // from 파라미터: PostCard가 진입 경로를 URL에 담아 전달. router.back() 대신
