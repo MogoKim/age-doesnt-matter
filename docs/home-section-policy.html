@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>홈 섹션 노출 정책 — 우나어</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f7;
+    color: #1c1c1e;
+    line-height: 1.6;
+  }
+  .page-header {
+    background: linear-gradient(135deg, #FF6F61 0%, #ff9a8b 100%);
+    color: white;
+    padding: 40px 24px 32px;
+    text-align: center;
+  }
+  .page-header h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+  .page-header p { font-size: 15px; opacity: 0.9; }
+  .page-header .date { font-size: 13px; opacity: 0.75; margin-top: 6px; }
+
+  .container { max-width: 800px; margin: 0 auto; padding: 0 16px 60px; }
+
+  /* 요약 카드 */
+  .summary-section { margin-top: 28px; }
+  .summary-title { font-size: 13px; font-weight: 700; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  .summary-cards { display: flex; flex-direction: column; gap: 10px; }
+  .summary-card {
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .summary-card.blue { background: #e8f0fe; border-left: 4px solid #4285f4; }
+  .summary-card.green { background: #e6f4ea; border-left: 4px solid #34a853; }
+  .summary-card.red { background: #fce8e6; border-left: 4px solid #ea4335; }
+  .summary-card .icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+  .summary-card .text { flex: 1; }
+  .summary-card .text strong { font-size: 16px; font-weight: 700; display: block; margin-bottom: 3px; }
+  .summary-card .text span { font-size: 14px; color: #3c3c43; }
+
+  /* 섹션 공통 */
+  .section {
+    background: white;
+    border-radius: 18px;
+    margin-top: 20px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+  .section-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid #f2f2f7;
+  }
+  .section-header .num {
+    font-size: 11px;
+    font-weight: 700;
+    color: #FF6F61;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+  .section-header h2 { font-size: 19px; font-weight: 800; }
+  .section-header .subtitle { font-size: 14px; color: #6c6c70; margin-top: 3px; }
+  .section-body { padding: 20px; }
+
+  /* 시뮬레이션 순서도 */
+  .flowchart { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .flow-start {
+    background: #1c1c1e;
+    color: white;
+    padding: 12px 28px;
+    border-radius: 50px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .flow-arrow { font-size: 20px; color: #8e8e93; margin: 6px 0; }
+  .flow-question {
+    background: #f2f2f7;
+    border-radius: 12px;
+    padding: 14px 20px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    width: 100%;
+    max-width: 360px;
+  }
+  .flow-branches {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 520px;
+    margin-top: 6px;
+  }
+  .flow-branch {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .flow-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6c6c70;
+  }
+  .flow-result {
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    width: 100%;
+  }
+  .flow-result.instant { background: #e6f4ea; color: #137333; }
+  .flow-result.wait { background: #fce8e6; color: #c5221f; }
+  .flow-sub { font-size: 12px; color: #6c6c70; margin-top: 4px; text-align: center; }
+  .flow-question2 {
+    background: #fff3cd;
+    border: 1.5px solid #ffc107;
+    border-radius: 12px;
+    padding: 13px 20px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    width: 100%;
+    max-width: 360px;
+  }
+  .flow-result.success { background: #e6f4ea; color: #137333; }
+  .flow-result.fail { background: #fce8e6; color: #c5221f; }
+  .flow-time-badge {
+    background: #e8f0fe;
+    color: #1a73e8;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 50px;
+    margin-top: 4px;
+  }
+
+  /* 타이밍 표 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th {
+    background: #f2f2f7;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 13px;
+    color: #3c3c43;
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid #f2f2f7; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .badge.realtime { background: #e6f4ea; color: #137333; }
+  .badge.batch { background: #e8f0fe; color: #1a73e8; }
+  .badge.cache { background: #f2f2f7; color: #3c3c43; }
+  .badge.none { background: #fce8e6; color: #c5221f; }
+  .conclusion-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 0 10px 10px 0;
+    padding: 12px 16px;
+    margin-top: 16px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* 섹션 정책 카드 */
+  .policy-cards { display: flex; flex-direction: column; gap: 16px; }
+  .policy-card {
+    border: 1.5px solid #e5e5ea;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .policy-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #fafafa;
+    border-bottom: 1px solid #e5e5ea;
+  }
+  .policy-card-header .emoji { font-size: 22px; }
+  .policy-card-header .title-wrap { flex: 1; }
+  .policy-card-header .pname { font-size: 17px; font-weight: 800; }
+  .policy-card-header .count { font-size: 13px; color: #6c6c70; }
+  .policy-card-header .gate {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 50px;
+  }
+  .gate.required { background: #fce8e6; color: #c5221f; }
+  .gate.not-required { background: #e6f4ea; color: #137333; }
+  .policy-card-body { padding: 14px 16px; }
+  .policy-row { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f2f2f7; align-items: flex-start; }
+  .policy-row:last-child { border-bottom: none; }
+  .policy-label { font-size: 12px; font-weight: 700; color: #8e8e93; width: 80px; flex-shrink: 0; padding-top: 1px; }
+  .policy-value { font-size: 14px; flex: 1; }
+  .tag { display: inline-block; background: #f2f2f7; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; margin: 1px 2px; }
+  .fallback-list { list-style: none; padding: 0; }
+  .fallback-list li {
+    padding: 5px 0 5px 20px;
+    position: relative;
+    font-size: 13px;
+    border-bottom: 1px solid #f9f9f9;
+  }
+  .fallback-list li:last-child { border-bottom: none; }
+  .fallback-list li::before {
+    content: attr(data-step);
+    position: absolute;
+    left: 0;
+    font-weight: 800;
+    color: #FF6F61;
+    font-size: 12px;
+  }
+  .special-note {
+    background: #f8f0ff;
+    border-left: 3px solid #9b59b6;
+    padding: 8px 12px;
+    border-radius: 0 8px 8px 0;
+    font-size: 13px;
+    margin-top: 8px;
+    font-weight: 600;
+    color: #6c3483;
+  }
+
+  /* 뜨는점수 */
+  .score-formula {
+    background: #1c1c1e;
+    color: #f2f2f7;
+    border-radius: 12px;
+    padding: 16px 18px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 2;
+  }
+  .score-formula .highlight { color: #FF6F61; font-weight: 700; font-size: 15px; }
+  .weight-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .weight-card {
+    background: #f2f2f7;
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .weight-card .wicon { font-size: 24px; margin-bottom: 6px; }
+  .weight-card .wname { font-size: 12px; color: #6c6c70; margin-bottom: 4px; }
+  .weight-card .wval { font-size: 18px; font-weight: 800; color: #1c1c1e; }
+  .weight-card .wsub { font-size: 11px; color: #8e8e93; margin-top: 2px; }
+  .time-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .time-card {
+    border-radius: 12px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .time-card.dawn { background: #2c2c54; color: white; }
+  .time-card.morning { background: #f39c12; color: white; }
+  .time-card.day { background: #ecf0f1; color: #1c1c1e; }
+  .time-card .trange { font-size: 11px; font-weight: 700; opacity: 0.85; margin-bottom: 4px; }
+  .time-card .tbonus { font-size: 20px; font-weight: 900; margin-bottom: 3px; }
+  .time-card .tdesc { font-size: 11px; opacity: 0.8; }
+  .example-table td { font-size: 13px; }
+  .decay-note {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 12px 16px;
+    border-radius: 0 10px 10px 0;
+    font-size: 14px;
+  }
+  .decay-timeline {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    padding: 10px 0;
+    justify-content: center;
+  }
+  .decay-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .decay-bar {
+    background: linear-gradient(to top, #FF6F61, #ff9a8b);
+    border-radius: 4px 4px 0 0;
+    width: 32px;
+  }
+  .decay-label { font-size: 11px; color: #6c6c70; }
+  .decay-val { font-size: 10px; font-weight: 700; color: #FF6F61; }
+
+  /* HOT */
+  .level-cards { display: flex; flex-direction: column; gap: 10px; }
+  .level-card {
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .level-card.normal { background: #f2f2f7; }
+  .level-card.hot { background: #fff3e0; border: 1.5px solid #ff9800; }
+  .level-card.hall { background: #f3e5f5; border: 1.5px solid #9c27b0; }
+  .level-card .licon { font-size: 26px; flex-shrink: 0; }
+  .level-card .lname { font-size: 16px; font-weight: 800; margin-bottom: 3px; }
+  .level-card .lcond { font-size: 14px; color: #3c3c43; margin-bottom: 3px; }
+  .level-card .lnoti { font-size: 13px; color: #6c6c70; }
+  .demotion-section {
+    background: #fce8e6;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 16px;
+  }
+  .demotion-section h4 { font-size: 14px; font-weight: 800; color: #c5221f; margin-bottom: 10px; }
+  .demotion-rule { font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(197,34,31,0.1); display: flex; gap: 8px; }
+  .demotion-rule:last-child { border-bottom: none; }
+  .demotion-rule .dr-icon { flex-shrink: 0; }
+  .hall-note {
+    background: #f3e5f5;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #6a1b9a;
+    text-align: center;
+  }
+
+  /* 집중 기능 */
+  .featured-warning {
+    background: #fce8e6;
+    border: 2px solid #ea4335;
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .featured-warning .wi { font-size: 36px; margin-bottom: 8px; }
+  .featured-warning h3 { font-size: 18px; font-weight: 800; color: #c5221f; margin-bottom: 6px; }
+  .featured-warning p { font-size: 14px; color: #3c3c43; }
+  .featured-table td:first-child { font-weight: 600; width: 200px; }
+  .featured-table td .no { color: #c5221f; font-weight: 700; }
+  .future-box {
+    background: #e8f0fe;
+    border-left: 4px solid #4285f4;
+    border-radius: 0 12px 12px 0;
+    padding: 14px 16px;
+    margin-top: 16px;
+    font-size: 14px;
+  }
+  .future-box strong { display: block; margin-bottom: 4px; color: #1a73e8; }
+
+  /* 반응형 */
+  @media (max-width: 480px) {
+    .weight-cards, .time-cards { grid-template-columns: repeat(3, 1fr); }
+    .flow-branches { flex-direction: column; }
+    .flow-branch { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>홈 섹션 노출 정책</h1>
+  <p>뜨는이야기 · 사는이야기 · 웃음방 · 매거진 · 오늘의 추천 일자리</p>
+  <div class="date">코드 직접 검토 기준 · 2026년 5월 16일</div>
+</div>
+
+<div class="container">
+
+  <!-- 0. 요약 -->
+  <div class="summary-section">
+    <div class="summary-title">한눈에 요약</div>
+    <div class="summary-cards">
+      <div class="summary-card blue">
+        <div class="icon">💬</div>
+        <div class="text">
+          <strong>커뮤니티 3섹션 (뜨는이야기·사는이야기·웃음방)</strong>
+          <span>좋아요 또는 댓글이 <strong>1개 이상</strong> 있어야 홈에 노출됩니다. 아무 반응이 없는 글은 보이지 않습니다.</span>
+        </div>
+      </div>
+      <div class="summary-card green">
+        <div class="icon">📰</div>
+        <div class="text">
+          <strong>매거진 · 오늘의 추천 일자리</strong>
+          <span>반응과 무관하게 <strong>발행 즉시 홈에 노출</strong>됩니다. 에디터/관리자가 발행하면 최대 60초 내에 보입니다.</span>
+        </div>
+      </div>
+      <div class="summary-card red">
+        <div class="icon">⭐</div>
+        <div class="text">
+          <strong>"집중" 기능 — 현재 홈과 연결 안 됨</strong>
+          <span>어드민에서 집중 체크를 해도 홈 노출에 영향이 <strong>없습니다</strong>. DB에만 기록되는 상태입니다.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. 시뮬레이션 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="num">시뮬레이션</div>
+      <h2>글을 올리면 언제 홈에 보이나?</h2>
+      <div class="subtitle">게시판 유형과 반응 여부에 따라 달라집니다</div>
+    </div>
+    <div class="section-body">
+      <div class="flowchart">
+
+        <!-- 시작 -->
+        <div class="flow-start">📝 글 발행 완료</div>
+        <div class="flow-arrow">↓</div>
+
+        <!-- 분기 1: 게시판 유형 -->
+        <div class="flow-question">어떤 게시판에 올렸나?</div>
+        <div class="flow-arrow">↓</div>
+
+        <div class="flow-branches">
+          <!-- 매거진/일자리 -->
+          <div class="flow-branch">
+            <div class="flow-label">📰 매거진 / 일자리</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-result instant">
+              ✅ 즉시 홈 노출<br>
+              <small style="font-weight:400">(최대 60초 이내)</small>
+            </div>
+            <div class="flow-sub">반응 없어도 됨<br>무조건 최신 순</div>
+          </div>
+
+          <!-- 커뮤니티 -->
+          <div class="flow-branch">
+            <div class="flow-label">💬 커뮤니티 (사는이야기·웃음방·2막준비)</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-question2" style="font-size:13px;">좋아요 or 댓글<br>1개 이상 받았나?</div>
+            <div style="display:flex; gap:8px; width:100%; margin-top:6px;">
+              <div style="flex:1;">
+                <div class="flow-result fail" style="font-size:12px;">❌ 홈에 안 보임<br><small style="font-weight:400">반응 생길 때까지 대기</small></div>
+              </div>
+              <div style="flex:1;">
+                <div class="flow-result success" style="font-size:12px;">✅ 홈 노출 대기열 진입</div>
+                <div class="flow-time-badge" style="font-size:11px; margin-top:6px;">engagement 발생 즉시 점수 계산<br>→ 최대 60초 내 홈 반영</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px; background:#f2f2f7; border-radius:12px; padding:12px 16px; font-size:14px; text-align:center; width:100%;">
+          ⏱️ 커뮤니티 글이 홈에 올라오기까지 <strong>최대 약 60초</strong> 소요<br>
+          <span style="font-size:12px; color:#6c6c70;">(engagement 발생 즉시 점수 계산 → 60초 캐시 자동 갱신)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 업데이트 주기 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="num">타이밍</div>
+      <h2>실시간인가? 배치인가?</h2>
+      <div class="subtitle">각 시스템이 언제 업데이트되는지 정확히 정리</div>
+    </div>
+    <div class="section-body">
+      <table>
+        <thead>
+          <tr>
+            <th>무엇이</th>
+            <th>주기</th>
+            <th>방식</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>홈 화면 목록</strong><br><span style="font-size:12px;color:#6c6c70;">어떤 글이 보일지 결정</span></td>
+            <td><strong>60초마다</strong></td>
+            <td><span class="badge cache">서버 캐시 자동 갱신</span></td>
+          </tr>
+          <tr>
+            <td><strong>뜨는점수 (trendingScore)</strong><br><span style="font-size:12px;color:#6c6c70;">어떤 글이 상위에 올지 결정</span></td>
+            <td><strong>즉시 + 하루 2회</strong><br><span style="font-size:11px;color:#6c6c70;">engagement 즉시 (실시간)<br>+ 배치 KST 12:11 · 18:11</span></td>
+            <td><span class="badge realtime">실시간</span> <span class="badge batch">배치</span><br><span style="font-size:11px;color:#6c6c70;">좋아요·댓글·비회원 댓글 즉시<br>+ COO 에이전트 배치</span></td>
+          </tr>
+          <tr>
+            <td><strong>HOT / 명예의전당 선정</strong><br><span style="font-size:12px;color:#6c6c70;">등급 자동 승격</span></td>
+            <td><strong>즉시</strong></td>
+            <td><span class="badge realtime">실시간</span><br><span style="font-size:11px;color:#6c6c70;">좋아요·댓글 발생 순간</span></td>
+          </tr>
+          <tr>
+            <td><strong>⭐ 집중 체크</strong><br><span style="font-size:12px;color:#6c6c70;">어드민 클릭 시</span></td>
+            <td>즉시</td>
+            <td><span class="badge none">홈 반영 안 됨</span><br><span style="font-size:11px;color:#6c6c70;">DB에만 기록</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="conclusion-box">
+        💡 커뮤니티 글이 처음 반응(좋아요·댓글 1개)을 받으면 <strong>즉시 점수가 계산</strong>되어, <strong>최대 60초</strong> 내 홈에 올라옵니다. 매거진·일자리도 발행 후 <strong>최대 60초</strong>면 홈에 반영됩니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 5개 섹션 정책 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="num">섹션별 정책</div>
+      <h2>5개 섹션 — 각각 다른 규칙</h2>
+      <div class="subtitle">어떤 글이, 어떤 순서로, 언제 보이는지</div>
+    </div>
+    <div class="section-body">
+      <div class="policy-cards">
+
+        <!-- 뜨는 이야기 -->
+        <div class="policy-card">
+          <div class="policy-card-header" style="background:#fff3e0;">
+            <div class="emoji">🔥</div>
+            <div class="title-wrap">
+              <div class="pname">뜨는 이야기</div>
+              <div class="count">최대 5개 표시</div>
+            </div>
+            <div class="gate required">반응 필요</div>
+          </div>
+          <div class="policy-card-body">
+            <div class="policy-row">
+              <div class="policy-label">어떤 글</div>
+              <div class="policy-value">
+                <span class="tag">사는이야기</span>
+                <span class="tag">웃음방</span>
+                <span class="tag">2막준비</span>
+                <strong>전체 통합</strong>에서 가장 반응 좋은 글<br>
+                <span style="font-size:12px;color:#6c6c70;">(3개 게시판이 합쳐져서 경쟁)</span>
+              </div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">기본 조건</div>
+              <div class="policy-value">오늘 정오(낮 12:00) 이후에 쓴 글 중 <strong>좋아요 or 댓글 1개 이상</strong></div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">노출 순서</div>
+              <div class="policy-value">뜨는점수 높은 순 → 동점이면 최신순</div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">글 부족 시<br>자동 확장</div>
+              <div class="policy-value">
+                <ul class="fallback-list">
+                  <li data-step="1단계">오늘 정오 이후 + 반응 1개 이상 → <strong>5개 미만이면 2단계로 보충</strong></li>
+                  <li data-step="2단계">어제 정오~오늘 정오 글로 부족분만 보충 (merge, 오늘 글과 중복 없음)</li>
+                  <li data-step="3단계">7일 내 HOT / 명예의전당 등급 글만 (반응 없어도 포함)</li>
+                  <li data-step="4단계">7일 내 전체 글 (반응 조건 완전 제거)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 사는 이야기 -->
+        <div class="policy-card">
+          <div class="policy-card-header" style="background:#e8f5e9;">
+            <div class="emoji">🏡</div>
+            <div class="title-wrap">
+              <div class="pname">사는 이야기</div>
+              <div class="count">최대 5개 표시</div>
+            </div>
+            <div class="gate required">반응 필요</div>
+          </div>
+          <div class="policy-card-body">
+            <div class="policy-row">
+              <div class="policy-label">어떤 글</div>
+              <div class="policy-value"><strong>사는이야기 게시판</strong> 글만 (다른 게시판 제외)</div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">기본 조건</div>
+              <div class="policy-value">오늘 정오(낮 12:00) 이후 + <strong>좋아요 or 댓글 1개 이상</strong></div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">노출 순서</div>
+              <div class="policy-value">뜨는점수 높은 순</div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">중복 제거</div>
+              <div class="policy-value">뜨는이야기 섹션에 이미 올라간 글은 <strong>자동 제외</strong></div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">글 부족 시</div>
+              <div class="policy-value">
+                <ul class="fallback-list">
+                  <li data-step="1단계">오늘 정오 이후 + 반응 1개 이상 → 5개 미만이면 2단계로</li>
+                  <li data-step="2단계">어제 정오~오늘 정오 글로 부족분 보충 (merge)</li>
+                  <li data-step="3단계">7일 내 전체 (반응 조건 제거)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 웃음방 -->
+        <div class="policy-card">
+          <div class="policy-card-header" style="background:#e8eaf6;">
+            <div class="emoji">😄</div>
+            <div class="title-wrap">
+              <div class="pname">웃음방</div>
+              <div class="count">최대 5개 표시</div>
+            </div>
+            <div class="gate required">반응 필요</div>
+          </div>
+          <div class="policy-card-body">
+            <div class="policy-row">
+              <div class="policy-label">어떤 글</div>
+              <div class="policy-value"><strong>웃음방 게시판</strong> 글만 (사는이야기 등 제외)</div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">모든 정책</div>
+              <div class="policy-value">사는이야기와 <strong>완전히 동일</strong> (게시판만 다름)</div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">중복 제거</div>
+              <div class="policy-value">뜨는이야기에 올라간 글은 자동 제외</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 매거진 -->
+        <div class="policy-card">
+          <div class="policy-card-header" style="background:#e0f7fa;">
+            <div class="emoji">📰</div>
+            <div class="title-wrap">
+              <div class="pname">매거진</div>
+              <div class="count">최대 4개 표시</div>
+            </div>
+            <div class="gate not-required">반응 불필요</div>
+          </div>
+          <div class="policy-card-body">
+            <div class="policy-row">
+              <div class="policy-label">어떤 글</div>
+              <div class="policy-value"><strong>매거진 게시판</strong>에 "발행" 처리된 글</div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">조건</div>
+              <div class="policy-value"><strong>발행 상태(PUBLISHED)면 무조건 노출</strong><br>좋아요·댓글·점수 아무것도 필요 없음</div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">노출 순서</div>
+              <div class="policy-value">최신 발행 순서 (순수 시간순)</div>
+            </div>
+            <div class="special-note">✅ 에디터가 발행하면 최대 60초 내에 홈에 표시됩니다</div>
+          </div>
+        </div>
+
+        <!-- 일자리 -->
+        <div class="policy-card">
+          <div class="policy-card-header" style="background:#f3e5f5;">
+            <div class="emoji">💼</div>
+            <div class="title-wrap">
+              <div class="pname">오늘의 추천 일자리</div>
+              <div class="count">최대 5개 표시</div>
+            </div>
+            <div class="gate not-required">반응 불필요</div>
+          </div>
+          <div class="policy-card-body">
+            <div class="policy-row">
+              <div class="policy-label">어떤 글</div>
+              <div class="policy-value"><strong>일자리 게시판</strong>에 발행된 최신 5개</div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">조건</div>
+              <div class="policy-value"><strong>발행 상태면 무조건 노출</strong><br>반응 조건 없음, 점수 무관</div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">노출 순서</div>
+              <div class="policy-value">최신 발행 순서</div>
+            </div>
+            <div class="policy-row">
+              <div class="policy-label">"긴급" 배지</div>
+              <div class="policy-value">🔥 HOT 등급을 받은 일자리 글에 자동으로 "긴급" 배지 표시</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /policy-cards -->
+    </div>
+  </div>
+
+  <!-- 4. 뜨는점수 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="num">점수 계산</div>
+      <h2>뜨는점수란?</h2>
+      <div class="subtitle">커뮤니티 섹션 순서를 결정하는 알고리즘</div>
+    </div>
+    <div class="section-body">
+
+      <div class="score-formula">
+        뜨는점수 = <span class="highlight">(댓글×5 + 좋아요×3 + 조회수×0.1)</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;× 시간대보너스<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;÷ <span class="highlight">(정오 이후 경과시간 + 2)^1.5</span>
+      </div>
+
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;">반응 가중치</h4>
+      <div class="weight-cards">
+        <div class="weight-card">
+          <div class="wicon">💬</div>
+          <div class="wname">댓글 1개</div>
+          <div class="wval">5점</div>
+          <div class="wsub">가장 중요</div>
+        </div>
+        <div class="weight-card">
+          <div class="wicon">👍</div>
+          <div class="wname">좋아요 1개</div>
+          <div class="wval">3점</div>
+          <div class="wsub">댓글의 60%</div>
+        </div>
+        <div class="weight-card">
+          <div class="wicon">👁</div>
+          <div class="wname">조회수 1회</div>
+          <div class="wval">0.1점</div>
+          <div class="wsub">참고 지표</div>
+        </div>
+      </div>
+
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;">시간대 보너스</h4>
+      <div class="time-cards">
+        <div class="time-card dawn">
+          <div class="trange">🌙 새벽 0~6시</div>
+          <div class="tbonus">×1.5</div>
+          <div class="tdesc">진짜 팬의 반응<br>50% 보너스</div>
+        </div>
+        <div class="time-card morning">
+          <div class="trange">🌅 오전 6~12시</div>
+          <div class="tbonus">×1.2</div>
+          <div class="tdesc">출근 시간대<br>20% 보너스</div>
+        </div>
+        <div class="time-card day">
+          <div class="trange">☀️ 낮 12~24시</div>
+          <div class="tbonus">×1.0</div>
+          <div class="tdesc">기본값<br>보너스 없음</div>
+        </div>
+      </div>
+
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;">시간 감쇠 — 오래될수록 빠르게 떨어짐</h4>
+      <div class="decay-note" style="margin-bottom:14px;">
+        📉 같은 점수의 글이라도 <strong>낮 12시(정오)를 기준으로 시간이 지날수록 급격히 점수가 떨어집니다.</strong><br>
+        정오 직후에 달린 반응이 가장 가치가 높고, 저녁이 될수록 빠르게 희석됩니다.
+      </div>
+      <div class="decay-timeline">
+        <div class="decay-bar-wrap">
+          <div class="decay-val">100%</div>
+          <div class="decay-bar" style="height:80px;"></div>
+          <div class="decay-label">정오 직후<br>1시간</div>
+        </div>
+        <div class="decay-bar-wrap">
+          <div class="decay-val">57%</div>
+          <div class="decay-bar" style="height:46px;"></div>
+          <div class="decay-label">2시간 후</div>
+        </div>
+        <div class="decay-bar-wrap">
+          <div class="decay-val">35%</div>
+          <div class="decay-bar" style="height:28px;"></div>
+          <div class="decay-label">4시간 후</div>
+        </div>
+        <div class="decay-bar-wrap">
+          <div class="decay-val">22%</div>
+          <div class="decay-bar" style="height:17px;"></div>
+          <div class="decay-label">8시간 후</div>
+        </div>
+        <div class="decay-bar-wrap">
+          <div class="decay-val">10%</div>
+          <div class="decay-bar" style="height:8px;"></div>
+          <div class="decay-label">다음날<br>정오</div>
+        </div>
+      </div>
+
+      <h4 style="font-size:14px;font-weight:700;margin:16px 0 10px;">체감 예시 (낮 1시 기준, 정오 후 1시간)</h4>
+      <table class="example-table">
+        <thead><tr><th>상황</th><th>계산</th><th>점수</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>댓글 1개, 조회수 30</td>
+            <td>(5 + 3) × 1.0 ÷ 1.84</td>
+            <td><strong>4.3점</strong></td>
+          </tr>
+          <tr>
+            <td>댓글 2개, 좋아요 1개</td>
+            <td>(10 + 3) × 1.0 ÷ 1.84</td>
+            <td><strong>7.1점</strong></td>
+          </tr>
+          <tr>
+            <td>댓글 5개, 좋아요 3개</td>
+            <td>(25 + 9) × 1.0 ÷ 1.84</td>
+            <td><strong>18.5점</strong></td>
+          </tr>
+          <tr style="background:#2c2c54; color:white;">
+            <td>댓글 2개, 새벽 2시에 받음</td>
+            <td>(10) × <strong>1.5</strong> ÷ 1.84</td>
+            <td><strong>8.2점 🌙</strong></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size:12px;color:#6c6c70;margin-top:8px;">※ 점수는 좋아요·댓글·비회원 댓글 발생 즉시 계산됩니다. 배치 재계산은 하루 2회 (KST 12:11, 18:11).</div>
+    </div>
+  </div>
+
+  <!-- 5. HOT / 명예의전당 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="num">등급 시스템</div>
+      <h2>HOT · 명예의전당 자동 선정</h2>
+      <div class="subtitle">좋아요+댓글 합계 기준으로 자동 승격, 작성자에게 알림 전송</div>
+    </div>
+    <div class="section-body">
+      <div class="level-cards">
+        <div class="level-card normal">
+          <div class="licon">📄</div>
+          <div>
+            <div class="lname">일반</div>
+            <div class="lcond">좋아요 + 댓글 합계 9개 이하</div>
+            <div class="lnoti">알림 없음</div>
+          </div>
+        </div>
+        <div class="level-card hot">
+          <div class="licon">🔥</div>
+          <div>
+            <div class="lname">HOT</div>
+            <div class="lcond">좋아요 + 댓글 합계 <strong>10개 이상</strong></div>
+            <div class="lnoti">✉️ 작성자에게 "뜨는 글에 선정됐어요! 🔥" 알림 전송</div>
+          </div>
+        </div>
+        <div class="level-card hall">
+          <div class="licon">👑</div>
+          <div>
+            <div class="lname">명예의전당</div>
+            <div class="lcond">좋아요 + 댓글 합계 <strong>30개 이상</strong> 또는 좋아요만 <strong>50개 이상</strong></div>
+            <div class="lnoti">✉️ 작성자에게 "명예의 전당에 올랐어요! 👑" 알림 전송</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="demotion-section">
+        <h4>🔽 HOT 자동 취소 조건 (하루 2회 자동 점검 — KST 12:11, 18:11)</h4>
+        <div class="demotion-rule">
+          <div class="dr-icon">📅</div>
+          <div>글을 올린 지 <strong>7일 이상</strong> 됐고, 마지막 반응이 <strong>72시간(3일) 이전</strong>이면 → 일반으로 하향</div>
+        </div>
+        <div class="demotion-rule">
+          <div class="dr-icon">📅</div>
+          <div>글을 올린 지 <strong>30일 이상</strong> 됐고, 마지막 반응이 <strong>2주 이전</strong>이면 → 일반으로 하향</div>
+        </div>
+        <div class="demotion-rule">
+          <div class="dr-icon">👻</div>
+          <div>글을 올린 지 <strong>7일 이상</strong> 됐고, <strong>반응 기록이 아예 없으면</strong> → 일반으로 하향</div>
+        </div>
+      </div>
+
+      <div class="hall-note">
+        👑 명예의전당에 한번 오른 글은 어떤 조건에서도 <strong>절대 내려오지 않습니다</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. 집중 기능 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="num">집중 기능</div>
+      <h2>⭐ "집중" 기능 — 현재 상태</h2>
+      <div class="subtitle">어드민에서 집중 체크를 하면 어떻게 되나?</div>
+    </div>
+    <div class="section-body">
+      <div class="featured-warning">
+        <div class="wi">⚠️</div>
+        <h3>집중 체크 → 홈 노출에 영향 없음</h3>
+        <p>어드민 콘텐츠 관리에서 ⭐ 집중을 눌러도, 현재 코드에서는 홈 섹션 노출과 <strong>전혀 연결되어 있지 않습니다.</strong></p>
+      </div>
+
+      <table class="featured-table">
+        <thead>
+          <tr><th>항목</th><th>현재 동작</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>어드민에서 집중 체크 시</td>
+            <td>DB에 "집중됨" + 집중 시간만 기록</td>
+          </tr>
+          <tr>
+            <td>홈 뜨는이야기 노출에 영향</td>
+            <td class="no">없음 ❌</td>
+          </tr>
+          <tr>
+            <td>홈 사는이야기 노출에 영향</td>
+            <td class="no">없음 ❌</td>
+          </tr>
+          <tr>
+            <td>홈 웃음방 노출에 영향</td>
+            <td class="no">없음 ❌</td>
+          </tr>
+          <tr>
+            <td>현재 집중이 실제로 사용되는 곳</td>
+            <td class="no">어디에도 없음 ❌</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="future-box">
+        <strong>💡 앞으로 연결하려면?</strong>
+        집중 기능을 홈 노출에 연결하는 것은 개발 가능합니다. 예를 들어 "집중된 글은 뜨는점수와 무관하게 항상 홈 상단에 고정" 같은 기능으로 만들 수 있습니다. 창업자의 의사결정과 별도 개발이 필요합니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- 하단 여백 -->
+  <div style="margin-top:24px; text-align:center; font-size:13px; color:#8e8e93;">
+    이 문서는 코드를 직접 검토하여 작성되었습니다 · 우나어 운영팀
+  </div>
+
+</div>
+</body>
+</html>
