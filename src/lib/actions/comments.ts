@@ -220,6 +220,19 @@ export async function deleteComment(commentId: string): Promise<CommentResult> {
     }),
   ])
 
+  void (async () => {
+    const p = await prisma.post.findUnique({
+      where: { id: comment.postId },
+      select: { likeCount: true, commentCount: true, viewCount: true },
+    })
+    if (!p) return
+    const score = calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount)
+    await prisma.post.update({
+      where: { id: comment.postId },
+      data: { trendingScore: score },
+    })
+  })().catch(() => {})
+
   revalidatePath('/community/[boardSlug]/[postId]', 'page')
   revalidateTag('comments-by-post')
   return {}
