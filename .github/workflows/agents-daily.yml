@@ -135,17 +135,11 @@ jobs:
             DOW=$(date -u +%u)  # 1=Monday
             case "$CRON" in
               "11 0 * * *")
-                echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-cycle" >> $GITHUB_OUTPUT ;;
+                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "11 1 * * *")
-                if [ "$DOW" = "1" ]; then
-                  echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=weekly-report" >> $GITHUB_OUTPUT
-                else
-                  # cmo:trend-analyzer — 중단 2026-05-16 (Slack 리포트만, 참고 안 함 → DISPATCH ONLY)
-                  echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT
-                fi
-                ;;
+                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "11 2 * * *")
-                echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=ux-analyzer" >> $GITHUB_OUTPUT ;;
+                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "11 5 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=content-scheduler" >> $GITHUB_OUTPUT ;;
               # "45 0 * * *") magazine-morning — 로컬 launchd로 전환
@@ -153,15 +147,15 @@ jobs:
               # echo "agent=cafe_crawler" >> $GITHUB_OUTPUT; echo "task=magazine-generate" >> $GITHUB_OUTPUT ;;
               # "30 10 * * *") magazine-evening — 로컬 launchd로 전환
               "11 13 * * *")
-                echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=kpi-collector" >> $GITHUB_OUTPUT ;;
+                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "11 14 * * *")
-                echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=cost-tracker" >> $GITHUB_OUTPUT ;;
+                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "30 14 * * *")
-                echo "agent=cfo" >> $GITHUB_OUTPUT; echo "task=revenue-tracker" >> $GITHUB_OUTPUT ;;
+                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "30 0 * * *")
                 echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=approval-reminder" >> $GITHUB_OUTPUT ;;
               "30 23 * * *")
-                echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-sns-briefing" >> $GITHUB_OUTPUT ;;
+                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "11 3 * * *")
                 # cpo:journey-analyzer — 중단 2026-05-16
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT
@@ -171,7 +165,7 @@ jobs:
               "11 21 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=security-audit" >> $GITHUB_OUTPUT ;;
               "30 2 * * 1")
-                echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=feature-tracker" >> $GITHUB_OUTPUT ;;
+                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "15 0 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=connection-facilitator" >> $GITHUB_OUTPUT ;;
               # "15 1 * * *") cmo:caregiving-curator — 중단 2026-05-15
@@ -197,7 +191,7 @@ jobs:
               "11 22 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=crawler-health" >> $GITHUB_OUTPUT ;;
               "30 13 * * *")
-                echo "agent=cdo" >> $GITHUB_OUTPUT; echo "task=engagement-optimizer" >> $GITHUB_OUTPUT ;;
+                echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "45 14 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=qa-verify" >> $GITHUB_OUTPUT ;;
               "20 23 * * *")

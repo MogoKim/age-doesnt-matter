@@ -55,17 +55,15 @@ interface CronResult {
  *   cafe_crawler:magazine-generate → CAFE_CRAWLER:MAGAZINE_GENERATE
  *   qa:content-audit         → QA:CONTENT_AUDIT   ← QA 에이전트 추가 후 활성화
  */
+// 중단된 에이전트 제거 2026-05-16: CEO 모닝/주간, CMO 트렌드, CDO KPI, CFO 비용
+// CTO 헬스체크: BaseAgent 사용 → BotLog action='run'으로 실제 기록됨
 const DAILY_EXPECTED: Array<{ botType: string; action: string; label: string }> = [
-  { botType: 'CEO', action: 'MORNING_CYCLE', label: 'CEO 모닝' },
-  { botType: 'CTO', action: 'HEALTH_CHECK', label: 'CTO 헬스체크' },
+  { botType: 'CTO', action: 'run', label: 'CTO 헬스체크' },
   { botType: 'CTO', action: 'SECURITY_AUDIT', label: 'CTO 보안감사' },
-  { botType: 'CMO', action: 'TREND_ANALYSIS', label: 'CMO 트렌드' },
   { botType: 'COO', action: 'MODERATION', label: 'COO 중재' },
   { botType: 'COO', action: 'JOB_SCRAPE', label: 'COO 일자리' },
   { botType: 'COO', action: 'TRENDING_SCORE', label: 'COO 트렌딩' },
-  { botType: 'CDO', action: 'KPI_DAILY', label: 'CDO KPI' },
   { botType: 'SEED', action: 'SCHEDULE', label: 'SEED 스케줄' },
-  { botType: 'CFO', action: 'COST_TRACK', label: 'CFO 비용' },
   { botType: 'CAFE_CRAWLER', action: 'TREND_ANALYSIS', label: '카페 트렌드' },
   { botType: 'CAFE_CRAWLER', action: 'MAGAZINE_GENERATE', label: '매거진 생성' },
   { botType: 'QA', action: 'CONTENT_AUDIT', label: 'QA 콘텐츠 감사' },

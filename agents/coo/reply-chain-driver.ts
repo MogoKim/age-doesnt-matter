@@ -93,24 +93,27 @@ async function main() {
         if (!post) continue
 
         // responders 순서대로 답글 생성 (maxDepth 제한)
-        const parentCommentId = comment.id
+        let currentParentId = comment.id
         const respondersToUse = chain.responders.slice(0, chain.maxDepth - 1)
+        let chainReplyCount = 0
 
         for (const responderId of respondersToUse) {
           const responderUserId = await getBotUser(responderId)
 
           const replyText = await generateReply(responderId, post.title, comment.content)
 
-          await prisma.comment.create({
+          const newReply = await prisma.comment.create({
             data: {
               postId: comment.postId,
               authorId: responderUserId,
               content: replyText,
-              parentId: parentCommentId,
+              parentId: currentParentId,
               status: 'ACTIVE',
             },
           })
 
+          currentParentId = newReply.id
+          chainReplyCount++
           replyCount++
           console.log(`[COO] 대댓글 체인: ${triggerPersonaId} → ${responderId} (${chain.topic})`)
         }
@@ -118,7 +121,7 @@ async function main() {
         // 게시글 댓글 수 업데이트
         await prisma.post.update({
           where: { id: comment.postId },
-          data: { commentCount: { increment: respondersToUse.length } },
+          data: { commentCount: { increment: chainReplyCount } },
         })
 
         chainCount++

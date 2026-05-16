@@ -198,7 +198,7 @@ async function getPerformanceTrend(): Promise<PerformanceTrend | null> {
   const logs = await prisma.botLog.findMany({
     where: {
       botType: 'CTO',
-      action: 'HEALTH_CHECK',
+      action: 'run',
       status: 'SUCCESS',
       createdAt: { gte: sevenDaysAgo },
     },

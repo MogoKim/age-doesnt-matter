@@ -212,14 +212,16 @@ async function main() {
   }
 
   console.log(`[Runner] ${agent}:${task} 시작 (automation_status=${status})`)
+  let exitCode = 0
   try {
     await handler()
   } catch (err) {
     console.error(`[Runner] ${agent}:${task} 실패:`, err)
-    process.exit(1)
+    exitCode = 1
   } finally {
     await disconnect()
   }
+  process.exit(exitCode)
 }
 
 main()

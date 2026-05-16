@@ -13,11 +13,11 @@ const BOARD_PERSONAS: Record<string, string[]> = {
   STORY: ['E', 'AQ', 'AV'],
   HUMOR: ['C', 'AP', 'AO'],
   JOB: ['AS', 'D'],
-  WEEKLY: ['AQ', 'E', 'AR'],
+  LIFE2: ['AQ', 'E', 'AR'],
 }
 
-/** 봇 댓글 제한 per post */
-const MAX_BOT_COMMENTS_PER_POST = 3
+/** 봇 댓글 제한 per post (constitution.yaml 기준 2026-05-12 갱신) */
+const MAX_BOT_COMMENTS_PER_POST = 5
 
 async function main() {
   // 봇 패턴 분산 — 매 run마다 0~3분 랜덤 딜레이로 시작 타이밍 변주

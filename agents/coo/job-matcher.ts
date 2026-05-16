@@ -49,26 +49,7 @@ async function main() {
       return
     }
 
-    // 2. AI로 일자리 카테고리화
-    const jobSummaries = jobPosts.map(j => `[${j.id}] ${j.title}: ${j.content.slice(0, 100)}`).join('\n')
-
-    const categorizeResult = await client.messages.create({
-      model: MODEL,
-      max_tokens: 1024,
-      messages: [{
-        role: 'user',
-        content: `다음 일자리 게시글들을 분류해주세요. 각 게시글에 대해 나이요건/지역/유형을 JSON 배열로 응답하세요.
-
-${jobSummaries}
-
-응답 형식 (JSON만, 설명 없이):
-[{"id":"...", "age":"50대 가능", "location":"서울", "type":"사무직"}]`,
-      }],
-    })
-
-    const categorizeText = categorizeResult.content[0].type === 'text' ? categorizeResult.content[0].text : '[]'
-
-    // 3. STORY 보드에서 일자리 관심 게시글 찾기
+    // 2. STORY 보드에서 일자리 관심 게시글 찾기
     const storyPosts = await prisma.post.findMany({
       where: {
         boardType: 'STORY',
@@ -138,7 +119,6 @@ ${jobSummaries}
 글 내용: ${story.content.slice(0, 200)}
 
 추천할 일자리: ${relevantJobs}
-일자리 카테고리 정보: ${categorizeText.slice(0, 500)}
 
 2-3문장으로 따뜻하게 일자리 정보를 알려주세요. "일자리 게시판에 ~ 글이 있더라고요" 같은 자연스러운 톤으로.`,
           }],

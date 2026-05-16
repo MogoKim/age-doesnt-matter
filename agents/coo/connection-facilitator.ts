@@ -73,19 +73,20 @@ async function main() {
         // 따뜻한 댓글 생성
         const commentText = await generateComment(personaId, post.title, post.content)
 
-        await prisma.comment.create({
-          data: {
-            postId: post.id,
-            authorId: botUserId,
-            content: commentText,
-            status: 'ACTIVE',
-          },
-        })
-
-        await prisma.post.update({
-          where: { id: post.id },
-          data: { commentCount: { increment: 1 } },
-        })
+        await prisma.$transaction([
+          prisma.comment.create({
+            data: {
+              postId: post.id,
+              authorId: botUserId,
+              content: commentText,
+              status: 'ACTIVE',
+            },
+          }),
+          prisma.post.update({
+            where: { id: post.id },
+            data: { commentCount: { increment: 1 } },
+          }),
+        ])
 
         facilitatedCount++
         console.log(`[COO] 연결 촉진: "${post.title}" ← ${personaId}`)

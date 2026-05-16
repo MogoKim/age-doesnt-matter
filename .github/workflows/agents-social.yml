@@ -10,12 +10,10 @@ on:
         type: choice
         options:
           - social-poster
-          - social-poster-visual
           - social-metrics
           - social-reviewer
           - social-strategy
           - channel-seeder
-          - knowledge-responder
           - seo-optimizer
           - threads-token-refresh
           - google-ads-report

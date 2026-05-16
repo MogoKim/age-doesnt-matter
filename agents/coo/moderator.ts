@@ -76,7 +76,7 @@ class COOModerator extends BaseAgent {
 - 도박/다단계/불법 광고
 - 타인 비방/명예훼손
 
-댓글: "${comment.content}"
+댓글: <user_content>${comment.content}</user_content>
 
 응답: "HIDE" (위반) 또는 "KEEP" (무해) 한 단어만
 `)
