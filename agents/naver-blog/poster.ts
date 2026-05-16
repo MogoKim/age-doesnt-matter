@@ -10,7 +10,7 @@
  *
  * DRY_RUN=true 시: markReadyForManual 스킵, 큐 미갱신
  *
- * // LOCAL ONLY — launchd 전용 (12:30/18:30 KST)
+ * // LOCAL ONLY — launchd 전용 (15:00 KST 단일 실행)
  */
 
 import { existsSync, writeFileSync, unlinkSync, readFileSync, statSync } from 'fs'

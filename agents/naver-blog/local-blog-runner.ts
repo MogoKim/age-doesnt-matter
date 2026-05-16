@@ -3,9 +3,9 @@
  *
  * // LOCAL ONLY — macOS launchd 전용 (GitHub Actions 실행 불가)
  *
- * 스케줄 (plist 설정):
- *   morning: 12:30 KST (UTC 03:30)
- *   evening: 18:30 KST (UTC 09:30)
+ * 스케줄 (plist 설정, KST 로컬 타임존 기준):
+ *   morning: 15:00 KST (magazine 12:00 + 14:00 두 건 처리)
+ *   evening: 비활성화 (naver-blog-evening.plist unloaded)
  *
  * 실행:
  *   npx tsx agents/naver-blog/local-blog-runner.ts
