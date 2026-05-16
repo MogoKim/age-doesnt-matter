@@ -1089,6 +1089,49 @@
     <div class="callout ok">
       <strong>헌법(constitution.yaml) 핵심 규칙:</strong> DB Write는 COO 에이전트만 가능. 나머지 에이전트는 읽기 전용. 월 $50 비용 상한 — 초과 시 Slack 자동 알림. "시니어·어르신·노인" 단어 사용 금지.
     </div>
+
+    <h3>C-Level 에이전트 운영 상태 (DISPATCH ONLY 전환)</h3>
+    <div class="narrative" style="margin-bottom:14px;">
+      일부 C-Level 에이전트는 자동 크론에서 제외되어 <strong>수동 실행(workflow_dispatch)만 가능</strong>합니다.
+      GHA workflow_dispatch로 수동 실행하거나 Claude Code에서 runner.ts를 통해 개별 호출해야 합니다.
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>에이전트</th><th>상태</th><th>용도</th></tr></thead>
+        <tbody>
+          <tr><td>cmo:trend-analyzer</td><td><span style="color:var(--yellow);">DISPATCH ONLY</span></td><td>트렌드 분석 — 필요 시 수동 실행</td></tr>
+          <tr><td>cmo:humor-curator</td><td><span style="color:var(--yellow);">DISPATCH ONLY</span></td><td>유머 큐레이션 — 필요 시 수동 실행</td></tr>
+          <tr><td>cmo:caregiving-curator</td><td><span style="color:var(--yellow);">DISPATCH ONLY</span></td><td>간병 특화 콘텐츠 큐레이션</td></tr>
+          <tr><td>cmo:content-gap-finder</td><td><span style="color:var(--yellow);">DISPATCH ONLY</span></td><td>콘텐츠 빈틈 분석</td></tr>
+          <tr><td>cmo:source-expander</td><td><span style="color:var(--yellow);">DISPATCH ONLY</span></td><td>소스 확장 분석</td></tr>
+          <tr><td>cto:arch-review</td><td><span style="color:var(--yellow);">DISPATCH ONLY</span></td><td>아키텍처 리뷰</td></tr>
+          <tr><td>ceo:*</td><td><span style="color:var(--yellow);">DISPATCH ONLY</span></td><td>CEO 에이전트 전체 — 전략 이슈 시 수동</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="background:var(--teal-dim);border:1px solid rgba(45,212,191,0.2); margin-top:12px;">
+      <strong>LOCKED 모드에서도 항상 실행되는 에이전트:</strong>
+      cto:health-check · cto:error-monitor · cto:security-audit · cdo:anomaly-detector · cto:qa-verify · cafe:session-refresh
+    </div>
+
+    <h3>ENABLE_SEED_POSTS 플래그 — 정확한 범위</h3>
+    <div class="alert info">
+      <strong>주의:</strong> 이 플래그를 false로 설정해도 봇 전체가 꺼지는 것이 아닙니다.
+    </div>
+    <div class="table-wrap mt12">
+      <table>
+        <thead><tr><th>기능</th><th>ENABLE_SEED_POSTS=false 시</th></tr></thead>
+        <tbody>
+          <tr><td>봇 게시글 생성 (글 쓰기)</td><td class="text-red">⛔ 중단</td></tr>
+          <tr><td>큐레이션·회원글 댓글 파동</td><td class="text-green">✅ 계속 실행</td></tr>
+          <tr><td>유기적 댓글·대댓글·좋아요</td><td class="text-green">✅ 계속 실행</td></tr>
+          <tr><td>Connection Facilitator</td><td class="text-green">✅ 계속 실행</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="narrative" style="font-size:13px; color:var(--sub); margin-top:8px;">
+      재개: GitHub Secrets → ENABLE_SEED_POSTS 값을 true로 변경. scheduler.ts L424-426에서 체크.
+    </div>
   </div>
 
   <!-- ══ S6: 비용 ══ -->
@@ -1239,6 +1282,33 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <h3>QA 2-Gate 배포 검증 시스템</h3>
+    <div class="narrative" style="margin-bottom:14px;">
+      코드 변경 시 2단계 자동 검증이 실행됩니다. 창업자는 Gate 2 결과를 Slack #QA에서 확인하면 됩니다.
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>단계</th><th>트리거</th><th>검증 항목</th><th>결과 위치</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Gate 1</strong></td>
+            <td><code>/done</code> 실행 시</td>
+            <td>TypeScript 타입 체크 · 크론 연결 무결성 · 빌드 · AI 아키텍처 검토</td>
+            <td>Claude 대화창 즉시 표시</td>
+          </tr>
+          <tr>
+            <td><strong>Gate 2</strong></td>
+            <td>Vercel 배포 완료 후 자동</td>
+            <td>Smoke Test · 광고 렌더링 · Visual QA · Lighthouse CI</td>
+            <td>Slack <strong>#QA</strong> 자동 전송</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert info" style="margin-top:12px;">
+      <strong>운영자 확인 포인트:</strong> 코드 배포 후 5~10분 내 Slack #QA에 Gate 2 결과가 오지 않으면 배포 파이프라인 이상 신호. GHA Actions 탭에서 <code>post-deploy-qa.yml</code> 실행 상태 확인.
     </div>
 
     <h3>관련 문서 링크</h3>
