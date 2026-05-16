@@ -448,15 +448,23 @@ async function runActivity(activity: Activity): Promise<void> {
     const htmlContent = `<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
     const summary = content.replace(/\n/g, ' ').slice(0, 150).trim()
 
-    // Fix 5: 24h 내 유사 제목 중복 발행 방지
+    // Fix 5 (v2): 24h 내 유사 주제 중복 발행 방지
+    // 이전 버그A: DB startsWith(titleKey)가 공백 포함 DB 제목과 절대 매칭 안 됨
+    // 이전 버그B: 6자 prefix는 한국어 조사 변형 제목 못 잡음 ("아이독립을준" ≠ "아이독립준비")
+    // 개선: JS에서 2자 단위 한국어 추출 후 3개 이상 겹치면 중복으로 판단
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    const titleKey = title.replace(/[^\w가-힣]/g, '').slice(0, 6)
-    if (titleKey) {
-      const recentSimilar = await prisma.post.findFirst({
-        where: { authorId: userId, createdAt: { gte: since24h }, title: { startsWith: titleKey } },
-      })
-      if (recentSimilar) {
-        console.log(`[Seed] 중복 발행 스킵: "${title.slice(0, 20)}"`)
+    const recentPosts24h = await prisma.post.findMany({
+      where: { authorId: userId, createdAt: { gte: since24h } },
+      select: { title: true },
+    })
+    if (recentPosts24h.length > 0) {
+      const toNouns = (t: string) => t.match(/[가-힣]{2,2}/g) ?? []
+      const newNouns = new Set(toNouns(title))
+      const isDuplicate = recentPosts24h.some(
+        p => toNouns(p.title).filter(n => newNouns.has(n)).length >= 3
+      )
+      if (isDuplicate) {
+        console.log(`[Seed] 유사 주제 중복 발행 스킵: "${title.slice(0, 20)}"`)
         return
       }
     }

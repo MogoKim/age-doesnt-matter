@@ -227,6 +227,7 @@ Constitution 상한 $50/월 대비 여유 있음.
 | 2026-05-12 | generator.ts: `getExampleCafeComments()` likeCount 정렬+대댓글 포함으로 개선, `getCommentAtmosphereContext()` 신규 추가→generatePost() 프롬프트 주입 | 댓글 분위기(공감형/논쟁형/정보형)를 시드봇 글 방향성에 반영 |
 | 2026-05-14 | micro-scheduler.ts + scheduler.ts 3개 함수에 hotPromotedAt 보정 cleanup 추가 — promotionLevel 직접 updateMany 후 hotPromotedAt=null인 HOT/HALL_OF_FAME 글 사후 보정 | 뜨는이야기 탭 구조를 위해 시드봇이 직접 쓰는 promotionLevel 경로 6개에 hotPromotedAt 누락 보정 필요 |
 | 2026-05-16 | generateComment() `priorComments?: string[]` 파라미터 추가 + user message에 priorCommentsHint 블록 주입. buildContextRule comment에 "첫 단어 맞아요 금지" 추가 | 9개 봇이 같은 본문으로 독립 생성 → 동일 키워드 반복 수렴 문제 해결 (priorComments로 기존 댓글 내용 전달) |
+| 2026-05-16 | scheduler.ts Fix 5 (v2): 24h 유사 제목 중복 발행 체크를 DB `startsWith(titleKey)` → JS noun overlap(2자 추출, 3개 이상 겹치면 스킵)으로 교체 | Bug A: titleKey 공백 제거 후 DB 원본(공백 포함)과 `startsWith` 비교해 항상 false. Bug B: 6자 prefix는 조사 변형("아이독립을준" ≠ "아이독립준비") 잡지 못함 → 동일 소재 글 3-4시간 내 2번 발행됨 |
 
 ---
 
