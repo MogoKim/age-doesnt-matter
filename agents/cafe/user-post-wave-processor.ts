@@ -15,8 +15,10 @@ import { getBotUser, generateComment } from '../seed/generator.js'
 import { getAllPersonaIds } from '../seed/persona-data.js'
 import { sendSlackMessage } from '../core/notifier.js'
 
+const HUMOR_ONLY_PERSONAS = ['C', 'AF', 'AO', 'AY']  // HUMOR 보드 전담 — 실제 회원 글 wave 제외
 const COMMENTER_PERSONA_IDS = getAllPersonaIds()
   .filter(id => !id.startsWith('EN') && !/^N\d/.test(id))
+  .filter(id => !HUMOR_ONLY_PERSONAS.includes(id))
 
 type WaveNum = 1 | 2 | 3 | 4
 type WaveDoneKey = 'wave1Done' | 'wave2Done' | 'wave3Done' | 'wave4Done'

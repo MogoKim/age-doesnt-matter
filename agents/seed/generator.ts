@@ -897,10 +897,16 @@ export async function generateComment(
     // 조회 실패 시 댓글 생성 계속
   }
 
+  const SERIOUS_KEYWORDS = ['수술', '병원', '입원', '간병', '아프', '치료', '재활', '위독', '응급', '돌아가', '고통']
+  const isSerious = SERIOUS_KEYWORDS.some(kw => `${postTitle} ${postContent}`.includes(kw))
+  const seriousOverride = isSerious
+    ? '\n\n[주의] 이 글은 아픔·돌봄 주제다. ㅋㅋ, ㅎㅎ, 웃음 표현 절대 금지. 짧고 조용하게 공감만.'
+    : ''
+
   const response = await client.messages.create({
     model: getModelForPersona(personaId),
     max_tokens: 200,
-    system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'comment') + trendContext,
+    system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'comment') + trendContext + seriousOverride,
     messages: [{
       role: 'user',
       content: `다음 글에 댓글을 달아주세요.\n\n제목: ${postTitle}\n내용: ${postContent.slice(0, 300)}${exampleBlock}${recentCommentHint}`,
