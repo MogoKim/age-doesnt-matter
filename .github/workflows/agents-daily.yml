@@ -1,12 +1,12 @@
 name: Agents — Daily
 on:
   schedule:
-    # 09:00 KST = 00:00 UTC — CEO 모닝 사이클
-    - cron: "11 0 * * *"
-    # 10:00 KST = 01:00 UTC — CMO 트렌드 (화~일) / CEO 주간 리포트 (월)
-    - cron: "11 1 * * *"
-    # 11:00 KST = 02:00 UTC — CPO UX 분석
-    - cron: "11 2 * * *"
+    # 09:00 KST = 00:00 UTC — CEO 모닝 사이클 (중단 2026-05-16 — DISPATCH ONLY)
+    # - cron: "11 0 * * *"
+    # 10:00 KST = 01:00 UTC — CEO 주간 리포트 (중단 2026-05-16 — DISPATCH ONLY)
+    # - cron: "11 1 * * *"
+    # 11:00 KST = 02:00 UTC — CPO UX 분석 (중단 2026-05-16 — DISPATCH ONLY)
+    # - cron: "11 2 * * *"
     # 14:00 KST = 05:00 UTC — COO 콘텐츠
     - cron: "11 5 * * *"
     # 09:45 KST = 00:45 UTC — 매거진 모닝 발행 (로컬 launchd로 전환 — 비활성화)
@@ -15,10 +15,10 @@ on:
     # - cron: "0 7 * * *"
     # 19:30 KST = 10:30 UTC — 매거진 이브닝 발행 (로컬 launchd로 전환 — 비활성화)
     # - cron: "30 10 * * *"
-    # 22:00 KST = 13:00 UTC — CDO KPI
-    - cron: "11 13 * * *"
-    # 08:30 KST = 23:30 UTC (전날) — CEO SNS 일일 브리핑
-    - cron: "30 23 * * *"
+    # 22:00 KST = 13:00 UTC — CDO KPI (중단 2026-05-16 — DISPATCH ONLY)
+    # - cron: "11 13 * * *"
+    # 08:30 KST = 23:30 UTC (전날) — CEO SNS 일일 브리핑 (중단 2026-05-16 — DISPATCH ONLY)
+    # - cron: "30 23 * * *"
     # 09:30 KST = 00:30 UTC — 승인 대기 리마인더 + 만료 처리
     - cron: "30 0 * * *"
     # 12:00 KST = 03:00 UTC — COO 트렌딩 스코어 (화~일) / CPO 사용자 여정 (월)
@@ -27,12 +27,12 @@ on:
     - cron: "11 9 * * *"
     # 06:00 KST = 21:00 UTC (전날) — CTO 보안 감사
     - cron: "11 21 * * *"
-    # 11:30 KST = 02:30 UTC (월요일) — CPO 기능 사용률
-    - cron: "30 2 * * 1"
-    # 23:00 KST = 14:00 UTC — CFO 비용
-    - cron: "11 14 * * *"
-    # 23:30 KST = 14:30 UTC — CFO 수익 추적
-    - cron: "30 14 * * *"
+    # 11:30 KST = 02:30 UTC (월요일) — CPO 기능 사용률 (중단 2026-05-16 — DISPATCH ONLY)
+    # - cron: "30 2 * * 1"
+    # 23:00 KST = 14:00 UTC — CFO 비용 (중단 2026-05-16 — DISPATCH ONLY)
+    # - cron: "11 14 * * *"
+    # 23:30 KST = 14:30 UTC — CFO 수익 추적 (중단 2026-05-16 — DISPATCH ONLY)
+    # - cron: "30 14 * * *"
     # ─── Phase 4 신규 에이전트 ───
     # 09:15 KST = 00:15 UTC — COO 느슨한 연결 촉진 (1차)
     - cron: "15 0 * * *"
@@ -58,8 +58,8 @@ on:
     - cron: "11 11 * * *"
     # 07:00 KST = 22:00 UTC (전날) — CTO 크롤링 헬스
     - cron: "11 22 * * *"
-    # 22:30 KST = 13:30 UTC — CDO 참여 최적화
-    - cron: "30 13 * * *"
+    # 22:30 KST = 13:30 UTC — CDO 참여 최적화 (중단 2026-05-16 — DISPATCH ONLY)
+    # - cron: "30 13 * * *"
     # 23:45 KST = 14:45 UTC — CTO QA 크론 실행 감사
     - cron: "45 14 * * *"
     # ─── Phase 5: CTO 거버넌스 + QA 에이전트 ───
@@ -163,11 +163,8 @@ jobs:
               "30 23 * * *")
                 echo "agent=ceo" >> $GITHUB_OUTPUT; echo "task=morning-sns-briefing" >> $GITHUB_OUTPUT ;;
               "11 3 * * *")
-                if [ "$DOW" = "1" ]; then
-                  echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=journey-analyzer" >> $GITHUB_OUTPUT
-                else
-                  echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT
-                fi
+                # cpo:journey-analyzer — 중단 2026-05-16
+                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT
                 ;;
               "11 9 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=trending-scorer" >> $GITHUB_OUTPUT ;;
