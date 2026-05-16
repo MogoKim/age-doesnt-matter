@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우나어 — 매거진 운영 딥다이브 가이드</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1f2533;
+    --border: #2a3042;
+    --text: #e6eaf4;
+    --muted: #8b92a8;
+    --sub: #5a6070;
+    --primary: #FF6F61;
+    --primary-dim: rgba(255,111,97,0.14);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.11);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.11);
+    --yellow: #fbbf24;
+    --yellow-dim: rgba(251,191,36,0.11);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.11);
+    --teal: #2dd4bf;
+    --teal-dim: rgba(45,212,191,0.11);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.11);
+    --orange: #fb923c;
+    --orange-dim: rgba(251,146,60,0.11);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif; background:var(--bg); color:var(--text); line-height:1.75; font-size:14.5px; }
+  a { color:var(--blue); text-decoration:none; } a:hover { text-decoration:underline; }
+  .wrap { max-width:1100px; margin:0 auto; padding:56px 28px 100px; }
+
+  /* Cover */
+  .cover { background:linear-gradient(135deg,#0d0f1a 0%,#12151f 50%,#0d1117 100%); border:1px solid var(--border); border-radius:16px; padding:52px 48px 44px; margin-bottom:20px; position:relative; overflow:hidden; }
+  .cover::before { content:''; position:absolute; top:-80px; right:-80px; width:360px; height:360px; border-radius:50%; background:radial-gradient(circle,rgba(96,165,250,0.10) 0%,transparent 70%); pointer-events:none; }
+  .cover-badge { display:inline-block; background:var(--blue-dim); color:var(--blue); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:4px 12px; border-radius:4px; border:1px solid rgba(96,165,250,0.3); margin-bottom:20px; }
+  .cover h1 { font-size:30px; font-weight:800; color:var(--text); margin-bottom:10px; line-height:1.3; }
+  .cover .subtitle { font-size:15px; color:var(--muted); margin-bottom:36px; max-width:680px; line-height:1.7; }
+  .cover-meta { display:flex; gap:32px; flex-wrap:wrap; padding-top:28px; border-top:1px solid var(--border); }
+  .cover-meta-item .label { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub); font-weight:600; margin-bottom:3px; }
+  .cover-meta-item .value { font-size:13px; color:var(--muted); font-weight:500; }
+  .cover-meta-item .value.ok { color:var(--green); } .cover-meta-item .value.live { color:var(--blue); }
+
+  /* Status */
+  .status-box { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:20px 28px; margin-bottom:36px; display:flex; flex-wrap:wrap; gap:16px 32px; align-items:center; }
+  .status-box .sb-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--sub); width:100%; margin-bottom:-4px; }
+  .status-item { display:flex; align-items:center; gap:7px; font-size:13px; color:var(--muted); }
+  .status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .status-dot.on { background:var(--green); box-shadow:0 0 6px rgba(74,222,128,0.5); }
+  .status-dot.warn { background:var(--yellow); }
+  .status-dot.off { background:var(--red); }
+
+  /* TOC */
+  .toc { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:28px 32px; margin-bottom:52px; }
+  .toc h2 { font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub); font-weight:700; margin-bottom:18px; }
+  .toc ol { columns:2; column-gap:40px; list-style:decimal inside; }
+  .toc li { font-size:13.5px; color:var(--muted); padding:4px 0; break-inside:avoid; }
+  .toc li a { color:var(--muted); } .toc li a:hover { color:var(--blue); }
+
+  /* Section */
+  .section { margin-bottom:64px; }
+  .section-header { display:flex; align-items:center; gap:12px; margin-bottom:28px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+  .section-num { width:32px; height:32px; border-radius:8px; background:var(--blue-dim); border:1px solid rgba(96,165,250,0.3); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:var(--blue); flex-shrink:0; }
+  .section h2 { font-size:20px; font-weight:700; color:var(--text); }
+  .section h3 { font-size:16px; font-weight:700; color:var(--text); margin:28px 0 14px; }
+
+  /* Biz Lead / Quote */
+  .quote-card { background:var(--bg2); border:1px solid var(--border); border-left:4px solid var(--blue); border-radius:0 10px 10px 0; padding:20px 24px; margin:20px 0; font-size:15.5px; color:var(--text); line-height:1.7; font-style:italic; }
+  .biz-lead { background:var(--bg2); border-left:3px solid var(--primary); border-radius:0 8px 8px 0; padding:16px 20px; margin-bottom:24px; font-size:14.5px; color:var(--muted); line-height:1.8; }
+  .biz-lead strong { color:var(--text); }
+
+  /* Narrative */
+  .narrative { font-size:14.5px; color:var(--muted); line-height:1.85; margin-bottom:20px; }
+  .narrative strong { color:var(--text); }
+  .narrative p { margin-bottom:14px; }
+
+  /* Why Cards */
+  .why-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:20px 0 28px; }
+  .why-card { border-radius:12px; padding:24px 20px; }
+  .why-card-icon { font-size:26px; margin-bottom:12px; }
+  .why-card-title { font-size:14px; font-weight:700; color:var(--text); margin-bottom:10px; }
+  .why-card-body { font-size:13px; color:var(--muted); line-height:1.8; }
+  .why-card.problem { background:var(--red-dim); border:1px solid rgba(248,113,113,0.3); }
+  .why-card.solution { background:var(--blue-dim); border:1px solid rgba(96,165,250,0.3); }
+  .why-card.goal { background:var(--green-dim); border:1px solid rgba(74,222,128,0.3); }
+
+  /* Metric Grid / Cards */
+  .metric-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:28px; }
+  .card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:22px 24px; margin-bottom:12px; }
+  .card-title { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+  .card-value { font-size:28px; font-weight:800; color:var(--text); line-height:1.2; }
+  .card-sub { font-size:12px; color:var(--sub); margin-top:6px; line-height:1.5; }
+  .card.green { border-color:rgba(74,222,128,0.25); background:linear-gradient(135deg,var(--bg2),var(--green-dim)); } .card.green .card-value { color:var(--green); }
+  .card.blue { border-color:rgba(96,165,250,0.25); background:linear-gradient(135deg,var(--bg2),var(--blue-dim)); } .card.blue .card-value { color:var(--blue); }
+  .card.yellow { border-color:rgba(251,191,36,0.25); background:linear-gradient(135deg,var(--bg2),var(--yellow-dim)); } .card.yellow .card-value { color:var(--yellow); }
+  .card.purple { border-color:rgba(167,139,250,0.25); background:linear-gradient(135deg,var(--bg2),var(--purple-dim)); } .card.purple .card-value { color:var(--purple); }
+  .card.primary { border-color:rgba(255,111,97,0.25); background:linear-gradient(135deg,var(--bg2),var(--primary-dim)); } .card.primary .card-value { color:var(--primary); }
+  .card.teal { border-color:rgba(45,212,191,0.25); background:linear-gradient(135deg,var(--bg2),var(--teal-dim)); } .card.teal .card-value { color:var(--teal); }
+
+  /* Table */
+  .table-wrap { overflow-x:auto; margin-bottom:24px; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th { background:var(--bg3); color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.05em; padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); }
+  td { padding:10px 14px; border-bottom:1px solid rgba(46,51,71,0.6); vertical-align:top; color:var(--text); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,0.02); }
+  code { font-family:'SF Mono','Menlo','Monaco','Consolas',monospace; font-size:12.5px; background:var(--bg3); border:1px solid var(--border); border-radius:4px; padding:1px 6px; color:var(--teal); }
+
+  /* Alert */
+  .alert { border-radius:8px; padding:16px 18px; margin-bottom:16px; border:1px solid; font-size:13.5px; line-height:1.65; }
+  .alert strong { display:block; font-size:13px; font-weight:700; margin-bottom:4px; }
+  .alert.warn { background:var(--yellow-dim); border-color:rgba(251,191,36,0.3); color:var(--text); } .alert.warn strong { color:var(--yellow); }
+  .alert.ok { background:var(--green-dim); border-color:rgba(74,222,128,0.3); color:var(--text); } .alert.ok strong { color:var(--green); }
+  .alert.info { background:var(--blue-dim); border-color:rgba(96,165,250,0.3); color:var(--text); } .alert.info strong { color:var(--blue); }
+  .alert.err { background:var(--red-dim); border-color:rgba(248,113,113,0.3); color:var(--text); } .alert.err strong { color:var(--red); }
+
+  /* Pipeline */
+  .pipeline { margin:24px 0 28px; }
+  .pipeline-step { display:flex; gap:16px; align-items:flex-start; padding:16px 0; border-bottom:1px solid rgba(42,48,66,0.5); }
+  .pipeline-step:last-child { border-bottom:none; }
+  .pipeline-badge { min-width:90px; text-align:center; font-size:11.5px; font-weight:700; padding:5px 10px; border-radius:6px; flex-shrink:0; line-height:1.4; }
+  .badge-auto { background:var(--green-dim); color:var(--green); border:1px solid rgba(74,222,128,0.3); }
+  .badge-ai { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(96,165,250,0.3); }
+  .badge-result { background:var(--purple-dim); color:var(--purple); border:1px solid rgba(167,139,250,0.3); }
+  .badge-fallback { background:var(--yellow-dim); color:var(--yellow); border:1px solid rgba(251,191,36,0.3); }
+  .pipeline-content { font-size:13.5px; color:var(--muted); line-height:1.7; }
+  .pipeline-content strong { color:var(--text); display:block; margin-bottom:3px; }
+
+  /* Runbook */
+  .runbook { background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:20px; }
+  .runbook-header { padding:14px 20px; background:var(--bg3); border-bottom:1px solid var(--border); font-size:13px; font-weight:700; display:flex; align-items:center; gap:10px; }
+  .runbook-step { padding:14px 20px; border-bottom:1px solid rgba(42,48,66,0.5); font-size:13px; color:var(--muted); display:flex; gap:12px; align-items:flex-start; }
+  .runbook-step:last-child { border-bottom:none; }
+  .runbook-step-num { width:22px; height:22px; border-radius:50%; background:var(--bg3); border:1px solid var(--border); font-size:11px; font-weight:700; color:var(--sub); display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+
+  /* Pre/Code block */
+  pre { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:16px 18px; overflow-x:auto; font-family:'SF Mono','Menlo','Monaco','Consolas',monospace; font-size:12.5px; line-height:1.6; color:var(--teal); margin-bottom:16px; }
+
+  /* Priority steps */
+  .priority-flow { margin:16px 0 24px; }
+  .priority-step { display:flex; align-items:flex-start; gap:14px; padding:12px 0; border-bottom:1px solid rgba(42,48,66,0.4); }
+  .priority-step:last-child { border-bottom:none; }
+  .priority-num { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
+  .pn1 { background:var(--primary-dim); color:var(--primary); border:1px solid rgba(255,111,97,0.3); }
+  .pn2 { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(96,165,250,0.3); }
+  .pn3 { background:var(--teal-dim); color:var(--teal); border:1px solid rgba(45,212,191,0.3); }
+  .pn4 { background:rgba(139,146,168,0.1); color:var(--muted); border:1px solid var(--border); }
+  .priority-content { font-size:13.5px; color:var(--muted); line-height:1.7; }
+  .priority-content strong { color:var(--text); }
+
+  /* Chips */
+  .chip { display:inline-block; font-size:11.5px; font-weight:600; padding:3px 10px; border-radius:20px; border:1px solid; margin:2px; }
+  .chip.green { background:var(--green-dim); color:var(--green); border-color:rgba(74,222,128,0.3); }
+  .chip.blue { background:var(--blue-dim); color:var(--blue); border-color:rgba(96,165,250,0.3); }
+  .chip.yellow { background:var(--yellow-dim); color:var(--yellow); border-color:rgba(251,191,36,0.3); }
+  .chip.purple { background:var(--purple-dim); color:var(--purple); border-color:rgba(167,139,250,0.3); }
+  .chip.primary { background:var(--primary-dim); color:var(--primary); border-color:rgba(255,111,97,0.3); }
+  .chip.teal { background:var(--teal-dim); color:var(--teal); border-color:rgba(45,212,191,0.3); }
+  .chip.red { background:var(--red-dim); color:var(--red); border-color:rgba(248,113,113,0.3); }
+  .chip.muted { background:rgba(139,146,168,0.1); color:var(--muted); border-color:var(--border); }
+
+  /* Series Grid */
+  .series-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; margin:16px 0 24px; }
+  .series-card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:18px 20px; }
+  .series-card-q { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--sub); margin-bottom:6px; }
+  .series-card-title { font-size:14px; font-weight:700; color:var(--text); margin-bottom:6px; }
+  .series-card-cat { font-size:12px; color:var(--muted); }
+
+  /* Remember Box */
+  .remember-box { background:linear-gradient(135deg,rgba(96,165,250,0.06),rgba(167,139,250,0.06)); border:1px solid rgba(96,165,250,0.25); border-radius:14px; padding:32px 36px; margin-top:12px; }
+  .remember-box h3 { font-size:17px; font-weight:800; color:var(--blue); margin-bottom:24px; }
+  .remember-item { display:flex; gap:16px; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid rgba(42,48,66,0.5); }
+  .remember-item:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+  .remember-num { width:36px; height:36px; border-radius:50%; background:var(--blue-dim); border:1px solid rgba(96,165,250,0.3); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:var(--blue); flex-shrink:0; }
+  .remember-body { font-size:14px; color:var(--muted); line-height:1.75; }
+  .remember-body strong { color:var(--text); display:block; margin-bottom:4px; font-size:15px; }
+
+  /* Timeline */
+  .timeline { position:relative; padding-left:28px; }
+  .timeline::before { content:''; position:absolute; left:6px; top:8px; bottom:8px; width:2px; background:var(--border); }
+  .tl-item { position:relative; margin-bottom:0; padding:16px 0 16px 20px; border-bottom:1px solid rgba(42,48,66,0.4); }
+  .tl-item:last-child { border-bottom:none; }
+  .tl-item::before { content:''; position:absolute; left:-22px; top:24px; width:10px; height:10px; border-radius:50%; background:var(--bg3); border:2px solid var(--border); }
+  .tl-item.q1::before { border-color:var(--green); background:var(--green-dim); }
+  .tl-item.q2::before { border-color:var(--blue); background:var(--blue-dim); }
+  .tl-item.q3::before { border-color:var(--purple); background:var(--purple-dim); }
+  .tl-item.q4::before { border-color:var(--yellow); background:var(--yellow-dim); }
+  .tl-time { font-size:16px; font-weight:800; color:var(--text); margin-bottom:3px; }
+  .tl-detail { font-size:13px; color:var(--muted); line-height:1.7; }
+
+  /* Utility */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .mt8{margin-top:8px;} .mt16{margin-top:16px;} .mt24{margin-top:24px;}
+  .mb8{margin-bottom:8px;} .mb16{margin-bottom:16px;} .mb24{margin-bottom:24px;}
+  .text-muted{color:var(--muted);} .text-green{color:var(--green);} .text-blue{color:var(--blue);}
+  .text-yellow{color:var(--yellow);} .text-primary{color:var(--primary);}
+
+  /* Footer */
+  .footer { margin-top:72px; padding-top:24px; border-top:1px solid var(--border); font-size:12px; color:var(--sub); text-align:center; line-height:1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- COVER -->
+  <div class="cover">
+    <div class="cover-badge">Founder Briefing · 2026-05-15</div>
+    <h1>매거진 운영 딥다이브</h1>
+    <p class="subtitle">왜 매거진을 만들었고, AI가 어떻게 글을 쓰고, 매일 어떤 일이 자동으로 일어나는가.<br>개발 코드 없이 사업/운영 관점에서만 설명한 문서다.</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <div class="label">발행 방식</div>
+        <div class="value ok">100% 완전 자동</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">하루 최대 편수</div>
+        <div class="value live">3편</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">실행 시간</div>
+        <div class="value ok">12:00 + 14:00 KST</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">창업자 개입</div>
+        <div class="value" style="color:var(--green);">불필요 (완전 자동)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div class="status-box">
+    <div class="sb-title">현재 시스템 상태 (2026-05-16)</div>
+    <div class="status-item"><div class="status-dot on"></div>launchd 자동 실행 — 12:00 + 14:00 KST</div>
+    <div class="status-item"><div class="status-dot on"></div>Gemini 이미지 생성 — 정상</div>
+    <div class="status-item"><div class="status-dot on"></div>Slack #매거진 알림 — 연결됨</div>
+    <div class="status-item"><div class="status-dot on"></div>AdSense + 쿠팡 배너 — 활성</div>
+    <div class="status-item"><div class="status-dot warn"></div>Coupang CPS API — 401 에러 (기사 발행 무영향)</div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h2>목차</h2>
+    <ol>
+      <li><a href="#s1">왜 매거진인가 — 목적과 배경</a></li>
+      <li><a href="#s2">매거진이 비즈니스에서 하는 역할</a></li>
+      <li><a href="#s3">완전 자동화 파이프라인 전체 흐름</a></li>
+      <li><a href="#s4">AI는 어떤 주제를 어떻게 고르는가</a></li>
+      <li><a href="#s5">AI는 어떻게 글을 쓰는가 — 페르소나와 톤</a></li>
+      <li><a href="#s6">이미지는 어떻게 만들어지는가</a></li>
+      <li><a href="#s7">시리즈 연재 — 연간 계획</a></li>
+      <li><a href="#s8">카페 데이터와의 연계</a></li>
+      <li><a href="#s9">수익화 구조</a></li>
+      <li><a href="#s10">운영 확인 방법</a></li>
+      <li><a href="#s11">솔직한 한계</a></li>
+      <li><a href="#s12">창업자가 알아야 할 3가지</a></li>
+    </ol>
+  </div>
+
+  <!-- S1 -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>왜 매거진인가 — 목적과 배경</h2>
+    </div>
+
+    <div class="quote-card">
+      우리 서비스에 오는 50~60대 여성을 위해 <strong style="color:var(--blue);font-style:normal;">매일 신선한 정보를 자동으로 생산</strong>하는 시스템.<br>
+      신뢰 구축 → 재방문 유도 → 회원 전환 → 광고 수익의 4단계 엔진이다.
+    </div>
+
+    <div class="why-grid">
+      <div class="why-card problem">
+        <div class="why-card-icon">🤔</div>
+        <div class="why-card-title">문제</div>
+        <div class="why-card-body">카페/커뮤니티만으로는 신규 방문자가 "이 사이트를 믿어도 되나?" 판단할 근거가 없다. 처음 온 사람에게 보여줄 <strong style="color:var(--text)">정보성 콘텐츠</strong>가 필요하다.</div>
+      </div>
+      <div class="why-card solution">
+        <div class="why-card-icon">📰</div>
+        <div class="why-card-title">해결책</div>
+        <div class="why-card-body">AI가 매일 <strong style="color:var(--text)">1,500~2,000자 정보형 기사</strong>를 자동 발행. 50~60대가 검색하는 건강, 재테크, 은퇴 주제를 다룬다. 창업자 개입 없이 돌아간다.</div>
+      </div>
+      <div class="why-card goal">
+        <div class="why-card-icon">🎯</div>
+        <div class="why-card-title">목표</div>
+        <div class="why-card-body">검색 유입 → 기사 읽기 → 댓글/좋아요 → 회원 가입. 쌓인 기사가 <strong style="color:var(--text)">SEO 자산</strong>이 되어 복리처럼 트래픽을 늘려간다.</div>
+      </div>
+    </div>
+
+    <div class="narrative">
+      <p>매거진은 우나어를 <strong>"50~60대가 믿을 수 있는 정보 허브"</strong>로 포지셔닝하는 핵심 콘텐츠다. 커뮤니티 기능만 있으면 신규 방문자가 이탈하지만, 양질의 기사가 쌓이면 "이 사이트에는 뭔가 있다"는 신뢰가 생긴다. 그 신뢰가 회원 가입과 재방문으로 이어진다.</p>
+    </div>
+  </div>
+
+  <!-- S2 -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>매거진이 비즈니스에서 하는 역할</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>역할</th><th>구체 내용</th><th>상태</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>신뢰 구축</strong></td>
+            <td>50·60대 페르소나 기반 공감형 정보 → "이 사이트는 나를 이해한다" 감각</td>
+            <td><span class="chip green">✅ 작동 중</span></td>
+          </tr>
+          <tr>
+            <td><strong>SEO 자연유입</strong></td>
+            <td>롱테일 키워드 + FAQ JSON-LD → 구글 검색 상위 노출 → 무료 트래픽</td>
+            <td><span class="chip green">✅ 축적 중</span></td>
+          </tr>
+          <tr>
+            <td><strong>회원 전환</strong></td>
+            <td>기사 읽기 → 댓글 달기 → 커뮤니티 가입 유도</td>
+            <td><span class="chip blue">진행 중</span></td>
+          </tr>
+          <tr>
+            <td><strong>광고 수익</strong></td>
+            <td>매거진 목록 쿠팡 배너 + 상세 페이지 Google AdSense</td>
+            <td><span class="chip green">✅ 활성</span></td>
+          </tr>
+          <tr>
+            <td><strong>CPS 수익</strong></td>
+            <td>기사 내용에 매칭된 쿠팡 상품 추천 링크 → 구매 수수료</td>
+            <td><span class="chip yellow">⚠️ API 오류</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- S3 -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>완전 자동화 파이프라인 — 매일 일어나는 일</h2>
+    </div>
+
+    <div class="alert ok">
+      <strong>창업자 개입 없이 돌아간다</strong>
+      매거진은 네이버 블로그와 달리 수동 발행 단계가 없다. 시스템이 주제 선정부터 DB 발행, Slack 보고까지 전부 자동으로 처리한다.
+    </div>
+
+    <div class="pipeline">
+      <div class="pipeline-step">
+        <div class="pipeline-badge badge-auto">12:00 KST</div>
+        <div class="pipeline-content">
+          <strong>오전 세션 시작 — 주제 선정</strong>
+          오늘 쓸 기사 주제를 우선순위 4단계로 자동 선정. 최근 30일 발행 제목과 비교해 중복 주제 자동 제외.
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-badge badge-ai">Claude AI</div>
+        <div class="pipeline-content">
+          <strong>AI 기사 작성</strong>
+          Claude Sonnet(평일) 또는 Claude Opus(일요일)이 1,500~2,000자 HTML 기사 생성. 소제목 3~4개, 통계 1개 이상, 팁 박스 1개 포함.
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-badge badge-ai">Gemini AI</div>
+        <div class="pipeline-content">
+          <strong>이미지 자동 생성</strong>
+          기사 내용에서 장면 추출 → Gemini AI 이미지 생성 → Cloudflare R2 업로드. 실패 시 Unsplash 사진으로 폴백.
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-badge badge-auto">DB 발행</div>
+        <div class="pipeline-content">
+          <strong>사이트에 즉시 발행</strong>
+          기사 + 이미지 + SEO 메타 + FAQ JSON-LD + 쿠팡 상품 매칭을 모두 처리 후 <code>/magazine/[slug]</code>로 즉시 공개. Google 인덱싱 요청 자동 전송.
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-badge badge-auto">14:00 KST</div>
+        <div class="pipeline-content">
+          <strong>오후 세션 — 추가 발행 + Slack 보고</strong>
+          오전과 동일 프로세스로 추가 기사 발행. 오전+오후 결과를 합산해 Slack #매거진 채널에 일일 보고.
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-badge badge-result">완료</div>
+        <div class="pipeline-content">
+          <strong>SEO 노출 대기</strong>
+          구글이 새 기사를 크롤링하기 시작. 보통 1~3일 내 색인. 롱테일 키워드 검색 시 노출 시작.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S4 -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>AI는 어떤 주제를 어떻게 고르는가</h2>
+    </div>
+
+    <h3>주제 선정 우선순위 4단계</h3>
+    <div class="priority-flow">
+      <div class="priority-step">
+        <div class="priority-num pn1">1</div>
+        <div class="priority-content">
+          <strong>시리즈 편 (월요일만)</strong>
+          연간 48개 시리즈 계획에서 오늘 차례가 된 편. 예: "50대 갱년기 완벽 가이드 3편". 가장 높은 우선순위 — 시리즈는 독자 재방문을 만드는 핵심.
+        </div>
+      </div>
+      <div class="priority-step">
+        <div class="priority-num pn2">2</div>
+        <div class="priority-content">
+          <strong>GEO 시드 (지역 기반 주제)</strong>
+          구글 GEO 랭킹을 위해 설계된 지역 특화 주제. "서울 50대 여성 노후 준비 현실" 같은 식. 구글 검색 유입에 특히 효과적.
+        </div>
+      </div>
+      <div class="priority-step">
+        <div class="priority-num pn3">3</div>
+        <div class="priority-content">
+          <strong>카페 트렌드 주제</strong>
+          어제/그제 우리 카페에서 많이 언급된 주제. 실제 50~60대가 지금 궁금해하는 것 → 공감도 높은 기사.
+        </div>
+      </div>
+      <div class="priority-step">
+        <div class="priority-num pn4">4</div>
+        <div class="priority-content">
+          <strong>욕망 폴백 (최후 수단)</strong>
+          위 3가지가 없을 때. 건강·재테크·은퇴준비 중 오늘 덜 다룬 주제를 자동 선택. 기사가 0편으로 끝나지 않기 위한 안전망.
+        </div>
+      </div>
+    </div>
+
+    <h3>중복 방지 필터</h3>
+    <div class="narrative">
+      <p>최근 30일간 발행된 기사 제목과 비교해 <strong>제목 첫 3단어 중 2개 이상 겹치면 자동 제외</strong>한다. "50대 무릎 통증"에 대한 글을 3일 전에 썼다면 오늘은 다른 주제로 넘어간다. 독자가 "또 같은 내용이네"라고 느끼지 않도록 하는 장치다.</p>
+    </div>
+
+    <h3>카테고리 분포</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>카테고리</th><th>대표 주제 예시</th><th>독자 욕망</th></tr></thead>
+        <tbody>
+          <tr><td><strong>건강</strong></td><td>갱년기, 관절, 수면, 혈압, 당뇨</td><td>악화 공포 → 실용 정보</td></tr>
+          <tr><td><strong>재테크</strong></td><td>국민연금, IRP, 퇴직금, 부동산</td><td>노후 불안 → 구체적 수치</td></tr>
+          <tr><td><strong>은퇴준비</strong></td><td>퇴직 후 첫 1년, 남편과 24시간, 인생 2막</td><td>미지의 불안 → 선배 경험</td></tr>
+          <tr><td><strong>일자리</strong></td><td>재취업, 자격증, 봉사, 창업</td><td>사회적 역할 상실 불안</td></tr>
+          <tr><td><strong>생활</strong></td><td>살림 꿀팁, 절약, 정리정돈</td><td>일상의 효율</td></tr>
+          <tr><td><strong>여행/문화</strong></td><td>국내 여행, 영화, 독서, 전시</td><td>여유와 즐거움</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- S5 -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>AI는 어떻게 글을 쓰는가 — 페르소나와 톤</h2>
+    </div>
+
+    <div class="alert info">
+      <strong>AI가 "정순씨 에디터봇"으로 쓴다</strong>
+      기사는 AI가 쓰지만, 독자에게는 "우나어 에디터팀이 작성한 기사"로 보인다. AI는 항상 50~60대 여성 독자의 시선에서, 공감 먼저 정보 나중 순서로 쓴다.
+    </div>
+
+    <h3>5개 검증 페르소나 — AI가 항상 이 사람들을 머릿속에 두고 쓴다</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>페르소나</th><th>특성</th><th>이 사람이 원하는 것</th></tr></thead>
+        <tbody>
+          <tr><td><strong>P1 영숙씨</strong></td><td>외로움, 느슨한 연결 욕구</td><td>"나 같은 사람이 또 있구나" 위로</td></tr>
+          <tr><td><strong>P2 정희씨</strong></td><td>건강 염려, 악화 공포</td><td>"이 증상 내가 어떻게 해야 해?" 구체적 답</td></tr>
+          <tr><td><strong>P4 순자씨</strong></td><td>실용형, 바로 써먹을 정보</td><td>"핵심만 알려줘, 시간 없어"</td></tr>
+          <tr><td><strong>P5 현주씨</strong></td><td>간병 부담, 공감 욕구</td><td>"나만 힘든 게 아니구나" 공감</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>글쓰기 규칙 — 절대 준수</h3>
+    <div class="grid-2">
+      <div>
+        <div class="runbook">
+          <div class="runbook-header">✅ 반드시 지키는 것</div>
+          <div class="runbook-step"><div class="runbook-step-num">✓</div><div>첫 문장: 독자 현실 공감으로 시작 ("혈압약 처방받고 갑자기 불안해지셨나요?")</div></div>
+          <div class="runbook-step"><div class="runbook-step-num">✓</div><div>길이: 1,500~2,000자 (너무 짧으면 SEO 저품질)</div></div>
+          <div class="runbook-step"><div class="runbook-step-num">✓</div><div>통계 데이터 1개 이상 (출처 명시)</div></div>
+          <div class="runbook-step"><div class="runbook-step-num">✓</div><div>팁 박스 1개 ("💡 꿀팁: ...")</div></div>
+          <div class="runbook-step"><div class="runbook-step-num">✓</div><div>소제목 3~4개, 각 15자 이내</div></div>
+          <div class="runbook-step"><div class="runbook-step-num">✓</div><div>단락 최대 3문장 (읽기 편하게)</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="runbook">
+          <div class="runbook-header">❌ 절대 금지</div>
+          <div class="runbook-step"><div class="runbook-step-num">✗</div><div>"시니어", "액티브 시니어", "어르신" 절대 금지</div></div>
+          <div class="runbook-step"><div class="runbook-step-num">✗</div><div>대신: "우리 또래", "50·60대", "인생 2막"</div></div>
+          <div class="runbook-step"><div class="runbook-step-num">✗</div><div>h1 태그 금지 (SEO 충돌)</div></div>
+          <div class="runbook-step"><div class="runbook-step-num">✗</div><div>정보 먼저 공감 나중 (순서 반대)</div></div>
+          <div class="runbook-step"><div class="runbook-step-num">✗</div><div>4문장 이상 긴 단락</div></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>SEO를 위한 롱테일 키워드 전략</h3>
+    <div class="narrative">
+      <p>AI는 기사마다 해당 카테고리의 <strong>롱테일 키워드</strong>를 제목이나 본문에 자연스럽게 녹인다. "건강"이라는 단어보다 "50대 여성 밤에 식은땀 나는 이유"처럼 구체적인 검색어를 타겟한다. 이런 롱테일 키워드는 경쟁이 적어 신생 도메인도 상위 노출이 가능하다.</p>
+    </div>
+    <pre>건강 예시: "50대 여성 밤에 식은땀 나는 이유", "갱년기 수면 장애 해결법", "무릎 통증 운동하면 낫나요"
+재테크 예시: "퇴직금 IRP 넣으면 세금 얼마나 아끼나", "국민연금 조기수령 vs 65세 비교"
+은퇴준비 예시: "퇴직 후 첫 한 달 어떻게 보내야 하나요", "남편 퇴직 후 24시간"</pre>
+
+    <h3>일요일에 Opus를 쓰는 이유</h3>
+    <div class="narrative">
+      <p>평일(월~토)은 Claude Sonnet(중간 모델)으로 빠르고 효율적으로 기사를 생산한다. 하지만 <strong>일요일은 Claude Opus(최상위 모델)</strong>로 전환한다. 일요일 독자는 더 여유롭게 긴 글을 읽고, 주간 정리·전략적 주제 기사가 적합하기 때문이다. 비용은 더 들지만 품질 차이가 확연하다.</p>
+    </div>
+  </div>
+
+  <!-- S6 -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>이미지는 어떻게 만들어지는가</h2>
+    </div>
+
+    <div class="narrative">
+      <p>모든 기사에는 <strong>히어로 이미지가 반드시 필요</strong>하다. 이미지 없는 기사는 발행 자체가 보류된다. AI가 기사 내용에서 핵심 장면을 추출해 영어 설명으로 변환 → Gemini AI가 이미지 생성.</p>
+    </div>
+
+    <h3>이미지 생성 우선순위</h3>
+    <div class="pipeline">
+      <div class="pipeline-step">
+        <div class="pipeline-badge badge-ai">1순위</div>
+        <div class="pipeline-content">
+          <strong>Gemini AI 생성</strong>
+          기사 내용 기반 영문 프롬프트로 Gemini에게 이미지 생성 요청. 한국 여성 4050 실사 또는 음식·풍경 사진. 성공 시 R2에 업로드.
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-badge badge-fallback">2순위 폴백</div>
+        <div class="pipeline-content">
+          <strong>Unsplash 사진 라이브러리</strong>
+          Gemini 실패 시(네트워크 불안정, 세션 만료 등) Unsplash API에서 관련 사진 자동 검색+다운로드. 저작권 문제 없이 무료 사용 가능.
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-badge badge-fallback" style="background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,0.3);">발행 보류</div>
+        <div class="pipeline-content">
+          <strong>두 방법 모두 실패 → 기사 발행 중단</strong>
+          히어로 이미지 없이는 발행하지 않는다. 다음 세션 때 같은 주제로 재시도하거나 다른 주제로 교체.
+        </div>
+      </div>
+    </div>
+
+    <h3>이미지 타입 분류</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>타입</th><th>언제 사용</th><th>생성 방식</th></tr></thead>
+        <tbody>
+          <tr><td><strong>PERSON_REAL</strong></td><td>건강·일상 주제 (메인 이미지)</td><td>Gemini 우선 → Unsplash 폴백</td></tr>
+          <tr><td><strong>FOOD_PHOTO</strong></td><td>요리·음식 주제</td><td>Gemini 우선 → Unsplash 폴백</td></tr>
+          <tr><td><strong>SCENE_PHOTO</strong></td><td>여행·풍경 주제</td><td>Gemini 우선 → Unsplash 폴백</td></tr>
+          <tr><td><strong>OBJECT_PHOTO</strong></td><td>상품·도구 소개</td><td>Gemini 우선 → Unsplash 폴백</td></tr>
+          <tr><td><strong>ILLUSTRATION</strong></td><td>개념·차트형 주제</td><td><span class="chip red">현재 비활성</span> — DALL-E 꺼둠</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert warn">
+      <strong>Gemini 세션이 만료되면</strong>
+      Gemini는 크롬 브라우저 자동화로 이미지를 생성한다. 크롬 로그인 세션이 만료되면 Gemini 생성에 실패하고 Unsplash로 폴백된다. 보통 수주~수개월에 한 번 발생. 로그인 갱신이 필요하면 Slack 알림으로 알 수 있다.
+    </div>
+  </div>
+
+  <!-- S7 -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>시리즈 연재 — 연간 계획</h2>
+    </div>
+
+    <div class="metric-grid">
+      <div class="card blue">
+        <div class="card-title">연간 시리즈 수</div>
+        <div class="card-value">48개</div>
+        <div class="card-sub">2026년 계획<br>분기별 12개</div>
+      </div>
+      <div class="card purple">
+        <div class="card-title">편당 기사 수</div>
+        <div class="card-value">5편</div>
+        <div class="card-sub">1~5편 연재<br>매주 월요일 1편</div>
+      </div>
+      <div class="card green">
+        <div class="card-title">연간 시리즈 기사</div>
+        <div class="card-value">240편</div>
+        <div class="card-sub">48 × 5편<br>자동 발행 예정</div>
+      </div>
+    </div>
+
+    <div class="narrative">
+      <p>시리즈는 독자의 <strong>재방문을 만드는 핵심 장치</strong>다. "50대 갱년기 완벽 가이드" 1편을 읽은 독자가 2편, 3편을 기다리며 다시 온다. 일반 단발 기사는 한 번 읽고 끝이지만, 시리즈는 구독 관계를 만든다.</p>
+    </div>
+
+    <h3>2026년 주요 시리즈 (일부)</h3>
+    <div class="series-grid">
+      <div class="series-card">
+        <div class="series-card-q">2026 Q1</div>
+        <div class="series-card-title">50대 갱년기 완벽 가이드</div>
+        <div class="series-card-cat"><span class="chip primary">건강</span> · 5편 · 1~5주</div>
+      </div>
+      <div class="series-card">
+        <div class="series-card-q">2026 Q1</div>
+        <div class="series-card-title">국민연금 완전 정복</div>
+        <div class="series-card-cat"><span class="chip green">재테크</span> · 5편 · 6~10주</div>
+      </div>
+      <div class="series-card">
+        <div class="series-card-q">2026 Q1</div>
+        <div class="series-card-title">중년에 진짜 친구 만들기</div>
+        <div class="series-card-cat"><span class="chip blue">관계</span> · 5편 · 11~15주</div>
+      </div>
+      <div class="series-card">
+        <div class="series-card-q">2026 Q2</div>
+        <div class="series-card-title">퇴직 후 6개월 생존 가이드</div>
+        <div class="series-card-cat"><span class="chip yellow">은퇴준비</span> · 5편</div>
+      </div>
+      <div class="series-card">
+        <div class="series-card-q">2026 Q2</div>
+        <div class="series-card-title">50대 재취업 성공 스토리</div>
+        <div class="series-card-cat"><span class="chip teal">일자리</span> · 5편</div>
+      </div>
+      <div class="series-card">
+        <div class="series-card-q">2026 Q3</div>
+        <div class="series-card-title">50대 무릎·관절 완전 가이드</div>
+        <div class="series-card-cat"><span class="chip primary">건강</span> · 5편</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S8 -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>카페 데이터와의 연계 — 실제 독자가 궁금한 것을 쓴다</h2>
+    </div>
+
+    <div class="narrative">
+      <p>매거진은 창작이 아니다. <strong>우리 카페에서 실제 50~60대가 오늘 무슨 이야기를 하고 있는가</strong>를 보고 그것을 기사로 만든다. 이것이 다른 AI 콘텐츠와의 결정적 차이다.</p>
+    </div>
+
+    <div class="runbook">
+      <div class="runbook-header">카페 → 매거진 데이터 흐름</div>
+      <div class="runbook-step">
+        <div class="runbook-step-num">1</div>
+        <div>카페 크롤러가 매일 네이버 카페 2곳에서 인기 글을 자동 수집</div>
+      </div>
+      <div class="runbook-step">
+        <div class="runbook-step-num">2</div>
+        <div>트렌드 분석 에이전트가 "오늘 가장 많이 언급된 주제"를 추출</div>
+      </div>
+      <div class="runbook-step">
+        <div class="runbook-step-num">3</div>
+        <div>매거진 생성 시 해당 트렌드 주제를 3순위 후보로 활용</div>
+      </div>
+      <div class="runbook-step">
+        <div class="runbook-step-num">4</div>
+        <div>기사 작성 시 카페 원글(최대 5개)을 AI에게 참고자료로 제공</div>
+      </div>
+      <div class="runbook-step">
+        <div class="runbook-step-num">5</div>
+        <div>기사 본문에 "우나어 커뮤니티에서도 자주 나오는 주제예요" 형태로 자연 언급</div>
+      </div>
+    </div>
+
+    <div class="alert info">
+      <strong>왜 이것이 중요한가</strong>
+      AI가 일반적인 건강 정보를 쓰는 것과, "지금 우리 독자들이 실제로 고민하는 것"을 쓰는 것은 공감도가 다르다. 카페 데이터 연계가 매거진을 "내 이야기 같은 기사"로 만드는 비결이다.
+    </div>
+  </div>
+
+  <!-- S9 -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>수익화 구조 — 매거진이 돈을 버는 방법</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>수익원</th><th>위치</th><th>현황</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Google AdSense</strong></td>
+            <td>기사 상세 페이지 내</td>
+            <td><span class="chip green">✅ 활성</span> — 트래픽 증가 시 수익 증가</td>
+          </tr>
+          <tr>
+            <td><strong>쿠팡 배너</strong></td>
+            <td>매거진 목록 페이지 (8번째 카드 뒤)</td>
+            <td><span class="chip green">✅ 활성</span></td>
+          </tr>
+          <tr>
+            <td><strong>쿠팡 CPS 링크</strong></td>
+            <td>기사 하단 관련 상품 추천</td>
+            <td><span class="chip yellow">⚠️ API 오류 중</span> — 기사 발행에는 무영향</td>
+          </tr>
+          <tr>
+            <td><strong>SEO 자연유입</strong></td>
+            <td>구글 검색 → 기사 → 사이트</td>
+            <td><span class="chip blue">누적 중</span> — 장기 자산</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert info">
+      <strong>매거진의 수익은 직접 수익보다 간접 수익이 크다</strong>
+      AdSense + 쿠팡 배너 수익보다, 매거진이 만드는 "신뢰 → 회원 가입 → 커뮤니티 활성화 → 광고 단가 상승" 연쇄가 더 가치 있다. 매거진은 수익 센터가 아니라 <strong>신뢰 제조 엔진</strong>이다.
+    </div>
+  </div>
+
+  <!-- S10 -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>운영 확인 방법 — 창업자 체크포인트</h2>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <h3>Slack #매거진 알림</h3>
+        <div class="biz-lead">매일 14:00 KST 이후 오전+오후 합산 보고</div>
+        <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:16px; font-size:13px; color:var(--muted); line-height:1.75; margin-bottom:16px;">
+          ✅ <strong style="color:var(--text);">5/15 매거진 2건 발행 완료</strong><br>
+          ──────────────────────────<br>
+          📰 <strong>오전 (12:00)</strong><br>
+          · 베란다 상추 한 잎의 위로 — 요리<br>
+          &nbsp;&nbsp;이미지: Gemini × 2장<br>
+          📰 <strong>저녁 (14:00)</strong><br>
+          · 은퇴 직전 연금 재편 — 재테크<br>
+          &nbsp;&nbsp;이미지: Gemini × 2장
+        </div>
+        <div class="alert ok" style="margin-top:8px;">
+          <strong>알림이 없으면</strong>
+          당일 0편 발행. 소재 부족이나 이미지 생성 실패일 가능성. 로그 확인 필요.
+        </div>
+      </div>
+      <div>
+        <h3>사이트에서 직접 확인</h3>
+        <div class="biz-lead">
+          <strong><code>age-doesnt-matter.com/magazine</code></strong><br>
+          최신 기사가 맨 위에 노출되는지 확인
+        </div>
+        <h3>발행 건수 이상 시</h3>
+        <div class="runbook">
+          <div class="runbook-header">간단 점검 순서</div>
+          <div class="runbook-step">
+            <div class="runbook-step-num">1</div>
+            <div>Slack #매거진 확인 — 에러 메시지 있는지</div>
+          </div>
+          <div class="runbook-step">
+            <div class="runbook-step-num">2</div>
+            <div>Mac 켜져 있는지 확인 (launchd는 Mac이 꺼지면 실행 안 됨)</div>
+          </div>
+          <div class="runbook-step">
+            <div class="runbook-step-num">3</div>
+            <div>인터넷 연결 확인 (Claude API + R2 업로드 필요)</div>
+          </div>
+          <div class="runbook-step">
+            <div class="runbook-step-num">4</div>
+            <div>이상 지속 시 Claude에게 "매거진 로그 확인해줘" 요청</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S11 -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>솔직한 한계</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>한계</th><th>내용</th><th>대응</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Mac 종속</strong></td>
+            <td>매거진 시스템은 창업자 Mac에서만 돌아간다. Mac 꺼지면 발행 없음.</td>
+            <td>Mac 상시 켜두기 (절전 모드는 괜찮음)</td>
+          </tr>
+          <tr>
+            <td><strong>0편 발행 가능</strong></td>
+            <td>소재 부족 + 이미지 실패가 겹치면 하루 0편 발행됨.</td>
+            <td>Slack 알림 없으면 다음 날 자동 재시도</td>
+          </tr>
+          <tr>
+            <td><strong>AI 오류 문장</strong></td>
+            <td>가끔 어색하거나 부정확한 통계를 포함한 기사 발행 가능성.</td>
+            <td>현재 발행 후 검수 프로세스 없음. 독자 신고 시 수동 수정.</td>
+          </tr>
+          <tr>
+            <td><strong>SEO 효과 지연</strong></td>
+            <td>구글 색인은 1~3일 소요. 검색 상위는 수개월 후.</td>
+            <td>장기전. 단기 성과 기대 금물.</td>
+          </tr>
+          <tr>
+            <td><strong>CPS 수익 0</strong></td>
+            <td>쿠팡 파트너스 API 401 오류 지속 중.</td>
+            <td>기사 발행에는 영향 없음. 별도 수정 필요.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- S12 -->
+  <div class="section" id="s12">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <h2>창업자가 알아야 할 3가지</h2>
+    </div>
+
+    <div class="remember-box">
+      <h3>딱 이것만 알면 된다</h3>
+
+      <div class="remember-item">
+        <div class="remember-num">1</div>
+        <div class="remember-body">
+          <strong>매거진은 완전 자동 — 창업자가 할 일 없다</strong>
+          네이버 블로그와 달리, 매거진은 창업자가 아무것도 안 해도 매일 기사가 발행된다. Slack #매거진 알림이 오면 "오늘도 잘 돌아가고 있구나" 확인만 하면 된다. 알림이 없는 날만 "왜 없지?" 확인.
+        </div>
+      </div>
+
+      <div class="remember-item">
+        <div class="remember-num">2</div>
+        <div class="remember-body">
+          <strong>Mac이 켜져 있어야 한다</strong>
+          매거진 시스템은 창업자 Mac에서 실행된다. Mac이 꺼져 있으면 12:00와 14:00에 아무 일도 일어나지 않는다. 절전 모드는 괜찮지만 완전 종료하면 안 된다. 장기 외출 시 이 점을 반드시 체크.
+        </div>
+      </div>
+
+      <div class="remember-item">
+        <div class="remember-num">3</div>
+        <div class="remember-body">
+          <strong>효과는 천천히, 하지만 복리다</strong>
+          오늘 발행한 기사가 내일 당장 트래픽을 만들지 않는다. 구글 색인에 1~3일, 검색 상위에는 수개월 걸린다. 하지만 한 번 쌓인 기사는 계속 사람들을 데려온다. 6개월 후의 트래픽은 지금 매일 발행하는 기사들의 합산이다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    우나어(우리 나이가 어때서) — 매거진 운영 딥다이브 가이드 V1.0<br>
+    작성: Claude Sonnet 4.6 | 검토: 창업자 | 최종 수정: 2026-05-15<br>
+    <span style="color:var(--blue);">age-doesnt-matter.com/magazine</span>
+  </div>
+
+</div>
+</body>
+</html>

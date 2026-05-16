@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v9.0</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v9.1</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -324,14 +324,14 @@
 
   <!-- ── Cover ── -->
   <div class="cover">
-    <div class="cover-badge">핸드오버 문서 v9.0 · 2026-05-15</div>
+    <div class="cover-badge">핸드오버 문서 v9.1 · 2026-05-16</div>
     <h1>우나어 네이버 카페 파이프라인<br>운영 핸드오버 가이드</h1>
     <p class="subtitle">
       왜 네이버를 크롤하는가, 왜 댓글을 다는가 — 근본 목적부터 기술 상세까지.<br>
       GHA 큐레이션 115건/일 (Regular 100 + Popular 15) + 크롤 10회/일 + 새벽 감성글 01:15 슬롯 + 회원글 댓글 파동.
     </p>
     <div class="cover-meta">
-      <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">V9.0 (2026-05-15 기준)</div></div>
+      <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">V9.1 (2026-05-16 기준)</div></div>
       <div class="cover-meta-item"><div class="label">수집 카페</div><div class="value">2개 (wgang · dlxogns01)</div></div>
       <div class="cover-meta-item"><div class="label">큐레이션</div><div class="value ok">115건/일 (Regular 100 + Popular 15)</div></div>
       <div class="cover-meta-item"><div class="label">Mac plist</div><div class="value ok">10종 (크롤 7 + popular-sync 3)</div></div>
@@ -342,17 +342,18 @@
 
   <!-- ── 현재 가동 상태 박스 ── -->
   <div class="status-box">
-    <div class="sb-title">현재 가동 중 (2026-05-15 기준 · V9.0)</div>
+    <div class="sb-title">현재 가동 중 (2026-05-16 기준 · V9.1)</div>
     <div class="status-item"><div class="status-dot on"></div>Mac plist 10종 (크롤 7종 + popular-sync 3종 10:30/16:00/21:15)</div>
     <div class="status-item"><div class="status-dot on"></div>GHA Regular 큐레이션 (08:20~01:15 KST, 20슬롯, 100건/일)</div>
     <div class="status-item"><div class="status-dot on"></div>GHA Popular 큐레이션 (10:50/16:15/21:30 KST, 3슬롯, 15건/일) — 신규 A30</div>
     <div class="status-item"><div class="status-dot on"></div>01:15 KST 새벽 감성글 특별 슬롯 (MEANING·SPIRITUAL·RELATION·FAMILY 우선)</div>
-    <div class="status-item"><div class="status-dot on"></div>댓글 파동 (*/5분 24시간)</div>
+    <div class="status-item"><div class="status-dot on"></div>댓글 파동 GHA ONLY (*/5분 24시간 — agents-cafe-wave.yml)</div>
     <div class="status-item"><div class="status-dot on"></div>시드봇 댓글·대댓글·좋아요</div>
     <div class="status-item"><div class="status-dot on"></div>회원글 댓글 파동</div>
     <div class="status-item"><div class="status-dot off"></div>시드봇 글 생성 중단 (ENABLE_SEED_POSTS=false)</div>
     <div class="status-item"><div class="status-dot on"></div>댓글 수집 복구 완료 (B1 해결 — 2026-05-14)</div>
     <div class="status-item"><div class="status-dot on"></div>인기글 파이프라인 (A30) 신규 — 115건/일 체제 전환 완료 (V9.0 — 2026-05-15)</div>
+    <div class="status-item"><div class="status-dot on"></div>V9.1 (2026-05-16) — 코드 감사 7개 이슈 수정: wave-processor GHA ONLY 확인, runner.ts 크론 주석 정확화, qa-verifier COO action 불일치 수정, connection-facilitator safeBotLog 교체</div>
   </div>
 
   <!-- ── TOC ── -->
@@ -1819,8 +1820,8 @@ launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
 
   <!-- ── Footer ── -->
   <div class="footer">
-    <p>우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 문서 v9.0</p>
-    <p>최종 업데이트: 2026-05-15 | 크롤 7회/일 + popular-sync 3회/일 · GHA 23슬롯 115건/일 (Regular 100 + Popular 15) · 01:15 심야 감성글 슬롯 · Mac plist 10종</p>
+    <p>우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 문서 v9.1</p>
+    <p>최종 업데이트: 2026-05-16 | 크롤 7회/일 + popular-sync 3회/일 · GHA 23슬롯 115건/일 (Regular 100 + Popular 15) · 01:15 심야 감성글 슬롯 · Mac plist 10종 · wave-processor GHA ONLY 확인</p>
     <p>문의: mogoyongseok@gmail.com | GitHub: MogoKim/age-doesnt-matter</p>
   </div>
 
