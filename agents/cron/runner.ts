@@ -64,7 +64,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cafe_crawler:wave-process': () => import('../cafe/wave-processor.js').then(m => m.main()),
   'cafe_crawler:user-post-wave-process': () => import('../cafe/user-post-wave-processor.js').then(m => m.main()),
   'cafe_crawler:brief-monitor': () => import('../cafe/brief-monitor.js').then(() => {}),
-  // GHA 안전망 — Mac launchd 미실행 시 fallback_yesterday 자동 생성 (09:00 KST, 0 0 * * * UTC)
+  // GHA 안전망 — Mac launchd 미실행 시 fallback_yesterday 자동 생성 (09:03 KST, 3 0 * * * UTC)
   'cafe_crawler:daily-brief-fallback': () => import('../cafe/daily-brief.js').then(async m => { await m.runFallbackBrief() }),
   'cafe_crawler:external-crawl': () => import('../cafe/external-crawler.js').then(() => {}), // DISPATCH ONLY — 82cook 외부 크롤, GHA 스케줄 제거됨 (2026-04-13)
   'cmo:social-poster': () => import('../cmo/social-poster.js').then(() => {}),
@@ -92,7 +92,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cpo:persona-diversity-checker': () => import('../cpo/persona-diversity-checker.js').then(() => {}),
   'cdo:engagement-optimizer': () => import('../cdo/engagement-optimizer.js').then(() => {}),
   'cto:qa-verify': () => import('../cto/qa-verifier.js').then(() => {}),
-  // CTO 주간 아키텍처 리뷰 (월요일 09:00 KST)
+  // CTO 주간 아키텍처 리뷰 (DISPATCH ONLY — 수동 트리거 전용)
   'cto:arch-review': () => import('../cto/arch-review.js').then(() => {}),
   // CTO 주간 코드 품질 가비지 컬렉션 (월요일 09:30 KST — arch-review 직후)
   'cto:garbage-collect': () => import('../cto/garbage-collect.js').then(() => {}),

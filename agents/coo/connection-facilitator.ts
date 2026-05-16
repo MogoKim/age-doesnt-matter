@@ -1,6 +1,7 @@
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { generateComment, getBotUser } from '../seed/generator.js'
+import { safeBotLog } from '../core/safe-log.js'
 
 /**
  * COO 에이전트 — 느슨한 연결 촉진
@@ -39,16 +40,7 @@ async function main() {
 
     if (orphanPosts.length === 0) {
       console.log('[COO] 연결 촉진 대상 없음')
-      await prisma.botLog.create({
-        data: {
-          botType: 'COO',
-          action: 'CONNECTION_FACILITATE',
-          status: 'SUCCESS',
-          details: '대상 게시글 없음',
-          itemCount: 0,
-          executionTimeMs: Date.now() - start,
-        },
-      })
+      await safeBotLog({ botType: 'COO', action: 'CONNECTION_FACILITATE', status: 'SUCCESS', details: '대상 게시글 없음', itemCount: 0, executionTimeMs: Date.now() - start })
       return
     }
 
@@ -97,16 +89,7 @@ async function main() {
 
     const summary = `연결 촉진 완료: ${facilitatedCount}건 댓글 (대상 ${selectedPosts.length}건)`
 
-    await prisma.botLog.create({
-      data: {
-        botType: 'COO',
-        action: 'CONNECTION_FACILITATE',
-        status: 'SUCCESS',
-        details: summary,
-        itemCount: facilitatedCount,
-        executionTimeMs: Date.now() - start,
-      },
-    })
+    await safeBotLog({ botType: 'COO', action: 'CONNECTION_FACILITATE', status: 'SUCCESS', details: summary, itemCount: facilitatedCount, executionTimeMs: Date.now() - start })
 
     if (facilitatedCount > 0) {
       await notifySlack({
@@ -122,16 +105,7 @@ async function main() {
     const errorMsg = err instanceof Error ? err.message : String(err)
     console.error('[COO] 연결 촉진 실패:', errorMsg)
 
-    await prisma.botLog.create({
-      data: {
-        botType: 'COO',
-        action: 'CONNECTION_FACILITATE',
-        status: 'FAILED',
-        details: errorMsg,
-        itemCount: 0,
-        executionTimeMs: Date.now() - start,
-      },
-    })
+    await safeBotLog({ botType: 'COO', action: 'CONNECTION_FACILITATE', status: 'FAILED', details: errorMsg, itemCount: 0, executionTimeMs: Date.now() - start })
   } finally {
     await disconnect()
   }

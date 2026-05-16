@@ -1,7 +1,7 @@
 /**
  * 매거진 자동생성기
  * CafeTrend.magazineTopics를 기반으로 에디터 스타일 매거진 글 생성
- * 매일 16:00 KST 실행 (트렌드 분석 후)
+ * LOCAL ONLY — launchd 12:00 KST 실행
  */
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'

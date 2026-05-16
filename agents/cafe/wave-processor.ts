@@ -1,4 +1,4 @@
-// LOCAL ONLY (GHA) — Comment Wave 파동 처리 (wave1~4 순차 댓글 게시)
+// GHA ONLY — agents-cafe-wave.yml */5 cron으로 실행, Comment Wave 파동 처리 (wave1~4 순차 댓글 게시)
 /**
  * 댓글 파동 프로세서
  * CommentWaveQueue에서 pending 항목을 찾아 댓글을 게시하고 done 처리.
