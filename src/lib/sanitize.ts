@@ -143,16 +143,27 @@ export function plainTextToSafeHtml(text: string): string {
 /**
  * 게시글 HTML 내 R2 이미지 URL을 Next.js Image Optimization으로 프록시
  * 브라우저에서 R2 직접 요청이 실패하므로 /_next/image 프록시 경유
- * *.r2.dev 및 *.r2.cloudflarestorage.com 모두 커버
+ * *.r2.dev / *.r2.cloudflarestorage.com / img.age-doesnt-matter.com 모두 커버
+ * [APPLIES TO] proxyMagazineImages()도 동일 패턴 — 연동 유지
  */
 export function proxyR2Images(html: string): string {
-  return html.replace(
+  // R2 직접 URL 프록시
+  let result = html.replace(
     /(<img\s[^>]*?)src="(https:\/\/[^"]*(?:\.r2\.dev|\.r2\.cloudflarestorage\.com)\/[^"]+)"/g,
     (_, before, url) => {
       const proxied = `/_next/image?url=${encodeURIComponent(url)}&w=750&q=80`
       return `${before}src="${proxied}"`
     },
   )
+  // 프로덕션 커스텀 도메인 프록시 — CORS 우회 필요
+  result = result.replace(
+    /(<img\s[^>]*?)src="(https:\/\/img\.age-doesnt-matter\.com\/[^"]+)"/g,
+    (_, before, url) => {
+      const proxied = `/_next/image?url=${encodeURIComponent(url)}&w=750&q=80`
+      return `${before}src="${proxied}"`
+    },
+  )
+  return result
 }
 
 /**
