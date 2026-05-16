@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { revalidatePath } from 'next/cache'
 import bcrypt from 'bcryptjs'
+import { calculateTrendingScore } from '@/lib/utils/trending'
 
 interface GuestCommentResult {
   error?: string
@@ -95,6 +96,17 @@ export async function createGuestComment({
 
     return created
   })
+
+  void (async () => {
+    const p = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { likeCount: true, commentCount: true, viewCount: true },
+    })
+    if (p) await prisma.post.update({
+      where: { id: postId },
+      data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) },
+    })
+  })().catch(() => {})
 
   revalidatePath('/community')
   return { id: comment.id }

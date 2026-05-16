@@ -7,6 +7,7 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
 import Anthropic from '@anthropic-ai/sdk'
 import { PERSONAS } from '../agents/seed/persona-data.js'
+import { calculateTrendingScore } from '../src/lib/utils/trending.js'
 
 function parseDbUrl(url: string) {
   const u = new URL(url)
@@ -55,6 +56,31 @@ async function genComment(personaId: string, title: string, body: string): Promi
   })
   const text = res.content[0].type === 'text' ? res.content[0].text.trim() : ''
   return text.replace(/[*#_`~]/g, '').replace(/\n+/g, ' ').trim()
+}
+
+// ── 0-A. trendingScore=0 + engagement 있는 글 일괄 재계산 ──────
+async function recalcTrendingScores() {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  // @ts-expect-error one-time script
+  const posts = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      trendingScore: 0,
+      createdAt: { gte: sevenDaysAgo },
+      OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
+    },
+    select: { id: true, likeCount: true, commentCount: true, viewCount: true },
+  })
+  let updated = 0
+  for (const post of posts) {
+    const score = calculateTrendingScore(post.likeCount, post.commentCount, post.viewCount)
+    if (score > 0) {
+      // @ts-expect-error one-time script
+      await prisma.post.update({ where: { id: post.id }, data: { trendingScore: score } })
+      updated++
+    }
+  }
+  console.log(`[Fix] trendingScore 재계산 ${updated}/${posts.length}개`)
 }
 
 // ── 0. 빈 제목 글 soft-delete ───────────────────────────────
@@ -109,6 +135,7 @@ async function addComments(board: string, postId: string) {
 // ── main ─────────────────────────────────────────────────────
 async function main() {
   console.log('=== 게시글 보정 시작 ===\n')
+  await recalcTrendingScores()
   await fixEmptyTitles()
   await fixMarkdown()
   console.log('\n--- 댓글 추가 (15건 × 2) ---')
