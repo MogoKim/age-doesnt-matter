@@ -223,6 +223,7 @@ export async function adminToggleFeatured(postId: string, isFeatured: boolean) {
     },
   })
 
+  revalidateServicePaths(existing?.boardType, postId)
   revalidatePath('/admin/content')
 }
 
