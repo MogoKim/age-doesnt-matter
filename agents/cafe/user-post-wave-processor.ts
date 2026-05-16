@@ -49,12 +49,13 @@ async function processUserWave(
     return 0
   }
 
-  // 이미 댓글 단 bot user UUID 집합 (중복 방지)
+  // 이미 댓글 단 bot user UUID 집합 + 기존 댓글 내용 (표현 중복 방지)
   const existingComments = await prisma.comment.findMany({
     where: { postId: queue.postId },
-    select: { authorId: true },
+    select: { authorId: true, content: true },
   })
   const usedUserIds = new Set(existingComments.map(c => c.authorId))
+  const priorCommentTexts = existingComments.map(c => c.content)
   const usedPersonaIds = new Set<string>()
 
   let successCount = 0
@@ -75,7 +76,8 @@ async function processUserWave(
     if (usedUserIds.has(userId)) continue // 이미 댓글 달았거나 글쓴이
     usedUserIds.add(userId)
 
-    const commentText = await generateComment(personaId, post.title, post.content ?? '')
+    const commentText = await generateComment(personaId, post.title, post.content ?? '', [...priorCommentTexts])
+    priorCommentTexts.push(commentText)
 
     await prisma.$transaction([
       prisma.comment.create({

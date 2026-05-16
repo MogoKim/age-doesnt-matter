@@ -226,6 +226,7 @@ Constitution 상한 $50/월 대비 여유 있음.
 | 2026-05-11 | generateSheetViralComment에 이미지 전용 글 감지 가드 추가: HTML 태그 제거 후 cleanText < 50자이면 즉시 '' 반환 | 오유/네이트판 짤방 글 스크래핑 시 rawContent가 &lt;img&gt; 태그만인 경우 "이미지를 볼 수 없어서..." 쓰레기 댓글이 길이 5 이상으로 가드 통과해 DB 저장되는 문제 재발 방지 |
 | 2026-05-12 | generator.ts: `getExampleCafeComments()` likeCount 정렬+대댓글 포함으로 개선, `getCommentAtmosphereContext()` 신규 추가→generatePost() 프롬프트 주입 | 댓글 분위기(공감형/논쟁형/정보형)를 시드봇 글 방향성에 반영 |
 | 2026-05-14 | micro-scheduler.ts + scheduler.ts 3개 함수에 hotPromotedAt 보정 cleanup 추가 — promotionLevel 직접 updateMany 후 hotPromotedAt=null인 HOT/HALL_OF_FAME 글 사후 보정 | 뜨는이야기 탭 구조를 위해 시드봇이 직접 쓰는 promotionLevel 경로 6개에 hotPromotedAt 누락 보정 필요 |
+| 2026-05-16 | generateComment() `priorComments?: string[]` 파라미터 추가 + user message에 priorCommentsHint 블록 주입. buildContextRule comment에 "첫 단어 맞아요 금지" 추가 | 9개 봇이 같은 본문으로 독립 생성 → 동일 키워드 반복 수렴 문제 해결 (priorComments로 기존 댓글 내용 전달) |
 
 ---
 

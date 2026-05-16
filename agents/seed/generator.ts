@@ -564,7 +564,7 @@ function buildContextRule(context: 'post' | 'comment' | 'reply'): string {
     return `원글을 쓴다. 내 이야기로 시작 ("오늘", "어제", "요즘", "우리 집"). 결론 내리지 않기, 레시피 나열 금지, "안녕하세요" 금지, !! 2개 이상 금지, 마크다운 금지, 오프라인 모임 모집 금지.`
   }
   if (context === 'comment') {
-    return `댓글을 단다. 1~2문장. 글에서 구체적인 것 하나("설악산 다녀오셨군요" / "딸이 허전하시겠다") 집어서 반응. "맞아요 저도 그런 경험이 있어요" / "공감이 너무 돼요" / "위로가 됩니다" 패턴 절대 금지. 자기 경험 한 줄 붙여도 좋음. 마크다운 금지.`
+    return `댓글을 단다. 1~2문장. 글에서 구체적인 것 하나("설악산 다녀오셨군요" / "딸이 허전하시겠다") 집어서 반응. "맞아요 저도 그런 경험이 있어요" / "공감이 너무 돼요" / "위로가 됩니다" 패턴 절대 금지. 첫 단어로 "맞아요" 금지. 자기 경험 한 줄 붙여도 좋음. 마크다운 금지.`
   }
   return `대댓글 1문장. 나는 이 글의 글쓴이가 아닌 다른 독자다. 글쓴이 입장에서 감사·응답하지 말 것. 상대 댓글 핵심 단어 하나 집기. "감사합니다" / "고마워요" / "감사해요" 절대 금지. 자연스러운 제3자 맞장구: "그쵸 ㅠ" / "맞아요ㅋ" / "저도 그런 경험". 마크다운 금지.`
 }
@@ -863,6 +863,7 @@ export async function generateComment(
   personaId: string,
   postTitle: string,
   postContent: string,
+  priorComments?: string[],
 ): Promise<string> {
   const p = getPersona(personaId)
 
@@ -904,13 +905,18 @@ export async function generateComment(
     ? '\n\n[주의] 이 글은 아픔·돌봄 주제다. ㅋㅋ, ㅎㅎ, 웃음 표현 절대 금지. 짧고 조용하게 공감만.'
     : ''
 
+  const priorCommentsHint = (priorComments && priorComments.length > 0)
+    ? `\n\n[이 글에 이미 달린 댓글들 — 완전히 다른 표현·시각으로 달아주세요]\n` +
+      priorComments.map(c => `- "${c.slice(0, 80)}"`).join('\n')
+    : ''
+
   const response = await client.messages.create({
     model: getModelForPersona(personaId),
     max_tokens: 200,
     system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'comment') + trendContext + seriousOverride,
     messages: [{
       role: 'user',
-      content: `다음 글에 댓글을 달아주세요.\n\n제목: ${postTitle}\n내용: ${postContent.slice(0, 300)}${exampleBlock}${recentCommentHint}`,
+      content: `다음 글에 댓글을 달아주세요.\n\n제목: ${postTitle}\n내용: ${postContent.slice(0, 300)}${exampleBlock}${recentCommentHint}${priorCommentsHint}`,
     }],
   })
 
