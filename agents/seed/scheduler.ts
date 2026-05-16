@@ -454,7 +454,9 @@ async function runActivity(activity: Activity): Promise<void> {
     // 개선: JS에서 2자 단위 한국어 추출 후 3개 이상 겹치면 중복으로 판단
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const recentPosts24h = await prisma.post.findMany({
-      where: { authorId: userId, createdAt: { gte: since24h } },
+      where: boardType === 'LIFE2'
+        ? { boardType: 'LIFE2' as const, createdAt: { gte: since24h } }
+        : { authorId: userId, createdAt: { gte: since24h } },
       select: { title: true },
     })
     if (recentPosts24h.length > 0) {

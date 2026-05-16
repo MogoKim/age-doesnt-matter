@@ -664,6 +664,26 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
   const htmlContent = `<p>${curated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
   const summary = curated.content.replace(/\n/g, ' ').slice(0, 150).trim()
 
+  // LIFE2 크로스소스 중복 방지 (Seed·PopularCurator와 동일 주제 중복 차단)
+  if (curated.boardType === 'LIFE2') {
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const recentLife2 = await prisma.post.findMany({
+      where: { boardType: 'LIFE2', createdAt: { gte: since24h } },
+      select: { title: true },
+    })
+    if (recentLife2.length > 0) {
+      const toNouns = (t: string) => t.match(/[가-힣]{2,2}/g) ?? []
+      const newNouns = new Set(toNouns(curated.title))
+      const isDuplicate = recentLife2.some(
+        p => toNouns(p.title).filter(n => newNouns.has(n)).length >= 3
+      )
+      if (isDuplicate) {
+        console.log(`[ContentCurator] LIFE2 중복 스킵: "${curated.title.slice(0, 20)}"`)
+        return null
+      }
+    }
+  }
+
   // post 생성 + cafePost usedAt 마킹을 트랜잭션으로 묶어 원자성 보장
   const postId = await prisma.$transaction(async (tx) => {
     const post = await tx.post.create({

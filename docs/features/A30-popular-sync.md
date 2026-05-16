@@ -41,3 +41,4 @@
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
 | 2026-05-15 | 신규 생성 — popular-sync 3슬롯 + popular-curate 3슬롯 | 카페 실제 인기글 우나어 발행 (killerScore 과소평가 문제 해결) |
+| 2026-05-16 | popular-curator.ts 발행 루프에 LIFE2 크로스소스 dedup 추가 — 24h 내 LIFE2 전체 Post 조회 후 2자 명사 overlap ≥3 이면 발행 스킵 | Seed·ContentCurator와 동일 주제 중복 발행 차단 (크로스소스 dedup 미구현 버그) |
