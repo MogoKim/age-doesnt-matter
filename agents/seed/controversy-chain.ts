@@ -19,6 +19,7 @@
  */
 
 import { fileURLToPath } from 'url'
+import { calculateTrendingScore } from '../../src/lib/utils/trending.js'
 import { generateComment, generateReply, getBotUser } from './generator.js'
 import { prisma, disconnect } from '../core/db.js'
 import { safeBotLog } from '../core/safe-log.js'
@@ -204,6 +205,10 @@ async function executeStep(
       prisma.comment.create({ data: { postId: post.id, authorId: userId, content: commentText } }),
       prisma.post.update({ where: { id: post.id }, data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() } }),
     ])
+    void (async () => {
+      const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
+      if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+    })().catch(() => {})
     console.log(`[Chain] ${chainId} step${step.stepIndex} — ${step.personaId} 댓글: "${commentText.slice(0, 40)}"`)
   }
 
@@ -241,6 +246,10 @@ async function executeStep(
       }),
       prisma.post.update({ where: { id: post.id }, data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() } }),
     ])
+    void (async () => {
+      const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
+      if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+    })().catch(() => {})
     console.log(`[Chain] ${chainId} step${step.stepIndex} — ${step.personaId} 반박댓글: "${replyText.slice(0, 40)}"`)
     void authorId  // 미사용 경고 방지
   }

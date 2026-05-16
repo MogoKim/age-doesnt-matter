@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
+import { calculateTrendingScore } from '../../src/lib/utils/trending.js'
 import { generateComment, generateReply, getBotUser } from './generator.js'
 
 /**
@@ -193,6 +194,10 @@ async function runMicroActivity(activity: MicroActivity): Promise<void> {
           where: { id: post.id },
           data: { commentCount: { increment: 1 } },
         })
+        void (async () => {
+          const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
+          if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+        })().catch(() => {})
         console.log(`[Micro] ${activity.personaId} commented on: "${post.title.slice(0, 30)}"`)
       }
     }
@@ -222,6 +227,10 @@ async function runMicroActivity(activity: MicroActivity): Promise<void> {
           where: { id: target.postId },
           data: { commentCount: { increment: 1 } },
         })
+        void (async () => {
+          const p = await prisma.post.findUnique({ where: { id: target.postId }, select: { likeCount: true, commentCount: true, viewCount: true } })
+          if (p) await prisma.post.update({ where: { id: target.postId }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+        })().catch(() => {})
         console.log(`[Micro] ${activity.personaId} replied to comment: "${target.content.slice(0, 30)}"`)
       }
     }
@@ -266,6 +275,10 @@ async function runMicroActivity(activity: MicroActivity): Promise<void> {
             data: { hotPromotedAt: new Date() },
           }).catch(() => {})
         }
+        void (async () => {
+          const p = await prisma.post.findUnique({ where: { id: target.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
+          if (p) await prisma.post.update({ where: { id: target.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+        })().catch(() => {})
         console.log(`[Micro] ${activity.personaId} liked post ${target.id.slice(0, 8)}`)
       } catch {
         // unique constraint 위반 시 무시

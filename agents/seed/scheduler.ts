@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
+import { calculateTrendingScore } from '../../src/lib/utils/trending.js'
 import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP, generateKillerPost, generateKillerComments, generateSheetViralComment } from './generator.js'
 import { scheduleChainFromPost } from './controversy-chain.js'
 import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
@@ -442,6 +443,19 @@ async function runActivity(activity: Activity): Promise<void> {
     const htmlContent = `<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
     const summary = content.replace(/\n/g, ' ').slice(0, 150).trim()
 
+    // Fix 5: 24h 내 유사 제목 중복 발행 방지
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const titleKey = title.replace(/[^\w가-힣]/g, '').slice(0, 6)
+    if (titleKey) {
+      const recentSimilar = await prisma.post.findFirst({
+        where: { authorId: userId, createdAt: { gte: since24h }, title: { startsWith: titleKey } },
+      })
+      if (recentSimilar) {
+        console.log(`[Seed] 중복 발행 스킵: "${title.slice(0, 20)}"`)
+        return
+      }
+    }
+
     // Fix 13-E: create() 반환값 직접 캡처 (findFirst race condition 방지)
     const newPost = await prisma.post.create({
       data: {
@@ -517,6 +531,10 @@ async function runActivity(activity: Activity): Promise<void> {
             data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() },
           }),
         ])
+        void (async () => {
+          const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
+          if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+        })().catch(() => {})
         console.log(`[Seed] ${activity.personaId} commented on: "${post.title.slice(0, 30)}"`)
       }
     }
@@ -548,6 +566,10 @@ async function runActivity(activity: Activity): Promise<void> {
             data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() },
           }),
         ])
+        void (async () => {
+          const p = await prisma.post.findUnique({ where: { id: target.postId }, select: { likeCount: true, commentCount: true, viewCount: true } })
+          if (p) await prisma.post.update({ where: { id: target.postId }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+        })().catch(() => {})
         console.log(`[Seed] ${activity.personaId} replied to comment: "${target.content.slice(0, 30)}"`)
       }
     }
@@ -589,6 +611,10 @@ async function runActivity(activity: Activity): Promise<void> {
           where: { id: target.id, promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] }, hotPromotedAt: null },
           data: { hotPromotedAt: new Date() },
         }).catch(() => {})
+        void (async () => {
+          const p = await prisma.post.findUnique({ where: { id: target.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
+          if (p) await prisma.post.update({ where: { id: target.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+        })().catch(() => {})
         console.log(`[Seed] ${activity.personaId} liked post ${target.id.slice(0, 8)}`)
       } catch {
         // unique constraint 위반 시 무시
@@ -810,8 +836,26 @@ export async function runKillerPostCycle(): Promise<void> {
   const killerPersonaId = pickKillerPersona(candidate.desireCategory)
   const userId = await getBotUser(killerPersonaId)
 
-  const { title, content, boardType } = await generateKillerPost(candidate, killerPersonaId)
+  const killerPost = await generateKillerPost(candidate, killerPersonaId)
+  if (!killerPost) {
+    console.log('[KillerPost] 빈 제목 — 스킵')
+    return
+  }
+  const { title, content, boardType } = killerPost
   const htmlContent = `<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
+
+  // Fix 5: 킬러포스트 24h 내 유사 제목 중복 발행 방지
+  const kSince24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  const kTitleKey = title.replace(/[^\w가-힣]/g, '').slice(0, 6)
+  if (kTitleKey) {
+    const kRecentSimilar = await prisma.post.findFirst({
+      where: { authorId: userId, createdAt: { gte: kSince24h }, title: { startsWith: kTitleKey } },
+    })
+    if (kRecentSimilar) {
+      console.log(`[KillerPost] 중복 발행 스킵: "${title.slice(0, 20)}"`)
+      return
+    }
+  }
 
   const newPost = await prisma.post.create({
     data: {

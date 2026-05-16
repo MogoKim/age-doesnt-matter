@@ -744,7 +744,7 @@ export async function generateKillerPost(
     desireCategory: string | null
   },
   personaId: string,
-): Promise<{ title: string; content: string; boardType: string; cafePostId: string }> {
+): Promise<{ title: string; content: string; boardType: string; cafePostId: string } | null> {
   const p = getPersona(personaId)
   const trend = await getLatestTrend()
   const trendContext = buildTrendContext(trend, personaId, p)
@@ -787,6 +787,7 @@ ${cafePost.content}
   const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
   const lines = raw.split('\n')
   const title = stripMarkdown(lines[0].replace(/^[#*\-•]+\s*/, '').trim()).slice(0, 50)
+  if (!title) return null
   const content = lines.slice(2).join('\n').trim()
   const boardType = killerDesireToBoardType(cafePost.desireCategory)
 

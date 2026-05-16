@@ -19,11 +19,12 @@ async function _getHomeBoardHotPosts(boardType: BoardType, limit = 10): Promise<
       createdAt: { gte: noon },
       OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
     },
-    select: postSelect,
+    select: { ...postSelect, trendingScore: true },
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
     take: limit,
   })
-  if (rows1.length >= 5) return rows1.map(toPostSummary)
+  const hasRealScore = rows1.some(r => r.trendingScore > 0)
+  if (rows1.length >= 5 && hasRealScore) return rows1.map(toPostSummary)
 
   // 2차: 이전 정오 사이클까지 확장 + engagement gate
   const rows2 = await prisma.post.findMany({
