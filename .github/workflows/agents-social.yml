@@ -36,8 +36,8 @@ on:
     # SNS 리뷰/전략 — 중단 2026-05-15 (Threads 단독 운영, 데이터 부족)
     # - cron: "7 1 * * 1,4"    # 월+목 10:07 KST — reviewer (중단)
     # - cron: "15 1 * * 1,4"   # 월+목 10:15 KST — strategy (중단)
-    # 주간 SEO
-    - cron: "17 23 * * 0"  # 월 08:17 KST — SEO 모니터
+    # 주간 SEO — 중단 2026-05-16 (Slack 리포트만, 참고 안 함 → DISPATCH ONLY)
+    # - cron: "17 23 * * 0"  # 월 08:17 KST — SEO 모니터
     # 지식인 답변 초안 — 삭제 2026-05-15
     # - cron: "17 3 * * 2,4,6" # 12:17 KST — knowledge-responder (삭제)
     # Threads 토큰 갱신
@@ -308,8 +308,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: >-
-      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'seo-optimizer' ||
-      github.event_name == 'schedule' && github.event.schedule == '17 23 * * 0'
+      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'seo-optimizer'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

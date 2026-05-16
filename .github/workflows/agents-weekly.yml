@@ -57,10 +57,10 @@ jobs:
             case "$CRON" in
               "5 0 * * 1,3,4,5")
                 case "$DOW" in
-                  1) echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=source-expander" >> $GITHUB_OUTPUT ;;
+                  1) echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # cmo:source-expander 중단 2026-05-16
                   3) echo "agent=cpo" >> $GITHUB_OUTPUT; echo "task=persona-diversity-checker" >> $GITHUB_OUTPUT ;;
                   4) echo "agent=strategist" >> $GITHUB_OUTPUT; echo "task=user-deep-analysis" >> $GITHUB_OUTPUT ;;
-                  5) echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=content-gap-finder" >> $GITHUB_OUTPUT ;;
+                  5) echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # cmo:content-gap-finder 중단 2026-05-16
                   *) echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
                 esac ;;
               "30 0 * * 1")

@@ -33,7 +33,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cto:health-check': () => import('../cto/health-check.js').then(() => {}),
   'cto:error-monitor': () => import('../cto/error-monitor.js').then(() => {}),
   'cto:security-audit': () => import('../cto/security-audit.js').then(() => {}),
-  'cmo:trend-analyzer': () => import('../cmo/trend-analyzer.js').then(() => {}),
+  'cmo:trend-analyzer': () => import('../cmo/trend-analyzer.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-16 (Slack 리포트만, 참고 안 함)
   'cpo:ux-analyzer': () => import('../cpo/ux-analyzer.js').then(() => {}),
   'cpo:feature-tracker': () => import('../cpo/feature-tracker.js').then(() => {}),
   'cpo:journey-analyzer': () => import('../cpo/journey-analyzer.js').then(() => {}),
@@ -80,9 +80,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cmo:caregiving-curator': () => import('../cmo/caregiving-curator.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-15 (Slack 알림만, 실용 가치 없음)
   'cmo:health-anxiety-responder': () => import('../cmo/health-anxiety-responder.js').then(() => {}),
   'cmo:humor-curator': () => import('../cmo/humor-curator.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-15 (Slack 알림만, 실용 가치 없음)
-  'cmo:content-gap-finder': () => import('../cmo/content-gap-finder.js').then(() => {}),
+  'cmo:content-gap-finder': () => import('../cmo/content-gap-finder.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-16 (Slack 리포트만, 참고 안 함)
   'cmo:band-manager': () => import('../cmo/band-manager.js').then(() => {}),
-  'cmo:source-expander': () => import('../cmo/source-expander.js').then(() => {}),
+  'cmo:source-expander': () => import('../cmo/source-expander.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-16 (Slack 리포트만, 참고 안 함)
   'coo:connection-facilitator': () => import('../coo/connection-facilitator.js').then(() => {}),
   'coo:job-matcher': () => import('../coo/job-matcher.js').then(() => {}),
   'coo:comment-activator': () => import('../coo/comment-activator.js').then(() => {}),

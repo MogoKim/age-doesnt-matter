@@ -1,3 +1,4 @@
+// DISPATCH ONLY — cron 중단 2026-05-16 (Slack 리포트만, 참고 안 함)
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
 import { notifyAdmin } from '../core/notifier.js'
