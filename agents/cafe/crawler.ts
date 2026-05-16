@@ -19,7 +19,7 @@ import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { ensureSession, SESSION_HALTED_FLAG } from './session-manager.js'
-import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS } from './config.js'
+import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS, COMPETITOR_KEYWORDS } from './config.js'
 import type { RawCafePost, CafeConfig, ContentCategory, CommentData } from './types.js'
 import { calculateQualityScore, calculateKillerScore } from './quality-scorer.js'
 
@@ -869,20 +869,27 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
         continue
       }
 
-      // 3. 품질 점수 계산
+      // 3. 경쟁사 카페 언급 체크 ('은오' 단독은 거짓양성 위험으로 제외)
+      const postSnippet = post.title + ' ' + post.content.slice(0, 1000)
+      if (COMPETITOR_KEYWORDS.filter(kw => kw !== '은오').some(kw => postSnippet.includes(kw))) {
+        console.log(`[CafeCrawler] 경쟁사 언급 스킵: ${post.title.slice(0, 20)}`)
+        continue
+      }
+
+      // 4. 품질 점수 계산
       const qualityScore = calculateQualityScore(post)
       const killerScore = calculateKillerScore(post)
       if (qualityScore < QUALITY_THRESHOLDS.minSave) {
         continue
       }
 
-      // 4. 중복 체크
+      // 5. 중복 체크
       const existing = await prisma.cafePost.findUnique({
         where: { postUrl: post.postUrl },
       })
       if (existing) continue
 
-      // 5. 새 필드 포함하여 저장
+      // 6. 새 필드 포함하여 저장
       await prisma.cafePost.create({
         data: {
           cafeId: post.cafeId,

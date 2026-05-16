@@ -7,6 +7,7 @@ import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
 import type { ControversyTopic } from '../core/intelligence.js'
 import { getPersona } from './persona-data.js'
 import { safeBotLog } from '../core/safe-log.js'
+import { COMPETITOR_KEYWORDS } from '../cafe/config.js'
 
 /** 페르소나 → 욕망 카테고리 역방향 매핑 (다양성 캡용) */
 const PERSONA_DESIRE: Record<string, string> = {}
@@ -440,6 +441,10 @@ async function runActivity(activity: Activity): Promise<void> {
       activity.board,
       activity.controversySeed,  // Fix 13-E: controversyBlock 주입용
     )
+    if (!title.trim()) {
+      console.log(`[Seed] 빈 제목 생성 스킵: ${activity.personaId}`)
+      return
+    }
     const htmlContent = `<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
     const summary = content.replace(/\n/g, ' ').slice(0, 150).trim()
 
@@ -519,6 +524,9 @@ async function runActivity(activity: Activity): Promise<void> {
         select: { id: true },
       })
       if (activeWave) continue
+
+      // 경쟁사 언급 글에 봇 댓글 금지
+      if (COMPETITOR_KEYWORDS.some(kw => `${post.title} ${(post.content ?? '').slice(0, 500)}`.includes(kw))) continue
 
       const commentText = await generateComment(activity.personaId, post.title, post.content)
       if (commentText) {
@@ -830,6 +838,13 @@ export async function runKillerPostCycle(): Promise<void> {
 
   if (!candidate) {
     console.log('[KillerPost] 적합한 CafePost 없음')
+    return
+  }
+
+  // 경쟁사 언급 CafePost는 KillerPost로 사용 금지 (기존 DB 저장분 포함)
+  const candidateText = candidate.title + ' ' + (candidate.content ?? '').slice(0, 1000)
+  if (COMPETITOR_KEYWORDS.some(kw => candidateText.includes(kw))) {
+    console.log(`[KillerPost] 경쟁사 언급 후보 스킵: "${candidate.title.slice(0, 20)}"`)
     return
   }
 

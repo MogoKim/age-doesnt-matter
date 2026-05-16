@@ -2,6 +2,7 @@ import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { calculateTrendingScore } from '../../src/lib/utils/trending.js'
 import { generateComment, generateReply, getBotUser } from './generator.js'
+import { COMPETITOR_KEYWORDS } from '../cafe/config.js'
 
 /**
  * Micro Scheduler — 댓글/대댓글/좋아요 전용 (글쓰기 없음)
@@ -184,6 +185,9 @@ async function runMicroActivity(activity: MicroActivity): Promise<void> {
         },
       })
       if (botCommentCount >= 3) continue
+
+      // 경쟁사 언급 글에 봇 댓글 금지
+      if (COMPETITOR_KEYWORDS.some(kw => `${post.title} ${(post.content ?? '').slice(0, 500)}`.includes(kw))) continue
 
       const commentText = await generateComment(activity.personaId, post.title, post.content)
       if (commentText) {

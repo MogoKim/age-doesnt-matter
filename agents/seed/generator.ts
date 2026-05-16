@@ -725,9 +725,10 @@ export async function generatePost(
   // 카테고리는 AI 선택 제거 → 해당 게시판 카테고리 중 랜덤 배정
   const validCategory = boardCategories[Math.floor(Math.random() * boardCategories.length)]
 
+  const titleProcessed = stripMarkdown(rawTitle || '')
+    .replace(/^\*+\s?/, '').replace(/\s?\*+$/, '').trim()
   return {
-    title: stripMarkdown(rawTitle || `${p.nickname}의 일상`)
-      .replace(/^\*+\s?/, '').replace(/\s?\*+$/, '').trim(),
+    title: titleProcessed || `${p.nickname}의 일상`,
     content: stripMarkdown(rawBody || text),
     boardType: board,
     category: validCategory,

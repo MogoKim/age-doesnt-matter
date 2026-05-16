@@ -14,6 +14,7 @@ import { prisma, disconnect } from '../core/db.js'
 import { getBotUser, generateComment } from '../seed/generator.js'
 import { getAllPersonaIds } from '../seed/persona-data.js'
 import { sendSlackMessage } from '../core/notifier.js'
+import { COMPETITOR_KEYWORDS } from './config.js'
 
 const HUMOR_ONLY_PERSONAS = ['C', 'AF', 'AO', 'AY']  // HUMOR 보드 전담 — 실제 회원 글 wave 제외
 const COMMENTER_PERSONA_IDS = getAllPersonaIds()
@@ -38,6 +39,13 @@ async function processUserWave(
   })
   if (!post) {
     console.warn(`[UserPostWave] wave${waveNum}: postId=${queue.postId} 없음 — 스킵`)
+    return 0
+  }
+
+  // 경쟁사 언급 USER 글 파동 전체 중단
+  const postSnippet = `${post.title} ${(post.content ?? '').slice(0, 500)}`
+  if (COMPETITOR_KEYWORDS.some(kw => postSnippet.includes(kw))) {
+    console.log(`[UserPostWave] 경쟁사 언급 글 파동 중단: ${queue.postId}`)
     return 0
   }
 
