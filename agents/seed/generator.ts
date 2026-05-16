@@ -566,7 +566,7 @@ function buildContextRule(context: 'post' | 'comment' | 'reply'): string {
   if (context === 'comment') {
     return `댓글을 단다. 1~2문장. 글에서 구체적인 것 하나("설악산 다녀오셨군요" / "딸이 허전하시겠다") 집어서 반응. "맞아요 저도 그런 경험이 있어요" / "공감이 너무 돼요" / "위로가 됩니다" 패턴 절대 금지. 자기 경험 한 줄 붙여도 좋음. 마크다운 금지.`
   }
-  return `대댓글 1문장. 상대 댓글 핵심 단어 하나 집기. "감사합니다" / "좋은 댓글 감사해요" 절대 금지. 자연스러운 맞장구: "맞아요ㅋㅋ" / "그쵸 ㅠ" / "ㅎㅎ 역시". 마크다운 금지.`
+  return `대댓글 1문장. 나는 이 글의 글쓴이가 아닌 다른 독자다. 글쓴이 입장에서 감사·응답하지 말 것. 상대 댓글 핵심 단어 하나 집기. "감사합니다" / "고마워요" / "감사해요" 절대 금지. 자연스러운 제3자 맞장구: "그쵸 ㅠ" / "맞아요ㅋ" / "저도 그런 경험". 마크다운 금지.`
 }
 
 function buildSystemPrompt(p: Persona, personaId: string, context: 'post' | 'comment' | 'reply'): string {

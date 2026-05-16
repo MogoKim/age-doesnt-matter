@@ -130,7 +130,7 @@ async function getRandomPosts(board: string, limit: number) {
 async function getReplyTargets(board: string, limit: number) {
   const comments = await prisma.comment.findMany({
     where: {
-      post: { boardType: board as 'STORY' | 'HUMOR' | 'JOB', status: 'PUBLISHED' },
+      post: { boardType: board as 'STORY' | 'HUMOR' | 'JOB', status: 'PUBLISHED', source: 'BOT' },
       parentId: null,
       status: 'ACTIVE',
     },

@@ -366,7 +366,7 @@ async function getRandomPosts(board: string, limit: number) {
 async function getReplyTargets(board: string, limit: number) {
   const comments = await prisma.comment.findMany({
     where: {
-      post: { boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2', status: 'PUBLISHED', source: { not: 'SHEET' } },
+      post: { boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2', status: 'PUBLISHED', source: 'BOT' },
       parentId: null,
       status: 'ACTIVE',
     },
@@ -499,6 +499,12 @@ async function runActivity(activity: Activity): Promise<void> {
         },
       })
       if (botCommentCount >= 5) continue
+
+      const activeWave = await prisma.userPostWaveQueue.findFirst({
+        where: { postId: post.id, wave4Done: false },
+        select: { id: true },
+      })
+      if (activeWave) continue
 
       const commentText = await generateComment(activity.personaId, post.title, post.content)
       if (commentText) {
