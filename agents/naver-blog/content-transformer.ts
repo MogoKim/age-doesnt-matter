@@ -213,28 +213,42 @@ export function validateBlogContent(content: BlogContent): ValidationResult {
   }
 }
 
-// ── JSON 파싱 (LLM 출력 정규화) ──
+// ── Tool Use 스키마 (JSON 파싱 실패 원천 차단) ──
 
-function parseLlmJson(raw: string): BlogContent {
-  // 마크다운 코드블록 제거
-  const cleaned = raw.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
-  const parsed = JSON.parse(cleaned) as BlogContent
+const BLOG_CONTENT_TOOL: Anthropic.Tool = {
+  name: 'blog_content',
+  description: '네이버 블로그 콘텐츠 구조체 반환',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      blogTitle: { type: 'string', description: '35~40자 블로그 제목' },
+      sections: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            heading: { type: ['string', 'null'], description: '소제목 (이모지+질문형) 또는 null' },
+            body: { type: 'string', description: '3~4문장 본문' },
+            isQuote: { type: 'boolean' },
+          },
+          required: ['heading', 'body', 'isQuote'],
+        },
+      },
+      hashtags: { type: 'array', items: { type: 'string' }, description: '#포함 5~10개' },
+      geoKeyword: { type: ['string', 'null'], description: '지역 키워드 또는 null' },
+      imagePrompts: { type: 'array', items: { type: 'string' }, description: 'DALL-E 3 영문 프롬프트 3개' },
+    },
+    required: ['blogTitle', 'sections', 'hashtags', 'geoKeyword', 'imagePrompts'],
+  },
+}
 
-  // hashtags #prefix 정규화
-  parsed.hashtags = (parsed.hashtags ?? []).map(t =>
-    t.startsWith('#') ? t : `#${t}`,
-  )
-
-  // isQuote 기본값
-  parsed.sections = (parsed.sections ?? []).map(s => ({
-    ...s,
-    isQuote: s.isQuote ?? false,
-  }))
-
-  // imagePrompts 기본값 (LLM이 누락하면 빈 배열)
-  parsed.imagePrompts = parsed.imagePrompts ?? []
-
-  return parsed
+function normalizeContent(raw: BlogContent): BlogContent {
+  return {
+    ...raw,
+    hashtags: (raw.hashtags ?? []).map(t => t.startsWith('#') ? t : `#${t}`),
+    sections: (raw.sections ?? []).map(s => ({ ...s, isQuote: s.isQuote ?? false })),
+    imagePrompts: raw.imagePrompts ?? [],
+  }
 }
 
 // ── 메인 변환 함수 ──
@@ -255,24 +269,25 @@ export async function transformTooBlogContent(post: PostInput): Promise<BlogCont
         max_tokens: 5000,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
+        tools: [BLOG_CONTENT_TOOL],
+        tool_choice: { type: 'tool', name: 'blog_content' },
       })
 
-      const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-      if (!raw) throw new Error('LLM 응답이 비어 있음')
+      const toolBlock = response.content.find(b => b.type === 'tool_use')
+      if (!toolBlock || toolBlock.type !== 'tool_use') {
+        throw new Error('tool_use 블록 없음 — 예상치 못한 응답 구조')
+      }
 
-      const blogContent = parseLlmJson(raw)
+      const blogContent = normalizeContent(toolBlock.input as BlogContent)
       const validation = validateBlogContent(blogContent)
 
       if (!validation.valid) {
         const errorMsg = validation.errors.join(' | ')
         console.warn(`[ContentTransformer] 검증 실패 (시도 ${attempt}): ${errorMsg}`)
         if (attempt <= MAX_RETRIES) {
-          // 금지어 포함 시 재시도
           lastError = new Error(`검증 실패: ${errorMsg}`)
           continue
         }
-        // 마지막 시도에서도 실패 → 경고 후 반환 (warnings는 허용)
-        console.warn(`[ContentTransformer] ⚠️ 최대 재시도 도달, 검증 실패 상태로 반환`)
         throw new Error(`콘텐츠 검증 최종 실패: ${errorMsg}`)
       }
 

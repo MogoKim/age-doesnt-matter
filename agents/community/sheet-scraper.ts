@@ -206,6 +206,8 @@ async function scrapePage(
     const sourceComments: string[] = []
     if (siteConfig.commentSelectors) {
       try {
+        // 댓글 섹션이 AJAX 비동기 로딩될 수 있으므로 최대 5초 대기
+        await page.waitForSelector(siteConfig.commentSelectors.item, { timeout: 5000 }).catch(() => {})
         const items = await page.$$(siteConfig.commentSelectors.item)
         for (const item of items.slice(0, 10)) {
           try {
@@ -218,6 +220,7 @@ async function scrapePage(
         }
       } catch { /* 댓글 수집 실패해도 스크래핑 계속 */ }
     }
+    console.log(`  [scrapePage] 원본 댓글 ${sourceComments.length}개 수집`)
 
     // 콘텐츠 변환
     const transformed = transformContent(rawContent, url, siteConfig, boardType)

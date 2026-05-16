@@ -919,6 +919,28 @@ export async function generateComment(
 }
 
 /** 시트 화제성 파동 댓글 생성 — Sonnet 모델, 본문 맥락 반영, 키워드 검증 포함 */
+/** 이미지 전용 글에서 제목+keyTerms만으로 짧은 반응 댓글 생성 (fallback) */
+async function generateTitleOnlyComment(
+  personaId: string,
+  postTitle: string,
+  keyTerms: string[],
+  waveType: 'empathy' | 'critical' | 'reversal',
+): Promise<string> {
+  const p = getPersona(personaId)
+  const response = await client.messages.create({
+    model: process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6',
+    max_tokens: 150,
+    system: getKstContext() + `\n\n당신은 50~60대 한국 여성 ${p.nickname}(${p.age}세)입니다.
+짧게 1~2문장, 자연스러운 비문 허용. ㅎ ㅋ ㅠ 이모티콘 자연스럽게.`,
+    messages: [{
+      role: 'user',
+      content: `제목만 보고 이미지 게시글에 짧게 반응해주세요.\n제목: ${postTitle}${keyTerms.length > 0 ? `\n핵심어: ${keyTerms.join(', ')}` : ''}\n방향: ${waveType === 'empathy' ? '공감' : waveType === 'critical' ? '다른 시각' : '여운'}`,
+    }],
+  })
+  const comment = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+  return stripMarkdown(comment)
+}
+
 export async function generateSheetViralComment(
   personaId: string,
   postTitle: string,
@@ -927,11 +949,18 @@ export async function generateSheetViralComment(
   keyTerms: string[],
   sourceComments: string[] = [],
 ): Promise<string> {
-  // ── 이미지 전용 글 감지: HTML 태그 제거 후 텍스트 50자 미만이면 AI 호출 스킵 ──
+  // ── 이미지 전용 글 감지: 텍스트 50자 미만 시 원본댓글 각색 또는 제목 기반 fallback ──
   const cleanText = rawContent.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
   if (cleanText.length < 50) {
-    console.log(`  [SheetViral] 본문 텍스트 부족 (${cleanText.length}자) — 이미지 전용 글 댓글 스킵`)
-    return ''
+    if (sourceComments.length > 0) {
+      // 원본 댓글이 있으면 → 댓글 내용을 본문 맥락으로 교체하여 각색 생성
+      rawContent = `[이미지 게시글 — 원본 댓글]\n${sourceComments.join('\n')}`
+      console.log(`  [SheetViral] 이미지 전용 글 — 원본 댓글 ${sourceComments.length}개 각색 모드`)
+    } else {
+      // 댓글도 없으면 → 제목+keyTerms만으로 짧은 반응 생성
+      console.log(`  [SheetViral] 이미지 전용 글 + 원본댓글 없음 — 제목 기반 fallback`)
+      return generateTitleOnlyComment(personaId, postTitle, keyTerms, waveType)
+    }
   }
   // ─────────────────────────────────────────────────────────────────────────────
   const p = getPersona(personaId)
