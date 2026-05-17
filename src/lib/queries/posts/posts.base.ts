@@ -129,7 +129,7 @@ export const getPostMeta = unstable_cache(
     })
   },
   ['post-meta'],
-  { revalidate: 60 },
+  { revalidate: 60, tags: ['post-meta'] },
 )
 
 /* ── 게시글 상세 ── */
@@ -184,5 +184,5 @@ export const getPostDetail = unstable_cache(
     }
   },
   ['post-detail'],
-  { revalidate: 30 },
+  { revalidate: 30, tags: ['post-detail'] },
 )

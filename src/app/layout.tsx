@@ -16,15 +16,15 @@ const AddToHomeScreen = dynamic(
 )
 const ServiceWorkerRegister = dynamic(
   () => import('@/components/common/ServiceWorkerRegister'),
-  { loading: () => null },
+  { loading: () => null, ssr: false },
 )
 const PageViewTracker = dynamic(
   () => import('@/components/common/PageViewTracker'),
-  { loading: () => null },
+  { loading: () => null, ssr: false },
 )
 const GtagLoader = dynamic(
   () => import('@/components/common/GtagLoader'),
-  { loading: () => null },
+  { loading: () => null, ssr: false },
 )
 
 const VALID_FONT_SIZES = ['NORMAL', 'LARGE', 'XLARGE'] as const

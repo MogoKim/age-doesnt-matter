@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -143,6 +143,11 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   const boardSlugPath = BOARD_TYPE_TO_SLUG[boardType]
   revalidatePath(`/community/${boardSlugPath}`)
   revalidatePath('/')
+  revalidateTag('home-trending')
+  revalidateTag('home-stories')
+  revalidateTag('home-humor')
+  revalidateTag('home-magazine')
+  revalidateTag('home-jobs')
   return { postUrl: `/community/${boardSlugPath}/${communitySlug ?? post.id}` }
 }
 
@@ -247,6 +252,8 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
   const slug = BOARD_TYPE_TO_SLUG[existing.boardType]
   revalidatePath(`/community/${slug}/${postId}`)
   revalidatePath(`/community/${slug}`)
+  revalidateTag('post-detail')
+  revalidateTag('post-meta')
   return { postUrl: `/community/${slug}/${postId}` }
 }
 
@@ -282,5 +289,12 @@ export async function deletePost(postId: string): Promise<{ error?: string }> {
   revalidatePath('/')
   revalidatePath('/best')
   revalidatePath('/search')
+  revalidateTag('post-detail')
+  revalidateTag('post-meta')
+  revalidateTag('home-trending')
+  revalidateTag('home-stories')
+  revalidateTag('home-humor')
+  revalidateTag('home-magazine')
+  revalidateTag('home-jobs')
   redirect(`/community/${slug}`)
 }

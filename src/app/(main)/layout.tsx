@@ -23,7 +23,7 @@ const PopupRenderer = dynamic(
 )
 const SignupPromptBanner = dynamic(
   () => import('@/components/common/SignupPromptBanner').then(m => ({ default: m.SignupPromptBanner })),
-  { loading: () => null },
+  { loading: () => null, ssr: false },
 )
 const ProgressBar = dynamic(
   () => import('@/components/common/ProgressBar'),

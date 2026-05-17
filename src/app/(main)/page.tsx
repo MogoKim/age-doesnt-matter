@@ -38,27 +38,27 @@ export const metadata: Metadata = {
 const getCachedJobs = unstable_cache(
   () => getLatestJobs(5),
   ['home-jobs'],
-  { revalidate: 60 }
+  { revalidate: 60, tags: ['home-jobs'] }
 )
 const getCachedTrending = unstable_cache(
   () => getTrendingCommunityPosts(5),
   ['home-trending-community'],
-  { revalidate: 60 }
+  { revalidate: 60, tags: ['home-trending'] }
 )
 const getCachedMagazine = unstable_cache(
   () => getLatestMagazinePosts(4),
   ['home-magazine'],
-  { revalidate: 60 }
+  { revalidate: 60, tags: ['home-magazine'] }
 )
 const getCachedStoriesRaw = unstable_cache(
   () => getHomeBoardHotPosts('STORY', 10),
   ['home-stories-hot'],
-  { revalidate: 60 }
+  { revalidate: 60, tags: ['home-stories'] }
 )
 const getCachedHumorRaw = unstable_cache(
   () => getHomeBoardHotPosts('HUMOR', 10),
   ['home-humor-hot'],
-  { revalidate: 60 }
+  { revalidate: 60, tags: ['home-humor'] }
 )
 // 회원 활동 카운트: 알림 배지 수치 → 10s 지연 허용 (매 요청 3× DB count 제거)
 const getCachedUserCounts = unstable_cache(
@@ -230,7 +230,7 @@ export default async function HomePage() {
             </Suspense>
 
             {/* 지금뜨는이야기 + 사는이야기 + 웃음방 (trendingIds 중복 제거로 단일 Suspense) */}
-            <Suspense fallback={<SectionSkeleton h="h-[600px]" />}>
+            <Suspense fallback={<SectionSkeleton h="min-h-[1400px]" />}>
               <HotContentSections />
             </Suspense>
 
