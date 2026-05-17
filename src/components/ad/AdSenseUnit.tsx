@@ -102,6 +102,7 @@ export default function AdSenseUnit({
         if (m.type === 'attributes' && m.attributeName === 'data-ad-status') {
           const status = (m.target as HTMLElement).getAttribute('data-ad-status')
           if (status === 'unfilled') {
+            ;(m.target as HTMLElement).style.display = 'none'
             setShowFallback(true)
           }
         }
@@ -130,7 +131,7 @@ export default function AdSenseUnit({
       <span className="absolute top-2 right-3 text-caption text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border z-10">
         광고
       </span>
-      <div ref={containerRef} style={{ minHeight: fixedHeight ?? FORMAT_MIN_HEIGHT[format] ?? 90 }} />
+      <div ref={containerRef} style={{ minHeight: showFallback ? 0 : (fixedHeight ?? FORMAT_MIN_HEIGHT[format] ?? 90) }} />
       {showFallback && (
         <CoupangBanner preset="mobile" className="mt-2" />
       )}
