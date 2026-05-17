@@ -73,7 +73,7 @@ export default function AdSenseUnit({
     ins.className = 'adsbygoogle'
     ins.setAttribute('data-ad-client', ADSENSE.CLIENT_ID)
     ins.setAttribute('data-ad-slot', slotId)
-    ins.setAttribute('data-ad-format', format)
+    ins.setAttribute('data-ad-format', fixedWidth && fixedHeight ? 'rectangle' : format)
 
     if (fixedWidth && fixedHeight) {
       ins.style.display = 'inline-block'

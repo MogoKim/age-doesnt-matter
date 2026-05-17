@@ -117,12 +117,10 @@ async function HotContentSections() {
         <HumorSection posts={humorPosts} />
       </div>
 
-      {/* 모바일: IN_FEED / 데스크탑: 쿠팡 728×90 */}
+      {/* 모바일: IN_FEED (데스크탑 쿠팡 → 매거진 아래로 이동) */}
       <ResponsiveAd
         mobile={<FeedAd />}
-        desktop={
-          <CoupangDesktopBanner className="my-4 rounded-2xl overflow-hidden" />
-        }
+        desktop={null}
       />
     </>
   )
@@ -233,10 +231,10 @@ export default async function HomePage() {
               <MagazineWrapper />
             </Suspense>
 
-            {/* 쿠팡 2번 — 모바일 전용 390×150 */}
+            {/* 쿠팡 2번 — 모바일 390×150 / 데스크탑 728×90 (사는이야기·웃음방 아래에서 이동) */}
             <ResponsiveAd
               mobile={<CoupangHome2 className="my-4 mx-4 rounded-2xl overflow-hidden" />}
-              desktop={null}
+              desktop={<CoupangDesktopBanner className="my-4 rounded-2xl overflow-hidden" />}
             />
 
             <Suspense fallback={<SectionSkeleton h="h-[280px]" />}>
