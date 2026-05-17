@@ -19,7 +19,7 @@
  */
 
 import { fileURLToPath } from 'url'
-import { calculateTrendingScore } from '../../src/lib/utils/trending.js'
+import { calculateTrendingScore } from '../core/trending.js'
 import { generateComment, generateReply, getBotUser } from './generator.js'
 import { prisma, disconnect } from '../core/db.js'
 import { safeBotLog } from '../core/safe-log.js'
