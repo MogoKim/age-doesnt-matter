@@ -4,6 +4,7 @@ import type { BoardType, PromotionLevel } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
 import { postSelect, toPostSummary, buildTextSearch, SearchField } from './posts.base'
 import { getLastNoon } from '@/lib/utils/trending'
+import { getHomeBoardHotPostsRaw } from './posts.home'
 
 /* ── 인기 게시글 (Trending) ── */
 
@@ -137,6 +138,25 @@ export const getTrendingCommunityPosts = unstable_cache(
   _getTrendingCommunityPosts,
   ['trending-community-posts'],
   { revalidate: 60, tags: ['home-trending', 'trending-community-posts'] },
+)
+
+/* ── 홈 뜨는이야기 쿼터 기반 (STORY 6 + LIFE2 2 + HUMOR 2 → trendingScore 재정렬) ── */
+
+async function _getTrendingQuotaPosts(): Promise<PostSummary[]> {
+  const [storyPosts, life2Posts, humorPosts] = await Promise.all([
+    getHomeBoardHotPostsRaw('STORY', 6),
+    getHomeBoardHotPostsRaw('LIFE2', 2),
+    getHomeBoardHotPostsRaw('HUMOR', 2),
+  ])
+  const merged = [...storyPosts, ...life2Posts, ...humorPosts]
+  merged.sort((a, b) => b.trendingScore - a.trendingScore)
+  return merged
+}
+
+export const getTrendingQuotaPosts = unstable_cache(
+  _getTrendingQuotaPosts,
+  ['home-trending-quota'],
+  { revalidate: 60, tags: ['home-trending'] },
 )
 
 /* ── 일간 인기글 (Trending) ── */

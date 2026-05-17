@@ -21,7 +21,7 @@ import SignupCard from '@/components/features/home/SignupCard'
 import HomeFaqSection from '@/components/features/home/HomeFaqSection'
 import {
   getLatestJobs,
-  getTrendingCommunityPosts,
+  getTrendingQuotaPosts,
   getLatestMagazinePosts,
   getHomeBoardHotPosts,
 } from '@/lib/queries/posts'
@@ -40,18 +40,13 @@ const getCachedJobs = unstable_cache(
   ['home-jobs'],
   { revalidate: 60, tags: ['home-jobs'] }
 )
-const getCachedTrending = unstable_cache(
-  () => getTrendingCommunityPosts(5),
-  ['home-trending-community'],
-  { revalidate: 60, tags: ['home-trending'] }
-)
 const getCachedMagazine = unstable_cache(
   () => getLatestMagazinePosts(4),
   ['home-magazine'],
   { revalidate: 60, tags: ['home-magazine'] }
 )
 const getCachedStoriesRaw = unstable_cache(
-  () => getHomeBoardHotPosts('STORY', 10),
+  () => getHomeBoardHotPosts('STORY', 12),
   ['home-stories-hot'],
   { revalidate: 60, tags: ['home-stories'] }
 )
@@ -83,7 +78,7 @@ function HeroSkeleton() {
 // 지금뜨는이야기 + 사는이야기 + 웃음방을 하나의 Suspense로 묶어 trendingIds 중복 제거 보장
 async function HotContentSections() {
   const [trendingPosts, storiesRaw, humorRaw] = await Promise.all([
-    getCachedTrending(),
+    getTrendingQuotaPosts(),
     getCachedStoriesRaw(),
     getCachedHumorRaw(),
   ])

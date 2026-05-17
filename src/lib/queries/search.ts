@@ -33,6 +33,7 @@ const postSelect = {
   commentCount: true,
   viewCount: true,
   promotionLevel: true,
+  trendingScore: true,
   createdAt: true,
   author: {
     select: { id: true, nickname: true, grade: true, profileImage: true },
@@ -50,6 +51,7 @@ function toPostSummary(post: {
   commentCount: number
   viewCount: number
   promotionLevel: string
+  trendingScore: number
   createdAt: Date
   author: { id: string; nickname: string; grade: string; profileImage: string | null }
 }): PostSummary {
@@ -65,6 +67,7 @@ function toPostSummary(post: {
     commentCount: post.commentCount,
     viewCount: post.viewCount,
     promotionLevel: post.promotionLevel as PostSummary['promotionLevel'],
+    trendingScore: post.trendingScore,
     createdAt: post.createdAt.toISOString(),
   }
 }

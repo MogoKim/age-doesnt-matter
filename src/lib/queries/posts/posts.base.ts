@@ -48,6 +48,7 @@ export const postSelect = {
   commentCount: true,
   viewCount: true,
   promotionLevel: true,
+  trendingScore: true,
   createdAt: true,
   slug: true,
   author: {
@@ -68,6 +69,7 @@ export function toPostSummary(
     commentCount: number
     viewCount: number
     promotionLevel: PromotionLevel
+    trendingScore: number
     createdAt: Date
     slug?: string | null
     author: { id: string; nickname: string; grade: string; profileImage: string | null } | null
@@ -88,6 +90,7 @@ export function toPostSummary(
     promotionLevel: toPromotionLevel(post.promotionLevel),
     hotPromotedAt: post.hotPromotedAt?.toISOString() ?? null,
     isPinned: post.isPinned ?? false,
+    trendingScore: post.trendingScore,
     createdAt: post.createdAt.toISOString(),
     slug: post.slug ?? null,
   }

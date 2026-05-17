@@ -6,7 +6,8 @@ import { postSelect, toPostSummary } from './posts.base'
 import { getLastNoon } from '@/lib/utils/trending'
 
 // 정오 기준 + engagement gate → merge 전략 (오늘 글 항상 우선, 어제 글로 보충)
-async function _getHomeBoardHotPosts(boardType: BoardType, limit = 10): Promise<PostSummary[]> {
+// export: 뜨는이야기 쿼터 fetch(_getTrendingQuotaPosts)에서 uncached로 재사용
+export async function getHomeBoardHotPostsRaw(boardType: BoardType, limit = 10): Promise<PostSummary[]> {
   const noon = getLastNoon()
   const prevNoon = new Date(noon.getTime() - 24 * 60 * 60 * 1000)
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -55,7 +56,7 @@ async function _getHomeBoardHotPosts(boardType: BoardType, limit = 10): Promise<
   return rows3.map(toPostSummary)
 }
 export const getHomeBoardHotPosts = unstable_cache(
-  _getHomeBoardHotPosts,
+  getHomeBoardHotPostsRaw,
   ['home-board-hot-posts'],
   { revalidate: 60, tags: ['home-stories', 'home-humor', 'home-board-hot'] },
 )

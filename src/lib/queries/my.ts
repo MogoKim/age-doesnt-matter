@@ -32,6 +32,7 @@ const postSelect = {
   commentCount: true,
   viewCount: true,
   promotionLevel: true,
+  trendingScore: true,
   createdAt: true,
   author: {
     select: { id: true, nickname: true, grade: true, profileImage: true },
@@ -50,6 +51,7 @@ function toPostSummary(post: {
   commentCount: number
   viewCount: number
   promotionLevel: PromotionLevel
+  trendingScore: number
   createdAt: Date
   author: { id: string; nickname: string; grade: string; profileImage: string | null }
 }): PostSummary {
@@ -66,6 +68,7 @@ function toPostSummary(post: {
     viewCount: post.viewCount,
     promotionLevel: post.promotionLevel === 'HALL_OF_FAME' ? 'HALL_OF_FAME' : post.promotionLevel,
     isPinned: post.isPinned ?? false,
+    trendingScore: post.trendingScore,
     createdAt: post.createdAt.toISOString(),
   }
 }
