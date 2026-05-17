@@ -27,6 +27,9 @@ export const ADSENSE = {
   /** 데스크탑 728×250 하단 배너 (SignupCard 아래) */
   DESKTOP_BOTTOM: '7055392341',
 
+  /** 목록 페이지 페이지네이션 하단 — 베스트·커뮤니티·매거진·내일찾기 공통 */
+  LIST_PAGINATION_BOTTOM: 'REPLACE_WITH_SLOT_ID',
+
 } as const
 
 // ── Coupang Partners ──

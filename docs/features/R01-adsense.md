@@ -167,6 +167,7 @@ pathname 변경 감지 (useEffect)
 |------|---------|------|
 | 2026-04-27 | Feature 문서 최초 생성 (코드 딥다이브 기반, specs/10-advertising.md 마이그레이션) | Feature Lifecycle 도입 |
 | 2026-05-14 | AdSenseUnit에 `fixedWidth`/`fixedHeight` prop 추가 + 홈 데스크탑 728×90(슬롯 3367428779)·728×250(슬롯 7055392341) 배치 신규 추가 | 홈 데스크탑 UI 전면 재설계 |
+| 2026-05-17 | `LIST_PAGINATION_BOTTOM` 슬롯 상수 추가 + `BoardPaginationFooter`에 페이지네이션 하단 광고 배치 (베스트·커뮤니티·매거진·내일찾기 6개 페이지 공통, 모바일 auto / 데스크탑 728×90) | 목록 페이지 광고 수익 증대 — 페이지 전환 후 시선 이동 구간 공략 |
 
 ---
 
