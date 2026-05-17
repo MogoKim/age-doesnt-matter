@@ -254,6 +254,9 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
   revalidatePath(`/community/${slug}`)
   revalidateTag('post-detail')
   revalidateTag('post-meta')
+  revalidateTag('home-trending')
+  revalidateTag('home-stories')
+  revalidateTag('home-humor')
   return { postUrl: `/community/${slug}/${postId}` }
 }
 

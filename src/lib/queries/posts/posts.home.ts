@@ -57,5 +57,5 @@ async function _getHomeBoardHotPosts(boardType: BoardType, limit = 10): Promise<
 export const getHomeBoardHotPosts = unstable_cache(
   _getHomeBoardHotPosts,
   ['home-board-hot-posts'],
-  { revalidate: 60 },
+  { revalidate: 60, tags: ['home-stories', 'home-humor', 'home-board-hot'] },
 )

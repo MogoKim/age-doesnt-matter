@@ -2,7 +2,6 @@ import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { calculateTrendingScore } from '../../src/lib/utils/trending.js'
 import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP, generateKillerPost, generateKillerComments, generateSheetViralComment } from './generator.js'
-import { scheduleChainFromPost } from './controversy-chain.js'
 import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
 import type { ControversyTopic } from '../core/intelligence.js'
 import { getPersona } from './persona-data.js'
@@ -497,7 +496,7 @@ async function runActivity(activity: Activity): Promise<void> {
         details: JSON.stringify({ postId: newPost.id, controversyType: activity.controversySeed.controversyType }),
         executionTimeMs: 0,
       }).catch(() => {})
-      await scheduleChainFromPost(newPost.id, activity.personaId).catch(() => {})
+      await import('./controversy-chain.js').then(m => m.scheduleChainFromPost(newPost.id, activity.personaId)).catch(() => {})
     }
   }
 

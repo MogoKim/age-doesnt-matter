@@ -63,7 +63,7 @@ async function _getTrendingPosts(limit = 5): Promise<PostSummary[]> {
 export const getTrendingPosts = unstable_cache(
   _getTrendingPosts,
   ['trending-posts'],
-  { revalidate: 60 },
+  { revalidate: 60, tags: ['home-trending', 'trending-posts'] },
 )
 
 /* ── 홈 커뮤니티 인기글 (STORY + HUMOR + LIFE2만) ── */
@@ -136,7 +136,7 @@ async function _getTrendingCommunityPosts(limit = 5): Promise<PostSummary[]> {
 export const getTrendingCommunityPosts = unstable_cache(
   _getTrendingCommunityPosts,
   ['trending-community-posts'],
-  { revalidate: 60 },
+  { revalidate: 60, tags: ['home-trending', 'trending-community-posts'] },
 )
 
 /* ── 일간 인기글 (Trending) ── */

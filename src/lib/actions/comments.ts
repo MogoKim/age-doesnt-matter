@@ -152,6 +152,7 @@ export async function createComment(
   revalidatePath('/community/[boardSlug]/[postId]', 'page')
   revalidateTag('comments-by-post')
   revalidateTag('post-detail')
+  revalidateTag('home-trending')
   return {}
 }
 

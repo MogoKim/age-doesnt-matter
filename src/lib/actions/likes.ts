@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidateTag } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkAndPromote } from '@/lib/grade'
@@ -113,6 +114,7 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
     await prisma.post.update({ where: { id: postId }, data: { trendingScore: score } })
   })().catch(() => {})
 
+  revalidateTag('home-trending')
   return { toggled: true }
 }
 
