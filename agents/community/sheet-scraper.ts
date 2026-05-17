@@ -15,6 +15,7 @@
  *   SHEET_SCRAPER_AI_FILTER    — "true"이면 Haiku로 관련성 점수/카테고리/제목 최적화 실행
  */
 
+import { fileURLToPath } from 'url'
 import Anthropic from '@anthropic-ai/sdk'
 import { chromium, type BrowserContext, type Page } from 'playwright'
 import { prisma, disconnect } from '../core/db.js'
@@ -298,7 +299,7 @@ function parseSiteFilter(): { siteOnly: string | null; siteExclude: string | nul
   return { siteOnly, siteExclude }
 }
 
-async function main() {
+export async function main() {
   const { siteOnly, siteExclude } = parseSiteFilter()
   const filterLabel = siteOnly ? `[${siteOnly} only]` : siteExclude ? `[${siteExclude} 제외]` : ''
   console.log(`[sheet-scraper]${filterLabel} 시작:`, kstNow())
@@ -685,4 +686,6 @@ async function main() {
   )
 }
 
-main().then(() => process.exit(0)).catch(() => process.exit(1))
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().then(() => process.exit(0)).catch(() => process.exit(1))
+}
