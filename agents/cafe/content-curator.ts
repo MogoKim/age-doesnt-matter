@@ -647,9 +647,12 @@ ${references ? `[원본 카페 글 — 수미상관으로 재가공]\n${referenc
   // boardType + category는 DESIRE_TO_BOARD에서 결정 (B21/B23/B26 통합 수정)
   const boardInfo = DESIRE_TO_BOARD[desireCat ?? 'GENERAL'] ?? DESIRE_TO_BOARD['GENERAL']
 
+  const title = stripMarkdown(titleMatch[1].trim())
+  if (!title) return null
+
   return {
     personaId: persona.id,
-    title: stripMarkdown(titleMatch[1].trim()),
+    title,
     content: stripMarkdown(bodyMatch[1].trim()),
     boardType: boardInfo.boardType,
     category: boardInfo.category,

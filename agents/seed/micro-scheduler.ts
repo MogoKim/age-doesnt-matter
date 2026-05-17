@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
-import { calculateTrendingScore } from '../../src/lib/utils/trending.js'
+import { calculateTrendingScore } from '../core/trending.js'
 import { generateComment, generateReply, getBotUser } from './generator.js'
 import { COMPETITOR_KEYWORDS } from '../cafe/config.js'
 
