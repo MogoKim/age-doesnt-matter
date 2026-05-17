@@ -4,6 +4,7 @@
  * 카페 트렌드 분석 결과를 기반으로 우나어 페르소나가 쓸 글/댓글을 생성
  * 원본 복붙 X → 주제와 감정만 참고해 오리지널 콘텐츠 작성
  */
+import { fileURLToPath } from 'url'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack, sendSlackMessage } from '../core/notifier.js'
@@ -729,7 +730,7 @@ async function enqueueCommentWave(postId: string, cafePostId: string, authorPers
 }
 
 /** 메인 실행 */
-async function main() {
+export async function main() {
   console.log('[ContentCurator] 시작 — 트렌드 기반 콘텐츠 큐레이션')
   const startTime = Date.now()
 
@@ -929,8 +930,12 @@ async function main() {
   await disconnect()
 }
 
-main().catch(async (err) => {
-  console.error('[ContentCurator] 치명적 오류:', err)
-  await disconnect()
-  process.exit(1)
-})
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main()
+    .then(() => process.exit(0))
+    .catch(async (err) => {
+      console.error('[ContentCurator] 치명적 오류:', err)
+      await disconnect()
+      process.exit(1)
+    })
+}
