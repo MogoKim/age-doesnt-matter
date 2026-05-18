@@ -74,9 +74,15 @@ async function processWave(
   const todayCommentStart = new Date()
   todayCommentStart.setHours(0, 0, 0, 0)
   const BOT_DAILY_COMMENT_CAP = 3
+  // groupBy에서 관계 필터 불가 → BOT 유저 ID 목록 먼저 조회
+  const botUsers = await prisma.user.findMany({
+    where: { source: 'BOT' },
+    select: { id: true },
+  })
+  const botUserIds = botUsers.map(u => u.id)
   const todayCommentCounts = await prisma.comment.groupBy({
     by: ['authorId'],
-    where: { createdAt: { gte: todayCommentStart }, author: { source: 'BOT' } },
+    where: { createdAt: { gte: todayCommentStart }, authorId: { in: botUserIds } },
     _count: { authorId: true },
   })
   const todayCountByUser = new Map(
