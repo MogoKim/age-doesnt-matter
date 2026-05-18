@@ -16,7 +16,7 @@ export const authConfig: NextAuthConfig = {
       checks: ['state'],
       authorization: {
         params: {
-          scope: 'profile_nickname profile_image account_email gender birthyear phone_number',
+          scope: 'profile_nickname profile_image account_email',
         },
       },
       token: {
