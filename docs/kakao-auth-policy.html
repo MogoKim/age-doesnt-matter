@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>카카오 로그인 정책 문서 — 우리 나이가 어때서</title>
+  <style>
+    :root {
+      --primary: #FEE500;
+      --primary-dark: #e6cf00;
+      --danger: #e53e3e;
+      --warning: #dd6b20;
+      --success: #38a169;
+      --info: #3182ce;
+      --bg: #f7f8fc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #1a202c;
+      --text-muted: #718096;
+      --code-bg: #1e293b;
+      --code-text: #e2e8f0;
+      --sidebar-w: 260px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    /* ── 레이아웃 ── */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── 사이드바 ── */
+    nav.sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      overflow-y: auto;
+      padding: 24px 0;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .sidebar-logo .badge {
+      display: inline-block;
+      background: var(--primary);
+      color: #000;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-bottom: 6px;
+    }
+    .sidebar-logo h2 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .sidebar-nav-title {
+      padding: 8px 20px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 7px 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s, background 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar a:hover {
+      color: var(--text);
+      background: var(--bg);
+      border-left-color: var(--primary-dark);
+    }
+
+    /* ── 본문 ── */
+    main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      padding: 40px 48px;
+      max-width: 960px;
+    }
+
+    /* ── 헤더 ── */
+    .doc-header {
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid var(--border);
+    }
+    .doc-header .meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .doc-header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .doc-header .warning-banner {
+      background: #fff5f5;
+      border: 1.5px solid #feb2b2;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #c53030;
+    }
+    .doc-header .warning-banner strong { display: block; margin-bottom: 2px; }
+
+    /* ── 섹션 ── */
+    section {
+      margin-bottom: 48px;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: var(--text);
+      color: #fff;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 24px 0 12px;
+      color: var(--text);
+    }
+
+    p {
+      margin-bottom: 12px;
+      font-size: 15px;
+    }
+
+    /* ── 표 ── */
+    .table-wrap { overflow-x: auto; margin-bottom: 20px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    thead tr { background: #f1f5f9; }
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+
+    /* ── 코드 블록 ── */
+    pre {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 20px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    pre code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--code-text);
+    }
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      background: #eef2ff;
+      color: #3730a3;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    pre code {
+      background: none;
+      color: inherit;
+      padding: 0;
+    }
+
+    /* ── 알림 박스 ── */
+    .alert {
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      border-left: 4px solid;
+    }
+    .alert-danger {
+      background: #fff5f5;
+      border-color: var(--danger);
+      color: #822727;
+    }
+    .alert-warning {
+      background: #fffaf0;
+      border-color: var(--warning);
+      color: #7b341e;
+    }
+    .alert-success {
+      background: #f0fff4;
+      border-color: var(--success);
+      color: #276749;
+    }
+    .alert-info {
+      background: #ebf8ff;
+      border-color: var(--info);
+      color: #2a4365;
+    }
+    .alert strong { display: block; margin-bottom: 4px; font-size: 13px; }
+
+    /* ── 체크리스트 ── */
+    .checklist {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 16px;
+    }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .checklist li:last-child { border-bottom: none; }
+    .checklist li::before {
+      content: '☐';
+      font-size: 16px;
+      flex-shrink: 0;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    /* ── 키 박스 (강조 정보) ── */
+    .key-box {
+      background: #fffbeb;
+      border: 2px solid var(--primary);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+    .key-box .key-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #92400e;
+      margin-bottom: 8px;
+    }
+    .key-box .key-value {
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a202c;
+      word-break: break-all;
+    }
+    .key-box .key-note {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #92400e;
+    }
+
+    .forbidden-box {
+      background: #fff5f5;
+      border: 2px solid #fc8181;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+
+    /* ── 플로우 다이어그램 ── */
+    .flow {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 20px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 2;
+      white-space: pre;
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+    .flow .highlight { color: #86efac; }
+    .flow .arrow { color: #60a5fa; }
+
+    /* ── 사고 이력 카드 ── */
+    .incident {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .incident-header {
+      background: #fef2f2;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .incident-header .severity {
+      background: var(--danger);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .incident-header .date {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .incident-header h3 {
+      font-size: 15px;
+      margin: 0;
+      color: #c53030;
+    }
+    .incident-body {
+      padding: 16px 18px;
+    }
+    .incident-body dl {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 8px 16px;
+      font-size: 14px;
+    }
+    .incident-body dt { font-weight: 700; color: var(--text-muted); }
+    .incident-body dd { color: var(--text); }
+
+    /* ── 파일 경로 표 ── */
+    .file-table td:first-child {
+      font-family: monospace;
+      font-size: 13px;
+      color: #5a67d8;
+      white-space: nowrap;
+    }
+
+    /* ── 반응형 ── */
+    @media (max-width: 768px) {
+      nav.sidebar { display: none; }
+      main { margin-left: 0; padding: 24px 20px; }
+    }
+
+    /* 스크롤바 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── 사이드바 ── -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="badge">우나어</div>
+      <h2>카카오 로그인<br>정책 문서</h2>
+    </div>
+    <div class="sidebar-nav-title">목차</div>
+    <a href="#arch">1. 아키텍처 개요</a>
+    <a href="#console">2. 카카오 콘솔 확정 설정</a>
+    <a href="#env">3. Vercel 환경변수</a>
+    <a href="#schema">4. DB 스키마</a>
+    <a href="#flow">5. 로그인/가입 플로우</a>
+    <a href="#onboarding">6. 온보딩 플로우</a>
+    <a href="#middleware">7. 미들웨어 로직</a>
+    <a href="#code">8. 핵심 코드 설명</a>
+    <a href="#incidents">9. 알려진 문제와 해결책</a>
+    <a href="#forbidden">10. 절대 금지사항</a>
+    <a href="#before">11. 변경 전 체크리스트</a>
+    <a href="#after">12. 변경 후 검증 절차</a>
+    <a href="#files">부록: 관련 파일 경로</a>
+  </nav>
+
+  <!-- ── 본문 ── -->
+  <main>
+    <div class="doc-header">
+      <div class="meta">최초 작성: 2026-05-18 &nbsp;|&nbsp; 대상: 우리 나이가 어때서 (age-doesnt-matter.com)</div>
+      <h1>카카오 로그인 정책 문서</h1>
+      <div class="warning-banner">
+        <strong>⚠️ 이 문서를 먼저 읽지 않고 카카오 인증 코드를 수정하지 마십시오.</strong>
+        이 문서는 인증 관련 모든 결정의 단일 진실의 원천입니다.
+        위반 시 전체 로그인 불가 사태가 발생합니다. (실제 발생 이력: 2026-03-20, 2026-05-18)
+      </div>
+    </div>
+
+    <!-- 1. 아키텍처 -->
+    <section id="arch">
+      <h2><span class="section-num">1</span> 아키텍처 개요</h2>
+
+      <h3>파일 구조 — 2개 파일로 분리 (절대 합치지 말 것)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>파일</th><th>실행 환경</th><th>Prisma</th><th>역할</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>src/lib/auth.config.ts</code></td>
+              <td>Edge Runtime</td>
+              <td>❌ 사용 불가</td>
+              <td>Kakao provider 설정, 세션/쿠키 설정, authorized 콜백</td>
+            </tr>
+            <tr>
+              <td><code>src/lib/auth.ts</code></td>
+              <td>Node.js (Serverless)</td>
+              <td>✅ 사용</td>
+              <td>DB 조회/생성, JWT 토큰 생성, signIn 콜백</td>
+            </tr>
+            <tr>
+              <td><code>src/middleware.ts</code></td>
+              <td>Edge Runtime</td>
+              <td>❌</td>
+              <td>JWT 쿠키 직접 복호화 (<code>getToken()</code>), 온보딩 리다이렉트</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-info">
+        <strong>왜 두 파일로 나뉘는가</strong>
+        미들웨어는 Edge Runtime에서 실행되는데 Prisma는 Edge Runtime에서 동작하지 않습니다.
+        NextAuth v5는 이를 해결하기 위해 <code>authConfig</code>(Edge OK)와 전체 <code>auth</code>(Node only)를 분리하는 패턴을 권장합니다.
+        <code>middleware.ts</code>는 <code>auth()</code>를 호출하지 않고 <code>getToken()</code>으로 JWT 쿠키만 복호화합니다.
+      </div>
+    </section>
+
+    <!-- 2. 카카오 콘솔 -->
+    <section id="console">
+      <h2><span class="section-num">2</span> 카카오 콘솔 확정 설정</h2>
+      <div class="alert alert-warning">
+        <strong>2026-05-18 실제 검증된 값입니다.</strong>
+        변경 시 반드시 창업자 승인 후 진행하십시오.
+      </div>
+
+      <h3>앱 정보</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>항목</th><th>값</th></tr></thead>
+          <tbody>
+            <tr><td>앱 이름</td><td>우리 나이가 어때서</td></tr>
+            <tr><td>앱 ID</td><td><code>1409330</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>REST API 키 — 반드시 이 키 사용</h3>
+
+      <div class="key-box">
+        <div class="key-label">✅ 사용하는 키 — "우리 나이가 어때서" 플랫폼 키</div>
+        <div class="key-value">4ec06c8a15dbb67bd92701f51c38ec2e</div>
+        <div class="key-note">client_secret: 4ecTVlhWjjQR20NZUcEyZMPrtMv0Ukyq (활성화 ON)</div>
+      </div>
+
+      <div class="forbidden-box">
+        <div style="font-size:12px;font-weight:700;color:#c53030;margin-bottom:8px;">⛔ 절대 사용 금지 — Default REST API Key</div>
+        <div style="font-family:monospace;font-size:14px;color:#742a2a;">3a0c2b623c95e823970b95ff61c97625</div>
+        <div style="font-size:12px;color:#c53030;margin-top:6px;">이 키의 client_secret은 우리 것과 다름 → KOE010 발생</div>
+      </div>
+
+      <div class="alert alert-danger">
+        <strong>핵심 규칙</strong>
+        <code>KAKAO_CLIENT_ID</code>와 <code>KAKAO_CLIENT_SECRET</code>은 반드시 <strong>같은 플랫폼 키 박스</strong>에 속해야 합니다.
+        다른 키의 시크릿을 혼용하면 KOE010 발생합니다. (2026-05-18 실제 사고 원인)
+      </div>
+
+      <h3>카카오 로그인 설정</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>항목</th><th>설정값</th></tr></thead>
+          <tbody>
+            <tr><td>Redirect URI (개발)</td><td><code>http://localhost:3000/api/auth/callback/kakao</code></td></tr>
+            <tr><td>Redirect URI (프로덕션)</td><td><code>https://age-doesnt-matter.com/api/auth/callback/kakao</code></td></tr>
+            <tr><td>Redirect URI (www)</td><td><code>https://www.age-doesnt-matter.com/api/auth/callback/kakao</code></td></tr>
+            <tr><td>PKCE 지원</td><td>❌ 미지원 → <code>checks: ['state']</code> 강제</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>동의항목 (현재 활성 상태)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>항목</th><th>동의 유형</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td>닉네임</td><td>필수</td><td></td></tr>
+            <tr><td>프로필 사진</td><td>선택</td><td></td></tr>
+            <tr><td>카카오계정(이메일)</td><td>필수</td><td></td></tr>
+            <tr><td>성별</td><td>권한 없음</td><td>현재 미활성 (DB 필드는 있음)</td></tr>
+            <tr><td>생일(출생연도)</td><td>권한 없음</td><td>현재 미활성 (DB 필드는 있음)</td></tr>
+            <tr><td>전화번호</td><td>권한 없음</td><td>비즈앱 심사 필요, Phase 1 예정</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3. 환경변수 -->
+    <section id="env">
+      <h2><span class="section-num">3</span> Vercel 환경변수 확정값</h2>
+      <div class="alert alert-warning">프로덕션 전용 환경변수입니다. <code>.env.local</code> 값과 다를 수 있습니다.</div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>변수명</th><th>값</th><th>적용 환경</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>KAKAO_CLIENT_ID</code></td>
+              <td><code>4ec06c8a15dbb67bd92701f51c38ec2e</code></td>
+              <td>Production Only</td>
+            </tr>
+            <tr>
+              <td><code>KAKAO_CLIENT_SECRET</code></td>
+              <td><code>4ecTVlhWjjQR20NZUcEyZMPrtMv0Ukyq</code></td>
+              <td>Production Only</td>
+            </tr>
+            <tr>
+              <td><code>AUTH_SECRET</code></td>
+              <td>(랜덤 문자열)</td>
+              <td>All Environments</td>
+            </tr>
+            <tr>
+              <td><code>AUTH_URL</code></td>
+              <td style="color:var(--danger);font-weight:700;">설정하지 말 것 ⛔</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-danger">
+        <strong><code>AUTH_URL</code>을 설정하면 안 되는 이유</strong>
+        설정 시 쿠키 domain 불일치로 <code>InvalidCheck: state value could not be parsed</code> 에러 발생.
+        NextAuth v5는 <code>trustHost: true</code>가 있으면 AUTH_URL 없이도 정상 동작합니다.
+      </div>
+
+      <h3>환경변수 확인 방법 (변경 전 필수)</h3>
+      <pre><code># 프로덕션 실제값 로컬로 가져오기
+vercel env pull --environment=production
+
+# 가져온 파일에서 확인
+cat .env.production.local | grep KAKAO</code></pre>
+    </section>
+
+    <!-- 4. DB 스키마 -->
+    <section id="schema">
+      <h2><span class="section-num">4</span> DB 스키마 — 인증 관련 필드</h2>
+      <p>파일: <code>prisma/schema.prisma</code> — User 모델</p>
+
+      <pre><code>model User {
+  id           String     @id @default(cuid())
+  providerId   String     @unique   // 카카오 숫자 User ID (문자열로 저장)
+  nickname     String     @unique   // 임시: "user_{providerId 끝 8자리}", 온보딩 완료 시 교체
+  profileImage String?              // 카카오 프로필 사진 URL
+  email        String?              // 카카오 선택 동의 이메일
+  birthYear    Int?                 // 카카오 선택 동의 생일(년도)
+  gender       String?              // 카카오 선택 동의 성별
+  phone        String?   @unique   // 카카오 선택 동의 전화번호, 정규화: "01012345678"
+
+  role         Role      @default(USER)
+  grade        Grade     @default(SPROUT)
+  fontSize     FontSize  @default(NORMAL)
+
+  status         UserStatus @default(ACTIVE)
+  suspendedUntil DateTime?  // SUSPENDED 상태일 때 정지 해제 시각
+  withdrawnAt    DateTime?  // WITHDRAWN 상태일 때 탈퇴 요청 시각
+  isOnboarded    Boolean   @default(false)  // DB 저장용 (런타임은 nickname 패턴으로 판단)
+
+  lastLoginAt    DateTime  @default(now())
+  nicknameChangedAt DateTime?
+  createdAt      DateTime  @default(now())
+}</code></pre>
+
+      <div class="alert alert-info">
+        <strong><code>needsOnboarding</code> 판단 로직 — DB 필드가 아닌 nickname 패턴 사용</strong>
+        <code>token.needsOnboarding = user.nickname.startsWith('user_')</code><br>
+        온보딩 완료 시 닉네임이 <code>user_XXXXXXXX</code> → 실제 닉네임으로 바뀌므로,
+        DB 추가 조회 없이 토큰만으로 판단 가능합니다.
+      </div>
+
+      <h3>유저 상태(UserStatus) 처리</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>상태</th><th>처리</th></tr></thead>
+          <tbody>
+            <tr><td><code>ACTIVE</code></td><td>정상 통과</td></tr>
+            <tr><td><code>WITHDRAWN</code></td><td>복구 후 통과 (30일 유예 중 재로그인 = 탈퇴 취소)</td></tr>
+            <tr><td><code>BANNED</code></td><td>로그인 거부 → <code>/auth/error</code></td></tr>
+            <tr><td><code>SUSPENDED</code> (기간 중)</td><td>로그인 거부 → <code>/auth/error</code></td></tr>
+            <tr><td><code>SUSPENDED</code> (기간 만료)</td><td>자동 ACTIVE 전환 후 통과</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. 플로우 -->
+    <section id="flow">
+      <h2><span class="section-num">5</span> 로그인/가입 플로우</h2>
+
+      <div class="flow">
+사용자 → /login 페이지
+       → "카카오로 로그인" 버튼 클릭
+       → /api/auth/signin/kakao (NextAuth 시작)
+       → 카카오 인증 서버 (kauth.kakao.com/oauth/authorize)
+       → 사용자 동의 화면
+       → 카카오 콜백 → /api/auth/callback/kakao
+       → NextAuth: oauth4webapi → token 교환
+                   kauth.kakao.com/oauth/token
+                         ↑ conform 함수 실행 (Content-Type 정규화)
+       → NextAuth: signIn 콜백
+                 → BANNED → /auth/error
+                 → SUSPENDED (기간 중) → /auth/error
+                 → WITHDRAWN → 복구 후 통과
+                 → 나머지 → 통과
+       → NextAuth: jwt 콜백
+                 → 신규 유저: DB create, nickname="user_{last8}", needsOnboarding=true
+                 → 기존 유저: lastLoginAt 업데이트
+       → JWT 쿠키 발급
+       → middleware: needsOnboarding=true → /onboarding 리다이렉트
+       → middleware: needsOnboarding=false → 원래 경로 or /</div>
+
+      <h3>Token 교환 시 핵심 처리 (conform 함수)</h3>
+      <div class="alert alert-warning">
+        <strong>카카오 비호환성 문제 3가지</strong>
+        카카오는 <code>Content-Type: application/json;charset=UTF-8</code>을 반환하지만 oauth4webapi v3는 <code>application/json</code>만 허용합니다.
+        또한 <code>WWW-Authenticate</code> 헤더도 제거해야 합니다.
+        <code>conform</code> 함수 없이는 token 교환 자체가 실패합니다.
+      </div>
+    </section>
+
+    <!-- 6. 온보딩 -->
+    <section id="onboarding">
+      <h2><span class="section-num">6</span> 온보딩 플로우</h2>
+
+      <div class="flow">
+신규 유저 첫 로그인
+  → JWT에 needsOnboarding=true
+  → middleware: 모든 요청을 /onboarding으로 리다이렉트
+  → /onboarding 페이지: 닉네임, 나이, 지역 설정
+  → 완료 시: unstable_update() 호출
+           → JWT의 needsOnboarding=false, nickname 갱신
+           → token.tokenRefreshedAt = 0 (다음 요청에 DB 재조회 강제)
+  → 이후 원래 경로 or / 로 이동</div>
+    </section>
+
+    <!-- 7. 미들웨어 -->
+    <section id="middleware">
+      <h2><span class="section-num">7</span> 미들웨어 로직</h2>
+      <p>파일: <code>src/middleware.ts</code></p>
+
+      <h3>처리 순서</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>순서</th><th>처리</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>레거시 경로 301 (아임웹 URL → 현재 URL)</td></tr>
+            <tr><td>2</td><td>어드민 라우트 (<code>/admin/*</code>) — 별도 admin-token 쿠키 검증</td></tr>
+            <tr><td>3</td><td>Magazine/Community CUID → slug 리다이렉트</td></tr>
+            <tr><td>4</td><td>보호된 경로 (<code>/my</code>, <code>/community/write</code>) — 세션 쿠키 존재 여부만 확인</td></tr>
+            <tr><td>5</td><td>온보딩 리다이렉트 — JWT 복호화 후 <code>needsOnboarding</code> 확인</td></tr>
+            <tr><td>6</td><td>익명 세션 쿠키 (<code>_anon_sid</code>) 발급</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-info">
+        <strong>미들웨어에서 <code>auth()</code> 함수를 사용하지 않습니다</strong>
+        <code>authConfig.callbacks.authorized</code>를 사용하지 않습니다.
+        Edge Runtime에서 Prisma 없이 JWT만으로 처리해야 하므로 <code>getToken()</code>을 직접 사용합니다.
+      </div>
+
+      <h3>세션 쿠키 이름</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>환경</th><th>쿠키 이름</th></tr></thead>
+          <tbody>
+            <tr><td>개발 (http)</td><td><code>authjs.session-token</code></td></tr>
+            <tr><td>프로덕션 (https)</td><td><code>__Secure-authjs.session-token</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 8. 핵심 코드 -->
+    <section id="code">
+      <h2><span class="section-num">8</span> 핵심 코드 설명</h2>
+
+      <h3>auth.config.ts — Kakao Provider 설정 핵심</h3>
+      <pre><code>Kakao({
+  clientId: process.env.KAKAO_CLIENT_ID ?? '',
+  clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
+  checks: ['state'],   // ← 카카오 PKCE 미지원, 반드시 state만 사용
+  token: {
+    url: 'https://kauth.kakao.com/oauth/token',  // ← 명시 필수 (없으면 authjs.dev fallback)
+    conform: async (response: Response) => {
+      // Content-Type charset 정규화 + WWW-Authenticate 제거
+    },
+  },
+})</code></pre>
+
+      <h3>JWT 콜백 — 30분 DB 조회 최적화</h3>
+      <pre><code>const TOKEN_REFRESH_WINDOW_MS = 30 * 60 * 1000  // 30분
+
+// 30분 이내 갱신된 토큰은 DB 재조회 건너뜀
+const lastRefresh = (token.tokenRefreshedAt as number) ?? 0
+if (Date.now() - lastRefresh &lt; TOKEN_REFRESH_WINDOW_MS) {
+  return token  // DB 스킵
+}
+// 30분 경과 시 DB 재조회 → token.tokenRefreshedAt = Date.now()</code></pre>
+
+      <h3>전화번호 정규화</h3>
+      <pre><code>// 카카오 제공 형식: "+82 10-1234-5678"
+// 저장 형식: "01012345678"
+function normalizeKakaoPhone(raw: string | undefined): string | null {
+  if (!raw) return null
+  return raw.replace(/^\+82\s?/, '0').replace(/[^0-9]/g, '') || null
+}</code></pre>
+    </section>
+
+    <!-- 9. 사고 이력 -->
+    <section id="incidents">
+      <h2><span class="section-num">9</span> 알려진 문제와 해결책</h2>
+
+      <div class="incident">
+        <div class="incident-header">
+          <span class="severity">사고 1</span>
+          <span class="date">2026-03-20</span>
+          <h3>Configuration 에러</h3>
+        </div>
+        <div class="incident-body">
+          <dl>
+            <dt>증상</dt><dd>로그인 시 "Configuration" 에러 페이지 표시</dd>
+            <dt>원인</dt><dd><code>authorization: { params: { scope: '...' } }</code> 추가 시 카카오 provider의 string URL이 빈 객체로 대체됨</dd>
+            <dt>해결</dt><dd><code>authorization</code> 블록 전체 제거</dd>
+            <dt>교훈</dt><dd>카카오 scope는 <code>authorization.params</code>로 추가 불가 (URL 소실). 이 방법으로 scope를 추가하려 하면 안 됨.</dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="incident">
+        <div class="incident-header">
+          <span class="severity">사고 2</span>
+          <span class="date">2026-03-20</span>
+          <h3>InvalidCheck: state value could not be parsed</h3>
+        </div>
+        <div class="incident-body">
+          <dl>
+            <dt>증상</dt><dd>카카오 인증 후 콜백에서 state 검증 실패</dd>
+            <dt>원인</dt><dd><code>AUTH_URL=https://www.age-doesnt-matter.com</code> 설정 → 쿠키 domain이 www와 비-www 간 불일치</dd>
+            <dt>해결</dt><dd><code>vercel env rm AUTH_URL production --yes</code></dd>
+            <dt>교훈</dt><dd><code>AUTH_URL</code> 절대 설정 금지. <code>trustHost: true</code>가 있으면 불필요.</dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="incident">
+        <div class="incident-header">
+          <span class="severity">사고 3</span>
+          <span class="date">2026-05-18 (하루 종일)</span>
+          <h3>KOE010 invalid_client Bad client credentials</h3>
+        </div>
+        <div class="incident-body">
+          <dl>
+            <dt>증상</dt><dd>카카오 token 교환 단계에서 KOE010 에러 → 전체 로그인 불가</dd>
+            <dt>원인</dt>
+            <dd>
+              Vercel Production의 <code>KAKAO_CLIENT_ID</code>가 Default REST API Key(<code>3a0c2b...</code>)였는데,
+              <code>KAKAO_CLIENT_SECRET</code>은 "우리 나이가 어때서" 플랫폼 키(<code>4ec06c8a...</code>)의 시크릿.
+              ID와 Secret이 서로 다른 키에 속함.
+            </dd>
+            <dt>해결</dt>
+            <dd>
+              <pre style="margin-top:8px;"><code>vercel env rm KAKAO_CLIENT_ID production --yes
+printf "4ec06c8a15dbb67bd92701f51c38ec2e" | vercel env add KAKAO_CLIENT_ID production
+vercel --prod --force</code></pre>
+            </dd>
+            <dt>교훈</dt>
+            <dd>
+              <ul style="margin-left:16px;margin-top:4px;font-size:14px;line-height:2;">
+                <li>카카오 authorize 엔드포인트는 client_id를 검증하지 않음 (가짜 ID도 동의 화면 표시)</li>
+                <li>token 엔드포인트에서만 ID+Secret 쌍 검증 → curl 직접 테스트 필요</li>
+                <li>반드시 <code>vercel env pull --environment=production</code>으로 실제 프로덕션 값 확인 후 작업</li>
+                <li>콘솔 스크린샷만 보고 "맞겠지" 가정 금지</li>
+              </ul>
+            </dd>
+          </dl>
+        </div>
+      </div>
+
+      <h3>KOE010 발생 시 즉시 체크리스트</h3>
+      <pre><code># 1. 프로덕션 실제 환경변수 확인
+vercel env pull --environment=production
+cat .env.production.local | grep KAKAO
+
+# 2. 해당 KAKAO_CLIENT_ID가 카카오 콘솔 어느 키 박스에 속하는지 확인
+#    카카오 콘솔 > 앱 1409330 > 플랫폼 키 탭
+
+# 3. KAKAO_CLIENT_SECRET이 그 키 박스의 시크릿인지 확인
+
+# 4. curl로 직접 token 교환 테스트
+curl -X POST https://kauth.kakao.com/oauth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code&client_id=YOUR_CLIENT_ID&client_secret=YOUR_SECRET&redirect_uri=https://age-doesnt-matter.com/api/auth/callback/kakao&code=TEMP_CODE"
+# KOE010 → ID/Secret 불일치
+# KOE320 → code 만료 (정상, ID/Secret은 맞음)</code></pre>
+    </section>
+
+    <!-- 10. 절대 금지 -->
+    <section id="forbidden">
+      <h2><span class="section-num">10</span> 절대 금지사항</h2>
+      <div class="alert alert-danger">아래 항목을 수정하면 <strong>전체 로그인 불가</strong> 사태가 발생합니다.</div>
+
+      <h3>코드 수준</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>금지</th><th>이유</th></tr></thead>
+          <tbody>
+            <tr><td><code>checks: ['pkce']</code> 또는 <code>checks: []</code></td><td>카카오 PKCE 미지원, state 필수</td></tr>
+            <tr><td><code>authorization: { params: { scope } }</code> 추가</td><td>Kakao authorization URL 소실 → Configuration 에러</td></tr>
+            <tr><td><code>conform</code> 함수 제거</td><td>oauth4webapi v3 파싱 실패</td></tr>
+            <tr><td><code>token.url</code> 제거</td><td>authjs.dev로 fallback → token 교환 실패</td></tr>
+            <tr><td><code>auth.config.ts</code>에 Prisma import</td><td>Edge Runtime에서 Prisma 불가 → 미들웨어 크래시</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>환경변수 수준</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>금지</th><th>이유</th></tr></thead>
+          <tbody>
+            <tr><td><code>AUTH_URL</code> 설정</td><td>cookie domain 불일치 → InvalidCheck</td></tr>
+            <tr><td><code>NEXTAUTH_SECRET</code> 사용</td><td>NextAuth v5는 <code>AUTH_SECRET</code>만 인식</td></tr>
+            <tr><td>Default REST API Key(<code>3a0c2b...</code>) 사용</td><td>시크릿이 다른 키 박스에 속함 → KOE010</td></tr>
+            <tr><td>ID와 Secret을 다른 플랫폼 키에서 조합</td><td>KOE010</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>카카오 콘솔 수준</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>금지</th><th>이유</th></tr></thead>
+          <tbody>
+            <tr><td>Redirect URI 삭제</td><td>콜백 실패</td></tr>
+            <tr><td>client_secret 비활성화</td><td>KOE010</td></tr>
+            <tr><td>플랫폼 키("우리 나이가 어때서") 삭제</td><td>전체 로그인 불가</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 11. 변경 전 체크리스트 -->
+    <section id="before">
+      <h2><span class="section-num">11</span> 변경 전 체크리스트</h2>
+
+      <h3>auth.config.ts 또는 auth.ts 수정 시</h3>
+      <ul class="checklist">
+        <li><code>vercel env pull --environment=production</code> 실행 → KAKAO_CLIENT_ID 실제값 확인</li>
+        <li>카카오 콘솔 > 앱 1409330 > 플랫폼 키 탭에서 해당 키 확인</li>
+        <li>ID와 Secret이 같은 키 박스에 속하는지 확인</li>
+        <li>10. 절대 금지사항 전체 검토</li>
+        <li><code>checks: ['state']</code> 유지 확인</li>
+        <li><code>token.url</code> 유지 확인</li>
+        <li><code>conform</code> 함수 유지 확인</li>
+        <li><code>AUTH_URL</code>이 환경변수에 없는지 확인</li>
+      </ul>
+
+      <h3>카카오 콘솔 설정 변경 시</h3>
+      <ul class="checklist">
+        <li>창업자 사전 승인 필수 (CLAUDE.md 규정)</li>
+        <li>Redirect URI 추가/변경은 기존 URI 유지한 채 추가</li>
+        <li>동의항목 변경 시 앱 심사 필요 여부 확인</li>
+        <li>플랫폼 키 신규 생성 시 KAKAO_CLIENT_ID 업데이트 필요</li>
+      </ul>
+
+      <h3>Vercel 환경변수 변경 시</h3>
+      <ul class="checklist">
+        <li><code>vercel env pull --environment=production</code>으로 현재값 백업</li>
+        <li>변경 후 <code>vercel --prod --force</code> 재배포 필수</li>
+        <li><code>/api/health/auth</code> 200 응답 확인 후 완료 선언</li>
+      </ul>
+    </section>
+
+    <!-- 12. 변경 후 검증 -->
+    <section id="after">
+      <h2><span class="section-num">12</span> 변경 후 검증 절차</h2>
+
+      <h3>즉시 확인 (배포 직후)</h3>
+      <pre><code># 헬스체크 엔드포인트
+curl -I https://age-doesnt-matter.com/api/health/auth
+# → 200 OK 확인</code></pre>
+
+      <div class="alert alert-warning">
+        <strong>실기기 테스트 필수 (2가지 모두)</strong>
+        Android Chrome (갤럭시) + iOS Safari (iPhone) — 카카오 동의 화면 → 로그인 성공 → 홈 도달 확인
+      </div>
+
+      <h3>1시간 모니터링</h3>
+      <pre><code>-- Supabase SQL Editor에서 실행
+SELECT * FROM "BotLog"
+WHERE action = 'AUTH_FAILURE'
+AND "createdAt" > NOW() - INTERVAL '1 hour'
+ORDER BY "createdAt" DESC;</code></pre>
+
+      <h3>완료 기준 (모두 충족해야 완료 선언 가능)</h3>
+      <ul class="checklist">
+        <li><code>/api/health/auth</code> 200 응답</li>
+        <li>Android Chrome 실기기 로그인 성공</li>
+        <li>iOS Safari 실기기 로그인 성공</li>
+        <li>1시간 이내 BotLog AUTH_FAILURE 0건</li>
+      </ul>
+    </section>
+
+    <!-- 부록 -->
+    <section id="files">
+      <h2><span class="section-num">+</span> 부록: 관련 파일 경로</h2>
+      <div class="table-wrap">
+        <table class="file-table">
+          <thead><tr><th>경로</th><th>용도</th></tr></thead>
+          <tbody>
+            <tr><td>src/lib/auth.config.ts</td><td>Edge Runtime 설정</td></tr>
+            <tr><td>src/lib/auth.ts</td><td>전체 Auth 설정 (Prisma)</td></tr>
+            <tr><td>src/middleware.ts</td><td>미들웨어</td></tr>
+            <tr><td>src/app/(main)/login/page.tsx</td><td>로그인 페이지</td></tr>
+            <tr><td>src/app/(main)/onboarding/page.tsx</td><td>온보딩 페이지</td></tr>
+            <tr><td>src/app/auth/error/page.tsx</td><td>에러 페이지</td></tr>
+            <tr><td>prisma/schema.prisma</td><td>DB 스키마</td></tr>
+            <tr><td>src/lib/auth-monitor.ts</td><td>Auth 모니터</td></tr>
+            <tr><td>src/app/api/health/auth/route.ts</td><td>헬스체크 API</td></tr>
+            <tr><td>memory/reference_kakao_oauth.md</td><td>OAuth 참고 메모리</td></tr>
+            <tr><td>docs/kakao-auth-policy.md</td><td>이 문서 (마크다운 원본)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:40px 0 20px;border-top:1px solid var(--border);margin-top:20px;">
+      우리 나이가 어때서 — 카카오 로그인 정책 문서 v1.0 (2026-05-18)
+    </div>
+  </main>
+</div>
+</body>
+</html>
