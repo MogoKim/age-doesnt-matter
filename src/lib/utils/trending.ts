@@ -20,18 +20,19 @@ export function getQuietHoursBonus(): number {
 
 /**
  * trendingScore 계산 공식
- * score = (likeCount×3 + commentCount×5 + viewCount×0.1) × bonus / (noonAge + 2)^1.5
- * noonAge: 마지막 정오로부터 경과 시간(시간 단위)
+ * score = (likeCount×3 + commentCount×5 + viewCount×0.1) × bonus / (postAge + 2)^1.5
+ * postAge: 글 작성 시점부터 경과 시간(시간 단위) — 24시간 신선도 기준
  */
 export function calculateTrendingScore(
   likeCount: number,
   commentCount: number,
   viewCount: number,
+  createdAt: Date,
 ): number {
-  const noonAge = (Date.now() - getLastNoon().getTime()) / (1000 * 60 * 60)
+  const postAge = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60)
   const bonus = getQuietHoursBonus()
   const score =
     (likeCount * 3 + commentCount * 5 + viewCount * 0.1) * bonus /
-    Math.pow(noonAge + 2, 1.5)
+    Math.pow(postAge + 2, 1.5)
   return Math.round(score * 1000) / 1000
 }

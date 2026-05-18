@@ -70,10 +70,10 @@ export async function toggleGuestPostLike(postId: string): Promise<GuestLikeResu
   void (async () => {
     const p = await prisma.post.findUnique({
       where: { id: postId },
-      select: { likeCount: true, commentCount: true, viewCount: true },
+      select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true },
     })
     if (!p) return
-    const score = calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount)
+    const score = calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt)
     await prisma.post.update({ where: { id: postId }, data: { trendingScore: score } })
   })().catch(() => {})
 

@@ -100,11 +100,11 @@ export async function createGuestComment({
   void (async () => {
     const p = await prisma.post.findUnique({
       where: { id: postId },
-      select: { likeCount: true, commentCount: true, viewCount: true },
+      select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true },
     })
     if (p) await prisma.post.update({
       where: { id: postId },
-      data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) },
+      data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt) },
     })
   })().catch(() => {})
 

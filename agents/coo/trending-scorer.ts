@@ -37,12 +37,13 @@ class COOTrendingScorer extends BaseAgent {
         likeCount: true,
         commentCount: true,
         viewCount: true,
+        createdAt: true,
       },
     })
 
     let scored = 0
     for (const post of posts) {
-      const score = calculateTrendingScore(post.likeCount, post.commentCount, post.viewCount)
+      const score = calculateTrendingScore(post.likeCount, post.commentCount, post.viewCount, post.createdAt)
 
       await prisma.post.update({
         where: { id: post.id },

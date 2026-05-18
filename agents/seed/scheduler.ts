@@ -549,8 +549,8 @@ async function runActivity(activity: Activity): Promise<void> {
           }),
         ])
         void (async () => {
-          const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
-          if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+          const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true } })
+          if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt) } })
         })().catch(() => {})
         console.log(`[Seed] ${activity.personaId} commented on: "${post.title.slice(0, 30)}"`)
       }
@@ -584,8 +584,8 @@ async function runActivity(activity: Activity): Promise<void> {
           }),
         ])
         void (async () => {
-          const p = await prisma.post.findUnique({ where: { id: target.postId }, select: { likeCount: true, commentCount: true, viewCount: true } })
-          if (p) await prisma.post.update({ where: { id: target.postId }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+          const p = await prisma.post.findUnique({ where: { id: target.postId }, select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true } })
+          if (p) await prisma.post.update({ where: { id: target.postId }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt) } })
         })().catch(() => {})
         console.log(`[Seed] ${activity.personaId} replied to comment: "${target.content.slice(0, 30)}"`)
       }
@@ -629,8 +629,8 @@ async function runActivity(activity: Activity): Promise<void> {
           data: { hotPromotedAt: new Date() },
         }).catch(() => {})
         void (async () => {
-          const p = await prisma.post.findUnique({ where: { id: target.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
-          if (p) await prisma.post.update({ where: { id: target.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+          const p = await prisma.post.findUnique({ where: { id: target.id }, select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true } })
+          if (p) await prisma.post.update({ where: { id: target.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt) } })
         })().catch(() => {})
         console.log(`[Seed] ${activity.personaId} liked post ${target.id.slice(0, 8)}`)
       } catch {

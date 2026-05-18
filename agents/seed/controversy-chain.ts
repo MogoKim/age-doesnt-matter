@@ -206,8 +206,8 @@ async function executeStep(
       prisma.post.update({ where: { id: post.id }, data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() } }),
     ])
     void (async () => {
-      const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
-      if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+      const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true } })
+      if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt) } })
     })().catch(() => {})
     console.log(`[Chain] ${chainId} step${step.stepIndex} — ${step.personaId} 댓글: "${commentText.slice(0, 40)}"`)
   }
@@ -247,8 +247,8 @@ async function executeStep(
       prisma.post.update({ where: { id: post.id }, data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() } }),
     ])
     void (async () => {
-      const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
-      if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+      const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true } })
+      if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt) } })
     })().catch(() => {})
     console.log(`[Chain] ${chainId} step${step.stepIndex} — ${step.personaId} 반박댓글: "${replyText.slice(0, 40)}"`)
     void authorId  // 미사용 경고 방지

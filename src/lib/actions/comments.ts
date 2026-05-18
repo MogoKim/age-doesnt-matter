@@ -94,10 +94,10 @@ export async function createComment(
   void (async () => {
     const p = await prisma.post.findUnique({
       where: { id: postId },
-      select: { likeCount: true, commentCount: true, viewCount: true },
+      select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true },
     })
     if (!p) return
-    const score = calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount)
+    const score = calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt)
     await prisma.post.update({
       where: { id: postId },
       data: { lastEngagedAt: new Date(), trendingScore: score },
@@ -225,10 +225,10 @@ export async function deleteComment(commentId: string): Promise<CommentResult> {
   void (async () => {
     const p = await prisma.post.findUnique({
       where: { id: comment.postId },
-      select: { likeCount: true, commentCount: true, viewCount: true },
+      select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true },
     })
     if (!p) return
-    const score = calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount)
+    const score = calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt)
     await prisma.post.update({
       where: { id: comment.postId },
       data: { trendingScore: score },

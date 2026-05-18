@@ -71,7 +71,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 |----|--------|----------|--------|---------|------------|------|------|---------|
 | F01 | 회원가입 유도 배너 | `src/components/common/SignupPromptBanner.tsx` | 20초 체류 + 50% 스크롤 | RELATION | ALL | [F01](F01-signup-prompt.md) | ACTIVE | 2026-04-27 |
 | F02 | PWA 설치 유도 | `src/components/common/AddToHomeScreen.tsx` | 4단계 트리거 (13s/3페이지/행동/주간) | RELATION+HEALTH | P1·P2 | [F02](F02-pwa-install.md) | ACTIVE | 2026-05-13 |
-| F03 | 홈 페이지 | `src/components/features/home/` (21개 컴포넌트) | 홈 방문 | RELATION | P1·P2·P3 | [F03](F03-home-page.md) | ACTIVE | 2026-05-17 |
+| F03 | 홈 페이지 | `src/components/features/home/` (21개 컴포넌트) | 홈 방문 | RELATION | P1·P2·P3 | [F03](F03-home-page.md) | ACTIVE | 2026-05-18 |
 | F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | RELATION+HEALTH | P1·P2·P5 | [F04](F04-community.md) | ACTIVE | 2026-05-15 |
 | F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-14 |
 | F06 | 일자리 게시판 | `src/app/(main)/jobs/` | 자동수집(A03) + 사용자 탐색 | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-05-14 |
@@ -92,7 +92,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 11:00, 14:00 KST | LOCAL_ONLY | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-13 |
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/community/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | agents-scraper.yml 07:30·09:00·12:00·15:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | RELATION | P1·P3 | [A04](A04-external-content.md) | ACTIVE | 2026-05-15 |
-| A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | ACTIVE | 2026-05-16 |
+| A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | ACTIVE | 2026-05-18 |
 | A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 07:00·12:00·15:00 KST | GHA | RELATION | — | [A06](A06-sns-posting.md) | ACTIVE | 2026-04-27 |
 | A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 13:00 KST | GHA | RELATION | — | [A07](A07-card-news.md) | ARCHIVED | 2026-05-15 |
 | A08 | 지식인 답변 | `agents/cmo/knowledge-responder.ts` | launchd 14:30 KST (화/목/토) | LOCAL_ONLY | HEALTH+MONEY | P2·P4 | - | ARCHIVED | 2026-05-15 |

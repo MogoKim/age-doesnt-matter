@@ -69,11 +69,11 @@ async function recalcTrendingScores() {
       createdAt: { gte: sevenDaysAgo },
       OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
     },
-    select: { id: true, likeCount: true, commentCount: true, viewCount: true },
+    select: { id: true, likeCount: true, commentCount: true, viewCount: true, createdAt: true },
   })
   let updated = 0
   for (const post of posts) {
-    const score = calculateTrendingScore(post.likeCount, post.commentCount, post.viewCount)
+    const score = calculateTrendingScore(post.likeCount, post.commentCount, post.viewCount, post.createdAt)
     if (score > 0) {
       // @ts-expect-error one-time script
       await prisma.post.update({ where: { id: post.id }, data: { trendingScore: score } })

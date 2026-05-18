@@ -199,8 +199,8 @@ async function runMicroActivity(activity: MicroActivity): Promise<void> {
           data: { commentCount: { increment: 1 } },
         })
         void (async () => {
-          const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
-          if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+          const p = await prisma.post.findUnique({ where: { id: post.id }, select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true } })
+          if (p) await prisma.post.update({ where: { id: post.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt) } })
         })().catch(() => {})
         console.log(`[Micro] ${activity.personaId} commented on: "${post.title.slice(0, 30)}"`)
       }
@@ -232,8 +232,8 @@ async function runMicroActivity(activity: MicroActivity): Promise<void> {
           data: { commentCount: { increment: 1 } },
         })
         void (async () => {
-          const p = await prisma.post.findUnique({ where: { id: target.postId }, select: { likeCount: true, commentCount: true, viewCount: true } })
-          if (p) await prisma.post.update({ where: { id: target.postId }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+          const p = await prisma.post.findUnique({ where: { id: target.postId }, select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true } })
+          if (p) await prisma.post.update({ where: { id: target.postId }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt) } })
         })().catch(() => {})
         console.log(`[Micro] ${activity.personaId} replied to comment: "${target.content.slice(0, 30)}"`)
       }
@@ -280,8 +280,8 @@ async function runMicroActivity(activity: MicroActivity): Promise<void> {
           }).catch(() => {})
         }
         void (async () => {
-          const p = await prisma.post.findUnique({ where: { id: target.id }, select: { likeCount: true, commentCount: true, viewCount: true } })
-          if (p) await prisma.post.update({ where: { id: target.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount) } })
+          const p = await prisma.post.findUnique({ where: { id: target.id }, select: { likeCount: true, commentCount: true, viewCount: true, createdAt: true } })
+          if (p) await prisma.post.update({ where: { id: target.id }, data: { trendingScore: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, p.createdAt) } })
         })().catch(() => {})
         console.log(`[Micro] ${activity.personaId} liked post ${target.id.slice(0, 8)}`)
       } catch {
