@@ -214,6 +214,7 @@
 | 2026-05-15 | content-curator.ts DESIRE_KEYWORDS HOBBY에서 '요리' 제거 + 수영·골프·바둑·자전거·캠핑·낚시·뜨개질·서예·그림·꽃꽂이 10개 추가 | '요리' 키워드가 HOBBY→FOOD 순서 탐색에서 음식 글을 HOBBY로 잘못 분류. 취미 키워드 확장으로 GENERAL 분류 비율 감소 목표 |
 | 2026-05-16 | content-curator.ts `publishCuratedContent()` 앞에 LIFE2 크로스소스 dedup 추가 — 24h 내 LIFE2 전체 Post 조회 후 2자 명사 overlap ≥3 이면 발행 스킵 | Seed·PopularCurator와 동일 주제 중복 발행 차단 (크로스소스 dedup 미구현 버그) |
 | 2026-05-15 | 크롤 7회/일로 확장(07:40·09:30·11:30·14:30·17:30·21:30·00:30), GHA 큐레이션 45분 간격 20슬롯 100건/일 전환. runner.ts dedup 60분→25분. content-curator.ts 01:15 KST 새벽 감성글 우선 정렬(MEANING/SPIRITUAL/RELATION/FAMILY) 추가 | 07:00대 아침 콘텐츠 공백 해소, 저녁/새벽 감성글 발행, 발행량 75→100건/일 목표 |
+| 2026-05-18 | content-curator.ts P1: todayPublishedTitles 조회 + countKeywordOverlap() — 특정 키워드 당일 2회 이상 발행 시 skip. P2: toNouns regex {2,2}→{2,} + 겹침 기준 3→2 + editDistance≤5 Levenshtein 추가. P3: SEASONAL_KEYWORDS + isSeasonMismatch() — 계절 불일치 글 자동 skip | 5/18 봇글 29개 전수 분석: 제주 8개(28%) 편중, 1글자 차이 의미중복(마음도/마음이), 5월 벚꽃글 발행 등 3가지 품질 문제 수정 |
 
 ---
 

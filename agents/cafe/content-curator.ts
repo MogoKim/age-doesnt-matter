@@ -662,12 +662,46 @@ ${references ? `[원본 카페 글 — 수미상관으로 재가공]\n${referenc
   }
 }
 
+const SEASONAL_KEYWORDS: Record<string, number[]> = {
+  '벚꽃': [3, 4], '꽃구경': [3, 4, 5], '벚꽃놀이': [3, 4],
+  '장마': [6, 7], '여름휴가': [7, 8], '피서': [7, 8], '물놀이': [7, 8],
+  '단풍': [10, 11], '단풍놀이': [10, 11],
+  '크리스마스': [12], '눈썰매': [12, 1, 2], '설날': [1, 2],
+}
+
+function isSeasonMismatch(title: string, content: string): boolean {
+  const text = title + ' ' + content
+  const currentMonth = new Date().getMonth() + 1
+  for (const [keyword, allowedMonths] of Object.entries(SEASONAL_KEYWORDS)) {
+    if (text.includes(keyword) && !allowedMonths.includes(currentMonth)) return true
+  }
+  return false
+}
+
+function editDistance(a: string, b: string): number {
+  const m = a.length, n = b.length
+  const dp = Array.from({ length: m + 1 }, (_, i) =>
+    Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  )
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1]
+        : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])
+  return dp[m][n]
+}
+
 /** 큐레이션 글을 DB에 게시, 생성된 postId 반환 */
 async function publishCuratedContent(curated: CuratedContent): Promise<string | null> {
   const userId = await getBotUser(curated.personaId)
 
   const htmlContent = `<p>${curated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
   const summary = curated.content.replace(/\n/g, ' ').slice(0, 150).trim()
+
+  // 계절 불일치 필터 (P3)
+  if (isSeasonMismatch(curated.title, curated.content)) {
+    console.log(`[ContentCurator] 계절 불일치 스킵: "${curated.title.slice(0, 20)}"`)
+    return null
+  }
 
   // 크로스소스 중복 방지 (LIFE2·STORY·HUMOR — Seed·PopularCurator와 동일 주제 중복 차단)
   if (['LIFE2', 'STORY', 'HUMOR'].includes(curated.boardType)) {
@@ -677,12 +711,15 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
       select: { title: true },
     })
     if (recentPosts.length > 0) {
-      const toNouns = (t: string) => t.match(/[가-힣]{2,2}/g) ?? []
+      const toNouns = (t: string) => t.match(/[가-힣]{2,}/g) ?? []
       const newNouns = new Set(toNouns(curated.title))
       const isDuplicate = recentPosts.some(
-        p => toNouns(p.title).filter(n => newNouns.has(n)).length >= 3
+        p => toNouns(p.title).filter(n => newNouns.has(n)).length >= 2
       )
-      if (isDuplicate) {
+      const isTitleNearDuplicate = recentPosts.some(
+        p => editDistance(p.title, curated.title) <= 5
+      )
+      if (isDuplicate || isTitleNearDuplicate) {
         console.log(`[ContentCurator] ${curated.boardType} 중복 스킵: "${curated.title.slice(0, 20)}"`)
         return null
       }
@@ -767,6 +804,23 @@ export async function main() {
     const key = desireCategory ?? 'GENERAL'
     desireUsedCount[key] = (desireUsedCount[key] ?? 0) + 1
   }
+
+  // 오늘 발행된 BOT 글 제목 목록 — 키워드 편중 방지 (P1)
+  const todayPublishedTitles = await prisma.post.findMany({
+    where: { source: 'BOT', createdAt: { gte: todayStart } },
+    select: { title: true },
+  })
+  function countKeywordOverlap(title: string): number {
+    const nouns = title.match(/[가-힣]{2,}/g) ?? []
+    const publishedAll = todayPublishedTitles.map(p => p.title).join(' ')
+    let max = 0
+    for (const n of nouns) {
+      const cnt = publishedAll.match(new RegExp(n, 'g'))?.length ?? 0
+      if (cnt > max) max = cnt
+    }
+    return max
+  }
+
   // 욕망별 하루 최대 발행 수 (75건/일 기준 30%/15%/8%)
   const MAX_PER_DESIRE: Partial<Record<string, number>> = { HEALTH: 22, FAMILY: 11, MONEY: 6 }
   const DEFAULT_MAX_DESIRE = 6
@@ -879,6 +933,13 @@ export async function main() {
     // 하루 한도 소진된 욕망은 스킵 (B20)
     if (isDesireExhausted(desireCat)) {
       console.log(`[ContentCurator] "${topicStr}" (${desireCat}) 오늘 한도 초과 — 스킵`)
+      continue
+    }
+
+    // 당일 발행 키워드 편중 체크 (P1)
+    const topicOverlap = countKeywordOverlap(topicStr)
+    if (topicOverlap >= 2) {
+      console.log(`[ContentCurator] "${topicStr}" 키워드 중복 스킵 (당일 ${topicOverlap}회 이미 발행)`)
       continue
     }
 

@@ -23,10 +23,10 @@ type WaveAtKey = 'wave1At' | 'wave2At' | 'wave3At' | 'wave4At'
 
 // wave별 댓글 유형 강제 — fallback(refComment 없음) 시 획일화 방지
 const WAVE_COMMENT_TYPES: Record<WaveNum, string> = {
-  1: '공감형 — 글쓴이와 같은 감정을 공유하는 한마디 (예: "저도 비슷한 경험이 있어요")',
-  2: '질문형 — 글 내용에 대해 궁금한 점을 물어보는 댓글 (예: "혹시 ~해보셨나요?")',
-  3: '경험공유형 — 본인의 비슷한 경험을 짧게 공유 (예: "저는 ~해서 많이 나아졌어요")',
-  4: '응원형 — 따뜻하게 격려하는 한마디 (예: "힘내세요! 곧 좋아질 거예요")',
+  1: '공감형 — 글쓴이의 감정이나 상황에 공감하는 1~2문장. "저도 그런 적 있어요"류. 응원 문구("화이팅") 금지.',
+  2: '질문형 — 글에서 궁금한 점 한 가지를 구체적으로 질문. "혹시 ~어떻게 하셨어요?"류. 공감 선언 없이 바로 질문으로 시작.',
+  3: '경험공유형 — 본인의 실제 경험을 2~3문장으로 구체적으로 공유. 수치/장소/기간 등 디테일 포함. "저는 ~했는데 ~하더라고요" 구조.',
+  4: '다른관점형 — 글과 다른 각도에서 바라본 생각 또는 보완 정보. "저는 반대로 ~", "그런데 ~도 있더라고요"류. 응원/화이팅 절대 금지.',
 }
 
 async function generateComment(postTitle: string, waveNum: WaveNum, refComment?: string): Promise<string> {
@@ -40,6 +40,7 @@ async function generateComment(postTitle: string, waveNum: WaveNum, refComment?:
 - 댓글 유형: ${waveType}
 - 원본의 핵심 주제(고유명사·수치)만 유지, 표현은 자유롭게
 - 40~80자 이내, 순수 텍스트만, 마크다운/이모지 금지
+- "화이팅", "응원합니다", "좋은 정보 감사합니다" 등 응원·감사 문구 금지
 - 접두사 없이 댓글 내용만 출력
 
 댓글:`
@@ -50,6 +51,7 @@ async function generateComment(postTitle: string, waveNum: WaveNum, refComment?:
 - 댓글 유형: ${waveType}
 - 40~80자 이내, 순수 텍스트만
 - 마크다운/이모지 금지
+- "화이팅", "응원합니다", "좋은 정보 감사합니다" 등 응원·감사 문구 금지
 - 자연스러운 구어체 (경어 또는 반말)
 
 댓글:`
@@ -68,10 +70,38 @@ async function processWave(
   queue: { id: string; postId: string; cafePostId: string; authorPersonaId: string },
   waveNum: WaveNum,
 ) {
-  // 글쓴이 제외 랜덤 페르소나
-  const available = COMMENTER_PERSONA_IDS.filter(p => p !== queue.authorPersonaId)
-  const personaId = available[Math.floor(Math.random() * available.length)]
-  const userId = await getBotUser(personaId)
+  // 봇 당일 댓글 수 집계 (cap 체크용 — P4)
+  const todayCommentStart = new Date()
+  todayCommentStart.setHours(0, 0, 0, 0)
+  const BOT_DAILY_COMMENT_CAP = 3
+  const todayCommentCounts = await prisma.comment.groupBy({
+    by: ['authorId'],
+    where: { createdAt: { gte: todayCommentStart }, author: { source: 'BOT' } },
+    _count: { authorId: true },
+  })
+  const todayCountByUser = new Map(
+    todayCommentCounts.map(c => [c.authorId, c._count.authorId])
+  )
+
+  // 글쓴이 제외 후보 풀 셔플 후 당일 캡 미초과 봇 우선 선택
+  const basePool = [...COMMENTER_PERSONA_IDS.filter(p => p !== queue.authorPersonaId)]
+    .sort(() => Math.random() - 0.5)
+  let personaId = basePool[0]
+  let userId: string | null = null
+  for (const candidate of basePool) {
+    const cid = await getBotUser(candidate)
+    if (!cid) continue
+    if ((todayCountByUser.get(cid) ?? 0) < BOT_DAILY_COMMENT_CAP) {
+      personaId = candidate
+      userId = cid
+      break
+    }
+  }
+  // fallback: 모두 캡 초과 시 첫 번째 후보
+  if (!userId) {
+    personaId = basePool[0]
+    userId = await getBotUser(personaId)
+  }
   if (!userId) {
     console.warn(`[WaveProcessor] wave${waveNum}: getBotUser(${personaId}) 실패 — 스킵`)
     return
