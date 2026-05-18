@@ -74,9 +74,9 @@ async function processWave(
   const todayCommentStart = new Date()
   todayCommentStart.setHours(0, 0, 0, 0)
   const BOT_DAILY_COMMENT_CAP = 3
-  // groupBy에서 관계 필터 불가 → BOT 유저 ID 목록 먼저 조회
+  // groupBy에서 관계 필터 불가 → BOT 유저 ID 목록 먼저 조회 (email @unao.bot 기준)
   const botUsers = await prisma.user.findMany({
-    where: { source: 'BOT' },
+    where: { email: { endsWith: '@unao.bot' } },
     select: { id: true },
   })
   const botUserIds = botUsers.map(u => u.id)
