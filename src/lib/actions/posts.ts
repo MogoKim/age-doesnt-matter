@@ -148,6 +148,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   revalidateTag('home-humor')
   revalidateTag('home-magazine')
   revalidateTag('home-jobs')
+  revalidateTag('community-board-page')
   return { postUrl: `/community/${boardSlugPath}/${communitySlug ?? post.id}` }
 }
 
@@ -299,5 +300,6 @@ export async function deletePost(postId: string): Promise<{ error?: string }> {
   revalidateTag('home-humor')
   revalidateTag('home-magazine')
   revalidateTag('home-jobs')
+  revalidateTag('community-board-page')
   redirect(`/community/${slug}`)
 }

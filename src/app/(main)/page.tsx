@@ -61,7 +61,7 @@ const getCachedHumorRaw = unstable_cache(
 const getCachedUserCounts = unstable_cache(
   (userId: string) => getUserCounts(userId),
   ['home-user-counts'],
-  { revalidate: 10 }
+  { revalidate: 60, tags: ['home-user-counts'] }
 )
 
 /* ── Suspense 스켈레톤 ── */

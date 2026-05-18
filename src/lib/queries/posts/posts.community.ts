@@ -217,6 +217,19 @@ export const getRecentActivities = unstable_cache(
   { revalidate: 60 },
 )
 
+// 커뮤니티 게시판 1페이지 — 모듈 최상위 생성으로 함수 참조 안정 → 30s 캐시 실제 동작
+export const getCachedBoardPage = unstable_cache(
+  (boardType: BoardType, category: string, sort: string) =>
+    getPostsByBoardPage(boardType, {
+      category: category === 'all' ? undefined : category,
+      sort: sort as 'latest' | 'likes',
+      skip: 0,
+      limit: 12,
+    }),
+  ['community-board-page'],
+  { revalidate: 30, tags: ['community-board-page'] },
+)
+
 function formatTimeAgoFromMs(ms: number): string {
   const minutes = Math.floor(ms / 60000)
   if (minutes < 1) return '방금 전'

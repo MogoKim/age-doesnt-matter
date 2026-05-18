@@ -1,10 +1,8 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { unstable_cache } from 'next/cache'
-
 import { getBoardConfig } from '@/lib/queries/boards'
-import { getPostsByBoardPage } from '@/lib/queries/posts'
+import { getPostsByBoardPage, getCachedBoardPage } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
 import type { BoardType } from '@/generated/prisma/client'
 import type { SearchField } from '@/lib/queries/posts/posts.base'
@@ -104,12 +102,7 @@ async function PostListContainer({ boardType, boardSlug, category, sortOption, q
   if (q || page > 1) {
     ;({ posts, total } = await getPostsByBoardPage(boardType, { category, sort: sortOption, skip, limit: LIMIT, q, sf }))
   } else {
-    const getCachedPosts = unstable_cache(
-      () => getPostsByBoardPage(boardType, { category, sort: sortOption, skip: 0, limit: LIMIT }),
-      [`board-page-${boardType}-${category ?? 'all'}-${sortOption}`],
-      { revalidate: 30 },
-    )
-    ;({ posts, total } = await getCachedPosts())
+    ;({ posts, total } = await getCachedBoardPage(boardType, category ?? 'all', sortOption))
   }
 
   const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''

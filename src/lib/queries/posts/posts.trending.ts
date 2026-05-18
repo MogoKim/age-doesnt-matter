@@ -235,12 +235,19 @@ async function _getEditorsPicks(limit: number): Promise<PostSummary[]> {
   return hotRecent.map(toPostSummary)
 }
 
+const _cachedEditorsPicks2 = unstable_cache(
+  () => _getEditorsPicks(2),
+  ['editors-picks-2'],
+  { revalidate: 300, tags: ['editors-picks'] },
+)
+const _cachedEditorsPicks5 = unstable_cache(
+  () => _getEditorsPicks(5),
+  ['editors-picks-5'],
+  { revalidate: 300, tags: ['editors-picks'] },
+)
+
 export function getEditorsPicks(limit = 2): Promise<PostSummary[]> {
-  return unstable_cache(
-    () => _getEditorsPicks(limit),
-    [`editors-picks-${limit}`],
-    { revalidate: 300 },
-  )()
+  return limit === 5 ? _cachedEditorsPicks5() : _cachedEditorsPicks2()
 }
 
 /* ── 베스트: 실시간 인기글 (공감 10+) ── */
