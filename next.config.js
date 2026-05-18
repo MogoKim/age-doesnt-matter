@@ -119,6 +119,11 @@ const nextConfig = {
         source: '/screenshots/:path*',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000' }],
       },
+      // assetlinks.json: Google TWA 검증이 항상 최신 파일을 읽도록 캐시 금지
+      {
+        source: '/.well-known/assetlinks.json',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+      },
     ]
   },
 }

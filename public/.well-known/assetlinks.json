@@ -3,6 +3,6 @@
   "target": {
     "namespace": "android_app",
     "package_name": "com.agenotmatter.app",
-    "sha256_cert_fingerprints": ["14:79:0C:CB:6A:1B:5B:8C:65:C4:0D:32:D5:79:EC:40:30:AC:24:96:9A:40:96:F5:80:5A:C9:30:45:11:9A:D5"]
+    "sha256_cert_fingerprints": ["D5:F1:9B:5B:0B:44:1C:CF:33:B9:2B:CE:1F:74:1B:62:E0:20:4F:15:61:9C:F2:C0:31:1F:F3:52:0F:40:FD:20"]
   }
 }]

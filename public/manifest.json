@@ -22,13 +22,5 @@
     { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/mobile-home.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "우나어 홈 화면"
-    }
-  ]
+  "screenshots": []
 }
