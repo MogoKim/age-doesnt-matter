@@ -29,6 +29,14 @@ export default function Footer() {
         <FooterPwaButton />
       </div>
       <p className="text-caption text-muted-foreground">&copy; 2026 우리 나이가 어때서</p>
+      <address className="not-italic mt-3 text-center space-y-1">
+        <p className="text-[13px] text-muted-foreground/70">
+          케이에이지랩(K-Agelab) &nbsp;|&nbsp; 대표 김용석 &nbsp;|&nbsp; 사업자등록번호 457-24-01157
+        </p>
+        <p className="text-[13px] text-muted-foreground/70">
+          서울특별시 노원구 월계로55길 15, 302동 912호
+        </p>
+      </address>
     </footer>
   )
 }
