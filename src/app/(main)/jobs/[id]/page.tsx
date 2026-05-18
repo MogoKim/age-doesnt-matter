@@ -26,13 +26,17 @@ interface PageProps {
 export const dynamicParams = true
 
 export async function generateStaticParams() {
-  const posts = await prisma.post.findMany({
-    where: { boardType: 'JOB', status: 'PUBLISHED' },
-    select: { slug: true, id: true },
-    orderBy: { viewCount: 'desc' },
-    take: 30,
-  })
-  return posts.map((p) => ({ id: p.slug ?? p.id }))
+  try {
+    const posts = await prisma.post.findMany({
+      where: { boardType: 'JOB', status: 'PUBLISHED' },
+      select: { slug: true, id: true },
+      orderBy: { viewCount: 'desc' },
+      take: 30,
+    })
+    return posts.map((p) => ({ id: p.slug ?? p.id }))
+  } catch {
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
