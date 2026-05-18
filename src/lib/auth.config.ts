@@ -24,15 +24,6 @@ export const authConfig: NextAuthConfig = {
           const needsContentTypeFix =
             contentType?.startsWith('application/json') && contentType !== 'application/json'
 
-          // 진단 로그 (임시) — 카카오 토큰 엔드포인트 응답 확인
-          const bodyForLog = await response.clone().text()
-          console.log('[auth:kakao:token]', {
-            status: response.status,
-            contentType,
-            hasWwwAuth,
-            body: bodyForLog.slice(0, 300),
-          })
-
           if (!needsContentTypeFix && !hasWwwAuth) return response
 
           const body = await response.clone().text()
