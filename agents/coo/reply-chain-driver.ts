@@ -79,6 +79,19 @@ async function main() {
         if (!personaMatch) continue
         const triggerPersonaId = personaMatch[1].toUpperCase()
 
+        // 봇 댓글 캡 체크 (≤5)
+        const botCommentCount = await prisma.comment.count({
+          where: {
+            postId: comment.postId,
+            author: { email: { endsWith: '@unao.bot' } },
+            status: 'ACTIVE',
+          },
+        })
+        if (botCommentCount >= 5) {
+          console.log(`[COO] post ${comment.postId} 봇 댓글 캡 초과(${botCommentCount}건) — 체인 스킵`)
+          continue
+        }
+
         // 체인 조회
         const chains = getChainsForTrigger(triggerPersonaId)
         if (chains.length === 0) continue

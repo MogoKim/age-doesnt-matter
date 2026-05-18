@@ -68,7 +68,7 @@ const PERSONAS: PersonaMatch[] = [
     style: '일상 수다, 시장 이야기, 동네 소식',
     patterns: ['~더라고요', '~인 거 있죠', '아 맞다'],
     topics: ['시장 장보기', '동네 소식', '요리', '건강 걱정', '날씨'],
-    quirks: ['문장 중간에 "아 맞다" 하면서 화제 전환', '이모지 1-2개만 자연스럽게', '맞춤법 가끔 틀림 (돼/되 혼용)', '쉼표 대신 ~ 사용'],
+    quirks: ['문장 중간에 "아 맞다" 하면서 화제 전환', '이모지 절대 금지', '맞춤법 가끔 틀림 (돼/되 혼용)', '쉼표 대신 ~ 사용'],
     examples: ['오늘 시장에서 딸기가 만원이더라고요~ 비싸긴 한데 맛있어서 하나 샀어요 😊', '아 맞다 어제 병원 갔다왔는데 별거 아니래요 다행이에요~'],
   },
   {
@@ -92,7 +92,7 @@ const PERSONAS: PersonaMatch[] = [
     style: '긴 공감 댓글, 위로, 자기 경험 공유',
     patterns: ['맞아요~', '저도 그랬어요', '힘내세요', '~하시는 거 보면 대단해요'],
     topics: ['공감', '위로', '경험 나눔', '인생 이야기'],
-    quirks: ['"맞아요~"로 댓글 시작', '자기 경험을 항상 덧붙임', '마지막에 격려 한 줄 추가', '하트 이모지 하나만 끝에'],
+    quirks: ['"맞아요~"로 댓글 시작', '자기 경험을 항상 덧붙임', '마지막에 격려 한 줄 추가', '이모지 절대 금지'],
     examples: ['맞아요~ 저도 그런 적 있어요. 그때 정말 힘들었는데 지나고 보니 다 추억이더라고요. 힘내세요 ❤️', '저도 비슷한 경험을 했는데, 시간이 지나면 괜찮아질 거예요 ❤️'],
   },
   {
@@ -623,6 +623,7 @@ ${examplesStr}
 [절대 하지 않는 것]
 - "시니어", "액티브 시니어" 표현 금지
 - 마크다운 문법(**, ##, *, _ 등) 금지. 순수 텍스트만.
+- 이모지(😊🥬❤️ 등 모든 특수문자) 절대 금지 — 제목·본문 모두
 - 정치/종교/혐오/광고 금지
 - 오프라인 모임 모집 글 금지 ("같이 걸어요", "이번 수요일 모여요" 등)
 - "어떤 드라마", "어느 식당" 식으로 추상적으로 쓰지 말 것 → 반드시 실제 이름 특정`,
@@ -668,21 +669,21 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
   const htmlContent = `<p>${curated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
   const summary = curated.content.replace(/\n/g, ' ').slice(0, 150).trim()
 
-  // LIFE2 크로스소스 중복 방지 (Seed·PopularCurator와 동일 주제 중복 차단)
-  if (curated.boardType === 'LIFE2') {
+  // 크로스소스 중복 방지 (LIFE2·STORY·HUMOR — Seed·PopularCurator와 동일 주제 중복 차단)
+  if (['LIFE2', 'STORY', 'HUMOR'].includes(curated.boardType)) {
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    const recentLife2 = await prisma.post.findMany({
-      where: { boardType: 'LIFE2', createdAt: { gte: since24h } },
+    const recentPosts = await prisma.post.findMany({
+      where: { boardType: curated.boardType as 'LIFE2' | 'STORY' | 'HUMOR', createdAt: { gte: since24h } },
       select: { title: true },
     })
-    if (recentLife2.length > 0) {
+    if (recentPosts.length > 0) {
       const toNouns = (t: string) => t.match(/[가-힣]{2,2}/g) ?? []
       const newNouns = new Set(toNouns(curated.title))
-      const isDuplicate = recentLife2.some(
+      const isDuplicate = recentPosts.some(
         p => toNouns(p.title).filter(n => newNouns.has(n)).length >= 3
       )
       if (isDuplicate) {
-        console.log(`[ContentCurator] LIFE2 중복 스킵: "${curated.title.slice(0, 20)}"`)
+        console.log(`[ContentCurator] ${curated.boardType} 중복 스킵: "${curated.title.slice(0, 20)}"`)
         return null
       }
     }

@@ -88,6 +88,21 @@ async function processWave(
     return
   }
 
+  // 봇 댓글 캡 체크 (≤5) — comment-activator·reply-chain과 합산
+  const totalBotComments = await prisma.comment.count({
+    where: {
+      postId: queue.postId,
+      author: { email: { endsWith: '@unao.bot' } },
+      status: 'ACTIVE',
+    },
+  })
+  if (totalBotComments >= 5) {
+    const doneFieldCap = `wave${waveNum}Done` as WaveDoneKey
+    await prisma.commentWaveQueue.update({ where: { id: queue.id }, data: { [doneFieldCap]: true } })
+    console.warn(`[WaveProcessor] wave${waveNum}: 봇 댓글 캡 초과(${totalBotComments}건) — 스킵 (postId=${queue.postId})`)
+    return
+  }
+
   // 포스트 제목 조회
   const post = await prisma.post.findUnique({
     where: { id: queue.postId },

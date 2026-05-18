@@ -34,8 +34,8 @@ interface TermItem {
 }
 
 const TERMS: TermItem[] = [
-  { id: 'service', label: '이용약관 동의', required: true, url: '/terms/service' },
-  { id: 'privacy', label: '개인정보처리방침 동의', required: true, url: '/terms/privacy' },
+  { id: 'service', label: '이용약관 동의', required: true, url: '/terms' },
+  { id: 'privacy', label: '개인정보처리방침 동의', required: true, url: '/privacy' },
   { id: 'marketing', label: '마케팅 수신 동의', required: false },
 ]
 

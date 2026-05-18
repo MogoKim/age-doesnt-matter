@@ -44,7 +44,7 @@ export default function PrivacyPage() {
                 </tr>
                 <tr className="border-b border-border">
                   <td className="py-2 pr-4">카카오 추가</td>
-                  <td className="py-2 pr-4">이메일, 성별, 출생연도</td>
+                  <td className="py-2 pr-4">이메일, 성별, 출생연도, 전화번호</td>
                   <td className="py-2">선택</td>
                 </tr>
                 <tr className="border-b border-border">
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
         </section>
 
         <p className="text-sm text-muted-foreground pt-4 border-t border-border">
-          시행일: 2026년 3월 1일
+          최초 시행일: 2026년 3월 1일 | 최종 개정일: 2026년 5월 18일
         </p>
       </div>
     </div>
