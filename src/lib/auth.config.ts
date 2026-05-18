@@ -14,6 +14,11 @@ export const authConfig: NextAuthConfig = {
       clientId: process.env.KAKAO_CLIENT_ID ?? '',
       clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
       checks: ['state'],
+      authorization: {
+        params: {
+          scope: 'profile_nickname profile_image account_email gender birthyear phone_number',
+        },
+      },
       token: {
         url: 'https://kauth.kakao.com/oauth/token',
         // oauth4webapi v3 ↔ 카카오 응답 호환:

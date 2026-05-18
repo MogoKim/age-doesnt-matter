@@ -236,6 +236,7 @@ model User {
   grade           Grade      @default(SPROUT)
   birthYear       Int?
   gender          String?
+  phone           String?  @unique // 카카오 전화번호 선택 동의, 정규화: "01012345678"
   regions         String[]
   interests       String[]
   fontSize        FontSize   @default(NORMAL)

@@ -5,6 +5,11 @@ import { logAuthFailure } from '@/lib/auth-monitor'
 
 const TOKEN_REFRESH_WINDOW_MS = 30 * 60 * 1000
 
+function normalizeKakaoPhone(raw: string | undefined): string | null {
+  if (!raw) return null
+  return raw.replace(/^\+82\s?/, '0').replace(/[^0-9]/g, '') || null
+}
+
 /**
  * 전체 auth 설정 (서버 전용 — Prisma DB 접근 포함)
  * 미들웨어에서는 auth.config.ts의 경량 버전 사용
@@ -87,6 +92,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
                 profileImage: kakaoProfile?.profile_image_url,
                 birthYear: kakaoData?.birthyear ? Number(kakaoData.birthyear) : undefined,
                 gender: typeof kakaoData?.gender === 'string' ? kakaoData.gender : undefined,
+                phone: normalizeKakaoPhone(kakaoData?.phone_number as string | undefined),
               },
             })
             token.needsOnboarding = true

@@ -391,7 +391,7 @@
 <div class="page-header">
   <h1>홈 섹션 노출 정책</h1>
   <p>뜨는이야기 · 사는이야기 · 웃음방 · 매거진 · 오늘의 추천 일자리</p>
-  <div class="date">코드 직접 검토 기준 · 2026년 5월 17일</div>
+  <div class="date">코드 직접 검토 기준 · 2026년 5월 18일</div>
 </div>
 
 <div class="container">
@@ -560,7 +560,7 @@
             </div>
             <div class="policy-row">
               <div class="policy-label">조건</div>
-              <div class="policy-value">오늘 낮 12시 이후 쓴 글 중 <strong>좋아요 또는 댓글 1개 이상</strong></div>
+              <div class="policy-value">작성 후 <strong>24시간 이내</strong> 글 중 <strong>좋아요 또는 댓글 1개 이상</strong></div>
             </div>
             <div class="policy-row">
               <div class="policy-label">순서</div>
@@ -570,9 +570,7 @@
               <div class="policy-label" style="padding-top:6px;">못<br>채울 때</div>
               <div class="policy-value">
                 <div class="fill-flow">
-                  <div class="fill-step today"><div class="fs-dot"></div><div>오늘 낮 12시 이후 글로 먼저 채워요<span class="fill-trigger">쿼터 미달이면 아래로</span></div></div>
-                  <div class="fill-arrow">↓</div>
-                  <div class="fill-step yest"><div class="fs-dot"></div><div>어제 낮 12시~오늘 낮 12시 글로 나머지 보충<span class="fill-trigger">그래도 부족하면</span></div></div>
+                  <div class="fill-step today"><div class="fs-dot"></div><div>작성 후 24시간 이내 글로 먼저 채워요<span class="fill-trigger">쿼터 미달이면 아래로</span></div></div>
                   <div class="fill-arrow">↓</div>
                   <div class="fill-step all"><div class="fs-dot"></div><div>7일 내 전체 글 (반응 조건 없이)</div></div>
                 </div>
@@ -598,7 +596,7 @@
             </div>
             <div class="policy-row">
               <div class="policy-label">조건</div>
-              <div class="policy-value">오늘 낮 12시 이후 쓴 글 중 <strong>좋아요 또는 댓글 1개 이상</strong></div>
+              <div class="policy-value">작성 후 <strong>24시간 이내</strong> 글 중 <strong>좋아요 또는 댓글 1개 이상</strong></div>
             </div>
             <div class="policy-row">
               <div class="policy-label">순서</div>
@@ -612,9 +610,7 @@
               <div class="policy-label" style="padding-top:6px;">5개 못<br>채울 때</div>
               <div class="policy-value">
                 <div class="fill-flow">
-                  <div class="fill-step today"><div class="fs-dot"></div><div>오늘 낮 12시 이후 글로 먼저 채워요<span class="fill-trigger">5개 미만이면 아래로</span></div></div>
-                  <div class="fill-arrow">↓</div>
-                  <div class="fill-step yest"><div class="fs-dot"></div><div>어제 낮 12시~오늘 낮 12시 글로 나머지 보충<span class="fill-trigger">그래도 부족하면</span></div></div>
+                  <div class="fill-step today"><div class="fs-dot"></div><div>작성 후 24시간 이내 글로 먼저 채워요<span class="fill-trigger">5개 미만이면 아래로</span></div></div>
                   <div class="fill-arrow">↓</div>
                   <div class="fill-step all"><div class="fs-dot"></div><div>7일 내 전체 글 (반응 조건 없이)</div></div>
                 </div>
@@ -735,14 +731,14 @@
       <div class="score-formula">
         뜨는점수 = <span class="highlight">(댓글×5 + 좋아요×3 + 조회수×0.1)</span><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;× 시간대보너스<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;÷ <span class="highlight">(정오 이후 경과시간 + 2)^1.5</span>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;÷ <span class="highlight">(글 작성 후 경과시간 + 2)^1.5</span>
       </div>
 
       <div style="background:#f9f9fb; border-radius:12px; padding:14px 16px; margin-bottom:20px;">
         <div style="font-size:12px; font-weight:700; color:#8e8e93; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;">이 공식 한 줄 요약</div>
         <div style="display:flex; flex-direction:column; gap:7px;">
           <div style="font-size:13px;">📈 <strong>반응이 많을수록</strong> 점수 올라감 (댓글 5점 > 좋아요 3점 > 조회수 0.1점)</div>
-          <div style="font-size:13px;">📉 <strong>낮 12시 이후 시간이 지날수록</strong> 점수 빠르게 내려감</div>
+          <div style="font-size:13px;">📉 <strong>글을 올린 후 시간이 지날수록</strong> 점수 빠르게 내려감</div>
           <div style="font-size:13px;">🌙 <strong>새벽·오전에 달린 반응</strong>은 더 높은 가치로 인정 (최대 ×1.5)</div>
         </div>
       </div>
@@ -788,16 +784,16 @@
         </div>
       </div>
 
-      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;">낮 12시 기준 — 시간이 지날수록 급격히 하락</h4>
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;">글 작성 시점 기준 — 시간이 지날수록 급격히 하락</h4>
       <div class="decay-note" style="margin-bottom:14px;">
-        📉 <strong>반응 수가 같아도</strong>, 낮 12시 이후로 시간이 지날수록 점수가 급격히 떨어집니다.<br>
-        낮 12시 직후 달린 반응이 가장 가치 있고, 저녁이 될수록 점수 기여도가 줄어듭니다.
+        📉 <strong>반응 수가 같아도</strong>, 글을 올린 후 시간이 지날수록 점수가 급격히 떨어집니다.<br>
+        방금 올린 글에 달린 반응이 가장 가치 있고, 시간이 지날수록 같은 반응의 점수 기여도가 줄어듭니다.
       </div>
       <div class="decay-timeline">
         <div class="decay-bar-wrap">
           <div class="decay-val">100%</div>
           <div class="decay-bar" style="height:80px;"></div>
-          <div class="decay-label">정오 직후<br>1시간</div>
+          <div class="decay-label">작성 후<br>1시간</div>
         </div>
         <div class="decay-bar-wrap">
           <div class="decay-val">57%</div>
@@ -817,7 +813,7 @@
         <div class="decay-bar-wrap">
           <div class="decay-val">10%</div>
           <div class="decay-bar" style="height:8px;"></div>
-          <div class="decay-label">다음날<br>정오</div>
+          <div class="decay-label">24시간<br>후</div>
         </div>
       </div>
 
