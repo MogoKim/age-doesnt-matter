@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v9.1</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v9.4</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -324,14 +324,14 @@
 
   <!-- ── Cover ── -->
   <div class="cover">
-    <div class="cover-badge">핸드오버 문서 v9.1 · 2026-05-16</div>
+    <div class="cover-badge">핸드오버 문서 v9.4 · 2026-05-18</div>
     <h1>우나어 네이버 카페 파이프라인<br>운영 핸드오버 가이드</h1>
     <p class="subtitle">
       왜 네이버를 크롤하는가, 왜 댓글을 다는가 — 근본 목적부터 기술 상세까지.<br>
       GHA 큐레이션 115건/일 (Regular 100 + Popular 15) + 크롤 10회/일 + 새벽 감성글 01:15 슬롯 + 회원글 댓글 파동.
     </p>
     <div class="cover-meta">
-      <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">V9.1 (2026-05-16 기준)</div></div>
+      <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">V9.4 (2026-05-18 기준)</div></div>
       <div class="cover-meta-item"><div class="label">수집 카페</div><div class="value">2개 (wgang · dlxogns01)</div></div>
       <div class="cover-meta-item"><div class="label">큐레이션</div><div class="value ok">115건/일 (Regular 100 + Popular 15)</div></div>
       <div class="cover-meta-item"><div class="label">Mac plist</div><div class="value ok">10종 (크롤 7 + popular-sync 3)</div></div>
@@ -356,6 +356,7 @@
     <div class="status-item"><div class="status-dot on"></div>V9.1 (2026-05-16) — 코드 감사 7개 이슈 수정: wave-processor GHA ONLY 확인, runner.ts 크론 주석 정확화, qa-verifier COO action 불일치 수정, connection-facilitator safeBotLog 교체</div>
     <div class="status-item"><div class="status-dot on"></div>V9.2 (2026-05-17) — 시드봇 ESM 충돌 근본 수정(agents/core/trending.ts 분리) + revalidateTag 캐시 무효화 4건 보완(likes·comments·posts·unstable_cache)</div>
     <div class="status-item"><div class="status-dot on"></div>V9.3 (2026-05-18) — cron-job.org wave 이중 트리거 등록(GHA 3시간 중단 대응, Job #7621797) + 봇 댓글 캡 5개 reply-chain 합산 체크 추가 + 이모지 전면 금지 + trendingScore 24시간 롤링 전환(정오 기준 폐기)</div>
+    <div class="status-item"><div class="status-dot on"></div>V9.4 (2026-05-18) — 콘텐츠 품질 개선 5종: 키워드 quota 차단(P1) · Levenshtein 중복 감지 강화(P2) · 계절 키워드 필터(P3) · 봇 당일 댓글 캡 3건/봇(P4) · wave4 다른관점형 교체(P5) + MONEY 하드캡 6→3건</div>
   </div>
 
   <!-- ── TOC ── -->
@@ -1292,7 +1293,7 @@ launchd/
         <div style="font-size:11px; font-weight:700; color:var(--orange,#fb923c); margin-bottom:6px; letter-spacing:0.05em;">④ HARDCAP — 욕망별 하루 상한</div>
         <div style="font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px;">특정 욕망 편중 차단</div>
         <div style="font-size:12px; color:var(--muted);">
-          HEALTH <strong>22건</strong> · FAMILY <strong>11건</strong> · 나머지 각 <strong>6건</strong>/일<br>
+          HEALTH <strong>22건</strong> · FAMILY <strong>11건</strong> · MONEY <strong>3건</strong> · 나머지 각 <strong>6건</strong>/일<br>
           상한 초과 → 그 시간 해당 욕망 건너뜀 → 다른 주제 강제 선택.<br>
           하루 총 100건(20슬롯 × 5건) 기준.
         </div>
@@ -1426,10 +1427,37 @@ launchd/
         <tbody>
           <tr><td>HEALTH (건강)</td><td>이야기방</td><td class="text-primary"><strong>22건</strong></td><td>원본 데이터 최다 — 편중 방지</td></tr>
           <tr><td>FAMILY (가족)</td><td>이야기방</td><td class="text-blue"><strong>11건</strong></td><td>두 번째로 많은 욕망</td></tr>
-          <tr><td>MONEY, RETIRE, HOUSING</td><td>라이프2</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한</td></tr>
+          <tr><td>MONEY</td><td>라이프2</td><td class="text-yellow"><strong>3건</strong></td><td>투자 편중 방지 (2026-05-18 강화)</td></tr>
+          <tr><td>RETIRE, HOUSING</td><td>라이프2</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한</td></tr>
           <tr><td>JOB</td><td>내일찾기</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한</td></tr>
           <tr><td>HUMOR, ENTERTAIN</td><td>유머</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한</td></tr>
           <tr><td>나머지 욕망</td><td>이야기방</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한 (DEFAULT_MAX_DESIRE)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>7-E. 콘텐츠 품질 필터 (V9.4 신규)</h3>
+    <div class="narrative">
+      <p>발행 후 분석(2026-05-18, 29개 전수 검토)에서 제주 편중·의미 중복·계절 불일치 3종 문제 발견 → 후보 선택 단계에서 자동 차단.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>필터</th><th>로직</th><th>차단 예시</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>P1. 키워드 quota</strong></td>
+            <td>오늘 발행 글 제목에서 2글자 이상 한글 명사 추출 → 특정 명사가 이미 2회 이상 등장하면 그 글 skip</td>
+            <td>"제주" 2개 발행 후 → "제주 온천 여행" 자동 skip</td>
+          </tr>
+          <tr>
+            <td><strong>P2. Levenshtein 중복</strong></td>
+            <td>최근 7일 발행 제목과 편집 거리 ≤ 5 이거나, 2글자 이상 명사 2개 이상 겹치면 중복 처리</td>
+            <td>"마음도 편해졌습니다" ↔ "마음이 편해졌습니다" (거리=2) → 차단</td>
+          </tr>
+          <tr>
+            <td><strong>P3. 계절 필터</strong></td>
+            <td>제목+본문에 계절 키워드 포함 시 허용 월 외에는 skip (벚꽃→3·4월, 장마→6·7월 등)</td>
+            <td>5월에 "벚꽃 명소" → 허용 월 [3,4] 불일치 → 자동 skip</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -1529,14 +1557,15 @@ launchd/
       <div class="wave-step">
         <div class="wave-badge w4">+60분</div>
         <div class="wave-content">
-          <strong>댓글 1건</strong> — 응원이나 추가 공감 댓글로 마무리됩니다.<br>
+          <strong>댓글 1건</strong> — 다른 각도의 관점이나 보완 정보를 제시하는 댓글로 마무리됩니다. ("저는 반대로 ~", "그런데 ~도 있더라고요"류. 응원/화이팅 금지)<br>
           총 4건 × 100건/일 = <strong>400건/일 댓글</strong>
         </div>
       </div>
     </div>
 
     <div class="narrative" style="font-size:13px; color:var(--sub);">
-      ※ 글을 쓴 페르소나는 자기 글에 댓글 달지 않습니다. 79명 중 글쓴이 제외 풀에서 랜덤 선택, 같은 게시글에 동일 페르소나 중복 댓글 방지. TTL = 발행 후 +60h (CommentWaveQueue).
+      ※ 글을 쓴 페르소나는 자기 글에 댓글 달지 않습니다. 79명 중 글쓴이 제외 풀에서 랜덤 선택, 같은 게시글에 동일 페르소나 중복 댓글 방지. TTL = 발행 후 +60h (CommentWaveQueue).<br>
+      ※ <strong>봇 당일 댓글 캡</strong>: 하루 3건 이상 다른 글에 댓글 단 봇은 선택 풀에서 제외 (손뜨개·체력왕 과반복 방지). 캡 미초과 봇 우선 셔플, 전원 초과 시 전체 풀 fallback.
     </div>
 
     <h3>A-1. 댓글 파동 타이밍 비교 (봇 글 vs 회원 글)</h3>
@@ -1547,7 +1576,7 @@ launchd/
           <tr><td>wave1</td><td>공감형</td><td>+1분</td><td>+1분</td></tr>
           <tr><td>wave2</td><td>질문형</td><td>+5분</td><td class="text-yellow"><strong>+10분</strong></td></tr>
           <tr><td>wave3</td><td>경험공유형</td><td>+30분</td><td>+30분</td></tr>
-          <tr><td>wave4</td><td>응원형</td><td>+60분</td><td>+60분</td></tr>
+          <tr><td>wave4</td><td>다른관점형</td><td>+60분</td><td>+60분</td></tr>
         </tbody>
       </table>
     </div>
@@ -1969,8 +1998,8 @@ launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
 
   <!-- ── Footer ── -->
   <div class="footer">
-    <p>우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 문서 v9.3</p>
-    <p>최종 업데이트: 2026-05-18 | 크롤 7회/일 + popular-sync 3회/일 · GHA 23슬롯 115건/일 (Regular 100 + Popular 15) · 01:15 심야 감성글 슬롯 · Mac plist 10종 · wave-processor GHA + cron-job.org 이중화 (Job #7621797)</p>
+    <p>우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 문서 v9.4</p>
+    <p>최종 업데이트: 2026-05-18 | 크롤 7회/일 + popular-sync 3회/일 · GHA 23슬롯 115건/일 (Regular 100 + Popular 15) · 01:15 심야 감성글 슬롯 · Mac plist 10종 · wave-processor GHA + cron-job.org 이중화 (Job #7621797) · 콘텐츠 품질 필터 P1~P3 + MONEY 캡 3건 (V9.4)</p>
     <p>문의: mogoyongseok@gmail.com | GitHub: MogoKim/age-doesnt-matter</p>
   </div>
 
