@@ -342,12 +342,12 @@
 
   <!-- ── 현재 가동 상태 박스 ── -->
   <div class="status-box">
-    <div class="sb-title">현재 가동 중 (2026-05-16 기준 · V9.1)</div>
+    <div class="sb-title">현재 가동 중 (2026-05-18 기준 · V9.3)</div>
     <div class="status-item"><div class="status-dot on"></div>Mac plist 10종 (크롤 7종 + popular-sync 3종 10:30/16:00/21:15)</div>
     <div class="status-item"><div class="status-dot on"></div>GHA Regular 큐레이션 (08:20~01:15 KST, 20슬롯, 100건/일)</div>
     <div class="status-item"><div class="status-dot on"></div>GHA Popular 큐레이션 (10:50/16:15/21:30 KST, 3슬롯, 15건/일) — 신규 A30</div>
     <div class="status-item"><div class="status-dot on"></div>01:15 KST 새벽 감성글 특별 슬롯 (MEANING·SPIRITUAL·RELATION·FAMILY 우선)</div>
-    <div class="status-item"><div class="status-dot on"></div>댓글 파동 GHA ONLY (*/5분 24시간 — agents-cafe-wave.yml)</div>
+    <div class="status-item"><div class="status-dot on"></div>댓글 파동 GHA + cron-job.org 이중 트리거 (*/5분 24시간 — Job #7621797, workflow_dispatch)</div>
     <div class="status-item"><div class="status-dot on"></div>시드봇 댓글·대댓글·좋아요</div>
     <div class="status-item"><div class="status-dot on"></div>회원글 댓글 파동</div>
     <div class="status-item"><div class="status-dot off"></div>시드봇 글 생성 중단 (ENABLE_SEED_POSTS=false)</div>
@@ -355,6 +355,7 @@
     <div class="status-item"><div class="status-dot on"></div>인기글 파이프라인 (A30) 신규 — 115건/일 체제 전환 완료 (V9.0 — 2026-05-15)</div>
     <div class="status-item"><div class="status-dot on"></div>V9.1 (2026-05-16) — 코드 감사 7개 이슈 수정: wave-processor GHA ONLY 확인, runner.ts 크론 주석 정확화, qa-verifier COO action 불일치 수정, connection-facilitator safeBotLog 교체</div>
     <div class="status-item"><div class="status-dot on"></div>V9.2 (2026-05-17) — 시드봇 ESM 충돌 근본 수정(agents/core/trending.ts 분리) + revalidateTag 캐시 무효화 4건 보완(likes·comments·posts·unstable_cache)</div>
+    <div class="status-item"><div class="status-dot on"></div>V9.3 (2026-05-18) — cron-job.org wave 이중 트리거 등록(GHA 3시간 중단 대응, Job #7621797) + 봇 댓글 캡 5개 reply-chain 합산 체크 추가 + 이모지 전면 금지 + trendingScore 24시간 롤링 전환(정오 기준 폐기)</div>
   </div>
 
   <!-- ── TOC ── -->
@@ -943,7 +944,7 @@
           <div class="tl-detail">펨코 등 외부 인기글 수집 (에디터 참고용)</div>
         </div>
         <div class="tl-item cron">
-          <div class="tl-time">*/5분 (24시간) <span class="tl-label label-cron">GHA cron</span></div>
+          <div class="tl-time">*/5분 (24시간) <span class="tl-label label-cron">GHA + cron-job.org</span></div>
           <div class="tl-mode">
             <span class="tooltip">댓글 파동 처리<span class="tooltip-text">CommentWaveQueue와 UserPostWaveQueue를 5분마다 확인해서 "지금 게시할 차례가 된 댓글"을 달아줍니다.</span></span>
           </div>
@@ -1595,11 +1596,12 @@ launchd/
 
     <h3>A-3. 게시글당 봇 댓글 캡</h3>
     <div class="card">
-      <div class="card-title">최대 5개/게시글 (2026-05-12 이후)</div>
+      <div class="card-title">최대 5개/게시글 — wave + reply-chain 합산 (2026-05-18 강화)</div>
       <div class="narrative mt8" style="font-size:13px;">
-        <p>이전: 최대 3개/게시글 → 현재: 최대 5개/게시글 (2026-05-12 상향)</p>
+        <p>이전: wave-processor만 체크 → reply-chain 합산 누락으로 15건+ 초과 발생</p>
+        <p>현재: wave-processor + reply-chain-driver 양쪽에서 봇 댓글 수 합산 체크 후 캡 적용</p>
         <p><strong>48시간 우선 처리 창:</strong> 발행 후 48h 내 게시글에 우선 댓글 배정</p>
-        <p><strong>최소 보장:</strong> 봇 발행 게시글당 최소 2개 댓글 목표</p>
+        <p><strong>이모지 전면 금지:</strong> generator 시스템 프롬프트 + content-curator 페르소나 A/E 이모지 제거 (2026-05-18)</p>
         <p style="color:var(--sub); font-size:12px;">근거: agents/core/constitution.yaml — bot comment cap 항목</p>
       </div>
     </div>
@@ -1967,8 +1969,8 @@ launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
 
   <!-- ── Footer ── -->
   <div class="footer">
-    <p>우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 문서 v9.1</p>
-    <p>최종 업데이트: 2026-05-16 | 크롤 7회/일 + popular-sync 3회/일 · GHA 23슬롯 115건/일 (Regular 100 + Popular 15) · 01:15 심야 감성글 슬롯 · Mac plist 10종 · wave-processor GHA ONLY 확인</p>
+    <p>우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 문서 v9.3</p>
+    <p>최종 업데이트: 2026-05-18 | 크롤 7회/일 + popular-sync 3회/일 · GHA 23슬롯 115건/일 (Regular 100 + Popular 15) · 01:15 심야 감성글 슬롯 · Mac plist 10종 · wave-processor GHA + cron-job.org 이중화 (Job #7621797)</p>
     <p>문의: mogoyongseok@gmail.com | GitHub: MogoKim/age-doesnt-matter</p>
   </div>
 
