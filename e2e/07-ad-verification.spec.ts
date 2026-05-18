@@ -35,8 +35,7 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
   })
 
   test('AdSense 스크립트 처리 확인 (data-ad-status)', async ({ page }) => {
-    await page.goto('/')
-    await page.waitForLoadState('load')
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20000 })
     await page.waitForTimeout(2000)
 
     const slot = page.locator('ins.adsbygoogle').first()
@@ -66,8 +65,7 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
 
   test('쿠팡 배너 이미지 렌더링', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
-    await page.goto('/')
-    await page.waitForLoadState('load')
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20000 })
     await page.waitForTimeout(2000)
 
     // 쿠팡 배너 또는 폴백 배너 — 둘 중 하나라도 있으면 성공
