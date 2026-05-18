@@ -27,6 +27,8 @@ import {
 } from '@/lib/queries/posts'
 import { getUserCounts } from '@/lib/queries/home'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: '우리 나이가 어때서 — 5060 세대 커뮤니티',
   description: '50·60대라면 누구나 "여기 오면 내 얘기가 있다"고 느끼는 중장년 연결 커뮤니티. 사는 이야기, 2막 준비, 일자리까지.',
