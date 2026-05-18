@@ -24,24 +24,6 @@ export const authConfig: NextAuthConfig = {
           const needsContentTypeFix =
             contentType?.startsWith('application/json') && contentType !== 'application/json'
 
-          // 런타임 자격증명 진단 (임시)
-          const clientId = process.env.KAKAO_CLIENT_ID ?? ''
-          const clientSecret = process.env.KAKAO_CLIENT_SECRET ?? ''
-          console.log('[auth:kakao:credentials]', {
-            clientIdTail: clientId.slice(-6),
-            secretLen: clientSecret.length,
-            secretTail: clientSecret.slice(-4),
-          })
-
-          // 카카오 토큰 엔드포인트 응답 진단 (임시)
-          const bodyForLog = await response.clone().text()
-          console.log('[auth:kakao:token]', {
-            status: response.status,
-            contentType,
-            hasWwwAuth,
-            body: bodyForLog.slice(0, 300),
-          })
-
           if (!needsContentTypeFix && !hasWwwAuth) return response
 
           const body = await response.clone().text()
