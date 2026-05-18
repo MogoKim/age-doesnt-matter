@@ -34,7 +34,7 @@ export default function Footer() {
           케이에이지랩(K-Agelab) &nbsp;|&nbsp; 대표 김용석 &nbsp;|&nbsp; 사업자등록번호 457-24-01157
         </p>
         <p className="text-[13px] text-muted-foreground/70">
-          서울특별시 노원구 월계로55길 15, 302동 912호
+          통신판매업 신고번호 제2023-서울서초-2160호 &nbsp;|&nbsp; 서울특별시 노원구 월계로55길 15, 302동 912호
         </p>
       </address>
     </footer>
