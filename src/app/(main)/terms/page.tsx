@@ -16,8 +16,8 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-bold mb-3">제1조 (목적)</h2>
           <p>
-            이 약관은 우리 나이가 어때서(이하 &ldquo;우나어&rdquo;)가 제공하는 서비스의 이용 조건 및
-            절차, 이용자와 우나어의 권리·의무 및 책임사항 등을 규정함을 목적으로 합니다.
+            이 약관은 케이에이지랩(K-Agelab)(이하 &ldquo;회사&rdquo;)이 운영하는 우리 나이가 어때서(이하 &ldquo;우나어&rdquo;) 서비스의 이용 조건 및
+            절차, 이용자와 회사의 권리·의무 및 책임사항 등을 규정함을 목적으로 합니다.
           </p>
         </section>
 
@@ -96,7 +96,7 @@ export default function TermsPage() {
         </section>
 
         <p className="text-sm text-muted-foreground pt-4 border-t border-border">
-          시행일: 2026년 3월 1일
+          최초 시행일: 2026년 3월 1일 | 최종 개정일: 2026년 5월 18일
         </p>
       </div>
     </div>
