@@ -822,7 +822,7 @@ export async function main() {
   }
 
   // 욕망별 하루 최대 발행 수 (75건/일 기준 30%/15%/8%)
-  const MAX_PER_DESIRE: Partial<Record<string, number>> = { HEALTH: 22, FAMILY: 11, MONEY: 6 }
+  const MAX_PER_DESIRE: Partial<Record<string, number>> = { HEALTH: 22, FAMILY: 11, MONEY: 3 }
   const DEFAULT_MAX_DESIRE = 6
 
   // 욕망 카테고리 키워드 매핑 (hotTopic 분류용)
