@@ -570,6 +570,60 @@
     </table>
   </div>
 
+  <h3 class="mt24">cron-job.org — 정확한 역할과 오해</h3>
+  <div class="alert warning" style="margin-bottom:16px;">
+    <strong>⚠️ 오해 주의:</strong> cron-job.org는 GHA 실행 여부를 감시하거나 미실행을 보완하지 않는다.
+    GHA cron과 cron-job.org는 둘 다 동일한 GitHub runner를 사용하기 때문에, cron-job.org로 dispatch해도 GHA 부하 지연은 그대로 적용된다.
+  </div>
+  <p class="narrative">
+    <strong>cron-job.org가 실제로 하는 것:</strong>
+    GitHub API(<code>POST /repos/.../dispatches</code>)에 <code>workflow_dispatch</code> 이벤트를 HTTP POST로 전송하는 외부 스케줄러다.
+    요청 자체는 1~2초 안에 성공(200)하지만, 그것이 GHA runner에서 <em>언제 실제로 실행되는지</em>는 보장하지 않는다.
+    GHA 서버 부하가 높으면 최대 30~40분까지 지연될 수 있으며, 이는 cron-job.org가 개입할 수 없는 GitHub 내부 처리 영역이다.
+  </p>
+
+  <div class="table-wrap" style="margin-bottom:16px;">
+    <table>
+      <thead><tr><th>구분</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>현재 운영 현황</strong></td>
+          <td>
+            큐레이션 20슬롯 전부(08:20~01:15 KST) + Wave 매 5분마다 dispatch 중<br>
+            <span style="color:var(--muted);font-size:12px;">총 21개 크론잡이 cron-job.org에서 GitHub API로 dispatch</span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>하는 것</strong></td>
+          <td>
+            GHA 자체 cron 외에 <em>추가로</em> workflow_dispatch를 전송 → GHA 자체 cron이 지연되더라도 dispatch 트리거는 이중으로 발사됨<br>
+            <span style="color:var(--muted);font-size:12px;">runner.ts 10분 중복방지 로직이 이중 실행을 차단함</span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>하지 않는 것</strong></td>
+          <td>
+            GHA 실행 여부 감시 / 실패한 GHA 재실행 / GHA 지연 해소<br>
+            <span style="color:var(--muted);font-size:12px;">dispatch 성공(HTTP 200) ≠ GHA runner 즉시 실행</span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>GHA 지연 대응</strong></td>
+          <td>
+            GHA runner 지연은 cron-job.org로 해결 불가. 대신 runner.ts 중복방지 시간을 25분→<strong>10분</strong>으로 단축하여,
+            GHA가 30분 지연된 경우에도 다음 슬롯(+45분)은 정상 실행되도록 함
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alert info">
+    <strong>왜 cron-job.org를 쓰나?</strong>
+    GHA 자체 cron은 GitHub 정책상 실행 순서가 보장되지 않으며 지연이 잦다.
+    cron-job.org는 <em>더 신뢰성 높은 외부 스케줄링</em>을 통해 dispatch 트리거 자체를 놓치지 않기 위한 이중 안전망이다.
+    단, dispatch 이후의 실행 지연은 GitHub runner 자체 문제이며 cron-job.org가 제어할 수 없다.
+  </div>
+
   <h3 class="mt24">Mac 켜짐/꺼짐 경계 — 한눈에 보기</h3>
   <div class="alert warning" style="margin-bottom:16px;">
     <strong>핵심 원칙:</strong> Mac이 꺼지면 "새 글 수집"만 멈춘다. 이미 수집된 글 기반의 발행·댓글·분석은 GHA가 계속 자동 실행한다.
