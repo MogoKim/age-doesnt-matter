@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Suspense } from 'react'
-import { unstable_cache } from 'next/cache'
 import nextDynamic from 'next/dynamic'
-import { getJobListPage, type JobCardItem } from '@/lib/queries/posts'
+import { getJobListPage, getCachedJobsPage, type JobCardItem } from '@/lib/queries/posts'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { formatSalary } from '@/lib/format'
 import JobFilterButton from '@/components/features/jobs/JobFilterButton'
@@ -41,12 +40,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
   if (q || region || (tags && tags.length > 0) || page > 1) {
     ;({ jobs, total } = await getJobListPage({ region, tags, skip, limit: LIMIT, q, sf }))
   } else {
-    const getCached = unstable_cache(
-      () => getJobListPage({ skip: 0, limit: LIMIT }),
-      ['jobs-list-page1'],
-      { revalidate: 120 },
-    )
-    ;({ jobs, total } = await getCached())
+    ;({ jobs, total } = await getCachedJobsPage())
   }
 
   const hasFilters = !!region || (tags && tags.length > 0)

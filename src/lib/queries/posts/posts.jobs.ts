@@ -202,6 +202,12 @@ export async function getJobListPage(
   return { jobs, total }
 }
 
+export const getCachedJobsPage = unstable_cache(
+  () => getJobListPage({ skip: 0, limit: 12 }),
+  ['jobs-list-page1'],
+  { revalidate: 120, tags: ['jobs-list'] },
+)
+
 /* ── 일자리 상세 ── */
 
 export interface JobDetailItem {

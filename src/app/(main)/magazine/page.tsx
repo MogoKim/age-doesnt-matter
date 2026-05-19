@@ -2,9 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Suspense } from 'react'
-import { unstable_cache } from 'next/cache'
 import nextDynamic from 'next/dynamic'
-import { getMagazineListPage } from '@/lib/queries/posts'
+import { getMagazineListPage, getCachedMagazinePage } from '@/lib/queries/posts'
 import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import PostListWithAds from '@/components/features/common/PostListWithAds'
@@ -76,12 +75,7 @@ export default async function MagazinePage({
   if (q || category || page > 1) {
     ;({ posts, total } = await getMagazineListPage({ category, skip, limit: LIMIT, q, sf }))
   } else {
-    const getCached = unstable_cache(
-      () => getMagazineListPage({ skip: 0, limit: LIMIT }),
-      ['magazine-list-page1'],
-      { revalidate: 60 },
-    )
-    ;({ posts, total } = await getCached())
+    ;({ posts, total } = await getCachedMagazinePage())
   }
 
   const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''

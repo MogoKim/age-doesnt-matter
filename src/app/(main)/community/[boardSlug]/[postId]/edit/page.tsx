@@ -18,10 +18,15 @@ interface PageProps {
 const WRITABLE_BOARD_TYPES = ['STORY', 'HUMOR', 'LIFE2']
 
 export default async function EditPage({ params }: PageProps) {
-  const session = await auth()
+  const { boardSlug, postId } = await params
+
+  // auth + getAllBoardConfigs 병렬 (상호 독립)
+  const [session, allBoards] = await Promise.all([
+    auth(),
+    getAllBoardConfigs(),
+  ])
   if (!session?.user?.id) redirect('/login')
 
-  const { boardSlug, postId } = await params
   // 게시글 조회 + 소유권 확인
   const post = await prisma.post.findUnique({
     where: { id: postId, status: 'PUBLISHED' },
@@ -37,8 +42,6 @@ export default async function EditPage({ params }: PageProps) {
 
   if (!post) notFound()
   if (post.authorId !== session.user.id) redirect(`/community/${boardSlug}/${postId}`)
-
-  const allBoards = await getAllBoardConfigs()
   const writableBoards = allBoards
     .filter((b) => WRITABLE_BOARD_TYPES.includes(b.boardType))
     .map((b) => ({

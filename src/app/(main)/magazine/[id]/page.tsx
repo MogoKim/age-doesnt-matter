@@ -123,23 +123,21 @@ function extractFaqJsonLd(html: string): object | null {
 }
 
 /** 매거진 글의 CPS 상품 링크 조회 (5분 캐시) */
-async function getCpsLinks(postId: string) {
-  return unstable_cache(
-    () =>
-      prisma.cpsLink.findMany({
-        where: { postId },
-        select: {
-          id: true,
-          productName: true,
-          productUrl: true,
-          productImageUrl: true,
-          rating: true,
-        },
-      }),
-    [`cps-links-${postId}`],
-    { revalidate: 300 },
-  )()
-}
+const getCachedCpsLinks = unstable_cache(
+  (postId: string) =>
+    prisma.cpsLink.findMany({
+      where: { postId },
+      select: {
+        id: true,
+        productName: true,
+        productUrl: true,
+        productImageUrl: true,
+        rating: true,
+      },
+    }),
+  ['cps-links'],
+  { revalidate: 300, tags: ['cps-links'] },
+)
 
 export default async function MagazineDetailPage({ params }: PageProps) {
   const { id: rawId } = await params
@@ -164,7 +162,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   const CPS_ENABLED = false
   // isLiked/isScrapped를 별도로 병렬 조회 (getPostDetail은 userId 없이 호출했으므로)
   const [cpsLinks, relatedPosts, isLiked, isScrapped] = await Promise.all([
-    CPS_ENABLED ? getCpsLinks(resolvedId) : Promise.resolve([] as Awaited<ReturnType<typeof getCpsLinks>>),
+    CPS_ENABLED ? getCachedCpsLinks(resolvedId) : Promise.resolve([] as Awaited<ReturnType<typeof getCachedCpsLinks>>),
     getRelatedMagazinePosts(post.category ?? null, resolvedId, 5, undefined, post.seriesId ?? null),
     userId
       ? prisma.like.findUnique({ where: { userId_postId: { userId, postId: resolvedId } }, select: { id: true } }).then(r => !!r)

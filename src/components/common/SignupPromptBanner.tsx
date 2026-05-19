@@ -218,16 +218,16 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
   useEffect(() => {
     if (isLoggedIn || !isActivePath(pathname)) return
 
-    let elapsed = 0
     let alreadyFired = false
-    let interval: ReturnType<typeof setInterval> | null = null
+    let timerFired = false
+    let timerId: ReturnType<typeof setTimeout> | null = null
 
     const tryFire = () => {
       if (alreadyFired) return
-      if (elapsed < TIMER_MS && !scrolledRef.current) return  // OR: 20초 경과 또는 50% 스크롤 중 하나 충족
+      if (!timerFired && !scrolledRef.current) return  // 20초 경과 또는 50% 스크롤 중 하나 충족
       if (!canShow()) return
       alreadyFired = true
-      if (interval) { clearInterval(interval); interval = null }
+      if (timerId) { clearTimeout(timerId); timerId = null }
 
       const v = getOrAssignVariant()
       const count = getPromptCount()
@@ -241,23 +241,23 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
 
     tryFireRef.current = tryFire
 
-    const startInterval = () => {
-      interval = setInterval(() => { elapsed += 500; tryFire() }, 500)
-    }
-
     const handleVisibility = () => {
       if (document.hidden) {
-        if (interval) { clearInterval(interval); interval = null }
+        if (timerId) { clearTimeout(timerId); timerId = null }
       } else {
-        if (!alreadyFired) startInterval()
+        if (!alreadyFired && !timerFired) {
+          timerId = setTimeout(() => { timerFired = true; tryFire() }, TIMER_MS)
+        }
       }
     }
 
-    if (!document.hidden) startInterval()
+    if (!document.hidden) {
+      timerId = setTimeout(() => { timerFired = true; tryFire() }, TIMER_MS)
+    }
     document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
-      if (interval) clearInterval(interval)
+      if (timerId) clearTimeout(timerId)
       document.removeEventListener('visibilitychange', handleVisibility)
       tryFireRef.current = () => {}
     }

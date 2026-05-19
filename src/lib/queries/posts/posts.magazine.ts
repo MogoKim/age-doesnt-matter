@@ -174,3 +174,9 @@ export async function getMagazineListPage(
 
   return { posts: rows.map(toPostSummary), total }
 }
+
+export const getCachedMagazinePage = unstable_cache(
+  () => getMagazineListPage({ skip: 0, limit: 12 }),
+  ['magazine-list-page1'],
+  { revalidate: 60, tags: ['magazine-list'] },
+)
