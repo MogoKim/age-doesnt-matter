@@ -1195,6 +1195,7 @@ export async function processSheetEngagementWaves(): Promise<void> {
   for (const wave of dueWaves) {
     const data = JSON.parse(wave.details as string) as {
       postId: string; scheduledAt: string; personaIds: string[]
+      sourceComments?: string[]  // sheet-scraper에서 수집한 원본 댓글 (있을 때만)
     }
 
     if (wave.action === 'SHEET_ENGAGE_LIKE_PENDING') {
@@ -1207,6 +1208,8 @@ export async function processSheetEngagementWaves(): Promise<void> {
       })
       if (!post) continue
 
+      const sourceComments = data.sourceComments ?? []
+
       let inserted = 0
       for (const personaId of data.personaIds) {
         const authorId = await getBotUser(personaId)
@@ -1218,7 +1221,15 @@ export async function processSheetEngagementWaves(): Promise<void> {
         const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
         if (existing) continue
 
-        const commentText = await generateComment(personaId, post.title, post.content)
+        // sourceComments가 있으면 원본 댓글 분위기를 반영한 댓글 생성 (없으면 제목+본문만)
+        const commentText = await generateSheetViralComment(
+          personaId,
+          post.title,
+          post.content ?? '',
+          'empathy',
+          [],
+          sourceComments,
+        )
         if (!commentText) continue
 
         await prisma.$transaction([

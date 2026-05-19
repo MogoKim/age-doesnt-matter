@@ -15,12 +15,14 @@ on:
 
   # 매일 09:03 KST — brief-fallback
   # 매일 09:30 KST — brief-monitor
+  # 매일 18:00 KST — evening-brief-safety (11:30 full 크롤 실패 시 공백 방지)
   # 시트 스크래퍼 → agents-scraper.yml (별도 워크플로우, 5회/일)
   # 큐레이션(5건/시간) → agents-cafe-hourly-curation.yml (09~23시 KST, 별도 워크플로우)
   # 댓글 파동(wave1~4) → agents-cafe-wave.yml (별도 concurrency group)
   schedule:
     - cron: "3 0 * * *"    # 09:03 KST — brief-fallback
     - cron: "30 0 * * *"   # 09:30 KST — brief-monitor
+    - cron: "0 9 * * *"    # 18:00 KST — evening-brief-safety
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -90,5 +92,26 @@ jobs:
 
       - name: Run DailyBrief Monitor
         run: cd agents && npx tsx cron/runner.ts cafe_crawler brief-monitor
+
+  evening-brief-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # 18:00 KST (0 9 * * * UTC) — 오늘 DailyBrief 없으면 fallback_yesterday 생성 (11:30 KST full 크롤 실패 안전망)
+    if: ${{ github.event.inputs.step == 'evening-brief-safety' || (github.event_name == 'schedule' && github.event.schedule == '0 9 * * *') }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Run Evening DailyBrief Safety Net (오늘 브리프 없으면 생성)
+        run: cd agents && npx tsx cron/runner.ts cafe_crawler evening-brief-safety
 
   # sheet-scrape → agents-scraper.yml 로 이전됨 (2026-05-15)

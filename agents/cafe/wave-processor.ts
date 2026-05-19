@@ -29,6 +29,25 @@ const WAVE_COMMENT_TYPES: Record<WaveNum, string> = {
   4: '다른관점형 — 글과 다른 각도에서 바라본 생각 또는 보완 정보. "저는 반대로 ~", "그런데 ~도 있더라고요"류. 응원/화이팅 절대 금지.',
 }
 
+// viralType별 wave 댓글 유형 리매핑 — 글의 감정 구조에 맞게 첫 댓글 유형을 동적으로 조정
+// BETRAYAL(배신): 배신감 글은 다른관점으로 시작할 때 공감대 더 높음
+// INJUSTICE(억울함): 억울한 글은 질문으로 시작해 사연을 더 풀어내도록 유도
+// CONTROVERSY(논쟁): 논란글은 질문 → 다른관점 순으로 균형 있게
+// REVERSAL(반전): 반전글은 경험공유로 시작해 "나도 당했어" 공감 유도
+// EMPATHY(공감): 공감 글은 공감 → 경험 순서 유지 (기본값과 유사)
+function remapWaveType(waveNum: WaveNum, viralType: string | null | undefined): WaveNum {
+  if (!viralType) return waveNum
+  const ORDER_MAP: Partial<Record<string, WaveNum[]>> = {
+    BETRAYAL:    [4, 1, 3, 2],
+    INJUSTICE:   [2, 4, 1, 3],
+    CONTROVERSY: [2, 4, 3, 1],
+    REVERSAL:    [3, 1, 2, 4],
+    EMPATHY:     [1, 3, 2, 4],
+  }
+  const order = ORDER_MAP[viralType]
+  return order ? order[waveNum - 1] : waveNum
+}
+
 async function generateComment(postTitle: string, waveNum: WaveNum, refComment?: string): Promise<string> {
   const waveType = WAVE_COMMENT_TYPES[waveNum]
   const content = refComment
@@ -149,10 +168,10 @@ async function processWave(
     return
   }
 
-  // 원본 카페글 topComments 참조
+  // 원본 카페글 topComments + viralType 참조
   const cafePost = await prisma.cafePost.findUnique({
     where: { id: queue.cafePostId },
-    select: { topComments: true },
+    select: { topComments: true, viralType: true },
   })
   const topComments = cafePost?.topComments as { content: string }[] | null
   // wave 번호 기반 인덱스 분산 — wave1~4가 서로 다른 원본 댓글 참조
@@ -160,8 +179,11 @@ async function processWave(
   const idx = len > 0 ? ((waveNum - 1) * Math.ceil(len / 4)) % len : 0
   const refComment = len > 0 ? topComments![idx]?.content : undefined
 
-  // Claude Haiku로 댓글 생성 (wave별 유형 강제)
-  const commentText = await generateComment(post.title, waveNum, refComment)
+  // viralType에 따라 댓글 유형 리매핑 (null이면 기본 순서 유지)
+  const effectiveWaveNum = remapWaveType(waveNum, cafePost?.viralType)
+
+  // Claude Haiku로 댓글 생성 (viralType 기반 유형 적용)
+  const commentText = await generateComment(post.title, effectiveWaveNum, refComment)
 
   // 댓글 DB 저장 + Post.commentCount 동기화 (목록 표시 정확도)
   await prisma.$transaction([

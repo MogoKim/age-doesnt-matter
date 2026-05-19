@@ -746,6 +746,17 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
         where: { id: { in: curated.sourcePostIds } },
         data: { usedAt: new Date() },
       })
+      // killerScore ≥ 85인 소스글 기반 발행 → isFeatured=true 자동 적용
+      const killerSource = await tx.cafePost.findFirst({
+        where: { id: { in: curated.sourcePostIds }, killerScore: { gte: 85 } },
+        select: { id: true },
+      })
+      if (killerSource) {
+        await tx.post.update({
+          where: { id: post.id },
+          data: { isFeatured: true, featuredAt: new Date() },
+        })
+      }
     }
     return post.id
   })
@@ -916,7 +927,7 @@ export async function main() {
 
   // killerScore 우선 삽입 (B3) — 화제성 높은 글 제목을 최우선 주제로
   const killerPosts = await prisma.cafePost.findMany({
-    where: { killerScore: { gte: 70 }, isUsable: true, usedAt: null, isPopular: false },
+    where: { killerScore: { gte: 55 }, isUsable: true, usedAt: null, isPopular: false }, // 55: 조용한 게시판 포용 (기존 70에서 완화)
     orderBy: { killerScore: 'desc' },
     take: 2,
     select: { title: true },
