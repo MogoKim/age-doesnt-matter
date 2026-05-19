@@ -15,6 +15,18 @@ export function trackEvent(
     properties,
   }
 
+  // 내부 트래픽 감지 — localStorage.setItem('unao_internal','1') 설정 시 founder로 기록
+  // sendBeacon은 커스텀 헤더 불가 → fetch 사용
+  if (localStorage.getItem('unao_internal') === '1') {
+    fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-bot-type': 'founder' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {})
+    return
+  }
+
   // fire-and-forget (beacon API for reliability)
   if (navigator.sendBeacon) {
     navigator.sendBeacon('/api/events', JSON.stringify(payload))
