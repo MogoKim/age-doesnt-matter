@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.8</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.9</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -282,12 +282,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.8</div>
+  <div class="cover-badge">Handover Document v10.9</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.8 (2026-05-19)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.9 (2026-05-19)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -432,7 +432,7 @@
       </div>
       <div class="pipe-item">
         <div class="pipe-item-dot gha"></div>
-        <div><strong>popular-curator.ts</strong> — 3회/일<br><span style="font-size:12px;">10:50 · 16:15 · 21:30 (popular-sync 20분 후)</span></div>
+        <div><strong>popular-curator.ts</strong> — 3회/일<br><span style="font-size:12px;">10:50 · 16:15 · 21:45 (popular-sync 완료 후 안전 슬롯)</span></div>
       </div>
       <div class="pipe-item">
         <div class="pipe-item-dot" style="background:var(--sub);margin-top:5px;"></div>
@@ -515,7 +515,7 @@
     <div class="tl-item plist">
       <div class="tl-time">21:15 KST <span class="tl-label label-plist">plist</span></div>
       <div class="tl-mode">cafe-crawler-popular-evening — <code>popular-sync</code></div>
-      <div class="tl-detail">야간 인기글 수집. popular-curator는 21:30 GHA 실행.</div>
+      <div class="tl-detail">야간 인기글 수집. popular-curator는 21:45 GHA 실행.</div>
     </div>
     <div class="tl-item plist">
       <div class="tl-time">21:30 KST <span class="tl-label label-plist">plist</span></div>
@@ -575,7 +575,7 @@
           </td>
         </tr>
         <tr><td>09:30</td><td><code>agents-cafe.yml</code></td><td>brief-monitor — DailyBrief 생성 여부 확인 + Slack 보고</td></tr>
-        <tr><td>10:50 / 16:15 / 21:30</td><td><code>agents-cafe-popular-curation.yml</code></td><td>popular-curate — Mac popular-sync(10:30/16:00/21:15) 15~20분 후 인기글 우선 발행</td></tr>
+        <tr><td>10:50 / 16:15 / 21:45</td><td><code>agents-cafe-popular-curation.yml</code></td><td>popular-curate — Mac popular-sync(10:30/16:00/21:15) 완료 후 안전 슬롯. 21:45는 hourly-curation concurrency 충돌 방지 (기존 21:30은 21:05 hourly 지연 시 blocking됨)</td></tr>
         <tr><td>매 5분 (24시간)</td><td><code>agents-cafe-wave.yml</code></td><td>wave-processor + user-post-wave-processor — 예약된 wave 댓글 처리 (Mac 없이 24시간)</td></tr>
         <tr>
           <td>13슬롯/일<br><span style="color:var(--muted);font-size:12px;">UTC 00~16시<br>(KST 09:00~다음날 01:00)</span></td>
@@ -686,7 +686,7 @@
         <li>DailyBrief 안전망 09:03 fallback (익일)</li>
         <li>DailyBrief 안전망 18:00 이중화 (당일) — 11:30 실패 시 당일 복구</li>
         <li>brief-monitor 보고</li>
-        <li>인기글 큐레이션 (10:50 / 16:15 / 21:30)</li>
+        <li>인기글 큐레이션 (10:50 / 16:15 / 21:45)</li>
       </ul>
     </div>
   </div>
@@ -1509,9 +1509,17 @@ for (const waveNum of order) {
       <tbody>
         <tr><td>10:30 KST</td><td>10:50 KST (20분 후)</td></tr>
         <tr><td>16:00 KST</td><td>16:15 KST (15분 후)</td></tr>
-        <tr><td>21:15 KST</td><td>21:30 KST (15분 후)</td></tr>
+        <tr><td>21:15 KST</td><td>21:45 KST (30분 후) ← 2026-05-19 21:30→21:45 조정</td></tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="alert warn" style="margin-bottom:20px;">
+    <strong>⚡ popular-curate 21:45 슬롯 조정 이유 (2026-05-19)</strong><br><br>
+    기존 21:30 슬롯은 GHA concurrency 충돌로 인해 실제로는 한 번도 실행되지 않았다. 원인은 이렇다.<br><br>
+    popular-curation 워크플로우와 hourly-curation 워크플로우가 <strong>같은 concurrency group</strong> (<code>cafe-hourly-curation</code>)을 공유한다. hourly-curation의 21:05 KST 크론은 GHA 서버 부하로 실제로는 21:15~21:31에 시작되는 경우가 많다. 이 상태에서 21:30에 popular-curation이 트리거되면 hourly가 아직 실행 중이라 큐에서 대기하거나 cancel된다.<br><br>
+    21:45로 이동하면 hourly-curation이 21:15에 시작해도 30분 안에 충분히 완료되므로 충돌이 없다.<br><br>
+    <strong>추가 버그 수정</strong>: popular-curator.ts의 <code>main()</code>이 module-level self-call 패턴이어서 runner.ts가 <code>then(() => {})</code>로 모듈만 import하고 즉시 <code>process.exit()</code>을 실행했다 (44ms 내 종료). <code>export async function main()</code> + runner.ts <code>then(m => m.main())</code>으로 수정. SHA: c2f7422.
   </div>
 
   <h3>Case A vs Case B 처리</h3>
@@ -1669,12 +1677,12 @@ for (const waveNum of order) {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션·Wave 개선 P1~P5 + ②③⑤⑦⑧ — 전부 구현 완료</h2>
+    <h2>큐레이션·Wave 개선 P1~P5 + ②③⑤⑦⑧⑨⑩⑪ — 전부 구현 완료</h2>
   </div>
 
   <div class="alert ok">
     <strong>Claude Code에게: 이 섹션이 가장 중요하다</strong>
-    아래 10개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
+    아래 13개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
   </div>
 
   <div class="impl-card">
@@ -1813,6 +1821,81 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 agents/cafe/content-curator.ts — 발행 트랜잭션 내 isFeatured 조건부 UPDATE<br>📄 agents/cafe/popular-curator.ts — 동일 패턴<br>📄 agents/cafe/crawler.ts — refreshRecentPosts() 내 Post.updateMany</div>
   </div>
+
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑨. POPULAR_CURATE 즉시 종료 버그 수정 — 모듈 self-call + GHA 동시성 충돌</div>
+    </div>
+    <div class="impl-body">
+      popular-curator.ts가 GHA에서 실행됐을 때 44ms 만에 process.exit(0)으로 바로 끝나는 버그였다. 원인은 두 겹이었다.<br><br>
+      <strong>첫 번째 원인 — 모듈 self-call과 runner.ts 패턴 불일치</strong><br>
+      runner.ts는 모든 핸들러를 <code>() =&gt; import('...').then(m =&gt; m.main())</code> 방식으로 실행한다. 즉, 모듈을 import한 뒤 export된 main()을 명시적으로 호출한다. 그런데 popular-curator.ts는 모듈 레벨에 <code>main().catch(async err =&gt; { ... process.exit(1) })</code>가 직접 쓰여 있었고, runner.ts에서는 <code>.then(() =&gt; {})</code>(빈 함수)로 연결되어 있었다.<br><br>
+      실행 흐름을 보면: runner.ts가 <code>import()</code>를 날리는 순간 popular-curator.ts 모듈이 로드되며 모듈 레벨 <code>main().catch()</code>가 실행된다. 이 Promise는 <strong>floating Promise</strong> — runner.ts가 기다리지 않는다. runner.ts의 <code>.then(() =&gt; {})</code>는 import 완료(모듈 로드)와 동시에 resolve되므로, main()이 아직 실행 중임에도 불구하고 runner.ts의 나머지 흐름이 이어져 process.exit(0)이 먼저 불리게 된다.<br><br>
+      비교: content-curator.ts는 이미 <code>.then(m =&gt; m.main())</code> 패턴이어서 정상 동작하고 있었다. popular-curator.ts만 유독 <code>.then(() =&gt; {})</code> — 이게 전부였다.<br><br>
+      <strong>두 번째 원인 — GHA concurrency 그룹 충돌(21:30 KST)</strong><br>
+      <code>.github/workflows/agents-cafe-hourly-curation.yml</code>과 <code>agents-cafe-popular-curation.yml</code>이 같은 concurrency 그룹 <code>cafe-hourly-curation</code>을 공유하고 있었다. 21:30 KST popular-curation 실행 시 직전 hourly-curation(21:00 KST)이 아직 실행 중이면 popular가 대기(queue) 또는 취소된다.<br><br>
+      <strong>수정 내용</strong>:<br>
+      → <code>popular-curator.ts</code>: <code>async function main()</code> → <code>export async function main()</code>로 변경, 모듈 레벨 self-call 완전 제거<br>
+      → <code>runner.ts</code> line 62: <code>.then(() =&gt; {})</code> → <code>.then(m =&gt; m.main())</code><br>
+      → GHA 크론: <code>30 12 * * *</code>(21:30 KST) → <code>45 12 * * *</code>(21:45 KST) — hourly-curation 실행 완료 후 15분 여유 확보<br><br>
+      SHA: c2f7422
+    </div>
+    <div class="impl-file">📄 agents/cafe/popular-curator.ts — export main() + self-call 제거<br>📄 agents/cron/runner.ts — line 62: .then(m =&gt; m.main())<br>📄 .github/workflows/agents-cafe-popular-curation.yml — 크론 21:30→21:45 KST</div>
+  </div>
+
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑩. LIFE2(2막준비) 페르소나 획일화 수정 — DESIRE_PERSONA_MAP 확장 + matchPersona 강제 선택</div>
+    </div>
+    <div class="impl-body">
+      2막준비 게시판에 비슷한 닉네임의 글이 반복해서 올라오는 현상의 원인을 추적했다. 세 겹의 문제가 있었다.<br><br>
+      <strong>첫 번째 — DESIRE_PERSONA_MAP 불완전</strong><br>
+      큐레이터가 페르소나를 고를 때 <code>desireCategory</code>에 맞는 페르소나 풀을 <code>DESIRE_PERSONA_MAP</code>에서 가져온다. LIFE2 게시판에 올라가는 글의 desireCategory는 주로 MONEY(재테크), RETIRE(은퇴), HOUSING(주거) 3종이다. 그런데 이 3개 카테고리에 각각 1~2개 페르소나 ID만 등록돼 있었다. 실제 시스템에는 50대·60대 전문 페르소나가 17개 이상 있음에도 대부분 연결되지 않은 상태였다.<br><br>
+      <strong>두 번째 — matchPersona() bestScore 우선 로직이 desireCat 풀을 무력화</strong><br>
+      <code>matchPersona()</code> 함수는 제목·본문 키워드와 페르소나의 interest 배열을 매칭해 bestScore가 가장 높은 페르소나를 선택한다. 문제는 bestScore &gt; 0이면 desireCategory 풀을 완전히 무시한다는 점이다. LIFE2 글의 키워드(돈, 투자, 노후 등)가 다른 게시판 페르소나의 interest와 매칭되면, desireCat과 무관한 페르소나가 선택된다. 결국 STORY 게시판 대상 페르소나가 LIFE2 글을 쓰는 경우가 발생했다.<br><br>
+      <strong>세 번째 — 중복 체크 허용 범위</strong><br>
+      24시간 내 같은 닉네임의 글이 반복 발행되는 문제도 포함되어 있었다.<br><br>
+      <strong>수정 내용</strong>:<br>
+      → <code>DESIRE_PERSONA_MAP</code>: MONEY, RETIRE, HOUSING 3개 카테고리에 각각 5~6개 페르소나 ID 추가 (B, AD~AS 범위의 50·60대 전문 페르소나)<br>
+      → <code>matchPersona()</code>: bestScore 체크 전에 LIFE2 desireCategory 강제 선택 로직 선행 삽입
+      <pre style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px;margin:8px 0;">const LIFE2_DESIRES = new Set(['MONEY', 'RETIRE', 'HOUSING'])
+if (desireCat &amp;&amp; LIFE2_DESIRES.has(desireCat)) {
+  const pool = DESIRE_PERSONA_MAP[desireCat]
+  const id = pool[Math.floor(Math.random() * pool.length)]
+  return PERSONAS.find(p =&gt; p.id === id) ?? PERSONAS[0]
+}</pre>
+      이 코드가 bestScore 체크보다 먼저 실행되므로, LIFE2 desireCategory가 있는 글은 키워드 매칭 결과에 관계없이 반드시 LIFE2 전용 페르소나 풀에서 무작위 선택된다.<br><br>
+      → <code>DESIRE_KEYWORDS</code> HUMOR 확장: '웃겨','웃기','빵터','폭소','개그','재밌','ㅋㅋ' 추가<br><br>
+      SHA: f159d85 + 8edc882
+    </div>
+    <div class="impl-file">📄 agents/cafe/curator-shared.ts — DESIRE_PERSONA_MAP MONEY/RETIRE/HOUSING 확장 + matchPersona LIFE2 강제 선택<br>📄 agents/cafe/content-curator.ts — 동일 패턴 (content-curator는 curator-shared와 별도 사본 보유)</div>
+  </div>
+
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑪. 웃음방(HUMOR) 글 0건 수정 — psych-analyzer.ts AI 카테고리 목록에 HUMOR 누락</div>
+    </div>
+    <div class="impl-body">
+      웃음방(boardType=HUMOR) 게시판에 글이 하나도 올라오지 않는 원인을 분석했다. 큐레이터 코드나 발행 로직이 아니라 <strong>AI 분류 단계</strong>에 문제가 있었다.<br><br>
+      <strong>원인 — DESIRE_TO_BOARD 매핑 구조 이해</strong><br>
+      큐레이터는 게시판을 직접 고르지 않는다. cafePost의 <code>desireCategory</code> 값을 보고 <code>DESIRE_TO_BOARD</code> 매핑 테이블을 통해 boardType을 결정한다. 웃음방으로 가려면 <code>desireCategory='HUMOR'</code> 또는 <code>'ENTERTAIN'</code>이어야 한다. 이 두 값만 <code>boardType:'HUMOR'</code>로 매핑된다.<br><br>
+      <strong>문제 — psych-analyzer.ts AI 프롬프트에 HUMOR가 없었다</strong><br>
+      psych-analyzer.ts의 시스템 프롬프트는 AI가 사용할 수 있는 욕망 카테고리 목록 20개를 나열한다. 이 목록에 ENTERTAIN은 있었지만 <strong>HUMOR가 통째로 빠져 있었다</strong>. AI는 모르는 카테고리를 쓸 수 없으므로, 아무리 웃긴 글이 수집돼도 HUMOR로 분류되지 않고 HOBBY, ENTERTAIN, null 등으로 분류됐다.<br><br>
+      DB 확인 결과: 전체 3,765건 중 desireCategory='HUMOR' = 0건 (100% 미분류).<br>
+      ENTERTAIN은 일부 존재하나 DESIRE_KEYWORDS에 웃음 관련 단어가 부족해 desireCat=HUMOR로 이어지지 못했다.<br><br>
+      <strong>수정 내용</strong>:<br>
+      → <code>psych-analyzer.ts</code> SYSTEM_PROMPT 욕망 카테고리 목록에 HUMOR 항목 추가:
+      <pre style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px;margin:8px 0;">HUMOR: 웃긴 상황/황당한 경험/실수담/유머/빵터짐/남편이/손주가 웃겨/황당함/ㅋㅋ</pre>
+      기존 ENTERTAIN 항목 바로 앞에 삽입. 이후 AI가 웃음·유머성 글을 분류할 때 HUMOR 카테고리를 선택할 수 있게 됐다.<br><br>
+      <strong>효과 발생 시점</strong>: psych-analyzer는 full 크롤(11:30 KST)에서만 실행된다. 수정 후 첫 11:30 실행부터 신규 수집 글에 HUMOR 분류가 적용되기 시작한다. 기존에 HUMOR가 돼야 할 글들은 이미 null/HOBBY로 저장돼 있으므로 소급 재분류는 발생하지 않는다. 웃음방 글이 실제로 나오기까지는 1~2일 소요 예상.<br><br>
+      SHA: 8edc882
+    </div>
+    <div class="impl-file">📄 agents/cafe/psych-analyzer.ts — SYSTEM_PROMPT 욕망 카테고리 목록에 HUMOR 항목 추가</div>
+  </div>
+
 </div>
 
 <!-- ══════════ §15. FAQ ══════════ -->
@@ -1947,6 +2030,28 @@ for (const waveNum of order) {
       viralType=null인 경우: crawl-only 발행 글(psych-analyzer 미실행), 또는 urgencyLevel ≤ 2이고 communitySignal이 complaint·confession이 아닌 글. 전체 순서 매핑은 §11 "viralType 기반 wave 댓글 순서" 표 참조.
     </div>
   </div>
+
+  <div class="faq-item">
+    <div class="faq-q">2막준비(LIFE2) 게시판에 비슷한 닉네임의 글이 반복된다. 왜인가?</div>
+    <div class="faq-a">
+      <strong>두 가지 구조적 원인이 있었고, 둘 다 수정됐다(SHA: f159d85 + 8edc882).</strong><br><br>
+      <strong>① DESIRE_PERSONA_MAP 불완전</strong><br>
+      큐레이터가 페르소나를 선택할 때 글의 <code>desireCategory</code>에 맞는 페르소나 풀을 참조한다. LIFE2 게시판에 오는 글의 주요 desireCategory는 MONEY(재테크)·RETIRE(은퇴)·HOUSING(주거) 3종인데, 수정 전에는 각 카테고리에 1~2개 페르소나 ID만 등록돼 있었다. 실제 시스템에 17개 이상의 50·60대 전문 페르소나가 있음에도 대부분 연결이 끊겨 있었던 것이다. 수정 후 각 카테고리당 5~6개 페르소나 ID로 확장됐다.<br><br>
+      <strong>② matchPersona() bestScore 로직이 desireCat 풀을 무력화</strong><br>
+      키워드 매칭에서 bestScore &gt; 0이면 desireCategory 풀을 완전히 무시하는 코드가 있었다. LIFE2 글의 키워드(돈, 노후, 투자 등)가 다른 게시판 페르소나의 interest와 매칭되면, LIFE2와 무관한 페르소나가 선택됐다. STORY 페르소나가 LIFE2 글을 쓰는 사례가 이것이다.<br>
+      수정 후: desireCategory가 MONEY·RETIRE·HOUSING이면 bestScore 체크 전에 해당 카테고리 풀에서 무조건 무작위 선택한다. 키워드 매칭 결과는 무시된다.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">웃음방(HUMOR 게시판)에 글이 하나도 안 올라온다. 큐레이터가 고르지 않는 건가?</div>
+    <div class="faq-a">
+      <strong>큐레이터 문제가 아니라 AI 분류 단계 문제였다. 수정됐다(SHA: 8edc882).</strong><br><br>
+      큐레이터는 <code>desireCategory='HUMOR'</code> 또는 <code>'ENTERTAIN'</code>인 글만 웃음방(boardType=HUMOR)으로 발행한다. 그런데 수집된 cafePost 3,765건 중 desireCategory='HUMOR'인 글이 단 한 건도 없었다.<br><br>
+      원인: psych-analyzer.ts의 AI 시스템 프롬프트에 나열된 욕망 카테고리 목록 20개 중 <strong>HUMOR가 통째로 빠져 있었다.</strong> AI는 알지 못하는 카테고리를 절대 쓸 수 없으므로, 웃긴 글·황당한 경험담·실수담이 수집돼도 전부 HOBBY·ENTERTAIN·null 등으로 분류됐다.<br><br>
+      수정 후: 프롬프트에 <code>HUMOR: 웃긴 상황/황당한 경험/실수담/유머/빵터짐/남편이/손주가 웃겨/황당함/ㅋㅋ</code> 항목이 추가됐다. psych-analyzer는 11:30 KST full 크롤에서만 실행되므로, 수정 이후 첫 11:30 실행부터 신규 글에 HUMOR 분류가 적용된다. 기존에 잘못 분류된 글은 소급 적용되지 않으므로, 웃음방에 글이 실제로 나타나기까지 1~2일 정도 소요된다.
+    </div>
+  </div>
 </div>
 
 <!-- ══════════ §16. 변경 이력 ══════════ -->
@@ -1954,6 +2059,29 @@ for (const waveNum of order) {
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.9</div>
+    <div class="changelog-date">2026-05-19</div>
+    <div class="changelog-content">
+      <strong>3대 운영 버그 수정 + 문서 최신화.</strong><br><br>
+      <strong>[버그 수정 ①] POPULAR_CURATE 즉시 종료(SHA: c2f7422)</strong><br>
+      popular-curator.ts가 GHA에서 실행 시 44ms 만에 process.exit(0)으로 종료되는 버그. 원인은 모듈 레벨 self-call(<code>main().catch()</code>)과 runner.ts의 <code>.then(() =&gt; {})</code> 패턴 불일치 — floating Promise로 인해 main() 완료 전에 process.exit 선점. 추가로 GHA concurrency 그룹 공유로 21:30 KST에 hourly-curation과 충돌 발생.<br>
+      수정: popular-curator.ts를 <code>export async function main()</code>으로 변경 + self-call 제거. runner.ts <code>.then(() =&gt; {})</code> → <code>.then(m =&gt; m.main())</code>. GHA 크론 21:30→21:45 KST로 이동.<br><br>
+      <strong>[버그 수정 ②] LIFE2 페르소나 획일화(SHA: f159d85 + 8edc882)</strong><br>
+      2막준비 게시판에 비슷한 닉네임 반복 현상. 원인: DESIRE_PERSONA_MAP MONEY·RETIRE·HOUSING에 1~2개 페르소나만 연결 + matchPersona() bestScore가 desireCat 풀 무력화.<br>
+      수정: 각 카테고리 페르소나 5~6개로 확장 + matchPersona()에 LIFE2 desireCategory 강제 선택 로직 선행 삽입.<br><br>
+      <strong>[버그 수정 ③] 웃음방 글 0건(SHA: 8edc882)</strong><br>
+      웃음방(boardType=HUMOR)에 글이 발행되지 않는 문제. 원인: psych-analyzer.ts AI 시스템 프롬프트의 욕망 카테고리 목록 20개에 HUMOR가 누락 → 모든 웃음·유머성 글이 HOBBY·ENTERTAIN·null로 분류.<br>
+      수정: 프롬프트에 HUMOR 카테고리 항목 추가. 11:30 KST full 크롤부터 적용.<br><br>
+      <strong>[문서 반영]</strong>
+      §3: popular-curation 21:30→21:45 KST 4곳 수정 + GHA concurrency 충돌 설명 추가.
+      §12: popular-curation 스케줄 표 수정 + 버그 수정 alert 박스 추가.
+      §14: 섹션 제목 ⑨⑩⑪ 추가(10개→13개). impl-card 3개 신규 추가(⑨POPULAR_CURATE 즉시 종료/⑩LIFE2 페르소나/⑪웃음방 HUMOR 누락).
+      §15 FAQ: LIFE2 반복 원인 FAQ + 웃음방 0건 원인 FAQ 2개 신규 추가.
+      footer: v10.7→v10.9.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -2083,7 +2211,7 @@ for (const waveNum of order) {
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.7<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.9<br>
   최종 업데이트: 2026-05-19 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
