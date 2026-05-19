@@ -1268,6 +1268,27 @@ interface CommentData {
       </tbody>
     </table>
   </div>
+
+  <h3 class="mt24">SHEET 포스트(스크래퍼 글) Wave 처리 — 별도 시스템</h3>
+  <div class="narrative">
+    <p>어드민에서 <strong>"스크래퍼"</strong> 배지가 붙은 글(source='SHEET')은 CommentWaveQueue가 아닌 <strong>BotLog 기반 별도 파이프라인</strong>으로 wave 댓글이 처리된다.</p>
+    <p>sheet-scraper.ts가 SHEET 포스트를 생성할 때 BotLog에 <code>action: 'SHEET_COMMENT_WAVE_PENDING'</code>으로 등록하고, scheduler.ts의 <code>processPendingSheetCommentWaves()</code>가 매 실행마다 이를 처리해 wave 댓글을 생성한다.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>구분</th><th>BOT 포스트 (큐레이션)</th><th>SHEET 포스트 (스크래퍼)</th></tr></thead>
+      <tbody>
+        <tr><td>source 값</td><td>BOT</td><td>SHEET</td></tr>
+        <tr><td>어드민 배지</td><td>큐레이션</td><td>스크래퍼</td></tr>
+        <tr><td>wave 등록</td><td>CommentWaveQueue DB INSERT</td><td>BotLog SHEET_COMMENT_WAVE_PENDING</td></tr>
+        <tr><td>wave 처리</td><td>wave-processor.ts (GHA, 5분 간격)</td><td>scheduler.ts processPendingSheetCommentWaves()</td></tr>
+        <tr><td>TTL</td><td>60시간</td><td>BotLog 기반 (처리 후 SUCCESS 갱신)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alert warning" style="margin-top:12px;">
+    <strong>2026-05-19 버그 수정 (SHA: 44d3bb9)</strong>: <code>processPendingSheetCommentWaves()</code>가 scheduler.ts line 1241에 구현돼 있었지만 main()에서 호출이 누락돼 SHEET 포스트 댓글이 영구 PENDING 상태였다. main()에 호출 1줄 추가로 해결.
+  </div>
 </div>
 
 <!-- ══════════ §12. 인기글 시스템 ══════════ -->
@@ -1377,7 +1398,8 @@ interface CommentData {
 
   <h3>Wave봇 상세</h3>
   <div class="narrative">
-    <p>5분 간격으로 24시간 실행되면서 CommentWaveQueue와 UserPostWaveQueue를 처리한다. wave1~4 각각 다른 유형의 댓글(공감형·질문형·경험공유형·다른관점형)을 생성한다. Claude Haiku 모델 사용.</p>
+    <p>5분 간격으로 24시간 실행되면서 CommentWaveQueue(BOT 포스트)와 UserPostWaveQueue(유저 글)를 처리한다. wave1~4 각각 다른 유형의 댓글(공감형·질문형·경험공유형·다른관점형)을 생성한다. Claude Haiku 모델 사용.</p>
+    <p><strong>SHEET 포스트(스크래퍼 글)의 wave 댓글</strong>은 Wave봇(wave-processor.ts)이 아닌 <strong>시드봇 scheduler.ts의 <code>processPendingSheetCommentWaves()</code></strong>가 처리한다. BotLog 기반 별도 파이프라인 — §11 "SHEET 포스트 Wave 처리" 참조.</p>
     <p><strong>한 봇이 하루에 달 수 있는 댓글 수는 최대 3개(BOT_DAILY_COMMENT_CAP)</strong>로 제한된다. 한 글에 붙을 수 있는 봇 댓글은 최대 5개. 동일 봇이 같은 글에 이미 달았으면 스킵한다. 50명 페르소나 봇(@unao.bot 이메일 도메인)이 순환하며 댓글을 단다.</p>
   </div>
 
@@ -1575,6 +1597,15 @@ interface CommentData {
   </div>
 
   <div class="changelog-item">
+    <div class="changelog-ver">v10.5</div>
+    <div class="changelog-date">2026-05-19</div>
+    <div class="changelog-content">
+      <strong>SHEET 포스트 댓글 파동 버그 수정 반영.</strong>
+      §11 Wave 댓글 시스템: "SHEET 포스트(스크래퍼 글) Wave 처리 — 별도 시스템" 섹션 신규 추가 (BotLog 기반 파이프라인 + BOT/SHEET 비교표 + 버그 수정 이력). §13 Wave봇 상세: SHEET 포스트 wave는 wave-processor.ts가 아닌 scheduler.ts processPendingSheetCommentWaves()가 처리함을 명시. 버그 원인: processPendingSheetCommentWaves()가 구현(scheduler.ts line 1241)됐지만 main()에서 호출 누락 → SHEET 포스트 댓글 영구 PENDING. SHA: 44d3bb9.
+    </div>
+  </div>
+
+  <div class="changelog-item">
     <div class="changelog-ver">v10.4</div>
     <div class="changelog-date">2026-05-19</div>
     <div class="changelog-content">
@@ -1635,7 +1666,7 @@ interface CommentData {
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.4<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.5<br>
   최종 업데이트: 2026-05-19 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
