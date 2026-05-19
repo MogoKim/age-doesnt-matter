@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.0</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.1</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -236,6 +236,45 @@
   .changelog-date { font-size: 12px; color: var(--sub); min-width: 90px; padding-top: 2px; }
   .changelog-content { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
   .changelog-content strong { color: var(--text); }
+
+  /* 코드 토글 */
+  details.code-toggle { margin-bottom: 16px; }
+  details.code-toggle summary {
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12px; font-weight: 600; color: var(--sub);
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 12px;
+    list-style: none; user-select: none;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  details.code-toggle summary:hover { color: var(--teal); border-color: var(--teal); }
+  details.code-toggle summary::before { content: '▶'; font-size: 9px; }
+  details.code-toggle[open] summary::before { content: '▼'; }
+  details.code-toggle pre { margin-top: 8px; margin-bottom: 0; }
+
+  /* 파이프라인 흐름 시각화 */
+  .pipe-layout { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: center; margin-bottom: 24px; }
+  .pipe-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; }
+  .pipe-box.mac { border-color: rgba(255,111,97,0.35); }
+  .pipe-box.gha { border-color: rgba(96,165,250,0.35); }
+  .pipe-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .pipe-label.mac { color: var(--primary); }
+  .pipe-label.gha { color: var(--blue); }
+  .pipe-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; font-size: 13px; color: var(--muted); line-height: 1.5; border-bottom: 1px solid rgba(42,48,66,0.35); }
+  .pipe-item:last-child { border-bottom: none; }
+  .pipe-item-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .pipe-item-dot.mac { background: var(--primary); }
+  .pipe-item-dot.gha { background: var(--blue); }
+  .pipe-item strong { color: var(--text); font-size: 12.5px; }
+  .pipe-connector { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0 10px; }
+  .pipe-db { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 11px; font-weight: 700; color: var(--muted); text-align: center; white-space: nowrap; }
+  .pipe-arrow { font-size: 18px; color: var(--border); }
+
+  /* GHA 슬롯 그리드 */
+  .slot-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+  .slot-chip { font-size: 11.5px; font-weight: 600; background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(96,165,250,0.3); border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
+  .slot-chip.special { background: var(--primary-dim); color: var(--primary); border-color: rgba(255,111,97,0.3); }
 </style>
 </head>
 <body>
@@ -243,12 +282,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.0</div>
+  <div class="cover-badge">Handover Document v10.1</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">크롤링 → 분석 → 큐레이션 → Wave 댓글 전체 흐름 완전 가이드.<br>
   이 문서 하나로 "왜 이렇게 동작하는가"를 설명할 수 있어야 한다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.0 (2026-05-19)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.1 (2026-05-19)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -260,7 +299,7 @@
 <div class="status-box">
   <div class="sb-title">시스템 현황 (2026-05-19)</div>
   <div class="status-item"><div class="status-dot on"></div>크롤링 (launchd, 하루 7회)</div>
-  <div class="status-item"><div class="status-dot on"></div>큐레이션 (GHA, 45분 간격 19슬롯)</div>
+  <div class="status-item"><div class="status-dot on"></div>큐레이션 (GHA, 45분 간격 20슬롯)</div>
   <div class="status-item"><div class="status-dot on"></div>Wave 댓글 (GHA, 5분 간격 24시간)</div>
   <div class="status-item"><div class="status-dot on"></div>인기글 수집 (launchd, 3회/일)</div>
   <div class="status-item"><div class="status-dot off"></div>씨드봇 글 (OFF — 의도적 중단)</div>
@@ -334,20 +373,67 @@
     Mac 로컬(launchd)이 네이버 카페를 크롤해서 DB에 저장하면, GHA(클라우드)가 24시간 그 데이터를 꺼내 콘텐츠를 발행하고 댓글을 단다. Mac이 꺼지면 크롤이 안 되지만, 발행·댓글은 계속 된다.
   </div>
 
-  <pre>
-[Mac 로컬 — launchd]                        [GHA 클라우드 — 24시간]
-crawler.ts ──────── CafePost DB ──────────→  content-curator.ts  (45분 간격 19슬롯)
-  │ (crawl-only: 6회/일)                        │ 큐레이션 발행 → Post DB
-  │ (full: 1회/일 11:30)                        │ + CommentWaveQueue 등록
-  ↓ (full 모드만)                               │
-psych-analyzer.ts                             wave-processor.ts  (5분 간격 24시간)
-  ↓                                            user-post-wave-processor.ts
-trend-analyzer.ts                             popular-curator.ts  (3회/일)
-  ↓                                            daily-brief-fallback.ts  (09:03, 안전망)
-daily-brief.ts → DailyBrief DB
+  <div class="pipe-layout">
+    <!-- Mac 로컬 -->
+    <div class="pipe-box mac">
+      <div class="pipe-label mac">Mac 로컬 — launchd (네이버 크롤링 전용)</div>
+      <div class="pipe-item">
+        <div class="pipe-item-dot mac"></div>
+        <div><strong>crawler.ts</strong> — crawl-only 6회/일<br><span style="font-size:12px;">신규 글 저장 + 7일 이내 지표 재크롤</span></div>
+      </div>
+      <div class="pipe-item">
+        <div class="pipe-item-dot mac"></div>
+        <div><strong>crawler.ts full</strong> — 1회/일 (11:30)<br><span style="font-size:12px;">위 3단계 추가 실행 ↓</span></div>
+      </div>
+      <div class="pipe-item" style="padding-left:14px;">
+        <div class="pipe-item-dot" style="background:var(--orange);margin-top:5px;"></div>
+        <div><strong>psych-analyzer.ts</strong> — AI 심리 분석</div>
+      </div>
+      <div class="pipe-item" style="padding-left:14px;">
+        <div class="pipe-item-dot" style="background:var(--orange);margin-top:5px;"></div>
+        <div><strong>trend-analyzer.ts</strong> — 트렌드 집계 + isUsable 재계산</div>
+      </div>
+      <div class="pipe-item" style="padding-left:14px;">
+        <div class="pipe-item-dot" style="background:var(--orange);margin-top:5px;"></div>
+        <div><strong>daily-brief.ts</strong> → DailyBrief DB</div>
+      </div>
+      <div class="pipe-item" style="margin-top:4px;">
+        <div class="pipe-item-dot mac"></div>
+        <div><strong>popular-sync.ts</strong> — 인기글 탭 수집 3회/일<br><span style="font-size:12px;">10:30 · 16:00 · 21:15</span></div>
+      </div>
+    </div>
 
-popular-sync.ts ─── CafePost DB (인기글 갱신)
-  (3회/일: 10:30·16:00·21:15)</pre>
+    <!-- 커넥터 -->
+    <div class="pipe-connector">
+      <div class="pipe-db">CafePost<br>DB</div>
+      <div class="pipe-arrow">→</div>
+    </div>
+
+    <!-- GHA 클라우드 -->
+    <div class="pipe-box gha">
+      <div class="pipe-label gha">GHA 클라우드 — Mac 없이 24시간 자동</div>
+      <div class="pipe-item">
+        <div class="pipe-item-dot gha"></div>
+        <div><strong>content-curator.ts</strong> — 45분 간격 20슬롯<br><span style="font-size:12px;">isUsable 후보 선택 → Claude 재가공 → Post 발행<br>발행 즉시 CommentWaveQueue 등록</span></div>
+      </div>
+      <div class="pipe-item">
+        <div class="pipe-item-dot gha"></div>
+        <div><strong>wave-processor.ts</strong> — 5분 간격 24시간<br><span style="font-size:12px;">큐레이션 글에 wave1~4 댓글 순차 생성</span></div>
+      </div>
+      <div class="pipe-item">
+        <div class="pipe-item-dot gha"></div>
+        <div><strong>user-post-wave-processor.ts</strong> — 5분 간격<br><span style="font-size:12px;">실제 유저 글에도 댓글 파동 적용</span></div>
+      </div>
+      <div class="pipe-item">
+        <div class="pipe-item-dot gha"></div>
+        <div><strong>popular-curator.ts</strong> — 3회/일<br><span style="font-size:12px;">10:50 · 16:15 · 21:30 (popular-sync 20분 후)</span></div>
+      </div>
+      <div class="pipe-item">
+        <div class="pipe-item-dot" style="background:var(--sub);margin-top:5px;"></div>
+        <div><strong>daily-brief-fallback.ts</strong> — 09:03 안전망<br><span style="font-size:12px;">Mac 11:30 크롤 실패 시 GHA에서 대신 생성</span></div>
+      </div>
+    </div>
+  </div>
 
   <h3>환경별 역할 분리</h3>
   <div class="table-wrap">
@@ -443,22 +529,23 @@ popular-sync.ts ─── CafePost DB (인기글 갱신)
       <thead><tr><th>시간 (KST)</th><th>워크플로우</th><th>실행 내용</th></tr></thead>
       <tbody>
         <tr>
-          <td>
-            <strong>20슬롯</strong><br>
-            08:20, 09:05, 09:50<br>
-            10:35, 11:20, 12:05<br>
-            12:50, 13:35, 14:20<br>
-            15:05, 15:50, 16:35<br>
-            17:20, 18:05, 18:50<br>
-            19:35, 20:20, 21:05<br>
-            21:50 (위 19개)<br>
-            <span style="color:var(--primary);font-weight:700;">+ 01:15 (새벽 특별)</span>
+          <td style="min-width:200px;">
+            <div class="slot-grid">
+              <span class="slot-chip">08:20</span><span class="slot-chip">09:05</span><span class="slot-chip">09:50</span>
+              <span class="slot-chip">10:35</span><span class="slot-chip">11:20</span><span class="slot-chip">12:05</span>
+              <span class="slot-chip">12:50</span><span class="slot-chip">13:35</span><span class="slot-chip">14:20</span>
+              <span class="slot-chip">15:05</span><span class="slot-chip">15:50</span><span class="slot-chip">16:35</span>
+              <span class="slot-chip">17:20</span><span class="slot-chip">18:05</span><span class="slot-chip">18:50</span>
+              <span class="slot-chip">19:35</span><span class="slot-chip">20:20</span><span class="slot-chip">21:05</span>
+              <span class="slot-chip">21:50</span>
+              <span class="slot-chip special">01:15 새벽</span>
+            </div>
+            <div style="font-size:11px;color:var(--sub);margin-top:6px;">총 20슬롯 · 45분 간격</div>
           </td>
           <td><code>agents-cafe-hourly-curation.yml</code></td>
           <td>
-            큐레이션 발행 — 45분 간격, 하루 최대 100건 목표<br>
-            isUsable=true + usedAt=null 후보에서 DailyBrief 주제에 맞는 글 선택 → Claude 재가공 → 발행<br>
-            <span style="color:var(--muted);font-size:12px;">파일 제목에도 "45분 간격, 100건/일" 명시됨</span>
+            isUsable=true 후보에서 DailyBrief 주제에 맞는 글 선택 → Claude 재가공(원문 90% 보존) → 발행<br>
+            <span style="color:var(--muted);font-size:12px;">발행 즉시 CommentWaveQueue 자동 등록 (wave1~4 예약)</span>
           </td>
         </tr>
         <tr><td>09:03</td><td><code>agents-cafe.yml</code></td><td>daily-brief-fallback — Mac 11:30 크롤이 실패했을 때 GHA에서 DailyBrief 안전망 생성</td></tr>
@@ -605,6 +692,8 @@ popular-sync.ts ─── CafePost DB (인기글 갱신)
     <p>crawler.ts는 전체글보기 페이지에 접근하기 전, DB에서 해당 카페의 <code>MAX(articleId)</code>를 조회한다. 그보다 articleId가 작거나 같은 글은 크롤링 자체를 하지 않는다.</p>
     <p>결과: 이미 저장된 글은 Playwright로 페이지를 방문하지도 않는다. 트래픽 절약 + 처리 시간 단축.</p>
   </div>
+  <details class="code-toggle">
+    <summary>코드 보기 — crawler.ts 증분 크롤</summary>
 <pre>// crawler.ts — 증분 크롤 핵심 로직
 const latestArticleId = await prisma.cafePost.aggregate({
   where: { cafeId: cafe.cafeId },
@@ -612,14 +701,18 @@ const latestArticleId = await prisma.cafePost.aggregate({
 })
 const maxKnownId = latestArticleId._max.articleId ?? 0
 // maxKnownId보다 큰 articleId를 가진 글만 수집</pre>
+  </details>
 
   <h3>단계 B — postUrl unique 차단 (저장 단계)</h3>
   <div class="narrative">
     <p>혹시 articleId 체크를 통과한 글이 있더라도, <code>savePosts</code> 함수에서 postUrl로 DB 조회 후 이미 있으면 저장하지 않는다.</p>
   </div>
+  <details class="code-toggle">
+    <summary>코드 보기 — crawler.ts savePosts 중복 차단</summary>
 <pre>// crawler.ts savePosts
 const existing = await prisma.cafePost.findUnique({ where: { postUrl: post.postUrl } })
 if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
+  </details>
 
   <h3>단계 C — 인기글 popular-sync: 갱신 vs 신규 분기</h3>
   <div class="narrative">
@@ -654,13 +747,17 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
       <h3>qualityScore — 저장·후보 기준</h3>
       <div class="narrative">
         <p>크롤 시점에 즉시 계산. 저장 여부와 isUsable 여부를 결정한다.</p>
+        <p style="font-size:13px;color:var(--sub);">좋아요·댓글·조회수(40%) + 본문 길이(20%) + 게시판 우선순위(20%) + 최신성(15%) + 미디어(5%) 합산</p>
       </div>
+      <details class="code-toggle">
+        <summary>계산식 보기 — qualityScore 가중치 상세</summary>
 <pre>qualityScore =
   engagement   × 0.40  (좋아요+댓글+조회)
   contentLen   × 0.20  (본문 길이)
   media        × 0.05  (이미지/영상 수)
   boardPriority× 0.20  (게시판 우선순위)
   recency      × 0.15  (최신성)</pre>
+      </details>
       <div class="table-wrap mt8">
         <table>
           <thead><tr><th>qualityScore</th><th>처리</th></tr></thead>
@@ -676,12 +773,16 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
       <h3>killerScore — 킬러글 기준</h3>
       <div class="narrative">
         <p>인게이지먼트 지표에 집중한 별도 점수. 재크롤 시 갱신됨.</p>
+        <p style="font-size:13px;color:var(--sub);">댓글 수(55%) + 좋아요(35%) 중심. 70점 이상이면 킬러글로 큐레이션 최우선 대상.</p>
       </div>
+      <details class="code-toggle">
+        <summary>계산식 보기 — killerScore 가중치 상세</summary>
 <pre>killerScore =
   commentCount×10÷100 × 0.55
   + likeCount×20÷100 × 0.35
   + (기타 보너스)
   × 100</pre>
+      </details>
       <div class="table-wrap mt8">
         <table>
           <thead><tr><th>killerScore</th><th>처리</th></tr></thead>
@@ -769,16 +870,22 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
 
   <h3>동작 방식</h3>
   <div class="narrative">
-    <p><code>refreshRecentPosts()</code>는 crawl-only와 full 모드 모두에서 크롤링 직후 실행된다 (CRAWL_MODE=refresh).</p>
+    <p><code>refreshRecentPosts()</code>는 crawl-only와 full 모드 모두에서 크롤링 직후 실행된다. 최근 7일 이내 인기 글 상위 50건을 Playwright로 재방문해 지표를 갱신하고, 변경된 경우에만 killerScore를 재계산한다.</p>
   </div>
+  <details class="code-toggle">
+    <summary>동작 흐름 보기 — refreshRecentPosts 단계</summary>
 <pre>refreshRecentPosts()
   → DB에서 최근 7일 이내 CafePost 상위 50건 조회 (commentCount 내림차순)
   → 각 글의 실제 페이지 재방문 (Playwright)
   → likeCount / commentCount / viewCount 재수집
   → 변경된 경우에만 killerScore 재계산 후 UPDATE</pre>
+  </details>
 
   <h3>killerScore 재계산 공식</h3>
+  <details class="code-toggle">
+    <summary>공식 보기 — killerScore 재계산</summary>
 <pre>killerScore = (commentCount × 10 ÷ 100 × 0.55 + likeCount × 20 ÷ 100 × 0.35) × 100</pre>
+  </details>
   <div class="alert info">
     <strong>승격 시나리오</strong>
     처음 크롤 시 killerScore=50 (킬러글 아님) → 3일 후 댓글이 급증 → 재크롤에서 killerScore=78 → 킬러글(≥70) 승격 → 다음 큐레이션에서 최우선 주제로 선택됨.
@@ -838,6 +945,9 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
     <strong>수집 조건</strong>
     11:30 full 모드(DEEP 크롤)에서만 수집. crawl-only에서는 topComments=null.
   </div>
+  <p style="font-size:13.5px;color:var(--muted);">댓글 1개당 작성자·내용·좋아요 수·대댓글(최대 5개)을 저장. 전체 배열은 최대 15개.</p>
+  <details class="code-toggle">
+    <summary>타입 구조 보기 — topComments JSON 스키마</summary>
 <pre>// topComments 타입 구조
 interface CommentData {
   author: string       // 댓글 작성자 닉네임
@@ -850,6 +960,7 @@ interface CommentData {
 }
 
 // CafePost.topComments = CommentData[]  (최대 15개)</pre>
+  </details>
 
   <h3>wave-processor가 topComments를 쓰는 방식</h3>
   <div class="narrative">
@@ -880,22 +991,39 @@ interface CommentData {
   </div>
 
   <h3>큐레이션 흐름</h3>
-<pre>1. DailyBrief 조회 (오늘 11:30 생성된 것)
-   → urgentTopics, dominantDesire 파악
-
-2. killerScore ≥ 70 글 조회 (isUsable=true, usedAt=null, isPopular=false)
-   → 제목을 selectedTopics 앞에 최우선 삽입
-
-3. isUsable=true + usedAt=null 후보 중 주제 선택
-   → P1 키워드 quota 체크 (당일 2회 이상 발행된 키워드 skip)
-   → P2 유사 제목 필터 (편집 거리 ≤5 또는 명사 2개 이상 겹침 skip)
-   → P3 계절 필터 (현재 월에 맞지 않는 계절 키워드 skip)
-
-4. Claude Sonnet으로 재가공 (수미상관 방식 — 원문 90% 보존, 아래 상세 참고)
-
-5. Post DB 저장 + usedAt 업데이트 (재사용 방지)
-
-6. CommentWaveQueue 자동 등록 (wave1~4 예약)</pre>
+  <div class="step-box">
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>DailyBrief 조회</strong> — 오늘 11:30에 생성된 브리프에서 urgentTopics, dominantDesire 파악</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>킬러글 우선 삽입</strong> — killerScore ≥ 70 + isUsable=true + usedAt=null 글의 제목을 주제 목록 맨 앞에 추가</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>후보 필터링 (P1~P3)</strong><br>
+          <span class="chip muted" style="margin:4px 2px 0 0;">P1</span> 당일 2회 이상 발행된 키워드 skip<br>
+          <span class="chip muted" style="margin:4px 2px 0 0;">P2</span> 유사 제목 (편집 거리 ≤5 또는 명사 2개 이상 겹침) skip<br>
+          <span class="chip muted" style="margin:4px 2px 0 0;">P3</span> 현재 월과 맞지 않는 계절 키워드 skip
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div class="step-content"><strong>Claude Sonnet 재가공</strong> — 수미상관 방식, 원문 90% 보존 (아래 "원문 보존율" 섹션 참고)</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">5</div>
+        <div class="step-content"><strong>Post DB 저장 + usedAt 업데이트</strong> — usedAt이 찍혀야 재사용 방지됨</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">6</div>
+        <div class="step-content"><strong>CommentWaveQueue 자동 등록</strong> — wave1~4 댓글 예약 (1분 / 5분 / 30분 / 60분 후)</div>
+      </div>
+    </div>
+  </div>
 
   <h3>원문 보존율 — 수미상관(首尾相觀) 방식 ⚠️ 중요</h3>
   <div class="alert info" style="margin-bottom:16px;">
