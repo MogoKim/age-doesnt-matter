@@ -19,9 +19,11 @@ export default function PrivacyPage() {
             우리 나이가 어때서(이하 &ldquo;우나어&rdquo;)는 다음의 목적을 위하여 개인정보를 처리합니다.
           </p>
           <ul className="list-disc pl-5 space-y-1 mt-2">
-            <li>회원 가입 및 관리: 본인 식별, 서비스 이용</li>
+            <li>회원 가입 및 관리: 카카오 계정을 통한 본인 식별, 회원 가입 및 서비스 이용</li>
+            <li>맞춤 서비스 제공: 성별·출생연도를 기반으로 연령대 맞춤 콘텐츠 및 커뮤니티 서비스 제공</li>
+            <li>본인 확인 및 계정 보안: 전화번호를 통한 중복 가입 방지 및 계정 보안 강화</li>
             <li>서비스 제공: 콘텐츠 제공, 일자리 정보 제공</li>
-            <li>서비스 개선: 이용 통계, 서비스 개선</li>
+            <li>서비스 개선: 이용 통계 분석 및 서비스 품질 개선</li>
           </ul>
         </section>
 
@@ -33,6 +35,7 @@ export default function PrivacyPage() {
                 <tr className="border-b-2 border-foreground">
                   <th className="text-left py-2 pr-4 font-bold">구분</th>
                   <th className="text-left py-2 pr-4 font-bold">항목</th>
+                  <th className="text-left py-2 pr-4 font-bold">수집 목적</th>
                   <th className="text-left py-2 font-bold">필수/선택</th>
                 </tr>
               </thead>
@@ -40,21 +43,37 @@ export default function PrivacyPage() {
                 <tr className="border-b border-border">
                   <td className="py-2 pr-4">카카오 로그인</td>
                   <td className="py-2 pr-4">회원번호, 닉네임, 프로필이미지</td>
+                  <td className="py-2 pr-4">회원 식별 및 서비스 이용</td>
                   <td className="py-2">필수</td>
                 </tr>
                 <tr className="border-b border-border">
-                  <td className="py-2 pr-4">카카오 추가</td>
-                  <td className="py-2 pr-4">이메일, 성별, 출생연도, 전화번호</td>
+                  <td className="py-2 pr-4">카카오 로그인<br/>선택 동의</td>
+                  <td className="py-2 pr-4">이메일</td>
+                  <td className="py-2 pr-4">서비스 안내 및 계정 관리</td>
+                  <td className="py-2">선택</td>
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-2 pr-4">카카오 로그인<br/>선택 동의</td>
+                  <td className="py-2 pr-4">성별, 출생연도</td>
+                  <td className="py-2 pr-4">연령·성별 기반 맞춤 커뮤니티 서비스 제공</td>
+                  <td className="py-2">선택</td>
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-2 pr-4">카카오 로그인<br/>선택 동의</td>
+                  <td className="py-2 pr-4">전화번호</td>
+                  <td className="py-2 pr-4">본인 확인 및 중복 가입 방지</td>
                   <td className="py-2">선택</td>
                 </tr>
                 <tr className="border-b border-border">
                   <td className="py-2 pr-4">서비스 이용</td>
                   <td className="py-2 pr-4">서비스 닉네임, 관심사, 지역</td>
+                  <td className="py-2 pr-4">프로필 설정 및 맞춤 서비스 제공</td>
                   <td className="py-2">선택</td>
                 </tr>
                 <tr className="border-b border-border">
                   <td className="py-2 pr-4">자동 수집</td>
                   <td className="py-2 pr-4">접속 로그, 기기 정보</td>
+                  <td className="py-2 pr-4">서비스 보안 및 통계 분석</td>
                   <td className="py-2">자동</td>
                 </tr>
               </tbody>
