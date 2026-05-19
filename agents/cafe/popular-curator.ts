@@ -110,7 +110,7 @@ async function enqueueCommentWave(postId: string, cafePostId: string, authorPers
   })
 }
 
-async function main() {
+export async function main() {
   console.log('[PopularCurator] 시작')
   const startTime = Date.now()
 
@@ -246,8 +246,4 @@ async function main() {
   await disconnect()
 }
 
-main().catch(async err => {
-  console.error('[PopularCurator] 치명적 오류:', err)
-  await disconnect()
-  process.exit(1)
-})
+// runner.ts에서 m.main()으로 호출됨 — 모듈 레벨 self-call 제거 (process.exit 경쟁 방지)

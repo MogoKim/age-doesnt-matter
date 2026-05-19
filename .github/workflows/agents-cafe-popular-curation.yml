@@ -1,10 +1,10 @@
-name: "Agents — Cafe Popular Curation (10:50 / 16:15 / 21:30 KST)"
+name: "Agents — Cafe Popular Curation (10:50 / 16:15 / 21:45 KST)"
 
 on:
   schedule:
     - cron: "50 1 * * *"   # 10:50 KST — popular-sync 10:30 완료 20분 후
     - cron: "15 7 * * *"   # 16:15 KST — popular-sync 16:00 완료 15분 후
-    - cron: "30 12 * * *"  # 21:30 KST — popular-sync 21:15 완료 15분 후
+    - cron: "45 12 * * *"  # 21:45 KST — 21:05 hourly 지연 완료 후 안전 슬롯 (기존 21:30은 hourly concurrency 충돌)
   workflow_dispatch:
 
 # regular curate와 동일 concurrency group — 동시 실행 방지 (queuing)
