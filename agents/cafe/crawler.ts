@@ -226,11 +226,15 @@ async function extractComments(
 ): Promise<CommentData[]> {
   const comments: CommentData[] = []
 
-  // 댓글 렌더링 대기 (동적 로드 — 신형식은 메인 페이지에서 지연 렌더링)
+  // 댓글 렌더링 대기 (동적 로드)
   await sleep(randomDelay(3000, 0.8, 1.3))
-  try {
-    await target.waitForSelector('.u_cbox_comment, .CommentItem, .comment_item', { timeout: 5000 })
-  } catch { /* 댓글 없으면 그냥 진행 */ }
+  const selectorFound = await target.waitForSelector(
+    '.u_cbox_comment, .CommentItem, .comment_item',
+    { timeout: 5000 },
+  ).then(() => true).catch(() => false)
+  if (!selectorFound) {
+    console.warn('[extractComments] 댓글 셀렉터 미매칭 — 댓글 없거나 DOM 구조 변경 가능성')
+  }
 
   // 네이버 카페 신/구 형식 댓글 컨테이너 셀렉터
   const containerSelectors = [
@@ -792,14 +796,13 @@ async function buildPostFromTarget(
   const media = await extractMedia(target)
 
   // DEEP 모드: 댓글 추출 (최대 15개 + 대댓글)
-  // 신형식 네이버 카페는 댓글이 cafe_main iframe 외부(메인 페이지)에 렌더링됨
-  // → mainPage에서 먼저 시도, 빈 배열이면 target(iframe)에서 재시도
+  // 진단(2026-05-19): 댓글은 target(cafe_main iframe, ca-fe URL) 안에 있음
+  // mainPage(외부 f-e 셸)는 빈 React wrapper — 댓글 DOM 없음
   let topComments: CommentData[] | undefined = undefined
   if (includeComments) {
-    const commentTarget = mainPage ?? target
-    topComments = await extractComments(commentTarget, 15)
-    if (topComments.length === 0 && mainPage && commentTarget !== target) {
-      topComments = await extractComments(target, 15)
+    topComments = await extractComments(target, 15)
+    if (topComments.length === 0 && mainPage) {
+      topComments = await extractComments(mainPage, 15)
     }
   }
 
