@@ -21,6 +21,7 @@ env:
   SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
   UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
   UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+  ENABLE_SEED_POSTS: 'false'
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
