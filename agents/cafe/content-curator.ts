@@ -472,8 +472,8 @@ const PERSONAS: PersonaMatch[] = [
 const DESIRE_PERSONA_MAP: Record<string, string[]> = {
   HEALTH:    ['H', 'A'],
   FAMILY:    ['L', 'E'],
-  MONEY:     ['B', 'A'],
-  RETIRE:    ['B', 'A'],
+  MONEY:     ['B', 'AD', 'AE', 'AI', 'AQ', 'AS'],   // LIFE2 전용: 재테크·연금·세금·ETF·가계부
+  RETIRE:    ['B', 'AH', 'AN', 'AR', 'AT', 'AO'],   // LIFE2 전용: 은퇴·재취업·연금생활·해외이민·디지털
   RELATION:  ['E', 'A'],
   MEANING:   ['E', 'I'],
   HOBBY:     ['F', 'G'],
@@ -483,7 +483,7 @@ const DESIRE_PERSONA_MAP: Record<string, string[]> = {
   DIGITAL:   ['A', 'E'],
   FOOD:      ['J', 'A'],
   SPIRITUAL: ['I', 'E'],
-  HOUSING:   ['B', 'A'],
+  HOUSING:   ['AG', 'AJ', 'AL', 'AM', 'AK', 'AF'],  // LIFE2 전용: 부동산·주택연금·전원·실버타운·의료·보험
   FASHION:   ['K', 'A'],
   PET:       ['A', 'E'],
   FREEDOM:   ['A', 'E'],
@@ -512,6 +512,14 @@ function matchPersona(topic: string, desireCat?: string): PersonaMatch {
       bestScore = score
       bestMatch = persona
     }
+  }
+
+  // LIFE2 카테고리(MONEY/RETIRE/HOUSING)는 bestScore 무관하게 전용 페르소나 강제 배정
+  const LIFE2_DESIRES = new Set(['MONEY', 'RETIRE', 'HOUSING'])
+  if (desireCat && LIFE2_DESIRES.has(desireCat)) {
+    const pool = DESIRE_PERSONA_MAP[desireCat]
+    const id = pool[Math.floor(Math.random() * pool.length)]
+    return PERSONAS.find(p => p.id === id) ?? PERSONAS[0]
   }
 
   // 매칭 안 되면 욕망 카테고리 기반 폴백 (B13 — A/E/G 편중 제거)
