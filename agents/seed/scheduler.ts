@@ -1342,8 +1342,9 @@ export async function main() {
   const kstHour = (now.getUTCHours() + 9) % 24
   const hour = kstHour.toString().padStart(2, '0')
 
-  // 매 시간 실행 시작에 댓글 파동 처리
+  // 매 실행마다 댓글 파동 처리 (KillerPost wave + SHEET 스크래퍼 wave)
   await processPendingKillerCommentWaves()
+  await processPendingSheetCommentWaves()
 
   const activities = await buildDailySchedule(hour)
 

@@ -5,7 +5,7 @@ on:
     - cron: "*/5 * * * *" # 5분마다 — GHA 최소 간격 (wave1 최대 5분 지연 허용)
   workflow_dispatch: {}
 
-# agents-cafe.yml과 독립 concurrency group → 큐레이션/크론 실행 중에도 5분 간격 보장
+# agents-cafe.yml과 독립 concurrency group → 큐레이션/크론 실행 중에도 독립 실행 (GHA 부하 시 지연 가능)
 concurrency:
   group: cafe-comment-wave
   cancel-in-progress: false
