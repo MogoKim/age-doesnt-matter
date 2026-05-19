@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.4</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.7</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -282,12 +282,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.4</div>
+  <div class="cover-badge">Handover Document v10.7</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.4 (2026-05-19)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.7 (2026-05-19)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -303,7 +303,8 @@
   <div class="status-item"><div class="status-dot on"></div>Wave 댓글 (GHA, 5분 간격 24시간)</div>
   <div class="status-item"><div class="status-dot on"></div>인기글 수집 (launchd, 3회/일)</div>
   <div class="status-item"><div class="status-dot off"></div>씨드봇 글 (OFF — 의도적 중단)</div>
-  <div class="status-item"><div class="status-dot on"></div>DailyBrief 안전망 (GHA 09:03)</div>
+  <div class="status-item"><div class="status-dot on"></div>DailyBrief 안전망 09:03 (GHA, 익일)</div>
+  <div class="status-item"><div class="status-dot on"></div>DailyBrief 안전망 18:00 이중화 (GHA, 당일)</div>
 </div>
 
 <!-- ══════════ TOC ══════════ -->
@@ -563,6 +564,16 @@
             </div>
           </td>
         </tr>
+        <tr>
+          <td>18:00<br><span style="color:var(--green);font-size:11px;font-weight:700;">[당일 이중화]</span></td>
+          <td><code>agents-cafe.yml</code></td>
+          <td>
+            evening-brief-safety — 11:30 full 크롤 실패 시 <strong>당일 18:00에 안전망 브리프 생성</strong>. <code>runFallbackBrief()</code> 재사용 (idempotent — 오늘 브리프 이미 있으면 스킵).<br>
+            <div style="margin-top:6px;padding:8px 10px;background:rgba(42,48,66,0.5);border-radius:4px;font-size:11.5px;font-family:monospace;line-height:1.7;color:var(--muted);">
+              11:30 실패 → 09:03 fallback도 실패 → 18:00 당일 생성 ✅ (공백 21시간 → 최대 6~7시간으로 단축)
+            </div>
+          </td>
+        </tr>
         <tr><td>09:30</td><td><code>agents-cafe.yml</code></td><td>brief-monitor — DailyBrief 생성 여부 확인 + Slack 보고</td></tr>
         <tr><td>10:50 / 16:15 / 21:30</td><td><code>agents-cafe-popular-curation.yml</code></td><td>popular-curate — Mac popular-sync(10:30/16:00/21:15) 15~20분 후 인기글 우선 발행</td></tr>
         <tr><td>매 5분 (24시간)</td><td><code>agents-cafe-wave.yml</code></td><td>wave-processor + user-post-wave-processor — 예약된 wave 댓글 처리 (Mac 없이 24시간)</td></tr>
@@ -672,7 +683,8 @@
         <li>시드봇 댓글/좋아요</li>
         <li>controversy-chain 글 생성</li>
         <li>magazine-generator 글 생성</li>
-        <li>DailyBrief 안전망 (09:03 fallback)</li>
+        <li>DailyBrief 안전망 09:03 fallback (익일)</li>
+        <li>DailyBrief 안전망 18:00 이중화 (당일) — 11:30 실패 시 당일 복구</li>
         <li>brief-monitor 보고</li>
         <li>인기글 큐레이션 (10:50 / 16:15 / 21:30)</li>
       </ul>
@@ -748,12 +760,24 @@
         <tr><td>신규 글 저장</td><td class="text-green">✅</td><td class="text-green">✅</td></tr>
         <tr><td>isUsable 즉시 설정 (savePosts)</td><td class="text-green">✅</td><td class="text-green">✅</td></tr>
         <tr><td>7일 재크롤 (지표 갱신)</td><td class="text-green">✅</td><td class="text-green">✅</td></tr>
-        <tr><td>댓글/대댓글 수집 (DEEP)</td><td class="text-red">❌</td><td class="text-green">✅ 최대 15개 + 대댓글 5개</td></tr>
+        <tr>
+          <td>
+            댓글/대댓글 수집<br>
+            <span style="font-size:11.5px;color:var(--yellow);">⚡ QUICK 모드만 미수집</span>
+          </td>
+          <td class="text-green">✅ 최대 15개 + 대댓글 5개</td>
+          <td class="text-green">✅ 최대 15개 + 대댓글 5개</td>
+        </tr>
         <tr><td>심리분석 (psych-analyzer)</td><td class="text-red">❌</td><td class="text-green">✅ Claude Haiku</td></tr>
         <tr><td>트렌드분석 (trend-analyzer)</td><td class="text-red">❌</td><td class="text-green">✅ isUsable 재설정</td></tr>
         <tr><td>DailyBrief (daily-brief)</td><td class="text-red">❌</td><td class="text-green">✅ Claude Sonnet</td></tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="alert info" style="margin-top:12px;">
+    <strong>⚡ topComments 수집 조건 — "DEEP 모드만"은 구버전 오류</strong>
+    <code>isQuickMode = crawlMode === 'quick'</code> 일 때만 댓글 수집을 건너뛴다. crawl-only(<code>isQuickMode=false</code>)는 댓글을 수집한다. 현재 운영 plist 전체가 <code>CRAWL_MODE=crawl-only</code>로 설정돼 있어, 실질적으로 <strong>모든 크롤에서 topComments가 수집</strong>된다. QUICK 모드는 현재 사용하지 않는다.
   </div>
 </div>
 
@@ -831,7 +855,7 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
   <div class="alert info" style="font-family:monospace; font-size:13.5px; line-height:1.9; margin-bottom:20px;">
     <strong>세 개념의 관계 (한눈에)</strong><br>
     <code>qualityScore (0~100)</code> → <strong>isUsable (true/false)</strong> 결정 기준: ≥30이면 true<br>
-    <code>killerScore (0~100)</code> → 큐레이션 <strong>우선순위</strong> 결정: ≥70이면 킬러글로 최우선 발행<br>
+    <code>killerScore (0~100)</code> → 큐레이션 <strong>우선순위</strong> 결정: ≥55이면 킬러글로 최우선 발행 / ≥75이면 isFeatured 자동 활성화<br>
     <span style="color:var(--sub);">두 점수는 독립적. isUsable=false여도 killerScore는 계산됨. 그러나 큐레이션 후보 풀에 없으므로 발행 불가.</span>
   </div>
 
@@ -866,7 +890,7 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
       <h3>killerScore — 킬러글 기준</h3>
       <div class="narrative">
         <p>인게이지먼트 지표에 집중한 별도 점수. 재크롤 시 갱신됨.</p>
-        <p style="font-size:13px;color:var(--sub);">댓글 수(55%) + 좋아요(35%) 중심. 70점 이상이면 킬러글로 큐레이션 최우선 대상.</p>
+        <p style="font-size:13px;color:var(--sub);">댓글 수(55%) + 좋아요(35%) 중심. 55점 이상이면 킬러글로 큐레이션 최우선 대상. 75점 이상이면 isFeatured 자동 활성화.</p>
       </div>
       <details class="code-toggle">
         <summary>계산식 보기 — killerScore 가중치 상세</summary>
@@ -880,8 +904,9 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
         <table>
           <thead><tr><th>killerScore</th><th>처리</th></tr></thead>
           <tbody>
-            <tr><td><code>≥ 70</code></td><td>킬러글 — 큐레이션 시 selectedTopics 앞에 최우선 삽입</td></tr>
-            <tr><td><code>&lt; 70</code></td><td>일반 처리</td></tr>
+            <tr><td><code>≥ 75</code></td><td>킬러글 + <strong>Post.isFeatured 자동 true</strong> — 발행 즉시 집중 부스트(좋아요 라운드 + 봇댓글 캡 10개) 자동 적용</td></tr>
+            <tr><td><code>55 ~ 74</code></td><td>킬러글 — 큐레이션 시 selectedTopics 앞에 최우선 삽입</td></tr>
+            <tr><td><code>&lt; 55</code></td><td>일반 처리</td></tr>
           </tbody>
         </table>
       </div>
@@ -890,9 +915,17 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
         해당 카페 글을 그대로 복사하지 않는다. 글의 <em>제목</em>을 주제로 삼아 Claude가 새 글을 생성한다.
       </div>
       <div class="alert warn mt8" style="font-size:12.5px; padding:12px 14px;">
-        <strong>killerScore 70점 달성 기준 (lifestyle 게시판, 본문 500자, 24시간 이내 기준)</strong><br>
-        댓글 25개 &nbsp;OR&nbsp; 좋아요 17개 &nbsp;OR&nbsp; (댓글 15개 + 좋아요 7개)<br>
+        <strong>killerScore 55점 달성 기준 (lifestyle 게시판, 본문 500자, 24시간 이내 기준)</strong><br>
+        댓글 8개 &nbsp;OR&nbsp; 좋아요 5개 &nbsp;OR&nbsp; (댓글 5개 + 좋아요 3개)<br>
         <span style="color:var(--sub);">조회수만으로는 달성 불가 — 가중치 0.01로 기여가 거의 없음. raw≥50이면 80점 고정(상한선).</span>
+      </div>
+      <div class="alert ok mt8" style="font-size:12.5px; padding:12px 14px;">
+        <strong>isFeatured 자동 활성화 규칙 (2026-05-19 추가)</strong>
+        killerScore ≥ 75인 글이 발행되는 순간 <code>Post.isFeatured=true</code> 자동 설정됨. 세 경로에서 동작:<br>
+        ① content-curator.ts 발행 트랜잭션 내<br>
+        ② popular-curator.ts 발행 트랜잭션 내<br>
+        ③ crawler.ts refreshRecentPosts — 재크롤 시 killerScore가 75를 넘으면 연결된 Post 자동 갱신<br>
+        <span style="color:var(--sub);">한 번 isFeatured=true가 되면 killerScore가 75 미만으로 내려가도 유지된다 (false 복구 없음).</span>
       </div>
     </div>
   </div>
@@ -1002,7 +1035,7 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
   </details>
   <div class="alert info">
     <strong>승격 시나리오</strong>
-    처음 크롤 시 killerScore=50 (킬러글 아님) → 3일 후 댓글이 급증 → 재크롤에서 killerScore=78 → 킬러글(≥70) 승격 → 다음 큐레이션에서 최우선 주제로 선택됨.
+    처음 크롤 시 killerScore=50 (킬러글 아님) → 3일 후 댓글이 급증 → 재크롤에서 killerScore=78 → 킬러글(≥55) 승격 + killerScore≥75이므로 <strong>isFeatured 자동 활성화</strong> → 다음 큐레이션에서 최우선 주제로 선택되고 집중 부스트까지 적용됨.
   </div>
 
   <h3>제약사항</h3>
@@ -1030,7 +1063,7 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
   <div class="narrative">
     <p>카페 글 한 건이 DB에 저장될 때 채워지는 필드는 총 19개다. 시점에 따라 세 그룹으로 나뉜다.</p>
     <p><strong>① 크롤 즉시 (crawl-only 포함)</strong>: 글의 URL·제목·본문·작성자·게시판 분류·지표(좋아요·댓글수·조회수)·점수(qualityScore·killerScore)·isUsable. crawl-only 모드에서도 이 필드들은 모두 채워진다. <code>createdAt</code> 필드는 없고 대신 <code>crawledAt</code>(수집 시각)이 기록된다는 점에 주의.</p>
-    <p><strong>② full 모드 AI 분석 후 (11:30 KST)</strong>: 심리 분석 결과 — emotionTags·desireCategory·desireType·communitySignal·urgencyLevel·conflictTrigger·viralType·aiAnalyzed. 댓글(topComments)도 이 때만 수집된다.</p>
+    <p><strong>② full 모드 AI 분석 후 (11:30 KST)</strong>: 심리 분석 결과 — emotionTags·desireCategory·desireType·communitySignal·urgencyLevel·conflictTrigger·viralType·aiAnalyzed. (topComments는 ① 크롤 즉시 함께 수집된다 — 아래 "topComments 구조" 섹션 참조)</p>
     <p><strong>③ 큐레이션 발행 후</strong>: <code>usedAt</code>이 찍힌다. 이 필드가 NULL이어야 큐레이션 후보 풀에 다시 들어갈 수 있다. 한 번 발행된 글은 영구적으로 제외된다.</p>
   </div>
   <details class="code-toggle">
@@ -1045,13 +1078,13 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
           <tr><td><code>title / content / author</code></td><td>원문 제목/본문/작성자 닉네임</td><td>savePosts</td></tr>
           <tr><td><code>category / boardName / boardCategory</code></td><td>게시판 분류</td><td>savePosts</td></tr>
           <tr><td><code>qualityScore</code></td><td>저장 기준(≥20) + isUsable 기준(≥30)</td><td>savePosts</td></tr>
-          <tr><td><code>killerScore</code></td><td>≥70 = 킬러글. 재크롤 시 갱신됨</td><td>savePosts + refreshRecentPosts</td></tr>
+          <tr><td><code>killerScore</code></td><td>≥55 = 큐레이터 필터 진입 / ≥75 = isFeatured 자동 활성화. 재크롤 시 갱신됨</td><td>savePosts + refreshRecentPosts</td></tr>
           <tr><td><code>isUsable</code></td><td>qualityScore ≥ 30이면 true (크롤 즉시)</td><td>savePosts + trend-analyzer</td></tr>
           <tr><td><code>isPopular</code></td><td>인기글 탭 수집 여부</td><td>popular-sync</td></tr>
           <tr><td><code>likeCount / commentCount / viewCount</code></td><td>수집 시점 지표. 재크롤로 갱신됨</td><td>savePosts + refreshRecentPosts</td></tr>
           <tr><td><code>imageUrls / videoUrls / thumbnailUrl / mediaCount</code></td><td>미디어 URL 목록</td><td>savePosts</td></tr>
-          <tr><td><code>topComments</code></td><td>댓글 JSON (DEEP 모드만). 최대 15개 + 대댓글 5개</td><td>crawler DEEP 모드</td></tr>
-          <tr><td><code>commentCrawled</code></td><td>댓글 수집 여부 bool</td><td>crawler DEEP 모드</td></tr>
+          <tr><td><code>topComments</code></td><td>댓글 JSON (QUICK 모드만 미수집). 최대 15개 + 대댓글 5개</td><td>crawler (isQuickMode=false일 때)</td></tr>
+          <tr><td><code>commentCrawled</code></td><td>댓글 수집 여부 bool (QUICK=false, 나머지=true)</td><td>crawler</td></tr>
           <tr><td><code>crawledAt</code></td><td>수집 시각 (<strong>createdAt 필드 없음</strong>)</td><td>savePosts</td></tr>
           <tr><td><code>usedAt</code></td><td>큐레이션 발행 시각. NULL이어야 후보 풀 진입</td><td>content-curator</td></tr>
           <tr><td><code>emotionTags / desireCategory / desireType</code></td><td>AI 심리 분석 결과</td><td>psych-analyzer (full만)</td></tr>
@@ -1065,8 +1098,10 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
 
   <h3>topComments 구조 (JSON)</h3>
   <div class="alert info">
-    <strong>수집 조건</strong>
-    11:30 full 모드(DEEP 크롤)에서만 수집. crawl-only에서는 topComments=null.
+    <strong>수집 조건 — QUICK 모드만 제외, 나머지 전부 수집</strong><br>
+    크롤러 내부에서 <code>isQuickMode = (crawlMode === 'quick')</code> 로 판단하고, <code>includeComments = !isQuickMode</code>로 댓글 수집 여부를 결정한다.<br><br>
+    현재 운영 중인 plist 스케줄은 모두 <code>crawl-only</code> 모드를 사용하므로 <code>isQuickMode=false</code> → 사실상 매 크롤마다 topComments가 수집된다.<br><br>
+    <strong>topComments=null이 되는 유일한 경우</strong>: GHA 12:30 KST <code>quick</code> 크롤로 수집된 글. 하루 1회 실행되는 이 모드에서 발행된 글만 댓글이 없을 수 있다.
   </div>
   <p style="font-size:13.5px;color:var(--muted);">댓글 1개당 작성자·내용·좋아요 수·대댓글(최대 5개)을 저장. 전체 배열은 최대 15개.</p>
   <details class="code-toggle">
@@ -1124,7 +1159,7 @@ interface CommentData {
       </div>
       <div class="step-row">
         <div class="step-num">2</div>
-        <div class="step-content"><strong>킬러글 우선 삽입</strong> — killerScore ≥ 70 + isUsable=true + usedAt=null 글의 제목을 주제 목록 맨 앞에 추가</div>
+        <div class="step-content"><strong>킬러글 우선 삽입</strong> — killerScore ≥ 55 + isUsable=true + usedAt=null 글의 제목을 주제 목록 맨 앞에 추가 (≥75이면 발행 즉시 isFeatured=true 자동 적용)</div>
       </div>
       <div class="step-row">
         <div class="step-num">3</div>
@@ -1170,7 +1205,7 @@ interface CommentData {
       </div>
     </div>
     <div>
-      <h4>킬러글 (killerScore ≥ 70) — 95% 보존</h4>
+      <h4>킬러글 (killerScore ≥ 55) — 95% 보존</h4>
       <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">seed/generator.ts generateKillerPost() 프롬프트</p>
       <div class="table-wrap">
         <table>
@@ -1319,40 +1354,129 @@ interface CommentData {
         <tr>
           <td><strong>① topComments 있는 글</strong></td>
           <td>원본 댓글을 <strong>50~60대 말투로 AI 각색</strong></td>
-          <td>11:30 full 크롤 이후 발행된 글 (DEEP 모드에서 topComments 수집됨)</td>
+          <td>QUICK 모드(12:30 GHA) 외 대부분의 크롤에서 수집됨. plist 스케줄 전부 crawl-only → 실질적으로 Mac 크롤 글은 전부 topComments 있음</td>
         </tr>
         <tr>
           <td><strong>② topComments 없는 글</strong></td>
           <td>글 제목+본문 기반으로 <strong>AI가 직접 생성</strong></td>
-          <td>crawl-only 크롤에서 발행된 글 (topComments=null)</td>
+          <td>GHA 12:30 QUICK 모드(<code>isQuickMode=true</code>)에서 수집된 글만 해당 (<code>includeComments=false</code>)</td>
         </tr>
       </tbody>
     </table>
   </div>
   <div class="alert info" style="font-size:12.5px; padding:10px 14px;">
-    crawl-only에서 발행된 글은 댓글 품질이 ①보다 낮을 수 있다. topComments는 11:30 full 크롤에서만 수집된다.
+    <strong>자주 묻는 오해</strong>: "crawl-only에선 댓글을 안 수집하지 않나요?" — 아니다. crawl-only는 <code>isQuickMode=false</code>이므로 <code>includeComments=true</code>. 댓글이 빠지는 건 오직 12:30 GHA의 <code>quick</code> 모드 1회뿐이다.
   </div>
 
-  <h3 class="mt24">SHEET 포스트(스크래퍼 글) Wave 처리 — 별도 시스템</h3>
+  <h3 class="mt24">SHEET 포스트(스크래퍼 글) Wave 처리 — 별도 시스템 (경로 2개)</h3>
   <div class="narrative">
-    <p>어드민에서 <strong>"스크래퍼"</strong> 배지가 붙은 글(source='SHEET')은 CommentWaveQueue가 아닌 <strong>BotLog 기반 별도 파이프라인</strong>으로 wave 댓글이 처리된다.</p>
-    <p>sheet-scraper.ts가 SHEET 포스트를 생성할 때 BotLog에 <code>action: 'SHEET_COMMENT_WAVE_PENDING'</code>으로 등록하고, scheduler.ts의 <code>processPendingSheetCommentWaves()</code>가 매 실행마다 이를 처리해 wave 댓글을 생성한다.</p>
+    <p>어드민에서 <strong>"스크래퍼"</strong> 배지가 붙은 글(source='SHEET')은 CommentWaveQueue가 아닌 <strong>BotLog 기반 별도 파이프라인</strong>으로 wave 댓글이 처리된다. 중요한 점은 SHEET 포스트의 wave 경로가 <strong>두 가지</strong>라는 것이다 — 처리 함수도, 댓글 생성 방식도 다르다.</p>
   </div>
-  <div class="table-wrap">
+
+  <div class="table-wrap" style="margin-bottom:16px;">
+    <table>
+      <thead><tr><th>구분</th><th>BOT 포스트 (큐레이션)</th><th>SHEET — 참여 wave</th><th>SHEET — 화제성 wave</th></tr></thead>
+      <tbody>
+        <tr><td>source 값</td><td>BOT</td><td colspan="2">SHEET</td></tr>
+        <tr><td>BotLog action</td><td>CommentWaveQueue INSERT</td><td><code>SHEET_ENGAGE_COMMENT_PENDING</code></td><td><code>SHEET_COMMENT_WAVE_PENDING</code></td></tr>
+        <tr><td>처리 함수</td><td>wave-processor.ts</td><td><code>processSheetEngagementWaves()</code></td><td><code>processPendingSheetCommentWaves()</code></td></tr>
+        <tr><td>댓글 생성</td><td>generateComment() / 각색</td><td><code>generateSheetViralComment()</code> + sourceComments 활용</td><td><code>generateSheetViralComment()</code> (화제성 전용)</td></tr>
+        <tr><td>sourceComments 사용</td><td>topComments 활용 (있을 때)</td><td>✅ sheet-scraper가 수집한 원본 댓글 참조</td><td>✅ 동일</td></tr>
+        <tr><td>TTL</td><td>60시간</td><td colspan="2">BotLog 기반 (처리 후 SUCCESS 갱신)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="narrative">
+    <p><strong>sourceComments란?</strong> sheet-scraper.ts가 외부 사이트(theqoo, FM Korea 등)에서 글을 수집할 때, 해당 글의 원본 댓글도 최대 10개 함께 수집한다. 이 원본 댓글들이 <code>sourceComments</code>로 BotLog details에 저장된다. 이후 <code>generateSheetViralComment()</code>가 이 원본 댓글을 참조해 더 자연스러운 반응 댓글을 생성한다 — 완전히 허공에서 만든 댓글이 아니라, 실제 독자 반응을 50~60대 말투로 재해석하는 방식이다.</p>
+    <p><strong>두 경로가 나뉜 이유</strong>: SHEET_ENGAGE_COMMENT_PENDING은 일반 SHEET 글에 참여감을 위한 wave를 붙이는 용도이고, SHEET_COMMENT_WAVE_PENDING은 <code>isFeatured=true</code>인 화제성 SHEET 글에 화제 부스트를 위한 wave를 붙이는 전용 경로다.</p>
+  </div>
+
+  <details class="code-toggle">
+    <summary>scheduler.ts 처리 흐름 보기 — 두 경로 비교</summary>
+<pre>// 경로 A: 참여 wave (일반 + 화제성 SHEET 글)
+async function processSheetEngagementWaves() {
+  const pending = await prisma.botLog.findMany({
+    where: { action: 'SHEET_ENGAGE_COMMENT_PENDING', status: 'PENDING' }
+  })
+  for (const log of pending) {
+    const { postId, sourceComments } = JSON.parse(log.details)
+    await generateSheetViralComment(postId, sourceComments)  // 원본 댓글 참조
+  }
+}
+
+// 경로 B: 화제성 전용 wave
+async function processPendingSheetCommentWaves() {
+  const pending = await prisma.botLog.findMany({
+    where: { action: 'SHEET_COMMENT_WAVE_PENDING', status: 'PENDING' }
+  })
+  // ... 화제성 글 전용 wave 처리
+}</pre>
+  </details>
+
+  <div class="table-wrap" style="margin-top:16px;">
     <table>
       <thead><tr><th>구분</th><th>BOT 포스트 (큐레이션)</th><th>SHEET 포스트 (스크래퍼)</th></tr></thead>
       <tbody>
         <tr><td>source 값</td><td>BOT</td><td>SHEET</td></tr>
         <tr><td>어드민 배지</td><td>큐레이션</td><td>스크래퍼</td></tr>
-        <tr><td>wave 등록</td><td>CommentWaveQueue DB INSERT</td><td>BotLog SHEET_COMMENT_WAVE_PENDING</td></tr>
-        <tr><td>wave 처리</td><td>wave-processor.ts (GHA, 5분 간격)</td><td>scheduler.ts processPendingSheetCommentWaves()</td></tr>
+        <tr><td>wave 등록</td><td>CommentWaveQueue DB INSERT</td><td>BotLog SHEET_*_PENDING (2가지)</td></tr>
+        <tr><td>wave 처리</td><td>wave-processor.ts (GHA, 5분 간격)</td><td>scheduler.ts (두 함수 각각)</td></tr>
         <tr><td>TTL</td><td>60시간</td><td>BotLog 기반 (처리 후 SUCCESS 갱신)</td></tr>
       </tbody>
     </table>
   </div>
+
   <div class="alert warning" style="margin-top:12px;">
-    <strong>2026-05-19 버그 수정 (SHA: 44d3bb9)</strong>: <code>processPendingSheetCommentWaves()</code>가 scheduler.ts line 1241에 구현돼 있었지만 main()에서 호출이 누락돼 SHEET 포스트 댓글이 영구 PENDING 상태였다. main()에 호출 1줄 추가로 해결.
+    <strong>2026-05-19 버그 수정 (SHA: 44d3bb9)</strong>: <code>processPendingSheetCommentWaves()</code>가 scheduler.ts에 구현돼 있었지만 main()에서 호출이 누락돼 SHEET 포스트 화제성 댓글이 영구 PENDING 상태였다. main()에 호출 1줄 추가로 해결.
   </div>
+
+  <h3 class="mt24">viralType 기반 wave 댓글 순서 동적 조정</h3>
+  <div class="narrative">
+    <p>psych-analyzer가 글을 분석할 때 <code>viralType</code>을 DB에 저장한다. wave-processor.ts는 이 값을 보고 wave1~4의 댓글 유형 순서를 동적으로 조정한다. 같은 "공감→질문→경험→다른관점" 순서가 아니라, 글의 감정적 특성에 맞는 순서로 wave가 실행된다.</p>
+    <p>예를 들어, 배신/배반 류의 글(<code>BETRAYAL</code>)은 첫 반응이 공감보다 "다른관점(wave4)"이 먼저 나와야 더 자연스러운 논쟁 흐름이 만들어진다. 반면 공감(EMPATHY) 글은 따뜻한 공감(wave1)이 먼저 오고 경험 공유(wave3)가 이어지는 것이 자연스럽다.</p>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>viralType</th><th>의미</th><th>wave 순서</th><th>이유</th></tr></thead>
+      <tbody>
+        <tr><td><code>BETRAYAL</code></td><td>배신·배반 이야기</td><td>다른관점 → 공감 → 경험 → 질문<br><span style="color:var(--muted);font-size:12px;">[4, 1, 3, 2]</span></td><td>배신 글엔 먼저 "그게 맞는 건가요?" 같은 의문 댓글이 자연스러움</td></tr>
+        <tr><td><code>INJUSTICE</code></td><td>억울함·부당 대우</td><td>질문 → 다른관점 → 공감 → 경험<br><span style="color:var(--muted);font-size:12px;">[2, 4, 1, 3]</span></td><td>억울함엔 "어떻게 된 건가요?" 질문이 먼저 → 상황 확인 후 다른 시각</td></tr>
+        <tr><td><code>CONTROVERSY</code></td><td>논쟁·갈등 이슈</td><td>질문 → 다른관점 → 경험 → 공감<br><span style="color:var(--muted);font-size:12px;">[2, 4, 3, 1]</span></td><td>논쟁 글엔 찬반 의견이 먼저, 마지막에 수렴</td></tr>
+        <tr><td><code>REVERSAL</code></td><td>반전·반전 이야기</td><td>경험 → 공감 → 질문 → 다른관점<br><span style="color:var(--muted);font-size:12px;">[3, 1, 2, 4]</span></td><td>반전 글엔 "나도 비슷한 일이" 경험 공유가 먼저 와야 현실감</td></tr>
+        <tr><td><code>EMPATHY</code></td><td>공감·감동 이야기</td><td>공감 → 경험 → 질문 → 다른관점<br><span style="color:var(--muted);font-size:12px;">[1, 3, 2, 4]</span></td><td>따뜻한 글엔 공감 → 비슷한 경험 나누기 순서가 자연스러움</td></tr>
+        <tr><td><code>null</code></td><td>분류 없음 (crawl-only 발행, urgency 낮음)</td><td>공감 → 질문 → 경험 → 다른관점<br><span style="color:var(--muted);font-size:12px;">[1, 2, 3, 4] 기본 순서</span></td><td>viralType 없으면 기본 고정 순서 유지 (fallback)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert info" style="margin-top:12px;">
+    <strong>viralType이 null인 경우</strong>: psych-analyzer는 full 모드(11:30 KST)에서만 실행된다. crawl-only 모드로 발행된 글, 또는 <code>urgencyLevel ≤ 2</code>이고 <code>communitySignal</code>이 complaint·confession이 아닌 글은 viralType=null이 될 수 있다. null 글은 기본 순서(1→2→3→4)를 따른다.
+  </div>
+
+  <details class="code-toggle">
+    <summary>wave-processor.ts 구현 보기 — remapWaveType() 함수</summary>
+<pre>// wave-processor.ts — determineWaveOrder()
+type WaveNum = 1 | 2 | 3 | 4
+
+function determineWaveOrder(viralType: string | null): WaveNum[] {
+  switch (viralType) {
+    case 'BETRAYAL':    return [4, 1, 3, 2]  // 다른관점→공감→경험→질문
+    case 'INJUSTICE':   return [2, 4, 1, 3]  // 질문→다른관점→공감→경험
+    case 'CONTROVERSY': return [2, 4, 3, 1]  // 질문→다른관점→경험→공감
+    case 'REVERSAL':    return [3, 1, 2, 4]  // 경험→공감→질문→다른관점
+    case 'EMPATHY':     return [1, 3, 2, 4]  // 공감→경험→질문→다른관점
+    default:            return [1, 2, 3, 4]  // null: 기본 순서
+  }
+}
+
+// processWave() 호출부
+const order = determineWaveOrder(cafePost?.viralType ?? null)
+for (const waveNum of order) {
+  await processWave(queue, waveNum, cafePost)
+}</pre>
+  </details>
 </div>
 
 <!-- ══════════ §12. 인기글 시스템 ══════════ -->
@@ -1406,7 +1530,7 @@ interface CommentData {
         <tr>
           <td><strong>출처</strong></td>
           <td>네이버 카페 인기글 탭 자동 수집 (popular-sync.ts)</td>
-          <td>창업자 어드민에서 수동 토글</td>
+          <td>① 창업자 어드민 수동 토글<br>② <strong>killerScore ≥ 75이면 발행 즉시 자동 활성화</strong> (content-curator, popular-curator, refreshRecentPosts 3경로)</td>
         </tr>
         <tr>
           <td><strong>의미</strong></td>
@@ -1425,6 +1549,15 @@ interface CommentData {
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="alert info" style="margin-top:12px;">
+    <strong>isFeatured 자동 활성화 — 3가지 경로</strong><br><br>
+    killerScore가 75 이상이면 수동 토글 없이도 isFeatured가 자동으로 true가 된다. 경로는 세 가지다.<br><br>
+    <strong>① content-curator.ts 발행 시</strong>: 트랜잭션 안에서 Post 생성 후 <code>killerScore ≥ 75</code>이면 즉시 <code>isFeatured=true, featuredAt=now()</code> 업데이트.<br>
+    <strong>② popular-curator.ts 발행 시</strong>: 동일 트랜잭션 패턴. 인기글 경로로 발행되는 글도 적용됨.<br>
+    <strong>③ crawler.ts refreshRecentPosts()</strong>: 재크롤 시 killerScore가 새로 계산된 CafePost가 ≥75이면, 그 CafePost로 발행된 Post를 찾아 isFeatured=true로 갱신. 발행 당시엔 점수가 낮았다가 이후 인기가 오른 글도 커버된다.<br><br>
+    <strong>한 번 켜지면 내려가지 않는다</strong>: killerScore가 75 미만으로 떨어져도 isFeatured는 false로 복구되지 않는다. 창업자 수동 해제만 가능.
   </div>
 </div>
 
@@ -1525,12 +1658,12 @@ interface CommentData {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션 품질 개선 P1~P5 — 전부 구현 완료</h2>
+    <h2>큐레이션·Wave 개선 P1~P5 + ②③⑤⑦⑧ — 전부 구현 완료</h2>
   </div>
 
   <div class="alert ok">
     <strong>Claude Code에게: 이 섹션이 가장 중요하다</strong>
-    아래 5개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
+    아래 10개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
   </div>
 
   <div class="impl-card">
@@ -1592,6 +1725,83 @@ interface CommentData {
     </div>
     <div class="impl-file">📄 agents/cafe/wave-processor.ts — <code>WAVE_COMMENT_TYPES</code> 상수 (wave4 설명 변경) + <code>generateComment()</code> 시스템 프롬프트 네거티브 가이드</div>
   </div>
+
+  <div style="border-top:2px dashed var(--border);margin:24px 0 20px;padding-top:4px;">
+    <p style="font-size:12px;color:var(--muted);margin:0;">아래 ②③⑤⑦⑧은 2026-05-19 파이프라인 개선 배치에서 추가 구현된 항목이다.</p>
+  </div>
+
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">②. killerScore 임계값 70 → 55 (큐레이터 필터 완화)</div>
+    </div>
+    <div class="impl-body">
+      content-curator.ts의 킬러글 필터를 <code>killerScore ≥ 70</code>에서 <code>≥ 55</code>로 완화했다. 댓글이 적은 조용한 게시판 글은 댓글 수 가중치 때문에 70점 달성이 어려워 킬러글 후보가 되지 못했다. 55로 낮추면 실제로 품질 좋은 글도 킬러 후보에 포함된다.<br><br>
+      <strong>변경 전 → 후</strong>: <code>killerScore: { gte: 70 }</code> → <code>killerScore: { gte: 55 }</code><br>
+      popular-curator.ts의 정렬 기준(killerScore desc)은 변경 없음 — 정렬이지 필터가 아니기 때문.
+    </div>
+    <div class="impl-file">📄 agents/cafe/content-curator.ts:919 — <code>killerPosts</code> WHERE 조건 1줄 변경</div>
+  </div>
+
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">③. 일반 SHEET 글 sourceComments 적용 (댓글 품질 개선)</div>
+    </div>
+    <div class="impl-body">
+      화제성(isFeatured=true) SHEET 글은 이미 <code>generateSheetViralComment()</code>가 sourceComments를 참조하고 있었다. 그런데 일반 SHEET 글의 <code>processSheetEngagementWaves()</code>는 <code>generateComment()</code>를 호출하면서 sourceComments를 전달하지 않고 있었다.<br><br>
+      개선: <code>processSheetEngagementWaves()</code> 내부에서 BotLog details의 sourceComments를 추출해 <code>generateSheetViralComment()</code>로 교체. 이제 일반 SHEET 글도 원본 댓글을 참조해 더 자연스러운 반응 댓글을 생성한다.<br><br>
+      <strong>구조 변화</strong>: SHEET 글 wave 처리 경로가 2개로 명확화됨<br>
+      → <code>SHEET_ENGAGE_COMMENT_PENDING</code>: 일반 + 화제성 모두 <code>processSheetEngagementWaves()</code><br>
+      → <code>SHEET_COMMENT_WAVE_PENDING</code>: 화제성 전용 <code>processPendingSheetCommentWaves()</code>
+    </div>
+    <div class="impl-file">📄 agents/seed/scheduler.ts — <code>processSheetEngagementWaves()</code> 내 generateComment → generateSheetViralComment 교체</div>
+  </div>
+
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑤. 18:00 KST DailyBrief 안전망 (GHA 이중화)</div>
+    </div>
+    <div class="impl-body">
+      11:30 KST full 파이프라인 실패 시, 기존엔 다음날 09:03 GHA fallback까지 최대 21시간 DailyBrief 없이 운영됐다. 18:00 KST에 두 번째 안전망을 추가해 최대 공백을 6~7시간으로 단축했다.<br><br>
+      <strong>구현 방식</strong>: <code>runFallbackBrief()</code>는 이미 idempotent 설계 — "오늘 브리프가 있으면 return"이라 11:30 성공 시엔 자동 스킵. 추가 코드 없이 GHA cron 1줄 + runner.ts 핸들러 1줄만 추가.<br><br>
+      <strong>UTC 주의</strong>: KST 18:00 = UTC 09:00 → cron: <code>0 9 * * *</code>
+    </div>
+    <div class="impl-file">📄 .github/workflows/agents-cafe.yml — cron <code>"0 9 * * *"</code> 추가 + case <code>evening-brief-safety</code><br>📄 agents/cron/runner.ts — <code>'cafe_crawler:evening-brief-safety'</code> 핸들러 추가</div>
+  </div>
+
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑦. viralType 기반 wave 댓글 순서 동적 조정</div>
+    </div>
+    <div class="impl-body">
+      기존엔 모든 글에 wave1(공감)→wave2(질문)→wave3(경험)→wave4(다른관점) 순서가 고정이었다. psych-analyzer가 이미 viralType을 DB에 저장하고 있었지만 wave에서 활용하지 않았다.<br><br>
+      개선: <code>determineWaveOrder(viralType)</code> 함수를 추가하고, processWave 루프의 순서를 viralType에 따라 동적으로 결정한다.<br><br>
+      <strong>예시</strong>: BETRAYAL(배신 이야기) → wave1이 "다른관점"형으로 시작 → 배신 글에 어울리는 첫 반응<br>
+      <strong>null fallback</strong>: crawl-only 발행 글(psych 미실행) → 기본 순서 [1,2,3,4] 유지<br><br>
+      순서 매핑: BETRAYAL=[4,1,3,2] / INJUSTICE=[2,4,1,3] / CONTROVERSY=[2,4,3,1] / REVERSAL=[3,1,2,4] / EMPATHY=[1,3,2,4]
+    </div>
+    <div class="impl-file">📄 agents/cafe/wave-processor.ts — <code>determineWaveOrder()</code> 함수 추가 + CafePost SELECT viralType 확장 + processWave 루프 수정</div>
+  </div>
+
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑧. killerScore ≥ 75 → Post.isFeatured 자동 true</div>
+    </div>
+    <div class="impl-body">
+      killerScore 75 이상인 글이 발행 후에도 isFeatured=false로 방치되는 문제를 자동화로 해결했다. 수동 어드민 토글 없이도 고품질 킬러글이 집중 부스트를 받는다.<br><br>
+      <strong>구조 주의</strong>: killerScore는 CafePost 테이블, isFeatured는 Post 테이블 — 두 테이블이 <code>Post.cafePostId</code>로 연결된다. 따라서 단순 UPDATE 한 곳이 아니라 3개 경로에서 각각 처리해야 한다.<br><br>
+      <strong>3개 경로</strong>:<br>
+      → <code>content-curator.ts</code>: 발행 트랜잭션 안에서 killerScore ≥ 75이면 즉시 isFeatured=true<br>
+      → <code>popular-curator.ts</code>: 동일 패턴 적용<br>
+      → <code>crawler.ts refreshRecentPosts()</code>: 재크롤 시 점수 갱신 후, 연결된 Post 검색해 업데이트 — 발행 이후 점수가 올라간 글도 커버<br><br>
+      <strong>복구 없음</strong>: 한 번 켜진 isFeatured는 점수가 내려가도 false로 되돌리지 않는다. 창업자 수동 해제만 가능.
+    </div>
+    <div class="impl-file">📄 agents/cafe/content-curator.ts — 발행 트랜잭션 내 isFeatured 조건부 UPDATE<br>📄 agents/cafe/popular-curator.ts — 동일 패턴<br>📄 agents/cafe/crawler.ts — refreshRecentPosts() 내 Post.updateMany</div>
+  </div>
 </div>
 
 <!-- ══════════ §15. FAQ ══════════ -->
@@ -1618,14 +1828,16 @@ interface CommentData {
   <div class="faq-item">
     <div class="faq-q">crawl-only 모드에서 댓글(topComments)이 수집되나?</div>
     <div class="faq-a">
-      <strong>수집되지 않는다.</strong> topComments는 11:30 full 모드(DEEP 크롤)에서만 수집된다. crawl-only에서는 제목/본문/지표만 저장되고 topComments는 null이다.
+      <strong>수집된다.</strong> 이것은 흔한 오해다. 크롤러 내부를 보면 <code>isQuickMode = (crawlMode === 'quick')</code>이고, <code>includeComments = !isQuickMode</code>다. crawl-only의 crawlMode는 'quick'이 아니므로 <code>isQuickMode=false</code> → <code>includeComments=true</code> → topComments 수집.<br><br>
+      현재 plist 스케줄 전부가 crawl-only 모드를 사용하므로 Mac 크롤에서 수집된 글은 사실상 모두 topComments가 있다.<br><br>
+      <strong>topComments=null이 되는 유일한 경우</strong>: GHA 12:30 KST <code>quick</code> 모드로 수집된 글. 이 모드에서는 <code>isQuickMode=true</code>라 댓글이 수집되지 않는다.
     </div>
   </div>
 
   <div class="faq-item">
     <div class="faq-q">killerScore가 높으면 그 카페 글이 그대로 우리 서비스에 발행되나?</div>
     <div class="faq-a">
-      <strong>아니다.</strong> killerScore ≥ 70인 글의 제목을 DailyBrief 주제 목록 앞에 삽입한다. 이 "주제"를 참고해서 Claude가 새 글을 생성한다. 카페 원문을 복사하지 않는다.
+      <strong>아니다.</strong> killerScore ≥ 55인 글의 제목을 DailyBrief 주제 목록 앞에 삽입한다. 이 "주제"를 참고해서 Claude가 새 글을 생성한다. 카페 원문을 복사하지 않는다. 수미상관 방식으로 원문의 핵심 정보를 90% 살리면서 첫/끝 문장만 페르소나 말투로 재가공한다.
     </div>
   </div>
 
@@ -1695,6 +1907,33 @@ interface CommentData {
       CommentWaveQueue TTL(60시간) 초과 / 글당 봇 댓글 5개 cap 도달 / 봇 당일 3개 cap 도달 / 동일 봇 중복 방지 중 하나다. BotLog에서 botType=WAVE, status=FAILED 확인. _pm2_audit.ts §9로 오늘 FAILED 목록 확인.
     </div>
   </div>
+
+  <div class="faq-item">
+    <div class="faq-q">killerScore가 정확히 몇 점이면 뭐가 달라지나? 70점, 75점, 55점이 섞여있어서 헷갈린다.</div>
+    <div class="faq-a">
+      <strong>임계값이 3개 있다 — 역할이 전부 다르다.</strong>
+      <ul style="margin:8px 0 8px 20px;line-height:2;">
+        <li><strong>≥ 55 → 큐레이터 필터 통과</strong>: content-curator.ts의 킬러글 우선 발행 후보 풀에 진입. 이 점수 이상이어야 DailyBrief 주제 목록 맨 앞에 제목이 삽입된다. (2026-05-19, 기존 70에서 완화)</li>
+        <li><strong>≥ 75 → isFeatured 자동 활성화</strong>: 발행 시 또는 재크롤 시 Post.isFeatured=true로 자동 전환. 이 글은 15시·21시 집중 부스트 라운드에 포함된다.</li>
+        <li><strong>저장 기준 (killerScore 자체)</strong>: qualityScore ≥ 20이면 저장, killerScore는 저장된 모든 글에 계산된다. 큐레이션 후보가 되려면 isUsable(qualityScore ≥ 30)과 killerScore ≥ 55를 동시에 만족해야 한다.</li>
+      </ul>
+      요약: 55 = "킬러글로 인정", 75 = "집중 부스트 자동 켜짐". 두 임계값을 혼동하지 말 것.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">wave 댓글이 항상 "공감→질문→경험→다른관점" 순서인가?</div>
+    <div class="faq-a">
+      <strong>글의 viralType에 따라 순서가 바뀐다.</strong> psych-analyzer가 글을 분석할 때 BETRAYAL·INJUSTICE·CONTROVERSY·REVERSAL·EMPATHY 중 하나로 분류하면, wave-processor.ts가 그 유형에 맞는 순서로 wave를 실행한다.<br><br>
+      예시:
+      <ul style="margin:8px 0 8px 20px;line-height:1.8;">
+        <li><strong>BETRAYAL(배신)</strong>: 다른관점(4) → 공감(1) → 경험(3) → 질문(2)</li>
+        <li><strong>EMPATHY(공감)</strong>: 공감(1) → 경험(3) → 질문(2) → 다른관점(4)</li>
+        <li><strong>null(분류 없음)</strong>: 기본 순서 1→2→3→4 고정</li>
+      </ul>
+      viralType=null인 경우: crawl-only 발행 글(psych-analyzer 미실행), 또는 urgencyLevel ≤ 2이고 communitySignal이 complaint·confession이 아닌 글. 전체 순서 매핑은 §11 "viralType 기반 wave 댓글 순서" 표 참조.
+    </div>
+  </div>
 </div>
 
 <!-- ══════════ §16. 변경 이력 ══════════ -->
@@ -1702,6 +1941,32 @@ interface CommentData {
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.7</div>
+    <div class="changelog-date">2026-05-19</div>
+    <div class="changelog-content">
+      <strong>코드 딥다이브 기반 오류 15건 수정 + 파이프라인 개선 5종(②③⑤⑦⑧) 문서화.</strong><br>
+      <strong>[오류 수정]</strong>
+      §4 비교표: crawl-only 댓글 수집 ❌→✅ 정정 (isQuickMode=false → includeComments=true 코드 확인).
+      §6: killerScore 임계값 ≥70→≥55(큐레이터 필터), ≥75 isFeatured 자동 활성화 추가. 킬러스코어 표 2-tier→3-tier로 재편. 달성 기준 박스 70점→55점 정정.
+      §9 전체 필드표: killerScore "≥70=킬러글"→"≥55=큐레이터필터/≥75=isFeatured". topComments 행 "DEEP 모드만"→"QUICK 모드만 미수집". topComments alert 전면 재작성(crawl-only=null 오류→isQuickMode 로직 정확히 기술).
+      §9 full모드 서술: "댓글도 이 때만 수집" 오류 문구 제거.
+      §10 step2: killerScore ≥70→≥55. §10 킬러글 헤더: ≥70→≥55.
+      §11 댓글출처표: crawl-only=topComments 없음 오류→QUICK 모드만 없음으로 정정. alert 재작성.
+      §12 isFeatured 표: "수동 토글만"→"수동 OR killerScore≥75 자동" 수정.
+      §15 FAQ: crawl-only 댓글 오답("수집 안 됨")→정답("수집됨") 전면 수정. killerScore ≥70 언급→≥55 수정.
+      <br><strong>[추가 내용]</strong>
+      §3 GHA표: 18:00 KST evening-brief-safety 행 추가. Mac꺼짐 목록 18:00 항목 추가. Status Box: 18:00 이중화 안전망 아이템 추가.
+      §6: isFeatured ≥75 자동 활성화 설명 박스 신규 추가.
+      §8 승격 시나리오: ≥75 isFeatured 자동 언급 추가.
+      §11: viralType 기반 wave 댓글 순서 동적 조정 섹션 신규 추가(5종 viralType 순서 표 + remapWaveType 코드 토글).
+      §11 SHEET 섹션: 2경로 구분 표(SHEET_ENGAGE/SHEET_COMMENT_WAVE) + sourceComments 역할 설명 + 코드 토글 추가.
+      §12 isFeatured: 자동 활성화 3경로 설명 박스 신규 추가.
+      §14: 섹션 제목 "P1~P5+②③⑤⑦⑧"로 확장. impl-card 5개 신규 추가(②killerScore 완화/③SHEET sourceComments/⑤18시 안전망/⑦viralType wave/⑧isFeatured 자동).
+      §15 FAQ: killerScore 3-tier 구분 FAQ 신규 추가. viralType wave 순서 FAQ 신규 추가.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -1792,7 +2057,7 @@ interface CommentData {
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.6<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.7<br>
   최종 업데이트: 2026-05-19 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
