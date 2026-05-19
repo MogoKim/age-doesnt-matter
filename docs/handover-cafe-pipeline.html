@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v9.4</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.0</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -45,7 +45,6 @@
   a:hover { text-decoration: underline; }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 56px 28px 100px; }
 
-  /* ── Cover ── */
   .cover {
     background: linear-gradient(135deg, #1a0a08 0%, #1f1020 50%, #0d1117 100%);
     border: 1px solid var(--border);
@@ -82,7 +81,6 @@
   .cover-meta-item .value.ok { color: var(--green); }
   .cover-meta-item .value.warn { color: var(--yellow); }
 
-  /* ── Status Box ── */
   .status-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px 28px; margin-bottom: 36px; display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; }
   .status-box .sb-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); width: 100%; margin-bottom: -4px; }
   .status-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
@@ -91,7 +89,6 @@
   .status-dot.off { background: var(--red); }
   .status-dot.warn { background: var(--yellow); }
 
-  /* ── TOC ── */
   .toc { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 28px 32px; margin-bottom: 52px; }
   .toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); font-weight: 700; margin-bottom: 18px; }
   .toc ol { columns: 2; column-gap: 40px; list-style: decimal inside; }
@@ -99,7 +96,6 @@
   .toc li a { color: var(--muted); }
   .toc li a:hover { color: var(--primary); }
 
-  /* ── Section ── */
   .section { margin-bottom: 64px; }
   .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
   .section-num { width: 32px; height: 32px; border-radius: 8px; background: var(--primary-dim); border: 1px solid rgba(255,111,97,0.3); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
@@ -107,15 +103,12 @@
   .section h3 { font-size: 16px; font-weight: 700; color: var(--text); margin: 28px 0 14px; }
   .section h4 { font-size: 14px; font-weight: 700; color: var(--muted); margin: 20px 0 10px; }
 
-  /* ── Business Lead ── */
   .biz-lead { background: var(--bg2); border-left: 3px solid var(--primary); border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 24px; font-size: 14.5px; color: var(--muted); line-height: 1.8; }
 
-  /* ── Narrative ── */
   .narrative { font-size: 14.5px; color: var(--muted); line-height: 1.85; margin-bottom: 20px; }
   .narrative strong { color: var(--text); }
   .narrative p { margin-bottom: 14px; }
 
-  /* ── Cards ── */
   .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 22px 24px; margin-bottom: 12px; }
   .card-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
   .card-value { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1.2; }
@@ -135,7 +128,6 @@
 
   .metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 28px; }
 
-  /* ── Table ── */
   .table-wrap { overflow-x: auto; margin-bottom: 24px; }
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   th { background: var(--bg3); color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
@@ -144,7 +136,6 @@
   tr:hover td { background: rgba(255,255,255,0.02); }
   code { font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace; font-size: 12.5px; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; color: var(--teal); }
 
-  /* ── Alert ── */
   .alert { border-radius: 8px; padding: 16px 18px; margin-bottom: 16px; border: 1px solid; font-size: 13.5px; line-height: 1.65; }
   .alert strong { display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
   .alert.warn { background: var(--yellow-dim); border-color: rgba(251,191,36,0.3); color: var(--text); }
@@ -156,7 +147,6 @@
   .alert.info { background: var(--blue-dim); border-color: rgba(96,165,250,0.3); color: var(--text); }
   .alert.info strong { color: var(--blue); }
 
-  /* ── Timeline ── */
   .timeline { position: relative; padding-left: 28px; }
   .timeline::before { content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
   .tl-item { position: relative; margin-bottom: 0; padding: 16px 0 16px 20px; border-bottom: 1px solid rgba(42,48,66,0.4); }
@@ -164,26 +154,21 @@
   .tl-item::before { content: ''; position: absolute; left: -22px; top: 24px; width: 10px; height: 10px; border-radius: 50%; background: var(--bg3); border: 2px solid var(--border); }
   .tl-item.plist::before { border-color: var(--primary); background: var(--primary-dim); }
   .tl-item.gha::before { border-color: var(--blue); background: var(--blue-dim); }
-  .tl-item.cron::before { border-color: var(--teal); background: var(--teal-dim); }
   .tl-time { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
   .tl-label { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; margin-left: 8px; vertical-align: middle; }
   .label-plist { background: var(--primary-dim); color: var(--primary); }
   .label-gha { background: var(--blue-dim); color: var(--blue); }
-  .label-cron { background: var(--teal-dim); color: var(--teal); }
   .tl-mode { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
   .tl-detail { font-size: 13px; color: var(--muted); line-height: 1.7; }
 
-  /* ── Runbook ── */
   .runbook { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
   .runbook-header { padding: 14px 20px; background: var(--bg3); border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
   .runbook-step { padding: 14px 20px; border-bottom: 1px solid rgba(42,48,66,0.5); font-size: 13px; color: var(--muted); display: flex; gap: 12px; align-items: flex-start; }
   .runbook-step:last-child { border-bottom: none; }
   .runbook-step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--sub); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
 
-  /* ── Pre/Code block ── */
   pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace; font-size: 12.5px; line-height: 1.6; color: var(--teal); margin-bottom: 16px; }
 
-  /* ── Chips ── */
   .chip { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid; margin: 2px; }
   .chip.green { background: var(--green-dim); color: var(--green); border-color: rgba(74,222,128,0.3); }
   .chip.blue { background: var(--blue-dim); color: var(--blue); border-color: rgba(96,165,250,0.3); }
@@ -194,18 +179,11 @@
   .chip.red { background: var(--red-dim); color: var(--red); border-color: rgba(248,113,113,0.3); }
   .chip.muted { background: rgba(139,146,168,0.1); color: var(--muted); border-color: var(--border); }
 
-  /* ── Tooltip ── */
-  .tooltip { position: relative; display: inline; border-bottom: 1px dashed var(--muted); cursor: help; }
-  .tooltip .tooltip-text { visibility: hidden; opacity: 0; background: var(--bg3); border: 1px solid var(--border); color: var(--text); font-size: 12px; line-height: 1.65; padding: 10px 14px; border-radius: 8px; position: absolute; z-index: 100; bottom: 130%; left: 50%; transform: translateX(-50%); min-width: 220px; max-width: 340px; box-shadow: 0 6px 20px rgba(0,0,0,0.5); transition: opacity 0.18s; pointer-events: none; white-space: normal; font-weight: normal; font-style: normal; }
-  .tooltip:hover .tooltip-text { visibility: visible; opacity: 1; }
-
-  /* ── Monitor Box ── */
   .monitor-box { background: var(--bg2); border: 1px solid rgba(96,165,250,0.25); border-radius: 10px; padding: 16px 20px; margin-top: 20px; margin-bottom: 8px; }
   .monitor-box .monitor-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); margin-bottom: 10px; }
   .monitor-box ul { margin: 0; padding-left: 18px; }
   .monitor-box li { font-size: 13px; color: var(--muted); line-height: 1.75; }
 
-  /* ── Wave Step ── */
   .wave-steps { margin: 12px 0 20px; }
   .wave-step { display: flex; align-items: flex-start; gap: 16px; padding: 12px 0; border-bottom: 1px solid rgba(42,48,66,0.4); }
   .wave-step:last-child { border-bottom: none; }
@@ -217,7 +195,6 @@
   .wave-content { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
   .wave-content strong { color: var(--text); }
 
-  /* ── Utility ── */
   .flex-row { display: flex; gap: 12px; flex-wrap: wrap; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .mt8 { margin-top: 8px; } .mt16 { margin-top: 16px; } .mt24 { margin-top: 24px; }
@@ -225,1789 +202,938 @@
   .text-muted { color: var(--muted); } .text-green { color: var(--green); } .text-yellow { color: var(--yellow); }
   .text-red { color: var(--red); } .text-blue { color: var(--blue); } .text-primary { color: var(--primary); } .text-teal { color: var(--teal); }
 
-  /* ── Footer ── */
   .footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 12px; color: var(--sub); text-align: center; line-height: 1.8; }
 
-  /* ══════════════════════════════════
-     V7.1 신규 컴포넌트
-  ══════════════════════════════════ */
+  /* FAQ 섹션 */
+  .faq-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .faq-q { padding: 16px 20px; font-size: 14px; font-weight: 700; color: var(--yellow); border-bottom: 1px solid var(--border); }
+  .faq-q::before { content: 'Q. '; }
+  .faq-a { padding: 16px 20px; font-size: 13.5px; color: var(--muted); line-height: 1.8; }
+  .faq-a strong { color: var(--green); }
 
-  /* Why Cards (섹션1) */
-  .why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0 28px; }
-  .why-card { border-radius: 12px; padding: 24px 20px; }
-  .why-card-icon { font-size: 26px; margin-bottom: 12px; }
-  .why-card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
-  .why-card-body { font-size: 13px; color: var(--muted); line-height: 1.8; }
-  .why-card.problem { background: var(--red-dim); border: 1px solid rgba(248,113,113,0.3); }
-  .why-card.solution { background: var(--primary-dim); border: 1px solid rgba(255,111,97,0.3); }
-  .why-card.goal { background: var(--green-dim); border: 1px solid rgba(74,222,128,0.3); }
-  .quote-card { background: var(--bg2); border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 0 10px 10px 0; padding: 20px 24px; margin: 20px 0; font-size: 15px; color: var(--text); line-height: 1.7; font-style: italic; }
+  /* 단계 박스 */
+  .step-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .step-box-header { background: var(--bg3); padding: 12px 18px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .step-list { padding: 0; }
+  .step-row { display: flex; gap: 14px; padding: 13px 18px; border-bottom: 1px solid rgba(42,48,66,0.5); align-items: flex-start; }
+  .step-row:last-child { border-bottom: none; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--primary-dim); border: 1px solid rgba(255,111,97,0.3); color: var(--primary); font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-content { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+  .step-content strong { color: var(--text); }
 
-  /* Flow Diagram (섹션5) */
-  .flow-diagram { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 16px 0; }
-  .flow-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; color: var(--text); }
-  .flow-label { font-size: 11px; color: var(--muted); display: block; margin-top: 3px; }
-  .flow-arrow { color: var(--sub); font-size: 18px; flex-shrink: 0; }
+  /* 구현 현황 P1~P5 */
+  .impl-card { background: var(--bg2); border: 1px solid rgba(74,222,128,0.2); border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; }
+  .impl-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .impl-tag { font-size: 11px; font-weight: 700; background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.3); border-radius: 4px; padding: 2px 8px; }
+  .impl-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .impl-body { font-size: 13px; color: var(--muted); line-height: 1.75; }
+  .impl-file { font-size: 12px; color: var(--sub); margin-top: 8px; }
 
-  /* Score Compare (섹션6) */
-  .score-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-  .score-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-  .score-card-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 14px; text-align: center; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-  .score-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(42,48,66,0.4); font-size: 13.5px; color: var(--muted); }
-  .score-row:last-child { border-bottom: none; }
-  .score-pct { font-weight: 700; font-size: 14px; }
-  .score-pct.up { color: var(--green); }
-  .score-pct.down { color: var(--sub); }
-  .score-pct.same { color: var(--blue); }
-  .score-card-tag { font-size: 11px; text-align: center; color: var(--sub); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
-
-  /* Threshold Bar (섹션6) */
-  .threshold-bar { display: flex; border-radius: 8px; overflow: hidden; margin: 16px 0; }
-  .threshold-zone { padding: 12px 16px; font-size: 13px; text-align: center; }
-  .zone-red { background: #ff444420; color: #ff6666; flex: 0 0 20%; }
-  .zone-yellow { background: #facc1520; color: #facc15; flex: 0 0 10%; }
-  .zone-green { background: #4ade8020; color: #4ade80; flex: 1; }
-  .zone-label { font-size: 10px; opacity: 0.75; display: block; margin-top: 3px; }
-
-  /* Chip Grid (섹션7 — 욕망 키워드) */
-  .chip-grid { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 16px; }
-  .chip-cat { display: inline-flex; align-items: center; font-size: 12px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
-  .chip-cat.health { background: #ff666620; color: #ff9999; }
-  .chip-cat.family { background: #a855f720; color: #c084fc; }
-  .chip-cat.money { background: #22c55e20; color: #4ade80; }
-  .chip-cat.retire { background: #fb923c20; color: #fb923c; }
-  .chip-cat.job { background: #f9731620; color: #fdba74; }
-  .chip-cat.relation { background: #60a5fa20; color: #60a5fa; }
-  .chip-cat.hobby { background: #2dd4bf20; color: #2dd4bf; }
-  .chip-cat.beauty { background: #f472b620; color: #f9a8d4; }
-  .chip-cat.housing { background: #818cf820; color: #a5b4fc; }
-  .chip-cat.humor { background: #fde04720; color: #fde047; }
-  .chip-cat.spiritual { background: rgba(139,146,168,0.12); color: #8b92a8; }
-  .chip-cat.freedom { background: #2dd4bf15; color: #5eead4; }
-  .chip-cat.food { background: #22c55e15; color: #86efac; }
-  .chip-cat.digital { background: #60a5fa15; color: #7dd3fc; }
-  .chip-cat.pet { background: #fbbf2420; color: #fbbf24; }
-  .chip-cat.meaning { background: #a78bfa20; color: #c4b5fd; }
-  .chip-cat.entertain { background: #fbbf2415; color: #fde68a; }
-  .chip-cat.general { background: rgba(139,146,168,0.08); color: var(--sub); }
-
-  /* Board Group Tree (섹션7) */
-  .board-group { margin-bottom: 14px; }
-  .board-header { font-size: 13px; font-weight: 700; padding: 8px 14px; border-radius: 8px 8px 0 0; }
-  .board-header.story { background: #3b82f630; color: #60a5fa; }
-  .board-header.life2 { background: #22c55e30; color: #4ade80; }
-  .board-header.humor { background: #facc1530; color: #fde047; }
-  .board-header.job { background: #f9731630; color: #fb923c; }
-  .board-subs { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; background: var(--bg2); border-radius: 0 0 8px 8px; border: 1px solid var(--border); border-top: none; }
-
-  /* Preservation Bar (섹션8) */
-  .preservation-bar { display: flex; border-radius: 10px; overflow: hidden; margin: 16px 0; min-height: 54px; }
-  .pres-persona { background: var(--primary-dim); color: var(--primary); flex: 0 0 auto; padding: 12px 16px; display: flex; align-items: center; font-size: 13px; font-weight: 700; border-right: 1px solid rgba(255,111,97,0.3); white-space: nowrap; }
-  .pres-original { background: var(--bg2); color: var(--muted); flex: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; text-align: center; padding: 12px; }
-  .pres-persona-end { background: var(--primary-dim); color: var(--primary); flex: 0 0 auto; padding: 12px 16px; display: flex; align-items: center; font-size: 13px; font-weight: 700; border-left: 1px solid rgba(255,111,97,0.3); white-space: nowrap; }
-
-  @media (max-width: 768px) {
-    .cover { padding: 32px 24px; }
-    .cover h1 { font-size: 22px; }
-    .toc ol { columns: 1; }
-    .grid-2 { grid-template-columns: 1fr; }
-    .metric-grid { grid-template-columns: repeat(2, 1fr); }
-    .why-grid { grid-template-columns: 1fr; }
-    .score-compare { grid-template-columns: 1fr; }
-    .preservation-bar { flex-direction: column; min-height: auto; }
-    .pres-persona, .pres-persona-end { border-right: none; border-left: none; border-bottom: 1px solid rgba(255,111,97,0.2); }
-  }
+  /* 변경이력 */
+  .changelog-item { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid rgba(42,48,66,0.4); }
+  .changelog-item:last-child { border-bottom: none; }
+  .changelog-ver { font-size: 12px; font-weight: 700; color: var(--primary); min-width: 60px; padding-top: 2px; }
+  .changelog-date { font-size: 12px; color: var(--sub); min-width: 90px; padding-top: 2px; }
+  .changelog-content { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+  .changelog-content strong { color: var(--text); }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- ── Cover ── -->
-  <div class="cover">
-    <div class="cover-badge">핸드오버 문서 v9.5 · 2026-05-19</div>
-    <h1>우나어 네이버 카페 파이프라인<br>운영 핸드오버 가이드</h1>
-    <p class="subtitle">
-      왜 네이버를 크롤하는가, 왜 댓글을 다는가 — 근본 목적부터 기술 상세까지.<br>
-      GHA 큐레이션 115건/일 (Regular 100 + Popular 15) + 크롤 10회/일 + 새벽 감성글 01:15 슬롯 + 회원글 댓글 파동.
-    </p>
-    <div class="cover-meta">
-      <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">V9.5 (2026-05-19 기준)</div></div>
-      <div class="cover-meta-item"><div class="label">수집 카페</div><div class="value">2개 (wgang · dlxogns01)</div></div>
-      <div class="cover-meta-item"><div class="label">큐레이션</div><div class="value ok">115건/일 (Regular 100 + Popular 15)</div></div>
-      <div class="cover-meta-item"><div class="label">Mac plist</div><div class="value ok">10종 (크롤 7 + popular-sync 3)</div></div>
-      <div class="cover-meta-item"><div class="label">총 일 활동량</div><div class="value ok">~554건 (댓글+대댓글+좋아요)</div></div>
-      <div class="cover-meta-item"><div class="label">실행 환경</div><div class="value warn">Mac LOCAL + GitHub Actions</div></div>
+<!-- ══════════ COVER ══════════ -->
+<div class="cover">
+  <div class="cover-badge">Handover Document v10.0</div>
+  <h1>우나어 — 네이버 카페 파이프라인</h1>
+  <p class="subtitle">크롤링 → 분석 → 큐레이션 → Wave 댓글 전체 흐름 완전 가이드.<br>
+  이 문서 하나로 "왜 이렇게 동작하는가"를 설명할 수 있어야 한다.</p>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.0 (2026-05-19)</div></div>
+    <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
+    <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
+    <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
+    <div class="cover-meta-item"><div class="label">씨드봇 발행</div><div class="value warn">OFF (ENABLE_SEED_POSTS=false)</div></div>
+  </div>
+</div>
+
+<!-- 시스템 현황 -->
+<div class="status-box">
+  <div class="sb-title">시스템 현황 (2026-05-19)</div>
+  <div class="status-item"><div class="status-dot on"></div>크롤링 (launchd, 하루 7회)</div>
+  <div class="status-item"><div class="status-dot on"></div>큐레이션 (GHA, 45분 간격 19슬롯)</div>
+  <div class="status-item"><div class="status-dot on"></div>Wave 댓글 (GHA, 5분 간격 24시간)</div>
+  <div class="status-item"><div class="status-dot on"></div>인기글 수집 (launchd, 3회/일)</div>
+  <div class="status-item"><div class="status-dot off"></div>씨드봇 글 (OFF — 의도적 중단)</div>
+  <div class="status-item"><div class="status-dot on"></div>DailyBrief 안전망 (GHA 09:03)</div>
+</div>
+
+<!-- ══════════ TOC ══════════ -->
+<div class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li><a href="#s-howtoread">이 문서 읽는 법</a></li>
+    <li><a href="#s-overview">전체 파이프라인 흐름</a></li>
+    <li><a href="#s-schedule">실행 스케줄 (launchd + GHA)</a></li>
+    <li><a href="#s-full">full 모드 5단계 상세</a></li>
+    <li><a href="#s-dedup">중복 수집 방지 3단계</a></li>
+    <li><a href="#s-score">점수 체계 (qualityScore / killerScore)</a></li>
+    <li><a href="#s-isusable">isUsable 완전 가이드 ⚠️ 오해 주의</a></li>
+    <li><a href="#s-refresh">7일 재크롤 (refreshRecentPosts)</a></li>
+    <li><a href="#s-db">DB 저장 구조 + topComments</a></li>
+    <li><a href="#s-curator">큐레이션 시스템 (content-curator)</a></li>
+    <li><a href="#s-wave">Wave 댓글 시스템</a></li>
+    <li><a href="#s-popular">인기글 시스템 (popular-sync)</a></li>
+    <li><a href="#s-p1p5">큐레이션 품질 개선 P1~P5 (전부 구현됨)</a></li>
+    <li><a href="#s-faq">FAQ — 자주 하는 오해들</a></li>
+    <li><a href="#s-changelog">변경 이력</a></li>
+  </ol>
+</div>
+
+<!-- ══════════ §1. 이 문서 읽는 법 ══════════ -->
+<div class="section" id="s-howtoread">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <h2>이 문서 읽는 법</h2>
+  </div>
+
+  <div class="alert info">
+    <strong>Claude Code가 이 문서를 읽는 경우</strong>
+    코드 수정 전 반드시 §13 "P1~P5 구현 현황"과 §14 "FAQ"를 먼저 확인할 것. 이미 구현된 기능을 다시 짜는 "헛짓거리"를 방지하기 위해 작성된 섹션이다.
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>섹션</th><th>읽어야 할 때</th></tr></thead>
+      <tbody>
+        <tr><td>§2 전체 흐름</td><td>시스템 구조를 처음 파악할 때, 어디서 어디로 데이터가 흐르는지 볼 때</td></tr>
+        <tr><td>§3 스케줄</td><td>"지금 몇 시에 뭐가 실행되지?" 확인할 때</td></tr>
+        <tr><td>§4 full 모드</td><td>11:30 크롤 후 왜 분석이 달라지는지 이해할 때</td></tr>
+        <tr><td>§5 중복 방지</td><td>"왜 같은 글이 두 번 안 들어오지?" 확인할 때</td></tr>
+        <tr><td>§6 점수 체계</td><td>qualityScore/killerScore 계산 방식 확인할 때</td></tr>
+        <tr><td>§7 isUsable</td><td><strong class="text-red">isUsable 관련 질문 시 반드시 이 섹션 먼저</strong></td></tr>
+        <tr><td>§8 7일 재크롤</td><td>지표(좋아요/댓글수)가 왜 계속 갱신되는지 볼 때</td></tr>
+        <tr><td>§9 DB 구조</td><td>DB 필드 전체 목록, topComments 구조 확인할 때</td></tr>
+        <tr><td>§10 큐레이션</td><td>큐레이션 로직, 킬러글 처리, 당일 quota 확인할 때</td></tr>
+        <tr><td>§11 Wave</td><td>댓글 wave 순서, cap, 봇 선택 로직 볼 때</td></tr>
+        <tr><td>§12 인기글</td><td>popular 탭 수집 방식, Case A/B 분기 볼 때</td></tr>
+        <tr><td>§13 P1~P5</td><td><strong class="text-red">에이전트 코드 수정/추가 전 반드시 확인</strong></td></tr>
+        <tr><td>§14 FAQ</td><td>뭔가 이상하다 느낄 때, 가정이 맞는지 검증할 때</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════ §2. 전체 파이프라인 흐름 ══════════ -->
+<div class="section" id="s-overview">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <h2>전체 파이프라인 흐름</h2>
+  </div>
+
+  <div class="biz-lead">
+    Mac 로컬(launchd)이 네이버 카페를 크롤해서 DB에 저장하면, GHA(클라우드)가 24시간 그 데이터를 꺼내 콘텐츠를 발행하고 댓글을 단다. Mac이 꺼지면 크롤이 안 되지만, 발행·댓글은 계속 된다.
+  </div>
+
+  <pre>
+[Mac 로컬 — launchd]                        [GHA 클라우드 — 24시간]
+crawler.ts ──────── CafePost DB ──────────→  content-curator.ts  (45분 간격 19슬롯)
+  │ (crawl-only: 6회/일)                        │ 큐레이션 발행 → Post DB
+  │ (full: 1회/일 11:30)                        │ + CommentWaveQueue 등록
+  ↓ (full 모드만)                               │
+psych-analyzer.ts                             wave-processor.ts  (5분 간격 24시간)
+  ↓                                            user-post-wave-processor.ts
+trend-analyzer.ts                             popular-curator.ts  (3회/일)
+  ↓                                            daily-brief-fallback.ts  (09:03, 안전망)
+daily-brief.ts → DailyBrief DB
+
+popular-sync.ts ─── CafePost DB (인기글 갱신)
+  (3회/일: 10:30·16:00·21:15)</pre>
+
+  <h3>환경별 역할 분리</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>환경</th><th>역할</th><th>왜 분리?</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="chip primary">Mac launchd</span></td>
+          <td>네이버 카페 크롤 (Playwright headless:false)</td>
+          <td>네이버 봇 탐지 우회를 위해 실제 브라우저 필요. GHA 환경에서는 불가.</td>
+        </tr>
+        <tr>
+          <td><span class="chip blue">GHA 클라우드</span></td>
+          <td>DB 데이터 기반 발행·댓글·분석</td>
+          <td>브라우저 불필요. 24시간 안정적으로 실행. Mac 전원 무관.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════ §3. 실행 스케줄 ══════════ -->
+<div class="section" id="s-schedule">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <h2>실행 스케줄 (launchd + GHA)</h2>
+  </div>
+
+  <h3>launchd — Mac 로컬 전용</h3>
+  <p class="narrative">plist 파일 위치: <code>~/Library/LaunchAgents/</code></p>
+
+  <div class="timeline">
+    <div class="tl-item plist">
+      <div class="tl-time">00:30 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">cafe-crawler-dawn — <code>crawl-only</code></div>
+      <div class="tl-detail">신규 글 저장 + 7일 이내 상위 50건 지표 갱신(재크롤). 심야 반응글 수집.</div>
+    </div>
+    <div class="tl-item plist">
+      <div class="tl-time">07:40 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">cafe-crawler-morning — <code>crawl-only</code></div>
+      <div class="tl-detail">아침 신규 글 수집 + 재크롤.</div>
+    </div>
+    <div class="tl-item plist">
+      <div class="tl-time">09:30 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">cafe-crawler-09h30 — <code>crawl-only</code></div>
+      <div class="tl-detail">신규 글 수집 + 재크롤.</div>
+    </div>
+    <div class="tl-item plist">
+      <div class="tl-time">10:30 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">cafe-crawler-popular-morning — <code>popular-sync</code></div>
+      <div class="tl-detail">인기글 탭 수집. popular-curator는 20분 후(10:50) GHA에서 실행.</div>
+    </div>
+    <div class="tl-item plist" style="border-left: 2px solid var(--primary); margin-left: -2px;">
+      <div class="tl-time">11:30 KST <span class="tl-label label-plist">plist</span> <span class="chip primary" style="font-size:10px;">★ 핵심</span></div>
+      <div class="tl-mode">cafe-crawler-lunch — <code>full</code></div>
+      <div class="tl-detail">크롤 + 재크롤 + <strong>심리분석(Haiku)</strong> + <strong>트렌드분석</strong> + <strong>DailyBrief(Sonnet)</strong>. 하루 1회만 실행하는 전체 분석 파이프라인.</div>
+    </div>
+    <div class="tl-item plist">
+      <div class="tl-time">14:30 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">cafe-crawler-afternoon — <code>crawl-only</code></div>
+      <div class="tl-detail">오후 신규 글 수집 + 재크롤.</div>
+    </div>
+    <div class="tl-item plist">
+      <div class="tl-time">16:00 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">cafe-crawler-popular-afternoon — <code>popular-sync</code></div>
+      <div class="tl-detail">오후 인기글 수집. popular-curator는 16:15 GHA 실행.</div>
+    </div>
+    <div class="tl-item plist">
+      <div class="tl-time">17:30 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">cafe-crawler-17h30 — <code>crawl-only</code></div>
+      <div class="tl-detail">저녁 전 신규 글 수집 + 재크롤.</div>
+    </div>
+    <div class="tl-item plist">
+      <div class="tl-time">21:15 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">cafe-crawler-popular-evening — <code>popular-sync</code></div>
+      <div class="tl-detail">야간 인기글 수집. popular-curator는 21:30 GHA 실행.</div>
+    </div>
+    <div class="tl-item plist">
+      <div class="tl-time">21:30 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">cafe-crawler-evening — <code>crawl-only</code></div>
+      <div class="tl-detail">야간 신규 글 수집 + 재크롤.</div>
     </div>
   </div>
 
-  <!-- ── 현재 가동 상태 박스 ── -->
-  <div class="status-box">
-    <div class="sb-title">현재 가동 중 (2026-05-19 기준 · V9.5)</div>
-    <div class="status-item"><div class="status-dot on"></div>Mac plist 10종 (크롤 7종 + popular-sync 3종 10:30/16:00/21:15)</div>
-    <div class="status-item"><div class="status-dot on"></div>GHA Regular 큐레이션 (08:20~01:15 KST, 20슬롯, 100건/일)</div>
-    <div class="status-item"><div class="status-dot on"></div>GHA Popular 큐레이션 (10:50/16:15/21:30 KST, 3슬롯, 15건/일) — 신규 A30</div>
-    <div class="status-item"><div class="status-dot on"></div>01:15 KST 새벽 감성글 특별 슬롯 (MEANING·SPIRITUAL·RELATION·FAMILY 우선)</div>
-    <div class="status-item"><div class="status-dot on"></div>댓글 파동 GHA + cron-job.org 이중 트리거 (*/5분 24시간 — Job #7621797, workflow_dispatch)</div>
-    <div class="status-item"><div class="status-dot on"></div>시드봇 댓글·대댓글·좋아요</div>
-    <div class="status-item"><div class="status-dot on"></div>회원글 댓글 파동</div>
-    <div class="status-item"><div class="status-dot off"></div>시드봇 글 생성 중단 (ENABLE_SEED_POSTS=false)</div>
-    <div class="status-item"><div class="status-dot on"></div>댓글 수집 복구 완료 (B1 해결 — 2026-05-14)</div>
-    <div class="status-item"><div class="status-dot on"></div>인기글 파이프라인 (A30) 신규 — 115건/일 체제 전환 완료 (V9.0 — 2026-05-15)</div>
-    <div class="status-item"><div class="status-dot on"></div>V9.1 (2026-05-16) — 코드 감사 7개 이슈 수정: wave-processor GHA ONLY 확인, runner.ts 크론 주석 정확화, qa-verifier COO action 불일치 수정, connection-facilitator safeBotLog 교체</div>
-    <div class="status-item"><div class="status-dot on"></div>V9.2 (2026-05-17) — 시드봇 ESM 충돌 근본 수정(agents/core/trending.ts 분리) + revalidateTag 캐시 무효화 4건 보완(likes·comments·posts·unstable_cache)</div>
-    <div class="status-item"><div class="status-dot on"></div>V9.3 (2026-05-18) — cron-job.org wave 이중 트리거 등록(GHA 3시간 중단 대응, Job #7621797) + 봇 댓글 캡 5개 reply-chain 합산 체크 추가 + 이모지 전면 금지 + trendingScore 24시간 롤링 전환(정오 기준 폐기)</div>
-    <div class="status-item"><div class="status-dot on"></div>V9.4 (2026-05-18) — 콘텐츠 품질 개선 5종: 키워드 quota 차단(P1) · Levenshtein 중복 감지 강화(P2) · 계절 키워드 필터(P3) · 봇 당일 댓글 캡 3건/봇(P4) · wave4 다른관점형 교체(P5) + MONEY 하드캡 6→3건</div>
-    <div class="status-item"><div class="status-dot on"></div>V9.5 (2026-05-19) — 문서 정확성 정정: isUsable 실제 기준 ≥30→≥60으로 수정(trend-analyzer.ts L350 실제 동작 확인) · isUsable 설정 타이밍 정정(크롤 즉시→11:30 FULL 분석 후) · "Mac 꺼져도 괜찮나요" 박스 실제 한계 명시 · config.ts minUsable=30 vs 실제 60 불일치 문서화 · 씨드봇 글 생성 중단 확인(ENABLE_SEED_POSTS=false)</div>
+  <div class="alert info mt24">
+    <strong>crawl-only 모드란?</strong>
+    crawler.ts를 두 번 실행한다. 1차: 신규 글 저장(CRAWL_MODE=crawl-only). 2차: 최근 7일 상위 50건 지표 갱신(CRAWL_MODE=refresh). 심리분석/트렌드분석/DailyBrief는 실행하지 않는다.
   </div>
 
-  <!-- ── TOC ── -->
-  <div class="toc">
-    <h2>목차</h2>
-    <ol>
-      <li><a href="#why">왜 이 파이프라인인가 — 근본 목적</a></li>
-      <li><a href="#metrics">현재 가동 현황</a></li>
-      <li><a href="#flow">파이프라인 흐름 — 하루가 어떻게 돌아가나</a></li>
-      <li><a href="#schedule">스케줄 타임라인</a></li>
-      <li><a href="#crawl">크롤 시스템 상세</a></li>
-      <li><a href="#popular-sync">Popular-Sync 시스템 (A30) — 인기글 파이프라인 <span style="color:var(--orange); font-size:11px;">★ 신규</span></a></li>
-      <li><a href="#quality">품질 점수 시스템</a></li>
-      <li><a href="#curation">큐레이션 &amp; 카테고리 매핑</a></li>
-      <li><a href="#preservation">원문 보존 — 수미상관 방식</a></li>
-      <li><a href="#wave">댓글 파동 시스템</a></li>
-      <li><a href="#persona">페르소나 생태계 (79명)</a></li>
-      <li><a href="#cafes">수집 대상 카페 상세</a></li>
-      <li><a href="#ops">쿠키 만료 · 비용 · 이슈 · 로드맵</a></li>
-    </ol>
+  <h3 class="mt24">GHA — 클라우드 24시간</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>시간 (KST)</th><th>워크플로우</th><th>실행 내용</th></tr></thead>
+      <tbody>
+        <tr><td>08:20 ~ 21:50</td><td><code>agents-cafe-hourly-curation.yml</code></td><td>큐레이션 19슬롯 (45분 간격) — isUsable=true 후보에서 선택 발행</td></tr>
+        <tr><td>09:03</td><td><code>agents-cafe.yml</code></td><td>daily-brief-fallback — Mac launchd가 11:30 전에 실패했을 때 안전망 DailyBrief 생성</td></tr>
+        <tr><td>09:30</td><td><code>agents-cafe.yml</code></td><td>brief-monitor — DailyBrief 생성 여부 확인 + Slack 보고</td></tr>
+        <tr><td>10:50 / 16:15 / 21:30</td><td><code>agents-cafe-popular-curation.yml</code></td><td>popular-curate — popular-sync 15~20분 후 인기글 우선 발행</td></tr>
+        <tr><td>매 5분 (24시간)</td><td><code>agents-cafe-wave.yml</code></td><td>wave-processor + user-post-wave-processor — 예약된 wave 댓글 처리</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════ §4. full 모드 5단계 ══════════ -->
+<div class="section" id="s-full">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <h2>full 모드 5단계 상세 (11:30 KST)</h2>
   </div>
 
-  <!-- ── 1. 왜 이 파이프라인인가 ── -->
-  <div class="section" id="why">
-    <div class="section-header">
-      <div class="section-num">1</div>
-      <h2>왜 이 파이프라인인가 — 근본 목적</h2>
-    </div>
-
-    <div class="why-grid">
-      <div class="why-card problem">
-        <div class="why-card-icon">🪺</div>
-        <div class="why-card-title">문제 — 빈 커뮤니티의 닭-달걀</div>
-        <div class="why-card-body">
-          커뮤니티는 사람이 있어야 사람이 온다. 그런데 처음엔 아무도 없다.<br><br>
-          글도 없고, 댓글도 없고, 반응도 없는 곳엔 첫 회원도 오지 않는다. 어렵게 온 회원이 글을 올려도 아무도 반응하지 않으면 다시 오지 않는다.
-        </div>
-      </div>
-      <div class="why-card solution">
-        <div class="why-card-icon">🔁</div>
-        <div class="why-card-title">해법 — 진짜 이야기로 채우기</div>
-        <div class="why-card-body">
-          네이버 우아한갱년기(280만 회원), 은퇴후50년에는 하루 수백 건의 진짜 50·60대 이야기가 올라온다.<br><br>
-          이 이야기를 가져와 살짝 손보면 AI가 만든 글과 달리 실제 경험과 감정이 담긴 콘텐츠가 된다.
-        </div>
-      </div>
-      <div class="why-card goal">
-        <div class="why-card-icon">✨</div>
-        <div class="why-card-title">목표 — "사람 있네"의 순간</div>
-        <div class="why-card-body">
-          진짜 회원 1,000명이 자생적으로 활동하는 날까지, 페르소나 79명이 그 자리를 따뜻하게 채운다.<br><br>
-          첫 회원이 글을 올리면 1분 안에 댓글이 달린다. 방문자가 보기엔 살아있는 커뮤니티다.
-        </div>
-      </div>
-    </div>
-
-    <div class="biz-lead">
-      우나어는 50·60대의 <strong>외로움·건강 염려·재정 불안·인생 2막</strong>을 중심으로 설계된 AI 운영 커뮤니티입니다.
-      네이버 카페 파이프라인은 이 커뮤니티를 살아있게 만드는 <strong>핵심 인프라</strong>입니다.
-    </div>
-
-    <div class="narrative">
-      <p>
-        <strong>왜 네이버 카페를 크롤하는가?</strong><br>
-        AI가 직접 글을 쓰면 "AI 냄새"가 납니다. 아무리 잘 써도 실제 경험에서 나오는 구체성이 없습니다.
-        반면 네이버 카페에서 50대 주부가 갱년기 증상으로 고생한 이야기, 퇴직 후 재취업에 성공한 경험 — 이건 진짜입니다.
-        이 원본 글을 90%는 그대로 두고 첫·끝 문장만 페르소나 말투로 바꾸면, 진짜 사람이 쓴 것과 구분이 안 됩니다.
-      </p>
-      <p>
-        <strong>왜 댓글과 대댓글을 다는가?</strong><br>
-        글만 있고 반응이 없으면 "죽은 커뮤니티"입니다. 특히 처음 온 회원이 글을 올렸을 때 아무도 반응하지 않으면
-        그 회원은 영원히 떠납니다. 페르소나가 1분 안에 공감 댓글을 달아주면 그 회원은 "여기 사람들이 반응하네"라고 느낍니다.
-        이것이 <strong>초기 커뮤니티에서 가장 중요한 리텐션 메커니즘</strong>입니다.
-      </p>
-    </div>
-
-    <div class="quote-card">
-      "우나어가 1,000명의 진짜 회원을 갖는 그날까지, 79명의 페르소나가 그 자리를 채운다."
-    </div>
-
-    <div class="grid-2 mt16">
-      <div class="card">
-        <div class="card-title">크롤→발행 핵심 흐름</div>
-        <div class="narrative mt8" style="font-size:13px;">
-          <p style="margin:0; line-height:2;">
-            네이버 카페 원본 수집<br>
-            → 품질 점수 ≥20점만 저장 · ≥60점부터 큐레이션 가능<br>
-            → 욕망 분류 (건강/가족/재테크…)<br>
-            → DailyBrief (오늘의 욕망 지도)<br>
-            → 매시간 5건 재가공 발행<br>
-            → 발행 즉시 댓글 파동 시작
-          </p>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">V7 → V8 핵심 변화 (2026-05-15)</div>
-        <div class="table-wrap mt8">
-          <table>
-            <tbody>
-              <tr><td style="color:var(--sub);font-size:12px;">큐레이션</td><td>75건/일 → <strong class="text-green">100건/일</strong></td></tr>
-              <tr><td style="color:var(--sub);font-size:12px;">GHA 간격</td><td>매시간(15슬롯) → <strong class="text-blue">45분(20슬롯)</strong></td></tr>
-              <tr><td style="color:var(--sub);font-size:12px;">첫 발행</td><td>09:07 KST → <strong class="text-primary">08:20 KST</strong></td></tr>
-              <tr><td style="color:var(--sub);font-size:12px;">크롤 횟수</td><td>4회/일 → <strong class="text-green">7회/일</strong></td></tr>
-              <tr><td style="color:var(--sub);font-size:12px;">새벽 슬롯</td><td>없음 → <strong class="text-teal">01:15 KST 감성글 전용</strong></td></tr>
-              <tr><td style="color:var(--sub);font-size:12px;">큐레이션 댓글</td><td>300건/일 → <strong class="text-green">~400건/일</strong></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="card" style="border-color:rgba(251,146,60,0.3); background:var(--orange-dim);">
-        <div class="card-title" style="color:var(--orange);">V8 → V9 핵심 변화 (2026-05-15) — 인기글 파이프라인 A30</div>
-        <div class="table-wrap mt8">
-          <table>
-            <tbody>
-              <tr><td style="color:var(--sub);font-size:12px;">총 큐레이션</td><td>100건/일 → <strong class="text-green">115건/일</strong> (Regular 100 + Popular 15)</td></tr>
-              <tr><td style="color:var(--sub);font-size:12px;">GHA 슬롯</td><td>20슬롯 → <strong class="text-orange">23슬롯</strong> (popular-curate 3슬롯 신규)</td></tr>
-              <tr><td style="color:var(--sub);font-size:12px;">Mac plist</td><td>7종 → <strong class="text-orange">10종</strong> (popular-sync 3종 신규)</td></tr>
-              <tr><td style="color:var(--sub);font-size:12px;">popular-sync</td><td>없음 → <strong class="text-orange">10:30 / 16:00 / 21:15 KST</strong> (카페 /popular 탭 수집)</td></tr>
-              <tr><td style="color:var(--sub);font-size:12px;">popular-curate</td><td>없음 → <strong class="text-orange">10:50 / 16:15 / 21:30 KST</strong> (5건/슬롯 발행)</td></tr>
-              <tr><td style="color:var(--sub);font-size:12px;">신규 DB 컬럼</td><td>CafePost.isPopular / popularUpdatedAt 추가</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+  <div class="biz-lead">
+    하루 단 1회, 11:30 KST에만 실행. crawl-only와 달리 AI 분석 3단계가 추가된다. 이 파이프라인이 끝나야 DailyBrief가 생성되고, 큐레이션이 최신 트렌드를 반영할 수 있다.
   </div>
 
-  <!-- ── 2. 현재 가동 현황 ── -->
-  <div class="section" id="metrics">
-    <div class="section-header">
-      <div class="section-num">2</div>
-      <h2>현재 가동 현황</h2>
-    </div>
-
-    <div class="biz-lead">
-      창업자 모니터링 기준: Slack #REPORT에서 매시간 <strong>[큐레이션] N건 발행</strong> 알림을 확인하세요.
-      HEALTH 편중 없이 FAMILY·MONEY·HUMOR도 골고루 발행되는지 확인합니다.
-    </div>
-
-    <div class="metric-grid">
-      <div class="card green">
-        <div class="card-title">큐레이션 발행</div>
-        <div class="card-value">115건/일</div>
-        <div class="card-sub">
-          <span class="tooltip">Regular 100 + Popular 15<span class="tooltip-text">Regular: GHA 45분 간격 5건×20슬롯(08:20~01:15 KST). Popular: /popular 탭 sync 후 5건×3슬롯(10:50/16:15/21:30 KST). Mac이 꺼져있어도 GHA 동작.</span></span>
-          (GHA 23슬롯)
+  <div class="step-box">
+    <div class="step-box-header">run-pipeline.ts full — 순서대로 실행</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>crawler.ts (CRAWL_MODE=crawl-only)</strong> — 신규 글 저장<br>
+          각 카페 전체글보기에서 MAX(articleId) 이후의 새 글만 수집. savePosts에서 isUsable 즉시 설정.
         </div>
       </div>
-      <div class="card primary">
-        <div class="card-title">총 일 활동량</div>
-        <div class="card-value">~554건</div>
-        <div class="card-sub">댓글 471 · 대댓글 31 · 좋아요 52</div>
-      </div>
-      <div class="card teal">
-        <div class="card-title">원문 보존율</div>
-        <div class="card-value">90%</div>
-        <div class="card-sub">
-          <span class="tooltip">수미상관 방식<span class="tooltip-text">원본 글의 90%는 그대로 살리고, 첫 문장과 마지막 문장만 페르소나 말투로 바꿉니다. 고유명사·수치는 100% 유지.</span></span>
-          — 첫·끝 문장만 재가공
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>crawler.ts (CRAWL_MODE=refresh)</strong> — 7일 이내 상위 50건 재방문<br>
+          likeCount / commentCount / viewCount 갱신 → killerScore 재계산. 댓글이 늘어난 글이 킬러글로 승격 가능.
         </div>
       </div>
-      <div class="card blue">
-        <div class="card-title">
-          <span class="tooltip">isUsable<span class="tooltip-text">qualityScore(품질 점수) 30점 이상인 글에 붙는 '큐레이션 사용 가능' 표시. 11:30 FULL 크롤 시 AI 심리분석 후 설정됨. 인기글(/popular 탭)은 크롤 즉시 자동 설정.</span></span>
-          통과율
-        </div>
-        <div class="card-value">~40%</div>
-        <div class="card-sub">qualityScore ≥ 30 기준 (11:30 분석 후 설정)</div>
-      </div>
-      <div class="card yellow">
-        <div class="card-title">시드봇 글 생성</div>
-        <div class="card-value">0건</div>
-        <div class="card-sub">scheduler.ts에서 ENABLE_SEED_POSTS=false<br>재개 시 Secrets 값만 변경</div>
-      </div>
-      <div class="card purple">
-        <div class="card-title">회원글 파동</div>
-        <div class="card-value">9건/글</div>
-        <div class="card-sub">실제 회원 글 발행 시 자동 댓글 9건<br>(+1분 / +10분 / +30분 / +60분)</div>
-      </div>
-    </div>
-
-    <div class="monitor-box">
-      <div class="monitor-title">창업자 일일 확인 포인트</div>
-      <ul>
-        <li>Slack #REPORT: "[큐레이션] N건 발행" 알림 확인 — 하루 20개 있어야 정상 (45분 간격)</li>
-        <li>첫 발행 08:20 KST에 게시글이 올라오는지 확인 (07:40 크롤 완료 후 첫 슬롯)</li>
-        <li>01:15 KST 새벽 슬롯: MEANING·SPIRITUAL·RELATION·FAMILY 카테고리 글이 발행되는지 확인</li>
-        <li>우나어 게시판: STORY·LIFE2·HUMOR에 다양한 욕망의 글이 골고루 올라오는지 확인</li>
-        <li>특정 주제(건강 등)만 계속 올라온다면 Slack #QA 확인 후 문의</li>
-        <li>발행 1분 후 게시글에 댓글 1건 이상 달렸는지 확인 (파동 정상 작동 기준)</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- ── 3. 파이프라인 흐름 ── -->
-  <div class="section" id="flow">
-    <div class="section-header">
-      <div class="section-num">3</div>
-      <h2>파이프라인 흐름 — 하루가 어떻게 돌아가나</h2>
-    </div>
-
-    <div class="biz-lead">
-      Mac과 GHA(GitHub 서버)가 역할을 분담합니다. Mac은 크롤링·분석, GHA는 큐레이션·댓글을 담당합니다.
-    </div>
-
-    <h3>Mac이 하는 일 (크롤링 + 분석 — 7회/일)</h3>
-    <div class="narrative">
-      <p>
-        <strong>매일 07:40 — 아침 크롤링 (첫 번째)</strong><br>
-        Mac이 자동으로 깨어나 우아한갱년기, 은퇴후50년 카페를 방문합니다.
-        07:00대에 올라온 아침 글을 수집합니다. 약 20분 소요, 완료 기준 08:14 이전.
-        수집 완료된 글이 <strong>08:20 GHA 첫 슬롯</strong>에 바로 반영됩니다. AI 비용 $0.
-      </p>
-      <p>
-        <strong>매일 09:30 — 오전 크롤링 (두 번째)</strong><br>
-        07:40~09:30 사이에 올라온 오전 글 추가 수집. 10:35 GHA 슬롯부터 반영됩니다.
-      </p>
-      <p>
-        <strong>매일 11:30 — 풀 파이프라인 (하루에 한 번, 큐레이션의 핵심 준비 단계)</strong><br>
-        수집한 글을 Claude Haiku로 심리 분석해 욕망(건강·가족·돈·은퇴 등)을 분류합니다.
-        이 때 품질 점수(qualityScore)가 60점 이상인 글에 <strong>"큐레이션 사용 가능"(isUsable=true)</strong> 표시가 붙습니다.
-        그 결과를 Claude Sonnet이 종합해서 "<span class="tooltip">DailyBrief<span class="tooltip-text">매일 생성되는 "오늘의 50·60대 욕망 지도". 이 날의 큐레이션 주제 선택에 활용됩니다.</span></span>"를 만듭니다.
-        <strong>이 두 가지(isUsable 글 + DailyBrief)가 없으면 GHA 큐레이션이 발행을 못 합니다.</strong>
-        큐레이션 자체는 하지 않습니다 — GHA 45분 간격 실행이 담당합니다. AI 비용 발생, 40~60분 소요.
-      </p>
-      <div class="alert info" style="margin:8px 0 12px;">
-        <strong>왜 크롤러에서 큐레이션을 안 하나요?</strong><br>
-        크롤러(Mac)와 큐레이션(GHA 서버)을 <strong>의도적으로 분리</strong>해 설계했습니다.
-        Mac이 꺼지거나 재시작되면 크롤러가 멈추는데, 만약 큐레이션까지 묶으면 Mac이 죽을 때 우나어 게시글 발행도 같이 멈춥니다.
-        GHA 서버는 Mac과 무관하게 항상 돌아가므로, 큐레이션·댓글·시드봇을 GHA에 위임하면 <strong>Mac 꺼짐 → 발행 중단 리스크가 제거</strong>됩니다.
-        크롤러는 "재료 창고 채우기", GHA hourly는 "요리해서 상에 올리기"로 역할을 나눈 겁니다.
-      </div>
-      <p>
-        <strong>14:30 · 17:30 · 21:30 — 오후/저녁 추가 크롤 (3회)</strong><br>
-        오후~저녁 동안 새로 올라온 글을 추가 수집해 DB에 쌓습니다. 분석·큐레이션은 하지 않습니다.
-        GHA 45분 간격 큐레이션은 독립적으로 계속 돌고 있어서, 방금 수집된 글이 다음 GHA 슬롯에 자동 반영됩니다.
-      </p>
-      <p>
-        <strong>매일 00:30 — 새벽 감성글 수집 (일곱 번째)</strong><br>
-        21:30~00:30 사이 저녁·새벽에 올라오는 감성글(인간관계·의미·가족·정신)을 수집합니다.
-        수집 완료 후 <strong>01:15 KST 특별 슬롯</strong>에서 MEANING·SPIRITUAL·RELATION·FAMILY 카테고리를 우선 발행합니다.
-        새벽에 위로가 필요한 50·60대에게 맞닿는 "감성 특화" 슬롯입니다.
-      </p>
-    </div>
-
-    <h3>GHA(GitHub 서버)가 하는 일 (큐레이션 + 댓글)</h3>
-    <div class="narrative">
-      <p>
-        <strong>08:20~21:50 — 45분 간격, 큐레이션 5건 발행 (19슬롯)</strong><br>
-        GitHub 서버가 DB에서 품질 좋은 원본 글 5건을 고릅니다.
-        <span class="tooltip">킬러 포스트(killerScore≥70)<span class="tooltip-text">참여도가 특히 높은 화제 글. 70점 이상이면 매 슬롯 큐레이션에 우선 삽입(최대 2건)됩니다.</span></span>가
-        있으면 먼저 선택합니다. Claude Sonnet이 각 글을 페르소나 말투로 재가공해서 발행합니다.
-        욕망별 하드캡을 적용해 HEALTH 상한 22건/일 등 편중을 방지합니다.
-      </p>
-      <p>
-        <strong>01:15 — 새벽 감성글 특별 슬롯 (20번째 슬롯)</strong><br>
-        00:30 크롤에서 수집한 저녁·새벽 감성글을 발행합니다.
-        MEANING·SPIRITUAL·RELATION·FAMILY 욕망 글을 다른 욕망보다 앞에 배치해 발행합니다.
-        새벽에 접속하는 50·60대 회원에게 공감·위로 콘텐츠가 먼저 보이도록 설계됐습니다.
-      </p>
-      <p>
-        <strong>24시간 내내, 5분마다 — 댓글 파동 처리</strong><br>
-        예약된 댓글들을 때가 되면 자동으로 게시합니다. 큐레이션 파동과 회원글 파동 모두 처리합니다.
-      </p>
-      <p>
-        <strong>09:03 · 09:30 — DailyBrief 보험</strong><br>
-        09:03에 Mac 꺼짐으로 브리프가 없으면 GHA가 어제 브리프를 복사하거나 새로 만듭니다.
-        09:30에는 브리프가 정상인지 감시하고 없으면 Slack에 경고를 보냅니다.
-      </p>
-    </div>
-
-    <div class="card mt16" style="border-color:rgba(99,102,241,0.3); background:rgba(99,102,241,0.05);">
-      <div class="card-title" style="color:#818cf8; margin-bottom:14px;">🔄 크롤 → 큐레이션 → 발행 전체 플로우</div>
-      <div class="flow-diagram" style="flex-wrap:wrap; align-items:flex-start; gap:6px;">
-        <div class="flow-box" style="min-width:130px;">
-          <span class="flow-label">Mac launchd (7회/일)</span>
-          크롤러 실행
-        </div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-box" style="min-width:150px;">
-          <span class="flow-label">11:30 FULL 크롤 시 (하루 1회)</span>
-          AI 심리분석 → 품질점수<br>
-          <span style="font-size:11px; color:var(--muted);">≥30: isUsable=true<br>&lt;30: 큐레이션 제외<br>인기글은 크롤 즉시 true</span>
-        </div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-box" style="min-width:150px; border-color:rgba(74,222,128,0.4);">
-          <span class="flow-label">GHA hourly (09~23시 매시간)</span>
-          isUsable=true 5건 선별<br>
-          <span style="font-size:11px; color:var(--muted);">killerScore≥70 우선<br>욕망별 하드캡 적용</span>
-        </div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-box" style="min-width:140px; border-color:rgba(74,222,128,0.4);">
-          <span class="flow-label">Claude Haiku/Sonnet</span>
-          수미상관 재작성<br>
-          <span style="font-size:11px; color:var(--muted);">첫·끝 문장 페르소나 말투<br>본문 90% 원문 유지</span>
-        </div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-box" style="min-width:130px; border-color:rgba(250,204,21,0.4);">
-          <span class="flow-label">페르소나 계정</span>
-          우나어에 게시글 발행
-        </div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-box" style="min-width:130px; border-color:rgba(251,146,60,0.4);">
-          <span class="flow-label">5분마다 (24시간)</span>
-          CommentWave 댓글 순차 게시
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>psych-analyzer.ts (Claude Haiku)</strong> — AI 심리 분석<br>
+          emotionTags / desireCategory / desireType / communitySignal / urgencyLevel / conflictTrigger / viralType 업데이트.
         </div>
       </div>
-      <p style="font-size:12px; color:var(--muted); margin:10px 0 0;">
-        ⚡ 크롤러(재료 창고)와 큐레이션(요리·발행)은 완전히 독립. 단, isUsable 설정과 DailyBrief 생성은 11:30 FULL 크롤에 의존합니다.
-      </p>
-    </div>
-
-    <div class="alert info" style="margin-top:16px;">
-      <strong>Mac이 꺼져도 괜찮나요?</strong>
-      <strong style="color:var(--yellow);">부분적으로만</strong> 괜찮습니다.<br>
-      댓글 파동과 씨드봇 활동은 GHA가 독립적으로 계속합니다. 하지만 큐레이션은 두 가지가 모두 필요합니다.<br>
-      ① <strong>DailyBrief(오늘의 핫토픽 목록)</strong> — 11:30 FULL 크롤에서 생성. Mac이 꺼지면 GHA가 어제 브리프로 대체하지만 정확도가 낮습니다.<br>
-      ② <strong>isUsable=true 글</strong> — 11:30 FULL 크롤 시 AI 심리분석 후 설정. Mac이 꺼지면 새로운 큐레이션 후보가 쌓이지 않습니다. 인기글(/popular 탭)만 크롤 즉시 설정됩니다.
-    </div>
-  </div>
-
-  <!-- ── 4. 스케줄 타임라인 ── -->
-  <div class="section" id="schedule">
-    <div class="section-header">
-      <div class="section-num">4</div>
-      <h2>스케줄 타임라인 (KST 기준)</h2>
-    </div>
-
-    <!-- Mac plist 10종 -->
-    <h3 style="margin-bottom:12px; color:var(--primary);">Mac plist (LOCAL) — 창업자 Mac에서 실행 · 10종</h3>
-    <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">
-      launchd가 Mac 로컬 시간(KST)을 직접 읽어 실행합니다. Mac이 켜져 있어야 동작합니다.
-      크롤 완료 소요시간 ~20~34분 (crawl-only) / 82~102분 (full). popular-sync는 10분 하드 타임아웃.<br>
-      <span style="color:var(--yellow);">⚠️ crawl-only 모드에서 수집된 새 글은 isUsable=false 상태입니다. "첫 GHA 반영 슬롯"은 GHA가 실행되는 시각이며, 그 슬롯에서 새 글이 큐레이션 된다는 의미가 아닙니다. 새 글이 큐레이션 후보가 되려면 <strong>11:30 FULL 분석(AI 심리분석)</strong>을 거쳐야 isUsable=true로 설정됩니다. 단, 인기글(popular-sync)은 수집 즉시 isUsable=true가 됩니다.</span>
-    </p>
-    <div style="overflow-x:auto; margin-bottom:32px;">
-      <table style="width:100%; border-collapse:collapse; font-size:13px;">
-        <thead>
-          <tr style="background:var(--bg3); color:var(--sub); font-size:11px; text-transform:uppercase; letter-spacing:0.06em;">
-            <th style="padding:10px 14px; text-align:left; border-bottom:1px solid var(--border);">KST 시각</th>
-            <th style="padding:10px 14px; text-align:left; border-bottom:1px solid var(--border);">모드</th>
-            <th style="padding:10px 14px; text-align:left; border-bottom:1px solid var(--border);">목적</th>
-            <th style="padding:10px 14px; text-align:left; border-bottom:1px solid var(--border);">크롤 완료 예상</th>
-            <th style="padding:10px 14px; text-align:left; border-bottom:1px solid var(--border);">첫 GHA 반영 슬롯</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:10px 14px; color:var(--primary); font-weight:700;">07:40</td>
-            <td style="padding:10px 14px; color:var(--muted);">crawl-only</td>
-            <td style="padding:10px 14px; color:var(--text);">07:00대 아침 글 수집 — <strong>첫 발행 08:20 실현의 핵심</strong></td>
-            <td style="padding:10px 14px; color:var(--muted);">08:00~08:14</td>
-            <td style="padding:10px 14px; color:var(--green); font-weight:600;">08:20 (6분 여유)</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:10px 14px; color:var(--primary); font-weight:700;">09:30</td>
-            <td style="padding:10px 14px; color:var(--muted);">crawl-only</td>
-            <td style="padding:10px 14px; color:var(--text);">07:40~09:30 오전 글 추가 수집</td>
-            <td style="padding:10px 14px; color:var(--muted);">09:50~10:04</td>
-            <td style="padding:10px 14px; color:var(--green); font-weight:600;">10:35 (31분 여유)</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border); background:rgba(255,111,97,0.04);">
-            <td style="padding:10px 14px; color:var(--primary); font-weight:700;">11:30</td>
-            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">full ★</td>
-            <td style="padding:10px 14px; color:var(--text);">09:30~11:30 글 + <span class="tooltip">Haiku 심리분석<span class="tooltip-text">수집된 원본에 욕망 태그(HEALTH/MEANING/RELATION 등), killerScore, 심리적 거리감 분석을 추가합니다.</span></span> + 트렌드 + DailyBrief 생성 — <strong>하루 한 번</strong></td>
-            <td style="padding:10px 14px; color:var(--muted);">13:02~13:22</td>
-            <td style="padding:10px 14px; color:var(--green); font-weight:600;">13:35 (13분 여유)</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:10px 14px; color:var(--primary); font-weight:700;">14:30</td>
-            <td style="padding:10px 14px; color:var(--muted);">crawl-only</td>
-            <td style="padding:10px 14px; color:var(--text);">11:30~14:30 오후 점심 글 수집</td>
-            <td style="padding:10px 14px; color:var(--muted);">14:50~15:04</td>
-            <td style="padding:10px 14px; color:var(--yellow);">15:05 (1분, 타이트)</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:10px 14px; color:var(--primary); font-weight:700;">17:30</td>
-            <td style="padding:10px 14px; color:var(--muted);">crawl-only</td>
-            <td style="padding:10px 14px; color:var(--text);">14:30~17:30 오후 글 수집</td>
-            <td style="padding:10px 14px; color:var(--muted);">17:50~18:04</td>
-            <td style="padding:10px 14px; color:var(--yellow);">18:05 (1분, 타이트)</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:10px 14px; color:var(--primary); font-weight:700;">21:30</td>
-            <td style="padding:10px 14px; color:var(--muted);">crawl-only</td>
-            <td style="padding:10px 14px; color:var(--text);">17:30~21:30 저녁 글 수집</td>
-            <td style="padding:10px 14px; color:var(--muted);">21:50~22:04</td>
-            <td style="padding:10px 14px; color:var(--sub);">없음 (다음날 08:20)</td>
-          </tr>
-          <tr>
-            <td style="padding:10px 14px; color:var(--purple); font-weight:700;">00:30</td>
-            <td style="padding:10px 14px; color:var(--muted);">crawl-only</td>
-            <td style="padding:10px 14px; color:var(--text);">21:30~00:30 <strong style="color:var(--purple);">심야 감성글</strong> (MEANING/SPIRITUAL/RELATION/FAMILY)</td>
-            <td style="padding:10px 14px; color:var(--muted);">00:50~01:04</td>
-            <td style="padding:10px 14px; color:var(--purple); font-weight:600;">01:15 특별 슬롯 (11분 여유)</td>
-          </tr>
-          <tr style="border-top:2px solid var(--border); background:rgba(251,146,60,0.05);">
-            <td style="padding:10px 14px; color:var(--orange); font-weight:700;">10:30 ★</td>
-            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">popular-sync</td>
-            <td style="padding:10px 14px; color:var(--text);">wgang·dlxogns01 /popular 탭 수집 → <strong>isPopular=true 마킹, killerScore 재계산</strong></td>
-            <td style="padding:10px 14px; color:var(--muted);">10:40 (10분 하드타임아웃)</td>
-            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">10:50 GHA popular-curate</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border); background:rgba(251,146,60,0.05);">
-            <td style="padding:10px 14px; color:var(--orange); font-weight:700;">16:00 ★</td>
-            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">popular-sync</td>
-            <td style="padding:10px 14px; color:var(--text);">오후 인기글 재수집 — isPopular 리셋 후 재마킹</td>
-            <td style="padding:10px 14px; color:var(--muted);">16:10 (10분 하드타임아웃)</td>
-            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">16:15 GHA popular-curate</td>
-          </tr>
-          <tr style="background:rgba(251,146,60,0.05);">
-            <td style="padding:10px 14px; color:var(--orange); font-weight:700;">21:15 ★</td>
-            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">popular-sync</td>
-            <td style="padding:10px 14px; color:var(--text);">저녁 인기글 재수집 — 21:25 전 완료 → 21:30 crawl-only 간섭 없음</td>
-            <td style="padding:10px 14px; color:var(--muted);">21:25 (10분 하드타임아웃)</td>
-            <td style="padding:10px 14px; color:var(--orange); font-weight:600;">21:30 GHA popular-curate</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- GHA 23슬롯 -->
-    <h3 style="margin-bottom:12px; color:var(--teal);">GitHub Actions (GHA) — 서버에서 자동 실행 · 큐레이션 23슬롯</h3>
-    <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">
-      Mac과 무관하게 GitHub 서버에서 실행됩니다. Regular: 45분 간격 5건×20슬롯(100건/일). Popular: popular-sync 완료 후 5건×3슬롯(15건/일). → <strong style="color:var(--text);">하루 총 115건</strong>.
-      runner.ts가 25분 이내 중복 실행을 차단합니다 (이중발화 방지).
-    </p>
-    <div style="overflow-x:auto; margin-bottom:24px;">
-      <table style="width:100%; border-collapse:collapse; font-size:13px;">
-        <thead>
-          <tr style="background:var(--bg3); color:var(--sub); font-size:11px; text-transform:uppercase; letter-spacing:0.06em;">
-            <th style="padding:8px 12px; text-align:center; border-bottom:1px solid var(--border); width:36px;">#</th>
-            <th style="padding:8px 12px; text-align:left; border-bottom:1px solid var(--border);">KST 슬롯</th>
-            <th style="padding:8px 12px; text-align:left; border-bottom:1px solid var(--border);">목적 · 비고</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="border-bottom:1px solid var(--border); background:rgba(74,222,128,0.04);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">1</td>
-            <td style="padding:8px 12px; color:var(--green); font-weight:700;">08:20</td>
-            <td style="padding:8px 12px; color:var(--text);">07:40 크롤 완료 후 <strong>하루 첫 발행</strong> — 아침 원본 글 반영</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">2</td>
-            <td style="padding:8px 12px; color:var(--teal);">09:05</td>
-            <td style="padding:8px 12px; color:var(--muted);">아침 콘텐츠 연속 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">3</td>
-            <td style="padding:8px 12px; color:var(--teal);">09:50</td>
-            <td style="padding:8px 12px; color:var(--muted);">아침 콘텐츠 연속 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">4</td>
-            <td style="padding:8px 12px; color:var(--teal);">10:35</td>
-            <td style="padding:8px 12px; color:var(--muted);">09:30 크롤 데이터 반영 시작</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">5</td>
-            <td style="padding:8px 12px; color:var(--teal);">11:20</td>
-            <td style="padding:8px 12px; color:var(--muted);">오전 콘텐츠 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">6</td>
-            <td style="padding:8px 12px; color:var(--teal);">12:05</td>
-            <td style="padding:8px 12px; color:var(--muted);">오전 콘텐츠 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">7</td>
-            <td style="padding:8px 12px; color:var(--teal);">12:50</td>
-            <td style="padding:8px 12px; color:var(--muted);">오전 콘텐츠 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border); background:rgba(74,222,128,0.04);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">8</td>
-            <td style="padding:8px 12px; color:var(--teal); font-weight:600;">13:35</td>
-            <td style="padding:8px 12px; color:var(--text);">11:30 full 크롤 완료 → <strong>Haiku 심리분석 결과 반영 시작</strong></td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">9</td>
-            <td style="padding:8px 12px; color:var(--teal);">14:20</td>
-            <td style="padding:8px 12px; color:var(--muted);">오후 콘텐츠 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">10</td>
-            <td style="padding:8px 12px; color:var(--teal);">15:05</td>
-            <td style="padding:8px 12px; color:var(--muted);">14:30 크롤 반영 (타이트 — 해당 슬롯은 이전 데이터, 다음 슬롯부터 새 데이터)</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">11</td>
-            <td style="padding:8px 12px; color:var(--teal);">15:50</td>
-            <td style="padding:8px 12px; color:var(--muted);">오후 콘텐츠 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">12</td>
-            <td style="padding:8px 12px; color:var(--teal);">16:35</td>
-            <td style="padding:8px 12px; color:var(--muted);">오후 콘텐츠 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">13</td>
-            <td style="padding:8px 12px; color:var(--teal);">17:20</td>
-            <td style="padding:8px 12px; color:var(--muted);">오후 콘텐츠 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">14</td>
-            <td style="padding:8px 12px; color:var(--teal);">18:05</td>
-            <td style="padding:8px 12px; color:var(--muted);">17:30 크롤 반영 시작</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">15</td>
-            <td style="padding:8px 12px; color:var(--teal);">18:50</td>
-            <td style="padding:8px 12px; color:var(--muted);">저녁 콘텐츠 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">16</td>
-            <td style="padding:8px 12px; color:var(--teal);">19:35</td>
-            <td style="padding:8px 12px; color:var(--muted);">저녁 콘텐츠 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">17</td>
-            <td style="padding:8px 12px; color:var(--teal);">20:20</td>
-            <td style="padding:8px 12px; color:var(--muted);">저녁 콘텐츠 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">18</td>
-            <td style="padding:8px 12px; color:var(--teal);">21:05</td>
-            <td style="padding:8px 12px; color:var(--muted);">저녁 콘텐츠 발행</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">19</td>
-            <td style="padding:8px 12px; color:var(--teal); font-weight:600;">21:50</td>
-            <td style="padding:8px 12px; color:var(--text);">일반 슬롯 마지막 — 21:30 크롤은 다음날 08:20에 첫 반영</td>
-          </tr>
-          <tr style="background:rgba(167,139,250,0.06);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">20</td>
-            <td style="padding:8px 12px; color:var(--purple); font-weight:700;">01:15 ★</td>
-            <td style="padding:8px 12px; color:var(--text);">
-              <strong style="color:var(--purple);">심야 감성글 특별 슬롯</strong> — 00:30 크롤 완료 후 11분 여유<br>
-              <span style="color:var(--muted); font-size:12px;">content-curator.ts가 KST 01시 감지 → MEANING/SPIRITUAL/RELATION/FAMILY 우선 정렬</span>
-            </td>
-          </tr>
-          <tr style="background:var(--bg3);">
-            <td colspan="3" style="padding:8px 12px; color:var(--orange); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em;">
-              ── Popular Track (A30) — 3슬롯 · popular-sync 완료 직후 실행 ──
-            </td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border); background:rgba(251,146,60,0.05);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">P1</td>
-            <td style="padding:8px 12px; color:var(--orange); font-weight:700;">10:50 ★</td>
-            <td style="padding:8px 12px; color:var(--text);">
-              <strong style="color:var(--orange);">popular-curate 오전</strong> — 10:30 popular-sync 완료 후 20분<br>
-              <span style="color:var(--muted); font-size:12px;">isPopular=true 글 5건 AI 재가공 발행. agents-cafe-popular-curation.yml</span>
-            </td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border); background:rgba(251,146,60,0.05);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">P2</td>
-            <td style="padding:8px 12px; color:var(--orange); font-weight:700;">16:15 ★</td>
-            <td style="padding:8px 12px; color:var(--text);">
-              <strong style="color:var(--orange);">popular-curate 오후</strong> — 16:00 popular-sync 완료 후 15분<br>
-              <span style="color:var(--muted); font-size:12px;">isPopular=true 글 5건 AI 재가공 발행</span>
-            </td>
-          </tr>
-          <tr style="background:rgba(251,146,60,0.05);">
-            <td style="padding:8px 12px; text-align:center; color:var(--sub);">P3</td>
-            <td style="padding:8px 12px; color:var(--orange); font-weight:700;">21:30 ★</td>
-            <td style="padding:8px 12px; color:var(--text);">
-              <strong style="color:var(--orange);">popular-curate 저녁</strong> — 21:15 popular-sync 완료 후 15분<br>
-              <span style="color:var(--muted); font-size:12px;">21:30 crawl-only plist와 concurrency group 공유 → 동시 실행 방지</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- 기타 GHA 워크플로우 -->
-    <h3 style="margin-bottom:12px; color:var(--blue);">기타 GHA 워크플로우 (큐레이션 외)</h3>
-    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:20px 24px; margin-bottom:24px;">
-      <div class="timeline">
-        <div class="tl-item gha">
-          <div class="tl-time">09:03 <span class="tl-label label-gha">GHA</span></div>
-          <div class="tl-mode">DailyBrief 대비 (brief-fallback)</div>
-          <div class="tl-detail">Mac이 꺼졌으면 어제 브리프 복사 또는 새 생성</div>
-        </div>
-        <div class="tl-item gha">
-          <div class="tl-time">09:30 <span class="tl-label label-gha">GHA</span></div>
-          <div class="tl-mode">브리프 생성 감시</div>
-          <div class="tl-detail">오늘 브리프가 없으면 Slack #시스템 경고 발송</div>
-        </div>
-        <div class="tl-item gha">
-          <div class="tl-time">10:30 · 14:09 · 21:13 <span class="tl-label label-gha">GHA</span></div>
-          <div class="tl-mode">외부 커뮤니티 트렌드 수집 (sheet-scrape)</div>
-          <div class="tl-detail">펨코 등 외부 인기글 수집 (에디터 참고용)</div>
-        </div>
-        <div class="tl-item cron">
-          <div class="tl-time">*/5분 (24시간) <span class="tl-label label-cron">GHA + cron-job.org</span></div>
-          <div class="tl-mode">
-            <span class="tooltip">댓글 파동 처리<span class="tooltip-text">CommentWaveQueue와 UserPostWaveQueue를 5분마다 확인해서 "지금 게시할 차례가 된 댓글"을 달아줍니다.</span></span>
-          </div>
-          <div class="tl-detail">큐레이션 파동(wave1~4) + 회원글 파동(wave1~4) 처리</div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>trend-analyzer.ts</strong> — 트렌드 집계 + isUsable 재설정<br>
+          QUALITY_THRESHOLDS.minUsable(=30) 기준으로 isUsable 재계산. 이 단계는 isUsable을 <em>재설정</em>하는 것이지 처음 설정이 아님.
         </div>
       </div>
-    </div>
-
-    <div class="alert info mt24">
-      <strong>GHA cron 혼잡 해소 — 워크플로우별 고유 오프셋 (2026-05-15 적용)</strong>
-      기존에 UTC 00:00 (KST 09:00)에 6~8개 워크플로우가 동시 실행되어 최대 75분 지연이 발생했습니다.
-      11개 워크플로우에 고유 오프셋을 적용해 혼잡을 해소했습니다.
-      <br><br>
-      <code>09:02</code> seed · <code>09:03</code> brief-fallback · <code>09:04</code> seed-micro ·
-      <code>09:05</code> agents-weekly · <code>09:06</code> quarantine · 큐레이션 20슬롯(08:20~01:15 45분 간격) ·
-      <code>09:11</code> agents-daily · <code>09:13</code> moderation · <code>09:17</code> agents-social ·
-      <code>09:19</code> agents-hourly
-    </div>
-    <div class="alert ok">
-      <strong>GHA 비용 안내</strong>
-      GitHub repo가 PUBLIC이므로 GHA 전체 무제한 무료입니다. 큐레이션 20슬롯 + 5분 파동 크론 모두 $0입니다.
-    </div>
-  </div>
-
-  <!-- ── 5. 크롤 시스템 상세 ── -->
-  <div class="section" id="crawl">
-    <div class="section-header">
-      <div class="section-num">5</div>
-      <h2>크롤 시스템 상세</h2>
-    </div>
-
-    <div class="biz-lead">
-      Playwright 브라우저가 네이버 카페 "전체글보기" 페이지에서 새 글만 증분 수집합니다.
-      매일 ~100건의 새 원본이 DB에 쌓입니다.
-    </div>
-
-    <h3>5-A. 전체글보기 증분 크롤 플로우</h3>
-    <div class="flow-diagram">
-      <div class="flow-box">Playwright 시작<span class="flow-label">NID 쿠키 로드</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box"><span class="tooltip">전체글보기 URL<span class="tooltip-text">카페 내 모든 게시판 글이 최신순으로 한 곳에 모이는 단일 스트림. 개별 게시판 21~25개를 순회하지 않고 이 URL 하나로 전체를 수집합니다. 게시판 추가·삭제에도 무관하게 동작.</span></span> 접근<span class="flow-label">allArticlesUrl</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">MAX(articleId) 확인<span class="flow-label">DB에서 마지막 수집 번호</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">새 글만 수집<span class="flow-label">증분 — 이후 번호만</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box"><span class="tooltip">cafe_main iframe<span class="tooltip-text">네이버 카페 특유의 프레임 구조. 본문이 cafe_main이라는 iframe 안에 있어 Playwright가 자동으로 frame switching을 해줍니다.</span></span> 본문 추출<span class="flow-label">iframe 자동 탐색</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">품질 점수 계산<span class="flow-label">qualityScore 산출</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">DB 저장<span class="flow-label">20점 미만 제외</span></div>
-    </div>
-
-    <div class="narrative">
-      <p>
-        <strong>두 카페의 전체글보기 URL</strong><br>
-        우아한갱년기: <code>cafe.naver.com/f-e/cafes/29349320/menus/0?viewType=L</code><br>
-        은퇴후50년: <code>cafe.naver.com/f-e/cafes/23676262/menus/0?viewType=L</code>
-      </p>
-      <p>
-        매번 처음부터 다 읽는 게 아닙니다. DB에 저장된 가장 큰 articleId 이후의 새 글만 수집합니다.
-        하루에 새로 올라오는 글 ~100~120건만 처리합니다.
-      </p>
-    </div>
-
-    <h3>5-B. 중복 수집 방지</h3>
-    <div class="flow-diagram">
-      <div class="flow-box">크롤된 글 URL<span class="flow-label">postUrl</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">DB <span class="tooltip">postUrl<span class="tooltip-text">DB의 CafePost 테이블에 postUrl unique 제약이 걸려있습니다. 네이버 게시글 고유 URL 기준으로 중복 체크합니다. naverPostId가 아닌 postUrl이 기준입니다. (crawler.ts L836)</span></span> 조회<span class="flow-label">unique 제약</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box" style="border-color:rgba(248,113,113,0.4); color:var(--red);">이미 있음 → 스킵<span class="flow-label">continue</span></div>
-    </div>
-    <div class="flow-diagram">
-      <div class="flow-box">크롤된 글 URL<span class="flow-label">postUrl</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">DB postUrl 조회</div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box" style="border-color:rgba(74,222,128,0.4); color:var(--green);">없음 → 저장 진행<span class="flow-label">새 글</span></div>
-    </div>
-    <div class="narrative" style="font-size:13px;">
-      <p>동일 URL은 DB 레벨에서 구조적으로 중복 저장 불가합니다. 재크롤 시에도 안전합니다.</p>
-    </div>
-
-    <h3>5-C. Playwright 안전장치</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>안전장치</th><th>이유</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><span class="tooltip">headless=false<span class="tooltip-text">브라우저 화면을 띄운 채 실행. 네이버는 headless 브라우저를 봇으로 감지해 차단하기 때문에 headless를 끕니다.</span></span></td>
-            <td>네이버 봇 감지 회피</td>
-          </tr>
-          <tr>
-            <td><span class="tooltip">NID_AUT / NID_SES 쿠키<span class="tooltip-text">네이버 로그인 상태를 유지하는 인증 쿠키. .env.local의 NAVER_COOKIES에서 로드합니다. 만료 시 크롤 전면 중단 → 섹션 12 런북 참조.</span></span></td>
-            <td>로그인 상태 유지 (비공개 게시판 접근)</td>
-          </tr>
-          <tr>
-            <td>cafe_main iframe 자동 탐색</td>
-            <td>네이버 카페 특유의 iframe 구조 처리</td>
-          </tr>
-          <tr>
-            <td><span class="tooltip">연속 실패 5회 → 카페 스킵<span class="tooltip-text">한 카페에서 본문 수집이 5번 연속 실패하면 해당 카페를 스킵하고 다음 카페로 넘어갑니다. 네이버 임시 차단 감지 시 전체 크롤 중단 방지. (crawler.ts L1000-1009)</span></span></td>
-            <td>네이버 차단 감지 시 자동 중단</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ── 6. Popular-Sync 시스템 (A30) ── -->
-  <div class="section" id="popular-sync">
-    <div class="section-header">
-      <div class="section-num">6</div>
-      <h2>Popular-Sync 시스템 (A30) — 인기글 파이프라인</h2>
-    </div>
-
-    <div class="biz-lead">
-      네이버 카페 실시간 인기글을 하루 3회 별도 수집해 우나어에 발행합니다.
-      <strong>killerScore 과소평가 문제를 근본 해결</strong>한 독립 트랙입니다.
-    </div>
-
-    <!-- 배경: killerScore 과소평가 문제 -->
-    <h3 style="margin-bottom:12px; color:var(--orange);">배경 — killerScore 과소평가 문제</h3>
-    <div class="card" style="border-color:rgba(251,146,60,0.3); background:var(--orange-dim); margin-bottom:24px;">
-      <div class="narrative" style="font-size:13.5px;">
-        <p><strong>Regular 크롤의 한계:</strong> 크롤 시점(11:22)에 수집된 글은 당시 조회수·좋아요로 killerScore가 낮게 기록됩니다.</p>
-        <p style="margin:8px 0 0;">
-          예) 11:22 게시글 A 올라옴 → 11:30 크롤 시 viewCount=12, likeCount=1 → killerScore=낮음 → "저점수 글"로 DB 저장<br>
-          → 14:30 A가 카페에서 오늘 가장 핫한 글이 됨 (viewCount=1,200, likeCount=47)<br>
-          → 하지만 DB에는 killerScore=낮음 → 큐레이션 제외<br>
-          → <strong style="color:var(--orange);">진짜 핫한 글이 우나어에 안 나온다.</strong>
-        </p>
-      </div>
-    </div>
-
-    <!-- 해결: /popular 탭 3회 sync -->
-    <h3 style="margin-bottom:12px; color:var(--orange);">해결 — /popular 탭 하루 3회 sync</h3>
-    <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">
-      네이버 카페 <code>/popular</code> 탭 = 실시간 인기 상위글. 이 페이지를 하루 3회(10:30/16:00/21:15 KST) 별도 크롤:
-    </p>
-    <div class="card-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
-      <div class="card" style="border-color:rgba(251,146,60,0.3);">
-        <div class="card-title" style="color:var(--orange);">Case A — 이미 DB에 있는 글</div>
-        <div class="narrative mt8" style="font-size:13px;">
-          viewCount / likeCount / commentCount 재수집 → killerScore 재계산 → isPopular=true 마킹
-        </div>
-      </div>
-      <div class="card" style="border-color:rgba(251,191,36,0.3);">
-        <div class="card-title" style="color:var(--yellow);">Case B — DB에 없는 글</div>
-        <div class="narrative mt8" style="font-size:13px;">
-          qualityScore 기준 무시하고 전체 수집 → isPopular=true (인기글 자체가 품질 보증)
-        </div>
-      </div>
-    </div>
-
-    <!-- 설계 핵심 결정 (4가지 버그 방지) -->
-    <h3 style="margin-bottom:12px; color:var(--orange);">설계 핵심 결정 — 4가지 버그 방지</h3>
-    <div class="table-wrap" style="margin-bottom:24px;">
-      <table>
-        <thead><tr><th>버그</th><th>문제</th><th>해결</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><strong class="text-orange">BUG-1</strong></td>
-            <td>popular-sync가 run-pipeline.ts 경유 시 락파일 공유 → 21:30 crawl-only가 스킵됨</td>
-            <td><code>popular-sync.ts</code>는 run-pipeline.ts 미사용 → 락파일 없음 → 충돌 없음</td>
-          </tr>
-          <tr>
-            <td><strong class="text-orange">BUG-2</strong></td>
-            <td>content-curator.ts가 isPopular=true 글을 Regular 큐레이션에 먼저 사용</td>
-            <td>content-curator.ts 2곳에 <code>isPopular: false</code> 필터 추가 → 인기글 선취 차단</td>
-          </tr>
-          <tr>
-            <td><strong class="text-orange">BUG-3</strong></td>
-            <td>popular-curator.ts가 content-curator.ts import → auto-run 이중실행</td>
-            <td>popular-curator.ts는 독립 파일 — content-curator.ts import 안 함</td>
-          </tr>
-          <tr>
-            <td><strong class="text-orange">BUG-4</strong></td>
-            <td>스키마+코드 동시 커밋 → GHA 배포 중 런타임 에러</td>
-            <td>Commit A(스키마) → 창업자 migrate → Commit B(코드) 순서 엄수</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- 추가 설계 -->
-    <div class="card" style="margin-bottom:24px;">
-      <div class="card-title">추가 설계 원칙</div>
-      <ul class="narrative mt8" style="font-size:13.5px; padding-left:20px; line-height:2;">
-        <li>매 sync 시작 시 해당 카페 isPopular <strong>전체 리셋</strong> → 전날 인기글 누적 방지</li>
-        <li>GHA concurrency group: <code>cafe-hourly-curation</code> 공유 → popular + regular 동시 실행 방지</li>
-        <li>popular-sync <strong>10분 하드 타임아웃</strong> — 21:25 전 강제 종료 → 21:30 crawl-only 보장</li>
-        <li>popular-curator.ts: Haiku 모델, 5건/슬롯, 일 3슬롯 → content-curator 대비 +15% 비용</li>
-      </ul>
-    </div>
-
-    <!-- 신규 파일 & DB 스키마 -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
-      <div class="card">
-        <div class="card-title">신규 파일</div>
-        <pre style="margin-top:8px; font-size:12px; line-height:1.8; background:var(--bg); padding:12px; border-radius:8px; overflow-x:auto;">agents/cafe/popular-sync.ts
-  Mac launchd 전용, standalone, 락파일 없음
-
-agents/cafe/popular-curator.ts
-  GHA auto-run, content-curator 미import
-
-agents/cafe/curator-shared.ts
-  순수함수+상수 (PERSONAS 52명,
-  matchPersona, guessDesire)
-
-.github/workflows/
-  agents-cafe-popular-curation.yml
-
-launchd/
-  com.unao.cafe-crawler-popular-morning.plist
-  com.unao.cafe-crawler-popular-afternoon.plist
-  com.unao.cafe-crawler-popular-evening.plist</pre>
-      </div>
-      <div class="card">
-        <div class="card-title">DB 스키마 (Prisma)</div>
-        <pre style="margin-top:8px; font-size:12px; line-height:1.8; background:var(--bg); padding:12px; border-radius:8px;">model CafePost {
-  ...
-  isPopular        Boolean
-                   @default(false)
-  popularUpdatedAt DateTime?
-  ...
-}</pre>
-        <div class="narrative mt8" style="font-size:13px; color:var(--muted);">
-          isPopular: popular-sync 마킹<br>
-          popularUpdatedAt: 마지막 sync 시각<br>
-          마이그레이션: <code>069a692</code>
+      <div class="step-row">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <strong>daily-brief.ts (Claude Sonnet)</strong> — DailyIntelligenceBrief 생성<br>
+          트렌드 집계 결과를 바탕으로 오늘의 욕망 키워드, 긴급 주제, dominantDesire 분석. 큐레이션의 주제 선택 기준이 된다.
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ── 7. 품질 점수 시스템 ── -->
-  <div class="section" id="quality">
-    <div class="section-header">
-      <div class="section-num">7</div>
-      <h2>품질 점수 시스템</h2>
-    </div>
+  <h3>crawl-only vs full 비교표</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>기능</th><th>crawl-only (6회/일)</th><th>full (1회/일, 11:30)</th></tr></thead>
+      <tbody>
+        <tr><td>신규 글 저장</td><td class="text-green">✅</td><td class="text-green">✅</td></tr>
+        <tr><td>isUsable 즉시 설정 (savePosts)</td><td class="text-green">✅</td><td class="text-green">✅</td></tr>
+        <tr><td>7일 재크롤 (지표 갱신)</td><td class="text-green">✅</td><td class="text-green">✅</td></tr>
+        <tr><td>댓글/대댓글 수집 (DEEP)</td><td class="text-red">❌</td><td class="text-green">✅ 최대 15개 + 대댓글 5개</td></tr>
+        <tr><td>심리분석 (psych-analyzer)</td><td class="text-red">❌</td><td class="text-green">✅ Claude Haiku</td></tr>
+        <tr><td>트렌드분석 (trend-analyzer)</td><td class="text-red">❌</td><td class="text-green">✅ isUsable 재설정</td></tr>
+        <tr><td>DailyBrief (daily-brief)</td><td class="text-red">❌</td><td class="text-green">✅ Claude Sonnet</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
-    <div class="biz-lead">
-      두 가지 점수로 원본 글을 평가합니다. <strong>qualityScore</strong>는 "큐레이션에 쓸 수 있는 글인가", <strong>killerScore</strong>는 "지금 카페에서 화제인 글인가"를 측정합니다.
-    </div>
-
-    <h3>6-A. qualityScore vs killerScore 비교</h3>
-    <div class="score-compare">
-      <div class="score-card">
-        <div class="score-card-title">qualityScore — 큐레이션 기준점</div>
-        <div class="score-row"><span>참여도 (좋아요+댓글)</span><span class="score-pct same">40%</span></div>
-        <div class="score-row"><span>본문 길이</span><span class="score-pct same">20%</span></div>
-        <div class="score-row"><span>게시판 중요도</span><span class="score-pct same">20%</span></div>
-        <div class="score-row"><span>최신성</span><span class="score-pct same">15%</span></div>
-        <div class="score-row"><span>이미지 유무</span><span class="score-pct same">5%</span></div>
-        <div class="score-card-tag">"균형잡힌 품질 — 큐레이션 원본으로 쓸 수 있는가"</div>
-      </div>
-      <div class="score-card">
-        <div class="score-card-title">killerScore — 화제성 탐지</div>
-        <div class="score-row"><span>참여도 (좋아요+댓글)</span><span class="score-pct up">55% ↑</span></div>
-        <div class="score-row"><span>본문 길이</span><span class="score-pct same">20%</span></div>
-        <div class="score-row"><span>게시판 중요도</span><span class="score-pct down">15% ↓</span></div>
-        <div class="score-row"><span>최신성</span><span class="score-pct down">5% ↓↓</span></div>
-        <div class="score-row"><span>이미지 유무</span><span class="score-pct same">5%</span></div>
-        <div class="score-card-tag">"지금 카페에서 좋아요·댓글이 폭발하는 글 탐지"</div>
-      </div>
-    </div>
-
-    <div class="narrative">
-      <p>
-        두 점수의 차이는 <strong>참여도 가중치와 최신성 가중치</strong>입니다.
-        qualityScore는 최신성(15%)과 게시판 중요도(20%)를 고려해 균형잡힌 품질을 측정합니다.
-        killerScore는 참여도(55%)를 최우선으로 두어 "요즘 카페에서 실제로 화제인 글"을 잡아냅니다.
-        killerScore가 70 이상인 글은 매시간 큐레이션 선택 시 최우선(최대 2건)으로 삽입됩니다.
-      </p>
-    </div>
-
-    <h3>6-B. 세 단계 임계값</h3>
-    <div class="threshold-bar">
-      <div class="threshold-zone zone-red" style="flex: 0 0 15%;">
-        0 ~ 19<span class="zone-label">DB 저장 안 함<br>(minSave=20 미달)</span>
-      </div>
-      <div class="threshold-zone zone-yellow" style="flex: 0 0 15%;">
-        20 ~ 29<span class="zone-label">저장만 · 큐레이션 불가<br>(분석 데이터 보관)</span>
-      </div>
-      <div class="threshold-zone zone-green">
-        30 이상<span class="zone-label">isUsable=true<br>큐레이션 사용 가능<br><span style="font-size:10px;opacity:0.7;">config.ts minUsable=30</span></span>
-      </div>
-    </div>
-
-    <div class="narrative" style="font-size:13px;">
-      <p>
-        수집된 글 100건 중 약 20건은 품질이 낮아 DB에 저장 자체가 되지 않습니다 (스팸·단문 등).
-        저장된 80건 중 대부분(약 80%)이 30점 이상으로 큐레이션에 사용 가능합니다.
-        20~29점 글은 분석 데이터로만 보관됩니다.
-      </p>
-    </div>
-
-    <div class="alert info">
-      <strong>코드 출처 확인</strong>
-      qualityScore 가중치: <code>quality-scorer.ts L23-29</code> · killerScore 가중치: <code>quality-scorer.ts L119-127</code><br>
-      임계값: <code>config.ts (minSave=20, minUsable=30)</code> · isUsable 설정: <code>trend-analyzer.ts L350</code>
-    </div>
+<!-- ══════════ §5. 중복 수집 방지 3단계 ══════════ -->
+<div class="section" id="s-dedup">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <h2>중복 수집 방지 3단계</h2>
   </div>
 
-  <!-- ── 7. 큐레이션 & 카테고리 매핑 ── -->
-  <div class="section" id="curation">
-    <div class="section-header">
-      <div class="section-num">8</div>
-      <h2>큐레이션 &amp; 카테고리 매핑</h2>
-    </div>
-
-    <div class="biz-lead">
-      매시간 GHA가 원본 글 5건을 선택하고 Claude Sonnet으로 재가공해 우나어에 발행합니다.
-      원본 글의 욕망 카테고리에 따라 게시판과 서브카테고리가 자동 결정됩니다.
-    </div>
-
-    <h3>7-A. 매시간 5건 선별 — 4단계 우선순위</h3>
-
-    <!-- 4단계 플로우 -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0;">
-      <div class="card" style="border-color:rgba(250,204,21,0.4); background:rgba(250,204,21,0.04);">
-        <div style="font-size:11px; font-weight:700; color:var(--yellow); margin-bottom:6px; letter-spacing:0.05em;">① KILLER — 최대 2건</div>
-        <div style="font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px;">killerScore ≥ 70 화제글 우선 삽입</div>
-        <div style="font-size:12px; color:var(--muted);">참여도 55% 가중치 점수 — "지금 사람들이 열광하는 글"을 빠르게 이식. <strong>상한 2건:</strong> 5건 전부 killer로 채우면 매시간 동일 주제(주로 건강·가족)가 반복 노출되어 다양성이 무너짐.</div>
-      </div>
-      <div class="card" style="border-color:rgba(96,165,250,0.4); background:rgba(96,165,250,0.04);">
-        <div style="font-size:11px; font-weight:700; color:var(--blue); margin-bottom:6px; letter-spacing:0.05em;">② BRIEF — 나머지 3건</div>
-        <div style="font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px;">DailyBrief(욕망 지도) 기반 주제 결정</div>
-        <div style="font-size:12px; color:var(--muted);">11:30 풀 파이프라인이 생성한 "오늘의 욕망 지도"를 보고 아직 덜 다룬 주제를 우선 선택. 매일 조금씩 다른 주제 비중이 나오는 이유.</div>
-      </div>
-      <div class="card" style="border-color:rgba(74,222,128,0.4); background:rgba(74,222,128,0.04);">
-        <div style="font-size:11px; font-weight:700; color:var(--green); margin-bottom:6px; letter-spacing:0.05em;">③ FALLBACK — 3단계 원본 탐색</div>
-        <div style="font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px;">원본 없으면 범위 자동 확장</div>
-        <div style="font-size:12px; color:var(--muted);">
-          <span style="display:block; padding:2px 0;">📌 1차: <strong>48시간</strong> + 키워드 매칭</span>
-          <span style="display:block; padding:2px 0;">📌 2차: <strong>7일</strong> + 키워드 매칭</span>
-          <span style="display:block; padding:2px 0;">📌 3차: <strong>7일</strong> + 카테고리만 (키워드 완화)</span>
-          최신 글 우선, 없으면 점점 과거로.
-        </div>
-      </div>
-      <div class="card" style="border-color:rgba(251,146,60,0.4); background:rgba(251,146,60,0.04);">
-        <div style="font-size:11px; font-weight:700; color:var(--orange,#fb923c); margin-bottom:6px; letter-spacing:0.05em;">④ HARDCAP — 욕망별 하루 상한</div>
-        <div style="font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px;">특정 욕망 편중 차단</div>
-        <div style="font-size:12px; color:var(--muted);">
-          HEALTH <strong>22건</strong> · FAMILY <strong>11건</strong> · MONEY <strong>3건</strong> · 나머지 각 <strong>6건</strong>/일<br>
-          상한 초과 → 그 시간 해당 욕망 건너뜀 → 다른 주제 강제 선택.<br>
-          하루 총 100건(20슬롯 × 5건) 기준.
-        </div>
-      </div>
-    </div>
-
-    <!-- HEALTH 편중 경고 -->
-    <div class="alert warn mt8">
-      <strong>⚠️ 설계 한계: 원본 데이터 자체가 HEALTH 편중</strong><br>
-      우아한갱년기는 건강 주제가 60%+를 차지합니다. 하드캡 22건으로 HEALTH 과다 발행은 막지만,
-      PET·BEAUTY·FASHION 같은 카테고리는 <strong>원본 글 자체가 DB에 적어서</strong> 하드캡(6건)에
-      한참 못 미치게 발행될 수 있습니다. 보호 장치는 있으나 데이터 부족은 보완 불가.<br>
-      <span style="font-size:12px; color:var(--muted); margin-top:6px; display:block;">
-        📅 <strong>2026-05-22 이후 확인:</strong> CuratedContent 욕망별 발행 비중 쿼리 돌려서
-        하드캡 조정 또는 소스 카페 추가 여부 결정. (Claude에게 "큐레이션 욕망 분포 분석해줘" 요청)
-      </span>
-    </div>
-
-    <h3>7-B. 욕망 → 게시판 자동 매핑</h3>
-    <div class="grid-2">
-      <div>
-        <div class="board-group">
-          <div class="board-header story">이야기방 (STORY)</div>
-          <div class="board-subs">
-            <span class="chip-cat health">건강 → 건강</span>
-            <span class="chip-cat beauty">뷰티 → 건강</span>
-            <span class="chip-cat family">가족 → 가족</span>
-            <span class="chip-cat relation">인간관계 → 고민</span>
-            <span class="chip-cat meaning">의미 → 고민</span>
-            <span class="chip-cat spiritual">정신·종교 → 고민</span>
-            <span class="chip-cat hobby">취미 → 취미</span>
-            <span class="chip-cat food">음식 → 취미</span>
-            <span class="chip-cat beauty">패션 → 취미</span>
-            <span class="chip-cat digital">디지털 → 취미</span>
-            <span class="chip-cat pet">반려동물 → 취미</span>
-            <span class="chip-cat freedom">자유 → 자유수다</span>
-            <span class="chip-cat general">일상 → 자유수다</span>
-          </div>
-        </div>
-        <div class="board-group">
-          <div class="board-header life2">라이프2 (LIFE2)</div>
-          <div class="board-subs">
-            <span class="chip-cat money">재테크 → 재테크·연금</span>
-            <span class="chip-cat retire">은퇴 → 은퇴준비</span>
-            <span class="chip-cat housing">주거 → 주거·이사</span>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div class="board-group">
-          <div class="board-header job">내일찾기 (JOB)</div>
-          <div class="board-subs">
-            <span class="chip-cat job">일자리 → 전체</span>
-          </div>
-        </div>
-        <div class="board-group">
-          <div class="board-header humor">유머 (HUMOR)</div>
-          <div class="board-subs">
-            <span class="chip-cat humor">유머 → 유머·웃음</span>
-            <span class="chip-cat entertain">엔터·TV → 엔터·TV</span>
-          </div>
-        </div>
-        <div class="alert info mt16" style="font-size:12.5px;">
-          <strong>욕망 자동 감지</strong>
-          <code>guessDesire()</code> 함수가 글 제목·주제에서 키워드를 탐지해 욕망을 자동 판단합니다. 매칭 안 되면 GENERAL → 자유수다 분류.
-        </div>
-      </div>
-    </div>
-
-    <h3>7-C. 욕망별 키워드 감지</h3>
-    <div class="narrative" style="font-size:13px; margin-bottom:8px;">
-      <p>아래 키워드가 제목/본문에 포함되면 해당 욕망으로 자동 분류됩니다.</p>
-    </div>
-
-    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:18px 20px;">
-      <div style="margin-bottom:12px;">
-        <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">HEALTH (건강)</span>
-        <div class="chip-grid">
-          <span class="chip-cat health">건강</span><span class="chip-cat health">병원</span><span class="chip-cat health">약</span><span class="chip-cat health">증상</span><span class="chip-cat health">통증</span><span class="chip-cat health">다이어트</span><span class="chip-cat health">갱년기</span><span class="chip-cat health">수술</span><span class="chip-cat health">검진</span><span class="chip-cat health">혈압</span>
-        </div>
-      </div>
-      <div style="margin-bottom:12px;">
-        <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">FAMILY (가족)</span>
-        <div class="chip-grid">
-          <span class="chip-cat family">자녀</span><span class="chip-cat family">아들</span><span class="chip-cat family">딸</span><span class="chip-cat family">남편</span><span class="chip-cat family">며느리</span><span class="chip-cat family">손주</span><span class="chip-cat family">부모님</span><span class="chip-cat family">결혼</span>
-        </div>
-      </div>
-      <div style="margin-bottom:12px;">
-        <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">MONEY (재테크)</span>
-        <div class="chip-grid">
-          <span class="chip-cat money">재테크</span><span class="chip-cat money">연금</span><span class="chip-cat money">투자</span><span class="chip-cat money">부동산</span><span class="chip-cat money">절약</span><span class="chip-cat money">주식</span><span class="chip-cat money">저축</span>
-        </div>
-      </div>
-      <div style="margin-bottom:12px;">
-        <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">RETIRE (은퇴)</span>
-        <div class="chip-grid">
-          <span class="chip-cat retire">은퇴</span><span class="chip-cat retire">퇴직</span><span class="chip-cat retire">노후</span><span class="chip-cat retire">인생2막</span><span class="chip-cat retire">제2의인생</span>
-        </div>
-      </div>
-      <div style="margin-bottom:12px;">
-        <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">JOB (일자리)</span>
-        <div class="chip-grid">
-          <span class="chip-cat job">취업</span><span class="chip-cat job">일자리</span><span class="chip-cat job">알바</span><span class="chip-cat job">파트타임</span><span class="chip-cat job">재취업</span><span class="chip-cat job">구직</span>
-        </div>
-      </div>
-      <div style="display:flex; gap:32px; flex-wrap:wrap;">
-        <div style="flex:1; min-width:200px;">
-          <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">RELATION / HOBBY / HUMOR</span>
-          <div class="chip-grid">
-            <span class="chip-cat relation">인간관계</span><span class="chip-cat relation">외로움</span><span class="chip-cat relation">갈등</span>
-            <span class="chip-cat hobby">여행</span><span class="chip-cat hobby">등산</span><span class="chip-cat hobby">독서</span>
-            <span class="chip-cat humor">유머</span><span class="chip-cat humor">웃음</span><span class="chip-cat entertain">드라마</span>
-          </div>
-        </div>
-        <div style="flex:1; min-width:200px;">
-          <span style="font-size:11px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">BEAUTY / FOOD / PET / DIGITAL</span>
-          <div class="chip-grid">
-            <span class="chip-cat beauty">피부</span><span class="chip-cat beauty">화장</span>
-            <span class="chip-cat food">맛집</span><span class="chip-cat food">요리</span>
-            <span class="chip-cat pet">강아지</span><span class="chip-cat pet">고양이</span>
-            <span class="chip-cat digital">스마트폰</span><span class="chip-cat digital">유튜브</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <h3>7-D. 욕망별 하드캡 (일일 상한)</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>욕망</th><th>게시판</th><th>일일 상한</th><th>이유</th></tr></thead>
-        <tbody>
-          <tr><td>HEALTH (건강)</td><td>이야기방</td><td class="text-primary"><strong>22건</strong></td><td>원본 데이터 최다 — 편중 방지</td></tr>
-          <tr><td>FAMILY (가족)</td><td>이야기방</td><td class="text-blue"><strong>11건</strong></td><td>두 번째로 많은 욕망</td></tr>
-          <tr><td>MONEY</td><td>라이프2</td><td class="text-yellow"><strong>3건</strong></td><td>투자 편중 방지 (2026-05-18 강화)</td></tr>
-          <tr><td>RETIRE, HOUSING</td><td>라이프2</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한</td></tr>
-          <tr><td>JOB</td><td>내일찾기</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한</td></tr>
-          <tr><td>HUMOR, ENTERTAIN</td><td>유머</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한</td></tr>
-          <tr><td>나머지 욕망</td><td>이야기방</td><td class="text-muted"><strong>6건</strong></td><td>기본 상한 (DEFAULT_MAX_DESIRE)</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <h3>7-E. 콘텐츠 품질 필터 (V9.4 신규)</h3>
-    <div class="narrative">
-      <p>발행 후 분석(2026-05-18, 29개 전수 검토)에서 제주 편중·의미 중복·계절 불일치 3종 문제 발견 → 후보 선택 단계에서 자동 차단.</p>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>필터</th><th>로직</th><th>차단 예시</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><strong>P1. 키워드 quota</strong></td>
-            <td>오늘 발행 글 제목에서 2글자 이상 한글 명사 추출 → 특정 명사가 이미 2회 이상 등장하면 그 글 skip</td>
-            <td>"제주" 2개 발행 후 → "제주 온천 여행" 자동 skip</td>
-          </tr>
-          <tr>
-            <td><strong>P2. Levenshtein 중복</strong></td>
-            <td>최근 7일 발행 제목과 편집 거리 ≤ 5 이거나, 2글자 이상 명사 2개 이상 겹치면 중복 처리</td>
-            <td>"마음도 편해졌습니다" ↔ "마음이 편해졌습니다" (거리=2) → 차단</td>
-          </tr>
-          <tr>
-            <td><strong>P3. 계절 필터</strong></td>
-            <td>제목+본문에 계절 키워드 포함 시 허용 월 외에는 skip (벚꽃→3·4월, 장마→6·7월 등)</td>
-            <td>5월에 "벚꽃 명소" → 허용 월 [3,4] 불일치 → 자동 skip</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div class="biz-lead">
+    하루 7번 크롤해도 같은 글이 DB에 두 번 들어가지 않는다. 3단계 방어 구조로 막는다.
   </div>
 
-  <!-- ── 8. 원문 보존 — 수미상관 ── -->
-  <div class="section" id="preservation">
-    <div class="section-header">
-      <div class="section-num">9</div>
-      <h2>원문 보존 — 수미상관 방식</h2>
-    </div>
+  <h3>단계 A — articleId 증분 크롤 (수집 단계)</h3>
+  <div class="narrative">
+    <p>crawler.ts는 전체글보기 페이지에 접근하기 전, DB에서 해당 카페의 <code>MAX(articleId)</code>를 조회한다. 그보다 articleId가 작거나 같은 글은 크롤링 자체를 하지 않는다.</p>
+    <p>결과: 이미 저장된 글은 Playwright로 페이지를 방문하지도 않는다. 트래픽 절약 + 처리 시간 단축.</p>
+  </div>
+<pre>// crawler.ts — 증분 크롤 핵심 로직
+const latestArticleId = await prisma.cafePost.aggregate({
+  where: { cafeId: cafe.cafeId },
+  _max: { articleId: true },
+})
+const maxKnownId = latestArticleId._max.articleId ?? 0
+// maxKnownId보다 큰 articleId를 가진 글만 수집</pre>
 
-    <div class="biz-lead">
-      AI가 글을 새로 쓰지 않습니다. 원본의 <strong>첫 문장과 마지막 문장만</strong> 페르소나 말투로 바꾸고, 나머지 90%는 원문 그대로입니다.
-    </div>
+  <h3>단계 B — postUrl unique 차단 (저장 단계)</h3>
+  <div class="narrative">
+    <p>혹시 articleId 체크를 통과한 글이 있더라도, <code>savePosts</code> 함수에서 postUrl로 DB 조회 후 이미 있으면 저장하지 않는다.</p>
+  </div>
+<pre>// crawler.ts savePosts
+const existing = await prisma.cafePost.findUnique({ where: { postUrl: post.postUrl } })
+if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
 
-    <h3>글 구조 시각화</h3>
-    <div class="preservation-bar">
-      <div class="pres-persona">첫 문장<br><small style="font-weight:400; font-size:11px;">페르소나 말투</small></div>
-      <div class="pres-original">원문 90% 그대로<br><small style="color:var(--sub); font-size:12px;">고유명사 · 수치 · 경험 내용 100% 유지</small></div>
-      <div class="pres-persona-end">끝 문장<br><small style="font-weight:400; font-size:11px;">페르소나 말투</small></div>
-    </div>
+  <h3>단계 C — 인기글 popular-sync: 갱신 vs 신규 분기</h3>
+  <div class="narrative">
+    <p>popular-sync.ts는 인기글 탭을 별도로 수집한다. 이미 DB에 있는 글이면 INSERT 없이 지표만 갱신하고 <code>isPopular=true</code>로 표시한다.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>경우</th><th>처리</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Case A</strong>: DB에 이미 있는 글</td>
+          <td>killerScore 재계산 + isPopular=true 업데이트. INSERT 없음.</td>
+        </tr>
+        <tr>
+          <td><strong>Case B</strong>: DB에 없는 새 글</td>
+          <td>isUsable=true 강제 설정 후 신규 INSERT. (인기글 = 품질 보증)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
-    <div class="narrative">
-      <p>
-        <strong>왜 수미상관인가?</strong><br>
-        순수 AI 생성(원본 0%)은 두 가지 문제가 있습니다. 첫째, "AI 냄새"가 납니다.
-        둘째, 실제 경험에서 나오는 구체적인 수치, 병원 이름, 지역명 같은 정보가 없어 신뢰도가 낮습니다.
-      </p>
-      <p>
-        원본 글의 90%를 그대로 살리면 실제 사람의 경험이 담긴 구체적인 이야기가 전달됩니다.
-        여기에 해당 페르소나의 말투로 시작하고 끝내면, 우나어 회원이 직접 쓴 것처럼 자연스러워집니다.
-      </p>
-      <p>
-        <strong>보존 원칙</strong><br>
-        고유명사(병원명, 지역, 브랜드), 구체적 수치(혈당 120, 체중 65kg), 날짜, 가격 — 모두 100% 원문 그대로.
-        오직 첫 문장("~더라고요", "요즘 들어서...")과 끝 문장("같이 해요!", "한번 해보세요 여러분!") 만 페르소나 색으로 입힙니다.
-      </p>
-    </div>
-
-    <div class="grid-2 mt16">
-      <div class="card">
-        <div class="card-title">Before — 순수 AI 생성</div>
-        <div class="narrative mt8" style="font-size:13px;">
-          <p style="color:var(--red);">"갱년기 증상으로 많은 분들이 힘드실 것 같습니다. 전문가 상담을 권장하며, 건강한 생활 습관이 중요합니다."</p>
-          <p style="color:var(--sub); margin:0; font-size:12px;">→ AI 냄새 남, 구체성 없음, 신뢰도 낮음</p>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">After — 수미상관 방식</div>
-        <div class="narrative mt8" style="font-size:13px;">
-          <p style="color:var(--primary);">"언니들, 저도 요즘 너무 힘들더라구요 ㅠㅠ"</p>
-          <p style="color:var(--muted);">"3달 전부터 갑자기 얼굴이 화끈화끈하고... [원문 그대로] ...분당 서울대병원에서 여성호르몬 검사 받았는데..."</p>
-          <p style="color:var(--primary); margin:0;">"우리 같이 이겨내요! 화이팅 🙌"</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="alert ok mt8">
-      <strong>코드 출처</strong>
-      수미상관 프롬프트: <code>content-curator.ts L615-620</code> — "원본 90% 보존, 첫/끝 문장만 페르소나 말투로 변환"
-    </div>
+<!-- ══════════ §6. 점수 체계 ══════════ -->
+<div class="section" id="s-score">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <h2>점수 체계 (qualityScore / killerScore)</h2>
   </div>
 
-  <!-- ── 9. 댓글 파동 시스템 ── -->
-  <div class="section" id="wave">
-    <div class="section-header">
-      <div class="section-num">10</div>
-      <h2>댓글 파동 시스템</h2>
-    </div>
-
-    <div class="biz-lead">
-      글이 올라오면 즉시 "반응이 있는 글"처럼 만들어 알고리즘 활성화를 유도합니다.
-      두 가지 파동 시스템이 운영됩니다: 큐레이션 글용과 실제 회원 글용.
-    </div>
-
-    <h3>A. 큐레이션 댓글 파동 (4건/글)</h3>
-    <div class="narrative"><p>GHA가 큐레이션 글을 발행하는 순간, 동시에 댓글 4건의 예약이 생성됩니다.</p></div>
-    <div class="wave-steps">
-      <div class="wave-step">
-        <div class="wave-badge w1">+1분</div>
-        <div class="wave-content">
-          <strong>댓글 1건</strong> — 글 발행 직후 1분 안에 페르소나 한 명이 공감 댓글을 답니다.<br>
-          알고리즘이 "이 글에 반응이 있다"고 인식하게 하는 핵심 타이밍입니다.
-        </div>
+  <div class="grid-2">
+    <div>
+      <h3>qualityScore — 저장·후보 기준</h3>
+      <div class="narrative">
+        <p>크롤 시점에 즉시 계산. 저장 여부와 isUsable 여부를 결정한다.</p>
       </div>
-      <div class="wave-step">
-        <div class="wave-badge w2">+5분</div>
-        <div class="wave-content">
-          <strong>댓글 1건</strong> — 다른 페르소나가 질문이나 동의 댓글을 답니다.
-        </div>
-      </div>
-      <div class="wave-step">
-        <div class="wave-badge w3">+30분</div>
-        <div class="wave-content"><strong>댓글 1건</strong> — 또 다른 페르소나가 자신의 경험을 공유하는 댓글을 답니다.</div>
-      </div>
-      <div class="wave-step">
-        <div class="wave-badge w4">+60분</div>
-        <div class="wave-content">
-          <strong>댓글 1건</strong> — 다른 각도의 관점이나 보완 정보를 제시하는 댓글로 마무리됩니다. ("저는 반대로 ~", "그런데 ~도 있더라고요"류. 응원/화이팅 금지)<br>
-          총 4건 × 100건/일 = <strong>400건/일 댓글</strong>
-        </div>
-      </div>
-    </div>
-
-    <div class="narrative" style="font-size:13px; color:var(--sub);">
-      ※ 글을 쓴 페르소나는 자기 글에 댓글 달지 않습니다. 79명 중 글쓴이 제외 풀에서 랜덤 선택, 같은 게시글에 동일 페르소나 중복 댓글 방지. TTL = 발행 후 +60h (CommentWaveQueue).<br>
-      ※ <strong>봇 당일 댓글 캡</strong>: 하루 3건 이상 다른 글에 댓글 단 봇은 선택 풀에서 제외 (손뜨개·체력왕 과반복 방지). 캡 미초과 봇 우선 셔플, 전원 초과 시 전체 풀 fallback.
-    </div>
-
-    <h3>A-1. 댓글 파동 타이밍 비교 (봇 글 vs 회원 글)</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>웨이브</th><th>역할</th><th>봇 큐레이션 글</th><th>실제 회원 글</th></tr></thead>
-        <tbody>
-          <tr><td>wave1</td><td>공감형</td><td>+1분</td><td>+1분</td></tr>
-          <tr><td>wave2</td><td>질문형</td><td>+5분</td><td class="text-yellow"><strong>+10분</strong></td></tr>
-          <tr><td>wave3</td><td>경험공유형</td><td>+30분</td><td>+30분</td></tr>
-          <tr><td>wave4</td><td>다른관점형</td><td>+60분</td><td>+60분</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="narrative" style="font-size:13px; color:var(--sub);">
-      ※ 회원 글 wave2가 +5분이 아닌 +10분인 이유: 회원이 작성 직후 바로 읽고 있을 수 있어 자연스러운 간격 확보 (UserPostWaveQueue 별도 타이밍).
-    </div>
-
-    <h3>A-2. 댓글 퍼소나 제외 규칙</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>퍼소나 계열</th><th>봇 글 댓글 파동</th><th>회원 글 댓글 파동</th><th>이유</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>EN1~EN5, N1~N5</td>
-            <td class="text-red">제외</td>
-            <td class="text-red">제외</td>
-            <td>특수 계정 — 모든 댓글 파동에서 완전 제외</td>
-          </tr>
-          <tr>
-            <td>HUMOR_ONLY (C, AF, AO, AY)</td>
-            <td class="text-green">참여</td>
-            <td class="text-red">제외</td>
-            <td>유머형 퍼소나는 진짜 회원 글에 댓글 달기 부자연스러움</td>
-          </tr>
-          <tr>
-            <td>글 작성자 본인</td>
-            <td class="text-red">제외</td>
-            <td class="text-red">제외</td>
-            <td>자기 글에 자기가 댓글 다는 것 방지 (자동 제외)</td>
-          </tr>
-          <tr>
-            <td>이미 댓글 단 퍼소나</td>
-            <td class="text-red">제외</td>
-            <td class="text-red">제외</td>
-            <td>동일 게시글 중복 댓글 방지</td>
-          </tr>
-          <tr>
-            <td>나머지 일반 퍼소나</td>
-            <td class="text-green">참여</td>
-            <td class="text-green">참여</td>
-            <td>랜덤 선택 풀</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>A-3. 게시글당 봇 댓글 캡</h3>
-    <div class="card">
-      <div class="card-title">최대 5개/게시글 — wave + reply-chain 합산 (2026-05-18 강화)</div>
-      <div class="narrative mt8" style="font-size:13px;">
-        <p>이전: wave-processor만 체크 → reply-chain 합산 누락으로 15건+ 초과 발생</p>
-        <p>현재: wave-processor + reply-chain-driver 양쪽에서 봇 댓글 수 합산 체크 후 캡 적용</p>
-        <p><strong>48시간 우선 처리 창:</strong> 발행 후 48h 내 게시글에 우선 댓글 배정</p>
-        <p><strong>이모지 전면 금지:</strong> generator 시스템 프롬프트 + content-curator 페르소나 A/E 이모지 제거 (2026-05-18)</p>
-        <p style="color:var(--sub); font-size:12px;">근거: agents/core/constitution.yaml — bot comment cap 항목</p>
-      </div>
-    </div>
-
-    <h3>B. 회원글 댓글 파동 (9건/글) — 신규</h3>
-    <div class="narrative">
-      <p>
-        실제 회원이 우나어에 글을 올리는 순간 자동으로 시작됩니다.
-        회원이 글을 올렸는데 아무 반응이 없으면 실망해서 떠날 수 있기 때문에,
-        자연스러운 "커뮤니티 반응"을 만들어드리는 기능입니다.
-      </p>
-    </div>
-    <div class="wave-steps">
-      <div class="wave-step">
-        <div class="wave-badge w1">+1분</div>
-        <div class="wave-content"><strong>댓글 1건</strong> — "글 잘 봤어요, 저도 그런 경험이..." 공감 댓글</div>
-      </div>
-      <div class="wave-step">
-        <div class="wave-badge w2">+10분</div>
-        <div class="wave-content"><strong>댓글 2건</strong> — 두 명이 각각 다른 관점으로 반응</div>
-      </div>
-      <div class="wave-step">
-        <div class="wave-badge w3">+30분</div>
-        <div class="wave-content"><strong>댓글 3건</strong> — 경험 공유, 정보 제공, 격려</div>
-      </div>
-      <div class="wave-step">
-        <div class="wave-badge w4">+60분</div>
-        <div class="wave-content"><strong>댓글 3건</strong> — 추가 공감 및 응원으로 마무리. 총 9건.</div>
-      </div>
-    </div>
-
-    <div class="alert ok">
-      <strong>모든 댓글·대댓글은 우나어 안에서만 달립니다</strong>
-      네이버 카페에는 아무것도 올리지 않습니다. 크롤링은 수집만 합니다.
-      모든 글·댓글·대댓글·좋아요는 우나어(age-doesnt-matter.com) 게시글에만 달립니다.
-    </div>
-  </div>
-
-  <!-- ── 10-B. Connection Facilitator ── -->
-  <div class="section" id="connection-facilitator">
-    <div class="section-header">
-      <div class="section-num" style="background:var(--teal-dim);border:1px solid rgba(45,212,191,0.3);color:var(--teal);">10-B</div>
-      <h2>Connection Facilitator — 외로운 글 첫 연결 고리</h2>
-    </div>
-
-    <div class="biz-lead">
-      댓글이 0~1개인 채 방치된 회원 글에 먼저 다가가는 전담 에이전트.
-      "내 글에 아무도 반응 안 하네"라고 실망한 회원이 떠나지 않도록 첫 연결 고리를 만들어 줍니다.
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>항목</th><th>상세</th></tr></thead>
-        <tbody>
-          <tr><td>대상 게시판</td><td>STORY 게시판 (자유 이야기)</td></tr>
-          <tr><td>선택 조건</td><td>commentCount ≤ 1 이고 생성 후 6시간 이상 경과한 글</td></tr>
-          <tr><td>1회 처리량</td><td>3~5개 게시글</td></tr>
-          <tr><td>전담 퍼소나</td><td class="text-teal"><strong>AQ, AV, AW, E — 이 4명만</strong> Connection Facilitator 역할 수행</td></tr>
-          <tr><td>스킵 조건</td><td>게시글 작성자 = 해당 퍼소나 / 이미 댓글 달았으면 스킵</td></tr>
-          <tr><td>실행 주체</td><td>COO 에이전트 (agents/coo/connection-facilitator.ts)</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="alert info" style="margin-top:16px;">
-      <strong>일반 댓글 파동과의 차이</strong><br>
-      일반 파동은 글이 발행되자마자 즉시 시작(+1분~+60분). Connection Facilitator는 <strong>6시간 이상 방치된 글</strong>을 찾아가는 사후 대응. 즉시 반응이 없었던 글들의 2차 생명줄.
-    </div>
-  </div>
-
-  <!-- ── 10-C. 이미지 전용 게시글 핸즈오프 정책 ── -->
-  <div class="section" id="image-only-policy">
-    <div class="section-header">
-      <div class="section-num" style="background:rgba(255,111,97,0.15);border:1px solid rgba(255,111,97,0.3);color:var(--primary);">10-C</div>
-      <h2>이미지 전용 게시글 핸즈오프 정책 — 절대 건드리지 말 것</h2>
-    </div>
-
-    <div class="alert warn">
-      <strong>⚠️ 이 규칙 위반 시 콘텐츠 손실 발생</strong><br>
-      아래 조건을 모두 만족하는 게시글은 <strong>댓글 달기 / 삭제 / 조정 절대 금지</strong>입니다.
-    </div>
-
-    <div class="table-wrap mt16">
-      <table>
-        <thead><tr><th>조건</th><th>값</th><th>판단 이유</th></tr></thead>
-        <tbody>
-          <tr><td>source</td><td><code>SHEET</code></td><td>구글 시트에서 수동 등록된 게시글</td></tr>
-          <tr><td>content 길이</td><td>&lt; 50자</td><td>텍스트가 거의 없음</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="narrative mt16">
-      <p>
-        <strong>왜 건드리면 안 되나요?</strong><br>
-        이 게시글은 이미지가 본문입니다. 텍스트 본문이 짧다고 "빈 글" 취급하면 실제 콘텐츠(이미지)가 있는 게시글을 삭제하거나 오조작할 수 있습니다.
-        시스템이 짧은 텍스트 = 이미지 전용으로 인식하도록 설계되어 있으며, AI 에이전트는 이 게시글에 일체 관여하지 않습니다.
-      </p>
-      <p style="color:var(--sub); font-size:12px;">근거: agents/core/constitution.yaml — image-only post rule</p>
-    </div>
-  </div>
-
-  <!-- ── 10. 페르소나 생태계 ── -->
-  <div class="section" id="persona">
-    <div class="section-header">
-      <div class="section-num">11</div>
-      <h2>페르소나 생태계 (79명)</h2>
-    </div>
-
-    <div class="biz-lead">
-      79명의 가상 페르소나가 50·60대 실제 사람처럼 우나어에서 활동합니다.
-      각자 이름·나이·관심사·말투가 다르며, 실제 우나어 DB에 봇 계정으로 존재합니다.
-    </div>
-
-    <h3>V8 현재 역할</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>활동</th><th>V6 이전</th><th>V8 현재</th><th>이유</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>글 쓰기</td>
-            <td class="text-yellow">56건/일</td>
-            <td class="text-red"><strong>0건 (중단)</strong></td>
-            <td>큐레이션 100건으로 충분. AI 원본 0% 글은 품질 리스크</td>
-          </tr>
-          <tr>
-            <td>큐레이션 댓글</td>
-            <td class="text-muted">~36건</td>
-            <td class="text-green"><strong>400건/일</strong></td>
-            <td>큐레이션 증가(75→100건)로 자연 증가</td>
-          </tr>
-          <tr>
-            <td>유기적 댓글</td>
-            <td>71건/일</td>
-            <td>71건/일 (유지)</td>
-            <td>기존 글에 자연스럽게 반응</td>
-          </tr>
-          <tr>
-            <td>대댓글</td>
-            <td>31건/일</td>
-            <td>31건/일 (유지)</td>
-            <td>댓글에 이어 대화가 형성되는 것처럼</td>
-          </tr>
-          <tr>
-            <td>좋아요</td>
-            <td>52건/일</td>
-            <td>52건/일 (유지)</td>
-            <td>자연스러운 인게이지먼트</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="narrative">
-      <p>
-        <strong>글 쓰기 중단은 언제 재개할 수 있나요?</strong><br>
-        GitHub Secrets에서 <code>ENABLE_SEED_POSTS</code> 값을 <code>true</code>로 바꾸면 됩니다.
-        단, 이 값은 scheduler.ts 코드 내부(L424-426)에서 체크합니다. GHA 워크플로우 자체를 수정하는 게 아닙니다.
-      </p>
-      <p>
-        <strong>⚠️ ENABLE_SEED_POSTS=false 가 중단하는 것 vs 계속하는 것</strong>
-      </p>
-      <div class="table-wrap" style="margin:8px 0 12px;">
+<pre>qualityScore =
+  engagement   × 0.40  (좋아요+댓글+조회)
+  contentLen   × 0.20  (본문 길이)
+  media        × 0.05  (이미지/영상 수)
+  boardPriority× 0.20  (게시판 우선순위)
+  recency      × 0.15  (최신성)</pre>
+      <div class="table-wrap mt8">
         <table>
-          <thead><tr><th>기능</th><th>ENABLE_SEED_POSTS=false 시</th></tr></thead>
+          <thead><tr><th>qualityScore</th><th>처리</th></tr></thead>
           <tbody>
-            <tr><td>봇 게시글 생성 (글 쓰기)</td><td class="text-red">⛔ 중단</td></tr>
-            <tr><td>큐레이션 댓글 파동 (CommentWaveQueue)</td><td class="text-green">✅ 계속</td></tr>
-            <tr><td>회원 글 댓글 파동 (UserPostWaveQueue)</td><td class="text-green">✅ 계속</td></tr>
-            <tr><td>유기적 댓글·대댓글·좋아요</td><td class="text-green">✅ 계속</td></tr>
-            <tr><td>Connection Facilitator</td><td class="text-green">✅ 계속</td></tr>
+            <tr><td><code>&lt; 20</code></td><td>저장 자체 안 함 (minSave)</td></tr>
+            <tr><td><code>20 ~ 29</code></td><td>저장하되 isUsable=false</td></tr>
+            <tr><td><code>≥ 30</code></td><td>isUsable=true → 큐레이션 후보 풀 진입</td></tr>
           </tbody>
         </table>
       </div>
-      <p style="color:var(--sub); font-size:12px;">"봇 끄기"가 아니라 "봇 글 발행 일시정지"입니다. 댓글·좋아요·파동은 모두 정상 동작합니다.</p>
-      <p>
-        <strong>79명 중 누가 댓글을 다나요?</strong><br>
-        매번 랜덤으로 선택됩니다. 글쓴이는 자기 글에 댓글을 달지 않도록 자동 제외됩니다.
-        특수 계정(EN1~EN5, N1~N5 계열)은 댓글 파동에서 제외됩니다.
-      </p>
     </div>
+    <div>
+      <h3>killerScore — 킬러글 기준</h3>
+      <div class="narrative">
+        <p>인게이지먼트 지표에 집중한 별도 점수. 재크롤 시 갱신됨.</p>
+      </div>
+<pre>killerScore =
+  commentCount×10÷100 × 0.55
+  + likeCount×20÷100 × 0.35
+  + (기타 보너스)
+  × 100</pre>
+      <div class="table-wrap mt8">
+        <table>
+          <thead><tr><th>killerScore</th><th>처리</th></tr></thead>
+          <tbody>
+            <tr><td><code>≥ 70</code></td><td>킬러글 — 큐레이션 시 selectedTopics 앞에 최우선 삽입</td></tr>
+            <tr><td><code>&lt; 70</code></td><td>일반 처리</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert info mt8" style="font-size:12.5px; padding:12px 14px;">
+        <strong>킬러글 처리 방식</strong>
+        해당 카페 글을 그대로 복사하지 않는다. 글의 <em>제목</em>을 주제로 삼아 Claude가 새 글을 생성한다.
+      </div>
+    </div>
+  </div>
+</div>
 
-    <div class="card mt16">
-      <div class="card-title">하루 전체 활동 합계</div>
-      <div class="flex-row mt8">
-        <span class="chip green">큐레이션 댓글 400건/일</span>
-        <span class="chip blue">유기 댓글 71건/일</span>
-        <span class="chip purple">대댓글 31건/일</span>
-        <span class="chip yellow">좋아요 52건/일</span>
-        <span class="chip primary">합계 ~554건/일</span>
+<!-- ══════════ §7. isUsable 완전 가이드 ══════════ -->
+<div class="section" id="s-isusable">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <h2>isUsable 완전 가이드 ⚠️ 오해 주의</h2>
+  </div>
+
+  <div class="alert err">
+    <strong>⚠️ 이전 문서(v9.4)의 두 가지 오류 — 반드시 읽을 것</strong>
+    ❌ 구버전: "qualityScore 60점 이상에 isUsable=true" → ✅ 실제: <strong>30점 이상</strong><br>
+    ❌ 구버전: "crawl-only 모드에서 신규글은 isUsable=false 상태로 저장" → ✅ 실제: <strong>savePosts에서 크롤 즉시 설정 (crawl-only 포함)</strong>
+  </div>
+
+  <h3>isUsable의 생애 주기</h3>
+  <div class="step-box">
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>savePosts() — 크롤 즉시 설정</strong><br>
+          crawler.ts의 savePosts 함수에서 qualityScore를 계산하고 즉시 isUsable을 결정한다.<br>
+          <code>isUsable = qualityScore &gt;= QUALITY_THRESHOLDS.minUsable</code> (minUsable = <strong>30</strong>)<br>
+          <span class="text-muted">crawl-only 모드도 동일하게 적용됨. 11:30까지 기다리지 않는다.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>trend-analyzer.ts — 11:30 full 모드에서 재설정</strong><br>
+          전체 CafePost를 대상으로 QUALITY_THRESHOLDS.minUsable(=30) 기준 재계산. savePosts에서 설정된 값을 업데이트한다.<br>
+          <span class="text-muted">이 단계는 "처음 설정"이 아니라 "검증·정정"이다.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>content-curator.ts — 큐레이션 후 usedAt 설정</strong><br>
+          발행에 사용된 CafePost는 <code>usedAt</code>에 현재 시각이 기록된다. usedAt이 NULL이어야 큐레이션 후보 풀에 포함된다. (isUsable은 변경 안 됨)
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>popular-sync.ts — 인기글은 isUsable=true 강제</strong><br>
+          인기글 탭에서 수집된 글(Case B: DB 신규)은 qualityScore 무관하게 isUsable=true로 저장. 인기글 = 품질 보증.
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ── 11. 카페 수집 상세 ── -->
-  <div class="section" id="cafes">
-    <div class="section-header">
-      <div class="section-num">12</div>
-      <h2>수집 대상 카페 상세</h2>
-    </div>
+  <h3>한 줄 요약</h3>
+  <div class="alert ok">
+    <strong>isUsable 규칙</strong>
+    qualityScore ≥ 30이면 크롤 즉시(savePosts) isUsable=true. crawl-only도 포함. 11:30 분석 없어도 적용됨.
+  </div>
+</div>
 
-    <div class="grid-2 mb24">
-      <div class="card">
-        <div class="card-title">
-          <span class="tooltip">우아한 갱년기 (wgang)<span class="tooltip-text">40~50대 여성 커뮤니티. 회원 280만명+. 갱년기·건강·뷰티 중심으로 HEALTH·FAMILY·RELATION·BEAUTY 욕망 데이터가 풍부합니다.</span></span>
+<!-- ══════════ §8. 7일 재크롤 ══════════ -->
+<div class="section" id="s-refresh">
+  <div class="section-header">
+    <div class="section-num">8</div>
+    <h2>7일 재크롤 (refreshRecentPosts)</h2>
+  </div>
+
+  <div class="biz-lead">
+    크롤 시점의 좋아요/댓글 수는 이후 계속 변한다. 7일 재크롤로 최신 지표를 유지하고, killerScore가 70에 도달한 글을 킬러글로 승격한다.
+  </div>
+
+  <h3>동작 방식</h3>
+  <div class="narrative">
+    <p><code>refreshRecentPosts()</code>는 crawl-only와 full 모드 모두에서 크롤링 직후 실행된다 (CRAWL_MODE=refresh).</p>
+  </div>
+<pre>refreshRecentPosts()
+  → DB에서 최근 7일 이내 CafePost 상위 50건 조회 (commentCount 내림차순)
+  → 각 글의 실제 페이지 재방문 (Playwright)
+  → likeCount / commentCount / viewCount 재수집
+  → 변경된 경우에만 killerScore 재계산 후 UPDATE</pre>
+
+  <h3>killerScore 재계산 공식</h3>
+<pre>killerScore = (commentCount × 10 ÷ 100 × 0.55 + likeCount × 20 ÷ 100 × 0.35) × 100</pre>
+  <div class="alert info">
+    <strong>승격 시나리오</strong>
+    처음 크롤 시 killerScore=50 (킬러글 아님) → 3일 후 댓글이 급증 → 재크롤에서 killerScore=78 → 킬러글(≥70) 승격 → 다음 큐레이션에서 최우선 주제로 선택됨.
+  </div>
+
+  <h3>제약사항</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>항목</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>대상 기간</td><td>최근 7일 이내 CafePost</td></tr>
+        <tr><td>대상 건수</td><td>상위 50건 (commentCount 내림차순)</td></tr>
+        <tr><td>실행 시점</td><td>crawl-only + full 모드 모두 (크롤 직후)</td></tr>
+        <tr><td>업데이트 조건</td><td>likeCount 또는 commentCount가 변한 경우에만</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════ §9. DB 저장 구조 ══════════ -->
+<div class="section" id="s-db">
+  <div class="section-header">
+    <div class="section-num">9</div>
+    <h2>DB 저장 구조 + topComments</h2>
+  </div>
+
+  <h3>CafePost 저장 필드 전체</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>필드</th><th>내용</th><th>설정 주체</th></tr></thead>
+      <tbody>
+        <tr><td><code>cafeId / cafeName</code></td><td>wgang / dlxogns01</td><td>savePosts</td></tr>
+        <tr><td><code>postUrl</code></td><td>글 URL (unique key)</td><td>savePosts</td></tr>
+        <tr><td><code>articleId</code></td><td>증분 크롤 기준값</td><td>savePosts</td></tr>
+        <tr><td><code>title / content / author</code></td><td>원문 제목/본문/작성자 닉네임</td><td>savePosts</td></tr>
+        <tr><td><code>category / boardName / boardCategory</code></td><td>게시판 분류</td><td>savePosts</td></tr>
+        <tr><td><code>qualityScore</code></td><td>저장 기준(≥20) + isUsable 기준(≥30)</td><td>savePosts</td></tr>
+        <tr><td><code>killerScore</code></td><td>≥70 = 킬러글. 재크롤 시 갱신됨</td><td>savePosts + refreshRecentPosts</td></tr>
+        <tr><td><code>isUsable</code></td><td>qualityScore ≥ 30이면 true (크롤 즉시)</td><td>savePosts + trend-analyzer</td></tr>
+        <tr><td><code>isPopular</code></td><td>인기글 탭 수집 여부</td><td>popular-sync</td></tr>
+        <tr><td><code>likeCount / commentCount / viewCount</code></td><td>수집 시점 지표. 재크롤로 갱신됨</td><td>savePosts + refreshRecentPosts</td></tr>
+        <tr><td><code>imageUrls / videoUrls / thumbnailUrl / mediaCount</code></td><td>미디어 URL 목록</td><td>savePosts</td></tr>
+        <tr><td><code>topComments</code></td><td>댓글 JSON (DEEP 모드만). 최대 15개 + 대댓글 5개</td><td>crawler DEEP 모드</td></tr>
+        <tr><td><code>commentCrawled</code></td><td>댓글 수집 여부 bool</td><td>crawler DEEP 모드</td></tr>
+        <tr><td><code>crawledAt</code></td><td>수집 시각 (<strong>createdAt 필드 없음</strong>)</td><td>savePosts</td></tr>
+        <tr><td><code>usedAt</code></td><td>큐레이션 발행 시각. NULL이어야 후보 풀 진입</td><td>content-curator</td></tr>
+        <tr><td><code>emotionTags / desireCategory / desireType</code></td><td>AI 심리 분석 결과</td><td>psych-analyzer (full만)</td></tr>
+        <tr><td><code>communitySignal / urgencyLevel / conflictTrigger / viralType</code></td><td>바이럴 분석 결과</td><td>psych-analyzer (full만)</td></tr>
+        <tr><td><code>aiAnalyzed</code></td><td>심리 분석 완료 여부</td><td>psych-analyzer (full만)</td></tr>
+        <tr><td><code>postedAt</code></td><td>원본 카페 글 게시 일시</td><td>savePosts</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>topComments 구조 (JSON)</h3>
+  <div class="alert info">
+    <strong>수집 조건</strong>
+    11:30 full 모드(DEEP 크롤)에서만 수집. crawl-only에서는 topComments=null.
+  </div>
+<pre>// topComments 타입 구조
+interface CommentData {
+  author: string       // 댓글 작성자 닉네임
+  content: string      // 댓글 내용
+  likeCount: number    // 댓글 좋아요 수
+  replies: Array&lt;{    // 대댓글 (최대 5개)
+    author: string
+    content: string    // 최대 150자로 자름
+  }&gt;
+}
+
+// CafePost.topComments = CommentData[]  (최대 15개)</pre>
+
+  <h3>wave-processor가 topComments를 쓰는 방식</h3>
+  <div class="narrative">
+    <p>wave-processor.ts는 댓글을 생성할 때 해당 글의 topComments를 참조해 맥락을 파악한다. 이 때 wave 번호(1~4) 기반으로 서로 다른 인덱스의 댓글을 참조한다.</p>
+    <p>결과: wave1, wave2, wave3, wave4가 모두 다른 원본 댓글을 보고 생성 → 4개 wave가 동일 댓글을 반복 복사하는 현상 방지.</p>
+  </div>
+
+  <h3>저장 전 필터 4단계</h3>
+  <div class="step-box">
+    <div class="step-list">
+      <div class="step-row"><div class="step-num">1</div><div class="step-content"><strong>BOARD_BLACKLIST</strong> — 게시판 블랙리스트 (광고성 게시판 등)</div></div>
+      <div class="step-row"><div class="step-num">2</div><div class="step-content"><strong>TOPIC_BLACKLIST</strong> — 주제 블랙리스트 (정치, 종교 등)</div></div>
+      <div class="step-row"><div class="step-num">3</div><div class="step-content"><strong>COMPETITOR_KEYWORDS</strong> — 경쟁 서비스 언급 차단</div></div>
+      <div class="step-row"><div class="step-num">4</div><div class="step-content"><strong>qualityScore &lt; 20</strong> — minSave 미달 (저장 자체 안 함)</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ §10. 큐레이션 시스템 ══════════ -->
+<div class="section" id="s-curator">
+  <div class="section-header">
+    <div class="section-num">10</div>
+    <h2>큐레이션 시스템 (content-curator.ts)</h2>
+  </div>
+
+  <div class="biz-lead">
+    GHA가 45분마다 실행. DB에서 isUsable=true + usedAt=null인 CafePost 중 오늘 DailyBrief 주제에 맞는 글을 선택해 Claude로 새 글을 생성·발행한다.
+  </div>
+
+  <h3>큐레이션 흐름</h3>
+<pre>1. DailyBrief 조회 (오늘 11:30 생성된 것)
+   → urgentTopics, dominantDesire 파악
+
+2. killerScore ≥ 70 글 조회 (isUsable=true, usedAt=null, isPopular=false)
+   → 제목을 selectedTopics 앞에 최우선 삽입
+
+3. isUsable=true + usedAt=null 후보 중 주제 선택
+   → P1 키워드 quota 체크 (당일 2회 이상 발행된 키워드 skip)
+   → P2 유사 제목 필터 (편집 거리 ≤5 또는 명사 2개 이상 겹침 skip)
+   → P3 계절 필터 (현재 월에 맞지 않는 계절 키워드 skip)
+
+4. Claude Sonnet으로 새 글 생성 (카페 원문 참조, 독자적 내용)
+
+5. Post DB 저장 + usedAt 업데이트
+
+6. CommentWaveQueue 자동 등록 (wave1~4 예약)</pre>
+
+  <h3>당일 큐레이션 cap</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>제한</th><th>기준</th></tr></thead>
+      <tbody>
+        <tr><td>발행 총량 cap</td><td>하루 최대 발행량 설정 (config.ts dailyPublishLimit)</td></tr>
+        <tr><td>desireCategory 다양성</td><td>동일 욕망 카테고리 연속 발행 제한</td></tr>
+        <tr><td>키워드 quota (P1)</td><td>동일 키워드 하루 2회 초과 발행 시 skip</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════ §11. Wave 댓글 시스템 ══════════ -->
+<div class="section" id="s-wave">
+  <div class="section-header">
+    <div class="section-num">11</div>
+    <h2>Wave 댓글 시스템</h2>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <h3>CommentWaveQueue (큐레이션 글)</h3>
+      <div class="wave-steps">
+        <div class="wave-step">
+          <div class="wave-badge w1">wave1<br>+1분</div>
+          <div class="wave-content"><strong>공감형</strong> — 글쓴이 감정에 공감. "저도 그런 적 있어요"류. 응원 문구 금지.</div>
         </div>
-        <div class="mt8 narrative" style="font-size:13px;">
-          <p style="margin-bottom:6px;">40~50대 여성 중심 커뮤니티. 회원 280만명+</p>
-          <p style="margin-bottom:6px;">주력 데이터: 건강, 가족, 인간관계, 뷰티</p>
-          <p style="margin:0; color:var(--sub); font-size:12px;">numericId: 29349320</p>
+        <div class="wave-step">
+          <div class="wave-badge w2">wave2<br>+5분</div>
+          <div class="wave-content"><strong>질문형</strong> — 글 내용 중 궁금한 점 한 가지 구체 질문. 공감 선언 없이 바로 질문으로 시작.</div>
+        </div>
+        <div class="wave-step">
+          <div class="wave-badge w3">wave3<br>+30분</div>
+          <div class="wave-content"><strong>경험공유형</strong> — 본인 실제 경험 2~3문장. 수치·장소·기간 등 디테일 포함.</div>
+        </div>
+        <div class="wave-step">
+          <div class="wave-badge w4">wave4<br>+60분</div>
+          <div class="wave-content"><strong>다른관점형</strong> — 글과 다른 각도의 생각. "저는 반대로 ~"류. 응원/화이팅 절대 금지.</div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title">
-          <span class="tooltip">은퇴 후 50년 (dlxogns01)<span class="tooltip-text">5060 은퇴 커뮤니티. 재취업·재정·건강 중심. RETIRE·MONEY·JOB·HEALTH 욕망 데이터가 풍부합니다.</span></span>
+      <div class="narrative" style="font-size:13px;">TTL: 등록 후 60시간 초과 시 만료 (처리 안 됨)</div>
+    </div>
+    <div>
+      <h3>UserPostWaveQueue (유저 글)</h3>
+      <div class="wave-steps">
+        <div class="wave-step">
+          <div class="wave-badge w1">wave1<br>+1분</div>
+          <div class="wave-content">첫 번째 봇 댓글</div>
         </div>
-        <div class="mt8 narrative" style="font-size:13px;">
-          <p style="margin-bottom:6px;">50~60대 은퇴 후 생활 커뮤니티</p>
-          <p style="margin-bottom:6px;">주력 데이터: 은퇴, 재테크, 취업, 건강</p>
-          <p style="margin:0; color:var(--sub); font-size:12px;">numericId: 23676262</p>
+        <div class="wave-step">
+          <div class="wave-badge w2">wave2<br>+10분</div>
+          <div class="wave-content">두 번째 봇 댓글</div>
+        </div>
+        <div class="wave-step">
+          <div class="wave-badge w3">wave3<br>+30분</div>
+          <div class="wave-content">세 번째 봇 댓글</div>
+        </div>
+        <div class="wave-step">
+          <div class="wave-badge w4">wave4<br>+60분</div>
+          <div class="wave-content">네 번째 봇 댓글 (총 9댓글 목표)</div>
         </div>
       </div>
-    </div>
-
-    <div class="alert info">
-      <strong>전체글보기 방식으로 전환 (V6~)</strong>
-      이전에는 57개 게시판 URL을 하나씩 돌았습니다. V6부터는 "전체글보기" 단 2개 URL로 전환했습니다.
-      게시판 추가·삭제에 무관하고 훨씬 빠릅니다. 중복은 postUrl unique 제약으로 구조적 방지.
+      <div class="narrative" style="font-size:13px;">TTL: 24시간. 큐레이션 글보다 짧음.</div>
     </div>
   </div>
 
-  <!-- ── 12. 쿠키 만료 · 비용 · 이슈 · 로드맵 ── -->
-  <div class="section" id="ops">
-    <div class="section-header">
-      <div class="section-num">13</div>
-      <h2>쿠키 만료 · 비용 · 알려진 이슈 · 로드맵</h2>
-    </div>
+  <h3 class="mt24">댓글 생성 제약 규칙</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>규칙</th><th>기준</th></tr></thead>
+      <tbody>
+        <tr><td>봇 당일 cap (P4)</td><td>오늘 이미 3개 글에 댓글 단 봇 → 선택 제외. 전체 봇이 cap 초과 시 cap 무시 fallback.</td></tr>
+        <tr><td>글당 봇 댓글 cap</td><td>동일 글에 봇 댓글 총 5개 초과 → 해당 wave 스킵</td></tr>
+        <tr><td>중복 방지</td><td>동일 봇이 같은 글에 이미 댓글 달았으면 스킵</td></tr>
+        <tr><td>봇 식별</td><td>User.email의 @unao.bot 도메인으로 식별</td></tr>
+        <tr><td>topComments 분산 참조</td><td>wave 번호 기반 인덱스 분산 → 4개 wave가 서로 다른 원본 댓글 참조</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
-    <h3>13-A. 쿠키 만료 대응</h3>
-    <div class="biz-lead">
-      네이버 카페 크롤링에는 로그인 쿠키가 필요합니다. NID_AUT가 만료되면 크롤이 중단되고 Slack #시스템에 긴급 알림이 옵니다.
-    </div>
+<!-- ══════════ §12. 인기글 시스템 ══════════ -->
+<div class="section" id="s-popular">
+  <div class="section-header">
+    <div class="section-num">12</div>
+    <h2>인기글 시스템 (popular-sync.ts)</h2>
+  </div>
 
-    <div class="grid-2 mb24">
-      <div class="card" style="border-color:rgba(251,191,36,0.3); background:var(--yellow-dim);">
-        <div class="card-title" style="color:var(--yellow);">NID_SES (단기 세션 쿠키)</div>
-        <p style="font-size:13px; color:var(--muted); margin-top:8px; line-height:1.7;">
-          수일~수주 유효. 잔여 5일 이하면 <strong>자동 갱신</strong>됩니다.<br>
-          창업자가 직접 관리할 필요 없습니다.
-        </p>
-      </div>
-      <div class="card" style="border-color:rgba(248,113,113,0.3); background:var(--red-dim);">
-        <div class="card-title" style="color:var(--red);">NID_AUT (장기 인증 쿠키)</div>
-        <p style="font-size:13px; color:var(--muted); margin-top:8px; line-height:1.7;">
-          30~60일 유효. 잔여 60일부터 Slack 경보 시작.<br>
-          <strong>만료되면 크롤 전면 중단 — 수동 갱신 필수</strong>
-        </p>
-      </div>
-    </div>
+  <div class="narrative">
+    <p>카페의 <code>/popular</code> 탭을 별도로 수집한다. headless:false Playwright 필요.</p>
+  </div>
 
-    <div class="runbook">
-      <div class="runbook-header" style="color:var(--red);">
-        <span style="font-size:16px;">🍪</span>
-        NID_AUT 만료 시 — 쿠키 수동 갱신 (5분 작업)
-      </div>
-      <div class="runbook-step"><div class="runbook-step-num">1</div><div>Chrome 브라우저에서 네이버에 로그인합니다 (wgang 카페에 접근 가능한 계정)</div></div>
-      <div class="runbook-step"><div class="runbook-step-num">2</div><div>F12(개발자 도구) → Application → Cookies → naver.com 에서 <code>NID_AUT</code>와 <code>NID_SES</code> 값을 복사합니다</div></div>
-      <div class="runbook-step"><div class="runbook-step-num">3</div><div><code>.env.local</code> 파일의 <code>NAVER_COOKIES</code> 값을 업데이트합니다</div></div>
-      <div class="runbook-step"><div class="runbook-step-num">4</div><div>GitHub Secrets의 <code>NAVER_COOKIES</code>도 동일하게 업데이트합니다</div></div>
-      <div class="runbook-step"><div class="runbook-step-num">5</div><div>터미널에서 테스트: <code>npx tsx agents/cafe/run-pipeline.ts crawl-only</code></div></div>
-      <div class="runbook-step"><div class="runbook-step-num">6</div><div>Slack #리포트에서 "CAFE_CRAWL SUCCESS" 메시지 확인하면 완료</div></div>
-    </div>
+  <h3>실행 스케줄</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>launchd (크롤)</th><th>GHA popular-curate (발행)</th></tr></thead>
+      <tbody>
+        <tr><td>10:30 KST</td><td>10:50 KST (20분 후)</td></tr>
+        <tr><td>16:00 KST</td><td>16:15 KST (15분 후)</td></tr>
+        <tr><td>21:15 KST</td><td>21:30 KST (15분 후)</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-    <h3>plist 미실행 시 (Mac 재부팅 후)</h3>
-    <pre>launchctl unload ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist
-launchctl load ~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist</pre>
+  <h3>Case A vs Case B 처리</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>경우</th><th>처리</th><th>이유</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Case A</strong><br>DB에 이미 있는 글</td>
+          <td>killerScore 재계산 + isPopular=true 업데이트<br><span class="text-red">INSERT 없음</span></td>
+          <td>인기글 탭은 기존 글을 다시 노출하는 경우가 많음. 중복 INSERT 방지.</td>
+        </tr>
+        <tr>
+          <td><strong>Case B</strong><br>DB에 없는 새 글</td>
+          <td>isUsable=true 강제 + 신규 INSERT</td>
+          <td>인기글 = 품질 검증 완료. qualityScore 계산 없이 바로 후보 풀 진입.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
-    <h3>13-B. 월간 AI 비용 (V9 기준)</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>항목</th><th>모델</th><th>설명</th><th>월간 비용</th></tr></thead>
-        <tbody>
-          <tr><td>심리분석</td><td>Claude Haiku</td><td>하루 1회, 글 ~50건 분석</td><td class="text-green">~$7</td></tr>
-          <tr><td>트렌드 분석</td><td>Claude Sonnet</td><td>하루 1회 (11:30)</td><td class="text-green">~$90</td></tr>
-          <tr><td>DailyBrief 생성</td><td>Claude Sonnet</td><td>하루 1회 (11:30)</td><td class="text-green">~$26</td></tr>
-          <tr><td>Regular 큐레이션 100건/일</td><td>Claude Sonnet</td><td>45분 간격 5건 × 20회 × 30일</td><td class="text-yellow">~$108</td></tr>
-          <tr style="background:rgba(251,146,60,0.05);"><td><strong style="color:var(--orange);">Popular 큐레이션 15건/일</strong></td><td>Claude Haiku</td><td>popular-curate 5건 × 3슬롯 × 30일 <span style="color:var(--orange); font-size:11px;">★ 신규 A30</span></td><td class="text-green">~$3</td></tr>
-          <tr><td>회원글 댓글 파동</td><td>Claude Haiku</td><td>회원글 발행 시 (소량)</td><td class="text-green">~$2</td></tr>
-          <tr><td>Playwright 크롤링</td><td>—</td><td>AI 미사용</td><td class="text-green">$0</td></tr>
-          <tr><td>GitHub Actions</td><td>—</td><td>Public repo 무제한 무료</td><td class="text-green">$0</td></tr>
-          <tr style="background:var(--bg3);"><td><strong>합계</strong></td><td></td><td></td><td><strong class="text-primary">~$236/월</strong></td></tr>
-        </tbody>
-      </table>
-    </div>
+<!-- ══════════ §13. P1~P5 구현 현황 ══════════ -->
+<div class="section" id="s-p1p5">
+  <div class="section-header">
+    <div class="section-num">13</div>
+    <h2>큐레이션 품질 개선 P1~P5 — 전부 구현 완료</h2>
+  </div>
 
-    <div class="alert warn">
-      <strong>비용 기준</strong>
-      Claude Sonnet: $3/1M input + $15/1M output. 큐레이션 1건당 약 $0.035. 월 $200 초과 시 Anthropic 대시보드에서 확인하세요.
-    </div>
+  <div class="alert ok">
+    <strong>Claude Code에게: 이 섹션이 가장 중요하다</strong>
+    아래 5개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
+  </div>
 
-    <h3>13-C. 알려진 이슈</h3>
-    <div class="card" style="border-color:rgba(74,222,128,0.3); background:var(--green-dim);">
-      <div class="card-title" style="color:var(--green);">✅ 댓글 수집 복구 완료 (B1 — 2026-05-14 해결)</div>
-      <div class="narrative mt8" style="font-size:13.5px;">
-        <p>
-          네이버 카페 원본 글의 <strong>댓글(topComments) 수집이 정상화됐습니다.</strong>
-          네이버 DOM 재추출로 댓글 셀렉터를 교체해 해결했습니다.
-        </p>
-        <p style="margin:0;">
-          <strong>현재 상태:</strong> 큐레이션 원본 글에 댓글 맥락이 포함되어 우나어 AI 댓글 품질 향상.
-        </p>
-      </div>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">P1. 주제 편중 방지 — 키워드 일일 quota</div>
     </div>
-    <div class="card mt16" style="border-color:rgba(96,165,250,0.3); background:var(--blue-dim);">
-      <div class="card-title" style="color:var(--blue);">✅ GHA cron 혼잡 해소 (2026-05-15 완료)</div>
-      <div class="narrative mt8" style="font-size:13.5px;">
-        <p>
-          UTC 00:00(KST 09:00)에 6~8개 워크플로우 동시 실행 → <strong>최대 75분 지연</strong> 문제를
-          11개 워크플로우에 고유 오프셋을 배정해 해결했습니다.
-        </p>
-        <p style="margin:0;">
-          <strong>커밋:</strong> <code>391312d</code> (Phase 1 — schedule만) + <code>1db4eff</code> (Phase 2 — schedule+라우팅)
-        </p>
-      </div>
+    <div class="impl-body">
+      오늘 발행된 BOT 글 제목에서 한글 명사(2글자 이상)를 추출해 빈도를 계산한다. 특정 명사가 이미 2번 이상 발행된 글에 포함됐다면 다음 후보로 건너뜀.<br>
+      효과: "제주" 키워드가 오늘 이미 2개 글에 나왔으면 3번째 제주 글 자동 skip.
     </div>
+    <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>countKeywordOverlap()</code> + <code>todayPublishedTitles</code> 조회 (main() 내부)</div>
+  </div>
 
-    <h3 class="mt24">13-D. 앞으로 할 것 (로드맵)</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Phase</th><th>내용</th><th>우선순위</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><strong>Phase 6</strong></td>
-            <td>댓글 수집 복구 — 네이버 DOM 재추출해서 topComments 수집 정상화</td>
-            <td><span class="chip green">✅ 완료</span></td>
-          </tr>
-          <tr>
-            <td><strong>Phase 7</strong></td>
-            <td>fmkorea 스크래퍼 — 외부 커뮤니티 트렌드 데이터 확장</td>
-            <td><span class="chip muted">P2</span></td>
-          </tr>
-          <tr>
-            <td><strong>장기</strong></td>
-            <td>실제 MAU 500명 도달 후 시드봇 글 쓰기 재개 여부 재검토</td>
-            <td><span class="chip muted">장기</span></td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">P2. 유사 제목 중복 방지 — 강화된 필터</div>
     </div>
+    <div class="impl-body">
+      ① 2글자 이상 한글 명사 추출 (구버전: 정확히 2글자만) → ② 겹치는 명사 2개 이상이면 중복 (구버전: 3개) → ③ Levenshtein 편집 거리 ≤5이면 중복 (신규)<br>
+      효과: "마음도 편해졌습니다" vs "마음이 편해졌습니다" 편집 거리=2 → 중복 차단.
+    </div>
+    <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>toNouns()</code> + <code>editDistance()</code> + <code>isDuplicate</code> 판단 (<code>publishCuratedContent()</code> 내부)</div>
+  </div>
 
-    <div class="alert ok mt16">
-      <strong>V8.0 완료 기준 (2026-05-15)</strong>
-      V7.2 모든 항목 포함 · 크롤 4회→7회/일 (07:40/09:30/11:30/14:30/17:30/21:30/00:30) · GHA 큐레이션 15슬롯→20슬롯, 75건→100건/일 ·
-      첫 발행 09:07→08:20 KST · runner.ts dedup 60분→25분 (45분 간격 대응) ·
-      01:15 KST 심야 감성글 특별 슬롯 (MEANING/SPIRITUAL/RELATION/FAMILY 우선 정렬) · 새벽 크롤 00:30 신규 추가.
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">P3. 계절 오류 방지 — 계절 키워드 필터</div>
     </div>
-    <div class="alert" style="background:rgba(251,146,60,0.08); border-color:rgba(251,146,60,0.4); margin-top:12px;">
-      <strong style="color:var(--orange);">V9.0 완료 기준 (2026-05-15)</strong>
-      V8.0 모든 항목 포함 · popular-sync 3슬롯 신규 (10:30/16:00/21:15 KST, Mac launchd) ·
-      popular-curate 3슬롯 신규 GHA (10:50/16:15/21:30 KST) · Mac plist 7→10종 ·
-      GHA 큐레이션 20→23슬롯, 100→115건/일 (Regular 100 + Popular 15) ·
-      DB: CafePost.isPopular / popularUpdatedAt 신규 컬럼 · curator-shared.ts (순수함수 공유) · BUG-1~4 설계 결정 반영.
+    <div class="impl-body">
+      벚꽃/장마/단풍/크리스마스 등 계절 키워드가 현재 월(1~12)에 허용된 월 목록에 없으면 해당 글 skip.<br>
+      효과: 5월에 "벚꽃" 키워드 글 → 허용 월 [3,4]에 5월 없음 → 자동 skip.
+    </div>
+    <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>SEASONAL_KEYWORDS</code> 상수 + <code>isSeasonMismatch()</code> 함수 (<code>publishCuratedContent()</code> 내부)</div>
+  </div>
+
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">P4. 봇 닉네임 당일 반복 등장 cap</div>
+    </div>
+    <div class="impl-body">
+      오늘 이미 3개 글에 댓글을 단 봇은 선택 풀에서 제외한다. 전체 봇이 cap을 초과하면 cap을 무시하고 전체 풀에서 선택 (fallback). cap: <code>BOT_DAILY_COMMENT_CAP = 3</code>.<br>
+      효과: "손뜨개" 봇이 오늘 3개 글에 이미 댓글 → 4번째 글부터 선택 제외.
+    </div>
+    <div class="impl-file">📄 agents/cafe/wave-processor.ts — <code>todayCommentCounts</code> 조회 + <code>BOT_DAILY_COMMENT_CAP</code> 필터 (<code>processWave()</code> 내부)</div>
+  </div>
+
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">P5. 댓글 패턴 다양화 — wave4 유형 교체</div>
+    </div>
+    <div class="impl-body">
+      wave4를 기존 "응원형(화이팅!)"에서 "다른관점형"으로 교체. 시스템 프롬프트에 네거티브 가이드 추가: "화이팅", "응원합니다", "좋은 정보 감사합니다" 등 기계적 응원 문구 금지.<br>
+      효과: wave4가 "저는 반대로 ~" 또는 "그런데 ~도 있더라고요" 형태로 생성됨.
+    </div>
+    <div class="impl-file">📄 agents/cafe/wave-processor.ts — <code>WAVE_COMMENT_TYPES</code> 상수 (wave4 설명 변경) + <code>generateComment()</code> 시스템 프롬프트 네거티브 가이드</div>
+  </div>
+</div>
+
+<!-- ══════════ §14. FAQ ══════════ -->
+<div class="section" id="s-faq">
+  <div class="section-header">
+    <div class="section-num">14</div>
+    <h2>FAQ — 자주 하는 오해들</h2>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">isUsable=true가 되려면 11:30 full 크롤을 기다려야 하나?</div>
+    <div class="faq-a">
+      <strong>아니다.</strong> isUsable은 savePosts()에서 크롤 즉시 설정된다. crawl-only 모드(00:30, 07:40 등)에서도 qualityScore ≥ 30이면 그 자리에서 isUsable=true가 된다. 11:30 full의 trend-analyzer는 재검증(업데이트)이지 최초 설정이 아니다.
     </div>
   </div>
 
-  <!-- ── Footer ── -->
-  <div class="footer">
-    <p>우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 문서 v9.4</p>
-    <p>최종 업데이트: 2026-05-18 | 크롤 7회/일 + popular-sync 3회/일 · GHA 23슬롯 115건/일 (Regular 100 + Popular 15) · 01:15 심야 감성글 슬롯 · Mac plist 10종 · wave-processor GHA + cron-job.org 이중화 (Job #7621797) · 콘텐츠 품질 필터 P1~P3 + MONEY 캡 3건 (V9.4)</p>
-    <p>문의: mogoyongseok@gmail.com | GitHub: MogoKim/age-doesnt-matter</p>
+  <div class="faq-item">
+    <div class="faq-q">isUsable 기준이 60점인가, 30점인가?</div>
+    <div class="faq-a">
+      <strong>30점이다.</strong> config.ts의 QUALITY_THRESHOLDS.minUsable = 30. 이전에 60으로 하드코딩된 버그가 있었는데 Fix #2(SHA: e32fdf2, 2026-05-19)로 30으로 복원됐다. 어떤 문서에 60이라고 나와 있으면 그 문서가 틀린 것이다.
+    </div>
   </div>
+
+  <div class="faq-item">
+    <div class="faq-q">crawl-only 모드에서 댓글(topComments)이 수집되나?</div>
+    <div class="faq-a">
+      <strong>수집되지 않는다.</strong> topComments는 11:30 full 모드(DEEP 크롤)에서만 수집된다. crawl-only에서는 제목/본문/지표만 저장되고 topComments는 null이다.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">killerScore가 높으면 그 카페 글이 그대로 우리 서비스에 발행되나?</div>
+    <div class="faq-a">
+      <strong>아니다.</strong> killerScore ≥ 70인 글의 제목을 DailyBrief 주제 목록 앞에 삽입한다. 이 "주제"를 참고해서 Claude가 새 글을 생성한다. 카페 원문을 복사하지 않는다.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">같은 글이 하루에 여러 번 크롤되어 DB에 중복 저장되지 않나?</div>
+    <div class="faq-a">
+      <strong>저장되지 않는다.</strong> §5에서 설명한 3단계 방어 구조가 막는다. ① articleId 증분 크롤(이미 아는 ID는 아예 수집 안 함) → ② postUrl unique 체크(저장 단계) → ③ popular-sync Case A(기존 글은 UPDATE만, INSERT 없음).
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">씨드봇 글이 지금도 발행되고 있나?</div>
+    <div class="faq-a">
+      <strong>발행되지 않는다.</strong> GHA에 ENABLE_SEED_POSTS=false로 설정되어 있다 (SHA: 3b8f70e). DB 확인: source=BOT, cafePostId=null 글이 0건이어야 정상. _pm2_audit.ts 스크립트로 확인 가능.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">큐레이션이 적게 발행되는 원인은?</div>
+    <div class="faq-a">
+      isUsable=true + usedAt=null인 후보가 부족하거나, 오늘 발행 cap에 도달했거나, P1~P3 필터로 후보가 모두 skip됐을 수 있다. 확인 방법: _pm2_audit.ts의 §10 "isUsable=true 큐레이션 후보 풀" + §11 "Silent Failure" 확인.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">wave 댓글이 안 달리는 이유는?</div>
+    <div class="faq-a">
+      CommentWaveQueue TTL(60시간) 초과 / 글당 봇 댓글 5개 cap 도달 / 봇 당일 3개 cap 도달 / 동일 봇 중복 방지 중 하나다. BotLog에서 botType=WAVE, status=FAILED 확인. _pm2_audit.ts §9로 오늘 FAILED 목록 확인.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ §15. 변경 이력 ══════════ -->
+<div class="section" id="s-changelog">
+  <div class="section-header">
+    <div class="section-num">15</div>
+    <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.0</div>
+    <div class="changelog-date">2026-05-19</div>
+    <div class="changelog-content">
+      <strong>전면 재작성.</strong> 오류 3건 수정: isUsable 기준 60→30 정정, isUsable 설정 시점 정정(크롤 즉시), V9.5 변경 기록 정정(복원이었는데 수정으로 잘못 기록됨). 누락 섹션 추가: 중복 수집 방지 3단계(§5), 7일 재크롤(§8), topComments 구조(§9), crawl-only vs full 비교표(§4), P1~P5 구현 현황(§13), FAQ(§14), 이 문서 읽는 법(§1).
+    </div>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v9.5</div>
+    <div class="changelog-date">2026-05-19</div>
+    <div class="changelog-content">
+      Fix #2: minUsable <strong>60→30 복원</strong> (trend-analyzer.ts 하드코딩 버그 수정, SHA: e32fdf2). ENABLE_SEED_POSTS=false GHA 추가 (SHA: 3b8f70e). ⚠️ v9.5 문서에 "30→60으로 수정"이라고 잘못 기록됐었음 — 실제는 60→30 복원이었음.
+    </div>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v9.4</div>
+    <div class="changelog-date">2026-05</div>
+    <div class="changelog-content">P1~P5 큐레이션 품질 개선 구현. wave4 유형 교체(응원형→다른관점형). 봇 당일 cap 추가. 계절 필터 추가. 유사 제목 필터 강화.
+    </div>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v9.0</div>
+    <div class="changelog-date">2026-04</div>
+    <div class="changelog-content">카페 크롤링 2카페 체제 확립 (wgang + dlxogns01). launchd plist 10개 구성. GHA 워크플로우 4개 분리.
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.0<br>
+  최종 업데이트: 2026-05-19 | 작성: Claude Code + MogoKim<br>
+  이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
+</div>
 
 </div>
 </body>
