@@ -70,7 +70,7 @@ export const metadata: Metadata = {
     google: process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? undefined,
     other: {
       'google-adsense-account': process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID ?? 'ca-pub-4117999106913048',
-      'naver-site-verification': 'dd29f33d5f95183061d1cf478d578911196ffb9a',
+      'naver-site-verification': 'f3e97b22a6f0ca4d7bbb2081bb3c50ddf8c149e5',
     },
   },
   manifest: '/manifest.json',
