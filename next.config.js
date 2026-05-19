@@ -67,7 +67,7 @@ const nextConfig = {
       { source: '/blog/:path*',    destination: '/magazine',         permanent: true },
       { source: '/write_1st',      destination: '/community/write',  permanent: true },
       { source: '/write',          destination: '/community/write',  permanent: true },
-      { source: '/faq',            destination: '/about',            permanent: true },
+      { source: '/faq',            destination: '/about',            permanent: true }, // 의도된 리다이렉트 — FAQ 콘텐츠를 /about으로 통합 (faq/page.tsx는 데드코드, 삭제하지 말 것)
     ]
   },
   async headers() {
