@@ -521,11 +521,11 @@
       </div>
       <div class="card blue">
         <div class="card-title">
-          <span class="tooltip">isUsable<span class="tooltip-text">qualityScore(품질 점수) 60점 이상인 글에 붙는 '큐레이션 사용 가능' 표시. 11:30 FULL 크롤 시 AI 심리분석 후 설정됨. 인기글(/popular 탭)은 크롤 즉시 자동 설정.</span></span>
+          <span class="tooltip">isUsable<span class="tooltip-text">qualityScore(품질 점수) 30점 이상인 글에 붙는 '큐레이션 사용 가능' 표시. 11:30 FULL 크롤 시 AI 심리분석 후 설정됨. 인기글(/popular 탭)은 크롤 즉시 자동 설정.</span></span>
           통과율
         </div>
         <div class="card-value">~40%</div>
-        <div class="card-sub">qualityScore ≥ 60 기준 (11:30 분석 후 설정)</div>
+        <div class="card-sub">qualityScore ≥ 30 기준 (11:30 분석 후 설정)</div>
       </div>
       <div class="card yellow">
         <div class="card-title">시드봇 글 생성</div>
@@ -640,7 +640,7 @@
         <div class="flow-box" style="min-width:150px;">
           <span class="flow-label">11:30 FULL 크롤 시 (하루 1회)</span>
           AI 심리분석 → 품질점수<br>
-          <span style="font-size:11px; color:var(--muted);">≥60: isUsable=true<br>&lt;60: 큐레이션 제외<br>인기글은 크롤 즉시 true</span>
+          <span style="font-size:11px; color:var(--muted);">≥30: isUsable=true<br>&lt;30: 큐레이션 제외<br>인기글은 크롤 즉시 true</span>
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-box" style="min-width:150px; border-color:rgba(74,222,128,0.4);">
@@ -1231,33 +1231,31 @@ launchd/
       </p>
     </div>
 
-    <h3>6-B. 세 단계 임계값 (실제 동작 기준)</h3>
+    <h3>6-B. 세 단계 임계값</h3>
     <div class="threshold-bar">
       <div class="threshold-zone zone-red" style="flex: 0 0 15%;">
         0 ~ 19<span class="zone-label">DB 저장 안 함<br>(minSave=20 미달)</span>
       </div>
-      <div class="threshold-zone zone-yellow">
-        20 ~ 59<span class="zone-label">저장만 · 큐레이션 불가<br>(분석 데이터 보관)</span>
+      <div class="threshold-zone zone-yellow" style="flex: 0 0 15%;">
+        20 ~ 29<span class="zone-label">저장만 · 큐레이션 불가<br>(분석 데이터 보관)</span>
       </div>
-      <div class="threshold-zone zone-green" style="flex: 0 0 30%;">
-        60 이상<span class="zone-label">isUsable=true<br>큐레이션 사용 가능<br><span style="font-size:10px;opacity:0.7;">trend-analyzer.ts L350</span></span>
+      <div class="threshold-zone zone-green">
+        30 이상<span class="zone-label">isUsable=true<br>큐레이션 사용 가능<br><span style="font-size:10px;opacity:0.7;">config.ts minUsable=30</span></span>
       </div>
     </div>
-    <p style="font-size:11px; color:var(--sub); margin-top:6px;">※ config.ts에 minUsable=30이 정의돼 있지만 trend-analyzer.ts가 실제로는 60을 사용 (코드 불일치 — 개선 필요)</p>
 
     <div class="narrative" style="font-size:13px;">
       <p>
         수집된 글 100건 중 약 20건은 품질이 낮아 DB에 저장 자체가 되지 않습니다 (스팸·단문 등).
-        저장된 80건 중 약 40%가 60점 이상(isUsable=true)으로 큐레이션에 사용 가능합니다.
-        60점 미만 글은 분석 데이터로만 보관됩니다. (저장 자체는 20점 미만만 제외)
+        저장된 80건 중 대부분(약 80%)이 30점 이상으로 큐레이션에 사용 가능합니다.
+        20~29점 글은 분석 데이터로만 보관됩니다.
       </p>
     </div>
 
     <div class="alert info">
       <strong>코드 출처 확인</strong>
       qualityScore 가중치: <code>quality-scorer.ts L23-29</code> · killerScore 가중치: <code>quality-scorer.ts L119-127</code><br>
-      저장 임계값: <code>config.ts(minSave=20)</code> · isUsable 실제 기준: <code>trend-analyzer.ts L350 (qualityScore &gt;= 60)</code><br>
-      <span style="color:var(--yellow);font-size:11px;">※ config.ts의 minUsable=30은 정의됐지만 trend-analyzer에서 실제로 사용하지 않음 (코드 불일치)</span>
+      임계값: <code>config.ts (minSave=20, minUsable=30)</code> · isUsable 설정: <code>trend-analyzer.ts L350</code>
     </div>
   </div>
 
