@@ -419,7 +419,7 @@
       <div class="pipe-label gha">GHA 클라우드 — Mac 없이 24시간 자동</div>
       <div class="pipe-item">
         <div class="pipe-item-dot gha"></div>
-        <div><strong>content-curator.ts</strong> — 45분 간격 20슬롯<br><span style="font-size:12px;">isUsable 후보 선택 → Claude 재가공 → Post 발행<br>발행 즉시 CommentWaveQueue 등록</span></div>
+        <div><strong>content-curator.ts</strong> — 45분 간격 20슬롯<br><span style="font-size:12px;">isUsable 후보 선택 → Claude 재가공 → Post 발행<br>댓글 직접 작성 안 함 — CommentWaveQueue에 wave 예약만</span></div>
       </div>
       <div class="pipe-item">
         <div class="pipe-item-dot gha"></div>
@@ -553,12 +553,21 @@
             <span style="color:var(--muted);font-size:12px;">발행 즉시 CommentWaveQueue 자동 등록 (wave1~4 예약)</span>
           </td>
         </tr>
-        <tr><td>09:03</td><td><code>agents-cafe.yml</code></td><td>daily-brief-fallback — Mac 11:30 크롤이 실패했을 때 GHA에서 DailyBrief 안전망 생성</td></tr>
+        <tr>
+          <td>09:03<br><span style="color:#f0ad4e;font-size:11px;font-weight:700;">[익일]</span></td>
+          <td><code>agents-cafe.yml</code></td>
+          <td>
+            daily-brief-fallback — 전날(D-1) 11:30 크롤이 실패했을 때 다음날 오전 어제 데이터로 안전망 브리프 생성<br>
+            <div style="margin-top:6px;padding:8px 10px;background:rgba(42,48,66,0.5);border-radius:4px;font-size:11.5px;font-family:monospace;line-height:1.7;color:var(--muted);">
+              D-1 11:30 크롤 실패 → D일 08:20~09:03 큐레이션은 D-1 브리프로 동작 → D일 09:03 fallback 브리프 생성 → 이후 정상
+            </div>
+          </td>
+        </tr>
         <tr><td>09:30</td><td><code>agents-cafe.yml</code></td><td>brief-monitor — DailyBrief 생성 여부 확인 + Slack 보고</td></tr>
         <tr><td>10:50 / 16:15 / 21:30</td><td><code>agents-cafe-popular-curation.yml</code></td><td>popular-curate — Mac popular-sync(10:30/16:00/21:15) 15~20분 후 인기글 우선 발행</td></tr>
         <tr><td>매 5분 (24시간)</td><td><code>agents-cafe-wave.yml</code></td><td>wave-processor + user-post-wave-processor — 예약된 wave 댓글 처리 (Mac 없이 24시간)</td></tr>
         <tr>
-          <td>13슬롯/일<br><span style="color:var(--muted);font-size:12px;">00~16시 UTC</span></td>
+          <td>13슬롯/일<br><span style="color:var(--muted);font-size:12px;">UTC 00~16시<br>(KST 09:00~다음날 01:00)</span></td>
           <td><code>agents-seed.yml</code></td>
           <td>
             ① seed scheduler — 50명 페르소나 창작글 생성 (<strong>ENABLE_SEED_POSTS=false로 현재 차단</strong>)<br>
@@ -568,6 +577,11 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="alert info" style="font-size:12.5px; padding:10px 14px; margin-top:12px;">
+    <strong>UTC 주의:</strong> GHA cron 표현식은 GitHub 정책상 UTC 기준으로만 작성됨.
+    이 표의 KST 시각은 UTC+9 변환값. 워크플로우 파일에서 UTC 숫자가 보이면 <strong>+9시간이 실제 KST 실행 시각</strong>.
   </div>
 
   <h3 class="mt24">cron-job.org — 정확한 역할과 오해</h3>
@@ -692,7 +706,8 @@
         <div class="step-num">2</div>
         <div class="step-content">
           <strong>crawler.ts (CRAWL_MODE=refresh)</strong> — 7일 이내 상위 50건 재방문<br>
-          likeCount / commentCount / viewCount 갱신 → killerScore 재계산. 댓글이 늘어난 글이 킬러글로 승격 가능.
+          <span style="color:#f0ad4e;font-size:12px;">⚠️ 우나어에 발행된 글이 아님 — 네이버 카페 원본 글(DB 저장된 것)의 최신 지표를 갱신하는 것</span><br>
+          likeCount / commentCount / viewCount 갱신 → killerScore 재계산. 오전에 일반글이었던 게 오후에 킬러글로 승격 가능.
         </div>
       </div>
       <div class="step-row">
@@ -712,8 +727,14 @@
       <div class="step-row">
         <div class="step-num">5</div>
         <div class="step-content">
-          <strong>daily-brief.ts (Claude Sonnet)</strong> — DailyIntelligenceBrief 생성<br>
-          트렌드 집계 결과를 바탕으로 오늘의 욕망 키워드, 긴급 주제, dominantDesire 분석. 큐레이션의 주제 선택 기준이 된다.
+          <strong>daily-brief.ts (Claude Sonnet)</strong> — 큐레이션봇 지시서 생성<br>
+          트렌드 집계 결과를 바탕으로 큐레이션봇이 오늘 어떻게 발행할지 지시하는 3가지 출력물을 만든다:<br>
+          <ul style="margin:6px 0 4px 18px; line-height:1.8; font-size:13px;">
+            <li><strong>personaQuotas</strong> — 50명 페르소나 각각의 오늘 quota 배율 (0.5~2.0). 배율이 높은 페르소나가 더 많이 발행</li>
+            <li><strong>contentDirective</strong> — "오늘은 HEALTH 위주, 톤은 따뜻하게" 같은 큐레이션 방향 지시</li>
+            <li><strong>controversySeeds</strong> — controversy-chain 입력용 논쟁 씨앗 키워드</li>
+          </ul>
+          <span style="color:var(--sub); font-size:12.5px;">큐레이션봇은 이 지시서 없이는 "오늘 어떤 방향으로 발행할지" 모른다. daily-brief 생성 실패 시 전날 브리프 또는 fallback으로 동작.</span>
         </div>
       </div>
     </div>
@@ -807,6 +828,13 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
     수집된 카페 글이 모두 큐레이션 후보가 되는 건 아니다. 크롤 즉시 두 가지 점수를 계산해 글의 운명을 결정한다. <strong>qualityScore</strong>는 "이 글을 DB에 저장할 가치가 있는가, 큐레이션 후보로 쓸 수 있는가"를 판단한다. <strong>killerScore</strong>는 "이 글이 오늘 카페에서 터진 핫한 주제인가"를 측정해, 큐레이션 주제 선택 시 최우선으로 올린다.
   </div>
 
+  <div class="alert info" style="font-family:monospace; font-size:13.5px; line-height:1.9; margin-bottom:20px;">
+    <strong>세 개념의 관계 (한눈에)</strong><br>
+    <code>qualityScore (0~100)</code> → <strong>isUsable (true/false)</strong> 결정 기준: ≥30이면 true<br>
+    <code>killerScore (0~100)</code> → 큐레이션 <strong>우선순위</strong> 결정: ≥70이면 킬러글로 최우선 발행<br>
+    <span style="color:var(--sub);">두 점수는 독립적. isUsable=false여도 killerScore는 계산됨. 그러나 큐레이션 후보 풀에 없으므로 발행 불가.</span>
+  </div>
+
   <div class="grid-2">
     <div>
       <h3>qualityScore — 저장·후보 기준</h3>
@@ -861,6 +889,11 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
         <strong>킬러글 처리 방식</strong>
         해당 카페 글을 그대로 복사하지 않는다. 글의 <em>제목</em>을 주제로 삼아 Claude가 새 글을 생성한다.
       </div>
+      <div class="alert warn mt8" style="font-size:12.5px; padding:12px 14px;">
+        <strong>killerScore 70점 달성 기준 (lifestyle 게시판, 본문 500자, 24시간 이내 기준)</strong><br>
+        댓글 25개 &nbsp;OR&nbsp; 좋아요 17개 &nbsp;OR&nbsp; (댓글 15개 + 좋아요 7개)<br>
+        <span style="color:var(--sub);">조회수만으로는 달성 불가 — 가중치 0.01로 기여가 거의 없음. raw≥50이면 80점 고정(상한선).</span>
+      </div>
     </div>
   </div>
 </div>
@@ -870,6 +903,10 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
   <div class="section-header">
     <div class="section-num">7</div>
     <h2>isUsable 완전 가이드 ⚠️ 오해 주의</h2>
+  </div>
+
+  <div class="alert" style="background:#fff3cd; border-left:4px solid #f0ad4e; padding:12px 16px; margin-bottom:16px; font-size:14px;">
+    ⚠️ <strong>isUsable은 점수가 아니다.</strong> true / false 두 값만 존재한다.
   </div>
 
   <div class="biz-lead">
@@ -932,6 +969,11 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
   <div class="section-header">
     <div class="section-num">8</div>
     <h2>7일 재크롤 (refreshRecentPosts)</h2>
+  </div>
+
+  <div class="alert" style="background:#1f2d1f; border-left:4px solid #27ae60; padding:10px 14px; margin-bottom:14px; font-size:13px;">
+    ⚠️ <strong>이것은 우나어에 발행된 글에 뭔가를 하는 게 아니다.</strong><br>
+    네이버 카페에 있는 원본 글의 지표(댓글수/좋아요/조회수)를 갱신하는 것이다.
   </div>
 
   <div class="biz-lead">
@@ -1269,6 +1311,28 @@ interface CommentData {
     </table>
   </div>
 
+  <h3 class="mt24">댓글 내용 출처 — AI 각색 vs AI 직접 생성</h3>
+  <div class="table-wrap" style="margin-bottom:8px;">
+    <table>
+      <thead><tr><th>케이스</th><th>댓글 생성 방식</th><th>적용 조건</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>① topComments 있는 글</strong></td>
+          <td>원본 댓글을 <strong>50~60대 말투로 AI 각색</strong></td>
+          <td>11:30 full 크롤 이후 발행된 글 (DEEP 모드에서 topComments 수집됨)</td>
+        </tr>
+        <tr>
+          <td><strong>② topComments 없는 글</strong></td>
+          <td>글 제목+본문 기반으로 <strong>AI가 직접 생성</strong></td>
+          <td>crawl-only 크롤에서 발행된 글 (topComments=null)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alert info" style="font-size:12.5px; padding:10px 14px;">
+    crawl-only에서 발행된 글은 댓글 품질이 ①보다 낮을 수 있다. topComments는 11:30 full 크롤에서만 수집된다.
+  </div>
+
   <h3 class="mt24">SHEET 포스트(스크래퍼 글) Wave 처리 — 별도 시스템</h3>
   <div class="narrative">
     <p>어드민에서 <strong>"스크래퍼"</strong> 배지가 붙은 글(source='SHEET')은 CommentWaveQueue가 아닌 <strong>BotLog 기반 별도 파이프라인</strong>으로 wave 댓글이 처리된다.</p>
@@ -1333,6 +1397,35 @@ interface CommentData {
       </tbody>
     </table>
   </div>
+
+  <h3 class="mt24">popular vs isFeatured — 어드민 두 개념 구분</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>구분</th><th>popular (isPopular=true)</th><th>isFeatured (집중)</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>출처</strong></td>
+          <td>네이버 카페 인기글 탭 자동 수집 (popular-sync.ts)</td>
+          <td>창업자 어드민에서 수동 토글</td>
+        </tr>
+        <tr>
+          <td><strong>의미</strong></td>
+          <td>카페 커뮤니티에서 이미 검증된 글</td>
+          <td>우나어에서 집중 부스트를 원하는 글</td>
+        </tr>
+        <tr>
+          <td><strong>발행 효과</strong></td>
+          <td>killerScore 상위로 우선 발행 (popular-curator 경로)</td>
+          <td>좋아요 집중 라운드(15시·21시) + 봇 댓글 캡 10개</td>
+        </tr>
+        <tr>
+          <td><strong>어드민 표시</strong></td>
+          <td>현재 별도 배지 없음 (source=BOT)</td>
+          <td>⭐️ 집중 배지</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- ══════════ §13. 봇 시스템 역할 전체 지도 ══════════ -->
@@ -1347,13 +1440,20 @@ interface CommentData {
     핵심 구분: <strong>큐레이션봇 + Wave봇</strong>은 항상 작동(GHA), <strong>시드봇(seed scheduler)</strong>은 현재 OFF, <strong>controversy봇 + magazine봇</strong>은 ENABLE_SEED_POSTS와 무관하게 계속 실행 중이다.
   </div>
 
+  <div class="alert info" style="font-size:13px; padding:10px 16px; margin-bottom:14px; line-height:1.8;">
+    <strong>"봇"이라고 부르지만 실제로는 GHA에서 실행되는 스케줄러 프로세스다.</strong><br>
+    페르소나(50명)는 댓글/글의 <em>이름표</em> 역할이고, 봇 자체는 1개 프로세스다.<br>
+    <span style="color:var(--sub);">예: Wave봇은 프로세스 1개가 5분마다 실행되고, 그 안에서 50명 페르소나 중 1명을 골라 댓글 이름을 붙이는 것이다.</span>
+  </div>
+
   <div class="table-wrap">
     <table>
-      <thead><tr><th>봇</th><th>실행 파일</th><th>실행 환경/주기</th><th>현재 상태</th><th>핵심 역할</th></tr></thead>
+      <thead><tr><th>봇</th><th>실행 파일</th><th>인스턴스</th><th>실행 환경/주기</th><th>현재 상태</th><th>핵심 역할</th></tr></thead>
       <tbody>
         <tr>
           <td><strong>큐레이션봇</strong></td>
           <td><code>cafe/content-curator.ts</code></td>
+          <td style="font-size:12px;">프로세스 1개<br><span style="color:var(--sub);">"봇 수" 없음</span></td>
           <td>GHA · 45분 간격 · 20슬롯/일</td>
           <td><span style="color:var(--green);">● ON</span></td>
           <td>카페 글 → Claude 재가공 → 우나어 발행 + Wave 예약</td>
@@ -1361,6 +1461,7 @@ interface CommentData {
         <tr>
           <td><strong>Wave봇</strong></td>
           <td><code>cafe/wave-processor.ts</code><br><code>cafe/user-post-wave-processor.ts</code></td>
+          <td style="font-size:12px;">프로세스 1개<br><span style="color:var(--sub);">댓글 이름표 = 50명 페르소나 중 선택</span></td>
           <td>GHA · 5분 간격 · 24시간</td>
           <td><span style="color:var(--green);">● ON</span></td>
           <td>큐레이션 글 + 유저 글에 순차 댓글 (wave1~4)</td>
@@ -1368,6 +1469,7 @@ interface CommentData {
         <tr>
           <td><strong>시드봇</strong><br><span style="font-size:12px;color:var(--muted);">(seed scheduler)</span></td>
           <td><code>seed/scheduler.ts</code></td>
+          <td style="font-size:12px;">프로세스 1개<br><span style="color:var(--sub);">글 작성자 = 50명 페르소나 중 1명</span></td>
           <td>GHA · agents-seed.yml</td>
           <td><span style="color:var(--red);">● OFF</span> (의도적 중단)</td>
           <td>50명 페르소나 창작글 생성·발행 (ENABLE_SEED_POSTS=false로 차단)</td>
@@ -1375,6 +1477,7 @@ interface CommentData {
         <tr>
           <td><strong>controversy봇</strong></td>
           <td><code>seed/controversy-chain.ts</code></td>
+          <td style="font-size:12px;">프로세스 1개</td>
           <td>GHA · agents-seed.yml (같이 실행)</td>
           <td><span style="color:var(--green);">● ON</span></td>
           <td>트렌드 기반 논쟁·토론 글 생성 (ENABLE_SEED_POSTS 영향 안 받음)</td>
@@ -1382,6 +1485,7 @@ interface CommentData {
         <tr>
           <td><strong>magazine봇</strong></td>
           <td><code>seed/magazine-generator.ts</code></td>
+          <td style="font-size:12px;">프로세스 1개</td>
           <td>별도 스케줄 (agents-seed.yml 외)</td>
           <td><span style="color:var(--green);">● ON</span></td>
           <td>매거진 형식 큐레이션 글 생성 (ENABLE_SEED_POSTS 영향 안 받음)</td>
@@ -1393,7 +1497,11 @@ interface CommentData {
   <h3 class="mt24">큐레이션봇 상세</h3>
   <div class="narrative">
     <p>우나어 콘텐츠의 핵심 공급원이다. 매일 최대 20건(45분 × 20슬롯)의 글을 자동 발행한다. 단, 실제 발행량은 후보 풀(isUsable=true + usedAt=null) 크기와 P1~P3 필터에 따라 달라진다. Mac이 꺼져 있어도 GHA가 실행되지만, Mac이 크롤을 못 하면 신규 후보가 보충되지 않아 발행량이 줄어든다.</p>
-    <p>발행 시 CommentWaveQueue에 wave1~4를 자동 등록한다. 댓글 직접 작성은 하지 않는다. 대댓글 기능은 현재 미구현이다.</p>
+    <div class="alert" style="background:#2d1f1f; border-left:4px solid #e74c3c; padding:12px 16px; margin:8px 0; font-size:13.5px; line-height:1.7;">
+      🚫 <strong>오해 주의: 큐레이션봇은 댓글을 직접 달지 않는다.</strong><br>
+      CommentWaveQueue에 댓글 예약(INSERT)만 한다. 실제 댓글 작성은 Wave봇(wave-processor.ts)이 5분마다 처리한다.
+    </div>
+    <p>발행 시 CommentWaveQueue에 wave1~4를 자동 등록한다. 대댓글 기능은 현재 미구현이다.</p>
   </div>
 
   <h3>Wave봇 상세</h3>
@@ -1597,6 +1705,24 @@ interface CommentData {
   </div>
 
   <div class="changelog-item">
+    <div class="changelog-ver">v10.6</div>
+    <div class="changelog-date">2026-05-19</div>
+    <div class="changelog-content">
+      <strong>창업자 Q&A 역분석 기반 문서 맹점 8개 수정 — 개념 혼동 구역 전면 개선.</strong>
+      §6: qualityScore→isUsable→killerScore 삼각 관계도 추가 + killerScore 70점 달성 기준 박스(댓글 25개 OR 좋아요 17개) 추가.
+      §7: "isUsable은 점수가 아니다. true/false 두 값만 존재한다" 경고 박스 추가.
+      §4 step5: daily-brief 출력물 3가지(personaQuotas·contentDirective·controversySeeds) 상세 기술.
+      §3: daily-brief-fallback 행에 [익일] 표기 + D-1→D일 타임라인 박스 추가. agents-seed.yml KST 병기. UTC 주의 안내 박스 추가.
+      §2 다이어그램: content-curator.ts 설명에 "댓글 직접 작성 안 함 — CommentWaveQueue에 wave 예약만" 명시.
+      §4 step2: CRAWL_MODE=refresh가 네이버 카페 원본 글 지표 갱신임을 명시.
+      §8: "우나어 발행 글에 뭔가 하는 게 아니다" 오해 방지 박스 추가.
+      §11: 댓글 내용 출처 섹션 추가(topComments 있음→원본 각색 / 없음→본문 기반 직접 생성).
+      §12: popular vs isFeatured 비교표 추가.
+      §13: "봇 = GHA 프로세스 1개" 안내 박스 추가 + 봇 비교표에 인스턴스 컬럼 추가. 큐레이션봇 "댓글 예약만" alert 박스로 승격.
+    </div>
+  </div>
+
+  <div class="changelog-item">
     <div class="changelog-ver">v10.5</div>
     <div class="changelog-date">2026-05-19</div>
     <div class="changelog-content">
@@ -1666,7 +1792,7 @@ interface CommentData {
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.5<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.6<br>
   최종 업데이트: 2026-05-19 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
