@@ -306,14 +306,14 @@
       <thead><tr><th>섹션</th><th>읽어야 할 때</th></tr></thead>
       <tbody>
         <tr><td>§2 전체 흐름</td><td>시스템 구조를 처음 파악할 때, 어디서 어디로 데이터가 흐르는지 볼 때</td></tr>
-        <tr><td>§3 스케줄</td><td>"지금 몇 시에 뭐가 실행되지?" 확인할 때</td></tr>
+        <tr><td>§3 스케줄</td><td>"지금 몇 시에 뭐가 실행되지?", "Mac 켜져 있어야 하는 시각은?", "큐레이션 슬롯 실제 시각 전체" 확인할 때</td></tr>
         <tr><td>§4 full 모드</td><td>11:30 크롤 후 왜 분석이 달라지는지 이해할 때</td></tr>
         <tr><td>§5 중복 방지</td><td>"왜 같은 글이 두 번 안 들어오지?" 확인할 때</td></tr>
         <tr><td>§6 점수 체계</td><td>qualityScore/killerScore 계산 방식 확인할 때</td></tr>
         <tr><td>§7 isUsable</td><td><strong class="text-red">isUsable 관련 질문 시 반드시 이 섹션 먼저</strong></td></tr>
         <tr><td>§8 7일 재크롤</td><td>지표(좋아요/댓글수)가 왜 계속 갱신되는지 볼 때</td></tr>
         <tr><td>§9 DB 구조</td><td>DB 필드 전체 목록, topComments 구조 확인할 때</td></tr>
-        <tr><td>§10 큐레이션</td><td>큐레이션 로직, 킬러글 처리, 당일 quota 확인할 때</td></tr>
+        <tr><td>§10 큐레이션</td><td>큐레이션 로직, 킬러글 처리, 당일 quota, <strong>원문 보존율 90%/95% 수미상관 방식 상세</strong> 확인할 때</td></tr>
         <tr><td>§11 Wave</td><td>댓글 wave 순서, cap, 봇 선택 로직 볼 때</td></tr>
         <tr><td>§12 인기글</td><td>popular 탭 수집 방식, Case A/B 분기 볼 때</td></tr>
         <tr><td>§13 P1~P5</td><td><strong class="text-red">에이전트 코드 수정/추가 전 반드시 확인</strong></td></tr>
@@ -437,18 +437,86 @@ popular-sync.ts ─── CafePost DB (인기글 갱신)
     crawler.ts를 두 번 실행한다. 1차: 신규 글 저장(CRAWL_MODE=crawl-only). 2차: 최근 7일 상위 50건 지표 갱신(CRAWL_MODE=refresh). 심리분석/트렌드분석/DailyBrief는 실행하지 않는다.
   </div>
 
-  <h3 class="mt24">GHA — 클라우드 24시간</h3>
+  <h3 class="mt24">GHA — 클라우드 24시간 (Mac 없이 자동 실행)</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>시간 (KST)</th><th>워크플로우</th><th>실행 내용</th></tr></thead>
       <tbody>
-        <tr><td>08:20 ~ 21:50</td><td><code>agents-cafe-hourly-curation.yml</code></td><td>큐레이션 19슬롯 (45분 간격) — isUsable=true 후보에서 선택 발행</td></tr>
-        <tr><td>09:03</td><td><code>agents-cafe.yml</code></td><td>daily-brief-fallback — Mac launchd가 11:30 전에 실패했을 때 안전망 DailyBrief 생성</td></tr>
+        <tr>
+          <td>
+            <strong>20슬롯</strong><br>
+            08:20, 09:05, 09:50<br>
+            10:35, 11:20, 12:05<br>
+            12:50, 13:35, 14:20<br>
+            15:05, 15:50, 16:35<br>
+            17:20, 18:05, 18:50<br>
+            19:35, 20:20, 21:05<br>
+            21:50 (위 19개)<br>
+            <span style="color:var(--primary);font-weight:700;">+ 01:15 (새벽 특별)</span>
+          </td>
+          <td><code>agents-cafe-hourly-curation.yml</code></td>
+          <td>
+            큐레이션 발행 — 45분 간격, 하루 최대 100건 목표<br>
+            isUsable=true + usedAt=null 후보에서 DailyBrief 주제에 맞는 글 선택 → Claude 재가공 → 발행<br>
+            <span style="color:var(--muted);font-size:12px;">파일 제목에도 "45분 간격, 100건/일" 명시됨</span>
+          </td>
+        </tr>
+        <tr><td>09:03</td><td><code>agents-cafe.yml</code></td><td>daily-brief-fallback — Mac 11:30 크롤이 실패했을 때 GHA에서 DailyBrief 안전망 생성</td></tr>
         <tr><td>09:30</td><td><code>agents-cafe.yml</code></td><td>brief-monitor — DailyBrief 생성 여부 확인 + Slack 보고</td></tr>
-        <tr><td>10:50 / 16:15 / 21:30</td><td><code>agents-cafe-popular-curation.yml</code></td><td>popular-curate — popular-sync 15~20분 후 인기글 우선 발행</td></tr>
-        <tr><td>매 5분 (24시간)</td><td><code>agents-cafe-wave.yml</code></td><td>wave-processor + user-post-wave-processor — 예약된 wave 댓글 처리</td></tr>
+        <tr><td>10:50 / 16:15 / 21:30</td><td><code>agents-cafe-popular-curation.yml</code></td><td>popular-curate — Mac popular-sync(10:30/16:00/21:15) 15~20분 후 인기글 우선 발행</td></tr>
+        <tr><td>매 5분 (24시간)</td><td><code>agents-cafe-wave.yml</code></td><td>wave-processor + user-post-wave-processor — 예약된 wave 댓글 처리 (Mac 없이 24시간)</td></tr>
+        <tr>
+          <td>13슬롯/일<br><span style="color:var(--muted);font-size:12px;">00~16시 UTC</span></td>
+          <td><code>agents-seed.yml</code></td>
+          <td>
+            ① seed scheduler — 50명 페르소나 창작글 생성 (<strong>ENABLE_SEED_POSTS=false로 현재 차단</strong>)<br>
+            ② controversy-chain — 트렌드 기반 논쟁/토론 형식 글 생성 (ENABLE_SEED_POSTS 영향 <strong>없음</strong>, 계속 실행 중)<br>
+            ③ magazine-generator — 매거진 형식 글 생성 (ENABLE_SEED_POSTS 영향 없음, 계속 실행 중)
+          </td>
+        </tr>
       </tbody>
     </table>
+  </div>
+
+  <h3 class="mt24">Mac 켜짐/꺼짐 경계 — 한눈에 보기</h3>
+  <div class="alert warning" style="margin-bottom:16px;">
+    <strong>핵심 원칙:</strong> Mac이 꺼지면 "새 글 수집"만 멈춘다. 이미 수집된 글 기반의 발행·댓글·분석은 GHA가 계속 자동 실행한다.
+  </div>
+  <div class="grid-2">
+    <div>
+      <h4 style="color:var(--danger,#e53e3e);margin-bottom:12px;">🔴 Mac 반드시 켜져 있어야 하는 시각</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>KST</th><th>이유</th></tr></thead>
+          <tbody>
+            <tr><td>00:30</td><td>새벽 크롤링 — 네이버 headless:false 필수</td></tr>
+            <tr><td>07:40</td><td>아침 크롤링</td></tr>
+            <tr><td>09:30</td><td>오전 크롤링</td></tr>
+            <tr><td>10:30</td><td>인기글 수집 (popular-sync)</td></tr>
+            <tr><td style="color:var(--primary);font-weight:700;">11:30 ★</td><td>핵심 full 크롤 — 분석+브리프 전체 파이프라인</td></tr>
+            <tr><td>14:30</td><td>오후 크롤링</td></tr>
+            <tr><td>16:00</td><td>인기글 수집</td></tr>
+            <tr><td>17:30</td><td>저녁 크롤링</td></tr>
+            <tr><td>21:15</td><td>인기글 수집</td></tr>
+            <tr><td>21:30</td><td>야간 크롤링</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-top:8px;">해당 시각에 꺼져 있으면 그 회차 크롤만 건너뜀. launchd가 켜지면 자동 실행.</p>
+    </div>
+    <div>
+      <h4 style="color:#38a169;margin-bottom:12px;">🟢 Mac 꺼져 있어도 GHA가 알아서 하는 것</h4>
+      <ul style="line-height:1.9;font-size:14px;padding-left:20px;">
+        <li>큐레이션 글 발행 (20슬롯, 45분 간격)</li>
+        <li>wave 댓글 생성 (매 5분, 24시간)</li>
+        <li>시드봇 댓글/좋아요</li>
+        <li>controversy-chain 글 생성</li>
+        <li>magazine-generator 글 생성</li>
+        <li>DailyBrief 안전망 (09:03 fallback)</li>
+        <li>brief-monitor 보고</li>
+        <li>인기글 큐레이션 (10:50 / 16:15 / 21:30)</li>
+      </ul>
+    </div>
   </div>
 </div>
 
@@ -823,11 +891,49 @@ interface CommentData {
    → P2 유사 제목 필터 (편집 거리 ≤5 또는 명사 2개 이상 겹침 skip)
    → P3 계절 필터 (현재 월에 맞지 않는 계절 키워드 skip)
 
-4. Claude Sonnet으로 새 글 생성 (카페 원문 참조, 독자적 내용)
+4. Claude Sonnet으로 재가공 (수미상관 방식 — 원문 90% 보존, 아래 상세 참고)
 
-5. Post DB 저장 + usedAt 업데이트
+5. Post DB 저장 + usedAt 업데이트 (재사용 방지)
 
 6. CommentWaveQueue 자동 등록 (wave1~4 예약)</pre>
+
+  <h3>원문 보존율 — 수미상관(首尾相觀) 방식 ⚠️ 중요</h3>
+  <div class="alert info" style="margin-bottom:16px;">
+    <strong>수미상관이란?</strong> 첫 문장과 마지막 문장만 페르소나 말투로 재가공하고, 중간 내용은 원문을 그대로 살리는 방식. 네이버 카페 원문의 정보 가치를 해치지 않으면서 우리 서비스 말투를 입힌다.
+  </div>
+  <div class="grid-2">
+    <div>
+      <h4>일반 큐레이션 글 — 90% 보존</h4>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">content-curator.ts 시스템 프롬프트: "원본 카페 글의 핵심 내용 90% 그대로 살리세요"</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>부분</th><th>처리</th><th>비중</th></tr></thead>
+          <tbody>
+            <tr><td>첫 문장</td><td>페르소나 말투로 재가공<br><span style="color:var(--muted);font-size:12px;">"~더라고요", "~거 있잖아요" 등</span></td><td>5%</td></tr>
+            <tr><td>중간 전체</td><td>원문 그대로<br><span style="color:var(--muted);font-size:12px;">지명·수치·경험·스토리 변경 없음</span></td><td>90%</td></tr>
+            <tr><td>마지막 문장</td><td>여운 있는 마무리로 재가공</td><td>5%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <h4>킬러글 (killerScore ≥ 70) — 95% 보존</h4>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">seed/generator.ts generateKillerPost() 프롬프트</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>바꾸는 것 (5%)</th><th>절대 금지</th></tr></thead>
+          <tbody>
+            <tr><td>첫 문장 표현 1개 교체</td><td rowspan="3" style="vertical-align:middle;color:var(--danger,#e53e3e);">이야기 전개 순서 변경<br>핵심 수치 변경<br>갈등 포인트 제거<br>등장인물 특성 변경</td></tr>
+            <tr><td>지명 → 익명화 ("OO구")</td></tr>
+            <tr><td>페르소나 어미 1~2개 교체</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="alert warning" style="margin-top:16px;">
+    <strong>자주 하는 오해:</strong> "AI가 글을 새로 쓰는 것 아닌가?" — 아니다. 원문의 스토리·정보·수치를 그대로 유지하고 말투만 손본다. 실제 발행 글을 원문과 비교해보면 내용은 동일하고 어미·시작/끝 문장만 다르다.
+  </div>
 
   <h3>당일 큐레이션 cap</h3>
   <div class="table-wrap">
@@ -1072,7 +1178,46 @@ interface CommentData {
   <div class="faq-item">
     <div class="faq-q">씨드봇 글이 지금도 발행되고 있나?</div>
     <div class="faq-a">
-      <strong>발행되지 않는다.</strong> GHA에 ENABLE_SEED_POSTS=false로 설정되어 있다 (SHA: 3b8f70e). DB 확인: source=BOT, cafePostId=null 글이 0건이어야 정상. _pm2_audit.ts 스크립트로 확인 가능.
+      <strong>seed scheduler(50명 페르소나 창작글)는 차단됐다.</strong> agents-seed.yml에 ENABLE_SEED_POSTS=false 설정 (SHA: 3b8f70e). BotLog에서 SEED [SUCCESS] publishedCount=0으로 확인 가능.<br><br>
+      <strong>단, 관련 시스템 2개는 계속 실행 중이다 — 아래 FAQ 참고.</strong>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">ENABLE_SEED_POSTS=false인데 왜 cafePostId=null BOT 글이 생기나?</div>
+    <div class="faq-a">
+      <strong>controversy-chain과 magazine-generator는 ENABLE_SEED_POSTS 영향을 받지 않는다.</strong><br><br>
+      agents-seed.yml은 3가지를 실행한다:
+      <ol style="margin:8px 0 8px 20px;line-height:1.8;">
+        <li><code>seed scheduler</code> — ✅ ENABLE_SEED_POSTS=false로 차단됨</li>
+        <li><code>controversy-chain execute</code> — ⚠️ 차단 안 됨. 트렌드 기반 STORY 글 계속 생성</li>
+        <li><code>magazine-generator</code> — ⚠️ 차단 안 됨. MAGAZINE 글 계속 생성</li>
+      </ol>
+      따라서 _pm2_audit.ts §6에서 "cafePostId=null BOT 글"이 0건이 아닐 수 있다. 이것은 버그가 아니라 두 시스템이 의도적으로 계속 실행되는 것이다. 모두 중단하려면 agents-seed.yml에서 controversy-chain 줄 제거 + 해당 워크플로우에서 magazine-generate 제거 필요.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">원문 보존율 90%/95%에서 AI가 실제로 바꾸는 게 정확히 뭐야?</div>
+    <div class="faq-a">
+      <strong>바꾸는 부분은 매우 제한적이다.</strong> §10 "원문 보존율" 섹션에 상세 표가 있다. 요약:
+      <ul style="margin:8px 0 8px 20px;line-height:1.8;">
+        <li><strong>일반 큐레이션 (90% 보존)</strong>: 첫 문장 말투 + 마지막 문장 마무리만 재가공. 중간 내용(지명·수치·경험·스토리) 완전 보존.</li>
+        <li><strong>킬러글 (95% 보존)</strong>: 첫 문장 표현 1개 + 지명 익명화("OO구") + 어미 1~2개. 이야기 순서·핵심 수치·갈등 포인트 절대 변경 금지.</li>
+      </ul>
+      실제 확인: age-doesnt-matter.com에서 발행된 글의 본문과 원문 카페 글을 비교하면 내용은 동일하고 어미/시작·끝 문장만 다른 것을 확인할 수 있다.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Mac이 꺼져도 되는 시간과 켜야 하는 시간은?</div>
+    <div class="faq-a">
+      <strong>§3 스케줄 섹션의 "Mac 켜짐/꺼짐 경계" 표를 참고.</strong> 요약:
+      <ul style="margin:8px 0 8px 20px;line-height:1.8;">
+        <li><strong>Mac 필요 (하루 10회)</strong>: 00:30, 07:40, 09:30, 10:30, 11:30★, 14:30, 16:00, 17:30, 21:15, 21:30 — Playwright 크롤링 (headless:false 필수, GHA에서 대체 불가)</li>
+        <li><strong>Mac 불필요</strong>: 큐레이션 발행, wave 댓글, 시드봇 댓글/좋아요, DailyBrief fallback, brief-monitor — GHA가 24시간 자동 처리</li>
+      </ul>
+      해당 시각에 Mac이 꺼져 있으면 그 회차 크롤만 건너뜀. 나머지 GHA 자동화는 영향받지 않는다.
     </div>
   </div>
 
@@ -1096,6 +1241,17 @@ interface CommentData {
   <div class="section-header">
     <div class="section-num">15</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.1</div>
+    <div class="changelog-date">2026-05-19</div>
+    <div class="changelog-content">
+      <strong>창업자 5개 질문 반영.</strong>
+      §3 스케줄: GHA 큐레이션 20슬롯 실제 시각 전체 명시(08:20~21:50, 01:15), agents-seed.yml 워크플로우 항목 추가(controversy-chain·magazine-generator 계속 실행 명시), "Mac 켜짐/꺼짐 경계" 표 신규 추가.
+      §10 큐레이션: 원문 보존율 수미상관 방식 상세 추가 — 일반글 90%(첫·끝 문장만 재가공, 중간 원문 그대로), 킬러글 95%(바꾸는 5%: 첫 문장 표현 1개·지명 익명화·어미 1~2개, 절대 금지 항목 명시).
+      §14 FAQ: "씨드봇 글" 답변 정정(seed scheduler만 차단, controversy-chain+magazine-generator는 계속 실행), 신규 FAQ 3개 추가(ENABLE_SEED_POSTS 범위, 원문 보존율 상세, Mac 꺼짐/켜짐).
+    </div>
   </div>
 
   <div class="changelog-item">
