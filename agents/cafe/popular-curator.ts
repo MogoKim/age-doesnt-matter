@@ -203,8 +203,8 @@ async function main() {
           where: { id: post.id },
           data: { usedAt: new Date() },
         })
-        // killerScore ≥ 85 → 발행 즉시 isFeatured=true (집중 부스트 자동 적용)
-        if ((post.killerScore ?? 0) >= 85) {
+        // killerScore ≥ 75 → 발행 즉시 isFeatured=true (집중 부스트 자동 적용)
+        if ((post.killerScore ?? 0) >= 75) {
           await tx.post.update({
             where: { id: newPost.id },
             data: { isFeatured: true, featuredAt: new Date() },

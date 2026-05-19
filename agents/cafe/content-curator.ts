@@ -746,9 +746,9 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
         where: { id: { in: curated.sourcePostIds } },
         data: { usedAt: new Date() },
       })
-      // killerScore ≥ 85인 소스글 기반 발행 → isFeatured=true 자동 적용
+      // killerScore ≥ 75인 소스글 기반 발행 → isFeatured=true 자동 적용
       const killerSource = await tx.cafePost.findFirst({
-        where: { id: { in: curated.sourcePostIds }, killerScore: { gte: 85 } },
+        where: { id: { in: curated.sourcePostIds }, killerScore: { gte: 75 } },
         select: { id: true },
       })
       if (killerSource) {
