@@ -127,6 +127,16 @@ export function captureUtm(): void {
     const val = params.get(key)
     if (val) utm[key] = val
   }
+  // TWA 첫 실행: URL에 UTM 없고 세션 저장도 없으면 google-play 자동 태깅
+  if (Object.keys(utm).length === 0 && !sessionStorage.getItem(UTM_STORAGE_KEY)) {
+    const _ua = navigator.userAgent
+    const isTWA = document.referrer.startsWith('android-app://') ||
+      (matchMedia('(display-mode: standalone)').matches && /Android/i.test(_ua) && !_ua.includes('wv'))
+    if (isTWA) {
+      utm.utm_source = 'google-play'
+      utm.utm_medium = 'organic'
+    }
+  }
   if (Object.keys(utm).length === 0) return
   // 이미 이 세션에서 UTM 저장된 경우 첫 소재 우선 (덮어쓰지 않음)
   if (!sessionStorage.getItem(UTM_STORAGE_KEY)) {
@@ -164,6 +174,9 @@ export function getBrowserEnv(): string {
   if (/\bGSA\//i.test(ua)) return 'google-inapp'
   if (/CriOS/i.test(ua)) return 'crios'
   if (/iphone|ipad|ipod/i.test(ua)) return 'ios-safari'
+  // TWA: android-app:// referrer = Play Store 설치 앱에서 실행 중
+  if (document.referrer.startsWith('android-app://')) return 'twa-android'
+  if (matchMedia('(display-mode: standalone)').matches && /Android/i.test(ua) && !ua.includes('wv')) return 'twa-android'
   return 'android-chrome'
 }
 
