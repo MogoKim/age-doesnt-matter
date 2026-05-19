@@ -69,7 +69,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 트리거 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|--------|---------|------------|------|------|---------|
-| F01 | 회원가입 유도 배너 | `src/components/common/SignupPromptBanner.tsx` | 20초 체류 + 50% 스크롤 | RELATION | ALL | [F01](F01-signup-prompt.md) | ACTIVE | 2026-04-27 |
+| F01 | 회원가입 유도 배너 | `src/components/common/SignupPromptBanner.tsx` | 20초 체류 + 50% 스크롤 | RELATION | ALL | [F01](F01-signup-prompt.md) | ACTIVE | 2026-05-19 |
 | F02 | PWA 설치 유도 | `src/components/common/AddToHomeScreen.tsx` | 4단계 트리거 (13s/3페이지/행동/주간) | RELATION+HEALTH | P1·P2 | [F02](F02-pwa-install.md) | ACTIVE | 2026-05-13 |
 | F03 | 홈 페이지 | `src/components/features/home/` (21개 컴포넌트) | 홈 방문 | RELATION | P1·P2·P3 | [F03](F03-home-page.md) | ACTIVE | 2026-05-18 |
 | F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | RELATION+HEALTH | P1·P2·P5 | [F04](F04-community.md) | ACTIVE | 2026-05-15 |

@@ -68,6 +68,7 @@
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
 | 2026-04-27 | Feature 문서 최초 생성 | Feature Lifecycle 도입 |
+| 2026-05-19 | EXCLUDED_PATHS에서 `/faq` 제거 | /faq 페이지 삭제 — /about#faq로 통합됨 |
 
 ---
 

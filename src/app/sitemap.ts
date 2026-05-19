@@ -19,7 +19,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/terms`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE_URL}/rules`, changeFrequency: 'yearly', priority: 0.2 },
-    { url: `${BASE_URL}/faq`, changeFrequency: 'monthly', priority: 0.3 },
     ...BOARD_SLUGS.map((slug) => ({
       url: `${BASE_URL}/community/${slug}`,
       changeFrequency: 'daily' as const,

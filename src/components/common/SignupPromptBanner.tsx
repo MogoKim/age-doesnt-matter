@@ -31,7 +31,7 @@ const MAX_SHOWS = 4
 const EXCLUDED_PATHS = [
   '/login', '/onboarding', '/signup', '/my', '/admin',
   '/terms', '/privacy', '/rules', '/about', '/contact',
-  '/faq', '/grade', '/error', '/_next', '/api',
+  '/grade', '/error', '/_next', '/api',
   '/',  // 홈: SignupCard가 중반부에 이미 있으므로 SignupPromptBanner 비활성화
 ]
 const CONTENT_PATHS = ['/community/', '/magazine/', '/jobs/', '/best']
