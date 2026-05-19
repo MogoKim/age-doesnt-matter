@@ -282,12 +282,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.1</div>
+  <div class="cover-badge">Handover Document v10.2</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
-  <p class="subtitle">크롤링 → 분석 → 큐레이션 → Wave 댓글 전체 흐름 완전 가이드.<br>
-  이 문서 하나로 "왜 이렇게 동작하는가"를 설명할 수 있어야 한다.</p>
+  <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
+  처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.1 (2026-05-19)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.2 (2026-05-19)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -370,7 +370,10 @@
   </div>
 
   <div class="biz-lead">
-    Mac 로컬(launchd)이 네이버 카페를 크롤해서 DB에 저장하면, GHA(클라우드)가 24시간 그 데이터를 꺼내 콘텐츠를 발행하고 댓글을 단다. Mac이 꺼지면 크롤이 안 되지만, 발행·댓글은 계속 된다.
+    우나어 콘텐츠 시스템은 두 개의 분리된 실행 환경으로 설계됐다. 집에 있는 <strong>Mac</strong>과 GitHub이 운영하는 <strong>클라우드 서버(GHA)</strong>다.<br><br>
+    <strong>Mac이 하는 일 — 데이터 수집</strong>: 네이버 카페(wgang · dlxogns01)에서 글·댓글·지표를 실제 브라우저로 수집해 우리 DB에 쌓는다. 네이버가 자동화 봇을 감지·차단하기 때문에 "눈에 보이는 진짜 브라우저"(headless:false)가 반드시 필요하다. 클라우드 서버 환경에서는 이걸 흉내낼 수 없어서 Mac에서만 실행된다.<br><br>
+    <strong>GHA가 하는 일 — 콘텐츠 발행</strong>: Mac이 쌓아 놓은 데이터를 Claude AI로 재가공해 발행하고, 발행된 글에 봇 댓글을 순차적으로 단다. DB만 접근할 수 있으면 되므로 인터넷 연결만 있는 클라우드에서 24시간 자동으로 돌아간다. Mac 전원 상태와 완전히 무관하다.<br><br>
+    <strong>핵심 설계 원칙 — 역할 분리의 이유</strong>: 수집(Mac)과 발행(GHA)을 분리했기 때문에 Mac이 꺼져 있어도 기존에 수집된 데이터로 발행·댓글이 계속된다. Mac이 하루 중 10시간만 켜져 있어도 GHA는 24시간 내내 콘텐츠를 발행한다. DB가 두 환경을 연결하는 유일한 다리다.
   </div>
 
   <div class="pipe-layout">
@@ -615,7 +618,8 @@
   </div>
 
   <div class="biz-lead">
-    하루 단 1회, 11:30 KST에만 실행. crawl-only와 달리 AI 분석 3단계가 추가된다. 이 파이프라인이 끝나야 DailyBrief가 생성되고, 큐레이션이 최신 트렌드를 반영할 수 있다.
+    크롤링은 하루 여러 번 실행되지만, 대부분은 글을 저장하고 끝나는 '빠른 수집'(crawl-only)이다. 11:30에는 전혀 다른 파이프라인이 실행된다. 단순 수집을 넘어, <strong>오늘 카페의 분위기·욕망 트렌드를 AI가 직접 분석하는 3단계가 추가</strong>된다.<br><br>
+    이 분석이 끝나야 오늘의 큐레이션 주제(DailyBrief)가 결정된다. GHA에서 45분마다 실행되는 큐레이션은 이 DailyBrief를 보고 "오늘 어떤 주제의 글을 써야 하나"를 판단한다. <strong>하루 콘텐츠 품질의 기준점이 11:30 full 파이프라인에서 만들어진다.</strong> 이 시각에 Mac이 꺼져 있으면 GHA가 09:03에 안전망(fallback)을 실행하지만, 전날 DailyBrief 기반이라 트렌드 반영이 늦어진다.
   </div>
 
   <div class="step-box">
@@ -684,7 +688,8 @@
   </div>
 
   <div class="biz-lead">
-    하루 7번 크롤해도 같은 글이 DB에 두 번 들어가지 않는다. 3단계 방어 구조로 막는다.
+    크롤링이 하루 7회 실행된다는 건, 같은 카페를 하루에 7번 방문한다는 뜻이다. 같은 글이 중복으로 DB에 쌓이지 않을까? 실제로 이 문제가 생기면 동일한 원문으로 비슷한 큐레이션 글이 반복 발행되는 치명적 품질 문제가 생긴다.<br><br>
+    3단계 방어 구조로 차단한다. 각 단계는 서로 다른 시점(수집 결정 전 → 저장 직전 → 인기글 동기화)에 작동하며, 한 단계가 뚫려도 다음 단계가 막는다.
   </div>
 
   <h3>단계 A — articleId 증분 크롤 (수집 단계)</h3>
@@ -740,6 +745,10 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
   <div class="section-header">
     <div class="section-num">6</div>
     <h2>점수 체계 (qualityScore / killerScore)</h2>
+  </div>
+
+  <div class="biz-lead">
+    수집된 카페 글이 모두 큐레이션 후보가 되는 건 아니다. 크롤 즉시 두 가지 점수를 계산해 글의 운명을 결정한다. <strong>qualityScore</strong>는 "이 글을 DB에 저장할 가치가 있는가, 큐레이션 후보로 쓸 수 있는가"를 판단한다. <strong>killerScore</strong>는 "이 글이 오늘 카페에서 터진 핫한 주제인가"를 측정해, 큐레이션 주제 선택 시 최우선으로 올린다.
   </div>
 
   <div class="grid-2">
@@ -807,6 +816,11 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
     <h2>isUsable 완전 가이드 ⚠️ 오해 주의</h2>
   </div>
 
+  <div class="biz-lead">
+    isUsable은 큐레이션 시스템의 <strong>입장 티켓</strong>이다. isUsable=true인 글만 45분마다 실행되는 큐레이션의 후보 풀에 들어간다. false면 DB에 저장돼 있어도 발행 대상에서 완전히 제외된다.<br><br>
+    이 필드를 잘못 이해하면 "왜 발행량이 줄었지?", "왜 후보 풀이 비어 있지?" 같은 문제를 엉뚱한 방향에서 디버깅하게 된다. 특히 이전 문서에 두 가지 오류가 있었기 때문에 이 섹션을 정확히 읽어야 한다.
+  </div>
+
   <div class="alert err">
     <strong>⚠️ 이전 문서(v9.4)의 두 가지 오류 — 반드시 읽을 것</strong>
     ❌ 구버전: "qualityScore 60점 이상에 isUsable=true" → ✅ 실제: <strong>30점 이상</strong><br>
@@ -865,7 +879,9 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
   </div>
 
   <div class="biz-lead">
-    크롤 시점의 좋아요/댓글 수는 이후 계속 변한다. 7일 재크롤로 최신 지표를 유지하고, killerScore가 70에 도달한 글을 킬러글로 승격한다.
+    오늘 오전 7:40에 수집한 글의 댓글 수가 30개였다고 해보자. 같은 날 오후에 댓글이 80개로 늘었다면, DB에는 여전히 30개로 저장돼 있다. 큐레이션 시스템은 "이 글은 반응이 별로 없다"고 잘못 판단한다.<br><br>
+    더 결정적인 문제는 killerScore다. 처음 수집 시엔 점수가 낮아서 일반 글이었던 게, 댓글이 급증하면서 킬러글 기준(≥70)을 넘어설 수 있다. 이걸 갱신하지 않으면 "오늘 카페에서 터진 글"이 그냥 묻혀버린다.<br><br>
+    이 문제를 해결하기 위해, 모든 크롤링(crawl-only + full) 직후에 <strong>최근 7일 인기 글 상위 50건을 다시 방문해 지표를 갱신</strong>한다. 변경이 있으면 killerScore를 재계산하고, 승격 조건을 충족하면 킬러글로 올린다.
   </div>
 
   <h3>동작 방식</h3>
@@ -987,7 +1003,9 @@ interface CommentData {
   </div>
 
   <div class="biz-lead">
-    GHA가 45분마다 실행. DB에서 isUsable=true + usedAt=null인 CafePost 중 오늘 DailyBrief 주제에 맞는 글을 선택해 Claude로 새 글을 생성·발행한다.
+    이 시스템 전체의 최종 산출물이다. Mac이 수집하고, AI가 분석하고, 스케줄러가 관리한 모든 과정이 여기서 결실을 맺는다.<br><br>
+    45분마다 GHA가 실행되면서 "오늘 발행할 글" 하나를 결정하고 실제로 우나어 서비스에 올린다. 이때 카페 글을 그대로 복사하지 않는다. <strong>원문의 정보·수치·이야기 구조는 90% 이상 살리면서, 우리 서비스 페르소나 말투로 첫 문장과 마지막 문장만 재가공</strong>한다. 출처가 카페인 글이 아니라, 우나어 커뮤니티 회원이 직접 쓴 글처럼 보이도록 하는 것이 목적이다.<br><br>
+    오늘 DailyBrief(11:30에 생성된 트렌드 분석 결과)를 기준으로 주제를 결정하기 때문에, 11:30 full 파이프라인이 돌아야 큐레이션 품질이 좋아진다.
   </div>
 
   <h3>큐레이션 흐름</h3>
@@ -1083,6 +1101,11 @@ interface CommentData {
     <h2>Wave 댓글 시스템</h2>
   </div>
 
+  <div class="biz-lead">
+    큐레이션 글이 발행되는 순간, 댓글이 하나도 없는 빈 글이 된다. 처음 방문한 유저 눈에는 '아무도 관심 없는 글'처럼 보인다. 봇들이 순차적으로 댓글을 달아 "이미 대화가 이뤄지고 있는 글"로 만드는 것이 Wave 시스템의 핵심 목적이다.<br><br>
+    '<strong>파도(Wave)</strong>' 방식을 쓰는 이유는 자연스러움 때문이다. 발행 직후 여러 봇이 동시에 댓글을 달면 누가 봐도 부자연스럽다. 1분 → 5분 → 30분 → 60분으로 나눠 달면, 실제 커뮤니티에서 반응이 퍼지듯 자연스럽게 보인다. 각 wave는 댓글 유형도 다르다 — 공감 → 질문 → 경험 공유 → 다른 관점 순으로, 실제 대화가 발전하는 흐름을 흉내낸다.
+  </div>
+
   <div class="grid-2">
     <div>
       <h3>CommentWaveQueue (큐레이션 글)</h3>
@@ -1108,25 +1131,26 @@ interface CommentData {
     </div>
     <div>
       <h3>UserPostWaveQueue (유저 글)</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.7;">실제 유저가 글을 올리면, 봇들이 댓글을 달아 "첫 글인데 아무 반응 없음"을 방지한다. 신규 유저가 첫 글 경험을 좋게 느끼고 다시 글을 쓰도록 유도하는 게 목적이다. 큐레이션 글(60시간 TTL)보다 TTL이 짧은 이유는, 실제 유저 글은 반응 없으면 빠르게 묻히기 때문에 24시간 내 처리가 더 중요하기 때문이다.</p>
       <div class="wave-steps">
         <div class="wave-step">
           <div class="wave-badge w1">wave1<br>+1분</div>
-          <div class="wave-content">첫 번째 봇 댓글</div>
+          <div class="wave-content"><strong>첫 반응</strong> — 글 내용에 공감하거나 관심을 표현. 유저가 "내 글이 읽혔다"는 느낌을 받도록.</div>
         </div>
         <div class="wave-step">
           <div class="wave-badge w2">wave2<br>+10분</div>
-          <div class="wave-content">두 번째 봇 댓글</div>
+          <div class="wave-content"><strong>질문/대화 유도</strong> — 글 내용과 연관된 구체적 질문. 유저가 답글을 달도록 자연스럽게 유도.</div>
         </div>
         <div class="wave-step">
           <div class="wave-badge w3">wave3<br>+30분</div>
-          <div class="wave-content">세 번째 봇 댓글</div>
+          <div class="wave-content"><strong>경험 공유</strong> — 비슷한 경험을 짧게 나누는 댓글. 대화가 이어지는 느낌 형성.</div>
         </div>
         <div class="wave-step">
           <div class="wave-badge w4">wave4<br>+60분</div>
-          <div class="wave-content">네 번째 봇 댓글 (총 9댓글 목표)</div>
+          <div class="wave-content"><strong>다른 관점</strong> — 글과 다른 각도의 의견. 자연스러운 토론 분위기 조성. (총 4 wave, 목표 9댓글)</div>
         </div>
       </div>
-      <div class="narrative" style="font-size:13px;">TTL: 24시간. 큐레이션 글보다 짧음.</div>
+      <div class="narrative" style="font-size:13px;">TTL: 24시간. 큐레이션 글(60시간)보다 짧음 — 유저 글은 초기 반응이 핵심이기 때문.</div>
     </div>
   </div>
 
@@ -1152,8 +1176,9 @@ interface CommentData {
     <h2>인기글 시스템 (popular-sync.ts)</h2>
   </div>
 
-  <div class="narrative">
-    <p>카페의 <code>/popular</code> 탭을 별도로 수집한다. headless:false Playwright 필요.</p>
+  <div class="biz-lead">
+    일반 크롤링은 '전체글보기' 탭의 최신 글을 시간순으로 가져온다. 그런데 카페에는 이미 많은 반응을 얻은 글들이 따로 모이는 <strong>'인기글' 탭</strong>이 있다. 여기 올라온 글은 카페 커뮤니티에서 이미 품질 검증이 된 글이다 — qualityScore를 새로 계산할 필요 없이 바로 큐레이션 후보 풀에 넣어도 된다는 의미다.<br><br>
+    이 탭도 네이버 봇 탐지를 우회해야 하기 때문에 headless:false Playwright가 필요하고, Mac에서만 실행된다. Mac이 수집을 마친 뒤 15~20분 후 GHA의 popular-curator가 이 글들을 일반 큐레이션보다 우선적으로 발행한다.
   </div>
 
   <h3>실행 스케줄</h3>
@@ -1372,6 +1397,15 @@ interface CommentData {
   </div>
 
   <div class="changelog-item">
+    <div class="changelog-ver">v10.2</div>
+    <div class="changelog-date">2026-05-19</div>
+    <div class="changelog-content">
+      <strong>자연어 설명 전면 개선 — 처음 접하는 사람도 이해할 수 있도록.</strong>
+      커버 subtitle 재작성. §2 전체 파이프라인: Mac/GHA 역할 분리 설계 이유 상세 서술. §4 full 모드: 11:30이 왜 중요한가 + DailyBrief 연결 설명. §5 중복 방지: 왜 필요한가 + 문제 시나리오. §6 점수 체계: biz-lead 추가 (qualityScore vs killerScore 역할 구분). §7 isUsable: biz-lead 추가 (입장 티켓 개념). §8 재크롤: 구체적 수치 예시로 "왜 갱신이 필요한가" 서술. §10 큐레이션: 최종 산출물 의미 + 수미상관 방식 도입 설명. §11 Wave: biz-lead 추가 (왜 Wave 방식인가) + UserPostWaveQueue wave1~4 내용 상세 기술. §12 인기글: narrative → biz-lead로 교체, 설계 이유 상세 서술.
+    </div>
+  </div>
+
+  <div class="changelog-item">
     <div class="changelog-ver">v10.1</div>
     <div class="changelog-date">2026-05-19</div>
     <div class="changelog-content">
@@ -1414,7 +1448,7 @@ interface CommentData {
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.0<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.2<br>
   최종 업데이트: 2026-05-19 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
