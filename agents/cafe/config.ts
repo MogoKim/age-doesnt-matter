@@ -232,6 +232,6 @@ export const COMPETITOR_KEYWORDS = [
 export const QUALITY_THRESHOLDS = {
   /** 이 점수 미만은 DB 저장 안 함 */
   minSave: 20,
-  /** 이 점수 이상은 isUsable = true */
-  minUsable: 30,
+  /** 이 점수 이상은 isUsable = true (trend-analyzer.ts에서 참조) */
+  minUsable: 60,
 }

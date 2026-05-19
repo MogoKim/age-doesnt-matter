@@ -324,14 +324,14 @@
 
   <!-- ── Cover ── -->
   <div class="cover">
-    <div class="cover-badge">핸드오버 문서 v9.4 · 2026-05-18</div>
+    <div class="cover-badge">핸드오버 문서 v9.5 · 2026-05-19</div>
     <h1>우나어 네이버 카페 파이프라인<br>운영 핸드오버 가이드</h1>
     <p class="subtitle">
       왜 네이버를 크롤하는가, 왜 댓글을 다는가 — 근본 목적부터 기술 상세까지.<br>
       GHA 큐레이션 115건/일 (Regular 100 + Popular 15) + 크롤 10회/일 + 새벽 감성글 01:15 슬롯 + 회원글 댓글 파동.
     </p>
     <div class="cover-meta">
-      <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">V9.4 (2026-05-18 기준)</div></div>
+      <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">V9.5 (2026-05-19 기준)</div></div>
       <div class="cover-meta-item"><div class="label">수집 카페</div><div class="value">2개 (wgang · dlxogns01)</div></div>
       <div class="cover-meta-item"><div class="label">큐레이션</div><div class="value ok">115건/일 (Regular 100 + Popular 15)</div></div>
       <div class="cover-meta-item"><div class="label">Mac plist</div><div class="value ok">10종 (크롤 7 + popular-sync 3)</div></div>
@@ -342,7 +342,7 @@
 
   <!-- ── 현재 가동 상태 박스 ── -->
   <div class="status-box">
-    <div class="sb-title">현재 가동 중 (2026-05-18 기준 · V9.3)</div>
+    <div class="sb-title">현재 가동 중 (2026-05-19 기준 · V9.5)</div>
     <div class="status-item"><div class="status-dot on"></div>Mac plist 10종 (크롤 7종 + popular-sync 3종 10:30/16:00/21:15)</div>
     <div class="status-item"><div class="status-dot on"></div>GHA Regular 큐레이션 (08:20~01:15 KST, 20슬롯, 100건/일)</div>
     <div class="status-item"><div class="status-dot on"></div>GHA Popular 큐레이션 (10:50/16:15/21:30 KST, 3슬롯, 15건/일) — 신규 A30</div>
@@ -357,6 +357,7 @@
     <div class="status-item"><div class="status-dot on"></div>V9.2 (2026-05-17) — 시드봇 ESM 충돌 근본 수정(agents/core/trending.ts 분리) + revalidateTag 캐시 무효화 4건 보완(likes·comments·posts·unstable_cache)</div>
     <div class="status-item"><div class="status-dot on"></div>V9.3 (2026-05-18) — cron-job.org wave 이중 트리거 등록(GHA 3시간 중단 대응, Job #7621797) + 봇 댓글 캡 5개 reply-chain 합산 체크 추가 + 이모지 전면 금지 + trendingScore 24시간 롤링 전환(정오 기준 폐기)</div>
     <div class="status-item"><div class="status-dot on"></div>V9.4 (2026-05-18) — 콘텐츠 품질 개선 5종: 키워드 quota 차단(P1) · Levenshtein 중복 감지 강화(P2) · 계절 키워드 필터(P3) · 봇 당일 댓글 캡 3건/봇(P4) · wave4 다른관점형 교체(P5) + MONEY 하드캡 6→3건</div>
+    <div class="status-item"><div class="status-dot on"></div>V9.5 (2026-05-19) — 문서 정확성 정정: isUsable 실제 기준 ≥30→≥60으로 수정(trend-analyzer.ts L350 실제 동작 확인) · isUsable 설정 타이밍 정정(크롤 즉시→11:30 FULL 분석 후) · "Mac 꺼져도 괜찮나요" 박스 실제 한계 명시 · config.ts minUsable=30 vs 실제 60 불일치 문서화 · 씨드봇 글 생성 중단 확인(ENABLE_SEED_POSTS=false)</div>
   </div>
 
   <!-- ── TOC ── -->
@@ -443,7 +444,7 @@
         <div class="narrative mt8" style="font-size:13px;">
           <p style="margin:0; line-height:2;">
             네이버 카페 원본 수집<br>
-            → 품질 점수 ≥30점만 보관<br>
+            → 품질 점수 ≥20점만 저장 · ≥60점부터 큐레이션 가능<br>
             → 욕망 분류 (건강/가족/재테크…)<br>
             → DailyBrief (오늘의 욕망 지도)<br>
             → 매시간 5건 재가공 발행<br>
@@ -520,11 +521,11 @@
       </div>
       <div class="card blue">
         <div class="card-title">
-          <span class="tooltip">isUsable<span class="tooltip-text">qualityScore(품질 점수) 30점 이상인 글에 붙는 '큐레이션 사용 가능' 표시.</span></span>
+          <span class="tooltip">isUsable<span class="tooltip-text">qualityScore(품질 점수) 60점 이상인 글에 붙는 '큐레이션 사용 가능' 표시. 11:30 FULL 크롤 시 AI 심리분석 후 설정됨. 인기글(/popular 탭)은 크롤 즉시 자동 설정.</span></span>
           통과율
         </div>
-        <div class="card-value">~80%</div>
-        <div class="card-sub">qualityScore ≥ 30 기준</div>
+        <div class="card-value">~40%</div>
+        <div class="card-sub">qualityScore ≥ 60 기준 (11:30 분석 후 설정)</div>
       </div>
       <div class="card yellow">
         <div class="card-title">시드봇 글 생성</div>
@@ -575,10 +576,12 @@
         07:40~09:30 사이에 올라온 오전 글 추가 수집. 10:35 GHA 슬롯부터 반영됩니다.
       </p>
       <p>
-        <strong>매일 11:30 — 풀 파이프라인 (하루에 한 번, 유일한 AI 분석 크롤)</strong><br>
+        <strong>매일 11:30 — 풀 파이프라인 (하루에 한 번, 큐레이션의 핵심 준비 단계)</strong><br>
         수집한 글을 Claude Haiku로 심리 분석해 욕망(건강·가족·돈·은퇴 등)을 분류합니다.
+        이 때 품질 점수(qualityScore)가 60점 이상인 글에 <strong>"큐레이션 사용 가능"(isUsable=true)</strong> 표시가 붙습니다.
         그 결과를 Claude Sonnet이 종합해서 "<span class="tooltip">DailyBrief<span class="tooltip-text">매일 생성되는 "오늘의 50·60대 욕망 지도". 이 날의 큐레이션 주제 선택에 활용됩니다.</span></span>"를 만듭니다.
-        <strong>큐레이션은 하지 않습니다</strong> — GHA 45분 간격 실행이 담당합니다. AI 비용 발생, 40~60분 소요.
+        <strong>이 두 가지(isUsable 글 + DailyBrief)가 없으면 GHA 큐레이션이 발행을 못 합니다.</strong>
+        큐레이션 자체는 하지 않습니다 — GHA 45분 간격 실행이 담당합니다. AI 비용 발생, 40~60분 소요.
       </p>
       <div class="alert info" style="margin:8px 0 12px;">
         <strong>왜 크롤러에서 큐레이션을 안 하나요?</strong><br>
@@ -635,9 +638,9 @@
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-box" style="min-width:150px;">
-          <span class="flow-label">즉시 (저장 시)</span>
-          qualityScore 계산<br>
-          <span style="font-size:11px; color:var(--muted);">≥30: isUsable=true<br>20~29: 보관만<br>&lt;20: 버림</span>
+          <span class="flow-label">11:30 FULL 크롤 시 (하루 1회)</span>
+          AI 심리분석 → 품질점수<br>
+          <span style="font-size:11px; color:var(--muted);">≥60: isUsable=true<br>&lt;60: 큐레이션 제외<br>인기글은 크롤 즉시 true</span>
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-box" style="min-width:150px; border-color:rgba(74,222,128,0.4);">
@@ -663,14 +666,16 @@
         </div>
       </div>
       <p style="font-size:12px; color:var(--muted); margin:10px 0 0;">
-        ⚡ 크롤러(재료 창고)와 큐레이션(요리·발행)은 완전히 독립. Mac이 꺼져도 DB에 쌓인 글로 큐레이션·발행은 계속됩니다.
+        ⚡ 크롤러(재료 창고)와 큐레이션(요리·발행)은 완전히 독립. 단, isUsable 설정과 DailyBrief 생성은 11:30 FULL 크롤에 의존합니다.
       </p>
     </div>
 
     <div class="alert info" style="margin-top:16px;">
       <strong>Mac이 꺼져도 괜찮나요?</strong>
-      네. Mac이 꺼지면 크롤(원본 수집)만 못 하고, 큐레이션·댓글·시드봇 활동은 GHA가 계속 처리합니다.
-      DB에 쌓인 원본으로 큐레이션을 계속할 수 있습니다.
+      <strong style="color:var(--yellow);">부분적으로만</strong> 괜찮습니다.<br>
+      댓글 파동과 씨드봇 활동은 GHA가 독립적으로 계속합니다. 하지만 큐레이션은 두 가지가 모두 필요합니다.<br>
+      ① <strong>DailyBrief(오늘의 핫토픽 목록)</strong> — 11:30 FULL 크롤에서 생성. Mac이 꺼지면 GHA가 어제 브리프로 대체하지만 정확도가 낮습니다.<br>
+      ② <strong>isUsable=true 글</strong> — 11:30 FULL 크롤 시 AI 심리분석 후 설정. Mac이 꺼지면 새로운 큐레이션 후보가 쌓이지 않습니다. 인기글(/popular 탭)만 크롤 즉시 설정됩니다.
     </div>
   </div>
 
@@ -685,7 +690,8 @@
     <h3 style="margin-bottom:12px; color:var(--primary);">Mac plist (LOCAL) — 창업자 Mac에서 실행 · 10종</h3>
     <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">
       launchd가 Mac 로컬 시간(KST)을 직접 읽어 실행합니다. Mac이 켜져 있어야 동작합니다.
-      크롤 완료 소요시간 ~20~34분 (crawl-only) / 82~102분 (full). popular-sync는 10분 하드 타임아웃.
+      크롤 완료 소요시간 ~20~34분 (crawl-only) / 82~102분 (full). popular-sync는 10분 하드 타임아웃.<br>
+      <span style="color:var(--yellow);">⚠️ crawl-only 모드에서 수집된 새 글은 isUsable=false 상태입니다. "첫 GHA 반영 슬롯"은 GHA가 실행되는 시각이며, 그 슬롯에서 새 글이 큐레이션 된다는 의미가 아닙니다. 새 글이 큐레이션 후보가 되려면 <strong>11:30 FULL 분석(AI 심리분석)</strong>을 거쳐야 isUsable=true로 설정됩니다. 단, 인기글(popular-sync)은 수집 즉시 isUsable=true가 됩니다.</span>
     </p>
     <div style="overflow-x:auto; margin-bottom:32px;">
       <table style="width:100%; border-collapse:collapse; font-size:13px;">
@@ -1225,31 +1231,33 @@ launchd/
       </p>
     </div>
 
-    <h3>6-B. 두 단계 임계값</h3>
+    <h3>6-B. 세 단계 임계값 (실제 동작 기준)</h3>
     <div class="threshold-bar">
-      <div class="threshold-zone zone-red">
+      <div class="threshold-zone zone-red" style="flex: 0 0 15%;">
         0 ~ 19<span class="zone-label">DB 저장 안 함<br>(minSave=20 미달)</span>
       </div>
-      <div class="threshold-zone zone-yellow" style="flex: 0 0 15%;">
-        20 ~ 29<span class="zone-label">저장만<br>큐레이션 불가</span>
+      <div class="threshold-zone zone-yellow">
+        20 ~ 59<span class="zone-label">저장만 · 큐레이션 불가<br>(분석 데이터 보관)</span>
       </div>
-      <div class="threshold-zone zone-green">
-        30 이상<span class="zone-label">isUsable=true<br>큐레이션 사용 가능 (minUsable=30)</span>
+      <div class="threshold-zone zone-green" style="flex: 0 0 30%;">
+        60 이상<span class="zone-label">isUsable=true<br>큐레이션 사용 가능<br><span style="font-size:10px;opacity:0.7;">trend-analyzer.ts L350</span></span>
       </div>
     </div>
+    <p style="font-size:11px; color:var(--sub); margin-top:6px;">※ config.ts에 minUsable=30이 정의돼 있지만 trend-analyzer.ts가 실제로는 60을 사용 (코드 불일치 — 개선 필요)</p>
 
     <div class="narrative" style="font-size:13px;">
       <p>
         수집된 글 100건 중 약 20건은 품질이 낮아 DB에 저장 자체가 되지 않습니다 (스팸·단문 등).
-        저장된 80건 중 대부분(약 80%)이 30점 이상으로 큐레이션에 사용 가능합니다.
-        20~29점 글은 분석 데이터로만 보관됩니다.
+        저장된 80건 중 약 40%가 60점 이상(isUsable=true)으로 큐레이션에 사용 가능합니다.
+        60점 미만 글은 분석 데이터로만 보관됩니다. (저장 자체는 20점 미만만 제외)
       </p>
     </div>
 
     <div class="alert info">
       <strong>코드 출처 확인</strong>
       qualityScore 가중치: <code>quality-scorer.ts L23-29</code> · killerScore 가중치: <code>quality-scorer.ts L119-127</code><br>
-      임계값: <code>config.ts L225(minSave=20), L227(minUsable=30)</code>
+      저장 임계값: <code>config.ts(minSave=20)</code> · isUsable 실제 기준: <code>trend-analyzer.ts L350 (qualityScore &gt;= 60)</code><br>
+      <span style="color:var(--yellow);font-size:11px;">※ config.ts의 minUsable=30은 정의됐지만 trend-analyzer에서 실제로 사용하지 않음 (코드 불일치)</span>
     </div>
   </div>
 

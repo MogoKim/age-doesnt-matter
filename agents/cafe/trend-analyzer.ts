@@ -11,6 +11,7 @@ import type { TrendAnalysis } from './types.js'
 import { parseTopComments, classifyCommentAtmosphere } from './types.js'
 import type { ControversyTopic } from '../core/intelligence.js'
 import { calcControversyScore } from './psych-analyzer.js'
+import { QUALITY_THRESHOLDS } from './config.js'
 
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
@@ -346,8 +347,7 @@ async function tagPosts(posts: Awaited<ReturnType<typeof getTodayPosts>>, analys
       (post.title ?? '').toLowerCase().includes(topic) || (post.content ?? '').toLowerCase().includes(topic),
     )
 
-    // 품질 점수 기반 isUsable (qualityScore >= 60)
-    const isUsable = (post.qualityScore ?? 0) >= 60
+    const isUsable = (post.qualityScore ?? 0) >= QUALITY_THRESHOLDS.minUsable
 
     await prisma.cafePost.update({
       where: { id: post.id },
