@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.7</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.8</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -282,12 +282,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.7</div>
+  <div class="cover-badge">Handover Document v10.8</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.7 (2026-05-19)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.8 (2026-05-19)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -1103,6 +1103,17 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
     현재 운영 중인 plist 스케줄은 모두 <code>crawl-only</code> 모드를 사용하므로 <code>isQuickMode=false</code> → 사실상 매 크롤마다 topComments가 수집된다.<br><br>
     <strong>topComments=null이 되는 유일한 경우</strong>: GHA 12:30 KST <code>quick</code> 크롤로 수집된 글. 하루 1회 실행되는 이 모드에서 발행된 글만 댓글이 없을 수 있다.
   </div>
+  <div class="alert warn" style="margin-top:10px;">
+    <strong>⚡ 버그 수정 이력 (2026-05-19, SHA 751eb43)</strong><br>
+    위 설계 의도와 달리 <strong>DB 전체 3,765건의 topComments가 100% 빈 배열</strong>이었음이 확인됐다.<br><br>
+    <strong>근본 원인</strong>: <code>buildPostFromTarget()</code>의 댓글 검색 대상이 잘못된 프레임이었다.<br>
+    네이버 카페 f-e URL(<code>cafe.naver.com/f-e/cafes/…</code>)은 빈 React 껍데기(outer shell)이고,
+    실제 본문과 댓글은 <code>cafe_main</code> iframe(<code>cafe.naver.com/ca-fe/cafes/…</code>) 안에 렌더링된다.<br>
+    수정 전 코드는 <code>mainPage</code>(outer shell)를 먼저 검색 → 항상 [] 반환 → <code>target</code>(cafe_main iframe) 재시도 순서였지만,
+    outer shell에 댓글 DOM이 없으므로 두 번째 시도도 [] 반환.<br><br>
+    <strong>수정 내용</strong>: 검색 순서를 역전 — <code>target</code>(cafe_main iframe) 우선, <code>mainPage</code> fallback.<br>
+    수정 이후 크롤부터 topComments가 실제 수집된다.
+  </div>
   <p style="font-size:13.5px;color:var(--muted);">댓글 1개당 작성자·내용·좋아요 수·대댓글(최대 5개)을 저장. 전체 배열은 최대 15개.</p>
   <details class="code-toggle">
     <summary>타입 구조 보기 — topComments JSON 스키마</summary>
@@ -1828,9 +1839,11 @@ for (const waveNum of order) {
   <div class="faq-item">
     <div class="faq-q">crawl-only 모드에서 댓글(topComments)이 수집되나?</div>
     <div class="faq-a">
-      <strong>수집된다.</strong> 이것은 흔한 오해다. 크롤러 내부를 보면 <code>isQuickMode = (crawlMode === 'quick')</code>이고, <code>includeComments = !isQuickMode</code>다. crawl-only의 crawlMode는 'quick'이 아니므로 <code>isQuickMode=false</code> → <code>includeComments=true</code> → topComments 수집.<br><br>
-      현재 plist 스케줄 전부가 crawl-only 모드를 사용하므로 Mac 크롤에서 수집된 글은 사실상 모두 topComments가 있다.<br><br>
-      <strong>topComments=null이 되는 유일한 경우</strong>: GHA 12:30 KST <code>quick</code> 모드로 수집된 글. 이 모드에서는 <code>isQuickMode=true</code>라 댓글이 수집되지 않는다.
+      <strong>설계상 수집된다. 단, 2026-05-19 이전 수집분은 전부 빈 배열이다.</strong><br><br>
+      크롤러 내부를 보면 <code>isQuickMode = (crawlMode === 'quick')</code>이고, <code>includeComments = !isQuickMode</code>다. crawl-only의 crawlMode는 'quick'이 아니므로 <code>isQuickMode=false</code> → <code>includeComments=true</code> → <code>extractComments()</code> 호출. 여기까지는 설계대로다.<br><br>
+      <strong>그러나 실제로는 버그가 있었다</strong>: <code>extractComments()</code>가 검색하는 대상이 잘못된 프레임이었다. 네이버 카페 f-e URL은 빈 React 껍데기이고, 실제 댓글은 <code>cafe_main</code> iframe(ca-fe URL) 안에 있다. 수정 전 코드가 outer shell을 먼저 검색해 항상 [] 반환했다.<br><br>
+      <strong>2026-05-19 수정(SHA 751eb43)</strong>: 검색 순서를 <code>cafe_main iframe 우선 → outer shell fallback</code>으로 역전. 이후 크롤부터 topComments가 실제 수집된다.<br><br>
+      <strong>topComments=[]가 되는 경우</strong>: ① 2026-05-19 이전 수집된 기존 3,765건(버그로 인한 소급 불가) ② GHA 12:30 KST <code>quick</code> 모드 수집 글(<code>isQuickMode=true</code>라 수집 자체 안 함) ③ 해당 카페 글에 실제 댓글이 없는 경우.
     </div>
   </div>
 
@@ -1941,6 +1954,19 @@ for (const waveNum of order) {
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.8</div>
+    <div class="changelog-date">2026-05-19</div>
+    <div class="changelog-content">
+      <strong>topComments 전수 미수집 버그 근본 원인 진단 + 수정 반영.</strong><br>
+      <strong>[버그 내용]</strong> DB 전체 3,765건 topComments=[] (100%). 설계상 crawl-only → includeComments=true → extractComments() 호출이 맞지만,
+      실제 검색 대상이 잘못된 프레임이었다. 네이버 카페 f-e URL 외부 셸(mainPage)은 빈 React wrapper이고 실제 본문+댓글은 cafe_main iframe(ca-fe URL) 안에 있다.
+      buildPostFromTarget()이 mainPage 우선 검색 → 항상 [] 반환하는 구조였음.<br>
+      <strong>[수정]</strong> crawler.ts buildPostFromTarget() 댓글 검색 순서 역전 — target(cafe_main iframe) 우선, mainPage fallback. extractComments() 내부 셀렉터 미매칭 시 warn 로그 추가(무음 실패 방지). SHA 751eb43.<br>
+      <strong>[문서 반영]</strong> §9 topComments alert: 버그 수정 이력 박스 추가. §15 FAQ: topComments 수집 여부 답변에 버그 경위·수정 내용·[] 케이스 3종 추가.
+    </div>
   </div>
 
   <div class="changelog-item">
