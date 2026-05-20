@@ -1683,6 +1683,37 @@ for (const waveNum of order) {
       <strong>오해 주의</strong>: "씨드봇이 OFF니까 GHA agents-seed.yml이 아무것도 안 한다" — 틀렸다. controversy-chain과 magazine-generator는 계속 실행된다.
     </div>
   </div>
+
+  <h3 class="mt24">봇 ON/OFF 변경 시 필수 체크리스트</h3>
+  <div class="narrative">
+    <p>봇·에이전트를 켜거나 끌 때 <strong>두 실행 환경을 동시에 반영</strong>해야 한다. 한 곳만 바꾸면 한 환경에서는 ON, 다른 환경에서는 OFF인 불일치 상태가 된다.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>실행 환경</th><th>변경 위치</th><th>예시</th></tr></thead>
+        <tbody>
+          <tr><td><strong>GHA</strong> (GitHub Actions)</td><td><code>.github/workflows/agents-*.yml</code> env 섹션</td><td><code>ENABLE_SEED_POSTS: 'false'</code></td></tr>
+          <tr><td><strong>launchd</strong> (맥 로컬)</td><td><code>.env.local</code></td><td><code>ENABLE_SEED_POSTS=false</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert" style="background:#1a2332; border-left:4px solid #3b82f6; padding:12px 16px; margin:12px 0; font-size:13px; line-height:1.9;">
+      <strong>OFF 시 체크리스트</strong>
+      <ol style="margin:6px 0 0 20px;">
+        <li><code>.github/workflows/agents-*.yml</code> env에 <code>FEATURE_FLAG: 'false'</code> 추가</li>
+        <li><code>.env.local</code> — 동일 키 추가</li>
+        <li>§13 봇 역할 표 — 해당 봇 상태 ● OFF 로 업데이트</li>
+      </ol>
+      <strong style="display:block; margin-top:8px;">ON 시 체크리스트</strong>
+      <ol style="margin:6px 0 0 20px;">
+        <li><code>.github/workflows/</code> env에서 해당 키 제거 또는 <code>'true'</code>로 변경</li>
+        <li><code>.env.local</code> — 동일하게 변경</li>
+        <li>§13 봇 역할 표 — 해당 봇 상태 ● ON 으로 업데이트</li>
+      </ol>
+    </div>
+    <div class="alert" style="background:#2d1f1f; border-left:4px solid #e74c3c; padding:10px 16px; font-size:13px; line-height:1.7;">
+      <strong>⚠️ 실제 사례 (2026-05-20)</strong>: <code>ENABLE_SEED_POSTS=false</code>를 GHA에만 추가하고 <code>.env.local</code>에 누락 → launchd 로컬 실행분은 계속 시드봇 글 생성됨.
+    </div>
+  </div>
 </div>
 
 <!-- ══════════ §14. P1~P5 구현 현황 ══════════ -->
