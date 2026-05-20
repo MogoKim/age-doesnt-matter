@@ -226,3 +226,4 @@
 | 진행중 | 쿠키 30일마다 만료 수동 갱신 필요 | 네이버 카페 인증 만료 | 28일 사전경고 알람으로 예방적 갱신 |
 | 진행중 | 트렌드 분석 비용 높음 (~$270/월) | Sonnet × 3회/일 | 5월 개선 시 Haiku 전환 또는 빈도 축소 검토 |
 | 2026-05-14 ✅ | 08:30 plist 미실행 (exit code 126) | macOS Full Disk Access에서 node 바이너리 권한 미부여 | 시스템 설정 → 개인 정보 보호 → 전체 디스크 접근 → node 활성화 → 내일부터 정상 실행 |
+| 2026-05-20 ✅ | 큐레이션봇 글이 어드민 필터에서 시드봇과 구분 안 됨 | publishCuratedContent()가 Post 생성 시 cafePostId 저장 안 함 | content-curator.ts tx.post.create에 cafePostId: sourcePostIds[0] 추가 |

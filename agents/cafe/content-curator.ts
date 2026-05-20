@@ -747,6 +747,7 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
         source: 'BOT',
         status: 'PUBLISHED',
         publishedAt: new Date(),
+        cafePostId: curated.sourcePostIds[0] ?? null,
       },
     })
     if (curated.sourcePostIds.length > 0) {
