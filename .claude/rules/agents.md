@@ -12,6 +12,7 @@ globs: agents/**/*.ts
 - DB write는 COO만 가능 (나머지 읽기 전용)
 - Slack 알림: notifier.ts의 notifySlack() 사용
 - 에이전트가 직접 에이전트 생성 금지
+- **agents/ → src/ 런타임 import 절대 금지**: `import type`만 허용. 함수·값이 필요하면 agents/ 내에서 직접 정의 (GHA ESM 환경에서 크로스 프로젝트 import 실패 — trending-scorer.ts 사례)
 
 ## 자사 사이트 HTTP 요청 프로토콜 (GA4/EventLog 오염 방지)
 

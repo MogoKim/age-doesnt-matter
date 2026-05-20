@@ -1,7 +1,15 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
-import { calculateTrendingScore } from '../../src/lib/utils/trending.js'
 import type { AgentResult } from '../core/types.js'
+
+// agents/ → src/ 런타임 import 금지 원칙에 따라 인라인 정의
+// 공식 변경 시 src/lib/utils/trending.ts와 동기화 필요
+function calculateTrendingScore(likeCount: number, commentCount: number, viewCount: number, createdAt: Date): number {
+  const postAge = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60)
+  const kstHour = (new Date().getUTCHours() + 9) % 24
+  const bonus = kstHour < 6 ? 1.5 : kstHour < 12 ? 1.2 : 1.0
+  return Math.round((likeCount * 3 + commentCount * 5 + viewCount * 0.1) * bonus / Math.pow(postAge + 2, 1.5) * 1000) / 1000
+}
 
 /**
  * COO 에이전트 — 트렌딩 스코어러
