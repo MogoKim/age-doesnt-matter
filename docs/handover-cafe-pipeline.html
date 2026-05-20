@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.11</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.12</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -282,12 +282,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.11</div>
+  <div class="cover-badge">Handover Document v10.12</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.11 (2026-05-20)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.12 (2026-05-20)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -297,7 +297,7 @@
 
 <!-- 시스템 현황 -->
 <div class="status-box">
-  <div class="sb-title">시스템 현황 (2026-05-19)</div>
+  <div class="sb-title">시스템 현황 (2026-05-20)</div>
   <div class="status-item"><div class="status-dot on"></div>크롤링 (launchd, 하루 7회)</div>
   <div class="status-item"><div class="status-dot on"></div>큐레이션 (GHA, 45분 간격 20슬롯)</div>
   <div class="status-item"><div class="status-dot on"></div>Wave 댓글 (GHA, 5분 간격 24시간)</div>
@@ -927,6 +927,12 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
         ③ crawler.ts refreshRecentPosts — 재크롤 시 killerScore가 75를 넘으면 연결된 Post 자동 갱신<br>
         <span style="color:var(--sub);">한 번 isFeatured=true가 되면 killerScore가 75 미만으로 내려가도 유지된다 (false 복구 없음).</span>
       </div>
+      <div class="alert warn mt8" style="font-size:12.5px; padding:12px 14px;">
+        <strong>⚠️ commentCount=0이면 killerScore 최대 35점 — 셀렉터 버그 영향 (2026-05-20 수정, SHA: b7cf87a)</strong><br>
+        killerScore 공식에서 댓글 가중치는 <strong>0.55</strong>로 전체 점수의 절반 이상이다. <code>commentCount</code>가 0으로 잘못 저장되면 이 55%가 통째로 0이 된다. 좋아요 10개짜리 인기글도 killerScore ≈ 35에 그쳐 킬러글 기준(≥55)을 통과하지 못하고 일반 글로 처리된다.<br><br>
+        네이버 카페가 u_cbox 위젯으로 댓글 DOM을 교체하면서 기존 셀렉터(<code>.comment_count</code>, <code>.comment_info_count .num</code> 등)가 매칭되지 않아, 수집 즉시 <code>safeNumber()</code>가 fallback <code>'0'</code>을 반환했다. 2026-05-20 14:30 KST 이전 수집분 약 717건이 commentCount=0 상태로 DB에 남아 있다. 수정 후 <code>refreshRecentPosts()</code> 실행 시 이 건들의 killerScore가 자동 재계산된다.<br>
+        <span style="color:var(--sub);">→ 14:30 KST 이후 크롤된 글은 정상. killerScore가 낮게 보이는 과거 글은 재크롤 후 갱신됨.</span>
+      </div>
     </div>
   </div>
 </div>
@@ -1113,6 +1119,25 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
     outer shell에 댓글 DOM이 없으므로 두 번째 시도도 [] 반환.<br><br>
     <strong>수정 내용</strong>: 검색 순서를 역전 — <code>target</code>(cafe_main iframe) 우선, <code>mainPage</code> fallback.<br>
     수정 이후 크롤부터 topComments가 실제 수집된다.
+  </div>
+  <div class="alert warn" style="margin-top:10px;">
+    <strong>⚡ 버그 수정 이력 (2026-05-20, SHA b7cf87a) — commentCount 셀렉터 불일치</strong><br>
+    <code>buildPostFromTarget()</code>와 <code>refreshRecentPosts()</code> 양쪽에서 <strong>commentCount가 항상 0으로 수집</strong>되는 버그가 3일간 지속됐다. 네이버 카페가 댓글 위젯을 u_cbox 방식으로 교체했는데, 크롤러의 <code>safeNumber()</code> 셀렉터 목록이 이전 DOM 구조(<code>.comment_count</code>, <code>.comment_info_count .num</code>, <code>.CommentCount</code>, <code>.reply_count</code>, <code>.num_number .num</code>)만 가지고 있어 전혀 매칭되지 않았다. 현재 네이버 u_cbox 위젯의 댓글 수 DOM 구조는 다음과 같다:<br><br>
+    <code>&lt;strong class="u_cbox_title"&gt;댓글 &lt;em class="u_cbox_count"&gt;N&lt;/em&gt;&lt;/strong&gt;</code><br><br>
+    <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — 수정된 셀렉터 목록</summary>
+    <pre style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px;margin:8px 0;overflow-x:auto;">// buildPostFromTarget() + refreshRecentPosts() 양쪽 모두 적용
+const commentCount = await safeNumber(target, [
+  '.u_cbox_count',           // ← 추가 (네이버 u_cbox 현행 DOM, 최우선)
+  '.u_cbox_title em',        // ← 추가 (fallback)
+  '.u_cbox_head em',         // ← 추가 (fallback)
+  '.comment_count',          // 구형 DOM (이제 매칭 안 됨)
+  '.comment_info_count .num',
+  '.CommentCount',
+  '.reply_count',
+  '.num_number .num',
+])</pre>
+    </details>
+    <strong>영향 범위</strong>: 2026-05-17~20 수집분 약 717건. commentCount=0 → killerScore 55% 가중치 항상 0 → 실제 인기글이 킬러글 기준 미달로 묻힘. 수정 이후 크롤부터 정상 수집되며, <code>refreshRecentPosts()</code>가 기존 717건의 killerScore를 자동 재계산한다.
   </div>
   <p style="font-size:13.5px;color:var(--muted);">댓글 1개당 작성자·내용·좋아요 수·대댓글(최대 5개)을 저장. 전체 배열은 최대 15개.</p>
   <details class="code-toggle">
@@ -1720,12 +1745,12 @@ for (const waveNum of order) {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션·Wave 개선 P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬ — 전부 구현 완료</h2>
+    <h2>큐레이션·Wave 개선 P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭ — 전부 구현 완료</h2>
   </div>
 
   <div class="alert ok">
     <strong>Claude Code에게: 이 섹션이 가장 중요하다</strong>
-    아래 15개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
+    아래 16개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
   </div>
 
   <div class="impl-card">
@@ -2029,6 +2054,41 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
     <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>DESIRE_PERSONA_MAP</code> 상수 전면 교체 (GENERAL 3→25명, HUMOR 2→7명, 각 STORY 카테고리 2→7~13명)</div>
   </div>
 
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑭. commentCount 셀렉터 불일치 수정 — 네이버 u_cbox DOM 대응 (killerScore 55% 가중치 복구)</div>
+    </div>
+    <div class="impl-body">
+      네이버 카페가 댓글 영역을 u_cbox 위젯 방식으로 교체하면서 크롤러의 commentCount 셀렉터가 전혀 매칭되지 않는 상태가 3일간 지속됐다. <code>safeNumber()</code>가 모든 셀렉터를 시도한 뒤 fallback <code>'0'</code>을 반환해 DB에 commentCount=0으로 저장됐다.<br><br>
+      <strong>핵심 영향 — killerScore 체계 붕괴</strong><br>
+      killerScore 공식에서 댓글 가중치는 0.55다. commentCount=0이면 이 55%가 항상 0 → 실제로 댓글이 10개인 글도 killerScore ≈ 35에 그쳐 킬러글 기준(≥55)을 통과하지 못하고 일반 글로 처리됐다. 킬러글 우선 발행·isFeatured 자동 활성화 체계가 사실상 무력화된 상태였다.<br><br>
+      <strong>원인 특정</strong><br>
+      네이버 u_cbox 위젯의 댓글 수 DOM: <code>&lt;strong class="u_cbox_title"&gt;댓글 &lt;em class="u_cbox_count"&gt;N&lt;/em&gt;&lt;/strong&gt;</code><br>
+      기존 셀렉터 목록(<code>.comment_count</code>, <code>.comment_info_count .num</code>, <code>.CommentCount</code>, <code>.reply_count</code>, <code>.num_number .num</code>)은 모두 이전 DOM 구조 기반이라 매칭 실패.<br><br>
+      <strong>수정 내용</strong><br>
+      <code>buildPostFromTarget()</code>와 <code>refreshRecentPosts()</code> 양쪽 <code>safeNumber()</code> 호출 시 셀렉터 배열 맨 앞에 현행 u_cbox 셀렉터 3개 추가:<br>
+      → <code>'.u_cbox_count'</code> (주 셀렉터, 현행 DOM)<br>
+      → <code>'.u_cbox_title em'</code> (fallback 1)<br>
+      → <code>'.u_cbox_head em'</code> (fallback 2)<br><br>
+      <strong>소급 복구 방식</strong>: <code>refreshRecentPosts()</code>는 최근 7일 상위 50건을 재방문해 commentCount가 변한 경우에만 killerScore를 재계산한다. 수정 후 첫 크롤에서 717건 중 실제 댓글이 있는 글들이 자동 복구된다.<br><br>
+      <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — 수정된 셀렉터 (buildPostFromTarget + refreshRecentPosts 공통)</summary>
+      <pre style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px;margin:8px 0;overflow-x:auto;">const commentCount = await safeNumber(target, [
+  '.u_cbox_count',           // 네이버 u_cbox 현행 DOM (추가)
+  '.u_cbox_title em',        // fallback (추가)
+  '.u_cbox_head em',         // fallback (추가)
+  '.comment_count',
+  '.comment_info_count .num',
+  '.CommentCount',
+  '.reply_count',
+  '.num_number .num',
+])</pre>
+      </details>
+      영향 범위: 2026-05-17~20 수집분 약 717건 (commentCount=0 상태). SHA: b7cf87a (2026-05-20)
+    </div>
+    <div class="impl-file">📄 agents/cafe/crawler.ts — <code>buildPostFromTarget()</code> + <code>refreshRecentPosts()</code> 각 <code>safeNumber()</code> 셀렉터 배열 앞에 u_cbox 셀렉터 3개 추가</div>
+  </div>
+
 </div>
 
 <!-- ══════════ §15. FAQ ══════════ -->
@@ -2193,6 +2253,23 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.12</div>
+    <div class="changelog-date">2026-05-20</div>
+    <div class="changelog-content">
+      <strong>commentCount 셀렉터 불일치 수정 + killerScore 55% 가중치 복구 + 문서 최신화.</strong><br><br>
+      <strong>[버그 수정 ⑭] commentCount 셀렉터 불일치 — 네이버 u_cbox DOM 대응 (SHA: b7cf87a)</strong><br>
+      네이버 카페 댓글 위젯이 u_cbox 방식으로 교체된 이후 <code>buildPostFromTarget()</code>와 <code>refreshRecentPosts()</code> 양쪽에서 commentCount가 항상 0으로 수집되는 문제가 3일간(2026-05-17~20) 지속됐다. 기존 셀렉터 목록(<code>.comment_count</code>, <code>.comment_info_count .num</code> 등)이 현행 DOM과 불일치해 <code>safeNumber()</code>가 전부 fallback '0'을 반환했다.<br><br>
+      직접 영향: commentCount=0 → killerScore 공식의 댓글 가중치 0.55가 항상 0 → killerScore 최대 35점 → 킬러글 기준(≥55) 미달로 실제 인기글이 일반글로 처리됨. DB 영향 건수 약 717건.<br><br>
+      수정: <code>safeNumber()</code> 셀렉터 배열 맨 앞에 <code>'.u_cbox_count'</code>(현행 u_cbox 표준) / <code>'.u_cbox_title em'</code> / <code>'.u_cbox_head em'</code> 3개 추가. 수정 후 첫 <code>refreshRecentPosts()</code> 실행 시 717건 killerScore 자동 재계산.<br><br>
+      <strong>[문서 반영]</strong><br>
+      §6 killerScore: commentCount=0 시 killerScore 최대 35점 경고 alert 추가.<br>
+      §9 DB 구조: topComments iframe 버그 기록 아래에 commentCount 셀렉터 버그 기록 추가 (코드 토글 포함).<br>
+      §14: 섹션 제목 ⑭ 추가(15개→16개). impl-card ⑭ 신규 추가 (commentCount 셀렉터 수정).<br>
+      커버 배지·메타·상태박스·footer: v10.11→v10.12.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -2385,7 +2462,7 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.11<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.12<br>
   최종 업데이트: 2026-05-20 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
