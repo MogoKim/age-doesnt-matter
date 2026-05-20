@@ -5,23 +5,12 @@
  * 원본 복붙 X → 주제와 감정만 참고해 오리지널 콘텐츠 작성
  */
 import { fileURLToPath } from 'url'
-import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack, sendSlackMessage } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
 import type { CuratedContent } from './types.js'
 import { loadTodayBrief } from './daily-brief.js'
 
-const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
-const client = new Anthropic()
-
-/** 네이버 카페 텍스트의 lone surrogate 문자 제거 (Anthropic API JSON 직렬화 오류 방지) */
-function sanitizeForApi(text: string): string {
-  return text
-    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
-    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-}
 
 /** AI 응답에서 마크다운 문법 제거 */
 function stripMarkdown(text: string): string {
@@ -41,14 +30,6 @@ function stripMarkdown(text: string): string {
 }
 
 /** KST 현재 날짜/요일/시간대 (GitHub Actions UTC 보정) */
-function getKstContext(): string {
-  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000)
-  const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
-  const day = days[kst.getUTCDay()]
-  const hour = kst.getUTCHours()
-  const timeSlot = hour < 6 ? '새벽' : hour < 12 ? '오전' : hour < 18 ? '오후' : '저녁'
-  return `[KST 현재] ${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 ${day} ${timeSlot}\n글에서 날짜/요일/시간대를 언급할 때 반드시 위 기준으로 쓰세요.`
-}
 
 /** 페르소나별 적합 매칭 */
 interface PersonaMatch {
@@ -598,83 +579,29 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   return stage3
 }
 
-/** 큐레이션된 글 생성 */
+/** 큐레이션된 글 생성 — 원본 카페글 제목·본문 그대로 사용 (AI 각색 없음) */
 async function generateCuratedPost(
   persona: PersonaMatch,
   topic: string,
   referencePosts: { id: string; title: string; content: string; cafeName: string }[],
   desireCat?: string,
 ): Promise<CuratedContent | null> {
-  const references = referencePosts.map((p, i) =>
-    `인기글 ${i + 1} (${p.cafeName}): "${sanitizeForApi(p.title)}"\n${sanitizeForApi(p.content.slice(0, 400))}`,
-  ).join('\n\n')
+  const mainRef = referencePosts[0]
+  if (!mainRef) return null
 
-  const quirksStr = persona.quirks.map(q => `- ${q}`).join('\n')
-  const examplesStr = persona.examples.map(e => `"${e}"`).join('\n')
-
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 900,
-    system: `${getKstContext()}
-
-당신은 "${persona.nickname}" (50~60대 커뮤니티 회원)입니다.
-성격/스타일: ${persona.style}
-말투: ${persona.patterns.join(', ')}
-
-[글쓰기 습관 — 반드시 지킬 것]
-${quirksStr}
-
-[당신이 실제로 쓰는 글 예시 — 이 톤과 스타일을 유지하세요]
-${examplesStr}
-
-[수미상관 방식으로 글 쓰기 — 원본 90% 보존]
-- 원본 카페 글의 핵심 내용(상황·사건·수치·정보)을 90% 그대로 살리세요
-- 첫 문장: 당신 "${persona.nickname}" 말투로 나 자신의 경험/감정으로 시작 (원본 글 작성자에게 공감 표현 금지)
-- 마지막 문장: 당신 말투로 자연스럽게 마무리 (응원·공감·경험 한 줄)
-- 중간 내용: 원본의 핵심 정보를 자신의 말투로 자연스럽게 전달 (재구성·재해석 금지)
-- 이 글은 원본 카페 글 작성자에게 보내는 답변·댓글이 아닙니다. 나 자신의 독립된 이야기를 씁니다.
-- 식당명·연예인명·프로그램명·지역명·음식명·수치 등 고유명사는 반드시 원본 그대로 사용
-
-[절대 하지 않는 것]
-- "시니어", "액티브 시니어" 표현 금지
-- 마크다운 문법(**, ##, *, _ 등) 금지. 순수 텍스트만.
-- 이모지(😊🥬❤️ 등 모든 특수문자) 절대 금지 — 제목·본문 모두
-- 정치/종교/혐오/광고 금지
-- 오프라인 모임 모집 글 금지 ("같이 걸어요", "이번 수요일 모여요" 등)
-- "어떤 드라마", "어느 식당" 식으로 추상적으로 쓰지 말 것 → 반드시 실제 이름 특정
-- 2인칭 공감 표현 금지: "~하시겠어요", "그 마음 알 것 같아요", "답답하시겠어요", "힘드셨겠어요" 등 상대방에게 말 거는 투 금지`,
-    messages: [{
-      role: 'user',
-      content: `"${topic}" 주제로 글을 써주세요.
-
-${references ? `[원본 카페 글 — 수미상관으로 재가공]\n${references}` : ''}
-
-응답 형식:
-제목: (15~30자, 당신 말투로)
-본문: (150~400자, 문단 2~3개)`,
-    }],
-  })
-
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
-  const titleMatch = text.match(/제목:\s*(.+)/)
-  const bodyMatch = text.match(/본문:\s*([\s\S]+)/)
-
-  if (!titleMatch || !bodyMatch) return null
-
-  // boardType + category는 DESIRE_TO_BOARD에서 결정 (B21/B23/B26 통합 수정)
   const boardInfo = DESIRE_TO_BOARD[desireCat ?? 'GENERAL'] ?? DESIRE_TO_BOARD['GENERAL']
 
-  const title = stripMarkdown(titleMatch[1].trim())
+  const title = stripMarkdown(mainRef.title.trim())
   if (!title) return null
 
   return {
     personaId: persona.id,
     title,
-    content: stripMarkdown(bodyMatch[1].trim()),
+    content: stripMarkdown(mainRef.content.trim()),
     boardType: boardInfo.boardType,
     category: boardInfo.category,
     sourceTopic: topic,
-    sourcePostIds: referencePosts.map(p => p.id),
+    sourcePostIds: [mainRef.id],
   }
 }
 

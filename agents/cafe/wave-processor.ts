@@ -182,8 +182,13 @@ async function processWave(
   // viralType에 따라 댓글 유형 리매핑 (null이면 기본 순서 유지)
   const effectiveWaveNum = remapWaveType(waveNum, cafePost?.viralType)
 
-  // Claude Haiku로 댓글 생성 (viralType 기반 유형 적용)
-  const commentText = await generateComment(post.title, effectiveWaveNum, refComment)
+  // topComments 있으면 원문 그대로 달기, 없으면 AI fallback
+  let commentText: string
+  if (refComment && refComment.trim().length >= 10) {
+    commentText = refComment.trim()
+  } else {
+    commentText = await generateComment(post.title, effectiveWaveNum, undefined)
+  }
 
   // 댓글 DB 저장 + Post.commentCount 동기화 (목록 표시 정확도)
   await prisma.$transaction([

@@ -128,5 +128,6 @@ CommentWaveQueue {
 | 2026-05-14 | agents-cafe-wave.yml 분리 — 독립 concurrency group(cafe-comment-wave) | agents-cafe.yml과 같은 그룹으로 묶여 평균 87분 1회만 실행되던 문제 해결 |
 | 2026-05-14 | WAVE_COMMENT_TYPES 상수 추가(공감/질문/경험공유/응원). generateComment에 waveNum 파라미터 추가 + wave별 유형 강제. topComments 인덱스 wave 번호 기반 분산 | topComments 없을 때 3개 wave 모두 공감형 수렴하는 획일화 방지 |
 | 2026-05-16 | user-post-wave-processor.ts: existingComments select에 content 추가. 루프 내 priorCommentTexts 누적 → generateComment 4번째 인자로 전달 | 동일 포스트 기존 봇 댓글 내용을 LLM에 전달하지 않아 표현 중복 수렴 발생 → inter-wave/intra-wave 모두 해결 |
+| 2026-05-20 | topComments 직접 달기 — refComment 10자 이상이면 AI 거치지 않고 원문 그대로 달기, 없으면 AI fallback | "큐레이션 댓글은 크롤된 topComments 그대로 달아라" 창업자 최종 지시 |
 | 2026-05-18 | P4: processWave()에 prisma.comment.groupBy로 봇 당일 댓글 수 집계 → BOT_DAILY_COMMENT_CAP=3 초과 봇 제외 후 셔플 풀에서 우선 선택. P5: WAVE_COMMENT_TYPES wave4 응원형→다른관점형 교체. generateComment 양쪽 프롬프트에 "화이팅/응원합니다/좋은 정보 감사합니다" 금지 추가 | 5/18 분석: 손뜨개 6개·체력왕 5개 반복 등장, wave4 전부 "화이팅!" 획일화 문제 수정 |
 | 2026-05-19 | ⑦ wave-processor.ts: `remapWaveType(waveNum, viralType)` 함수 추가 — BETRAYAL[4,1,3,2]/INJUSTICE[2,4,1,3]/CONTROVERSY[2,4,3,1]/REVERSAL[3,1,2,4]/EMPATHY[1,3,2,4]/null=기본순서. CafePost select에 viralType 추가, processWave 내 effectiveWaveNum으로 generateComment 호출 | viralType별 글 감정 구조에 맞게 첫 댓글 유형 동적 조정 (psych-analyzer 저장 데이터 실사용) |
