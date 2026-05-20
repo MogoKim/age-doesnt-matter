@@ -749,8 +749,11 @@ async function buildPostFromTarget(
     '.LikeButton .count',
   ])
 
-  // 댓글 수
+  // 댓글 수 — Naver u_cbox 위젯 기준 (2026-05-20 .u_cbox_count 추가)
   const commentCount = await safeNumber(target, [
+    '.u_cbox_count',             // Naver u_cbox 표준 댓글수 (현행)
+    '.u_cbox_title em',          // <strong class="u_cbox_title">댓글 <em>5</em>
+    '.u_cbox_head em',           // u_cbox head 영역
     '.comment_count',
     '.comment_info_count .num',
     '.CommentCount',
@@ -962,6 +965,7 @@ export async function refreshRecentPosts(): Promise<number> {
         '.u_likeit_list_count .u_cnt', '.LikeButton .count',
       ])
       const newCommentCount = await safeNumber(page, [
+        '.u_cbox_count', '.u_cbox_title em', '.u_cbox_head em',
         '.comment_count', '.comment_info_count .num', '.CommentCount',
         '.reply_count', '.num_comment .num',
       ])
