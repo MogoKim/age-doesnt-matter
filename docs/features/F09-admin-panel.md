@@ -1,0 +1,47 @@
+---
+id: F09
+name: 어드민 패널
+status: ACTIVE
+created: 2026-05-14
+updated: 2026-05-20
+---
+
+# F09 — 어드민 패널
+
+## 개요
+운영자 전용 관리 패널. 콘텐츠·멤버·에이전트·배너·큐 등 서비스 전반을 관리한다.
+
+## 주요 기능
+| 섹션 | 경로 | 설명 |
+|------|------|------|
+| 콘텐츠 관리 | `/admin/content` | 게시글 필터·검색·상태 변경·일괄 액션 |
+| 멤버 관리 | `/admin/members` | 회원 조회·제재 |
+| 에이전트 로그 | `/admin/agents` | BotLog 조회 |
+| 배너 관리 | `/admin/banners` | 광고·프로모 배너 |
+| AdminQueue | `/admin/queue` | 창업자 승인 큐 |
+
+## 콘텐츠 관리 필터 구조
+`source` + `botType` 파라미터로 게시글 출처 세분화:
+
+| 드롭다운 항목 | botType 값 | 실제 DB 조건 |
+|--------------|-----------|-------------|
+| 전체 소스 | (없음) | — |
+| 실고객 | `user` | source=USER |
+| 시드봇 | `seed` | source=BOT, cafePostId IS NULL |
+| 큐레이션봇 | `curate` | source=BOT, cafePostId IS NOT NULL |
+| 스크래퍼봇 | `sheet` | source=SHEET |
+| NNN | `admin` | source=ADMIN |
+
+> ⚠️ 시드봇/큐레이션봇 구분: cafePostId 기반(best-effort). 비킬러 큐레이션글은 시드봇 버킷에 포함될 수 있음.
+
+## 코드 위치
+| 파일 | 역할 |
+|------|------|
+| `src/app/admin/(panel)/content/page.tsx` | 콘텐츠 관리 페이지 (SSR 필터 파싱) |
+| `src/components/admin/ContentTable.tsx` | 콘텐츠 테이블 + 필터 UI (client) |
+| `src/lib/queries/admin/admin.content.ts` | getContentList() 쿼리 (botType 지원) |
+
+## 수정 이력
+| 날짜 | 내용 | 이유 |
+|------|------|------|
+| 2026-05-20 | 콘텐츠 필터 botType 추가 — 실고객/시드봇/큐레이션봇/스크래퍼봇/NNN | 봇 유형별 조회 필요 |

@@ -55,6 +55,7 @@ interface ContentTableProps {
     board?: string
     status?: string
     source?: string
+    botType?: string
     search?: string
     sort?: string
   }
@@ -74,6 +75,15 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
     } else {
       params.delete(key)
     }
+    params.delete('cursor')
+    router.push(`/admin/content?${params.toString()}`)
+  }
+
+  function updateBotType(value: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('source')
+    params.delete('botType')
+    if (value) params.set('botType', value)
     params.delete('cursor')
     router.push(`/admin/content?${params.toString()}`)
   }
@@ -136,15 +146,16 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
         </select>
 
         <select
-          value={filters.source || ''}
-          onChange={(e) => updateFilter('source', e.target.value)}
+          value={filters.botType || ''}
+          onChange={(e) => updateBotType(e.target.value)}
           className="h-10 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
         >
           <option value="">전체 소스</option>
-          <option value="USER">유저</option>
-          <option value="BOT">봇</option>
-          <option value="ADMIN">관리자</option>
-          <option value="SHEET">스크래퍼</option>
+          <option value="user">실고객</option>
+          <option value="seed">시드봇</option>
+          <option value="curate">큐레이션봇</option>
+          <option value="sheet">스크래퍼봇</option>
+          <option value="admin">NNN</option>
         </select>
 
         <select

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getContentList } from '@/lib/queries/admin'
-import type { ContentSortType } from '@/lib/queries/admin/admin.content'
+import type { ContentSortType, BotTypeFilter } from '@/lib/queries/admin/admin.content'
 import type { BoardType, PostSource, PostStatus } from '@/generated/prisma/client'
 import nextDynamic from 'next/dynamic'
 import ExpireJobsButton from '@/components/admin/ExpireJobsButton'
@@ -17,11 +17,17 @@ function parseSort(s?: string): ContentSortType | undefined {
   return VALID_SORTS.includes(s as ContentSortType) ? (s as ContentSortType) : undefined
 }
 
+const VALID_BOT_TYPES: BotTypeFilter[] = ['user', 'seed', 'curate', 'sheet', 'admin']
+function parseBotType(s?: string): BotTypeFilter | undefined {
+  return VALID_BOT_TYPES.includes(s as BotTypeFilter) ? (s as BotTypeFilter) : undefined
+}
+
 interface Props {
   searchParams: Promise<{
     board?: string
     status?: string
     source?: string
+    botType?: string
     search?: string
     cursor?: string
     sort?: string
@@ -34,6 +40,7 @@ export default async function AdminContentPage({ searchParams }: Props) {
     boardType: params.board as BoardType | undefined,
     status: params.status as PostStatus | undefined,
     source: params.source as PostSource | undefined,
+    botType: parseBotType(params.botType),
     search: params.search,
     cursor: params.cursor,
     sort: parseSort(params.sort),
@@ -57,6 +64,7 @@ export default async function AdminContentPage({ searchParams }: Props) {
           board: params.board,
           status: params.status,
           source: params.source,
+          botType: params.botType,
           search: params.search,
           sort: params.sort,
         }}

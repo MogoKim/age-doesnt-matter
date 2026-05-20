@@ -4,11 +4,13 @@ import type { BoardType, PostSource, PostStatus } from '@/generated/prisma/clien
 // ─── 콘텐츠 관리 ───
 
 export type ContentSortType = 'latest' | 'likes' | 'comments' | 'views'
+export type BotTypeFilter = 'user' | 'seed' | 'curate' | 'sheet' | 'admin'
 
 export interface ContentListOptions {
   boardType?: BoardType
   status?: PostStatus
   source?: PostSource
+  botType?: BotTypeFilter
   search?: string
   cursor?: string
   limit?: number
@@ -16,17 +18,30 @@ export interface ContentListOptions {
 }
 
 export async function getContentList(options: ContentListOptions = {}) {
-  const { boardType, status, source, search, cursor, limit = 20, sort } = options
+  const { boardType, status, source, botType, search, cursor, limit = 20, sort } = options
 
   // sort가 없거나 'latest'면 기본 cursor 페이지네이션 모드
   const isDefaultSort = !sort || sort === 'latest'
   // 비기본 정렬은 cursor 페이지네이션 불가 → limit 100으로 한 번만 조회
   const effectiveLimit = isDefaultSort ? limit : 100
 
+  // botType이 있으면 source를 세분화, 없으면 기존 source 필터
+  const sourceFilter = (() => {
+    if (!botType && source) return { source }
+    switch (botType) {
+      case 'user':   return { source: 'USER' as PostSource }
+      case 'seed':   return { source: 'BOT' as PostSource, cafePostId: null }
+      case 'curate': return { source: 'BOT' as PostSource, cafePostId: { not: null } }
+      case 'sheet':  return { source: 'SHEET' as PostSource }
+      case 'admin':  return { source: 'ADMIN' as PostSource }
+      default:       return {}
+    }
+  })()
+
   const where = {
     ...(boardType && { boardType }),
     ...(status && { status }),
-    ...(source && { source }),
+    ...sourceFilter,
     ...(search && {
       OR: [
         { title: { contains: search, mode: 'insensitive' as const } },
