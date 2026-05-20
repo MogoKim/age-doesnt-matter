@@ -936,7 +936,7 @@ export async function refreshRecentPosts(): Promise<number> {
   const cutoff7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
 
   const posts = await prisma.cafePost.findMany({
-    where: { createdAt: { gte: cutoff7d }, postUrl: { not: '' } },
+    where: { crawledAt: { gte: cutoff7d }, postUrl: { not: '' } },
     select: { id: true, postUrl: true, commentCount: true, likeCount: true },
     orderBy: { commentCount: 'desc' },
     take: 50,

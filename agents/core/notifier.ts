@@ -175,7 +175,7 @@ export async function notifySlack(payload: NotifyPayload): Promise<void> {
     },
     {
       type: 'section',
-      text: { type: 'mrkdwn', text: payload.body },
+      text: { type: 'mrkdwn', text: payload.body.slice(0, 2900) },
     },
     {
       type: 'context',

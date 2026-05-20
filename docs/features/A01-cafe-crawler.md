@@ -227,3 +227,4 @@
 | 진행중 | 트렌드 분석 비용 높음 (~$270/월) | Sonnet × 3회/일 | 5월 개선 시 Haiku 전환 또는 빈도 축소 검토 |
 | 2026-05-14 ✅ | 08:30 plist 미실행 (exit code 126) | macOS Full Disk Access에서 node 바이너리 권한 미부여 | 시스템 설정 → 개인 정보 보호 → 전체 디스크 접근 → node 활성화 → 내일부터 정상 실행 |
 | 2026-05-20 ✅ | 큐레이션봇 글이 어드민 필터에서 시드봇과 구분 안 됨 | publishCuratedContent()가 Post 생성 시 cafePostId 저장 안 함 | content-curator.ts tx.post.create에 cafePostId: sourcePostIds[0] 추가 |
+| 2026-05-20 ✅ | 09:30 크롤 재크롤 단계 실패 + Slack 알림 오류 | refreshRecentPosts()에서 createdAt(없는 필드) 사용 → PrismaValidationError, 에러 메시지가 3001자 초과 → Slack invalid_blocks | crawler.ts createdAt→crawledAt 수정, notifier.ts body.slice(0,2900) 추가 |
