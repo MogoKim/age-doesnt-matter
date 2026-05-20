@@ -32,6 +32,7 @@
 - 모델 3-tier: strategic=Opus / heavy=Sonnet / light=Haiku → 상세: constitution.yaml model_policy
 - 회사 헌법: /agents/core/constitution.yaml 항상 참조
 - DB write: COO 에이전트만 가능
+- **봇/에이전트 ON·OFF 상태 질문 시**: 기억·문서만 보고 "있습니다/없습니다" 주장 금지. 반드시 `.env.local` + `.github/workflows/` 파일 직접 Read 후 답변. 두 곳 불일치 시 "불일치 상태입니다"로 보고.
 
 ## 검증 명령 (코드 변경 후 반드시 실행)
 - 타입 체크: `npx tsc --noEmit`
