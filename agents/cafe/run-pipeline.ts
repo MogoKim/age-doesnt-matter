@@ -64,6 +64,12 @@ loadEnvFile(resolve(projectRoot, '.env'))
 const { notifySlack, sendSlackMessage } = await import('../core/notifier.js')
 const { prisma, disconnect } = await import('../core/db.js')
 
+const PIPELINE_THRESHOLDS = {
+  MIN_CRAWL_POSTS_TOTAL: 10,        // 당일 크롤 10건 미만 = 이상
+  MAX_EMPTY_COMMENT_RATIO: 0.5,     // commentCount=0 비율 50% 초과 = DOM 셀렉터 오류
+  MAX_EMPTY_TOP_COMMENT_RATIO: 0.8, // topComments=[] 비율 80% 초과 = 댓글 수집 오류
+} as const
+
 async function run(script: string, label: string) {
   console.log(`\n${'='.repeat(50)}`)
   console.log(`[Pipeline] ${label} 시작`)
@@ -215,6 +221,78 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
   })
 }
 
+/**
+ * 크롤 품질 assertion — commentCount=0·topComments=[] 비율 임계값 초과 시 즉시 중단
+ * withComments=false: quick 모드처럼 댓글 미수집 크롤에서는 비율 검사 스킵
+ */
+async function assertCrawlQuality(withComments = true): Promise<void> {
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const posts = await prisma.cafePost.findMany({
+    where: { crawledAt: { gte: todayStart } },
+    select: { commentCount: true, topComments: true },
+  })
+
+  if (!withComments || posts.length < PIPELINE_THRESHOLDS.MIN_CRAWL_POSTS_TOTAL) {
+    console.log(`[Pipeline] ✅ CRAWL_QUALITY: ${posts.length}건 (댓글 비율 검사 스킵)`)
+    return
+  }
+
+  const emptyCommentCount = posts.filter(p => p.commentCount === 0).length
+  const emptyCommentRatio = emptyCommentCount / posts.length
+  if (emptyCommentRatio > PIPELINE_THRESHOLDS.MAX_EMPTY_COMMENT_RATIO) {
+    const msg = [
+      `[Pipeline] ❌ CRAWL_QUALITY: commentCount=0 비율 ${Math.round(emptyCommentRatio * 100)}%`,
+      `(${emptyCommentCount}/${posts.length}건) → DOM 셀렉터 오류 의심`,
+      `파이프라인 중단. agents/cafe/crawler.ts 셀렉터 확인 필요.`,
+    ].join('\n')
+    console.error(msg)
+    await sendSlackMessage('SYSTEM', msg).catch(() => {})
+    process.exit(1)
+  }
+
+  const emptyTopCount = posts.filter(p => {
+    const tc = p.topComments
+    return !tc || (Array.isArray(tc) && tc.length === 0)
+  }).length
+  const emptyTopRatio = emptyTopCount / posts.length
+  if (emptyTopRatio > PIPELINE_THRESHOLDS.MAX_EMPTY_TOP_COMMENT_RATIO) {
+    const msg = [
+      `[Pipeline] ❌ CRAWL_QUALITY: topComments=[] 비율 ${Math.round(emptyTopRatio * 100)}%`,
+      `(${emptyTopCount}/${posts.length}건) → 댓글 수집 오류 의심`,
+      `파이프라인 중단. agents/cafe/crawler.ts extractComments() 셀렉터 확인 필요.`,
+    ].join('\n')
+    console.error(msg)
+    await sendSlackMessage('SYSTEM', msg).catch(() => {})
+    process.exit(1)
+  }
+
+  console.log(
+    `[Pipeline] ✅ CRAWL_QUALITY: ${posts.length}건 | commentCount=0 ${Math.round(emptyCommentRatio * 100)}% | topComments=[] ${Math.round(emptyTopRatio * 100)}%`
+  )
+}
+
+/** 트렌드 품질 assertion — 오늘 CafeTrend(daily) 없으면 즉시 중단 */
+async function assertTrendQuality(): Promise<void> {
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const trend = await prisma.cafeTrend.findFirst({
+    where: { date: todayStart, period: 'daily' },
+    select: { id: true },
+    orderBy: { id: 'desc' },
+  })
+  if (!trend) {
+    const msg = [
+      `[Pipeline] ❌ TREND_QUALITY: 오늘 CafeTrend(daily) 없음 → trend-analyzer 실패`,
+      `파이프라인 중단. DailyBrief는 어제 데이터로 폴백하지 않습니다.`,
+    ].join('\n')
+    console.error(msg)
+    await sendSlackMessage('SYSTEM', msg).catch(() => {})
+    process.exit(1)
+  }
+  console.log(`[Pipeline] ✅ TREND_QUALITY: CafeTrend id=${trend.id}`)
+}
+
 export async function main(stepOverride?: string) {
   if (stepOverride) step = stepOverride
   // Bug 8: 중복 실행 방지 — 30분 이내 락파일이 있으면 스킵
@@ -247,11 +325,13 @@ export async function main(stepOverride?: string) {
     if (step === 'deep') {
       await runCrawlWithRetry('crawler.ts', '1단계: 딥다이브 크롤링 (댓글 포함)')
       await checkCookieExpiry()
+      await assertCrawlQuality()          // 댓글 수집 품질 검사 — 이상 시 즉시 중단
       await reportPipelineStage('crawl')
       await run('external-crawler.ts', '2단계: 외부 크롤링 (비활성 — 빈 배열)')
       await run('psych-analyzer.ts', '3단계: AI 심리 분석')
       await reportPipelineStage('psych')
       await run('trend-analyzer.ts', '4단계: 풀 트렌드 생성 (욕망/감정 집계 포함)')
+      await assertTrendQuality()          // CafeTrend 생성 검사 — 없으면 즉시 중단
       await reportPipelineStage('trend')
       await run('daily-brief.ts', '5단계: 욕망 지도 → DailyIntelligenceBrief 생성')
       await reportPipelineStage('brief')
@@ -263,6 +343,7 @@ export async function main(stepOverride?: string) {
       process.env.CRAWL_MODE = 'quick'
       await runCrawlWithRetry('crawler.ts', '1단계: 퀵 크롤링 (HIGH 게시판 1페이지)')
       await checkCookieExpiry()
+      await assertCrawlQuality(false)     // 퀵 모드: 제목만 수집 → 댓글 비율 검사 스킵
       // 심리 분석은 스킵 (제목만 수집)
       process.env.TREND_MODE = 'quick'
       await run('trend-analyzer.ts', '2단계: 퀵 트렌드 업데이트')
@@ -273,11 +354,13 @@ export async function main(stepOverride?: string) {
     else if (step === 'all') {
       await runCrawlWithRetry('crawler.ts', '1단계: 카페 크롤링')
       await checkCookieExpiry()
+      await assertCrawlQuality()          // 댓글 수집 품질 검사 — 이상 시 즉시 중단
       await reportPipelineStage('crawl')
       await run('external-crawler.ts', '2단계: 외부 크롤링 (비활성)')
       await run('psych-analyzer.ts', '3단계: AI 심리 분석')
       await reportPipelineStage('psych')
       await run('trend-analyzer.ts', '4단계: 트렌드 분석')
+      await assertTrendQuality()          // CafeTrend 생성 검사 — 없으면 즉시 중단
       await reportPipelineStage('trend')
       await run('daily-brief.ts', '5단계: DailyIntelligenceBrief 생성')
       await reportPipelineStage('brief')
@@ -289,6 +372,7 @@ export async function main(stepOverride?: string) {
       process.env.CRAWL_MODE = 'crawl-only'
       await runCrawlWithRetry('crawler.ts', '전체글보기 크롤링 (증분)')
       await checkCookieExpiry()
+      await assertCrawlQuality(false)     // crawl-only 모드: 댓글 미수집 → 비율 검사 스킵
       // 재크롤: 7일 이내 게시글 like/comment/view 최신화
       process.env.CRAWL_MODE = 'refresh'
       await run('crawler.ts', '재크롤: 최근 7일 게시글 지표 갱신')
@@ -302,10 +386,12 @@ export async function main(stepOverride?: string) {
       // 재크롤: 7일 이내 게시글 지표 최신화 (B8)
       process.env.CRAWL_MODE = 'refresh'
       await run('crawler.ts', '1-b단계: 최근 7일 게시글 지표 갱신')
+      await assertCrawlQuality()          // 댓글 수집 품질 검사 — 이상 시 즉시 중단
       await reportPipelineStage('crawl')
       await run('psych-analyzer.ts', '2단계: AI 심리 분석')
       await reportPipelineStage('psych')
       await run('trend-analyzer.ts', '3단계: 트렌드 분석')
+      await assertTrendQuality()          // CafeTrend 생성 검사 — 없으면 즉시 중단
       await reportPipelineStage('trend')
       await run('daily-brief.ts', '4단계: DailyBrief 생성')
       await reportPipelineStage('brief')
@@ -317,6 +403,7 @@ export async function main(stepOverride?: string) {
       process.env.CRAWL_MODE = 'crawl-only'
       await runCrawlWithRetry('crawler.ts', '1단계: 전체글보기 크롤링 (증분)')
       await checkCookieExpiry()
+      await assertCrawlQuality(false)     // crawl-curate 모드: 댓글 미수집 → 비율 검사 스킵
       // 큐레이션은 agents-cafe-hourly-curation.yml (GHA hourly)에서 처리
     }
 
