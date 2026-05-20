@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.9</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.10</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -282,12 +282,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.9</div>
+  <div class="cover-badge">Handover Document v10.10</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.9 (2026-05-19)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.10 (2026-05-20)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -1654,6 +1654,18 @@ for (const waveNum of order) {
       CommentWaveQueue에 댓글 예약(INSERT)만 한다. 실제 댓글 작성은 Wave봇(wave-processor.ts)이 5분마다 처리한다.
     </div>
     <p>발행 시 CommentWaveQueue에 wave1~4를 자동 등록한다. 대댓글 기능은 현재 미구현이다.</p>
+    <div class="alert info" style="font-size:13px; padding:10px 16px; margin:8px 0; line-height:1.8;">
+      <strong>DB에서 큐레이션봇/시드봇 구분 방법 (2026-05-20~)</strong><br>
+      <code>content-curator.ts</code>가 글 발행 시 원본 CafePost ID를 <code>Post.cafePostId</code>에 저장한다.<br>
+      <table style="margin-top:8px; font-size:12.5px; width:100%;">
+        <thead><tr><th style="text-align:left;">봇 유형</th><th style="text-align:left;">DB 조건</th><th style="text-align:left;">어드민 botType 필터</th></tr></thead>
+        <tbody>
+          <tr><td>큐레이션봇 글</td><td><code>source=BOT AND cafePostId IS NOT NULL</code></td><td>botType=curate</td></tr>
+          <tr><td>시드봇/controversy/magazine 글</td><td><code>source=BOT AND cafePostId IS NULL</code></td><td>botType=seed</td></tr>
+        </tbody>
+      </table>
+      ⚠️ 2026-05-20 이전 발행된 큐레이션봇 글은 cafePostId=NULL로 남아있어 시드봇 버킷에 포함될 수 있다(best-effort).
+    </div>
   </div>
 
   <h3>Wave봇 상세</h3>
@@ -1962,7 +1974,8 @@ if (desireCat &amp;&amp; LIFE2_DESIRES.has(desireCat)) {
         <li><code>controversy-chain execute</code> — ⚠️ 차단 안 됨. 트렌드 기반 STORY 글 계속 생성</li>
         <li><code>magazine-generator</code> — ⚠️ 차단 안 됨. MAGAZINE 글 계속 생성</li>
       </ol>
-      따라서 _pm2_audit.ts §6에서 "cafePostId=null BOT 글"이 0건이 아닐 수 있다. 이것은 버그가 아니라 두 시스템이 의도적으로 계속 실행되는 것이다. 모두 중단하려면 agents-seed.yml에서 controversy-chain 줄 제거 + 해당 워크플로우에서 magazine-generate 제거 필요.
+      따라서 _pm2_audit.ts §6에서 "cafePostId=null BOT 글"이 0건이 아닐 수 있다. 이것은 버그가 아니라 두 시스템이 의도적으로 계속 실행되는 것이다. 모두 중단하려면 agents-seed.yml에서 controversy-chain 줄 제거 + 해당 워크플로우에서 magazine-generate 제거 필요.<br><br>
+      <strong>📌 2026-05-20 이후 변경</strong>: <code>content-curator.ts</code>가 발행 시 <code>Post.cafePostId</code>를 저장하도록 수정됐다. 이제 <code>cafePostId IS NOT NULL</code>인 BOT 글 = 큐레이션봇, <code>cafePostId IS NULL</code>인 BOT 글 = 시드봇/controversy/magazine 으로 구분 가능하다. 어드민 콘텐츠 관리 페이지의 "큐레이션봇" / "시드봇" 필터가 이 기준으로 동작한다.
     </div>
   </div>
 
@@ -2059,6 +2072,27 @@ if (desireCat &amp;&amp; LIFE2_DESIRES.has(desireCat)) {
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.10</div>
+    <div class="changelog-date">2026-05-20</div>
+    <div class="changelog-content">
+      <strong>버그 수정 2건 + 큐레이션봇/시드봇 DB 구분 + 어드민 botType 필터 추가.</strong><br><br>
+      <strong>[버그 수정 ①] refreshRecentPosts() createdAt→crawledAt(SHA: b18530e)</strong><br>
+      재크롤 단계(§8)에서 없는 필드 <code>createdAt</code>을 조건으로 사용 → <code>PrismaClientValidationError</code> 발생. CafePost 모델에는 <code>createdAt</code>이 없고 <code>crawledAt</code>만 존재한다. 09:30 크롤 재크롤 단계가 매번 실패하고 있었음. 수정: <code>crawler.ts:939</code> <code>createdAt → crawledAt</code>.<br><br>
+      <strong>[버그 수정 ②] Slack 알림 3001자 초과 → invalid_blocks(SHA: b18530e)</strong><br>
+      Prisma 에러 스택트레이스 등 긴 메시지가 Slack 블록 텍스트 3000자 제한 초과 → <code>invalid_blocks</code> 에러로 Slack 알림 자체가 전송 실패. 수정: <code>notifier.ts:178</code> <code>payload.body.slice(0, 2900)</code> 추가.<br><br>
+      <strong>[기능] 큐레이션봇 글 발행 시 cafePostId 저장(SHA: 544d6f4)</strong><br>
+      <code>content-curator.ts</code> <code>tx.post.create()</code>에 <code>cafePostId: sourcePostIds[0] ?? null</code> 추가. 이제 DB에서 <code>source=BOT AND cafePostId IS NOT NULL</code> = 큐레이션봇, <code>IS NULL</code> = 시드봇/controversy/magazine 으로 구분 가능. 2026-05-20 이전 발행분은 소급 미적용(best-effort).<br><br>
+      <strong>[기능] 어드민 콘텐츠 관리 botType 필터 추가(SHA: 544d6f4)</strong><br>
+      <code>/admin/content</code> 페이지에 실고객/시드봇/큐레이션봇/스크래퍼봇/NNN 드롭다운 필터 추가. cafePostId 기반으로 DB 조회 조건 분기. 관련 파일: <code>admin.content.ts</code>, <code>ContentTable.tsx</code>, <code>admin/content/page.tsx</code>.<br><br>
+      <strong>[운영 규칙] 봇 ON/OFF 체크리스트 문서화</strong><br>
+      봇 상태를 GHA(<code>.github/workflows/agents-*.yml</code>)와 로컬(<code>.env.local</code>) 두 환경에 동시 반영 필수 원칙을 <code>CLAUDE.md</code> + <code>.claude/rules/agent-lifecycle.md</code>에 추가. 한 곳만 변경 시 환경 불일치 발생 사례(2026-05-20 ENABLE_SEED_POSTS) 기록.<br><br>
+      <strong>[문서 반영]</strong>
+      §13 큐레이션봇 상세: cafePostId 저장 기반 DB 구분 표 + 어드민 botType 필터 매핑 추가.
+      §15 FAQ: cafePostId=null 답변에 "2026-05-20 이후 변경" 항목 추가.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -2211,8 +2245,8 @@ if (desireCat &amp;&amp; LIFE2_DESIRES.has(desireCat)) {
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.9<br>
-  최종 업데이트: 2026-05-19 | 작성: Claude Code + MogoKim<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.10<br>
+  최종 업데이트: 2026-05-20 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
 
