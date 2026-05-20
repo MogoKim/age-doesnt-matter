@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.10</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.11</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -282,12 +282,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.10</div>
+  <div class="cover-badge">Handover Document v10.11</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.10 (2026-05-20)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.11 (2026-05-20)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -1176,7 +1176,7 @@ interface CommentData {
         <div class="step-num">3</div>
         <div class="step-content">
           <strong>후보 필터링 (P1~P3)</strong><br>
-          <span class="chip muted" style="margin:4px 2px 0 0;">P1</span> 당일 2회 이상 발행된 키워드 skip<br>
+          <span class="chip muted" style="margin:4px 2px 0 0;">P1</span> 당일 3회 이상 발행된 키워드 skip (기능어 필터 OVERLAP_STOPWORDS 적용)<br>
           <span class="chip muted" style="margin:4px 2px 0 0;">P2</span> 유사 제목 (편집 거리 ≤5 또는 명사 2개 이상 겹침) skip<br>
           <span class="chip muted" style="margin:4px 2px 0 0;">P3</span> 현재 월과 맞지 않는 계절 키워드 skip
         </div>
@@ -1241,7 +1241,7 @@ interface CommentData {
       <tbody>
         <tr><td>발행 총량 cap</td><td>하루 최대 발행량 설정 (config.ts dailyPublishLimit)</td></tr>
         <tr><td>desireCategory 다양성</td><td>동일 욕망 카테고리 연속 발행 제한</td></tr>
-        <tr><td>키워드 quota (P1)</td><td>동일 키워드 하루 2회 초과 발행 시 skip</td></tr>
+        <tr><td>키워드 quota (P1)</td><td>동일 키워드 하루 3회 이상 발행 시 skip (기능어 OVERLAP_STOPWORDS 필터 제외)</td></tr>
       </tbody>
     </table>
   </div>
@@ -1720,12 +1720,12 @@ for (const waveNum of order) {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션·Wave 개선 P1~P5 + ②③⑤⑦⑧⑨⑩⑪ — 전부 구현 완료</h2>
+    <h2>큐레이션·Wave 개선 P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬ — 전부 구현 완료</h2>
   </div>
 
   <div class="alert ok">
     <strong>Claude Code에게: 이 섹션이 가장 중요하다</strong>
-    아래 13개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
+    아래 15개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
   </div>
 
   <div class="impl-card">
@@ -1734,10 +1734,11 @@ for (const waveNum of order) {
       <div class="impl-title">P1. 주제 편중 방지 — 키워드 일일 quota</div>
     </div>
     <div class="impl-body">
-      오늘 발행된 BOT 글 제목에서 한글 명사(2글자 이상)를 추출해 빈도를 계산한다. 특정 명사가 이미 2번 이상 발행된 글에 포함됐다면 다음 후보로 건너뜀.<br>
-      효과: "제주" 키워드가 오늘 이미 2개 글에 나왔으면 3번째 제주 글 자동 skip.
+      오늘 발행된 BOT 글 제목에서 한글 명사(2글자 이상)를 추출해 빈도를 계산한다. 특정 명사가 이미 3회 이상 발행된 글에 포함됐다면 다음 후보로 건너뜀.<br>
+      명사 추출 시 "해요", "데이", "오늘", "많이" 등 기능어·어미·부사는 <code>OVERLAP_STOPWORDS</code> Set으로 사전 필터링해 오탐을 방지한다.<br>
+      효과: "제주" 키워드가 오늘 이미 2개 글에 나와도 3번째는 발행 허용, 4번째부터 skip. → 자세한 버그 수정 경위는 ⑫ 참고.
     </div>
-    <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>countKeywordOverlap()</code> + <code>todayPublishedTitles</code> 조회 (main() 내부)</div>
+    <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>OVERLAP_STOPWORDS</code> + <code>countKeywordOverlap()</code> threshold ≥3 (SHA: 8999de4)</div>
   </div>
 
   <div class="impl-card">
@@ -1939,6 +1940,95 @@ if (desireCat &amp;&amp; LIFE2_DESIRES.has(desireCat)) {
     <div class="impl-file">📄 agents/cafe/psych-analyzer.ts — SYSTEM_PROMPT 욕망 카테고리 목록에 HUMOR 항목 추가</div>
   </div>
 
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑫. keyword overlap 오탐 수정 — OVERLAP_STOPWORDS 필터 + threshold 완화 (≥2→≥3)</div>
+    </div>
+    <div class="impl-body">
+      P1 키워드 quota 필터가 정상 글을 과도하게 skip하는 두 가지 오탐 문제가 있었다.<br><br>
+      <strong>원인 ① — 기능어·어미가 명사로 오추출</strong><br>
+      명사 추출 정규식 <code>/[가-힣]{2,}/g</code>는 2글자 이상의 모든 한글을 가져온다. 그 결과 "해요", "이요", "데이", "같아", "있어", "너무", "오늘", "많이" 같은 기능어·어미·부사가 명사로 추출됐다. 이 단어들은 실제 주제어가 아님에도 빈도 계산에 포함돼 아무 관련 없는 글들이 "키워드 중복"으로 걸려 skip됐다.<br>
+      예: "해요"가 당일 발행글에서 2번 이상 등장하면(거의 항상), 이후 후보글 제목에 "해요"가 있으면 무조건 skip. 실제로는 전혀 다른 주제의 글이 탈락됨.<br><br>
+      <strong>해결 ①</strong>: <code>OVERLAP_STOPWORDS</code> Set 신설 (43개). 명사 추출 후 이 Set에 포함되는 단어를 제거한 뒤 빈도 계산.<br>
+      포함 단어: 어미(해요/이요/에요/어요/아요/줘요/봐요/되요), 연결어(해서/하고/해도/는데/인데), 형용사(같아/같이/있어/없어/싶어/했어/봤어/갔어), 조사(에서/으로/에게/이나/거나/에도/이도/이고), 지시어(이게/그게/저게/이건/그건/저건), 부사(많이/너무/정말/진짜/아직/이미/그냥/항상), 시간어(오늘/내일/어제/이번/지난/다음/데이)<br><br>
+      <strong>원인 ② — threshold ≥2가 너무 엄격</strong><br>
+      같은 키워드가 2번째 글부터 바로 skip됐다. "건강" 주제 글이 오전에 1개 발행되면 다른 관점의 "건강" 글이 오후에 전부 차단되는 현상이 발생했다.<br><br>
+      <strong>해결 ②</strong>: threshold를 <strong>≥2 → ≥3</strong>으로 완화. 같은 키워드가 최대 2개까지 발행되고, 3번째부터 skip.<br><br>
+      <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — OVERLAP_STOPWORDS + threshold</summary>
+      <pre style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px;margin:8px 0;overflow-x:auto;">const OVERLAP_STOPWORDS = new Set([
+  '해요', '이요', '에요', '어요', '아요', '해서', '하고', '해도',
+  '가요', '이야', '거야', '줘요', '봐요', '되요', '는데', '인데',
+  '같아', '같이', '있어', '없어', '싶어', '했어', '봤어', '갔어',
+  '에서', '으로', '에게', '이나', '거나', '에도', '이도', '이고',
+  '이게', '그게', '저게', '이건', '그건', '저건',
+  '많이', '너무', '정말', '진짜', '아직', '이미', '그냥', '항상',
+  '오늘', '내일', '어제', '이번', '지난', '다음', '데이',
+])
+
+// countKeywordOverlap() 내부 — threshold ≥3으로 완화
+const nouns = (title.match(/[가-힣]{2,}/g) ?? [])
+  .filter(n =&gt; !OVERLAP_STOPWORDS.has(n))  // ← 기능어 제거
+// ...빈도 집계 후
+if (maxCount &gt;= 3) return true  // ≥3이면 skip (기존: ≥2)</pre>
+      </details>
+      SHA: 8999de4 (2026-05-20)
+    </div>
+    <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>OVERLAP_STOPWORDS</code> 상수 신설 + <code>countKeywordOverlap()</code> 필터 적용 + threshold 2→3</div>
+  </div>
+
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑬. 페르소나 편중 해소 — DESIRE_PERSONA_MAP 전면 확대 (GENERAL 3→25명, HUMOR 2→7명)</div>
+    </div>
+    <div class="impl-body">
+      STORY 게시판 봇 25명 중 A(하늘바라기), E(봄바람), G(여행이좋아) 3명에만 편중 발행되는 현상이 발생했다.<br><br>
+      <strong>원인 ① — GENERAL pool이 3명뿐 (핵심)</strong><br>
+      큐레이터는 CafePost의 <code>desireCategory</code>를 <code>DESIRE_PERSONA_MAP</code>에서 조회해 페르소나 풀을 가져온다. DB CafePost 중 <strong>57%(약 660건)가 <code>desireCategory=null</code></strong>이다. psych-analyzer가 11:30 full 크롤에서만 실행되므로, 오전에 수집된 글은 null 상태로 큐레이션에 사용된다. null인 글은 전부 GENERAL pool로 폴백되는데, GENERAL pool에 A, E, G 3명만 있었다. 따라서 오전 내내 이 3명만 글을 쓰게 됐다.<br><br>
+      <strong>원인 ② — 각 STORY 카테고리 pool이 2명</strong><br>
+      HEALTH, FAMILY, RELATION 등 각 카테고리에 페르소나 2명씩만 등록됐다. psych-analyzer가 분류한 글도 2명 중에서만 선택됐다.<br><br>
+      <strong>원인 ③ — HUMOR pool이 2명</strong><br>
+      HUMOR 카테고리에 C, AY 2명만 등록됐으나 실제 웃음방 페르소나는 7명이다.<br><br>
+      <strong>수정 내용 — DESIRE_PERSONA_MAP 전면 교체</strong><br>
+      → <code>GENERAL</code>: 3명(A/E/G) → <strong>STORY 25명 전원</strong> (null 660건이 여기로 폴백되므로 가장 효과 큼)<br>
+      → <code>HUMOR</code>: 2명 → <strong>7명 전원</strong> (C/R/AU/AV/AW/AX/AY)<br>
+      → 각 STORY 카테고리: 2명 → 욕망 관련 페르소나 <strong>7~13명</strong>으로 확대<br>
+      → LIFE2(MONEY/RETIRE/HOUSING): 기존 5~6명 유지 (⑩에서 이미 개선됨)<br><br>
+      <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — DESIRE_PERSONA_MAP 수정 전후</summary>
+      <pre style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px;margin:8px 0;overflow-x:auto;">// 수정 전 (편중 상태)
+GENERAL: ['A', 'E', 'G'],  // 3명 ← null 57% 전부 여기로
+HUMOR:   ['C', 'AY'],      // 2명
+HEALTH:  ['H', 'A'],       // 2명
+
+// 수정 후 (SHA: 930d98a)
+HEALTH:    ['H', 'M', 'X', 'A', 'F', 'Z', 'Y', 'N', 'T', 'E'],         // 10명
+FAMILY:    ['L', 'E', 'V', 'AA', 'AB', 'A', 'W', 'Q'],                   // 8명
+RELATION:  ['E', 'V', 'AB', 'A', 'W', 'T', 'L', 'P', 'O'],              // 9명
+MEANING:   ['W', 'T', 'I', 'E', 'AB', 'P', 'AA', 'V', 'O'],             // 9명
+HOBBY:     ['F', 'S', 'U', 'Y', 'Z', 'O', 'I', 'K', 'M', 'X', 'Q', 'G', 'AA'], // 13명
+FOOD:      ['J', 'A', 'G', 'N', 'P', 'K', 'F', 'S'],                    // 8명
+SPIRITUAL: ['W', 'I', 'T', 'E', 'P', 'AB', 'O', 'V'],                   // 8명
+BEAUTY:    ['K', 'A', 'G', 'E', 'U', 'P', 'V'],                         // 7명
+DIGITAL:   ['A', 'E', 'G', 'T', 'N', 'AC', 'O', 'I'],                   // 8명
+FASHION:   ['K', 'A', 'G', 'E', 'U', 'P', 'V', 'AC'],                   // 8명
+PET:       ['Q', 'Y', 'A', 'E', 'F', 'S', 'Z'],                         // 7명
+FREEDOM:   ['G', 'P', 'AC', 'M', 'X', 'A', 'E', 'W', 'I', 'F'],        // 10명
+HUMOR:     ['C', 'R', 'AU', 'AV', 'AW', 'AX', 'AY'],                    // 7명 전원
+ENTERTAIN: ['C', 'R', 'AW', 'AX', 'AU', 'I', 'O'],                      // 7명
+MONEY:     ['B', 'AD', 'AE', 'AI', 'AQ', 'AS'],                         // 6명 유지
+RETIRE:    ['B', 'AH', 'AN', 'AR', 'AT', 'AO'],                         // 6명 유지
+HOUSING:   ['AG', 'AJ', 'AL', 'AM', 'AK', 'AF'],                        // 6명 유지
+GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
+             'N','O','P','Q','S','T','U','V','W','X',
+             'Y','Z','AA','AB','AC'],                                      // 25명 전원</pre>
+      </details>
+      <strong>효과</strong>: desireCategory=null 660건 폴백 시 25명 전원에서 균등 무작위 선택. 이전 A/E/G 3명 반복 → 10명 이상 분산 기대. 10명 미만으로 보이는 "실 사용자가 10명같다"는 문제 해소.<br>
+      SHA: 930d98a (2026-05-20)
+    </div>
+    <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>DESIRE_PERSONA_MAP</code> 상수 전면 교체 (GENERAL 3→25명, HUMOR 2→7명, 각 STORY 카테고리 2→7~13명)</div>
+  </div>
+
 </div>
 
 <!-- ══════════ §15. FAQ ══════════ -->
@@ -2103,6 +2193,25 @@ if (desireCat &amp;&amp; LIFE2_DESIRES.has(desireCat)) {
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.11</div>
+    <div class="changelog-date">2026-05-20</div>
+    <div class="changelog-content">
+      <strong>keyword overlap 오탐 수정 + DESIRE_PERSONA_MAP 전면 확대 + 문서 최신화.</strong><br><br>
+      <strong>[버그 수정 ①] keyword overlap 오탐 — OVERLAP_STOPWORDS + threshold 완화 (SHA: 8999de4)</strong><br>
+      P1 키워드 quota 필터가 정상 글을 과도하게 skip하는 문제 두 가지를 수정했다.<br>
+      첫째, 명사 추출 정규식 <code>/[가-힣]{2,}/g</code>가 "해요", "이요", "데이", "오늘", "많이" 같은 기능어·어미·부사를 명사로 잡아 무의미한 skip을 유발했다. <code>OVERLAP_STOPWORDS</code> Set(43개)을 신설해 명사 추출 후 이 단어들을 제거한다.<br>
+      둘째, threshold가 ≥2로 너무 엄격해 같은 주제의 다양한 관점 글이 차단됐다. ≥3으로 완화해 같은 키워드를 최대 2개까지 허용한다.<br><br>
+      <strong>[기능 개선] DESIRE_PERSONA_MAP 전면 확대 — 페르소나 편중 해소 (SHA: 930d98a)</strong><br>
+      STORY 게시판 발행이 A(하늘바라기)/E(봄바람)/G(여행이좋아) 3명에 집중되는 현상이 발생했다. 원인: DB CafePost의 57%(약 660건)가 <code>desireCategory=null</code>이고, null은 전부 GENERAL pool로 폴백되는데 GENERAL pool에 3명만 있었다.<br>
+      수정: <code>GENERAL</code> pool을 3명 → STORY 25명 전원으로 확대. <code>HUMOR</code>는 2명 → 7명 전원. 각 STORY 카테고리(HEALTH/FAMILY/RELATION 등)는 2명 → 7~13명으로 확대. LIFE2(MONEY/RETIRE/HOUSING)는 기존 5~6명 유지(⑩ 변경 없음).<br><br>
+      <strong>[문서 반영]</strong><br>
+      §10 후보 필터링: P1 threshold "2회 이상" → "3회 이상", OVERLAP_STOPWORDS 언급 추가.<br>
+      §14: 섹션 제목 ⑫⑬ 추가(13개→15개). impl-card 2개 신규 추가(⑫ keyword overlap 오탐 수정 / ⑬ DESIRE_PERSONA_MAP 전면 확대). P1 카드 설명 threshold 반영.<br>
+      footer: v10.10→v10.11.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -2276,7 +2385,7 @@ if (desireCat &amp;&amp; LIFE2_DESIRES.has(desireCat)) {
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.10<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.11<br>
   최종 업데이트: 2026-05-20 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
