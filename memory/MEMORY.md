@@ -1,13 +1,11 @@
 # Memory — 우리 나이가 어때서 (우나어)
 
-## 현재 상태 (2026-05-08)
-- 신규 맥북 이관 완료 (2026-05-08)
-- 자동화: ✅ 전부 가동 (크롤링 2카페 × 3회/일, 시드봇 35명, 트렌드 분석, 일자리 스크래퍼)
+## 현재 상태 (2026-05-20)
+- 자동화: 시드봇 OFF (ENABLE_SEED_POSTS=false, 2026-05-16 중단) / 카페 파이프라인 ✅ / CEO·CFO 크론 중단
 - SNS: Threads/IG/FB ✅ / X ✅ / Band API 심사중
 - 수익: AdSense + 쿠팡 ✅ | 도메인 만기: 2027-04-25
-- GHA Node.js 24 업그레이드 완료 (P1-2)
-- BotStatus SKIP enum 추가 완료 (P0-1)
-- job.automation Python LaunchAgent 삭제 (아임웹 폐서비스, Node.js coo:job-scraper로 대체)
+- 최근 완료: 사이트맵 제출 + 핸드오버 v10.10 + 하네스 딥다이브 (globs 교정, 고아 파일 정리, cafe-crawler.md 신규)
+- Figma 개발 모드: /prd 텍스트 명세 → 승인 → 코딩 → 역공학
 
 ## 서비스 기본정보
 - URL: age-doesnt-matter.com | GitHub: MogoKim/age-doesnt-matter (main, PUBLIC)

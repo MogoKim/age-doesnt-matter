@@ -1,3 +1,7 @@
+---
+globs: ["src/**", "agents/**"]
+---
+
 # 파이프라인 묵시적 실패 디버깅 방법론
 > Silent Pipeline Failure — 에러 없이 실행됐는데 결과가 이상한 모든 버그
 

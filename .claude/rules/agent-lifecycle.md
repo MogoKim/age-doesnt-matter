@@ -1,3 +1,7 @@
+---
+globs: ["agents/**/*.ts", ".github/workflows/agents-*.yml"]
+---
+
 # 에이전트 라이프사이클 규칙 (Orphaned Script 방지)
 
 ## 에이전트 스크립트 작성 시 필수 체크리스트
