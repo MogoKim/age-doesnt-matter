@@ -85,7 +85,7 @@ export abstract class BaseAgent {
       const failures = logs.filter((l) => l.status === 'FAILED')
       if (failures.length === 0) return
 
-      const logText = logs
+      const logText = failures
         .map(
           (l) =>
             `[${l.createdAt.toISOString().slice(0, 10)}] ${l.action} → ${l.status}` +
