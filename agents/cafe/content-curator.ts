@@ -830,8 +830,20 @@ export async function main() {
     where: { source: 'BOT', createdAt: { gte: todayStart } },
     select: { title: true },
   })
+  // keyword overlap 오탐 방지 — 어미·조사·기능어는 주제어가 아니므로 제외
+  const OVERLAP_STOPWORDS = new Set([
+    '해요', '이요', '에요', '어요', '아요', '해서', '하고', '해도',
+    '가요', '이야', '거야', '줘요', '봐요', '되요', '는데', '인데',
+    '같아', '같이', '있어', '없어', '싶어', '했어', '봤어', '갔어',
+    '에서', '으로', '에게', '이나', '거나', '에도', '이도', '이고',
+    '이게', '그게', '저게', '이건', '그건', '저건',
+    '많이', '너무', '정말', '진짜', '아직', '이미', '그냥', '항상',
+    '오늘', '내일', '어제', '이번', '지난', '다음',
+    '데이',
+  ])
   function countKeywordOverlap(title: string): number {
-    const nouns = title.match(/[가-힣]{2,}/g) ?? []
+    const nouns = (title.match(/[가-힣]{2,}/g) ?? [])
+      .filter(n => !OVERLAP_STOPWORDS.has(n))
     const publishedAll = todayPublishedTitles.map(p => p.title).join(' ')
     let max = 0
     for (const n of nouns) {
@@ -958,7 +970,7 @@ export async function main() {
 
     // 당일 발행 키워드 편중 체크 (P1)
     const topicOverlap = countKeywordOverlap(topicStr)
-    if (topicOverlap >= 2) {
+    if (topicOverlap >= 3) {
       console.log(`[ContentCurator] "${topicStr}" 키워드 중복 스킵 (당일 ${topicOverlap}회 이미 발행)`)
       continue
     }
