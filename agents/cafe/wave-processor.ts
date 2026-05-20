@@ -97,11 +97,9 @@ const AUTHOR_REPLY_POOL = [
 ]
 
 async function processAuthorReply(
-  queue: { id: string; postId: string; cafePostId: string; authorPersonaId: string }
+  queue: { id: string; postId: string; cafePostId: string; authorPersonaId: string },
+  authorUserId: string
 ) {
-  const authorUserId = await getBotUser(queue.authorPersonaId)
-  if (!authorUserId) return
-
   // 작성자가 아닌 봇의 첫 번째 일반 댓글 (대댓글 달 대상)
   const firstComment = await prisma.comment.findFirst({
     where: {
@@ -324,14 +322,17 @@ export async function main() {
     take: 10,
   })
   for (const queue of replyPending) {
-    const authorUserId = await getBotUser(queue.authorPersonaId)
-    if (!authorUserId) continue
+    const post = await prisma.post.findUnique({
+      where: { id: queue.postId },
+      select: { authorId: true },
+    })
+    if (!post?.authorId) continue
     const alreadyReplied = await prisma.comment.findFirst({
-      where: { postId: queue.postId, authorId: authorUserId, parentId: { not: null } },
+      where: { postId: queue.postId, authorId: post.authorId, parentId: { not: null } },
     })
     if (alreadyReplied) continue
     try {
-      await processAuthorReply(queue)
+      await processAuthorReply(queue, post.authorId)
       processed++
     } catch (err) {
       failed++

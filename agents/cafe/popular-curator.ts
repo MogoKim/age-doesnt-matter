@@ -14,40 +14,13 @@ import {
   PERSONAS,
   type PersonaMatch,
 } from './curator-shared.js'
+import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
 
 const HEALTH_CAP = 2
 const MAX_PUBLISH = 5
-const AUTHOR_DAILY_POST_CAP = 2
-
-/** curator 전용 봇 유저 upsert — seed bot(bot-*)과 이메일 네임스페이스 분리 */
-async function getCuratorBotUser(persona: PersonaMatch): Promise<string> {
-  const email = `curator-${persona.id.toLowerCase()}@unao.bot`
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: { nickname: persona.nickname },
-    create: {
-      email,
-      nickname: persona.nickname,
-      providerId: `curator-${persona.id.toLowerCase()}`,
-      role: 'USER',
-      grade: 'MEMBER',
-    },
-  })
-  return user.id
-}
-
-/** 오늘 해당 페르소나가 발행한 글 수 (curator- 이메일 기준) */
-async function countTodayPostsByPersona(personaId: string): Promise<number> {
-  const email = `curator-${personaId.toLowerCase()}@unao.bot`
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } })
-  if (!user) return 0
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  return prisma.post.count({ where: { authorId: user.id, createdAt: { gte: todayStart } } })
-}
 
 interface PopularCandidate {
   id: string
