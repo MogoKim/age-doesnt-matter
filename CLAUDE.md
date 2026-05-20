@@ -15,7 +15,7 @@
 
 ## 시니어 친화 UI 원칙 (절대 준수)
 - 터치 타겟: 최소 52×52px
-- 폰트 최소: 15px (caption/배지만, 본문 18px 베이스)
+- 폰트 최소: 본문 17px / caption·배지 14px (constitution.yaml 기준) — 구현 목표: 본문 18px
 - 브랜드 컬러: --color-primary (#FF6F61)
 - 버튼 높이: 52px (모바일) / 48px (데스크탑)
 - 모달: 모바일=하단 풀스크린 시트 / 데스크탑=중앙 팝업
@@ -26,6 +26,7 @@
 - 이미지: next/image 필수 (WebP + lazy load)
 - 에러 클래스: AppError / NotFoundError / ForbiddenError
 - 에이전트 스크립트 생성 시: `.claude/rules/agents.md` 체크리스트 준수
+- 에이전트 ON/OFF 변경 시: `.claude/rules/agent-lifecycle.md` ON/OFF 체크리스트 준수 (GHA + .env.local 동시 반영)
 
 ## AI 에이전트 규칙
 - 에이전트 코드: /agents 폴더 (TypeScript)
