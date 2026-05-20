@@ -749,6 +749,8 @@ async function buildPostFromTarget(
     '.LikeButton .count',
   ])
 
+  // u_cbox 위젯은 AJAX로 별도 로드 — 읽기 전 최대 2초 대기
+  await target.locator('.u_cbox_count, .u_cbox_head').first().waitFor({ timeout: 2000 }).catch(() => {})
   // 댓글 수 — Naver u_cbox 위젯 기준 (2026-05-20 .u_cbox_count 추가)
   const commentCount = await safeNumber(target, [
     '.u_cbox_count',             // Naver u_cbox 표준 댓글수 (현행)
@@ -964,6 +966,8 @@ export async function refreshRecentPosts(): Promise<number> {
         '.like_article .u_cnt', '.sympathy_count', '.like_article em',
         '.u_likeit_list_count .u_cnt', '.LikeButton .count',
       ])
+      // u_cbox 위젯 AJAX 로드 대기
+      await page.locator('.u_cbox_count, .u_cbox_head').first().waitFor({ timeout: 2000 }).catch(() => {})
       const newCommentCount = await safeNumber(page, [
         '.u_cbox_count', '.u_cbox_title em', '.u_cbox_head em',
         '.comment_count', '.comment_info_count .num', '.CommentCount',
