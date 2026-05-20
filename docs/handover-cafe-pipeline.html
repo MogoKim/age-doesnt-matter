@@ -3,32 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.14</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.15</title>
 <style>
   :root {
-    --bg: #0d1117;
-    --bg2: #161b22;
-    --bg3: #1f2533;
-    --border: #2a3042;
-    --text: #e6eaf4;
-    --muted: #8b92a8;
-    --sub: #5a6070;
+    --bg: #ffffff;
+    --bg2: #f6f8fa;
+    --bg3: #eef0f3;
+    --border: #d0d7de;
+    --text: #1a1d23;
+    --muted: #57606a;
+    --sub: #8b949e;
     --primary: #FF6F61;
-    --primary-dim: rgba(255,111,97,0.14);
-    --green: #4ade80;
-    --green-dim: rgba(74,222,128,0.11);
-    --blue: #60a5fa;
-    --blue-dim: rgba(96,165,250,0.11);
-    --yellow: #fbbf24;
-    --yellow-dim: rgba(251,191,36,0.11);
-    --purple: #a78bfa;
-    --purple-dim: rgba(167,139,250,0.11);
-    --teal: #2dd4bf;
-    --teal-dim: rgba(45,212,191,0.11);
-    --red: #f87171;
-    --red-dim: rgba(248,113,113,0.11);
-    --orange: #fb923c;
-    --orange-dim: rgba(251,146,60,0.11);
+    --primary-dim: rgba(255,111,97,0.10);
+    --green: #1a7f37;
+    --green-dim: rgba(26,127,55,0.10);
+    --blue: #0969da;
+    --blue-dim: rgba(9,105,218,0.10);
+    --yellow: #9a6700;
+    --yellow-dim: rgba(154,103,0,0.10);
+    --purple: #6639ba;
+    --purple-dim: rgba(102,57,186,0.10);
+    --teal: #0e7490;
+    --teal-dim: rgba(14,116,144,0.10);
+    --red: #cf222e;
+    --red-dim: rgba(207,34,46,0.10);
+    --orange: #bc4c00;
+    --orange-dim: rgba(188,76,0,0.10);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -46,7 +46,7 @@
   .wrap { max-width: 1100px; margin: 0 auto; padding: 56px 28px 100px; }
 
   .cover {
-    background: linear-gradient(135deg, #1a0a08 0%, #1f1020 50%, #0d1117 100%);
+    background: linear-gradient(135deg, #fff5f4 0%, #fdf0ff 50%, #f8f9fa 100%);
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 52px 48px 44px;
@@ -275,6 +275,14 @@
   .slot-grid { display: flex; flex-wrap: wrap; gap: 4px; }
   .slot-chip { font-size: 11.5px; font-weight: 600; background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(96,165,250,0.3); border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
   .slot-chip.special { background: var(--primary-dim); color: var(--primary); border-color: rgba(255,111,97,0.3); }
+
+  /* 구현 현황 토글 */
+  .impl-toggle { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; }
+  .impl-summary { padding: 14px 18px; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--text); list-style: none; display: flex; align-items: center; gap: 8px; }
+  .impl-summary::-webkit-details-marker { display: none; }
+  .impl-summary::before { content: '▶'; font-size: 11px; color: var(--muted); transition: transform 0.2s; }
+  details[open] .impl-summary::before { transform: rotate(90deg); }
+  .impl-toggle .impl-card { border: none; border-top: 1px solid var(--border); border-radius: 0 0 8px 8px; margin: 0; }
 </style>
 </head>
 <body>
@@ -282,12 +290,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.14</div>
+  <div class="cover-badge">Handover Document v10.15</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.14 (2026-05-20)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.15 (2026-05-20)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -1657,8 +1665,11 @@ for (const waveNum of order) {
 
   <div class="alert info" style="font-size:13px; padding:10px 16px; margin-bottom:14px; line-height:1.8;">
     <strong>"봇"이라고 부르지만 실제로는 GHA에서 실행되는 스케줄러 프로세스다.</strong><br>
-    페르소나(50명)는 댓글/글의 <em>이름표</em> 역할이고, 봇 자체는 1개 프로세스다.<br>
-    <span style="color:var(--sub);">예: Wave봇은 프로세스 1개가 5분마다 실행되고, 그 안에서 50명 페르소나 중 1명을 골라 댓글 이름을 붙이는 것이다.</span>
+    페르소나는 댓글/글의 <em>이름표</em> 역할이고, 봇 자체는 1개 프로세스다.<br>
+    <strong>페르소나 시스템은 두 가지로 완전히 분리됩니다:</strong><br>
+    · <strong>큐레이션봇</strong>: 99명 큐레이터 페르소나 (<code>curator-*@unao.bot</code>) — curator-shared.ts 관리<br>
+    · <strong>Wave봇·시드봇</strong>: 50명 시드 페르소나 (<code>bot-*@unao.bot</code>) — persona-data.ts 관리<br>
+    <span style="color:var(--sub);">두 시스템은 이메일 네임스페이스가 다르며 DB User 레코드도 별개다.</span>
   </div>
 
   <div class="table-wrap">
@@ -1668,7 +1679,7 @@ for (const waveNum of order) {
         <tr>
           <td><strong>큐레이션봇</strong></td>
           <td><code>cafe/content-curator.ts</code></td>
-          <td style="font-size:12px;">프로세스 1개<br><span style="color:var(--sub);">"봇 수" 없음</span></td>
+          <td style="font-size:12px;">99명 큐레이터 페르소나<br><span style="color:var(--sub);">curator-*@unao.bot (curator-shared.ts)</span></td>
           <td>GHA · 45분 간격 · 20슬롯/일</td>
           <td><span style="color:var(--green);">● ON</span></td>
           <td>카페 글 → Claude 재가공 → 우나어 발행 + Wave 예약</td>
@@ -1712,7 +1723,14 @@ for (const waveNum of order) {
   <h3 class="mt24">큐레이션봇 상세</h3>
   <div class="narrative">
     <p>우나어 콘텐츠의 핵심 공급원이다. 매일 최대 20건(45분 × 20슬롯)의 글을 자동 발행한다. 단, 실제 발행량은 후보 풀(isUsable=true + usedAt=null) 크기와 P1~P3 필터에 따라 달라진다. Mac이 꺼져 있어도 GHA가 실행되지만, Mac이 크롤을 못 하면 신규 후보가 보충되지 않아 발행량이 줄어든다.</p>
-    <div class="alert" style="background:#2d1f1f; border-left:4px solid #e74c3c; padding:12px 16px; margin:8px 0; font-size:13.5px; line-height:1.7;">
+    <div class="alert info" style="font-size:13px; padding:10px 16px; margin:8px 0; line-height:1.8;">
+      <strong>페르소나 레이어 구조 (2026-05-20 SSoT 통합 이후)</strong><br>
+      · <code>curator-shared.ts</code> — 99명 페르소나 정의, DESIRE_PERSONA_MAP, matchPersona() 등 <strong>순수함수만</strong> (DB 접근 없음)<br>
+      · <code>curator-users.ts</code> — DB 사이드이펙트 전담: <code>getCuratorBotUser()</code> (upsert), <code>countTodayPostsByPersona()</code><br>
+      · <strong>AUTHOR_DAILY_POST_CAP = 2</strong>: 동일 큐레이터 페르소나가 하루 최대 2건 발행. 초과 시 같은 board 내 대체 페르소나 자동 선택<br>
+      · 이메일 패턴: <code>curator-{id}@unao.bot</code> (Wave봇·시드봇의 <code>bot-{id}@unao.bot</code>과 완전 분리)
+    </div>
+    <div class="alert err" style="font-size:13.5px; padding:12px 16px; margin:8px 0; line-height:1.7;">
       🚫 <strong>오해 주의: 큐레이션봇은 댓글을 직접 달지 않는다.</strong><br>
       CommentWaveQueue에 댓글 예약(INSERT)만 한다. 실제 댓글 작성은 Wave봇(wave-processor.ts)이 5분마다 처리한다.
     </div>
@@ -1783,14 +1801,16 @@ for (const waveNum of order) {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션·Wave 개선 P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰ — 전부 구현 완료</h2>
+    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑ 전부 완료</h2>
   </div>
 
   <div class="alert ok">
     <strong>Claude Code에게: 이 섹션이 가장 중요하다</strong>
-    아래 19개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
+    아래 23개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
   </div>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">P1. 주제 편중 방지 — 키워드 일일 quota</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1803,7 +1823,10 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>OVERLAP_STOPWORDS</code> + <code>countKeywordOverlap()</code> threshold ≥3 (SHA: 8999de4)</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">P2. 유사 제목 중복 방지 — 강화된 필터</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1815,7 +1838,10 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>toNouns()</code> + <code>editDistance()</code> + <code>isDuplicate</code> 판단 (<code>publishCuratedContent()</code> 내부)</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">P3. 계절 오류 방지 — 계절 키워드 필터</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1827,7 +1853,10 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>SEASONAL_KEYWORDS</code> 상수 + <code>isSeasonMismatch()</code> 함수 (<code>publishCuratedContent()</code> 내부)</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">P4. 봇 닉네임 당일 반복 등장 cap</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1839,7 +1868,10 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 agents/cafe/wave-processor.ts — <code>todayCommentCounts</code> 조회 + <code>BOT_DAILY_COMMENT_CAP</code> 필터 (<code>processWave()</code> 내부)</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">P5. 댓글 패턴 다양화 — wave4 유형 교체</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1851,11 +1883,14 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 agents/cafe/wave-processor.ts — <code>WAVE_COMMENT_TYPES</code> 상수 (wave4 설명 변경) + <code>generateComment()</code> 시스템 프롬프트 네거티브 가이드</div>
   </div>
+  </details>
 
   <div style="border-top:2px dashed var(--border);margin:24px 0 20px;padding-top:4px;">
     <p style="font-size:12px;color:var(--muted);margin:0;">아래 ②③⑤⑦⑧은 2026-05-19 파이프라인 개선 배치에서 추가 구현된 항목이다.</p>
   </div>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">②. killerScore 임계값 70 → 55 (큐레이터 필터 완화)</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1868,7 +1903,10 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 agents/cafe/content-curator.ts:919 — <code>killerPosts</code> WHERE 조건 1줄 변경</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">③. 일반 SHEET 글 sourceComments 적용 (댓글 품질 개선)</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1883,7 +1921,10 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 agents/seed/scheduler.ts — <code>processSheetEngagementWaves()</code> 내 generateComment → generateSheetViralComment 교체</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑤. 18:00 KST DailyBrief 안전망 (GHA 이중화)</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1896,7 +1937,10 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 .github/workflows/agents-cafe.yml — cron <code>"0 9 * * *"</code> 추가 + case <code>evening-brief-safety</code><br>📄 agents/cron/runner.ts — <code>'cafe_crawler:evening-brief-safety'</code> 핸들러 추가</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑦. viralType 기반 wave 댓글 순서 동적 조정</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1911,7 +1955,10 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 agents/cafe/wave-processor.ts — <code>determineWaveOrder()</code> 함수 추가 + CafePost SELECT viralType 확장 + processWave 루프 수정</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑧. killerScore ≥ 75 → Post.isFeatured 자동 true</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1928,7 +1975,10 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 agents/cafe/content-curator.ts — 발행 트랜잭션 내 isFeatured 조건부 UPDATE<br>📄 agents/cafe/popular-curator.ts — 동일 패턴<br>📄 agents/cafe/crawler.ts — refreshRecentPosts() 내 Post.updateMany</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑨. POPULAR_CURATE 즉시 종료 버그 수정 — 모듈 self-call + GHA 동시성 충돌</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1950,7 +2000,10 @@ for (const waveNum of order) {
     </div>
     <div class="impl-file">📄 agents/cafe/popular-curator.ts — export main() + self-call 제거<br>📄 agents/cron/runner.ts — line 62: .then(m =&gt; m.main())<br>📄 .github/workflows/agents-cafe-popular-curation.yml — 크론 21:30→21:45 KST</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑩. LIFE2(2막준비) 페르소나 획일화 수정 — DESIRE_PERSONA_MAP 확장 + matchPersona 강제 선택</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -1977,9 +2030,12 @@ if (desireCat &amp;&amp; LIFE2_DESIRES.has(desireCat)) {
       → <code>DESIRE_KEYWORDS</code> HUMOR 확장: '웃겨','웃기','빵터','폭소','개그','재밌','ㅋㅋ' 추가<br><br>
       SHA: f159d85 + 8edc882
     </div>
-    <div class="impl-file">📄 agents/cafe/curator-shared.ts — DESIRE_PERSONA_MAP MONEY/RETIRE/HOUSING 확장 + matchPersona LIFE2 강제 선택<br>📄 agents/cafe/content-curator.ts — 동일 패턴 (content-curator는 curator-shared와 별도 사본 보유)</div>
+    <div class="impl-file">📄 agents/cafe/curator-shared.ts — DESIRE_PERSONA_MAP MONEY/RETIRE/HOUSING 확장 + matchPersona LIFE2 강제 선택<br>📄 agents/cafe/content-curator.ts — ⑳ SSoT 통합 이후 curator-shared.ts에서 import (별도 사본 없음)</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑪. 웃음방(HUMOR) 글 0건 수정 — psych-analyzer.ts AI 카테고리 목록에 HUMOR 누락</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -2002,7 +2058,10 @@ if (desireCat &amp;&amp; LIFE2_DESIRES.has(desireCat)) {
     </div>
     <div class="impl-file">📄 agents/cafe/psych-analyzer.ts — SYSTEM_PROMPT 욕망 카테고리 목록에 HUMOR 항목 추가</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑫. keyword overlap 오탐 수정 — OVERLAP_STOPWORDS 필터 신설 (threshold ≥2 유지)</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -2036,7 +2095,10 @@ if (maxCount &gt;= 2) return true  // ≥2이면 skip</pre>
     </div>
     <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>OVERLAP_STOPWORDS</code> 상수 신설 (53개) + <code>countKeywordOverlap()</code> 필터 적용 + threshold ≥2 유지</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑬. 페르소나 편중 해소 — DESIRE_PERSONA_MAP 전면 확대 (GENERAL 3→25명, HUMOR 2→7명)</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -2086,9 +2148,12 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
       <strong>효과</strong>: desireCategory=null 660건 폴백 시 25명 전원에서 균등 무작위 선택. 이전 A/E/G 3명 반복 → 10명 이상 분산 기대. 10명 미만으로 보이는 "실 사용자가 10명같다"는 문제 해소.<br>
       SHA: 930d98a (2026-05-20)
     </div>
-    <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>DESIRE_PERSONA_MAP</code> 상수 전면 교체 (GENERAL 3→25명, HUMOR 2→7명, 각 STORY 카테고리 2→7~13명)</div>
+    <div class="impl-file">📄 agents/cafe/curator-shared.ts — <code>DESIRE_PERSONA_MAP</code> 상수 전면 교체 (GENERAL 3→25명, HUMOR 2→7명, 각 STORY 카테고리 2→7~13명)<br>📄 agents/cafe/content-curator.ts — ⑳ SSoT 통합 이전 당시 기준; 이후 curator-shared.ts가 단일 원천 (본 파일에 DESIRE_PERSONA_MAP 없음)</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑭. commentCount 셀렉터 불일치 수정 — 네이버 u_cbox DOM 대응 (killerScore 55% 가중치 복구)</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -2123,11 +2188,14 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
     </div>
     <div class="impl-file">📄 agents/cafe/crawler.ts — <code>buildPostFromTarget()</code> + <code>refreshRecentPosts()</code> 각 <code>safeNumber()</code> 셀렉터 배열 앞에 u_cbox 셀렉터 3개 추가</div>
   </div>
+  </details>
 
   <div style="border-top:2px dashed var(--border);margin:24px 0 20px;padding-top:4px;">
     <p style="font-size:12px;color:var(--muted);margin:0;">아래 ⑮⑯⑰은 2026-05-20 신포맷 대응 + 창업자 지시 반영 배치에서 추가 구현된 항목이다.</p>
   </div>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑮. 댓글 신포맷 셀렉터 수정 — .comment_nickname / .text_comment / .CommentItem count</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -2147,7 +2215,10 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
     </div>
     <div class="impl-file">📄 agents/cafe/crawler.ts — <code>extractComments()</code> 닉네임·내용 셀렉터 앞에 신포맷 셀렉터 추가 + <code>buildPostFromTarget()</code>·<code>refreshRecentPosts()</code> commentCount .CommentItem count 우선 적용</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑯. Wave 댓글 원문 그대로 달기 — topComments 10자 이상이면 AI 없이 직접</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -2165,7 +2236,10 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
     </div>
     <div class="impl-file">📄 agents/cafe/wave-processor.ts — <code>generateComment()</code>: refComment 10자 이상 조건 추가 → 원문 return (AI 호출 전 early return)</div>
   </div>
+  </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑰. 작성자 대댓글 자동화 — wave4 완료 후 processAuthorReply()</summary>
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
@@ -2187,6 +2261,83 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
     </div>
     <div class="impl-file">📄 agents/cafe/wave-processor.ts — <code>AUTHOR_REPLY_POOL</code> 상수 추가 + <code>processAuthorReply()</code> 함수 신규 + <code>main()</code> wave4Done=true 큐 조회 → processAuthorReply 호출</div>
   </div>
+  </details>
+
+  <div style="border-top:2px dashed var(--border);margin:24px 0 20px;padding-top:4px;">
+    <p style="font-size:12px;color:var(--muted);margin:0;">아래 ⑱⑲⑳㉑은 2026-05-20 SSoT 리팩토링 + GHA 크로스 import 수정 배치에서 추가 구현된 항목이다.</p>
+  </div>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑱. 손뜨개 ID collision + AUTHOR_DAILY_POST_CAP 구조적 차단</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑱. 손뜨개 ID collision + AUTHOR_DAILY_POST_CAP 구조적 차단</div>
+    </div>
+    <div class="impl-body">
+      큐레이션 글 발행 시 페르소나 ID에서 이메일을 생성하는 로직이 시드봇의 <code>bot-*@unao.bot</code> 네임스페이스와 충돌했다. "손뜨개" 닉네임을 가진 seed bot과 curator bot이 동일 이메일을 공유해 DB unique 제약 위반이 발생했다.<br><br>
+      <strong>원인</strong>: getCuratorBotUser()가 기존 getBotUser()와 동일한 네임스페이스(<code>bot-*@unao.bot</code>)를 사용하고 있었음.<br><br>
+      <strong>해결</strong>: <code>curator-users.ts</code> 신규 파일에 큐레이터 전용 함수 분리. 이메일 네임스페이스를 <code>curator-{id}@unao.bot</code>으로 분리해 충돌 원천 차단.<br><br>
+      <strong>AUTHOR_DAILY_POST_CAP=2</strong>: 동일 큐레이터 페르소나가 하루 2건 초과 발행 시 동일 board 내 대체 페르소나 자동 탐색 → 대체 없으면 skip. 페르소나 독점 구조적 차단.<br><br>
+      SHA: 03d28b2 (2026-05-20)
+    </div>
+    <div class="impl-file">📄 agents/cafe/curator-users.ts — 신규 생성. <code>getCuratorBotUser()</code> (<code>curator-*@unao.bot</code> 네임스페이스) + <code>countTodayPostsByPersona()</code> + <code>AUTHOR_DAILY_POST_CAP=2</code></div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑲. processAuthorReply 닉네임 불일치 수정</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑲. processAuthorReply 닉네임 불일치 수정</div>
+    </div>
+    <div class="impl-body">
+      wave-processor.ts에서 대댓글 작성자를 결정할 때 <code>getBotUser(queue.authorPersonaId)</code>를 호출하고 있었다. 이 함수는 <code>bot-*@unao.bot</code> 네임스페이스로 사용자를 조회하는데, 큐레이션 글 작성자는 <code>curator-*@unao.bot</code> 네임스페이스다. 결과적으로 글 작성자 닉네임과 대댓글 작성자 닉네임이 다른 인물이 되는 불일치 현상이 발생했다.<br><br>
+      <strong>수정</strong>: <code>processAuthorReply(queue, authorUserId: string)</code>로 시그니처 변경. main()에서 CommentWaveQueue → Post.authorId를 직접 조회해 전달. getBotUser() 호출 완전 제거.<br><br>
+      ※ getBotUser()는 wave 댓글 봇 선택(<code>bot-*@unao.bot</code>) 용도로는 계속 사용됨 — 변경 없음.<br><br>
+      SHA: 03d28b2 (2026-05-20)
+    </div>
+    <div class="impl-file">📄 agents/cafe/wave-processor.ts — <code>processAuthorReply(queue, authorUserId)</code> 시그니처 변경 + main()에서 Post.authorId 직접 전달 (getBotUser() 호출 제거)</div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">⑳. 페르소나 시스템 Single Source of Truth 확립</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">⑳. 페르소나 시스템 Single Source of Truth 확립</div>
+    </div>
+    <div class="impl-body">
+      content-curator.ts가 PERSONAS, DESIRE_PERSONA_MAP 등을 자체 보유(약 560줄)하면서 curator-shared.ts와 중복 상태였다. 두 파일을 따로 수정하면 한 쪽만 반영되는 구조적 문제가 있었다.<br><br>
+      <strong>수정 내용</strong>:<br>
+      → <code>content-curator.ts</code>: 로컬 정의 560줄 전부 제거 → curator-shared.ts / curator-users.ts에서 import만<br>
+      → <code>curator-shared.ts</code>: 큐레이터 페르소나 51명 → <strong>99명</strong> 확장 (A~EB, D 없음). DESIRE_PERSONA_MAP 전 카테고리 확장<br>
+      → <code>curator-users.ts</code>: DB 사이드이펙트 함수(getCuratorBotUser, countTodayPostsByPersona) 전담<br>
+      → 이후 페르소나·DESIRE_PERSONA_MAP 변경은 <strong>curator-shared.ts 한 파일만</strong> 수정하면 됨<br><br>
+      SHA: 03d28b2 (2026-05-20)
+    </div>
+    <div class="impl-file">📄 agents/cafe/curator-shared.ts — 큐레이터 페르소나 51→99명 확장 + DESIRE_PERSONA_MAP 전 카테고리 확장 (SSoT)<br>📄 agents/cafe/content-curator.ts — 로컬 중복 560줄 제거 → import만<br>📄 agents/cafe/curator-users.ts — DB 사이드이펙트 함수 전담 분리</div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉑. trending-scorer agents→src 크로스 import GHA 실패 수정</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉑. trending-scorer agents→src 크로스 import GHA 실패 수정</div>
+    </div>
+    <div class="impl-body">
+      trending-scorer.ts가 <code>import { calculateTrendingScore } from '../../src/lib/utils/trending.js'</code>를 사용하고 있었다. GHA ESM 환경에서 agents/ → src/ 크로스 디렉토리 런타임 import가 실패해 GHA 트렌딩 스코어러 실행이 전부 오류 종료됐다.<br><br>
+      <strong>수정</strong>: <code>calculateTrendingScore</code> 함수를 trending-scorer.ts 내부에 인라인 정의. src/ import 완전 제거. 공식 변경 시 src/lib/utils/trending.ts와 수동 동기화 필요 (파일 내 주석으로 명시).<br><br>
+      <strong>규칙화</strong>: <code>agents/ → src/ 런타임 import 금지</code> 원칙을 <code>.claude/rules/agents.md</code>에 추가해 재발 방지. <code>import type</code>만 허용.<br><br>
+      SHA: 3e9dae9 (2026-05-20)
+    </div>
+    <div class="impl-file">📄 agents/coo/trending-scorer.ts — calculateTrendingScore 인라인 정의 (src/ 런타임 import 제거)<br>📄 .claude/rules/agents.md — agents→src 런타임 import 금지 규칙 추가</div>
+  </div>
+  </details>
 
 </div>
 
@@ -2352,6 +2503,24 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.15</div>
+    <div class="changelog-date">2026-05-20</div>
+    <div class="changelog-content">
+      <strong>SSoT 리팩토링 + GHA 크로스 import 수정 + 다크→라이트모드 + §14 전 항목 토글화.</strong><br><br>
+      <strong>[§13]</strong> 큐레이터 페르소나 50→99명 (curator-*@unao.bot). curator-users.ts 신규 레이어(getCuratorBotUser, countTodayPostsByPersona) + AUTHOR_DAILY_POST_CAP=2 명시. curator-* vs bot-* 두 네임스페이스 구분 박스 추가.<br>
+      <strong>[§14]</strong> 섹션 제목 ⑱⑲⑳㉑ 추가(19개→23개). impl-card 4개 신규 추가:<br>
+      &nbsp;&nbsp;⑱ 손뜨개 ID collision + AUTHOR_DAILY_POST_CAP 구조적 차단 (curator-users.ts 신규)<br>
+      &nbsp;&nbsp;⑲ processAuthorReply 닉네임 불일치 수정 (Post.authorId 직접 전달)<br>
+      &nbsp;&nbsp;⑳ 페르소나 시스템 SSoT 확립 (content-curator.ts 중복 560줄 제거, 99명 확장)<br>
+      &nbsp;&nbsp;㉑ trending-scorer agents→src 크로스 import GHA 실패 수정 (인라인 정의)<br>
+      <strong>[§14]</strong> ⑩·⑬ 오류 수정 — SSoT 리팩토링 이후 content-curator.ts 관련 설명 정정 (별도 사본 없음 명시, DESIRE_PERSONA_MAP 파일명 수정).<br>
+      <strong>[§14]</strong> 모든 23개 구현 항목 토글(&lt;details&gt;) 형식으로 변환 — 목록이 길어도 펼쳐보기 방식으로 가독성 확보.<br>
+      <strong>[전체]</strong> 다크모드 → 라이트모드 CSS 전환 (--bg:#ffffff, --text:#1a1d23 외 전 변수 교체).<br>
+      커버 배지·메타·footer: v10.14→v10.15.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -2598,7 +2767,7 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.14<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.15<br>
   최종 업데이트: 2026-05-20 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
