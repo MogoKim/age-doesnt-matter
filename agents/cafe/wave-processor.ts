@@ -85,6 +85,68 @@ async function generateComment(postTitle: string, waveNum: WaveNum, refComment?:
   return raw.replace(/^댓글:\s*/, '').slice(0, 200)
 }
 
+// 작성자가 첫 번째 봇 댓글에 대댓글 달 때 사용할 원문 없을 경우 풀
+const AUTHOR_REPLY_POOL = [
+  '공감해 주셔서 감사해요~',
+  '맞아요 저도 그렇게 생각해요 ^^',
+  '좋은 말씀 감사합니다',
+  '그러게요 저도 비슷한 경험이 있어요',
+  '이렇게 공감해 주시니 힘이 나요',
+  '맞아요 맞아요 ^^',
+  '함께 나눠 주셔서 감사해요',
+]
+
+async function processAuthorReply(
+  queue: { id: string; postId: string; cafePostId: string; authorPersonaId: string }
+) {
+  const authorUserId = await getBotUser(queue.authorPersonaId)
+  if (!authorUserId) return
+
+  // 작성자가 아닌 봇의 첫 번째 일반 댓글 (대댓글 달 대상)
+  const firstComment = await prisma.comment.findFirst({
+    where: {
+      postId: queue.postId,
+      parentId: null,
+      status: 'ACTIVE',
+      authorId: { not: authorUserId },
+    },
+    orderBy: { createdAt: 'asc' },
+  })
+  if (!firstComment) return
+
+  // 원본 카페글 replies에서 작성자 대댓글 원문 찾기
+  const cafePost = await prisma.cafePost.findUnique({
+    where: { id: queue.cafePostId },
+    select: { topComments: true },
+  })
+  type TC = { content: string; replies?: Array<{ content: string }> }
+  const topComments = (cafePost?.topComments as TC[]) ?? []
+  const replyFromOriginal = topComments
+    .flatMap(c => c.replies ?? [])
+    .find(r => r.content?.trim().length >= 5)
+    ?.content?.trim()
+
+  const replyText = replyFromOriginal
+    ?? AUTHOR_REPLY_POOL[Math.floor(Math.random() * AUTHOR_REPLY_POOL.length)]
+
+  await prisma.$transaction([
+    prisma.comment.create({
+      data: {
+        postId: queue.postId,
+        authorId: authorUserId,
+        content: replyText,
+        parentId: firstComment.id,
+        status: 'ACTIVE',
+      },
+    }),
+    prisma.post.update({
+      where: { id: queue.postId },
+      data: { commentCount: { increment: 1 } },
+    }),
+  ])
+  console.log(`[WaveProcessor] 작성자 대댓글 완료: postId=${queue.postId}, persona=${queue.authorPersonaId}`)
+}
+
 async function processWave(
   queue: { id: string; postId: string; cafePostId: string; authorPersonaId: string },
   waveNum: WaveNum,
@@ -252,6 +314,28 @@ export async function main() {
         console.error(`[WaveProcessor] wave${waveNum} 오류 (id=${queue.id}):`, err)
         await sendSlackMessage('QA', `[WaveProcessor] wave${waveNum} 오류 (id=${queue.id}): ${String(err).slice(0, 100)}`)
       }
+    }
+  }
+
+  // wave4 완료된 큐에서 작성자 대댓글 미처리 항목 처리
+  const replyPending = await prisma.commentWaveQueue.findMany({
+    where: { wave4Done: true, expiresAt: { gte: now } },
+    select: { id: true, postId: true, cafePostId: true, authorPersonaId: true },
+    take: 10,
+  })
+  for (const queue of replyPending) {
+    const authorUserId = await getBotUser(queue.authorPersonaId)
+    if (!authorUserId) continue
+    const alreadyReplied = await prisma.comment.findFirst({
+      where: { postId: queue.postId, authorId: authorUserId, parentId: { not: null } },
+    })
+    if (alreadyReplied) continue
+    try {
+      await processAuthorReply(queue)
+      processed++
+    } catch (err) {
+      failed++
+      console.error('[WaveProcessor] 작성자 대댓글 오류:', err)
     }
   }
 
