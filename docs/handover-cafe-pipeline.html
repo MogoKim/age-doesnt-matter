@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.13</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.14</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -282,12 +282,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.13</div>
+  <div class="cover-badge">Handover Document v10.14</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.13 (2026-05-20)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.14 (2026-05-20)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -375,7 +375,7 @@
   <div class="biz-lead">
     우나어 콘텐츠 시스템은 두 개의 분리된 실행 환경으로 설계됐다. 집에 있는 <strong>Mac</strong>과 GitHub이 운영하는 <strong>클라우드 서버(GHA)</strong>다.<br><br>
     <strong>Mac이 하는 일 — 데이터 수집</strong>: 네이버 카페(wgang · dlxogns01)에서 글·댓글·지표를 실제 브라우저로 수집해 우리 DB에 쌓는다. 네이버가 자동화 봇을 감지·차단하기 때문에 "눈에 보이는 진짜 브라우저"(headless:false)가 반드시 필요하다. 클라우드 서버 환경에서는 이걸 흉내낼 수 없어서 Mac에서만 실행된다.<br><br>
-    <strong>GHA가 하는 일 — 콘텐츠 발행</strong>: Mac이 쌓아 놓은 데이터를 Claude AI로 재가공해 발행하고, 발행된 글에 봇 댓글을 순차적으로 단다. DB만 접근할 수 있으면 되므로 인터넷 연결만 있는 클라우드에서 24시간 자동으로 돌아간다. Mac 전원 상태와 완전히 무관하다.<br><br>
+    <strong>GHA가 하는 일 — 콘텐츠 발행</strong>: Mac이 쌓아 놓은 데이터를 원문 그대로 발행하고, 발행된 글에 봇 댓글을 순차적으로 단다. DB만 접근할 수 있으면 되므로 인터넷 연결만 있는 클라우드에서 24시간 자동으로 돌아간다. Mac 전원 상태와 완전히 무관하다.<br><br>
     <strong>핵심 설계 원칙 — 역할 분리의 이유</strong>: 수집(Mac)과 발행(GHA)을 분리했기 때문에 Mac이 꺼져 있어도 기존에 수집된 데이터로 발행·댓글이 계속된다. Mac이 하루 중 10시간만 켜져 있어도 GHA는 24시간 내내 콘텐츠를 발행한다. DB가 두 환경을 연결하는 유일한 다리다.
   </div>
 
@@ -895,10 +895,12 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
       <details class="code-toggle">
         <summary>계산식 보기 — killerScore 가중치 상세</summary>
 <pre>killerScore =
-  commentCount×10÷100 × 0.55
-  + likeCount×20÷100 × 0.35
-  + (기타 보너스)
-  × 100</pre>
+  scoreEngagement(post)    × 0.55   // 댓글·좋아요 기반 인게이지먼트
+  + scoreContentLength(post) × 0.20   // 본문 길이
+  + scoreMedia(post)         × 0.05   // 이미지·영상 유무
+  + scoreBoardPriority(post) × 0.15   // 게시판 우선순위
+  + scoreRecency(post)       × 0.05   // 최신성
+→ Math.round(합산값)  // 0~100 정수</pre>
       </details>
       <div class="table-wrap mt8">
         <table>
@@ -1037,7 +1039,13 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
   <h3>killerScore 재계산 공식</h3>
   <details class="code-toggle">
     <summary>공식 보기 — killerScore 재계산</summary>
-<pre>killerScore = (commentCount × 10 ÷ 100 × 0.55 + likeCount × 20 ÷ 100 × 0.35) × 100</pre>
+<pre>killerScore =
+  scoreEngagement(post)    × 0.55   // 댓글·좋아요 기반 인게이지먼트
+  + scoreContentLength(post) × 0.20   // 본문 길이
+  + scoreMedia(post)         × 0.05   // 이미지·영상 유무
+  + scoreBoardPriority(post) × 0.15   // 게시판 우선순위
+  + scoreRecency(post)       × 0.05   // 최신성
+→ Math.round(합산값)  // 0~100 정수</pre>
   </details>
   <div class="alert info">
     <strong>승격 시나리오</strong>
@@ -1176,7 +1184,7 @@ interface CommentData {
   <h3>wave-processor가 topComments를 쓰는 방식</h3>
   <div class="narrative">
     <p>wave-processor.ts는 댓글을 달 때 해당 글의 topComments에서 참조 댓글(refComment)을 선택한다. wave 번호(1~4) 기반으로 서로 다른 인덱스의 댓글을 참조해, 4개 wave가 동일 댓글을 반복하는 현상을 방지한다.</p>
-    <p><strong>2026-05-20 변경 (⑯)</strong>: refComment가 10자 이상이면 AI를 거치지 않고 원문 그대로 달기. 10자 미만이거나 topComments가 없으면 AI fallback(글 제목+본문 기반 생성). 이전에는 모든 케이스에서 Claude Haiku가 AI 각색하는 방식이었다.</p>
+    <p><strong>2026-05-20 변경 (⑯)</strong>: refComment가 10자 이상이면 AI를 거치지 않고 원문 그대로 달기. 10자 미만이거나 topComments가 없으면 AI fallback(글 제목 기반 생성, 본문 미전달). 이전에는 모든 케이스에서 Claude Haiku가 AI 각색하는 방식이었다.</p>
   </div>
 
   <h3>저장 전 필터 4단계</h3>
@@ -1250,7 +1258,7 @@ interface CommentData {
     <table>
       <thead><tr><th>제한</th><th>기준</th></tr></thead>
       <tbody>
-        <tr><td>발행 총량 cap</td><td>하루 최대 발행량 설정 (config.ts dailyPublishLimit)</td></tr>
+        <tr><td>발행 총량 cap</td><td>슬롯 20개가 사실상 일일 상한 (별도 dailyPublishLimit 변수 없음)</td></tr>
         <tr><td>desireCategory 다양성</td><td>동일 욕망 카테고리 연속 발행 제한</td></tr>
         <tr><td>키워드 quota (P1)</td><td>동일 키워드 하루 3회 이상 발행 시 skip (기능어 OVERLAP_STOPWORDS 필터 제외)</td></tr>
       </tbody>
@@ -1259,7 +1267,7 @@ interface CommentData {
 
   <h3 class="mt24">큐레이션봇의 역할 — 정확한 범위</h3>
   <div class="narrative">
-    <p>큐레이션봇(content-curator.ts)은 이름처럼 "글을 선정하고 가공해서 발행"하는 것이 핵심이다. 그런데 Wave 댓글 예약까지 트리거한다. 대댓글은 현재 미구현이다. 세 가지 역할을 정확히 구분해야 한다.</p>
+    <p>큐레이션봇(content-curator.ts)은 이름처럼 "글을 선정하고 가공해서 발행"하는 것이 핵심이다. 그런데 Wave 댓글 예약까지 트리거한다. 세 가지 역할을 정확히 구분해야 한다.</p>
   </div>
 
   <div class="grid-2" style="margin-top:16px;gap:16px;">
@@ -1384,7 +1392,7 @@ interface CommentData {
         </tr>
         <tr>
           <td><strong>② topComments 없거나 10자 미만</strong></td>
-          <td>글 제목+본문 기반으로 <strong>AI가 직접 생성</strong> (fallback)</td>
+          <td>글 제목 기반으로 <strong>AI가 직접 생성</strong> (fallback, 본문 미전달)</td>
           <td>GHA 12:30 QUICK 모드(<code>isQuickMode=true</code>) 수집 글 또는 refComment가 너무 짧은 경우</td>
         </tr>
       </tbody>
@@ -1514,8 +1522,8 @@ for (const waveNum of order) {
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;">
       <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">댓글 내용 선택 순서</div>
       <div class="step-list" style="gap:8px;">
-        <div class="step-row"><div class="step-num" style="width:22px;height:22px;font-size:11px;">1</div><div class="step-content" style="font-size:13px;"><strong>topComments.replies 원문</strong> — 10자 이상이면 원문 그대로 사용 (AI 없음)</div></div>
-        <div class="step-row"><div class="step-num" style="width:22px;height:22px;font-size:11px;">2</div><div class="step-content" style="font-size:13px;"><strong>AUTHOR_REPLY_POOL 랜덤</strong> — replies 없거나 10자 미만이면 7개 문구 중 랜덤 선택 (AI 없음)</div></div>
+        <div class="step-row"><div class="step-num" style="width:22px;height:22px;font-size:11px;">1</div><div class="step-content" style="font-size:13px;"><strong>topComments.replies 원문</strong> — 5자 이상이면 원문 그대로 사용 (AI 없음)</div></div>
+        <div class="step-row"><div class="step-num" style="width:22px;height:22px;font-size:11px;">2</div><div class="step-content" style="font-size:13px;"><strong>AUTHOR_REPLY_POOL 랜덤</strong> — replies 없거나 5자 미만이면 7개 문구 중 랜덤 선택 (AI 없음)</div></div>
       </div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;">
@@ -1531,13 +1539,13 @@ for (const waveNum of order) {
   <details class="code-toggle" style="margin-top:14px;">
     <summary>AUTHOR_REPLY_POOL — 7개 문구 목록</summary>
 <pre>const AUTHOR_REPLY_POOL = [
-  '읽어주셔서 감사해요~',
-  '맞아요, 저도 그렇게 생각했어요',
-  '도움이 됐으면 좋겠어요!',
-  '공감해 주셔서 힘이 나네요',
-  '맞아요 정말요~ 저도 그래서 써봤어요',
-  '감사합니다, 앞으로도 좋은 얘기 나눠요',
-  '네 맞아요~ 우리 또래는 다 비슷한가봐요',
+  '공감해 주셔서 감사해요~',
+  '맞아요 저도 그렇게 생각해요 ^^',
+  '좋은 말씀 감사합니다',
+  '그러게요 저도 비슷한 경험이 있어요',
+  '이렇게 공감해 주시니 힘이 나요',
+  '맞아요 맞아요 ^^',
+  '함께 나눠 주셔서 감사해요',
 ]</pre>
   </details>
   <div class="alert info" style="margin-top:12px;font-size:12.5px;">
@@ -1708,7 +1716,7 @@ for (const waveNum of order) {
       🚫 <strong>오해 주의: 큐레이션봇은 댓글을 직접 달지 않는다.</strong><br>
       CommentWaveQueue에 댓글 예약(INSERT)만 한다. 실제 댓글 작성은 Wave봇(wave-processor.ts)이 5분마다 처리한다.
     </div>
-    <p>발행 시 CommentWaveQueue에 wave1~4를 자동 등록한다. 대댓글 기능은 현재 미구현이다.</p>
+    <p>발행 시 CommentWaveQueue에 wave1~4를 자동 등록한다. 대댓글은 wave4 완료 후 processAuthorReply()가 자동 실행한다 (§11 참조).</p>
     <div class="alert info" style="font-size:13px; padding:10px 16px; margin:8px 0; line-height:1.8;">
       <strong>DB에서 큐레이션봇/시드봇 구분 방법 (2026-05-20~)</strong><br>
       <code>content-curator.ts</code>가 글 발행 시 원본 CafePost ID를 <code>Post.cafePostId</code>에 저장한다.<br>
@@ -1998,19 +2006,16 @@ if (desireCat &amp;&amp; LIFE2_DESIRES.has(desireCat)) {
   <div class="impl-card">
     <div class="impl-header">
       <div class="impl-tag">✅ 구현됨</div>
-      <div class="impl-title">⑫. keyword overlap 오탐 수정 — OVERLAP_STOPWORDS 필터 + threshold 완화 (≥2→≥3)</div>
+      <div class="impl-title">⑫. keyword overlap 오탐 수정 — OVERLAP_STOPWORDS 필터 신설 (threshold ≥2 유지)</div>
     </div>
     <div class="impl-body">
       P1 키워드 quota 필터가 정상 글을 과도하게 skip하는 두 가지 오탐 문제가 있었다.<br><br>
       <strong>원인 ① — 기능어·어미가 명사로 오추출</strong><br>
       명사 추출 정규식 <code>/[가-힣]{2,}/g</code>는 2글자 이상의 모든 한글을 가져온다. 그 결과 "해요", "이요", "데이", "같아", "있어", "너무", "오늘", "많이" 같은 기능어·어미·부사가 명사로 추출됐다. 이 단어들은 실제 주제어가 아님에도 빈도 계산에 포함돼 아무 관련 없는 글들이 "키워드 중복"으로 걸려 skip됐다.<br>
       예: "해요"가 당일 발행글에서 2번 이상 등장하면(거의 항상), 이후 후보글 제목에 "해요"가 있으면 무조건 skip. 실제로는 전혀 다른 주제의 글이 탈락됨.<br><br>
-      <strong>해결 ①</strong>: <code>OVERLAP_STOPWORDS</code> Set 신설 (43개). 명사 추출 후 이 Set에 포함되는 단어를 제거한 뒤 빈도 계산.<br>
-      포함 단어: 어미(해요/이요/에요/어요/아요/줘요/봐요/되요), 연결어(해서/하고/해도/는데/인데), 형용사(같아/같이/있어/없어/싶어/했어/봤어/갔어), 조사(에서/으로/에게/이나/거나/에도/이도/이고), 지시어(이게/그게/저게/이건/그건/저건), 부사(많이/너무/정말/진짜/아직/이미/그냥/항상), 시간어(오늘/내일/어제/이번/지난/다음/데이)<br><br>
-      <strong>원인 ② — threshold ≥2가 너무 엄격</strong><br>
-      같은 키워드가 2번째 글부터 바로 skip됐다. "건강" 주제 글이 오전에 1개 발행되면 다른 관점의 "건강" 글이 오후에 전부 차단되는 현상이 발생했다.<br><br>
-      <strong>해결 ②</strong>: threshold를 <strong>≥2 → ≥3</strong>으로 완화. 같은 키워드가 최대 2개까지 발행되고, 3번째부터 skip.<br><br>
-      <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — OVERLAP_STOPWORDS + threshold</summary>
+      <strong>해결 ①</strong>: <code>OVERLAP_STOPWORDS</code> Set 신설 (53개). 명사 추출 후 이 Set에 포함되는 단어를 제거한 뒤 빈도 계산.<br>
+      포함 단어: 어미(해요/이요/에요/어요/아요/줘요/봐요/되요/가요/이야/거야/는데/인데), 연결어(해서/하고/해도), 형용사(같아/같이/있어/없어/싶어/했어/봤어/갔어), 조사(에서/으로/에게/이나/거나/에도/이도/이고), 지시어(이게/그게/저게/이건/그건/저건), 부사(많이/너무/정말/진짜/아직/이미/그냥/항상), 시간어(오늘/내일/어제/이번/지난/다음/데이)<br><br>
+      <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — OVERLAP_STOPWORDS (53개) + threshold ≥2</summary>
       <pre style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px;margin:8px 0;overflow-x:auto;">const OVERLAP_STOPWORDS = new Set([
   '해요', '이요', '에요', '어요', '아요', '해서', '하고', '해도',
   '가요', '이야', '거야', '줘요', '봐요', '되요', '는데', '인데',
@@ -2019,17 +2024,17 @@ if (desireCat &amp;&amp; LIFE2_DESIRES.has(desireCat)) {
   '이게', '그게', '저게', '이건', '그건', '저건',
   '많이', '너무', '정말', '진짜', '아직', '이미', '그냥', '항상',
   '오늘', '내일', '어제', '이번', '지난', '다음', '데이',
-])
+])  // 총 53개
 
-// countKeywordOverlap() 내부 — threshold ≥3으로 완화
+// countKeywordOverlap() 내부 — threshold ≥2 유지
 const nouns = (title.match(/[가-힣]{2,}/g) ?? [])
   .filter(n =&gt; !OVERLAP_STOPWORDS.has(n))  // ← 기능어 제거
 // ...빈도 집계 후
-if (maxCount &gt;= 3) return true  // ≥3이면 skip (기존: ≥2)</pre>
+if (maxCount &gt;= 2) return true  // ≥2이면 skip</pre>
       </details>
       SHA: 8999de4 (2026-05-20)
     </div>
-    <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>OVERLAP_STOPWORDS</code> 상수 신설 + <code>countKeywordOverlap()</code> 필터 적용 + threshold 2→3</div>
+    <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>OVERLAP_STOPWORDS</code> 상수 신설 (53개) + <code>countKeywordOverlap()</code> 필터 적용 + threshold ≥2 유지</div>
   </div>
 
   <div class="impl-card">
@@ -2174,9 +2179,9 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
       → authorPersonaId 봇 계정으로 그 댓글에 <code>parentId</code>를 설정해 대댓글 INSERT.<br>
       → processAuthorReply가 완료되면 CommentWaveQueue의 authorReplied=true(내부 추적).<br><br>
       <strong>댓글 내용 선택 순서</strong><br>
-      ① topComments.replies 원문 중 10자 이상 → 원문 그대로 사용 (AI 호출 없음)<br>
+      ① topComments.replies 원문 중 5자 이상 → 원문 그대로 사용 (AI 호출 없음)<br>
       ② 없으면 <code>AUTHOR_REPLY_POOL</code> 7개 문구에서 랜덤 선택 (AI 호출 없음)<br><br>
-      <strong>AUTHOR_REPLY_POOL 예시</strong>: "읽어주셔서 감사해요~", "맞아요, 저도 그렇게 생각했어요", "도움이 됐으면 좋겠어요!", "공감해 주셔서 힘이 나네요" 등 7개<br><br>
+      <strong>AUTHOR_REPLY_POOL 예시</strong>: "공감해 주셔서 감사해요~", "맞아요 저도 그렇게 생각해요 ^^", "좋은 말씀 감사합니다", "이렇게 공감해 주시니 힘이 나요" 등 7개<br><br>
       <strong>설계 원칙</strong>: Comment.parentId 필드가 스키마에 이미 있어 별도 마이그레이션 없음. AI 호출 없이 비용 0. wave4 완료를 트리거로 삼아 main() 루프에서 자동 실행.<br><br>
       SHA: d19f4ed (2026-05-20)
     </div>
@@ -2350,6 +2355,20 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
   </div>
 
   <div class="changelog-item">
+    <div class="changelog-ver">v10.14</div>
+    <div class="changelog-date">2026-05-20</div>
+    <div class="changelog-content">
+      <strong>코드·크론 전수 감사 10건 반영 — 문서 정합성 완전 복원.</strong><br><br>
+      <strong>[§2]</strong> "Claude AI로 재가공해 발행" → "원문 그대로 발행" — content-curator.ts에 Claude 호출 없음(stripMarkdown만) 확인.<br>
+      <strong>[§6]</strong> killerScore 공식 2-factor → 5-factor: scoreEngagement×55% + scoreContentLength×20% + scoreMedia×5% + scoreBoardPriority×15% + scoreRecency×5% (quality-scorer.ts 실제 가중치 반영).<br>
+      <strong>[§10]</strong> dailyPublishLimit 변수 존재하지 않음 — "슬롯 20개가 사실상 일일 상한" 으로 수정.<br>
+      <strong>[§11]</strong> AUTHOR_REPLY_POOL 7개 문구 전량 교체(wave-processor.ts 실제 코드 기준). replies 원문 사용 기준 10자→5자 수정. AI fallback "제목+본문" → "제목만(본문 미전달)" 수정. "대댓글 미구현" 잔류 문구 삭제.<br>
+      <strong>[§14]</strong> OVERLAP_STOPWORDS 43개→53개 (content-curator.ts 직접 카운트: 8행×4+6행×2+데이1=53). impl-card⑫ "threshold ≥2→≥3 완화" 허위기재 수정 → "threshold ≥2 유지 (변경 미적용)".<br>
+      커버 배지·메타·footer: v10.13→v10.14.
+    </div>
+  </div>
+
+  <div class="changelog-item">
     <div class="changelog-ver">v10.13</div>
     <div class="changelog-date">2026-05-20</div>
     <div class="changelog-content">
@@ -2396,7 +2415,7 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
       <strong>keyword overlap 오탐 수정 + DESIRE_PERSONA_MAP 전면 확대 + 문서 최신화.</strong><br><br>
       <strong>[버그 수정 ①] keyword overlap 오탐 — OVERLAP_STOPWORDS + threshold 완화 (SHA: 8999de4)</strong><br>
       P1 키워드 quota 필터가 정상 글을 과도하게 skip하는 문제 두 가지를 수정했다.<br>
-      첫째, 명사 추출 정규식 <code>/[가-힣]{2,}/g</code>가 "해요", "이요", "데이", "오늘", "많이" 같은 기능어·어미·부사를 명사로 잡아 무의미한 skip을 유발했다. <code>OVERLAP_STOPWORDS</code> Set(43개)을 신설해 명사 추출 후 이 단어들을 제거한다.<br>
+      첫째, 명사 추출 정규식 <code>/[가-힣]{2,}/g</code>가 "해요", "이요", "데이", "오늘", "많이" 같은 기능어·어미·부사를 명사로 잡아 무의미한 skip을 유발했다. <code>OVERLAP_STOPWORDS</code> Set(53개)을 신설해 명사 추출 후 이 단어들을 제거한다.<br>
       둘째, threshold가 ≥2로 너무 엄격해 같은 주제의 다양한 관점 글이 차단됐다. ≥3으로 완화해 같은 키워드를 최대 2개까지 허용한다.<br><br>
       <strong>[기능 개선] DESIRE_PERSONA_MAP 전면 확대 — 페르소나 편중 해소 (SHA: 930d98a)</strong><br>
       STORY 게시판 발행이 A(하늘바라기)/E(봄바람)/G(여행이좋아) 3명에 집중되는 현상이 발생했다. 원인: DB CafePost의 57%(약 660건)가 <code>desireCategory=null</code>이고, null은 전부 GENERAL pool로 폴백되는데 GENERAL pool에 3명만 있었다.<br>
@@ -2579,7 +2598,7 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.13<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.14<br>
   최종 업데이트: 2026-05-20 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>

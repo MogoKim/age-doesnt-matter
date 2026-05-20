@@ -24,8 +24,9 @@
 ```
 content-curator.ts (발행 완료)
   │
-  ├─ POST /api/internal/comment-wave
+  ├─ enqueueCommentWave() — prisma.commentWaveQueue.create() 직접 호출
   │   └─ CommentWaveQueue 생성 (wave1~4 타임스탬프 + 60h TTL)
+  │   ※ /api/internal/comment-wave route 존재하나 현재 미사용
   │
   └─ GHA */5 * * * * — wave-processor.ts
       ├─ wave1Done=false AND wave1At ≤ now → 댓글 생성 (+1분)
@@ -84,7 +85,7 @@ CommentWaveQueue {
 
 | 구성 | 내용 |
 |------|------|
-| 큐 등록 | content-curator.ts → `/api/internal/comment-wave` API |
+| 큐 등록 | content-curator.ts `main()` → `enqueueCommentWave()` → prisma 직접 (API 미사용) |
 | 처리 | GHA `*/5 * * * *` → `agents/cafe/wave-processor.ts` |
 | runner 등록 | `cafe_crawler:wave-process` |
 
@@ -105,7 +106,7 @@ CommentWaveQueue {
 ✅ `/api/internal/comment-wave` API 신규 구현 완료  
 ✅ GHA `*/5 * * * *` wave-process job 추가 완료  
 ✅ runner.ts `cafe_crawler:wave-process` 등록 완료  
-⏳ content-curator.ts → API 호출 연동 (enqueueCommentWave 함수 구현됨)
+✅ content-curator.ts → main()에서 enqueueCommentWave() 호출 (DB 직접 쓰기, API 미사용)
 
 ---
 
