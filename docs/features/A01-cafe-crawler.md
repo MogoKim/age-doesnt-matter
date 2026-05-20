@@ -216,6 +216,7 @@
 | 2026-05-15 | 크롤 7회/일로 확장(07:40·09:30·11:30·14:30·17:30·21:30·00:30), GHA 큐레이션 45분 간격 20슬롯 100건/일 전환. runner.ts dedup 60분→25분. content-curator.ts 01:15 KST 새벽 감성글 우선 정렬(MEANING/SPIRITUAL/RELATION/FAMILY) 추가 | 07:00대 아침 콘텐츠 공백 해소, 저녁/새벽 감성글 발행, 발행량 75→100건/일 목표 |
 | 2026-05-18 | content-curator.ts P1: todayPublishedTitles 조회 + countKeywordOverlap() — 특정 키워드 당일 2회 이상 발행 시 skip. P2: toNouns regex {2,2}→{2,} + 겹침 기준 3→2 + editDistance≤5 Levenshtein 추가. P3: SEASONAL_KEYWORDS + isSeasonMismatch() — 계절 불일치 글 자동 skip | 5/18 봇글 29개 전수 분석: 제주 8개(28%) 편중, 1글자 차이 의미중복(마음도/마음이), 5월 벚꽃글 발행 등 3가지 품질 문제 수정 |
 | 2026-05-19 | ② content-curator.ts killerScore 필터 70→55 (조용한 게시판 글 킬러 후보 포용). ⑤ runner.ts + agents-cafe.yml에 `cafe_crawler:evening-brief-safety` 핸들러+18:00 KST cron 추가 (daily-brief 공백 21h→7h 단축). ⑧ crawler.ts refreshRecentPosts()에 killerScore≥85 재크롤 시 CommentWaveQueue 경유 Post.isFeatured 자동 true 처리 추가. content-curator.ts 발행 트랜잭션에 killerScore≥85 → Post.isFeatured+featuredAt 즉시 설정 추가 | 킬러 다양성 확보, DailyBrief 안전망, 고점수 글 집중 부스트 자동화 |
+| 2026-05-20 | content-curator.ts OVERLAP_STOPWORDS 추가 + countKeywordOverlap 필터 적용 + 임계값 2→3 (keyword overlap 오탐 해소). DESIRE_PERSONA_MAP 전면 확대: GENERAL 3→25명 전원, HUMOR 2→7명 전원, STORY 각 카테고리 2명→7~13명 (A/E/G 3명 편중 해소) | "해요"·"데이" 등 기능어가 명사로 잡혀 멀쩡한 글 스킵되는 오탐 + desireCategory=null(57%) 글 전부 GENERAL 폴백 시 동일 3명만 반복되는 편중 |
 
 ---
 

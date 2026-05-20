@@ -468,26 +468,32 @@ const PERSONAS: PersonaMatch[] = [
   },
 ]
 
-// 욕망별 우선 페르소나 (매칭 실패 시 폴백용)
+// 욕망별 우선 페르소나 (매칭 실패 시 폴백용) — 페르소나 편중 방지를 위해 풀 최대 확대
 const DESIRE_PERSONA_MAP: Record<string, string[]> = {
-  HEALTH:    ['H', 'A'],
-  FAMILY:    ['L', 'E'],
-  MONEY:     ['B', 'AD', 'AE', 'AI', 'AQ', 'AS'],   // LIFE2 전용: 재테크·연금·세금·ETF·가계부
-  RETIRE:    ['B', 'AH', 'AN', 'AR', 'AT', 'AO'],   // LIFE2 전용: 은퇴·재취업·연금생활·해외이민·디지털
-  RELATION:  ['E', 'A'],
-  MEANING:   ['E', 'I'],
-  HOBBY:     ['F', 'G'],
-  HUMOR:     ['C', 'AY'],
-  ENTERTAIN: ['C', 'I'],
-  BEAUTY:    ['K', 'A'],
-  DIGITAL:   ['A', 'E'],
-  FOOD:      ['J', 'A'],
-  SPIRITUAL: ['I', 'E'],
-  HOUSING:   ['AG', 'AJ', 'AL', 'AM', 'AK', 'AF'],  // LIFE2 전용: 부동산·주택연금·전원·실버타운·의료·보험
-  FASHION:   ['K', 'A'],
-  PET:       ['A', 'E'],
-  FREEDOM:   ['A', 'E'],
-  GENERAL:   ['A', 'E', 'G'],
+  // STORY 카테고리 — 욕망별 관련 페르소나 최대 배치
+  HEALTH:    ['H', 'M', 'X', 'A', 'F', 'Z', 'Y', 'N', 'T', 'E'],
+  FAMILY:    ['L', 'E', 'V', 'AA', 'AB', 'A', 'W', 'Q'],
+  RELATION:  ['E', 'V', 'AB', 'A', 'W', 'T', 'L', 'P', 'O'],
+  MEANING:   ['W', 'T', 'I', 'E', 'AB', 'P', 'AA', 'V', 'O'],
+  HOBBY:     ['F', 'S', 'U', 'Y', 'Z', 'O', 'I', 'K', 'M', 'X', 'Q', 'G', 'AA'],
+  FOOD:      ['J', 'A', 'G', 'N', 'P', 'K', 'F', 'S'],
+  SPIRITUAL: ['W', 'I', 'T', 'E', 'P', 'AB', 'O', 'V'],
+  BEAUTY:    ['K', 'A', 'G', 'E', 'U', 'P', 'V'],
+  DIGITAL:   ['A', 'E', 'G', 'T', 'N', 'AC', 'O', 'I'],
+  FASHION:   ['K', 'A', 'G', 'E', 'U', 'P', 'V', 'AC'],
+  PET:       ['Q', 'Y', 'A', 'E', 'F', 'S', 'Z'],
+  FREEDOM:   ['G', 'P', 'AC', 'M', 'X', 'A', 'E', 'W', 'I', 'F'],
+  // HUMOR 카테고리 — 7명 전원
+  HUMOR:     ['C', 'R', 'AU', 'AV', 'AW', 'AX', 'AY'],
+  ENTERTAIN: ['C', 'R', 'AW', 'AX', 'AU', 'I', 'O'],
+  // LIFE2 카테고리 — 기존 유지 (전용 페르소나)
+  MONEY:     ['B', 'AD', 'AE', 'AI', 'AQ', 'AS'],   // 재테크·연금·세금·ETF·가계부
+  RETIRE:    ['B', 'AH', 'AN', 'AR', 'AT', 'AO'],   // 은퇴·재취업·연금생활·해외이민·디지털
+  HOUSING:   ['AG', 'AJ', 'AL', 'AM', 'AK', 'AF'],  // 부동산·주택연금·전원·실버타운·의료·보험
+  // GENERAL — STORY 25명 전원 (null desireCategory 폴백 핵심)
+  GENERAL:   ['A', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+               'N', 'O', 'P', 'Q', 'S', 'T', 'U', 'V', 'W', 'X',
+               'Y', 'Z', 'AA', 'AB', 'AC'],
 }
 
 /** 트렌드 주제에 가장 적합한 페르소나 매칭 */
