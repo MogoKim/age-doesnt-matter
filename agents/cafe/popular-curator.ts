@@ -4,7 +4,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
-import { getBotUser } from '../seed/generator.js'
 import {
   sanitizeForApi,
   stripMarkdown,
@@ -12,6 +11,7 @@ import {
   matchPersona,
   guessDesire,
   DESIRE_TO_BOARD,
+  PERSONAS,
   type PersonaMatch,
 } from './curator-shared.js'
 
@@ -20,6 +20,34 @@ const client = new Anthropic()
 
 const HEALTH_CAP = 2
 const MAX_PUBLISH = 5
+const AUTHOR_DAILY_POST_CAP = 2
+
+/** curator 전용 봇 유저 upsert — seed bot(bot-*)과 이메일 네임스페이스 분리 */
+async function getCuratorBotUser(persona: PersonaMatch): Promise<string> {
+  const email = `curator-${persona.id.toLowerCase()}@unao.bot`
+  const user = await prisma.user.upsert({
+    where: { email },
+    update: { nickname: persona.nickname },
+    create: {
+      email,
+      nickname: persona.nickname,
+      providerId: `curator-${persona.id.toLowerCase()}`,
+      role: 'USER',
+      grade: 'MEMBER',
+    },
+  })
+  return user.id
+}
+
+/** 오늘 해당 페르소나가 발행한 글 수 (curator- 이메일 기준) */
+async function countTodayPostsByPersona(personaId: string): Promise<number> {
+  const email = `curator-${personaId.toLowerCase()}@unao.bot`
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } })
+  if (!user) return 0
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  return prisma.post.count({ where: { authorId: user.id, createdAt: { gte: todayStart } } })
+}
 
 interface PopularCandidate {
   id: string
@@ -151,7 +179,15 @@ export async function main() {
     const desire = post.desireCategory ?? guessDesire(post.title)
     if (desire === 'HEALTH' && healthCount >= HEALTH_CAP) continue
 
-    const persona = matchPersona(post.title, desire)
+    let persona = matchPersona(post.title, desire)
+    const todayCount = await countTodayPostsByPersona(persona.id)
+    if (todayCount >= AUTHOR_DAILY_POST_CAP) {
+      const sameBoard = PERSONAS.filter(p => p.board === persona.board && p.id !== persona.id)
+      for (const alt of sameBoard) {
+        const altCount = await countTodayPostsByPersona(alt.id)
+        if (altCount < AUTHOR_DAILY_POST_CAP) { persona = alt; break }
+      }
+    }
     const generated = await generatePopularPost(post, persona)
     if (!generated) {
       console.warn(`[PopularCurator] 생성 실패 스킵: ${post.title.slice(0, 30)}`)
@@ -183,7 +219,7 @@ export async function main() {
     }
 
     try {
-      const userId = await getBotUser(persona.id)
+      const userId = await getCuratorBotUser(persona)
 
       const postId = await prisma.$transaction(async tx => {
         const newPost = await tx.post.create({

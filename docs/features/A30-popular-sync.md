@@ -43,3 +43,4 @@
 | 2026-05-15 | 신규 생성 — popular-sync 3슬롯 + popular-curate 3슬롯 | 카페 실제 인기글 우나어 발행 (killerScore 과소평가 문제 해결) |
 | 2026-05-16 | popular-curator.ts 발행 루프에 LIFE2 크로스소스 dedup 추가 — 24h 내 LIFE2 전체 Post 조회 후 2자 명사 overlap ≥3 이면 발행 스킵 | Seed·ContentCurator와 동일 주제 중복 발행 차단 (크로스소스 dedup 미구현 버그) |
 | 2026-05-19 | ⑧ popular-curator.ts 발행 트랜잭션에 killerScore≥85 → Post.isFeatured+featuredAt 즉시 설정 추가 | 고점수 인기글 발행 즉시 집중 부스트 자동 적용 (수동 토글 불필요) |
+| 2026-05-20 | popular-curator.ts: `getBotUser()` 제거 → `getCuratorBotUser()` 신규 (email prefix `curator-`, PersonaMatch.nickname 직접 사용). `AUTHOR_DAILY_POST_CAP=2` + `countTodayPostsByPersona()` — cap 초과 시 동일 board 내 대체 페르소나 탐색. curator-shared.ts `PERSONAS` import 추가 | ID collision '손뜨개' 버그 수정 + 페르소나 일일 독점 구조적 차단 |

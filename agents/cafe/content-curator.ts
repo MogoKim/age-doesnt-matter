@@ -7,10 +7,39 @@
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack, sendSlackMessage } from '../core/notifier.js'
-import { getBotUser } from '../seed/generator.js'
 import type { CuratedContent } from './types.js'
 import { loadTodayBrief } from './daily-brief.js'
 
+
+const AUTHOR_DAILY_POST_CAP = 2
+
+/** curator 전용 봇 유저 upsert — seed bot(bot-*)과 이메일 네임스페이스 분리 */
+async function getCuratorBotUser(personaId: string): Promise<string> {
+  const nickname = PERSONAS.find(p => p.id === personaId)?.nickname ?? personaId
+  const email = `curator-${personaId.toLowerCase()}@unao.bot`
+  const user = await prisma.user.upsert({
+    where: { email },
+    update: { nickname },
+    create: {
+      email,
+      nickname,
+      providerId: `curator-${personaId.toLowerCase()}`,
+      role: 'USER',
+      grade: 'MEMBER',
+    },
+  })
+  return user.id
+}
+
+/** 오늘 해당 페르소나가 발행한 글 수 (curator- 이메일 기준) */
+async function countTodayPostsByPersona(personaId: string): Promise<number> {
+  const email = `curator-${personaId.toLowerCase()}@unao.bot`
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } })
+  if (!user) return 0
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  return prisma.post.count({ where: { authorId: user.id, createdAt: { gte: todayStart } } })
+}
 
 /** AI 응답에서 마크다운 문법 제거 */
 function stripMarkdown(text: string): string {
@@ -635,7 +664,7 @@ function editDistance(a: string, b: string): number {
 
 /** 큐레이션 글을 DB에 게시, 생성된 postId 반환 */
 async function publishCuratedContent(curated: CuratedContent): Promise<string | null> {
-  const userId = await getBotUser(curated.personaId)
+  const userId = await getCuratorBotUser(curated.personaId)
 
   const htmlContent = `<p>${curated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
   const summary = curated.content.replace(/\n/g, ' ').slice(0, 150).trim()
@@ -910,7 +939,19 @@ export async function main() {
       continue
     }
 
-    const persona = matchPersona(topicStr, desireCat)
+    let persona = matchPersona(topicStr, desireCat)
+    const todayCount = await countTodayPostsByPersona(persona.id)
+    if (todayCount >= AUTHOR_DAILY_POST_CAP) {
+      const candidates = DESIRE_PERSONA_MAP[desireCat] ?? DESIRE_PERSONA_MAP['GENERAL']
+      for (const altId of candidates) {
+        if (altId === persona.id) continue
+        const altCount = await countTodayPostsByPersona(altId)
+        if (altCount < AUTHOR_DAILY_POST_CAP) {
+          const altPersona = PERSONAS.find(p => p.id === altId)
+          if (altPersona) { persona = altPersona; break }
+        }
+      }
+    }
     const refs = await getReferencePosts(topicStr, desireCat, 3)
 
     console.log(`[ContentCurator] "${topicStr}" (${desireCat}) → ${persona.nickname} (참고글 ${refs.length}개)`)
