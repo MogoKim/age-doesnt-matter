@@ -34,8 +34,8 @@
 - `CafePost.popularUpdatedAt` (DateTime?) — sync 시각 기록
 
 ## 비용 영향
-- popular-curator: Haiku 모델, 슬롯당 5건, 일 3슬롯 → 15건/일
-- 예상 비용: content-curate 대비 +15% (동일 모델·토큰 규모)
+- popular-curator: AI 없음 (2026-05-21~ 원문 기반 발행 전환), API 비용 0원
+- ~~Haiku 모델, 슬롯당 5건, 일 3슬롯 → 15건/일~~ (제거됨, SHA: d4c74d6)
 
 ## 수정 이력
 | 날짜 | 변경 내용 | 이유 |
