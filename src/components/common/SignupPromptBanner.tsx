@@ -314,7 +314,7 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
               <div className="flex items-start gap-3">
                 <span className="text-2xl" aria-hidden="true">👋</span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-base leading-snug text-foreground">
+                  <p className="font-bold text-body leading-snug text-foreground">
                     {utmLabel}에서 오셨군요!
                   </p>
                   <p className="text-sm text-muted-foreground mt-0.5">
@@ -419,7 +419,7 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
             <div className="flex items-start gap-3">
               <span className="text-2xl" aria-hidden="true">{content.emoji}</span>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-base leading-snug text-foreground">
+                <p className="font-bold text-body leading-snug text-foreground">
                   {content.headline}
                 </p>
                 <p className="text-sm text-muted-foreground mt-0.5">

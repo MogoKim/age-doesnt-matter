@@ -50,7 +50,7 @@ export default function MagazineSection({ posts }: Props) {
             </div>
             <div className="p-3">
               <span className="text-caption text-primary-text font-semibold mb-1 block">{article.category}</span>
-              <h3 className="text-caption font-bold text-foreground leading-[1.4] line-clamp-2 break-keep">{article.title}</h3>
+              <h3 className="text-body font-bold text-foreground leading-[1.4] line-clamp-2 break-keep">{article.title}</h3>
             </div>
           </HomeCardLink>
         ))}

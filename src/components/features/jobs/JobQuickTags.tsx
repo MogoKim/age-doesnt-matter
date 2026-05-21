@@ -40,7 +40,7 @@ export default function JobQuickTags() {
           <button
             key={tag}
             className={cn(
-              'shrink-0 px-5 py-2.5 rounded-full border-2 text-caption font-medium min-h-[52px] cursor-pointer transition-all',
+              'shrink-0 px-5 py-2.5 rounded-full border-2 text-body font-medium min-h-[52px] cursor-pointer transition-all',
               isActive
                 ? 'bg-primary text-white border-primary font-bold'
                 : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary hover:bg-primary/5',

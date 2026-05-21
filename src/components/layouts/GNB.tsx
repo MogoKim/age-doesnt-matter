@@ -63,7 +63,7 @@ export default function GNB({ isLoggedIn = false, nickname, unreadCount = 0 }: G
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'text-caption no-underline px-3 py-1.5 rounded-lg transition-colors duration-150 whitespace-nowrap',
+                  'text-body no-underline px-3 py-1.5 rounded-lg transition-colors duration-150 whitespace-nowrap',
                   isActive
                     ? 'bg-[#FFE9E5] text-primary-text font-semibold'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
