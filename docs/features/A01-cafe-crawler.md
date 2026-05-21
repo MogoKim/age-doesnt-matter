@@ -203,6 +203,7 @@
 
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
+| 2026-05-21 | crawler.ts `syncPopularPosts()` Case B에 `isImageDependentContent()`+`isBoardNoticeContent()` 적용 — `isUsable: true` 하드코딩 해제, popular-sync 신규 저장 경로도 이미지 의존·공지문 차단 | savePosts()와 동일 기준 적용으로 Case B 우회 경로 차단 |
 | 2026-05-21 | crawler.ts `savePosts()`에 `isImageDependentContent()`+`isBoardNoticeContent()` 헬퍼 추가 — 이미지 의존(실질텍스트<50자) 및 게시판 공지문(신호어 2개↑) 감지 시 `isUsable=false`로 저장 | 이미지가 본문인 글·공지문 수집 방지 (DB dedup 유지) |
 | 2026-04-27 | Feature 문서 최초 생성 (코드 딥다이브 기반) | Feature Lifecycle 도입 |
 | 2026-05-12 | quality-scorer.ts에 `calculateKillerScore()` 추가 + crawler.ts killerScore 저장 | 화제성글 후보 선별 고도화 (참여도 55%, 최신성 5%) |

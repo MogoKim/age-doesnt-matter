@@ -1087,11 +1087,15 @@ export async function syncPopularPosts(page: Page, cafe: CafeConfig): Promise<{ 
         updated++
         console.log(`[PopularSync] ${cafe.name} A-${article.articleId}: killerScore=${newKillerScore} 갱신`)
       } else {
-        // Case B: DB 없는 글 → /popular 탭 존재 자체가 품질 보증 → isUsable=true로 저장
+        // Case B: DB 없는 글 → /popular 탭이 참여도 보증, 큐레이션 적합성은 추가 확인
         const crawled = await crawlPost(page, article, cafe, false)
         if (!crawled) continue // 삭제/비공개 → 스킵
         const qualityScore = calculateQualityScore(crawled)
         const killerScore = calculateKillerScore(crawled)
+        const imageDep = isImageDependentContent(crawled)
+        const noticeText = isBoardNoticeContent(crawled.content)
+        if (imageDep) console.log(`[PopularSync] 이미지 의존 isUsable=false: "${crawled.title.slice(0, 25)}"`)
+        if (noticeText) console.log(`[PopularSync] 게시판 공지문 isUsable=false: "${crawled.title.slice(0, 25)}"`)
         await prisma.cafePost.create({
           data: {
             cafeId: crawled.cafeId,
@@ -1105,7 +1109,7 @@ export async function syncPopularPosts(page: Page, cafe: CafeConfig): Promise<{ 
             boardCategory: crawled.boardCategory,
             qualityScore,
             killerScore,
-            isUsable: true,
+            isUsable: !imageDep && !noticeText,
             isPopular: true,
             popularUpdatedAt: new Date(),
             likeCount: crawled.likeCount,
