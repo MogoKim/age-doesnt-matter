@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.unao.naver-cafe-sheet-scraper</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <!-- node 사용 이유: /bin/bash는 kTCCServiceSystemPolicyDocumentsFolder TCC 미승인 →
+             launchd에서 ~/Documents/ 접근 불가. node는 TCC 승인됨. -->
+        <string>/bin/bash</string>
+        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/scripts/launchd-alert.sh</string>
+        <string>naver-cafe-sheet-scraper</string>
+        <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npx</string>
+        <string>tsx</string>
+        <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/agents/community/run-local-naver-cafe.ts</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
+
+    <key>StartCalendarInterval</key>
+    <array>
+        <!-- 13:00 KST (점심 — fmkorea/cafe-crawler 11:30 이후) -->
+        <dict>
+            <key>Hour</key>
+            <integer>13</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <!-- 23:00 KST (자정 전 — fmkorea/cafe-crawler 21:30 이후) -->
+        <dict>
+            <key>Hour</key>
+            <integer>23</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
+
+    <key>StandardOutPath</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/naver-cafe-sheet-scraper.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/yanadoo/Documents/New_Claude_agenotmatter/logs/naver-cafe-sheet-scraper-error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+        <key>HOME</key>
+        <string>/Users/yanadoo</string>
+    </dict>
+</dict>
+</plist>

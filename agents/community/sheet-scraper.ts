@@ -15,8 +15,10 @@
  *   SHEET_SCRAPER_AI_FILTER    — "true"이면 Haiku로 관련성 점수/카테고리/제목 최적화 실행
  */
 
+import { existsSync } from 'fs'
+import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { chromium, type BrowserContext, type Page } from 'playwright'
+import { chromium, type BrowserContext, type Page, type Frame } from 'playwright'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
@@ -135,6 +137,26 @@ async function launchBrowser(): Promise<BrowserContext> {
   return context
 }
 
+async function launchBrowserWithSession(storagePath: string): Promise<BrowserContext> {
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--disable-blink-features=AutomationControlled',
+      '--disable-dev-shm-usage',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+    ],
+  })
+  return browser.newContext({
+    viewport: { width: 1920, height: 1080 },
+    userAgent: randomUserAgent(),
+    locale: 'ko-KR',
+    timezoneId: 'Asia/Seoul',
+    colorScheme: 'light',
+    storageState: storagePath,
+  })
+}
+
 // ── 단일 URL 스크래핑 ──
 
 interface ScrapeResult {
@@ -169,13 +191,18 @@ async function scrapePage(
       throw new Error('CF_BLOCKED')
     }
 
+    // iframe 핸들링 (네이버 카페 f-e/ URL은 cafe_main iframe 사용, ca-fe/는 page 직접)
+    const target: Page | Frame = siteConfig.contentFrame
+      ? (page.frame({ name: siteConfig.contentFrame }) ?? page)
+      : page
+
     // 제목 추출 (댓글 수 [숫자] 패턴 제거)
-    const rawTitle = await extractText(page, siteConfig.selectors.title)
+    const rawTitle = await extractText(target, siteConfig.selectors.title)
     if (!rawTitle) throw new Error('제목 추출 실패')
     const title = rawTitle.replace(/\s*\[\d+\]\s*$/, '').trim()
 
     // 본문 추출
-    const rawContent = await extractHtml(page, siteConfig.selectors.content)
+    const rawContent = await extractHtml(target, siteConfig.selectors.content)
     if (!rawContent) throw new Error('본문 추출 실패')
 
     // 원글 작성자 닉네임 추출 (자기 댓글 제외용 — postAuthorSelectors 없는 사이트는 null)
@@ -183,7 +210,7 @@ async function scrapePage(
     if (siteConfig.postAuthorSelectors) {
       try {
         for (const sel of siteConfig.postAuthorSelectors) {
-          const el = await page.$(sel)
+          const el = await target.$(sel)
           if (el) {
             const raw = (await el.textContent())?.trim() ?? ''
             postAuthorNick = raw.split(/[\s(]/)[0] || null
@@ -198,8 +225,8 @@ async function scrapePage(
     if (siteConfig.commentSelectors) {
       try {
         // 댓글 섹션이 AJAX 비동기 로딩될 수 있으므로 최대 5초 대기
-        await page.waitForSelector(siteConfig.commentSelectors.item, { timeout: 5000 }).catch(() => {})
-        const items = await page.$$(siteConfig.commentSelectors.item)
+        await target.waitForSelector(siteConfig.commentSelectors.item, { timeout: 5000 }).catch(() => {})
+        const items = await target.$$(siteConfig.commentSelectors.item)
         for (const item of items.slice(0, 10)) {
           try {
             if (siteConfig.commentSelectors.author && postAuthorNick) {
@@ -238,7 +265,7 @@ async function scrapePage(
   }
 }
 
-async function extractText(page: Page, selectors: string[]): Promise<string | null> {
+async function extractText(page: Page | Frame, selectors: string[]): Promise<string | null> {
   for (const sel of selectors) {
     try {
       const el = page.locator(sel).first()
@@ -253,7 +280,7 @@ async function extractText(page: Page, selectors: string[]): Promise<string | nu
   return null
 }
 
-async function extractHtml(page: Page, selectors: string[]): Promise<string | null> {
+async function extractHtml(page: Page | Frame, selectors: string[]): Promise<string | null> {
   for (const sel of selectors) {
     try {
       const el = page.locator(sel).first()
@@ -320,6 +347,7 @@ export async function main() {
 
     // 2. 브라우저 시작
     const context = await launchBrowser()
+    let sessionContext: BrowserContext | null = null
 
     try {
       for (const tab of tabs) {
@@ -342,6 +370,20 @@ export async function main() {
               console.log(`  → SKIP (제외: ${siteExclude})`)
               totalSkippedFilter++
               continue
+            }
+
+            // SESSION_REQUIRED 사이트: storage-state.json 없으면 PENDING 유지 (GHA skip)
+            if (siteConfig?.requiresSession) {
+              const storagePath = resolve(dirname(fileURLToPath(import.meta.url)), '../cafe/storage-state.json')
+              if (!existsSync(storagePath)) {
+                console.log(`  → SKIP (SESSION_REQUIRED — storage-state.json 없음, PENDING 유지)`)
+                totalSkippedFilter++
+                continue
+              }
+              if (!sessionContext) {
+                sessionContext = await launchBrowserWithSession(storagePath)
+                console.log(`  [session] 네이버 세션 컨텍스트 초기화: ${storagePath}`)
+              }
             }
 
             // PROCESSING 상태로 업데이트
@@ -477,7 +519,8 @@ export async function main() {
               console.log(`  → raw_content 사용 (스크래핑 스킵)`)
             } else {
               // 자동 스크래핑
-              const result = await scrapePage(context, row.sourceUrl, siteConfig, tab.boardType)
+              const activeContext = siteConfig?.requiresSession && sessionContext ? sessionContext : context
+              const result = await scrapePage(activeContext, row.sourceUrl, siteConfig, tab.boardType)
               title = row.title || result.title // 창업자 제목 우선
               content = result.content
               thumbnailUrl = result.thumbnailUrl
@@ -621,6 +664,7 @@ export async function main() {
       }
     } finally {
       await context.browser()?.close()
+      if (sessionContext) await sessionContext.browser()?.close()
     }
 
     // 3. BotLog 기록

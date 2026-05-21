@@ -20,6 +20,8 @@ export interface SiteConfig {
     author?: string // 댓글 작성자 (원글 작성자 제외 필터용)
   }
   postAuthorSelectors?: string[] // 원글 작성자 추출 (자기 댓글 제외용)
+  requiresSession?: boolean      // true → storage-state.json 필요. 없으면 GHA skip (PENDING 유지)
+  contentFrame?: string          // iframe name (예: 'cafe_main'). 없으면 page 직접 사용
   headless: boolean
   minDelay: number       // ms — 페이지 로드 후 대기
   cloudflareProtected: boolean
@@ -117,6 +119,29 @@ export const SITE_CONFIGS: SiteConfig[] = [
     postAuthorSelectors: ['div.readLeft strong.user_function.user_profile a'],
     headless: true,
     minDelay: 1500,
+    cloudflareProtected: false,
+  },
+  {
+    id: 'navercafe',
+    name: '네이버 카페',
+    urlPatterns: [/cafe\.naver\.com\/(f-e|ca-fe)\/cafes\//],
+    selectors: {
+      title: ['.title_text'],
+      content: ['.article_viewer'],
+      images: 'img',
+      // iframe 전체 제거: 네이버 동영상 플레이어(naverVideoPlayer, kakaotv 등) 지원 제외
+      removeElements: ['script', 'style', '.ad_area', 'iframe', '.ArticleTool'],
+    },
+    commentSelectors: {
+      item: 'ul.comment_list li',
+      text: '.text_comment',
+      author: '.comment_nickname',
+    },
+    postAuthorSelectors: ['.WriterInfo .nickname'],
+    requiresSession: true,
+    contentFrame: 'cafe_main',
+    headless: true,
+    minDelay: 3000,
     cloudflareProtected: false,
   },
 ]

@@ -104,6 +104,9 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // LOCAL ONLY — 펨코 Cloudflare 차단으로 로컬 Mac launchd에서만 실행 (GitHub Actions 불가)
   // launchd: com.unao.fmkorea-scraper.plist (11:30, 21:30 KST)
   'community:fmkorea-scrape': () => import('../community/run-local-fmkorea.js').then(() => {}),
+  // LOCAL ONLY — 네이버 카페는 로그인 세션(storage-state.json) 필요, GHA 미지원
+  // launchd: com.unao.naver-cafe-sheet-scraper.plist (13:00, 23:00 KST)
+  'community:navercafe-scrape': () => import('../community/run-local-naver-cafe.js').then(() => {}),
   'cmo:channel-seeder': () => import('../cmo/channel-seeder.js').then(() => {}),
   // cmo:knowledge-responder — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
   // cmo:jisik-answerer — 삭제됨 2026-05-15 (지식인 운영 중단, 코드 삭제)
