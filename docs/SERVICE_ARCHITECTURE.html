@@ -395,7 +395,7 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>우나어 아키텍처</h2>
-    <div class="version">v12 &middot; 2026-05-12</div>
+    <div class="version">v13 &middot; 2026-05-21</div>
   </div>
   <nav>
     <a href="#s1" class="depth-1">1. 서비스 개요</a>
@@ -415,7 +415,7 @@
     <a href="#s7" class="depth-1">7. Webhook &amp; 연동</a>
     <a href="#s7-slack" class="depth-2" style="color:var(--primary)">Slack 채널 아키텍처</a>
     <a href="#s7-commands" class="depth-2">Slack 커맨드</a>
-    <a href="#s7-migration" class="depth-2">마이그레이션 계획</a>
+    <a href="#s-twa" class="depth-1" style="color:var(--primary)">TWA (Android)</a>
     <a href="#s8" class="depth-1">8. MCP 서버</a>
     <a href="#s9" class="depth-1">9. 시니어 UI 원칙</a>
     <a href="#s10" class="depth-1">10. 페이지 구조</a>
@@ -447,7 +447,7 @@
 <main class="main">
 <h1>우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서</h1>
 <blockquote>
-<p><strong>최종 업데이트</strong>: 2026-05-12 (v12 — 코드 전수검사 최신화: 78명 페르소나 · 69핸들러 · 17GHA · $198/월 · 화제성 파이프라인 · Phase 4 에이전트)
+<p><strong>최종 업데이트</strong>: 2026-05-21 (v13 — 코드 직독 전면 최신화: 71핸들러 · 35모델 · 21GHA · 49페이지 · 39API · TWA 추가)
 <strong>문서 관리자</strong>: Claude Code (자동화) + 창업자 (승인)
 <strong>변경 시</strong>: 이 문서 하단 <a href="#%EB%AC%B8%EC%84%9C-%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8-%EA%B0%80%EC%9D%B4%EB%93%9C">문서 업데이트 가이드</a> 참고</p>
 </blockquote>
@@ -577,7 +577,7 @@
 </tr>
 <tr>
 <td><strong>AI</strong></td>
-<td><span class="tip" data-tip="Anthropic의 Claude 모델 3단계 운용 전략. Opus 4.7: 최고 추론력, 주간 전략 분석(1~2회/일). Sonnet 4.6: 균형형, 콘텐츠 생성·고객 대면(다수). Haiku 4.5: 초고속·저비용, 모니터링·분류·댓글(69핸들러 대부분).">Anthropic Claude (Opus 4.7 / Sonnet 4.6 / Haiku 4.5)</span></td>
+<td><span class="tip" data-tip="Anthropic의 Claude 모델 3단계 운용 전략. Opus 4.7: 최고 추론력, 주간 전략 분석(1~2회/일). Sonnet 4.6: 균형형, 콘텐츠 생성·고객 대면(다수). Haiku 4.5: 초고속·저비용, 모니터링·분류·댓글(71핸들러 대부분).">Anthropic Claude (Opus 4.7 / Sonnet 4.6 / Haiku 4.5)</span></td>
 <td>3-tier</td>
 </tr>
 <tr>
@@ -587,7 +587,7 @@
 </tr>
 <tr>
 <td><strong>CI/CD</strong></td>
-<td><span class="tip" data-tip="GitHub 내장 CI/CD 자동화. YAML 워크플로우 17개로 에이전트 크론 스케줄·배포 QA 실행. Push·PR 트리거로 lint·타입체크·빌드·E2E 자동 검증. 무료 2,000분/월 (현재 사용량 내).">GitHub Actions</span></td>
+<td><span class="tip" data-tip="GitHub 내장 CI/CD 자동화. YAML 워크플로우 21개로 에이전트 크론 스케줄·배포 QA 실행. Push·PR 트리거로 lint·타입체크·빌드·E2E 자동 검증. 무료 2,000분/월 (현재 사용량 내).">GitHub Actions</span></td>
 <td>-</td>
 </tr>
 <tr>
@@ -829,6 +829,7 @@
 <hr>
 <h2>4. 데이터베이스 스키마</h2>
 <h3>4.1 전체 모델 맵</h3>
+<p><small>총 <strong>35개 모델</strong> (v12 대비 +3: NaverBlogQueue, UserPostWaveQueue, DailyBrief 신규)</small></p>
 <pre><code>┌── 사용자 ──────────────────────┐
 │ User          사용자 (등급 시스템) │
 │ AdminAccount  어드민 계정         │
@@ -837,7 +838,7 @@
 └────────────────────────────────┘
 
 ┌── 콘텐츠 ──────────────────────┐
-│ Post          게시글 (5개 보드)   │
+│ Post          게시글 (6개 보드)   │
 │ JobDetail     일자리 상세 (1:1)  │
 │ Comment       댓글 (대댓글 지원)  │
 │ DraftPost     임시저장            │
@@ -845,9 +846,11 @@
 
 ┌── 상호작용 ────────────────────┐
 │ Like          좋아요             │
+│ GuestLike     비회원 좋아요       │
 │ Scrap         스크랩             │
 │ Report        신고               │
 │ Notification  알림               │
+│ PostView      게시글 조회수       │
 └────────────────────────────────┘
 
 ┌── 운영 ────────────────────────┐
@@ -856,18 +859,23 @@
 │ Banner        프로모션 배너        │
 │ AdBanner      광고 배너           │
 │ CpsLink       쿠팡 CPS 링크      │
+│ AdminQueue    에이전트 승인 큐     │
+│ AdminAuditLog 어드민 감사 로그    │
+│ Popup         팝업 관리           │
+│ Setting       전역 설정           │
+│ PushSubscription 웹 푸시 구독     │
 └────────────────────────────────┘
 
 ┌── 분석·로그 ───────────────────┐
 │ BotLog        봇 실행 로그       │
 │ EventLog      분석 이벤트         │
-│ AdminAuditLog 어드민 감사 로그    │
 └────────────────────────────────┘
 
 ┌── 카페 인텔리전스 ──────────────┐
 │ CafePost      카페 크롤링 원본    │
 │               (네이버 3곳+82cook) │
 │ CafeTrend     일별 트렌드 분석    │
+│ DailyBrief    에이전트 인텔리전스 브리프 ★신규 │
 └────────────────────────────────┘
 
 ┌── SNS 마케팅 실험 ─────────────┐
@@ -875,6 +883,12 @@
 │ SocialExperiment A/B 실험 관리   │
 │ ChannelDraft     채널 홍보 초안   │
 └────────────────────────────────┘
+
+┌── 파동·큐 시스템 ───────────────┐
+│ CommentWaveQueue  댓글 파동 큐           │
+│ UserPostWaveQueue 회원글 댓글 파동 ★신규  │
+│ NaverBlogQueue    네이버 블로그 발행 큐 ★신규 │
+└──────────────────────────────────────┘
 </code></pre>
 <h3>4.2 핵심 Enum 값</h3>
 <table>
@@ -886,11 +900,11 @@
 </thead>
 <tbody><tr>
 <td><strong>BoardType</strong></td>
-<td>JOB, STORY, HUMOR, MAGAZINE, WEEKLY</td>
+<td>JOB, STORY, HUMOR, MAGAZINE, WEEKLY, <strong>LIFE2</strong> ★신규</td>
 </tr>
 <tr>
 <td><strong>Grade</strong></td>
-<td>SPROUT(새싹) → REGULAR(단골) → VETERAN(베테랑) → WARM_NEIGHBOR(따뜻한이웃)</td>
+<td>SPROUT(새싹) → REGULAR(단골) → WARM_NEIGHBOR(따뜻한이웃) → <strong>HONORARY</strong>(명예회원) ★신규 <small>(VETERAN 삭제)</small></td>
 </tr>
 <tr>
 <td><strong>PostStatus</strong></td>
@@ -898,7 +912,7 @@
 </tr>
 <tr>
 <td><strong>PostSource</strong></td>
-<td>USER, BOT, ADMIN</td>
+<td>USER, BOT, ADMIN, <strong>SHEET</strong> ★신규</td>
 </tr>
 <tr>
 <td><strong>PromotionLevel</strong></td>
@@ -911,6 +925,14 @@
 <tr>
 <td><strong>BotType</strong></td>
 <td>JOB, HUMOR, STORY, THREAD, CEO, CTO, CMO, CPO, CDO, CFO, COO, SEED, CAFE_CRAWLER</td>
+</tr>
+<tr>
+<td><strong>BotStatus</strong></td>
+<td>SUCCESS, PARTIAL, FAILED, <strong>PENDING</strong>, <strong>SKIP</strong> ★신규</td>
+</tr>
+<tr>
+<td><strong>NaverBlogQueueStatus</strong></td>
+<td>PENDING, READY_FOR_MANUAL, POSTED, FAILED, EXPIRED ★신규 Enum</td>
 </tr>
 <tr>
 <td><strong>SocialPlatform</strong></td>
@@ -1156,7 +1178,7 @@
 </thead>
 <tbody><tr>
 <td><code>core/agent.ts</code></td>
-<td><strong>BaseAgent</strong> 추상 클래스 — 모든 에이전트가 상속. AI 호출, 로깅, 에러 처리</td>
+<td><strong>BaseAgent</strong> 추상 클래스 — 모든 에이전트가 상속. AI 호출, 로깅, 에러 처리<br><small>@anthropic-ai/sdk <strong>^0.89.0</strong> (agents/package.json — v12 0.39.0에서 업그레이드)</small></td>
 </tr>
 <tr>
 <td><code>core/constitution.yaml</code></td>
@@ -1352,7 +1374,8 @@
 </tbody></table>
 <p><strong>졸업 기준</strong>: 8주 후 70% exploit (검증된 우승 공식) + 30% explore (새 실험). 우승 공식이 2주 연속 하락 시 재탐색.</p>
 <p><strong>Skills 레지스트리</strong>: 반복 우승 패턴 → <code>agents/skills/registry.ts</code>에 코드화 → 승률 기반 가중 랜덤 선택으로 exploit 모드 자동 적용.</p>
-<h3>5.5.1 비주얼 카드뉴스 파이프라인 (CMO)</h3>
+<h3>5.5.1 비주얼 카드뉴스 파이프라인 (CMO) <span style="color:var(--danger,#e53e3e);font-size:0.85em;">⚠️ 2026-05-15 운영 중단</span></h3>
+<blockquote><p>지식인 답변 시스템 · 카드뉴스 생성 · SNS 비주얼 게시 전체 중단. runner.ts에서 해당 핸들러 제거됨. 하단 파이프라인은 <strong>아카이브</strong> 용도.</p></blockquote>
 <pre><code>CafeTrend (매일 수집)
   └→ card-news/generator.ts
       ├→ 요일별 유형 로테이션
@@ -1372,7 +1395,8 @@
                    ├→ Band 텍스트+이미지
                    └→ SocialPost DB 저장 + Slack 알림
 </code></pre>
-<h3>5.5.2 멀티채널 홍보 시스템 (CMO)</h3>
+<h3>5.5.2 SNS 홍보 시스템 (CMO) — Threads 단독 운영 <span style="color:var(--success,#38a169);font-size:0.85em;">✅ ACTIVE</span></h3>
+<blockquote><p>2026-05-15 기준: <strong>Threads 단독 운영</strong> (07:17 아침 · 12:17 점심 · 20:17 메트릭). X·IG·FB·Band 자동화 중단. channel-seeder·knowledge-responder·seo-optimizer 핸들러 비활성.</p></blockquote>
 <pre><code>┌─────────────────────────────────────────────────────┐
 │  channel-seeder.ts (매일 11:30)                       │
 │  → 오늘의 인기 콘텐츠 (게시글, 매거진, 일자리) 수집       │
@@ -1801,8 +1825,8 @@
 </tr>
 </tbody></table>
 <hr>
-<h2>6. GitHub Actions 워크플로우 (17개)</h2>
-<p><small>⚠️ 추가로 창업자 MacBook에서 5개 로컬 launchd 프로세스 실행 중 (카페 크롤러, 매거진 커버 생성 등).</small></p>
+<h2>6. GitHub Actions 워크플로우 (21개)</h2>
+<p><small>⚠️ 추가로 창업자 MacBook에서 <strong>6개</strong> 로컬 launchd 프로세스 실행 중 (카페 크롤러, 매거진, 네이버 블로그, 세션 갱신 등).</small></p>
 <h3>6.1 CI/CD</h3>
 <table>
 <thead>
@@ -1829,68 +1853,168 @@
 <tr>
 <th>파일</th>
 <th>스케줄 (KST)</th>
-<th>에이전트</th>
+<th>에이전트 / 상태</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td><code>agents-daily.yml</code></td>
-<td>09, 10, 11, 14, 22, 23시</td>
-<td>CEO, CMO, CPO, COO, CDO, CFO</td>
+<td>09:30, 12:19, 16:00시</td>
+<td>CEO, COO (content-scheduler), CDO, CFO</td>
 </tr>
 <tr>
 <td><code>agents-hourly.yml</code></td>
 <td>2시간마다</td>
-<td>CTO (헬스체크, 에러감시), CDO (이상감지)</td>
+<td>CTO (헬스체크, 에러감시, 보안감사), CDO (이상감지)</td>
 </tr>
 <tr>
 <td><code>agents-jobs.yml</code></td>
-<td>12, 16, 20시</td>
+<td>12:09, 15:09, 20:09시</td>
 <td>COO (일자리 수집)</td>
 </tr>
 <tr>
 <td><code>agents-moderation.yml</code></td>
-<td>09, 15, 21시</td>
+<td>09:13, 15:13, 21:13시</td>
 <td>COO (모더레이션)</td>
 </tr>
 <tr>
 <td><code>agents-seed.yml</code></td>
-<td>09, 10, 14, 16, 19, 21시</td>
-<td>SEED (시드 콘텐츠)</td>
+<td>×13/일 (UTC 0,1,2,4,6,7,8,10,11,12,13,15,16)</td>
+<td>SEED (시드 콘텐츠) — <span style="color:#e53e3e">ENABLE_SEED_POSTS=false (2026-05-16 중단)</span></td>
+</tr>
+<tr>
+<td><code>agents-seed-micro.yml</code></td>
+<td>08:04, 12:04, 18:04, 23:04, 00:04, 01:04 (×6/일)</td>
+<td>SEED micro (소량 실험 시드)</td>
 </tr>
 <tr>
 <td><code>agents-social.yml</code></td>
-<td>09/11/11:30/12/20시 + 월 08/10/10:15 + 수 10시</td>
-<td>CMO (텍스트포스팅·카드뉴스·채널시딩·지식iN·SEO·메트릭·리뷰·전략·토큰갱신)</td>
+<td>07:17, 12:17 (Threads) + 20:17 (메트릭) + 수 10:17 (토큰갱신)</td>
+<td>CMO — <strong>Threads 단독</strong> (카드뉴스·채널시딩·지식iN 중단)</td>
 </tr>
 <tr>
 <td><code>agents-cafe.yml</code></td>
-<td>09, 13, 19시</td>
-<td>CAFE (네이버 카페 3곳 + 82cook 크롤링)</td>
+<td>09:03, 09:30시</td>
+<td>CAFE (daily-brief-fallback, brief-monitor)</td>
+</tr>
+<tr>
+<td><code>agents-cafe-hourly-curation.yml</code></td>
+<td>08:20, 09:05, 09:50, 10:35 ★신규</td>
+<td>CAFE 시간별 큐레이션 (5건/시간)</td>
+</tr>
+<tr>
+<td><code>agents-cafe-popular-curation.yml</code></td>
+<td>10:50, 16:15, 21:45 ★신규</td>
+<td>CAFE 인기글 큐레이션</td>
+</tr>
+<tr>
+<td><code>agents-cafe-wave.yml</code></td>
+<td>*/5분 ★신규</td>
+<td>CAFE 댓글 파동 wave1~4 + 회원글 파동</td>
+</tr>
+<tr>
+<td><code>agents-scraper.yml</code></td>
+<td>07:30, 09:00, 12:00, 15:00, 21:00 (×5/일) ★신규</td>
+<td>시트 스크래퍼 (펨코 제외)</td>
+</tr>
+<tr>
+<td><code>agents-weekly.yml</code></td>
+<td>월 09:30</td>
+<td>CEO 주간리포트 + CMO 리뷰/전략</td>
+</tr>
+<tr>
+<td><code>agents-killer-post.yml</code></td>
+<td>—</td>
+<td><span style="color:#e53e3e">DISABLED</span> (2026-05-14 큐레이션 아키텍처 전환)</td>
+</tr>
+<tr>
+<td><code>agents-design.yml</code></td>
+<td>—</td>
+<td><span style="color:#e53e3e">LOCAL ONLY</span> (cron 없음, Playwright+Gemini 로컬 전용)</td>
+</tr>
+</tbody></table>
+<h4>launchd 로컬 프로세스 (6개, 창업자 MacBook)</h4>
+<table>
+<thead>
+<tr>
+<th>플리스트</th>
+<th>실행 시간 (KST)</th>
+<th>실행 파일</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>session-refresh</td>
+<td>02:00</td>
+<td>agents/cafe/session-manager.ts</td>
+</tr>
+<tr>
+<td>magazine-morning</td>
+<td>12:00</td>
+<td>agents/cafe/local-magazine-runner.ts</td>
+</tr>
+<tr>
+<td>magazine-late</td>
+<td>14:00</td>
+<td>agents/cafe/local-magazine-runner.ts</td>
+</tr>
+<tr>
+<td>jisik-answerer</td>
+<td>14:30</td>
+<td>scripts/run-jisik.sh</td>
+</tr>
+<tr>
+<td>naver-blog-morning</td>
+<td>15:00</td>
+<td>agents/naver-blog/local-blog-runner.ts</td>
+</tr>
+<tr>
+<td>naver-blog-evening <small>⚠️ 이름 역전</small></td>
+<td>09:30</td>
+<td>agents/naver-blog/local-blog-runner.ts</td>
 </tr>
 </tbody></table>
 <h3>6.3 전체 타임라인 (KST)</h3>
-<pre><code>08:00 (월) CMO SEO옵티마이저
-08:30  ░░ CAFE 크롤링 (로컬)
-09:00  ██ CEO 모닝사이클 | SEED 활동 | COO 모더레이션 | CMO 텍스트포스팅(Threads/X)
-10:00  ██ CMO 트렌드분석 | SEED 활동
- (월)  ██ CMO 리뷰(10:00) → 전략(10:15) [주간 실험 분석 + 설계]
- (수)  ██ CMO Threads 토큰 갱신 (10:00)
-10:30  ██ CEO 주간리포트 (월요일, SNS 메트릭 포함)
-11:00  ██ CPO UX분석 | CMO 카드뉴스→멀티플랫폼(IG/FB/Threads/Band)
-11:30  ██ CMO 채널시딩(카카오/당근/커뮤니티)
-12:00  ██ COO 일자리수집 | CMO 지식iN(화/목/토)
-12:30  ░░ CAFE 크롤링 (로컬)
-13:00  ░░ CAFE 크롤링 (Actions)
-14:00  ██ COO 콘텐츠편성 | SEED 활동
-15:00  ██ COO 모더레이션
-16:00  ██ COO 일자리수집 | SEED 활동
-18:30  ░░ CAFE 크롤링 (로컬)
-19:00  ██ SEED 활동 | CAFE 크롤링 (Actions)
-20:00  ██ COO 일자리수집 | CMO SNS메트릭수집(전 플랫폼)
-21:00  ██ COO 모더레이션 | SEED 활동
-22:00  ██ CDO KPI수집
-23:00  ██ CFO 비용추적
-(2h)   ▒▒ CTO 헬스체크 + 에러감시 + CDO 이상감지
+<pre><code>02:00  ░░ launchd session-refresh (네이버 쿠키 갱신)
+07:17  ██ CMO social-poster (Threads 아침)
+07:30  ██ sheet-scraper (시트 스크래퍼 1회차)
+08:04  ██ SEED micro (1회차)
+08:20  ██ CAFE hourly curation (1회차)
+09:00  ██ sheet-scraper (2회차)
+09:03  ██ CAFE daily-brief-fallback
+09:05  ██ CAFE hourly curation (2회차)
+09:06  ██ COO quarantine-check (월요일만)
+09:09  ██ SEED scheduler (×13/일 시작 — ENABLE_SEED_POSTS=false 중단중)
+09:13  ██ COO 모더레이션 (1회차)
+09:30  ██ CAFE brief-monitor | agents-weekly CEO주간리포트 (월요일)
+09:30  ░░ launchd naver-blog-evening (실제 09:30 실행 — 이름 역전)
+09:50  ██ CAFE hourly curation (3회차)
+10:35  ██ CAFE hourly curation (4회차)
+10:50  ██ CAFE popular curation (1회차)
+12:00  ██ sheet-scraper (3회차) | ░░ launchd magazine-morning
+12:04  ██ SEED micro (2회차)
+12:09  ██ COO 일자리수집 (1회차)
+12:17  ██ CMO social-poster (Threads 점심)
+12:19  ██ CDO hourly-monitoring
+14:00  ░░ launchd magazine-late (매거진 커버 생성)
+14:30  ░░ launchd jisik-answerer
+15:00  ██ sheet-scraper (4회차) | ░░ launchd naver-blog-morning (실제 15:00)
+15:09  ██ COO 일자리수집 (2회차)
+15:13  ██ COO 모더레이션 (2회차)
+16:00  ██ COO content-scheduler
+16:15  ██ CAFE popular curation (2회차)
+18:00  ██ CAFE evening-brief-safety
+18:04  ██ SEED micro (3회차)
+20:09  ██ COO 일자리수집 (3회차)
+20:17  ██ CMO social-metrics (Threads 메트릭)
+21:00  ██ sheet-scraper (5회차)
+21:13  ██ COO 모더레이션 (3회차)
+21:45  ██ CAFE popular curation (3회차)
+23:04  ██ SEED micro (4회차)
+00:04  ██ SEED micro (5회차)
+01:04  ██ SEED micro (6회차)
+*/5분  ██ cafe-wave (댓글파동 wave1~4 + 회원글 파동)
+(2h)   ▒▒ CTO 헬스체크 + 에러감시 + 보안감사 + CDO 이상감지
 </code></pre>
 <hr>
 <h2>7. Webhook &amp; 외부 연동</h2>
@@ -2326,69 +2450,10 @@
      ...
    })
 </code></pre>
-<h3>7.5 Telegram → Slack 마이그레이션 계획</h3>
-<table>
-<thead>
-<tr>
-<th>항목</th>
-<th>변경 전 (Telegram)</th>
-<th>변경 후 (Slack)</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>환경 변수</td>
-<td><code>TELEGRAM_BOT_TOKEN</code>, <code>TELEGRAM_CHAT_ID</code></td>
-<td><code>SLACK_BOT_TOKEN</code>, <code>SLACK_SIGNING_SECRET</code>, <code>SLACK_CHANNEL_*</code></td>
-</tr>
-<tr>
-<td>알림 발송</td>
-<td><code>core/notifier.ts</code> → Telegram Bot API</td>
-<td><code>core/notifier.ts</code> → Slack Web API</td>
-</tr>
-<tr>
-<td>커맨드 수신</td>
-<td><code>core/telegram-commander.ts</code> → <code>/api/telegram</code></td>
-<td><code>core/slack-commander.ts</code> → <code>/api/slack</code></td>
-</tr>
-<tr>
-<td>일일 브리핑</td>
-<td>1개 채팅방에 모든 메시지</td>
-<td>#일일-브리핑 전용 채널</td>
-</tr>
-<tr>
-<td>긴급 알림</td>
-<td>일반 알림과 동일 채팅방</td>
-<td>#알림-긴급 (별도 알림 설정)</td>
-</tr>
-<tr>
-<td>회의록</td>
-<td>없음 (메시지에 혼재)</td>
-<td>#회의록 (스레드 기반 아카이브)</td>
-</tr>
-<tr>
-<td>Gate 1 승인</td>
-<td>채팅방 /approve</td>
-<td>#ceo-창업자 /approve</td>
-</tr>
-<tr>
-<td>API 엔드포인트</td>
-<td><code>/api/telegram</code> (POST)</td>
-<td><code>/api/slack</code> (POST)</td>
-</tr>
-</tbody></table>
-<pre><code>마이그레이션 단계:
-1. Slack Workspace 생성 (우나어-ops) ← 창업자
-2. Slack App 생성 + Bot 설정 ← 창업자
-3. 13개 채널 생성 ← 창업자 (또는 Claude가 API로)
-4. 환경 변수 교체 (GitHub Secrets + Vercel) ← 창업자
-5. notifier.ts 리팩토링 (Telegram → Slack API) ← Claude
-6. slack-commander.ts 구현 ← Claude
-7. /api/telegram → /api/slack 교체 ← Claude
-8. 각 에이전트 알림 채널 매핑 ← Claude
-9. 테스트: 각 채널에 테스트 메시지 발송 ← Claude
-10. Telegram 코드 제거 ← Claude
-</code></pre>
+<h3>7.5 Slack 완전 전환 <span style="color:var(--success,#38a169);">✅ 완료 (v11)</span></h3>
+<p>Telegram → Slack 마이그레이션 <strong>완전 완료</strong>. notifier.ts → Slack Web API / slack-commander.ts → /api/slack / 14개 채널 운영 중. Telegram 관련 코드 전면 제거됨.</p>
 <hr>
+<h2>8. MCP 서버</h2><hr>
 <h2>8. MCP 서버</h2>
 <table>
 <thead>
@@ -2459,7 +2524,8 @@
 </tbody></table>
 <hr>
 <h2>10. 페이지 구조</h2>
-<h3>10.1 사용자 페이지 (30개)</h3>
+<h3>10.1 페이지 구조 (총 49개)</h3>
+<p><small>사용자 페이지 25개 + 어드민 17개 + 특수 7개 (/auth/error, /dev/*, /landing, /login, /offline, /onboarding)</small></p>
 <table>
 <thead>
 <tr>
@@ -2584,6 +2650,18 @@
 <td>커뮤니티 인덱스 → <code>/community/stories</code> 리다이렉트</td>
 </tr>
 <tr>
+<td><code>/dev/components</code></td>
+<td>컴포넌트 미리보기 (개발용)</td>
+</tr>
+<tr>
+<td><code>/dev/qa-report</code></td>
+<td>QA 리포트 (개발용)</td>
+</tr>
+<tr>
+<td><code>/ops/internal-flag</code></td>
+<td>내부 기능 플래그 관리 ★신규</td>
+</tr>
+<tr>
 <td><code>/auth/error</code></td>
 <td>로그인·인증 에러 처리 (NextAuth)</td>
 </tr>
@@ -2665,7 +2743,7 @@
 <td>설정 (게시판·금칙어·광고)</td>
 </tr>
 </tbody></table>
-<h3>10.3 API 라우트 (17+개)</h3>
+<h3>10.3 API 라우트 (39개)</h3>
 <table>
 <thead>
 <tr>
@@ -2765,11 +2843,147 @@
 <td>Threads OAuth 콜백 + 토큰 교환</td>
 </tr>
 <tr>
+<td><code>/api/health/auth</code></td>
+<td>GET</td>
+<td>인증 헬스체크 ★신규</td>
+</tr>
+<tr>
+<td><code>/api/posts/[postId]/view</code></td>
+<td>POST</td>
+<td>게시글 조회수 ★신규</td>
+</tr>
+<tr>
+<td><code>/api/internal/comment-wave</code></td>
+<td>POST</td>
+<td>댓글 파동 내부 트리거 ★신규</td>
+</tr>
+<tr>
+<td><code>/api/internal/user-post-wave</code></td>
+<td>POST</td>
+<td>회원글 파동 내부 트리거 ★신규</td>
+</tr>
+<tr>
+<td><code>/api/push/subscribe</code></td>
+<td>POST</td>
+<td>웹 푸시 구독 등록 ★신규</td>
+</tr>
+<tr>
+<td><code>/api/slack/interactions</code></td>
+<td>POST</td>
+<td>Slack 인터랙티브 액션 ★신규</td>
+</tr>
+<tr>
+<td><code>/api/admin/naver-queue</code></td>
+<td>GET, POST</td>
+<td>네이버 블로그 큐 관리 ★신규</td>
+</tr>
+<tr>
+<td><code>/api/admin/naver-queue/[queueId]</code></td>
+<td>GET, PATCH</td>
+<td>네이버 블로그 큐 상세 ★신규</td>
+</tr>
+<tr>
+<td><code>/api/admin/uploads/presign</code></td>
+<td>POST</td>
+<td>어드민 이미지 업로드 presign ★신규</td>
+</tr>
+<tr>
+<td><code>/api/admin/revalidate-deleted</code></td>
+<td>POST</td>
+<td>삭제된 페이지 캐시 무효화 ★신규</td>
+</tr>
+<tr>
+<td><code>/api/admin/check-post</code></td>
+<td>POST</td>
+<td>게시글 검수 ★신규</td>
+</tr>
+<tr>
+<td><code>/api/admin/agent-status</code></td>
+<td>GET</td>
+<td>에이전트 상태 조회 ★신규</td>
+</tr>
+<tr>
+<td><code>/api/uploads/presign</code></td>
+<td>POST</td>
+<td>이미지 presign URL</td>
+</tr>
+<tr>
+<td><code>/api/uploads/video</code></td>
+<td>POST</td>
+<td>영상 업로드</td>
+</tr>
+<tr>
+<td><code>/api/uploads/video/presign</code></td>
+<td>POST</td>
+<td>영상 presign URL</td>
+</tr>
+<tr>
+<td><code>/api/popups</code></td>
+<td>GET</td>
+<td>팝업 목록</td>
+</tr>
+<tr>
+<td><code>/api/user/pwa-status</code></td>
+<td>GET, POST</td>
+<td>PWA 설치 상태 ★신규</td>
+</tr>
+<tr>
 <td><code>/api/bot/*</code></td>
 <td>*</td>
 <td>봇 API (check, jobs, posts, logs)</td>
 </tr>
 </tbody></table>
+<hr>
+<h2 id="s-twa">10.5 TWA — Android Play Store</h2>
+<p><small>★ v13 신규 섹션 (2026-05-18 구축)</small></p>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>방식</strong></td>
+<td>Trusted Web Activity (TWA) — PWA를 Android 앱으로 래핑</td>
+</tr>
+<tr>
+<td><strong>패키지명</strong></td>
+<td><code>com.agenotmatter.app</code></td>
+</tr>
+<tr>
+<td><strong>도메인 인증</strong></td>
+<td><code>public/.well-known/assetlinks.json</code> 배포 완료</td>
+</tr>
+<tr>
+<td><strong>SHA256 핑거프린트</strong></td>
+<td><code>D5:F1:9B:5B:0B:44:1C:CF:33:B9:2B:CE:1F:74:1B:62:E0:20:4F:15:61:9C:F2:C0:31:1F:F3:52:0F:40:FD:20</code></td>
+</tr>
+<tr>
+<td><strong>PWA 상태</strong></td>
+<td><code>public/manifest.json</code> 완성 (display: standalone, 아이콘 10종)</td>
+</tr>
+<tr>
+<td><strong>정책 문서</strong></td>
+<td><code>docs/twa-policy.md</code> + <code>docs/twa-policy.html</code></td>
+</tr>
+<tr>
+<td><strong>API</strong></td>
+<td><code>/api/user/pwa-status</code> — PWA 설치 상태 추적</td>
+</tr>
+<tr>
+<td><strong>현재 상태</strong></td>
+<td>도메인 인증 완료 · Play Store 프로덕션 트랙 심사 진행 중</td>
+</tr>
+</tbody>
+</table>
+<pre><code>PWA → TWA 흐름:
+  public/manifest.json (display: standalone)
+  → assetlinks.json (도메인 소유권 인증)
+  → Android Studio (TWA 래핑 + 서명)
+  → Play Store 내부 테스트 → 프로덕션 트랙
+</code></pre>
 <hr>
 <h2>11. 컴포넌트 구조</h2>
 <h3>11.1 카테고리별</h3>
@@ -3022,10 +3236,16 @@
 </tbody></table>
 <hr>
 <h2>14. 현재 상태 &amp; 남은 작업</h2>
-<h3>완료됨 (2026-05-11 기준)</h3>
+<h3>완료됨 (2026-05-21 기준 v13)</h3>
 <ul>
-<li>전체 코드 구현 (46페이지, 19+ API, 77+ 컴포넌트)</li>
-<li>에이전트 시스템 ACTIVE (헌법 v5.0, 69핸들러 · 78명 페르소나)</li>
+<li>전체 코드 구현 (<strong>49페이지, 39개 API</strong>, 77+ 컴포넌트)</li>
+<li>에이전트 시스템 ACTIVE (헌법 v5.0, <strong>71핸들러</strong> · 78명 페르소나)</li>
+<li><strong>TWA (Android) 구축 완료</strong> — assetlinks.json 배포, Play Store 심사 중</li>
+<li><strong>DailyBrief 인텔리전스 시스템</strong> — 욕망 인텔리전스 + 페르소나 쿼터 자동화</li>
+<li><strong>댓글 파동 시스템 v2</strong> — 회원글 UserPostWaveQueue (1분/10분/30분/60분)</li>
+<li><strong>네이버 블로그 발행 큐</strong> — NaverBlogQueue + 어드민 관리 UI</li>
+<li><strong>카페 큐레이션 아키텍처</strong> — 시간별(×4) + 인기글(×3) + 5분 파동 자동화</li>
+<li>시드봇 OFF (ENABLE_SEED_POSTS=false, 2026-05-16) — 카페 큐레이션으로 전환</li>
 <li>일자리 자동 수집 파이프라인</li>
 <li>시드 페르소나 78명 (기존 봇 + 스크래퍼봇 BI~BW + 엔터봇 EN1~EN5)</li>
 <li>카페 크롤링 파이프라인</li>
