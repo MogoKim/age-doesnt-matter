@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.17</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.18</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -290,12 +290,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.17</div>
+  <div class="cover-badge">Handover Document v10.18</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.17 (2026-05-21)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.18 (2026-05-21)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -530,7 +530,7 @@
       </div>
       <div class="pipe-item">
         <div class="pipe-item-dot gha"></div>
-        <div><strong>popular-curator.ts</strong> — 3회/일<br><span style="font-size:12px;">10:50 · 16:15 · 21:45 (popular-sync 완료 후 안전 슬롯)</span></div>
+        <div><strong>popular-curator.ts</strong> — 3회/일<br><span style="font-size:12px;">10:50 · 16:15 · 21:45 (popular-sync 완료 후 안전 슬롯)<br>원문 그대로 발행 — AI 없음 (2026-05-21~)</span></div>
       </div>
       <div class="pipe-item">
         <div class="pipe-item-dot" style="background:var(--sub);margin-top:5px;"></div>
@@ -1891,7 +1891,7 @@ for (const waveNum of order) {
     <p>발행 시 CommentWaveQueue에 wave1~4를 자동 등록한다. 대댓글은 wave4 완료 후 processAuthorReply()가 자동 실행한다 (§11 참조).</p>
     <div class="alert info" style="font-size:13px; padding:10px 16px; margin:8px 0; line-height:1.8;">
       <strong>DB에서 큐레이션봇/시드봇 구분 방법 (2026-05-20~)</strong><br>
-      <code>content-curator.ts</code>가 글 발행 시 원본 CafePost ID를 <code>Post.cafePostId</code>에 저장한다.<br>
+      <code>content-curator.ts</code>(2026-05-20~) 및 <code>popular-curator.ts</code>(2026-05-21~) 발행 시 원본 CafePost ID를 <code>Post.cafePostId</code>에 저장한다.<br>
       <table style="margin-top:8px; font-size:12.5px; width:100%;">
         <thead><tr><th style="text-align:left;">봇 유형</th><th style="text-align:left;">DB 조건</th><th style="text-align:left;">어드민 botType 필터</th></tr></thead>
         <tbody>
@@ -1899,7 +1899,7 @@ for (const waveNum of order) {
           <tr><td>시드봇/controversy/magazine 글</td><td><code>source=BOT AND cafePostId IS NULL</code></td><td>botType=seed</td></tr>
         </tbody>
       </table>
-      ⚠️ 2026-05-20 이전 발행된 큐레이션봇 글은 cafePostId=NULL로 남아있어 시드봇 버킷에 포함될 수 있다(best-effort).
+      ⚠️ 2026-05-20 이전 발행된 큐레이션봇 글 + 2026-05-21 이전 발행된 인기글 큐레이터(popular-curator) 글은 cafePostId=NULL로 남아있어 시드봇 버킷에 포함될 수 있다(best-effort).
     </div>
   </div>
 
@@ -1955,12 +1955,12 @@ for (const waveNum of order) {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗ 전부 완료</h2>
+    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘ 전부 완료</h2>
   </div>
 
   <div class="alert ok">
     <strong>Claude Code에게: 이 섹션이 가장 중요하다</strong>
-    아래 26개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
+    아래 30개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
   </div>
 
   <details class="impl-toggle">
@@ -2768,6 +2768,46 @@ await prisma.cafePost.create({
   </div>
   </details>
 
+  <div style="border-top:2px dashed var(--border);margin:24px 0 20px;padding-top:4px;">
+    <p style="font-size:12px;color:var(--muted);margin:0;">아래 ㉘은 2026-05-21 popular-curator 원문 기반 발행 전환 배치에서 추가된 항목이다.</p>
+  </div>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉘. popular-curator 원문 기반 발행 전환 — AI 재창작 제거 + cafePostId 저장</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉘. popular-curator 원문 기반 발행 전환 — AI 재창작 제거 + cafePostId 저장</div>
+    </div>
+    <div class="impl-body">
+      popular-curator.ts가 인기글을 발행할 때 Claude haiku를 호출해 페르소나 스타일로 재창작하는 방식에서, content-curator와 동일하게 원본 카페글 title/content를 그대로 발행하는 방식으로 전환했다.<br><br>
+      <strong>전환 배경</strong><br>
+      2026-05-21 발행된 두 건에서 문제 확인:<br>
+      · <code>cmpf2vqz8…</code> "한복입는날" — 댓글 형식으로 시작되는 독립 게시물<br>
+      · <code>cmpf2vejx…</code> "베란다텃밭" — "사우나에서 들은 얘기", "성수동 그 분 폐암" 등 대화 반응형<br>
+      원인: AI "수미상관" 프롬프트의 "첫 문장: 공감·감탄·질문 중 하나" 지시가 대화체 원본과 결합해 댓글형 게시물을 생성.<br><br>
+      <strong>제거된 것</strong><br>
+      → <code>generatePopularPost()</code> 함수 전체 삭제 (Anthropic haiku 호출 63줄)<br>
+      → <code>import Anthropic from '@anthropic-ai/sdk'</code> 제거<br><br>
+      <strong>추가/변경된 것</strong><br>
+      → <code>stripMarkdown(cafePost.title/content)</code> 직접 사용 (content-curator와 동일)<br>
+      → <code>Post.cafePostId: post.id</code> 저장 추가 (원본 역추적 가능. 이전에는 null)<br>
+      → summary 슬라이스 120→150자<br><br>
+      <strong>변경되지 않은 것</strong><br>
+      → 페르소나 선택 로직 (matchPersona, AUTHOR_DAILY_POST_CAP 한도 체크)<br>
+      → LIFE2 크로스소스 중복 방지 dedup<br>
+      → killerScore ≥ 75 → isFeatured 자동 활성화<br>
+      → CommentWaveQueue 등록 (wave1~4)<br><br>
+      <strong>부수 효과</strong><br>
+      · API 비용: haiku 월 450건(슬롯당 5건 × 3슬롯/일 × 30일) 제거<br>
+      · cafePostId 저장으로 발행 후 원본 카페글 즉시 역추적 가능<br>
+      · AI 환각/대화체 오염 원천 차단<br><br>
+      SHA: d4c74d6 (2026-05-21)
+    </div>
+    <div class="impl-file">📄 agents/cafe/popular-curator.ts — <code>generatePopularPost()</code> 삭제 + <code>stripMarkdown()</code> 직접 사용 + <code>cafePostId: post.id</code> 추가</div>
+  </div>
+  </details>
+
 </div>
 
 <!-- ══════════ §15. FAQ ══════════ -->
@@ -2805,7 +2845,8 @@ await prisma.cafePost.create({
   <div class="faq-item">
     <div class="faq-q">killerScore가 높으면 그 카페 글이 그대로 우리 서비스에 발행되나?</div>
     <div class="faq-a">
-      <strong>아니다.</strong> killerScore ≥ 55인 글의 제목을 DailyBrief 주제 목록 앞에 삽입한다. 이 "주제"를 참고해서 Claude가 새 글을 생성한다. 카페 원문을 복사하지 않는다. 수미상관 방식으로 원문의 핵심 정보를 90% 살리면서 첫/끝 문장만 페르소나 말투로 재가공한다.
+      <strong>content-curator(일반 큐레이션): 아니다.</strong> killerScore ≥ 50인 글의 제목을 DailyBrief 주제 목록 앞에 삽입한다. 이 "주제"를 참고해서 Claude가 새 글을 생성한다. 카페 원문을 복사하지 않는다. 수미상관 방식으로 원문의 핵심 정보를 90% 살리면서 첫/끝 문장만 페르소나 말투로 재가공한다.<br><br>
+      <strong>popular-curator(인기글 큐레이션): 맞다 (2026-05-21~).</strong> isPopular=true로 수집된 네이버 인기글은 <code>stripMarkdown(cafePost.title/content)</code>를 그대로 발행한다. AI 재창작 없음. content-curator와 동일 방식으로 전환됐다. 상세: §14 ㉘.
     </div>
   </div>
 
@@ -2835,19 +2876,20 @@ await prisma.cafePost.create({
         <li><code>magazine-generator</code> — ⚠️ 차단 안 됨. MAGAZINE 글 계속 생성</li>
       </ol>
       따라서 _pm2_audit.ts §6에서 "cafePostId=null BOT 글"이 0건이 아닐 수 있다. 이것은 버그가 아니라 두 시스템이 의도적으로 계속 실행되는 것이다. 모두 중단하려면 agents-seed.yml에서 controversy-chain 줄 제거 + 해당 워크플로우에서 magazine-generate 제거 필요.<br><br>
-      <strong>📌 2026-05-20 이후 변경</strong>: <code>content-curator.ts</code>가 발행 시 <code>Post.cafePostId</code>를 저장하도록 수정됐다. 이제 <code>cafePostId IS NOT NULL</code>인 BOT 글 = 큐레이션봇, <code>cafePostId IS NULL</code>인 BOT 글 = 시드봇/controversy/magazine 으로 구분 가능하다. 어드민 콘텐츠 관리 페이지의 "큐레이션봇" / "시드봇" 필터가 이 기준으로 동작한다.
+      <strong>📌 2026-05-20 이후 변경</strong>: <code>content-curator.ts</code>(2026-05-20~) 및 <code>popular-curator.ts</code>(2026-05-21~)가 발행 시 <code>Post.cafePostId</code>를 저장하도록 수정됐다. 이제 <code>cafePostId IS NOT NULL</code>인 BOT 글 = 큐레이션봇(일반+인기글), <code>cafePostId IS NULL</code>인 BOT 글 = 시드봇/controversy/magazine 으로 구분 가능하다. 어드민 콘텐츠 관리 페이지의 "큐레이션봇" / "시드봇" 필터가 이 기준으로 동작한다.
     </div>
   </div>
 
   <div class="faq-item">
     <div class="faq-q">원문 보존율 90%/95%에서 AI가 실제로 바꾸는 게 정확히 뭐야?</div>
     <div class="faq-a">
-      <strong>바꾸는 부분은 매우 제한적이다.</strong> §10 "원문 보존율" 섹션에 상세 표가 있다. 요약:
+      <strong>바꾸는 부분은 매우 제한적이다 (content-curator 기준).</strong> §10 "원문 보존율" 섹션에 상세 표가 있다. 요약:
       <ul style="margin:8px 0 8px 20px;line-height:1.8;">
         <li><strong>일반 큐레이션 (90% 보존)</strong>: 첫 문장 말투 + 마지막 문장 마무리만 재가공. 중간 내용(지명·수치·경험·스토리) 완전 보존.</li>
         <li><strong>킬러글 (95% 보존)</strong>: 첫 문장 표현 1개 + 지명 익명화("OO구") + 어미 1~2개. 이야기 순서·핵심 수치·갈등 포인트 절대 변경 금지.</li>
+        <li><strong>인기글 큐레이션 (100% 원문, AI 없음) — 2026-05-21~</strong>: popular-curator.ts는 AI 재창작 없이 <code>stripMarkdown(cafePost.title/content)</code>를 그대로 발행. 상세: §14 ㉘.</li>
       </ul>
-      실제 확인: age-doesnt-matter.com에서 발행된 글의 본문과 원문 카페 글을 비교하면 내용은 동일하고 어미/시작·끝 문장만 다른 것을 확인할 수 있다.
+      실제 확인: age-doesnt-matter.com에서 발행된 글의 본문과 원문 카페 글을 비교하면 내용은 동일하고 어미/시작·끝 문장만 다른 것을 확인할 수 있다 (content-curator 발행글 기준).
     </div>
   </div>
 
@@ -2932,6 +2974,20 @@ await prisma.cafePost.create({
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.18</div>
+    <div class="changelog-date">2026-05-21</div>
+    <div class="changelog-content">
+      <strong>popular-curator 원문 기반 발행 전환 — AI 재창작 제거 + cafePostId 저장.</strong><br><br>
+      <strong>[㉘ — SHA: d4c74d6]</strong> popular-curator.ts AI 재창작(<code>generatePopularPost</code> + Anthropic haiku 호출 63줄) 완전 제거 → 원문 기반 발행 전환. <code>stripMarkdown(cafePost.title/content)</code> 직접 사용. <code>Post.cafePostId: post.id</code> 저장 추가(원본 역추적). summary 슬라이스 120→150자. AI "수미상관" 프롬프트가 대화체 원본 카페글을 댓글형 게시물로 변질시키는 문제(2026-05-21 두 건 확인). haiku API 월 450건 제거.<br><br>
+      <strong>[§2]</strong> popular-curator.ts 파이프라인 설명에 "원문 그대로 발행 — AI 없음 (2026-05-21~)" 추가.<br>
+      <strong>[§13]</strong> DB 구분 방법 설명 업데이트: content-curator(2026-05-20~)에 popular-curator(2026-05-21~) 추가 + cafePostId=NULL 범위 경고 갱신.<br>
+      <strong>[§14]</strong> 섹션 제목 ㉘ 추가(29개→30개). impl-card ㉘ 신규 추가: popular-curator 원문 기반 발행 전환.<br>
+      <strong>[§15]</strong> FAQ 3건 업데이트: killerScore FAQ에 popular-curator 원문 발행 명시 + ≥55→≥50 교정 / 원문 보존율 FAQ에 인기글 큐레이션 100%(AI 없음) 항목 추가 / cafePostId 구분 설명에 popular-curator 추가.<br>
+      커버 배지·메타·footer: v10.17→v10.18.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -3229,7 +3285,7 @@ await prisma.cafePost.create({
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.17<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.18<br>
   최종 업데이트: 2026-05-21 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>

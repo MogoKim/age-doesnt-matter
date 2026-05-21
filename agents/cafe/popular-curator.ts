@@ -1,5 +1,5 @@
 // popular-curator.ts — 인기글 전용 큐레이터 (auto-run)
-// runner.ts: 'cafe_crawler:popular-curate': () => import('../cafe/popular-curator.js').then(() => {})
+// runner.ts: 'cafe_crawler:popular-curate': () => import('../cafe/popular-curator.js').then(m => m.main())
 // BUG-3: content-curator.ts는 module-level main().catch가 있어 import 금지 → curator-shared.ts 경유
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
