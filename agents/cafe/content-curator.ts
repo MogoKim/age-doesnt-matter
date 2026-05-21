@@ -334,7 +334,7 @@ export async function main() {
 
   // killerScore 우선 삽입 (B3) — 화제성 높은 글 제목을 최우선 주제로
   const killerPosts = await prisma.cafePost.findMany({
-    where: { killerScore: { gte: 55 }, isUsable: true, usedAt: null, isPopular: false }, // 55: 조용한 게시판 포용 (기존 70에서 완화)
+    where: { killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false }, // 50: hotTopics 30개 확장 후 pool 안전망 (기존 55에서 완화)
     orderBy: { killerScore: 'desc' },
     take: 2,
     select: { title: true },
@@ -356,7 +356,7 @@ export async function main() {
 
     // 당일 발행 키워드 편중 체크 (P1)
     const topicOverlap = countKeywordOverlap(topicStr)
-    if (topicOverlap >= 3) {
+    if (topicOverlap >= 4) {
       console.log(`[ContentCurator] "${topicStr}" 키워드 중복 스킵 (당일 ${topicOverlap}회 이미 발행)`)
       continue
     }

@@ -213,15 +213,16 @@ ${postSummaries}
   ]
 }
 
-hotTopics: 아래 7개 생활 영역에서 각 1개씩 대표 주제 추출. 없으면 null (억지 금지):
-- health: 건강/몸/병원/갱년기
-- family: 가족/자녀/남편/손주
-- money: 돈/재테크/은퇴준비/연금
-- hobby: 취미/여행/요리/운동/문화/음악/영화
-- relation: 관계/외로움/친구/소통
-- humor: 웃긴일/황당에피소드/유머
-- meaning: 인생/철학/감사/보람/인생2막
-각 hotTopic 객체에 "area" 필드 추가 필수.
+hotTopics: 아래 7개 생활 영역에서 각 최대 4개씩 화제 주제 추출 (관련 글이 2개 이상일 때만 추출, 억지 금지):
+- health: 건강/몸/병원/갱년기 → 예: '갱년기 증상', '혈압 관리', '수면 장애', '관절 통증'
+- family: 가족/자녀/남편/손주 → 예: '자녀 걱정', '손주 육아', '부부 갈등'
+- money: 돈/재테크/은퇴준비/연금 → 예: 'S&P500', '노후 연금', '절약 생활', '부동산'
+- hobby: 취미/여행/요리/운동/문화/음악/영화 → 예: '등산', '요리', '해외여행'
+- relation: 관계/외로움/친구/소통 → 예: '외로움', '친구 사귀기'
+- humor: 웃긴일/황당에피소드/유머 → 예: '남편 실수', '손주 말실수'
+- meaning: 인생/철학/감사/보람/인생2막 → 예: '인생 2막', '감사한 삶'
+각 area 내 주제는 서로 다른 핵심 키워드 사용 (같은 키워드 반복 금지).
+각 hotTopic 객체에 area 필드 필수.
 keywords: 상위 15개, magazineTopics: 상위 3개, personaHints: 2~3개`,
     }],
   })
@@ -402,6 +403,63 @@ async function aggregateControversyTopics(): Promise<ControversyTopic[]> {
     }))
 }
 
+// psych-analyzer 20개 desireCategory → Claude 7개 area 매핑 (Layer 2 메타데이터용, content-curator 미사용)
+const DESIRE_TO_AREA: Record<string, string> = {
+  HEALTH: 'health', FAMILY: 'family', MONEY: 'money', RETIRE: 'money',
+  JOB: 'money', RELATION: 'relation', HOBBY: 'hobby', MEANING: 'meaning',
+  DIGNITY: 'relation', LEGACY: 'meaning', CARE: 'family', FREEDOM: 'meaning',
+  HUMOR: 'humor', ENTERTAIN: 'humor', BEAUTY: 'hobby', DIGITAL: 'hobby',
+  FOOD: 'hobby', SPIRITUAL: 'meaning', HOUSING: 'money', FASHION: 'hobby',
+  PET: 'hobby', GENERAL: 'hobby',
+}
+
+/** killerScore >= 25인 최근 14일 글을 desireCategory별로 집계해 Layer 2 보충 주제 생성 */
+async function aggregateKillerTopics(): Promise<TrendAnalysis['hotTopics']> {
+  const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 3600_000)
+  const posts = await prisma.cafePost.findMany({
+    where: {
+      killerScore: { gte: 25 },
+      isUsable: true,
+      postedAt: { gte: fourteenDaysAgo },
+      isPopular: false,
+      aiAnalyzed: true,
+      title: { not: '' },
+      desireCategory: { not: null },
+    },
+    orderBy: { killerScore: 'desc' },
+    take: 120,
+    select: { title: true, desireCategory: true, killerScore: true },
+  })
+
+  const byCategory: Record<string, typeof posts> = {}
+  for (const p of posts) {
+    const cat = p.desireCategory ?? 'GENERAL'
+    if (!byCategory[cat]) byCategory[cat] = []
+    if (byCategory[cat].length < 3) byCategory[cat].push(p)
+  }
+
+  console.log(`[TrendAnalyzer] killerTopics 후보: ${posts.length}건 (desireCategory 분포: ${
+    Object.entries(byCategory).map(([k, v]) => `${k}:${v.length}`).join(', ')
+  })`)
+
+  const result: TrendAnalysis['hotTopics'] = []
+  for (const [cat, catPosts] of Object.entries(byCategory)) {
+    for (const p of catPosts) {
+      const rawTitle = p.title?.trim()
+      if (!rawTitle) continue
+      const topic = rawTitle.replace(/[~!?ㅋㅠㅜ…]+.*$/, '').trim().slice(0, 20) || rawTitle.slice(0, 15)
+      result.push({
+        topic,
+        area: DESIRE_TO_AREA[cat] ?? 'hobby',
+        count: Math.round(p.killerScore),
+        sentiment: 'neutral',
+        examples: [rawTitle],
+      })
+    }
+  }
+  return result
+}
+
 /** 트렌드 결과 DB 저장 */
 async function saveTrend(
   analysis: TrendAnalysis,
@@ -416,8 +474,25 @@ async function saveTrend(
   // Fix 13-B: controversy 집계 (saveTrend 내부 호출 필수 — 단독 정의만으로는 저장 안 됨)
   const controversyTopics = await aggregateControversyTopics()
 
+  // Layer 2: killerScore 기반 보충 주제 집계 + AI 결과와 merge (max 30개)
+  const killerTopics = await aggregateKillerTopics()
+  function extractFirstKeyword(text: string): string {
+    return (text.match(/[가-힣]{2,}|[A-Za-z&]{2,}|\d{3,}/g) ?? [])[0]?.toLowerCase() ?? ''
+  }
+  const aiFirstKeywords = new Set(
+    analysis.hotTopics.map(t => extractFirstKeyword(t.topic)).filter(Boolean)
+  )
+  const supplemental = killerTopics.filter(t => {
+    const kw = extractFirstKeyword(t.topic)
+    const isDup = !kw || aiFirstKeywords.has(kw)
+    if (isDup) console.log(`[TrendAnalyzer] Layer2 dedup 제외: "${t.topic}" (키워드: ${kw})`)
+    return !isDup
+  })
+  const mergedHotTopics = [...analysis.hotTopics, ...supplemental].slice(0, 30)
+  console.log(`[TrendAnalyzer] hotTopics merge: AI ${analysis.hotTopics.length}개 + killer ${supplemental.length}개 = ${mergedHotTopics.length}개`)
+
   const baseData = {
-    hotTopics: JSON.parse(JSON.stringify(analysis.hotTopics)),
+    hotTopics: JSON.parse(JSON.stringify(mergedHotTopics)),
     keywords: JSON.parse(JSON.stringify(analysis.keywords)),
     sentimentMap: JSON.parse(JSON.stringify(analysis.sentimentMap)),
     magazineTopics: JSON.parse(JSON.stringify(analysis.magazineTopics)),

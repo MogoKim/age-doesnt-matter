@@ -80,6 +80,7 @@ export interface TrendAnalysis {
 
 export interface HotTopic {
   topic: string
+  area?: string  // AI 프롬프트 및 aggregateKillerTopics에서 채움 (content-curator 미사용, 로그/디버깅용)
   count: number
   sentiment: string
   examples: string[]
