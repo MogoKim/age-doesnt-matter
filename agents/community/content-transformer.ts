@@ -40,7 +40,7 @@ export function transformContent(
   rawHtml: string,
   sourceUrl: string,
   siteConfig: SiteConfig,
-  boardType: 'STORY' | 'HUMOR' = 'HUMOR',
+  boardType: 'STORY' | 'HUMOR' | 'LIFE2' = 'HUMOR',
 ): string {
   // 1. 불필요 요소 제거 (사이트별)
   let cleaned = rawHtml
@@ -81,7 +81,7 @@ export function transformRawContent(
   rawContent: string,
   sourceUrl: string,
   siteName: string,
-  boardType: 'STORY' | 'HUMOR' = 'HUMOR',
+  boardType: 'STORY' | 'HUMOR' | 'LIFE2' = 'HUMOR',
 ): string {
   const isHtml = /<[a-z][\s\S]*>/i.test(rawContent)
 
@@ -130,7 +130,7 @@ const HUMOR_KEYWORDS: Record<string, string[]> = {
 export function classifyCategory(
   title: string,
   content: string,
-  boardType: 'STORY' | 'HUMOR' = 'STORY',
+  boardType: 'STORY' | 'HUMOR' | 'LIFE2' = 'STORY',
 ): string {
   const text = `${title} ${content}`.toLowerCase()
   const keywords = boardType === 'HUMOR' ? HUMOR_KEYWORDS : STORY_KEYWORDS

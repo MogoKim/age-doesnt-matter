@@ -44,11 +44,12 @@ interface PersonaMapping {
   id: string
   nickname: string
   categories: string[]
-  boards: Array<'STORY' | 'HUMOR'>
+  boards: Array<'STORY' | 'HUMOR' | 'LIFE2'>
 }
 
 // 기존 E/H/P 별칭(봄바람/매일걷기/오후세시)은 Google Sheet E열 override 호환성 유지를 위해 유지.
 // 실제 서비스 표시 닉네임은 persona-data.ts(getBotUser) 기준: E=미숙이맘, H=걷기매니아58, P=love1961
+// E열 수동 지정은 boardType 검증 없이 존중 (창업자가 LIFE2 탭에 STORY 페르소나를 지정해도 허용)
 const PERSONAS: PersonaMapping[] = [
   // ── HUMOR ──
   { id: 'C',  nickname: 'ㅋㅋ요정',   categories: ['유머'],         boards: ['HUMOR'] },
@@ -68,11 +69,22 @@ const PERSONAS: PersonaMapping[] = [
   { id: 'P',  nickname: '오후세시',   categories: ['기타'],         boards: ['STORY', 'HUMOR'] },
   { id: 'U',  nickname: '부산아지매', categories: ['기타'],         boards: ['STORY'] },
   { id: 'Q',  nickname: '멍멍이엄마', categories: ['기타'],         boards: ['STORY'] },
+  // ── LIFE2 (2막준비 게시판) ──
+  { id: 'B',  nickname: '정순씨',     categories: ['일상', '고민', '은퇴'], boards: ['LIFE2'] },
+  { id: 'Y',  nickname: '솔직히말해서', categories: ['고민', '기타'],        boards: ['LIFE2'] },
+  { id: 'AB', nickname: '따져보자',   categories: ['일상', '기타'],         boards: ['LIFE2'] },
+  { id: 'BX', nickname: '말티즈엄마', categories: ['일상', '기타'],         boards: ['LIFE2'] },
 ]
+
+function getBoardSlug(boardType: 'STORY' | 'HUMOR' | 'LIFE2'): string {
+  if (boardType === 'STORY') return 'stories'
+  if (boardType === 'HUMOR') return 'humor'
+  return 'life2'
+}
 
 function pickPersona(
   category: string,
-  boardType: 'STORY' | 'HUMOR',
+  boardType: 'STORY' | 'HUMOR' | 'LIFE2',
   overrideNickname?: string,
 ): PersonaMapping {
   // 창업자가 지정한 닉네임/ID 우선
@@ -138,7 +150,7 @@ async function scrapePage(
   context: BrowserContext,
   url: string,
   siteConfig: SiteConfig,
-  boardType: 'STORY' | 'HUMOR' = 'HUMOR',
+  boardType: 'STORY' | 'HUMOR' | 'LIFE2' = 'HUMOR',
 ): Promise<ScrapeResult> {
   const page = await context.newPage()
 
@@ -337,8 +349,7 @@ export async function main() {
               if (waveCount === 0) {
                 // 파동 없음 → 재예약 (FAILED 후 B~J 공백 재시도 케이스)
                 const retryNow = new Date()
-                const boardSlug = tab.boardType === 'STORY' ? 'stories' : 'humor'
-                const retryPostUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${boardSlug}/${existingActive.id}`
+                const retryPostUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${getBoardSlug(tab.boardType)}/${existingActive.id}`
 
                 if (tab.isFeatured) {
                   const keyTerms = extractKeyTerms(existingActive.title)
@@ -485,8 +496,7 @@ export async function main() {
               : await prisma.post.create({ data: postData })
 
             // 게시글 URL 생성
-            const boardSlug = tab.boardType === 'STORY' ? 'stories' : 'humor'
-            const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${boardSlug}/${post.id}`
+            const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${getBoardSlug(tab.boardType)}/${post.id}`
 
             // BotLog 파동 예약 — details는 scheduler가 JSON.parse()로 읽는 구조
             const now = new Date()

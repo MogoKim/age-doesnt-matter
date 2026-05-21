@@ -26,16 +26,18 @@ export interface SheetRow {
 /** 시트 탭 정보 */
 export interface SheetTab {
   tabName: string
-  boardType: 'STORY' | 'HUMOR'
+  boardType: 'STORY' | 'HUMOR' | 'LIFE2'
   isFeatured: boolean  // _화제성 탭: 즉각 HOT 파이프라인 발동
   rows: SheetRow[]
 }
 
-const TAB_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR'; isFeatured: boolean }> = {
+const TAB_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; isFeatured: boolean }> = {
   '사는이야기': { boardType: 'STORY', isFeatured: false },
   '웃음방': { boardType: 'HUMOR', isFeatured: false },
   '사는이야기_화제성': { boardType: 'STORY', isFeatured: true },
   '웃음방_화제성': { boardType: 'HUMOR', isFeatured: true },
+  '2막준비': { boardType: 'LIFE2', isFeatured: false },
+  '2막준비_화제성': { boardType: 'LIFE2', isFeatured: true },
 }
 
 function getSheetId(): string {
@@ -51,7 +53,8 @@ function getSheets() {
 }
 
 /**
- * 4개 탭(사는이야기/웃음방/사는이야기_화제성/웃음방_화제성)에서 PENDING 행 읽기
+ * 탭(사는이야기/웃음방/2막준비 등)에서 PENDING 행 읽기
+ * 탭이 Sheet에 아직 없으면 warning 후 skip (GHA 실패 방지)
  */
 export async function readPendingRows(): Promise<SheetTab[]> {
   const sheets = getSheets()
@@ -60,7 +63,17 @@ export async function readPendingRows(): Promise<SheetTab[]> {
 
   for (const [tabName, { boardType, isFeatured }] of Object.entries(TAB_TO_BOARD)) {
     const range = `${tabName}!A:J`
-    const res = await sheets.spreadsheets.values.get({ spreadsheetId, range })
+    let res
+    try {
+      res = await sheets.spreadsheets.values.get({ spreadsheetId, range })
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('Unable to parse range') || msg.includes('does not exist')) {
+        console.warn(`[sheets] 탭 없음, 스킵: ${tabName}`)
+        continue
+      }
+      throw err
+    }
     const rawRows = res.data.values ?? []
 
     if (rawRows.length <= 1) continue // 헤더만 있거나 비어있음
