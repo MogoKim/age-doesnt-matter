@@ -791,7 +791,7 @@ async function buildPostFromTarget(
         parseInt(match[4]), parseInt(match[5]),
       )
     } else {
-      // Bug 3: 날짜 파싱 실패 시 현재 시각 대신 플래그만 세팅 → quality-scorer에서 recency=0
+      // Bug 3: 날짜 파싱 실패 시 현재 시각 저장 + dateParseFailure 플래그 세팅 → quality-scorer에서 recency=0
       postedAt = new Date()
       dateParseFailure = true
     }

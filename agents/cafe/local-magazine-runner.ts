@@ -129,7 +129,7 @@ function formatFailureMessage(session: 'morning' | 'evening', engine: string, st
 
 async function main(): Promise<void> {
   const rawSession = process.env.SESSION_TIME ?? 'morning'
-  // plist 값: morning(10:00) / afternoon(15:00) → 중간 세션, late(17:00) → 마지막 세션(일일 Slack 전송)
+  // plist 값: morning(11:00 KST) / late(14:00 KST) → 마지막 세션 + 일일 Slack 전송
   const sessionTime: 'morning' | 'evening' = (rawSession === 'late' || rawSession === 'afternoon') ? 'evening' : 'morning'
   const engine = (process.env.IMAGE_GENERATOR ?? 'gemini') as 'gemini' | 'chatgpt'
 

@@ -28,7 +28,7 @@ const WEIGHTS = {
   recency: 0.15,
 }
 
-/** 참여도 점수 (30%) */
+/** 참여도 점수 (40%) */
 function scoreEngagement(post: RawCafePost): number {
   // 베스트 댓글 좋아요 보너스 (DEEP 모드 글에만 효과, 최대 +10)
   const topComments = parseTopComments(post.topComments)
@@ -57,7 +57,7 @@ function scoreContentLength(post: RawCafePost): number {
   return 5 // 너무 짧음 (제목만 있는 글 등)
 }
 
-/** 미디어 점수 (15%) */
+/** 미디어 점수 (5%) */
 function scoreMedia(post: RawCafePost): number {
   const imageCount = post.imageUrls.length
   const videoCount = post.videoUrls.length

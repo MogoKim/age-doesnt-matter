@@ -60,7 +60,7 @@ const DIRECTIVE_MAP: Record<string, { theme: string; tone: string; avoid: string
   ENTERTAIN:{ theme: '연예/드라마 이야기', tone: '신나고 활기차게', avoid: ['무거운 주제', '정치'] },
 }
 
-// ── 페르소나 욕망 친화도 테이블 (50명 × 13욕망) ──
+// ── 페르소나 욕망 친화도 테이블 (55명 × 13욕망 — A~AX 50명 + EN1~EN5 5명) ──
 // 0.0 = 전혀 안 맞음 / 1.0 = 완벽히 일치
 // Step 8 (persona-data.ts 업데이트) 후 여기서 export로 이동 예정
 
