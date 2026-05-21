@@ -48,8 +48,8 @@ const nextConfig = {
     // static 페이지 300초 — /contact, /faq 등 불변 콘텐츠
     // Server Action revalidatePath/revalidateTag 호출 시 즉시 무효화됨
     staleTimes: {
-      dynamic: 30,
-      static: 300,
+      dynamic: 60,
+      static: 600,
     },
   },
   async redirects() {

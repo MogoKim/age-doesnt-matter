@@ -19,12 +19,12 @@ const LIMIT = 12
 const getCachedHot = unstable_cache(
   () => getAccumulatedHotPosts({ limit: LIMIT }),
   ['best-hot-p1'],
-  { revalidate: 60 }
+  { revalidate: 60, tags: ['best-hot'] }
 )
 const getCachedFame = unstable_cache(
   () => getHallOfFamePosts({ limit: LIMIT }),
   ['best-fame-p1'],
-  { revalidate: 60 }
+  { revalidate: 60, tags: ['best-fame'] }
 )
 
 type TabType = 'hot' | 'fame'
