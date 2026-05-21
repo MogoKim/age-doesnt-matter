@@ -11,12 +11,26 @@ export async function getCuratorBotUser(persona: string | PersonaMatch): Promise
     ? (PERSONAS.find(p => p.id === id)?.nickname ?? id)
     : persona.nickname
   const email = `curator-${id.toLowerCase()}@unao.bot`
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: { nickname },
-    create: { email, nickname, providerId: `curator-${id.toLowerCase()}`, role: 'USER', grade: 'SPROUT' },
-  })
-  return user.id
+  const providerId = `curator-${id.toLowerCase()}`
+  try {
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {},
+      create: { email, nickname, providerId, role: 'USER', grade: 'SPROUT' },
+    })
+    return user.id
+  } catch (err: unknown) {
+    // P2002: nickname 충돌 시 id suffix로 unique 보장 (구 이메일 포맷 레코드와 충돌 방어)
+    if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2002') {
+      const user = await prisma.user.upsert({
+        where: { email },
+        update: {},
+        create: { email, nickname: `${nickname}-${id.toLowerCase()}`, providerId, role: 'USER', grade: 'SPROUT' },
+      })
+      return user.id
+    }
+    throw err
+  }
 }
 
 export async function countTodayPostsByPersona(personaId: string): Promise<number> {
