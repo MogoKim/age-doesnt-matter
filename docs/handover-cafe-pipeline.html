@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.15</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.16</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -290,12 +290,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.15</div>
+  <div class="cover-badge">Handover Document v10.16</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.15 (2026-05-20)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.16 (2026-05-21)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -305,7 +305,7 @@
 
 <!-- 시스템 현황 -->
 <div class="status-box">
-  <div class="sb-title">시스템 현황 (2026-05-20)</div>
+  <div class="sb-title">시스템 현황 (2026-05-21)</div>
   <div class="status-item"><div class="status-dot on"></div>크롤링 (launchd, 하루 7회)</div>
   <div class="status-item"><div class="status-dot on"></div>큐레이션 (GHA, 45분 간격 20슬롯)</div>
   <div class="status-item"><div class="status-dot on"></div>Wave 댓글 (GHA, 5분 간격 24시간)</div>
@@ -313,6 +313,96 @@
   <div class="status-item"><div class="status-dot off"></div>씨드봇 글 (OFF — 의도적 중단)</div>
   <div class="status-item"><div class="status-dot on"></div>DailyBrief 안전망 09:03 (GHA, 익일)</div>
   <div class="status-item"><div class="status-dot on"></div>DailyBrief 안전망 18:00 이중화 (GHA, 당일)</div>
+</div>
+
+<!-- ══════════ 파이프라인 비주얼 요약 ══════════ -->
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px 36px;margin-bottom:36px;">
+  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--sub);margin-bottom:20px;">Pipeline Overview — 데이터 흐름 한눈에</div>
+
+  <!-- 5단계 플라이휠 -->
+  <div style="display:flex;align-items:stretch;gap:6px;margin-bottom:28px;overflow-x:auto;padding-bottom:4px;">
+    <div style="flex:1;min-width:130px;background:var(--primary-dim);border:1px solid rgba(255,111,97,0.3);border-radius:10px;padding:16px 12px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:6px;">🕷️</div>
+      <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:6px;">① 수집</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;">Playwright<br>headless:false<br><strong style="color:var(--text);">Mac 전용</strong></div>
+      <div style="font-size:10px;color:var(--sub);margin-top:8px;background:white;border-radius:4px;padding:3px 8px;display:inline-block;">7회/일 launchd</div>
+    </div>
+    <div style="display:flex;align-items:center;color:var(--muted);font-size:18px;padding:0 2px;">▸</div>
+    <div style="flex:1;min-width:130px;background:var(--purple-dim);border:1px solid rgba(102,57,186,0.3);border-radius:10px;padding:16px 12px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:6px;">🧠</div>
+      <div style="font-size:12px;font-weight:800;color:var(--purple);margin-bottom:6px;">② 분석</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;">psych-analyzer<br>trend-analyzer<br><strong style="color:var(--text);">11:30 full only</strong></div>
+      <div style="font-size:10px;color:var(--sub);margin-top:8px;background:white;border-radius:4px;padding:3px 8px;display:inline-block;">1회/일</div>
+    </div>
+    <div style="display:flex;align-items:center;color:var(--muted);font-size:18px;padding:0 2px;">▸</div>
+    <div style="flex:1;min-width:130px;background:var(--blue-dim);border:1px solid rgba(9,105,218,0.3);border-radius:10px;padding:16px 12px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:6px;">✂️</div>
+      <div style="font-size:12px;font-weight:800;color:var(--blue);margin-bottom:6px;">③ 큐레이션</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;">content-curator<br>후보 선별<br><strong style="color:var(--text);">원문 그대로</strong></div>
+      <div style="font-size:10px;color:var(--sub);margin-top:8px;background:white;border-radius:4px;padding:3px 8px;display:inline-block;">45분 간격 GHA</div>
+    </div>
+    <div style="display:flex;align-items:center;color:var(--muted);font-size:18px;padding:0 2px;">▸</div>
+    <div style="flex:1;min-width:130px;background:var(--green-dim);border:1px solid rgba(26,127,55,0.3);border-radius:10px;padding:16px 12px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:6px;">📢</div>
+      <div style="font-size:12px;font-weight:800;color:var(--green);margin-bottom:6px;">④ 발행</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;">Post DB 저장<br>최대 20건/일<br><strong style="color:var(--text);">Wave 자동 예약</strong></div>
+      <div style="font-size:10px;color:var(--sub);margin-top:8px;background:white;border-radius:4px;padding:3px 8px;display:inline-block;">자동 (GHA)</div>
+    </div>
+    <div style="display:flex;align-items:center;color:var(--muted);font-size:18px;padding:0 2px;">▸</div>
+    <div style="flex:1;min-width:130px;background:var(--teal-dim);border:1px solid rgba(14,116,144,0.3);border-radius:10px;padding:16px 12px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:6px;">💬</div>
+      <div style="font-size:12px;font-weight:800;color:var(--teal);margin-bottom:6px;">⑤ Wave</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;">wave1~4 댓글<br>작성자 대댓글<br><strong style="color:var(--text);">AI 없이 원문</strong></div>
+      <div style="font-size:10px;color:var(--sub);margin-top:8px;background:white;border-radius:4px;padding:3px 8px;display:inline-block;">5분 간격 GHA</div>
+    </div>
+    <div style="display:flex;align-items:center;color:var(--primary);font-size:20px;padding:0 4px;font-weight:700;" title="다음 크롤에서 반복">↻</div>
+  </div>
+
+  <!-- 단계별 영향 표 -->
+  <div class="table-wrap" style="margin-bottom:0;">
+    <table style="font-size:13px;">
+      <thead>
+        <tr>
+          <th style="width:80px;">단계</th>
+          <th>생성 / 변화</th>
+          <th>핵심 필터·조건</th>
+          <th>영향 (왜 중요한가)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="chip primary">① 수집</span></td>
+          <td><code>CafePost</code> 저장, <code>topComments</code> 최대 15개, <code>killerScore</code> 첫 계산</td>
+          <td>articleId dedup, postedAt 14일 이내, qualityScore ≥20 저장</td>
+          <td>후보 풀 유일한 공급원. Mac 꺼지면 신규 유입 없음 — 기존 풀로 GHA는 계속 발행</td>
+        </tr>
+        <tr>
+          <td><span class="chip purple" style="background:var(--purple-dim);color:var(--purple);border-color:rgba(102,57,186,0.3);">② 분석</span></td>
+          <td><code>desireCategory</code>·<code>viralType</code> 분류, <code>hotTopics</code> 30개 집계, <code>isUsable</code> 재계산</td>
+          <td>full 크롤(11:30)에서만 실행. qualityScore ≥30 → isUsable=true</td>
+          <td>큐레이션 주제·페르소나·wave 댓글 순서 결정. 분석 없으면 null 폴백으로 운영</td>
+        </tr>
+        <tr>
+          <td><span class="chip blue">③ 큐레이션</span></td>
+          <td><code>hotTopics</code> 30개 기반 후보 선별, <code>CommentWaveQueue</code> wave 예약</td>
+          <td>killerScore ≥50, topicOverlap ≤3회, CAP=2/페르소나/일, P1~P3 필터</td>
+          <td>발행 병목 핵심 단계. 필터 과다 → 발행 0건. 필터 완화 → 발행 재개</td>
+        </tr>
+        <tr>
+          <td><span class="chip green">④ 발행</span></td>
+          <td><code>Post</code> DB 저장, killerScore ≥75 → <code>isFeatured=true</code> 자동</td>
+          <td>P1~P3 통과, 계절 키워드 체크, 유사 제목 dedup</td>
+          <td>우나어 게시판 노출. isFeatured=true → 집중 부스트 라운드 포함</td>
+        </tr>
+        <tr>
+          <td><span class="chip teal">⑤ Wave</span></td>
+          <td><code>Comment</code> DB 저장 (wave1~4 + 작성자 대댓글)</td>
+          <td>TTL 60시간, 글당 봇댓글 최대 5개, 봇 당일 3개 cap</td>
+          <td>커뮤니티 초기 반응 자동 생성. 원본 topComments 10자↑이면 AI 없이 그대로</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- ══════════ TOC ══════════ -->
@@ -1728,7 +1818,15 @@ for (const waveNum of order) {
       · <code>curator-shared.ts</code> — 99명 페르소나 정의, DESIRE_PERSONA_MAP, matchPersona() 등 <strong>순수함수만</strong> (DB 접근 없음)<br>
       · <code>curator-users.ts</code> — DB 사이드이펙트 전담: <code>getCuratorBotUser()</code> (upsert), <code>countTodayPostsByPersona()</code><br>
       · <strong>AUTHOR_DAILY_POST_CAP = 2</strong>: 동일 큐레이터 페르소나가 하루 최대 2건 발행. 초과 시 같은 board 내 대체 페르소나 자동 선택<br>
-      · 이메일 패턴: <code>curator-{id}@unao.bot</code> (Wave봇·시드봇의 <code>bot-{id}@unao.bot</code>과 완전 분리)
+      · 이메일 패턴: <code>curator-{id}@unao.bot</code> (Wave봇·시드봇의 <code>bot-{id}@unao.bot</code>과 완전 분리)<br>
+      · <strong>grade 필드</strong>: CREATE 시 반드시 <code>grade: 'SPROUT'</code> (Grade enum 유효값: SPROUT / REGULAR / WARM_NEIGHBOR / HONORARY)<br>
+      <div class="alert err" style="font-size:12.5px;padding:10px 16px;margin-top:8px;line-height:1.8;">
+        <strong>버그 이력 (2026-05-21, SHA: 11f7227)</strong><br>
+        <code>getCuratorBotUser()</code> upsert CREATE 경로에 <code>grade: 'MEMBER'</code> 하드코딩 →
+        Prisma Grade enum에 'MEMBER' 없음 → PrismaClientValidationError crash.<br>
+        UPDATE 경로(기존 계정)는 grade 필드 없어 영향 없었음. 신규 페르소나 첫 실행 시에만 발생.<br>
+        → <code>'SPROUT'</code>으로 1줄 수정 완료. content-curator + popular-curator 양쪽 동시 해결.
+      </div>
     </div>
     <div class="alert err" style="font-size:13.5px; padding:12px 16px; margin:8px 0; line-height:1.7;">
       🚫 <strong>오해 주의: 큐레이션봇은 댓글을 직접 달지 않는다.</strong><br>
@@ -1801,12 +1899,12 @@ for (const waveNum of order) {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑ 전부 완료</h2>
+    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔ 전부 완료</h2>
   </div>
 
   <div class="alert ok">
     <strong>Claude Code에게: 이 섹션이 가장 중요하다</strong>
-    아래 23개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
+    아래 26개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
   </div>
 
   <details class="impl-toggle">
@@ -1900,6 +1998,9 @@ for (const waveNum of order) {
       content-curator.ts의 킬러글 필터를 <code>killerScore ≥ 70</code>에서 <code>≥ 55</code>로 완화했다. 댓글이 적은 조용한 게시판 글은 댓글 수 가중치 때문에 70점 달성이 어려워 킬러글 후보가 되지 못했다. 55로 낮추면 실제로 품질 좋은 글도 킬러 후보에 포함된다.<br><br>
       <strong>변경 전 → 후</strong>: <code>killerScore: { gte: 70 }</code> → <code>killerScore: { gte: 55 }</code><br>
       popular-curator.ts의 정렬 기준(killerScore desc)은 변경 없음 — 정렬이지 필터가 아니기 때문.
+      <div class="alert info" style="font-size:12px;padding:8px 14px;margin-top:8px;line-height:1.7;">
+        ⚠️ <strong>이후 추가 완화됨</strong>: 95869de (2026-05-21)에서 <code>≥55 → ≥50</code>으로 재차 완화. 현재 실제 코드 기준값 = <code>killerScore ≥50</code>. 상세: ㉔ 참조.
+      </div>
     </div>
     <div class="impl-file">📄 agents/cafe/content-curator.ts:919 — <code>killerPosts</code> WHERE 조건 1줄 변경</div>
   </div>
@@ -2339,6 +2440,136 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
   </div>
   </details>
 
+  <div style="border-top:2px dashed var(--border);margin:24px 0 20px;padding-top:4px;">
+    <p style="font-size:12px;color:var(--muted);margin:0;">아래 ㉒㉓㉔는 2026-05-21 긴급 핫픽스 + hotTopics 풀 확장 배치에서 추가된 항목이다.</p>
+  </div>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉒. curator-users.ts grade 'MEMBER' → 'SPROUT' — Prisma crash 긴급 수정</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉒. curator-users.ts grade 'MEMBER' → 'SPROUT' — Prisma crash 긴급 수정</div>
+    </div>
+    <div class="impl-body">
+      2026-05-21 09:05 KST부터 GHA agents-cafe-hourly-curation.yml 연속 3회 FAILURE. 실제 에러 로그:<br><br>
+      <pre>PrismaClientValidationError: Invalid `prisma.user.upsert()` invocation
+grade: "MEMBER"
+~~~~~~~
+Invalid value for argument `grade`. Expected Grade.</pre>
+
+      <strong>원인</strong><br>
+      <code>getCuratorBotUser()</code>의 upsert CREATE 경로에 <code>grade: 'MEMBER'</code>가 하드코딩.
+      Prisma Grade enum에 'MEMBER'는 존재하지 않는다: <code>SPROUT / REGULAR / WARM_NEIGHBOR / HONORARY</code>.<br><br>
+
+      <strong>왜 05-21 09:05에 처음 crash가 발생했는가 (이전 슬롯들은 success였음)</strong><br>
+      → 18:06 May20 ~ 08:20 May21 구간: hotTopics 7개 전부 AUTHOR_DAILY_POST_CAP(2) 또는 topicOverlap(≥3)으로 차단
+      → <code>publishCuratedContent()</code> 진입 전 루프 전부 skip → <code>getCuratorBotUser()</code> 미호출 → crash 미발생, GHA "success 0건"<br>
+      → 09:05 May21: 07:40 launchd 파이프라인이 새 DailyBrief 생성 → 오늘 날짜 기준 CAP 리셋 → 일부 topic 필터 통과 → 신규 CA-EB 페르소나 선택 (DB 미생성) → CREATE 경로 최초 진입 → crash<br><br>
+
+      <strong>수정 내용</strong><br>
+      curator-users.ts line 17: <code>grade: 'MEMBER'</code> → <code>grade: 'SPROUT'</code> (1자 변경)<br><br>
+
+      영향 범위: content-curator.ts + popular-curator.ts 모두 <code>getCuratorBotUser()</code>를 같은 파일에서 import → 1파일 수정으로 양쪽 동시 해결.<br>
+      UPDATE 경로(기존 계정)는 grade 필드 없어 영향 없음. CREATE(신규 페르소나 최초 실행)에만 발생.<br><br>
+
+      <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — 수정 전후</summary>
+      <pre>// 수정 전 (버그)
+create: { email, nickname, providerId: `curator-${id.toLowerCase()}`, role: 'USER', grade: 'MEMBER' },
+
+// 수정 후 (SHA: 11f7227)
+create: { email, nickname, providerId: `curator-${id.toLowerCase()}`, role: 'USER', grade: 'SPROUT' },</pre>
+      </details>
+      SHA: 11f7227 (2026-05-21)
+    </div>
+    <div class="impl-file">📄 agents/cafe/curator-users.ts:17 — grade 'MEMBER' → 'SPROUT' (1줄 수정)</div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉓. hotTopics 풀 7→30개 2-Layer 확장 — trend-analyzer.ts Layer1+Layer2 병합</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉓. hotTopics 풀 7→30개 2-Layer 확장 — trend-analyzer.ts Layer1+Layer2 병합</div>
+    </div>
+    <div class="impl-body">
+      content-curator.ts가 돌릴 수 있는 발행 후보 주제(hotTopics)가 하루 7개뿐이었다. 각 topic은 AUTHOR_DAILY_POST_CAP(2) 또는 topicOverlap 필터에 걸리면 skip되므로, 7개가 전부 차단되면 발행 0건이 된다. 실제로 2026-05-20 18:06 KST부터 하루 동안 이 현상이 발생했다.<br><br>
+
+      <strong>2-Layer 확장 구조</strong><br>
+      <strong>Layer 1 (Claude AI 프롬프트 확장)</strong><br>
+      기존 프롬프트: "각 영역에서 대표 주제 1개씩" → 7영역 × 1개 = 최대 7개<br>
+      변경 후: "각 영역에서 관련 글이 2개 이상일 때만, 최대 4개씩" → 7영역 × 최대 4개 = 최대 28개<br>
+      7개 영역: health / family / money / relation / hobby / meaning / humor<br><br>
+
+      <strong>Layer 2 (aggregateKillerTopics — DB 직접 집계)</strong><br>
+      Claude AI 분석 없이 DB에서 직접 트렌드 주제를 추출한다:<br>
+      → 조건: killerScore ≥25, isUsable=true, aiAnalyzed=true, postedAt 14일 이내, isPopular=false, title 비어있지 않음, desireCategory NOT NULL<br>
+      → 정렬: killerScore DESC, take: 120건<br>
+      → 그룹: desireCategory별 상위 3개 제목 추출 (extractFirstKeyword로 dedup)<br>
+      → DESIRE_TO_AREA 매핑 (21-entry) → hotTopics 형식으로 변환<br><br>
+
+      <strong>병합 로직 (saveTrend 내부)</strong><br>
+      Layer1 결과 + Layer2 supplemental → extractFirstKeyword 기반 dedup → 최대 30개 slice<br>
+      extractFirstKeyword: <code>/[가-힣]{2,}|[A-Za-z&amp;]{2,}|\d{3,}/g</code> — 한글 우선, fallback 영문/숫자<br><br>
+
+      <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — DESIRE_TO_AREA 21-entry 매핑</summary>
+      <pre>const DESIRE_TO_AREA: Record&lt;string, string&gt; = {
+  HEALTH: 'health', AGING: 'health', BEAUTY: 'health',
+  FAMILY: 'family', PET: 'family', SPIRITUAL: 'family',
+  MONEY: 'money', RETIRE: 'money', HOUSING: 'money',
+  RELATION: 'relation', FREEDOM: 'relation',
+  HOBBY: 'hobby', FOOD: 'hobby', FASHION: 'hobby', DIGITAL: 'hobby',
+  MEANING: 'meaning', ENTERTAIN: 'meaning',
+  HUMOR: 'humor',
+  LIFE2: 'money',
+  GENERAL: 'meaning',
+}  // 20개 desireCategory + GENERAL = 21 entry</pre>
+      </details>
+      SHA: 95869de (2026-05-21)
+    </div>
+    <div class="impl-file">📄 agents/cafe/trend-analyzer.ts — <code>DESIRE_TO_AREA</code> 상수 신규 + <code>aggregateKillerTopics()</code> 함수 신규 + <code>saveTrend()</code> 병합 로직 + Claude 프롬프트 "각 최대 4개씩" 변경</div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉔. content-curator topicOverlap ≥3→≥4 + killerScore ≥55→≥50 완화</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉔. content-curator topicOverlap ≥3→≥4 + killerScore ≥55→≥50 완화</div>
+    </div>
+    <div class="impl-body">
+      ㉓의 hotTopics 30개 확장과 함께 발행 후보 차단율을 낮추기 위해 두 필터를 동시에 완화했다.<br><br>
+
+      <strong>① topicOverlap ≥3 → ≥4 (P1 키워드 quota 완화)</strong><br>
+      content-curator.ts의 <code>countKeywordOverlap()</code> threshold: 오늘 발행 글에 동일 키워드가 이미 3회 이상 등장했으면 skip → 4회 이상으로 완화.<br>
+      효과: 같은 주제 키워드가 하루 최대 3개(기존 2개)까지 허용됨.<br><br>
+
+      <strong>② killerScore ≥55 → ≥50 (킬러글 필터 추가 완화)</strong><br>
+      killerScore ≥70 → ≥55 (SHA: 기존 ②)에서 한 차례 완화됐으나, 발행 후보 고갈 문제가 지속되어 ≥50으로 추가 완화.<br>
+      ≥75 (isFeatured 자동 활성화) 기준은 변경 없음.<br><br>
+
+      <strong>현재 killerScore 임계값 3개 요약</strong><br>
+      → <code>≥50</code>: 큐레이터 킬러글 우선 발행 후보 진입 (이 기준값)<br>
+      → <code>≥75</code>: Post.isFeatured=true 자동 (집중 부스트)<br>
+      → <code>≥25</code>: aggregateKillerTopics() Layer2 집계 대상 (㉓)<br><br>
+
+      <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — 변경 전후</summary>
+      <pre>// topicOverlap — content-curator.ts
+// 수정 전: if (topicOverlap >= 3)
+if (topicOverlap >= 4) continue  // ← ≥3 → ≥4
+
+// killerScore — content-curator.ts killerPosts WHERE
+// 수정 전: killerScore: { gte: 55 }
+killerScore: { gte: 50 }         // ← ≥55 → ≥50</pre>
+      </details>
+      SHA: 95869de (2026-05-21)
+    </div>
+    <div class="impl-file">📄 agents/cafe/content-curator.ts — <code>countKeywordOverlap()</code> threshold ≥3→≥4 + <code>killerPosts</code> WHERE killerScore ≥55→≥50</div>
+  </div>
+  </details>
+
 </div>
 
 <!-- ══════════ §15. FAQ ══════════ -->
@@ -2453,9 +2684,9 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
     <div class="faq-a">
       <strong>임계값이 3개 있다 — 역할이 전부 다르다.</strong>
       <ul style="margin:8px 0 8px 20px;line-height:2;">
-        <li><strong>≥ 55 → 큐레이터 필터 통과</strong>: content-curator.ts의 킬러글 우선 발행 후보 풀에 진입. 이 점수 이상이어야 DailyBrief 주제 목록 맨 앞에 제목이 삽입된다. (2026-05-19, 기존 70에서 완화)</li>
+        <li><strong>≥ 50 → 큐레이터 필터 통과</strong>: content-curator.ts의 킬러글 우선 발행 후보 풀에 진입. 이 점수 이상이어야 DailyBrief 주제 목록 맨 앞에 제목이 삽입된다. (70→55: 2026-05-19 / 55→50: 2026-05-21, ㉔ 참조)</li>
         <li><strong>≥ 75 → isFeatured 자동 활성화</strong>: 발행 시 또는 재크롤 시 Post.isFeatured=true로 자동 전환. 이 글은 15시·21시 집중 부스트 라운드에 포함된다.</li>
-        <li><strong>저장 기준 (killerScore 자체)</strong>: qualityScore ≥ 20이면 저장, killerScore는 저장된 모든 글에 계산된다. 큐레이션 후보가 되려면 isUsable(qualityScore ≥ 30)과 killerScore ≥ 55를 동시에 만족해야 한다.</li>
+        <li><strong>저장 기준 (killerScore 자체)</strong>: qualityScore ≥ 20이면 저장, killerScore는 저장된 모든 글에 계산된다. 큐레이션 후보가 되려면 isUsable(qualityScore ≥ 30)과 killerScore ≥ 50을 동시에 만족해야 한다.</li>
       </ul>
       요약: 55 = "킬러글로 인정", 75 = "집중 부스트 자동 켜짐". 두 임계값을 혼동하지 말 것.
     </div>
@@ -2503,6 +2734,22 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.16</div>
+    <div class="changelog-date">2026-05-21</div>
+    <div class="changelog-content">
+      <strong>긴급 핫픽스 2건(grade crash + hotTopics 고갈) + 최상단 비주얼 파이프라인 다이어그램 신규 추가.</strong><br><br>
+      <strong>[긴급 수정 ㉒ — SHA: 11f7227]</strong> curator-users.ts grade 'MEMBER'→'SPROUT': 09:05 KST May21부터 GHA 연속 3회 FAILURE. getCuratorBotUser() CREATE 경로의 grade: 'MEMBER'(Grade enum 미존재) → Prisma crash. 1줄 수정으로 content-curator + popular-curator 양쪽 해결. 기존 계정(UPDATE 경로)은 영향 없음.<br>
+      <strong>[기능 확장 ㉓ — SHA: 95869de]</strong> hotTopics 풀 7→30개 2-Layer 확장: Layer1(Claude 프롬프트 각 영역 최대 4개) + Layer2(aggregateKillerTopics — killerScore≥25 desireCategory별 top 3) 병합. DESIRE_TO_AREA 21-entry 매핑 신규 추가.<br>
+      <strong>[필터 완화 ㉔ — SHA: 95869de]</strong> content-curator topicOverlap ≥3→≥4 + killerScore ≥55→≥50. 발행 후보 차단율 감소 목적.<br>
+      <strong>[§13]</strong> curator-users.ts grade: 'SPROUT' 명시 + 버그 수정 이력 alert 추가.<br>
+      <strong>[§14]</strong> 섹션 제목 ㉒㉓㉔ 추가(23개→26개). ② 카드에 ≥50 추가 완화 note 추가.<br>
+      <strong>[§15]</strong> FAQ killerScore ≥55 → ≥50 수정.<br>
+      <strong>[최상단]</strong> Pipeline Overview 비주얼 다이어그램 신규 추가: 5단계 플라이휠 + 단계별 영향 표.<br>
+      커버 배지·메타·footer: v10.15→v10.16.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -2767,7 +3014,7 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.15<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.16<br>
   최종 업데이트: 2026-05-20 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
