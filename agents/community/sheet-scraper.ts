@@ -344,10 +344,10 @@ export async function main() {
                   const keyTerms = extractKeyTerms(existingActive.title)
                   const rawContent = (existingActive.content ?? '').slice(0, 2000)
                   const retryWaves = [
-                    { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 1 },
-                    { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 3 },
-                    { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 6 },
-                    { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 10 },
+                    { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 1,  targetCount: undefined },
+                    { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 3,  targetCount: 3 },
+                    { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 6,  targetCount: 2 },
+                    { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 10, targetCount: 2 },
                   ]
                   for (const wave of retryWaves) {
                     await prisma.botLog.create({
@@ -359,9 +359,10 @@ export async function main() {
                           postId: existingActive.id,
                           waveType: wave.waveType,
                           scheduledAt: new Date(retryNow.getTime() + wave.delayMin * 60 * 1000).toISOString(),
-                          personaIds: WAVE_PERSONAS[wave.waveType] ?? [],
+                          personaIds: shuffleArray(WAVE_PERSONAS[wave.waveType] ?? []),
                           rawContent,
                           keyTerms,
+                          ...(wave.targetCount !== undefined ? { targetCount: wave.targetCount } : {}),
                         }),
                       },
                     })
@@ -376,7 +377,8 @@ export async function main() {
                       details: JSON.stringify({
                         postId: existingActive.id,
                         scheduledAt: new Date(retryNow.getTime() + 2 * 60 * 1000).toISOString(),
-                        personaIds: ['BI', 'BJ', 'BK'],
+                        personaIds: shuffleArray(['BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR']),
+                        targetCount: 4,
                       }),
                     },
                   })
