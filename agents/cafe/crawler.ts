@@ -858,6 +858,26 @@ async function crawlPost(page: Page, article: ArticleInfo, cafe: CafeConfig, inc
   return fallback
 }
 
+// ─── 콘텐츠 품질 방어 필터 ──────────────────────────────
+
+const NOTICE_SIGNALS = ['게시판 안내', '인원모집', '무통보 강퇴', '신고게시판', '카톡, 쪽지'] as const
+
+/** 이미지 의존 글 감지: 이미지가 있고 실질 텍스트(URL·공백 제거 후) 50자 미만 */
+function isImageDependentContent(post: RawCafePost): boolean {
+  if (post.imageUrls.length < 1) return false
+  const effectiveLen = post.content
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/\s+/g, '')
+    .length
+  return effectiveLen < 50
+}
+
+/** 게시판 공지문 혼입 감지: NOTICE_SIGNALS 중 2개 이상 포함 */
+function isBoardNoticeContent(content: string): boolean {
+  const hits = NOTICE_SIGNALS.filter(s => content.includes(s)).length
+  return hits >= 2
+}
+
 // ─── DB 저장 ─────────────────────────────────────────
 
 /** DB에 저장 (중복 skip + 블랙리스트/품질 필터링) */
@@ -897,6 +917,12 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
       })
       if (existing) continue
 
+      // 5.5. 이미지 의존·공지문 필터
+      const imageDep = isImageDependentContent(post)
+      const noticeText = isBoardNoticeContent(post.content)
+      if (imageDep) console.log(`[CafeCrawler] 이미지 의존 글 isUsable=false: "${post.title.slice(0, 25)}"`)
+      if (noticeText) console.log(`[CafeCrawler] 게시판 공지문 isUsable=false: "${post.title.slice(0, 25)}"`)
+
       // 6. 새 필드 포함하여 저장
       await prisma.cafePost.create({
         data: {
@@ -911,7 +937,7 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
           boardCategory: post.boardCategory,
           qualityScore,
           killerScore,
-          isUsable: qualityScore >= QUALITY_THRESHOLDS.minUsable,
+          isUsable: qualityScore >= QUALITY_THRESHOLDS.minUsable && !imageDep && !noticeText,
           likeCount: post.likeCount,
           commentCount: post.commentCount,
           viewCount: post.viewCount,

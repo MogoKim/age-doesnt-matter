@@ -40,6 +40,7 @@
 ## 수정 이력
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
+| 2026-05-21 | curator-shared.ts MONEY 키워드 확장 — 코스피·코스닥·나스닥·etf·커버드콜·코덱스·kodex·하이닉스·삼성전자·배당·배당주·미국주식 추가 | 투자 글이 guessDesire() 미감지로 STORY/자유수다 오분류되는 문제 완화 |
 | 2026-05-15 | 신규 생성 — popular-sync 3슬롯 + popular-curate 3슬롯 | 카페 실제 인기글 우나어 발행 (killerScore 과소평가 문제 해결) |
 | 2026-05-16 | popular-curator.ts 발행 루프에 LIFE2 크로스소스 dedup 추가 — 24h 내 LIFE2 전체 Post 조회 후 2자 명사 overlap ≥3 이면 발행 스킵 | Seed·ContentCurator와 동일 주제 중복 발행 차단 (크로스소스 dedup 미구현 버그) |
 | 2026-05-19 | ⑧ popular-curator.ts 발행 트랜잭션에 killerScore≥85 → Post.isFeatured+featuredAt 즉시 설정 추가 | 고점수 인기글 발행 즉시 집중 부스트 자동 적용 (수동 토글 불필요) |
