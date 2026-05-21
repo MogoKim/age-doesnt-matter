@@ -144,7 +144,7 @@
     margin-bottom: 14px;
   }
 
-  /* Big callout — "핵심" */
+  /* Callout */
   .callout {
     background: var(--green-dim);
     border: 1px solid rgba(74,222,128,0.25);
@@ -153,26 +153,11 @@
     padding: 18px 22px;
     margin-bottom: 20px;
   }
-  .callout.blue {
-    background: var(--blue-dim);
-    border-color: rgba(96,165,250,0.25);
-    border-left-color: var(--blue);
-  }
-  .callout.yellow {
-    background: var(--yellow-dim);
-    border-color: rgba(251,191,36,0.25);
-    border-left-color: var(--yellow);
-  }
-  .callout.red {
-    background: var(--red-dim);
-    border-color: rgba(248,113,113,0.25);
-    border-left-color: var(--red);
-  }
-  .callout.orange {
-    background: var(--orange-dim);
-    border-color: rgba(251,146,60,0.25);
-    border-left-color: var(--orange);
-  }
+  .callout.blue { background: var(--blue-dim); border-color: rgba(96,165,250,0.25); border-left-color: var(--blue); }
+  .callout.yellow { background: var(--yellow-dim); border-color: rgba(251,191,36,0.25); border-left-color: var(--yellow); }
+  .callout.red { background: var(--red-dim); border-color: rgba(248,113,113,0.25); border-left-color: var(--red); }
+  .callout.orange { background: var(--orange-dim); border-color: rgba(251,146,60,0.25); border-left-color: var(--orange); }
+  .callout.purple { background: var(--purple-dim); border-color: rgba(167,139,250,0.25); border-left-color: var(--purple); }
   .callout p { margin: 0; color: var(--text); font-size: 14.5px; line-height: 1.7; }
   .callout strong { color: inherit; }
 
@@ -218,6 +203,28 @@
     font-family: 'SF Mono', 'Fira Code', monospace;
   }
   pre code { background: none; color: inherit; padding: 0; border-radius: 0; font-size: inherit; }
+
+  /* Details / toggle */
+  details {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  details summary {
+    cursor: pointer;
+    padding: 12px 18px;
+    font-size: 13px; font-weight: 600;
+    color: var(--muted);
+    list-style: none;
+    display: flex; align-items: center; gap: 8px;
+    user-select: none;
+  }
+  details summary::before { content: '▶'; font-size: 10px; color: var(--sub); transition: transform .15s; }
+  details[open] summary::before { transform: rotate(90deg); }
+  details summary:hover { color: var(--text); }
+  details > pre { margin: 0; border: none; border-radius: 0; border-top: 1px solid var(--border); }
 
   /* Flow steps */
   .flow {
@@ -296,7 +303,7 @@
   .tl-body .title { font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
   .tl-body .note  { font-size: 12.5px; color: var(--muted); }
 
-  /* Status table badges */
+  /* Badges */
   .badge {
     display: inline-block;
     font-size: 11px; font-weight: 700;
@@ -309,6 +316,7 @@
   .badge-red    { background: var(--red-dim);    color: var(--red); }
   .badge-orange { background: var(--orange-dim); color: var(--orange); }
   .badge-sub    { background: var(--bg3);        color: var(--sub); }
+  .badge-primary { background: var(--primary-dim); color: var(--primary); border: 1px solid rgba(255,111,97,0.3); }
 
   /* KPI grid */
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
@@ -342,6 +350,21 @@
   .num-list .t { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
   .num-list .t strong { color: var(--text); }
 
+  /* Wave cards */
+  .wave-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 12px; margin-bottom: 20px; }
+  .wave-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .wave-card .wc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .wave-card .wc-name { font-size: 14px; font-weight: 700; color: var(--text); }
+  .wave-card .wc-time { font-size: 12px; color: var(--primary); font-weight: 700; }
+  .wave-card .wc-type { font-size: 11px; color: var(--sub); margin-bottom: 6px; }
+  .wave-card .wc-personas { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .wave-card .wc-personas code { font-size: 11px; }
+
   hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
   ul { padding-left: 20px; color: var(--muted); }
   ul li { margin-bottom: 4px; }
@@ -360,11 +383,11 @@
       이 문서는 스크래퍼가 왜 존재하고 어떻게 움직이는지를 처음부터 끝까지 설명한다.
     </div>
     <div class="cover-meta">
-      <div class="cover-meta-item"><div class="label">최종 업데이트</div><div class="val">2026-05-16</div></div>
+      <div class="cover-meta-item"><div class="label">최종 업데이트</div><div class="val">2026-05-21</div></div>
       <div class="cover-meta-item"><div class="label">대상</div><div class="val">창업자 (비기술 독자)</div></div>
       <div class="cover-meta-item"><div class="label">스케줄</div><div class="val">5회/일 (GHA) + 2회/일 (로컬)</div></div>
-      <div class="cover-meta-item"><div class="label">AI 모델</div><div class="val">Claude Haiku</div></div>
-      <div class="cover-meta-item"><div class="label">월 비용</div><div class="val">~$0.73</div></div>
+      <div class="cover-meta-item"><div class="label">AI 모델</div><div class="val">Haiku(필터) + Sonnet(파동댓글)</div></div>
+      <div class="cover-meta-item"><div class="label">파동 실행</div><div class="val">5분마다 (GHA 상시)</div></div>
     </div>
   </div>
 
@@ -375,7 +398,7 @@
     <div class="status-chip chip-blue"><div class="dot dot-blue"></div>AI 품질 필터 활성</div>
     <div class="status-chip chip-orange"><div class="dot dot-orange"></div>화제성 파동 시스템 정상</div>
     <div class="status-chip chip-purple"><div class="dot dot-purple"></div>Google Sheets 연동 정상</div>
-    <div class="status-chip chip-blue"><div class="dot dot-blue"></div>원본 댓글 AI 각색 신규 (2026-05-16)</div>
+    <div class="status-chip chip-blue"><div class="dot dot-blue"></div>원본 댓글 AI 각색 활성</div>
   </div>
 
   <!-- 1. 배경 -->
@@ -392,12 +415,12 @@
     <div class="tbl-wrap">
       <table>
         <thead>
-          <tr><th>수집 사이트</th><th>특징</th><th>처리 방식</th></tr>
+          <tr><th>수집 사이트</th><th>특징</th><th>처리 방식</th><th>딜레이</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>오늘의유머 (오유)</strong></td><td>50~60대가 많이 보는 유머·생활 커뮤니티</td><td>GitHub Actions (클라우드)</td></tr>
-          <tr><td><strong>네이트판</strong></td><td>40~60대 여성 비율 높음. 연애·가족·일상</td><td>GitHub Actions (클라우드)</td></tr>
-          <tr><td><strong>펨코 (fmkorea)</strong></td><td>다양한 연령대. 유머·시사·연예 선별</td><td>창업자 Mac (로컬 전용)</td></tr>
+          <tr><td><strong>오늘의유머 (오유)</strong></td><td>50~60대가 많이 보는 유머·생활 커뮤니티</td><td>GitHub Actions (클라우드)</td><td>2초</td></tr>
+          <tr><td><strong>네이트판</strong></td><td>40~60대 여성 비율 높음. 연애·가족·일상</td><td>GitHub Actions (클라우드)</td><td>2초</td></tr>
+          <tr><td><strong>펨코 (fmkorea)</strong></td><td>다양한 연령대. Cloudflare 보호 — 해외 IP 차단</td><td><strong>창업자 Mac (로컬 전용)</strong></td><td>3초</td></tr>
         </tbody>
       </table>
     </div>
@@ -462,37 +485,54 @@
     <div class="tbl-wrap">
       <table>
         <thead>
-          <tr><th>탭 이름</th><th>어디에 올라가는가</th><th>파동 강도</th></tr>
+          <tr><th>탭 이름</th><th>게시판</th><th>isFeatured</th><th>파동 강도</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>사는이야기</strong></td><td>우나어 사는이야기 게시판</td><td>약한 파동 (일반)</td></tr>
-          <tr><td><strong>웃음방</strong></td><td>우나어 웃음방 게시판</td><td>약한 파동 (일반)</td></tr>
-          <tr><td><strong>사는이야기_화제성</strong></td><td>사는이야기 + <span class="badge badge-orange">HOT 탭 자동 승격</span></td><td><strong>강한 파동 — 1분 이내 시작</strong></td></tr>
-          <tr><td><strong>웃음방_화제성</strong></td><td>웃음방 + <span class="badge badge-orange">HOT 탭 자동 승격</span></td><td><strong>강한 파동 — 1분 이내 시작</strong></td></tr>
+          <tr><td><strong>사는이야기</strong></td><td>사는이야기 (STORY)</td><td><span class="badge badge-sub">false</span></td><td>약한 파동 — 댓글 +2분, 좋아요 +6분</td></tr>
+          <tr><td><strong>웃음방</strong></td><td>웃음방 (HUMOR)</td><td><span class="badge badge-sub">false</span></td><td>약한 파동 — 댓글 +2분, 좋아요 +6분</td></tr>
+          <tr><td><strong>사는이야기_화제성</strong></td><td>사는이야기 + <span class="badge badge-orange">HOT 탭 자동 승격</span></td><td><span class="badge badge-orange">true</span></td><td><strong>강한 파동 — 4종, 총 10분</strong></td></tr>
+          <tr><td><strong>웃음방_화제성</strong></td><td>웃음방 + <span class="badge badge-orange">HOT 탭 자동 승격</span></td><td><span class="badge badge-orange">true</span></td><td><strong>강한 파동 — 4종, 총 10분</strong></td></tr>
         </tbody>
       </table>
     </div>
 
-    <h3>입력 방법</h3>
+    <h3>입력 방법 — 컬럼 A~J</h3>
     <div class="callout yellow">
-      <p><strong>A열에 URL만 넣으면 된다.</strong> B열 상태(Status)는 자동으로 PENDING이 된다.</p>
+      <p><strong>A열에 URL만 넣으면 된다.</strong> B열 상태(Status)는 자동으로 PENDING이 된다.<br>
+      나머지 열은 선택 사항이며, 비워두면 AI가 자동으로 처리한다.</p>
     </div>
 
     <div class="tbl-wrap">
       <table>
         <thead>
-          <tr><th>열</th><th>내용</th><th>필수 여부</th><th>예시</th></tr>
+          <tr><th>열</th><th>내용</th><th>필수 여부</th><th>예시 / 비고</th></tr>
         </thead>
         <tbody>
           <tr><td><strong>A열</strong></td><td>원본 URL</td><td><span class="badge badge-red">필수</span></td><td>https://www.todayhumor.co.kr/...</td></tr>
-          <tr><td>B열</td><td>처리 상태 (자동)</td><td><span class="badge badge-sub">자동</span></td><td>PENDING → PUBLISHED</td></tr>
-          <tr><td>C열</td><td>제목 직접 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>비워두면 AI가 판단</td></tr>
+          <tr><td>B열</td><td>처리 상태 (자동)</td><td><span class="badge badge-sub">자동</span></td><td>PENDING → PROCESSING → PUBLISHED</td></tr>
+          <tr><td>C열</td><td>제목 직접 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>비워두면 AI가 최적화</td></tr>
           <tr><td>D열</td><td>카테고리 직접 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>유머, 건강, 일상, 요리, 여행</td></tr>
           <tr><td>E열</td><td>게시자 닉네임 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>ㅋㅋ요정, 봄바람, 매일걷기 등</td></tr>
           <tr><td>F열</td><td>게시 완료 URL (자동)</td><td><span class="badge badge-sub">자동</span></td><td>PUBLISHED 후 자동 기록</td></tr>
           <tr><td>G열</td><td>에러 또는 필터 사유 (자동)</td><td><span class="badge badge-sub">자동</span></td><td>관련성 낮음 (점수: 4/10) 등</td></tr>
+          <tr><td>H열</td><td>게시 시각 (자동)</td><td><span class="badge badge-sub">자동</span></td><td>KST 시각 자동 기록</td></tr>
+          <tr><td>I열</td><td>운영 메모 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>내부 메모용, 처리에 영향 없음</td></tr>
+          <tr>
+            <td><strong>J열</strong></td>
+            <td><strong>본문 수동 붙여넣기 (선택)</strong></td>
+            <td><span class="badge badge-sub">선택</span></td>
+            <td>
+              <strong>J열에 내용이 있으면 Playwright 스크래핑을 완전히 건너뛴다.</strong><br>
+              펨코 Cloudflare 차단(FAILED) 시 대안 — 원문을 복사해 붙여넣기.<br>
+              HTML 또는 평문 텍스트 모두 지원.
+            </td>
+          </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="callout orange">
+      <p><strong>J열 사용 케이스:</strong> 펨코 글이 CF_BLOCKED로 FAILED 처리됐을 때, G열에 "CF 차단 — J열에 본문 붙여넣기 가능" 메시지가 표시된다. 이때 원본 글을 복사해서 J열에 붙여넣고 B열을 PENDING으로 바꾸면 된다.</p>
     </div>
   </div>
 
@@ -501,44 +541,20 @@
     <div class="section-label">04 — 자동 흐름</div>
     <h2>URL을 넣으면 A to Z 무슨 일이 일어나는가</h2>
 
-    <h3>실행 시간표 (GHA — 하루 5회)</h3>
+    <div class="callout blue">
+      <p><strong>두 개의 GHA 워크플로우가 분리되어 작동한다:</strong><br>
+      <strong>①</strong> <code>agents-scraper.yml</code> — 하루 5회 실행, 스크래핑·게시·파동 예약<br>
+      <strong>②</strong> <code>agents-sheet-viral.yml</code> — 5분마다 실행, 예약된 파동 실행</p>
+    </div>
+
+    <h3>실행 시간표 — 스크래퍼 (GHA, 하루 5회)</h3>
     <div class="card" style="margin-bottom:20px;">
       <div class="timeline">
-        <div class="tl-item">
-          <div class="tl-time">07:30</div>
-          <div class="tl-body">
-            <div class="title">아침 실행</div>
-            <div class="note">전날 밤 또는 새벽에 입력한 URL 처리</div>
-          </div>
-        </div>
-        <div class="tl-item">
-          <div class="tl-time">09:00</div>
-          <div class="tl-body">
-            <div class="title">오전 실행</div>
-            <div class="note">아침 입력분 처리</div>
-          </div>
-        </div>
-        <div class="tl-item">
-          <div class="tl-time">12:00</div>
-          <div class="tl-body">
-            <div class="title">점심 실행</div>
-            <div class="note">오전 중 입력분 처리 — 가장 빠른 반영</div>
-          </div>
-        </div>
-        <div class="tl-item">
-          <div class="tl-time">15:00</div>
-          <div class="tl-body">
-            <div class="title">오후 실행</div>
-            <div class="note">점심 입력분 처리</div>
-          </div>
-        </div>
-        <div class="tl-item">
-          <div class="tl-time">21:00</div>
-          <div class="tl-body">
-            <div class="title">저녁 실행</div>
-            <div class="note">오후~저녁 입력분 처리</div>
-          </div>
-        </div>
+        <div class="tl-item"><div class="tl-time">07:30</div><div class="tl-body"><div class="title">아침 실행</div><div class="note">전날 밤 또는 새벽에 입력한 URL 처리</div></div></div>
+        <div class="tl-item"><div class="tl-time">09:00</div><div class="tl-body"><div class="title">오전 실행</div><div class="note">아침 입력분 처리</div></div></div>
+        <div class="tl-item"><div class="tl-time">12:00</div><div class="tl-body"><div class="title">점심 실행</div><div class="note">오전 중 입력분 처리 — 가장 빠른 반영</div></div></div>
+        <div class="tl-item"><div class="tl-time">15:00</div><div class="tl-body"><div class="title">오후 실행</div><div class="note">점심 입력분 처리</div></div></div>
+        <div class="tl-item"><div class="tl-time">21:00</div><div class="tl-body"><div class="title">저녁 실행</div><div class="note">오후~저녁 입력분 처리</div></div></div>
       </div>
     </div>
     <p style="margin-bottom:20px;">
@@ -551,62 +567,79 @@
         <div class="flow-num blue">1</div>
         <div class="flow-content">
           <div class="title">PENDING 상태 URL 감지</div>
-          <div class="desc">시트에서 B열 = PENDING인 행만 가져온다. 처리 시작 시 즉시 PROCESSING으로 변경 (중복 처리 방지)</div>
+          <div class="desc">시트에서 B열 = PENDING인 행만 가져온다. 처리 시작 시 즉시 PROCESSING으로 변경 (중복 처리 방지).<br>
+          중복 URL 체크: 이미 게시된 글이면 SKIPPED 처리. 파동이 없으면 파동만 재예약 후 PUBLISHED.</div>
         </div>
       </div>
       <div class="flow-step">
-        <div class="flow-num yellow">2</div>
+        <div class="flow-num blue">2</div>
         <div class="flow-content">
-          <div class="title">AI 관련성 판단 (Claude Haiku)</div>
-          <div class="desc">50~60대 여성 관련성 0~10점 측정 → 6점 미만이면 <span class="badge badge-yellow">SKIPPED_LOW_SCORE</span>로 처리하고 G열에 사유 기록. 다음 URL로 넘어감</div>
+          <div class="title">J열 확인 — 수동 모드 or 자동 스크래핑</div>
+          <div class="desc">J열(rawContent)에 내용이 있으면 → Playwright 브라우저 접속을 건너뛰고 수동 본문을 사용.<br>
+          비어있으면 → Playwright로 원본 사이트에 자동 접속해 본문·이미지·댓글을 수집한다.</div>
         </div>
       </div>
       <div class="flow-step">
-        <div class="flow-num yellow">3</div>
+        <div class="flow-num green">3</div>
         <div class="flow-content">
-          <div class="title">AI 카테고리 분류 + 제목 최적화</div>
-          <div class="desc">카테고리 자동 분류 (유머/일상/건강/요리/여행/기타). 제목이 너무 짧거나 ㅋㅋ 등 특수문자만이면 더 나은 제목으로 자동 개선</div>
+          <div class="title">Playwright 브라우저로 원본 접속 + 댓글 수집</div>
+          <div class="desc">해당 URL에 자동으로 접속 (타임아웃 45초). 페이지 로드 후 사이트별 딜레이(2~3초) 대기.<br>
+          <strong>원본 댓글 최대 10개 수집</strong> — AJAX 비동기 로딩 최대 5초 대기. 5자 초과 댓글만 수집.<br>
+          수집된 댓글은 BotLog details.sourceComments에 저장, 나중에 파동 댓글 AI 각색에 활용됨.</div>
         </div>
       </div>
       <div class="flow-step">
         <div class="flow-num green">4</div>
         <div class="flow-content">
-          <div class="title">Playwright 브라우저로 원본 접속 + 댓글 수집</div>
-          <div class="desc">해당 URL에 자동으로 접속해 본문 글 추출, 이미지 추출, <strong>원본 댓글 최대 10개 수집</strong> (AJAX 로딩 최대 5초 대기). 수집된 댓글은 파동 댓글 AI 각색에 활용</div>
+          <div class="title">콘텐츠 변환 + 이미지/비디오 R2 업로드</div>
+          <div class="desc">HTML 정제 8단계 실행 (광고 제거 → sanitize → YouTube iframe 변환 등).<br>
+          이미지는 sharp로 WebP 변환 후 R2에 업로드. GIF는 원본 유지. 비디오도 R2에 업로드.<br>
+          외부 도메인 차단 시에도 이미지가 우나어 서버에서 서빙됨.</div>
         </div>
       </div>
       <div class="flow-step">
-        <div class="flow-num green">5</div>
+        <div class="flow-num yellow">5</div>
         <div class="flow-content">
-          <div class="title">이미지 R2 클라우드에 자동 업로드</div>
-          <div class="desc">외부 도메인 이미지를 우나어 서버(Cloudflare R2)에 재업로드. 원본 도메인 차단 시에도 이미지 정상 표시됨</div>
+          <div class="title">카테고리 분류 (키워드 기반 fallback + AI override)</div>
+          <div class="desc">먼저 키워드 매칭으로 카테고리를 결정한다. 그 다음 AI 필터(Haiku)가 관련성을 판단하고 카테고리를 재분류할 수 있다.<br>
+          창업자가 D열에 직접 지정했으면 그걸 최우선으로 따름.</div>
         </div>
       </div>
       <div class="flow-step">
-        <div class="flow-num green">6</div>
+        <div class="flow-num yellow">6</div>
+        <div class="flow-content">
+          <div class="title">AI 관련성 판단 (Claude Haiku)</div>
+          <div class="desc">50~60대 여성 관련성 0~10점 측정 → 6점 미만이면 <span class="badge badge-yellow">SKIPPED_LOW_SCORE</span>로 처리하고 G열에 사유 기록.<br>
+          AI가 오류나면 relevanceScore=7로 자동 처리 — AI 실패로 글이 안 올라가는 일은 없다.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num green">7</div>
         <div class="flow-content">
           <div class="title">우나어 사이트에 게시글 자동 생성</div>
-          <div class="desc">5명의 AI 페르소나 중 카테고리에 맞는 1명이 게시자로 표시. 출처 URL 포함. boardType은 시트 탭에서 결정</div>
+          <div class="desc">5명의 AI 페르소나 중 카테고리에 맞는 1명이 게시자로 표시.<br>
+          삭제된 적 있는 게시글이면 DB row를 재활용(update), 완전 신규면 create.</div>
         </div>
       </div>
       <div class="flow-step">
-        <div class="flow-num orange">7</div>
+        <div class="flow-num orange">8</div>
         <div class="flow-content">
-          <div class="title">화제성 탭이면 — 즉시 파동 시작</div>
+          <div class="title">파동 BotLog 예약 (즉시)</div>
           <div class="desc">
-            +1분: 좋아요 10명 자동 클릭 &nbsp;|&nbsp;
-            +3분: 공감 댓글 5개 자동 생성<br>
-            +6분: 반박/다른 의견 댓글 3개 &nbsp;|&nbsp;
-            +10분: 반전·마무리 댓글 5개<br>
-            → HOT 탭 자동 승격
+            <strong>화제성 탭 (isFeatured=true):</strong>
+            WAVE_L(좋아요 +1분) + WAVE_1(공감댓글 +3분) + WAVE_2(비판댓글 +6분) + WAVE_3(역전댓글 +10분) 4개 예약.<br>
+            <strong>일반 탭 (isFeatured=false):</strong>
+            댓글 +2분, 좋아요 +6분 2개 예약.<br>
+            원본 댓글(sourceComments)과 본문 내용(rawContent)도 함께 저장.
           </div>
         </div>
       </div>
       <div class="flow-step">
-        <div class="flow-num blue">8</div>
+        <div class="flow-num blue">9</div>
         <div class="flow-content">
           <div class="title">시트 상태 업데이트 + Slack 알림</div>
-          <div class="desc">성공 → F열에 게시글 URL + <span class="badge badge-green">PUBLISHED</span>. 실패 → G열에 에러 + <span class="badge badge-red">FAILED</span>. Slack #로그 채널에 결과 전송</div>
+          <div class="desc">성공 → F열에 게시글 URL + <span class="badge badge-green">PUBLISHED</span>. 실패 → G열에 에러 + <span class="badge badge-red">FAILED</span>.<br>
+          Slack 에이전트 채널에 처리 결과 전송 (게시 N건, 실패 N건, 필터 스킵 N건).</div>
         </div>
       </div>
     </div>
@@ -615,11 +648,9 @@
   <!-- 5. AI 역할 -->
   <div class="section">
     <div class="section-label">05 — AI 역할</div>
-    <h2>AI가 하는 4가지 판단</h2>
+    <h2>AI가 하는 판단</h2>
 
-    <p>2026-05-15부터 Claude Haiku AI가 스크래퍼에 추가됐다. 이전에는 단순 키워드 매칭이었지만, 이제는 AI가 문맥을 이해해서 판단한다.</p>
-
-    <h3>판단 1 — 관련성 점수 (0~10점)</h3>
+    <h3>판단 1 — 관련성 점수 (0~10점, Claude Haiku)</h3>
     <p>창업자가 URL을 넣어도 AI가 먼저 "이 글이 우리 타겟에 맞는가"를 본다.</p>
 
     <div class="score-row">
@@ -630,23 +661,53 @@
     </div>
 
     <div class="callout yellow">
-      <p><strong>AI도 실수할 수 있다.</strong> 좋은 글인데 SKIPPED됐다면 → D열에 카테고리를 직접 지정하고 B열을 다시 PENDING으로 바꾸면 재처리된다.</p>
+      <p><strong>AI도 실수할 수 있다.</strong> 좋은 글인데 SKIPPED됐다면 → G열에서 점수 확인 후, B열을 다시 PENDING으로 바꾸면 재처리된다.<br>
+      AI 서버 오류 시: 관련성 7점으로 자동 처리 (게시 차단 없음).</p>
     </div>
 
+    <details>
+      <summary>AI 필터 프롬프트 원문 (Claude Haiku, max_tokens: 200)</summary>
+      <pre>다음 글을 분석하세요. 대상: 50~60대 한국 여성 커뮤니티 "우리 나이가 어때서".
+
+제목: {제목 앞 50자}
+본문: {본문 앞 300자}
+
+JSON으로만 응답:
+{
+  "relevanceScore": 0~10 정수,
+  "category": "유머|일상|건강|요리|여행|기타",
+  "optimizedTitle": "개선 제목(25자 이내) 또는 null"
+}
+
+optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시. 나머지는 null.
+절대 금지 단어: 시니어, 어르신, 노인</pre>
+    </details>
+
     <h3>판단 2 — 카테고리 분류</h3>
+    <p>카테고리는 <strong>키워드 매칭 우선</strong>으로 결정되고, AI가 더 나은 분류를 제시하면 override한다.</p>
+
     <div class="grid2">
-      <div class="callout red" style="margin-bottom:0;">
-        <p><strong>기존 키워드 방식의 문제</strong><br>
-        "남편이 웃음을 잃었어요" → 웃음방(HUMOR)으로 잘못 분류<br>
-        "건강한 유머 생활" → 건강? 유머? 딕셔너리 순서대로 결정</p>
+      <div class="card">
+        <div class="card-title" style="color: var(--blue);">STORY (사는이야기) 키워드</div>
+        <ul>
+          <li><strong>건강</strong> — 혈압·혈당·관절·걷기·식단·병원·약·수술·다이어트·허리·무릎·영양제</li>
+          <li><strong>일상</strong> — 오늘·주말·산책·커피·여행·요리·취미·퇴직·은퇴·날씨·장보기</li>
+          <li><strong>고민</strong> — 걱정·힘들·스트레스·불안·외로·우울·상담·도움·속상</li>
+          <li><strong>자녀</strong> — 아들·딸·손주·손녀·육아·교육·학교·결혼·며느리·사위</li>
+        </ul>
       </div>
-      <div class="callout green" style="margin-bottom:0;">
-        <p><strong>AI 분류 (문맥 이해)</strong><br>
-        "남편이 웃음을 잃었어요" → 사는이야기(고민)으로 정확 분류<br>
-        창업자가 D열에 직접 지정했으면 그걸 우선 따름</p>
+      <div class="card">
+        <div class="card-title" style="color: var(--orange);">HUMOR (웃음방) 키워드</div>
+        <ul>
+          <li><strong>유머</strong> — ㅋㅋ·웃긴·빵터·레전드·개웃·짤·웃음·유머·대박·헐</li>
+          <li><strong>힐링</strong> — 힐링·감동·눈물·따뜻·가슴·울컥·편지·봉사·고마·치유</li>
+          <li><strong>자랑</strong> — 자랑·뿌듯·성공·해냈·드디어·합격·수상·인증·축하</li>
+          <li><strong>추천</strong> — 추천·강추·꿀팁·정보·소개·리뷰·후기·맛집·꿀잼</li>
+        </ul>
       </div>
     </div>
-    <br>
+
+    <p>AI 카테고리: <code>유머|일상|건강|요리|여행|기타</code> 6개. 키워드 fallback이 더 세분화된 분류를 제공한다 (건강/일상/고민/자녀 등).</p>
 
     <h3>판단 3 — 제목 최적화 (조건부)</h3>
     <div class="tbl-wrap">
@@ -672,70 +733,68 @@
       </table>
     </div>
 
-    <h3>판단 4 — 원본 댓글 AI 각색 <span style="display:inline-block;background:rgba(255,111,97,0.15);color:#FF6F61;font-size:10px;font-weight:700;padding:1px 7px;border-radius:3px;border:1px solid rgba(255,111,97,0.3);vertical-align:middle;margin-left:6px;">2026-05-16 신규</span></h3>
+    <h3>판단 4 — 원본 댓글 AI 각색 (Claude Sonnet, 파동 시)</h3>
     <div class="callout blue">
       <p><strong>스크랩 시 원본 사이트 댓글을 최대 10개 자동 수집한다.</strong><br>
-      수집된 댓글은 파동 댓글 생성 시 AI가 50~60대 말투로 각색해 활용한다.<br>
-      이미지만 있고 본문 텍스트가 없는 글도 원본 댓글을 보고 맥락을 이해해 자연스러운 댓글을 만든다.</p>
+      수집된 댓글은 파동 댓글 생성 시 AI(Sonnet)가 50~60대 말투로 각색해 활용한다.</p>
     </div>
 
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>게시글 유형</th><th>파동 댓글 생성 방식</th></tr></thead>
+        <thead><tr><th>게시글 유형</th><th>파동 댓글 생성 방식</th><th>모델</th></tr></thead>
         <tbody>
           <tr>
-            <td><strong>텍스트 본문 있음</strong></td>
-            <td>본문 내용 + 원본 댓글 분위기 참고 → AI가 50~60대 말투로 각색</td>
+            <td><strong>텍스트 본문 있음 (50자+)</strong></td>
+            <td>본문 + 원본 댓글 최대 5개 참고 → AI가 50~60대 말투로 각색</td>
+            <td>Claude Sonnet</td>
           </tr>
           <tr>
-            <td><strong>이미지 전용 (본문 텍스트 없음)</strong></td>
-            <td>원본 댓글이 있으면 → 댓글 보고 반응 생성<br>원본 댓글도 없으면 → 제목만 보고 짧은 반응 생성</td>
+            <td><strong>이미지 전용 (텍스트 50자 미만)</strong></td>
+            <td>원본 댓글 있으면 → 댓글 내용 기반 각색<br>원본 댓글도 없으면 → 제목+핵심어만으로 짧은 반응 생성</td>
+            <td>Claude Sonnet</td>
           </tr>
         </tbody>
       </table>
     </div>
-
-    <div class="callout blue">
-      <p><strong>AI 실패 보험:</strong> Claude API가 오류가 나면 AI 필터 전체를 건너뛰고 기존 키워드 방식으로 자동 게시한다. AI 실패 때문에 글이 안 올라가는 일은 없다.</p>
-    </div>
+    <p style="font-size: 13px; color: var(--sub);">max_tokens: 200, keyTerms 포함 여부 검증 후 최대 2회 시도. 5자 미만 댓글은 스킵.</p>
   </div>
 
   <!-- 6. 5명 페르소나 -->
   <div class="section">
-    <div class="section-label">06 — AI 페르소나</div>
+    <div class="section-label">06 — AI 게시 페르소나</div>
     <h2>5명의 AI 게시자 — 누가 글을 올리는가</h2>
 
-    <p>스크래퍼가 올린 글은 실제 사람처럼 보이는 5명의 봇 계정이 게시자로 표시된다. 카테고리에 맞는 페르소나가 자동으로 선택된다.</p>
+    <p>스크래퍼가 올린 글은 실제 사람처럼 보이는 5명의 봇 계정이 게시자로 표시된다. 카테고리·게시판에 맞는 페르소나가 자동 선택된다.</p>
 
     <div class="persona-grid">
       <div class="persona-card">
         <div class="nickname">ㅋㅋ요정</div>
-        <div class="code">코드 C</div>
-        <div class="desc">유머·웃음 특화. 웃기고 가벼운 글 담당</div>
+        <div class="code">코드 C | HUMOR 전용</div>
+        <div class="desc">유머·웃음 특화. 카테고리: 유머</div>
       </div>
       <div class="persona-card">
         <div class="nickname">봄바람</div>
-        <div class="code">코드 E</div>
-        <div class="desc">따뜻하고 공감 잘 함. 일상·고민 이야기 담당</div>
+        <div class="code">코드 E | STORY 전용</div>
+        <div class="desc">따뜻하고 공감 잘 함. 카테고리: 일상·고민</div>
       </div>
       <div class="persona-card">
         <div class="nickname">매일걷기</div>
-        <div class="code">코드 H</div>
-        <div class="desc">건강·운동에 관심 많음. 건강 이야기 담당</div>
+        <div class="code">코드 H | STORY 전용</div>
+        <div class="desc">건강·운동에 관심 많음. 카테고리: 건강</div>
       </div>
       <div class="persona-card">
         <div class="nickname">한페이지</div>
-        <div class="code">코드 I</div>
-        <div class="desc">감성적·차분함. 힐링·책·문화 이야기 담당</div>
+        <div class="code">코드 I | HUMOR 전용</div>
+        <div class="desc">감성적·차분함. 카테고리: 힐링</div>
       </div>
       <div class="persona-card">
         <div class="nickname">오후세시</div>
-        <div class="code">코드 P</div>
-        <div class="desc">만능형. 여유·일상·기타 모든 분야 담당</div>
+        <div class="code">코드 P | STORY+HUMOR 만능형</div>
+        <div class="desc">추천·자랑·자녀·기타 모든 분야 + 최종 폴백</div>
       </div>
     </div>
 
-    <p>이 5명은 게시글 올리기 + 화제성 파동 댓글 쓰기 모두 담당한다. 원본 댓글에서 분위기를 파악해 비슷한 톤으로 댓글을 생성한다.</p>
+    <p>페르소나 선택 우선순위: <strong>① 창업자 E열 지정 → ② 카테고리 매칭 → ③ 게시판 매칭 → ④ 오후세시(폴백)</strong></p>
   </div>
 
   <!-- 7. 펨코 왜 다른가 -->
@@ -753,10 +812,11 @@
       <table>
         <thead><tr><th>항목</th><th>오유·네이트판</th><th>펨코</th></tr></thead>
         <tbody>
-          <tr><td>실행 서버</td><td>GitHub 클라우드 (미국)</td><td><strong>창업자 Mac</strong></td></tr>
-          <tr><td>실행 시간</td><td>07:30·09:00·12:00·15:00·21:00 KST</td><td>11:30·21:30 KST</td></tr>
+          <tr><td>실행 서버</td><td>GitHub 클라우드 (미국)</td><td><strong>창업자 Mac (caffeinate로 슬립 방지)</strong></td></tr>
+          <tr><td>실행 시간</td><td>07:30·09:00·12:00·15:00·21:00 KST</td><td><strong>11:30 KST + 21:30 KST (launchd 스케줄)</strong></td></tr>
           <tr><td>자동화 여부</td><td>완전 자동 (Mac 꺼져 있어도 됨)</td><td><strong>Mac이 켜져 있어야 실행됨</strong></td></tr>
-          <tr><td>입력 방식</td><td>Google Sheets URL 입력</td><td>Google Sheets URL 입력</td></tr>
+          <tr><td>실행 스크립트</td><td><code>agents-scraper.yml</code> → <code>cron/runner.ts community sheet-scrape</code></td><td><code>run-local-fmkorea.ts</code> → <code>--site fmkorea</code></td></tr>
+          <tr><td>로그 위치</td><td>GitHub Actions 실행 로그</td><td><code>logs/fmkorea-scraper.log</code></td></tr>
         </tbody>
       </table>
     </div>
@@ -764,6 +824,19 @@
     <div class="callout red">
       <p><strong>주의:</strong> 펨코 글 처리는 창업자 Mac이 해당 시간(11:30, 21:30 KST)에 켜져 있고 인터넷 연결이 돼 있어야 한다. Mac이 꺼져 있으면 그 회차는 건너뜀.</p>
     </div>
+
+    <details>
+      <summary>launchd plist 스케줄 확인 (com.unao.fmkorea-scraper)</summary>
+      <pre>&lt;!-- ~/Library/LaunchAgents/com.unao.fmkorea-scraper.plist --&gt;
+&lt;key&gt;StartCalendarInterval&lt;/key&gt;
+&lt;array&gt;
+    &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;11&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;30&lt;/integer&gt;&lt;/dict&gt;  &lt;!-- 11:30 KST --&gt;
+    &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;21&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;30&lt;/integer&gt;&lt;/dict&gt;  &lt;!-- 21:30 KST --&gt;
+&lt;/array&gt;
+
+&lt;!-- caffeinate -i 로 Mac 슬립 방지 --&gt;
+&lt;!-- scripts/launchd-alert.sh 경유 → agents/community/run-local-fmkorea.ts 실행 --&gt;</pre>
+    </details>
   </div>
 
   <!-- 8. 시트 상태값 -->
@@ -793,7 +866,8 @@
           <tr>
             <td><span class="badge badge-red">FAILED</span></td>
             <td>스크래핑 실패</td>
-            <td>G열 에러 메시지 확인 → PENDING으로 바꾸면 재시도</td>
+            <td>G열 에러 메시지 확인 → PENDING으로 바꾸면 재시도.<br>
+            "CF 차단"이면 → J열에 본문 붙여넣기 후 PENDING으로</td>
           </tr>
           <tr>
             <td><span class="badge badge-sub">SKIPPED</span></td>
@@ -802,7 +876,7 @@
           </tr>
           <tr>
             <td><span class="badge badge-yellow">SKIPPED_LOW_SCORE</span></td>
-            <td>AI가 관련성 낮다고 판단</td>
+            <td>AI가 관련성 낮다고 판단 (6점 미만)</td>
             <td>G열에서 점수 확인. 억지로 올리고 싶으면 PENDING으로 바꾸면 됨</td>
           </tr>
         </tbody>
@@ -822,7 +896,7 @@
           <li>50~60대 여성이 "이거 나 얘기잖아!" 할 것 같은 글</li>
           <li>유머·건강·요리·여행·가족·부부 관련</li>
           <li>공감 댓글이 많이 달린 원본 글 (HOT 탭 글)</li>
-          <li>화제성 탭: 정말 반응 좋을 것 같은 글만</li>
+          <li>화제성 탭: 정말 반응 좋을 것 같은 글만 (하루 1~3개)</li>
         </ul>
       </div>
       <div class="card">
@@ -831,34 +905,36 @@
           <li>정치·종교·혐오 관련 → AI가 필터링하지만 창업자도 주의</li>
           <li>너무 젊은 타겟 글 (10~20대 주제) → AI가 걸러냄</li>
           <li>같은 URL 두 번 입력 → SKIPPED 처리됨 (중복 방지)</li>
-          <li>"시니어", "어르신", "노인" 표현이 많은 글</li>
+          <li>"시니어", "어르신", "노인" 표현이 많은 글 (AI 프롬프트에서 금지어)</li>
         </ul>
       </div>
     </div>
 
     <div class="callout blue">
-      <p><strong>화제성 탭 사용 기준:</strong> 파동 댓글·좋아요 비용이 더 들기 때문에 정말 좋은 글만 사용하는 것이 효율적이다. 하루 1~3개 정도가 적당하다.</p>
+      <p><strong>화제성 탭 사용 기준:</strong> 파동 댓글·좋아요 비용(Sonnet)이 더 들기 때문에 정말 좋은 글만 사용하는 것이 효율적이다. 하루 1~3개 정도가 적당하다.</p>
     </div>
   </div>
 
   <!-- 10. 비용 -->
   <div class="section">
     <div class="section-label">10 — 비용</div>
-    <h2>월 비용 — 약 $0.73</h2>
+    <h2>월 비용 추정</h2>
 
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>항목</th><th>비용</th><th>비고</th></tr></thead>
+        <thead><tr><th>항목</th><th>사용 모델</th><th>비용</th><th>비고</th></tr></thead>
         <tbody>
-          <tr><td>Playwright 크롤링</td><td><strong>무료</strong></td><td>오픈소스 브라우저 자동화</td></tr>
-          <tr><td>Google Sheets API</td><td><strong>무료</strong></td><td>쿼터 범위 내</td></tr>
-          <tr><td><strong>Claude Haiku AI 필터</strong></td><td><strong>~$0.68/월</strong></td><td>25건/일 × 30일 기준</td></tr>
-          <tr><td>R2 이미지 저장</td><td>~$0.05/월</td><td>Cloudflare R2</td></tr>
-          <tr><td>GitHub Actions 실행</td><td><strong>무료</strong></td><td>월 2,000분 한도 내 여유 있음</td></tr>
+          <tr><td>Playwright 크롤링</td><td>—</td><td><strong>무료</strong></td><td>오픈소스 브라우저 자동화</td></tr>
+          <tr><td>Google Sheets API</td><td>—</td><td><strong>무료</strong></td><td>쿼터 범위 내</td></tr>
+          <tr><td><strong>AI 품질 필터</strong></td><td>Claude Haiku</td><td><strong>~$0.68/월</strong></td><td>25건/일 × 30일 기준</td></tr>
+          <tr><td><strong>파동 댓글 생성</strong></td><td>Claude Sonnet</td><td><strong>~$0.10~0.30/월</strong></td><td>화제성 글 수에 비례 (댓글 1개 ≈ $0.002)</td></tr>
+          <tr><td>R2 이미지 저장</td><td>—</td><td>~$0.05/월</td><td>Cloudflare R2</td></tr>
+          <tr><td>GitHub Actions 실행</td><td>—</td><td><strong>무료</strong></td><td>월 2,000분 한도 내 여유 있음</td></tr>
           <tr>
             <td><strong>합계</strong></td>
-            <td><strong>~$0.73/월</strong></td>
-            <td>월 1달러 미만 — 무시 가능한 수준</td>
+            <td>—</td>
+            <td><strong>~$0.83~1.03/월</strong></td>
+            <td>월 1달러 수준 — 무시 가능</td>
           </tr>
         </tbody>
       </table>
@@ -868,7 +944,7 @@
   <!-- 11. 현재 운영 현황 -->
   <div class="section">
     <div class="section-label">11 — 현재 운영 현황</div>
-    <h2>2026-05-16 기준 상태</h2>
+    <h2>2026-05-21 기준 상태</h2>
 
     <div class="tbl-wrap">
       <table>
@@ -877,12 +953,17 @@
           <tr>
             <td>오유·네이트판 GHA 자동화</td>
             <td><span class="badge badge-green">✅ 정상</span></td>
-            <td>5회/일, agents-scraper.yml</td>
+            <td>5회/일, agents-scraper.yml, timeout 25분</td>
           </tr>
           <tr>
             <td>펨코 로컬 Mac 자동화</td>
             <td><span class="badge badge-green">✅ 정상</span></td>
-            <td>2회/일 (11:30·21:30 KST), launchd</td>
+            <td>2회/일 (11:30·21:30 KST), launchd, caffeinate -i 슬립 방지</td>
+          </tr>
+          <tr>
+            <td>파동 GHA 자동화</td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>5분마다, agents-sheet-viral.yml, timeout 10분</td>
           </tr>
           <tr>
             <td>AI 품질 필터</td>
@@ -891,45 +972,40 @@
           </tr>
           <tr>
             <td>원본 댓글 수집 + AI 각색</td>
-            <td><span class="badge badge-blue">✅ 신규 (2026-05-16)</span></td>
-            <td>AJAX 대기 5초, 최대 10개 수집 → 파동 댓글 50~60대 말투 각색</td>
+            <td><span class="badge badge-blue">✅ 정상 (2026-05-16 도입)</span></td>
+            <td>AJAX 대기 5초, 최대 10개 수집 → Claude Sonnet으로 50~60대 말투 각색</td>
           </tr>
           <tr>
-            <td>화제성 파동 시스템</td>
+            <td>화제성 파동 시스템 (4종)</td>
             <td><span class="badge badge-green">✅ 정상</span></td>
-            <td>+1/+3/+6/+10분 자동 실행</td>
+            <td>WAVE_L+1/2/3, +1/+3/+6/+10분 자동 실행, 일일 50건 상한</td>
+          </tr>
+          <tr>
+            <td>일반 글 engagement 파동 (2종)</td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>댓글 +2분 (3명), 좋아요 +6분 (5명)</td>
           </tr>
           <tr>
             <td>커뮤니티 이미지 표시</td>
-            <td><span class="badge badge-blue">✅ 수정 (2026-05-16)</span></td>
+            <td><span class="badge badge-blue">✅ 정상 (2026-05-16 수정)</span></td>
             <td>img.age-doesnt-matter.com → /_next/image 프록시 처리 (이미지 안 보이던 버그 수정)</td>
           </tr>
           <tr>
             <td>Google Sheets 연동</td>
             <td><span class="badge badge-green">✅ 정상</span></td>
-            <td>4탭 구조 (사는이야기/웃음방 × 일반/화제성)</td>
+            <td>4탭 구조 (사는이야기/웃음방 × 일반/화제성), A~J 10열</td>
           </tr>
           <tr>
-            <td>82cook 외부 크롤러 (external-crawler.ts)</td>
+            <td>82cook 외부 크롤러</td>
             <td><span class="badge" style="background:rgba(255,111,97,0.15);color:#FF6F61;border:1px solid rgba(255,111,97,0.3);">⛔ 비활성</span></td>
-            <td>2026-04-07 전략 개편으로 비활성화 — EXTERNAL_CONFIGS: [] (코드 보존, 재활성화 가능)</td>
-          </tr>
-          <tr>
-            <td>2막준비(LIFE2) 중복 글 이슈</td>
-            <td><span class="badge" style="background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);">✅ 수정완료</span></td>
-            <td>커밋 7f2d8eb (2026-05-16) — Seed·ContentCurator·PopularCurator 3개 소스 모두에 board-wide 24h dedup 추가. 알고리즘: 2자 한글 명사 추출 후 ≥3개 겹치면 발행 스킵 (LIFE2 전용, 타 게시판은 per-user 유지)</td>
-          </tr>
-          <tr>
-            <td>SHEET 포스트 댓글 파동</td>
-            <td><span class="badge badge-blue">✅ 수정 (2026-05-19)</span></td>
-            <td>커밋 44d3bb9 — <code>processPendingSheetCommentWaves()</code>가 구현됐지만 scheduler.ts main()에서 호출 누락 → SHEET 포스트(스크래퍼 글) 댓글이 영구 PENDING이던 버그 수정. main()에 호출 1줄 추가로 해결.</td>
+            <td>2026-04-07 전략 개편으로 비활성화 (코드 보존, 재활성화 가능)</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- 12. 창업자가 기억할 3가지 -->
+  <!-- 12. 핵심 요약 -->
   <div class="section">
     <div class="section-label">12 — 핵심 요약</div>
     <h2>창업자가 기억할 3가지</h2>
@@ -953,10 +1029,302 @@
         <div class="n">3</div>
         <div class="t">
           <strong>펨코 글 처리는 Mac이 켜져 있어야 한다.</strong><br>
-          오유·네이트판은 Mac 꺼져 있어도 GitHub에서 알아서 처리한다.
+          오유·네이트판은 Mac 꺼져 있어도 GitHub에서 알아서 처리한다.<br>
+          펨코 차단(CF_BLOCKED)이면 G열 확인 → J열에 본문 직접 붙여넣기.
         </div>
       </li>
     </ul>
+  </div>
+
+  <hr>
+
+  <!-- 13. 콘텐츠 변환 파이프라인 (신규) -->
+  <div class="section">
+    <div class="section-label">13 — 기술 상세 (콘텐츠 변환)</div>
+    <h2>콘텐츠 변환 파이프라인 8단계</h2>
+    <p>스크래핑한 외부 HTML을 우나어 사이트에 맞게 변환하는 과정. <code>agents/community/content-transformer.ts</code></p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-content">
+          <div class="title">불필요 요소 제거 (removeElements)</div>
+          <div class="desc">광고·네비게이션·댓글영역·iframe·서명 등 사이트별로 정의된 CSS 셀렉터로 제거. 예: <code>.rd_hd, .botBanner, .comment_area</code></div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-content">
+          <div class="title">사이트별 전처리 (preClean)</div>
+          <div class="desc">
+            <strong>펨코:</strong> link.php 리다이렉터 → 실제 URL 추출. highslide 이미지 확대 wrapper 제거. auto_media_wrapper에서 <code>&lt;video&gt;</code> 태그만 추출 (플레이어 UI 제거). button/input 태그 제거.<br>
+            <strong>네이트판:</strong> /attach/imageView 뷰어 링크 wrapper 제거.<br>
+            <strong>오유:</strong> <code>&lt;b&gt;</code> 태그가 본문 전체를 감싸는 패턴 제거.
+          </div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">3</div>
+        <div class="flow-content">
+          <div class="title">sanitize-html 정제</div>
+          <div class="desc">허용 태그: <code>p, br, strong, i, em, u, del, a, h2~h4, img, iframe, video, source, ul, ol, li, blockquote, hr, div, span, table</code><br>
+          iframe은 youtube.com·youtube-nocookie.com만 허용. 나머지 외부 iframe 전부 제거.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">4</div>
+        <div class="flow-content">
+          <div class="title">후처리 (postClean) — 미디어 플레이어 UI 잔해 제거</div>
+          <div class="desc">펨코 MediaElement.js 플레이어 UI 잔해 제거: "Video Player" 텍스트, 속도 셀렉터 목록 (0.25x 등), 타임코드 (0:00 형식), 슬래시(/) 요소 등.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">5</div>
+        <div class="flow-content">
+          <div class="title">YouTube URL → iframe 변환</div>
+          <div class="desc"><code>&lt;a&gt;</code> 태그 안의 YouTube 링크 또는 텍스트 bare URL을 <code>youtube-nocookie.com/embed</code> iframe으로 변환. width 100%, height 400px.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">6</div>
+        <div class="flow-content">
+          <div class="title">video controls 속성 자동 주입</div>
+          <div class="desc"><code>controls</code> 속성 없는 <code>&lt;video&gt;</code> 태그에 자동으로 추가. 사용자가 영상을 재생할 수 있도록.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">7</div>
+        <div class="flow-content">
+          <div class="title">빈 태그 정리</div>
+          <div class="desc">빈 <code>&lt;p&gt;</code>/<code>&lt;div&gt;</code> 제거. 연속 <code>&lt;br&gt;</code> 3개 이상 → 2개로 줄임. <code>&amp;nbsp;</code> → 공백 변환.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num orange">8</div>
+        <div class="flow-content">
+          <div class="title">출처 표시 (게시판별 차이)</div>
+          <div class="desc">
+            <strong>HUMOR (웃음방):</strong> 본문 끝에 <code>&lt;p&gt;출처: 오늘의유머&lt;/p&gt;</code> 자동 추가.<br>
+            <strong>STORY (사는이야기):</strong> 출처 없음 — 개인이 직접 쓴 글처럼 보여야 하기 때문.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <details>
+      <summary>transformRawContent() — J열 수동 붙여넣기 처리</summary>
+      <pre>// J열(rawContent)에 내용이 있을 때 실행 (Playwright 스크래핑 완전 스킵)
+// HTML 자동 감지: &lt;태그&gt; 패턴 있으면 sanitize-html 처리
+// 평문 텍스트: 줄 단위로 &lt;p&gt; 태그로 감싸기
+// HUMOR 게시판이면 출처 추가, STORY는 없음</pre>
+    </details>
+  </div>
+
+  <!-- 14. 이미지/미디어 파이프라인 (신규) -->
+  <div class="section">
+    <div class="section-label">14 — 기술 상세 (미디어)</div>
+    <h2>이미지 / 비디오 파이프라인</h2>
+    <p>외부 이미지·비디오를 우나어 R2 서버에 재업로드해 엑박·CSP 차단을 방지한다. <code>agents/community/image-pipeline.ts</code></p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>미디어 유형</th><th>처리 방식</th><th>R2 저장 경로</th><th>용량 한도</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>이미지 (jpg/png/webp 등)</strong></td>
+            <td>sharp 라이브러리 → WebP 80% 품질 변환 후 업로드.<br>50px×50px 미만 → 아이콘/이모티콘으로 판단해 스킵.</td>
+            <td><code>scraped/{date}/{timestamp}/{index}.webp</code></td>
+            <td>5MB</td>
+          </tr>
+          <tr>
+            <td><strong>GIF</strong></td>
+            <td>원본 그대로 업로드 (WebP 변환 안 함 — 애니메이션 보존)</td>
+            <td><code>scraped/{date}/{timestamp}/{index}.gif</code></td>
+            <td>5MB</td>
+          </tr>
+          <tr>
+            <td><strong>비디오 (mp4/webm)</strong></td>
+            <td>원본 그대로 업로드. <code>&lt;video controls preload="metadata"&gt;</code>로 재구성.</td>
+            <td><code>scraped/{date}/{timestamp}/v{index}.mp4</code></td>
+            <td>20MB</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>이미지 필터 제외 조건</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>조건</th><th>이유</th></tr></thead>
+        <tbody>
+          <tr><td><code>data:URI</code></td><td>인라인 이미지 (업로드 불필요)</td></tr>
+          <tr><td>URL에 <code>pixel / tracking / beacon</code> 포함</td><td>트래킹 픽셀</td></tr>
+          <tr><td><code>/modules/point/icons</code> 경로</td><td>펨코 등급 뱃지 아이콘</td></tr>
+          <tr><td>가로 또는 세로 50px 미만</td><td>이모티콘·UI 아이콘</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout yellow">
+      <p><strong>이미지 업로드 실패 시:</strong> 태그를 삭제하지 않고 <code>&lt;div class="image-placeholder"&gt;이미지를 불러올 수 없습니다&lt;/div&gt;</code>로 대체한다. 레이아웃 파괴 없음.<br>
+      <strong>Referer 헤더</strong>를 자동으로 원본 도메인으로 설정해 핫링크 차단을 우회한다.</p>
+    </div>
+  </div>
+
+  <!-- 15. 파동 시스템 상세 (신규) -->
+  <div class="section">
+    <div class="section-label">15 — 기술 상세 (파동 시스템)</div>
+    <h2>파동 시스템 — 화제성 4종 + 일반 2종</h2>
+
+    <div class="callout blue">
+      <p><strong>두 개의 파동 트랙이 완전히 분리되어 동작한다.</strong><br>
+      파동 예약은 <code>agents-scraper.yml</code>(스크래핑 시 즉시)에서 BotLog에 기록하고,<br>
+      파동 실행은 <code>agents-sheet-viral.yml</code>(5분마다)에서 scheduledAt을 확인해 실행한다.</p>
+    </div>
+
+    <h3>화제성 글 파동 4종 (isFeatured=true)</h3>
+    <div class="wave-grid">
+      <div class="wave-card">
+        <div class="wc-header">
+          <div class="wc-name">WAVE_L</div>
+          <div class="wc-time">+1분</div>
+        </div>
+        <div class="wc-type">BotLog: SHEET_LIKE_WAVE_PENDING</div>
+        <div class="wc-personas">좋아요 10명<br><code>BI BJ BK BL BM BN BO BP BQ BR</code></div>
+      </div>
+      <div class="wave-card">
+        <div class="wc-header">
+          <div class="wc-name">WAVE_1 (공감)</div>
+          <div class="wc-time">+3분</div>
+        </div>
+        <div class="wc-type">BotLog: SHEET_COMMENT_WAVE_PENDING (empathy)</div>
+        <div class="wc-personas">댓글 5명<br><code>BS BT BU BV BW</code></div>
+      </div>
+      <div class="wave-card">
+        <div class="wc-header">
+          <div class="wc-name">WAVE_2 (비판)</div>
+          <div class="wc-time">+6분</div>
+        </div>
+        <div class="wc-type">BotLog: SHEET_COMMENT_WAVE_PENDING (critical)</div>
+        <div class="wc-personas">댓글 5명<br><code>V W AB Y AA</code></div>
+      </div>
+      <div class="wave-card">
+        <div class="wc-header">
+          <div class="wc-name">WAVE_3 (역전)</div>
+          <div class="wc-time">+10분</div>
+        </div>
+        <div class="wc-type">BotLog: SHEET_COMMENT_WAVE_PENDING (reversal)</div>
+        <div class="wc-personas">댓글 5명<br><code>AE P AD BG BH</code></div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <p><strong>화제성 파동 상한:</strong> 오늘 PENDING 건수가 50건 초과 시 처리를 스킵한다 (과도한 봇 활동 방지).<br>
+      <strong>글당 댓글 상한:</strong> 봇 댓글이 이미 20개 이상이면 추가하지 않는다.</p>
+    </div>
+
+    <h3>일반 글 파동 2종 (isFeatured=false)</h3>
+    <div class="wave-grid">
+      <div class="wave-card">
+        <div class="wc-header">
+          <div class="wc-name">ENGAGE_COMMENT</div>
+          <div class="wc-time">+2분</div>
+        </div>
+        <div class="wc-type">BotLog: SHEET_ENGAGE_COMMENT_PENDING (empathy)</div>
+        <div class="wc-personas">댓글 3명<br><code>BI BJ BK</code><br>페르소나당 SHEET 글 일일 3개 댓글 상한</div>
+      </div>
+      <div class="wave-card">
+        <div class="wc-header">
+          <div class="wc-name">ENGAGE_LIKE</div>
+          <div class="wc-time">+6분</div>
+        </div>
+        <div class="wc-type">BotLog: SHEET_ENGAGE_LIKE_PENDING</div>
+        <div class="wc-personas">좋아요 5명<br><code>BL BM BN BO BP</code></div>
+      </div>
+    </div>
+
+    <h3>파동 댓글 생성 로직 (generateSheetViralComment)</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-num blue">1</div>
+        <div class="flow-content">
+          <div class="title">이미지 전용 글 감지</div>
+          <div class="desc">본문 텍스트(HTML 태그 제거 후)가 50자 미만이면 이미지 전용 글로 판단.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num green">2</div>
+        <div class="flow-content">
+          <div class="title">원본 댓글 각색 모드</div>
+          <div class="desc">이미지 전용 + sourceComments 있으면 → 원본 댓글 내용을 본문으로 삼아 각색.<br>
+          "상스러운 표현은 순화하고, 50~60대 말투로 재작성" 지시 포함. 최대 5개 참조.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num yellow">3</div>
+        <div class="flow-content">
+          <div class="title">제목 기반 fallback</div>
+          <div class="desc">이미지 전용 + sourceComments도 없으면 → 제목 + keyTerms만으로 짧은 반응 생성 (generateTitleOnlyComment).</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num orange">4</div>
+        <div class="flow-content">
+          <div class="title">본문 기반 댓글 생성 (일반)</div>
+          <div class="desc">텍스트 본문이 충분하면 본문 앞 1,500자 + sourceComments 참고로 댓글 생성.<br>
+          waveType에 따라 다른 프롬프트: empathy(공감·구체적 언급) / critical(솔직한 다른 시각) / reversal(여운·비슷한 경험).<br>
+          keyTerms 검증 후 미포함 시 최대 2회 재시도. Claude Sonnet, max_tokens: 200.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 16. GHA 파동 워크플로우 (신규) -->
+  <div class="section">
+    <div class="section-label">16 — 기술 상세 (파동 워크플로우)</div>
+    <h2>GHA 파동 워크플로우 — agents-sheet-viral.yml</h2>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>항목</th><th>값</th></tr></thead>
+        <tbody>
+          <tr><td>파일</td><td><code>.github/workflows/agents-sheet-viral.yml</code></td></tr>
+          <tr><td>실행 주기</td><td>매 5분마다 (*/5 * * * *)</td></tr>
+          <tr><td>timeout</td><td>10분</td></tr>
+          <tr><td>concurrency</td><td>cancel-in-progress: false (겹쳐도 큐에서 대기)</td></tr>
+          <tr><td>사용 모델</td><td>CLAUDE_MODEL_HEAVY = <code>claude-sonnet-4-6</code> (파동 댓글 생성)<br>CLAUDE_MODEL_LIGHT = <code>claude-haiku-4-5</code></td></tr>
+          <tr><td>실행 명령</td><td><code>npx tsx cron/runner.ts seed viral-waves</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>실행 순서 (seed:viral-waves 핸들러)</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-num green">1</div>
+        <div class="flow-content">
+          <div class="title">processSheetEngagementWaves()</div>
+          <div class="desc">BotLog에서 <code>SHEET_ENGAGE_COMMENT_PENDING</code>, <code>SHEET_ENGAGE_LIKE_PENDING</code> 중 scheduledAt이 지난 항목 처리.<br>
+          일반 글(isFeatured=false) engagement 파동 담당.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num orange">2</div>
+        <div class="flow-content">
+          <div class="title">processPendingSheetCommentWaves()</div>
+          <div class="desc">BotLog에서 <code>SHEET_LIKE_WAVE_PENDING</code>, <code>SHEET_COMMENT_WAVE_PENDING</code> 중 scheduledAt이 지난 항목 처리.<br>
+          화제성 글(isFeatured=true) 파동 4종 담당. 일일 50건 상한 체크 먼저.</div>
+        </div>
+      </div>
+    </div>
+
+    <details>
+      <summary>runner.ts viral-waves 핸들러 원문</summary>
+      <pre>'seed:viral-waves': () => import('../seed/scheduler.js').then(async m => {
+  await m.processSheetEngagementWaves()   // 1. 일반 글 engagement 파동
+  await m.processPendingSheetCommentWaves() // 2. 화제성 글 파동
+}),</pre>
+    </details>
   </div>
 
   <!-- 부록 -->
@@ -966,18 +1334,24 @@
 
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>구성요소</th><th>역할</th></tr></thead>
+        <thead><tr><th>구성요소</th><th>역할</th><th>모델/비고</th></tr></thead>
         <tbody>
-          <tr><td><code>agents/community/sheet-scraper.ts</code></td><td>핵심 스크래퍼 코드 (AI 필터 포함)</td></tr>
-          <tr><td><code>agents/community/site-configs.ts</code></td><td>오유·네이트판·펨코 크롤링 설정</td></tr>
-          <tr><td><code>agents/community/content-transformer.ts</code></td><td>본문 HTML 정제</td></tr>
-          <tr><td><code>agents/community/image-pipeline.ts</code></td><td>이미지 R2 업로드</td></tr>
-          <tr><td><code>agents/community/sheets-client.ts</code></td><td>Google Sheets 읽기/쓰기 (탭: 사는이야기/웃음방 × 2)</td></tr>
-          <tr><td><code>agents/seed/generator.ts</code></td><td>파동 댓글 AI 생성 (원본 댓글 각색 포함, 2026-05-16 개선)</td></tr>
-          <tr><td><code>src/lib/sanitize.ts</code></td><td>커뮤니티 이미지 프록시 처리 — proxyR2Images() (2026-05-16 수정)</td></tr>
-          <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>GHA 자동 실행 스케줄 (5회/일)</td></tr>
-          <tr><td>Claude Haiku</td><td>AI 관련성 판단·카테고리 분류·제목 최적화·댓글 각색</td></tr>
-          <tr><td>Cloudflare R2</td><td>이미지 영구 저장 (<code>scraped/{postKey}/{index}.ext</code>)</td></tr>
+          <tr><td><code>agents/community/sheet-scraper.ts</code></td><td>핵심 스크래퍼 — PENDING 읽기 → 스크래핑 → 게시 → 파동 예약</td><td>691줄</td></tr>
+          <tr><td><code>agents/community/sheets-client.ts</code></td><td>Google Sheets A~J 10열 읽기/쓰기 (4탭)</td><td>googleapis</td></tr>
+          <tr><td><code>agents/community/site-configs.ts</code></td><td>오유·네이트판·펨코 크롤링 설정 + 댓글 셀렉터</td><td>—</td></tr>
+          <tr><td><code>agents/community/content-transformer.ts</code></td><td>외부 HTML 정제 8단계 + 카테고리 키워드 분류</td><td>sanitize-html</td></tr>
+          <tr><td><code>agents/community/image-pipeline.ts</code></td><td>이미지 WebP 변환·비디오·R2 업로드 통합 파이프라인</td><td>sharp</td></tr>
+          <tr><td><code>agents/community/run-local-fmkorea.ts</code></td><td>펨코 로컬 런처 (launchd 전용, dotenv 직접 로드)</td><td>LOCAL ONLY</td></tr>
+          <tr><td><code>agents/seed/generator.ts</code></td><td>파동 댓글 AI 생성 (generateSheetViralComment)</td><td>Claude Sonnet</td></tr>
+          <tr><td><code>agents/seed/scheduler.ts</code></td><td>파동 처리 함수 (processSheetEngagementWaves, processPendingSheetCommentWaves)</td><td>1416줄</td></tr>
+          <tr><td><code>agents/cron/runner.ts</code></td><td>모든 에이전트 핸들러 등록 테이블 (cron/worker entry point)</td><td>—</td></tr>
+          <tr><td><code>src/lib/sanitize.ts</code></td><td>커뮤니티 이미지 프록시 처리 — proxyR2Images() (커스텀 도메인 + /_next/image)</td><td>—</td></tr>
+          <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>스크래핑·게시 GHA 스케줄 (5회/일, timeout 25분)</td><td>claude-haiku-4-5</td></tr>
+          <tr><td><code>.github/workflows/agents-sheet-viral.yml</code></td><td>파동 실행 GHA 스케줄 (5분마다, timeout 10분)</td><td>claude-sonnet-4-6</td></tr>
+          <tr><td><code>~/Library/LaunchAgents/com.unao.fmkorea-scraper.plist</code></td><td>펨코 로컬 launchd 스케줄 (11:30·21:30 KST, caffeinate)</td><td>—</td></tr>
+          <tr><td>Claude Haiku</td><td>AI 관련성 판단(0~10점)·카테고리 분류·제목 최적화</td><td>max_tokens: 200</td></tr>
+          <tr><td>Claude Sonnet</td><td>파동 댓글 생성 — 원본 댓글 각색·이미지 전용 반응</td><td>max_tokens: 200</td></tr>
+          <tr><td>Cloudflare R2</td><td>이미지·비디오 영구 저장 (<code>scraped/{date}/{timestamp}/{index}.webp</code>)</td><td>sharp WebP 80%</td></tr>
         </tbody>
       </table>
     </div>
