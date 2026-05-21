@@ -620,6 +620,20 @@
       <div class="tl-mode">cafe-crawler-evening — <code>crawl-only</code></div>
       <div class="tl-detail">야간 신규 글 수집 + 재크롤.</div>
     </div>
+
+    <div class="tl-item" style="border-left:none;padding-left:0;margin:16px 0 8px;">
+      <div style="font-size:12px;color:var(--muted);letter-spacing:0.04em;font-weight:600;">── 외부 커뮤니티 시트 스크래퍼 (Playwright, 로컬 전용) ──</div>
+    </div>
+    <div class="tl-item plist">
+      <div class="tl-time">11:30 / 21:30 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">fmkorea-scraper — <code>sheet-scraper.ts --site fmkorea</code></div>
+      <div class="tl-detail">펨코 인기글 Playwright 스크래핑 → Google Sheet PENDING URL 처리 → 우나어 발행. Cloudflare 해외 IP 차단으로 GHA 실행 불가 → Mac 로컬 필수. cafe-crawler-lunch(11:30) / cafe-crawler-evening(21:30)과 동시 실행됨.</div>
+    </div>
+    <div class="tl-item plist">
+      <div class="tl-time">13:00 / 23:00 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">naver-cafe-sheet-scraper — <code>sheet-scraper.ts --site navercafe</code></div>
+      <div class="tl-detail">네이버 카페 URL 스크래핑. storage-state.json 로그인 세션 필요 → Mac 로컬 필수. GHA에서는 storage-state.json 없으면 PENDING 유지(자동 skip). fmkorea(11:30/21:30)·cafe-crawler(11:30/21:30)과 겹치지 않는 슬롯 배치.</div>
+    </div>
   </div>
 
   <div class="alert info mt24">
@@ -682,6 +696,14 @@
             ① seed scheduler — 50명 페르소나 창작글 생성 (<strong>ENABLE_SEED_POSTS=false로 현재 차단</strong>)<br>
             ② controversy-chain — 트렌드 기반 논쟁/토론 형식 글 생성 (ENABLE_SEED_POSTS 영향 <strong>없음</strong>, 계속 실행 중)<br>
             ③ magazine-generator — 매거진 형식 글 생성 (ENABLE_SEED_POSTS 영향 없음, 계속 실행 중)
+          </td>
+        </tr>
+        <tr>
+          <td>08:04 / 12:04 / 18:04<br>23:04 / 00:04 / 01:04</td>
+          <td><code>agents-seed-micro.yml</code></td>
+          <td>
+            seed micro — <strong>댓글·좋아요·대댓글 전용</strong> (글 생성 없음). agents-seed.yml의 시드봇 댓글/좋아요 기능을 별도 워크플로우로 분리해 하루 6회 독립 실행.<br>
+            <span style="color:var(--muted);font-size:12px;">cron: <code>"4 23,3,9,14,15,16 * * *"</code> (UTC) — seed scheduler(agents-seed.yml)와 슬롯 겹치지 않도록 배치</span>
           </td>
         </tr>
       </tbody>
@@ -767,11 +789,13 @@
             <tr><td>16:00</td><td>인기글 수집</td></tr>
             <tr><td>17:30</td><td>저녁 크롤링</td></tr>
             <tr><td>21:15</td><td>인기글 수집</td></tr>
-            <tr><td>21:30</td><td>야간 크롤링</td></tr>
+            <tr><td>21:30</td><td>야간 크롤링 + 펨코 시트 스크래퍼</td></tr>
+            <tr><td>13:00</td><td>네이버 카페 시트 스크래퍼 (storage-state.json 세션 필요)</td></tr>
+            <tr><td>23:00</td><td>네이버 카페 시트 스크래퍼</td></tr>
           </tbody>
         </table>
       </div>
-      <p style="font-size:13px;color:var(--muted);margin-top:8px;">해당 시각에 꺼져 있으면 그 회차 크롤만 건너뜀. launchd가 켜지면 자동 실행.</p>
+      <p style="font-size:13px;color:var(--muted);margin-top:8px;">해당 시각에 꺼져 있으면 그 회차 크롤/스크래핑만 건너뜀. launchd가 켜지면 자동 실행.</p>
     </div>
     <div>
       <h4 style="color:#38a169;margin-bottom:12px;">🟢 Mac 꺼져 있어도 GHA가 알아서 하는 것</h4>
@@ -1955,12 +1979,12 @@ for (const waveNum of order) {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘ 전부 완료</h2>
+    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜ 전부 완료</h2>
   </div>
 
   <div class="alert ok">
     <strong>Claude Code에게: 이 섹션이 가장 중요하다</strong>
-    아래 30개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
+    아래 34개 개선은 이미 코드에 구현돼 있다. 다시 짜지 마라. 수정이 필요하면 명시된 파일·함수를 직접 읽고 판단할 것.
   </div>
 
   <details class="impl-toggle">
@@ -2808,6 +2832,105 @@ await prisma.cafePost.create({
   </div>
   </details>
 
+  <div style="border-top:2px dashed var(--border);margin:24px 0 20px;padding-top:4px;">
+    <p style="font-size:12px;color:var(--muted);margin:0;">아래 ㉙~㉜는 2026-05-21 외부 커뮤니티 스크래퍼 확장 + 버그 수정 배치에서 추가된 항목이다.</p>
+  </div>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉙. SHEET 스크래퍼 페르소나 다양화 + AI 필터 제거 + 자기 댓글 방지</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉙. SHEET 스크래퍼 페르소나 다양화 + AI 필터 제거 + 자기 댓글 방지</div>
+    </div>
+    <div class="impl-body">
+      외부 커뮤니티 글(SHEET 포스트) 발행 시 세 가지 품질 문제를 한 번에 개선했다.<br><br>
+      <strong>① 페르소나 다양화</strong><br>
+      발행 봇을 고정 3명(E/H/P)에서 19명(HUMOR 5명·STORY 10명·LIFE2 4명)으로 확장했다. 새 <code>pickPersona(category, boardType)</code> 함수가 게시판 유형과 카테고리에 맞는 페르소나 풀에서 무작위 선택한다. E열 수동 지정(Google Sheet)은 여전히 최우선 적용된다.<br><br>
+      <strong>② AI 필터 제거</strong><br>
+      SHEET_SCRAPER_AI_FILTER 환경변수로 Haiku를 호출해 관련성 점수·카테고리·제목을 최적화하던 로직을 완전 제거했다. AI 분류 오류와 추가 비용이 문제였다. 대신 Google Sheet 담당자가 직접 URL과 게시판을 지정하는 방식으로 전환.<br><br>
+      <strong>③ 자기 댓글 방지</strong><br>
+      <code>postAuthorSelectors</code> 기반으로 원글 작성자를 추출하고, 댓글 수집 시 원글 작성자가 단 댓글(자기 댓글)을 자동 제외한다. 외부 사이트 특성상 작성자가 자신의 글에 추가 설명을 댓글로 달면, 이 댓글이 topComment로 수집돼 불필요한 내용이 포함되는 문제를 막는다.<br><br>
+      <strong>④ 재시도 경로 댓글 정책 통일</strong> (SHA: dc1722b)<br>
+      SHEET 재시도(retryPost) 경로가 신규 발행 경로와 댓글 처리 방식이 달랐던 문제를 통일했다.<br><br>
+      SHA: 39b3f6a + dc1722b (2026-05-21)
+    </div>
+    <div class="impl-file">📄 agents/community/sheet-scraper.ts — PERSONAS 19명 + pickPersona() 신규 + SHEET_SCRAPER_AI_FILTER 로직 제거 + 댓글 자기 댓글 필터<br>📄 agents/seed/scheduler.ts — processSheetEngagementWaves() sourceComments 추출 보완<br>📄 .github/workflows/agents-scraper.yml — SHEET_SCRAPER_AI_FILTER env 제거</div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉚. checkCookieExpiry 버그 수정 — crawl-only 모드 오진단 수정 2건</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉚. checkCookieExpiry 버그 수정 — crawl-only 모드 오진단 수정 2건</div>
+    </div>
+    <div class="impl-body">
+      <code>run-pipeline.ts</code>의 쿠키 만료 감지 함수 <code>checkCookieExpiry()</code>에서 두 가지 버그가 연속 수정됐다.<br><br>
+      <strong>BUG-1 (SHA: 67b1123)</strong>: BotLog에서 최근 크롤 결과를 조회할 때 <code>details.collected</code> 필드를 참조했다. 그런데 crawl-only 모드에서는 <code>collected</code> 대신 <code>saved</code> 필드에 수집 건수가 기록된다. <code>collected</code>가 없으면 <code>undefined</code>로 처리되어 "쿠키 만료" 오진단 → Slack 경보 과다 발생.<br>
+      수정: <code>details.collected ?? details.saved ?? 0</code> fallback 처리.<br><br>
+      <strong>BUG-2 (SHA: 71387db)</strong>: BotLog action 타입 조회 조건이 <code>CAFE_CRAWL_FULL</code>만 포함하고 <code>CAFE_CRAWL_ALLARTICLES</code>(crawl-only)를 제외하고 있었다. crawl-only 회차가 BotLog 조회에서 완전히 누락되어 "최근 크롤 없음"으로 잘못 판단.<br>
+      수정: action 조건에 <code>CAFE_CRAWL_ALLARTICLES</code> 추가.<br><br>
+      두 버그 수정 후 crawl-only 회차가 쿠키 만료 판단에 정확히 반영된다.
+    </div>
+    <div class="impl-file">📄 agents/cafe/run-pipeline.ts — <code>checkCookieExpiry()</code> details.collected → collected??saved fallback + action 배열에 CAFE_CRAWL_ALLARTICLES 추가</div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉛. curator-users P2002 nickname 충돌 — adapter-pg meta.target 없을 때 message 폴백</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉛. curator-users P2002 nickname 충돌 — adapter-pg meta.target 없을 때 message 폴백</div>
+    </div>
+    <div class="impl-body">
+      <code>curator-users.ts</code>의 <code>getCuratorBotUser()</code>가 DB upsert(createOrUpdate) 실행 중 P2002(UniqueConstraint violation)가 발생하면 nickname 충돌로 인식해 대체 페르소나를 탐색한다.<br><br>
+      <strong>문제</strong>: Prisma가 adapter-pg 환경에서 P2002 에러를 던질 때, 정상적으로는 <code>error.meta.target</code> 배열에 충돌 필드명이 포함된다. 그런데 adapter-pg 버전에 따라 <code>meta.target</code>이 없고 <code>error.message</code>에 필드명이 문자열로 포함되는 경우가 있었다.<br>
+      이 경우 기존 코드는 target 배열 체크가 실패해 충돌을 인식하지 못하고 에러를 상위로 전파 → 큐레이션 전체 중단.<br><br>
+      <strong>수정</strong>: <code>meta.target</code>이 없을 때 <code>error.message</code>를 폴백으로 확인해 'nickname' 문자열이 포함되면 동일하게 충돌로 처리.<br><br>
+      SHA: fc7521c (2026-05-21)
+    </div>
+    <div class="impl-file">📄 agents/cafe/curator-users.ts — <code>getCuratorBotUser()</code> P2002 catch 블록: <code>meta.target?.includes('nickname') || message?.includes('nickname')</code> 폴백 추가</div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉜. 외부 커뮤니티 스크래퍼 확장 — LIFE2 게시판 + 82cook + 네이버 카페 URL (Phase 1~3)</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉜. 외부 커뮤니티 스크래퍼 확장 — LIFE2 게시판 + 82cook + 네이버 카페 URL (Phase 1~3)</div>
+    </div>
+    <div class="impl-body">
+      외부 커뮤니티 시트 스크래퍼(sheet-scraper.ts)가 지원하는 게시판·사이트 범위를 3단계에 걸쳐 확장했다.<br><br>
+      <strong>Phase 1 — LIFE2(2막준비) 게시판 지원 (SHA: 3bafec9)</strong><br>
+      Google Sheet에 기입된 URL의 게시판 지정이 LIFE2일 때 <code>boardType: 'LIFE2'</code>로 발행하는 경로를 추가했다. sheet-scraper.ts의 boardType 파싱과 content-transformer.ts의 카테고리 매핑을 확장.<br><br>
+      <strong>Phase 2 — 82cook 사이트 스크래퍼 추가 (SHA: 534e429)</strong><br>
+      82cook(<code>82cook.com/entiz/read</code>) 사이트 스크래핑 설정을 site-configs.ts에 추가했다. 주요 설정:<br>
+      · 제목: <code>h4.title.bbstitle span</code><br>
+      · 본문: <code>div#articleBody</code><br>
+      · 댓글: <code>li.rp &gt; p</code>, 작성자: <code>h5 strong.user_function a</code><br>
+      · 원글 작성자: <code>div.readLeft strong.user_function.user_profile a</code> (자기 댓글 제외용)<br>
+      · Cloudflare 미적용, headless:true, 한국 IP 불필요 → GHA 실행 가능<br><br>
+      <strong>Phase 3 — 네이버 카페 URL 지원 (SHA: cc35473)</strong><br>
+      네이버 카페 f-e URL(<code>cafe.naver.com/(f-e|ca-fe)/cafes/</code>)을 스크래핑하는 설정과 실행 인프라를 추가했다.<br>
+      · <code>requiresSession: true</code>: storage-state.json 로그인 세션 필수 → GHA에서는 자동 skip(PENDING 유지), Mac 로컬에서만 실행<br>
+      · <code>contentFrame: 'cafe_main'</code>: f-e URL은 빈 React 껍데기 → 실제 콘텐츠는 cafe_main iframe 안에 있음<br>
+      · <code>removeElements</code>에 <code>iframe</code> 포함 → 네이버 동영상 플레이어(naverVideoPlayer 등) 제거, 동영상 포함 글은 텍스트/이미지만 발행<br>
+      · <code>run-local-naver-cafe.ts</code> 신규 (launchd 전용 런처)<br>
+      · launchd plist: <code>com.unao.naver-cafe-sheet-scraper</code> (13:00 + 23:00 KST)<br>
+      · runner.ts: <code>community:navercafe-scrape</code> LOCAL ONLY 등록<br><br>
+      <strong>지원 사이트 현황 (Phase 3 완료 후)</strong><br>
+      GHA + Mac: 오늘의유머, 네이트판, 82cook<br>
+      Mac 전용: 펨코(Cloudflare 차단), 네이버 카페(session 필요)<br><br>
+      SHA: 3bafec9 + 534e429 + cc35473 (2026-05-21)
+    </div>
+    <div class="impl-file">📄 agents/community/site-configs.ts — cook82 + navercafe SiteConfig 추가 (requiresSession / contentFrame 필드 포함)<br>📄 agents/community/sheet-scraper.ts — LIFE2 boardType + requiresSession skip + contentFrame iframe 분기<br>📄 agents/community/run-local-naver-cafe.ts — 신규 (launchd 런처)<br>📄 launchd/com.unao.naver-cafe-sheet-scraper.plist — 신규 (13:00 + 23:00 KST)<br>📄 agents/cron/runner.ts — <code>community:navercafe-scrape</code> LOCAL ONLY 등록</div>
+  </div>
+  </details>
+
 </div>
 
 <!-- ══════════ §15. FAQ ══════════ -->
@@ -2898,10 +3021,11 @@ await prisma.cafePost.create({
     <div class="faq-a">
       <strong>§3 스케줄 섹션의 "Mac 켜짐/꺼짐 경계" 표를 참고.</strong> 요약:
       <ul style="margin:8px 0 8px 20px;line-height:1.8;">
-        <li><strong>Mac 필요 (하루 10회)</strong>: 00:30, 07:40, 09:30, 10:30, 11:30★, 14:30, 16:00, 17:30, 21:15, 21:30 — Playwright 크롤링 (headless:false 필수, GHA에서 대체 불가)</li>
-        <li><strong>Mac 불필요</strong>: 큐레이션 발행, wave 댓글, 시드봇 댓글/좋아요, DailyBrief fallback, brief-monitor — GHA가 24시간 자동 처리</li>
+        <li><strong>Mac 필요 (하루 12회)</strong>: 00:30, 07:40, 09:30, 10:30, 11:30★, 13:00, 14:30, 16:00, 17:30, 21:15, 21:30, 23:00<br>
+          — 카페 Playwright 크롤링(headless:false 필수) + 펨코 시트 스크래퍼(11:30/21:30, Cloudflare 차단) + 네이버 카페 시트 스크래퍼(13:00/23:00, session 필요)</li>
+        <li><strong>Mac 불필요</strong>: 큐레이션 발행, wave 댓글, 시드봇 댓글/좋아요, DailyBrief fallback, brief-monitor, 오늘의유머·네이트판·82cook 시트 스크래핑 — GHA가 24시간 자동 처리</li>
       </ul>
-      해당 시각에 Mac이 꺼져 있으면 그 회차 크롤만 건너뜀. 나머지 GHA 자동화는 영향받지 않는다.
+      해당 시각에 Mac이 꺼져 있으면 그 회차 크롤/스크래핑만 건너뜀. 나머지 GHA 자동화는 영향받지 않는다.
     </div>
   </div>
 
@@ -2974,6 +3098,19 @@ await prisma.cafePost.create({
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.19</div>
+    <div class="changelog-date">2026-05-21</div>
+    <div class="changelog-content">
+      <strong>외부 커뮤니티 스크래퍼 Phase 1~3 완성 + 버그 수정 4건 + launchd 12개 체제 + agents-seed-micro 문서화.</strong><br>
+      §3 launchd 타임라인: fmkorea-scraper(11:30/21:30) + naver-cafe-sheet-scraper(13:00/23:00) 2개 신규 plist 추가 → launchd 총 12개 체제.<br>
+      §3 GHA 표: agents-seed-micro.yml 행 추가 (하루 6회, 댓글·좋아요 전용).<br>
+      §3 Mac 켜짐/꺼짐 표: 13:00·23:00 추가 → Mac 필요 10→12회.<br>
+      §14 구현현황: ㉙(SHEET 스크래퍼 페르소나 다양화+AI필터 제거+자기댓글 방지) + ㉚(checkCookieExpiry 2건) + ㉛(curator-users P2002) + ㉜(Phase 1~3 외부 스크래퍼 확장) 추가 → 30→34개.<br>
+      §15 FAQ: Mac 필요 회수 10→12회 + GHA 자동처리 목록 업데이트.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -3285,7 +3422,7 @@ await prisma.cafePost.create({
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.18<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.19<br>
   최종 업데이트: 2026-05-21 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
