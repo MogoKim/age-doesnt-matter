@@ -580,7 +580,7 @@ async function checkCookieExpiryWarning() {
 async function checkCookieExpiry() {
   try {
     const lastLog = await prisma.botLog.findFirst({
-      where: { botType: 'CAFE_CRAWLER', action: 'CAFE_CRAWL' },
+      where: { botType: 'CAFE_CRAWLER', action: { in: ['CAFE_CRAWL', 'CAFE_CRAWL_ALLARTICLES'] } },
       orderBy: { createdAt: 'desc' },
     })
     if (!lastLog) return
