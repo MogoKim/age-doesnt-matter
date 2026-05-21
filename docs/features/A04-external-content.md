@@ -207,6 +207,7 @@ scraped/{postKey}/{index}.{ext}
 | 2026-05-15 | 워크플로우 분리(agents-cafe.yml → agents-scraper.yml) + 스케줄 3→5회/일(07:30·09:00·12:00·15:00·21:00 KST) + Claude Haiku AI 품질 필터 추가(관련성 점수·카테고리 분류·제목 최적화) + `SHEET_SCRAPER_AI_FILTER` 환경변수 도입 | 카페 크롤링과 스크래퍼 종속성 분리 + 50~60대 관련성 낮은 글 자동 필터링 + AI 카테고리 분류 정확도 향상 |
 | 2026-05-21 | AI 필터 완전 제거(Haiku 비용 0원) + 게시자 페르소나 5명→15명 확장 + pickPersona 랜덤화 + 일반 댓글 BI~BR 10명 풀 shuffle(targetCount: 4) + 화제성 파동 댓글 공감3/비판2/역전2 targetCount + 자기 글 자기 댓글 방지 | 페르소나 다양성 향상, AI 비용 절감, 댓글 자연도 개선 |
 | 2026-05-21 | Phase 1 — LIFE2(2막준비) 게시판 지원: sheets-client TAB_TO_BOARD에 '2막준비'/'2막준비_화제성' 추가 + 없는 탭 try/catch 방어, sheet-scraper getBoardSlug() helper(3-way) + LIFE2 페르소나 4명(정순씨/솔직히말해서/따져보자/말티즈엄마), content-transformer boardType 타입 확장(LIFE2는 STORY처럼 출처 생략) | 인생 2막 특화 콘텐츠 전용 게시판 자동 발행 지원 |
+| 2026-05-21 | Phase 2 — 82cook 사이트 추가: site-configs SiteConfig에 commentSelectors.author + postAuthorSelectors optional 필드 추가, SITE_CONFIGS에 cook82 설정(bn=15/16/17 curl 검증 완료), sheet-scraper scrapePage에 원글 작성자 자기 댓글 제외 로직 | 40~60대 여성 생활 정보 커뮤니티 수집 + 자기 댓글 오염 방지 |
 
 ---
 

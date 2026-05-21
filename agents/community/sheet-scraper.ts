@@ -178,6 +178,21 @@ async function scrapePage(
     const rawContent = await extractHtml(page, siteConfig.selectors.content)
     if (!rawContent) throw new Error('본문 추출 실패')
 
+    // 원글 작성자 닉네임 추출 (자기 댓글 제외용 — postAuthorSelectors 없는 사이트는 null)
+    let postAuthorNick: string | null = null
+    if (siteConfig.postAuthorSelectors) {
+      try {
+        for (const sel of siteConfig.postAuthorSelectors) {
+          const el = await page.$(sel)
+          if (el) {
+            const raw = (await el.textContent())?.trim() ?? ''
+            postAuthorNick = raw.split(/[\s(]/)[0] || null
+            break
+          }
+        }
+      } catch { /* 원글 작성자 추출 실패해도 계속 */ }
+    }
+
     // 원본 댓글 수집 (removeElements 실행 전 — 최대 10개)
     const sourceComments: string[] = []
     if (siteConfig.commentSelectors) {
@@ -187,6 +202,13 @@ async function scrapePage(
         const items = await page.$$(siteConfig.commentSelectors.item)
         for (const item of items.slice(0, 10)) {
           try {
+            if (siteConfig.commentSelectors.author && postAuthorNick) {
+              const authorEl = await item.$(siteConfig.commentSelectors.author)
+              if (authorEl) {
+                const commentAuthor = (await authorEl.textContent())?.trim() ?? ''
+                if (commentAuthor.split(/[\s(]/)[0] === postAuthorNick) continue
+              }
+            }
             const text = await item.$eval(
               siteConfig.commentSelectors.text,
               (el: Element) => el.textContent?.trim() ?? '',

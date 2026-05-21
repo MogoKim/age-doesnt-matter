@@ -17,7 +17,9 @@ export interface SiteConfig {
   commentSelectors?: {
     item: string   // 개별 댓글 컨테이너
     text: string   // 댓글 텍스트 요소
+    author?: string // 댓글 작성자 (원글 작성자 제외 필터용)
   }
+  postAuthorSelectors?: string[] // 원글 작성자 추출 (자기 댓글 제외용)
   headless: boolean
   minDelay: number       // ms — 페이지 로드 후 대기
   cloudflareProtected: boolean
@@ -92,6 +94,29 @@ export const SITE_CONFIGS: SiteConfig[] = [
     },
     headless: true,
     minDelay: 2000,
+    cloudflareProtected: false,
+  },
+  {
+    id: 'cook82',
+    name: '82cook',
+    urlPatterns: [/82cook\.com\/entiz\/read/],
+    selectors: {
+      title: ['h4.title.bbstitle span'],
+      content: ['div#articleBody'],
+      images: 'img',
+      removeElements: [
+        'script', 'style', '.ad_area', 'iframe:not([src*="youtube"])',
+        'div.read_reple',
+      ],
+    },
+    commentSelectors: {
+      item: 'li.rp',
+      text: 'li.rp p',
+      author: 'li.rp h5 strong.user_function a',
+    },
+    postAuthorSelectors: ['div.readLeft strong.user_function.user_profile a'],
+    headless: true,
+    minDelay: 1500,
     cloudflareProtected: false,
   },
 ]
