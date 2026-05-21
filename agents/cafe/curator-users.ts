@@ -20,8 +20,14 @@ export async function getCuratorBotUser(persona: string | PersonaMatch): Promise
     })
     return user.id
   } catch (err: unknown) {
-    // P2002: nickname 충돌 시 id suffix로 unique 보장 (구 이메일 포맷 레코드와 충돌 방어)
     if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2002') {
+      // Prisma 7.x: meta는 Record<string, unknown> → target은 unknown. string[] (PG) 또는 string 모두 방어
+      const rawTarget = (err as { meta?: Record<string, unknown> }).meta?.['target']
+      const isNicknameConflict = Array.isArray(rawTarget)
+        ? rawTarget.includes('nickname')
+        : typeof rawTarget === 'string' && rawTarget.includes('nickname')
+      // nickname 외 필드(providerId 등) P2002는 masking하지 않고 원본 에러 유지
+      if (!isNicknameConflict) throw err
       const user = await prisma.user.upsert({
         where: { email },
         update: {},
