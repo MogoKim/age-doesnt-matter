@@ -576,7 +576,8 @@
         <div class="flow-content">
           <div class="title">J열 확인 — 수동 모드 or 자동 스크래핑</div>
           <div class="desc">J열(rawContent)에 내용이 있으면 → Playwright 브라우저 접속을 건너뛰고 수동 본문을 사용.<br>
-          비어있으면 → Playwright로 원본 사이트에 자동 접속해 본문·이미지·댓글을 수집한다.</div>
+          비어있으면 → Playwright로 원본 사이트에 자동 접속해 본문·이미지·댓글을 수집한다.<br>
+          <strong>주의:</strong> J열 수동 모드에서는 원본 댓글 수집이 불가능하다 (<code>sourceComments = []</code>). 파동 댓글은 본문만으로 생성되며, 이미지 전용 글이면 제목 기반 fallback으로 대체된다.</div>
         </div>
       </div>
       <div class="flow-step">
@@ -1219,8 +1220,9 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
     </div>
 
     <div class="callout yellow">
-      <p><strong>화제성 파동 상한:</strong> 오늘 PENDING 건수가 50건 초과 시 처리를 스킵한다 (과도한 봇 활동 방지).<br>
-      <strong>글당 댓글 상한:</strong> 봇 댓글이 이미 20개 이상이면 추가하지 않는다.</p>
+      <p><strong>화제성 파동 상한:</strong> 오늘 <code>SHEET_COMMENT_WAVE_PENDING</code> 건수가 50건 초과 시 처리를 전체 스킵한다 — 이미 SUCCESS로 완료된 건은 제외하고 <strong>PENDING 대기 건수만</strong> 카운트.<br>
+      <strong>글당 댓글 상한:</strong> 봇 댓글이 이미 20개 이상이면 추가하지 않는다 (botCount 기준).<br>
+      <strong>중복 방지:</strong> 동일 postId + authorId 조합이 BotLog에 이미 존재하면 스킵한다.</p>
     </div>
 
     <h3>일반 글 파동 2종 (isFeatured=false)</h3>
@@ -1231,7 +1233,7 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
           <div class="wc-time">+2분</div>
         </div>
         <div class="wc-type">BotLog: SHEET_ENGAGE_COMMENT_PENDING (empathy)</div>
-        <div class="wc-personas">댓글 3명<br><code>BI BJ BK</code><br>페르소나당 SHEET 글 일일 3개 댓글 상한</div>
+        <div class="wc-personas">댓글 3명<br><code>BI BJ BK</code><br>페르소나당 SHEET 글 일일 3개 댓글 상한<br>sourceComments 있으면 원본 댓글을 참고해 각색<br>중복 방지: 동일 postId + authorId 조합 이미 존재하면 스킵</div>
       </div>
       <div class="wave-card">
         <div class="wc-header">
@@ -1273,7 +1275,8 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
           <div class="title">본문 기반 댓글 생성 (일반)</div>
           <div class="desc">텍스트 본문이 충분하면 본문 앞 1,500자 + sourceComments 참고로 댓글 생성.<br>
           waveType에 따라 다른 프롬프트: empathy(공감·구체적 언급) / critical(솔직한 다른 시각) / reversal(여운·비슷한 경험).<br>
-          keyTerms 검증 후 미포함 시 최대 2회 재시도. Claude Sonnet, max_tokens: 200.</div>
+          <strong>keyTerms 검증 구분:</strong> 화제성 파동(SHEET_COMMENT_WAVE)은 keyTerms 포함 여부를 최대 2회 재시도로 검증. 일반 ENGAGE_COMMENT 파동은 keyTerms=[]로 설정되어 검증 단계를 자동 스킵한다.<br>
+          Claude Sonnet (CLAUDE_MODEL_HEAVY), max_tokens: 200.</div>
         </div>
       </div>
     </div>
