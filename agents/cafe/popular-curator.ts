@@ -1,99 +1,20 @@
 // popular-curator.ts — 인기글 전용 큐레이터 (auto-run)
 // runner.ts: 'cafe_crawler:popular-curate': () => import('../cafe/popular-curator.js').then(() => {})
 // BUG-3: content-curator.ts는 module-level main().catch가 있어 import 금지 → curator-shared.ts 경유
-import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import {
-  sanitizeForApi,
   stripMarkdown,
-  getKstContext,
   matchPersona,
   guessDesire,
   DESIRE_TO_BOARD,
   PERSONAS,
-  type PersonaMatch,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
-
-const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
-const client = new Anthropic()
 
 const HEALTH_CAP = 2
 const MAX_PUBLISH = 5
 
-interface PopularCandidate {
-  id: string
-  title: string
-  content: string
-  cafeName: string
-  desireCategory: string | null
-  killerScore: number | null
-}
-
-async function generatePopularPost(
-  post: PopularCandidate,
-  persona: PersonaMatch,
-): Promise<{ title: string; content: string } | null> {
-  const quirksStr = persona.quirks.map(q => `- ${q}`).join('\n')
-  const examplesStr = persona.examples.map(e => `"${e}"`).join('\n')
-  const ref = sanitizeForApi(post.content.slice(0, 800))
-
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 900,
-    system: `${getKstContext()}
-
-당신은 "${persona.nickname}" (50~60대 커뮤니티 회원)입니다.
-성격/스타일: ${persona.style}
-말투: ${persona.patterns.join(', ')}
-
-[글쓰기 습관 — 반드시 지킬 것]
-${quirksStr}
-
-[당신이 실제로 쓰는 글 예시 — 이 톤과 스타일을 유지하세요]
-${examplesStr}
-
-[수미상관 방식으로 글 쓰기 — 원본 90% 보존]
-- 원본 카페 글의 핵심 내용(상황·사건·수치·정보)을 90% 그대로 살리세요
-- 첫 문장: 당신 "${persona.nickname}" 말투로 시작 (공감·감탄·질문 중 하나)
-- 마지막 문장: 당신 말투로 자연스럽게 마무리 (응원·공감·경험 한 줄)
-- 중간 내용: 원본의 핵심 정보를 자신의 말투로 자연스럽게 전달 (재구성·재해석 금지)
-- 식당명·연예인명·프로그램명·지역명·음식명·수치 등 고유명사는 반드시 원본 그대로 사용
-
-[절대 하지 않는 것]
-- "시니어", "액티브 시니어" 표현 금지
-- 마크다운 문법(**, ##, *, _ 등) 금지. 순수 텍스트만.
-- 정치/종교/혐오/광고 금지
-- 오프라인 모임 모집 글 금지 ("같이 걸어요", "이번 수요일 모여요" 등)
-- "어떤 드라마", "어느 식당" 식으로 추상적으로 쓰지 말 것 → 반드시 실제 이름 특정`,
-    messages: [
-      {
-        role: 'user',
-        content: `"${sanitizeForApi(post.title)}" 주제로 글을 써주세요.
-
-[원본 카페 글 — 수미상관으로 재가공]
-인기글 (${post.cafeName}): "${sanitizeForApi(post.title)}"
-${ref}
-
-응답 형식:
-제목: (15~30자, 당신 말투로)
-본문: (150~400자, 문단 2~3개)`,
-      },
-    ],
-  })
-
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
-  const titleMatch = text.match(/제목:\s*(.+)/)
-  const bodyMatch = text.match(/본문:\s*([\s\S]+)/)
-
-  if (!titleMatch || !bodyMatch) return null
-
-  return {
-    title: stripMarkdown(titleMatch[1].trim()),
-    content: stripMarkdown(bodyMatch[1].trim()),
-  }
-}
 
 async function enqueueCommentWave(postId: string, cafePostId: string, authorPersonaId: string) {
   const now = new Date()
@@ -123,7 +44,6 @@ export async function main() {
       id: true,
       title: true,
       content: true,
-      cafeName: true,
       desireCategory: true,
       killerScore: true,
     },
@@ -161,15 +81,17 @@ export async function main() {
         if (altCount < AUTHOR_DAILY_POST_CAP) { persona = alt; break }
       }
     }
-    const generated = await generatePopularPost(post, persona)
-    if (!generated) {
-      console.warn(`[PopularCurator] 생성 실패 스킵: ${post.title.slice(0, 30)}`)
+    // 원문 기반 발행 — AI 재창작 없이 원본 CafePost title/content 그대로 사용
+    const title = stripMarkdown(post.title.trim())
+    const rawContent = stripMarkdown(post.content.trim())
+    if (!title || !rawContent) {
+      console.warn(`[PopularCurator] 원본 내용 없음 스킵: ${post.title.slice(0, 30)}`)
       continue
     }
 
     const boardInfo = DESIRE_TO_BOARD[desire] ?? DESIRE_TO_BOARD['GENERAL']
-    const htmlContent = `<p>${generated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
-    const summary = generated.content.replace(/\n/g, ' ').slice(0, 150).trim()
+    const htmlContent = `<p>${rawContent.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
+    const summary = rawContent.replace(/\n/g, ' ').slice(0, 150).trim()
 
     // LIFE2 크로스소스 중복 방지 (Seed·ContentCurator와 동일 주제 중복 차단)
     if (boardInfo.boardType === 'LIFE2') {
@@ -180,12 +102,12 @@ export async function main() {
       })
       if (recentLife2.length > 0) {
         const toNouns = (t: string) => t.match(/[가-힣]{2,2}/g) ?? []
-        const newNouns = new Set(toNouns(generated.title))
+        const newNouns = new Set(toNouns(title))
         const isDuplicate = recentLife2.some(
           p => toNouns(p.title).filter(n => newNouns.has(n)).length >= 3
         )
         if (isDuplicate) {
-          console.log(`[PopularCurator] LIFE2 중복 스킵: "${generated.title.slice(0, 20)}"`)
+          console.log(`[PopularCurator] LIFE2 중복 스킵: "${title.slice(0, 20)}"`)
           continue
         }
       }
@@ -197,9 +119,10 @@ export async function main() {
       const postId = await prisma.$transaction(async tx => {
         const newPost = await tx.post.create({
           data: {
-            title: generated.title,
+            title,
             content: htmlContent,
             summary,
+            cafePostId: post.id,
             boardType: boardInfo.boardType,
             category: boardInfo.category ?? '자유수다',
             authorId: userId,
@@ -226,7 +149,7 @@ export async function main() {
 
       if (desire === 'HEALTH') healthCount++
       publishedCount++
-      console.log(`[PopularCurator] 발행: ${generated.title.slice(0, 30)} (${persona.nickname})`)
+      console.log(`[PopularCurator] 발행: ${title.slice(0, 30)} (${persona.nickname})`)
     } catch (err) {
       console.error(`[PopularCurator] 발행 실패 스킵:`, err)
     }
