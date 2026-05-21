@@ -48,24 +48,24 @@ class CEOWeeklyReport extends BaseAgent {
       prisma.post.count({ where: { status: 'PUBLISHED' } }),
     ])
 
-    // 2. Q2 OKR 지표 수집
+    // 2. KPI 지표 수집
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    // KR1: MAU — 이번달 로그인한 유니크 유저 (EventLog 기반)
+    // MAU — 이번달 로그인한 유니크 유저 (EventLog 기반)
     const mauResult = await prisma.eventLog.groupBy({
       by: ['userId'],
       where: { createdAt: { gte: monthStart }, userId: { not: null } },
     })
     const mauCount = mauResult.length
 
-    // KR2: NSM — 주간 댓글 참여 유저
+    // NSM — 주간 댓글 참여 유저
     const nsmResult = await prisma.comment.groupBy({
       by: ['authorId'],
       where: { createdAt: { gte: weekAgo }, status: 'ACTIVE' },
     })
     const nsmCount = nsmResult.length
 
-    // KR3: D7 리텐션 — CDO KPI_DAILY BotLog에서 GA4 코호트 데이터 파싱
+    // D7 리텐션 — CDO KPI_DAILY BotLog에서 GA4 코호트 데이터 파싱
     const cdoKpiLog = await prisma.botLog.findFirst({
       where: { botType: 'CDO', action: 'KPI_DAILY', status: 'SUCCESS' },
       orderBy: { createdAt: 'desc' },
@@ -228,13 +228,12 @@ ${snsExperiment ? `- 현재 실험: ${snsExperiment.hypothesis} (${snsExperiment
         text: {
           type: 'mrkdwn',
           text: [
-            `*:bar_chart: Q2 OKR 진행률*`,
-            `  KR1 MAU:  ${mauCount}명 / 500명 목표 (${Math.round(mauCount / 500 * 100)}%)  [마일스톤: 4월50→5월150→6월500]`,
-            `  KR2 NSM:  ${nsmCount}명/주 / 50명 목표 (${Math.round(nsmCount / 50 * 100)}%)`,
+            `*:bar_chart: 이번 주 KPI*`,
+            `  MAU:  ${mauCount}명`,
+            `  NSM (주간 댓글 참여):  ${nsmCount}명/주`,
             d7RetentionPct !== null
-              ? `  KR3 D7:   ${d7RetentionPct}% (${d7Users}/${d7CohortSize}명, 목표 25%)`
-              : `  KR3 D7:   GA4 데이터 수집 대기 중`,
-            `  KR4 매출: 어드민 수동 기록 필요`,
+              ? `  D7 리텐션: ${d7RetentionPct}% (${d7Users}/${d7CohortSize}명)`
+              : `  D7 리텐션: GA4 데이터 수집 대기 중`,
           ].join('\n'),
         },
       },

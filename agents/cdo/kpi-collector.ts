@@ -58,8 +58,8 @@ class CDOKpiCollector extends BaseAgent {
       prisma.report.count({ where: { createdAt: { gte: yesterday } } }),
     ])
 
-    // OKR 연계 지표
-    // KR2: NSM — 주간 댓글 참여 유저
+    // KPI 지표
+    // NSM — 주간 댓글 참여 유저
     const nsmResult = await prisma.comment.groupBy({
       by: ['authorId'],
       where: { createdAt: { gte: sevenDaysAgo }, status: 'ACTIVE' },
@@ -84,7 +84,7 @@ class CDOKpiCollector extends BaseAgent {
     ])
     const gradeDist = Object.fromEntries(gradeDistribution.map(g => [g.grade, g._count.grade]))
 
-    // 온보딩 완료율 (KR3 전제)
+    // 온보딩 완료율
     const [onboardedCount, totalActiveUsers] = await Promise.all([
       prisma.user.count({ where: { isOnboarded: true, status: 'ACTIVE' } }),
       prisma.user.count({ where: { status: 'ACTIVE' } }),
@@ -104,7 +104,7 @@ class CDOKpiCollector extends BaseAgent {
     const todayStr = new Date().toISOString().split('T')[0]
     const ga4Data: GA4Report | null = await fetchGA4Report(yesterdayStr, todayStr)
     const scData: SearchConsoleReport | null = await fetchSearchConsoleReport(yesterdayStr, todayStr)
-    // KR3: D7 리텐션율 — 매주 측정 (cohort API, 주 1회 의미 있는 값)
+    // D7 리텐션율 — 매주 측정 (cohort API, 주 1회 의미 있는 값)
     const cohortData: GA4CohortRetention | null = await fetchGA4CohortRetention()
 
     const kpi: Record<string, unknown> = {
@@ -147,7 +147,7 @@ class CDOKpiCollector extends BaseAgent {
     // 내부 DB KPI 요약
     const summaryParts: string[] = [
       `DAU ${dau} | MAU ${mau} | DAU/MAU ${dauMauRatio} | UGC ${ugcRatio}% | 글 ${todayPosts} | 댓글 ${todayComments} | 공감 ${todayLikes}`,
-      `\n📊 OKR 연계 지표\n  KR2 NSM: ${weeklyNSM}명/주 (목표 50명)\n  KR3 D7 리텐션: ${cohortData ? `${(cohortData.d7RetentionRate * 100).toFixed(1)}% (${cohortData.d7RetentionUsers}/${cohortData.cohortSize}명, 목표 25%)` : 'GA4 미설정'}\n  온보딩 완료율: ${onboardingRate}% (목표 70%)\n  LIFE2 주간 게시글: ${life2WeeklyPosts}건`,
+      `\n📊 KPI 지표\n  NSM: ${weeklyNSM}명/주\n  D7 리텐션: ${cohortData ? `${(cohortData.d7RetentionRate * 100).toFixed(1)}% (${cohortData.d7RetentionUsers}/${cohortData.cohortSize}명)` : 'GA4 미설정'}\n  온보딩 완료율: ${onboardingRate}%\n  LIFE2 주간 게시글: ${life2WeeklyPosts}건`,
       `\n👥 등급 분포 (이탈위험 SPROUT ${churnRiskSprouts}명)\n  새싹 ${gradeDist.SPROUT ?? 0} | 이웃 ${gradeDist.REGULAR ?? 0} | 따뜻한이웃 ${gradeDist.WARM_NEIGHBOR ?? 0} | 명예 ${gradeDist.HONORARY ?? 0}`,
     ]
 
