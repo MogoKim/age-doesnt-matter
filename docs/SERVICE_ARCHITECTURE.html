@@ -448,7 +448,7 @@
 <main class="main">
 <h1>우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서</h1>
 <blockquote>
-<p><strong>최종 업데이트</strong>: 2026-05-21 (v13 — 코드 직독 전면 최신화: 71핸들러 · 35모델 · 21GHA · 49페이지 · 39API · TWA 추가)
+<p><strong>최종 업데이트</strong>: 2026-05-22 (v14 — 코드 직독 전면 최신화: 78핸들러 · 35모델 · 21GHA · 49페이지 · 39API · launchd 18개 · 커뮤니티·블로그 에이전트 대폭 추가)
 <strong>문서 관리자</strong>: Claude Code (자동화) + 창업자 (승인)
 <strong>변경 시</strong>: 이 문서 하단 <a href="#%EB%AC%B8%EC%84%9C-%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8-%EA%B0%80%EC%9D%B4%EB%93%9C">문서 업데이트 가이드</a> 참고</p>
 </blockquote>
@@ -578,7 +578,7 @@
 </tr>
 <tr>
 <td><strong>AI</strong></td>
-<td><span class="tip" data-tip="Anthropic의 Claude 모델 3단계 운용 전략. Opus 4.7: 최고 추론력, 주간 전략 분석(1~2회/일). Sonnet 4.6: 균형형, 콘텐츠 생성·고객 대면(다수). Haiku 4.5: 초고속·저비용, 모니터링·분류·댓글(71핸들러 대부분).">Anthropic Claude (Opus 4.7 / Sonnet 4.6 / Haiku 4.5)</span></td>
+<td><span class="tip" data-tip="Anthropic의 Claude 모델 3단계 운용 전략. Opus 4.7: 최고 추론력, 주간 전략 분석(1~2회/일). Sonnet 4.6: 균형형, 콘텐츠 생성·고객 대면(다수). Haiku 4.5: 초고속·저비용, 모니터링·분류·댓글(78핸들러 대부분).">Anthropic Claude (Opus 4.7 / Sonnet 4.6 / Haiku 4.5)</span></td>
 <td>3-tier</td>
 </tr>
 <tr>
@@ -1827,7 +1827,7 @@
 </tbody></table>
 <hr>
 <h2>6. GitHub Actions 워크플로우 (21개)</h2>
-<p><small>⚠️ 추가로 창업자 MacBook에서 <strong>6개</strong> 로컬 launchd 프로세스 실행 중 (카페 크롤러, 매거진, 네이버 블로그, 세션 갱신 등).</small></p>
+<p><small>⚠️ 추가로 창업자 MacBook에서 <strong>18개</strong> 로컬 launchd 프로세스 실행 중 (카페 크롤러 6종, 인기글 동기화 3종, 펨코·네이버카페 스크래퍼, 매거진, 블로그 발행, 세션 갱신 등).</small></p>
 <h3>6.1 CI/CD</h3>
 <table>
 <thead>
@@ -1900,8 +1900,8 @@
 </tr>
 <tr>
 <td><code>agents-cafe-hourly-curation.yml</code></td>
-<td>08:20, 09:05, 09:50, 10:35 ★신규</td>
-<td>CAFE 시간별 큐레이션 (5건/시간)</td>
+<td>08:20~21:05 (매 45분 × 18슬롯) + 01:15 새벽 = <strong>19슬롯/일</strong></td>
+<td>CAFE 시간별 큐레이션 (launchd 크롤 완료 후 45분 지연 발행)</td>
 </tr>
 <tr>
 <td><code>agents-cafe-popular-curation.yml</code></td>
@@ -1934,12 +1934,14 @@
 <td><span style="color:#e53e3e">LOCAL ONLY</span> (cron 없음, Playwright+Gemini 로컬 전용)</td>
 </tr>
 </tbody></table>
-<h4>launchd 로컬 프로세스 (6개, 창업자 MacBook)</h4>
+<h4>launchd 로컬 프로세스 (18개, 창업자 MacBook)</h4>
+<p><small>※ com.unao.* (크롤러류) / com.unaeo.* (발행·지원류) 두 prefix로 구분됨</small></p>
 <table>
 <thead>
 <tr>
 <th>플리스트</th>
 <th>실행 시간 (KST)</th>
+<th>역할</th>
 <th>실행 파일</th>
 </tr>
 </thead>
@@ -1947,74 +1949,180 @@
 <tr>
 <td>session-refresh</td>
 <td>02:00</td>
+<td>네이버 쿠키 갱신</td>
 <td>agents/cafe/session-manager.ts</td>
+</tr>
+<tr>
+<td>cafe-crawler-morning</td>
+<td>07:40</td>
+<td>크롤 전용 (아침글)</td>
+<td>agents/cafe/crawler.ts</td>
+</tr>
+<tr>
+<td>naver-blog-evening <small>⚠️ 이름 역전</small></td>
+<td>09:30 (UTC 00:30)</td>
+<td>블로그 발행 (새벽 배치)</td>
+<td>agents/naver-blog/local-blog-runner.ts</td>
+</tr>
+<tr>
+<td>cafe-crawler-09h30</td>
+<td>09:30</td>
+<td>크롤 전용</td>
+<td>agents/cafe/crawler.ts</td>
+</tr>
+<tr>
+<td>cafe-crawler-popular-morning</td>
+<td>10:30</td>
+<td>인기글 동기화 → GHA 10:50 발행</td>
+<td>agents/cafe/popular-sync.ts</td>
+</tr>
+<tr>
+<td>cafe-crawler-lunch</td>
+<td>11:30</td>
+<td>FULL 파이프라인 (크롤+심리분석+트렌드+브리프+큐레이션)</td>
+<td>agents/cafe/crawler.ts</td>
+</tr>
+<tr>
+<td>fmkorea-scraper</td>
+<td>11:30, 21:30</td>
+<td>펨코 전용 (Cloudflare 우회, GHA 불가)</td>
+<td>agents/community/run-local-fmkorea.ts</td>
 </tr>
 <tr>
 <td>magazine-morning</td>
 <td>12:00</td>
+<td>매거진 생성 (11:30 full 기반 최신 트렌드 반영)</td>
 <td>agents/cafe/local-magazine-runner.ts</td>
+</tr>
+<tr>
+<td>naver-cafe-sheet-scraper</td>
+<td>13:00, 23:00</td>
+<td>네이버 카페 시트 크롤 (Phase 3, storage-state.json 필요)</td>
+<td>agents/community/run-local-naver-cafe.ts</td>
 </tr>
 <tr>
 <td>magazine-late</td>
 <td>14:00</td>
+<td>오후 매거진 (Gemini 이미지 생성)</td>
 <td>agents/cafe/local-magazine-runner.ts</td>
 </tr>
 <tr>
 <td>jisik-answerer</td>
 <td>14:30</td>
+<td>지식인 답변 (로컬 전용)</td>
 <td>scripts/run-jisik.sh</td>
+</tr>
+<tr>
+<td>cafe-crawler-afternoon</td>
+<td>14:30</td>
+<td>크롤 전용</td>
+<td>agents/cafe/crawler.ts</td>
 </tr>
 <tr>
 <td>naver-blog-morning</td>
 <td>15:00</td>
+<td>블로그 발행 (magazine-morning+late 2건 처리)</td>
 <td>agents/naver-blog/local-blog-runner.ts</td>
 </tr>
 <tr>
-<td>naver-blog-evening <small>⚠️ 이름 역전</small></td>
-<td>09:30</td>
-<td>agents/naver-blog/local-blog-runner.ts</td>
+<td>cafe-crawler-popular-afternoon</td>
+<td>16:00</td>
+<td>인기글 동기화 → GHA 16:15 발행</td>
+<td>agents/cafe/popular-sync.ts</td>
+</tr>
+<tr>
+<td>cafe-crawler-17h30</td>
+<td>17:30</td>
+<td>크롤 전용</td>
+<td>agents/cafe/crawler.ts</td>
+</tr>
+<tr>
+<td>cafe-crawler-popular-evening</td>
+<td>21:15</td>
+<td>인기글 동기화 → GHA 21:45 발행</td>
+<td>agents/cafe/popular-sync.ts</td>
+</tr>
+<tr>
+<td>cafe-crawler-evening</td>
+<td>21:30</td>
+<td>크롤 전용 (전체글 보기)</td>
+<td>agents/cafe/crawler.ts</td>
+</tr>
+<tr>
+<td>cafe-crawler-dawn</td>
+<td>00:30</td>
+<td>심야 감성글 수집 → GHA 01:15 발행</td>
+<td>agents/cafe/crawler.ts</td>
 </tr>
 </tbody></table>
 <h3>6.3 전체 타임라인 (KST)</h3>
-<pre><code>02:00  ░░ launchd session-refresh (네이버 쿠키 갱신)
+<pre><code>── 범례: ██ GHA  ░░ launchd(Mac)  ▒▒ 주기적 ──────────────────────────────
+00:30  ░░ launchd cafe-crawler-dawn (심야 감성글 수집)
+01:04  ██ SEED micro (6회차)
+01:15  ██ CAFE hourly curation #19 (새벽 특별 슬롯 — 00:30 크롤 기반)
+02:00  ░░ launchd session-refresh (네이버 쿠키 갱신)
 07:17  ██ CMO social-poster (Threads 아침)
-07:30  ██ sheet-scraper (시트 스크래퍼 1회차)
+07:30  ██ sheet-scraper 오유·네이트판 (1회차, 펨코 제외)
+07:40  ░░ launchd cafe-crawler-morning (크롤 전용, 아침글)
 08:04  ██ SEED micro (1회차)
-08:20  ██ CAFE hourly curation (1회차)
+08:20  ██ CAFE hourly curation #1 (07:40 크롤 기반)
 09:00  ██ sheet-scraper (2회차)
 09:03  ██ CAFE daily-brief-fallback
-09:05  ██ CAFE hourly curation (2회차)
+09:05  ██ CAFE hourly curation #2
 09:06  ██ COO quarantine-check (월요일만)
-09:09  ██ SEED scheduler (×13/일 시작 — ENABLE_SEED_POSTS=false 중단중)
+09:09  ██ SEED scheduler (×13/일 — ENABLE_SEED_POSTS=false 중단중)
 09:13  ██ COO 모더레이션 (1회차)
-09:30  ██ CAFE brief-monitor | agents-weekly CEO주간리포트 (월요일)
-09:30  ░░ launchd naver-blog-evening (실제 09:30 실행 — 이름 역전)
-09:50  ██ CAFE hourly curation (3회차)
-10:35  ██ CAFE hourly curation (4회차)
-10:50  ██ CAFE popular curation (1회차)
-12:00  ██ sheet-scraper (3회차) | ░░ launchd magazine-morning
+09:30  ██ CAFE brief-monitor | CEO주간리포트 (월요일)
+09:30  ░░ launchd naver-blog-evening ⚠️ 이름 역전 (실제 09:30 = UTC 00:30)
+09:30  ░░ launchd cafe-crawler-09h30 (크롤 전용)
+09:50  ██ CAFE hourly curation #3
+10:30  ░░ launchd cafe-crawler-popular-morning (인기글 동기화)
+10:35  ██ CAFE hourly curation #4 (09:30 크롤 기반)
+10:50  ██ CAFE popular curation (1회차, 10:30 동기화 기반)
+11:20  ██ CAFE hourly curation #5
+11:30  ░░ launchd cafe-crawler-lunch FULL (크롤+심리분석+트렌드+브리프+큐레이션)
+11:30  ░░ launchd fmkorea-scraper (펨코 1회차, Cloudflare 우회)
+12:00  ██ sheet-scraper (3회차) | ░░ launchd magazine-morning (11:30 full 기반)
 12:04  ██ SEED micro (2회차)
+12:05  ██ CAFE hourly curation #6
 12:09  ██ COO 일자리수집 (1회차)
 12:17  ██ CMO social-poster (Threads 점심)
 12:19  ██ CDO hourly-monitoring
-14:00  ░░ launchd magazine-late (매거진 커버 생성)
-14:30  ░░ launchd jisik-answerer
-15:00  ██ sheet-scraper (4회차) | ░░ launchd naver-blog-morning (실제 15:00)
+12:50  ██ CAFE hourly curation #7
+13:00  ░░ launchd naver-cafe-sheet-scraper (네이버 카페 Phase 3, 1회차)
+13:35  ██ CAFE hourly curation #8 (11:30 full 기반)
+14:00  ░░ launchd magazine-late (오후 매거진, Gemini 이미지 생성)
+14:20  ██ CAFE hourly curation #9
+14:30  ░░ launchd jisik-answerer | ░░ launchd cafe-crawler-afternoon (크롤 전용)
+15:00  ██ sheet-scraper (4회차) | ░░ launchd naver-blog-morning (매거진 2건 발행)
+15:05  ██ CAFE hourly curation #10
 15:09  ██ COO 일자리수집 (2회차)
 15:13  ██ COO 모더레이션 (2회차)
-16:00  ██ COO content-scheduler
-16:15  ██ CAFE popular curation (2회차)
+15:50  ██ CAFE hourly curation #11 (14:30 크롤 기반)
+16:00  ██ COO content-scheduler | ░░ launchd cafe-crawler-popular-afternoon
+16:15  ██ CAFE popular curation (2회차, 16:00 동기화 기반)
+16:35  ██ CAFE hourly curation #12
+17:20  ██ CAFE hourly curation #13
+17:30  ░░ launchd cafe-crawler-17h30 (크롤 전용)
 18:00  ██ CAFE evening-brief-safety
 18:04  ██ SEED micro (3회차)
+18:05  ██ CAFE hourly curation #14 (17:30 크롤 기반)
+18:50  ██ CAFE hourly curation #15
+19:35  ██ CAFE hourly curation #16
 20:09  ██ COO 일자리수집 (3회차)
 20:17  ██ CMO social-metrics (Threads 메트릭)
+20:20  ██ CAFE hourly curation #17
 21:00  ██ sheet-scraper (5회차)
+21:05  ██ CAFE hourly curation #18
 21:13  ██ COO 모더레이션 (3회차)
-21:45  ██ CAFE popular curation (3회차)
+21:15  ░░ launchd cafe-crawler-popular-evening (인기글 동기화)
+21:30  ░░ launchd cafe-crawler-evening (크롤 전용, 전체글)
+21:30  ░░ launchd fmkorea-scraper (펨코 2회차)
+21:45  ██ CAFE popular curation (3회차, 21:15 동기화 기반)
+23:00  ░░ launchd naver-cafe-sheet-scraper (네이버 카페, 2회차)
 23:04  ██ SEED micro (4회차)
 00:04  ██ SEED micro (5회차)
-01:04  ██ SEED micro (6회차)
-*/5분  ██ cafe-wave (댓글파동 wave1~4 + 회원글 파동)
+*/5분  ██ cafe-wave (댓글파동 wave1~4 + UserPostWaveQueue 회원글 파동)
 (2h)   ▒▒ CTO 헬스체크 + 에러감시 + 보안감사 + CDO 이상감지
 </code></pre>
 <hr>
@@ -3350,10 +3458,10 @@ Layer 4 — 장기 기억 (세션 간 지속)
 </tbody></table>
 <hr>
 <h2>14. 현재 상태 &amp; 남은 작업</h2>
-<h3>완료됨 (2026-05-21 기준 v13)</h3>
+<h3>완료됨 (2026-05-22 기준 v14)</h3>
 <ul>
 <li>전체 코드 구현 (<strong>49페이지, 39개 API</strong>, 77+ 컴포넌트)</li>
-<li>에이전트 시스템 ACTIVE (헌법 v5.0, <strong>71핸들러</strong> · 78명 페르소나)</li>
+<li>에이전트 시스템 ACTIVE (헌법 v5.0, <strong>78핸들러</strong> · 78명 페르소나)</li>
 <li><strong>TWA (Android) 구축 완료</strong> — assetlinks.json 배포, Play Store 심사 중</li>
 <li><strong>DailyBrief 인텔리전스 시스템</strong> — 욕망 인텔리전스 + 페르소나 쿼터 자동화</li>
 <li><strong>댓글 파동 시스템 v2</strong> — 회원글 UserPostWaveQueue (1분/10분/30분/60분)</li>
@@ -4993,12 +5101,17 @@ Slack 설정         긴급 회의             학습 축적          자동 롤
 <tr><td><strong>Gemini 이미지 생성</strong></td><td>launchd IMAGE_GENERATOR=gemini, 매거진 커버 3회/일</td><td>2026-04</td></tr>
 <tr><td><strong>헌법 v5.0</strong></td><td>6개 파일 분리 (core/audience/ops/infra/strategy), Opus 4.7 전략 모델</td><td>2026-04</td></tr>
 <tr><td><strong>BaseAgent Prompt Caching</strong></td><td>cache_control: ephemeral (Line 144), constitution 토큰 90% 절감</td><td>2026-04</td></tr>
-<tr><td><strong>GHA 17개 체계</strong></td><td>agents-sheet-viral/killer-post/weekly + post-deploy-qa + quarantine-check</td><td>2026-04~05</td></tr>
+<tr><td><strong>GHA 21개 체계</strong></td><td>agents-cafe-hourly-curation(19슬롯) + agents-cafe-popular-curation + agents-cafe-wave(5분) + agents-scraper + 기존 17개</td><td>2026-04~05</td></tr>
 <tr><td><strong>봇 게시글 Slug 자동생성</strong></td><td>/api/bot/posts + generateCommunitySlug(), Google 12,533개 URL 색인 복구</td><td>2026-05-11</td></tr>
 <tr><td><strong>SEO Article JSON-LD image</strong></td><td>커뮤니티 게시글 Google 리치 결과 필수 필드 충족 (3-tier fallback)</td><td>2026-05-11</td></tr>
 <tr><td><strong>Gate 2 자동화</strong></td><td>post-deploy-qa.yml: Smoke+Visual QA(Claude Haiku)+Lighthouse → Slack #qa</td><td>2026-04</td></tr>
 <tr><td><strong>시드봇 78명 체계</strong></td><td>스크래퍼봇 BI~BW 18명(source=SHEET 전담) + 엔터봇 EN1~EN5 5명(10·13·15·21시만 활성) — 생태계 격리</td><td>2026-05-11</td></tr>
 <tr><td><strong>Phase 4 에이전트 7종</strong></td><td>comment-activator, reply-chain-driver, connection-facilitator, job-matcher, caregiving-curator, humor-curator, health-anxiety-responder — 1차/2차/3차 분산 실행</td><td>2026-05-11</td></tr>
+<tr><td><strong>카페 크롤링 2카페 딥다이브 전략</strong></td><td>4카페 → 우갱·은퇴 2개 집중, 게시판 우갱 20개·은퇴 27개, maxPostsPerCafe 80, 일 160건 수집</td><td>2026-05</td></tr>
+<tr><td><strong>launchd 18개 체계</strong></td><td>cafe-crawler 6종(07:40~00:30) + popular-sync 3종 + fmkorea·naver-cafe 스크래퍼 + magazine 2종 + naver-blog 2종 + session + jisik</td><td>2026-05</td></tr>
+<tr><td><strong>Phase 2+3 외부 스크래퍼</strong></td><td>82cook 외부 크롤러(DISPATCH ONLY, GHA 스케줄 제거) + 네이버 카페 URL 지원(LOCAL ONLY, storage-state.json 필요)</td><td>2026-05</td></tr>
+<tr><td><strong>네이버 블로그 자동 발행</strong></td><td>agents/naver-blog/ 10개 파일(poster/session/queue/content/image/smart-editor 등), launchd 2종(09:30·15:00)</td><td>2026-05</td></tr>
+<tr><td><strong>커뮤니티 에이전트 모듈</strong></td><td>agents/community/ sheet-scraper·site-configs·sheets-client·content-transformer·image-pipeline + fmkorea/naver-cafe 로컬 런처</td><td>2026-05</td></tr>
 <tr><td><strong>구글 시트 화제성 파이프라인</strong></td><td>4탭 구조(사는이야기_화제성/웃음방_화제성) → WAVE_L(좋아요10)+WAVE_1~3(댓글15) → HOT 자동 달성, agents-sheet-viral.yml 30분마다</td><td>2026-05-11</td></tr>
 <tr><td><strong>FAILED 행 스마트 재시도</strong></td><td>B~J 공백 처리 시 파동 0개 → 재예약+PUBLISHED, 파동 존재 → SKIPPED (SHA 80eb1d5)</td><td>2026-05-11</td></tr>
 <tr><td><strong>이미지 전용 글 댓글 가드</strong></td><td>generateSheetViralComment: cleanText &lt; 50자이면 즉시 '' 반환 — 짤방 쓰레기 댓글 재발 방지 (SHA 67cf99e)</td><td>2026-05-12</td></tr>
