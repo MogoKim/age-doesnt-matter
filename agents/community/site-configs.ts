@@ -111,8 +111,8 @@ export const SITE_CONFIGS: SiteConfig[] = [
     },
     commentSelectors: {
       item: 'li.rp',
-      text: 'li.rp p',
-      author: 'li.rp h5 strong.user_function a',
+      text: 'p',
+      author: 'h5 strong.user_function a',
     },
     postAuthorSelectors: ['div.readLeft strong.user_function.user_profile a'],
     headless: true,
