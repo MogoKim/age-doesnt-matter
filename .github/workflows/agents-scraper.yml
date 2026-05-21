@@ -64,4 +64,3 @@ jobs:
         run: cd agents && npx tsx cron/runner.ts community sheet-scrape
         env:
           SHEET_SCRAPER_EXCLUDE_SITE: fmkorea
-          SHEET_SCRAPER_AI_FILTER: "true"

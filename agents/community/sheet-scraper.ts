@@ -16,7 +16,6 @@
  */
 
 import { fileURLToPath } from 'url'
-import Anthropic from '@anthropic-ai/sdk'
 import { chromium, type BrowserContext, type Page } from 'playwright'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
@@ -27,64 +26,9 @@ import { processContentMedia } from './image-pipeline.js'
 import { transformContent, transformRawContent, classifyCategory } from './content-transformer.js'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
-const client = new Anthropic()
 
-// -- AI 품질 필터 (SHEET_SCRAPER_AI_FILTER=true 시 활성화) --
-
-interface AiFilterResult {
-  relevanceScore: number   // 0~10: 50~60대 여성 공감도
-  category: string | null  // AI 분류 카테고리 (null이면 keyword fallback 사용)
-  optimizedTitle: string | null // 개선 제목 (조건부: 원본 충분하면 null)
-}
-
-async function aiQualityFilter(title: string, content: string): Promise<AiFilterResult> {
-  try {
-    const response = await client.messages.create({
-      model: process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5',
-      max_tokens: 200,
-      messages: [{
-        role: 'user',
-        content: `다음 글을 분석하세요. 대상: 50~60대 한국 여성 커뮤니티 "우리 나이가 어때서".
-
-제목: ${title.slice(0, 50)}
-본문: ${content.slice(0, 300)}
-
-JSON으로만 응답 (다른 텍스트 없음):
-{
-  "relevanceScore": 0~10 정수,
-  "category": "유머|일상|건강|요리|여행|기타",
-  "optimizedTitle": "개선 제목(25자 이내) 또는 null"
-}
-
-relevanceScore 기준:
-- 10: 50~60대 여성이 바로 공유할 것
-- 7: 우리 또래 공감 가능
-- 4: 관련 있지만 타겟층 불명확
-- 0: 20대 타겟/정치/혐오/무관
-
-optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 개선안 제시. 나머지는 null.
-절대 금지 단어: 시니어, 어르신, 노인`,
-      }],
-    })
-
-    const text = response.content[0].type === 'text' ? response.content[0].text : '{}'
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    const parsed = JSON.parse(jsonMatch?.[0] ?? '{}') as {
-      relevanceScore?: number
-      category?: string
-      optimizedTitle?: string | null
-    }
-
-    return {
-      relevanceScore: typeof parsed.relevanceScore === 'number' ? parsed.relevanceScore : 7,
-      category: typeof parsed.category === 'string' ? parsed.category : null,
-      optimizedTitle: typeof parsed.optimizedTitle === 'string' ? parsed.optimizedTitle : null,
-    }
-  } catch (err) {
-    // AI 실패 → keyword fallback, 게시 차단 없음
-    console.warn('[aiQualityFilter] 실패 — keyword fallback 사용:', err instanceof Error ? err.message : err)
-    return { relevanceScore: 7, category: null, optimizedTitle: null }
-  }
+function shuffleArray<T>(arr: T[]): T[] {
+  return [...arr].sort(() => Math.random() - 0.5)
 }
 
 const WAVE_PERSONAS: Record<string, string[]> = {
@@ -103,12 +47,27 @@ interface PersonaMapping {
   boards: Array<'STORY' | 'HUMOR'>
 }
 
+// 기존 E/H/P 별칭(봄바람/매일걷기/오후세시)은 Google Sheet E열 override 호환성 유지를 위해 유지.
+// 실제 서비스 표시 닉네임은 persona-data.ts(getBotUser) 기준: E=미숙이맘, H=걷기매니아58, P=love1961
 const PERSONAS: PersonaMapping[] = [
-  { id: 'C', nickname: 'ㅋㅋ요정', categories: ['유머'], boards: ['HUMOR'] },
-  { id: 'E', nickname: '봄바람', categories: ['일상', '고민'], boards: ['STORY'] },
-  { id: 'H', nickname: '매일걷기', categories: ['건강'], boards: ['STORY'] },
-  { id: 'I', nickname: '한페이지', categories: ['힐링'], boards: ['HUMOR'] },
-  { id: 'P', nickname: '오후세시', categories: ['추천', '자랑', '자녀', '기타'], boards: ['STORY', 'HUMOR'] },
+  // ── HUMOR ──
+  { id: 'C',  nickname: 'ㅋㅋ요정',   categories: ['유머'],         boards: ['HUMOR'] },
+  { id: 'R',  nickname: '밤새봤다',   categories: ['유머', '힐링'], boards: ['HUMOR'] },
+  { id: 'AF', nickname: '하하호호',   categories: ['유머', '자랑'], boards: ['HUMOR'] },
+  { id: 'I',  nickname: '한페이지',   categories: ['힐링', '추천'], boards: ['HUMOR'] },
+  { id: 'AO', nickname: '웃음충전',   categories: ['힐링', '추천'], boards: ['HUMOR'] },
+  // ── STORY ──
+  { id: 'E',  nickname: '봄바람',     categories: ['일상', '고민'], boards: ['STORY'] },
+  { id: 'A',  nickname: '하늘바라기', categories: ['일상', '고민'], boards: ['STORY'] },
+  { id: 'H',  nickname: '매일걷기',   categories: ['건강'],         boards: ['STORY'] },
+  { id: 'M',  nickname: '등산만보',   categories: ['건강'],         boards: ['STORY'] },
+  { id: 'AN', nickname: '약국단골',   categories: ['건강'],         boards: ['STORY'] },
+  { id: 'L',  nickname: '손주러브',   categories: ['자녀'],         boards: ['STORY'] },
+  { id: 'K',  nickname: '예쁘게살자', categories: ['자랑', '추천'], boards: ['STORY'] },
+  // ── 만능 fallback (STORY+HUMOR) ──
+  { id: 'P',  nickname: '오후세시',   categories: ['기타'],         boards: ['STORY', 'HUMOR'] },
+  { id: 'U',  nickname: '부산아지매', categories: ['기타'],         boards: ['STORY'] },
+  { id: 'Q',  nickname: '멍멍이엄마', categories: ['기타'],         boards: ['STORY'] },
 ]
 
 function pickPersona(
@@ -116,7 +75,7 @@ function pickPersona(
   boardType: 'STORY' | 'HUMOR',
   overrideNickname?: string,
 ): PersonaMapping {
-  // 창업자가 지정한 닉네임 우선
+  // 창업자가 지정한 닉네임/ID 우선
   if (overrideNickname) {
     const match = PERSONAS.find(
       (p) => p.nickname === overrideNickname || p.id === overrideNickname.toUpperCase(),
@@ -124,16 +83,20 @@ function pickPersona(
     if (match) return match
   }
 
-  // 카테고리 매칭
-  const categoryMatch = PERSONAS.find((p) => p.categories.includes(category))
-  if (categoryMatch && categoryMatch.boards.includes(boardType)) return categoryMatch
+  // category + boardType 매칭 풀에서 랜덤 선택
+  const categoryPool = PERSONAS.filter(
+    (p) => p.categories.includes(category) && p.boards.includes(boardType),
+  )
+  if (categoryPool.length > 0)
+    return categoryPool[Math.floor(Math.random() * categoryPool.length)]
 
-  // 게시판 매칭 폴백
-  const boardMatch = PERSONAS.find((p) => p.boards.includes(boardType))
-  if (boardMatch) return boardMatch
+  // boardType만 매칭 풀에서 랜덤 선택
+  const boardPool = PERSONAS.filter((p) => p.boards.includes(boardType))
+  if (boardPool.length > 0)
+    return boardPool[Math.floor(Math.random() * boardPool.length)]
 
-  // 최종 폴백: 오후세시 (만능형)
-  return PERSONAS[4]
+  // 최종 fallback: 전체 풀 랜덤
+  return PERSONAS[Math.floor(Math.random() * PERSONAS.length)]
 }
 
 // ── 브라우저 관리 ──
@@ -489,33 +452,8 @@ export async function main() {
             }
 
             // 카테고리 결정 (창업자 지정 우선, 아니면 게시판별 자동 분류)
-            let category = row.category || classifyCategory(title, content, tab.boardType)
-            let finalTitle = title
-
-            // AI 품질 필터 (SHEET_SCRAPER_AI_FILTER=true 시 활성화)
-            if (process.env.SHEET_SCRAPER_AI_FILTER === 'true') {
-              const aiResult = await aiQualityFilter(title, content)
-
-              // 관련성 낮으면 건너뜀 (50~60대 여성 공감도 6점 미만)
-              if (aiResult.relevanceScore < 6) {
-                await updateRow(tab.tabName, row.rowIndex, {
-                  status: 'SKIPPED_LOW_SCORE',
-                  error: `관련성 낮음 (점수: ${aiResult.relevanceScore}/10) — 50~60대 공감도 부족`,
-                }).catch((e) => console.error('[sheet-scraper] updateRow 실패 (SKIPPED_LOW_SCORE):', e))
-                totalSkippedFilter++
-                continue
-              }
-
-              // AI 카테고리 반영 (창업자 미지정 시만)
-              if (!row.category && aiResult.category) {
-                category = aiResult.category
-              }
-
-              // 제목 최적화 (AI가 개선안 제시한 경우만)
-              if (aiResult.optimizedTitle) {
-                finalTitle = aiResult.optimizedTitle
-              }
-            }
+            const category = row.category || classifyCategory(title, content, tab.boardType)
+            const finalTitle = title
 
             // 페르소나 선택
             const persona = pickPersona(category, tab.boardType, row.persona)
@@ -554,10 +492,10 @@ export async function main() {
               // 화제성 글: WAVE_L(좋아요+1분) + WAVE_1(공감+3분) + WAVE_2(비판+6분) + WAVE_3(역전+10분)
               const keyTerms = extractKeyTerms(title)
               const waves = [
-                { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 1 },
-                { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 3 },
-                { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 6 },
-                { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 10 },
+                { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 1,  targetCount: undefined },
+                { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 3,  targetCount: 3 },
+                { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 6,  targetCount: 2 },
+                { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 10, targetCount: 2 },
               ]
               for (const wave of waves) {
                 const scheduledAt = new Date(now.getTime() + wave.delayMin * 60 * 1000)
@@ -570,10 +508,11 @@ export async function main() {
                       postId: post.id,
                       waveType: wave.waveType,
                       scheduledAt: scheduledAt.toISOString(),
-                      personaIds: WAVE_PERSONAS[wave.waveType] ?? [],
+                      personaIds: shuffleArray(WAVE_PERSONAS[wave.waveType] ?? []),
                       rawContent: content.slice(0, 2000),
                       keyTerms,
                       sourceComments,
+                      ...(wave.targetCount !== undefined ? { targetCount: wave.targetCount } : {}),
                     }),
                   },
                 })
@@ -589,7 +528,8 @@ export async function main() {
                   details: JSON.stringify({
                     postId: post.id,
                     scheduledAt: new Date(now.getTime() + 2 * 60 * 1000).toISOString(),
-                    personaIds: ['BI', 'BJ', 'BK'],
+                    personaIds: shuffleArray(['BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR']),
+                    targetCount: 4,
                     sourceComments,
                   }),
                 },

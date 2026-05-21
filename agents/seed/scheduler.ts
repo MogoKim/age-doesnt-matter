@@ -1195,6 +1195,7 @@ export async function processSheetEngagementWaves(): Promise<void> {
   for (const wave of dueWaves) {
     const data = JSON.parse(wave.details as string) as {
       postId: string; scheduledAt: string; personaIds: string[]
+      targetCount?: number
       sourceComments?: string[]  // sheet-scraper에서 수집한 원본 댓글 (있을 때만)
     }
 
@@ -1204,19 +1205,24 @@ export async function processSheetEngagementWaves(): Promise<void> {
     } else {
       const post = await prisma.post.findUnique({
         where: { id: data.postId },
-        select: { title: true, content: true },
+        select: { title: true, content: true, authorId: true },
       })
       if (!post) continue
 
       const sourceComments = data.sourceComments ?? []
+      const targetCount = data.targetCount
 
       let inserted = 0
       for (const personaId of data.personaIds) {
+        if (targetCount !== undefined && inserted >= targetCount) break
+
         const authorId = await getBotUser(personaId)
+        if (authorId === post.authorId) continue
+
         const todayCommentCount = await prisma.comment.count({
           where: { authorId, createdAt: { gte: startOfKstDay() }, post: { source: 'SHEET' } },
         })
-        if (todayCommentCount >= 3) continue
+        if (todayCommentCount >= 4) continue
 
         const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
         if (existing) continue
@@ -1286,6 +1292,7 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
       scheduledAt: string
       waveType?: 'empathy' | 'critical' | 'reversal'
       personaIds: string[]
+      targetCount?: number
       keyTerms?: string[]
       rawContent?: string
       sourceComments?: string[]
@@ -1293,7 +1300,7 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
 
     const post = await prisma.post.findUnique({
       where: { id: data.postId },
-      select: { title: true, content: true },
+      select: { title: true, content: true, authorId: true },
     })
     if (!post) continue
 
@@ -1305,6 +1312,7 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
       const rawContent = data.rawContent ?? post.content ?? ''
       const keyTerms = data.keyTerms ?? []
       const sourceComments = data.sourceComments ?? []
+      const targetCount = data.targetCount
       const cap = 20
 
       const botCount = await prisma.comment.count({
@@ -1314,8 +1322,11 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
       let inserted = 0
       for (const personaId of data.personaIds) {
         if (botCount + inserted >= cap) break
+        if (targetCount !== undefined && inserted >= targetCount) break
 
         const authorId = await getBotUser(personaId)
+        if (authorId === post.authorId) continue
+
         const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
         if (existing) continue
 

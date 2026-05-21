@@ -205,6 +205,7 @@ scraped/{postKey}/{index}.{ext}
 | 2026-05-11 | FAILED 행 스마트 재시도 로직: 게시글은 있으나 파동 BotLog 0개인 경우 B~J 공백 처리 시 파동 재예약 → PUBLISHED 자동 처리 | 창업자가 FAILED 행을 PENDING으로 초기화했을 때 HOT 달성까지 완전 자동화 |
 | 2026-05-13 | 원본 댓글 수집 추가 + 파동 타이밍 단축: site-configs `commentSelectors`(오유·네이트판·펨코), scrapePage()에서 댓글 최대 10개 수집 → BotLog `sourceComments`. 파동: 화제성 +1/+3/+6/+10분, 일반 +2/+6분 | 글 발행 1분 이내 첫 댓글, 10분 이내 전부 완료 + 원본 분위기 반영 댓글 생성 |
 | 2026-05-15 | 워크플로우 분리(agents-cafe.yml → agents-scraper.yml) + 스케줄 3→5회/일(07:30·09:00·12:00·15:00·21:00 KST) + Claude Haiku AI 품질 필터 추가(관련성 점수·카테고리 분류·제목 최적화) + `SHEET_SCRAPER_AI_FILTER` 환경변수 도입 | 카페 크롤링과 스크래퍼 종속성 분리 + 50~60대 관련성 낮은 글 자동 필터링 + AI 카테고리 분류 정확도 향상 |
+| 2026-05-21 | AI 필터 완전 제거(Haiku 비용 0원) + 게시자 페르소나 5명→15명 확장 + pickPersona 랜덤화 + 일반 댓글 BI~BR 10명 풀 shuffle(targetCount: 4) + 화제성 파동 댓글 공감3/비판2/역전2 targetCount + 자기 글 자기 댓글 방지 | 페르소나 다양성 향상, AI 비용 절감, 댓글 자연도 개선 |
 
 ---
 
