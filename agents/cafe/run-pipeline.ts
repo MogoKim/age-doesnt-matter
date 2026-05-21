@@ -587,7 +587,7 @@ async function checkCookieExpiry() {
 
     const details = lastLog.details ? JSON.parse(lastLog.details as string) : {}
     const saved = details.saved ?? lastLog.itemCount ?? 0
-    const collected = details.collected ?? 0
+    const collected = details.collected ?? details.saved ?? lastLog.itemCount ?? 0
 
     if (collected < 10) {
       const successRate = collected > 0 ? Math.round(saved / collected * 100) : 0
