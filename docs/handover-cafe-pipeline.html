@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.16</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.17</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -290,12 +290,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.16</div>
+  <div class="cover-badge">Handover Document v10.17</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.16 (2026-05-21)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.17 (2026-05-21)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -932,7 +932,7 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
         </tr>
         <tr>
           <td><strong>Case B</strong>: DB에 없는 새 글</td>
-          <td>isUsable=true 강제 설정 후 신규 INSERT. (인기글 = 품질 보증)</td>
+          <td>이미지 의존글(본문 50자 미만 + 이미지만)·공지문이면 <strong>isUsable=false</strong>, 그 외는 isUsable=true로 신규 INSERT. isPopular=true는 항상 설정.</td>
         </tr>
       </tbody>
     </table>
@@ -979,7 +979,7 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
           <tbody>
             <tr><td><code>&lt; 20</code></td><td>저장 자체 안 함 (minSave)</td></tr>
             <tr><td><code>20 ~ 29</code></td><td>저장하되 isUsable=false</td></tr>
-            <tr><td><code>≥ 30</code></td><td>isUsable=true → 큐레이션 후보 풀 진입</td></tr>
+            <tr><td><code>≥ 30</code></td><td>isUsable=true → 큐레이션 후보 풀 진입<br><span style="font-size:12px;color:var(--sub);">단, 이미지 의존(본문 50자 미만)·공지문이면 false</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -1067,8 +1067,8 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
         <div class="step-content">
           <strong>savePosts() — 크롤 즉시 설정</strong><br>
           crawler.ts의 savePosts 함수에서 qualityScore를 계산하고 즉시 isUsable을 결정한다.<br>
-          <code>isUsable = qualityScore &gt;= QUALITY_THRESHOLDS.minUsable</code> (minUsable = <strong>30</strong>)<br>
-          <span class="text-muted">crawl-only 모드도 동일하게 적용됨. 11:30까지 기다리지 않는다.</span>
+          <code>isUsable = qualityScore &gt;= QUALITY_THRESHOLDS.minUsable &amp;&amp; !imageDep &amp;&amp; !noticeText</code> (minUsable = <strong>30</strong>)<br>
+          <span class="text-muted">crawl-only 모드도 동일하게 적용됨. 11:30까지 기다리지 않는다. 이미지 의존·공지문은 점수와 무관하게 isUsable=false로 강제.</span>
         </div>
       </div>
       <div class="step-row">
@@ -1089,17 +1089,73 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
       <div class="step-row">
         <div class="step-num">4</div>
         <div class="step-content">
-          <strong>popular-sync.ts — 인기글은 isUsable=true 강제</strong><br>
-          인기글 탭에서 수집된 글(Case B: DB 신규)은 qualityScore 무관하게 isUsable=true로 저장. 인기글 = 품질 보증.
+          <strong>popular-sync.ts — Case B 신규글 isUsable 결정</strong><br>
+          인기글 탭에서 수집된 DB 신규 글(Case B)은 isPopular=true로 표시한다. isUsable은 이미지 의존·공지문 여부로 결정: 해당되면 false, 아니면 true. "인기글 = 품질 보증"이지만 이미지만 있는 글·공지문은 큐레이션에 부적합하므로 예외 처리한다.
         </div>
       </div>
     </div>
   </div>
 
+  <h3>크롤 품질 방어 필터 (2026-05-21 추가)</h3>
+  <div class="narrative">
+    <p>qualityScore 기준을 통과해도 아래 두 종류의 글은 이미지 의존·공지문 필터에 걸려 isUsable=false로 강제된다. savePosts()와 popular-sync Case B 신규 INSERT 양쪽에 동일하게 적용된다.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>필터</th><th>판단 기준</th><th>이유</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>이미지 의존글</strong><br><code>isImageDependentContent()</code></td>
+          <td>이미지 URL이 1개 이상이고, URL·공백 제거 후 본문 길이 &lt; 50자</td>
+          <td>이미지가 사실상 본문인 글. Claude가 이미지를 볼 수 없어 내용 파악 불가 → 재가공 시 의미 없는 글 생성됨</td>
+        </tr>
+        <tr>
+          <td><strong>게시판 공지문</strong><br><code>isBoardNoticeContent()</code></td>
+          <td>NOTICE_SIGNALS 5개 중 2개 이상 동시 포함</td>
+          <td>가입 안내·강퇴 규정·신고 게시판 안내 등 운영 공지문. 큐레이션 콘텐츠로 부적합</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <details class="code-toggle">
+    <summary>NOTICE_SIGNALS 목록 및 판단 함수 보기</summary>
+<pre>// NOTICE_SIGNALS — 2개 이상이면 게시판 공지문으로 판단
+const NOTICE_SIGNALS = ['게시판 안내', '인원모집', '무통보 강퇴', '신고게시판', '카톡, 쪽지'] as const
+
+// isImageDependentContent — URL·공백 제거 후 본문 50자 미만
+function isImageDependentContent(post: RawCafePost): boolean {
+  if (post.imageUrls.length &lt; 1) return false
+  const effectiveLen = post.content
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/\s+/g, '')
+    .length
+  return effectiveLen &lt; 50
+}</pre>
+  </details>
+  <div class="alert info" style="font-size:13px; margin-top:12px;">
+    <strong>2개 이상 신호가 필요한 이유 — false positive 방지</strong><br>
+    "카톡 문의 주세요", "가입을 환영합니다" 같이 일반 글에 NOTICE_SIGNALS 단어 1개가 등장하는 경우를 허용하기 위해, 2개 이상 동시 출현을 공지문의 기준으로 삼는다.
+  </div>
+
+  <h3>MONEY 키워드 확장 (2026-05-21)</h3>
+  <div class="narrative">
+    <p><code>curator-shared.ts</code>의 <code>guessDesire()</code> 함수는 키워드 기반으로 글의 desireCategory를 추정한다. MONEY 범주에 투자 관련 단어가 누락되어 코스피·나스닥·ETF 등 투자 글이 STORY/자유수다로 오분류되는 문제가 있었다. 아래 키워드를 MONEY 배열에 추가했다.</p>
+  </div>
+  <details class="code-toggle">
+    <summary>추가된 MONEY 키워드 보기</summary>
+<pre>// curator-shared.ts — MONEY 확장 (2026-05-21, SHA: c57f0fa)
+MONEY: [
+  '돈', '재테크', '연금', '절약', '투자', '부동산', '물가', '주식', '적금', '노후',
+  // ↓ 신규 추가
+  '코스피', '코스닥', '나스닥', 'etf', '커버드콜', '코덱스', 'kodex',
+  '하이닉스', '삼성전자', '배당', '배당주', '미국주식'
+]</pre>
+  </details>
+
   <h3>한 줄 요약</h3>
   <div class="alert ok">
-    <strong>isUsable 규칙</strong>
-    qualityScore ≥ 30이면 크롤 즉시(savePosts) isUsable=true. crawl-only도 포함. 11:30 분석 없어도 적용됨.
+    <strong>isUsable 규칙 (2026-05-21 기준)</strong>
+    qualityScore ≥ 30이고 이미지 의존·공지문이 아니면 크롤 즉시(savePosts) isUsable=true. crawl-only도 포함. 11:30 분석 없어도 적용됨. 인기글(popular-sync Case B)도 동일 필터 적용.
   </div>
 </div>
 
@@ -1659,7 +1715,7 @@ for (const waveNum of order) {
   </div>
 
   <div class="biz-lead">
-    일반 크롤링은 '전체글보기' 탭의 최신 글을 시간순으로 가져온다. 그런데 카페에는 이미 많은 반응을 얻은 글들이 따로 모이는 <strong>'인기글' 탭</strong>이 있다. 여기 올라온 글은 카페 커뮤니티에서 이미 품질 검증이 된 글이다 — qualityScore를 새로 계산할 필요 없이 바로 큐레이션 후보 풀에 넣어도 된다는 의미다.<br><br>
+    일반 크롤링은 '전체글보기' 탭의 최신 글을 시간순으로 가져온다. 그런데 카페에는 이미 많은 반응을 얻은 글들이 따로 모이는 <strong>'인기글' 탭</strong>이 있다. 여기 올라온 글은 카페 커뮤니티에서 이미 품질 검증이 된 글이다 — qualityScore를 새로 계산할 필요 없이 바로 큐레이션 후보 풀에 넣어도 된다. 단, 이미지만 있는 글이나 게시판 공지문은 큐레이션에 부적합하므로 예외 처리한다.<br><br>
     이 탭도 네이버 봇 탐지를 우회해야 하기 때문에 headless:false Playwright가 필요하고, Mac에서만 실행된다. Mac이 수집을 마친 뒤 15~20분 후 GHA의 popular-curator가 이 글들을 일반 큐레이션보다 우선적으로 발행한다.
   </div>
 
@@ -1695,8 +1751,8 @@ for (const waveNum of order) {
         </tr>
         <tr>
           <td><strong>Case B</strong><br>DB에 없는 새 글</td>
-          <td>isUsable=true 강제 + 신규 INSERT</td>
-          <td>인기글 = 품질 검증 완료. qualityScore 계산 없이 바로 후보 풀 진입.</td>
+          <td>isPopular=true + 신규 INSERT<br>isUsable: 이미지 의존·공지문이면 <strong>false</strong>, 그 외 <strong>true</strong></td>
+          <td>인기글은 품질 검증됐지만, 이미지만 있는 글·공지문은 재가공이 불가능해 큐레이션 부적합. 해당 글만 예외 처리.</td>
         </tr>
       </tbody>
     </table>
@@ -1899,7 +1955,7 @@ for (const waveNum of order) {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔ 전부 완료</h2>
+    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗ 전부 완료</h2>
   </div>
 
   <div class="alert ok">
@@ -2570,6 +2626,148 @@ killerScore: { gte: 50 }         // ← ≥55 → ≥50</pre>
   </div>
   </details>
 
+  <div style="border-top:2px dashed var(--border);margin:24px 0 20px;padding-top:4px;">
+    <p style="font-size:12px;color:var(--muted);margin:0;">아래 ㉕㉖㉗은 2026-05-21 크롤 품질 방어 배치에서 추가된 항목이다.</p>
+  </div>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉕. curator-users.ts P2002 타겟 검증 강화 — nickname 충돌만 fallback, 타 필드 re-throw</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉕. curator-users.ts P2002 타겟 검증 강화 — nickname 충돌만 fallback, 타 필드 re-throw</div>
+    </div>
+    <div class="impl-body">
+      ㉒에서 추가된 P2002 catch 블록은 에러 코드(<code>P2002</code>)만 확인하고 어떤 unique 필드가 충돌했는지 구분하지 않았다. 이로 인해 두 가지 충돌 시나리오가 가능했다.<br><br>
+
+      <strong>시나리오 A — 인간 유저가 동일 닉네임 선점</strong><br>
+      nickname만 충돌 → fallback nickname(<code>${nickname}-${id.toLowerCase()}</code>)으로 2차 upsert → 성공.<br><br>
+
+      <strong>시나리오 B — 구 포맷 봇 레코드와 providerId 충돌</strong><br>
+      nickname + providerId 모두 충돌 → fallback nickname을 바꿔도 providerId P2002가 재발 → 조용히 실패.<br><br>
+
+      <strong>수정 내용</strong><br>
+      <code>err.meta.target</code>으로 nickname 충돌 여부를 명시 확인. 충돌 필드가 nickname이 아니면(providerId 등) 원본 에러를 그대로 re-throw해 디버깅 가능하게 만든다.<br><br>
+
+      <strong>현실 판단</strong>: 배포 후 GHA가 정상 재개됐으므로 실제 케이스는 시나리오 A. 단, 타 필드 P2002를 조용히 숨기지 않는 방어적 코드로 개선.<br><br>
+
+      <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — 수정 전후</summary>
+      <pre>// 수정 전 (㉒, SHA: 451ab68) — P2002면 무조건 nickname fallback
+catch (err: unknown) {
+  if (...code === 'P2002') {
+    const user = await prisma.user.upsert({ ..., create: { nickname: `${nickname}-${id.toLowerCase()}` } })
+    return user.id
+  }
+  throw err
+}
+
+// 수정 후 (SHA: ab8a9b6) — nickname 충돌만 fallback, 타 필드는 re-throw
+catch (err: unknown) {
+  if (...code === 'P2002') {
+    const rawTarget = (err as { meta?: Record&lt;string, unknown&gt; }).meta?.['target']
+    const isNicknameConflict = Array.isArray(rawTarget)
+      ? rawTarget.includes('nickname')
+      : typeof rawTarget === 'string' &amp;&amp; rawTarget.includes('nickname')
+    if (!isNicknameConflict) throw err  // providerId 등 타 필드 P2002는 숨기지 않음
+    const user = await prisma.user.upsert({ ..., create: { nickname: `${nickname}-${id.toLowerCase()}` } })
+    return user.id
+  }
+  throw err
+}</pre>
+      </details>
+      SHA: ab8a9b6 (2026-05-21)
+    </div>
+    <div class="impl-file">📄 agents/cafe/curator-users.ts — <code>getCuratorBotUser()</code> catch 블록: P2002 타겟 필드 확인 추가 (배열·문자열 양쪽 방어)</div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉖. 크롤 품질 방어 1차 — 이미지 의존글·공지문 isUsable=false + MONEY 키워드 확장</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉖. 크롤 품질 방어 1차 — 이미지 의존글·공지문 isUsable=false + MONEY 키워드 확장</div>
+    </div>
+    <div class="impl-body">
+      실제 발행된 글 9건을 DB에서 직접 조회한 결과, 3가지 품질 문제가 확인됐다.<br><br>
+
+      <strong>문제 1 — 이미지 의존글</strong><br>
+      본문이 이미지 URL만 있고 텍스트가 거의 없는 글이 큐레이션 후보에 포함. Claude가 이미지를 볼 수 없어 의미 없는 재가공 글이 생성됨.<br>
+      → <code>isImageDependentContent()</code> 신설: 이미지 URL ≥1개이고 URL·공백 제거 후 본문 &lt;50자이면 isUsable=false.<br><br>
+
+      <strong>문제 2 — 게시판 공지문</strong><br>
+      카페 운영 공지(가입안내, 강퇴규정, 신고게시판 등)가 크롤되어 큐레이션에 혼입됨.<br>
+      → <code>isBoardNoticeContent()</code> 신설: NOTICE_SIGNALS 5개 중 2개 이상 포함 시 isUsable=false. (1개만으로는 false positive 우려)<br><br>
+
+      <strong>문제 3 — MONEY 오분류</strong><br>
+      코스피·나스닥·ETF·배당주 등 투자 관련 글이 <code>guessDesire()</code>에서 MONEY 미감지 → STORY/자유수다 게시판으로 오분류됨.<br>
+      → <code>curator-shared.ts</code> MONEY 배열에 12개 투자 키워드 추가.<br><br>
+
+      <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — 두 필터 함수 + isUsable 조건</summary>
+      <pre>// crawler.ts — savePosts() isUsable 조건 (수정 후)
+isUsable: qualityScore &gt;= QUALITY_THRESHOLDS.minUsable &amp;&amp; !imageDep &amp;&amp; !noticeText
+
+// isImageDependentContent
+function isImageDependentContent(post: RawCafePost): boolean {
+  if (post.imageUrls.length &lt; 1) return false
+  const effectiveLen = post.content
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/\s+/g, '')
+    .length
+  return effectiveLen &lt; 50
+}
+
+// isBoardNoticeContent
+const NOTICE_SIGNALS = ['게시판 안내', '인원모집', '무통보 강퇴', '신고게시판', '카톡, 쪽지'] as const
+function isBoardNoticeContent(content: string): boolean {
+  return NOTICE_SIGNALS.filter(s =&gt; content.includes(s)).length &gt;= 2
+}</pre>
+      </details>
+      SHA: c57f0fa (2026-05-21)
+    </div>
+    <div class="impl-file">📄 agents/cafe/crawler.ts — <code>isImageDependentContent()</code> + <code>isBoardNoticeContent()</code> 신설, <code>savePosts()</code> isUsable 조건 확장<br>📄 agents/cafe/curator-shared.ts — MONEY 키워드 12개 추가 (코스피·코스닥·나스닥·etf·커버드콜·코덱스·kodex·하이닉스·삼성전자·배당·배당주·미국주식)</div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㉗. popular-sync Case B 이미지 의존·공지문 isUsable 우회 차단</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㉗. popular-sync Case B 이미지 의존·공지문 isUsable 우회 차단</div>
+    </div>
+    <div class="impl-body">
+      ㉖에서 <code>savePosts()</code>에 품질 방어 필터를 추가했지만, <code>syncPopularPosts()</code>의 Case B(DB 신규글) 경로는 별개 INSERT 로직이라 같은 우회 경로가 그대로 남아 있었다.<br><br>
+
+      <strong>우회 경로 구조</strong><br>
+      일반 크롤 → <code>savePosts()</code> → 필터 적용 ✅<br>
+      popular-sync Case B → <code>syncPopularPosts()</code> 내 별도 INSERT → <code>isUsable: true</code> 하드코딩 ❌<br><br>
+
+      인기글 탭에도 이미지만 있는 글이나 게시판 공지문이 올라올 수 있다. "인기글 = 품질 보증"이지만 이미지 의존·공지문은 큐레이션 부적합 기준과 별개다.<br><br>
+
+      <strong>수정 내용</strong><br>
+      <code>isImageDependentContent()</code>·<code>isBoardNoticeContent()</code>를 Case B INSERT에도 동일하게 적용.<br>
+      <code>isPopular: true</code>는 변경 없음 — 인기글 탭에서 수집됐다는 사실은 유지.<br><br>
+
+      <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — 수정 전후</summary>
+      <pre>// 수정 전 — isUsable 하드코딩
+await prisma.cafePost.create({
+  data: { ...crawled, isPopular: true, isUsable: true, ... }
+})
+
+// 수정 후 (SHA: 8e4e3c1) — 동일 필터 적용
+const imageDep = isImageDependentContent(crawled)
+const noticeText = isBoardNoticeContent(crawled.content)
+await prisma.cafePost.create({
+  data: { ...crawled, isPopular: true, isUsable: !imageDep &amp;&amp; !noticeText, ... }
+})</pre>
+      </details>
+      SHA: 8e4e3c1 (2026-05-21)
+    </div>
+    <div class="impl-file">📄 agents/cafe/crawler.ts — <code>syncPopularPosts()</code> Case B INSERT: <code>isUsable: true</code> → <code>isUsable: !imageDep &amp;&amp; !noticeText</code></div>
+  </div>
+  </details>
+
 </div>
 
 <!-- ══════════ §15. FAQ ══════════ -->
@@ -2734,6 +2932,23 @@ killerScore: { gte: 50 }         // ← ≥55 → ≥50</pre>
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.17</div>
+    <div class="changelog-date">2026-05-21</div>
+    <div class="changelog-content">
+      <strong>크롤 품질 방어 1차 + popular-sync Case B 우회 차단 + P2002 타겟 검증 강화.</strong><br><br>
+      <strong>[㉕ — SHA: ab8a9b6]</strong> curator-users.ts getCuratorBotUser() P2002 catch 블록 타겟 검증 강화: <code>err.meta.target</code>으로 nickname 충돌 여부 명시 확인. providerId 등 타 필드 P2002는 masking하지 않고 원본 에러 re-throw. Prisma 7.x <code>meta</code>가 <code>Record&lt;string, unknown&gt;</code>이므로 배열·문자열 양쪽 방어.<br>
+      <strong>[㉖ — SHA: c57f0fa]</strong> 크롤 품질 방어 1차 (crawler.ts + curator-shared.ts): ① <code>isImageDependentContent()</code> — 이미지 URL≥1 + URL·공백 제거 후 본문 &lt;50자이면 isUsable=false. ② <code>isBoardNoticeContent()</code> — NOTICE_SIGNALS 5개 중 2개 이상이면 isUsable=false (false positive 방지). ③ MONEY 키워드 12개 추가(코스피·코스닥·나스닥·etf·커버드콜·코덱스·kodex·하이닉스·삼성전자·배당·배당주·미국주식) — 투자 글 desireCategory 오분류 감소.<br>
+      <strong>[㉗ — SHA: 8e4e3c1]</strong> popular-sync Case B 우회 차단: <code>syncPopularPosts()</code> 내 별도 INSERT 경로도 ㉖와 동일 필터 적용. <code>isUsable: true</code> 하드코딩 → <code>isUsable: !imageDep &amp;&amp; !noticeText</code>. isPopular=true는 변경 없음.<br><br>
+      <strong>[§5]</strong> 중복 수집 방지 단계 C — Case B 설명 업데이트: "isUsable=true 강제" → "이미지 의존·공지문이면 false, 그 외 true".<br>
+      <strong>[§6]</strong> qualityScore 표: ≥30 행에 "이미지 의존·공지문 예외" 주석 추가.<br>
+      <strong>[§7]</strong> isUsable 생애 주기 step1 공식 업데이트 + step4 popular-sync 설명 수정. 크롤 품질 방어 필터 서브섹션 신규 추가 (두 필터 표 + 코드 토글 + false positive 방지 설명). MONEY 키워드 확장 서브섹션 신규 추가. 한 줄 요약 업데이트.<br>
+      <strong>[§12]</strong> 인기글 시스템 biz-lead 업데이트 + Case A vs Case B 표 수정.<br>
+      <strong>[§14]</strong> 섹션 제목 ㉕㉖㉗ 추가(26개→29개). impl-card 3개 신규 추가: ㉕ P2002 타겟 검증 / ㉖ 품질 방어 1차 / ㉗ popular-sync Case B 우회 차단.<br>
+      커버 배지·메타·footer: v10.16→v10.17.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -3014,8 +3229,8 @@ killerScore: { gte: 50 }         // ← ≥55 → ≥50</pre>
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.16<br>
-  최종 업데이트: 2026-05-20 | 작성: Claude Code + MogoKim<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.17<br>
+  최종 업데이트: 2026-05-21 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
 
