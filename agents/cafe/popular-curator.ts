@@ -40,7 +40,7 @@ export async function main() {
   const startTime = Date.now()
 
   const candidates = await prisma.cafePost.findMany({
-    where: { isPopular: true, isUsable: true, usedAt: null },
+    where: { isPopular: true, isUsable: true, usedAt: null, imageUrls: { isEmpty: true } },
     orderBy: { killerScore: 'desc' },
     take: 15,
     select: {

@@ -29,7 +29,7 @@ import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } fr
  * 1단계: 48h + 키워드 / 2단계: 7일 + 키워드 / 3단계: 7일 + desireCategory만
  */
 async function getReferencePosts(topic: string, desireCat: string, limit: number) {
-  const base = { isUsable: true, usedAt: null, isPopular: false }
+  const base = { isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true } }
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
   const firstWord = topicWords[0] ?? topic
   const selectFields = { id: true, title: true, content: true, cafeName: true } as const
@@ -226,7 +226,7 @@ export async function main() {
   }
 
   // 2) 카테고리 다양화 — desireMap 기반으로 HEALTH 독점 방지
-  const maxPosts = 5
+  const maxPosts = 3
   let publishedCount = 0
 
   // 오늘 이미 발행된 욕망 집계 — 시간당 동일 욕망 반복 방지 (B20)
@@ -337,7 +337,7 @@ export async function main() {
 
   // killerScore 우선 삽입 (B3) — 화제성 높은 글 제목을 최우선 주제로
   const killerPosts = await prisma.cafePost.findMany({
-    where: { killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false }, // 50: hotTopics 30개 확장 후 pool 안전망 (기존 55에서 완화)
+    where: { killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true } }, // 50: hotTopics 30개 확장 후 pool 안전망 (기존 55에서 완화)
     orderBy: { killerScore: 'desc' },
     take: 2,
     select: { title: true },
