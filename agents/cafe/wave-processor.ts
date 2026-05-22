@@ -17,6 +17,7 @@ import { getBotUser } from '../seed/generator.js'
 import { getAllPersonaIds } from '../seed/persona-data.js'
 import { sendSlackMessage } from '../core/notifier.js'
 import { parseTopComments } from './types.js'
+import { replaceCafeReferences } from './curator-shared.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
@@ -357,7 +358,7 @@ async function processAuthorRepliesV2(
   if (topComments.length === 0) return
 
   const cafeAuthor = normalizeNickname(cafePost.author ?? '')
-  const topCommentByContent = new Map(topComments.map(tc => [tc.content.trim(), tc]))
+  const topCommentByContent = new Map(topComments.map(tc => [replaceCafeReferences(tc.content.trim()), tc]))
 
   // v2 source-copy 봇 댓글만 조회 (content 매칭)
   const botComments = await prisma.comment.findMany({
@@ -401,16 +402,18 @@ async function processAuthorRepliesV2(
     const authorReply = (sourceTopComment.replies ?? []).find(r =>
       normalizeNickname(r.author) === cafeAuthor &&
       r.content.trim().length >= 5 &&
-      !usedContents.has(r.content.trim())
+      !usedContents.has(replaceCafeReferences(r.content.trim()))
     )
     if (!authorReply) continue
+
+    const replyContent = replaceCafeReferences(authorReply.content.trim())
 
     await prisma.$transaction([
       prisma.comment.create({
         data: {
           postId: queue.postId,
           authorId: authorUserId,
-          content: authorReply.content.trim(),
+          content: replyContent,
           parentId: botComment.id,
           status: 'ACTIVE',
         },
@@ -422,7 +425,7 @@ async function processAuthorRepliesV2(
     ])
 
     usedParentIds.add(botComment.id)
-    usedContents.add(authorReply.content.trim())
+    usedContents.add(replyContent)
     replyCount++
   }
 
@@ -479,7 +482,7 @@ async function processWaveV2(
     // 아직 복사되지 않은 원문 candidates 추출 (순서 유지)
     const sourceCandidates: string[] = []
     for (const tc of topComments) {
-      const text = tc.content?.trim() ?? ''
+      const text = replaceCafeReferences(tc.content?.trim() ?? '')
       if (text.length < 10) continue
       if (usedContentSet.has(text)) continue
       sourceCandidates.push(text)

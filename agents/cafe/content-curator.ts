@@ -18,6 +18,7 @@ import {
   DESIRE_TO_BOARD,
   guessDesire,
   stripMarkdown,
+  replaceCafeReferences,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
 
@@ -70,13 +71,13 @@ async function generateCuratedPost(
 
   const boardInfo = DESIRE_TO_BOARD[desireCat ?? 'GENERAL'] ?? DESIRE_TO_BOARD['GENERAL']
 
-  const title = stripMarkdown(mainRef.title.trim())
+  const title = replaceCafeReferences(stripMarkdown(mainRef.title.trim()))
   if (!title) return null
 
   return {
     personaId: persona.id,
     title,
-    content: stripMarkdown(mainRef.content.trim()),
+    content: replaceCafeReferences(stripMarkdown(mainRef.content.trim())),
     boardType: boardInfo.boardType,
     category: boardInfo.category,
     sourceTopic: topic,

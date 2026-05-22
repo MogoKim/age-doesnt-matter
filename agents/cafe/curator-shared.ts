@@ -11,6 +11,22 @@ export function sanitizeForApi(text: string): string {
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
 }
 
+/** 카페 원본 명칭을 우나어 브랜드명으로 치환 — 발행 직전에만 적용, CafePost 원본 DB 보존 */
+const CAFE_NAME_MAP: [RegExp, string][] = [
+  [/우아한\s*갱년기/g, '우나어'],
+  [/은퇴\s*후\s*50년/g, '우나어'],
+  [/우갱/g, '우나어'],
+  [/은오/g, '우나어'],
+]
+
+export function replaceCafeReferences(text: string): string {
+  let result = text
+  for (const [pattern, replacement] of CAFE_NAME_MAP) {
+    result = result.replace(pattern, replacement)
+  }
+  return result
+}
+
 /** AI 응답에서 마크다운 문법 제거 */
 export function stripMarkdown(text: string): string {
   return text
