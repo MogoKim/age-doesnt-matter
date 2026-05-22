@@ -60,5 +60,13 @@ jobs:
       - run: npx prisma generate
       - run: cd agents && npm ci
 
+      - name: Run Image Router (이미지 CafePost → Sheet PENDING append)
+        run: cd agents && npx tsx cron/runner.ts cafe_crawler image-route
+        env:
+          ENABLE_IMAGE_ROUTER: ${{ vars.ENABLE_IMAGE_ROUTER || 'false' }}
+          DRY_RUN_IMAGE_ROUTER: ${{ vars.DRY_RUN_IMAGE_ROUTER || 'true' }}
+          SHEETS_SCRAPER_ID: ${{ secrets.SHEETS_SCRAPER_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+
       - name: Run Content Curator (45분 간격 5건 — runner.ts 25분 중복 방지 내장)
         run: cd agents && npx tsx cron/runner.ts cafe_crawler content-curate

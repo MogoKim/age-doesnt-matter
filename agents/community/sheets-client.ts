@@ -176,3 +176,59 @@ export async function updateRow(
     })
   }
 }
+
+/**
+ * 전 탭 A열 URL 집합 반환 (상태 무관 — PENDING/PUBLISHED/FAILED 전부)
+ * image-router dedup 전용. readPendingRows()는 PENDING만 반환하므로 사용 불가.
+ * 탭 없음(범위 오류)만 스킵 — 인증/API 실패는 throw → append 전체 차단
+ */
+export async function readAllSheetUrls(): Promise<Set<string>> {
+  const sheets = getSheets()
+  const spreadsheetId = getSheetId()
+  const urlSet = new Set<string>()
+  for (const tabName of Object.keys(TAB_TO_BOARD)) {
+    try {
+      const res = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `${tabName}!A:A`,
+      })
+      for (const row of res.data.values ?? []) {
+        const url = ((row[0] as string | undefined) ?? '').trim()
+        if (url.startsWith('http')) urlSet.add(url)
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('Unable to parse range') || msg.includes('does not exist') || msg.includes('notFound')) {
+        console.warn(`[sheets] 탭 없음, 스킵: ${tabName}`)
+        continue
+      }
+      throw err
+    }
+  }
+  return urlSet
+}
+
+/**
+ * 전 탭 PENDING 행 총 수 (readPendingRows 재사용 — backlog cap 체크용)
+ */
+export async function countPendingTotal(): Promise<number> {
+  const tabs = await readPendingRows()
+  return tabs.reduce((sum, t) => sum + t.rows.length, 0)
+}
+
+/**
+ * 탭에 새 행 append (image-router 전용)
+ * J열 rawContent 반드시 빈 문자열 — 비워야 scraper 자동 스크래핑 모드 동작
+ */
+export async function appendRow(tabName: string, sourceUrl: string, note?: string): Promise<void> {
+  const sheets = getSheets()
+  // A:sourceUrl B:PENDING C~H:빈칸 I:note J:rawContent=빈 문자열(필수)
+  const values = [[sourceUrl, 'PENDING', '', '', '', '', '', '', note ?? '', '']]
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: getSheetId(),
+    range: `${tabName}!A:J`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: { values },
+  })
+}

@@ -60,6 +60,8 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cafe_crawler:magazine-generate': () => import('../cafe/magazine-generator.js').then(async m => { await m.main() }),
   'cafe_crawler:content-curate': () => import('../cafe/content-curator.js').then(m => m.main()),
   'cafe_crawler:popular-curate': () => import('../cafe/popular-curator.js').then(m => m.main()),
+  // launchd: com.unao.naver-cafe-sheet-scraper.plist (10:40, 13:00, 15:30, 23:00 KST)
+  'cafe_crawler:image-route': () => import('../cafe/image-router.js').then(m => m.main()),
   'cafe_crawler:popular-sync': () => import('../cafe/popular-sync.js').then(() => {}), // DISPATCH ONLY — Mac launchd 전용. GHA 실행 불가 (네이버 Playwright).
   'cafe_crawler:wave-process': () => import('../cafe/wave-processor.js').then(m => m.main()),
   'cafe_crawler:user-post-wave-process': () => import('../cafe/user-post-wave-processor.js').then(m => m.main()),
