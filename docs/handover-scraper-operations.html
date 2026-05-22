@@ -385,20 +385,20 @@
     <div class="cover-meta">
       <div class="cover-meta-item"><div class="label">최종 업데이트</div><div class="val">2026-05-21</div></div>
       <div class="cover-meta-item"><div class="label">대상</div><div class="val">창업자 (비기술 독자)</div></div>
-      <div class="cover-meta-item"><div class="label">스케줄</div><div class="val">5회/일 (GHA) + 2회/일 (로컬)</div></div>
-      <div class="cover-meta-item"><div class="label">AI 모델</div><div class="val">Haiku(필터) + Sonnet(파동댓글)</div></div>
+      <div class="cover-meta-item"><div class="label">스케줄</div><div class="val">5회/일 (GHA) + 6회/일 (로컬 Mac)</div></div>
+      <div class="cover-meta-item"><div class="label">AI 모델</div><div class="val">Sonnet(파동댓글)</div></div>
       <div class="cover-meta-item"><div class="label">파동 실행</div><div class="val">5분마다 (GHA 상시)</div></div>
     </div>
   </div>
 
   <!-- Status bar -->
   <div class="status-bar">
-    <div class="status-chip chip-green"><div class="dot dot-green"></div>오유·네이트판 GHA 정상</div>
+    <div class="status-chip chip-green"><div class="dot dot-green"></div>오유·네이트판·82cook GHA 정상</div>
     <div class="status-chip chip-green"><div class="dot dot-green"></div>펨코 로컬 Mac 정상</div>
-    <div class="status-chip chip-blue"><div class="dot dot-blue"></div>AI 품질 필터 활성</div>
+    <div class="status-chip chip-green"><div class="dot dot-green"></div>네이버 카페 로컬 Mac 정상</div>
     <div class="status-chip chip-orange"><div class="dot dot-orange"></div>화제성 파동 시스템 정상</div>
-    <div class="status-chip chip-purple"><div class="dot dot-purple"></div>Google Sheets 연동 정상</div>
-    <div class="status-chip chip-blue"><div class="dot dot-blue"></div>원본 댓글 AI 각색 활성</div>
+    <div class="status-chip chip-purple"><div class="dot dot-purple"></div>Google Sheets 6탭 연동 정상</div>
+    <div class="status-chip chip-blue"><div class="dot dot-blue"></div>파동 댓글 AI 각색 활성</div>
   </div>
 
   <!-- 1. 배경 -->
@@ -420,7 +420,9 @@
         <tbody>
           <tr><td><strong>오늘의유머 (오유)</strong></td><td>50~60대가 많이 보는 유머·생활 커뮤니티</td><td>GitHub Actions (클라우드)</td><td>2초</td></tr>
           <tr><td><strong>네이트판</strong></td><td>40~60대 여성 비율 높음. 연애·가족·일상</td><td>GitHub Actions (클라우드)</td><td>2초</td></tr>
+          <tr><td><strong>82cook</strong></td><td>40~60대 여성 생활 정보·요리·육아. 로그인 불필요</td><td>GitHub Actions (클라우드)</td><td>1.5초</td></tr>
           <tr><td><strong>펨코 (fmkorea)</strong></td><td>다양한 연령대. Cloudflare 보호 — 해외 IP 차단</td><td><strong>창업자 Mac (로컬 전용)</strong></td><td>3초</td></tr>
+          <tr><td><strong>네이버 카페</strong></td><td>로그인 세션 필요. 창업자가 저장한 쿠키 사용 — 30일 자동 갱신</td><td><strong>창업자 Mac (로컬 전용)</strong></td><td>3초</td></tr>
         </tbody>
       </table>
     </div>
@@ -481,7 +483,7 @@
       창업자가 "이 글 좋다"고 판단한 URL을 Google Sheets에 붙여넣으면, AI가 판단하고, 봇이 올리고, 파동이 HOT을 만든다.</p>
     </div>
 
-    <h3>Google Sheets 탭 구조</h3>
+    <h3>Google Sheets 탭 구조 (6탭)</h3>
     <div class="tbl-wrap">
       <table>
         <thead>
@@ -492,8 +494,14 @@
           <tr><td><strong>웃음방</strong></td><td>웃음방 (HUMOR)</td><td><span class="badge badge-sub">false</span></td><td>약한 파동 — 댓글 +2분, 좋아요 +6분</td></tr>
           <tr><td><strong>사는이야기_화제성</strong></td><td>사는이야기 + <span class="badge badge-orange">HOT 탭 자동 승격</span></td><td><span class="badge badge-orange">true</span></td><td><strong>강한 파동 — 4종, 총 10분</strong></td></tr>
           <tr><td><strong>웃음방_화제성</strong></td><td>웃음방 + <span class="badge badge-orange">HOT 탭 자동 승격</span></td><td><span class="badge badge-orange">true</span></td><td><strong>강한 파동 — 4종, 총 10분</strong></td></tr>
+          <tr><td><strong>2막준비</strong></td><td>2막준비 (LIFE2) — 인생 2막 특화</td><td><span class="badge badge-sub">false</span></td><td>약한 파동 — 댓글 +2분, 좋아요 +6분</td></tr>
+          <tr><td><strong>2막준비_화제성</strong></td><td>2막준비 + <span class="badge badge-orange">HOT 탭 자동 승격</span></td><td><span class="badge badge-orange">true</span></td><td><strong>강한 파동 — 4종, 총 10분</strong></td></tr>
         </tbody>
       </table>
+    </div>
+    <div class="callout blue">
+      <p><strong>탭이 아직 Sheet에 없어도 GHA는 실패하지 않는다.</strong><br>
+      없는 탭은 경고(warning) 로그만 남기고 자동으로 건너뛴다. 코드 먼저 배포 → 탭 나중에 추가해도 무방.</p>
     </div>
 
     <h3>입력 방법 — 컬럼 A~J</h3>
@@ -510,11 +518,11 @@
         <tbody>
           <tr><td><strong>A열</strong></td><td>원본 URL</td><td><span class="badge badge-red">필수</span></td><td>https://www.todayhumor.co.kr/...</td></tr>
           <tr><td>B열</td><td>처리 상태 (자동)</td><td><span class="badge badge-sub">자동</span></td><td>PENDING → PROCESSING → PUBLISHED</td></tr>
-          <tr><td>C열</td><td>제목 직접 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>비워두면 AI가 최적화</td></tr>
+          <tr><td>C열</td><td>제목 직접 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>비워두면 원본 제목 그대로 사용</td></tr>
           <tr><td>D열</td><td>카테고리 직접 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>유머, 건강, 일상, 요리, 여행</td></tr>
-          <tr><td>E열</td><td>게시자 닉네임 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>ㅋㅋ요정, 봄바람, 매일걷기 등</td></tr>
+          <tr><td>E열</td><td>게시자 닉네임 지정 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>ㅋㅋ요정, 봄바람, 매일걷기, 정순씨 등 (비워두면 카테고리·게시판에 맞는 봇이 자동 선택)</td></tr>
           <tr><td>F열</td><td>게시 완료 URL (자동)</td><td><span class="badge badge-sub">자동</span></td><td>PUBLISHED 후 자동 기록</td></tr>
-          <tr><td>G열</td><td>에러 또는 필터 사유 (자동)</td><td><span class="badge badge-sub">자동</span></td><td>관련성 낮음 (점수: 4/10) 등</td></tr>
+          <tr><td>G열</td><td>에러 또는 처리 실패 사유 (자동)</td><td><span class="badge badge-sub">자동</span></td><td>CF 차단, 타임아웃, 지원하지 않는 사이트 등</td></tr>
           <tr><td>H열</td><td>게시 시각 (자동)</td><td><span class="badge badge-sub">자동</span></td><td>KST 시각 자동 기록</td></tr>
           <tr><td>I열</td><td>운영 메모 (선택)</td><td><span class="badge badge-sub">선택</span></td><td>내부 메모용, 처리에 영향 없음</td></tr>
           <tr>
@@ -533,6 +541,26 @@
 
     <div class="callout orange">
       <p><strong>J열 사용 케이스:</strong> 펨코 글이 CF_BLOCKED로 FAILED 처리됐을 때, G열에 "CF 차단 — J열에 본문 붙여넣기 가능" 메시지가 표시된다. 이때 원본 글을 복사해서 J열에 붙여넣고 B열을 PENDING으로 바꾸면 된다.</p>
+    </div>
+
+    <div class="callout" style="border-left-color: var(--purple); background: var(--purple-dim);">
+      <p><strong>🤖 Sheet URL 입력 경로가 2가지다</strong></p>
+      <p><strong>① 창업자 수동 입력 (기본)</strong> — 위에서 설명한 A열 직접 입력 방식.</p>
+      <p><strong>② image-router 자동 append (신규 — 현재 비활성)</strong> — <code>agents/cafe/image-router.ts</code>가 CafePost DB에서 이미지 있는 글을 골라 자동으로 Sheet에 PENDING 행을 추가한다.</p>
+      <div class="tbl-wrap" style="margin-top:12px;margin-bottom:0;">
+        <table>
+          <thead><tr><th>항목</th><th>내용</th></tr></thead>
+          <tbody>
+            <tr><td>트리거</td><td><code>agents-cafe-hourly-curation.yml</code> — GHA, cafe_crawler:image-route 핸들러</td></tr>
+            <tr><td>현재 상태</td><td><span class="badge" style="background:rgba(139,146,168,0.15);color:#8b92a8;border:1px solid rgba(139,146,168,0.3);">비활성</span> — <code>ENABLE_IMAGE_ROUTER=false</code> (GHA vars 기본값) / <code>DRY_RUN_IMAGE_ROUTER=true</code></td></tr>
+            <tr><td>활성화 조건</td><td>GitHub Vars에서 <code>ENABLE_IMAGE_ROUTER=true</code> + <code>DRY_RUN_IMAGE_ROUTER=false</code> 설정 필요</td></tr>
+            <tr><td>동작</td><td>CafePost DB (isUsable=true, imageUrls 있음, killerScore≥50) → 탭 자동 배정 → Sheet PENDING append</td></tr>
+            <tr><td>탭 배정 로직</td><td>HUMOR 카테고리 → 웃음방 / MONEY 카테고리 → 2막준비 / 나머지 → 사는이야기 + isPopular 또는 killer≥75 시 _화제성</td></tr>
+            <tr><td>상한</td><td>DAY_CAP=3건/일, TAB_CAP=1건/탭, PENDING 적체 10건 초과 시 자동 skip</td></tr>
+            <tr><td>처리 주체</td><td>append된 URL은 네이버 카페 URL → <strong>로컬 naver-cafe-sheet-scraper가 처리</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -560,6 +588,22 @@
     <p style="margin-bottom:20px;">
       <strong>예시</strong>: 창업자가 오전 10시에 URL 5개를 넣으면 → <strong>12:00 KST</strong>에 자동 처리된다.
     </p>
+
+    <h3>실행 시간표 — 로컬 Mac (하루 6회, Mac이 켜져 있어야 실행)</h3>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">10:40</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (1차)</div><div class="note">오전 입력분 처리. popular-sync 10:30 완료 후, cafe-crawler-lunch 11:30 이전. launchd: com.unao.naver-cafe-sheet-scraper.plist</div></div></div>
+        <div class="tl-item"><div class="tl-time">11:30</div><div class="tl-body"><div class="title">펨코 크롤링 (1차)</div><div class="note">fmkorea.com — Cloudflare 보호로 로컬 Mac 필수. launchd: com.unao.fmkorea-scraper.plist</div></div></div>
+        <div class="tl-item"><div class="tl-time">13:00</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (2차)</div><div class="note">점심 입력분 처리. 로그인 세션(storage-state.json) 사용. launchd: com.unao.naver-cafe-sheet-scraper.plist</div></div></div>
+        <div class="tl-item"><div class="tl-time">15:30</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (3차)</div><div class="note">오후 입력분 처리. cafe-crawler-afternoon 14:30 완료 후, popular-sync 16:00 이전. naver-cafe-sheet-scraper.plist</div></div></div>
+        <div class="tl-item"><div class="tl-time">21:30</div><div class="tl-body"><div class="title">펨코 크롤링 (2차)</div><div class="note">저녁 시간대 추가 처리. fmkorea-scraper.plist</div></div></div>
+        <div class="tl-item"><div class="tl-time">23:00</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (4차)</div><div class="note">저녁 입력분 처리. naver-cafe-sheet-scraper.plist</div></div></div>
+      </div>
+    </div>
+    <div class="callout red">
+      <p><strong>로컬 Mac 실행 6회는 Mac이 켜져 있어야 한다.</strong> Mac이 슬립 상태이거나 꺼져 있으면 그 회차는 건너뛴다.<br>
+      오유·네이트판·82cook은 Mac 상태와 무관하게 GitHub에서 자동 처리된다.</p>
+    </div>
 
     <h3>자동 처리 단계 (전체 흐름)</h3>
     <div class="flow">
@@ -601,24 +645,24 @@
       <div class="flow-step">
         <div class="flow-num yellow">5</div>
         <div class="flow-content">
-          <div class="title">카테고리 분류 (키워드 기반 fallback + AI override)</div>
-          <div class="desc">먼저 키워드 매칭으로 카테고리를 결정한다. 그 다음 AI 필터(Haiku)가 관련성을 판단하고 카테고리를 재분류할 수 있다.<br>
-          창업자가 D열에 직접 지정했으면 그걸 최우선으로 따름.</div>
+          <div class="title">카테고리 분류 (키워드 기반 자동 분류)</div>
+          <div class="desc">제목·본문 키워드로 카테고리를 자동 결정한다 (건강·일상·고민·자녀·유머·힐링 등).<br>
+          창업자가 D열에 직접 지정했으면 그걸 최우선으로 따름. 일치 키워드 없으면 '기타'로 분류.</div>
         </div>
       </div>
       <div class="flow-step">
         <div class="flow-num yellow">6</div>
         <div class="flow-content">
-          <div class="title">AI 관련성 판단 (Claude Haiku)</div>
-          <div class="desc">50~60대 여성 관련성 0~10점 측정 → 6점 미만이면 <span class="badge badge-yellow">SKIPPED_LOW_SCORE</span>로 처리하고 G열에 사유 기록.<br>
-          AI가 오류나면 relevanceScore=7로 자동 처리 — AI 실패로 글이 안 올라가는 일은 없다.</div>
+          <div class="title">AI 관련성 판단 — <span class="badge badge-sub">현재 비활성</span> (2026-05-21 제거)</div>
+          <div class="desc">Claude Haiku를 이용한 관련성 0~10점 필터는 <strong>비활성화됐다</strong>. 비용 절감(월 ~$0.68 제거) 및 창업자 큐레이션 품질에 대한 신뢰 기반 결정.<br>
+          이 단계는 현재 건너뛴다. 창업자가 Sheet에 넣은 URL은 관련성 체크 없이 전부 게시된다.</div>
         </div>
       </div>
       <div class="flow-step">
         <div class="flow-num green">7</div>
         <div class="flow-content">
           <div class="title">우나어 사이트에 게시글 자동 생성</div>
-          <div class="desc">5명의 AI 페르소나 중 카테고리에 맞는 1명이 게시자로 표시.<br>
+          <div class="desc">19명의 AI 페르소나 중 카테고리·게시판에 맞는 1명이 게시자로 표시 (STORY 10명 / HUMOR 5명 / LIFE2 4명).<br>
           삭제된 적 있는 게시글이면 DB row를 재활용(update), 완전 신규면 create.</div>
         </div>
       </div>
@@ -651,41 +695,26 @@
     <div class="section-label">05 — AI 역할</div>
     <h2>AI가 하는 판단</h2>
 
-    <h3>판단 1 — 관련성 점수 (0~10점, Claude Haiku)</h3>
-    <p>창업자가 URL을 넣어도 AI가 먼저 "이 글이 우리 타겟에 맞는가"를 본다.</p>
-
-    <div class="score-row">
-      <div class="score-pill sp-green"><div class="score">9~10</div><div class="label">50~60대 여성이<br>바로 공유할 것</div></div>
-      <div class="score-pill sp-green"><div class="score">7~8</div><div class="label">우리 또래면<br>공감할 것</div></div>
-      <div class="score-pill sp-yellow"><div class="score">6</div><div class="label">관련 있긴 하지만<br>(임계값 — 게시됨)</div></div>
-      <div class="score-pill sp-red"><div class="score">5↓</div><div class="label">20대 타겟이거나<br>우리와 무관 → <strong>SKIP</strong></div></div>
+    <div class="callout orange">
+      <p><strong>2026-05-21 변경:</strong> Claude Haiku AI 품질 필터(관련성 점수·제목 최적화)가 제거됐다.<br>
+      창업자가 직접 발굴한 URL의 품질을 신뢰하는 방향으로 전환. 비용 절감(월 ~$0.68)도 부수 효과.<br>
+      현재 AI가 사용되는 곳은 <strong>파동 댓글 생성 (Claude Sonnet) 1곳뿐이다.</strong></p>
     </div>
 
-    <div class="callout yellow">
-      <p><strong>AI도 실수할 수 있다.</strong> 좋은 글인데 SKIPPED됐다면 → G열에서 점수 확인 후, B열을 다시 PENDING으로 바꾸면 재처리된다.<br>
-      AI 서버 오류 시: 관련성 7점으로 자동 처리 (게시 차단 없음).</p>
-    </div>
+    <h3>판단 1 — 관련성 점수 <span class="badge badge-sub">현재 비활성</span></h3>
+    <p>과거에는 창업자가 URL을 넣으면 AI가 먼저 "이 글이 우리 타겟에 맞는가"를 0~10점으로 판단했다. <strong>현재는 이 단계를 건너뛴다.</strong> Sheet에 넣은 URL은 AI 필터 없이 바로 처리된다.</p>
 
     <details>
-      <summary>AI 필터 프롬프트 원문 (Claude Haiku, max_tokens: 200)</summary>
-      <pre>다음 글을 분석하세요. 대상: 50~60대 한국 여성 커뮤니티 "우리 나이가 어때서".
+      <summary>이전 AI 필터 동작 방식 (참고용 — 현재 미사용)</summary>
+      <pre>과거 동작:
+50~60대 여성 관련성 0~10점 측정 → 6점 미만이면 SKIPPED_LOW_SCORE 처리 + G열에 사유 기록
+Claude Haiku, max_tokens: 200, 건당 ~$0.0003
 
-제목: {제목 앞 50자}
-본문: {본문 앞 300자}
-
-JSON으로만 응답:
-{
-  "relevanceScore": 0~10 정수,
-  "category": "유머|일상|건강|요리|여행|기타",
-  "optimizedTitle": "개선 제목(25자 이내) 또는 null"
-}
-
-optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시. 나머지는 null.
-절대 금지 단어: 시니어, 어르신, 노인</pre>
+현재: 이 단계 제거됨. 카테고리 분류만 키워드 기반으로 실행됨.</pre>
     </details>
 
-    <h3>판단 2 — 카테고리 분류</h3>
-    <p>카테고리는 <strong>키워드 매칭 우선</strong>으로 결정되고, AI가 더 나은 분류를 제시하면 override한다.</p>
+    <h3>판단 2 — 카테고리 분류 (키워드 기반)</h3>
+    <p>카테고리는 <strong>키워드 매칭</strong>으로만 결정된다. AI override 없음.</p>
 
     <div class="grid2">
       <div class="card">
@@ -710,29 +739,8 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
 
     <p>AI 카테고리: <code>유머|일상|건강|요리|여행|기타</code> 6개. 키워드 fallback이 더 세분화된 분류를 제공한다 (건강/일상/고민/자녀 등).</p>
 
-    <h3>판단 3 — 제목 최적화 (조건부)</h3>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr><th>조건</th><th>처리</th><th>예시</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>제목 10자 미만 또는 특수문자만</td>
-            <td>AI가 더 나은 제목 자동 생성 (최대 25자)</td>
-            <td>"ㅋㅋㅋ" → "남편 자신감이 너무 넘쳐서 웃음 터진 일"</td>
-          </tr>
-          <tr>
-            <td>제목이 충분한 경우</td>
-            <td>원본 제목 그대로 유지</td>
-            <td>—</td>
-          </tr>
-          <tr>
-            <td>창업자가 C열에 직접 입력</td>
-            <td>창업자 제목 최우선 적용</td>
-            <td>—</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <h3>판단 3 — 제목 최적화 <span class="badge badge-sub">현재 비활성</span></h3>
+    <p>과거에는 제목이 10자 미만이거나 특수문자만일 때 AI(Haiku)가 제목을 자동으로 개선했다. <strong>현재는 원본 제목을 그대로 사용한다.</strong> 창업자가 C열에 제목을 직접 입력하면 그것이 최우선으로 적용된다.</p>
 
     <h3>판단 4 — 원본 댓글 AI 각색 (Claude Sonnet, 파동 시)</h3>
     <div class="callout blue">
@@ -760,84 +768,219 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
     <p style="font-size: 13px; color: var(--sub);">max_tokens: 200, keyTerms 포함 여부 검증 후 최대 2회 시도. 5자 미만 댓글은 스킵.</p>
   </div>
 
-  <!-- 6. 5명 페르소나 -->
+  <!-- 6. AI 게시 페르소나 -->
   <div class="section">
     <div class="section-label">06 — AI 게시 페르소나</div>
-    <h2>5명의 AI 게시자 — 누가 글을 올리는가</h2>
+    <h2>19명의 AI 게시자 — 누가 글을 올리는가</h2>
 
-    <p>스크래퍼가 올린 글은 실제 사람처럼 보이는 5명의 봇 계정이 게시자로 표시된다. 카테고리·게시판에 맞는 페르소나가 자동 선택된다.</p>
+    <p>스크래퍼가 올린 글은 실제 사람처럼 보이는 봇 계정이 게시자로 표시된다. <strong>게시판·카테고리에 맞는 페르소나가 자동으로 랜덤 선택된다.</strong> 다양한 닉네임이 번갈아 올리기 때문에 단일 봇처럼 보이지 않는다.</p>
 
+    <div class="callout blue">
+      <p>페르소나 선택 우선순위: <strong>① 창업자 E열 지정</strong> → ② 카테고리 매칭 → ③ 게시판 매칭 → ④ 전체 중 랜덤(최종 폴백)<br>
+      E열에 지정하면 게시판 검증 없이 그대로 적용됨 (예: LIFE2 탭에 STORY 페르소나 지정도 허용).</p>
+    </div>
+
+    <h3 style="color: var(--orange);">HUMOR (웃음방) — 5명</h3>
     <div class="persona-grid">
       <div class="persona-card">
         <div class="nickname">ㅋㅋ요정</div>
-        <div class="code">코드 C | HUMOR 전용</div>
+        <div class="code">코드 C | HUMOR</div>
         <div class="desc">유머·웃음 특화. 카테고리: 유머</div>
       </div>
       <div class="persona-card">
-        <div class="nickname">봄바람</div>
-        <div class="code">코드 E | STORY 전용</div>
-        <div class="desc">따뜻하고 공감 잘 함. 카테고리: 일상·고민</div>
+        <div class="nickname">밤새봤다</div>
+        <div class="code">코드 R | HUMOR</div>
+        <div class="desc">재미있는 글 밤새 탐독. 카테고리: 유머·힐링</div>
       </div>
       <div class="persona-card">
-        <div class="nickname">매일걷기</div>
-        <div class="code">코드 H | STORY 전용</div>
-        <div class="desc">건강·운동에 관심 많음. 카테고리: 건강</div>
+        <div class="nickname">하하호호</div>
+        <div class="code">코드 AF | HUMOR</div>
+        <div class="desc">긍정 에너지 넘침. 카테고리: 유머·자랑</div>
       </div>
       <div class="persona-card">
         <div class="nickname">한페이지</div>
-        <div class="code">코드 I | HUMOR 전용</div>
-        <div class="desc">감성적·차분함. 카테고리: 힐링</div>
+        <div class="code">코드 I | HUMOR</div>
+        <div class="desc">감성적·차분함. 카테고리: 힐링·추천</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">웃음충전</div>
+        <div class="code">코드 AO | HUMOR</div>
+        <div class="desc">일상 속 작은 웃음 찾기. 카테고리: 힐링·추천</div>
+      </div>
+    </div>
+
+    <h3 style="color: var(--blue);">STORY (사는이야기) — 10명</h3>
+    <div class="persona-grid">
+      <div class="persona-card">
+        <div class="nickname">봄바람</div>
+        <div class="code">코드 E | STORY</div>
+        <div class="desc">따뜻하고 공감 잘 함. 카테고리: 일상·고민</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">하늘바라기</div>
+        <div class="code">코드 A | STORY</div>
+        <div class="desc">긍정적인 생활인. 카테고리: 일상·고민</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">매일걷기</div>
+        <div class="code">코드 H | STORY</div>
+        <div class="desc">건강·운동 관심. 카테고리: 건강</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">등산만보</div>
+        <div class="code">코드 M | STORY</div>
+        <div class="desc">산과 걷기를 즐기는 건강인. 카테고리: 건강</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">약국단골</div>
+        <div class="code">코드 AN | STORY</div>
+        <div class="desc">건강 정보 발 빠른 수집가. 카테고리: 건강</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">손주러브</div>
+        <div class="code">코드 L | STORY</div>
+        <div class="desc">손주 이야기라면 눈이 번쩍. 카테고리: 자녀</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">예쁘게살자</div>
+        <div class="code">코드 K | STORY</div>
+        <div class="desc">좋은 것은 알려야 직성이 풀림. 카테고리: 자랑·추천</div>
       </div>
       <div class="persona-card">
         <div class="nickname">오후세시</div>
-        <div class="code">코드 P | STORY+HUMOR 만능형</div>
-        <div class="desc">추천·자랑·자녀·기타 모든 분야 + 최종 폴백</div>
+        <div class="code">코드 P | STORY+HUMOR</div>
+        <div class="desc">여유로운 오후. 기타 모든 분야 + 최종 폴백. 카테고리: 기타</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">부산아지매</div>
+        <div class="code">코드 U | STORY</div>
+        <div class="desc">직설적이고 정 많은 부산 스타일. 카테고리: 기타</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">멍멍이엄마</div>
+        <div class="code">코드 Q | STORY</div>
+        <div class="desc">반려견과 함께하는 일상. 카테고리: 기타</div>
       </div>
     </div>
 
-    <p>페르소나 선택 우선순위: <strong>① 창업자 E열 지정 → ② 카테고리 매칭 → ③ 게시판 매칭 → ④ 오후세시(폴백)</strong></p>
+    <h3 style="color: var(--green);">LIFE2 (2막준비) — 4명</h3>
+    <div class="persona-grid">
+      <div class="persona-card">
+        <div class="nickname">정순씨</div>
+        <div class="code">코드 B | LIFE2</div>
+        <div class="desc">인생 2막을 준비 중인 주부. 카테고리: 일상·고민·은퇴</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">솔직히말해서</div>
+        <div class="code">코드 Y | LIFE2</div>
+        <div class="desc">거침없이 솔직한 현실 발언. 카테고리: 고민·기타</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">따져보자</div>
+        <div class="code">코드 AB | LIFE2</div>
+        <div class="desc">따져보고 비교하는 꼼꼼한 성격. 카테고리: 일상·기타</div>
+      </div>
+      <div class="persona-card">
+        <div class="nickname">말티즈엄마</div>
+        <div class="code">코드 BX | LIFE2</div>
+        <div class="desc">반려견 말티즈와 여유로운 2막. 카테고리: 일상·기타</div>
+      </div>
+    </div>
   </div>
 
-  <!-- 7. 펨코 왜 다른가 -->
+  <!-- 7. 로컬 전용 처리 -->
   <div class="section">
-    <div class="section-label">07 — 펨코 예외</div>
-    <h2>펨코는 왜 창업자 Mac에서만 처리되는가</h2>
+    <div class="section-label">07 — 로컬 전용 처리</div>
+    <h2>창업자 Mac에서만 처리되는 2가지 — 펨코 &amp; 네이버 카페</h2>
 
-    <div class="callout orange">
-      <p><strong>펨코(fmkorea)는 Cloudflare 보안 시스템이 걸려 있다.</strong><br>
-      미국에 있는 GitHub Actions 서버에서 접속하면 자동으로 차단된다.<br>
-      <strong>한국 IP + 실제 컴퓨터</strong>에서만 정상 접속이 가능하다.</p>
-    </div>
+    <p style="color:var(--muted);margin-bottom:20px;">GitHub Actions(미국 서버)로는 처리할 수 없는 사이트 2개가 있다. 두 경우 모두 창업자 Mac에서 launchd가 자동 실행하며, Mac이 켜져 있어야만 해당 회차가 처리된다.</p>
 
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>항목</th><th>오유·네이트판</th><th>펨코</th></tr></thead>
+        <thead><tr><th>항목</th><th>GHA (클라우드)</th><th>펨코</th><th>네이버 카페</th></tr></thead>
         <tbody>
-          <tr><td>실행 서버</td><td>GitHub 클라우드 (미국)</td><td><strong>창업자 Mac (caffeinate로 슬립 방지)</strong></td></tr>
-          <tr><td>실행 시간</td><td>07:30·09:00·12:00·15:00·21:00 KST</td><td><strong>11:30 KST + 21:30 KST (launchd 스케줄)</strong></td></tr>
-          <tr><td>자동화 여부</td><td>완전 자동 (Mac 꺼져 있어도 됨)</td><td><strong>Mac이 켜져 있어야 실행됨</strong></td></tr>
-          <tr><td>실행 스크립트</td><td><code>agents-scraper.yml</code> → <code>cron/runner.ts community sheet-scrape</code></td><td><code>run-local-fmkorea.ts</code> → <code>--site fmkorea</code></td></tr>
-          <tr><td>로그 위치</td><td>GitHub Actions 실행 로그</td><td><code>logs/fmkorea-scraper.log</code></td></tr>
+          <tr><td>실행 서버</td><td>GitHub 클라우드 (미국)</td><td><strong>창업자 Mac</strong></td><td><strong>창업자 Mac</strong></td></tr>
+          <tr><td>실행 시간</td><td>07:30·09:00·12:00·15:00·21:00 KST</td><td>11:30 · 21:30 KST</td><td>10:40 · 13:00 · 15:30 · 23:00 KST</td></tr>
+          <tr><td>Mac 필요 여부</td><td>불필요 (꺼져 있어도 됨)</td><td><strong>필요</strong></td><td><strong>필요</strong></td></tr>
+          <tr><td>로컬 전용 이유</td><td>—</td><td>Cloudflare 보호 — 해외 IP 차단</td><td>네이버 로그인 세션 필요 (storage-state.json)</td></tr>
+          <tr><td>실행 스크립트</td><td><code>agents-scraper.yml</code></td><td><code>run-local-fmkorea.ts</code></td><td><code>run-local-naver-cafe.ts</code></td></tr>
+          <tr><td>launchd plist</td><td>—</td><td><code>com.unao.fmkorea-scraper.plist</code></td><td><code>com.unao.naver-cafe-sheet-scraper.plist</code></td></tr>
         </tbody>
       </table>
     </div>
 
-    <div class="callout red">
-      <p><strong>주의:</strong> 펨코 글 처리는 창업자 Mac이 해당 시간(11:30, 21:30 KST)에 켜져 있고 인터넷 연결이 돼 있어야 한다. Mac이 꺼져 있으면 그 회차는 건너뜀.</p>
+    <h3 style="margin-top:28px;">펨코 — Cloudflare 차단</h3>
+    <div class="callout orange">
+      <p><strong>펨코(fmkorea)는 Cloudflare 보안 시스템이 걸려 있다.</strong><br>
+      미국에 있는 GitHub Actions 서버에서 접속하면 자동으로 차단된다.<br>
+      <strong>한국 IP + 실제 컴퓨터</strong>에서만 정상 접속이 가능하다.<br>
+      caffeinate -i 로 Mac 슬립을 방지하며, scripts/launchd-alert.sh 경유로 실행된다.</p>
     </div>
 
     <details>
-      <summary>launchd plist 스케줄 확인 (com.unao.fmkorea-scraper)</summary>
-      <pre>&lt;!-- ~/Library/LaunchAgents/com.unao.fmkorea-scraper.plist --&gt;
-&lt;key&gt;StartCalendarInterval&lt;/key&gt;
+      <summary>펨코 launchd plist (com.unao.fmkorea-scraper)</summary>
+      <pre>&lt;key&gt;StartCalendarInterval&lt;/key&gt;
 &lt;array&gt;
     &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;11&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;30&lt;/integer&gt;&lt;/dict&gt;  &lt;!-- 11:30 KST --&gt;
     &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;21&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;30&lt;/integer&gt;&lt;/dict&gt;  &lt;!-- 21:30 KST --&gt;
 &lt;/array&gt;
-
 &lt;!-- caffeinate -i 로 Mac 슬립 방지 --&gt;
 &lt;!-- scripts/launchd-alert.sh 경유 → agents/community/run-local-fmkorea.ts 실행 --&gt;</pre>
     </details>
+
+    <h3 style="margin-top:28px;">네이버 카페 — 로그인 세션</h3>
+    <div class="callout blue">
+      <p><strong>네이버 카페는 로그인이 필요한 게시글을 접근한다.</strong><br>
+      창업자가 Chrome에서 로그인 후 저장한 <code>storage-state.json</code> 쿠키를 Playwright가 사용한다.<br>
+      session-manager가 30일 주기로 자동 갱신하므로 평소에는 수동 개입이 불필요하다.<br>
+      GHA에서는 <code>storage-state.json</code>이 없으므로 해당 행을 <strong>PENDING 유지</strong>(스킵·FAILED 처리 안 함).</p>
+    </div>
+
+    <div class="tbl-wrap" style="margin-top:16px;">
+      <table>
+        <thead><tr><th>처리 방식</th><th>설명</th></tr></thead>
+        <tbody>
+          <tr><td>iframe 처리</td><td><code>f-e/</code> path → cafe_main iframe 존재 / <code>ca-fe/</code> path → page 직접. 동일 selector로 통합 처리 (contentFrame: 'cafe_main')</td></tr>
+          <tr><td>제목 selector</td><td><code>.title_text</code></td></tr>
+          <tr><td>본문 selector</td><td><code>.article_viewer</code></td></tr>
+          <tr><td>댓글 selector</td><td><code>ul.comment_list li</code> / 텍스트: <code>.text_comment</code> / 닉네임: <code>.comment_nickname</code></td></tr>
+          <tr><td>동영상 지원</td><td><strong>지원 제외</strong> — removeElements에 iframe 포함. 네이버 카페 동영상은 수집·재호스팅 시도하지 않음.</td></tr>
+          <tr><td>세션 만료</td><td>NID_SES 쿠키 만료 시 Chrome 재로그인 후 storage-state.json 재추출 필요 (창업자 수동)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <details>
+      <summary>네이버 카페 launchd plist (com.unao.naver-cafe-sheet-scraper)</summary>
+      <pre>&lt;key&gt;StartCalendarInterval&lt;/key&gt;
+&lt;array&gt;
+    &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;10&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;40&lt;/integer&gt;&lt;/dict&gt;  &lt;!-- 10:40 KST --&gt;
+    &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;13&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;0&lt;/integer&gt;&lt;/dict&gt;   &lt;!-- 13:00 KST --&gt;
+    &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;15&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;30&lt;/integer&gt;&lt;/dict&gt;  &lt;!-- 15:30 KST --&gt;
+    &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;23&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;0&lt;/integer&gt;&lt;/dict&gt;   &lt;!-- 23:00 KST --&gt;
+&lt;/array&gt;
+&lt;!-- scripts/launchd-alert.sh 경유 → agents/community/run-local-naver-cafe.ts 실행 --&gt;</pre>
+    </details>
+
+    <div class="callout red" style="margin-top:16px;">
+      <p><strong>주의:</strong> 펨코·네이버 카페 모두 창업자 Mac이 해당 시간에 켜져 있고 인터넷 연결이 돼 있어야 한다. Mac이 꺼져 있으면 그 회차는 건너뜀.</p>
+    </div>
+
+    <h3 style="margin-top:28px;">⚠️ 트러블슈팅 — macOS TCC 전체 디스크 접근 오류</h3>
+    <div class="callout" style="border-left-color: var(--yellow); background: var(--yellow-dim);">
+      <p><strong>증상:</strong> Mac 재시작 후 갑자기 launchd 실행 실패 — <code>Operation not permitted</code> / <code>getcwd 실패 (exit code 126)</code></p>
+      <p><strong>원인:</strong> macOS TCC(전체 디스크 접근) — <code>/bin/bash</code>가 Full Disk Access 권한 미승인 상태. Mac 재시작 시 가끔 초기화됨.</p>
+      <div class="tbl-wrap" style="margin-top:12px;margin-bottom:0;">
+        <table>
+          <thead><tr><th>항목</th><th>내용</th></tr></thead>
+          <tbody>
+            <tr><td><strong>복구 방법</strong></td><td>시스템 설정 → 개인 정보 보호 및 보안 → 전체 디스크 접근 → <code>/bin/bash</code> 항목 체크박스 활성화</td></tr>
+            <tr><td>영향 대상</td><td><code>naver-cafe-sheet-scraper</code>, <code>fmkorea-scraper</code> 등 <code>/bin/bash → launchd-alert.sh</code> 래핑 구조를 사용하는 모든 launchd 잡</td></tr>
+            <tr><td>설계 배경</td><td><code>scripts/launchd-alert.sh</code>가 중간에 존재하는 이유가 바로 이 TCC 우회를 위한 것 (bash에 권한을 한 번만 주면 모든 잡에 적용됨)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- 8. 시트 상태값 -->
@@ -876,12 +1019,26 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
             <td>없음 (이미 존재)</td>
           </tr>
           <tr>
-            <td><span class="badge badge-yellow">SKIPPED_LOW_SCORE</span></td>
-            <td>AI가 관련성 낮다고 판단 (6점 미만)</td>
-            <td>G열에서 점수 확인. 억지로 올리고 싶으면 PENDING으로 바꾸면 됨</td>
+            <td><span class="badge badge-yellow">SKIPPED_LOW_SCORE</span><br><span class="badge badge-sub" style="margin-top:5px;display:inline-block;font-size:11px;">현재 신규 발생 없음</span></td>
+            <td>AI가 관련성 낮다고 판단 (6점 미만) — <strong>2026-05-21 AI 필터 제거로 현재 신규 발생 없음</strong><br><span style="font-size:12px;color:var(--sub);">과거 Sheet 행에는 남아있을 수 있음 (레거시 상태값)</span></td>
+            <td>억지로 올리고 싶으면 PENDING으로 바꾸면 됨</td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="callout blue" style="margin-top:16px;">
+      <p><strong>G열 에러 메시지 읽는 법</strong></p>
+      <div class="tbl-wrap" style="margin-bottom:0;">
+        <table>
+          <thead><tr><th>G열 에러 메시지</th><th>의미</th><th>대처</th></tr></thead>
+          <tbody>
+            <tr><td><code>CF 차단 — J열에 본문 붙여넣기 가능</code></td><td>Cloudflare가 봇 차단 (펨코 주로 발생)</td><td>원문 복사 → J열 붙여넣기 → B열 PENDING으로 재시도</td></tr>
+            <tr><td><code>타임아웃 — 45초 초과</code></td><td>페이지 로드 시간 초과</td><td>B열 PENDING으로 바꾸면 재시도</td></tr>
+            <tr><td><code>지원하지 않는 사이트</code></td><td>URL이 site-configs.ts의 urlPatterns에 매칭 안 됨</td><td>navercafe URL이면 <code>ca-fe/</code> 또는 <code>f-e/</code> 경로 포함 여부 확인. 잘못된 URL이면 A열 교체</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -904,7 +1061,7 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
         <div class="card-title" style="color: var(--red);">❌ 피해야 할 것</div>
         <ul>
           <li>정치·종교·혐오 관련 → AI가 필터링하지만 창업자도 주의</li>
-          <li>너무 젊은 타겟 글 (10~20대 주제) → AI가 걸러냄</li>
+          <li>너무 젊은 타겟 글 (10~20대 주제) → 창업자 직접 주의 (AI 필터 없음)</li>
           <li>같은 URL 두 번 입력 → SKIPPED 처리됨 (중복 방지)</li>
           <li>"시니어", "어르신", "노인" 표현이 많은 글 (AI 프롬프트에서 금지어)</li>
         </ul>
@@ -927,15 +1084,15 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
         <tbody>
           <tr><td>Playwright 크롤링</td><td>—</td><td><strong>무료</strong></td><td>오픈소스 브라우저 자동화</td></tr>
           <tr><td>Google Sheets API</td><td>—</td><td><strong>무료</strong></td><td>쿼터 범위 내</td></tr>
-          <tr><td><strong>AI 품질 필터</strong></td><td>Claude Haiku</td><td><strong>~$0.68/월</strong></td><td>25건/일 × 30일 기준</td></tr>
+          <tr><td><strong>AI 품질 필터</strong></td><td>Claude Haiku</td><td><strong style="color:var(--sub);">$0</strong></td><td><span class="badge" style="background:rgba(255,111,97,0.15);color:#FF6F61;border:1px solid rgba(255,111,97,0.3);">2026-05-21 완전 제거</span> — 비용 0원, 스크래퍼 파이프라인에 AI 없음</td></tr>
           <tr><td><strong>파동 댓글 생성</strong></td><td>Claude Sonnet</td><td><strong>~$0.10~0.30/월</strong></td><td>화제성 글 수에 비례 (댓글 1개 ≈ $0.002)</td></tr>
           <tr><td>R2 이미지 저장</td><td>—</td><td>~$0.05/월</td><td>Cloudflare R2</td></tr>
           <tr><td>GitHub Actions 실행</td><td>—</td><td><strong>무료</strong></td><td>월 2,000분 한도 내 여유 있음</td></tr>
           <tr>
             <td><strong>합계</strong></td>
             <td>—</td>
-            <td><strong>~$0.83~1.03/월</strong></td>
-            <td>월 1달러 수준 — 무시 가능</td>
+            <td><strong>~$0.15~0.35/월</strong></td>
+            <td>파동 댓글(Sonnet) + R2만 — Haiku 필터 제거로 대폭 절감</td>
           </tr>
         </tbody>
       </table>
@@ -954,7 +1111,12 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
           <tr>
             <td>오유·네이트판 GHA 자동화</td>
             <td><span class="badge badge-green">✅ 정상</span></td>
-            <td>5회/일, agents-scraper.yml, timeout 25분</td>
+            <td>5회/일 (07:30·09:00·12:00·15:00·21:00 KST), agents-scraper.yml, timeout 25분</td>
+          </tr>
+          <tr>
+            <td>82cook GHA 자동화</td>
+            <td><span class="badge badge-green">✅ 정상 (2026-05-21 활성)</span></td>
+            <td>오유·네이트판과 동일 스케줄 (GHA). 로그인 불필요. 원글 작성자 자기 댓글 자동 제외.</td>
           </tr>
           <tr>
             <td>펨코 로컬 Mac 자동화</td>
@@ -962,19 +1124,24 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
             <td>2회/일 (11:30·21:30 KST), launchd, caffeinate -i 슬립 방지</td>
           </tr>
           <tr>
+            <td>네이버 카페 로컬 Mac 자동화</td>
+            <td><span class="badge badge-green">✅ 정상 (2026-05-21 활성)</span></td>
+            <td>4회/일 (10:40·13:00·15:30·23:00 KST), launchd. 로그인 세션(storage-state.json) 사용. GHA에서는 PENDING 유지.</td>
+          </tr>
+          <tr>
             <td>파동 GHA 자동화</td>
             <td><span class="badge badge-green">✅ 정상</span></td>
             <td>5분마다, agents-sheet-viral.yml, timeout 10분</td>
           </tr>
           <tr>
-            <td>AI 품질 필터</td>
-            <td><span class="badge badge-green">✅ 정상</span></td>
-            <td>Claude Haiku, 2026-05-15 적용</td>
+            <td>AI 품질 필터 (Haiku 관련성 점수)</td>
+            <td><span class="badge" style="background:rgba(255,111,97,0.15);color:#FF6F61;border:1px solid rgba(255,111,97,0.3);">⛔ 제거됨</span></td>
+            <td>2026-05-21 완전 제거. Haiku 비용 0원. AI 없이 원문 그대로 게시.</td>
           </tr>
           <tr>
-            <td>원본 댓글 수집 + AI 각색</td>
-            <td><span class="badge badge-blue">✅ 정상 (2026-05-16 도입)</span></td>
-            <td>AJAX 대기 5초, 최대 10개 수집 → Claude Sonnet으로 50~60대 말투 각색</td>
+            <td>원본 댓글 수집 (sourceComments)</td>
+            <td><span class="badge badge-blue">✅ 정상 (2026-05-13 도입)</span></td>
+            <td>사이트별 댓글 selector로 최대 10개 수집 → BotLog에 저장 → 파동 댓글 생성 시 참고 각색</td>
           </tr>
           <tr>
             <td>화제성 파동 시스템 (4종)</td>
@@ -984,7 +1151,7 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
           <tr>
             <td>일반 글 engagement 파동 (2종)</td>
             <td><span class="badge badge-green">✅ 정상</span></td>
-            <td>댓글 +2분 (3명), 좋아요 +6분 (5명)</td>
+            <td>댓글 +2분 (4명 랜덤, BI~BR 10명 풀), 좋아요 +6분 (5명)</td>
           </tr>
           <tr>
             <td>커뮤니티 이미지 표시</td>
@@ -994,12 +1161,12 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
           <tr>
             <td>Google Sheets 연동</td>
             <td><span class="badge badge-green">✅ 정상</span></td>
-            <td>4탭 구조 (사는이야기/웃음방 × 일반/화제성), A~J 10열</td>
+            <td>6탭 구조 (사는이야기/웃음방/2막준비 × 일반/화제성), A~J 10열. 없는 탭은 warning 후 skip.</td>
           </tr>
           <tr>
-            <td>82cook 외부 크롤러</td>
-            <td><span class="badge" style="background:rgba(255,111,97,0.15);color:#FF6F61;border:1px solid rgba(255,111,97,0.3);">⛔ 비활성</span></td>
-            <td>2026-04-07 전략 개편으로 비활성화 (코드 보존, 재활성화 가능)</td>
+            <td>LIFE2 (2막준비) 게시판</td>
+            <td><span class="badge badge-green">✅ 정상 (2026-05-21 신설)</span></td>
+            <td>인생 2막 특화 게시판. 페르소나 4명(정순씨·솔직히말해서·따져보자·말티즈엄마). 출처 표시 없음(STORY와 동일).</td>
           </tr>
         </tbody>
       </table>
@@ -1022,8 +1189,10 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
       <li>
         <div class="n">2</div>
         <div class="t">
-          <strong>B열 상태가 SKIPPED_LOW_SCORE면 → AI가 관련성 낮다고 판단한 것.</strong><br>
-          억지로 올리고 싶으면 PENDING으로 바꾸면 된다. G열에 점수와 사유가 적혀 있다.
+          <strong>FAILED 행은 G열 에러를 먼저 확인한다.</strong><br>
+          <strong>"CF 차단"이면</strong> → J열에 원문 본문 붙여넣기 후 B열을 PENDING으로 바꾸면 재시도.<br>
+          <strong>"지원하지 않는 사이트"이면</strong> → 네이버 카페 URL인 경우 <code>ca-fe/</code> 또는 <code>f-e/</code> 경로 포함 여부 확인. URL 형식이 바뀐 경우 A열 교체.<br>
+          <strong>"타임아웃"이면</strong> → B열을 PENDING으로 바꾸면 재시도.
         </div>
       </li>
       <li>
@@ -1106,7 +1275,8 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
           <div class="title">출처 표시 (게시판별 차이)</div>
           <div class="desc">
             <strong>HUMOR (웃음방):</strong> 본문 끝에 <code>&lt;p&gt;출처: 오늘의유머&lt;/p&gt;</code> 자동 추가.<br>
-            <strong>STORY (사는이야기):</strong> 출처 없음 — 개인이 직접 쓴 글처럼 보여야 하기 때문.
+            <strong>STORY (사는이야기):</strong> 출처 없음 — 개인이 직접 쓴 글처럼 보여야 하기 때문.<br>
+            <strong>LIFE2 (2막준비):</strong> 출처 없음 — STORY와 동일 정책. 인생 2막 관련 개인 경험·고민 글처럼 표시.
           </div>
         </div>
       </div>
@@ -1199,7 +1369,7 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
           <div class="wc-time">+3분</div>
         </div>
         <div class="wc-type">BotLog: SHEET_COMMENT_WAVE_PENDING (empathy)</div>
-        <div class="wc-personas">댓글 5명<br><code>BS BT BU BV BW</code></div>
+        <div class="wc-personas">댓글 3명 (5명 풀에서 랜덤)<br><code>BS BT BU BV BW</code></div>
       </div>
       <div class="wave-card">
         <div class="wc-header">
@@ -1207,7 +1377,7 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
           <div class="wc-time">+6분</div>
         </div>
         <div class="wc-type">BotLog: SHEET_COMMENT_WAVE_PENDING (critical)</div>
-        <div class="wc-personas">댓글 5명<br><code>V W AB Y AA</code></div>
+        <div class="wc-personas">댓글 2명 (5명 풀에서 랜덤)<br><code>V W AB Y AA</code></div>
       </div>
       <div class="wave-card">
         <div class="wc-header">
@@ -1215,7 +1385,7 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
           <div class="wc-time">+10분</div>
         </div>
         <div class="wc-type">BotLog: SHEET_COMMENT_WAVE_PENDING (reversal)</div>
-        <div class="wc-personas">댓글 5명<br><code>AE P AD BG BH</code></div>
+        <div class="wc-personas">댓글 2명 (5명 풀에서 랜덤)<br><code>AE P AD BG BH</code></div>
       </div>
     </div>
 
@@ -1233,7 +1403,7 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
           <div class="wc-time">+2분</div>
         </div>
         <div class="wc-type">BotLog: SHEET_ENGAGE_COMMENT_PENDING (empathy)</div>
-        <div class="wc-personas">댓글 3명<br><code>BI BJ BK</code><br>페르소나당 SHEET 글 일일 3개 댓글 상한<br>sourceComments 있으면 원본 댓글을 참고해 각색<br>중복 방지: 동일 postId + authorId 조합 이미 존재하면 스킵</div>
+        <div class="wc-personas">댓글 4명 (랜덤 shuffle)<br><code>BI BJ BK BL BM BN BO BP BQ BR</code> (10명 풀)<br>페르소나당 SHEET 글 일일 3개 댓글 상한<br>sourceComments 있으면 원본 댓글을 참고해 각색<br>자기 글 자기 댓글 방지 (게시자 authorId 제외)<br>중복 방지: 동일 postId + authorId 조합 이미 존재하면 스킵</div>
       </div>
       <div class="wave-card">
         <div class="wc-header">
@@ -1339,20 +1509,22 @@ optimizedTitle: 제목이 10자 미만이거나 특수문자만일 때만 제시
       <table>
         <thead><tr><th>구성요소</th><th>역할</th><th>모델/비고</th></tr></thead>
         <tbody>
-          <tr><td><code>agents/community/sheet-scraper.ts</code></td><td>핵심 스크래퍼 — PENDING 읽기 → 스크래핑 → 게시 → 파동 예약</td><td>691줄</td></tr>
-          <tr><td><code>agents/community/sheets-client.ts</code></td><td>Google Sheets A~J 10열 읽기/쓰기 (4탭)</td><td>googleapis</td></tr>
-          <tr><td><code>agents/community/site-configs.ts</code></td><td>오유·네이트판·펨코 크롤링 설정 + 댓글 셀렉터</td><td>—</td></tr>
-          <tr><td><code>agents/community/content-transformer.ts</code></td><td>외부 HTML 정제 8단계 + 카테고리 키워드 분류</td><td>sanitize-html</td></tr>
+          <tr><td><code>agents/community/sheet-scraper.ts</code></td><td>핵심 스크래퍼 — PENDING 읽기 → 스크래핑 → 게시 → 파동 예약. SESSION_REQUIRED 분기(네이버 카페 GHA skip) + contentFrame 분기(cafe_main iframe) 포함.</td><td>—</td></tr>
+          <tr><td><code>agents/community/sheets-client.ts</code></td><td>Google Sheets A~J 10열 읽기/쓰기 (6탭: 사는이야기·웃음방·2막준비 × 일반/화제성). 없는 탭은 warning 후 skip.</td><td>googleapis</td></tr>
+          <tr><td><code>agents/community/site-configs.ts</code></td><td>5개 사이트 크롤링 설정 + 댓글 selector: <strong>오늘의유머·네이트판</strong>(GHA) / <strong>펨코</strong>(LOCAL) / <strong>82cook</strong>(GHA, postAuthorSelectors 포함) / <strong>네이버 카페</strong>(LOCAL, requiresSession·contentFrame)</td><td>—</td></tr>
+          <tr><td><code>agents/community/content-transformer.ts</code></td><td>외부 HTML 정제 8단계 + 카테고리 키워드 분류. boardType: STORY·HUMOR·LIFE2 지원. HUMOR만 출처 표시.</td><td>sanitize-html</td></tr>
           <tr><td><code>agents/community/image-pipeline.ts</code></td><td>이미지 WebP 변환·비디오·R2 업로드 통합 파이프라인</td><td>sharp</td></tr>
-          <tr><td><code>agents/community/run-local-fmkorea.ts</code></td><td>펨코 로컬 런처 (launchd 전용, dotenv 직접 로드)</td><td>LOCAL ONLY</td></tr>
+          <tr><td><code>agents/community/run-local-fmkorea.ts</code></td><td>펨코 로컬 런처 (launchd 전용, dotenv 직접 로드, --site fmkorea)</td><td>LOCAL ONLY</td></tr>
+          <tr><td><code>agents/community/run-local-naver-cafe.ts</code></td><td>네이버 카페 로컬 런처 (launchd 전용, --site navercafe, storage-state.json 세션 사용)</td><td>LOCAL ONLY</td></tr>
           <tr><td><code>agents/seed/generator.ts</code></td><td>파동 댓글 AI 생성 (generateSheetViralComment)</td><td>Claude Sonnet</td></tr>
-          <tr><td><code>agents/seed/scheduler.ts</code></td><td>파동 처리 함수 (processSheetEngagementWaves, processPendingSheetCommentWaves)</td><td>1416줄</td></tr>
+          <tr><td><code>agents/seed/scheduler.ts</code></td><td>파동 처리 함수 (processSheetEngagementWaves, processPendingSheetCommentWaves)</td><td>—</td></tr>
           <tr><td><code>agents/cron/runner.ts</code></td><td>모든 에이전트 핸들러 등록 테이블 (cron/worker entry point)</td><td>—</td></tr>
           <tr><td><code>src/lib/sanitize.ts</code></td><td>커뮤니티 이미지 프록시 처리 — proxyR2Images() (커스텀 도메인 + /_next/image)</td><td>—</td></tr>
-          <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>스크래핑·게시 GHA 스케줄 (5회/일, timeout 25분)</td><td>claude-haiku-4-5</td></tr>
+          <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>스크래핑·게시 GHA 스케줄 (5회/일, timeout 25분). SHEET_SCRAPER_EXCLUDE_SITE=fmkorea 로 펨코 제외.</td><td>AI 없음 (2026-05-21 Haiku 필터 제거)</td></tr>
           <tr><td><code>.github/workflows/agents-sheet-viral.yml</code></td><td>파동 실행 GHA 스케줄 (5분마다, timeout 10분)</td><td>claude-sonnet-4-6</td></tr>
-          <tr><td><code>~/Library/LaunchAgents/com.unao.fmkorea-scraper.plist</code></td><td>펨코 로컬 launchd 스케줄 (11:30·21:30 KST, caffeinate)</td><td>—</td></tr>
-          <tr><td>Claude Haiku</td><td>AI 관련성 판단(0~10점)·카테고리 분류·제목 최적화</td><td>max_tokens: 200</td></tr>
+          <tr><td><code>~/Library/LaunchAgents/com.unao.fmkorea-scraper.plist</code></td><td>펨코 로컬 launchd 스케줄 (11:30·21:30 KST, caffeinate -i 슬립 방지)</td><td>—</td></tr>
+          <tr><td><code>~/Library/LaunchAgents/com.unao.naver-cafe-sheet-scraper.plist</code></td><td>네이버 카페 로컬 launchd 스케줄 (10:40·13:00·15:30·23:00 KST, 4회)</td><td>—</td></tr>
+          <tr><td>Claude Haiku</td><td><del>AI 관련성 판단·카테고리 분류·제목 최적화</del> → <strong>2026-05-21 완전 제거</strong> (비용 0원, AI 없이 원문 그대로 게시)</td><td>비활성</td></tr>
           <tr><td>Claude Sonnet</td><td>파동 댓글 생성 — 원본 댓글 각색·이미지 전용 반응</td><td>max_tokens: 200</td></tr>
           <tr><td>Cloudflare R2</td><td>이미지·비디오 영구 저장 (<code>scraped/{date}/{timestamp}/{index}.webp</code>)</td><td>sharp WebP 80%</td></tr>
         </tbody>
