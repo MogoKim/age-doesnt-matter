@@ -613,6 +613,42 @@ async function processWaveV2(
   }
 }
 
+// ── v2-F pre-check: processWaveV2 내부와 동일한 sourceCandidates 기준으로 사전 판정 ──
+async function getV2SourceCandidates(
+  queue: { postId: string; cafePostId: string },
+  authorUserId: string,
+): Promise<string[]> {
+  const cafePost = await prisma.cafePost.findUnique({
+    where: { id: queue.cafePostId },
+    select: { topComments: true },
+  })
+  if (!cafePost) return []
+
+  const topComments = parseTopComments(cafePost.topComments)
+  if (topComments.length === 0) return []
+
+  const existingBotComments = await prisma.comment.findMany({
+    where: {
+      postId: queue.postId,
+      parentId: null,
+      status: 'ACTIVE',
+      author: { email: { endsWith: '@unao.bot' } },
+      ...(authorUserId ? { authorId: { not: authorUserId } } : {}),
+    },
+    select: { content: true },
+  })
+  const usedContentSet = new Set(existingBotComments.map(c => c.content.trim()))
+
+  const candidates: string[] = []
+  for (const tc of topComments) {
+    const text = replaceCafeReferences(tc.content?.trim() ?? '')
+    if (text.length < 10) continue
+    if (usedContentSet.has(text)) continue
+    candidates.push(text)
+  }
+  return candidates
+}
+
 export async function main() {
   const now = new Date()
   console.log('[WaveProcessor] 댓글 파동 처리 시작')
@@ -651,13 +687,42 @@ export async function main() {
           ])
           const authorUserId = post?.authorId ?? ''
 
-          await processWaveV2(queue, waveNum, tier, authorUserId)
+          // v2-F: sourceCandidates 사전 판정 (processWaveV2 내부와 동일 기준)
+          const waveTargetCount = getWaveTargetCount(tier, waveNum, queue.cafePostId)
+          const sourceCandidates = await getV2SourceCandidates(queue, authorUserId)
 
-          // wave2/3/4 완료 직후 v2 대댓글 처리 (piggybacked)
-          if (waveNum >= 2 && authorUserId) {
-            const allowed = getAllowedReplyCount(tier, waveNum)
-            if (allowed > 0) {
-              await processAuthorRepliesV2(queue, tier, allowed, authorUserId)
+          if (sourceCandidates.length >= waveTargetCount) {
+            // V2 정상 경로 (sourceCandidates 충분)
+            await processWaveV2(queue, waveNum, tier, authorUserId)
+
+            // wave2/3/4 완료 직후 v2 대댓글 처리 (piggybacked)
+            if (waveNum >= 2 && authorUserId) {
+              const allowed = getAllowedReplyCount(tier, waveNum)
+              if (allowed > 0) {
+                await processAuthorRepliesV2(queue, tier, allowed, authorUserId)
+              }
+            }
+          } else {
+            // V2 fallback → legacy (sourceCandidates 부족)
+            console.log(
+              `[WaveProcessor] wave${waveNum}(v2-fallback→legacy): postId=${queue.postId}, reason=source_not_enough, available=${sourceCandidates.length}, target=${waveTargetCount}`
+            )
+            await processWaveLegacy(queue, waveNum)
+
+            // wave4에서만 대댓글 처리 (R1: inline, alreadyReplied 체크로 중복 방지)
+            if (waveNum === 4 && authorUserId) {
+              try {
+                const alreadyReplied = await prisma.comment.findFirst({
+                  where: { postId: queue.postId, authorId: authorUserId, parentId: { not: null } },
+                })
+                if (!alreadyReplied) {
+                  await processAuthorReplyLegacy(queue, authorUserId)
+                } else {
+                  console.log(`[WaveProcessor] wave4(v2-fallback→legacy): 대댓글 이미 존재, 스킵 postId=${queue.postId}`)
+                }
+              } catch (err) {
+                console.error(`[WaveProcessor] wave4(v2-fallback→legacy): 대댓글 오류 postId=${queue.postId}`, err)
+              }
             }
           }
         }
