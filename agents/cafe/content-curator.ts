@@ -19,6 +19,8 @@ import {
   guessDesire,
   stripMarkdown,
   replaceCafeReferences,
+  toCuratedHtmlContent,
+  toCuratedSummary,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
 
@@ -117,8 +119,8 @@ function editDistance(a: string, b: string): number {
 async function publishCuratedContent(curated: CuratedContent): Promise<string | null> {
   const userId = await getCuratorBotUser(curated.personaId)
 
-  const htmlContent = `<p>${curated.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
-  const summary = curated.content.replace(/\n/g, ' ').slice(0, 150).trim()
+  const htmlContent = toCuratedHtmlContent(curated.content)
+  const summary = toCuratedSummary(curated.content)
 
   // 계절 불일치 필터 (P3)
   if (isSeasonMismatch(curated.title, curated.content)) {

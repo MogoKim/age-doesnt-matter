@@ -6,6 +6,8 @@ import { notifySlack } from '../core/notifier.js'
 import {
   stripMarkdown,
   replaceCafeReferences,
+  toCuratedHtmlContent,
+  toCuratedSummary,
   matchPersona,
   guessDesire,
   DESIRE_TO_BOARD,
@@ -91,8 +93,8 @@ export async function main() {
     }
 
     const boardInfo = DESIRE_TO_BOARD[desire] ?? DESIRE_TO_BOARD['GENERAL']
-    const htmlContent = `<p>${rawContent.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
-    const summary = rawContent.replace(/\n/g, ' ').slice(0, 150).trim()
+    const htmlContent = toCuratedHtmlContent(rawContent)
+    const summary = toCuratedSummary(rawContent)
 
     // LIFE2 크로스소스 중복 방지 (Seed·ContentCurator와 동일 주제 중복 차단)
     if (boardInfo.boardType === 'LIFE2') {

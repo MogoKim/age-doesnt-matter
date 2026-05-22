@@ -27,6 +27,33 @@ export function replaceCafeReferences(text: string): string {
   return result
 }
 
+/** 평문 텍스트 → 큐레이션 발행용 HTML 변환
+ * 이미지가 있던 자리의 과도한 빈 줄/빈 단락을 제거하고 단락 구조를 정규화.
+ */
+export function toCuratedHtmlContent(text: string): string {
+  const normalized = text
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map(line => line.trim())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  const paragraphs = normalized
+    .split(/\n{2,}/)
+    .map(p => p.trim())
+    .filter(Boolean)
+
+  return paragraphs
+    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+    .join('')
+}
+
+/** 큐레이션 summary 생성 — 과도한 공백을 단일 스페이스로 압축 후 슬라이스 */
+export function toCuratedSummary(text: string, maxLen = 150): string {
+  return text.replace(/\s+/g, ' ').trim().slice(0, maxLen)
+}
+
 /** AI 응답에서 마크다운 문법 제거 */
 export function stripMarkdown(text: string): string {
   return text
