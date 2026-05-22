@@ -1,17 +1,33 @@
 // GHA ONLY — agents-cafe-wave.yml */5 cron으로 실행, Comment Wave 파동 처리 (wave1~4 순차 댓글 게시)
 /**
- * 댓글 파동 프로세서
- * CommentWaveQueue에서 pending 항목을 찾아 댓글을 게시하고 done 처리.
- * GHA cron `*\/5 * * * *` 으로 실행 (wave1: +1분, wave2: +5분, wave3: +30분, wave4: +60분)
+ * 댓글 파동 프로세서 v2-E
+ *
+ * v2-E path (COMMENT_WAVE_V2_ENABLED=true, queue.createdAt >= V2_LAUNCH_DATE):
+ *   - tier별 wave count (KILLER 최대 15, HOT 8~11, NORMAL 최대 5)
+ *   - 원문 content 기반 dedup, AI fallback 완전 제거
+ *   - 원글 작성자 대댓글 1:1 매핑 (flatMap 제거, fallback 제거)
+ *   - 단계별 대댓글 허용 수 (wave2/3/4 piggybacked)
+ *
+ * legacy path (kill switch OFF 또는 createdAt < V2_LAUNCH_DATE):
+ *   - 기존 4댓글 + 1대댓글 동작 그대로 유지
  */
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { getBotUser } from '../seed/generator.js'
 import { getAllPersonaIds } from '../seed/persona-data.js'
 import { sendSlackMessage } from '../core/notifier.js'
+import { parseTopComments } from './types.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
+
+// ── Kill Switch (v2-E) ──
+const V2_ENABLED = process.env.COMMENT_WAVE_V2_ENABLED === 'true'
+const V2_LAUNCH_DATE = new Date(process.env.COMMENT_WAVE_V2_DATE ?? '2099-01-01T00:00:00Z')
+
+function isLegacyQueue(queue: { createdAt: Date }): boolean {
+  return !V2_ENABLED || queue.createdAt < V2_LAUNCH_DATE
+}
 
 // 큐레이션 페르소나 — persona-data.ts에서 자동 생성 (EN/N계열 특수 페르소나 제외)
 const COMMENTER_PERSONA_IDS = getAllPersonaIds()
@@ -20,8 +36,70 @@ const COMMENTER_PERSONA_IDS = getAllPersonaIds()
 type WaveNum = 1 | 2 | 3 | 4
 type WaveDoneKey = 'wave1Done' | 'wave2Done' | 'wave3Done' | 'wave4Done'
 type WaveAtKey = 'wave1At' | 'wave2At' | 'wave3At' | 'wave4At'
+type Tier = 'KILLER' | 'HOT' | 'NORMAL'
 
-// wave별 댓글 유형 강제 — fallback(refComment 없음) 시 획일화 방지
+// ── v2-E 상수 ──
+
+const KILLER_WAVE_COUNTS: Record<WaveNum, number> = { 1: 2, 2: 4, 3: 5, 4: 4 }
+const NORMAL_WAVE_COUNTS: Record<WaveNum, number> = { 1: 1, 2: 1, 3: 2, 4: 1 }
+const HOT_WAVE_COUNTS: Record<number, Record<WaveNum, number>> = {
+  8:  { 1: 1, 2: 2, 3: 3, 4: 2 },
+  9:  { 1: 2, 2: 2, 3: 3, 4: 2 },
+  10: { 1: 2, 2: 2, 3: 3, 4: 3 },
+  11: { 1: 2, 2: 3, 3: 3, 4: 3 },
+}
+
+// ── v2-E 유틸 함수 ──
+
+function normalizeNickname(name: string): string {
+  return name
+    .replace(/\s+/g, '')
+    .replace(/\([^)]+\)/g, '')
+    .replace(/[^\w가-힣]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+function deterministicTargetCount(cafePostId: string, min: number, max: number): number {
+  let h = 0
+  for (let i = 0; i < cafePostId.length; i++) {
+    h = Math.imul(31, h) + cafePostId.charCodeAt(i)
+    h |= 0
+  }
+  return min + (Math.abs(h) % (max - min + 1))
+}
+
+function getGlobalCap(tier: Tier): number {
+  if (tier === 'KILLER') return 20
+  if (tier === 'HOT')    return 14
+  return 6
+}
+
+function getWaveTargetCount(tier: Tier, waveNum: WaveNum, cafePostId: string): number {
+  if (tier === 'KILLER') return KILLER_WAVE_COUNTS[waveNum]
+  if (tier === 'NORMAL') return NORMAL_WAVE_COUNTS[waveNum]
+  const total = deterministicTargetCount(cafePostId, 8, 11)
+  return HOT_WAVE_COUNTS[total][waveNum]
+}
+
+function getAllowedReplyCount(tier: Tier, waveNum: WaveNum): number {
+  if (tier === 'KILLER') return waveNum === 2 ? 1 : waveNum === 3 ? 2 : 4
+  if (tier === 'HOT')    return waveNum === 2 ? 1 : waveNum === 3 ? 2 : 3
+  return waveNum === 4 ? 1 : 0  // NORMAL: wave4에서만
+}
+
+async function getQueueTier(postId: string, cafePostId: string): Promise<Tier> {
+  const [post, cafePost] = await Promise.all([
+    prisma.post.findUnique({ where: { id: postId }, select: { isFeatured: true } }),
+    prisma.cafePost.findUnique({ where: { id: cafePostId }, select: { killerScore: true, isPopular: true } }),
+  ])
+  if (post?.isFeatured || (cafePost?.killerScore ?? 0) >= 75) return 'KILLER'
+  if (cafePost?.isPopular) return 'HOT'
+  return 'NORMAL'
+}
+
+// ── Legacy 상수 (processWaveLegacy / processAuthorReplyLegacy 전용) ──
+
 const WAVE_COMMENT_TYPES: Record<WaveNum, string> = {
   1: '공감형 — 글쓴이의 감정이나 상황에 공감하는 1~2문장. "저도 그런 적 있어요"류. 응원 문구("화이팅") 금지.',
   2: '질문형 — 글에서 궁금한 점 한 가지를 구체적으로 질문. "혹시 ~어떻게 하셨어요?"류. 공감 선언 없이 바로 질문으로 시작.',
@@ -29,12 +107,6 @@ const WAVE_COMMENT_TYPES: Record<WaveNum, string> = {
   4: '다른관점형 — 글과 다른 각도에서 바라본 생각 또는 보완 정보. "저는 반대로 ~", "그런데 ~도 있더라고요"류. 응원/화이팅 절대 금지.',
 }
 
-// viralType별 wave 댓글 유형 리매핑 — 글의 감정 구조에 맞게 첫 댓글 유형을 동적으로 조정
-// BETRAYAL(배신): 배신감 글은 다른관점으로 시작할 때 공감대 더 높음
-// INJUSTICE(억울함): 억울한 글은 질문으로 시작해 사연을 더 풀어내도록 유도
-// CONTROVERSY(논쟁): 논란글은 질문 → 다른관점 순으로 균형 있게
-// REVERSAL(반전): 반전글은 경험공유로 시작해 "나도 당했어" 공감 유도
-// EMPATHY(공감): 공감 글은 공감 → 경험 순서 유지 (기본값과 유사)
 function remapWaveType(waveNum: WaveNum, viralType: string | null | undefined): WaveNum {
   if (!viralType) return waveNum
   const ORDER_MAP: Partial<Record<string, WaveNum[]>> = {
@@ -85,7 +157,7 @@ async function generateComment(postTitle: string, waveNum: WaveNum, refComment?:
   return raw.replace(/^댓글:\s*/, '').slice(0, 200)
 }
 
-// 작성자가 첫 번째 봇 댓글에 대댓글 달 때 사용할 원문 없을 경우 풀
+// 작성자 대댓글 fallback 풀 (legacy path 전용)
 const AUTHOR_REPLY_POOL = [
   '공감해 주셔서 감사해요~',
   '맞아요 저도 그렇게 생각해요 ^^',
@@ -96,11 +168,12 @@ const AUTHOR_REPLY_POOL = [
   '함께 나눠 주셔서 감사해요',
 ]
 
-async function processAuthorReply(
+// ── Legacy 함수 (기존 로직 그대로 유지 — 변경 금지) ──
+
+async function processAuthorReplyLegacy(
   queue: { id: string; postId: string; cafePostId: string; authorPersonaId: string },
   authorUserId: string
 ) {
-  // 작성자가 아닌 봇의 첫 번째 일반 댓글 (대댓글 달 대상)
   const firstComment = await prisma.comment.findFirst({
     where: {
       postId: queue.postId,
@@ -112,7 +185,6 @@ async function processAuthorReply(
   })
   if (!firstComment) return
 
-  // 원본 카페글 replies에서 작성자 대댓글 원문 찾기
   const cafePost = await prisma.cafePost.findUnique({
     where: { id: queue.cafePostId },
     select: { topComments: true },
@@ -142,18 +214,17 @@ async function processAuthorReply(
       data: { commentCount: { increment: 1 } },
     }),
   ])
-  console.log(`[WaveProcessor] 작성자 대댓글 완료: postId=${queue.postId}, persona=${queue.authorPersonaId}`)
+  console.log(`[WaveProcessor] 작성자 대댓글(legacy): postId=${queue.postId}`)
 }
 
-async function processWave(
+async function processWaveLegacy(
   queue: { id: string; postId: string; cafePostId: string; authorPersonaId: string },
   waveNum: WaveNum,
 ) {
-  // 봇 당일 댓글 수 집계 (cap 체크용 — P4)
   const todayCommentStart = new Date()
   todayCommentStart.setHours(0, 0, 0, 0)
   const BOT_DAILY_COMMENT_CAP = 3
-  // groupBy에서 관계 필터 불가 → BOT 유저 ID 목록 먼저 조회 (email @unao.bot 기준)
+
   const botUsers = await prisma.user.findMany({
     where: { email: { endsWith: '@unao.bot' } },
     select: { id: true },
@@ -168,7 +239,6 @@ async function processWave(
     todayCommentCounts.map(c => [c.authorId, c._count.authorId])
   )
 
-  // 글쓴이 제외 후보 풀 셔플 후 당일 캡 미초과 봇 우선 선택
   const basePool = [...COMMENTER_PERSONA_IDS.filter(p => p !== queue.authorPersonaId)]
     .sort(() => Math.random() - 0.5)
   let personaId = basePool[0]
@@ -182,28 +252,26 @@ async function processWave(
       break
     }
   }
-  // fallback: 모두 캡 초과 시 첫 번째 후보
+  // fallback: 모두 캡 초과 시 첫 번째 후보 (legacy 동작 유지)
   if (!userId) {
     personaId = basePool[0]
     userId = await getBotUser(personaId)
   }
   if (!userId) {
-    console.warn(`[WaveProcessor] wave${waveNum}: getBotUser(${personaId}) 실패 — 스킵`)
+    console.warn(`[WaveProcessor] wave${waveNum}(legacy): getBotUser(${personaId}) 실패 — 스킵`)
     return
   }
 
-  // 중복 댓글 방지 — 동시 실행 또는 재시도 시 같은 페르소나가 이미 댓글 달았으면 스킵
   const existingComment = await prisma.comment.findFirst({
     where: { postId: queue.postId, authorId: userId },
   })
   if (existingComment) {
     const doneFieldEarly = `wave${waveNum}Done` as WaveDoneKey
     await prisma.commentWaveQueue.update({ where: { id: queue.id }, data: { [doneFieldEarly]: true } })
-    console.warn(`[WaveProcessor] wave${waveNum}: 중복 댓글 스킵 (postId=${queue.postId}, persona=${personaId})`)
+    console.warn(`[WaveProcessor] wave${waveNum}(legacy): 중복 댓글 스킵 (postId=${queue.postId}, persona=${personaId})`)
     return
   }
 
-  // 봇 댓글 캡 체크 (≤5) — comment-activator·reply-chain과 합산
   const totalBotComments = await prisma.comment.count({
     where: {
       postId: queue.postId,
@@ -214,35 +282,30 @@ async function processWave(
   if (totalBotComments >= 5) {
     const doneFieldCap = `wave${waveNum}Done` as WaveDoneKey
     await prisma.commentWaveQueue.update({ where: { id: queue.id }, data: { [doneFieldCap]: true } })
-    console.warn(`[WaveProcessor] wave${waveNum}: 봇 댓글 캡 초과(${totalBotComments}건) — 스킵 (postId=${queue.postId})`)
+    console.warn(`[WaveProcessor] wave${waveNum}(legacy): 봇 댓글 캡 초과(${totalBotComments}건) — 스킵 (postId=${queue.postId})`)
     return
   }
 
-  // 포스트 제목 조회
   const post = await prisma.post.findUnique({
     where: { id: queue.postId },
     select: { title: true },
   })
   if (!post) {
-    console.warn(`[WaveProcessor] wave${waveNum}: postId=${queue.postId} 없음 — 스킵`)
+    console.warn(`[WaveProcessor] wave${waveNum}(legacy): postId=${queue.postId} 없음 — 스킵`)
     return
   }
 
-  // 원본 카페글 topComments + viralType 참조
   const cafePost = await prisma.cafePost.findUnique({
     where: { id: queue.cafePostId },
     select: { topComments: true, viralType: true },
   })
   const topComments = cafePost?.topComments as { content: string }[] | null
-  // wave 번호 기반 인덱스 분산 — wave1~4가 서로 다른 원본 댓글 참조
   const len = topComments?.length ?? 0
   const idx = len > 0 ? ((waveNum - 1) * Math.ceil(len / 4)) % len : 0
   const refComment = len > 0 ? topComments![idx]?.content : undefined
 
-  // viralType에 따라 댓글 유형 리매핑 (null이면 기본 순서 유지)
   const effectiveWaveNum = remapWaveType(waveNum, cafePost?.viralType)
 
-  // topComments 있으면 원문 그대로 달기, 없으면 AI fallback
   let commentText: string
   if (refComment && refComment.trim().length >= 10) {
     commentText = refComment.trim()
@@ -250,7 +313,6 @@ async function processWave(
     commentText = await generateComment(post.title, effectiveWaveNum, undefined)
   }
 
-  // 댓글 DB 저장 + Post.commentCount 동기화 (목록 표시 정확도)
   await prisma.$transaction([
     prisma.comment.create({
       data: {
@@ -266,14 +328,286 @@ async function processWave(
     }),
   ])
 
-  // wave 완료 마킹
   const doneField = `wave${waveNum}Done` as WaveDoneKey
   await prisma.commentWaveQueue.update({
     where: { id: queue.id },
     data: { [doneField]: true },
   })
 
-  console.log(`[WaveProcessor] wave${waveNum} 완료: postId=${queue.postId}, persona=${personaId}`)
+  console.log(`[WaveProcessor] wave${waveNum}(legacy) 완료: postId=${queue.postId}, persona=${personaId}`)
+}
+
+// ── v2-E 함수 ──
+
+async function processAuthorRepliesV2(
+  queue: { id: string; postId: string; cafePostId: string },
+  _tier: Tier,
+  allowedReplyCount: number,
+  authorUserId: string,
+) {
+  if (allowedReplyCount <= 0) return
+
+  const cafePost = await prisma.cafePost.findUnique({
+    where: { id: queue.cafePostId },
+    select: { topComments: true, author: true },
+  })
+  if (!cafePost) return
+
+  const topComments = parseTopComments(cafePost.topComments)
+  if (topComments.length === 0) return
+
+  const cafeAuthor = normalizeNickname(cafePost.author ?? '')
+  const topCommentByContent = new Map(topComments.map(tc => [tc.content.trim(), tc]))
+
+  // v2 source-copy 봇 댓글만 조회 (content 매칭)
+  const botComments = await prisma.comment.findMany({
+    where: {
+      postId: queue.postId,
+      parentId: null,
+      status: 'ACTIVE',
+      author: { email: { endsWith: '@unao.bot' } },
+      authorId: { not: authorUserId },
+      content: { in: [...topCommentByContent.keys()] },
+    },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, content: true },
+  })
+  if (botComments.length === 0) return
+
+  const botCommentIds = new Set(botComments.map(b => b.id))
+
+  // 이미 생성된 대댓글 중 v2 source-copy botComment에 달린 것만 카운트
+  const existingReplies = await prisma.comment.findMany({
+    where: { postId: queue.postId, authorId: authorUserId, parentId: { not: null } },
+    select: { parentId: true, content: true },
+  })
+  const usedParentIds = new Set(
+    existingReplies.filter(r => botCommentIds.has(r.parentId!)).map(r => r.parentId!)
+  )
+  const usedContents = new Set(
+    existingReplies.filter(r => botCommentIds.has(r.parentId!)).map(r => r.content.trim())
+  )
+
+  let replyCount = usedParentIds.size
+  if (replyCount >= allowedReplyCount) return
+
+  for (const botComment of botComments) {
+    if (replyCount >= allowedReplyCount) break
+    if (usedParentIds.has(botComment.id)) continue
+
+    const sourceTopComment = topCommentByContent.get(botComment.content.trim())
+    if (!sourceTopComment) continue
+
+    const authorReply = (sourceTopComment.replies ?? []).find(r =>
+      normalizeNickname(r.author) === cafeAuthor &&
+      r.content.trim().length >= 5 &&
+      !usedContents.has(r.content.trim())
+    )
+    if (!authorReply) continue
+
+    await prisma.$transaction([
+      prisma.comment.create({
+        data: {
+          postId: queue.postId,
+          authorId: authorUserId,
+          content: authorReply.content.trim(),
+          parentId: botComment.id,
+          status: 'ACTIVE',
+        },
+      }),
+      prisma.post.update({
+        where: { id: queue.postId },
+        data: { commentCount: { increment: 1 } },
+      }),
+    ])
+
+    usedParentIds.add(botComment.id)
+    usedContents.add(authorReply.content.trim())
+    replyCount++
+  }
+
+  console.log(`[WaveProcessor] v2 대댓글: postId=${queue.postId}, count=${replyCount}/${allowedReplyCount}`)
+}
+
+async function processWaveV2(
+  queue: { id: string; postId: string; cafePostId: string; authorPersonaId: string },
+  waveNum: WaveNum,
+  tier: Tier,
+  authorUserId: string,
+) {
+  const skips: string[] = []
+  let actualCount = 0
+  let normalExit = false
+  const doneField = `wave${waveNum}Done` as WaveDoneKey
+  const waveTargetCount = getWaveTargetCount(tier, waveNum, queue.cafePostId)
+  const globalCap = getGlobalCap(tier)
+
+  try {
+    // 원본 topComments 파싱
+    const cafePost = await prisma.cafePost.findUnique({
+      where: { id: queue.cafePostId },
+      select: { topComments: true },
+    })
+    if (!cafePost) {
+      skips.push('source_not_found')
+      normalExit = true
+      return
+    }
+
+    const topComments = parseTopComments(cafePost.topComments)
+    if (topComments.length === 0) {
+      skips.push('source_not_enough')
+      normalExit = true
+      return
+    }
+
+    // 기존 v2 bot top-level 댓글 content Set 구성
+    const existingBotComments = await prisma.comment.findMany({
+      where: {
+        postId: queue.postId,
+        parentId: null,
+        status: 'ACTIVE',
+        author: { email: { endsWith: '@unao.bot' } },
+        ...(authorUserId ? { authorId: { not: authorUserId } } : {}),
+      },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, authorId: true, content: true },
+    })
+
+    const usedContentSet = new Set(existingBotComments.map(c => c.content.trim()))
+
+    // 아직 복사되지 않은 원문 candidates 추출 (순서 유지)
+    const sourceCandidates: string[] = []
+    for (const tc of topComments) {
+      const text = tc.content?.trim() ?? ''
+      if (text.length < 10) continue
+      if (usedContentSet.has(text)) continue
+      sourceCandidates.push(text)
+    }
+
+    if (sourceCandidates.length === 0) {
+      skips.push('source_not_enough')
+      normalExit = true
+      return
+    }
+
+    // bot daily cap 집계
+    const todayCommentStart = new Date()
+    todayCommentStart.setHours(0, 0, 0, 0)
+    const BOT_DAILY_COMMENT_CAP = 3
+    const botUsers = await prisma.user.findMany({
+      where: { email: { endsWith: '@unao.bot' } },
+      select: { id: true },
+    })
+    const botUserIds = botUsers.map(u => u.id)
+    const todayCommentCounts = await prisma.comment.groupBy({
+      by: ['authorId'],
+      where: { createdAt: { gte: todayCommentStart }, authorId: { in: botUserIds } },
+      _count: { authorId: true },
+    })
+    const todayCountByUser = new Map(
+      todayCommentCounts.map(c => [c.authorId, c._count.authorId])
+    )
+
+    const existingCommenters = new Set(existingBotComments.map(c => c.authorId))
+    const usedInThisRun = new Set<string>()
+
+    for (let slot = 0; slot < waveTargetCount; slot++) {
+      const commentText = sourceCandidates[slot]
+      if (!commentText) { skips.push('source_not_enough'); break }
+
+      // global cap 체크
+      const totalBotCount = await prisma.comment.count({
+        where: {
+          postId: queue.postId,
+          author: { email: { endsWith: '@unao.bot' } },
+          status: 'ACTIVE',
+        },
+      })
+      if (totalBotCount >= globalCap) { skips.push('global_cap'); break }
+
+      // 봇 후보 선택 (중복 없는 봇만, 강제 선택 금지)
+      const candidates = [...COMMENTER_PERSONA_IDS]
+        .filter(p => p !== queue.authorPersonaId)
+        .sort(() => Math.random() - 0.5)
+
+      let chosen: { personaId: string; userId: string } | null = null
+      for (const personaId of candidates) {
+        const userId = await getBotUser(personaId)
+        if (!userId) continue
+        if (existingCommenters.has(userId)) continue
+        if (usedInThisRun.has(userId)) continue
+        if ((todayCountByUser.get(userId) ?? 0) >= BOT_DAILY_COMMENT_CAP) continue
+        chosen = { personaId, userId }
+        break
+      }
+
+      if (!chosen) { skips.push('bot_cap'); continue }
+
+      await prisma.$transaction([
+        prisma.comment.create({
+          data: {
+            postId: queue.postId,
+            authorId: chosen.userId,
+            content: commentText,
+            status: 'ACTIVE',
+          },
+        }),
+        prisma.post.update({
+          where: { id: queue.postId },
+          data: { commentCount: { increment: 1 } },
+        }),
+      ])
+
+      usedInThisRun.add(chosen.userId)
+      existingCommenters.add(chosen.userId)
+      usedContentSet.add(commentText)
+      actualCount++
+    }
+
+    // bot_cap/global_cap으로 50% 미만 생성 시 Slack warning
+    if (
+      actualCount < waveTargetCount / 2 &&
+      skips.some(s => s === 'bot_cap' || s === 'global_cap')
+    ) {
+      await sendSlackMessage('QA',
+        `[WaveProcessor v2] wave${waveNum} cap 부족 — postId=${queue.postId}, tier=${tier}, target=${waveTargetCount}, actual=${actualCount}`
+      )
+    }
+
+    normalExit = true
+
+  } finally {
+    // normalExit=true인 경우만 waveXDone 마킹 (exception 시 false → 재시도 허용)
+    if (normalExit) {
+      await prisma.commentWaveQueue.update({
+        where: { id: queue.id },
+        data: { [doneField]: true },
+      })
+
+      await prisma.botLog.create({
+        data: {
+          botType: 'CAFE_CRAWLER',
+          action: 'WAVE_PROCESS_V2',
+          status: actualCount === 0 ? 'SKIP'
+                 : actualCount < waveTargetCount ? 'PARTIAL' : 'SUCCESS',
+          details: JSON.stringify({
+            postId:         queue.postId,
+            waveNum,
+            tier,
+            targetCount:    waveTargetCount,
+            actualCreated:  actualCount,
+            skippedReasons: skips,
+          }),
+          itemCount: actualCount,
+        },
+      })
+
+      console.log(
+        `[WaveProcessor] wave${waveNum}(v2) 완료: postId=${queue.postId}, tier=${tier}, created=${actualCount}/${waveTargetCount}`
+      )
+    }
+  }
 }
 
 export async function main() {
@@ -299,13 +633,31 @@ export async function main() {
         [atField]: { lte: now },
         expiresAt: { gte: now },
       },
-      select: { id: true, postId: true, cafePostId: true, authorPersonaId: true },
+      select: { id: true, postId: true, cafePostId: true, authorPersonaId: true, createdAt: true },
       take: 10,
     })
 
     for (const queue of pending) {
       try {
-        await processWave(queue, waveNum)
+        if (isLegacyQueue(queue)) {
+          await processWaveLegacy(queue, waveNum)
+        } else {
+          const [tier, post] = await Promise.all([
+            getQueueTier(queue.postId, queue.cafePostId),
+            prisma.post.findUnique({ where: { id: queue.postId }, select: { authorId: true } }),
+          ])
+          const authorUserId = post?.authorId ?? ''
+
+          await processWaveV2(queue, waveNum, tier, authorUserId)
+
+          // wave2/3/4 완료 직후 v2 대댓글 처리 (piggybacked)
+          if (waveNum >= 2 && authorUserId) {
+            const allowed = getAllowedReplyCount(tier, waveNum)
+            if (allowed > 0) {
+              await processAuthorRepliesV2(queue, tier, allowed, authorUserId)
+            }
+          }
+        }
         processed++
       } catch (err) {
         failed++
@@ -315,13 +667,14 @@ export async function main() {
     }
   }
 
-  // wave4 완료된 큐에서 작성자 대댓글 미처리 항목 처리
+  // legacy 대댓글 처리 (wave4Done=true, legacy queue만)
   const replyPending = await prisma.commentWaveQueue.findMany({
     where: { wave4Done: true, expiresAt: { gte: now } },
-    select: { id: true, postId: true, cafePostId: true, authorPersonaId: true },
+    select: { id: true, postId: true, cafePostId: true, authorPersonaId: true, createdAt: true },
     take: 10,
   })
   for (const queue of replyPending) {
+    if (!isLegacyQueue(queue)) continue  // v2는 wave 직후 처리 완료
     const post = await prisma.post.findUnique({
       where: { id: queue.postId },
       select: { authorId: true },
@@ -332,11 +685,11 @@ export async function main() {
     })
     if (alreadyReplied) continue
     try {
-      await processAuthorReply(queue, post.authorId)
+      await processAuthorReplyLegacy(queue, post.authorId)
       processed++
     } catch (err) {
       failed++
-      console.error('[WaveProcessor] 작성자 대댓글 오류:', err)
+      console.error('[WaveProcessor] 작성자 대댓글 오류(legacy):', err)
     }
   }
 

@@ -18,6 +18,8 @@ env:
   CLAUDE_MODEL_LIGHT: claude-haiku-4-5
   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
   SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}
+  COMMENT_WAVE_V2_ENABLED: ${{ vars.COMMENT_WAVE_V2_ENABLED || 'false' }}
+  COMMENT_WAVE_V2_DATE: ${{ vars.COMMENT_WAVE_V2_DATE || '2099-01-01T00:00:00Z' }}
 
 jobs:
   wave-process:
