@@ -475,7 +475,7 @@ export async function main(): Promise<MagazineRunResult[]> {
     console.log(`[MagazineGenerator] 욕망지도 폴백 주제 사용: "${fallbackTopic.title}"`)
     const category = DESIRE_TO_CATEGORY[dominantDesire] ?? '생활'
     const refs = await getReferencePosts(fallbackTopic)
-    const recentTitles = await getRecentMagazineTitles(30)
+    const recentTitles = await getRecentMagazineTitles(7)
     const article = await generateMagazineArticle(fallbackTopic, category, refs, recentTitles)
     if (!article) {
       console.log('[MagazineGenerator] 폴백 주제 생성 실패')
@@ -492,7 +492,7 @@ export async function main(): Promise<MagazineRunResult[]> {
   }
 
   // 2) 최근 매거진 제목 (중복 방지)
-  const recentTitles = await getRecentMagazineTitles(30)
+  const recentTitles = await getRecentMagazineTitles(7)
 
   // 3) 상위 1~2개 주제로 매거진 생성
   const maxArticles = 3
@@ -511,7 +511,7 @@ export async function main(): Promise<MagazineRunResult[]> {
     // 의미 중복 주제 스킵
     const allRecentTitles = [...recentTitles, ...publishedTitles]
     if (isSimilarTitle(topic.title, allRecentTitles)) {
-      console.log(`[MagazineGenerator] "${topic.title}" — 최근 30일 유사 주제 이미 발행, 스킵`)
+      console.log(`[MagazineGenerator] "${topic.title}" — 최근 7일 유사 주제 이미 발행, 스킵`)
       continue
     }
 
