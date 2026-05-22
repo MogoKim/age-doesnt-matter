@@ -25,9 +25,23 @@ const client = new Anthropic()
 /** 카테고리 자동 매핑 */
 function detectCategory(title: string, reason: string): string {
   const text = `${title} ${reason}`.toLowerCase()
+
+  // 1단계: 재테크 우선 phrase — '건강보험'이 '건강'으로 오분류되는 substring 버그 방지
+  const financeFirstPhrases = [
+    '건강보험', '건보', '피부양자', '보험료', '실손보험',
+    '퇴직연금', 'irp', '연금저축', '세액공제', '노후자금',
+    '재테크', '저축', '투자', '부동산',
+  ]
+  if (financeFirstPhrases.some(kw => text.includes(kw))) return '재테크'
+
+  // 2단계: 관계 카테고리 — prompt.ts DESIRE_TO_CATEGORY.RELATION='관계'와 동기화
+  const relationPhrases = ['연인', '부부', '황혼', '이성', '재혼', '연애', '외로움', '친구 사귀']
+  if (relationPhrases.some(kw => text.includes(kw))) return '관계'
+
+  // 3단계: 기존 map 순회 (건강 포함 — 이제 재테크와 substring 충돌 없음)
   const map: Record<string, string[]> = {
     '건강': ['건강', '운동', '관절', '영양', '수면', '병원', '치매', '혈압', '당뇨', '걷기', '갱년기'],
-    '재테크': ['재테크', '연금', '저축', '투자', '부동산', '노후', '보험', '퇴직연금', 'irp'],
+    '재테크': ['재테크', '연금', '저축', '투자', '부동산', '노후', '퇴직연금'],
     '은퇴준비': ['은퇴', '퇴직', '인생 2막', '2막', '노후 준비', '노후준비', '은퇴 준비'],
     '일자리': ['일자리', '취업', '자격증', '봉사', '창업', '알바', '재취업', '파트타임'],
     '생활': ['살림', '정리', '세탁', '절약', '생활', '꿀팁', '재활용'],
@@ -146,8 +160,8 @@ ${longtailSection ? `SEO 타겟 롱테일 키워드 (아래 중 1~2개를 제목
 요약: (40자 이내, 한 줄 요약)
 seoTitle: (50자 이내, 주요 키워드 앞에 배치, 숫자/연도 포함 권장 예: "50대 갱년기 증상 7가지 — 2024 완벽 정리")
 seoDescription: (120자 이내, 첫 문장에 직접 답변, "50대" "갱년기" 등 핵심 키워드 포함, 공감 유도)
-이미지컨텍스트1: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, ILLUSTRATION 제외 전 타입 필수 작성 — PERSON_REAL은 "Korean women lifestyle", "mature woman wellness" 등 인물 관련 키워드)
-이미지컨텍스트2: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, ILLUSTRATION 제외 전 타입 필수 작성 — PERSON_REAL은 "Korean women lifestyle", "mature woman wellness" 등 인물 관련 키워드)
+이미지컨텍스트1: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, ILLUSTRATION 제외 전 타입 필수 작성 — PERSON_REAL은 "Korean women lifestyle", "mature woman wellness" 등 인물 관련 키워드), altKo:(한국어 이미지 설명 20자 이내)
+이미지컨텍스트2: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, ILLUSTRATION 제외 전 타입 필수 작성 — PERSON_REAL은 "Korean women lifestyle", "mature woman wellness" 등 인물 관련 키워드), altKo:(한국어 이미지 설명 20자 이내)
 본문: (HTML, 1500~2000자, 소제목 3~4개, 각 15자 이내)
 
 본문 구조:
@@ -208,6 +222,8 @@ seoDescription: (120자 이내, 첫 문장에 직접 답변, "50대" "갱년기"
         }
         if (genderMatch) ctx.gender = genderMatch[1] as 'female' | 'male'
         if (unsplashMatch) ctx.unsplashQuery = unsplashMatch[1].trim()
+        const altKoMatch = raw.match(/altKo:([^,\n]+)/)
+        if (altKoMatch) ctx.altKo = altKoMatch[1].trim()
         imageContexts.push(ctx)
       }
     }
@@ -294,6 +310,62 @@ async function publishMagazine(
   })
 
   return { id: post.id, slug }
+}
+
+/** seoTitle exact duplicate 체크 — null 시 스킵, DB 실패 시 발행 계속 */
+async function isSeoTitleDuplicate(seoTitle: string | null): Promise<boolean> {
+  if (!seoTitle) return false
+  try {
+    const existing = await prisma.post.findFirst({
+      where: {
+        boardType: 'MAGAZINE',
+        status: 'PUBLISHED',
+        seoTitle: { equals: seoTitle.trim(), mode: 'insensitive' },
+      },
+      select: { id: true },
+    })
+    return !!existing
+  } catch (err) {
+    console.warn('[MagazineGenerator] seoTitle 중복 체크 실패 (무시):', err)
+    return false
+  }
+}
+
+/** 발행 후 QA — Slack warning only, 발행 취소 없음 */
+async function postPublishQA(
+  article: { title: string; content: string; seoTitle: string | null; thumbnailUrl?: string },
+  category: string,
+): Promise<void> {
+  try {
+    const warnings: string[] = []
+
+    const plainLen = article.content.replace(/<[^>]*>/g, '').trim().length
+    if (plainLen < 1200) warnings.push(`⚠️ 본문 ${plainLen}자 (목표 1500자+)`)
+
+    if (!article.thumbnailUrl) warnings.push('⚠️ 히어로 이미지 없음')
+
+    const ALLOWED_CATEGORIES = [
+      '건강', '재테크', '은퇴준비', '생활', '관계', '여행',
+      '문화', '요리', '취미', '일자리', '집꾸미기', '패션', '간병',
+    ]
+    if (!ALLOWED_CATEGORIES.includes(category)) warnings.push(`⚠️ 카테고리 이상: ${category}`)
+
+    if (!article.seoTitle) warnings.push('⚠️ seoTitle 없음')
+
+    const hasExternalAnchor = /<a\s[^>]*href=["']https?:\/\//i.test(article.content)
+    if (!hasExternalAnchor) warnings.push('⚠️ 외부 출처 anchor 링크 없음')
+
+    if (warnings.length > 0) {
+      await notifySlack({
+        level: 'important',
+        agent: 'MAGAZINE_QA',
+        title: `📋 발행 QA 경고 — ${article.title}`,
+        body: warnings.join('\n'),
+      })
+    }
+  } catch (err) {
+    console.warn('[MagazineQA] QA 실패 (무시):', err)
+  }
 }
 
 export interface MagazineRunResult {
@@ -454,6 +526,12 @@ export async function main(): Promise<MagazineRunResult[]> {
       continue
     }
 
+    // seoTitle exact duplicate 체크 (DB 실패 시 발행 계속)
+    if (article.seoTitle && await isSeoTitleDuplicate(article.seoTitle)) {
+      console.log(`[MagazineGenerator] "${topic.title}" — seoTitle 중복, 다음 topic으로`)
+      continue
+    }
+
     // IMAGE_PROMPT 잔존 텍스트 방어 제거
     article.content = article.content.replace(/\[IMAGE_PROMPT:\s*.+?\]/g, '')
 
@@ -503,9 +581,9 @@ export async function main(): Promise<MagazineRunResult[]> {
 
     // 본문 <!-- [IMAGE:N] --> 플레이스홀더를 실제 이미지로 치환
     for (const [n, url] of bodyImageUrls) {
-      // alt text: Unsplash 검색어(한국어) → 이미지 타입 → 제목 기반 fallback
-      const ctx = ctxList[n - 1]
-      const altText = ctx?.unsplashQuery ?? `${article.title} 관련 이미지`
+      // n=1 → ctxList[1] (본문 이미지 context). out-of-bounds 방어: 마지막 ctx 사용
+      const ctx = ctxList[n] ?? ctxList[ctxList.length - 1]
+      const altText = ctx?.altKo ?? `${article.title} 관련 이미지`
       finalHtml = finalHtml.replace(
         `<!-- [IMAGE:${n}] -->`,
         `<img src="${url}" alt="${altText}" style="width:100%;height:auto;border-radius:12px;margin:16px 0;" loading="lazy" />`,
@@ -540,6 +618,9 @@ export async function main(): Promise<MagazineRunResult[]> {
     const richArticle = { ...article, content: finalHtml }
     const seriesMeta = seriesMetaMap.get(topic.title)
     const { id: postId, slug: postSlug } = await publishMagazine(richArticle, category, thumbnailUrl, seriesMeta)
+
+    // 발행 후 QA — Slack warning only (발행은 이미 완료)
+    await postPublishQA({ ...richArticle, thumbnailUrl }, category)
 
     // Google 인덱싱 요청 (환경변수 미설정 시 자동 skip)
     const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/magazine/${postSlug}`

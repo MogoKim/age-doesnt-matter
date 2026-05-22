@@ -52,8 +52,8 @@ const KOREAN_REALISM_BASE =
   + 'Genuine East Asian Korean facial features and bone structure — '
   + 'inspired by the natural appearance of real Korean women in their 50s and 60s, '
   + 'NOT resembling any specific individual or celebrity. '
-  // 헤어·피부 — 5060 자연스러운 노화 허용 (흰머리 금지 조항 제거)
-  + 'Naturally styled hair with possible subtle grey highlights (less than 20%), '
+  // 헤어·피부 — 5060 자연스러운 노화 허용 (흰머리 포인트 ~10%)
+  + 'Naturally styled hair with subtle silver highlights (~10%, natural accent point only — not fully grey), '
   + 'modern flattering Korean cut that celebrates natural aging beautifully. '
   + 'Healthy luminous skin with genuine human skin texture: visible pores, '
   + 'fine lines around eyes and mouth showing life experience, '
@@ -65,9 +65,9 @@ const KOREAN_REALISM_BASE =
   + 'NOT Western, NOT Caucasian, NOT Southeast Asian.'
 
 export const PERSON_STYLE_GUIDE = {
-  /** 단일 인물 (1명) — 5060 한국 여성 (DALL-E 렌더링 기준 mid-40s = 실제 5060 외모) */
+  /** 단일 인물 (1명) — 5060 한국 여성 (47~52세 느낌, 흰머리 ~10% 포인트) */
   femalePromptSingle:
-    'Photorealistic photograph, one Korean woman in her mid-40s, '
+    'Photorealistic photograph, one Korean woman in her late 40s to early 50s (age 47 to 52), '
     + 'refined intelligent warmth, modern Korean everyday fashion in muted elegant tones, '
     + 'candid authentic lifestyle moment — genuine natural expression, NOT posed, '
     + 'soft natural window light or warm outdoor golden light, '
@@ -75,9 +75,9 @@ export const PERSON_STYLE_GUIDE = {
     + 'editorial magazine photograph quality, subtle warm coral accent in environment, '
     + KOREAN_REALISM_BASE,
 
-  /** 복수 인물 (2~3명) — 5060 한국 여성들 그룹 (DALL-E 렌더링 기준 mid-40s = 실제 5060) */
+  /** 복수 인물 (2~3명) — 5060 한국 여성들 그룹 (47~52세 느낌, 흰머리 ~10% 포인트) */
   femalePromptMultiple:
-    'Photorealistic photograph, two to three Korean women in their mid-40s, '
+    'Photorealistic photograph, two to three Korean women in their late 40s to early 50s (age 47 to 52), '
     + 'genuine warm friendship — real laughter, natural eye contact, authentic joyful connection, '
     + 'NOT models, NOT posed stock photo, spontaneous candid moment, '
     + 'modern Korean everyday fashion, '
@@ -215,6 +215,7 @@ export interface ImageContext {
   gender?: 'female'
   dallePrompt: string       // DALL-E용 영문 프롬프트
   unsplashQuery?: string    // Unsplash 검색어 (FOOD/SCENE/OBJECT만)
+  altKo?: string            // 한국어 alt 텍스트 (20자 이내) — DB schema 변경 없음
 }
 
 /** 카테고리별 기본 이미지 컨텍스트 2종 (AI가 컨텍스트를 주지 않을 때 폴백) */
@@ -224,7 +225,7 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman in her mid-40s doing gentle morning walk outdoors smiling, natural sunlight, park path',
+        dallePrompt: 'Korean woman in her late 40s to early 50s doing gentle morning walk outdoors smiling, natural sunlight, park path',
         unsplashQuery: 'mature women outdoor walk smiling park morning',
       },
       {
@@ -237,7 +238,7 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman in her 60s organizing a cozy Korean home with warm morning sunlight',
+        dallePrompt: 'Korean woman in her late 40s to early 50s organizing a cozy Korean home with warm morning sunlight',
       },
       {
         type: 'SCENE_PHOTO',
@@ -249,7 +250,7 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman in her mid-40s smiling warmly at cafe table with coffee, genuine happy expression, window light, candid moment',
+        dallePrompt: 'Korean woman in her late 40s to early 50s smiling warmly at cafe table with coffee, genuine happy expression, window light, candid moment',
         unsplashQuery: 'women friends laughing together coffee cafe',
       },
       {
@@ -267,7 +268,7 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman in her mid-40s reviewing financial documents at home desk with reading glasses, thoughtful expression, warm light',
+        dallePrompt: 'Korean woman in her late 40s to early 50s reviewing financial documents at home desk with reading glasses, thoughtful expression, warm light',
         unsplashQuery: 'mature woman reading documents desk home',
       },
     ],
@@ -280,7 +281,7 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'two Korean women in their 60s enjoying sightseeing at a scenic Korean location together',
+        dallePrompt: 'two Korean women in their late 40s to early 50s enjoying sightseeing at a scenic Korean location together',
       },
     ],
     '요리': [
@@ -292,7 +293,7 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman in her 60s cooking happily in a bright modern kitchen smiling',
+        dallePrompt: 'Korean woman in her late 40s to early 50s cooking happily in a bright modern kitchen smiling',
       },
     ],
     '집꾸미기': [
@@ -304,14 +305,14 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman in her 60s proudly decorating her home interior with plants and cozy items',
+        dallePrompt: 'Korean woman in her late 40s to early 50s proudly decorating her home interior with plants and cozy items',
       },
     ],
     '패션': [
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman in her 60s wearing elegant comfortable everyday Korean fashion smiling confidently',
+        dallePrompt: 'Korean woman in her late 40s to early 50s wearing elegant comfortable everyday Korean fashion smiling confidently',
       },
       {
         type: 'SCENE_PHOTO',
@@ -328,14 +329,14 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman in her 60s reading a book in a cozy sunlit Korean cafe',
+        dallePrompt: 'Korean woman in her late 40s to early 50s reading a book in a cozy sunlit Korean cafe',
       },
     ],
     '취미': [
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman in her 60s happily doing a hobby like painting or gardening with natural sunlight',
+        dallePrompt: 'Korean woman in her late 40s to early 50s happily doing a hobby like painting or gardening with natural sunlight',
       },
       {
         type: 'SCENE_PHOTO',
@@ -347,7 +348,7 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman in her 60s working confidently at a clean modern office desk',
+        dallePrompt: 'Korean woman in her late 40s to early 50s working confidently at a clean modern office desk',
       },
       {
         type: 'SCENE_PHOTO',
@@ -359,7 +360,7 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
       {
         type: 'PERSON_REAL',
         gender: 'female',
-        dallePrompt: 'Korean woman in her mid-40s warmly and gently holding hands with elderly parent at home, soft warm light, caring expression',
+        dallePrompt: 'Korean woman in her late 40s to early 50s warmly and gently holding hands with elderly parent at home, soft warm light, caring expression',
         unsplashQuery: 'daughter caring elderly parent home warm',
       },
       {

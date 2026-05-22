@@ -161,9 +161,15 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   // CPS_ENABLED=false: 쿠팡 CPS 상품 준비 완료 후 활성화
   const CPS_ENABLED = false
   // isLiked/isScrapped를 별도로 병렬 조회 (getPostDetail은 userId 없이 호출했으므로)
+  const titleKeywords = (post.seoTitle ?? post.title)
+    .replace(/[^\w\s가-힣]/g, ' ')
+    .split(/\s+/)
+    .filter((w: string) => w.length >= 2)
+    .slice(0, 3)
+
   const [cpsLinks, relatedPosts, isLiked, isScrapped] = await Promise.all([
     CPS_ENABLED ? getCachedCpsLinks(resolvedId) : Promise.resolve([] as Awaited<ReturnType<typeof getCachedCpsLinks>>),
-    getRelatedMagazinePosts(post.category ?? null, resolvedId, 5, undefined, post.seriesId ?? null),
+    getRelatedMagazinePosts(post.category ?? null, resolvedId, 5, titleKeywords, post.seriesId ?? null),
     userId
       ? prisma.like.findUnique({ where: { userId_postId: { userId, postId: resolvedId } }, select: { id: true } }).then(r => !!r)
       : Promise.resolve(false),

@@ -49,21 +49,21 @@ function buildGeminiPromptFromContext(ctx: ImageContext): string | null {
   if (ctx.type === 'PERSON_REAL') {
     const isMulti = isMultiPersonPrompt(ctx.dallePrompt)
     const subjectDesc = isMulti
-      ? 'two to three stylish Korean women in their mid-40s (age 44 to 46), genuine warm friendship, real laughter and authentic connection'
-      : 'portrait of a stylish Korean woman in her mid-40s (age 44 to 46)'
+      ? 'two to three stylish Korean women in their late 40s to early 50s (age 47 to 52), genuine warm friendship, real laughter and authentic connection'
+      : 'portrait of a stylish Korean woman in her late 40s to early 50s (age 47 to 52)'
     return [
       subjectDesc,
       ctx.dallePrompt,
       'THIS IS A PHOTOGRAPH OF REAL PEOPLE — not AI art, not illustration, not CGI',
-      'Genuine East Asian Korean facial features and bone structure, born around 1978–1982',
+      'Genuine East Asian Korean facial features and bone structure, born around 1974–1979',
       'NOT resembling any specific individual or celebrity',
-      'naturally styled dark brown to dark black hair, less than 5% grey strands, modern flattering Korean cut',
+      'naturally styled hair with subtle silver highlights (~10%, natural accent point only — not fully grey), modern flattering Korean cut',
       'candid unposed authentic lifestyle moment, warm confident expression',
       'shot on Canon EOS R5, 85mm f/1.4 portrait lens, soft bokeh',
       'soft natural window light or outdoor daylight',
       'healthy luminous skin with genuine human texture: visible pores, subtle laugh lines, NOT airbrushed',
       'photorealistic high resolution, NOT AI art NOT stock photo NOT Midjourney style',
-      'NOT gray hair, NOT elderly, NOT Western, NOT Caucasian',
+      'NOT elderly frail, NOT Western, NOT Caucasian',
       'subtle warm coral #FF6F61 accent in environment',
     ].join(', ')
   }
@@ -95,20 +95,20 @@ function buildChatGPTPromptFromContext(ctx: ImageContext): string | null {
   if (ctx.type === 'PERSON_REAL') {
     const isMulti = isMultiPersonPrompt(ctx.dallePrompt)
     const subjectDesc = isMulti
-      ? `ONLY women present, no men. Two to three stylish Korean women in their mid-40s (age 44 to 46), genuine warm friendship — real laughter, natural eye contact, authentic connection. ${ctx.dallePrompt}`
-      : `ONLY women present, no men. Portrait of a stylish Korean woman in her mid-40s (age 44 to 46). ${ctx.dallePrompt}`
+      ? `ONLY women present, no men. Two to three stylish Korean women in their late 40s to early 50s (age 47 to 52), genuine warm friendship — real laughter, natural eye contact, authentic connection. ${ctx.dallePrompt}`
+      : `ONLY women present, no men. Portrait of a stylish Korean woman in her late 40s to early 50s (age 47 to 52). ${ctx.dallePrompt}`
     return [
       subjectDesc,
       'THIS IS A PHOTOGRAPH OF REAL PEOPLE — not AI art, not illustration, not CGI',
-      'Genuine East Asian Korean facial features and bone structure, born around 1978–1982',
+      'Genuine East Asian Korean facial features and bone structure, born around 1974–1979',
       'NOT resembling any specific individual or celebrity',
-      'naturally styled dark brown to dark black hair, less than 5% grey strands, modern flattering Korean cut',
+      'naturally styled hair with subtle silver highlights (~10%, natural accent point only — not fully grey), modern flattering Korean cut',
       'candid unposed authentic lifestyle moment, warm confident smile',
       'shot on Canon EOS R5, 85mm portrait lens, sharp crisp focus, f/5.6, NO blur NO bokeh',
       'soft natural window light or outdoor daylight',
       'healthy luminous skin with genuine human texture: visible pores, subtle laugh lines, NOT airbrushed',
       'photorealistic high resolution, NOT AI art NOT stock photo NOT Midjourney style',
-      'NOT gray hair, NOT elderly, NOT Western, NOT Caucasian',
+      'NOT elderly frail, NOT Western, NOT Caucasian',
       'subtle warm coral #FF6F61 accent in environment',
     ].join(', ')
   }
