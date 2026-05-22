@@ -22,12 +22,26 @@
 
     <key>StartCalendarInterval</key>
     <array>
+        <!-- 10:40 KST (신규: popular-sync 10:30 완료 후, cafe-crawler-lunch 11:30 이전) -->
+        <dict>
+            <key>Hour</key>
+            <integer>10</integer>
+            <key>Minute</key>
+            <integer>40</integer>
+        </dict>
         <!-- 13:00 KST (점심 — fmkorea/cafe-crawler 11:30 이후) -->
         <dict>
             <key>Hour</key>
             <integer>13</integer>
             <key>Minute</key>
             <integer>0</integer>
+        </dict>
+        <!-- 15:30 KST (신규: cafe-crawler-afternoon 14:30 완료 후, popular-sync 16:00 이전) -->
+        <dict>
+            <key>Hour</key>
+            <integer>15</integer>
+            <key>Minute</key>
+            <integer>30</integer>
         </dict>
         <!-- 23:00 KST (자정 전 — fmkorea/cafe-crawler 21:30 이후) -->
         <dict>

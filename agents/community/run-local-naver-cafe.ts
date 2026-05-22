@@ -5,7 +5,7 @@
  *
  * 사용법: npx tsx agents/community/run-local-naver-cafe.ts
  * 크론: ~/Library/LaunchAgents/com.unao.naver-cafe-sheet-scraper.plist
- * 스케줄: 매일 13:00 / 23:00 KST (fmkorea 11:30/21:30, cafe-crawler 11:30/21:30과 충돌 없음)
+ * 스케줄: 매일 10:40 / 13:00 / 15:30 / 23:00 KST
  *
  * 동영상 처리: 네이버 카페 동영상은 지원 제외 — 텍스트/이미지/댓글만 발행
  * storage-state.json 없으면 자동 skip (Sheet 상태 PENDING 유지)
