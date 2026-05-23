@@ -1,15 +1,14 @@
 /**
- * P1-1 Community Slug Backfill — Dry-run Only
+ * P1-2 Community Slug Backfill — Dry-run + Write Sample (10건 한정)
  *
- * 기존 slug=null PUBLISHED 커뮤니티 글(STORY/HUMOR/LIFE2)에 대해
- * 예상 slug를 시뮬레이션합니다. DB write 없음.
- *
- * 사용:
- *   npx tsx scripts/backfill-community-slug.ts              # dry-run 50건
+ * dry-run (기본값):
+ *   npx tsx scripts/backfill-community-slug.ts              # 50건
  *   npx tsx scripts/backfill-community-slug.ts --limit 20   # 20건
  *   npx tsx scripts/backfill-community-slug.ts --offset 50  # 51번째부터
  *   npx tsx scripts/backfill-community-slug.ts --csv        # CSV 저장
- *   npx tsx scripts/backfill-community-slug.ts --write      # ❌ disabled (P1-2에서 구현)
+ *
+ * write (안전장치 3중: --write + --limit ≤10 + --confirm-write-sample 모두 필요):
+ *   npx tsx scripts/backfill-community-slug.ts --write --limit 10 --confirm-write-sample
  */
 import { writeFileSync } from 'fs'
 import { join, dirname } from 'path'
@@ -26,8 +25,11 @@ const BOARDS = ['STORY', 'HUMOR', 'LIFE2']
 // ── args parsing ──────────────────────────────────────────────────────────────
 const args = process.argv.slice(2)
 
-if (args.includes('--write')) {
-  console.error('[Backfill] ❌ --write mode is disabled in P1-1. Use P1-2 script for actual write.')
+const isWrite         = args.includes('--write')
+const isConfirmSample = args.includes('--confirm-write-sample')
+
+if (isWrite && !isConfirmSample) {
+  console.error('[Backfill] ❌ --write requires --confirm-write-sample flag (safety guard).')
   process.exitCode = 1
   process.exit(1)
 }
@@ -39,9 +41,15 @@ function getArg(flag: string, defaultVal: number): number {
   return isNaN(val) ? defaultVal : val
 }
 
-const limit  = getArg('--limit',  50)
-const offset = getArg('--offset', 0)
+const limit   = getArg('--limit',  50)
+const offset  = getArg('--offset', 0)
 const csvMode = args.includes('--csv')
+
+if (isWrite && limit > 10) {
+  console.error(`[Backfill] ❌ --write mode: --limit must not exceed 10. Got: ${limit}`)
+  process.exitCode = 1
+  process.exit(1)
+}
 
 // ── in-batch duplicate tracker ────────────────────────────────────────────────
 const assignedInBatch = new Set<string>()
@@ -68,28 +76,20 @@ async function computeExpectedSlug(title: string): Promise<SlugResult> {
   const suffixes = ['', '-2', '-3', '-4', '-5', '-6', '-7', '-8', '-9']
   for (const sfx of suffixes) {
     const candidate = base + sfx
-    // 이번 배치 내 중복 회피
     if (assignedInBatch.has(candidate)) continue
-    // DB 기존 slug 충돌 확인
     const exists = await p.post.findUnique({ where: { slug: candidate }, select: { id: true } })
     if (!exists) {
       assignedInBatch.add(candidate)
-      return {
-        slug: candidate,
-        isFallback: false,
-        hasSuffix: sfx !== '',
-        isTruncated,
-      }
+      return { slug: candidate, isFallback: false, hasSuffix: sfx !== '', isTruncated }
     }
   }
 
-  // -2 ~ -9 모두 사용 중 → timestamp fallback
   const tsSlug = `${base}-${Date.now()}`
   assignedInBatch.add(tsSlug)
   return { slug: tsSlug, isFallback: false, hasSuffix: true, isTruncated }
 }
 
-// ── CSV row type ──────────────────────────────────────────────────────────────
+// ── row types ─────────────────────────────────────────────────────────────────
 interface CsvRow {
   id: string
   boardType: string
@@ -103,24 +103,30 @@ interface CsvRow {
   isTruncated: boolean
 }
 
+interface WriteLogRow {
+  id: string
+  boardType: string
+  source: string
+  createdAt: string
+  title: string
+  oldSlug: string
+  newSlug: string
+  updatedAt: string
+}
+
+type PostRow = { id: string; boardType: string; source: string; createdAt: Date; title: string }
+
 // ── main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log(`\n[Backfill DryRun] ✅ DB write 없음 | limit=${limit} offset=${offset} csv=${csvMode}`)
+  const modeLabel = isWrite ? '⚠️  WRITE MODE' : '✅ DB write 없음'
+  console.log(`\n[Backfill ${isWrite ? 'Write' : 'DryRun'}] ${modeLabel} | limit=${limit} offset=${offset} csv=${csvMode}`)
 
-  // 전체 대상 수
   const totalTarget: number = await p.post.count({
     where: { boardType: { in: BOARDS }, status: 'PUBLISHED', slug: null },
   })
-  console.log(`[Backfill DryRun] 전체 대상: ${totalTarget}건\n`)
+  console.log(`[Backfill] slug=null 전체 대상: ${totalTarget}건\n`)
 
-  // 대상 조회 (createdAt 오름차순 — 오래된 글이 clean slug 우선)
-  const posts: Array<{
-    id: string
-    boardType: string
-    source: string
-    createdAt: Date
-    title: string
-  }> = await p.post.findMany({
+  const posts: PostRow[] = await p.post.findMany({
     where: { boardType: { in: BOARDS }, status: 'PUBLISHED', slug: null },
     orderBy: { createdAt: 'asc' },
     skip: offset,
@@ -129,12 +135,99 @@ async function main() {
   })
 
   if (posts.length === 0) {
-    console.log('[Backfill DryRun] 처리할 대상이 없습니다.')
+    console.log('[Backfill] 처리할 대상이 없습니다.')
     return
   }
 
-  // ── header ──
   const H = (s: string, w: number) => s.slice(0, w).padEnd(w)
+
+  // ── WRITE MODE ───────────────────────────────────────────────────────────────
+  if (isWrite) {
+    // Phase 1: 모든 slug 사전 계산 (DB write 없음)
+    console.log('[Backfill Write] Phase 1: 예상 slug 계산 중...')
+    const preview: Array<{ post: PostRow; slug: string; result: SlugResult }> = []
+    for (const post of posts) {
+      const result = await computeExpectedSlug(post.title)
+      preview.push({ post, slug: result.slug, result })
+    }
+
+    // 사전 확인 테이블
+    console.log('\n[Backfill Write] ⚠️  다음 대상에 slug를 부여합니다:')
+    console.log(
+      H('idx', 5) + H('id(끝8)', 10) + H('board', 8) + H('src', 8) +
+      H('date', 12) + H('newSlug', 52) + H('len', 5) + 'suffix'
+    )
+    console.log('─'.repeat(110))
+    for (let i = 0; i < preview.length; i++) {
+      const { post, slug, result } = preview[i]
+      console.log(
+        H(String(offset + i + 1), 5) +
+        H(post.id.slice(-8), 10) +
+        H(post.boardType, 8) +
+        H(post.source, 8) +
+        H(post.createdAt.toISOString().slice(0, 10), 12) +
+        H(slug, 52) +
+        H(String(slug.length), 5) +
+        (result.hasSuffix ? '✓' : '')
+      )
+    }
+    console.log()
+
+    // Phase 2: 실제 DB write
+    console.log('[Backfill Write] Phase 2: DB slug 업데이트 시작...')
+    const writeLogs: WriteLogRow[] = []
+    let writeCount = 0
+
+    for (const { post, slug } of preview) {
+      await p.post.update({ where: { id: post.id }, data: { slug } })
+      const updatedAt = new Date().toISOString()
+      writeLogs.push({
+        id: post.id,
+        boardType: post.boardType,
+        source: post.source,
+        createdAt: post.createdAt.toISOString().slice(0, 10),
+        title: post.title,
+        oldSlug: 'null',
+        newSlug: slug,
+        updatedAt,
+      })
+      writeCount++
+      console.log(`  [${writeCount}/${preview.length}] ${post.id.slice(-8)} → ${slug}`)
+    }
+
+    // 사후 검증: slug=null 감소 확인
+    const afterTotal: number = await p.post.count({
+      where: { boardType: { in: BOARDS }, status: 'PUBLISHED', slug: null },
+    })
+    const decreased = totalTarget - afterTotal
+
+    console.log('\n' + '═'.repeat(80))
+    console.log('[Backfill Write] ✅ 완료')
+    console.log('═'.repeat(80))
+    console.log(`slug 부여:  ${writeCount}건`)
+    console.log(`slug=null:  ${totalTarget}건 → ${afterTotal}건 (감소: ${decreased}건)`)
+    if (decreased !== writeCount) {
+      console.error(`[Backfill Write] ⚠️  감소량 불일치: 예상 ${writeCount}건 / 실제 ${decreased}건`)
+    } else {
+      console.log('✅ slug=null 감소량 일치')
+    }
+
+    // write 로그 CSV (rollback용)
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+    const logPath = join(__dirname, `backfill-community-slug-write-sample-${ts}.csv`)
+    const header = 'id,boardType,source,createdAt,title,oldSlug,newSlug,updatedAt'
+    const lines = writeLogs.map(r =>
+      [r.id, r.boardType, r.source, r.createdAt,
+       `"${r.title.replace(/"/g, '""')}"`,
+       r.oldSlug, r.newSlug, r.updatedAt,
+      ].join(',')
+    )
+    writeFileSync(logPath, [header, ...lines].join('\n'), 'utf-8')
+    console.log(`\n📄 Rollback 로그: ${logPath}`)
+    return
+  }
+
+  // ── DRY-RUN MODE ─────────────────────────────────────────────────────────────
   console.log(
     H('idx', 5) + H('id(끝8)', 10) + H('board', 8) + H('src', 8) +
     H('date', 12) + H('expectedSlug', 52) + H('len', 5) + H('fallback', 10) + 'suffix'
@@ -159,16 +252,12 @@ async function main() {
     boardCounts[post.boardType] = (boardCounts[post.boardType] ?? 0) + 1
     sourceCounts[post.source]   = (sourceCounts[post.source]   ?? 0) + 1
 
-    const idx    = offset + i + 1
-    const idTail = post.id.slice(-8)
-    const date   = post.createdAt.toISOString().slice(0, 10)
-
     console.log(
-      H(String(idx), 5) +
-      H(idTail, 10) +
+      H(String(offset + i + 1), 5) +
+      H(post.id.slice(-8), 10) +
       H(post.boardType, 8) +
       H(post.source, 8) +
-      H(date, 12) +
+      H(post.createdAt.toISOString().slice(0, 10), 12) +
       H(slug, 52) +
       H(String(slug.length), 5) +
       H(isFallback ? '⚠️ fallback' : '', 10) +
@@ -179,7 +268,7 @@ async function main() {
       id: post.id,
       boardType: post.boardType,
       source: post.source,
-      createdAt: date,
+      createdAt: post.createdAt.toISOString().slice(0, 10),
       title: post.title,
       expectedSlug: slug,
       slugLength: slug.length,
@@ -189,7 +278,6 @@ async function main() {
     })
   }
 
-  // ── 요약 ──
   console.log('\n' + '═'.repeat(80))
   console.log('[Backfill DryRun] 결과 요약')
   console.log('═'.repeat(80))
@@ -206,23 +294,14 @@ async function main() {
 
   console.log('\n✅ DB write 없음 — dry-run 완료')
 
-  // ── CSV 저장 ──
   if (csvMode && csvRows.length > 0) {
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
     const csvPath = join(__dirname, `backfill-community-slug-dryrun-${ts}.csv`)
     const header = 'id,boardType,source,createdAt,title,expectedSlug,slugLength,isFallback,hasSuffix,isTruncated'
     const lines = csvRows.map(r =>
-      [
-        r.id,
-        r.boardType,
-        r.source,
-        r.createdAt,
-        `"${r.title.replace(/"/g, '""')}"`,
-        r.expectedSlug,
-        r.slugLength,
-        r.isFallback,
-        r.hasSuffix,
-        r.isTruncated,
+      [r.id, r.boardType, r.source, r.createdAt,
+       `"${r.title.replace(/"/g, '""')}"`,
+       r.expectedSlug, r.slugLength, r.isFallback, r.hasSuffix, r.isTruncated,
       ].join(',')
     )
     writeFileSync(csvPath, [header, ...lines].join('\n'), 'utf-8')
@@ -232,7 +311,7 @@ async function main() {
 
 main()
   .catch((err: unknown) => {
-    console.error('[Backfill DryRun] ❌ 에러:', err)
+    console.error('[Backfill] ❌ 에러:', err)
     process.exitCode = 1
   })
   .finally(() => disconnect())
