@@ -14,6 +14,7 @@ import {
   PERSONAS,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
+import { generateCommunitySlug } from '../core/slug.js'
 
 const HEALTH_CAP = 2
 const MAX_PUBLISH = 5
@@ -119,6 +120,8 @@ export async function main() {
     try {
       const userId = await getCuratorBotUser(persona)
 
+      const slug = await generateCommunitySlug(title)
+
       const postId = await prisma.$transaction(async tx => {
         const newPost = await tx.post.create({
           data: {
@@ -132,6 +135,7 @@ export async function main() {
             source: 'BOT',
             status: 'PUBLISHED',
             publishedAt: new Date(),
+            slug,
           },
         })
         await tx.cafePost.update({

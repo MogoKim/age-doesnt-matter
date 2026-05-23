@@ -8,6 +8,7 @@ import type { ControversyTopic } from '../core/intelligence.js'
 import { getPersona } from './persona-data.js'
 import { safeBotLog } from '../core/safe-log.js'
 import { COMPETITOR_KEYWORDS } from '../cafe/config.js'
+import { generateCommunitySlug } from '../core/slug.js'
 
 /** 페르소나 → 욕망 카테고리 역방향 매핑 (다양성 캡용) */
 const PERSONA_DESIRE: Record<string, string> = {}
@@ -472,6 +473,7 @@ async function runActivity(activity: Activity): Promise<void> {
     }
 
     // Fix 13-E: create() 반환값 직접 캡처 (findFirst race condition 방지)
+    const slug = await generateCommunitySlug(title)
     const newPost = await prisma.post.create({
       data: {
         title,
@@ -483,6 +485,7 @@ async function runActivity(activity: Activity): Promise<void> {
         source: 'BOT',
         status: 'PUBLISHED',
         publishedAt: new Date(),
+        slug,
       },
       select: { id: true },
     })
@@ -882,6 +885,7 @@ export async function runKillerPostCycle(): Promise<void> {
     }
   }
 
+  const slug = await generateCommunitySlug(title)
   const newPost = await prisma.post.create({
     data: {
       title,
@@ -895,6 +899,7 @@ export async function runKillerPostCycle(): Promise<void> {
       isFeatured: true,
       featuredAt: new Date(),
       cafePostId: candidate.id,
+      slug,
     },
     select: { id: true },
   })

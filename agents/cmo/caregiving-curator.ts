@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { ensureBotUser } from '../core/bot-user.js'
+import { generateCommunitySlug } from '../core/slug.js'
 
 /**
  * CMO Caregiving Curator -- P5 현주씨 타겟
@@ -148,6 +149,7 @@ async function main() {
 
   // 3. Post 저장
   const botUserId = await ensureBotUser('bot-caregiving@unao.bot', '돌봄길잡이', 'bot-caregiving')
+  const slug = await generateCommunitySlug(digest.title)
   const post = await prisma.post.create({
     data: {
       title: digest.title,
@@ -158,6 +160,7 @@ async function main() {
       authorId: botUserId,
       source: 'BOT',
       status: 'PUBLISHED',
+      slug,
     },
   })
   console.log(`[CaregivingCurator] Post 저장: ${post.id}`)

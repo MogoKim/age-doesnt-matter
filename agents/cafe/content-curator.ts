@@ -23,6 +23,7 @@ import {
   toCuratedSummary,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
+import { generateCommunitySlug } from '../core/slug.js'
 
 
 /** 참고용 원본 글 가져오기 — 3단계 fallback (B19+B24)
@@ -151,6 +152,11 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
     }
   }
 
+  // slug 생성 (transaction 전 — JOB 게시판 제외)
+  const slug = curated.boardType !== 'JOB'
+    ? await generateCommunitySlug(curated.title)
+    : undefined
+
   // post 생성 + cafePost usedAt 마킹을 트랜잭션으로 묶어 원자성 보장
   const postId = await prisma.$transaction(async (tx) => {
     const post = await tx.post.create({
@@ -165,6 +171,7 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
         status: 'PUBLISHED',
         publishedAt: new Date(),
         cafePostId: curated.sourcePostIds[0] ?? null,
+        ...(slug ? { slug } : {}),
       },
     })
     if (curated.sourcePostIds.length > 0) {

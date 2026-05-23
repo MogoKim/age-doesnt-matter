@@ -22,6 +22,7 @@ import { chromium, type BrowserContext, type Page, type Frame } from 'playwright
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
+import { generateCommunitySlug } from '../core/slug.js'
 import { readPendingRows, updateRow } from './sheets-client.js'
 import { detectSite, randomUserAgent, isCloudflareChallenge, type SiteConfig } from './site-configs.js'
 import { processContentMedia } from './image-pipeline.js'
@@ -492,7 +493,7 @@ export async function main() {
             }
             const existingDeleted = await prisma.post.findFirst({
               where: { sourceUrl: row.sourceUrl, status: 'DELETED' },
-              select: { id: true },
+              select: { id: true, slug: true },
             })
 
             if (!siteConfig) {
@@ -538,6 +539,7 @@ export async function main() {
             const userId = await getBotUser(persona.id)
 
             // 게시 (삭제된 게시글 재활용 또는 신규 생성)
+            const slug = await generateCommunitySlug(finalTitle)
             const postData = {
               title: finalTitle,
               content,
@@ -556,12 +558,13 @@ export async function main() {
             const post = existingDeleted
               ? await prisma.post.update({
                   where: { id: existingDeleted.id },
-                  data: postData,
+                  // 복원 글: 기존 slug가 있으면 유지, 없으면 신규 slug 부여
+                  data: existingDeleted.slug ? postData : { ...postData, slug },
                 })
-              : await prisma.post.create({ data: postData })
+              : await prisma.post.create({ data: { ...postData, slug } })
 
-            // 게시글 URL 생성
-            const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${getBoardSlug(tab.boardType)}/${post.id}`
+            // 게시글 URL 생성 (slug 우선)
+            const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${getBoardSlug(tab.boardType)}/${post.slug ?? post.id}`
 
             // BotLog 파동 예약 — details는 scheduler가 JSON.parse()로 읽는 구조
             const now = new Date()
