@@ -79,7 +79,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F08 | 검색 | `src/app/(main)/search/` | 사용자 검색 | ALL | ALL | `docs/specs/04-search.md` | ACTIVE | 2026-05-15 |
 | F09 | 어드민 패널 | `src/app/(admin)/` + `src/app/admin/(panel)/` + `src/components/admin/ContentTable.tsx` + `src/lib/queries/admin/admin.content.ts` | 운영자 접근 | INFRA | — | [F09](F09-admin-panel.md) | ACTIVE | 2026-05-20 |
 | F10 | 최상단 띠 배너 | `src/components/layouts/TopPromoBanner.tsx` + `TopPromoBannerClient.tsx` + `src/components/admin/TopPromoBannerPanel.tsx` | DB Setting 테이블 (어드민 관리) | RELATION | ALL | [F10](F10-top-promo-banner.md) | ACTIVE | 2026-04-29 |
-| F11 | 비회원 댓글+좋아요 | `src/lib/actions/guest-comments.ts` + `src/lib/actions/guest-likes.ts` + `src/lib/turnstile.ts` + `src/components/features/community/GuestCommentInput.tsx` + `GuestPasswordModal.tsx` | 비로그인 사용자 직접 참여 | RELATION | P1/P2/P3 | [F11](F11-guest-comment-like.md) | ACTIVE | 2026-05-12 |
+| F11 | 비회원 댓글+좋아요 | `src/lib/actions/guest-comments.ts` + `src/lib/actions/guest-likes.ts` + `src/lib/turnstile.ts` + `src/components/features/community/GuestCommentInput.tsx` + `GuestPasswordModal.tsx` | 비로그인 사용자 직접 참여 | RELATION | P1/P2/P3 | [F11](F11-guest-comment-like.md) | ACTIVE | 2026-05-23 |
 | F12 | HOT/명예의 전당 승격 시스템 | `src/lib/actions/promotion.ts` + `src/lib/actions/likes.ts` + `src/lib/actions/guest-likes.ts` + `src/lib/actions/comments.ts` + `src/lib/queries/boards.ts` + `src/lib/actions/admin/admin.content.ts` + `src/components/admin/ContentTable.tsx` | 좋아요+댓글 수 기반 자동 승격 (HOT/HALL_OF_FAME) | RELATION | P3 | [F12](F12-promotion-system.md) | ACTIVE | 2026-05-12 |
 
 ---
@@ -88,7 +88,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 스케줄/트리거 | 실행환경 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|-------------|---------|---------|------------|------|------|---------|
-| A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` + `content-curator.ts` + `run-pipeline.ts` | launchd 07:40·09:30·11:30·14:30·17:30·21:30·00:30 KST + GHA 45분 간격 20슬롯 | LOCAL_ONLY | INFRA | — | [A01](A01-cafe-crawler.md) | ACTIVE | 2026-05-21 |
+| A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` + `content-curator.ts` + `run-pipeline.ts` | launchd 07:40·09:30·11:30·14:30·17:30·21:30·00:30 KST + GHA 45분 간격 20슬롯 | LOCAL_ONLY | INFRA | — | [A01](A01-cafe-crawler.md) | ACTIVE | 2026-05-22 |
 | A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 11:00, 14:00 KST | LOCAL_ONLY | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-13 |
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/community/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | agents-scraper.yml 07:30·09:00·12:00·15:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | RELATION | P1·P3 | [A04](A04-external-content.md) | ACTIVE | 2026-05-21 |
@@ -105,19 +105,19 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A15 | CTO QA 검증 | `agents/cto/qa-verifier.ts` | GHA 주간 | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A16 | COO 커넥션 퍼실리테이터 | `agents/coo/connection-facilitator.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
 | A17 | COO 일자리 매처 | `agents/coo/job-matcher.ts` | GHA 일간 | GHA | MONEY | P4 | — | ACTIVE | 2026-05-12 |
-| A18 | COO 댓글 활성화 | `agents/coo/comment-activator.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
+| A18 | COO 댓글 활성화 | `agents/coo/comment-activator.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-23 |
 | A19 | COO 답글 체인 드라이버 | `agents/coo/reply-chain-driver.ts` | GHA 일간 | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
 | A20 | CPO 페르소나 다양성 체커 | `agents/cpo/persona-diversity-checker.ts` | GHA 주간 | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A21 | CDO 참여 최적화 | `agents/cdo/engagement-optimizer.ts` | GHA 일간 | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A22 | Strategist 사용자 딥 분석 | `agents/strategist/user-deep-analysis.ts` | GHA 목 09:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A23 | Seed 킬러 포스트 | `agents/seed/scheduler.ts` (killer-post) | GHA 09:10·22:10 KST | GHA | RELATION | ALL | — | ACTIVE | 2026-05-19 |
-| A24 | Seed 바이럴 웨이브 | `agents/seed/scheduler.ts` (viral-waves) | GHA 5분마다 (agents-sheet-viral.yml) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-21 |
+| A24 | Seed 바이럴 웨이브 | `agents/seed/scheduler.ts` (viral-waves) | GHA 5분마다 (agents-sheet-viral.yml) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-23 |
 | A25 | 논란 체인 | `agents/seed/controversy-chain.ts` | GHA 하루 16회 (seed 동일) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
 | A26 | Design 광고 루프 | `agents/marketing-loop/creative-optimizer.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A27 | QA 코드 게이트 | `agents/qa/pre-deploy-gate.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A28 | 네이버 블로그 수동 발행 큐 | `agents/naver-blog/*`, `src/app/admin/(panel)/naver-blog/*` | LOCAL 12:30/18:30 KST | LOCAL_ONLY | GROWTH | — | Gemini 이미지 포함 | ACTIVE | 2026-05-14 |
-| A29 | 댓글 파동 프로세서 | `agents/cafe/wave-processor.ts` + `src/app/api/internal/comment-wave/route.ts` | GHA `*/5 * * * *` (wave1~4 순차) / content-curator 발행 즉시 API 호출 | GHA+API | RELATION | ALL | [A29](A29-comment-wave.md) | ACTIVE | 2026-05-22 |
-| A30 | 카페 인기글 sync+큐레이션 | `agents/cafe/popular-sync.ts` + `agents/cafe/popular-curator.ts` + `agents/cafe/curator-shared.ts` | launchd 10:30/16:00/21:15 KST (sync) + GHA 10:50/16:15/21:30 KST (curate) | LOCAL+GHA | HEALTH+RELATION | ALL | [A30](A30-popular-sync.md) | ACTIVE | 2026-05-21 |
+| A29 | 댓글 파동 프로세서 | `agents/cafe/wave-processor.ts` + `src/app/api/internal/comment-wave/route.ts` | GHA `*/5 * * * *` (wave1~4 순차) / content-curator 발행 즉시 API 호출 | GHA+API | RELATION | ALL | [A29](A29-comment-wave.md) | ACTIVE | 2026-05-23 |
+| A30 | 카페 인기글 sync+큐레이션 | `agents/cafe/popular-sync.ts` + `agents/cafe/popular-curator.ts` + `agents/cafe/curator-shared.ts` | launchd 10:30/16:00/21:15 KST (sync) + GHA 10:50/16:15/21:30 KST (curate) | LOCAL+GHA | HEALTH+RELATION | ALL | [A30](A30-popular-sync.md) | ACTIVE | 2026-05-22 |
 
 ---
 

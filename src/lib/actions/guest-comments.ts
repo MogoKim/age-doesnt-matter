@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { verifyTurnstile } from '@/lib/turnstile'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import bcrypt from 'bcryptjs'
 import { calculateTrendingScore } from '@/lib/utils/trending'
 
@@ -109,6 +109,7 @@ export async function createGuestComment({
   })().catch(() => {})
 
   revalidatePath('/community')
+  revalidateTag('home-trending')
   return { id: comment.id }
 }
 

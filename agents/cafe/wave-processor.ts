@@ -18,6 +18,7 @@ import { getAllPersonaIds } from '../seed/persona-data.js'
 import { sendSlackMessage } from '../core/notifier.js'
 import { parseTopComments } from './types.js'
 import { replaceCafeReferences } from './curator-shared.js'
+import { refreshPostTrendingScore } from '../core/post-trending.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
@@ -212,9 +213,10 @@ async function processAuthorReplyLegacy(
     }),
     prisma.post.update({
       where: { id: queue.postId },
-      data: { commentCount: { increment: 1 } },
+      data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() },
     }),
   ])
+  await refreshPostTrendingScore(queue.postId).catch(() => {})
   console.log(`[WaveProcessor] 작성자 대댓글(legacy): postId=${queue.postId}`)
 }
 
@@ -325,9 +327,10 @@ async function processWaveLegacy(
     }),
     prisma.post.update({
       where: { id: queue.postId },
-      data: { commentCount: { increment: 1 } },
+      data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() },
     }),
   ])
+  await refreshPostTrendingScore(queue.postId).catch(() => {})
 
   const doneField = `wave${waveNum}Done` as WaveDoneKey
   await prisma.commentWaveQueue.update({
@@ -391,6 +394,7 @@ async function processAuthorRepliesV2(
 
   let replyCount = usedParentIds.size
   if (replyCount >= allowedReplyCount) return
+  const initialReplyCount = replyCount
 
   for (const botComment of botComments) {
     if (replyCount >= allowedReplyCount) break
@@ -420,7 +424,7 @@ async function processAuthorRepliesV2(
       }),
       prisma.post.update({
         where: { id: queue.postId },
-        data: { commentCount: { increment: 1 } },
+        data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() },
       }),
     ])
 
@@ -429,6 +433,7 @@ async function processAuthorRepliesV2(
     replyCount++
   }
 
+  if (replyCount > initialReplyCount) await refreshPostTrendingScore(queue.postId).catch(() => {})
   console.log(`[WaveProcessor] v2 대댓글: postId=${queue.postId}, count=${replyCount}/${allowedReplyCount}`)
 }
 
@@ -558,7 +563,7 @@ async function processWaveV2(
         }),
         prisma.post.update({
           where: { id: queue.postId },
-          data: { commentCount: { increment: 1 } },
+          data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() },
         }),
       ])
 
@@ -609,6 +614,7 @@ async function processWaveV2(
       console.log(
         `[WaveProcessor] wave${waveNum}(v2) 완료: postId=${queue.postId}, tier=${tier}, created=${actualCount}/${waveTargetCount}`
       )
+      if (actualCount > 0) await refreshPostTrendingScore(queue.postId).catch(() => {})
     }
   }
 }

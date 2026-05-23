@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { calculateTrendingScore } from '../core/trending.js'
+import { refreshPostTrendingScore } from '../core/post-trending.js'
 import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP, generateKillerPost, generateKillerComments, generateSheetViralComment } from './generator.js'
 import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
 import type { ControversyTopic } from '../core/intelligence.js'
@@ -1145,7 +1146,7 @@ async function processViralLikeWave(postId: string, personaIds: string[]): Promi
         await tx.like.create({ data: { userId, postId } })
         const updated = await tx.post.update({
           where: { id: postId },
-          data: { likeCount: { increment: 1 } },
+          data: { likeCount: { increment: 1 }, lastEngagedAt: new Date() },
           select: { likeCount: true, authorId: true },
         })
         await tx.user.update({
@@ -1170,6 +1171,7 @@ async function processViralLikeWave(postId: string, personaIds: string[]): Promi
       continue
     }
   }
+  if (liked > 0) await refreshPostTrendingScore(postId).catch(() => {})
   return liked
 }
 
@@ -1247,6 +1249,7 @@ export async function processSheetEngagementWaves(): Promise<void> {
         ])
         inserted++
       }
+      if (inserted > 0) await refreshPostTrendingScore(data.postId).catch(() => {})
       console.log(`[SheetEngage] 일반 댓글 ${inserted}개 투입 (postId=${data.postId.slice(0, 8)})`)
     }
 
@@ -1352,6 +1355,7 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
         ])
         inserted++
       }
+      if (inserted > 0) await refreshPostTrendingScore(data.postId).catch(() => {})
       console.log(`[SheetViral] ${waveType} 파동 댓글 ${inserted}개 투입 (postId=${data.postId.slice(0, 8)})`)
     }
 

@@ -2,6 +2,7 @@ import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { generateComment, getBotUser } from '../seed/generator.js'
 import { safeBotLog } from '../core/safe-log.js'
+import { refreshPostTrendingScore } from '../core/post-trending.js'
 
 /**
  * COO 에이전트 — 댓글 활성화
@@ -109,7 +110,7 @@ async function main() {
             }),
             prisma.post.update({
               where: { id: post.id },
-              data: { commentCount: { increment: 1 } },
+              data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() },
             }),
           ])
 
@@ -119,6 +120,7 @@ async function main() {
 
         if (commentsAdded > 0) {
           postCount++
+          await refreshPostTrendingScore(post.id).catch(() => {})
         }
 
         console.log(`[COO] 댓글 활성화: "${post.title}" (${post.boardType}) +${commentsAdded}`)
