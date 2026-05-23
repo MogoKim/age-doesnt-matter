@@ -43,3 +43,4 @@ npx tsx --env-file=../.env.local scripts/backfill-community-slug.ts --write --li
 | 2026-05-23 | P1-1: dry-run 스크립트 최초 생성 | SEO slug 부재 조사 |
 | 2026-05-23 | P1-2: --write --confirm-write-sample 모드 추가 (10건 샘플) | 안전한 점진적 적용 |
 | 2026-05-23 | P1-3: --confirm-write-batch 모드 추가 (100건 배치) | 대량 적용 확장 |
+| 2026-05-23 | P1-4: --confirm-write-large-batch 모드 추가 (500건 배치) | 대량 적용 확장 |

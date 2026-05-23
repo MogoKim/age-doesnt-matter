@@ -27,12 +27,13 @@ const BOARDS = ['STORY', 'HUMOR', 'LIFE2']
 // ── args parsing ──────────────────────────────────────────────────────────────
 const args = process.argv.slice(2)
 
-const isWrite         = args.includes('--write')
-const isConfirmSample = args.includes('--confirm-write-sample')
-const isConfirmBatch  = args.includes('--confirm-write-batch')
+const isWrite             = args.includes('--write')
+const isConfirmSample     = args.includes('--confirm-write-sample')
+const isConfirmBatch      = args.includes('--confirm-write-batch')
+const isConfirmLargeBatch = args.includes('--confirm-write-large-batch')
 
-if (isWrite && !isConfirmSample && !isConfirmBatch) {
-  console.error('[Backfill] ❌ --write requires --confirm-write-sample (≤10건) or --confirm-write-batch (≤100건).')
+if (isWrite && !isConfirmSample && !isConfirmBatch && !isConfirmLargeBatch) {
+  console.error('[Backfill] ❌ --write requires --confirm-write-sample (≤10건) or --confirm-write-batch (≤100건) or --confirm-write-large-batch (≤500건).')
   process.exitCode = 1
   process.exit(1)
 }
@@ -48,14 +49,20 @@ const limit   = getArg('--limit',  50)
 const offset  = getArg('--offset', 0)
 const csvMode = args.includes('--csv')
 
-if (isWrite && isConfirmSample && !isConfirmBatch && limit > 10) {
+if (isWrite && isConfirmSample && !isConfirmBatch && !isConfirmLargeBatch && limit > 10) {
   console.error(`[Backfill] ❌ --confirm-write-sample: --limit must not exceed 10. Got: ${limit}`)
   process.exitCode = 1
   process.exit(1)
 }
 
-if (isWrite && isConfirmBatch && limit > 100) {
+if (isWrite && isConfirmBatch && !isConfirmLargeBatch && limit > 100) {
   console.error(`[Backfill] ❌ --confirm-write-batch: --limit must not exceed 100. Got: ${limit}`)
+  process.exitCode = 1
+  process.exit(1)
+}
+
+if (isWrite && isConfirmLargeBatch && limit > 500) {
+  console.error(`[Backfill] ❌ --confirm-write-large-batch: --limit must not exceed 500. Got: ${limit}`)
   process.exitCode = 1
   process.exit(1)
 }
