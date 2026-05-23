@@ -1,14 +1,16 @@
 /**
- * P1-2 Community Slug Backfill — Dry-run + Write Sample (10건 한정)
+ * P1-3 Community Slug Backfill — Dry-run + Write (샘플 10건 / 배치 100건)
  *
  * dry-run (기본값):
  *   npx tsx scripts/backfill-community-slug.ts              # 50건
  *   npx tsx scripts/backfill-community-slug.ts --limit 20   # 20건
- *   npx tsx scripts/backfill-community-slug.ts --offset 50  # 51번째부터
  *   npx tsx scripts/backfill-community-slug.ts --csv        # CSV 저장
  *
- * write (안전장치 3중: --write + --limit ≤10 + --confirm-write-sample 모두 필요):
+ * write 샘플 (--limit ≤10):
  *   npx tsx scripts/backfill-community-slug.ts --write --limit 10 --confirm-write-sample
+ *
+ * write 배치 (--limit ≤100):
+ *   npx tsx scripts/backfill-community-slug.ts --write --limit 100 --confirm-write-batch --csv
  */
 import { writeFileSync } from 'fs'
 import { join, dirname } from 'path'
@@ -27,9 +29,10 @@ const args = process.argv.slice(2)
 
 const isWrite         = args.includes('--write')
 const isConfirmSample = args.includes('--confirm-write-sample')
+const isConfirmBatch  = args.includes('--confirm-write-batch')
 
-if (isWrite && !isConfirmSample) {
-  console.error('[Backfill] ❌ --write requires --confirm-write-sample flag (safety guard).')
+if (isWrite && !isConfirmSample && !isConfirmBatch) {
+  console.error('[Backfill] ❌ --write requires --confirm-write-sample (≤10건) or --confirm-write-batch (≤100건).')
   process.exitCode = 1
   process.exit(1)
 }
@@ -45,8 +48,14 @@ const limit   = getArg('--limit',  50)
 const offset  = getArg('--offset', 0)
 const csvMode = args.includes('--csv')
 
-if (isWrite && limit > 10) {
-  console.error(`[Backfill] ❌ --write mode: --limit must not exceed 10. Got: ${limit}`)
+if (isWrite && isConfirmSample && !isConfirmBatch && limit > 10) {
+  console.error(`[Backfill] ❌ --confirm-write-sample: --limit must not exceed 10. Got: ${limit}`)
+  process.exitCode = 1
+  process.exit(1)
+}
+
+if (isWrite && isConfirmBatch && limit > 100) {
+  console.error(`[Backfill] ❌ --confirm-write-batch: --limit must not exceed 100. Got: ${limit}`)
   process.exitCode = 1
   process.exit(1)
 }

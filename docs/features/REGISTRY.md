@@ -141,6 +141,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | I03 | Cloudflare R2 이미지 저장소 | `src/lib/r2.ts` + `agents/core/r2.ts` | INFRA | — | [I03](I03-r2-storage.md) | ACTIVE | 2026-04-27 |
 | I04 | Google Indexing API | 발행 시 자동 호출 | INFRA | — | [I04](I04-google-indexing.md) | ACTIVE | 2026-04-27 |
 | I05 | 아동 안전 표준 페이지 | `src/app/child-safety/page.tsx` | INFRA | — | — | ACTIVE | 2026-05-23 |
+| I06 | 커뮤니티 slug 백필 스크립트 | `agents/scripts/backfill-community-slug.ts` | INFRA | — | [I06](I06-community-slug-backfill.md) | ACTIVE | 2026-05-23 |
 
 ---
 
