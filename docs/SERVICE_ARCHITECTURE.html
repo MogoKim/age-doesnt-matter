@@ -395,7 +395,7 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>우나어 아키텍처</h2>
-    <div class="version">v15 &middot; 2026-05-24</div>
+    <div class="version">v16 &middot; 2026-05-24</div>
   </div>
   <nav>
     <a href="#s1" class="depth-1">1. 서비스 개요</a>
@@ -449,7 +449,7 @@
 <main class="main">
 <h1>우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서</h1>
 <blockquote>
-<p><strong>최종 업데이트</strong>: 2026-05-24 (v15 — comment-activator(COO) 에이전트 추가 · trendingScore 즉시 갱신(게스트+BOT wave+SHEET+COO) · 어드민 회원 글/댓글 드릴다운(UserContentDrawer) · post-trending.ts 신규 · wave-processor.ts v2-E 상세 보강)
+<p><strong>최종 업데이트</strong>: 2026-05-24 (v16 — /child-safety 페이지 추가(Play Store TWA 정책 대응) · comment-activator(COO) 에이전트 · trendingScore 즉시 갱신 · 어드민 드릴다운 · 운영 플래그 §3.2)
 <strong>문서 관리자</strong>: Claude Code (자동화) + 창업자 (승인)
 <strong>변경 시</strong>: 이 문서 하단 <a href="#%EB%AC%B8%EC%84%9C-%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8-%EA%B0%80%EC%9D%B4%EB%93%9C">문서 업데이트 가이드</a> 참고</p>
 </blockquote>
@@ -2771,6 +2771,10 @@
 <td>커뮤니티 규칙</td>
 </tr>
 <tr>
+<td><code>/child-safety</code></td>
+<td>아동 안전 표준 정책 (Play Store TWA 정책 대응, Static SSR, 미인증 공개)</td>
+</tr>
+<tr>
 <td><code>/contact</code></td>
 <td>문의</td>
 </tr>
@@ -3490,11 +3494,12 @@ Layer 4 — 장기 기억 (세션 간 지속)
 </tbody></table>
 <hr>
 <h2>14. 현재 상태 &amp; 남은 작업</h2>
-<h3>완료됨 (2026-05-24 기준 v15)</h3>
+<h3>완료됨 (2026-05-24 기준 v16)</h3>
 <ul>
 <li>전체 코드 구현 (<strong>49페이지, 39개 API</strong>, 77+ 컴포넌트)</li>
 <li>에이전트 시스템 ACTIVE (헌법 v5.0, <strong>78핸들러</strong> · 78명 페르소나)</li>
 <li><strong>TWA (Android) 구축 완료</strong> — assetlinks.json 배포, Play Store 심사 중</li>
+<li><strong>아동 안전 표준 페이지</strong> (2026-05-23) — Play Store 정책 대응. <code>/child-safety</code> Static SSR, 미인증 공개, CSAE 금지·신고 절차 명시 (<code>src/app/child-safety/page.tsx</code>)</li>
 <li><strong>DailyBrief 인텔리전스 시스템</strong> — 욕망 인텔리전스 + 페르소나 쿼터 자동화</li>
 <li><strong>댓글 파동 시스템 v2</strong> — 회원글 UserPostWaveQueue (1분/10분/30분/60분)</li>
 <li><strong>네이버 블로그 발행 큐</strong> — NaverBlogQueue + 어드민 관리 UI</li>
@@ -5164,6 +5169,7 @@ Slack 설정         긴급 회의             학습 축적          자동 롤
 <tr><td><strong>어드민 콘텐츠 필터 botType</strong></td><td>실고객(source=USER) / 시드봇(source=BOT, cafePostId IS NULL) / 큐레이션봇(source=BOT, cafePostId IS NOT NULL) / 스크래퍼봇(source=SHEET) / NNN(source=ADMIN) 세분화 드롭다운 필터 — getContentList() botType 파라미터 지원 (F09)</td><td>2026-05-20</td></tr>
 <tr><td><strong>어드민 회원 글/댓글 드릴다운</strong></td><td>MemberTable 글·댓글 수 클릭 → UserContentDrawer(우측 슬라이드 드로어, cursor 기반 20개 페이지네이션) — adminGetUserPosts / adminGetUserComments Server Action, 요구어드민 인증·조회 전용·DB schema 변경 없음 (F09)</td><td>2026-05-24</td></tr>
 <tr><td><strong>trendingScore 즉시 갱신</strong></td><td>반응(댓글·좋아요) 발생 즉시 홈 순위 반영. ① 게스트 revalidateTag('home-trending') ② BOT wave / COO comment-activator → lastEngagedAt + trendingScore 갱신 ③ SHEET 파동 좋아요/댓글 → trendingScore 갱신. 신규 헬퍼 agents/core/post-trending.ts (refreshPostTrendingScore). GHA 최대 6시간 공백 → 즉시 갱신으로 단축</td><td>2026-05-23</td></tr>
+<tr><td><strong>아동 안전 표준 페이지</strong></td><td>Play Store TWA 정책 대응 — <code>/child-safety</code> Static SSR 페이지 신규 추가. CSAE 금지·서비스 특성(성인 전용)·신고 절차 명시. 미인증 공개, DB 조회 없음 (src/app/child-safety/page.tsx)</td><td>2026-05-23</td></tr>
 </table>
 <hr>
 <h2>문서 업데이트 가이드</h2>
