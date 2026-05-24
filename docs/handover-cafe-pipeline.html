@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.21</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.22</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -290,12 +290,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.21</div>
+  <div class="cover-badge">Handover Document v10.22</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.21 (2026-05-24)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.22 (2026-05-25)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -1475,7 +1475,7 @@ interface CommentData {
       <tbody>
         <tr><td>일일 발행량</td><td>최대 60건/일 (슬롯 20개 × 최대 3건)</td><td>content-curator.ts L229 <code>maxPosts=3</code> — 후보 풀이 충분할 때. 이미지 없는 글만 대상</td></tr>
         <tr><td>원문 보존율</td><td>해당없음 — 원문 그대로 발행</td><td>AI 재가공 제거 (창업자 지시, 2026-05-20)</td></tr>
-        <tr><td>Wave 예약</td><td>발행 즉시 4건 예약</td><td>CommentWaveQueue: wave1~4 자동 INSERT</td></tr>
+        <tr><td>Wave 예약</td><td>발행 즉시 최대 4건 예약<br><span style="color:var(--red);font-size:12px;">단, 원본 댓글(usable)이 0개이면 queue 미등록</span></td><td>usableTopComments=0이면 <code>enqueueCommentWave</code> 스킵. CommentWaveQueue INSERT는 원본 댓글이 있는 글에만 실행됨. (content-curator + popular-curator 동일 정책)</td></tr>
         <tr><td>후보 부족 시</td><td>해당 슬롯 발행 스킵</td><td>isUsable=true + usedAt=null 후보 없으면 실행만 되고 발행 안 함</td></tr>
         <tr><td>Mac 꺼져 있을 때</td><td>기존 후보 풀로 계속 발행</td><td>GHA는 Mac 상태 무관. 단, 신규 후보 보충은 안 됨</td></tr>
       </tbody>
@@ -1548,8 +1548,14 @@ interface CommentData {
     <table>
       <thead><tr><th>규칙</th><th>기준</th></tr></thead>
       <tbody>
-        <tr><td>봇 당일 cap (P4)</td><td>오늘 이미 3개 글에 댓글 단 봇 → 선택 제외. 전체 봇이 cap 초과 시 cap 무시 fallback.</td></tr>
-        <tr><td>글당 봇 댓글 cap</td><td>동일 글에 봇 댓글 총 5개 초과 → 해당 wave 스킵</td></tr>
+        <tr><td>usable=0 — queue 미등록</td><td>원본 댓글(usableTopComments)이 0개이면 발행 시 CommentWaveQueue 자체를 생성하지 않음. content-curator / popular-curator 동일 정책.</td></tr>
+        <tr style="background:var(--red-dim)"><td><strong>BLOCK1 — title-only AI 완전 차단</strong></td><td>processWaveLegacy: refComment가 없거나 10자 미만 → 해당 wave를 <code>done=true</code>로 처리하고 즉시 return. <strong>AI 생성 완전 차단</strong> (generateComment 함수 삭제됨, SHA: 4bdf236).</td></tr>
+        <tr style="background:var(--yellow-dim)"><td><strong>BLOCK2 — 원본 댓글 수 한도</strong></td><td>usableTopComments가 1~4개인 글: 이미 달린 봇 댓글 수 ≥ usable이면 해당 wave done 처리. 원본보다 많은 댓글 금지.</td></tr>
+        <tr><td>글당 봇 댓글 전역 cap (tier별)</td><td>동일 글의 봇 댓글 총량 초과 → 해당 wave 스킵. <strong>티어별 상한: NORMAL 6개 / HOT 14개 / KILLER 20개</strong> (<code>getGlobalCap()</code> 함수). 글당 일괄 5개 상한은 <strong>잘못된 정보</strong>.</td></tr>
+        <tr><td>봇 당일 cap</td><td>오늘 이미 3개 글에 댓글 단 봇 → 선택 제외 (<code>BOT_DAILY_COMMENT_CAP=3</code>). 전체 봇이 cap 초과 시 cap 무시 fallback.</td></tr>
+        <tr><td>HUMOR_ONLY 페르소나 제한</td><td>STORY / LIFE2 게시판: HUMOR 전용 페르소나(C·R·AF·AO·AP·AX·AY) 선택 제외. JOB 게시판: AS·D 페르소나만 허용. (<code>boardPersonaFilter()</code>, SHA: 0b4a484)</td></tr>
+        <tr><td>removeEmoji</td><td>봇 댓글 본문에서 이모지 범위 제거 후 게시. 이모지 포함 댓글이 어색하게 보이는 현상 차단. (SHA: 0b4a484)</td></tr>
+        <tr><td>작성자 대댓글 (dispatchUsable 조건)</td><td>usableTopComments ≥ 5인 글에만 실행. 5개 미만이면 dispatch 시점에 대댓글 스킵. (§11 "작성자 대댓글" 참조)</td></tr>
         <tr><td>중복 방지</td><td>동일 봇이 같은 글에 이미 댓글 달았으면 스킵</td></tr>
         <tr><td>봇 식별</td><td>User.email의 @unao.bot 도메인으로 식별</td></tr>
         <tr><td>topComments 분산 참조</td><td>wave 번호 기반 인덱스 분산 → 4개 wave가 서로 다른 원본 댓글 참조</td></tr>
@@ -1557,30 +1563,30 @@ interface CommentData {
     </table>
   </div>
 
-  <h3 class="mt24">댓글 내용 출처 — topComments 원문 달기 vs AI fallback</h3>
+  <h3 class="mt24">댓글 내용 출처 — topComments 원문 달기 (AI fallback 완전 제거)</h3>
   <div class="alert ok" style="margin-bottom:12px; font-size:13px;">
-    <strong>창업자 최종 지시 (2026-05-20, SHA: 7c27f0e)</strong>: "큐레이션 댓글은 크롤된 topComments 그대로 달아라." — AI 각색 방식 폐기. 원문 우선, AI는 fallback 전용.
+    <strong>현재 정책 (SHA: 4bdf236, 2026-05-24)</strong>: <code>generateComment()</code> 함수가 wave-processor.ts에서 <strong>완전히 삭제</strong>됐다. AI fallback 경로는 더 이상 존재하지 않는다. refComment가 없거나 짧으면 AI로 보완하는 것이 아니라 해당 wave를 <strong>done 처리 후 스킵</strong>한다.
   </div>
   <div class="table-wrap" style="margin-bottom:8px;">
     <table>
-      <thead><tr><th>케이스</th><th>댓글 생성 방식</th><th>적용 조건</th></tr></thead>
+      <thead><tr><th>케이스</th><th>처리 방식</th><th>적용 조건</th></tr></thead>
       <tbody>
         <tr>
-          <td><strong>① topComments refComment 10자 이상</strong></td>
+          <td><strong>① refComment 10자 이상</strong></td>
           <td>원본 댓글 <strong>원문 그대로</strong> 사용 (AI 호출 없음)</td>
-          <td>QUICK 모드 외 대부분의 크롤에서 수집됨. plist 스케줄 전부 crawl-only → 실질적으로 Mac 크롤 글은 전부 topComments 있음</td>
+          <td>plist 스케줄 크롤-only 글은 전부 topComments 수집됨 (<code>isQuickMode=false</code> → <code>includeComments=true</code>)</td>
         </tr>
-        <tr>
-          <td><strong>② topComments 없거나 10자 미만</strong></td>
-          <td>글 제목 기반으로 <strong>AI가 직접 생성</strong> (fallback, 본문 미전달)</td>
-          <td>GHA 12:30 QUICK 모드(<code>isQuickMode=true</code>) 수집 글 또는 refComment가 너무 짧은 경우</td>
+        <tr style="background:var(--red-dim)">
+          <td><strong>② refComment 없거나 10자 미만 — BLOCK1</strong></td>
+          <td>해당 wave를 <code>wave{N}Done=true</code>로 처리하고 <strong>즉시 return</strong>. AI 생성 <strong>완전 없음</strong>.</td>
+          <td>topComments가 없거나, emoji 제거 후 10자 미만인 경우. 이 경우 해당 wave는 댓글 없이 건너뜀. title-only AI 댓글("글 내용을 보여주셔야…" 류) 구조적 차단.</td>
         </tr>
       </tbody>
     </table>
   </div>
-  <div class="alert info" style="font-size:12.5px; padding:10px 14px;">
-    <strong>10자 기준 이유</strong>: "ㅋㅋ", "맞아요" 같은 2~4자 댓글은 맥락 없이 달리면 어색하다. 10자 미만은 AI로 보완해 문맥에 맞는 댓글을 생성한다.<br>
-    <strong>자주 묻는 오해</strong>: "crawl-only에선 댓글을 안 수집하지 않나요?" — 아니다. crawl-only는 <code>isQuickMode=false</code>이므로 <code>includeComments=true</code>. 댓글이 빠지는 건 오직 12:30 GHA의 <code>quick</code> 모드 1회뿐이다.
+  <div class="alert warn" style="font-size:12.5px; padding:10px 14px;">
+    <strong>⚠️ 구버전 설명 삭제 안내</strong>: "10자 미만은 AI로 보완해 문맥에 맞는 댓글을 생성한다"는 설명은 <strong>잘못된 정보</strong>다. SHA: 4bdf236에서 <code>generateComment()</code>가 삭제되면서 AI fallback 경로가 완전히 제거됐다.<br><br>
+    <strong>자주 묻는 오해</strong>: "crawl-only에선 댓글을 안 수집하지 않나요?" — 아니다. crawl-only는 <code>isQuickMode=false</code>이므로 <code>includeComments=true</code>. 댓글이 빠지는 건 오직 GHA quick 모드 1회뿐이다.
   </div>
 
   <h3 class="mt24">SHEET 포스트(스크래퍼 글) Wave 처리 — 별도 시스템 (경로 2개)</h3>
@@ -1595,7 +1601,7 @@ interface CommentData {
         <tr><td>source 값</td><td>BOT</td><td colspan="2">SHEET</td></tr>
         <tr><td>BotLog action</td><td>CommentWaveQueue INSERT</td><td><code>SHEET_ENGAGE_COMMENT_PENDING</code></td><td><code>SHEET_COMMENT_WAVE_PENDING</code></td></tr>
         <tr><td>처리 함수</td><td>wave-processor.ts</td><td><code>processSheetEngagementWaves()</code></td><td><code>processPendingSheetCommentWaves()</code></td></tr>
-        <tr><td>댓글 생성</td><td>generateComment() / 각색</td><td><code>generateSheetViralComment()</code> + sourceComments 활용</td><td><code>generateSheetViralComment()</code> (화제성 전용)</td></tr>
+        <tr><td>댓글 생성</td><td>topComments 원문 참조 (BLOCK1/BLOCK2 적용, AI 없음)<br><span style="font-size:11px;color:var(--red);">generateComment() 삭제됨 (SHA: 4bdf236)</span></td><td><code>generateSheetViralComment()</code> + sourceComments 활용</td><td><code>generateSheetViralComment()</code> (화제성 전용)</td></tr>
         <tr><td>sourceComments 사용</td><td>topComments 활용 (있을 때)</td><td>✅ sheet-scraper가 수집한 원본 댓글 참조</td><td>✅ 동일</td></tr>
         <tr><td>TTL</td><td>60시간</td><td colspan="2">BotLog 기반 (처리 후 SUCCESS 갱신)</td></tr>
       </tbody>
@@ -1646,54 +1652,52 @@ async function processPendingSheetCommentWaves() {
     <strong>2026-05-19 버그 수정 (SHA: 44d3bb9)</strong>: <code>processPendingSheetCommentWaves()</code>가 scheduler.ts에 구현돼 있었지만 main()에서 호출이 누락돼 SHEET 포스트 화제성 댓글이 영구 PENDING 상태였다. main()에 호출 1줄 추가로 해결.
   </div>
 
-  <h3 class="mt24">viralType 기반 wave 댓글 순서 동적 조정</h3>
+  <h3 class="mt24">viralType 기반 wave 댓글 순서 동적 조정 <span style="font-size:13px;font-weight:400;color:var(--red);">⚠️ 현재 코드와 다름 — 아래 주의 참조</span></h3>
+
+  <div class="alert err" style="margin-bottom:14px;">
+    <strong>⚠️ 중요: determineWaveOrder() 함수는 현재 wave-processor.ts에 존재하지 않는다.</strong><br><br>
+    이 함수는 V2-E 리팩토링(SHA: ㉝ 관련 배포) 과정에서 <strong>삭제</strong>됐다. 현재 코드의 dispatch 루프는 항상 고정 순서 <code>for (const waveNum of [1, 2, 3, 4])</code>로 실행된다. viralType 값은 DB에 저장돼 있지만 wave 순서 결정에 사용되지 않는다.<br><br>
+    아래 표와 코드 예시는 <strong>구버전 설계 의도</strong>를 기록한 것이다. 실제 현재 동작은 모든 글이 <strong>wave1(공감) → wave2(질문) → wave3(경험) → wave4(다른관점) 고정 순서</strong>로 실행된다.
+  </div>
+
   <div class="narrative">
-    <p>psych-analyzer가 글을 분석할 때 <code>viralType</code>을 DB에 저장한다. wave-processor.ts는 이 값을 보고 wave1~4의 댓글 유형 순서를 동적으로 조정한다. 같은 "공감→질문→경험→다른관점" 순서가 아니라, 글의 감정적 특성에 맞는 순서로 wave가 실행된다.</p>
-    <p>예를 들어, 배신/배반 류의 글(<code>BETRAYAL</code>)은 첫 반응이 공감보다 "다른관점(wave4)"이 먼저 나와야 더 자연스러운 논쟁 흐름이 만들어진다. 반면 공감(EMPATHY) 글은 따뜻한 공감(wave1)이 먼저 오고 경험 공유(wave3)가 이어지는 것이 자연스럽다.</p>
+    <p>당초 설계: psych-analyzer가 글을 분석할 때 <code>viralType</code>을 DB에 저장하면, wave-processor.ts가 이 값을 보고 wave1~4의 댓글 유형 순서를 동적으로 조정하는 구조였다. 예를 들어, 배신/배반 류의 글(<code>BETRAYAL</code>)은 "다른관점(wave4)"이 먼저 나오도록 순서를 재배치하는 식이다.</p>
+    <p>현재 구현: V2-E 도입 이후 wave는 tier별 count와 v2/legacy 분기 구조로 크게 바뀌었고, 그 과정에서 <code>determineWaveOrder()</code>와 <code>remapWaveType()</code>이 제거됐다. 재구현 예정이나 일정 미정.</p>
   </div>
 
   <div class="table-wrap">
     <table>
-      <thead><tr><th>viralType</th><th>의미</th><th>wave 순서</th><th>이유</th></tr></thead>
+      <thead><tr><th>viralType</th><th>의미</th><th>당초 설계 wave 순서</th><th>현재 실제 동작</th></tr></thead>
       <tbody>
-        <tr><td><code>BETRAYAL</code></td><td>배신·배반 이야기</td><td>다른관점 → 공감 → 경험 → 질문<br><span style="color:var(--muted);font-size:12px;">[4, 1, 3, 2]</span></td><td>배신 글엔 먼저 "그게 맞는 건가요?" 같은 의문 댓글이 자연스러움</td></tr>
-        <tr><td><code>INJUSTICE</code></td><td>억울함·부당 대우</td><td>질문 → 다른관점 → 공감 → 경험<br><span style="color:var(--muted);font-size:12px;">[2, 4, 1, 3]</span></td><td>억울함엔 "어떻게 된 건가요?" 질문이 먼저 → 상황 확인 후 다른 시각</td></tr>
-        <tr><td><code>CONTROVERSY</code></td><td>논쟁·갈등 이슈</td><td>질문 → 다른관점 → 경험 → 공감<br><span style="color:var(--muted);font-size:12px;">[2, 4, 3, 1]</span></td><td>논쟁 글엔 찬반 의견이 먼저, 마지막에 수렴</td></tr>
-        <tr><td><code>REVERSAL</code></td><td>반전·반전 이야기</td><td>경험 → 공감 → 질문 → 다른관점<br><span style="color:var(--muted);font-size:12px;">[3, 1, 2, 4]</span></td><td>반전 글엔 "나도 비슷한 일이" 경험 공유가 먼저 와야 현실감</td></tr>
-        <tr><td><code>EMPATHY</code></td><td>공감·감동 이야기</td><td>공감 → 경험 → 질문 → 다른관점<br><span style="color:var(--muted);font-size:12px;">[1, 3, 2, 4]</span></td><td>따뜻한 글엔 공감 → 비슷한 경험 나누기 순서가 자연스러움</td></tr>
-        <tr><td><code>null</code></td><td>분류 없음 (crawl-only 발행, urgency 낮음)</td><td>공감 → 질문 → 경험 → 다른관점<br><span style="color:var(--muted);font-size:12px;">[1, 2, 3, 4] 기본 순서</span></td><td>viralType 없으면 기본 고정 순서 유지 (fallback)</td></tr>
+        <tr><td><code>BETRAYAL</code></td><td>배신·배반 이야기</td><td>다른관점→공감→경험→질문 [4,1,3,2]</td><td rowspan="6" style="color:var(--red);font-weight:600;vertical-align:middle;text-align:center;">고정 순서<br>[1,2,3,4]<br>(모든 viralType 동일)</td></tr>
+        <tr><td><code>INJUSTICE</code></td><td>억울함·부당 대우</td><td>질문→다른관점→공감→경험 [2,4,1,3]</td></tr>
+        <tr><td><code>CONTROVERSY</code></td><td>논쟁·갈등 이슈</td><td>질문→다른관점→경험→공감 [2,4,3,1]</td></tr>
+        <tr><td><code>REVERSAL</code></td><td>반전 이야기</td><td>경험→공감→질문→다른관점 [3,1,2,4]</td></tr>
+        <tr><td><code>EMPATHY</code></td><td>공감·감동 이야기</td><td>공감→경험→질문→다른관점 [1,3,2,4]</td></tr>
+        <tr><td><code>null</code></td><td>분류 없음</td><td>공감→질문→경험→다른관점 [1,2,3,4]</td></tr>
       </tbody>
     </table>
   </div>
 
-  <div class="alert info" style="margin-top:12px;">
-    <strong>viralType이 null인 경우</strong>: psych-analyzer는 full 모드(11:30 KST)에서만 실행된다. crawl-only 모드로 발행된 글, 또는 <code>urgencyLevel ≤ 2</code>이고 <code>communitySignal</code>이 complaint·confession이 아닌 글은 viralType=null이 될 수 있다. null 글은 기본 순서(1→2→3→4)를 따른다.
-  </div>
-
   <details class="code-toggle">
-    <summary>wave-processor.ts 구현 보기 — remapWaveType() 함수</summary>
-<pre>// wave-processor.ts — determineWaveOrder()
-type WaveNum = 1 | 2 | 3 | 4
-
-function determineWaveOrder(viralType: string | null): WaveNum[] {
-  switch (viralType) {
-    case 'BETRAYAL':    return [4, 1, 3, 2]  // 다른관점→공감→경험→질문
-    case 'INJUSTICE':   return [2, 4, 1, 3]  // 질문→다른관점→공감→경험
-    case 'CONTROVERSY': return [2, 4, 3, 1]  // 질문→다른관점→경험→공감
-    case 'REVERSAL':    return [3, 1, 2, 4]  // 경험→공감→질문→다른관점
-    case 'EMPATHY':     return [1, 3, 2, 4]  // 공감→경험→질문→다른관점
-    default:            return [1, 2, 3, 4]  // null: 기본 순서
-  }
+    <summary>현재 wave-processor.ts 실제 dispatch 루프 (고정 순서)</summary>
+<pre>// wave-processor.ts — 현재 실제 코드 (determineWaveOrder 없음)
+// dispatch 루프: 항상 [1, 2, 3, 4] 고정 순서
+for (const waveNum of [1, 2, 3, 4]) {
+  if (waveNum === 1) { /* wave1At 체크 후 processWaveV2 또는 processWaveLegacy */ }
+  if (waveNum === 2) { /* wave2At 체크 */ }
+  if (waveNum === 3) { /* wave3At 체크 */ }
+  if (waveNum === 4) { /* wave4At 체크 */ }
 }
 
-// processWave() 호출부
-const order = determineWaveOrder(cafePost?.viralType ?? null)
-for (const waveNum of order) {
-  await processWave(queue, waveNum, cafePost)
-}</pre>
+// determineWaveOrder(), remapWaveType() 함수 → 삭제됨 (SHA: 4bdf236 V2-E 리팩토링)</pre>
   </details>
 
   <h3 class="mt24">작성자 대댓글 자동화 (processAuthorReply) — wave4 완료 후 실행</h3>
+  <div class="alert info" style="margin-bottom:10px;font-size:13px;">
+    <strong>실행 전제 조건: usableTopComments ≥ 5</strong><br>
+    dispatch 시점에 CafePost.topComments를 조회해 <code>computeUsableCount()</code>를 실행한다. usable이 5개 미만이면 wave2·wave4에서 대댓글 단계를 자동 스킵한다 (<code>dispatchUsable &gt;= 5</code> 조건). 원본 댓글이 적은 글에서 작성자 대댓글이 억지스럽게 붙는 현상 차단.
+  </div>
   <div class="narrative">
     <p>wave4가 완료된 글에 대해 <strong>글 작성자 페르소나(authorPersonaId)</strong>가 첫 번째 봇 댓글에 대댓글을 자동으로 단다. "글 쓴 봇이 댓글에 반응하는" 자연스러운 상호작용을 구현한다.</p>
     <p>AI 호출이 전혀 없다. topComments.replies 원문을 먼저 시도하고, 없으면 AUTHOR_REPLY_POOL 7개 문구 중 하나를 랜덤으로 선택한다. <code>Comment.parentId</code> 필드가 스키마에 이미 존재하므로 DB 마이그레이션 없음.</p>
@@ -1709,6 +1713,7 @@ for (const waveNum of order) {
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;">
       <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">실행 조건</div>
       <ul style="font-size:13px;color:var(--muted);line-height:2;padding-left:16px;">
+        <li><strong>dispatchUsable ≥ 5</strong> — usable 5개 미만이면 대댓글 단계 전체 스킵</li>
         <li>wave4Done=true인 CommentWaveQueue 조회</li>
         <li>해당 포스트의 첫 봇 댓글(parentId=null) 탐색</li>
         <li>authorPersonaId ≠ 첫 댓글 commenterPersonaId (글쓴이가 자기 댓글에 답하지 않도록)</li>
@@ -1821,6 +1826,13 @@ for (const waveNum of order) {
     <strong>③ crawler.ts refreshRecentPosts()</strong>: 재크롤 시 killerScore가 새로 계산된 CafePost가 ≥75이면, 그 CafePost로 발행된 Post를 찾아 isFeatured=true로 갱신. 발행 당시엔 점수가 낮았다가 이후 인기가 오른 글도 커버된다.<br><br>
     <strong>한 번 켜지면 내려가지 않는다</strong>: killerScore가 75 미만으로 떨어져도 isFeatured는 false로 복구되지 않는다. 창업자 수동 해제만 가능.
   </div>
+
+  <div class="alert ok" style="margin-top:12px;font-size:13px;">
+    <strong>popular-curator Wave queue 정책 (SHA: 4d67da4, 2026-05-24)</strong><br><br>
+    popular-curator.ts도 content-curator와 동일한 usable=0 queue 미등록 정책을 적용한다. 발행 후 <code>computeUsableCount(post.topComments)</code>를 실행해 0이면 <code>enqueueCommentWave</code>를 스킵하고 로그를 출력한다.<br><br>
+    <strong>배경</strong>: 4bdf236에서 content-curator에는 usable=0 skip이 적용됐으나, popular-curator에는 적용되지 않아 4건의 usable=0 글에 wave queue가 생성되고 BLOCK1이 반복 실행되는 현상이 발생했다. 4d67da4로 정책 통일 완료.<br><br>
+    적용 기준 — usableTopComments: topComments 배열 중 ① content 존재 ② emoji 제거 후 10자 이상 ③ AI 거절문 패턴 없음 ④ 중복 없음인 항목 수.
+  </div>
 </div>
 
 <!-- ══════════ §13. 봇 시스템 역할 전체 지도 ══════════ -->
@@ -1922,7 +1934,7 @@ for (const waveNum of order) {
       🚫 <strong>오해 주의: 큐레이션봇은 댓글을 직접 달지 않는다.</strong><br>
       CommentWaveQueue에 댓글 예약(INSERT)만 한다. 실제 댓글 작성은 Wave봇(wave-processor.ts)이 5분마다 처리한다.
     </div>
-    <p>발행 시 CommentWaveQueue에 wave1~4를 자동 등록한다. 대댓글은 wave4 완료 후 processAuthorReply()가 자동 실행한다 (§11 참조).</p>
+    <p>발행 시 usableTopComments > 0인 글에만 CommentWaveQueue에 wave1~4를 자동 등록한다. usable=0이면 queue 등록 자체를 스킵한다. 대댓글은 wave4 완료 후 processAuthorReply()가 자동 실행된다 (단, dispatchUsable ≥ 5인 글에만 — §11 참조).</p>
     <div class="alert info" style="font-size:13px; padding:10px 16px; margin:8px 0; line-height:1.8;">
       <strong>DB에서 큐레이션봇/시드봇 구분 방법 (2026-05-20~)</strong><br>
       <code>content-curator.ts</code>(2026-05-20~) 및 <code>popular-curator.ts</code>(2026-05-21~) 발행 시 원본 CafePost ID를 <code>Post.cafePostId</code>에 저장한다.<br>
@@ -1997,7 +2009,7 @@ for (const waveNum of order) {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝ 전부 완료</h2>
+    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝㉞㉟㊱㊲㊳㊴㊵㊶ 전부 완료</h2>
   </div>
 
   <div class="alert ok">
@@ -2983,7 +2995,7 @@ await prisma.cafePost.create({
   </div>
   </details>
 
-  <p style="font-size:12px;color:var(--muted);margin:12px 0 0 0;">아래 ㉞㉟㊱㊲는 2026-05-23~24 배포 항목이다.</p>
+  <p style="font-size:12px;color:var(--muted);margin:12px 0 0 0;">아래 ㉞㉟㊱㊲는 2026-05-23~24 배포 항목이다. ㊳~㊶는 2026-05-24~25 Wave 댓글 품질 개선 항목이다.</p>
 
   <details>
   <summary class="impl-summary">㉞. 커뮤니티 신규 글 slug 자동 생성 — BOT/SHEET/curator/seed 전체 적용</summary>
@@ -3053,6 +3065,80 @@ await prisma.cafePost.create({
       SHA: bfdaab9 (2026-05-24)
     </div>
     <div class="impl-file">📄 src/lib/queries/posts/posts.trending.ts — _getTrendingQuotaPosts currentScore 재계산 + board-by-board quota 정렬</div>
+  </div>
+  </details>
+
+  <details>
+  <summary class="impl-summary">㊳. wave-processor BOT_CAP 초과 방지 + removeEmoji + HUMOR_ONLY 페르소나 게시판 제한 (0b4a484)</summary>
+  <div class="impl-card">
+    <div class="impl-title">㊳. wave-processor BOT_CAP 초과 방지 + removeEmoji + boardPersonaFilter (HUMOR_ONLY 제외 기반)</div>
+    <div class="impl-body">
+      <strong>문제</strong>: 봇 댓글 이모지가 어색하게 노출됐고, 유머 전용 페르소나(HUMOR_ONLY)가 STORY/LIFE2 게시판 글에도 댓글을 달아 어조가 튀는 현상이 있었다.<br><br>
+      <strong>수정 1 — removeEmoji()</strong>: 댓글 본문에서 이모지 범위(<code>[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]</code>) 제거 후 게시. wave-processor.ts 내 댓글 작성 직전 적용.<br><br>
+      <strong>수정 2 — boardPersonaFilter()</strong>: 게시판별 페르소나 허용/제외 로직 신규 추가.<br>
+      · <code>JOB</code> 게시판: AS·D 페르소나만 허용 (직업 전문성 맥락).<br>
+      · <code>STORY / LIFE2</code> 게시판: HUMOR_ONLY_PERSONAS(C·R·AF·AO·AP·AX·AY) 제외.<br>
+      · 나머지 게시판: 전체 허용.<br><br>
+      <strong>수정 3 — BOT_CAP 일일 초과 방지</strong>: <code>BOT_DAILY_COMMENT_CAP=3</code> 초과 봇을 선택에서 제외하는 로직 강화.<br><br>
+      SHA: 0b4a484 (2026-05-24)
+    </div>
+    <div class="impl-file">📄 agents/cafe/wave-processor.ts — removeEmoji() 함수 + boardPersonaFilter() 함수 + BOT_CAP 체크 강화</div>
+  </div>
+  </details>
+
+  <details>
+  <summary class="impl-summary">㊴. wave-processor HUMOR_ONLY 제외 정책 보정 — STORY/LIFE2 후보 3명→67명 (fbe1f62)</summary>
+  <div class="impl-card">
+    <div class="impl-title">㊴. HUMOR_ONLY 페르소나 제외 정책 보정 — STORY/LIFE2 게시판 후보 3명→67명</div>
+    <div class="impl-body">
+      <strong>문제</strong>: ㊳(0b4a484)에서 HUMOR_ONLY 제외 정책을 적용했으나 <code>HUMOR_ONLY_PERSONAS</code> Set에 포함된 ID가 너무 많아 STORY/LIFE2 게시판의 실제 선택 가능 봇이 3명으로 급감했다. 동일 봇이 같은 게시판에 반복 댓글을 달게 되는 역효과 발생.<br><br>
+      <strong>수정</strong>: HUMOR_ONLY_PERSONAS를 재검토해 진짜 유머 전용 페르소나만 남기고 나머지는 제외 목록에서 제거. 결과적으로 STORY/LIFE2 게시판 선택 가능 후보가 3명 → 67명으로 회복됐다.<br><br>
+      <strong>정책 원칙</strong>: 유머/개그 전용 tone을 가진 페르소나만 HUMOR_ONLY로 분류. 일반 생활글·경험담을 쓸 수 있는 페르소나는 HUMOR_ONLY에서 제외해 STORY/LIFE2에서도 사용 가능하게 유지.<br><br>
+      SHA: fbe1f62 (2026-05-24)
+    </div>
+    <div class="impl-file">📄 agents/cafe/wave-processor.ts — HUMOR_ONLY_PERSONAS Set 재정의 (7개 → 진짜 유머 전용만)</div>
+  </div>
+  </details>
+
+  <details>
+  <summary class="impl-summary">㊵. 댓글 없는 CafePost title-only AI 댓글 구조적 차단 — BLOCK1/BLOCK2 + generateComment 삭제 (4bdf236)</summary>
+  <div class="impl-card">
+    <div class="impl-title">㊵. title-only AI 댓글 완전 차단 — BLOCK1/BLOCK2 + generateComment() 삭제 + content-curator usable=0 queue 스킵</div>
+    <div class="impl-body">
+      <strong>문제 (근본 원인 2개)</strong>:<br>
+      · <strong>원인 1</strong> — content-curator.ts L402: topComments 확인 없이 <code>enqueueCommentWave</code> 무조건 호출. commentCount=0인 CafePost에도 wave queue가 생성됐다.<br>
+      · <strong>원인 2</strong> — wave-processor.ts processWaveLegacy: refComment가 없으면 <code>generateComment(title, waveNum, undefined)</code>를 호출해 글 제목만으로 AI 댓글을 생성했다 → "글 내용을 보여주셔야…", "어떤 상황인지 몰라서…" 류의 쓰레기 댓글 생성.<br><br>
+      <strong>수정 1 — content-curator.ts</strong>:<br>
+      · <code>selectFields</code>에 <code>topComments: true</code> 추가.<br>
+      · <code>computeUsableCount()</code> 헬퍼 신규 추가 (<code>CC_AI_REJECT_RE</code> 패턴 포함).<br>
+      · wave queue 호출 전 usable=0 체크 → 0이면 queue 등록 스킵 + 로그 출력.<br><br>
+      <strong>수정 2 — wave-processor.ts</strong>:<br>
+      · <code>generateComment()</code> 함수 <strong>완전 삭제</strong> (Anthropic import, MODEL, client, WAVE_COMMENT_TYPES, remapWaveType 전부 삭제).<br>
+      · <strong>BLOCK1</strong>: processWaveLegacy에서 refComment가 없거나 10자 미만이면 <code>wave{N}Done=true</code>로 처리 후 즉시 return. AI 생성 완전 차단.<br>
+      · <strong>BLOCK2</strong>: usableCount &lt; 5이고 totalBotComments ≥ usableCount이면 done 처리. 원본 댓글 수 이상 댓글 금지.<br>
+      · <strong>dispatchUsable</strong>: dispatch 시점에 cafePost.topComments 조회 → usable &lt; 5이면 작성자 대댓글(wave2·wave4 author reply) 스킵.<br>
+      · legacy wave4 대댓글 루프: computeUsableCount &lt; 5이면 continue.<br><br>
+      <strong>영향 확인</strong>: 4개의 usable=0 글에 wave queue가 이미 등록돼 있었고 BLOCK1이 4건 × 4wave = 16회 작동해 쓰레기 댓글 생성 없이 done 처리됨 확인.<br><br>
+      SHA: 4bdf236 (2026-05-24)
+    </div>
+    <div class="impl-file">📄 agents/cafe/content-curator.ts — selectFields topComments 추가 + computeUsableCount() + usable=0 queue 스킵<br>📄 agents/cafe/wave-processor.ts — generateComment() 전면 삭제 + BLOCK1/BLOCK2 추가 + dispatchUsable gate + legacy reply cap</div>
+  </div>
+  </details>
+
+  <details>
+  <summary class="impl-summary">㊶. popular-curator usable=0 wave queue 생성 방지 — content-curator 정책 일치 (4d67da4)</summary>
+  <div class="impl-card">
+    <div class="impl-title">㊶. popular-curator usable=0 wave queue 생성 방지 (content-curator 정책 통일)</div>
+    <div class="impl-body">
+      <strong>문제</strong>: ㊵(4bdf236)에서 content-curator에는 usable=0 wave queue 스킵이 적용됐으나, popular-curator.ts는 대상에 포함되지 않았다. 검증 스크립트(<code>_check-botlog-1413.ts</code>) 실행 결과, usable=0 인기글 4건에 wave queue가 생성돼 있었고 BLOCK1이 반복 실행되는 비효율 확인.<br><br>
+      <strong>수정</strong>: popular-curator.ts에 동일 정책 적용.<br>
+      · <code>candidates</code> select에 <code>topComments: true</code> 추가.<br>
+      · <code>PC_AI_REJECT_RE</code> + <code>computeUsableCount()</code> 헬퍼 신규 추가 (content-curator와 동일 로직).<br>
+      · <code>enqueueCommentWave</code> 호출 전 usable=0 체크 → 0이면 스킵 + 로그 출력.<br><br>
+      <strong>정책 통일</strong>: content-curator / popular-curator 모두 usable=0 글은 wave queue를 생성하지 않는다. wave-processor.ts의 BLOCK1은 기존 queue에 대한 방어 역할로 유지된다.<br><br>
+      SHA: 4d67da4 (2026-05-24)
+    </div>
+    <div class="impl-file">📄 agents/cafe/popular-curator.ts — topComments select 추가 + PC_AI_REJECT_RE + computeUsableCount() + usable=0 enqueueCommentWave 스킵</div>
   </div>
   </details>
 
@@ -3184,14 +3270,14 @@ await prisma.cafePost.create({
   <div class="faq-item">
     <div class="faq-q">wave 댓글이 항상 "공감→질문→경험→다른관점" 순서인가?</div>
     <div class="faq-a">
-      <strong>글의 viralType에 따라 순서가 바뀐다.</strong> psych-analyzer가 글을 분석할 때 BETRAYAL·INJUSTICE·CONTROVERSY·REVERSAL·EMPATHY 중 하나로 분류하면, wave-processor.ts가 그 유형에 맞는 순서로 wave를 실행한다.<br><br>
-      예시:
+      <strong>현재는 항상 고정 순서(1→2→3→4)다.</strong> <code>determineWaveOrder()</code> 함수가 V2-E 리팩토링 과정에서 wave-processor.ts에서 삭제됐다. viralType 값은 DB에 저장되지만 wave 순서 결정에 사용되지 않는다.<br><br>
+      <strong>과거 설계 의도</strong>: psych-analyzer가 글을 분석할 때 BETRAYAL·INJUSTICE·CONTROVERSY·REVERSAL·EMPATHY로 분류하면 viralType에 맞는 순서로 wave를 실행하려 했다.
       <ul style="margin:8px 0 8px 20px;line-height:1.8;">
-        <li><strong>BETRAYAL(배신)</strong>: 다른관점(4) → 공감(1) → 경험(3) → 질문(2)</li>
-        <li><strong>EMPATHY(공감)</strong>: 공감(1) → 경험(3) → 질문(2) → 다른관점(4)</li>
-        <li><strong>null(분류 없음)</strong>: 기본 순서 1→2→3→4 고정</li>
+        <li><strong>BETRAYAL(배신)</strong>: 설계상 다른관점(4) → 공감(1) → 경험(3) → 질문(2)</li>
+        <li><strong>EMPATHY(공감)</strong>: 설계상 공감(1) → 경험(3) → 질문(2) → 다른관점(4)</li>
+        <li><strong>현재 실제</strong>: 모든 viralType에 무관하게 1→2→3→4 고정</li>
       </ul>
-      viralType=null인 경우: crawl-only 발행 글(psych-analyzer 미실행), 또는 urgencyLevel ≤ 2이고 communitySignal이 complaint·confession이 아닌 글. 전체 순서 매핑은 §11 "viralType 기반 wave 댓글 순서" 표 참조.
+      전체 당초 설계 매핑은 §11 "viralType 기반 wave 댓글 순서" 표 참조 (⚠️ DEPRECATED 주의).
     </div>
   </div>
 
@@ -3223,6 +3309,30 @@ await prisma.cafePost.create({
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.22</div>
+    <div class="changelog-date">2026-05-25</div>
+    <div class="changelog-content">
+      <strong>Wave 댓글 품질 개선 4건 반영 (㊳~㊶) + 전수 오류 수정 — generateComment 삭제, determineWaveOrder 삭제, 티어별 cap, usable=0 정책 통일.</strong><br><br>
+      <strong>[㊳ — SHA: 0b4a484]</strong> wave-processor BOT_CAP 초과 방지 + removeEmoji(이모지 제거) + boardPersonaFilter(HUMOR_ONLY 페르소나를 STORY/LIFE2에서 제외, JOB은 AS/D만).<br><br>
+      <strong>[㊴ — SHA: fbe1f62]</strong> HUMOR_ONLY_PERSONAS Set 재정의 — 진짜 유머 전용 페르소나만 제외 목록 유지. STORY/LIFE2 선택 후보 3명 → 67명 회복.<br><br>
+      <strong>[㊵ — SHA: 4bdf236]</strong> title-only AI 댓글 구조적 차단 — <code>generateComment()</code> wave-processor.ts에서 완전 삭제. BLOCK1(refComment 없거나 10자 미만 → done 처리/return), BLOCK2(usable 1~4개 글: bot댓글≥usable → done), content-curator usable=0 wave queue 스킵, dispatchUsable≥5 gate(대댓글 제한).<br><br>
+      <strong>[㊶ — SHA: 4d67da4]</strong> popular-curator usable=0 wave queue 생성 방지 — content-curator 정책 통일. topComments select 추가 + computeUsableCount() + usable=0 시 enqueueCommentWave 스킵.<br><br>
+      <strong>[오류 수정 — 코드와 불일치 항목 전면 정정]</strong><br>
+      §10 기대값 표: "Wave 예약 발행 즉시 4건" → usable=0 skip 조건 명시.<br>
+      §11 댓글 생성 제약 규칙 표: "글당 봇 댓글 5개 초과" 오류 → 티어별(NORMAL 6/HOT 14/KILLER 20) 정정 + BLOCK1/BLOCK2/HUMOR_ONLY/removeEmoji/dispatchUsable 행 신규 추가.<br>
+      §11 댓글 내용 출처 표: row② "AI가 직접 생성(fallback)" 완전 삭제 → BLOCK1 설명으로 교체. "10자 미만은 AI로 보완" alert 삭제 → BLOCK1 경고 alert으로 교체.<br>
+      §11 SHEET wave 비교표: BOT 포스트 "generateComment()/각색" → "topComments 원문 참조(BLOCK1/BLOCK2, AI 없음)"으로 수정.<br>
+      §11 viralType 섹션: determineWaveOrder()/remapWaveType() 삭제 사실 반영. DEPRECATED alert 추가. 코드 예시 → 현재 실제 고정 순서로 교체. 표에 "현재 실제 동작" 열 추가.<br>
+      §11 작성자 대댓글: dispatchUsable≥5 조건 신규 명시 (실행 조건 box + intro alert 추가).<br>
+      §12 인기글: popular-curator usable=0 wave queue 미등록 정책 alert 신규 추가.<br>
+      §13 큐레이션봇: wave queue 등록 설명 → usable>0 조건 및 dispatchUsable≥5 대댓글 조건 명시.<br>
+      §14 h2 제목: ㉝ → ㊶ 전부 완료.<br>
+      §15 FAQ viralType: "글의 viralType에 따라 순서가 바뀐다" → "현재는 고정 순서(1→2→3→4)" 정정.<br>
+      footer: v10.21 → v10.22.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -3592,7 +3702,7 @@ await prisma.cafePost.create({
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.21<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.22<br>
   최종 업데이트: 2026-05-21 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
