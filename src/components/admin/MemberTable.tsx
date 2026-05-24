@@ -4,6 +4,8 @@ import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { adminUpdateUserStatus, adminUpdateUserGrade } from '@/lib/actions/admin'
 import type { Grade, UserStatus } from '@/generated/prisma/client'
+import UserContentDrawer from './UserContentDrawer'
+import type { DrawerTarget } from './UserContentDrawer'
 
 const GRADE_LABELS: Record<string, { label: string; icon: string }> = {
   SPROUT: { label: '새싹', icon: '🌱' },
@@ -64,6 +66,7 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
   const [isPending, startTransition] = useTransition()
   const [searchInput, setSearchInput] = useState(filters.search || '')
   const [actionUserId, setActionUserId] = useState<string | null>(null)
+  const [drawer, setDrawer] = useState<DrawerTarget | null>(null)
 
   function updateFilter(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString())
@@ -219,8 +222,30 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
                       <span className="text-zinc-400">❌</span>
                     )}
                   </td>
-                  <td className="px-3 py-3 text-center text-zinc-600">{user.postCount}</td>
-                  <td className="px-3 py-3 text-center text-zinc-600">{user.commentCount}</td>
+                  <td className="px-3 py-3 text-center">
+                    {user.postCount > 0 ? (
+                      <button
+                        onClick={() => setDrawer({ userId: user.id, nickname: user.nickname, mode: 'posts', totalCount: user.postCount })}
+                        className="font-medium text-zinc-700 underline-offset-2 hover:underline"
+                      >
+                        {user.postCount}
+                      </button>
+                    ) : (
+                      <span className="text-zinc-400">0</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {user.commentCount > 0 ? (
+                      <button
+                        onClick={() => setDrawer({ userId: user.id, nickname: user.nickname, mode: 'comments', totalCount: user.commentCount })}
+                        className="font-medium text-zinc-700 underline-offset-2 hover:underline"
+                      >
+                        {user.commentCount}
+                      </button>
+                    ) : (
+                      <span className="text-zinc-400">0</span>
+                    )}
+                  </td>
                   <td className="px-3 py-3 text-center text-zinc-600">{user.receivedLikes}</td>
                   <td className="whitespace-nowrap px-3 py-3 text-zinc-500">
                     <div>{new Date(user.lastLoginAt).toLocaleDateString('ko-KR')}</div>
@@ -308,6 +333,8 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
           </button>
         </div>
       )}
+
+      <UserContentDrawer target={drawer} onClose={() => setDrawer(null)} />
     </>
   )
 }

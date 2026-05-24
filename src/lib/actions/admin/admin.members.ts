@@ -5,6 +5,26 @@ import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import type { Grade, UserStatus } from '@/generated/prisma/client'
 
+export type UserPostItem = {
+  id: string
+  title: string
+  boardType: string
+  status: string
+  likeCount: number
+  commentCount: number
+  createdAt: Date
+  slug: string | null
+}
+
+export type UserCommentItem = {
+  id: string
+  content: string
+  status: string
+  createdAt: Date
+  parentId: string | null
+  post: { id: string; title: string; boardType: string; slug: string | null }
+}
+
 async function requireAdmin() {
   const session = await getAdminSession()
   if (!session) throw new Error('관리자 인증이 필요합니다.')
@@ -147,4 +167,56 @@ export async function adminUpdateUserGrade(userId: string, grade: Grade) {
   })
 
   revalidatePath('/admin/members')
+}
+
+export async function adminGetUserPosts(
+  userId: string,
+  cursor?: string,
+  limit = 20
+): Promise<{ posts: UserPostItem[]; hasMore: boolean }> {
+  await requireAdmin()
+  const take = limit + 1
+  const rows = await prisma.post.findMany({
+    where: { authorId: userId },
+    orderBy: { createdAt: 'desc' },
+    take,
+    ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+    select: {
+      id: true,
+      title: true,
+      boardType: true,
+      status: true,
+      likeCount: true,
+      commentCount: true,
+      createdAt: true,
+      slug: true,
+    },
+  })
+  const hasMore = rows.length > limit
+  return { posts: hasMore ? rows.slice(0, limit) : rows, hasMore }
+}
+
+export async function adminGetUserComments(
+  userId: string,
+  cursor?: string,
+  limit = 20
+): Promise<{ comments: UserCommentItem[]; hasMore: boolean }> {
+  await requireAdmin()
+  const take = limit + 1
+  const rows = await prisma.comment.findMany({
+    where: { authorId: userId },
+    orderBy: { createdAt: 'desc' },
+    take,
+    ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+    select: {
+      id: true,
+      content: true,
+      status: true,
+      createdAt: true,
+      parentId: true,
+      post: { select: { id: true, title: true, boardType: true, slug: true } },
+    },
+  })
+  const hasMore = rows.length > limit
+  return { comments: hasMore ? rows.slice(0, limit) : rows, hasMore }
 }
