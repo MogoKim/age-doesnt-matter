@@ -383,7 +383,7 @@
       이 문서는 스크래퍼가 왜 존재하고 어떻게 움직이는지를 처음부터 끝까지 설명한다.
     </div>
     <div class="cover-meta">
-      <div class="cover-meta-item"><div class="label">최종 업데이트</div><div class="val">2026-05-21</div></div>
+      <div class="cover-meta-item"><div class="label">최종 업데이트</div><div class="val">2026-05-24</div></div>
       <div class="cover-meta-item"><div class="label">대상</div><div class="val">창업자 (비기술 독자)</div></div>
       <div class="cover-meta-item"><div class="label">스케줄</div><div class="val">5회/일 (GHA) + 6회/일 (로컬 Mac)</div></div>
       <div class="cover-meta-item"><div class="label">AI 모델</div><div class="val">Sonnet(파동댓글)</div></div>
@@ -546,18 +546,18 @@
     <div class="callout" style="border-left-color: var(--purple); background: var(--purple-dim);">
       <p><strong>🤖 Sheet URL 입력 경로가 2가지다</strong></p>
       <p><strong>① 창업자 수동 입력 (기본)</strong> — 위에서 설명한 A열 직접 입력 방식.</p>
-      <p><strong>② image-router 자동 append (신규 — 현재 비활성)</strong> — <code>agents/cafe/image-router.ts</code>가 CafePost DB에서 이미지 있는 글을 골라 자동으로 Sheet에 PENDING 행을 추가한다.</p>
+      <p><strong>② image-router 자동 append (2026-05-24 live 전환)</strong> — <code>agents/cafe/image-router.ts</code>가 CafePost DB에서 이미지 있는 글을 골라 자동으로 Sheet에 PENDING 행을 추가한다.</p>
       <div class="tbl-wrap" style="margin-top:12px;margin-bottom:0;">
         <table>
           <thead><tr><th>항목</th><th>내용</th></tr></thead>
           <tbody>
             <tr><td>트리거</td><td><code>agents-cafe-hourly-curation.yml</code> — GHA, cafe_crawler:image-route 핸들러</td></tr>
-            <tr><td>현재 상태</td><td><span class="badge" style="background:rgba(139,146,168,0.15);color:#8b92a8;border:1px solid rgba(139,146,168,0.3);">비활성</span> — <code>ENABLE_IMAGE_ROUTER=false</code> (GHA vars 기본값) / <code>DRY_RUN_IMAGE_ROUTER=true</code></td></tr>
-            <tr><td>활성화 조건</td><td>GitHub Vars에서 <code>ENABLE_IMAGE_ROUTER=true</code> + <code>DRY_RUN_IMAGE_ROUTER=false</code> 설정 필요</td></tr>
+            <tr><td>현재 상태</td><td><span class="badge badge-green">✅ 활성 (live)</span> — <code>ENABLE_IMAGE_ROUTER=true</code> / <code>DRY_RUN_IMAGE_ROUTER=false</code> / 2026-05-24 전환 완료</td></tr>
             <tr><td>동작</td><td>CafePost DB (isUsable=true, imageUrls 있음, killerScore≥50) → 탭 자동 배정 → Sheet PENDING append</td></tr>
             <tr><td>탭 배정 로직</td><td>HUMOR 카테고리 → 웃음방 / MONEY 카테고리 → 2막준비 / 나머지 → 사는이야기 + isPopular 또는 killer≥75 시 _화제성</td></tr>
             <tr><td>상한</td><td>DAY_CAP=3건/일, TAB_CAP=1건/탭, PENDING 적체 10건 초과 시 자동 skip</td></tr>
             <tr><td>처리 주체</td><td>append된 URL은 네이버 카페 URL → <strong>로컬 naver-cafe-sheet-scraper가 처리</strong></td></tr>
+            <tr><td>실제 동작 확인</td><td>10:35 KST run — Sheet PENDING 3건 append (DAY_CAP 도달) → 10:40 naver-cafe-sheet-scraper가 3건 PUBLISHED 처리. 11:20 run은 DAY_CAP 도달로 SKIP 확인.</td></tr>
           </tbody>
         </table>
       </div>
@@ -663,7 +663,8 @@
         <div class="flow-content">
           <div class="title">우나어 사이트에 게시글 자동 생성</div>
           <div class="desc">19명의 AI 페르소나 중 카테고리·게시판에 맞는 1명이 게시자로 표시 (STORY 10명 / HUMOR 5명 / LIFE2 4명).<br>
-          삭제된 적 있는 게시글이면 DB row를 재활용(update), 완전 신규면 create.</div>
+          삭제된 적 있는 게시글이면 DB row를 재활용(update), 완전 신규면 create.<br>
+          <strong>게시글 URL은 제목 기반 slug로 자동 생성</strong> — F열에 기록되는 URL이 <code>/{id}</code> 대신 <code>/{slug}</code> 형태로 표시됨 (2026-05-23 도입). 복원 글은 기존 slug 유지.</div>
         </div>
       </div>
       <div class="flow-step">
@@ -1102,7 +1103,7 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
   <!-- 11. 현재 운영 현황 -->
   <div class="section">
     <div class="section-label">11 — 현재 운영 현황</div>
-    <h2>2026-05-21 기준 상태</h2>
+    <h2>2026-05-24 기준 상태</h2>
 
     <div class="tbl-wrap">
       <table>
@@ -1167,6 +1168,16 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
             <td>LIFE2 (2막준비) 게시판</td>
             <td><span class="badge badge-green">✅ 정상 (2026-05-21 신설)</span></td>
             <td>인생 2막 특화 게시판. 페르소나 4명(정순씨·솔직히말해서·따져보자·말티즈엄마). 출처 표시 없음(STORY와 동일).</td>
+          </tr>
+          <tr>
+            <td>커뮤니티 Slug 자동 생성</td>
+            <td><span class="badge badge-green">✅ 정상 (2026-05-23 도입)</span></td>
+            <td>SHEET 게시글 제목 기반 slug 자동 생성 (<code>agents/core/slug.ts</code>). F열 URL이 <code>/{id}</code> → <code>/{slug}</code> 형태로 개선. 복원 글은 기존 slug 유지.</td>
+          </tr>
+          <tr>
+            <td>image-router 자동 append</td>
+            <td><span class="badge badge-green">✅ 활성 (2026-05-24 live 전환)</span></td>
+            <td>CafePost DB → Sheet PENDING 자동 append. DAY_CAP=3건/일, TAB_CAP=1건/탭. 10:35 run에서 3건 append → 10:40 naver-cafe-sheet-scraper가 PUBLISHED 처리 확인.</td>
           </tr>
         </tbody>
       </table>
@@ -1392,7 +1403,8 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
     <div class="callout yellow">
       <p><strong>화제성 파동 상한:</strong> 오늘 <code>SHEET_COMMENT_WAVE_PENDING</code> 건수가 50건 초과 시 처리를 전체 스킵한다 — 이미 SUCCESS로 완료된 건은 제외하고 <strong>PENDING 대기 건수만</strong> 카운트.<br>
       <strong>글당 댓글 상한:</strong> 봇 댓글이 이미 20개 이상이면 추가하지 않는다 (botCount 기준).<br>
-      <strong>중복 방지:</strong> 동일 postId + authorId 조합이 BotLog에 이미 존재하면 스킵한다.</p>
+      <strong>중복 방지:</strong> 동일 postId + authorId 조합이 BotLog에 이미 존재하면 스킵한다.<br>
+      <strong>trendingScore 즉시 갱신 (2026-05-23):</strong> 댓글·좋아요 투입 후 <code>refreshPostTrendingScore()</code>가 즉시 실행되어 commentCount/likeCount 증가가 홈 뜨는이야기 점수에도 실시간 반영된다.</p>
     </div>
 
     <h3>일반 글 파동 2종 (isFeatured=false)</h3>
@@ -1403,7 +1415,7 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
           <div class="wc-time">+2분</div>
         </div>
         <div class="wc-type">BotLog: SHEET_ENGAGE_COMMENT_PENDING (empathy)</div>
-        <div class="wc-personas">댓글 4명 (랜덤 shuffle)<br><code>BI BJ BK BL BM BN BO BP BQ BR</code> (10명 풀)<br>페르소나당 SHEET 글 일일 3개 댓글 상한<br>sourceComments 있으면 원본 댓글을 참고해 각색<br>자기 글 자기 댓글 방지 (게시자 authorId 제외)<br>중복 방지: 동일 postId + authorId 조합 이미 존재하면 스킵</div>
+        <div class="wc-personas">댓글 4명 (랜덤 shuffle)<br><code>BI BJ BK BL BM BN BO BP BQ BR</code> (10명 풀)<br>페르소나당 SHEET 글 일일 4개 댓글 상한<br>sourceComments 있으면 원본 댓글을 참고해 각색<br>자기 글 자기 댓글 방지 (게시자 authorId 제외)<br>중복 방지: 동일 postId + authorId 조합 이미 존재하면 스킵</div>
       </div>
       <div class="wave-card">
         <div class="wc-header">
@@ -1509,7 +1521,8 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
       <table>
         <thead><tr><th>구성요소</th><th>역할</th><th>모델/비고</th></tr></thead>
         <tbody>
-          <tr><td><code>agents/community/sheet-scraper.ts</code></td><td>핵심 스크래퍼 — PENDING 읽기 → 스크래핑 → 게시 → 파동 예약. SESSION_REQUIRED 분기(네이버 카페 GHA skip) + contentFrame 분기(cafe_main iframe) 포함.</td><td>—</td></tr>
+          <tr><td><code>agents/community/sheet-scraper.ts</code></td><td>핵심 스크래퍼 — PENDING 읽기 → 스크래핑 → 게시 → 파동 예약. SESSION_REQUIRED 분기(네이버 카페 GHA skip) + contentFrame 분기(cafe_main iframe) + slug 자동 생성(generateCommunitySlug) 포함.</td><td>—</td></tr>
+          <tr><td><code>agents/core/slug.ts</code></td><td>게시글 제목 → URL-safe slug 생성 (한글 변환 포함). sheet-scraper, seed, curator, BOT 게시글 모두 사용.</td><td>—</td></tr>
           <tr><td><code>agents/community/sheets-client.ts</code></td><td>Google Sheets A~J 10열 읽기/쓰기 (6탭: 사는이야기·웃음방·2막준비 × 일반/화제성). 없는 탭은 warning 후 skip.</td><td>googleapis</td></tr>
           <tr><td><code>agents/community/site-configs.ts</code></td><td>5개 사이트 크롤링 설정 + 댓글 selector: <strong>오늘의유머·네이트판</strong>(GHA) / <strong>펨코</strong>(LOCAL) / <strong>82cook</strong>(GHA, postAuthorSelectors 포함) / <strong>네이버 카페</strong>(LOCAL, requiresSession·contentFrame)</td><td>—</td></tr>
           <tr><td><code>agents/community/content-transformer.ts</code></td><td>외부 HTML 정제 8단계 + 카테고리 키워드 분류. boardType: STORY·HUMOR·LIFE2 지원. HUMOR만 출처 표시.</td><td>sanitize-html</td></tr>
@@ -1517,7 +1530,8 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
           <tr><td><code>agents/community/run-local-fmkorea.ts</code></td><td>펨코 로컬 런처 (launchd 전용, dotenv 직접 로드, --site fmkorea)</td><td>LOCAL ONLY</td></tr>
           <tr><td><code>agents/community/run-local-naver-cafe.ts</code></td><td>네이버 카페 로컬 런처 (launchd 전용, --site navercafe, storage-state.json 세션 사용)</td><td>LOCAL ONLY</td></tr>
           <tr><td><code>agents/seed/generator.ts</code></td><td>파동 댓글 AI 생성 (generateSheetViralComment)</td><td>Claude Sonnet</td></tr>
-          <tr><td><code>agents/seed/scheduler.ts</code></td><td>파동 처리 함수 (processSheetEngagementWaves, processPendingSheetCommentWaves)</td><td>—</td></tr>
+          <tr><td><code>agents/seed/scheduler.ts</code></td><td>파동 처리 함수 (processSheetEngagementWaves, processPendingSheetCommentWaves). 2026-05-23부터 댓글·좋아요 투입 후 <code>refreshPostTrendingScore()</code> 즉시 실행 — 홈 점수 실시간 반영.</td><td>—</td></tr>
+          <tr><td><code>agents/cafe/image-router.ts</code></td><td>CafePost DB → Sheet PENDING 자동 append 파이프라인. <strong>2026-05-24 live 전환</strong> (ENABLE_IMAGE_ROUTER=true, DRY_RUN=false). DAY_CAP=3/TAB_CAP=1. agents-cafe-hourly-curation.yml 트리거.</td><td>활성</td></tr>
           <tr><td><code>agents/cron/runner.ts</code></td><td>모든 에이전트 핸들러 등록 테이블 (cron/worker entry point)</td><td>—</td></tr>
           <tr><td><code>src/lib/sanitize.ts</code></td><td>커뮤니티 이미지 프록시 처리 — proxyR2Images() (커스텀 도메인 + /_next/image)</td><td>—</td></tr>
           <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>스크래핑·게시 GHA 스케줄 (5회/일, timeout 25분). SHEET_SCRAPER_EXCLUDE_SITE=fmkorea 로 펨코 제외.</td><td>AI 없음 (2026-05-21 Haiku 필터 제거)</td></tr>
