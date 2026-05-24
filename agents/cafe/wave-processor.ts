@@ -11,7 +11,6 @@
  * legacy path (kill switch OFF 또는 createdAt < V2_LAUNCH_DATE):
  *   - 기존 4댓글 + 1대댓글 동작 그대로 유지
  */
-import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { getBotUser } from '../seed/generator.js'
 import { getAllPersonaIds } from '../seed/persona-data.js'
@@ -19,9 +18,6 @@ import { sendSlackMessage } from '../core/notifier.js'
 import { parseTopComments } from './types.js'
 import { replaceCafeReferences } from './curator-shared.js'
 import { refreshPostTrendingScore } from '../core/post-trending.js'
-
-const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
-const client = new Anthropic()
 
 // ── Kill Switch (v2-E) ──
 const V2_ENABLED = process.env.COMMENT_WAVE_V2_ENABLED === 'true'
@@ -91,6 +87,21 @@ function removeEmoji(text: string): string {
     .trim()
 }
 
+const WP_AI_REJECT_RE = /글 내용을|내용을 보여|볼 수가 없|상황을 모르|글의 내용을|어떤 상황인지|댓글을 작성할 수 없|내용 올려/
+function computeUsableCount(topComments: unknown): number {
+  if (!Array.isArray(topComments)) return 0
+  const seen = new Set<string>()
+  let n = 0
+  for (const item of topComments) {
+    const raw = (item as { content?: string })?.content ?? ''
+    const cleaned = removeEmoji(raw)
+    if (cleaned.length < 10 || WP_AI_REJECT_RE.test(cleaned) || seen.has(cleaned)) continue
+    seen.add(cleaned)
+    n++
+  }
+  return n
+}
+
 function getGlobalCap(tier: Tier): number {
   if (tier === 'KILLER') return 20
   if (tier === 'HOT')    return 14
@@ -118,65 +129,6 @@ async function getQueueTier(postId: string, cafePostId: string): Promise<Tier> {
   if (post?.isFeatured || (cafePost?.killerScore ?? 0) >= 75) return 'KILLER'
   if (cafePost?.isPopular) return 'HOT'
   return 'NORMAL'
-}
-
-// ── Legacy 상수 (processWaveLegacy / processAuthorReplyLegacy 전용) ──
-
-const WAVE_COMMENT_TYPES: Record<WaveNum, string> = {
-  1: '공감형 — 글쓴이의 감정이나 상황에 공감하는 1~2문장. "저도 그런 적 있어요"류. 응원 문구("화이팅") 금지.',
-  2: '질문형 — 글에서 궁금한 점 한 가지를 구체적으로 질문. "혹시 ~어떻게 하셨어요?"류. 공감 선언 없이 바로 질문으로 시작.',
-  3: '경험공유형 — 본인의 실제 경험을 2~3문장으로 구체적으로 공유. 수치/장소/기간 등 디테일 포함. "저는 ~했는데 ~하더라고요" 구조.',
-  4: '다른관점형 — 글과 다른 각도에서 바라본 생각 또는 보완 정보. "저는 반대로 ~", "그런데 ~도 있더라고요"류. 응원/화이팅 절대 금지.',
-}
-
-function remapWaveType(waveNum: WaveNum, viralType: string | null | undefined): WaveNum {
-  if (!viralType) return waveNum
-  const ORDER_MAP: Partial<Record<string, WaveNum[]>> = {
-    BETRAYAL:    [4, 1, 3, 2],
-    INJUSTICE:   [2, 4, 1, 3],
-    CONTROVERSY: [2, 4, 3, 1],
-    REVERSAL:    [3, 1, 2, 4],
-    EMPATHY:     [1, 3, 2, 4],
-  }
-  const order = ORDER_MAP[viralType]
-  return order ? order[waveNum - 1] : waveNum
-}
-
-async function generateComment(postTitle: string, waveNum: WaveNum, refComment?: string): Promise<string> {
-  const waveType = WAVE_COMMENT_TYPES[waveNum]
-  const content = refComment
-    ? `아래 원본 댓글을 참고해 새 댓글을 작성하세요.
-원본 댓글: "${refComment.slice(0, 150)}"
-글 제목: "${postTitle}"
-
-규칙:
-- 댓글 유형: ${waveType}
-- 원본의 핵심 주제(고유명사·수치)만 유지, 표현은 자유롭게
-- 40~80자 이내, 순수 텍스트만, 마크다운/이모지 금지
-- "화이팅", "응원합니다", "좋은 정보 감사합니다" 등 응원·감사 문구 금지
-- 접두사 없이 댓글 내용만 출력
-
-댓글:`
-    : `50-60대 여성 커뮤니티 회원으로서 아래 글에 짧은 댓글을 써주세요.
-글 제목: "${postTitle}"
-
-규칙:
-- 댓글 유형: ${waveType}
-- 40~80자 이내, 순수 텍스트만
-- 마크다운/이모지 금지
-- "화이팅", "응원합니다", "좋은 정보 감사합니다" 등 응원·감사 문구 금지
-- 자연스러운 구어체 (경어 또는 반말)
-
-댓글:`
-
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 120,
-    messages: [{ role: 'user', content }],
-  })
-
-  const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-  return raw.replace(/^댓글:\s*/, '').slice(0, 200)
 }
 
 // 작성자 대댓글 fallback 풀 (legacy path 전용)
@@ -335,15 +287,23 @@ async function processWaveLegacy(
   const len = topComments?.length ?? 0
   const idx = len > 0 ? ((waveNum - 1) * Math.ceil(len / 4)) % len : 0
   const refComment = len > 0 ? topComments![idx]?.content : undefined
+  const usableCount = computeUsableCount(topComments)
 
-  const effectiveWaveNum = remapWaveType(waveNum, cafePost?.viralType)
-
-  let commentText: string
-  if (refComment && refComment.trim().length >= 10) {
-    commentText = refComment.trim()
-  } else {
-    commentText = await generateComment(post.title, effectiveWaveNum, undefined)
+  // BLOCK 1: title-only AI 완전 차단 — refComment 없거나 10자 미만이면 스킵
+  if (!refComment || refComment.trim().length < 10) {
+    const doneFieldBlk = `wave${waveNum}Done` as WaveDoneKey
+    await prisma.commentWaveQueue.update({ where: { id: queue.id }, data: { [doneFieldBlk]: true } })
+    console.log(`[WaveProcessor] wave${waveNum}(legacy): 원본 댓글 없음 — title-only AI 차단, 스킵 (postId=${queue.postId})`)
+    return
   }
+  // BLOCK 2: 최대 usable 수 한도 (usable 1~4개 케이스, 기존 bot 댓글 수 >= usable이면 스킵)
+  if (usableCount < 5 && totalBotComments >= usableCount) {
+    const doneFieldCap2 = `wave${waveNum}Done` as WaveDoneKey
+    await prisma.commentWaveQueue.update({ where: { id: queue.id }, data: { [doneFieldCap2]: true } })
+    console.log(`[WaveProcessor] wave${waveNum}(legacy): 원본 댓글 한도(최대 ${usableCount}개) 도달 — 스킵 (postId=${queue.postId})`)
+    return
+  }
+  const commentText = refComment.trim()
 
   await prisma.$transaction([
     prisma.comment.create({
@@ -735,11 +695,15 @@ export async function main() {
         if (isLegacyQueue(queue)) {
           await processWaveLegacy(queue, waveNum)
         } else {
-          const [tier, post] = await Promise.all([
+          const [tier, post, cafePostUsable] = await Promise.all([
             getQueueTier(queue.postId, queue.cafePostId),
             prisma.post.findUnique({ where: { id: queue.postId }, select: { authorId: true } }),
+            queue.cafePostId
+              ? prisma.cafePost.findUnique({ where: { id: queue.cafePostId }, select: { topComments: true } })
+              : Promise.resolve(null),
           ])
           const authorUserId = post?.authorId ?? ''
+          const dispatchUsable = computeUsableCount(cafePostUsable?.topComments)
 
           // v2-F: sourceCandidates 사전 판정 (processWaveV2 내부와 동일 기준)
           const waveTargetCount = getWaveTargetCount(tier, waveNum, queue.cafePostId)
@@ -749,8 +713,8 @@ export async function main() {
             // V2 정상 경로 (sourceCandidates 충분)
             await processWaveV2(queue, waveNum, tier, authorUserId)
 
-            // wave2/3/4 완료 직후 v2 대댓글 처리 (piggybacked)
-            if (waveNum >= 2 && authorUserId) {
+            // wave2/3/4 완료 직후 v2 대댓글 처리 (piggybacked) — usable >= 5일 때만
+            if (waveNum >= 2 && authorUserId && dispatchUsable >= 5) {
               const allowed = getAllowedReplyCount(tier, waveNum)
               if (allowed > 0) {
                 await processAuthorRepliesV2(queue, tier, allowed, authorUserId)
@@ -763,8 +727,8 @@ export async function main() {
             )
             await processWaveLegacy(queue, waveNum)
 
-            // wave4에서만 대댓글 처리 (R1: inline, alreadyReplied 체크로 중복 방지)
-            if (waveNum === 4 && authorUserId) {
+            // wave4에서만 대댓글 처리 (R1: inline, alreadyReplied 체크로 중복 방지) — usable >= 5일 때만
+            if (waveNum === 4 && authorUserId && dispatchUsable >= 5) {
               try {
                 const alreadyReplied = await prisma.comment.findFirst({
                   where: { postId: queue.postId, authorId: authorUserId, parentId: { not: null } },
@@ -797,6 +761,14 @@ export async function main() {
   })
   for (const queue of replyPending) {
     if (!isLegacyQueue(queue)) continue  // v2는 wave 직후 처리 완료
+    // usable < 5이면 author reply 스킵 (댓글 부풀리기 방지)
+    const cpReply = queue.cafePostId
+      ? await prisma.cafePost.findUnique({ where: { id: queue.cafePostId }, select: { topComments: true } })
+      : null
+    if (computeUsableCount(cpReply?.topComments) < 5) {
+      console.log(`[WaveProcessor] wave4-reply(legacy): usable < 5 — 대댓글 스킵 (postId=${queue.postId})`)
+      continue
+    }
     const post = await prisma.post.findUnique({
       where: { id: queue.postId },
       select: { authorId: true },

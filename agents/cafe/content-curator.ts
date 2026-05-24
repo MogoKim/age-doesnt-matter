@@ -26,6 +26,21 @@ import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } fr
 import { generateCommunitySlug } from '../core/slug.js'
 
 
+const CC_AI_REJECT_RE = /글 내용을|내용을 보여|볼 수가 없|상황을 모르|글의 내용을|어떤 상황인지|댓글을 작성할 수 없|내용 올려/
+function computeUsableCount(topComments: unknown): number {
+  if (!Array.isArray(topComments)) return 0
+  const seen = new Set<string>()
+  let n = 0
+  for (const item of topComments) {
+    const raw = (item as { content?: string })?.content ?? ''
+    const cleaned = raw.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim()
+    if (cleaned.length < 10 || CC_AI_REJECT_RE.test(cleaned) || seen.has(cleaned)) continue
+    seen.add(cleaned)
+    n++
+  }
+  return n
+}
+
 /** 참고용 원본 글 가져오기 — 3단계 fallback (B19+B24)
  * 1단계: 48h + 키워드 / 2단계: 7일 + 키워드 / 3단계: 7일 + desireCategory만
  */
@@ -33,7 +48,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   const base = { isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true } }
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
   const firstWord = topicWords[0] ?? topic
-  const selectFields = { id: true, title: true, content: true, cafeName: true } as const
+  const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true } as const
 
   // 1단계: 48h + 키워드
   const cutoff48h = new Date(Date.now() - 48 * 3600_000)
@@ -394,15 +409,18 @@ export async function main() {
       publishedCount++
       desireUsedCount[desireCat] = (desireUsedCount[desireCat] ?? 0) + 1
       console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
-      // 댓글 파동 큐 등록 — refs 없어도 등록 (wave-processor가 fallback 댓글 생성)
+      // 댓글 파동 큐 등록 — usableTopComments=0이면 생략
       if (postId) {
-        if (refs.length === 0) {
-          await sendSlackMessage('QA', `[큐레이션] wave 등록: refs 없음 fallback 모드 (topic=${topicStr})`)
+        const refCafePost = refs[0]
+        const usable = computeUsableCount(refCafePost?.topComments)
+        if (usable === 0) {
+          console.log(`[ContentCurator] 댓글 없는 글 — wave queue 생략 postId=${postId} cafePostId=${refCafePost?.id ?? 'none'}`)
+        } else {
+          await enqueueCommentWave(postId, refCafePost!.id, persona.id).catch(async (err) => {
+            await sendSlackMessage('QA', `[큐레이션] wave 등록 실패: ${String(err).slice(0, 100)}`)
+            console.error('[ContentCurator] wave 큐 등록 실패:', err)
+          })
         }
-        await enqueueCommentWave(postId, refs[0]?.id ?? '', persona.id).catch(async (err) => {
-          await sendSlackMessage('QA', `[큐레이션] wave 등록 실패: ${String(err).slice(0, 100)}`)
-          console.error('[ContentCurator] wave 큐 등록 실패:', err)
-        })
       }
     }
   }
