@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { generateComment, getBotUser } from '../seed/generator.js'
@@ -20,7 +21,7 @@ const BOARD_PERSONAS: Record<string, string[]> = {
 /** 봇 댓글 제한 per post (constitution.yaml 기준 2026-05-12 갱신) */
 const MAX_BOT_COMMENTS_PER_POST = 5
 
-async function main() {
+export async function main() {
   // 봇 패턴 분산 — 매 run마다 0~3분 랜덤 딜레이로 시작 타이밍 변주
   const startDelay = Math.floor(Math.random() * 3 * 60 * 1000)
   await new Promise(r => setTimeout(r, startDelay))
@@ -153,4 +154,11 @@ async function main() {
   }
 }
 
-main()
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main()
+    .then(() => process.exit(0))
+    .catch(err => {
+      console.error('[COO] 치명적 오류:', err)
+      process.exit(1)
+    })
+}

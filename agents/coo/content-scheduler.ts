@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url'
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
 import { notifyAdmin } from '../core/notifier.js'
@@ -112,8 +113,17 @@ ${candidates.map((p, i) => `${i + 1}. [${p.boardType}] "${p.title}" — 공감 $
   }
 }
 
-const agent = new COOContentScheduler()
-agent.execute().then((result) => {
+export async function main() {
+  const agent = new COOContentScheduler()
+  const result = await agent.execute()
   console.log('[COO] 콘텐츠:', result.summary)
-  process.exit(0)
-})
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main()
+    .then(() => process.exit(0))
+    .catch(err => {
+      console.error('[COO_CONTENT] 치명적 오류:', err)
+      process.exit(1)
+    })
+}

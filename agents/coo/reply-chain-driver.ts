@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { generateReply, getBotUser } from '../seed/generator.js'
@@ -12,7 +13,7 @@ import { safeBotLog } from '../core/safe-log.js'
 /** 체인 실행 제한 per run */
 const MAX_CHAINS_PER_RUN = 5
 
-async function main() {
+export async function main() {
   console.log('[COO] 대댓글 체인 생성 시작')
   const start = Date.now()
   let chainCount = 0
@@ -167,4 +168,11 @@ async function main() {
   }
 }
 
-main()
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main()
+    .then(() => process.exit(0))
+    .catch(err => {
+      console.error('[COO] 치명적 오류:', err)
+      process.exit(1)
+    })
+}

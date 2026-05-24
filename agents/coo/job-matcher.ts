@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
@@ -14,7 +15,7 @@ const client = new Anthropic()
 /** 일자리 관련 키워드 */
 const JOB_KEYWORDS = ['일자리', '취업', '구직', '알바', '파트타임', '재취업', '채용', '구인']
 
-async function main() {
+export async function main() {
   console.log('[COO] 일자리 매칭 시작')
   const start = Date.now()
   let matchCount = 0
@@ -193,4 +194,11 @@ async function main() {
   }
 }
 
-main()
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main()
+    .then(() => process.exit(0))
+    .catch(err => {
+      console.error('[COO] 치명적 오류:', err)
+      process.exit(1)
+    })
+}

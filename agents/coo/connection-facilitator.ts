@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { generateComment, getBotUser } from '../seed/generator.js'
@@ -11,7 +12,7 @@ import { safeBotLog } from '../core/safe-log.js'
 /** P1 연결 촉진에 적합한 페르소나 */
 const CONNECTION_PERSONAS = ['AQ', 'AV', 'AW', 'E']
 
-async function main() {
+export async function main() {
   console.log('[COO] 연결 촉진 시작')
   const start = Date.now()
   let facilitatedCount = 0
@@ -111,4 +112,11 @@ async function main() {
   }
 }
 
-main()
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main()
+    .then(() => process.exit(0))
+    .catch(err => {
+      console.error('[COO] 치명적 오류:', err)
+      process.exit(1)
+    })
+}

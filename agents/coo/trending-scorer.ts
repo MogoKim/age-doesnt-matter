@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url'
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
 import type { AgentResult } from '../core/types.js'
@@ -112,8 +113,17 @@ class COOTrendingScorer extends BaseAgent {
   }
 }
 
-// 직접 실행
-const agent = new COOTrendingScorer()
-agent.execute().then((result) => {
+export async function main() {
+  const agent = new COOTrendingScorer()
+  const result = await agent.execute()
   console.log('[COO_TRENDING] 완료:', JSON.stringify(result, null, 2))
-})
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main()
+    .then(() => process.exit(0))
+    .catch(err => {
+      console.error('[COO_TRENDING] 치명적 오류:', err)
+      process.exit(1)
+    })
+}
