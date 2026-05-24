@@ -6,6 +6,23 @@ import type { BotStatus, BotType } from '@/generated/prisma/client'
 
 type DashboardBotState = 'active' | 'error' | 'dormant'
 
+const DASHBOARD_BOT_TYPES: BotType[] = [
+  'JOB',
+  'HUMOR',
+  'STORY',
+  'THREAD',
+  'CEO',
+  'CTO',
+  'CMO',
+  'CPO',
+  'CDO',
+  'CFO',
+  'COO',
+  'SEED',
+  'CAFE_CRAWLER',
+  'QA',
+]
+
 function getKstTodayStart(): Date {
   const now = new Date()
   const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
@@ -76,17 +93,18 @@ function summarizeFailure(log: {
 export const getRecentBotLogs = unstable_cache(
   async () => {
     const today = getKstTodayStart()
-    const logs = await prisma.botLog.findMany({
-      orderBy: { executedAt: 'desc' },
-      take: 500,
-    })
+    const logs = (
+      await Promise.all(
+        DASHBOARD_BOT_TYPES.map((botType) =>
+          prisma.botLog.findFirst({
+            where: { botType },
+            orderBy: { executedAt: 'desc' },
+          })
+        )
+      )
+    ).filter((log): log is NonNullable<typeof log> => log !== null)
 
-    const latestByBotType = new Map<BotType, (typeof logs)[number]>()
-    for (const log of logs) {
-      if (!latestByBotType.has(log.botType)) latestByBotType.set(log.botType, log)
-    }
-
-    return Array.from(latestByBotType.values()).map((log) => {
+    return logs.map((log) => {
       const state: DashboardBotState =
         log.status === 'FAILED'
           ? 'error'
