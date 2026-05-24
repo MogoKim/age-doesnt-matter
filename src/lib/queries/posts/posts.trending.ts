@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import type { BoardType, PromotionLevel } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
 import { postSelect, toPostSummary, buildTextSearch, SearchField } from './posts.base'
-import { getLastNoon } from '@/lib/utils/trending'
+import { getLastNoon, calculateTrendingScore } from '@/lib/utils/trending'
 import { getHomeBoardHotPostsRaw } from './posts.home'
 
 /* ── 인기 게시글 (Trending) ── */
@@ -143,14 +143,29 @@ export const getTrendingCommunityPosts = unstable_cache(
 /* ── 홈 뜨는이야기 쿼터 기반 (STORY 6 + LIFE2 2 + HUMOR 2 → trendingScore 재정렬) ── */
 
 async function _getTrendingQuotaPosts(): Promise<PostSummary[]> {
+  // 후보 풀을 쿼터의 2배로 확장 — board별 currentScore 재정렬 후 쿼터만 선택 (P2)
   const [storyPosts, life2Posts, humorPosts] = await Promise.all([
-    getHomeBoardHotPostsRaw('STORY', 6),
-    getHomeBoardHotPostsRaw('LIFE2', 2),
-    getHomeBoardHotPostsRaw('HUMOR', 2),
+    getHomeBoardHotPostsRaw('STORY', 12),
+    getHomeBoardHotPostsRaw('LIFE2', 4),
+    getHomeBoardHotPostsRaw('HUMOR', 4),
   ])
-  const merged = [...storyPosts, ...life2Posts, ...humorPosts]
-  merged.sort((a, b) => b.trendingScore - a.trendingScore)
-  return merged
+
+  // 현재 시각 기준 currentScore 계산 (DB trendingScore는 변경하지 않음)
+  const withCurrentScore = (posts: PostSummary[]) =>
+    posts.map(p => ({
+      post: p,
+      score: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, new Date(p.createdAt)),
+    }))
+
+  // board별: currentScore desc 정렬 후 쿼터만큼 선택
+  const story = withCurrentScore(storyPosts).sort((a, b) => b.score - a.score).slice(0, 6)
+  const life2 = withCurrentScore(life2Posts).sort((a, b) => b.score - a.score).slice(0, 2)
+  const humor = withCurrentScore(humorPosts).sort((a, b) => b.score - a.score).slice(0, 2)
+
+  // 선택된 10개를 currentScore 기준 최종 정렬 후 PostSummary만 반환
+  return [...story, ...life2, ...humor]
+    .sort((a, b) => b.score - a.score)
+    .map(s => s.post)
 }
 
 export const getTrendingQuotaPosts = unstable_cache(
