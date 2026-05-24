@@ -395,7 +395,7 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>우나어 아키텍처</h2>
-    <div class="version">v13 &middot; 2026-05-21</div>
+    <div class="version">v15 &middot; 2026-05-24</div>
   </div>
   <nav>
     <a href="#s1" class="depth-1">1. 서비스 개요</a>
@@ -404,6 +404,7 @@
     <a href="#s2" class="depth-1">2. 기술 스택</a>
     <a href="#s3" class="depth-1">3. 인프라 구조</a>
     <a href="#s3-1" class="depth-2">환경 변수</a>
+    <a href="#s3-2" class="depth-2">운영 환경 플래그</a>
     <a href="#s4" class="depth-1">4. 데이터베이스</a>
     <a href="#s5" class="depth-1">5. AI 에이전트</a>
     <a href="#s5-2" class="depth-2">에이전트 상세</a>
@@ -448,7 +449,7 @@
 <main class="main">
 <h1>우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서</h1>
 <blockquote>
-<p><strong>최종 업데이트</strong>: 2026-05-22 (v14 — 코드 직독 전면 최신화: 78핸들러 · 35모델 · 21GHA · 49페이지 · 39API · launchd 18개 · 커뮤니티·블로그 에이전트 대폭 추가)
+<p><strong>최종 업데이트</strong>: 2026-05-24 (v15 — comment-activator(COO) 에이전트 추가 · trendingScore 즉시 갱신(게스트+BOT wave+SHEET+COO) · 어드민 회원 글/댓글 드릴다운(UserContentDrawer) · post-trending.ts 신규 · wave-processor.ts v2-E 상세 보강)
 <strong>문서 관리자</strong>: Claude Code (자동화) + 창업자 (승인)
 <strong>변경 시</strong>: 이 문서 하단 <a href="#%EB%AC%B8%EC%84%9C-%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8-%EA%B0%80%EC%9D%B4%EB%93%9C">문서 업데이트 가이드</a> 참고</p>
 </blockquote>
@@ -827,6 +828,15 @@
 <td>GTM에서 참조</td>
 </tr>
 </tbody></table>
+<h3 id="s3-2">3.2 운영 환경 플래그 (GHA env + .env.local 동시 적용)</h3>
+<table>
+<thead><tr><th>플래그</th><th>현재 값</th><th>효과</th><th>변경 시점</th></tr></thead>
+<tbody>
+<tr><td><code>ENABLE_SEED_POSTS</code></td><td><span style="color:#e53e3e">false</span></td><td>시드봇 게시글·댓글·좋아요 생성 전면 중단. agents-seed.yml × 13회/일 스케줄은 유지되나 실행 즉시 return.</td><td>2026-05-16</td></tr>
+<tr><td><code>COMMENT_WAVE_V2_ENABLED</code></td><td><span style="color:#e53e3e">false</span></td><td>wave-processor.ts v2(processWaveV2/processAuthorRepliesV2) 비활성 → legacy 함수(processWaveLegacy/processAuthorReplyLegacy)로 fallback. agents-cafe-wave.yml에서 참조.</td><td>—</td></tr>
+<tr><td><code>ENABLE_IMAGE_ROUTER</code></td><td><span style="color:#e53e3e">false</span></td><td>이미지 라우터 에이전트 비활성 (로컬 테스트 전용).</td><td>—</td></tr>
+</tbody></table>
+<p><small>⚠️ 플래그 변경 시 GHA env + .env.local <strong>동시</strong> 반영 필수. 한 곳만 바꾸면 로컬/GHA 불일치 상태 발생 → <code>.claude/rules/agent-lifecycle.md</code> ON/OFF 체크리스트 참고.</small></p>
 <hr>
 <h2>4. 데이터베이스 스키마</h2>
 <h3>4.1 전체 모델 맵</h3>
@@ -1136,7 +1146,7 @@
 <tr>
 <td><strong>COO</strong></td>
 <td><code>coo/job-scraper.ts</code></td>
-<td>12/16/20시</td>
+<td>12:09, 15:09, 20:09시</td>
 <td>Haiku</td>
 <td>50plus.or.kr 일자리 크롤링 → AI 가공 → DB</td>
 </tr>
@@ -1153,6 +1163,13 @@
 <td>매일 14:00</td>
 <td>Haiku</td>
 <td>에디터스 픽 + 시드 콘텐츠 편성 + Gemini 커버 이미지 (IMAGE_GENERATOR=gemini)<br><small>⚠️ 매거진 커버는 Gemini API. DALL-E는 CMO SNS 카드뉴스 전용(~$1.5/월).</small></td>
+</tr>
+<tr>
+<td><strong>COO</strong></td>
+<td><code>coo/comment-activator.ts</code> ★신규</td>
+<td>10:30, 14:30, 20:00</td>
+<td>Haiku</td>
+<td>댓글 0개 게시글 자동 댓글 활성화 — 당일 BOT/SHEET 글 중 댓글 없는 게시글에 페르소나 댓글 1개 생성. lastEngagedAt + trendingScore 즉시 갱신 (agents-daily.yml)</td>
 </tr>
 <tr>
 <td><strong>SEED</strong></td>
@@ -1252,6 +1269,18 @@
 <tr>
 <td><code>skills/types.ts</code></td>
 <td>ProvenSkill, SkillSuggestion 타입 정의</td>
+</tr>
+<tr>
+<td><code>core/post-trending.ts</code> ★신규</td>
+<td><strong>refreshPostTrendingScore(postId)</strong> — 반응(좋아요·댓글) 발생 직후 trendingScore를 즉시 재계산·갱신. wave-processor / comment-activator / seed/scheduler에서 루프 종료 후 1회만 호출. calculateTrendingScore()는 core/trending.ts에서 import (DB 코드 분리). agents/ → src/ 런타임 import 금지 규칙 준수.</td>
+</tr>
+<tr>
+<td><code>cafe/wave-processor.ts</code></td>
+<td><strong>댓글 파동 v2-E</strong> — CommentWaveQueue 처리 엔진. Tier별 댓글 수: KILLER 15개 / HOT 8~11개 / NORMAL 5개. content 중복 dedup + lastEngagedAt + trendingScore 즉시 갱신 포함. COMMENT_WAVE_V2_ENABLED killswitch 지원. agents-cafe-wave.yml (*/5분) 연동. processWaveLegacy / processAuthorReplyLegacy (단일) · processWaveV2 / processAuthorRepliesV2 (루프, 루프 종료 후 1회 refresh).</td>
+</tr>
+<tr>
+<td><code>coo/comment-activator.ts</code> ★신규</td>
+<td><strong>댓글 0개 게시글 자동 활성화</strong> — 당일 BOT/SHEET 글 중 댓글 없는 게시글에 페르소나 댓글 1개 자동 생성. lastEngagedAt + trendingScore 즉시 갱신. DB write 권한(COO 전용) 준수. agents-daily.yml 10:30 · 14:30 · 20:00 KST.</td>
 </tr>
 </tbody></table>
 <h3>5.4 일자리 파이프라인 (COO)</h3>
@@ -2077,6 +2106,7 @@
 09:30  ░░ launchd cafe-crawler-09h30 (크롤 전용)
 09:50  ██ CAFE hourly curation #3
 10:30  ░░ launchd cafe-crawler-popular-morning (인기글 동기화)
+10:30  ██ COO comment-activator (1차 — 댓글 0개 글 자동 활성화)
 10:35  ██ CAFE hourly curation #4 (09:30 크롤 기반)
 10:50  ██ CAFE popular curation (1회차, 10:30 동기화 기반)
 11:20  ██ CAFE hourly curation #5
@@ -2094,6 +2124,7 @@
 14:00  ░░ launchd magazine-late (오후 매거진, Gemini 이미지 생성)
 14:20  ██ CAFE hourly curation #9
 14:30  ░░ launchd jisik-answerer | ░░ launchd cafe-crawler-afternoon (크롤 전용)
+14:30  ██ COO comment-activator (2차 — 댓글 0개 글 자동 활성화)
 15:00  ██ sheet-scraper (4회차) | ░░ launchd naver-blog-morning (매거진 2건 발행)
 15:05  ██ CAFE hourly curation #10
 15:09  ██ COO 일자리수집 (2회차)
@@ -2109,6 +2140,7 @@
 18:05  ██ CAFE hourly curation #14 (17:30 크롤 기반)
 18:50  ██ CAFE hourly curation #15
 19:35  ██ CAFE hourly curation #16
+20:00  ██ COO comment-activator (3차 — 댓글 0개 글 자동 활성화)
 20:09  ██ COO 일자리수집 (3회차)
 20:17  ██ CMO social-metrics (Threads 메트릭)
 20:20  ██ CAFE hourly curation #17
@@ -3458,7 +3490,7 @@ Layer 4 — 장기 기억 (세션 간 지속)
 </tbody></table>
 <hr>
 <h2>14. 현재 상태 &amp; 남은 작업</h2>
-<h3>완료됨 (2026-05-22 기준 v14)</h3>
+<h3>완료됨 (2026-05-24 기준 v15)</h3>
 <ul>
 <li>전체 코드 구현 (<strong>49페이지, 39개 API</strong>, 77+ 컴포넌트)</li>
 <li>에이전트 시스템 ACTIVE (헌법 v5.0, <strong>78핸들러</strong> · 78명 페르소나)</li>
@@ -3467,6 +3499,20 @@ Layer 4 — 장기 기억 (세션 간 지속)
 <li><strong>댓글 파동 시스템 v2</strong> — 회원글 UserPostWaveQueue (1분/10분/30분/60분)</li>
 <li><strong>네이버 블로그 발행 큐</strong> — NaverBlogQueue + 어드민 관리 UI</li>
 <li><strong>카페 큐레이션 아키텍처</strong> — 시간별(×4) + 인기글(×3) + 5분 파동 자동화</li>
+<li><strong>trendingScore 즉시 갱신 시스템</strong> (2026-05-23) — 반응 발생 시 홈 순위 실시간 반영<ul>
+<li>게스트 좋아요/댓글 → <code>revalidateTag('home-trending')</code> 즉시 무효화 (guest-likes.ts · guest-comments.ts)</li>
+<li>BOT wave 댓글 (cafe/wave-processor) · COO 댓글 활성화 (comment-activator) → lastEngagedAt + trendingScore 즉시 갱신</li>
+<li>SHEET 파동 좋아요/댓글 (seed/scheduler processViralLikeWave · SHEET_ENGAGE_COMMENT · SHEET_COMMENT_WAVE) → trendingScore 즉시 갱신</li>
+<li>신규 헬퍼: <code>agents/core/post-trending.ts</code> — refreshPostTrendingScore() (calculateTrendingScore 로 공식 재사용)</li>
+</ul>
+</li>
+<li><strong>어드민 회원 글/댓글 드릴다운</strong> (2026-05-24) — 회원 관리에서 글/댓글 수 클릭 시 우측 드로어로 상세 목록 확인<ul>
+<li><code>UserContentDrawer</code> (신규 Client Component) — 글/댓글 cursor 기반 페이지네이션 20개씩, "더 보기" 무한 스크롤</li>
+<li><code>adminGetUserPosts / adminGetUserComments</code> Server Action — requireAdmin() 인증 + 조회 전용 (DB write 없음)</li>
+<li>어드민 콘텐츠 필터 botType 추가 — 실고객 / 시드봇 / 큐레이션봇(cafePostId 기반) / 스크래퍼봇(SHEET) / NNN(ADMIN)</li>
+</ul>
+</li>
+<li><strong>COO comment-activator 에이전트</strong> (2026-05-11 구축 · 2026-05-23 trendingScore 연동) — 댓글 0개 게시글 자동 활성화 3회/일</li>
 <li>시드봇 OFF (ENABLE_SEED_POSTS=false, 2026-05-16) — 카페 큐레이션으로 전환</li>
 <li>일자리 자동 수집 파이프라인</li>
 <li>시드 페르소나 78명 (기존 봇 + 스크래퍼봇 BI~BW + 엔터봇 EN1~EN5)</li>
@@ -5115,6 +5161,9 @@ Slack 설정         긴급 회의             학습 축적          자동 롤
 <tr><td><strong>구글 시트 화제성 파이프라인</strong></td><td>4탭 구조(사는이야기_화제성/웃음방_화제성) → WAVE_L(좋아요10)+WAVE_1~3(댓글15) → HOT 자동 달성, agents-sheet-viral.yml 30분마다</td><td>2026-05-11</td></tr>
 <tr><td><strong>FAILED 행 스마트 재시도</strong></td><td>B~J 공백 처리 시 파동 0개 → 재예약+PUBLISHED, 파동 존재 → SKIPPED (SHA 80eb1d5)</td><td>2026-05-11</td></tr>
 <tr><td><strong>이미지 전용 글 댓글 가드</strong></td><td>generateSheetViralComment: cleanText &lt; 50자이면 즉시 '' 반환 — 짤방 쓰레기 댓글 재발 방지 (SHA 67cf99e)</td><td>2026-05-12</td></tr>
+<tr><td><strong>어드민 콘텐츠 필터 botType</strong></td><td>실고객(source=USER) / 시드봇(source=BOT, cafePostId IS NULL) / 큐레이션봇(source=BOT, cafePostId IS NOT NULL) / 스크래퍼봇(source=SHEET) / NNN(source=ADMIN) 세분화 드롭다운 필터 — getContentList() botType 파라미터 지원 (F09)</td><td>2026-05-20</td></tr>
+<tr><td><strong>어드민 회원 글/댓글 드릴다운</strong></td><td>MemberTable 글·댓글 수 클릭 → UserContentDrawer(우측 슬라이드 드로어, cursor 기반 20개 페이지네이션) — adminGetUserPosts / adminGetUserComments Server Action, 요구어드민 인증·조회 전용·DB schema 변경 없음 (F09)</td><td>2026-05-24</td></tr>
+<tr><td><strong>trendingScore 즉시 갱신</strong></td><td>반응(댓글·좋아요) 발생 즉시 홈 순위 반영. ① 게스트 revalidateTag('home-trending') ② BOT wave / COO comment-activator → lastEngagedAt + trendingScore 갱신 ③ SHEET 파동 좋아요/댓글 → trendingScore 갱신. 신규 헬퍼 agents/core/post-trending.ts (refreshPostTrendingScore). GHA 최대 6시간 공백 → 즉시 갱신으로 단축</td><td>2026-05-23</td></tr>
 </table>
 <hr>
 <h2>문서 업데이트 가이드</h2>
