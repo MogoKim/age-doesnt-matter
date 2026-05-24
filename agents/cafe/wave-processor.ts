@@ -35,12 +35,15 @@ function isLegacyQueue(queue: { createdAt: Date }): boolean {
 const COMMENTER_PERSONA_IDS = getAllPersonaIds()
   .filter(id => !id.startsWith('EN') && !/^N\d/.test(id))
 
-// 게시판별 허용 페르소나 (comment-activator.ts BOARD_PERSONAS와 동일 정책)
-const BOARD_PERSONAS: Record<string, readonly string[]> = {
-  STORY: ['E', 'AQ', 'AV'],
-  HUMOR: ['C', 'AP', 'AO'],
-  JOB:   ['AS', 'D'],
-  LIFE2: ['AQ', 'E', 'AR'],
+// HUMOR 전용 페르소나 — persona-data.ts board:'HUMOR' 기준 (C/R/AF/AO/AP/AX/AY)
+// STORY/LIFE2에서 제외. HUMOR 게시판은 전체 풀 허용. JOB은 별도 허용 목록 유지.
+const HUMOR_ONLY_PERSONAS = new Set(['C', 'R', 'AF', 'AO', 'AP', 'AX', 'AY'])
+const JOB_ALLOWED_PERSONAS = new Set(['AS', 'D'])
+
+function boardPersonaFilter(boardType: string): (p: string) => boolean {
+  if (boardType === 'JOB')                              return p => JOB_ALLOWED_PERSONAS.has(p)
+  if (boardType === 'STORY' || boardType === 'LIFE2')   return p => !HUMOR_ONLY_PERSONAS.has(p)
+  return () => true  // HUMOR·기타: 전체 풀
 }
 
 type WaveNum = 1 | 2 | 3 | 4
@@ -249,7 +252,7 @@ async function processWaveLegacy(
     getQueueTier(queue.postId, queue.cafePostId),
     prisma.post.findUnique({ where: { id: queue.postId }, select: { boardType: true } }),
   ])
-  const legacyBoardPersonas = BOARD_PERSONAS[legacyPost?.boardType ?? ''] ?? null
+  const legacyBoardType = legacyPost?.boardType ?? ''
 
   const botUsers = await prisma.user.findMany({
     where: { email: { endsWith: '@unao.bot' } },
@@ -268,7 +271,7 @@ async function processWaveLegacy(
   const basePool = [
     ...COMMENTER_PERSONA_IDS
       .filter(p => p !== queue.authorPersonaId)
-      .filter(p => legacyBoardPersonas === null || legacyBoardPersonas.includes(p)),
+      .filter(boardPersonaFilter(legacyBoardType)),
   ].sort(() => Math.random() - 0.5)
   let personaId = basePool[0]
   let userId: string | null = null
@@ -504,7 +507,7 @@ async function processWaveV2(
       normalExit = true
       return
     }
-    const boardPersonas = BOARD_PERSONAS[postForBoard?.boardType ?? ''] ?? null
+    const boardType = postForBoard?.boardType ?? ''
 
     const topComments = parseTopComments(cafePost.topComments)
     if (topComments.length === 0) {
@@ -581,7 +584,7 @@ async function processWaveV2(
       // 봇 후보 선택 (중복 없는 봇만, 강제 선택 금지, 게시판별 페르소나 제한)
       const candidates = [...COMMENTER_PERSONA_IDS]
         .filter(p => p !== queue.authorPersonaId)
-        .filter(p => boardPersonas === null || boardPersonas.includes(p))
+        .filter(boardPersonaFilter(boardType))
         .sort(() => Math.random() - 0.5)
 
       let chosen: { personaId: string; userId: string } | null = null
