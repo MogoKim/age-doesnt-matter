@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.18</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.21</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -290,12 +290,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.18</div>
+  <div class="cover-badge">Handover Document v10.21</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.18 (2026-05-21)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.21 (2026-05-24)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -305,7 +305,7 @@
 
 <!-- 시스템 현황 -->
 <div class="status-box">
-  <div class="sb-title">시스템 현황 (2026-05-21)</div>
+  <div class="sb-title">시스템 현황 (2026-05-24)</div>
   <div class="status-item"><div class="status-dot on"></div>크롤링 (launchd, 하루 7회)</div>
   <div class="status-item"><div class="status-dot on"></div>큐레이션 (GHA, 45분 간격 20슬롯)</div>
   <div class="status-item"><div class="status-dot on"></div>Wave 댓글 (GHA, 5분 간격 24시간)</div>
@@ -1861,8 +1861,8 @@ for (const waveNum of order) {
           <td><code>cafe/image-router.ts</code></td>
           <td style="font-size:12px;">프로세스 없음<br><span style="color:var(--sub);">GHA hourly-curation 내 step</span></td>
           <td>GHA · hourly-curation · content-curator 직전</td>
-          <td><span style="color:var(--green);">● ON</span> · <span style="color:var(--sub);">DRY_RUN=true</span></td>
-          <td>이미지 있는 CafePost → Google Sheet PENDING append (DAY_CAP=3, TAB_CAP=1). DRY_RUN 시 실제 append 없이 BotLog만 기록. ENABLE_IMAGE_ROUTER / DRY_RUN_IMAGE_ROUTER 환경변수로 제어.</td>
+          <td><span style="color:var(--green);">● ON · LIVE</span><br><span style="font-size:12px;color:var(--sub);">DRY_RUN=false (2026-05-24~)</span></td>
+          <td>이미지 있는 CafePost → Google Sheet PENDING append (DAY_CAP=3, TAB_CAP=1). 2026-05-24 DRY_RUN=false 전환 후 live append 실행 중 — 첫 날 3건 PUBLISHED 확인. ENABLE_IMAGE_ROUTER / DRY_RUN_IMAGE_ROUTER 환경변수로 제어.</td>
         </tr>
         <tr>
           <td><strong>Wave봇</strong></td>
@@ -1947,7 +1947,7 @@ for (const waveNum of order) {
 
   <h3>image-router 상세 (A31 P3)</h3>
   <div class="narrative">
-    <p>이미지 있는 CafePost를 Google Sheet PENDING 행으로 자동 등록하는 에이전트. GHA hourly-curation의 content-curator 직전 step으로 실행된다. <strong>현재 상태: ENABLE_IMAGE_ROUTER=true / DRY_RUN_IMAGE_ROUTER=true</strong> — 실제 append 없이 BotLog(IMAGE_ROUTE, reason=dry_run)만 기록 중.</p>
+    <p>이미지 있는 CafePost를 Google Sheet PENDING 행으로 자동 등록하는 에이전트. GHA hourly-curation의 content-curator 직전 step으로 실행된다. <strong>현재 상태: ENABLE_IMAGE_ROUTER=true / DRY_RUN_IMAGE_ROUTER=false (live, 2026-05-24 전환)</strong> — 실제 Sheet append 실행 중. 전환 첫 날(2026-05-24) 10:35 KST append 3건 → 10:40 naver-cafe-sheet-scraper 처리 → 이미지 포함 PUBLISHED 3건 실증 완료.</p>
     <p><strong>탭 매핑</strong>: desireCategory HUMOR/ENTERTAIN → 웃음방, MONEY/RETIRE/HOUSING/JOB → 2막준비, 나머지 → 사는이야기. killerScore≥75 또는 isPopular=true → _화제성 탭 추가. <strong>cap</strong>: DAY_CAP=3 (KST 오늘 기준), TAB_CAP=1 (탭별), PENDING_BACKLOG_LIMIT=10 (전 탭 PENDING 총량 초과 시 전체 중단).</p>
     <p><strong>중복 방지</strong>: readAllSheetUrls()(전 탭 A열 상태 무관) + Post.sourceUrl 기존 발행 대조. <strong>usedAt A정책</strong>: CafePost.usedAt 마킹 안 함 — scraper 실패 시 CafePost 영구 누락 방지. Sheet 중복 방어로 재append 차단.</p>
   </div>
@@ -1997,7 +1997,7 @@ for (const waveNum of order) {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜ 전부 완료</h2>
+    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝ 전부 완료</h2>
   </div>
 
   <div class="alert ok">
@@ -2971,7 +2971,7 @@ await prisma.cafePost.create({
       · <code>community/sheets-client.ts</code>: appendRow() + readAllSheetUrls() + countPendingTotal() 신규<br>
       · <code>cron/runner.ts</code>: <code>cafe_crawler:image-route</code> 핸들러 등록<br>
       · <code>.github/workflows/agents-cafe-hourly-curation.yml</code>: image-router step 추가 (content-curator 직전 실행)<br>
-      · 현재 상태: ENABLE_IMAGE_ROUTER=true / DRY_RUN_IMAGE_ROUTER=true (실제 append 없이 BotLog만 기록)<br><br>
+      · 현재 상태: ENABLE_IMAGE_ROUTER=true / DRY_RUN_IMAGE_ROUTER=false (live, 2026-05-24 전환 — 첫 날 3건 PUBLISHED 확인)<br><br>
       <strong>Wave V2-E kill switch (wave-processor.ts 동반 배포)</strong><br>
       · <code>COMMENT_WAVE_V2_ENABLED</code> / <code>COMMENT_WAVE_V2_DATE</code> 환경변수로 kill switch 제어<br>
       · 티어별 wave count: KILLER {1:2,2:4,3:5,4:4} / NORMAL {1:1,2:1,3:2,4:1} / HOT 슬라이딩<br>
@@ -2980,6 +2980,79 @@ await prisma.cafePost.create({
       SHA: (A31 P0~P3 + Phase 1, 2026-05-22)
     </div>
     <div class="impl-file">📄 agents/cafe/content-curator.ts — imageUrls 필터 + maxPosts 5→3<br>📄 agents/cafe/popular-curator.ts — imageUrls 필터<br>📄 agents/cafe/image-router.ts — 신규<br>📄 agents/community/sheets-client.ts — appendRow / readAllSheetUrls / countPendingTotal 신규<br>📄 agents/cron/runner.ts — cafe_crawler:image-route 등록<br>📄 .github/workflows/agents-cafe-hourly-curation.yml — image-router step 추가<br>📄 launchd/com.unao.naver-cafe-sheet-scraper.plist — 10:40 / 15:30 슬롯 추가<br>📄 agents/cafe/wave-processor.ts — V2-E kill switch + 티어별 count + v2-F fallback</div>
+  </div>
+  </details>
+
+  <p style="font-size:12px;color:var(--muted);margin:12px 0 0 0;">아래 ㉞㉟㊱㊲는 2026-05-23~24 배포 항목이다.</p>
+
+  <details>
+  <summary class="impl-summary">㉞. 커뮤니티 신규 글 slug 자동 생성 — BOT/SHEET/curator/seed 전체 적용</summary>
+  <div class="impl-card">
+    <div class="impl-title">㉞. 커뮤니티 신규 글 slug 자동 생성 (BOT/SHEET/curator/seed)</div>
+    <div class="impl-body">
+      카페 파이프라인으로 발행되는 모든 글(큐레이션봇·sheet-scraper·humor/caregiving-curator·seed scheduler)에 SEO용 slug가 자동 부여되지 않는 문제가 있었다. Post.slug가 null이면 사이트맵 URL이 누락되고 Google 색인 효율이 떨어진다.<br><br>
+      <strong>수정 내용</strong>: <code>agents/core/slug.ts</code> 신규 생성 — 한글 제목을 영문/숫자 기반 slug로 변환하는 공통 유틸. 카페 파이프라인 각 발행 진입점에서 글 생성 시 slug를 자동 계산해 저장한다.<br><br>
+      <strong>적용 범위</strong>:
+      <ul style="margin:6px 0 6px 20px;line-height:1.8;">
+        <li><code>content-curator.ts</code> — BOT 큐레이션 글</li>
+        <li><code>popular-curator.ts</code> — HOT BOT 큐레이션 글</li>
+        <li><code>sheet-scraper.ts</code> — SHEET 라인 글 (naver-cafe / fmkorea 등)</li>
+        <li><code>humor-curator.ts</code> / <code>caregiving-curator.ts</code> — CMO 큐레이터 글</li>
+        <li><code>seed/scheduler.ts</code> — seed 글</li>
+      </ul>
+      <strong>후속 조치 (2026-05-23)</strong>: 기존 slug=null 게시글 1,812건 백필 완료. 커뮤니티 URL 포함 사이트맵 2,052건으로 재생성 후 GSC(Google Search Console) 재제출 완료 — 색인 반영은 대기 중.<br><br>
+      SHA: ed46b2c (2026-05-23)
+    </div>
+    <div class="impl-file">📄 agents/core/slug.ts — 신규 (slug 생성 유틸)<br>📄 agents/cafe/content-curator.ts — 발행 시 slug 자동 저장<br>📄 agents/cafe/popular-curator.ts — 발행 시 slug 자동 저장<br>📄 agents/community/sheet-scraper.ts — SHEET 글 slug 저장<br>📄 agents/cmo/humor-curator.ts — slug 저장<br>📄 agents/cmo/caregiving-curator.ts — slug 저장<br>📄 agents/seed/scheduler.ts — seed 글 slug 저장</div>
+  </div>
+  </details>
+
+  <details>
+  <summary class="impl-summary">㉟. COO runner.ts silent failure 수정 — 6개 핸들러 Promise discard 버그</summary>
+  <div class="impl-card">
+    <div class="impl-title">㉟. COO runner.ts silent failure 수정 (.then(() => {}) → .then(m => m.main()))</div>
+    <div class="impl-body">
+      <code>agents/cron/runner.ts</code>의 COO 핸들러 6개가 <code>.then(() => {})</code> 패턴으로 등록돼 있었다. 이 패턴은 dynamic import 후 반환된 모듈 객체를 버리고 <code>main()</code>을 호출하지 않는다. 결과적으로 runner가 핸들러를 "실행했다"고 판단하지만 실제 작업(댓글 달기, 트렌딩 점수 계산 등)은 전혀 실행되지 않는 silent failure였다.<br><br>
+      <strong>영향 받은 핸들러 6개</strong>:
+      <ul style="margin:6px 0 6px 20px;line-height:1.8;">
+        <li><code>coo:comment-activate</code> — 댓글 활성화 (comment-activator.ts)</li>
+        <li><code>coo:job-match</code> — 일자리 매칭 (job-matcher.ts)</li>
+        <li><code>coo:connection-facilitate</code> — 관계 연결 (connection-facilitator.ts)</li>
+        <li><code>coo:reply-chain</code> — 대화 체인 (reply-chain-driver.ts)</li>
+        <li><code>coo:content-schedule</code> — 콘텐츠 예약 (content-scheduler.ts)</li>
+        <li><code>coo:trending-score</code> — 트렌딩 점수 계산 (trending-scorer.ts, ㉑에 기문서화)</li>
+      </ul>
+      <strong>수정</strong>: <code>.then(() => {})</code> → <code>.then(m => m.main())</code>. 수정 후 첫 10:30 KST 슬롯에서 comment-activator 2분 17초 실행, 4개 게시글 8개 댓글 달기 확인.<br><br>
+      SHA: ece918c (2026-05-22)
+    </div>
+    <div class="impl-file">📄 agents/cron/runner.ts — COO 핸들러 6개 .then(m =&gt; m.main()) 수정</div>
+  </div>
+  </details>
+
+  <details>
+  <summary class="impl-summary">㊱. 반응 발생 시 trendingScore 즉시 갱신 — refreshPostTrendingScore 신규</summary>
+  <div class="impl-card">
+    <div class="impl-title">㊱. 반응 발생 시 trendingScore 즉시 갱신 (refreshPostTrendingScore)</div>
+    <div class="impl-body">
+      기존에는 trendingScore가 COO trending-scorer(하루 2회 GHA)에 의해서만 갱신됐다. 댓글·좋아요 등 반응이 발생해도 다음 정기 갱신 때까지 점수가 업데이트되지 않아 "지금 막 반응이 터진 글"이 즉시 뜨는이야기에 반영되지 않는 문제가 있었다.<br><br>
+      <strong>수정</strong>: <code>agents/core/post-trending.ts</code> 신규 — <code>refreshPostTrendingScore(postId)</code> 유틸 함수. 댓글/좋아요 발생 직후 호출해 해당 글의 trendingScore를 즉시 재계산하고 게스트 홈 캐시도 무효화한다.<br><br>
+      <strong>현재 호출 지점</strong>: comment-activator.ts (COO 봇이 댓글 추가 후 자동 호출). 이후 다른 반응 발생 경로에도 점진적으로 적용 예정.<br><br>
+      SHA: b1da0ab (2026-05-22)
+    </div>
+    <div class="impl-file">📄 agents/core/post-trending.ts — 신규 (refreshPostTrendingScore 유틸)<br>📄 agents/coo/comment-activator.ts — 댓글 추가 후 refreshPostTrendingScore 호출</div>
+  </div>
+  </details>
+
+  <details>
+  <summary class="impl-summary">㊲. 홈 뜨는이야기 read-time currentScore 시간 감쇠 정렬 (bfdaab9)</summary>
+  <div class="impl-card">
+    <div class="impl-title">㊲. 홈 뜨는이야기 — read-time currentScore 기반 시간 감쇠 정렬 (카페 발행 글 노출 품질 개선)</div>
+    <div class="impl-body">
+      카페 파이프라인으로 발행된 글이 홈 뜨는이야기 탭에 노출될 때 정렬 품질 개선. DB에 저장된 trendingScore를 그대로 쓰던 방식에서 벗어나, 페이지 요청 시점에 currentScore를 동적으로 재계산(시간 감쇠 적용)해 정렬한다.<br><br>
+      <strong>변경 내용</strong>: <code>posts.trending.ts</code> <code>_getTrendingQuotaPosts()</code> — board별 후보풀(STORY 12, LIFE2 4, HUMOR 4)을 2× 크게 가져와 currentScore로 재정렬 후 최종 선택(STORY 6 + LIFE2 2 + HUMOR 2). 오래된 발행 글이 높은 DB trendingScore로 계속 상단 점유하는 현상 해소.<br><br>
+      SHA: bfdaab9 (2026-05-24)
+    </div>
+    <div class="impl-file">📄 src/lib/queries/posts/posts.trending.ts — _getTrendingQuotaPosts currentScore 재계산 + board-by-board quota 정렬</div>
   </div>
   </details>
 
@@ -3056,15 +3129,15 @@ await prisma.cafePost.create({
   </div>
 
   <div class="faq-item">
-    <div class="faq-q">원문 보존율 90%/95%에서 AI가 실제로 바꾸는 게 정확히 뭐야?</div>
+    <div class="faq-q">큐레이션봇이 카페 글을 AI로 재가공해서 발행하나?</div>
     <div class="faq-a">
-      <strong>바꾸는 부분은 매우 제한적이다 (content-curator 기준).</strong> §10 "원문 보존율" 섹션에 상세 표가 있다. 요약:
+      <strong>아니다. 현재는 전부 100% 원문 그대로 발행하며 AI 재가공이 없다.</strong>
       <ul style="margin:8px 0 8px 20px;line-height:1.8;">
-        <li><strong>일반 큐레이션 (90% 보존)</strong>: 첫 문장 말투 + 마지막 문장 마무리만 재가공. 중간 내용(지명·수치·경험·스토리) 완전 보존.</li>
-        <li><strong>킬러글 (95% 보존)</strong>: 첫 문장 표현 1개 + 지명 익명화("OO구") + 어미 1~2개. 이야기 순서·핵심 수치·갈등 포인트 절대 변경 금지.</li>
-        <li><strong>인기글 큐레이션 (100% 원문, AI 없음) — 2026-05-21~</strong>: popular-curator.ts는 AI 재창작 없이 <code>stripMarkdown(cafePost.title/content)</code>를 그대로 발행. 상세: §14 ㉘.</li>
+        <li><strong>일반 큐레이션 · killerPosts (100% 원문, AI 없음 — 2026-05-20~)</strong>: content-curator.ts는 <code>stripMarkdown(cafePost.title/content)</code>를 그대로 발행한다. Claude API 호출 없음.</li>
+        <li><strong>인기글 큐레이션 (100% 원문, AI 없음 — 2026-05-21~)</strong>: popular-curator.ts도 동일 방식으로 전환됐다. 상세: §14 ㉘.</li>
       </ul>
-      실제 확인: age-doesnt-matter.com에서 발행된 글의 본문과 원문 카페 글을 비교하면 내용은 동일하고 어미/시작·끝 문장만 다른 것을 확인할 수 있다 (content-curator 발행글 기준).
+      ⚠️ <em>이전 버전(~2026-05-19)에서는 일반글 90%·킬러글 95% 보존 AI 재가공 방식을 운영했다. 현재는 해당 방식이 제거됐으므로 참고 목적으로만 남긴다.</em><br>
+      Wave 댓글은 v2-E 기준 topComments 원문 기반 직접 달기 (AI 없음). sourceCandidates 부족 시에만 legacy AI fallback 경로가 실행될 수 있다.
     </div>
   </div>
 
@@ -3150,6 +3223,29 @@ await prisma.cafePost.create({
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.21</div>
+    <div class="changelog-date">2026-05-24</div>
+    <div class="changelog-content">
+      <strong>image-router live 전환 실증 + slug 자동생성 + COO runner 수정 + trendingScore 즉시갱신 + 홈 정렬 개선 반영 (신규 구현 ㉞㉟㊱㊲ + 오류 수정 7건).</strong><br><br>
+      <strong>[image-router DRY_RUN=false 전환 (2026-05-24)]</strong><br>
+      GitHub Variables에서 DRY_RUN_IMAGE_ROUTER=false로 전환. 전환 첫 날 10:35 KST append 3건 → 10:40 naver-cafe-sheet-scraper 처리 → 이미지 포함 PUBLISHED 3건 — 전체 파이프라인 최초 실증 완료.<br>
+      §13 봇 상태표: DRY_RUN=true → DRY_RUN=false (live) 반영.<br>
+      §13 image-router 상세: live 상태 + 실증 데이터 반영.<br>
+      §14 ㉝: 현재 상태 DRY_RUN=false 반영.<br><br>
+      <strong>[㉞ — SHA: ed46b2c (2026-05-23)]</strong> 커뮤니티 신규 글 slug 자동 생성 — agents/core/slug.ts 신규. content-curator / popular-curator / sheet-scraper / humor-curator / caregiving-curator / seed/scheduler 6개 발행 진입점 전체 적용. 기존 slug=null 1,812건 백필 완료. 사이트맵 커뮤니티 URL 포함 2,052건 재생성 + GSC 재제출 완료 (색인 반영 대기).<br><br>
+      <strong>[㉟ — SHA: ece918c (2026-05-22)]</strong> COO runner.ts silent failure 수정 — 6개 핸들러(comment-activator / job-matcher / connection-facilitator / reply-chain-driver / content-scheduler / trending-scorer) <code>.then(() => {})</code> → <code>.then(m => m.main())</code>. 수정 전 main() 미호출로 COO 전체 기능 무동작. 수정 후 comment-activator 2m 17s 실행 + 4개 글 8개 댓글 확인.<br><br>
+      <strong>[㊱ — SHA: b1da0ab (2026-05-22)]</strong> 반응 발생 시 trendingScore 즉시 갱신 — agents/core/post-trending.ts 신규. refreshPostTrendingScore(postId) 유틸 + 게스트 홈 캐시 무효화. comment-activator 댓글 추가 후 자동 호출 중.<br><br>
+      <strong>[㊲ — SHA: bfdaab9 (2026-05-24)]</strong> 홈 뜨는이야기 read-time currentScore 시간 감쇠 정렬 — 카페 발행 글의 홈 노출 점수 감쇠 보정. _getTrendingQuotaPosts() board별 2× 후보풀 → currentScore 재계산 → STORY 6 + LIFE2 2 + HUMOR 2 최종 선택. 오래된 글의 상단 고착 현상 해소.<br><br>
+      <strong>[오류 수정]</strong><br>
+      §14 섹션 제목: ㉜ 전부 완료 → ㉜㉝ 전부 완료 (㉝ 누락 반영).<br>
+      §15 FAQ "원문 보존율 90%/95%": 현재 정책(100% 원문, AI 없음)으로 전면 교체. 일반 큐레이션 90% / 킬러글 95% 구버전 설명 제거.<br>
+      버전 메타: title / cover badge / cover meta 전부 v10.18 → v10.21.<br>
+      status-box 날짜: 2026-05-21 → 2026-05-24.<br>
+      footer 버전: v10.19 → v10.21.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -3496,7 +3592,7 @@ await prisma.cafePost.create({
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.19<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.21<br>
   최종 업데이트: 2026-05-21 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>

@@ -395,7 +395,7 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>우나어 아키텍처</h2>
-    <div class="version">v17 &middot; 2026-05-24</div>
+    <div class="version">v18 &middot; 2026-05-24</div>
   </div>
   <nav>
     <a href="#s1" class="depth-1">1. 서비스 개요</a>
@@ -449,7 +449,7 @@
 <main class="main">
 <h1>우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서</h1>
 <blockquote>
-<p><strong>최종 업데이트</strong>: 2026-05-24 (v17 — 코드 전수 교차검증: /faq 유령 페이지 제거·social-poster-visual/knowledge-responder 삭제된 에이전트 제거·CMO 크론 중단 3개 상태 수정·페이지 수 카운트 정정·/child-safety 누락 보완)
+<p><strong>최종 업데이트</strong>: 2026-05-24 (v18 — 코드 전수 교차검증 2차: job-scraper 스케줄 15:09→16:09 수정·social-reviewer/social-strategy/seo-optimizer/channel-seeder 크론 중단 상태 추가 반영)
 <strong>문서 관리자</strong>: Claude Code (자동화) + 창업자 (승인)
 <strong>변경 시</strong>: 이 문서 하단 <a href="#%EB%AC%B8%EC%84%9C-%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8-%EA%B0%80%EC%9D%B4%EB%93%9C">문서 업데이트 가이드</a> 참고</p>
 </blockquote>
@@ -1048,16 +1048,16 @@
 <tr>
 <td><strong>CMO</strong></td>
 <td><code>cmo/channel-seeder.ts</code></td>
-<td>매일 11:30</td>
+<td><span style="color:#e53e3e">❌ 크론 중단</span> (2026-05-15, DISPATCH ONLY)</td>
 <td>Haiku</td>
-<td>카카오 오픈챗/당근마켓/커뮤니티 홍보 초안 생성</td>
+<td>카카오 오픈챗/당근마켓/커뮤니티 홍보 초안 생성 — 초기 시딩 완료로 중단</td>
 </tr>
 <tr>
 <td><strong>CMO</strong></td>
 <td><code>cmo/seo-optimizer.ts</code></td>
-<td>월요일 08:00</td>
+<td><span style="color:#e53e3e">❌ 크론 중단</span> (2026-05-16, DISPATCH ONLY)</td>
 <td>Haiku</td>
-<td>주간 SEO 키워드 분석 + 메타데이터 커버리지 체크</td>
+<td>주간 SEO 키워드 분석 + 메타데이터 커버리지 체크 — Slack 리포트만, 실제 참고 안 함</td>
 </tr>
 <tr>
 <td><strong>CMO</strong></td>
@@ -1069,16 +1069,16 @@
 <tr>
 <td><strong>CMO</strong></td>
 <td><code>cmo/social-reviewer.ts</code></td>
-<td>월요일 10:00</td>
+<td><span style="color:#e53e3e">❌ 크론 중단</span> (2026-05-15, DISPATCH ONLY)</td>
 <td>Haiku</td>
-<td>주간 실험 분석 — 통제/실험군 비교, 인사이트 도출</td>
+<td>주간 실험 분석 — 통제/실험군 비교, 인사이트 도출 (Threads 단독 운영 전환으로 데이터 부족)</td>
 </tr>
 <tr>
 <td><strong>CMO</strong></td>
 <td><code>cmo/social-strategy.ts</code></td>
-<td>월요일 10:15</td>
+<td><span style="color:#e53e3e">❌ 크론 중단</span> (2026-05-15, DISPATCH ONLY)</td>
 <td>Sonnet</td>
-<td>주간 전략 설계 — 실험 로드맵 + 트렌드 교차 참조</td>
+<td>주간 전략 설계 — 실험 로드맵 + 트렌드 교차 참조 (Threads 단독 운영 전환으로 데이터 부족)</td>
 </tr>
 <tr>
 <td><strong>CMO</strong></td>
@@ -1132,7 +1132,7 @@
 <tr>
 <td><strong>COO</strong></td>
 <td><code>coo/job-scraper.ts</code></td>
-<td>12:09, 15:09, 20:09시</td>
+<td>12:09, 16:09, 20:09시</td>
 <td>Haiku</td>
 <td>50plus.or.kr 일자리 크롤링 → AI 가공 → DB</td>
 </tr>
@@ -1885,7 +1885,7 @@
 </tr>
 <tr>
 <td><code>agents-jobs.yml</code></td>
-<td>12:09, 15:09, 20:09시</td>
+<td>12:09, 16:09, 20:09시</td>
 <td>COO (일자리 수집)</td>
 </tr>
 <tr>
@@ -2113,7 +2113,7 @@
 14:30  ██ COO comment-activator (2차 — 댓글 0개 글 자동 활성화)
 15:00  ██ sheet-scraper (4회차) | ░░ launchd naver-blog-morning (매거진 2건 발행)
 15:05  ██ CAFE hourly curation #10
-15:09  ██ COO 일자리수집 (2회차)
+16:09  ██ COO 일자리수집 (2회차)
 15:13  ██ COO 모더레이션 (2회차)
 15:50  ██ CAFE hourly curation #11 (14:30 크롤 기반)
 16:00  ██ COO content-scheduler | ░░ launchd cafe-crawler-popular-afternoon
@@ -3476,7 +3476,7 @@ Layer 4 — 장기 기억 (세션 간 지속)
 </tbody></table>
 <hr>
 <h2>14. 현재 상태 &amp; 남은 작업</h2>
-<h3>완료됨 (2026-05-24 기준 v17)</h3>
+<h3>완료됨 (2026-05-24 기준 v18)</h3>
 <ul>
 <li>전체 코드 구현 (<strong>49페이지, 39개 API</strong>, 77+ 컴포넌트)</li>
 <li>에이전트 시스템 ACTIVE (헌법 v5.0, <strong>78핸들러</strong> · 78명 페르소나)</li>
