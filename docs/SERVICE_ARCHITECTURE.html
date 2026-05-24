@@ -395,7 +395,7 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>우나어 아키텍처</h2>
-    <div class="version">v16 &middot; 2026-05-24</div>
+    <div class="version">v17 &middot; 2026-05-24</div>
   </div>
   <nav>
     <a href="#s1" class="depth-1">1. 서비스 개요</a>
@@ -449,7 +449,7 @@
 <main class="main">
 <h1>우리 나이가 어때서 (우나어) — 서비스 아키텍처 종합 문서</h1>
 <blockquote>
-<p><strong>최종 업데이트</strong>: 2026-05-24 (v16 — /child-safety 페이지 추가(Play Store TWA 정책 대응) · comment-activator(COO) 에이전트 · trendingScore 즉시 갱신 · 어드민 드릴다운 · 운영 플래그 §3.2)
+<p><strong>최종 업데이트</strong>: 2026-05-24 (v17 — 코드 전수 교차검증: /faq 유령 페이지 제거·social-poster-visual/knowledge-responder 삭제된 에이전트 제거·CMO 크론 중단 3개 상태 수정·페이지 수 카운트 정정·/child-safety 누락 보완)
 <strong>문서 관리자</strong>: Claude Code (자동화) + 창업자 (승인)
 <strong>변경 시</strong>: 이 문서 하단 <a href="#%EB%AC%B8%EC%84%9C-%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8-%EA%B0%80%EC%9D%B4%EB%93%9C">문서 업데이트 가이드</a> 참고</p>
 </blockquote>
@@ -1034,9 +1034,9 @@
 <tr>
 <td><strong>CMO</strong></td>
 <td><code>cmo/trend-analyzer.ts</code></td>
-<td>매일 10:00</td>
+<td><span style="color:#e53e3e">❌ 크론 중단</span> (2026-05-16, DISPATCH ONLY)</td>
 <td>Sonnet</td>
-<td>시니어 트렌드 분석, 콘텐츠 주제 제안</td>
+<td>시니어 트렌드 분석, 콘텐츠 주제 제안 — Slack 리포트만, 실제 참고 안 함</td>
 </tr>
 <tr>
 <td><strong>CMO</strong></td>
@@ -1047,24 +1047,10 @@
 </tr>
 <tr>
 <td><strong>CMO</strong></td>
-<td><code>cmo/social-poster-visual.ts</code></td>
-<td>매일 11:00</td>
-<td>Haiku</td>
-<td>카드뉴스 → IG/FB/Threads/Band 멀티플랫폼 게시</td>
-</tr>
-<tr>
-<td><strong>CMO</strong></td>
 <td><code>cmo/channel-seeder.ts</code></td>
 <td>매일 11:30</td>
 <td>Haiku</td>
 <td>카카오 오픈챗/당근마켓/커뮤니티 홍보 초안 생성</td>
-</tr>
-<tr>
-<td><strong>CMO</strong></td>
-<td><code>cmo/knowledge-responder.ts</code></td>
-<td>화/목/토 12:00</td>
-<td>Sonnet</td>
-<td>네이버 지식iN Q&amp;A 초안 생성</td>
 </tr>
 <tr>
 <td><strong>CMO</strong></td>
@@ -1097,9 +1083,9 @@
 <tr>
 <td><strong>CMO</strong></td>
 <td><code>cmo/caregiving-curator.ts</code></td>
-<td>매일 10:15 KST</td>
+<td><span style="color:#e53e3e">❌ 크론 중단</span> (2026-05-15, DISPATCH ONLY)</td>
 <td>Sonnet</td>
-<td>간병·요양 토픽 큐레이션 — 우나어 타겟 고민 대응 콘텐츠 생성</td>
+<td>간병·요양 토픽 큐레이션 — Slack 알림만, 실용 가치 없어 중단</td>
 </tr>
 <tr>
 <td><strong>CMO</strong></td>
@@ -1111,9 +1097,9 @@
 <tr>
 <td><strong>CMO</strong></td>
 <td><code>cmo/humor-curator.ts</code></td>
-<td>매일 11:15 KST</td>
+<td><span style="color:#e53e3e">❌ 크론 중단</span> (2026-05-15, DISPATCH ONLY)</td>
 <td>Sonnet</td>
-<td>유머·웃음 토픽 큐레이션 — 50+세대 공감 유머 콘텐츠 생성</td>
+<td>유머·웃음 토픽 큐레이션 — Slack 알림만, 실용 가치 없어 중단</td>
 </tr>
 <tr>
 <td><strong>CPO</strong></td>
@@ -2666,7 +2652,7 @@
 <hr>
 <h2>10. 페이지 구조</h2>
 <h3>10.1 페이지 구조 (총 49개)</h3>
-<p><small>사용자 페이지 25개 + 어드민 17개 + 특수 7개 (/auth/error, /dev/*, /landing, /login, /offline, /onboarding)</small></p>
+<p><small>사용자 페이지 24개 + 어드민 17개 + 특수 8개 (/auth/error, /child-safety, /dev/*, /landing, /login, /offline, /onboarding)</small></p>
 <table>
 <thead>
 <tr>
@@ -2753,10 +2739,6 @@
 <tr>
 <td><code>/my/settings</code></td>
 <td>설정 (닉네임, 폰트, 차단, 탈퇴)</td>
-</tr>
-<tr>
-<td><code>/faq</code></td>
-<td>자주 묻는 질문</td>
 </tr>
 <tr>
 <td><code>/terms</code></td>
@@ -3494,7 +3476,7 @@ Layer 4 — 장기 기억 (세션 간 지속)
 </tbody></table>
 <hr>
 <h2>14. 현재 상태 &amp; 남은 작업</h2>
-<h3>완료됨 (2026-05-24 기준 v16)</h3>
+<h3>완료됨 (2026-05-24 기준 v17)</h3>
 <ul>
 <li>전체 코드 구현 (<strong>49페이지, 39개 API</strong>, 77+ 컴포넌트)</li>
 <li>에이전트 시스템 ACTIVE (헌법 v5.0, <strong>78핸들러</strong> · 78명 페르소나)</li>
