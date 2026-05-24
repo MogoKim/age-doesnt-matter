@@ -35,6 +35,14 @@ function isLegacyQueue(queue: { createdAt: Date }): boolean {
 const COMMENTER_PERSONA_IDS = getAllPersonaIds()
   .filter(id => !id.startsWith('EN') && !/^N\d/.test(id))
 
+// 게시판별 허용 페르소나 (comment-activator.ts BOARD_PERSONAS와 동일 정책)
+const BOARD_PERSONAS: Record<string, readonly string[]> = {
+  STORY: ['E', 'AQ', 'AV'],
+  HUMOR: ['C', 'AP', 'AO'],
+  JOB:   ['AS', 'D'],
+  LIFE2: ['AQ', 'E', 'AR'],
+}
+
 type WaveNum = 1 | 2 | 3 | 4
 type WaveDoneKey = 'wave1Done' | 'wave2Done' | 'wave3Done' | 'wave4Done'
 type WaveAtKey = 'wave1At' | 'wave2At' | 'wave3At' | 'wave4At'
@@ -69,6 +77,15 @@ function deterministicTargetCount(cafePostId: string, min: number, max: number):
     h |= 0
   }
   return min + (Math.abs(h) % (max - min + 1))
+}
+
+// source-copy 경로 이모지 제거 (AI 생성 경로는 프롬프트로 이미 차단)
+function removeEmoji(text: string): string {
+  return text
+    .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function getGlobalCap(tier: Tier): number {
@@ -228,6 +245,12 @@ async function processWaveLegacy(
   todayCommentStart.setHours(0, 0, 0, 0)
   const BOT_DAILY_COMMENT_CAP = 3
 
+  const [legacyTier, legacyPost] = await Promise.all([
+    getQueueTier(queue.postId, queue.cafePostId),
+    prisma.post.findUnique({ where: { id: queue.postId }, select: { boardType: true } }),
+  ])
+  const legacyBoardPersonas = BOARD_PERSONAS[legacyPost?.boardType ?? ''] ?? null
+
   const botUsers = await prisma.user.findMany({
     where: { email: { endsWith: '@unao.bot' } },
     select: { id: true },
@@ -242,8 +265,11 @@ async function processWaveLegacy(
     todayCommentCounts.map(c => [c.authorId, c._count.authorId])
   )
 
-  const basePool = [...COMMENTER_PERSONA_IDS.filter(p => p !== queue.authorPersonaId)]
-    .sort(() => Math.random() - 0.5)
+  const basePool = [
+    ...COMMENTER_PERSONA_IDS
+      .filter(p => p !== queue.authorPersonaId)
+      .filter(p => legacyBoardPersonas === null || legacyBoardPersonas.includes(p)),
+  ].sort(() => Math.random() - 0.5)
   let personaId = basePool[0]
   let userId: string | null = null
   for (const candidate of basePool) {
@@ -282,7 +308,7 @@ async function processWaveLegacy(
       status: 'ACTIVE',
     },
   })
-  if (totalBotComments >= 5) {
+  if (totalBotComments >= getGlobalCap(legacyTier)) {
     const doneFieldCap = `wave${waveNum}Done` as WaveDoneKey
     await prisma.commentWaveQueue.update({ where: { id: queue.id }, data: { [doneFieldCap]: true } })
     console.warn(`[WaveProcessor] wave${waveNum}(legacy): 봇 댓글 캡 초과(${totalBotComments}건) — 스킵 (postId=${queue.postId})`)
@@ -345,7 +371,7 @@ async function processWaveLegacy(
 
 async function processAuthorRepliesV2(
   queue: { id: string; postId: string; cafePostId: string },
-  _tier: Tier,
+  tier: Tier,
   allowedReplyCount: number,
   authorUserId: string,
 ) {
@@ -361,7 +387,7 @@ async function processAuthorRepliesV2(
   if (topComments.length === 0) return
 
   const cafeAuthor = normalizeNickname(cafePost.author ?? '')
-  const topCommentByContent = new Map(topComments.map(tc => [replaceCafeReferences(tc.content.trim()), tc]))
+  const topCommentByContent = new Map(topComments.map(tc => [removeEmoji(replaceCafeReferences(tc.content.trim())), tc]))
 
   // v2 source-copy 봇 댓글만 조회 (content 매칭)
   const botComments = await prisma.comment.findMany({
@@ -392,12 +418,23 @@ async function processAuthorRepliesV2(
     existingReplies.filter(r => botCommentIds.has(r.parentId!)).map(r => r.content.trim())
   )
 
+  // globalCap 체크 — processWaveV2 완료 후 총 봇 댓글 수가 cap에 도달했으면 author reply 생략
+  const globalCap = getGlobalCap(tier)
+  const preTotalBotCount = await prisma.comment.count({
+    where: {
+      postId: queue.postId,
+      author: { email: { endsWith: '@unao.bot' } },
+      status: 'ACTIVE',
+    },
+  })
+  const effectiveAllowed = Math.min(allowedReplyCount, Math.max(0, globalCap - preTotalBotCount))
+
   let replyCount = usedParentIds.size
-  if (replyCount >= allowedReplyCount) return
+  if (replyCount >= effectiveAllowed || effectiveAllowed === 0) return
   const initialReplyCount = replyCount
 
   for (const botComment of botComments) {
-    if (replyCount >= allowedReplyCount) break
+    if (replyCount >= effectiveAllowed) break
     if (usedParentIds.has(botComment.id)) continue
 
     const sourceTopComment = topCommentByContent.get(botComment.content.trim())
@@ -406,11 +443,11 @@ async function processAuthorRepliesV2(
     const authorReply = (sourceTopComment.replies ?? []).find(r =>
       normalizeNickname(r.author) === cafeAuthor &&
       r.content.trim().length >= 5 &&
-      !usedContents.has(replaceCafeReferences(r.content.trim()))
+      !usedContents.has(removeEmoji(replaceCafeReferences(r.content.trim())))
     )
     if (!authorReply) continue
 
-    const replyContent = replaceCafeReferences(authorReply.content.trim())
+    const replyContent = removeEmoji(replaceCafeReferences(authorReply.content.trim()))
 
     await prisma.$transaction([
       prisma.comment.create({
@@ -451,16 +488,23 @@ async function processWaveV2(
   const globalCap = getGlobalCap(tier)
 
   try {
-    // 원본 topComments 파싱
-    const cafePost = await prisma.cafePost.findUnique({
-      where: { id: queue.cafePostId },
-      select: { topComments: true },
-    })
+    // 원본 topComments 파싱 + 게시판 타입 조회 (병렬)
+    const [cafePost, postForBoard] = await Promise.all([
+      prisma.cafePost.findUnique({
+        where: { id: queue.cafePostId },
+        select: { topComments: true },
+      }),
+      prisma.post.findUnique({
+        where: { id: queue.postId },
+        select: { boardType: true },
+      }),
+    ])
     if (!cafePost) {
       skips.push('source_not_found')
       normalExit = true
       return
     }
+    const boardPersonas = BOARD_PERSONAS[postForBoard?.boardType ?? ''] ?? null
 
     const topComments = parseTopComments(cafePost.topComments)
     if (topComments.length === 0) {
@@ -487,7 +531,7 @@ async function processWaveV2(
     // 아직 복사되지 않은 원문 candidates 추출 (순서 유지)
     const sourceCandidates: string[] = []
     for (const tc of topComments) {
-      const text = replaceCafeReferences(tc.content?.trim() ?? '')
+      const text = removeEmoji(replaceCafeReferences(tc.content?.trim() ?? ''))
       if (text.length < 10) continue
       if (usedContentSet.has(text)) continue
       sourceCandidates.push(text)
@@ -534,9 +578,10 @@ async function processWaveV2(
       })
       if (totalBotCount >= globalCap) { skips.push('global_cap'); break }
 
-      // 봇 후보 선택 (중복 없는 봇만, 강제 선택 금지)
+      // 봇 후보 선택 (중복 없는 봇만, 강제 선택 금지, 게시판별 페르소나 제한)
       const candidates = [...COMMENTER_PERSONA_IDS]
         .filter(p => p !== queue.authorPersonaId)
+        .filter(p => boardPersonas === null || boardPersonas.includes(p))
         .sort(() => Math.random() - 0.5)
 
       let chosen: { personaId: string; userId: string } | null = null
@@ -647,7 +692,7 @@ async function getV2SourceCandidates(
 
   const candidates: string[] = []
   for (const tc of topComments) {
-    const text = replaceCafeReferences(tc.content?.trim() ?? '')
+    const text = removeEmoji(replaceCafeReferences(tc.content?.trim() ?? ''))
     if (text.length < 10) continue
     if (usedContentSet.has(text)) continue
     candidates.push(text)
