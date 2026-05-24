@@ -49,3 +49,4 @@
 | 2026-05-21 | popular-curator.ts AI 재창작(generatePopularPost + Anthropic haiku 호출) 완전 제거 → 원문 기반 발행 전환. stripMarkdown(cafePost.title/content) 직접 사용. Post.cafePostId 저장 추가(원본 역추적). summary 슬라이스 120→150자 | AI "수미상관" 프롬프트가 대화체 원본 카페글을 댓글형 게시물로 변질시키는 문제 (2026-05-21 두 건 확인). haiku API 월 450건 제거 |
 | 2026-05-22 | popular-curator.ts `candidates` where에 `imageUrls: { isEmpty: true }` 추가. `MAX_PUBLISH=5` 유지 | A31 P0: 이미지 있는 인기글이 BOT 라인에서 텍스트-only로 발행되는 품질 문제 구조적 차단 |
 | 2026-05-22 | popular-curator.ts title/rawContent에 `replaceCafeReferences()` 적용. curator-shared.ts에 CAFE_NAME_MAP + `replaceCafeReferences()` 순수 함수 신규 추가(export) | 인기글 큐레이션 발행글에 카페 원본 명칭 노출 차단 — 브랜드 정체성 강화 |
+| 2026-05-24 | popular-curator.ts: `computeUsableCount()` + `PC_AI_REJECT_RE` 추가. candidates select에 topComments 추가. enqueueCommentWave 호출 전 usable=0 체크 — 0이면 queue 생략, 로그 출력 | 4bdf236 검증에서 발견: content-curator는 usable=0 queue 생략하나 popular-curator는 미적용 — 정책 일치 |

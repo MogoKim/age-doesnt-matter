@@ -19,6 +19,20 @@ import { generateCommunitySlug } from '../core/slug.js'
 const HEALTH_CAP = 2
 const MAX_PUBLISH = 5
 
+const PC_AI_REJECT_RE = /글 내용을|내용을 보여|볼 수가 없|상황을 모르|글의 내용을|어떤 상황인지|댓글을 작성할 수 없|내용 올려/
+function computeUsableCount(topComments: unknown): number {
+  if (!Array.isArray(topComments)) return 0
+  const seen = new Set<string>()
+  let n = 0
+  for (const item of topComments) {
+    const raw = (item as { content?: string })?.content ?? ''
+    const cleaned = raw.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim()
+    if (cleaned.length < 10 || PC_AI_REJECT_RE.test(cleaned) || seen.has(cleaned)) continue
+    seen.add(cleaned)
+    n++
+  }
+  return n
+}
 
 async function enqueueCommentWave(postId: string, cafePostId: string, authorPersonaId: string) {
   const now = new Date()
@@ -50,6 +64,7 @@ export async function main() {
       content: true,
       desireCategory: true,
       killerScore: true,
+      topComments: true,
     },
   })
 
@@ -152,7 +167,12 @@ export async function main() {
         return newPost.id
       })
 
-      await enqueueCommentWave(postId, post.id, persona.id)
+      const usable = computeUsableCount(post.topComments)
+      if (usable === 0) {
+        console.log(`[PopularCurator] 댓글 없는 글 — wave queue 생략 postId=${postId} cafePostId=${post.id}`)
+      } else {
+        await enqueueCommentWave(postId, post.id, persona.id)
+      }
 
       if (desire === 'HEALTH') healthCount++
       publishedCount++
