@@ -3,13 +3,19 @@ import { unstable_cache } from 'next/cache'
 
 // ─── 대시보드 KPI (5분 캐시) ───
 
+function getKstTodayStart(): Date {
+  const now = new Date()
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+  return new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate(), -9, 0, 0, 0))
+}
+
 export const getDashboardStats = unstable_cache(
   async () => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const today = getKstTodayStart()
 
     const [
-      todayUsers,
+      todayUniqueVisitorRows,
+      todayLogins,
       todaySignups,
       todayPosts,
       todayComments,
@@ -17,11 +23,27 @@ export const getDashboardStats = unstable_cache(
       pendingBotReviews,
       pushSubCount,
     ] = await Promise.all([
-      prisma.user.count({
-        where: { lastLoginAt: { gte: today } },
+      prisma.eventLog.findMany({
+        where: {
+          eventName: 'page_view',
+          isBot: false,
+          sessionId: { not: null },
+          createdAt: { gte: today },
+        },
+        select: { sessionId: true },
+        distinct: ['sessionId'],
       }),
       prisma.user.count({
-        where: { createdAt: { gte: today } },
+        where: {
+          lastLoginAt: { gte: today },
+          NOT: { email: { endsWith: '@unao.bot' } },
+        },
+      }),
+      prisma.user.count({
+        where: {
+          createdAt: { gte: today },
+          NOT: { email: { endsWith: '@unao.bot' } },
+        },
       }),
       prisma.post.count({
         where: { createdAt: { gte: today }, status: 'PUBLISHED' },
@@ -39,7 +61,8 @@ export const getDashboardStats = unstable_cache(
     ])
 
     return {
-      todayUsers,
+      todayUniqueVisitors: todayUniqueVisitorRows.length,
+      todayLogins,
       todaySignups,
       todayPosts,
       todayComments,

@@ -28,17 +28,22 @@ export default function AutomationToggle({ isActive }: Props) {
   }
 
   return (
-    <button
-      onClick={handleToggle}
-      disabled={isPending}
-      className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${
-        isActive
-          ? 'border border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200'
-          : 'bg-green-500 text-white hover:bg-green-600'
-      }`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-green-500' : 'bg-red-500'}`} />
-      {isPending ? '처리 중...' : isActive ? '자동화 정지' : '자동화 재개'}
-    </button>
+    <div className="flex items-center gap-2">
+      <span className="flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600">
+        <span className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-green-500' : 'bg-red-500'}`} />
+        {isActive ? '실행 중' : '중단됨'}
+      </span>
+      <button
+        onClick={handleToggle}
+        disabled={isPending}
+        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${
+          isActive
+            ? 'border border-zinc-200 bg-white text-zinc-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600'
+            : 'bg-green-500 text-white hover:bg-green-600'
+        }`}
+      >
+        {isPending ? '처리 중...' : isActive ? '일시 중지' : '재개하기'}
+      </button>
+    </div>
   )
 }

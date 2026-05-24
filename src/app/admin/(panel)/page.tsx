@@ -36,6 +36,9 @@ export default async function AdminDashboardPage() {
     getAutomationStatus(),
     getAdminQueueCounts(),
   ])
+  const activeBots = botLogs.filter((log) => log.dashboardState === 'active')
+  const errorBots = botLogs.filter((log) => log.dashboardState === 'error')
+  const dormantBots = botLogs.filter((log) => log.dashboardState === 'dormant')
 
   return (
     <div className="space-y-6">
@@ -56,10 +59,16 @@ export default async function AdminDashboardPage() {
 
       {/* KPI 카드 */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <KpiCard label="오늘 방문" value={stats.todayUsers} icon="👁️" />
-        <KpiCard label="오늘 가입" value={stats.todaySignups} icon="🆕" href="/admin/members" />
-        <KpiCard label="오늘 글" value={stats.todayPosts} icon="📝" prefix="+" href="/admin/content" />
-        <KpiCard label="오늘 댓글" value={stats.todayComments} icon="💬" prefix="+" href="/admin/content" />
+        <KpiCard label="오늘 방문" value={stats.todayUniqueVisitors} icon="👁️" sub="비로그인 포함" />
+        <KpiCard label="로그인 회원" value={stats.todayLogins} icon="🔑" sub="봇 제외" href="/admin/members" />
+        <KpiCard label="신규가입" value={stats.todaySignups} icon="🆕" sub="봇 제외" href="/admin/members" />
+        <KpiCard
+          label="오늘 글/댓글"
+          value={`+${stats.todayPosts.toLocaleString()} / +${stats.todayComments.toLocaleString()}`}
+          icon="📝"
+          sub="글 / 댓글"
+          href="/admin/content"
+        />
         <KpiCard label="푸시 구독자" value={stats.pushSubCount} icon="🔔" href="/admin/push" />
       </div>
 
@@ -132,36 +141,10 @@ export default async function AdminDashboardPage() {
         {botLogs.length === 0 ? (
           <p className="text-sm text-zinc-500">봇 실행 기록이 없습니다.</p>
         ) : (
-          <div className="space-y-3">
-            {botLogs.map((log) => {
-              const badge = BOT_STATUS_BADGE[log.status] || BOT_STATUS_BADGE.SUCCESS
-              return (
-                <div
-                  key={log.id}
-                  className="flex items-center justify-between rounded-lg border border-zinc-100 px-4 py-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-zinc-900">
-                      {BOT_TYPE_LABELS[log.botType] || log.botType}
-                    </span>
-                    <span
-                      className={`rounded-md px-2 py-0.5 text-xs font-medium ${badge.className}`}
-                    >
-                      {badge.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-zinc-500">
-                    <span>수집 {log.collectedCount}</span>
-                    <span>발행 {log.publishedCount}</span>
-                    {log.reviewPendingCount > 0 && (
-                      <span className="font-medium text-yellow-600">
-                        검수 {log.reviewPendingCount}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+          <div className="space-y-5">
+            <BotStatusGroup title="활성 에이전트" tone="active" logs={activeBots} emptyText="오늘 실행된 에이전트가 없습니다." />
+            <BotStatusGroup title="오류 에이전트" tone="error" logs={errorBots} emptyText="현재 실패 상태인 에이전트가 없습니다." />
+            <BotStatusGroup title="휴면 에이전트" tone="dormant" logs={dormantBots} emptyText="오래된 실행 로그가 없습니다." />
           </div>
         )}
       </section>
@@ -175,13 +158,16 @@ function KpiCard({
   icon,
   prefix = '',
   href,
+  sub,
 }: {
   label: string
-  value: number
+  value: number | string
   icon: string
   prefix?: string
   href?: string
+  sub?: string
 }) {
+  const displayValue = typeof value === 'number' ? `${prefix}${value.toLocaleString()}` : value
   const inner = (
     <div className={`rounded-xl border border-zinc-200 bg-white p-5 ${href ? 'transition-colors hover:border-zinc-300 hover:bg-zinc-50' : ''}`}>
       <div className="flex items-center justify-between">
@@ -189,10 +175,95 @@ function KpiCard({
         <span className="text-lg">{icon}</span>
       </div>
       <p className="mt-2 text-2xl font-bold text-zinc-900">
-        {prefix}{value.toLocaleString()}
+        {displayValue}
       </p>
+      {sub && <p className="mt-1 text-xs text-zinc-400">{sub}</p>}
     </div>
   )
   if (href) return <Link href={href} className="block no-underline">{inner}</Link>
   return inner
+}
+
+type DashboardBotLog = Awaited<ReturnType<typeof getRecentBotLogs>>[number]
+
+function BotStatusGroup({
+  title,
+  tone,
+  logs,
+  emptyText,
+}: {
+  title: string
+  tone: 'active' | 'error' | 'dormant'
+  logs: DashboardBotLog[]
+  emptyText: string
+}) {
+  const titleClassName =
+    tone === 'active'
+      ? 'text-green-700'
+      : tone === 'error'
+        ? 'text-red-700'
+        : 'text-zinc-500'
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className={`text-xs font-bold ${titleClassName}`}>{title}</h3>
+        <span className="text-xs text-zinc-400">{logs.length}개</span>
+      </div>
+      {logs.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-zinc-200 px-4 py-3 text-xs text-zinc-400">{emptyText}</p>
+      ) : (
+        <div className="space-y-2">
+          {logs.map((log) => (
+            <BotStatusRow key={log.id} log={log} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BotStatusRow({ log }: { log: DashboardBotLog }) {
+  const statusBadge =
+    log.dashboardState === 'dormant'
+      ? { label: '🔇 휴면', className: 'text-zinc-600 bg-zinc-100' }
+      : BOT_STATUS_BADGE[log.status] || BOT_STATUS_BADGE.SUCCESS
+  const actionLabel = log.action ?? '최근 실행'
+
+  return (
+    <div className="rounded-lg border border-zinc-100 px-4 py-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-zinc-900">
+              {BOT_TYPE_LABELS[log.botType] || log.botType}
+            </span>
+            <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${statusBadge.className}`}>
+              {statusBadge.label}
+            </span>
+            <span className="text-xs text-zinc-400">{log.executedAtLabel}</span>
+            <span className="text-xs text-zinc-400">· {log.ageLabel}</span>
+          </div>
+          <p className="mt-1 truncate text-xs text-zinc-500">
+            {actionLabel}
+            {log.failureSummary ? ` · ${log.failureSummary}` : ''}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
+          <span>수집 {log.collectedCount}</span>
+          <span>발행 {log.publishedCount}</span>
+          {log.itemCount > 0 && <span>처리 {log.itemCount}</span>}
+          {log.reviewPendingCount > 0 && (
+            <span className="font-medium text-yellow-600">검수 {log.reviewPendingCount}</span>
+          )}
+          <Link
+            href={`/admin/agents?botType=${log.botType}`}
+            className="font-medium text-[#FF6F61] no-underline hover:underline"
+          >
+            로그 →
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
 }

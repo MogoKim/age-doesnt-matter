@@ -4,12 +4,103 @@ import type { BotStatus, BotType } from '@/generated/prisma/client'
 
 // ─── 최근 BotLog (대시보드용) ───
 
+type DashboardBotState = 'active' | 'error' | 'dormant'
+
+function getKstTodayStart(): Date {
+  const now = new Date()
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+  return new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate(), -9, 0, 0, 0))
+}
+
+function formatKstDateTime(date: Date): string {
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+function formatAge(date: Date): string {
+  const diffMs = Date.now() - date.getTime()
+  const minutes = Math.max(0, Math.floor(diffMs / 60000))
+  if (minutes < 60) return `${minutes}분 전`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}시간 전`
+  const days = Math.floor(hours / 24)
+  return `${days}일 전`
+}
+
+function safeJsonParse(value: string | null): unknown {
+  if (!value) return null
+  try {
+    return JSON.parse(value)
+  } catch {
+    return value
+  }
+}
+
+function pickString(value: unknown, keys: string[]): string | null {
+  if (!value || typeof value !== 'object') return null
+  const record = value as Record<string, unknown>
+  for (const key of keys) {
+    const item = record[key]
+    if (typeof item === 'string' && item.trim()) return item.trim()
+  }
+  return null
+}
+
+function summarizeFailure(log: {
+  action: string | null
+  details: string | null
+  logData: unknown
+  botType: BotType
+}): string | null {
+  if (log.botType === 'CTO' && log.action === 'AUTH_FAILURE') {
+    const details = safeJsonParse(log.details)
+    const reason = pickString(details, ['reason', 'error', 'detail', 'message'])
+    return reason ? `GitHub Actions Secrets 확인 필요 · ${reason}` : 'GitHub Actions Secrets 확인 필요'
+  }
+
+  const parsedDetails = safeJsonParse(log.details)
+  const detailReason = pickString(parsedDetails, ['reason', 'error', 'detail', 'message'])
+  if (detailReason) return detailReason
+
+  const logDataReason = pickString(log.logData, ['reason', 'error', 'message'])
+  if (logDataReason) return logDataReason
+
+  return log.action
+}
+
 export const getRecentBotLogs = unstable_cache(
   async () => {
-    return prisma.botLog.findMany({
+    const today = getKstTodayStart()
+    const logs = await prisma.botLog.findMany({
       orderBy: { executedAt: 'desc' },
-      take: 10,
-      distinct: ['botType'],
+      take: 500,
+    })
+
+    const latestByBotType = new Map<BotType, (typeof logs)[number]>()
+    for (const log of logs) {
+      if (!latestByBotType.has(log.botType)) latestByBotType.set(log.botType, log)
+    }
+
+    return Array.from(latestByBotType.values()).map((log) => {
+      const state: DashboardBotState =
+        log.status === 'FAILED'
+          ? 'error'
+          : log.executedAt >= today
+            ? 'active'
+            : 'dormant'
+
+      return {
+        ...log,
+        dashboardState: state,
+        executedAtLabel: formatKstDateTime(log.executedAt),
+        ageLabel: formatAge(log.executedAt),
+        failureSummary: log.status === 'FAILED' ? summarizeFailure(log) : null,
+      }
     })
   },
   ['admin-recent-bot-logs'],
