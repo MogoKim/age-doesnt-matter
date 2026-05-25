@@ -158,10 +158,10 @@ ${longtailSection ? `SEO 타겟 롱테일 키워드 (아래 중 1~2개를 제목
 응답 형식 (반드시 아래 형식을 따라주세요):
 제목: (20자 이내, 핵심을 담은 제목)
 요약: (40자 이내, 한 줄 요약)
-seoTitle: (50자 이내, 주요 키워드 앞에 배치, 숫자/연도 포함 권장 예: "50대 갱년기 증상 7가지 — 2024 완벽 정리")
+seoTitle: (50자 이내, 주요 키워드 앞에 배치, 숫자 포함 권장. 연도는 쓰지 말 것. 예: "50대 갱년기 증상 7가지 완벽 정리")
 seoDescription: (120자 이내, 첫 문장에 직접 답변, "50대" "갱년기" 등 핵심 키워드 포함, 공감 유도)
-이미지컨텍스트1: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, ILLUSTRATION 제외 전 타입 필수 작성 — PERSON_REAL은 "Korean women lifestyle", "mature woman wellness" 등 인물 관련 키워드), altKo:(한국어 이미지 설명 20자 이내)
-이미지컨텍스트2: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(영문 Unsplash 검색어, ILLUSTRATION 제외 전 타입 필수 작성 — PERSON_REAL은 "Korean women lifestyle", "mature woman wellness" 등 인물 관련 키워드), altKo:(한국어 이미지 설명 20자 이내)
+이미지컨텍스트1: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(FOOD_PHOTO·SCENE_PHOTO·OBJECT_PHOTO만 영문 검색어 작성 — PERSON_REAL과 ILLUSTRATION은 이 필드 생략), altKo:(한국어 이미지 설명 20자 이내)
+이미지컨텍스트2: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(FOOD_PHOTO·SCENE_PHOTO·OBJECT_PHOTO만 영문 검색어 작성 — PERSON_REAL과 ILLUSTRATION은 이 필드 생략), altKo:(한국어 이미지 설명 20자 이내)
 본문: (HTML, 1500~2000자, 소제목 3~4개, 각 15자 이내)
 
 본문 구조:
@@ -340,7 +340,7 @@ async function postPublishQA(
     const warnings: string[] = []
 
     const plainLen = article.content.replace(/<[^>]*>/g, '').trim().length
-    if (plainLen < 1200) warnings.push(`⚠️ 본문 ${plainLen}자 (목표 1500자+)`)
+    if (plainLen < 1500) warnings.push(`⚠️ 본문 ${plainLen}자 (기준 1500자)`)
 
     if (!article.thumbnailUrl) warnings.push('⚠️ 히어로 이미지 없음')
 
@@ -372,6 +372,7 @@ export interface MagazineRunResult {
   title: string
   category: string
   postId: string
+  heroImageSource: 'local' | 'unsplash' | 'dalle' | 'none'
 }
 
 /** 메인 실행 */
@@ -573,6 +574,7 @@ export async function main(): Promise<MagazineRunResult[]> {
       subtitle: article.summary ?? '',
       category,
       heroImageUrl: image?.url,
+      heroAlt: ctxList[0].altKo,
       readingTime: Math.ceil(article.content.length / 500),
       sections,
       authorName: '우나어 매거진 편집팀',
@@ -601,16 +603,16 @@ export async function main(): Promise<MagazineRunResult[]> {
     // 썸네일 = 히어로 이미지 직접 사용 (별도 Playwright 생성 불필요)
     const thumbnailUrl: string | undefined = image?.url
 
-    // 본문 길이 검증 — 너무 짧으면 발행 건너뜀
+    // 본문 길이 검증 — 1500자 미만이면 발행 건너뜀
     const textLength = finalHtml.replace(/<[^>]*>/g, '').trim().length
-    if (textLength < 500) {
+    if (textLength < 1500) {
       await notifySlack({
         level: 'important',
         agent: 'MAGAZINE_GENERATOR',
-        title: '⚠️ 매거진 본문 너무 짧음',
-        body: `"${article.title}" — ${textLength}자 (기준 500자)\n→ 발행 건너뜀`,
+        title: '⚠️ 매거진 본문 미달',
+        body: `"${article.title}" — ${textLength}자 (기준 1500자)\n→ 본문 미달, 발행 건너뜀`,
       })
-      console.warn(`[MagazineGenerator] ⚠️ 본문 너무 짧음(${textLength}자) — 발행 건너뜀: "${article.title}"`)
+      console.warn(`[MagazineGenerator] ⚠️ 본문 짧음(${textLength}자, 기준 1500자) — 발행 건너뜀: "${article.title}"`)
       continue
     }
 
@@ -640,7 +642,7 @@ export async function main(): Promise<MagazineRunResult[]> {
 
     publishedCount++
     publishedTitles.push(article.title)
-    publishedResults.push({ title: article.title, category, postId })
+    publishedResults.push({ title: article.title, category, postId, heroImageSource: image.source })
     console.log(`[MagazineGenerator] 발행: "${article.title}" (${postId}) — 히어로 ${image ? `1장(${image.source})` : '없음'} + 본문 ${bodyImageUrls.size}장`)
   }
 

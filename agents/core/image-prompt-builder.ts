@@ -12,11 +12,11 @@
 
 /** v2: 매거진 이미지 타입 5종 */
 export type ImageType =
-  | 'PERSON_REAL'   // 한국인 인물 실사 → DALL-E 전용
-  | 'FOOD_PHOTO'    // 음식·식재료 → Unsplash 우선, DALL-E 폴백
-  | 'SCENE_PHOTO'   // 장소·공간·환경 → Unsplash 우선, DALL-E 폴백
-  | 'OBJECT_PHOTO'  // 제품·도구·의료기기 → Unsplash 우선, DALL-E 폴백
-  | 'ILLUSTRATION'  // 추상 개념·정보 → DALL-E 전용
+  | 'PERSON_REAL'   // 한국인 인물 실사 → Gemini 전용 (Unsplash fallback 금지)
+  | 'FOOD_PHOTO'    // 음식·식재료 → Gemini 우선, Unsplash 폴백
+  | 'SCENE_PHOTO'   // 장소·공간·환경 → Gemini 우선, Unsplash 폴백
+  | 'OBJECT_PHOTO'  // 제품·도구·의료기기 → Gemini 우선, Unsplash 폴백
+  | 'ILLUSTRATION'  // 추상 개념·정보 → Gemini (null 반환 시 스킵)
 
 /** v1: 카드뉴스 스타일 (하위 호환) */
 export type ImageStyle =
@@ -214,7 +214,7 @@ export interface ImageContext {
   type: ImageType
   gender?: 'female'
   dallePrompt: string       // DALL-E용 영문 프롬프트
-  unsplashQuery?: string    // Unsplash 검색어 (FOOD/SCENE/OBJECT만)
+  unsplashQuery?: string    // Unsplash 검색어 (FOOD/SCENE/OBJECT만 — PERSON_REAL 사용 금지)
   altKo?: string            // 한국어 alt 텍스트 (20자 이내) — DB schema 변경 없음
 }
 
@@ -226,7 +226,6 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
         type: 'PERSON_REAL',
         gender: 'female',
         dallePrompt: 'Korean woman in her late 40s to early 50s doing gentle morning walk outdoors smiling, natural sunlight, park path',
-        unsplashQuery: 'mature women outdoor walk smiling park morning',
       },
       {
         type: 'FOOD_PHOTO',
@@ -251,7 +250,6 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
         type: 'PERSON_REAL',
         gender: 'female',
         dallePrompt: 'Korean woman in her late 40s to early 50s smiling warmly at cafe table with coffee, genuine happy expression, window light, candid moment',
-        unsplashQuery: 'women friends laughing together coffee cafe',
       },
       {
         type: 'SCENE_PHOTO',
@@ -269,7 +267,6 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
         type: 'PERSON_REAL',
         gender: 'female',
         dallePrompt: 'Korean woman in her late 40s to early 50s reviewing financial documents at home desk with reading glasses, thoughtful expression, warm light',
-        unsplashQuery: 'mature woman reading documents desk home',
       },
     ],
     '여행': [
@@ -361,7 +358,6 @@ export function getDefaultImagePlan(category: string): [ImageContext, ImageConte
         type: 'PERSON_REAL',
         gender: 'female',
         dallePrompt: 'Korean woman in her late 40s to early 50s warmly and gently holding hands with elderly parent at home, soft warm light, caring expression',
-        unsplashQuery: 'daughter caring elderly parent home warm',
       },
       {
         type: 'ILLUSTRATION',

@@ -15,6 +15,7 @@ interface MagazineTemplateData {
   subtitle: string
   category: string
   heroImageUrl?: string
+  heroAlt?: string     // 히어로 이미지 한국어 alt (없으면 title 사용)
   readingTime: number  // minutes
   sections: MagazineSection[]
   authorName: string
@@ -51,7 +52,7 @@ export function buildMagazineHtml(data: MagazineTemplateData): string {
 
   const heroSection = data.heroImageUrl
     ? `<div style="margin:-24px -24px 24px -24px;border-radius:16px 16px 0 0;overflow:hidden;">
-        <img src="${data.heroImageUrl}" alt="${data.title}" style="width:100%;height:auto;display:block;" />
+        <img src="${data.heroImageUrl}" alt="${data.heroAlt ?? data.title}" style="width:100%;height:auto;display:block;" />
        </div>`
     : ''
 

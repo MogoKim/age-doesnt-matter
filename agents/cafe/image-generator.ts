@@ -78,8 +78,8 @@ async function fetchUnsplashPhoto(query: string): Promise<string | null> {
 // v2: 이미지 컨텍스트 기반 생성 (매거진 전용)
 // ---------------------------------------------------------------------------
 
-// PERSON_REAL도 unsplashQuery 있을 때 Unsplash 시도 허용 (v3 Gemini 이관)
-const UNSPLASH_ELIGIBLE: ImageType[] = ['PERSON_REAL', 'FOOD_PHOTO', 'SCENE_PHOTO', 'OBJECT_PHOTO']
+// FOOD/SCENE/OBJECT만 Unsplash fallback 허용 — PERSON_REAL 차단 (외국 스톡 이미지 방지)
+const UNSPLASH_ELIGIBLE: ImageType[] = ['FOOD_PHOTO', 'SCENE_PHOTO', 'OBJECT_PHOTO']
 
 /**
  * v3: ImageContext를 받아 최적 방식으로 이미지 생성
@@ -95,11 +95,16 @@ export async function generateMagazineImageByContext(
     const { generateMagazineImageLocally } = await import('./local-image-generator.js')
     const localResult = await generateMagazineImageLocally(context, localEngine)
     if (localResult) return localResult
-    // null이면 ILLUSTRATION 타입이거나 생성 실패 → Unsplash 폴백 시도
+    // PERSON_REAL은 Unsplash fallback 금지 — Gemini 실패 시 null 반환 (발행 보류 처리)
+    if (context.type === 'PERSON_REAL') {
+      console.log(`[ImageGen] PERSON_REAL Gemini 실패 — Unsplash fallback 차단, null 반환 (발행 보류 처리)`)
+      return null
+    }
+    // ILLUSTRATION/FOOD/SCENE/OBJECT: Unsplash 폴백 시도
     console.log(`[ImageGen] 로컬 생성 null → Unsplash 폴백 시도 (${context.type})`)
   }
 
-  // Unsplash 시도 (unsplashQuery 있을 때 — PERSON_REAL 포함 전 타입)
+  // Unsplash 시도 (FOOD/SCENE/OBJECT만 — PERSON_REAL은 위에서 차단됨)
   if (context.unsplashQuery && UNSPLASH_ELIGIBLE.includes(context.type)) {
     const unsplashUrl = await fetchUnsplashPhoto(context.unsplashQuery)
     if (unsplashUrl) {

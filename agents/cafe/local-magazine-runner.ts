@@ -68,6 +68,7 @@ interface SessionArticle {
   category: string
   postId: string
   engine: string
+  imageSource: 'local' | 'unsplash' | 'dalle' | 'none'
 }
 
 function getDailyFilePath(): string {
@@ -99,19 +100,26 @@ async function deleteDailyStatus(): Promise<void> {
 
 // ─── Slack 메시지 포맷 ────────────────────────────────────────────────────────
 
+function formatImageSourceLabel(a: SessionArticle): string {
+  if (a.imageSource === 'local') return 'Gemini Imagen ✅'
+  if (a.imageSource === 'unsplash') return 'Unsplash ⚠️ (Gemini 실패)'
+  if (a.imageSource === 'dalle') return 'DALL-E'
+  return 'source 추적 불가 ⚠️'
+}
+
 function formatSuccessMessage(status: DailyStatus): string {
   const kstDate = new Date(Date.now() + 9 * 60 * 60 * 1000)
   const dateStr = `${kstDate.getMonth() + 1}/${kstDate.getDate()}`
 
   const morningSection = status.morningDone && status.morningArticles.length > 0
     ? `📰 *오전 (11:00)*\n${status.morningArticles.map(a =>
-        `• ${a.title} — ${a.category}\n  이미지: ${a.engine === 'gemini' ? 'Gemini Imagen' : 'ChatGPT'} × 2장`
+        `• ${a.title} — ${a.category}\n  이미지: ${formatImageSourceLabel(a)}`
       ).join('\n')}`
     : `📰 *오전 (11:00)*\n• 발행 없음`
 
   const eveningSection = status.eveningDone && status.eveningArticles.length > 0
     ? `📰 *저녁 (14:00)*\n${status.eveningArticles.map(a =>
-        `• ${a.title} — ${a.category}\n  이미지: ${a.engine === 'gemini' ? 'Gemini Imagen' : 'ChatGPT'} × 2장`
+        `• ${a.title} — ${a.category}\n  이미지: ${formatImageSourceLabel(a)}`
       ).join('\n')}`
     : `📰 *저녁 (14:00)*\n• 발행 없음`
 
@@ -170,6 +178,7 @@ async function main(): Promise<void> {
   const sessionArticles: SessionArticle[] = articles.map(a => ({
     ...a,
     engine,
+    imageSource: a.heroImageSource ?? 'none',
   }))
 
   // 일일 결과 파일 업데이트
