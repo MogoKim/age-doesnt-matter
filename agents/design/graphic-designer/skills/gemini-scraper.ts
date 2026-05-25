@@ -16,6 +16,7 @@ import type { BrowserContext, Page, Locator } from 'playwright-core'
 import type { GeneratedImage } from './generate-image.js'
 import * as fsp from 'fs/promises'
 import * as path from 'path'
+import { existsSync, readlinkSync, rmSync } from 'node:fs'
 
 // ─── 설정 ────────────────────────────────────────────────────────────────────
 
@@ -63,10 +64,58 @@ let _context: BrowserContext | null = null
  */
 let _captureCallback: ((base64: string) => void) | null = null
 
+// ─── Singleton* preflight (stale lock 자동 정리) ────────────────────────────
+async function clearStaleSingletonLocks(profileDir: string): Promise<void> {
+  const lockFile = path.join(profileDir, 'SingletonLock')
+  if (!existsSync(lockFile)) return
+
+  let pid = 0
+  try {
+    const target = readlinkSync(lockFile)
+    pid = parseInt(target.split('-').at(-1) ?? '0', 10)
+    if (!pid || isNaN(pid)) {
+      console.warn('[Gemini] SingletonLock PID 파싱 실패 — 보수적 유지 (삭제 안 함)')
+      return
+    }
+  } catch {
+    console.warn('[Gemini] SingletonLock readlink 실패 — 보수적 유지 (삭제 안 함)')
+    return
+  }
+
+  try {
+    process.kill(pid, 0)
+    // 프로세스 살아있음 → active lock → 절대 삭제 금지
+    console.warn(`[Gemini] 활성 Chrome 프로세스 감지 (PID ${pid}) — Gemini 실행 중단`)
+    try {
+      const { sendSlackMessage } = await import('../../../core/notifier.js')
+      await sendSlackMessage('SYSTEM',
+        `[Gemini] 활성 Chrome 프로세스 충돌 (PID ${pid})\n→ ~/.chrome-gemini-profile 점유 중\n→ Chrome이 열려 있으면 닫아주세요`)
+    } catch { /* Slack 실패 시 무시 */ }
+    throw new Error(`GEMINI_ACTIVE_PROCESS:${pid}`)
+  } catch (e: unknown) {
+    const err = e as NodeJS.ErrnoException
+    if (err.message?.startsWith('GEMINI_ACTIVE_PROCESS')) throw e
+    if (err.code === 'ESRCH') {
+      const singletonFiles = ['SingletonLock', 'SingletonCookie', 'SingletonSocket']
+      for (const f of singletonFiles) {
+        const fp = path.join(profileDir, f)
+        if (existsSync(fp)) {
+          rmSync(fp, { force: true })
+          console.log(`[Gemini] Stale ${f} 제거 완료 (PID ${pid} 없음)`)
+        }
+      }
+    } else {
+      console.warn(`[Gemini] PID 확인 중 예상 외 오류 — 보수적 유지:`, err.code)
+    }
+  }
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 export async function getGeminiBrowserContext(): Promise<BrowserContext> {
   if (_context) return _context
 
   await fsp.mkdir(GEMINI_PROFILE_DIR, { recursive: true })
+  await clearStaleSingletonLocks(GEMINI_PROFILE_DIR)
   console.log('[Gemini Scraper] Chrome 연결 중...')
   console.log(`  프로필 경로: ${GEMINI_PROFILE_DIR}`)
 

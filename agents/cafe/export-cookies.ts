@@ -77,6 +77,10 @@ print(json.dumps(cookies, ensure_ascii=False))
   const SESSION_HALTED_FLAG = resolve(__dirname, '.session-halted')
   if (existsSync(SESSION_HALTED_FLAG)) {
     rmSync(SESSION_HALTED_FLAG, { force: true })
+    const SESSION_HALTED_ALERT_FLAG = resolve(__dirname, '.session-halted-alerted')
+    if (existsSync(SESSION_HALTED_ALERT_FLAG)) {
+      rmSync(SESSION_HALTED_ALERT_FLAG, { force: true })
+    }
     console.log('[ExportCookies] SESSION_HALTED 플래그 해제 완료 — 크롤러 재가동 가능')
   }
 

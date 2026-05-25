@@ -65,6 +65,8 @@ const STORAGE_STATE_PATH = resolve(__dirname, 'storage-state.json')
 const BACKUP_DIR = resolve(__dirname, 'session-backups')
 /** SESSION_HALTED 플래그 — crawler.ts에서도 import해서 사용 */
 export const SESSION_HALTED_FLAG = resolve(__dirname, '.session-halted')
+const SESSION_HALTED_ALERT_FLAG = resolve(__dirname, '.session-halted-alerted')
+const HALTED_ALERT_COOLDOWN_MS = 30 * 60 * 1000  // 30분
 
 // ── 임계값 상수 ──
 const NID_SES_REFRESH_THRESHOLD_DAYS = 5  // NID_SES 이 일수 이하면 갱신
@@ -309,7 +311,7 @@ async function verifyLoginAccess(): Promise<boolean> {
 
 async function notifySessionHalted(reason: string): Promise<void> {
   const msg = [
-    '🚨 *네이버 카페 크롤러 전면 중단*',
+    '🚨 *크롤러 전면 중단 — 수동 조치 필요 (자동 복구 불가)*',
     '',
     `사유: ${reason}`,
     `시각: ${kstNow()}`,
@@ -331,6 +333,15 @@ async function notifySessionHalted(reason: string): Promise<void> {
 }
 
 async function notifyAlreadyHalted(): Promise<void> {
+  // 30분 cooldown — mtime 기반 (파일 내용 깨짐 방어)
+  if (existsSync(SESSION_HALTED_ALERT_FLAG)) {
+    try {
+      const { mtimeMs } = statSync(SESSION_HALTED_ALERT_FLAG)
+      if (Date.now() - mtimeMs < HALTED_ALERT_COOLDOWN_MS) return
+    } catch { /* statSync 실패 시 보수적으로 알림 전송 허용 */ }
+  }
+  writeFileSync(SESSION_HALTED_ALERT_FLAG, '')  // mtime 갱신 목적
+
   let haltedAt = '알 수 없음'
   try {
     const content = readFileSync(SESSION_HALTED_FLAG, 'utf-8').trim()
@@ -338,13 +349,13 @@ async function notifyAlreadyHalted(): Promise<void> {
   } catch { /* ignore */ }
 
   const msg = [
-    '🔴 *크롤러 차단 중 — 재실행 시도 감지*',
+    '⛔ *자동 복구 불가 — 수동 쿠키 재발급 필요*',
     '',
     `차단 시각: ${haltedAt}`,
     `현재 시각: ${kstNow()}`,
     '',
-    '→ export-cookies.ts 미실행 상태입니다',
-    '→ Chrome 닫고 `npx tsx agents/cafe/export-cookies.ts` 실행 필요',
+    '조치: Chrome 완전 종료(Cmd+Q) 후',
+    '→ `npx tsx agents/cafe/export-cookies.ts`',
   ].join('\n')
 
   // 2채널 동시 전송 (DASHBOARD, SYSTEM)

@@ -4,7 +4,7 @@
  * 사용법: npx tsx scripts/check-cron-links.ts
  */
 
-import { readFileSync, readdirSync } from 'fs'
+import { readFileSync, readdirSync, existsSync } from 'fs'
 import { resolve, join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -16,6 +16,8 @@ const WORKFLOWS_DIR = join(ROOT, '.github/workflows')
 
 interface HandlerInfo { key: string; importPath: string }
 
+interface LaunchdOrphan { plist: string; missingFile: string }
+
 interface Report {
   total: number
   linked: number
@@ -23,6 +25,7 @@ interface Report {
   dispatchOnly: string[]
   localOnly: string[]
   unlinkedWithoutReason: string[]
+  launchdOrphans: LaunchdOrphan[]
 }
 
 function extractHandlers(): HandlerInfo[] {
@@ -76,6 +79,30 @@ function hasExemptComment(filePath: string): 'dispatch' | 'local' | null {
   return null
 }
 
+function checkLaunchdOrphans(): LaunchdOrphan[] {
+  const plistDir = resolve(ROOT, 'launchd')
+  const SKIP_PATTERNS = [/^node$/, /^npx$/, /^tsx$/, /\/bin\//, /\.log$/, /^[a-z-]+$/]
+  const orphans: LaunchdOrphan[] = []
+
+  let plistFiles: string[]
+  try {
+    plistFiles = readdirSync(plistDir).filter(f => f.endsWith('.plist'))
+  } catch { return orphans }
+
+  for (const plistFile of plistFiles) {
+    const content = readFileSync(resolve(plistDir, plistFile), 'utf-8')
+    const args = [...content.matchAll(/<string>([^<]+)<\/string>/g)].map(m => m[1])
+    for (const arg of args) {
+      if (SKIP_PATTERNS.some(p => p.test(arg))) continue
+      if (!arg.startsWith(ROOT)) continue
+      if (/\.(ts|js|mjs|sh)$/.test(arg) && !existsSync(arg)) {
+        orphans.push({ plist: plistFile, missingFile: arg })
+      }
+    }
+  }
+  return orphans
+}
+
 function main() {
   const handlers = extractHandlers()
   const workflowKeys = extractWorkflowKeys()
@@ -95,6 +122,8 @@ function main() {
     else unlinkedWithoutReason.push(key)
   }
 
+  const launchdOrphans = checkLaunchdOrphans()
+
   const report: Report = {
     total: handlers.length,
     linked: handlers.length - orphaned.length,
@@ -102,10 +131,11 @@ function main() {
     dispatchOnly,
     localOnly,
     unlinkedWithoutReason,
+    launchdOrphans,
   }
 
   console.log(JSON.stringify(report, null, 2))
-  process.exit(unlinkedWithoutReason.length > 0 ? 1 : 0)
+  process.exit(unlinkedWithoutReason.length > 0 || launchdOrphans.length > 0 ? 1 : 0)
 }
 
 main()
