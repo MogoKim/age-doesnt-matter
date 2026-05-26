@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import Header from './Header'
 import IconMenu from './IconMenu'
 import GNB from './GNB'
@@ -28,8 +29,10 @@ export default function MainLayout({
         본문으로 건너뛰기
       </a>
 
-      {/* 전 페이지 최상단 홍보 띠 배너 */}
-      <TopPromoBanner />
+      {/* 전 페이지 최상단 홍보 띠 배너 — Suspense로 감싸 children blocking 방지 */}
+      <Suspense fallback={<div className="h-[44px]" />}>
+        <TopPromoBanner />
+      </Suspense>
 
       {/* 모바일: Header + IconMenu / 데스크탑: GNB */}
       <Header isLoggedIn={isLoggedIn} unreadCount={unreadCount} />
