@@ -158,7 +158,7 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
     try {
       execFileSync('npx', ['tsx', resolve(__dirname, script)], {
         env: { ...process.env },
-        timeout: 900000,
+        timeout: 1200000, // 20분 — 실제 크롤 ~15분 + 여유 5분
         stdio: 'inherit',
       })
       lastError = ''

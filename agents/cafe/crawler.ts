@@ -932,8 +932,17 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
       }
 
       // 3. 경쟁사 카페 언급 체크 ('은오' 단독은 거짓양성 위험으로 제외)
+      // 소스 카페 자기참조 키워드는 예외 처리 — 해당 카페 글이 자기 카페명 언급은 정상 콘텐츠
+      const CAFE_SELF_KEYWORDS: Record<string, string[]> = {
+        wgang: ['우갱', '우아한 갱년기', '우아한갱년기'],
+        dlxogns01: ['은퇴 후 50년', '은퇴후 50년'],
+      }
+      const selfKeywords = CAFE_SELF_KEYWORDS[post.cafeId] ?? []
+      const externalKeywords = COMPETITOR_KEYWORDS.filter(
+        kw => kw !== '은오' && !selfKeywords.includes(kw)
+      )
       const postSnippet = post.title + ' ' + post.content.slice(0, 1000)
-      if (COMPETITOR_KEYWORDS.filter(kw => kw !== '은오').some(kw => postSnippet.includes(kw))) {
+      if (externalKeywords.some(kw => postSnippet.includes(kw))) {
         console.log(`[CafeCrawler] 경쟁사 언급 스킵: ${post.title.slice(0, 20)}`)
         continue
       }
