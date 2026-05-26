@@ -17,6 +17,7 @@ import type { GeneratedImage } from './generate-image.js'
 import * as fsp from 'fs/promises'
 import * as path from 'path'
 import { existsSync, readlinkSync, rmSync } from 'node:fs'
+import { execSync } from 'child_process'
 
 // ─── 설정 ────────────────────────────────────────────────────────────────────
 
@@ -102,6 +103,30 @@ async function clearStaleSingletonLocks(profileDir: string): Promise<void> {
         if (existsSync(fp)) {
           rmSync(fp, { force: true })
           console.log(`[Gemini] Stale ${f} 제거 완료 (PID ${pid} 없음)`)
+        }
+      }
+    } else if (err.code === 'EPERM') {
+      // EPERM: PID 존재하지만 signal 권한 없음 (다른 사용자 소유) → PID 재활용 가능성
+      // 강제 삭제 금지 — ps로 실제 Chrome인지 먼저 확인
+      let isActualChrome = false
+      try {
+        const comm = execSync(`ps -p ${pid} -o comm=`, { encoding: 'utf-8' }).trim()
+        isActualChrome = comm.includes('Google Chrome') || comm.toLowerCase().includes('chrome')
+      } catch {
+        // ps 실패 = PID 사라짐(경쟁 조건) → stale 추정
+      }
+      if (isActualChrome) {
+        console.warn(`[Gemini] EPERM — ps로 Chrome 확인됨 (PID ${pid}) → lock 유지, ABORT`)
+        throw new Error(`GEMINI_ACTIVE_PROCESS:${pid}`)
+      } else {
+        console.warn(`[Gemini] EPERM — ps로 비Chrome/없음 (PID ${pid}) → PID 재활용, stale 삭제`)
+        const singletonFiles = ['SingletonLock', 'SingletonCookie', 'SingletonSocket']
+        for (const f of singletonFiles) {
+          const fp = path.join(profileDir, f)
+          if (existsSync(fp)) {
+            rmSync(fp, { force: true })
+            console.log(`[Gemini] Stale ${f} 삭제 완료 (EPERM+비Chrome)`)
+          }
         }
       }
     } else {

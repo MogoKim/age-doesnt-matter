@@ -1,9 +1,9 @@
 /**
  * 네이버 블로그 계정 쿠키 추출
- * Chrome Profile 2 (hihihihi1023)의 암호화된 쿠키를 복호화하여 blog-storage-state.json 저장
+ * Chrome Profile 1 (k-agelab) — 블로그 자동화 폐기 예정 (2026-05-26)
  *
  * 사전 조건:
- *   1. Chrome에서 hihihihi1023 계정을 Profile 2로 로그인
+ *   1. Chrome에서 k-agelab 계정을 Profile 1로 로그인
  *   2. Chrome 완전히 종료 (쿠키 DB 잠금 해제)
  *   3. 이 스크립트 실행
  *
