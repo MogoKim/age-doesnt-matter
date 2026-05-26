@@ -530,6 +530,32 @@ export async function main() {
               sourceComments = result.sourceComments
             }
 
+            // 접근 차단 안내문 / 게시판 안내문 필터 (ea1ae6a sheet-scraper 경로 누락 보완)
+            const ACCESS_BLOCKED_SIGNALS = [
+              '검색 비허용 게시물',
+              '게시물을 확인하기 위해서는 가입이 필요합니다',
+              '가입이 필요합니다',
+              '카페의 멤버가 되어보세요',
+              '카페에 가입하면 바로 글을 볼 수 있어요',
+              '10초 만에 가입하기',
+            ]
+            const BOARD_NOTICE_SIGNALS = [
+              '게시판 안내를 확인해 주세요',
+              '게시판에 작성 바랍니다',
+            ]
+            const _isAccessBlocked = ACCESS_BLOCKED_SIGNALS.some(s => content.includes(s))
+            const _isBoardNotice = BOARD_NOTICE_SIGNALS.some(s => content.includes(s))
+            if (_isAccessBlocked || _isBoardNotice) {
+              const _blockReason = _isAccessBlocked ? '접근 차단 안내문 포함' : '게시판 안내문 포함'
+              await updateRow(tab.tabName, row.rowIndex, {
+                status: 'FAILED',
+                error: `${_blockReason} — 발행 제외`,
+              })
+              totalFailed++
+              console.log(`  → FAILED: ${_blockReason} 감지`)
+              continue
+            }
+
             // 동영상 포함 글 발행 차단 (navercafe: 동영상은 임베드/보존 금지, 3차 방어선)
             const _pzpStrong = ['.pzp', 'pzp-pc', 'pzp-poster', 'webplayer-internal-video', '광고 후 계속됩니다', '디버그 정보 다운로드', '고화질 재생이 가능한 영상입니다']
             const _pzpWeak = ['재생 속도', '해상도', '자막', '음소거', '전체 화면', '자동 (480p)', '0초']
