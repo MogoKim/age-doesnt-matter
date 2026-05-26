@@ -40,6 +40,7 @@
 ## 수정 이력
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
+| 2026-05-26 | popular-curator.ts candidates 2차 content filter 추가 — ACCESS_BLOCKED_SIGNALS 5개 패턴 인라인 정의, 기존 오염 CafePost(isUsable=true, 접근 차단 안내문 잔존) 발행 차단 | 검색 비허용 안내문이 isUsable=true로 DB에 남아있는 경우 POPULAR_CURATE 발행 방지 (2차 방어선) |
 | 2026-05-21 | curator-shared.ts MONEY 키워드 확장 — 코스피·코스닥·나스닥·etf·커버드콜·코덱스·kodex·하이닉스·삼성전자·배당·배당주·미국주식 추가 | 투자 글이 guessDesire() 미감지로 STORY/자유수다 오분류되는 문제 완화 |
 | 2026-05-15 | 신규 생성 — popular-sync 3슬롯 + popular-curate 3슬롯 | 카페 실제 인기글 우나어 발행 (killerScore 과소평가 문제 해결) |
 | 2026-05-16 | popular-curator.ts 발행 루프에 LIFE2 크로스소스 dedup 추가 — 24h 내 LIFE2 전체 Post 조회 후 2자 명사 overlap ≥3 이면 발행 스킵 | Seed·ContentCurator와 동일 주제 중복 발행 차단 (크로스소스 dedup 미구현 버그) |

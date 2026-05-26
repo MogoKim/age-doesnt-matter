@@ -54,7 +54,13 @@ export async function main() {
   console.log('[PopularCurator] 시작')
   const startTime = Date.now()
 
-  const candidates = await prisma.cafePost.findMany({
+  // 기존 오염 CafePost 2차 방어 (isUsable=true이지만 접근 차단 안내문이 남아있는 경우)
+  const ACCESS_BLOCKED_SIGNALS_PC = [
+    '검색 비허용 게시물', '가입이 필요합니다', '카페의 멤버가 되어보세요',
+    '카페에 가입하면 바로 글을 볼 수 있어요', '10초 만에 가입하기',
+  ] as const
+
+  const rawCandidates = await prisma.cafePost.findMany({
     where: { isPopular: true, isUsable: true, usedAt: null, imageUrls: { isEmpty: true } },
     orderBy: { killerScore: 'desc' },
     take: 15,
@@ -66,6 +72,12 @@ export async function main() {
       killerScore: true,
       topComments: true,
     },
+  })
+
+  const candidates = rawCandidates.filter(cp => {
+    const blocked = ACCESS_BLOCKED_SIGNALS_PC.some(s => (cp.content ?? '').includes(s))
+    if (blocked) console.log(`[PopularCurator] 접근 차단 안내문 2차 필터 skip: "${cp.title.slice(0, 30)}"`)
+    return !blocked
   })
 
   if (candidates.length === 0) {

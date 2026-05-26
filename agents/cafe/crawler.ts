@@ -878,6 +878,20 @@ function isBoardNoticeContent(content: string): boolean {
   return hits >= 2
 }
 
+// 네이버가 실제 글 대신 반환하는 접근 차단/가입 유도 안내문 시그널
+const ACCESS_BLOCKED_SIGNALS = [
+  '검색 비허용 게시물',
+  '가입이 필요합니다',
+  '카페의 멤버가 되어보세요',
+  '카페에 가입하면 바로 글을 볼 수 있어요',
+  '10초 만에 가입하기',
+] as const
+
+/** 접근 차단 안내문 감지: ANY 1개 이상 포함 시 true (게시판 공지문과 성격이 다름) */
+function isAccessBlockedContent(content: string): boolean {
+  return ACCESS_BLOCKED_SIGNALS.some(s => content.includes(s))
+}
+
 // ─── DB 저장 ─────────────────────────────────────────
 
 /** DB에 저장 (중복 skip + 블랙리스트/품질 필터링) */
@@ -917,11 +931,13 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
       })
       if (existing) continue
 
-      // 5.5. 이미지 의존·공지문 필터
+      // 5.5. 이미지 의존·공지문·접근 차단 필터
       const imageDep = isImageDependentContent(post)
       const noticeText = isBoardNoticeContent(post.content)
+      const accessBlocked = isAccessBlockedContent(post.content)
       if (imageDep) console.log(`[CafeCrawler] 이미지 의존 글 isUsable=false: "${post.title.slice(0, 25)}"`)
       if (noticeText) console.log(`[CafeCrawler] 게시판 공지문 isUsable=false: "${post.title.slice(0, 25)}"`)
+      if (accessBlocked) console.log(`[CafeCrawler] 접근 차단 안내문 isUsable=false: "${post.title.slice(0, 25)}"`)
 
       // 6. 새 필드 포함하여 저장
       await prisma.cafePost.create({
@@ -937,7 +953,7 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
           boardCategory: post.boardCategory,
           qualityScore,
           killerScore,
-          isUsable: qualityScore >= QUALITY_THRESHOLDS.minUsable && !imageDep && !noticeText,
+          isUsable: qualityScore >= QUALITY_THRESHOLDS.minUsable && !imageDep && !noticeText && !accessBlocked,
           likeCount: post.likeCount,
           commentCount: post.commentCount,
           viewCount: post.viewCount,
@@ -1094,8 +1110,10 @@ export async function syncPopularPosts(page: Page, cafe: CafeConfig): Promise<{ 
         const killerScore = calculateKillerScore(crawled)
         const imageDep = isImageDependentContent(crawled)
         const noticeText = isBoardNoticeContent(crawled.content)
+        const accessBlocked = isAccessBlockedContent(crawled.content)
         if (imageDep) console.log(`[PopularSync] 이미지 의존 isUsable=false: "${crawled.title.slice(0, 25)}"`)
         if (noticeText) console.log(`[PopularSync] 게시판 공지문 isUsable=false: "${crawled.title.slice(0, 25)}"`)
+        if (accessBlocked) console.log(`[PopularSync] 접근 차단 안내문 isUsable=false: "${crawled.title.slice(0, 25)}"`)
         await prisma.cafePost.create({
           data: {
             cafeId: crawled.cafeId,
@@ -1109,7 +1127,7 @@ export async function syncPopularPosts(page: Page, cafe: CafeConfig): Promise<{ 
             boardCategory: crawled.boardCategory,
             qualityScore,
             killerScore,
-            isUsable: !imageDep && !noticeText,
+            isUsable: !imageDep && !noticeText && !accessBlocked,
             isPopular: true,
             popularUpdatedAt: new Date(),
             likeCount: crawled.likeCount,

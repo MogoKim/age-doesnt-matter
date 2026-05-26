@@ -50,30 +50,42 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   const firstWord = topicWords[0] ?? topic
   const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true } as const
 
+  // 기존 오염 CafePost 2차 방어 (isUsable=true이지만 접근 차단 안내문이 남아있는 경우)
+  const ACCESS_BLOCKED_SIGNALS_CC = [
+    '검색 비허용 게시물', '가입이 필요합니다', '카페의 멤버가 되어보세요',
+    '카페에 가입하면 바로 글을 볼 수 있어요', '10초 만에 가입하기',
+  ] as const
+  const filterBlocked = <T extends { title: string; content: string }>(posts: T[]): T[] =>
+    posts.filter(p => {
+      const blocked = ACCESS_BLOCKED_SIGNALS_CC.some(s => p.content.includes(s))
+      if (blocked) console.log(`[ContentCurator] 접근 차단 안내문 2차 필터 skip: "${p.title.slice(0, 30)}"`)
+      return !blocked
+    })
+
   // 1단계: 48h + 키워드
   const cutoff48h = new Date(Date.now() - 48 * 3600_000)
-  const stage1 = await prisma.cafePost.findMany({
+  const stage1 = filterBlocked(await prisma.cafePost.findMany({
     where: { ...base, postedAt: { gte: cutoff48h }, OR: [{ title: { contains: firstWord, mode: 'insensitive' } }, { topics: { hasSome: topicWords } }] },
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: limit, select: selectFields,
-  })
+  }))
   if (stage1.length >= limit) return stage1
 
   // 2단계: 7일 + 키워드
   const cutoff7d = new Date(Date.now() - 7 * 24 * 3600_000)
-  const stage2 = await prisma.cafePost.findMany({
+  const stage2 = filterBlocked(await prisma.cafePost.findMany({
     where: { ...base, postedAt: { gte: cutoff7d }, OR: [{ title: { contains: firstWord, mode: 'insensitive' } }, { topics: { hasSome: topicWords } }] },
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: limit, select: selectFields,
-  })
+  }))
   if (stage2.length >= limit) return stage2
 
   // 3단계: 7일 + desireCategory만 (키워드 없이)
-  const stage3 = await prisma.cafePost.findMany({
+  const stage3 = filterBlocked(await prisma.cafePost.findMany({
     where: { ...base, postedAt: { gte: cutoff7d }, ...(desireCat !== 'GENERAL' ? { desireCategory: desireCat } : {}) },
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: limit, select: selectFields,
-  })
+  }))
   return stage3
 }
 
