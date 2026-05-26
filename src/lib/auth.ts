@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@/generated/prisma/client'
 import { authConfig } from '@/lib/auth.config'
 import { logAuthFailure } from '@/lib/auth-monitor'
 
@@ -119,11 +120,21 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
             return token
           }
 
-          // 기존 세션 갱신: DB에 유저가 실제 존재하는지 확인
-          const user = await prisma.user.findUnique({
-            where: { id: token.userId as string },
-            select: { id: true, role: true, grade: true, nickname: true, profileImage: true, fontSize: true, createdAt: true },
-          })
+          // 기존 세션 갱신: lastLoginAt 업데이트 겸 유저 존재 확인 (30분 throttle 내 스킵됨)
+          const user = await (async () => {
+            try {
+              return await prisma.user.update({
+                where: { id: token.userId as string },
+                data: { lastLoginAt: new Date() },
+                select: { id: true, role: true, grade: true, nickname: true, profileImage: true, fontSize: true, createdAt: true },
+              })
+            } catch (e) {
+              if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+                return null // 유저 없음 → 토큰 초기화
+              }
+              throw e // 기타 DB 오류 → 외부 catch로 넘겨 logAuthFailure 처리 (정상 유저 로그아웃 방지)
+            }
+          })()
           if (!user) {
             // DB에 유저가 없으면 토큰 초기화 → 재로그인 유도
             token.userId = undefined
