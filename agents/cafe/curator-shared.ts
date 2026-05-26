@@ -54,9 +54,12 @@ export function toCuratedSummary(text: string, maxLen = 150): string {
   return text.replace(/\s+/g, ' ').trim().slice(0, maxLen)
 }
 
-/** AI 응답에서 마크다운 문법 제거 */
+/** AI 응답에서 마크다운 문법 제거 + 잔여 HTML 블록 보조 제거 */
 export function stripMarkdown(text: string): string {
   return text
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
     .replace(/#{1,6}\s?/g, '')
     .replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/\*(.+?)\*/g, '$1')

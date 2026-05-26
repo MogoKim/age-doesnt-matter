@@ -530,6 +530,22 @@ export async function main() {
               sourceComments = result.sourceComments
             }
 
+            // 동영상 포함 글 발행 차단 (navercafe: 동영상은 임베드/보존 금지, 3차 방어선)
+            const _pzpStrong = ['.pzp', 'pzp-pc', 'pzp-poster', 'webplayer-internal-video', '광고 후 계속됩니다', '디버그 정보 다운로드', '고화질 재생이 가능한 영상입니다']
+            const _pzpWeak = ['재생 속도', '해상도', '자막', '음소거', '전체 화면', '자동 (480p)', '0초']
+            const _isVideoContent = videoCount > 0
+              || _pzpStrong.some(s => content.includes(s))
+              || _pzpWeak.filter(s => content.includes(s)).length >= 2
+            if (_isVideoContent) {
+              await updateRow(tab.tabName, row.rowIndex, {
+                status: 'FAILED',
+                error: '네이버 카페 동영상 포함 글은 발행 제외',
+              })
+              totalFailed++
+              console.log(`  → FAILED: 동영상 포함 글 발행 제외 (videoCount=${videoCount})`)
+              continue
+            }
+
             // 카테고리 결정 (창업자 지정 우선, 아니면 게시판별 자동 분류)
             const category = row.category || classifyCategory(title, content, tab.boardType)
             const finalTitle = title

@@ -59,9 +59,16 @@ export async function main() {
     '검색 비허용 게시물', '가입이 필요합니다', '카페의 멤버가 되어보세요',
     '카페에 가입하면 바로 글을 볼 수 있어요', '10초 만에 가입하기',
   ] as const
+  const STRONG_PZP_SIGNALS_PC = [
+    '.pzp', 'pzp-pc', 'pzp-poster', 'webplayer-internal-video',
+    '광고 후 계속됩니다', '디버그 정보 다운로드', '고화질 재생이 가능한 영상입니다',
+  ] as const
+  const WEAK_PZP_SIGNALS_PC = [
+    '재생 속도', '해상도', '자막', '음소거', '전체 화면', '자동 (480p)', '0초',
+  ] as const
 
   const rawCandidates = await prisma.cafePost.findMany({
-    where: { isPopular: true, isUsable: true, usedAt: null, imageUrls: { isEmpty: true } },
+    where: { isPopular: true, isUsable: true, usedAt: null, imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true } },
     orderBy: { killerScore: 'desc' },
     take: 15,
     select: {
@@ -75,9 +82,15 @@ export async function main() {
   })
 
   const candidates = rawCandidates.filter(cp => {
-    const blocked = ACCESS_BLOCKED_SIGNALS_PC.some(s => (cp.content ?? '').includes(s))
-    if (blocked) console.log(`[PopularCurator] 접근 차단 안내문 2차 필터 skip: "${cp.title.slice(0, 30)}"`)
-    return !blocked
+    const content = cp.content ?? ''
+    const blocked = ACCESS_BLOCKED_SIGNALS_PC.some(s => content.includes(s))
+    if (blocked) { console.log(`[PopularCurator] 접근 차단 안내문 2차 필터 skip: "${cp.title.slice(0, 30)}"`)
+      return false }
+    const hasStrongPzp = STRONG_PZP_SIGNALS_PC.some(s => content.includes(s))
+    const weakPzpCount = WEAK_PZP_SIGNALS_PC.filter(s => content.includes(s)).length
+    const videoPzp = hasStrongPzp || weakPzpCount >= 2
+    if (videoPzp) console.log(`[PopularCurator] PZP/동영상 2차 필터 skip: "${cp.title.slice(0, 30)}"`)
+    return !videoPzp
   })
 
   if (candidates.length === 0) {

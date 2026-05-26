@@ -109,7 +109,12 @@ async function safeText(
       const el = frame.locator(sel).first()
       const count = await el.count()
       if (count > 0) {
-        const text = await el.textContent({ timeout: 3000 })
+        // style/script/noscript 노드 제거 후 textContent (PZP UI 텍스트 오염 방어)
+        const text = await el.evaluate((node: Element) => {
+          const clone = node.cloneNode(true) as Element
+          clone.querySelectorAll('style, script, noscript').forEach(e => e.remove())
+          return clone.textContent ?? ''
+        })
         if (text?.trim()) return text.trim()
       }
     } catch {
@@ -892,6 +897,21 @@ function isAccessBlockedContent(content: string): boolean {
   return ACCESS_BLOCKED_SIGNALS.some(s => content.includes(s))
 }
 
+// 네이버 동영상 플레이어(PZP) UI 흔적 — videoUrls 추출 실패 시 2차 감지
+const STRONG_PZP_SIGNALS = [
+  '.pzp', 'pzp-pc', 'pzp-poster', 'webplayer-internal-video',
+  '광고 후 계속됩니다', '디버그 정보 다운로드', '고화질 재생이 가능한 영상입니다',
+] as const
+const WEAK_PZP_SIGNALS = [
+  '재생 속도', '해상도', '자막', '음소거', '전체 화면', '자동 (480p)', '0초',
+] as const
+
+/** PZP/동영상 플레이어 UI 텍스트 감지: strong 1개 이상 또는 weak 2개 이상 */
+function isVideoPlayerContent(content: string): boolean {
+  if (STRONG_PZP_SIGNALS.some(s => content.includes(s))) return true
+  return WEAK_PZP_SIGNALS.filter(s => content.includes(s)).length >= 2
+}
+
 // ─── DB 저장 ─────────────────────────────────────────
 
 /** DB에 저장 (중복 skip + 블랙리스트/품질 필터링) */
@@ -931,13 +951,15 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
       })
       if (existing) continue
 
-      // 5.5. 이미지 의존·공지문·접근 차단 필터
+      // 5.5. 이미지 의존·공지문·접근 차단·동영상 필터
       const imageDep = isImageDependentContent(post)
       const noticeText = isBoardNoticeContent(post.content)
       const accessBlocked = isAccessBlockedContent(post.content)
+      const videoBlocked = post.videoUrls.length > 0 || isVideoPlayerContent(post.content)
       if (imageDep) console.log(`[CafeCrawler] 이미지 의존 글 isUsable=false: "${post.title.slice(0, 25)}"`)
       if (noticeText) console.log(`[CafeCrawler] 게시판 공지문 isUsable=false: "${post.title.slice(0, 25)}"`)
       if (accessBlocked) console.log(`[CafeCrawler] 접근 차단 안내문 isUsable=false: "${post.title.slice(0, 25)}"`)
+      if (videoBlocked) console.log(`[CafeCrawler] 동영상/PZP 포함 isUsable=false: "${post.title.slice(0, 25)}"`)
 
       // 6. 새 필드 포함하여 저장
       await prisma.cafePost.create({
@@ -953,7 +975,7 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
           boardCategory: post.boardCategory,
           qualityScore,
           killerScore,
-          isUsable: qualityScore >= QUALITY_THRESHOLDS.minUsable && !imageDep && !noticeText && !accessBlocked,
+          isUsable: qualityScore >= QUALITY_THRESHOLDS.minUsable && !imageDep && !noticeText && !accessBlocked && !videoBlocked,
           likeCount: post.likeCount,
           commentCount: post.commentCount,
           viewCount: post.viewCount,
@@ -1111,9 +1133,11 @@ export async function syncPopularPosts(page: Page, cafe: CafeConfig): Promise<{ 
         const imageDep = isImageDependentContent(crawled)
         const noticeText = isBoardNoticeContent(crawled.content)
         const accessBlocked = isAccessBlockedContent(crawled.content)
+        const videoBlocked = crawled.videoUrls.length > 0 || isVideoPlayerContent(crawled.content)
         if (imageDep) console.log(`[PopularSync] 이미지 의존 isUsable=false: "${crawled.title.slice(0, 25)}"`)
         if (noticeText) console.log(`[PopularSync] 게시판 공지문 isUsable=false: "${crawled.title.slice(0, 25)}"`)
         if (accessBlocked) console.log(`[PopularSync] 접근 차단 안내문 isUsable=false: "${crawled.title.slice(0, 25)}"`)
+        if (videoBlocked) console.log(`[PopularSync] 동영상/PZP 포함 isUsable=false: "${crawled.title.slice(0, 25)}"`)
         await prisma.cafePost.create({
           data: {
             cafeId: crawled.cafeId,
@@ -1127,7 +1151,7 @@ export async function syncPopularPosts(page: Page, cafe: CafeConfig): Promise<{ 
             boardCategory: crawled.boardCategory,
             qualityScore,
             killerScore,
-            isUsable: !imageDep && !noticeText && !accessBlocked,
+            isUsable: !imageDep && !noticeText && !accessBlocked && !videoBlocked,
             isPopular: true,
             popularUpdatedAt: new Date(),
             likeCount: crawled.likeCount,

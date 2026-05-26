@@ -57,13 +57,10 @@ function scoreContentLength(post: RawCafePost): number {
   return 5 // 너무 짧음 (제목만 있는 글 등)
 }
 
-/** 미디어 점수 (5%) */
+/** 미디어 점수 (5%) — 발행 차단은 crawler/curator/sheet-scraper 정책 담당, 점수는 이미지 기준만 */
 function scoreMedia(post: RawCafePost): number {
   const imageCount = post.imageUrls.length
-  const videoCount = post.videoUrls.length
 
-  if (videoCount > 0 && imageCount >= 3) return 100
-  if (videoCount > 0) return 80
   if (imageCount >= 3) return 80
   if (imageCount >= 1) return 50
   return 10 // 텍스트 전용

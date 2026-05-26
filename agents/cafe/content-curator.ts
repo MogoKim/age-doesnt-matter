@@ -45,7 +45,7 @@ function computeUsableCount(topComments: unknown): number {
  * 1단계: 48h + 키워드 / 2단계: 7일 + 키워드 / 3단계: 7일 + desireCategory만
  */
 async function getReferencePosts(topic: string, desireCat: string, limit: number) {
-  const base = { isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true } }
+  const base = { isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true } }
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
   const firstWord = topicWords[0] ?? topic
   const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true } as const
@@ -55,11 +55,23 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     '검색 비허용 게시물', '가입이 필요합니다', '카페의 멤버가 되어보세요',
     '카페에 가입하면 바로 글을 볼 수 있어요', '10초 만에 가입하기',
   ] as const
+  const STRONG_PZP_SIGNALS_CC = [
+    '.pzp', 'pzp-pc', 'pzp-poster', 'webplayer-internal-video',
+    '광고 후 계속됩니다', '디버그 정보 다운로드', '고화질 재생이 가능한 영상입니다',
+  ] as const
+  const WEAK_PZP_SIGNALS_CC = [
+    '재생 속도', '해상도', '자막', '음소거', '전체 화면', '자동 (480p)', '0초',
+  ] as const
   const filterBlocked = <T extends { title: string; content: string }>(posts: T[]): T[] =>
     posts.filter(p => {
       const blocked = ACCESS_BLOCKED_SIGNALS_CC.some(s => p.content.includes(s))
-      if (blocked) console.log(`[ContentCurator] 접근 차단 안내문 2차 필터 skip: "${p.title.slice(0, 30)}"`)
-      return !blocked
+      if (blocked) { console.log(`[ContentCurator] 접근 차단 안내문 2차 필터 skip: "${p.title.slice(0, 30)}"`)
+        return false }
+      const hasStrongPzp = STRONG_PZP_SIGNALS_CC.some(s => p.content.includes(s))
+      const weakPzpCount = WEAK_PZP_SIGNALS_CC.filter(s => p.content.includes(s)).length
+      const videoPzp = hasStrongPzp || weakPzpCount >= 2
+      if (videoPzp) console.log(`[ContentCurator] PZP/동영상 2차 필터 skip: "${p.title.slice(0, 30)}"`)
+      return !videoPzp
     })
 
   // 1단계: 48h + 키워드

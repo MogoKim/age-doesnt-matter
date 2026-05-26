@@ -209,6 +209,7 @@ scraped/{postKey}/{index}.{ext}
 | 2026-05-21 | Phase 1 — LIFE2(2막준비) 게시판 지원: sheets-client TAB_TO_BOARD에 '2막준비'/'2막준비_화제성' 추가 + 없는 탭 try/catch 방어, sheet-scraper getBoardSlug() helper(3-way) + LIFE2 페르소나 4명(정순씨/솔직히말해서/따져보자/말티즈엄마), content-transformer boardType 타입 확장(LIFE2는 STORY처럼 출처 생략) | 인생 2막 특화 콘텐츠 전용 게시판 자동 발행 지원 |
 | 2026-05-21 | Phase 2 — 82cook 사이트 추가: site-configs SiteConfig에 commentSelectors.author + postAuthorSelectors optional 필드 추가, SITE_CONFIGS에 cook82 설정(bn=15/16/17 curl 검증 완료), sheet-scraper scrapePage에 원글 작성자 자기 댓글 제외 로직 | 40~60대 여성 생활 정보 커뮤니티 수집 + 자기 댓글 오염 방지 |
 | 2026-05-21 | Phase 3 — 네이버 카페 URL 지원(LOCAL ONLY): SiteConfig에 requiresSession?/contentFrame? 추가, navercafe 설정(cafe_main iframe 통합 처리), sheet-scraper SESSION_REQUIRED skip(GHA는 storage-state.json 없으면 PENDING 유지), extractText/extractHtml Page\|Frame 지원, launchBrowserWithSession() 추가, run-local-naver-cafe.ts + plist 신규. 동영상 지원 제외(removeElements에 iframe 포함) | 창업자 발굴 카페 글 Sheet URL만으로 자동 발행 — 로그인 세션 Mac 로컬 전용 |
+| 2026-05-26 | sheet-scraper.ts scrapePage() 직후 videoCount > 0 또는 PZP signal(STRONG any 1개 / WEAK 2개 이상) 감지 시 updateRow(FAILED, '네이버 카페 동영상 포함 글은 발행 제외') 처리 추가. totalFailed 카운트 + continue로 Post 생성 완전 차단 | 동영상 포함 글 Sheet 경유 발행 3차 방어선 — image-router/curator 통과하더라도 최종 게시 직전 차단 |
 
 ---
 

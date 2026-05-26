@@ -107,6 +107,7 @@ export async function main(): Promise<void> {
         isUsable: true,
         usedAt: null,
         imageUrls: { isEmpty: false },
+        videoUrls: { isEmpty: true },
         killerScore: { gte: 50 },
       },
       orderBy: { killerScore: 'desc' },
