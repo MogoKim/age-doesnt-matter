@@ -1,6 +1,6 @@
 import 'server-only'
 import dynamic from 'next/dynamic'
-import { auth } from '@/lib/auth'
+import { getAuth } from '@/lib/auth-rsc'
 
 const SignupPromptBanner = dynamic(
   () => import('@/components/common/SignupPromptBanner').then(m => ({ default: m.SignupPromptBanner })),
@@ -8,7 +8,7 @@ const SignupPromptBanner = dynamic(
 )
 
 export default async function AuthBanners() {
-  const session = await auth()
+  const session = await getAuth()
   return (
     <SignupPromptBanner
       isLoggedIn={!!session?.user}

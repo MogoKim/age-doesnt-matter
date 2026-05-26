@@ -1,8 +1,8 @@
 import 'server-only'
-import { auth } from '@/lib/auth'
+import { getAuth } from '@/lib/auth-rsc'
 import FAB from './FAB'
 
 export default async function AuthFAB() {
-  const session = await auth()
+  const session = await getAuth()
   return <FAB isLoggedIn={!!session?.user} />
 }
