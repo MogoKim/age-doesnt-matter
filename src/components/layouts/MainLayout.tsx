@@ -1,24 +1,24 @@
 import { Suspense } from 'react'
-import Header from './Header'
 import IconMenu from './IconMenu'
-import GNB from './GNB'
-import FAB from './FAB'
 import Footer from './Footer'
 import TopPromoBanner from './TopPromoBanner'
+import AuthNavTop from './AuthNavTop'
+import AuthFAB from './AuthFAB'
 
 interface MainLayoutProps {
   children: React.ReactNode
-  isLoggedIn?: boolean
-  nickname?: string
-  unreadCount?: number
 }
 
-export default function MainLayout({
-  children,
-  isLoggedIn = false,
-  nickname,
-  unreadCount = 0,
-}: MainLayoutProps) {
+function NavFallback() {
+  return (
+    <>
+      <div className="h-[64px] lg:hidden bg-card border-b border-border" aria-hidden="true" />
+      <div className="hidden lg:block h-16 bg-card border-b border-border" aria-hidden="true" />
+    </>
+  )
+}
+
+export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <>
       {/* 스킵 네비게이션 (접근성) */}
@@ -34,14 +34,21 @@ export default function MainLayout({
         <TopPromoBanner />
       </Suspense>
 
-      {/* 모바일: Header + IconMenu / 데스크탑: GNB */}
-      <Header isLoggedIn={isLoggedIn} unreadCount={unreadCount} />
+      {/* 모바일: Header / 데스크탑: GNB — auth 의존, Suspense 스트리밍 */}
+      <Suspense fallback={<NavFallback />}>
+        <AuthNavTop />
+      </Suspense>
+
+      {/* 모바일 전용 아이콘 메뉴 — auth 불필요, 즉시 렌더 */}
       <IconMenu />
-      <GNB isLoggedIn={isLoggedIn} nickname={nickname} unreadCount={unreadCount} />
 
       <main id="main-content" className="pb-[72px] lg:pb-0">{children}</main>
 
-      <FAB isLoggedIn={isLoggedIn} />
+      {/* FAB — auth 의존, fixed 포지션(DOM 위치 시각적 무관) */}
+      <Suspense fallback={null}>
+        <AuthFAB />
+      </Suspense>
+
       <Footer />
     </>
   )

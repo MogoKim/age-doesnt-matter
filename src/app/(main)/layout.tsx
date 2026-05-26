@@ -1,8 +1,10 @@
 import { Suspense } from 'react'
+import { cookies } from 'next/headers'
 import dynamic from 'next/dynamic'
-import { auth } from '@/lib/auth'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
+import AuthBanners from './AuthBanners'
+
 const OfflineBanner = dynamic(
   () => import('@/components/common/OfflineBanner'),
   { loading: () => null, ssr: false },
@@ -21,37 +23,38 @@ const PopupRenderer = dynamic(
   () => import('@/components/common/PopupRenderer'),
   { loading: () => null, ssr: false },
 )
-const SignupPromptBanner = dynamic(
-  () => import('@/components/common/SignupPromptBanner').then(m => ({ default: m.SignupPromptBanner })),
-  { loading: () => null, ssr: false },
-)
 const ProgressBar = dynamic(
   () => import('@/components/common/ProgressBar'),
   { ssr: false },
 )
-export default async function MainGroupLayout({
+
+const VALID_FONT_SIZES = ['NORMAL', 'LARGE', 'XLARGE'] as const
+type FontSizeValue = typeof VALID_FONT_SIZES[number]
+
+function getLayoutFontSize(): FontSizeValue {
+  try {
+    const stored = cookies().get('unao-font-size')?.value
+    if (stored && VALID_FONT_SIZES.includes(stored as FontSizeValue)) return stored as FontSizeValue
+  } catch {}
+  return 'NORMAL'
+}
+
+export default function MainGroupLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
-  const isLoggedIn = !!session?.user
-  const nickname = session?.user?.nickname
-  // fontSize는 JWT 토큰에 포함 — 별도 DB 쿼리 없음 (root layout 쿠키 SSR 병행)
-  const fontSize = session?.user?.fontSize
-  const createdAt = session?.user?.createdAt
+  const fontSize = getLayoutFontSize()
 
   return (
     <FontSizeProvider fontSize={fontSize}>
       <ProgressBar />
       <WelcomeToast />
       <OfflineBanner />
-      <MainLayout isLoggedIn={isLoggedIn} nickname={nickname}>
-        {children}
-      </MainLayout>
-      {/* useSearchParams() 사용으로 Suspense 경계 필요 */}
+      <MainLayout>{children}</MainLayout>
+      {/* SignupPromptBanner: auth 의존, MainLayout 바깥 Suspense */}
       <Suspense fallback={null}>
-        <SignupPromptBanner isLoggedIn={isLoggedIn} createdAt={createdAt} />
+        <AuthBanners />
       </Suspense>
       <PopupRenderer />
       <PushPermissionToast />
