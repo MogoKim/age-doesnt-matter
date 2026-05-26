@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getContentList } from '@/lib/queries/admin'
+import { getAllBoardConfigs } from '@/lib/queries/boards'
 import type { ContentSortType, BotTypeFilter } from '@/lib/queries/admin/admin.content'
 import type { BoardType, PostSource, PostStatus } from '@/generated/prisma/client'
 import nextDynamic from 'next/dynamic'
@@ -36,15 +37,18 @@ interface Props {
 
 export default async function AdminContentPage({ searchParams }: Props) {
   const params = await searchParams
-  const { posts, hasMore } = await getContentList({
-    boardType: params.board as BoardType | undefined,
-    status: params.status as PostStatus | undefined,
-    source: params.source as PostSource | undefined,
-    botType: parseBotType(params.botType),
-    search: params.search,
-    cursor: params.cursor,
-    sort: parseSort(params.sort),
-  })
+  const [{ posts, hasMore }, boardConfigs] = await Promise.all([
+    getContentList({
+      boardType: params.board as BoardType | undefined,
+      status: params.status as PostStatus | undefined,
+      source: params.source as PostSource | undefined,
+      botType: parseBotType(params.botType),
+      search: params.search,
+      cursor: params.cursor,
+      sort: parseSort(params.sort),
+    }),
+    getAllBoardConfigs(),
+  ])
 
   return (
     <div className="space-y-4">
@@ -68,6 +72,7 @@ export default async function AdminContentPage({ searchParams }: Props) {
           search: params.search,
           sort: params.sort,
         }}
+        boardConfigs={boardConfigs.map((c) => ({ boardType: c.boardType, categories: c.categories }))}
       />
     </div>
   )

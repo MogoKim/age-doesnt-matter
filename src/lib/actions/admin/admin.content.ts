@@ -1,17 +1,20 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
-import type { PostStatus, PromotionLevel } from '@/generated/prisma/client'
+import type { PostStatus, PromotionLevel, BoardType } from '@/generated/prisma/client'
 
 async function requireAdmin() {
   const session = await getAdminSession()
   if (!session) throw new Error('관리자 인증이 필요합니다.')
   return session
 }
+
+// 1차 이동 허용 게시판 (커뮤니티 3개 — MAGAZINE/JOB/WEEKLY는 별도 영향도 검토 필요)
+const MOVABLE_BOARD_TYPES: BoardType[] = ['STORY', 'LIFE2', 'HUMOR']
 
 // BoardType → 서비스 페이지 경로 매핑
 const BOARD_PATHS: Record<string, string> = {
@@ -336,4 +339,66 @@ export async function adminDeleteComment(commentId: string) {
   revalidatePath(`/admin/content/${comment.postId}`)
   const boardPath = BOARD_PATHS[comment.post.boardType]
   if (boardPath) revalidatePath(`${boardPath}/${comment.postId}`)
+}
+
+export async function adminMovePost(
+  postId: string,
+  boardType: BoardType,
+  category: string | null
+) {
+  const admin = await requireAdmin()
+
+  // 1차: 커뮤니티 3개만 허용
+  if (!MOVABLE_BOARD_TYPES.includes(boardType)) {
+    throw new Error('이동할 수 없는 게시판입니다. (STORY / LIFE2 / HUMOR만 가능)')
+  }
+
+  // category 정규화: '' | '전체' → null
+  const normalizedCategory = !category || category === '전체' ? null : category
+
+  // category 유효성: 대상 게시판 BoardConfig.categories에 포함 여부
+  if (normalizedCategory) {
+    const config = await prisma.boardConfig.findUnique({
+      where: { boardType },
+      select: { categories: true },
+    })
+    const validCategories = (config?.categories ?? []) as string[]
+    if (!validCategories.includes(normalizedCategory)) {
+      throw new Error(`유효하지 않은 카테고리입니다: ${normalizedCategory}`)
+    }
+  }
+
+  const existing = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { boardType: true, category: true },
+  })
+  if (!existing) throw new Error('게시글을 찾을 수 없습니다.')
+
+  await prisma.post.update({
+    where: { id: postId },
+    data: { boardType, category: normalizedCategory },
+  })
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.adminId,
+      action: 'POST_MOVE',
+      targetType: 'POST',
+      targetId: postId,
+      before: { boardType: existing.boardType, category: existing.category },
+      after: { boardType, category: normalizedCategory },
+    },
+  })
+
+  // 이전 게시판 + 새 게시판 revalidation
+  revalidateServicePaths(existing.boardType, postId)
+  revalidateServicePaths(boardType, postId)
+  revalidatePath('/admin/content')
+  revalidatePath('/')
+  revalidatePath('/best')
+  revalidatePath('/search')
+  revalidateTag('home-trending')
+  revalidateTag('home-stories')
+  revalidateTag('home-humor')
+  revalidateTag('community-board-page')
 }

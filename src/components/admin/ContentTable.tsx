@@ -4,8 +4,8 @@ import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { adminUpdatePostStatus, adminTogglePin, adminBulkAction, adminSetPostPromotionLevel, adminToggleFeatured, adminSetPostLikeCount } from '@/lib/actions/admin'
-import type { PromotionLevel } from '@/generated/prisma/client'
+import { adminUpdatePostStatus, adminTogglePin, adminBulkAction, adminSetPostPromotionLevel, adminToggleFeatured, adminSetPostLikeCount, adminMovePost } from '@/lib/actions/admin'
+import type { PromotionLevel, BoardType } from '@/generated/prisma/client'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 
 // 어드민은 WEEKLY를 "숨김"으로 표시 (운영자가 인지해야 함)
@@ -34,6 +34,7 @@ const PROMOTION_BADGE: Record<string, string> = {
 interface Post {
   id: string
   boardType: string
+  category: string | null
   title: string
   status: string
   source: string
@@ -59,9 +60,10 @@ interface ContentTableProps {
     search?: string
     sort?: string
   }
+  boardConfigs: Array<{ boardType: string; categories: string[] }>
 }
 
-export default function ContentTable({ posts, hasMore, filters }: ContentTableProps) {
+export default function ContentTable({ posts, hasMore, filters, boardConfigs }: ContentTableProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -253,9 +255,12 @@ export default function ContentTable({ posts, hasMore, filters }: ContentTablePr
                     />
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
-                    <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-                      {BOARD_LABELS[post.boardType] || post.boardType}
-                    </span>
+                    <BoardCategoryCell
+                      postId={post.id}
+                      boardType={post.boardType}
+                      category={post.category}
+                      boardConfigs={boardConfigs}
+                    />
                   </td>
                   <td className="max-w-xs truncate px-3 py-3 font-medium text-zinc-900">
                     {post.isPinned && <span className="mr-1">📌</span>}
@@ -547,6 +552,117 @@ function PromotionButton({
             </button>
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+// 1차 허용 게시판 (UI 표시용)
+const MOVABLE_BOARD_TYPES = ['STORY', 'LIFE2', 'HUMOR']
+
+function BoardCategoryCell({
+  postId,
+  boardType: initialBoardType,
+  category: initialCategory,
+  boardConfigs,
+}: {
+  postId: string
+  boardType: string
+  category: string | null
+  boardConfigs: Array<{ boardType: string; categories: string[] }>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [selectedBoard, setSelectedBoard] = useState(initialBoardType)
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory ?? '')
+  const [isPending, startTransition] = useTransition()
+
+  const currentConfig = boardConfigs.find((c) => c.boardType === selectedBoard)
+  const categories = currentConfig?.categories ?? []
+
+  function handleBoardChange(newBoard: string) {
+    setSelectedBoard(newBoard)
+    setSelectedCategory('')
+  }
+
+  function handleConfirm() {
+    if (!confirm('게시판/카테고리를 변경하시겠습니까?')) return
+    startTransition(async () => {
+      try {
+        await adminMovePost(postId, selectedBoard as BoardType, selectedCategory || null)
+        setEditing(false)
+      } catch (e) {
+        alert(e instanceof Error ? e.message : '저장에 실패했습니다.')
+      }
+    })
+  }
+
+  function handleCancel() {
+    setSelectedBoard(initialBoardType)
+    setSelectedCategory(initialCategory ?? '')
+    setEditing(false)
+  }
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => setEditing(true)}
+        title="클릭하여 게시판/카테고리 변경"
+        className="text-left"
+      >
+        <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 hover:bg-zinc-200">
+          {BOARD_LABELS[initialBoardType] || initialBoardType}
+        </span>
+        {initialCategory && (
+          <div className="mt-0.5 text-[10px] text-zinc-400">{initialCategory}</div>
+        )}
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex min-w-[150px] flex-col gap-1.5">
+      <div className="flex items-center gap-1">
+        <select
+          value={selectedBoard}
+          onChange={(e) => handleBoardChange(e.target.value)}
+          disabled={isPending}
+          className="rounded border border-zinc-300 px-1.5 py-1 text-xs"
+        >
+          {Object.entries(BOARD_LABELS).map(([key, label]) => (
+            <option key={key} value={key} disabled={!MOVABLE_BOARD_TYPES.includes(key)}>
+              {label}{!MOVABLE_BOARD_TYPES.includes(key) ? ' (제한)' : ''}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={handleConfirm}
+          disabled={isPending}
+          title="저장"
+          className="rounded bg-zinc-900 px-2 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
+        >
+          ✓
+        </button>
+        <button
+          onClick={handleCancel}
+          disabled={isPending}
+          title="취소"
+          className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-50 disabled:opacity-50"
+        >
+          ✗
+        </button>
+      </div>
+      {categories.length > 0 && (
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          disabled={isPending}
+          className="rounded border border-zinc-300 px-1.5 py-1 text-xs"
+        >
+          <option value="">카테고리 없음</option>
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
       )}
     </div>
   )

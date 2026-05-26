@@ -46,3 +46,4 @@ updated: 2026-05-20
 |------|------|------|
 | 2026-05-20 | 콘텐츠 필터 botType 추가 — 실고객/시드봇/큐레이션봇/스크래퍼봇/NNN | 봇 유형별 조회 필요 |
 | 2026-05-24 | 회원 글·댓글 드릴다운 — 글/댓글 수 클릭 시 우측 드로어에서 목록 조회 (UserContentDrawer 신규, adminGetUserPosts/adminGetUserComments 추가) | 어드민이 특정 회원의 콘텐츠 활동을 페이지 이동 없이 확인 필요 |
+| 2026-05-26 | 게시판·카테고리 인라인 수정 — ContentTable 게시판 셀 클릭으로 STORY/LIFE2/HUMOR 이동 + 카테고리 변경 (BoardCategoryCell 신규, adminMovePost server action 추가, AdminAuditLog POST_MOVE 기록) | 잘못 분류된 게시글을 DB 직접 수정 없이 어드민에서 이동 |

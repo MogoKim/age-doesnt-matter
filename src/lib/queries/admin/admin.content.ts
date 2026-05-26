@@ -66,6 +66,7 @@ export async function getContentList(options: ContentListOptions = {}) {
     select: {
       id: true,
       boardType: true,
+      category: true,
       title: true,
       status: true,
       source: true,
