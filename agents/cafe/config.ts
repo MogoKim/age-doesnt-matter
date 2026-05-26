@@ -185,7 +185,7 @@ export const CHROME_USER_DATA_DIR =
   process.env.CHROME_USER_DATA_DIR ??
   `${process.env.HOME}/Library/Application Support/Google/Chrome`
 
-export const CHROME_PROFILE = process.env.CHROME_PROFILE ?? 'Profile 1'
+export const CHROME_PROFILE = process.env.CHROME_PROFILE ?? 'Default'
 
 /** 크롤링 제한 */
 export const CRAWL_LIMITS = {
