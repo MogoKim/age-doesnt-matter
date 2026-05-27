@@ -15,24 +15,10 @@ import {
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
 import { generateCommunitySlug } from '../core/slug.js'
+import { computeUsableCount } from './compute-usable-count.js'
 
 const HEALTH_CAP = 2
 const MAX_PUBLISH = 5
-
-const PC_AI_REJECT_RE = /글 내용을|내용을 보여|볼 수가 없|상황을 모르|글의 내용을|어떤 상황인지|댓글을 작성할 수 없|내용 올려/
-function computeUsableCount(topComments: unknown): number {
-  if (!Array.isArray(topComments)) return 0
-  const seen = new Set<string>()
-  let n = 0
-  for (const item of topComments) {
-    const raw = (item as { content?: string })?.content ?? ''
-    const cleaned = raw.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim()
-    if (cleaned.length < 10 || PC_AI_REJECT_RE.test(cleaned) || seen.has(cleaned)) continue
-    seen.add(cleaned)
-    n++
-  }
-  return n
-}
 
 async function enqueueCommentWave(postId: string, cafePostId: string, authorPersonaId: string) {
   const now = new Date()
@@ -68,7 +54,11 @@ export async function main() {
   ] as const
 
   const rawCandidates = await prisma.cafePost.findMany({
-    where: { isPopular: true, isUsable: true, usedAt: null, imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true } },
+    where: {
+      isPopular: true, isUsable: true, usedAt: null,
+      imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true },
+      commentCrawled: true,
+    },
     orderBy: { killerScore: 'desc' },
     take: 15,
     select: {
@@ -78,6 +68,8 @@ export async function main() {
       desireCategory: true,
       killerScore: true,
       topComments: true,
+      commentCount: true,
+      commentCrawled: true,
     },
   })
 
@@ -108,10 +100,17 @@ export async function main() {
     return
   }
 
+  const usableCandidates = candidates.filter(cp => computeUsableCount(cp.topComments) >= 5)
+  const lowUsableCount = candidates.length - usableCandidates.length
+  const maxUsableCount = candidates.length > 0
+    ? Math.max(...candidates.map(cp => computeUsableCount(cp.topComments)))
+    : 0
+  console.log(`[PopularCurator] 후보 ${candidates.length}건 → usable≥5 통과 ${usableCandidates.length}건 (저usable ${lowUsableCount}건 제외)`)
+
   let healthCount = 0
   let publishedCount = 0
 
-  for (const post of candidates) {
+  for (const post of usableCandidates) {
     if (publishedCount >= MAX_PUBLISH) break
     const desire = post.desireCategory ?? guessDesire(post.title)
     if (desire === 'HEALTH' && healthCount >= HEALTH_CAP) continue
@@ -194,7 +193,15 @@ export async function main() {
 
       const usable = computeUsableCount(post.topComments)
       if (usable === 0) {
-        console.log(`[PopularCurator] 댓글 없는 글 — wave queue 생략 postId=${postId} cafePostId=${post.id}`)
+        console.log(`[PopularCurator] usable=0 — wave queue 생략 postId=${postId} cafePostId=${post.id}`)
+        await prisma.botLog.create({
+          data: {
+            botType: 'CAFE_CRAWLER',
+            action: 'WAVE_SKIP_USABLE_ZERO',
+            status: 'SKIP',
+            details: JSON.stringify({ postId, cafePostId: post.id, source: 'POPULAR_CURATE' }),
+          },
+        })
       } else {
         await enqueueCommentWave(postId, post.id, persona.id)
       }
@@ -214,7 +221,13 @@ export async function main() {
       botType: 'CAFE_CRAWLER',
       action: 'POPULAR_CURATE',
       status: publishedCount > 0 ? 'SUCCESS' : 'SKIP',
-      details: JSON.stringify({ publishedCount, candidateCount: candidates.length }),
+      details: JSON.stringify({
+        publishedCount,
+        candidateCount: candidates.length,
+        usableCount: usableCandidates.length,
+        lowUsableCount,
+        maxUsableCount,
+      }),
       executionTimeMs: durationMs,
     },
   })

@@ -22,6 +22,7 @@ import { ensureSession, SESSION_HALTED_FLAG } from './session-manager.js'
 import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS, COMPETITOR_KEYWORDS } from './config.js'
 import type { RawCafePost, CafeConfig, ContentCategory, CommentData } from './types.js'
 import { calculateQualityScore, calculateKillerScore } from './quality-scorer.js'
+import { computeUsableCount } from './compute-usable-count.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const STORAGE_STATE_PATH = resolve(__dirname, 'storage-state.json')
@@ -1117,9 +1118,10 @@ export async function syncPopularPosts(page: Page, cafe: CafeConfig): Promise<{ 
 
       if (existing) {
         // Case A: DB에 있는 글 → 재크롤 → killerScore 갱신 + isPopular=true
-        const crawled = await crawlPost(page, article, cafe, false)
+        const crawled = await crawlPost(page, article, cafe, true)
         if (!crawled) continue // 삭제/비공개 → 스킵
         const newKillerScore = calculateKillerScore(crawled)
+        const newUsable = computeUsableCount(crawled.topComments)
         await prisma.cafePost.update({
           where: { id: existing.id },
           data: {
@@ -1129,13 +1131,15 @@ export async function syncPopularPosts(page: Page, cafe: CafeConfig): Promise<{ 
             killerScore: newKillerScore,
             isPopular: true,
             popularUpdatedAt: new Date(),
+            // usable≥5일 때만 덮어쓰기 — 실패·0개·부족 시 기존 topComments/commentCrawled 보호
+            ...(newUsable >= 5 ? { topComments: crawled.topComments, commentCrawled: true } : {}),
           },
         })
         updated++
-        console.log(`[PopularSync] ${cafe.name} A-${article.articleId}: killerScore=${newKillerScore} 갱신`)
+        console.log(`[PopularSync] ${cafe.name} A-${article.articleId}: killerScore=${newKillerScore} usable=${newUsable} 갱신`)
       } else {
         // Case B: DB 없는 글 → /popular 탭이 참여도 보증, 큐레이션 적합성은 추가 확인
-        const crawled = await crawlPost(page, article, cafe, false)
+        const crawled = await crawlPost(page, article, cafe, true)
         if (!crawled) continue // 삭제/비공개 → 스킵
         const qualityScore = calculateQualityScore(crawled)
         const killerScore = calculateKillerScore(crawled)
@@ -1172,10 +1176,12 @@ export async function syncPopularPosts(page: Page, cafe: CafeConfig): Promise<{ 
             thumbnailUrl: crawled.thumbnailUrl ?? null,
             mediaCount: crawled.imageUrls.length + crawled.videoUrls.length,
             articleId: crawled.articleId ?? null,
+            topComments: crawled.topComments,
+            commentCrawled: (crawled.topComments?.length ?? 0) > 0,
           },
         })
         created++
-        console.log(`[PopularSync] ${cafe.name} B-${article.articleId}: 신규 저장 (killerScore=${killerScore})`)
+        console.log(`[PopularSync] ${cafe.name} B-${article.articleId}: 신규 저장 (killerScore=${killerScore} usable=${computeUsableCount(crawled.topComments)})`)
       }
     } catch (err) {
       console.warn(`[PopularSync] ${cafe.name} article ${article.articleId} 처리 실패 (스킵):`, err)
