@@ -1,7 +1,7 @@
 // 공통 helper — content-curator / wave-processor usable 댓글 수 계산 기준 통일
 // wave-processor.ts에서 추출. 두 파일이 동일한 기준으로 usable을 판단하도록 단일 진실의 원천.
 
-function removeEmoji(text: string): string {
+export function removeEmoji(text: string): string {
   return text
     .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
     .replace(/[\u{2600}-\u{27BF}]/gu, '')

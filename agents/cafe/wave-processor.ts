@@ -18,7 +18,7 @@ import { sendSlackMessage } from '../core/notifier.js'
 import { parseTopComments } from './types.js'
 import { replaceCafeReferences } from './curator-shared.js'
 import { refreshPostTrendingScore } from '../core/post-trending.js'
-import { computeUsableCount } from './compute-usable-count.js'
+import { computeUsableCount, removeEmoji } from './compute-usable-count.js'
 
 // ── Kill Switch (v2-E) ──
 const V2_ENABLED = process.env.COMMENT_WAVE_V2_ENABLED === 'true'
