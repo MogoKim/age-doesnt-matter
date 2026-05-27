@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.30</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.31</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -290,12 +290,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.30</div>
+  <div class="cover-badge">Handover Document v10.31</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.30 (2026-05-27)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.31 (2026-05-27)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -415,7 +415,7 @@
     <li><a href="#s-full">full 모드 5단계 상세</a></li>
     <li><a href="#s-dedup">중복 수집 방지 3단계</a></li>
     <li><a href="#s-score">점수 체계 (qualityScore / killerScore)</a></li>
-    <li><a href="#s-isusable">isUsable 완전 가이드 ⚠️ 오해 주의</a></li>
+    <li><a href="#s-isusable">isUsable — 발행 자격 관리</a></li>
     <li><a href="#s-refresh">7일 재크롤 (refreshRecentPosts)</a></li>
     <li><a href="#s-db">DB 저장 구조 + topComments</a></li>
     <li><a href="#s-curator">큐레이션 시스템 (content-curator)</a></li>
@@ -1110,22 +1110,13 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
 <div class="section" id="s-isusable">
   <div class="section-header">
     <div class="section-num">7</div>
-    <h2>isUsable 완전 가이드 ⚠️ 오해 주의</h2>
-  </div>
-
-  <div class="alert" style="background:#fff3cd; border-left:4px solid #f0ad4e; padding:12px 16px; margin-bottom:16px; font-size:14px;">
-    ⚠️ <strong>isUsable은 점수가 아니다.</strong> true / false 두 값만 존재한다.
+    <h2>isUsable — 발행 자격 관리</h2>
   </div>
 
   <div class="biz-lead">
-    isUsable은 큐레이션 시스템의 <strong>입장 티켓</strong>이다. isUsable=true인 글만 45분마다 실행되는 큐레이션의 후보 풀에 들어간다. false면 DB에 저장돼 있어도 발행 대상에서 완전히 제외된다.<br><br>
-    이 필드를 잘못 이해하면 "왜 발행량이 줄었지?", "왜 후보 풀이 비어 있지?" 같은 문제를 엉뚱한 방향에서 디버깅하게 된다. 특히 이전 문서에 두 가지 오류가 있었기 때문에 이 섹션을 정확히 읽어야 한다.
-  </div>
-
-  <div class="alert err">
-    <strong>⚠️ 이전 문서(v9.4)의 두 가지 오류 — 반드시 읽을 것</strong>
-    ❌ 구버전: "qualityScore 60점 이상에 isUsable=true" → ✅ 실제: <strong>30점 이상</strong><br>
-    ❌ 구버전: "crawl-only 모드에서 신규글은 isUsable=false 상태로 저장" → ✅ 실제: <strong>savePosts에서 크롤 즉시 설정 (crawl-only 포함)</strong>
+    카페 글이 크롤되는 순간, <strong>발행 자격이 결정된다.</strong> isUsable=true인 글만 45분마다 실행되는 큐레이션 후보 풀에 들어간다. false면 DB에 저장돼 있어도 발행 대상에서 완전히 제외된다.<br><br>
+    카페 크롤러는 글을 수집할 때 <strong>4가지 방어선</strong>을 동시에 적용한다 — 이미지만 있는 글, 게시판 공지문, 동영상 포함 글, 접근차단 안내문. 이 중 하나라도 감지되면 즉시 isUsable=false로 저장된다. 품질 점수(qualityScore) 30점 미만인 글도 마찬가지다.<br><br>
+    인기글 탭(popular-sync)에서 수집된 글은 품질 점수 기준 없이 4가지 방어선만 적용한다. 인기글이라는 사실 자체가 품질을 보증하기 때문이다.
   </div>
 
   <h3>isUsable의 생애 주기</h3>
@@ -1137,8 +1128,7 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
           <strong>savePosts() — 크롤 즉시 설정</strong><br>
           crawler.ts의 savePosts 함수에서 qualityScore를 계산하고 즉시 isUsable을 결정한다.<br>
           <code>isUsable = qualityScore &gt;= QUALITY_THRESHOLDS.minUsable &amp;&amp; !imageDep &amp;&amp; !noticeText &amp;&amp; !videoBlocked &amp;&amp; !accessBlocked</code> (minUsable = <strong>30</strong>)<br>
-          <span class="text-muted">crawl-only 모드도 동일하게 적용됨. 11:30까지 기다리지 않는다. 이미지 의존·공지문은 점수와 무관하게 isUsable=false로 강제.</span><br>
-          <span style="font-size:12px;color:var(--muted);">🆕 <strong>videoBlocked</strong>: videoUrls.length &gt; 0 또는 PZP 신호(STRONG 1개+ / WEAK 2개+) → isUsable=false<br>🆕 <strong>accessBlocked</strong>: ACCESS_BLOCKED_SIGNALS 5종 감지 → isUsable=false (커밋 ea1ae6a · 9745f9e, 2026-05-26)</span>
+          <span class="text-muted">crawl-only 모드도 동일하게 적용됨. 11:30까지 기다리지 않는다. 이미지 의존·공지문·동영상·접근차단 — 4가지 방어선 중 하나라도 감지되면 점수와 무관하게 isUsable=false로 강제.</span>
         </div>
       </div>
       <div class="step-row">
@@ -1160,13 +1150,13 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
         <div class="step-num">4</div>
         <div class="step-content">
           <strong>popular-sync.ts — Case B 신규글 isUsable 결정</strong><br>
-          인기글 탭에서 수집된 DB 신규 글(Case B)은 isPopular=true로 표시한다. isUsable은 이미지 의존·공지문 여부로 결정: 해당되면 false, 아니면 true. "인기글 = 품질 보증"이지만 이미지만 있는 글·공지문은 큐레이션에 부적합하므로 예외 처리한다.
+          인기글 탭에서 수집된 DB 신규 글(Case B)은 isPopular=true로 표시한다. isUsable은 4가지 방어선(이미지 의존·공지문·동영상·접근차단) 기준으로 결정: 하나라도 감지되면 false, 전부 통과하면 true. "인기글 = 품질 보증"이지만 4가지 방어선에 걸리는 글은 큐레이션에 부적합하므로 예외 처리한다.
         </div>
       </div>
     </div>
   </div>
 
-  <h3>크롤 품질 방어 필터 (2026-05-21 추가)</h3>
+  <h3>크롤 품질 방어 필터</h3>
   <div class="narrative">
     <p>qualityScore 기준을 통과해도 아래 두 종류의 글은 이미지 의존·공지문 필터에 걸려 isUsable=false로 강제된다. savePosts()와 popular-sync Case B 신규 INSERT 양쪽에 동일하게 적용된다.</p>
   </div>
@@ -1207,7 +1197,7 @@ function isImageDependentContent(post: RawCafePost): boolean {
     "카톡 문의 주세요", "가입을 환영합니다" 같이 일반 글에 NOTICE_SIGNALS 단어 1개가 등장하는 경우를 허용하기 위해, 2개 이상 동시 출현을 공지문의 기준으로 삼는다.
   </div>
 
-  <h3>MONEY 키워드 확장 (2026-05-21)</h3>
+  <h3>MONEY 키워드 확장</h3>
   <div class="narrative">
     <p><code>curator-shared.ts</code>의 <code>guessDesire()</code> 함수는 키워드 기반으로 글의 desireCategory를 추정한다. MONEY 범주에 투자 관련 단어가 누락되어 코스피·나스닥·ETF 등 투자 글이 STORY/자유수다로 오분류되는 문제가 있었다. 아래 키워드를 MONEY 배열에 추가했다.</p>
   </div>
@@ -1223,44 +1213,46 @@ MONEY: [
   </details>
 
 
-  <h3 class="mt24">동영상 포함 글 발행 차단 (2026-05-26, 9745f9e)</h3>
+  <h3 class="mt24">동영상 포함 글 발행 차단</h3>
   <div class="narrative">
+    <p>동영상이 포함된 카페 글은 어떤 경로로 들어와도 발행되지 않습니다. 크롤 시점에 즉시 isUsable=false로 저장되며, 큐레이터가 후보로 선택할 수 없습니다. 스프레드시트에서 직접 입력한 글도 동영상이 감지되면 FAILED 처리됩니다.</p>
+  </div>
+  <details class="code-toggle">
+    <summary>개발자용 — 동영상 차단 구현 상세</summary>
     <p><strong>[CafePost 경로 — 2단계]</strong></p>
-    <p><strong>1단계 — <code>agents/cafe/crawler.ts</code> savePosts:</strong><br>
+    <p><strong>1단계 — crawler.ts savePosts:</strong><br>
     <code>videoBlocked = post.videoUrls.length &gt; 0 || isVideoPlayerContent(post.content)</code><br>
     <code>isUsable = ... &amp;&amp; !videoBlocked</code> — DB 저장 즉시 false.</p>
     <p><strong>2단계 — content-curator.ts + popular-curator.ts:</strong><br>
-    WHERE <code>videoUrls: { isEmpty: true }</code> (Prisma isEmpty 필터) + PZP 2차 필터: STRONG 1개 이상 or WEAK 2개 이상 감지 시 skip.<br>
-    ← 1단계를 통과한 글에 대한 백업 방어선.</p>
+    WHERE <code>videoUrls: { isEmpty: true }</code> (Prisma isEmpty 필터) + PZP 2차 필터: STRONG 1개 이상 or WEAK 2개 이상 감지 시 skip. ← 1단계를 통과한 글에 대한 백업 방어선.</p>
     <p><strong>[SHEET 경로 — 별도]</strong><br>
-    <code>agents/community/sheet-scraper.ts</code>: 동영상 감지 → Sheet row status=FAILED + continue. CafePost.isUsable와 무관.</p>
+    sheet-scraper.ts: 동영상 감지 → Sheet row status=FAILED + continue. CafePost.isUsable와 무관.</p>
     <p><strong>PZP 신호 (isVideoPlayerContent):</strong><br>
     STRONG (1개+): <code>.pzp</code> / <code>pzp-pc</code> / <code>pzp-poster</code> / <code>webplayer-internal-video</code> / 광고 후 계속됩니다 / 디버그 정보 다운로드 / 고화질 재생이 가능한 영상입니다<br>
     WEAK (2개+): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면 / 자동 (480p) / 0초</p>
-  </div>
+  </details>
 
-  <h3 class="mt24">접근차단·가입 안내문 방어 (2026-05-26, ea1ae6a + 3f206b7)</h3>
+  <h3 class="mt24">접근차단·가입 안내문 방어</h3>
   <div class="narrative">
+    <p>네이버 카페 접근이 차단된 글(로그인이나 멤버십 필요 안내문)은 크롤 시점에 감지되어 isUsable=false로 저장됩니다. 스프레드시트 경로에서도 동일한 안내문이 감지되면 FAILED 처리됩니다.</p>
+  </div>
+  <details class="code-toggle">
+    <summary>개발자용 — 접근차단 신호 목록 및 구현 상세</summary>
     <p><strong>[CafePost 경로 — crawler.ts]</strong><br>
     <code>ACCESS_BLOCKED_SIGNALS</code> ANY 1개 이상 → <code>accessBlocked=true</code> → <code>isUsable=false</code><br>
     신호 5종: <code>'검색 비허용 게시물'</code> / <code>'가입이 필요합니다'</code> / <code>'카페의 멤버가 되어보세요'</code> / <code>'카페에 가입하면 바로 글을 볼 수 있어요'</code> / <code>'10초 만에 가입하기'</code></p>
-    <p><strong>[SHEET 경로 — sheet-scraper.ts, 3f206b7]</strong><br>
+    <p><strong>[SHEET 경로 — sheet-scraper.ts]</strong><br>
     ACCESS_BLOCKED_SIGNALS (6종, <code>'게시물을 확인하기 위해서는 가입이 필요합니다'</code> 추가) 또는 BOARD_NOTICE_SIGNALS (2종) 감지<br>
     → Sheet row status=FAILED + continue. CafePost.isUsable와 무관.</p>
-    <p><strong>배경:</strong> 2026-05-25~26 k-agelab 쿠키 혼용(22시간) → 접근차단 콘텐츠 7건 isUsable=true 오염 → 전량 isUsable=false 정리.</p>
-  </div>
+  </details>
 
-  <h3 class="mt24">소스 카페 자기참조 키워드 경쟁사 필터 예외 처리 (2026-05-26, 77496c9)</h3>
+  <h3 class="mt24">소스 카페 자기참조 키워드 — 경쟁사 필터 예외</h3>
   <div class="narrative">
-    <p><strong>파일:</strong> <code>agents/cafe/crawler.ts</code> savePosts</p>
-    <p><strong>문제:</strong> 소스 카페 자체 이름이 COMPETITOR_KEYWORDS에 포함 → 해당 카페 글이 경쟁사 언급으로 오탐.</p>
-    <p><strong>해결:</strong> <code>CAFE_SELF_KEYWORDS</code> Map으로 카페별 자기참조 키워드 정의 → externalKeywords 필터 시 제외.</p>
-    <p><strong>CAFE_SELF_KEYWORDS:</strong><br>
-    <code>wgang</code> → <code>['우갱', '우아한 갱년기', '우아한갱년기']</code><br>
-    <code>dlxogns01</code> → <code>['은퇴 후 50년', '은퇴후 50년']</code></p>
+    <p>수집 카페 자체 이름이 경쟁사 키워드로 오인되는 문제를 방지합니다. 카페별 자기참조 키워드(<code>CAFE_SELF_KEYWORDS</code>)를 정의해 경쟁사 필터에서 제외합니다.</p>
+    <p>현재 등록: <code>wgang</code>(우갱·우아한갱년기), <code>dlxogns01</code>(은퇴 후 50년)</p>
   </div>
 
-  <h3>한 줄 요약</h3>
+  <h3>현재 정책 요약</h3>
   <div class="alert ok">
     <strong>isUsable 규칙 (2026-05-26 기준)</strong>
     qualityScore ≥ 30이고 이미지 의존·공지문이 아니면 크롤 즉시(savePosts) isUsable=true. crawl-only도 포함. 11:30 분석 없어도 적용됨. 인기글(popular-sync Case B)도 동일 필터 적용. 동영상(videoUrls 또는 PZP 신호) 또는 접근차단 안내문 감지 시 isUsable=false 강제 (2026-05-26~).
@@ -1689,10 +1681,7 @@ interface CommentData {
       </tbody>
     </table>
   </div>
-  <div class="alert warn" style="font-size:12.5px; padding:10px 14px;">
-    <strong>⚠️ 구버전 설명 삭제 안내</strong>: "10자 미만은 AI로 보완해 문맥에 맞는 댓글을 생성한다"는 설명은 <strong>잘못된 정보</strong>다. SHA: 4bdf236에서 <code>generateComment()</code>가 삭제되면서 AI fallback 경로가 완전히 제거됐다.<br><br>
-    <strong>자주 묻는 오해</strong>: "crawl-only에선 댓글을 안 수집하지 않나요?" — 아니다. crawl-only는 <code>isQuickMode=false</code>이므로 <code>includeComments=true</code>. 댓글이 빠지는 건 오직 GHA quick 모드 1회뿐이다.
-  </div>
+
 
   <h3 class="mt24">SHEET 포스트(스크래퍼 글) Wave 처리 — 별도 시스템 (경로 2개)</h3>
   <div class="narrative">
@@ -1757,46 +1746,9 @@ async function processPendingSheetCommentWaves() {
     <strong>2026-05-19 버그 수정 (SHA: 44d3bb9)</strong>: <code>processPendingSheetCommentWaves()</code>가 scheduler.ts에 구현돼 있었지만 main()에서 호출이 누락돼 SHEET 포스트 화제성 댓글이 영구 PENDING 상태였다. main()에 호출 1줄 추가로 해결.
   </div>
 
-  <h3 class="mt24">viralType 기반 wave 댓글 순서 동적 조정 <span style="font-size:13px;font-weight:400;color:var(--red);">⚠️ 현재 코드와 다름 — 아래 주의 참조</span></h3>
-
-  <div class="alert err" style="margin-bottom:14px;">
-    <strong>⚠️ 중요: determineWaveOrder() 함수는 현재 wave-processor.ts에 존재하지 않는다.</strong><br><br>
-    이 함수는 V2-E 리팩토링(SHA: ㉝ 관련 배포) 과정에서 <strong>삭제</strong>됐다. 현재 코드의 dispatch 루프는 항상 고정 순서 <code>for (const waveNum of [1, 2, 3, 4])</code>로 실행된다. viralType 값은 DB에 저장돼 있지만 wave 순서 결정에 사용되지 않는다.<br><br>
-    아래 표와 코드 예시는 <strong>구버전 설계 의도</strong>를 기록한 것이다. 실제 현재 동작은 모든 글이 <strong>wave1(공감) → wave2(질문) → wave3(경험) → wave4(다른관점) 고정 순서</strong>로 실행된다.
-  </div>
-
   <div class="narrative">
-    <p>당초 설계: psych-analyzer가 글을 분석할 때 <code>viralType</code>을 DB에 저장하면, wave-processor.ts가 이 값을 보고 wave1~4의 댓글 유형 순서를 동적으로 조정하는 구조였다. 예를 들어, 배신/배반 류의 글(<code>BETRAYAL</code>)은 "다른관점(wave4)"이 먼저 나오도록 순서를 재배치하는 식이다.</p>
-    <p>현재 구현: V2-E 도입 이후 wave는 tier별 count와 v2/legacy 분기 구조로 크게 바뀌었고, 그 과정에서 <code>determineWaveOrder()</code>와 <code>remapWaveType()</code>이 제거됐다. 재구현 예정이나 일정 미정.</p>
+    <p><strong>wave 순서는 항상 1→2→3→4 고정</strong>입니다. 공감(wave1) → 질문(wave2) → 경험(wave3) → 다른관점(wave4) 순서로 진행되며, 글의 유형(viralType)에 관계없이 동일합니다.</p>
   </div>
-
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>viralType</th><th>의미</th><th>당초 설계 wave 순서</th><th>현재 실제 동작</th></tr></thead>
-      <tbody>
-        <tr><td><code>BETRAYAL</code></td><td>배신·배반 이야기</td><td>다른관점→공감→경험→질문 [4,1,3,2]</td><td rowspan="6" style="color:var(--red);font-weight:600;vertical-align:middle;text-align:center;">고정 순서<br>[1,2,3,4]<br>(모든 viralType 동일)</td></tr>
-        <tr><td><code>INJUSTICE</code></td><td>억울함·부당 대우</td><td>질문→다른관점→공감→경험 [2,4,1,3]</td></tr>
-        <tr><td><code>CONTROVERSY</code></td><td>논쟁·갈등 이슈</td><td>질문→다른관점→경험→공감 [2,4,3,1]</td></tr>
-        <tr><td><code>REVERSAL</code></td><td>반전 이야기</td><td>경험→공감→질문→다른관점 [3,1,2,4]</td></tr>
-        <tr><td><code>EMPATHY</code></td><td>공감·감동 이야기</td><td>공감→경험→질문→다른관점 [1,3,2,4]</td></tr>
-        <tr><td><code>null</code></td><td>분류 없음</td><td>공감→질문→경험→다른관점 [1,2,3,4]</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <details class="code-toggle">
-    <summary>현재 wave-processor.ts 실제 dispatch 루프 (고정 순서)</summary>
-<pre>// wave-processor.ts — 현재 실제 코드 (determineWaveOrder 없음)
-// dispatch 루프: 항상 [1, 2, 3, 4] 고정 순서
-for (const waveNum of [1, 2, 3, 4]) {
-  if (waveNum === 1) { /* wave1At 체크 후 processWaveV2 또는 processWaveLegacy */ }
-  if (waveNum === 2) { /* wave2At 체크 */ }
-  if (waveNum === 3) { /* wave3At 체크 */ }
-  if (waveNum === 4) { /* wave4At 체크 */ }
-}
-
-// determineWaveOrder(), remapWaveType() 함수 → 삭제됨 (SHA: 4bdf236 V2-E 리팩토링)</pre>
-  </details>
 
   <h3 class="mt24">작성자 대댓글 자동화 (processAuthorReply) — wave4 완료 후 실행</h3>
   <div class="alert info" style="margin-bottom:10px;font-size:13px;">
@@ -2150,8 +2102,10 @@ for (const waveNum of [1, 2, 3, 4]) {
 <div class="section" id="s-p1p5">
   <div class="section-header">
     <div class="section-num">14</div>
-    <h2>큐레이션·Wave 개선 구현 현황 — P1~P5 + ②③⑤⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝㉞㉟㊱㊲㊳㊴㊵㊶㊷㊸㊹㊺㊻㊼ 전부 완료</h2>
+    <h2>큐레이션·Wave 구현 현황 (개발자·감사용)</h2>
   </div>
+  <details>
+    <summary>구현 이력 펼쳐보기 — P1~P5 + 기능 개선 ②~㊼ 전부 완료</summary>
 
   <div class="alert ok">
     <strong>Claude Code에게: 이 섹션이 가장 중요하다</strong>
@@ -3405,7 +3359,7 @@ await prisma.cafePost.create({
   </div>
   </details>
 
-
+  </details>
 </div>
 
 <!-- ══════════ §15. FAQ ══════════ -->
@@ -3415,22 +3369,22 @@ await prisma.cafePost.create({
     <h2>FAQ — 자주 하는 오해들</h2>
   </div>
 
-  <div class="faq-item">
-    <div class="faq-q">isUsable=true가 되려면 11:30 full 크롤을 기다려야 하나?</div>
+  <details class="faq-item">
+    <summary class="faq-q">isUsable=true가 되려면 11:30 full 크롤을 기다려야 하나?</summary>
     <div class="faq-a">
       <strong>아니다.</strong> isUsable은 savePosts()에서 크롤 즉시 설정된다. crawl-only 모드(00:30, 07:40 등)에서도 qualityScore ≥ 30이면 그 자리에서 isUsable=true가 된다. 11:30 full의 trend-analyzer는 재검증(업데이트)이지 최초 설정이 아니다.
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">isUsable 기준이 60점인가, 30점인가?</div>
+  <details class="faq-item">
+    <summary class="faq-q">isUsable 기준이 60점인가, 30점인가?</summary>
     <div class="faq-a">
       <strong>30점이다.</strong> config.ts의 QUALITY_THRESHOLDS.minUsable = 30. 이전에 60으로 하드코딩된 버그가 있었는데 Fix #2(SHA: e32fdf2, 2026-05-19)로 30으로 복원됐다. 어떤 문서에 60이라고 나와 있으면 그 문서가 틀린 것이다.
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">crawl-only 모드에서 댓글(topComments)이 수집되나?</div>
+  <details class="faq-item">
+    <summary class="faq-q">crawl-only 모드에서 댓글(topComments)이 수집되나?</summary>
     <div class="faq-a">
       <strong>설계상 수집된다. 단, 2026-05-19 이전 수집분은 전부 빈 배열이다.</strong><br><br>
       크롤러 내부를 보면 <code>isQuickMode = (crawlMode === 'quick')</code>이고, <code>includeComments = !isQuickMode</code>다. crawl-only의 crawlMode는 'quick'이 아니므로 <code>isQuickMode=false</code> → <code>includeComments=true</code> → <code>extractComments()</code> 호출. 여기까지는 설계대로다.<br><br>
@@ -3438,33 +3392,33 @@ await prisma.cafePost.create({
       <strong>2026-05-19 수정(SHA 751eb43)</strong>: 검색 순서를 <code>cafe_main iframe 우선 → outer shell fallback</code>으로 역전. 이후 크롤부터 topComments가 실제 수집된다.<br><br>
       <strong>topComments=[]가 되는 경우</strong>: ① 2026-05-19 이전 수집된 기존 3,765건(버그로 인한 소급 불가) ② GHA 12:30 KST <code>quick</code> 모드 수집 글(<code>isQuickMode=true</code>라 수집 자체 안 함) ③ 해당 카페 글에 실제 댓글이 없는 경우.
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">killerScore가 높으면 그 카페 글이 그대로 우리 서비스에 발행되나?</div>
+  <details class="faq-item">
+    <summary class="faq-q">killerScore가 높으면 그 카페 글이 그대로 우리 서비스에 발행되나?</summary>
     <div class="faq-a">
       <strong>content-curator(일반 큐레이션): 아니다 — 그리고 AI도 없다.</strong> 원문(cafePost.title + cafePost.content)을 그대로 발행한다. AI 재가공 없음 (2026-05-20 제거). killerScore≥50 글은 killerPosts 쿼리로 우선 처리될 뿐, 발행 방식은 동일(원문 그대로). imageUrls 있는 글은 content-curator에서 완전 배제.<br><br>
       <strong>popular-curator(인기글 큐레이션): 맞다 (2026-05-21~).</strong> isPopular=true로 수집된 네이버 인기글은 <code>stripMarkdown(cafePost.title/content)</code>를 그대로 발행한다. AI 재창작 없음. content-curator와 동일 방식으로 전환됐다. 상세: §14 ㉘.
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">같은 글이 하루에 여러 번 크롤되어 DB에 중복 저장되지 않나?</div>
+  <details class="faq-item">
+    <summary class="faq-q">같은 글이 하루에 여러 번 크롤되어 DB에 중복 저장되지 않나?</summary>
     <div class="faq-a">
       <strong>저장되지 않는다.</strong> §5에서 설명한 3단계 방어 구조가 막는다. ① articleId 증분 크롤(이미 아는 ID는 아예 수집 안 함) → ② postUrl unique 체크(저장 단계) → ③ popular-sync Case A(기존 글은 UPDATE만, INSERT 없음).
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">씨드봇 글이 지금도 발행되고 있나?</div>
+  <details class="faq-item">
+    <summary class="faq-q">씨드봇 글이 지금도 발행되고 있나?</summary>
     <div class="faq-a">
       <strong>seed scheduler(50명 페르소나 창작글)는 차단됐다.</strong> agents-seed.yml에 ENABLE_SEED_POSTS=false 설정 (SHA: 3b8f70e). BotLog에서 SEED [SUCCESS] publishedCount=0으로 확인 가능.<br><br>
       <strong>단, 관련 시스템 2개는 계속 실행 중이다 — 아래 FAQ 참고.</strong>
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">ENABLE_SEED_POSTS=false인데 왜 cafePostId=null BOT 글이 생기나?</div>
+  <details class="faq-item">
+    <summary class="faq-q">ENABLE_SEED_POSTS=false인데 왜 cafePostId=null BOT 글이 생기나?</summary>
     <div class="faq-a">
       <strong>controversy-chain은 ENABLE_SEED_POSTS 영향을 받지 않는다. magazine봇은 launchd로 전환됨(2026-05-27).</strong><br><br>
       agents-seed.yml은 현재 2가지를 실행한다:
@@ -3476,10 +3430,10 @@ await prisma.cafePost.create({
       따라서 _pm2_audit.ts §6에서 "cafePostId=null BOT 글"이 0건이 아닐 수 있다. 이것은 버그가 아니라 두 시스템이 의도적으로 계속 실행되는 것이다. 모두 중단하려면 agents-seed.yml에서 controversy-chain 줄 제거 + launchd에서 magazine plist unload 필요.<br><br>
       <strong>📌 2026-05-20 이후 변경</strong>: <code>content-curator.ts</code>(2026-05-20~) 및 <code>popular-curator.ts</code>(2026-05-21~)가 발행 시 <code>Post.cafePostId</code>를 저장하도록 수정됐다. 이제 <code>cafePostId IS NOT NULL</code>인 BOT 글 = 큐레이션봇(일반+인기글), <code>cafePostId IS NULL</code>인 BOT 글 = 시드봇/controversy/magazine 으로 구분 가능하다. 어드민 콘텐츠 관리 페이지의 "큐레이션봇" / "시드봇" 필터가 이 기준으로 동작한다.
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">큐레이션봇이 카페 글을 AI로 재가공해서 발행하나?</div>
+  <details class="faq-item">
+    <summary class="faq-q">큐레이션봇이 카페 글을 AI로 재가공해서 발행하나?</summary>
     <div class="faq-a">
       <strong>아니다. 현재는 전부 100% 원문 그대로 발행하며 AI 재가공이 없다.</strong>
       <ul style="margin:8px 0 8px 20px;line-height:1.8;">
@@ -3489,10 +3443,10 @@ await prisma.cafePost.create({
       ⚠️ <em>이전 버전(~2026-05-19)에서는 일반글 90%·킬러글 95% 보존 AI 재가공 방식을 운영했다. 현재는 해당 방식이 제거됐으므로 참고 목적으로만 남긴다.</em><br>
       Wave 댓글은 v2-E 기준 topComments 원문 기반 직접 달기 (AI 없음). sourceCandidates 부족 시에만 legacy AI fallback 경로가 실행될 수 있다.
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">Mac이 꺼져도 되는 시간과 켜야 하는 시간은?</div>
+  <details class="faq-item">
+    <summary class="faq-q">Mac이 꺼져도 되는 시간과 켜야 하는 시간은?</summary>
     <div class="faq-a">
       <strong>§3 스케줄 섹션의 "Mac 켜짐/꺼짐 경계" 표를 참고.</strong> 요약:
       <ul style="margin:8px 0 8px 20px;line-height:1.8;">
@@ -3502,24 +3456,24 @@ await prisma.cafePost.create({
       </ul>
       해당 시각에 Mac이 꺼져 있으면 그 회차 크롤/스크래핑만 건너뜀. 나머지 GHA 자동화는 영향받지 않는다.
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">큐레이션이 적게 발행되는 원인은?</div>
+  <details class="faq-item">
+    <summary class="faq-q">큐레이션이 적게 발행되는 원인은?</summary>
     <div class="faq-a">
       isUsable=true + usedAt=null인 후보가 부족하거나, 오늘 발행 cap에 도달했거나, P1~P3 필터로 후보가 모두 skip됐을 수 있다. 확인 방법: _pm2_audit.ts의 §10 "isUsable=true 큐레이션 후보 풀" + §11 "Silent Failure" 확인.
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">wave 댓글이 안 달리는 이유는?</div>
+  <details class="faq-item">
+    <summary class="faq-q">wave 댓글이 안 달리는 이유는?</summary>
     <div class="faq-a">
-      CommentWaveQueue TTL(60시간) 초과 / 글당 봇 댓글 5개 cap 도달 / 봇 당일 3개 cap 도달 / 동일 봇 중복 방지 중 하나다. BotLog에서 botType=WAVE, status=FAILED 확인. _pm2_audit.ts §9로 오늘 FAILED 목록 확인.
+      CommentWaveQueue TTL(60시간) 초과 / 글당 봇 댓글 cap 도달(NORMAL 6개 / HOT 14개 / KILLER 20개) / 봇 당일 3개 cap 도달 / 동일 봇 중복 방지 중 하나다. BotLog에서 botType=WAVE, status=FAILED 확인. _pm2_audit.ts §9로 오늘 FAILED 목록 확인.
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">killerScore가 정확히 몇 점이면 뭐가 달라지나? 70점, 75점, 55점이 섞여있어서 헷갈린다.</div>
+  <details class="faq-item">
+    <summary class="faq-q">killerScore가 정확히 몇 점이면 뭐가 달라지나? 70점, 75점, 55점이 섞여있어서 헷갈린다.</summary>
     <div class="faq-a">
       <strong>임계값이 3개 있다 — 역할이 전부 다르다.</strong>
       <ul style="margin:8px 0 8px 20px;line-height:2;">
@@ -3529,10 +3483,10 @@ await prisma.cafePost.create({
       </ul>
       요약: 55 = "킬러글로 인정", 75 = "집중 부스트 자동 켜짐". 두 임계값을 혼동하지 말 것.
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">wave 댓글이 항상 "공감→질문→경험→다른관점" 순서인가?</div>
+  <details class="faq-item">
+    <summary class="faq-q">wave 댓글이 항상 "공감→질문→경험→다른관점" 순서인가?</summary>
     <div class="faq-a">
       <strong>현재는 항상 고정 순서(1→2→3→4)다.</strong> <code>determineWaveOrder()</code> 함수가 V2-E 리팩토링 과정에서 wave-processor.ts에서 삭제됐다. viralType 값은 DB에 저장되지만 wave 순서 결정에 사용되지 않는다.<br><br>
       <strong>과거 설계 의도</strong>: psych-analyzer가 글을 분석할 때 BETRAYAL·INJUSTICE·CONTROVERSY·REVERSAL·EMPATHY로 분류하면 viralType에 맞는 순서로 wave를 실행하려 했다.
@@ -3541,12 +3495,11 @@ await prisma.cafePost.create({
         <li><strong>EMPATHY(공감)</strong>: 설계상 공감(1) → 경험(3) → 질문(2) → 다른관점(4)</li>
         <li><strong>현재 실제</strong>: 모든 viralType에 무관하게 1→2→3→4 고정</li>
       </ul>
-      전체 당초 설계 매핑은 §11 "viralType 기반 wave 댓글 순서" 표 참조 (⚠️ DEPRECATED 주의).
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">2막준비(LIFE2) 게시판에 비슷한 닉네임의 글이 반복된다. 왜인가?</div>
+  <details class="faq-item">
+    <summary class="faq-q">2막준비(LIFE2) 게시판에 비슷한 닉네임의 글이 반복된다. 왜인가?</summary>
     <div class="faq-a">
       <strong>두 가지 구조적 원인이 있었고, 둘 다 수정됐다(SHA: f159d85 + 8edc882).</strong><br><br>
       <strong>① DESIRE_PERSONA_MAP 불완전</strong><br>
@@ -3555,17 +3508,17 @@ await prisma.cafePost.create({
       키워드 매칭에서 bestScore &gt; 0이면 desireCategory 풀을 완전히 무시하는 코드가 있었다. LIFE2 글의 키워드(돈, 노후, 투자 등)가 다른 게시판 페르소나의 interest와 매칭되면, LIFE2와 무관한 페르소나가 선택됐다. STORY 페르소나가 LIFE2 글을 쓰는 사례가 이것이다.<br>
       수정 후: desireCategory가 MONEY·RETIRE·HOUSING이면 bestScore 체크 전에 해당 카테고리 풀에서 무조건 무작위 선택한다. 키워드 매칭 결과는 무시된다.
     </div>
-  </div>
+  </details>
 
-  <div class="faq-item">
-    <div class="faq-q">웃음방(HUMOR 게시판)에 글이 하나도 안 올라온다. 큐레이터가 고르지 않는 건가?</div>
+  <details class="faq-item">
+    <summary class="faq-q">웃음방(HUMOR 게시판)에 글이 하나도 안 올라온다. 큐레이터가 고르지 않는 건가?</summary>
     <div class="faq-a">
       <strong>큐레이터 문제가 아니라 AI 분류 단계 문제였다. 수정됐다(SHA: 8edc882).</strong><br><br>
       큐레이터는 <code>desireCategory='HUMOR'</code> 또는 <code>'ENTERTAIN'</code>인 글만 웃음방(boardType=HUMOR)으로 발행한다. 그런데 수집된 cafePost 3,765건 중 desireCategory='HUMOR'인 글이 단 한 건도 없었다.<br><br>
       원인: psych-analyzer.ts의 AI 시스템 프롬프트에 나열된 욕망 카테고리 목록 20개 중 <strong>HUMOR가 통째로 빠져 있었다.</strong> AI는 알지 못하는 카테고리를 절대 쓸 수 없으므로, 웃긴 글·황당한 경험담·실수담이 수집돼도 전부 HOBBY·ENTERTAIN·null 등으로 분류됐다.<br><br>
       수정 후: 프롬프트에 <code>HUMOR: 웃긴 상황/황당한 경험/실수담/유머/빵터짐/남편이/손주가 웃겨/황당함/ㅋㅋ</code> 항목이 추가됐다. psych-analyzer는 11:30 KST full 크롤에서만 실행되므로, 수정 이후 첫 11:30 실행부터 신규 글에 HUMOR 분류가 적용된다. 기존에 잘못 분류된 글은 소급 적용되지 않으므로, 웃음방에 글이 실제로 나타나기까지 1~2일 정도 소요된다.
     </div>
-  </div>
+  </details>
 </div>
 
 <!-- ══════════ §16. 변경 이력 ══════════ -->
@@ -3576,17 +3529,15 @@ await prisma.cafePost.create({
   </div>
 
   <div class="changelog-item">
-    <div class="changelog-ver">v10.23</div>
+    <div class="changelog-ver">v10.31</div>
     <div class="changelog-date">2026-05-27</div>
     <div class="changelog-content">
-      <strong>magazine봇 launchd 전환 + 동영상·접근차단 3단계 방어선 + 비활성 plist 명세 + runCrawlWithRetry 1500초 + SESSION_HALTED 30분 dedup + COMPETITOR 소스카페 예외.</strong><br><br>
-      <strong>[SHA: 8a0ac2a — 2026-05-25]</strong> 매거진 이미지 파이프라인 개선 — PERSON_REAL Unsplash 불허(Gemini 전용), FOOD/SCENE/OBJECT만 Unsplash 허용, ILLUSTRATION 로컬 전용, heroImageSource 추적. 본문 최소 1500자(이전 500자). SEO 타이틀 연도 하드코딩 금지·최대 50자.<br><br>
-      <strong>[SHA: 8c29064 — 2026-05-25]</strong> SESSION_HALTED 30분 쿨다운 중복 알림 방지 + export-cookies 성공 시 자동 해제. 알림 메시지: '⛔ 자동 복구 불가 — 수동 쿠키 재발급 필요'.<br><br>
-      <strong>[SHA: ea1ae6a — 2026-05-26]</strong> 크롤러 savePosts ACCESS_BLOCKED_SIGNALS 5종 감지 → isUsable=false. DB 저장은 되나 큐레이터에서 제외.<br><br>
-      <strong>[SHA: 9745f9e — 2026-05-26]</strong> 동영상 3단계 방어선: ① crawler.ts videoUrls+PZP → isUsable=false, ② content/popular-curator filterBlocked() 2차 필터, ③ image-router 3차 필터. fmkorea video 보존 vs navercafe video 차단 분리.<br><br>
-      <strong>[SHA: 3f206b7 — 2026-05-26]</strong> sheet-scraper 동영상·접근차단 발행 차단 — Sheet row FAILED (DB 저장 안 됨, cafe crawler isUsable=false와 별개 메커니즘).<br><br>
-      <strong>[SHA: 77496c9 — 2026-05-26]</strong> runCrawlWithRetry 타임아웃 1500초 (128건/일 최대 기준 1228초 + 여유). COMPETITOR_KEYWORDS 소스카페(wgang·dlxogns01) 예외 처리 신규.<br><br>
-      <strong>[2026-05-27 문서 갱신]</strong> magazine봇 launchd 전환(12:00/14:00 KST), agents-seed.yml에서 제거. 비활성 launchd 파일 목록 명세(cafe-crawler 3개·naver-blog 2개 미로드). §3 타임라인·§13 봇 표·FAQ 전면 정정.
+      <strong>문서 경량화 · 가독성 재구조화 — 자연어 리드 우선, 기술 상세는 토글.</strong><br><br>
+      §7 isUsable: 제목 변경(오해 주의 제거), v9.4 오류 박스 삭제, biz-lead 자연어 재작성(4가지 방어선 명시), Case B isUsable 필터 정확성 수정(accessBlocked·videoBlocked 추가), 동영상·접근차단 섹션 자연어+토글 재작성, 날짜 마커 전면 제거.<br><br>
+      §11 Wave: viralType 구버전 설계 섹션 삭제(wave 순서 고정 1→2→3→4 자연어 서술 대체), 구버전 설명 삭제 안내 alert 제거.<br><br>
+      §14 구현 현황: 기본 접힘 처리(비개발자 기본 숨김), h2 제목 간소화.<br><br>
+      §15 FAQ: 15개 항목 전부 접힘 토글 처리, wave 댓글 cap 오류 수정(5개→NORMAL 6/HOT 14/KILLER 20).<br><br>
+      §16 변경이력: v10.23 중복 항목 삭제(2026-05-27 오기재분), v10.15 이전 이력 토글로 감춤.
     </div>
   </div>
 
@@ -3795,6 +3746,9 @@ await prisma.cafePost.create({
       커버 배지·메타·footer: v10.15→v10.16.
     </div>
   </div>
+
+  <details>
+    <summary>v10.15 이전 버전 이력 보기</summary>
 
   <div class="changelog-item">
     <div class="changelog-ver">v10.15</div>
@@ -4055,10 +4009,11 @@ await prisma.cafePost.create({
     <div class="changelog-content">카페 크롤링 2카페 체제 확립 (wgang + dlxogns01). launchd plist 10개 구성. GHA 워크플로우 4개 분리.
     </div>
   </div>
+  </details>
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.30<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.31<br>
   최종 업데이트: 2026-05-27 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
