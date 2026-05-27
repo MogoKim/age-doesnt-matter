@@ -24,12 +24,14 @@ import {
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
 import { generateCommunitySlug } from '../core/slug.js'
+import { computeUsableCount } from './compute-usable-count.js'
 
 // ─── 후보 풀 / skipReason 타입 ─────────────────────────────────
 type SkipReason =
   | 'DESIRE_EXHAUSTED'
   | 'KEYWORD_OVERLAP'
   | 'REFS_EMPTY'
+  | 'LOW_USABLE_COMMENTS'
   | 'AUTHOR_DAILY_CAP'
   | 'GENERATION_FAILED'
   | 'SEASON_MISMATCH'
@@ -48,6 +50,9 @@ interface CandidateTopic {
 interface TopicResult extends CandidateTopic {
   refsCount: number
   skipReason: SkipReason | null
+  candidatesBeforeUsableFilter?: number
+  maxUsableCount?: number
+  requiredUsableCount?: number
 }
 
 type PublishResult =
@@ -56,29 +61,22 @@ type PublishResult =
 
 const CANDIDATE_POOL_SIZE = 15
 
-const CC_AI_REJECT_RE = /글 내용을|내용을 보여|볼 수가 없|상황을 모르|글의 내용을|어떤 상황인지|댓글을 작성할 수 없|내용 올려/
-function computeUsableCount(topComments: unknown): number {
-  if (!Array.isArray(topComments)) return 0
-  const seen = new Set<string>()
-  let n = 0
-  for (const item of topComments) {
-    const raw = (item as { content?: string })?.content ?? ''
-    const cleaned = raw.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim()
-    if (cleaned.length < 10 || CC_AI_REJECT_RE.test(cleaned) || seen.has(cleaned)) continue
-    seen.add(cleaned)
-    n++
-  }
-  return n
-}
 
 /** 참고용 원본 글 가져오기 — 3단계 fallback (B19+B24)
  * 1단계: 48h + 키워드 / 2단계: 7일 + 키워드 / 3단계: 7일 + desireCategory만
+ * usable≥5 필터: wave-processor BLOCK2 기준(usableCount<5)과 통일, wave4 full run 보장
  */
 async function getReferencePosts(topic: string, desireCat: string, limit: number) {
-  const base = { isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true } }
+  const base = {
+    isUsable: true, usedAt: null, isPopular: false,
+    imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true },
+    commentCrawled: true,  // topComments가 한 번이라도 수집된 글만 (usable 필터 사전 조건)
+  }
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
   const firstWord = topicWords[0] ?? topic
   const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true } as const
+  // limit*5 이상 조회 후 usable 필터 → 상위 limit개만 반환. 상위 3개가 모두 usable<5여도 뒤의 후보 탐색.
+  const candidateTake = Math.max(limit * 5, 15)
 
   // 기존 오염 CafePost 2차 방어 (isUsable=true이지만 접근 차단 안내문이 남아있는 경우)
   const ACCESS_BLOCKED_SIGNALS_CC = [
@@ -104,31 +102,43 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
       return !videoPzp
     })
 
+  // usable 메타데이터 누적 (LOW_USABLE_COMMENTS topicResults 기록용)
+  let totalCandidatesChecked = 0
+  let maxUsableCount = 0
+  const withUsableFilter = <T extends { topComments: unknown }>(posts: T[]): T[] => {
+    totalCandidatesChecked += posts.length
+    for (const p of posts) {
+      const u = computeUsableCount(p.topComments)
+      if (u > maxUsableCount) maxUsableCount = u
+    }
+    return posts.filter(p => computeUsableCount(p.topComments) >= 5)
+  }
+
   // 1단계: 48h + 키워드
   const cutoff48h = new Date(Date.now() - 48 * 3600_000)
-  const stage1 = filterBlocked(await prisma.cafePost.findMany({
+  const s1 = withUsableFilter(filterBlocked(await prisma.cafePost.findMany({
     where: { ...base, postedAt: { gte: cutoff48h }, OR: [{ title: { contains: firstWord, mode: 'insensitive' } }, { topics: { hasSome: topicWords } }] },
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
-    take: limit, select: selectFields,
-  }))
-  if (stage1.length >= limit) return stage1
+    take: candidateTake, select: selectFields,
+  })))
+  if (s1.length >= limit) return { refs: s1.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
 
   // 2단계: 7일 + 키워드
   const cutoff7d = new Date(Date.now() - 7 * 24 * 3600_000)
-  const stage2 = filterBlocked(await prisma.cafePost.findMany({
+  const s2 = withUsableFilter(filterBlocked(await prisma.cafePost.findMany({
     where: { ...base, postedAt: { gte: cutoff7d }, OR: [{ title: { contains: firstWord, mode: 'insensitive' } }, { topics: { hasSome: topicWords } }] },
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
-    take: limit, select: selectFields,
-  }))
-  if (stage2.length >= limit) return stage2
+    take: candidateTake, select: selectFields,
+  })))
+  if (s2.length >= limit) return { refs: s2.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
 
   // 3단계: 7일 + desireCategory만 (키워드 없이)
-  const stage3 = filterBlocked(await prisma.cafePost.findMany({
+  const s3 = withUsableFilter(filterBlocked(await prisma.cafePost.findMany({
     where: { ...base, postedAt: { gte: cutoff7d }, ...(desireCat !== 'GENERAL' ? { desireCategory: desireCat } : {}) },
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
-    take: limit, select: selectFields,
-  }))
-  return stage3
+    take: candidateTake, select: selectFields,
+  })))
+  return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
 }
 
 /** 큐레이션된 글 생성 — 원본 카페글 제목·본문 그대로 사용 (AI 각색 없음) */
@@ -505,11 +515,16 @@ export async function main() {
       }
     }
 
-    const refs = await getReferencePosts(candidate.topic, desireCat, 3)
+    const { refs, candidatesBeforeUsableFilter, maxUsableCount } = await getReferencePosts(candidate.topic, desireCat, 3)
     console.log(`[ContentCurator] "${candidate.topic}" (${desireCat}) → ${persona.nickname} (참고글 ${refs.length}개)`)
 
     if (refs.length === 0) {
-      topicResults.push({ ...candidate, refsCount: 0, skipReason: 'REFS_EMPTY' })
+      if (candidatesBeforeUsableFilter > 0) {
+        // refs는 있었지만 usable<5로 전부 탈락 — topicResults에 기록 (별도 BotLog 없음)
+        topicResults.push({ ...candidate, refsCount: 0, skipReason: 'LOW_USABLE_COMMENTS', candidatesBeforeUsableFilter, maxUsableCount, requiredUsableCount: 5 })
+      } else {
+        topicResults.push({ ...candidate, refsCount: 0, skipReason: 'REFS_EMPTY' })
+      }
       continue
     }
 
@@ -532,11 +547,19 @@ export async function main() {
     desireUsedCount[desireCat] = (desireUsedCount[desireCat] ?? 0) + 1
     console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
 
-    // 댓글 파동 큐 등록 — usableTopComments=0이면 생략
+    // 댓글 파동 큐 등록 — WAVE_SKIP_USABLE_ZERO: refs 필터 통과 후에도 usable=0이면 최후 방어선 BotLog
     const refCafePost = refs[0]
     const usable = computeUsableCount(refCafePost?.topComments)
     if (usable === 0) {
       console.log(`[ContentCurator] 댓글 없는 글 — wave queue 생략 postId=${publishResult.postId}`)
+      await prisma.botLog.create({ data: {
+        botType: 'CAFE_CRAWLER', action: 'WAVE_SKIP_USABLE_ZERO', status: 'SKIP',
+        details: JSON.stringify({
+          postId: publishResult.postId,
+          cafePostId: refCafePost?.id,
+          topCommentsCount: Array.isArray(refCafePost?.topComments) ? refCafePost.topComments.length : 0,
+        }),
+      }}).catch(e => console.error('[ContentCurator] WAVE_SKIP_USABLE_ZERO log 실패:', e))
     } else {
       await enqueueCommentWave(publishResult.postId, refCafePost!.id, persona.id).catch(async (err) => {
         await sendSlackMessage('QA', `[큐레이션] wave 등록 실패: ${String(err).slice(0, 100)}`)

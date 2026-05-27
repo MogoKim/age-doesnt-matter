@@ -18,6 +18,7 @@ import { sendSlackMessage } from '../core/notifier.js'
 import { parseTopComments } from './types.js'
 import { replaceCafeReferences } from './curator-shared.js'
 import { refreshPostTrendingScore } from '../core/post-trending.js'
+import { computeUsableCount } from './compute-usable-count.js'
 
 // ── Kill Switch (v2-E) ──
 const V2_ENABLED = process.env.COMMENT_WAVE_V2_ENABLED === 'true'
@@ -78,29 +79,6 @@ function deterministicTargetCount(cafePostId: string, min: number, max: number):
   return min + (Math.abs(h) % (max - min + 1))
 }
 
-// source-copy 경로 이모지 제거 (AI 생성 경로는 프롬프트로 이미 차단)
-function removeEmoji(text: string): string {
-  return text
-    .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
-    .replace(/[\u{2600}-\u{27BF}]/gu, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-const WP_AI_REJECT_RE = /글 내용을|내용을 보여|볼 수가 없|상황을 모르|글의 내용을|어떤 상황인지|댓글을 작성할 수 없|내용 올려/
-function computeUsableCount(topComments: unknown): number {
-  if (!Array.isArray(topComments)) return 0
-  const seen = new Set<string>()
-  let n = 0
-  for (const item of topComments) {
-    const raw = (item as { content?: string })?.content ?? ''
-    const cleaned = removeEmoji(raw)
-    if (cleaned.length < 10 || WP_AI_REJECT_RE.test(cleaned) || seen.has(cleaned)) continue
-    seen.add(cleaned)
-    n++
-  }
-  return n
-}
 
 function getGlobalCap(tier: Tier): number {
   if (tier === 'KILLER') return 20

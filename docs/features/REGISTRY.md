@@ -116,7 +116,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A26 | Design 광고 루프 | `agents/marketing-loop/creative-optimizer.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A27 | QA 코드 게이트 | `agents/qa/pre-deploy-gate.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A28 | 네이버 블로그 수동 발행 큐 | `agents/naver-blog/*`, `src/app/admin/(panel)/naver-blog/*` | LOCAL 12:30/18:30 KST | LOCAL_ONLY | GROWTH | — | Gemini 이미지 포함 | ACTIVE | 2026-05-14 |
-| A29 | 댓글 파동 프로세서 | `agents/cafe/wave-processor.ts` + `src/app/api/internal/comment-wave/route.ts` | GHA `*/5 * * * *` (wave1~4 순차) / content-curator 발행 즉시 API 호출 | GHA+API | RELATION | ALL | [A29](A29-comment-wave.md) | ACTIVE | 2026-05-24 |
+| A29 | 댓글 파동 프로세서 | `agents/cafe/wave-processor.ts` + `src/app/api/internal/comment-wave/route.ts` | GHA `*/5 * * * *` (wave1~4 순차) / content-curator 발행 즉시 API 호출 | GHA+API | RELATION | ALL | [A29](A29-comment-wave.md) | ACTIVE | 2026-05-27 |
 | A30 | 카페 인기글 sync+큐레이션 | `agents/cafe/popular-sync.ts` + `agents/cafe/popular-curator.ts` + `agents/cafe/curator-shared.ts` | launchd 10:30/16:00/21:15 KST (sync) + GHA 10:50/16:15/21:30 KST (curate) | LOCAL+GHA | HEALTH+RELATION | ALL | [A30](A30-popular-sync.md) | ACTIVE | 2026-05-26 |
 
 ---

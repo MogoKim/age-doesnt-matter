@@ -28,9 +28,9 @@ export default function HeaderFontSizeToggle() {
         aria-expanded={open}
         aria-haspopup="true"
       >
-        <span className="relative inline-flex items-center justify-center leading-none select-none">
+        <span className="inline-flex items-start leading-none select-none">
           <span className="text-[18px] font-bold">가</span>
-          <span className="absolute -top-2 -right-2.5 text-[11px] font-bold text-primary leading-none">+</span>
+          <span className="text-[11px] font-bold text-primary leading-none">+</span>
         </span>
       </button>
 
