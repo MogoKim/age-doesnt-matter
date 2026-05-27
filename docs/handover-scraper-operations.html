@@ -422,7 +422,7 @@
           <tr><td><strong>네이트판</strong></td><td>40~60대 여성 비율 높음. 연애·가족·일상</td><td>GitHub Actions (클라우드)</td><td>2초</td></tr>
           <tr><td><strong>82cook</strong></td><td>40~60대 여성 생활 정보·요리·육아. 로그인 불필요</td><td>GitHub Actions (클라우드)</td><td>1.5초</td></tr>
           <tr><td><strong>펨코 (fmkorea)</strong></td><td>다양한 연령대. Cloudflare 보호 — 해외 IP 차단</td><td><strong>창업자 Mac (로컬 전용)</strong></td><td>3초</td></tr>
-          <tr><td><strong>네이버 카페</strong></td><td>로그인 세션 필요. 창업자가 저장한 쿠키 사용 — 30일 자동 갱신</td><td><strong>창업자 Mac (로컬 전용)</strong></td><td>3초</td></tr>
+          <tr><td><strong>네이버 카페</strong></td><td>로그인 세션 필요. 창업자가 저장한 쿠키 사용 — 매일 만료 체크, 5일 전 자동 갱신</td><td><strong>창업자 Mac (로컬 전용)</strong></td><td>3초</td></tr>
         </tbody>
       </table>
     </div>
@@ -546,13 +546,13 @@
     <div class="callout" style="border-left-color: var(--purple); background: var(--purple-dim);">
       <p><strong>🤖 Sheet URL 입력 경로가 2가지다</strong></p>
       <p><strong>① 창업자 수동 입력 (기본)</strong> — 위에서 설명한 A열 직접 입력 방식.</p>
-      <p><strong>② image-router 자동 append (2026-05-24 live 전환)</strong> — <code>agents/cafe/image-router.ts</code>가 CafePost DB에서 이미지 있는 글을 골라 자동으로 Sheet에 PENDING 행을 추가한다.</p>
+      <p><strong>② image-router 자동 append</strong> — <code>agents/cafe/image-router.ts</code>가 CafePost DB에서 이미지 있는 글을 골라 자동으로 Sheet에 PENDING 행을 추가한다.</p>
       <div class="tbl-wrap" style="margin-top:12px;margin-bottom:0;">
         <table>
           <thead><tr><th>항목</th><th>내용</th></tr></thead>
           <tbody>
             <tr><td>트리거</td><td><code>agents-cafe-hourly-curation.yml</code> — GHA, cafe_crawler:image-route 핸들러</td></tr>
-            <tr><td>현재 상태</td><td><span class="badge badge-green">✅ 활성 (live)</span> — <code>ENABLE_IMAGE_ROUTER=true</code> / <code>DRY_RUN_IMAGE_ROUTER=false</code> / 2026-05-24 전환 완료</td></tr>
+            <tr><td>현재 상태</td><td><span class="badge badge-green">✅ 활성</span> — <code>ENABLE_IMAGE_ROUTER=true</code> / <code>DRY_RUN_IMAGE_ROUTER=false</code></td></tr>
             <tr><td>동작</td><td>CafePost DB (isUsable=true, imageUrls 있음, killerScore≥50) → 탭 자동 배정 → Sheet PENDING append</td></tr>
             <tr><td>탭 배정 로직</td><td>HUMOR 카테고리 → 웃음방 / MONEY 카테고리 → 2막준비 / 나머지 → 사는이야기 + isPopular 또는 killer≥75 시 _화제성</td></tr>
             <tr><td>상한</td><td>DAY_CAP=3건/일, TAB_CAP=1건/탭, PENDING 적체 10건 초과 시 자동 skip</td></tr>
@@ -651,24 +651,16 @@
         </div>
       </div>
       <div class="flow-step">
-        <div class="flow-num yellow">6</div>
-        <div class="flow-content">
-          <div class="title">AI 관련성 판단 — <span class="badge badge-sub">현재 비활성</span> (2026-05-21 제거)</div>
-          <div class="desc">Claude Haiku를 이용한 관련성 0~10점 필터는 <strong>비활성화됐다</strong>. 비용 절감(월 ~$0.68 제거) 및 창업자 큐레이션 품질에 대한 신뢰 기반 결정.<br>
-          이 단계는 현재 건너뛴다. 창업자가 Sheet에 넣은 URL은 관련성 체크 없이 전부 게시된다.</div>
-        </div>
-      </div>
-      <div class="flow-step">
-        <div class="flow-num green">7</div>
+        <div class="flow-num green">6</div>
         <div class="flow-content">
           <div class="title">우나어 사이트에 게시글 자동 생성</div>
           <div class="desc">19명의 AI 페르소나 중 카테고리·게시판에 맞는 1명이 게시자로 표시 (STORY 10명 / HUMOR 5명 / LIFE2 4명).<br>
           삭제된 적 있는 게시글이면 DB row를 재활용(update), 완전 신규면 create.<br>
-          <strong>게시글 URL은 제목 기반 slug로 자동 생성</strong> — F열에 기록되는 URL이 <code>/{id}</code> 대신 <code>/{slug}</code> 형태로 표시됨 (2026-05-23 도입). 복원 글은 기존 slug 유지.</div>
+          <strong>게시글 URL은 제목 기반 slug로 자동 생성</strong> — F열에 기록되는 URL이 <code>/{id}</code> 대신 <code>/{slug}</code> 형태로 표시됨. 복원 글은 기존 slug 유지.</div>
         </div>
       </div>
       <div class="flow-step">
-        <div class="flow-num orange">8</div>
+        <div class="flow-num orange">7</div>
         <div class="flow-content">
           <div class="title">파동 BotLog 예약 (즉시)</div>
           <div class="desc">
@@ -681,7 +673,7 @@
         </div>
       </div>
       <div class="flow-step">
-        <div class="flow-num blue">9</div>
+        <div class="flow-num blue">8</div>
         <div class="flow-content">
           <div class="title">시트 상태 업데이트 + Slack 알림</div>
           <div class="desc">성공 → F열에 게시글 URL + <span class="badge badge-green">PUBLISHED</span>. 실패 → G열에 에러 + <span class="badge badge-red">FAILED</span>.<br>
@@ -694,28 +686,16 @@
   <!-- 5. AI 역할 -->
   <div class="section">
     <div class="section-label">05 — AI 역할</div>
-    <h2>AI가 하는 판단</h2>
+    <h2>AI가 실제로 하는 2가지</h2>
 
-    <div class="callout orange">
-      <p><strong>2026-05-21 변경:</strong> Claude Haiku AI 품질 필터(관련성 점수·제목 최적화)가 제거됐다.<br>
-      창업자가 직접 발굴한 URL의 품질을 신뢰하는 방향으로 전환. 비용 절감(월 ~$0.68)도 부수 효과.<br>
-      현재 AI가 사용되는 곳은 <strong>파동 댓글 생성 (Claude Sonnet) 1곳뿐이다.</strong></p>
+    <div class="callout blue">
+      <p>스크래핑 파이프라인에서 AI가 직접 개입하는 단계는 <strong>2가지뿐</strong>이다.<br>
+      콘텐츠 수집·정제·게시는 AI 없이 규칙 기반으로 처리된다. 창업자가 넣은 URL은 필터 없이 전부 게시된다.</p>
     </div>
 
-    <h3>판단 1 — 관련성 점수 <span class="badge badge-sub">현재 비활성</span></h3>
-    <p>과거에는 창업자가 URL을 넣으면 AI가 먼저 "이 글이 우리 타겟에 맞는가"를 0~10점으로 판단했다. <strong>현재는 이 단계를 건너뛴다.</strong> Sheet에 넣은 URL은 AI 필터 없이 바로 처리된다.</p>
-
-    <details>
-      <summary>이전 AI 필터 동작 방식 (참고용 — 현재 미사용)</summary>
-      <pre>과거 동작:
-50~60대 여성 관련성 0~10점 측정 → 6점 미만이면 SKIPPED_LOW_SCORE 처리 + G열에 사유 기록
-Claude Haiku, max_tokens: 200, 건당 ~$0.0003
-
-현재: 이 단계 제거됨. 카테고리 분류만 키워드 기반으로 실행됨.</pre>
-    </details>
-
-    <h3>판단 2 — 카테고리 분류 (키워드 기반)</h3>
-    <p>카테고리는 <strong>키워드 매칭</strong>으로만 결정된다. AI override 없음.</p>
+    <h3>① 카테고리 자동 분류 (키워드 기반, AI 없음)</h3>
+    <p>카테고리는 <strong>키워드 매칭</strong>으로만 결정된다. AI가 개입하지 않는다.<br>
+    창업자가 D열에 직접 지정했으면 그걸 최우선으로 따름. 일치 키워드 없으면 '기타'로 분류.</p>
 
     <div class="grid2">
       <div class="card">
@@ -738,12 +718,9 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
       </div>
     </div>
 
-    <p>AI 카테고리: <code>유머|일상|건강|요리|여행|기타</code> 6개. 키워드 fallback이 더 세분화된 분류를 제공한다 (건강/일상/고민/자녀 등).</p>
+    <p>분류 결과: <code>유머|일상|건강|요리|여행|기타</code> 6개. 키워드 직접 매칭이 더 세분화된 분류를 제공한다 (건강/일상/고민/자녀 등).</p>
 
-    <h3>판단 3 — 제목 최적화 <span class="badge badge-sub">현재 비활성</span></h3>
-    <p>과거에는 제목이 10자 미만이거나 특수문자만일 때 AI(Haiku)가 제목을 자동으로 개선했다. <strong>현재는 원본 제목을 그대로 사용한다.</strong> 창업자가 C열에 제목을 직접 입력하면 그것이 최우선으로 적용된다.</p>
-
-    <h3>판단 4 — 원본 댓글 AI 각색 (Claude Sonnet, 파동 시)</h3>
+    <h3>② 파동 댓글 생성 (Claude Sonnet)</h3>
     <div class="callout blue">
       <p><strong>스크랩 시 원본 사이트 댓글을 최대 10개 자동 수집한다.</strong><br>
       수집된 댓글은 파동 댓글 생성 시 AI(Sonnet)가 50~60대 말투로 각색해 활용한다.</p>
@@ -918,8 +895,9 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
       caffeinate -i 로 Mac 슬립을 방지하며, scripts/launchd-alert.sh 경유로 실행된다.</p>
     </div>
 
+    <p style="font-size:13.5px; color:var(--muted); margin-bottom:10px;">펨코 launchd 설정은 하루 2회(11:30·21:30 KST) 자동 실행된다. <code>caffeinate -i</code>로 Mac 슬립을 방지하며 실행 중 Mac이 잠들지 않는다.</p>
     <details>
-      <summary>펨코 launchd plist (com.unao.fmkorea-scraper)</summary>
+      <summary>펨코 launchd 실행 스케줄 (com.unao.fmkorea-scraper)</summary>
       <pre>&lt;key&gt;StartCalendarInterval&lt;/key&gt;
 &lt;array&gt;
     &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;11&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;30&lt;/integer&gt;&lt;/dict&gt;  &lt;!-- 11:30 KST --&gt;
@@ -933,32 +911,53 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
     <div class="callout blue">
       <p><strong>네이버 카페는 로그인이 필요한 게시글을 접근한다.</strong><br>
       창업자가 Chrome에서 로그인 후 저장한 <code>storage-state.json</code> 쿠키를 Playwright가 사용한다.<br>
-      session-manager가 30일 주기로 자동 갱신하므로 평소에는 수동 개입이 불필요하다.<br>
+      매일 새벽 02:00에 만료일을 자동 체크하며, 만료 5일 전부터 자동으로 갱신한다. 평소에는 수동 개입 불필요.<br>
       GHA에서는 <code>storage-state.json</code>이 없으므로 해당 행을 <strong>PENDING 유지</strong>(스킵·FAILED 처리 안 함).</p>
+    </div>
+
+    <p style="font-size:13.5px; color:var(--muted); margin-bottom:14px;">세션 쿠키는 두 종류로 관리된다. NID_SES(단기, ~30일)가 만료되려 하면 NID_AUT(장기, ~1년)를 사용해 자동 갱신한다. NID_AUT 자체가 만료에 가까워지면 Slack 알림이 오며, 그때만 창업자 수동 재로그인이 필요하다.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>상황</th><th>자동 동작</th><th>창업자 역할</th></tr></thead>
+        <tbody>
+          <tr><td>NID_SES 만료 5일 이내</td><td>매일 02:00 KST 자동 감지 → NID_AUT로 NID_SES 자동 갱신</td><td><strong>없음</strong></td></tr>
+          <tr><td>NID_AUT 만료 60일 이내</td><td>Slack SYSTEM 경보 발송</td><td>미리 인지 후 준비</td></tr>
+          <tr><td>NID_AUT 만료 30일 이내</td><td>매일 Slack 경보 발송</td><td><strong>Chrome 재로그인 후 storage-state.json 재추출</strong></td></tr>
+          <tr><td>자동 갱신 3회 연속 실패</td><td>SESSION_HALTED — 크롤러 전면 중단 + 3채널 알림</td><td>즉시 수동 개입 필요</td></tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="tbl-wrap" style="margin-top:16px;">
       <table>
         <thead><tr><th>처리 방식</th><th>설명</th></tr></thead>
         <tbody>
-          <tr><td>iframe 처리</td><td><code>f-e/</code> path → cafe_main iframe 존재 / <code>ca-fe/</code> path → page 직접. 동일 selector로 통합 처리 (contentFrame: 'cafe_main')</td></tr>
-          <tr><td>제목 selector</td><td><code>.title_text</code></td></tr>
-          <tr><td>본문 selector</td><td><code>.article_viewer</code></td></tr>
-          <tr><td>댓글 selector</td><td><code>ul.comment_list li</code> / 텍스트: <code>.text_comment</code> / 닉네임: <code>.comment_nickname</code></td></tr>
-          <tr><td>동영상 지원</td><td><strong>지원 제외 — Sheet row FAILED 처리 (발행 차단)</strong><br>
-            <code>removeElements</code>에 <code>iframe</code> 포함 → HTML에서 네이버 동영상 플레이어(naverVideoPlayer 등) 제거.<br>
-            ⚠️ 단순 제거 후 텍스트/이미지만 발행하는 것이 아님 — 동영상 감지 시 Sheet row <strong>FAILED</strong>로 처리해 발행 자체를 차단한다:<br>
-            · <code>videoCount &gt; 0</code> → FAILED<br>
-            · PZP STRONG 신호 1개+ (7종: <code>.pzp</code> / <code>pzp-pc</code> / <code>pzp-poster</code> / <code>webplayer-internal-video</code> 등) → FAILED<br>
-            · PZP WEAK 신호 2개+ (8종: <code>재생 속도</code> / <code>해상도</code> / <code>자막</code> 등) → FAILED<br>
-            <span style="font-size:12px;color:var(--sub);">커밋 9745f9e · 3f206b7 (2026-05-26). fmkorea <code>&lt;video&gt;</code> 태그는 보존(R2 업로드)과 달리 navercafe는 발행 차단.</span></td></tr>
-          <tr><td>세션 만료</td><td>NID_SES 쿠키 만료 시 Chrome 재로그인 후 storage-state.json 재추출 필요 (창업자 수동)</td></tr>
+          <tr><td><strong>동영상 포함 글</strong></td><td><strong>발행 차단 — Sheet row FAILED 처리</strong><br>
+            동영상이 감지되면 텍스트·이미지만 발행하는 것이 아니라 게시 자체를 차단한다:<br>
+            · 동영상 태그(videoCount &gt; 0) → FAILED<br>
+            · 네이버 동영상 플레이어(PZP) 강신호 7종 중 1개 이상 → FAILED<br>
+            · 네이버 동영상 플레이어(PZP) 약신호 7종 중 2개 이상 → FAILED<br>
+            (약신호 7종: 재생 속도·해상도·자막·음소거·전체 화면·자동(480p)·0초)</td></tr>
+          <tr><td><strong>세션 만료 시</strong></td><td>Chrome 재로그인 후 storage-state.json 재추출 필요 (창업자 수동). NID_AUT 만료 30일 전부터 Slack 경보 발송.</td></tr>
         </tbody>
       </table>
     </div>
 
+    <p style="font-size: 13px; color: var(--sub); margin-bottom:14px;">caffeinate -i (Mac 슬립 방지)는 펨코 전용 설정이다. 네이버 카페는 caffeinate 없이 실행된다.</p>
+
     <details>
-      <summary>네이버 카페 launchd plist (com.unao.naver-cafe-sheet-scraper)</summary>
+      <summary>네이버 카페 기술 상세 — CSS selector, iframe 처리 방식 (개발자 참고용)</summary>
+      <pre>iframe 처리: f-e/ path → cafe_main iframe / ca-fe/ path → page 직접. contentFrame: 'cafe_main'
+제목 selector: .title_text
+본문 selector: .article_viewer
+댓글 selector: ul.comment_list li / 텍스트: .text_comment / 닉네임: .comment_nickname
+PZP STRONG (7종): .pzp / pzp-pc / pzp-poster / webplayer-internal-video 등 → 1개+ 시 FAILED
+PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면 / 자동 (480p) / 0초 → 2개+ 시 FAILED</pre>
+    </details>
+
+    <details>
+      <summary>네이버 카페 launchd 실행 스케줄 (com.unao.naver-cafe-sheet-scraper)</summary>
       <pre>&lt;key&gt;StartCalendarInterval&lt;/key&gt;
 &lt;array&gt;
     &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;10&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;40&lt;/integer&gt;&lt;/dict&gt;  &lt;!-- 10:40 KST --&gt;
@@ -966,6 +965,7 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
     &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;15&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;30&lt;/integer&gt;&lt;/dict&gt;  &lt;!-- 15:30 KST --&gt;
     &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;23&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;0&lt;/integer&gt;&lt;/dict&gt;   &lt;!-- 23:00 KST --&gt;
 &lt;/array&gt;
+&lt;!-- caffeinate 없음 — 펨코와 달리 슬립 방지 없이 단순 실행 --&gt;
 &lt;!-- scripts/launchd-alert.sh 경유 → agents/community/run-local-naver-cafe.ts 실행 --&gt;</pre>
     </details>
 
@@ -1027,7 +1027,7 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
           </tr>
           <tr>
             <td><span class="badge badge-yellow">SKIPPED_LOW_SCORE</span><br><span class="badge badge-sub" style="margin-top:5px;display:inline-block;font-size:11px;">현재 신규 발생 없음</span></td>
-            <td>AI가 관련성 낮다고 판단 (6점 미만) — <strong>2026-05-21 AI 필터 제거로 현재 신규 발생 없음</strong><br><span style="font-size:12px;color:var(--sub);">과거 Sheet 행에는 남아있을 수 있음 (레거시 상태값)</span></td>
+            <td>AI가 관련성 낮다고 판단 (6점 미만) — <strong>AI 필터 제거로 현재 신규 발생 없음</strong><br><span style="font-size:12px;color:var(--sub);">과거 Sheet 행에는 남아있을 수 있음 (레거시 상태값)</span></td>
             <td>억지로 올리고 싶으면 PENDING으로 바꾸면 됨</td>
           </tr>
         </tbody>
@@ -1038,13 +1038,14 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
       <p><strong>G열 에러 메시지 읽는 법</strong></p>
       <div class="tbl-wrap" style="margin-bottom:0;">
         <table>
-          <thead><tr><th>G열 에러 메시지</th><th>의미</th><th>대처</th></tr></thead>
+          <thead><tr><th>G열 에러 메시지</th><th>이럴 때 나타남</th><th>이렇게 하면 됨</th></tr></thead>
           <tbody>
-            <tr><td><code>CF 차단 — J열에 본문 붙여넣기 가능</code></td><td>Cloudflare가 봇 차단 (펨코 주로 발생)</td><td>원문 복사 → J열 붙여넣기 → B열 PENDING으로 재시도</td></tr>
-            <tr><td><code>네이버 카페 동영상 포함 글은 발행 제외</code></td><td>navercafe 동영상 감지 (videoCount &gt; 0 또는 PZP 신호) — sheet-scraper 단계에서 발행 차단 (커밋 9745f9e)</td><td>재시도 불가. 동영상 없는 글로 교체하거나 A열 삭제</td></tr>
-            <tr><td><code>접근 차단 — 발행 제외</code> (또는 유사 차단 문구)</td><td>ACCESS_BLOCKED_SIGNALS 5종 감지 (네이버 카페 접근 제한·로그인 필요 등) — sheet-scraper 단계에서 발행 차단 (커밋 3f206b7). CF_BLOCKED(Cloudflare)와 별개 메커니즘.</td><td>세션 쿠키 만료 여부 확인. storage-state.json 재추출 필요할 수 있음</td></tr>
-            <tr><td><code>타임아웃 — 45초 초과</code></td><td>페이지 로드 시간 초과</td><td>B열 PENDING으로 바꾸면 재시도</td></tr>
-            <tr><td><code>지원하지 않는 사이트</code></td><td>URL이 site-configs.ts의 urlPatterns에 매칭 안 됨</td><td>navercafe URL이면 <code>ca-fe/</code> 또는 <code>f-e/</code> 경로 포함 여부 확인. 잘못된 URL이면 A열 교체</td></tr>
+            <tr><td><code>CF 차단 — J열에 본문 붙여넣기 가능</code></td><td>Cloudflare가 봇 접속 차단 — 펨코(fmkorea)에서 주로 발생</td><td>원문 글 전체 복사 → J열에 붙여넣기 → B열을 PENDING으로 변경 후 재시도</td></tr>
+            <tr><td><code>네이버 카페 동영상 포함 글은 발행 제외</code></td><td>네이버 카페 글에서 동영상이 감지됨 — 동영상 포함 글은 발행 자체를 차단함</td><td>재시도 불가. 동영상이 없는 다른 글로 교체하거나 A열 삭제</td></tr>
+            <tr><td><code>접근 차단 안내문 포함 — 발행 제외</code></td><td>네이버 카페 로그인 필요 안내 또는 가입 유도 문구 감지 (6종) — 세션 쿠키가 만료됐거나 해당 카페가 접근 제한 중일 때 발생</td><td>세션 쿠키 만료 여부 확인. Slack에 SESSION_HALTED 알림이 왔으면 storage-state.json 재추출 필요</td></tr>
+            <tr><td><code>게시판 안내문 포함 — 발행 제외</code></td><td>네이버 카페 게시판 운영 안내문이 본문에 포함됨 — 실제 글이 아닌 공지·안내 글일 때 발생</td><td>재시도 불가. 해당 글은 게시판 공지이므로 A열 삭제</td></tr>
+            <tr><td><code>타임아웃 — 45초 초과</code></td><td>페이지가 45초 내에 로드되지 않음 — 네트워크 불안정 또는 일시적 서버 부하</td><td>B열을 PENDING으로 변경하면 다음 실행 시 재시도</td></tr>
+            <tr><td><code>지원하지 않는 사이트</code></td><td>입력한 URL이 등록된 사이트 패턴과 맞지 않음</td><td>네이버 카페 URL이면 <code>ca-fe/</code> 또는 <code>f-e/</code> 경로가 포함돼 있는지 확인. 맞지 않으면 A열 교체</td></tr>
           </tbody>
         </table>
       </div>
@@ -1069,7 +1070,7 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
       <div class="card">
         <div class="card-title" style="color: var(--red);">❌ 피해야 할 것</div>
         <ul>
-          <li>정치·종교·혐오 관련 → AI가 필터링하지만 창업자도 주의</li>
+          <li>정치·종교·혐오 관련 → AI 필터 없음. 창업자가 직접 주의 필요</li>
           <li>너무 젊은 타겟 글 (10~20대 주제) → 창업자 직접 주의 (AI 필터 없음)</li>
           <li>같은 URL 두 번 입력 → SKIPPED 처리됨 (중복 방지)</li>
           <li>"시니어", "어르신", "노인" 표현이 많은 글 (AI 프롬프트에서 금지어)</li>
@@ -1093,7 +1094,6 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
         <tbody>
           <tr><td>Playwright 크롤링</td><td>—</td><td><strong>무료</strong></td><td>오픈소스 브라우저 자동화</td></tr>
           <tr><td>Google Sheets API</td><td>—</td><td><strong>무료</strong></td><td>쿼터 범위 내</td></tr>
-          <tr><td><strong>AI 품질 필터</strong></td><td>Claude Haiku</td><td><strong style="color:var(--sub);">$0</strong></td><td><span class="badge" style="background:rgba(255,111,97,0.15);color:#FF6F61;border:1px solid rgba(255,111,97,0.3);">2026-05-21 완전 제거</span> — 비용 0원, 스크래퍼 파이프라인에 AI 없음</td></tr>
           <tr><td><strong>파동 댓글 생성</strong></td><td>Claude Sonnet</td><td><strong>~$0.10~0.30/월</strong></td><td>화제성 글 수에 비례 (댓글 1개 ≈ $0.002)</td></tr>
           <tr><td>R2 이미지 저장</td><td>—</td><td>~$0.05/월</td><td>Cloudflare R2</td></tr>
           <tr><td>GitHub Actions 실행</td><td>—</td><td><strong>무료</strong></td><td>월 2,000분 한도 내 여유 있음</td></tr>
@@ -1111,7 +1111,7 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
   <!-- 11. 현재 운영 현황 -->
   <div class="section">
     <div class="section-label">11 — 현재 운영 현황</div>
-    <h2>2026-05-24 기준 상태</h2>
+    <h2>2026-05-27 기준 상태</h2>
 
     <div class="tbl-wrap">
       <table>
@@ -1124,7 +1124,7 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
           </tr>
           <tr>
             <td>82cook GHA 자동화</td>
-            <td><span class="badge badge-green">✅ 정상 (2026-05-21 활성)</span></td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
             <td>오유·네이트판과 동일 스케줄 (GHA). 로그인 불필요. 원글 작성자 자기 댓글 자동 제외.</td>
           </tr>
           <tr>
@@ -1134,8 +1134,13 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
           </tr>
           <tr>
             <td>네이버 카페 로컬 Mac 자동화</td>
-            <td><span class="badge badge-green">✅ 정상 (2026-05-21 활성)</span></td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
             <td>4회/일 (10:40·13:00·15:30·23:00 KST), launchd. 로그인 세션(storage-state.json) 사용. GHA에서는 PENDING 유지.</td>
+          </tr>
+          <tr>
+            <td>세션 자동 갱신 (네이버 카페)</td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>매일 02:00 KST 만료 체크. NID_SES 5일 이내 시 자동 갱신. NID_AUT 30일 이내 시 Slack 경보. 3회 실패 시 SESSION_HALTED + 알림. (launchd: com.unaeo.session-refresh)</td>
           </tr>
           <tr>
             <td>파동 GHA 자동화</td>
@@ -1145,11 +1150,11 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
           <tr>
             <td>AI 품질 필터 (Haiku 관련성 점수)</td>
             <td><span class="badge" style="background:rgba(255,111,97,0.15);color:#FF6F61;border:1px solid rgba(255,111,97,0.3);">⛔ 제거됨</span></td>
-            <td>2026-05-21 완전 제거. Haiku 비용 0원. AI 없이 원문 그대로 게시.</td>
+            <td>Haiku 관련성 필터 제거. AI 없이 원문 그대로 게시.</td>
           </tr>
           <tr>
             <td>원본 댓글 수집 (sourceComments)</td>
-            <td><span class="badge badge-blue">✅ 정상 (2026-05-13 도입)</span></td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
             <td>사이트별 댓글 selector로 최대 10개 수집 → BotLog에 저장 → 파동 댓글 생성 시 참고 각색</td>
           </tr>
           <tr>
@@ -1164,8 +1169,8 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
           </tr>
           <tr>
             <td>커뮤니티 이미지 표시</td>
-            <td><span class="badge badge-blue">✅ 정상 (2026-05-16 수정)</span></td>
-            <td>img.age-doesnt-matter.com → /_next/image 프록시 처리 (이미지 안 보이던 버그 수정)</td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>img.age-doesnt-matter.com → /_next/image 프록시 처리</td>
           </tr>
           <tr>
             <td>Google Sheets 연동</td>
@@ -1174,18 +1179,18 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
           </tr>
           <tr>
             <td>LIFE2 (2막준비) 게시판</td>
-            <td><span class="badge badge-green">✅ 정상 (2026-05-21 신설)</span></td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
             <td>인생 2막 특화 게시판. 페르소나 4명(정순씨·솔직히말해서·따져보자·말티즈엄마). 출처 표시 없음(STORY와 동일).</td>
           </tr>
           <tr>
             <td>커뮤니티 Slug 자동 생성</td>
-            <td><span class="badge badge-green">✅ 정상 (2026-05-23 도입)</span></td>
-            <td>SHEET 게시글 제목 기반 slug 자동 생성 (<code>agents/core/slug.ts</code>). F열 URL이 <code>/{id}</code> → <code>/{slug}</code> 형태로 개선. 복원 글은 기존 slug 유지.</td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>SHEET 게시글 제목 기반 slug 자동 생성. F열 URL이 <code>/{slug}</code> 형태로 표시됨. 복원 글은 기존 slug 유지.</td>
           </tr>
           <tr>
             <td>image-router 자동 append</td>
-            <td><span class="badge badge-green">✅ 활성 (2026-05-24 live 전환)</span></td>
-            <td>CafePost DB → Sheet PENDING 자동 append. DAY_CAP=3건/일, TAB_CAP=1건/탭. 10:35 run에서 3건 append → 10:40 naver-cafe-sheet-scraper가 PUBLISHED 처리 확인.</td>
+            <td><span class="badge badge-green">✅ 활성</span></td>
+            <td>CafePost DB → Sheet PENDING 자동 append. DAY_CAP=3건/일, TAB_CAP=1건/탭.</td>
           </tr>
         </tbody>
       </table>
@@ -1301,6 +1306,7 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
       </div>
     </div>
 
+    <p style="margin:0 0 8px;color:var(--sub);font-size:14px;">J열(rawContent)에 직접 HTML이나 텍스트를 붙여넣으면 Playwright 스크래핑 없이 해당 내용으로 바로 처리한다. 개발자 참고용 구현 상세는 아래 토글에 있다.</p>
     <details>
       <summary>transformRawContent() — J열 수동 붙여넣기 처리</summary>
       <pre>// J열(rawContent)에 내용이 있을 때 실행 (Playwright 스크래핑 완전 스킵)
@@ -1412,7 +1418,7 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
       <p><strong>화제성 파동 상한:</strong> 오늘 <code>SHEET_COMMENT_WAVE_PENDING</code> 건수가 50건 초과 시 처리를 전체 스킵한다 — 이미 SUCCESS로 완료된 건은 제외하고 <strong>PENDING 대기 건수만</strong> 카운트.<br>
       <strong>글당 댓글 상한:</strong> 봇 댓글이 이미 20개 이상이면 추가하지 않는다 (botCount 기준).<br>
       <strong>중복 방지:</strong> 동일 postId + authorId 조합이 BotLog에 이미 존재하면 스킵한다.<br>
-      <strong>trendingScore 즉시 갱신 (2026-05-23):</strong> 댓글·좋아요 투입 후 <code>refreshPostTrendingScore()</code>가 즉시 실행되어 commentCount/likeCount 증가가 홈 뜨는이야기 점수에도 실시간 반영된다.</p>
+      <strong>trendingScore 즉시 갱신:</strong> 댓글·좋아요 투입 후 <code>refreshPostTrendingScore()</code>가 즉시 실행되어 commentCount/likeCount 증가가 홈 뜨는이야기 점수에도 실시간 반영된다.</p>
     </div>
 
     <h3>일반 글 파동 2종 (isFeatured=false)</h3>
@@ -1511,6 +1517,7 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
       </div>
     </div>
 
+    <p style="margin:0 0 8px;color:var(--sub);font-size:14px;">5분마다 GHA가 runner.ts의 <code>seed:viral-waves</code> 핸들러를 호출해 일반 글 파동과 화제성 글 파동을 순서대로 처리한다. 개발자 참고용 핸들러 원문은 아래 토글에 있다.</p>
     <details>
       <summary>runner.ts viral-waves 핸들러 원문</summary>
       <pre>'seed:viral-waves': () => import('../seed/scheduler.js').then(async m => {
@@ -1538,17 +1545,39 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
           <tr><td><code>agents/community/run-local-fmkorea.ts</code></td><td>펨코 로컬 런처 (launchd 전용, dotenv 직접 로드, --site fmkorea)</td><td>LOCAL ONLY</td></tr>
           <tr><td><code>agents/community/run-local-naver-cafe.ts</code></td><td>네이버 카페 로컬 런처 (launchd 전용, --site navercafe, storage-state.json 세션 사용)</td><td>LOCAL ONLY</td></tr>
           <tr><td><code>agents/seed/generator.ts</code></td><td>파동 댓글 AI 생성 (generateSheetViralComment)</td><td>Claude Sonnet</td></tr>
-          <tr><td><code>agents/seed/scheduler.ts</code></td><td>파동 처리 함수 (processSheetEngagementWaves, processPendingSheetCommentWaves). 2026-05-23부터 댓글·좋아요 투입 후 <code>refreshPostTrendingScore()</code> 즉시 실행 — 홈 점수 실시간 반영.</td><td>—</td></tr>
-          <tr><td><code>agents/cafe/image-router.ts</code></td><td>CafePost DB → Sheet PENDING 자동 append 파이프라인. <strong>2026-05-24 live 전환</strong> (ENABLE_IMAGE_ROUTER=true, DRY_RUN=false). DAY_CAP=3/TAB_CAP=1. agents-cafe-hourly-curation.yml 트리거.</td><td>활성</td></tr>
+          <tr><td><code>agents/seed/scheduler.ts</code></td><td>파동 처리 함수 (processSheetEngagementWaves, processPendingSheetCommentWaves). 댓글·좋아요 투입 후 <code>refreshPostTrendingScore()</code> 즉시 실행 — 홈 점수 실시간 반영.</td><td>—</td></tr>
+          <tr><td><code>agents/cafe/image-router.ts</code></td><td>CafePost DB → Sheet PENDING 자동 append 파이프라인. 활성 (ENABLE_IMAGE_ROUTER=true, DRY_RUN=false). DAY_CAP=3/TAB_CAP=1. agents-cafe-hourly-curation.yml 트리거.</td><td>활성</td></tr>
           <tr><td><code>agents/cron/runner.ts</code></td><td>모든 에이전트 핸들러 등록 테이블 (cron/worker entry point)</td><td>—</td></tr>
           <tr><td><code>src/lib/sanitize.ts</code></td><td>커뮤니티 이미지 프록시 처리 — proxyR2Images() (커스텀 도메인 + /_next/image)</td><td>—</td></tr>
-          <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>스크래핑·게시 GHA 스케줄 (5회/일, timeout 25분). SHEET_SCRAPER_EXCLUDE_SITE=fmkorea 로 펨코 제외.</td><td>AI 없음 (2026-05-21 Haiku 필터 제거)</td></tr>
+          <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>스크래핑·게시 GHA 스케줄 (5회/일, timeout 25분). SHEET_SCRAPER_EXCLUDE_SITE=fmkorea 로 펨코 제외.</td><td>AI 없음</td></tr>
           <tr><td><code>.github/workflows/agents-sheet-viral.yml</code></td><td>파동 실행 GHA 스케줄 (5분마다, timeout 10분)</td><td>claude-sonnet-4-6</td></tr>
           <tr><td><code>~/Library/LaunchAgents/com.unao.fmkorea-scraper.plist</code></td><td>펨코 로컬 launchd 스케줄 (11:30·21:30 KST, caffeinate -i 슬립 방지)</td><td>—</td></tr>
           <tr><td><code>~/Library/LaunchAgents/com.unao.naver-cafe-sheet-scraper.plist</code></td><td>네이버 카페 로컬 launchd 스케줄 (10:40·13:00·15:30·23:00 KST, 4회)</td><td>—</td></tr>
-          <tr><td>Claude Haiku</td><td><del>AI 관련성 판단·카테고리 분류·제목 최적화</del> → <strong>2026-05-21 완전 제거</strong> (비용 0원, AI 없이 원문 그대로 게시)</td><td>비활성</td></tr>
+          <tr><td>Claude Haiku</td><td><del>AI 관련성 판단·카테고리 분류·제목 최적화</del> → <strong>완전 제거</strong> (비용 0원, AI 없이 원문 그대로 게시)</td><td>비활성</td></tr>
           <tr><td>Claude Sonnet</td><td>파동 댓글 생성 — 원본 댓글 각색·이미지 전용 반응</td><td>max_tokens: 200</td></tr>
           <tr><td>Cloudflare R2</td><td>이미지·비디오 영구 저장 (<code>scraped/{date}/{timestamp}/{index}.webp</code>)</td><td>sharp WebP 80%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 변경이력 -->
+  <div class="section">
+    <div class="section-label">변경이력</div>
+    <h2>주요 변경이력</h2>
+    <p style="color:var(--sub);font-size:14px;margin-bottom:16px;">본문에서는 날짜 마커를 제거하고 현재 상태만 기술한다. 언제 무엇이 바뀌었는지 확인할 때는 이 섹션을 참조한다.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>날짜</th><th>변경 내용</th><th>영향</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2026-05-13</td><td>파동 시스템 도입 — SHEET_COMMENT_WAVE_PENDING 기반 댓글·좋아요 예약 투입 시작</td><td>화제성 글 파동 4종 + 일반 글 파동 2종 가동</td></tr>
+          <tr><td>2026-05-16</td><td>시드봇(ENABLE_SEED_POSTS) OFF — GHA·launchd 양쪽 비활성화</td><td>자체 생성 글 중단, 커뮤니티 수집 콘텐츠만 운영</td></tr>
+          <tr><td>2026-05-21</td><td>AI 품질 필터(Haiku) 완전 제거 — 관련성 판단·카테고리 분류·제목 최적화 AI 처리 제거</td><td>AI 비용 0원, 원문 그대로 게시. 파동 댓글(Sonnet)만 유지</td></tr>
+          <tr><td>2026-05-23</td><td>trendingScore 즉시 갱신 도입 — 댓글·좋아요 투입 직후 refreshPostTrendingScore() 실행</td><td>홈 뜨는이야기 점수가 파동 투입 후 즉시 반영됨</td></tr>
+          <tr><td>2026-05-24</td><td>image-router live 전환 — ENABLE_IMAGE_ROUTER=true, DRY_RUN=false</td><td>CafePost DB → Sheet PENDING 자동 append 파이프라인 실가동</td></tr>
+          <tr><td>2026-05-26</td><td>네이버 카페 스크래퍼 개선 (커밋 9745f9e · 3f206b7) — contentFrame 처리 및 동영상 감지 로직 수정</td><td>navercafe 게시 안정성 향상</td></tr>
         </tbody>
       </table>
     </div>
