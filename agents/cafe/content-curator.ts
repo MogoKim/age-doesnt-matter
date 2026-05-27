@@ -392,11 +392,7 @@ export async function main() {
   const killerPosts = await prisma.cafePost.findMany({
     where: {
       killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true },
-      // postedAt null 레거시 글은 crawledAt으로 대체 판단
-      OR: [
-        { postedAt: { gte: sevenDaysAgo } },
-        { postedAt: { equals: null }, crawledAt: { gte: sevenDaysAgo } },
-      ],
+      crawledAt: { gte: sevenDaysAgo },  // crawledAt은 항상 설정됨(NOT NULL) — postedAt null 허용
     },
     orderBy: { killerScore: 'desc' },
     take: 2,
