@@ -25,6 +25,36 @@ import {
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
 import { generateCommunitySlug } from '../core/slug.js'
 
+// ─── 후보 풀 / skipReason 타입 ─────────────────────────────────
+type SkipReason =
+  | 'DESIRE_EXHAUSTED'
+  | 'KEYWORD_OVERLAP'
+  | 'REFS_EMPTY'
+  | 'AUTHOR_DAILY_CAP'
+  | 'GENERATION_FAILED'
+  | 'SEASON_MISMATCH'
+  | 'DUPLICATE_TITLE'
+  | 'PUBLISH_FAILED'
+
+interface CandidateTopic {
+  topic: string
+  source: 'killer' | 'trend'
+  cafePostId?: string
+  postedAt?: Date
+  killerScore?: number
+  desireCategory?: string
+}
+
+interface TopicResult extends CandidateTopic {
+  refsCount: number
+  skipReason: SkipReason | null
+}
+
+type PublishResult =
+  | { success: true; postId: string }
+  | { success: false; skipReason: Extract<SkipReason, 'SEASON_MISMATCH' | 'DUPLICATE_TITLE' | 'PUBLISH_FAILED'> }
+
+const CANDIDATE_POOL_SIZE = 15
 
 const CC_AI_REJECT_RE = /글 내용을|내용을 보여|볼 수가 없|상황을 모르|글의 내용을|어떤 상황인지|댓글을 작성할 수 없|내용 올려/
 function computeUsableCount(topComments: unknown): number {
@@ -155,8 +185,8 @@ function editDistance(a: string, b: string): number {
   return dp[m][n]
 }
 
-/** 큐레이션 글을 DB에 게시, 생성된 postId 반환 */
-async function publishCuratedContent(curated: CuratedContent): Promise<string | null> {
+/** 큐레이션 글을 DB에 게시 */
+async function publishCuratedContent(curated: CuratedContent): Promise<PublishResult> {
   const userId = await getCuratorBotUser(curated.personaId)
 
   const htmlContent = toCuratedHtmlContent(curated.content)
@@ -165,7 +195,7 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
   // 계절 불일치 필터 (P3)
   if (isSeasonMismatch(curated.title, curated.content)) {
     console.log(`[ContentCurator] 계절 불일치 스킵: "${curated.title.slice(0, 20)}"`)
-    return null
+    return { success: false, skipReason: 'SEASON_MISMATCH' }
   }
 
   // 크로스소스 중복 방지 (LIFE2·STORY·HUMOR — Seed·PopularCurator와 동일 주제 중복 차단)
@@ -186,7 +216,7 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
       )
       if (isDuplicate || isTitleNearDuplicate) {
         console.log(`[ContentCurator] ${curated.boardType} 중복 스킵: "${curated.title.slice(0, 20)}"`)
-        return null
+        return { success: false, skipReason: 'DUPLICATE_TITLE' }
       }
     }
   }
@@ -197,43 +227,47 @@ async function publishCuratedContent(curated: CuratedContent): Promise<string | 
     : undefined
 
   // post 생성 + cafePost usedAt 마킹을 트랜잭션으로 묶어 원자성 보장
-  const postId = await prisma.$transaction(async (tx) => {
-    const post = await tx.post.create({
-      data: {
-        title: curated.title,
-        content: htmlContent,
-        summary,
-        boardType: curated.boardType as 'STORY' | 'HUMOR' | 'LIFE2' | 'JOB',
-        category: curated.category ?? '자유수다',
-        authorId: userId,
-        source: 'BOT',
-        status: 'PUBLISHED',
-        publishedAt: new Date(),
-        cafePostId: curated.sourcePostIds[0] ?? null,
-        ...(slug ? { slug } : {}),
-      },
-    })
-    if (curated.sourcePostIds.length > 0) {
-      await tx.cafePost.updateMany({
-        where: { id: { in: curated.sourcePostIds } },
-        data: { usedAt: new Date() },
+  try {
+    const postId = await prisma.$transaction(async (tx) => {
+      const post = await tx.post.create({
+        data: {
+          title: curated.title,
+          content: htmlContent,
+          summary,
+          boardType: curated.boardType as 'STORY' | 'HUMOR' | 'LIFE2' | 'JOB',
+          category: curated.category ?? '자유수다',
+          authorId: userId,
+          source: 'BOT',
+          status: 'PUBLISHED',
+          publishedAt: new Date(),
+          cafePostId: curated.sourcePostIds[0] ?? null,
+          ...(slug ? { slug } : {}),
+        },
       })
-      // killerScore ≥ 75인 소스글 기반 발행 → isFeatured=true 자동 적용
-      const killerSource = await tx.cafePost.findFirst({
-        where: { id: { in: curated.sourcePostIds }, killerScore: { gte: 75 } },
-        select: { id: true },
-      })
-      if (killerSource) {
-        await tx.post.update({
-          where: { id: post.id },
-          data: { isFeatured: true, featuredAt: new Date() },
+      if (curated.sourcePostIds.length > 0) {
+        await tx.cafePost.updateMany({
+          where: { id: { in: curated.sourcePostIds } },
+          data: { usedAt: new Date() },
         })
+        // killerScore ≥ 75인 소스글 기반 발행 → isFeatured=true 자동 적용
+        const killerSource = await tx.cafePost.findFirst({
+          where: { id: { in: curated.sourcePostIds }, killerScore: { gte: 75 } },
+          select: { id: true },
+        })
+        if (killerSource) {
+          await tx.post.update({
+            where: { id: post.id },
+            data: { isFeatured: true, featuredAt: new Date() },
+          })
+        }
       }
-    }
-    return post.id
-  })
-
-  return postId
+      return post.id
+    })
+    return { success: true, postId }
+  } catch (err) {
+    console.error('[ContentCurator] publishCuratedContent 트랜잭션 실패:', err)
+    return { success: false, skipReason: 'PUBLISH_FAILED' }
+  }
 }
 
 /** 댓글 파동 큐 등록 (wave1: +1분, wave2: +5분, wave3: +30분, wave4: +60분) */
@@ -320,7 +354,6 @@ export async function main() {
   const MAX_PER_DESIRE: Partial<Record<string, number>> = { HEALTH: 22, FAMILY: 11, MONEY: 3 }
   const DEFAULT_MAX_DESIRE = 6
 
-
   function isDesireExhausted(desire: string): boolean {
     return (desireUsedCount[desire] ?? 0) >= (MAX_PER_DESIRE[desire] ?? DEFAULT_MAX_DESIRE)
   }
@@ -340,126 +373,191 @@ export async function main() {
   }
   const topDesires = Object.entries(desireMap).sort(([, a], [, b]) => b - a).map(([k]) => k)
 
+  // categorizedTopics: hotTopics에 desireCategory 부여 (desireCategory 필드 보장)
   const categorizedTopics = hotTopics.map(t => ({ ...t, desireCategory: guessDesire(t.topic) }))
-  const selectedTopics: string[] = []
+
+  // ─── killerPosts 날짜 제한 7일 (Fix 1) ───────────────────────
+  // 날짜 제한으로 34일된 "청국장" 등 오래된 글의 영구 재선발 차단
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const killerPosts = await prisma.cafePost.findMany({
+    where: {
+      killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true },
+      // postedAt null 레거시 글은 crawledAt으로 대체 판단
+      OR: [
+        { postedAt: { gte: sevenDaysAgo } },
+        { postedAt: null, crawledAt: { gte: sevenDaysAgo } },
+      ],
+    },
+    orderBy: { killerScore: 'desc' },
+    take: 2,
+    select: { id: true, title: true, postedAt: true, killerScore: true, desireCategory: true },
+  })
+
+  // ─── candidatePool 구성 (Fix 2-B) ─────────────────────────────
+  const killerCandidates: CandidateTopic[] = killerPosts
+    .filter(p => !isDesireExhausted(p.desireCategory ?? 'GENERAL'))
+    .map(p => ({
+      topic: p.title,
+      source: 'killer' as const,
+      cafePostId: p.id,
+      postedAt: p.postedAt ?? undefined,
+      killerScore: p.killerScore ?? undefined,
+      desireCategory: p.desireCategory ?? undefined,
+    }))
+  if (killerCandidates.length > 0) {
+    console.log(`[ContentCurator] 킬러글 후보: ${killerCandidates.length}건`)
+  }
+
+  const maxTrendCandidates = CANDIDATE_POOL_SIZE - killerCandidates.length
+  const trendCandidates: CandidateTopic[] = []
   const usedCategories = new Set<string>()
 
-  // 1순위: desireMap 순서대로 카테고리별 첫 번째 hotTopic (소진된 욕망 제외)
+  // 풀 내 중복 확인 (클로저가 배열 참조를 추적)
+  const inPool = (topic: string) =>
+    killerCandidates.some(c => c.topic === topic) || trendCandidates.some(c => c.topic === topic)
+
+  // 1순위: desireMap 순서대로 카테고리별 첫 번째 topic (소진된 욕망 제외)
   for (const desire of topDesires) {
-    if (selectedTopics.length >= maxPosts) break
+    if (trendCandidates.length >= maxTrendCandidates) break
     if (isDesireExhausted(desire)) continue
-    const match = categorizedTopics.find(t => t.desireCategory === desire && !usedCategories.has(desire))
+    const match = categorizedTopics.find(
+      t => t.desireCategory === desire && !usedCategories.has(desire) && !inPool(t.topic)
+    )
     if (match) {
-      selectedTopics.push(match.topic)
+      trendCandidates.push({ topic: match.topic, source: 'trend', desireCategory: match.desireCategory })
       usedCategories.add(desire)
     }
   }
-  // 2순위: 미달 시 나머지 hotTopics에서 카테고리 중복 없이 채움 (소진된 욕망 제외)
+  // 2순위: 미달 시 나머지 categorizedTopics에서 카테고리 중복 없이 채움 (소진된 욕망 제외)
   for (const t of categorizedTopics) {
-    if (selectedTopics.length >= maxPosts) break
+    if (trendCandidates.length >= maxTrendCandidates) break
     if (isDesireExhausted(t.desireCategory)) continue
-    if (!usedCategories.has(t.desireCategory) && !selectedTopics.includes(t.topic)) {
-      selectedTopics.push(t.topic)
+    if (!usedCategories.has(t.desireCategory) && !inPool(t.topic)) {
+      trendCandidates.push({ topic: t.topic, source: 'trend', desireCategory: t.desireCategory })
       usedCategories.add(t.desireCategory)
     }
   }
-  // 3순위: 폴백 — 원래 hotTopics 순서
-  for (const t of hotTopics) {
-    if (selectedTopics.length >= maxPosts) break
-    if (!selectedTopics.includes(t.topic)) selectedTopics.push(t.topic)
+  // 3순위: 폴백 — isDesireExhausted 체크 포함 (Fix 3: 소진 카테고리 재진입 차단)
+  for (const t of categorizedTopics) {
+    if (trendCandidates.length >= maxTrendCandidates) break
+    if (isDesireExhausted(t.desireCategory)) continue
+    if (!inPool(t.topic)) {
+      trendCandidates.push({ topic: t.topic, source: 'trend', desireCategory: t.desireCategory })
+    }
   }
 
-  // 01:15 KST 특별 슬롯: 저녁/새벽 감성글 우선 정렬 (killerScore 블록 이전 배치)
-  // kstHour = (getUTCHours() + 9) % 24 → UTC 16시 = (16+9)%24 = 1 = KST 01시
+  // 01:15 KST 특별 슬롯: 저녁/새벽 감성글 우선 정렬 (trendCandidates만, killerCandidates 순서 유지)
   const kstHour = (new Date().getUTCHours() + 9) % 24
   const DAWN_DESIRES = ['MEANING', 'SPIRITUAL', 'RELATION', 'FAMILY']
   if (kstHour === 1) {
-    selectedTopics.sort((a, b) => {
-      const aIsDawn = DAWN_DESIRES.includes(guessDesire(a))
-      const bIsDawn = DAWN_DESIRES.includes(guessDesire(b))
+    trendCandidates.sort((a, b) => {
+      const aIsDawn = DAWN_DESIRES.includes(a.desireCategory ?? '')
+      const bIsDawn = DAWN_DESIRES.includes(b.desireCategory ?? '')
       return (bIsDawn ? 1 : 0) - (aIsDawn ? 1 : 0)
     })
   }
 
-  // killerScore 우선 삽입 (B3) — 화제성 높은 글 제목을 최우선 주제로
-  const killerPosts = await prisma.cafePost.findMany({
-    where: { killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true } }, // 50: hotTopics 30개 확장 후 pool 안전망 (기존 55에서 완화)
-    orderBy: { killerScore: 'desc' },
-    take: 2,
-    select: { title: true },
-  })
-  if (killerPosts.length > 0) {
-    const killerTopics = killerPosts.map(p => p.title).filter(Boolean)
-    const merged = [...killerTopics, ...selectedTopics.filter(t => !killerTopics.includes(t))].slice(0, maxPosts)
-    selectedTopics.splice(0, selectedTopics.length, ...merged)
-    console.log(`[ContentCurator] 킬러글 우선 삽입: ${killerTopics.length}건`)
-  }
+  // killerCandidates 앞, trendCandidates 뒤
+  const candidatePool: CandidateTopic[] = [...killerCandidates, ...trendCandidates]
+  console.log(`[ContentCurator] 후보 풀: ${candidatePool.length}개 (killer=${killerCandidates.length}, trend=${trendCandidates.length})`)
 
-  for (const topicStr of selectedTopics) {
-    const desireCat = guessDesire(topicStr)
-    // 하루 한도 소진된 욕망은 스킵 (B20)
+  // ─── 실행 루프 (Fix 2-C) ──────────────────────────────────────
+  // refs=0 / 생성실패 / 발행실패 시 다음 후보로 이동 (continue 기반)
+  const topicResults: TopicResult[] = []
+
+  for (const candidate of candidatePool) {
+    if (publishedCount >= maxPosts) break
+
+    const desireCat = candidate.desireCategory ?? guessDesire(candidate.topic)
+
+    // DESIRE_EXHAUSTED: pool 구성 후 루프 중 카운터가 소진된 경우 재확인
     if (isDesireExhausted(desireCat)) {
-      console.log(`[ContentCurator] "${topicStr}" (${desireCat}) 오늘 한도 초과 — 스킵`)
+      topicResults.push({ ...candidate, refsCount: 0, skipReason: 'DESIRE_EXHAUSTED' })
       continue
     }
 
-    // 당일 발행 키워드 편중 체크 (P1)
-    const topicOverlap = countKeywordOverlap(topicStr)
+    // KEYWORD_OVERLAP: 당일 발행 키워드 편중 체크 (P1)
+    const topicOverlap = countKeywordOverlap(candidate.topic)
     if (topicOverlap >= 4) {
-      console.log(`[ContentCurator] "${topicStr}" 키워드 중복 스킵 (당일 ${topicOverlap}회 이미 발행)`)
+      console.log(`[ContentCurator] "${candidate.topic}" 키워드 중복 스킵 (당일 ${topicOverlap}회)`)
+      topicResults.push({ ...candidate, refsCount: 0, skipReason: 'KEYWORD_OVERLAP' })
       continue
     }
 
-    let persona = matchPersona(topicStr, desireCat)
+    // 페르소나 선택 + AUTHOR_DAILY_CAP 체크
+    let persona = matchPersona(candidate.topic, desireCat)
     const todayCount = await countTodayPostsByPersona(persona.id)
     if (todayCount >= AUTHOR_DAILY_POST_CAP) {
-      const candidates = DESIRE_PERSONA_MAP[desireCat] ?? DESIRE_PERSONA_MAP['GENERAL']
-      for (const altId of candidates) {
+      const altIds = DESIRE_PERSONA_MAP[desireCat] ?? DESIRE_PERSONA_MAP['GENERAL']
+      let found = false
+      for (const altId of altIds) {
         if (altId === persona.id) continue
         const altCount = await countTodayPostsByPersona(altId)
         if (altCount < AUTHOR_DAILY_POST_CAP) {
           const altPersona = PERSONAS.find(p => p.id === altId)
-          if (altPersona) { persona = altPersona; break }
+          if (altPersona) { persona = altPersona; found = true; break }
         }
+      }
+      if (!found) {
+        console.log(`[ContentCurator] "${candidate.topic}" 모든 페르소나 일간 한도 초과 — 스킵`)
+        topicResults.push({ ...candidate, refsCount: 0, skipReason: 'AUTHOR_DAILY_CAP' })
+        continue
       }
     }
-    const refs = await getReferencePosts(topicStr, desireCat, 3)
 
-    console.log(`[ContentCurator] "${topicStr}" (${desireCat}) → ${persona.nickname} (참고글 ${refs.length}개)`)
+    const refs = await getReferencePosts(candidate.topic, desireCat, 3)
+    console.log(`[ContentCurator] "${candidate.topic}" (${desireCat}) → ${persona.nickname} (참고글 ${refs.length}개)`)
 
-    const curated = await generateCuratedPost(persona, topicStr, refs, desireCat)
-    if (curated) {
-      const postId = await publishCuratedContent(curated)
-      publishedCount++
-      desireUsedCount[desireCat] = (desireUsedCount[desireCat] ?? 0) + 1
-      console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
-      // 댓글 파동 큐 등록 — usableTopComments=0이면 생략
-      if (postId) {
-        const refCafePost = refs[0]
-        const usable = computeUsableCount(refCafePost?.topComments)
-        if (usable === 0) {
-          console.log(`[ContentCurator] 댓글 없는 글 — wave queue 생략 postId=${postId} cafePostId=${refCafePost?.id ?? 'none'}`)
-        } else {
-          await enqueueCommentWave(postId, refCafePost!.id, persona.id).catch(async (err) => {
-            await sendSlackMessage('QA', `[큐레이션] wave 등록 실패: ${String(err).slice(0, 100)}`)
-            console.error('[ContentCurator] wave 큐 등록 실패:', err)
-          })
-        }
-      }
+    if (refs.length === 0) {
+      topicResults.push({ ...candidate, refsCount: 0, skipReason: 'REFS_EMPTY' })
+      continue
+    }
+
+    const curated = await generateCuratedPost(persona, candidate.topic, refs, desireCat)
+    if (!curated) {
+      // refs는 있었지만 curated content 생성 결과가 null
+      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'GENERATION_FAILED' })
+      continue
+    }
+
+    const publishResult = await publishCuratedContent(curated)
+    if (!publishResult.success) {
+      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: publishResult.skipReason })
+      continue
+    }
+
+    // 발행 성공
+    topicResults.push({ ...candidate, refsCount: refs.length, skipReason: null })
+    publishedCount++
+    desireUsedCount[desireCat] = (desireUsedCount[desireCat] ?? 0) + 1
+    console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
+
+    // 댓글 파동 큐 등록 — usableTopComments=0이면 생략
+    const refCafePost = refs[0]
+    const usable = computeUsableCount(refCafePost?.topComments)
+    if (usable === 0) {
+      console.log(`[ContentCurator] 댓글 없는 글 — wave queue 생략 postId=${publishResult.postId}`)
+    } else {
+      await enqueueCommentWave(publishResult.postId, refCafePost!.id, persona.id).catch(async (err) => {
+        await sendSlackMessage('QA', `[큐레이션] wave 등록 실패: ${String(err).slice(0, 100)}`)
+        console.error('[ContentCurator] wave 큐 등록 실패:', err)
+      })
     }
   }
 
   const durationMs = Date.now() - startTime
 
-  // BotLog
+  // BotLog — topicsUsed: 실제 시도한 topic만 (candidatePool 전체 아님)
   await prisma.botLog.create({
     data: {
       botType: 'CAFE_CRAWLER',
       action: 'CONTENT_CURATE',
       status: publishedCount >= maxPosts ? 'SUCCESS' : publishedCount > 0 ? 'PARTIAL' : 'FAILED',
       details: JSON.stringify({
-        topicsUsed: selectedTopics,
+        topicsUsed: topicResults.map(r => r.topic),
+        candidatePoolSize: candidatePool.length,
         published: publishedCount,
+        topicResults,
       }),
       itemCount: publishedCount,
       executionTimeMs: durationMs,

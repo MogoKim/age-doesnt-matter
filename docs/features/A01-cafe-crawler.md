@@ -203,6 +203,7 @@
 
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
+| 2026-05-27 | content-curator.ts 근본 수정 — killerPosts 7일 날짜 제한(postedAt/crawledAt OR), candidatePool 15개 확장(CandidateTopic 객체 배열), 실행 루프 continue 기반 다음 후보 이동, publishCuratedContent 반환타입 PublishResult 변경(SEASON_MISMATCH/DUPLICATE_TITLE/PUBLISH_FAILED 구분), BotLog topicResults + skipReason 8종 구조화 | 34일된 "청국장"(killerScore=75)이 FOOD refs 소진 후 매 시간 재선발 → published=0 반복 차단 |
 | 2026-05-26 | crawler.ts `isAccessBlockedContent()` 추가 — '검색 비허용 게시물'·'가입이 필요합니다' 등 5개 패턴 ANY 1개 포함 시 isUsable=false (savePosts + PopularSync Case B 양 경로 적용). content-curator.ts `getReferencePosts()` 3단계 fallback 전체에 2차 content 필터 래핑 | 우아한 갱년기(wgang) 검색 비허용 게시물 4건이 isUsable=true로 저장·발행된 사태 재발 방지 |
 | 2026-05-21 | crawler.ts `syncPopularPosts()` Case B에 `isImageDependentContent()`+`isBoardNoticeContent()` 적용 — `isUsable: true` 하드코딩 해제, popular-sync 신규 저장 경로도 이미지 의존·공지문 차단 | savePosts()와 동일 기준 적용으로 Case B 우회 경로 차단 |
 | 2026-05-21 | crawler.ts `savePosts()`에 `isImageDependentContent()`+`isBoardNoticeContent()` 헬퍼 추가 — 이미지 의존(실질텍스트<50자) 및 게시판 공지문(신호어 2개↑) 감지 시 `isUsable=false`로 저장 | 이미지가 본문인 글·공지문 수집 방지 (DB dedup 유지) |
