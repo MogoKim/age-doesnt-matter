@@ -395,7 +395,7 @@ export async function main() {
       // postedAt null 레거시 글은 crawledAt으로 대체 판단
       OR: [
         { postedAt: { gte: sevenDaysAgo } },
-        { postedAt: null, crawledAt: { gte: sevenDaysAgo } },
+        { postedAt: { equals: null }, crawledAt: { gte: sevenDaysAgo } },
       ],
     },
     orderBy: { killerScore: 'desc' },
