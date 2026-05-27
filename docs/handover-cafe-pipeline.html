@@ -616,7 +616,7 @@
     <div class="tl-item plist">
       <div class="tl-time">02:00 KST <span class="tl-label label-plist">plist</span></div>
       <div class="tl-mode">session-refresh — <code>com.unaeo.session-refresh</code> ✅ 로드됨</div>
-      <div class="tl-detail">Playwright 네이버 세션 갱신 (storage-state.json 재발급). 카페 크롤러 인증 유지.</div>
+      <div class="tl-detail"><strong>크롤이 아니라 쿠키 갱신 전용.</strong> NID_SES 잔여 ≤5일일 때만 Playwright로 재로그인해 storage-state.json을 새로 발급한다. 잔여가 5일 초과이면 체크만 하고 즉시 종료. Mac이 매일 켜져 있을 필요 없음 — NID_SES ~30일 / NID_AUT ~1년 유효. 갱신 3회 연속 실패 시 SESSION_HALTED 플래그 생성 → 크롤러 전면 차단 + Slack #대시보드/#시스템/#qa 3채널 동시 알림.</div>
     </div>
     <div class="tl-item plist">
       <div class="tl-time">00:30 KST <span class="tl-label label-plist">plist</span></div>
@@ -1951,6 +1951,28 @@ async function processPendingSheetCommentWaves() {
     popular-curation 워크플로우와 hourly-curation 워크플로우가 <strong>같은 concurrency group</strong> (<code>cafe-hourly-curation</code>)을 공유한다. hourly-curation의 21:05 KST 크론은 GHA 서버 부하로 실제로는 21:15~21:31에 시작되는 경우가 많다. 이 상태에서 21:30에 popular-curation이 트리거되면 hourly가 아직 실행 중이라 큐에서 대기하거나 cancel된다.<br><br>
     21:45로 이동하면 hourly-curation이 21:15에 시작해도 30분 안에 충분히 완료되므로 충돌이 없다.<br><br>
     <strong>추가 버그 수정</strong>: popular-curator.ts의 <code>main()</code>이 module-level self-call 패턴이어서 runner.ts가 <code>then(() => {})</code>로 모듈만 import하고 즉시 <code>process.exit()</code>을 실행했다 (44ms 내 종료). <code>export async function main()</code> + runner.ts <code>then(m => m.main())</code>으로 수정. SHA: c2f7422.
+  </div>
+
+  <h3>카페별 인기글 접근 URL — 왜 다른가</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>카페</th><th>URL 방식</th><th>이유</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>wgang</strong><br>(우아한 갱년기)</td>
+          <td><code>cafe.naver.com/wgang?iframe_url_utf8=<br>/CommunityReadTop.nhn?clubid=29349320</code><br><span style="font-size:13px;color:var(--muted)">구 format — 네이버 옛날 iframe 구조</span></td>
+          <td>wgang 인기글 탭은 Next.js로 JS 렌더링된다. <code>f-e/cafes/29349320/popular</code> 로 접근하면 브라우저에서는 글 목록이 보이지만, Playwright가 <code>domcontentloaded</code> 시점에 <code>&lt;a&gt;</code> 태그가 아직 DOM에 없다. 구 format은 iframe 내 정적 HTML에 링크가 바로 있어 안정적으로 파싱 가능.</td>
+        </tr>
+        <tr>
+          <td><strong>dlxogns01</strong><br>(은퇴 후 50년)</td>
+          <td><code>cafe.naver.com/f-e/cafes/23676262/menus/107</code><br><span style="font-size:13px;color:var(--muted)">신 format — menuId=107 일반 게시판</span></td>
+          <td>dlxogns01 인기글은 menuId=107 게시판으로 등록돼 있어 일반 게시판 방식으로 접근 가능. 2026-04-07 discover-boards.ts로 전체 menuId 탐색 완료 시 확인됨.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alert info" style="margin-bottom:20px; font-size:15px;">
+    <strong>요약:</strong> wgang에도 <code>/popular</code> URL이 있고 브라우저에서 잘 보인다. 크롤러가 구 format을 쓰는 이유는 JS 렌더링 타이밍 문제 때문이며, 데이터는 동일하다.
   </div>
 
   <h3>Case A vs Case B 처리</h3>
