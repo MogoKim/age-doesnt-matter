@@ -3,32 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.31</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.32</title>
 <style>
   :root {
-    --bg: #ffffff;
-    --bg2: #f6f8fa;
-    --bg3: #eef0f3;
-    --border: #d0d7de;
-    --text: #1a1d23;
-    --muted: #57606a;
-    --sub: #8b949e;
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --sub: #6e7681;
     --primary: #FF6F61;
-    --primary-dim: rgba(255,111,97,0.10);
-    --green: #1a7f37;
-    --green-dim: rgba(26,127,55,0.10);
-    --blue: #0969da;
-    --blue-dim: rgba(9,105,218,0.10);
-    --yellow: #9a6700;
-    --yellow-dim: rgba(154,103,0,0.10);
-    --purple: #6639ba;
-    --purple-dim: rgba(102,57,186,0.10);
-    --teal: #0e7490;
-    --teal-dim: rgba(14,116,144,0.10);
-    --red: #cf222e;
-    --red-dim: rgba(207,34,46,0.10);
-    --orange: #bc4c00;
-    --orange-dim: rgba(188,76,0,0.10);
+    --primary-dim: rgba(255,111,97,0.18);
+    --green: #3fb950;
+    --green-dim: rgba(63,185,80,0.15);
+    --blue: #58a6ff;
+    --blue-dim: rgba(88,166,255,0.15);
+    --yellow: #d29922;
+    --yellow-dim: rgba(210,153,34,0.15);
+    --purple: #bc8cff;
+    --purple-dim: rgba(188,140,255,0.15);
+    --teal: #22d3ee;
+    --teal-dim: rgba(34,211,238,0.15);
+    --red: #f85149;
+    --red-dim: rgba(248,81,73,0.15);
+    --orange: #d18616;
+    --orange-dim: rgba(209,134,22,0.15);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,15 +38,15 @@
     background: var(--bg);
     color: var(--text);
     line-height: 1.75;
-    font-size: 14.5px;
+    font-size: 16.5px;
   }
 
   a { color: var(--blue); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 56px 28px 100px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 56px 18px 100px; }
 
   .cover {
-    background: linear-gradient(135deg, #fff5f4 0%, #fdf0ff 50%, #f8f9fa 100%);
+    background: linear-gradient(135deg, #161b22 0%, #1a1423 50%, #0d1117 100%);
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 52px 48px 44px;
@@ -60,139 +60,139 @@
     top: -80px; right: -80px;
     width: 360px; height: 360px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,111,97,0.12) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255,111,97,0.14) 0%, transparent 70%);
     pointer-events: none;
   }
   .cover-badge {
     display: inline-block;
     background: var(--primary-dim);
     color: var(--primary);
-    font-size: 11px; font-weight: 700;
+    font-size: 13px; font-weight: 700;
     letter-spacing: 0.1em; text-transform: uppercase;
     padding: 4px 12px; border-radius: 4px;
-    border: 1px solid rgba(255,111,97,0.3);
+    border: 1px solid rgba(255,111,97,0.35);
     margin-bottom: 20px;
   }
-  .cover h1 { font-size: 30px; font-weight: 800; color: var(--text); margin-bottom: 10px; line-height: 1.3; }
-  .cover .subtitle { font-size: 15px; color: var(--muted); margin-bottom: 36px; max-width: 680px; line-height: 1.7; }
+  .cover h1 { font-size: 32px; font-weight: 800; color: var(--text); margin-bottom: 10px; line-height: 1.3; }
+  .cover .subtitle { font-size: 17px; color: var(--muted); margin-bottom: 36px; max-width: 680px; line-height: 1.7; }
   .cover-meta { display: flex; gap: 32px; flex-wrap: wrap; padding-top: 28px; border-top: 1px solid var(--border); }
-  .cover-meta-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); font-weight: 600; margin-bottom: 3px; }
-  .cover-meta-item .value { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .cover-meta-item .label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); font-weight: 600; margin-bottom: 3px; }
+  .cover-meta-item .value { font-size: 15px; color: var(--muted); font-weight: 500; }
   .cover-meta-item .value.ok { color: var(--green); }
   .cover-meta-item .value.warn { color: var(--yellow); }
 
   .status-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px 28px; margin-bottom: 36px; display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; }
-  .status-box .sb-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); width: 100%; margin-bottom: -4px; }
-  .status-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
+  .status-box .sb-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); width: 100%; margin-bottom: -4px; }
+  .status-item { display: flex; align-items: center; gap: 7px; font-size: 15px; color: var(--muted); }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .status-dot.on { background: var(--green); box-shadow: 0 0 6px rgba(74,222,128,0.5); }
+  .status-dot.on { background: var(--green); box-shadow: 0 0 6px rgba(63,185,80,0.5); }
   .status-dot.off { background: var(--red); }
   .status-dot.warn { background: var(--yellow); }
 
   .toc { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 28px 32px; margin-bottom: 52px; }
-  .toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); font-weight: 700; margin-bottom: 18px; }
+  .toc h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); font-weight: 700; margin-bottom: 18px; }
   .toc ol { columns: 2; column-gap: 40px; list-style: decimal inside; }
-  .toc li { font-size: 13.5px; color: var(--muted); padding: 4px 0; break-inside: avoid; }
+  .toc li { font-size: 15.5px; color: var(--muted); padding: 4px 0; break-inside: avoid; }
   .toc li a { color: var(--muted); }
   .toc li a:hover { color: var(--primary); }
 
   .section { margin-bottom: 64px; }
   .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
-  .section-num { width: 32px; height: 32px; border-radius: 8px; background: var(--primary-dim); border: 1px solid rgba(255,111,97,0.3); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
-  .section h2 { font-size: 20px; font-weight: 700; color: var(--text); }
-  .section h3 { font-size: 16px; font-weight: 700; color: var(--text); margin: 28px 0 14px; }
-  .section h4 { font-size: 14px; font-weight: 700; color: var(--muted); margin: 20px 0 10px; }
+  .section-num { width: 32px; height: 32px; border-radius: 8px; background: var(--primary-dim); border: 1px solid rgba(255,111,97,0.3); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
+  .section h2 { font-size: 22px; font-weight: 700; color: var(--text); }
+  .section h3 { font-size: 18px; font-weight: 700; color: var(--text); margin: 28px 0 14px; }
+  .section h4 { font-size: 16px; font-weight: 700; color: var(--muted); margin: 20px 0 10px; }
 
-  .biz-lead { background: var(--bg2); border-left: 3px solid var(--primary); border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 24px; font-size: 14.5px; color: var(--muted); line-height: 1.8; }
+  .biz-lead { background: var(--bg2); border-left: 3px solid var(--primary); border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 24px; font-size: 16.5px; color: var(--muted); line-height: 1.8; }
 
-  .narrative { font-size: 14.5px; color: var(--muted); line-height: 1.85; margin-bottom: 20px; }
+  .narrative { font-size: 16.5px; color: var(--muted); line-height: 1.85; margin-bottom: 20px; }
   .narrative strong { color: var(--text); }
   .narrative p { margin-bottom: 14px; }
 
   .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 22px 24px; margin-bottom: 12px; }
-  .card-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-  .card-value { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1.2; }
-  .card-sub { font-size: 12px; color: var(--sub); margin-top: 6px; line-height: 1.5; }
-  .card.green { border-color: rgba(74,222,128,0.25); background: linear-gradient(135deg, var(--bg2), var(--green-dim)); }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .card-value { font-size: 30px; font-weight: 800; color: var(--text); line-height: 1.2; }
+  .card-sub { font-size: 14px; color: var(--sub); margin-top: 6px; line-height: 1.5; }
+  .card.green { border-color: rgba(63,185,80,0.25); background: linear-gradient(135deg, var(--bg2), var(--green-dim)); }
   .card.green .card-value { color: var(--green); }
-  .card.blue { border-color: rgba(96,165,250,0.25); background: linear-gradient(135deg, var(--bg2), var(--blue-dim)); }
+  .card.blue { border-color: rgba(88,166,255,0.25); background: linear-gradient(135deg, var(--bg2), var(--blue-dim)); }
   .card.blue .card-value { color: var(--blue); }
-  .card.yellow { border-color: rgba(251,191,36,0.25); background: linear-gradient(135deg, var(--bg2), var(--yellow-dim)); }
+  .card.yellow { border-color: rgba(210,153,34,0.25); background: linear-gradient(135deg, var(--bg2), var(--yellow-dim)); }
   .card.yellow .card-value { color: var(--yellow); }
-  .card.purple { border-color: rgba(167,139,250,0.25); background: linear-gradient(135deg, var(--bg2), var(--purple-dim)); }
+  .card.purple { border-color: rgba(188,140,255,0.25); background: linear-gradient(135deg, var(--bg2), var(--purple-dim)); }
   .card.purple .card-value { color: var(--purple); }
   .card.primary { border-color: rgba(255,111,97,0.25); background: linear-gradient(135deg, var(--bg2), var(--primary-dim)); }
   .card.primary .card-value { color: var(--primary); }
-  .card.teal { border-color: rgba(45,212,191,0.25); background: linear-gradient(135deg, var(--bg2), var(--teal-dim)); }
+  .card.teal { border-color: rgba(34,211,238,0.25); background: linear-gradient(135deg, var(--bg2), var(--teal-dim)); }
   .card.teal .card-value { color: var(--teal); }
 
   .metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 28px; }
 
   .table-wrap { overflow-x: auto; margin-bottom: 24px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  th { background: var(--bg3); color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
-  td { padding: 10px 14px; border-bottom: 1px solid rgba(46,51,71,0.6); vertical-align: top; color: var(--text); }
+  table { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+  th { background: var(--bg3); color: var(--muted); font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text); }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-  code { font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace; font-size: 12.5px; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; color: var(--teal); }
+  tr:hover td { background: rgba(255,255,255,0.04); }
+  code { font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace; font-size: 14.5px; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; color: var(--teal); }
 
-  .alert { border-radius: 8px; padding: 16px 18px; margin-bottom: 16px; border: 1px solid; font-size: 13.5px; line-height: 1.65; }
-  .alert strong { display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
-  .alert.warn { background: var(--yellow-dim); border-color: rgba(251,191,36,0.3); color: var(--text); }
+  .alert { border-radius: 8px; padding: 16px 18px; margin-bottom: 16px; border: 1px solid; font-size: 15.5px; line-height: 1.65; }
+  .alert strong { display: block; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .alert.warn { background: var(--yellow-dim); border-color: rgba(210,153,34,0.35); color: var(--text); }
   .alert.warn strong { color: var(--yellow); }
-  .alert.err { background: var(--red-dim); border-color: rgba(248,113,113,0.3); color: var(--text); }
+  .alert.err { background: var(--red-dim); border-color: rgba(248,81,73,0.35); color: var(--text); }
   .alert.err strong { color: var(--red); }
-  .alert.ok { background: var(--green-dim); border-color: rgba(74,222,128,0.3); color: var(--text); }
+  .alert.ok { background: var(--green-dim); border-color: rgba(63,185,80,0.35); color: var(--text); }
   .alert.ok strong { color: var(--green); }
-  .alert.info { background: var(--blue-dim); border-color: rgba(96,165,250,0.3); color: var(--text); }
+  .alert.info { background: var(--blue-dim); border-color: rgba(88,166,255,0.35); color: var(--text); }
   .alert.info strong { color: var(--blue); }
 
   .timeline { position: relative; padding-left: 28px; }
   .timeline::before { content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
-  .tl-item { position: relative; margin-bottom: 0; padding: 16px 0 16px 20px; border-bottom: 1px solid rgba(42,48,66,0.4); }
+  .tl-item { position: relative; margin-bottom: 0; padding: 16px 0 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); }
   .tl-item:last-child { border-bottom: none; }
   .tl-item::before { content: ''; position: absolute; left: -22px; top: 24px; width: 10px; height: 10px; border-radius: 50%; background: var(--bg3); border: 2px solid var(--border); }
   .tl-item.plist::before { border-color: var(--primary); background: var(--primary-dim); }
   .tl-item.gha::before { border-color: var(--blue); background: var(--blue-dim); }
-  .tl-time { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
-  .tl-label { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; margin-left: 8px; vertical-align: middle; }
+  .tl-time { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+  .tl-label { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; margin-left: 8px; vertical-align: middle; }
   .label-plist { background: var(--primary-dim); color: var(--primary); }
   .label-gha { background: var(--blue-dim); color: var(--blue); }
-  .tl-mode { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-  .tl-detail { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .tl-mode { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .tl-detail { font-size: 15px; color: var(--muted); line-height: 1.7; }
 
   .runbook { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
-  .runbook-header { padding: 14px 20px; background: var(--bg3); border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-  .runbook-step { padding: 14px 20px; border-bottom: 1px solid rgba(42,48,66,0.5); font-size: 13px; color: var(--muted); display: flex; gap: 12px; align-items: flex-start; }
+  .runbook-header { padding: 14px 20px; background: var(--bg3); border-bottom: 1px solid var(--border); font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .runbook-step { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 15px; color: var(--muted); display: flex; gap: 12px; align-items: flex-start; }
   .runbook-step:last-child { border-bottom: none; }
-  .runbook-step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--sub); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .runbook-step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); font-size: 13px; font-weight: 700; color: var(--sub); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
 
-  pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace; font-size: 12.5px; line-height: 1.6; color: var(--teal); margin-bottom: 16px; }
+  pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace; font-size: 14.5px; line-height: 1.6; color: var(--teal); margin-bottom: 16px; }
 
-  .chip { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid; margin: 2px; }
-  .chip.green { background: var(--green-dim); color: var(--green); border-color: rgba(74,222,128,0.3); }
-  .chip.blue { background: var(--blue-dim); color: var(--blue); border-color: rgba(96,165,250,0.3); }
-  .chip.yellow { background: var(--yellow-dim); color: var(--yellow); border-color: rgba(251,191,36,0.3); }
-  .chip.purple { background: var(--purple-dim); color: var(--purple); border-color: rgba(167,139,250,0.3); }
-  .chip.primary { background: var(--primary-dim); color: var(--primary); border-color: rgba(255,111,97,0.3); }
-  .chip.teal { background: var(--teal-dim); color: var(--teal); border-color: rgba(45,212,191,0.3); }
-  .chip.red { background: var(--red-dim); color: var(--red); border-color: rgba(248,113,113,0.3); }
+  .chip { display: inline-block; font-size: 13.5px; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid; margin: 2px; }
+  .chip.green { background: var(--green-dim); color: var(--green); border-color: rgba(63,185,80,0.35); }
+  .chip.blue { background: var(--blue-dim); color: var(--blue); border-color: rgba(88,166,255,0.35); }
+  .chip.yellow { background: var(--yellow-dim); color: var(--yellow); border-color: rgba(210,153,34,0.35); }
+  .chip.purple { background: var(--purple-dim); color: var(--purple); border-color: rgba(188,140,255,0.35); }
+  .chip.primary { background: var(--primary-dim); color: var(--primary); border-color: rgba(255,111,97,0.35); }
+  .chip.teal { background: var(--teal-dim); color: var(--teal); border-color: rgba(34,211,238,0.35); }
+  .chip.red { background: var(--red-dim); color: var(--red); border-color: rgba(248,81,73,0.35); }
   .chip.muted { background: rgba(139,146,168,0.1); color: var(--muted); border-color: var(--border); }
 
-  .monitor-box { background: var(--bg2); border: 1px solid rgba(96,165,250,0.25); border-radius: 10px; padding: 16px 20px; margin-top: 20px; margin-bottom: 8px; }
-  .monitor-box .monitor-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); margin-bottom: 10px; }
+  .monitor-box { background: var(--bg2); border: 1px solid rgba(88,166,255,0.25); border-radius: 10px; padding: 16px 20px; margin-top: 20px; margin-bottom: 8px; }
+  .monitor-box .monitor-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); margin-bottom: 10px; }
   .monitor-box ul { margin: 0; padding-left: 18px; }
-  .monitor-box li { font-size: 13px; color: var(--muted); line-height: 1.75; }
+  .monitor-box li { font-size: 15px; color: var(--muted); line-height: 1.75; }
 
   .wave-steps { margin: 12px 0 20px; }
-  .wave-step { display: flex; align-items: flex-start; gap: 16px; padding: 12px 0; border-bottom: 1px solid rgba(42,48,66,0.4); }
+  .wave-step { display: flex; align-items: flex-start; gap: 16px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
   .wave-step:last-child { border-bottom: none; }
-  .wave-badge { min-width: 80px; text-align: center; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; flex-shrink: 0; }
-  .wave-badge.w1 { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
-  .wave-badge.w2 { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(96,165,250,0.3); }
-  .wave-badge.w3 { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(167,139,250,0.3); }
-  .wave-badge.w4 { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(251,191,36,0.3); }
-  .wave-content { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+  .wave-badge { min-width: 80px; text-align: center; font-size: 14px; font-weight: 700; padding: 4px 10px; border-radius: 6px; flex-shrink: 0; }
+  .wave-badge.w1 { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,0.35); }
+  .wave-badge.w2 { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(88,166,255,0.35); }
+  .wave-badge.w3 { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(188,140,255,0.35); }
+  .wave-badge.w4 { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(210,153,34,0.35); }
+  .wave-content { font-size: 15.5px; color: var(--muted); line-height: 1.7; }
   .wave-content strong { color: var(--text); }
 
   .flex-row { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -202,39 +202,39 @@
   .text-muted { color: var(--muted); } .text-green { color: var(--green); } .text-yellow { color: var(--yellow); }
   .text-red { color: var(--red); } .text-blue { color: var(--blue); } .text-primary { color: var(--primary); } .text-teal { color: var(--teal); }
 
-  .footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 12px; color: var(--sub); text-align: center; line-height: 1.8; }
+  .footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 14px; color: var(--sub); text-align: center; line-height: 1.8; }
 
   /* FAQ 섹션 */
   .faq-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
-  .faq-q { padding: 16px 20px; font-size: 14px; font-weight: 700; color: var(--yellow); border-bottom: 1px solid var(--border); }
+  .faq-q { padding: 16px 20px; font-size: 16px; font-weight: 700; color: var(--yellow); border-bottom: 1px solid var(--border); }
   .faq-q::before { content: 'Q. '; }
-  .faq-a { padding: 16px 20px; font-size: 13.5px; color: var(--muted); line-height: 1.8; }
+  .faq-a { padding: 16px 20px; font-size: 15.5px; color: var(--muted); line-height: 1.8; }
   .faq-a strong { color: var(--green); }
 
   /* 단계 박스 */
   .step-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
-  .step-box-header { background: var(--bg3); padding: 12px 18px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .step-box-header { background: var(--bg3); padding: 12px 18px; font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
   .step-list { padding: 0; }
-  .step-row { display: flex; gap: 14px; padding: 13px 18px; border-bottom: 1px solid rgba(42,48,66,0.5); align-items: flex-start; }
+  .step-row { display: flex; gap: 14px; padding: 13px 18px; border-bottom: 1px solid rgba(255,255,255,0.07); align-items: flex-start; }
   .step-row:last-child { border-bottom: none; }
-  .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--primary-dim); border: 1px solid rgba(255,111,97,0.3); color: var(--primary); font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
-  .step-content { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--primary-dim); border: 1px solid rgba(255,111,97,0.3); color: var(--primary); font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-content { font-size: 15.5px; color: var(--muted); line-height: 1.7; }
   .step-content strong { color: var(--text); }
 
   /* 구현 현황 P1~P5 */
-  .impl-card { background: var(--bg2); border: 1px solid rgba(74,222,128,0.2); border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; }
+  .impl-card { background: var(--bg2); border: 1px solid rgba(63,185,80,0.2); border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; }
   .impl-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .impl-tag { font-size: 11px; font-weight: 700; background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.3); border-radius: 4px; padding: 2px 8px; }
-  .impl-title { font-size: 14px; font-weight: 700; color: var(--text); }
-  .impl-body { font-size: 13px; color: var(--muted); line-height: 1.75; }
-  .impl-file { font-size: 12px; color: var(--sub); margin-top: 8px; }
+  .impl-tag { font-size: 13px; font-weight: 700; background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,0.3); border-radius: 4px; padding: 2px 8px; }
+  .impl-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .impl-body { font-size: 15px; color: var(--muted); line-height: 1.75; }
+  .impl-file { font-size: 14px; color: var(--sub); margin-top: 8px; }
 
   /* 변경이력 */
-  .changelog-item { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid rgba(42,48,66,0.4); }
+  .changelog-item { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
   .changelog-item:last-child { border-bottom: none; }
-  .changelog-ver { font-size: 12px; font-weight: 700; color: var(--primary); min-width: 60px; padding-top: 2px; }
-  .changelog-date { font-size: 12px; color: var(--sub); min-width: 90px; padding-top: 2px; }
-  .changelog-content { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+  .changelog-ver { font-size: 14px; font-weight: 700; color: var(--primary); min-width: 60px; padding-top: 2px; }
+  .changelog-date { font-size: 14px; color: var(--sub); min-width: 90px; padding-top: 2px; }
+  .changelog-content { font-size: 15.5px; color: var(--muted); line-height: 1.7; }
   .changelog-content strong { color: var(--text); }
 
   /* 코드 토글 */
@@ -242,7 +242,7 @@
   details.code-toggle summary {
     cursor: pointer;
     display: inline-flex; align-items: center; gap: 7px;
-    font-size: 12px; font-weight: 600; color: var(--sub);
+    font-size: 14px; font-weight: 600; color: var(--sub);
     background: var(--bg3); border: 1px solid var(--border);
     border-radius: 6px; padding: 5px 12px;
     list-style: none; user-select: none;
@@ -257,32 +257,84 @@
   .pipe-layout { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: center; margin-bottom: 24px; }
   .pipe-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; }
   .pipe-box.mac { border-color: rgba(255,111,97,0.35); }
-  .pipe-box.gha { border-color: rgba(96,165,250,0.35); }
-  .pipe-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .pipe-box.gha { border-color: rgba(88,166,255,0.35); }
+  .pipe-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
   .pipe-label.mac { color: var(--primary); }
   .pipe-label.gha { color: var(--blue); }
-  .pipe-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; font-size: 13px; color: var(--muted); line-height: 1.5; border-bottom: 1px solid rgba(42,48,66,0.35); }
+  .pipe-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; font-size: 15px; color: var(--muted); line-height: 1.5; border-bottom: 1px solid rgba(255,255,255,0.05); }
   .pipe-item:last-child { border-bottom: none; }
   .pipe-item-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
   .pipe-item-dot.mac { background: var(--primary); }
   .pipe-item-dot.gha { background: var(--blue); }
-  .pipe-item strong { color: var(--text); font-size: 12.5px; }
+  .pipe-item strong { color: var(--text); font-size: 14.5px; }
   .pipe-connector { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0 10px; }
-  .pipe-db { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 11px; font-weight: 700; color: var(--muted); text-align: center; white-space: nowrap; }
+  .pipe-db { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 700; color: var(--muted); text-align: center; white-space: nowrap; }
   .pipe-arrow { font-size: 18px; color: var(--border); }
 
   /* GHA 슬롯 그리드 */
   .slot-grid { display: flex; flex-wrap: wrap; gap: 4px; }
-  .slot-chip { font-size: 11.5px; font-weight: 600; background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(96,165,250,0.3); border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
-  .slot-chip.special { background: var(--primary-dim); color: var(--primary); border-color: rgba(255,111,97,0.3); }
+  .slot-chip { font-size: 13.5px; font-weight: 600; background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(88,166,255,0.35); border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
+  .slot-chip.special { background: var(--primary-dim); color: var(--primary); border-color: rgba(255,111,97,0.35); }
 
   /* 구현 현황 토글 */
   .impl-toggle { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; }
-  .impl-summary { padding: 14px 18px; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--text); list-style: none; display: flex; align-items: center; gap: 8px; }
+  .impl-summary { padding: 14px 18px; cursor: pointer; font-weight: 600; font-size: 16px; color: var(--text); list-style: none; display: flex; align-items: center; gap: 8px; }
   .impl-summary::-webkit-details-marker { display: none; }
   .impl-summary::before { content: '▶'; font-size: 11px; color: var(--muted); transition: transform 0.2s; }
   details[open] .impl-summary::before { transform: rotate(90deg); }
   .impl-toggle .impl-card { border: none; border-top: 1px solid var(--border); border-radius: 0 0 8px 8px; margin: 0; }
+
+  /* ── 새 컴포넌트 ─────────────────────────────────────────────────── */
+
+  /* 파이프라인 스텝퍼 */
+  .pipeline-stepper { display: flex; align-items: center; justify-content: center; gap: 0; margin: 24px 0 32px; flex-wrap: wrap; }
+  .ps-step { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 22px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--border); min-width: 110px; text-align: center; transition: border-color 0.15s; }
+  .ps-step.mac { border-color: rgba(255,111,97,0.45); }
+  .ps-step.gha { border-color: rgba(88,166,255,0.4); }
+  .ps-icon { font-size: 26px; }
+  .ps-label { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.4; }
+  .ps-label span { font-size: 13px; color: var(--muted); font-weight: 400; }
+  .ps-arrow { font-size: 22px; color: var(--border); padding: 0 6px; }
+
+  /* isUsable 플로우차트 */
+  .flowchart { margin: 20px 0 28px; padding: 24px 28px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0; min-width: 340px; }
+  .fc-start { padding: 10px 22px; border-radius: 20px; font-size: 15px; font-weight: 700; background: var(--primary-dim); color: var(--primary); border: 1px solid rgba(255,111,97,0.4); align-self: center; margin-bottom: 4px; }
+  .fc-arrow-v { width: 2px; height: 18px; background: var(--border); align-self: center; flex-shrink: 0; }
+  .fc-decision-row { display: flex; align-items: center; gap: 14px; }
+  .fc-diamond { padding: 9px 16px; border: 2px solid var(--border); border-radius: 6px; font-size: 14px; font-weight: 600; color: var(--text); min-width: 210px; text-align: center; background: var(--bg3); line-height: 1.4; }
+  .fc-yes { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sub); }
+  .fc-yes::before { content: 'YES →'; font-weight: 700; color: var(--muted); margin-right: 2px; }
+  .fc-badge-f { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,81,73,0.4); border-radius: 4px; padding: 2px 10px; font-size: 13px; font-weight: 800; }
+  .fc-badge-t { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,0.4); border-radius: 4px; padding: 2px 10px; font-size: 13px; font-weight: 800; }
+  .fc-end-f { padding: 10px 22px; border-radius: 20px; font-size: 15px; font-weight: 700; background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,81,73,0.4); align-self: center; margin-top: 4px; }
+
+  /* Wave 티어 매트릭스 */
+  .wave-matrix { display: grid; grid-template-columns: 130px repeat(4, 1fr) 80px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 16px 0 28px; }
+  .wm-header { background: var(--bg3); padding: 10px 12px; font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; text-align: center; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .wm-tier { padding: 13px 14px; font-size: 14px; font-weight: 800; background: var(--bg2); border-right: 1px solid var(--border); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; }
+  .wm-cell { padding: 13px 8px; text-align: center; font-size: 17px; letter-spacing: 3px; border-right: 1px solid var(--border); border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .wm-cap { padding: 13px 10px; text-align: center; font-size: 15px; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; }
+
+  /* 큐레이션 포함 관계도 */
+  .inclusion-diagram { margin: 20px 0 28px; }
+  .inc-ring { border: 2px solid; border-radius: 16px; padding: 20px; }
+  .inc-ring.all { border-color: var(--border); background: var(--bg2); }
+  .inc-ring.usable { border-color: rgba(63,185,80,0.5); background: rgba(63,185,80,0.05); margin: 14px; }
+  .inc-ring.pool { border-color: rgba(255,111,97,0.55); background: rgba(255,111,97,0.09); margin: 14px; text-align: center; padding: 18px; }
+  .inc-label { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .inc-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .inc-count { font-size: 13px; color: var(--sub); margin-top: 2px; }
+
+  /* 정의 리스트 */
+  dl.dlist { margin: 16px 0 24px; }
+  dl.dlist dt { font-size: 15px; font-weight: 700; color: var(--primary); padding: 10px 0 4px; border-top: 1px solid var(--border); }
+  dl.dlist dt:first-child { border-top: none; padding-top: 0; }
+  dl.dlist dd { font-size: 15px; color: var(--muted); padding: 0 0 10px 16px; margin: 0; line-height: 1.75; }
+
+  /* 미니 툴팁 */
+  .has-tip { position: relative; cursor: help; border-bottom: 1px dashed var(--sub); display: inline; }
+  .has-tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px; color: var(--text); white-space: normal; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 100; width: 220px; text-align: center; line-height: 1.5; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+  .has-tip:hover::after { opacity: 1; }
 </style>
 </head>
 <body>
@@ -290,12 +342,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.31</div>
+  <div class="cover-badge">Handover Document v10.32</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.31 (2026-05-27)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.32 (2026-05-27)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -409,7 +461,6 @@
 <div class="toc">
   <h2>목차</h2>
   <ol>
-    <li><a href="#s-howtoread">이 문서 읽는 법</a></li>
     <li><a href="#s-overview">전체 파이프라인 흐름</a></li>
     <li><a href="#s-schedule">실행 스케줄 (launchd + GHA)</a></li>
     <li><a href="#s-full">full 모드 5단계 상세</a></li>
@@ -428,45 +479,10 @@
   </ol>
 </div>
 
-<!-- ══════════ §1. 이 문서 읽는 법 ══════════ -->
-<div class="section" id="s-howtoread">
-  <div class="section-header">
-    <div class="section-num">1</div>
-    <h2>이 문서 읽는 법</h2>
-  </div>
-
-  <div class="alert info">
-    <strong>Claude Code가 이 문서를 읽는 경우</strong>
-    코드 수정 전 반드시 §13 "봇 시스템 역할 전체 지도", §14 "P1~P5 구현 현황", §15 "FAQ"를 먼저 확인할 것. 이미 구현된 기능을 다시 짜는 "헛짓거리"를 방지하기 위해 작성된 섹션이다.
-  </div>
-
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>섹션</th><th>읽어야 할 때</th></tr></thead>
-      <tbody>
-        <tr><td>§2 전체 흐름</td><td>시스템 구조를 처음 파악할 때, 어디서 어디로 데이터가 흐르는지 볼 때</td></tr>
-        <tr><td>§3 스케줄</td><td>"지금 몇 시에 뭐가 실행되지?", "Mac 켜져 있어야 하는 시각은?", "큐레이션 슬롯 실제 시각 전체" 확인할 때</td></tr>
-        <tr><td>§4 full 모드</td><td>11:30 크롤 후 왜 분석이 달라지는지 이해할 때</td></tr>
-        <tr><td>§5 중복 방지</td><td>"왜 같은 글이 두 번 안 들어오지?" 확인할 때</td></tr>
-        <tr><td>§6 점수 체계</td><td>qualityScore/killerScore 계산 방식 확인할 때</td></tr>
-        <tr><td>§7 isUsable</td><td><strong class="text-red">isUsable 관련 질문 시 반드시 이 섹션 먼저</strong></td></tr>
-        <tr><td>§8 7일 재크롤</td><td>지표(좋아요/댓글수)가 왜 계속 갱신되는지 볼 때</td></tr>
-        <tr><td>§9 DB 구조</td><td>DB 필드 전체 목록, topComments 구조 확인할 때</td></tr>
-        <tr><td>§10 큐레이션</td><td>큐레이션 로직, 킬러글 처리, 당일 quota, 원문 그대로 발행 방식 확인할 때 <span style="color:var(--muted);font-size:12px;">(원문 보존율 해당없음 — AI 재가공 제거됨)</span></td></tr>
-        <tr><td>§11 Wave</td><td>댓글 wave 순서, cap, 봇 선택 로직 볼 때</td></tr>
-        <tr><td>§12 인기글</td><td>popular 탭 수집 방식, Case A/B 분기 볼 때</td></tr>
-        <tr><td>§13 봇 역할</td><td>큐레이션봇·Wave봇·시드봇 역할 구분 + 무엇을 안 하는지 확인할 때</td></tr>
-        <tr><td>§14 P1~P5</td><td><strong class="text-red">에이전트 코드 수정/추가 전 반드시 확인</strong></td></tr>
-        <tr><td>§15 FAQ</td><td>뭔가 이상하다 느낄 때, 가정이 맞는지 검증할 때</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
 <!-- ══════════ §2. 전체 파이프라인 흐름 ══════════ -->
 <div class="section" id="s-overview">
   <div class="section-header">
-    <div class="section-num">2</div>
+    <div class="section-num">1</div>
     <h2>전체 파이프라인 흐름</h2>
   </div>
 
@@ -475,6 +491,33 @@
     <strong>Mac이 하는 일 — 데이터 수집</strong>: 네이버 카페(wgang · dlxogns01)에서 글·댓글·지표를 실제 브라우저로 수집해 우리 DB에 쌓는다. 네이버가 자동화 봇을 감지·차단하기 때문에 "눈에 보이는 진짜 브라우저"(headless:false)가 반드시 필요하다. 클라우드 서버 환경에서는 이걸 흉내낼 수 없어서 Mac에서만 실행된다.<br><br>
     <strong>GHA가 하는 일 — 콘텐츠 발행</strong>: Mac이 쌓아 놓은 데이터를 원문 그대로 발행하고, 발행된 글에 봇 댓글을 순차적으로 단다. DB만 접근할 수 있으면 되므로 인터넷 연결만 있는 클라우드에서 24시간 자동으로 돌아간다. Mac 전원 상태와 완전히 무관하다.<br><br>
     <strong>핵심 설계 원칙 — 역할 분리의 이유</strong>: 수집(Mac)과 발행(GHA)을 분리했기 때문에 Mac이 꺼져 있어도 기존에 수집된 데이터로 발행·댓글이 계속된다. Mac이 하루 중 10시간만 켜져 있어도 GHA는 24시간 내내 콘텐츠를 발행한다. DB가 두 환경을 연결하는 유일한 다리다.
+  </div>
+
+  <div class="pipeline-stepper">
+    <div class="ps-step mac">
+      <div class="ps-icon">📡</div>
+      <div class="ps-label">① 수집<br><span>Mac launchd</span></div>
+    </div>
+    <div class="ps-arrow">→</div>
+    <div class="ps-step mac">
+      <div class="ps-icon">🔍</div>
+      <div class="ps-label">② 필터링<br><span>isUsable 판정</span></div>
+    </div>
+    <div class="ps-arrow">→</div>
+    <div class="ps-step gha">
+      <div class="ps-icon">✂️</div>
+      <div class="ps-label">③ 큐레이션<br><span>GHA 45분</span></div>
+    </div>
+    <div class="ps-arrow">→</div>
+    <div class="ps-step gha">
+      <div class="ps-icon">📢</div>
+      <div class="ps-label">④ 발행<br><span>원문 그대로</span></div>
+    </div>
+    <div class="ps-arrow">→</div>
+    <div class="ps-step gha">
+      <div class="ps-icon">🌊</div>
+      <div class="ps-label">⑤ Wave 댓글<br><span>GHA 5분</span></div>
+    </div>
   </div>
 
   <div class="pipe-layout">
@@ -562,7 +605,7 @@
 <!-- ══════════ §3. 실행 스케줄 ══════════ -->
 <div class="section" id="s-schedule">
   <div class="section-header">
-    <div class="section-num">3</div>
+    <div class="section-num">2</div>
     <h2>실행 스케줄 (launchd + GHA)</h2>
   </div>
 
@@ -861,7 +904,7 @@
 <!-- ══════════ §4. full 모드 5단계 ══════════ -->
 <div class="section" id="s-full">
   <div class="section-header">
-    <div class="section-num">4</div>
+    <div class="section-num">3</div>
     <h2>full 모드 5단계 상세 (11:30 KST)</h2>
   </div>
 
@@ -951,7 +994,7 @@
 <!-- ══════════ §5. 중복 수집 방지 3단계 ══════════ -->
 <div class="section" id="s-dedup">
   <div class="section-header">
-    <div class="section-num">5</div>
+    <div class="section-num">4</div>
     <h2>중복 수집 방지 3단계</h2>
   </div>
 
@@ -1011,7 +1054,7 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
 <!-- ══════════ §6. 점수 체계 ══════════ -->
 <div class="section" id="s-score">
   <div class="section-header">
-    <div class="section-num">6</div>
+    <div class="section-num">5</div>
     <h2>점수 체계 (qualityScore / killerScore)</h2>
   </div>
 
@@ -1109,14 +1152,50 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
 <!-- ══════════ §7. isUsable 완전 가이드 ══════════ -->
 <div class="section" id="s-isusable">
   <div class="section-header">
-    <div class="section-num">7</div>
+    <div class="section-num">6</div>
     <h2>isUsable — 발행 자격 관리</h2>
   </div>
 
   <div class="biz-lead">
-    카페 글이 크롤되는 순간, <strong>발행 자격이 결정된다.</strong> isUsable=true인 글만 45분마다 실행되는 큐레이션 후보 풀에 들어간다. false면 DB에 저장돼 있어도 발행 대상에서 완전히 제외된다.<br><br>
-    카페 크롤러는 글을 수집할 때 <strong>4가지 방어선</strong>을 동시에 적용한다 — 이미지만 있는 글, 게시판 공지문, 동영상 포함 글, 접근차단 안내문. 이 중 하나라도 감지되면 즉시 isUsable=false로 저장된다. 품질 점수(qualityScore) 30점 미만인 글도 마찬가지다.<br><br>
+    카페 글이 크롤되는 순간, <strong>발행 자격이 결정된다.</strong> <span class="has-tip" data-tip="발행 자격 필드: true=큐레이션 후보 풀 진입, false=DB에 저장되나 발행 대상 완전 제외">isUsable=true</span>인 글만 45분마다 실행되는 큐레이션 후보 풀에 들어간다. <span class="has-tip" data-tip="한번 false → 발행 불가. trend-analyzer(11:30)가 재계산으로 복구 가능">isUsable=false</span>면 DB에 저장돼 있어도 발행 대상에서 완전히 제외된다.<br><br>
+    카페 크롤러는 글을 수집할 때 <strong>4가지 방어선</strong>을 동시에 적용한다 — 이미지만 있는 글, 게시판 공지문, 동영상 포함 글, 접근차단 안내문. 이 중 하나라도 감지되면 즉시 isUsable=false로 저장된다. 품질 점수(<span class="has-tip" data-tip="0-100 품질 점수: 댓글수·좋아요·조회수 기반. 30 미만이면 isUsable=false">qualityScore</span>) 30점 미만인 글도 마찬가지다.<br><br>
     인기글 탭(popular-sync)에서 수집된 글은 품질 점수 기준 없이 4가지 방어선만 적용한다. 인기글이라는 사실 자체가 품질을 보증하기 때문이다.
+  </div>
+
+  <div class="flowchart">
+    <div class="fc-start">크롤 글 수신</div>
+    <div class="fc-arrow-v"></div>
+    <div class="fc-decision-row">
+      <div class="fc-diamond">이미지 의존글?<br><small style="font-weight:400;color:var(--muted)">본문 &lt; 50자</small></div>
+      <div class="fc-yes"><span class="fc-badge-f">isUsable=false</span></div>
+    </div>
+    <div class="fc-arrow-v"></div>
+    <div class="fc-decision-row">
+      <div class="fc-diamond">게시판 공지문?<br><small style="font-weight:400;color:var(--muted)">NOTICE_SIGNALS 2개↑</small></div>
+      <div class="fc-yes"><span class="fc-badge-f">isUsable=false</span></div>
+    </div>
+    <div class="fc-arrow-v"></div>
+    <div class="fc-decision-row">
+      <div class="fc-diamond">동영상 포함?</div>
+      <div class="fc-yes"><span class="fc-badge-f">isUsable=false</span></div>
+    </div>
+    <div class="fc-arrow-v"></div>
+    <div class="fc-decision-row">
+      <div class="fc-diamond">접근차단 안내문?</div>
+      <div class="fc-yes"><span class="fc-badge-f">isUsable=false</span></div>
+    </div>
+    <div class="fc-arrow-v"></div>
+    <div class="fc-decision-row">
+      <div class="fc-diamond">인기글(popular)?</div>
+      <div class="fc-yes"><span class="fc-badge-t">isUsable=true ✓</span></div>
+    </div>
+    <div class="fc-arrow-v"></div>
+    <div class="fc-decision-row">
+      <div class="fc-diamond">qualityScore ≥ 30?</div>
+      <div class="fc-yes"><span class="fc-badge-t">isUsable=true ✓</span></div>
+    </div>
+    <div class="fc-arrow-v"></div>
+    <div class="fc-end-f">isUsable = false</div>
   </div>
 
   <h3>isUsable의 생애 주기</h3>
@@ -1262,7 +1341,7 @@ MONEY: [
 <!-- ══════════ §8. 7일 재크롤 ══════════ -->
 <div class="section" id="s-refresh">
   <div class="section-header">
-    <div class="section-num">8</div>
+    <div class="section-num">7</div>
     <h2>7일 재크롤 (refreshRecentPosts)</h2>
   </div>
 
@@ -1345,7 +1424,7 @@ MONEY: [
 <!-- ══════════ §9. DB 저장 구조 ══════════ -->
 <div class="section" id="s-db">
   <div class="section-header">
-    <div class="section-num">9</div>
+    <div class="section-num">8</div>
     <h2>DB 저장 구조 + topComments</h2>
   </div>
 
@@ -1477,7 +1556,7 @@ interface CommentData {
 <!-- ══════════ §10. 큐레이션 시스템 ══════════ -->
 <div class="section" id="s-curator">
   <div class="section-header">
-    <div class="section-num">10</div>
+    <div class="section-num">9</div>
     <h2>큐레이션 시스템 (content-curator.ts)</h2>
   </div>
 
@@ -1485,6 +1564,21 @@ interface CommentData {
     이 시스템 전체의 최종 산출물이다. Mac이 수집하고, AI가 분석하고, 스케줄러가 관리한 모든 과정이 여기서 결실을 맺는다.<br><br>
     45분마다 GHA가 실행되면서 "오늘 발행할 글" 하나를 결정하고 실제로 우나어 서비스에 올린다. <strong>카페 원문을 그대로 발행한다 — 제목과 본문을 변경하지 않고 원문 그대로 우나어 서비스 Post에 저장한다.</strong> AI 재가공(Claude Sonnet 수미상관 방식)은 2026-05-20 창업자 지시로 제거됐다.<br><br>
     오늘 DailyBrief(11:30에 생성된 트렌드 분석 결과)를 기준으로 주제를 결정하기 때문에, 11:30 full 파이프라인이 돌아야 큐레이션 품질이 좋아진다.
+  </div>
+
+  <div class="inclusion-diagram">
+    <div class="inc-ring all">
+      <div class="inc-label">📦 전체 CafePost DB</div>
+      <div class="inc-count">크롤 수집 글 누적 전체</div>
+      <div class="inc-ring usable">
+        <div class="inc-label">✅ isUsable = true</div>
+        <div class="inc-sub">4가지 방어선 통과 + qualityScore ≥ 30<br>(인기글은 점수 무관)</div>
+        <div class="inc-ring pool">
+          <div class="inc-label" style="color:var(--primary)">🎯 큐레이션 후보</div>
+          <div class="inc-sub">usedAt = NULL<br>(아직 발행되지 않은 글)</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <h3>큐레이션 흐름</h3>
@@ -1583,7 +1677,7 @@ interface CommentData {
 <!-- ══════════ §11. Wave 댓글 시스템 ══════════ -->
 <div class="section" id="s-wave">
   <div class="section-header">
-    <div class="section-num">11</div>
+    <div class="section-num">10</div>
     <h2>Wave 댓글 시스템</h2>
   </div>
 
@@ -1659,6 +1753,38 @@ interface CommentData {
       </tbody>
     </table>
   </div>
+
+  <h3>티어별 봇 댓글 상한 매트릭스</h3>
+  <div class="wave-matrix">
+    <div class="wm-header">Tier</div>
+    <div class="wm-header">Wave1<br>+1분</div>
+    <div class="wm-header">Wave2<br>+5분</div>
+    <div class="wm-header">Wave3<br>+30분</div>
+    <div class="wm-header">Wave4<br>+60분</div>
+    <div class="wm-header">최대</div>
+    <div class="wm-tier" style="color:var(--red)">🔴 KILLER</div>
+    <div class="wm-cell" style="color:var(--red)">●●●●●</div>
+    <div class="wm-cell" style="color:var(--red)">●●●●●</div>
+    <div class="wm-cell" style="color:var(--red)">●●●●●</div>
+    <div class="wm-cell" style="color:var(--red)">●●●●●</div>
+    <div class="wm-cap" style="color:var(--red)">20개</div>
+    <div class="wm-tier" style="color:var(--yellow)">🟡 HOT</div>
+    <div class="wm-cell" style="color:var(--yellow)">●●●●</div>
+    <div class="wm-cell" style="color:var(--yellow)">●●●●</div>
+    <div class="wm-cell" style="color:var(--yellow)">●●●</div>
+    <div class="wm-cell" style="color:var(--yellow)">●●●</div>
+    <div class="wm-cap" style="color:var(--yellow)">14개</div>
+    <div class="wm-tier" style="color:var(--muted)">⚪ NORMAL</div>
+    <div class="wm-cell" style="color:var(--muted)">●●</div>
+    <div class="wm-cell" style="color:var(--muted)">●●</div>
+    <div class="wm-cell" style="color:var(--muted)">●</div>
+    <div class="wm-cell" style="color:var(--muted)">●</div>
+    <div class="wm-cap" style="color:var(--muted)">6개</div>
+  </div>
+  <p style="font-size:14px;color:var(--sub);margin-top:-14px;margin-bottom:24px;">
+    ※ 점수별 tier: killerScore &gt; 70 = KILLER, &gt; 40 = HOT, 나머지 = NORMAL.<br>
+    각 wave 내 실제 댓글 수는 tier cap 안에서 wave-processor가 배분. ●는 상대적 밀도를 나타냄.
+  </p>
 
   <h3 class="mt24">댓글 내용 출처 — topComments 원문 달기 (AI fallback 완전 제거)</h3>
   <div class="alert ok" style="margin-bottom:12px; font-size:13px;">
@@ -1798,7 +1924,7 @@ async function processPendingSheetCommentWaves() {
 <!-- ══════════ §12. 인기글 시스템 ══════════ -->
 <div class="section" id="s-popular">
   <div class="section-header">
-    <div class="section-num">12</div>
+    <div class="section-num">11</div>
     <h2>인기글 시스템 (popular-sync.ts)</h2>
   </div>
 
@@ -1895,7 +2021,7 @@ async function processPendingSheetCommentWaves() {
 <!-- ══════════ §13. 봇 시스템 역할 전체 지도 ══════════ -->
 <div class="section" id="s-bots">
   <div class="section-header">
-    <div class="section-num">13</div>
+    <div class="section-num">12</div>
     <h2>봇 시스템 역할 전체 지도</h2>
   </div>
 
@@ -2101,7 +2227,7 @@ async function processPendingSheetCommentWaves() {
 <!-- ══════════ §14. P1~P5 구현 현황 ══════════ -->
 <div class="section" id="s-p1p5">
   <div class="section-header">
-    <div class="section-num">14</div>
+    <div class="section-num">13</div>
     <h2>큐레이션·Wave 구현 현황 (개발자·감사용)</h2>
   </div>
   <details>
@@ -3365,7 +3491,7 @@ await prisma.cafePost.create({
 <!-- ══════════ §15. FAQ ══════════ -->
 <div class="section" id="s-faq">
   <div class="section-header">
-    <div class="section-num">15</div>
+    <div class="section-num">14</div>
     <h2>FAQ — 자주 하는 오해들</h2>
   </div>
 
@@ -3524,10 +3650,22 @@ await prisma.cafePost.create({
 <!-- ══════════ §16. 변경 이력 ══════════ -->
 <div class="section" id="s-changelog">
   <div class="section-header">
-    <div class="section-num">16</div>
+    <div class="section-num">15</div>
     <h2>변경 이력</h2>
   </div>
 
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.32</div>
+    <div class="changelog-date">2026-05-27</div>
+    <div class="changelog-content">
+      <strong>다크모드 전환 + 시각화 강화</strong> —
+      §1 "이 문서 읽는 법" 삭제, 섹션 §2→§1 재번호.
+      light → GitHub Dark 팔레트. 전체 텍스트 +2px, 좌우 여백 -10px.
+      4종 다이어그램: 파이프라인 스텝퍼(§1), isUsable 플로우차트(§6),
+      큐레이션 포함 관계도(§9), Wave 티어 매트릭스(§10).
+      미니 툴팁 추가. 신규 CSS: pipeline-stepper / flowchart / wave-matrix / inclusion-diagram / has-tip / dlist.
+    </div>
+  </div>
   <div class="changelog-item">
     <div class="changelog-ver">v10.31</div>
     <div class="changelog-date">2026-05-27</div>
@@ -4013,7 +4151,7 @@ await prisma.cafePost.create({
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.31<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.32<br>
   최종 업데이트: 2026-05-27 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
