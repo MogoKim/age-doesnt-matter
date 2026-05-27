@@ -84,6 +84,17 @@
     --pulse-dot-color: #FF6F61;
     --pulse-dot-glow:  rgba(255, 111, 97, 0.2);
 
+    /* ── Semantic Colors ── */
+    --success: 142 71% 38%;           /* #1F8A47 */
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;            /* #F4A60D */
+    --warning-foreground: 0 0% 100%;
+    --info: 211 100% 41%;             /* #0066CC */
+    --info-foreground: 0 0% 100%;
+
+    /* ── Elevation ── */
+    --shadow-fab: 0 8px 24px rgba(255,111,97,0.4);
+
     --font-family: var(--font-pretendard), 'Pretendard Variable', 'Pretendard',
       -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
