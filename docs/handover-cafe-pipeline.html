@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.22</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.30</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -290,12 +290,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.22</div>
+  <div class="cover-badge">Handover Document v10.30</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.22 (2026-05-25)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.30 (2026-05-27)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -695,7 +695,7 @@
           <td>
             ① seed scheduler — 50명 페르소나 창작글 생성 (<strong>ENABLE_SEED_POSTS=false로 현재 차단</strong>)<br>
             ② controversy-chain — 트렌드 기반 논쟁/토론 형식 글 생성 (ENABLE_SEED_POSTS 영향 <strong>없음</strong>, 계속 실행 중)<br>
-            ③ magazine-generator — 매거진 형식 글 생성 (ENABLE_SEED_POSTS 영향 없음, 계속 실행 중)
+            ③ magazine-generator — <strong>launchd 전환됨</strong> (GHA 미실행 · <code>com.unaeo.magazine-morning/late.plist</code> · 11:00/14:00 KST)
           </td>
         </tr>
         <tr>
@@ -791,7 +791,9 @@
             <tr><td>21:15</td><td>인기글 수집</td></tr>
             <tr><td>21:30</td><td>야간 크롤링 + 펨코 시트 스크래퍼</td></tr>
             <tr><td>10:40</td><td>네이버 카페 시트 스크래퍼 (Phase 1 신규)</td></tr>
+            <tr><td>11:00</td><td>magazine-generator 아침 — launchd 전환 (com.unaeo.magazine-morning.plist)</td></tr>
             <tr><td>13:00</td><td>네이버 카페 시트 스크래퍼 (storage-state.json 세션 필요)</td></tr>
+            <tr><td>14:00</td><td>magazine-generator 오후 — launchd 전환 (com.unaeo.magazine-late.plist)</td></tr>
             <tr><td>15:30</td><td>네이버 카페 시트 스크래퍼 (Phase 1 신규)</td></tr>
             <tr><td>23:00</td><td>네이버 카페 시트 스크래퍼</td></tr>
           </tbody>
@@ -806,12 +808,28 @@
         <li>wave 댓글 생성 (매 5분, 24시간)</li>
         <li>시드봇 댓글/좋아요</li>
         <li>controversy-chain 글 생성</li>
-        <li>magazine-generator 글 생성</li>
         <li>DailyBrief 안전망 09:03 fallback (익일)</li>
         <li>DailyBrief 안전망 18:00 이중화 (당일) — 11:30 실패 시 당일 복구</li>
         <li>brief-monitor 보고</li>
         <li>인기글 큐레이션 (10:50 / 16:15 / 21:45)</li>
       </ul>
+    </div>
+  </div>
+
+  <div class="alert warning" style="margin-top:20px;font-size:13px;">
+    <strong>⚠️ 비활성 launchd 파일 (파일 존재, 현재 미로드)</strong><br>
+    아래 plist 파일은 <code>~/Library/LaunchAgents/</code>에 존재하나 <code>launchctl list</code> 기준 현재 로드되지 않은 상태입니다. 활성 스케줄에 포함되지 않습니다.
+    <div class="table-wrap" style="margin-top:10px;">
+      <table>
+        <thead><tr><th>plist</th><th>예정 시각</th><th>모드/용도</th><th>상태</th></tr></thead>
+        <tbody>
+          <tr><td><code>com.unaeo.cafe-crawler-morning.plist</code></td><td>08:30 KST</td><td>deep</td><td style="color:var(--muted);">미로드 (비활성)</td></tr>
+          <tr><td><code>com.unaeo.cafe-crawler-lunch.plist</code></td><td>12:30 KST</td><td>quick</td><td style="color:var(--muted);">미로드 (비활성)</td></tr>
+          <tr><td><code>com.unaeo.cafe-crawler-evening.plist</code></td><td>20:40 KST</td><td>crawl</td><td style="color:var(--muted);">미로드 (비활성)</td></tr>
+          <tr><td><code>com.unaeo.naver-blog-morning.plist</code></td><td>12:30 KST</td><td>네이버 블로그 포스터</td><td style="color:var(--danger,#e53e3e);">미로드, 폐기 예정</td></tr>
+          <tr><td><code>com.unaeo.naver-blog-evening.plist</code></td><td>18:30 KST</td><td>네이버 블로그 포스터</td><td style="color:var(--danger,#e53e3e);">미로드, 폐기 예정</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -835,7 +853,8 @@
         <div class="step-num">1</div>
         <div class="step-content">
           <strong>crawler.ts (CRAWL_MODE=crawl-only)</strong> — 신규 글 저장<br>
-          각 카페 전체글보기에서 MAX(articleId) 이후의 새 글만 수집. savePosts에서 isUsable 즉시 설정.
+          각 카페 전체글보기에서 MAX(articleId) 이후의 새 글만 수집. savePosts에서 isUsable 즉시 설정.<br>
+          <span style="font-size:12px;color:var(--muted);">실행 래퍼: <code>runCrawlWithRetry()</code> — 타임아웃 <strong>1500초</strong> (1500000ms). 일 최대 128건 기준 최장 소요 1228초 + 여유 마진. 커밋 77496c9.</span>
         </div>
       </div>
       <div class="step-row">
@@ -1093,8 +1112,9 @@ if (existing) continue  // 이미 있으면 저장 건너뜀</pre>
         <div class="step-content">
           <strong>savePosts() — 크롤 즉시 설정</strong><br>
           crawler.ts의 savePosts 함수에서 qualityScore를 계산하고 즉시 isUsable을 결정한다.<br>
-          <code>isUsable = qualityScore &gt;= QUALITY_THRESHOLDS.minUsable &amp;&amp; !imageDep &amp;&amp; !noticeText</code> (minUsable = <strong>30</strong>)<br>
-          <span class="text-muted">crawl-only 모드도 동일하게 적용됨. 11:30까지 기다리지 않는다. 이미지 의존·공지문은 점수와 무관하게 isUsable=false로 강제.</span>
+          <code>isUsable = qualityScore &gt;= QUALITY_THRESHOLDS.minUsable &amp;&amp; !imageDep &amp;&amp; !noticeText &amp;&amp; !videoBlocked &amp;&amp; !accessBlocked</code> (minUsable = <strong>30</strong>)<br>
+          <span class="text-muted">crawl-only 모드도 동일하게 적용됨. 11:30까지 기다리지 않는다. 이미지 의존·공지문은 점수와 무관하게 isUsable=false로 강제.</span><br>
+          <span style="font-size:12px;color:var(--muted);">🆕 <strong>videoBlocked</strong>: videoUrls.length &gt; 0 또는 PZP 신호(STRONG 1개+ / WEAK 2개+) → isUsable=false<br>🆕 <strong>accessBlocked</strong>: ACCESS_BLOCKED_SIGNALS 5종 감지 → isUsable=false (커밋 ea1ae6a · 9745f9e, 2026-05-26)</span>
         </div>
       </div>
       <div class="step-row">
@@ -1372,7 +1392,7 @@ interface CommentData {
     <div class="step-list">
       <div class="step-row"><div class="step-num">1</div><div class="step-content"><strong>BOARD_BLACKLIST</strong> — 게시판 블랙리스트 (광고성 게시판 등)</div></div>
       <div class="step-row"><div class="step-num">2</div><div class="step-content"><strong>TOPIC_BLACKLIST</strong> — 주제 블랙리스트 (정치, 종교 등)</div></div>
-      <div class="step-row"><div class="step-num">3</div><div class="step-content"><strong>COMPETITOR_KEYWORDS</strong> — 경쟁 서비스 언급 차단</div></div>
+      <div class="step-row"><div class="step-num">3</div><div class="step-content"><strong>COMPETITOR_KEYWORDS</strong> — 경쟁 서비스 언급 차단 (<code>agents/cafe/config.ts</code>)<br><span style="color:var(--muted);font-size:12.5px;">예외: <strong>CAFE_SELF_KEYWORDS</strong> — 소스 카페 자신이 출처인 글은 제외 (<code>wgang</code>·<code>dlxogns01</code> 카페 고유 명칭 허용, <code>agents/cafe/crawler.ts</code>)</span></div></div>
       <div class="step-row"><div class="step-num">4</div><div class="step-content"><strong>qualityScore &lt; 20</strong> — minSave 미달 (저장 자체 안 함)</div></div>
     </div>
   </div>
@@ -1405,10 +1425,11 @@ interface CommentData {
       <div class="step-row">
         <div class="step-num">3</div>
         <div class="step-content">
-          <strong>후보 필터링 (P1~P3)</strong><br>
+          <strong>후보 필터링 (P1~P4)</strong><br>
           <span class="chip muted" style="margin:4px 2px 0 0;">P1</span> 당일 3회 이상 발행된 키워드 skip (기능어 필터 OVERLAP_STOPWORDS 적용)<br>
           <span class="chip muted" style="margin:4px 2px 0 0;">P2</span> 유사 제목 (편집 거리 ≤5 또는 명사 2개 이상 겹침) skip<br>
-          <span class="chip muted" style="margin:4px 2px 0 0;">P3</span> 현재 월과 맞지 않는 계절 키워드 skip
+          <span class="chip muted" style="margin:4px 2px 0 0;">P3</span> 현재 월과 맞지 않는 계절 키워드 skip<br>
+          <span class="chip muted" style="margin:4px 2px 0 0;">P4</span> <strong>filterBlocked()</strong> 2차 차단 — 동영상·접근차단 감지 (크롤러 isUsable=false 이후에도 DB에 잔존한 케이스 보완). content-curator.ts + popular-curator.ts 공통 적용. (커밋 9745f9e, 2026-05-26)
         </div>
       </div>
       <div class="step-row">
@@ -1844,7 +1865,7 @@ for (const waveNum of [1, 2, 3, 4]) {
 
   <div class="biz-lead">
     우나어에는 현재 다섯 종류의 자동화 봇이 운영된다. 이름이 비슷해 역할을 혼동하기 쉽다. 각 봇이 <strong>무엇을 하는가, 언제 실행되는가, 무엇을 하지 않는가</strong>를 정확히 알아야 수정이나 디버깅 때 엉뚱한 파일을 건드리지 않는다.<br><br>
-    핵심 구분: <strong>큐레이션봇 + Wave봇</strong>은 항상 작동(GHA), <strong>시드봇(seed scheduler)</strong>은 현재 OFF, <strong>controversy봇 + magazine봇</strong>은 ENABLE_SEED_POSTS와 무관하게 계속 실행 중이다.
+    핵심 구분: <strong>큐레이션봇 + Wave봇</strong>은 항상 작동(GHA), <strong>시드봇(seed scheduler)</strong>은 현재 OFF, <strong>controversy봇</strong>은 ENABLE_SEED_POSTS와 무관하게 GHA 실행 중, <strong>magazine봇</strong>은 launchd 전환됨(11:00/14:00 KST · Mac 필요).
   </div>
 
   <div class="alert info" style="font-size:13px; padding:10px 16px; margin-bottom:14px; line-height:1.8;">
@@ -1902,11 +1923,11 @@ for (const waveNum of [1, 2, 3, 4]) {
         </tr>
         <tr>
           <td><strong>magazine봇</strong></td>
-          <td><code>seed/magazine-generator.ts</code></td>
+          <td><code>agents/cafe/magazine-generator.ts</code></td>
           <td style="font-size:12px;">프로세스 1개</td>
-          <td>별도 스케줄 (agents-seed.yml 외)</td>
+          <td>launchd · 11:00 KST (morning) / 14:00 KST (late)</td>
           <td><span style="color:var(--green);">● ON</span></td>
-          <td>매거진 형식 큐레이션 글 생성 (ENABLE_SEED_POSTS 영향 안 받음)</td>
+          <td>매거진 형식 큐레이션 글 생성 (ENABLE_SEED_POSTS 영향 안 받음)<br><span style="font-size:12px;color:var(--muted);">이미지: PERSON_REAL→Gemini 전용(Unsplash 불허), FOOD/SCENE/OBJECT→Unsplash 허용, ILLUSTRATION→로컬 전용. heroImageSource 추적. 본문 최소 1500자. SEO 타이틀 연도 하드코딩 금지·최대 50자.</span></td>
         </tr>
       </tbody>
     </table>
@@ -1967,9 +1988,9 @@ for (const waveNum of [1, 2, 3, 4]) {
   <h3>시드봇(seed scheduler) 상세</h3>
   <div class="narrative">
     <p>50명의 페르소나 봇 중 한 명이 자신의 일상 경험을 담은 창작글을 직접 발행하는 봇이다. 현재 <code>ENABLE_SEED_POSTS=false</code>로 <strong>글 생성이 차단</strong>돼 있다. 단, 이 플래그는 글 생성 단계(scheduler.ts line 426~428)만 막는다 — <strong>댓글·좋아요 등 다른 기능은 이 플래그와 무관하게 계속 실행</strong>된다.</p>
-    <p>controversy-chain(논쟁 글)과 magazine-generator(매거진 글)도 같은 agents-seed.yml에서 실행되지만 ENABLE_SEED_POSTS 체크를 하지 않아 계속 동작 중이다.</p>
+    <p>controversy-chain(논쟁 글)도 agents-seed.yml에서 실행되지만 ENABLE_SEED_POSTS 체크를 하지 않아 계속 동작 중이다. magazine-generator는 <strong>launchd 전환됨</strong> — agents-seed.yml에서 더 이상 실행되지 않음(2026-05-27).</p>
     <div class="alert warning" style="margin-top:12px;">
-      <strong>오해 주의</strong>: "씨드봇이 OFF니까 GHA agents-seed.yml이 아무것도 안 한다" — 틀렸다. controversy-chain과 magazine-generator는 계속 실행된다.
+      <strong>오해 주의</strong>: "씨드봇이 OFF니까 GHA agents-seed.yml이 아무것도 안 한다" — 틀렸다. controversy-chain은 GHA에서 계속 실행된다. magazine봇은 launchd(11:00/14:00 KST)로 전환됐으므로 Mac이 켜져 있어야 실행된다.
     </div>
   </div>
 
@@ -2759,7 +2780,7 @@ catch (err: unknown) {
 
       <details><summary style="cursor:pointer;color:var(--blue);font-size:12.5px;margin:6px 0;">코드 보기 — 두 필터 함수 + isUsable 조건</summary>
       <pre>// crawler.ts — savePosts() isUsable 조건 (수정 후)
-isUsable: qualityScore &gt;= QUALITY_THRESHOLDS.minUsable &amp;&amp; !imageDep &amp;&amp; !noticeText
+isUsable: qualityScore &gt;= QUALITY_THRESHOLDS.minUsable &amp;&amp; !imageDep &amp;&amp; !noticeText &amp;&amp; !videoBlocked &amp;&amp; !accessBlocked
 
 // isImageDependentContent
 function isImageDependentContent(post: RawCafePost): boolean {
@@ -2948,7 +2969,8 @@ await prisma.cafePost.create({
       네이버 카페 f-e URL(<code>cafe.naver.com/(f-e|ca-fe)/cafes/</code>)을 스크래핑하는 설정과 실행 인프라를 추가했다.<br>
       · <code>requiresSession: true</code>: storage-state.json 로그인 세션 필수 → GHA에서는 자동 skip(PENDING 유지), Mac 로컬에서만 실행<br>
       · <code>contentFrame: 'cafe_main'</code>: f-e URL은 빈 React 껍데기 → 실제 콘텐츠는 cafe_main iframe 안에 있음<br>
-      · <code>removeElements</code>에 <code>iframe</code> 포함 → 네이버 동영상 플레이어(naverVideoPlayer 등) 제거, 동영상 포함 글은 텍스트/이미지만 발행<br>
+      · <code>removeElements</code>에 <code>iframe</code> 포함 → 네이버 동영상 플레이어(naverVideoPlayer 등) HTML 제거<br>
+      · ⚠️ 동영상 감지 시 <strong>발행 차단 (Sheet row FAILED)</strong> — "텍스트/이미지만 발행"이 아님. <code>videoCount &gt; 0</code> 또는 PZP 신호(STRONG 1개+ / WEAK 2개+) → sheet-scraper 단계에서 거부. (커밋 9745f9e · 3f206b7, 2026-05-26)<br>
       · <code>run-local-naver-cafe.ts</code> 신규 (launchd 전용 런처)<br>
       · launchd plist: <code>com.unao.naver-cafe-sheet-scraper</code> (13:00 + 23:00 KST → Phase 1 이후 10:40 + 13:00 + 15:30 + 23:00 KST, 4슬롯)<br>
       · runner.ts: <code>community:navercafe-scrape</code> LOCAL ONLY 등록<br><br>
@@ -3142,6 +3164,25 @@ await prisma.cafePost.create({
   </div>
   </details>
 
+  <details class="impl-toggle">
+  <summary class="impl-summary">㊷. SESSION_HALTED 중복 알림 방지 — 30분 쿨다운 + export-cookies 성공 시 자동 해제 (8c29064)</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㊷. SESSION_HALTED 중복 알림 방지 — 30분 쿨다운 + 자동 해제</div>
+    </div>
+    <div class="impl-body">
+      세션 만료(SESSION_HALTED) 상황에서 동일 알림이 30분 이내에 반복 전송되던 문제를 수정했다.<br><br>
+      <strong>변경 내용:</strong><br>
+      · 30분 쿨다운: 동일 SESSION_HALTED 알림을 30분 내 재전송 차단<br>
+      · 알림 메시지 변경: <code>'⛔ 자동 복구 불가 — 수동 쿠키 재발급 필요'</code><br>
+      · export-cookies 성공 시 쿨다운 플래그 자동 제거 (쿠키 갱신 후 다음 만료 시 정상 알림 재개)<br><br>
+      SHA: 8c29064 (2026-05-25)
+    </div>
+    <div class="impl-file">📄 agents/cafe/session-manager.ts — SESSION_HALTED 30분 쿨다운 + 쿠키 재발급 성공 시 플래그 초기화</div>
+  </div>
+  </details>
+
 </div>
 
 <!-- ══════════ §15. FAQ ══════════ -->
@@ -3202,14 +3243,14 @@ await prisma.cafePost.create({
   <div class="faq-item">
     <div class="faq-q">ENABLE_SEED_POSTS=false인데 왜 cafePostId=null BOT 글이 생기나?</div>
     <div class="faq-a">
-      <strong>controversy-chain과 magazine-generator는 ENABLE_SEED_POSTS 영향을 받지 않는다.</strong><br><br>
-      agents-seed.yml은 3가지를 실행한다:
+      <strong>controversy-chain은 ENABLE_SEED_POSTS 영향을 받지 않는다. magazine봇은 launchd로 전환됨(2026-05-27).</strong><br><br>
+      agents-seed.yml은 현재 2가지를 실행한다:
       <ol style="margin:8px 0 8px 20px;line-height:1.8;">
         <li><code>seed scheduler</code> — ✅ ENABLE_SEED_POSTS=false로 차단됨</li>
         <li><code>controversy-chain execute</code> — ⚠️ 차단 안 됨. 트렌드 기반 STORY 글 계속 생성</li>
-        <li><code>magazine-generator</code> — ⚠️ 차단 안 됨. MAGAZINE 글 계속 생성</li>
       </ol>
-      따라서 _pm2_audit.ts §6에서 "cafePostId=null BOT 글"이 0건이 아닐 수 있다. 이것은 버그가 아니라 두 시스템이 의도적으로 계속 실행되는 것이다. 모두 중단하려면 agents-seed.yml에서 controversy-chain 줄 제거 + 해당 워크플로우에서 magazine-generate 제거 필요.<br><br>
+      <code>magazine-generator</code>는 agents-seed.yml에서 <strong>제거됨</strong> — launchd 전용으로 전환 (<code>com.unaeo.magazine-morning/late.plist</code> · 11:00/14:00 KST · Mac 필요).<br><br>
+      따라서 _pm2_audit.ts §6에서 "cafePostId=null BOT 글"이 0건이 아닐 수 있다. 이것은 버그가 아니라 두 시스템이 의도적으로 계속 실행되는 것이다. 모두 중단하려면 agents-seed.yml에서 controversy-chain 줄 제거 + launchd에서 magazine plist unload 필요.<br><br>
       <strong>📌 2026-05-20 이후 변경</strong>: <code>content-curator.ts</code>(2026-05-20~) 및 <code>popular-curator.ts</code>(2026-05-21~)가 발행 시 <code>Post.cafePostId</code>를 저장하도록 수정됐다. 이제 <code>cafePostId IS NOT NULL</code>인 BOT 글 = 큐레이션봇(일반+인기글), <code>cafePostId IS NULL</code>인 BOT 글 = 시드봇/controversy/magazine 으로 구분 가능하다. 어드민 콘텐츠 관리 페이지의 "큐레이션봇" / "시드봇" 필터가 이 기준으로 동작한다.
     </div>
   </div>
@@ -3309,6 +3350,21 @@ await prisma.cafePost.create({
   <div class="section-header">
     <div class="section-num">16</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.23</div>
+    <div class="changelog-date">2026-05-27</div>
+    <div class="changelog-content">
+      <strong>magazine봇 launchd 전환 + 동영상·접근차단 3단계 방어선 + 비활성 plist 명세 + runCrawlWithRetry 1500초 + SESSION_HALTED 30분 dedup + COMPETITOR 소스카페 예외.</strong><br><br>
+      <strong>[SHA: 8a0ac2a — 2026-05-25]</strong> 매거진 이미지 파이프라인 개선 — PERSON_REAL Unsplash 불허(Gemini 전용), FOOD/SCENE/OBJECT만 Unsplash 허용, ILLUSTRATION 로컬 전용, heroImageSource 추적. 본문 최소 1500자(이전 500자). SEO 타이틀 연도 하드코딩 금지·최대 50자.<br><br>
+      <strong>[SHA: 8c29064 — 2026-05-25]</strong> SESSION_HALTED 30분 쿨다운 중복 알림 방지 + export-cookies 성공 시 자동 해제. 알림 메시지: '⛔ 자동 복구 불가 — 수동 쿠키 재발급 필요'.<br><br>
+      <strong>[SHA: ea1ae6a — 2026-05-26]</strong> 크롤러 savePosts ACCESS_BLOCKED_SIGNALS 5종 감지 → isUsable=false. DB 저장은 되나 큐레이터에서 제외.<br><br>
+      <strong>[SHA: 9745f9e — 2026-05-26]</strong> 동영상 3단계 방어선: ① crawler.ts videoUrls+PZP → isUsable=false, ② content/popular-curator filterBlocked() 2차 필터, ③ image-router 3차 필터. fmkorea video 보존 vs navercafe video 차단 분리.<br><br>
+      <strong>[SHA: 3f206b7 — 2026-05-26]</strong> sheet-scraper 동영상·접근차단 발행 차단 — Sheet row FAILED (DB 저장 안 됨, cafe crawler isUsable=false와 별개 메커니즘).<br><br>
+      <strong>[SHA: 77496c9 — 2026-05-26]</strong> runCrawlWithRetry 타임아웃 1500초 (128건/일 최대 기준 1228초 + 여유). COMPETITOR_KEYWORDS 소스카페(wgang·dlxogns01) 예외 처리 신규.<br><br>
+      <strong>[2026-05-27 문서 갱신]</strong> magazine봇 launchd 전환(11:00/14:00 KST), agents-seed.yml에서 제거. 비활성 launchd 파일 목록 명세(cafe-crawler 3개·naver-blog 2개 미로드). §3 타임라인·§13 봇 표·FAQ 전면 정정.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -3702,8 +3758,8 @@ await prisma.cafePost.create({
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.22<br>
-  최종 업데이트: 2026-05-21 | 작성: Claude Code + MogoKim<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.30<br>
+  최종 업데이트: 2026-05-27 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
 

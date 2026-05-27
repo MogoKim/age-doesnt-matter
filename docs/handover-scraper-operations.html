@@ -945,7 +945,13 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
           <tr><td>제목 selector</td><td><code>.title_text</code></td></tr>
           <tr><td>본문 selector</td><td><code>.article_viewer</code></td></tr>
           <tr><td>댓글 selector</td><td><code>ul.comment_list li</code> / 텍스트: <code>.text_comment</code> / 닉네임: <code>.comment_nickname</code></td></tr>
-          <tr><td>동영상 지원</td><td><strong>지원 제외</strong> — removeElements에 iframe 포함. 네이버 카페 동영상은 수집·재호스팅 시도하지 않음.</td></tr>
+          <tr><td>동영상 지원</td><td><strong>지원 제외 — Sheet row FAILED 처리 (발행 차단)</strong><br>
+            <code>removeElements</code>에 <code>iframe</code> 포함 → HTML에서 네이버 동영상 플레이어(naverVideoPlayer 등) 제거.<br>
+            ⚠️ 단순 제거 후 텍스트/이미지만 발행하는 것이 아님 — 동영상 감지 시 Sheet row <strong>FAILED</strong>로 처리해 발행 자체를 차단한다:<br>
+            · <code>videoCount &gt; 0</code> → FAILED<br>
+            · PZP STRONG 신호 1개+ (7종: <code>.pzp</code> / <code>pzp-pc</code> / <code>pzp-poster</code> / <code>webplayer-internal-video</code> 등) → FAILED<br>
+            · PZP WEAK 신호 2개+ (8종: <code>재생 속도</code> / <code>해상도</code> / <code>자막</code> 등) → FAILED<br>
+            <span style="font-size:12px;color:var(--sub);">커밋 9745f9e · 3f206b7 (2026-05-26). fmkorea <code>&lt;video&gt;</code> 태그는 보존(R2 업로드)과 달리 navercafe는 발행 차단.</span></td></tr>
           <tr><td>세션 만료</td><td>NID_SES 쿠키 만료 시 Chrome 재로그인 후 storage-state.json 재추출 필요 (창업자 수동)</td></tr>
         </tbody>
       </table>
@@ -1035,6 +1041,8 @@ Claude Haiku, max_tokens: 200, 건당 ~$0.0003
           <thead><tr><th>G열 에러 메시지</th><th>의미</th><th>대처</th></tr></thead>
           <tbody>
             <tr><td><code>CF 차단 — J열에 본문 붙여넣기 가능</code></td><td>Cloudflare가 봇 차단 (펨코 주로 발생)</td><td>원문 복사 → J열 붙여넣기 → B열 PENDING으로 재시도</td></tr>
+            <tr><td><code>네이버 카페 동영상 포함 글은 발행 제외</code></td><td>navercafe 동영상 감지 (videoCount &gt; 0 또는 PZP 신호) — sheet-scraper 단계에서 발행 차단 (커밋 9745f9e)</td><td>재시도 불가. 동영상 없는 글로 교체하거나 A열 삭제</td></tr>
+            <tr><td><code>접근 차단 — 발행 제외</code> (또는 유사 차단 문구)</td><td>ACCESS_BLOCKED_SIGNALS 5종 감지 (네이버 카페 접근 제한·로그인 필요 등) — sheet-scraper 단계에서 발행 차단 (커밋 3f206b7). CF_BLOCKED(Cloudflare)와 별개 메커니즘.</td><td>세션 쿠키 만료 여부 확인. storage-state.json 재추출 필요할 수 있음</td></tr>
             <tr><td><code>타임아웃 — 45초 초과</code></td><td>페이지 로드 시간 초과</td><td>B열 PENDING으로 바꾸면 재시도</td></tr>
             <tr><td><code>지원하지 않는 사이트</code></td><td>URL이 site-configs.ts의 urlPatterns에 매칭 안 됨</td><td>navercafe URL이면 <code>ca-fe/</code> 또는 <code>f-e/</code> 경로 포함 여부 확인. 잘못된 URL이면 A열 교체</td></tr>
           </tbody>
