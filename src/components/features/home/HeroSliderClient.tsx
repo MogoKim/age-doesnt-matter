@@ -36,8 +36,6 @@ export default function HeroSliderClient({ slides }: Props) {
   const [paused, setPaused] = useState(false)
   const touchStartX = useRef<number | null>(null)
 
-  const goTo = useCallback((index: number) => setCurrent(index), [])
-
   const goPrev = useCallback(() => {
     setCurrent((prev) => (prev - 1 + slides.length) % slides.length)
   }, [slides.length])
@@ -83,131 +81,108 @@ export default function HeroSliderClient({ slides }: Props) {
       aria-label="홈 배너 슬라이더"
       aria-roledescription="carousel"
     >
-        {slides.map((slide, index) => (
-          <div
-            key={slide.id}
-            role="group"
-            aria-roledescription="slide"
-            aria-label={`슬라이드 ${index + 1} / ${slides.length}`}
-            aria-hidden={index !== current}
-            className={cn(
-              'absolute inset-0 transition-opacity duration-500',
-              index === current ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-            )}
-            style={{ background: slide.imageUrl ? undefined : buildGradient(slide) }}
-          >
-            {/* 이미지 배경 */}
-            {slide.imageUrl && (
-              <Image
-                src={slide.imageUrl}
-                alt={slide.title}
-                fill
-                className="object-cover object-center"
-                priority={index === 0}
-                sizes="100vw"
-              />
-            )}
-
-            {/* 오버레이 — 이미지 있으면 좌측 어두운 그라디언트, 없으면 반투명 어둠 */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background: slide.imageUrl
-                  ? 'linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.08) 100%)'
-                  : 'rgba(0,0,0,0.15)',
-              }}
-            />
-
-            {/* 텍스트 오버레이 — 전체 영역 클릭 시 ctaUrl로 이동 */}
-            <Link
-              href={slide.ctaUrl ?? '/'}
-              className={cn(
-                'absolute inset-0 flex flex-col justify-center gap-3 px-5 lg:px-16 no-underline [-webkit-tap-highlight-color:transparent]',
-                slide.imageUrl ? 'items-start text-left' : 'items-center text-center'
-              )}
-              tabIndex={index === current ? 0 : -1}
-              aria-label={slide.title.replace(/\\n/g, ' ')}
-            >
-              <h2
-                className="text-white font-bold leading-[1.4] break-keep max-w-[72%] lg:max-w-none"
-                style={{ fontSize: 'clamp(24px, 7vw, 36px)', whiteSpace: 'pre-line', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
-              >
-                {slide.title.replace(/\\n/g, '\n')}
-              </h2>
-
-              {slide.subtitle && (
-                <p
-                  className="text-white/90 leading-snug break-keep max-w-[72%] lg:max-w-none"
-                  style={{ fontSize: 'clamp(17px, 4vw, 20px)', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
-                >
-                  {slide.subtitle}
-                </p>
-              )}
-
-              {slide.ctaText && (
-                <span
-                  className="mt-1 inline-flex items-center justify-center px-5 h-[52px] rounded-full bg-white/20 backdrop-blur-sm text-white font-semibold"
-                  style={{ fontSize: 'clamp(17px, 4vw, 19px)', minWidth: 130 }}
-                >
-                  {slide.ctaText}
-                </span>
-              )}
-            </Link>
-          </div>
-        ))}
-
-        {/* 좌우 화살표 (데스크탑) */}
-        {slides.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={goPrev}
-              className="hidden lg:flex absolute left-3 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/35 text-white hover:bg-black/50 transition-colors z-10"
-              aria-label="이전 슬라이드"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={goNext}
-              className="hidden lg:flex absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/35 text-white hover:bg-black/50 transition-colors z-10"
-              aria-label="다음 슬라이드"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </>
-        )}
-      {/* 인디케이터 dots — 이미지 위 absolute 하단 */}
-      {slides.length > 1 && (
+      {slides.map((slide, index) => (
         <div
-          className="absolute bottom-2 left-0 right-0 flex justify-center items-center gap-2 z-10"
-          role="tablist"
-          aria-label="슬라이드 선택"
+          key={slide.id}
+          role="group"
+          aria-roledescription="slide"
+          aria-label={`슬라이드 ${index + 1} / ${slides.length}`}
+          aria-hidden={index !== current}
+          className={cn(
+            'absolute inset-0 transition-opacity duration-500',
+            index === current ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          )}
+          style={{ background: slide.imageUrl ? undefined : buildGradient(slide) }}
         >
-          {slides.map((slide, index) => (
-            <button
-              key={slide.id}
-              type="button"
-              role="tab"
-              aria-selected={index === current}
-              aria-label={`슬라이드 ${index + 1}`}
-              onClick={() => goTo(index)}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 border-none bg-transparent cursor-pointer"
+          {/* 이미지 배경 */}
+          {slide.imageUrl && (
+            <Image
+              src={slide.imageUrl}
+              alt={slide.title}
+              fill
+              className="object-cover object-center"
+              priority={index === 0}
+              sizes="100vw"
+            />
+          )}
+
+          {/* 오버레이 — 이미지 있으면 좌측 어두운 그라디언트, 없으면 반투명 어둠 */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: slide.imageUrl
+                ? 'linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.08) 100%)'
+                : 'rgba(0,0,0,0.15)',
+            }}
+          />
+
+          {/* 텍스트 오버레이 — 전체 영역 클릭 시 ctaUrl로 이동 */}
+          <Link
+            href={slide.ctaUrl ?? '/'}
+            className={cn(
+              'absolute inset-0 flex flex-col justify-center gap-3 px-5 lg:px-16 no-underline [-webkit-tap-highlight-color:transparent]',
+              slide.imageUrl ? 'items-start text-left' : 'items-center text-center'
+            )}
+            tabIndex={index === current ? 0 : -1}
+            aria-label={slide.title.replace(/\\n/g, ' ')}
+          >
+            <h2
+              className="text-white font-bold leading-[1.4] break-keep max-w-[72%] lg:max-w-none"
+              style={{ fontSize: 'clamp(22px, 6vw, 32px)', whiteSpace: 'pre-line', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
             >
+              {slide.title.replace(/\\n/g, '\n')}
+            </h2>
+
+            {slide.subtitle && (
+              <p
+                className="text-white/90 leading-snug break-keep max-w-[72%] lg:max-w-none"
+                style={{ fontSize: 'clamp(17px, 4vw, 20px)', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
+              >
+                {slide.subtitle}
+              </p>
+            )}
+
+            {slide.ctaText && (
               <span
-                className={cn(
-                  'block rounded-full transition-all duration-300',
-                  index === current
-                    ? 'w-5 h-2 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.5)]'
-                    : 'w-2 h-2 bg-white/60 hover:bg-white/80 shadow-[0_1px_2px_rgba(0,0,0,0.4)]'
-                )}
-              />
-            </button>
-          ))}
+                className="mt-1 inline-flex items-center justify-center px-5 h-[52px] rounded-full bg-white/20 backdrop-blur-sm text-white font-semibold"
+                style={{ fontSize: 'clamp(17px, 4vw, 19px)', minWidth: 130 }}
+              >
+                {slide.ctaText}
+              </span>
+            )}
+          </Link>
+        </div>
+      ))}
+
+      {/* 우하단 이전/카운터/다음 pill 인디케이터 */}
+      {slides.length > 1 && (
+        <div className="absolute right-3 bottom-3 z-10 flex items-center overflow-hidden rounded-full bg-black/35 backdrop-blur-sm shadow-[0_2px_8px_rgba(0,0,0,0.25)]">
+          <button
+            type="button"
+            onClick={goPrev}
+            className="w-11 h-11 inline-flex items-center justify-center text-white/90 hover:text-white hover:bg-white/10 active:bg-white/15"
+            aria-label="이전 슬라이드"
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <span
+            className="min-w-[48px] text-center text-[16px] font-semibold leading-none tabular-nums text-white"
+            aria-live="polite"
+          >
+            {current + 1} / {slides.length}
+          </span>
+          <button
+            type="button"
+            onClick={goNext}
+            className="w-11 h-11 inline-flex items-center justify-center text-white/90 hover:text-white hover:bg-white/10 active:bg-white/15"
+            aria-label="다음 슬라이드"
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
       )}
     </section>
