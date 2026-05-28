@@ -75,8 +75,9 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
   const firstWord = topicWords[0] ?? topic
   const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true } as const
-  // limit*5 이상 조회 후 usable 필터 → 상위 limit개만 반환. 상위 3개가 모두 usable<5여도 뒤의 후보 탐색.
-  const candidateTake = Math.max(limit * 5, 15)
+  // killerScore 상위권(~63위)이 usable<5인 경우가 많아 넉넉히 조회 후 usable 필터 적용.
+  // 실측: killerScore top-63 전체가 usable<5, 64위부터 usable≥5 등장 → 최소 150개 필요.
+  const candidateTake = Math.max(limit * 50, 150)
 
   // 기존 오염 CafePost 2차 방어 (isUsable=true이지만 접근 차단 안내문이 남아있는 경우)
   const ACCESS_BLOCKED_SIGNALS_CC = [

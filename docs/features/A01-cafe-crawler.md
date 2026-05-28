@@ -203,6 +203,7 @@
 
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
+| 2026-05-28 | content-curator.ts `candidateTake` 15→150 수정 — killerScore 상위 63개 전부 usable<5인 역상관 관계 실측(top-200 중 64위부터 usable≥5 첫 등장). `Math.max(limit*5,15)` → `Math.max(limit*50,150)`으로 확대 | killerScore 높은 글은 이모지·짧은 반응 댓글 위주(usable=0~1)라 candidateTake=15로는 전 토픽 참고글 0개 → 10:35 KST 이후 모든 슬롯 0개 게시 |
 | 2026-05-28 | crawler.ts `extractComments()` 신형 DOM `.CommentItem` sibling 방식 추가 — `.CommentItem` 매칭 시 전체 items 인덱스 순회, `CommentItem--reply` 클래스로 대댓글 판별, 일반 댓글 뒤 연속 reply sibling 최대 5개 수집. playwright import에 `type Locator` 추가. 구형 DOM fallback 유지 | 네이버 카페 신형 DOM 변경으로 대댓글이 부모 자식이 아닌 sibling `<li>`로 렌더링 — 기존 셀렉터 3종 모두 0개 매칭 → topComments[].replies 항상 빈 배열 → V2 대댓글 발생 불가 |
 | 2026-05-27 | content-curator.ts 근본 수정 — killerPosts 7일 날짜 제한(postedAt/crawledAt OR), candidatePool 15개 확장(CandidateTopic 객체 배열), 실행 루프 continue 기반 다음 후보 이동, publishCuratedContent 반환타입 PublishResult 변경(SEASON_MISMATCH/DUPLICATE_TITLE/PUBLISH_FAILED 구분), BotLog topicResults + skipReason 8종 구조화 | 34일된 "청국장"(killerScore=75)이 FOOD refs 소진 후 매 시간 재선발 → published=0 반복 차단 |
 | 2026-05-26 | crawler.ts `isAccessBlockedContent()` 추가 — '검색 비허용 게시물'·'가입이 필요합니다' 등 5개 패턴 ANY 1개 포함 시 isUsable=false (savePosts + PopularSync Case B 양 경로 적용). content-curator.ts `getReferencePosts()` 3단계 fallback 전체에 2차 content 필터 래핑 | 우아한 갱년기(wgang) 검색 비허용 게시물 4건이 isUsable=true로 저장·발행된 사태 재발 방지 |
