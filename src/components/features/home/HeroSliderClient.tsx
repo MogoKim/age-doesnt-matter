@@ -120,7 +120,7 @@ export default function HeroSliderClient({ slides }: Props) {
           <Link
             href={slide.ctaUrl ?? '/'}
             className={cn(
-              'absolute inset-0 flex flex-col justify-center gap-3 px-5 lg:px-16 no-underline [-webkit-tap-highlight-color:transparent]',
+              'absolute inset-0 flex flex-col justify-end gap-2.5 px-5 pb-7 lg:justify-center lg:gap-3 lg:px-16 lg:pb-0 no-underline [-webkit-tap-highlight-color:transparent]',
               slide.imageUrl ? 'items-start text-left' : 'items-center text-center'
             )}
             tabIndex={index === current ? 0 : -1}
@@ -144,8 +144,8 @@ export default function HeroSliderClient({ slides }: Props) {
 
             {slide.ctaText && (
               <span
-                className="mt-1 inline-flex items-center justify-center px-5 h-[52px] rounded-full bg-white/20 backdrop-blur-sm text-white font-semibold"
-                style={{ fontSize: 'clamp(17px, 4vw, 19px)', minWidth: 130 }}
+                className="mt-1 inline-flex items-center justify-center px-4 h-11 rounded-full bg-black/30 backdrop-blur-sm text-white font-semibold"
+                style={{ fontSize: 'clamp(16px, 3.8vw, 17px)' }}
               >
                 {slide.ctaText}
               </span>
@@ -154,35 +154,14 @@ export default function HeroSliderClient({ slides }: Props) {
         </div>
       ))}
 
-      {/* 우하단 이전/카운터/다음 pill 인디케이터 */}
+      {/* 우하단 카운터 pill — 비인터랙티브 */}
       {slides.length > 1 && (
-        <div className="absolute right-3 bottom-3 z-10 flex items-center overflow-hidden rounded-full bg-black/35 backdrop-blur-sm shadow-[0_2px_8px_rgba(0,0,0,0.25)]">
-          <button
-            type="button"
-            onClick={goPrev}
-            className="w-11 h-11 inline-flex items-center justify-center text-white/90 hover:text-white hover:bg-white/10 active:bg-white/15"
-            aria-label="이전 슬라이드"
-          >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <span
-            className="min-w-[48px] text-center text-[16px] font-semibold leading-none tabular-nums text-white"
-            aria-live="polite"
-          >
-            {current + 1} / {slides.length}
-          </span>
-          <button
-            type="button"
-            onClick={goNext}
-            className="w-11 h-11 inline-flex items-center justify-center text-white/90 hover:text-white hover:bg-white/10 active:bg-white/15"
-            aria-label="다음 슬라이드"
-          >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+        <div
+          className="absolute right-3 bottom-3 z-10 rounded-full bg-black/35 px-3 h-8 inline-flex items-center justify-center text-[13px] font-semibold leading-none tabular-nums text-white shadow-[0_1px_4px_rgba(0,0,0,0.25)]"
+          aria-live="polite"
+          aria-label={`현재 슬라이드 ${current + 1} / ${slides.length}`}
+        >
+          {current + 1} / {slides.length}
         </div>
       )}
     </section>
