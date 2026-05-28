@@ -215,7 +215,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         <button
           className={cn(
             'flex items-center gap-1 bg-none border-none text-muted-foreground text-[17px] cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5',
-            isLiked && 'text-primary font-bold'
+            isLiked && 'text-primary-text font-bold'
           )}
           onClick={handleLike}
           disabled={isPending}
