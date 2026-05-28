@@ -16,8 +16,8 @@ const GRADES = [
     description: '우나어에 처음 가입한 회원',
     condition: '회원가입 시 자동 부여',
     benefits: ['글 쓰기', '댓글 달기', '공감 누르기'],
-    color: 'bg-green-50 border-green-200',
-    emojiColor: 'text-green-600',
+    color: 'bg-[var(--grade-sprout-bg)] border-[var(--grade-sprout-border)]',
+    emojiColor: 'text-[var(--grade-sprout-text)]',
   },
   {
     emoji: '🌿',
@@ -25,8 +25,8 @@ const GRADES = [
     description: '활발하게 활동하는 회원',
     condition: '글 5개 이상 작성 또는 댓글 20개 이상',
     benefits: ['새싹 혜택 전부', '닉네임 옆 단골 배지'],
-    color: 'bg-emerald-50 border-emerald-200',
-    emojiColor: 'text-emerald-600',
+    color: 'bg-[var(--grade-regular-bg)] border-[var(--grade-regular-border)]',
+    emojiColor: 'text-[var(--grade-regular-text)]',
   },
   {
     emoji: '💎',
@@ -34,8 +34,8 @@ const GRADES = [
     description: '커뮤니티에 기여가 큰 회원',
     condition: '글 20개 이상 작성 + 받은 공감 100개 이상',
     benefits: ['단골 혜택 전부', '터줏대감 특별 배지', '에디터스 픽 우선 추천'],
-    color: 'bg-blue-50 border-blue-200',
-    emojiColor: 'text-blue-600',
+    color: 'bg-[var(--grade-veteran-bg)] border-[var(--grade-veteran-border)]',
+    emojiColor: 'text-[var(--grade-veteran-text)]',
   },
   {
     emoji: '☀️',
@@ -43,8 +43,8 @@ const GRADES = [
     description: '커뮤니티의 모범이 되는 특별 회원',
     condition: '운영진이 직접 선정 (자동 승급 아님)',
     benefits: ['터줏대감 혜택 전부', '따뜻한이웃 골드 배지', '커뮤니티 멘토 역할'],
-    color: 'bg-amber-50 border-amber-200',
-    emojiColor: 'text-amber-600',
+    color: 'bg-[var(--grade-neighbor-bg)] border-[var(--grade-neighbor-border)]',
+    emojiColor: 'text-[var(--grade-neighbor-text)]',
   },
 ]
 
