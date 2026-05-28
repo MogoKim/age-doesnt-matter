@@ -17,7 +17,7 @@ export default function MarkAllReadButton() {
       type="button"
       onClick={handleClick}
       disabled={isPending}
-      className="text-sm text-primary font-medium min-h-[52px] px-3 disabled:opacity-50"
+      className="text-[17px] text-primary-text font-medium min-h-[52px] px-3 disabled:opacity-50"
     >
       {isPending ? '처리 중...' : '모두 읽음'}
     </button>

@@ -60,18 +60,18 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
             className={cn(
               'flex items-center w-full min-h-[52px] px-4 rounded-xl border transition-colors text-left',
               selected === option.value
-                ? 'border-primary bg-primary/5 text-primary font-medium'
+                ? 'border-primary bg-primary/5 text-primary-text font-medium'
                 : 'border-border bg-background text-foreground hover:border-primary/30',
             )}
           >
             <span className="flex-1 text-body">{option.label}</span>
-            <span className="text-sm text-muted-foreground">{option.desc}</span>
+            <span className="text-[17px] text-muted-foreground">{option.desc}</span>
           </button>
         ))}
       </div>
 
       {message && (
-        <p className={cn('text-sm mb-3 px-1', message.includes('변경') ? 'text-green-600' : 'text-destructive')}>
+        <p className={cn('text-[17px] mb-3 px-1', message.includes('변경') ? 'text-success' : 'text-destructive')}>
           {message}
         </p>
       )}
@@ -80,7 +80,7 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
         type="button"
         onClick={handleSave}
         disabled={isPending || selected === currentSize}
-        className="w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold transition-colors hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed lg:h-12"
+        className="w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold transition-colors hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed lg:h-12"
       >
         {isPending ? '적용 중...' : '적용하기'}
       </button>

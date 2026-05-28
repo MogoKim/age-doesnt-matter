@@ -32,22 +32,22 @@ export default function BlockedUserList() {
   }
 
   if (loading) {
-    return <p className="text-sm text-muted-foreground">불러오는 중...</p>
+    return <p className="text-[17px] text-muted-foreground">불러오는 중...</p>
   }
 
   if (users.length === 0) {
-    return <p className="text-sm text-muted-foreground">차단한 사용자가 없습니다.</p>
+    return <p className="text-[17px] text-muted-foreground">차단한 사용자가 없습니다.</p>
   }
 
   return (
     <div className="space-y-3">
       {users.map((user) => (
         <div key={user.id} className="flex items-center justify-between p-3 bg-background rounded-xl">
-          <span className="text-sm font-medium text-foreground">{user.nickname}</span>
+          <span className="text-[17px] font-medium text-foreground">{user.nickname}</span>
           <button
             onClick={() => handleUnblock(user.id)}
             disabled={isPending}
-            className="min-h-[52px] px-4 py-2 text-caption font-bold text-destructive border border-destructive/30 rounded-lg bg-destructive/5 transition-all hover:bg-destructive/10 disabled:opacity-50"
+            className="min-h-[52px] px-4 py-2 text-[17px] font-bold text-destructive border border-destructive/30 rounded-lg bg-destructive/5 transition-colors hover:bg-destructive/10 disabled:opacity-50"
           >
             차단 해제
           </button>

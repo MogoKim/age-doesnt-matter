@@ -52,25 +52,25 @@ export default function NicknameSettings({ currentNickname, canChange, lastChang
           type="button"
           onClick={handleSave}
           disabled={isPending || !canChange || nickname.trim() === currentNickname}
-          className="shrink-0 whitespace-nowrap h-[52px] px-5 bg-primary text-white rounded-xl text-body font-bold transition-colors hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed lg:h-12 lg:px-5"
+          className="shrink-0 whitespace-nowrap h-[52px] px-5 bg-primary text-white rounded-xl text-body font-bold transition-colors hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed lg:h-12 lg:px-5"
         >
           {isPending ? '변경 중...' : '변경'}
         </button>
       </div>
 
       {!canChange && nextChangeDate && (
-        <p className="text-sm text-muted-foreground px-1">
+        <p className="text-[17px] text-muted-foreground px-1">
           다음 변경 가능: {nextChangeDate}
         </p>
       )}
 
       {message && (
-        <p className={cn('text-sm px-1 mt-1', isError ? 'text-destructive' : 'text-green-600')}>
+        <p className={cn('text-[17px] px-1 mt-1', isError ? 'text-destructive' : 'text-success')}>
           {message}
         </p>
       )}
 
-      <p className="text-caption text-muted-foreground mt-2 px-1">
+      <p className="text-[17px] text-muted-foreground mt-2 px-1">
         한글, 영문, 숫자 2~12자 · 30일에 1회 변경 가능
       </p>
     </div>

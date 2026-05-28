@@ -18,7 +18,7 @@ export default async function MyCommentsPage() {
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <Link
         href="/my"
-        className="inline-flex items-center gap-1 text-caption font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
       >
         ← 마이페이지
       </Link>
@@ -39,7 +39,7 @@ export default async function MyCommentsPage() {
                 <p className="text-body text-foreground m-0 mb-2 line-clamp-2 leading-relaxed">
                   {comment.content}
                 </p>
-                <div className="flex items-center gap-2 text-caption text-muted-foreground">
+                <div className="flex items-center gap-2 text-[17px] text-muted-foreground">
                   <span className="truncate max-w-[200px]">{comment.postTitle}</span>
                   <span>·</span>
                   <span>{formatTimeAgo(comment.createdAt)}</span>
@@ -49,12 +49,18 @@ export default async function MyCommentsPage() {
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
+        <div className="flex flex-col items-center justify-center p-8 text-center bg-card rounded-2xl border-2 border-dashed border-border">
           <p className="text-body text-muted-foreground leading-relaxed">
             아직 작성한 댓글이 없어요.
             <br />
             다른 분들의 글에 댓글을 남겨보세요!
           </p>
+          <Link
+            href="/best"
+            className="mt-4 inline-flex items-center justify-center min-h-[52px] px-6 py-3 bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90"
+          >
+            인기글 보러가기
+          </Link>
         </div>
       )}
     </div>
