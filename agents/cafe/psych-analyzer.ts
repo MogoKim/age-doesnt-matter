@@ -20,6 +20,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import { computeUsableCount } from './compute-usable-count.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const BATCH_SIZE = 5  // Bug 5: 10 → 5 (본문 1200자 확대로 토큰 비용 균등 유지)
@@ -35,6 +36,9 @@ function sanitizeForApi(text: string): string {
 
 const isTest = process.argv.includes('--test')
 const isBackfill = process.argv.includes('--backfill')
+const isMini = process.argv.includes('--mini')
+const MINI_CANDIDATE_TAKE = 60
+const MINI_LIMIT = 30
 
 // ── 타입 정의 ──
 
@@ -264,17 +268,55 @@ export async function analyzeBatch(posts: PostForAnalysis[]): Promise<PsychResul
   return individualResults
 }
 
-// ── 오늘 미분석 글 조회 ──
+// ── Fresh Hot mini psych 후보 조회 ──
 
-async function getUnanalyzedPosts(limit = 200, backfill = false) {
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
+async function getMiniPsychCandidates(): Promise<{
+  posts: PostForAnalysis[]
+  candidateCount: number
+  usableCount: number
+  maxKillerScore: number
+}> {
+  const cutoff8h = new Date(Date.now() - 8 * 3600_000)
+
+  const candidates = await prisma.cafePost.findMany({
+    where: {
+      aiAnalyzed: false,
+      isUsable: true,
+      usedAt: null,
+      isPopular: false,
+      commentCrawled: true,
+      qualityScore: { gte: 30 },
+      imageUrls: { isEmpty: true },
+      videoUrls: { isEmpty: true },
+      crawledAt: { gte: cutoff8h },
+    },
+    orderBy: [{ killerScore: 'desc' }, { crawledAt: 'desc' }],
+    take: MINI_CANDIDATE_TAKE,
+    select: { id: true, title: true, content: true, topComments: true, boardName: true, killerScore: true },
+  })
+  const usable = candidates.filter(p => computeUsableCount(p.topComments) >= 5)
+  const sliced = usable.slice(0, MINI_LIMIT)
+  const maxKillerScore = sliced.length > 0 ? (sliced[0].killerScore ?? 0) : 0
+  const posts = sliced.map(p => ({
+    id: p.id,
+    title: p.title,
+    content: p.content,
+    topComments: p.topComments,
+    boardName: p.boardName,
+  })) as PostForAnalysis[]
+  return { posts, candidateCount: candidates.length, usableCount: usable.length, maxKillerScore }
+}
+
+// ── 미분석 글 조회 (7일 rolling window) ──
+
+async function getUnanalyzedPosts(limit = 300, backfill = false) {
+  const cutoff7d = new Date(Date.now() - 7 * 24 * 3600_000)
 
   return prisma.cafePost.findMany({
     where: {
       aiAnalyzed: false,
       // --backfill 플래그 시 날짜 제한 없이 전체 미분석 글 처리
-      ...(backfill ? {} : { crawledAt: { gte: todayStart } }),
+      ...(backfill ? {} : { crawledAt: { gte: cutoff7d } }),
       qualityScore: { gte: 30 },
     },
     orderBy: { qualityScore: 'desc' },
@@ -389,10 +431,59 @@ async function main() {
     return
   }
 
+  // ── Fresh Hot mini psych (--mini) ──
+  if (isMini) {
+    const startTime = Date.now()
+    const { posts, candidateCount, usableCount, maxKillerScore } = await getMiniPsychCandidates()
+    const deferredCount = Math.max(usableCount - MINI_LIMIT, 0)
+    const baseDetails = {
+      mode: 'mini' as const,
+      candidateCount,
+      usableCount,
+      targetCount: posts.length,
+      deferredCount,
+      maxKillerScore,
+      cutoffHours: 8,
+    }
+    if (posts.length === 0) {
+      console.log('[PsychAnalyzer] Fresh Hot mini — 후보 없음, 스킵')
+      await prisma.botLog.create({
+        data: {
+          botType: 'CAFE_CRAWLER',
+          action: 'PSYCH_MINI_ANALYSIS',
+          status: 'SKIP',
+          details: JSON.stringify({ ...baseDetails, analyzedCount: 0, reason: 'NO_TARGET' }),
+        },
+      })
+      await disconnect()
+      return
+    }
+    let analyzed = 0
+    for (let i = 0; i < posts.length; i += BATCH_SIZE) {
+      const batch = posts.slice(i, i + BATCH_SIZE)
+      const results = await analyzeBatch(batch)
+      await saveResults(batch, results)
+      analyzed += results.length
+    }
+    const elapsedSec = Math.round((Date.now() - startTime) / 1000)
+    console.log(`[PsychAnalyzer] Fresh Hot mini 완료 — ${analyzed}개, ${elapsedSec}초`)
+    await prisma.botLog.create({
+      data: {
+        botType: 'CAFE_CRAWLER',
+        action: 'PSYCH_MINI_ANALYSIS',
+        status: 'SUCCESS',
+        details: JSON.stringify({ ...baseDetails, analyzedCount: analyzed, elapsedSec }),
+      },
+    })
+    await disconnect()
+    return
+  }
+
+  // ── Full psych (7일 rolling window) ──
   console.log('[PsychAnalyzer] 시작')
   const startTime = Date.now()
 
-  const posts = await getUnanalyzedPosts(200, isBackfill)
+  const posts = await getUnanalyzedPosts(300, isBackfill)
   if (posts.length === 0) {
     console.log(isBackfill ? '[PsychAnalyzer] 백필 대상 글 없음 — 스킵' : '[PsychAnalyzer] 오늘 분석할 글 없음 — 스킵')
     await disconnect()
@@ -418,7 +509,7 @@ async function main() {
       botType: 'CAFE_CRAWLER',
       action: 'PSYCH_ANALYSIS',
       status: 'SUCCESS',
-      details: JSON.stringify({ postsAnalyzed: analyzed }),
+      details: JSON.stringify({ mode: 'full', windowDays: 7, candidateLimit: 300, postsAnalyzed: analyzed }),
       itemCount: analyzed,
       executionTimeMs: Date.now() - startTime,
     },

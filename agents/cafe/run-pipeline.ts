@@ -376,6 +376,8 @@ export async function main(stepOverride?: string) {
       // 재크롤: 7일 이내 게시글 like/comment/view 최신화
       process.env.CRAWL_MODE = 'refresh'
       await run('crawler.ts', '재크롤: 최근 7일 게시글 지표 갱신')
+      // Fresh Hot mini psych — refresh로 killerScore 갱신 후 분석
+      await runWithArgs('psych-analyzer.ts', ['--mini'], 'Fresh Hot 미니 심리 분석 (30개)')
     }
 
     // ── FULL 모드 (11:30 KST) — 크롤 + 심리분석 + 트렌드 + 브리프 + 큐레이션 ──
