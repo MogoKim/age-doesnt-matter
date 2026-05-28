@@ -11,6 +11,7 @@ import BoardPaginationFooter from '@/components/features/common/BoardPaginationF
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 
 const JobQuickTags = nextDynamic(() => import('@/components/features/jobs/JobQuickTags'))
+const JobSearchBar = nextDynamic(() => import('@/components/features/jobs/JobSearchBar'))
 
 export const dynamic = 'force-dynamic'
 
@@ -54,6 +55,11 @@ export default async function JobsPage({ searchParams }: PageProps) {
       <div className="px-4 py-6 max-w-[960px] mx-auto">
         {/* sr-only h1 */}
         <h1 className="sr-only">내 일 찾기</h1>
+
+        {/* 검색 바 */}
+        <Suspense fallback={null}>
+          <JobSearchBar defaultValue={q} />
+        </Suspense>
 
         {/* 필터 버튼 + 퀵태그 한 행 — 필터▼ 좌측 고정, 태그만 스크롤 */}
         <div className="flex items-center gap-2 mb-4">
