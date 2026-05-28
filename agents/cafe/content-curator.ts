@@ -139,6 +139,20 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: candidateTake, select: selectFields,
   })))
+  if (s3.length >= limit) return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
+
+  // 4단계: desireCategory 무관 전체 pool — DB 카테고리 분류 97% NULL 상태 보완
+  // GENERAL은 stage 3와 동일 쿼리라 스킵
+  if (desireCat !== 'GENERAL') {
+    const s3ids = new Set(s3.map(p => p.id))
+    const s4 = withUsableFilter(filterBlocked(await prisma.cafePost.findMany({
+      where: { ...base, postedAt: { gte: cutoff7d } },
+      orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
+      take: candidateTake, select: selectFields,
+    }))).filter(p => !s3ids.has(p.id))
+    if (s4.length > 0) console.log(`[ContentCurator] stage4 fallback (${desireCat}→NULL pool): ${s4.length}개 발견`)
+    return { refs: [...s3, ...s4].slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
+  }
   return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
 }
 
