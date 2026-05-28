@@ -236,7 +236,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       {/* 뒤로가기 */}
       <Link
         href="/magazine"
-        className="inline-flex items-center gap-1 text-caption font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
       >
         ← 매거진
       </Link>
@@ -244,14 +244,14 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       {/* 헤더 */}
       <div className="mb-8 pb-6 border-b border-border">
         {post.category && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-foreground text-caption font-bold w-fit mb-2">
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary-text text-caption font-bold w-fit mb-2">
             {post.category}
           </span>
         )}
         <h1 className="text-2xl font-bold text-foreground m-0 mb-4 leading-[1.4]">
           {post.title}
         </h1>
-        <div className="flex items-center gap-2 text-caption text-muted-foreground">
+        <div className="flex items-center gap-2 text-[17px] text-muted-foreground">
           <span className="font-medium text-foreground">우나어 매거진</span>
           <span>·</span>
           <span>{formatTimeAgo(post.createdAt)}</span>
@@ -300,7 +300,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
                   href={link.productUrl}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border no-underline transition-all hover:border-primary/30 hover:shadow-sm min-h-[52px]"
+                  className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-[52px]"
                 >
                   <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-xl flex-shrink-0">
                     🛍️
@@ -310,19 +310,19 @@ export default async function MagazineDetailPage({ params }: PageProps) {
                       {link.productName}
                     </p>
                     {link.rating && (
-                      <p className="text-caption text-muted-foreground m-0">
+                      <p className="text-[17px] text-muted-foreground m-0">
                         ⭐ {link.rating}
                       </p>
                     )}
                   </div>
-                  <span className="text-caption text-primary font-bold flex-shrink-0">
+                  <span className="text-[17px] text-primary-text font-bold flex-shrink-0">
                     보러가기 →
                   </span>
                 </a>
               </CpsClickTracker>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground mt-2 m-0">
+          <p className="text-[17px] text-muted-foreground mt-2 m-0">
             광고 · 이 링크를 통해 구매 시 소정의 수수료를 받을 수 있습니다
           </p>
         </div>
@@ -353,11 +353,11 @@ export default async function MagazineDetailPage({ params }: PageProps) {
               <a
                 key={related.id}
                 href={`/magazine/${related.slug ?? related.id}`}
-                className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-all hover:border-primary/30 hover:shadow-sm min-h-[52px]"
+                className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm min-h-[52px]"
               >
                 <div className="flex-1 min-w-0">
                   {related.category && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-foreground text-caption font-bold mb-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary-text text-caption font-bold mb-1">
                       {related.category}
                     </span>
                   )}
@@ -365,7 +365,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
                     {related.title}
                   </p>
                 </div>
-                <span className="text-caption text-muted-foreground flex-shrink-0 mt-1">→</span>
+                <span className="text-[17px] text-primary-text flex-shrink-0 mt-1">→</span>
               </a>
             ))}
           </div>
@@ -388,5 +388,5 @@ export default async function MagazineDetailPage({ params }: PageProps) {
 
 async function MagazineCommentsLoader({ postId, userId }: { postId: string; userId?: string }) {
   const comments = await getCommentsByPostId(postId, userId)
-  return <CommentSection postId={postId} comments={comments} />
+  return <CommentSection postId={postId} comments={comments} isLoggedIn={!!userId} />
 }

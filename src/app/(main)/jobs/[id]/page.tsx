@@ -168,7 +168,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       {/* 뒤로가기 */}
       <Link
         href="/jobs"
-        className="inline-flex items-center gap-1 text-caption font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+        className="inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
       >
         ← 내 일 찾기
       </Link>
@@ -179,9 +179,9 @@ export default async function JobDetailPage({ params }: PageProps) {
           {job.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-foreground text-caption font-medium"
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary-text text-caption font-medium"
             >
-              🏷{tag}
+              🏷 {tag}
             </span>
           ))}
         </div>
@@ -228,7 +228,7 @@ export default async function JobDetailPage({ params }: PageProps) {
             href={job.applyUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-[#E85D50] lg:w-auto lg:h-12 lg:px-8"
+            className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90 lg:w-auto lg:h-12 lg:px-8"
           >
             지원하기
           </a>
