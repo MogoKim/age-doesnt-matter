@@ -21,12 +21,12 @@ function PostCard({ post, boardSlug, showBoardBadge = false, fromParam }: PostCa
     >
       {showBoardBadge
         ? (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-foreground text-caption font-bold w-fit tracking-wide">
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary-text text-caption font-bold w-fit tracking-wide">
             {BOARD_DISPLAY_NAMES[post.boardType as BoardType] ?? post.boardType}
           </span>
         )
         : post.category && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-foreground text-caption font-bold w-fit tracking-wide">
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary-text text-caption font-bold w-fit tracking-wide">
             {post.category}
           </span>
         )
@@ -54,7 +54,7 @@ function PostCard({ post, boardSlug, showBoardBadge = false, fromParam }: PostCa
         <span>{formatTimeAgo(post.createdAt)}</span>
       </div>
 
-      <div className="flex items-center gap-4 text-caption text-muted-foreground pt-1.5 border-t border-[#f0eeec] mt-0.5">
+      <div className="flex items-center gap-4 text-caption text-muted-foreground pt-1.5 border-t border-border mt-0.5">
         <span className="flex items-center gap-1.5" aria-label={`좋아요 ${post.likeCount}개`}>
           <IconHeart size={16} /> {post.likeCount}
         </span>

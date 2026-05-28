@@ -80,7 +80,7 @@ export default async function BestPage({
                 no-underline transition-colors min-h-[52px] whitespace-nowrap flex-shrink-0
                 ${currentTab === tab.key
                   ? 'bg-primary text-white border-2 border-primary'
-                  : 'bg-card border-2 border-border text-muted-foreground hover:border-primary/30'
+                  : 'bg-card border-2 border-border text-foreground hover:border-primary/30'
                 }
               `}
             >
@@ -109,7 +109,11 @@ export default async function BestPage({
         ) : currentTab === 'fame' && !q ? (
           <FameEmptyState />
         ) : (
-          <EmptyState message={q ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.` : getEmptyMessage(currentTab)} />
+          <EmptyState
+            message={q ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.` : getEmptyMessage(currentTab)}
+            ctaHref={q ? `/best?tab=${currentTab}` : undefined}
+            ctaLabel={q ? '검색 초기화' : undefined}
+          />
         )}
 
         <BoardPaginationFooter
@@ -130,11 +134,11 @@ function getEmptyMessage(tab: TabType): string {
 
 function FameEmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center p-10 text-center bg-card rounded-2xl border-2 border-dashed border-border gap-4">
+    <div className="flex flex-col items-center justify-center p-8 text-center bg-card rounded-2xl border-2 border-dashed border-border gap-4">
       <p className="text-4xl">👑</p>
       <div>
         <p className="text-body font-bold text-foreground mb-1">아직 명예의 전당이 비어있어요!</p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-[17px] text-muted-foreground leading-relaxed">
           공감 + 댓글 합계 30개를 달성한 글이 이곳에 입성합니다.<br />
           지금 인기글에 공감을 눌러보세요! 🔥
         </p>
@@ -149,10 +153,18 @@ function FameEmptyState() {
   )
 }
 
-function EmptyState({ message }: { message: string }) {
+function EmptyState({ message, ctaHref, ctaLabel }: { message: string; ctaHref?: string; ctaLabel?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
+    <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border">
       <p className="text-body text-muted-foreground leading-relaxed">{message}</p>
+      {ctaHref && ctaLabel && (
+        <Link
+          href={ctaHref}
+          className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
+        >
+          {ctaLabel}
+        </Link>
+      )}
     </div>
   )
 }

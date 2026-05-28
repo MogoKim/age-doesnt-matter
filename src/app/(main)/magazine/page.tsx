@@ -97,7 +97,7 @@ export default async function MagazinePage({
 
         {posts.length === 0 ? (
           <>
-            <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-4">
+            <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-4">
               <p className="text-body text-muted-foreground leading-relaxed">
                 {q
                   ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.`
@@ -105,6 +105,14 @@ export default async function MagazinePage({
                     ? `${category} 카테고리 매거진이 아직 없어요. 곧 올라올 거예요!`
                     : '아직 매거진이 없어요. 곧 유익한 글이 올라올 거예요!'}
               </p>
+              {(q || category) && (
+                <Link
+                  href="/magazine"
+                  className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
+                >
+                  {q ? '검색 초기화' : '전체 매거진 보기'}
+                </Link>
+              )}
             </div>
             <BoardPaginationFooter
               total={total}
@@ -137,7 +145,7 @@ function MagazineCard({ post, priority }: { post: PostSummary; priority?: boolea
   return (
     <Link
       href={`/magazine/${post.slug ?? post.id}`}
-      className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border overflow-hidden no-underline transition-all hover:border-primary/30 min-h-[52px]"
+      className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border overflow-hidden no-underline transition-colors hover:border-primary/30 min-h-[52px]"
     >
       {post.thumbnailUrl ? (
         <div className="relative flex-shrink-0 w-24 h-20 rounded-lg overflow-hidden">
@@ -157,13 +165,13 @@ function MagazineCard({ post, priority }: { post: PostSummary; priority?: boolea
       )}
       <div className="flex-1 min-w-0">
         {post.category && (
-          <span className="text-caption text-primary-text font-bold">{post.category}</span>
+          <span className="text-caption text-primary-text font-bold mb-1 block">{post.category}</span>
         )}
         <h3 className="text-body font-bold text-foreground m-0 line-clamp-2 leading-snug">
           {post.title}
         </h3>
         {post.preview && (
-          <p className="text-sm text-muted-foreground mt-1 m-0 line-clamp-2">{post.preview}</p>
+          <p className="text-[17px] text-muted-foreground mt-1 m-0 line-clamp-2">{post.preview}</p>
         )}
         <p className="text-caption text-muted-foreground mt-1 m-0">
           👁 {post.viewCount} · {formatTimeAgo(post.createdAt)}
