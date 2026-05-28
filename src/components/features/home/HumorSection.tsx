@@ -2,7 +2,7 @@ import HomeCardLink from '@/components/features/home/HomeCardLink'
 import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
-import { IconComment, IconHeart } from '@/components/icons'
+import { IconEnergy } from '@/components/icons'
 
 interface Props {
   posts: PostSummary[]
@@ -15,12 +15,12 @@ export default function HumorSection({ posts }: Props) {
     <section className="py-6 border-b-4 border-background lg:py-8 lg:border-b-0">
       <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
         <h2 className="text-title font-bold text-foreground flex items-center gap-2">
-          <span>😄</span>
+          <span className="text-[var(--icon-laugh-stroke)]"><IconEnergy size={22} /></span>
           웃음방
         </h2>
         <HomeCardLink
           href="/community/humor"
-          className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary"
+          className="text-[17px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary"
           section="humor-hot"
           position={-1}
           contentId=""
@@ -44,8 +44,8 @@ export default function HumorSection({ posts }: Props) {
               </div>
               <p className="text-body text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
               <div className="flex items-center gap-2.5 text-caption text-muted-foreground">
-                <span className="flex items-center gap-1"><IconComment size={14} /> {post.commentCount}</span>
-                <span className="flex items-center gap-1"><IconHeart size={14} /> {post.likeCount}</span>
+                <span>💬 {post.commentCount}</span>
+                <span>❤️ {post.likeCount}</span>
                 <span>{formatTimeAgo(post.createdAt)}</span>
               </div>
             </HomeCardLink>

@@ -79,7 +79,7 @@ export default function HomeFaqSection() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(HOME_FAQ_SCHEMA) }}
       />
       <h2 className="text-title font-bold text-foreground mb-4">자주 묻는 질문</h2>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         {HOME_FAQ_ITEMS.map((item) => (
           <FaqAccordion key={item.q} item={item} />
         ))}
