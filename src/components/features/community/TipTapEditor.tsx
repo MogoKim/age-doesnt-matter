@@ -157,6 +157,7 @@ export default function TipTapEditor({
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [mediaError, setMediaError] = useState('')
+  const [selectedMedia, setSelectedMedia] = useState<'image' | 'video' | null>(null)
   const [debugVals, setDebugVals] = useState({ innerH: 0, vpH: 0, offsetTop: 0, kbH: 0, toolbarBottom: '' })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -215,6 +216,13 @@ export default function TipTapEditor({
     onUpdate: ({ editor: ed }) => {
       onChange(ed.getHTML())
     },
+    onSelectionUpdate: ({ editor: ed }) => {
+      const sel = ed.state.selection as { node?: { type: { name: string } } }
+      const name = sel.node?.type?.name
+      if (name === 'image') setSelectedMedia('image')
+      else if (name === 'video') setSelectedMedia('video')
+      else setSelectedMedia(null)
+    },
     editorProps: {
       attributes: {
         class:
@@ -232,6 +240,13 @@ export default function TipTapEditor({
             .createParagraphNear()
             .run()
           if (editorRef.current) scrollCursorIntoView(editorRef.current)
+          return true
+        }
+        return false
+      },
+      handleClickOn: (_view, _pos, node, nodePos, _event, direct) => {
+        if (direct && (node.type.name === 'image' || node.type.name === 'video')) {
+          editorRef.current?.chain().setNodeSelection(nodePos).run()
           return true
         }
         return false
@@ -499,6 +514,13 @@ export default function TipTapEditor({
     [editor],
   )
 
+  // ─── 미디어 선택 삭제 핸들러 ───
+  const handleDeleteSelected = useCallback(() => {
+    if (!editor || isUploadingImage || isUploadingVideo) return
+    editor.chain().focus().deleteSelection().run()
+    setSelectedMedia(null)
+  }, [editor, isUploadingImage, isUploadingVideo])
+
   // ─── 유튜브 삽입 핸들러 ───
   const handleYouTubeInsert = useCallback(() => {
     if (!editor) return
@@ -530,6 +552,22 @@ export default function TipTapEditor({
         ref={toolbarRef}
         className="bg-card pt-1 pb-2 border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)]"
       >
+        {selectedMedia && (
+          <div className="flex items-center justify-between px-2 py-1 mb-1 bg-primary/5 rounded-xl border border-primary/10">
+            <span className="text-[17px] text-primary-text font-medium">
+              {selectedMedia === 'image' ? '📷 사진이 선택됐어요' : '🎬 영상이 선택됐어요'}
+            </span>
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleDeleteSelected}
+              disabled={isUploading}
+              className="min-h-[52px] px-4 text-[17px] font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors disabled:opacity-40"
+            >
+              삭제
+            </button>
+          </div>
+        )}
         <div className="flex items-center gap-0.5 border border-border rounded-xl bg-card px-2 py-1">
           {/* 인용구 */}
           <button
@@ -538,7 +576,7 @@ export default function TipTapEditor({
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             className={cn(
               'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-body transition-colors',
-              editor.isActive('blockquote') ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted',
+              editor.isActive('blockquote') ? 'bg-primary/10 text-primary-text' : 'text-foreground hover:bg-muted',
             )}
           >
             "
@@ -551,7 +589,7 @@ export default function TipTapEditor({
             onClick={() => editor.chain().focus().toggleBold().run()}
             className={cn(
               'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-body font-bold transition-colors',
-              editor.isActive('bold') ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted',
+              editor.isActive('bold') ? 'bg-primary/10 text-primary-text' : 'text-foreground hover:bg-muted',
             )}
           >
             B
@@ -576,7 +614,7 @@ export default function TipTapEditor({
                 }}
                 className={cn(
                   'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl transition-colors font-medium',
-                  isActive ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted',
+                  isActive ? 'bg-primary/10 text-primary-text' : 'text-foreground hover:bg-muted',
                 )}
                 style={{ fontSize: size ?? '16px' }}
               >
@@ -615,7 +653,7 @@ export default function TipTapEditor({
       {mediaError && (
         <div className="fixed top-[132px] left-4 right-4 z-[200] flex items-center gap-2 px-4 py-3 rounded-xl bg-destructive text-white shadow-xl">
           <span className="text-base shrink-0">⚠️</span>
-          <span className="text-sm font-medium flex-1">{mediaError}</span>
+          <span className="text-[17px] font-medium flex-1">{mediaError}</span>
           <button
             type="button"
             onClick={() => setMediaError('')}
@@ -646,6 +684,9 @@ export default function TipTapEditor({
         <EditorContent editor={editor} />
       </div>
 
+      {/* 액션바 여백 보정 — selectedMedia 시 fixed 툴바 높이 증가분 보상 */}
+      {selectedMedia && <div className="h-14" aria-hidden="true" />}
+
       {/* ── 동영상 선택 바텀시트 ── */}
       {videoSheet !== 'closed' && (
         <div className="fixed inset-0 z-[60]" onClick={() => setVideoSheet('closed')}>
@@ -667,7 +708,7 @@ export default function TipTapEditor({
                     <span className="text-2xl">🎞</span>
                     <div>
                       <p className="font-bold">내 동영상 올리기</p>
-                      <p className="text-caption text-muted-foreground">MP4, MOV, WebM · 최대 50MB</p>
+                      <p className="text-[17px] text-muted-foreground">MP4, MOV, WebM · 최대 50MB</p>
                     </div>
                   </button>
                   {/* 2번: 유튜브 링크 */}
@@ -679,14 +720,14 @@ export default function TipTapEditor({
                     <span className="text-2xl">📺</span>
                     <div>
                       <p className="font-bold">유튜브 링크</p>
-                      <p className="text-caption text-muted-foreground">유튜브 주소를 붙여넣어 삽입</p>
+                      <p className="text-[17px] text-muted-foreground">유튜브 주소를 붙여넣어 삽입</p>
                     </div>
                   </button>
                 </div>
                 <button
                   type="button"
                   onClick={() => setVideoSheet('closed')}
-                  className="w-full min-h-[52px] mt-3 border-2 border-border rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
+                  className="w-full min-h-[52px] mt-3 border-2 border-border rounded-xl text-body font-bold text-muted-foreground hover:text-foreground transition-colors"
                 >
                   취소
                 </button>
@@ -694,7 +735,7 @@ export default function TipTapEditor({
             ) : (
               <>
                 <p className="text-body font-bold text-foreground mb-2">유튜브 주소를 붙여넣어 주세요</p>
-                <p className="text-caption text-muted-foreground mb-3">
+                <p className="text-[17px] text-muted-foreground mb-3">
                   💡 본문에 유튜브 링크를 바로 붙여넣기해도 자동으로 삽입돼요
                 </p>
                 <input
@@ -708,19 +749,19 @@ export default function TipTapEditor({
                   }}
                   autoFocus
                 />
-                {youtubeError && <p className="text-sm text-destructive mt-1">{youtubeError}</p>}
+                {youtubeError && <p className="text-[17px] text-destructive mt-1">{youtubeError}</p>}
                 <div className="flex gap-2 mt-3">
                   <button
                     type="button"
                     onClick={() => { setVideoSheet('picking'); setYoutubeUrl(''); setYoutubeError('') }}
-                    className="min-h-[52px] px-5 border-2 border-border rounded-xl text-sm font-bold text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
+                    className="min-h-[52px] px-5 border-2 border-border rounded-xl text-body font-bold text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
                   >
                     ← 뒤로
                   </button>
                   <button
                     type="button"
                     onClick={handleYouTubeInsert}
-                    className="flex-1 min-h-[52px] bg-primary text-white rounded-xl text-sm font-bold hover:bg-[#E85D50] transition-colors"
+                    className="flex-1 min-h-[52px] bg-primary text-white rounded-xl text-body font-bold hover:bg-primary/90 transition-colors"
                   >
                     삽입
                   </button>
@@ -806,7 +847,7 @@ export default function TipTapEditor({
         <div className="absolute inset-0 bg-card/60 rounded-xl flex items-center justify-center z-10 pointer-events-none">
           <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 shadow-md">
             <span className="text-lg">⏳</span>
-            <span className="text-caption font-medium text-foreground">
+            <span className="text-[17px] font-medium text-foreground">
               {isUploadingImage ? '사진 업로드 중' : '동영상 업로드 중'}
               {uploadProgress !== null ? ` ${uploadProgress}%` : '...'}
             </span>

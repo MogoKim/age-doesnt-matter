@@ -441,7 +441,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           maxLength={40}
         />
         <div className={cn(
-          'text-right text-caption font-medium text-muted-foreground mt-1',
+          'text-right text-[17px] font-medium text-muted-foreground mt-1',
           (title.length > 40 || (title.length > 0 && title.length < 2)) && 'text-destructive font-bold'
         )}>
           {title.length}/40
@@ -459,7 +459,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           bottomBarHeight={isKeyboardOpen ? 0 : 56}
         />
         <div className={cn(
-          'text-right text-caption font-medium text-muted-foreground mt-1',
+          'text-right text-[17px] font-medium text-muted-foreground mt-1',
           plainTextLength > 0 && plainTextLength < 10 && 'text-destructive font-bold'
         )}>
           {plainTextLength}자
