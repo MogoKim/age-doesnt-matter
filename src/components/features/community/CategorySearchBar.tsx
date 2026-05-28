@@ -1,9 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
 type SearchField = 'both' | 'title' | 'content'
+
+function parseSf(raw: string | null): SearchField {
+  if (raw === 'title' || raw === 'content' || raw === 'both') return raw
+  return 'both'
+}
 
 const FIELD_OPTIONS: Array<{ value: SearchField; label: string }> = [
   { value: 'title', label: '제목' },
@@ -17,10 +22,15 @@ export default function CategorySearchBar() {
   const searchParams = useSearchParams()
 
   const currentQ = searchParams.get('q')
-  const [field, setField] = useState<SearchField>(
-    (searchParams.get('sf') as SearchField | null) ?? 'title',
-  )
+  const currentSf = parseSf(searchParams.get('sf'))
+
+  const [field, setField] = useState<SearchField>(currentSf)
   const [query, setQuery] = useState(currentQ ?? '')
+
+  useEffect(() => {
+    setQuery(currentQ ?? '')
+    setField(currentSf)
+  }, [currentQ, currentSf])
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -42,7 +52,7 @@ export default function CategorySearchBar() {
     params.delete('sf')
     params.delete('page')
     setQuery('')
-    setField('title')
+    setField('both')
     router.push(`${pathname}?${params.toString()}`)
   }
 
@@ -76,7 +86,7 @@ export default function CategorySearchBar() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="검색어를 입력하세요"
-          className="h-[52px] min-w-[140px] flex-1 rounded-xl border border-border bg-background px-4 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/60"
+          className="h-[52px] min-w-[140px] flex-1 rounded-xl border border-border bg-background px-4 text-base text-foreground outline-none transition-colors placeholder:text-foreground/50 focus:border-primary/60"
         />
 
         {/* 검색 버튼 */}
@@ -100,7 +110,7 @@ export default function CategorySearchBar() {
       </div>
 
       {currentQ && (
-        <p className="mt-2 text-sm font-medium text-primary-text">
+        <p className="mt-2 text-[17px] font-medium text-primary-text">
           &ldquo;{currentQ}&rdquo; 검색 결과
         </p>
       )}

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { Suspense } from 'react'
 import { getBoardConfig } from '@/lib/queries/boards'
 import { getPostsByBoardPage, getCachedBoardPage } from '@/lib/queries/posts'
@@ -110,14 +111,37 @@ async function PostListContainer({ boardType, boardSlug, category, sortOption, q
   const categorySuffix = category && category !== '전체' ? `&category=${encodeURIComponent(category)}` : ''
 
   if (posts.length === 0) {
+    const resetParams = [
+      sortOption === 'likes' ? 'sort=likes' : '',
+      category && category !== '전체' ? `category=${encodeURIComponent(category)}` : '',
+    ].filter(Boolean).join('&')
+    const searchResetHref = resetParams
+      ? `/community/${boardSlug}?${resetParams}`
+      : `/community/${boardSlug}`
+
     return (
       <>
-        <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
-          <div className="text-[56px] mb-4">📝</div>
-          <p className="text-sm text-muted-foreground leading-[1.8]">
+        <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
+          <div className="text-[56px]">📝</div>
+          <p className="text-[17px] text-muted-foreground leading-[1.8]">
             {q ? `"${q}" 검색 결과가 없어요.` : '아직 작성된 글이 없어요.'}<br />
             {q ? '다른 검색어를 입력해 보세요.' : '첫 번째 글을 남겨보세요!'}
           </p>
+          {q ? (
+            <Link
+              href={searchResetHref}
+              className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
+            >
+              검색 초기화
+            </Link>
+          ) : (
+            <Link
+              href="/community/write"
+              className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
+            >
+              ✏️ 글쓰기
+            </Link>
+          )}
         </div>
         <BoardPaginationFooter
           total={total}
