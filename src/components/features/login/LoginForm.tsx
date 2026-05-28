@@ -22,13 +22,12 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
 
       {/* 상단: 브랜드 + 공감 카피 (primary/5 배경) */}
       <div
-        className="px-7 flex flex-col justify-between py-10 md:py-12"
-        style={{ background: 'rgba(255, 111, 97, 0.13)', flex: '0 0 44%' }}
+        className="px-7 flex flex-col justify-between py-10 md:py-12 bg-primary/[13%]"
+        style={{ flex: '0 0 44%' }}
       >
         {/* 소셜 프루프 뱃지 */}
         <div
-          className="inline-flex items-center gap-2 w-fit px-3 py-2 rounded-xl text-sm font-semibold"
-          style={{ background: 'rgba(255, 111, 97, 0.18)', color: '#FF6F61' }}
+          className="inline-flex items-center gap-2 w-fit px-3 py-2 rounded-xl text-[17px] font-semibold bg-primary/15 text-primary-text"
         >
           <span>💬</span>
           <span>지금도 누군가 고민을 나누고 있어요</span>
@@ -36,10 +35,10 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
 
         {/* 메인 카피 */}
         <div>
-          <p className="font-bold leading-[1.45]" style={{ fontSize: '30px', color: '#111', letterSpacing: '-0.02em' }}>
+          <p className="text-[30px] font-bold leading-[1.45] text-foreground tracking-tight">
             엄마 말고,<br />아내 말고,<br />그냥 나로.
           </p>
-          <p className="text-[17px] font-medium mt-3" style={{ color: '#888' }}>
+          <p className="text-[17px] font-medium mt-3 text-muted-foreground">
             내 이야기만 해도 되는 곳.
           </p>
         </div>
@@ -64,9 +63,9 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
         </button>
 
         {/* 불안 해소 체크리스트 */}
-        <div className="mt-4 flex items-center justify-center gap-4 text-sm" style={{ color: '#999' }}>
+        <div className="mt-4 flex items-center justify-center gap-4 text-[17px] text-muted-foreground">
           <span>✓ 닉네임만 공개</span>
-          <span style={{ color: '#ddd' }}>|</span>
+          <span className="text-muted-foreground/40">|</span>
           <span>✓ 1초 가입 · 무료</span>
         </div>
 
@@ -74,8 +73,7 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
         <div className="flex-1 flex items-end justify-center pb-10 md:flex-none md:mt-8 md:pb-0">
           <Link
             href="/"
-            className="text-sm transition-colors hover:underline underline-offset-2"
-            style={{ color: '#bbb' }}
+            className="text-[17px] text-muted-foreground transition-colors hover:underline underline-offset-2"
           >
             먼저 둘러볼게요
           </Link>

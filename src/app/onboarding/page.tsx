@@ -3,7 +3,7 @@ import dynamic from 'next/dynamic'
 
 const OnboardingForm = dynamic(
   () => import('@/components/features/onboarding/OnboardingForm'),
-  { loading: () => <div className="h-64 animate-pulse rounded bg-zinc-100" />, ssr: false },
+  { loading: () => <div className="h-64 animate-pulse rounded bg-muted" />, ssr: false },
 )
 
 export const metadata: Metadata = {

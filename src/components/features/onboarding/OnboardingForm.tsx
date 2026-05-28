@@ -201,13 +201,13 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
         <div
           className={cn(
             'flex-1 h-1 rounded-full transition-colors duration-300',
-            step === 1 ? 'bg-primary' : 'bg-green-500',
+            step === 1 ? 'bg-primary' : 'bg-success',
           )}
         />
         <div
           className={cn(
             'flex-1 h-1 rounded-full transition-colors duration-300',
-            step === 2 ? 'bg-primary' : step > 2 ? 'bg-green-500' : 'bg-border',
+            step === 2 ? 'bg-primary' : step > 2 ? 'bg-success' : 'bg-border',
           )}
         />
       </div>
@@ -229,15 +229,15 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
         </div>
 
         <div className="mb-6">
-          <label className="block text-caption font-bold text-foreground mb-2" htmlFor="nickname">닉네임</label>
+          <label className="block text-[17px] font-bold text-foreground mb-2" htmlFor="nickname">닉네임</label>
           <div className="relative">
             <input
               id="nickname"
               type="text"
               className={cn(
-                'w-full min-h-[52px] px-4 pr-12 border-2 rounded-xl text-body font-medium text-foreground bg-card outline-none transition-all placeholder:text-muted-foreground placeholder:font-normal',
+                'w-full min-h-[52px] px-4 pr-12 border-2 rounded-xl text-body font-medium text-foreground bg-card outline-none transition-colors placeholder:text-muted-foreground placeholder:font-normal',
                 nicknameStatus === 'valid'
-                  ? 'border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/10'
+                  ? 'border-success focus:border-success focus:ring-2 focus:ring-success/10'
                   : nicknameStatus === 'error'
                     ? 'border-destructive focus:border-destructive focus:ring-2 focus:ring-destructive/10'
                     : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/10',
@@ -255,20 +255,20 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
               {nicknameStatus === 'checking' && '⏳'}
             </span>
           </div>
-          <div className="text-right text-caption text-muted-foreground mt-1">{nickname.length}/10</div>
+          <div className="text-right text-[17px] text-muted-foreground mt-1">{nickname.length}/10</div>
 
           {nicknameStatus === 'valid' && (
-            <div className="flex items-center gap-1.5 mt-2 text-caption text-green-500 font-medium min-h-6">
+            <div className="flex items-center gap-1.5 mt-2 text-[17px] text-success font-medium min-h-6">
               ✓ 사용 가능한 닉네임이에요
             </div>
           )}
           {nicknameStatus === 'error' && nicknameError && (
-            <div className="flex items-center gap-1.5 mt-2 text-caption text-destructive font-medium min-h-6">
+            <div className="flex items-center gap-1.5 mt-2 text-[17px] text-destructive font-medium min-h-6">
               ✗ {nicknameError}
             </div>
           )}
           {nicknameStatus === 'checking' && (
-            <div className="flex items-center gap-1.5 mt-2 text-caption text-muted-foreground min-h-6">
+            <div className="flex items-center gap-1.5 mt-2 text-[17px] text-muted-foreground min-h-6">
               중복 확인 중...
             </div>
           )}
@@ -276,15 +276,15 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
 
         {/* 규칙 안내 */}
         <div className="bg-background rounded-xl p-4 mb-8">
-          <p className="text-caption font-bold text-muted-foreground mb-2">닉네임 규칙</p>
+          <p className="text-[17px] font-bold text-muted-foreground mb-2">닉네임 규칙</p>
           <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
-            <li className={cn('text-caption flex items-center gap-1.5', lengthOk ? 'text-green-500' : 'text-muted-foreground')}>
+            <li className={cn('text-[17px] flex items-center gap-1.5', lengthOk ? 'text-success' : 'text-muted-foreground')}>
               {lengthOk ? '✓' : '·'} 2~10자
             </li>
-            <li className={cn('text-caption flex items-center gap-1.5', charOk ? 'text-green-500' : 'text-muted-foreground')}>
+            <li className={cn('text-[17px] flex items-center gap-1.5', charOk ? 'text-success' : 'text-muted-foreground')}>
               {charOk ? '✓' : '·'} 한글, 영문, 숫자만 (띄어쓰기 불가)
             </li>
-            <li className={cn('text-caption flex items-center gap-1.5', noBanned ? 'text-green-500' : 'text-muted-foreground')}>
+            <li className={cn('text-[17px] flex items-center gap-1.5', noBanned ? 'text-success' : 'text-muted-foreground')}>
               {noBanned ? '✓' : '·'} 금지어 미포함
             </li>
           </ul>
@@ -323,7 +323,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
           {/* 전체 동의 */}
           <div
             className={cn(
-              'flex items-center gap-2 min-h-[52px] p-4 rounded-xl mb-4 cursor-pointer border-2 transition-all',
+              'flex items-center gap-2 min-h-[52px] p-4 rounded-xl mb-4 cursor-pointer border-2 transition-colors',
               allChecked
                 ? 'border-primary bg-primary/5'
                 : 'border-border bg-background hover:border-primary',
@@ -336,7 +336,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
           >
             <span
               className={cn(
-                'w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all text-sm',
+                'w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors text-sm',
                 allChecked ? 'bg-primary border-primary text-white' : 'bg-card border-border text-transparent',
               )}
             >
@@ -351,7 +351,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
               <div key={term.id} className="flex items-center gap-2 min-h-[52px] px-4 py-2 cursor-pointer rounded-lg transition-colors hover:bg-background">
                 <span
                   className={cn(
-                    'w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all text-sm',
+                    'w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors text-sm',
                     agreed[term.id] ? 'bg-primary border-primary text-white' : 'bg-card border-border text-transparent',
                   )}
                   onClick={() => toggleTerm(term.id)}
@@ -362,16 +362,16 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
                 >
                   ✓
                 </span>
-                <span className="flex-1 text-caption text-foreground" onClick={() => toggleTerm(term.id)}>
+                <span className="flex-1 text-[17px] text-foreground" onClick={() => toggleTerm(term.id)}>
                   {term.label}
                 </span>
-                <span className={cn('text-caption', term.required ? 'text-primary font-bold' : 'text-muted-foreground')}>
+                <span className={cn('text-[17px]', term.required ? 'text-primary-text font-bold' : 'text-muted-foreground')}>
                   {term.required ? '[필수]' : '[선택]'}
                 </span>
                 {term.url && (
                   <a
                     href={term.url}
-                    className="text-caption text-muted-foreground underline shrink-0 min-w-[52px] min-h-[52px] flex items-center justify-center hover:text-primary"
+                    className="text-[17px] text-muted-foreground underline shrink-0 min-w-[52px] min-h-[52px] flex items-center justify-center hover:text-primary-text"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -407,17 +407,17 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
           <strong>{nickname}</strong>님,<br />
           우나어에 오신 것을 환영해요
         </p>
-        <div className="inline-flex items-center gap-2 px-6 py-2 bg-primary/5 rounded-full text-body font-bold text-primary mb-4">
+        <div className="inline-flex items-center gap-2 px-6 py-2 bg-primary/5 rounded-full text-body font-bold text-primary-text mb-4">
           🌱 새싹 등급
         </div>
         <div className="bg-background rounded-xl p-5 text-left space-y-2 mb-4">
-          <p className="text-caption text-foreground font-medium">🌱 새싹 등급으로 시작해요!</p>
-          <p className="text-caption text-muted-foreground leading-relaxed">
+          <p className="text-[17px] text-foreground font-medium">🌱 새싹 등급으로 시작해요!</p>
+          <p className="text-[17px] text-muted-foreground leading-relaxed">
             글쓰기와 댓글 작성이 가능합니다.<br />
             활동하면 등급이 올라가고, 이미지 첨부 등 더 많은 기능을 쓸 수 있어요.
           </p>
-          <div className="text-caption text-muted-foreground pt-1">
-            <span className="text-primary font-bold">다음 등급 🌿 단골</span> → 게시글 5개 또는 댓글 20개
+          <div className="text-[17px] text-muted-foreground pt-1">
+            <span className="text-primary-text font-bold">다음 등급 🌿 단골</span> → 게시글 5개 또는 댓글 20개
           </div>
         </div>
       </div>

@@ -39,7 +39,7 @@ export default function LoginPromptModal({ message, onClose, callbackUrl }: Logi
           <div className="text-[48px]">💬</div>
           <div>
             <p className="text-lg font-bold text-foreground leading-[1.6] mb-1">{message}</p>
-            <p className="text-sm text-muted-foreground">우나어에서 우리 또래와 더 깊이 연결돼요</p>
+            <p className="text-[17px] text-muted-foreground">우나어에서 우리 또래와 더 깊이 연결돼요</p>
           </div>
 
           <KakaoSignupButton
@@ -51,7 +51,7 @@ export default function LoginPromptModal({ message, onClose, callbackUrl }: Logi
           </KakaoSignupButton>
 
           <button
-            className="text-sm text-muted-foreground cursor-pointer min-h-[52px] lg:min-h-[44px] hover:text-foreground transition-colors"
+            className="text-[17px] text-muted-foreground cursor-pointer min-h-[52px] lg:min-h-[44px] hover:text-foreground transition-colors"
             onClick={onClose}
           >
             나중에
