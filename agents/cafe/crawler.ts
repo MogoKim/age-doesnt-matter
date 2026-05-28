@@ -12,7 +12,7 @@
  *   1차 시도: 신 형식 URL (f-e/cafes/{id}/articles/{id}) — 직접 렌더링, iframe 불필요
  *   2차 폴백: 구 형식 URL (iframe_url_utf8) — cafe_main iframe에서 추출
  */
-import { chromium, type BrowserContext, type Page, type Frame } from 'playwright'
+import { chromium, type BrowserContext, type Page, type Frame, type Locator } from 'playwright'
 import { existsSync, readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -252,7 +252,7 @@ async function extractComments(
   ]
 
   for (const sel of containerSelectors) {
-    let items: Awaited<ReturnType<typeof target.locator>>[] = []
+    let items: Locator[] = []
     try {
       items = await target.locator(sel).all()
     } catch {
@@ -260,6 +260,98 @@ async function extractComments(
     }
     if (items.length === 0) continue
 
+    // ─── 신형 DOM: .CommentItem sibling 방식 ───
+    // 일반 댓글과 대댓글이 동일 레벨 sibling <li>로 나열됨
+    // <li class="CommentItem">          — 일반 댓글
+    // <li class="CommentItem CommentItem--reply"> — 대댓글 (바로 다음 sibling)
+    if (sel === '.CommentItem') {
+      let commentCount = 0
+      for (let i = 0; i < items.length; i++) {
+        if (commentCount >= maxComments) break
+
+        const isReply = await items[i].evaluate(
+          (el: Element) => el.classList.contains('CommentItem--reply')
+        )
+        if (isReply) continue  // top-level 댓글로 저장 금지
+
+        const item = items[i]
+
+        // 작성자
+        let author = '익명'
+        for (const authorSel of ['.comment_nickname', '.u_cbox_nick', '.nickname', '.nick', '.comment_writer']) {
+          try {
+            const el = item.locator(authorSel).first()
+            if (await el.count() > 0) {
+              const text = await el.textContent({ timeout: 2000 })
+              if (text?.trim()) { author = text.trim(); break }
+            }
+          } catch { /* 다음 셀렉터 */ }
+        }
+
+        // 댓글 본문
+        let content = ''
+        for (const contentSel of ['.text_comment', '.u_cbox_contents', '.comment_text', '.text', '.content_area']) {
+          try {
+            const el = item.locator(contentSel).first()
+            if (await el.count() > 0) {
+              const text = await el.textContent({ timeout: 2000 })
+              if (text?.trim()) { content = text.trim().slice(0, 200); break }
+            }
+          } catch { /* 다음 셀렉터 */ }
+        }
+        if (!content) continue
+
+        // 좋아요 수
+        let likeCount = 0
+        for (const likeSel of ['.u_cbox_cnt_recomm', '.like_count', '.recomm_count']) {
+          try {
+            const el = item.locator(likeSel).first()
+            if (await el.count() > 0) {
+              const text = await el.textContent({ timeout: 2000 })
+              if (text) { likeCount = parseInt(text.replace(/[^0-9]/g, ''), 10) || 0; break }
+            }
+          } catch { /* 다음 셀렉터 */ }
+        }
+
+        // sibling 대댓글 수집: 이 댓글 바로 다음에 오는 CommentItem--reply들
+        const replies: Array<{ author: string; content: string }> = []
+        for (let j = i + 1; j < items.length && replies.length < 5; j++) {
+          const isNextReply = await items[j].evaluate(
+            (el: Element) => el.classList.contains('CommentItem--reply')
+          )
+          if (!isNextReply) break  // 연속 대댓글 블록 끝
+
+          let replyAuthor = '익명'
+          let replyContent = ''
+          for (const raSel of ['.comment_nickname', '.u_cbox_nick', '.nickname', '.nick']) {
+            try {
+              const el = items[j].locator(raSel).first()
+              if (await el.count() > 0) {
+                const t = await el.textContent({ timeout: 1500 })
+                if (t?.trim()) { replyAuthor = t.trim(); break }
+              }
+            } catch { /* skip */ }
+          }
+          for (const rcSel of ['.text_comment', '.u_cbox_contents', '.comment_text', '.text']) {
+            try {
+              const el = items[j].locator(rcSel).first()
+              if (await el.count() > 0) {
+                const t = await el.textContent({ timeout: 1500 })
+                if (t?.trim()) { replyContent = t.trim().slice(0, 150); break }
+              }
+            } catch { /* skip */ }
+          }
+          if (replyContent) replies.push({ author: replyAuthor, content: replyContent })
+        }
+
+        comments.push({ author, content, likeCount, replies })
+        commentCount++
+      }
+      if (comments.length > 0) break
+      continue
+    }
+
+    // ─── 구형 DOM fallback: 기존 로직 유지 ───
     for (const item of items.slice(0, maxComments)) {
       // 작성자
       let author = '익명'
@@ -299,7 +391,7 @@ async function extractComments(
         } catch { /* 다음 셀렉터 */ }
       }
 
-      // 대댓글 추출
+      // 대댓글 추출 (구형 DOM: item 자식 탐색)
       const replies: Array<{ author: string; content: string }> = []
       for (const replySel of ['.u_cbox_reply_area .u_cbox_comment', '.reply_box .reply_item', '.CommentItem__reply']) {
         try {
