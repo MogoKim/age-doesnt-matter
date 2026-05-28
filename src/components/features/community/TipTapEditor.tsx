@@ -220,7 +220,7 @@ export default function TipTapEditor({
       const sel = ed.state.selection as { node?: { type: { name: string } } }
       const name = sel.node?.type?.name
       if (name === 'image') setSelectedMedia('image')
-      else if (name === 'video') setSelectedMedia('video')
+      else if (name === 'video' || name === 'youtube') setSelectedMedia('video')
       else setSelectedMedia(null)
     },
     editorProps: {
@@ -245,7 +245,7 @@ export default function TipTapEditor({
         return false
       },
       handleClickOn: (_view, _pos, node, nodePos, _event, direct) => {
-        if (direct && (node.type.name === 'image' || node.type.name === 'video')) {
+        if (direct && (node.type.name === 'image' || node.type.name === 'video' || node.type.name === 'youtube')) {
           editorRef.current?.chain().setNodeSelection(nodePos).run()
           return true
         }
