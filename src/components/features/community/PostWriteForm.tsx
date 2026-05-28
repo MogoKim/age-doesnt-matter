@@ -10,6 +10,7 @@ import { useToast } from '@/components/common/Toast'
 import { gtmPostCreate, sendGtmEvent } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
 import BottomSheet from '@/components/ui/BottomSheet'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { ChevronDown } from 'lucide-react'
 
 // TipTap은 SSR 불가 → dynamic import
@@ -71,6 +72,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   // 모바일 키보드 열림 감지 (visualViewport resize) — 하단 CTA 바 표시/숨김 제어
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
   const [categorySheetOpen, setCategorySheetOpen] = useState(false)
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
 
   const board = boards.find((b) => b.slug === selectedBoard)
   const categories = board?.categories.filter((c) => c !== '전체') || []
@@ -226,9 +228,8 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   }
 
 
-  function handleCancel() {
+  function proceedCancel() {
     if (title || content) {
-      if (!confirm('작성 중인 내용이 사라져요. 나가시겠어요?')) return
       sendGtmEvent('post_write_abandoned', {
         board_type: selectedBoard,
         category: selectedCategory,
@@ -245,6 +246,14 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
     } else {
       router.push('/community')
     }
+  }
+
+  function handleCancel() {
+    if (title || content) {
+      setShowCancelDialog(true)
+      return
+    }
+    proceedCancel()
   }
 
   function handleSubmit() {
@@ -305,7 +314,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         disabled={!canSubmit || isPending}
         className={cn(
           'min-w-[52px] h-[52px] flex items-center justify-end text-body font-bold transition-colors',
-          canSubmit && !isPending ? 'text-primary' : 'text-muted-foreground opacity-50'
+          canSubmit && !isPending ? 'text-primary-text' : 'text-muted-foreground opacity-50'
         )}
       >
         {isPending ? (isEditMode ? '수정중' : '등록중') : (isEditMode ? '수정' : '등록')}
@@ -327,15 +336,15 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
                 className="flex-1 text-left cursor-pointer min-h-[52px] flex flex-col justify-center"
                 onClick={() => loadDraft(d)}
               >
-                <span className="text-sm font-bold text-foreground line-clamp-1">
+                <span className="text-[17px] font-bold text-foreground line-clamp-1">
                   {d.title || '(제목 없음)'}
                 </span>
-                <span className="text-caption text-muted-foreground">
+                <span className="text-[17px] text-muted-foreground">
                   {new Date(d.updatedAt).toLocaleDateString('ko-KR')}
                 </span>
               </button>
               <button
-                className="shrink-0 text-caption text-muted-foreground min-h-[52px] min-w-[44px] flex items-center justify-center hover:text-destructive transition-colors cursor-pointer"
+                className="shrink-0 text-[17px] text-muted-foreground min-h-[52px] min-w-[44px] flex items-center justify-center hover:text-destructive transition-colors cursor-pointer"
                 onClick={() => handleDeleteDraft(d.id)}
               >
                 삭제
@@ -344,12 +353,22 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           ))}
         </div>
         <button
-          className="w-full min-h-[52px] border-2 border-border rounded-xl text-sm font-bold text-muted-foreground cursor-pointer hover:border-foreground hover:text-foreground transition-all"
+          className="w-full min-h-[52px] border-2 border-border rounded-xl text-body font-bold text-muted-foreground cursor-pointer hover:border-foreground hover:text-foreground transition-colors"
           onClick={() => setShowDraftList(false)}
         >
           새로 작성하기
         </button>
       </div>
+      <ConfirmDialog
+        open={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={() => { setShowCancelDialog(false); proceedCancel() }}
+        title="글쓰기를 그만할까요?"
+        message="지금 나가면 작성 중인 내용이 사라져요."
+        confirmLabel="나가기"
+        cancelLabel="계속 쓰기"
+        variant="destructive"
+      />
       </>
     )
   }
@@ -360,7 +379,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       {writeHeader}
 
       {error && (
-        <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-sm font-medium">
+        <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-[17px] font-medium">
           {error}
         </div>
       )}
@@ -382,7 +401,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
             </span>
             <ChevronDown className={cn(
               'w-5 h-5 shrink-0 transition-colors',
-              selectedCategory ? 'text-primary' : 'text-muted-foreground'
+              selectedCategory ? 'text-primary-text' : 'text-muted-foreground'
             )} />
           </button>
           <BottomSheet
@@ -399,7 +418,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
                   className={cn(
                     'w-full min-h-[52px] flex items-center px-4 rounded-xl text-body transition-colors',
                     selectedCategory === cat
-                      ? 'bg-primary/10 text-foreground font-bold'
+                      ? 'bg-primary/10 text-primary-text font-bold'
                       : 'text-foreground hover:bg-muted'
                   )}
                 >
@@ -472,6 +491,16 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         </div>
       )}
 
+      <ConfirmDialog
+        open={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={() => { setShowCancelDialog(false); proceedCancel() }}
+        title="글쓰기를 그만할까요?"
+        message="지금 나가면 작성 중인 내용이 사라져요."
+        confirmLabel="나가기"
+        cancelLabel="계속 쓰기"
+        variant="destructive"
+      />
     </>
   )
 }
