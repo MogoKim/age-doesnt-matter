@@ -18,7 +18,7 @@ export default function Life2Section({ posts }: Props) {
           <span>🌿</span>
           2막 준비
         </h2>
-        <HomeCardLink href="/community/life2" className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary" section="life2" position={-1} contentId="" action="more">
+        <HomeCardLink href="/community/life2" className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary-text" section="life2" position={-1} contentId="" action="more">
           더보기 →
         </HomeCardLink>
       </div>

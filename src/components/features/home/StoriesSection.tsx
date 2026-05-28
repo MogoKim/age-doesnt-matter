@@ -20,7 +20,7 @@ export default function StoriesSection({ posts }: Props) {
         </h2>
         <HomeCardLink
           href="/community/stories"
-          className="text-[17px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary"
+          className="text-[17px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary-text"
           section="stories-hot"
           position={-1}
           contentId=""

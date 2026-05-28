@@ -18,7 +18,7 @@ export default function MagazineSection({ posts }: Props) {
           <span className="text-[var(--icon-magazine-stroke)]"><IconMagazine size={22} /></span>
           매거진
         </h2>
-        <HomeCardLink href="/magazine" className="text-[17px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary" section="magazine" position={-1} contentId="" action="more">
+        <HomeCardLink href="/magazine" className="text-[17px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary-text" section="magazine" position={-1} contentId="" action="more">
           전체보기 →
         </HomeCardLink>
       </div>

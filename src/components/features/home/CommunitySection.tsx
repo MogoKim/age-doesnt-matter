@@ -16,10 +16,10 @@ export default function CommunitySection({ posts }: Props) {
     <section className="py-6 lg:py-8">
       <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
         <h2 className="text-title font-bold text-foreground flex items-center gap-2">
-          <span className="text-primary"><IconStories size={22} /></span>
+          <span className="text-primary-text"><IconStories size={22} /></span>
           소통 마당 최신
         </h2>
-        <HomeCardLink href="/community/stories" className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary" section="community" position={-1} contentId="" action="more">
+        <HomeCardLink href="/community/stories" className="text-caption text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary-text" section="community" position={-1} contentId="" action="more">
           더보기 →
         </HomeCardLink>
       </div>

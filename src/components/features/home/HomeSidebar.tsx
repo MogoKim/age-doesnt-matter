@@ -14,14 +14,14 @@ export default function HomeSidebar({ posts }: Props) {
   return (
     <aside className="hidden lg:flex lg:flex-col lg:gap-5 lg:sticky lg:top-[92px]">
       <div className="bg-card rounded-xl p-4 border border-border">
-        <h3 className="text-body font-bold text-foreground mb-3 pb-2.5 border-b border-border flex items-center gap-2"><span className="text-primary"><IconStories size={18} /></span> 최신 소통글</h3>
+        <h3 className="text-body font-bold text-foreground mb-3 pb-2.5 border-b border-border flex items-center gap-2"><span className="text-primary-text"><IconStories size={18} /></span> 최신 소통글</h3>
         <ul className="list-none m-0 p-0">
           {posts.map((post) => (
             <li key={post.id}>
               <Link
                 href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
                 prefetch={false}
-                className="block py-2.5 border-b border-border last:border-b-0 no-underline hover:text-primary"
+                className="block py-2.5 border-b border-border last:border-b-0 no-underline hover:text-primary-text"
               >
                 <span className="text-caption text-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis block">{post.title}</span>
                 <span className="flex items-center gap-2 text-caption text-muted-foreground mt-0.5">

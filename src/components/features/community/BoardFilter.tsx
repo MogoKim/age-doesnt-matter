@@ -28,7 +28,7 @@ export default function BoardFilter({ categories, boardSlug }: BoardFilterProps)
   }
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0 overflow-hidden">
       <div className="flex gap-2 overflow-x-auto py-2 pb-4 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="카테고리 필터">
         {categories.map((cat) => (
           <button
@@ -38,7 +38,7 @@ export default function BoardFilter({ categories, boardSlug }: BoardFilterProps)
               'shrink-0 px-5 py-2.5 rounded-full border-2 text-body font-medium cursor-pointer transition-colors min-h-[52px] flex items-center whitespace-nowrap',
               currentCategory === cat
                 ? 'bg-primary text-white border-primary font-bold'
-                : 'bg-card text-foreground border-border hover:border-primary hover:text-primary-text hover:bg-primary/5',
+                : 'bg-card text-foreground border-border hover:border-primary hover:text-primary-text hover:bg-muted',
               isPending && 'opacity-60',
             )}
             onClick={() => handleSelect(cat)}

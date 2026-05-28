@@ -17,7 +17,7 @@ export default function TrendingSection({ posts }: Props) {
           <span className="text-xl">🔥</span>
           지금 뜨는 이야기
         </h2>
-        <HomeCardLink href="/best" className="text-[17px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary" section="trending" position={-1} contentId="" action="more">
+        <HomeCardLink href="/best" className="text-[17px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary-text" section="trending" position={-1} contentId="" action="more">
           더보기 →
         </HomeCardLink>
       </div>

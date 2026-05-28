@@ -70,7 +70,7 @@ export default function ReportModal({ targetId, targetType, onClose }: ReportMod
               onClick={() => setReason(opt.value)}
               className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all min-h-[52px] ${
                 reason === opt.value
-                  ? 'border-primary bg-primary/5 text-primary'
+                  ? 'border-primary bg-primary/5 text-primary-text'
                   : 'border-border bg-background text-foreground hover:border-primary/30'
               }`}
             >

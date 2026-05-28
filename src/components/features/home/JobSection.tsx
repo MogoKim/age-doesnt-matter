@@ -25,7 +25,7 @@ export default function JobSection({ jobs }: Props) {
           <span className="text-xl">💼</span>
           오늘의 추천 일자리
         </h2>
-        <HomeCardLink href="/jobs" className="text-[17px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary" section="jobs" position={-1} contentId="" action="more">
+        <HomeCardLink href="/jobs" className="text-[17px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary-text" section="jobs" position={-1} contentId="" action="more">
           전체보기 →
         </HomeCardLink>
       </div>
