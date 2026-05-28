@@ -22,7 +22,7 @@ export default function SortToggle() {
     [router, pathname, searchParams],
   )
 
-  const btnBase = 'px-3 py-1.5 rounded-full text-body font-bold cursor-pointer min-h-[52px] lg:min-h-[48px] transition-all'
+  const btnBase = 'px-4 py-2 rounded-full text-body font-bold cursor-pointer min-h-[52px] lg:min-h-[48px] transition-colors'
 
   return (
     <div className="flex gap-1" role="group" aria-label="정렬 방식">

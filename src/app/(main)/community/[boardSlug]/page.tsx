@@ -136,7 +136,7 @@ async function PostListContainer({ boardType, boardSlug, category, sortOption, q
             </Link>
           ) : (
             <Link
-              href="/community/write"
+              href={`/community/write?board=${encodeURIComponent(boardSlug)}`}
               className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
             >
               ✏️ 글쓰기
