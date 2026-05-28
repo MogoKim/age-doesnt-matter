@@ -40,7 +40,7 @@ export default function ConfirmDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="text-lg">{title}</AlertDialogTitle>
           {message && (
-            <AlertDialogDescription className="text-sm text-muted-foreground">
+            <AlertDialogDescription className="text-body text-muted-foreground">
               {message}
             </AlertDialogDescription>
           )}

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 interface ToastMessage {
   id: number
   text: string
-  type: 'success' | 'error' | 'info'
+  type: 'success' | 'warning' | 'error' | 'info'
 }
 
 interface ToastContextValue {
@@ -43,10 +43,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={msg.id}
               className={cn(
-                'px-6 py-3.5 rounded-2xl text-sm font-bold shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-300 pointer-events-auto',
-                msg.type === 'success' && 'bg-foreground text-background',
-                msg.type === 'error' && 'bg-destructive text-white',
-                msg.type === 'info' && 'bg-primary text-white',
+                'px-6 py-3.5 rounded-2xl text-body font-bold shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-300 pointer-events-auto',
+                msg.type === 'success' && 'bg-success text-success-foreground',
+                msg.type === 'warning' && 'bg-warning text-warning-foreground',
+                msg.type === 'error' && 'bg-destructive text-destructive-foreground',
+                msg.type === 'info' && 'bg-info text-info-foreground',
               )}
             >
               {msg.text}
