@@ -17,7 +17,7 @@ export interface SlideData {
   imageUrl?: string
 }
 
-const AUTO_PLAY_INTERVAL = 5000
+const AUTO_PLAY_INTERVAL = 7000
 
 /** 3색 그라디언트 배경 CSS 문자열 생성 */
 function buildGradient(slide: SlideData): string {
@@ -114,7 +114,7 @@ export default function HeroSliderClient({ slides }: Props) {
               style={{
                 background: slide.imageUrl
                   ? 'linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.08) 100%)'
-                  : undefined,
+                  : 'rgba(0,0,0,0.15)',
               }}
             />
 
@@ -130,7 +130,7 @@ export default function HeroSliderClient({ slides }: Props) {
             >
               <h2
                 className="text-white font-bold leading-[1.4] break-keep max-w-[72%] lg:max-w-none"
-                style={{ fontSize: 'clamp(20px, 5.5vw, 32px)', whiteSpace: 'pre-line', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
+                style={{ fontSize: 'clamp(24px, 7vw, 36px)', whiteSpace: 'pre-line', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
               >
                 {slide.title.replace(/\\n/g, '\n')}
               </h2>
@@ -138,7 +138,7 @@ export default function HeroSliderClient({ slides }: Props) {
               {slide.subtitle && (
                 <p
                   className="text-white/90 leading-snug break-keep max-w-[72%] lg:max-w-none"
-                  style={{ fontSize: 'clamp(15px, 3.5vw, 18px)', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
+                  style={{ fontSize: 'clamp(17px, 4vw, 20px)', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
                 >
                   {slide.subtitle}
                 </p>
@@ -147,7 +147,7 @@ export default function HeroSliderClient({ slides }: Props) {
               {slide.ctaText && (
                 <span
                   className="mt-1 inline-flex items-center justify-center px-5 h-[52px] rounded-full bg-white/20 backdrop-blur-sm text-white font-semibold"
-                  style={{ fontSize: 'clamp(15px, 3.5vw, 16px)', minWidth: 110 }}
+                  style={{ fontSize: 'clamp(17px, 4vw, 19px)', minWidth: 130 }}
                 >
                   {slide.ctaText}
                 </span>
@@ -162,7 +162,7 @@ export default function HeroSliderClient({ slides }: Props) {
             <button
               type="button"
               onClick={goPrev}
-              className="hidden lg:flex absolute left-3 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/35 transition-colors z-10"
+              className="hidden lg:flex absolute left-3 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/35 text-white hover:bg-black/50 transition-colors z-10"
               aria-label="이전 슬라이드"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -172,7 +172,7 @@ export default function HeroSliderClient({ slides }: Props) {
             <button
               type="button"
               onClick={goNext}
-              className="hidden lg:flex absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/35 transition-colors z-10"
+              className="hidden lg:flex absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/35 text-white hover:bg-black/50 transition-colors z-10"
               aria-label="다음 슬라이드"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -184,7 +184,7 @@ export default function HeroSliderClient({ slides }: Props) {
       {/* 인디케이터 dots — 이미지 위 absolute 하단 */}
       {slides.length > 1 && (
         <div
-          className="absolute bottom-2 left-0 right-0 flex justify-center items-center gap-1.5 z-10"
+          className="absolute bottom-2 left-0 right-0 flex justify-center items-center gap-2 z-10"
           role="tablist"
           aria-label="슬라이드 선택"
         >
@@ -196,7 +196,7 @@ export default function HeroSliderClient({ slides }: Props) {
               aria-selected={index === current}
               aria-label={`슬라이드 ${index + 1}`}
               onClick={() => goTo(index)}
-              className="p-1.5 border-none bg-transparent cursor-pointer"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 border-none bg-transparent cursor-pointer"
             >
               <span
                 className={cn(

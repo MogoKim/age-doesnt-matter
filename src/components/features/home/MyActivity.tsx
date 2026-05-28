@@ -27,8 +27,7 @@ export default function MyActivity({ todayPosts, newComments, receivedLikes }: P
             className="flex flex-col items-center justify-center gap-1 rounded-2xl py-4 bg-card border border-border no-underline text-inherit hover:border-primary/30 active:scale-95 transition-all"
           >
             <span
-              className="text-[28px] font-bold"
-              style={{ color: 'var(--color-primary)' }}
+              className="text-[28px] font-bold text-primary-text"
             >
               {stat.value}
             </span>
