@@ -89,7 +89,7 @@ export default function GuestPasswordModal({
             className={`flex-1 flex items-center justify-center min-h-[52px] px-4 rounded-xl text-caption font-bold text-white transition-colors disabled:bg-border disabled:cursor-not-allowed ${
               mode === 'delete'
                 ? 'bg-destructive hover:bg-red-600'
-                : 'bg-primary hover:bg-[#E85D50]'
+                : 'bg-primary hover:bg-primary/90'
             }`}
           >
             {isPending ? '처리 중...' : '확인'}
