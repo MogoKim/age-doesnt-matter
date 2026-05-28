@@ -12,6 +12,7 @@ import { useToast } from '@/components/common/Toast'
 import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
 import GuestPasswordModal from './GuestPasswordModal'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 interface CommentItemProps {
   comment: CommentItemType
@@ -30,6 +31,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
   const [editValue, setEditValue] = useState(comment.content)
   const [isPending, startTransition] = useTransition()
   const [guestModal, setGuestModal] = useState<'edit' | 'delete' | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const handleLike = useCallback(() => {
     if (isPending) return
@@ -87,8 +89,10 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
 
   const handleDelete = useCallback(() => {
     if (isPending) return
-    if (!confirm('댓글을 삭제하시겠어요?')) return
+    setShowDeleteConfirm(true)
+  }, [isPending])
 
+  const confirmDelete = useCallback(() => {
     startTransition(async () => {
       const result = await deleteComment(comment.id)
       if (result.error) {
@@ -97,11 +101,11 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         toast('댓글이 삭제되었어요')
       }
     })
-  }, [isPending, comment.id, toast])
+  }, [comment.id, toast])
 
   if (comment.isDeleted) {
     return (
-      <div className="py-4 border-b border-[#f0eeec] text-muted-foreground text-caption italic">
+      <div className="py-4 border-b border-border text-muted-foreground text-[17px] italic">
         삭제된 댓글입니다.
         {comment.replies.length > 0 && (
           <div>
@@ -117,42 +121,42 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
   return (
     <div
       className={cn(
-        'py-4 border-b border-[#f0eeec]',
+        'py-4 border-b border-border',
         isReply && 'pl-8 bg-background rounded-lg p-4 pl-8 mt-1 border-b-0 relative before:content-[""] before:absolute before:left-4 before:top-4 before:bottom-4 before:w-0.5 before:bg-primary/20 before:rounded-sm'
       )}
     >
       <div className="flex items-center gap-1.5 mb-1.5">
         {isBest && (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary text-white leading-none shrink-0">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-primary text-white leading-none shrink-0">
             BEST
           </span>
         )}
         {comment.isGuest ? (
           <>
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-caption bg-muted text-muted-foreground font-medium leading-none">비회원</span>
-            <span className="text-sm font-bold text-foreground">{comment.guestNickname}</span>
+            <span className="text-[17px] font-bold text-foreground">{comment.guestNickname}</span>
           </>
         ) : comment.author ? (
           <>
-            <span className="text-sm">{comment.author.gradeEmoji}</span>
-            <span className="text-sm font-bold text-foreground">{comment.author.nickname}</span>
+            <span className="text-[17px]">{comment.author.gradeEmoji}</span>
+            <span className="text-[17px] font-bold text-foreground">{comment.author.nickname}</span>
           </>
         ) : null}
-        <span className="text-caption text-muted-foreground">· {formatTimeAgo(comment.createdAt)}</span>
+        <span className="text-[17px] text-muted-foreground">· {formatTimeAgo(comment.createdAt)}</span>
 
         {/* 회원 본인 댓글 수정/삭제 */}
         {comment.isOwn && !comment.isGuest && (
           <div className="ml-auto flex items-center gap-1">
             {comment.canEdit && (
               <button
-                className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary transition-colors"
+                className="text-[17px] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary-text transition-colors"
                 onClick={() => { setIsEditing(!isEditing); setEditValue(comment.content) }}
               >
                 수정
               </button>
             )}
             <button
-              className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
+              className="text-[17px] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
               onClick={handleDelete}
               disabled={isPending}
             >
@@ -165,13 +169,13 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         {comment.isGuest && (
           <div className="ml-auto flex items-center gap-1">
             <button
-              className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary transition-colors"
+              className="text-[17px] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary-text transition-colors"
               onClick={() => setGuestModal('edit')}
             >
               수정
             </button>
             <button
-              className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
+              className="text-[17px] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
               onClick={() => setGuestModal('delete')}
             >
               삭제
@@ -189,13 +193,13 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
           />
           <div className="flex justify-end gap-2 mt-2">
             <button
-              className="px-4 py-2 text-caption font-bold text-muted-foreground min-h-[52px] rounded-lg hover:text-foreground transition-colors"
+              className="px-4 py-2 text-[17px] font-bold text-muted-foreground min-h-[52px] rounded-lg hover:text-foreground transition-colors"
               onClick={() => setIsEditing(false)}
             >
               취소
             </button>
             <button
-              className="px-4 py-2 text-caption font-bold text-white bg-primary rounded-lg min-h-[52px] hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-[17px] font-bold text-white bg-primary rounded-lg min-h-[52px] hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
               onClick={handleEdit}
               disabled={isPending || !editValue.trim()}
             >
@@ -210,7 +214,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
       <div className="flex items-center gap-4">
         <button
           className={cn(
-            'flex items-center gap-1 bg-none border-none text-muted-foreground text-caption cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5',
+            'flex items-center gap-1 bg-none border-none text-muted-foreground text-[17px] cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5',
             isLiked && 'text-primary font-bold'
           )}
           onClick={handleLike}
@@ -221,7 +225,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         </button>
         {!isReply && (
           <button
-            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-caption cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-[17px] cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
             onClick={() => setShowReplyInput(!showReplyInput)}
             aria-label="답글"
           >
@@ -267,6 +271,16 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
           onClose={() => setGuestModal(null)}
         />
       )}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => { setShowDeleteConfirm(false); confirmDelete() }}
+        title="댓글 삭제"
+        message="댓글을 삭제하시겠어요?"
+        confirmLabel="삭제"
+        variant="destructive"
+        isLoading={isPending}
+      />
     </div>
   )
 }

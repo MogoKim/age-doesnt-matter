@@ -43,7 +43,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
   return (
     <div className="flex flex-col gap-2">
       {error && (
-        <p className="text-caption text-destructive font-medium px-1">{error}</p>
+        <p className="text-[17px] text-destructive font-medium px-1">{error}</p>
       )}
       <div className="flex items-end gap-2 p-4 bg-card border border-border rounded-2xl mt-2 shadow-sm max-md:sticky max-md:bottom-[72px] max-md:z-50 max-md:rounded-none max-md:border-x-0 max-md:border-b-0 max-md:shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
         <textarea
@@ -56,7 +56,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
         <div className="flex gap-1.5">
           {onCancel && (
             <button
-              className="min-h-[52px] min-w-[52px] px-3 py-2.5 bg-card text-muted-foreground border border-border rounded-xl text-caption font-bold cursor-pointer transition-all hover:text-foreground"
+              className="min-h-[52px] min-w-[52px] px-3 py-2.5 bg-card text-muted-foreground border border-border rounded-xl text-[17px] font-bold cursor-pointer transition-colors hover:text-foreground"
               onClick={onCancel}
               type="button"
             >
@@ -64,7 +64,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
             </button>
           )}
           <button
-            className="min-h-[52px] min-w-[72px] px-4 py-2.5 bg-primary text-white border-none rounded-xl text-caption font-bold cursor-pointer transition-all whitespace-nowrap hover:bg-[#E85D50] hover:shadow-[0_2px_8px_rgba(255,111,97,0.3)] disabled:bg-border disabled:cursor-not-allowed disabled:shadow-none"
+            className="min-h-[52px] min-w-[72px] px-4 py-2.5 bg-primary text-white border-none rounded-xl text-[17px] font-bold cursor-pointer transition-colors whitespace-nowrap hover:bg-primary/90 hover:shadow-[0_2px_8px_rgba(255,111,97,0.3)] disabled:bg-border disabled:cursor-not-allowed disabled:shadow-none"
             disabled={!value.trim() || isPending}
             onClick={handleSubmit}
           >

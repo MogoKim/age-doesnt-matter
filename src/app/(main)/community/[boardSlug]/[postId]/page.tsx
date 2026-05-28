@@ -177,14 +177,14 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
       {/* 뒤로가기 */}
       <div className="flex items-center justify-between">
         {/* lg:hidden: 데스크탑은 Breadcrumbs의 breadcrumb nav가 내비게이션 담당 */}
-        <Link href={backHref} className="lg:hidden inline-flex items-center gap-1 text-xs font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-all hover:text-primary hover:bg-primary/5">
+        <Link href={backHref} className="lg:hidden inline-flex items-center gap-1 text-[17px] font-medium text-muted-foreground no-underline min-h-[52px] mb-4 px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5">
           ← {backLabel}
         </Link>
         {isOwnPost && (
           <div className="flex items-center gap-1">
             <Link
               href={`/community/${boardSlug}/${resolvedId}/edit`}
-              className="text-xs text-muted-foreground min-h-[52px] px-3 py-1 rounded-lg hover:text-primary transition-colors no-underline flex items-center"
+              className="text-[17px] text-muted-foreground min-h-[52px] px-3 py-1 rounded-lg hover:text-primary-text transition-colors no-underline flex items-center"
             >
               수정
             </Link>
@@ -196,11 +196,11 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
       {/* 게시글 헤더 */}
       <div className="mb-8 pb-6 border-b border-border">
         {post.category && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-foreground text-caption font-bold w-fit mb-2">{post.category}</span>
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary-text text-caption font-bold w-fit mb-2">{post.category}</span>
         )}
         <h1 className="text-xl font-bold text-foreground m-0 mb-4 leading-[1.4]">{post.title}</h1>
         <div className="flex items-center gap-2 text-caption text-muted-foreground">
-          <span>{post.author.gradeEmoji}</span>
+          <span title={post.author.gradeEmoji}>{post.author.gradeEmoji}</span>
           <span className="font-bold text-foreground">{post.author.nickname}</span>
           <span>·</span>
           <span>{formatTimeAgo(post.createdAt)}</span>
@@ -211,7 +211,7 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
 
       {/* 본문 */}
       <div
-        className="post-content text-body text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:my-4 [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4 [&_video]:w-full [&_video]:rounded-xl [&_video]:my-4 [&_.image-placeholder]:py-6 [&_.image-placeholder]:px-4 [&_.image-placeholder]:bg-muted [&_.image-placeholder]:rounded-xl [&_.image-placeholder]:text-center [&_.image-placeholder]:text-muted-foreground [&_.image-placeholder]:text-[15px] [&_.image-placeholder]:my-4"
+        className="post-content text-body text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:my-4 [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4 [&_video]:w-full [&_video]:rounded-xl [&_video]:my-4 [&_.image-placeholder]:py-6 [&_.image-placeholder]:px-4 [&_.image-placeholder]:bg-muted [&_.image-placeholder]:rounded-xl [&_.image-placeholder]:text-center [&_.image-placeholder]:text-muted-foreground [&_.image-placeholder]:text-[17px] [&_.image-placeholder]:my-4"
         dangerouslySetInnerHTML={{ __html: proxyR2Images(sanitizeHtml(post.content)) }}
       />
 

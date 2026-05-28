@@ -64,7 +64,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
     <section className="mb-12">
       {bestComments.length > 0 && (
         <div className="mb-6 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-          <p className="text-caption font-bold text-primary mb-2">인기 댓글</p>
+          <p className="text-caption font-bold text-primary-text mb-2">인기 댓글</p>
           {bestComments.map((comment) => (
             <CommentItemComponent
               key={`best-${comment.id}`}
@@ -77,25 +77,25 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
         </div>
       )}
       <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-foreground">
-        <h3 className="text-lg font-medium text-foreground m-0">
-          💬 댓글 <span className="text-primary font-bold">{totalCount}</span>
+        <h3 className="text-lg font-bold text-foreground m-0">
+          💬 댓글 <span className="text-primary-text font-bold">{totalCount}</span>
         </h3>
         <div className="flex gap-1">
           <button
-            className={`px-4 py-2 rounded-full text-caption font-bold cursor-pointer min-h-[52px] transition-all ${
+            className={`px-4 py-2 rounded-full text-[17px] font-bold cursor-pointer min-h-[52px] transition-colors ${
               sort === 'latest'
-                ? 'bg-primary/5 border border-primary text-primary'
-                : 'bg-none border border-transparent text-muted-foreground hover:bg-background'
+                ? 'bg-primary/5 border border-primary text-primary-text'
+                : 'bg-none border border-transparent text-foreground hover:bg-background'
             }`}
             onClick={() => setSort('latest')}
           >
             등록순
           </button>
           <button
-            className={`px-4 py-2 rounded-full text-caption font-bold cursor-pointer min-h-[52px] transition-all ${
+            className={`px-4 py-2 rounded-full text-[17px] font-bold cursor-pointer min-h-[52px] transition-colors ${
               sort === 'likes'
-                ? 'bg-primary/5 border border-primary text-primary'
-                : 'bg-none border border-transparent text-muted-foreground hover:bg-background'
+                ? 'bg-primary/5 border border-primary text-primary-text'
+                : 'bg-none border border-transparent text-foreground hover:bg-background'
             }`}
             onClick={() => setSort('likes')}
           >
@@ -111,7 +111,8 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
+        <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
+          <div className="text-[48px]">💬</div>
           <p className="text-body text-muted-foreground leading-[1.8]">
             아직 댓글이 없어요.<br />
             따뜻한 한마디를 남겨보세요!

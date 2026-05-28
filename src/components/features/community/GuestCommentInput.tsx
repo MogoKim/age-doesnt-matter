@@ -143,7 +143,7 @@ export default function GuestCommentInput({
 
   return (
     <div className="bg-card border border-border rounded-2xl p-4 mt-4">
-      <p className="text-caption font-bold text-foreground mb-3">💬 비회원으로 댓글 달기</p>
+      <p className="text-[17px] font-bold text-foreground mb-3">💬 비회원으로 댓글 달기</p>
 
       <div className="flex gap-3 mb-3">
         <div className="flex-1">
@@ -155,7 +155,7 @@ export default function GuestCommentInput({
             maxLength={10}
             className="w-full px-3 py-2 min-h-[52px] border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
           />
-          <p className="text-caption text-muted-foreground mt-1 ml-1">※ 회원 닉네임은 사용 불가</p>
+          <p className="text-[17px] text-muted-foreground mt-1 ml-1">※ 회원 닉네임은 사용 불가</p>
         </div>
         <div className="flex-1">
           <input
@@ -166,7 +166,7 @@ export default function GuestCommentInput({
             maxLength={8}
             className="w-full px-3 py-2 min-h-[52px] border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
           />
-          <p className="text-caption text-muted-foreground mt-1 ml-1">※ 수정·삭제 시 필요</p>
+          <p className="text-[17px] text-muted-foreground mt-1 ml-1">※ 수정·삭제 시 필요</p>
         </div>
       </div>
 
@@ -178,7 +178,7 @@ export default function GuestCommentInput({
         rows={3}
         className="w-full px-3 py-2 border border-border rounded-xl text-body text-foreground bg-background resize-none outline-none focus:border-primary transition-colors mb-1"
       />
-      <p className="text-caption text-muted-foreground text-right mb-3">{content.length}/500</p>
+      <p className="text-[17px] text-muted-foreground text-right mb-3">{content.length}/500</p>
 
       {/* Turnstile compact 위젯 — 자동 검증 또는 체크박스 표시 */}
       <div className="mb-2">
@@ -189,7 +189,7 @@ export default function GuestCommentInput({
         <KakaoSignupButton
           callbackUrl={pathname}
           gtmFrom="guest_comment_kakao"
-          className="flex-1 flex items-center justify-center min-h-[52px] px-4 bg-[#FEE500] text-[#191919] rounded-xl text-caption font-bold hover:bg-[#FDD800] transition-colors"
+          className="flex-1 flex items-center justify-center min-h-[52px] px-4 bg-[#FEE500] text-[#191919] rounded-xl text-[17px] font-bold hover:bg-[#FDD800] transition-colors"
         >
           💛 카카오로 시작하기
         </KakaoSignupButton>
@@ -197,7 +197,7 @@ export default function GuestCommentInput({
           type="button"
           onClick={handleSubmit}
           disabled={isLoading || !canSubmit}
-          className="flex-1 flex items-center justify-center min-h-[52px] px-4 bg-primary text-white rounded-xl text-caption font-bold hover:bg-[#E85D50] disabled:bg-border disabled:cursor-not-allowed transition-colors"
+          className="flex-1 flex items-center justify-center min-h-[52px] px-4 bg-primary text-white rounded-xl text-[17px] font-bold hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
         >
           {isLoading ? '등록 중...' : '비회원으로 작성'}
         </button>
@@ -205,7 +205,7 @@ export default function GuestCommentInput({
           <button
             type="button"
             onClick={onCancel}
-            className="flex items-center justify-center min-h-[52px] min-w-[52px] px-3 rounded-xl text-caption text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center justify-center min-h-[52px] min-w-[52px] px-3 rounded-xl text-[17px] text-muted-foreground hover:text-foreground transition-colors"
           >
             취소
           </button>

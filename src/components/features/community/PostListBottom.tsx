@@ -30,10 +30,10 @@ export default async function PostListBottom({ boardType, boardSlug, excludePost
   return (
     <section className="mt-2 mb-8">
       <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-foreground">
-        <span className="text-base font-bold text-foreground">{title}</span>
+        <span className="text-title font-bold text-foreground">{title}</span>
         <Link
           href={moreHref}
-          className="text-caption text-primary no-underline min-h-[44px] flex items-center px-2 hover:underline"
+          className="text-[17px] text-primary-text no-underline min-h-[52px] flex items-center px-2 hover:underline"
           prefetch={false}
         >
           {moreLabel}
@@ -47,7 +47,7 @@ export default async function PostListBottom({ boardType, boardSlug, excludePost
               className="flex items-start gap-3 py-3 no-underline text-inherit min-h-[52px] hover:bg-muted/40 transition-colors -mx-1 px-1 rounded-lg"
               prefetch={false}
             >
-              <span className="text-caption font-bold text-muted-foreground w-5 shrink-0 pt-0.5 text-right">
+              <span className="text-caption font-bold text-muted-foreground min-w-[24px] shrink-0 pt-0.5 text-right">
                 {idx + 1}
               </span>
               <div className="flex-1 min-w-0">
