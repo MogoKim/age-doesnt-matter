@@ -1144,7 +1144,10 @@ export async function refreshRecentPosts(): Promise<number> {
         '.article_info .count', '.article_viewer_head .count', '.count', '.info_count .num',
       ])
 
-      if (newCommentCount !== post.commentCount || newLikeCount !== post.likeCount) {
+      // 차단/DOM 미매칭 시 둘 다 0으로 읽힘 → DB 0 리셋 방지
+      if (newCommentCount === 0 && newLikeCount === 0) {
+        console.warn(`[CafeCrawler] refresh skip(차단 의심): id=${post.id} url=${post.postUrl} 기존 댓글=${post.commentCount} 좋아요=${post.likeCount}`)
+      } else if (newCommentCount !== post.commentCount || newLikeCount !== post.likeCount) {
         const commentScore = Math.min(newCommentCount * 10, 100) * 0.55
         const likeScore = Math.min(newLikeCount * 20, 100) * 0.35
         const newKillerScore = Math.round(commentScore + likeScore)
@@ -1181,7 +1184,17 @@ export async function refreshRecentPosts(): Promise<number> {
     }
   }
 
-  await context.close()
+  // close timeout 보호 — headless:false Chromium이 차단 상태에서 IPC 정리 중 deadlock 방지
+  // browser 참조는 context.close() 전에 확보 (close 후에는 null 반환 가능)
+  const browser = context.browser()
+  await Promise.race([page.close(), new Promise<void>(r => setTimeout(r, 5000))])
+    .catch(() => console.warn('[CafeCrawler] page.close() 5초 timeout'))
+  await Promise.race([context.close(), new Promise<void>(r => setTimeout(r, 5000))])
+    .catch(() => console.warn('[CafeCrawler] context.close() 5초 timeout'))
+  if (browser) {
+    await Promise.race([browser.close(), new Promise<void>(r => setTimeout(r, 5000))])
+      .catch(() => console.warn('[CafeCrawler] browser.close() 5초 timeout'))
+  }
   console.log(`[CafeCrawler] 재크롤 완료: ${updated}건 갱신 / ${posts.length}건 확인`)
   return updated
 }
@@ -1295,8 +1308,8 @@ async function main() {
     await prisma.botLog.create({
       data: { botType: 'CAFE_CRAWLER', action: 'CAFE_CRAWL', status: 'SUCCESS', details: JSON.stringify({ mode: 'refresh', updated }), itemCount: updated },
     })
-    await disconnect()
-    return
+    await Promise.race([disconnect(), new Promise(r => setTimeout(r, 5000))])
+    process.exit(0)
   }
 
   const isQuickMode = crawlMode === 'quick'
