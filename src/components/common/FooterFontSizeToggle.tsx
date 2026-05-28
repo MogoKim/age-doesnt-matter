@@ -22,10 +22,10 @@ export default function FooterFontSizeToggle() {
           aria-checked={fontSize === s.key}
           onClick={() => setFontSize(s.key)}
           className={cn(
-            'flex items-center justify-center w-10 h-10 rounded-lg border transition-colors',
+            'flex items-center justify-center w-[52px] h-[52px] lg:w-12 lg:h-12 rounded-lg border transition-colors',
             s.class,
             fontSize === s.key
-              ? 'border-primary bg-primary/10 text-foreground font-bold'
+              ? 'border-primary bg-primary/10 text-primary-text font-bold'
               : 'border-border text-muted-foreground hover:border-primary/50'
           )}
         >

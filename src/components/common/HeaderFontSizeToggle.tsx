@@ -30,7 +30,7 @@ export default function HeaderFontSizeToggle() {
       >
         <span className="relative leading-none select-none">
           <span className="text-[18px] font-bold">가</span>
-          <span className="absolute -top-1.5 -right-2 text-[10px] font-bold text-primary leading-none">+</span>
+          <span className="absolute -top-1.5 -right-2 text-[11px] font-bold text-primary-text leading-none">+</span>
         </span>
       </button>
 
@@ -67,7 +67,7 @@ export default function HeaderFontSizeToggle() {
               >
                 <span
                   className="font-bold leading-none select-none w-6 text-center"
-                  style={{ fontSize: s.key === 'NORMAL' ? 14 : s.key === 'LARGE' ? 18 : 22 }}
+                  style={{ fontSize: s.key === 'NORMAL' ? 15 : s.key === 'LARGE' ? 18 : 22 }}
                 >
                   {s.label}
                 </span>

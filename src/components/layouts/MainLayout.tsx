@@ -30,7 +30,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </a>
 
       {/* 전 페이지 최상단 홍보 띠 배너 — Suspense로 감싸 children blocking 방지 */}
-      <Suspense fallback={<div className="h-[44px]" />}>
+      <Suspense fallback={<div className="h-[56px]" />}>
         <TopPromoBanner />
       </Suspense>
 

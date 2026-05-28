@@ -63,9 +63,9 @@ export default function GNB({ isLoggedIn = false, nickname, unreadCount = 0 }: G
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'text-body no-underline px-3 py-1.5 rounded-lg transition-colors duration-150 whitespace-nowrap',
+                  'inline-flex items-center h-12 text-body no-underline px-3 rounded-lg transition-colors duration-150 whitespace-nowrap',
                   isActive
-                    ? 'bg-[#FFE9E5] text-primary-text font-semibold'
+                    ? 'bg-[var(--surface-coral-soft)] text-primary-text font-semibold'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 )}
                 aria-current={isActive ? 'page' : undefined}
@@ -91,7 +91,7 @@ export default function GNB({ isLoggedIn = false, nickname, unreadCount = 0 }: G
             </button>
           </form>
           {searchError && (
-            <p className="absolute top-full left-0 mt-1 text-xs text-destructive whitespace-nowrap" role="alert">
+            <p className="absolute top-full left-0 mt-1 text-[17px] text-destructive whitespace-nowrap" role="alert">
               {searchError}
             </p>
           )}
@@ -108,7 +108,7 @@ export default function GNB({ isLoggedIn = false, nickname, unreadCount = 0 }: G
               </Link>
             </>
           ) : (
-            <Link href="/login" className="flex items-center gap-2 text-sm text-muted-foreground no-underline whitespace-nowrap hover:text-foreground ml-1">
+            <Link href="/login" className="flex items-center gap-2 text-base text-muted-foreground no-underline whitespace-nowrap hover:text-foreground ml-1">
               로그인
             </Link>
           )}

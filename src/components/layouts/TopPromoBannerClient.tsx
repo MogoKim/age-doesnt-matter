@@ -33,14 +33,14 @@ export default function TopPromoBannerClient({
   const isExternal = href.startsWith('https://')
 
   const linkContent = (
-    <span className="text-white text-caption font-semibold leading-snug line-clamp-1 flex-1 min-w-0">
+    <span className="text-white text-[17px] font-semibold leading-snug line-clamp-2 flex-1 min-w-0">
       {text}
     </span>
   )
 
   return (
     <div
-      className="relative flex items-center justify-center gap-2 h-[44px] px-4 overflow-hidden text-center"
+      className="relative flex items-center justify-center gap-2 h-[56px] px-4 overflow-hidden text-center"
       style={{
         background: 'linear-gradient(90deg, var(--hero-1-from) 0%, var(--hero-1-mid) 50%, var(--hero-1-to) 100%)',
       }}
