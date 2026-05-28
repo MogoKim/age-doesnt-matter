@@ -41,7 +41,7 @@ export default function SearchTabs({ activeTab, query }: SearchTabsProps) {
           className={cn(
             'flex-1 min-w-fit px-4 py-3 min-h-[52px] text-body font-medium whitespace-nowrap transition-colors',
             activeTab === tab.key
-              ? 'text-primary border-b-2 border-primary'
+              ? 'text-primary-text border-b-2 border-primary font-bold'
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
