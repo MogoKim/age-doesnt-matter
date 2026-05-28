@@ -55,7 +55,7 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
         a: (
           <span>
             카카오로 1초 가입돼요.{' '}
-            <KakaoSignupButton callbackUrl="/community/stories" gtmFrom="about_faq" className="text-primary font-bold underline cursor-pointer bg-transparent border-none p-0">
+            <KakaoSignupButton callbackUrl="/community/stories" gtmFrom="about_faq" className="text-primary-text font-bold underline cursor-pointer bg-transparent border-none p-0">
               카카오톡으로 시작하기 →
             </KakaoSignupButton>
           </span>
@@ -85,7 +85,7 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
               <li>💎 <strong>터줏대감</strong> — 게시글 20개 이상 + 받은 공감 100개 이상</li>
               <li>☀️ <strong>따뜻한이웃</strong> — 운영진이 직접 선정하는 특별 등급</li>
             </ul>
-            <p className="text-sm text-muted-foreground mt-2">등급이 올라가면 이미지·유튜브 첨부 등 더 많은 기능을 사용할 수 있어요.</p>
+            <p className="text-[17px] text-muted-foreground mt-2">등급이 올라가면 이미지·유튜브 첨부 등 더 많은 기능을 사용할 수 있어요.</p>
           </div>
         ),
       },
@@ -104,11 +104,11 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
           <div className="space-y-2">
             <p>원하는 게시판에 들어간 뒤 오른쪽 아래 ✏️ 버튼을 눌러주세요.</p>
             <ul className="list-disc pl-5 space-y-1.5">
-              <li><Link href="/community/stories" className="text-primary underline">사는이야기</Link> — 일상·고민·감동 이야기</li>
-              <li><Link href="/community/life2" className="text-primary underline">2막준비</Link> — 재취업·은퇴·인생 2막</li>
-              <li><Link href="/community/humor" className="text-primary underline">웃음방</Link> — 유머·재미있는 글</li>
+              <li><Link href="/community/stories" className="text-primary-text underline">사는이야기</Link> — 일상·고민·감동 이야기</li>
+              <li><Link href="/community/life2" className="text-primary-text underline">2막준비</Link> — 재취업·은퇴·인생 2막</li>
+              <li><Link href="/community/humor" className="text-primary-text underline">웃음방</Link> — 유머·재미있는 글</li>
             </ul>
-            <p className="text-sm text-muted-foreground">✏️ 버튼은 로그인 후에 보여요.</p>
+            <p className="text-[17px] text-muted-foreground">✏️ 버튼은 로그인 후에 보여요.</p>
           </div>
         ),
       },
@@ -246,12 +246,12 @@ export default async function AboutPage() {
             {isLoggedIn ? (
               <Link
                 href="/community/stories"
-                className="text-primary font-bold text-body no-underline hover:underline"
+                className="text-primary-text font-bold text-body no-underline hover:underline"
               >
                 커뮤니티 들어가기 →
               </Link>
             ) : (
-              <KakaoSignupButton callbackUrl="/community/stories" gtmFrom="about_mid_cta" className="text-primary font-bold text-body bg-transparent border-none p-0 cursor-pointer hover:underline">
+              <KakaoSignupButton callbackUrl="/community/stories" gtmFrom="about_mid_cta" className="text-primary-text font-bold text-body bg-transparent border-none p-0 cursor-pointer hover:underline">
                 1초만에 무료 회원가입 →
               </KakaoSignupButton>
             )}
@@ -271,14 +271,14 @@ export default async function AboutPage() {
             >
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{card.emoji}</span>
-                <span className="text-caption text-primary font-bold bg-primary/10 rounded-full px-2.5 py-0.5">
+                <span className="text-caption text-primary-text font-bold bg-primary/10 rounded-full px-2.5 py-0.5">
                   {card.label}
                 </span>
               </div>
               <p className="text-body font-bold text-foreground leading-snug break-keep m-0">
                 {card.title}
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed break-keep m-0">
+              <p className="text-[17px] text-muted-foreground leading-relaxed break-keep m-0">
                 {card.desc}
               </p>
             </Link>
@@ -297,7 +297,7 @@ export default async function AboutPage() {
               '1초면 끝 — 카카오 계정 하나면 바로 시작',
             ].map((text) => (
               <li key={text} className="flex items-start gap-3 text-body text-foreground">
-                <span className="text-primary font-bold shrink-0 mt-0.5">✓</span>
+                <span className="text-primary-text font-bold shrink-0 mt-0.5">✓</span>
                 <span className="break-keep">{text}</span>
               </li>
             ))}
@@ -305,7 +305,7 @@ export default async function AboutPage() {
           {isLoggedIn ? (
             <Link
               href="/community/stories"
-              className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-[#E85D50] lg:w-auto lg:px-10"
+              className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90 lg:w-auto lg:px-10"
             >
               커뮤니티 바로 가기
             </Link>
@@ -329,7 +329,7 @@ export default async function AboutPage() {
         <div className="space-y-7">
           {FAQ_GROUPS.map((group) => (
             <div key={group.group}>
-              <h3 className="text-sm font-bold text-muted-foreground mb-3">{group.group}</h3>
+              <h3 className="text-[17px] font-bold text-muted-foreground mb-3">{group.group}</h3>
               <div className="space-y-2">
                 {group.items.map((item) => (
                   <FaqAccordion key={item.q} item={item} />

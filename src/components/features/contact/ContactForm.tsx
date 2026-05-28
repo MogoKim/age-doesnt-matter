@@ -70,7 +70,7 @@ export default function ContactForm({ type }: ContactFormProps) {
         <div className="space-y-5">
           {/* 이름 */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">
+            <label className="text-[17px] font-medium text-foreground">
               이름 <span className="text-muted-foreground font-normal">(선택)</span>
             </label>
             <input
@@ -86,7 +86,7 @@ export default function ContactForm({ type }: ContactFormProps) {
 
           {/* 이메일 */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">
+            <label className="text-[17px] font-medium text-foreground">
               답장 받을 이메일 <span className="text-muted-foreground font-normal">(선택)</span>
             </label>
             <input
@@ -102,7 +102,7 @@ export default function ContactForm({ type }: ContactFormProps) {
 
           {/* 문의 내용 */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">
+            <label className="text-[17px] font-medium text-foreground">
               문의 내용 <span className="text-destructive">*</span>
             </label>
             <textarea
@@ -115,13 +115,13 @@ export default function ContactForm({ type }: ContactFormProps) {
               className="w-full px-4 py-3 rounded-xl border border-border bg-background text-body text-foreground placeholder:text-muted-foreground resize-none outline-none transition-colors focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,111,97,0.1)] disabled:opacity-50"
             />
             <div className="flex justify-between">
-              <p className="text-sm text-muted-foreground">{message.trim().length < 10 ? `최소 10자 이상 입력해 주세요 (현재 ${message.length}자)` : ''}</p>
-              <p className="text-sm text-muted-foreground">{message.length}/500</p>
+              <p className="text-[17px] text-muted-foreground">{message.trim().length < 10 ? `최소 10자 이상 입력해 주세요 (현재 ${message.length}자)` : ''}</p>
+              <p className="text-[17px] text-muted-foreground">{message.length}/500</p>
             </div>
           </div>
 
           {/* 에러 */}
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-[17px] text-destructive">{error}</p>}
 
           {/* honeypot (봇 방지) */}
           <input type="text" name="_honey" tabIndex={-1} aria-hidden style={{ display: 'none' }} readOnly value="" />

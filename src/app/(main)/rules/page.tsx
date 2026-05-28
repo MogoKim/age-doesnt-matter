@@ -77,12 +77,12 @@ export default function RulesPage() {
             <li><strong>3차 위반:</strong> 30일 이용 정지</li>
             <li><strong>중대 위반:</strong> 즉시 영구 이용정지 (음란물, 사기 등)</li>
           </ul>
-          <p className="text-sm text-muted-foreground mt-3">
+          <p className="text-[17px] text-muted-foreground mt-3">
             신고가 3건 이상 접수된 글은 자동으로 숨김 처리되며, 운영진이 검토합니다.
           </p>
         </section>
 
-        <p className="text-sm text-muted-foreground pt-4 border-t border-border">
+        <p className="text-[17px] text-muted-foreground pt-4 border-t border-border">
           시행일: 2026년 3월 1일 · 우리 나이가 어때서 운영팀
         </p>
       </div>

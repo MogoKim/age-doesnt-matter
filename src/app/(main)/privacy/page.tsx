@@ -30,7 +30,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-bold mb-3">2. 수집하는 개인정보 항목</h2>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse mt-2">
+            <table className="w-full text-[17px] border-collapse mt-2">
               <thead>
                 <tr className="border-b-2 border-foreground">
                   <th className="text-left py-2 pr-4 font-bold">구분</th>
@@ -124,7 +124,7 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <p className="text-sm text-muted-foreground pt-4 border-t border-border">
+        <p className="text-[17px] text-muted-foreground pt-4 border-t border-border">
           최초 시행일: 2026년 3월 1일 | 최종 개정일: 2026년 5월 18일
         </p>
       </div>

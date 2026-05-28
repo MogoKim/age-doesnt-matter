@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 
 const ContactForm = dynamic(
   () => import('@/components/features/contact/ContactForm'),
-  { loading: () => <div className="h-48 animate-pulse rounded bg-zinc-100" />, ssr: false },
+  { loading: () => <div className="h-48 animate-pulse rounded bg-muted" />, ssr: false },
 )
 
 export const revalidate = 604800 // 7일 — 문의 안내는 거의 불변
@@ -42,18 +42,18 @@ export default function ContactPage() {
           <div className="space-y-2 text-body text-muted-foreground">
             <p className="m-0">평일 오전 10시 ~ 오후 6시</p>
             <p className="m-0">주말·공휴일 휴무</p>
-            <p className="m-0 text-sm">문의 접수 후 영업일 기준 1~2일 내 답변드려요.</p>
+            <p className="m-0 text-[17px]">문의 접수 후 영업일 기준 1~2일 내 답변드려요.</p>
           </div>
         </section>
 
         <div className="pt-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[17px] text-muted-foreground">
             커뮤니티 이용 관련은{' '}
-            <Link href="/terms" className="text-primary no-underline font-medium">
+            <Link href="/terms" className="text-primary-text no-underline font-medium">
               이용약관
             </Link>
             과{' '}
-            <Link href="/privacy" className="text-primary no-underline font-medium">
+            <Link href="/privacy" className="text-primary-text no-underline font-medium">
               개인정보처리방침
             </Link>
             을 참고해 주세요.

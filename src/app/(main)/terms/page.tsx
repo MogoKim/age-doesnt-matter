@@ -95,7 +95,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <p className="text-sm text-muted-foreground pt-4 border-t border-border">
+        <p className="text-[17px] text-muted-foreground pt-4 border-t border-border">
           최초 시행일: 2026년 3월 1일 | 최종 개정일: 2026년 5월 18일
         </p>
       </div>
