@@ -57,13 +57,25 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
 
       <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full max-w-[480px] max-h-[85vh] overflow-y-auto shadow-2xl animate-in slide-in-from-bottom duration-300">
         <div className="sticky top-0 bg-card px-6 pt-6 pb-3 border-b border-border flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground">필터</h2>
-          <button
-            className="text-sm text-muted-foreground cursor-pointer min-h-[52px] lg:min-h-[44px] px-2 hover:text-primary transition-colors"
-            onClick={handleReset}
-          >
-            초기화
-          </button>
+          <h2 className="text-title font-bold text-foreground">필터</h2>
+          <div className="flex items-center gap-2">
+            <button
+              className="text-body font-medium text-muted-foreground cursor-pointer min-h-[52px] lg:min-h-[44px] px-2 hover:text-primary transition-colors"
+              onClick={handleReset}
+            >
+              초기화
+            </button>
+            <button
+              type="button"
+              aria-label="필터 닫기"
+              onClick={onClose}
+              className="flex items-center justify-center w-[52px] h-[52px] lg:w-11 lg:h-11 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M4 4L16 16M16 4L4 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-6">
@@ -72,8 +84,8 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
             <h3 className="text-body font-bold text-foreground mb-3">지역</h3>
             <div className="flex flex-wrap gap-2">
               <button
-                className={`px-4 py-2 rounded-full text-sm font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                  !region ? 'bg-primary text-white border-primary' : 'bg-card text-muted-foreground border-border'
+                className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
+                  !region ? 'bg-primary text-white border-primary' : 'bg-card text-foreground border-border'
                 }`}
                 onClick={() => setRegion('')}
               >
@@ -82,8 +94,8 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
               {REGIONS.map((r) => (
                 <button
                   key={r}
-                  className={`px-4 py-2 rounded-full text-sm font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                    region === r ? 'bg-primary text-white border-primary' : 'bg-card text-muted-foreground border-border'
+                  className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
+                    region === r ? 'bg-primary text-white border-primary' : 'bg-card text-foreground border-border'
                   }`}
                   onClick={() => setRegion(region === r ? '' : r)}
                 >
@@ -100,8 +112,8 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
               {WORK_TIMES.map((t) => (
                 <button
                   key={t}
-                  className={`px-4 py-2 rounded-full text-sm font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                    tags.includes(t) ? 'bg-primary text-white border-primary' : 'bg-card text-muted-foreground border-border'
+                  className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
+                    tags.includes(t) ? 'bg-primary text-white border-primary' : 'bg-card text-foreground border-border'
                   }`}
                   onClick={() => toggleTag(t)}
                 >
@@ -118,8 +130,8 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
               {CONDITIONS.map((c) => (
                 <button
                   key={c}
-                  className={`px-4 py-2 rounded-full text-sm font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                    tags.includes(c) ? 'bg-primary text-white border-primary' : 'bg-card text-muted-foreground border-border'
+                  className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
+                    tags.includes(c) ? 'bg-primary text-white border-primary' : 'bg-card text-foreground border-border'
                   }`}
                   onClick={() => toggleTag(c)}
                 >

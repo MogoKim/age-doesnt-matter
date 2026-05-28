@@ -33,24 +33,27 @@ export default function JobQuickTags() {
   )
 
   return (
-    <div className="flex gap-2">
-      {QUICK_TAGS.map((tag) => {
-        const isActive = activeTags.includes(tag)
-        return (
-          <button
-            key={tag}
-            className={cn(
-              'shrink-0 px-5 py-2.5 rounded-full border-2 text-body font-medium min-h-[52px] cursor-pointer transition-all',
-              isActive
-                ? 'bg-primary text-white border-primary font-bold'
-                : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary hover:bg-primary/5',
-            )}
-            onClick={() => toggleTag(tag)}
-          >
-            {tag}
-          </button>
-        )
-      })}
+    <div className="relative">
+      <div className="flex gap-2 overflow-x-auto [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {QUICK_TAGS.map((tag) => {
+          const isActive = activeTags.includes(tag)
+          return (
+            <button
+              key={tag}
+              className={cn(
+                'shrink-0 px-5 py-2.5 rounded-full border-2 text-body font-medium min-h-[52px] cursor-pointer transition-all',
+                isActive
+                  ? 'bg-primary text-white border-primary font-bold'
+                  : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary hover:bg-primary/5',
+              )}
+              onClick={() => toggleTag(tag)}
+            >
+              {tag}
+            </button>
+          )
+        })}
+      </div>
+      <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
     </div>
   )
 }

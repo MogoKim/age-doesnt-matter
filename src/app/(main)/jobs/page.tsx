@@ -60,7 +60,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
           <Suspense fallback={null}>
             <JobFilterButton />
           </Suspense>
-          <div className="flex-1 min-w-0 overflow-x-auto [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex-1 min-w-0">
             <Suspense fallback={null}>
               <JobQuickTags />
             </Suspense>
@@ -69,15 +69,15 @@ export default async function JobsPage({ searchParams }: PageProps) {
 
         {/* 활성 필터 표시 */}
         {hasFilters && (
-          <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
-            <span>적용된 필터:</span>
+          <div className="flex items-center gap-2 mb-4 text-[17px] text-muted-foreground">
+            <span className="font-medium">적용된 필터:</span>
             {region && (
-              <span className="px-2.5 py-1 rounded-full bg-primary/10 text-foreground text-caption font-medium">
+              <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary-text text-caption font-medium">
                 {region}
               </span>
             )}
             {tags?.map((tag) => (
-              <span key={tag} className="px-2.5 py-1 rounded-full bg-primary/10 text-foreground text-caption font-medium">
+              <span key={tag} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary-text text-caption font-medium">
                 {tag}
               </span>
             ))}
@@ -92,7 +92,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
             className="space-y-3"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-2xl border-2 border-dashed border-border">
+          <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border">
             <p className="text-body text-muted-foreground leading-relaxed">
               {q ? (
                 <>&ldquo;{q}&rdquo; 검색 결과가 없어요.<br />다른 검색어를 입력해 보세요.</>
@@ -102,6 +102,14 @@ export default async function JobsPage({ searchParams }: PageProps) {
                 <>아직 등록된 일자리가 없어요.<br />곧 새로운 일자리가 올라올 거예요!</>
               )}
             </p>
+            {(q || hasFilters) && (
+              <Link
+                href="/jobs"
+                className="inline-flex items-center justify-center h-[52px] px-6 bg-primary text-white rounded-xl text-body font-bold no-underline hover:bg-primary/90"
+              >
+                {q ? '검색 초기화' : '필터 초기화'}
+              </Link>
+            )}
           </div>
         )}
 
@@ -126,14 +134,14 @@ function JobCard({ job }: { job: JobCardItem }) {
       {job.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
           {job.isUrgent && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-br from-[#FF6B6B] to-[#FF8E53] text-white">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-destructive text-white">
               급구
             </span>
           )}
           {job.tags.slice(0, 2).map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-foreground text-caption font-medium"
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary-text text-caption font-medium"
             >
               {tag}
             </span>
@@ -147,7 +155,7 @@ function JobCard({ job }: { job: JobCardItem }) {
       </h3>
 
       {/* 급여 — 정규화된 형식 */}
-      <p className="text-body text-foreground m-0 mb-1 font-medium">
+      <p className="text-body text-primary-text m-0 mb-1 font-bold">
         {formatSalary(job.salary)}
       </p>
 
@@ -160,9 +168,9 @@ function JobCard({ job }: { job: JobCardItem }) {
 
       {/* 메타 */}
       <div className="flex items-center gap-3 text-caption text-muted-foreground">
-        <span>조회 {job.viewCount}</span>
-        <span>댓글 {job.commentCount}</span>
-        <span>{formatTimeAgo(job.createdAt)}</span>
+        <span>👀 {job.viewCount}</span>
+        <span>💬 {job.commentCount}</span>
+        <span>🕐 {formatTimeAgo(job.createdAt)}</span>
       </div>
     </Link>
   )

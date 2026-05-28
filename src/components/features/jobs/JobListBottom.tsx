@@ -18,7 +18,7 @@ export default async function JobListBottom({ excludeJobId }: Props) {
         <span className="text-base font-bold text-foreground">다른 일자리도 찾아보세요</span>
         <Link
           href="/jobs"
-          className="text-caption text-primary no-underline min-h-[44px] flex items-center px-2 hover:underline"
+          className="text-[17px] text-primary-text no-underline min-h-[52px] flex items-center px-2 hover:underline"
           prefetch={false}
         >
           목록 →
