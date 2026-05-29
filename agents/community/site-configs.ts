@@ -68,8 +68,9 @@ export const SITE_CONFIGS: SiteConfig[] = [
       ],
     },
     commentSelectors: {
-      item: '.view_comment_list li',
-      text: '.memo_text_wrap',
+      item: '.memoWrapperDiv',
+      text: '.memoContent',
+      author: '.memoName',
     },
     headless: true,
     minDelay: 2000,
@@ -91,8 +92,9 @@ export const SITE_CONFIGS: SiteConfig[] = [
       ],
     },
     commentSelectors: {
-      item: '.comment_area .comment_item',
-      text: '.comment_cont',
+      item: '.cmt_item',
+      text: '.usertxt span',
+      author: '.nameui',
     },
     headless: true,
     minDelay: 2000,
