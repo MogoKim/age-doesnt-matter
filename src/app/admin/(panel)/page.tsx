@@ -98,6 +98,12 @@ export default async function AdminDashboardPage() {
   const trendMaxPv = Math.max(...trend.map((d) => d.pv), 1)
   const trendMaxSignups = Math.max(...trend.map((d) => d.signups), 1)
 
+  const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000)
+  const kstY = kstNow.getUTCFullYear()
+  const kstM = String(kstNow.getUTCMonth() + 1).padStart(2, '0')
+  const kstD = String(kstNow.getUTCDate()).padStart(2, '0')
+  const okrPeriod = `${kstY}.${kstM}.01 ~ ${kstY}.${kstM}.${kstD}`
+
   return (
     <div className="space-y-6">
       {/* 자동화 중지 배너 */}
@@ -190,12 +196,15 @@ export default async function AdminDashboardPage() {
       <section className="rounded-xl border border-[#FF6F61]/30 bg-[#FF6F61]/5 p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-bold text-zinc-900">🎯 이번 달 누적 / 6월 목표</h2>
+            <h2 className="text-sm font-bold text-zinc-900">🎯 이번 달 OKR</h2>
             <p className="mt-0.5 text-xs font-medium text-[#FF6F61]">
               광고 + SEO로 진짜 커뮤니티 트래픽 만들기
             </p>
           </div>
-          <span className="text-xs text-zinc-400">현재 월 1일 기준 · 목표: 6월 말</span>
+          <div className="text-right">
+            <p className="text-xs text-zinc-500">{okrPeriod}</p>
+            <p className="mt-0.5 text-xs text-zinc-400">6월 말 목표 대비 기준선</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -266,38 +275,6 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* UV 마일스톤 */}
-        <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-4">
-          <h3 className="mb-3 text-xs font-bold text-zinc-900">📅 UV 마일스톤</h3>
-          <div className="flex items-end gap-3">
-            {(
-              [
-                { date: '5월 말', target: 500 },
-                { date: '6월 말 (최종)', target: 5000 },
-              ] as const
-            ).map((m) => {
-              const reached = okr.monthlyUv >= m.target
-              const pct = Math.min(100, Math.round((okr.monthlyUv / m.target) * 100))
-              return (
-                <div key={m.date} className="flex-1 text-center">
-                  <div className="relative mx-auto mb-1 h-16 w-full rounded-lg bg-zinc-100">
-                    <div
-                      className={`absolute bottom-0 left-0 right-0 rounded-lg transition-all ${
-                        reached ? 'bg-green-400' : 'bg-[#FF6F61]/60'
-                      }`}
-                      style={{ height: `${pct}%` }}
-                    />
-                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-zinc-700">
-                      {reached ? '✅' : `${pct}%`}
-                    </span>
-                  </div>
-                  <p className="text-xs font-bold text-zinc-700">{m.target.toLocaleString()}명</p>
-                  <p className="text-xs text-zinc-400">{m.date}</p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
       </section>
 
       {/* ③ 30일 트렌드 */}
