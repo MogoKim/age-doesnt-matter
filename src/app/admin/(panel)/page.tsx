@@ -39,6 +39,15 @@ const BOT_STATUS_BADGE: Record<string, { label: string; className: string }> = {
   FAILED: { label: '❌ 실패', className: 'text-red-700 bg-red-50' },
 }
 
+function formatMaybeNumber(value: unknown): string {
+  if (typeof value === 'number' && Number.isFinite(value)) return value.toFixed(1)
+  if (typeof value === 'string') {
+    const n = Number(value)
+    if (Number.isFinite(n)) return n.toFixed(1)
+  }
+  return '—'
+}
+
 const EXPERIMENT_STATUS_LABELS: Record<ExperimentStatus, { label: string; className: string }> = {
   PLANNING: { label: '기획 중', className: 'bg-zinc-100 text-zinc-600' },
   ACTIVE: { label: '진행 중', className: 'bg-blue-50 text-blue-700' },
@@ -401,10 +410,10 @@ export default async function AdminDashboardPage() {
             {experiments.map((exp) => {
               const badge = EXPERIMENT_STATUS_LABELS[exp.status]
               const results = exp.results as {
-                controlAvg?: number
-                testAvg?: number
-                winner?: string
-                delta?: number
+                controlAvg?: unknown
+                testAvg?: unknown
+                winner?: unknown
+                delta?: unknown
               } | null
               return (
                 <div key={exp.id} className="rounded-xl border border-zinc-200 bg-white p-5">
@@ -445,22 +454,22 @@ export default async function AdminDashboardPage() {
                       <div className="rounded-lg bg-zinc-50 p-3 text-center">
                         <div className="text-xs text-zinc-400">통제군 평균</div>
                         <div className="mt-1 text-lg font-bold text-zinc-700">
-                          {results.controlAvg?.toFixed(1) ?? '—'}
+                          {formatMaybeNumber(results.controlAvg)}
                         </div>
                       </div>
                       <div className="rounded-lg bg-zinc-50 p-3 text-center">
                         <div className="text-xs text-zinc-400">실험군 평균</div>
                         <div className="mt-1 text-lg font-bold text-zinc-700">
-                          {results.testAvg?.toFixed(1) ?? '—'}
+                          {formatMaybeNumber(results.testAvg)}
                         </div>
                       </div>
                       <div className="rounded-lg bg-zinc-50 p-3 text-center">
                         <div className="text-xs text-zinc-400">승자</div>
                         <div className="mt-1 text-lg font-bold text-[#FF6F61]">
-                          {results.winner ?? '—'}
-                          {results.delta !== undefined && (
+                          {typeof results.winner === 'string' ? results.winner : '—'}
+                          {results.delta !== undefined && formatMaybeNumber(results.delta) !== '—' && (
                             <span className="ml-1 text-sm text-zinc-500">
-                              (+{results.delta?.toFixed(1)})
+                              (+{formatMaybeNumber(results.delta)})
                             </span>
                           )}
                         </div>
