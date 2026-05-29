@@ -211,6 +211,7 @@ scraped/{postKey}/{index}.{ext}
 | 2026-05-21 | Phase 3 — 네이버 카페 URL 지원(LOCAL ONLY): SiteConfig에 requiresSession?/contentFrame? 추가, navercafe 설정(cafe_main iframe 통합 처리), sheet-scraper SESSION_REQUIRED skip(GHA는 storage-state.json 없으면 PENDING 유지), extractText/extractHtml Page\|Frame 지원, launchBrowserWithSession() 추가, run-local-naver-cafe.ts + plist 신규. 동영상 지원 제외(removeElements에 iframe 포함) | 창업자 발굴 카페 글 Sheet URL만으로 자동 발행 — 로그인 세션 Mac 로컬 전용 |
 | 2026-05-26 | sheet-scraper.ts scrapePage() 직후 videoCount > 0 또는 PZP signal(STRONG any 1개 / WEAK 2개 이상) 감지 시 updateRow(FAILED, '네이버 카페 동영상 포함 글은 발행 제외') 처리 추가. totalFailed 카운트 + continue로 Post 생성 완전 차단 | 동영상 포함 글 Sheet 경유 발행 3차 방어선 — image-router/curator 통과하더라도 최종 게시 직전 차단 |
 | 2026-05-26 | sheet-scraper.ts rawContent/scrapePage 공통 content 변수 기준 ACCESS_BLOCKED_SIGNALS(6개) + BOARD_NOTICE_SIGNALS(2개) 필터 추가 — 동영상 차단 블록 앞 삽입, 감지 시 updateRow(FAILED) + continue | ea1ae6a 접근 차단 fix의 sheet-scraper 경로 구조적 누락 보완 — navercafe "검색 비허용/가입 필요" 안내문 발행 차단 |
+| 2026-05-29 | P0: todayhumor/natepann commentSelectors 셀렉터 수정(d44746c) + GHA 시스템 Chrome 전환(18c0051). P1: filterSourceComments() 추가(HARD_REMOVE_RE, @태그/URL 제거, 앞4자 dedup, 10자↑) + sc SKIP/PARTIAL/FULL 정책 — usable≤2→SHEET_WAVE_SKIP, usable=3→PARTIAL, usable≥4(일반)/7(화제성)→FULL. 좋아요 파동 sc 무관 항상 예약. PENDING details에 sourceComments(filtered)+sourceCommentsRaw(감사용) 분리 | 빈 sourceComments(sc=0) 100% 문제 해결 + 품질 낮은 댓글로 파동 소비 방지 |
 
 ---
 

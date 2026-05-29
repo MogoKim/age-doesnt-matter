@@ -310,6 +310,29 @@ function extractKeyTerms(title: string): string[] {
     .slice(0, 5)
 }
 
+// ── sourceComments 필터 (P1: sc SKIP/PARTIAL/FULL 정책) ──
+
+const HARD_REMOVE_RE = /^[ㄱ-ㅎㅏ-ㅣ\s!?.,♡♥★☆]+$|^[\d\s.,!?]+$/
+
+function filterSourceComments(raw: string[]): string[] {
+  const seen = new Set<string>()
+  return raw
+    .map(c => c
+      .replace(/@\S+/g, '')
+      .replace(/https?:\/\/\S+/g, '')
+      .trim()
+    )
+    .filter(c => {
+      if (c.length < 5) return false
+      if (HARD_REMOVE_RE.test(c)) return false
+      const key = c.slice(0, 4)
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .filter(c => c.length >= 10)
+}
+
 // ── 메인 파이프라인 ──
 
 // ── CLI 인자 + 환경변수 파싱 ──
@@ -609,51 +632,142 @@ export async function main() {
             // BotLog 파동 예약 — details는 scheduler가 JSON.parse()로 읽는 구조
             const now = new Date()
             if (tab.isFeatured) {
-              // 화제성 글: WAVE_L(좋아요+1분) + WAVE_1(공감+3분) + WAVE_2(비판+6분) + WAVE_3(역전+10분)
+              // 화제성 글: sc 필터 → SKIP/PARTIAL/FULL 정책 + 좋아요 항상 예약
               const keyTerms = extractKeyTerms(title)
-              const waves = [
-                { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 1,  targetCount: undefined },
-                { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 3,  targetCount: 3 },
-                { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 6,  targetCount: 2 },
-                { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 10, targetCount: 2 },
-              ]
-              for (const wave of waves) {
-                const scheduledAt = new Date(now.getTime() + wave.delayMin * 60 * 1000)
+              const filteredComments = filterSourceComments(sourceComments)
+              const usable = filteredComments.length
+              const criticalTarget = usable >= 5 ? 2 : usable >= 4 ? 1 : 0
+              const reversalTarget = usable >= 7 ? 2 : usable >= 6 ? 1 : 0
+              console.log(`  [sc] raw=${sourceComments.length} filtered=${usable} empathy=${usable >= 3 ? 3 : 0} critical=${criticalTarget} reversal=${reversalTarget}`)
+
+              if (usable <= 2) {
                 await prisma.botLog.create({
                   data: {
                     botType: 'SEED',
-                    action: wave.action,
+                    action: 'SHEET_WAVE_SKIP',
+                    status: 'SKIP',
+                    details: JSON.stringify({
+                      postId: post.id,
+                      reason: usable === 0 ? 'SC_ZERO' : 'SC_INSUFFICIENT',
+                      sourceCommentsRawCount: sourceComments.length,
+                      sourceCommentsFilteredCount: usable,
+                    }),
+                  },
+                })
+              } else {
+                if (usable < 7) {
+                  await prisma.botLog.create({
+                    data: {
+                      botType: 'SEED',
+                      action: 'SHEET_WAVE_PARTIAL',
+                      status: 'PARTIAL',
+                      details: JSON.stringify({
+                        postId: post.id,
+                        sourceCommentsRawCount: sourceComments.length,
+                        sourceCommentsFilteredCount: usable,
+                        targetCount: 3 + criticalTarget + reversalTarget,
+                      }),
+                    },
+                  })
+                }
+                const commentWaves: Array<{ waveType: string; delayMin: number; targetCount: number }> = [
+                  { waveType: 'empathy',  delayMin: 3,  targetCount: 3 },
+                  ...(criticalTarget > 0 ? [{ waveType: 'critical', delayMin: 6,  targetCount: criticalTarget }] : []),
+                  ...(reversalTarget > 0 ? [{ waveType: 'reversal', delayMin: 10, targetCount: reversalTarget }] : []),
+                ]
+                for (const wave of commentWaves) {
+                  await prisma.botLog.create({
+                    data: {
+                      botType: 'SEED',
+                      action: 'SHEET_COMMENT_WAVE_PENDING',
+                      status: 'PENDING',
+                      details: JSON.stringify({
+                        postId: post.id,
+                        waveType: wave.waveType,
+                        scheduledAt: new Date(now.getTime() + wave.delayMin * 60 * 1000).toISOString(),
+                        personaIds: shuffleArray(WAVE_PERSONAS[wave.waveType] ?? []),
+                        rawContent: content.slice(0, 2000),
+                        keyTerms,
+                        sourceComments: filteredComments,
+                        sourceCommentsRaw: sourceComments,
+                        targetCount: wave.targetCount,
+                      }),
+                    },
+                  })
+                }
+              }
+              // 좋아요 파동 — 항상 예약 (sc 무관)
+              await prisma.botLog.create({
+                data: {
+                  botType: 'SEED',
+                  action: 'SHEET_LIKE_WAVE_PENDING',
+                  status: 'PENDING',
+                  details: JSON.stringify({
+                    postId: post.id,
+                    waveType: 'like',
+                    scheduledAt: new Date(now.getTime() + 1 * 60 * 1000).toISOString(),
+                    personaIds: shuffleArray(WAVE_PERSONAS['like'] ?? []),
+                    rawContent: content.slice(0, 2000),
+                    keyTerms,
+                  }),
+                },
+              })
+              const totalWaves = 1 + (usable >= 3 ? 1 : 0) + (criticalTarget > 0 ? 1 : 0) + (reversalTarget > 0 ? 1 : 0)
+              console.log(`  → 화제성 파동 ${totalWaves}개 예약 (raw=${sourceComments.length} filtered=${usable})`)
+            } else {
+              // 일반 스크래퍼 글: sc 필터 → SKIP/PARTIAL/FULL 정책 + 좋아요 항상 예약
+              const filteredComments = filterSourceComments(sourceComments)
+              const usable = filteredComments.length
+              const commentTargetCount = usable >= 4 ? 4 : usable === 3 ? 3 : 0
+              console.log(`  [sc] raw=${sourceComments.length} filtered=${usable} target=${commentTargetCount}`)
+
+              if (usable <= 2) {
+                await prisma.botLog.create({
+                  data: {
+                    botType: 'SEED',
+                    action: 'SHEET_WAVE_SKIP',
+                    status: 'SKIP',
+                    details: JSON.stringify({
+                      postId: post.id,
+                      reason: usable === 0 ? 'SC_ZERO' : 'SC_INSUFFICIENT',
+                      sourceCommentsRawCount: sourceComments.length,
+                      sourceCommentsFilteredCount: usable,
+                    }),
+                  },
+                })
+              } else {
+                if (usable === 3) {
+                  await prisma.botLog.create({
+                    data: {
+                      botType: 'SEED',
+                      action: 'SHEET_WAVE_PARTIAL',
+                      status: 'PARTIAL',
+                      details: JSON.stringify({
+                        postId: post.id,
+                        sourceCommentsRawCount: sourceComments.length,
+                        sourceCommentsFilteredCount: usable,
+                        targetCount: commentTargetCount,
+                      }),
+                    },
+                  })
+                }
+                await prisma.botLog.create({
+                  data: {
+                    botType: 'SEED',
+                    action: 'SHEET_ENGAGE_COMMENT_PENDING',
                     status: 'PENDING',
                     details: JSON.stringify({
                       postId: post.id,
-                      waveType: wave.waveType,
-                      scheduledAt: scheduledAt.toISOString(),
-                      personaIds: shuffleArray(WAVE_PERSONAS[wave.waveType] ?? []),
-                      rawContent: content.slice(0, 2000),
-                      keyTerms,
-                      sourceComments,
-                      ...(wave.targetCount !== undefined ? { targetCount: wave.targetCount } : {}),
+                      scheduledAt: new Date(now.getTime() + 2 * 60 * 1000).toISOString(),
+                      personaIds: shuffleArray(['BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR']),
+                      targetCount: commentTargetCount,
+                      sourceComments: filteredComments,
+                      sourceCommentsRaw: sourceComments,
                     }),
                   },
                 })
               }
-              console.log(`  → 화제성 파동 4개 예약 (WAVE_L+1+2+3, 댓글 분위기 ${sourceComments.length}개 수집)`)
-            } else {
-              // 일반 스크래퍼 글: engagement 파동 2개 예약 (댓글 +2분, 좋아요 +6분)
-              await prisma.botLog.create({
-                data: {
-                  botType: 'SEED',
-                  action: 'SHEET_ENGAGE_COMMENT_PENDING',
-                  status: 'PENDING',
-                  details: JSON.stringify({
-                    postId: post.id,
-                    scheduledAt: new Date(now.getTime() + 2 * 60 * 1000).toISOString(),
-                    personaIds: shuffleArray(['BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR']),
-                    targetCount: 4,
-                    sourceComments,
-                  }),
-                },
-              })
+              // 좋아요 파동 — 항상 예약 (sc 무관)
               await prisma.botLog.create({
                 data: {
                   botType: 'SEED',

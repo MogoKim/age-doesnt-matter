@@ -91,7 +91,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` + `content-curator.ts` + `run-pipeline.ts` | launchd 07:40·09:30·11:30·14:30·17:30·21:30·00:30 KST + GHA 45분 간격 20슬롯 | LOCAL_ONLY | INFRA | — | [A01](A01-cafe-crawler.md) | ACTIVE | 2026-05-28 |
 | A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 11:00, 14:00 KST | LOCAL_ONLY | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-13 |
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
-| A04 | 외부 콘텐츠 스크래퍼 | `agents/community/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | agents-scraper.yml 07:30·09:00·12:00·15:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | RELATION | P1·P3 | [A04](A04-external-content.md) | ACTIVE | 2026-05-26 |
+| A04 | 외부 콘텐츠 스크래퍼 | `agents/community/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | agents-scraper.yml 07:30·09:00·12:00·15:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | RELATION | P1·P3 | [A04](A04-external-content.md) | ACTIVE | 2026-05-29 |
 | A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) | GHA | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | ACTIVE | 2026-05-18 |
 | A06 | SNS 자동 포스팅 | `agents/cmo/social-poster.ts` + `social-poster-visual.ts` | GHA 07:00·12:00·15:00 KST | GHA | RELATION | — | [A06](A06-sns-posting.md) | ACTIVE | 2026-04-27 |
 | A07 | 카드뉴스 생성 | `agents/cmo/card-news-generator.ts` | GHA 13:00 KST | GHA | RELATION | — | [A07](A07-card-news.md) | ARCHIVED | 2026-05-15 |
