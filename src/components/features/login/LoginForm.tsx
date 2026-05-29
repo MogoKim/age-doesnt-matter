@@ -20,25 +20,52 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
     ">
       <h1 className="sr-only">로그인</h1>
 
-      {/* 상단: 브랜드 + 공감 카피 (primary/5 배경) */}
-      <div
-        className="px-7 flex flex-col justify-between py-10 md:py-12 bg-primary/[13%]"
-        style={{ flex: '0 0 44%' }}
-      >
-        {/* 소셜 프루프 뱃지 */}
-        <div
-          className="inline-flex items-center gap-2 w-fit px-3 py-2 rounded-xl text-[17px] font-semibold bg-primary/15 text-primary-text"
-        >
-          <span>💬</span>
-          <span>지금도 누군가 고민을 나누고 있어요</span>
-        </div>
+      {/* 상단: 브랜드 + 공감 카피 */}
+      <div className="relative basis-1/2 shrink-0 grow-0 overflow-hidden px-[22px] py-[22px] flex flex-col justify-center bg-[#FFF5F2]">
 
-        {/* 메인 카피 */}
-        <div>
-          <p className="text-[30px] font-bold leading-[1.45] text-foreground tracking-tight">
+        {/* Blob 1: 좌상단 장식 */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute"
+          style={{
+            top: '-40%',
+            left: '-20%',
+            width: '320px',
+            height: '320px',
+            borderRadius: '9999px',
+            background: 'radial-gradient(circle, rgba(255,111,97,0.4) 0%, transparent 70%)',
+            filter: 'blur(20px)',
+          }}
+        />
+
+        {/* Blob 2: 우하단 장식 */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute"
+          style={{
+            bottom: '-30%',
+            right: '-15%',
+            width: '260px',
+            height: '260px',
+            borderRadius: '9999px',
+            background: 'radial-gradient(circle, rgba(255,180,162,0.55) 0%, transparent 70%)',
+            filter: 'blur(15px)',
+          }}
+        />
+
+        {/* 실제 콘텐츠 — blob 위 */}
+        <div className="relative z-10">
+          {/* 소셜 프루프 배지 */}
+          <div className="inline-flex items-center gap-1.5 w-fit px-2.5 py-1.5 rounded-lg bg-primary/20 text-primary-text text-[15px] font-bold mb-9">
+            <span>💬</span>
+            <span>지금도 누군가 고민을 나누고 있어요</span>
+          </div>
+
+          {/* 메인 카피 */}
+          <p className="text-[24px] font-extrabold leading-[1.4] tracking-tight text-foreground">
             엄마 말고,<br />아내 말고,<br />그냥 나로.
           </p>
-          <p className="text-[17px] font-medium mt-3 text-muted-foreground">
+          <p className="text-[17px] text-muted-foreground mt-2.5">
             내 이야기만 해도 되는 곳.
           </p>
         </div>
