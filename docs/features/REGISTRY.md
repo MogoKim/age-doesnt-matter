@@ -77,7 +77,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F06 | 일자리 게시판 | `src/app/(main)/jobs/` | 자동수집(A03) + 사용자 탐색 | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-05-14 |
 | F07 | 베스트 탭 | `src/app/(main)/best/` | hotPromotedAt 기반 누적 | RELATION | P3 | [F07](F07-best-tab.md) | ACTIVE | 2026-05-14 |
 | F08 | 검색 | `src/app/(main)/search/` | 사용자 검색 | ALL | ALL | `docs/specs/04-search.md` | ACTIVE | 2026-05-15 |
-| F09 | 어드민 패널 | `src/app/(admin)/` + `src/app/admin/(panel)/` + `src/components/admin/ContentTable.tsx` + `src/lib/queries/admin/admin.content.ts` | 운영자 접근 | INFRA | — | [F09](F09-admin-panel.md) | ACTIVE | 2026-05-26 |
+| F09 | 어드민 패널 | `src/app/(admin)/` + `src/app/admin/(panel)/` + `src/components/admin/ContentTable.tsx` + `src/lib/queries/admin/admin.content.ts` | 운영자 접근 | INFRA | — | [F09](F09-admin-panel.md) | ACTIVE | 2026-05-29 |
 | F10 | 최상단 띠 배너 | `src/components/layouts/TopPromoBanner.tsx` + `TopPromoBannerClient.tsx` + `src/components/admin/TopPromoBannerPanel.tsx` | DB Setting 테이블 (어드민 관리) | RELATION | ALL | [F10](F10-top-promo-banner.md) | ACTIVE | 2026-04-29 |
 | F11 | 비회원 댓글+좋아요 | `src/lib/actions/guest-comments.ts` + `src/lib/actions/guest-likes.ts` + `src/lib/turnstile.ts` + `src/components/features/community/GuestCommentInput.tsx` + `GuestPasswordModal.tsx` | 비로그인 사용자 직접 참여 | RELATION | P1/P2/P3 | [F11](F11-guest-comment-like.md) | ACTIVE | 2026-05-23 |
 | F12 | HOT/명예의 전당 승격 시스템 | `src/lib/actions/promotion.ts` + `src/lib/actions/likes.ts` + `src/lib/actions/guest-likes.ts` + `src/lib/actions/comments.ts` + `src/lib/queries/boards.ts` + `src/lib/actions/admin/admin.content.ts` + `src/components/admin/ContentTable.tsx` | 좋아요+댓글 수 기반 자동 승격 (HOT/HALL_OF_FAME) | RELATION | P3 | [F12](F12-promotion-system.md) | ACTIVE | 2026-05-12 |
