@@ -230,6 +230,7 @@ async function printNormalSample(
   console.log(`\n  🎭 v2 댓글팩 예상 — targetCount=${targetCount} / empathy [${mode}]`)
 
   const candidates: CommentCandidate[] = []
+  let transformedCount = 0
   const pickedPersonas = personaIds.slice(0, targetCount)
 
   for (let i = 0; i < pickedPersonas.length; i++) {
@@ -248,14 +249,13 @@ async function printNormalSample(
     }
 
     const { result: text, changed } = mockSoftTransform(raw)
+    if (changed) transformedCount++
     const nick = safeNickname(personaId)
     console.log(`    [${personaId}/${nick}]  "${text.slice(0, 65)}${text.length > 65 ? '…' : ''}"${changed ? ' 🔧' : ''}`)
     candidates.push({ personaId, sourceCommentIndex, text })
   }
 
-  if (!candidates.some(c => c.text !== mockSoftTransform(c.text.replace(/🔧/g, '')).result)) {
-    console.log(`    🔧 soft transform: 없음`)
-  }
+  console.log(`    🔧 soft transform: ${transformedCount > 0 ? `${transformedCount}건` : '없음'}`)
 
   console.log(line)
   const vr = validateCommentPack(candidates, sourceComments, targetCount, personaIds)
@@ -317,6 +317,7 @@ async function printFeaturedSet(
     console.log(`\n  🎭 v2 댓글팩 예상 — ${waveType} [${mode}]`)
 
     const candidates: CommentCandidate[] = []
+    let transformedCount = 0
     const pickedPersonas = personaIds.slice(0, targetCount)
 
     for (let i = 0; i < pickedPersonas.length; i++) {
@@ -335,11 +336,13 @@ async function printFeaturedSet(
       }
 
       const { result: text, changed } = mockSoftTransform(raw)
+      if (changed) transformedCount++
       const nick = safeNickname(personaId)
       console.log(`    [${personaId}/${nick}]  "${text.slice(0, 65)}${text.length > 65 ? '…' : ''}"${changed ? ' 🔧' : ''}`)
       candidates.push({ personaId, sourceCommentIndex, text })
     }
 
+    console.log(`    🔧 soft transform: ${transformedCount > 0 ? `${transformedCount}건` : '없음'}`)
     const vr = validateCommentPack(candidates, sourceComments, targetCount, personaIds)
     printValidator(vr, targetCount, candidates.length)
   }
