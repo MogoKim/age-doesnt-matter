@@ -42,7 +42,7 @@ concurrency:
 jobs:
   sheet-scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     if: ${{ github.event_name == 'schedule' || github.event.inputs.step == 'sheet-scrape' }}
 
     steps:
@@ -56,6 +56,14 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: cd agents && npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('agents/package-lock.json') }}
+          restore-keys: |
+            pw-${{ runner.os }}-
 
       - name: Install Playwright Chromium
         run: cd agents && npx playwright install chromium --with-deps
