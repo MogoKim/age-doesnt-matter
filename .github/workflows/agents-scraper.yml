@@ -57,18 +57,11 @@ jobs:
       - run: npx prisma generate
       - run: cd agents && npm ci
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: pw-${{ runner.os }}-${{ hashFiles('agents/package-lock.json') }}
-          restore-keys: |
-            pw-${{ runner.os }}-
-
-      - name: Install Playwright Chromium
-        run: cd agents && npx playwright install chromium --with-deps
+      - name: Verify system Chrome
+        run: google-chrome-stable --version
 
       - name: Run Sheet Scraper (펨코 제외 — 로컬 Mac에서 처리)
         run: cd agents && npx tsx cron/runner.ts community sheet-scrape
         env:
           SHEET_SCRAPER_EXCLUDE_SITE: fmkorea
+          PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: /usr/bin/google-chrome-stable

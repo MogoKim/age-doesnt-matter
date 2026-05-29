@@ -116,16 +116,22 @@ function pickPersona(
 
 // ── 브라우저 관리 ──
 
-async function launchBrowser(): Promise<BrowserContext> {
-  const browser = await chromium.launch({
-    headless: true,
+function chromiumLaunchOptions() {
+  const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+  return {
+    headless: true as const,
     args: [
       '--disable-blink-features=AutomationControlled',
       '--disable-dev-shm-usage',
       '--no-sandbox',
       '--disable-setuid-sandbox',
     ],
-  })
+    ...(executablePath ? { executablePath } : {}),
+  }
+}
+
+async function launchBrowser(): Promise<BrowserContext> {
+  const browser = await chromium.launch(chromiumLaunchOptions())
 
   const context = await browser.newContext({
     viewport: { width: 1920, height: 1080 },
@@ -139,15 +145,7 @@ async function launchBrowser(): Promise<BrowserContext> {
 }
 
 async function launchBrowserWithSession(storagePath: string): Promise<BrowserContext> {
-  const browser = await chromium.launch({
-    headless: true,
-    args: [
-      '--disable-blink-features=AutomationControlled',
-      '--disable-dev-shm-usage',
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-    ],
-  })
+  const browser = await chromium.launch(chromiumLaunchOptions())
   return browser.newContext({
     viewport: { width: 1920, height: 1080 },
     userAgent: randomUserAgent(),
