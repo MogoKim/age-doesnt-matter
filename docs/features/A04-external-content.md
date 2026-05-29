@@ -212,6 +212,7 @@ scraped/{postKey}/{index}.{ext}
 | 2026-05-26 | sheet-scraper.ts scrapePage() 직후 videoCount > 0 또는 PZP signal(STRONG any 1개 / WEAK 2개 이상) 감지 시 updateRow(FAILED, '네이버 카페 동영상 포함 글은 발행 제외') 처리 추가. totalFailed 카운트 + continue로 Post 생성 완전 차단 | 동영상 포함 글 Sheet 경유 발행 3차 방어선 — image-router/curator 통과하더라도 최종 게시 직전 차단 |
 | 2026-05-26 | sheet-scraper.ts rawContent/scrapePage 공통 content 변수 기준 ACCESS_BLOCKED_SIGNALS(6개) + BOARD_NOTICE_SIGNALS(2개) 필터 추가 — 동영상 차단 블록 앞 삽입, 감지 시 updateRow(FAILED) + continue | ea1ae6a 접근 차단 fix의 sheet-scraper 경로 구조적 누락 보완 — navercafe "검색 비허용/가입 필요" 안내문 발행 차단 |
 | 2026-05-29 | P0: todayhumor/natepann commentSelectors 셀렉터 수정(d44746c) + GHA 시스템 Chrome 전환(18c0051). P1: filterSourceComments() 추가(HARD_REMOVE_RE, @태그/URL 제거, 앞4자 dedup, 10자↑) + sc SKIP/PARTIAL/FULL 정책 — usable≤2→SHEET_WAVE_SKIP, usable=3→PARTIAL, usable≥4(일반)/7(화제성)→FULL. 좋아요 파동 sc 무관 항상 예약. PENDING details에 sourceComments(filtered)+sourceCommentsRaw(감사용) 분리 | 빈 sourceComments(sc=0) 100% 문제 해결 + 품질 낮은 댓글로 파동 소비 방지 |
+| 2026-05-29 | Shadow Mode 검수 도구 추가: `agents/scripts/_shadow-comment-pack.ts` — DB write 없이 raw댓글→P1필터→v2댓글팩 예상(MOCK/LLM)→Validator 7항목 콘솔 출력. `--dry-run`(기본, API키 불필요) / `--llm`(dynamic import, current-generator-preview) / `--postId` / `--limit` CLI 지원 | P1 운영 검증 후 창업자가 댓글 품질을 직접 검수할 수 있는 Shadow Mode 구현 |
 
 ---
 
