@@ -56,14 +56,12 @@ const EXPERIMENT_STATUS_LABELS: Record<ExperimentStatus, { label: string; classN
 }
 
 const BOARD_TYPE_LABELS: Record<string, string> = {
-  COMMUNITY: '커뮤니티',
   JOB: '일자리',
+  STORY: '사는 이야기',
+  HUMOR: '웃음방',
   MAGAZINE: '매거진',
-  HUMOR: '유머',
-  STORY: '이야기',
-  THREAD: '스레드',
-  LIFE: '생활',
-  CAFE: '카페',
+  WEEKLY: '수다방',
+  LIFE2: '2막 준비',
 }
 
 const Q2_OKR = {
@@ -134,10 +132,16 @@ export default async function AdminDashboardPage() {
           label="오늘 글/댓글"
           value={`+${stats.todayPosts.toLocaleString()} / +${stats.todayComments.toLocaleString()}`}
           icon="📝"
-          sub="사용자 글 / 댓글"
+          sub="사용자 글 / 전체 댓글"
           href="/admin/content"
         />
-        <KpiCard label="푸시 구독자" value={stats.pushSubCount} icon="🔔" href="/admin/push" />
+        <KpiCard
+          label="미처리 신고"
+          value={stats.pendingReports}
+          icon="🛡️"
+          sub={stats.pendingReports === 0 ? '이상 없음' : '즉시 처리 필요'}
+          href="/admin/reports"
+        />
       </div>
 
       {/* 긴급 알림 */}
@@ -186,12 +190,12 @@ export default async function AdminDashboardPage() {
       <section className="rounded-xl border border-[#FF6F61]/30 bg-[#FF6F61]/5 p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-bold text-zinc-900">🎯 Q2 2026 OKR</h2>
+            <h2 className="text-sm font-bold text-zinc-900">🎯 이번 달 누적 / 6월 목표</h2>
             <p className="mt-0.5 text-xs font-medium text-[#FF6F61]">
               광고 + SEO로 진짜 커뮤니티 트래픽 만들기
             </p>
           </div>
-          <span className="text-xs text-zinc-400">2026-04-01 ~ 2026-06-30</span>
+          <span className="text-xs text-zinc-400">현재 월 1일 기준 · 목표: 6월 말</span>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -338,7 +342,7 @@ export default async function AdminDashboardPage() {
 
       {boards.length > 0 && (
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="mb-4 text-sm font-bold text-zinc-900">🗂️ 게시판별 7일 활성도</h2>
+          <h2 className="mb-4 text-sm font-bold text-zinc-900">🗂️ 게시판별 7일 활성도 <span className="font-normal text-zinc-400">(사용자 글 / 전체 댓글)</span></h2>
           <div className="space-y-2">
             {boards.map((b) => (
               <div key={b.boardType} className="flex items-center gap-3">
@@ -403,9 +407,13 @@ export default async function AdminDashboardPage() {
       </section>
 
       {/* ⑥ SNS A/B 실험 */}
-      {experiments.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-zinc-900">📱 SNS A/B 실험 결과</h2>
+      <section className="space-y-4">
+        <h2 className="text-sm font-bold text-zinc-900">📱 SNS A/B 실험 결과</h2>
+        {experiments.length === 0 ? (
+          <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-400">
+            SNS 실험 데이터가 없습니다.
+          </div>
+        ) : (
           <div className="space-y-4">
             {experiments.map((exp) => {
               const badge = EXPERIMENT_STATUS_LABELS[exp.status]
@@ -494,8 +502,8 @@ export default async function AdminDashboardPage() {
               )
             })}
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </div>
   )
 }
