@@ -610,18 +610,18 @@ export default function AddToHomeScreen() {
                 </p>
                 <div className="bg-muted/60 rounded-2xl p-4 space-y-3">
                   <div className="flex items-center gap-3 text-sm text-foreground">
-                    <span className="w-6 h-6 rounded-full bg-primary/20 text-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                    <span className="w-6 h-6 rounded-full bg-primary/20 text-primary-text flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
                     <span>하단 <strong>공유 버튼</strong>을 탭하세요</span>
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 ml-auto text-primary flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 ml-auto text-primary-text flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
                     </svg>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-foreground">
-                    <span className="w-6 h-6 rounded-full bg-primary/20 text-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                    <span className="w-6 h-6 rounded-full bg-primary/20 text-primary-text flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
                     <span><strong>홈 화면에 추가</strong>를 선택하세요</span>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-foreground">
-                    <span className="w-6 h-6 rounded-full bg-primary/20 text-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                    <span className="w-6 h-6 rounded-full bg-primary/20 text-primary-text flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
                     <span>오른쪽 상단 <strong>추가</strong>를 탭하세요</span>
                   </div>
                 </div>
@@ -641,22 +641,22 @@ export default function AddToHomeScreen() {
                 <div className="border-t border-primary/20 my-4" />
 
                 {/* 슬로건 */}
-                <p className="text-center text-[17px] font-bold text-primary mb-5 break-keep">
+                <p className="text-center text-[17px] font-bold text-primary-text mb-5 break-keep">
                   우리 — 서로를 잇다
                 </p>
 
                 {/* 혜택 3줄 */}
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2 text-[15px] text-foreground">
-                    <span className="text-primary font-bold flex-shrink-0">✓</span>
+                    <span className="text-primary-text font-bold flex-shrink-0">✓</span>
                     혼자 답답할 때, 우리 또래 바로
                   </li>
                   <li className="flex items-center gap-2 text-[15px] text-foreground">
-                    <span className="text-primary font-bold flex-shrink-0">✓</span>
+                    <span className="text-primary-text font-bold flex-shrink-0">✓</span>
                     나만의 이야기 편하게 나눠요
                   </li>
                   <li className="flex items-center gap-2 text-[15px] text-foreground">
-                    <span className="text-primary font-bold flex-shrink-0">✓</span>
+                    <span className="text-primary-text font-bold flex-shrink-0">✓</span>
                     검색 없이 홈에서 바로 열려요
                   </li>
                 </ul>

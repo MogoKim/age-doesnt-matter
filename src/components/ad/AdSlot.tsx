@@ -52,7 +52,7 @@ export default async function AdSlot({ slot, className }: AdSlotProps) {
           href={ad.clickUrl ?? '#'}
           target="_blank"
           rel="noopener noreferrer nofollow"
-          className="block bg-[var(--surface-warm)] border border-border rounded-lg p-4 text-center hover:bg-zinc-50 transition-colors"
+          className="block bg-[var(--surface-warm)] border border-border rounded-lg p-4 text-center hover:bg-muted transition-colors"
         >
           <p className="text-body font-medium text-foreground">{ad.title}</p>
         </a>
