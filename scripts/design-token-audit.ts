@@ -14,7 +14,6 @@ import { join, relative } from 'path'
 const ROOT = process.cwd()
 const INCLUDE_DIRS = ['src/app', 'src/components']
 
-// 제외 경로 (상대 경로 기준)
 const EXCLUDE_MATCHERS: Array<(rel: string) => boolean> = [
   (p) => p.startsWith('src/app/admin/'),
   (p) => p.startsWith('src/components/admin/'),
@@ -35,23 +34,48 @@ interface Rule {
   check: (line: string) => boolean
 }
 
+/**
+ * 라인 안의 quoted string 내 class token 목록 반환.
+ * "foo bar baz" 또는 'foo bar baz' → ['foo', 'bar', 'baz']
+ * variant prefix(hover:, md: 등)도 토큰 그대로 포함.
+ */
+function getClassTokens(line: string): string[] {
+  const tokens: string[] = []
+  const re = /["']([^"'\n]+)["']/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(line)) !== null) {
+    for (const t of m[1].split(/\s+/)) {
+      if (t) tokens.push(t)
+    }
+  }
+  return tokens
+}
+
 const RULES: Rule[] = [
   {
     id: 'R01',
     name: 'hover-text-primary',
     severity: 'error',
-    // hover:text-primary 단독 — hover:text-primary-text / hover:text-primary-foreground는 정상
-    check: (l) => /hover:text-primary(?![-/a-z])/.test(l),
+    // token === 'hover:text-primary' 정확 일치만
+    // hover:text-primary-text / hover:text-primary-foreground 제외
+    check: (l) => getClassTokens(l).some((t) => t === 'hover:text-primary'),
   },
   {
     id: 'R02',
     name: 'bg-primary-transparent-foreground',
     severity: 'error',
-    // bg-primary/숫자 + text-foreground 동일 줄 — text-primary-text 함께 있으면 정상
-    check: (l) =>
-      /bg-primary\/\d/.test(l) &&
-      /\btext-foreground\b/.test(l) &&
-      !/text-primary-text/.test(l),
+    // 조건 1: static bg-primary/N 토큰 (콜론 없음 — hover:/md: 등 variant 제외)
+    // 조건 2: text-foreground 토큰 정확 일치 (text-muted-foreground 부분매칭 방지)
+    // 예외: text-primary-text 토큰도 있으면 올바른 조합 → pass
+    check: (l) => {
+      const tokens = getClassTokens(l)
+      const hasStaticBgPrimary = tokens.some(
+        (t) => /^bg-primary\/\d/.test(t) && !t.includes(':')
+      )
+      const hasTextForeground = tokens.some((t) => t === 'text-foreground')
+      if (!hasStaticBgPrimary || !hasTextForeground) return false
+      return !tokens.some((t) => t === 'text-primary-text')
+    },
   },
   {
     id: 'R03',
@@ -63,9 +87,10 @@ const RULES: Rule[] = [
     id: 'R04',
     name: 'text-primary-standalone',
     severity: 'warn',
-    // text-primary 단독 — text-primary-text / text-primary-foreground는 정상
-    // border-primary / bg-primary는 text- 로 시작하지 않아 이 패턴에 매칭 안 됨
-    check: (l) => /\btext-primary(?![-/a-z])/.test(l),
+    // token === 'text-primary' 정확 일치만
+    // text-primary-text / text-primary-foreground 제외
+    // hover:text-primary는 R01이 error로 담당 — R04에서 중복 방지
+    check: (l) => getClassTokens(l).some((t) => t === 'text-primary'),
   },
   {
     id: 'R05',
@@ -87,7 +112,6 @@ const RULES: Rule[] = [
   },
 ]
 
-// 주석 행 패턴
 const COMMENT_RE = /^\s*(?:\/\/|\/\*|\*)/
 
 interface Violation {
