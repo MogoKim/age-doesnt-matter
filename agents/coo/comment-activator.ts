@@ -41,6 +41,7 @@ export async function main() {
       where: {
         status: 'PUBLISHED',
         commentCount: 0,
+        source: { not: 'SHEET' },
         createdAt: { gte: twelveHoursAgo, lte: thirtyMinutesAgo },
       },
       select: {
