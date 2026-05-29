@@ -105,11 +105,7 @@ export async function createComment(
   })().catch(() => {})
 
   // 알림 생성 (본인에게는 보내지 않음)
-  const commentAuthor = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { nickname: true },
-  })
-  const nickname = commentAuthor?.nickname ?? '회원'
+  const nickname = session.user.nickname ?? '회원'
 
   const postUrl = `/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${postId}`
 
@@ -152,7 +148,6 @@ export async function createComment(
   revalidatePath('/community/[boardSlug]/[postId]', 'page')
   revalidateTag('comments-by-post')
   revalidateTag('post-detail')
-  revalidateTag('home-trending')
   return {}
 }
 
