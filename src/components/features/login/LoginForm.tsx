@@ -56,7 +56,7 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
         {/* 실제 콘텐츠 — blob 위 */}
         <div className="relative z-10">
           {/* 소셜 프루프 배지 */}
-          <div className="inline-flex items-center gap-1.5 w-fit px-2.5 py-1.5 rounded-lg bg-primary/20 text-primary-text text-[15px] font-bold mb-9">
+          <div className="inline-flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-lg bg-primary/15 text-primary-text text-[15px] font-bold mb-7">
             <span>💬</span>
             <span>지금도 누군가 고민을 나누고 있어요</span>
           </div>
