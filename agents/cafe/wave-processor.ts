@@ -80,6 +80,9 @@ function deterministicTargetCount(cafePostId: string, min: number, max: number):
 }
 
 
+// bot당 일일 최대 댓글 수 (legacy/v2 공통) — bot_cap 문제 완화를 위해 3→8로 상향 (2026-05-30)
+const BOT_DAILY_COMMENT_CAP = 8
+
 function getGlobalCap(tier: Tier): number {
   if (tier === 'KILLER') return 20
   if (tier === 'HOT')    return 14
@@ -176,7 +179,6 @@ async function processWaveLegacy(
 ) {
   const todayCommentStart = new Date()
   todayCommentStart.setHours(0, 0, 0, 0)
-  const BOT_DAILY_COMMENT_CAP = 3
 
   const [legacyTier, legacyPost] = await Promise.all([
     getQueueTier(queue.postId, queue.cafePostId),
@@ -487,7 +489,6 @@ async function processWaveV2(
     // bot daily cap 집계
     const todayCommentStart = new Date()
     todayCommentStart.setHours(0, 0, 0, 0)
-    const BOT_DAILY_COMMENT_CAP = 3
     const botUsers = await prisma.user.findMany({
       where: { email: { endsWith: '@unao.bot' } },
       select: { id: true },
