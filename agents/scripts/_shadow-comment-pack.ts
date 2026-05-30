@@ -104,9 +104,8 @@ function validateCommentPack(
     }
   }
 
-  // 4. 최소 길이 (MOCK 텍스트는 dry-run 단편이므로 스킵 — LLM 실제 생성 시에만 적용)
+  // 4. 최소 길이 (MOCK·LLM오류·실제생성 모두 동일 기준 적용)
   for (const c of candidates) {
-    if (c.text.startsWith('[MOCK')) continue
     if (c.text.length < 10) errors.push(`최소 길이 미달: ${c.personaId} len=${c.text.length}`)
   }
 
@@ -262,6 +261,19 @@ async function printNormalSample(
   printValidator(vr, targetCount, candidates.length)
 }
 
+// ── wave 정렬 helpers (화제성 파동 순서 고정: empathy → critical → reversal) ──
+const WAVE_ORDER = ['empathy', 'critical', 'reversal'] as const
+type WaveType = (typeof WAVE_ORDER)[number]
+
+function getWaveType(details: unknown): string {
+  return (parseDetails(details).waveType as string | undefined) ?? 'empathy'
+}
+
+function waveRank(type: string): number {
+  const idx = WAVE_ORDER.indexOf(type as WaveType)
+  return idx === -1 ? 99 : idx
+}
+
 // ── 화제성 wave 세트 출력 ──
 async function printFeaturedSet(
   waves: { id: string; details: unknown; createdAt: Date }[],
@@ -279,13 +291,27 @@ async function printFeaturedSet(
     select: { title: true, content: true },
   })
 
+  // wave 정렬 (empathy → critical → reversal, 알 수 없는 타입은 맨 뒤)
+  const sortedWaves = [...waves].sort((a, b) => waveRank(getWaveType(a.details)) - waveRank(getWaveType(b.details)))
+
   const sep = '═'.repeat(65)
   console.log(`\n${sep}`)
   console.log(`[SAMPLE 화제성 ${idx}/${total}] postId=${postId.slice(0, 12)}…  ${waves[0].createdAt.toISOString().slice(0, 10)}`)
   console.log(`글 제목: "${(post?.title ?? '(조회 실패)').slice(0, 55)}"`)
 
-  // wave 간 details.sourceComments.length 비교
-  const waveLengths = waves.map(w => {
+  // 3파동 완결성 검증
+  const waveTypes = sortedWaves.map(w => getWaveType(w.details))
+  const expectedTypes = [...WAVE_ORDER]
+  const missing = expectedTypes.filter(t => !waveTypes.includes(t))
+  const duplicateSet = new Set(waveTypes.filter((t, i) => waveTypes.indexOf(t) !== i))
+  const unknown = waveTypes.filter(t => !expectedTypes.includes(t as WaveType))
+  if (missing.length > 0) console.log(`  ⚠️  WARN: 누락 waveType — [${missing.join(', ')}]`)
+  if (duplicateSet.size > 0) console.log(`  ⚠️  WARN: 중복 waveType — [${[...duplicateSet].join(', ')}]`)
+  if (unknown.length > 0) console.log(`  ⚠️  WARN: 알 수 없는 waveType — [${unknown.join(', ')}]`)
+  if (waveTypes.length > 3) console.log(`  ⚠️  WARN: waveType 3개 초과 — ${waveTypes.length}개 발견`)
+
+  // wave 간 details.sourceComments.length 비교 (sortedWaves 기준)
+  const waveLengths = sortedWaves.map(w => {
     const d = parseDetails(w.details)
     return ((d.sourceComments as string[] | undefined) ?? []).length
   })
@@ -296,7 +322,7 @@ async function printFeaturedSet(
 
   let firstWavePrinted = false
 
-  for (const wave of waves) {
+  for (const wave of sortedWaves) {
     const d = parseDetails(wave.details)
     const waveType = (d.waveType as 'empathy' | 'critical' | 'reversal' | undefined) ?? 'empathy'
     const targetCount = (d.targetCount as number | undefined) ?? 3
