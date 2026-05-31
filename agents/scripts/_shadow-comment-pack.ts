@@ -195,7 +195,7 @@ function printValidator(vr: ValidationResult, targetCount: number, candidateCoun
 }
 
 // ── LLM 함수 타입 ──
-type GenFn = (personaId: string, title: string, content: string, waveType: 'empathy' | 'critical' | 'reversal', keyTerms: string[], sourceComments: string[]) => Promise<string>
+type GenFn = (personaId: string, title: string, content: string, waveType: 'empathy' | 'critical' | 'reversal', keyTerms: string[], sourceComments: string[], options?: { sourceCommentIndex?: number; priorCommentTexts?: string[] }) => Promise<string>
 
 // ── 일반 ENGAGE 샘플 출력 ──
 async function printNormalSample(
@@ -232,14 +232,19 @@ async function printNormalSample(
   let transformedCount = 0
   const pickedPersonas = personaIds.slice(0, targetCount)
 
+  const generatedSoFar: string[] = []
   for (let i = 0; i < pickedPersonas.length; i++) {
     const personaId = pickedPersonas[i]
-    const sourceCommentIndex = Math.min(i, sourceComments.length - 1)
+    const sourceCommentIndex = sourceComments.length > 1 ? i % sourceComments.length : 0
 
     let raw: string
     if (genFn) {
       try {
-        raw = await genFn(personaId, post?.title ?? '', post?.content ?? '', 'empathy', [], sourceComments)
+        raw = await genFn(personaId, post?.title ?? '', post?.content ?? '', 'empathy', [], sourceComments, {
+          sourceCommentIndex: sourceComments.length > 1 ? sourceCommentIndex : undefined,
+          priorCommentTexts: generatedSoFar.length > 0 ? generatedSoFar.slice(-3) : undefined,
+        })
+        if (!raw.startsWith('[LLM 오류')) generatedSoFar.push(raw)
       } catch (e) {
         raw = `[LLM 오류: ${String(e).slice(0, 40)}]`
       }
@@ -320,6 +325,8 @@ async function printFeaturedSet(
     console.log(`  ⚠️  WARN: wave 간 details.sourceComments.length 불일치 — ${waveLengths.join(' / ')}`)
   }
 
+  const WAVE_BASE_OFFSET: Record<string, number> = { empathy: 0, critical: 3, reversal: 5 }
+  const postGeneratedSoFar: string[] = []
   let firstWavePrinted = false
 
   for (const wave of sortedWaves) {
@@ -345,15 +352,25 @@ async function printFeaturedSet(
     const candidates: CommentCandidate[] = []
     let transformedCount = 0
     const pickedPersonas = personaIds.slice(0, targetCount)
+    const baseOffset = WAVE_BASE_OFFSET[waveType] ?? 0
+    const waveGeneratedSoFar: string[] = []
 
     for (let i = 0; i < pickedPersonas.length; i++) {
       const personaId = pickedPersonas[i]
-      const sourceCommentIndex = Math.min(i, sourceComments.length - 1)
+      const sourceCommentIndex = sourceComments.length > 1 ? (baseOffset + i) % sourceComments.length : 0
 
       let raw: string
       if (genFn) {
         try {
-          raw = await genFn(personaId, post?.title ?? '', post?.content ?? '', waveType, [], sourceComments)
+          const priorCommentTexts = [...postGeneratedSoFar, ...waveGeneratedSoFar].slice(-3)
+          raw = await genFn(personaId, post?.title ?? '', post?.content ?? '', waveType, [], sourceComments, {
+            sourceCommentIndex: sourceComments.length > 1 ? sourceCommentIndex : undefined,
+            priorCommentTexts: priorCommentTexts.length > 0 ? priorCommentTexts : undefined,
+          })
+          if (!raw.startsWith('[LLM 오류')) {
+            waveGeneratedSoFar.push(raw)
+            postGeneratedSoFar.push(raw)
+          }
         } catch (e) {
           raw = `[LLM 오류: ${String(e).slice(0, 40)}]`
         }

@@ -1197,6 +1197,12 @@ export async function processSheetEngagementWaves(): Promise<void> {
       const d = JSON.parse(w.details as string) as { scheduledAt: string }
       return new Date(d.scheduledAt) <= now
     } catch { return false }
+  }).sort((a: { id: string; action: string; details: unknown }, b: { id: string; action: string; details: unknown }) => {
+    try {
+      const tA = new Date((JSON.parse(a.details as string) as { scheduledAt?: string }).scheduledAt ?? '').getTime()
+      const tB = new Date((JSON.parse(b.details as string) as { scheduledAt?: string }).scheduledAt ?? '').getTime()
+      return (isNaN(tA) ? Infinity : tA) - (isNaN(tB) ? Infinity : tB)
+    } catch { return 1 }
   })
 
   for (const wave of dueWaves) {
@@ -1257,6 +1263,11 @@ export async function processSheetEngagementWaves(): Promise<void> {
         const targetCount = data.targetCount
         const personaIds = [...new Set(data.personaIds)]
         const insertedAuthorIds = new Set<string>()
+        const generatedTexts: string[] = []
+        const existingPriorTexts = (await prisma.comment.findMany({
+          where: { postId: data.postId, author: { email: { endsWith: '@unao.bot' } } },
+          orderBy: { createdAt: 'desc' }, take: 3, select: { content: true },
+        })).map(c => c.content).reverse()
 
         let inserted = 0
         const skipReasons = { sameAuthor: 0, dailyCap: 0, existingComment: 0, emptyGenerated: 0 }
@@ -1275,7 +1286,7 @@ export async function processSheetEngagementWaves(): Promise<void> {
           const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
           if (existing) { skipReasons.existingComment++; continue }
 
-          // sourceComments가 있으면 원본 댓글 분위기를 반영한 댓글 생성 (없으면 제목+본문만)
+          const priorCommentTexts = [...existingPriorTexts, ...generatedTexts].slice(-3)
           const commentText = await generateSheetViralComment(
             personaId,
             post.title,
@@ -1283,6 +1294,10 @@ export async function processSheetEngagementWaves(): Promise<void> {
             'empathy',
             [],
             sourceComments,
+            {
+              sourceCommentIndex: sourceComments.length > 1 ? inserted % sourceComments.length : undefined,
+              priorCommentTexts: priorCommentTexts.length > 0 ? priorCommentTexts : undefined,
+            },
           )
           if (!commentText) { skipReasons.emptyGenerated++; continue }
 
@@ -1294,6 +1309,7 @@ export async function processSheetEngagementWaves(): Promise<void> {
             }),
           ])
           insertedAuthorIds.add(authorId)
+          generatedTexts.push(commentText)
           inserted++
         }
         if (inserted > 0) await refreshPostTrendingScore(data.postId).catch(() => {})
@@ -1358,6 +1374,12 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
       const d = JSON.parse(w.details as string) as { scheduledAt: string }
       return new Date(d.scheduledAt) <= now
     } catch { return false }
+  }).sort((a: { id: string; action: string; details: unknown }, b: { id: string; action: string; details: unknown }) => {
+    try {
+      const tA = new Date((JSON.parse(a.details as string) as { scheduledAt?: string }).scheduledAt ?? '').getTime()
+      const tB = new Date((JSON.parse(b.details as string) as { scheduledAt?: string }).scheduledAt ?? '').getTime()
+      return (isNaN(tA) ? Infinity : tA) - (isNaN(tB) ? Infinity : tB)
+    } catch { return 1 }
   })
 
   for (const wave of dueWaves) {
@@ -1426,6 +1448,13 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
         const cap = 20
         const personaIds = [...new Set(data.personaIds)]
         const insertedAuthorIds = new Set<string>()
+        const WAVE_BASE_OFFSET: Record<string, number> = { empathy: 0, critical: 3, reversal: 5 }
+        const baseOffset = WAVE_BASE_OFFSET[waveType] ?? 0
+        const generatedTexts: string[] = []
+        const existingPriorTexts = (await prisma.comment.findMany({
+          where: { postId: data.postId, author: { email: { endsWith: '@unao.bot' } } },
+          orderBy: { createdAt: 'desc' }, take: 3, select: { content: true },
+        })).map(c => c.content).reverse()
 
         const botCount = await prisma.comment.count({
           where: { postId: data.postId, author: { email: { endsWith: '@unao.bot' } } },
@@ -1444,6 +1473,7 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
           const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
           if (existing) { skipReasons.existingComment++; continue }
 
+          const priorCommentTexts = [...existingPriorTexts, ...generatedTexts].slice(-3)
           const commentText = await generateSheetViralComment(
             personaId,
             post.title,
@@ -1451,6 +1481,10 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
             waveType,
             keyTerms,
             sourceComments,
+            {
+              sourceCommentIndex: sourceComments.length > 1 ? (baseOffset + inserted) % sourceComments.length : undefined,
+              priorCommentTexts: priorCommentTexts.length > 0 ? priorCommentTexts : undefined,
+            },
           )
           if (!commentText || commentText.length < 5) {
             skipReasons.emptyGenerated++
@@ -1466,6 +1500,7 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
             }),
           ])
           insertedAuthorIds.add(authorId)
+          generatedTexts.push(commentText)
           inserted++
         }
         if (inserted > 0) await refreshPostTrendingScore(data.postId).catch(() => {})

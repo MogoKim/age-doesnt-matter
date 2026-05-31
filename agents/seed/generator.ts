@@ -954,13 +954,14 @@ export async function generateSheetViralComment(
   waveType: 'empathy' | 'critical' | 'reversal',
   keyTerms: string[],
   sourceComments: string[] = [],
+  options?: { sourceCommentIndex?: number; priorCommentTexts?: string[] },
 ): Promise<string> {
   // ── 이미지 전용 글 감지: 텍스트 50자 미만 시 원본댓글 각색 또는 제목 기반 fallback ──
   const cleanText = rawContent.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
   if (cleanText.length < 50) {
     if (sourceComments.length > 0) {
-      // 원본 댓글이 있으면 → 댓글 내용을 본문 맥락으로 교체하여 각색 생성
-      rawContent = `[이미지 게시글 — 원본 댓글]\n${sourceComments.join('\n')}`
+      // 원본 댓글이 있으면 → rawContent 최소화, sourceComments는 commentContext에서만 전달 (중복 삽입 방지)
+      rawContent = '[이미지 게시글]'
       console.log(`  [SheetViral] 이미지 전용 글 — 원본 댓글 ${sourceComments.length}개 각색 모드`)
     } else {
       // 댓글도 없으면 → 제목+keyTerms만으로 짧은 반응 생성
@@ -999,9 +1000,26 @@ export async function generateSheetViralComment(
 [댓글 방향]
 ${WAVE_PROMPTS[waveType]}`
 
-  const commentContext = sourceComments.length > 0
-    ? `\n\n[원본 커뮤니티 댓글 분위기 참고 — 상스러운 표현은 순화하고, 50~60대 말투로 재작성]\n${sourceComments.slice(0, 5).join('\n')}`
-    : ''
+  let commentContext = ''
+  if (sourceComments.length > 0) {
+    const idx = options?.sourceCommentIndex
+    if (idx !== undefined && sourceComments.length > 1) {
+      // P1-B: focus 1개 + rest 참고
+      const focusIdx = idx % sourceComments.length
+      const focus = sourceComments[focusIdx]!
+      const rest = sourceComments.filter((_, i) => i !== focusIdx).slice(0, 4)
+      commentContext = `\n\n[이 댓글의 관점에서 반응하세요 — 이 시각으로 쓰세요]\n${focus}`
+      if (rest.length > 0) {
+        commentContext += `\n\n[다른 댓글들 (분위기 참고용, 겹치지 않게)]\n${rest.join('\n')}`
+      }
+    } else {
+      commentContext = `\n\n[원본 커뮤니티 댓글 분위기 참고 — 상스러운 표현은 순화하고, 50~60대 말투로 재작성]\n${sourceComments.slice(0, 5).join('\n')}`
+    }
+  }
+  // P1-C: 이미 달린 댓글 (최대 3개 — wave 간 포함)
+  if (options?.priorCommentTexts && options.priorCommentTexts.length > 0) {
+    commentContext += `\n\n[이미 달린 댓글들 — 같은 장면·문구·감정 포인트를 반복하지 마세요]\n${options.priorCommentTexts.join('\n')}`
+  }
 
   const maxAttempts = 2
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
