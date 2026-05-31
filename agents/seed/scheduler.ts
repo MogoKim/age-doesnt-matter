@@ -1205,60 +1205,126 @@ export async function processSheetEngagementWaves(): Promise<void> {
       targetCount?: number
       sourceComments?: string[]  // sheet-scraper에서 수집한 원본 댓글 (있을 때만)
     }
+    const existingDetails = JSON.parse(wave.details as string) as Record<string, unknown>
 
-    if (wave.action === 'SHEET_ENGAGE_LIKE_PENDING') {
-      const liked = await processViralLikeWave(data.postId, data.personaIds)
-      console.log(`[SheetEngage] 일반 좋아요 ${liked}개 투입 (postId=${data.postId.slice(0, 8)})`)
-    } else {
-      const post = await prisma.post.findUnique({
-        where: { id: data.postId },
-        select: { title: true, content: true, authorId: true },
-      })
-      if (!post) continue
-
-      const sourceComments = data.sourceComments ?? []
-      const targetCount = data.targetCount
-
-      let inserted = 0
-      for (const personaId of data.personaIds) {
-        if (targetCount !== undefined && inserted >= targetCount) break
-
-        const authorId = await getBotUser(personaId)
-        if (authorId === post.authorId) continue
-
-        const todayCommentCount = await prisma.comment.count({
-          where: { authorId, createdAt: { gte: startOfKstDay() }, post: { source: 'SHEET' } },
-        })
-        if (todayCommentCount >= 4) continue
-
-        const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
-        if (existing) continue
-
-        // sourceComments가 있으면 원본 댓글 분위기를 반영한 댓글 생성 (없으면 제목+본문만)
-        const commentText = await generateSheetViralComment(
-          personaId,
-          post.title,
-          post.content ?? '',
-          'empathy',
-          [],
-          sourceComments,
-        )
-        if (!commentText) continue
-
-        await prisma.$transaction([
-          prisma.comment.create({ data: { postId: data.postId, authorId, content: commentText } }),
-          prisma.post.update({
-            where: { id: data.postId },
-            data: { commentCount: { increment: 1 }, lastEngagedAt: now },
-          }),
-        ])
-        inserted++
-      }
-      if (inserted > 0) await refreshPostTrendingScore(data.postId).catch(() => {})
-      console.log(`[SheetEngage] 일반 댓글 ${inserted}개 투입 (postId=${data.postId.slice(0, 8)})`)
+    // Atomic claim: WHERE status=PENDING → PARTIAL (DB 레벨 단일 트랜잭션)
+    // 두 run이 동시에 호출해도 한쪽만 count=1, 나머지는 count=0 → skip
+    const claimed = await prisma.botLog.updateMany({
+      where: { id: wave.id, status: 'PENDING' },
+      data: {
+        status: 'PARTIAL',
+        details: JSON.stringify({
+          ...existingDetails,
+          claimStatus: 'PROCESSING',
+          claimedAt: now.toISOString(),
+          claimSource: 'atomic-claim',
+        }),
+      },
+    })
+    if (claimed.count !== 1) {
+      console.log(`[SheetEngage] ⏭ wave=${wave.id.slice(0, 8)} already claimed — skip`)
+      continue
     }
 
-    await prisma.botLog.update({ where: { id: wave.id }, data: { status: 'SUCCESS' } })
+    try {
+      if (wave.action === 'SHEET_ENGAGE_LIKE_PENDING') {
+        const liked = await processViralLikeWave(data.postId, data.personaIds)
+        console.log(`[SheetEngage] 일반 좋아요 ${liked}개 투입 (postId=${data.postId.slice(0, 8)})`)
+        await prisma.botLog.update({
+          where: { id: wave.id },
+          data: {
+            status: 'SUCCESS',
+            details: JSON.stringify({ ...existingDetails, insertedCount: liked, processedAt: now.toISOString(), claimStatus: 'DONE' }),
+          },
+        })
+      } else {
+        const post = await prisma.post.findUnique({
+          where: { id: data.postId },
+          select: { title: true, content: true, authorId: true },
+        })
+        if (!post) {
+          await prisma.botLog.update({
+            where: { id: wave.id },
+            data: {
+              status: 'FAILED',
+              details: JSON.stringify({ ...existingDetails, claimStatus: 'FAILED', errorMessage: 'post not found', failedAt: now.toISOString() }),
+            },
+          }).catch(() => {})
+          continue
+        }
+
+        const sourceComments = data.sourceComments ?? []
+        const targetCount = data.targetCount
+        const personaIds = [...new Set(data.personaIds)]
+        const insertedAuthorIds = new Set<string>()
+
+        let inserted = 0
+        const skipReasons = { sameAuthor: 0, dailyCap: 0, existingComment: 0, emptyGenerated: 0 }
+        for (const personaId of personaIds) {
+          if (targetCount !== undefined && inserted >= targetCount) break
+
+          const authorId = await getBotUser(personaId)
+          if (authorId === post.authorId) { skipReasons.sameAuthor++; continue }
+          if (insertedAuthorIds.has(authorId)) { skipReasons.existingComment++; continue }
+
+          const todayCommentCount = await prisma.comment.count({
+            where: { authorId, createdAt: { gte: startOfKstDay() }, post: { source: 'SHEET' } },
+          })
+          if (todayCommentCount >= 4) { skipReasons.dailyCap++; continue }
+
+          const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
+          if (existing) { skipReasons.existingComment++; continue }
+
+          // sourceComments가 있으면 원본 댓글 분위기를 반영한 댓글 생성 (없으면 제목+본문만)
+          const commentText = await generateSheetViralComment(
+            personaId,
+            post.title,
+            post.content ?? '',
+            'empathy',
+            [],
+            sourceComments,
+          )
+          if (!commentText) { skipReasons.emptyGenerated++; continue }
+
+          await prisma.$transaction([
+            prisma.comment.create({ data: { postId: data.postId, authorId, content: commentText } }),
+            prisma.post.update({
+              where: { id: data.postId },
+              data: { commentCount: { increment: 1 }, lastEngagedAt: now },
+            }),
+          ])
+          insertedAuthorIds.add(authorId)
+          inserted++
+        }
+        if (inserted > 0) await refreshPostTrendingScore(data.postId).catch(() => {})
+        console.log(`[SheetEngage] 일반 댓글 ${inserted}개 투입, skip=${JSON.stringify(skipReasons)} (postId=${data.postId.slice(0, 8)})`)
+
+        const finalStatus = targetCount !== undefined && inserted >= targetCount ? 'SUCCESS'
+          : inserted > 0 ? 'PARTIAL'
+          : 'FAILED'
+        await prisma.botLog.update({
+          where: { id: wave.id },
+          data: {
+            status: finalStatus,
+            details: JSON.stringify({ ...existingDetails, insertedCount: inserted, targetCount, skipReasons, processedAt: now.toISOString(), claimStatus: 'DONE' }),
+          },
+        })
+      }
+    } catch (err) {
+      console.error(`[SheetEngage] ❌ wave=${wave.id.slice(0, 8)} 처리 실패`, err)
+      await prisma.botLog.update({
+        where: { id: wave.id },
+        data: {
+          status: 'FAILED',
+          details: JSON.stringify({
+            ...existingDetails,
+            claimStatus: 'FAILED',
+            errorMessage: err instanceof Error ? err.message : String(err),
+            failedAt: now.toISOString(),
+          }),
+        },
+      }).catch(() => {})
+    }
   }
 }
 
@@ -1305,66 +1371,132 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
       rawContent?: string
       sourceComments?: string[]
     }
+    const existingDetails = JSON.parse(wave.details as string) as Record<string, unknown>
 
-    const post = await prisma.post.findUnique({
-      where: { id: data.postId },
-      select: { title: true, content: true, authorId: true },
+    // Atomic claim: WHERE status=PENDING → PARTIAL (DB 레벨 단일 트랜잭션)
+    const claimed = await prisma.botLog.updateMany({
+      where: { id: wave.id, status: 'PENDING' },
+      data: {
+        status: 'PARTIAL',
+        details: JSON.stringify({
+          ...existingDetails,
+          claimStatus: 'PROCESSING',
+          claimedAt: now.toISOString(),
+          claimSource: 'atomic-claim',
+        }),
+      },
     })
-    if (!post) continue
+    if (claimed.count !== 1) {
+      console.log(`[SheetViral] ⏭ wave=${wave.id.slice(0, 8)} already claimed — skip`)
+      continue
+    }
 
-    if (wave.action === 'SHEET_LIKE_WAVE_PENDING') {
-      const liked = await processViralLikeWave(data.postId, data.personaIds)
-      console.log(`[SheetViral] WAVE_L 좋아요 ${liked}개 투입 → HOT 달성 시도 (postId=${data.postId.slice(0, 8)})`)
-    } else {
-      const waveType = data.waveType ?? 'empathy'
-      const rawContent = data.rawContent ?? post.content ?? ''
-      const keyTerms = data.keyTerms ?? []
-      const sourceComments = data.sourceComments ?? []
-      const targetCount = data.targetCount
-      const cap = 20
-
-      const botCount = await prisma.comment.count({
-        where: { postId: data.postId, author: { email: { endsWith: '@unao.bot' } } },
-      })
-
-      let inserted = 0
-      for (const personaId of data.personaIds) {
-        if (botCount + inserted >= cap) break
-        if (targetCount !== undefined && inserted >= targetCount) break
-
-        const authorId = await getBotUser(personaId)
-        if (authorId === post.authorId) continue
-
-        const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
-        if (existing) continue
-
-        const commentText = await generateSheetViralComment(
-          personaId,
-          post.title,
-          rawContent,
-          waveType,
-          keyTerms,
-          sourceComments,
-        )
-        if (!commentText || commentText.length < 5) {
-          console.log(`  [SheetViral] ⚠️ 댓글 스킵 — 빈값 또는 5자 미만 (persona=${personaId}, post=${data.postId.slice(0, 8)})`)
+    try {
+      if (wave.action === 'SHEET_LIKE_WAVE_PENDING') {
+        const liked = await processViralLikeWave(data.postId, data.personaIds)
+        console.log(`[SheetViral] WAVE_L 좋아요 ${liked}개 투입 → HOT 달성 시도 (postId=${data.postId.slice(0, 8)})`)
+        await prisma.botLog.update({
+          where: { id: wave.id },
+          data: {
+            status: 'SUCCESS',
+            details: JSON.stringify({ ...existingDetails, insertedCount: liked, processedAt: now.toISOString(), claimStatus: 'DONE' }),
+          },
+        })
+      } else {
+        const post = await prisma.post.findUnique({
+          where: { id: data.postId },
+          select: { title: true, content: true, authorId: true },
+        })
+        if (!post) {
+          await prisma.botLog.update({
+            where: { id: wave.id },
+            data: {
+              status: 'FAILED',
+              details: JSON.stringify({ ...existingDetails, claimStatus: 'FAILED', errorMessage: 'post not found', failedAt: now.toISOString() }),
+            },
+          }).catch(() => {})
           continue
         }
 
-        await prisma.$transaction([
-          prisma.comment.create({ data: { postId: data.postId, authorId, content: commentText } }),
-          prisma.post.update({
-            where: { id: data.postId },
-            data: { commentCount: { increment: 1 }, lastEngagedAt: now },
-          }),
-        ])
-        inserted++
-      }
-      if (inserted > 0) await refreshPostTrendingScore(data.postId).catch(() => {})
-      console.log(`[SheetViral] ${waveType} 파동 댓글 ${inserted}개 투입 (postId=${data.postId.slice(0, 8)})`)
-    }
+        const waveType = data.waveType ?? 'empathy'
+        const rawContent = data.rawContent ?? post.content ?? ''
+        const keyTerms = data.keyTerms ?? []
+        const sourceComments = data.sourceComments ?? []
+        const targetCount = data.targetCount
+        const cap = 20
+        const personaIds = [...new Set(data.personaIds)]
+        const insertedAuthorIds = new Set<string>()
 
-    await prisma.botLog.update({ where: { id: wave.id }, data: { status: 'SUCCESS' } })
+        const botCount = await prisma.comment.count({
+          where: { postId: data.postId, author: { email: { endsWith: '@unao.bot' } } },
+        })
+
+        let inserted = 0
+        const skipReasons = { sameAuthor: 0, existingComment: 0, postBotCap: 0, emptyGenerated: 0 }
+        for (const personaId of personaIds) {
+          if (botCount + inserted >= cap) { skipReasons.postBotCap++; break }
+          if (targetCount !== undefined && inserted >= targetCount) break
+
+          const authorId = await getBotUser(personaId)
+          if (authorId === post.authorId) { skipReasons.sameAuthor++; continue }
+          if (insertedAuthorIds.has(authorId)) { skipReasons.existingComment++; continue }
+
+          const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
+          if (existing) { skipReasons.existingComment++; continue }
+
+          const commentText = await generateSheetViralComment(
+            personaId,
+            post.title,
+            rawContent,
+            waveType,
+            keyTerms,
+            sourceComments,
+          )
+          if (!commentText || commentText.length < 5) {
+            skipReasons.emptyGenerated++
+            console.log(`  [SheetViral] ⚠️ 댓글 스킵 — 빈값 또는 5자 미만 (persona=${personaId}, post=${data.postId.slice(0, 8)})`)
+            continue
+          }
+
+          await prisma.$transaction([
+            prisma.comment.create({ data: { postId: data.postId, authorId, content: commentText } }),
+            prisma.post.update({
+              where: { id: data.postId },
+              data: { commentCount: { increment: 1 }, lastEngagedAt: now },
+            }),
+          ])
+          insertedAuthorIds.add(authorId)
+          inserted++
+        }
+        if (inserted > 0) await refreshPostTrendingScore(data.postId).catch(() => {})
+        console.log(`[SheetViral] ${waveType} 파동 댓글 ${inserted}개 투입, skip=${JSON.stringify(skipReasons)} (postId=${data.postId.slice(0, 8)})`)
+
+        const finalStatus = targetCount !== undefined && inserted >= targetCount ? 'SUCCESS'
+          : inserted > 0 ? 'PARTIAL'
+          : 'FAILED'
+        await prisma.botLog.update({
+          where: { id: wave.id },
+          data: {
+            status: finalStatus,
+            details: JSON.stringify({ ...existingDetails, insertedCount: inserted, targetCount, skipReasons, processedAt: now.toISOString(), claimStatus: 'DONE' }),
+          },
+        })
+      }
+    } catch (err) {
+      console.error(`[SheetViral] ❌ wave=${wave.id.slice(0, 8)} 처리 실패`, err)
+      await prisma.botLog.update({
+        where: { id: wave.id },
+        data: {
+          status: 'FAILED',
+          details: JSON.stringify({
+            ...existingDetails,
+            claimStatus: 'FAILED',
+            errorMessage: err instanceof Error ? err.message : String(err),
+            failedAt: now.toISOString(),
+          }),
+        },
+      }).catch(() => {})
+    }
   }
 }
 

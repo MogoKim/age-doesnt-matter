@@ -111,7 +111,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | A21 | CDO 참여 최적화 | `agents/cdo/engagement-optimizer.ts` | GHA 일간 | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A22 | Strategist 사용자 딥 분석 | `agents/strategist/user-deep-analysis.ts` | GHA 목 09:00 KST | GHA | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A23 | Seed 킬러 포스트 | `agents/seed/scheduler.ts` (killer-post) | GHA 09:10·22:10 KST | GHA | RELATION | ALL | — | ACTIVE | 2026-05-19 |
-| A24 | Seed 바이럴 웨이브 | `agents/seed/scheduler.ts` (viral-waves) | GHA 5분마다 (agents-sheet-viral.yml) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-23 |
+| A24 | Seed 바이럴 웨이브 | `agents/seed/scheduler.ts` (viral-waves) | GHA 5분마다 (agents-sheet-viral.yml) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-31 |
 | A25 | 논란 체인 | `agents/seed/controversy-chain.ts` | GHA 하루 16회 (seed 동일) | GHA | RELATION | ALL | — | ACTIVE | 2026-05-12 |
 | A26 | Design 광고 루프 | `agents/marketing-loop/creative-optimizer.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
 | A27 | QA 코드 게이트 | `agents/qa/pre-deploy-gate.ts` | DISPATCH ONLY | DISPATCH | INFRA | — | — | ACTIVE | 2026-05-12 |
