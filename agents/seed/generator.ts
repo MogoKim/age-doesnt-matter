@@ -925,26 +925,46 @@ export async function generateComment(
 }
 
 /** 시트 화제성 파동 댓글 생성 — Sonnet 모델, 본문 맥락 반영, 키워드 검증 포함 */
-/** 이미지 전용 글에서 제목+keyTerms만으로 짧은 반응 댓글 생성 (fallback) */
-async function generateTitleOnlyComment(
-  personaId: string,
-  postTitle: string,
-  keyTerms: string[],
-  waveType: 'empathy' | 'critical' | 'reversal',
-): Promise<string> {
-  const p = getPersona(personaId)
-  const response = await client.messages.create({
-    model: process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6',
-    max_tokens: 150,
-    system: getKstContext() + `\n\n당신은 50~60대 한국 여성 ${p.nickname}(${p.age}세)입니다.
-짧게 1~2문장, 자연스러운 비문 허용. ㅎ ㅋ ㅠ 이모티콘 자연스럽게.`,
-    messages: [{
-      role: 'user',
-      content: `제목만 보고 이미지 게시글에 짧게 반응해주세요.\n제목: ${postTitle}${keyTerms.length > 0 ? `\n핵심어: ${keyTerms.join(', ')}` : ''}\n방향: ${waveType === 'empathy' ? '공감' : waveType === 'critical' ? '다른 시각' : '여운'}`,
-    }],
-  })
-  const comment = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-  return stripMarkdown(comment)
+function extractForbiddenAnchors(priorCommentTexts: string[]): string[] {
+  if (priorCommentTexts.length === 0) return []
+
+  // "저렇게"는 실제 anchor 반복 사례로 확인되어 의도적으로 제외
+  const STOP = new Set([
+    '마세요','있어요','그래서','했는데','저도','진짜','그냥','이제','그때',
+    '너무','정말','많이','그래도','하지만','근데','이거','저거','여기',
+    '좀더','아직','또한','이렇게','그렇게','같아요','같은데',
+    '요즘','나도','우리','정도','느낌','생각','그분','항상','가끔','하네요',
+  ])
+
+  const text = priorCommentTexts.join(' ')
+
+  // 단어 anchor (최대 4개)
+  const wordTokens = text.match(/[가-힣]{2,6}/g) ?? []
+  const wordFreq = new Map<string, number>()
+  for (const t of wordTokens) {
+    if (!STOP.has(t)) wordFreq.set(t, (wordFreq.get(t) ?? 0) + 1)
+  }
+  const wordAnchors = [...wordFreq.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([k]) => k)
+
+  // 구문 anchor: 2~3어절 슬라이딩 윈도우, 한글 4자 이상 어절 포함 구문만 (최대 2개)
+  const phraseAnchors: string[] = []
+  for (const comment of priorCommentTexts) {
+    const words = comment.split(/\s+/).filter(w => /[가-힣]/.test(w))
+    for (let n = 2; n <= 3; n++) {
+      for (let i = 0; i <= words.length - n; i++) {
+        const phrase = words.slice(i, i + n).join(' ')
+        const hasContent = words.slice(i, i + n).some(w => w.length >= 4 && !STOP.has(w))
+        if (hasContent && !phraseAnchors.includes(phrase) && phraseAnchors.length < 2) {
+          phraseAnchors.push(phrase)
+        }
+      }
+    }
+  }
+
+  return [...wordAnchors, ...phraseAnchors].slice(0, 6)
 }
 
 export async function generateSheetViralComment(
@@ -956,18 +976,16 @@ export async function generateSheetViralComment(
   sourceComments: string[] = [],
   options?: { sourceCommentIndex?: number; priorCommentTexts?: string[] },
 ): Promise<string> {
-  // ── 이미지 전용 글 감지: 텍스트 50자 미만 시 원본댓글 각색 또는 제목 기반 fallback ──
+  // ── 이미지 전용 글 감지: 텍스트 50자 미만 ──
   const cleanText = rawContent.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
-  if (cleanText.length < 50) {
-    if (sourceComments.length > 0) {
-      // 원본 댓글이 있으면 → rawContent 최소화, sourceComments는 commentContext에서만 전달 (중복 삽입 방지)
-      rawContent = '[이미지 게시글]'
-      console.log(`  [SheetViral] 이미지 전용 글 — 원본 댓글 ${sourceComments.length}개 각색 모드`)
-    } else {
-      // 댓글도 없으면 → 제목+keyTerms만으로 짧은 반응 생성
-      console.log(`  [SheetViral] 이미지 전용 글 + 원본댓글 없음 — 제목 기반 fallback`)
-      return generateTitleOnlyComment(personaId, postTitle, keyTerms, waveType)
+  const isImagePost = cleanText.length < 50
+  if (isImagePost) {
+    rawContent = ''
+    if (sourceComments.length === 0) {
+      console.log(`  [SheetViral] 이미지 전용 글 + 원본댓글 없음 — skip`)
+      return ''
     }
+    console.log(`  [SheetViral] 이미지 전용 글 — 원본 댓글 ${sourceComments.length}개 각색 모드`)
   }
   // ─────────────────────────────────────────────────────────────────────────────
   const p = getPersona(personaId)
@@ -1000,25 +1018,36 @@ export async function generateSheetViralComment(
 [댓글 방향]
 ${WAVE_PROMPTS[waveType]}`
 
+  // P1-B+C-2: forbidden anchor는 priorCommentTexts 기반으로만 추출 (sourceComments는 앞으로 쓸 재료)
+  const forbiddenAnchors = extractForbiddenAnchors(options?.priorCommentTexts ?? [])
+
   let commentContext = ''
   if (sourceComments.length > 0) {
     const idx = options?.sourceCommentIndex
-    if (idx !== undefined && sourceComments.length > 1) {
-      // P1-B: focus 1개 + rest 참고
-      const focusIdx = idx % sourceComments.length
-      const focus = sourceComments[focusIdx]!
-      const rest = sourceComments.filter((_, i) => i !== focusIdx).slice(0, 4)
-      commentContext = `\n\n[이 댓글의 관점에서 반응하세요 — 이 시각으로 쓰세요]\n${focus}`
-      if (rest.length > 0) {
-        commentContext += `\n\n[다른 댓글들 (분위기 참고용, 겹치지 않게)]\n${rest.join('\n')}`
-      }
+    const focusIdx = (idx !== undefined && sourceComments.length > 1)
+      ? idx % sourceComments.length
+      : 0
+    const focus = sourceComments[focusIdx]!
+
+    if (isImagePost) {
+      // 이미지 글: 맥락 설명에 이미지/본문 단어 없음, 메타 발화 금지어 섹션 추가
+      commentContext = `\n\n아래 반응을 글의 맥락으로 삼아, 실제 게시물을 본 사람처럼 자연스럽게 댓글을 쓰세요.\n\n[이 관점으로 자연스럽게 반응]\n${focus}`
+      commentContext += `\n\n[절대 쓰지 말아야 할 표현]\n이미지라 내용을 못 봤지만 / 본문을 못 봤지만 / 사진을 볼 수 없어서 / 내용 올려주세요 / 이미지 게시글 / 내용을 못 봤다 / 본문 내용 올려주실 수 있나요`
+    } else if (idx !== undefined && sourceComments.length > 1) {
+      // 일반 글, sourceCommentIndex 지정: focus 1개만 (rest 완전 제거)
+      commentContext = `\n\n[이 관점으로 자연스럽게 반응]\n${focus}`
     } else {
-      commentContext = `\n\n[원본 커뮤니티 댓글 분위기 참고 — 상스러운 표현은 순화하고, 50~60대 말투로 재작성]\n${sourceComments.slice(0, 5).join('\n')}`
+      // sourceComments 1개 또는 index 미지정
+      commentContext = `\n\n[참고할 반응]\n${focus}`
+    }
+
+    if (forbiddenAnchors.length > 0) {
+      commentContext += `\n\n[금지 표현 — 앞 댓글에서 이미 사용됨. 절대 쓰지 마라]\n${forbiddenAnchors.join(' / ')}`
     }
   }
-  // P1-C: 이미 달린 댓글 (최대 3개 — wave 간 포함)
+  // P1-C: 이미 달린 댓글 (강화된 지시 — 같은 뜻이라도 비슷한 표현 금지)
   if (options?.priorCommentTexts && options.priorCommentTexts.length > 0) {
-    commentContext += `\n\n[이미 달린 댓글들 — 같은 장면·문구·감정 포인트를 반복하지 마세요]\n${options.priorCommentTexts.join('\n')}`
+    commentContext += `\n\n[이미 달린 댓글들 — 아래와 다른 각도·표현·감정으로 써라 (같은 뜻이라도 비슷한 표현 금지)]\n${options.priorCommentTexts.join('\n')}`
   }
 
   const maxAttempts = 2
