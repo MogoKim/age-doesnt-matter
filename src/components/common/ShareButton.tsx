@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { shareToKakao, copyShareLink, KakaoUnavailableError } from '@/lib/kakao-share'
+import { logKakaoShareDebug, getKakaoRuntimeSnapshot } from '@/lib/kakao-share-debug'
 import { useToast } from '@/components/common/Toast'
 import { IconShare, IconKakao, IconCopy } from '@/components/icons'
 
@@ -16,12 +17,18 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
   const { toast } = useToast()
   const [open, setOpen] = useState(false)
 
-  async function handleKakaoShare() {
+  async function handleKakaoShare(e: React.MouseEvent) {
+    logKakaoShareDebug('SHARE_CLICK_KAKAO', {
+      isTrusted: e.isTrusted,
+      url,
+      ...getKakaoRuntimeSnapshot(),
+    })
     try {
       await shareToKakao({ title, description, imageUrl, url })
       setOpen(false)
     } catch (e) {
       if (e instanceof KakaoUnavailableError) {
+        logKakaoShareDebug('TOAST_FALLBACK', { reason: e.reason, url })
         toast('카카오 공유가 안 되어 링크를 복사했어요', 'success')
         setOpen(false)
       } else {
@@ -44,7 +51,7 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
     <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={(e) => { if (!open) logKakaoShareDebug('SHARE_MENU_OPEN', { isTrusted: e.isTrusted, url }); setOpen(!open) }}
         className="icon-hover flex items-center justify-center min-w-[52px] min-h-[52px] text-muted-foreground hover:text-primary-text hover:bg-primary/5 rounded-xl lg:min-h-[44px] lg:min-w-[44px]"
         aria-label="공유하기"
       >

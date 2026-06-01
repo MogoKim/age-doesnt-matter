@@ -8,6 +8,7 @@ import { togglePostLike, togglePostScrap, incrementShareCount } from '@/lib/acti
 import { toggleGuestPostLike } from '@/lib/actions/guest-likes'
 import { useToast } from '@/components/common/Toast'
 import { shareToKakao, copyShareLink, KakaoUnavailableError } from '@/lib/kakao-share'
+import { logKakaoShareDebug, getKakaoRuntimeSnapshot } from '@/lib/kakao-share-debug'
 import { gtmLike, gtmShare } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
 import { IconHeart, IconBookmark, IconShare, IconFlag, IconKakao, IconCopy } from '@/components/icons'
@@ -117,7 +118,12 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
 
   const [showShareMenu, setShowShareMenu] = useState(false)
 
-  async function handleKakaoShare() {
+  async function handleKakaoShare(e: React.MouseEvent) {
+    logKakaoShareDebug('SHARE_CLICK_KAKAO', {
+      isTrusted: e.isTrusted,
+      postId,
+      ...getKakaoRuntimeSnapshot(),
+    })
     try {
       await shareToKakao({ title, description, url: window.location.pathname })
       gtmShare('kakao', 'post', postId)
@@ -125,6 +131,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
       setShowShareMenu(false)
     } catch (e) {
       if (e instanceof KakaoUnavailableError) {
+        logKakaoShareDebug('TOAST_FALLBACK', { reason: e.reason, postId })
         gtmShare('copy_link', 'post', postId)
         void incrementShareCount(postId)
         toast('카카오 공유가 안 되어 링크를 복사했어요', 'success')
@@ -171,7 +178,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
           <span>스크랩</span>
         </button>
         <div className="relative">
-          <button className={btnBase} onClick={() => setShowShareMenu(!showShareMenu)} aria-label="공유">
+          <button className={btnBase} onClick={(e) => { if (!showShareMenu) logKakaoShareDebug('SHARE_MENU_OPEN', { isTrusted: e.isTrusted, postId }); setShowShareMenu(!showShareMenu) }} aria-label="공유">
             <IconShare size={20} />
             <span>공유</span>
           </button>

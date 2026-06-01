@@ -4,6 +4,8 @@
  * 클릭 시점에는 isInitialized() 확인 후 sendDefault()로 바로 진행합니다.
  */
 
+import { logKakaoShareDebug, getKakaoRuntimeSnapshot } from '@/lib/kakao-share-debug'
+
 declare global {
   interface Window {
     Kakao?: {
@@ -56,9 +58,11 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.co
 /** SDK 미초기화/로드 실패 시 링크 복사로 대체됐음을 알리는 에러 */
 export class KakaoUnavailableError extends Error {
   readonly copiedUrl: string
-  constructor(url: string) {
+  readonly reason: 'timeout' | 'unavailable' | 'sendDefaultThrow' | 'unknown'
+  constructor(url: string, reason: 'timeout' | 'unavailable' | 'sendDefaultThrow' | 'unknown' = 'unknown') {
     super('KAKAO_UNAVAILABLE')
     this.copiedUrl = url
+    this.reason = reason
   }
 }
 
@@ -86,6 +90,15 @@ function waitForKakaoInit(timeoutMs = 5000): Promise<boolean> {
   })
 }
 
+async function copyToClipboard(url: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(url)
+    return true
+  } catch {
+    return false
+  }
+}
+
 interface SharePostParams {
   title: string
   description: string
@@ -95,18 +108,23 @@ interface SharePostParams {
 
 export async function shareToKakao(params: SharePostParams): Promise<void> {
   const fullUrl = params.url.startsWith('http') ? params.url : `${APP_URL}${params.url}`
+  const startTs = Date.now()
 
   if (typeof window === 'undefined') {
-    throw new KakaoUnavailableError(fullUrl)
+    throw new KakaoUnavailableError(fullUrl, 'unknown')
   }
 
+  logKakaoShareDebug('WAIT_INIT_START', getKakaoRuntimeSnapshot({ fullUrl }))
+
   const initialized = await waitForKakaoInit()
+
   if (!initialized) {
     const now = new Date().toISOString()
+    const elapsed = Date.now() - startTs
     if (window.__KAKAO_SHARE_DIAG__) window.__KAKAO_SHARE_DIAG__.lastWaitTimeoutAt = now
     const sdkEl = document.getElementById('kakao-js-sdk') as HTMLScriptElement | null
-    console.error('[kakao-share] SDK_INIT_TIMEOUT', {
-      diag: window.__KAKAO_SHARE_DIAG__,
+    const timeoutPayload = {
+      diag: window.__KAKAO_SHARE_DIAG__ ?? null,
       scriptEl: {
         id: sdkEl?.id ?? null,
         src: sdkEl?.src ?? null,
@@ -118,18 +136,41 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
       hasKakao: !!window.Kakao,
       initialized: false,
       hasSendDefault: typeof window.Kakao?.Share?.sendDefault,
-    })
-    await copyToClipboardSilent(fullUrl)
-    throw new KakaoUnavailableError(fullUrl)
+      elapsed,
+    }
+    logKakaoShareDebug('WAIT_INIT_TIMEOUT', timeoutPayload)
+    console.error('[kakao-share] SDK_INIT_TIMEOUT', timeoutPayload)
+    logKakaoShareDebug('FALLBACK_COPY_START', { reason: 'timeout', fullUrl })
+    const copied = await copyToClipboard(fullUrl)
+    logKakaoShareDebug(copied ? 'FALLBACK_COPY_OK' : 'FALLBACK_COPY_FAILED', { reason: 'timeout', fullUrl })
+    throw new KakaoUnavailableError(fullUrl, 'timeout')
   }
+
+  logKakaoShareDebug('WAIT_INIT_OK', getKakaoRuntimeSnapshot({ elapsed: Date.now() - startTs }))
 
   const kakao = window.Kakao
   if (!kakao?.isInitialized()) {
-    console.error('[kakao-share] SDK_UNAVAILABLE', { hasKakao: !!kakao, initialized: false })
-    await copyToClipboardSilent(fullUrl)
-    throw new KakaoUnavailableError(fullUrl)
+    const elapsed = Date.now() - startTs
+    const unavailPayload = { hasKakao: !!kakao, initialized: false, elapsed }
+    logKakaoShareDebug('SDK_UNAVAILABLE', unavailPayload)
+    console.error('[kakao-share] SDK_UNAVAILABLE', unavailPayload)
+    logKakaoShareDebug('FALLBACK_COPY_START', { reason: 'unavailable', fullUrl })
+    const copied = await copyToClipboard(fullUrl)
+    logKakaoShareDebug(copied ? 'FALLBACK_COPY_OK' : 'FALLBACK_COPY_FAILED', { reason: 'unavailable', fullUrl })
+    throw new KakaoUnavailableError(fullUrl, 'unavailable')
   }
 
+  const elapsedBeforeSend = Date.now() - startTs
+  const snapshot = getKakaoRuntimeSnapshot()
+  // localStorage에 먼저 기록 — sendDefault() 호출 전이므로 페이지 이탈 시에도 보존됨
+  logKakaoShareDebug('SEND_DEFAULT_START', {
+    snapshot,
+    href: window.location.href,
+    fullUrl,
+    readyState: document.readyState,
+    visibilityState: document.visibilityState,
+    elapsed: elapsedBeforeSend,
+  })
   console.info('[kakao-share] SEND_DEFAULT_START', {
     initialized: true,
     host: window.location.host,
@@ -158,23 +199,21 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
         },
       ],
     })
+    logKakaoShareDebug('SEND_DEFAULT_RETURNED', { elapsed: Date.now() - startTs })
   } catch (e) {
     const err = e instanceof Error ? e : new Error(String(e))
-    console.error('[kakao-share] SEND_DEFAULT_FAILED', {
+    const throwPayload = {
       name: err.name,
       message: err.message,
-      stack: err.stack,
-    })
-    await copyToClipboardSilent(fullUrl)
-    throw new KakaoUnavailableError(fullUrl)
-  }
-}
-
-async function copyToClipboardSilent(url: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(url)
-  } catch {
-    // clipboard 접근 불가 시 무시
+      stack: err.stack ?? null,
+      elapsed: Date.now() - startTs,
+    }
+    logKakaoShareDebug('SEND_DEFAULT_THROW', throwPayload)
+    console.error('[kakao-share] SEND_DEFAULT_FAILED', throwPayload)
+    logKakaoShareDebug('FALLBACK_COPY_START', { reason: 'sendDefaultThrow', fullUrl })
+    const copied = await copyToClipboard(fullUrl)
+    logKakaoShareDebug(copied ? 'FALLBACK_COPY_OK' : 'FALLBACK_COPY_FAILED', { reason: 'sendDefaultThrow', fullUrl })
+    throw new KakaoUnavailableError(fullUrl, 'sendDefaultThrow')
   }
 }
 

@@ -28,6 +28,10 @@ const ProgressBar = dynamic(
   () => import('@/components/common/ProgressBar'),
   { ssr: false },
 )
+const KakaoShareDebugPanel = dynamic(
+  () => import('@/components/common/KakaoShareDebugPanel'),
+  { loading: () => null, ssr: false },
+)
 
 const VALID_FONT_SIZES = ['NORMAL', 'LARGE', 'XLARGE'] as const
 type FontSizeValue = typeof VALID_FONT_SIZES[number]
@@ -60,6 +64,7 @@ export default function MainGroupLayout({
       </Suspense>
       <PopupRenderer />
       <PushPermissionToast />
+      <KakaoShareDebugPanel />
     </FontSizeProvider>
   )
 }
