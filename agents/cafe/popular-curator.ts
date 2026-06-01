@@ -10,7 +10,7 @@ import {
   toCuratedSummary,
   matchPersona,
   guessDesire,
-  DESIRE_TO_BOARD,
+  resolveCommunityBoard,
   PERSONAS,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
@@ -132,7 +132,7 @@ export async function main() {
       continue
     }
 
-    const boardInfo = DESIRE_TO_BOARD[desire] ?? DESIRE_TO_BOARD['GENERAL']
+    const boardInfo = resolveCommunityBoard(desire)
     const htmlContent = toCuratedHtmlContent(rawContent)
     const summary = toCuratedSummary(rawContent)
 

@@ -940,10 +940,19 @@ export const DESIRE_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR' | 'L
   MONEY:     { boardType: 'LIFE2', category: '재테크·연금' },
   RETIRE:    { boardType: 'LIFE2', category: '은퇴준비' },
   HOUSING:   { boardType: 'LIFE2', category: '주거·이사' },
-  JOB:       { boardType: 'JOB',   category: '전체' },
+  JOB:       { boardType: 'STORY', category: '자유수다' },
   HUMOR:     { boardType: 'HUMOR', category: '유머·웃음' },
   ENTERTAIN: { boardType: 'HUMOR', category: '엔터·TV' },
   GENERAL:   { boardType: 'STORY', category: '자유수다' },
+}
+
+/** 커뮤니티 큐레이션 전용 게시판 결정. boardType='JOB'를 절대 반환하지 않는다. */
+export function resolveCommunityBoard(desire: string): { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; category: string } {
+  const entry = DESIRE_TO_BOARD[desire] ?? DESIRE_TO_BOARD['GENERAL']!
+  if (entry.boardType === 'JOB') {
+    return { boardType: 'STORY', category: '자유수다' }
+  }
+  return { boardType: entry.boardType, category: entry.category }
 }
 
 const DESIRE_KEYWORDS: Record<string, string[]> = {

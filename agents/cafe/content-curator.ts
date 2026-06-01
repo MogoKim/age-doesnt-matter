@@ -15,7 +15,7 @@ import {
   PERSONAS,
   DESIRE_PERSONA_MAP,
   matchPersona,
-  DESIRE_TO_BOARD,
+  resolveCommunityBoard,
   guessDesire,
   stripMarkdown,
   replaceCafeReferences,
@@ -166,7 +166,7 @@ async function generateCuratedPost(
   const mainRef = referencePosts[0]
   if (!mainRef) return null
 
-  const boardInfo = DESIRE_TO_BOARD[desireCat ?? 'GENERAL'] ?? DESIRE_TO_BOARD['GENERAL']
+  const boardInfo = resolveCommunityBoard(desireCat ?? 'GENERAL')
 
   const title = replaceCafeReferences(stripMarkdown(mainRef.title.trim()))
   if (!title) return null
