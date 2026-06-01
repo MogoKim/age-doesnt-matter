@@ -100,7 +100,7 @@ const nextConfig = {
               "media-src 'self' https://*.r2.cloudflarestorage.com https://*.r2.dev",
               "frame-ancestors 'none'",
               "base-uri 'self'",
-              "form-action 'self' https://kauth.kakao.com",
+              "form-action 'self' https://kauth.kakao.com https://sharer.kakao.com",
             ].join('; '),
           },
         ],

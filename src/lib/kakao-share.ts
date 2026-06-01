@@ -87,38 +87,56 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
 
   const initialized = await waitForKakaoInit()
   if (!initialized) {
-    console.error('[kakao-share] SDK 초기화 타임아웃 — KakaoSdkScript 로드 상태 확인 필요')
+    console.error('[kakao-share] SDK_INIT_TIMEOUT', { hasKakao: !!window.Kakao, initialized: false })
     await copyToClipboardSilent(fullUrl)
     throw new KakaoUnavailableError(fullUrl)
   }
 
   const kakao = window.Kakao
   if (!kakao?.isInitialized()) {
+    console.error('[kakao-share] SDK_UNAVAILABLE', { hasKakao: !!kakao, initialized: false })
     await copyToClipboardSilent(fullUrl)
     throw new KakaoUnavailableError(fullUrl)
   }
 
-  kakao.Share.sendDefault({
-    objectType: 'feed',
-    content: {
-      title: params.title,
-      description: params.description,
-      imageUrl: params.imageUrl || `${APP_URL}/og-image.png`,
-      link: {
-        mobileWebUrl: fullUrl,
-        webUrl: fullUrl,
-      },
-    },
-    buttons: [
-      {
-        title: '자세히 보기',
+  console.info('[kakao-share] SEND_DEFAULT_START', {
+    initialized: true,
+    host: window.location.host,
+    path: window.location.pathname,
+  })
+
+  try {
+    kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: params.title,
+        description: params.description,
+        imageUrl: params.imageUrl || `${APP_URL}/og-image.png`,
         link: {
           mobileWebUrl: fullUrl,
           webUrl: fullUrl,
         },
       },
-    ],
-  })
+      buttons: [
+        {
+          title: '자세히 보기',
+          link: {
+            mobileWebUrl: fullUrl,
+            webUrl: fullUrl,
+          },
+        },
+      ],
+    })
+  } catch (e) {
+    const err = e instanceof Error ? e : new Error(String(e))
+    console.error('[kakao-share] SEND_DEFAULT_FAILED', {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+    })
+    await copyToClipboardSilent(fullUrl)
+    throw new KakaoUnavailableError(fullUrl)
+  }
 }
 
 async function copyToClipboardSilent(url: string): Promise<void> {
