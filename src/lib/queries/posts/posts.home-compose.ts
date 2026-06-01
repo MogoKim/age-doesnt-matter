@@ -104,7 +104,7 @@ async function _composeHomeSections(): Promise<HomeSectionsResult> {
     bySection('STORIES'),
     pinPostMap,
     globallyShownIds,
-    12,
+    5,
   )
   stories.forEach(p => globallyShownIds.add(p.id))
 
@@ -114,7 +114,7 @@ async function _composeHomeSections(): Promise<HomeSectionsResult> {
     bySection('HUMOR'),
     pinPostMap,
     globallyShownIds,
-    10,
+    5,
   )
 
   return { trending, stories, humor }
