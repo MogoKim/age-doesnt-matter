@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import dynamic from 'next/dynamic'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
+import KakaoSdkScript from '@/components/common/KakaoSdkScript'
 import AuthBanners from './AuthBanners'
 
 const OfflineBanner = dynamic(
@@ -48,6 +49,7 @@ export default function MainGroupLayout({
 
   return (
     <FontSizeProvider fontSize={fontSize}>
+      <KakaoSdkScript />
       <ProgressBar />
       <WelcomeToast />
       <OfflineBanner />
