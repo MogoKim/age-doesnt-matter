@@ -13,6 +13,21 @@ declare global {
         sendDefault: (options: KakaoShareOptions) => void
       }
     }
+    __KAKAO_SHARE_DIAG__?: {
+      scriptMountedAt?: string
+      scriptReadyAt?: string
+      scriptLoadAt?: string
+      scriptErrorAt?: string
+      keyPresent?: boolean
+      keyLength?: number
+      hasKakaoAfterLoad?: boolean
+      initializedBeforeInit?: boolean | null
+      initializedAfterInit?: boolean | null
+      hasShareAfterInit?: boolean
+      initErrorName?: string
+      initErrorMessage?: string
+      lastWaitTimeoutAt?: string
+    }
   }
 }
 
@@ -87,7 +102,23 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
 
   const initialized = await waitForKakaoInit()
   if (!initialized) {
-    console.error('[kakao-share] SDK_INIT_TIMEOUT', { hasKakao: !!window.Kakao, initialized: false })
+    const now = new Date().toISOString()
+    if (window.__KAKAO_SHARE_DIAG__) window.__KAKAO_SHARE_DIAG__.lastWaitTimeoutAt = now
+    const sdkEl = document.getElementById('kakao-js-sdk') as HTMLScriptElement | null
+    console.error('[kakao-share] SDK_INIT_TIMEOUT', {
+      diag: window.__KAKAO_SHARE_DIAG__,
+      scriptEl: {
+        id: sdkEl?.id ?? null,
+        src: sdkEl?.src ?? null,
+        integrity: sdkEl?.getAttribute('integrity') ?? null,
+        crossOrigin: sdkEl?.getAttribute('crossorigin') ?? null,
+      },
+      readyState: document.readyState,
+      href: window.location.href,
+      hasKakao: !!window.Kakao,
+      initialized: false,
+      hasSendDefault: typeof window.Kakao?.Share?.sendDefault,
+    })
     await copyToClipboardSilent(fullUrl)
     throw new KakaoUnavailableError(fullUrl)
   }
