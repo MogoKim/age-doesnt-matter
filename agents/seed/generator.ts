@@ -967,6 +967,16 @@ function extractForbiddenAnchors(priorCommentTexts: string[]): string[] {
   return [...wordAnchors, ...phraseAnchors].slice(0, 6)
 }
 
+const LEAK_PHRASES = [
+  '제가 구성된', '구성된 인물', '설정되어 있고', '참여하지 않기로',
+  '댓글을 달기 어렵습니다', '제 캐릭터', '페르소나', '시스템 프롬프트',
+  'AI 모델', '정책상', '지침상',
+]
+
+function isLeakySheetComment(text: string): boolean {
+  return LEAK_PHRASES.some(phrase => text.includes(phrase))
+}
+
 export async function generateSheetViralComment(
   personaId: string,
   postTitle: string,
@@ -1064,6 +1074,11 @@ ${WAVE_PROMPTS[waveType]}`
 
     const comment = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
     const cleaned = stripMarkdown(comment)
+
+    if (isLeakySheetComment(cleaned)) {
+      console.warn(`  [SheetViral] leaky output 감지 — skip (attempt ${attempt + 1})`)
+      continue
+    }
 
     // 키워드 검증: 핵심 단어 1개 이상 포함 여부
     const hasKeyTerm = keyTerms.length === 0 || keyTerms.some(term => cleaned.includes(term))

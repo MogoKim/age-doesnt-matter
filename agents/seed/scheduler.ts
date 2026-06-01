@@ -1233,6 +1233,31 @@ export async function processSheetEngagementWaves(): Promise<void> {
     }
 
     try {
+      const post = await prisma.post.findUnique({
+        where: { id: data.postId },
+        select: { title: true, content: true, authorId: true, status: true },
+      })
+      if (!post) {
+        await prisma.botLog.update({
+          where: { id: wave.id },
+          data: {
+            status: 'FAILED',
+            details: JSON.stringify({ ...existingDetails, claimStatus: 'FAILED', errorMessage: 'post not found', failedAt: now.toISOString() }),
+          },
+        }).catch(() => {})
+        continue
+      }
+      if (post.status !== 'PUBLISHED') {
+        await prisma.botLog.update({
+          where: { id: wave.id },
+          data: {
+            status: 'SKIP',
+            details: JSON.stringify({ ...existingDetails, claimStatus: 'DONE', skipReason: 'post_not_published', postStatus: post.status, processedAt: now.toISOString() }),
+          },
+        })
+        continue
+      }
+
       if (wave.action === 'SHEET_ENGAGE_LIKE_PENDING') {
         const liked = await processViralLikeWave(data.postId, data.personaIds)
         console.log(`[SheetEngage] 일반 좋아요 ${liked}개 투입 (postId=${data.postId.slice(0, 8)})`)
@@ -1244,20 +1269,6 @@ export async function processSheetEngagementWaves(): Promise<void> {
           },
         })
       } else {
-        const post = await prisma.post.findUnique({
-          where: { id: data.postId },
-          select: { title: true, content: true, authorId: true },
-        })
-        if (!post) {
-          await prisma.botLog.update({
-            where: { id: wave.id },
-            data: {
-              status: 'FAILED',
-              details: JSON.stringify({ ...existingDetails, claimStatus: 'FAILED', errorMessage: 'post not found', failedAt: now.toISOString() }),
-            },
-          }).catch(() => {})
-          continue
-        }
 
         const sourceComments = data.sourceComments ?? []
         const targetCount = data.targetCount
@@ -1414,6 +1425,31 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
     }
 
     try {
+      const post = await prisma.post.findUnique({
+        where: { id: data.postId },
+        select: { title: true, content: true, authorId: true, status: true },
+      })
+      if (!post) {
+        await prisma.botLog.update({
+          where: { id: wave.id },
+          data: {
+            status: 'FAILED',
+            details: JSON.stringify({ ...existingDetails, claimStatus: 'FAILED', errorMessage: 'post not found', failedAt: now.toISOString() }),
+          },
+        }).catch(() => {})
+        continue
+      }
+      if (post.status !== 'PUBLISHED') {
+        await prisma.botLog.update({
+          where: { id: wave.id },
+          data: {
+            status: 'SKIP',
+            details: JSON.stringify({ ...existingDetails, claimStatus: 'DONE', skipReason: 'post_not_published', postStatus: post.status, processedAt: now.toISOString() }),
+          },
+        })
+        continue
+      }
+
       if (wave.action === 'SHEET_LIKE_WAVE_PENDING') {
         const liked = await processViralLikeWave(data.postId, data.personaIds)
         console.log(`[SheetViral] WAVE_L 좋아요 ${liked}개 투입 → HOT 달성 시도 (postId=${data.postId.slice(0, 8)})`)
@@ -1425,20 +1461,6 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
           },
         })
       } else {
-        const post = await prisma.post.findUnique({
-          where: { id: data.postId },
-          select: { title: true, content: true, authorId: true },
-        })
-        if (!post) {
-          await prisma.botLog.update({
-            where: { id: wave.id },
-            data: {
-              status: 'FAILED',
-              details: JSON.stringify({ ...existingDetails, claimStatus: 'FAILED', errorMessage: 'post not found', failedAt: now.toISOString() }),
-            },
-          }).catch(() => {})
-          continue
-        }
 
         const waveType = data.waveType ?? 'empathy'
         const rawContent = data.rawContent ?? post.content ?? ''

@@ -230,6 +230,7 @@ Constitution 상한 $50/월 대비 여유 있음.
 | 2026-05-16 | scheduler.ts Fix 5 (v2): 24h 유사 제목 중복 발행 체크를 DB `startsWith(titleKey)` → JS noun overlap(2자 추출, 3개 이상 겹치면 스킵)으로 교체 | Bug A: titleKey 공백 제거 후 DB 원본(공백 포함)과 `startsWith` 비교해 항상 false. Bug B: 6자 prefix는 조사 변형("아이독립을준" ≠ "아이독립준비") 잡지 못함 → 동일 소재 글 3-4시간 내 2번 발행됨 |
 | 2026-05-18 | scheduler.ts·micro-scheduler.ts·controversy-chain.ts trendingScore 호출에 createdAt 파라미터 추가 — calculateTrendingScore(likes, comments, views, post.createdAt) | trendingScore 알고리즘 postAge 기반 개편에 맞춰 호출부 전체 업데이트 |
 | 2026-06-01 | P1-B+C-2: generateSheetViralComment commentContext 구성 전면 개편 — (1) rest sourceComments 완전 제거→focus 1개만 (2) extractForbiddenAnchors 신규(priorCommentTexts 기반 단어+구문 최대 6개 추출) (3) 이미지 글 rawContent=''·메타 발화 금지어 섹션 추가 (4) sourceComments 없는 이미지 글 return '' skip (5) prior 지시 강화 "같은 뜻이라도 비슷한 표현 금지" | 2차 전수 재검증(natepann 83% anchor 수렴·이미지 글 메타 발화 노출) C.실패 판정 → anchor 수렴 83%→25%↓, 메타 발화 0건 |
+| 2026-06-01 | P0 핫픽스+scheduler HIDDEN skip: (1) generator.ts isLeakySheetComment 추가(LEAK_PHRASES 11개) → leaky output continue 재시도, 최종 return '' (2) scheduler.ts processSheetEngagementWaves·processPendingSheetCommentWaves — 분기 전 post.status 조회 추가, HIDDEN/미발행 글은 BotLog SKIP 처리, LIKE wave도 동일 적용 | 페르소나/시스템 설정 노출 실 운영 댓글 발견 + HIDDEN 글에 수동 실행 시 봇댓글 붙는 안전 문제 |
 
 ---
 
