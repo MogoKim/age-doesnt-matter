@@ -192,6 +192,17 @@ enum AdminQueueType {
   SYSTEM_ACTION     // 기타 시스템 액션
 }
 
+enum HomeCurationSection {
+  TRENDING
+  STORIES
+  HUMOR
+}
+
+enum HomeCurationAction {
+  PIN
+  HIDE
+}
+
 enum AdminQueueStatus {
   PENDING
   APPROVED
@@ -305,8 +316,9 @@ model AdminAccount {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  auditLogs        AdminAuditLog[]
-  processedReports Report[]        @relation("reportProcessor")
+  auditLogs                AdminAuditLog[]
+  processedReports         Report[]               @relation("reportProcessor")
+  createdCurationOverrides HomeCurationOverride[] @relation("AdminCreatedCurations")
 }
 
 model Agreement {
@@ -397,6 +409,7 @@ model Post {
   notifications Notification[] @relation("notificationPost")
   cpsLinks      CpsLink[]
   views         PostView[]
+  homeCurationOverrides HomeCurationOverride[] @relation("PostHomeCurations")
 
   @@index([boardType, status, createdAt(sort: Desc)])
   @@index([boardType, status, promotionLevel, createdAt(sort: Desc)])
@@ -1140,6 +1153,32 @@ model Setting {
   key       String   @id
   value     String   @default("")
   updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────────
+// 홈 편성 수동 조정
+// ─────────────────────────────────────────────────
+
+/// 관리자 수동 홈 편성 override (PIN / HIDE)
+model HomeCurationOverride {
+  id               String               @id @default(cuid())
+  section          HomeCurationSection
+  postId           String
+  post             Post                 @relation("PostHomeCurations", fields: [postId], references: [id])
+  action           HomeCurationAction
+  position         Int?                 // 1-based, null = 후미
+  expiresAt        DateTime?            // null = 수동 해제 시까지 유지
+  isActive         Boolean              @default(true)
+  note             String?
+  createdByAdminId String
+  createdBy        AdminAccount         @relation("AdminCreatedCurations", fields: [createdByAdminId], references: [id])
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([section, isActive])
+  @@index([postId])
+  @@index([createdByAdminId])
+  @@index([createdAt])
 }
 
 // ── 네이버 블로그 수동 발행 큐 ──

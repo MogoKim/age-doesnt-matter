@@ -21,9 +21,8 @@ import SignupCard from '@/components/features/home/SignupCard'
 import HomeFaqSection from '@/components/features/home/HomeFaqSection'
 import {
   getLatestJobs,
-  getTrendingQuotaPosts,
   getLatestMagazinePosts,
-  getHomeBoardHotPosts,
+  getCachedHomeSections,
 } from '@/lib/queries/posts'
 import { getUserCounts } from '@/lib/queries/home'
 
@@ -47,16 +46,6 @@ const getCachedMagazine = unstable_cache(
   ['home-magazine'],
   { revalidate: 60, tags: ['home-magazine'] }
 )
-const getCachedStoriesRaw = unstable_cache(
-  () => getHomeBoardHotPosts('STORY', 12),
-  ['home-stories-hot'],
-  { revalidate: 60, tags: ['home-stories'] }
-)
-const getCachedHumorRaw = unstable_cache(
-  () => getHomeBoardHotPosts('HUMOR', 10),
-  ['home-humor-hot'],
-  { revalidate: 60, tags: ['home-humor'] }
-)
 // 회원 활동 카운트: 알림 배지 수치 → 10s 지연 허용 (매 요청 3× DB count 제거)
 const getCachedUserCounts = unstable_cache(
   (userId: string) => getUserCounts(userId),
@@ -77,21 +66,13 @@ function HeroSkeleton() {
 
 /* ── 섹션별 async 서버 컴포넌트 (독립 스트리밍) ── */
 
-// 지금뜨는이야기 + 사는이야기 + 웃음방을 하나의 Suspense로 묶어 trendingIds 중복 제거 보장
+// 지금뜨는이야기 + 사는이야기 + 웃음방 — compose 레이어에서 중복 제거 + override 반영
 async function HotContentSections() {
-  const [trendingPosts, storiesRaw, humorRaw] = await Promise.all([
-    getTrendingQuotaPosts(),
-    getCachedStoriesRaw(),
-    getCachedHumorRaw(),
-  ])
-  const trendingIds = new Set(trendingPosts.map((p) => p.id))
-
-  const storiesPosts = storiesRaw.filter((p) => !trendingIds.has(p.id)).slice(0, 5)
-  const humorPosts = humorRaw.filter((p) => !trendingIds.has(p.id)).slice(0, 5)
+  const { trending, stories, humor } = await getCachedHomeSections()
 
   return (
     <>
-      <TrendingSection posts={trendingPosts} />
+      <TrendingSection posts={trending} />
 
       {/* 모바일: IN_FEED / 데스크탑: AdSense 728×90 */}
       <ResponsiveAd
@@ -108,15 +89,15 @@ async function HotContentSections() {
 
       {/* 모바일: 세로 배치 기존 완전 유지 */}
       <div className="block lg:hidden">
-        <StoriesSection posts={storiesPosts} />
+        <StoriesSection posts={stories} />
         <CoupangHome1 className="my-4 mx-4 rounded-2xl overflow-hidden" />
-        <HumorSection posts={humorPosts} />
+        <HumorSection posts={humor} />
       </div>
 
       {/* 데스크탑: 2-column 나란히 */}
       <div className="hidden lg:grid lg:grid-cols-2 lg:gap-8 lg:mt-4">
-        <StoriesSection posts={storiesPosts} />
-        <HumorSection posts={humorPosts} />
+        <StoriesSection posts={stories} />
+        <HumorSection posts={humor} />
       </div>
 
       {/* 모바일: IN_FEED (데스크탑 쿠팡 → 매거진 아래로 이동) */}

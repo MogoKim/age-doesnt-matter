@@ -5,6 +5,7 @@ import type { ContentSortType, BotTypeFilter } from '@/lib/queries/admin/admin.c
 import type { BoardType, PostSource, PostStatus } from '@/generated/prisma/client'
 import nextDynamic from 'next/dynamic'
 import ExpireJobsButton from '@/components/admin/ExpireJobsButton'
+import ContentNavTabs from '@/components/admin/ContentNavTabs'
 
 const ContentTable = nextDynamic(() => import('@/components/admin/ContentTable'), {
   loading: () => <div className="h-64 animate-pulse rounded bg-zinc-100" />,
@@ -52,6 +53,7 @@ export default async function AdminContentPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-4">
+      <ContentNavTabs />
       {/* 일자리 탭 선택 시 만료 처리 버튼 노출 */}
       {params.board === 'JOB' && (
         <div className="flex items-center justify-between rounded-xl border border-yellow-200 bg-yellow-50 px-5 py-3">
