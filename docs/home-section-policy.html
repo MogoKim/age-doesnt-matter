@@ -391,7 +391,7 @@
 <div class="page-header">
   <h1>홈 섹션 노출 정책</h1>
   <p>뜨는이야기 · 사는이야기 · 웃음방 · 매거진 · 오늘의 추천 일자리</p>
-  <div class="date">코드 직접 검토 기준 · 2026년 5월 22일</div>
+  <div class="date">코드 직접 검토 기준 · 2026년 6월 1일</div>
 </div>
 
 <div class="container">
@@ -456,7 +456,7 @@
 
           <!-- 커뮤니티 -->
           <div class="flow-branch">
-            <div class="flow-label">💬 커뮤니티 (사는이야기·웃음방·2막준비)</div>
+            <div class="flow-label">💬 커뮤니티<br><small style="font-weight:400;font-size:11px;color:#3c3c43;">사는이야기·웃음방 → 별도 홈 섹션 있음<br>2막준비 → 뜨는이야기 쿼터에만 포함</small></div>
             <div class="flow-arrow">↓</div>
             <div class="flow-question2" style="font-size:13px;">좋아요 or 댓글<br>1개 이상 받았나?</div>
             <div style="display:flex; gap:8px; width:100%; margin-top:6px;">
@@ -559,6 +559,10 @@
               </div>
             </div>
             <div class="policy-row">
+              <div class="policy-label">2막준비</div>
+              <div class="policy-value"><span style="font-size:13px;color:#6a1b9a;background:#f8f0ff;border-radius:8px;padding:5px 10px;display:inline-block;line-height:1.6;">쿼터 포함 (최대 2개) · 단, 홈에 <strong>별도 섹션 없음</strong><br>2막준비 글은 뜨는이야기를 통해서만 홈에 노출됨</span></div>
+            </div>
+            <div class="policy-row">
               <div class="policy-label">조건</div>
               <div class="policy-value">작성 후 <strong>24시간 이내</strong> 글 중 <strong>좋아요 또는 댓글 1개 이상</strong></div>
             </div>
@@ -566,13 +570,17 @@
               <div class="policy-label">순서</div>
               <div class="policy-value">각 게시판별 선발 후 <strong>뜨는점수 통합 재정렬</strong></div>
             </div>
+            <div class="policy-row">
+              <div class="policy-label">링크</div>
+              <div class="policy-value">"더보기" → <code>/best</code> (인기글 페이지) · 각 게시글 URL에 <code>?from=trending</code> 쿼리 포함</div>
+            </div>
             <div class="policy-row" style="align-items:flex-start;">
               <div class="policy-label" style="padding-top:6px;">못<br>채울 때</div>
               <div class="policy-value">
                 <div class="fill-flow">
-                  <div class="fill-step today"><div class="fs-dot"></div><div>작성 후 24시간 이내 글로 먼저 채워요<span class="fill-trigger">쿼터 미달이면 아래로</span></div></div>
+                  <div class="fill-step today"><div class="fs-dot"></div><div>게시판별로 24시간+반응 1개 이상 글 후보 조회<span class="fill-trigger">해당 게시판 조회 결과가 0개일 때만 ↓</span></div></div>
                   <div class="fill-arrow">↓</div>
-                  <div class="fill-step all"><div class="fs-dot"></div><div>7일 내 전체 글 (반응 조건 없이)</div></div>
+                  <div class="fill-step all"><div class="fs-dot"></div><div>해당 게시판 7일 내 전체 글 (반응 조건 없이)</div></div>
                 </div>
               </div>
             </div>
@@ -610,7 +618,7 @@
               <div class="policy-label" style="padding-top:6px;">5개 못<br>채울 때</div>
               <div class="policy-value">
                 <div class="fill-flow">
-                  <div class="fill-step today"><div class="fs-dot"></div><div>작성 후 24시간 이내 글로 먼저 채워요<span class="fill-trigger">5개 미만이면 아래로</span></div></div>
+                  <div class="fill-step today"><div class="fs-dot"></div><div>24시간+반응 1개 이상 글 후보 조회<span class="fill-trigger">조회 결과가 0개일 때만 ↓</span></div></div>
                   <div class="fill-arrow">↓</div>
                   <div class="fill-step all"><div class="fs-dot"></div><div>7일 내 전체 글 (반응 조건 없이)</div></div>
                 </div>
@@ -706,6 +714,39 @@
     </div>
   </div>
 
+  <!-- 3-B. 홈 화면 렌더 순서 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="num">렌더 순서</div>
+      <h2>홈 화면 섹션 구성 순서</h2>
+      <div class="subtitle">src/app/(main)/page.tsx 기준 실제 렌더 순서</div>
+    </div>
+    <div class="section-body">
+      <table>
+        <thead><tr><th>#</th><th>섹션</th><th>비고</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>HeroSlider</strong></td><td>히어로 배너 슬라이더</td></tr>
+          <tr><td>2</td><td><strong>PersonalGreeting</strong></td><td>로그인 사용자 개인화 인사 / 비로그인 빈 영역</td></tr>
+          <tr><td>3</td><td>🔥 <strong>뜨는이야기</strong> (TrendingSection)</td><td>"더보기" → <code>/best</code> · 게시글 URL에 <code>?from=trending</code> 포함</td></tr>
+          <tr><td>4</td><td>광고 슬롯</td><td>Trending 하단 AdSlot</td></tr>
+          <tr><td>5</td><td>🏡 <strong>사는이야기</strong> (StoriesSection)</td><td>뜨는이야기 노출 글 자동 제외 (trendingIds Set 기반)</td></tr>
+          <tr><td>6</td><td>😄 <strong>웃음방</strong> (HumorSection)</td><td>뜨는이야기 노출 글 자동 제외 (trendingIds Set 기반)</td></tr>
+          <tr><td>7</td><td>광고 슬롯</td><td>커뮤니티 하단 AdSlot</td></tr>
+          <tr><td>8</td><td>📰 <strong>매거진</strong> (MagazineWrapper)</td><td>최신 발행 순</td></tr>
+          <tr><td>9</td><td>광고 슬롯</td><td>매거진 하단 AdSlot</td></tr>
+          <tr><td>10</td><td>💼 <strong>일자리</strong> (JobWrapper)</td><td>최신 발행 순</td></tr>
+          <tr><td>11</td><td>MyActivity</td><td>로그인 사용자 전용 (최근 활동)</td></tr>
+          <tr><td>12</td><td>HomeFaqWrapper</td><td>자주 묻는 질문</td></tr>
+          <tr><td>13</td><td>SignupCardWrapper</td><td>비로그인 사용자 전용 (가입 유도)</td></tr>
+          <tr><td>14</td><td>Desktop AdSense</td><td>데스크탑 전용 사이드 광고</td></tr>
+        </tbody>
+      </table>
+      <div class="conclusion-box" style="margin-top:14px;">
+        ⚠️ <strong>2막준비(LIFE2)는 홈에 별도 섹션이 없습니다.</strong> 2막준비 게시글은 뜨는이야기 쿼터(최대 2개)를 통해서만 홈에 노출됩니다.
+      </div>
+    </div>
+  </div>
+
   <!-- 4. 뜨는점수 -->
   <div class="section">
     <div class="section-header">
@@ -725,6 +766,14 @@
           <div style="font-size:18px; margin-bottom:4px;">🔄</div>
           <div style="font-size:14px; font-weight:800; color:#1a73e8; margin-bottom:3px;">배치 재계산 (하루 2회)</div>
           <div style="font-size:12px; color:#1a73e8; line-height:1.5;">GHA 자동 실행 · KST 12:11 · 18:11</div>
+        </div>
+      </div>
+
+      <div style="background:#f8f0ff;border-left:4px solid #9b59b6;border-radius:0 12px 12px 0;padding:14px 16px;margin-bottom:20px;">
+        <div style="font-size:13px;font-weight:800;color:#6a1b9a;margin-bottom:8px;">📐 화면 선발용 점수 vs DB 저장 점수 — 두 가지가 별도로 존재</div>
+        <div style="font-size:13px;display:flex;flex-direction:column;gap:8px;color:#3c3c43;">
+          <div><strong style="color:#1c1c1e;">currentScore (화면 선발용)</strong> — 홈 화면에 어떤 글을 올릴지 결정할 때 그 자리에서 즉시 계산. 현재 likeCount·commentCount·viewCount와 글 작성 시간으로 산출하며, <strong>DB의 trendingScore 값을 사용하지 않고 DB에도 저장하지 않음.</strong></div>
+          <div><strong style="color:#1c1c1e;">DB trendingScore (저장된 점수)</strong> — DB에 저장되는 점수로 두 가지 경로로 갱신됨: ① engagement 발생 시 즉시 갱신 (refreshPostTrendingScore) ② COO 배치 에이전트가 하루 2회 전체 재계산 (KST 12:11·18:11). 게시판별 후보 정렬 기준으로 사용.</div>
         </div>
       </div>
 
