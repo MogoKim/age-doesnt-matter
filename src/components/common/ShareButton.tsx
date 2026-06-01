@@ -22,7 +22,7 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
       setOpen(false)
     } catch (e) {
       if (e instanceof KakaoUnavailableError) {
-        toast('링크가 복사됐어요', 'success')
+        toast('카카오 공유가 안 되어 링크를 복사했어요', 'success')
         setOpen(false)
       } else {
         toast('카카오톡 공유에 실패했어요', 'error')

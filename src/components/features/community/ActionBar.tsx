@@ -127,7 +127,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
       if (e instanceof KakaoUnavailableError) {
         gtmShare('copy_link', 'post', postId)
         void incrementShareCount(postId)
-        toast('링크가 복사됐어요', 'success')
+        toast('카카오 공유가 안 되어 링크를 복사했어요', 'success')
         setShowShareMenu(false)
       } else {
         toast('공유에 실패했어요', 'error')

@@ -35,7 +35,7 @@ interface KakaoShareOptions {
   }>
 }
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
 
 /** SDK 미초기화/로드 실패 시 링크 복사로 대체됐음을 알리는 에러 */
 export class KakaoUnavailableError extends Error {
@@ -60,10 +60,15 @@ async function ensureKakaoSDK(): Promise<void> {
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement('script')
           script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js'
-          script.integrity = 'sha384-DKYJZ8NLiK8MN4/C5P2ezmFnkrysYIcIJf/rKaAvTEi4wFJSkmSm3JRBY/je6yX'
+          script.integrity = 'sha384-DKYJZ8NLiK8MN4/C5P2dtSmLQ4KwPaoqAfyA/DfmEc1VDxu4yyC7wy6K1Hs90nka'
           script.crossOrigin = 'anonymous'
           script.onload = () => resolve()
-          script.onerror = () => reject(new Error('Kakao SDK 로드 실패'))
+          script.onerror = () => {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('[kakao-share] SDK script 로드 실패 — SRI 해시 불일치 또는 네트워크 오류')
+            }
+            reject(new Error('Kakao SDK 로드 실패'))
+          }
           document.head.appendChild(script)
         })
       }
@@ -102,6 +107,9 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
 
   if (!window.Kakao?.isInitialized()) {
     // SDK 로드됐지만 JS 키 미설정 → 링크 복사 대체
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[kakao-share] SDK 로드됐지만 init 실패 — NEXT_PUBLIC_KAKAO_JS_KEY 확인 필요')
+    }
     await copyToClipboardSilent(fullUrl)
     throw new KakaoUnavailableError(fullUrl)
   }
