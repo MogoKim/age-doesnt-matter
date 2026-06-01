@@ -1292,7 +1292,7 @@ export async function processSheetEngagementWaves(): Promise<void> {
           const todayCommentCount = await prisma.comment.count({
             where: { authorId, createdAt: { gte: startOfKstDay() }, post: { source: 'SHEET' } },
           })
-          if (todayCommentCount >= 4) { skipReasons.dailyCap++; continue }
+          if (todayCommentCount >= 8) { skipReasons.dailyCap++; continue }
 
           const existing = await prisma.comment.findFirst({ where: { postId: data.postId, authorId } })
           if (existing) { skipReasons.existingComment++; continue }
