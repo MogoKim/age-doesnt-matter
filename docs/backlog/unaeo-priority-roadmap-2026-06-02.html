@@ -3,206 +3,213 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>우리 나이가 어때서 남은 업무 우선순위</title>
+  <title>우리 나이가 어때서 운영 우선순위 로드맵</title>
   <style>
     :root {
       --bg: #fff8f6;
-      --surface: #ffffff;
-      --surface-soft: #fff1ed;
-      --ink: #2f2a28;
-      --muted: #706866;
-      --line: #eadbd6;
+      --paper: #ffffff;
+      --paper-soft: #fff2ee;
+      --ink: #282321;
+      --muted: #6f6662;
+      --line: #ead8d2;
       --primary: #ff6f61;
       --primary-dark: #d94d40;
-      --p0: #e9533d;
-      --p0-soft: #fff0ea;
-      --p1: #ff806f;
-      --p1-soft: #fff3f0;
-      --p2: #4b6f9f;
-      --p2-soft: #eef4fb;
-      --done: #2f9b63;
-      --done-soft: #edf9f2;
-      --excluded: #7c7f86;
-      --excluded-soft: #f2f3f5;
-      --shadow: 0 16px 42px rgba(94, 51, 42, 0.11);
+      --p0: #c93629;
+      --p0-soft: #fff0ec;
+      --p1: #385f92;
+      --p1-soft: #eef4fb;
+      --p2: #6f5aa8;
+      --p2-soft: #f3efff;
+      --ok: #237d52;
+      --ok-soft: #edf9f2;
+      --wait: #9a5b00;
+      --wait-soft: #fff4d8;
+      --defer: #6f747b;
+      --defer-soft: #f2f3f5;
+      --shadow: 0 18px 48px rgba(89, 43, 34, 0.12);
+      --soft-shadow: 0 10px 26px rgba(89, 43, 34, 0.08);
       --radius: 18px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      background:
-        radial-gradient(circle at top left, rgba(255, 111, 97, 0.18), transparent 32rem),
-        linear-gradient(180deg, #fffaf8 0%, var(--bg) 42%, #ffffff 100%);
       color: var(--ink);
+      background:
+        radial-gradient(circle at 7% -10%, rgba(255, 111, 97, 0.22), transparent 34rem),
+        radial-gradient(circle at 94% 12%, rgba(56, 95, 146, 0.14), transparent 30rem),
+        linear-gradient(180deg, #fffaf8 0%, var(--bg) 45%, #ffffff 100%);
       font-family: -apple-system, BlinkMacSystemFont, "Pretendard Variable", Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
       line-height: 1.58;
     }
 
     .page {
-      width: min(1180px, calc(100% - 32px));
+      width: min(1240px, calc(100% - 32px));
       margin: 0 auto;
-      padding: 40px 0 64px;
+      padding: 36px 0 72px;
     }
 
     .hero {
       display: grid;
-      grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
-      gap: 24px;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+      gap: 18px;
       align-items: stretch;
-      margin-bottom: 24px;
     }
 
     .hero-main,
     .hero-side,
+    .metric-card,
     .section,
-    .action-panel {
-      background: rgba(255, 255, 255, 0.86);
-      border: 1px solid rgba(234, 219, 214, 0.9);
+    .lane,
+    .task-card,
+    .compact-card,
+    .prompt-box {
+      background: rgba(255, 255, 255, 0.93);
+      border: 1px solid rgba(234, 216, 210, 0.95);
       border-radius: var(--radius);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .hero-main,
+    .hero-side,
+    .section {
       box-shadow: var(--shadow);
       backdrop-filter: blur(8px);
     }
 
-    .hero-main {
-      padding: 34px;
-    }
+    .hero-main { padding: 34px; }
+    .hero-side { padding: 24px; }
 
     .eyebrow {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      min-height: 34px;
       margin-bottom: 16px;
       padding: 7px 12px;
       border-radius: 999px;
-      background: var(--surface-soft);
+      background: var(--paper-soft);
       color: var(--primary-dark);
       font-size: 14px;
-      font-weight: 800;
+      font-weight: 850;
     }
 
-    h1,
-    h2,
-    h3,
-    p {
-      margin-top: 0;
-    }
+    h1, h2, h3, p { margin-top: 0; }
 
     h1 {
-      margin-bottom: 12px;
-      font-size: clamp(32px, 5vw, 58px);
-      line-height: 1.08;
+      max-width: 880px;
+      margin-bottom: 14px;
+      font-size: clamp(34px, 5vw, 60px);
+      line-height: 1.07;
       letter-spacing: 0;
     }
 
     .subtitle {
-      max-width: 760px;
+      max-width: 840px;
       margin-bottom: 24px;
       color: var(--muted);
       font-size: 18px;
     }
 
-    .hero-meta {
+    .status-strip,
+    .chip-row {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
     }
 
+    .status-pill,
     .chip {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
       min-height: 36px;
       padding: 8px 12px;
       border: 1px solid var(--line);
       border-radius: 999px;
       background: #fff;
-      color: #4d4644;
+      color: #433b38;
       font-size: 14px;
-      font-weight: 750;
+      font-weight: 800;
+      white-space: nowrap;
     }
 
-    .hero-side {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 24px;
+    .status-pill.strong {
+      border-color: rgba(255, 111, 97, 0.38);
+      background: var(--paper-soft);
+      color: var(--primary-dark);
     }
 
     .hero-side h2 {
       margin-bottom: 10px;
-      font-size: 20px;
+      font-size: 22px;
+      line-height: 1.25;
     }
 
     .hero-side p {
-      margin-bottom: 16px;
+      margin-bottom: 18px;
       color: var(--muted);
+      font-size: 15px;
     }
 
-    .next-list {
+    .timeline {
       display: grid;
-      gap: 10px;
+      gap: 11px;
       margin: 0;
       padding: 0;
       list-style: none;
-      counter-reset: next;
+      counter-reset: step;
     }
 
-    .next-list li {
+    .timeline li {
       position: relative;
-      padding: 12px 12px 12px 42px;
+      min-height: 52px;
+      padding: 12px 12px 12px 46px;
       border-radius: 14px;
-      background: #fff7f4;
-      color: #4a3b37;
-      font-weight: 750;
+      background: #fff8f5;
+      font-weight: 780;
     }
 
-    .next-list li::before {
-      counter-increment: next;
-      content: counter(next);
+    .timeline li::before {
+      counter-increment: step;
+      content: counter(step);
       position: absolute;
       left: 12px;
       top: 12px;
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       background: var(--primary);
       color: #fff;
-      text-align: center;
-      line-height: 22px;
       font-size: 13px;
-      font-weight: 900;
+      font-weight: 950;
+      line-height: 24px;
+      text-align: center;
     }
 
-    .summary-grid {
+    .metric-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 14px;
-      margin-bottom: 24px;
+      margin: 18px 0 22px;
     }
 
-    .summary-card {
-      padding: 18px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: var(--surface);
-      box-shadow: 0 10px 24px rgba(94, 51, 42, 0.07);
+    .metric-card {
+      padding: 19px;
     }
 
-    .summary-card strong {
+    .metric-card strong {
       display: block;
       margin-bottom: 4px;
-      font-size: 30px;
+      font-size: 34px;
       line-height: 1;
+      letter-spacing: 0;
     }
 
-    .summary-card span {
+    .metric-card span {
+      display: block;
       color: var(--muted);
       font-size: 14px;
-      font-weight: 750;
+      font-weight: 780;
     }
 
     .section {
@@ -213,17 +220,17 @@
     .section-header {
       display: flex;
       justify-content: space-between;
-      gap: 16px;
+      gap: 18px;
       align-items: flex-start;
       padding: 24px 24px 18px;
       border-bottom: 1px solid var(--line);
-      background: linear-gradient(90deg, rgba(255, 111, 97, 0.08), rgba(255, 255, 255, 0));
+      background: linear-gradient(90deg, rgba(255, 111, 97, 0.09), rgba(255, 255, 255, 0));
     }
 
     .section-title {
       margin-bottom: 4px;
-      font-size: 24px;
-      line-height: 1.25;
+      font-size: 25px;
+      line-height: 1.24;
     }
 
     .section-desc {
@@ -236,239 +243,241 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      white-space: nowrap;
-      min-height: 30px;
+      min-height: 29px;
       padding: 6px 10px;
       border-radius: 999px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 900;
+      white-space: nowrap;
     }
 
-    .badge.p0 {
-      background: var(--p0-soft);
-      color: var(--p0);
-    }
+    .badge.done { background: var(--ok-soft); color: var(--ok); }
+    .badge.wait { background: var(--wait-soft); color: var(--wait); }
+    .badge.p0 { background: var(--p0-soft); color: var(--p0); }
+    .badge.p1 { background: var(--p1-soft); color: var(--p1); }
+    .badge.p2 { background: var(--p2-soft); color: var(--p2); }
+    .badge.defer { background: var(--defer-soft); color: var(--defer); }
+    .badge.exclude { background: #f6f0ee; color: #8b5a4f; }
 
-    .badge.p1 {
-      background: var(--p1-soft);
-      color: var(--primary-dark);
-    }
-
-    .badge.p2 {
-      background: var(--p2-soft);
-      color: var(--p2);
-    }
-
-    .badge.done {
-      background: var(--done-soft);
-      color: var(--done);
-    }
-
-    .badge.partial {
-      background: #fff4d8;
-      color: #9a5b00;
-    }
-
-    .badge.wait {
-      background: #eef2ff;
-      color: #3346a0;
-    }
-
-    .badge.excluded {
-      background: var(--excluded-soft);
-      color: var(--excluded);
-    }
-
-    .table-wrap {
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      min-width: 980px;
-      border-collapse: collapse;
-      background: #fff;
-    }
-
-    th,
-    td {
-      padding: 15px 14px;
-      border-bottom: 1px solid #f0e5e1;
-      text-align: left;
-      vertical-align: top;
-    }
-
-    th {
-      position: sticky;
-      top: 0;
-      background: #fff7f4;
-      color: #4d3e3a;
-      font-size: 13px;
-      font-weight: 900;
-      z-index: 1;
-    }
-
-    td {
-      font-size: 14px;
-    }
-
-    td.task {
-      min-width: 210px;
-      font-size: 15px;
-      font-weight: 900;
-    }
-
-    td.status {
-      min-width: 150px;
-      color: #4c4644;
-      font-weight: 750;
-    }
-
-    td.goal {
-      min-width: 270px;
-    }
-
-    td.action,
-    td.claude {
-      min-width: 230px;
-      color: #5b514e;
-    }
-
-    tbody tr:hover {
-      background: #fffaf8;
-    }
-
-    .mobile-cards {
-      display: none;
-      padding: 14px;
-      gap: 12px;
+    .task-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      padding: 18px;
     }
 
     .task-card {
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: #fff;
-      padding: 16px;
-      box-shadow: 0 8px 18px rgba(94, 51, 42, 0.06);
+      padding: 18px;
+      box-shadow: none;
     }
 
-    .task-card-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .task-card h3 {
-      margin: 0;
-      font-size: 17px;
+    .task-card h3,
+    .compact-card h3,
+    .lane h3 {
+      margin-bottom: 8px;
+      font-size: 18px;
       line-height: 1.28;
     }
 
-    .field {
-      margin-top: 10px;
-    }
-
-    .field-label {
-      display: block;
-      color: var(--primary-dark);
-      font-size: 12px;
-      font-weight: 900;
-      margin-bottom: 2px;
-    }
-
-    .field-value {
-      color: #4e4643;
+    .task-card p,
+    .compact-card p,
+    .lane p {
+      margin-bottom: 12px;
+      color: var(--muted);
       font-size: 14px;
     }
 
-    .action-panel {
-      margin-top: 24px;
-      padding: 26px;
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
     }
 
-    .action-panel h2 {
-      font-size: 24px;
-      margin-bottom: 14px;
-    }
-
-    .timeline {
+    .fact-list {
       display: grid;
-      gap: 12px;
+      gap: 8px;
       margin: 0;
       padding: 0;
       list-style: none;
     }
 
-    .timeline li {
+    .fact-list li {
+      padding: 10px 11px;
+      border-radius: 12px;
+      background: #fff8f5;
+      color: #4c413e;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .priority-board {
       display: grid;
-      grid-template-columns: 118px minmax(0, 1fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 14px;
-      align-items: start;
-      padding: 14px;
-      border-radius: 15px;
-      background: #fff7f4;
-      border: 1px solid #f1ded8;
-    }
-
-    .time {
-      color: var(--primary-dark);
-      font-weight: 950;
-    }
-
-    .excluded-box {
-      margin: 20px 24px 24px;
       padding: 18px;
-      border-radius: 16px;
-      background: var(--excluded-soft);
-      border: 1px dashed #c6c8ce;
     }
 
-    .excluded-box ul {
-      margin: 8px 0 0;
-      padding-left: 18px;
-      color: #55585f;
-      font-weight: 750;
+    .lane {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 100%;
+      padding: 16px;
+      box-shadow: none;
+      background: #fffdfc;
     }
 
-    .footer-note {
-      margin-top: 26px;
+    .lane-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .lane-head h3 { margin: 0; }
+
+    .mini-task {
+      padding: 13px;
+      border: 1px solid #f0dfda;
+      border-radius: 14px;
+      background: #fff8f5;
+    }
+
+    .mini-task strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+      line-height: 1.32;
+    }
+
+    .mini-task span {
+      display: block;
       color: var(--muted);
-      text-align: center;
       font-size: 13px;
     }
 
-    @media (max-width: 900px) {
-      .page {
-        width: min(100% - 20px, 720px);
-        padding-top: 20px;
-      }
+    .compact-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 18px;
+    }
 
+    .compact-card {
+      padding: 15px;
+      box-shadow: none;
+    }
+
+    .compact-card h3 {
+      font-size: 16px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+    }
+
+    .prompt-box {
+      padding: 18px;
+      background: #2b2523;
+      color: #fff8f5;
+      box-shadow: none;
+    }
+
+    .prompt-box h3 {
+      margin-bottom: 10px;
+      font-size: 17px;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      color: #fff8f5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .split-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+      padding: 18px;
+    }
+
+    .soft-panel {
+      padding: 18px;
+      border: 1px dashed #d7c7c2;
+      border-radius: 16px;
+      background: rgba(246, 240, 238, 0.8);
+    }
+
+    .soft-panel h3 {
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+
+    .footer-note {
+      margin-top: 24px;
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    a {
+      color: var(--primary-dark);
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    @media (max-width: 1040px) {
       .hero,
-      .summary-grid {
+      .priority-board {
         grid-template-columns: 1fr;
       }
 
-      .hero-main {
-        padding: 24px;
+      .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .table-wrap {
-        display: none;
+      .compact-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100% - 20px, 640px);
+        padding: 18px 0 42px;
       }
 
-      .mobile-cards {
-        display: grid;
-      }
-
+      .hero-main,
+      .hero-side,
       .section-header {
-        flex-direction: column;
         padding: 20px;
       }
 
-      .timeline li {
+      .metric-grid,
+      .task-grid,
+      .compact-grid,
+      .split-grid {
         grid-template-columns: 1fr;
+      }
+
+      .status-pill,
+      .chip {
+        white-space: normal;
+      }
+
+      .section-header {
+        display: grid;
       }
     }
   </style>
@@ -477,388 +486,348 @@
   <main class="page">
     <section class="hero">
       <div class="hero-main">
-        <div class="eyebrow">운영 우선순위 대시보드</div>
-        <h1>우리 나이가 어때서 남은 업무 우선순위</h1>
-        <p class="subtitle">2026-06-02 12:24 KST 운영 검증 반영 · 운영 검증 / 제품 개선 / 성장 백로그. 창업자가 지금 무엇을 확인하고, Claude Code에게 무엇을 맡겨야 하는지 한눈에 보기 위한 문서입니다.</p>
-        <div class="hero-meta">
-          <span class="chip">P0 5개 · 2 PASS / 2 PARTIAL / 1 NOT RUN · 운영량 종결</span>
-          <span class="chip">P1 12개 · 다음 선택 후보</span>
-          <span class="chip">P2 11개 · 성장 백로그</span>
-          <span class="chip">제외 2개 · 사용자가 무시 지시</span>
+        <div class="eyebrow">2026-06-02 23:00 KST 운영 결산</div>
+        <h1>오늘은 P0를 닫고, 내일은 운영 증거를 확인하는 날</h1>
+        <p class="subtitle">
+          회원 글 댓글 엔진 v2는 1시간 5 wave E2E까지 최종 PASS. P1-1A와 홈 인터랙션은 배포 완료.
+          P1-1B는 코드/배포는 끝났고, AZ/BA가 실제 SEED에 배정되는 순간만 기다리면 된다.
+        </p>
+        <div class="status-strip">
+          <span class="status-pill strong">P0 Wave Engine v2 최종 PASS</span>
+          <span class="status-pill">P1-1B 배포 완료 / 운영 증거 대기</span>
+          <span class="status-pill">다음 1순위: 내일 SEED 확인</span>
+          <span class="status-pill">제외 항목 분리 완료</span>
         </div>
       </div>
       <aside class="hero-side">
-        <div>
-          <h2>오늘의 추천 실행 순서</h2>
-          <p>12:24 KST 기준 즉시 수정할 운영 사고는 없습니다. 이제 검증 대기와 병렬 기획을 분리합니다.</p>
-        </div>
-        <ol class="next-list">
-          <li>지금: P0 즉시 수정 없음. 병렬로 P1/P2 업무를 선택 가능</li>
-          <li>다음 에이전트 실행 후: 닉네임 DB 자동 갱신 여부 재확인</li>
-          <li>다음 content-curator 실행 후: LIFE2 라우팅 추가 확인</li>
-          <li>HIDDEN+wave 사례 발생 시: SKIP/post_not_published 확인</li>
+        <h2>내일 아침 첫 액션</h2>
+        <p>창업자가 판단할 것은 적고, Claude Code가 읽기 전용으로 확인할 것은 명확하게 둔다.</p>
+        <ol class="timeline">
+          <li>P1-1B AZ/BA LIFE2 신규 글 여부 확인</li>
+          <li>닉네임 DB 갱신 반영 확인</li>
+          <li>P1-B+C-2 댓글 품질 개선 착수 여부 결정</li>
+          <li>이 로드맵 HTML만 커밋할지 결정</li>
         </ol>
       </aside>
     </section>
 
-    <section class="summary-grid" aria-label="전체 요약">
-      <div class="summary-card">
-        <strong>2</strong>
-        <span>P0 운영 검증 PASS</span>
-      </div>
-      <div class="summary-card">
-        <strong>2</strong>
-        <span>P0 PARTIAL / 추가 확인</span>
-      </div>
-      <div class="summary-card">
+    <section class="metric-grid" aria-label="로드맵 요약 지표">
+      <div class="metric-card">
         <strong>1</strong>
-        <span>HIDDEN 검증 기회 없음</span>
+        <span>P0 최종 PASS</span>
       </div>
-      <div class="summary-card">
-        <strong>27</strong>
-        <span>P1/P2 남은 백로그</span>
+      <div class="metric-card">
+        <strong>4</strong>
+        <span>오늘 배포/완료 묶음</span>
+      </div>
+      <div class="metric-card">
+        <strong>2</strong>
+        <span>운영 검증 대기</span>
+      </div>
+      <div class="metric-card">
+        <strong>30+</strong>
+        <span>관리 대상 백로그</span>
       </div>
     </section>
 
-    <section class="section" id="p0">
+    <section class="section">
       <div class="section-header">
         <div>
-          <h2 class="section-title">P0 운영 검증</h2>
-          <p class="section-desc">이미 고친 것들이 실제 운영에서 작동하는지 오늘/내일 바로 확인해야 하는 항목입니다.</p>
+          <h2 class="section-title">오늘 완료</h2>
+          <p class="section-desc">코드 완료와 운영 PASS를 분리해 기록한다. 배포 전 주의 문구는 제거하고 완료 기록으로 정리했다.</p>
         </div>
-        <span class="badge p0">즉시 확인 5개</span>
+        <span class="badge done">완료 기록</span>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>우선순위</th>
-              <th>작업명</th>
-              <th>현재 상태</th>
-              <th>목적/성공 기준</th>
-              <th>창업자 다음 행동</th>
-              <th>Claude Code 다음 행동</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="badge partial">P0-1</span></td>
-              <td class="task">페르소나 닉네임 갱신 운영 검증</td>
-              <td class="status">PARTIAL — 정상 대기</td>
-              <td class="goal">1차/2차 닉네임 교체가 DB User.nickname에 반영되어 구 닉네임과 -접미사 노출이 사라지는 것</td>
-              <td class="action">지금 액션 없음. 다음 seed/content-curator 실행 후 화면에 구 닉네임이 보이면 캡처</td>
-              <td class="claude">내일 오전 또는 다음 에이전트 실행 후 User.nickname 구 닉네임 잔존 0건 확인</td>
-            </tr>
-            <tr>
-              <td><span class="badge wait">P0-2</span></td>
-              <td class="task">HIDDEN 글 wave skip 검증</td>
-              <td class="status">NOT RUN — 검증 기회 없음</td>
-              <td class="goal">HIDDEN 게시글에 댓글/좋아요 wave가 실행되지 않고 SKIP/post_not_published로 남는 것</td>
-              <td class="action">HIDDEN+wave 사례가 실제로 생길 때만 공유. 지금은 대기</td>
-              <td class="claude">BotLog status=SKIP, skipReason=post_not_published 확인</td>
-            </tr>
-            <tr>
-              <td><span class="badge p0">P0-3</span></td>
-              <td class="task">페르소나/시스템 노출 차단 모니터링</td>
-              <td class="status">패치 완료, 1차 통과</td>
-              <td class="goal">"제가 구성된 인물", "페르소나", "댓글을 달기 어렵습니다" 문구 0건</td>
-              <td class="action">민감/철학 주제 댓글 생기면 확인</td>
-              <td class="claude">leaky phrase 잔존 여부 read-only 확인</td>
-            </tr>
-            <tr>
-              <td><span class="badge done">P0-4</span></td>
-              <td class="task">P1-6 카테고리 분류 후속 검증</td>
-              <td class="status">JOB 차단 PASS, LIFE2 추가 확인 대기</td>
-              <td class="goal">일반 글이 내일찾기/JOB로 가지 않음. 재테크/연금/보험 글은 2막준비/LIFE2로 감</td>
-              <td class="action">다음 content-curator 실행 후 재테크/연금/보험 글이 보이면 게시판 확인</td>
-              <td class="claude">신규 BOT/SHEET 글 boardType=JOB 0건 유지, MONEY/RETIRE 글 LIFE2 라우팅 확인</td>
-            </tr>
-            <tr>
-              <td><span class="badge done">P0-5</span></td>
-              <td class="task">dlxogns01 은퇴후50년 13개 게시판 제한 검증</td>
-              <td class="status">PASS</td>
-              <td class="goal">신규 CafePost가 지정 13개 게시판 안에서만 생성되고 isPopular=true 신규가 0건인 것</td>
-              <td class="action">지금 액션 없음. 체감상 투자/사업 글이 다시 늘면 사례 공유</td>
-              <td class="claude">12:24 기준 17개 전부 허용 게시판 확인 완료. 며칠 후 비율 리포트만 선택</td>
-            </tr>
-            <tr>
-              <td><span class="badge done">종결</span></td>
-              <td class="task">SHEET 댓글 운영량 가이드 적용</td>
-              <td class="status">종결</td>
-              <td class="goal">하루 15~18건, 최대 20건 이하 운영으로 댓글 0개 리스크 낮춤</td>
-              <td class="action">매일 cap 검증 중단. 하루 끝 댓글 0개만 가볍게 확인</td>
-              <td class="claude">문제 재발 전까지 없음</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="mobile-cards">
-        <article class="task-card"><div class="task-card-head"><h3>페르소나 닉네임 갱신 운영 검증</h3><span class="badge partial">P0-1</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">PARTIAL — 정상 대기</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">구 닉네임과 -접미사 노출 제거</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">지금 액션 없음. 다음 실행 후 구 닉네임 보이면 캡처</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">User.nickname 잔존 0건 확인</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>HIDDEN 글 wave skip 검증</h3><span class="badge wait">P0-2</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">NOT RUN — 검증 기회 없음</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">HIDDEN 게시글에 댓글/좋아요 wave가 실행되지 않고 SKIP/post_not_published로 남는 것</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">HIDDEN+wave 사례가 생길 때만 공유</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">BotLog status=SKIP 확인</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>페르소나/시스템 노출 차단 모니터링</h3><span class="badge p0">P0-3</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">패치 완료, 1차 통과</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">시스템/페르소나 노출 문구 0건</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">민감/철학 주제 댓글 생기면 확인</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">leaky phrase 잔존 여부 read-only 확인</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>P1-6 카테고리 분류 후속 검증</h3><span class="badge done">P0-4</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">JOB 차단 PASS, LIFE2 추가 확인 대기</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">일반 글은 JOB 금지, 재테크/연금/보험 글은 LIFE2</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">다음 큐레이션 후 재테크성 글 게시판 확인</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">JOB 0건 유지, LIFE2 라우팅 확인</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>dlxogns01 13개 게시판 제한 검증</h3><span class="badge done">P0-5</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">PASS</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">지정 13개 게시판만 수집, 인기글 신규 0건</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">지금 액션 없음</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">12:24 기준 17개 전부 허용 게시판 확인 완료</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>SHEET 댓글 운영량 가이드 적용</h3><span class="badge done">종결</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">종결</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">하루 15~18건, 최대 20건 이하 운영으로 댓글 0개 리스크 낮춤</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">하루 끝 댓글 0개만 가볍게 확인</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">문제 재발 전까지 없음</span></div></article>
+      <div class="task-grid">
+        <article class="task-card">
+          <div class="meta-row"><span class="badge p0">P0</span><span class="badge done">최종 PASS</span></div>
+          <h3>P0 Wave Engine v2</h3>
+          <p>회원 글 댓글 엔진을 9파동에서 1시간 내 5개 자연 댓글로 교체. migration 정합성, queue, BotLog, 댓글 품질까지 E2E 통과.</p>
+          <ul class="fact-list">
+            <li>wave1~5 모두 Done, 각 wave items=1</li>
+            <li>댓글 총량 5개, 중복 처리 없음</li>
+            <li>anchor 수렴 2건은 P1-B+C-2로 인계</li>
+          </ul>
+        </article>
+        <article class="task-card">
+          <div class="meta-row"><span class="badge p1">홈 UX</span><span class="badge done">배포 완료</span></div>
+          <h3>홈 리스트 카드 인터랙션</h3>
+          <p>지금 뜨는 이야기, 사는 이야기, 웃음방 카드에 데스크탑 hover와 모바일 active 피드백을 적용했다.</p>
+          <ul class="fact-list">
+            <li>커밋: 3974380</li>
+            <li>제목 굵기: font-light 최종 반영</li>
+            <li>데이터/라우팅/속도 트리거 변경 없음</li>
+          </ul>
+        </article>
+        <article class="task-card">
+          <div class="meta-row"><span class="badge p1">P1-1A</span><span class="badge done">완료</span></div>
+          <h3>페르소나 세대표현 핀포인트 수정</h3>
+          <p>세대비하/멸칭은 제거하고 회고, 문화 차이, 소통 어려움 표현은 허용하는 기준으로 정리했다.</p>
+          <ul class="fact-list">
+            <li>커밋: 19263fb</li>
+            <li>constitution-audience 기준 정리</li>
+            <li>EN2 닉네임 실존 연예인명 제거</li>
+          </ul>
+        </article>
+        <article class="task-card">
+          <div class="meta-row"><span class="badge p1">P1-1B</span><span class="badge wait">운영 증거 대기</span></div>
+          <h3>AZ/BA board 값을 LIFE2로 정리</h3>
+          <p>MONEY/RETIRE는 Prisma BoardType에 없어서 런타임 실패 위험이 있었다. 코드와 배포는 끝났고, 실제 신규 글 증거만 남았다.</p>
+          <ul class="fact-list">
+            <li>커밋: 0725be1</li>
+            <li>BoardType 오류 0건</li>
+            <li>다음 SEED에서 AZ/BA 배정 시 최종 PASS</li>
+          </ul>
+        </article>
       </div>
     </section>
 
-    <section class="section" id="p0-perf">
+    <section class="section">
       <div class="section-header">
         <div>
-          <h2 class="section-title">P0 성능 — CDN 정적화 완료 <span style="font-size:0.75rem;font-weight:500;color:#888;">(2026-06-02)</span></h2>
-          <p class="section-desc">홈·로그인 등 주요 페이지의 force-dynamic 트리거를 제거해 Vercel CDN HIT를 활성화했습니다. warm TTFB 280–660ms → CDN HIT 시 50ms 이하. 홈 리스트 카드 hover 인터랙션도 동일 작업 내 완료 (CDN HIT 유지).</p>
+          <h2 class="section-title">내일 아침 1순위 체크리스트</h2>
+          <p class="section-desc">지금 당장 새 코드를 더 넣기보다, 밤사이 운영 증거를 잡는 쪽이 더 안전하다.</p>
         </div>
-        <span class="badge done">CDN HIT 3종 + UX 1건</span>
+        <span class="badge wait">내일 오전</span>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>페이지</th>
-              <th>작업</th>
-              <th>CDN 상태</th>
-              <th>커밋</th>
-              <th>비고</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="task"><code>/</code> 홈</td>
-              <td>force-dynamic 제거 + auth() wrapper 4개 → useSession() 전환 (PersonalGreeting/HomeFaqSection/SignupCard)</td>
-              <td class="status"><span class="badge done">✅ HIT</span></td>
-              <td><code>7aad5cb</code></td>
-              <td class="goal">MyActivity 임시 비노출 (파일 보존, /api/home/counts 신설 시 복원). x-vercel-cache: HIT 운영 검증 완료</td>
-            </tr>
-            <tr>
-              <td class="task"><code>/login</code></td>
-              <td>await searchParams → LoginForm useSearchParams() 클라이언트 전환</td>
-              <td class="status"><span class="badge done">✅ HIT</span></td>
-              <td><code>9aee463</code></td>
-              <td class="goal">x-vercel-cache: HIT 운영 검증 완료</td>
-            </tr>
-            <tr>
-              <td class="task"><code>/terms</code> · <code>/privacy</code> · <code>/rules</code></td>
-              <td>P0 1단계에서 정적화 완료</td>
-              <td class="status"><span class="badge done">✅ HIT</span></td>
-              <td>이전 단계</td>
-              <td class="goal">유지</td>
-            </tr>
-            <tr>
-              <td class="task">홈 <code>/</code> 리스트 카드</td>
-              <td>TrendingSection/StoriesSection/HumorSection hover — 코랄 배경·제목 색·화살표 (순수 Tailwind CSS)</td>
-              <td class="status"><span class="badge done">✅ 완료</span></td>
-              <td><code>a130739</code></td>
-              <td class="goal">Static·CDN HIT 유지 확인. use client 없음, JS 없음</td>
-            </tr>
-            <tr>
-              <td class="task"><code>/best</code></td>
-              <td>await searchParams 기반 탭/페이징 → /api/best route 신설 필요</td>
-              <td class="status"><span class="badge wait">⏸️ 보류</span></td>
-              <td>—</td>
-              <td class="goal">API route 신설 금지 조건. 별도 스프린트</td>
-            </tr>
-            <tr>
-              <td class="task"><code>/magazine</code> · <code>/jobs</code></td>
-              <td>force-dynamic + searchParams 이중 blocker. 필터 UX 전체 재설계 필요</td>
-              <td class="status"><span class="badge wait">⏸️ 보류</span></td>
-              <td>—</td>
-              <td class="goal">별도 스프린트</td>
-            </tr>
-            <tr>
-              <td class="task"><code>/community/*</code></td>
-              <td>목록: force-dynamic+searchParams / 상세: page.tsx 직접 auth()+searchParams</td>
-              <td class="status"><span class="badge wait">⏸️ 보류</span></td>
-              <td>—</td>
-              <td class="goal">장기 보류</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="mobile-cards">
-        <article class="task-card"><div class="task-card-head"><h3>홈 <code>/</code> 정적화</h3><span class="badge done">✅ HIT</span></div><div class="field"><span class="field-label">작업</span><span class="field-value">force-dynamic 제거 + auth() wrapper 4개 → useSession() 전환</span></div><div class="field"><span class="field-label">커밋</span><span class="field-value">7aad5cb</span></div><div class="field"><span class="field-label">비고</span><span class="field-value">MyActivity 임시 비노출. x-vercel-cache: HIT 확인</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>로그인 <code>/login</code> 정적화</h3><span class="badge done">✅ HIT</span></div><div class="field"><span class="field-label">작업</span><span class="field-value">await searchParams → useSearchParams() 클라이언트 전환</span></div><div class="field"><span class="field-label">커밋</span><span class="field-value">9aee463</span></div><div class="field"><span class="field-label">비고</span><span class="field-value">x-vercel-cache: HIT 운영 검증 완료</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>약관 · 개인정보 · 운영규칙</h3><span class="badge done">✅ HIT</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">P0 1단계에서 정적화 완료 / 유지</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>홈 <code>/</code> 리스트 카드 hover</h3><span class="badge done">✅ 완료</span></div><div class="field"><span class="field-label">작업</span><span class="field-value">TrendingSection/StoriesSection/HumorSection — 코랄 배경·제목 색·화살표</span></div><div class="field"><span class="field-label">커밋</span><span class="field-value">a130739</span></div><div class="field"><span class="field-label">비고</span><span class="field-value">순수 Tailwind CSS. Static·CDN HIT 유지</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>베스트 · 매거진 · 잡스 · 커뮤니티</h3><span class="badge wait">⏸️ 보류</span></div><div class="field"><span class="field-label">이유</span><span class="field-value">searchParams/force-dynamic 이중 blocker 또는 API route 신설 필요</span></div><div class="field"><span class="field-label">비고</span><span class="field-value">별도 스프린트에서 진행</span></div></article>
-      </div>
-      <div style="margin-top:1.5rem;padding:1rem 1.25rem;background:var(--bg-section,#f9f9f9);border-radius:8px;border-left:3px solid #4caf50;font-size:0.85rem;color:#444;">
-        <strong>다음 추천 업무</strong> — P0 성능/홈 UX 완료 기준<br>
-        · <strong>P1-1</strong> 페르소나 bio/style 2차 진단 (read-only, 구현 금지)<br>
-        · <strong>P1-10</strong> PostCTA 가입/앱 설치 유도 — 홈 Static 유지 조건 하에 구현<br>
-        · 후속 보류: /best 정적화(API route 허용 시), MyActivity 복원(/api/home/counts 신설 시), 폰트 크기 flicker QA
+      <div class="task-grid">
+        <article class="task-card">
+          <div class="meta-row"><span class="badge p1">1순위</span><span class="badge wait">다음 SEED 후</span></div>
+          <h3>P1-1B AZ/BA LIFE2 최종 운영 검증</h3>
+          <p>AZ 돈공부중, BA 은퇴준비중이 실제 글을 만들 때 `post.boardType = LIFE2`인지 확인한다.</p>
+          <ul class="fact-list">
+            <li>PASS: 신규 AZ/BA 글이 LIFE2로 생성</li>
+            <li>FAIL: BoardType 오류 또는 STORY/JOB 오배정</li>
+          </ul>
+        </article>
+        <article class="task-card">
+          <div class="meta-row"><span class="badge p1">2순위</span><span class="badge wait">에이전트 실행 후</span></div>
+          <h3>닉네임 DB 갱신 확인</h3>
+          <p>닉네임 수정 커밋 이후 실제 Bot User 레코드가 최신 닉네임으로 갱신됐는지 확인한다.</p>
+          <ul class="fact-list">
+            <li>PASS: DB Bot User 닉네임과 persona-data 일치</li>
+            <li>FAIL: 구 닉네임이 댓글/글에 계속 노출</li>
+          </ul>
+        </article>
+        <article class="task-card">
+          <div class="meta-row"><span class="badge p1">3순위</span><span class="badge wait">결정 필요</span></div>
+          <h3>로드맵 HTML 커밋 여부</h3>
+          <p>이 문서는 운영 기준판이다. 커밋한다면 현재 dirty worktree에서 이 HTML 하나만 선별해야 한다.</p>
+          <ul class="fact-list">
+            <li>커밋 후보: docs/backlog/unaeo-priority-roadmap-2026-06-02.html</li>
+            <li>제외: 삭제 파일, 미추적 스크립트, screenshots, assets</li>
+          </ul>
+        </article>
+        <article class="task-card">
+          <div class="meta-row"><span class="badge p1">4순위</span><span class="badge wait">정리 판단</span></div>
+          <h3>dirty worktree 정리 여부</h3>
+          <p>현재 삭제/미추적 파일이 많다. 운영 파일과 실험 파일을 분리하지 않으면 다음 커밋 사고 위험이 커진다.</p>
+          <ul class="fact-list">
+            <li>우선: 커밋 전 `git status --short` 재확인</li>
+            <li>원칙: 사용자/Claude Code 산출물은 임의 삭제 금지</li>
+          </ul>
+        </article>
       </div>
     </section>
 
-    <section class="section" id="p1-ops">
+    <section class="section">
       <div class="section-header">
         <div>
-          <h2 class="section-title">P1 진행/진단/구현 후보</h2>
-          <p class="section-desc">운영 품질을 계속 끌어올리는 핵심 작업입니다. 대부분 read-only 진단을 먼저 하고 구현 범위를 결정합니다.</p>
+          <h2 class="section-title">남은 작업 우선순위 보드</h2>
+          <p class="section-desc">오늘 기준 남은 일을 빠짐없이 유지하되, 지금 당장 할 일과 기다릴 일을 분리한다.</p>
         </div>
-        <span class="badge p1">이번 주 핵심 8개</span>
+        <span class="badge p1">P1 중심</span>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>우선순위</th>
-              <th>작업명</th>
-              <th>현재 상태</th>
-              <th>목적/성공 기준</th>
-              <th>창업자 다음 행동</th>
-              <th>Claude Code 다음 행동</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td><span class="badge p1">P1-1</span></td><td class="task">페르소나 bio/style 2차 정비 기획</td><td class="status">닉네임 긴급 교체 완료, 다음 진단 가능</td><td class="goal">남성/노년/전문가/코드명 느낌을 닉네임뿐 아니라 bio/style에서도 제거</td><td class="action">거슬리는 실제 닉네임·말투가 보이면 메모. 지금은 Claude Code read-only 진단 가능</td><td class="claude">남은 MEDIUM/LOW 닉네임, bio/style, board 주제 전수 진단. 구현 금지</td></tr>
-            <tr><td><span class="badge p1">P1-2</span></td><td class="task">SHEET 댓글 AI티 후속 개선</td><td class="status">관찰 중, 플랜 후보 있음</td><td class="goal">anchor 반복, 메타 발화, 시스템 노출, 어색한 말투 감소</td><td class="action">이상 댓글 전문 2~3개 쌓이면 공유. 지금은 무리한 추가 구현 보류</td><td class="claude">반복 사례가 쌓이면 P1-B+C-3 문제정의와 프롬프트 보정안 작성</td></tr>
-            <tr><td><span class="badge p1">P1-3</span></td><td class="task">게시글 카테고리 분류 개선 Phase 2</td><td class="status">JOB 차단 완료, LIFE2 샘플 대기</td><td class="goal">사는이야기 vs 2막준비 경계 정교화. 투자/보험/연금 글 LIFE2 안정화</td><td class="action">오분류 사례 계속 모으기</td><td class="claude">AdminAuditLog 기반 회귀 데이터 분석과 MONEY/RETIRE 보정안</td></tr>
-            <tr><td><span class="badge p1">P1-4</span></td><td class="task">은퇴후50년 주식성 글 비율 모니터링</td><td class="status">1차 PASS 후 관찰</td><td class="goal">13개 게시판 제한 후에도 주식/ETF/종목 글이 많은지 확인</td><td class="action">며칠간 체감 사례 모으기</td><td class="claude">sourceSite/boardName별 투자 키워드 비율 산출</td></tr>
-            <tr><td><span class="badge p1">P1-5</span></td><td class="task">은퇴후50년 기존 DB 후보 잔존 위험</td><td class="status">일부 차단 완료, 관찰</td><td class="goal">과거 투자/사업 CafePost가 계속 발행 후보로 쓰이는지 확인</td><td class="action">신규 발행 중 투자성 글 나오면 표시</td><td class="claude">usable+unused 잔존 후보 발행 추적</td></tr>
-            <tr><td><span class="badge p1">P1-6</span></td><td class="task">GHA 스케줄 안정화/정리</td><td class="status">백로그, 중요</td><td class="goal">GHA 지연으로 wave/댓글/크롤링이 밀리지 않게 함</td><td class="action">운영 시간 우선순위 정하기</td><td class="claude">workflow별 실제 실행 간격 조사, launchd 보완안 설계</td></tr>
-            <tr><td><span class="badge p1">P1-7</span></td><td class="task">SHEET 일반 페르소나 풀 확장</td><td class="status">백로그, cap 운영은 종결</td><td class="goal">하루 20건 이상 운영해도 댓글 부족 없게 함</td><td class="action">현재 cap 운영 종결, 투입량 증가 시 재개</td><td class="claude">기존 큐레이션 페르소나 충돌 확인 후 신규 풀 설계</td></tr>
-            <tr><td><span class="badge p1">P1-8</span></td><td class="task">페르소나 2차 정비 구현</td><td class="status">기획 승인 후 진행</td><td class="goal">검증된 후보만 반영해 화면에 어색한 닉네임·bio·style 노출을 줄임</td><td class="action">P1-1 진단 보고서에서 바꿀 후보를 승인</td><td class="claude">승인된 nickname/bio/style 값만 수정하고 /done 검증</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="mobile-cards">
-        <article class="task-card"><div class="task-card-head"><h3>페르소나 bio/style 2차 정비 기획</h3><span class="badge p1">P1-1</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">닉네임 긴급 교체 완료, 다음 진단 가능</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">닉네임뿐 아니라 bio/style의 노년·전문가 느낌 제거</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">거슬리는 실제 말투가 보이면 메모</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">남은 후보 전수 진단, 구현 금지</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>SHEET 댓글 AI티 후속 개선</h3><span class="badge p1">P1-2</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">관찰 중, 플랜 후보 있음</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">anchor 반복, 메타 발화, 시스템 노출 감소</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">이상 댓글 전문 2~3개 공유</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">반복 사례 기반 P1-B+C-3 설계</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>게시글 카테고리 분류 개선 Phase 2</h3><span class="badge p1">P1-3</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">JOB 차단 완료, LIFE2 샘플 대기</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">사는이야기 vs 2막준비 경계 정교화</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">오분류 사례 계속 모으기</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">MONEY/RETIRE 보정안</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>은퇴후50년 주식성 글 비율 모니터링</h3><span class="badge p1">P1-4</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">1차 PASS 후 관찰</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">지정 게시판 안에서도 투자글 비율 확인</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">며칠간 체감 사례 모으기</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">투자 키워드 비율 산출</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>기존 DB 후보 잔존 위험</h3><span class="badge p1">P1-5</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">일부 차단 완료, 관찰</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">과거 투자/사업 CafePost 후보 발행 추적</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">신규 발행 중 투자성 글 표시</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">usable+unused 잔존 후보 발행 추적</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>GHA 스케줄 안정화/정리</h3><span class="badge p1">P1-6</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">백로그, 중요</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">크롤링/댓글/wave 지연 감소</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">운영 시간 우선순위 정하기</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">workflow별 실행 간격 조사</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>SHEET 일반 페르소나 풀 확장</h3><span class="badge p1">P1-7</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">백로그, cap 운영은 종결</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">하루 20건 이상 운영에도 댓글 부족 방지</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">투입량 증가 시 재개</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">기존 페르소나 충돌 후 신규 풀 설계</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>페르소나 2차 정비 구현</h3><span class="badge p1">P1-8</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">기획 승인 후 진행</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">검증된 후보만 반영</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">P1-1 진단 보고서에서 후보 승인</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">승인 값만 수정하고 /done</span></div></article>
+      <div class="priority-board">
+        <div class="lane">
+          <div class="lane-head"><h3>P1 품질/운영 핵심</h3><span class="badge p1">품질</span></div>
+          <div class="mini-task"><strong>P1-B+C-2 댓글 anchor 수렴 개선</strong><span>Wave E2E에서 확인된 반복 표현 2건을 prior forbidden anchor로 차단.</span></div>
+          <div class="mini-task"><strong>이미지 글 메타 발화 차단</strong><span>“이미지를 볼 수 없다”, “댓글을 달기 어렵다” 같은 시스템 노출 0건 유지.</span></div>
+          <div class="mini-task"><strong>SHEET 댓글 AI티 추가 개선</strong><span>anchor 반복, 요약형 말투, 부적합 페르소나 사례가 쌓이면 설계.</span></div>
+          <div class="mini-task"><strong>페르소나 전체 2차 진단</strong><span>닉네임, bio, tone, 금지어를 전수 확인. P1-1A는 완료, 더 넓은 정비는 후속.</span></div>
+          <div class="mini-task"><strong>GHA 스케줄 안정화</strong><span>wave, 댓글, 크롤링 지연을 줄이기 위한 workflow 간격/launchd 보완안 설계.</span></div>
+        </div>
+
+        <div class="lane">
+          <div class="lane-head"><h3>P1 크롤링/카테고리</h3><span class="badge p1">운영</span></div>
+          <div class="mini-task"><strong>은오/은퇴후50년 크롤링 검증</strong><span>13개 지정 게시판만 수집되고 투자/사업/인기글 유입이 0건인지 확인.</span></div>
+          <div class="mini-task"><strong>게시글 카테고리 Phase 2</strong><span>사는 이야기 vs 2막준비 경계 정교화. 재테크/연금/보험은 LIFE2 안정화.</span></div>
+          <div class="mini-task"><strong>기존 DB 후보 잔존 위험</strong><span>과거 투자/사업 CafePost가 발행 후보로 계속 쓰이는지 추적.</span></div>
+          <div class="mini-task"><strong>주식성 글 비율 모니터링</strong><span>13개 게시판 제한 후에도 ETF/종목 글이 많은지 sourceSite/boardName별 산출.</span></div>
+          <div class="mini-task"><strong>SHEET 일반 페르소나 풀 확장</strong><span>하루 20건 이상 운영 시 댓글 부족이 다시 생기면 재개.</span></div>
+        </div>
+
+        <div class="lane">
+          <div class="lane-head"><h3>P1 제품/UX</h3><span class="badge p1">전환</span></div>
+          <div class="mini-task"><strong>PostCTA 가입/앱 설치 유도</strong><span>글 하단 비회원 가입과 웹 회원 앱 설치 전환을 측정 가능하게 설계.</span></div>
+          <div class="mini-task"><strong>글쓰기 UI/UX 개선</strong><span>이미지/영상 업로드 후 커서 위치와 이어쓰기 흐름 개선.</span></div>
+          <div class="mini-task"><strong>TWA 첫 진입 회원가입 A/B</strong><span>다운로드 유저 50% 즉시 가입 유도, 50% 기존 흐름 유지 실험.</span></div>
+          <div class="mini-task"><strong>A/B 테스트 어드민/히스토리</strong><span>실험 상태, 결과, 히스토리를 놓치지 않는 관리 화면 설계.</span></div>
+          <div class="mini-task"><strong>MyActivity 홈 복원</strong><span>홈 정적화 때 임시 비노출. `/api/home/counts` 신설 시 복원.</span></div>
+        </div>
+
+        <div class="lane">
+          <div class="lane-head"><h3>성능 후속</h3><span class="badge p2">속도</span></div>
+          <div class="mini-task"><strong>/best 정적화</strong><span>searchParams 클라이언트 전환 + `/api/best` 필요. API 신설 허용 시 진행.</span></div>
+          <div class="mini-task"><strong>/magazine, /jobs 정적화</strong><span>force-dynamic + searchParams 이중 blocker. 필터 UX 재설계 필요.</span></div>
+          <div class="mini-task"><strong>www redirect 제거</strong><span>Vercel Primary Domain 설정으로 신규 유저 RTT 1회 절감.</span></div>
+          <div class="mini-task"><strong>댓글 per-user cache 분리</strong><span>댓글 목록 공유 캐시와 isLiked per-user 상태를 분리해 인기글 DB 부하 감소.</span></div>
+          <div class="mini-task"><strong>Vercel cold start 대응</strong><span>Pro min instances 또는 health keep-warm은 비용/운영 결정 필요.</span></div>
+        </div>
       </div>
     </section>
 
-    <section class="section" id="p1-product">
+    <section class="section">
       <div class="section-header">
         <div>
-          <h2 class="section-title">P1 제품 전환/UX</h2>
-          <p class="section-desc">사용자 경험과 가입/앱 설치 전환을 직접 끌어올리는 제품 작업입니다.</p>
+          <h2 class="section-title">P0 운영 검증 묶음</h2>
+          <p class="section-desc">오늘/내일 바로 확인 가능한 운영 항목이다. 완료된 것은 종료로, 남은 것은 트리거를 명확히 둔다.</p>
         </div>
-        <span class="badge p1">제품 개선 4개</span>
+        <span class="badge p0">운영 검증</span>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>우선순위</th>
-              <th>작업명</th>
-              <th>현재 상태</th>
-              <th>목적/성공 기준</th>
-              <th>창업자 다음 행동</th>
-              <th>Claude Code 다음 행동</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td><span class="badge p1">P1-9</span></td><td class="task">글쓰기 UI/UX 개선</td><td class="status">백로그</td><td class="goal">이미지/영상 업로드 후 커서가 아래로 이동하고 글 이어쓰기 쉽게 함</td><td class="action">문제 화면/원하는 동작 설명</td><td class="claude">PostWriteForm 구조 확인 후 UX 설계</td></tr>
-            <tr><td><span class="badge p1">P1-10</span></td><td class="task">PostCTA 가입/앱 설치 유도</td><td class="status">백로그, 우선도 높음</td><td class="goal">글 하단에서 비회원 가입, 웹 회원 앱 설치 유도. 전환 측정 가능</td><td class="action">CTA 문구/노출 위치 방향 결정</td><td class="claude">PostCTA 기획 재검토 후 구현 범위 확정</td></tr>
-            <tr><td><span class="badge p1">P1-11</span></td><td class="task">TWA 첫 진입 회원가입 A/B 테스트</td><td class="status">백로그</td><td class="goal">TWA 다운로드 유저 50% 즉시 가입 유도, 50% 기존 흐름 유지</td><td class="action">실험 목적/성공지표 확정</td><td class="claude">실험 설계, 분기 방식, 지표 정의</td></tr>
-            <tr><td><span class="badge p1">P1-12</span></td><td class="task">A/B 테스트 어드민/히스토리 관리</td><td class="status">백로그</td><td class="goal">실험 상태/결과/히스토리를 놓치지 않게 관리</td><td class="action">필요한 어드민 화면 감각 전달</td><td class="claude">실험 모델/로그/대시보드 설계</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="mobile-cards">
-        <article class="task-card"><div class="task-card-head"><h3>글쓰기 UI/UX 개선</h3><span class="badge p1">P1-9</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">백로그</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">업로드 후 글 이어쓰기 흐름 개선</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">문제 화면/원하는 동작 설명</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">PostWriteForm 구조 확인 후 UX 설계</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>PostCTA 가입/앱 설치 유도</h3><span class="badge p1">P1-10</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">백로그, 우선도 높음</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">비회원 가입과 웹 회원 앱 설치 전환 측정</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">CTA 문구/노출 위치 방향 결정</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">기획 재검토 후 구현 범위 확정</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>TWA 첫 진입 회원가입 A/B 테스트</h3><span class="badge p1">P1-11</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">백로그</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">TWA 유저 5:5 가입 유도 실험</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">실험 목적/성공지표 확정</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">실험 설계, 분기 방식, 지표 정의</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>A/B 테스트 어드민/히스토리 관리</h3><span class="badge p1">P1-12</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">백로그</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">실험 상태/결과/히스토리 관리</span></div><div class="field"><span class="field-label">창업자 행동</span><span class="field-value">필요한 어드민 화면 감각 전달</span></div><div class="field"><span class="field-label">Claude Code</span><span class="field-value">실험 모델/로그/대시보드 설계</span></div></article>
+      <div class="compact-grid">
+        <article class="compact-card">
+          <div class="meta-row"><span class="badge done">종결</span></div>
+          <h3>11:30 이후 운영 검증 묶음</h3>
+          <p>닉네임, dlxogns01, JOB 차단, HIDDEN skip read-only 확인은 당일 패치 묶음 검증으로 정리.</p>
+        </article>
+        <article class="compact-card">
+          <div class="meta-row"><span class="badge wait">사례 발생 시</span></div>
+          <h3>HIDDEN 글 wave skip 검증</h3>
+          <p>HIDDEN+wave 사례가 생기면 BotLog status와 skipReason이 SKIP/post_not_published인지 확인.</p>
+        </article>
+        <article class="compact-card">
+          <div class="meta-row"><span class="badge done">1차 통과</span></div>
+          <h3>페르소나/시스템 노출 차단</h3>
+          <p>“제가 구성된 인물”, “페르소나”, “댓글을 달기 어렵습니다” 류 문구 0건 유지.</p>
+        </article>
+        <article class="compact-card">
+          <div class="meta-row"><span class="badge wait">다음 큐레이션 후</span></div>
+          <h3>P1-6 카테고리 분류 검증</h3>
+          <p>일반 글은 JOB으로 가지 않고, 재테크/연금/보험 글은 LIFE2로 가는지 어드민에서 확인.</p>
+        </article>
+        <article class="compact-card">
+          <div class="meta-row"><span class="badge done">종결</span></div>
+          <h3>SHEET 댓글 운영량 가이드</h3>
+          <p>하루 15~18건, 최대 20건 이하 운영으로 댓글 0개 리스크를 낮춘 상태. 문제 재발 전까지 추가 액션 없음.</p>
+        </article>
       </div>
     </section>
 
-    <section class="section" id="p2">
+    <section class="section">
       <div class="section-header">
         <div>
           <h2 class="section-title">P2 측정/SEO/운영 리포트</h2>
-          <p class="section-desc">당장 불은 아니지만 성장과 운영 품질을 꾸준히 올리는 백로그입니다.</p>
+          <p class="section-desc">각 항목은 아직 P1을 밀어낼 정도는 아니다. 그래도 누락 방지를 위해 짧은 카드로 유지한다.</p>
         </div>
-        <span class="badge p2">백로그 11개</span>
+        <span class="badge p2">P2</span>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>우선순위</th>
-              <th>작업명</th>
-              <th>현재 상태</th>
-              <th>목적/성공 기준</th>
-              <th>창업자 다음 행동</th>
-              <th>Claude Code 다음 행동</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td><span class="badge p2">P2-1</span></td><td class="task">댓글 비회원 UX 개선</td><td class="status">백로그</td><td class="goal">비회원도 댓글 쉽게 달고, 카카오 가입 압박이 과하지 않게 함</td><td class="action">현재 불편한 흐름 캡처</td><td class="claude">guest comment flow 분석</td></tr>
-            <tr><td><span class="badge p2">P2-2</span></td><td class="task">Cloudflare Turnstile UX 개선</td><td class="status">백로그</td><td class="goal">댓글 작성 흐름에서 보안 검증이 너무 앞에 튀어나오지 않게 함</td><td class="action">체감상 불편한 지점 공유</td><td class="claude">Turnstile 노출 위치/타이밍 재설계</td></tr>
-            <tr><td><span class="badge p2">P2-3</span></td><td class="task">네이버 뿜 스크래퍼 추가</td><td class="status">백로그</td><td class="goal">m.bboom.naver.com 글+댓글 수집 후 게시글 생성</td><td class="action">우선순위 판단</td><td class="claude">지원 사이트 추가 설계</td></tr>
-            <tr><td><span class="badge p2">P2-4</span></td><td class="task">SEO 메타 디스크립션 점검</td><td class="status">백로그</td><td class="goal">50대/60대 여성 타깃과 페이지별 검색 의도에 맞는 메타 구성</td><td class="action">주요 페이지 우선순위 지정</td><td class="claude">metadata 감사</td></tr>
-            <tr><td><span class="badge p2">P2-5</span></td><td class="task">어드민 OKR/대시보드 정리</td><td class="status">백로그</td><td class="goal">UV/PV/전환/D7 등 선행지표 중심 운영 현황 확인</td><td class="action">보고 싶은 핵심 지표 정하기</td><td class="claude">/admin, /admin/analytics 구조 정리</td></tr>
-            <tr><td><span class="badge p2">P2-6</span></td><td class="task">TWA/Web EventLog platform 구분</td><td class="status">백로그</td><td class="goal">TWA와 웹 사용자를 분리 측정해 전환/리텐션 분석 정확도 개선</td><td class="action">지금은 보류</td><td class="claude">EventLog property 설계</td></tr>
-            <tr><td><span class="badge p2">P2-7</span></td><td class="task">Naver Search Advisor/검색 노출 점검</td><td class="status">백로그</td><td class="goal">네이버 검색 유입 안정화</td><td class="action">Search Advisor 상태 공유 가능하면 공유</td><td class="claude">사이트맵/색인/메타 점검</td></tr>
-            <tr><td><span class="badge p2">P2-8</span></td><td class="task">스크래퍼 sourceSite별 품질 리포트</td><td class="status">백로그</td><td class="goal">82cook/네이트판/오늘의유머/네이버카페별 품질·댓글량·AI티 비교</td><td class="action">지금은 보류</td><td class="claude">정기 read-only 리포트 스크립트 설계</td></tr>
-            <tr><td><span class="badge p2">P2-9</span></td><td class="task">PARTIAL/FAILED BotLog 정리 리포트</td><td class="status">백로그</td><td class="goal">실패가 누적돼도 놓치지 않게 원인별 추적</td><td class="action">지금은 보류</td><td class="claude">BotLog status별 일일 요약</td></tr>
-            <tr><td><span class="badge p2">P2-10</span></td><td class="task">홈/인기 큐레이션 품질 모니터링</td><td class="status">백로그</td><td class="goal">홈에 뜨는 글이 타깃·브랜드에 맞는지 관리</td><td class="action">HOT/집중/숨김 기준 체감 공유</td><td class="claude">홈/인기 노출 기준 리포트</td></tr>
-            <tr><td><span class="badge p2">P2-11</span></td><td class="task">카테고리/페르소나 정책 문서화</td><td class="status">백로그</td><td class="goal">같은 정책 판단을 반복하지 않도록 기준 고정</td><td class="action">주요 정책 확정 후 진행</td><td class="claude">AGENTS/운영 문서 초안 작성</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="mobile-cards">
-        <article class="task-card"><div class="task-card-head"><h3>댓글 비회원 UX 개선</h3><span class="badge p2">P2-1</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">비회원 댓글 허들 완화</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>Cloudflare Turnstile UX 개선</h3><span class="badge p2">P2-2</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">보안 검증이 댓글 흐름을 방해하지 않게 함</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>네이버 뿜 스크래퍼 추가</h3><span class="badge p2">P2-3</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">신규 sourceSite 확장</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>SEO 메타 디스크립션 점검</h3><span class="badge p2">P2-4</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">검색 의도에 맞는 메타 구성</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>어드민 OKR/대시보드 정리</h3><span class="badge p2">P2-5</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">선행지표 중심 운영 현황 확인</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>TWA/Web EventLog platform 구분</h3><span class="badge p2">P2-6</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">TWA와 웹 리텐션 분리 측정</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>Naver Search Advisor 점검</h3><span class="badge p2">P2-7</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">네이버 검색 유입 안정화</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>sourceSite별 품질 리포트</h3><span class="badge p2">P2-8</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">사이트별 품질·댓글량·AI티 비교</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>PARTIAL/FAILED BotLog 리포트</h3><span class="badge p2">P2-9</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">실패 누적 방지</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>홈/인기 큐레이션 품질 모니터링</h3><span class="badge p2">P2-10</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">홈 노출 글 품질 관리</span></div></article>
-        <article class="task-card"><div class="task-card-head"><h3>카테고리/페르소나 정책 문서화</h3><span class="badge p2">P2-11</span></div><div class="field"><span class="field-label">목적</span><span class="field-value">반복 판단 방지</span></div></article>
+      <div class="compact-grid">
+        <article class="compact-card"><h3>댓글 비회원 UX 개선</h3><p>비회원이 댓글 의사를 잃지 않게 로그인 전환 흐름을 손본다.</p></article>
+        <article class="compact-card"><h3>Cloudflare Turnstile UX 개선</h3><p>보안은 유지하되 사용자가 막히는 지점을 줄인다.</p></article>
+        <article class="compact-card"><h3>네이버 뿜 스크래퍼 추가</h3><p>소스 다양화 후보. 품질 기준과 운영량 먼저 설계.</p></article>
+        <article class="compact-card"><h3>SEO 메타 디스크립션 점검</h3><p>게시글/매거진/목록별 검색 노출 문구를 정리.</p></article>
+        <article class="compact-card"><h3>어드민 OKR/대시보드 정리</h3><p>창업자가 매일 보는 운영 지표를 한 화면에 묶는다.</p></article>
+        <article class="compact-card"><h3>TWA/Web EventLog platform 구분</h3><p>앱 사용자와 웹 사용자의 이벤트를 분리해 전환을 읽는다.</p></article>
+        <article class="compact-card"><h3>Naver Search Advisor 점검</h3><p>검색 노출, 색인, 누락 URL 상태를 주기적으로 확인.</p></article>
+        <article class="compact-card"><h3>스크래퍼 sourceSite 품질 리포트</h3><p>소스별 품질, 발행률, 문제율을 운영 리포트화.</p></article>
+        <article class="compact-card"><h3>PARTIAL/FAILED BotLog 리포트</h3><p>실패 로그를 원인별로 묶어 재발 방지 루프를 만든다.</p></article>
+        <article class="compact-card"><h3>홈/인기 큐레이션 품질 모니터링</h3><p>트렌딩과 홈 노출 글의 사용자 반응과 품질을 같이 본다.</p></article>
+        <article class="compact-card"><h3>카테고리/페르소나 정책 문서화</h3><p>코드와 운영 판단이 충돌하지 않게 기준 문서를 업데이트.</p></article>
       </div>
     </section>
 
-    <section class="section" id="excluded">
+    <section class="section">
       <div class="section-header">
         <div>
-          <h2 class="section-title">제외/무시 목록</h2>
-          <p class="section-desc">사용자가 “완전 무시”라고 지시한 항목입니다. 현재 우선순위 계산에서 제외합니다.</p>
+          <h2 class="section-title">의도적 후순위 / 제외</h2>
+          <p class="section-desc">중요하지 않다는 뜻이 아니라, 지금 P0/P1 운영 증거보다 앞서면 안 되는 항목이다.</p>
         </div>
-        <span class="badge excluded">제외 2개</span>
+        <span class="badge defer">후순위</span>
       </div>
-      <div class="excluded-box">
-        <strong>현재 제외된 작업</strong>
-        <ul>
-          <li>카카오 공유 P0</li>
-          <li>홈 편성 수동 조정 MVP</li>
-        </ul>
+      <div class="split-grid">
+        <div class="soft-panel">
+          <div class="meta-row"><span class="badge defer">후순위 유지</span></div>
+          <h3>지금 미루는 항목</h3>
+          <ul class="fact-list">
+            <li>STORY 편중 개선: 나중에 진행</li>
+            <li>성별 분포 조정: 지금은 운영 리스크 아님</li>
+            <li>중복 페르소나 정리: 품질 사례가 쌓인 뒤 정리</li>
+            <li>기존 어색한 댓글 삭제/숨김: 이번 작업 범위 아님</li>
+          </ul>
+        </div>
+        <div class="soft-panel">
+          <div class="meta-row"><span class="badge exclude">우선순위 계산 제외</span></div>
+          <h3>사용자 지시로 제외</h3>
+          <ul class="fact-list">
+            <li>카카오 공유 P0</li>
+            <li>홈 편성 수동 조정 MVP</li>
+          </ul>
+        </div>
       </div>
     </section>
 
-    <section class="action-panel" id="today">
-      <h2>오늘 추천 실행 순서</h2>
-      <ul class="timeline">
-        <li>
-          <span class="time">지금</span>
-          <span>P0 즉시 수정은 없습니다. 병렬로 P1-1 페르소나 bio/style 2차 정비 기획 또는 P1-10 PostCTA 중 하나를 선택할 수 있습니다.</span>
-        </li>
-        <li>
-          <span class="time">다음 에이전트 실행 후</span>
-          <span>닉네임 DB 갱신을 재확인합니다. 구 닉네임과 하늘바라기-a 같은 -접미사 닉네임이 0건이면 PASS입니다.</span>
-        </li>
-        <li>
-          <span class="time">다음 content-curator 후</span>
-          <span>JOB 일반글 0건 유지와 재테크/연금/보험 글의 LIFE2 라우팅을 확인합니다.</span>
-        </li>
-        <li>
-          <span class="time">HIDDEN+wave 발생 시</span>
-          <span>BotLog가 SKIP/post_not_published로 남는지 확인합니다. 그 전까지는 대기입니다.</span>
-        </li>
-      </ul>
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">내일 아침 Claude Code 프롬프트</h2>
+          <p class="section-desc">읽기 전용 검증만 시킨다. DB write, workflow 수동 실행, 댓글 수정/삭제는 금지한다.</p>
+        </div>
+        <span class="badge wait">복붙용</span>
+      </div>
+      <div class="stack">
+        <div class="prompt-box">
+          <h3>P1-1B AZ/BA LIFE2 최종 운영 검증</h3>
+          <pre>read-only로 P1-1B AZ/BA LIFE2 운영 검증을 해줘.
+
+전제:
+- 커밋 0725be1 배포 완료
+- persona-data.ts의 AZ/BA board 값은 LIFE2
+- DB write 금지, workflow 수동 실행 금지, raw SQL 금지
+
+확인:
+1. 최신 SEED/SCHEDULE 실행 시각과 items 확인
+2. AZ 돈공부중, BA 은퇴준비중이 최근 신규 글을 생성했는지 확인
+3. 생성했다면 post.boardType이 LIFE2인지 확인
+4. BoardType 관련 BotLog FAILED/PARTIAL이 있는지 확인
+5. 없으면 "운영 검증 대기 유지"로 보고
+
+보고:
+- 최근 SEED 실행
+- AZ/BA 배정 여부
+- 신규 postId/title/boardType
+- BoardType 오류 여부
+- 최종 판정 PASS/대기/FAIL</pre>
+        </div>
+        <div class="prompt-box">
+          <h3>닉네임 DB 갱신 확인</h3>
+          <pre>read-only로 닉네임 DB 갱신 상태를 확인해줘.
+
+목적:
+persona-data.ts 변경 후 Bot User 레코드가 구 닉네임을 계속 쓰는지 확인한다.
+
+금지:
+- DB write 금지
+- seed/agent/workflow 수동 실행 금지
+
+확인:
+1. persona-data.ts 기준 최신 닉네임 목록 확인
+2. Bot User DB 레코드와 불일치하는 닉네임 확인
+3. 최근 글/댓글에 구 닉네임 노출이 있는지 확인
+
+보고:
+- 불일치 닉네임 목록
+- 최근 노출 여부
+- 운영 영향
+- 다음 액션</pre>
+        </div>
+      </div>
     </section>
 
-    <p class="footer-note">작성 기준: 2026-06-02 12:24 KST · 이 문서는 기능 코드, DB, workflow를 변경하지 않는 운영 우선순위 문서입니다.</p>
+    <p class="footer-note">
+      이 문서는 2026-06-02 23:00 KST 기준 운영 판단판이다. 커밋 시에는 이 HTML 파일만 포함하고,
+      현재 worktree의 삭제 파일, 미추적 스크립트, screenshots, assets는 제외한다.
+    </p>
   </main>
 </body>
 </html>
