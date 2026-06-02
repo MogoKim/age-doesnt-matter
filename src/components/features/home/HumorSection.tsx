@@ -2,7 +2,7 @@ import HomeCardLink from '@/components/features/home/HomeCardLink'
 import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
-import { IconEnergy } from '@/components/icons'
+import { IconComment, IconHeart, IconEnergy } from '@/components/icons'
 
 interface Props {
   posts: PostSummary[]
@@ -44,8 +44,8 @@ export default function HumorSection({ posts }: Props) {
               </div>
               <p className="text-body text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
               <div className="flex items-center gap-2.5 text-caption text-muted-foreground">
-                <span>💬 {post.commentCount}</span>
-                <span>❤️ {post.likeCount}</span>
+                <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
+                <span className="flex items-center gap-1"><IconHeart size={15} /> {post.likeCount}</span>
                 <span>{formatTimeAgo(post.createdAt)}</span>
               </div>
             </HomeCardLink>

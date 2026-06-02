@@ -2,6 +2,7 @@ import HomeCardLink from '@/components/features/home/HomeCardLink'
 import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
+import { IconComment, IconHeart } from '@/components/icons'
 
 interface Props {
   posts: PostSummary[]
@@ -36,8 +37,8 @@ export default function TrendingSection({ posts }: Props) {
               <div className="flex-1 min-w-0">
                 <p className="text-body text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
                 <div className="flex items-center gap-2.5 text-caption text-muted-foreground">
-                  <span>💬 {post.commentCount}</span>
-                  <span>❤️ {post.likeCount}</span>
+                  <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
+                  <span className="flex items-center gap-1"><IconHeart size={15} /> {post.likeCount}</span>
                   <span className="bg-background px-2 py-0.5 rounded text-caption text-muted-foreground">{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
-import { IconStories } from '@/components/icons'
+import { IconComment, IconHeart, IconStories } from '@/components/icons'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
@@ -25,8 +25,8 @@ export default function HomeSidebar({ posts }: Props) {
               >
                 <span className="text-caption text-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis block">{post.title}</span>
                 <span className="flex items-center gap-2 text-caption text-muted-foreground mt-0.5">
-                  <span>❤️ {post.likeCount}</span>
-                  <span>💬 {post.commentCount}</span>
+                  <span className="flex items-center gap-1"><IconHeart size={15} /> {post.likeCount}</span>
+                  <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
                 </span>
               </Link>
             </li>

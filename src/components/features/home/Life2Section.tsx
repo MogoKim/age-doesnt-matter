@@ -39,8 +39,8 @@ export default function Life2Section({ posts }: Props) {
               </div>
               <p className="text-body text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
               <div className="flex items-center gap-2.5 text-caption text-muted-foreground">
-                <span className="flex items-center gap-1"><IconComment size={14} /> {post.commentCount}</span>
-                <span className="flex items-center gap-1"><IconHeart size={14} /> {post.likeCount}</span>
+                <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
+                <span className="flex items-center gap-1"><IconHeart size={15} /> {post.likeCount}</span>
                 <span>{formatTimeAgo(post.createdAt)}</span>
               </div>
             </HomeCardLink>
