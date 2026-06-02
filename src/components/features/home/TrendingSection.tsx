@@ -26,18 +26,18 @@ export default function TrendingSection({ posts }: Props) {
         {posts.map((post, index) => (
           <li
             key={post.id}
-            className="group lg:border-b lg:border-border/60 lg:last:border-b-0 motion-safe:transition-[border-color] motion-safe:duration-[250ms] [@media(hover:hover)]:hover:border-primary active:border-primary"
+            className="group lg:border-b lg:border-border/60 lg:last:border-b-0 motion-safe:transition-[border-color] motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:hover:border-primary active:border-primary"
           >
             <HomeCardLink
               href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}?from=trending`}
-              className="group flex items-start gap-3 py-3.5 border-b border-border/60 last:border-b-0 no-underline text-inherit min-h-[52px] motion-safe:transition-[border-color] motion-safe:duration-[250ms] [@media(hover:hover)]:hover:border-primary active:border-primary lg:border-b-0"
+              className="group flex items-start gap-3 py-3.5 border-b border-border/60 last:border-b-0 no-underline text-inherit min-h-[52px] motion-safe:transition-[border-color] motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:hover:border-primary active:border-primary lg:border-b-0"
               section="trending"
               position={index}
               contentId={post.id}
             >
               <span className="text-[28px] font-black italic text-primary/20 min-w-[32px] text-center shrink-0 leading-none">{index + 1}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-body font-medium text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep motion-safe:transition-colors motion-safe:duration-[250ms] [@media(hover:hover)]:group-hover:text-primary-text group-active:text-primary-text">{post.title}</p>
+                <p className="text-body font-medium text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep motion-safe:transition-colors motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:group-hover:text-primary-text group-active:text-primary-text">{post.title}</p>
                 <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-caption text-muted-foreground">
                   <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold leading-[1.4] text-primary-text">{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
                   <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
