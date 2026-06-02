@@ -122,7 +122,7 @@ const MICRO_SCHEDULE: Record<string, MicroActivity[]> = {
 
 async function getRandomPosts(board: string, limit: number) {
   return prisma.post.findMany({
-    where: { boardType: board as 'STORY' | 'HUMOR' | 'JOB', status: 'PUBLISHED', source: { not: 'SHEET' } },
+    where: { boardType: board as 'STORY' | 'HUMOR' | 'JOB', status: 'PUBLISHED', source: 'BOT' },
     orderBy: { createdAt: 'desc' },
     take: Math.min(limit * 5, 200),
     select: { id: true, title: true, content: true, authorId: true },

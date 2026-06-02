@@ -25,6 +25,7 @@ export async function main() {
       where: {
         boardType: 'STORY',
         status: 'PUBLISHED',
+        source: 'BOT',
         createdAt: { gte: sixHoursAgo },
         commentCount: { lte: 1 },
       },
@@ -64,7 +65,8 @@ export async function main() {
         if (existing) continue
 
         // 따뜻한 댓글 생성
-        const commentText = await generateComment(personaId, post.title, post.content)
+        const content = post.content ?? ''
+        const commentText = await generateComment(personaId, post.title, content)
 
         await prisma.$transaction([
           prisma.comment.create({

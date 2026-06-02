@@ -341,7 +341,7 @@ async function getRandomPosts(board: string, limit: number) {
   const baseWhere = {
     boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2',
     status: 'PUBLISHED' as const,
-    source: { not: 'SHEET' as const },
+    source: 'BOT' as const,
   }
   const sel = { id: true, title: true, content: true, authorId: true }
 
@@ -533,7 +533,7 @@ async function runActivity(activity: Activity): Promise<void> {
       if (botCommentCount >= 5) continue
 
       const activeWave = await prisma.userPostWaveQueue.findFirst({
-        where: { postId: post.id, wave4Done: false },
+        where: { postId: post.id, wave5Done: false },
         select: { id: true },
       })
       if (activeWave) continue

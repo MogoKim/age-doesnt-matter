@@ -370,6 +370,7 @@ function getModelForPersona(personaId: string): string {
 }
 
 const client = new Anthropic()
+const USER_POST_COMMENT_MODEL = 'claude-sonnet-4-6'
 
 /** KST 현재 시간대별 분위기 힌트 (Fix 10) */
 function getTimeOfDayMood(kstHour: number): string {
@@ -922,6 +923,106 @@ export async function generateComment(
 
   const comment = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
   return stripMarkdown(comment)
+}
+
+function hasUserCommentQualityIssue(comment: string, priorComments: string[]): boolean {
+  const text = comment.trim()
+  if (text.length < 5) return true
+  if (text.length > 260) return true
+
+  const leakyPhrases = [
+    'AI', '인공지능', '페르소나', '시스템 프롬프트', '지침상', '정책상',
+    '댓글을 달기 어렵습니다', '제가 구성된',
+  ]
+  if (leakyPhrases.some(phrase => text.includes(phrase))) return true
+
+  const genericOpenings = [
+    '힘드시겠어요', '정말 힘드시겠어요', '저도 비슷한 경험', '저도 그런 경험',
+    '저도 회사 다니면서 그런 상황', '팀 전체가 지치실 수밖에',
+  ]
+  if (genericOpenings.some(phrase => text.includes(phrase))) return true
+
+  return priorComments.some(prev => {
+    const normalizedPrev = prev.replace(/\s+/g, '')
+    const normalizedText = text.replace(/\s+/g, '')
+    return normalizedPrev.length >= 12 && normalizedText.includes(normalizedPrev.slice(0, 24))
+  })
+}
+
+/** 실제 회원 글 전용 댓글 생성 — Sonnet 고정, 본문 요약형 봇 댓글 방지 */
+export async function generateUserPostComment(
+  personaId: string,
+  postTitle: string,
+  postContent: string,
+  priorComments: string[] = [],
+): Promise<string> {
+  const p = getPersona(personaId)
+  const trend = await getLatestTrend()
+  const trendContext = buildTrendContext(trend, personaId, p)
+
+  const recentComments = await prisma.comment.findMany({
+    where: {
+      author: { email: `bot-${personaId.toLowerCase()}@unao.bot` },
+      parentId: null,
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 3,
+    select: { content: true },
+  }).catch(() => [])
+
+  const priorCommentsHint = priorComments.length > 0
+    ? `\n\n[이미 이 글에 달린 댓글]\n${priorComments.map(c => `- ${c.slice(0, 120)}`).join('\n')}`
+    : '\n\n[이미 이 글에 달린 댓글]\n아직 없음'
+
+  const recentCommentHint = recentComments.length > 0
+    ? `\n\n[이 봇이 최근 단 댓글 — 같은 첫 문장과 구조 금지]\n${recentComments.map(c => `- ${c.content.slice(0, 90)}`).join('\n')}`
+    : ''
+
+  const system = `${getKstContext()}
+
+당신은 우나어 회원이 쓴 글을 방금 읽은 50대 60대 한국인 회원입니다.
+이 댓글은 실제 글쓴이가 보게 됩니다. 댓글 수를 채우는 것이 아니라, 글쓴이가 "사람이 읽고 반응해줬다"고 느끼게 하는 것이 목적입니다.
+
+[가장 중요한 원칙]
+- 글쓴이 문장을 다시 설명하지 마세요.
+- 본문에 나온 사실을 요약하지 마세요.
+- "힘드시겠어요", "저도 비슷한 경험이 있어요" 같은 템플릿으로 시작하지 마세요.
+- 페르소나의 취미·가족 설정을 억지로 끼워 넣지 마세요.
+- 댓글 역할표처럼 공감/질문/조언/경험을 기계적으로 나누지 마세요.
+- 이미 달린 댓글과 같은 결론, 같은 단어, 같은 문장 구조를 피하세요.
+- 글쓴이가 미처 정리하지 못한 감정, 쟁점, 다음 행동 중 그 순간 가장 자연스러운 하나만 짚으세요.
+- 댓글은 1~3문장. 짧아도 됩니다. 번호, 따옴표, 설명 없이 댓글 본문만 쓰세요.
+
+[페르소나 참고]
+닉네임: ${p.nickname}
+나이: ${p.age}세
+성향: ${p.personality}
+말투: ${p.speech_patterns.join(' / ')}
+
+페르소나는 말투 참고용입니다. 글 주제와 맞지 않는 설정은 사용하지 마세요.
+${trendContext}`
+
+  const userContent = `회원 글에 자연스러운 댓글 하나만 달아주세요.
+
+제목: ${postTitle}
+본문:
+${postContent.replace(/<[^>]+>/g, '').slice(0, 900)}
+${priorCommentsHint}
+${recentCommentHint}`
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const response = await client.messages.create({
+      model: USER_POST_COMMENT_MODEL,
+      max_tokens: 180,
+      system,
+      messages: [{ role: 'user', content: userContent }],
+    })
+
+    const comment = response.content[0].type === 'text' ? stripMarkdown(response.content[0].text.trim()) : ''
+    if (!hasUserCommentQualityIssue(comment, priorComments)) return comment
+  }
+
+  return ''
 }
 
 /** 시트 화제성 파동 댓글 생성 — Sonnet 모델, 본문 맥락 반영, 키워드 검증 포함 */

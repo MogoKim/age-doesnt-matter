@@ -1222,18 +1222,21 @@ model UserPostWaveQueue {
 
   wave1At   DateTime // 발행 +1분
   wave2At   DateTime // 발행 +10분
-  wave3At   DateTime // 발행 +30분
-  wave4At   DateTime // 발행 +60분
+  wave3At   DateTime // 발행 +20분
+  wave4At   DateTime // 발행 +45분
+  wave5At   DateTime? // 발행 +60분 (신규 5-wave 정책, 기존 row 보호를 위해 nullable)
 
   wave1Count Int @default(1)
-  wave2Count Int @default(2)
-  wave3Count Int @default(3)
-  wave4Count Int @default(3)
+  wave2Count Int @default(1)
+  wave3Count Int @default(1)
+  wave4Count Int @default(1)
+  wave5Count Int @default(1)
 
   wave1Done Boolean @default(false)
   wave2Done Boolean @default(false)
   wave3Done Boolean @default(false)
   wave4Done Boolean @default(false)
+  wave5Done Boolean @default(false)
 
   createdAt DateTime @default(now())
   expiresAt DateTime // +24h TTL
@@ -1242,5 +1245,6 @@ model UserPostWaveQueue {
   @@index([wave2Done, wave2At])
   @@index([wave3Done, wave3At])
   @@index([wave4Done, wave4At])
+  @@index([wave5Done, wave5At])
   @@index([expiresAt])
 }

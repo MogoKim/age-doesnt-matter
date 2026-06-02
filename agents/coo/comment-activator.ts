@@ -41,7 +41,7 @@ export async function main() {
       where: {
         status: 'PUBLISHED',
         commentCount: 0,
-        source: { not: 'SHEET' },
+        source: 'BOT',
         createdAt: { gte: twelveHoursAgo, lte: thirtyMinutesAgo },
       },
       select: {
@@ -98,7 +98,8 @@ export async function main() {
           })
           if (existing) continue
 
-          const commentText = await generateComment(personaId, post.title, post.content)
+          const content = post.content ?? ''
+          const commentText = await generateComment(personaId, post.title, content)
 
           // comment 생성 + commentCount 증가를 원자적으로 처리 (F-6 Prisma 트랜잭션)
           await prisma.$transaction([

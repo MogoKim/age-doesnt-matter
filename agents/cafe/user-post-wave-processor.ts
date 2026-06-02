@@ -1,37 +1,84 @@
-// LOCAL ONLY (GHA) — 회원 글 댓글 파동 처리 (wave1~4 순차 댓글 게시)
+// LOCAL ONLY (GHA) — 회원 글 댓글 파동 처리 (wave1~5 순차 댓글 게시)
 /**
  * 회원 글 댓글 파동 프로세서
  * UserPostWaveQueue에서 pending 항목을 찾아 댓글을 게시하고 done 처리.
  * GHA cron `*\/5 * * * *` 으로 실행
  *
- * 회원 글 1건당 총 9건의 댓글 파동:
- *   wave1: +1분  × 1건
- *   wave2: +10분 × 2건
- *   wave3: +30분 × 3건
- *   wave4: +60분 × 3건
+ * 회원 글 1건당 총 5건의 자연 댓글 파동:
+ *   wave1: +1분  × 1건 (GHA 주기상 실제 1~5분)
+ *   wave2: +10분 × 1건
+ *   wave3: +20분 × 1건
+ *   wave4: +45분 × 1건
+ *   wave5: +60분 × 1건
  */
 import { prisma, disconnect } from '../core/db.js'
-import { getBotUser, generateComment } from '../seed/generator.js'
-import { getAllPersonaIds } from '../seed/persona-data.js'
+import { getBotUser, generateUserPostComment } from '../seed/generator.js'
+import { getAllPersonaIds, getPersona } from '../seed/persona-data.js'
 import { sendSlackMessage } from '../core/notifier.js'
 import { COMPETITOR_KEYWORDS } from './config.js'
 
-const HUMOR_ONLY_PERSONAS = ['C', 'AF', 'AO', 'AY']  // HUMOR 보드 전담 — 실제 회원 글 wave 제외
-const COMMENTER_PERSONA_IDS = getAllPersonaIds()
-  .filter(id => !id.startsWith('EN') && !/^N\d/.test(id))
-  .filter(id => !HUMOR_ONLY_PERSONAS.includes(id))
+type WaveNum = 1 | 2 | 3 | 4 | 5
+type WaveDoneKey = 'wave1Done' | 'wave2Done' | 'wave3Done' | 'wave4Done' | 'wave5Done'
+type WaveAtKey = 'wave1At' | 'wave2At' | 'wave3At' | 'wave4At' | 'wave5At'
+type WaveCountKey = 'wave1Count' | 'wave2Count' | 'wave3Count' | 'wave4Count' | 'wave5Count'
 
-type WaveNum = 1 | 2 | 3 | 4
-type WaveDoneKey = 'wave1Done' | 'wave2Done' | 'wave3Done' | 'wave4Done'
-type WaveAtKey = 'wave1At' | 'wave2At' | 'wave3At' | 'wave4At'
-type WaveCountKey = 'wave1Count' | 'wave2Count' | 'wave3Count' | 'wave4Count'
+type UserWaveQueue = {
+  id: string
+  postId: string
+  authorId: string
+  wave1Count: number
+  wave2Count: number
+  wave3Count: number
+  wave4Count: number
+  wave5Count: number
+}
+
+const ALL_PERSONA_IDS = getAllPersonaIds().filter(id => !id.startsWith('EN') && !/^N\d/.test(id))
+
+const PERSONA_POOLS: Record<string, string[]> = {
+  WORK: ['AS', 'AT', 'D', 'T', 'G', 'BA', 'I', 'AE', 'AR', 'AG'],
+  FAMILY: ['E', 'K', 'BC', 'BD', 'BF', 'BH', 'AE', 'V'],
+  CARE: ['W', 'AH', 'AK', 'AJ', 'AG', 'AE'],
+  MONEY: ['B', 'N', 'AZ', 'AA', 'Y', 'AG'],
+  GENERAL: ['V', 'AE', 'I', 'P', 'Q', 'AR', 'AD', 'T', 'G'],
+}
+
+const TOPIC_KEYWORDS: Record<string, string[]> = {
+  WORK: ['회사', '팀장', '상사', '업무', '인사', '퇴사', '정년', '결재', '미팅', '업체', '단가', '공장', '직장', '출근'],
+  FAMILY: ['남편', '아내', '자녀', '딸', '아들', '며느리', '시어머니', '가족', '부모'],
+  CARE: ['간병', '병원', '수술', '입원', '치료', '재활', '돌봄', '아프'],
+  MONEY: ['돈', '연금', '재테크', '절약', '물가', '노후', '생활비', '투자'],
+}
+
+function classifyUserPostTopic(title: string, content: string): string {
+  const haystack = `${title} ${content}`.slice(0, 1200)
+  for (const [topic, keywords] of Object.entries(TOPIC_KEYWORDS)) {
+    if (keywords.some(keyword => haystack.includes(keyword))) return topic
+  }
+  return 'GENERAL'
+}
+
+function getPersonaPoolForPost(title: string, content: string): string[] {
+  const topic = classifyUserPostTopic(title, content)
+  const preferred = PERSONA_POOLS[topic] ?? PERSONA_POOLS.GENERAL
+  const existing = new Set(ALL_PERSONA_IDS)
+  const pool = preferred.filter(id => existing.has(id))
+  return pool.length > 0 ? pool : PERSONA_POOLS.GENERAL.filter(id => existing.has(id))
+}
+
+function pickPersona(pool: string[], usedPersonaIds: Set<string>): string | null {
+  const available = pool.filter(id => !usedPersonaIds.has(id))
+  if (available.length === 0) return null
+  return available[Math.floor(Math.random() * available.length)] ?? null
+}
 
 async function processUserWave(
-  queue: { id: string; postId: string; authorId: string; wave1Count: number; wave2Count: number; wave3Count: number; wave4Count: number },
+  queue: UserWaveQueue,
   waveNum: WaveNum,
 ): Promise<number> {
   const countKey = `wave${waveNum}Count` as WaveCountKey
-  const count = queue[countKey]
+  const count = Math.min(queue[countKey] ?? 1, 1)
+  if (count < 1) return 0
 
   const post = await prisma.post.findUnique({
     where: { id: queue.postId },
@@ -52,19 +99,25 @@ async function processUserWave(
   // 이미 댓글 단 bot user UUID 집합 + 기존 댓글 내용 (표현 중복 방지)
   const existingComments = await prisma.comment.findMany({
     where: { postId: queue.postId },
-    select: { authorId: true, content: true },
+    select: { authorId: true, content: true, author: { select: { email: true } } },
   })
-  const usedUserIds = new Set(existingComments.map(c => c.authorId))
+  const existingAuthorIds = existingComments
+    .map(c => c.authorId)
+    .filter((id): id is string => Boolean(id))
+  const usedUserIds = new Set([queue.authorId, ...existingAuthorIds])
   const priorCommentTexts = existingComments.map(c => c.content)
-  const usedPersonaIds = new Set<string>()
+  const usedPersonaIds = new Set(
+    existingComments
+      .map(c => c.author?.email?.match(/^bot-([a-z0-9]+)@unao\.bot$/)?.[1]?.toUpperCase())
+      .filter((id): id is string => Boolean(id)),
+  )
+  const personaPool = getPersonaPoolForPost(post.title, post.content ?? '')
 
   let successCount = 0
 
   for (let i = 0; i < count; i++) {
-    const available = COMMENTER_PERSONA_IDS.filter(id => !usedPersonaIds.has(id))
-    if (available.length === 0) break
-
-    const personaId = available[Math.floor(Math.random() * available.length)]
+    const personaId = pickPersona(personaPool, usedPersonaIds)
+    if (!personaId) break
     usedPersonaIds.add(personaId) // 이 이터레이션에서 사용됨으로 마킹
 
     const userId = await getBotUser(personaId)
@@ -76,7 +129,11 @@ async function processUserWave(
     if (usedUserIds.has(userId)) continue // 이미 댓글 달았거나 글쓴이
     usedUserIds.add(userId)
 
-    const commentText = await generateComment(personaId, post.title, post.content ?? '', [...priorCommentTexts])
+    const commentText = await generateUserPostComment(personaId, post.title, post.content ?? '', [...priorCommentTexts])
+    if (!commentText) {
+      console.warn(`[UserPostWave] wave${waveNum}: 자연 댓글 생성 실패 — 스킵 (persona=${personaId}, nickname=${getPersona(personaId).nickname})`)
+      continue
+    }
     priorCommentTexts.push(commentText)
 
     await prisma.$transaction([
@@ -90,7 +147,7 @@ async function processUserWave(
     ])
 
     successCount++
-    console.log(`[UserPostWave] wave${waveNum} 댓글 게시: postId=${queue.postId}, persona=${personaId}`)
+    console.log(`[UserPostWave] wave${waveNum} 자연 댓글 게시: postId=${queue.postId}, persona=${personaId}, nickname=${getPersona(personaId).nickname}`)
   }
 
   return successCount
@@ -108,7 +165,9 @@ export async function main() {
   })
   if (expired.count > 0) console.log(`[UserPostWave] 만료 정리: ${expired.count}건`)
 
-  for (const waveNum of [1, 2, 3, 4] as WaveNum[]) {
+  const processedQueueIds = new Set<string>()
+
+  for (const waveNum of [1, 2, 3, 4, 5] as WaveNum[]) {
     const doneField = `wave${waveNum}Done` as WaveDoneKey
     const atField = `wave${waveNum}At` as WaveAtKey
 
@@ -120,15 +179,17 @@ export async function main() {
       },
       select: {
         id: true, postId: true, authorId: true,
-        wave1Count: true, wave2Count: true, wave3Count: true, wave4Count: true,
+        wave1Count: true, wave2Count: true, wave3Count: true, wave4Count: true, wave5Count: true,
       },
       take: 10,
     })
 
     for (const queue of pending) {
+      if (processedQueueIds.has(queue.id)) continue
       try {
         const count = await processUserWave(queue, waveNum)
         processed += count
+        processedQueueIds.add(queue.id)
 
         await prisma.userPostWaveQueue.update({
           where: { id: queue.id },
