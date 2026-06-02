@@ -34,20 +34,23 @@ export default function HumorSection({ posts }: Props) {
           <li key={post.id}>
             <HomeCardLink
               href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
-              className="block py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0"
+              className="relative overflow-hidden group block py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0 after:content-[''] after:absolute after:inset-0 after:pointer-events-none after:opacity-0 after:bg-[linear-gradient(90deg,rgba(255,111,97,0.10),rgba(255,111,97,0.02))] motion-safe:after:transition-opacity motion-safe:after:duration-300 motion-reduce:after:transition-none hover:after:opacity-100"
               section="humor-hot"
               position={index}
               contentId={post.id}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-caption text-muted-foreground">{post.author.nickname}</span>
+              <div className="relative z-[1] pr-8">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-caption text-muted-foreground">{post.author.nickname}</span>
+                </div>
+                <p className="text-body text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep group-hover:text-primary-text motion-safe:transition-colors motion-safe:duration-200">{post.title}</p>
+                <div className="flex items-center gap-2.5 text-caption text-muted-foreground">
+                  <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
+                  <span className="flex items-center gap-1"><IconHeart size={15} /> {post.likeCount}</span>
+                  <span>{formatTimeAgo(post.createdAt)}</span>
+                </div>
               </div>
-              <p className="text-body text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>
-              <div className="flex items-center gap-2.5 text-caption text-muted-foreground">
-                <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
-                <span className="flex items-center gap-1"><IconHeart size={15} /> {post.likeCount}</span>
-                <span>{formatTimeAgo(post.createdAt)}</span>
-              </div>
+              <span aria-hidden="true" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-primary-text opacity-0 -translate-x-[6px] group-hover:opacity-100 group-hover:translate-x-0 motion-safe:transition-all motion-safe:duration-200">→</span>
             </HomeCardLink>
           </li>
         ))}
