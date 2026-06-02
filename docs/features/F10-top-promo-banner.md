@@ -90,3 +90,4 @@ TopPromoBanner (Server Component)
 |------|------|------|
 | 2026-04-29 | 기능 신규 등록(v1). CLS fix, h-[44px] 고정, 터치 타겟 44px, text-caption, unstable_cache, 어드민 패널 신규 | 전수 검수 후 6개 이슈 개선 |
 | 2026-04-29 | v2 재설계. GUEST/MEMBER 배너 분리, 외부 URL 지원, 어드민 두 섹션 독립 운영 | 비회원 가입 유도 vs 회원 공지·이벤트 분리 운영 필요 |
+| 2026-06-02 | B3 방식 재설계: auth() 제거, 서버에서 두 설정 병렬 fetch, 클라이언트 useSession() 분기 | P0 2단계 auth island 제거 — CDN 캐시 활성화 |

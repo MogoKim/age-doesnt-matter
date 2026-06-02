@@ -1,9 +1,7 @@
-import { Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
 import KakaoSdkScript from '@/components/common/KakaoSdkScript'
-import AuthBanners from './AuthBanners'
 
 const OfflineBanner = dynamic(
   () => import('@/components/common/OfflineBanner'),
@@ -31,6 +29,10 @@ const KakaoShareDebugPanel = dynamic(
   () => import('@/components/common/KakaoShareDebugPanel'),
   { loading: () => null, ssr: false },
 )
+const SignupPromptBanner = dynamic(
+  () => import('@/components/common/SignupPromptBanner').then(m => ({ default: m.SignupPromptBanner })),
+  { loading: () => null, ssr: false },
+)
 
 export default function MainGroupLayout({
   children,
@@ -44,10 +46,7 @@ export default function MainGroupLayout({
       <WelcomeToast />
       <OfflineBanner />
       <MainLayout>{children}</MainLayout>
-      {/* SignupPromptBanner: auth 의존, MainLayout 바깥 Suspense */}
-      <Suspense fallback={null}>
-        <AuthBanners />
-      </Suspense>
+      <SignupPromptBanner />
       <PopupRenderer />
       <PushPermissionToast />
       <KakaoShareDebugPanel />

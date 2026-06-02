@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { kakaoSignIn } from '@/app/login/actions'
 import {
   gtmSignupBannerEligible,
@@ -118,7 +119,7 @@ function incrementCount(): void {
 }
 
 // ──────────────────────────────────────────────
-// Props
+// 상수
 // ──────────────────────────────────────────────
 // auto-trigger 카운트다운 초
 const AUTO_TRIGGER_COUNTDOWN_S = 5
@@ -129,17 +130,15 @@ const SESSION_AUTO_TRIGGERED = 'signup_auto_triggered'
 // auto-trigger: 유효한 인앱 utm_source 목록
 const INAPP_UTM_SOURCES = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp'] as const
 
-interface Props {
-  isLoggedIn: boolean
-  createdAt?: string // ISO 8601 — 인앱→Chrome 재접속 backfill용
-}
-
 // ──────────────────────────────────────────────
 // 컴포넌트
 // ──────────────────────────────────────────────
-export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
+export function SignupPromptBanner() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
+  const isLoggedIn = status === 'authenticated'
+  const createdAt = session?.user?.createdAt ? String(session.user.createdAt) : undefined
 
   // ?signup=1 + 유효 utm_source 감지 (클라이언트에서 직접 읽기 — layout은 searchParams 미지원)
   const signupAutoTrigger =
@@ -166,6 +165,7 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
 
   // ── ?signup=1 auto-trigger: 인앱→외부브라우저 도착 시 카운트다운 배너 ──
   useEffect(() => {
+    if (status === 'loading') return
     if (!signupAutoTrigger) return
     if (isLoggedIn) return
     if (sessionStorage.getItem(SESSION_AUTO_TRIGGERED)) return
@@ -192,7 +192,7 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
       if (autoCountdownRef.current) clearInterval(autoCountdownRef.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signupAutoTrigger])
+  }, [signupAutoTrigger, status])
 
   const handleAutoTriggerDismiss = () => {
     if (autoCountdownRef.current) clearInterval(autoCountdownRef.current)
@@ -216,6 +216,7 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
 
   // ── 타이머 (Tab Visibility API 포함) ──
   useEffect(() => {
+    if (status === 'loading') return
     if (isLoggedIn || !isActivePath(pathname)) return
 
     let alreadyFired = false
@@ -261,10 +262,11 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
       document.removeEventListener('visibilitychange', handleVisibility)
       tryFireRef.current = () => {}
     }
-  }, [pathname, isLoggedIn])
+  }, [pathname, isLoggedIn, status])
 
   // ── 스크롤 감지 ──
   useEffect(() => {
+    if (status === 'loading') return
     if (isLoggedIn || !isActivePath(pathname)) return
     // pathname 변경 시 현재 스크롤 위치로 초기화 (scroll effect가 timer effect보다 나중에 실행됨)
     const docH0 = document.documentElement.scrollHeight - window.innerHeight
@@ -280,7 +282,7 @@ export function SignupPromptBanner({ isLoggedIn, createdAt }: Props) {
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [pathname, isLoggedIn])
+  }, [pathname, isLoggedIn, status])
 
   // ── Body scroll lock ──
   useEffect(() => {

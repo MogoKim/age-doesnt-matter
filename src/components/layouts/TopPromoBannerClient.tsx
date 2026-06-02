@@ -1,29 +1,46 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 
-interface TopPromoBannerClientProps {
-  type: 'guest' | 'member'
-  tag:  string
+interface PromoSettings {
+  enabled: boolean
+  tag: string
   text: string
   href: string
 }
 
+interface TopPromoBannerClientProps {
+  guestSettings: PromoSettings | null
+  memberSettings: PromoSettings | null
+}
+
 export default function TopPromoBannerClient({
-  type,
-  tag,
-  text,
-  href,
+  guestSettings,
+  memberSettings,
 }: TopPromoBannerClientProps) {
+  const { status } = useSession()
+  const isLoggedIn = status === 'authenticated'
+
+  const type = isLoggedIn ? 'member' : 'guest'
+  const settings = isLoggedIn ? memberSettings : guestSettings
   const sessionKey = `top-promo-${type}-dismissed`
+
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
-    if (sessionStorage.getItem(sessionKey)) setVisible(false)
+    if (sessionStorage.getItem(sessionKey)) {
+      setVisible(false)
+    } else {
+      setVisible(true)
+    }
   }, [sessionKey])
 
+  if (!settings || !settings.enabled || !settings.text) return null
   if (!visible) return null
+
+  const { tag, text, href } = settings
 
   function handleDismiss() {
     sessionStorage.setItem(sessionKey, '1')

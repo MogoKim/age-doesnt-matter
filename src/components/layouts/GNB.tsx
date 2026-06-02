@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
+import { useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 import NotificationBadge from '@/components/common/NotificationBadge'
 import HeaderFontSizeToggle from '@/components/common/HeaderFontSizeToggle'
@@ -18,15 +19,12 @@ const MENU_ITEMS = [
   { label: '내일찾기',   href: '/jobs' },
 ] as const
 
-interface GNBProps {
-  isLoggedIn?: boolean
-  nickname?: string
-  unreadCount?: number
-}
-
-export default function GNB({ isLoggedIn = false, nickname, unreadCount = 0 }: GNBProps) {
+export default function GNB() {
   const pathname = usePathname()
   const router = useRouter()
+  const { data: session, status } = useSession()
+  const isLoggedIn = status === 'authenticated'
+  const nickname = session?.user?.nickname
   const [query, setQuery] = useState('')
   const [searchError, setSearchError] = useState('')
 
@@ -97,12 +95,11 @@ export default function GNB({ isLoggedIn = false, nickname, unreadCount = 0 }: G
           )}
         </div>
 
-        {/* 글씨 크기 + 알림/로그인 */}
         <div className="flex items-center gap-1 shrink-0">
           <HeaderFontSizeToggle />
           {isLoggedIn ? (
             <>
-              <NotificationBadge initialCount={unreadCount} />
+              <NotificationBadge />
               <Link href="/my" className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-muted-foreground no-underline hover:text-foreground ml-1" aria-label={nickname ? `${nickname} — 내 페이지` : '내 페이지'} title={nickname}>
                 <IconUser size={18} />
               </Link>

@@ -1,11 +1,4 @@
-/**
- * TopPromoBanner — 전 페이지 최상단 홍보 띠 배너 (Server Component)
- * - 비로그인(GUEST): 회원가입 유도 배너
- * - 로그인(MEMBER): 공지·이벤트 배너
- * - auth()는 캐시 밖에서 호출 — unstable_cache 안에서 세션 읽기 금지
- */
 import { unstable_cache } from 'next/cache'
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import TopPromoBannerClient from './TopPromoBannerClient'
 
@@ -72,21 +65,17 @@ const getMemberPromoSettings = unstable_cache(
 )
 
 export default async function TopPromoBanner() {
-  const session = await auth()
-  const settings = session?.user
-    ? await getMemberPromoSettings()
-    : await getGuestPromoSettings()
+  const [guestSettings, memberSettings] = await Promise.all([
+    getGuestPromoSettings(),
+    getMemberPromoSettings(),
+  ])
 
-  if (!settings || !settings.enabled || !settings.text) return null
-
-  const bannerType = session?.user ? 'member' : 'guest'
+  if (!guestSettings && !memberSettings) return null
 
   return (
     <TopPromoBannerClient
-      type={bannerType}
-      tag={settings.tag}
-      text={settings.text}
-      href={settings.href}
+      guestSettings={guestSettings}
+      memberSettings={memberSettings}
     />
   )
 }

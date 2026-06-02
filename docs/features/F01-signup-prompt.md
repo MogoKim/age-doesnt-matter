@@ -69,6 +69,7 @@
 |------|---------|------|
 | 2026-04-27 | Feature 문서 최초 생성 | Feature Lifecycle 도입 |
 | 2026-05-19 | EXCLUDED_PATHS에서 `/faq` 제거 | /faq 페이지 삭제 — /about#faq로 통합됨 |
+| 2026-06-02 | Props 제거, `useSession()` 도입, `status==='loading'` 가드 추가 | P0 2단계 auth island 제거 — CDN 캐시 활성화 |
 
 ---
 
