@@ -136,7 +136,6 @@ export default function KakaoSdkScript() {
     <Script
       id="kakao-js-sdk"
       src={SDK_URL}
-      crossOrigin="anonymous"
       strategy="afterInteractive"
       onReady={handleReady}
       onLoad={handleLoad}
