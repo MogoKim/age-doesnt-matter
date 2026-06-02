@@ -9,7 +9,7 @@ import {
 } from '@/lib/kakao-share-debug'
 
 const SDK_URL = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js'
-const SDK_INTEGRITY = 'sha384-DKYJZ8NLiK8MN4/C5P2dtSmLQ4KwPaoqAfyA/DfmEc1VDxu4yyC7wy6K1Hs90nka'
+// integrity 속성 제거 — SRI 해시 불일치로 스크립트 차단 확인됨 (t1.kakaocdn.net 신뢰됨)
 
 type KakaoDiag = NonNullable<Window['__KAKAO_SHARE_DIAG__']>
 
@@ -136,7 +136,6 @@ export default function KakaoSdkScript() {
     <Script
       id="kakao-js-sdk"
       src={SDK_URL}
-      integrity={SDK_INTEGRITY}
       crossOrigin="anonymous"
       strategy="afterInteractive"
       onReady={handleReady}
