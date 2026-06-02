@@ -1,11 +1,15 @@
 'use client'
 
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { kakaoSignIn } from '@/app/login/actions'
 import { sendGtmEvent, getStoredUtm, getBrowserEnv } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
 
-export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
+export default function LoginForm() {
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl') ?? '/'
+
   async function handleKakaoClick() {
     sendGtmEvent('kakao_button_click', { from: 'login_page', browser_env: getBrowserEnv(), ...getStoredUtm() })
     trackEvent('kakao_button_click', { from: 'login_page', browser_env: getBrowserEnv() })
