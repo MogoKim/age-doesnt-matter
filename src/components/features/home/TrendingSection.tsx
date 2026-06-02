@@ -35,7 +35,7 @@ export default function TrendingSection({ posts }: Props) {
             >
               <span className="relative z-[1] text-body font-bold text-primary-text min-w-[32px] text-center shrink-0 leading-[1.4] motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-110">{index + 1}</span>
               <div className="relative z-[1] flex-1 min-w-0 pr-8">
-                <p className="text-body font-bold text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep group-hover:text-primary-text motion-safe:transition-colors motion-safe:duration-200">{post.title}</p>
+                <p className="text-body font-medium text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep group-hover:text-primary-text motion-safe:transition-colors motion-safe:duration-200">{post.title}</p>
                 <div className="flex items-center gap-2.5 text-caption text-muted-foreground">
                   <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
                   <span className="flex items-center gap-1"><IconHeart size={15} /> {post.likeCount}</span>
