@@ -1,8 +1,9 @@
 import HomeCardLink from '@/components/features/home/HomeCardLink'
 import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
+import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 import { formatTimeAgo } from '@/components/features/community/utils'
-import { IconComment, IconHeart, IconEnergy } from '@/components/icons'
+import { IconComment, IconEnergy } from '@/components/icons'
 
 interface Props {
   posts: PostSummary[]
@@ -34,23 +35,27 @@ export default function HumorSection({ posts }: Props) {
           <li key={post.id}>
             <HomeCardLink
               href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
-              className="relative overflow-hidden group block py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0 after:content-[''] after:absolute after:inset-0 after:pointer-events-none after:opacity-0 after:bg-[linear-gradient(90deg,rgba(255,111,97,0.10),rgba(255,111,97,0.02))] motion-safe:after:transition-opacity motion-safe:after:duration-300 motion-reduce:after:transition-none hover:after:opacity-100"
+              className="relative overflow-hidden group block py-3.5 border-b border-border last:border-b-0 no-underline text-inherit min-h-[52px] active:bg-background active:-mx-4 active:px-4 lg:active:mx-0 lg:active:px-0 after:content-[''] after:absolute after:inset-0 after:pointer-events-none after:opacity-0 after:bg-[linear-gradient(90deg,rgba(255,111,97,0.10),rgba(255,111,97,0.02))] motion-safe:after:transition-opacity motion-safe:after:duration-300 motion-safe:after:ease-out motion-reduce:after:transition-none [@media(hover:hover)]:hover:after:opacity-100"
               section="humor-hot"
               position={index}
               contentId={post.id}
             >
-              <div className="relative z-[1] pr-8">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-caption text-muted-foreground">{post.author.nickname}</span>
+              <div className="relative z-[1]">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold leading-[1.4] text-primary-text motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out motion-safe:[@media(hover:hover)]:group-hover:scale-[1.05]">
+                    {BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}
+                  </span>
+                  <span aria-hidden="true" className="shrink-0 pointer-events-none text-primary-text opacity-0 -translate-x-[6px] motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-out motion-reduce:translate-x-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:translate-x-0">→</span>
                 </div>
-                <p className="text-body font-light text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep group-hover:text-primary-text motion-safe:transition-colors motion-safe:duration-200">{post.title}</p>
-                <div className="flex items-center gap-2.5 text-caption text-muted-foreground">
+                <p className="text-body font-medium text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep motion-safe:transition-colors motion-safe:duration-300 [@media(hover:hover)]:group-hover:text-primary-text">{post.title}</p>
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-caption text-muted-foreground">
+                  <span>{post.author.nickname}</span>
+                  <span aria-hidden="true">·</span>
                   <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
-                  <span className="flex items-center gap-1"><IconHeart size={15} /> {post.likeCount}</span>
+                  <span aria-hidden="true">·</span>
                   <span>{formatTimeAgo(post.createdAt)}</span>
                 </div>
               </div>
-              <span aria-hidden="true" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-primary-text opacity-0 -translate-x-[6px] group-hover:opacity-100 group-hover:translate-x-0 motion-safe:transition-all motion-safe:duration-200">→</span>
             </HomeCardLink>
           </li>
         ))}
