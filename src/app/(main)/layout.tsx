@@ -1,5 +1,4 @@
 import { Suspense } from 'react'
-import { cookies } from 'next/headers'
 import dynamic from 'next/dynamic'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
@@ -33,26 +32,13 @@ const KakaoShareDebugPanel = dynamic(
   { loading: () => null, ssr: false },
 )
 
-const VALID_FONT_SIZES = ['NORMAL', 'LARGE', 'XLARGE'] as const
-type FontSizeValue = typeof VALID_FONT_SIZES[number]
-
-function getLayoutFontSize(): FontSizeValue {
-  try {
-    const stored = cookies().get('unao-font-size')?.value
-    if (stored && VALID_FONT_SIZES.includes(stored as FontSizeValue)) return stored as FontSizeValue
-  } catch {}
-  return 'NORMAL'
-}
-
 export default function MainGroupLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const fontSize = getLayoutFontSize()
-
   return (
-    <FontSizeProvider fontSize={fontSize}>
+    <FontSizeProvider>
       <KakaoSdkScript />
       <ProgressBar />
       <WelcomeToast />

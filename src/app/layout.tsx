@@ -2,9 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import dynamic from 'next/dynamic'
 import Script from 'next/script'
-import { cookies, headers } from 'next/headers'
 import { GTMScript, GTMNoScript } from '@/components/common/GoogleTagManager'
-import { BOT_UA_PATTERN, BOT_IP_PATTERN } from '@/lib/bot-patterns'
 import { ToastProvider } from '@/components/common/Toast'
 import AuthProvider from '@/components/common/AuthProvider'
 import './globals.css'
@@ -26,21 +24,6 @@ const GtagLoader = dynamic(
   () => import('@/components/common/GtagLoader'),
   { loading: () => null, ssr: false },
 )
-
-const VALID_FONT_SIZES = ['NORMAL', 'LARGE', 'XLARGE'] as const
-type FontSizeValue = typeof VALID_FONT_SIZES[number]
-
-function getInitialFontSize(): FontSizeValue {
-  try {
-    const stored = cookies().get('unao-font-size')?.value
-    if (stored && VALID_FONT_SIZES.includes(stored as FontSizeValue)) {
-      return stored as FontSizeValue
-    }
-  } catch {
-    // cookies() 접근 실패 시 기본값
-  }
-  return 'NORMAL'
-}
 
 const pretendard = localFont({
   src: '../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2',
@@ -93,17 +76,14 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const initialFontSize = getInitialFontSize()
-  const fontSizeAttr = initialFontSize !== 'NORMAL' ? initialFontSize : undefined
-  const headersList = headers()
-  const ip = headersList.get('x-real-ip') ?? headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? ''
-  const isBot = headersList.has('x-bot-type') || BOT_UA_PATTERN.test(headersList.get('user-agent') ?? '') || (ip !== '' && BOT_IP_PATTERN.test(ip))
   return (
-    <html lang="ko" className={pretendard.variable} {...(fontSizeAttr ? { 'data-font-size': fontSizeAttr } : {})}>
+    <html lang="ko" className={pretendard.variable}>
       <head>
+        {/* 폰트 크기 flicker 방지 — localStorage 기반, SSR cookies() 의존 없음 */}
+        <script dangerouslySetInnerHTML={{ __html: `try{var s=localStorage.getItem('unao-font-size');if(s==='LARGE'||s==='XLARGE'){document.documentElement.setAttribute('data-font-size',s)}}catch{}` }} />
         <link rel="preconnect" href="https://img.age-doesnt-matter.com" />
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
-        {!isBot && <GTMScript />}
+        <GTMScript />
         <Script
           async
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID ?? 'ca-pub-4117999106913048'}`}
@@ -112,15 +92,15 @@ export default function RootLayout({
         />
       </head>
       <body className={pretendard.className}>
-        {!isBot && <GTMNoScript />}
+        <GTMNoScript />
         <AuthProvider>
           <ToastProvider>
             {children}
             <AddToHomeScreen />
           </ToastProvider>
           <ServiceWorkerRegister />
-          {!isBot && <PageViewTracker />}
-          {!isBot && <GtagLoader />}
+          <PageViewTracker />
+          <GtagLoader />
         </AuthProvider>
       </body>
     </html>
