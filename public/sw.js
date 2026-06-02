@@ -40,17 +40,24 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-// 페치: Network-first (HTML), Cache-first (정적 리소스)
+// 페치: Network-first (HTML), Cache-first (동일 출처 정적 리소스)
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
+
+  // 타사(cross-origin) 요청은 SW가 인터셉트하지 않음
+  // 이유: SW fetch()는 connect-src CSP 적용 대상이며,
+  //       t1.kakaocdn.net 등 외부 도메인은 connect-src에 없어 ERR_FAILED 발생
+  if (url.origin !== self.location.origin) {
+    return
+  }
 
   // API/인증 요청은 캐시하지 않음
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/api/auth')) {
     return
   }
 
-  // 정적 리소스: Cache-first
+  // 동일 출처 정적 리소스: Cache-first
   if (
     request.destination === 'image' ||
     request.destination === 'font' ||
@@ -67,6 +74,9 @@ self.addEventListener('fetch', (event) => {
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
           }
           return response
+        }).catch(() => {
+          // 네트워크 실패 시 캐시 재시도, 없으면 네트워크 에러 응답
+          return caches.match(request).then((fallback) => fallback ?? Response.error())
         })
       })
     )
