@@ -606,9 +606,9 @@
       <div class="section-header">
         <div>
           <h2 class="section-title">P0 성능 — CDN 정적화 완료 <span style="font-size:0.75rem;font-weight:500;color:#888;">(2026-06-02)</span></h2>
-          <p class="section-desc">홈·로그인 등 주요 페이지의 force-dynamic 트리거를 제거해 Vercel CDN HIT를 활성화했습니다. warm TTFB 280–660ms → CDN HIT 시 50ms 이하.</p>
+          <p class="section-desc">홈·로그인 등 주요 페이지의 force-dynamic 트리거를 제거해 Vercel CDN HIT를 활성화했습니다. warm TTFB 280–660ms → CDN HIT 시 50ms 이하. 홈 리스트 카드 hover 인터랙션도 동일 작업 내 완료 (CDN HIT 유지).</p>
         </div>
-        <span class="badge done">HIT 확인 3종</span>
+        <span class="badge done">CDN HIT 3종 + UX 1건</span>
       </div>
       <div class="table-wrap">
         <table>
@@ -644,6 +644,13 @@
               <td class="goal">유지</td>
             </tr>
             <tr>
+              <td class="task">홈 <code>/</code> 리스트 카드</td>
+              <td>TrendingSection/StoriesSection/HumorSection hover — 코랄 배경·제목 색·화살표 (순수 Tailwind CSS)</td>
+              <td class="status"><span class="badge done">✅ 완료</span></td>
+              <td><code>a130739</code></td>
+              <td class="goal">Static·CDN HIT 유지 확인. use client 없음, JS 없음</td>
+            </tr>
+            <tr>
               <td class="task"><code>/best</code></td>
               <td>await searchParams 기반 탭/페이징 → /api/best route 신설 필요</td>
               <td class="status"><span class="badge wait">⏸️ 보류</span></td>
@@ -671,7 +678,14 @@
         <article class="task-card"><div class="task-card-head"><h3>홈 <code>/</code> 정적화</h3><span class="badge done">✅ HIT</span></div><div class="field"><span class="field-label">작업</span><span class="field-value">force-dynamic 제거 + auth() wrapper 4개 → useSession() 전환</span></div><div class="field"><span class="field-label">커밋</span><span class="field-value">7aad5cb</span></div><div class="field"><span class="field-label">비고</span><span class="field-value">MyActivity 임시 비노출. x-vercel-cache: HIT 확인</span></div></article>
         <article class="task-card"><div class="task-card-head"><h3>로그인 <code>/login</code> 정적화</h3><span class="badge done">✅ HIT</span></div><div class="field"><span class="field-label">작업</span><span class="field-value">await searchParams → useSearchParams() 클라이언트 전환</span></div><div class="field"><span class="field-label">커밋</span><span class="field-value">9aee463</span></div><div class="field"><span class="field-label">비고</span><span class="field-value">x-vercel-cache: HIT 운영 검증 완료</span></div></article>
         <article class="task-card"><div class="task-card-head"><h3>약관 · 개인정보 · 운영규칙</h3><span class="badge done">✅ HIT</span></div><div class="field"><span class="field-label">상태</span><span class="field-value">P0 1단계에서 정적화 완료 / 유지</span></div></article>
+        <article class="task-card"><div class="task-card-head"><h3>홈 <code>/</code> 리스트 카드 hover</h3><span class="badge done">✅ 완료</span></div><div class="field"><span class="field-label">작업</span><span class="field-value">TrendingSection/StoriesSection/HumorSection — 코랄 배경·제목 색·화살표</span></div><div class="field"><span class="field-label">커밋</span><span class="field-value">a130739</span></div><div class="field"><span class="field-label">비고</span><span class="field-value">순수 Tailwind CSS. Static·CDN HIT 유지</span></div></article>
         <article class="task-card"><div class="task-card-head"><h3>베스트 · 매거진 · 잡스 · 커뮤니티</h3><span class="badge wait">⏸️ 보류</span></div><div class="field"><span class="field-label">이유</span><span class="field-value">searchParams/force-dynamic 이중 blocker 또는 API route 신설 필요</span></div><div class="field"><span class="field-label">비고</span><span class="field-value">별도 스프린트에서 진행</span></div></article>
+      </div>
+      <div style="margin-top:1.5rem;padding:1rem 1.25rem;background:var(--bg-section,#f9f9f9);border-radius:8px;border-left:3px solid #4caf50;font-size:0.85rem;color:#444;">
+        <strong>다음 추천 업무</strong> — P0 성능/홈 UX 완료 기준<br>
+        · <strong>P1-1</strong> 페르소나 bio/style 2차 진단 (read-only, 구현 금지)<br>
+        · <strong>P1-10</strong> PostCTA 가입/앱 설치 유도 — 홈 Static 유지 조건 하에 구현<br>
+        · 후속 보류: /best 정적화(API route 허용 시), MyActivity 복원(/api/home/counts 신설 시), 폰트 크기 flicker QA
       </div>
     </section>
 

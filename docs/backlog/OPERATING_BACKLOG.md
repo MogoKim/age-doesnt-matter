@@ -59,6 +59,9 @@
   - `/best`: await searchParams → /api/best route 신설 필요 (현재 금지 조건)
   - `/magazine`, `/jobs`: force-dynamic + searchParams 이중 blocker, 대규모 재설계 필요
   - `/community/*`: 목록 force-dynamic + searchParams, 상세 page.tsx 자체 auth() 호출
+- 홈 리스트 카드 hover 인터랙션 완료:
+  - TrendingSection/StoriesSection/HumorSection — 코랄 배경·제목 색·화살표 (`a130739`)
+  - 순수 Tailwind CSS. / Static·CDN HIT 유지 확인. use client·JS 추가 없음
 - 마지막 업데이트: 2026-06-02
 
 ---
