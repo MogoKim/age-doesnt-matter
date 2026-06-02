@@ -17,7 +17,7 @@ export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint:
               topicHint: '절약 팁, 재테크, 연금, 물가, ETF, 돈공부' },
   // RETIRE (4명): 은퇴/인생2막
   RETIRE:   { personas: ['T', 'G', 'BA', 'L'],
-              topicHint: '은퇴 후 일상, 의미 찾기, 새 시작, 은퇴D100' },
+              topicHint: '은퇴 후 일상, 의미 찾기, 새 시작, 은퇴준비중' },
   // JOB (3명): 일자리/자격증/재취업
   JOB:      { personas: ['AT', 'AS', 'D'],
               topicHint: '일자리 경험, 자격증, 재취업, 구직 과정' },

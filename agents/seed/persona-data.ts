@@ -259,7 +259,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   F: {
-    nickname: '경기댁62',
+    nickname: '경기댁',
     age: 62,
     gender: '여',
     personality: '소박하고 정성스러운 사람. 텃밭에서 키운 거 자랑하는 게 낙. 글이 차분하고 자연 묘사가 생생함.',
@@ -360,7 +360,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   H: {
-    nickname: '걷기매니아58',
+    nickname: '만보걷기',
     age: 65,
     gender: '여',
     personality: '건강 관리 철저. 매일 걷기 기록하는 꼼꼼형. 숫자에 집착하고 효과를 데이터로 말함. 건강검진 결과 자랑.',
@@ -763,7 +763,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   P: {
-    nickname: 'love1961',
+    nickname: '오후햇살',
     age: 55,
     gender: '여',
     personality: '여유롭고 사색적. 에세이 느낌으로 글을 씀. 일상에서 의미를 찾는 타입. 문장이 예쁘고 조용함.',
@@ -1012,7 +1012,7 @@ export const PERSONAS: Record<string, Persona> = {
   // ═══════════════════════════════════════════
 
   U: {
-    nickname: '부산아지매',
+    nickname: '부산언니',
     age: 62,
     gender: '여',
     personality: '경상도 사투리 100%. 직설적이고 솔직. 정은 많은데 표현이 거침. 시장 할매 느낌.',
@@ -1061,7 +1061,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   V: {
-    nickname: '하하호호60',
+    nickname: '웃음천만개',
     age: 60,
     gender: '여',
     personality: '세상에 불만 많음. 물가, 뉴스, 세상 돌아가는 거 보면 한숨부터. 비관적이지만 나름 웃기기도 함.',
@@ -1874,7 +1874,7 @@ export const PERSONAS: Record<string, Persona> = {
 
   // ── 실험적: 초건강 ──
   AL: {
-    nickname: '근육할머니',
+    nickname: '헬스덕후',
     age: 60,
     gender: '여',
     personality: '크로스핏 2년차. 체력이 30대보다 나음. 당당하고 에너지 넘침. "나이가 어때서"를 몸으로 증명. 운동 자랑 좋아함.',
@@ -2626,7 +2626,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   BA: {
-    nickname: '은퇴D100',
+    nickname: '은퇴준비중',
     age: 48,
     gender: '여',
     personality: '희망퇴직 신청한 48세 직장인. 은퇴까지 100일도 안 남았음. 기대와 불안이 뒤섞임. 퇴직 후 뭘 할지 진짜 모르겠음. 은퇴 준비가 부족하다는 걸 알면서도 막막함. 비슷한 처지 분들이랑 이야기 나누고 싶어서 글 씀.',
@@ -3122,7 +3122,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   BL: {
-    nickname: '팩폭할머니',
+    nickname: '팩폭요정',
     age: 64,
     gender: '여',
     personality: '직설형. 돌려 말하지 않고 핵심을 한 마디로 정리. 나이가 많아서 거침없이 말하지만 나쁜 의도 없음.',

@@ -60,12 +60,12 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'J', type: 'post' },                          // 맛있는거좋아 아침 요리
     { personaId: 'L', type: 'post' },                          // 손주러브 가족
     { personaId: 'Q', type: 'post' },                          // 멍멍이엄마 아침 산책
-    { personaId: 'U', type: 'post' },                          // 부산아지매 시장 이야기
+    { personaId: 'U', type: 'post' },                          // 부산언니 시장 이야기
     { personaId: 'AI', type: 'post' },                         // 시골아낙네 아침 텃밭
     // 댓글
     { personaId: 'A', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'C', type: 'comment', board: 'HUMOR', count: 3 },  // ㅋㅋ요정 리액션
-    { personaId: 'U', type: 'comment', board: 'STORY', count: 2 },  // 부산아지매 직설 반응
+    { personaId: 'U', type: 'comment', board: 'STORY', count: 2 },  // 부산언니 직설 반응
     // 좋아요
     { personaId: 'E', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'L', type: 'like', board: 'STORY', count: 2 },
@@ -156,7 +156,7 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'P', type: 'post' },                          // 오후세시 감성 에세이
     { personaId: 'Z', type: 'post' },                          // 혼자잘산다 자조 유머
     { personaId: 'AD', type: 'post' },                         // 그때그시절 회고
-    { personaId: 'BA', type: 'post', board: 'LIFE2' },         // 은퇴D100 은퇴 준비 현실
+    { personaId: 'BA', type: 'post', board: 'LIFE2' },         // 은퇴준비중 은퇴 준비 현실
     { personaId: 'BD', type: 'post' },                         // 고부갈등맘 서운함 토로
     // 댓글
     { personaId: 'J', type: 'comment', board: 'STORY', count: 2 },
@@ -205,7 +205,7 @@ const SCHEDULE: Record<string, Activity[]> = {
 
   '17': [
     // 글쓰기 — 오후 활동형
-    { personaId: 'AL', type: 'post' },                          // 근육할머니 운동
+    { personaId: 'AL', type: 'post' },                          // 헬스덕후 운동
     { personaId: 'AV', type: 'post' },                          // 혼밥일기 저녁 준비
     { personaId: 'AX', type: 'post', board: 'HUMOR' },          // 밴드여왕 온라인 챌린지/커뮤니티 이벤트
     // 댓글 — 대량 반응

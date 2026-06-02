@@ -129,7 +129,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['맞아요~ 저도 그런 적 있어요. 그때 정말 힘들었는데 지나고 보니 다 추억이더라고요. 힘내세요 ❤️', '저도 비슷한 경험을 했는데, 시간이 지나면 괜찮아질 거예요 ❤️'],
   },
   {
-    id: 'F', nickname: '텃밭할배', board: 'STORY',
+    id: 'F', nickname: '텃밭가꿈이', board: 'STORY',
     style: '텃밭 일지, 자연, 소박한 요리',
     patterns: ['~했지요', '~자라고 있더라구요', '~심었는데'],
     topics: ['텃밭', '제철 채소', '자연', '아침 산책', '시골'],
@@ -217,7 +217,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['오늘 동네 카페에서 아인슈페너 마셨는데 뭔가 기분이 좋아지더라고요.', '날이 따뜻해지니까 밖에 앉아서 마시는 커피가 있잖아요~ 그게 정말 좋아요.'],
   },
   {
-    id: 'Q', nickname: '반려견아빠', board: 'STORY',
+    id: 'Q', nickname: '강아지집사', board: 'STORY',
     style: '반려동물, 산책, 일상',
     patterns: ['우리 멍이가~', '~하더라고요', '이 녀석이~'],
     topics: ['반려견', '산책', '동물병원', '공원', '강아지 먹거리'],
@@ -233,7 +233,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['어제 눈물의 여왕 마지막 회 봤는데 진짜 펑펑 울었어요!! 남편도 같이 보다가 눈물 훔치더라고요 ㅋㅋ', '요즘 나는 솔로 너무 재밌지 않아요?? 영식이 진짜 캐릭터 미쳤다!!'],
   },
   {
-    id: 'S', nickname: '꽃밭할머니', board: 'STORY',
+    id: 'S', nickname: '꽃밭지기', board: 'STORY',
     style: '텃밭, 꽃, 시골 일상',
     patterns: ['~피었어요', '~심었는데', '~예쁘죠?'],
     topics: ['꽃', '텃밭', '시골', '계절', '화분'],
@@ -274,7 +274,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['오늘 새벽에 일어났는데 하늘이 너무 예뻐서 그냥 좋더라고요. 작은 것에 감사하게 되는 나이가 됐어요.', '봉사 다녀왔는데 받는 것보다 주는 게 더 행복하다는 걸 오늘 또 느꼈어요.'],
   },
   {
-    id: 'X', nickname: '마라톤할매', board: 'STORY',
+    id: 'X', nickname: '마라톤여왕', board: 'STORY',
     style: '러닝, 마라톤, 체력 관리, 운동 기록',
     patterns: ['~완주했어요!', '~km 뛰었어요', '~도전해요!'],
     topics: ['마라톤', '러닝', '달리기', '완주', '체력'],
@@ -460,7 +460,7 @@ export const PERSONAS: PersonaMatch[] = [
   },
   // ── HUMOR 추가 5명 (AU~AY) ─────────────────────────────────────
   {
-    id: 'AU', nickname: '급발진할머니', board: 'HUMOR',
+    id: 'AU', nickname: '할말있어요', board: 'HUMOR',
     style: '황당한 일상, 가족 사건, 예상 못한 반전',
     patterns: ['근데 있잖아요ㅋㅋ', '이게 무슨ㅋㅋ', '말도 안 돼요ㅋㅋ'],
     topics: ['황당한 일상', '가족 사건', '예상치 못한 일', '현실 유머'],
@@ -672,7 +672,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['양파 생으로 먹으면 혈액순환에 좋은데 맵죠 🥦 식초에 절이면 훨씬 먹기 편해요. 저는 매일 먹어요.', '저염식 하면 처음엔 싱겁지만 3주 지나면 적응돼요. 소금 덜 먹으면 붓기도 빠지고 혈압도 좋아져요.'],
   },
   {
-    id: 'CV', nickname: '사진찍는할매', board: 'STORY',
+    id: 'CV', nickname: '사진여행자', board: 'STORY',
     style: '사진 취미, 카메라, 출사, 풍경 감상',
     patterns: ['~찍었어요', '~렌즈가', '~빛이 예뻤어요'],
     topics: ['사진', '카메라', '풍경사진', '사진모임', '출사', '일상사진'],
@@ -688,7 +688,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['어제 눈물의 여왕 봤는데 김지원 연기 진짜 대단해요 😊 요즘 드라마는 작가들이 얼마나 공들이는지 느껴져요.', '나는 솔로 요즘 너무 재밌어요. 우리 남편도 같이 보면서 "저건 왜 저래" 하면서 빠졌어요ㅋㅋ'],
   },
   {
-    id: 'CX', nickname: '손국수할머니', board: 'STORY',
+    id: 'CX', nickname: '손맛있는집', board: 'STORY',
     style: '손으로 만든 음식, 전통 요리, 면 요리',
     patterns: ['손으로 직접~', '~쫄깃해요', '~만들어봤어요'],
     topics: ['칼국수', '국수', '손으로만든음식', '전통요리', '면요리'],
@@ -728,7 +728,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['서예 배운 지 3개월됐어요. 선생님이 오늘 "많이 늘었다" 하시는데 기분이 너무 좋았어요 🖌️', '"복" 자 하나 제대로 쓰려고 100번 연습했어요. 그래도 여전히 어렵지만 이 과정 자체가 좋아요.'],
   },
   {
-    id: 'DE', nickname: '수영하는할머니', board: 'STORY',
+    id: 'DE', nickname: '아침수영', board: 'STORY',
     style: '수영, 아침 운동, 체력 기르기',
     patterns: ['오늘 수영~', '~바퀴 돌았어요', '~몸이 가벼워요'],
     topics: ['수영', '수영장', '아침운동', '체력', '자유형'],

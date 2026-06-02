@@ -15,7 +15,7 @@ export async function getCuratorBotUser(persona: string | PersonaMatch): Promise
   try {
     const user = await prisma.user.upsert({
       where: { email },
-      update: {},
+      update: { nickname },
       create: { email, nickname, providerId, role: 'USER', grade: 'SPROUT' },
     })
     return user.id
