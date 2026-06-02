@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>카카오 로그인 정책 문서 — 우리 나이가 어때서</title>
+  <title>카카오 로그인/공유 정책 문서 — 우리 나이가 어때서</title>
   <style>
     :root {
       --primary: #FEE500;
@@ -401,7 +401,7 @@
   <nav class="sidebar">
     <div class="sidebar-logo">
       <div class="badge">우나어</div>
-      <h2>카카오 로그인<br>정책 문서</h2>
+      <h2>카카오 로그인/공유<br>정책 문서</h2>
     </div>
     <div class="sidebar-nav-title">목차</div>
     <a href="#arch">1. 아키텍처 개요</a>
@@ -423,11 +423,11 @@
   <main>
     <div class="doc-header">
       <div class="meta">최초 작성: 2026-05-18 &nbsp;|&nbsp; 대상: 우리 나이가 어때서 (age-doesnt-matter.com)</div>
-      <h1>카카오 로그인 정책 문서</h1>
+      <h1>카카오 로그인/공유 정책 문서</h1>
       <div class="warning-banner">
-        <strong>⚠️ 이 문서를 먼저 읽지 않고 카카오 인증 코드를 수정하지 마십시오.</strong>
-        이 문서는 인증 관련 모든 결정의 단일 진실의 원천입니다.
-        위반 시 전체 로그인 불가 사태가 발생합니다. (실제 발생 이력: 2026-03-20, 2026-05-18)
+        <strong>⚠️ 이 문서를 먼저 읽지 않고 카카오 인증/공유 코드를 수정하지 마십시오.</strong>
+        이 문서는 카카오 로그인과 카카오톡 공유 관련 결정의 단일 진실의 원천입니다.
+        위반 시 전체 로그인 불가 또는 공유 불가 사태가 발생합니다. (실제 발생 이력: 2026-03-20, 2026-05-18, 2026-06-02)
       </div>
     </div>
 
@@ -569,6 +569,16 @@
               <td style="color:var(--danger);font-weight:700;">설정하지 말 것 ⛔</td>
               <td>—</td>
             </tr>
+            <tr>
+              <td><code>NEXT_PUBLIC_KAKAO_JS_KEY</code></td>
+              <td>카카오 JavaScript 키 (공개키, 값 출력 금지)</td>
+              <td>Production / Preview / Local 필요 시</td>
+            </tr>
+            <tr>
+              <td><code>NEXT_PUBLIC_APP_URL</code></td>
+              <td><code>https://age-doesnt-matter.com</code></td>
+              <td>All Environments</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -585,6 +595,13 @@ vercel env pull --environment=production
 
 # 가져온 파일에서 확인
 cat .env.production.local | grep KAKAO</code></pre>
+
+      <div class="alert alert-info">
+        <strong>카카오 공유용 JavaScript 키 확인 원칙</strong>
+        <code>NEXT_PUBLIC_KAKAO_JS_KEY</code>는 브라우저에 노출되는 공개키이지만, 운영 로그/문서에는 실제 값을 쓰지 않습니다.
+        디버그 로그에서는 <code>keyPresent: true</code>, <code>keyLength: 32</code> 정도만 확인합니다.
+        키가 존재하고 <code>INIT_OK</code>가 발생해도 카카오톡 앱 설치/로그인/브라우저 시크릿 정책까지 보장하는 것은 아닙니다.
+      </div>
     </section>
 
     <!-- 4. DB 스키마 -->
@@ -832,6 +849,112 @@ vercel --prod --force</code></pre>
         </div>
       </div>
 
+      <div class="incident">
+        <div class="incident-header">
+          <span class="severity">사고 4</span>
+          <span class="date">2026-06-02</span>
+          <h3>카카오톡 공유 P0 — Service Worker가 Kakao SDK를 차단</h3>
+        </div>
+        <div class="incident-body">
+          <dl>
+            <dt>증상</dt>
+            <dd>
+              게시글 상세에서 <code>공유 → 카카오톡</code> 클릭 시 fallback toast 발생.
+              여러 환경에서 <code>window.Kakao === undefined</code>, <code>SCRIPT_ERROR</code>, <code>SDK_NOT_READY_AT_CLICK</code> 확인.
+              일부 시크릿/비로그인 환경에서는 <code>talk-apps.kakao.com</code> 다운로드 안내 또는 <code>about:blank</code>이 보였으나, 이는 별도 브릿지/세션 단계로 분리.
+            </dd>
+            <dt>목표</dt>
+            <dd>
+              카카오 SDK 로드, 초기화, <code>sendDefault()</code> 호출까지 정상화하고
+              일반 모바일 Chrome, 데스크탑 Chrome, TWA 실사용 경로에서 공유 가능 상태를 복구.
+            </dd>
+            <dt>진짜 원인</dt>
+            <dd>
+              <code>public/sw.js</code>의 fetch handler가 <code>request.destination === 'script'</code> 조건으로
+              Kakao SDK 요청(<code>https://t1.kakaocdn.net/kakao_js_sdk/.../kakao.min.js</code>)까지 인터셉트함.
+              Service Worker 실행 컨텍스트의 CSP <code>connect-src</code>에는 <code>t1.kakaocdn.net</code>이 없어
+              SW 내부 <code>fetch(request)</code>가 <code>net::ERR_FAILED</code>로 실패.
+              결과적으로 Kakao SDK 미로드 → <code>window.Kakao undefined</code> → fallback 발생.
+            </dd>
+            <dt>잘못된 가설</dt>
+            <dd>
+              SRI 해시 불일치, <code>crossOrigin</code> CORS 강제, 도메인 미등록, Vercel 키 누락도 순차적으로 의심했으나
+              최종 P0 원인은 Service Worker의 타사 스크립트 인터셉트였다.
+              카카오 Developers 도메인/앱키 문제는 로그인 상태 웹 공유 성공 및 모바일/TWA 성공으로 사실상 배제.
+            </dd>
+            <dt>해결</dt>
+            <dd>
+              커밋 <code>25478fd</code>:
+              <code>public/sw.js</code>에서 cross-origin 요청은 fetch handler 초반에 즉시 <code>return</code>.
+              동일 출처 정적 리소스만 cache-first 처리.
+              static fetch chain에 <code>.catch()</code>를 추가해 rejected promise 방치 방지.
+              <pre style="margin-top:8px;"><code>const url = new URL(request.url)
+
+if (url.origin !== self.location.origin) {
+  return
+}</code></pre>
+            </dd>
+            <dt>검증</dt>
+            <dd>
+              Playwright before/after로 확인.
+              Before: Kakao SDK <code>net::ERR_FAILED</code>, <code>SCRIPT_ERROR</code>, <code>window.Kakao undefined</code>.
+              After: Kakao SDK 200 OK, <code>SCRIPT_LOADED</code>, <code>INIT_OK</code>, <code>SCRIPT_READY</code>.
+              이후 iPhone Chrome 로그인 상태, 데스크탑 Chrome 로그인 상태, TWA에서 실제 공유 성공 확인.
+            </dd>
+            <dt>UX 정리</dt>
+            <dd>
+              커밋 <code>2816740</code>:
+              fallback toast를 <code>카카오 공유가 안 되어 링크를 복사했어요</code>에서
+              <code>카카오톡을 열 수 없어 링크를 복사했어요</code>로 변경.
+              카카오톡 앱 없음/로그인 안 됨/업데이트 필요/시크릿 제한은 카카오 화면이 처리하므로,
+              우리 서비스가 전체 공유 실패처럼 표현하지 않는다.
+            </dd>
+            <dt>교훈</dt>
+            <dd>
+              외부 SDK가 로드되지 않을 때는 SRI/CORS/env/도메인만 보지 말고
+              <strong>Service Worker가 타사 리소스를 인터셉트하는지</strong> 반드시 확인한다.
+              특히 SW 내부 <code>fetch()</code>는 페이지의 <code>script-src</code>가 아니라 SW 응답 헤더의 <code>connect-src</code> 영향을 받는다.
+            </dd>
+          </dl>
+        </div>
+      </div>
+
+      <h3>카카오 공유 장애 발생 시 즉시 체크리스트</h3>
+      <pre><code># 1. 브라우저 런타임 상태 확인
+window.Kakao
+window.Kakao?.isInitialized?.()
+typeof window.Kakao?.Share?.sendDefault
+document.getElementById('kakao-js-sdk')
+
+# 2. 모바일/실기기 디버그
+게시글 상세 URL에 ?kakaoDebug=1 추가
+공유 → 카카오톡 클릭
+디버그 패널 Copy logs 확인
+
+# 3. 반드시 분리해서 판단할 이벤트
+SCRIPT_COMPONENT_MOUNTED
+SCRIPT_LOADED
+INIT_OK
+SDK_NOT_READY_AT_CLICK
+SEND_DEFAULT_START
+SEND_DEFAULT_RETURNED
+SEND_DEFAULT_THROW
+WINDOW_ERROR
+UNHANDLED_REJECTION
+
+# 4. Service Worker/CSP 확인
+curl -L https://age-doesnt-matter.com/sw.js
+curl -I https://age-doesnt-matter.com/sw.js
+# public/sw.js가 cross-origin 요청을 즉시 return 하는지 확인
+# connect-src에 없는 외부 스크립트를 SW가 fetch하지 않는지 확인</code></pre>
+
+      <div class="alert alert-success">
+        <strong>2026-06-02 최종 운영 판정</strong>
+        카카오 공유 P0는 해결 완료.
+        일반 모바일 Chrome, 데스크탑 Chrome, TWA에서 성공 확인.
+        시크릿 모드의 다운로드 안내 또는 <code>about:blank</code>은 카카오 앱/세션/브라우저 정책 특수 케이스로 P0 범위에서 제외.
+      </div>
+
       <h3>KOE010 발생 시 즉시 체크리스트</h3>
       <pre><code># 1. 프로덕션 실제 환경변수 확인
 vercel env pull --environment=production
@@ -865,6 +988,8 @@ curl -X POST https://kauth.kakao.com/oauth/token \
             <tr><td><code>conform</code> 함수 제거</td><td>oauth4webapi v3 파싱 실패</td></tr>
             <tr><td><code>token.url</code> 제거</td><td>authjs.dev로 fallback → token 교환 실패</td></tr>
             <tr><td><code>auth.config.ts</code>에 Prisma import</td><td>Edge Runtime에서 Prisma 불가 → 미들웨어 크래시</td></tr>
+            <tr><td><code>public/sw.js</code>가 타사 스크립트 요청을 인터셉트</td><td>Kakao SDK 등 외부 SDK 미로드 → 공유 불가</td></tr>
+            <tr><td>카카오 공유 실패 시 로그인 로직/NextAuth 수정</td><td>공유와 로그인은 별도 경로. 원인 분리 전 인증 코드를 건드리면 2차 장애 발생</td></tr>
           </tbody>
         </table>
       </div>
@@ -878,6 +1003,7 @@ curl -X POST https://kauth.kakao.com/oauth/token \
             <tr><td><code>NEXTAUTH_SECRET</code> 사용</td><td>NextAuth v5는 <code>AUTH_SECRET</code>만 인식</td></tr>
             <tr><td>Default REST API Key(<code>3a0c2b...</code>) 사용</td><td>시크릿이 다른 키 박스에 속함 → KOE010</td></tr>
             <tr><td>ID와 Secret을 다른 플랫폼 키에서 조합</td><td>KOE010</td></tr>
+            <tr><td><code>NEXT_PUBLIC_KAKAO_JS_KEY</code> 값을 로그/문서에 그대로 출력</td><td>공개키라도 운영 문서에는 keyPresent/keyLength만 기록</td></tr>
           </tbody>
         </table>
       </div>
@@ -925,6 +1051,17 @@ curl -X POST https://kauth.kakao.com/oauth/token \
         <li>변경 후 <code>vercel --prod --force</code> 재배포 필수</li>
         <li><code>/api/health/auth</code> 200 응답 확인 후 완료 선언</li>
       </ul>
+
+      <h3>카카오 공유 코드 또는 Service Worker 수정 시</h3>
+      <ul class="checklist">
+        <li><code>git status --short</code>로 기존 변경 확인</li>
+        <li><code>src/components/common/KakaoSdkScript.tsx</code>의 SDK URL, integrity, crossOrigin 상태 확인</li>
+        <li><code>src/lib/kakao-share.ts</code>에서 <code>sendDefault()</code> 전 await가 없는지 확인</li>
+        <li><code>public/sw.js</code>가 cross-origin 요청을 즉시 return 하는지 확인</li>
+        <li>일반 모바일 브라우저와 TWA를 분리해 판단</li>
+        <li>시크릿/비로그인 브라우저 동작을 P0 성공 기준으로 삼지 않음</li>
+        <li>공유 문제를 이유로 NextAuth/OAuth/카카오 로그인 코드를 수정하지 않음</li>
+      </ul>
     </section>
 
     <!-- 12. 변경 후 검증 -->
@@ -955,6 +1092,22 @@ ORDER BY "createdAt" DESC;</code></pre>
         <li>iOS Safari 실기기 로그인 성공</li>
         <li>1시간 이내 BotLog AUTH_FAILURE 0건</li>
       </ul>
+
+      <h3>카카오 공유 변경 후 확인</h3>
+      <pre><code># 프로덕션 SW 반영 확인
+curl -L https://age-doesnt-matter.com/sw.js | sed -n '43,82p'
+
+# 브라우저 콘솔/Playwright에서 확인
+window.Kakao
+window.Kakao?.isInitialized?.()
+typeof window.Kakao?.Share?.sendDefault</code></pre>
+
+      <div class="alert alert-info">
+        <strong>공유 완료 기준</strong>
+        <code>SCRIPT_LOADED</code>, <code>INIT_OK</code>, <code>SEND_DEFAULT_START</code>, <code>SEND_DEFAULT_RETURNED</code> 확인.
+        일반 모바일 Chrome/Safari 또는 데스크탑 Chrome에서 실제 공유 화면 확인.
+        TWA는 Playwright로 최종 검증 불가하므로 실기기 확인을 별도로 기록합니다.
+      </div>
     </section>
 
     <!-- 부록 -->
@@ -973,6 +1126,13 @@ ORDER BY "createdAt" DESC;</code></pre>
             <tr><td>prisma/schema.prisma</td><td>DB 스키마</td></tr>
             <tr><td>src/lib/auth-monitor.ts</td><td>Auth 모니터</td></tr>
             <tr><td>src/app/api/health/auth/route.ts</td><td>헬스체크 API</td></tr>
+            <tr><td>src/components/common/KakaoSdkScript.tsx</td><td>카카오 JavaScript SDK 로드/초기화</td></tr>
+            <tr><td>src/lib/kakao-share.ts</td><td>카카오톡 공유 유틸, fallback 링크 복사</td></tr>
+            <tr><td>src/lib/kakao-share-debug.ts</td><td>카카오 공유 모바일 디버그 로그</td></tr>
+            <tr><td>src/components/common/KakaoShareDebugPanel.tsx</td><td><code>?kakaoDebug=1</code> 디버그 패널</td></tr>
+            <tr><td>src/components/features/community/ActionBar.tsx</td><td>게시글 상세 공유 버튼</td></tr>
+            <tr><td>src/components/common/ShareButton.tsx</td><td>공통 공유 버튼</td></tr>
+            <tr><td>public/sw.js</td><td>Service Worker. 타사 SDK 요청 인터셉트 금지</td></tr>
             <tr><td>memory/reference_kakao_oauth.md</td><td>OAuth 참고 메모리</td></tr>
             <tr><td>docs/kakao-auth-policy.md</td><td>이 문서 (마크다운 원본)</td></tr>
           </tbody>
@@ -981,7 +1141,7 @@ ORDER BY "createdAt" DESC;</code></pre>
     </section>
 
     <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:40px 0 20px;border-top:1px solid var(--border);margin-top:20px;">
-      우리 나이가 어때서 — 카카오 로그인 정책 문서 v1.0 (2026-05-18)
+      우리 나이가 어때서 — 카카오 로그인/공유 정책 문서 v1.1 (2026-06-02)
     </div>
   </main>
 </div>
