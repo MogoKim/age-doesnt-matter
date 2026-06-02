@@ -34,7 +34,7 @@ export default function StoriesSection({ posts }: Props) {
           <li key={post.id} className="group">
             <HomeCardLink
               href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
-              className="group block py-3.5 border-b border-border/60 last:border-b-0 no-underline text-inherit min-h-[52px] motion-safe:transition-[border-color] motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:hover:border-primary active:border-primary"
+              className="group block py-3.5 border-b border-border/60 no-underline text-inherit min-h-[52px] motion-safe:transition-[border-color] motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:hover:border-primary active:border-primary"
               section="stories-hot"
               position={index}
               contentId={post.id}
