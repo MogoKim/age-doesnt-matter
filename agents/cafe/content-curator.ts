@@ -23,6 +23,7 @@ import {
   toCuratedSummary,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
+import { DLXOGNS01_ALLOWED_BOARDS } from './config.js'
 import { generateCommunitySlug } from '../core/slug.js'
 import { computeUsableCount } from './compute-usable-count.js'
 
@@ -71,6 +72,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     isUsable: true, usedAt: null, isPopular: false,
     imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true },
     commentCrawled: true,  // topComments가 한 번이라도 수집된 글만 (usable 필터 사전 조건)
+    NOT: { AND: [{ cafeId: 'dlxogns01' }, { boardName: { notIn: DLXOGNS01_ALLOWED_BOARDS } }] },
   }
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
   const firstWord = topicWords[0] ?? topic
@@ -408,6 +410,7 @@ export async function main() {
     where: {
       killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true },
       crawledAt: { gte: sevenDaysAgo },  // crawledAt은 항상 설정됨(NOT NULL) — postedAt null 허용
+      NOT: { AND: [{ cafeId: 'dlxogns01' }, { boardName: { notIn: DLXOGNS01_ALLOWED_BOARDS } }] },
     },
     orderBy: { killerScore: 'desc' },
     take: 2,

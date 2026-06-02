@@ -113,71 +113,33 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/dlxogns01',
     numericId: 23676262,
     allArticlesUrl: 'https://cafe.naver.com/f-e/cafes/23676262/menus/0?viewType=L',
+    // P1-1: 은퇴후50년은 창업자 지정 게시판만 수집한다.
+    // crawl-only 모드의 전체글보기(allArticlesUrl) 우회를 막고 boards 루프만 사용한다.
+    legacyCrawler: true,
     boards: [
-      // ── 인기글 (베스트 게시판 menuId=107 — wgang과 달리 일반 게시판 방식으로 접근) ──
-      { name: '인기글', menuId: 107, maxPages: 2, priority: 'high', category: 'general' },
-
-      // ── 은퇴 후 삶 (RETIRE/JOB/MONEY) ──
+      // ── 창업자 지정 허용 게시판 13개만 수집 (2026-06-02) ──
       { name: '귀농·귀촌 이야기', menuId: 198, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '일자리·자격증 이야기', menuId: 149, maxPages: 2, priority: 'high', category: 'job' },
-      { name: '사업·자영업 이야기', menuId: 148, maxPages: 2, priority: 'high', category: 'job' },
-      { name: '투자 이야기(금융)', menuId: 106, maxPages: 2, priority: 'high', category: 'finance' },
-      { name: '투자 이야기(부동산)', menuId: 274, maxPages: 2, priority: 'high', category: 'finance' },
-      { name: '해외이민 이야기', menuId: 95, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '한달살기 이야기', menuId: 85, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '취미 이야기', menuId: 314, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-
-      // ── 은오 일상 (RELATION/MEANING/FREEDOM) ──
+      { name: '취미 이야기', menuId: 314, maxPages: 1, priority: 'high', category: 'lifestyle' },
       { name: '자유로운 이야기', menuId: 45, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '예비은퇴자 이야기', menuId: 356, maxPages: 2, priority: 'high', category: 'finance' },
-      { name: '고민 있어요(QnA)', menuId: 113, maxPages: 3, priority: 'high', category: 'lifestyle' },
       { name: '은퇴 일기', menuId: 29, maxPages: 3, priority: 'high', category: 'lifestyle' },
-      { name: '소소한 일상과 행복', menuId: 98, maxPages: 1, priority: 'medium', category: 'lifestyle' },
       { name: '여행 이야기', menuId: 102, maxPages: 2, priority: 'high', category: 'lifestyle' },
       { name: '맛집 이야기', menuId: 136, maxPages: 2, priority: 'high', category: 'lifestyle' },
-      { name: '꽃·식물·반려동물', menuId: 139, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '나의 버킷리스트', menuId: 97, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '나의 창작물', menuId: 83, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+      { name: '꽃·식물·반려동물', menuId: 139, maxPages: 1, priority: 'high', category: 'lifestyle' },
+      { name: '나의 버킷리스트', menuId: 97, maxPages: 1, priority: 'high', category: 'lifestyle' },
       { name: '유머·이슈·정보', menuId: 61, maxPages: 2, priority: 'high', category: 'lifestyle' },
-      { name: '칼럼·에세이', menuId: 111, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-
-      // ── 은오 자기관리 (HEALTH) ──
       { name: '건강 이야기', menuId: 65, maxPages: 2, priority: 'high', category: 'health' },
-      { name: '운동 이야기', menuId: 103, maxPages: 1, priority: 'medium', category: 'health' },
-      { name: '공부 이야기', menuId: 44, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-      { name: '독서 이야기', menuId: 112, maxPages: 1, priority: 'medium', category: 'lifestyle' },
-
-      // ── Fix 0 신규 추가 (2026-04-30) ──
-
-      // MEANING (인생 의미/철학/회고 — 기존 0개)
-      { name: '인생 스토리', menuId: 27, maxPages: 2, priority: 'high', category: 'lifestyle' },
-      { name: '인생 가장 기억에 남는 일', menuId: 265, maxPages: 2, priority: 'high', category: 'lifestyle' },
-      { name: '임사자들의 브런치', menuId: 277, maxPages: 2, priority: 'high', category: 'finance' },
-
-      // FAMILY (은퇴 관점 자녀 — 결혼/출가)
-      { name: '자녀 결혼시키기', menuId: 199, maxPages: 2, priority: 'high', category: 'lifestyle' },
-
-      // SINGLES/FREEDOM (독거 은퇴자 — 기존 0개)
-      { name: '싱글 은퇴자', menuId: 214, maxPages: 2, priority: 'high', category: 'lifestyle' },
-
-      // FIRE족 MONEY (4050 조기은퇴 — 기존 0개)
-      { name: '4050 파이어족', menuId: 251, maxPages: 2, priority: 'high', category: 'finance' },
-
-      // ENTERTAIN (영화/감상 — 기존 0개)
-      { name: '영화보고 감상말하기', menuId: 222, maxPages: 1, priority: 'high', category: 'lifestyle' },
-
-      // HOBBY 다양성
-      { name: '피아노 연주 감상 모임', menuId: 202, maxPages: 1, priority: 'high', category: 'lifestyle' },
-      { name: '렌즈로 쓰는 인생2막', menuId: 308, maxPages: 1, priority: 'high', category: 'lifestyle' },
-      { name: '여행스터디클럽', menuId: 259, maxPages: 1, priority: 'high', category: 'lifestyle' },
-
-      // HEALTH 다른 각도 (질병 아닌 성취감)
-      { name: '오운완~^^', menuId: 236, maxPages: 1, priority: 'high', category: 'health' },
-
-      // FOOD (dlxogns01 기존 0개)
-      { name: '신선식품 (먹거리를 부탁해)', menuId: 137, maxPages: 1, priority: 'medium', category: 'health' },
+      { name: '운동 이야기', menuId: 103, maxPages: 1, priority: 'high', category: 'health' },
     ],
   },
+]
+
+/** dlxogns01(은퇴 후 50년) 창업자 지정 허용 게시판 13개 — content-curator 후보 필터용 */
+export const DLXOGNS01_ALLOWED_BOARDS: string[] = [
+  '귀농·귀촌 이야기', '일자리·자격증 이야기', '취미 이야기', '자유로운 이야기',
+  '예비은퇴자 이야기', '은퇴 일기', '여행 이야기', '맛집 이야기',
+  '꽃·식물·반려동물', '나의 버킷리스트', '유머·이슈·정보', '건강 이야기', '운동 이야기',
 ]
 
 /** Chrome 사용자 프로필 경로 (macOS) */
