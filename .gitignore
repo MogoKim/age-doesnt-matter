@@ -116,3 +116,25 @@ agents/cafe/.session-halted
 
 # Playwright MCP 로그
 .playwright-mcp/
+
+# 로컬 툴 상태 / 락 파일 (절대 커밋 금지)
+.claude/scheduled_tasks.lock
+.serena/
+
+# 스크린샷 / 스토어 자산 (대용량 — git 불가)
+play-store-screenshots/
+playwright-screenshots/
+assets/
+
+# 임시 쿼리 / 분석 스크립트 (루트 레벨)
+agents/query*.js
+agents/query*.cjs
+agents/query*.mjs
+agents/query*.ts
+query*.mjs
+query_logs.ts
+analyze-posts.ts
+test-query.ts
+
+# 백필 결과 CSV (일회성 산출물)
+agents/scripts/backfill-*.csv
