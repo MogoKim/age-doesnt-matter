@@ -1,3 +1,6 @@
+'use client'
+
+import { useSession } from 'next-auth/react'
 import { FaqAccordion } from '@/components/common/FaqAccordion'
 import type { FaqItem } from '@/components/common/FaqAccordion'
 
@@ -72,6 +75,9 @@ const HOME_FAQ_ITEMS: FaqItem[] = [
 ]
 
 export default function HomeFaqSection() {
+  const { status } = useSession()
+  if (status === 'loading' || status === 'authenticated') return null
+
   return (
     <section className="px-4 py-6 lg:px-0">
       <script

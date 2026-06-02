@@ -1,13 +1,16 @@
-import Link from 'next/link'
+'use client'
 
-interface Props {
-  nickname: string
-}
+import { useSession } from 'next-auth/react'
+import Link from 'next/link'
 
 /**
  * PersonalGreeting — 회원 전용 Hero 직후 인사 카드
  */
-export default function PersonalGreeting({ nickname }: Props) {
+export default function PersonalGreeting() {
+  const { data: session, status } = useSession()
+  if (status !== 'authenticated' || !session?.user?.nickname) return null
+  const nickname = session.user.nickname
+
   return (
     <section
       className="px-4 py-4 lg:px-0"

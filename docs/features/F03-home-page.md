@@ -134,6 +134,7 @@ GA4 실시간 → 이벤트 → `home_card_click` 에서 확인 가능.
 | 2026-04-27 | Promise.all 제거 → 섹션별 Suspense 스트리밍 | LCP Load Delay 3,121ms → ~400ms |
 | 2026-05-02 | HeroSlider Suspense 래핑 + auth() 페이지 상단 제거 | cold-start auth() 블로킹 → TTFB 개선 |
 | 2026-05-10 | HomeFaqSection 추가 (FAQPage Schema + FAQ UI 5개) | GEO(AI 검색) 인용 최적화 |
+| 2026-06-02 | force-dynamic 제거 + auth() wrapper 4개 → useSession() 전환 (PersonalGreeting/HomeFaqSection/SignupCard), MyActivity 임시 비노출 | / CDN HIT 활성화 (Static 전환) |
 | 2026-06-02 | 홈 섹션 댓글/좋아요 메타 이모지(❤️💬) → SVG 아이콘(size=15) 통일 (6개 컴포넌트) | 빨간 이모지 제거 + PostCard 계열 시각 통일 |
 | 2026-05-11 | HomeCardLink 래퍼로 5개 섹션 GA4 클릭 추적 추가 | 홈 이탈률 63.9% 원인 분석 — 어느 섹션 클릭하는지 데이터 없음 |
 | 2026-05-11 | F03-hero-banner.md → F03-home-page.md 확장 (REGISTRY PATH MAP hero*→home*) | 홈 섹션 19개 컴포넌트 모두 F03으로 통합 관리 |

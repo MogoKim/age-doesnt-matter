@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
-import { auth } from '@/lib/auth'
 import HeroSlider from '@/components/features/home/HeroSlider'
 import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
@@ -16,7 +15,6 @@ import CoupangDesktopBanner from '@/components/ad/CoupangDesktopBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
 import PersonalGreeting from '@/components/features/home/PersonalGreeting'
-import MyActivity from '@/components/features/home/MyActivity'
 import SignupCard from '@/components/features/home/SignupCard'
 import HomeFaqSection from '@/components/features/home/HomeFaqSection'
 import {
@@ -24,9 +22,6 @@ import {
   getLatestMagazinePosts,
   getCachedHomeSections,
 } from '@/lib/queries/posts'
-import { getUserCounts } from '@/lib/queries/home'
-
-export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: '우리 나이가 어때서 — 5060 세대 커뮤니티',
@@ -34,8 +29,6 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 }
 
-// layout.tsx의 auth() 때문에 페이지 레벨 ISR이 무효화됨
-// → unstable_cache로 DB 쿼리 자체를 60초 캐싱하여 속도 확보
 const getCachedJobs = unstable_cache(
   () => getLatestJobs(5),
   ['home-jobs'],
@@ -45,12 +38,6 @@ const getCachedMagazine = unstable_cache(
   () => getLatestMagazinePosts(4),
   ['home-magazine'],
   { revalidate: 60, tags: ['home-magazine'] }
-)
-// 회원 활동 카운트: 알림 배지 수치 → 10s 지연 허용 (매 요청 3× DB count 제거)
-const getCachedUserCounts = unstable_cache(
-  (userId: string) => getUserCounts(userId),
-  ['home-user-counts'],
-  { revalidate: 60, tags: ['home-user-counts'] }
 )
 
 /* ── Suspense 스켈레톤 ── */
@@ -119,40 +106,9 @@ async function JobWrapper() {
   return <JobSection jobs={jobs} />
 }
 
-async function PersonalGreetingWrapper() {
-  const session = await auth()
-  if (!session?.user?.nickname) return null
-  return <PersonalGreeting nickname={session.user.nickname} />
-}
-
-async function MyActivityWrapper() {
-  const session = await auth()
-  if (!session?.user?.id) return null
-  const counts = await getCachedUserCounts(session.user.id)
-  return (
-    <MyActivity
-      todayPosts={counts.todayPosts}
-      newComments={counts.newComments}
-      receivedLikes={counts.receivedLikes}
-    />
-  )
-}
-
-async function HomeFaqWrapper() {
-  const session = await auth()
-  if (session?.user) return null
-  return <HomeFaqSection />
-}
-
-async function SignupCardWrapper() {
-  const session = await auth()
-  if (session?.user) return null
-  return <SignupCard />
-}
-
 /* ── 페이지 ── */
 
-export default async function HomePage() {
+export default function HomePage() {
   const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -200,10 +156,8 @@ export default async function HomePage() {
           </Suspense>
 
           <div className="lg:px-8">
-            {/* 회원 전용 인사 카드 */}
-            <Suspense fallback={null}>
-              <PersonalGreetingWrapper />
-            </Suspense>
+            {/* 회원 전용 인사 카드 (클라이언트, useSession) */}
+            <PersonalGreeting />
 
             {/* 지금뜨는이야기 + 사는이야기 + 웃음방 (trendingIds 중복 제거로 단일 Suspense) */}
             <Suspense fallback={<SectionSkeleton h="min-h-[1400px]" />}>
@@ -214,7 +168,7 @@ export default async function HomePage() {
               <MagazineWrapper />
             </Suspense>
 
-            {/* 쿠팡 2번 — 모바일 390×150 / 데스크탑 728×90 (사는이야기·웃음방 아래에서 이동) */}
+            {/* 쿠팡 2번 — 모바일 390×150 / 데스크탑 728×90 */}
             <ResponsiveAd
               mobile={<CoupangHome2 className="my-4 mx-4 rounded-2xl overflow-hidden" />}
               desktop={<CoupangDesktopBanner className="my-4 rounded-2xl overflow-hidden" />}
@@ -224,20 +178,11 @@ export default async function HomePage() {
               <JobWrapper />
             </Suspense>
 
-            {/* 회원 전용 나의 활동 */}
-            <Suspense fallback={null}>
-              <MyActivityWrapper />
-            </Suspense>
+            {/* 비회원 전용 FAQ (클라이언트, useSession) */}
+            <HomeFaqSection />
 
-            {/* 비회원 전용 FAQ */}
-            <Suspense fallback={null}>
-              <HomeFaqWrapper />
-            </Suspense>
-
-            {/* 비회원 전용 가입 유도 카드 */}
-            <Suspense fallback={null}>
-              <SignupCardWrapper />
-            </Suspense>
+            {/* 비회원 전용 가입 유도 카드 (클라이언트, useSession) */}
+            <SignupCard />
 
             {/* 데스크탑 전용 하단 AdSense 728×250 (회원/비회원 공통) */}
             <ResponsiveAd

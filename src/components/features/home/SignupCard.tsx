@@ -1,3 +1,6 @@
+'use client'
+
+import { useSession } from 'next-auth/react'
 import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 
 /**
@@ -5,6 +8,9 @@ import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
  * variant="middle": 홈 페이지 중반부 자연스러운 가입 유도
  */
 export default function SignupCard() {
+  const { status } = useSession()
+  if (status === 'loading' || status === 'authenticated') return null
+
   return (
     <section className="py-6 px-4 lg:px-0">
       <div
