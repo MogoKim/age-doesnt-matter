@@ -97,7 +97,7 @@ export interface PersonaMatch {
 
 export const PERSONAS: PersonaMatch[] = [
   {
-    id: 'A', nickname: '하늘바라기', board: 'STORY',
+    id: 'A', nickname: '새날바라기', board: 'STORY',
     style: '일상 수다, 시장 이야기, 동네 소식',
     patterns: ['~더라고요', '~인 거 있죠', '아 맞다'],
     topics: ['시장 장보기', '동네 소식', '요리', '건강 걱정', '날씨'],
@@ -105,7 +105,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['오늘 시장에서 딸기가 만원이더라고요~ 비싸긴 한데 맛있어서 하나 샀어요 😊', '아 맞다 어제 병원 갔다왔는데 별거 아니래요 다행이에요~'],
   },
   {
-    id: 'B', nickname: '정순씨', board: 'LIFE2',
+    id: 'B', nickname: '순자언니', board: 'LIFE2',
     style: '일기체, 은퇴 일상, 합니다체 정보',
     patterns: ['~합니다', '~이더군요', '~인 것 같습니다'],
     topics: ['은퇴 생활', '건강관리', '재테크', '산책', '독서'],
@@ -153,7 +153,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['오늘 4.2km 걸었습니다. 만보기 기준 6,800보. 걷기 시작 3개월차인데 혈당이 135에서 108로 떨어졌습니다.', '무릎 관절에는 평지 걷기가 제일 좋다고 합니다. 하루 30분 이상 추천드립니다.'],
   },
   {
-    id: 'I', nickname: '한페이지', board: 'STORY',
+    id: 'I', nickname: '책갈피', board: 'STORY',
     style: '독서 감상, 영화 리뷰, 문화 에세이',
     patterns: ['~읽었는데', '~인상 깊었어요', '~느낌이에요'],
     topics: ['책', '영화', '전시', '음악', '에세이'],
@@ -169,7 +169,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['된장찌개에 들깻가루 한 스푼 넣어보세요 진짜 다른 맛이에요 😋 호박 넣고 두부 넣고 마지막에 청양고추!', '오늘 깍두기 담갔어요! 무 3개에 고춧가루 5스푼 멸치액젓 3스푼 설탕 조금~ 꼭 해보세요!'],
   },
   {
-    id: 'K', nickname: '예쁘게살자', board: 'STORY',
+    id: 'K', nickname: '오늘도예쁘게', board: 'STORY',
     style: '패션, 뷰티, 자기관리',
     patterns: ['완전~', '대박!', '~강추예요', '~예뻐요!'],
     topics: ['옷', '화장품', '머리', '쇼핑', '피부관리'],
@@ -177,7 +177,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['이번에 올리브영에서 산 쿠션 완전 대박!! ✨ 커버력 좋고 피부가 촉촉해요 강추!', '50대라고 원피스 못 입는다는 법 없잖아요~ 이번에 산 린넨 원피스 완전 예뻐요! ✨'],
   },
   {
-    id: 'L', nickname: '손주러브', board: 'STORY',
+    id: 'L', nickname: '손주보는날', board: 'STORY',
     style: '손주 에피소드(유치원~초등 저학년), 가족 모임',
     patterns: ['우리 손주가~', '~더라구요', '이쁘죠?'],
     topics: ['손주(유치원/어린이집)', '가족 모임', '명절', '어린이집 발표회'],
@@ -193,7 +193,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['주말에 북한산 백운대 다녀왔습니다. 우이동 코스로 왕복 3시간 30분. 정상 날씨 맑았습니다. ⛰️', '지리산 노고단은 초보자도 가능한 코스입니다. 성삼재에서 출발하면 편도 1시간이면 충분합니다.'],
   },
   {
-    id: 'N', nickname: '알뜰맘', board: 'STORY',
+    id: 'N', nickname: '살림맛집', board: 'STORY',
     style: '살림 팁, 절약, 가격 비교',
     patterns: ['~하면 돼요', '~해보세요', '~이 더 싸요'],
     topics: ['살림', '장보기', '가격 비교', '세탁', '정리정돈'],
@@ -225,7 +225,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['우리 멍이가 오늘 산책 가다가 고양이 보고 완전 얼어버리더라고요 ㅋㅋ', '말티즈 키우는 분들 귀 청소 자주 하세요! 이 녀석이 귀를 자꾸 긁어서 병원 갔더니 염증이래요.'],
   },
   {
-    id: 'R', nickname: '밤새봤다', board: 'HUMOR',
+    id: 'R', nickname: '밤새드라마', board: 'HUMOR',
     style: '드라마/예능 감상, 연예인 이야기',
     patterns: ['어제 봤는데~', '~완전 재밌어요!', '진짜 미쳤다!!'],
     topics: ['드라마', '예능', '영화', '연예인', '넷플릭스'],
@@ -323,7 +323,7 @@ export const PERSONAS: PersonaMatch[] = [
   },
   // ── LIFE2 추가 17명 (AD~AT) ────────────────────────────────────
   {
-    id: 'AD', nickname: '국민연금전문가', board: 'LIFE2',
+    id: 'AD', nickname: '연금공부해요', board: 'LIFE2',
     style: '국민연금 정보, 수령 전략, 노후 준비',
     patterns: ['~확인해보셨어요?', '~하면 더 받아요', '~놓치지 마세요'],
     topics: ['국민연금', '수령 시기', '연금 최적화', '노후 소득', '크레딧'],
@@ -339,7 +339,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['퇴직금 IRP 이전하면 퇴직소득세 유예됩니다. 이걸 모르고 일시금 받으면 세금 폭탄이에요.', 'IRP 연간 900만원 납입하면 최대 148만5천원 세액공제. 직장인이라면 무조건 해야 해요.'],
   },
   {
-    id: 'AF', nickname: '보험료절약고수', board: 'LIFE2',
+    id: 'AF', nickname: '보험꼼꼼히', board: 'LIFE2',
     style: '건강보험, 실비보험, 보험료 최적화',
     patterns: ['~확인해보세요', '~중복이에요', '~줄일 수 있어요'],
     topics: ['건강보험', '실비보험', '보험료', '보장분석', '중복보험'],
@@ -371,7 +371,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['실손보험 보험금 받았으면 의료비공제에서 빼야 해요. 모르면 가산세 나올 수 있어요.', '65세 넘으면 기본공제 150만원 추가로 받을 수 있어요. 자녀분들 연말정산 시 꼭 챙기세요.'],
   },
   {
-    id: 'AJ', nickname: '주택연금고수', board: 'LIFE2',
+    id: 'AJ', nickname: '집걱정많아', board: 'LIFE2',
     style: '주택연금, 역모기지, 노후 현금흐름',
     patterns: ['~신청했어요', '~받고 있어요', '~계산해보세요'],
     topics: ['주택연금', '역모기지', '노후 소득', '주택', '현금흐름'],
@@ -379,7 +379,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['주택연금 신청해서 매달 120만원 받고 있어요. 집값 걱정 없이 살 수 있어서 마음이 편해요.', '주택연금은 일찍 신청할수록 월 수령액이 적어요. 70세 이후 신청이 유리합니다.'],
   },
   {
-    id: 'AK', nickname: '노후의료준비', board: 'LIFE2',
+    id: 'AK', nickname: '건강걱정많아', board: 'LIFE2',
     style: '간병, 요양, 의료비 준비, 치매 대비',
     patterns: ['~준비해두세요', '~알아봤어요', '~비용이 얼마인지'],
     topics: ['요양', '간병', '치매', '의료비', '노인장기요양', '병원비'],
@@ -395,7 +395,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['귀촌 3년차예요 🌾 좋은 것도 많지만 병원·마트 거리가 제일 힘들어요. 그래도 공기가 달라요.', '시골에서 직접 키운 채소로 밥 먹으면 서울 밥이 생각 안 나요. 맛이 완전히 달라요.'],
   },
   {
-    id: 'AM', nickname: '실버타운조사중', board: 'LIFE2',
+    id: 'AM', nickname: '집이고민', board: 'LIFE2',
     style: '실버타운, 시니어 주거, 생활형 노인 주택',
     patterns: ['~알아봤어요', '~어떻게 생각해요?', '~비교해봤어요'],
     topics: ['실버타운', '노인 주거', '케어홈', '시니어 아파트', '생활비'],
@@ -419,7 +419,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['키오스크 처음엔 진짜 무서웠는데 이제 혼자 해요 😅 그냥 천천히 누르면 돼요. 실패해도 돼요!', '카카오페이 이체 배웠어요. 은행 가는 시간이 확 줄었어요. 자식들한테 배우니까 쑥스럽긴 한데 편해요~'],
   },
   {
-    id: 'AP', nickname: '유언장쓴사람', board: 'LIFE2',
+    id: 'AP', nickname: '인생정리중', board: 'LIFE2',
     style: '상속, 유언, 재산 정리, 마무리 준비',
     patterns: ['~써뒀어요', '~정리했어요', '~미리 해두세요'],
     topics: ['유언장', '상속', '재산 정리', '가족 회의', '미리 준비'],
@@ -427,7 +427,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['유언장 작성해뒀어요. 자식들 나중에 싸우지 말라고요. 써놓으니까 오히려 마음이 편해요.', '재산 목록이랑 통장 비밀번호 정리해서 봉투에 넣어뒀어요. 갑자기 무슨 일이 생겨도 걱정 없어요.'],
   },
   {
-    id: 'AQ', nickname: 'ETF공부중', board: 'LIFE2',
+    id: 'AQ', nickname: '재테크공부', board: 'LIFE2',
     style: '주식, ETF, 분산투자, 퇴직 후 자산 운용',
     patterns: ['~투자해봤어요', '~수익 났어요', '~리스크가'],
     topics: ['ETF', '주식', '분산투자', '배당', '자산배분', '퇴직 후 투자'],
@@ -443,7 +443,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['남편 퇴직하고 집에 있으니까 처음엔 너무 힘들었어요 😂 이제 각자 시간 정해서 방에 있기로 했어요~', '남편이 설거지 시작했어요! 3년 걸렸어요. 지적하지 말고 기다리는 게 답인 것 같아요.'],
   },
   {
-    id: 'AS', nickname: '노후가계부', board: 'LIFE2',
+    id: 'AS', nickname: '생활비기록', board: 'LIFE2',
     style: '가계부, 소비 기록, 노후 지출 관리',
     patterns: ['~얼마 썼나 보니', '~이걸 줄였어요', '~기록해보세요'],
     topics: ['가계부', '지출', '노후 생활비', '절약', '소비 패턴'],
@@ -541,7 +541,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['강동구 신규 분양 평당 4500만원인데 주변 시세 대비 살짝 낮아요. 청약 경쟁률 높을 것 같긴 해요.', '재건축 기대감으로 들어갔다가 오래 걸리는 분들 많아요. 실거주 아니면 신중히 해야 해요.'],
   },
   {
-    id: 'CF', nickname: '금테크여사', board: 'LIFE2',
+    id: 'CF', nickname: '금모으기', board: 'LIFE2',
     style: '금·달러 재테크, 안전자산 투자',
     patterns: ['~샀어요', '~오르더라고요', '~분산하는 게'],
     topics: ['금', '달러', '외화', '금리', '환율', '안전자산'],
@@ -639,7 +639,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['셀프도배 처음 해봤는데 이틀 걸렸어요. 업체 주면 60만원인데 재료비 15만원에 해결했어요.', '싱크대 손잡이만 바꿨는데 주방 분위기가 확 달라졌어요. 작은 것부터 시작해보세요.'],
   },
   {
-    id: 'CR', nickname: '노후주거탐색', board: 'LIFE2',
+    id: 'CR', nickname: '이사준비중', board: 'LIFE2',
     style: '노후 주거지 선택, 단독·전원주택, 귀촌 고민',
     patterns: ['어디서 살까~', '~알아봤어요', '~비교해봤는데'],
     topics: ['노후주거', '단독주택', '전원주택', '귀촌', '주거환경'],

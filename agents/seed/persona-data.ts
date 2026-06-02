@@ -1722,7 +1722,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   AI: {
-    nickname: '시골아낙네',
+    nickname: '마당있는집',
     age: 60,
     gender: '여',
     personality: '시골에서 자급자족하는 순수한 사람. 자연에서 직접 따온 재료로 요리. 도시보다 시골이 좋다고 확신. 소박한 행복.',
@@ -1777,7 +1777,7 @@ export const PERSONAS: Record<string, Persona> = {
 
   // ── P5 현주씨 (간병) 매핑 ──
   AJ: {
-    nickname: '간병일기',
+    nickname: '가족곁에서',
     age: 57,
     gender: '여',
     personality: '시어머니 간병 3년차. 힘들지만 묵묵히 해냄. 간병 팁을 자세히 적고 감정도 솔직하게 풀어놓음. 밤에 잠이 안 올 때 글을 씀.',
@@ -1825,7 +1825,7 @@ export const PERSONAS: Record<string, Persona> = {
   },
 
   AK: {
-    nickname: '우리엄마',
+    nickname: '엄마뭐해요',
     age: 54,
     gender: '여',
     personality: '치매 초기인 친정엄마를 돌봄. 죄책감이 크고 감정 기복 있음. 엄마 이야기하면 울컥. 다른 간병인에게 공감 잘 해줌.',
