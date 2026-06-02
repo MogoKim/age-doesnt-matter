@@ -1,7 +1,7 @@
 'use client'
 
 import { signIn } from 'next-auth/react'
-import { sendGtmEvent, getStoredUtm } from '@/lib/gtm'
+import { sendGtmEvent, getStoredUtm, getBrowserEnv } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
 
 interface Props {
@@ -24,9 +24,9 @@ function safeCallbackUrl(url: string): string {
 export default function KakaoSignupButton({ callbackUrl = '/', className, style, children, gtmFrom }: Props) {
   async function handleClick() {
     if (gtmFrom) {
-      sendGtmEvent('kakao_button_click', { from: gtmFrom, ...getStoredUtm() })
+      sendGtmEvent('kakao_button_click', { from: gtmFrom, browser_env: getBrowserEnv(), ...getStoredUtm() })
     }
-    trackEvent('kakao_button_click', { from: gtmFrom ?? 'unknown' })
+    trackEvent('kakao_button_click', { from: gtmFrom ?? 'unknown', browser_env: getBrowserEnv() })
     await signIn('kakao', { callbackUrl: safeCallbackUrl(callbackUrl) })
   }
 

@@ -2,13 +2,13 @@
 
 import Link from 'next/link'
 import { kakaoSignIn } from '@/app/login/actions'
-import { sendGtmEvent, getStoredUtm } from '@/lib/gtm'
+import { sendGtmEvent, getStoredUtm, getBrowserEnv } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
 
 export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   async function handleKakaoClick() {
-    sendGtmEvent('kakao_button_click', { from: 'login_page', ...getStoredUtm() })
-    trackEvent('kakao_button_click', { from: 'login_page' })
+    sendGtmEvent('kakao_button_click', { from: 'login_page', browser_env: getBrowserEnv(), ...getStoredUtm() })
+    trackEvent('kakao_button_click', { from: 'login_page', browser_env: getBrowserEnv() })
     await kakaoSignIn(callbackUrl)
   }
 

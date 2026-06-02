@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { trackEvent } from '@/lib/track'
-import { gtmPageView, gtmLogin, gtmSetUserProperties, captureUtm } from '@/lib/gtm'
+import { gtmPageView, gtmLogin, gtmSetUserProperties, captureUtm, getBrowserEnv } from '@/lib/gtm'
 
 // 하드 리프레시마다 login 이벤트 중복 발사 방지.
 // useRef는 리프레시 시 초기화되므로 sessionStorage 플래그 사용.
@@ -29,7 +29,7 @@ export default function PageViewTracker() {
     sessionStorage.setItem(SESSION_LOGIN_KEY, '1')
 
     gtmLogin('kakao')
-    trackEvent('login', { method: 'kakao' })
+    trackEvent('login', { method: 'kakao', browser_env: getBrowserEnv() })
     // user_id undefined 전송 방지
     if (session.user?.id) {
       void gtmSetUserProperties({
@@ -42,7 +42,7 @@ export default function PageViewTracker() {
 
   // 페이지 이동 시 page_view
   useEffect(() => {
-    trackEvent('page_view')
+    trackEvent('page_view', { browser_env: getBrowserEnv() })
     gtmPageView(pathname)
   }, [pathname])
 

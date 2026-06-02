@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { checkNickname, completeOnboarding } from '@/lib/actions/onboarding'
-import { gtmSignUp, sendGtmEvent, waitForGtagReady } from '@/lib/gtm'
+import { gtmSignUp, sendGtmEvent, waitForGtagReady, getBrowserEnv } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
 
 // ── 닉네임 유효성 검사 ──
@@ -104,15 +104,15 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
 
   // 가입 퍼널 추적 — Step 1 진입 (컴포넌트 첫 마운트 시)
   useEffect(() => {
-    sendGtmEvent('signup_step', { step: 1, step_name: 'nickname' })
-    trackEvent('signup_step', { step: 1, step_name: 'nickname' })
+    sendGtmEvent('signup_step', { step: 1, step_name: 'nickname', browser_env: getBrowserEnv() })
+    trackEvent('signup_step', { step: 1, step_name: 'nickname', browser_env: getBrowserEnv() })
   }, [])
 
   // 가입 퍼널 추적 — Step 2 진입
   useEffect(() => {
     if (step === 2) {
-      sendGtmEvent('signup_step', { step: 2, step_name: 'terms' })
-      trackEvent('signup_step', { step: 2, step_name: 'terms' })
+      sendGtmEvent('signup_step', { step: 2, step_name: 'terms', browser_env: getBrowserEnv() })
+      trackEvent('signup_step', { step: 2, step_name: 'terms', browser_env: getBrowserEnv() })
     }
   }, [step])
 
@@ -127,10 +127,12 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
         sendGtmEvent('signup_abandoned', {
           abandoned_at_step: stepRef.current,
           time_spent_ms: Date.now() - startTime,
+          browser_env: getBrowserEnv(),
         })
         trackEvent('signup_abandoned', {
           abandoned_at_step: stepRef.current,
           time_spent_ms: Date.now() - startTime,
+          browser_env: getBrowserEnv(),
         })
       }
     }
@@ -170,8 +172,8 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
       if (result.error) {
         setSubmitError(result.error)
       } else {
-        sendGtmEvent('signup_step', { step: 3, step_name: 'welcome' })
-        trackEvent('signup_step', { step: 3, step_name: 'welcome' })
+        sendGtmEvent('signup_step', { step: 3, step_name: 'welcome', browser_env: getBrowserEnv() })
+        trackEvent('signup_step', { step: 3, step_name: 'welcome', browser_env: getBrowserEnv() })
         setStep(3)
       }
     })
@@ -185,7 +187,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     localStorage.setItem('signup_welcome_toast', '1')
     const signupVariant = localStorage.getItem('signup_variant') ?? undefined
     gtmSignUp('kakao', signupVariant)
-    trackEvent('sign_up', { method: 'kakao' })
+    trackEvent('sign_up', { method: 'kakao', browser_env: getBrowserEnv() })
     // gtag.js 로드 완료 대기 — _gtagReady=true 확인 후 navigate
     // window.gtag 존재 체크는 부족 (GTM stub이 미리 생성됨)
     await waitForGtagReady()
