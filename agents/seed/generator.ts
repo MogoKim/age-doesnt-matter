@@ -971,11 +971,16 @@ export async function generateUserPostComment(
   }).catch(() => [])
 
   const priorCommentsHint = priorComments.length > 0
-    ? `\n\n[이미 이 글에 달린 댓글]\n${priorComments.map(c => `- ${c.slice(0, 120)}`).join('\n')}`
+    ? `\n\n[이미 달린 댓글 — 아래와 다른 각도·표현·감정으로 써라 (같은 뜻이라도 비슷한 표현 금지)]\n${priorComments.map(c => `- ${c.slice(0, 120)}`).join('\n')}`
     : '\n\n[이미 이 글에 달린 댓글]\n아직 없음'
 
   const recentCommentHint = recentComments.length > 0
     ? `\n\n[이 봇이 최근 단 댓글 — 같은 첫 문장과 구조 금지]\n${recentComments.map(c => `- ${c.content.slice(0, 90)}`).join('\n')}`
+    : ''
+
+  const forbiddenAnchors = extractForbiddenAnchors(priorComments)
+  const forbiddenSection = forbiddenAnchors.length > 0
+    ? `\n\n[금지 표현 — 앞 댓글에서 이미 사용됨. 절대 쓰지 마라]\n${forbiddenAnchors.join(' / ')}`
     : ''
 
   const system = `${getKstContext()}
@@ -1008,7 +1013,7 @@ ${trendContext}`
 본문:
 ${postContent.replace(/<[^>]+>/g, '').slice(0, 900)}
 ${priorCommentsHint}
-${recentCommentHint}`
+${recentCommentHint}${forbiddenSection}`
 
   for (let attempt = 0; attempt < 2; attempt++) {
     const response = await client.messages.create({
