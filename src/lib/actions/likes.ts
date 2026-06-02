@@ -21,23 +21,21 @@ export async function togglePostLike(postId: string): Promise<ToggleResult> {
 
   const existing = await prisma.like.findUnique({
     where: { userId_postId: { userId, postId } },
+    include: { post: { select: { authorId: true } } },
   })
 
   if (existing) {
     // 취소 경로: receivedLikes 감소 포함 단일 트랜잭션
+    const postAuthorId = existing.post?.authorId
     await prisma.$transaction(async (tx) => {
-      const cancelPost = await tx.post.findUnique({
-        where: { id: postId },
-        select: { authorId: true },
-      })
       await tx.like.delete({ where: { id: existing.id } })
       await tx.post.update({
         where: { id: postId },
         data: { likeCount: { decrement: 1 } },
       })
-      if (cancelPost && cancelPost.authorId !== userId) {
+      if (postAuthorId && postAuthorId !== userId) {
         await tx.user.update({
-          where: { id: cancelPost.authorId },
+          where: { id: postAuthorId },
           data: { receivedLikes: { decrement: 1 } },
         })
       }
