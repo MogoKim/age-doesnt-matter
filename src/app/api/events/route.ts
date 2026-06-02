@@ -42,9 +42,13 @@ export async function POST(request: NextRequest) {
   }
 
   const session = await auth()
-  const sessionId = request.cookies.get('_anon_sid')?.value ?? null
   const userAgent = request.headers.get('user-agent')?.slice(0, 500) ?? null
   const { isBot, botType } = detectBot(userAgent, request.headers, ip)
+
+  // 봇이 아닐 때만 anon session 발급 — 기존 middleware 정책과 동일
+  // HTML 응답에서 Set-Cookie를 제거했으므로, 최초 이벤트 발생 시 여기서 sessionId를 생성
+  const existingSid = request.cookies.get('_anon_sid')?.value ?? null
+  const sessionId = isBot ? null : (existingSid ?? crypto.randomUUID())
 
   await prisma.eventLog.create({
     data: {
@@ -61,5 +65,15 @@ export async function POST(request: NextRequest) {
     },
   })
 
-  return NextResponse.json({ ok: true })
+  const response = NextResponse.json({ ok: true })
+  if (!isBot && sessionId) {
+    response.cookies.set('_anon_sid', sessionId, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+      secure: process.env.NODE_ENV === 'production',
+    })
+  }
+  return response
 }

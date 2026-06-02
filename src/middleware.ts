@@ -195,7 +195,9 @@ export default async function middleware(request: NextRequest) {
     return addAnonSession(NextResponse.redirect(new URL('/', request.url)), request)
   }
 
-  return addAnonSession(NextResponse.next(), request)
+  // HTML 페이지 응답에는 Set-Cookie를 하지 않음 — Vercel CDN HTML 캐시 허용
+  // _anon_sid는 /api/events POST 최초 호출 시 발급 (EventLog.sessionId 보존)
+  return NextResponse.next()
 }
 
 export const config = {
