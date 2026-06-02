@@ -1,7 +1,8 @@
 /**
  * 카카오톡 공유하기 유틸리티 (클라이언트 전용)
  * Kakao SDK는 KakaoSdkScript(afterInteractive)가 페이지 로드 후 미리 초기화합니다.
- * 클릭 시점에는 isInitialized() 확인 후 sendDefault()로 바로 진행합니다.
+ * 클릭 시점에 isInitialized() 확인 후 sendDefault()를 동기적으로 즉시 호출합니다.
+ * await 대기 후 sendDefault()를 호출하면 iOS Safari에서 user gesture가 소실됩니다.
  */
 
 import { logKakaoShareDebug, getKakaoRuntimeSnapshot } from '@/lib/kakao-share-debug'
@@ -55,39 +56,15 @@ interface KakaoShareOptions {
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
 
-/** SDK 미초기화/로드 실패 시 링크 복사로 대체됐음을 알리는 에러 */
+/** SDK 미준비/로드 실패 시 링크 복사로 대체됐음을 알리는 에러 */
 export class KakaoUnavailableError extends Error {
   readonly copiedUrl: string
-  readonly reason: 'timeout' | 'unavailable' | 'sendDefaultThrow' | 'unknown'
-  constructor(url: string, reason: 'timeout' | 'unavailable' | 'sendDefaultThrow' | 'unknown' = 'unknown') {
+  readonly reason: 'notReadyAtClick' | 'sendDefaultThrow' | 'unknown'
+  constructor(url: string, reason: 'notReadyAtClick' | 'sendDefaultThrow' | 'unknown' = 'unknown') {
     super('KAKAO_UNAVAILABLE')
     this.copiedUrl = url
     this.reason = reason
   }
-}
-
-/**
- * KakaoSdkScript(afterInteractive)가 SDK를 로드/초기화할 때까지 대기.
- * 이미 초기화됐으면 즉시 true 반환. 최대 5초 폴링 후 false.
- */
-function waitForKakaoInit(timeoutMs = 5000): Promise<boolean> {
-  if (typeof window === 'undefined') return Promise.resolve(false)
-  if (window.Kakao?.isInitialized()) return Promise.resolve(true)
-
-  return new Promise<boolean>(resolve => {
-    const interval = 100
-    let elapsed = 0
-    const timer = setInterval(() => {
-      elapsed += interval
-      if (window.Kakao?.isInitialized()) {
-        clearInterval(timer)
-        resolve(true)
-      } else if (elapsed >= timeoutMs) {
-        clearInterval(timer)
-        resolve(false)
-      }
-    }, interval)
-  })
 }
 
 async function copyToClipboard(url: string): Promise<boolean> {
@@ -114,55 +91,50 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
     throw new KakaoUnavailableError(fullUrl, 'unknown')
   }
 
-  logKakaoShareDebug('WAIT_INIT_START', getKakaoRuntimeSnapshot({ fullUrl }))
+  // 동기 SDK 상태 확인 — sendDefault() 전 어떤 await도 없어야 함 (iOS user gesture 보존)
+  const kakao = window.Kakao
+  const hasKakao = Boolean(kakao)
+  let initialized = false
+  try {
+    initialized = Boolean(kakao?.isInitialized?.())
+  } catch {
+    initialized = false
+  }
+  const hasSendDefault = typeof kakao?.Share?.sendDefault === 'function'
+  const ready = hasKakao && initialized && hasSendDefault
 
-  const initialized = await waitForKakaoInit()
-
-  if (!initialized) {
-    const now = new Date().toISOString()
-    const elapsed = Date.now() - startTs
-    if (window.__KAKAO_SHARE_DIAG__) window.__KAKAO_SHARE_DIAG__.lastWaitTimeoutAt = now
+  if (!ready) {
+    // SDK 미준비 상태에서는 기다리지 않고 즉시 fallback
+    // (await 이후 sendDefault 호출 시 iOS에서 user gesture 소실)
     const sdkEl = document.getElementById('kakao-js-sdk') as HTMLScriptElement | null
-    const timeoutPayload = {
+    logKakaoShareDebug('SDK_NOT_READY_AT_CLICK', {
+      hasKakao,
+      initialized,
+      hasSendDefault,
       diag: window.__KAKAO_SHARE_DIAG__ ?? null,
-      scriptEl: {
-        id: sdkEl?.id ?? null,
-        src: sdkEl?.src ?? null,
-        integrity: sdkEl?.getAttribute('integrity') ?? null,
-        crossOrigin: sdkEl?.getAttribute('crossorigin') ?? null,
-      },
+      scriptEl: sdkEl
+        ? {
+            id: sdkEl.id,
+            src: sdkEl.src,
+            integrity: sdkEl.getAttribute('integrity') ?? null,
+            crossOrigin: sdkEl.getAttribute('crossorigin') ?? null,
+          }
+        : null,
       readyState: document.readyState,
       href: window.location.href,
-      hasKakao: !!window.Kakao,
-      initialized: false,
-      hasSendDefault: typeof window.Kakao?.Share?.sendDefault,
-      elapsed,
-    }
-    logKakaoShareDebug('WAIT_INIT_TIMEOUT', timeoutPayload)
-    console.error('[kakao-share] SDK_INIT_TIMEOUT', timeoutPayload)
-    logKakaoShareDebug('FALLBACK_COPY_START', { reason: 'timeout', fullUrl })
+      elapsed: Date.now() - startTs,
+    })
+    console.error('[kakao-share] SDK_NOT_READY_AT_CLICK', { hasKakao, initialized, hasSendDefault })
+    logKakaoShareDebug('FALLBACK_COPY_START', { reason: 'notReadyAtClick', fullUrl })
     const copied = await copyToClipboard(fullUrl)
-    logKakaoShareDebug(copied ? 'FALLBACK_COPY_OK' : 'FALLBACK_COPY_FAILED', { reason: 'timeout', fullUrl })
-    throw new KakaoUnavailableError(fullUrl, 'timeout')
+    logKakaoShareDebug(copied ? 'FALLBACK_COPY_OK' : 'FALLBACK_COPY_FAILED', { reason: 'notReadyAtClick', fullUrl })
+    throw new KakaoUnavailableError(fullUrl, 'notReadyAtClick')
   }
 
-  logKakaoShareDebug('WAIT_INIT_OK', getKakaoRuntimeSnapshot({ elapsed: Date.now() - startTs }))
-
-  const kakao = window.Kakao
-  if (!kakao?.isInitialized()) {
-    const elapsed = Date.now() - startTs
-    const unavailPayload = { hasKakao: !!kakao, initialized: false, elapsed }
-    logKakaoShareDebug('SDK_UNAVAILABLE', unavailPayload)
-    console.error('[kakao-share] SDK_UNAVAILABLE', unavailPayload)
-    logKakaoShareDebug('FALLBACK_COPY_START', { reason: 'unavailable', fullUrl })
-    const copied = await copyToClipboard(fullUrl)
-    logKakaoShareDebug(copied ? 'FALLBACK_COPY_OK' : 'FALLBACK_COPY_FAILED', { reason: 'unavailable', fullUrl })
-    throw new KakaoUnavailableError(fullUrl, 'unavailable')
-  }
-
+  // SDK 준비 완료 — sendDefault()를 동기적으로 즉시 호출 (이 아래에 await 없음)
   const elapsedBeforeSend = Date.now() - startTs
   const snapshot = getKakaoRuntimeSnapshot()
-  // localStorage에 먼저 기록 — sendDefault() 호출 전이므로 페이지 이탈 시에도 보존됨
+  // sendDefault() 호출 직전에 localStorage 기록 — 페이지 이탈 시에도 보존됨
   logKakaoShareDebug('SEND_DEFAULT_START', {
     snapshot,
     href: window.location.href,
@@ -178,7 +150,8 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
   })
 
   try {
-    kakao.Share.sendDefault({
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    kakao!.Share.sendDefault({
       objectType: 'feed',
       content: {
         title: params.title,
