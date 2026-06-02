@@ -2577,7 +2577,7 @@ export const PERSONAS: Record<string, Persona> = {
     age: 47,
     gender: '여',
     personality: '마흔 중반에 재테크에 뒤늦게 눈떴지만 번번이 타이밍을 놓침. 코인에 손댔다가 반타작. 요즘 ETF 공부 중. 배운 거 나누고 싶어서 글 씀. 실패담도 솔직하게 공유.',
-    board: 'MONEY',
+    board: 'LIFE2',
     style: '재테크 현실 공유, 연금·절약 솔직 토로',
     topics: [
       '코인에 손댔다가 반타작한 이야기예요',
@@ -2630,7 +2630,7 @@ export const PERSONAS: Record<string, Persona> = {
     age: 48,
     gender: '여',
     personality: '희망퇴직 신청한 48세 직장인. 은퇴까지 100일도 안 남았음. 기대와 불안이 뒤섞임. 퇴직 후 뭘 할지 진짜 모르겠음. 은퇴 준비가 부족하다는 걸 알면서도 막막함. 비슷한 처지 분들이랑 이야기 나누고 싶어서 글 씀.',
-    board: 'RETIRE',
+    board: 'LIFE2',
     style: '은퇴 준비 현실, 불안과 기대 공존',
     topics: [
       'D-87일 이제 정말 얼마 안 남았어요',
