@@ -134,7 +134,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         logKakaoShareDebug('TOAST_FALLBACK', { reason: e.reason, postId })
         gtmShare('copy_link', 'post', postId)
         void incrementShareCount(postId)
-        toast('카카오 공유가 안 되어 링크를 복사했어요', 'success')
+        toast('카카오톡을 열 수 없어 링크를 복사했어요', 'success')
         setShowShareMenu(false)
       } else {
         toast('공유에 실패했어요', 'error')
