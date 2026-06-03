@@ -46,16 +46,16 @@ export default function LoginForm() {
         <div className="flex-1 flex flex-col items-center justify-center px-8 py-10">
           <Image
             src="/logo.png"
-            width={108}
-            height={108}
+            width={130}
+            height={130}
             alt="우나어 로고"
             className="object-contain mb-3"
             priority
           />
           <p className="text-[25px] font-bold leading-[1.4] text-center">
-            <span className="text-foreground">중년여성만을 위한</span>
+            <span className="text-foreground">신중년 여성만을 위한</span>
             <br />
-            <span className="text-primary-text">고민상담소</span>
+            <span className="text-[#FF6F61]">고민 상담소</span>
           </p>
           <p className="text-[15px] text-muted-foreground mt-4 text-center">
             지금 로그인하고
@@ -65,7 +65,7 @@ export default function LoginForm() {
         </div>
 
         {/* 3. 하단 카카오 CTA */}
-        <div className="px-6 pb-12 md:pb-10">
+        <div className="px-6 pb-[68px] md:pb-[60px]">
           <button
             type="button"
             onClick={handleKakaoClick}
