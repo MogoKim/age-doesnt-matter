@@ -75,6 +75,13 @@
     --icon-magazine-bg: #E3F2FD; --icon-magazine-stroke: #185FA5;
     --icon-job-bg:      #F3E5F5; --icon-job-stroke:      #6A1B9A;
 
+    /* ── Category chip 전용 — GNB icon 동일 색 계열 ── */
+    --cat-life-bg: #FFF1E5;  --cat-life-text: #C7651E;
+    --cat-life2-bg: #E8F5E9; --cat-life2-text: #2E7D32;
+    --cat-laugh-bg: #FFF8E1; --cat-laugh-text: #A06900;
+    --cat-mag-bg: #E3F2FD;   --cat-mag-text: #185FA5;
+    --cat-best-bg: #FFE9E5;  --cat-best-text: #C4453B;
+
     /* ── 보조 surface (코랄 계열) ── */
     --surface-coral-soft: #FFE9E5; /* 태그·뱃지 배경 */
     --surface-coral-pale: #FFF8F6; /* 카드·greeting 배경 */

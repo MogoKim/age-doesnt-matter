@@ -3,6 +3,7 @@ import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 import { IconComment, IconEye, IconStories } from '@/components/icons'
+import { getCategoryChipClass } from '@/lib/category-chip'
 
 interface Props {
   posts: PostSummary[]
@@ -39,7 +40,7 @@ export default function StoriesSection({ posts }: Props) {
               position={index}
               contentId={post.id}
             >
-              <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold leading-[1.4] text-primary-text mb-1.5">
+              <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-bold leading-[1.4] mb-1.5 ${getCategoryChipClass(post.boardType)}`}>
                 {BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}
               </span>
               <p className="text-body font-medium text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep motion-safe:transition-colors motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:group-hover:text-primary-text group-active:text-primary-text">{post.title}</p>

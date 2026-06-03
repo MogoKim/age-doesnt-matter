@@ -3,6 +3,7 @@ import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { IconComment, IconHeart, IconStories } from '@/components/icons'
+import { getCategoryChipClass } from '@/lib/category-chip'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 
 interface Props {
@@ -35,7 +36,7 @@ export default function CommunitySection({ posts }: Props) {
               contentId={post.id}
             >
               <div className="flex items-center gap-2 mb-1">
-                <span className="bg-background px-2 py-0.5 rounded text-caption text-muted-foreground font-medium">{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
+                <span className={`px-2 py-0.5 rounded text-caption font-medium ${getCategoryChipClass(post.boardType)}`}>{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
                 <span className="text-caption text-muted-foreground">{post.author.nickname}</span>
               </div>
               <p className="text-body text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>

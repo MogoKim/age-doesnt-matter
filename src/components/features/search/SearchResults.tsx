@@ -4,6 +4,7 @@ import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { formatTimeAgo } from '../community/utils'
 import { IconSearch } from '@/components/icons'
+import { getCategoryChipClass } from '@/lib/category-chip'
 
 interface SearchResultsProps {
   result: SearchResult
@@ -126,7 +127,7 @@ function SearchResultCard({ post, query }: { post: PostSummary; query: string })
       className="block p-4 bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30"
     >
       {post.category && (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary-text text-caption font-bold mb-2">
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-caption font-bold mb-2 ${getCategoryChipClass(post.boardType)}`}>
           {post.category}
         </span>
       )}

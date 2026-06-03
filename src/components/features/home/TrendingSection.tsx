@@ -3,6 +3,7 @@ import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 import { IconComment, IconEye } from '@/components/icons'
+import { getCategoryChipClass } from '@/lib/category-chip'
 
 interface Props {
   posts: PostSummary[]
@@ -39,7 +40,7 @@ export default function TrendingSection({ posts }: Props) {
               <div className="flex-1 min-w-0">
                 <p className="text-body font-medium text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep motion-safe:transition-colors motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:group-hover:text-primary-text group-active:text-primary-text">{post.title}</p>
                 <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-caption text-muted-foreground">
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold leading-[1.4] text-primary-text">{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold leading-[1.4] ${getCategoryChipClass(post.boardType)}`}>{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
                   <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
                   <span className="flex items-center gap-1"><IconEye size={15} /> {post.viewCount}</span>
                 </div>

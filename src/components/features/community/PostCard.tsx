@@ -4,6 +4,7 @@ import type { PostSummary } from '@/types/api'
 import { formatTimeAgo } from './utils'
 import { IconHeart, IconComment, IconEye } from '@/components/icons'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
+import { getCategoryChipClass } from '@/lib/category-chip'
 import type { BoardType } from '@/generated/prisma/client'
 
 interface PostCardProps {
@@ -21,12 +22,12 @@ function PostCard({ post, boardSlug, showBoardBadge = false, fromParam }: PostCa
     >
       {showBoardBadge
         ? (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary-text text-caption font-bold w-fit tracking-wide">
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-caption font-bold w-fit tracking-wide ${getCategoryChipClass(post.boardType as string)}`}>
             {BOARD_DISPLAY_NAMES[post.boardType as BoardType] ?? post.boardType}
           </span>
         )
         : post.category && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary-text text-caption font-bold w-fit tracking-wide">
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-caption font-bold w-fit tracking-wide ${getCategoryChipClass(post.boardType as string)}`}>
             {post.category}
           </span>
         )

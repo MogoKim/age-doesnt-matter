@@ -2,6 +2,7 @@ import Image from 'next/image'
 import HomeCardLink from '@/components/features/home/HomeCardLink'
 import type { PostSummary } from '@/types/api'
 import { getCategoryEmoji } from '@/lib/format'
+import { getCategoryChipClass } from '@/lib/category-chip'
 import { IconMagazine } from '@/components/icons'
 
 interface Props {
@@ -51,7 +52,7 @@ export default function MagazineSection({ posts }: Props) {
                 )}
               </div>
               <div className="p-3">
-                <span className="inline-flex w-fit items-center rounded-md bg-primary/10 px-2 py-0.5 text-caption text-primary-text font-bold mb-2">{article.category}</span>
+                <span className={`inline-flex w-fit items-center rounded-md px-2 py-0.5 text-caption font-bold mb-2 ${getCategoryChipClass(article.boardType)}`}>{article.category}</span>
                 <h3 className="text-body font-bold text-foreground leading-[1.4] line-clamp-2 break-keep">{article.title}</h3>
               </div>
             </HomeCardLink>

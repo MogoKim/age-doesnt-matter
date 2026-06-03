@@ -146,3 +146,4 @@ GA4 실시간 → 이벤트 → `home_card_click` 에서 확인 가능.
 | 2026-05-12 | 쿠팡 홈 carousel 390×150으로 교체 — CoupangHome1(id=976335)·CoupangHome2(id=988412) 신규 슬롯, insertAdjacentElement 방식으로 렌더링 버그 수정 | carousel이 React useEffect 내 appendChild로 DOM 주입 시 PartnersCoupang.G 렌더링 타겟 인식 실패 → afterend 형제 삽입으로 수정 |
 | 2026-05-13 | getTrendingPosts 정오(12:00) 기준 리셋 + 4단계 engagement gate fallback, getHomeBoardHotPosts 정오 기준 + 3단계 fallback (src/lib/utils/trending.ts 신규) | 새벽/새 글 없는 시간대 좋아요·댓글 0건 글 노출 → "망한 서비스" 이탈 방지. 00~12시 조용한 시간대 1.5×·1.2× 보너스 적용 |
 | 2026-05-14 | TrendingSection 링크에 ?from=trending 추가 — 홈 [지금뜨는이야기] 클릭 시 게시글 하단에 베스트글 12개 연속읽기 목록 표시 | 세션당 PV 증가 목표 — fmkorea 연속읽기 UX 벤치마킹 |
+| 2026-06-03 | boardType별 카테고리 칩 색상 분리 — TrendingSection·StoriesSection·HumorSection·Life2Section·CommunitySection·MagazineSection에 getCategoryChipClass() 적용, globals.css --cat-* 토큰 5종 추가 | 게시판별 색상 시각화로 콘텐츠 구분 개선 |
