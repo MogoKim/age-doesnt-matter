@@ -650,9 +650,9 @@ launchctl list | grep unaeo
 | plist | 실행 시간 (KST) | 역할 |
 |-------|--------------|------|
 | com.unaeo.session-refresh | 02:00 | NID_SES 쿠키 갱신 체크 |
-| com.unaeo.magazine-morning | 01:00 | 매거진 생성 (morning) |
-| com.unaeo.magazine-afternoon | 06:00 | 매거진 생성 (afternoon) |
-| com.unaeo.magazine-late | 08:00 | 매거진 생성 (late) |
+| com.unaeo.magazine-morning | 11:00 | 매거진 생성 (morning) |
+| com.unaeo.magazine-afternoon | **비활성** | 파일 보존, launchctl 미등록 |
+| com.unaeo.magazine-late | 14:00 | 매거진 생성 (late) |
 | com.unaeo.cafe-crawler-morning | 08:30 | 카페 deep 크롤링 |
 | com.unaeo.cafe-crawler-lunch | 12:30 | 카페 quick 크롤링 |
 | com.unaeo.cafe-crawler-evening | 20:40 | 카페 deep 크롤링 |
