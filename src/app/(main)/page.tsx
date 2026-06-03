@@ -40,6 +40,27 @@ const getCachedMagazine = unstable_cache(
   { revalidate: 60, tags: ['home-magazine'] }
 )
 
+type HomeSections = Awaited<ReturnType<typeof getCachedHomeSections>>
+type HomeMagazinePosts = Awaited<ReturnType<typeof getCachedMagazine>>
+type HomeJobs = Awaited<ReturnType<typeof getCachedJobs>>
+
+const EMPTY_HOME_SECTIONS: HomeSections = { trending: [], stories: [], humor: [] }
+const EMPTY_HOME_MAGAZINE: HomeMagazinePosts = []
+const EMPTY_HOME_JOBS: HomeJobs = []
+
+async function withHomeFallback<T>(
+  label: string,
+  loader: () => Promise<T>,
+  fallback: T,
+): Promise<T> {
+  try {
+    return await loader()
+  } catch (error) {
+    console.warn(`[home] ${label} fallback used`, error)
+    return fallback
+  }
+}
+
 /* ── Suspense 스켈레톤 ── */
 function SectionSkeleton({ h = 'h-[200px]' }: { h?: string }) {
   return <div className={`${h} animate-pulse bg-muted/50 rounded-2xl mx-4 my-3 lg:mx-0`} />
@@ -55,7 +76,11 @@ function HeroSkeleton() {
 
 // 지금뜨는이야기 + 사는이야기 + 웃음방 — compose 레이어에서 중복 제거 + override 반영
 async function HotContentSections() {
-  const { trending, stories, humor } = await getCachedHomeSections()
+  const { trending, stories, humor } = await withHomeFallback(
+    'content sections',
+    getCachedHomeSections,
+    EMPTY_HOME_SECTIONS,
+  )
 
   return (
     <>
@@ -97,12 +122,12 @@ async function HotContentSections() {
 }
 
 async function MagazineWrapper() {
-  const posts = await getCachedMagazine()
+  const posts = await withHomeFallback('magazine section', getCachedMagazine, EMPTY_HOME_MAGAZINE)
   return <MagazineSection posts={posts} />
 }
 
 async function JobWrapper() {
-  const jobs = await getCachedJobs()
+  const jobs = await withHomeFallback('job section', getCachedJobs, EMPTY_HOME_JOBS)
   return <JobSection jobs={jobs} />
 }
 
