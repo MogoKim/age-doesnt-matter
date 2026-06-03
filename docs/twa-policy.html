@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 나이가 어때서 — TWA 정책 문서</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #1a1a1a;
+    background: #f8f9fa;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* 헤더 */
+  .doc-header {
+    background: linear-gradient(135deg, #2A0B1E 0%, #7B2547 60%, #C4637A 100%);
+    color: white;
+    padding: 48px 40px 40px;
+    border-radius: 16px;
+    margin-bottom: 32px;
+  }
+  .doc-header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+  .meta-grid {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .meta-item {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  .meta-item strong { color: #FFD6E3; }
+
+  /* TOC */
+  .toc {
+    background: white;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 32px;
+  }
+  .toc h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #666;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .toc ol {
+    padding-left: 20px;
+  }
+  .toc li {
+    margin-bottom: 4px;
+  }
+  .toc a {
+    color: #7B2547;
+    text-decoration: none;
+    font-size: 14px;
+  }
+  .toc a:hover { text-decoration: underline; }
+
+  /* 섹션 */
+  .section {
+    background: white;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  h2 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #2A0B1E;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #F2A0B5;
+    letter-spacing: -0.02em;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #7B2547;
+    margin: 24px 0 12px;
+  }
+  h3:first-child { margin-top: 0; }
+  p {
+    margin-bottom: 12px;
+    color: #333;
+  }
+  ul, ol {
+    padding-left: 20px;
+    margin-bottom: 12px;
+  }
+  li { margin-bottom: 4px; }
+
+  /* 강조 */
+  strong { color: #C4637A; }
+  code {
+    background: #f4f0f2;
+    color: #7B2547;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+  }
+
+  /* 코드 블록 */
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: 10px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  /* 테이블 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  th {
+    background: #f4f0f2;
+    color: #2A0B1E;
+    font-weight: 700;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 2px solid #F2A0B5;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0e8ec;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fdf7f9; }
+
+  /* 경고/정보 박스 */
+  .alert {
+    border-left: 4px solid #C4637A;
+    background: #fdf2f5;
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .alert.warning {
+    border-color: #e67e22;
+    background: #fef9f0;
+  }
+  .alert.info {
+    border-color: #3498db;
+    background: #f0f7fd;
+  }
+
+  /* 배지 */
+  .badge {
+    display: inline-block;
+    background: #F2A0B5;
+    color: #2A0B1E;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 100px;
+    letter-spacing: 0.03em;
+  }
+  .badge.green { background: #d4edda; color: #155724; }
+  .badge.red { background: #f8d7da; color: #721c24; }
+
+  /* 체크리스트 */
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { padding-left: 28px; position: relative; margin-bottom: 8px; }
+  .checklist li::before {
+    content: '□';
+    position: absolute;
+    left: 0;
+    color: #C4637A;
+    font-size: 16px;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #f0e8ec;
+    margin: 24px 0;
+  }
+
+  /* 변경 이력 */
+  .changelog td:first-child { color: #888; font-size: 13px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- 헤더 -->
+  <div class="doc-header">
+    <h1>우리 나이가 어때서 — TWA 정책 문서</h1>
+    <div class="meta-grid">
+      <div class="meta-item"><strong>용도</strong> TWA 수정·개선·배포 시 단일 진실의 원천</div>
+      <div class="meta-item"><strong>최초 작성</strong> 2026-05-18</div>
+      <div class="meta-item"><strong>관리</strong> Claude Code 자동 업데이트</div>
+      <div class="meta-item"><strong>현재 버전</strong> appVersionCode: 4</div>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h2>목차</h2>
+    <ol>
+      <li><a href="#s1">배경 및 목적</a></li>
+      <li><a href="#s2">아키텍처 개요</a></li>
+      <li><a href="#s3">핵심 구성 요소 현황</a></li>
+      <li><a href="#s4">정책</a></li>
+      <li><a href="#s5">빌드 및 배포 절차</a></li>
+      <li><a href="#s6">검증 체크리스트</a></li>
+      <li><a href="#s7">트러블슈팅</a></li>
+      <li><a href="#s8">파일 위치 참조</a></li>
+      <li><a href="#s9">변경 이력</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. 배경 및 목적 -->
+  <div class="section" id="s1">
+    <h2>1. 배경 및 목적</h2>
+
+    <h3>1-1. 왜 TWA인가</h3>
+    <p>우리 나이가 어때서(이하 우나어)는 PWA(Progressive Web App)로 구축된 웹 서비스다.
+    TWA(Trusted Web Activity)는 Android 앱 셸이 웹 콘텐츠를 네이티브 앱처럼 구동하는 방식으로,
+    별도 React Native/Flutter 앱 없이 Google Play Store에 정식 등록이 가능하다.</p>
+    <p><strong>선택 근거:</strong></p>
+    <ul>
+      <li>이미 완성된 PWA(sw.js, manifest.json, 아이콘, web-push) 자산 재활용</li>
+      <li>유지보수 단일화: 웹 코드 배포 = 앱 업데이트 (별도 앱 심사 불필요)</li>
+      <li>주소창 없는 전체화면 경험 = 네이티브 앱과 동일한 UX</li>
+      <li>푸시 알림: 이미 구현된 Web Push 그대로 작동</li>
+    </ul>
+
+    <h3>1-2. 목표</h3>
+    <table>
+      <thead><tr><th>목표</th><th>지표</th></tr></thead>
+      <tbody>
+        <tr><td>Play Store 정식 등록</td><td>프로덕션 트랙 게시</td></tr>
+        <tr><td>네이티브 앱 UX</td><td>주소창 없는 전체화면 확인</td></tr>
+        <tr><td>도메인 인증</td><td>assetlinks.json 검증 통과</td></tr>
+        <tr><td>푸시 알림 작동</td><td>Web Push 구독 + 수신 확인</td></tr>
+        <tr><td>5060 사용자 접근</td><td>Play Store 다운로드 가능</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 2. 아키텍처 -->
+  <div class="section" id="s2">
+    <h2>2. 아키텍처 개요</h2>
+    <pre>사용자 Android 기기
+    │
+    ▼
+[com.agenotmatter.app] ← Google Play Store 배포
+    │  TWA 셸 (Bubblewrap 생성)
+    │  minSdkVersion: 21 (Android 5.0+)
+    │  fallback: Custom Tabs
+    │
+    ▼ Digital Asset Links 인증 통과 시
+[age-doesnt-matter.com] ← Vercel 배포 웹앱
+    │  Next.js 14 App Router
+    │  Service Worker (/sw.js)
+    │  Web Manifest (/manifest.json)
+    │
+    ├── /.well-known/assetlinks.json  ← 도메인 인증
+    ├── /manifest.json                ← PWA 설정
+    ├── /sw.js                        ← 오프라인·푸시
+    └── /icons/                       ← 앱 아이콘</pre>
+
+    <h3>TWA 작동 원리</h3>
+    <ol>
+      <li>Android가 앱 실행 시 <code>assetlinks.json</code> 검증</li>
+      <li>검증 성공 → 주소창 없는 전체화면으로 웹앱 로드</li>
+      <li>검증 실패 → Custom Tabs로 폴백 (주소창 있음)</li>
+      <li>Service Worker가 오프라인·푸시 처리</li>
+    </ol>
+  </div>
+
+  <!-- 3. 핵심 구성 요소 -->
+  <div class="section" id="s3">
+    <h2>3. 핵심 구성 요소 현황</h2>
+
+    <h3>3-1. assetlinks.json</h3>
+    <p><strong>파일 경로</strong>: <code>public/.well-known/assetlinks.json</code><br>
+    <strong>서빙 URL</strong>: <code>https://age-doesnt-matter.com/.well-known/assetlinks.json</code><br>
+    <strong>Cache-Control</strong>: <code>no-cache, no-store, must-revalidate</code> (항상 최신)</p>
+    <pre>[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.agenotmatter.app",
+    "sha256_cert_fingerprints": [
+      "D5:F1:9B:5B:0B:44:1C:CF:33:B9:2B:CE:1F:74:1B:62:E0:20:4F:15:61:9C:F2:C0:31:1F:F3:52:0F:40:FD:20"
+    ]
+  }
+}]</pre>
+    <div class="alert warning">
+      이 SHA-256은 <strong>Google Play App Signing</strong> 서명키다. 로컬 android.keystore의 SHA-256이 아님. Play Console → 앱 서명 페이지에서 확인.
+    </div>
+
+    <h3>3-2. Web App Manifest</h3>
+    <p><strong>파일 경로</strong>: <code>public/manifest.json</code></p>
+    <table>
+      <thead><tr><th>필드</th><th>값</th><th>TWA 필수 여부</th></tr></thead>
+      <tbody>
+        <tr><td>display</td><td>standalone</td><td><span class="badge green">✅ 필수</span></td></tr>
+        <tr><td>start_url</td><td>/</td><td><span class="badge green">✅ 필수</span></td></tr>
+        <tr><td>id</td><td>/</td><td>권장</td></tr>
+        <tr><td>theme_color</td><td>#FF6F61</td><td>권장</td></tr>
+        <tr><td>background_color</td><td>#FFFFFF</td><td>권장</td></tr>
+        <tr><td>orientation</td><td>portrait-primary</td><td>설정됨</td></tr>
+        <tr><td>icons (192px maskable)</td><td>✅</td><td><span class="badge green">✅ 필수</span></td></tr>
+        <tr><td>icons (512px maskable)</td><td>✅</td><td><span class="badge green">✅ 필수</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>3-3. Service Worker</h3>
+    <p><strong>파일 경로</strong>: <code>public/sw.js</code> | <strong>캐시명</strong>: <code>unao-v1</code></p>
+    <ul>
+      <li>프리캐시: <code>/</code>, <code>/offline</code>, <code>/manifest.json</code>, 아이콘 2종</li>
+      <li>설치 즉시 활성화 (<code>skipWaiting()</code>)</li>
+      <li>VAPID 키 동적 주입 (<code>postMessage</code> 수신)</li>
+      <li>Web Push 푸시 알림 수신 처리</li>
+    </ul>
+    <p><strong>등록 컴포넌트</strong>: <code>src/components/common/ServiceWorkerRegister.tsx</code></p>
+
+    <h3>3-4. Android TWA 앱</h3>
+    <p><strong>빌드 도구</strong>: Bubblewrap CLI | <strong>결과물 위치</strong>: <code>/Users/yanadoo/migration-backup/android/</code></p>
+    <table>
+      <thead><tr><th>파일</th><th>용도</th></tr></thead>
+      <tbody>
+        <tr><td><code>android.keystore</code></td><td>로컬 서명 키 (분실 금지)</td></tr>
+        <tr><td><code>twa-manifest.json</code></td><td>Bubblewrap 프로젝트 설정</td></tr>
+        <tr><td><code>app-release-signed.apk</code></td><td>직접 설치용 APK</td></tr>
+        <tr><td><code>app-release-bundle.aab</code></td><td>Play Store 업로드용 AAB</td></tr>
+      </tbody>
+    </table>
+    <p><strong>twa-manifest.json 핵심 설정 (현재 버전: 4):</strong></p>
+    <pre>{
+  "packageId": "com.agenotmatter.app",
+  "host": "age-doesnt-matter.com",
+  "name": "우리 나이가 어때서",
+  "launcherName": "우나어",
+  "appVersionCode": 4,
+  "appVersionName": "4",
+  "enableNotifications": true,
+  "minSdkVersion": 21,
+  "fallbackType": "customtabs"
+}</pre>
+
+    <h3>3-5. Web Push (푸시 알림)</h3>
+    <p><strong>라이브러리</strong>: <code>web-push ^3.6.7</code></p>
+    <pre>NEXT_PUBLIC_VAPID_PUBLIC_KEY=   # 공개키 (브라우저에 노출)
+VAPID_PRIVATE_KEY=               # 비밀키 (서버 전용, 절대 노출 금지)
+VAPID_SUBJECT=mailto:korea.age.not.matter@gmail.com</pre>
+    <p><strong>API 라우트:</strong></p>
+    <ul>
+      <li><code>POST /api/push/subscribe</code> — 구독 등록 (rate limit: 10/분)</li>
+      <li><code>DELETE /api/push/subscribe</code> — 구독 해제</li>
+    </ul>
+
+    <h3>3-6. Feature Flags</h3>
+    <p><strong>파일</strong>: <code>src/lib/feature-flags.ts</code></p>
+    <pre>export const flags = {
+  webPush: process.env.FEATURE_WEB_PUSH !== 'false',
+  pushToast: process.env.FEATURE_PUSH_TOAST !== 'false',
+  twa: process.env.FEATURE_TWA !== 'false',
+}</pre>
+    <div class="alert info">Vercel 환경변수로 재배포 없이 즉시 토글 가능. 기본값: true (환경변수 미설정 시 활성)</div>
+  </div>
+
+  <!-- 4. 정책 -->
+  <div class="section" id="s4">
+    <h2>4. 정책</h2>
+
+    <h3>4-1. 패키지명 정책</h3>
+    <pre>com.agenotmatter.app</pre>
+    <div class="alert">
+      <strong>절대 변경 불가.</strong> Play Store 등록 후 패키지명 변경 = 신규 앱으로 재등록. 기존 사용자 이관 불가능.
+    </div>
+
+    <h3>4-2. 키스토어 정책</h3>
+    <table>
+      <thead><tr><th>항목</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>파일 위치</td><td><code>/Users/yanadoo/migration-backup/android/android.keystore</code></td></tr>
+        <tr><td>alias</td><td>android</td></tr>
+        <tr><td>역할</td><td>로컬 서명 (Play Console 업로드 전 서명)</td></tr>
+      </tbody>
+    </table>
+    <div class="alert warning">Play App Signing 활성화 상태. Google이 재서명하므로 최종 APK 서명 = Google 서명키. assetlinks.json의 SHA-256은 Google 서명키 기준. <strong>키스토어 분실 시 Play Console 업로드 불가. 반드시 백업 유지.</strong></div>
+
+    <h3>4-3. assetlinks.json 수정 정책</h3>
+    <p>수정이 필요한 경우:</p>
+    <ol>
+      <li>Google Play App Signing SHA-256 교체 (재등록 등)</li>
+      <li>추가 앱 패키지 등록</li>
+    </ol>
+    <p>수정 절차:</p>
+    <ol>
+      <li><code>public/.well-known/assetlinks.json</code> 수정</li>
+      <li>배포 (Vercel 자동 배포)</li>
+      <li>검증: <code>curl https://age-doesnt-matter.com/.well-known/assetlinks.json</code></li>
+      <li>Google Digital Asset Links API로 확인</li>
+    </ol>
+    <div class="alert"><strong>절대 캐시 허용 금지</strong>: Cache-Control: no-cache, no-store, must-revalidate 유지.</div>
+
+    <h3>4-4. 앱 버전 정책</h3>
+    <table>
+      <thead><tr><th>항목</th><th>현재값</th><th>규칙</th></tr></thead>
+      <tbody>
+        <tr><td>appVersionCode</td><td><strong>4</strong></td><td>업로드마다 +1 (감소 불가)</td></tr>
+        <tr><td>appVersionName</td><td><strong>"4"</strong></td><td>의미있는 버전명 (예: "5", "1.1")</td></tr>
+      </tbody>
+    </table>
+    <p>버전 코드는 <strong>단조 증가</strong>. 같은 버전 코드 재업로드 불가.</p>
+
+    <h3>4-5. AAB 업로드 정책</h3>
+    <ul>
+      <li>Play Console에는 반드시 <strong>AAB</strong> 업로드 (APK 아님)</li>
+      <li>AAB: <code>app-release-bundle.aab</code></li>
+      <li>내부 테스트 → 비공개 테스트 → 프로덕션 순서로 트랙 이동</li>
+    </ul>
+
+    <h3>4-6. manifest.json 수정 정책</h3>
+    <p><span class="badge red">수정 금지</span> (TWA 파괴):</p>
+    <ul>
+      <li><code>display</code>: standalone 고정</li>
+      <li><code>start_url</code>: / 고정</li>
+      <li><code>id</code>: / 고정</li>
+    </ul>
+    <p><span class="badge green">수정 가능</span>:</p>
+    <ul>
+      <li><code>icons</code> 배열에 추가 (기존 삭제 금지)</li>
+      <li><code>screenshots</code> 배열 추가/수정</li>
+      <li><code>categories</code>, <code>description</code> 수정</li>
+    </ul>
+
+    <h3>4-7. Service Worker 수정 정책</h3>
+    <p>캐시명(<code>CACHE_NAME</code>) 변경 시: 기존 캐시 자동 정리 로직 확인 + 오프라인 동작 테스트 필수</p>
+    <p>VAPID 키 변경 시:</p>
+    <ul>
+      <li>기존 모든 PushSubscription 무효화됨</li>
+      <li>DB 전체 삭제 후 재구독 유도 필요</li>
+      <li>변경 절차: 새 키 생성 → .env 업데이트 → 배포 → DB cleanup</li>
+    </ul>
+
+    <h3>4-8. Feature Flag 정책</h3>
+    <p>TWA 기능 긴급 비활성화 시:</p>
+    <pre>FEATURE_TWA=false
+FEATURE_WEB_PUSH=false
+FEATURE_PUSH_TOAST=false</pre>
+    <p>Vercel 대시보드에서 환경변수 수정 → 재배포 없이 즉시 적용.</p>
+  </div>
+
+  <!-- 5. 빌드 및 배포 -->
+  <div class="section" id="s5">
+    <h2>5. 빌드 및 배포 절차</h2>
+
+    <h3>5-1. 신규 TWA 빌드 (버전 업)</h3>
+    <pre># 1. twa-manifest.json에서 버전 업
+# appVersionCode: N → N+1
+# appVersionName: "N" → "N+1"
+
+# 2. Bubblewrap으로 빌드 (터미널에서 직접 실행)
+cd /Users/yanadoo/migration-backup/android
+bubblewrap build
+# 프롬프트: Y → 키스토어 비밀번호 → 키 비밀번호
+
+# 3. 결과물 확인
+ls -la *.apk *.aab
+
+# 4. Play Console에 AAB 업로드
+# Play Console → 프로덕션 → 새 버전 만들기 → AAB 업로드</pre>
+
+    <h3>5-2. assetlinks.json만 변경 시</h3>
+    <pre># 코드 변경
+vi public/.well-known/assetlinks.json
+
+# 배포 (git push → Vercel 자동)
+git add public/.well-known/assetlinks.json
+git commit -m "fix: assetlinks.json SHA-256 업데이트"
+git push
+
+# 검증 (배포 후 1-2분 후)
+curl -s https://age-doesnt-matter.com/.well-known/assetlinks.json | python3 -m json.tool</pre>
+
+    <h3>5-3. VAPID 키 교체 시</h3>
+    <pre># 1. 새 키 생성
+npx web-push generate-vapid-keys
+
+# 2. Vercel 환경변수 업데이트
+# NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY
+
+# 3. 기존 PushSubscription 전체 삭제 (Supabase SQL Editor)
+DELETE FROM "PushSubscription";
+
+# 4. 배포 후 사용자에게 재구독 팝업 노출</pre>
+  </div>
+
+  <!-- 6. 검증 체크리스트 -->
+  <div class="section" id="s6">
+    <h2>6. 검증 체크리스트</h2>
+
+    <h3>6-1. assetlinks.json 검증</h3>
+    <pre># 파일 응답 확인
+curl -I https://age-doesnt-matter.com/.well-known/assetlinks.json
+# → Cache-Control: no-cache, no-store, must-revalidate 확인
+
+# 내용 확인
+curl -s https://age-doesnt-matter.com/.well-known/assetlinks.json
+
+# Google Digital Asset Links API
+curl "https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://age-doesnt-matter.com&relation=delegate_permission/common.handle_all_urls"
+# → linked: true 확인</pre>
+
+    <h3>6-2. TWA 주소창 없음 확인</h3>
+    <ol>
+      <li>Android 기기에 APK 설치</li>
+      <li>앱 실행</li>
+      <li>주소창 없이 전체화면 = TWA 인증 성공</li>
+      <li>주소창 있음 = assetlinks.json 불일치 (검증 실패)</li>
+    </ol>
+
+    <h3>6-3. 푸시 알림 검증</h3>
+    <ol>
+      <li>앱 설치 → 로그인</li>
+      <li>알림 허용 팝업 → 허용</li>
+      <li>DB에 PushSubscription 레코드 생성 확인</li>
+      <li>테스트 푸시 발송 → 기기 수신 확인</li>
+    </ol>
+
+    <h3>6-4. manifest.json 검증</h3>
+    <pre>curl -s https://age-doesnt-matter.com/manifest.json | python3 -m json.tool | grep -E '"display"|"start_url"|"id"'
+# "display": "standalone"
+# "start_url": "/"
+# "id": "/"</pre>
+  </div>
+
+  <!-- 7. 트러블슈팅 -->
+  <div class="section" id="s7">
+    <h2>7. 트러블슈팅</h2>
+
+    <h3>주소창이 없어지지 않는다</h3>
+    <ol>
+      <li><strong>assetlinks.json SHA-256 불일치</strong>: Play Console → 앱 서명 → Google 서명 인증서 SHA-256 복사 → <code>public/.well-known/assetlinks.json</code> 업데이트 → 배포</li>
+      <li><strong>assetlinks.json 캐시</strong>: <code>Cache-Control: no-cache</code> 헤더 확인 → <code>curl -I</code>로 응답 헤더 검증</li>
+      <li><strong>패키지명 불일치</strong>: assetlinks.json <code>package_name</code> vs twa-manifest.json <code>packageId</code> 일치 확인</li>
+    </ol>
+
+    <h3>푸시 알림이 오지 않는다</h3>
+    <ol>
+      <li>VAPID 키 불일치: <code>.env.local</code>과 Vercel 환경변수 동일 여부 확인</li>
+      <li>PushSubscription 만료: 기기 재구독 필요</li>
+      <li>Feature flag 비활성: <code>FEATURE_WEB_PUSH=false</code> 여부 확인</li>
+      <li>Service Worker 미등록: production 환경인지 확인</li>
+    </ol>
+
+    <h3>Play Console 업로드 거부</h3>
+    <ol>
+      <li>버전 코드 중복: <code>appVersionCode</code> +1 후 재빌드</li>
+      <li>서명 불일치: <code>android.keystore</code> 동일한 키스토어 사용 확인</li>
+      <li>APK가 아닌 AAB 요구: <code>app-release-bundle.aab</code> 업로드</li>
+    </ol>
+  </div>
+
+  <!-- 8. 파일 위치 참조 -->
+  <div class="section" id="s8">
+    <h2>8. 파일 위치 참조</h2>
+    <table>
+      <thead><tr><th>파일</th><th>경로</th></tr></thead>
+      <tbody>
+        <tr><td>assetlinks.json</td><td><code>public/.well-known/assetlinks.json</code></td></tr>
+        <tr><td>manifest.json</td><td><code>public/manifest.json</code></td></tr>
+        <tr><td>Service Worker</td><td><code>public/sw.js</code></td></tr>
+        <tr><td>SW 등록 컴포넌트</td><td><code>src/components/common/ServiceWorkerRegister.tsx</code></td></tr>
+        <tr><td>Feature Flags</td><td><code>src/lib/feature-flags.ts</code></td></tr>
+        <tr><td>Push 구독 API</td><td><code>src/app/api/push/subscribe/route.ts</code></td></tr>
+        <tr><td>PWA 상태 API</td><td><code>src/app/api/user/pwa-status/route.ts</code></td></tr>
+        <tr><td>next.config.js</td><td><code>next.config.js</code> (캐시 헤더)</td></tr>
+        <tr><td>TWA 빌드 설정</td><td><code>/Users/yanadoo/migration-backup/android/twa-manifest.json</code></td></tr>
+        <tr><td>키스토어</td><td><code>/Users/yanadoo/migration-backup/android/android.keystore</code></td></tr>
+        <tr><td>AAB 결과물</td><td><code>/Users/yanadoo/migration-backup/android/app-release-bundle.aab</code></td></tr>
+        <tr><td>APK 결과물</td><td><code>/Users/yanadoo/migration-backup/android/app-release-signed.apk</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 9. 변경 이력 -->
+  <div class="section" id="s9">
+    <h2>9. 변경 이력</h2>
+    <table class="changelog">
+      <thead><tr><th>날짜</th><th>내용</th><th>작성자</th></tr></thead>
+      <tbody>
+        <tr><td>2026-05-18</td><td>최초 작성 — 탐색 기반 전체 현황 문서화</td><td>Claude Code</td></tr>
+        <tr><td>2026-05-18</td><td>appVersionCode 2→4 반영 (Play Store 제출 과정에서 버전 업)</td><td>Claude Code</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>
