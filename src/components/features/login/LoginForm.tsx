@@ -1,12 +1,13 @@
 'use client'
 
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import Image from 'next/image'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { kakaoSignIn } from '@/app/login/actions'
 import { sendGtmEvent, getStoredUtm, getBrowserEnv } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
 
 export default function LoginForm() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') ?? '/'
 
@@ -17,97 +18,67 @@ export default function LoginForm() {
   }
 
   return (
-    // 모바일: 전체 화면 세로 분할 / 데스크탑: 420px 카드
-    <div className="
-      w-full min-h-dvh flex flex-col
-      md:min-h-0 md:w-[420px] md:rounded-2xl md:overflow-hidden md:shadow-[0_4px_24px_rgba(0,0,0,0.10)]
-    ">
+    <div className="relative w-full min-h-dvh flex flex-col overflow-hidden bg-background md:min-h-0 md:w-[420px] md:rounded-2xl md:shadow-[0_4px_24px_rgba(0,0,0,0.10)]">
       <h1 className="sr-only">로그인</h1>
 
-      {/* 상단: 브랜드 + 공감 카피 */}
-      <div className="relative basis-1/2 shrink-0 grow-0 overflow-hidden px-[22px] py-[22px] flex flex-col justify-center bg-[#FFF5F2]">
+      {/* 하단 코랄 그라데이션 배경 */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{ background: 'linear-gradient(0deg, rgba(255,111,97,0.07) 0%, #fff 40%)' }}
+      />
 
-        {/* Blob 1: 좌상단 장식 */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute"
-          style={{
-            top: '-40%',
-            left: '-20%',
-            width: '320px',
-            height: '320px',
-            borderRadius: '9999px',
-            background: 'radial-gradient(circle, rgba(255,111,97,0.4) 0%, transparent 70%)',
-            filter: 'blur(20px)',
-          }}
-        />
+      <div className="relative z-10 flex flex-col flex-1">
 
-        {/* Blob 2: 우하단 장식 */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute"
-          style={{
-            bottom: '-30%',
-            right: '-15%',
-            width: '260px',
-            height: '260px',
-            borderRadius: '9999px',
-            background: 'radial-gradient(circle, rgba(255,180,162,0.55) 0%, transparent 70%)',
-            filter: 'blur(15px)',
-          }}
-        />
-
-        {/* 실제 콘텐츠 — blob 위 */}
-        <div className="relative z-10">
-          {/* 소셜 프루프 배지 */}
-          <div className="inline-flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-lg bg-primary/15 text-primary-text text-[15px] font-bold mb-7">
-            <span>💬</span>
-            <span>지금도 누군가 고민을 나누고 있어요</span>
-          </div>
-
-          {/* 메인 카피 */}
-          <p className="text-[24px] font-extrabold leading-[1.4] tracking-tight text-foreground">
-            엄마 말고,<br />아내 말고,<br />그냥 나로.
-          </p>
-          <p className="text-[17px] text-muted-foreground mt-2.5">
-            내 이야기만 해도 되는 곳.
-          </p>
-        </div>
-      </div>
-
-      {/* 하단: 액션 영역 (흰색) */}
-      <div className="bg-background px-6 pt-8 flex flex-col flex-1 md:flex-none md:pb-12">
-
-        {/* 카카오 버튼 */}
-        <button
-          type="button"
-          onClick={handleKakaoClick}
-          className="flex items-center justify-center gap-2 w-full h-[56px] px-6 border-none rounded-xl font-bold text-base cursor-pointer transition-all hover:brightness-95 hover:-translate-y-0.5 active:translate-y-0"
-          style={{
-            background: '#FEE500',
-            color: '#191919',
-            boxShadow: '0 2px 8px rgba(254,229,0,0.35)',
-          }}
-        >
-          <span className="text-[22px] shrink-0">💬</span>
-          카카오톡으로 시작하기
-        </button>
-
-        {/* 불안 해소 체크리스트 */}
-        <div className="mt-4 flex items-center justify-center gap-4 text-[17px] text-muted-foreground">
-          <span>✓ 닉네임만 공개</span>
-          <span className="text-muted-foreground/40">|</span>
-          <span>✓ 1초 가입 · 무료</span>
-        </div>
-
-        {/* 먼저 둘러볼게요 — 최하단 */}
-        <div className="flex-1 flex items-end justify-center pb-10 md:flex-none md:mt-8 md:pb-0">
-          <Link
-            href="/"
-            className="text-[17px] text-muted-foreground transition-colors hover:underline underline-offset-2"
+        {/* 1. 좌상단 뒤로가기 */}
+        <div className="px-4 pt-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex items-center gap-1 min-h-[52px] px-2 text-muted-foreground hover:text-foreground transition-colors"
           >
-            먼저 둘러볼게요
-          </Link>
+            <span className="text-[22px] leading-none" aria-hidden="true">‹</span>
+            <span className="text-[15px]">뒤로가기</span>
+          </button>
+        </div>
+
+        {/* 2. 중앙 로고 + 헤드라인 + 서브카피 */}
+        <div className="flex-1 flex flex-col items-center justify-center px-8 py-10">
+          <Image
+            src="/logo.png"
+            width={108}
+            height={108}
+            alt="우나어 로고"
+            className="object-contain mb-3"
+            priority
+          />
+          <p className="text-[25px] font-bold leading-[1.4] text-center">
+            <span className="text-foreground">중년여성만을 위한</span>
+            <br />
+            <span className="text-primary-text">고민상담소</span>
+          </p>
+          <p className="text-[15px] text-muted-foreground mt-4 text-center">
+            지금 로그인하고
+            <br />
+            나의 고민을 나눠보세요
+          </p>
+        </div>
+
+        {/* 3. 하단 카카오 CTA */}
+        <div className="px-6 pb-12 md:pb-10">
+          <button
+            type="button"
+            onClick={handleKakaoClick}
+            className="flex items-center justify-center gap-2 w-full h-[54px] rounded-xl font-bold cursor-pointer transition-all hover:brightness-95 hover:-translate-y-0.5 active:translate-y-0"
+            style={{
+              background: '#FEE500',
+              color: '#191919',
+              boxShadow: '0 2px 8px rgba(254,229,0,0.35)',
+            }}
+          >
+            <span className="text-[20px] shrink-0" aria-hidden="true">💬</span>
+            카카오로 3초만에 시작하기
+          </button>
         </div>
 
       </div>
