@@ -50,10 +50,15 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     return { error: '본문은 10자 이상 입력해 주세요' }
   }
 
-  // 금지어 검사 (병렬)
-  const [bannedInTitle, bannedInContent] = await Promise.all([
+  // 금지어/게시판/slug 준비는 서로 독립적이라 병렬 처리한다.
+  const COMMUNITY_BOARD_TYPES: BoardType[] = ['STORY', 'HUMOR', 'LIFE2']
+  const [bannedInTitle, bannedInContent, boardConfig, communitySlug] = await Promise.all([
     checkBannedWords(title),
     checkBannedWords(content),
+    prisma.boardConfig.findUnique({ where: { boardType } }),
+    COMMUNITY_BOARD_TYPES.includes(boardType)
+      ? generateCommunitySlug(title)
+      : Promise.resolve(undefined),
   ])
   if (bannedInTitle) {
     return { error: `제목에 사용할 수 없는 표현이 포함되어 있습니다.` }
@@ -62,10 +67,6 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     return { error: `본문에 사용할 수 없는 표현이 포함되어 있습니다.` }
   }
 
-  // 게시판 활성 여부 확인
-  const boardConfig = await prisma.boardConfig.findUnique({
-    where: { boardType },
-  })
   if (!boardConfig?.isActive) {
     return { error: '현재 글을 작성할 수 없는 게시판입니다' }
   }
@@ -92,12 +93,6 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
       }
     }
   }
-
-  // 커뮤니티 게시판만 slug 생성 (MAGAZINE/JOB/WEEKLY는 각자 slug 관리)
-  const COMMUNITY_BOARD_TYPES: BoardType[] = ['STORY', 'HUMOR', 'LIFE2']
-  const communitySlug = COMMUNITY_BOARD_TYPES.includes(boardType)
-    ? await generateCommunitySlug(title)
-    : undefined
 
   // 게시글 생성 — HTML 새니타이즈 (TipTap HTML 지원)
   const safeContent = sanitizeHtml(content)

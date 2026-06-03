@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import PostWriteForm from '@/components/features/community/PostWriteForm'
 import { getAllBoardConfigs } from '@/lib/queries/boards'
-import { getMyDrafts } from '@/lib/actions/drafts'
+import { getDraftSummariesByUserId } from '@/lib/queries/drafts'
 
 export const metadata: Metadata = {
   title: '글쓰기',
@@ -18,14 +18,14 @@ interface PageProps {
 const WRITABLE_BOARD_TYPES = ['STORY', 'HUMOR', 'LIFE2']
 
 export default async function WritePage({ searchParams }: PageProps) {
-  const session = await auth()
+  const [session, { board }, allBoards] = await Promise.all([
+    auth(),
+    searchParams,
+    getAllBoardConfigs(),
+  ])
   if (!session?.user?.id) redirect('/login')
 
-  const { board } = await searchParams
-  const [allBoards, drafts] = await Promise.all([
-    getAllBoardConfigs(),
-    getMyDrafts(),
-  ])
+  const drafts = await getDraftSummariesByUserId(session.user.id)
 
   const writableBoards = allBoards
     .filter((b) => WRITABLE_BOARD_TYPES.includes(b.boardType))

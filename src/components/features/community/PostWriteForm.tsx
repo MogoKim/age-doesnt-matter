@@ -13,8 +13,31 @@ import BottomSheet from '@/components/ui/BottomSheet'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { ChevronDown } from 'lucide-react'
 
+function TipTapEditorFallback() {
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden" aria-hidden="true">
+      <div className="min-h-[280px] p-4">
+        <div className="h-5 w-44 rounded-full bg-muted mb-4" />
+        <div className="space-y-3">
+          <div className="h-4 w-full rounded-full bg-muted/80" />
+          <div className="h-4 w-11/12 rounded-full bg-muted/80" />
+          <div className="h-4 w-3/4 rounded-full bg-muted/80" />
+        </div>
+      </div>
+      <div className="h-[56px] border-t border-border bg-background flex items-center gap-3 px-4">
+        <div className="h-9 w-9 rounded-full bg-muted" />
+        <div className="h-9 w-9 rounded-full bg-muted" />
+        <div className="h-9 w-9 rounded-full bg-muted" />
+      </div>
+    </div>
+  )
+}
+
 // TipTap은 SSR 불가 → dynamic import
-const TipTapEditor = dynamic(() => import('./TipTapEditor'), { ssr: false })
+const TipTapEditor = dynamic(() => import('./TipTapEditor'), {
+  ssr: false,
+  loading: () => <TipTapEditorFallback />,
+})
 
 interface BoardOption {
   slug: string
