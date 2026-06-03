@@ -490,12 +490,12 @@
         <h1>오늘은 P0를 닫고, 내일은 운영 증거를 확인하는 날</h1>
         <p class="subtitle">
           회원 글 댓글 엔진 v2는 1시간 5 wave E2E까지 최종 PASS. P1-1A와 홈 인터랙션은 배포 완료.
-          P1-1B는 코드/배포는 끝났고, AZ/BA가 실제 SEED에 배정되는 순간만 기다리면 된다.
+          P1-1B는 9c98ad7(2026-06-03)로 seed bot post가 retired 처리돼 종료됐다. AZ/BA 신규 글은 더 이상 생성되지 않는다.
         </p>
         <div class="status-strip">
           <span class="status-pill strong">P0 Wave Engine v2 최종 PASS</span>
-          <span class="status-pill">P1-1B 배포 완료 / 운영 증거 대기</span>
-          <span class="status-pill">다음 1순위: 내일 SEED 확인</span>
+          <span class="status-pill">P1-1B 종료 — seed bot post retired</span>
+          <span class="status-pill">다음 1순위: P1-B+C-2 댓글 품질 개선</span>
           <span class="status-pill">제외 항목 분리 완료</span>
         </div>
       </div>
@@ -503,9 +503,8 @@
         <h2>내일 아침 첫 액션</h2>
         <p>창업자가 판단할 것은 적고, Claude Code가 읽기 전용으로 확인할 것은 명확하게 둔다.</p>
         <ol class="timeline">
-          <li>P1-1B AZ/BA LIFE2 신규 글 여부 확인</li>
-          <li>닉네임 DB 갱신 반영 확인</li>
           <li>P1-B+C-2 댓글 품질 개선 착수 여부 결정</li>
+          <li>닉네임 DB 갱신 반영 확인</li>
           <li>이 로드맵 HTML만 커밋할지 결정</li>
         </ol>
       </aside>
@@ -570,13 +569,13 @@
           </ul>
         </article>
         <article class="task-card">
-          <div class="meta-row"><span class="badge p1">P1-1B</span><span class="badge wait">운영 증거 대기</span></div>
+          <div class="meta-row"><span class="badge p1">P1-1B</span><span class="badge done">종료 — seed bot post retired</span></div>
           <h3>AZ/BA board 값을 LIFE2로 정리</h3>
-          <p>MONEY/RETIRE는 Prisma BoardType에 없어서 런타임 실패 위험이 있었다. 코드와 배포는 끝났고, 실제 신규 글 증거만 남았다.</p>
+          <p>MONEY/RETIRE는 Prisma BoardType에 없어서 런타임 실패 위험이 있었다. 코드/배포 완료. 이후 9c98ad7(2026-06-03)로 seed bot post 경로가 전면 retired 처리돼 AZ/BA 신규 글은 더 이상 생성되지 않으므로 운영 검증 의미 없음 — 종료.</p>
           <ul class="fact-list">
-            <li>커밋: 0725be1</li>
+            <li>커밋: 0725be1 (코드), 9c98ad7 (post retired)</li>
             <li>BoardType 오류 0건</li>
-            <li>다음 SEED에서 AZ/BA 배정 시 최종 PASS</li>
+            <li>AZ/BA 글쓰기 경로 retired — 검증 불필요</li>
           </ul>
         </article>
       </div>
@@ -592,12 +591,13 @@
       </div>
       <div class="task-grid">
         <article class="task-card">
-          <div class="meta-row"><span class="badge p1">1순위</span><span class="badge wait">다음 SEED 후</span></div>
-          <h3>P1-1B AZ/BA LIFE2 최종 운영 검증</h3>
-          <p>AZ 돈공부중, BA 은퇴준비중이 실제 글을 만들 때 `post.boardType = LIFE2`인지 확인한다.</p>
+          <div class="meta-row"><span class="badge p1">종료</span><span class="badge done">seed bot post retired</span></div>
+          <h3>P1-1B AZ/BA LIFE2 운영 검증 — 종료</h3>
+          <p>9c98ad7(2026-06-03)로 seed bot 글쓰기 경로 전면 제거. AZ/BA 신규 글이 생성되지 않으므로 boardType 검증 의미 없음. 항목 종료 처리.</p>
           <ul class="fact-list">
-            <li>PASS: 신규 AZ/BA 글이 LIFE2로 생성</li>
-            <li>FAIL: BoardType 오류 또는 STORY/JOB 오배정</li>
+            <li>코드 배포: 0725be1 ✅</li>
+            <li>글쓰기 경로 retired: 9c98ad7 ✅</li>
+            <li>검증 대상 없음 — 종료</li>
           </ul>
         </article>
         <article class="task-card">
@@ -777,27 +777,14 @@
       </div>
       <div class="stack">
         <div class="prompt-box">
-          <h3>P1-1B AZ/BA LIFE2 최종 운영 검증</h3>
-          <pre>read-only로 P1-1B AZ/BA LIFE2 운영 검증을 해줘.
+          <h3>P1-1B AZ/BA LIFE2 운영 검증 — 종료됨</h3>
+          <pre>⛔ 이 프롬프트는 더 이상 유효하지 않습니다.
 
-전제:
-- 커밋 0725be1 배포 완료
-- persona-data.ts의 AZ/BA board 값은 LIFE2
-- DB write 금지, workflow 수동 실행 금지, raw SQL 금지
+9c98ad7 (2026-06-03): seed bot post 경로 전면 retired.
+generatePost/generateKillerPost → throw Error('retired')
+AZ/BA 신규 글 생성 없음 → boardType 검증 의미 없음.
 
-확인:
-1. 최신 SEED/SCHEDULE 실행 시각과 items 확인
-2. AZ 돈공부중, BA 은퇴준비중이 최근 신규 글을 생성했는지 확인
-3. 생성했다면 post.boardType이 LIFE2인지 확인
-4. BoardType 관련 BotLog FAILED/PARTIAL이 있는지 확인
-5. 없으면 "운영 검증 대기 유지"로 보고
-
-보고:
-- 최근 SEED 실행
-- AZ/BA 배정 여부
-- 신규 postId/title/boardType
-- BoardType 오류 여부
-- 최종 판정 PASS/대기/FAIL</pre>
+P1-1B 종료.</pre>
         </div>
         <div class="prompt-box">
           <h3>닉네임 DB 갱신 확인</h3>
