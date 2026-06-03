@@ -35,21 +35,21 @@ export default function LoginForm() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex items-center gap-1 min-h-[52px] px-2 text-muted-foreground hover:text-foreground transition-colors"
+            className="flex min-h-[52px] items-center gap-2 px-2 text-foreground transition-colors hover:text-primary-text"
           >
-            <span className="text-[22px] leading-none" aria-hidden="true">‹</span>
-            <span className="text-[15px]">뒤로가기</span>
+            <span className="text-[26px] leading-none" aria-hidden="true">‹</span>
+            <span className="text-[18px] font-bold">뒤로가기</span>
           </button>
         </div>
 
-        {/* 2. 중앙 로고 + 헤드라인 + 서브카피 */}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 py-10">
+        {/* 2. 중앙 cluster — 로고/헤드라인/서브카피 22px 균등 간격 */}
+        <div className="my-auto flex flex-col items-center gap-[22px] px-8 py-8">
           <Image
             src="/logo.png"
             width={130}
             height={130}
             alt="우나어 로고"
-            className="object-contain mb-3"
+            className="object-contain"
             priority
           />
           <p className="text-[25px] font-bold leading-[1.4] text-center">
@@ -57,7 +57,7 @@ export default function LoginForm() {
             <br />
             <span className="text-[#FF6F61]">고민 상담소</span>
           </p>
-          <p className="text-[15px] text-muted-foreground mt-4 text-center">
+          <p className="text-[15px] text-muted-foreground text-center">
             지금 로그인하고
             <br />
             나의 고민을 나눠보세요
