@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../core/db.js'
 import { getPersona, getAllPersonaIds, type Persona } from './persona-data.js'
 import type { ControversyTopic } from '../core/intelligence.js'
-import { parseTopComments, classifyCommentAtmosphere } from '../cafe/types.js'
+import { parseTopComments } from '../cafe/types.js'
 
 // ── 욕망 카테고리 → 적합 페르소나 매핑 (v8 — 12카테고리 55명 완전매핑, EN1~EN5 제외) ──
 export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint: string }> = {
@@ -66,33 +66,6 @@ async function getLatestTrend() {
   }
 }
 
-/**
- * 실제 CafePost에서 스타일 예시 추출 — "모방" 파이프라인 핵심
- * 페르소나 욕망과 일치하는 카테고리의 실제 커뮤니티 글/댓글 발췌
- */
-async function getExampleCafePosts(desire: string | null): Promise<string[]> {
-  try {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    const posts = await prisma.cafePost.findMany({
-      where: {
-        isUsable: true,
-        aiAnalyzed: true,
-        ...(desire ? { desireCategory: desire } : {}),
-        crawledAt: { gte: sevenDaysAgo },
-      },
-      select: { content: true },
-      orderBy: { crawledAt: 'desc' },
-      take: 5,
-    })
-    // 실제 글에서 자연스러운 첫 220자 발췌 (줄바꿈 제거, 빈 문장 제외) — 100자는 스타일 전달 불충분
-    return posts
-      .map(p => p.content.replace(/<[^>]+>/g, '').replace(/&[a-zA-Z]+;/g, '').replace(/\n+/g, ' ').trim().slice(0, 220))
-      .filter(s => s.length > 20)
-      .slice(0, 5)
-  } catch {
-    return []
-  }
-}
 
 /** 댓글 스타일 예시 — likeCount 정렬 + 대댓글 포함 (베스트 댓글 5개) */
 async function getExampleCafeComments(desire: string | null): Promise<string[]> {
@@ -125,31 +98,6 @@ async function getExampleCafeComments(desire: string | null): Promise<string[]> 
   }
 }
 
-/** 최근 인기글 댓글 분위기 → 시드봇 글 방향성 컨텍스트 */
-async function getCommentAtmosphereContext(desire: string | null): Promise<string> {
-  try {
-    const posts = await prisma.cafePost.findMany({
-      where: {
-        isUsable: true,
-        commentCrawled: true,
-        commentCount: { gte: 5 },
-        ...(desire ? { desireCategory: desire } : {}),
-        crawledAt: { gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
-      },
-      select: { topComments: true, commentCount: true },
-      orderBy: { commentCount: 'desc' },
-      take: 3,
-    })
-    if (!posts.length) return ''
-    const all = posts.flatMap(p => parseTopComments(p.topComments))
-    const atmosphere = classifyCommentAtmosphere(all)
-    if (atmosphere === '알수없음') return ''
-    const best = all.sort((a, b) => b.likeCount - a.likeCount)[0]
-    if (!best) return ''
-    const replyHint = best.replies.length > 0 ? ` / 대댓글 ${best.replies.length}개 달린 공감 포인트` : ''
-    return `\n\n[최근 커뮤니티 반응 패턴 — 이런 글에 호응이 옴]\n분위기: ${atmosphere} / 베스트 반응: "${best.content.slice(0, 70)}"${replyHint}\n→ 이 분위기에 맞는 소재와 톤으로 글을 써주세요.`
-  } catch { return '' }
-}
 
 /** 페르소나의 주담당 욕망 카테고리 조회 */
 function getPersonaDesire(personaId: string): string | null {
@@ -163,64 +111,7 @@ function getPersonaDesire(personaId: string): string | null {
 
 type VariationType = 'ESCALATION' | 'EMOTIONAL_DEPTH' | 'REVERSAL'
 
-function pickVariationType(): VariationType {
-  const r = Math.random()
-  if (r < 0.40) return 'ESCALATION'
-  if (r < 0.75) return 'EMOTIONAL_DEPTH'
-  return 'REVERSAL'
-}
 
-async function getTopDNAPost(): Promise<{
-  conflictTrigger: string
-  betrayalFactor: string | null
-  emotionalPeak: string | null
-  viralType: string
-  commentSplit: number
-} | null> {
-  try {
-    const post = await prisma.cafePost.findFirst({
-      where: {
-        viralType: { not: null },
-        commentSplit: { gte: 6 },
-        isUsable: true,
-        aiAnalyzed: true,
-        crawledAt: { gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
-      },
-      orderBy: { commentSplit: 'desc' },
-      select: { conflictTrigger: true, betrayalFactor: true, emotionalPeak: true, viralType: true, commentSplit: true },
-    })
-    if (!post?.conflictTrigger || !post?.viralType) return null
-    return {
-      conflictTrigger: post.conflictTrigger,
-      betrayalFactor: post.betrayalFactor,
-      emotionalPeak: post.emotionalPeak,
-      viralType: post.viralType,
-      commentSplit: post.commentSplit ?? 0,
-    }
-  } catch {
-    return null
-  }
-}
-
-function buildVariationBlock(
-  dna: NonNullable<Awaited<ReturnType<typeof getTopDNAPost>>>,
-  variation: VariationType,
-): string {
-  const baseCtx = `갈등 상황: "${dna.conflictTrigger}"${dna.betrayalFactor ? ` / 배신: "${dna.betrayalFactor}"` : ''}`
-  const instructions: Record<VariationType, string> = {
-    ESCALATION:      `비슷하지만 더 심했던 내 경험 — 억울함·분노·배신감을 행동·상황으로만 표현 (감정 직접 묘사 금지). "저는 그보다 더했어요..." 식으로 시작`,
-    EMOTIONAL_DEPTH: `표면 분노 말고 내면 상처·외로움·섭섭함 — 행동·상황으로 표현 (감정 직접 묘사 금지). "겉으론 웃고 있었는데 속으론..." 식`,
-    REVERSAL:        `처음엔 상대 잘못인 줄 알았다가 내 잘못이기도 했던 경험 — "그때는 몰랐는데..." 식 반전`,
-  }
-  return `\n\n[커뮤니티 화제 참고 — 당신만의 이야기로 자연스럽게 변주]
-${baseCtx}
-방향: ${instructions[variation]}
-규칙:
-- 원문 인용/복붙 절대 금지
-- 감정("슬펐어요", "화났어요") 직접 묘사 금지 — 행동·상황으로만 표현
-- AI 특유의 서론/본론/결론 구조 금지 — 중간에서 바로 시작
-- "안녕하세요", "공유드립니다" 등 기계적 인사말 금지`
-}
 
 /** 페르소나 욕망 area에 맞는 hotTopic 1개 선택 (Fix 2) */
 function selectPersonalizedTopic(
@@ -393,37 +284,6 @@ function getKstContext(): string {
   return `[KST 현재] ${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 ${day} ${timeSlot}\n글에서 날짜/요일/시간대를 언급할 때 반드시 위 기준으로 쓰세요.`
 }
 
-/** HUMOR 보드 글 생성 시 최근 엔터테인먼트 크롤링 글 조회 */
-async function getLatestEntertainPost(): Promise<{ title: string; content: string } | null> {
-  try {
-    // KST 오늘 자정을 UTC로 변환
-    const nowKST = new Date(Date.now() + 9 * 60 * 60 * 1000)
-    const startOfTodayKST = new Date(nowKST)
-    startOfTodayKST.setUTCHours(0, 0, 0, 0)
-    const startOfTodayUTC = new Date(startOfTodayKST.getTime() - 9 * 60 * 60 * 1000)
-    const sevenDaysAgoUTC = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-
-    // 오늘 크롤링 글 우선, 없으면 최근 7일 fallback
-    for (const since of [startOfTodayUTC, sevenDaysAgoUTC]) {
-      const post = await prisma.cafePost.findFirst({
-        where: {
-          isUsable: true,
-          crawledAt: { gte: since },
-          OR: [
-            { desireCategory: 'ENTERTAIN' },
-            { topics: { hasSome: ['드라마', '예능', '연예인', '트로트', '넷플릭스', '임영웅'] } },
-          ],
-        },
-        orderBy: { crawledAt: 'desc' },
-        select: { title: true, content: true },
-      })
-      if (post) return post
-    }
-    return null
-  } catch {
-    return null
-  }
-}
 
 /** AI 응답에서 마크다운 문법 제거 */
 function stripMarkdown(text: string): string {
@@ -447,42 +307,7 @@ function stripMarkdown(text: string): string {
 // re-export for scheduler.ts
 export { getAllPersonaIds, getPersona }
 
-/** 제목 목록에서 중복 소재 키워드 추출 — 2회 이상 등장 한국어 명사 (2~4글자) */
-function extractTopicKeywords(titles: string[]): string[] {
-  const stopwords = new Set([
-    '있어요', '없어요', '했어요', '좋아요', '같아요', '것들', '이번', '요즘',
-    '오늘', '어제', '그냥', '너무', '진짜', '정말', '그래서', '하지만',
-    '그런데', '드디어', '우리가', '이게', '이런', '저도', '나도', '다들',
-    '아직', '벌써', '이미', '내가', '우리', '모두', '어떻게', '하나',
-    '이제', '여기', '저기', '가장', '조금', '많이', '갑자기', '결국',
-    '처음', '나중', '마지막', '이렇게', '저렇게', '그렇게', '지금', '다시',
-  ])
-  const allText = titles.join(' ')
-  const words = allText.match(/[가-힣]{2,4}/g) ?? []
-  const freq = new Map<string, number>()
-  for (const w of words) {
-    if (!stopwords.has(w)) freq.set(w, (freq.get(w) ?? 0) + 1)
-  }
-  return [...freq.entries()]
-    .filter(([, count]) => count >= 2)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 6)
-    .map(([word]) => word)
-}
 
-/** 글 길이 다양화 — 짧은/보통/긴 글 랜덤 선택 (HEAVY 페르소나는 30% 확률로 에세이형 가능) */
-const POST_LENGTHS = [
-  { instruction: '60~120자, 짧고 가벼운 1문단', maxTokens: 350 },
-  { instruction: '150~280자, 2~3문장으로 나눠서', maxTokens: 700 },
-  { instruction: '280~450자, 에세이형 3~4문단, 구체적 상황 묘사 포함', maxTokens: 1100 },
-]
-
-function pickPostLength(personaId: string) {
-  if (HEAVY_PERSONAS.has(personaId) && Math.random() < 0.30) {
-    return POST_LENGTHS[2]
-  }
-  return POST_LENGTHS[Math.floor(Math.random() * 2)]
-}
 
 /** 페르소나별 강화된 시스템 프롬프트 생성 */
 // 클러스터별 오타/표현 패턴 (wgang + dlxogns01 실제 게시물 40개 분석 기반)
@@ -595,211 +420,28 @@ ${examplesStr}
 "시니어"/"액티브 시니어" 금지. 정치/종교/혐오/광고 금지. 이모지(😊❤️💛 등) 절대 금지 — 텍스트만. 드라마/예능 언급 시 실제 제목 명시. 예시 문장 그대로 복사 금지.${timeMoodLine}${lateNightExtra}`
 }
 
-/** 글 생성 */
+/** 글 생성 — retired: seed bot post generation disabled */
 export async function generatePost(
-  personaId: string,
-  boardOverride?: string,
-  controversySeed?: ControversyTopic,
+  _personaId: string,
+  _boardOverride?: string,
+  _controversySeed?: ControversyTopic,
 ): Promise<{ title: string; content: string; boardType: string; category?: string; variationType?: VariationType }> {
-  const p = getPersona(personaId)
-  const board = boardOverride ?? p.board
-  const topic = p.topics.length > 0
-    ? p.topics[Math.floor(Math.random() * p.topics.length)]
-    : '일상'
-
-  const categoryMap: Record<string, string[]> = {
-    STORY: ['건강', '가족', '취미', '고민', '자유수다'],
-    HUMOR: ['유머·웃음', '엔터·TV', '추천·리뷰', '기타'],
-    JOB: ['전체'],
-    LIFE2: ['은퇴준비', '재테크·연금', '보험', '주거·이사'],
-    WEEKLY: ['은퇴준비', '재테크·연금', '보험', '주거·이사'],  // WEEKLY 숨김 — LIFE2와 동일 카테고리
-  }
-  const boardCategories = categoryMap[board] ?? ['기타']
-
-  const length = pickPostLength(personaId)
-
-  // 오늘의 CafeTrend 심리 프로파일 주입
-  const trend = await getLatestTrend()
-  const trendContext = buildTrendContext(trend, personaId, p)
-
-  // Fix 13-D: controversy 시드 있을 때 논쟁 체인 글 유도
-  const controversyBlock = controversySeed
-    ? `\n\n[오늘 커뮤니티 화제 유형 — 이런 상황 경험 글 써주세요]
-유형: ${controversySeed.controversyType}
-분위기: "${controversySeed.seedContent}"
-- "저만 이런 건가요?", "여러분은 어떻게 생각하세요?" 식 열린 결말
-- 직접 인용 금지, 본인 경험처럼 자연스럽게`
-    : ''
-
-  // HUMOR 보드: 최근 엔터 크롤링 글에서 프로그램명/연예인명 힌트 추출
-  let entertainHint = ''
-  if (board === 'HUMOR') {
-    const entertainPost = await getLatestEntertainPost()
-    if (entertainPost) {
-      entertainHint = `\n\n[오늘 화제 엔터 소재 — 이 글을 참고해 구체적 프로그램명/연예인명 사용]\n제목: ${entertainPost.title}\n${entertainPost.content.slice(0, 200)}`
-    }
-  }
-
-  // 이전 게시 이력 + 오늘 봇 전체 발행 소재 조회 — 중복 주제 방지 (실패해도 글 생성 계속)
-  let recentHint = ''
-  try {
-    const [recentPosts, todayBotPosts] = await Promise.all([
-      prisma.post.findMany({
-        where: { author: { email: `bot-${personaId.toLowerCase()}@unao.bot` } },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        select: { title: true },
-      }),
-      prisma.post.findMany({
-        where: {
-          author: { email: { endsWith: '@unao.bot' } },
-          createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
-        },
-        select: { title: true },
-        take: 30,
-      }),
-    ])
-    if (recentPosts.length > 0) {
-      recentHint = `\n\n[최근 쓴 글들 — 이 주제들과 완전히 다른 소재로 써주세요]\n` +
-        recentPosts.map(r => `- ${r.title}`).join('\n')
-    }
-    const todayKeywords = extractTopicKeywords(todayBotPosts.map(r => r.title))
-    if (todayKeywords.length > 0) {
-      recentHint += `\n오늘 이미 나온 소재 (반드시 피하세요): ${todayKeywords.join(', ')}`
-    }
-  } catch {
-    // 조회 실패 시 글 생성은 계속
-  }
-
-  // 실제 CafePost 예시 — 말투 모방 (글 생성)
-  const desire = getPersonaDesire(personaId)
-  const examples = await getExampleCafePosts(desire)
-  const exampleBlock = examples.length > 0
-    ? `\n\n[실제 우갱 회원 글 말투 — 이 스타일로 쓰세요, 내용 인용 절대 금지]\n` +
-      examples.map(e => `"${e}"`).join('\n')
-    : ''
-  // 댓글 분위기 컨텍스트 — DEEP 모드 글 있을 때만 채워짐
-  const atmosphereContext = await getCommentAtmosphereContext(desire)
-
-  // 변주 엔진 — FAMILY/RELATION/CARE/HEALTH 페르소나 + 40% 확률 (controversySeed 없을 때만)
-  const DNA_ELIGIBLE_DESIRES = ['FAMILY', 'RELATION', 'CARE', 'HEALTH']
-  let variationType: VariationType | undefined
-  let variationBlock = ''
-  if (!controversySeed && desire && DNA_ELIGIBLE_DESIRES.includes(desire) && Math.random() < 0.40) {
-    const dna = await getTopDNAPost()
-    if (dna) {
-      variationType = pickVariationType()
-      variationBlock = buildVariationBlock(dna, variationType)
-    }
-  }
-
-  if (process.env.DRY_RUN === 'true') {
-    return {
-      title: `${p.nickname} — ${variationType ? `[${variationType}] ` : ''}${topic}`,
-      content: `[DRY_RUN] personaId=${personaId} desire=${desire ?? 'null'} board=${board} variationType=${variationType ?? 'none'}\n변주블록:${variationBlock || '(없음)'}`,
-      boardType: board,
-      category: boardCategories[0],
-      variationType,
-    }
-  }
-
-  const response = await client.messages.create({
-    model: getModelForPersona(personaId),
-    max_tokens: length.maxTokens,
-    system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'post') + trendContext,
-    messages: [{
-      role: 'user',
-      content: `오늘 "${topic}" 주제로 커뮤니티 글 하나만 써줘.${entertainHint}${recentHint}${exampleBlock}${atmosphereContext}${controversyBlock}${variationBlock}
-
-글이 시작되는 순간이 중요해: 지금 막 어떤 일이 있었거나 어떤 생각이 떠올라서 바로 그 장면부터 써줘. "오늘", "아까", "방금", "요즘"으로 바로 시작.
-제목도 반드시 "오늘", "아까", "진짜", "어휴", "요즘", "방금"으로 시작하는 현장감 있는 구어체로.
-첫 줄에 제목 (구어체, 15~25자), 빈 줄 하나, 그 다음 본문 (${length.instruction}).
-제목/카테고리/본문 레이블 붙이지 말 것. 제목에 #·*·---·** 등 마크다운 기호 절대 사용 금지.`,
-    }],
-  })
-
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
-  // 폼 양식 제거 — 첫 줄 = 제목, 나머지 = 본문으로 파싱
-  const lines = text.trim().split('\n')
-  const rawTitle = lines[0]?.trim() ?? ''
-  const rawBody = lines.slice(1).join('\n').replace(/^\n+/, '').trim()
-  // 카테고리는 AI 선택 제거 → 해당 게시판 카테고리 중 랜덤 배정
-  const validCategory = boardCategories[Math.floor(Math.random() * boardCategories.length)]
-
-  const titleProcessed = stripMarkdown(rawTitle || '')
-    .replace(/^\*+\s?/, '').replace(/\s?\*+$/, '').trim()
-  return {
-    title: titleProcessed || `${p.nickname}의 일상`,
-    content: stripMarkdown(rawBody || text),
-    boardType: board,
-    category: validCategory,
-    variationType,
-  }
+  throw new Error('generatePost is retired: seed bot post generation is disabled')
 }
 
-/** 킬러 포스트 생성 — CafePost 원문 95% 유지, 어미·익명화 5%만 변형 */
+/** 킬러 포스트 생성 — retired: seed bot post generation disabled */
 export async function generateKillerPost(
-  cafePost: {
+  _cafePost: {
     id: string
     title: string
     content: string
     desireCategory: string | null
   },
-  personaId: string,
+  _personaId: string,
 ): Promise<{ title: string; content: string; boardType: string; cafePostId: string } | null> {
-  const p = getPersona(personaId)
-  const trend = await getLatestTrend()
-  const trendContext = buildTrendContext(trend, personaId, p)
-  const system = getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'post') + trendContext
-
-  const userMessage = `아래 원문을 우나어 커뮤니티에 내 이름으로 올릴 수 있게 옮겨줘.
-이 글을 쓴 사람인 것처럼 자연스럽게.
-
-[원문 제목]: ${cafePost.title}
-[원문 본문]:
-${cafePost.content}
-
-■ 반드시 유지 (95%):
-  - 이야기 전개 순서와 구조 (앞뒤 바꾸기 금지)
-  - 갈등·배신·황당함·억울함·반전 포인트 (이게 핵심)
-  - 감정 흐름의 아크 (분노→허탈, 기대→실망 등)
-  - 결말과 현재 감정 상태
-  - 핵심 대사, 상황 묘사, 숫자/금액 등 구체적 사실
-
-■ 바꿔도 되는 것 (5%):
-  - 첫 문장 시작 표현 1개 ("오늘", "아까", "진짜", "어휴")
-  - 지명·인명·직장명 → 익명화 ("OO구", "남편", "회사")
-  - 페르소나 말투 어미 1~2개 교체
-
-■ 절대 금지:
-  - 새 에피소드·반전 추가 금지
-  - 교훈·조언·맺음말 새로 붙이기 금지
-  - 내용 압축·요약 금지 (원문과 비슷한 분량 유지)
-  - AI답게 정리·구조화 금지
-
-출력: 제목(15~25자) → 빈줄 → 본문. 레이블 없음.`
-
-  const response = await client.messages.create({
-    model: process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-5',
-    max_tokens: 1500,
-    system,
-    messages: [{ role: 'user', content: userMessage }],
-  })
-
-  const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-  const lines = raw.split('\n')
-  const title = stripMarkdown(lines[0].replace(/^[#*\-•]+\s*/, '').trim()).slice(0, 50)
-  if (!title) return null
-  const content = lines.slice(2).join('\n').trim()
-  const boardType = killerDesireToBoardType(cafePost.desireCategory)
-
-  return { title, content, boardType, cafePostId: cafePost.id }
+  throw new Error('generateKillerPost is retired: seed bot post generation is disabled')
 }
 
-function killerDesireToBoardType(desire: string | null): string {
-  if (desire === 'HUMOR' || desire === 'ENTERTAIN') return 'HUMOR'
-  return 'STORY'
-}
 
 /** 킬러 댓글 생성 — CafePost topComments 99% 유지, 어미 1개만 변형 */
 export async function generateKillerComments(

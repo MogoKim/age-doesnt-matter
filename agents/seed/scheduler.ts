@@ -2,26 +2,11 @@ import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { calculateTrendingScore } from '../core/trending.js'
 import { refreshPostTrendingScore } from '../core/post-trending.js'
-import { generatePost, generateComment, generateReply, getBotUser, DESIRE_PERSONA_MAP, generateKillerPost, generateKillerComments, generateSheetViralComment } from './generator.js'
+import { generateComment, generateReply, getBotUser, generateKillerComments, generateSheetViralComment } from './generator.js'
 import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
 import type { ControversyTopic } from '../core/intelligence.js'
-import { getPersona } from './persona-data.js'
 import { safeBotLog } from '../core/safe-log.js'
 import { COMPETITOR_KEYWORDS } from '../cafe/config.js'
-import { generateCommunitySlug } from '../core/slug.js'
-
-/** 페르소나 → 욕망 카테고리 역방향 매핑 (다양성 캡용) */
-const PERSONA_DESIRE: Record<string, string> = {}
-for (const [desire, { personas }] of Object.entries(DESIRE_PERSONA_MAP)) {
-  for (const pid of personas) {
-    // 한 페르소나가 여러 욕망에 매핑된 경우 첫 번째 욕망 우선
-    if (!(pid in PERSONA_DESIRE)) PERSONA_DESIRE[pid] = desire
-  }
-}
-
-/** 시간대당 욕망 카테고리별 최대 글쓰기 수 — 쏠림 방지 */
-const MAX_POSTS_PER_DESIRE = 2
-
 /**
  * 시드 콘텐츠 스케줄러 (50명 — A~T + U~Z + AA~AI + AJ~AX)
  * 크롤링 08:30/12:30/20:40에 연동하여 시드봇 활동
@@ -31,7 +16,7 @@ const MAX_POSTS_PER_DESIRE = 2
  * 게시판 분포: STORY(22) + HUMOR(4) + JOB(1) + LIFE2(6) + 크로스보드 활동
  */
 
-type ActivityType = 'post' | 'comment' | 'reply' | 'like'
+type ActivityType = 'comment' | 'reply' | 'like'
 
 interface Activity {
   personaId: string
@@ -54,14 +39,6 @@ interface Activity {
 const SCHEDULE: Record<string, Activity[]> = {
   // ── 아침 (크롤링 08:30 후) ──
   '09': [
-    // 글쓰기 — 아침형 페르소나
-    { personaId: 'A', type: 'post' },                          // 하늘바라기 일상
-    { personaId: 'F', type: 'post' },                          // 텃밭언니 아침 텃밭
-    { personaId: 'J', type: 'post' },                          // 맛있는거좋아 아침 요리
-    { personaId: 'L', type: 'post' },                          // 손주러브 가족
-    { personaId: 'Q', type: 'post' },                          // 멍멍이엄마 아침 산책
-    { personaId: 'U', type: 'post' },                          // 부산언니 시장 이야기
-    { personaId: 'AI', type: 'post' },                         // 시골아낙네 아침 텃밭
     // 댓글
     { personaId: 'A', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'C', type: 'comment', board: 'HUMOR', count: 3 },  // ㅋㅋ요정 리액션
@@ -76,15 +53,6 @@ const SCHEDULE: Record<string, Activity[]> = {
   ],
 
   '10': [
-    // 글쓰기 — 정보형 + 활발형
-    { personaId: 'B', type: 'post' },                          // 정순씨 정보
-    { personaId: 'G', type: 'post' },                          // 여행이좋아 여행
-    { personaId: 'K', type: 'post' },                          // 예쁘게살자 패션
-    { personaId: 'M', type: 'post' },                          // 산이좋아 등산
-    { personaId: 'V', type: 'post' },                          // 세상에나 불만 (부정)
-    { personaId: 'AF', type: 'post', board: 'HUMOR' },         // 하하호호 아재개그
-    { personaId: 'R', type: 'post', board: 'HUMOR' },          // 밤새봤다 드라마 감상
-    { personaId: 'C', type: 'post', board: 'HUMOR' },          // ㅋㅋ요정 유머
     // 대댓글 — 아침 글에 답글
     { personaId: 'A', type: 'reply', board: 'STORY', count: 1 },
     { personaId: 'U', type: 'reply', board: 'STORY', count: 1 },
@@ -97,11 +65,6 @@ const SCHEDULE: Record<string, Activity[]> = {
   ],
 
   '11': [
-    // 글쓰기 — 간병·건강 페르소나
-    { personaId: 'AJ', type: 'post' },                          // 간병일기 간병
-    { personaId: 'AN', type: 'post' },                          // 약국단골 영양제
-    { personaId: 'AT', type: 'post' },                          // 자격증도전 공부
-    { personaId: 'AY', type: 'post', board: 'HUMOR' },         // 웃음보따리 일상 유머
     // 댓글 — 신규 페르소나 반응
     { personaId: 'AK', type: 'comment', board: 'STORY', count: 3 }, // 우리엄마 공감
     { personaId: 'AM', type: 'comment', board: 'STORY', count: 2 }, // 불안한밤 질문
@@ -140,24 +103,6 @@ const SCHEDULE: Record<string, Activity[]> = {
 
   // ── 오후 자체 활동 (구 14시 포함) ──
   '15': [
-    // 글쓰기 — 구 14시 오후 활동 (11개)
-    { personaId: 'B', type: 'post', board: 'LIFE2' },           // 정호씨 은퇴/재테크 정보
-    { personaId: 'H', type: 'post' },                          // 매일걷기 건강 데이터
-    { personaId: 'N', type: 'post' },                          // 알뜰맘 살림 팁
-    { personaId: 'T', type: 'post' },                          // 배움은즐거워 교육
-    { personaId: 'X', type: 'post' },                          // 걱정인형 걱정 글 (부정)
-    { personaId: 'AZ', type: 'post', board: 'LIFE2' },         // 돈공부중 재테크 현실
-    { personaId: 'AA', type: 'post' },                         // 어휴답답 한탄 (부정)
-    { personaId: 'AG', type: 'post' },                         // 비교분석왕 비교 리뷰
-    { personaId: 'Y', type: 'post', board: 'LIFE2' },          // 솔직히말해서 현실 팩폭
-    { personaId: 'AB', type: 'post', board: 'LIFE2' },         // 따져보자 토론 주제
-    { personaId: 'BF', type: 'post' },                         // 속터지는현실 억울형 에피소드
-    // 글쓰기 — 감성 + 논쟁 (기존 15시)
-    { personaId: 'P', type: 'post' },                          // 오후세시 감성 에세이
-    { personaId: 'Z', type: 'post' },                          // 혼자잘산다 자조 유머
-    { personaId: 'AD', type: 'post' },                         // 그때그시절 회고
-    { personaId: 'BA', type: 'post', board: 'LIFE2' },         // 은퇴준비중 은퇴 준비 현실
-    { personaId: 'BD', type: 'post' },                         // 고부갈등맘 서운함 토로
     // 댓글
     { personaId: 'J', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'S', type: 'comment', board: 'STORY', count: 1 },
@@ -204,10 +149,6 @@ const SCHEDULE: Record<string, Activity[]> = {
   ],
 
   '17': [
-    // 글쓰기 — 오후 활동형
-    { personaId: 'AL', type: 'post' },                          // 헬스덕후 운동
-    { personaId: 'AV', type: 'post' },                          // 혼밥일기 저녁 준비
-    { personaId: 'AX', type: 'post', board: 'HUMOR' },          // 밴드여왕 온라인 챌린지/커뮤니티 이벤트
     // 댓글 — 대량 반응
     { personaId: 'AO', type: 'comment', board: 'HUMOR', count: 3 }, // 웃음충전 유머
     { personaId: 'AS', type: 'comment', board: 'JOB', count: 2 },   // 일자리헌터 정보
@@ -227,16 +168,6 @@ const SCHEDULE: Record<string, Activity[]> = {
 
   // ── 저녁 ──
   '19': [
-    // 글쓰기 — 저녁 감성 + 문화
-    { personaId: 'I', type: 'post' },                          // 한페이지 독서
-    { personaId: 'O', type: 'post' },                          // 올드팝 음악
-    { personaId: 'W', type: 'post' },                          // 참나진짜 비판 리뷰
-    { personaId: 'AH', type: 'post' },                         // 피곤해요 하루 TMI
-    { personaId: 'S', type: 'post' },                          // 제주살이 저녁 풍경
-    { personaId: 'BC', type: 'post' },                         // 억울한아내 남편 하소연
-    { personaId: 'BG', type: 'post' },                         // 황당목격자 황당 에피소드
-    { personaId: 'R', type: 'post', board: 'HUMOR' },          // 밤새봤다 저녁 드라마
-    { personaId: 'T', type: 'post', board: 'LIFE2' },         // 배움은즐거워 수다방
     // 댓글
     { personaId: 'E', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'G', type: 'comment', board: 'STORY', count: 2 },
@@ -278,10 +209,6 @@ const SCHEDULE: Record<string, Activity[]> = {
 
   // ── 밤 (크롤링 20:40 후) ──
   '21': [
-    // 밤 감성 페르소나 활동
-    { personaId: 'AE', type: 'post' },                         // 새벽감성 밤 글
-    { personaId: 'AC', type: 'post' },                         // 느긋이 느긋한 하루 마무리
-    { personaId: 'BH', type: 'post' },                         // 반전언니 밤 고백형
     // 댓글
     { personaId: 'BC', type: 'comment', board: 'STORY', count: 1 }, // 억울한아내 밤 댓글 (2차)
     { personaId: 'C', type: 'comment', board: 'HUMOR', count: 2 },
@@ -301,7 +228,6 @@ const SCHEDULE: Record<string, Activity[]> = {
     { personaId: 'Q', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'S', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'AE', type: 'like', board: 'STORY', count: 2 },
-    { personaId: 'AM', type: 'post' },                               // 불안한밤 밤 글
     { personaId: 'AE', type: 'reply', board: 'STORY', count: 2 },   // 새벽감성 대댓글
     { personaId: 'AJ', type: 'reply', board: 'STORY', count: 1 },   // 간병일기 대댓글
   ],
@@ -322,15 +248,12 @@ const SCHEDULE: Record<string, Activity[]> = {
 
   // ── 심야 (Fix 10 — 잠 못 드는 00~01시) ──
   '00': [
-    { personaId: 'E', type: 'post' },                               // 봄바람: 새벽 감성 글
-    { personaId: 'AE', type: 'post' },                              // 새벽감성: 불면 이야기
     { personaId: 'P', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'AQ', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'E', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'AE', type: 'like', board: 'STORY', count: 2 },
   ],
   '01': [
-    { personaId: 'P', type: 'post' },                               // 오후세시: 늦은 밤 혼자만의 시간
     { personaId: 'AD', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'AE', type: 'reply', board: 'STORY', count: 1 },
     { personaId: 'P', type: 'like', board: 'STORY', count: 2 },
@@ -402,107 +325,8 @@ async function getLikeTargets(userId: string, board: string, limit: number) {
   return posts.sort(() => Math.random() - 0.5).slice(0, limit)
 }
 
-/** 페르소나 오늘 글쓰기 횟수 조회 (Fix 6 — 일 2회 제한) */
-async function getTodayPostCount(personaId: string): Promise<number> {
-  try {
-    const KST_OFFSET = 9 * 60 * 60 * 1000
-    const nowKst = new Date(Date.now() + KST_OFFSET)
-    nowKst.setUTCHours(0, 0, 0, 0)
-    const today = new Date(nowKst.getTime() - KST_OFFSET)
-    const user = await prisma.user.findFirst({
-      where: { email: `bot-${personaId.toLowerCase()}@unao.bot` },
-      select: { id: true },
-    })
-    if (!user) return 0
-    return prisma.post.count({
-      where: { authorId: user.id, createdAt: { gte: today }, status: 'PUBLISHED' },
-    })
-  } catch { return 0 }
-}
-
 async function runActivity(activity: Activity): Promise<void> {
   const userId = await getBotUser(activity.personaId)
-
-  if (activity.type === 'post') {
-    // ENABLE_SEED_POSTS=false 시 글 생성 중단 (댓글/좋아요는 계속 실행)
-    if (process.env.ENABLE_SEED_POSTS === 'false') {
-      console.log(`[Seed] 글 생성 스킵 (ENABLE_SEED_POSTS=false): ${activity.personaId}`)
-      return
-    }
-
-    // Fix 6: 하루 최대 2회 제한
-    const todayCount = await getTodayPostCount(activity.personaId)
-    if (todayCount >= 2) {
-      console.log(`[Seed] ${activity.personaId} 글쓰기 스킵 (오늘 ${todayCount}회)`)
-      return
-    }
-
-    const { title, content, boardType, category } = await generatePost(
-      activity.personaId,
-      activity.board,
-      activity.controversySeed,  // Fix 13-E: controversyBlock 주입용
-    )
-    if (!title.trim()) {
-      console.log(`[Seed] 빈 제목 생성 스킵: ${activity.personaId}`)
-      return
-    }
-    const htmlContent = `<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
-    const summary = content.replace(/\n/g, ' ').slice(0, 150).trim()
-
-    // Fix 5 (v2): 24h 내 유사 주제 중복 발행 방지
-    // 이전 버그A: DB startsWith(titleKey)가 공백 포함 DB 제목과 절대 매칭 안 됨
-    // 이전 버그B: 6자 prefix는 한국어 조사 변형 제목 못 잡음 ("아이독립을준" ≠ "아이독립준비")
-    // 개선: JS에서 2자 단위 한국어 추출 후 3개 이상 겹치면 중복으로 판단
-    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    const recentPosts24h = await prisma.post.findMany({
-      where: boardType === 'LIFE2'
-        ? { boardType: 'LIFE2' as const, createdAt: { gte: since24h } }
-        : { authorId: userId, createdAt: { gte: since24h } },
-      select: { title: true },
-    })
-    if (recentPosts24h.length > 0) {
-      const toNouns = (t: string) => t.match(/[가-힣]{2,2}/g) ?? []
-      const newNouns = new Set(toNouns(title))
-      const isDuplicate = recentPosts24h.some(
-        p => toNouns(p.title).filter(n => newNouns.has(n)).length >= 3
-      )
-      if (isDuplicate) {
-        console.log(`[Seed] 유사 주제 중복 발행 스킵: "${title.slice(0, 20)}"`)
-        return
-      }
-    }
-
-    // Fix 13-E: create() 반환값 직접 캡처 (findFirst race condition 방지)
-    const slug = await generateCommunitySlug(title)
-    const newPost = await prisma.post.create({
-      data: {
-        title,
-        content: htmlContent,
-        summary,
-        boardType: boardType as 'STORY' | 'HUMOR' | 'LIFE2',
-        category: category ?? null,
-        authorId: userId,
-        source: 'BOT',
-        status: 'PUBLISHED',
-        publishedAt: new Date(),
-        slug,
-      },
-      select: { id: true },
-    })
-    console.log(`[Seed] ${activity.personaId} posted: "${title}"`)
-
-    // Fix 13-E: 논쟁글 생성 시 BotLog 기록 + 5단계 체인 예약
-    if (activity.controversySeed) {
-      await safeBotLog({
-        botType: 'SEED',
-        action: 'CONTROVERSY_POST_CREATED',
-        status: 'SUCCESS',
-        details: JSON.stringify({ postId: newPost.id, controversyType: activity.controversySeed.controversyType }),
-        executionTimeMs: 0,
-      }).catch(() => {})
-      await import('./controversy-chain.js').then(m => m.scheduleChainFromPost(newPost.id, activity.personaId)).catch(() => {})
-    }
-  }
 
   if (activity.type === 'comment') {
     const rawPosts = await getRandomPosts(activity.board ?? 'STORY', activity.count ?? 1)
@@ -647,13 +471,6 @@ async function runActivity(activity: Activity): Promise<void> {
 // ── 논쟁 체인 헬퍼 (Fix 13-E) ──
 
 function buildControversyChain(seed: ControversyTopic, hour: string): Activity[] {
-  if (hour === '15') {
-    const authorMap: Record<string, string> = {
-      family_conflict: 'BD', social_anger: 'W',
-      dignity_hurt: 'Y', money_stress: 'AZ',
-    }
-    return [{ personaId: authorMap[seed.controversyType] ?? 'BD', type: 'post', controversySeed: seed }]
-  }
   if (hour === '16') return [
     { personaId: 'W', type: 'comment', board: 'STORY', count: 1 },
     { personaId: 'E', type: 'comment', board: 'STORY', count: 1 },
@@ -707,39 +524,9 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
   if (!brief) return base
 
   const adjusted: Activity[] = []
-  const postsByDesire: Record<string, number> = {}  // 욕망 카테고리별 이번 시간대 글쓰기 수
-  const usedPrimaryTopics = new Set<string>()       // 소재 중복 방지 (페르소나 첫 번째 주제)
 
   for (const activity of base) {
     const quota = getPersonaQuota(brief, activity.personaId)
-
-    // 글쓰기: quotaMultiplier < 0.9 이면 스킵 (댓글/좋아요는 유지)
-    if (activity.type === 'post' && quota.quotaMultiplier < 0.9) {
-      console.log(`[Seed] ${activity.personaId} 글쓰기 스킵 (quota ×${quota.quotaMultiplier.toFixed(2)})`)
-      continue
-    }
-
-    // 글쓰기 다양성 캡 — 같은 욕망 카테고리 MAX_POSTS_PER_DESIRE 초과 시 스킵
-    if (activity.type === 'post') {
-      const desire = PERSONA_DESIRE[activity.personaId]
-      if (desire) {
-        const current = postsByDesire[desire] ?? 0
-        if (current >= MAX_POSTS_PER_DESIRE) {
-          console.log(`[Seed] ${activity.personaId} 글쓰기 스킵 (${desire} 캡 ${current}/${MAX_POSTS_PER_DESIRE})`)
-          continue
-        }
-        postsByDesire[desire] = current + 1
-      }
-
-      // 소재 중복 방지 — 페르소나 첫 번째 주제 키워드 중복 시 스킵
-      const persona = getPersona(activity.personaId)
-      const primaryTopic = persona.topics[0]?.split(/[\s·,]+/)[0] ?? ''
-      if (primaryTopic && usedPrimaryTopics.has(primaryTopic)) {
-        console.log(`[Seed] ${activity.personaId} 글쓰기 스킵 (소재 중복: ${primaryTopic})`)
-        continue
-      }
-      if (primaryTopic) usedPrimaryTopics.add(primaryTopic)
-    }
 
     // count가 있는 활동: quotaMultiplier 반영
     if (activity.count !== undefined && quota.quotaMultiplier !== 1.0) {
@@ -749,8 +536,7 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
       adjusted.push(activity)
     }
 
-    // shouldBoost=true인 페르소나: 댓글 한 번 더 (post 타입 제외)
-    if (activity.type !== 'post' && quota.shouldBoost && activity.count === undefined) {
+    if (quota.shouldBoost && activity.count === undefined) {
       adjusted.push({ ...activity, count: 1 })
     }
   }
@@ -762,14 +548,7 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
       const quota = getPersonaQuota(brief, personaId)
       if (quota.quotaMultiplier <= 0) continue
 
-      if (quota.quotaMultiplier >= 1.1) {
-        // 글쓰기 + 댓글
-        adjusted.push({ personaId, type: 'post', board: 'STORY' })
-        adjusted.push({ personaId, type: 'comment', board: 'STORY', count: 1 })
-      } else {
-        // 댓글만 (quotaMultiplier 0.5 = 댓글 모드)
-        adjusted.push({ personaId, type: 'comment', board: 'STORY', count: 1 })
-      }
+      adjusted.push({ personaId, type: 'comment', board: 'STORY', count: 1 })
     }
   }
 
@@ -804,180 +583,9 @@ async function buildDailySchedule(hour: string): Promise<Activity[]> {
  * 하루 최대 2-3개 글만 타겟 → 자연스러움 유지
  */
 export async function runKillerPostCycle(): Promise<void> {
-  // 30일 이내 사용한 CafePost ID 조회 (재사용 방지 강화)
-  const recentLogs = await prisma.botLog.findMany({
-    where: {
-      action: 'KILLER_POST_GENERATED',
-      createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-    },
-    select: { details: true, createdAt: true },
-  })
-
-  const usedCafePostIds = recentLogs
-    .map(l => {
-      try { return (JSON.parse(l.details as string) as { cafePostId: string }).cafePostId }
-      catch { return null }
-    })
-    .filter((id): id is string => id !== null)
-
-  // 오늘 이미 2개 이상 생성됐으면 스킵
-  // KST 자정 = UTC 전날 15:00 (setHours는 UTC 기준 아니므로 UTC 명시)
-  const _now = new Date()
-  const todayStart = new Date(_now)
-  todayStart.setUTCHours(15, 0, 0, 0)
-  if (todayStart > _now) todayStart.setUTCDate(todayStart.getUTCDate() - 1)
-  const todayKillerCount = recentLogs.filter(l => new Date(l.createdAt) >= todayStart).length
-  if (todayKillerCount >= 2) {
-    console.log('[KillerPost] 오늘 이미 2개 생성됨 — 스킵')
-    return
-  }
-
-  // 후보 선택: isUsable(60점+), viralType 있음, 14일 이내, 참여도 직접 필터, 미사용
-  const candidate = await prisma.cafePost.findFirst({
-    where: {
-      isUsable: true,
-      aiAnalyzed: true,
-      viralType: { not: null },
-      crawledAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
-      OR: [
-        { likeCount: { gte: 3 } },
-        { commentCount: { gte: 2 } },
-      ],
-      id: { notIn: usedCafePostIds },
-    },
-    select: { id: true, title: true, content: true, desireCategory: true, topComments: true },
-    orderBy: { killerScore: 'desc' },
-  })
-
-  if (!candidate) {
-    console.log('[KillerPost] 적합한 CafePost 없음')
-    return
-  }
-
-  // 경쟁사 언급 CafePost는 KillerPost로 사용 금지 (기존 DB 저장분 포함)
-  const candidateText = candidate.title + ' ' + (candidate.content ?? '').slice(0, 1000)
-  if (COMPETITOR_KEYWORDS.some(kw => candidateText.includes(kw))) {
-    console.log(`[KillerPost] 경쟁사 언급 후보 스킵: "${candidate.title.slice(0, 20)}"`)
-    return
-  }
-
-  const killerPersonaId = pickKillerPersona(candidate.desireCategory)
-  const userId = await getBotUser(killerPersonaId)
-
-  const killerPost = await generateKillerPost(candidate, killerPersonaId)
-  if (!killerPost) {
-    console.log('[KillerPost] 빈 제목 — 스킵')
-    return
-  }
-  const { title, content, boardType } = killerPost
-  const htmlContent = `<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`
-
-  // Fix 5: 킬러포스트 24h 내 유사 제목 중복 발행 방지
-  const kSince24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  const kTitleKey = title.replace(/[^\w가-힣]/g, '').slice(0, 6)
-  if (kTitleKey) {
-    const kRecentSimilar = await prisma.post.findFirst({
-      where: { authorId: userId, createdAt: { gte: kSince24h }, title: { startsWith: kTitleKey } },
-    })
-    if (kRecentSimilar) {
-      console.log(`[KillerPost] 중복 발행 스킵: "${title.slice(0, 20)}"`)
-      return
-    }
-  }
-
-  const slug = await generateCommunitySlug(title)
-  const newPost = await prisma.post.create({
-    data: {
-      title,
-      content: htmlContent,
-      summary: content.replace(/\n/g, ' ').slice(0, 150),
-      boardType: boardType as 'STORY' | 'HUMOR' | 'LIFE2',
-      authorId: userId,
-      source: 'BOT',
-      status: 'PUBLISHED',
-      publishedAt: new Date(),
-      isFeatured: true,
-      featuredAt: new Date(),
-      cafePostId: candidate.id,
-      slug,
-    },
-    select: { id: true },
-  })
-
-  console.log(`[KillerPost] 생성 완료: "${title}" (postId=${newPost.id})`)
-
-  await safeBotLog({
-    botType: 'SEED',
-    action: 'KILLER_POST_GENERATED',
-    status: 'SUCCESS',
-    details: JSON.stringify({
-      postId: newPost.id,
-      cafePostId: candidate.id,
-      personaId: killerPersonaId,
-      date: new Date().toISOString().slice(0, 10),
-    }),
-  })
-
-  // 댓글 파동 3개 예약 (10분, 1시간, 3시간 후)
-  const now = new Date()
-  await prisma.botLog.createMany({
-    data: [
-      {
-        botType: 'SEED',
-        action: 'KILLER_COMMENT_WAVE_PENDING',
-        status: 'PENDING',
-        details: JSON.stringify({
-          postId: newPost.id,
-          cafePostId: candidate.id,
-          wave: 1, personaCount: 3,
-          scheduledAt: new Date(now.getTime() + 10 * 60 * 1000).toISOString(),
-        }),
-      },
-      {
-        botType: 'SEED',
-        action: 'KILLER_COMMENT_WAVE_PENDING',
-        status: 'PENDING',
-        details: JSON.stringify({
-          postId: newPost.id,
-          cafePostId: candidate.id,
-          wave: 2, personaCount: 4,
-          scheduledAt: new Date(now.getTime() + 60 * 60 * 1000).toISOString(),
-        }),
-      },
-      {
-        botType: 'SEED',
-        action: 'KILLER_COMMENT_WAVE_PENDING',
-        status: 'PENDING',
-        details: JSON.stringify({
-          postId: newPost.id,
-          cafePostId: candidate.id,
-          wave: 3, personaCount: 3,
-          scheduledAt: new Date(now.getTime() + 3 * 60 * 60 * 1000).toISOString(),
-        }),
-      },
-    ],
-  })
+  console.log('[KillerPost] retired — seed bot post generation disabled')
 }
 
-function pickKillerPersona(desireCategory: string | null): string {
-  const desireToHeavy: Record<string, string[]> = {
-    HEALTH:   ['A', 'H'],
-    FAMILY:   ['E'],
-    MONEY:    ['B'],
-    CARE:     ['AJ'],
-    RETIRE:   ['G'],
-    HOBBY:    ['M', 'F'],
-    MEANING:  ['I'],
-    FOOD:     ['J'],
-    RELATION: ['A'],
-    JOB:      ['B'],
-    HUMOR:    ['G'],
-    ENTERTAIN:['G'],
-    FREEDOM:  ['G'],
-  }
-  const candidates = desireToHeavy[desireCategory ?? ''] ?? ['A', 'E', 'H']
-  return candidates[Math.floor(Math.random() * candidates.length)]
-}
 
 export async function processPendingKillerCommentWaves(): Promise<void> {
   const now = new Date()
