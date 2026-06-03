@@ -9,6 +9,8 @@ const MagazineFilter = nextDynamic(() => import('@/components/features/magazine/
 
 export const revalidate = 60
 
+const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.includes('localhost:5432/dummy')
+
 export const metadata: Metadata = {
   title: '매거진',
   description: '건강, 재테크, 여행, 생활정보 등 50·60대를 위한 유익한 콘텐츠',
@@ -50,8 +52,17 @@ const magazineCollectionPageJsonLd = {
   },
 }
 
+async function getInitialMagazineData() {
+  try {
+    return await getCachedMagazinePage()
+  } catch (error) {
+    if (!CI_DUMMY_DB) throw error
+    return { posts: [], total: 0 }
+  }
+}
+
 export default async function MagazinePage() {
-  const initialData = await getCachedMagazinePage()
+  const initialData = await getInitialMagazineData()
 
   return (
     <div className="min-h-screen bg-background">

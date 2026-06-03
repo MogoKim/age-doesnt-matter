@@ -9,9 +9,42 @@ import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 import BoardPostListClient from '@/components/features/community/BoardPostListClient'
 import PwaInlineBanner from '@/components/common/PwaInlineBanner'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
+import type { BoardType } from '@/generated/prisma/client'
 
 interface PageProps {
   params: Promise<{ boardSlug: string }>
+}
+
+const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.includes('localhost:5432/dummy')
+
+const STATIC_BOARD_CONFIGS: Record<string, {
+  slug: string
+  boardType: BoardType
+  displayName: string
+  description: string
+  categories: string[]
+}> = {
+  stories: {
+    slug: 'stories',
+    boardType: 'STORY',
+    displayName: '사는이야기',
+    description: '50대 60대의 일상과 고민을 나누는 게시판',
+    categories: ['전체'],
+  },
+  humor: {
+    slug: 'humor',
+    boardType: 'HUMOR',
+    displayName: '웃음방',
+    description: '우리 또래가 함께 웃고 공감하는 게시판',
+    categories: ['전체'],
+  },
+  life2: {
+    slug: 'life2',
+    boardType: 'LIFE2',
+    displayName: '2막준비',
+    description: '인생 2막과 은퇴 준비를 나누는 게시판',
+    categories: ['전체'],
+  },
 }
 
 export const revalidate = 30
@@ -85,13 +118,32 @@ function PostListSkeleton() {
   )
 }
 
+async function getBoardForPage(boardSlug: string) {
+  try {
+    const board = await getBoardConfig(boardSlug)
+    if (board) return board
+  } catch (error) {
+    if (!CI_DUMMY_DB) throw error
+  }
+  return STATIC_BOARD_CONFIGS[boardSlug] ?? null
+}
+
+async function getInitialBoardData(boardType: BoardType) {
+  try {
+    return await getCachedBoardPage(boardType, 'all', 'latest')
+  } catch (error) {
+    if (!CI_DUMMY_DB) throw error
+    return { posts: [], total: 0 }
+  }
+}
+
 export default async function BoardListPage({ params }: PageProps) {
   const { boardSlug } = await params
 
-  const board = await getBoardConfig(boardSlug)
+  const board = await getBoardForPage(boardSlug)
   if (!board) notFound()
 
-  const initialData = await getCachedBoardPage(board.boardType, 'all', 'latest')
+  const initialData = await getInitialBoardData(board.boardType)
 
   const boardFaqJsonLd = getBoardFaqJsonLd(boardSlug)
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([

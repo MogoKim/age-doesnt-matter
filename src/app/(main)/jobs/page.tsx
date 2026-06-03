@@ -11,14 +11,25 @@ const JobSearchBar = nextDynamic(() => import('@/components/features/jobs/JobSea
 
 export const revalidate = 120
 
+const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.includes('localhost:5432/dummy')
+
 export const metadata: Metadata = {
   title: '내 일 찾기',
   description: '50·60대 맞춤 일자리 정보, 나이 무관 채용공고',
   alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/jobs` },
 }
 
+async function getInitialJobsData() {
+  try {
+    return await getCachedJobsPage()
+  } catch (error) {
+    if (!CI_DUMMY_DB) throw error
+    return { jobs: [], total: 0 }
+  }
+}
+
 export default async function JobsPage() {
-  const initialData = await getCachedJobsPage()
+  const initialData = await getInitialJobsData()
 
   return (
     <div className="min-h-screen bg-background">
