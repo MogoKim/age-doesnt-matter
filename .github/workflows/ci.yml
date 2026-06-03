@@ -88,7 +88,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
-      - run: npx playwright install --with-deps chromium
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - name: Smoke E2E (PR — 변경된 spec만 / push — @smoke 전체)
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -129,7 +136,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
-      - run: npx playwright install --with-deps chromium
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - name: Ads E2E (데스크탑 + 모바일)
         run: npx playwright test --grep "@ads" --project=chromium --project=mobile-chrome
         env:
@@ -174,7 +188,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
-      - run: npx playwright install --with-deps chromium
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright Chromium
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - name: Admin E2E
         run: npx playwright test --project=qa-admin --workers=1
         env:
