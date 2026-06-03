@@ -15,7 +15,7 @@ export default function HumorSection({ posts }: Props) {
     <section className="py-6 border-b-4 border-background lg:py-8 lg:border-b-0">
       <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
         <h2 className="text-title font-bold text-foreground flex items-center gap-2">
-          <span className="text-[var(--icon-laugh-stroke)]"><IconEnergy size={22} /></span>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-[var(--icon-laugh-bg)] text-[var(--icon-laugh-stroke)]"><IconEnergy size={22} /></span>
           웃음방
         </h2>
         <HomeCardLink

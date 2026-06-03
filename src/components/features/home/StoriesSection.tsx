@@ -15,7 +15,7 @@ export default function StoriesSection({ posts }: Props) {
     <section className="py-6 border-b-4 border-background lg:py-8 lg:border-b-0">
       <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
         <h2 className="text-title font-bold text-foreground flex items-center gap-2">
-          <span className="text-[var(--icon-life-stroke)]"><IconStories size={22} /></span>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-[var(--icon-life-bg)] text-[var(--icon-life-stroke)]"><IconStories size={22} /></span>
           사는 이야기
         </h2>
         <HomeCardLink

@@ -15,7 +15,7 @@ export default function TrendingSection({ posts }: Props) {
     <section className="py-4 border-b-4 border-background lg:py-8 lg:border-b-0">
       <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
         <h2 className="text-title font-bold text-foreground flex items-center gap-2">
-          <span className="text-xl">🔥</span>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-[var(--icon-best-bg)] text-xl">🔥</span>
           지금 뜨는 이야기
         </h2>
         <HomeCardLink href="/best" className="text-[17px] text-muted-foreground no-underline flex items-center gap-1 p-2 -m-2 min-h-[52px] min-w-[52px] hover:text-primary-text" section="trending" position={-1} contentId="" action="more">
