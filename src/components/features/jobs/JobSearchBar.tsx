@@ -14,11 +14,12 @@ export default function JobSearchBar({ defaultValue }: JobSearchBarProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const currentQ = searchParams.get('q') ?? defaultValue ?? ''
 
   useEffect(() => {
-    setQuery(defaultValue ?? '')
+    setQuery(currentQ)
     setError('')
-  }, [defaultValue])
+  }, [currentQ])
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
