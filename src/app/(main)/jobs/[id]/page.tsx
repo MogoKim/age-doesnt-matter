@@ -3,7 +3,6 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
-import { auth } from '@/lib/auth'
 import { getJobDetailPublic, type JobDetailPublicItem } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
 import { prisma } from '@/lib/prisma'
@@ -18,12 +17,14 @@ import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import JobListBottom from '@/components/features/jobs/JobListBottom'
+import PostViewBeacon from '@/components/common/PostViewBeacon'
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
 export const dynamicParams = true
+export const revalidate = 30
 
 export async function generateStaticParams() {
   try {
@@ -131,29 +132,14 @@ function JobPostingJsonLd({ job }: { job: JobDetailPublicItem }) {
 
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params
-  const [session, jobPublic] = await Promise.all([
-    auth(),
-    getJobDetailPublic(id),
-  ])
-  if (!jobPublic) notFound()
-
-  const userId = session?.user?.id
-  const [isLiked, isScrapped] = await Promise.all([
-    userId
-      ? prisma.like.findUnique({ where: { userId_postId: { userId, postId: id } }, select: { id: true } }).then(r => !!r)
-      : Promise.resolve(false),
-    userId
-      ? prisma.scrap.findUnique({ where: { userId_postId: { userId, postId: id } }, select: { id: true } }).then(r => !!r)
-      : Promise.resolve(false),
-  ])
-  const job = { ...jobPublic, isLiked, isScrapped }
-
-  prisma.post.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {})
+  const job = await getJobDetailPublic(id)
+  if (!job) notFound()
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
       {/* GA4 일자리 조회 이벤트 */}
       <GTMEventOnMount event="job_view" data={{ job_id: id, job_title: job.title }} />
+      <PostViewBeacon postId={id} />
       {/* JSON-LD 구조화 데이터 */}
       <JobPostingJsonLd job={job} />
       <script
@@ -250,9 +236,8 @@ export default async function JobDetailPage({ params }: PageProps) {
         title={job.title}
         description={job.company ? `${job.company} — ${job.location}` : job.title}
         likeCount={job.likeCount}
-        isLiked={job.isLiked}
-        isScrapped={job.isScrapped}
-        isLoggedIn={!!userId}
+        isLiked={false}
+        isScrapped={false}
       />
 
       {/* 쿠팡 관련 상품 */}
@@ -268,7 +253,7 @@ export default async function JobDetailPage({ params }: PageProps) {
           ))}
         </div>
       }>
-        <JobCommentsLoader postId={id} userId={userId} />
+        <JobCommentsLoader postId={id} />
       </Suspense>
 
       {/* 쿠팡 배너 + 다른 일자리 */}
@@ -280,9 +265,9 @@ export default async function JobDetailPage({ params }: PageProps) {
   )
 }
 
-async function JobCommentsLoader({ postId, userId }: { postId: string; userId?: string }) {
-  const comments = await getCommentsByPostId(postId, userId)
-  return <CommentSection postId={postId} comments={comments} isLoggedIn={!!userId} />
+async function JobCommentsLoader({ postId }: { postId: string }) {
+  const comments = await getCommentsByPostId(postId)
+  return <CommentSection postId={postId} comments={comments} />
 }
 
 function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
