@@ -211,7 +211,10 @@ async function main() {
   console.log(`   페이지: ${PAGES.length}개 × 뷰포트: ${VIEWPORTS.length}개 = ${PAGES.length * VIEWPORTS.length}개 스크린샷\n`)
 
   const results: VisualCheckResult[] = []
-  const browser = await chromium.launch({ args: ['--no-sandbox'] })
+  const browser = await chromium.launch({
+    args: ['--no-sandbox'],
+    ...(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME === '1' ? { channel: 'chrome' as const } : {}),
+  })
 
   for (const viewport of VIEWPORTS) {
     const context = await browser.newContext({

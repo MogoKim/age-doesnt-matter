@@ -4,6 +4,12 @@ import path from 'path'
 // QA 전용 storageState 경로
 const ADMIN_AUTH = path.join(__dirname, 'e2e/.auth/admin.json')
 const USER_AUTH = path.join(__dirname, 'e2e/.auth/user.json')
+const chromeChannel = process.env.PLAYWRIGHT_USE_SYSTEM_CHROME === '1'
+  ? ({ channel: 'chrome' as const })
+  : {}
+const desktopChrome = { ...devices['Desktop Chrome'], ...chromeChannel }
+const pixel7Chrome = { ...devices['Pixel 7'], ...chromeChannel }
+const galaxyS24Chrome = { ...devices['Galaxy S24'], ...chromeChannel }
 
 export default defineConfig({
   testDir: './e2e',
@@ -26,12 +32,12 @@ export default defineConfig({
     {
       name: 'chromium',
       testMatch: /^(?!.*\/qa\/).*\.spec\.ts$/,
-      use: { ...devices['Desktop Chrome'] },
+      use: desktopChrome,
     },
     {
       name: 'mobile-chrome',
       testMatch: /^(?!.*\/qa\/).*\.spec\.ts$/,
-      use: { ...devices['Pixel 7'] },
+      use: pixel7Chrome,
     },
 
     // ── Smoke Fast 프로젝트 (CI --grep @smoke 전용) ──
@@ -40,7 +46,7 @@ export default defineConfig({
       name: 'smoke-fast',
       testMatch: /e2e\/.*\.spec\.ts$/,
       grep: /@smoke/,
-      use: { ...devices['Desktop Chrome'] },
+      use: desktopChrome,
     },
 
     // ── QA 프로젝트 ──
@@ -48,20 +54,20 @@ export default defineConfig({
     {
       name: 'setup-admin',
       testMatch: /fixtures\/auth\.setup\.ts/,
-      use: { ...devices['Desktop Chrome'] },
+      use: desktopChrome,
     },
     // 2. 공개 페이지 QA (인증 불필요)
     {
       name: 'qa-public',
       testMatch: /qa\/(0[1-4])-.*\.spec\.ts/,
-      use: { ...devices['Desktop Chrome'] },
+      use: desktopChrome,
     },
     // 3. 유저 인증 QA (user.json storageState)
     {
       name: 'qa-user',
       testMatch: /qa\/05-.*\.spec\.ts/,
       use: {
-        ...devices['Desktop Chrome'],
+        ...desktopChrome,
         storageState: USER_AUTH,
       },
     },
@@ -71,7 +77,7 @@ export default defineConfig({
       testMatch: /qa\/(0[6-9]|1[0-4])-.*\.spec\.ts/,
       dependencies: ['setup-admin'],
       use: {
-        ...devices['Desktop Chrome'],
+        ...desktopChrome,
         storageState: ADMIN_AUTH,
       },
     },
@@ -79,7 +85,7 @@ export default defineConfig({
     {
       name: 'qa-edge',
       testMatch: /qa\/14-.*\.spec\.ts/,
-      use: { ...devices['Desktop Chrome'] },
+      use: desktopChrome,
     },
 
     // 6. 종합 Deep QA — 모바일 (390×844, user.json)
@@ -87,7 +93,7 @@ export default defineConfig({
       name: 'qa-deep-mobile',
       testMatch: /qa\/15-.*\.spec\.ts/,
       use: {
-        ...devices['Pixel 7'],
+        ...pixel7Chrome,
         viewport: { width: 390, height: 844 },
         storageState: USER_AUTH,
       },
@@ -97,7 +103,7 @@ export default defineConfig({
       name: 'qa-deep-desktop',
       testMatch: /qa\/15-.*\.spec\.ts/,
       use: {
-        ...devices['Desktop Chrome'],
+        ...desktopChrome,
         viewport: { width: 1440, height: 900 },
         storageState: USER_AUTH,
       },
@@ -107,7 +113,7 @@ export default defineConfig({
       name: 'qa-upload',
       testMatch: /qa\/16-.*\.spec\.ts/,
       use: {
-        ...devices['Desktop Chrome'],
+        ...desktopChrome,
         storageState: USER_AUTH,
       },
     },
@@ -116,7 +122,7 @@ export default defineConfig({
       name: 'qa-fixes',
       testMatch: /qa\/17-.*\.spec\.ts/,
       use: {
-        ...devices['Desktop Chrome'],
+        ...desktopChrome,
         storageState: USER_AUTH,
       },
     },
@@ -128,7 +134,7 @@ export default defineConfig({
       name: 'qa-audit',
       testMatch: /qa\/(18|19|20|22|25)-.*\.spec\.ts/,
       use: {
-        ...devices['Desktop Chrome'],
+        ...desktopChrome,
         baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
         screenshot: 'on',
       },
@@ -138,7 +144,7 @@ export default defineConfig({
       name: 'qa-audit-mobile',
       testMatch: /qa\/(18|19)-.*\.spec\.ts/,
       use: {
-        ...devices['Pixel 7'],
+        ...pixel7Chrome,
         baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
         screenshot: 'on',
       },
@@ -148,7 +154,7 @@ export default defineConfig({
       name: 'qa-audit-user',
       testMatch: /qa\/19-.*\.spec\.ts/,
       use: {
-        ...devices['Desktop Chrome'],
+        ...desktopChrome,
         baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
         storageState: USER_AUTH,
         screenshot: 'on',
@@ -159,7 +165,7 @@ export default defineConfig({
       name: 'qa-write-mobile',
       testMatch: /qa\/21-.*\.spec\.ts/,
       use: {
-        ...devices['Pixel 7'],
+        ...pixel7Chrome,
         viewport: { width: 390, height: 844 },
         baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
         storageState: USER_AUTH,
@@ -174,6 +180,7 @@ export default defineConfig({
       testMatch: /qa\/21-write-devices.*\.spec\.ts/,
       use: {
         browserName: 'chromium',
+        ...chromeChannel,
         viewport: { width: 402, height: 874 },
         deviceScaleFactor: 3,
         userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
@@ -189,7 +196,7 @@ export default defineConfig({
       name: 'qa-write-s24ultra',
       testMatch: /qa\/21-write-devices.*\.spec\.ts/,
       use: {
-        ...devices['Galaxy S24'],
+        ...galaxyS24Chrome,
         viewport: { width: 412, height: 915 },
         deviceScaleFactor: 3.5,
         userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-S928U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
@@ -225,7 +232,7 @@ export default defineConfig({
       name: 'qa-galaxy',
       testMatch: /qa\/2[6-9]-.*\.spec\.ts/,
       use: {
-        ...devices['Galaxy S24'],
+        ...galaxyS24Chrome,
         viewport: { width: 412, height: 915 },
         deviceScaleFactor: 3.5,
         userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-S928U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
@@ -242,7 +249,7 @@ export default defineConfig({
       name: 'qa-audit-user-full',
       testMatch: /qa\/2[6-9]-.*\.spec\.ts/,
       use: {
-        ...devices['Desktop Chrome'],
+        ...desktopChrome,
         viewport: { width: 1440, height: 900 },
         baseURL: process.env.QA_AUDIT_URL || 'https://www.age-doesnt-matter.com',
         storageState: USER_AUTH,
@@ -255,7 +262,7 @@ export default defineConfig({
       name: 'signup-banner',
       testMatch: /qa\/22-signup-banner-gtm\.spec\.ts/,
       use: {
-        ...devices['Pixel 7'],
+        ...pixel7Chrome,
         viewport: { width: 390, height: 844 },
       },
     },
@@ -265,7 +272,7 @@ export default defineConfig({
       name: 'qa-tracking',
       testMatch: /qa\/23-.*\.spec\.ts/,
       use: {
-        ...devices['Desktop Chrome'],
+        ...desktopChrome,
         extraHTTPHeaders: { 'x-bot-type': 'e2e-test' },
       },
     },
@@ -274,7 +281,7 @@ export default defineConfig({
       name: 'qa-tracking-user',
       testMatch: /qa\/23-.*\.spec\.ts/,
       use: {
-        ...devices['Desktop Chrome'],
+        ...desktopChrome,
         storageState: USER_AUTH,
         extraHTTPHeaders: { 'x-bot-type': 'e2e-test' },
       },
