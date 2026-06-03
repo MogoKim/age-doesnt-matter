@@ -1,8 +1,15 @@
 import Link from 'next/link'
+import { unstable_cache } from 'next/cache'
 import { getTrendingCommunityPosts, getPostsByBoardPage } from '@/lib/queries/posts'
 import type { BoardType } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { formatTimeAgo } from './utils'
+
+const getCachedBoardBottomPosts = unstable_cache(
+  async (boardType: BoardType) => (await getPostsByBoardPage(boardType, { limit: 13 })).posts,
+  ['post-list-bottom-latest'],
+  { revalidate: 30, tags: ['community-board-page'] },
+)
 
 interface Props {
   boardType: BoardType
@@ -15,7 +22,7 @@ interface Props {
 export default async function PostListBottom({ boardType, boardSlug, excludePostId, displayName, mode }: Props) {
   const rawPosts = mode === 'trending'
     ? await getTrendingCommunityPosts(13)
-    : (await getPostsByBoardPage(boardType, { limit: 13 })).posts
+    : await getCachedBoardBottomPosts(boardType)
 
   const posts = rawPosts
     .filter(p => p.id !== excludePostId)

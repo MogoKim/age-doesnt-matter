@@ -12,16 +12,19 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') ?? 'hot' // hot | fame
     const { limit } = parsePaginationParams(searchParams)
     const skip = parseInt(searchParams.get('skip') ?? '0', 10) || 0
+    const q = searchParams.get('q')?.trim() || undefined
+    const sfParam = searchParams.get('sf')
+    const sf = sfParam === 'both' || sfParam === 'content' ? sfParam : 'title'
 
     if (type === 'fame') {
-      const result = await getHallOfFamePosts({ skip, limit })
+      const result = await getHallOfFamePosts({ skip, limit, q, sf })
       return NextResponse.json(result, {
         headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
       })
     }
 
     // type=hot: 영구 누적 인기글 (hotPromotedAt IS NOT NULL), offset pagination
-    const result = await getAccumulatedHotPosts({ skip, limit })
+    const result = await getAccumulatedHotPosts({ skip, limit, q, sf })
     return NextResponse.json(result, {
       headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
     })
