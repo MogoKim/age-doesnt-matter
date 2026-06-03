@@ -75,6 +75,7 @@ jobs:
   e2e-smoke:
     name: E2E Smoke (@smoke 태그)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [quality, detect-changes]
     if: needs.detect-changes.outputs.frontend == 'true'
     steps:
@@ -117,6 +118,7 @@ jobs:
   e2e-ads:
     name: E2E Ads (@ads 태그)
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     needs: [quality, detect-changes]
     if: needs.detect-changes.outputs.ads == 'true'
     steps:
@@ -161,6 +163,7 @@ jobs:
   e2e-admin:
     name: E2E Admin
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     needs: [quality, detect-changes]
     if: needs.detect-changes.outputs.admin == 'true'
     steps:

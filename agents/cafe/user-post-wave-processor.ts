@@ -82,10 +82,14 @@ async function processUserWave(
 
   const post = await prisma.post.findUnique({
     where: { id: queue.postId },
-    select: { title: true, content: true },
+    select: { title: true, content: true, status: true },
   })
   if (!post) {
     console.warn(`[UserPostWave] wave${waveNum}: postId=${queue.postId} 없음 — 스킵`)
+    return 0
+  }
+  if (post.status !== 'PUBLISHED') {
+    console.warn(`[UserPostWave] wave${waveNum}: postId=${queue.postId} status=${post.status} — 스킵`)
     return 0
   }
 

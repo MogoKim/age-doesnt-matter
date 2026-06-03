@@ -942,6 +942,14 @@ function hasUserCommentQualityIssue(comment: string, priorComments: string[]): b
   ]
   if (genericOpenings.some(phrase => text.includes(phrase))) return true
 
+  const awkwardPatterns = [
+    '있는 것이 아니라 없는 것이 아니라',
+    '아닌 것이 아니라 아닌 것이 아니라',
+    '그런 것이 아니라 그런 것이 아니라',
+  ]
+  if (awkwardPatterns.some(phrase => text.includes(phrase))) return true
+  if ((text.match(/것이 아니라/g) ?? []).length >= 2) return true
+
   return priorComments.some(prev => {
     const normalizedPrev = prev.replace(/\s+/g, '')
     const normalizedText = text.replace(/\s+/g, '')
