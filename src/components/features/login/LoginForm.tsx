@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { kakaoSignIn } from '@/app/login/actions'
 import { sendGtmEvent, getStoredUtm, getBrowserEnv } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
-import { IconKakao } from '@/components/icons'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -44,8 +43,8 @@ export default function LoginForm() {
         <div className="my-auto flex flex-col items-center gap-[22px] px-8 py-8">
           <Image
             src="/logo.png"
-            width={108}
-            height={108}
+            width={120}
+            height={120}
             alt="우나어 로고"
             className="object-contain"
             priority
@@ -71,7 +70,12 @@ export default function LoginForm() {
               boxShadow: '0 2px 8px rgba(254,229,0,0.35)',
             }}
           >
-            <IconKakao size={22} />
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path
+                d="M10 2C5.582 2 2 4.925 2 8.5c0 2.26 1.37 4.25 3.46 5.43l-.9 3.3a.25.25 0 0 0 .38.27L8.8 15.5c.39.05.79.08 1.2.08 4.418 0 8-2.925 8-6.5S14.418 2 10 2Z"
+                fill="currentColor"
+              />
+            </svg>
             카카오로 3초만에 시작하기
           </button>
         </div>
