@@ -11,6 +11,7 @@ import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import ActionBar from '@/components/features/community/ActionBar'
+import PostCTA from '@/components/features/community/PostCTA'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
@@ -343,6 +344,8 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         isScrapped={isScrapped}
         isLoggedIn={!!userId}
       />
+
+      <PostCTA postId={resolvedId} postTitle={post.title} isLoggedIn={!!userId} />
 
       {/* 함께 읽어보세요 */}
       {relatedPosts.length > 0 && (

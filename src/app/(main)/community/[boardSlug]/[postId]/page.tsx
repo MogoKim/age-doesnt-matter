@@ -9,6 +9,7 @@ import { getBoardConfig } from '@/lib/queries/boards'
 import { getPostDetail, getPostMeta } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
 import ActionBar from '@/components/features/community/ActionBar'
+import PostCTA from '@/components/features/community/PostCTA'
 import PostDeleteButton from '@/components/features/community/PostDeleteButton'
 import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
@@ -230,6 +231,8 @@ export default async function PostDetailPage({ params, searchParams }: PageProps
         isScrapped={isScrapped}
         isLoggedIn={!!userId}
       />
+
+      <PostCTA postId={resolvedId} postTitle={post.title} isLoggedIn={!!userId} />
 
       {/* 쿠팡 관련 상품 */}
       <div className="mb-8">
