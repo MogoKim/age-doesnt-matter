@@ -5,7 +5,6 @@ import { Suspense } from 'react'
 
 import { getJobDetailPublic, type JobDetailPublicItem } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
-import { prisma } from '@/lib/prisma'
 import ActionBar from '@/components/features/community/ActionBar'
 import CommentSection from '@/components/features/community/CommentSection'
 import { sanitizeHtml } from '@/lib/sanitize'
@@ -27,17 +26,9 @@ export const dynamicParams = true
 export const revalidate = 30
 
 export async function generateStaticParams() {
-  try {
-    const posts = await prisma.post.findMany({
-      where: { boardType: 'JOB', status: 'PUBLISHED' },
-      select: { slug: true, id: true },
-      orderBy: { viewCount: 'desc' },
-      take: 30,
-    })
-    return posts.map((p) => ({ id: p.slug ?? p.id }))
-  } catch {
-    return []
-  }
+  // 상세 사전생성은 build 중 DB 연결을 많이 사용한다.
+  // 첫 요청에서 ISR로 생성하고 이후 CDN 캐시로 재사용한다.
+  return []
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

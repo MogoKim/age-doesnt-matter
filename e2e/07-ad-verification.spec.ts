@@ -4,8 +4,7 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
 
   test('데스크탑: AdSense 슬롯 존재', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
-    await page.goto('/')
-    await page.waitForLoadState('load')
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20000 })
     await page.waitForTimeout(2000)
 
     // ins.adsbygoogle 태그가 DOM에 존재하는지 확인
@@ -22,8 +21,7 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
 
   test('모바일: AdSense 슬롯 존재', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
-    await page.goto('/')
-    await page.waitForLoadState('load')
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20000 })
     await page.waitForTimeout(2000)
 
     const adsenseSlots = page.locator('ins.adsbygoogle')
@@ -51,6 +49,7 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
         const ins = document.querySelector('ins.adsbygoogle')
         return ins?.getAttribute('data-ad-status') !== null
       },
+      undefined,
       { timeout: 15000 },
     ).then(() => true).catch(() => false)
 
@@ -83,8 +82,7 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
   })
 
   test('SPA 네비게이션 후 광고 슬롯 재생성', async ({ page }) => {
-    await page.goto('/')
-    await page.waitForLoadState('load')
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20000 })
     await page.waitForTimeout(2000)
 
     // 매거진으로 이동
@@ -98,7 +96,7 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
 
     await magLink.click()
     await page.waitForURL(/\/magazine/, { timeout: 10000 })
-    await page.waitForLoadState('load')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(2000)
 
     // 홈으로 돌아오기
@@ -112,7 +110,7 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
 
     await homeLink.click()
     await page.waitForURL(/\/$/, { timeout: 10000 })
-    await page.waitForLoadState('load')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(2000)
 
     // 광고 슬롯이 다시 생성되었는지 확인
@@ -143,9 +141,8 @@ test.describe('시나리오 7: 광고 렌더링 검증', { tag: ['@smoke', '@ads
       }
     })
 
-    await page.goto('/')
-    await page.waitForLoadState('load')
-    await page.waitForTimeout(5000)
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20000 })
+    await page.waitForTimeout(2000)
 
     if (errors.length > 0) {
       console.warn('[CI] 광고 관련 에러 발견:', errors)

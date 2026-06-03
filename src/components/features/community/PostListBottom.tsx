@@ -41,7 +41,6 @@ export default async function PostListBottom({ boardType, boardSlug, excludePost
         <Link
           href={moreHref}
           className="text-[17px] text-primary-text no-underline min-h-[52px] flex items-center px-2 hover:underline"
-          prefetch={false}
         >
           {moreLabel}
         </Link>
@@ -52,7 +51,6 @@ export default async function PostListBottom({ boardType, boardSlug, excludePost
             <Link
               href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
               className="flex items-start gap-3 py-3 no-underline text-inherit min-h-[52px] hover:bg-muted/40 transition-colors -mx-1 px-1 rounded-lg"
-              prefetch={false}
             >
               <span className="text-caption font-bold text-muted-foreground min-w-[24px] shrink-0 pt-0.5 text-right">
                 {idx + 1}

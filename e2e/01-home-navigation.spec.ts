@@ -36,8 +36,9 @@ test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', {
       { href: '/magazine', label: '매거진' },
     ]
 
+    const mobileMenu = page.locator('nav[aria-label="주요 메뉴"]')
     for (const { href, label } of navLinks) {
-      const link = page.locator(`a[href="${href}"]`).first()
+      const link = mobileMenu.locator(`a[href="${href}"]`)
       await expect(link).toBeVisible()
       await expect(link).toContainText(label)
     }
