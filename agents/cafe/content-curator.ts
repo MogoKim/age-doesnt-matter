@@ -61,6 +61,7 @@ type PublishResult =
   | { success: false; skipReason: Extract<SkipReason, 'SEASON_MISMATCH' | 'DUPLICATE_TITLE' | 'PUBLISH_FAILED'> }
 
 const CANDIDATE_POOL_SIZE = 15
+const LIFE2_SOURCE_DESIRES = new Set(['MONEY', 'RETIRE', 'HOUSING'])
 
 
 /** 참고용 원본 글 가져오기 — 3단계 fallback (B19+B24)
@@ -76,7 +77,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   }
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
   const firstWord = topicWords[0] ?? topic
-  const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true } as const
+  const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true, desireCategory: true } as const
   // killerScore 상위권(~63위)이 usable<5인 경우가 많아 넉넉히 조회 후 usable 필터 적용.
   // 실측: killerScore top-63 전체가 usable<5, 64위부터 usable≥5 등장 → 최소 150개 필요.
   const candidateTake = Math.max(limit * 50, 150)
@@ -162,13 +163,16 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
 async function generateCuratedPost(
   persona: PersonaMatch,
   topic: string,
-  referencePosts: { id: string; title: string; content: string; cafeName: string }[],
+  referencePosts: { id: string; title: string; content: string; cafeName: string; desireCategory?: string | null }[],
   desireCat?: string,
 ): Promise<CuratedContent | null> {
   const mainRef = referencePosts[0]
   if (!mainRef) return null
 
-  const boardInfo = resolveCommunityBoard(desireCat ?? 'GENERAL')
+  const effectiveDesire = mainRef.desireCategory && LIFE2_SOURCE_DESIRES.has(mainRef.desireCategory)
+    ? mainRef.desireCategory
+    : (desireCat ?? 'GENERAL')
+  const boardInfo = resolveCommunityBoard(effectiveDesire)
 
   const title = replaceCafeReferences(stripMarkdown(mainRef.title.trim()))
   if (!title) return null
