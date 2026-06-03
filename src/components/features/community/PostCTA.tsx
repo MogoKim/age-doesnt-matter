@@ -94,8 +94,10 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
           className="shrink-0 min-h-[52px] px-4 rounded-lg text-[15px] font-bold flex items-center gap-1.5 whitespace-nowrap transition-all hover:brightness-95"
           style={{ background: '#FEE500', color: '#191919' }}
         >
-          <span className="text-[18px] leading-none" aria-hidden="true">💬</span>
-          3초만에 가입하기
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="#191919" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M10 2C5.58 2 2 5.02 2 8.75c0 2.34 1.39 4.4 3.5 5.6-.15.54-.55 1.97-.63 2.27-.1.37.14.37.3.27.12-.08 1.9-1.28 2.67-1.8.7.1 1.42.16 2.16.16 4.42 0 8-3.02 8-6.75C18 5.02 14.42 2 10 2Z" />
+          </svg>
+          3초 만에 가입하기
         </button>
       </div>
     )
