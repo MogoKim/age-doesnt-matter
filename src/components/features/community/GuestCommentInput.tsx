@@ -37,11 +37,15 @@ export default function GuestCommentInput({
   const [password, setPassword] = useState('')
   const [content, setContent] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false)
   const turnstileRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
-  // auto-execute: 위젯 렌더 즉시 챌린지 수행 → 토큰 미리 저장
   const tokenRef = useRef<string>('')
 
+  const isTopLevel = !parentId
+  const showExtraFields = content.trim().length > 0
+
+  // script preload — 마운트 시 inject, 네트워크 지연 흡수
   useEffect(() => {
     if (!document.getElementById('cf-turnstile-script')) {
       const script = document.createElement('script')
@@ -51,6 +55,25 @@ export default function GuestCommentInput({
       script.defer = true
       document.head.appendChild(script)
     }
+    return () => {
+      if (window.turnstile && widgetIdRef.current) {
+        window.turnstile.remove(widgetIdRef.current)
+        widgetIdRef.current = null
+      }
+      tokenRef.current = ''
+    }
+  }, [])
+
+  // widget lifecycle — showExtraFields가 열릴 때만 render, 닫힐 때 remove
+  useEffect(() => {
+    if (!showExtraFields) {
+      if (window.turnstile && widgetIdRef.current) {
+        window.turnstile.remove(widgetIdRef.current)
+        widgetIdRef.current = null
+      }
+      tokenRef.current = ''
+      return
+    }
 
     const tryRender = () => {
       if (!window.turnstile || !turnstileRef.current || widgetIdRef.current) return
@@ -58,6 +81,8 @@ export default function GuestCommentInput({
       if (!siteKey) return
       widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
         sitekey: siteKey,
+        appearance: 'interaction-only',
+        execution: 'render',
         size: 'compact',
         language: 'auto',
         callback: (token: string) => { tokenRef.current = token },
@@ -71,18 +96,12 @@ export default function GuestCommentInput({
       })
     }
 
+    tryRender()
     const interval = setInterval(tryRender, 300)
-    return () => {
-      clearInterval(interval)
-      if (window.turnstile && widgetIdRef.current) {
-        window.turnstile.remove(widgetIdRef.current)
-        widgetIdRef.current = null
-      }
-      tokenRef.current = ''
-    }
-  }, [])
+    return () => clearInterval(interval)
+  }, [showExtraFields])
 
-  // compact 모드: 사용자 클릭 시간 포함 최대 15초 대기
+  // compact 모드: 최대 15초 대기 (interaction-only에서 체크박스 필요 시 대기)
   async function waitForToken(maxMs = 15000): Promise<string> {
     const start = Date.now()
     while (Date.now() - start < maxMs) {
@@ -94,8 +113,8 @@ export default function GuestCommentInput({
 
   async function handleSubmit() {
     if (!content.trim()) return
-    if (!nickname.trim()) { toast('닉네임을 입력해 주세요', 'error'); return }
-    if (password.length < 4) { toast('비밀번호는 4~8자리로 입력해 주세요', 'error'); return }
+    if (!nickname.trim()) { toast('댓글 남길 이름을 입력해 주세요', 'error'); return }
+    if (password.length < 4) { toast('수정·삭제용 번호를 4자리로 입력해 주세요', 'error'); return }
 
     setIsLoading(true)
     try {
@@ -116,7 +135,6 @@ export default function GuestCommentInput({
 
       if (result.error) {
         toast(result.error, 'error')
-        // 토큰 소진 → 위젯 초기화로 새 토큰 발급
         tokenRef.current = ''
         if (window.turnstile && widgetIdRef.current) {
           window.turnstile.reset(widgetIdRef.current)
@@ -124,51 +142,55 @@ export default function GuestCommentInput({
         return
       }
 
-      toast('댓글이 등록됐어요!')
+      // 성공 — content 초기화 → showExtraFields=false → widget cleanup은 effect가 처리
       setContent('')
       setNickname('')
       setPassword('')
-      // 사용 후 초기화 → 위젯이 새 토큰 자동 발급
-      tokenRef.current = ''
-      if (window.turnstile && widgetIdRef.current) {
-        window.turnstile.reset(widgetIdRef.current)
-      }
       onSuccess?.()
+
+      if (isTopLevel) {
+        sessionStorage.setItem('signup_prompt_shown_this_session', '1')
+        setShowSignupPrompt(true)
+      } else {
+        toast('댓글이 등록됐어요!')
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
-  const canSubmit = content.trim().length > 0 && nickname.trim().length > 0 && password.length >= 4
+  const canSubmit = content.trim().length > 0 && nickname.trim().length > 0 && password.length === 4
+
+  // 댓글 등록 성공 후 가입 유도 카드 (top-level 전용)
+  if (showSignupPrompt) {
+    return (
+      <div className="bg-card border border-border rounded-2xl p-4 mt-4">
+        <p className="text-body font-bold text-foreground mb-1">댓글이 등록됐어요</p>
+        <p className="text-caption text-muted-foreground mb-4">
+          다음부터는 닉네임·번호 없이 바로 댓글을 남길 수 있어요
+        </p>
+        <KakaoSignupButton
+          callbackUrl={pathname}
+          gtmFrom="guest_comment_success"
+          className="flex items-center justify-center w-full min-h-[52px] rounded-xl text-caption font-bold mb-2 transition-all hover:brightness-95"
+          style={{ background: '#FEE500', color: '#191919' }}
+        >
+          카카오로 3초 만에 시작하기
+        </KakaoSignupButton>
+        <button
+          type="button"
+          onClick={() => setShowSignupPrompt(false)}
+          className="w-full min-h-[52px] rounded-xl text-caption text-muted-foreground hover:text-foreground transition-colors"
+        >
+          나중에 할게요
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-card border border-border rounded-2xl p-4 mt-4">
-      <p className="text-[17px] font-bold text-foreground mb-3">💬 비회원으로 댓글 달기</p>
-
-      <div className="flex gap-3 mb-3">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="닉네임 (최대 10자)"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value.slice(0, 10))}
-            maxLength={10}
-            className="w-full px-3 py-2 min-h-[52px] border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
-          />
-          <p className="text-[17px] text-muted-foreground mt-1 ml-1">※ 회원 닉네임은 사용 불가</p>
-        </div>
-        <div className="flex-1">
-          <input
-            type="password"
-            placeholder="비밀번호 (4~8자)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value.slice(0, 8))}
-            maxLength={8}
-            className="w-full px-3 py-2 min-h-[52px] border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
-          />
-          <p className="text-[17px] text-muted-foreground mt-1 ml-1">※ 수정·삭제 시 필요</p>
-        </div>
-      </div>
+      <p className="text-body font-bold text-foreground mb-3">댓글을 남겨보세요</p>
 
       <textarea
         placeholder={placeholder}
@@ -178,34 +200,54 @@ export default function GuestCommentInput({
         rows={3}
         className="w-full px-3 py-2 border border-border rounded-xl text-body text-foreground bg-background resize-none outline-none focus:border-primary transition-colors mb-1"
       />
-      <p className="text-[17px] text-muted-foreground text-right mb-3">{content.length}/500</p>
+      <p className="text-caption text-muted-foreground text-right mb-3">{content.length}/500</p>
 
-      {/* Turnstile compact 위젯 — 자동 검증 또는 체크박스 표시 */}
-      <div className="mb-2">
-        <div ref={turnstileRef} />
-      </div>
+      {showExtraFields && (
+        <div className="mb-3 space-y-3">
+          <div>
+            <label className="block text-caption text-muted-foreground mb-1">댓글 남길 이름</label>
+            <input
+              type="text"
+              placeholder="예: 또래친구"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value.slice(0, 10))}
+              maxLength={10}
+              className="w-full px-3 py-2 min-h-[52px] border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-caption text-muted-foreground mb-1">수정·삭제용 번호</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="숫자 4자리"
+              value={password}
+              onChange={(e) => setPassword(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              maxLength={4}
+              className="w-full px-3 py-2 min-h-[52px] border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors"
+            />
+            <p className="text-caption text-muted-foreground mt-1 ml-1">댓글 수정·삭제할 때만 써요</p>
+          </div>
+          {/* Turnstile — appearance:interaction-only, 인증 필요 시에만 보임 */}
+          <div ref={turnstileRef} />
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
-        <KakaoSignupButton
-          callbackUrl={pathname}
-          gtmFrom="guest_comment_kakao"
-          className="flex-1 flex items-center justify-center min-h-[52px] px-4 bg-[#FEE500] text-[#191919] rounded-xl text-[17px] font-bold hover:bg-[#FDD800] transition-colors"
-        >
-          💛 카카오로 시작하기
-        </KakaoSignupButton>
         <button
           type="button"
           onClick={handleSubmit}
           disabled={isLoading || !canSubmit}
-          className="flex-1 flex items-center justify-center min-h-[52px] px-4 bg-primary text-white rounded-xl text-[17px] font-bold hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
+          className="flex-1 flex items-center justify-center min-h-[52px] px-4 bg-primary text-white rounded-xl text-caption font-bold hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading ? '등록 중...' : '비회원으로 작성'}
+          {isLoading ? '등록 중...' : '댓글 남기기'}
         </button>
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="flex items-center justify-center min-h-[52px] min-w-[52px] px-3 rounded-xl text-[17px] text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center justify-center min-h-[52px] min-w-[52px] px-3 rounded-xl text-caption text-muted-foreground hover:text-foreground transition-colors"
           >
             취소
           </button>
