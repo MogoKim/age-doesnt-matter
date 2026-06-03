@@ -85,14 +85,17 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
   if (!isLoggedIn) {
     return (
       <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-3">
-        <p className="text-[17px] text-foreground leading-snug m-0">
-          가입하면 공감·댓글·저장까지 할 수 있어요
+        <p className="text-[17px] text-foreground leading-snug m-0 flex flex-col">
+          <span>우리 또래 이야기,</span>
+          <span>같이 나눠보세요</span>
         </p>
         <button
           onClick={handleClick}
-          className="shrink-0 min-h-[52px] px-4 rounded-lg bg-primary text-white text-[15px] font-semibold"
+          className="shrink-0 min-h-[52px] px-4 rounded-lg text-[15px] font-bold flex items-center gap-1.5 whitespace-nowrap transition-all hover:brightness-95"
+          style={{ background: '#FEE500', color: '#191919' }}
         >
-          카카오로<br />시작하기
+          <span className="text-[18px] leading-none" aria-hidden="true">💬</span>
+          3초만에 가입하기
         </button>
       </div>
     )
