@@ -113,7 +113,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['퇴직 후 매일 30분 걷기를 실천 중인데 혈압이 확실히 안정됐습니다.', '국민연금 수령 시기를 5년 미루면 월 36% 더 받습니다. 참고하시기 바랍니다.'],
   },
   {
-    id: 'C', nickname: 'ㅋㅋ요정', board: 'HUMOR',
+    id: 'C', nickname: '웃음한스푼', board: 'HUMOR',
     style: '초짧은 리액션, 웃음 폭발',
     patterns: ['ㅋㅋㅋ', 'ㅋㅋㅋㅋㅋ', '미쳤ㅋㅋ', '헐ㅋㅋ'],
     topics: ['유머', '웃긴 상황', '공감 리액션'],
@@ -201,7 +201,7 @@ export const PERSONAS: PersonaMatch[] = [
     examples: ['이마트 계란 한판 4,990원인데 쿠팡은 5,800원이에요. 참고하세요 ✅', '흰 셔츠 누런 얼룩은 과탄산소다 한 스푼 + 미지근한 물에 30분 담그면 돼요. 꼭 해보세요!'],
   },
   {
-    id: 'O', nickname: '올드팝', board: 'STORY',
+    id: 'O', nickname: '추억라디오', board: 'STORY',
     style: '음악, 추억의 노래, 라디오',
     patterns: ['~들으니까', '~생각나네요', '~그 시절이'],
     topics: ['옛날 노래', '트로트', '팝송', '라디오', '콘서트'],

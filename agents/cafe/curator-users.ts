@@ -32,12 +32,7 @@ export async function getCuratorBotUser(persona: string | PersonaMatch): Promise
           : typeof rawTarget === 'string' && rawTarget.includes('nickname')
       // nickname 외 필드(providerId 등) P2002는 masking하지 않고 원본 에러 유지
       if (!isNicknameConflict) throw err
-      const user = await prisma.user.upsert({
-        where: { email },
-        update: {},
-        create: { email, nickname: `${nickname}-${id.toLowerCase()}`, providerId, role: 'USER', grade: 'SPROUT' },
-      })
-      return user.id
+      throw new Error(`[CuratorUser] nickname conflict: ${nickname} (${email}). Use a unique curator nickname.`)
     }
     throw err
   }

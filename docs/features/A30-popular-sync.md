@@ -40,6 +40,7 @@
 ## 수정 이력
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
+| 2026-06-03 | curator-shared.ts C 닉네임 'ㅋㅋ요정'→'웃음한스푼', O 닉네임 '올드팝'→'추억라디오'. curator-users.ts P2002 nickname 충돌 시 suffix fallback 제거 → throw Error | seed bot과 User.nickname @unique 충돌 방지 |
 | 2026-06-01 | curator-shared.ts resolveCommunityBoard() 신규 export — DESIRE_TO_BOARD.JOB을 STORY로 변경, JOB 반환 불가 함수 추가. popular-curator.ts DESIRE_TO_BOARD 직접 참조 제거 → resolveCommunityBoard() 경유 | 커뮤니티 큐레이션 경로에서 JOB 게시판 발행 차단 정책 적용 (P1-6 오분류 37건 원인 수정) |
 | 2026-05-26 | popular-curator.ts candidates 2차 content filter 추가 — ACCESS_BLOCKED_SIGNALS 5개 패턴 인라인 정의, 기존 오염 CafePost(isUsable=true, 접근 차단 안내문 잔존) 발행 차단 | 검색 비허용 안내문이 isUsable=true로 DB에 남아있는 경우 POPULAR_CURATE 발행 방지 (2차 방어선) |
 | 2026-05-21 | curator-shared.ts MONEY 키워드 확장 — 코스피·코스닥·나스닥·etf·커버드콜·코덱스·kodex·하이닉스·삼성전자·배당·배당주·미국주식 추가 | 투자 글이 guessDesire() 미감지로 STORY/자유수다 오분류되는 문제 완화 |
