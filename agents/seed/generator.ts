@@ -681,8 +681,12 @@ ${recentCommentHint}${forbiddenSection}`
 }
 
 /** 시트 화제성 파동 댓글 생성 — Sonnet 모델, 본문 맥락 반영, 키워드 검증 포함 */
-function extractForbiddenAnchors(priorCommentTexts: string[]): string[] {
-  if (priorCommentTexts.length === 0) return []
+function extractForbiddenAnchors(priorCommentTexts: string[], rawContent?: string): string[] {
+  const cleanedRaw = rawContent
+    ? rawContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300)
+    : ''
+  const sources = cleanedRaw ? [...priorCommentTexts, cleanedRaw] : priorCommentTexts
+  if (sources.length === 0) return []
 
   // "저렇게"는 실제 anchor 반복 사례로 확인되어 의도적으로 제외
   const STOP = new Set([
@@ -692,7 +696,7 @@ function extractForbiddenAnchors(priorCommentTexts: string[]): string[] {
     '요즘','나도','우리','정도','느낌','생각','그분','항상','가끔','하네요',
   ])
 
-  const text = priorCommentTexts.join(' ')
+  const text = sources.join(' ')
 
   // 단어 anchor (최대 4개)
   const wordTokens = text.match(/[가-힣]{2,6}/g) ?? []
@@ -705,14 +709,14 @@ function extractForbiddenAnchors(priorCommentTexts: string[]): string[] {
     .slice(0, 4)
     .map(([k]) => k)
 
-  // 구문 anchor: 2~3어절 슬라이딩 윈도우, 한글 4자 이상 어절 포함 구문만 (최대 2개)
+  // 구문 anchor: 2~3어절 슬라이딩 윈도우, 한글 3자 이상 어절 포함 구문만 (최대 2개)
   const phraseAnchors: string[] = []
-  for (const comment of priorCommentTexts) {
-    const words = comment.split(/\s+/).filter(w => /[가-힣]/.test(w))
+  for (const source of sources) {
+    const words = source.split(/\s+/).filter(w => /[가-힣]/.test(w))
     for (let n = 2; n <= 3; n++) {
       for (let i = 0; i <= words.length - n; i++) {
         const phrase = words.slice(i, i + n).join(' ')
-        const hasContent = words.slice(i, i + n).some(w => w.length >= 4 && !STOP.has(w))
+        const hasContent = words.slice(i, i + n).some(w => w.length >= 3 && !STOP.has(w))
         if (hasContent && !phraseAnchors.includes(phrase) && phraseAnchors.length < 2) {
           phraseAnchors.push(phrase)
         }
@@ -784,8 +788,8 @@ export async function generateSheetViralComment(
 [댓글 방향]
 ${WAVE_PROMPTS[waveType]}`
 
-  // P1-B+C-2: forbidden anchor는 priorCommentTexts 기반으로만 추출 (sourceComments는 앞으로 쓸 재료)
-  const forbiddenAnchors = extractForbiddenAnchors(options?.priorCommentTexts ?? [])
+  // P1-B+C-2: forbidden anchor — priorCommentTexts + rawContent 본문 초반부 (3차 수정: 본문 anchor 사전 차단)
+  const forbiddenAnchors = extractForbiddenAnchors(options?.priorCommentTexts ?? [], rawContent)
 
   let commentContext = ''
   if (sourceComments.length > 0) {
