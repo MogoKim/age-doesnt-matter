@@ -1,8 +1,9 @@
 'use client'
 
-import { signIn } from 'next-auth/react'
+import { useState } from 'react'
 import { sendGtmEvent, getStoredUtm, getBrowserEnv } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
+import { startKakaoLogin } from '@/lib/kakao-start'
 
 interface Props {
   callbackUrl?: string
@@ -12,26 +13,27 @@ interface Props {
   gtmFrom?: string
 }
 
-/**
- * 카카오 OAuth 직행 버튼 — /login 페이지를 거치지 않고 바로 카카오로 이동
- * callbackUrl: 로그인 후 돌아올 경로 (기본값 '/')
- */
-function safeCallbackUrl(url: string): string {
-  // 상대경로만 허용 — 외부 도메인 오픈 리다이렉트 방지
-  return url.startsWith('/') && !url.startsWith('//') ? url : '/'
-}
-
 export default function KakaoSignupButton({ callbackUrl = '/', className, style, children, gtmFrom }: Props) {
-  async function handleClick() {
+  const [isStarting, setIsStarting] = useState(false)
+
+  function handleClick() {
+    setIsStarting(true)
     if (gtmFrom) {
       sendGtmEvent('kakao_button_click', { from: gtmFrom, browser_env: getBrowserEnv(), ...getStoredUtm() })
     }
     trackEvent('kakao_button_click', { from: gtmFrom ?? 'unknown', browser_env: getBrowserEnv() })
-    await signIn('kakao', { callbackUrl: safeCallbackUrl(callbackUrl) })
+    window.setTimeout(() => startKakaoLogin(callbackUrl), 0)
   }
 
   return (
-    <button type="button" onClick={handleClick} className={className} style={style}>
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={isStarting}
+      aria-busy={isStarting}
+      className={className}
+      style={style}
+    >
       {children}
     </button>
   )

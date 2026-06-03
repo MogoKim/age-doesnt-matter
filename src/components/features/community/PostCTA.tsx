@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useRef, startTransition, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
-import { kakaoSignIn } from '@/app/login/actions'
 import { trackEvent } from '@/lib/track'
 import { sendGtmEvent } from '@/lib/gtm'
+import { startKakaoLogin } from '@/lib/kakao-start'
 import { detectEnv } from '@/components/common/AddToHomeScreen'
 
 // 로그인 설치 CTA를 표시하지 않을 환경 (AddToHomeScreen의 BLOCKED_ENVS + desktop)
@@ -31,6 +31,7 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
 
   // null = 아직 클라이언트 계산 전 (SSR 안전)
   const [installCtaVisible, setInstallCtaVisible] = useState<boolean | null>(null)
+  const [isStartingSignup, setIsStartingSignup] = useState(false)
 
   // 로그인 상태에서 설치 CTA 표시 여부를 클라이언트에서 계산
   useEffect(() => {
@@ -82,7 +83,8 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
     sendGtmEvent('post_cta_clicked', props)
 
     if (!resolvedIsLoggedIn) {
-      startTransition(async () => { await kakaoSignIn(pathname) })
+      setIsStartingSignup(true)
+      window.setTimeout(() => startKakaoLogin(pathname), 0)
     } else {
       window.dispatchEvent(new CustomEvent('pwa-prompt', { detail: 'manual' }))
     }
@@ -100,13 +102,15 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
         </p>
         <button
           onClick={handleClick}
+          disabled={isStartingSignup}
+          aria-busy={isStartingSignup}
           className="shrink-0 min-h-[52px] px-4 rounded-lg text-caption font-bold flex items-center gap-1.5 whitespace-nowrap transition-all hover:brightness-95"
           style={{ background: '#FEE500', color: '#191919' }}
         >
           <svg width="18" height="18" viewBox="0 0 20 20" fill="#191919" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <path d="M10 2C5.58 2 2 5.02 2 8.75c0 2.34 1.39 4.4 3.5 5.6-.15.54-.55 1.97-.63 2.27-.1.37.14.37.3.27.12-.08 1.9-1.28 2.67-1.8.7.1 1.42.16 2.16.16 4.42 0 8-3.02 8-6.75C18 5.02 14.42 2 10 2Z" />
           </svg>
-          3초 만에 가입하기
+          {isStartingSignup ? '카카오로 이동 중...' : '3초 만에 가입하기'}
         </button>
       </div>
     )

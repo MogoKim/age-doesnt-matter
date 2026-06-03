@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { kakaoSignIn } from '@/app/login/actions'
 import {
   gtmSignupBannerEligible,
   gtmSignupBannerShown,
@@ -12,6 +11,7 @@ import {
   gtmInappRedirectAttempted,
   gtmInappRedirectSuccess,
 } from '@/lib/gtm'
+import { startKakaoLogin } from '@/lib/kakao-start'
 import { detectEnv } from '@/components/common/AddToHomeScreen'
 
 // 인앱 환경 (카카오/네이버/구글 앱) 감지 — CTA를 외부브라우저 유도로 변경
@@ -147,7 +147,7 @@ export function SignupPromptBanner() {
   const signupUtmSource = searchParams.get('utm_source') ?? ''
   const [visible, setVisible] = useState(false)
   const [variant, setVariant] = useState<Variant>('A')
-  const [isPending, startTransition] = useTransition()
+  const [isStarting, setIsStarting] = useState(false)
   const [currentEnv, setCurrentEnv] = useState<string>('android-chrome')
 
   // auto-trigger 카운트다운 상태
@@ -181,7 +181,8 @@ export function SignupPromptBanner() {
         if (prev <= 1) {
           if (autoCountdownRef.current) clearInterval(autoCountdownRef.current)
           // 카운트다운 만료 → 자동 OAuth 실행
-          startTransition(async () => { await kakaoSignIn(pathname) })
+          setIsStarting(true)
+          startKakaoLogin(pathname)
           return 0
         }
         return prev - 1
@@ -202,7 +203,8 @@ export function SignupPromptBanner() {
   const handleAutoTriggerNow = () => {
     if (autoCountdownRef.current) clearInterval(autoCountdownRef.current)
     setAutoVisible(false)
-    startTransition(async () => { await kakaoSignIn(pathname) })
+    setIsStarting(true)
+    startKakaoLogin(pathname)
   }
 
   // ── 인앱→Chrome 재접속 backfill ──
@@ -334,10 +336,10 @@ export function SignupPromptBanner() {
               <button
                 data-testid="signup-auto-trigger-cta"
                 onClick={handleAutoTriggerNow}
-                disabled={isPending}
+                disabled={isStarting}
                 className="mt-3 flex items-center justify-center w-full h-[52px] bg-[#FEE500] text-[#191919] rounded-xl font-bold text-[15px] disabled:opacity-70 transition-opacity"
               >
-                {isPending ? '잠깐만요...' : '💛 지금 바로 시작하기'}
+                {isStarting ? '카카오로 이동 중...' : '💛 지금 바로 시작하기'}
               </button>
               <button
                 onClick={handleAutoTriggerDismiss}
@@ -402,7 +404,8 @@ export function SignupPromptBanner() {
     } else {
       // 일반 브라우저: 직접 카카오 OAuth
       gtmSignupBannerClicked(variant, pathname, 'kakao_oauth')
-      startTransition(async () => { await kakaoSignIn(pathname) })
+      setIsStarting(true)
+      startKakaoLogin(pathname)
     }
   }
 
@@ -440,10 +443,10 @@ export function SignupPromptBanner() {
             <button
               data-testid="signup-banner-cta"
               onClick={handleCTAClick}
-              disabled={isPending}
+              disabled={isStarting}
               className="mt-3 flex items-center justify-center w-full h-[52px] bg-[#FEE500] text-[#191919] rounded-xl font-bold text-[15px] disabled:opacity-70 transition-opacity"
             >
-              {isPending ? '잠깐만요...' : `💛 ${inapp ? inappCtaText : content.cta}`}
+              {isStarting ? '카카오로 이동 중...' : `💛 ${inapp ? inappCtaText : content.cta}`}
             </button>
           </div>
         </div>

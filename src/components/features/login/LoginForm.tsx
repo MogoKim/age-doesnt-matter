@@ -1,20 +1,23 @@
 'use client'
 
 import Image from 'next/image'
+import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { kakaoSignIn } from '@/app/login/actions'
 import { sendGtmEvent, getStoredUtm, getBrowserEnv } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
+import { startKakaoLogin } from '@/lib/kakao-start'
 
 export default function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') ?? '/'
+  const [isStarting, setIsStarting] = useState(false)
 
-  async function handleKakaoClick() {
+  function handleKakaoClick() {
+    setIsStarting(true)
     sendGtmEvent('kakao_button_click', { from: 'login_page', browser_env: getBrowserEnv(), ...getStoredUtm() })
     trackEvent('kakao_button_click', { from: 'login_page', browser_env: getBrowserEnv() })
-    await kakaoSignIn(callbackUrl)
+    window.setTimeout(() => startKakaoLogin(callbackUrl), 0)
   }
 
   return (
@@ -63,6 +66,8 @@ export default function LoginForm() {
           <button
             type="button"
             onClick={handleKakaoClick}
+            disabled={isStarting}
+            aria-busy={isStarting}
             className="flex items-center justify-center gap-2 w-full h-[54px] rounded-xl font-bold cursor-pointer transition-all hover:brightness-95 hover:-translate-y-0.5 active:translate-y-0"
             style={{
               background: '#FEE500',
@@ -76,7 +81,7 @@ export default function LoginForm() {
                 fill="currentColor"
               />
             </svg>
-            카카오로 3초만에 시작하기
+            {isStarting ? '카카오로 이동 중...' : '카카오로 3초 만에 시작하기'}
           </button>
         </div>
 
