@@ -3,7 +3,6 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
-import { auth } from '@/lib/auth'
 import { getPostDetail } from '@/lib/queries/posts'
 import { getRelatedMagazinePosts } from '@/lib/queries/posts/posts.magazine'
 import { getCommentsByPostId } from '@/lib/queries/comments'
@@ -29,6 +28,7 @@ interface PageProps {
 }
 
 export const dynamicParams = true
+export const revalidate = 30
 
 export async function generateStaticParams() {
   try {
@@ -145,9 +145,8 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   // Next.js 미들웨어 통과 시 한글 slug params가 자동 디코딩 안 됨 → 수동 디코딩
   const id = decodeURIComponent(rawId)
 
-  // P1-C: auth() + getPostDetail() 병렬화
   // getPostDetail(id) without userId = generateMetadata의 호출과 React cache 공유 → DB 쿼리 1회 절감
-  const [session, post] = await Promise.all([auth(), getPostDetail(id)])
+  const post = await getPostDetail(id)
   if (!post || post.boardType !== 'MAGAZINE') notFound()
 
   // CUID로 접근했는데 slug가 있으면 slug URL로 308 영구 redirect
@@ -155,28 +154,20 @@ export default async function MagazineDetailPage({ params }: PageProps) {
     permanentRedirect(`/magazine/${post.slug}`)
   }
 
-  const userId = session?.user?.id
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/CPS/ActionBar FK 보장)
   const resolvedId = post.id
 
   // CPS_ENABLED=false: 쿠팡 CPS 상품 준비 완료 후 활성화
   const CPS_ENABLED = false
-  // isLiked/isScrapped를 별도로 병렬 조회 (getPostDetail은 userId 없이 호출했으므로)
   const titleKeywords = (post.seoTitle ?? post.title)
     .replace(/[^\w\s가-힣]/g, ' ')
     .split(/\s+/)
     .filter((w: string) => w.length >= 2)
     .slice(0, 3)
 
-  const [cpsLinks, relatedPosts, isLiked, isScrapped] = await Promise.all([
+  const [cpsLinks, relatedPosts] = await Promise.all([
     CPS_ENABLED ? getCachedCpsLinks(resolvedId) : Promise.resolve([] as Awaited<ReturnType<typeof getCachedCpsLinks>>),
     getRelatedMagazinePosts(post.category ?? null, resolvedId, 5, titleKeywords, post.seriesId ?? null),
-    userId
-      ? prisma.like.findUnique({ where: { userId_postId: { userId, postId: resolvedId } }, select: { id: true } }).then(r => !!r)
-      : Promise.resolve(false),
-    userId
-      ? prisma.scrap.findUnique({ where: { userId_postId: { userId, postId: resolvedId } }, select: { id: true } }).then(r => !!r)
-      : Promise.resolve(false),
   ])
 
   // JSON-LD 구조화 데이터
@@ -340,12 +331,11 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         title={post.title}
         description={post.preview}
         likeCount={post.likeCount}
-        isLiked={isLiked}
-        isScrapped={isScrapped}
-        isLoggedIn={!!userId}
+        isLiked={false}
+        isScrapped={false}
       />
 
-      <PostCTA postId={resolvedId} postTitle={post.title} isLoggedIn={!!userId} />
+      <PostCTA postId={resolvedId} postTitle={post.title} />
 
       {/* 함께 읽어보세요 */}
       {relatedPosts.length > 0 && (
@@ -383,13 +373,13 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           ))}
         </div>
       }>
-        <MagazineCommentsLoader postId={resolvedId} userId={userId} />
+        <MagazineCommentsLoader postId={resolvedId} />
       </Suspense>
     </div>
   )
 }
 
-async function MagazineCommentsLoader({ postId, userId }: { postId: string; userId?: string }) {
-  const comments = await getCommentsByPostId(postId, userId)
-  return <CommentSection postId={postId} comments={comments} isLoggedIn={!!userId} />
+async function MagazineCommentsLoader({ postId }: { postId: string }) {
+  const comments = await getCommentsByPostId(postId)
+  return <CommentSection postId={postId} comments={comments} />
 }

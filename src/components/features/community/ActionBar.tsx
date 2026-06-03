@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState, useTransition, useRef, useCallback } from 'react'
+import { useEffect, useState, useTransition, useRef, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap, incrementShareCount } from '@/lib/actions/likes'
@@ -25,12 +25,15 @@ interface ActionBarProps {
   isLoggedIn?: boolean
 }
 
-export default function ActionBar({ postId, title, description, likeCount, isLiked: initialLiked, isScrapped: initialScrapped, isLoggedIn = false }: ActionBarProps) {
+export default function ActionBar({ postId, title, description, likeCount, isLiked: initialLiked, isScrapped: initialScrapped, isLoggedIn }: ActionBarProps) {
   const { toast } = useToast()
   const pathname = usePathname()
+  const initialAuthKnown = typeof isLoggedIn === 'boolean'
   const [isLiked, setIsLiked] = useState(initialLiked)
   const [likes, setLikes] = useState(likeCount)
   const [isScrapped, setIsScrapped] = useState(initialScrapped)
+  const [resolvedIsLoggedIn, setResolvedIsLoggedIn] = useState(isLoggedIn ?? false)
+  const [authChecked, setAuthChecked] = useState(initialAuthKnown)
   const [isPending, startTransition] = useTransition()
   const likePendingRef = useRef(false)
   const [showReport, setShowReport] = useState(false)
@@ -38,8 +41,40 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [loginPromptMessage, setLoginPromptMessage] = useState('')
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadPostState() {
+      try {
+        const res = await fetch(`/api/me/post-state?postId=${encodeURIComponent(postId)}`, {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        })
+        if (!res.ok) throw new Error('post-state fetch failed')
+        const state = await res.json() as { isLoggedIn: boolean; isLiked: boolean; isScrapped: boolean }
+        if (cancelled) return
+        setResolvedIsLoggedIn(state.isLoggedIn)
+        setIsLiked(state.isLiked)
+        setIsScrapped(state.isScrapped)
+      } catch {
+        if (cancelled) return
+        setResolvedIsLoggedIn(false)
+      } finally {
+        if (!cancelled) setAuthChecked(true)
+      }
+    }
+
+    void loadPostState()
+    return () => { cancelled = true }
+  }, [postId])
+
   const handleLike = useCallback(() => {
-    if (!isLoggedIn) {
+    if (!authChecked) {
+      toast('잠시만요. 상태를 확인하고 있어요')
+      return
+    }
+
+    if (!resolvedIsLoggedIn) {
       if (isLiked) {
         toast('이미 공감하셨어요')
         return
@@ -93,10 +128,15 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         toast('공감했어요 ❤️', 'success')
       }
     })
-  }, [isLoggedIn, isPending, isLiked, likes, postId, toast])
+  }, [authChecked, resolvedIsLoggedIn, isPending, isLiked, likes, postId, toast])
 
   const handleScrap = useCallback(() => {
-    if (!isLoggedIn) {
+    if (!authChecked) {
+      toast('잠시만요. 상태를 확인하고 있어요')
+      return
+    }
+
+    if (!resolvedIsLoggedIn) {
       setLoginPromptMessage('이 글이 마음에 드셨나요? 스크랩하면 언제든 다시 찾아볼 수 있어요')
       setShowLoginPrompt(true)
       return
@@ -114,7 +154,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         toast(wasScrapped ? '스크랩을 취소했어요' : '스크랩했어요')
       }
     })
-  }, [isLoggedIn, isPending, isScrapped, postId, toast])
+  }, [authChecked, resolvedIsLoggedIn, isPending, isScrapped, postId, toast])
 
   const [showShareMenu, setShowShareMenu] = useState(false)
 
@@ -160,7 +200,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         <button
           className={cn(btnBase, isLiked && 'text-primary-text font-bold')}
           onClick={handleLike}
-          disabled={isPending}
+          disabled={isPending || !authChecked}
           aria-label={isLiked ? '공감 취소' : '공감'}
         >
           <span className={cn(heartAnimating && 'heart-active')}>
@@ -171,7 +211,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         <button
           className={cn(btnBase, isScrapped && 'text-primary-text font-bold')}
           onClick={handleScrap}
-          disabled={isPending}
+          disabled={isPending || !authChecked}
           aria-label={isScrapped ? '스크랩 취소' : '스크랩'}
         >
           <IconBookmark size={20} filled={isScrapped} />
