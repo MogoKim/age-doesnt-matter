@@ -93,8 +93,10 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
       - name: Install Playwright Chromium
-        timeout-minutes: 10
+        timeout-minutes: 20
         run: npx playwright install --with-deps chromium
       - name: Smoke E2E (PR — 변경된 spec만 / push — @smoke 전체)
         run: |
@@ -141,8 +143,10 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
       - name: Install Playwright Chromium
-        timeout-minutes: 10
+        timeout-minutes: 20
         run: npx playwright install --with-deps chromium
       - name: Ads E2E (데스크탑 + 모바일)
         run: npx playwright test --grep "@ads" --project=chromium --project=mobile-chrome
@@ -193,8 +197,10 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
       - name: Install Playwright Chromium
-        timeout-minutes: 10
+        timeout-minutes: 20
         run: npx playwright install --with-deps chromium
       - name: Admin E2E
         run: npx playwright test --project=qa-admin --workers=1

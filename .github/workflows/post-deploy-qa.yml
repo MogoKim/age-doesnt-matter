@@ -62,9 +62,11 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
       - name: Install Playwright Chromium
-        timeout-minutes: 10
+        timeout-minutes: 20
         run: npx playwright install chromium --with-deps
 
       - name: Get Deploy URL
