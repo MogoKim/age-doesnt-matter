@@ -1,26 +1,27 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { Suspense } from 'react'
 import { getBoardConfig } from '@/lib/queries/boards'
-import { getPostsByBoardPage, getCachedBoardPage } from '@/lib/queries/posts'
-import type { PostSummary } from '@/types/api'
-import type { BoardType } from '@/generated/prisma/client'
-import type { SearchField } from '@/lib/queries/posts/posts.base'
+import { getCachedBoardPage } from '@/lib/queries/posts'
 import BoardFilter from '@/components/features/community/BoardFilter'
-import PostCard from '@/components/features/community/PostCard'
 import SortToggle from '@/components/features/community/SortToggle'
-import PostListWithAds from '@/components/features/common/PostListWithAds'
-import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
+import BoardPostListClient from '@/components/features/community/BoardPostListClient'
 import PwaInlineBanner from '@/components/common/PwaInlineBanner'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 
-const LIMIT = 12
-
 interface PageProps {
   params: Promise<{ boardSlug: string }>
-  searchParams: Promise<{ category?: string; sort?: string; q?: string; sf?: string; page?: string }>
+}
+
+export const revalidate = 30
+
+export function generateStaticParams() {
+  return [
+    { boardSlug: 'stories' },
+    { boardSlug: 'humor' },
+    { boardSlug: 'life2' },
+  ]
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -84,106 +85,13 @@ function PostListSkeleton() {
   )
 }
 
-interface PostListContainerProps {
-  boardType: BoardType
-  boardSlug: string
-  category: string | undefined
-  sortOption: 'latest' | 'likes'
-  q: string | undefined
-  sf: SearchField
-  page: number
-}
-
-async function PostListContainer({ boardType, boardSlug, category, sortOption, q, sf, page }: PostListContainerProps) {
-  const skip = (page - 1) * LIMIT
-
-  let posts: PostSummary[]
-  let total: number
-
-  if (q || page > 1) {
-    ;({ posts, total } = await getPostsByBoardPage(boardType, { category, sort: sortOption, skip, limit: LIMIT, q, sf }))
-  } else {
-    ;({ posts, total } = await getCachedBoardPage(boardType, category ?? 'all', sortOption))
-  }
-
-  const qSuffix = q ? `&q=${encodeURIComponent(q)}&sf=${sf}` : ''
-  const sortSuffix = sortOption === 'likes' ? '&sort=likes' : ''
-  const categorySuffix = category && category !== '전체' ? `&category=${encodeURIComponent(category)}` : ''
-
-  if (posts.length === 0) {
-    const resetParams = [
-      sortOption === 'likes' ? 'sort=likes' : '',
-      category && category !== '전체' ? `category=${encodeURIComponent(category)}` : '',
-    ].filter(Boolean).join('&')
-    const searchResetHref = resetParams
-      ? `/community/${boardSlug}?${resetParams}`
-      : `/community/${boardSlug}`
-
-    return (
-      <>
-        <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
-          <div className="text-[56px]">📝</div>
-          <p className="text-[17px] text-muted-foreground leading-[1.8]">
-            {q ? `"${q}" 검색 결과가 없어요.` : '아직 작성된 글이 없어요.'}<br />
-            {q ? '다른 검색어를 입력해 보세요.' : '첫 번째 글을 남겨보세요!'}
-          </p>
-          {q ? (
-            <Link
-              href={searchResetHref}
-              className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
-            >
-              검색 초기화
-            </Link>
-          ) : (
-            <Link
-              href={`/community/write?board=${encodeURIComponent(boardSlug)}`}
-              className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
-            >
-              ✏️ 글쓰기
-            </Link>
-          )}
-        </div>
-        <BoardPaginationFooter
-          total={total}
-          page={page}
-          pageSize={LIMIT}
-          buildHref={(p) => `/community/${boardSlug}?page=${p}${sortSuffix}${categorySuffix}${qSuffix}`}
-        />
-      </>
-    )
-  }
-
-  return (
-    <>
-      <PostListWithAds
-        items={posts}
-        renderCard={(post) => <PostCard post={post} boardSlug={boardSlug} />}
-        className="space-y-3"
-      />
-      <BoardPaginationFooter
-        total={total}
-        page={page}
-        pageSize={LIMIT}
-        buildHref={(p) => `/community/${boardSlug}?page=${p}${sortSuffix}${categorySuffix}${qSuffix}`}
-      />
-    </>
-  )
-}
-
-// searchParams 사용으로 dynamic rendering 필수 (DYNAMIC_SERVER_USAGE 방지)
-export const dynamic = 'force-dynamic'
-
-export default async function BoardListPage({ params, searchParams }: PageProps) {
+export default async function BoardListPage({ params }: PageProps) {
   const { boardSlug } = await params
-  const { category, sort, q: rawQ, sf: rawSf, page: rawPage } = await searchParams
 
   const board = await getBoardConfig(boardSlug)
   if (!board) notFound()
 
-  const q = rawQ?.trim() || undefined
-  const sf = rawSf === 'title' || rawSf === 'content' ? rawSf : ('both' as const)
-  const sortOption = sort === 'likes' ? ('likes' as const) : ('latest' as const)
-  const page = Math.max(1, parseInt(rawPage ?? '1', 10) || 1)
+  const initialData = await getCachedBoardPage(board.boardType, 'all', 'latest')
 
   const boardFaqJsonLd = getBoardFaqJsonLd(boardSlug)
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -224,14 +132,11 @@ export default async function BoardListPage({ params, searchParams }: PageProps)
 
       {/* 게시글 목록 + 페이지네이션 + 검색 — 스트리밍 */}
       <Suspense fallback={<PostListSkeleton />}>
-        <PostListContainer
+        <BoardPostListClient
           boardType={board.boardType}
           boardSlug={boardSlug}
-          category={category}
-          sortOption={sortOption}
-          q={q}
-          sf={sf}
-          page={page}
+          initialPosts={initialData.posts}
+          initialTotal={initialData.total}
         />
       </Suspense>
     </div>
