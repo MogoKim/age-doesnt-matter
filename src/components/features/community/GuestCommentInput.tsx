@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 import { useToast } from '@/components/common/Toast'
 import { createGuestComment } from '@/lib/actions/guest-comments'
+import { trackEvent } from '@/lib/track'
 
 declare global {
   interface Window {
@@ -143,6 +144,12 @@ export default function GuestCommentInput({
       }
 
       // 성공 — content 초기화 → showExtraFields=false → widget cleanup은 effect가 처리
+      trackEvent('comment_create', {
+        content_type: 'post',
+        content_id: postId,
+        comment_type: parentId ? 'guest_reply' : 'guest_comment',
+      })
+
       setContent('')
       setNickname('')
       setPassword('')

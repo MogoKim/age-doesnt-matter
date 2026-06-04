@@ -6,12 +6,12 @@ import { cn } from '@/lib/utils'
 import { IconBest, IconJobs, IconStories, IconEnergy, IconMagazine, IconLife2 } from '@/components/icons'
 
 const MENU_ITEMS = [
-  { icon: IconBest,     label: '베스트',    href: '/best',             bgVar: '--icon-best-bg',     strokeVar: '--icon-best-stroke' },
-  { icon: IconStories,  label: '사는이야기', href: '/community/stories', bgVar: '--icon-life-bg',     strokeVar: '--icon-life-stroke' },
-  { icon: IconLife2,    label: '2막준비',   href: '/community/life2',  bgVar: '--icon-life2-bg',    strokeVar: '--icon-life2-stroke' },
-  { icon: IconEnergy,   label: '웃음방',    href: '/community/humor',  bgVar: '--icon-laugh-bg',    strokeVar: '--icon-laugh-stroke' },
-  { icon: IconMagazine, label: '매거진',    href: '/magazine',         bgVar: '--icon-magazine-bg', strokeVar: '--icon-magazine-stroke' },
-  { icon: IconJobs,     label: '내일찾기',  href: '/jobs',             bgVar: '--icon-job-bg',      strokeVar: '--icon-job-stroke' },
+  { icon: IconBest,     label: '베스트',    href: '/best',             bgVar: '--icon-best-bg',     strokeVar: '--icon-best-stroke',     textVar: '--cat-best-text' },
+  { icon: IconStories,  label: '사는이야기', href: '/community/stories', bgVar: '--icon-life-bg',     strokeVar: '--icon-life-stroke',     textVar: '--cat-life-text' },
+  { icon: IconLife2,    label: '2막준비',   href: '/community/life2',  bgVar: '--icon-life2-bg',    strokeVar: '--icon-life2-stroke',    textVar: '--cat-life2-text' },
+  { icon: IconEnergy,   label: '웃음방',    href: '/community/humor',  bgVar: '--icon-laugh-bg',    strokeVar: '--icon-laugh-stroke',    textVar: '--cat-laugh-text' },
+  { icon: IconMagazine, label: '매거진',    href: '/magazine',         bgVar: '--icon-magazine-bg', strokeVar: '--icon-magazine-stroke', textVar: '--cat-mag-text' },
+  { icon: IconJobs,     label: '내일찾기',  href: '/jobs',             bgVar: '--icon-job-bg',      strokeVar: '--icon-job-stroke',      textVar: '--cat-job-text' },
 ]
 
 export default function IconMenu() {
@@ -56,7 +56,7 @@ export default function IconMenu() {
               )}
               style={{
                 fontSize: 'var(--text-caption)',
-                ...(isActive ? { color: `var(${item.strokeVar})` } : {}),
+                ...(isActive ? { color: `var(${item.textVar})` } : {}),
               }}
             >
               {item.label}

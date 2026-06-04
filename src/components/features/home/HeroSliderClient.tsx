@@ -27,6 +27,15 @@ function buildGradient(slide: SlideData): string {
   return `linear-gradient(135deg, ${from} 0%, ${mid} 50%, ${to} 100%)`
 }
 
+function getSlideAccessibleName(slide: SlideData): string {
+  return [slide.title, slide.subtitle, slide.ctaText]
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\\n/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 interface Props {
   slides: SlideData[]
 }
@@ -118,13 +127,13 @@ export default function HeroSliderClient({ slides }: Props) {
 
           {/* 텍스트 오버레이 — 전체 영역 클릭 시 ctaUrl로 이동 */}
           <Link
-            href={slide.ctaUrl ?? '/'}
+            href={(slide.ctaUrl ?? '/').trim() || '/'}
             className={cn(
               'absolute inset-0 flex flex-col justify-end gap-2.5 px-5 pb-7 lg:justify-center lg:gap-3 lg:px-16 lg:pb-0 no-underline [-webkit-tap-highlight-color:transparent]',
               slide.imageUrl ? 'items-start text-left' : 'items-center text-center'
             )}
             tabIndex={index === current ? 0 : -1}
-            aria-label={slide.title.replace(/\\n/g, ' ')}
+            aria-label={getSlideAccessibleName(slide)}
           >
             <h2
               className="text-white font-bold leading-[1.4] break-keep max-w-[72%] lg:max-w-none"
