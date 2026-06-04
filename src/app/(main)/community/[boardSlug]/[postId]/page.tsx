@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 import { getBoardConfig } from '@/lib/queries/boards'
-import { getPostDetail, getPostMeta } from '@/lib/queries/posts'
+import { getPostDetail } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
 import ActionBar from '@/components/features/community/ActionBar'
 import PostCTA from '@/components/features/community/PostCTA'
@@ -33,7 +33,9 @@ export const revalidate = 30
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { boardSlug, postId: rawPostId } = await params
   const postId = decodeURIComponent(rawPostId)
-  const post = await getPostMeta(postId)
+  // getPostDetail(postId) without user state is shared with the page render through Data Cache.
+  // This avoids a separate getPostMeta DB round trip on the first ISR/MISS request.
+  const post = await getPostDetail(postId)
   if (!post) return {}
 
   // CUID로 접근 시 streaming 시작 전에 308 redirect
@@ -43,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const canonicalId = post.slug ?? postId
   const url = `${BASE_URL}/community/${boardSlug}/${canonicalId}`
-  const description = post.summary || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티'
+  const description = post.preview || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티'
 
   return {
     title: post.seoTitle ?? post.title,
