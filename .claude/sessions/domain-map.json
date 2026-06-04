@@ -1,0 +1,30 @@
+{
+  "_comment": "Antigravity IDE 멀티 AI 도메인 선언. 각 AI 세션 시작 시 본인 담당 도메인을 등록한다.",
+  "_shared": [
+    "agents/core/",
+    "prisma/",
+    "src/",
+    "CLAUDE.md"
+  ],
+
+  "claude": {
+    "description": "커뮤니티 스크래퍼 + 문서화 + 하네스",
+    "domains": [
+      "agents/community/",
+      "agents/cafe/session-manager.ts",
+      "agents/seed/generator.ts",
+      "agents/seed/scheduler.ts",
+      "docs/handover-scraper-*",
+      ".claude/"
+    ]
+  },
+
+  "codex": {
+    "description": "COO 에이전트 + 크론 러너",
+    "domains": [
+      "agents/coo/",
+      "agents/cron/runner.ts",
+      "docs/handover-cafe-pipeline.html"
+    ]
+  }
+}
