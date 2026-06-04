@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.32</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.33</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -342,12 +342,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.32</div>
+  <div class="cover-badge">Handover Document v10.33</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.32 (2026-05-27)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.33 (2026-06-04)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -357,7 +357,7 @@
 
 <!-- 시스템 현황 -->
 <div class="status-box">
-  <div class="sb-title">시스템 현황 (2026-05-24)</div>
+  <div class="sb-title">시스템 현황 (2026-06-04)</div>
   <div class="status-item"><div class="status-dot on"></div>크롤링 (launchd, 하루 7회)</div>
   <div class="status-item"><div class="status-dot on"></div>큐레이션 (GHA, 45분 간격 20슬롯)</div>
   <div class="status-item"><div class="status-dot on"></div>Wave 댓글 (GHA, 5분 간격 24시간)</div>
@@ -449,7 +449,7 @@
         <tr>
           <td><span class="chip teal">⑤ Wave</span></td>
           <td><code>Comment</code> DB 저장 (wave1~4 + 작성자 대댓글)</td>
-          <td>TTL 60시간, 글당 봇댓글 최대 5개, 봇 당일 3개 cap</td>
+          <td>TTL 60시간, 글당 봇댓글 tier별 cap(NORMAL 6/HOT 14/KILLER 20), 봇 당일 8개 cap</td>
           <td>커뮤니티 초기 반응 자동 생성. 원본 topComments 10자↑이면 AI 없이 그대로</td>
         </tr>
       </tbody>
@@ -687,19 +687,19 @@
       <div style="font-size:12px;color:var(--muted);letter-spacing:0.04em;font-weight:600;">── 보조 시스템 (magazine봇 · 블로그 자동화) ──</div>
     </div>
     <div class="tl-item plist">
-      <div class="tl-time">12:00 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-time">11:00 KST <span class="tl-label label-plist">plist</span></div>
       <div class="tl-mode">magazine-morning — <code>com.unaeo.magazine-morning</code> ✅ 로드됨</div>
-      <div class="tl-detail">매거진 형식 글 생성 (<code>agents/cafe/magazine-generator.ts</code>). 코드 주석 11:00은 stale — 실제 운영은 plist 기준 12:00 KST.</div>
+      <div class="tl-detail">매거진 형식 글 생성 (<code>agents/cafe/magazine-generator.ts</code>). plist 실제값 Hour=11 → 11:00 KST.</div>
     </div>
     <div class="tl-item plist">
       <div class="tl-time">14:00 KST <span class="tl-label label-plist">plist</span></div>
       <div class="tl-mode">magazine-late — <code>com.unaeo.magazine-late</code> ✅ 로드됨</div>
       <div class="tl-detail">매거진 오후 슬롯. magazine-morning과 동일 파이프라인.</div>
     </div>
-    <div class="tl-item plist" style="opacity:0.65;">
-      <div class="tl-time">— <span class="tl-label label-plist">plist</span></div>
-      <div class="tl-mode">naver-blog-morning / naver-blog-evening — <code>com.unaeo.naver-blog-*</code> ❌ 미로드</div>
-      <div class="tl-detail">네이버 블로그 자동화 — plist 파일 존재하나 launchctl 미로드. 블로그 자동화 폐기 예정 (2026-05-26 이후 미실행). 정식 ARCHIVED 처리는 별도 세션.</div>
+    <div class="tl-item plist">
+      <div class="tl-time">03:30 / 09:30 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-mode">naver-blog-morning(03:30) / naver-blog-evening(09:30) — <code>com.unaeo.naver-blog-*</code> ✅ 로드됨</div>
+      <div class="tl-detail">네이버 블로그 자동화 — plist 2개 모두 launchctl 로드됨(<code>launchctl list</code> 기준 morning은 실행 흔적 PID 확인). plist 실제 시각 Hour 3/9, Minute 30 → 03:30 / 09:30 KST.</div>
     </div>
   </div>
 
@@ -762,7 +762,7 @@
           <td>
             ① seed scheduler — 50명 페르소나 창작글 생성 (<strong>ENABLE_SEED_POSTS=false로 현재 차단</strong>)<br>
             ② controversy-chain — 트렌드 기반 논쟁/토론 형식 글 생성 (ENABLE_SEED_POSTS 영향 <strong>없음</strong>, 계속 실행 중)<br>
-            ③ magazine-generator — <strong>launchd 전환됨</strong> (GHA 미실행 · <code>com.unaeo.magazine-morning/late.plist</code> · 12:00/14:00 KST)
+            ③ magazine-generator — <strong>launchd 전환됨</strong> (GHA 미실행 · <code>com.unaeo.magazine-morning/late.plist</code> · 11:00/14:00 KST)
           </td>
         </tr>
         <tr>
@@ -857,8 +857,10 @@
             <tr><td>17:30</td><td>저녁 크롤링</td></tr>
             <tr><td>21:15</td><td>인기글 수집</td></tr>
             <tr><td>21:30</td><td>야간 크롤링 + 펨코 시트 스크래퍼</td></tr>
+            <tr><td>03:30</td><td>네이버 블로그 아침 발행 (com.unaeo.naver-blog-morning.plist)</td></tr>
+            <tr><td>09:30</td><td>네이버 블로그 저녁 발행 (com.unaeo.naver-blog-evening.plist)</td></tr>
             <tr><td>10:40</td><td>네이버 카페 시트 스크래퍼 (Phase 1 신규)</td></tr>
-            <tr><td>12:00</td><td>magazine-generator 아침 — launchd 전환 (com.unaeo.magazine-morning.plist)</td></tr>
+            <tr><td>11:00</td><td>magazine-generator 아침 — launchd 전환 (com.unaeo.magazine-morning.plist)</td></tr>
             <tr><td>13:00</td><td>네이버 카페 시트 스크래퍼 (storage-state.json 세션 필요)</td></tr>
             <tr><td>14:00</td><td>magazine-generator 오후 — launchd 전환 (com.unaeo.magazine-late.plist)</td></tr>
             <tr><td>15:30</td><td>네이버 카페 시트 스크래퍼 (Phase 1 신규)</td></tr>
@@ -893,8 +895,6 @@
           <tr><td><code>com.unaeo.cafe-crawler-morning.plist</code></td><td>08:30 KST</td><td>deep</td><td style="color:var(--muted);">미로드 (비활성)</td></tr>
           <tr><td><code>com.unaeo.cafe-crawler-lunch.plist</code></td><td>12:30 KST</td><td>quick</td><td style="color:var(--muted);">미로드 (비활성)</td></tr>
           <tr><td><code>com.unaeo.cafe-crawler-evening.plist</code></td><td>20:40 KST</td><td>crawl</td><td style="color:var(--muted);">미로드 (비활성)</td></tr>
-          <tr><td><code>com.unaeo.naver-blog-morning.plist</code></td><td>12:30 KST</td><td>네이버 블로그 포스터</td><td style="color:var(--danger,#e53e3e);">미로드, 폐기 예정</td></tr>
-          <tr><td><code>com.unaeo.naver-blog-evening.plist</code></td><td>18:30 KST</td><td>네이버 블로그 포스터</td><td style="color:var(--danger,#e53e3e);">미로드, 폐기 예정</td></tr>
         </tbody>
       </table>
     </div>
@@ -1460,6 +1460,14 @@ MONEY: [
   + scoreRecency(post)       × 0.05   // 최신성
 → Math.round(합산값)  // 0~100 정수</pre>
   </details>
+  <div class="alert warn" style="font-size:12.5px;">
+    <strong>⚠️ 재크롤 경로는 위 5-factor 정식 공식이 아니라 단순식을 쓴다</strong><br>
+    위 5-factor(<code>calculateKillerScore</code>)는 <strong>savePosts() 최초 크롤 시점</strong>에만 적용된다.
+    <code>refreshRecentPosts()</code>의 재계산은 댓글·좋아요만으로 계산하는 별도 단순식이다 (<code>crawler.ts:1151-1153</code>):<br>
+    <code>commentScore = min(commentCount × 10, 100) × 0.55</code> (최대 55점)<br>
+    <code>likeScore = min(likeCount × 20, 100) × 0.35</code> (최대 35점)<br>
+    <code>newKillerScore = round(commentScore + likeScore)</code> → <strong>최대 90점</strong> (본문 길이·미디어·게시판·최신성은 재계산에서 제외)
+  </div>
   <div class="alert info">
     <strong>승격 시나리오</strong>
     처음 크롤 시 killerScore=50 (킬러글 아님) → 3일 후 댓글이 급증 → 재크롤에서 killerScore=78 → 킬러글(≥55) 승격 + killerScore≥75이므로 <strong>isFeatured 자동 활성화</strong> → 다음 큐레이션에서 최우선 주제로 선택되고 집중 부스트까지 적용됨.
@@ -1510,13 +1518,13 @@ MONEY: [
 
   <h3>CafePost 저장 필드 전체</h3>
   <div class="narrative">
-    <p>카페 글 한 건이 DB에 저장될 때 채워지는 필드는 총 19개다. 시점에 따라 세 그룹으로 나뉜다.</p>
+    <p>카페 글 한 건이 DB에 저장될 때 채워지는 필드는 총 20개다. 시점에 따라 세 그룹으로 나뉜다.</p>
     <p><strong>① 크롤 즉시 (crawl-only 포함)</strong>: 글의 URL·제목·본문·작성자·게시판 분류·지표(좋아요·댓글수·조회수)·점수(qualityScore·killerScore)·isUsable. crawl-only 모드에서도 이 필드들은 모두 채워진다. <code>createdAt</code> 필드는 없고 대신 <code>crawledAt</code>(수집 시각)이 기록된다는 점에 주의.</p>
     <p><strong>② full 모드 AI 분석 후 (11:30 KST)</strong>: 심리 분석 결과 — emotionTags·desireCategory·desireType·communitySignal·urgencyLevel·conflictTrigger·viralType·aiAnalyzed. (topComments는 ① 크롤 즉시 함께 수집된다 — 아래 "topComments 구조" 섹션 참조)</p>
     <p><strong>③ 큐레이션 발행 후</strong>: <code>usedAt</code>이 찍힌다. 이 필드가 NULL이어야 큐레이션 후보 풀에 다시 들어갈 수 있다. 한 번 발행된 글은 영구적으로 제외된다.</p>
   </div>
   <details class="code-toggle">
-    <summary>전체 필드 목록 보기 (19개)</summary>
+    <summary>전체 필드 목록 보기 (20개)</summary>
     <div class="table-wrap" style="margin-top:8px;">
       <table>
         <thead><tr><th>필드</th><th>내용</th><th>설정 주체</th></tr></thead>
@@ -1530,6 +1538,7 @@ MONEY: [
           <tr><td><code>killerScore</code></td><td>≥55 = 큐레이터 필터 진입 / ≥75 = isFeatured 자동 활성화. 재크롤 시 갱신됨</td><td>savePosts + refreshRecentPosts</td></tr>
           <tr><td><code>isUsable</code></td><td>qualityScore ≥ 30이면 true (크롤 즉시)</td><td>savePosts + trend-analyzer</td></tr>
           <tr><td><code>isPopular</code></td><td>인기글 탭 수집 여부</td><td>popular-sync</td></tr>
+          <tr><td><code>popularUpdatedAt</code></td><td>인기글 sync 시각 기록 (DateTime?)</td><td>popular-sync</td></tr>
           <tr><td><code>likeCount / commentCount / viewCount</code></td><td>수집 시점 지표. 재크롤로 갱신됨</td><td>savePosts + refreshRecentPosts</td></tr>
           <tr><td><code>imageUrls / videoUrls / thumbnailUrl / mediaCount</code></td><td>미디어 URL 목록</td><td>savePosts</td></tr>
           <tr><td><code>topComments</code></td><td>댓글 JSON (QUICK 모드만 미수집). 최대 15개 + 대댓글 5개</td><td>crawler (isQuickMode=false일 때)</td></tr>
@@ -1577,7 +1586,7 @@ const commentCount = await safeNumber(target, [
   '.comment_info_count .num',
   '.CommentCount',
   '.reply_count',
-  '.num_number .num',
+  '.num_comment .num',
 ])</pre>
     </details>
     <strong>영향 범위</strong>: 2026-05-17~20 수집분 약 717건. commentCount=0 → killerScore 55% 가중치 항상 0 → 실제 인기글이 킬러글 기준 미달로 묻힘. 수정 이후 크롤부터 정상 수집되며, <code>refreshRecentPosts()</code>가 기존 717건의 killerScore를 자동 재계산한다.
@@ -1823,7 +1832,7 @@ interface CommentData {
         <tr style="background:var(--red-dim)"><td><strong>BLOCK1 — title-only AI 완전 차단</strong></td><td>processWaveLegacy: refComment가 없거나 10자 미만 → 해당 wave를 <code>done=true</code>로 처리하고 즉시 return. <strong>AI 생성 완전 차단</strong> (generateComment 함수 삭제됨, SHA: 4bdf236).</td></tr>
         <tr style="background:var(--yellow-dim)"><td><strong>BLOCK2 — 원본 댓글 수 한도</strong></td><td>usableTopComments가 1~4개인 글: 이미 달린 봇 댓글 수 ≥ usable이면 해당 wave done 처리. 원본보다 많은 댓글 금지.</td></tr>
         <tr><td>글당 봇 댓글 전역 cap (tier별)</td><td>동일 글의 봇 댓글 총량 초과 → 해당 wave 스킵. <strong>티어별 상한: NORMAL 6개 / HOT 14개 / KILLER 20개</strong> (<code>getGlobalCap()</code> 함수). 글당 일괄 5개 상한은 <strong>잘못된 정보</strong>.</td></tr>
-        <tr><td>봇 당일 cap</td><td>오늘 이미 3개 글에 댓글 단 봇 → 선택 제외 (<code>BOT_DAILY_COMMENT_CAP=3</code>). 전체 봇이 cap 초과 시 cap 무시 fallback.</td></tr>
+        <tr><td>봇 당일 cap</td><td>오늘 이미 8개 글에 댓글 단 봇 → 선택 제외 (<code>BOT_DAILY_COMMENT_CAP=8</code>, 2026-05-30 3→8 상향). 전체 봇이 cap 초과 시 cap 무시 fallback.</td></tr>
         <tr><td>HUMOR_ONLY 페르소나 제한</td><td>STORY / LIFE2 게시판: HUMOR 전용 페르소나(C·R·AF·AO·AP·AX·AY) 선택 제외. JOB 게시판: AS·D 페르소나만 허용. (<code>boardPersonaFilter()</code>, SHA: 0b4a484)</td></tr>
         <tr><td>removeEmoji</td><td>봇 댓글 본문에서 이모지 범위 제거 후 게시. 이모지 포함 댓글이 어색하게 보이는 현상 차단. (SHA: 0b4a484)</td></tr>
         <tr><td>작성자 대댓글 (dispatchUsable 조건)</td><td>usableTopComments ≥ 5인 글에만 실행. 5개 미만이면 dispatch 시점에 대댓글 스킵. (§11 "작성자 대댓글" 참조)</td></tr>
@@ -1862,7 +1871,7 @@ interface CommentData {
     <div class="wm-cap" style="color:var(--muted)">6개</div>
   </div>
   <p style="font-size:14px;color:var(--sub);margin-top:-14px;margin-bottom:24px;">
-    ※ 점수별 tier: killerScore &gt; 70 = KILLER, &gt; 40 = HOT, 나머지 = NORMAL.<br>
+    ※ tier 구분(<code>getQueueTier</code>, wave-processor.ts): <strong>KILLER = isFeatured 또는 killerScore ≥ 75</strong> / <strong>HOT = isPopular=true</strong> / 나머지 = NORMAL. (killerScore 40/70 임계가 아님)<br>
     각 wave 내 실제 댓글 수는 tier cap 안에서 wave-processor가 배분. ●는 상대적 밀도를 나타냄.
   </p>
 
@@ -2129,7 +2138,7 @@ async function processPendingSheetCommentWaves() {
 
   <div class="biz-lead">
     우나어에는 현재 다섯 종류의 자동화 봇이 운영된다. 이름이 비슷해 역할을 혼동하기 쉽다. 각 봇이 <strong>무엇을 하는가, 언제 실행되는가, 무엇을 하지 않는가</strong>를 정확히 알아야 수정이나 디버깅 때 엉뚱한 파일을 건드리지 않는다.<br><br>
-    핵심 구분: <strong>큐레이션봇 + Wave봇</strong>은 항상 작동(GHA), <strong>시드봇(seed scheduler)</strong>은 현재 OFF, <strong>controversy봇</strong>은 ENABLE_SEED_POSTS와 무관하게 GHA 실행 중, <strong>magazine봇</strong>은 launchd 전환됨(12:00/14:00 KST · Mac 필요).
+    핵심 구분: <strong>큐레이션봇 + Wave봇</strong>은 항상 작동(GHA), <strong>시드봇(seed scheduler)</strong>은 현재 OFF, <strong>controversy봇</strong>은 ENABLE_SEED_POSTS와 무관하게 GHA 실행 중, <strong>magazine봇</strong>은 launchd 전환됨(11:00/14:00 KST · Mac 필요).
   </div>
 
   <div class="alert info" style="font-size:13px; padding:10px 16px; margin-bottom:14px; line-height:1.8;">
@@ -2189,7 +2198,7 @@ async function processPendingSheetCommentWaves() {
           <td><strong>magazine봇</strong></td>
           <td><code>agents/cafe/magazine-generator.ts</code></td>
           <td style="font-size:12px;">프로세스 1개</td>
-          <td>launchd · 12:00 KST (morning) / 14:00 KST (late)</td>
+          <td>launchd · 11:00 KST (morning) / 14:00 KST (late)</td>
           <td><span style="color:var(--green);">● ON</span></td>
           <td>매거진 형식 큐레이션 글 생성 (ENABLE_SEED_POSTS 영향 안 받음)<br><span style="font-size:12px;color:var(--muted);">이미지: PERSON_REAL→Gemini 전용(Unsplash 불허), FOOD/SCENE/OBJECT→Unsplash 허용, ILLUSTRATION→로컬 전용. heroImageSource 추적. 본문 최소 1500자. SEO 타이틀 연도 하드코딩 금지·최대 50자.</span></td>
         </tr>
@@ -2239,7 +2248,7 @@ async function processPendingSheetCommentWaves() {
     <p>5분 간격으로 24시간 실행되면서 CommentWaveQueue(BOT 포스트)와 UserPostWaveQueue(유저 글)를 처리한다. wave1~4 각각 다른 유형의 댓글(공감형·질문형·경험공유형·다른관점형)을 생성한다. <strong>v2-E(현재): topComments 원문 기반 직접 생성, AI 없음.</strong> V2 OFF 또는 v2-F fallback(sourceCandidates 부족) 시에만 legacy 경로 (AI 가능). 환경변수: <code>COMMENT_WAVE_V2_ENABLED</code> / <code>COMMENT_WAVE_V2_DATE</code> kill switch로 제어.</p>
     <p><strong>SHEET 포스트(스크래퍼 글)의 wave 댓글</strong>은 Wave봇(wave-processor.ts)이 아닌 <strong>시드봇 scheduler.ts의 <code>processPendingSheetCommentWaves()</code></strong>가 처리한다. BotLog 기반 별도 파이프라인 — §11 "SHEET 포스트 Wave 처리" 참조.</p>
     <p><strong>V2-E 티어별 wave count</strong>: killerScore≥75 → KILLER {wave1:2, wave2:4, wave3:5, wave4:4} / isPopular·killerScore 55~74 → HOT (슬라이딩) / 그 외 → NORMAL {wave1:1, wave2:1, wave3:2, wave4:1}. <strong>v2-F fallback</strong>: sourceCandidates(topComments 원문 기반 풀)가 해당 wave의 목표 수에 미달 → legacy path로 자동 라우팅 (BotLog reason=source_not_enough). V2가 ON이어도 원본 댓글이 없으면 자동 fallback.</p>
-    <p><strong>한 봇이 하루에 달 수 있는 댓글 수는 최대 3개(BOT_DAILY_COMMENT_CAP)</strong>로 제한된다. 한 글에 붙을 수 있는 봇 댓글은 최대 5개. 동일 봇이 같은 글에 이미 달았으면 스킵한다. 50명 페르소나 봇(@unao.bot 이메일 도메인)이 순환하며 댓글을 단다.</p>
+    <p><strong>한 봇이 하루에 달 수 있는 댓글 수는 최대 8개(BOT_DAILY_COMMENT_CAP, 2026-05-30 3→8 상향)</strong>로 제한된다. 한 글에 붙을 수 있는 봇 댓글은 tier별 cap(NORMAL 6 / HOT 14 / KILLER 20). 동일 봇이 같은 글에 이미 달았으면 스킵한다. 50명 페르소나 봇(@unao.bot 이메일 도메인)이 순환하며 댓글을 단다.</p>
   </div>
 
   <h3>image-router 상세 (A31 P3)</h3>
@@ -2254,7 +2263,7 @@ async function processPendingSheetCommentWaves() {
     <p>50명의 페르소나 봇 중 한 명이 자신의 일상 경험을 담은 창작글을 직접 발행하는 봇이다. 현재 <code>ENABLE_SEED_POSTS=false</code>로 <strong>글 생성이 차단</strong>돼 있다. 단, 이 플래그는 글 생성 단계(scheduler.ts line 426~428)만 막는다 — <strong>댓글·좋아요 등 다른 기능은 이 플래그와 무관하게 계속 실행</strong>된다.</p>
     <p>controversy-chain(논쟁 글)도 agents-seed.yml에서 실행되지만 ENABLE_SEED_POSTS 체크를 하지 않아 계속 동작 중이다. magazine-generator는 <strong>launchd 전환됨</strong> — agents-seed.yml에서 더 이상 실행되지 않음(2026-05-27).</p>
     <div class="alert warning" style="margin-top:12px;">
-      <strong>오해 주의</strong>: "씨드봇이 OFF니까 GHA agents-seed.yml이 아무것도 안 한다" — 틀렸다. controversy-chain은 GHA에서 계속 실행된다. magazine봇은 launchd(12:00/14:00 KST)로 전환됐으므로 Mac이 켜져 있어야 실행된다.
+      <strong>오해 주의</strong>: "씨드봇이 OFF니까 GHA agents-seed.yml이 아무것도 안 한다" — 틀렸다. controversy-chain은 GHA에서 계속 실행된다. magazine봇은 launchd(11:00/14:00 KST)로 전환됐으므로 Mac이 켜져 있어야 실행된다.
     </div>
   </div>
 
@@ -2274,7 +2283,7 @@ async function processPendingSheetCommentWaves() {
             <td><code>Profile 1</code></td>
             <td>k-agelab</td>
             <td><code>agents/naver-blog/blog-storage-state.json</code></td>
-            <td><span style="color:var(--muted);">❌ 미사용 (블로그 폐기 예정)</span></td>
+            <td><span style="color:var(--green);">✅ 사용 중 (naver-blog launchd 03:30/09:30 KST)</span></td>
           </tr>
         </tbody>
       </table>
@@ -2287,10 +2296,11 @@ async function processPendingSheetCommentWaves() {
       <strong>예방:</strong> <code>export-blog-cookies.ts</code>와 <code>export-cookies.ts</code>는 저장 경로가 완전히 분리됨. 절대 혼용 금지.
     </div>
     <div class="alert info" style="margin-top:10px;font-size:13px;">
-      <strong>네이버 블로그 자동화 현황 (2026-05-27)</strong><br>
+      <strong>네이버 블로그 자동화 현황 (2026-06-04)</strong><br>
       plist 파일: <code>com.unaeo.naver-blog-morning</code> / <code>com.unaeo.naver-blog-evening</code> → ✅ 존재<br>
-      launchctl: ❌ 미로드 — 현재 실행 안 됨.<br>
-      상태: 블로그 자동화 폐기 예정. 정식 ARCHIVED 처리는 별도 세션.
+      launchctl: ✅ 로드됨 — 2개 모두 등록. <code>launchctl list</code> 기준 morning은 실행 흔적(PID) 확인.<br>
+      시각: morning 03:30 KST / evening 09:30 KST (plist Hour 3/9, Minute 30).<br>
+      상태: ● ON — 블로그 자동화 가동 중. (이전 v10.32 문서의 "미로드/폐기 예정"은 오기재였음)
     </div>
   </div>
 
@@ -2394,7 +2404,7 @@ async function processPendingSheetCommentWaves() {
       <div class="impl-title">P4. 봇 닉네임 당일 반복 등장 cap</div>
     </div>
     <div class="impl-body">
-      오늘 이미 3개 글에 댓글을 단 봇은 선택 풀에서 제외한다. 전체 봇이 cap을 초과하면 cap을 무시하고 전체 풀에서 선택 (fallback). cap: <code>BOT_DAILY_COMMENT_CAP = 3</code>.<br>
+      오늘 이미 8개 글에 댓글을 단 봇은 선택 풀에서 제외한다. 전체 봇이 cap을 초과하면 cap을 무시하고 전체 풀에서 선택 (fallback). cap: <code>BOT_DAILY_COMMENT_CAP = 8</code> (2026-05-30 3→8 상향).<br>
       효과: "손뜨개" 봇이 오늘 3개 글에 이미 댓글 → 4번째 글부터 선택 제외.
     </div>
     <div class="impl-file">📄 agents/cafe/wave-processor.ts — <code>todayCommentCounts</code> 조회 + <code>BOT_DAILY_COMMENT_CAP</code> 필터 (<code>processWave()</code> 내부)</div>
@@ -2715,7 +2725,7 @@ GENERAL:   ['A','E','F','G','H','I','J','K','L','M',
   '.comment_info_count .num',
   '.CommentCount',
   '.reply_count',
-  '.num_number .num',
+  '.num_comment .num',
 ])</pre>
       </details>
       영향 범위: 2026-05-17~20 수집분 약 717건 (commentCount=0 상태). SHA: b7cf87a (2026-05-20)
@@ -3053,8 +3063,17 @@ catch (err: unknown) {
 }</pre>
       </details>
       SHA: ab8a9b6 (2026-05-21)
+      <div class="alert err" style="font-size:12.5px;margin-top:10px;line-height:1.8;">
+        <strong>⚠️ 최신 정책 (2026-06-03, SHA: cddf3f5) — suffix fallback 완전 제거</strong><br>
+        위 nickname suffix fallback(<code>${nickname}-${id}</code> 2차 upsert)은 <strong>전면 제거</strong>됐다.
+        seed bot과 <code>User.nickname @unique</code> 충돌을 suffix로 우회하면 의도치 않은 닉네임 계정이 생기므로,
+        이제 nickname 충돌 시 즉시 <code>throw new Error('[CuratorUser] nickname conflict: ...')</code>로 실패시켜 가시성을 확보한다.
+        타 필드(providerId 등) P2002는 기존대로 원본 re-throw. 동시에 curator-shared.ts에서
+        충돌 닉네임을 고유값으로 교체(C: 'ㅋㅋ요정'→'웃음한스푼', O: '올드팝'→'추억라디오').<br>
+        <strong>현재 코드 동작</strong>: nickname 충돌 = 즉시 throw (fallback 없음). 위 "수정 후" 코드 블록은 ㉕ 시점 이력이며, 현행은 fallback upsert 라인이 없다.
+      </div>
     </div>
-    <div class="impl-file">📄 agents/cafe/curator-users.ts — <code>getCuratorBotUser()</code> catch 블록: P2002 타겟 필드 확인 추가 (배열·문자열 양쪽 방어)</div>
+    <div class="impl-file">📄 agents/cafe/curator-users.ts — <code>getCuratorBotUser()</code> catch: nickname 충돌 시 throw Error (suffix fallback 제거, cddf3f5)<br>📄 agents/cafe/curator-shared.ts — C='웃음한스푼' / O='추억라디오' 닉네임 변경 (seed bot 충돌 방지)</div>
   </div>
   </details>
 
@@ -3312,7 +3331,7 @@ await prisma.cafePost.create({
       · <code>COMMENT_WAVE_V2_ENABLED</code> / <code>COMMENT_WAVE_V2_DATE</code> 환경변수로 kill switch 제어<br>
       · 티어별 wave count: KILLER {1:2,2:4,3:5,4:4} / NORMAL {1:1,2:1,3:2,4:1} / HOT 슬라이딩<br>
       · v2-F fallback: sourceCandidates(topComments) 부족 시 legacy path 자동 라우팅 (reason=source_not_enough)<br>
-      · 현재 상태: COMMENT_WAVE_V2_ENABLED=true / DATE=2026-05-14T00:00:00Z<br><br>
+      · 현재 상태: COMMENT_WAVE_V2_ENABLED=true / DATE=2026-05-22T03:30:00Z<br><br>
       SHA: (A31 P0~P3 + Phase 1, 2026-05-22)
     </div>
     <div class="impl-file">📄 agents/cafe/content-curator.ts — imageUrls 필터 + maxPosts 5→3<br>📄 agents/cafe/popular-curator.ts — imageUrls 필터<br>📄 agents/cafe/image-router.ts — 신규<br>📄 agents/community/sheets-client.ts — appendRow / readAllSheetUrls / countPendingTotal 신규<br>📄 agents/cron/runner.ts — cafe_crawler:image-route 등록<br>📄 .github/workflows/agents-cafe-hourly-curation.yml — image-router step 추가<br>📄 launchd/com.unao.naver-cafe-sheet-scraper.plist — 10:40 / 15:30 슬롯 추가<br>📄 agents/cafe/wave-processor.ts — V2-E kill switch + 티어별 count + v2-F fallback</div>
@@ -3403,7 +3422,7 @@ await prisma.cafePost.create({
       · <code>JOB</code> 게시판: AS·D 페르소나만 허용 (직업 전문성 맥락).<br>
       · <code>STORY / LIFE2</code> 게시판: HUMOR_ONLY_PERSONAS(C·R·AF·AO·AP·AX·AY) 제외.<br>
       · 나머지 게시판: 전체 허용.<br><br>
-      <strong>수정 3 — BOT_CAP 일일 초과 방지</strong>: <code>BOT_DAILY_COMMENT_CAP=3</code> 초과 봇을 선택에서 제외하는 로직 강화.<br><br>
+      <strong>수정 3 — BOT_CAP 일일 초과 방지</strong>: <code>BOT_DAILY_COMMENT_CAP</code> 초과 봇을 선택에서 제외하는 로직 강화. (당시 3 → 이후 2026-05-30 8로 상향)<br><br>
       SHA: 0b4a484 (2026-05-24)
     </div>
     <div class="impl-file">📄 agents/cafe/wave-processor.ts — removeEmoji() 함수 + boardPersonaFilter() 함수 + BOT_CAP 체크 강화</div>
@@ -3654,7 +3673,7 @@ await prisma.cafePost.create({
         <li><code>seed scheduler</code> — ✅ ENABLE_SEED_POSTS=false로 차단됨</li>
         <li><code>controversy-chain execute</code> — ⚠️ 차단 안 됨. 트렌드 기반 STORY 글 계속 생성</li>
       </ol>
-      <code>magazine-generator</code>는 agents-seed.yml에서 <strong>제거됨</strong> — launchd 전용으로 전환 (<code>com.unaeo.magazine-morning/late.plist</code> · 12:00/14:00 KST · Mac 필요).<br><br>
+      <code>magazine-generator</code>는 agents-seed.yml에서 <strong>제거됨</strong> — launchd 전용으로 전환 (<code>com.unaeo.magazine-morning/late.plist</code> · 11:00/14:00 KST · Mac 필요).<br><br>
       따라서 _pm2_audit.ts §6에서 "cafePostId=null BOT 글"이 0건이 아닐 수 있다. 이것은 버그가 아니라 두 시스템이 의도적으로 계속 실행되는 것이다. 모두 중단하려면 agents-seed.yml에서 controversy-chain 줄 제거 + launchd에서 magazine plist unload 필요.<br><br>
       <strong>📌 2026-05-20 이후 변경</strong>: <code>content-curator.ts</code>(2026-05-20~) 및 <code>popular-curator.ts</code>(2026-05-21~)가 발행 시 <code>Post.cafePostId</code>를 저장하도록 수정됐다. 이제 <code>cafePostId IS NOT NULL</code>인 BOT 글 = 큐레이션봇(일반+인기글), <code>cafePostId IS NULL</code>인 BOT 글 = 시드봇/controversy/magazine 으로 구분 가능하다. 어드민 콘텐츠 관리 페이지의 "큐레이션봇" / "시드봇" 필터가 이 기준으로 동작한다.
     </div>
@@ -3696,7 +3715,7 @@ await prisma.cafePost.create({
   <details class="faq-item">
     <summary class="faq-q">wave 댓글이 안 달리는 이유는?</summary>
     <div class="faq-a">
-      CommentWaveQueue TTL(60시간) 초과 / 글당 봇 댓글 cap 도달(NORMAL 6개 / HOT 14개 / KILLER 20개) / 봇 당일 3개 cap 도달 / 동일 봇 중복 방지 중 하나다. BotLog에서 botType=WAVE, status=FAILED 확인. _pm2_audit.ts §9로 오늘 FAILED 목록 확인.
+      CommentWaveQueue TTL(60시간) 초과 / 글당 봇 댓글 cap 도달(NORMAL 6개 / HOT 14개 / KILLER 20개) / 봇 당일 8개 cap 도달(BOT_DAILY_COMMENT_CAP, 2026-05-30 3→8 상향) / 동일 봇 중복 방지 중 하나다. BotLog에서 botType=WAVE, status=FAILED 확인. _pm2_audit.ts §9로 오늘 FAILED 목록 확인.
     </div>
   </details>
 
@@ -3754,6 +3773,22 @@ await prisma.cafePost.create({
   <div class="section-header">
     <div class="section-num">15</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.33</div>
+    <div class="changelog-date">2026-06-04</div>
+    <div class="changelog-content">
+      <strong>코드 한 줄 단위 전수 대조 검증 → 불일치 9건 + 미문서화 1건 정정.</strong><br><br>
+      <strong>[§3]</strong> magazine-morning 시각 12:00 → <strong>11:00 KST</strong> (plist Hour=11 실제값, 기존 "11:00 stale→12:00" 설명이 오류였음). naver-blog 2개 plist <strong>"미로드/폐기 예정" → 실제 로드+실행 중</strong>(launchctl 확인, morning PID): 비활성표에서 제거 + 활성 타임라인(03:30/09:30 KST) + Mac 켜짐 목록 추가.<br>
+      <strong>[§8]</strong> refreshRecentPosts killerScore는 정식 5-factor가 아니라 <strong>단순식</strong>(댓글×10×0.55 + 좋아요×20×0.35, 최대 90점)임을 경고 박스로 명시. (crawler.ts:1151-1153)<br>
+      <strong>[§9]</strong> CafePost 필드 19→20개: <code>popularUpdatedAt</code> 행 추가. commentCount 셀렉터 <code>.num_number .num</code> → <code>.num_comment .num</code> 정정(crawler.ts:1141).<br>
+      <strong>[§11]</strong> tier 정의 "killerScore>70=KILLER, >40=HOT" → <strong>getQueueTier 실제 기준</strong>(KILLER=isFeatured\|\|killerScore≥75, HOT=isPopular). BOT_DAILY_COMMENT_CAP 3 → <strong>8</strong>(2026-05-30 상향) 전수 정정(§11·§13·§14·§15 FAQ).<br>
+      <strong>[§13]</strong> COMMENT_WAVE_V2_DATE 2026-05-14 → <strong>2026-05-22T03:30:00Z</strong>(GHA var 직접 확인). Chrome 계정표 naver-blog "미사용" → "사용 중". 블로그 자동화 현황 박스 ON으로 정정.<br>
+      <strong>[§14]</strong> ㉕ P2002 impl-card에 최신 정책 박스 추가: suffix fallback <strong>전면 제거 → nickname 충돌 시 throw Error</strong>(cddf3f5) + curator 닉네임 변경(C='웃음한스푼'/O='추억라디오').<br>
+      <strong>[검증 일치 확인 — 수정 안 함]</strong> OVERLAP_STOPWORDS 53개, image-router ON+DRY_RUN=false, COMMENT_WAVE_V2 ON, ENABLE_SEED_POSTS=false, qualityScore/killerScore 가중치, isUsable 조건, NOTICE_SIGNALS, ACCESS_BLOCKED_SIGNALS, CAFE_SELF_KEYWORDS(우갱/은퇴 후 50년), PERSONAS 99명, AUTHOR_DAILY_POST_CAP=2, tier cap(20/14/6), GHA 크론 전부 — 모두 코드와 일치 재확인.<br>
+      cover badge·meta·footer v10.32→v10.33, 날짜 2026-06-04, status-box 2026-05-24→2026-06-04.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -4253,8 +4288,8 @@ await prisma.cafePost.create({
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.32<br>
-  최종 업데이트: 2026-05-27 | 작성: Claude Code + MogoKim<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.33<br>
+  최종 업데이트: 2026-06-04 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
 
