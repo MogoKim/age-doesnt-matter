@@ -1,40 +1,54 @@
-// 거울 보드 1단계 카드 정의 (5개).
-// 각 카드는 probe 파라미터(sha/workflow/url)와 decide()만 가진다.
-// probe 실행은 evaluator가 담당한다(단일 진입점). DB probe 없음.
+// 거울 보드 카드 정의 — 전체 백로그(5분류).
+// 원칙: "카드 목록"은 손 정의(거의 불변), "카드 상태(컬럼)"는 probe가 자동 판정(안 썩음).
+// probe 있는 카드 = 자동 판정 / probe 없는 정적 카드 = baseCategory 고정(미래 작업은 시작되면 probe 부착).
 import type { CardProbeResults, Column } from '../probes/probe.types.js'
-
-export type Category = '완료됨' | '배포완료-적용확인' | '지금가능' | '백로그' | '제외'
 
 export interface Card {
   id: string
   title: string
   track: 'T1-검증' | 'T2-성능' | 'T3-봇'
-  /** probe가 전부 판정불가일 때의 기본 분류 */
-  baseCategory: Category
-  probes: { git?: string; ci?: string; http?: string[]; db?: { label: string; sql: string } }
+  /** 5분류 컬럼. probe 없으면 이 값이 그대로 표시됨 */
+  baseCategory: Column
+  probes?: { git?: string; ci?: string; http?: string[]; db?: { label: string; sql: string } }
   /** probe 가정이 마지막으로 사람에 의해 검증된 날(YYYY-MM-DD). 90일 초과 시 메타-stale 경고 */
   probeReviewedAt: string
   note?: string
-  decide(r: CardProbeResults): { column: Column; label: string }
+  /** probe 결과 → 컬럼 판정. 없으면 baseCategory 고정(정적 카드) */
+  decide?: (r: CardProbeResults) => { column: Column; label: string }
 }
 
 const SITE = 'https://age-doesnt-matter.com'
 const REVIEWED = '2026-06-04'
 
-/** git 커밋 + CI 공통 판정. DB proof가 없으면 최대 REVIEW까지만(절대 DONE 아님). */
+/** 정적 카드(probe 없음) 헬퍼 */
+function s(id: string, title: string, track: Card['track'], baseCategory: Column, note?: string): Card {
+  return { id, title, track, baseCategory, probeReviewedAt: REVIEWED, note }
+}
+
+/** git 커밋 + CI 공통 판정 → 배포완료·적용확인 (DB 증명은 각 카드 decide에서 완료됨으로 승격) */
 function decideGitCi(r: CardProbeResults, reviewLabel: string): { column: Column; label: string } {
   const g = r.git
   const c = r.ci
-  if (!g || g.ok === null) return { column: 'PENDING', label: '⚠️ git 판정불가' }
-  if (g.ok === false) return { column: 'PENDING', label: '커밋 미반영' }
-  // git 커밋 존재(true)
-  if (!c) return { column: 'REVIEW', label: reviewLabel }
-  if (c.ok === false) return { column: 'DOING', label: 'CI 실패 — 확인 필요' }
-  if (c.ok === null) return { column: 'REVIEW', label: `${reviewLabel} (CI 판정불가)` }
-  return { column: 'REVIEW', label: reviewLabel }
+  if (!g || g.ok === null) return { column: '배포완료-적용확인', label: '⚠️ git 판정불가' }
+  if (g.ok === false) return { column: '배포완료-적용확인', label: '커밋 미반영' }
+  if (!c) return { column: '배포완료-적용확인', label: reviewLabel }
+  if (c.ok === false) return { column: '지금가능', label: 'CI 실패 — 확인 필요' }
+  if (c.ok === null) return { column: '배포완료-적용확인', label: `${reviewLabel} (CI 판정불가)` }
+  return { column: '배포완료-적용확인', label: reviewLabel }
+}
+
+/** CI 워크플로우 건강도 → 정상이면 배포완료·적용확인(관찰중), 실패면 지금가능(확인필요) */
+function decideCi(r: CardProbeResults, okLabel: string): { column: Column; label: string } {
+  const c = r.ci
+  if (!c || c.ok === null) return { column: '배포완료-적용확인', label: '⚠️ CI 판정불가' }
+  if (c.ok === false) return { column: '지금가능', label: '워크플로우 실패 — 확인 필요' }
+  const ok = String(c.detail.successCount ?? '?')
+  const n = String(c.detail.sampleSize ?? '?')
+  return { column: '배포완료-적용확인', label: `${okLabel} (${ok}/${n} success)` }
 }
 
 export const CARDS: Card[] = [
+  // ═══════════ probe 카드 (자동 판정) ═══════════
   {
     id: 'C-MAGJOB-BLOCK',
     title: 'MAGAZINE/JOB 봇 engagement 차단',
@@ -65,13 +79,13 @@ export const CARDS: Card[] = [
       },
     },
     probeReviewedAt: REVIEWED,
-    note: '차단 후 MAG/JOB BOT 댓글·좋아요 0건이면 DONE. 사람 댓글은 정책상 허용.',
+    note: '차단 후 MAG/JOB BOT 댓글·좋아요 0건이면 완료. 사람 댓글은 정책상 허용.',
     decide: (r) => {
       const db = r.db
       if (!db || db.ok === null) return decideGitCi(r, 'DB 검증 대기 — MAG/JOB BOT 0건 확인 필요')
       const n = Number(db.detail.count ?? 0)
-      if (n === 0) return { column: 'DONE', label: '신규 MAG/JOB 봇 engagement 0건 — 차단 확인' }
-      return { column: 'DOING', label: `신규 MAG/JOB 봇 engagement ${n}건 — 즉시 확인 필요` }
+      if (n === 0) return { column: '완료됨', label: '신규 MAG/JOB 봇 engagement 0건 — 차단 확인' }
+      return { column: '지금가능', label: `신규 MAG/JOB 봇 engagement ${n}건 — 즉시 확인 필요` }
     },
   },
   {
@@ -81,7 +95,7 @@ export const CARDS: Card[] = [
     baseCategory: '배포완료-적용확인',
     probes: { git: 'd1861dd', ci: 'CI (Smart QA)' },
     probeReviewedAt: REVIEWED,
-    note: 'DB proof(2단계): 신규 SHEET 댓글 source-only fact 0건',
+    note: 'DB proof(후속): 신규 SHEET 댓글 source-only fact 0건',
     decide: (r) => decideGitCi(r, '신규 SHEET 글 댓글 검증 대기'),
   },
   {
@@ -98,14 +112,13 @@ export const CARDS: Card[] = [
       },
     },
     probeReviewedAt: REVIEWED,
-    note: 'edc3f36 배포(06-04 08:06 UTC) 이후 post_cta_clicked/scrap/share/comment_create 실제 수집 여부',
+    note: '회원 참여 이벤트. 비회원 댓글(GuestCommentInput)은 측정 누락 — 사각지대 발견됨',
     decide: (r) => {
       const db = r.db
-      // DB 미설정/판정불가 → git+ci 기준(REVIEW)
       if (!db || db.ok === null) return decideGitCi(r, 'EventLog 데이터 축적 대기 (DB 미연결)')
       const n = Number(db.detail.count ?? 0)
-      if (n === 0) return { column: 'REVIEW', label: '⚠️ 측정 이벤트 0건 — 배포됐으나 미수집(점검 필요)' }
-      return { column: 'DONE', label: `측정 작동 확인 — CTA/scrap/share/comment ${n}건 수집` }
+      if (n === 0) return { column: '배포완료-적용확인', label: '⚠️ 측정 이벤트 0건 — 회원 행동 없음 + 비회원 미측정' }
+      return { column: '완료됨', label: `측정 작동 확인 — CTA/scrap/share/comment ${n}건 수집` }
     },
   },
   {
@@ -116,14 +129,47 @@ export const CARDS: Card[] = [
     probes: { ci: 'Agents — Cafe Comment Wave' },
     probeReviewedAt: REVIEWED,
     note: '대표 워크플로우: Cafe Comment Wave(5분 간격). 실패 시 DB 포화/연결 재점검',
-    decide: (r) => {
-      const c = r.ci
-      if (!c || c.ok === null) return { column: 'PENDING', label: '⚠️ CI 판정불가' }
-      if (c.ok === false) return { column: 'DOING', label: 'agents 워크플로우 실패 — 확인 필요' }
-      const ok = String(c.detail.successCount ?? '?')
-      const n = String(c.detail.sampleSize ?? '?')
-      return { column: 'REVIEW', label: `운영 정상 관찰중 (${ok}/${n} success)` }
-    },
+    decide: (r) => decideCi(r, '운영 정상 관찰중'),
+  },
+  {
+    id: 'C-CAFE-WAVE',
+    title: 'Cafe Comment Wave 안정성',
+    track: 'T3-봇',
+    baseCategory: '배포완료-적용확인',
+    probes: { ci: 'Agents — Cafe Comment Wave' },
+    probeReviewedAt: REVIEWED,
+    note: 'success + EMAXCONN/timeout 없음',
+    decide: (r) => decideCi(r, '안정 가동중'),
+  },
+  {
+    id: 'C-CAFE-CURATION',
+    title: 'Cafe Hourly Curation 안정성',
+    track: 'T3-봇',
+    baseCategory: '배포완료-적용확인',
+    probes: { ci: 'Agents — Cafe Hourly Curation (08:20~01:15 KST, 45분 간격, 100건/일)' },
+    probeReviewedAt: REVIEWED,
+    note: 'success, 실패/timeout 없음',
+    decide: (r) => decideCi(r, '안정 가동중'),
+  },
+  {
+    id: 'C-PREWARM',
+    title: 'Prewarm Detail Pages',
+    track: 'T2-성능',
+    baseCategory: '배포완료-적용확인',
+    probes: { ci: 'Prewarm Detail Pages' },
+    probeReviewedAt: REVIEWED,
+    note: 'skip 없이 success, failed:0',
+    decide: (r) => decideCi(r, '자동 실행 정상'),
+  },
+  {
+    id: 'C-OPS-DAILY',
+    title: 'Ops Daily Report',
+    track: 'T1-검증',
+    baseCategory: '배포완료-적용확인',
+    probes: { ci: 'Ops — Daily Report' },
+    probeReviewedAt: REVIEWED,
+    note: '08:30 KST summary/artifact 생성',
+    decide: (r) => decideCi(r, '정기 실행 정상'),
   },
   {
     id: 'C-SPEED-CACHE',
@@ -135,13 +181,76 @@ export const CARDS: Card[] = [
     note: 'x-vercel-cache HIT/MISS + 상태코드 실측',
     decide: (r) => {
       const hs = r.http ?? []
-      if (hs.length === 0) return { column: 'PENDING', label: 'http probe 없음' }
+      if (hs.length === 0) return { column: '지금가능', label: 'http probe 없음' }
       const nullCount = hs.filter((h) => h.ok === null).length
       const failCount = hs.filter((h) => h.ok === false).length
       const edgeCacheCount = hs.filter((h) => h.detail.cache === 'HIT' || h.detail.cache === 'STALE').length
-      if (nullCount === hs.length) return { column: 'PENDING', label: '⚠️ 전부 판정불가' }
-      if (failCount > 0) return { column: 'DOING', label: `${failCount}개 페이지 비정상(4xx/5xx)` }
-      return { column: 'REVIEW', label: `${hs.length}개 정상 · CDN 캐시(HIT/STALE) ${edgeCacheCount}개` }
+      if (nullCount === hs.length) return { column: '지금가능', label: '⚠️ 전부 판정불가' }
+      if (failCount > 0) return { column: '지금가능', label: `${failCount}개 페이지 비정상(4xx/5xx)` }
+      return { column: '배포완료-적용확인', label: `${hs.length}개 정상 · CDN 캐시(HIT/STALE) ${edgeCacheCount}개` }
     },
   },
+
+  // ═══════════ 완료됨 (정적) ═══════════
+  s('C-WAVE-V2', 'USER Wave Engine v2', 'T1-검증', '완료됨', 'wave1~5 E2E PASS'),
+  s('C-WAVE-ANCHOR', 'USER wave anchor 반복 방지', 'T1-검증', '완료됨', '신규 USER 글 anchor 반복 0건'),
+  s('C-SEED-RETIRE', 'seed bot 글쓰기 retired', 'T3-봇', '완료됨', 'seed bot 신규 글쓰기 경로 종료 (9c98ad7)'),
+  s('C-AZBA-LIFE2', 'P1-1B AZ/BA LIFE2 (종료)', 'T3-봇', '완료됨', 'seed bot 글쓰기 retired로 검증 대상 사라짐'),
+  s('C-CURATOR-NICK', 'curator suffix 닉네임 재발 방지', 'T3-봇', '완료됨', 'suffix 계정 0건, 새 닉네임 반영'),
+  s('C-POSTCTA-CTA', 'PostCTA 가입/앱 설치 CTA', 'T2-성능', '완료됨', '비회원/로그인 모바일 조건별 표시'),
+  s('C-POSTCTA-CHIP', 'PostCTA/홈 chip 가+ 반응', 'T2-성능', '완료됨', '창업자 눈검수 완료'),
+  s('C-HOME-FEEDLINE', '홈 3개 피드 하단선 인터랙션', 'T2-성능', '완료됨', '창업자 눈검수 완료'),
+  s('C-NAVER-BLOG-RETIRE', 'Naver blog 자동화 폐기', 'T3-봇', '완료됨', 'Gemini 구독 종료 반영 (bdc673f)'),
+  s('C-MAGAZINE-CHATGPT', '매거진 이미지 엔진 ChatGPT 전환', 'T3-봇', '완료됨', 'SingletonLock 근본 해결 (d734893)'),
+  s('C-JOBS-SEO', '지역 일자리 SEO 랜딩', 'T2-성능', '완료됨', '/jobs/region/[시도] 17개 (0ea2008)'),
+  s('C-COMM-DUP-URL', '커뮤니티 중복 목록 URL 리다이렉트', 'T2-성능', '완료됨', '중복 URL 정리 (614e579)'),
+
+  // ═══════════ 배포완료·적용확인 (정적 — probe 없는 수동 검증) ═══════════
+  s('C-GUEST-COMMENT-UX', '비회원 댓글 UX v1', 'T2-성능', '배포완료-적용확인', 'E2E: 비회원 모바일 댓글 작성 → 등록 성공 + 가입 유도 카드'),
+  s('C-POSTCTA-CLICK', 'PostCTA 클릭/가입 시작', 'T2-성능', '배포완료-적용확인', '비회원 CTA 클릭 → 카카오 이동 전 내부 지연 없음'),
+  s('C-WRITE-SPEED', '글쓰기 진입 속도', 'T2-성능', '배포완료-적용확인', '로그인 후 /community/write 진입 지연 완화 (7448ba6)'),
+
+  // ═══════════ 지금 가능 (정적 — read-only 검증 작업) ═══════════
+  s('C-KAKAO-SIGNUP-SPEED', '카카오 가입 시작 속도 진단', 'T1-검증', '지금가능', 'LoginForm/PostCTA/FAB 클릭 경로 내부 await/API 병목'),
+  s('C-WRITE-SPEED-2', '글쓰기 속도 2차 진단', 'T1-검증', '지금가능', 'auth/editor/draft/upload/submit 중 원인 확정'),
+  s('C-MAG-JOB-SPEED', '/magazine·/jobs 속도 재측정', 'T1-검증', '지금가능', 'curl 헤더/TTFB 샘플링'),
+  s('C-DETAIL-SPEED', '게시글 상세 속도 재측정', 'T1-검증', '지금가능', '인기 상세 3~5개 TTFB/Total, MISS 비용 원인'),
+  s('C-LIGHTHOUSE', 'Lighthouse 접근성 진단', 'T1-검증', '지금가능', 'contrast/target-size 원인 정리'),
+  s('C-SEO-CHECK', 'SEO/Search Advisor 점검', 'T1-검증', '지금가능', 'sitemap/meta/canonical/robots 누락'),
+  s('C-ROADMAP-DOC', '로드맵 문서 재작성', 'T1-검증', '지금가능', '창업자가 바로 이해 가능한 운영판'),
+  s('C-DIRTY-FILES', 'dirty 파일 정리', 'T1-검증', '지금가능', 'agents/scripts/_*.ts, docs/analysis 분류'),
+  s('C-WORKTREE-SETUP', '병렬 세션 worktree 세팅', 'T1-검증', '지금가능', 'worktree 생성 및 역할 분리, 세션별 파일 충돌 없음'),
+
+  // ═══════════ 백로그 — 고객 임팩트/리텐션 순 (정적) ═══════════
+  s('C-BL-FIRST-ACTION', '첫 활동 유도 강화', 'T2-성능', '백로그', '첫 댓글/공감/저장 유도 UX → 가입 후 첫 활동률 상승'),
+  s('C-BL-GUEST-CONVERT', '비회원 댓글 → 가입 전환 측정', 'T1-검증', '백로그', '댓글 성공 후 가입 funnel 연결'),
+  s('C-BL-CTA-MISSING', 'PostCTA 클릭 누락 원인', 'T1-검증', '백로그', 'post_cta_clicked 유실 여부 확인'),
+  s('C-BL-REAL-FILTER', '실제 고객 기준 필터', 'T1-검증', '백로그', 'bot/admin/test 제외 기준 → 리포트가 실제 고객만'),
+  s('C-BL-GUEST-READ', '비회원 글 읽기 측정', 'T1-검증', '백로그', '익명 식별자 + PostView schema → 비회원 readPercent'),
+  s('C-BL-DETAIL-MISS', '게시글 상세 첫 요청 MISS 비용 절감', 'T2-성능', '백로그', 'auth 개인화 분리/API화 → 상세 TTFB 안정'),
+  s('C-BL-LIST-STATIC', '목록 정적화 확장', 'T2-성능', '백로그', '/community, /magazine, /jobs 정적화'),
+  s('C-BL-WRITE-UX2', '글쓰기 UX/속도 2차', 'T2-성능', '백로그', '에디터 chunk/upload/submit 개선'),
+  s('C-BL-SHEET-NGRAM', 'SHEET 말투/어미 반복 개선 v2', 'T3-봇', '백로그', 'n-gram 반복 guard → "근데 솔직히/했어" 감소'),
+  s('C-BL-SHEET-HALLU', 'SHEET 순수 hallucination 방지', 'T3-봇', '백로그', 'source/본문 둘 다 없는 창작 사실 검출'),
+  s('C-BL-IMG-COMMENT', '이미지/초단문 글 댓글 정책 강화', 'T3-봇', '백로그', 'source 신뢰도 낮은 글 skip/저강도 댓글'),
+  s('C-BL-OPS-REPORT-V2', '운영 리포트 v2', 'T1-검증', '백로그', '댓글 품질/source 품질/FAILED 리포트 확장'),
+  s('C-BL-TWA-AB', 'TWA 첫 진입 A/B 테스트', 'T2-성능', '백로그', '실험 지표 정의 → 가입률/재방문'),
+  s('C-BL-AB-ADMIN', 'A/B 테스트 어드민', 'T2-성능', '백로그', '실험 상태/결과 관리 → 실험 누락 방지'),
+  s('C-BL-COMMENT-CACHE', '댓글 per-user cache 분리', 'T2-성능', '백로그', '댓글 목록 캐시와 개인 상태 분리 → 인기글 DB 부하 감소'),
+  s('C-BL-PERSONA-2', '페르소나 2차 정비 (후순위)', 'T3-봇', '백로그', 'STORY 편중/성별/중복 정리 (품질 악화 시 재개)'),
+  s('C-BL-NAVER-SEO', 'Naver Search Advisor 운영 점검', 'T1-검증', '백로그', '검색 노출/색인 상태'),
+  s('C-BL-SCRAPER-QUALITY', '스크래퍼 sourceSite 품질 리포트', 'T3-봇', '백로그', 'source별 발행/댓글 품질 집계'),
+
+  // ═══════════ 제외/무시 (정적) ═══════════
+  s('C-X-KAKAO-SHARE-P0', '카카오 공유 P0', 'T2-성능', '제외', '현재 우선순위 아님 — 명시 재개 요청 시만'),
+  s('C-X-HOME-MANUAL', '홈 편성 수동 조정 MVP', 'T2-성능', '제외', '창업자 지시로 무시'),
+  s('C-X-SEED-NEW-POST', 'seed bot 신규 글쓰기', 'T3-봇', '제외', 'retired 완료 — 재개하지 않음'),
+  s('C-X-AZBA-VERIFY', 'P1-1B AZ/BA 신규 글 검증', 'T3-봇', '제외', 'seed bot 글쓰기 종료로 대상 없음'),
+  s('C-X-MAGJOB-HUMAN', 'MAGAZINE/JOB 사람 댓글 차단', 'T3-봇', '제외', '사람 댓글은 유지 정책 — 막지 않음'),
+  s('C-X-BOT-COMMENT-DEL', 'MAGAZINE/JOB 기존 봇 댓글 일괄 삭제', 'T3-봇', '제외', '이번 정책은 신규 유입 차단만 — 별도 승인 시'),
+  s('C-X-AWKWARD-DEL', '기존 어색한 봇 댓글 삭제/숨김', 'T3-봇', '제외', '삭제는 운영 리스크 — 별도 정책 승인 시'),
+  s('C-X-PERSONA-DIST', 'STORY 편중/성별 분포/중복 페르소나', 'T3-봇', '제외', '고객 체감 P0 아님 — 품질 악화 시 재개'),
+  s('C-X-SPA', '전체 SPA 전환', 'T2-성능', '제외', 'SEO/초기 로딩 악화 — 하지 않음'),
+  s('C-X-AUTH-REMOVE', 'auth 완전 제거', 'T2-성능', '제외', '권한/개인화 손상 — 하지 않음'),
+  s('C-X-RAW-SQL', 'DB raw SQL 운영 수정', 'T1-검증', '제외', '프로젝트 원칙상 금지 — Prisma/정식 migration만'),
 ]

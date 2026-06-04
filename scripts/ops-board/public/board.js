@@ -3,10 +3,11 @@
 'use strict'
 
 var COLUMNS = [
-  { key: 'PENDING', label: '지금 가능', color: '#9ca3af' },
-  { key: 'DOING', label: '진행 / 문제', color: '#f59e0b' },
-  { key: 'REVIEW', label: '적용 확인', color: '#3b82f6' },
-  { key: 'DONE', label: '완료', color: '#22c55e' },
+  { key: '완료됨', label: '완료됨', color: '#22c55e' },
+  { key: '배포완료-적용확인', label: '배포완료·적용확인', color: '#3b82f6' },
+  { key: '지금가능', label: '지금 가능', color: '#f59e0b' },
+  { key: '백로그', label: '백로그', color: '#9ca3af' },
+  { key: '제외', label: '제외 / 무시', color: '#6b7280' },
 ]
 
 function hasNullProbe(card) {

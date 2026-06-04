@@ -22,7 +22,8 @@ export interface ProbeResult {
 
 export type ProbeKind = 'git' | 'ci' | 'http' | 'db'
 
-export type Column = 'PENDING' | 'DOING' | 'REVIEW' | 'DONE'
+// 보드 컬럼 = 창업자의 5분류 (probe가 자동으로 이 중 하나에 배치)
+export type Column = '완료됨' | '배포완료-적용확인' | '지금가능' | '백로그' | '제외'
 
 export interface CardProbeResults {
   git?: ProbeResult

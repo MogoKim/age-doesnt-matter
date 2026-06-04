@@ -1,7 +1,7 @@
 // 거울 보드 단일 진입점.
 // /board(슬래시)와 웹 칸반이 둘 다 이 evaluateBoardState()의 결과만 사용한다.
 // (슬래시 전용·웹 전용 조회 로직을 따로 만들지 않는다.)
-import { CARDS, type Card, type Category } from '../cards/cards.js'
+import { CARDS, type Card } from '../cards/cards.js'
 import { gitCommitExists } from '../probes/git-probe.js'
 import { ciWorkflowHealth } from '../probes/ci-probe.js'
 import { httpStatus } from '../probes/http-probe.js'
@@ -15,7 +15,7 @@ export interface EvaluatedCard {
   track: string
   column: Column
   label: string
-  baseCategory: Category
+  baseCategory: Column
   probes: CardProbeResults
   checkedAt: string
   probeReviewedAt: string
@@ -39,27 +39,29 @@ async function runCard(card: Card): Promise<EvaluatedCard> {
   const probes: CardProbeResults = {}
   // probe들은 카드 단위로 병렬 실행
   const tasks: Promise<void>[] = []
-  if (card.probes.git) {
+  if (card.probes?.git) {
     const sha = card.probes.git
     tasks.push(gitCommitExists(sha).then((res) => void (probes.git = res)))
   }
-  if (card.probes.ci) {
+  if (card.probes?.ci) {
     const wf = card.probes.ci
     tasks.push(ciWorkflowHealth(wf).then((res) => void (probes.ci = res)))
   }
-  if (card.probes.http) {
+  if (card.probes?.http) {
     const urls = card.probes.http
     tasks.push(
       Promise.all(urls.map((u) => httpStatus(u))).then((res: ProbeResult[]) => void (probes.http = res)),
     )
   }
-  if (card.probes.db) {
+  if (card.probes?.db) {
     const { label, sql } = card.probes.db
     tasks.push(dbCount(label, sql).then((res) => void (probes.db = res)))
   }
   await Promise.all(tasks)
 
-  const { column, label } = card.decide(probes)
+  const { column, label } = card.decide
+    ? card.decide(probes)
+    : { column: card.baseCategory, label: card.note ?? '' }
   return {
     id: card.id,
     title: card.title,

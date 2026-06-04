@@ -37,12 +37,14 @@
       #status .down { color: #ef4444; }
       main {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 12px;
         padding: 16px 24px;
+        align-items: start;
       }
-      @media (max-width: 900px) { main { grid-template-columns: 1fr 1fr; } }
-      @media (max-width: 560px) { main { grid-template-columns: 1fr; } }
+      @media (max-width: 1200px) { main { grid-template-columns: repeat(3, 1fr); } }
+      @media (max-width: 760px) { main { grid-template-columns: 1fr 1fr; } }
+      @media (max-width: 460px) { main { grid-template-columns: 1fr; } }
       .col {
         background: var(--panel);
         border-radius: 12px;
