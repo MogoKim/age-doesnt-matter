@@ -65,6 +65,9 @@ const nextConfig = {
       { source: '/job/:path*',     destination: '/jobs',             permanent: true },
       { source: '/blog',           destination: '/magazine',         permanent: true },
       { source: '/blog/:path*',    destination: '/magazine',         permanent: true },
+      // 커뮤니티 동적 라우트로 잘못 열리던 목록 중복 URL → 권위 URL로 통합
+      { source: '/community/magazine', destination: '/magazine', permanent: true },
+      { source: '/community/jobs',     destination: '/jobs',     permanent: true },
       { source: '/write_1st',      destination: '/community/write',  permanent: true },
       { source: '/write',          destination: '/community/write',  permanent: true },
       { source: '/faq',            destination: '/about',            permanent: true }, // 의도된 리다이렉트 — FAQ 콘텐츠를 /about으로 통합 (faq/page.tsx는 데드코드, 삭제하지 말 것)
