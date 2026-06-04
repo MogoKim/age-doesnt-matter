@@ -107,6 +107,10 @@ function toRows(map: Map<string, number>, limit = 12): Array<[string, number]> {
   return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit)
 }
 
+function minutesAgo(date: Date): number {
+  return Math.max(0, Math.round((Date.now() - date.getTime()) / 60_000))
+}
+
 function table(headers: string[], rows: string[][]): string {
   if (rows.length === 0) return '_없음_'
   const sep = headers.map(() => '---')
@@ -184,9 +188,12 @@ async function main() {
 
   const logStatus = new Map<string, number>()
   const logActions = new Map<string, number>()
+  const latestByAction = new Map<string, BotLogRow>()
   for (const log of recentLogs) {
     increment(logStatus, log.status)
-    increment(logActions, `${log.botType}:${log.action ?? '-'}`)
+    const key = `${log.botType}:${log.action ?? '-'}`
+    increment(logActions, key)
+    if (!latestByAction.has(key)) latestByAction.set(key, log)
   }
 
   const cafeBySource = new Map<string, number>()
@@ -277,6 +284,42 @@ async function main() {
   console.log(table(
     ['board:status', '건수'],
     toRows(postsByBoard).map(([key, count]) => [key, String(count)]),
+  ))
+
+  console.log('')
+  console.log('## 7. 핵심 파이프라인 freshness')
+  console.log(table(
+    ['파이프라인', '마지막 BotLog', '상태', '비고'],
+    [
+      ['Cafe wave', 'CAFE_CRAWLER:WAVE_PROCESS', 20],
+      ['USER post wave', 'CAFE_CRAWLER:USER_POST_WAVE', 20],
+      ['Sheet scrape', 'CAFE_CRAWLER:SHEET_SCRAPE', 240],
+      ['Sheet comment wave', 'SEED:SHEET_COMMENT_WAVE_PENDING', 360],
+      ['Sheet engage comment', 'SEED:SHEET_ENGAGE_COMMENT_PENDING', 360],
+      ['Sheet engage like', 'SEED:SHEET_ENGAGE_LIKE_PENDING', 360],
+    ].map(([label, key, threshold]) => {
+      const actionKey = String(key)
+      const thresholdMinutes = Number(threshold)
+      const latest = latestByAction.get(actionKey)
+
+      if (!latest) {
+        return [
+          String(label),
+          '없음',
+          'MISSING',
+          `${days}일 범위 내 BotLog 없음 — GHA 로그 확인 필요`,
+        ]
+      }
+
+      const age = minutesAgo(latest.executedAt)
+      const status = age <= thresholdMinutes ? 'OK' : 'STALE'
+      return [
+        String(label),
+        `${kst(latest.executedAt)} (${age}분 전)`,
+        status,
+        `기준 ${thresholdMinutes}분 / 최근 상태 ${latest.status}`,
+      ]
+    }),
   ))
 }
 
