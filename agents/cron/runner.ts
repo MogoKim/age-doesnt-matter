@@ -41,7 +41,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cfo:revenue-tracker': () => import('../cfo/revenue-tracker.js').then(() => {}),
   'coo:moderator': () => import('../coo/moderator.js').then(() => {}),
   'coo:content-scheduler': () => import('../coo/content-scheduler.js').then(m => m.main()),
-  'coo:job-scraper': () => import('../coo/job-scraper.js').then(() => {}),
+  'coo:job-scraper': () => import('../coo/job-scraper.js').then(m => m.main()),
   'coo:trending-scorer': () => import('../coo/trending-scorer.js').then(m => m.main()),
   'cdo:kpi-collector': () => import('../cdo/kpi-collector.js').then(() => {}),
   'cdo:anomaly-detector': () => import('../cdo/anomaly-detector.js').then(() => {}),

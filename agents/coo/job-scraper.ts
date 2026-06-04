@@ -13,6 +13,7 @@
  * 1배치: 4-5건 엄선
  */
 
+import { fileURLToPath } from 'url'
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
@@ -329,8 +330,15 @@ class COOJobScraper extends BaseAgent {
 
 }
 
-// 실행
-const agent = new COOJobScraper()
-agent.execute().then((result) => {
+export async function main() {
+  const agent = new COOJobScraper()
+  const result = await agent.execute()
   console.log('[JobScraper] 결과:', result.summary)
-})
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().then(() => process.exit(0)).catch(err => {
+    console.error('[JobScraper] 치명적 오류:', err)
+    process.exit(1)
+  })
+}
