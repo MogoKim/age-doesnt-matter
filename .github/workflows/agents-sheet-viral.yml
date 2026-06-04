@@ -5,7 +5,7 @@ on:
 
   # 5분마다 실행 (파동 타이밍: +1분/+3분/+6분/+10분 — 글 발행 후 최대 15분 내 전부 완료)
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "3-59/5 * * * *" # cafe comment wave와 시작 분산
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -21,6 +21,7 @@ env:
   SLACK_CHANNEL_SYSTEM: ${{ secrets.SLACK_CHANNEL_SYSTEM }}
   SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
   SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
+  AGENT_DB_POOL_MAX: "1"
 
 concurrency:
   group: ${{ github.workflow }}
@@ -44,4 +45,47 @@ jobs:
       - run: cd agents && npm ci
 
       - name: Run Sheet Viral Waves
-        run: cd agents && npx tsx cron/runner.ts seed viral-waves
+        run: |
+          # cron-link-check: runner.ts seed viral-waves
+          run_with_emaxconn_retry() {
+            local label="$1"
+            shift
+            local output
+            local status
+
+            set +e
+            output=$("$@" 2>&1)
+            status=$?
+            set -e
+            echo "$output"
+
+            if [ "$status" -eq 0 ]; then
+              return 0
+            fi
+
+            if ! echo "$output" | grep -q "EMAXCONN"; then
+              return "$status"
+            fi
+
+            echo "::warning::$label hit DB connection limit (EMAXCONN); waiting 45s and retrying once."
+            sleep 45
+
+            set +e
+            output=$("$@" 2>&1)
+            status=$?
+            set -e
+            echo "$output"
+
+            if [ "$status" -eq 0 ]; then
+              return 0
+            fi
+
+            if echo "$output" | grep -q "EMAXCONN"; then
+              echo "::warning::$label still hit EMAXCONN after retry; skipping this tick. The next scheduled run will retry."
+              return 0
+            fi
+
+            return "$status"
+          }
+
+          run_with_emaxconn_retry "sheet viral wave" bash -lc "cd agents && npx tsx cron/runner.ts seed viral-waves"

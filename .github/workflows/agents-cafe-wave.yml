@@ -2,7 +2,7 @@ name: "Agents — Cafe Comment Wave"
 
 on:
   schedule:
-    - cron: "*/5 * * * *" # 5분마다 — GHA 최소 간격 (wave1 최대 5분 지연 허용)
+    - cron: "1-59/5 * * * *" # 5분마다 — sheet viral wave와 시작 분산 (wave1 최대 5분 지연 허용)
   workflow_dispatch: {}
 
 # agents-cafe.yml과 독립 concurrency group → 큐레이션/크론 실행 중에도 독립 실행 (GHA 부하 시 지연 가능)
@@ -25,7 +25,7 @@ env:
 jobs:
   wave-process:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
 
     steps:
       - uses: actions/checkout@v4
@@ -41,30 +41,92 @@ jobs:
 
       - name: Process Comment Waves (wave1~4 순차 댓글 게시)
         run: |
-          set +e
-          output=$(cd agents && npx tsx cron/runner.ts cafe_crawler wave-process 2>&1)
-          status=$?
-          echo "$output"
-          if [ "$status" -eq 0 ]; then
-            exit 0
-          fi
-          if echo "$output" | grep -q "EMAXCONN"; then
-            echo "::warning::DB connection limit reached (EMAXCONN); skipping this 5-minute cafe wave tick. The next scheduled run will retry."
-            exit 0
-          fi
-          exit "$status"
+          # cron-link-check: runner.ts cafe_crawler wave-process
+          run_with_emaxconn_retry() {
+            local label="$1"
+            shift
+            local output
+            local status
+
+            set +e
+            output=$("$@" 2>&1)
+            status=$?
+            set -e
+            echo "$output"
+
+            if [ "$status" -eq 0 ]; then
+              return 0
+            fi
+
+            if ! echo "$output" | grep -q "EMAXCONN"; then
+              return "$status"
+            fi
+
+            echo "::warning::$label hit DB connection limit (EMAXCONN); waiting 45s and retrying once."
+            sleep 45
+
+            set +e
+            output=$("$@" 2>&1)
+            status=$?
+            set -e
+            echo "$output"
+
+            if [ "$status" -eq 0 ]; then
+              return 0
+            fi
+
+            if echo "$output" | grep -q "EMAXCONN"; then
+              echo "::warning::$label still hit EMAXCONN after retry; skipping this tick. The next scheduled run will retry."
+              return 0
+            fi
+
+            return "$status"
+          }
+
+          run_with_emaxconn_retry "cafe wave" bash -lc "cd agents && npx tsx cron/runner.ts cafe_crawler wave-process"
 
       - name: Process User Post Waves (회원 글 댓글 파동)
         run: |
-          set +e
-          output=$(cd agents && npx tsx cron/runner.ts cafe_crawler user-post-wave-process 2>&1)
-          status=$?
-          echo "$output"
-          if [ "$status" -eq 0 ]; then
-            exit 0
-          fi
-          if echo "$output" | grep -q "EMAXCONN"; then
-            echo "::warning::DB connection limit reached (EMAXCONN); skipping this 5-minute user post wave tick. The next scheduled run will retry."
-            exit 0
-          fi
-          exit "$status"
+          # cron-link-check: runner.ts cafe_crawler user-post-wave-process
+          run_with_emaxconn_retry() {
+            local label="$1"
+            shift
+            local output
+            local status
+
+            set +e
+            output=$("$@" 2>&1)
+            status=$?
+            set -e
+            echo "$output"
+
+            if [ "$status" -eq 0 ]; then
+              return 0
+            fi
+
+            if ! echo "$output" | grep -q "EMAXCONN"; then
+              return "$status"
+            fi
+
+            echo "::warning::$label hit DB connection limit (EMAXCONN); waiting 45s and retrying once."
+            sleep 45
+
+            set +e
+            output=$("$@" 2>&1)
+            status=$?
+            set -e
+            echo "$output"
+
+            if [ "$status" -eq 0 ]; then
+              return 0
+            fi
+
+            if echo "$output" | grep -q "EMAXCONN"; then
+              echo "::warning::$label still hit EMAXCONN after retry; skipping this tick. The next scheduled run will retry."
+              return 0
+            fi
+
+            return "$status"
+          }
+
+          run_with_emaxconn_retry "user post wave" bash -lc "cd agents && npx tsx cron/runner.ts cafe_crawler user-post-wave-process"
