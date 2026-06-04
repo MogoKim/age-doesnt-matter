@@ -40,7 +40,31 @@ jobs:
       - run: cd agents && npm ci
 
       - name: Process Comment Waves (wave1~4 순차 댓글 게시)
-        run: cd agents && npx tsx cron/runner.ts cafe_crawler wave-process
+        run: |
+          set +e
+          output=$(cd agents && npx tsx cron/runner.ts cafe_crawler wave-process 2>&1)
+          status=$?
+          echo "$output"
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+          if echo "$output" | grep -q "EMAXCONN"; then
+            echo "::warning::DB connection limit reached (EMAXCONN); skipping this 5-minute cafe wave tick. The next scheduled run will retry."
+            exit 0
+          fi
+          exit "$status"
 
       - name: Process User Post Waves (회원 글 댓글 파동)
-        run: cd agents && npx tsx cron/runner.ts cafe_crawler user-post-wave-process
+        run: |
+          set +e
+          output=$(cd agents && npx tsx cron/runner.ts cafe_crawler user-post-wave-process 2>&1)
+          status=$?
+          echo "$output"
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+          if echo "$output" | grep -q "EMAXCONN"; then
+            echo "::warning::DB connection limit reached (EMAXCONN); skipping this 5-minute user post wave tick. The next scheduled run will retry."
+            exit 0
+          fi
+          exit "$status"
