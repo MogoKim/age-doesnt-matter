@@ -101,8 +101,8 @@ async function deleteDailyStatus(): Promise<void> {
 // ─── Slack 메시지 포맷 ────────────────────────────────────────────────────────
 
 function formatImageSourceLabel(a: SessionArticle): string {
-  if (a.imageSource === 'local') return 'Gemini Imagen ✅'
-  if (a.imageSource === 'unsplash') return 'Unsplash ⚠️ (Gemini 실패)'
+  if (a.imageSource === 'local') return 'AI 생성 ✅'
+  if (a.imageSource === 'unsplash') return 'Unsplash ⚠️ (AI 생성 실패)'
   if (a.imageSource === 'dalle') return 'DALL-E'
   return 'source 추적 불가 ⚠️'
 }
@@ -131,6 +131,28 @@ function formatSuccessMessage(status: DailyStatus): string {
 function formatFailureMessage(session: 'morning' | 'evening', engine: string, stage: string, error: string): string {
   const sessionLabel = session === 'morning' ? '오전 (11:00)' : '저녁 (14:00)'
   return `❌ *매거진 발행 실패 — ${sessionLabel} 세션*\n단계: ${stage}\n엔진: ${engine}\n원인: ${error}\n→ 이번 회차 건너뜀`
+}
+
+// ─── 이미지 브라우저 정리 ─────────────────────────────────────────────────────
+
+/**
+ * 이미지 생성 Playwright 브라우저 종료.
+ * 미종료 시 Chrome이 고아 프로세스로 남아 SingletonLock을 점유 →
+ * 다음 실행이 launchPersistentContext 실패 → 이미지 100% 실패 (이전 만성 장애 근본 원인).
+ * 모든 종료 경로에서 process.exit 직전 호출 필수.
+ */
+async function closeImageBrowser(engine: string): Promise<void> {
+  try {
+    if (engine === 'chatgpt') {
+      const { closeChatGPTBrowser } = await import('../design/graphic-designer/skills/chatgpt-scraper.js')
+      await closeChatGPTBrowser()
+    } else if (engine === 'gemini') {
+      const { closeGeminiBrowser } = await import('../design/graphic-designer/skills/gemini-scraper.js')
+      await closeGeminiBrowser()
+    }
+  } catch (err) {
+    console.warn('[MagazineRunner] 브라우저 종료 실패 (무시):', err)
+  }
 }
 
 // ─── 메인 실행 ────────────────────────────────────────────────────────────────
@@ -162,6 +184,7 @@ async function main(): Promise<void> {
     await sendMagazineSlack(
       formatFailureMessage(sessionTime, engine, '매거진 생성', errMsg)
     )
+    await closeImageBrowser(engine)
     process.exit(0)
   }
 
@@ -170,6 +193,7 @@ async function main(): Promise<void> {
     await sendMagazineSlack(
       formatFailureMessage(sessionTime, engine, '매거진 발행', '발행된 기사 0건 (트렌드 점수 미달 또는 이미지 생성 실패)')
     )
+    await closeImageBrowser(engine)
     process.exit(0)
   }
 
@@ -213,6 +237,7 @@ async function main(): Promise<void> {
     await deleteDailyStatus()
   }
 
+  await closeImageBrowser(engine)
   console.log('[MagazineRunner] 종료')
   process.exit(0)
 }
@@ -223,5 +248,6 @@ main().catch(async (err) => {
   const session = (process.env.SESSION_TIME ?? 'morning') as 'morning' | 'evening'
   const engine = process.env.IMAGE_GENERATOR ?? 'unknown'
   await sendMagazineSlack(formatFailureMessage(session, engine, '런타임 오류', errMsg))
+  await closeImageBrowser(engine)
   process.exit(0)  // exit 0 — launchd가 재시작하지 않도록
 })

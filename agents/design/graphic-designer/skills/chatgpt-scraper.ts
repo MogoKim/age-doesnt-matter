@@ -87,41 +87,61 @@ export async function getChatGPTBrowserContext(): Promise<BrowserContext> {
   return _context
 }
 
-/** ChatGPT 로그인 상태 확인. 미로그인이면 수동 로그인 대기. */
+/**
+ * ChatGPT 로그인 상태 확인.
+ * 판정 기준: NextAuth 세션 엔드포인트(/api/auth/session)의 user 데이터 유무.
+ *   → chatgpt.com/images 랜딩은 로그인 상태에서도 "Log in" CTA가 남아 있어
+ *     DOM 버튼 유무로는 오판(false positive)한다. 세션 API가 유일한 진실.
+ * 미로그인 시: 대화형(TTY)이면 수동 로그인 대기, 비대화형(launchd)이면 즉시 throw.
+ */
 async function ensureLoggedIn(context: BrowserContext): Promise<void> {
   const page = await context.newPage()
   try {
     await page.goto(CHATGPT_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 })
     await delay(2_000, 3_000)
 
-    // chatgpt.com/images는 비로그인 상태에서도 입력창이 렌더링됨.
-    // "로그인" 버튼이 보이면 → 비로그인 상태로 판단.
-    const loginBtnVisible = await page
-      .locator(
-        'a[href*="login"], button:has-text("로그인"), a:has-text("로그인"), [data-testid*="login"]'
-      )
-      .first()
-      .isVisible({ timeout: 4_000 })
-      .catch(() => false)
-
-    if (loginBtnVisible) {
-      console.log('\n[ChatGPT Scraper] ⚠️  OpenAI 로그인 필요!')
-      console.log('  1. 열린 Chrome 창에서 chatgpt.com 로그인')
-      console.log('  2. 로그인 완료 후 chatgpt.com/images 메인 화면이 보이면')
-      console.log('  3. 이 터미널에서 Enter 를 누르세요\n')
-      await new Promise<void>((resolve) => {
-        process.stdin.setRawMode?.(false)
-        process.stdin.resume()
-        process.stdin.once('data', () => {
-          process.stdin.pause()
-          resolve()
-        })
-      })
-    } else {
-      console.log('  [ChatGPT Scraper] 로그인 상태 확인 ✅')
+    if (await isAuthenticated(page)) {
+      console.log('  [ChatGPT Scraper] 로그인 상태 확인 ✅ (auth session)')
+      return
     }
+
+    // 미로그인 — 비대화형(launchd)에서는 stdin이 없어 무한 대기 → 즉시 실패시켜
+    // silent hang 대신 명확한 에러 + 상위 catch에서 Slack 알림으로 전환.
+    if (!process.stdin.isTTY) {
+      throw new Error(
+        'ChatGPT 미로그인 + 비대화형(launchd) 실행 — 자동 로그인 불가. ' +
+        '로컬 터미널에서 chatgpt.com 재로그인 필요 (프로필: ' + CHATGPT_PROFILE_DIR + ')'
+      )
+    }
+
+    console.log('\n[ChatGPT Scraper] ⚠️  OpenAI 로그인 필요!')
+    console.log('  1. 열린 Chrome 창에서 chatgpt.com 로그인')
+    console.log('  2. 로그인 완료 후 chatgpt.com/images 메인 화면이 보이면')
+    console.log('  3. 이 터미널에서 Enter 를 누르세요\n')
+    await new Promise<void>((resolve) => {
+      process.stdin.setRawMode?.(false)
+      process.stdin.resume()
+      process.stdin.once('data', () => {
+        process.stdin.pause()
+        resolve()
+      })
+    })
   } finally {
     await page.close()
+  }
+}
+
+/** NextAuth 세션 엔드포인트로 로그인 여부 확인 (user 데이터 있으면 로그인됨) */
+async function isAuthenticated(page: Page): Promise<boolean> {
+  try {
+    const resp = await page.request.get('https://chatgpt.com/api/auth/session', {
+      timeout: 15_000,
+    })
+    if (!resp.ok()) return false
+    const data = (await resp.json().catch(() => ({}))) as { user?: { email?: string; id?: string } }
+    return !!(data?.user && (data.user.email || data.user.id))
+  } catch {
+    return false
   }
 }
 
