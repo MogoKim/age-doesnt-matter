@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>내 일 찾기 자동화 기획설계</title>
+<style>
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e; --sub: #6e7681;
+    --primary: #FF6F61; --primary-dim: rgba(255,111,97,0.16);
+    --green: #3fb950; --green-dim: rgba(63,185,80,0.15);
+    --blue: #58a6ff; --blue-dim: rgba(88,166,255,0.15);
+    --yellow: #d29922; --yellow-dim: rgba(210,153,34,0.15);
+    --purple: #bc8cff; --purple-dim: rgba(188,140,255,0.15);
+    --teal: #22d3ee; --teal-dim: rgba(34,211,238,0.15);
+    --red: #f85149; --red-dim: rgba(248,81,73,0.15);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.75; font-size: 16.5px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 48px 18px 100px; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { color: var(--primary); }
+
+  /* Cover */
+  .cover {
+    background: linear-gradient(135deg, #161b22 0%, #1a1423 50%, #0d1117 100%);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 48px 44px 40px; margin-bottom: 24px; position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: ''; position: absolute; top: -80px; right: -80px;
+    width: 360px; height: 360px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,111,97,0.16) 0%, transparent 70%);
+  }
+  .cover-badge {
+    display: inline-block; background: var(--primary-dim); color: var(--primary);
+    font-size: 12.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(255,111,97,0.35); margin-bottom: 18px;
+  }
+  .cover h1 { font-size: 32px; font-weight: 800; line-height: 1.3; margin: 0 0 10px; }
+  .cover .subtitle { font-size: 17px; color: var(--muted); margin: 0; }
+  .cover-meta { display: flex; gap: 30px; flex-wrap: wrap; padding-top: 26px; margin-top: 26px; border-top: 1px solid var(--border); position: relative; }
+  .cover-meta .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); font-weight: 600; margin-bottom: 3px; }
+  .cover-meta .value { font-size: 15px; color: var(--muted); font-weight: 600; }
+  .cover-meta .value.ok { color: var(--green); }
+
+  /* TOC */
+  .toc { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 24px 30px; margin-bottom: 48px; }
+  .toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); font-weight: 700; margin: 0 0 16px; }
+  .toc ol { columns: 2; column-gap: 40px; margin: 0; padding-left: 20px; }
+  .toc li { font-size: 15px; color: var(--muted); padding: 4px 0; break-inside: avoid; }
+
+  /* Section */
+  .section { margin-bottom: 60px; scroll-margin-top: 20px; }
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+  .section-num { width: 32px; height: 32px; border-radius: 8px; background: var(--primary-dim); border: 1px solid rgba(255,111,97,0.3); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
+  .section-header h2 { font-size: 22px; font-weight: 700; margin: 0; }
+  h3 { font-size: 18px; font-weight: 700; margin: 28px 0 12px; }
+  h4 { font-size: 15px; font-weight: 700; color: var(--muted); margin: 18px 0 8px; }
+  .lead { font-size: 17px; color: var(--text); line-height: 1.8; margin: 0 0 16px; }
+  .lead .hi { color: var(--primary); font-weight: 700; }
+  p.narrative { font-size: 16px; color: var(--muted); line-height: 1.85; margin: 0 0 16px; }
+  p.narrative strong { color: var(--text); }
+
+  /* Cards */
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin: 20px 0; }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .card-value { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1.15; }
+  .card-sub { font-size: 13.5px; color: var(--sub); margin-top: 6px; line-height: 1.5; }
+  .card.green { border-color: rgba(63,185,80,0.25); background: linear-gradient(135deg, var(--bg2), var(--green-dim)); } .card.green .card-value { color: var(--green); }
+  .card.blue { border-color: rgba(88,166,255,0.25); background: linear-gradient(135deg, var(--bg2), var(--blue-dim)); } .card.blue .card-value { color: var(--blue); }
+  .card.teal { border-color: rgba(34,211,238,0.25); background: linear-gradient(135deg, var(--bg2), var(--teal-dim)); } .card.teal .card-value { color: var(--teal); }
+  .card.purple { border-color: rgba(188,140,255,0.25); background: linear-gradient(135deg, var(--bg2), var(--purple-dim)); } .card.purple .card-value { color: var(--purple); }
+
+  /* Pipeline stepper */
+  .pipeline { display: flex; align-items: stretch; justify-content: center; gap: 0; margin: 24px 0 8px; flex-wrap: wrap; }
+  .ps-step { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 14px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--border); min-width: 104px; text-align: center; }
+  .ps-step .ic { font-size: 24px; }
+  .ps-step .lb { font-size: 14px; font-weight: 700; color: var(--text); }
+  .ps-step .sb { font-size: 12px; color: var(--muted); }
+  .ps-step.blue { border-color: rgba(88,166,255,0.45); } .ps-step.blue .lb { color: var(--blue); }
+  .ps-step.yellow { border-color: rgba(210,153,34,0.45); } .ps-step.yellow .lb { color: var(--yellow); }
+  .ps-step.purple { border-color: rgba(188,140,255,0.45); } .ps-step.purple .lb { color: var(--purple); }
+  .ps-step.green { border-color: rgba(63,185,80,0.45); } .ps-step.green .lb { color: var(--green); }
+  .ps-step.teal { border-color: rgba(34,211,238,0.45); } .ps-step.teal .lb { color: var(--teal); }
+  .ps-step.primary { border-color: rgba(255,111,97,0.45); } .ps-step.primary .lb { color: var(--primary); }
+  .ps-arrow { display: flex; align-items: center; font-size: 20px; color: var(--border); padding: 0 4px; }
+
+  /* Chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .chip { display: inline-block; font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid; }
+  .chip.green { background: var(--green-dim); color: var(--green); border-color: rgba(63,185,80,0.35); }
+  .chip.blue { background: var(--blue-dim); color: var(--blue); border-color: rgba(88,166,255,0.35); }
+  .chip.yellow { background: var(--yellow-dim); color: var(--yellow); border-color: rgba(210,153,34,0.35); }
+  .chip.purple { background: var(--purple-dim); color: var(--purple); border-color: rgba(188,140,255,0.35); }
+  .chip.teal { background: var(--teal-dim); color: var(--teal); border-color: rgba(34,211,238,0.35); }
+  .chip.primary { background: var(--primary-dim); color: var(--primary); border-color: rgba(255,111,97,0.35); }
+  .chip.muted { background: var(--bg3); color: var(--muted); border-color: var(--border); }
+
+  /* Status */
+  .status-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin-bottom: 24px; }
+  .status-item { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 15px; color: var(--muted); }
+  .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.on { background: var(--green); box-shadow: 0 0 6px rgba(63,185,80,0.5); }
+  .status-dot.off { background: var(--red); }
+  .status-dot.warn { background: var(--yellow); }
+
+  /* Alert */
+  .alert { border-radius: 8px; padding: 16px 18px; margin: 16px 0; border: 1px solid; font-size: 15.5px; line-height: 1.65; }
+  .alert strong { display: block; font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+  .alert.warn { background: var(--yellow-dim); border-color: rgba(210,153,34,0.35); } .alert.warn strong { color: var(--yellow); }
+  .alert.err { background: var(--red-dim); border-color: rgba(248,81,73,0.35); } .alert.err strong { color: var(--red); }
+  .alert.ok { background: var(--green-dim); border-color: rgba(63,185,80,0.35); } .alert.ok strong { color: var(--green); }
+  .alert.info { background: var(--blue-dim); border-color: rgba(88,166,255,0.35); } .alert.info strong { color: var(--blue); }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; margin: 18px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th { background: var(--bg3); color: var(--muted); font-weight: 600; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+  code { font-family: 'SF Mono', 'Menlo', 'Monaco', monospace; font-size: 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; color: var(--teal); }
+
+  /* Toggle */
+  details { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin: 14px 0; overflow: hidden; }
+  details[open] { border-color: rgba(255,111,97,0.3); }
+  summary { cursor: pointer; padding: 14px 18px; font-size: 15px; font-weight: 700; color: var(--text); list-style: none; display: flex; align-items: center; gap: 8px; user-select: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: '▶'; font-size: 11px; color: var(--primary); transition: transform 0.15s; }
+  details[open] summary::before { transform: rotate(90deg); }
+  summary:hover { background: rgba(255,255,255,0.03); }
+  .toggle-body { padding: 0 18px 20px; }
+  .preview { background: #fff; border-radius: 12px; padding: 16px; margin-top: 8px; }
+
+  /* Mock components (preview, light bg) */
+  .mock-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); max-width: 380px; font-family: 'Pretendard', sans-serif; }
+  .mock-badges { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .mock-badge { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+  .mb-urgent { background: #f85149; color: #fff; }
+  .mb-region { background: #f1f3f5; color: #333; }
+  .mb-tag { background: #FFEDEA; color: #C4453B; }
+  .mock-title { font-size: 16px; font-weight: 700; color: #111; margin: 0 0 4px; }
+  .mock-salary { font-size: 16px; font-weight: 700; color: #C4453B; margin: 0 0 4px; }
+  .mock-hl { font-size: 14px; color: #666; margin: 0 0 8px; }
+  .mock-meta { display: flex; gap: 12px; font-size: 13px; color: #999; }
+  .mock-banner { width: 100%; aspect-ratio: 3/1; border-radius: 14px; background: linear-gradient(120deg, #FF6F61, #ffb199); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 18px; }
+  .mock-region-links { display: flex; flex-wrap: wrap; gap: 6px; max-width: 420px; }
+  .mrl { font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #f1f3f5; color: #333; }
+  .mrl.active { background: #FF6F61; color: #fff; }
+  .mock-detail { max-width: 380px; font-family: 'Pretendard', sans-serif; color: #222; }
+  .mock-sec { border: 1px solid #eee; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; font-size: 14px; }
+  .mock-sec b { color: #111; }
+
+  .footnote { font-size: 13.5px; color: var(--sub); margin-top: 8px; }
+  .est { display: inline-block; font-size: 11px; font-weight: 700; color: var(--yellow); background: var(--yellow-dim); border: 1px solid rgba(210,153,34,0.35); border-radius: 4px; padding: 0 6px; vertical-align: middle; }
+
+  @media (max-width: 720px) {
+    .toc ol { columns: 1; }
+    .cover { padding: 36px 24px; }
+    .cover h1 { font-size: 26px; }
+    .ps-arrow { transform: rotate(90deg); }
+    .pipeline { flex-direction: column; align-items: center; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== COVER ===== -->
+  <div class="cover">
+    <div class="cover-badge">기획설계 · v1.0 · 2026-06-04</div>
+    <h1>내 일 찾기 자동화 기획설계</h1>
+    <p class="subtitle">50·60대 맞춤 일자리를 매일 자동으로 모아 보여주는 시스템 — 전략 · 작동 · 앞으로</p>
+    <div class="cover-meta">
+      <div><div class="label">데이터 소스</div><div class="value">50plus.or.kr</div></div>
+      <div><div class="label">스케줄</div><div class="value">매일 3회 (12·16·20시)</div></div>
+      <div><div class="label">월 비용</div><div class="value">~$16 (추정)</div></div>
+      <div><div class="label">상태</div><div class="value ok">● 정상 가동</div></div>
+    </div>
+  </div>
+
+  <!-- ===== TOC ===== -->
+  <div class="toc">
+    <h2>목차</h2>
+    <ol>
+      <li><a href="#s1">한눈에 보기</a></li>
+      <li><a href="#s2">왜 일자리인가 (전략)</a></li>
+      <li><a href="#s3">어디서 가져오나 (수집)</a></li>
+      <li><a href="#s4">어떻게 고르나 (선별)</a></li>
+      <li><a href="#s5">AI가 하는 일 (가공)</a></li>
+      <li><a href="#s6">사용자가 보는 화면</a></li>
+      <li><a href="#s7">검색 노출 (SEO)</a></li>
+      <li><a href="#s8">언제 도나 (스케줄)</a></li>
+      <li><a href="#s9">비용</a></li>
+      <li><a href="#s10">모니터링 &amp; 리스크</a></li>
+      <li><a href="#s11">최근 개선</a></li>
+      <li><a href="#s12">앞으로 (로드맵)</a></li>
+    </ol>
+  </div>
+
+  <!-- ===== 1. 한눈에 보기 ===== -->
+  <div class="section" id="s1">
+    <div class="section-header"><div class="section-num">1</div><h2>한눈에 보기</h2></div>
+    <p class="lead">매일 정해진 시간에 <span class="hi">로봇이 일자리 사이트를 방문해 공고를 긁어오고</span>, AI가 우리 또래가 읽기 좋게 다듬어 사이트에 올립니다. 사람이 손댈 일은 없습니다.</p>
+
+    <div class="pipeline">
+      <div class="ps-step blue"><div class="ic">🔎</div><div class="lb">수집</div><div class="sb">50plus 크롤</div></div>
+      <div class="ps-arrow">→</div>
+      <div class="ps-step blue"><div class="ic">🧹</div><div class="lb">중복 제거</div><div class="sb">이미 올린 건 제외</div></div>
+      <div class="ps-arrow">→</div>
+      <div class="ps-step yellow"><div class="ic">⚖️</div><div class="lb">선별</div><div class="sb">등급+쿼터 8건</div></div>
+      <div class="ps-arrow">→</div>
+      <div class="ps-step purple"><div class="ic">🤖</div><div class="lb">AI 가공</div><div class="sb">제목·Q&amp;A</div></div>
+      <div class="ps-arrow">→</div>
+      <div class="ps-step green"><div class="ic">📝</div><div class="lb">게시</div><div class="sb">DB 저장</div></div>
+      <div class="ps-arrow">→</div>
+      <div class="ps-step teal"><div class="ic">🌐</div><div class="lb">검색 노출</div><div class="sb">구글/네이버</div></div>
+      <div class="ps-arrow">→</div>
+      <div class="ps-step primary"><div class="ic">💬</div><div class="lb">댓글 매칭</div><div class="sb">관련 글에 추천</div></div>
+    </div>
+
+    <div class="metric-grid">
+      <div class="card blue"><div class="card-title">1회 스캔</div><div class="card-value">최대 50건</div><div class="card-sub">목록에서 훑는 양</div></div>
+      <div class="card green"><div class="card-title">1회 게시</div><div class="card-value">최대 8건</div><div class="card-sub">엄선해서 올림</div></div>
+      <div class="card teal"><div class="card-title">지역 페이지</div><div class="card-value">17개</div><div class="card-sub">시도별 SEO 랜딩</div></div>
+      <div class="card purple"><div class="card-title">월 비용</div><div class="card-value">~$16<span class="est">추정</span></div><div class="card-sub">AI 가공 비용</div></div>
+    </div>
+  </div>
+
+  <!-- ===== 2. 왜 일자리인가 ===== -->
+  <div class="section" id="s2">
+    <div class="section-header"><div class="section-num">2</div><h2>왜 일자리인가 (전략)</h2></div>
+    <p class="lead">우리 또래(50·60대)에게 <span class="hi">"일자리"는 가장 절실한 관심사 중 하나</span>입니다. 재취업·부수입·소일거리 — 돈과 직결된 욕망(MONEY)이라 검색도 많이 하고, 자주 들어옵니다.</p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>축</th><th>효과</th></tr>
+        <tr><td><span class="chip green">수익</span></td><td>일자리 페이지에 AdSense 광고 + 쿠팡 배너 노출 → 광고 수익</td></tr>
+        <tr><td><span class="chip blue">유입</span></td><td>"OO지역 일자리"로 검색하고 들어온 신규 방문자 → 회원가입 유도</td></tr>
+        <tr><td><span class="chip teal">SEO</span></td><td>매일 새 공고 = 매일 새 페이지 → 검색엔진이 좋아하는 "신선한 콘텐츠"</td></tr>
+      </table>
+    </div>
+    <p class="narrative">기능 관리 대장 기준 <strong>F06(일자리 게시판)·A03(일자리봇)·A17(일자리 매처)</strong>로 등록돼 있으며, 충족 욕망은 <strong>MONEY</strong>, 타겟은 <strong>P4 페르소나</strong>입니다.</p>
+  </div>
+
+  <!-- ===== 3. 수집 ===== -->
+  <div class="section" id="s3">
+    <div class="section-header"><div class="section-num">3</div><h2>어디서 가져오나 (수집)</h2></div>
+    <p class="lead">서울시가 운영하는 <span class="hi">50플러스 포털(50plus.or.kr)</span>의 일자리 목록을 자동으로 읽어옵니다. 공식 공공 일자리 정보라 신뢰도가 높습니다.</p>
+    <h4>한 번 돌 때 가져오는 정보</h4>
+    <div class="chips">
+      <span class="chip blue">제목</span><span class="chip blue">급여</span><span class="chip blue">지역</span>
+      <span class="chip blue">회사명</span><span class="chip blue">근무시간</span><span class="chip blue">고용형태</span>
+      <span class="chip blue">담당업무(상세)</span><span class="chip blue">지원 링크</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>항목</th><th>내용</th></tr>
+        <tr><td>대상 URL</td><td><code>50plus.or.kr/externalList.do</code></td></tr>
+        <tr><td>1회 스캔 한도</td><td>목록 상단 <strong>최대 50건</strong></td></tr>
+        <tr><td>수집 방식</td><td>Playwright(자동 크롬)로 실제 페이지를 열어 DOM 파싱</td></tr>
+        <tr><td>중복 처리</td><td>공고 원본 URL(<code>sourceUrl</code>) 기준 — 이미 올린 건 건너뜀</td></tr>
+      </table>
+    </div>
+    <div class="alert info"><strong>워크넷 연계 공고는 상세 크롤 생략</strong>work24.go.kr 같은 외부 링크 공고는 목록 정보만 쓰고 상세 페이지는 긁지 않습니다(차단 회피).</div>
+  </div>
+
+  <!-- ===== 4. 선별 ===== -->
+  <div class="section" id="s4">
+    <div class="section-header"><div class="section-num">4</div><h2>어떻게 고르나 (선별)</h2></div>
+    <p class="lead">50건을 다 올리지 않습니다. <span class="hi">품질 등급(Tier) + 균형 정책(쿼터)</span>으로 매회 <strong>최대 8건</strong>만 엄선합니다.</p>
+
+    <h3>① 품질 등급 — Waterfall (위에서부터 우선)</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>등급</th><th>기준</th><th>예시</th></tr>
+        <tr><td><span class="chip primary">T1</span></td><td>대기업·공공기관</td><td>삼성·현대·은행·공단·병원·교육청</td></tr>
+        <tr><td><span class="chip yellow">T2</span></td><td>시니어 선호 직무</td><td>사무·행정·경비·상담·코디네이터</td></tr>
+        <tr><td><span class="chip blue">T3</span></td><td>광역시·제주 일반</td><td>지역 거점 공고</td></tr>
+        <tr><td><span class="chip muted">T4</span></td><td>나머지 안전망</td><td>그 외 모든 공고</td></tr>
+      </table>
+    </div>
+
+    <h3>② 균형 정책 — 쿼터</h3>
+    <div class="metric-grid">
+      <div class="card"><div class="card-title">여성 친화 직무</div><div class="card-value">50%</div><div class="card-sub">8건 중 최소 4건<br>(돌봄·요양·상담·판매 등)</div></div>
+      <div class="card"><div class="card-title">수도권 / 비수도권</div><div class="card-value">4 : 4</div><div class="card-sub">지역 편중 방지</div></div>
+    </div>
+    <p class="narrative">우나어 주 사용자가 여성이 많아 <strong>여성 친화 직무를 절반 이상</strong> 확보하고, 특정 지역에 쏠리지 않도록 수도권/비수도권을 균형 있게 섞습니다. 목표 8건이 안 차면 등급을 낮춰가며 채웁니다.</p>
+    <div class="alert info"><strong>운영 요약 예시</strong>매회 슬랙에 이렇게 보고됩니다 → <code>총 8건 | T1=1 T2=3 T3=2 T4=2 | 여성직무 4건(50%) | 수도권 4 / 비수도권 4</code></div>
+  </div>
+
+  <!-- ===== 5. AI 가공 ===== -->
+  <div class="section" id="s5">
+    <div class="section-header"><div class="section-num">5</div><h2>AI가 하는 일 (가공)</h2></div>
+    <p class="lead">긁어온 공고는 딱딱하고 어렵습니다. <span class="hi">AI(Claude Sonnet)가 우리 또래 눈높이로 다시 씁니다.</span> 단, 비용 아끼려고 꼭 필요한 4가지만 AI에 맡깁니다.</p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>AI가 만드는 것</th><th>설명</th></tr>
+        <tr><td><span class="chip purple">제목·부제</span></td><td>"[서울 강남구] 도서관 사서 보조" + "오전만 근무, 오후는 내 시간"</td></tr>
+        <tr><td><span class="chip purple">SEO 키워드 4개</span></td><td>검색 노출용 숨은 키워드</td></tr>
+        <tr><td><span class="chip purple">Pick 포인트 5개</span></td><td>"주말 완전 휴무 🗓️", "앉아서 하는 업무 💺" 등 매력 요약</td></tr>
+        <tr><td><span class="chip purple">Q&amp;A 3개</span></td><td>"무릎이 안 좋은데 오래 서있어야 하나요?" 같은 실제 궁금증</td></tr>
+      </table>
+    </div>
+    <h4>AI를 안 쓰는 부분 (규칙으로 처리 → 비용 절감)</h4>
+    <div class="chips"><span class="chip green">급여 정규화</span><span class="chip green">표시 태그(나이무관 등)</span></div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>항목</th><th>값</th></tr>
+        <tr><td>사용 모델</td><td><code>claude-sonnet-4-6</code> (고객이 보는 콘텐츠라 고품질)</td></tr>
+        <tr><td>호출 횟수</td><td>공고 1건당 4번 × 8건 × 3회/일 = <strong>약 96번/일</strong> <span class="est">추정</span></td></tr>
+        <tr><td>실패 대비</td><td>AI 결과가 불량(원본 복사·길이 초과)이면 <strong>규칙 기반 Fallback</strong>으로 자동 대체</td></tr>
+      </table>
+    </div>
+    <div class="alert ok"><strong>품질 가드</strong>"시니어 환영", "나이 무관" 같은 뻔한 표현은 프롬프트에서 명시적으로 금지 → 공고마다 구체적이고 다른 내용이 나오게 합니다.</div>
+  </div>
+
+  <!-- ===== 6. 사용자 화면 ===== -->
+  <div class="section" id="s6">
+    <div class="section-header"><div class="section-num">6</div><h2>사용자가 보는 화면</h2></div>
+    <p class="lead">아래 토글을 열면 <span class="hi">실제 화면 구조</span>를 미리볼 수 있습니다.</p>
+
+    <h3>① 목록 카드</h3>
+    <p class="narrative">한 줄에 <strong>지역 → 제목 → 급여(빨간 강조) → 한 줄 매력 → 조회·댓글·시간</strong> 순으로 보여줍니다. 이번에 <strong>지역 뱃지(📍)</strong>를 추가해 근무지를 바로 알 수 있게 했습니다.</p>
+    <details><summary>목록 카드 미리보기</summary>
+      <div class="toggle-body"><div class="preview">
+        <div class="mock-card">
+          <div class="mock-badges"><span class="mock-badge mb-urgent">급구</span><span class="mock-badge mb-region">📍 서울 동작구</span><span class="mock-badge mb-tag">나이무관</span></div>
+          <p class="mock-title">[서울 동작구] 도서관 사서 보조</p>
+          <p class="mock-salary">월 220만원</p>
+          <p class="mock-hl">오전만 근무, 오후는 내 시간</p>
+          <div class="mock-meta"><span>👁 152</span><span>💬 3</span><span>2시간 전</span></div>
+        </div>
+      </div></div>
+    </details>
+
+    <h3>② 상세 페이지 (8개 구역)</h3>
+    <p class="narrative">제목·부제 → 회사/주소 → Pick 포인트 → 근무조건 카드 → 상세 설명 → Q&amp;A → 지원 버튼 순으로, 맨 위엔 검색엔진용 숨은 키워드가 들어갑니다.</p>
+    <details><summary>상세 페이지 구조 미리보기</summary>
+      <div class="toggle-body"><div class="preview"><div class="mock-detail">
+        <div class="mock-sec"><b>제목·부제</b><br>[서울 동작구] 도서관 사서 보조<br><span style="color:#888">오전만 근무, 오후는 내 시간</span></div>
+        <div class="mock-sec"><b>📍 회사·주소</b> · ○○구립도서관 / 서울 동작구</div>
+        <div class="mock-sec"><b>✨ Pick 포인트</b> · 주말 완전 휴무 🗓️ · 앉아서 하는 업무 💺 · 점심 제공 🍽️</div>
+        <div class="mock-sec"><b>💼 근무조건</b> · 급여 월220 · 9~13시 · 주5일 · 계약직</div>
+        <div class="mock-sec"><b>❓ Q&amp;A</b> · "컴퓨터를 잘 못 쓰는데 괜찮을까요?" → "간단한 입력만, 교육 있어요"</div>
+        <div class="mock-sec" style="background:#FF6F61;color:#fff;text-align:center;border:none"><b style="color:#fff">지원하러 가기 →</b></div>
+      </div></div></div>
+    </details>
+
+    <h3>③ 지역 랜딩페이지 (신규)</h3>
+    <p class="narrative">"서울 일자리"처럼 <strong>시도별 전용 페이지 17개</strong>를 만들어 검색 유입을 늘렸습니다. 상단에 지역 바로가기 링크가 있습니다.</p>
+    <details><summary>지역 링크 + 페이지 미리보기</summary>
+      <div class="toggle-body"><div class="preview">
+        <div class="mock-region-links">
+          <span class="mrl active">서울</span><span class="mrl">부산</span><span class="mrl">대구</span><span class="mrl">인천</span><span class="mrl">경기</span><span class="mrl">강원</span><span class="mrl">…</span>
+        </div>
+        <p style="color:#111;font-weight:800;margin:14px 0 0">서울 50·60대 일자리</p>
+        <p style="color:#888;font-size:14px;margin:2px 0 0">서울 지역 나이 무관 채용공고 30건</p>
+      </div></div>
+    </details>
+
+    <h3>④ 상단 띠배너 (신규)</h3>
+    <p class="narrative">일자리 페이지 상단에 <strong>11개 배너 중 1개를 매일 자동 교체</strong>(일 단위 로테이션)해서 보여줍니다.</p>
+    <details><summary>띠배너 미리보기</summary>
+      <div class="toggle-body"><div class="preview">
+        <div class="mock-banner">다른 50대 여성들은 어떻게 해결할까요?</div>
+      </div></div>
+    </details>
+  </div>
+
+  <!-- ===== 7. SEO ===== -->
+  <div class="section" id="s7">
+    <div class="section-header"><div class="section-num">7</div><h2>검색 노출 (SEO)</h2></div>
+    <p class="lead">단순히 올리는 게 아니라 <span class="hi">구글·네이버가 잘 찾아가도록</span> 설계돼 있습니다. 특히 <strong>구글 일자리 검색(Google for Jobs)</strong>에 노출될 수 있습니다.</p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>장치</th><th>역할</th></tr>
+        <tr><td><span class="chip teal">JobPosting</span></td><td>구글이 "이건 채용공고"라고 인식하는 구조화 데이터 → 구글 일자리 검색 노출</td></tr>
+        <tr><td><span class="chip teal">BreadcrumbList</span></td><td>홈 &gt; 일자리 &gt; 상세 경로 표시</td></tr>
+        <tr><td><span class="chip teal">ItemList</span></td><td>지역 페이지의 공고 목록을 구조화</td></tr>
+        <tr><td><span class="chip teal">sitemap</span></td><td>일자리 목록·상세 전부 + 지역 17개를 검색엔진에 자동 제출 (우선순위 0.9/0.7)</td></tr>
+        <tr><td><span class="chip teal">OG 이미지</span></td><td>공고별 카카오/SNS 공유 시 썸네일 자동 생성</td></tr>
+      </table>
+    </div>
+    <div class="alert info"><strong>신선도가 핵심</strong>매일 새 공고가 올라가야 구글 일자리 검색이 계속 노출해 줍니다. (그래서 자동화 중단이 SEO에 치명적 — 10번 섹션 참고)</div>
+  </div>
+
+  <!-- ===== 8. 스케줄 ===== -->
+  <div class="section" id="s8">
+    <div class="section-header"><div class="section-num">8</div><h2>언제 도나 (스케줄)</h2></div>
+    <p class="lead">하루 <span class="hi">3번</span> 자동 실행됩니다. GitHub Actions(외부 자동화 서버)가 시간 맞춰 돌립니다.</p>
+    <div class="metric-grid">
+      <div class="card blue"><div class="card-title">아침</div><div class="card-value">12:09</div><div class="card-sub">KST (점심 직전)</div></div>
+      <div class="card blue"><div class="card-title">오후</div><div class="card-value">16:09</div><div class="card-sub">KST</div></div>
+      <div class="card blue"><div class="card-title">저녁</div><div class="card-value">20:09</div><div class="card-sub">KST</div></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>항목</th><th>값</th></tr>
+        <tr><td>실행 환경</td><td>GitHub Actions (Ubuntu) — 매번 새 가상 서버</td></tr>
+        <tr><td>cron 설정</td><td><code>9 3,7,11 * * *</code> (UTC) = 12·16·20시 KST</td></tr>
+        <tr><td>동시 실행 방지</td><td>이전 작업이 안 끝났으면 대기 (DB 중복 방지)</td></tr>
+        <tr><td>제한 시간</td><td>15분 내 완료 강제</td></tr>
+      </table>
+    </div>
+    <p class="footnote">※ 정각이 아닌 9분에 도는 이유: 전 세계 수많은 작업이 정각에 몰려 지연되는 걸 피하려고 일부러 9분 뒤로 설정.</p>
+  </div>
+
+  <!-- ===== 9. 비용 ===== -->
+  <div class="section" id="s9">
+    <div class="section-header"><div class="section-num">9</div><h2>비용</h2></div>
+    <p class="lead">일자리 자동화에 드는 돈은 <span class="hi">AI 사용료뿐</span>입니다(서버는 GitHub Actions 무료 범위). 월 <strong>약 $16</strong>로 추정됩니다. <span class="est">추정</span></p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>항목</th><th>모델</th><th>용도</th><th>월 추정</th></tr>
+        <tr><td>공고 가공</td><td><code>Sonnet 4.6</code></td><td>제목·Pick·Q&amp;A 생성</td><td>~$14.7</td></tr>
+        <tr><td>댓글 매칭</td><td><code>Haiku 4.5</code></td><td>관련 글 추천 댓글</td><td>~$1.3</td></tr>
+        <tr><td colspan="3"><strong>합계</strong></td><td><strong>~$16 / 월</strong></td></tr>
+      </table>
+    </div>
+    <p class="footnote">※ 토큰 단가·평균 사용량 기반 추정치입니다. 실제는 공고 길이·게시 건수에 따라 변동. 전체 에이전트 비용($55/월 추정) 중 일자리 몫.</p>
+    <h4>절감 옵션 (필요 시)</h4>
+    <div class="chips">
+      <span class="chip muted">게시 건수 8→4건 (약 50% 절감, 단 공급 감소)</span>
+      <span class="chip muted">스케줄 3회→2회 (약 33% 절감)</span>
+    </div>
+  </div>
+
+  <!-- ===== 10. 모니터링 & 리스크 ===== -->
+  <div class="section" id="s10">
+    <div class="section-header"><div class="section-num">10</div><h2>모니터링 &amp; 리스크</h2></div>
+    <p class="lead">매 실행 결과는 <span class="hi">슬랙으로 자동 보고</span>됩니다. 다만 "성공이라고 떴는데 실제론 안 된" 사고가 있었습니다.</p>
+
+    <div class="alert err">
+      <strong>⚠️ 과거 사고 — Silent Failure (2026-05-16 ~ 06-03, 약 3주)</strong>
+      코드 구조 변경(<code>process.exit</code> 추가) 때문에, 일자리봇이 "시작합니다"라고 대답만 하고 실제 크롤링 전에 프로세스가 종료됨. GitHub Actions에는 <strong>"성공"으로 표시</strong>돼서 3주간 아무도 몰랐고, 그동안 신규 공고 0건 → 검색 노출도 하락. <br><br>
+      <strong>→ 원인:</strong> 봇이 백그라운드로 일하는데 관리자가 즉시 종료 / <strong>복구:</strong> 끝까지 기다리도록 수정(<code>main() await</code>), 즉시 정상화 확인.
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>리스크</th><th>증상</th><th>대응</th></tr>
+        <tr><td>50plus 사이트 구조 변경</td><td>크롤링 실패(0건)</td><td>슬랙 경고 + 실패 로그 3일 보관</td></tr>
+        <tr><td>AI 비용 초과</td><td>월 $50 초과</td><td>CTO 에이전트 슬랙 경고</td></tr>
+        <tr><td>Silent Failure 재발</td><td>"성공"인데 0건</td><td>게시 건수까지 확인하는 점검 필요</td></tr>
+      </table>
+    </div>
+    <div class="alert info"><strong>점검 포인트</strong>"성공" 표시만 믿지 말고 슬랙 보고의 <strong>"게시 N건"</strong> 숫자를 확인하는 게 가장 확실합니다.</div>
+  </div>
+
+  <!-- ===== 11. 최근 개선 ===== -->
+  <div class="section" id="s11">
+    <div class="section-header"><div class="section-num">11</div><h2>최근 개선 (2026-06-04)</h2></div>
+    <div class="alert ok">
+      <strong>✅ 이번에 개선한 4가지</strong>
+      ① <strong>자동화 복구</strong> — 3주간 멈췄던 일자리봇 정상화 (실제 게시 확인)<br>
+      ② <strong>지역 SEO 17개</strong> — /jobs/region/시도 랜딩페이지 신설 + sitemap 등록<br>
+      ③ <strong>카드 디자인</strong> — 지역 뱃지 추가 + 아이콘 통일(이모지→SVG)<br>
+      ④ <strong>상단 띠배너</strong> — 11개 배너 일 단위 자동 로테이션
+    </div>
+  </div>
+
+  <!-- ===== 12. 로드맵 ===== -->
+  <div class="section" id="s12">
+    <div class="section-header"><div class="section-num">12</div><h2>앞으로 (로드맵)</h2></div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>우선순위</th><th>항목</th><th>효과</th></tr>
+        <tr><td><span class="chip primary">1</span></td><td>공고 마감일·고용형태 파싱 → JobPosting 보강(validThrough·employmentType)</td><td>구글 일자리 검색 노출 품질 ↑</td></tr>
+        <tr><td><span class="chip yellow">2</span></td><td>Silent Failure 자동 감지 (게시 0건 시 경고)</td><td>장기 중단 재발 방지</td></tr>
+        <tr><td><span class="chip blue">3</span></td><td>추가 공고 소스 (워크넷 등)</td><td>공급량·다양성 ↑</td></tr>
+        <tr><td><span class="chip teal">4</span></td><td>일자리 전담 비용 대시보드</td><td>비용 가시성</td></tr>
+        <tr><td><span class="chip muted">5</span></td><td>job-matcher 추천 정교화</td><td>댓글 품질 ↑</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <p class="footnote" style="text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid var(--border)">
+    내 일 찾기 자동화 기획설계 v1.0 · 우리 나이가 어때서 · 2026-06-04
+  </p>
+
+</div>
+</body>
+</html>
