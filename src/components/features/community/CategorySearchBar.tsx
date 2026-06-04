@@ -92,7 +92,7 @@ export default function CategorySearchBar() {
         {/* 검색 버튼 */}
         <button
           type="submit"
-          className="h-[52px] whitespace-nowrap rounded-xl bg-primary px-6 text-base font-bold text-white transition-colors hover:bg-primary/90"
+          className="h-[52px] whitespace-nowrap rounded-xl border border-primary/30 bg-primary/10 px-6 text-base font-bold text-primary-text transition-colors hover:bg-primary/15"
         >
           검색
         </button>

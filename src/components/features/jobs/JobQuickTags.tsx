@@ -43,7 +43,7 @@ export default function JobQuickTags() {
               className={cn(
                 'shrink-0 px-5 py-2.5 rounded-full border-2 text-body font-medium min-h-[52px] cursor-pointer transition-all',
                 isActive
-                  ? 'bg-primary text-white border-primary font-bold'
+                  ? 'bg-primary/10 text-primary-text border-primary font-bold'
                   : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary-text hover:bg-primary/5',
               )}
               onClick={() => toggleTag(tag)}

@@ -37,7 +37,7 @@ export default function BoardFilter({ categories, boardSlug }: BoardFilterProps)
             className={cn(
               'shrink-0 px-5 py-2.5 rounded-full border-2 text-body font-medium cursor-pointer transition-colors min-h-[52px] flex items-center whitespace-nowrap',
               currentCategory === cat
-                ? 'bg-primary text-white border-primary font-bold'
+                ? 'bg-primary/10 text-primary-text border-primary font-bold'
                 : 'bg-card text-foreground border-border hover:border-primary hover:text-primary-text hover:bg-muted',
               isPending && 'opacity-60',
             )}

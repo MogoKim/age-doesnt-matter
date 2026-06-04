@@ -34,7 +34,7 @@ export default function MagazineFilter({ currentCategory }: { currentCategory?: 
             className={cn(
               'shrink-0 px-5 py-2.5 rounded-full border-2 text-body font-medium transition-all min-h-[52px] whitespace-nowrap',
               active === cat
-                ? 'bg-primary text-white border-primary font-bold'
+                ? 'bg-primary/10 text-primary-text border-primary font-bold'
                 : 'bg-card text-foreground border-border hover:border-primary hover:text-primary-text',
             )}
           >

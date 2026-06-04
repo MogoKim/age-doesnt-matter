@@ -85,7 +85,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
             <div className="flex flex-wrap gap-2">
               <button
                 className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                  !region ? 'bg-primary text-white border-primary' : 'bg-card text-foreground border-border'
+                  !region ? 'bg-primary/10 text-primary-text border-primary' : 'bg-card text-foreground border-border'
                 }`}
                 onClick={() => setRegion('')}
               >
@@ -95,7 +95,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
                 <button
                   key={r}
                   className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                    region === r ? 'bg-primary text-white border-primary' : 'bg-card text-foreground border-border'
+                    region === r ? 'bg-primary/10 text-primary-text border-primary' : 'bg-card text-foreground border-border'
                   }`}
                   onClick={() => setRegion(region === r ? '' : r)}
                 >
@@ -113,7 +113,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
                 <button
                   key={t}
                   className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                    tags.includes(t) ? 'bg-primary text-white border-primary' : 'bg-card text-foreground border-border'
+                    tags.includes(t) ? 'bg-primary/10 text-primary-text border-primary' : 'bg-card text-foreground border-border'
                   }`}
                   onClick={() => toggleTag(t)}
                 >
@@ -131,7 +131,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
                 <button
                   key={c}
                   className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                    tags.includes(c) ? 'bg-primary text-white border-primary' : 'bg-card text-foreground border-border'
+                    tags.includes(c) ? 'bg-primary/10 text-primary-text border-primary' : 'bg-card text-foreground border-border'
                   }`}
                   onClick={() => toggleTag(c)}
                 >
@@ -144,7 +144,7 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
 
         <div className="sticky bottom-0 bg-card px-6 py-4 border-t border-border">
           <button
-            className="w-full h-[52px] bg-primary text-white rounded-xl font-bold text-body cursor-pointer hover:bg-primary/90 transition-colors"
+            className="w-full h-[52px] rounded-xl border border-primary/30 bg-primary/10 text-primary-text font-bold text-body cursor-pointer hover:bg-primary/15 transition-colors"
             onClick={handleApply}
           >
             필터 적용하기
