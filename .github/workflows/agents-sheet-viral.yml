@@ -5,7 +5,7 @@ on:
 
   # 5분마다 실행 (파동 타이밍: +1분/+3분/+6분/+10분 — 글 발행 후 최대 15분 내 전부 완료)
   schedule:
-    - cron: "3-59/5 * * * *" # cafe comment wave와 시작 분산
+    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *" # cafe comment wave와 시작 분산
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
