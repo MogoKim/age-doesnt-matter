@@ -4,6 +4,7 @@ import { notifySlack } from '../core/notifier.js'
 import { generateReply, getBotUser } from '../seed/generator.js'
 import { REPLY_CHAINS, getChainsForTrigger } from '../seed/reply-chains.js'
 import { safeBotLog } from '../core/safe-log.js'
+import { isBotEngagementEnabledBoard, BOARD_ENGAGEMENT_DISABLED_REASON } from '../core/bot-engagement-policy.js'
 
 /**
  * COO 에이전트 — 대댓글 체인 생성
@@ -99,12 +100,17 @@ export async function main() {
 
         const chain = chains[Math.floor(Math.random() * chains.length)]
 
-        // 게시글 제목 조회
+        // 게시글 제목 + boardType 조회
         const post = await prisma.post.findUnique({
           where: { id: comment.postId },
-          select: { title: true },
+          select: { title: true, boardType: true },
         })
         if (!post) continue
+        // MAGAZINE/JOB 등 봇 engagement 미운영 board → 대댓글 생성 skip (생성 직전 방어)
+        if (!isBotEngagementEnabledBoard(post.boardType)) {
+          console.log(`[COO] 대댓글 체인 skip (${BOARD_ENGAGEMENT_DISABLED_REASON}): post ${comment.postId} (${post.boardType})`)
+          continue
+        }
 
         // responders 순서대로 답글 생성 (maxDepth 제한)
         let currentParentId = comment.id

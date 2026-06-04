@@ -23,6 +23,7 @@ import { calculateTrendingScore } from '../core/trending.js'
 import { generateComment, generateReply, getBotUser } from './generator.js'
 import { prisma, disconnect } from '../core/db.js'
 import { safeBotLog } from '../core/safe-log.js'
+import { isBotEngagementEnabledBoard, BOARD_ENGAGEMENT_DISABLED_REASON } from '../core/bot-engagement-policy.js'
 
 const MAX_CHAIN_STEPS = 6  // 원글 포함 chainId당 최대 6개
 
@@ -149,10 +150,15 @@ export async function executePendingChainSteps(): Promise<void> {
     // 글이 아직 PUBLISHED 상태인지 확인 (삭제된 글에 댓글 금지)
     const post = await prisma.post.findFirst({
       where: { id: postId, status: 'PUBLISHED' },
-      select: { id: true, title: true, content: true },
+      select: { id: true, title: true, content: true, boardType: true },
     })
     if (!post) {
       console.log(`[Chain] ${chainId} — 글 없음/삭제됨 (postId=${postId}), 스킵`)
+      continue
+    }
+    // MAGAZINE/JOB 등 봇 engagement 미운영 board → 댓글/대댓글 step 전체 skip (생성 직전 방어)
+    if (!isBotEngagementEnabledBoard(post.boardType)) {
+      console.log(`[Chain] ${chainId} — ${BOARD_ENGAGEMENT_DISABLED_REASON} (${post.boardType}, postId=${postId}), 스킵`)
       continue
     }
 

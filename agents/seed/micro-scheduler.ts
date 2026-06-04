@@ -3,6 +3,7 @@ import { prisma, disconnect } from '../core/db.js'
 import { calculateTrendingScore } from '../core/trending.js'
 import { generateComment, generateReply, getBotUser } from './generator.js'
 import { COMPETITOR_KEYWORDS } from '../cafe/config.js'
+import { isBotEngagementEnabledBoard, BOARD_ENGAGEMENT_DISABLED_REASON } from '../core/bot-engagement-policy.js'
 
 /**
  * Micro Scheduler — 댓글/대댓글/좋아요 전용 (글쓰기 없음)
@@ -44,18 +45,15 @@ const MICRO_SCHEDULE: Record<string, MicroActivity[]> = {
   '12': [
     // 댓글
     { personaId: 'AO', type: 'comment', board: 'HUMOR', count: 3 },
-    { personaId: 'AS', type: 'comment', board: 'JOB', count: 3 },
     { personaId: 'C', type: 'comment', board: 'HUMOR', count: 3 },
     { personaId: 'AN', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'AX', type: 'comment', board: 'STORY', count: 2 },
     { personaId: 'AT', type: 'comment', board: 'STORY', count: 2 },
     // 대댓글
     { personaId: 'AO', type: 'reply', board: 'HUMOR', count: 2 },
-    { personaId: 'AS', type: 'reply', board: 'JOB', count: 1 },
     { personaId: 'C', type: 'reply', board: 'HUMOR', count: 2 },
     // 좋아요
     { personaId: 'AO', type: 'like', board: 'HUMOR', count: 3 },
-    { personaId: 'AS', type: 'like', board: 'JOB', count: 3 },
     { personaId: 'AT', type: 'like', board: 'STORY', count: 3 },
   ],
 
@@ -121,6 +119,8 @@ const MICRO_SCHEDULE: Record<string, MicroActivity[]> = {
 // ── 헬퍼 함수 ──
 
 async function getRandomPosts(board: string, limit: number) {
+  // MAGAZINE/JOB 등 봇 engagement 미운영 board → 대상 없음 (생성 직전 방어)
+  if (!isBotEngagementEnabledBoard(board)) return []
   return prisma.post.findMany({
     where: { boardType: board as 'STORY' | 'HUMOR' | 'JOB', status: 'PUBLISHED', source: 'BOT' },
     orderBy: { createdAt: 'desc' },
@@ -130,6 +130,7 @@ async function getRandomPosts(board: string, limit: number) {
 }
 
 async function getReplyTargets(board: string, limit: number) {
+  if (!isBotEngagementEnabledBoard(board)) return []
   const comments = await prisma.comment.findMany({
     where: {
       post: { boardType: board as 'STORY' | 'HUMOR' | 'JOB', status: 'PUBLISHED', source: 'BOT' },
@@ -150,6 +151,7 @@ async function getReplyTargets(board: string, limit: number) {
 }
 
 async function getLikeTargets(userId: string, board: string, limit: number) {
+  if (!isBotEngagementEnabledBoard(board)) return []
   const posts = await prisma.post.findMany({
     where: {
       boardType: board as 'STORY' | 'HUMOR' | 'JOB',
@@ -167,6 +169,13 @@ async function getLikeTargets(userId: string, board: string, limit: number) {
 // ── 활동 실행 (댓글/대댓글/좋아요만 — 글쓰기 없음) ──
 
 async function runMicroActivity(activity: MicroActivity): Promise<void> {
+  // MAGAZINE/JOB 등 봇 engagement 미운영 board → 댓글·대댓글·좋아요 전부 no-op (생성 직전 방어)
+  const activityBoard = activity.board ?? 'STORY'
+  if (!isBotEngagementEnabledBoard(activityBoard)) {
+    console.log(`[Micro] runMicroActivity skip (${BOARD_ENGAGEMENT_DISABLED_REASON}): ${activity.type} board=${activityBoard}`)
+    return
+  }
+
   const userId = await getBotUser(activity.personaId)
 
   if (activity.type === 'comment') {

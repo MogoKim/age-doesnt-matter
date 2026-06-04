@@ -7,6 +7,7 @@ import { loadTodayBrief, getPersonaQuota } from '../core/intelligence.js'
 import type { ControversyTopic } from '../core/intelligence.js'
 import { safeBotLog } from '../core/safe-log.js'
 import { COMPETITOR_KEYWORDS } from '../cafe/config.js'
+import { isBotEngagementEnabledBoard, BOARD_ENGAGEMENT_DISABLED_REASON } from '../core/bot-engagement-policy.js'
 /**
  * 시드 콘텐츠 스케줄러 (50명 — A~T + U~Z + AA~AI + AJ~AX)
  * 크롤링 08:30/12:30/20:40에 연동하여 시드봇 활동
@@ -84,17 +85,14 @@ const SCHEDULE: Record<string, Activity[]> = {
   // ── 점심 (크롤링 12:30 후) ──
   '13': [
     // 댓글 위주 — 부정/비판 캐릭터 활동 시작
-    { personaId: 'D', type: 'comment', board: 'JOB', count: 2 },     // 궁금한건못참아 질문
     { personaId: 'E', type: 'comment', board: 'STORY', count: 2 },   // 봄바람 공감
     { personaId: 'W', type: 'comment', board: 'STORY', count: 2 },   // 참나진짜 비판 (!)
     { personaId: 'X', type: 'comment', board: 'STORY', count: 2 },   // 걱정인형 걱정
     { personaId: 'N', type: 'comment', board: 'STORY', count: 2 },   // 알뜰맘 정보
     { personaId: 'AC', type: 'comment', board: 'STORY', count: 1 },  // 느긋이 느긋 반응
     // 좋아요
-    { personaId: 'D', type: 'like', board: 'JOB', count: 2 },
     { personaId: 'J', type: 'like', board: 'STORY', count: 2 },
     { personaId: 'X', type: 'like', board: 'STORY', count: 2 },
-    { personaId: 'AS', type: 'comment', board: 'JOB', count: 2 },   // 일자리헌터
     { personaId: 'AT', type: 'comment', board: 'STORY', count: 2 },  // 자격증도전
     { personaId: 'AN', type: 'comment', board: 'STORY', count: 2 },  // 약국단골
   ],
@@ -151,14 +149,12 @@ const SCHEDULE: Record<string, Activity[]> = {
   '17': [
     // 댓글 — 대량 반응
     { personaId: 'AO', type: 'comment', board: 'HUMOR', count: 3 }, // 웃음충전 유머
-    { personaId: 'AS', type: 'comment', board: 'JOB', count: 2 },   // 일자리헌터 정보
     { personaId: 'AW', type: 'comment', board: 'STORY', count: 2 }, // 손뜨개 느린 공감
     { personaId: 'AR', type: 'comment', board: 'STORY', count: 2 }, // 요즘세상 관찰
     { personaId: 'AU', type: 'comment', board: 'STORY', count: 2 }, // 체력왕 응원
     // 대댓글
     { personaId: 'AL', type: 'reply', board: 'STORY', count: 2 },
     { personaId: 'AO', type: 'reply', board: 'HUMOR', count: 2 },
-    { personaId: 'AS', type: 'reply', board: 'JOB', count: 1 },
     // 좋아요
     { personaId: 'AL', type: 'like', board: 'STORY', count: 3 },
     { personaId: 'AV', type: 'like', board: 'STORY', count: 3 },
@@ -261,6 +257,8 @@ const SCHEDULE: Record<string, Activity[]> = {
 }
 
 async function getRandomPosts(board: string, limit: number) {
+  // MAGAZINE/JOB 등 봇 engagement 미운영 board → 대상 없음 (생성 직전 방어)
+  if (!isBotEngagementEnabledBoard(board)) return []
   const baseWhere = {
     boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2',
     status: 'PUBLISHED' as const,
@@ -290,6 +288,7 @@ async function getRandomPosts(board: string, limit: number) {
 
 /** 댓글이 달린 글에서 대댓글 타겟 찾기 */
 async function getReplyTargets(board: string, limit: number) {
+  if (!isBotEngagementEnabledBoard(board)) return []
   const comments = await prisma.comment.findMany({
     where: {
       post: { boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2', status: 'PUBLISHED', source: 'BOT' },
@@ -311,6 +310,7 @@ async function getReplyTargets(board: string, limit: number) {
 
 /** 좋아요할 글 찾기 (아직 좋아요 안 한 글) */
 async function getLikeTargets(userId: string, board: string, limit: number) {
+  if (!isBotEngagementEnabledBoard(board)) return []
   const posts = await prisma.post.findMany({
     where: {
       boardType: board as 'STORY' | 'HUMOR' | 'JOB' | 'LIFE2',
@@ -326,6 +326,13 @@ async function getLikeTargets(userId: string, board: string, limit: number) {
 }
 
 async function runActivity(activity: Activity): Promise<void> {
+  // MAGAZINE/JOB 등 봇 engagement 미운영 board → 댓글·대댓글·좋아요 전부 no-op (생성 직전 방어)
+  const activityBoard = activity.board ?? 'STORY'
+  if (!isBotEngagementEnabledBoard(activityBoard)) {
+    console.log(`[Seed] runActivity skip (${BOARD_ENGAGEMENT_DISABLED_REASON}): ${activity.type} board=${activityBoard}`)
+    return
+  }
+
   const userId = await getBotUser(activity.personaId)
 
   if (activity.type === 'comment') {

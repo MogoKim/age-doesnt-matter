@@ -210,6 +210,12 @@
     <div class="section-header"><div class="section-num">1</div><h2>한눈에 보기</h2></div>
     <p class="lead">매일 정해진 시간에 <span class="hi">로봇이 일자리 사이트를 방문해 공고를 긁어오고</span>, AI가 우리 또래가 읽기 좋게 다듬어 사이트에 올립니다. 사람이 손댈 일은 없습니다.</p>
 
+    <div class="callout" style="border-left:4px solid var(--accent,#2563eb);background:rgba(37,99,235,0.06);padding:12px 16px;border-radius:8px;margin:12px 0;">
+      <strong>📌 댓글 정책 (2026-06-04~)</strong><br>
+      내 일 찾기(JOB)는 SEO·정보 제공용이다. <strong>봇 댓글·대댓글·좋아요는 운영하지 않는다.</strong> 사람 댓글(회원·비회원)만 허용한다.<br>
+      구현: <code>agents/core/bot-engagement-policy.ts</code>의 <code>isBotEngagementEnabledBoard()</code>가 STORY/HUMOR/LIFE2만 허용하고, 모든 봇 engagement 생성 직전(comment-activator / reply-chain-driver / controversy-chain / wave-processor / seed·micro-scheduler)에서 JOB을 차단한다. seed·micro 스케줄의 JOB 댓글/대댓글/좋아요 항목도 제거됨. (skip 사유: <code>board_engagement_disabled</code>)
+    </div>
+
     <div class="pipeline">
       <div class="ps-step blue"><div class="ic">🔎</div><div class="lb">수집</div><div class="sb">50plus 크롤</div></div>
       <div class="ps-arrow">→</div>

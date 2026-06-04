@@ -19,6 +19,7 @@ import { parseTopComments } from './types.js'
 import { replaceCafeReferences } from './curator-shared.js'
 import { refreshPostTrendingScore } from '../core/post-trending.js'
 import { computeUsableCount, removeEmoji } from './compute-usable-count.js'
+import { isBotEngagementEnabledBoard, BOARD_ENGAGEMENT_DISABLED_REASON } from '../core/bot-engagement-policy.js'
 
 // ── Kill Switch (v2-E) ──
 const V2_ENABLED = process.env.COMMENT_WAVE_V2_ENABLED === 'true'
@@ -671,6 +672,17 @@ export async function main() {
 
     for (const queue of pending) {
       try {
+        // MAGAZINE/JOB 등 봇 engagement 미운영 board → 큐 done 처리 후 skip
+        // (legacy/v2 공통 방어 + 레거시 큐가 남아도 wave 전체 done 처리해 반복 실행 방지)
+        const boardCheck = await prisma.post.findUnique({ where: { id: queue.postId }, select: { boardType: true } })
+        if (!isBotEngagementEnabledBoard(boardCheck?.boardType)) {
+          await prisma.commentWaveQueue.update({
+            where: { id: queue.id },
+            data: { wave1Done: true, wave2Done: true, wave3Done: true, wave4Done: true },
+          })
+          console.log(`[WaveProcessor] ${BOARD_ENGAGEMENT_DISABLED_REASON} (${boardCheck?.boardType}) — 큐 done 처리 후 skip (postId=${queue.postId})`)
+          continue
+        }
         if (isLegacyQueue(queue)) {
           await processWaveLegacy(queue, waveNum)
         } else {
@@ -750,9 +762,11 @@ export async function main() {
     }
     const post = await prisma.post.findUnique({
       where: { id: queue.postId },
-      select: { authorId: true },
+      select: { authorId: true, boardType: true },
     })
     if (!post?.authorId) continue
+    // MAGAZINE/JOB 등 봇 engagement 미운영 board → 대댓글 skip
+    if (!isBotEngagementEnabledBoard(post.boardType)) continue
     const alreadyReplied = await prisma.comment.findFirst({
       where: { postId: queue.postId, authorId: post.authorId, parentId: { not: null } },
     })

@@ -268,6 +268,15 @@
       <h2>왜 매거진인가 — 목적과 배경</h2>
     </div>
 
+    <div class="quote-card" style="border-left:4px solid var(--blue);">
+      <strong style="color:var(--blue);font-style:normal;">📌 댓글 정책 (2026-06-04~)</strong><br>
+      매거진(MAGAZINE)은 SEO·정보 제공용 콘텐츠다. <strong style="color:var(--text);font-style:normal;">봇 댓글·대댓글·좋아요(wave 포함)는 운영하지 않는다.</strong>
+      사람 댓글(회원·비회원)만 허용한다.<br>
+      구현: <code>agents/core/bot-engagement-policy.ts</code>의 <code>isBotEngagementEnabledBoard()</code>가 STORY/HUMOR/LIFE2만 허용하고,
+      모든 봇 engagement 생성 직전(comment-activator / reply-chain-driver / controversy-chain / wave-processor / seed·micro-scheduler)에서 MAGAZINE을 차단한다.
+      레거시 commentWaveQueue가 남아도 생성 직전 guard로 막힌다(skip 사유: <code>board_engagement_disabled</code>).
+    </div>
+
     <div class="quote-card">
       우리 서비스에 오는 50~60대 여성을 위해 <strong style="color:var(--blue);font-style:normal;">매일 신선한 정보를 자동으로 생산</strong>하는 시스템.<br>
       신뢰 구축 → 재방문 유도 → 회원 전환 → 광고 수익의 4단계 엔진이다.

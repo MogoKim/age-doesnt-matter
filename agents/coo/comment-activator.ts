@@ -4,17 +4,18 @@ import { notifySlack } from '../core/notifier.js'
 import { generateComment, getBotUser } from '../seed/generator.js'
 import { safeBotLog } from '../core/safe-log.js'
 import { refreshPostTrendingScore } from '../core/post-trending.js'
+import { isBotEngagementEnabledBoard, BOT_ENGAGEMENT_BOARD_TYPES, BOARD_ENGAGEMENT_DISABLED_REASON } from '../core/bot-engagement-policy.js'
 
 /**
  * COO 에이전트 — 댓글 활성화
  * 댓글 없는 글에 시드봇 댓글 배치 (보드 타입별 페르소나 매칭)
+ * MAGAZINE/JOB은 봇 engagement 미운영 → 대상에서 제외 (bot-engagement-policy)
  */
 
-/** 보드 타입별 적합한 페르소나 */
+/** 보드 타입별 적합한 페르소나 (봇 engagement 허용 board만 — JOB 제거됨) */
 const BOARD_PERSONAS: Record<string, string[]> = {
   STORY: ['E', 'AQ', 'AV'],
   HUMOR: ['C', 'AP', 'AO'],
-  JOB: ['AS', 'D'],
   LIFE2: ['AQ', 'E', 'AR'],
 }
 
@@ -42,6 +43,8 @@ export async function main() {
         status: 'PUBLISHED',
         commentCount: 0,
         source: 'BOT',
+        // MAGAZINE/JOB 등 봇 engagement 미운영 board 제외 (허용: STORY/HUMOR/LIFE2)
+        boardType: { in: [...BOT_ENGAGEMENT_BOARD_TYPES] },
         createdAt: { gte: twelveHoursAgo, lte: thirtyMinutesAgo },
       },
       select: {
@@ -63,8 +66,14 @@ export async function main() {
 
     for (const post of zeroPosts) {
       try {
-        // 보드 타입에 맞는 페르소나 2명 선택
-        const personas = BOARD_PERSONAS[post.boardType] ?? BOARD_PERSONAS['STORY']
+        // 생성 직전 재확인 (레거시/우회 유입 방어) — 차단 board면 skip, fallback 없음
+        if (!isBotEngagementEnabledBoard(post.boardType)) {
+          console.log(`[COO] 댓글 활성화 skip (${BOARD_ENGAGEMENT_DISABLED_REASON}): "${post.title}" (${post.boardType})`)
+          continue
+        }
+        // 보드 타입에 맞는 페르소나 2명 선택 (매핑 없으면 skip — STORY fallback 제거)
+        const personas = BOARD_PERSONAS[post.boardType]
+        if (!personas || personas.length === 0) continue
         const shuffled = [...personas].sort(() => Math.random() - 0.5)
         const selected = shuffled.slice(0, 2)
 
