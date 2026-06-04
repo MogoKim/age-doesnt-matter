@@ -49,7 +49,8 @@ interface OpsPrisma {
     findMany(args: {
       where: {
         executedAt: { gte: Date }
-        status?: { in: BotStatus[] }
+        status?: BotStatus | { in: BotStatus[] }
+        action?: { in: string[] }
       }
       orderBy: { executedAt: 'desc' }
       select: Record<keyof BotLogRow, true>
@@ -111,6 +112,16 @@ function minutesAgo(date: Date): number {
   return Math.max(0, Math.round((Date.now() - date.getTime()) / 60_000))
 }
 
+function scheduledAtFromDetails(details: string | null): Date | null {
+  if (!details) return null
+  try {
+    const parsed = JSON.parse(details) as { scheduledAt?: string }
+    return parsed.scheduledAt ? new Date(parsed.scheduledAt) : null
+  } catch {
+    return null
+  }
+}
+
 function table(headers: string[], rows: string[][]): string {
   if (rows.length === 0) return '_없음_'
   const sep = headers.map(() => '---')
@@ -124,8 +135,14 @@ function table(headers: string[], rows: string[][]): string {
 async function main() {
   const days = parseDays()
   const since = sinceFromDays(days)
+  const sheetWaveActions = [
+    'SHEET_ENGAGE_COMMENT_PENDING',
+    'SHEET_ENGAGE_LIKE_PENDING',
+    'SHEET_LIKE_WAVE_PENDING',
+    'SHEET_COMMENT_WAVE_PENDING',
+  ]
 
-  const [problemLogs, recentLogs, cafePosts, posts] = await Promise.all([
+  const [problemLogs, recentLogs, pendingSheetWaves, cafePosts, posts] = await Promise.all([
     db.botLog.findMany({
       where: {
         executedAt: { gte: since },
@@ -149,6 +166,28 @@ async function main() {
     }),
     db.botLog.findMany({
       where: { executedAt: { gte: since } },
+      orderBy: { executedAt: 'desc' },
+      select: {
+        id: true,
+        botType: true,
+        status: true,
+        action: true,
+        details: true,
+        collectedCount: true,
+        filteredCount: true,
+        publishedCount: true,
+        reviewPendingCount: true,
+        itemCount: true,
+        executionTimeMs: true,
+        executedAt: true,
+      },
+    }),
+    db.botLog.findMany({
+      where: {
+        executedAt: { gte: since },
+        action: { in: sheetWaveActions },
+        status: 'PENDING',
+      },
       orderBy: { executedAt: 'desc' },
       select: {
         id: true,
@@ -194,6 +233,18 @@ async function main() {
     const key = `${log.botType}:${log.action ?? '-'}`
     increment(logActions, key)
     if (!latestByAction.has(key)) latestByAction.set(key, log)
+  }
+
+  const pendingByAction = new Map<string, { total: number; due: number }>()
+  const now = Date.now()
+  for (const action of sheetWaveActions) pendingByAction.set(action, { total: 0, due: 0 })
+  for (const wave of pendingSheetWaves) {
+    if (!wave.action) continue
+    const bucket = pendingByAction.get(wave.action)
+    if (!bucket) continue
+    bucket.total++
+    const scheduledAt = scheduledAtFromDetails(wave.details)
+    if (scheduledAt && scheduledAt.getTime() <= now) bucket.due++
   }
 
   const cafeBySource = new Map<string, number>()
@@ -291,18 +342,27 @@ async function main() {
   console.log(table(
     ['파이프라인', '마지막 BotLog', '상태', '비고'],
     [
-      ['Cafe wave', 'CAFE_CRAWLER:WAVE_PROCESS', 20],
-      ['USER post wave', 'CAFE_CRAWLER:USER_POST_WAVE', 20],
-      ['Sheet scrape', 'CAFE_CRAWLER:SHEET_SCRAPE', 240],
-      ['Sheet comment wave', 'SEED:SHEET_COMMENT_WAVE_PENDING', 360],
-      ['Sheet engage comment', 'SEED:SHEET_ENGAGE_COMMENT_PENDING', 360],
-      ['Sheet engage like', 'SEED:SHEET_ENGAGE_LIKE_PENDING', 360],
-    ].map(([label, key, threshold]) => {
+      ['Cafe wave', 'CAFE_CRAWLER:WAVE_PROCESS', 20, ''],
+      ['USER post wave', 'CAFE_CRAWLER:USER_POST_WAVE', 20, ''],
+      ['Sheet scrape', 'CAFE_CRAWLER:SHEET_SCRAPE', 240, ''],
+      ['Sheet comment wave', 'SEED:SHEET_COMMENT_WAVE_PENDING', 360, 'SHEET_COMMENT_WAVE_PENDING'],
+      ['Sheet engage comment', 'SEED:SHEET_ENGAGE_COMMENT_PENDING', 360, 'SHEET_ENGAGE_COMMENT_PENDING'],
+      ['Sheet engage like', 'SEED:SHEET_ENGAGE_LIKE_PENDING', 360, 'SHEET_ENGAGE_LIKE_PENDING'],
+    ].map(([label, key, threshold, pendingAction]) => {
       const actionKey = String(key)
       const thresholdMinutes = Number(threshold)
+      const pending = pendingByAction.get(String(pendingAction))
       const latest = latestByAction.get(actionKey)
 
       if (!latest) {
+        if (pending && pending.due === 0) {
+          return [
+            String(label),
+            '없음',
+            'IDLE_OK',
+            `pending ${pending.total} / due ${pending.due}`,
+          ]
+        }
         return [
           String(label),
           '없음',
@@ -312,12 +372,17 @@ async function main() {
       }
 
       const age = minutesAgo(latest.executedAt)
-      const status = age <= thresholdMinutes ? 'OK' : 'STALE'
+      const status = age <= thresholdMinutes
+        ? 'OK'
+        : pending && pending.due === 0
+          ? 'IDLE_OK'
+          : 'STALE'
+      const pendingNote = pending ? ` / pending ${pending.total}, due ${pending.due}` : ''
       return [
         String(label),
         `${kst(latest.executedAt)} (${age}분 전)`,
         status,
-        `기준 ${thresholdMinutes}분 / 최근 상태 ${latest.status}`,
+        `기준 ${thresholdMinutes}분 / 최근 상태 ${latest.status}${pendingNote}`,
       ]
     }),
   ))
