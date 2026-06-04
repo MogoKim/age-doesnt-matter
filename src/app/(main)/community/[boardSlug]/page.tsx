@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { getBoardConfig } from '@/lib/queries/boards'
@@ -145,6 +145,8 @@ async function getInitialBoardData(boardType: BoardType) {
 
 export default async function BoardListPage({ params }: PageProps) {
   const { boardSlug } = await params
+  if (boardSlug === 'magazine') permanentRedirect('/magazine')
+  if (boardSlug === 'jobs') permanentRedirect('/jobs')
 
   const board = await getBoardForPage(boardSlug)
   if (!board) notFound()

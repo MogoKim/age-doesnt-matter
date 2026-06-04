@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { JOB_SIDO_LIST } from '@/lib/jobs-regions'
 
@@ -7,6 +8,20 @@ export const dynamic = 'force-dynamic'
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
 
 const BOARD_SLUGS = ['stories', 'humor', 'life2']
+
+const getSitemapPosts = unstable_cache(
+  () => prisma.post.findMany({
+    where: {
+      status: { in: ['PUBLISHED', 'SEO_ONLY'] },
+      boardType: { not: 'WEEKLY' },
+    },
+    select: { id: true, boardType: true, status: true, updatedAt: true, slug: true },
+    orderBy: { createdAt: 'desc' },
+    take: 5000,
+  }),
+  ['sitemap-posts'],
+  { revalidate: 3600, tags: ['sitemap-posts'] },
+)
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 정적 페이지
@@ -35,15 +50,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 게시글 동적 페이지
   // WEEKLY 제외: /community/weekly 라우트 없음 (LIFE2로 대체된 숨겨진 게시판) → 포함 시 404 대량 발생
-  const posts = await prisma.post.findMany({
-    where: {
-      status: { in: ['PUBLISHED', 'SEO_ONLY'] },
-      boardType: { not: 'WEEKLY' },
-    },
-    select: { id: true, boardType: true, status: true, updatedAt: true, slug: true },
-    orderBy: { createdAt: 'desc' },
-    take: 5000,
-  })
+  const posts = await getSitemapPosts()
 
   const BOARD_TYPE_TO_SLUG: Record<string, string> = {
     STORY: 'stories',
