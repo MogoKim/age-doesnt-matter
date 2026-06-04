@@ -11,7 +11,7 @@ test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우
   test('일자리 목록 → 상세 페이지 진입', async ({ page }) => {
     await page.goto('/jobs')
 
-    const firstJob = page.locator('a[href*="/jobs/"]').first()
+    const firstJob = page.locator('a[href^="/jobs/"]:not([href^="/jobs/region/"])').first()
     const hasJob = await firstJob.isVisible({ timeout: 5000 }).catch(() => false)
 
     if (hasJob) {
@@ -31,7 +31,7 @@ test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우
   test('일자리 상세 — 정보 카드 (근무지/급여 등)', async ({ page }) => {
     await page.goto('/jobs')
 
-    const firstJob = page.locator('a[href*="/jobs/"]').first()
+    const firstJob = page.locator('a[href^="/jobs/"]:not([href^="/jobs/region/"])').first()
     const hasJob = await firstJob.isVisible({ timeout: 5000 }).catch(() => false)
 
     if (hasJob) {
@@ -52,7 +52,7 @@ test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우
   test('일자리 상세 — 지원하기 버튼 존재', async ({ page }) => {
     await page.goto('/jobs')
 
-    const firstJob = page.locator('a[href*="/jobs/"]').first()
+    const firstJob = page.locator('a[href^="/jobs/"]:not([href^="/jobs/region/"])').first()
     const hasJob = await firstJob.isVisible({ timeout: 5000 }).catch(() => false)
 
     if (hasJob) {
@@ -74,7 +74,7 @@ test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우
   test('일자리 상세 — 댓글 섹션 존재', async ({ page }) => {
     await page.goto('/jobs')
 
-    const firstJob = page.locator('a[href*="/jobs/"]').first()
+    const firstJob = page.locator('a[href^="/jobs/"]:not([href^="/jobs/region/"])').first()
     const hasJob = await firstJob.isVisible({ timeout: 5000 }).catch(() => false)
 
     if (hasJob) {
@@ -87,7 +87,7 @@ test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우
   test('일자리 목록 — 콘텐츠 또는 빈 상태', async ({ page }) => {
     await page.goto('/jobs')
 
-    const hasJob = await page.locator('a[href*="/jobs/"]').first().isVisible({ timeout: 3000 }).catch(() => false)
+    const hasJob = await page.locator('a[href^="/jobs/"]:not([href^="/jobs/region/"])').first().isVisible({ timeout: 3000 }).catch(() => false)
     const hasEmpty = await page.getByText(/일자리가 없|아직/).first().isVisible({ timeout: 1000 }).catch(() => false)
     const hasBody = await page.locator('body').isVisible()
 
