@@ -1,5 +1,5 @@
 {
-  "_comment": "Antigravity IDE 멀티 AI 도메인 선언. 각 AI 세션 시작 시 본인 담당 도메인을 등록한다.",
+  "_comment": "참고용 문서 — 강제 규칙 아님. '이 파일 건드려도 되나?' 모를 때 확인하는 지도. 새 담당 파일 생기면 업데이트.",
   "_shared": [
     "agents/core/",
     "prisma/",
