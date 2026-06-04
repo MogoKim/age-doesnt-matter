@@ -62,10 +62,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const board = await getBoardConfig(boardSlug)
     if (!board) return { title: '게시판' }
+    const canonical = boardSlug === 'magazine'
+      ? '/magazine'
+      : boardSlug === 'jobs'
+        ? '/jobs'
+        : `/community/${boardSlug}`
+
     return {
       title: board.displayName,
       description: board.description,
-      alternates: { canonical: `/community/${boardSlug}` },
+      alternates: { canonical },
     }
   } catch {
     return { title: '게시판' }
