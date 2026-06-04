@@ -15,6 +15,7 @@ export const revalidate = 120
 export const dynamicParams = false // 화이트리스트 17개 시도만 허용, 나머지 404
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
+const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.includes('localhost:5432/dummy')
 
 export function generateStaticParams() {
   return JOB_SIDO_LIST.map((sido) => ({ sido }))
@@ -54,12 +55,21 @@ function ItemListJsonLd({ region, jobs }: { region: string; jobs: JobCardItem[] 
   )
 }
 
+async function getRegionJobs(region: string) {
+  try {
+    return await getJobListPage({ region, limit: 30 })
+  } catch (error) {
+    if (!CI_DUMMY_DB) throw error
+    return { jobs: [], total: 0 }
+  }
+}
+
 export default async function RegionJobsPage({ params }: PageProps) {
   const { sido } = await params
   const region = decodeURIComponent(sido)
   if (!isJobSido(region)) notFound()
 
-  const { jobs, total } = await getJobListPage({ region, limit: 30 })
+  const { jobs, total } = await getRegionJobs(region)
 
   return (
     <div className="min-h-screen bg-background">
