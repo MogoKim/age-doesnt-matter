@@ -21,6 +21,10 @@ try {
 function createPrismaClient() {
   const url = process.env.DATABASE_URL ?? process.env.DIRECT_URL ?? ''
   const u = new URL(url)
+  const configuredPoolMax = Number.parseInt(process.env.AGENT_DB_POOL_MAX ?? '1', 10)
+  const poolMax = Number.isFinite(configuredPoolMax) && configuredPoolMax > 0
+    ? configuredPoolMax
+    : 1
 
   const pool = new Pool({
     host: u.hostname,
@@ -31,7 +35,7 @@ function createPrismaClient() {
     // NOTE: Supabase PgBouncer uses self-signed cert → rejectUnauthorized:true fails
     // Full cert validation requires SUPABASE_SSL_CA secret (future improvement)
     ssl: { rejectUnauthorized: false },
-    max: 3,                    // GHA 프로세스당 최대 3개 (src/lib/prisma.ts 동일)
+    max: poolMax,              // GHA agent는 여러 workflow가 겹치므로 기본 1개로 연결 포화 방지
     idleTimeoutMillis: 10000,  // 유휴 연결 10초 후 해제
     connectionTimeoutMillis: 10000, // 연결 실패 10초 후 에러 발생
   })
