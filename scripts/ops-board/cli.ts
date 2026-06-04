@@ -59,7 +59,7 @@ async function main(): Promise<void> {
     console.log('')
   }
 
-  console.log('※ 1단계는 카드 5개 + DB 없는 git/CI/HTTP probe만. DB 검증 항목은 REVIEW로 멈춥니다(2단계 db-probe 예정).')
+  console.log('※ DB probe는 OPS_BOARD_READONLY_URL이 있을 때만 실행됩니다. 없으면 REVIEW/PENDING으로 남깁니다.')
   console.log('※ 시각적 실시간 칸반: npm run board → http://127.0.0.1:4321\n')
 }
 

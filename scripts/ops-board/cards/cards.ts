@@ -21,7 +21,7 @@ export interface Card {
 const SITE = 'https://age-doesnt-matter.com'
 const REVIEWED = '2026-06-04'
 
-/** git 커밋 + CI 공통 판정. DB proof가 없으므로 최대 REVIEW까지만(절대 DONE 아님). */
+/** git 커밋 + CI 공통 판정. DB proof가 없으면 최대 REVIEW까지만(절대 DONE 아님). */
 function decideGitCi(r: CardProbeResults, reviewLabel: string): { column: Column; label: string } {
   const g = r.git
   const c = r.ci
@@ -40,10 +40,39 @@ export const CARDS: Card[] = [
     title: 'MAGAZINE/JOB 봇 engagement 차단',
     track: 'T3-봇',
     baseCategory: '배포완료-적용확인',
-    probes: { git: 'e01ed14', ci: 'CI (Smart QA)' },
+    probes: {
+      git: 'e01ed14',
+      ci: 'CI (Smart QA)',
+      db: {
+        label: 'magazine/job bot engagement after block',
+        sql: `SELECT (
+          SELECT count(*)::int
+          FROM "Comment" c
+          JOIN "Post" p ON p.id = c."postId"
+          JOIN "User" u ON u.id = c."authorId"
+          WHERE p."boardType" IN ('MAGAZINE','JOB')
+            AND c."createdAt" > '2026-06-04T08:25:00Z'
+            AND (u.email LIKE '%@unao.bot%' OR u.email LIKE '%bot%')
+        ) + (
+          SELECT count(*)::int
+          FROM "Like" l
+          JOIN "Post" p ON p.id = l."postId"
+          JOIN "User" u ON u.id = l."userId"
+          WHERE p."boardType" IN ('MAGAZINE','JOB')
+            AND l."createdAt" > '2026-06-04T08:25:00Z'
+            AND (u.email LIKE '%@unao.bot%' OR u.email LIKE '%bot%')
+        ) AS n`,
+      },
+    },
     probeReviewedAt: REVIEWED,
-    note: 'DB proof(2단계): 차단 후 MAG/JOB BOT engagement 0건 확인 시 DONE',
-    decide: (r) => decideGitCi(r, 'DB 검증 대기 — MAG/JOB BOT 0건 확인 필요'),
+    note: '차단 후 MAG/JOB BOT 댓글·좋아요 0건이면 DONE. 사람 댓글은 정책상 허용.',
+    decide: (r) => {
+      const db = r.db
+      if (!db || db.ok === null) return decideGitCi(r, 'DB 검증 대기 — MAG/JOB BOT 0건 확인 필요')
+      const n = Number(db.detail.count ?? 0)
+      if (n === 0) return { column: 'DONE', label: '신규 MAG/JOB 봇 engagement 0건 — 차단 확인' }
+      return { column: 'DOING', label: `신규 MAG/JOB 봇 engagement ${n}건 — 즉시 확인 필요` }
+    },
   },
   {
     id: 'C-SHEET-V15',
@@ -64,19 +93,19 @@ export const CARDS: Card[] = [
       git: 'edc3f36',
       ci: 'CI (Smart QA)',
       db: {
-        label: 'scrap/share/comment_create',
-        sql: `SELECT count(*)::int AS n FROM "EventLog" WHERE "eventName" IN ('scrap','share','comment_create') AND "createdAt" > '2026-06-04T08:00:00Z'`,
+        label: 'post_cta_clicked/scrap/share/comment_create',
+        sql: `SELECT count(*)::int AS n FROM "EventLog" WHERE "eventName" IN ('post_cta_clicked','scrap','share','comment_create') AND "createdAt" > '2026-06-04T08:00:00Z'`,
       },
     },
     probeReviewedAt: REVIEWED,
-    note: 'edc3f36 배포(06-04 08:06 UTC) 이후 scrap/share/comment_create 실제 수집 여부',
+    note: 'edc3f36 배포(06-04 08:06 UTC) 이후 post_cta_clicked/scrap/share/comment_create 실제 수집 여부',
     decide: (r) => {
       const db = r.db
       // DB 미설정/판정불가 → git+ci 기준(REVIEW)
       if (!db || db.ok === null) return decideGitCi(r, 'EventLog 데이터 축적 대기 (DB 미연결)')
       const n = Number(db.detail.count ?? 0)
       if (n === 0) return { column: 'REVIEW', label: '⚠️ 측정 이벤트 0건 — 배포됐으나 미수집(점검 필요)' }
-      return { column: 'DONE', label: `측정 작동 확인 — scrap/share/comment ${n}건 수집` }
+      return { column: 'DONE', label: `측정 작동 확인 — CTA/scrap/share/comment ${n}건 수집` }
     },
   },
   {
@@ -109,10 +138,10 @@ export const CARDS: Card[] = [
       if (hs.length === 0) return { column: 'PENDING', label: 'http probe 없음' }
       const nullCount = hs.filter((h) => h.ok === null).length
       const failCount = hs.filter((h) => h.ok === false).length
-      const hitCount = hs.filter((h) => h.detail.cache === 'HIT').length
+      const edgeCacheCount = hs.filter((h) => h.detail.cache === 'HIT' || h.detail.cache === 'STALE').length
       if (nullCount === hs.length) return { column: 'PENDING', label: '⚠️ 전부 판정불가' }
       if (failCount > 0) return { column: 'DOING', label: `${failCount}개 페이지 비정상(4xx/5xx)` }
-      return { column: 'REVIEW', label: `${hs.length}개 정상 · 캐시 HIT ${hitCount}개` }
+      return { column: 'REVIEW', label: `${hs.length}개 정상 · CDN 캐시(HIT/STALE) ${edgeCacheCount}개` }
     },
   },
 ]
