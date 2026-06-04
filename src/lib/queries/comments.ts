@@ -23,7 +23,7 @@ function toUserSummary(user: {
 async function _getCommentsByPostId(
   postId: string,
   userId?: string,
-  sort: 'latest' | 'oldest' = 'latest',
+  sort: 'latest' | 'oldest' = 'oldest',
 ): Promise<CommentItem[]> {
   const orderBy = sort === 'latest' ? { createdAt: 'desc' as const } : { createdAt: 'asc' as const }
 

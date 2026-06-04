@@ -19,7 +19,7 @@ interface CommentSectionProps {
   currentUser?: { id: string; nickname: string; grade: Grade; profileImage: string | null }
 }
 
-function sortComments(comments: CommentItemType[], sort: 'latest' | 'likes'): CommentItemType[] {
+function sortComments(comments: CommentItemType[], sort: 'oldest' | 'likes'): CommentItemType[] {
   const sorted = [...comments]
   if (sort === 'likes') {
     sorted.sort((a, b) => b.likeCount - a.likeCount)
@@ -33,7 +33,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
   const resolvedIsLoggedIn = isLoggedIn ?? status === 'authenticated'
   const resolvedCurrentUser = currentUser ?? (status === 'authenticated' ? session.user : undefined)
   const [personalizedComments, setPersonalizedComments] = useState(comments)
-  const [sort, setSort] = useState<'latest' | 'likes'>('latest')
+  const [sort, setSort] = useState<'oldest' | 'likes'>('oldest')
 
   useEffect(() => {
     setPersonalizedComments(comments)
@@ -63,7 +63,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
 
   const [optimisticComments, addOptimisticComment] = useOptimistic(
     personalizedComments,
-    (state: CommentItemType[], newComment: CommentItemType) => [newComment, ...state],
+    (state: CommentItemType[], newComment: CommentItemType) => [...state, newComment],
   )
 
   const handleOptimisticAdd = useCallback((content: string) => {
@@ -135,11 +135,11 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
         <div className="flex gap-1">
           <button
             className={`px-4 py-2 rounded-full text-[17px] font-bold cursor-pointer min-h-[52px] transition-colors ${
-              sort === 'latest'
+              sort === 'oldest'
                 ? 'bg-primary/5 border border-primary text-primary-text'
                 : 'bg-none border border-transparent text-foreground hover:bg-background'
             }`}
-            onClick={() => setSort('latest')}
+            onClick={() => setSort('oldest')}
           >
             등록순
           </button>

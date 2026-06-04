@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl
     const postId = searchParams.get('postId')
-    const sort = (searchParams.get('sort') ?? 'latest') as 'latest' | 'oldest'
+    const sort = (searchParams.get('sort') ?? 'oldest') as 'latest' | 'oldest'
 
     if (!postId) {
       return NextResponse.json({ error: 'postId가 필요합니다' }, { status: 400 })
