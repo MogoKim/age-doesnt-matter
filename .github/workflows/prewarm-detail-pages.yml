@@ -1,0 +1,32 @@
+name: Prewarm Detail Pages
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: detail-page-prewarm
+  cancel-in-progress: true
+
+jobs:
+  prewarm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Prewarm top detail pages
+        env:
+          INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
+          SITE_URL: ${{ vars.NEXT_PUBLIC_APP_URL || secrets.NEXT_PUBLIC_APP_URL || secrets.NEXT_PUBLIC_BASE_URL }}
+        run: |
+          set -euo pipefail
+          SITE_URL="${SITE_URL:-https://age-doesnt-matter.com}"
+
+          curl -fsS \
+            --retry 2 \
+            --retry-delay 5 \
+            --max-time 150 \
+            -X POST "${SITE_URL%/}/api/internal/prewarm-details" \
+            -H "x-internal-token: ${INTERNAL_API_TOKEN}" \
+            -H "content-type: application/json" \
+            --data '{"communityLimit":8,"magazineLimit":4,"jobsLimit":4}'
