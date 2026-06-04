@@ -22,6 +22,11 @@ jobs:
           set -euo pipefail
           SITE_URL="${SITE_URL:-https://age-doesnt-matter.com}"
 
+          if [ -z "${INTERNAL_API_TOKEN:-}" ]; then
+            echo "::notice::INTERNAL_API_TOKEN is not configured in GitHub Secrets. Skipping detail prewarm."
+            exit 0
+          fi
+
           curl -fsS \
             --retry 2 \
             --retry-delay 5 \
