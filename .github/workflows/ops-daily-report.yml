@@ -1,0 +1,47 @@
+name: Ops — Daily Report
+
+on:
+  schedule:
+    # 매일 08:30 KST
+    - cron: "30 23 * * *"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "조회 기간(일)"
+        required: false
+        default: "1"
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  AGENT_DB_POOL_MAX: "1"
+
+concurrency:
+  group: ops-daily-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+      - name: Generate read-only ops report
+        run: |
+          DAYS="${{ github.event.inputs.days || '1' }}"
+          cd agents
+          npx tsx scripts/ops-daily-report.ts --days "$DAYS" > ../ops-daily-report.md
+      - name: Add report to job summary
+        run: cat ops-daily-report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ops-daily-report
+          path: ops-daily-report.md
+          retention-days: 14
