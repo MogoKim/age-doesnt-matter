@@ -151,6 +151,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         setIsScrapped(wasScrapped)
         toast(result.error, 'error')
       } else {
+        trackEvent('scrap', { content_type: 'post', content_id: postId, action: wasScrapped ? 'remove' : 'add' })
         toast(wasScrapped ? '스크랩을 취소했어요' : '스크랩했어요')
       }
     })
@@ -167,12 +168,14 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
     try {
       await shareToKakao({ title, description, url: window.location.pathname })
       gtmShare('kakao', 'post', postId)
+      trackEvent('share', { method: 'kakao', content_type: 'post', content_id: postId })
       void incrementShareCount(postId)
       setShowShareMenu(false)
     } catch (e) {
       if (e instanceof KakaoUnavailableError) {
         logKakaoShareDebug('TOAST_FALLBACK', { reason: e.reason, postId })
         gtmShare('copy_link', 'post', postId)
+        trackEvent('share', { method: 'copy_link', content_type: 'post', content_id: postId })
         void incrementShareCount(postId)
         toast('카카오톡을 열 수 없어 링크를 복사했어요', 'success')
         setShowShareMenu(false)
@@ -186,6 +189,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
     const ok = await copyShareLink(window.location.pathname)
     if (ok) {
       gtmShare('copy_link', 'post', postId)
+      trackEvent('share', { method: 'copy_link', content_type: 'post', content_id: postId })
       void incrementShareCount(postId)
     }
     toast(ok ? '링크가 복사되었어요' : '링크 복사에 실패했어요', ok ? 'success' : 'error')

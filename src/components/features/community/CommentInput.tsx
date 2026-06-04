@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { createComment } from '@/lib/actions/comments'
 import { gtmCommentCreate } from '@/lib/gtm'
+import { trackEvent } from '@/lib/track'
 import { setPushToastTrigger } from '@/components/common/PushPermissionToast'
 import { useToast } from '@/components/common/Toast'
 
@@ -31,6 +32,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
         setError(result.error)
       } else {
         gtmCommentCreate(parentId ? 'reply' : 'comment')
+        trackEvent('comment_create', { content_type: 'post', content_id: postId, comment_type: parentId ? 'reply' : 'comment' })
         window.dispatchEvent(new CustomEvent('pwa-prompt', { detail: 'engagement' }))
         setPushToastTrigger('comment')
         toast('댓글이 등록됐어요! 💬', 'success')
