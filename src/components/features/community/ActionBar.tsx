@@ -146,13 +146,19 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
     setIsScrapped(!wasScrapped)
 
     startTransition(async () => {
-      const result = await togglePostScrap(postId)
-      if (result.error) {
+      try {
+        const result = await togglePostScrap(postId)
+        if (result.error) {
+          setIsScrapped(wasScrapped)
+          toast(result.error, 'error')
+        } else {
+          trackEvent('scrap', { content_type: 'post', content_id: postId, action: wasScrapped ? 'remove' : 'add' })
+          toast(wasScrapped ? '스크랩을 취소했어요' : '스크랩했어요')
+        }
+      } catch {
+        // 서버 action throw 시에도 UI 원복 + 에러 토스트 (무증상 실패 방지)
         setIsScrapped(wasScrapped)
-        toast(result.error, 'error')
-      } else {
-        trackEvent('scrap', { content_type: 'post', content_id: postId, action: wasScrapped ? 'remove' : 'add' })
-        toast(wasScrapped ? '스크랩을 취소했어요' : '스크랩했어요')
+        toast('스크랩 처리에 실패했어요. 잠시 후 다시 시도해 주세요', 'error')
       }
     })
   }, [authChecked, resolvedIsLoggedIn, isPending, isScrapped, postId, toast])

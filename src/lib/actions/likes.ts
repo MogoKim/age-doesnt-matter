@@ -122,31 +122,42 @@ export async function togglePostScrap(postId: string): Promise<ToggleResult> {
 
   const userId = session.user.id
 
-  const existing = await prisma.scrap.findUnique({
-    where: { userId_postId: { userId, postId } },
-  })
+  try {
+    // 삭제/숨김된 글에는 스크랩 불가
+    const targetPost = await prisma.post.findUnique({
+      where: { id: postId, status: 'PUBLISHED' },
+      select: { id: true },
+    })
+    if (!targetPost) return { error: '존재하지 않는 게시글입니다' }
 
-  if (existing) {
-    await prisma.$transaction([
-      prisma.scrap.delete({ where: { id: existing.id } }),
-      prisma.post.update({
+    const existing = await prisma.scrap.findUnique({
+      where: { userId_postId: { userId, postId } },
+    })
+
+    if (existing) {
+      // 기존 스크랩이 있을 때만 decrement → scrapCount 음수 방지
+      await prisma.$transaction(async (tx) => {
+        await tx.scrap.delete({ where: { id: existing.id } })
+        await tx.post.update({
+          where: { id: postId },
+          data: { scrapCount: { decrement: 1 } },
+        })
+      })
+      return { toggled: false }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.scrap.create({ data: { userId, postId } })
+      await tx.post.update({
         where: { id: postId },
-        data: { scrapCount: { decrement: 1 } },
-      }),
-    ])
-    return { toggled: false }
+        data: { scrapCount: { increment: 1 } },
+      })
+    })
+    return { toggled: true }
+  } catch (error) {
+    console.error('[scrap] togglePostScrap failed', { postId, userId, error })
+    return { error: '스크랩 처리에 실패했어요. 잠시 후 다시 시도해 주세요' }
   }
-
-  await prisma.$transaction([
-    prisma.scrap.create({
-      data: { userId, postId },
-    }),
-    prisma.post.update({
-      where: { id: postId },
-      data: { scrapCount: { increment: 1 } },
-    }),
-  ])
-  return { toggled: true }
 }
 
 export async function toggleCommentLike(commentId: string): Promise<ToggleResult> {
