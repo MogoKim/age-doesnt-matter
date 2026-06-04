@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import PostWriteForm from '@/components/features/community/PostWriteForm'
 import { getAllBoardConfigs } from '@/lib/queries/boards'
-import { getDraftSummariesByUserId } from '@/lib/queries/drafts'
 
 export const metadata: Metadata = {
   title: '글쓰기',
@@ -25,8 +24,6 @@ export default async function WritePage({ searchParams }: PageProps) {
   ])
   if (!session?.user?.id) redirect('/login')
 
-  const drafts = await getDraftSummariesByUserId(session.user.id)
-
   const writableBoards = allBoards
     .filter((b) => WRITABLE_BOARD_TYPES.includes(b.boardType))
     .map((b) => ({
@@ -38,14 +35,6 @@ export default async function WritePage({ searchParams }: PageProps) {
   // URL searchParam이 유효하지 않은 slug일 경우 undefined로 처리
   const validSlugs = writableBoards.map((b) => b.slug)
   const validDefaultBoard = board && validSlugs.includes(board) ? board : undefined
-
-  const serverDrafts = drafts.map((d) => ({
-    id: d.id,
-    boardSlug: d.boardSlug,
-    category: d.category,
-    title: d.title,
-    updatedAt: d.updatedAt.toISOString(),
-  }))
 
   return (
     <>
@@ -59,7 +48,6 @@ export default async function WritePage({ searchParams }: PageProps) {
         <PostWriteForm
           defaultBoard={validDefaultBoard}
           boards={writableBoards}
-          serverDrafts={serverDrafts}
         />
       </div>
     </>

@@ -96,6 +96,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
   const [categorySheetOpen, setCategorySheetOpen] = useState(false)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const userEditedRef = useRef(false)
 
   const board = boards.find((b) => b.slug === selectedBoard)
   const categories = board?.categories.filter((c) => c !== '전체') || []
@@ -107,24 +108,24 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   const isContentValid = plainTextLength >= 10 || hasMedia
   const canSubmit = isTitleValid && isContentValid && selectedBoard && boards.length > 0
 
-  // localStorage 임시저장 복원 (수정 모드에서는 스킵)
+  // localStorage 임시저장 복원 (수정 모드에서는 스킵).
+  // 서버 임시저장 목록은 첫 화면 렌더 후 비동기로 가져와 글쓰기 진입 대기를 줄인다.
   useEffect(() => {
+    let cancelled = false
+
     if (isEditMode) {
       setDraftLoaded(true)
-      return
+      return () => { cancelled = true }
     }
-    // 서버 임시저장이 있으면 목록 표시
-    if (serverDrafts.length > 0) {
-      setShowDraftList(true)
-      setDraftLoaded(true)
-      return
-    }
+
     // 서버 임시저장이 없으면 localStorage에서 복원 (게시판별 키)
+    let hasLocalDraft = false
     try {
       const saved = localStorage.getItem(getDraftKey(selectedBoard))
       if (saved) {
         const draft = JSON.parse(saved) as { board?: string; category?: string; title?: string; content?: string }
         if (draft.title || draft.content) {
+          hasLocalDraft = true
           setSelectedCategory(draft.category || '')
           setTitle(draft.title || '')
           setContent(draft.content || '')
@@ -133,6 +134,21 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       }
     } catch { /* ignore */ }
     setDraftLoaded(true)
+
+    if (!hasLocalDraft) {
+      fetch('/api/drafts')
+        .then((res) => res.ok ? res.json() : null)
+        .then((data: { drafts?: ServerDraft[] } | null) => {
+          if (cancelled || userEditedRef.current) return
+          const nextDrafts = data?.drafts ?? []
+          if (nextDrafts.length === 0) return
+          setDrafts(nextDrafts)
+          setShowDraftList(true)
+        })
+        .catch(() => {})
+    }
+
+    return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -460,7 +476,10 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           className="w-full min-h-[60px] px-0 py-4 border-0 border-b-2 border-border text-[22px] font-bold text-foreground bg-transparent outline-none transition-colors focus:border-primary placeholder:text-muted-foreground placeholder:font-normal placeholder:text-[22px]"
           placeholder="제목을 입력해 주세요"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            userEditedRef.current = true
+            setTitle(e.target.value)
+          }}
           maxLength={40}
         />
         <div className={cn(
@@ -477,7 +496,10 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       <div className={cn('mb-6', isKeyboardOpen ? 'pb-[68px]' : 'pb-[124px]')}>
         <TipTapEditor
           content={content}
-          onChange={setContent}
+          onChange={(value) => {
+            userEditedRef.current = true
+            setContent(value)
+          }}
           placeholder="내용을 입력해 주세요"
           bottomBarHeight={isKeyboardOpen ? 0 : 56}
         />
