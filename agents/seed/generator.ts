@@ -727,6 +727,83 @@ function extractForbiddenAnchors(priorCommentTexts: string[], rawContent?: strin
   return [...wordAnchors, ...phraseAnchors].slice(0, 6)
 }
 
+// ── v1.5 source-only fact 차단 (제한된 카테고리만) ──────────────────────────────
+// 정책: 댓글에 쓸 수 있는 구체 사실은 제목+본문에 실제 등장한 것만 허용.
+// sourceComments(원본 사이트 댓글)에만 있고 본문에 없는 구체 사실은 차단.
+// 차단 카테고리: 숫자·금액·단위 / 학년 / 가족관계 / 브랜드(영문) / 접미 고유명사.
+// (본문에 없는 2글자+ 명사 전부 차단은 과차단 위험 → 하지 않음. 작품명 등 일반 한글 고유명사는 통과)
+
+// 가족관계어 — 모두 "선행어(우리/저희/제/내/울)가 있으면 봇 자기경험 → 허용",
+// 선행어 없이 등장하면(=글쓴이/원본 인물 지칭) 본문에 없을 때 차단.
+// 1글자 가족어('형','딸')는 "형편/딸기" 등 오탐 위험이 커서 제외.
+const FAMILY_TERMS = [
+  '동생', '둘째', '첫째', '막내', '셋째', '넷째', '남편', '아내', '와이프',
+  '시어머니', '시아버지', '시누이', '장모', '장인', '며느리', '사위',
+  '조카', '손주', '손녀', '손자', '외삼촌', '아들', '누나', '오빠', '언니',
+  '이모', '고모', '삼촌',
+] as const
+const EDU_TERMS = [
+  '유학', '학비', '수능', '재수', '삼수', '등록금', '과외', '대학원', '편입', '자퇴',
+] as const
+// 숫자+단위 (금액·체중·기간·나이 등)
+const NUM_UNIT_RE = /\d+\s*(?:억|천만|만\s*원|만원|원|키로|킬로|kg|㎏|개월|주\s*차|일\s*차|단계|살|세|명|평|년\s*차|회차)/g
+// 학년 (고1~고3, 중1~중3, 초1~초6)
+const AGE_GRADE_RE = /(?:고|중|초)\s*[1-6]/g
+// 접미 고유명사 (앞에 1~5글자 붙은 합성: 펫카페·반올림라이프 등). '카페'/'라이프' 단독은 매치 안 됨
+const SUFFIX_PROPER_RE = /[가-힣]{1,5}(?:라이프|카페|블로그|채널|클럽|아카데미|스튜디오)/g
+// 영문 브랜드/고유 (2글자+). 일반 약어는 화이트리스트로 제외
+const ENG_RE = /[A-Za-z]{2,}/g
+const ENG_WHITELIST = new Set(['ai', 'tv', 'pc', 'ott', 'sns', 'kg', 'cm', 'km', 'ml', 'app'])
+
+/** 댓글에서 "본문(allowedNorm)에 없는 구체 사실"을 추출. 비어있으면 위반 없음. */
+export function detectSourceOnlyFacts(comment: string, allowedNorm: string): string[] {
+  const viol: string[] = []
+  const push = (raw: string) => {
+    const n = raw.replace(/\s+/g, '').toLowerCase()
+    if (n && !allowedNorm.includes(n)) viol.push(raw.trim())
+  }
+  for (const m of comment.matchAll(NUM_UNIT_RE)) push(m[0])
+  for (const m of comment.matchAll(AGE_GRADE_RE)) push(m[0])
+  for (const m of comment.matchAll(SUFFIX_PROPER_RE)) push(m[0])
+  for (const m of comment.matchAll(ENG_RE)) {
+    if (!ENG_WHITELIST.has(m[0].toLowerCase())) push(m[0])
+  }
+  for (const t of EDU_TERMS) if (comment.includes(t)) push(t)
+  // 가족관계어: 선행어(우리/저희/제/내/울)가 있으면 봇 자기경험 → 허용, 없으면 차단
+  for (const t of FAMILY_TERMS) {
+    let i = comment.indexOf(t)
+    while (i !== -1) {
+      const before = comment.slice(Math.max(0, i - 3), i)
+      if (!/우리|저희|제|내|울/.test(before)) { push(t); break }
+      i = comment.indexOf(t, i + 1)
+    }
+  }
+  return [...new Set(viol)]
+}
+
+const ANCHOR_STOP = new Set([
+  '그래서', '하지만', '그런데', '그리고', '그러니까', '그러면', '이렇게', '그렇게',
+  '저렇게', '어떻게', '왜냐면', '정말로', '진짜로', '너무나', '조금씩', '우리가',
+  '저희가', '그러게', '그러다', '그치만', '아무튼', '어쨌든',
+])
+
+/** 본문+제목에서 anchor 후보(3~6자 한글 명사) 추출 */
+export function extractBodyAnchors(title: string, rawText: string): string[] {
+  const text = (title + ' ' + rawText.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ')
+  const tokens = text.match(/[가-힣]{3,6}/g) ?? []
+  return [...new Set(tokens)].filter(t => !ANCHOR_STOP.has(t))
+}
+
+/** 같은 글 내 같은 anchor 2회까지 허용, 3회째(prior 2회 이상 + 현재 포함) reject → 위반 anchor 반환 */
+export function violatesAnchorCap(comment: string, anchors: string[], priorTexts: string[]): string | null {
+  for (const a of anchors) {
+    if (!comment.includes(a)) continue
+    const priorCount = priorTexts.filter(t => t.includes(a)).length
+    if (priorCount >= 2) return a
+  }
+  return null
+}
+
 const LEAK_PHRASES = [
   '제가 구성된', '구성된 인물', '설정되어 있고', '참여하지 않기로',
   '댓글을 달기 어렵습니다', '제 캐릭터', '페르소나', '시스템 프롬프트',
@@ -785,6 +862,11 @@ export async function generateSheetViralComment(
 
 [페르소나] ${p.nickname} (${p.age}세, ${p.personality.slice(0, 80)})
 
+[사실 사용 규칙 — 매우 중요]
+- 댓글에 쓸 수 있는 구체 사실(숫자·금액·나이·학년·가족관계·브랜드·고유명사·지명)은 위 제목과 본문에 실제로 등장한 것만 허용합니다.
+- 참고 반응(아래)에만 있고 본문에 없는 구체 사실은 절대 인용하지 마세요. 참고 반응은 감정 톤·반응 방향만 참고합니다.
+- 본인 경험은 "우리 딸도~"처럼 일반적으로만 언급하고, 구체 수치(○○킬로, ○억, 고3 등)는 붙이지 마세요.
+
 [댓글 방향]
 ${WAVE_PROMPTS[waveType]}`
 
@@ -801,14 +883,14 @@ ${WAVE_PROMPTS[waveType]}`
 
     if (isImagePost) {
       // 이미지 글: 맥락 설명에 이미지/본문 단어 없음, 메타 발화 금지어 섹션 추가
-      commentContext = `\n\n아래 반응을 글의 맥락으로 삼아, 실제 게시물을 본 사람처럼 자연스럽게 댓글을 쓰세요.\n\n[이 관점으로 자연스럽게 반응]\n${focus}`
+      commentContext = `\n\n아래 반응을 글의 분위기로 삼아, 실제 게시물을 본 사람처럼 자연스럽게 댓글을 쓰세요.\n\n[글 분위기·감정 톤 참고용 (아래의 숫자·고유명사 등 구체 사실은 인용 금지, 톤만 참고)]\n${focus}`
       commentContext += `\n\n[절대 쓰지 말아야 할 표현]\n이미지라 내용을 못 봤지만 / 본문을 못 봤지만 / 사진을 볼 수 없어서 / 내용 올려주세요 / 이미지 게시글 / 내용을 못 봤다 / 본문 내용 올려주실 수 있나요`
     } else if (idx !== undefined && sourceComments.length > 1) {
       // 일반 글, sourceCommentIndex 지정: focus 1개만 (rest 완전 제거)
-      commentContext = `\n\n[이 관점으로 자연스럽게 반응]\n${focus}`
+      commentContext = `\n\n[글 분위기·감정 톤 참고용 (아래의 숫자·고유명사 등 구체 사실은 인용 금지, 톤만 참고)]\n${focus}`
     } else {
       // sourceComments 1개 또는 index 미지정
-      commentContext = `\n\n[참고할 반응]\n${focus}`
+      commentContext = `\n\n[글 분위기·감정 톤 참고용 (아래의 숫자·고유명사 등 구체 사실은 인용 금지, 톤만 참고)]\n${focus}`
     }
 
     if (forbiddenAnchors.length > 0) {
@@ -820,7 +902,12 @@ ${WAVE_PROMPTS[waveType]}`
     commentContext += `\n\n[이미 달린 댓글들 — 아래와 다른 각도·표현·감정으로 써라 (같은 뜻이라도 비슷한 표현 금지)]\n${options.priorCommentTexts.join('\n')}`
   }
 
-  const maxAttempts = 2
+  // v1.5: 출력 검증용 — 허용 텍스트(제목+본문)와 본문 anchor
+  const allowedNorm = (postTitle + ' ' + cleanText).replace(/\s+/g, '').toLowerCase()
+  const bodyAnchors = extractBodyAnchors(postTitle, cleanText)
+  const priorTexts = options?.priorCommentTexts ?? []
+
+  const maxAttempts = 3
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const response = await client.messages.create({
       model: process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6',
@@ -837,6 +924,20 @@ ${WAVE_PROMPTS[waveType]}`
 
     if (isLeakySheetComment(cleaned)) {
       console.warn(`  [SheetViral] leaky output 감지 — skip (attempt ${attempt + 1})`)
+      continue
+    }
+
+    // v1.5-A: source-only fact 차단 — 본문에 없는 구체 사실(숫자·금액·학년·가족관계·브랜드·고유명사) 인용 시 재생성
+    const sof = detectSourceOnlyFacts(cleaned, allowedNorm)
+    if (sof.length > 0) {
+      console.warn(`  [SheetViral] source-only fact 감지 [${sof.join(', ')}] — skip (attempt ${attempt + 1})`)
+      continue
+    }
+
+    // v1.5-B: 본문 anchor 반복 cap — 같은 글 내 같은 anchor 3회째 차단
+    const anchorHit = violatesAnchorCap(cleaned, bodyAnchors, priorTexts)
+    if (anchorHit) {
+      console.warn(`  [SheetViral] anchor 반복 cap "${anchorHit}" 3회째 — skip (attempt ${attempt + 1})`)
       continue
     }
 
