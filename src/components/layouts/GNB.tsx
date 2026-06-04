@@ -75,16 +75,16 @@ export default function GNB() {
         </div>
 
         <div className="relative shrink-0">
-          <form className="flex items-center w-44 h-12 px-4 bg-background border border-border rounded-lg text-caption text-foreground transition-colors focus-within:border-primary" onSubmit={handleSearch} role="search" aria-label="통합검색">
+          <form className="flex items-center w-52 min-h-[52px] pl-4 pr-0 bg-background border border-border rounded-lg text-caption text-foreground transition-colors focus-within:border-primary" onSubmit={handleSearch} role="search" aria-label="통합검색">
             <input
-              className="flex-1 border-none bg-transparent outline-none font-[inherit] text-inherit min-h-11 placeholder:text-muted-foreground"
+              className="min-w-0 flex-1 border-none bg-transparent outline-none font-[inherit] text-inherit min-h-[52px] placeholder:text-muted-foreground"
               type="search"
               placeholder="통합검색"
               value={query}
               onChange={(e) => { setQuery(e.target.value); setSearchError('') }}
               aria-label="통합검색"
             />
-            <button type="submit" className="icon-hover flex items-center justify-center w-[48px] h-[48px] rounded-lg text-muted-foreground hover:text-primary-text" aria-label="검색">
+            <button type="submit" className="icon-hover flex shrink-0 items-center justify-center w-[52px] h-[52px] rounded-lg text-muted-foreground hover:text-primary-text" aria-label="검색">
               <IconSearch size={18} />
             </button>
           </form>

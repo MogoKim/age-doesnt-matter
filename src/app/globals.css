@@ -24,8 +24,8 @@
     /* 메인 코랄: #FF6F61 — 브랜드 컬러 (배경/버튼 fill용) */
     --primary: 5 100% 69%;
     --primary-foreground: 0 0% 100%;
-    /* 접근성 고대비 코랄: #C4453B — 텍스트 전용 (WCAG AA 4.93:1) */
-    --primary-text: 5 55% 50%;
+    /* 접근성 고대비 코랄: #AD372F — 텍스트 전용 (soft surface 위에서도 WCAG AA 통과) */
+    --primary-text: 4 57% 43%;
 
     /* 보조: 은은한 뉴트럴 */
     --secondary: 220 14% 96%;
@@ -76,11 +76,11 @@
     --icon-job-bg:      #F3E5F5; --icon-job-stroke:      #6A1B9A;
 
     /* ── Category chip 전용 — GNB icon 동일 색 계열 ── */
-    --cat-life-bg: #FFF1E5;  --cat-life-text: #C7651E;
+    --cat-life-bg: #FFF1E5;  --cat-life-text: #8F4514;
     --cat-life2-bg: #E8F5E9; --cat-life2-text: #2E7D32;
-    --cat-laugh-bg: #FFF8E1; --cat-laugh-text: #A06900;
+    --cat-laugh-bg: #FFF8E1; --cat-laugh-text: #765000;
     --cat-mag-bg: #E3F2FD;   --cat-mag-text: #185FA5;
-    --cat-best-bg: #FFE9E5;  --cat-best-text: #C4453B;
+    --cat-best-bg: #FFE9E5;  --cat-best-text: #AD372F;
 
     /* ── 보조 surface (코랄 계열) ── */
     --surface-coral-soft: #FFE9E5; /* 태그·뱃지 배경 */
