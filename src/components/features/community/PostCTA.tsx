@@ -122,12 +122,12 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
   // 로그인 모바일 웹 앱 설치 CTA
   return (
     <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-3">
-      <p className="text-[17px] text-foreground leading-snug m-0">
+      <p className="text-body text-foreground leading-snug m-0">
         앱처럼 설치하면 더 빠르게 읽을 수 있어요
       </p>
       <button
         onClick={handleClick}
-        className="shrink-0 min-h-[52px] px-4 rounded-lg bg-primary text-white text-[15px] font-semibold"
+        className="shrink-0 min-h-[52px] px-4 rounded-lg bg-primary text-white text-caption font-semibold"
       >
         홈 화면에<br />추가하기
       </button>
