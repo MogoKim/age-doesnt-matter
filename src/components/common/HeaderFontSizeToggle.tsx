@@ -24,7 +24,7 @@ export default function HeaderFontSizeToggle() {
           'hover:bg-primary/5 hover:text-primary-text',
           open && 'bg-primary/10 text-primary-text'
         )}
-        aria-label="글씨 크기 조절"
+        aria-label="가+ 글씨 크기 조절"
         aria-expanded={open}
         aria-haspopup="true"
       >
