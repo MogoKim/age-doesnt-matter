@@ -5,6 +5,7 @@ import { CARDS, type Card, type Category } from '../cards/cards.js'
 import { gitCommitExists } from '../probes/git-probe.js'
 import { ciWorkflowHealth } from '../probes/ci-probe.js'
 import { httpStatus } from '../probes/http-probe.js'
+import { dbCount } from '../probes/db-probe.js'
 import type { CardProbeResults, Column, ProbeResult } from '../probes/probe.types.js'
 import { nowIso } from '../probes/probe.types.js'
 
@@ -51,6 +52,10 @@ async function runCard(card: Card): Promise<EvaluatedCard> {
     tasks.push(
       Promise.all(urls.map((u) => httpStatus(u))).then((res: ProbeResult[]) => void (probes.http = res)),
     )
+  }
+  if (card.probes.db) {
+    const { label, sql } = card.probes.db
+    tasks.push(dbCount(label, sql).then((res) => void (probes.db = res)))
   }
   await Promise.all(tasks)
 

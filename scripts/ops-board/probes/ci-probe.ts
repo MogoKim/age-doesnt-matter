@@ -7,6 +7,16 @@ import { nowIso } from './probe.types.js'
 const pexec = promisify(execFile)
 const TIMEOUT_MS = 15000
 
+// gh는 GH_TOKEN/GITHUB_TOKEN 환경변수를 키체인 인증보다 우선한다.
+// .env.local에 (Actions용 등) GITHUB_TOKEN이 있으면 dotenv가 주입해 gh가 그 토큰으로 실패할 수 있다.
+// → gh 호출 시 이 변수를 제거해 키체인 인증(gh auth login)을 쓰게 한다.
+function ghEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env }
+  delete env.GH_TOKEN
+  delete env.GITHUB_TOKEN
+  return env
+}
+
 interface GhRun {
   status: string // 'completed' | 'in_progress' | 'queued'
   conclusion: string | null // 'success' | 'failure' | 'cancelled' | null
@@ -27,7 +37,7 @@ export async function ciWorkflowHealth(workflowName: string, limit = 10): Promis
     const { stdout } = await pexec(
       'gh',
       ['run', 'list', '--workflow', workflowName, '--limit', String(limit), '--json', 'status,conclusion,createdAt'],
-      { timeout: TIMEOUT_MS },
+      { timeout: TIMEOUT_MS, env: ghEnv() },
     )
     const runs = JSON.parse(stdout) as GhRun[]
     if (!Array.isArray(runs) || runs.length === 0) {

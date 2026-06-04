@@ -11,7 +11,7 @@ export interface Card {
   track: 'T1-검증' | 'T2-성능' | 'T3-봇'
   /** probe가 전부 판정불가일 때의 기본 분류 */
   baseCategory: Category
-  probes: { git?: string; ci?: string; http?: string[] }
+  probes: { git?: string; ci?: string; http?: string[]; db?: { label: string; sql: string } }
   /** probe 가정이 마지막으로 사람에 의해 검증된 날(YYYY-MM-DD). 90일 초과 시 메타-stale 경고 */
   probeReviewedAt: string
   note?: string
@@ -60,10 +60,24 @@ export const CARDS: Card[] = [
     title: '고객 참여 이벤트 측정 v1',
     track: 'T1-검증',
     baseCategory: '배포완료-적용확인',
-    probes: { git: 'edc3f36', ci: 'CI (Smart QA)' },
+    probes: {
+      git: 'edc3f36',
+      ci: 'CI (Smart QA)',
+      db: {
+        label: 'scrap/share/comment_create',
+        sql: `SELECT count(*)::int AS n FROM "EventLog" WHERE "eventName" IN ('scrap','share','comment_create') AND "createdAt" > '2026-06-04T08:00:00Z'`,
+      },
+    },
     probeReviewedAt: REVIEWED,
-    note: 'DB proof(2단계): EventLog readPercent/scrap/share/comment_create 기록',
-    decide: (r) => decideGitCi(r, 'EventLog 데이터 축적 대기'),
+    note: 'edc3f36 배포(06-04 08:06 UTC) 이후 scrap/share/comment_create 실제 수집 여부',
+    decide: (r) => {
+      const db = r.db
+      // DB 미설정/판정불가 → git+ci 기준(REVIEW)
+      if (!db || db.ok === null) return decideGitCi(r, 'EventLog 데이터 축적 대기 (DB 미연결)')
+      const n = Number(db.detail.count ?? 0)
+      if (n === 0) return { column: 'REVIEW', label: '⚠️ 측정 이벤트 0건 — 배포됐으나 미수집(점검 필요)' }
+      return { column: 'DONE', label: `측정 작동 확인 — scrap/share/comment ${n}건 수집` }
+    },
   },
   {
     id: 'C-AGENT-DB-SATURATION',

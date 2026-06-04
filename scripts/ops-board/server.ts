@@ -1,6 +1,7 @@
 // 거울 보드 로컬 웹 서버 — SSE 실시간 칸반.
 // 보안: 반드시 127.0.0.1 only bind. SSE payload에는 토큰/env/DB URL이 들어가지 않는다
 // (probe.detail이 이미 화이트리스트된 값만 담는다).
+import './env.js'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'

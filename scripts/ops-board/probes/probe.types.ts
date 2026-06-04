@@ -20,7 +20,7 @@ export interface ProbeResult {
   error?: string
 }
 
-export type ProbeKind = 'git' | 'ci' | 'http'
+export type ProbeKind = 'git' | 'ci' | 'http' | 'db'
 
 export type Column = 'PENDING' | 'DOING' | 'REVIEW' | 'DONE'
 
@@ -28,6 +28,7 @@ export interface CardProbeResults {
   git?: ProbeResult
   ci?: ProbeResult
   http?: ProbeResult[]
+  db?: ProbeResult
 }
 
 export function nowIso(): string {

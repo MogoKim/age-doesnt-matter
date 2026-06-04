@@ -1,5 +1,6 @@
 // /board 슬래시커맨드가 호출하는 CLI.
 // 웹 칸반과 동일한 evaluateBoardState() 결과를 5분류 텍스트로 출력한다(단일 엔진 공유).
+import './env.js'
 import { evaluateBoardState, type EvaluatedCard } from './engine/evaluator.js'
 import type { Column } from './probes/probe.types.js'
 
@@ -25,6 +26,7 @@ function evidence(card: EvaluatedCard): string {
     const oks = card.probes.http.filter((h) => h.ok === true).length
     parts.push(`http:${oks}/${card.probes.http.length} ok`)
   }
+  if (card.probes.db) parts.push(`db:${card.probes.db.signal}`)
   return parts.join(' · ')
 }
 

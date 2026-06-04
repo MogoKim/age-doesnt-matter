@@ -14,6 +14,7 @@ function hasNullProbe(card) {
   if (p.git && p.git.ok === null) return true
   if (p.ci && p.ci.ok === null) return true
   if (p.http && p.http.some(function (h) { return h.ok === null })) return true
+  if (p.db && p.db.ok === null) return true
   return false
 }
 
@@ -26,6 +27,7 @@ function probeEvidence(card) {
     var oks = p.http.filter(function (h) { return h.ok === true }).length
     parts.push('http:' + oks + '/' + p.http.length)
   }
+  if (p.db) parts.push('db:' + p.db.signal)
   return parts.join(' · ')
 }
 
