@@ -85,6 +85,19 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
     })
   }, [resolvedCurrentUser, addOptimisticComment])
 
+  const handleGuestOptimisticAdd = useCallback((data: { content: string; guestNickname: string }) => {
+    addOptimisticComment({
+      id: `temp-guest-${Date.now()}`,
+      content: data.content,
+      author: null,
+      guestNickname: data.guestNickname,
+      isGuest: true,
+      likeCount: 0, isLiked: false, isDeleted: false, isOwn: false, canEdit: false,
+      createdAt: new Date().toISOString(),
+      replies: [],
+    })
+  }, [addOptimisticComment])
+
   const totalCount = optimisticComments.reduce(
     (sum, c) => sum + 1 + c.replies.length,
     0,
@@ -164,7 +177,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
       ) : resolvedIsLoggedIn ? (
         <CommentInput postId={postId} onOptimisticAdd={resolvedCurrentUser ? handleOptimisticAdd : undefined} />
       ) : (
-        <GuestCommentInput postId={postId} />
+        <GuestCommentInput postId={postId} onOptimisticAdd={handleGuestOptimisticAdd} />
       )}
     </section>
   )

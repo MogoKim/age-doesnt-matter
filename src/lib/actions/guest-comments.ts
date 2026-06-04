@@ -109,6 +109,9 @@ export async function createGuestComment({
   })().catch(() => {})
 
   revalidatePath('/community')
+  revalidatePath('/community/[boardSlug]/[postId]', 'page')
+  revalidateTag('comments-by-post')
+  revalidateTag('post-detail')
   revalidateTag('home-trending')
   return { id: comment.id }
 }
@@ -180,6 +183,9 @@ export async function editGuestComment(
   })
 
   revalidatePath('/community')
+  revalidatePath('/community/[boardSlug]/[postId]', 'page')
+  revalidateTag('comments-by-post')
+  revalidateTag('post-detail')
   return {}
 }
 
@@ -208,5 +214,8 @@ export async function deleteGuestComment(
   })
 
   revalidatePath('/community')
+  revalidatePath('/community/[boardSlug]/[postId]', 'page')
+  revalidateTag('comments-by-post')
+  revalidateTag('post-detail')
   return {}
 }
