@@ -5,7 +5,7 @@ on:
 
   # 5분마다 실행 (파동 타이밍: +1분/+3분/+6분/+10분 — 글 발행 후 최대 15분 내 전부 완료)
   schedule:
-    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *" # cafe comment wave와 시작 분산
+    - cron: "*/5 * * * *" # 실제 runner 호출은 아래에서 지연해 cafe comment wave와 DB 접속 피크 분산
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -46,6 +46,9 @@ jobs:
 
       - name: Run Sheet Viral Waves
         run: |
+          echo "[SheetViral] Waiting 150s before DB work to stagger high-frequency agent jobs."
+          sleep 150
+
           # cron-link-check: runner.ts seed viral-waves
           run_with_emaxconn_retry() {
             local label="$1"

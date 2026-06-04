@@ -2,7 +2,7 @@ name: "Agents — Cafe Comment Wave"
 
 on:
   schedule:
-    - cron: "1,6,11,16,21,26,31,36,41,46,51,56 * * * *" # 5분마다 — sheet viral wave와 시작 분산 (wave1 최대 5분 지연 허용)
+    - cron: "*/5 * * * *" # 5분마다 — 실제 runner 호출은 아래에서 지연해 DB 접속 피크 분산
   workflow_dispatch: {}
 
 # agents-cafe.yml과 독립 concurrency group → 큐레이션/크론 실행 중에도 독립 실행 (GHA 부하 시 지연 가능)
@@ -41,6 +41,9 @@ jobs:
 
       - name: Process Comment Waves (wave1~4 순차 댓글 게시)
         run: |
+          echo "[CafeWave] Waiting 45s before DB work to stagger high-frequency agent jobs."
+          sleep 45
+
           # cron-link-check: runner.ts cafe_crawler wave-process
           run_with_emaxconn_retry() {
             local label="$1"
