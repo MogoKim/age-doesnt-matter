@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  거울 보드(M05) 자동 상시 실행 — launchd user agent.
+  설치: cp 이 파일 → ~/Library/LaunchAgents/  후  launchctl load -w
+  효과: 맥 로그인 시 자동 실행. 크롬 즐겨찾기 http://127.0.0.1:4321 클릭만으로 항상 최신.
+  DB 미사용(1단계)이라 .env 불필요. gh는 맥 키체인 인증 사용.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.unaeo.opsboard</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin/npm</string>
+    <string>run</string>
+    <string>board</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/yanadoo/.nvm/versions/node/v24.14.0/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/unaeo-opsboard.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/unaeo-opsboard.err</string>
+</dict>
+</plist>

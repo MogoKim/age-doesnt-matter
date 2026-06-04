@@ -1,0 +1,18 @@
+{
+  "//": "거울 보드 전용 tsconfig — root tsconfig는 scripts/를 exclude하므로 board:check로 별도 검사",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["public"]
+}

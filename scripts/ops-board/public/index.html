@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>거울 보드 — 우나어 상황실</title>
+    <style>
+      :root {
+        --primary: #ff6f61;
+        --bg: #0f1117;
+        --panel: #1a1d27;
+        --card: #232733;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif;
+        font-size: 18px;
+      }
+      header {
+        padding: 16px 24px;
+        border-bottom: 1px solid #2a2f3a;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      header h1 { font-size: 22px; margin: 0; }
+      header h1 .dot { color: var(--primary); }
+      #status { font-size: 15px; color: var(--muted); }
+      #status .live { color: #22c55e; }
+      #status .down { color: #ef4444; }
+      main {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        padding: 16px 24px;
+      }
+      @media (max-width: 900px) { main { grid-template-columns: 1fr 1fr; } }
+      @media (max-width: 560px) { main { grid-template-columns: 1fr; } }
+      .col {
+        background: var(--panel);
+        border-radius: 12px;
+        padding: 12px;
+        min-height: 120px;
+      }
+      .col h2 {
+        font-size: 16px;
+        margin: 0 0 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .col h2 .badge {
+        width: 10px; height: 10px; border-radius: 50%;
+      }
+      .col h2 .count { color: var(--muted); font-size: 14px; }
+      .card {
+        background: var(--card);
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        border-left: 4px solid transparent;
+        transition: transform 0.2s ease;
+      }
+      .card.null { opacity: 0.6; border-left-color: var(--muted); }
+      .card .title { font-size: 16px; font-weight: 600; line-height: 1.35; }
+      .card .label { font-size: 15px; color: var(--text); margin-top: 6px; }
+      .card .meta { font-size: 13px; color: var(--muted); margin-top: 8px; }
+      .card .track {
+        display: inline-block; font-size: 12px; padding: 2px 8px;
+        border-radius: 6px; background: #2f3442; color: var(--muted); margin-top: 8px;
+      }
+      .card .stale { color: #fbbf24; font-size: 13px; margin-top: 6px; }
+      .empty { color: var(--muted); font-size: 14px; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1><span class="dot">●</span> 거울 보드 — 우나어 상황실</h1>
+      <div id="status">연결 중…</div>
+    </header>
+    <main id="board"></main>
+    <script src="/board.js"></script>
+  </body>
+</html>

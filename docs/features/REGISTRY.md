@@ -57,6 +57,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | `agents/cto/health*`, `agents/cto/error*`, `agents/cto/crawler-health*` | M01 |
 | `agents/qa/*` | M02 |
 | `agents/cafe/brief-monitor*` | M03 |
+| `scripts/ops-board*`, `.claude/commands/board*` | M05 |
 | `launchd/*`, `~/Library/LaunchAgents/com.unaeo*` | I01 |
 | `src/lib/rate-limit*`, `agents/core/rate*` | I02 |
 | `src/lib/r2*`, `agents/core/r2*` | I03 |
@@ -131,6 +132,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | M02 | QA 콘텐츠 감사 | `agents/qa/content-audit.ts` | GHA 매일 08:20 KST | INFRA | — | [M02](M02-qa-content-audit.md) | ACTIVE | 2026-04-27 |
 | M03 | 브리프 모니터 | `agents/cafe/brief-monitor.ts` | GHA 09:30 KST | INFRA | — | [M03](M03-brief-monitor.md) | ACTIVE | 2026-04-27 |
 | M04 | Threads 토큰 갱신 알림 | `agents/cmo/threads-token-check.ts` | GHA 수 10:00 KST | INFRA | — | [M04](M04-threads-token.md) | ACTIVE | 2026-04-27 |
+| M05 | 거울 보드 (운영 현황 실측 대시보드) | `scripts/ops-board/` + `.claude/commands/board.md` | 로컬 수동 (`npm run board` / `/board`) | INFRA | — | [M05](M05-ops-board.md) | ACTIVE | 2026-06-04 |
 
 ---
 
