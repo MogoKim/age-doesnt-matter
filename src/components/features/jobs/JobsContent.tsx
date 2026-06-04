@@ -170,9 +170,9 @@ function JobCard({ job }: { job: JobCardItem }) {
         </div>
       )}
 
-      <h3 className="text-body font-bold text-foreground m-0 mb-1">
+      <p className="text-body font-bold text-foreground m-0 mb-1">
         {job.title}
-      </h3>
+      </p>
 
       <p className="text-body text-primary-text m-0 mb-1 font-bold">
         {formatSalary(job.salary)}

@@ -163,9 +163,9 @@ function MagazineCard({ post, priority }: { post: PostSummary; priority?: boolea
         {post.category && (
           <span className="text-caption text-primary-text font-bold mb-1 block">{post.category}</span>
         )}
-        <h3 className="text-body font-bold text-foreground m-0 line-clamp-2 leading-snug">
+        <p className="text-body font-bold text-foreground m-0 line-clamp-2 leading-snug">
           {post.title}
-        </h3>
+        </p>
         {post.preview && (
           <p className="text-body text-muted-foreground mt-1 m-0 line-clamp-2">{post.preview}</p>
         )}
