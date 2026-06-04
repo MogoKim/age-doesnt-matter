@@ -6,6 +6,7 @@ import JobFilterButton from '@/components/features/jobs/JobFilterButton'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 import JobsContent from '@/components/features/jobs/JobsContent'
 import JobBanner from '@/components/features/jobs/JobBanner'
+import JobRegionLinks from '@/components/features/jobs/JobRegionLinks'
 
 const JobQuickTags = nextDynamic(() => import('@/components/features/jobs/JobQuickTags'))
 const JobSearchBar = nextDynamic(() => import('@/components/features/jobs/JobSearchBar'))
@@ -41,6 +42,9 @@ export default async function JobsPage() {
 
         {/* 상단 띠배너 (11개 중 일 단위 로테이션) */}
         <JobBanner />
+
+        {/* 지역별 일자리 내부링크 (SEO + 탐색) */}
+        <JobRegionLinks />
 
         {/* 검색 바 */}
         <Suspense fallback={null}>

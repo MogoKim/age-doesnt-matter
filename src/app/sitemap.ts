@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
+import { JOB_SIDO_LIST } from '@/lib/jobs-regions'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${BASE_URL}/community/${slug}`,
       changeFrequency: 'daily' as const,
       priority: 0.8,
+    })),
+    // 지역별 일자리 랜딩페이지 (롱테일 SEO)
+    ...JOB_SIDO_LIST.map((sido) => ({
+      url: `${BASE_URL}/jobs/region/${encodeURIComponent(sido)}`,
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
     })),
   ]
 
