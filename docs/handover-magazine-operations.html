@@ -209,7 +209,7 @@
 
   <!-- COVER -->
   <div class="cover">
-    <div class="cover-badge">Founder Briefing · 2026-05-15</div>
+    <div class="cover-badge">Founder Briefing · 2026-06-04</div>
     <h1>매거진 운영 딥다이브</h1>
     <p class="subtitle">왜 매거진을 만들었고, AI가 어떻게 글을 쓰고, 매일 어떤 일이 자동으로 일어나는가.<br>개발 코드 없이 사업/운영 관점에서만 설명한 문서다.</p>
     <div class="cover-meta">
@@ -234,9 +234,9 @@
 
   <!-- STATUS -->
   <div class="status-box">
-    <div class="sb-title">현재 시스템 상태 (2026-05-16)</div>
+    <div class="sb-title">현재 시스템 상태 (2026-06-04)</div>
     <div class="status-item"><div class="status-dot on"></div>launchd 자동 실행 — 12:00 + 14:00 KST</div>
-    <div class="status-item"><div class="status-dot on"></div>Gemini 이미지 생성 — 정상</div>
+    <div class="status-item"><div class="status-dot on"></div>ChatGPT 이미지 생성 (Playwright) — 정상</div>
     <div class="status-item"><div class="status-dot on"></div>Slack #매거진 알림 — 연결됨</div>
     <div class="status-item"><div class="status-dot on"></div>AdSense + 쿠팡 배너 — 활성</div>
     <div class="status-item"><div class="status-dot warn"></div>Coupang CPS API — 401 에러 (기사 발행 무영향)</div>
@@ -367,10 +367,10 @@
         </div>
       </div>
       <div class="pipeline-step">
-        <div class="pipeline-badge badge-ai">Gemini AI</div>
+        <div class="pipeline-badge badge-ai">ChatGPT AI</div>
         <div class="pipeline-content">
           <strong>이미지 자동 생성</strong>
-          기사 내용에서 장면 추출 → Gemini AI 이미지 생성 → Cloudflare R2 업로드. 실패 시 Unsplash 사진으로 폴백.
+          기사 내용에서 장면 추출 → ChatGPT(Playwright) 이미지 생성 → Cloudflare R2 업로드. FOOD·SCENE·OBJECT는 실패 시 Unsplash 폴백, PERSON_REAL(인물)은 폴백 없이 발행 보류.
         </div>
       </div>
       <div class="pipeline-step">
@@ -529,7 +529,7 @@
     </div>
 
     <div class="narrative">
-      <p>모든 기사에는 <strong>히어로 이미지가 반드시 필요</strong>하다. 이미지 없는 기사는 발행 자체가 보류된다. AI가 기사 내용에서 핵심 장면을 추출해 영어 설명으로 변환 → Gemini AI가 이미지 생성.</p>
+      <p>모든 기사에는 <strong>히어로 이미지가 반드시 필요</strong>하다. 이미지 없는 기사는 발행 자체가 보류된다. AI가 기사 내용에서 핵심 장면을 추출해 영어 설명으로 변환 → <strong>ChatGPT(Playwright)</strong>가 이미지 생성. (2026-06-04 Gemini 구독 종료로 ChatGPT 전환, API 미사용 = 추가 비용 0)</p>
     </div>
 
     <h3>이미지 생성 우선순위</h3>
@@ -537,21 +537,21 @@
       <div class="pipeline-step">
         <div class="pipeline-badge badge-ai">1순위</div>
         <div class="pipeline-content">
-          <strong>Gemini AI 생성</strong>
-          기사 내용 기반 영문 프롬프트로 Gemini에게 이미지 생성 요청. 한국 여성 4050 실사 또는 음식·풍경 사진. 성공 시 R2에 업로드.
+          <strong>ChatGPT AI 생성 (chatgpt.com Playwright)</strong>
+          기사 내용 기반 영문 프롬프트로 chatgpt.com에 접속해 이미지 생성. 한국 여성 4050 실사 또는 음식·풍경 사진. 성공 시 R2에 업로드(magazine-chatgpt-*.png). ChatGPT Pro 구독 세션 사용.
         </div>
       </div>
       <div class="pipeline-step">
         <div class="pipeline-badge badge-fallback">2순위 폴백</div>
         <div class="pipeline-content">
-          <strong>Unsplash 사진 라이브러리</strong>
-          Gemini 실패 시(네트워크 불안정, 세션 만료 등) Unsplash API에서 관련 사진 자동 검색+다운로드. 저작권 문제 없이 무료 사용 가능.
+          <strong>Unsplash 사진 라이브러리 (인물 제외)</strong>
+          ChatGPT 실패 시 FOOD·SCENE·OBJECT만 Unsplash API에서 관련 사진 자동 검색+다운로드. <strong>PERSON_REAL(인물)은 외국 스톡 방지를 위해 폴백 금지</strong> → 발행 보류로 넘어감.
         </div>
       </div>
       <div class="pipeline-step">
         <div class="pipeline-badge badge-fallback" style="background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,0.3);">발행 보류</div>
         <div class="pipeline-content">
-          <strong>두 방법 모두 실패 → 기사 발행 중단</strong>
+          <strong>인물 이미지 실패 → 기사 발행 중단</strong>
           히어로 이미지 없이는 발행하지 않는다. 다음 세션 때 같은 주제로 재시도하거나 다른 주제로 교체.
         </div>
       </div>
@@ -562,18 +562,23 @@
       <table>
         <thead><tr><th>타입</th><th>언제 사용</th><th>생성 방식</th></tr></thead>
         <tbody>
-          <tr><td><strong>PERSON_REAL</strong></td><td>건강·일상 주제 (메인 이미지)</td><td>Gemini 우선 → Unsplash 폴백</td></tr>
-          <tr><td><strong>FOOD_PHOTO</strong></td><td>요리·음식 주제</td><td>Gemini 우선 → Unsplash 폴백</td></tr>
-          <tr><td><strong>SCENE_PHOTO</strong></td><td>여행·풍경 주제</td><td>Gemini 우선 → Unsplash 폴백</td></tr>
-          <tr><td><strong>OBJECT_PHOTO</strong></td><td>상품·도구 소개</td><td>Gemini 우선 → Unsplash 폴백</td></tr>
+          <tr><td><strong>PERSON_REAL</strong></td><td>건강·일상 주제 (메인 이미지)</td><td><span class="chip teal">ChatGPT 전용</span> — 폴백 없음(실패 시 발행 보류)</td></tr>
+          <tr><td><strong>FOOD_PHOTO</strong></td><td>요리·음식 주제</td><td>ChatGPT 우선 → Unsplash 폴백</td></tr>
+          <tr><td><strong>SCENE_PHOTO</strong></td><td>여행·풍경 주제</td><td>ChatGPT 우선 → Unsplash 폴백</td></tr>
+          <tr><td><strong>OBJECT_PHOTO</strong></td><td>상품·도구 소개</td><td>ChatGPT 우선 → Unsplash 폴백</td></tr>
           <tr><td><strong>ILLUSTRATION</strong></td><td>개념·차트형 주제</td><td><span class="chip red">현재 비활성</span> — DALL-E 꺼둠</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="alert warn">
-      <strong>Gemini 세션이 만료되면</strong>
-      Gemini는 크롬 브라우저 자동화로 이미지를 생성한다. 크롬 로그인 세션이 만료되면 Gemini 생성에 실패하고 Unsplash로 폴백된다. 보통 수주~수개월에 한 번 발생. 로그인 갱신이 필요하면 Slack 알림으로 알 수 있다.
+      <strong>ChatGPT 세션이 만료되면</strong>
+      ChatGPT는 크롬 브라우저 자동화로 이미지를 생성한다(프로필 <code>~/.chrome-chatgpt-profile</code>). 로그인 여부는 <code>/api/auth/session</code>으로 정확히 감지하며, 미로그인 상태로 자동(launchd) 실행되면 무한 대기 대신 즉시 실패하고 Slack 알림이 온다. 보통 수주~수개월에 한 번 발생. 알림이 오면 chatgpt.com에 다시 로그인하면 된다.
+    </div>
+
+    <div class="alert ok">
+      <strong>SingletonLock 근본 해결 (2026-06-04)</strong>
+      과거 만성 장애의 진짜 원인은 "이미지 생성용 크롬을 열고 종료하지 않아" 고아 프로세스가 프로필 락(SingletonLock)을 점유 → 다음 실행이 전부 실패한 것이었다. 이제 매 실행 종료 시 브라우저를 반드시 닫아(모든 종료 경로) 락 누적을 차단한다.
     </div>
   </div>
 
@@ -735,14 +740,14 @@
         <h3>Slack #매거진 알림</h3>
         <div class="biz-lead">매일 14:00 KST 이후 오전+오후 합산 보고</div>
         <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:16px; font-size:13px; color:var(--muted); line-height:1.75; margin-bottom:16px;">
-          ✅ <strong style="color:var(--text);">5/15 매거진 2건 발행 완료</strong><br>
+          ✅ <strong style="color:var(--text);">6/4 매거진 2건 발행 완료</strong><br>
           ──────────────────────────<br>
           📰 <strong>오전 (12:00)</strong><br>
           · 베란다 상추 한 잎의 위로 — 요리<br>
-          &nbsp;&nbsp;이미지: Gemini × 2장<br>
+          &nbsp;&nbsp;이미지: AI 생성 × 2장<br>
           📰 <strong>저녁 (14:00)</strong><br>
           · 은퇴 직전 연금 재편 — 재테크<br>
-          &nbsp;&nbsp;이미지: Gemini × 2장
+          &nbsp;&nbsp;이미지: AI 생성 × 2장
         </div>
         <div class="alert ok" style="margin-top:8px;">
           <strong>알림이 없으면</strong>
@@ -859,7 +864,7 @@
   <!-- FOOTER -->
   <div class="footer">
     우나어(우리 나이가 어때서) — 매거진 운영 딥다이브 가이드 V1.0<br>
-    작성: Claude Sonnet 4.6 | 검토: 창업자 | 최종 수정: 2026-05-15<br>
+    작성: Claude Sonnet 4.6 | 갱신: Claude Opus 4.8 | 검토: 창업자 | 최종 수정: 2026-06-04<br>
     <span style="color:var(--blue);">age-doesnt-matter.com/magazine</span>
   </div>
 

@@ -1,6 +1,6 @@
 # 매거진 시스템 인수인계서
 
-> 작성일: 2026-05-12 | 대상: 우나어(age-doesnt-matter.com) 매거진 영역 전체
+> 작성일: 2026-05-12 | 갱신: 2026-06-04 (Gemini→ChatGPT 전환 반영) | 대상: 우나어(age-doesnt-matter.com) 매거진 영역 전체
 > 작성 기준: 코드 전수검사 + 실측 로그 분석
 
 ---
@@ -11,7 +11,7 @@
 
 ```
 launchd (macOS 스케줄러)
-  └─ 11:00 KST (morning 세션) → 기사 생성 + DB 발행
+  └─ 12:00 KST (morning 세션) → 기사 생성 + DB 발행
   └─ 14:00 KST (late 세션)   → 기사 생성 + Slack 알림
 ```
 
@@ -27,8 +27,8 @@ launchd (macOS 스케줄러)
 agents/cafe/
 ├── local-magazine-runner.ts      # launchd 진입점 (오케스트레이터)
 ├── magazine-generator.ts         # 기사 선정 + 생성 + DB 발행
-├── image-generator.ts            # 이미지 라우팅 (Gemini → Unsplash → null)
-├── local-image-generator.ts      # Playwright 기반 Gemini/ChatGPT 스크래퍼
+├── image-generator.ts            # 이미지 라우팅 (ChatGPT → Unsplash[PERSON_REAL 제외] → null)
+├── local-image-generator.ts      # Playwright 기반 ChatGPT(현행)/Gemini(레거시) 스크래퍼
 ├── sanitize.ts                   # HTML 새니타이제이션 + 이미지 프록시
 └── preload-eagain-retry.cjs      # EAGAIN 에러 방어 (Node.js 파일시스템)
 
@@ -39,7 +39,7 @@ scripts/
 └── launchd-alert.sh              # launchd 실패 시 Slack 알림 래퍼
 
 ~/Library/LaunchAgents/
-├── com.unaeo.magazine-morning.plist   # 11:00 KST (ACTIVE)
+├── com.unaeo.magazine-morning.plist   # 12:00 KST (ACTIVE)
 ├── com.unaeo.magazine-late.plist      # 14:00 KST (ACTIVE)
 └── com.unaeo.magazine-afternoon.plist # INACTIVE (비활성 보존)
 
@@ -80,8 +80,9 @@ launchd 트리거
 
 **필터 조건:**
 - score ≥ 7점
-- isSimilarTitle() 통과 (최근 30일 제목 첫 3단어 중 2개 미만 겹침)
+- isSimilarTitle() 통과 (최근 **7일** 제목 첫 3단어 중 2개 미만 겹침)
 - 일일 3편 한도 미초과 (`prisma.post.count` 기준)
+- 본문 **1500자 이상** (미달 시 발행 건너뜀 — magazine-generator.ts:608)
 
 ### 3-3. 기사 생성 모델
 
@@ -93,20 +94,23 @@ launchd 트리거
 ### 3-4. 이미지 생성 흐름
 
 ```
-IMAGE_GENERATOR=gemini (plist 환경변수)
+IMAGE_GENERATOR=chatgpt (plist 환경변수, 현행)
   → local-image-generator.ts
-    → gemini-scraper.js (Playwright, Chrome 프로필: ~/.chrome-gemini-profile)
-      → 성공: buffer → R2 업로드 → r2.dev URL 반환
+    → chatgpt-scraper.js (Playwright, Chrome 프로필: ~/.chrome-chatgpt-profile)
+      → 로그인 감지: /api/auth/session (DOM 버튼 아님). 미로그인+비TTY(launchd)면 즉시 throw → Slack 알림
+      → 성공: buffer → R2 업로드(magazine-chatgpt-*.png) → r2.dev URL 반환
       → 실패/타임아웃(120초): null 반환
-  → Unsplash 폴백 (PERSON_REAL, FOOD_PHOTO, SCENE_PHOTO, OBJECT_PHOTO만)
+  → Unsplash 폴백 (FOOD_PHOTO, SCENE_PHOTO, OBJECT_PHOTO만 — UNSPLASH_ELIGIBLE)
     → fetchUnsplashPhoto() → R2 업로드 (2회 재시도) → r2.dev URL
     → 실패: null
-  → null 반환 → 히어로 이미지 없음 → 기사 발행 보류
+  → PERSON_REAL은 폴백 없음 → null 반환 → 히어로 이미지 없음 → 기사 발행 보류
+  → [SingletonLock 근본해결] 실행 종료 시 local-magazine-runner.ts closeImageBrowser()로
+    브라우저 종료 (4개 종료 경로 모두) → 고아 Chrome/락 누적 차단
 ```
 
 **이미지 타입별 처리:**
-- `PERSON_REAL`: 한국 여성 4050 실사 프롬프트
-- `FOOD_PHOTO / SCENE_PHOTO / OBJECT_PHOTO`: 카테고리별 프롬프트
+- `PERSON_REAL`: 한국 여성 4050 실사 프롬프트 — **ChatGPT 전용, Unsplash 폴백 금지** (외국 스톡 방지, 실패 시 발행 보류)
+- `FOOD_PHOTO / SCENE_PHOTO / OBJECT_PHOTO`: 카테고리별 프롬프트 — ChatGPT 우선 → Unsplash 폴백
 - `ILLUSTRATION`: local-image-generator에서 null 반환 (DALL-E 폴백 비활성화)
 
 ### 3-5. DB 발행 (publishMagazine)
@@ -134,7 +138,7 @@ prisma.post.create({
 
 | plist 파일 | 실행 시각 | SESSION_TIME | 역할 |
 |-----------|---------|------------|------|
-| magazine-morning | 11:00 KST | morning | 기사 생성 + JSON 저장, Slack 없음 |
+| magazine-morning | 12:00 KST | morning | 기사 생성 + JSON 저장, Slack 없음 |
 | magazine-late | 14:00 KST | late (→ evening) | 기사 생성 + Slack 통합 알림 + JSON 삭제 |
 | magazine-afternoon | **비활성** | — | 파일 보존, launchctl 미등록 |
 
@@ -148,7 +152,7 @@ EnvironmentVariables:
   PATH: .../node_modules/.bin:/...nvm.../bin:/usr/local/bin:...
   HOME: /Users/yanadoo
   SESSION_TIME: morning | late
-  IMAGE_GENERATOR: gemini
+  IMAGE_GENERATOR: chatgpt
   NODE_OPTIONS: --require .../preload-eagain-retry.cjs
 
 StandardOutPath: /Users/yanadoo/Documents/New_Claude_agenotmatter/logs/magazine-{name}.log
@@ -177,7 +181,7 @@ launchctl load ~/Library/LaunchAgents/com.unaeo.magazine-{name}.plist
   "date": "2026-05-12",
   "morningDone": true,
   "morningArticles": [
-    { "title": "베란다 상추 한 잎의 위로", "category": "요리", "postId": "cmoy0n...", "engine": "gemini" }
+    { "title": "베란다 상추 한 잎의 위로", "category": "요리", "postId": "cmoy0n...", "engine": "chatgpt", "imageSource": "local" }
   ],
   "eveningDone": false,
   "eveningArticles": []
@@ -316,7 +320,8 @@ cat agents/cafe/.magazine-daily-$(date +%Y-%m-%d).json
 | 이슈 | 상태 | 설명 |
 |------|------|------|
 | Slack `not_in_channel` | ✅ 해결 (2026-05-12) | 봇(@agedoesntmatter) #magazine 채널 초대 완료 |
-| Gemini 로그인 세션 만료 | ⚠️ 간헐적 | Chrome 프로필 세션 만료 시 Unsplash 폴백으로 처리 |
+| ChatGPT 로그인 세션 만료 | ⚠️ 간헐적 | chatgpt.com 프로필 세션 만료 시 PERSON_REAL은 발행 보류 / FOOD·SCENE·OBJECT는 Unsplash 폴백. auth session 감지 + launchd 가드로 silent hang 방지 |
+| Gemini (레거시) | ⚫ 폐기 | 구독 종료(2026-06-04). gemini-scraper는 코드에 남아있으나 매거진은 chatgpt 전용 |
 | Claude API 타임아웃 | ⚠️ 간헐적 | 3번째 기사 생성 중 간헐적 발생 |
 | Coupang API 401 | ❌ 미해결 | CPS 매칭 실패 (기사 발행에는 영향 없음) |
 
@@ -373,19 +378,22 @@ launchctl list | grep magazine
 5. **R2 미설정**: `[R2] CLOUDFLARE_ACCOUNT_ID 미설정` 로그 확인 → dotenv 순서 문제
 6. 수동 실행: `launchctl start com.unaeo.magazine-morning`
 
-### Gemini 로그인 만료 시
+### ChatGPT 로그인 만료 시
 
 1. Chrome 완전 종료
-2. Gemini 프로필로 Chrome 열기: `open -a "Google Chrome" --args --user-data-dir=$HOME/.chrome-gemini-profile`
-3. gemini.google.com 로그인
+2. ChatGPT 프로필로 Chrome 열기: `open -a "Google Chrome" --args --user-data-dir=$HOME/.chrome-chatgpt-profile`
+3. chatgpt.com 로그인 (ChatGPT Pro 계정)
 4. Chrome 종료
 5. 다음 스케줄 자동 실행 (또는 수동 실행)
+6. 검증: `npx tsx -e "..."`로 /api/auth/session 확인하거나, 로그에 `[ChatGPT Scraper] 로그인 상태 확인 ✅` 출력 확인
+> 참고: 미로그인 상태로 launchd가 돌면 stdin 무한대기 대신 즉시 throw + Slack 알림 (가드 적용)
 
-### 이미지 없어서 발행 보류 반복 시
+### 이미지 없어서 발행 보류 반복 시 (PERSON_REAL)
 
-1. Gemini 로그인 확인
-2. 로그에서 `[ImageGen] 이미지 수급 불가` 확인
-3. `IMAGE_GENERATOR` 환경변수를 plist에서 제거 → DALL-E API 폴백 복구 (OPENAI_API_KEY 필요)
+1. ChatGPT 로그인 확인 (위 절차)
+2. 로그에서 `[ImageGen] PERSON_REAL ... Unsplash fallback 차단, null 반환` 확인
+3. PERSON_REAL은 의도적으로 Unsplash 폴백을 막아둠(외국 스톡 방지) → 세션 복구가 정답
+4. (비상) `IMAGE_GENERATOR`를 plist에서 제거 → DALL-E API 폴백 복구 가능하나 **비용 발생** → 권장 안 함
 
 ---
 
@@ -418,6 +426,6 @@ launchctl list | grep magazine
 | P2 | Coupang API 키 갱신 | 30분 (기사 발행 무영향) |
 | P2 | Article JSON-LD 필드 보강 (inLanguage 등) | 15분 |
 | P2 | 구형 글 FAQPage 재생성 (5/5 이전) | 1~2시간 |
-| P2 | Gemini 로그인 체크 로직 개선 | 30분 |
+| ✅ 완료 | ChatGPT 전환 + 로그인 감지(/api/auth/session) + SingletonLock 종료처리 | 2026-06-04 (d734893) |
 | P3 | ILLUSTRATION 타입 DALL-E 폴백 재활성화 | 1시간 |
 | P3 | 매거진 발행 Admin 대시보드 | 3시간 |
