@@ -85,18 +85,55 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
 
           if (!user) {
             const tempNickname = `user_${providerId.slice(-8)}`
-            user = await prisma.user.create({
-              data: {
-                providerId,
-                nickname: tempNickname,
-                email: typeof kakaoData?.email === 'string' ? kakaoData.email : undefined,
-                profileImage: kakaoProfile?.profile_image_url,
-                birthYear: kakaoData?.birthyear ? Number(kakaoData.birthyear) : undefined,
-                gender: typeof kakaoData?.gender === 'string' ? kakaoData.gender : undefined,
-                phone: normalizeKakaoPhone(kakaoData?.phone_number as string | undefined),
-              },
-            })
-            token.needsOnboarding = true
+            const kakaoEmail = typeof kakaoData?.email === 'string' ? kakaoData.email : undefined
+            // 계정 식별자는 providerId. email은 부가 정보일 뿐 식별/병합에 쓰지 않는다.
+            const newUserData = {
+              providerId,
+              nickname: tempNickname,
+              profileImage: kakaoProfile?.profile_image_url,
+              birthYear: kakaoData?.birthyear ? Number(kakaoData.birthyear) : undefined,
+              gender: typeof kakaoData?.gender === 'string' ? kakaoData.gender : undefined,
+              phone: normalizeKakaoPhone(kakaoData?.phone_number as string | undefined),
+            }
+            try {
+              user = await prisma.user.create({
+                data: { ...newUserData, email: kakaoEmail },
+              })
+              token.needsOnboarding = true
+            } catch (createError) {
+              // 동시 콜백 race: 형제 요청이 먼저 같은 providerId(=같은 사람)로 생성하면서
+              // unique(email/providerId) 제약 위반. providerId 기준으로만 회복한다.
+              if (
+                createError instanceof Prisma.PrismaClientKnownRequestError &&
+                createError.code === 'P2002'
+              ) {
+                // 1) 같은 사람(providerId) 계정이 방금 생겼는지 재조회 → 있으면 그 계정 채택
+                user = await prisma.user.findUnique({
+                  where: { providerId },
+                  select: { id: true, role: true, grade: true, nickname: true, profileImage: true, status: true, suspendedUntil: true, fontSize: true, createdAt: true },
+                })
+                if (user) {
+                  // 정상 회복 — BotLog FAILED로 남기지 않고 Vercel 로그로만 관측
+                  console.warn('[auth] jwt create P2002 → providerId 재조회로 회복 (동시 콜백)')
+                  token.needsOnboarding = user.nickname.startsWith('user_')
+                } else {
+                  // 2) providerId로도 없음 = 다른 사람이 같은 email을 선점한 진짜 충돌.
+                  //    email로 그 계정에 로그인/병합하지 않는다(계정 탈취 방어).
+                  //    email 없이 신규 생성하여 제약 위반과 탈취를 동시에 회피한다.
+                  user = await prisma.user.create({
+                    data: { ...newUserData, email: undefined },
+                  })
+                  token.needsOnboarding = true
+                  // email 값(PII)은 기록하지 않고 충돌 발생 사실만 남긴다.
+                  await logAuthFailure(
+                    'jwt_exception',
+                    'kakao_email_collision: created account without email (no providerId match after P2002)'
+                  ).catch(() => {})
+                }
+              } else {
+                throw createError
+              }
+            }
           } else {
             await prisma.user.update({
               where: { id: user.id },
