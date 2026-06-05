@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>앱 설치 유도 — 운영 가이드 | 우나어</title>
+<style>
+  :root{
+    --coral:#FF6F61; --coral-deep:#E5503F; --ink:#1f2430; --sub:#5b6370;
+    --line:#e7e9ee; --bg:#f6f7f9; --card:#fff;
+    --green:#1f8a47; --green-bg:#e9f7ef; --red:#d24b3e; --red-bg:#fdecea;
+    --blue:#1d6fd6; --blue-bg:#e9f1fd; --amber:#a4690a; --amber-bg:#fdf3e2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.75;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.5px}
+  h2{font-size:22px;font-weight:800;margin:0 0 4px;letter-spacing:-.3px}
+  .lead{color:var(--sub);font-size:16px;margin-top:6px}
+  .sec{background:var(--card);border:1px solid var(--line);border-radius:18px;
+    padding:26px 24px;margin-top:22px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+  .sec-no{display:inline-block;background:var(--coral);color:#fff;font-weight:800;
+    font-size:13px;border-radius:8px;padding:2px 9px;margin-bottom:10px}
+  .muted{color:var(--sub)}
+  strong{color:var(--ink)}
+  .hl{color:var(--coral-deep);font-weight:700}
+  /* 헤더 */
+  .hero{background:linear-gradient(135deg,#fff6f4,#ffe4de 60%,#fff);border:1px solid #ffd9d2;
+    border-radius:22px;padding:30px 26px}
+  .hero .tag{display:inline-block;background:var(--coral);color:#fff;font-weight:700;font-size:12px;
+    border-radius:999px;padding:4px 12px;margin-bottom:12px}
+  .three{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+  .three .pill{flex:1;min-width:200px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .three .pill b{color:var(--coral-deep)}
+  /* 갈림길 */
+  .fork{display:flex;gap:16px;flex-wrap:wrap;margin-top:18px}
+  .branch{flex:1;min-width:240px;border-radius:16px;padding:18px;border:2px solid}
+  .branch.aos{border-color:#bfe3c9;background:var(--green-bg)}
+  .branch.ios{border-color:#bcd6f7;background:var(--blue-bg)}
+  .branch h3{font-size:17px;margin-bottom:6px}
+  .branch .way{font-weight:800;font-size:18px;margin-top:8px}
+  .branch.aos .way{color:var(--green)}
+  .branch.ios .way{color:var(--blue)}
+  /* 카드 그리드 */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+  .ccard{border:1px solid var(--line);border-radius:14px;padding:16px}
+  .ccard h4{font-size:16px;margin-bottom:6px}
+  .ccard .ico{font-size:26px}
+  /* 목업 */
+  .mockwrap{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:16px}
+  @media(max-width:640px){.mockwrap{grid-template-columns:1fr}}
+  .mock{background:#f0f1f4;border:1px solid var(--line);border-radius:16px;padding:18px;text-align:center}
+  .mock .label{font-size:12px;color:var(--sub);margin-bottom:10px;font-weight:700}
+  .modal{background:#fff;border-radius:18px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.12);max-width:300px;margin:0 auto;text-align:left}
+  .modal .logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#ffb4a2,var(--coral));margin:0 auto 10px}
+  .modal h5{text-align:center;font-size:17px;font-weight:800;line-height:1.4}
+  .modal .slogan{text-align:center;color:var(--coral-deep);font-weight:700;font-size:13px;margin:8px 0}
+  .modal ul{list-style:none;margin:10px 0;font-size:13px}
+  .modal ul li{padding:3px 0}
+  .modal ul li::before{content:"✓";color:var(--coral-deep);font-weight:800;margin-right:6px}
+  .btn{display:block;text-align:center;background:var(--coral);color:#fff;font-weight:800;
+    border-radius:12px;padding:11px;margin-top:8px}
+  .btn.ghost{background:#eef0f3;color:var(--sub);font-weight:600;font-size:12px;margin-top:6px}
+  .step{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0}
+  .step .n{width:22px;height:22px;border-radius:50%;background:#ffe2dc;color:var(--coral-deep);
+    font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .botbanner{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;
+    align-items:center;gap:10px;text-align:left;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+  .botbanner .lg{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#ffb4a2,var(--coral));flex-shrink:0}
+  .botbanner .txt{flex:1;font-size:13px;font-weight:600}
+  .botbanner .go{background:var(--coral);color:#fff;font-weight:800;font-size:12px;border-radius:8px;padding:8px 12px;white-space:nowrap}
+  /* 타임라인 */
+  .timeline{margin-top:16px}
+  .tl{display:flex;gap:14px;padding:14px 0;border-bottom:1px dashed var(--line)}
+  .tl:last-child{border-bottom:0}
+  .tl .num{width:34px;height:34px;border-radius:50%;background:var(--coral);color:#fff;font-weight:800;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .tl .when{font-weight:800;color:var(--coral-deep)}
+  .tl .body{flex:1}
+  /* 매트릭스 표 */
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
+  th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+  th{background:#f3f4f7;font-weight:700;font-size:13px}
+  .bdg{display:inline-block;font-weight:700;font-size:12px;border-radius:999px;padding:2px 10px}
+  .b-show{background:var(--green-bg);color:var(--green)}
+  .b-block{background:var(--red-bg);color:var(--red)}
+  .b-redir{background:var(--blue-bg);color:var(--blue)}
+  /* 체크리스트 */
+  .checks{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  @media(max-width:640px){.checks{grid-template-columns:1fr}}
+  .chk{background:#f8f9fb;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px}
+  .chk b{color:var(--coral-deep)}
+  /* 플로우 2갈래 */
+  .flow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:640px){.flow{grid-template-columns:1fr}}
+  .flowbox{border-radius:14px;padding:16px;border:2px solid}
+  .flowbox.aos{border-color:#bfe3c9;background:var(--green-bg)}
+  .flowbox.ios{border-color:#bcd6f7;background:var(--blue-bg)}
+  .arrow{text-align:center;color:var(--sub);font-size:13px;margin:4px 0}
+  /* details */
+  details{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  summary{cursor:pointer;padding:12px 16px;background:#f3f4f7;font-weight:700;font-size:14px;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ ";color:var(--coral)}
+  details[open] summary::before{content:"▾ "}
+  details .inner{padding:14px 16px}
+  pre{background:#1e2430;color:#e6e9ef;border-radius:10px;padding:14px;overflow:auto;font-size:12.5px;line-height:1.6}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .note{background:var(--amber-bg);border:1px solid #f0dcb5;border-radius:12px;padding:12px 14px;font-size:14px;color:#7a5408;margin-top:14px}
+  .kv{font-family:ui-monospace,monospace;background:#eef0f3;border-radius:6px;padding:1px 7px;font-size:13px}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .toc a{font-size:13px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--sub);text-decoration:none}
+  .toc a:hover{border-color:var(--coral);color:var(--coral-deep)}
+  .foot{text-align:center;color:var(--sub);font-size:13px;margin-top:36px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 헤더 -->
+  <div class="hero">
+    <span class="tag">운영 가이드 · 담당자 필독</span>
+    <h1>우나어 앱 설치 유도, 어떻게 동작하나요?</h1>
+    <p class="lead">사용자에게 "앱으로 설치하세요" 안내가 <b>언제 · 누구에게 · 어디서 · 어떻게</b> 뜨는지 정리한 문서입니다.
+    코드를 몰라도 이해할 수 있게 쓰였고, 기술 내용은 접어뒀습니다(▸ 눌러서 펼치기).</p>
+    <div class="three">
+      <div class="pill">📱 <b>안드로이드</b>는 <b>플레이스토어</b>로 보냅니다</div>
+      <div class="pill">🍏 <b>아이폰</b>은 <b>홈 화면에 추가</b>로 안내합니다</div>
+      <div class="pill">🔕 한 번 닫거나 설치하면 <b>계속 귀찮게 안 합니다</b></div>
+    </div>
+    <div class="toc">
+      <a href="#s1">1. 한눈에</a>
+      <a href="#s2">2. PWA vs 앱</a>
+      <a href="#s3">3. 화면 모양</a>
+      <a href="#s4">4. 언제 뜨나</a>
+      <a href="#s5">5. 누구에게</a>
+      <a href="#s6">6. 어디서</a>
+      <a href="#s7">7. 안 귀찮게</a>
+      <a href="#s8">8. 누르면</a>
+      <a href="#s9">9. 기록</a>
+      <a href="#s10">10. 켜고 끄기</a>
+    </div>
+  </div>
+
+  <!-- 1. 한눈에 -->
+  <div class="sec" id="s1">
+    <span class="sec-no">1</span>
+    <h2>한눈에 보기 — 폰 종류로 갈립니다</h2>
+    <p class="muted">우리 앱을 설치하는 방법은 폰 종류에 따라 다릅니다. 이 한 장이 전부예요.</p>
+    <div class="fork">
+      <div class="branch aos">
+        <h3>🤖 안드로이드 (갤럭시 등)</h3>
+        <p class="muted">플레이스토어에 정식 앱이 있습니다.</p>
+        <div class="way">→ 플레이스토어로 보내기</div>
+        <p class="muted" style="margin-top:6px">"앱 받기" 누르면 스토어로 이동해 설치합니다. (앱 이름: <span class="kv">com.agenotmatter.app</span>)</p>
+      </div>
+      <div class="branch ios">
+        <h3>🍏 아이폰 (iOS)</h3>
+        <p class="muted">아이폰은 플레이스토어가 없습니다.</p>
+        <div class="way">→ 홈 화면에 추가</div>
+        <p class="muted" style="margin-top:6px">사파리에서 "공유 → 홈 화면에 추가"로 바탕화면에 아이콘을 만듭니다. 아이폰엔 이게 유일한 방법이에요.</p>
+      </div>
+    </div>
+    <div class="note">💡 그래서 "안드로이드는 플레이스토어 / 아이폰은 홈 화면 추가"로 자연스럽게 나뉩니다. 같은 앱을 두 방법으로 권하던 혼란을 이렇게 정리했습니다.</div>
+  </div>
+
+  <!-- 2. 개념 -->
+  <div class="sec" id="s2">
+    <span class="sec-no">2</span>
+    <h2>PWA와 앱(TWA)이 뭔가요?</h2>
+    <p class="muted">용어가 어렵지만, 쉽게 두 가지입니다.</p>
+    <div class="grid2">
+      <div class="ccard">
+        <div class="ico">🔖</div>
+        <h4>PWA = "홈 화면 바로가기"</h4>
+        <p class="muted">웹사이트를 폰 바탕화면에 아이콘으로 추가하는 것. 스토어 없이 즉시. 아이폰·안드로이드 모두 됨. 단 "앱"이라기보단 똑똑한 바로가기.</p>
+      </div>
+      <div class="ccard">
+        <div class="ico">📦</div>
+        <h4>TWA = "플레이스토어 앱"</h4>
+        <p class="muted">우리 웹앱을 안드로이드 앱 껍데기로 감싸 <b>플레이스토어에 올린 것</b>. 검색·신뢰도 높음. 안드로이드 전용(아이폰 없음).</p>
+      </div>
+    </div>
+    <div class="note">🧩 <b>핵심</b>: TWA(스토어 앱)는 사실 PWA(웹앱)를 감싼 것입니다. 즉 PWA가 토대이고, TWA는 그 위에 입힌 "스토어 포장"입니다. 그래서 둘은 별개가 아니라 한 몸이에요.</div>
+  </div>
+
+  <!-- 3. UI -->
+  <div class="sec" id="s3">
+    <span class="sec-no">3</span>
+    <h2>사용자가 보는 화면은 4가지</h2>
+    <p class="muted">설치를 권하는 화면은 아래처럼 생겼습니다. (실제 모양을 흉내 낸 그림)</p>
+    <div class="mockwrap">
+      <div class="mock">
+        <div class="label">① 설치 팝업 — 안드로이드</div>
+        <div class="modal">
+          <div class="logo"></div>
+          <h5>우리 또래 이야기,<br>언제든 꺼낼 수 있게</h5>
+          <div class="slogan">우리 — 서로를 잇다</div>
+          <ul>
+            <li>혼자 답답할 때, 우리 또래 바로</li>
+            <li>나만의 이야기 편하게</li>
+            <li>검색 없이 홈에서 바로</li>
+          </ul>
+          <div class="btn">📱 무료로 다운받기</div>
+          <div class="btn ghost">나중에 할게요</div>
+        </div>
+      </div>
+      <div class="mock">
+        <div class="label">② 설치 팝업 — 아이폰(수동 안내)</div>
+        <div class="modal">
+          <div class="logo"></div>
+          <h5>홈 화면에 추가하세요</h5>
+          <div class="slogan">앱 설치와 달라요 — 버튼 하나</div>
+          <div class="step"><span class="n">1</span> 하단 <b>공유 버튼</b>을 탭</div>
+          <div class="step"><span class="n">2</span> <b>홈 화면에 추가</b> 선택</div>
+          <div class="step"><span class="n">3</span> 오른쪽 위 <b>추가</b> 탭</div>
+          <div class="btn ghost">나중에 할게요</div>
+        </div>
+      </div>
+      <div class="mock">
+        <div class="label">③ 하단 배너 (로그인 안드로이드)</div>
+        <div class="botbanner">
+          <div class="lg"></div>
+          <div class="txt">앱처럼 쓰는데 완전 무료예요</div>
+          <div class="go">무료 받기</div>
+        </div>
+        <p class="muted" style="font-size:12px;margin-top:10px">화면 맨 아래 가로 띠. "하루 안보기"로 닫을 수 있음.</p>
+      </div>
+      <div class="mock">
+        <div class="label">④ 인앱 유도 (카카오·네이버·인스타 안에서 열었을 때)</div>
+        <div class="botbanner" style="flex-direction:column;align-items:stretch">
+          <div class="txt" style="font-weight:800">앱처럼 편하게 쓰려면</div>
+          <div class="muted" style="font-size:12px">Chrome/Safari에서 열면 홈 화면에 추가할 수 있어요</div>
+          <div class="go" style="text-align:center;margin-top:6px">크롬으로 열기</div>
+        </div>
+        <p class="muted" style="font-size:12px;margin-top:10px">카톡·네이버 앱 안의 브라우저는 설치가 막혀 있어, "진짜 브라우저로 열기"를 안내합니다.</p>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:14px">이 밖에 <b>버튼형 진입점</b>도 있습니다 — 글/매거진을 다 읽은 뒤 하단 "앱 다운받기", 맨 아래 푸터의 "홈 화면에 추가", 게시판 목록 위의 작은 띠. (어디에 있는지는 6번 참고)</p>
+  </div>
+
+  <!-- 4. 언제 -->
+  <div class="sec" id="s4">
+    <span class="sec-no">4</span>
+    <h2>언제 뜨나요? — 4단계로 차근차근</h2>
+    <p class="muted">처음부터 들이대지 않습니다. 사용자가 서비스에 익숙해지는 순서대로, 아직 설치를 안 한 사람에게만 단계적으로 권합니다.</p>
+    <div class="timeline">
+      <div class="tl"><div class="num">1</div><div class="body"><span class="when">첫 방문 13초 뒤</span> — 처음 들어와 13초쯤 둘러보면 한 번 살짝 권합니다. (딱 1번)</div></div>
+      <div class="tl"><div class="num">2</div><div class="body"><span class="when">가입하고 3페이지 본 뒤</span> — 회원가입을 마치고 이리저리 3페이지쯤 구경하면 권합니다.</div></div>
+      <div class="tl"><div class="num">3</div><div class="body"><span class="when">첫 글/댓글을 쓴 뒤</span> — 직접 참여(글·댓글)한 사람에게 권합니다. (애착이 생긴 시점)</div></div>
+      <div class="tl"><div class="num">4</div><div class="body"><span class="when">그 뒤로는 7일에 한 번</span> — 위에서 다 안 깔았으면 1주일 간격으로 다시. 단 <b>3번 거절하면 더 안 권합니다.</b></div></div>
+    </div>
+    <div class="note">⏱️ 모두 "아직 설치 안 한 사람" 한정입니다. 설치하면 이 모든 안내가 즉시 멈춥니다.</div>
+  </div>
+
+  <!-- 5. 누구에게 -->
+  <div class="sec" id="s5">
+    <span class="sec-no">5</span>
+    <h2>누구에게 뜨나요? — 폰·브라우저 환경별</h2>
+    <p class="muted">접속한 환경에 따라 보여주는 방식이 다릅니다. 설치가 불가능한 환경에선 억지로 안 띄웁니다.</p>
+    <table>
+      <thead><tr><th>접속 환경</th><th>처리</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr><td>안드로이드 Chrome / 삼성인터넷</td><td><span class="bdg b-redir">↗ 플레이스토어</span></td><td>"앱 받기" 누르면 스토어로 이동</td></tr>
+        <tr><td>아이폰 Safari</td><td><span class="bdg b-show">✅ 홈화면 추가 안내</span></td><td>3단계 수동 안내 팝업</td></tr>
+        <tr><td>카카오톡 인앱</td><td><span class="bdg b-redir">↗ 외부 브라우저</span></td><td>"크롬/사파리로 열기" 유도 (3일에 한 번)</td></tr>
+        <tr><td>네이버 앱 인앱</td><td><span class="bdg b-redir">↗ 외부 브라우저</span></td><td>위와 동일</td></tr>
+        <tr><td>인스타그램 인앱</td><td><span class="bdg b-redir">↗ 외부 브라우저</span></td><td>위와 동일</td></tr>
+        <tr><td>구글 검색앱 인앱</td><td><span class="bdg b-block">⛔ 안 띄움</span></td><td>설치 불가 환경</td></tr>
+        <tr><td>아이폰 Chrome</td><td><span class="bdg b-block">⛔ 안 띄움</span></td><td>iOS Chrome은 홈화면 추가 불가</td></tr>
+        <tr><td>데스크탑(PC)</td><td><span class="bdg b-block">⛔ 안 띄움</span></td><td>모바일 전용 기능</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 6. 어디서 -->
+  <div class="sec" id="s6">
+    <span class="sec-no">6</span>
+    <h2>어디서 뜨나요? — 위치(경로) 지도</h2>
+    <p class="muted">설치 안내가 나타나는 자리는 5곳입니다.</p>
+    <table>
+      <thead><tr><th>자리</th><th>어디에</th><th>형태</th></tr></thead>
+      <tbody>
+        <tr><td><b>자동 팝업 / 하단 배너</b></td><td>모든 페이지(전역)</td><td>4단계 트리거로 자동 등장</td></tr>
+        <tr><td><b>푸터 버튼</b></td><td>모든 페이지 맨 아래</td><td>"홈 화면에 추가 / 앱 다운받기" 텍스트 버튼</td></tr>
+        <tr><td><b>게시판 상단 띠</b></td><td>커뮤니티 목록(<span class="kv">/community/...</span>)</td><td>목록 위 작은 안내 띠</td></tr>
+        <tr><td><b>글 하단 CTA</b></td><td>게시글·매거진 <b>상세</b> 페이지</td><td>다 읽은 뒤 "앱 다운받기 / 홈 화면에 추가하기"</td></tr>
+      </tbody>
+    </table>
+    <div class="note">📍 <b>안 뜨는 곳</b>: 로그인·회원가입·온보딩 페이지에서는 방해하지 않으려고 띄우지 않습니다.</div>
+  </div>
+
+  <!-- 7. 빈도 -->
+  <div class="sec" id="s7">
+    <span class="sec-no">7</span>
+    <h2>너무 귀찮지 않게 — 중복 방지 규칙</h2>
+    <p class="muted">광고처럼 계속 뜨면 짜증나니까, 아래 규칙으로 절제합니다.</p>
+    <div class="checks">
+      <div class="chk">🔂 <b>한 세션에 1번만</b> — 앱을 한 번 열어 쓰는 동안 팝업은 1회만</div>
+      <div class="chk">🙅 <b>3번 거절하면 정지</b> — 계속 닫으면 더 이상 안 권함</div>
+      <div class="chk">📅 <b>7일 간격</b> — 반복 단계는 일주일에 한 번</div>
+      <div class="chk">✅ <b>설치하면 전면 중단</b> — 깐 사람에겐 두 번 다시 안 권함</div>
+      <div class="chk">🚫 <b>가입·로그인·온보딩 제외</b> — 중요한 흐름은 안 막음</div>
+      <div class="chk">⏳ <b>인앱 유도는 3일 쿨다운</b> — 카톡 등에선 3일에 한 번만</div>
+    </div>
+  </div>
+
+  <!-- 8. 누르면 -->
+  <div class="sec" id="s8">
+    <span class="sec-no">8</span>
+    <h2>"설치" 누르면 어떻게 되나요?</h2>
+    <div class="flow">
+      <div class="flowbox aos">
+        <h3>🤖 안드로이드</h3>
+        <div class="arrow">"앱 받기" 클릭 ▼</div>
+        <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;font-weight:700">플레이스토어 앱 페이지로 이동</div>
+        <div class="arrow">▼</div>
+        <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;font-weight:700">스토어에서 "설치"</div>
+      </div>
+      <div class="flowbox ios">
+        <h3>🍏 아이폰</h3>
+        <div class="arrow">"홈 화면에 추가하기" 클릭 ▼</div>
+        <div class="step"><span class="n">1</span> 하단 공유 버튼 탭</div>
+        <div class="step"><span class="n">2</span> "홈 화면에 추가" 선택</div>
+        <div class="step"><span class="n">3</span> 오른쪽 위 "추가" 탭</div>
+      </div>
+    </div>
+    <div class="note">🔗 클릭 링크는 똑똑하게 갈립니다 — 우나어 <b>내부 주소</b>면 같은 탭에서, <b>외부(다른 사이트)</b>면 새 탭에서 열립니다.</div>
+  </div>
+
+  <!-- 9. 기록 -->
+  <div class="sec" id="s9">
+    <span class="sec-no">9</span>
+    <h2>무엇이 기록되나요? — 성과 측정</h2>
+    <p class="muted">얼마나 보고 깔았는지 추적해서 개선에 씁니다.</p>
+    <table>
+      <thead><tr><th>기록</th><th>어디에</th><th>무엇을</th></tr></thead>
+      <tbody>
+        <tr><td>팝업 노출 / 설치 / 플레이스토어 클릭</td><td>GA4 (구글 애널리틱스)</td><td>각 단계 발생 횟수</td></tr>
+        <tr><td>설치 여부 · 팝업 본 횟수 · 배너 숨김 기한</td><td>회원 DB(pwa-status)</td><td>로그인 사용자별 상태 (브라우저 기록 지워도 유지)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 10. 켜고 끄기 -->
+  <div class="sec" id="s10">
+    <span class="sec-no">10</span>
+    <h2>켜고 끄기 — 운영 스위치</h2>
+    <div class="grid2">
+      <div class="ccard">
+        <h4>① 전체 ON / OFF</h4>
+        <p class="muted">환경변수 <span class="kv">NEXT_PUBLIC_PWA_INSTALL_ENABLED</span> 가 <span class="kv">true</span>일 때만 자동 유도가 작동합니다. (Vercel 설정에서 변경)</p>
+      </div>
+      <div class="ccard">
+        <h4>② 안드로이드 자동배너 차단</h4>
+        <p class="muted">manifest의 <span class="kv">prefer_related_applications: true</span> 설정으로, 안드로이드 Chrome이 PWA 대신 <b>플레이스토어</b>를 권하게 됩니다. (지금 적용됨)</p>
+      </div>
+    </div>
+    <div class="note">⚙️ 현재 프로덕션에서 전체 ON/OFF 값은 Vercel 환경변수에서 확인하세요. 이 문서는 "스위치가 무엇을 하는지"만 설명합니다.</div>
+  </div>
+
+  <!-- 11. 기술 토글 -->
+  <div class="sec">
+    <span class="sec-no">11</span>
+    <h2>개발자용 — 기술 상세 (펼치기)</h2>
+    <p class="muted">아래는 코드 담당자를 위한 내용입니다. 운영만 하실 분은 안 보셔도 됩니다.</p>
+
+    <details>
+      <summary>파일 구성 (어떤 코드가 어디 있나)</summary>
+      <div class="inner">
+        <table>
+          <tbody>
+            <tr><td><code>src/components/common/AddToHomeScreen.tsx</code></td><td>자동 팝업·하단 배너·인앱 유도의 두뇌. 트리거·환경판별(detectEnv)·빈도(canShow)</td></tr>
+            <tr><td><code>src/lib/app-links.ts</code></td><td><code>triggerAppInstall()</code> 안드→Play / iOS→pwa-prompt, <code>PLAY_STORE_URL</code></td></tr>
+            <tr><td><code>public/manifest.json</code></td><td><code>prefer_related_applications</code> + Play 앱 등록</td></tr>
+            <tr><td><code>PostCTA / FooterPwaButton / PwaInlineBanner</code></td><td>버튼형 진입점 (상세·푸터·목록)</td></tr>
+            <tr><td><code>src/app/api/user/pwa-status/route.ts</code></td><td>설치/노출/닫기 DB 기록</td></tr>
+            <tr><td><code>src/lib/gtm.ts</code></td><td>GA4 이벤트(gtmPwaPopupShown·gtmPwaInstall·gtmPlayStoreClick)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details>
+      <summary>트리거 조건 (canShow 핵심 로직)</summary>
+      <div class="inner">
+<pre><code>// AddToHomeScreen.tsx — 상수
+TIMER_MS = 13_000            // 첫 방문 13초
+PAGE_VIEW_TRIGGER = 3        // 가입 후 3페이지
+MAX_DECLINES = 3             // 거절 3회 후 weekly 정지
+WEEKLY_MS = 7일
+KAKAO_GUIDE_COOLDOWN = 3일   // 인앱 유도 쿨다운
+EXCLUDED_PATHS = ['/login','/signup','/onboarding']
+
+first_15s : shownCount===0 (최초 1회)
+signup    : 가입완료 + 3페이지 탐색 + shownCount<2
+engagement: 첫 글/댓글 + shownCount<3
+weekly    : declineCount<3 + shownCount>=2 + 마지막 노출 7일 경과
+공통 차단 : 설치됨 / 세션내 이미 노출 / 가입유도배너와 충돌 시</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>환경 판별 (detectEnv) + 차단 목록</summary>
+      <div class="inner">
+<pre><code>detectEnv(): 'android-chrome' | 'ios-safari' | 'kakao-android' | 'kakao-ios'
+           | 'naver-inapp' | 'google-inapp' | 'instagram-inapp' | 'crios'
+           | 'desktop' | 'other'(삼성인터넷)
+
+BLOCKED_ENVS = kakao-*, naver-inapp, google-inapp, instagram-inapp, crios, desktop
+ANDROID_ENVS = android-chrome, other  // beforeinstallprompt 사용
+// manifest prefer_related_applications=true → 안드 자동 PWA 프롬프트 미발생
+//   → 안드 자동 팝업/배너는 사실상 안 뜨고, 명시 버튼이 Play로 보냄. iOS는 정상.</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>설치 링크 분기 (triggerAppInstall)</summary>
+      <div class="inner">
+<pre><code>// app-links.ts
+isAndroidInstallEnv() = detectEnv() ∈ {android-chrome, other}
+triggerAppInstall(source):
+  안드  → gtmPlayStoreClick(source); location.href = PLAY_STORE_URL
+  그외 → window.dispatchEvent('pwa-prompt','manual')  // iOS 팝업 등
+
+PLAY_STORE_URL = https://play.google.com/store/apps/details?id=com.agenotmatter.app&hl=ko</code></pre>
+      </div>
+    </details>
+  </div>
+
+  <p class="foot">우나어 운영 문서 · 앱 설치 유도 정책 · 최종 갱신 2026-06-05</p>
+</div>
+</body>
+</html>
