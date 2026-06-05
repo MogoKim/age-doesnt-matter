@@ -364,18 +364,22 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
 
             {form.slot === 'LIST_HEADER' && (
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-zinc-600">노출 위치 (복수 선택 가능 · 전부 또는 0개 = 전체 공통) <HelpTip text={HELP.AD_TARGET} /></label>
+                <label className="mb-1 block text-xs font-medium text-zinc-600">노출 위치 (기본 전체 노출 · 원하는 목록만 켜고 끄기) <HelpTip text={HELP.AD_TARGET} /></label>
                 <div className="flex flex-wrap gap-2">
                   {LIST_HEADER_PAGES.map((p) => {
                     const selected = parseTargetPaths(form.targetPath)
-                    const checked = selected.includes(p.value)
+                    // 빈값(targetPath='') = 전체 공통 → 모든 칩을 켜진 상태로 표시
+                    const isAll = selected.length === 0
+                    const checked = isAll || selected.includes(p.value)
                     return (
                       <button
                         key={p.value}
                         type="button"
                         onClick={() => {
-                          const next = checked ? selected.filter((v) => v !== p.value) : [...selected, p.value]
-                          // 전부 선택 또는 0개 선택 = 전체 공통(빈 문자열)
+                          // 전체(빈값) 상태에서 끄기를 누르면 6개 전체를 기준으로 해당 칩만 제외
+                          const base = isAll ? LIST_HEADER_PAGES.map((v) => v.value) : selected
+                          const next = checked ? base.filter((v) => v !== p.value) : [...base, p.value]
+                          // 6개 전부 켜짐(또는 0개로 떨어짐) = 전체 공통(빈 문자열). 0개 도달 시 자동 전체 복귀
                           const csv = next.length === 0 || next.length === LIST_HEADER_PAGES.length ? '' : next.join(',')
                           setForm({ ...form, targetPath: csv })
                         }}
@@ -392,8 +396,8 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 </div>
                 <p className="mt-1 text-[11px] text-zinc-500">
                   {parseTargetPaths(form.targetPath).length === 0
-                    ? '현재: 전체 공통(6개 목록 모두)'
-                    : `현재: ${parseTargetPaths(form.targetPath).map((v) => LIST_HEADER_PAGES.find((p) => p.value === v)?.label).join(', ')}`}
+                    ? '현재: 전체 공통(6개 목록 모두 노출)'
+                    : `현재: ${parseTargetPaths(form.targetPath).map((v) => LIST_HEADER_PAGES.find((p) => p.value === v)?.label).join(', ')} (${parseTargetPaths(form.targetPath).length}개)`}
                 </p>
               </div>
             )}
