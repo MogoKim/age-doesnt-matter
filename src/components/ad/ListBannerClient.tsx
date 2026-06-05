@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 // GNB 바로 아래 띠배너를 노출할 6개 목록 페이지 (정확 매칭 — 상세/글쓰기 등 제외)
 const AD_ROUTES = ['/best', '/community/stories', '/community/life2', '/community/humor', '/magazine', '/jobs']
 
-const DISMISS_KEY = 'list-ad-dismissed'
+// 광고는 사용자가 닫을 수 없음 (닫기 버튼 없음 — 노출 보장)
 const ROTATE_MS = 7000
 
 export interface ListBannerItem {
@@ -25,7 +25,6 @@ export interface ListBannerItem {
 
 export default function ListBannerClient({ banners }: { banners: ListBannerItem[] }) {
   const pathname = usePathname()
-  const [dismissed, setDismissed] = useState(false)
   const [index, setIndex] = useState(0)
   const impressed = useRef<Set<string>>(new Set())
 
@@ -35,22 +34,17 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
   const safeIndex = visible.length ? index % visible.length : 0
   const current = visible[safeIndex] ?? null
 
-  // 세션 내 닫기 상태 복원
-  useEffect(() => {
-    if (sessionStorage.getItem(DISMISS_KEY)) setDismissed(true)
-  }, [])
-
   // 2개 이상이면 자동 슬라이드 (모션 최소화 설정 존중)
   useEffect(() => {
-    if (!onAdRoute || dismissed || visible.length < 2) return
+    if (!onAdRoute || visible.length < 2) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const t = setInterval(() => setIndex((i) => (i + 1) % visible.length), ROTATE_MS)
     return () => clearInterval(t)
-  }, [onAdRoute, dismissed, visible.length])
+  }, [onAdRoute, visible.length])
 
   // 노출 추적 (배너별 1회)
   useEffect(() => {
-    if (!onAdRoute || dismissed || !current) return
+    if (!onAdRoute || !current) return
     if (impressed.current.has(current.id)) return
     impressed.current.add(current.id)
     fetch('/api/ad-impression', {
@@ -59,14 +53,9 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
       body: JSON.stringify({ adId: current.id }),
       keepalive: true,
     }).catch(() => {})
-  }, [onAdRoute, dismissed, current])
+  }, [onAdRoute, current])
 
-  if (!onAdRoute || dismissed || !current) return null
-
-  function handleDismiss() {
-    sessionStorage.setItem(DISMISS_KEY, '1')
-    setDismissed(true)
-  }
+  if (!onAdRoute || !current) return null
 
   function handleClick(adId: string, adType: string) {
     gtmAdClick('LIST_HEADER', adType)
@@ -132,17 +121,6 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
       <span className="absolute left-2 top-2 z-10 rounded bg-black/40 px-1.5 py-0.5 text-[11px] font-bold text-white">
         광고
       </span>
-
-      <button
-        type="button"
-        onClick={handleDismiss}
-        aria-label="광고 닫기"
-        className="absolute right-1 top-1 z-10 flex h-[44px] w-[44px] items-center justify-center rounded-full bg-black/30 text-white/90 hover:bg-black/50 transition-colors [-webkit-tap-highlight-color:transparent]"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      </button>
 
       {body}
     </div>
