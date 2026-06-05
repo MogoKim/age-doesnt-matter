@@ -93,16 +93,38 @@ function summarizeFailure(log: {
 export const getRecentBotLogs = unstable_cache(
   async () => {
     const today = getKstTodayStart()
-    const logs = (
-      await Promise.all(
-        DASHBOARD_BOT_TYPES.map((botType) =>
-          prisma.botLog.findFirst({
-            where: { botType },
-            orderBy: { executedAt: 'desc' },
-          })
-        )
-      )
-    ).filter((log): log is NonNullable<typeof log> => log !== null)
+
+    // botType별 findFirst 14회(Promise.all) 대신 정확한 2쿼리로 조회.
+    // /admin 콜드 진입 시 동시 DB 쿼리 폭을 줄여 connection pool 부담을 완화한다.
+    // ① groupBy로 botType별 최신 executedAt만 추출 (휴면 봇도 누락 없음 — take 윈도우에 의존하지 않음)
+    const maxByType = await prisma.botLog.groupBy({
+      by: ['botType'],
+      where: { botType: { in: DASHBOARD_BOT_TYPES } },
+      _max: { executedAt: true },
+    })
+
+    const orConditions = maxByType
+      .filter((g): g is typeof g & { _max: { executedAt: Date } } => g._max.executedAt != null)
+      .map((g) => ({ botType: g.botType, executedAt: g._max.executedAt }))
+
+    if (orConditions.length === 0) return []
+
+    // ② 각 botType별 최신 executedAt에 해당하는 실제 row 조회 (botType+executedAt 조합으로 한정)
+    const rows = await prisma.botLog.findMany({
+      where: { OR: orConditions },
+      orderBy: { id: 'desc' },
+    })
+
+    // 동일 botType+executedAt row가 복수면 id desc 우선으로 botType별 1개만 안정적으로 선택
+    const latestByType = new Map<BotType, (typeof rows)[number]>()
+    for (const log of rows) {
+      if (!latestByType.has(log.botType)) latestByType.set(log.botType, log)
+    }
+
+    // 기존 DASHBOARD_BOT_TYPES 노출 순서 유지 (그룹 내 표시 순서 회귀 방지)
+    const logs = DASHBOARD_BOT_TYPES.map((botType) => latestByType.get(botType)).filter(
+      (log): log is NonNullable<typeof log> => log != null
+    )
 
     return logs.map((log) => {
       const state: DashboardBotState =
