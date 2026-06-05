@@ -42,18 +42,20 @@ loadEnvFile(resolve(projectRoot, '.env.local'))
 loadEnvFile(resolve(projectRoot, '.env'))
 
 console.log(`\n${'='.repeat(50)}`)
-console.log('[네이버 카페 로컬] 시트 스크래퍼 시작')
+console.log('[네이버 로컬] 시트 스크래퍼 시작 (navercafe + bboom)')
 console.log('='.repeat(50))
 
 try {
-  execFileSync('npx', ['tsx', resolve(__dirname, 'sheet-scraper.ts'), '--site', 'navercafe'], {
+  // 네이버 도메인은 GHA 봇 차단 리스크 → 로컬 Mac launchd 전용.
+  // navercafe(세션 필요) + bboom(공개 게시판) 둘 다 이 경로에서 처리.
+  execFileSync('npx', ['tsx', resolve(__dirname, 'sheet-scraper.ts'), '--site', 'navercafe,bboom'], {
     env: { ...process.env },
     timeout: 900000, // 15분
     stdio: 'inherit',
   })
-  console.log('[네이버 카페 로컬] 완료')
+  console.log('[네이버 로컬] 완료')
 } catch (err: unknown) {
   const msg = err instanceof Error ? err.message : String(err)
-  console.error(`[네이버 카페 로컬] 실패: ${msg}`)
+  console.error(`[네이버 로컬] 실패: ${msg}`)
   process.exit(1)
 }

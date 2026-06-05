@@ -148,6 +148,29 @@ export const SITE_CONFIGS: SiteConfig[] = [
     minDelay: 3000,
     cloudflareProtected: false,
   },
+  {
+    id: 'bboom',
+    name: '네이버 뿜',
+    // /best/get?... + /board/get?... 단일 글 URL만 (popular/list/API성 URL 차단)
+    urlPatterns: [/m\.bboom\.naver\.com\/(best|board)\/get(?:\?|$)/],
+    selectors: {
+      title: ['.se-title-text'],
+      content: ['.se-main-container'],
+      images: 'img',
+      removeElements: ['script', 'style', '.ad_area', 'iframe'],
+    },
+    commentSelectors: {
+      item: 'li.u_cbox_comment',
+      text: '.u_cbox_contents',
+      author: '.u_cbox_nick',
+    },
+    // iframe 없음(contentFrame 미사용). 공개 게시판이라 세션 불필요.
+    // 단 naver 도메인 GHA 차단 리스크로 로컬 launchd 전용 운영(.github 워크플로 EXCLUDE).
+    requiresSession: false,
+    headless: true,
+    minDelay: 2500,
+    cloudflareProtected: false,
+  },
 ]
 
 /**

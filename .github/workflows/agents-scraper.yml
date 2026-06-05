@@ -60,8 +60,9 @@ jobs:
       - name: Verify system Chrome
         run: google-chrome-stable --version
 
-      - name: Run Sheet Scraper (펨코 제외 — 로컬 Mac에서 처리)
+      - name: Run Sheet Scraper (펨코·뿜 제외 — 로컬 Mac에서 처리)
         run: cd agents && npx tsx cron/runner.ts community sheet-scrape
         env:
-          SHEET_SCRAPER_EXCLUDE_SITE: fmkorea
+          # fmkorea(Cloudflare) + bboom(naver GHA 봇 차단 리스크) → 로컬 launchd 전용
+          SHEET_SCRAPER_EXCLUDE_SITE: fmkorea,bboom
           PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: /usr/bin/google-chrome-stable

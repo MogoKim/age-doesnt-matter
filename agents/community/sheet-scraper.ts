@@ -350,17 +350,23 @@ function filterSourceComments(raw: string[]): string[] {
 
 // ── CLI 인자 + 환경변수 파싱 ──
 
-function parseSiteFilter(): { siteOnly: string | null; siteExclude: string | null } {
+/** 콤마 구분 다중값 파싱 — "navercafe,bboom" → ['navercafe','bboom'], 빈값은 [] */
+function parseSiteList(value: string | null | undefined): string[] {
+  if (!value) return []
+  return value.split(',').map(s => s.trim()).filter(Boolean)
+}
+
+function parseSiteFilter(): { siteOnly: string[]; siteExclude: string[] } {
   const args = process.argv.slice(2)
   const siteIdx = args.indexOf('--site')
-  const siteOnly = siteIdx !== -1 ? args[siteIdx + 1] ?? null : null
-  const siteExclude = process.env.SHEET_SCRAPER_EXCLUDE_SITE ?? null
+  const siteOnly = parseSiteList(siteIdx !== -1 ? args[siteIdx + 1] : null)
+  const siteExclude = parseSiteList(process.env.SHEET_SCRAPER_EXCLUDE_SITE)
   return { siteOnly, siteExclude }
 }
 
 export async function main() {
   const { siteOnly, siteExclude } = parseSiteFilter()
-  const filterLabel = siteOnly ? `[${siteOnly} only]` : siteExclude ? `[${siteExclude} 제외]` : ''
+  const filterLabel = siteOnly.length > 0 ? `[${siteOnly.join(',')} only]` : siteExclude.length > 0 ? `[${siteExclude.join(',')} 제외]` : ''
   console.log(`[sheet-scraper]${filterLabel} 시작:`, kstNow())
 
   let totalProcessed = 0
@@ -397,15 +403,15 @@ export async function main() {
             // 사이트 감지 (필터링 전에 먼저 수행 — PROCESSING 마킹 방지)
             const siteConfig = detectSite(normalizedUrl)
 
-            // 사이트 필터: --site fmkorea → 펨코만 처리, 나머지 PENDING 유지
-            if (siteOnly && siteConfig && siteConfig.id !== siteOnly) {
-              console.log(`  → SKIP (필터: ${siteOnly} only)`)
+            // 사이트 필터: --site navercafe,bboom → 지정 사이트만 처리, 나머지 PENDING 유지
+            if (siteOnly.length > 0 && siteConfig && !siteOnly.includes(siteConfig.id)) {
+              console.log(`  → SKIP (필터: ${siteOnly.join(',')} only)`)
               totalSkippedFilter++
               continue
             }
-            // 사이트 제외: SHEET_SCRAPER_EXCLUDE_SITE=fmkorea → 펨코 건너뜀
-            if (siteExclude && siteConfig && siteConfig.id === siteExclude) {
-              console.log(`  → SKIP (제외: ${siteExclude})`)
+            // 사이트 제외: SHEET_SCRAPER_EXCLUDE_SITE=fmkorea,bboom → 지정 사이트 건너뜀
+            if (siteExclude.length > 0 && siteConfig && siteExclude.includes(siteConfig.id)) {
+              console.log(`  → SKIP (제외: ${siteConfig.id})`)
               totalSkippedFilter++
               continue
             }
