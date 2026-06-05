@@ -74,8 +74,19 @@ interface AdBannerTableProps {
   currentSlot?: string
 }
 
-function formatDate(date: Date) {
-  return new Date(date).toISOString().split('T')[0]
+// Date → KST 'YYYY-MM-DDTHH:mm' (datetime-local 입력값)
+function toKstInput(date: Date | string): string {
+  const d = new Date(date)
+  return new Date(d.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 16)
+}
+// datetime-local(KST 벽시계) → +09:00 명시 ISO (서버 UTC 오해석 방지)
+function kstInputToIso(v: string): string {
+  return v ? `${v}:00+09:00` : ''
+}
+// Date → KST 'YYYY-MM-DD HH:mm' (테이블 표시)
+function formatKst(date: Date | string): string {
+  const d = new Date(date)
+  return new Date(d.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 16).replace('T', ' ')
 }
 
 export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: AdBannerTableProps) {
@@ -94,7 +105,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
     htmlCode: '',
     clickUrl: '',
     targetPath: '',
-    startDate: formatDate(new Date()),
+    startDate: toKstInput(new Date()),
     endDate: '',
     priority: 0,
   })
@@ -137,7 +148,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
     htmlCode: '',
     clickUrl: '',
     targetPath: '',
-    startDate: formatDate(new Date()),
+    startDate: toKstInput(new Date()),
     endDate: '',
     priority: 0,
   }
@@ -151,8 +162,8 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
       htmlCode: ad.htmlCode ?? '',
       clickUrl: ad.clickUrl ?? '',
       targetPath: ad.targetPath ?? '',
-      startDate: formatDate(ad.startDate),
-      endDate: formatDate(ad.endDate),
+      startDate: toKstInput(ad.startDate),
+      endDate: toKstInput(ad.endDate),
       priority: ad.priority,
     })
     setEditingId(ad.id)
@@ -177,8 +188,8 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
           htmlCode: form.htmlCode || undefined,
           clickUrl: form.clickUrl || undefined,
           targetPath: form.targetPath || undefined,
-          startDate: form.startDate,
-          endDate: form.endDate,
+          startDate: kstInputToIso(form.startDate),
+          endDate: kstInputToIso(form.endDate),
           priority: form.priority,
         })
       } else {
@@ -190,8 +201,8 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
           htmlCode: form.htmlCode || undefined,
           clickUrl: form.clickUrl || undefined,
           targetPath: form.targetPath || undefined,
-          startDate: form.startDate,
-          endDate: form.endDate,
+          startDate: kstInputToIso(form.startDate),
+          endDate: kstInputToIso(form.endDate),
           priority: form.priority,
         })
       }
@@ -226,6 +237,22 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
           </button>
         ))}
       </div>
+
+      {/* 운영 가이드 — 광고 슬롯 탭 (신입 담당자 필독) */}
+      {activeTab === 'ads' && (
+        <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800 space-y-1.5">
+          <p className="font-semibold">📋 광고 슬롯 운영 가이드 (담당자 필독)</p>
+          <ul className="space-y-1 list-none pl-0 text-blue-700">
+            <li>• <strong>목록 상단 띠</strong>: 6개 목록 페이지(베스트·사는이야기·2막준비·웃음방·매거진·내일찾기) 메뉴 바로 아래에 노출</li>
+            <li>• <strong>노출 위치</strong>: 여러 페이지 복수 선택 가능 — 전부 또는 0개 선택 = 6개 전체 공통</li>
+            <li>• <strong>이미지</strong>: 권장 1200×400(3:1) 가로 띠 — 파일 선택하면 자동 업로드</li>
+            <li>• <strong>광고 유형</strong>: 자체(우리 배너 이미지) / 구글·쿠팡(HTML 코드) / 외부</li>
+            <li>• <strong>클릭 URL</strong>: 우나어 내부 주소는 같은 탭, 외부(https://)는 새 탭으로 열림</li>
+            <li>• <strong>노출 조건</strong>: 활성 ON + 현재 시각이 시작~종료 사이 (한국 시간 KST 기준)</li>
+            <li>• 최대 <strong>3개</strong>까지 자동 슬라이드 · CTR = 클릭÷노출×100 · 각 칸의 <strong>?</strong>에 마우스를 올리면 설명이 나옵니다</li>
+          </ul>
+        </div>
+      )}
 
       {/* 슬롯 필터 + 추가 */}
       <div className="flex flex-wrap items-center gap-3">
@@ -269,7 +296,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">광고 유형 *</label>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">광고 유형 * <HelpTip text={HELP.AD_TYPE} /></label>
               <select
                 value={form.adType}
                 onChange={(e) => setForm({ ...form, adType: e.target.value as AdType })}
@@ -281,7 +308,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">제목</label>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">제목 <HelpTip text={HELP.AD_TITLE} /></label>
               <input
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -289,7 +316,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">클릭 URL</label>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">클릭 URL <HelpTip text={HELP.AD_CLICK_URL} /></label>
               <input
                 value={form.clickUrl}
                 onChange={(e) => setForm({ ...form, clickUrl: e.target.value })}
@@ -298,7 +325,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
             </div>
             {(form.adType === 'GOOGLE' || form.adType === 'COUPANG') ? (
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-zinc-600">광고 HTML 코드</label>
+                <label className="mb-1 block text-xs font-medium text-zinc-600">광고 HTML 코드 <HelpTip text={HELP.AD_HTML_CODE} /></label>
                 <textarea
                   value={form.htmlCode}
                   onChange={(e) => setForm({ ...form, htmlCode: e.target.value })}
@@ -310,7 +337,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               </div>
             ) : (
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-600">이미지</label>
+                <label className="mb-1 block text-xs font-medium text-zinc-600">이미지 <HelpTip text={HELP.AD_IMAGE} /></label>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -337,7 +364,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
 
             {form.slot === 'LIST_HEADER' && (
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-zinc-600">노출 위치 (복수 선택 가능 · 전부 또는 0개 = 전체 공통)</label>
+                <label className="mb-1 block text-xs font-medium text-zinc-600">노출 위치 (복수 선택 가능 · 전부 또는 0개 = 전체 공통) <HelpTip text={HELP.AD_TARGET} /></label>
                 <div className="flex flex-wrap gap-2">
                   {LIST_HEADER_PAGES.map((p) => {
                     const selected = parseTargetPaths(form.targetPath)
@@ -371,7 +398,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               </div>
             )}
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">우선순위</label>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">우선순위 <HelpTip text={HELP.AD_PRIORITY} /></label>
               <input
                 type="number"
                 value={form.priority}
@@ -380,20 +407,20 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">시작일 * </label>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">시작일시 (KST) * <HelpTip text={HELP.AD_PERIOD} /></label>
               <input
                 required
-                type="date"
+                type="datetime-local"
                 value={form.startDate}
                 onChange={(e) => setForm({ ...form, startDate: e.target.value })}
                 className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">종료일 *</label>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">종료일시 (KST) *</label>
               <input
                 required
-                type="date"
+                type="datetime-local"
                 value={form.endDate}
                 onChange={(e) => setForm({ ...form, endDate: e.target.value })}
                 className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
@@ -464,7 +491,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                     {ad.title || '-'}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-xs text-zinc-500">
-                    {formatDate(ad.startDate)} ~ {formatDate(ad.endDate)}
+                    {formatKst(ad.startDate)} ~ {formatKst(ad.endDate)}
                   </td>
                   <td className="px-3 py-3 text-center text-zinc-600">{ad.priority}</td>
                   <td className="px-3 py-3 text-center text-zinc-600">{ad.impressions.toLocaleString()}</td>
