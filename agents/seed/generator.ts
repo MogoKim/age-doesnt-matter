@@ -912,6 +912,9 @@ const LEAK_PHRASES = [
   '제가 구성된', '구성된 인물', '설정되어 있고', '참여하지 않기로',
   '댓글을 달기 어렵습니다', '제 캐릭터', '페르소나', '시스템 프롬프트',
   'AI 모델', '정책상', '지침상',
+  // 메타 누설 — 본문 truncation/미열람을 댓글에 노출 (예: "본문이 잘려서 끝까지 못 봤지만")
+  '본문이 잘려', '끝까지 못 봤', '본문을 못 봤', '내용을 못 봤',
+  '내용이 잘려', '글이 잘려', '사진을 볼 수 없', '이미지라 내용', '본문 내용 올려',
 ]
 
 function isLeakySheetComment(text: string): boolean {
@@ -1038,11 +1041,12 @@ ${WAVE_PROMPTS[waveType]}`
       continue
     }
 
-    // v1.6: 이미지/초단문 글 source anchor 차단 — 제목/본문에 없는 원본댓글 인물명·표현·구문 인용 방지
-    if (isImagePost) {
+    // v1.7: source-only anchor 차단 — 원본댓글에만 있고 제목/본문엔 없는 표현(예: 크루아상) 인용 방지.
+    //        이미지 글뿐 아니라 sourceComments 있는 모든 글에 적용 (일반 글 source comment 누수 차단).
+    if (sourceComments.length > 0) {
       const sourceOnlyAnchors = detectSourceOnlyAnchors(cleaned, sourceComments, allowedNorm)
       if (sourceOnlyAnchors.length > 0) {
-        console.warn(`  [SheetViral] image source-only anchor 감지 [${sourceOnlyAnchors.join(', ')}] — skip (attempt ${attempt + 1})`)
+        console.warn(`  [SheetViral] source-only anchor 감지 [${sourceOnlyAnchors.join(', ')}] — skip (attempt ${attempt + 1})`)
         continue
       }
     }
