@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'unao-v1'
+const CACHE_NAME = 'unao-v2'
 
 // VAPID 키 — ServiceWorkerRegister.tsx에서 postMessage로 주입받음
 let vapidPublicKey = null
@@ -88,13 +88,24 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const clone = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+          // 정상(200·비리다이렉트) 응답만 캐시 — 리다이렉트/오류 캐시 시 예외·내비게이션 실패 방지
+          if (response.ok && !response.redirected) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {})
+          }
           return response
         })
-        .catch(() =>
-          caches.match(request).then((cached) => cached || caches.match(OFFLINE_URL))
-        )
+        .catch(async () => {
+          const cached = await caches.match(request)
+          if (cached) return cached
+          const offline = await caches.match(OFFLINE_URL)
+          if (offline) return offline
+          // 절대 undefined 반환 금지 (respondWith(undefined) → 브라우저 네이티브 에러)
+          return new Response(
+            '<h1>오프라인</h1><p>잠시 후 다시 시도해 주세요.</p>',
+            { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          )
+        })
     )
     return
   }
