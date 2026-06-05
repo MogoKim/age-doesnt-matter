@@ -36,7 +36,7 @@ function createPrismaClient() {
   const configuredPoolMax = Number.parseInt(process.env.WEB_DB_POOL_MAX ?? '', 10)
   const poolMax = Number.isFinite(configuredPoolMax) && configuredPoolMax > 0
     ? configuredPoolMax
-    : (isProduction ? 1 : 10)
+    : (isProduction ? 3 : 10)
 
   const pool = new Pool({
     host: parsed.host,
@@ -46,7 +46,7 @@ function createPrismaClient() {
     database: parsed.database,
     ssl: isProduction ? { rejectUnauthorized: false } : undefined,
     // 서버리스 환경: 여러 Lambda/GHA가 동시에 뜨면 전체 DB 연결 200개를 빠르게 소진한다.
-    // production 기본 1개로 제한하고, 필요 시 WEB_DB_POOL_MAX로만 올린다.
+    // production 기본 3개(어드민 동시 쿼리 직렬화 방지). 연결 footprint 우려 시 WEB_DB_POOL_MAX로 낮춘다.
     max: poolMax,
     // 15초: warm Lambda가 유휴 풀러(client) 슬롯을 빠르게 반납해 연결 footprint 축소
     // PgBouncer transaction mode → idle 연결이 PostgreSQL 슬롯 점유 없음
