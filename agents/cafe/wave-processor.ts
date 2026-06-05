@@ -113,18 +113,7 @@ async function getQueueTier(postId: string, cafePostId: string): Promise<Tier> {
   return 'NORMAL'
 }
 
-// 작성자 대댓글 fallback 풀 (legacy path 전용)
-const AUTHOR_REPLY_POOL = [
-  '공감해 주셔서 감사해요~',
-  '맞아요 저도 그렇게 생각해요 ^^',
-  '좋은 말씀 감사합니다',
-  '그러게요 저도 비슷한 경험이 있어요',
-  '이렇게 공감해 주시니 힘이 나요',
-  '맞아요 맞아요 ^^',
-  '함께 나눠 주셔서 감사해요',
-]
-
-// ── Legacy 함수 (기존 로직 그대로 유지 — 변경 금지) ──
+// ── Legacy 함수 (작성자 대댓글은 V2와 동일 정책: 원문 글 작성자가 실제로 단 답글만 미러) ──
 
 async function processAuthorReplyLegacy(
   queue: { id: string; postId: string; cafePostId: string; authorPersonaId: string },
@@ -143,17 +132,17 @@ async function processAuthorReplyLegacy(
 
   const cafePost = await prisma.cafePost.findUnique({
     where: { id: queue.cafePostId },
-    select: { topComments: true },
+    select: { topComments: true, author: true },
   })
-  type TC = { content: string; replies?: Array<{ content: string }> }
+  const cafeAuthor = normalizeNickname(cafePost?.author ?? '')
+  type TC = { content: string; replies?: Array<{ author: string; content: string }> }
   const topComments = (cafePost?.topComments as TC[]) ?? []
-  const replyFromOriginal = topComments
+  // V2와 동일 정책: 원문 글 작성자가 실제로 단 답글만 미러 (가짜답글 생성 안 함)
+  const replyText = topComments
     .flatMap(c => c.replies ?? [])
-    .find(r => r.content?.trim().length >= 5)
+    .find(r => normalizeNickname(r.author) === cafeAuthor && r.content?.trim().length >= 5)
     ?.content?.trim()
-
-  const replyText = replyFromOriginal
-    ?? AUTHOR_REPLY_POOL[Math.floor(Math.random() * AUTHOR_REPLY_POOL.length)]
+  if (!replyText) return
 
   await prisma.$transaction([
     prisma.comment.create({
