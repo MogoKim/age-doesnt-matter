@@ -23,6 +23,9 @@ const SLOT_LABELS: Record<string, string> = {
   MAGAZINE_CPS: '매거진 CPS',
 }
 
+// 실제 화면 렌더 코드가 있는 슬롯만 폼/필터 드롭다운에 노출 (나머지는 등록해도 안 나오는 유령 슬롯)
+const ACTIVE_SLOTS: string[] = ['LIST_HEADER', 'HOME_INLINE']
+
 // LIST_HEADER(목록 상단 띠) 노출 위치 — targetPath('' = 6개 전체 공통)
 const LIST_HEADER_TARGETS: { value: string; label: string }[] = [
   { value: '', label: '전체 공통(6개 목록)' },
@@ -78,7 +81,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
   const [uploading, setUploading] = useState(false)
 
   const [form, setForm] = useState({
-    slot: 'HOME_INLINE' as AdSlot,
+    slot: 'LIST_HEADER' as AdSlot,
     adType: 'SELF' as AdType,
     title: '',
     imageUrl: '',
@@ -177,8 +180,8 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
           className="h-9 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700"
         >
           <option value="">전체 슬롯</option>
-          {Object.entries(SLOT_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
+          {ACTIVE_SLOTS.map((key) => (
+            <option key={key} value={key}>{SLOT_LABELS[key]}</option>
           ))}
         </select>
 
@@ -205,8 +208,8 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 onChange={(e) => setForm({ ...form, slot: e.target.value as AdSlot })}
                 className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm"
               >
-                {Object.entries(SLOT_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                {ACTIVE_SLOTS.map((key) => (
+                  <option key={key} value={key}>{SLOT_LABELS[key]}</option>
                 ))}
               </select>
             </div>
@@ -238,30 +241,44 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">이미지</label>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                disabled={uploading}
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = '' }}
-                className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-800 disabled:opacity-50"
-              />
-              {uploading && <p className="mt-1 text-[11px] text-zinc-500">업로드 중…</p>}
-              {form.slot === 'LIST_HEADER' && (
-                <p className="mt-1 text-[11px] text-zinc-500">권장 1456×180 (8:1 비율) · 데스크탑 기준 고화질 1장, 비율 유지 반응형</p>
-              )}
-              <input
-                value={form.imageUrl}
-                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                placeholder="또는 이미지 URL 직접 입력"
-                className="mt-2 h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
-              />
-              {form.imageUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={form.imageUrl} alt="배너 미리보기" className="mt-2 max-h-24 w-full rounded-lg border border-zinc-200 object-contain" />
-              )}
-            </div>
+            {(form.adType === 'GOOGLE' || form.adType === 'COUPANG') ? (
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-zinc-600">광고 HTML 코드</label>
+                <textarea
+                  value={form.htmlCode}
+                  onChange={(e) => setForm({ ...form, htmlCode: e.target.value })}
+                  rows={4}
+                  placeholder="구글 애드센스 / 쿠팡 광고 HTML 코드 붙여넣기"
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-xs outline-none focus:border-zinc-500"
+                />
+                <p className="mt-1 text-[11px] text-zinc-500">&lt;script&gt; 등 위험 태그는 저장 시 자동 제거됩니다.</p>
+              </div>
+            ) : (
+              <div>
+                <label className="mb-1 block text-xs font-medium text-zinc-600">이미지</label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={uploading}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = '' }}
+                  className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-800 disabled:opacity-50"
+                />
+                {uploading && <p className="mt-1 text-[11px] text-zinc-500">업로드 중…</p>}
+                {form.slot === 'LIST_HEADER' && (
+                  <p className="mt-1 text-[11px] text-zinc-500">권장 1456×180 (8:1 비율) · 데스크탑 기준 고화질 1장, 비율 유지 반응형</p>
+                )}
+                <input
+                  value={form.imageUrl}
+                  onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                  placeholder="또는 이미지 URL 직접 입력"
+                  className="mt-2 h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                />
+                {form.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={form.imageUrl} alt="배너 미리보기" className="mt-2 max-h-24 w-full rounded-lg border border-zinc-200 object-contain" />
+                )}
+              </div>
+            )}
 
             {form.slot === 'LIST_HEADER' && (
               <div>
