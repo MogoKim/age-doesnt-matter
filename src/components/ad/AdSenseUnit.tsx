@@ -67,6 +67,17 @@ export default function AdSenseUnit({
 
     debugBeacon('debug_stage', { stage: 'ad_init', slot: slotId }) // [임시 진단]
 
+    // [크래시 수정] fluid/인피드 광고는 컨테이너 폭 250px 미만(availableWidth=0)에서
+    // adsbygoogle.push() 시 "Fluid responsive ads must be at least 250px wide" TagError를
+    // 던지고, 저사양 안드로이드 WebView에서 렌더러 크래시("앗, 이런!")로 이어짐.
+    // 폭이 확보됐을 때만 push하고, 부족하면 쿠팡 폴백으로 대체.
+    const isFluidUnit = format === 'fluid' || !!layoutKey
+    if (isFluidUnit && container.offsetWidth < 250) {
+      container.innerHTML = ''
+      setShowFallback(true)
+      return
+    }
+
     // 이전 ins 제거 (SPA 네비게이션 대응)
     container.innerHTML = ''
     setShowFallback(false)
