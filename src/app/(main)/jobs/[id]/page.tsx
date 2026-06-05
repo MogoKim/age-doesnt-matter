@@ -16,6 +16,7 @@ import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import JobListBottom from '@/components/features/jobs/JobListBottom'
+import JobPostBanner from '@/components/features/jobs/JobPostBanner'
 import PostViewBeacon from '@/components/common/PostViewBeacon'
 
 interface PageProps {
@@ -149,6 +150,9 @@ export default async function JobDetailPage({ params }: PageProps) {
       >
         ← 내 일 찾기
       </Link>
+
+      {/* 자사 홍보 배너 (게시글별 11개 중 1개, 클릭 시 홈) */}
+      <JobPostBanner seed={id} />
 
       {/* 태그 */}
       {job.tags.length > 0 && (
