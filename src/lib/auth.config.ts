@@ -16,7 +16,7 @@ export const authConfig: NextAuthConfig = {
       checks: ['state'],
       authorization: {
         url: 'https://kauth.kakao.com/oauth/authorize',
-        params: { scope: 'profile_nickname profile_image account_email gender birthyear phone_number' },
+        params: { scope: 'profile_nickname profile_image account_email' },
       },
       token: {
         url: 'https://kauth.kakao.com/oauth/token',
