@@ -107,18 +107,16 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
   async function handleImageUpload(file: File) {
     setUploading(true)
     try {
-      const presignRes = await fetch(`/api/admin/uploads/presign?type=${encodeURIComponent(file.type)}`)
-      if (!presignRes.ok) {
-        const err = await presignRes.json().catch(() => ({}))
-        alert(err.error ?? '업로드 준비 실패 (JPG·PNG·WebP만 가능)')
+      // 서버 경유 업로드 (브라우저가 R2에 직접 PUT하지 않아 CORS 무관)
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/admin/uploads/banner', { method: 'POST', body: fd })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error ?? '업로드 실패 (JPG·PNG·WebP, 4MB 이하)')
         return
       }
-      const { uploadUrl, publicUrl } = await presignRes.json() as { uploadUrl: string; publicUrl: string }
-      const putRes = await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } })
-      if (!putRes.ok) {
-        alert('이미지 업로드 실패. 다시 시도해주세요.')
-        return
-      }
+      const { publicUrl } = await res.json() as { publicUrl: string }
       setForm((f) => ({ ...f, imageUrl: publicUrl }))
     } catch {
       alert('업로드 중 오류가 발생했습니다.')
