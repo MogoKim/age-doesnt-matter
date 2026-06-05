@@ -72,19 +72,19 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
     <Image
       src={current.imageUrl}
       alt={current.title ?? '광고'}
-      width={1456}
-      height={180}
-      className="w-full h-auto"
+      fill
+      className="object-cover object-center"
+      sizes="(max-width: 1200px) 100vw, 1200px"
     />
   ) : current.htmlCode ? (
-    <div dangerouslySetInnerHTML={{ __html: current.htmlCode }} />
+    <div className="absolute inset-0 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: current.htmlCode }} />
   ) : (
-    <div className="flex h-[100px] items-center justify-center md:h-[90px] text-caption text-muted-foreground">
+    <div className="absolute inset-0 flex items-center justify-center text-caption text-muted-foreground">
       {current.title ?? ''}
     </div>
   )
 
-  // 링크가 있으면 내부(Link)/외부(a) 분기, 없으면 그대로
+  // 링크가 있으면 내부(Link)/외부(a) 분기, 없으면 그대로 (전체 클릭 영역)
   const body = current.clickUrl
     ? isExternal
       ? (
@@ -93,7 +93,7 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
           target="_blank"
           rel="noopener noreferrer nofollow"
           onClick={() => handleClick(current.id, current.adType)}
-          className="block"
+          className="absolute inset-0 block"
         >
           {inner}
         </a>
@@ -102,26 +102,23 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
         <Link
           href={current.clickUrl}
           onClick={() => handleClick(current.id, current.adType)}
-          className="block"
+          className="absolute inset-0 block"
         >
           {inner}
         </Link>
       )
     : inner
 
+  // 히어로 배너와 동일: 좌우 풀블리드(데스크탑 max-w-1200 중앙) + 고정 비율 + object-cover
   return (
     <div
       className={cn(
-        'relative mx-4 mb-3 overflow-hidden rounded-2xl border border-border bg-muted',
-        'lg:mx-auto lg:max-w-[960px]',
+        'relative w-full mx-auto max-w-[1200px] mb-2 overflow-hidden bg-muted',
+        '[aspect-ratio:5/2] lg:[aspect-ratio:8/3]',
       )}
       role="complementary"
       aria-label="광고"
     >
-      <span className="absolute left-2 top-2 z-10 rounded bg-black/40 px-1.5 py-0.5 text-[11px] font-bold text-white">
-        광고
-      </span>
-
       {body}
     </div>
   )
