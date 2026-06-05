@@ -24,7 +24,7 @@ import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
 import { generateCommunitySlug } from '../core/slug.js'
 import { readPendingRows, updateRow } from './sheets-client.js'
-import { detectSite, randomUserAgent, isCloudflareChallenge, type SiteConfig } from './site-configs.js'
+import { detectSite, normalizeNaverCafeUrl, randomUserAgent, isCloudflareChallenge, type SiteConfig } from './site-configs.js'
 import { processContentMedia } from './image-pipeline.js'
 import { transformContent, transformRawContent, classifyCategory } from './content-transformer.js'
 
@@ -391,8 +391,11 @@ export async function main() {
           console.log(`[sheet-scraper] [${totalProcessed}/${totalRows}] ${row.sourceUrl}`)
 
           try {
+            // 네이버 카페 구형 URL → f-e article URL 정규화 (Sheet 원본 source_url은 불변)
+            const normalizedUrl = normalizeNaverCafeUrl(row.sourceUrl)
+
             // 사이트 감지 (필터링 전에 먼저 수행 — PROCESSING 마킹 방지)
-            const siteConfig = detectSite(row.sourceUrl)
+            const siteConfig = detectSite(normalizedUrl)
 
             // 사이트 필터: --site fmkorea → 펨코만 처리, 나머지 PENDING 유지
             if (siteOnly && siteConfig && siteConfig.id !== siteOnly) {
@@ -564,7 +567,7 @@ export async function main() {
             } else {
               // 자동 스크래핑
               const activeContext = siteConfig?.requiresSession && sessionContext ? sessionContext : context
-              const result = await scrapePage(activeContext, row.sourceUrl, siteConfig, tab.boardType)
+              const result = await scrapePage(activeContext, normalizedUrl, siteConfig, tab.boardType)
               title = row.title || result.title // 창업자 제목 우선
               content = result.content
               thumbnailUrl = result.thumbnailUrl

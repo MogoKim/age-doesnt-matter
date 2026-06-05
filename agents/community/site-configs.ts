@@ -156,6 +156,44 @@ export function detectSite(url: string): SiteConfig | null {
 }
 
 /**
+ * 네이버 카페 slug → 내부 numericId 매핑 (v1: 검증 완료 source만)
+ * 값 출처: agents/cafe/config.ts (wgang/dlxogns01) + live smoke 검증 (remonterrace)
+ * busanmam은 BOARD_NOTICE 오염으로 v1 제외 — v1.1 재검토
+ */
+const NAVER_CAFE_NUMERIC_ID: Record<string, number> = {
+  wgang: 29349320,
+  dlxogns01: 23676262,
+  remonterrace: 10298136,
+}
+
+/**
+ * 네이버 카페 구형 글 URL → f-e article URL 정규화
+ *
+ * - 이미 신형(f-e|ca-fe/cafes/) URL이면 그대로 반환
+ * - 구형 cafe.naver.com/{slug}/{articleId} 이고 slug가 매핑에 있으면
+ *   https://cafe.naver.com/f-e/cafes/{numericId}/articles/{articleId} 로 변환
+ * - 매핑 없는 slug / 비카페 URL은 원본 그대로 반환 (detectSite가 처리)
+ *
+ * 주의: naver.me 단축 URL, popular/목록 URL은 지원하지 않는다.
+ */
+export function normalizeNaverCafeUrl(url: string): string {
+  // 이미 신형 URL이면 변환 불필요
+  if (/cafe\.naver\.com\/(f-e|ca-fe)\/cafes\//.test(url)) return url
+
+  // 구형 단일 글 URL: cafe.naver.com/{slug}/{articleId}
+  const m = url.match(/cafe\.naver\.com\/([a-zA-Z0-9_-]+)\/(\d+)/)
+  if (m) {
+    const numericId = NAVER_CAFE_NUMERIC_ID[m[1]]
+    if (numericId) {
+      return `https://cafe.naver.com/f-e/cafes/${numericId}/articles/${m[2]}`
+    }
+  }
+
+  // 변환 불가 → 원본 반환
+  return url
+}
+
+/**
  * Chrome User-Agent 로테이션
  */
 const USER_AGENTS = [
