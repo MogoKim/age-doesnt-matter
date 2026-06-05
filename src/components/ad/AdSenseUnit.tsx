@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ADSENSE } from './ad-slots'
 import CoupangBanner from './CoupangBanner'
+import { debugBeacon } from '@/lib/debug-beacon' // [임시 진단]
 
 interface AdSenseUnitProps {
   /** AdSense 광고 슬롯 ID */
@@ -63,6 +64,8 @@ export default function AdSenseUnit({
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
+
+    debugBeacon('debug_stage', { stage: 'ad_init', slot: slotId }) // [임시 진단]
 
     // 이전 ins 제거 (SPA 네비게이션 대응)
     container.innerHTML = ''
