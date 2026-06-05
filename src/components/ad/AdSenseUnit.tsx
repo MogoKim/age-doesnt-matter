@@ -131,7 +131,16 @@ export default function AdSenseUnit({
       <span className="absolute top-2 right-3 text-caption text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border z-10">
         광고
       </span>
-      <div ref={containerRef} style={{ minHeight: showFallback ? 0 : (fixedHeight ?? FORMAT_MIN_HEIGHT[format] ?? 90) }} />
+      {/* 광고 ins가 viewport를 넘기지 않도록 가둠 — AdSense full-width-responsive/fluid가
+          부모 패딩 무시하고 펼쳐지는 가로 overflow 차단 (크롬·TWA 가로 밀림 근본 수정) */}
+      <div
+        ref={containerRef}
+        style={{
+          minHeight: showFallback ? 0 : (fixedHeight ?? FORMAT_MIN_HEIGHT[format] ?? 90),
+          maxWidth: '100%',
+          overflowX: 'hidden',
+        }}
+      />
       {showFallback && (
         <CoupangBanner preset="mobile" className="mt-2" />
       )}

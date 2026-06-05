@@ -186,6 +186,10 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: contain; /* Android pull-to-refresh 방지 (에디터 스크롤 충돌 예방) */
+  /* 가로 overflow 방어선 — 광고(AdSense full-width) 등 자식이 viewport를 넘겨도
+     페이지 전체가 가로로 밀리지 않게 차단. clip은 hidden과 달리 스크롤 컨테이너를
+     만들지 않아 sticky 헤더/IconMenu가 깨지지 않음. [범인] 크롬·TWA 광고 충전 시 가로 밀림 */
+  overflow-x: clip;
 }
 
 body {
@@ -197,6 +201,10 @@ body {
   background-color: hsl(var(--background));
   word-break: keep-all;
   min-height: 100dvh;
+  /* 가로 overflow 방어선 — root overflow propagation 때문에 html에만 걸면 무효.
+     html+body 둘 다 clip이어야 광고 등 초과 요소가 페이지를 가로로 밀지 못함(실측 확인).
+     clip은 스크롤 컨테이너 미생성 → sticky 헤더/IconMenu·세로 스크롤 정상 유지. */
+  overflow-x: clip;
 }
 
 a {
