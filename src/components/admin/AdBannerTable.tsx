@@ -75,6 +75,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [showForm, setShowForm] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const [form, setForm] = useState({
     slot: 'HOME_INLINE' as AdSlot,
@@ -96,6 +97,29 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
     else params.delete(key)
     params.delete('cursor')
     router.push(`/admin/banners?${params.toString()}`)
+  }
+
+  async function handleImageUpload(file: File) {
+    setUploading(true)
+    try {
+      const presignRes = await fetch(`/api/admin/uploads/presign?type=${encodeURIComponent(file.type)}`)
+      if (!presignRes.ok) {
+        const err = await presignRes.json().catch(() => ({}))
+        alert(err.error ?? '업로드 준비 실패 (JPG·PNG·WebP만 가능)')
+        return
+      }
+      const { uploadUrl, publicUrl } = await presignRes.json() as { uploadUrl: string; publicUrl: string }
+      const putRes = await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } })
+      if (!putRes.ok) {
+        alert('이미지 업로드 실패. 다시 시도해주세요.')
+        return
+      }
+      setForm((f) => ({ ...f, imageUrl: publicUrl }))
+    } catch {
+      alert('업로드 중 오류가 발생했습니다.')
+    } finally {
+      setUploading(false)
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -215,14 +239,27 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">이미지 URL</label>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">이미지</label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={uploading}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = '' }}
+                className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-800 disabled:opacity-50"
+              />
+              {uploading && <p className="mt-1 text-[11px] text-zinc-500">업로드 중…</p>}
+              {form.slot === 'LIST_HEADER' && (
+                <p className="mt-1 text-[11px] text-zinc-500">권장 1456×180 (8:1 비율) · 데스크탑 기준 고화질 1장, 비율 유지 반응형</p>
+              )}
               <input
                 value={form.imageUrl}
                 onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                placeholder="또는 이미지 URL 직접 입력"
+                className="mt-2 h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
               />
-              {form.slot === 'LIST_HEADER' && (
-                <p className="mt-1 text-[11px] text-zinc-500">권장 1456×180 (8:1 비율) · 데스크탑 기준 고화질 1장, 비율 유지 반응형</p>
+              {form.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.imageUrl} alt="배너 미리보기" className="mt-2 max-h-24 w-full rounded-lg border border-zinc-200 object-contain" />
               )}
             </div>
 
@@ -274,7 +311,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
           <div className="flex gap-2">
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || uploading}
               className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
             >
               등록
