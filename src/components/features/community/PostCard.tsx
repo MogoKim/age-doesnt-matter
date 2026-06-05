@@ -46,8 +46,6 @@ function PostCard({ post, boardSlug, showBoardBadge = false, fromParam }: PostCa
         {post.title}
       </h2>
 
-      <p className="text-body text-muted-foreground m-0 line-clamp-2 leading-relaxed">{post.preview}</p>
-
       <div className="flex items-center gap-1.5 text-caption text-muted-foreground pt-1">
         <span>{post.author.gradeEmoji}</span>
         <span className="font-medium text-muted-foreground">{post.author.nickname}</span>
