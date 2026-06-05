@@ -130,6 +130,7 @@ enum AdSlot {
   HOME_SECTION_GAP
   SIDEBAR
   LIST_INLINE
+  LIST_HEADER
   POST_BOTTOM
   POST_INLINE
   MOBILE_STICKY
@@ -658,6 +659,7 @@ model AdBanner {
   imageUrl    String?
   htmlCode    String?
   clickUrl    String?
+  targetPath  String?  // null=전체 공통 노출 / "/magazine" 등=해당 목록 페이지에만 노출
 
   startDate   DateTime
   endDate     DateTime

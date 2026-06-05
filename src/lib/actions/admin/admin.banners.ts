@@ -170,6 +170,7 @@ export async function adminCreateAdBanner(data: {
   imageUrl?: string
   htmlCode?: string
   clickUrl?: string
+  targetPath?: string
   startDate: string
   endDate: string
   priority?: number
@@ -186,6 +187,7 @@ export async function adminCreateAdBanner(data: {
       imageUrl: data.imageUrl,
       htmlCode: sanitizedHtmlCode,
       clickUrl: data.clickUrl,
+      targetPath: data.targetPath || null,
       startDate: new Date(data.startDate),
       endDate: new Date(data.endDate),
       priority: data.priority ?? 0,
@@ -211,6 +213,7 @@ export async function adminUpdateAdBanner(
     imageUrl?: string
     htmlCode?: string
     clickUrl?: string
+    targetPath?: string
     startDate?: string
     endDate?: string
     priority?: number
@@ -228,6 +231,7 @@ export async function adminUpdateAdBanner(
     data: {
       ...data,
       htmlCode: sanitizedHtmlCode,
+      ...(data.targetPath !== undefined && { targetPath: data.targetPath || null }),
       ...(data.startDate && { startDate: new Date(data.startDate) }),
       ...(data.endDate && { endDate: new Date(data.endDate) }),
     },

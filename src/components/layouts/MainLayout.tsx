@@ -5,6 +5,7 @@ import TopPromoBanner from './TopPromoBanner'
 import Header from './Header'
 import GNB from './GNB'
 import FAB from './FAB'
+import ListBanner from '@/components/ad/ListBanner'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -32,6 +33,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
       {/* 모바일 전용 아이콘 메뉴 */}
       <IconMenu />
+
+      {/* 목록 페이지(6개) GNB 아래 광고 띠배너 — 경로 게이트는 클라에서 처리 */}
+      <Suspense fallback={null}>
+        <ListBanner />
+      </Suspense>
 
       <main id="main-content" className="pb-[72px] lg:pb-0">{children}</main>
 

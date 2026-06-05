@@ -17,10 +17,22 @@ const SLOT_LABELS: Record<string, string> = {
   HOME_INLINE: '홈 인라인',
   SIDEBAR: '사이드바',
   LIST_INLINE: '목록 인라인',
+  LIST_HEADER: '목록 상단 띠',
   POST_BOTTOM: '글 하단',
   MOBILE_STICKY: '모바일 스티키',
   MAGAZINE_CPS: '매거진 CPS',
 }
+
+// LIST_HEADER(목록 상단 띠) 노출 위치 — targetPath('' = 6개 전체 공통)
+const LIST_HEADER_TARGETS: { value: string; label: string }[] = [
+  { value: '', label: '전체 공통(6개 목록)' },
+  { value: '/best', label: '베스트' },
+  { value: '/community/stories', label: '사는이야기' },
+  { value: '/community/life2', label: '2막준비' },
+  { value: '/community/humor', label: '웃음방' },
+  { value: '/magazine', label: '매거진' },
+  { value: '/jobs', label: '내일찾기' },
+]
 
 const TYPE_LABELS: Record<string, { label: string; className: string }> = {
   SELF: { label: '자체', className: 'bg-blue-50 text-blue-700' },
@@ -37,6 +49,7 @@ interface Ad {
   imageUrl: string | null
   htmlCode: string | null
   clickUrl: string | null
+  targetPath: string | null
   startDate: Date
   endDate: Date
   priority: number
@@ -70,6 +83,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
     imageUrl: '',
     htmlCode: '',
     clickUrl: '',
+    targetPath: '',
     startDate: formatDate(new Date()),
     endDate: '',
     priority: 0,
@@ -94,6 +108,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
         imageUrl: form.imageUrl || undefined,
         htmlCode: form.htmlCode || undefined,
         clickUrl: form.clickUrl || undefined,
+        targetPath: form.targetPath || undefined,
         startDate: form.startDate,
         endDate: form.endDate,
         priority: form.priority,
@@ -206,7 +221,25 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
                 className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
               />
+              {form.slot === 'LIST_HEADER' && (
+                <p className="mt-1 text-[11px] text-zinc-500">권장 1456×180 (8:1 비율) · 데스크탑 기준 고화질 1장, 비율 유지 반응형</p>
+              )}
             </div>
+
+            {form.slot === 'LIST_HEADER' && (
+              <div>
+                <label className="mb-1 block text-xs font-medium text-zinc-600">노출 위치 (목록 상단 띠)</label>
+                <select
+                  value={form.targetPath}
+                  onChange={(e) => setForm({ ...form, targetPath: e.target.value })}
+                  className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm"
+                >
+                  {LIST_HEADER_TARGETS.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">우선순위</label>
               <input
@@ -284,6 +317,11 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                     <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
                       {SLOT_LABELS[ad.slot] || ad.slot}
                     </span>
+                    {ad.slot === 'LIST_HEADER' && (
+                      <span className="mt-1 block text-[11px] text-zinc-400">
+                        {LIST_HEADER_TARGETS.find((t) => t.value === (ad.targetPath ?? ''))?.label ?? ad.targetPath}
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-3">
                     <span className={`rounded px-2 py-0.5 text-xs font-medium ${typeInfo.className}`}>

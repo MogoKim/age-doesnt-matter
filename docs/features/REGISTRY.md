@@ -38,6 +38,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | `src/components/features/home*`, `src/app/(main)/page.tsx` | F03 |
 | `src/app/(main)/community*`, `src/components/features/community*` | F04 |
 | `src/components/features/community/PostCTA*` | F13 |
+| `src/components/ad/ListBanner*`, `src/app/api/ad-impression*` | F14 |
 | `src/app/(main)/magazine*`, `src/components/features/magazine*`, `agents/cafe/magazine*`, `agents/magazine*` | F05 |
 | `src/app/(main)/jobs*`, `src/components/features/jobs*`, `agents/coo/job*` | F06 |
 | `src/app/(main)/best*` | F07 |
@@ -84,6 +85,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F11 | 비회원 댓글+좋아요 | `src/lib/actions/guest-comments.ts` + `src/lib/actions/guest-likes.ts` + `src/lib/turnstile.ts` + `src/components/features/community/GuestCommentInput.tsx` + `GuestPasswordModal.tsx` | 비로그인 사용자 직접 참여 | RELATION | P1/P2/P3 | [F11](F11-guest-comment-like.md) | ACTIVE | 2026-05-23 |
 | F12 | HOT/명예의 전당 승격 시스템 | `src/lib/actions/promotion.ts` + `src/lib/actions/likes.ts` + `src/lib/actions/guest-likes.ts` + `src/lib/actions/comments.ts` + `src/lib/queries/boards.ts` + `src/lib/actions/admin/admin.content.ts` + `src/components/admin/ContentTable.tsx` | 좋아요+댓글 수 기반 자동 승격 (HOT/HALL_OF_FAME) | RELATION | P3 | [F12](F12-promotion-system.md) | ACTIVE | 2026-05-12 |
 | F13 | 게시글 하단 CTA | `src/components/features/community/PostCTA.tsx` | 게시글/매거진 상세 열람 후 자동 표시 — 비회원→가입 / 모바일웹 로그인→앱설치 | RELATION | ALL | [F13](F13-post-cta.md) | ACTIVE | 2026-06-03 |
+| F14 | 목록 광고 띠배너 | `src/components/ad/ListBanner.tsx` + `ListBannerClient.tsx` + `src/app/api/ad-impression/route.ts` + AdBanner `LIST_HEADER` 슬롯 + `src/components/admin/AdBannerTable.tsx` | 6개 목록 페이지 GNB 아래 노출 (어드민 AdBanner 관리, 최대 3개 자동 슬라이드) | MONEY | ALL | [F14](F14-list-ad-banner.md) | ACTIVE | 2026-06-05 |
 
 ---
 
