@@ -28,7 +28,13 @@ const TYPE_DESC = {
   member: '로그인한 유저에게 표시 — 공지·이벤트·신기능 안내에 활용',
 } as const
 
-function detectHrefType(href: string): 'internal' | 'external' {
+type HrefType = 'internal' | 'external' | 'kakao_share'
+
+// 카카오 공유 액션 sentinel — 이 값이면 클릭 시 카카오톡 공유 실행(이동 아님)
+const KAKAO_SHARE_HREF = 'kakao:share'
+
+function detectHrefType(href: string): HrefType {
+  if (href === KAKAO_SHARE_HREF) return 'kakao_share'
   return href.startsWith('https://') ? 'external' : 'internal'
 }
 
@@ -42,11 +48,12 @@ export default function TopPromoBannerPanel({ type, settings }: TopPromoBannerPa
     tag:      settings.tag,
     text:     settings.text,
     href:     settings.href,
-    hrefType: detectHrefType(settings.href) as 'internal' | 'external',
+    hrefType: detectHrefType(settings.href),
   })
 
-  function handleHrefTypeChange(hrefType: 'internal' | 'external') {
-    const href = hrefType === 'internal' ? '/' : 'https://'
+  function handleHrefTypeChange(hrefType: HrefType) {
+    const href =
+      hrefType === 'internal' ? '/' : hrefType === 'external' ? 'https://' : KAKAO_SHARE_HREF
     setForm((f) => ({ ...f, hrefType, href }))
   }
 
@@ -100,6 +107,9 @@ export default function TopPromoBannerPanel({ type, settings }: TopPromoBannerPa
                 </span>
                 {form.hrefType === 'external' && (
                   <span className="shrink-0 text-white/70 text-xs">↗</span>
+                )}
+                {form.hrefType === 'kakao_share' && (
+                  <span className="shrink-0 text-white/80 text-xs">💬</span>
                 )}
                 <span className="shrink-0 flex items-center justify-center w-[44px] h-[44px] text-white/80 text-sm">
                   ✕
@@ -194,6 +204,16 @@ export default function TopPromoBannerPanel({ type, settings }: TopPromoBannerPa
                   />
                   <span className="text-sm text-zinc-700">외부 URL</span>
                 </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name={`href-type-${type}`}
+                    checked={form.hrefType === 'kakao_share'}
+                    onChange={() => handleHrefTypeChange('kakao_share')}
+                    className="accent-zinc-800"
+                  />
+                  <span className="text-sm text-zinc-700">카카오톡 공유</span>
+                </label>
               </div>
 
               {form.hrefType === 'internal' ? (
@@ -203,7 +223,7 @@ export default function TopPromoBannerPanel({ type, settings }: TopPromoBannerPa
                   className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500 font-mono"
                   placeholder="/about"
                 />
-              ) : (
+              ) : form.hrefType === 'external' ? (
                 <div className="space-y-1.5">
                   <input
                     value={form.href}
@@ -215,6 +235,11 @@ export default function TopPromoBannerPanel({ type, settings }: TopPromoBannerPa
                     ⚠️ 외부 URL — 클릭 시 새 탭으로 열립니다. 정확한 주소를 입력했는지 확인하세요.
                   </p>
                 </div>
+              ) : (
+                <p className="text-xs text-zinc-700 bg-zinc-50 rounded-lg px-3 py-2 leading-relaxed">
+                  💬 <b>카카오톡 공유</b> — 배너를 누르면 친구에게 우나어를 카카오톡으로 공유합니다.
+                  입력할 주소가 없습니다(공유 카드는 <b>우나어 홈 고정</b>). 회원이 공유하면 <b>누가 초대했는지 추적</b>됩니다.
+                </p>
               )}
             </div>
           </div>

@@ -3,7 +3,7 @@ id: F10
 name: 최상단 띠 배너
 status: ACTIVE
 created: 2026-04-29
-updated: 2026-04-29
+updated: 2026-06-05
 ---
 
 ## 개요
@@ -40,11 +40,11 @@ updated: 2026-04-29
 | `TOP_PROMO_GUEST_ENABLED` | 비회원 배너 활성화 여부 | `'true'` / `'false'` |
 | `TOP_PROMO_GUEST_TAG` | 비회원 태그 칩 텍스트 | 최대 4자 |
 | `TOP_PROMO_GUEST_TEXT` | 비회원 본문 텍스트 | 최대 20자 (모바일 1줄 기준) |
-| `TOP_PROMO_GUEST_HREF` | 비회원 클릭 링크 | 내부 `/` 또는 외부 `https://` |
+| `TOP_PROMO_GUEST_HREF` | 비회원 클릭 링크 | 내부 `/` · 외부 `https://` · 카카오 공유 `kakao:share` |
 | `TOP_PROMO_MEMBER_ENABLED` | 회원 배너 활성화 여부 | `'true'` / `'false'` |
 | `TOP_PROMO_MEMBER_TAG` | 회원 태그 칩 텍스트 | 최대 4자 |
 | `TOP_PROMO_MEMBER_TEXT` | 회원 본문 텍스트 | 최대 20자 (모바일 1줄 기준) |
-| `TOP_PROMO_MEMBER_HREF` | 회원 클릭 링크 | 내부 `/` 또는 외부 `https://` |
+| `TOP_PROMO_MEMBER_HREF` | 회원 클릭 링크 | 내부 `/` · 외부 `https://` · 카카오 공유 `kakao:share` |
 
 > **구 키(`TOP_PROMO_ENABLED/TAG/TEXT/HREF`)**: v2 전환 시 코드에서 제거됨. DB 레코드는 잔류(무해).
 
@@ -54,6 +54,7 @@ updated: 2026-04-29
 |------|---------|---------|
 | 내부 경로 | `/`로 시작 | Next.js `<Link>` — 같은 탭 |
 | 외부 URL | `https://`로 시작 | `<a target="_blank" rel="noopener noreferrer">` — 새 탭 |
+| 카카오 공유 | `kakao:share` (sentinel) | `<button onClick>` → `shareToKakao()` 호출(이동 없음). 친구에게 우나어 공유(초대) |
 | 차단 | 그 외(`javascript:`, `http://`, 빈값) | Server Action에서 에러 반환 |
 
 ## 동작 방식
@@ -80,8 +81,9 @@ TopPromoBanner (Server Component)
 
 `/admin/banners?tab=top-promo` — 비회원/회원 두 섹션 독립 운영
 
-- 각 섹션: 미리보기 + 활성화 토글 + 태그 + 텍스트 + 링크 유형(내부|외부) + [저장]
+- 각 섹션: 미리보기 + 활성화 토글 + 태그 + 텍스트 + 링크 유형(내부|외부|**카카오공유**) + [저장]
 - 외부 URL 선택 시 `⚠️ 클릭 시 새 탭으로 열립니다` 경고 표시
+- 카카오 공유 선택 시: URL 입력칸 없음(공유 카드는 우나어 홈 고정) + 추천인 추적 안내
 - [저장] 버튼은 각 섹션 독립 — 한쪽 수정이 다른 쪽에 영향 없음
 
 ## 수정 이력
@@ -91,3 +93,4 @@ TopPromoBanner (Server Component)
 | 2026-04-29 | 기능 신규 등록(v1). CLS fix, h-[44px] 고정, 터치 타겟 44px, text-caption, unstable_cache, 어드민 패널 신규 | 전수 검수 후 6개 이슈 개선 |
 | 2026-04-29 | v2 재설계. GUEST/MEMBER 배너 분리, 외부 URL 지원, 어드민 두 섹션 독립 운영 | 비회원 가입 유도 vs 회원 공지·이벤트 분리 운영 필요 |
 | 2026-06-02 | B3 방식 재설계: auth() 제거, 서버에서 두 설정 병렬 fetch, 클라이언트 useSession() 분기 | P0 2단계 auth island 제거 — CDN 캐시 활성화 |
+| 2026-06-05 | 링크 유형에 **카카오톡 공유**(`kakao:share`) 추가 — 클릭 시 친구에게 우나어 공유(초대), 회원은 추천인 UTM(`utm_source=member_referral&utm_content=userId`) 추적. `gtmReferralShare` 이벤트 신설. 공유 카드는 홈 고정(`shareToKakao` 재사용) | 회원·비회원 바이럴 유입 + 누가 초대했는지 측정 |

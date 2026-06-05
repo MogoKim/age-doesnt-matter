@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { shareToKakao, KakaoUnavailableError } from '@/lib/kakao-share'
+import { gtmReferralShare } from '@/lib/gtm'
+import { useToast } from '@/components/common/Toast'
 
 interface PromoSettings {
   enabled: boolean
@@ -20,7 +23,8 @@ export default function TopPromoBannerClient({
   guestSettings,
   memberSettings,
 }: TopPromoBannerClientProps) {
-  const { status } = useSession()
+  const { data: session, status } = useSession()
+  const { toast } = useToast()
   const isLoggedIn = status === 'authenticated'
 
   const type = isLoggedIn ? 'member' : 'guest'
@@ -47,6 +51,34 @@ export default function TopPromoBannerClient({
     setVisible(false)
   }
 
+  // 카카오 공유 액션 sentinel (admin.config.ts validatePromoHref / TopPromoBannerPanel과 동일 값)
+  const isKakaoShare = href === 'kakao:share'
+
+  async function handleShare() {
+    const userId = session?.user?.id
+    // 추천인 추적: UTM으로 실으면 captureUtm(PageViewTracker)이 랜딩 시 저장 → sign_up에 자동 포함
+    const shareUrl =
+      isLoggedIn && userId
+        ? `/?utm_source=member_referral&utm_medium=kakao_share&utm_content=${userId}`
+        : `/?utm_source=guest_referral&utm_medium=kakao_share`
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
+    gtmReferralShare(type)
+    try {
+      await shareToKakao({
+        title: '우리 나이가 어때서 — 우나어',
+        description: '우리 또래끼리 모이는 따뜻한 커뮤니티, 같이 해요!',
+        imageUrl: `${appUrl}/logo.png`,
+        url: shareUrl,
+      })
+    } catch (err) {
+      if (err instanceof KakaoUnavailableError) {
+        toast('카카오톡을 열 수 없어 링크를 복사했어요', 'success')
+      } else {
+        toast('카카오톡 공유에 실패했어요', 'error')
+      }
+    }
+  }
+
   const isExternal = href.startsWith('https://')
 
   const linkContent = (
@@ -70,7 +102,15 @@ export default function TopPromoBannerClient({
         </span>
       )}
 
-      {isExternal ? (
+      {isKakaoShare ? (
+        <button
+          type="button"
+          onClick={handleShare}
+          className="no-underline hover:underline flex-1 min-w-0 flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer"
+        >
+          {linkContent}
+        </button>
+      ) : isExternal ? (
         <a
           href={href}
           target="_blank"

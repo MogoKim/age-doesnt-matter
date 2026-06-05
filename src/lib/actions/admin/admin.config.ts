@@ -126,6 +126,7 @@ export async function adminUpdateBoardConfig(
 
 function validatePromoHref(href: string) {
   if (!href) return
+  if (href === 'kakao:share') return // 카카오 공유 액션 sentinel — 클릭 시 카카오톡 공유(TopPromoBannerClient에서 처리)
   if (!href.startsWith('/') && !/^https:\/\//.test(href)) {
     throw new Error('링크는 /로 시작하는 내부 경로 또는 https://로 시작하는 외부 URL만 허용됩니다.')
   }

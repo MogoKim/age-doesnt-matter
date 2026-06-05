@@ -215,6 +215,11 @@ export function gtmSignupBannerDismissed(variant: string, pagePath: string, show
   sendEvent('signup_banner_dismissed', { variant, page_path: pagePath, show_count: showCount, browser_env: getBrowserEnv() })
 }
 
+/** 최상단 띠 배너에서 카카오 공유(친구 초대) 클릭 — audience: member(회원)/guest(비회원) */
+export function gtmReferralShare(audience: 'member' | 'guest'): void {
+  sendEvent('referral_share', { audience, channel: 'kakao', browser_env: getBrowserEnv() })
+}
+
 /** 인앱 → 외부브라우저 리다이렉트 시도 (SignupPromptBanner CTA 클릭 시) */
 export function gtmInappRedirectAttempted(browserEnv: string, method: 'intent' | 'clipboard'): void {
   sendEvent('inapp_redirect_attempted', { browser_env: browserEnv, redirect_method: method })
