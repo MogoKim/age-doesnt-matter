@@ -94,3 +94,4 @@ TopPromoBanner (Server Component)
 | 2026-04-29 | v2 재설계. GUEST/MEMBER 배너 분리, 외부 URL 지원, 어드민 두 섹션 독립 운영 | 비회원 가입 유도 vs 회원 공지·이벤트 분리 운영 필요 |
 | 2026-06-02 | B3 방식 재설계: auth() 제거, 서버에서 두 설정 병렬 fetch, 클라이언트 useSession() 분기 | P0 2단계 auth island 제거 — CDN 캐시 활성화 |
 | 2026-06-05 | 링크 유형에 **카카오톡 공유**(`kakao:share`) 추가 — 클릭 시 친구에게 우나어 공유(초대), 회원은 추천인 UTM(`utm_source=member_referral&utm_content=userId`) 추적. `gtmReferralShare` 이벤트 신설. 공유 카드는 홈 고정(`shareToKakao` 재사용) | 회원·비회원 바이럴 유입 + 누가 초대했는지 측정 |
+| 2026-06-05 | 어드민 패널 HelpTip(? hover 도움말) 7종 + 운영 가이드 박스 상세화(링크유형 3종·카카오 공유 설명) | 신규 직원 온보딩 — 각 칸 의미를 바로 이해 |

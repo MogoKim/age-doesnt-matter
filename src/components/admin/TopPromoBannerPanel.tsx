@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { adminUpdateTopPromoBanner } from '@/lib/actions/admin'
+import HelpTip from './HelpTip'
+import { HELP } from './admin-help-texts'
 
 const TAG_MAX = 4
 const TEXT_MAX = 20
@@ -83,7 +85,10 @@ export default function TopPromoBannerPanel({ type, settings }: TopPromoBannerPa
     <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
       {/* 섹션 헤더 */}
       <div className="px-5 py-4 border-b border-zinc-100 bg-zinc-50">
-        <p className="text-sm font-semibold text-zinc-800">{TYPE_LABEL[type]}</p>
+        <p className="text-sm font-semibold text-zinc-800 inline-flex items-center">
+          {TYPE_LABEL[type]}
+          <HelpTip text={type === 'guest' ? HELP.TOP_PROMO_AUDIENCE_GUEST : HELP.TOP_PROMO_AUDIENCE_MEMBER} />
+        </p>
         <p className="mt-0.5 text-xs text-zinc-500">{TYPE_DESC[type]}</p>
       </div>
 
@@ -136,13 +141,14 @@ export default function TopPromoBannerPanel({ type, settings }: TopPromoBannerPa
             <span className="text-sm font-medium text-zinc-700">
               {form.enabled ? '활성 (배너 노출 중)' : '비활성 (배너 숨김)'}
             </span>
+            <HelpTip text={HELP.TOP_PROMO_ENABLED} />
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {/* 태그 */}
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">
-                태그 칩 <span className="text-zinc-400">(최대 {TAG_MAX}자)</span>
+                태그 칩 <span className="text-zinc-400">(최대 {TAG_MAX}자)</span> <HelpTip text={HELP.TOP_PROMO_TAG} />
               </label>
               <div className="relative">
                 <input
@@ -161,7 +167,7 @@ export default function TopPromoBannerPanel({ type, settings }: TopPromoBannerPa
             {/* 텍스트 */}
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs font-medium text-zinc-600">
-                본문 텍스트 <span className="text-zinc-400">(최대 {TEXT_MAX}자 — 모바일 1줄 기준)</span>
+                본문 텍스트 <span className="text-zinc-400">(최대 {TEXT_MAX}자 — 모바일 1줄 기준)</span> <HelpTip text={HELP.TOP_PROMO_TEXT} />
               </label>
               <div className="relative">
                 <input
@@ -182,7 +188,9 @@ export default function TopPromoBannerPanel({ type, settings }: TopPromoBannerPa
 
             {/* 링크 유형 */}
             <div className="sm:col-span-2 space-y-2">
-              <p className="text-xs font-medium text-zinc-600">링크 유형</p>
+              <p className="text-xs font-medium text-zinc-600 inline-flex items-center">
+                링크 유형 <HelpTip text={HELP.TOP_PROMO_LINK_TYPE} />
+              </p>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -213,6 +221,7 @@ export default function TopPromoBannerPanel({ type, settings }: TopPromoBannerPa
                     className="accent-zinc-800"
                   />
                   <span className="text-sm text-zinc-700">카카오톡 공유</span>
+                  <HelpTip text={HELP.TOP_PROMO_KAKAO} />
                 </label>
               </div>
 
