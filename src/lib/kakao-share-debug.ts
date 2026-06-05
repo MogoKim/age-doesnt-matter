@@ -77,7 +77,13 @@ export function enableKakaoShareDebugFromQuery(): boolean {
 
   try {
     const params = new URLSearchParams(window.location.search)
-    if (params.get('kakaoDebug') === '1') {
+    const debugParam = params.get('kakaoDebug')
+    if (debugParam === '0') {
+      // OFF 토글: localStorage에 영구 저장된 디버그 플래그 제거 (kakaoDebug=1의 짝)
+      window.localStorage.removeItem(KAKAO_SHARE_DEBUG_ENABLED_KEY)
+      return false
+    }
+    if (debugParam === '1') {
       window.localStorage.setItem(KAKAO_SHARE_DEBUG_ENABLED_KEY, '1')
       return true
     }
