@@ -6,6 +6,7 @@
 - **추가일**: 2026-06-04
 - **충족욕망**: INFRA / **타겟**: —(운영용)
 - **코드 위치**: `scripts/ops-board/` + `.claude/commands/board.md`
+- **정책 문서**: [docs/ops-board-policy.html](../ops-board-policy.html) — 동작 규칙·판정·보안 단일 기준 (수정 전 필독)
 - **트리거**: 로컬 수동 — `/board`(텍스트 5분류) / `npm run board`(웹 칸반)
 
 ## 목적 / 배경
