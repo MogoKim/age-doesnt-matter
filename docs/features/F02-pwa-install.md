@@ -69,6 +69,7 @@
 |------|---------|------|
 | 2026-04-27 | Feature 문서 최초 생성 | Feature Lifecycle 도입 |
 | 2026-05-13 | AddToHomeScreen·PwaInlineBanner·FooterPwaButton useEffect에 `NEXT_PUBLIC_PWA_INSTALL_ENABLED !== 'true'` 가드 추가 — 잠정 홀드 처리 | PWA 설치 유도 전략 재검토 결정. env var 하나로 재활성화 가능하도록 코드 보존 |
+| 2026-06-05 | 안드=Play스토어 / iOS=PWA 분리. manifest `prefer_related_applications:true` + `related_applications`(com.agenotmatter.app) 추가로 안드 자동 PWA 차단. 설치 진입점(PostCTA/Footer/Inline)은 `triggerAppInstall()`(src/lib/app-links.ts)로 안드→Play, iOS→홈화면추가 분기 | TWA 앱 Play스토어 출시 완료 → 채널 혼란(PWA/Play 동시 유도) 정리 |
 
 ---
 

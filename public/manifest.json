@@ -10,6 +10,14 @@
   "orientation": "portrait-primary",
   "categories": ["social", "lifestyle"],
   "lang": "ko",
+  "related_applications": [
+    {
+      "platform": "play",
+      "id": "com.agenotmatter.app",
+      "url": "https://play.google.com/store/apps/details?id=com.agenotmatter.app"
+    }
+  ],
+  "prefer_related_applications": true,
   "icons": [
     { "src": "/icons/icon-72x72.png", "sizes": "72x72", "type": "image/png" },
     { "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" },

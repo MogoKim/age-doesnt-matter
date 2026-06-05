@@ -268,6 +268,13 @@ export function gtmAdClick(adSlot: string, adType: string): void {
   })
 }
 
+/** Play스토어 앱 다운로드 클릭 (안드로이드 설치 유도) */
+export function gtmPlayStoreClick(source: string): void {
+  sendEvent('play_store_click', {
+    source,
+  })
+}
+
 /** 쿠팡 CPS 상품 클릭 */
 export function gtmCpsClick(productName: string, category: string): void {
   sendEvent('cps_click', {

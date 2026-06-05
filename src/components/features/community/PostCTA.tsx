@@ -8,6 +8,7 @@ import { trackEvent } from '@/lib/track'
 import { sendGtmEvent } from '@/lib/gtm'
 import { startKakaoLogin } from '@/lib/kakao-start'
 import { detectEnv } from '@/components/common/AddToHomeScreen'
+import { triggerAppInstall, isAndroidInstallEnv } from '@/lib/app-links'
 
 // 로그인 설치 CTA를 표시하지 않을 환경 (AddToHomeScreen의 BLOCKED_ENVS + desktop)
 const INSTALL_BLOCKED_ENVS = [
@@ -32,6 +33,7 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
   // null = 아직 클라이언트 계산 전 (SSR 안전)
   const [installCtaVisible, setInstallCtaVisible] = useState<boolean | null>(null)
   const [isStartingSignup, setIsStartingSignup] = useState(false)
+  const [isAndroid, setIsAndroid] = useState(false)
 
   // 로그인 상태에서 설치 CTA 표시 여부를 클라이언트에서 계산
   useEffect(() => {
@@ -44,6 +46,7 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
     const pwaInstalled = localStorage.getItem('pwa_installed') === '1'
     const blocked = INSTALL_BLOCKED_ENVS.includes(env) || pwaInstalled || isTWA || isStandalone
     setInstallCtaVisible(!blocked)
+    setIsAndroid(isAndroidInstallEnv())
   }, [authKnown, resolvedIsLoggedIn, isTWA, isStandalone])
 
   // 노출 이벤트 — 실제 렌더되는 CTA에 대해서만 1회 전송
@@ -86,7 +89,8 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
       setIsStartingSignup(true)
       window.setTimeout(() => startKakaoLogin(pathname), 0)
     } else {
-      window.dispatchEvent(new CustomEvent('pwa-prompt', { detail: 'manual' }))
+      // 안드로이드 = Play스토어 / iOS = PWA 홈화면 추가
+      triggerAppInstall('post_cta')
     }
   }
 
@@ -123,13 +127,13 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
   return (
     <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-3">
       <p className="text-body text-foreground leading-snug m-0">
-        앱처럼 설치하면 더 빠르게 읽을 수 있어요
+        앱으로 설치하면 더 빠르게 읽을 수 있어요
       </p>
       <button
         onClick={handleClick}
         className="shrink-0 min-h-[52px] px-4 rounded-lg bg-primary text-white text-caption font-semibold"
       >
-        홈 화면에<br />추가하기
+        {isAndroid ? <>앱<br />다운받기</> : <>홈 화면에<br />추가하기</>}
       </button>
     </div>
   )
