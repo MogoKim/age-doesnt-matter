@@ -43,8 +43,12 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
   const impressed = useRef<Set<string>>(new Set())
 
   const onAdRoute = AD_ROUTES.includes(pathname)
-  // targetPath: null=전체 공통 / 값=해당 경로에서만
-  const visible = banners.filter((b) => !b.targetPath || b.targetPath === pathname)
+  // targetPath: 빈/null=전체 공통 / 콤마 구분 다중 경로="/best,/magazine" 등=해당 경로들에서만
+  const visible = banners.filter((b) => {
+    if (!b.targetPath) return true
+    const paths = b.targetPath.split(',').map((s) => s.trim()).filter(Boolean)
+    return paths.length === 0 || paths.includes(pathname)
+  })
   const safeIndex = visible.length ? index % visible.length : 0
   const current = visible[safeIndex] ?? null
 

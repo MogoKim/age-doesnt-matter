@@ -28,9 +28,8 @@ const SLOT_LABELS: Record<string, string> = {
 // (HOME_INLINE은 AdInline 컴포넌트가 어디에도 연결돼 있지 않아 제외)
 const ACTIVE_SLOTS: string[] = ['LIST_HEADER']
 
-// LIST_HEADER(목록 상단 띠) 노출 위치 — targetPath('' = 6개 전체 공통)
-const LIST_HEADER_TARGETS: { value: string; label: string }[] = [
-  { value: '', label: '전체 공통(6개 목록)' },
+// LIST_HEADER(목록 상단 띠) 노출 위치 — targetPath(콤마 구분 다중 경로 / 빈=전체 공통)
+const LIST_HEADER_PAGES: { value: string; label: string }[] = [
   { value: '/best', label: '베스트' },
   { value: '/community/stories', label: '사는이야기' },
   { value: '/community/life2', label: '2막준비' },
@@ -38,6 +37,10 @@ const LIST_HEADER_TARGETS: { value: string; label: string }[] = [
   { value: '/magazine', label: '매거진' },
   { value: '/jobs', label: '내일찾기' },
 ]
+
+function parseTargetPaths(csv: string): string[] {
+  return csv ? csv.split(',').map((s) => s.trim()).filter(Boolean) : []
+}
 
 const TYPE_LABELS: Record<string, { label: string; className: string }> = {
   SELF: { label: '자체', className: 'bg-blue-50 text-blue-700' },
@@ -333,17 +336,38 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
             )}
 
             {form.slot === 'LIST_HEADER' && (
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-600">노출 위치 (목록 상단 띠)</label>
-                <select
-                  value={form.targetPath}
-                  onChange={(e) => setForm({ ...form, targetPath: e.target.value })}
-                  className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm"
-                >
-                  {LIST_HEADER_TARGETS.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-zinc-600">노출 위치 (복수 선택 가능 · 전부 또는 0개 = 전체 공통)</label>
+                <div className="flex flex-wrap gap-2">
+                  {LIST_HEADER_PAGES.map((p) => {
+                    const selected = parseTargetPaths(form.targetPath)
+                    const checked = selected.includes(p.value)
+                    return (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => {
+                          const next = checked ? selected.filter((v) => v !== p.value) : [...selected, p.value]
+                          // 전부 선택 또는 0개 선택 = 전체 공통(빈 문자열)
+                          const csv = next.length === 0 || next.length === LIST_HEADER_PAGES.length ? '' : next.join(',')
+                          setForm({ ...form, targetPath: csv })
+                        }}
+                        className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                          checked
+                            ? 'border-zinc-900 bg-zinc-900 text-white'
+                            : 'border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-50'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="mt-1 text-[11px] text-zinc-500">
+                  {parseTargetPaths(form.targetPath).length === 0
+                    ? '현재: 전체 공통(6개 목록 모두)'
+                    : `현재: ${parseTargetPaths(form.targetPath).map((v) => LIST_HEADER_PAGES.find((p) => p.value === v)?.label).join(', ')}`}
+                </p>
               </div>
             )}
             <div>
@@ -425,7 +449,9 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                     </span>
                     {ad.slot === 'LIST_HEADER' && (
                       <span className="mt-1 block text-[11px] text-zinc-400">
-                        {LIST_HEADER_TARGETS.find((t) => t.value === (ad.targetPath ?? ''))?.label ?? ad.targetPath}
+                        {parseTargetPaths(ad.targetPath ?? '').length === 0
+                          ? '전체 공통'
+                          : parseTargetPaths(ad.targetPath ?? '').map((v) => LIST_HEADER_PAGES.find((p) => p.value === v)?.label ?? v).join(', ')}
                       </span>
                     )}
                   </td>
