@@ -24,7 +24,9 @@ const SLOT_LABELS: Record<string, string> = {
 }
 
 // 실제 화면 렌더 코드가 있는 슬롯만 폼/필터 드롭다운에 노출 (나머지는 등록해도 안 나오는 유령 슬롯)
-const ACTIVE_SLOTS: string[] = ['LIST_HEADER', 'HOME_INLINE']
+// 현재 DB 광고를 실제 렌더하는 건 LIST_HEADER(ListBanner) 하나뿐.
+// (HOME_INLINE은 AdInline 컴포넌트가 어디에도 연결돼 있지 않아 제외)
+const ACTIVE_SLOTS: string[] = ['LIST_HEADER']
 
 // LIST_HEADER(목록 상단 띠) 노출 위치 — targetPath('' = 6개 전체 공통)
 const LIST_HEADER_TARGETS: { value: string; label: string }[] = [
