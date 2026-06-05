@@ -5,7 +5,6 @@ import { getCachedJobsPage } from '@/lib/queries/posts'
 import JobFilterButton from '@/components/features/jobs/JobFilterButton'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 import JobsContent from '@/components/features/jobs/JobsContent'
-import JobBanner from '@/components/features/jobs/JobBanner'
 import JobRegionLinks from '@/components/features/jobs/JobRegionLinks'
 
 const JobQuickTags = nextDynamic(() => import('@/components/features/jobs/JobQuickTags'))
@@ -39,9 +38,6 @@ export default async function JobsPage() {
       <div className="px-4 py-6 max-w-[960px] mx-auto">
         {/* sr-only h1 */}
         <h1 className="sr-only">내 일 찾기</h1>
-
-        {/* 상단 띠배너 (11개 중 일 단위 로테이션) */}
-        <JobBanner />
 
         {/* 지역별 일자리 내부링크 (SEO + 탐색) */}
         <JobRegionLinks />
