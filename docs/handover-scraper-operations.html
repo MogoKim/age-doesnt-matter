@@ -383,7 +383,7 @@
       이 문서는 스크래퍼가 왜 존재하고 어떻게 움직이는지를 처음부터 끝까지 설명한다.
     </div>
     <div class="cover-meta">
-      <div class="cover-meta-item"><div class="label">최종 업데이트</div><div class="val">2026-05-27</div></div>
+      <div class="cover-meta-item"><div class="label">최종 업데이트</div><div class="val">2026-06-05 (코드 실측 검증)</div></div>
       <div class="cover-meta-item"><div class="label">대상</div><div class="val">창업자 (비기술 독자)</div></div>
       <div class="cover-meta-item"><div class="label">스케줄</div><div class="val">5회/일 (GHA) + 6회/일 (로컬 Mac)</div></div>
       <div class="cover-meta-item"><div class="label">AI 모델</div><div class="val">Sonnet(파동댓글)</div></div>
@@ -423,6 +423,7 @@
           <tr><td><strong>82cook</strong></td><td>40~60대 여성 생활 정보·요리·육아. 로그인 불필요</td><td>GitHub Actions (클라우드)</td><td>1.5초</td></tr>
           <tr><td><strong>펨코 (fmkorea)</strong></td><td>다양한 연령대. Cloudflare 보호 — 해외 IP 차단</td><td><strong>창업자 Mac (로컬 전용)</strong></td><td>3초</td></tr>
           <tr><td><strong>네이버 카페</strong></td><td>로그인 세션 필요. 창업자가 저장한 쿠키 사용 — 매일 만료 체크, 5일 전 자동 갱신</td><td><strong>창업자 Mac (로컬 전용)</strong></td><td>3초</td></tr>
+          <tr><td><strong>네이버 뿜 (bboom)</strong></td><td>유머·짤 커뮤니티. <code>m.bboom.naver.com</code>. naver 도메인 GHA 차단 리스크</td><td><strong>창업자 Mac (로컬 전용)</strong> — GHA 제외</td><td>2.5초</td></tr>
         </tbody>
       </table>
     </div>
@@ -947,7 +948,7 @@
       </table>
     </div>
 
-    <p style="font-size: 13px; color: var(--sub); margin-bottom:14px;">caffeinate -i (Mac 슬립 방지)는 펨코 전용 설정이다. 네이버 카페는 caffeinate 없이 실행된다.</p>
+    <p style="font-size: 13px; color: var(--sub); margin-bottom:14px;">caffeinate -i (Mac 슬립 방지)는 <strong>펨코·네이버 카페 둘 다 적용</strong>된다. 펨코 plist는 <code>/usr/bin/caffeinate</code>를 직접 호출하고, 네이버 카페는 <code>scripts/launchd-alert.sh</code> 경유(내부 <code>caffeinate -i "$@"</code>)로 래핑된다.</p>
 
     <details>
       <summary>네이버 카페 기술 상세 — CSS selector, iframe 처리 방식 (개발자 참고용)</summary>
@@ -968,8 +969,7 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
     &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;15&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;30&lt;/integer&gt;&lt;/dict&gt;  &lt;!-- 15:30 KST --&gt;
     &lt;dict&gt;&lt;key&gt;Hour&lt;/key&gt;&lt;integer&gt;23&lt;/integer&gt;&lt;key&gt;Minute&lt;/key&gt;&lt;integer&gt;0&lt;/integer&gt;&lt;/dict&gt;   &lt;!-- 23:00 KST --&gt;
 &lt;/array&gt;
-&lt;!-- caffeinate 없음 — 펨코와 달리 슬립 방지 없이 단순 실행 --&gt;
-&lt;!-- scripts/launchd-alert.sh 경유 → agents/community/run-local-naver-cafe.ts 실행 --&gt;</pre>
+&lt;!-- scripts/launchd-alert.sh 경유 → 내부 caffeinate -i 로 슬립 방지 → run-local-naver-cafe.ts 실행 --&gt;</pre>
     </details>
 
     <div class="callout red" style="margin-top:16px;">
@@ -1116,7 +1116,7 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
   <!-- 11. 현재 운영 현황 -->
   <div class="section">
     <div class="section-label">11 — 현재 운영 현황</div>
-    <h2>2026-05-27 기준 상태</h2>
+    <h2>2026-06-05 기준 상태</h2>
 
     <div class="tbl-wrap">
       <table>
@@ -1141,6 +1141,11 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
             <td>네이버 카페 로컬 Mac 자동화</td>
             <td><span class="badge badge-green">✅ 정상</span></td>
             <td>4회/일 (10:40·13:00·15:30·23:00 KST), launchd. 로그인 세션(storage-state.json) 사용. GHA에서는 PENDING 유지.</td>
+          </tr>
+          <tr>
+            <td>네이버 뿜(bboom) 로컬 Mac</td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>site-configs 6번째 사이트. <code>SHEET_SCRAPER_EXCLUDE_SITE=fmkorea,bboom</code>로 GHA 제외 → 로컬 launchd에서만 처리(naver 도메인 GHA 차단 리스크).</td>
           </tr>
           <tr>
             <td>세션 자동 갱신 (네이버 카페)</td>
@@ -1440,7 +1445,7 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
 
     <div class="callout yellow">
       <p><strong>화제성 파동 상한:</strong> 오늘 <code>SHEET_COMMENT_WAVE_PENDING</code> 건수가 50건 초과 시 처리를 전체 스킵한다 — 이미 SUCCESS로 완료된 건은 제외하고 <strong>PENDING 대기 건수만</strong> 카운트.<br>
-      <strong>글당 댓글 상한:</strong> 봇 댓글이 이미 20개 이상이면 추가하지 않는다 (botCount 기준).<br>
+      <strong>글당 댓글 상한:</strong> 봇 댓글이 <strong>화제성 10개 / 일반 3개</strong> 이상이면 추가하지 않는다 (<code>cap = isFeatured ? 10 : 3</code>, botCount+inserted ≥ cap이면 중단).<br>
       <strong>중복 방지:</strong> 동일 postId + authorId 조합이 BotLog에 이미 존재하면 스킵한다.<br>
       <strong>trendingScore 즉시 갱신:</strong> 댓글·좋아요 투입 후 <code>refreshPostTrendingScore()</code>가 즉시 실행되어 commentCount/likeCount 증가가 홈 뜨는이야기 점수에도 실시간 반영된다.</p>
     </div>
@@ -1563,7 +1568,7 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
           <tr><td><code>agents/community/sheet-scraper.ts</code></td><td>핵심 스크래퍼 — PENDING 읽기 → 스크래핑 → 게시 → 파동 예약. SESSION_REQUIRED 분기(네이버 카페 GHA skip) + contentFrame 분기(cafe_main iframe) + slug 자동 생성(generateCommunitySlug) 포함.</td><td>—</td></tr>
           <tr><td><code>agents/core/slug.ts</code></td><td>게시글 제목 → URL-safe slug 생성 (한글 변환 포함). sheet-scraper, seed, curator, BOT 게시글 모두 사용.</td><td>—</td></tr>
           <tr><td><code>agents/community/sheets-client.ts</code></td><td>Google Sheets A~J 10열 읽기/쓰기 (6탭: 사는이야기·웃음방·2막준비 × 일반/화제성). 없는 탭은 warning 후 skip.</td><td>googleapis</td></tr>
-          <tr><td><code>agents/community/site-configs.ts</code></td><td>5개 사이트 크롤링 설정 + 댓글 selector: <strong>오늘의유머·네이트판</strong>(GHA) / <strong>펨코</strong>(LOCAL) / <strong>82cook</strong>(GHA, postAuthorSelectors 포함) / <strong>네이버 카페</strong>(LOCAL, requiresSession·contentFrame)</td><td>—</td></tr>
+          <tr><td><code>agents/community/site-configs.ts</code></td><td>6개 사이트 크롤링 설정 + 댓글 selector: <strong>오늘의유머·네이트판·82cook</strong>(GHA, 82cook은 postAuthorSelectors 포함) / <strong>펨코</strong>(LOCAL, cloudflareProtected) / <strong>네이버 카페</strong>(LOCAL, requiresSession·contentFrame) / <strong>네이버 뿜 bboom</strong>(LOCAL, GHA 제외)</td><td>—</td></tr>
           <tr><td><code>agents/community/content-transformer.ts</code></td><td>외부 HTML 정제 8단계 + 카테고리 키워드 분류. boardType: STORY·HUMOR·LIFE2 지원. HUMOR만 출처 표시.</td><td>sanitize-html</td></tr>
           <tr><td><code>agents/community/image-pipeline.ts</code></td><td>이미지 WebP 변환·비디오·R2 업로드 통합 파이프라인</td><td>sharp</td></tr>
           <tr><td><code>agents/community/run-local-fmkorea.ts</code></td><td>펨코 로컬 런처 (launchd 전용, dotenv 직접 로드, --site fmkorea)</td><td>LOCAL ONLY</td></tr>
@@ -1573,7 +1578,7 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
           <tr><td><code>agents/cafe/image-router.ts</code></td><td>CafePost DB → Sheet PENDING 자동 append 파이프라인. 활성 (ENABLE_IMAGE_ROUTER=true, DRY_RUN=false). DAY_CAP=3/TAB_CAP=1. agents-cafe-hourly-curation.yml 트리거.</td><td>활성</td></tr>
           <tr><td><code>agents/cron/runner.ts</code></td><td>모든 에이전트 핸들러 등록 테이블 (cron/worker entry point)</td><td>—</td></tr>
           <tr><td><code>src/lib/sanitize.ts</code></td><td>커뮤니티 이미지 프록시 처리 — proxyR2Images() (커스텀 도메인 + /_next/image)</td><td>—</td></tr>
-          <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>스크래핑·게시 GHA 스케줄 (5회/일, timeout 40분). SHEET_SCRAPER_EXCLUDE_SITE=fmkorea 로 펨코 제외.</td><td>AI 없음</td></tr>
+          <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>스크래핑·게시 GHA 스케줄 (5회/일, timeout 40분). <code>SHEET_SCRAPER_EXCLUDE_SITE=fmkorea,bboom</code> 로 펨코·뿜 제외(둘 다 로컬 전용).</td><td>AI 없음</td></tr>
           <tr><td><code>.github/workflows/agents-sheet-viral.yml</code></td><td>파동 실행 GHA 스케줄 (5분마다, timeout 10분)</td><td>claude-sonnet-4-6</td></tr>
           <tr><td><code>~/Library/LaunchAgents/com.unao.fmkorea-scraper.plist</code></td><td>펨코 로컬 launchd 스케줄 (11:30·21:30 KST, caffeinate -i 슬립 방지)</td><td>—</td></tr>
           <tr><td><code>~/Library/LaunchAgents/com.unao.naver-cafe-sheet-scraper.plist</code></td><td>네이버 카페 로컬 launchd 스케줄 (10:40·13:00·15:30·23:00 KST, 4회)</td><td>—</td></tr>
