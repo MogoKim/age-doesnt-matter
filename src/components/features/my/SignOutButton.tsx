@@ -27,13 +27,16 @@ export default function SignOutButton() {
         form.appendChild(input)
       }
       addField('csrfToken', csrfToken)
-      addField('callbackUrl', '/')
+      // 로그아웃 후 광고 많은 홈(/) 대신 가벼운 /login으로 이동.
+      // 저사양 안드로이드 크롬에서 홈 광고 과다로 렌더러 OOM 크래시가 발생해,
+      // 로그아웃 목적지를 광고 없는 페이지로 두어 회피.
+      addField('callbackUrl', '/login')
 
       document.body.appendChild(form)
       form.submit()
     } catch {
-      // CSRF 조회 실패 등 예외 시 최소한 홈으로 이동
-      window.location.href = '/'
+      // CSRF 조회 실패 등 예외 시 최소한 로그인 페이지로 이동
+      window.location.href = '/login'
     }
   }
 
