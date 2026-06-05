@@ -81,6 +81,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
   const [isPending, startTransition] = useTransition()
   const [showForm, setShowForm] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     slot: 'LIST_HEADER' as AdSlot,
@@ -125,22 +126,73 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
     }
   }
 
+  const EMPTY_FORM = {
+    slot: 'LIST_HEADER' as AdSlot,
+    adType: 'SELF' as AdType,
+    title: '',
+    imageUrl: '',
+    htmlCode: '',
+    clickUrl: '',
+    targetPath: '',
+    startDate: formatDate(new Date()),
+    endDate: '',
+    priority: 0,
+  }
+
+  function handleEdit(ad: Ad) {
+    setForm({
+      slot: ad.slot as AdSlot,
+      adType: ad.adType as AdType,
+      title: ad.title ?? '',
+      imageUrl: ad.imageUrl ?? '',
+      htmlCode: ad.htmlCode ?? '',
+      clickUrl: ad.clickUrl ?? '',
+      targetPath: ad.targetPath ?? '',
+      startDate: formatDate(ad.startDate),
+      endDate: formatDate(ad.endDate),
+      priority: ad.priority,
+    })
+    setEditingId(ad.id)
+    setShowForm(true)
+  }
+
+  function handleCancel() {
+    setShowForm(false)
+    setEditingId(null)
+    setForm(EMPTY_FORM)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     startTransition(async () => {
-      await adminCreateAdBanner({
-        slot: form.slot,
-        adType: form.adType,
-        title: form.title || undefined,
-        imageUrl: form.imageUrl || undefined,
-        htmlCode: form.htmlCode || undefined,
-        clickUrl: form.clickUrl || undefined,
-        targetPath: form.targetPath || undefined,
-        startDate: form.startDate,
-        endDate: form.endDate,
-        priority: form.priority,
-      })
-      setShowForm(false)
+      if (editingId) {
+        await adminUpdateAdBanner(editingId, {
+          slot: form.slot,
+          adType: form.adType,
+          title: form.title || undefined,
+          imageUrl: form.imageUrl || undefined,
+          htmlCode: form.htmlCode || undefined,
+          clickUrl: form.clickUrl || undefined,
+          targetPath: form.targetPath || undefined,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          priority: form.priority,
+        })
+      } else {
+        await adminCreateAdBanner({
+          slot: form.slot,
+          adType: form.adType,
+          title: form.title || undefined,
+          imageUrl: form.imageUrl || undefined,
+          htmlCode: form.htmlCode || undefined,
+          clickUrl: form.clickUrl || undefined,
+          targetPath: form.targetPath || undefined,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          priority: form.priority,
+        })
+      }
+      handleCancel()
     })
   }
 
@@ -187,7 +239,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
 
         {!showForm && (
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => { setForm(EMPTY_FORM); setEditingId(null); setShowForm(true) }}
             className="ml-auto rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
             + 광고 추가
@@ -195,10 +247,10 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
         )}
       </div>
 
-      {/* 등록 폼 */}
+      {/* 등록/수정 폼 */}
       {showForm && (
         <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
-          <h3 className="text-sm font-semibold text-zinc-900">새 광고 등록</h3>
+          <h3 className="text-sm font-semibold text-zinc-900">{editingId ? '광고 수정' : '새 광고 등록'}</h3>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -331,11 +383,11 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               disabled={isPending || uploading}
               className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
             >
-              등록
+              {editingId ? '수정 저장' : '등록'}
             </button>
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={handleCancel}
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50"
             >
               취소
@@ -401,6 +453,13 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={() => handleEdit(ad)}
+                        disabled={isPending}
+                        className="rounded px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-50"
+                      >
+                        수정
+                      </button>
                       <button
                         onClick={() => handleToggle(ad)}
                         disabled={isPending}

@@ -13,6 +13,20 @@ const AD_ROUTES = ['/best', '/community/stories', '/community/life2', '/communit
 // 광고는 사용자가 닫을 수 없음 (닫기 버튼 없음 — 노출 보장)
 const ROTATE_MS = 7000
 
+// 클릭 URL 분류: 자사 도메인/상대경로 = 내부(같은 탭), 그 외 = 외부(새 탭)
+function classifyLink(url: string): { external: boolean; href: string } {
+  if (url.startsWith('/')) return { external: false, href: url }
+  try {
+    const u = new URL(url)
+    if (u.hostname.endsWith('age-doesnt-matter.com')) {
+      return { external: false, href: u.pathname + u.search + u.hash } // 자사 → 경로만 추출해 내부 이동
+    }
+    return { external: true, href: url }
+  } catch {
+    return { external: false, href: url }
+  }
+}
+
 export interface ListBannerItem {
   id: string
   adType: string
@@ -66,7 +80,7 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
     }).catch(() => {})
   }
 
-  const isExternal = current.clickUrl?.startsWith('https://')
+  const link = current.clickUrl ? classifyLink(current.clickUrl) : null
 
   const inner = current.imageUrl ? (
     <Image
@@ -84,12 +98,12 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
     </div>
   )
 
-  // 링크가 있으면 내부(Link)/외부(a) 분기, 없으면 그대로 (전체 클릭 영역)
-  const body = current.clickUrl
-    ? isExternal
+  // 링크가 있으면 내부(Link, 같은 탭)/외부(a, 새 탭) 분기, 없으면 그대로 (전체 클릭 영역)
+  const body = link
+    ? link.external
       ? (
         <a
-          href={current.clickUrl}
+          href={link.href}
           target="_blank"
           rel="noopener noreferrer nofollow"
           onClick={() => handleClick(current.id, current.adType)}
@@ -100,7 +114,7 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
       )
       : (
         <Link
-          href={current.clickUrl}
+          href={link.href}
           onClick={() => handleClick(current.id, current.adType)}
           className="absolute inset-0 block"
         >

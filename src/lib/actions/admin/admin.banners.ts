@@ -209,6 +209,8 @@ export async function adminCreateAdBanner(data: {
 export async function adminUpdateAdBanner(
   adId: string,
   data: {
+    slot?: AdSlot
+    adType?: AdType
     title?: string
     imageUrl?: string
     htmlCode?: string
