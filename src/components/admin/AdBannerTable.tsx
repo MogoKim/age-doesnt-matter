@@ -10,6 +10,7 @@ import { HELP } from './admin-help-texts'
 const TAB_ITEMS = [
   { value: 'hero', label: '히어로 배너' },
   { value: 'ads', label: '광고 슬롯' },
+  { value: 'top-promo', label: '최상단 띠 배너' },
 ]
 
 const SLOT_LABELS: Record<string, string> = {
