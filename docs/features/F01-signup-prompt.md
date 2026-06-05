@@ -1,6 +1,6 @@
 # 회원가입 유도 배너 운영 기획서 (F01)
 
-> 최초 작성: 2026-04-27 | 최근 수정: 2026-04-27
+> 최초 작성: 2026-04-27 | 최근 수정: 2026-06-05
 
 ---
 
@@ -70,6 +70,7 @@
 | 2026-04-27 | Feature 문서 최초 생성 | Feature Lifecycle 도입 |
 | 2026-05-19 | EXCLUDED_PATHS에서 `/faq` 제거 | /faq 페이지 삭제 — /about#faq로 통합됨 |
 | 2026-06-02 | Props 제거, `useSession()` 도입, `status==='loading'` 가드 추가 | P0 2단계 auth island 제거 — CDN 캐시 활성화 |
+| 2026-06-05 | GA4 A/B/C 성과 집계 스크립트(`scripts/ga4-signup-ab.ts`) 추가 + 운영문서(`docs/signup-prompt-policy.html`) 코드 기준 전면 재작성 | 실험 데이터 가시화 — 명령 한 줄로 승자 확인. 본 문서(F01)의 A/B/C 카피·storage 키는 코드와 불일치분 잔존(별도 정정 예정) |
 
 ---
 

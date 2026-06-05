@@ -252,7 +252,20 @@
       </tbody>
     </table>
     <p class="muted" style="margin-top:12px"><b>배정 방식</b>: 기기마다 고정 ID로 3등분 배정 → 같은 사람은 늘 같은 버전을 봅니다(측정 정확성 확보).</p>
-    <div class="warn">📊 <b>현재 실험 상태(승자·전환율)는 확인 필요</b> — GA4의 <span class="kv">signup_banner_shown / clicked / sign_up</span> 이벤트를 버전별로 비교해 확정합니다. (이 문서엔 결과를 공란으로 둠)</div>
+
+    <div class="note">📊 <b>최신 성과는 명령 한 줄로 확인</b> — 터미널에서 <span class="kv">npx tsx scripts/ga4-signup-ab.ts</span> 실행하면 GA4에서 A/B/C별 노출·클릭·가입을 자동 집계합니다. 기간 지정: <span class="kv">npx tsx scripts/ga4-signup-ab.ts 30daysAgo</span></div>
+
+    <h3 style="margin-top:18px">현재 스냅샷 <span class="muted" style="font-weight:400;font-size:13px">— 2026-06-05 기준 최근 90일</span></h3>
+    <table>
+      <thead><tr><th>버전</th><th>노출</th><th>클릭</th><th>클릭률</th><th>가입</th></tr></thead>
+      <tbody>
+        <tr><td>A (혜택)</td><td>206</td><td>14</td><td>6.8%</td><td>3</td></tr>
+        <tr><td><b>B (재미)</b> 🏆</td><td>208</td><td>18</td><td><b>8.7%</b></td><td>4</td></tr>
+        <tr><td>C (공감)</td><td>219</td><td>14</td><td>6.4%</td><td>1</td></tr>
+        <tr><td class="muted">합계</td><td class="muted">633</td><td class="muted">46</td><td class="muted">7.3%</td><td class="muted">8</td></tr>
+      </tbody>
+    </table>
+    <div class="warn">⚠️ B(재미·함께)가 클릭률·가입 모두 1위지만, <b>가입 표본(8건)이 작아 아직 확정은 아닙니다</b>. 위 수치는 2026-06-05 스냅샷이니, 최신 값은 반드시 위 명령으로 재확인하세요. (배너 미경유 가입 17건은 별도)</div>
   </div>
 
   <!-- 10 -->
