@@ -3,9 +3,9 @@ import { Suspense } from 'react'
 import nextDynamic from 'next/dynamic'
 import { getCachedJobsPage } from '@/lib/queries/posts'
 import JobFilterButton from '@/components/features/jobs/JobFilterButton'
+import JobRegionButton from '@/components/features/jobs/JobRegionButton'
 import BoardViewTracker from '@/components/features/community/BoardViewTracker'
 import JobsContent from '@/components/features/jobs/JobsContent'
-import JobRegionLinks from '@/components/features/jobs/JobRegionLinks'
 
 const JobQuickTags = nextDynamic(() => import('@/components/features/jobs/JobQuickTags'))
 const JobSearchBar = nextDynamic(() => import('@/components/features/jobs/JobSearchBar'))
@@ -39,18 +39,18 @@ export default async function JobsPage() {
         {/* sr-only h1 */}
         <h1 className="sr-only">내 일 찾기</h1>
 
-        {/* 지역별 일자리 내부링크 (SEO + 탐색) */}
-        <JobRegionLinks />
-
         {/* 검색 바 */}
         <Suspense fallback={null}>
           <JobSearchBar />
         </Suspense>
 
-        {/* 필터 버튼 + 퀵태그 한 행 — 필터▼ 좌측 고정, 태그만 스크롤 */}
+        {/* 필터·지역 버튼 + 퀵태그 한 행 — 필터▼·지역▼ 좌측 고정, 태그만 스크롤 */}
         <div className="flex items-center gap-2 mb-4">
           <Suspense fallback={null}>
             <JobFilterButton />
+          </Suspense>
+          <Suspense fallback={null}>
+            <JobRegionButton />
           </Suspense>
           <div className="flex-1 min-w-0">
             <Suspense fallback={null}>
