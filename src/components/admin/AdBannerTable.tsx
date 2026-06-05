@@ -265,7 +265,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 />
                 {uploading && <p className="mt-1 text-[11px] text-zinc-500">업로드 중…</p>}
                 {form.slot === 'LIST_HEADER' && (
-                  <p className="mt-1 text-[11px] text-zinc-500">권장 1456×180 (8:1 비율) · 데스크탑 기준 고화질 1장, 비율 유지 반응형</p>
+                  <p className="mt-1 text-[11px] text-zinc-500">권장 1200×400 (3:1 비율) · 가로로 긴 띠 이미지, 비율 벗어나면 위아래 잘릴 수 있음</p>
                 )}
                 <input
                   value={form.imageUrl}

@@ -74,7 +74,7 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
       alt={current.title ?? '광고'}
       fill
       className="object-cover object-center"
-      sizes="(max-width: 1200px) 100vw, 1200px"
+      sizes="(max-width: 960px) 100vw, 960px"
     />
   ) : current.htmlCode ? (
     <div className="absolute inset-0 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: current.htmlCode }} />
@@ -109,12 +109,12 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
       )
     : inner
 
-  // 히어로 배너와 동일: 좌우 풀블리드(데스크탑 max-w-1200 중앙) + 고정 비율 + object-cover
+  // 모바일 좌우 풀블리드 / 데스크탑 목록 콘텐츠 폭(960) 중앙 정렬 + 3:1 고정 비율 + object-cover
   return (
     <div
       className={cn(
-        'relative w-full mx-auto max-w-[1200px] mb-2 overflow-hidden bg-muted',
-        '[aspect-ratio:5/2] lg:[aspect-ratio:8/3]',
+        'relative w-full mx-auto max-w-[960px] mb-2 overflow-hidden bg-muted',
+        '[aspect-ratio:3/1]',
       )}
       role="complementary"
       aria-label="광고"
