@@ -61,7 +61,50 @@ jobs:
       - run: cd agents && npm ci
 
       - name: Run Image Router (이미지 CafePost → Sheet PENDING append)
-        run: cd agents && npx tsx cron/runner.ts cafe_crawler image-route
+        run: |
+          # cron-link-check: runner.ts cafe_crawler image-route
+          run_with_emaxconn_retry() {
+            local label="$1"
+            shift
+            local output
+            local status
+
+            set +e
+            output=$("$@" 2>&1)
+            status=$?
+            set -e
+            echo "$output"
+
+            if [ "$status" -eq 0 ]; then
+              return 0
+            fi
+
+            if ! echo "$output" | grep -q "EMAXCONN"; then
+              return "$status"
+            fi
+
+            echo "::warning::$label hit DB connection limit (EMAXCONN); waiting 45s and retrying once."
+            sleep 45
+
+            set +e
+            output=$("$@" 2>&1)
+            status=$?
+            set -e
+            echo "$output"
+
+            if [ "$status" -eq 0 ]; then
+              return 0
+            fi
+
+            if echo "$output" | grep -q "EMAXCONN"; then
+              echo "::warning::$label still hit EMAXCONN after retry; skipping this tick. The next scheduled run will retry."
+              return 0
+            fi
+
+            return "$status"
+          }
+
+          run_with_emaxconn_retry "image router" bash -lc "cd agents && npx tsx cron/runner.ts cafe_crawler image-route"
         env:
           ENABLE_IMAGE_ROUTER: ${{ vars.ENABLE_IMAGE_ROUTER || 'false' }}
           DRY_RUN_IMAGE_ROUTER: ${{ vars.DRY_RUN_IMAGE_ROUTER || 'true' }}
@@ -69,4 +112,47 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
 
       - name: Run Content Curator (45분 간격 5건 — runner.ts 25분 중복 방지 내장)
-        run: cd agents && npx tsx cron/runner.ts cafe_crawler content-curate
+        run: |
+          # cron-link-check: runner.ts cafe_crawler content-curate
+          run_with_emaxconn_retry() {
+            local label="$1"
+            shift
+            local output
+            local status
+
+            set +e
+            output=$("$@" 2>&1)
+            status=$?
+            set -e
+            echo "$output"
+
+            if [ "$status" -eq 0 ]; then
+              return 0
+            fi
+
+            if ! echo "$output" | grep -q "EMAXCONN"; then
+              return "$status"
+            fi
+
+            echo "::warning::$label hit DB connection limit (EMAXCONN); waiting 45s and retrying once."
+            sleep 45
+
+            set +e
+            output=$("$@" 2>&1)
+            status=$?
+            set -e
+            echo "$output"
+
+            if [ "$status" -eq 0 ]; then
+              return 0
+            fi
+
+            if echo "$output" | grep -q "EMAXCONN"; then
+              echo "::warning::$label still hit EMAXCONN after retry; skipping this tick. The next scheduled run will retry."
+              return 0
+            fi
+
+            return "$status"
+          }
+
+          run_with_emaxconn_retry "content curator" bash -lc "cd agents && npx tsx cron/runner.ts cafe_crawler content-curate"
