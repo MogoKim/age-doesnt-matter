@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'unao-v2'
+const CACHE_NAME = 'unao-v3'
 
 // VAPID 키 — ServiceWorkerRegister.tsx에서 postMessage로 주입받음
 let vapidPublicKey = null
@@ -9,8 +9,6 @@ self.addEventListener('message', (event) => {
     vapidPublicKey = event.data.key
   }
 })
-const OFFLINE_URL = '/offline'
-
 // 프리캐시할 정적 리소스
 const PRECACHE_URLS = [
   '/',
@@ -83,30 +81,11 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // HTML: Network-first, 오프라인 시 캐시 또는 오프라인 페이지
+  // HTML 내비게이션(화면 이동): SW가 가로채지 않고 브라우저에 위임(패스스루).
+  // 이유: SW가 리다이렉트/오류 응답을 navigation에 반환하면 브라우저가 네이티브 에러로
+  //       내비게이션을 실패시킴(로그아웃 후 홈 이동 실패 사례). 이동 안정성 최우선.
+  //       정적 리소스는 위 cache-first 블록에서 계속 오프라인 지원됨.
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // 정상(200·비리다이렉트) 응답만 캐시 — 리다이렉트/오류 캐시 시 예외·내비게이션 실패 방지
-          if (response.ok && !response.redirected) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {})
-          }
-          return response
-        })
-        .catch(async () => {
-          const cached = await caches.match(request)
-          if (cached) return cached
-          const offline = await caches.match(OFFLINE_URL)
-          if (offline) return offline
-          // 절대 undefined 반환 금지 (respondWith(undefined) → 브라우저 네이티브 에러)
-          return new Response(
-            '<h1>오프라인</h1><p>잠시 후 다시 시도해 주세요.</p>',
-            { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-          )
-        })
-    )
     return
   }
 })
