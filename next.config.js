@@ -71,6 +71,9 @@ const nextConfig = {
       { source: '/write_1st',      destination: '/community/write',  permanent: true },
       { source: '/write',          destination: '/community/write',  permanent: true },
       { source: '/faq',            destination: '/about',            permanent: true }, // 의도된 리다이렉트 — FAQ 콘텐츠를 /about으로 통합 (faq/page.tsx는 데드코드, 삭제하지 말 것)
+      // 매거진 쌍둥이 글 권위 통합 (2026-06-04, 키워드 잠식 방지) — loser → keeper 301
+      { source: '/magazine/갱년기-참지-말고-알고-대처해요', destination: '/magazine/갱년기-참지-말고-알고-대처해요-2', permanent: true },
+      { source: '/magazine/노후-주거-3가지-시나리오-비교', destination: '/magazine/노후-주거-시나리오-3가지-비교', permanent: true },
     ]
   },
   async headers() {

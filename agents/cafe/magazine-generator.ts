@@ -91,6 +91,35 @@ function isSimilarTitle(newTitle: string, existingTitles: string[]): boolean {
   })
 }
 
+/**
+ * 제목 정규화 — 공백·기호 제거 후 글자 정렬.
+ * 어순/띄어쓰기만 다른 쌍둥이 제목을 같은 값으로 만든다.
+ * 예: "노후 주거 시나리오 3가지 비교" === "노후 주거 3가지 시나리오 비교"
+ */
+function normalizeTitle(title: string): string {
+  return title.replace(/[^가-힣0-9a-zA-Z]/g, '').split('').sort().join('')
+}
+
+/**
+ * 전체 기간 중복 가드 — isSimilarTitle(7일 윈도우)이 못 잡는 장기 간격 쌍둥이 차단.
+ * 정규화 제목이 기존 PUBLISHED 매거진과 동일하면 true (어순만 다른 글·완전 동일 글 모두 차단).
+ * DB 실패 시 false 반환 → 발행 계속 (가드는 보조 안전장치).
+ */
+async function isDuplicateAllTime(title: string): Promise<boolean> {
+  const target = normalizeTitle(title)
+  if (!target) return false
+  try {
+    const all = await prisma.post.findMany({
+      where: { boardType: 'MAGAZINE', status: 'PUBLISHED' },
+      select: { title: true },
+    })
+    return all.some(p => normalizeTitle(p.title) === target)
+  } catch (err) {
+    console.warn('[MagazineGenerator] 전체기간 중복 체크 실패 (무시):', err)
+    return false
+  }
+}
+
 /** 카페 참고글 가져오기 */
 async function getReferencePosts(topic: MagazineSuggestion) {
   const todayStart = new Date()
@@ -524,6 +553,12 @@ export async function main(): Promise<MagazineRunResult[]> {
     const article = await generateMagazineArticle(topic, category, refs, recentTitles)
     if (!article) {
       console.log(`[MagazineGenerator] "${topic.title}" — 생성 실패`)
+      continue
+    }
+
+    // 전체 기간 중복 가드 — 7일 윈도우 밖의 쌍둥이(어순만 다름·완전 동일) 차단
+    if (await isDuplicateAllTime(article.title)) {
+      console.log(`[MagazineGenerator] "${article.title}" — 전체기간 중복 제목 이미 발행, 스킵`)
       continue
     }
 
