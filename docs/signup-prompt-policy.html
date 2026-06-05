@@ -3,1448 +3,404 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>회원가입 유도 정책 설계서 v2 — 안 1 + A/B/C 테스트</title>
+<title>회원가입 유도 배너 — 운영 가이드 | 우나어</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, 'Apple SD Gothic Neo', 'Pretendard', sans-serif;
-    background: #f5f5f7;
-    color: #1d1d1f;
-    line-height: 1.7;
-    font-size: 15px;
+  :root{
+    --coral:#FF6F61; --coral-deep:#E5503F; --ink:#1f2430; --sub:#5b6370;
+    --line:#e7e9ee; --bg:#f6f7f9; --card:#fff;
+    --green:#1f8a47; --green-bg:#e9f7ef; --red:#d24b3e; --red-bg:#fdecea;
+    --blue:#1d6fd6; --blue-bg:#e9f1fd; --amber:#a4690a; --amber-bg:#fdf3e2;
+    --purple:#5b4bd6; --purple-bg:#eeecfb;
   }
-  .page {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 48px 24px 80px;
-  }
-
-  /* 헤더 */
-  .doc-header {
-    background: linear-gradient(135deg, #FF6F61 0%, #ff8a7a 100%);
-    border-radius: 20px;
-    padding: 40px 40px 36px;
-    color: white;
-    margin-bottom: 40px;
-  }
-  .doc-header .badge {
-    display: inline-block;
-    background: rgba(255,255,255,0.25);
-    border-radius: 100px;
-    padding: 4px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    letter-spacing: 0.02em;
-  }
-  .doc-header h1 {
-    font-size: 28px;
-    font-weight: 800;
-    line-height: 1.3;
-    margin-bottom: 10px;
-  }
-  .doc-header p {
-    font-size: 15px;
-    opacity: 0.88;
-  }
-  .doc-header .meta {
-    display: flex;
-    gap: 16px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-  }
-  .doc-header .meta-item {
-    background: rgba(255,255,255,0.15);
-    border-radius: 8px;
-    padding: 6px 14px;
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  /* TOC */
-  .toc {
-    background: white;
-    border-radius: 16px;
-    padding: 24px 28px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  }
-  .toc-title { font-size: 13px; font-weight: 700; color: #86868b; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .toc-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; }
-  @media (max-width: 600px) { .toc-list { grid-template-columns: 1fr; } }
-  .toc-list a { color: #0071e3; text-decoration: none; font-size: 14px; }
-  .toc-list a:hover { text-decoration: underline; }
-  .toc-list .toc-num { color: #86868b; margin-right: 6px; font-size: 12px; }
-
-  /* 섹션 */
-  .section {
-    background: white;
-    border-radius: 16px;
-    padding: 32px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  }
-  .section-title {
-    font-size: 18px;
-    font-weight: 800;
-    color: #1d1d1f;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .section-title .num {
-    background: #FF6F61;
-    color: white;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 800;
-    flex-shrink: 0;
-  }
-  .section-title .num.ab { background: #5856d6; }
-
-  /* 핵심 철학 */
-  .philosophy {
-    background: #fff8f7;
-    border-left: 4px solid #FF6F61;
-    border-radius: 0 12px 12px 0;
-    padding: 20px 24px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #c0392b;
-    line-height: 1.6;
-    margin-bottom: 24px;
-  }
-
-  /* 동선 박스 */
-  .flow-box {
-    background: #f5f5f7;
-    border-radius: 12px;
-    padding: 20px 24px;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 13px;
-    line-height: 1.9;
-    color: #3a3a3c;
-  }
-  .flow-box .arrow { color: #FF6F61; font-weight: 700; }
-  .flow-box .label { color: #86868b; }
-  .flow-box .highlight { color: #FF6F61; font-weight: 700; }
-
-  /* 조건 목록 */
-  .condition-list {
-    list-style: none;
-    counter-reset: cond;
-  }
-  .condition-list li {
-    counter-increment: cond;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid #f5f5f7;
-    font-size: 14px;
-  }
-  .condition-list li:last-child { border-bottom: none; }
-  .condition-list li::before {
-    content: counter(cond);
-    background: #f5f5f7;
-    color: #86868b;
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 700;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-  .condition-list li strong { color: #1d1d1f; }
-  .condition-list li code {
-    background: #f5f5f7;
-    padding: 2px 7px;
-    border-radius: 5px;
-    font-size: 12px;
-    font-family: 'SF Mono', monospace;
-    color: #FF6F61;
-  }
-
-  /* 테이블 */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-    margin-top: 4px;
-  }
-  th {
-    background: #f5f5f7;
-    padding: 10px 14px;
-    text-align: left;
-    font-weight: 700;
-    font-size: 13px;
-    color: #86868b;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  th:first-child { border-radius: 8px 0 0 8px; }
-  th:last-child { border-radius: 0 8px 8px 0; }
-  td {
-    padding: 11px 14px;
-    border-bottom: 1px solid #f5f5f7;
-    vertical-align: top;
-    line-height: 1.6;
-  }
-  tr:last-child td { border-bottom: none; }
-  td:first-child { font-weight: 600; color: #3a3a3c; }
-  .tag-possible { color: #34c759; font-weight: 700; }
-  .tag-inapp { color: #ff9500; font-weight: 700; }
-  .tag-no { color: #86868b; }
-
-  /* UI 프리뷰 */
-  .ui-preview {
-    background: #1d1d1f;
-    border-radius: 12px;
-    padding: 20px 24px;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 13px;
-    color: #a1a1a6;
-    line-height: 1.8;
-    margin: 16px 0;
-  }
-  .ui-preview .box-line { color: #48484a; }
-  .ui-preview .content { color: #e5e5ea; }
-  .ui-preview .btn { color: #FF6F61; font-weight: 700; }
-
-  /* 노출 횟수 타임라인 */
-  .timeline { display: flex; flex-direction: column; gap: 0; }
-  .timeline-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 14px 0;
-    border-bottom: 1px solid #f5f5f7;
-  }
-  .timeline-item:last-child { border-bottom: none; }
-  .timeline-dot {
-    width: 32px; height: 32px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;
-  }
-  .dot-1 { background: #fff0f0; color: #FF6F61; }
-  .dot-2 { background: #fff8e7; color: #ff9500; }
-  .dot-3 { background: #fff8e7; color: #ff9500; }
-  .dot-4 { background: #fff8e7; color: #ff9500; }
-  .dot-stop { background: #f5f5f7; color: #86868b; }
-  .timeline-content { flex: 1; }
-  .timeline-content .round { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
-  .timeline-content .desc { font-size: 13px; color: #86868b; }
-  .timeline-content .cooldown {
-    display: inline-block; background: #f5f5f7; border-radius: 6px;
-    padding: 2px 8px; font-size: 12px; font-weight: 600; color: #86868b; margin-top: 4px;
-  }
-
-  /* A/B/C 배리언트 카드 */
-  .variant-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 8px;
-  }
-  @media (max-width: 680px) { .variant-grid { grid-template-columns: 1fr; } }
-  .variant-card {
-    border-radius: 14px;
-    padding: 20px;
-    border: 2px solid transparent;
-  }
-  .variant-a { background: #f0f4ff; border-color: #5856d6; }
-  .variant-b { background: #fff0f0; border-color: #FF6F61; }
-  .variant-c { background: #f0fff5; border-color: #34c759; }
-  .variant-badge {
-    display: inline-block;
-    padding: 3px 12px;
-    border-radius: 100px;
-    font-size: 12px;
-    font-weight: 800;
-    margin-bottom: 12px;
-  }
-  .badge-a { background: #5856d6; color: white; }
-  .badge-b { background: #FF6F61; color: white; }
-  .badge-c { background: #34c759; color: white; }
-  .variant-concept {
-    font-size: 12px;
-    font-weight: 700;
-    color: #86868b;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 10px;
-  }
-  .variant-headline {
-    font-size: 15px;
-    font-weight: 700;
-    color: #1d1d1f;
-    line-height: 1.5;
-    margin-bottom: 10px;
-  }
-  .variant-cta {
-    display: inline-block;
-    background: #FEE500;
-    color: #191919;
-    border-radius: 8px;
-    padding: 7px 14px;
-    font-size: 13px;
-    font-weight: 700;
-  }
-
-  /* 측정 퍼널 */
-  .funnel {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    margin: 16px 0;
-    flex-wrap: wrap;
-  }
-  .funnel-step {
-    background: #f5f5f7;
-    border-radius: 10px;
-    padding: 14px 18px;
-    text-align: center;
-    flex: 1;
-    min-width: 120px;
-  }
-  .funnel-step .step-label { font-size: 12px; color: #86868b; font-weight: 600; text-transform: uppercase; }
-  .funnel-step .step-event { font-family: 'SF Mono', monospace; font-size: 12px; color: #FF6F61; margin-top: 4px; }
-  .funnel-step .step-metric { font-size: 11px; color: #86868b; margin-top: 4px; }
-  .funnel-arrow { color: #FF6F61; font-size: 20px; font-weight: 700; padding: 0 8px; }
-
-  /* 실험 타임라인 */
-  .exp-timeline {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    margin: 16px 0;
-  }
-  @media (max-width: 600px) { .exp-timeline { grid-template-columns: 1fr; } }
-  .exp-phase {
-    border-radius: 12px;
-    padding: 18px;
-    border: 1.5px solid #e8e8e8;
-  }
-  .exp-phase .phase-day { font-size: 13px; font-weight: 800; color: #FF6F61; margin-bottom: 6px; }
-  .exp-phase .phase-title { font-size: 14px; font-weight: 700; color: #1d1d1f; margin-bottom: 8px; }
-  .exp-phase .phase-desc { font-size: 13px; color: #3a3a3c; line-height: 1.6; }
-  .exp-phase.current { border-color: #FF6F61; background: #fff8f7; }
-
-  /* 위너 결정 박스 */
-  .winner-box {
-    background: linear-gradient(135deg, #fff8f7, #fffaf5);
-    border: 2px solid #FF6F61;
-    border-radius: 14px;
-    padding: 20px 24px;
-    margin: 16px 0;
-  }
-  .winner-box .winner-title { font-size: 15px; font-weight: 800; color: #1d1d1f; margin-bottom: 12px; }
-  .winner-rule {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,111,97,0.1);
-    font-size: 14px;
-  }
-  .winner-rule:last-child { border-bottom: none; }
-  .winner-rule .wr-icon { font-size: 16px; flex-shrink: 0; }
-
-  /* 환경별 카드 */
-  .env-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-  @media (max-width: 600px) { .env-grid { grid-template-columns: 1fr; } }
-  .env-card {
-    border: 1.5px solid #f0f0f0;
-    border-radius: 12px;
-    padding: 16px;
-  }
-  .env-card.pwa-ok { border-color: #d1f2e0; background: #f8fff9; }
-  .env-card.inapp { border-color: #ffecd4; background: #fffaf5; }
-  .env-card.no-pwa { border-color: #e8e8e8; background: #fafafa; }
-  .env-name {
-    font-family: 'SF Mono', monospace;
-    font-size: 12px; font-weight: 700;
-    padding: 3px 8px; border-radius: 5px;
-    display: inline-block; margin-bottom: 10px;
-  }
-  .env-card.pwa-ok .env-name { background: #d1f2e0; color: #1a7a3f; }
-  .env-card.inapp .env-name { background: #ffecd4; color: #b05a00; }
-  .env-card.no-pwa .env-name { background: #e8e8e8; color: #6e6e73; }
-  .env-flow { font-size: 13px; line-height: 1.8; color: #3a3a3c; }
-  .env-flow .step { display: block; padding-left: 2px; }
-  .env-flow .arrow { color: #FF6F61; }
-
-  /* 키 명세 */
-  .key-list { list-style: none; }
-  .key-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 11px 0;
-    border-bottom: 1px solid #f5f5f7;
-    font-size: 13px;
-  }
-  .key-item:last-child { border-bottom: none; }
-  .key-name {
-    font-family: 'SF Mono', monospace;
-    background: #f5f5f7; color: #FF6F61;
-    padding: 3px 9px; border-radius: 6px;
-    font-size: 12px; white-space: nowrap; flex-shrink: 0;
-  }
-  .key-name.ab-key { color: #5856d6; }
-  .key-storage {
-    font-size: 11px; font-weight: 700;
-    padding: 2px 6px; border-radius: 4px;
-    flex-shrink: 0; margin-top: 2px;
-  }
-  .local { background: #e8f4fd; color: #0071e3; }
-  .session { background: #fef3e2; color: #b05a00; }
-  .key-desc { color: #3a3a3c; line-height: 1.6; }
-
-  /* 충돌 방지 */
-  .priority-list { list-style: none; }
-  .priority-item {
-    display: flex; align-items: center; gap: 14px;
-    padding: 12px 0; border-bottom: 1px solid #f5f5f7;
-  }
-  .priority-item:last-child { border-bottom: none; }
-  .p-rank {
-    width: 28px; height: 28px; border-radius: 50%;
-    background: #f5f5f7; color: #86868b;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 800; flex-shrink: 0;
-  }
-  .p-rank.high { background: #FF6F61; color: white; }
-  .p-rank.mid { background: #ff9500; color: white; }
-  .p-item-label { font-weight: 600; font-size: 14px; }
-  .p-item-desc { font-size: 13px; color: #86868b; margin-top: 1px; }
-
-  /* 엣지케이스 */
-  .edge-table td:first-child { font-size: 13px; color: #3a3a3c; font-weight: 500; width: 40%; }
-  .edge-table td:last-child { font-size: 13px; color: #1d1d1f; font-weight: 400; }
-
-  /* QA */
-  .qa-item {
-    display: flex; align-items: flex-start; gap: 12px;
-    padding: 11px 0; border-bottom: 1px solid #f5f5f7; font-size: 14px;
-  }
-  .qa-item:last-child { border-bottom: none; }
-  .qa-num {
-    background: #f5f5f7; color: #86868b;
-    width: 24px; height: 24px; border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
-  }
-  .qa-num.ab { background: #5856d6; color: white; }
-  .qa-scenario { flex: 1; }
-  .qa-scenario strong { display: block; margin-bottom: 2px; }
-  .qa-how { font-size: 12px; color: #86868b; }
-
-  /* 파일 수정 */
-  .file-item {
-    display: flex; align-items: flex-start; gap: 12px;
-    padding: 12px 0; border-bottom: 1px solid #f5f5f7; font-size: 14px;
-  }
-  .file-item:last-child { border-bottom: none; }
-  .file-badge {
-    font-size: 11px; font-weight: 700;
-    padding: 3px 8px; border-radius: 5px;
-    flex-shrink: 0; margin-top: 2px;
-  }
-  .badge-new { background: #d1f2e0; color: #1a7a3f; }
-  .badge-mod { background: #ffecd4; color: #b05a00; }
-  .badge-min { background: #e8e8e8; color: #6e6e73; }
-  .file-name {
-    font-family: 'SF Mono', monospace;
-    font-size: 12px; color: #0071e3;
-    display: block; margin-bottom: 3px;
-  }
-  .file-desc { color: #3a3a3c; line-height: 1.5; }
-
-  /* 비회원 판단 */
-  .judge-box { background: #f5f5f7; border-radius: 12px; padding: 20px 24px; }
-  .judge-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 8px 0; font-size: 14px;
-  }
-  .judge-rank {
-    background: #FF6F61; color: white;
-    padding: 2px 10px; border-radius: 100px;
-    font-size: 12px; font-weight: 700; flex-shrink: 0;
-  }
-  .judge-rank.two { background: #ff9500; }
-  .judge-rank.three { background: #86868b; }
-
-  /* 제외 경로 */
-  .path-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-  .path-tag {
-    background: #f5f5f7; font-family: 'SF Mono', monospace;
-    font-size: 13px; color: #c0392b;
-    padding: 5px 12px; border-radius: 7px; border: 1px solid #e8e8e8;
-  }
-
-  /* 공통 */
-  .divider { height: 1px; background: #e8e8e8; margin: 20px 0; }
-  .sub-title {
-    font-size: 15px; font-weight: 700; color: #1d1d1f;
-    margin: 20px 0 12px; padding-bottom: 8px;
-    border-bottom: 2px solid #f5f5f7;
-  }
-  .sub-title:first-child { margin-top: 0; }
-  code {
-    background: #f5f5f7; padding: 2px 7px; border-radius: 5px;
-    font-size: 12px; font-family: 'SF Mono', monospace; color: #FF6F61;
-  }
-  .note {
-    background: #f5f5f7; border-radius: 10px;
-    padding: 14px 18px; font-size: 13px;
-    color: #6e6e73; line-height: 1.7; margin-top: 12px;
-  }
-  .note strong { color: #1d1d1f; }
-  .highlight-box {
-    background: #f0f4ff; border-left: 4px solid #5856d6;
-    border-radius: 0 12px 12px 0;
-    padding: 16px 20px; font-size: 14px;
-    color: #3a3a3c; line-height: 1.7; margin: 16px 0;
-  }
-  .highlight-box strong { color: #5856d6; }
-
-  /* 코드 블록 */
-  .code-block {
-    background: #1d1d1f; border-radius: 12px;
-    padding: 20px 24px; font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 12px; color: #a1a1a6;
-    line-height: 1.8; margin: 12px 0; overflow-x: auto;
-  }
-  .code-block .kw { color: #ff9f0a; }
-  .code-block .fn { color: #5ac8fa; }
-  .code-block .str { color: #30d158; }
-  .code-block .cm { color: #636366; }
-  .code-block .type { color: #bf5af2; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.75;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.5px}
+  h2{font-size:22px;font-weight:800;margin:0 0 4px;letter-spacing:-.3px}
+  h3{font-size:16px;font-weight:800;margin-bottom:6px}
+  .lead{color:var(--sub);font-size:16px;margin-top:6px}
+  .sec{background:var(--card);border:1px solid var(--line);border-radius:18px;
+    padding:26px 24px;margin-top:22px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+  .sec-no{display:inline-block;background:var(--coral);color:#fff;font-weight:800;
+    font-size:13px;border-radius:8px;padding:2px 9px;margin-bottom:10px}
+  .muted{color:var(--sub)}
+  .hl{color:var(--coral-deep);font-weight:700}
+  .hero{background:linear-gradient(135deg,#fff6f4,#ffe4de 60%,#fff);border:1px solid #ffd9d2;
+    border-radius:22px;padding:30px 26px}
+  .hero .tag{display:inline-block;background:var(--coral);color:#fff;font-weight:700;font-size:12px;
+    border-radius:999px;padding:4px 12px;margin-bottom:12px}
+  .three{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+  .three .pill{flex:1;min-width:200px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:15px}
+  .three .pill b{color:var(--coral-deep)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+  .ccard{border:1px solid var(--line);border-radius:14px;padding:16px}
+  .ccard .ico{font-size:26px}
+  .mock{background:#f0f1f4;border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:14px}
+  .mock .label{font-size:12px;color:var(--sub);margin-bottom:10px;font-weight:700}
+  .botbanner{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;
+    align-items:center;gap:12px;text-align:left;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+  .botbanner .emoji{font-size:24px;flex-shrink:0}
+  .botbanner .txt{flex:1}
+  .botbanner .txt .h{font-size:14px;font-weight:800;line-height:1.3}
+  .botbanner .txt .s{font-size:12px;color:var(--sub);margin-top:2px}
+  .botbanner .go{background:#FEE500;color:#191919;font-weight:800;font-size:13px;border-radius:8px;padding:9px 13px;white-space:nowrap}
+  .botbanner .x{color:#bbb;font-weight:700;flex-shrink:0}
+  .vargrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:760px){.vargrid{grid-template-columns:1fr}}
+  .vcard{border-radius:14px;padding:16px;border:2px solid}
+  .vcard.A{border-color:#bcd6f7;background:var(--blue-bg)}
+  .vcard.B{border-color:#ffd0a2;background:var(--amber-bg)}
+  .vcard.C{border-color:#c9c0f5;background:var(--purple-bg)}
+  .vbadge{display:inline-block;font-weight:800;font-size:12px;border-radius:999px;padding:2px 11px;color:#fff;margin-bottom:8px}
+  .vcard.A .vbadge{background:var(--blue)} .vcard.B .vbadge{background:var(--amber)} .vcard.C .vbadge{background:var(--purple)}
+  .vcard .vh{font-weight:800;font-size:15px;line-height:1.4}
+  .vcard .vs{font-size:13px;color:var(--sub);margin:4px 0 10px}
+  .vcard .vcta{display:inline-block;background:#FEE500;color:#191919;font-weight:800;font-size:12px;border-radius:8px;padding:6px 12px}
+  .step{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:15px}
+  .step .n{width:26px;height:26px;border-radius:50%;background:#ffe2dc;color:var(--coral-deep);
+    font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
+  th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+  th{background:#f3f4f7;font-weight:700;font-size:13px}
+  .bdg{display:inline-block;font-weight:700;font-size:12px;border-radius:999px;padding:2px 10px}
+  .b-show{background:var(--green-bg);color:var(--green)}
+  .b-block{background:var(--red-bg);color:var(--red)}
+  .checks{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  @media(max-width:640px){.checks{grid-template-columns:1fr}}
+  .chk{background:#f8f9fb;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px}
+  .chk b{color:var(--coral-deep)}
+  .flow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:640px){.flow{grid-template-columns:1fr}}
+  .flowbox{border-radius:14px;padding:16px;border:2px solid}
+  .flowbox.norm{border-color:#bfe3c9;background:var(--green-bg)}
+  .flowbox.inapp{border-color:#bcd6f7;background:var(--blue-bg)}
+  .arrow{text-align:center;color:var(--sub);font-size:13px;margin:4px 0}
+  .innerbox{background:#fff;border-radius:10px;padding:10px;text-align:center;font-weight:700;font-size:14px}
+  details{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  summary{cursor:pointer;padding:12px 16px;background:#f3f4f7;font-weight:700;font-size:14px;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ ";color:var(--coral)}
+  details[open] summary::before{content:"▾ "}
+  details .inner{padding:14px 16px}
+  pre{background:#1e2430;color:#e6e9ef;border-radius:10px;padding:14px;overflow:auto;font-size:12.5px;line-height:1.6}
+  .note{background:var(--amber-bg);border:1px solid #f0dcb5;border-radius:12px;padding:12px 14px;font-size:14px;color:#7a5408;margin-top:14px}
+  .warn{background:var(--red-bg);border:1px solid #f3c9c3;border-radius:12px;padding:12px 14px;font-size:14px;color:#9c2f23;margin-top:14px}
+  .kv{font-family:ui-monospace,monospace;background:#eef0f3;border-radius:6px;padding:1px 7px;font-size:13px}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .toc a{font-size:13px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--sub);text-decoration:none}
+  .toc a:hover{border-color:var(--coral);color:var(--coral-deep)}
+  .foot{text-align:center;color:var(--sub);font-size:13px;margin-top:36px}
 </style>
 </head>
 <body>
-<div class="page">
+<div class="wrap">
 
-  <!-- 헤더 -->
-  <div class="doc-header">
-    <div class="badge">안 1 v2 — 소프트 바텀 배너 + A/B/C 테스트</div>
-    <h1>회원가입 유도 정책 설계서</h1>
-    <p>비회원 → 가입 → 탐색 → PWA 전체 퍼널 + 배리언트 실험 운영 정책</p>
-    <div class="meta">
-      <div class="meta-item">작성 2026-04-23</div>
-      <div class="meta-item">배리언트 3개 (A/B/C)</div>
-      <div class="meta-item">실험 기간 4주</div>
-      <div class="meta-item">위너 결정 CVR 기준</div>
+  <div class="hero">
+    <span class="tag">운영 가이드 · 담당자 필독</span>
+    <h1>회원가입 유도 배너, 어떻게 동작하나요?</h1>
+    <p class="lead">비회원에게 "가입하세요" 하단 배너가 <b>언제 · 누구에게 · 어디서 · 어떻게</b> 뜨는지 정리한 문서입니다.
+    코드를 몰라도 이해할 수 있게 쓰였고, 기술 내용은 접어뒀습니다(▸ 눌러서 펼치기).</p>
+    <div class="three">
+      <div class="pill">👋 <b>로그인 안 한 사람</b>에게만 보입니다</div>
+      <div class="pill">⏱️ 글을 <b>20초 보거나 절반 스크롤</b>하면 등장</div>
+      <div class="pill">🔕 <b>4번</b> 권하고 나면 더는 안 띄웁니다</div>
+    </div>
+    <div class="toc">
+      <a href="#s1">1. 한눈에</a><a href="#s2">2. 무엇</a><a href="#s3">3. 화면</a>
+      <a href="#s4">4. 언제</a><a href="#s5">5. 누구</a><a href="#s6">6. 어디서</a>
+      <a href="#s7">7. 안 귀찮게</a><a href="#s8">8. 누르면</a><a href="#s9">9. A/B/C 실험</a>
+      <a href="#s10">10. 가입 후</a><a href="#s11">11. 충돌 방지</a><a href="#s12">12. 추적</a><a href="#s13">13. 기술 상세</a>
     </div>
   </div>
 
-  <!-- TOC -->
-  <div class="toc">
-    <div class="toc-title">목차</div>
-    <ul class="toc-list">
-      <li><a href="#s1"><span class="toc-num">1</span>핵심 철학 &amp; 목표 동선</a></li>
-      <li><a href="#s2"><span class="toc-num">2</span>가입 유도 배너 상세 정책</a></li>
-      <li><a href="#s3"><span class="toc-num">3</span>A/B/C 테스트 — 배리언트 3개</a></li>
-      <li><a href="#s4"><span class="toc-num">4</span>배리언트 배정 로직</a></li>
-      <li><a href="#s5"><span class="toc-num">5</span>측정 이벤트 &amp; GTM 설계</a></li>
-      <li><a href="#s6"><span class="toc-num">6</span>실험 기간 &amp; 위너 결정 기준</a></li>
-      <li><a href="#s7"><span class="toc-num">7</span>8개 환경별 동작</a></li>
-      <li><a href="#s8"><span class="toc-num">8</span>PWA 유도 정책</a></li>
-      <li><a href="#s9"><span class="toc-num">9</span>충돌 방지 정책</a></li>
-      <li><a href="#s10"><span class="toc-num">10</span>비회원 여부 판단</a></li>
-      <li><a href="#s11"><span class="toc-num">11</span>제외 경로</a></li>
-      <li><a href="#s12"><span class="toc-num">12</span>Storage 키 전체 명세</a></li>
-      <li><a href="#s13"><span class="toc-num">13</span>엣지케이스 처리표</a></li>
-      <li><a href="#s14"><span class="toc-num">14</span>수정 대상 파일</a></li>
-      <li><a href="#s15"><span class="toc-num">15</span>QA 시나리오</a></li>
-    </ul>
+  <!-- 1 -->
+  <div class="sec" id="s1">
+    <span class="sec-no">1</span><h2>한눈에 보기</h2>
+    <p class="muted">우나어를 둘러보는 <b>비회원</b>에게, 자연스럽게 카카오 가입을 권하는 <b>화면 맨 아래 띠 배너</b>입니다.</p>
+    <div class="step"><span class="n">1</span> 비회원이 글·매거진·일자리·베스트를 구경</div>
+    <div class="step"><span class="n">2</span> <b>20초</b>가 지나거나 <b>화면 절반</b>까지 스크롤하면 하단 배너 등장</div>
+    <div class="step"><span class="n">3</span> "카카오로 시작하기" 누르면 → 카카오 로그인 → 가입 완료 후 보던 글로 복귀</div>
+    <div class="note">💡 가입을 너무 들이대지 않으려고, 한 세션에 1번만 / 평생 최대 4번까지만 권합니다.</div>
   </div>
 
-  <!-- 1. 핵심 철학 -->
-  <div class="section" id="s1">
-    <div class="section-title"><span class="num">1</span> 핵심 철학 &amp; 목표 동선</div>
-    <div class="philosophy">
-      "유저가 콘텐츠를 탐색하는 흐름을 끊지 않는다.<br>
-      가입은 자연스럽게 유도하고, PWA는 가입 후 가치를 충분히 체감한 뒤에만 제안한다."
-    </div>
-    <div class="flow-box">
-      <span class="label">비회원 진입</span><br>
-      &nbsp;&nbsp;<span class="arrow">→</span> 콘텐츠 탐색 <span class="label">(방해 없음)</span><br>
-      &nbsp;&nbsp;<span class="arrow">→</span> <span class="highlight">20초 후</span> 하단 배너 등장 <span class="label">(비침습 · A/B/C 배리언트 중 1개)</span><br>
-      &nbsp;&nbsp;<span class="arrow">→</span> [💛 CTA] 클릭 → 카카오 로그인 → 온보딩<br>
-      &nbsp;&nbsp;<span class="arrow">→</span> <span class="highlight">가입 완료</span> → callbackUrl로 원래 페이지 복귀<br>
-      &nbsp;&nbsp;<span class="arrow">→</span> 환영 토스트 표시<br>
-      &nbsp;&nbsp;<span class="arrow">→</span> 탐색 계속 <span class="label">(방해 없음)</span><br>
-      &nbsp;&nbsp;<span class="arrow">→</span> <span class="highlight">콘텐츠 3페이지 탐색 후</span> PWA 팝업 1회
+  <!-- 2 -->
+  <div class="sec" id="s2">
+    <span class="sec-no">2</span><h2>이게 뭔가요?</h2>
+    <div class="grid2">
+      <div class="ccard"><div class="ico">👋</div><h3>비회원 전용 가입 배너</h3>
+        <p class="muted">로그인 안 한 사람에게만 보이는 하단 띠. 로그인한 회원에겐 절대 안 뜹니다.</p></div>
+      <div class="ccard"><div class="ico">🧪</div><h3>A/B/C 문구 실험 중</h3>
+        <p class="muted">같은 배너로 <b>문구 3가지</b>를 나눠 보여주고, 어떤 말이 가입을 더 끌어내는지 측정합니다(9번 참고).</p></div>
     </div>
   </div>
 
-  <!-- 2. 가입 유도 배너 상세 정책 -->
-  <div class="section" id="s2">
-    <div class="section-title"><span class="num">2</span> 가입 유도 배너 — 상세 정책</div>
-
-    <div class="sub-title">노출 트리거 조건 (6개 전부 충족 필요)</div>
-    <ul class="condition-list">
-      <li><strong>비회원 확인</strong> — <code>useSession()</code> → <code>session?.user?.id</code> 없음</li>
-      <li><strong>제외 경로 아님</strong> — <code>SIGNUP_EXCLUDED_PATHS</code> 미포함</li>
-      <li><strong>이 세션에서 닫은 적 없음</strong> — <code>sessionStorage: signup_banner_dismissed</code> 없음</li>
-      <li><strong>총 노출 4회 미만</strong> — <code>localStorage: signup_prompt_count &lt; 4</code></li>
-      <li><strong>쿨다운 경과</strong> — 마지막 노출로부터 회차별 쿨다운 경과</li>
-      <li><strong>페이지 진입 후 20초 경과</strong> — setTimeout(20,000)</li>
-    </ul>
-
-    <div class="sub-title" style="margin-top:24px;">재노출 정책 (4회 후 영구 중단)</div>
-    <div class="timeline">
-      <div class="timeline-item">
-        <div class="timeline-dot dot-1">1</div>
-        <div class="timeline-content">
-          <div class="round">첫 번째 노출</div>
-          <div class="desc">첫 방문 20초 후</div>
-          <div class="cooldown">쿨다운 없음</div>
-        </div>
+  <!-- 3 -->
+  <div class="sec" id="s3">
+    <span class="sec-no">3</span><h2>화면 모양 — 문구 3종(A/B/C)</h2>
+    <p class="muted">생김새는 같고 <b>문구만</b> 다릅니다. 사용자는 자기 기기에 배정된 1개만 봅니다.</p>
+    <div class="vargrid">
+      <div class="vcard A">
+        <span class="vbadge">버전 A</span>
+        <div class="vh">👋 가입하면 더 많이 즐길 수 있어요</div>
+        <div class="vs">소중한 내 일상과 생각들을 간직해봐요</div>
+        <span class="vcta">카카오로 바로 시작하기</span>
       </div>
-      <div class="timeline-item">
-        <div class="timeline-dot dot-2">2</div>
-        <div class="timeline-content">
-          <div class="round">두 번째 노출</div>
-          <div class="desc">1회 닫은 후</div>
-          <div class="cooldown">24시간 이후</div>
-        </div>
+      <div class="vcard B">
+        <span class="vbadge">버전 B</span>
+        <div class="vh">👋 가입하고 더 재미있게 놀다 가세요</div>
+        <div class="vs">혼자 읽기 아까운 글, 함께 나눠봐요</div>
+        <span class="vcta">3초만에 카카오로 시작</span>
       </div>
-      <div class="timeline-item">
-        <div class="timeline-dot dot-3">3</div>
-        <div class="timeline-content">
-          <div class="round">세 번째 노출</div>
-          <div class="desc">2회 닫은 후</div>
-          <div class="cooldown">3일 이후</div>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot dot-4">4</div>
-        <div class="timeline-content">
-          <div class="round">네 번째 (마지막) 노출</div>
-          <div class="desc">3회 닫은 후</div>
-          <div class="cooldown">7일 이후</div>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot dot-stop">∞</div>
-        <div class="timeline-content">
-          <div class="round" style="color:#86868b;">영구 중단</div>
-          <div class="desc"><code>localStorage: signup_prompt_done = '1'</code> 저장 → 이후 완전 차단</div>
-        </div>
+      <div class="vcard C">
+        <span class="vbadge">버전 C</span>
+        <div class="vh">👋 나만 이런 게 아니었네?</div>
+        <div class="vs">우리끼리 편하게 수다 떨어봐요</div>
+        <span class="vcta">카카오 한 번 클릭으로 가입</span>
       </div>
     </div>
-
-    <div class="sub-title" style="margin-top:24px;">UI 명세 (배리언트 공통)</div>
-    <div class="ui-preview">
-      <span class="box-line">┌──────────────────────────────────────────────────────┐</span><br>
-      <span class="box-line">│</span> <span class="content">[로고 40px]  [배리언트별 헤드라인 1~2줄]</span>               <span class="box-line">│</span><br>
-      <span class="box-line">│</span>                          <span class="btn">[💛 배리언트별 CTA]   [✕]</span>     <span class="box-line">│</span><br>
-      <span class="box-line">└──────────────────────────────────────────────────────┘</span><br>
-      <span style="color:#636366;">높이: 72px / fixed bottom / z-index: 250 / slide-in-from-bottom</span>
+    <div class="mock">
+      <div class="label">실제 배너 모양 (화면 맨 아래 가로 띠)</div>
+      <div class="botbanner">
+        <span class="emoji">👋</span>
+        <div class="txt"><div class="h">가입하면 더 많이 즐길 수 있어요</div><div class="s">소중한 내 일상과 생각들을 간직해봐요</div></div>
+        <span class="go">카카오로 바로 시작하기</span>
+        <span class="x">✕</span>
+      </div>
     </div>
+  </div>
 
-    <div class="sub-title">버튼 동작</div>
+  <!-- 4 -->
+  <div class="sec" id="s4">
+    <span class="sec-no">4</span><h2>언제 뜨나요?</h2>
+    <p class="muted">들어오자마자 띄우지 않습니다. 콘텐츠를 어느 정도 본 뒤 자연스럽게 등장합니다.</p>
+    <div class="grid2">
+      <div class="ccard"><h3>⏱️ 20초 경과</h3><p class="muted">콘텐츠 페이지에 들어와 20초가 지나면</p></div>
+      <div class="ccard"><h3>📜 또는 절반 스크롤</h3><p class="muted">화면을 50%까지 내리면</p></div>
+    </div>
+    <div class="note">⏱️ "20초 <b>또는</b> 절반 스크롤" — 둘 중 하나만 충족해도 뜹니다(먼저 충족되는 쪽).</div>
+  </div>
+
+  <!-- 5 -->
+  <div class="sec" id="s5">
+    <span class="sec-no">5</span><h2>누구에게 뜨나요?</h2>
     <table>
-      <thead><tr><th>버튼</th><th>동작</th></tr></thead>
+      <thead><tr><th>대상</th><th>노출</th></tr></thead>
       <tbody>
-        <tr>
-          <td>[💛 CTA]</td>
-          <td>
-            1. <code>signup_banner_dismissed = '1'</code> (session)<br>
-            2. <code>signup_prompt_count</code> +1 / <code>signup_prompt_last_at</code> = now<br>
-            3. GTM: <code>signup_banner_clicked(variant)</code><br>
-            4. 배너 숨김 → <code>/login?callbackUrl={현재 pathname}</code> 이동
-          </td>
-        </tr>
-        <tr>
-          <td>[✕] 닫기</td>
-          <td>
-            1. <code>signup_banner_dismissed = '1'</code> (session)<br>
-            2. <code>signup_prompt_count</code> +1 / <code>signup_prompt_last_at</code> = now<br>
-            3. GTM: <code>signup_banner_dismissed(variant)</code><br>
-            4. 배너 숨김 → 이 세션 재노출 없음
-          </td>
-        </tr>
+        <tr><td>로그인 안 한 비회원</td><td><span class="bdg b-show">✅ 노출</span></td></tr>
+        <tr><td>로그인한 회원</td><td><span class="bdg b-block">⛔ 안 뜸</span> &nbsp;가입했으니 권할 필요 없음</td></tr>
       </tbody>
     </table>
   </div>
 
-  <!-- 3. A/B/C 테스트 배리언트 -->
-  <div class="section" id="s3">
-    <div class="section-title"><span class="num ab">3</span> A/B/C 테스트 — 배리언트 3개</div>
-
-    <div class="highlight-box">
-      <strong>실험 목적:</strong> 동일한 배너 UI에서 카피(헤드라인 + CTA)만 다르게 노출해 어떤 소구 포인트가 가입 전환율(CVR)을 가장 높이는지 측정. 위너 카피는 4주 후 코드 고정.
+  <!-- 6 -->
+  <div class="sec" id="s6">
+    <span class="sec-no">6</span><h2>어디서 뜨나요?</h2>
+    <p class="muted">콘텐츠를 보는 페이지에서만 뜨고, 가입·로그인 같은 중요한 흐름은 방해하지 않습니다.</p>
+    <div class="grid2">
+      <div class="ccard"><h3>✅ 뜨는 곳</h3>
+        <p class="muted">커뮤니티(사는이야기·2막준비·웃음방), 매거진, 일자리(내일찾기), 베스트</p></div>
+      <div class="ccard"><h3>⛔ 안 뜨는 곳</h3>
+        <p class="muted"><b>홈</b>, 로그인·회원가입·온보딩, 마이·어드민, 약관·개인정보·이용규칙·소개·문의 등</p></div>
     </div>
+    <div class="note">🏠 홈에서는 이 배너 대신 화면 중간의 "가입 카드(SignupCard)"가 그 역할을 합니다(중복 방지).</div>
+  </div>
 
-    <div class="variant-grid">
-      <div class="variant-card variant-a">
-        <span class="variant-badge badge-a">배리언트 A</span>
-        <div class="variant-concept">루틴 / 소속감</div>
-        <div class="variant-headline">매일 우리 또래가 모이는 곳이 있어요</div>
-        <span class="variant-cta">💛 오늘 처음 들어가기</span>
-      </div>
-      <div class="variant-card variant-b">
-        <span class="variant-badge badge-b">배리언트 B</span>
-        <div class="variant-concept">실시간 FOMO</div>
-        <div class="variant-headline">지금 이 순간도 대화가 이어지고 있어요</div>
-        <span class="variant-cta">💛 나도 참여하기</span>
-      </div>
-      <div class="variant-card variant-c">
-        <span class="variant-badge badge-c">배리언트 C</span>
-        <div class="variant-concept">위로 / 이해</div>
-        <div class="variant-headline">우리 나이 고민,<br>여기선 다들 이미 알아요</div>
-        <span class="variant-cta">💛 가입하고 공감받기</span>
-      </div>
+  <!-- 7 -->
+  <div class="sec" id="s7">
+    <span class="sec-no">7</span><h2>너무 귀찮지 않게 — 빈도 규칙</h2>
+    <div class="checks">
+      <div class="chk">🔂 <b>한 세션에 1번만</b></div>
+      <div class="chk">🔢 <b>평생 최대 4번</b> — 4번 본 뒤엔 영구적으로 안 뜸</div>
+      <div class="chk">✕ <b>닫으면</b> 그 세션 동안 다시 안 뜸</div>
+      <div class="chk">🧩 <b>같은 기기엔 같은 문구</b>(A/B/C) — 볼 때마다 바뀌지 않음</div>
     </div>
+    <div class="warn">⚠️ 옛 문서에 있던 "24시간 / 3일 / 7일 쿨다운"은 <b>실제로는 없습니다</b>. 현재는 "최대 4회 + 세션 1회" 규칙만 작동합니다.</div>
+  </div>
 
-    <div class="note">
-      <strong>배리언트 선정 근거:</strong><br>
-      A — "매일 오는 곳"이라는 루틴 소구. 커뮤니티가 이미 활성화됐다는 암시.<br>
-      B — "지금 이 순간도"라는 현재진행형. 나만 빠진 것 같은 FOMO 자극.<br>
-      C — "다들 이미 알아요"라는 안도감. 이해받을 것이라는 기대로 가입 동기 유발.
+  <!-- 8 -->
+  <div class="sec" id="s8">
+    <span class="sec-no">8</span><h2>"가입" 누르면 어떻게 되나요?</h2>
+    <div class="flow">
+      <div class="flowbox norm">
+        <h3>🌐 일반 브라우저(크롬·사파리)</h3>
+        <div class="arrow">CTA 클릭 ▼</div>
+        <div class="innerbox">카카오 로그인 바로 시작</div>
+        <div class="arrow">▼ 가입 완료</div>
+        <div class="innerbox">보던 페이지로 복귀</div>
+      </div>
+      <div class="flowbox inapp">
+        <h3>📱 카카오·네이버·인스타 앱 안에서 열었을 때</h3>
+        <div class="arrow">버튼 문구가 "밖에서 가입하기"로 바뀜 ▼</div>
+        <div class="innerbox">크롬·사파리로 열도록 유도</div>
+        <p class="muted" style="font-size:12px;margin-top:8px">인앱 브라우저는 카카오 로그인이 막혀 있어, 진짜 브라우저로 안내합니다.</p>
+      </div>
     </div>
   </div>
 
-  <!-- 4. 배리언트 배정 로직 -->
-  <div class="section" id="s4">
-    <div class="section-title"><span class="num ab">4</span> 배리언트 배정 로직</div>
-
-    <div class="highlight-box">
-      <strong>핵심 원칙:</strong> 동일 기기는 항상 같은 배리언트를 봐야 함. 랜덤 배정은 리로드마다 카피가 바뀌어 측정이 오염됨 → 기기 고정 UUID 해시로 결정론적 배정.
-    </div>
-
-    <div class="code-block">
-<span class="cm">// localStorage에 기기 고정 UUID 생성 및 저장</span><br>
-<span class="kw">function</span> <span class="fn">getOrCreateDeviceId</span>(): <span class="type">string</span> {<br>
-&nbsp;&nbsp;<span class="kw">const</span> key = <span class="str">'unao_device_id'</span><br>
-&nbsp;&nbsp;<span class="kw">let</span> id = localStorage.getItem(key)<br>
-&nbsp;&nbsp;<span class="kw">if</span> (!id) {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;id = crypto.randomUUID()<br>
-&nbsp;&nbsp;&nbsp;&nbsp;localStorage.setItem(key, id)<br>
-&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;<span class="kw">return</span> id<br>
-}<br>
-<br>
-<span class="kw">function</span> <span class="fn">getVariant</span>(): <span class="str">'A'</span> | <span class="str">'B'</span> | <span class="str">'C'</span> {<br>
-&nbsp;&nbsp;<span class="cm">// 이미 배정된 배리언트 있으면 재사용</span><br>
-&nbsp;&nbsp;<span class="kw">const</span> cached = localStorage.getItem(<span class="str">'signup_banner_variant'</span>)<br>
-&nbsp;&nbsp;<span class="kw">if</span> (cached === <span class="str">'A'</span> || cached === <span class="str">'B'</span> || cached === <span class="str">'C'</span>) <span class="kw">return</span> cached<br>
-&nbsp;&nbsp;<span class="cm">// UUID 해시 → 3등분 (결정론적)</span><br>
-&nbsp;&nbsp;<span class="kw">const</span> deviceId = <span class="fn">getOrCreateDeviceId</span>()<br>
-&nbsp;&nbsp;<span class="kw">const</span> hash = Array.from(deviceId).reduce((acc, c) => acc + c.charCodeAt(0), 0)<br>
-&nbsp;&nbsp;<span class="kw">const</span> variant = ([<span class="str">'A'</span>, <span class="str">'B'</span>, <span class="str">'C'</span>] <span class="kw">as const</span>)[hash % 3]<br>
-&nbsp;&nbsp;localStorage.setItem(<span class="str">'signup_banner_variant'</span>, variant)<br>
-&nbsp;&nbsp;<span class="kw">return</span> variant<br>
-}
-    </div>
-
-    <div class="sub-title">배정 방식 비교</div>
+  <!-- 9 -->
+  <div class="sec" id="s9">
+    <span class="sec-no">9</span><h2>A/B/C 문구 실험</h2>
+    <p class="muted">같은 배너에 <b>문구만 3가지</b>로 나눠, 어떤 말이 가입(또는 클릭)을 더 끌어내는지 비교합니다.</p>
     <table>
-      <thead><tr><th>방식</th><th>장점</th><th>단점</th><th>채택 여부</th></tr></thead>
+      <thead><tr><th>버전</th><th>핵심 문구</th><th>컨셉</th></tr></thead>
       <tbody>
-        <tr><td>Math.random() 매번</td><td>구현 간단</td><td>리로드마다 카피 변경 → 측정 오염</td><td class="tag-no">❌ 불채택</td></tr>
-        <tr><td>UUID 해시 고정</td><td>기기별 1개 배리언트 보장</td><td>삭제 시 재배정 (수용 가능)</td><td class="tag-possible">✅ 채택</td></tr>
-        <tr><td>서버 쿠키 배정</td><td>가장 정확</td><td>비회원 서버 세션 필요 → 오버엔지니어링</td><td class="tag-no">❌ 불채택</td></tr>
+        <tr><td><b>A</b></td><td>가입하면 더 많이 즐길 수 있어요</td><td>혜택 강조</td></tr>
+        <tr><td><b>B</b></td><td>가입하고 더 재미있게 놀다 가세요</td><td>재미·함께</td></tr>
+        <tr><td><b>C</b></td><td>나만 이런 게 아니었네?</td><td>공감·위로</td></tr>
       </tbody>
     </table>
+    <p class="muted" style="margin-top:12px"><b>배정 방식</b>: 기기마다 고정 ID로 3등분 배정 → 같은 사람은 늘 같은 버전을 봅니다(측정 정확성 확보).</p>
+    <div class="warn">📊 <b>현재 실험 상태(승자·전환율)는 확인 필요</b> — GA4의 <span class="kv">signup_banner_shown / clicked / sign_up</span> 이벤트를 버전별로 비교해 확정합니다. (이 문서엔 결과를 공란으로 둠)</div>
   </div>
 
-  <!-- 5. 측정 이벤트 -->
-  <div class="section" id="s5">
-    <div class="section-title"><span class="num ab">5</span> 측정 이벤트 &amp; GTM 설계</div>
+  <!-- 10 -->
+  <div class="sec" id="s10">
+    <span class="sec-no">10</span><h2>가입한 다음에는?</h2>
+    <p class="muted">가입을 마치면 이번엔 <b>앱 설치</b>를 권하는 흐름으로 이어집니다.</p>
+    <div class="step"><span class="n">1</span> 가입 완료 시각이 기록됨</div>
+    <div class="step"><span class="n">2</span> 그 뒤 <b>3페이지</b>를 더 둘러보면</div>
+    <div class="step"><span class="n">3</span> 앱 설치 유도 등장 — <b>안드로이드=플레이스토어 / 아이폰=홈 화면 추가</b></div>
+    <div class="note">📱 앱 설치 유도의 자세한 동작은 <b>app-install-policy.html</b>(앱 설치 유도 운영 가이드)를 참고하세요.</div>
+  </div>
 
-    <div class="sub-title">측정 퍼널 3단계</div>
-    <div class="funnel">
-      <div class="funnel-step">
-        <div class="step-label">노출</div>
-        <div class="step-event">signup_banner_shown</div>
-        <div class="step-metric">variant, path</div>
-      </div>
-      <div class="funnel-arrow">→</div>
-      <div class="funnel-step">
-        <div class="step-label">CTA 클릭 (CTR)</div>
-        <div class="step-event">signup_banner_clicked</div>
-        <div class="step-metric">variant</div>
-      </div>
-      <div class="funnel-arrow">→</div>
-      <div class="funnel-step">
-        <div class="step-label">가입 완료 (CVR)</div>
-        <div class="step-event">sign_up</div>
-        <div class="step-metric">signup_banner_variant</div>
-      </div>
-    </div>
-    <div class="note" style="margin-top:8px;">
-      <strong>최종 위너 기준:</strong> CVR (sign_up / 노출수) &nbsp;|&nbsp; 1차 점검 기준: CTR (클릭 / 노출수)
-    </div>
+  <!-- 11 -->
+  <div class="sec" id="s11">
+    <span class="sec-no">11</span><h2>배너끼리 안 겹치게 — 충돌 방지</h2>
+    <p class="muted">가입 배너와 앱 설치 배너가 동시에 뜨면 지저분하니, 서로 양보합니다.</p>
+    <div class="note">🤝 가입 배너가 뜬 세션에서는 앱 설치 배너·게시판 인라인 배너가 <b>자동으로 양보</b>합니다. (한 세션에 하단 배너는 하나만)</div>
+  </div>
 
-    <div class="sub-title" style="margin-top:24px;">신규 GTM 함수 (src/lib/gtm.ts에 추가)</div>
-    <div class="code-block">
-<span class="cm">// 배너 노출 (20초 후 화면에 등장할 때)</span><br>
-<span class="kw">export function</span> <span class="fn">gtmSignupBannerShown</span>(variant: <span class="str">'A'</span>|<span class="str">'B'</span>|<span class="str">'C'</span>, path: <span class="type">string</span>): <span class="type">void</span> {<br>
-&nbsp;&nbsp;sendEvent(<span class="str">'signup_banner_shown'</span>, { variant, path })<br>
-}<br>
-<br>
-<span class="cm">// CTA 버튼 클릭</span><br>
-<span class="kw">export function</span> <span class="fn">gtmSignupBannerClicked</span>(variant: <span class="str">'A'</span>|<span class="str">'B'</span>|<span class="str">'C'</span>): <span class="type">void</span> {<br>
-&nbsp;&nbsp;sendEvent(<span class="str">'signup_banner_clicked'</span>, { variant })<br>
-}<br>
-<br>
-<span class="cm">// ✕ 닫기 클릭</span><br>
-<span class="kw">export function</span> <span class="fn">gtmSignupBannerDismissed</span>(variant: <span class="str">'A'</span>|<span class="str">'B'</span>|<span class="str">'C'</span>): <span class="type">void</span> {<br>
-&nbsp;&nbsp;sendEvent(<span class="str">'signup_banner_dismissed'</span>, { variant })<br>
-}
-    </div>
-
-    <div class="sub-title" style="margin-top:20px;">기존 gtmSignUp() 수정 — variant 파라미터 추가</div>
-    <div class="code-block">
-<span class="cm">// gtm.ts — variant 파라미터 추가</span><br>
-<span class="kw">export function</span> <span class="fn">gtmSignUp</span>(method = <span class="str">'kakao'</span>, signupBannerVariant?: <span class="type">string</span>): <span class="type">void</span> {<br>
-&nbsp;&nbsp;sendEvent(<span class="str">'sign_up'</span>, {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;method,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;signup_banner_variant: signupBannerVariant ?? <span class="str">'none'</span>,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;...getStoredUtm()<br>
-&nbsp;&nbsp;})<br>
-}<br>
-<br>
-<span class="cm">// OnboardingForm.tsx — 호출 시 variant 전달</span><br>
-<span class="fn">gtmSignUp</span>(<span class="str">'kakao'</span>, localStorage.getItem(<span class="str">'signup_banner_variant'</span>) ?? <span class="kw">undefined</span>)
-    </div>
-
-    <div class="sub-title" style="margin-top:20px;">GA4에서 결과 보는 법</div>
+  <!-- 12 -->
+  <div class="sec" id="s12">
+    <span class="sec-no">12</span><h2>무엇이 기록되나요? — 성과 측정</h2>
     <table>
-      <thead><tr><th>리포트</th><th>설정 방법</th></tr></thead>
+      <thead><tr><th>단계</th><th>GA4 이벤트</th></tr></thead>
       <tbody>
-        <tr>
-          <td>배리언트별 CTR</td>
-          <td>Explore → Custom Report → Dimension: <code>event_param.variant</code> / Metric: <code>signup_banner_clicked</code> 수 ÷ <code>signup_banner_shown</code> 수</td>
-        </tr>
-        <tr>
-          <td>배리언트별 가입 CVR</td>
-          <td>Explore → Funnel → Step 1: <code>signup_banner_shown</code> → Step 2: <code>sign_up</code> / Breakdown: <code>event_param.variant</code></td>
-        </tr>
-        <tr>
-          <td>이탈률</td>
-          <td><code>signup_banner_dismissed</code> / <code>signup_banner_shown</code> 비율</td>
-        </tr>
+        <tr><td>배너 노출</td><td><span class="kv">signup_banner_shown</span> &nbsp;버전·경로·노출횟수</td></tr>
+        <tr><td>버튼 클릭</td><td><span class="kv">signup_banner_clicked</span> &nbsp;버전·경로·CTA종류</td></tr>
+        <tr><td>닫기</td><td><span class="kv">signup_banner_dismissed</span></td></tr>
+        <tr><td>가입 완료</td><td><span class="kv">sign_up</span> &nbsp;가입에 쓰인 버전 포함</td></tr>
       </tbody>
     </table>
   </div>
 
-  <!-- 6. 실험 기간 & 위너 결정 -->
-  <div class="section" id="s6">
-    <div class="section-title"><span class="num ab">6</span> 실험 기간 &amp; 위너 결정 기준</div>
+  <!-- 13 기술 토글 -->
+  <div class="sec" id="s13">
+    <span class="sec-no">13</span><h2>개발자용 — 기술 상세 (펼치기)</h2>
 
-    <div class="sub-title">샘플 크기 추정</div>
-    <table>
-      <thead><tr><th>변수</th><th>추정값</th><th>근거</th></tr></thead>
-      <tbody>
-        <tr><td>일평균 비로그인 게시글 방문</td><td>300~500명/일</td><td>GA4 비회원 세션 기준</td></tr>
-        <tr><td>배너 트리거 충족률</td><td>약 40%</td><td>20초 + 스크롤 50% 동시 충족</td></tr>
-        <tr><td>배리언트당 일노출</td><td>40~67명</td><td>(300~500 × 40%) ÷ 3</td></tr>
-      </tbody>
-    </table>
+    <details>
+      <summary>파일 위치</summary>
+      <div class="inner">
+        <table><tbody>
+          <tr><td><code>src/components/common/SignupPromptBanner.tsx</code></td><td>배너 본체 — 트리거·A/B/C·인앱 분기·노출 제한</td></tr>
+          <tr><td><code>src/lib/gtm.ts</code></td><td>GTM 이벤트 함수</td></tr>
+          <tr><td><code>src/components/features/onboarding/OnboardingForm.tsx</code></td><td>가입 완료 시 variant 전달 · <code>signup_completed_at</code> 저장</td></tr>
+          <tr><td><code>src/components/common/AddToHomeScreen.tsx</code></td><td>가입 후 3페이지 → 앱 설치 유도</td></tr>
+          <tr><td>노출 위치</td><td>커뮤니티·매거진·일자리·베스트 (CONTENT_PATHS)</td></tr>
+        </tbody></table>
+      </div>
+    </details>
 
-    <div class="sub-title" style="margin-top:24px;">실험 단계별 일정</div>
-    <div class="exp-timeline">
-      <div class="exp-phase">
-        <div class="phase-day">D+0 ~ D+7</div>
-        <div class="phase-title">배포 &amp; 수집</div>
-        <div class="phase-desc">3개 배리언트 동시 노출 시작. GA4 이벤트 수집 확인. 이상 노출 모니터링.</div>
-      </div>
-      <div class="exp-phase">
-        <div class="phase-day">D+7 (1주 점검)</div>
-        <div class="phase-title">CTR 1차 점검</div>
-        <div class="phase-desc">배리언트별 CTR 비교. CTR 차이가 2배 이상이면 열세 배리언트 조기 종료 논의.</div>
-      </div>
-      <div class="exp-phase">
-        <div class="phase-day">D+14 (2주)</div>
-        <div class="phase-title">CTR 중간 결과</div>
-        <div class="phase-desc">통계적 유의성 1차 판단 가능. Slack 중간 보고. 조기 종료 실행 가능.</div>
-      </div>
-    </div>
-    <div class="exp-timeline" style="margin-top:12px;">
-      <div class="exp-phase">
-        <div class="phase-day">D+28 (4주)</div>
-        <div class="phase-title">최종 위너 선정</div>
-        <div class="phase-desc">CVR 기준 최고 배리언트 선택. 위너 배리언트로 코드 고정 후 A/B 분기 제거.</div>
-      </div>
-      <div class="exp-phase" style="grid-column: span 2;">
-        <div class="phase-day">D+28 이후</div>
-        <div class="phase-title">코드 정리</div>
-        <div class="phase-desc"><code>getVariant()</code> 함수 제거. 위너 카피 하드코딩. <code>signup_banner_variant</code> localStorage 키 유지 (레거시 데이터 분석용).</div>
-      </div>
-    </div>
+    <details>
+      <summary>트리거 · 노출 규칙 (실제 상수)</summary>
+      <div class="inner">
+<pre><code>TIMER_MS = 20_000          // 20초
+SCROLL_THRESHOLD = 0.5     // 50% 스크롤 (둘 중 먼저 충족)
+MAX_SHOWS = 4              // 4회 → signup_prompt_done='1' 영구 정지
+// 쿨다운(24h/3일/7일) 없음
 
-    <div class="sub-title" style="margin-top:24px;">위너 결정 규칙</div>
-    <div class="winner-box">
-      <div class="winner-title">✅ 위너 선정 기준 (우선순위 순)</div>
-      <div class="winner-rule">
-        <span class="wr-icon">1️⃣</span>
-        <span><strong>CVR 기준 최고값</strong> — sign_up / signup_banner_shown 비율이 가장 높은 배리언트</span>
+CONTENT_PATHS  = ['/community/','/magazine/','/jobs/','/best']   // 노출
+EXCLUDED_PATHS = ['/login','/onboarding','/signup','/my','/admin',
+  '/terms','/privacy','/rules','/about','/contact','/grade',
+  '/error','/_next','/api','/']   // '/'(홈)은 SignupCard가 대체
+
+canShow(): signup_prompt_done!=='1'
+        && !sessionStorage['signup_prompt_shown_this_session']
+렌더 조건: isLoggedIn 이면 차단 (비회원 전용)</code></pre>
       </div>
-      <div class="winner-rule">
-        <span class="wr-icon">2️⃣</span>
-        <span><strong>통계적 유의성</strong> — p &lt; 0.05 기준 (χ² 검정 또는 GA4 자동 계산)</span>
+    </details>
+
+    <details>
+      <summary>A/B/C 배정 로직</summary>
+      <div class="inner">
+<pre><code>// 기기 고유 ID(_uid) 해시 % 3 → A/B/C 결정론적 배정 (재방문 불변)
+let uid = localStorage.getItem('_uid') ?? crypto.randomUUID()   // 없으면 생성·저장
+hash = sum(uid.charCodeAt(i)) ; variant = ['A','B','C'][hash % 3]
+localStorage.setItem('signup_variant', variant)
+
+VARIANT_CONTENT:
+  A  가입하면 더 많이 즐길 수 있어요 / 소중한 내 일상과 생각들을 간직해봐요 / 카카오로 바로 시작하기
+  B  가입하고 더 재미있게 놀다 가세요 / 혼자 읽기 아까운 글, 함께 나눠봐요   / 3초만에 카카오로 시작
+  C  나만 이런 게 아니었네?        / 우리끼리 편하게 수다 떨어봐요        / 카카오 한 번 클릭으로 가입</code></pre>
       </div>
-      <div class="winner-rule">
-        <span class="wr-icon">3️⃣</span>
-        <span><strong>동률 시 (CVR 차이 5% 미만)</strong> — CTR + 이탈률 종합 판단. 이탈률이 낮은 쪽 우선.</span>
+    </details>
+
+    <details>
+      <summary>CTA · 인앱 분기</summary>
+      <div class="inner">
+<pre><code>일반 환경: startKakaoLogin(pathname)   // 카카오 로그인 직접, 현재 경로로 복귀
+인앱(kakao-android / kakao-ios / naver-inapp / google-inapp):
+  버튼 문구 → "카카오 밖에서 가입하기" / "브라우저에서 가입하기"
+  Android: intent:// 로 크롬 열기   iOS: 주소 클립보드 복사 + Safari 안내
+  + gtmInappRedirectAttempted / gtmInappRedirectSuccess 기록
+
+(인앱 utm_source 로 들어온 경우: 5초 카운트다운 자동 트리거 —
+ signup_auto_triggered 로 탭 내 1회 제한)</code></pre>
       </div>
-      <div class="winner-rule">
-        <span class="wr-icon">⚡</span>
-        <span><strong>조기 종료 조건</strong> — D+14에 CTR 차이 2배 이상이면 하위 배리언트 종료 → 위너에 100% 트래픽</span>
+    </details>
+
+    <details>
+      <summary>Storage 키 (정확)</summary>
+      <div class="inner">
+<pre><code>localStorage:
+  signup_variant            배정된 버전 A/B/C
+  signup_prompt_count       노출 횟수 (4 도달 시 done)
+  signup_prompt_done        '1' = 영구 정지
+  _uid                      기기 고유 ID (배정용)
+  signup_completed_at       가입 완료 시각 (가입 후 앱 설치 트리거)
+  signup_welcome_toast      '1' = 가입 환영 토스트 1회용
+
+sessionStorage:
+  signup_prompt_shown_this_session   세션 1회 제한 + 다른 배너 충돌 방지
+  signup_auto_triggered              인앱 utm 자동 트리거 1회 제한</code></pre>
       </div>
-    </div>
+    </details>
+
+    <details>
+      <summary>GTM 함수 시그니처 (실제)</summary>
+      <div class="inner">
+<pre><code>gtmSignupBannerShown(variant, pagePath, showCount)
+gtmSignupBannerClicked(variant, pagePath, ctaType: 'kakao_oauth' | 'external_browser')
+gtmSignupBannerDismissed(variant, pagePath, showCount)
+gtmSignUp(method='kakao', variant?)
+gtmInappRedirectAttempted(env, 'intent' | 'clipboard')
+gtmInappRedirectSuccess(fromEnv)</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>옛 설계서(v2)와 달라진 점 — 정정 이력</summary>
+      <div class="inner">
+        <table>
+          <thead><tr><th>옛 문서</th><th>실제 코드</th></tr></thead>
+          <tbody>
+            <tr><td>키 <span class="kv">signup_banner_variant</span></td><td><span class="kv">signup_variant</span></td></tr>
+            <tr><td>키 <span class="kv">bottom_banner_shown_this_session</span></td><td><span class="kv">signup_prompt_shown_this_session</span></td></tr>
+            <tr><td>기기ID <span class="kv">unao_device_id</span></td><td><span class="kv">_uid</span></td></tr>
+            <tr><td><span class="kv">signup_prompt_last_at</span> · <span class="kv">signup_banner_dismissed</span></td><td>없음 (미사용)</td></tr>
+            <tr><td>쿨다운 24h / 3일 / 7일</td><td>미구현 (최대 4회만)</td></tr>
+            <tr><td>CTA → <span class="kv">/login?callbackUrl</span></td><td><span class="kv">startKakaoLogin()</span> 직접</td></tr>
+            <tr><td>제외 경로 6개</td><td>15개 (홈 포함)</td></tr>
+            <tr><td>"수정 대상 파일(예정)"</td><td>이미 구현 완료 → 위 "파일 위치" 참고</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
   </div>
 
-  <!-- 7. 환경별 동작 -->
-  <div class="section" id="s7">
-    <div class="section-title"><span class="num">7</span> 8개 환경별 동작 상세</div>
-
-    <div class="env-grid">
-      <div class="env-card pwa-ok">
-        <span class="env-name">android-chrome</span>
-        <div class="env-flow">
-          <span class="step"><span class="arrow">→</span> 20초 후 가입 배너 (A/B/C 중 1개)</span>
-          <span class="step"><span class="arrow">→</span> 가입 완료 후 복귀</span>
-          <span class="step"><span class="arrow">→</span> 3페이지 후 PWA 팝업</span>
-        </div>
-      </div>
-      <div class="env-card pwa-ok">
-        <span class="env-name">ios-safari</span>
-        <div class="env-flow">
-          <span class="step"><span class="arrow">→</span> 20초 후 가입 배너 (A/B/C 중 1개)</span>
-          <span class="step"><span class="arrow">→</span> 가입 완료 후 복귀</span>
-          <span class="step"><span class="arrow">→</span> 3페이지 후 PWA 팝업 (3단계 안내)</span>
-        </div>
-      </div>
-      <div class="env-card pwa-ok">
-        <span class="env-name">other (삼성인터넷)</span>
-        <div class="env-flow">
-          <span class="step"><span class="arrow">→</span> 20초 후 가입 배너 (A/B/C 중 1개)</span>
-          <span class="step"><span class="arrow">→</span> 가입 완료 후 복귀</span>
-          <span class="step"><span class="arrow">→</span> 3페이지 후 PWA 팝업</span>
-        </div>
-      </div>
-      <div class="env-card inapp">
-        <span class="env-name">kakao-android</span>
-        <div class="env-flow">
-          <span class="step"><span class="arrow">→</span> 기존 크롬 유도 배너 <strong>이연</strong></span>
-          <span class="step"><span class="arrow">→</span> 20초 후 가입 배너 먼저</span>
-          <span class="step"><span class="arrow">→</span> 가입 완료 후 "크롬으로 열기" 배너</span>
-          <span class="step"><span class="arrow">→</span> 크롬 재접속 → 3페이지 후 PWA</span>
-        </div>
-      </div>
-      <div class="env-card inapp">
-        <span class="env-name">kakao-ios</span>
-        <div class="env-flow">
-          <span class="step"><span class="arrow">→</span> 기존 Safari 유도 배너 <strong>이연</strong></span>
-          <span class="step"><span class="arrow">→</span> 20초 후 가입 배너 먼저</span>
-          <span class="step"><span class="arrow">→</span> 가입 완료 후 "Safari에서 열기" 배너</span>
-          <span class="step"><span class="arrow">→</span> Safari 재접속 → 3페이지 후 PWA</span>
-        </div>
-      </div>
-      <div class="env-card inapp">
-        <span class="env-name">naver-inapp</span>
-        <div class="env-flow">
-          <span class="step"><span class="arrow">→</span> kakao-android/ios와 동일 전략</span>
-          <span class="step"><span class="arrow">→</span> Android: intent:// 크롬 열기</span>
-          <span class="step"><span class="arrow">→</span> iOS: 주소 복사 + Safari 안내</span>
-        </div>
-      </div>
-      <div class="env-card inapp">
-        <span class="env-name">instagram-inapp</span>
-        <div class="env-flow">
-          <span class="step"><span class="arrow">→</span> naver-inapp과 동일</span>
-        </div>
-      </div>
-      <div class="env-card no-pwa">
-        <span class="env-name">crios (iOS Chrome)</span>
-        <div class="env-flow">
-          <span class="step"><span class="arrow">→</span> 20초 후 가입 배너 노출</span>
-          <span class="step"><span class="arrow">→</span> 가입 완료 후 복귀</span>
-          <span class="step" style="color:#86868b;"><span class="arrow">→</span> PWA 단계 없음</span>
-        </div>
-      </div>
-      <div class="env-card no-pwa">
-        <span class="env-name">desktop</span>
-        <div class="env-flow">
-          <span class="step"><span class="arrow">→</span> 20초 후 가입 배너 노출</span>
-          <span class="step"><span class="arrow">→</span> 가입 완료 후 복귀</span>
-          <span class="step" style="color:#86868b;"><span class="arrow">→</span> PWA 단계 없음</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="note">
-      <strong>인앱 브라우저 전략 — 가입 먼저 (선택지 A)</strong><br>
-      카카오/네이버/인스타 인앱에서 카카오 소셜 로그인은 기술적으로 정상 작동. 가입(핵심 KPI)을 인앱에서 먼저 달성한 뒤, PWA는 외부 브라우저 재접속 시 유도. 외부 브라우저 전환을 첫 번째 허들로 놓으면 이탈률이 높아짐.
-    </div>
-  </div>
-
-  <!-- 8. PWA 유도 정책 -->
-  <div class="section" id="s8">
-    <div class="section-title"><span class="num">8</span> PWA 유도 정책 — 가입 완료 유저 전용</div>
-
-    <div class="sub-title">트리거 조건 (6개 전부 충족)</div>
-    <ul class="condition-list">
-      <li><strong>회원 확인</strong> — <code>session?.user?.id</code> 있음</li>
-      <li><strong>이 기기에서 가입 완료</strong> — <code>localStorage: signup_completed_at</code> 있음</li>
-      <li><strong>3페이지 탐색 완료</strong> — <code>pwa_page_views_after_signup &gt;= 3</code></li>
-      <li><strong>미설치</strong> — <code>getInstalled() = false</code></li>
-      <li><strong>PWA 가능 환경</strong> — android-chrome / ios-safari / other</li>
-      <li><strong>기존 canShow('signup') = true</strong></li>
-    </ul>
-
-    <div class="sub-title" style="margin-top:24px;">기존 pwa_pending 교체</div>
-    <table>
-      <thead><tr><th>현재</th><th>변경 후</th></tr></thead>
-      <tbody>
-        <tr>
-          <td><code>pwa_pending = 'signup'</code><br>온보딩 완료 → 300ms 후 PWA 즉시 팝업</td>
-          <td><code>signup_completed_at = now</code><br>페이지 카운터 3회 후 PWA 팝업 발동</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- 9. 충돌 방지 -->
-  <div class="section" id="s9">
-    <div class="section-title"><span class="num">9</span> 팝업/배너 충돌 방지 정책</div>
-
-    <div class="sub-title">우선순위 계층</div>
-    <ul class="priority-list">
-      <li class="priority-item">
-        <div class="p-rank high">1</div>
-        <div>
-          <div class="p-item-label">가입 완료 환영 토스트</div>
-          <div class="p-item-desc">비침습 — 다른 팝업과 충돌 없음</div>
-        </div>
-      </li>
-      <li class="priority-item">
-        <div class="p-rank high">2</div>
-        <div>
-          <div class="p-item-label">PWA 팝업 (전체 모달)</div>
-          <div class="p-item-desc">회원 전용. 가입 배너와 동시 불가 — 비회원/회원으로 이미 분리됨</div>
-        </div>
-      </li>
-      <li class="priority-item">
-        <div class="p-rank mid">3</div>
-        <div>
-          <div class="p-item-label">가입 유도 배너 신규 (A/B/C)</div>
-          <div class="p-item-desc">비회원 전용. 하단 72px 고정</div>
-        </div>
-      </li>
-      <li class="priority-item">
-        <div class="p-rank">4</div>
-        <div>
-          <div class="p-item-label">인앱 외부 브라우저 유도 배너</div>
-          <div class="p-item-desc">인앱 환경 전용. 가입 완료 후에만 노출</div>
-        </div>
-      </li>
-      <li class="priority-item">
-        <div class="p-rank">5</div>
-        <div>
-          <div class="p-item-label">PWA 하단 배너 (기존 bannerVisible)</div>
-          <div class="p-item-desc">회원 + Android 전용. 팝업 1회 경험 후 조건 충족 시</div>
-        </div>
-      </li>
-      <li class="priority-item">
-        <div class="p-rank">6</div>
-        <div>
-          <div class="p-item-label">PwaInlineBanner (커뮤니티 피드)</div>
-          <div class="p-item-desc">가입 배너 노출 세션에서는 숨김</div>
-        </div>
-      </li>
-    </ul>
-
-    <div class="sub-title" style="margin-top:24px;">핵심 충돌 방지 키</div>
-    <div class="note">
-      <code>bottom_banner_shown_this_session</code> (sessionStorage)<br><br>
-      하단 배너 종류 막론하고 세션 내 1개만 노출.<br>
-      가입 배너가 뜨면 → <code>'signup'</code> 저장 → PWA 배너/PwaInlineBanner 차단.<br>
-      PWA 배너가 뜨면 → <code>'pwa'</code> 저장 → 가입 배너 차단.
-    </div>
-  </div>
-
-  <!-- 10. 비회원 판단 -->
-  <div class="section" id="s10">
-    <div class="section-title"><span class="num">10</span> 비회원 여부 판단 우선순위</div>
-    <div class="judge-box">
-      <div class="judge-row">
-        <span class="judge-rank">1순위</span>
-        <span><strong>useSession()</strong> → <code>session?.user?.id</code> 유무 — 서버 세션 기반, 가장 신뢰</span>
-      </div>
-      <div class="judge-row">
-        <span class="judge-rank two">보조</span>
-        <span><code>localStorage: signup_completed_at</code> — PWA 카운터 시작점으로만 사용</span>
-      </div>
-      <div class="judge-row">
-        <span class="judge-rank three">제외</span>
-        <span>localStorage 단독 판단 — localStorage 삭제로 우회 가능하므로 1순위 아님</span>
-      </div>
-    </div>
-    <div class="note" style="margin-top:12px;">
-      <strong>핵심:</strong> localStorage를 아무리 삭제해도 세션 쿠키가 살아있는 한 로그인 유저에게 가입 배너가 절대 뜨지 않음.
-    </div>
-  </div>
-
-  <!-- 11. 제외 경로 -->
-  <div class="section" id="s11">
-    <div class="section-title"><span class="num">11</span> 제외 경로 (가입 배너 절대 미노출)</div>
-    <div class="path-list">
-      <span class="path-tag">/login</span>
-      <span class="path-tag">/onboarding</span>
-      <span class="path-tag">/signup</span>
-      <span class="path-tag">/admin</span>
-      <span class="path-tag">/my</span>
-      <span class="path-tag">/terms</span>
-    </div>
-  </div>
-
-  <!-- 12. Storage 키 전체 명세 -->
-  <div class="section" id="s12">
-    <div class="section-title"><span class="num">12</span> Storage 키 전체 명세</div>
-
-    <div class="sub-title">A/B/C 테스트 신규 키</div>
-    <ul class="key-list">
-      <li class="key-item">
-        <span class="key-storage local">local</span>
-        <span class="key-name ab-key">unao_device_id</span>
-        <span class="key-desc">기기 고정 UUID. 배리언트 결정론적 배정에 사용. 삭제 시 재배정.</span>
-      </li>
-      <li class="key-item">
-        <span class="key-storage local">local</span>
-        <span class="key-name ab-key">signup_banner_variant</span>
-        <span class="key-desc">'A' | 'B' | 'C' — 배정된 배리언트. 기기 고정. 위너 선정 후 삭제 가능.</span>
-      </li>
-    </ul>
-
-    <div class="sub-title" style="margin-top:20px;">배너 노출 제어 키 (신규)</div>
-    <ul class="key-list">
-      <li class="key-item">
-        <span class="key-storage local">local</span>
-        <span class="key-name">signup_prompt_count</span>
-        <span class="key-desc">가입 배너 총 노출 횟수. 최대 4회 후 영구 중단</span>
-      </li>
-      <li class="key-item">
-        <span class="key-storage local">local</span>
-        <span class="key-name">signup_prompt_last_at</span>
-        <span class="key-desc">마지막 가입 배너 노출 시각 (ISO timestamp). 쿨다운 계산에 사용</span>
-      </li>
-      <li class="key-item">
-        <span class="key-storage local">local</span>
-        <span class="key-name">signup_prompt_done</span>
-        <span class="key-desc">'1' — 4회 모두 노출 후 영구 중단 플래그</span>
-      </li>
-      <li class="key-item">
-        <span class="key-storage local">local</span>
-        <span class="key-name">signup_completed_at</span>
-        <span class="key-desc">가입 완료 시각. PWA 페이지 카운터 시작점</span>
-      </li>
-      <li class="key-item">
-        <span class="key-storage local">local</span>
-        <span class="key-name">pwa_page_views_after_signup</span>
-        <span class="key-desc">가입 후 콘텐츠 페이지 탐색 횟수. 3 이상 시 PWA 트리거</span>
-      </li>
-      <li class="key-item">
-        <span class="key-storage session">session</span>
-        <span class="key-name">signup_banner_dismissed</span>
-        <span class="key-desc">'1' — 이 세션에서 가입 배너 닫은 경우. 탭 닫으면 리셋</span>
-      </li>
-      <li class="key-item">
-        <span class="key-storage session">session</span>
-        <span class="key-name">bottom_banner_shown_this_session</span>
-        <span class="key-desc">'signup' | 'pwa' — 하단 배너 중복 방지. 세션 내 1종만 노출</span>
-      </li>
-      <li class="key-item">
-        <span class="key-storage session">session</span>
-        <span class="key-name">signup_welcome_toast</span>
-        <span class="key-desc">'1' — 가입 완료 환영 토스트 1회 표시용</span>
-      </li>
-    </ul>
-
-    <div class="sub-title" style="margin-top:24px;">기존 키 변경</div>
-    <table>
-      <thead><tr><th>키</th><th>변경 내용</th></tr></thead>
-      <tbody>
-        <tr>
-          <td><code>pwa_pending = 'signup'</code></td>
-          <td>즉시 실행 폐기 → <code>signup_completed_at</code>으로 대체</td>
-        </tr>
-        <tr>
-          <td><code>pwa_shown_this_session</code></td>
-          <td>유지. PWA 팝업 세션 1회 제한 그대로</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- 13. 엣지케이스 -->
-  <div class="section" id="s13">
-    <div class="section-title"><span class="num">13</span> 전체 엣지케이스 처리표</div>
-    <table class="edge-table">
-      <thead><tr><th>엣지케이스</th><th>처리 방법</th></tr></thead>
-      <tbody>
-        <tr>
-          <td>가입 배너 노출 중 13초 PWA 타이머 도달</td>
-          <td><code>bottom_banner_shown_this_session</code> 있으면 PWA 팝업 차단</td>
-        </tr>
-        <tr>
-          <td>이미 회원인 유저에게 가입 배너가 뜨면?</td>
-          <td><code>useSession()</code> 1순위 체크 → <code>session.user.id</code> 있으면 즉시 스킵</td>
-        </tr>
-        <tr>
-          <td>localStorage 전체 초기화 후 재방문</td>
-          <td>로그인 상태면 세션으로 차단. A/B 배리언트는 재배정됨 (허용 가능)</td>
-        </tr>
-        <tr>
-          <td>배리언트 localStorage 삭제 후 재방문</td>
-          <td><code>getVariant()</code> 재실행 → 같은 deviceId가 있으면 동일 배리언트 재배정. deviceId도 삭제됐으면 새 UUID로 재배정.</td>
-        </tr>
-        <tr>
-          <td>A/B 테스트 중 배리언트 추가/변경 필요 시</td>
-          <td>기존 <code>signup_banner_variant</code> 로컬스토리지 무효화 불가 → 배포 후 신규 유저부터 적용. 기존 배정 유저는 그대로 유지.</td>
-        </tr>
-        <tr>
-          <td>카카오 인앱에서 카카오 로그인 제한?</td>
-          <td>우나어는 카카오 전용 → 기술적 문제 없음</td>
-        </tr>
-        <tr>
-          <td>가입 배너 닫고 같은 세션에서 공감 클릭</td>
-          <td>LoginPromptModal(ActionBar) 정상 노출. 별개 컴포넌트 — 충돌 없음</td>
-        </tr>
-        <tr>
-          <td>4회 모두 닫은 비회원이 나중에 방문</td>
-          <td><code>signup_prompt_done=1</code> → 영구 차단. 직접 로그인 클릭 시 정상 동작</td>
-        </tr>
-        <tr>
-          <td>20초 타이머 중 페이지 이동하면?</td>
-          <td>usePathname() 변경 → 기존 타이머 clearTimeout → 새 페이지에서 20초 재시작</td>
-        </tr>
-        <tr>
-          <td>가입 배너와 PwaInlineBanner 동시 노출</td>
-          <td><code>bottom_banner_shown_this_session='signup'</code> 있으면 PwaInlineBanner 숨김</td>
-        </tr>
-        <tr>
-          <td>데스크탑 가입 후 3페이지 카운터 충족</td>
-          <td><code>detectEnv()='desktop'</code> → PWA 환경 아님 → PWA 이벤트 발동 안 함</td>
-        </tr>
-        <tr>
-          <td>신규 가입자 온보딩 중 가입 배너가 뜨면?</td>
-          <td>/onboarding EXCLUDED_PATHS 포함 → 차단</td>
-        </tr>
-        <tr>
-          <td>A/B 실험 중 위너 배리언트 결정됐을 때 코드 정리</td>
-          <td>위너 카피 하드코딩 → <code>getVariant()</code> 함수 제거 → <code>signup_banner_variant</code>키는 GA4 분석용으로 6개월 유지 후 제거</td>
-        </tr>
-        <tr>
-          <td>가입 완료 후 callbackUrl이 만료된 페이지면?</td>
-          <td>Next.js 404 처리. 404 → 홈(/) 이동은 기존 로직 그대로</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- 14. 수정 파일 -->
-  <div class="section" id="s14">
-    <div class="section-title"><span class="num">14</span> 수정 대상 파일</div>
-    <div>
-      <div class="file-item">
-        <span class="file-badge badge-new">신규</span>
-        <div>
-          <span class="file-name">src/components/common/SignupPromptBanner.tsx</span>
-          <span class="file-desc">비회원 전용 가입 유도 하단 배너. A/B/C 배리언트 포함. useSession + usePathname + detectEnv + getVariant 조합. 72px fixed bottom.</span>
-        </div>
-      </div>
-      <div class="file-item">
-        <span class="file-badge badge-mod">수정</span>
-        <div>
-          <span class="file-name">src/lib/gtm.ts</span>
-          <span class="file-desc">
-            ① <code>gtmSignupBannerShown(variant, path)</code> 추가<br>
-            ② <code>gtmSignupBannerClicked(variant)</code> 추가<br>
-            ③ <code>gtmSignupBannerDismissed(variant)</code> 추가<br>
-            ④ <code>gtmSignUp()</code>에 <code>signupBannerVariant?</code> 파라미터 추가
-          </span>
-        </div>
-      </div>
-      <div class="file-item">
-        <span class="file-badge badge-mod">수정</span>
-        <div>
-          <span class="file-name">src/components/features/onboarding/OnboardingForm.tsx</span>
-          <span class="file-desc">
-            ① <code>gtmSignUp('kakao', localStorage.getItem('signup_banner_variant'))</code>로 변경<br>
-            ② <code>pwa_pending='signup'</code> 제거 → <code>signup_completed_at = now</code>으로 교체<br>
-            ③ <code>signup_welcome_toast = '1'</code> 추가
-          </span>
-        </div>
-      </div>
-      <div class="file-item">
-        <span class="file-badge badge-mod">수정</span>
-        <div>
-          <span class="file-name">src/components/common/AddToHomeScreen.tsx</span>
-          <span class="file-desc">
-            ① <code>canShow('first_15s')</code>에 session 체크 추가 — 비회원 PWA 팝업 차단<br>
-            ② <code>pwa_pending='signup'</code> 즉시 실행 → 페이지 카운터 3회 후 처리로 교체<br>
-            ③ 카카오/네이버/인스타 즉시 배너 → <code>signup_completed_at</code> 있을 때만 노출<br>
-            ④ <code>bottom_banner_shown_this_session</code> 키 체크 추가
-          </span>
-        </div>
-      </div>
-      <div class="file-item">
-        <span class="file-badge badge-min">최소</span>
-        <div>
-          <span class="file-name">src/components/common/PwaInlineBanner.tsx</span>
-          <span class="file-desc"><code>bottom_banner_shown_this_session</code> 체크 추가 (가입 배너와 중복 방지)</span>
-        </div>
-      </div>
-      <div class="file-item">
-        <span class="file-badge badge-min">확인</span>
-        <div>
-          <span class="file-name">src/app/(main)/community/[boardSlug]/[postId]/page.tsx</span>
-          <span class="file-desc">&lt;SignupPromptBanner /&gt; 삽입</span>
-        </div>
-      </div>
-      <div class="file-item">
-        <span class="file-badge badge-min">확인 (P2)</span>
-        <div>
-          <span class="file-name">src/app/(main)/magazine/[id]/page.tsx</span>
-          <span class="file-desc">&lt;SignupPromptBanner /&gt; 삽입 (매거진 페이지도 포함 시)</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 15. QA 시나리오 -->
-  <div class="section" id="s15">
-    <div class="section-title"><span class="num">15</span> QA 시나리오</div>
-
-    <div class="sub-title">기본 동작 QA</div>
-    <div>
-      <div class="qa-item">
-        <div class="qa-num">1</div>
-        <div class="qa-scenario">
-          <strong>비회원 첫 방문 → 20초 후 배너 노출</strong>
-          <div class="qa-how">DevTools → Storage 확인. 20초 대기 후 하단 배너 등장 확인</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num">2</div>
-        <div class="qa-scenario">
-          <strong>배너 닫기 → 동일 세션 재노출 없음</strong>
-          <div class="qa-how">✕ 클릭 → sessionStorage signup_banner_dismissed=1 확인 → 다른 페이지 20초 후에도 미노출</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num">3</div>
-        <div class="qa-scenario">
-          <strong>4회 노출 후 영구 차단</strong>
-          <div class="qa-how">localStorage signup_prompt_count=3 수동 설정 → 마지막 노출 → signup_prompt_done=1 저장 확인 → 이후 미노출</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num">4</div>
-        <div class="qa-scenario">
-          <strong>로그인 회원 → 가입 배너 미노출</strong>
-          <div class="qa-how">로그인 상태에서 localStorage 전체 삭제 후 재방문 → 배너 미노출 확인 (세션 쿠키 기반)</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num">5</div>
-        <div class="qa-scenario">
-          <strong>가입 배너 → 카카오 로그인 → callbackUrl 복귀</strong>
-          <div class="qa-how">배너 [CTA] 클릭 → URL에 callbackUrl 파라미터 확인 → 로그인 완료 → 원래 게시글 복귀 확인</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num">6</div>
-        <div class="qa-scenario">
-          <strong>가입 완료 후 3페이지 탐색 → PWA 팝업</strong>
-          <div class="qa-how">가입 완료 상태에서 콘텐츠 페이지 3개 이동 → pwa_page_views_after_signup=3 → PWA 팝업 노출 확인</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num">7</div>
-        <div class="qa-scenario">
-          <strong>가입 배너 + PWA 팝업 충돌 방지</strong>
-          <div class="qa-how">가입 배너 노출 세션에서 bottom_banner_shown_this_session=signup 확인 → 동일 세션 PWA 팝업 미노출 확인</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num">8</div>
-        <div class="qa-scenario">
-          <strong>공감 클릭 → LoginPromptModal 정상 노출 (충돌 없음)</strong>
-          <div class="qa-how">배너가 떠있는 상태에서 공감 클릭 → LoginPromptModal 정상 노출 확인</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="sub-title" style="margin-top:24px;">A/B/C 테스트 QA</div>
-    <div>
-      <div class="qa-item">
-        <div class="qa-num ab">T1</div>
-        <div class="qa-scenario">
-          <strong>배리언트 고정 확인</strong>
-          <div class="qa-how">localStorage signup_banner_variant 확인 → 페이지 리로드 후에도 동일 배리언트 표시</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num ab">T2</div>
-        <div class="qa-scenario">
-          <strong>3등분 배포 확인</strong>
-          <div class="qa-how">unao_device_id 수동 변경 3회 → signup_banner_variant가 A/B/C 각각 나오는지 확인</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num ab">T3</div>
-        <div class="qa-scenario">
-          <strong>GTM 노출 이벤트 확인</strong>
-          <div class="qa-how">배너 등장 시 DevTools Network → signup_banner_shown 이벤트 + variant 파라미터 확인</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num ab">T4</div>
-        <div class="qa-scenario">
-          <strong>GTM 클릭 이벤트 확인</strong>
-          <div class="qa-how">CTA 클릭 → signup_banner_clicked 이벤트 + variant 파라미터 확인</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num ab">T5</div>
-        <div class="qa-scenario">
-          <strong>sign_up 이벤트에 variant 전달 확인</strong>
-          <div class="qa-how">가입 완료 → GA4 DebugView → sign_up 이벤트 → signup_banner_variant 속성 확인</div>
-        </div>
-      </div>
-      <div class="qa-item">
-        <div class="qa-num ab">T6</div>
-        <div class="qa-scenario">
-          <strong>배리언트 없이 가입한 경우 (직접 접근)</strong>
-          <div class="qa-how">배너 미노출 상태에서 직접 /login 접근 후 가입 → sign_up 이벤트 signup_banner_variant='none' 확인</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <p class="foot">우나어 운영 문서 · 회원가입 유도 배너 정책 · 현재 코드 기준 재작성 2026-06-05</p>
 </div>
 </body>
 </html>
