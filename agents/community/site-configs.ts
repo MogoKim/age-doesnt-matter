@@ -129,7 +129,9 @@ export const SITE_CONFIGS: SiteConfig[] = [
     urlPatterns: [/cafe\.naver\.com\/(f-e|ca-fe)\/cafes\//],
     selectors: {
       title: ['.title_text'],
-      content: ['.article_viewer'],
+      // .content.CafeViewer 우선 — busanmam 등 게시판 공지(.FormNoticeContent)가
+      // .article_viewer에 섞이는 카페 대응. 없으면 .article_viewer fallback.
+      content: ['.article_viewer .content.CafeViewer', '.article_viewer'],
       images: 'img',
       // iframe 전체 제거: 네이버 동영상 플레이어(naverVideoPlayer, kakaotv 등) 지원 제외
       removeElements: ['script', 'style', '.ad_area', 'iframe', '.ArticleTool'],
@@ -156,14 +158,15 @@ export function detectSite(url: string): SiteConfig | null {
 }
 
 /**
- * 네이버 카페 slug → 내부 numericId 매핑 (v1: 검증 완료 source만)
- * 값 출처: agents/cafe/config.ts (wgang/dlxogns01) + live smoke 검증 (remonterrace)
- * busanmam은 BOARD_NOTICE 오염으로 v1 제외 — v1.1 재검토
+ * 네이버 카페 slug → 내부 numericId 매핑 (검증 완료 source만)
+ * 값 출처: agents/cafe/config.ts (wgang/dlxogns01) + live smoke 검증 (remonterrace/busanmam)
+ * busanmam: 본문은 .content.CafeViewer로 좁혀 공지(.FormNoticeContent) 오염 배제 (v1.1)
  */
 const NAVER_CAFE_NUMERIC_ID: Record<string, number> = {
   wgang: 29349320,
   dlxogns01: 23676262,
   remonterrace: 10298136,
+  busanmam: 29635040,
 }
 
 /**
