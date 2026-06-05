@@ -15,7 +15,8 @@ globs: src/components/**/*.tsx
 
 ## Primary Color 컨트라스트 규칙 (절대 준수 — WCAG)
 - `bg-primary` 사용 시: `text-white` 필수 (`text-foreground` / `text-muted` 금지)
-- `bg-primary/10~30` (투명도) 사용 시: `text-primary-text` (#C4453B) 사용
+- `bg-primary/10~30` (투명도) 사용 시: `text-primary-text` (#E85D50) 사용
+  - ⚠️ #E85D50은 흰 배경 대비 3.4:1 (큰 글씨 AA 통과 / 작은 caption·배지는 경계) — 작은 텍스트엔 배경 톤·굵기로 가독성 보강
 - SVG 아이콘: `stroke="currentColor"` / `fill="currentColor"` 필수 (하드코딩 색상 금지)
 - hover 변형 (`bg-primary/90`, `bg-[#E85D50]`) 시에도 `text-white` 유지
 - 점/인디케이터 등 텍스트 없는 `bg-primary` 사용은 예외

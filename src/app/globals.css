@@ -24,8 +24,8 @@
     /* 메인 코랄: #FF6F61 — 브랜드 컬러 (배경/버튼 fill용) */
     --primary: 5 100% 69%;
     --primary-foreground: 0 0% 100%;
-    /* 접근성 고대비 코랄: #AD372F — 텍스트 전용 (soft surface 위에서도 WCAG AA 통과) */
-    --primary-text: 4 57% 43%;
+    /* 브랜드 코랄(텍스트 포인트): #E85D50 — 흰 배경 대비 3.4:1 (큰 글씨 AA / 작은 글씨는 경계) */
+    --primary-text: 5 77% 61%;
 
     /* 보조: 은은한 뉴트럴 */
     --secondary: 220 14% 96%;
