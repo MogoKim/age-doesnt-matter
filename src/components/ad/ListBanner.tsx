@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import ListBannerClient from './ListBannerClient'
+import type { ListBannerItem } from './ListBannerClient'
 
 /**
  * 목록 페이지 상단 광고 띠배너 (GNB 아래).
@@ -8,25 +9,34 @@ import ListBannerClient from './ListBannerClient'
  */
 export default async function ListBanner() {
   const now = new Date()
-  const banners = await prisma.adBanner.findMany({
-    where: {
-      slot: 'LIST_HEADER',
-      isActive: true,
-      startDate: { lte: now },
-      endDate: { gte: now },
-    },
-    orderBy: { priority: 'desc' },
-    take: 3,
-    select: {
-      id: true,
-      adType: true,
-      title: true,
-      imageUrl: true,
-      htmlCode: true,
-      clickUrl: true,
-      targetPath: true,
-    },
-  })
+
+  let banners: ListBannerItem[]
+  try {
+    banners = await prisma.adBanner.findMany({
+      where: {
+        slot: 'LIST_HEADER',
+        isActive: true,
+        startDate: { lte: now },
+        endDate: { gte: now },
+      },
+      orderBy: { priority: 'desc' },
+      take: 3,
+      select: {
+        id: true,
+        adType: true,
+        title: true,
+        imageUrl: true,
+        htmlCode: true,
+        clickUrl: true,
+        targetPath: true,
+      },
+    })
+  } catch (error) {
+    if (process.env.CI !== 'true') {
+      console.warn('[ads] LIST_HEADER 배너 조회 실패', error)
+    }
+    return null
+  }
 
   if (banners.length === 0) return null
 

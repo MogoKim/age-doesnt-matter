@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { prisma } from '@/lib/prisma'
-import type { AdSlot as AdSlotType } from '@/generated/prisma/client'
+import type { AdBanner, AdSlot as AdSlotType } from '@/generated/prisma/client'
 
 interface AdSlotProps {
   slot: AdSlotType
@@ -9,15 +9,23 @@ interface AdSlotProps {
 
 export default async function AdSlot({ slot, className }: AdSlotProps) {
   const now = new Date()
-  const ad = await prisma.adBanner.findFirst({
-    where: {
-      slot,
-      isActive: true,
-      startDate: { lte: now },
-      endDate: { gte: now },
-    },
-    orderBy: { priority: 'desc' },
-  })
+  let ad: AdBanner | null
+  try {
+    ad = await prisma.adBanner.findFirst({
+      where: {
+        slot,
+        isActive: true,
+        startDate: { lte: now },
+        endDate: { gte: now },
+      },
+      orderBy: { priority: 'desc' },
+    })
+  } catch (error) {
+    if (process.env.CI !== 'true') {
+      console.warn(`[ads] ${slot} 배너 조회 실패`, error)
+    }
+    return null
+  }
 
   if (!ad) return null
 
