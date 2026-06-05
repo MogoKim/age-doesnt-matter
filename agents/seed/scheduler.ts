@@ -756,6 +756,21 @@ function startOfKstDay(): Date {
   return new Date(nowKst.getTime() - KST_OFFSET)
 }
 
+function getPlainTextLength(html: string): number {
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length
+}
+
+function isImageLikeSheetContent(content: string): boolean {
+  return getPlainTextLength(content) < 50
+}
+
+function clampImageLikeTargetCount(targetCount: number | undefined, sourceCommentCount: number): number | undefined {
+  if (targetCount === undefined) return undefined
+  if (sourceCommentCount <= 2) return 0
+  const maxForImageLike = sourceCommentCount <= 3 ? 1 : 2
+  return Math.min(targetCount, maxForImageLike)
+}
+
 /** SHEET 화제성 글 좋아요 파동 — promotionLevel HOT 트랜잭션 포함 (Risk B 대응) */
 async function processViralLikeWave(postId: string, personaIds: string[]): Promise<number> {
   let liked = 0
@@ -886,7 +901,11 @@ export async function processSheetEngagementWaves(): Promise<void> {
       } else {
 
         const sourceComments = data.sourceComments ?? []
-        const targetCount = data.targetCount
+        const rawContent = post.content ?? ''
+        const imageLikePost = isImageLikeSheetContent(rawContent)
+        const targetCount = imageLikePost
+          ? clampImageLikeTargetCount(data.targetCount, sourceComments.length)
+          : data.targetCount
         const personaIds = [...new Set(data.personaIds)]
         const insertedAuthorIds = new Set<string>()
         const generatedTexts: string[] = []
@@ -916,7 +935,7 @@ export async function processSheetEngagementWaves(): Promise<void> {
           const commentText = await generateSheetViralComment(
             personaId,
             post.title,
-            post.content ?? '',
+            rawContent,
             'empathy',
             [],
             sourceComments,
@@ -941,14 +960,24 @@ export async function processSheetEngagementWaves(): Promise<void> {
         if (inserted > 0) await refreshPostTrendingScore(data.postId).catch(() => {})
         console.log(`[SheetEngage] 일반 댓글 ${inserted}개 투입, skip=${JSON.stringify(skipReasons)} (postId=${data.postId.slice(0, 8)})`)
 
-        const finalStatus = targetCount !== undefined && inserted >= targetCount ? 'SUCCESS'
+        const finalStatus = targetCount === 0 ? 'SKIP'
+          : targetCount !== undefined && inserted >= targetCount ? 'SUCCESS'
           : inserted > 0 ? 'PARTIAL'
           : 'FAILED'
         await prisma.botLog.update({
           where: { id: wave.id },
           data: {
             status: finalStatus,
-            details: JSON.stringify({ ...existingDetails, insertedCount: inserted, targetCount, skipReasons, processedAt: now.toISOString(), claimStatus: 'DONE' }),
+            details: JSON.stringify({
+              ...existingDetails,
+              insertedCount: inserted,
+              targetCount,
+              originalTargetCount: data.targetCount,
+              imageLikePost,
+              skipReasons,
+              processedAt: now.toISOString(),
+              claimStatus: 'DONE',
+            }),
           },
         })
       }
@@ -1081,7 +1110,10 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
         const rawContent = data.rawContent ?? post.content ?? ''
         const keyTerms = data.keyTerms ?? []
         const sourceComments = data.sourceComments ?? []
-        const targetCount = data.targetCount
+        const imageLikePost = isImageLikeSheetContent(rawContent)
+        const targetCount = imageLikePost
+          ? clampImageLikeTargetCount(data.targetCount, sourceComments.length)
+          : data.targetCount
         const cap = 20
         const personaIds = [...new Set(data.personaIds)]
         const insertedAuthorIds = new Set<string>()
@@ -1143,14 +1175,24 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
         if (inserted > 0) await refreshPostTrendingScore(data.postId).catch(() => {})
         console.log(`[SheetViral] ${waveType} 파동 댓글 ${inserted}개 투입, skip=${JSON.stringify(skipReasons)} (postId=${data.postId.slice(0, 8)})`)
 
-        const finalStatus = targetCount !== undefined && inserted >= targetCount ? 'SUCCESS'
+        const finalStatus = targetCount === 0 ? 'SKIP'
+          : targetCount !== undefined && inserted >= targetCount ? 'SUCCESS'
           : inserted > 0 ? 'PARTIAL'
           : 'FAILED'
         await prisma.botLog.update({
           where: { id: wave.id },
           data: {
             status: finalStatus,
-            details: JSON.stringify({ ...existingDetails, insertedCount: inserted, targetCount, skipReasons, processedAt: now.toISOString(), claimStatus: 'DONE' }),
+            details: JSON.stringify({
+              ...existingDetails,
+              insertedCount: inserted,
+              targetCount,
+              originalTargetCount: data.targetCount,
+              imageLikePost,
+              skipReasons,
+              processedAt: now.toISOString(),
+              claimStatus: 'DONE',
+            }),
           },
         })
       }

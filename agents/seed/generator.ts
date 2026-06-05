@@ -781,6 +781,110 @@ export function detectSourceOnlyFacts(comment: string, allowedNorm: string): str
   return [...new Set(viol)]
 }
 
+// ── v1.6 image-like source anchor 차단 ───────────────────────────────────────
+// 이미지/초단문 글은 사용자가 볼 수 있는 본문 정보가 부족하므로, 원본 사이트 댓글의
+// 인물명·인용구·평가어를 "사실"처럼 가져오면 어색해진다. 이 guard는 image-like 글에만 적용한다.
+const SOURCE_ANCHOR_STOP = new Set([
+  '진짜', '정말', '너무', '그냥', '완전', '대박', '댓글', '사람', '게시물',
+  '보니까', '보면서', '이거', '저거', '그거', '같아요', '같네요', '하네요',
+  '했네요', '봤어요', '아니', '근데', '그런데', '그래도', '이렇게', '저렇게',
+  '처음', '두번째', '첫번째', '우리', '저희', '나도', '저도',
+])
+
+const SOURCE_ANCHOR_ALIASES = [
+  { source: '유튭', output: '유튜브' },
+  { source: '유투브', output: '유튜브' },
+] as const
+
+function normalizeAnchorText(value: string): string {
+  return value.replace(/[^가-힣a-zA-Z0-9]+/g, '').toLowerCase()
+}
+
+function stripKoreanTail(value: string): string {
+  return value
+    .replace(/(?:에게|한테|으로|부터|까지|처럼|에서|이랑|와|과|은|는|이|가|을|를|에|도|만|로|야)$/u, '')
+    .replace(/(?:구나|네요|어요|아요|더라|더라고요|잖아요|같네요|같아요)$/u, '')
+}
+
+function addSourceAnchorCandidate(candidates: Set<string>, raw: string): void {
+  const normalized = normalizeAnchorText(raw)
+  if (!normalized) return
+
+  const hangulLength = (normalized.match(/[가-힣]/g) ?? []).length
+  const base = stripKoreanTail(normalized)
+  const baseHangulLength = (base.match(/[가-힣]/g) ?? []).length
+  const withoutEnglishSuffix = normalized.replace(/[a-z0-9]+$/i, '')
+  const baseWithoutEnglishSuffix = base.replace(/[a-z0-9]+$/i, '')
+
+  for (const candidate of [normalized, base, withoutEnglishSuffix, baseWithoutEnglishSuffix]) {
+    const hLen = (candidate.match(/[가-힣]/g) ?? []).length
+    if (candidate.length >= 3 && hLen >= 3 && !SOURCE_ANCHOR_STOP.has(candidate)) {
+      candidates.add(candidate)
+    }
+  }
+
+  if (hangulLength >= 3 && baseHangulLength >= 3 && !SOURCE_ANCHOR_STOP.has(base)) {
+    candidates.add(base)
+  }
+}
+
+function extractSourceAnchorCandidates(sourceComments: string[]): Set<string> {
+  const candidates = new Set<string>()
+
+  for (const source of sourceComments) {
+    const rawTokens = source.match(/[가-힣a-zA-Z0-9]{2,20}/g) ?? []
+    const words = rawTokens
+      .map(t => stripKoreanTail(normalizeAnchorText(t)))
+      .filter(t => t.length >= 2 && !SOURCE_ANCHOR_STOP.has(t))
+
+    for (const token of rawTokens) addSourceAnchorCandidate(candidates, token)
+
+    for (let n = 2; n <= 3; n++) {
+      for (let i = 0; i <= words.length - n; i++) {
+        const phraseWords = words.slice(i, i + n)
+        const phrase = phraseWords.join('')
+        const hasContentWord = phraseWords.some(w => (w.match(/[가-힣]/g) ?? []).length >= 3)
+        if (hasContentWord && phrase.length >= 4 && !SOURCE_ANCHOR_STOP.has(phrase)) {
+          candidates.add(phrase)
+        }
+      }
+    }
+  }
+
+  return candidates
+}
+
+export function detectSourceOnlyAnchors(
+  comment: string,
+  sourceComments: string[],
+  allowedNorm: string,
+): string[] {
+  if (sourceComments.length === 0) return []
+
+  const commentNorm = normalizeAnchorText(comment)
+  const allowed = normalizeAnchorText(allowedNorm)
+  const sourceNorm = normalizeAnchorText(sourceComments.join(' '))
+  const violations: string[] = []
+
+  for (const candidate of extractSourceAnchorCandidates(sourceComments)) {
+    if (!allowed.includes(candidate) && commentNorm.includes(candidate)) {
+      violations.push(candidate)
+    }
+  }
+
+  for (const alias of SOURCE_ANCHOR_ALIASES) {
+    if (
+      sourceNorm.includes(alias.source) &&
+      commentNorm.includes(alias.output) &&
+      !allowed.includes(alias.output)
+    ) {
+      violations.push(alias.output)
+    }
+  }
+
+  return [...new Set(violations)].slice(0, 8)
+}
+
 const ANCHOR_STOP = new Set([
   '그래서', '하지만', '그런데', '그리고', '그러니까', '그러면', '이렇게', '그렇게',
   '저렇게', '어떻게', '왜냐면', '정말로', '진짜로', '너무나', '조금씩', '우리가',
@@ -883,7 +987,7 @@ ${WAVE_PROMPTS[waveType]}`
 
     if (isImagePost) {
       // 이미지 글: 맥락 설명에 이미지/본문 단어 없음, 메타 발화 금지어 섹션 추가
-      commentContext = `\n\n아래 반응을 글의 분위기로 삼아, 실제 게시물을 본 사람처럼 자연스럽게 댓글을 쓰세요.\n\n[글 분위기·감정 톤 참고용 (아래의 숫자·고유명사 등 구체 사실은 인용 금지, 톤만 참고)]\n${focus}`
+      commentContext = `\n\n제목과 전체 분위기에만 짧게 반응하세요. 아래 반응은 감정 톤 참고용입니다.\n아래 반응의 구체 표현·인물명·인용구·평가어·숫자·브랜드는 그대로 쓰지 마세요.\n확신할 수 없으면 짧게 반응하세요.\n\n[글 분위기·감정 톤 참고용 (구체 표현 인용 금지)]\n${focus}`
       commentContext += `\n\n[절대 쓰지 말아야 할 표현]\n이미지라 내용을 못 봤지만 / 본문을 못 봤지만 / 사진을 볼 수 없어서 / 내용 올려주세요 / 이미지 게시글 / 내용을 못 봤다 / 본문 내용 올려주실 수 있나요`
     } else if (idx !== undefined && sourceComments.length > 1) {
       // 일반 글, sourceCommentIndex 지정: focus 1개만 (rest 완전 제거)
@@ -932,6 +1036,15 @@ ${WAVE_PROMPTS[waveType]}`
     if (sof.length > 0) {
       console.warn(`  [SheetViral] source-only fact 감지 [${sof.join(', ')}] — skip (attempt ${attempt + 1})`)
       continue
+    }
+
+    // v1.6: 이미지/초단문 글 source anchor 차단 — 제목/본문에 없는 원본댓글 인물명·표현·구문 인용 방지
+    if (isImagePost) {
+      const sourceOnlyAnchors = detectSourceOnlyAnchors(cleaned, sourceComments, allowedNorm)
+      if (sourceOnlyAnchors.length > 0) {
+        console.warn(`  [SheetViral] image source-only anchor 감지 [${sourceOnlyAnchors.join(', ')}] — skip (attempt ${attempt + 1})`)
+        continue
+      }
     }
 
     // v1.5-B: 본문 anchor 반복 cap — 같은 글 내 같은 anchor 3회째 차단

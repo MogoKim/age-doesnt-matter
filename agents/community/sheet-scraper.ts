@@ -30,6 +30,19 @@ import { transformContent, transformRawContent, classifyCategory } from './conte
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+function getPlainTextLength(html: string): number {
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length
+}
+
+function isImageLikePostContent(content: string): boolean {
+  return getPlainTextLength(content) < 50
+}
+
+function getImageLikeCommentTarget(sourceCommentCount: number): number {
+  if (sourceCommentCount <= 2) return 0
+  return sourceCommentCount === 3 ? 1 : 2
+}
+
 function shuffleArray<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5)
 }
@@ -436,16 +449,20 @@ export async function main() {
                 // 파동 없음 → 재예약 (FAILED 후 B~J 공백 재시도 케이스)
                 const retryNow = new Date()
                 const retryPostUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${getBoardSlug(tab.boardType)}/${existingActive.id}`
+                const imageLikePost = isImageLikePostContent(existingActive.content ?? '')
 
                 if (tab.isFeatured) {
                   const keyTerms = extractKeyTerms(existingActive.title)
                   const rawContent = (existingActive.content ?? '').slice(0, 2000)
+                  const empathyTarget = imageLikePost ? 0 : 3
+                  const criticalTarget = imageLikePost ? 0 : 2
+                  const reversalTarget = imageLikePost ? 0 : 2
                   const retryWaves = [
                     { waveType: 'like',     action: 'SHEET_LIKE_WAVE_PENDING',    delayMin: 1,  targetCount: undefined },
-                    { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 3,  targetCount: 3 },
-                    { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 6,  targetCount: 2 },
-                    { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 10, targetCount: 2 },
-                  ]
+                    { waveType: 'empathy',  action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 3,  targetCount: empathyTarget },
+                    { waveType: 'critical', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 6,  targetCount: criticalTarget },
+                    { waveType: 'reversal', action: 'SHEET_COMMENT_WAVE_PENDING', delayMin: 10, targetCount: reversalTarget },
+                  ].filter(w => w.targetCount === undefined || w.targetCount > 0)
                   for (const wave of retryWaves) {
                     await prisma.botLog.create({
                       data: {
@@ -459,26 +476,30 @@ export async function main() {
                           personaIds: shuffleArray(WAVE_PERSONAS[wave.waveType] ?? []),
                           rawContent,
                           keyTerms,
+                          imageLikePost,
                           ...(wave.targetCount !== undefined ? { targetCount: wave.targetCount } : {}),
                         }),
                       },
                     })
                   }
-                  console.log(`  → [재시도] 화제성 파동 4개 재예약 → PUBLISHED`)
+                  console.log(`  → [재시도] 화제성 파동 ${retryWaves.length}개 재예약 → PUBLISHED`)
                 } else {
-                  await prisma.botLog.create({
-                    data: {
-                      botType: 'SEED',
-                      action: 'SHEET_ENGAGE_COMMENT_PENDING',
-                      status: 'PENDING',
-                      details: JSON.stringify({
-                        postId: existingActive.id,
-                        scheduledAt: new Date(retryNow.getTime() + 2 * 60 * 1000).toISOString(),
-                        personaIds: shuffleArray(['BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR']),
-                        targetCount: 4,
-                      }),
-                    },
-                  })
+                  if (!imageLikePost) {
+                    await prisma.botLog.create({
+                      data: {
+                        botType: 'SEED',
+                        action: 'SHEET_ENGAGE_COMMENT_PENDING',
+                        status: 'PENDING',
+                        details: JSON.stringify({
+                          postId: existingActive.id,
+                          scheduledAt: new Date(retryNow.getTime() + 2 * 60 * 1000).toISOString(),
+                          personaIds: shuffleArray(['BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR']),
+                          targetCount: 4,
+                          imageLikePost,
+                        }),
+                      },
+                    })
+                  }
                   await prisma.botLog.create({
                     data: {
                       botType: 'SEED',
@@ -488,10 +509,11 @@ export async function main() {
                         postId: existingActive.id,
                         scheduledAt: new Date(retryNow.getTime() + 6 * 60 * 1000).toISOString(),
                         personaIds: ['BL', 'BM', 'BN', 'BO', 'BP'],
+                        imageLikePost,
                       }),
                     },
                   })
-                  console.log(`  → [재시도] 일반 engagement 파동 2개 재예약 → PUBLISHED`)
+                  console.log(`  → [재시도] 일반 engagement 파동 ${imageLikePost ? 1 : 2}개 재예약 → PUBLISHED`)
                 }
 
                 await updateRow(tab.tabName, row.rowIndex, {
@@ -631,14 +653,18 @@ export async function main() {
 
             // BotLog 파동 예약 — details는 scheduler가 JSON.parse()로 읽는 구조
             const now = new Date()
+            const imageLikePost = isImageLikePostContent(content)
             if (tab.isFeatured) {
               // 화제성 글: sc 필터 → SKIP/PARTIAL/FULL 정책 + 좋아요 항상 예약
               const keyTerms = extractKeyTerms(title)
               const filteredComments = filterSourceComments(sourceComments)
               const usable = filteredComments.length
-              const criticalTarget = usable >= 5 ? 2 : usable >= 4 ? 1 : 0
-              const reversalTarget = usable >= 7 ? 2 : usable >= 6 ? 1 : 0
-              console.log(`  [sc] raw=${sourceComments.length} filtered=${usable} empathy=${usable >= 3 ? 3 : 0} critical=${criticalTarget} reversal=${reversalTarget}`)
+              const empathyTarget = imageLikePost
+                ? getImageLikeCommentTarget(usable)
+                : usable >= 3 ? 3 : 0
+              const criticalTarget = imageLikePost ? 0 : usable >= 5 ? 2 : usable >= 4 ? 1 : 0
+              const reversalTarget = imageLikePost ? 0 : usable >= 7 ? 2 : usable >= 6 ? 1 : 0
+              console.log(`  [sc] raw=${sourceComments.length} filtered=${usable} imageLike=${imageLikePost} empathy=${empathyTarget} critical=${criticalTarget} reversal=${reversalTarget}`)
 
               if (usable <= 2) {
                 await prisma.botLog.create({
@@ -651,6 +677,7 @@ export async function main() {
                       reason: usable === 0 ? 'SC_ZERO' : 'SC_INSUFFICIENT',
                       sourceCommentsRawCount: sourceComments.length,
                       sourceCommentsFilteredCount: usable,
+                      imageLikePost,
                     }),
                   },
                 })
@@ -665,17 +692,18 @@ export async function main() {
                         postId: post.id,
                         sourceCommentsRawCount: sourceComments.length,
                         sourceCommentsFilteredCount: usable,
-                        targetCount: 3 + criticalTarget + reversalTarget,
+                        imageLikePost,
+                        targetCount: empathyTarget + criticalTarget + reversalTarget,
                       }),
                     },
                   })
                 }
                 const commentWaves: Array<{ waveType: string; delayMin: number; targetCount: number }> = [
-                  { waveType: 'empathy',  delayMin: 3,  targetCount: 3 },
+                  { waveType: 'empathy',  delayMin: 3,  targetCount: empathyTarget },
                   ...(criticalTarget > 0 ? [{ waveType: 'critical', delayMin: 6,  targetCount: criticalTarget }] : []),
                   ...(reversalTarget > 0 ? [{ waveType: 'reversal', delayMin: 10, targetCount: reversalTarget }] : []),
                 ]
-                for (const wave of commentWaves) {
+                for (const wave of commentWaves.filter(w => w.targetCount > 0)) {
                   await prisma.botLog.create({
                     data: {
                       botType: 'SEED',
@@ -690,6 +718,7 @@ export async function main() {
                         keyTerms,
                         sourceComments: filteredComments,
                         sourceCommentsRaw: sourceComments,
+                        imageLikePost,
                         targetCount: wave.targetCount,
                       }),
                     },
@@ -709,17 +738,20 @@ export async function main() {
                     personaIds: shuffleArray(WAVE_PERSONAS['like'] ?? []),
                     rawContent: content.slice(0, 2000),
                     keyTerms,
+                    imageLikePost,
                   }),
                 },
               })
-              const totalWaves = 1 + (usable >= 3 ? 1 : 0) + (criticalTarget > 0 ? 1 : 0) + (reversalTarget > 0 ? 1 : 0)
+              const totalWaves = 1 + (empathyTarget > 0 ? 1 : 0) + (criticalTarget > 0 ? 1 : 0) + (reversalTarget > 0 ? 1 : 0)
               console.log(`  → 화제성 파동 ${totalWaves}개 예약 (raw=${sourceComments.length} filtered=${usable})`)
             } else {
               // 일반 스크래퍼 글: sc 필터 → SKIP/PARTIAL/FULL 정책 + 좋아요 항상 예약
               const filteredComments = filterSourceComments(sourceComments)
               const usable = filteredComments.length
-              const commentTargetCount = usable >= 4 ? 4 : usable === 3 ? 3 : 0
-              console.log(`  [sc] raw=${sourceComments.length} filtered=${usable} target=${commentTargetCount}`)
+              const commentTargetCount = imageLikePost
+                ? getImageLikeCommentTarget(usable)
+                : usable >= 4 ? 4 : usable === 3 ? 3 : 0
+              console.log(`  [sc] raw=${sourceComments.length} filtered=${usable} imageLike=${imageLikePost} target=${commentTargetCount}`)
 
               if (usable <= 2) {
                 await prisma.botLog.create({
@@ -732,11 +764,12 @@ export async function main() {
                       reason: usable === 0 ? 'SC_ZERO' : 'SC_INSUFFICIENT',
                       sourceCommentsRawCount: sourceComments.length,
                       sourceCommentsFilteredCount: usable,
+                      imageLikePost,
                     }),
                   },
                 })
               } else {
-                if (usable === 3) {
+                if (usable === 3 || imageLikePost) {
                   await prisma.botLog.create({
                     data: {
                       botType: 'SEED',
@@ -746,6 +779,7 @@ export async function main() {
                         postId: post.id,
                         sourceCommentsRawCount: sourceComments.length,
                         sourceCommentsFilteredCount: usable,
+                        imageLikePost,
                         targetCount: commentTargetCount,
                       }),
                     },
@@ -763,6 +797,7 @@ export async function main() {
                       targetCount: commentTargetCount,
                       sourceComments: filteredComments,
                       sourceCommentsRaw: sourceComments,
+                      imageLikePost,
                     }),
                   },
                 })
@@ -777,6 +812,7 @@ export async function main() {
                     postId: post.id,
                     scheduledAt: new Date(now.getTime() + 6 * 60 * 1000).toISOString(),
                     personaIds: ['BL', 'BM', 'BN', 'BO', 'BP'],
+                    imageLikePost,
                   }),
                 },
               })
