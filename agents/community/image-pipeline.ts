@@ -35,12 +35,32 @@ interface MediaResult {
 
 // ── URL 해석 ──
 
-/** protocol-relative(//), 절대(/), 상대 URL → https:// 절대 URL */
+/**
+ * fetch용 URL의 HTML 엔티티 디코딩 (&amp;, &#38;, &#x26; → &).
+ * sanitize-html이 img/video src의 &를 &amp;로 인코딩하므로, 디코딩 없이 fetch하면
+ * 쿼리스트링 이미지(예: pbs.twimg.com/...?format=jpg&amp;name=small)가 404 → 미디어 누락.
+ * 이중 인코딩(&amp;amp;)까지 안정될 때까지 반복.
+ */
+function decodeUrlEntities(src: string): string {
+  let prev = ''
+  let cur = src.trim()
+  while (cur !== prev) {
+    prev = cur
+    cur = cur
+      .replace(/&amp;/gi, '&')
+      .replace(/&#0*38;/g, '&')
+      .replace(/&#x0*26;/gi, '&')
+  }
+  return cur
+}
+
+/** protocol-relative(//), 절대(/), 상대 URL → https:// 절대 URL (HTML 엔티티 디코딩 포함) */
 function resolveUrl(src: string, referer: string): string {
-  if (src.startsWith('http')) return src
-  if (src.startsWith('//')) return `https:${src}`
-  if (src.startsWith('/')) return `${referer}${src}`
-  return `${referer}/${src}`
+  const url = decodeUrlEntities(src)
+  if (url.startsWith('http')) return url
+  if (url.startsWith('//')) return `https:${url}`
+  if (url.startsWith('/')) return `${referer}${url}`
+  return `${referer}/${url}`
 }
 
 // ── 이미지 필터링 ──
