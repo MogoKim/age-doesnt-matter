@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap, incrementShareCount } from '@/lib/actions/likes'
 import { toggleGuestPostLike } from '@/lib/actions/guest-likes'
 import { useToast } from '@/components/common/Toast'
-import { shareToKakao, copyShareLink, KakaoUnavailableError } from '@/lib/kakao-share'
+import { shareToKakao, copyShareLink, KakaoUnavailableError, preloadKakaoSdk } from '@/lib/kakao-share'
 import { logKakaoShareDebug, getKakaoRuntimeSnapshot } from '@/lib/kakao-share-debug'
 import { gtmLike, gtmShare } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
@@ -40,6 +40,11 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
   const [heartAnimating, setHeartAnimating] = useState(false)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [loginPromptMessage, setLoginPromptMessage] = useState('')
+
+  // 게시글 상세에 공유 버튼이 있으므로 SDK를 미리 로드 (클릭 시 동기 sendDefault 가능)
+  useEffect(() => {
+    preloadKakaoSdk()
+  }, [])
 
   useEffect(() => {
     let cancelled = false

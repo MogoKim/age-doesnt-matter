@@ -1,7 +1,6 @@
 import dynamic from 'next/dynamic'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
-import KakaoSdkScript from '@/components/common/KakaoSdkScript'
 
 const OfflineBanner = dynamic(
   () => import('@/components/common/OfflineBanner'),
@@ -25,10 +24,6 @@ const ProgressBar = dynamic(
   () => import('@/components/common/ProgressBar'),
   { ssr: false },
 )
-const KakaoShareDebugPanel = dynamic(
-  () => import('@/components/common/KakaoShareDebugPanel'),
-  { loading: () => null, ssr: false },
-)
 const SignupPromptBanner = dynamic(
   () => import('@/components/common/SignupPromptBanner').then(m => ({ default: m.SignupPromptBanner })),
   { loading: () => null, ssr: false },
@@ -41,7 +36,6 @@ export default function MainGroupLayout({
 }) {
   return (
     <FontSizeProvider>
-      <KakaoSdkScript />
       <ProgressBar />
       <WelcomeToast />
       <OfflineBanner />
@@ -49,7 +43,6 @@ export default function MainGroupLayout({
       <SignupPromptBanner />
       <PopupRenderer />
       <PushPermissionToast />
-      <KakaoShareDebugPanel />
     </FontSizeProvider>
   )
 }

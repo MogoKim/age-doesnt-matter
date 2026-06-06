@@ -1,6 +1,7 @@
 /**
  * 카카오톡 공유하기 유틸리티 (클라이언트 전용)
- * Kakao SDK는 KakaoSdkScript(afterInteractive)가 페이지 로드 후 미리 초기화합니다.
+ * Kakao SDK는 공유 버튼이 있는 컴포넌트가 마운트 시 preloadKakaoSdk()로 미리 로드/초기화합니다.
+ * (전역 layout 마운트 없음 — 공유 화면에서만 온디맨드 로드)
  * 클릭 시점에 isInitialized() 확인 후 sendDefault()를 동기적으로 즉시 호출합니다.
  * await 대기 후 sendDefault()를 호출하면 iOS Safari에서 user gesture가 소실됩니다.
  */
@@ -198,4 +199,55 @@ export async function copyShareLink(url: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+// ── 카카오 SDK 온디맨드 프리로드 ──────────────────────────────────────────
+// 전역 layout 마운트(KakaoSdkScript) 대신, 공유 버튼이 있는 컴포넌트가 마운트 시
+// preloadKakaoSdk()를 호출해 미리 로드/초기화한다. 클릭 시점에는 shareToKakao()가
+// 동기 isInitialized() 확인 후 즉시 sendDefault()를 호출하므로 iOS user gesture가
+// 보존된다(클릭 후 await 로드 금지). 미준비 시 기존 링크 복사 fallback 동작.
+
+const KAKAO_SDK_URL = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js'
+let kakaoSdkLoadStarted = false
+
+function initKakaoIfNeeded(): void {
+  const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY
+  if (!key) return
+  const kakao = window.Kakao
+  if (!kakao) return
+  try {
+    if (!kakao.isInitialized()) kakao.init(key)
+  } catch {
+    // init 실패는 무시 — 클릭 시 미준비로 판단되어 링크 복사 fallback
+  }
+}
+
+/** 공유 버튼이 있는 컴포넌트가 마운트 시 호출 — 클릭 전에 SDK를 미리 로드/초기화 */
+export function preloadKakaoSdk(): void {
+  if (typeof window === 'undefined') return
+  try {
+    if (window.Kakao?.isInitialized?.()) return
+  } catch {
+    /* ignore */
+  }
+  if (kakaoSdkLoadStarted) return
+  // 이미 스크립트 태그가 있으면(중복 방지) 초기화만 시도
+  if (document.getElementById('kakao-js-sdk')) {
+    initKakaoIfNeeded()
+    return
+  }
+  kakaoSdkLoadStarted = true
+  const script = document.createElement('script')
+  script.id = 'kakao-js-sdk'
+  script.src = KAKAO_SDK_URL
+  script.async = true
+  script.crossOrigin = 'anonymous'
+  script.onload = initKakaoIfNeeded
+  script.onerror = () => {
+    // 로드 실패 시 재시도 가능하도록 플래그 리셋 + 실패한 태그 제거.
+    // (클릭 시 shareToKakao는 미준비로 판단 → 링크 복사 fallback)
+    kakaoSdkLoadStarted = false
+    script.remove()
+  }
+  document.head.appendChild(script)
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { shareToKakao, KakaoUnavailableError } from '@/lib/kakao-share'
+import { shareToKakao, KakaoUnavailableError, preloadKakaoSdk } from '@/lib/kakao-share'
 import { gtmReferralShare } from '@/lib/gtm'
 import { useToast } from '@/components/common/Toast'
 
@@ -40,6 +40,11 @@ export default function TopPromoBannerClient({
       setVisible(true)
     }
   }, [sessionKey])
+
+  // 프로모 배너가 카카오 공유(kakao:share)로 설정된 경우에만 SDK 미리 로드
+  useEffect(() => {
+    if (settings?.href === 'kakao:share') preloadKakaoSdk()
+  }, [settings])
 
   if (!settings || !settings.enabled || !settings.text) return null
   if (!visible) return null

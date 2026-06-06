@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { shareToKakao, copyShareLink, KakaoUnavailableError } from '@/lib/kakao-share'
+import { useState, useEffect } from 'react'
+import { shareToKakao, copyShareLink, KakaoUnavailableError, preloadKakaoSdk } from '@/lib/kakao-share'
 import { logKakaoShareDebug, getKakaoRuntimeSnapshot } from '@/lib/kakao-share-debug'
 import { useToast } from '@/components/common/Toast'
 import { IconShare, IconKakao, IconCopy } from '@/components/icons'
@@ -16,6 +16,11 @@ interface ShareButtonProps {
 export default function ShareButton({ title, description, imageUrl, url }: ShareButtonProps) {
   const { toast } = useToast()
   const [open, setOpen] = useState(false)
+
+  // 공유 버튼이 화면에 있으므로 SDK를 미리 로드 (클릭 시 동기 sendDefault 가능)
+  useEffect(() => {
+    preloadKakaoSdk()
+  }, [])
 
   async function handleKakaoShare(e: React.MouseEvent) {
     logKakaoShareDebug('SHARE_CLICK_KAKAO', {
