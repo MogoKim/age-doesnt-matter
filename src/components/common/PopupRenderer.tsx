@@ -91,7 +91,6 @@ export default function PopupRenderer() {
 
   const handleHideForDays = useCallback(() => {
     if (!activePopup) return
-    // hideForDays 값이 있으면 그대로, 없으면 showOncePerDay로 처리
     hidePopup(activePopup)
 
     const remaining = popups.filter((p) => p.id !== activePopup.id)
@@ -123,29 +122,20 @@ export default function PopupRenderer() {
     }).catch(() => {})
   }, [activePopup])
 
-  // TODO: 팝업 내용 수정 후 false로 변경
-  const POPUP_DISABLED = true
-  if (POPUP_DISABLED || !activePopup) return null
+  if (!activePopup) return null
+
+  const props = {
+    popup: activePopup,
+    onClose: handleClose,
+    onHide: handleHideForDays,
+    onClick: handleClick,
+  }
 
   return (
     <>
-      {/* BOTTOM_SHEET 비활성화 — 광고 팝업 UX 문제로 제거. 공지는 CENTER 타입 사용 */}
-      {activePopup.type === 'FULLSCREEN' && (
-        <FullscreenPopup
-          popup={activePopup}
-          onClose={handleClose}
-          onHide={handleHideForDays}
-          onClick={handleClick}
-        />
-      )}
-      {activePopup.type === 'CENTER' && (
-        <CenterPopup
-          popup={activePopup}
-          onClose={handleClose}
-          onHide={handleHideForDays}
-          onClick={handleClick}
-        />
-      )}
+      {activePopup.type === 'FULLSCREEN' && <FullscreenPopup {...props} />}
+      {activePopup.type === 'CENTER' && <CenterPopup {...props} />}
+      {activePopup.type === 'BOTTOM_SHEET' && <BottomSheetPopup {...props} />}
     </>
   )
 }
@@ -159,25 +149,38 @@ interface PopupProps {
   onClick: () => void
 }
 
-/* ── 전면 팝업 ── */
+/* ── 닫기 버튼 (공통, 시니어 가독성: 52px 원형 + 명확 대비) ── */
+
+function CloseButton({ onClose, className }: { onClose: () => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClose}
+      aria-label="닫기"
+      className={cn(
+        'flex items-center justify-center w-[52px] h-[52px] rounded-full bg-black/50 text-white shadow-md hover:bg-black/70 transition-colors [-webkit-tap-highlight-color:transparent]',
+        className,
+      )}
+    >
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+        <path d="M6 6l10 10M16 6L6 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+    </button>
+  )
+}
+
+/* ── 전면 팝업 (9:16 이미지 중심) ── */
 
 function FullscreenPopup({ popup, onClose, onHide, onClick }: PopupProps) {
   return (
     <div className="fixed inset-0 z-[200] bg-card flex flex-col" role="dialog" aria-modal="true" aria-label={popup.title ?? '팝업'}>
-      <div className="flex items-center justify-end p-4">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex items-center justify-center w-[52px] h-[52px] text-muted-foreground text-xl"
-          aria-label="닫기"
-        >
-          ✕
-        </button>
+      <div className="absolute top-4 right-4 z-10">
+        <CloseButton onClose={onClose} />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4">
+      <div className="flex-1 overflow-y-auto px-4 pt-20 pb-4">
         {popup.title && <h2 className="text-heading font-bold text-foreground mb-4 text-center">{popup.title}</h2>}
-        <PopupBody popup={popup} onClick={onClick} />
+        <PopupBody popup={popup} onClick={onClick} imageAspect="aspect-[9/16] max-h-[70vh]" />
       </div>
 
       <PopupFooter popup={popup} onClose={onClose} onHide={onHide} />
@@ -185,29 +188,24 @@ function FullscreenPopup({ popup, onClose, onHide, onClick }: PopupProps) {
   )
 }
 
-/* ── 센터 팝업 ── */
+/* ── 센터 팝업 (1:1 이미지) ── */
 
 function CenterPopup({ popup, onClose, onHide, onClick }: PopupProps) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={popup.title ?? '팝업'}>
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-card rounded-2xl max-w-[400px] w-full max-h-[80vh] overflow-y-auto shadow-xl animate-in zoom-in-95 duration-200">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-2 right-2 flex items-center justify-center w-[44px] h-[44px] text-muted-foreground text-lg z-10"
-          aria-label="닫기"
-        >
-          ✕
-        </button>
+      <div className="relative bg-card rounded-2xl max-w-[400px] w-full max-h-[85vh] overflow-y-auto shadow-xl animate-in zoom-in-95 duration-200">
+        <div className="absolute top-2 right-2 z-10">
+          <CloseButton onClose={onClose} />
+        </div>
 
         {popup.title && (
-          <div className="p-5 pb-2">
-            <h2 className="text-title font-bold text-foreground pr-8">{popup.title}</h2>
+          <div className="p-5 pb-2 pr-16">
+            <h2 className="text-title font-bold text-foreground">{popup.title}</h2>
           </div>
         )}
 
-        <PopupBody popup={popup} onClick={onClick} />
+        <PopupBody popup={popup} onClick={onClick} imageAspect="aspect-square" />
 
         <PopupFooter popup={popup} onClose={onClose} onHide={onHide} />
       </div>
@@ -215,9 +213,39 @@ function CenterPopup({ popup, onClose, onHide, onClick }: PopupProps) {
   )
 }
 
-/* ── 팝업 본문 (공통) ── */
+/* ── 바텀 팝업 (하단 시트, 3:2 이미지) ── */
 
-function PopupBody({ popup, onClick }: { popup: PopupData; onClick: () => void }) {
+function BottomSheetPopup({ popup, onClose, onHide, onClick }: PopupProps) {
+  return (
+    <div className="fixed inset-0 z-[200] flex items-end justify-center" role="dialog" aria-modal="true" aria-label={popup.title ?? '팝업'}>
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-card rounded-t-2xl w-full max-w-[600px] max-h-[85vh] overflow-y-auto shadow-xl animate-in slide-in-from-bottom duration-300">
+        <div className="absolute top-2 right-2 z-10">
+          <CloseButton onClose={onClose} />
+        </div>
+
+        {/* 시트 핸들 */}
+        <div className="flex justify-center pt-3 pb-1">
+          <span className="h-1.5 w-10 rounded-full bg-zinc-300" />
+        </div>
+
+        {popup.title && (
+          <div className="px-5 pt-2 pb-1 pr-16">
+            <h2 className="text-title font-bold text-foreground">{popup.title}</h2>
+          </div>
+        )}
+
+        <PopupBody popup={popup} onClick={onClick} imageAspect="aspect-[3/2]" />
+
+        <PopupFooter popup={popup} onClose={onClose} onHide={onHide} />
+      </div>
+    </div>
+  )
+}
+
+/* ── 팝업 본문 (공통) — imageAspect로 형태별 비율 ── */
+
+function PopupBody({ popup, onClick, imageAspect = 'aspect-[4/3]' }: { popup: PopupData; onClick: () => void; imageAspect?: string }) {
   const isClickable = !!popup.linkUrl
 
   return (
@@ -228,13 +256,13 @@ function PopupBody({ popup, onClick }: { popup: PopupData; onClick: () => void }
       tabIndex={isClickable ? 0 : undefined}
     >
       {popup.imageUrl && (
-        <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden mb-4">
+        <div className={cn('relative w-full rounded-xl overflow-hidden mb-4', imageAspect)}>
           <Image
             src={popup.imageUrl}
             alt={popup.title ?? '팝업 이미지'}
             fill
             className="object-cover"
-            sizes="(max-width: 768px) 100vw, 400px"
+            sizes="(max-width: 768px) 100vw, 600px"
           />
         </div>
       )}
@@ -258,7 +286,7 @@ function PopupFooter({ popup, onClose, onHide }: { popup: PopupData; onClose: ()
       : null
 
   return (
-    <div className="p-4 flex items-center justify-between border-t border-border">
+    <div className="p-4 flex items-center justify-between border-t border-border bg-card sticky bottom-0">
       {hideLabel ? (
         <button
           type="button"
