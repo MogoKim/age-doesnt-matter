@@ -2,7 +2,6 @@ import dynamic from 'next/dynamic'
 import MainLayout from '@/components/layouts/MainLayout'
 import FontSizeProvider from '@/components/common/FontSizeProvider'
 import KakaoSdkScript from '@/components/common/KakaoSdkScript'
-import ClientErrorBeacon from '@/components/common/ClientErrorBeacon' // [임시 진단]
 
 const OfflineBanner = dynamic(
   () => import('@/components/common/OfflineBanner'),
@@ -42,7 +41,6 @@ export default function MainGroupLayout({
 }) {
   return (
     <FontSizeProvider>
-      <ClientErrorBeacon />
       <KakaoSdkScript />
       <ProgressBar />
       <WelcomeToast />

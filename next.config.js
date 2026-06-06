@@ -134,4 +134,9 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+// 번들 분석기 — ANALYZE=true 일 때만 활성. 평상시 build에는 영향 없음.
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
+module.exports = withBundleAnalyzer(nextConfig)

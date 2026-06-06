@@ -24,6 +24,10 @@ const GtagLoader = dynamic(
   () => import('@/components/common/GtagLoader'),
   { loading: () => null, ssr: false },
 )
+const WebVitalsReporter = dynamic(
+  () => import('@/components/common/WebVitalsReporter'),
+  { loading: () => null, ssr: false },
+)
 
 const pretendard = localFont({
   src: '../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2',
@@ -101,6 +105,7 @@ export default function RootLayout({
           <ServiceWorkerRegister />
           <PageViewTracker />
           <GtagLoader />
+          <WebVitalsReporter />
         </AuthProvider>
       </body>
     </html>

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ADSENSE } from './ad-slots'
 import CoupangBanner from './CoupangBanner'
-import { debugBeacon } from '@/lib/debug-beacon' // [임시 진단]
 
 interface AdSenseUnitProps {
   /** AdSense 광고 슬롯 ID */
@@ -64,8 +63,6 @@ export default function AdSenseUnit({
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-
-    debugBeacon('debug_stage', { stage: 'ad_init', slot: slotId }) // [임시 진단]
 
     // [크래시 수정] 숨김(display:none, 폭 0) 또는 폭 부족 컨테이너에 adsbygoogle.push() 시
     // 문제 발생 → 저사양 안드로이드 크롬에서 렌더러 크래시("앗, 이런!").

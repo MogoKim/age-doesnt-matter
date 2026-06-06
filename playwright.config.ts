@@ -286,6 +286,18 @@ export default defineConfig({
         extraHTTPHeaders: { 'x-bot-type': 'e2e-test' },
       },
     },
+
+    // 20. 저사양 기준선 측정 — CDP로 CPU 4x + slow-3G 실제 적용 (홈/목록/상세/매거진/잡스/로그인)
+    // 목적: PASS/FAIL이 아니라 기준선(TTFB/load/JS heap/에러) 수집 → 2·3회차 비교용
+    // 실행: E2E_BASE_URL=https://age-doesnt-matter.com npm run qa:lowend
+    {
+      name: 'qa-lowend',
+      testMatch: /qa\/30-lowend-baseline\.spec\.ts/,
+      use: {
+        ...pixel7Chrome,
+        baseURL: process.env.QA_AUDIT_URL || 'https://age-doesnt-matter.com',
+      },
+    },
   ],
 
   // E2E_BASE_URL 설정 시 외부 URL 직접 테스트 (프로덕션 QA)
