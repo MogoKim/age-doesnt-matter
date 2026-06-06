@@ -2,8 +2,8 @@ docs/
 .claude/
 .bkit/
 .omc/
-memory/
-scripts/
-agents/
+/memory/
+/scripts/
+/agents/
 .github/
 *.log
