@@ -8,6 +8,7 @@ import { HANDLER_REGISTRY, HANDLER_GROUPS, type HandlerMeta } from '@/lib/agent-
 
 export const metadata: Metadata = { title: '에이전트 로그' }
 export const dynamic = 'force-dynamic'
+// 2026-06-06: production 산출물에서 이 라우트가 누락돼 404 → 파일 변경으로 Vercel 빌드 캐시 무효화/강제 재컴파일
 
 const BOT_TYPE_OPTIONS: { value: BotType | ''; label: string }[] = [
   { value: '', label: '전체 에이전트' },
