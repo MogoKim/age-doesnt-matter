@@ -290,8 +290,19 @@ export const getBoardActivity = unstable_cache(
 
 export const getTotalCounts = unstable_cache(
   async () => {
+    // totalUsers: 봇 제외(@unao.bot 이메일 + seed_ providerId)로 실유저만 카운트.
+    // kpi-collector.ts·slack-commands.ts와 동일 기준 (Prisma는 정규식 where 미지원 → ^\d+$ 대신 prefix 제외).
+    // ※ totalPosts/totalComments는 발행 콘텐츠 총량이므로 봇 포함이 의도된 값.
     const [totalUsers, totalPosts, totalComments] = await Promise.all([
-      prisma.user.count({ where: { status: 'ACTIVE' } }),
+      prisma.user.count({
+        where: {
+          status: 'ACTIVE',
+          AND: [
+            { NOT: { email: { endsWith: '@unao.bot' } } },
+            { NOT: { providerId: { startsWith: 'seed_' } } },
+          ],
+        },
+      }),
       prisma.post.count({ where: { status: 'PUBLISHED' } }),
       prisma.comment.count({ where: { status: 'ACTIVE' } }),
     ])

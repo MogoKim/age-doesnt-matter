@@ -28,7 +28,8 @@
     "qa:full": "playwright test --project=qa-audit --project=qa-audit-mobile --project=qa-audit-user --workers=1",
     "test:signup-banner": "playwright test --project=signup-banner",
     "board": "tsx scripts/ops-board/server.ts",
-    "board:check": "tsc --noEmit -p scripts/ops-board/tsconfig.json"
+    "board:check": "tsc --noEmit -p scripts/ops-board/tsconfig.json",
+    "insights": "tsx --env-file=.env.local agents/scripts/insights.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.89.0",
