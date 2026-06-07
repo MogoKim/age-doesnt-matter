@@ -29,7 +29,8 @@ export function trackEvent(
 
   // fire-and-forget (beacon API for reliability)
   if (navigator.sendBeacon) {
-    navigator.sendBeacon('/api/events', JSON.stringify(payload))
+    // Blob으로 Content-Type 명시 (text/plain 기본 → 서버 파싱 안정)
+    navigator.sendBeacon('/api/events', new Blob([JSON.stringify(payload)], { type: 'application/json' }))
   } else {
     fetch('/api/events', {
       method: 'POST',

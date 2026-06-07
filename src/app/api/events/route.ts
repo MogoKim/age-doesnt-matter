@@ -27,19 +27,23 @@ function detectBot(userAgent: string | null, headers: Headers, ip: string | null
 }
 
 export async function POST(request: NextRequest) {
-  const rl = await checkApiRateLimit(request, 'event', { max: 30 })
-  if (rl) return rl
-
-  const ip =
-    request.headers.get('x-real-ip')?.trim() ||
-    request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() ||
-    null
-
   const body = (await request.json()) as EventPayload
 
   if (!body.eventName || body.eventName.length > 100) {
     return NextResponse.json({ error: 'Invalid eventName' }, { status: 400 })
   }
+
+  // 전환 이벤트(가입 funnel)는 rate limit 면제 — page_view 등과 버킷(event:ip) 공유로 인한 429 유실 방지
+  const CONVERSION_EVENTS = ['post_cta_clicked', 'sign_up', 'signup_step']
+  if (!CONVERSION_EVENTS.includes(body.eventName)) {
+    const rl = await checkApiRateLimit(request, 'event', { max: 30 })
+    if (rl) return rl
+  }
+
+  const ip =
+    request.headers.get('x-real-ip')?.trim() ||
+    request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() ||
+    null
 
   const session = await auth()
   const userAgent = request.headers.get('user-agent')?.slice(0, 500) ?? null
