@@ -6,6 +6,7 @@ export interface NavItem {
 
 export const adminNavItems: NavItem[] = [
   { label: '대시보드', icon: '📊', href: '/admin' },
+  { label: '인사이트', icon: '📈', href: '/admin/insights' },
   { label: '승인 대기', icon: '🔔', href: '/admin/queue' },
   { label: '욕망 지도', icon: '🧠', href: '/admin/daily-brief' },
   { label: '에이전트 로그', icon: '🤖', href: '/admin/agents' },
@@ -22,6 +23,7 @@ export const adminNavItems: NavItem[] = [
 
 export const adminPageTitles: Record<string, string> = {
   '/admin': '대시보드',
+  '/admin/insights': '인사이트',
   '/admin/queue': '승인 대기',
   '/admin/daily-brief': '욕망 지도',
   '/admin/agents': '에이전트 로그',
