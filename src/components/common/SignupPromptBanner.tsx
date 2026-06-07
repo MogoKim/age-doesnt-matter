@@ -13,6 +13,7 @@ import {
 } from '@/lib/gtm'
 import { startKakaoLogin } from '@/lib/kakao-start'
 import { detectEnv } from '@/components/common/AddToHomeScreen'
+import { trackEvent } from '@/lib/track'
 
 // 인앱 환경 (카카오/네이버/구글 앱) 감지 — CTA를 외부브라우저 유도로 변경
 const INAPP_ENVS = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp'] as const
@@ -28,6 +29,11 @@ function isInappEnv(env: string): env is InappEnv {
 const TIMER_MS = 20_000
 const SCROLL_THRESHOLD = 0.5
 const MAX_SHOWS = 4
+
+// 타이밍 A/B (리텐션 P1): early=현행(20초/50%) vs read_complete=정독 거의 완료(85%) 후 발동.
+// 근거: 정독자 재방문 100% — 정독을 끊지 않고 다 읽은 순간에 유도. 짧은 글/무스크롤은 백스톱으로 발동.
+const READ_COMPLETE_SCROLL = 0.85
+const BACKSTOP_MS = 60_000
 
 const EXCLUDED_PATHS = [
   '/login', '/onboarding', '/signup', '/my', '/admin',
@@ -104,6 +110,20 @@ function getOrAssignVariant(): Variant {
   const assigned = keys[hash % keys.length]
   localStorage.setItem(KEY_VARIANT, assigned)
   return assigned
+}
+
+// 타이밍 A/B 배정: _uid 해시 기반 50:50 결정론적(재방문 시 불변). 콘텐츠 variant(%3)와 직교(+7 시드, %2).
+function getTriggerVariant(): 'early' | 'read_complete' {
+  let uid = localStorage.getItem('_uid')
+  if (!uid) {
+    uid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    localStorage.setItem('_uid', uid)
+  }
+  let hash = 0
+  for (let i = 0; i < uid.length; i++) hash += uid.charCodeAt(i)
+  return (hash + 7) % 2 === 0 ? 'read_complete' : 'early'
 }
 
 function getPromptCount(): number {
@@ -221,13 +241,17 @@ export function SignupPromptBanner() {
     if (status === 'loading') return
     if (isLoggedIn || !isActivePath(pathname)) return
 
+    const triggerVar = getTriggerVariant()
+    // read_complete: 스크롤(85%)이 주 트리거, 타이머는 60초 백스톱 / early: 20초 타이머
+    const fireDelay = triggerVar === 'read_complete' ? BACKSTOP_MS : TIMER_MS
+
     let alreadyFired = false
     let timerFired = false
     let timerId: ReturnType<typeof setTimeout> | null = null
 
     const tryFire = () => {
       if (alreadyFired) return
-      if (!timerFired && !scrolledRef.current) return  // 20초 경과 또는 50% 스크롤 중 하나 충족
+      if (!timerFired && !scrolledRef.current) return  // (early)타이머·50% / (read_complete)백스톱·85% 중 충족
       if (!canShow()) return
       alreadyFired = true
       if (timerId) { clearTimeout(timerId); timerId = null }
@@ -240,6 +264,10 @@ export function SignupPromptBanner() {
       setVisible(true)
       gtmSignupBannerEligible(v, pathname)
       gtmSignupBannerShown(v, pathname, count + 1)
+      // 타이밍 A/B 측정 (EventLog, _anon_sid 자동) — 발동 시점 정독률 + 콘텐츠/타이밍 variant
+      const scrollableNow = document.documentElement.scrollHeight - window.innerHeight
+      const scrollAt = scrollableNow <= 0 ? 100 : Math.min(100, Math.max(0, Math.round((window.scrollY / scrollableNow) * 100)))
+      trackEvent('signup_banner_shown', { trigger_variant: triggerVar, content_variant: v, scroll_at_show: scrollAt })
     }
 
     tryFireRef.current = tryFire
@@ -249,13 +277,13 @@ export function SignupPromptBanner() {
         if (timerId) { clearTimeout(timerId); timerId = null }
       } else {
         if (!alreadyFired && !timerFired) {
-          timerId = setTimeout(() => { timerFired = true; tryFire() }, TIMER_MS)
+          timerId = setTimeout(() => { timerFired = true; tryFire() }, fireDelay)
         }
       }
     }
 
     if (!document.hidden) {
-      timerId = setTimeout(() => { timerFired = true; tryFire() }, TIMER_MS)
+      timerId = setTimeout(() => { timerFired = true; tryFire() }, fireDelay)
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
@@ -270,13 +298,15 @@ export function SignupPromptBanner() {
   useEffect(() => {
     if (status === 'loading') return
     if (isLoggedIn || !isActivePath(pathname)) return
+    // 타이밍 variant별 스크롤 임계값 (early 50% / read_complete 85% 정독 완료)
+    const scrollThreshold = getTriggerVariant() === 'read_complete' ? READ_COMPLETE_SCROLL : SCROLL_THRESHOLD
     // pathname 변경 시 현재 스크롤 위치로 초기화 (scroll effect가 timer effect보다 나중에 실행됨)
     const docH0 = document.documentElement.scrollHeight - window.innerHeight
-    scrolledRef.current = docH0 < 100 || window.scrollY / docH0 >= SCROLL_THRESHOLD
+    scrolledRef.current = docH0 < 100 || window.scrollY / docH0 >= scrollThreshold
 
     const handleScroll = () => {
       const docH = document.documentElement.scrollHeight - window.innerHeight
-      if (docH < 100 || window.scrollY / docH >= SCROLL_THRESHOLD) {
+      if (docH < 100 || window.scrollY / docH >= scrollThreshold) {
         scrolledRef.current = true
         tryFireRef.current() // 타이머 이미 경과했으면 즉시 발동
       }
