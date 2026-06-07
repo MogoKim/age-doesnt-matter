@@ -90,6 +90,8 @@ assets/generated/
 
 # Local debug scripts
 check-data.mjs
+# 일회성 진단·측정 스크립트 (언더스코어 prefix) — 로컬 보존, git 추적 제외
+agents/scripts/_*.ts
 
 # 매거진 로컬 러너 일일 결과 파일 (gitignore — 로컬 전용)
 agents/cafe/.magazine-daily-*.json
