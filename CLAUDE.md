@@ -106,6 +106,7 @@
 - "에러 없는데 이상해", "됐는데 안 보여" → `/investigate` (Silent Failure 섹션)
 - "코드 리뷰", "PR 전 확인" → `/code-review`
 - DB 마이그레이션, force push, 에이전트 구조 변경, rm -rf → `/careful`
+- "혼자 처리해", "자율로", "/goal처럼", "알아서 끝내고 보고" → `.claude/rules/autonomy.md` (AUTO/HANDOFF/WAIT 3-tier 자가 분류)
 - 에이전트 기능 추가·수정 전 → `.claude/rules/agent-code-review.md` 체크리스트 먼저 (이미 구현된 기능 중복 작업 방지)
 - "회고", "주간 리뷰" → `/retro`
 - "iPhone으로", "iOS로", "Safari로", "WebKit으로" → `npx playwright test --project=qa-ios-webkit` (WebKit 엔진)
