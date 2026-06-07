@@ -183,6 +183,7 @@ enum AuditTargetType {
   AGENT
   ADMIN_QUEUE
   POPUP
+  EXPERIMENT
 }
 
 enum AdminQueueType {
@@ -1249,4 +1250,23 @@ model UserPostWaveQueue {
   @@index([wave4Done, wave4At])
   @@index([wave5Done, wave5At])
   @@index([expiresAt])
+}
+
+// ──────────────────────────────────────────────
+// 웹 A/B 실험 운영 오버레이
+//  - 코드(src/lib/experiments/registry.ts) = 실험 구조(불변): variant·측정이벤트·목적/배경/가설
+//  - DB(이 모델) = 운영 상태(가변): 상태·담당·메모·결론 → 어드민에서 배포 없이 편집
+//  - experimentId 로 코드 레지스트리와 매칭. 행이 없으면 어드민은 코드 default 로 폴백.
+// ──────────────────────────────────────────────
+model ExperimentState {
+  id           String    @id @default(cuid())
+  experimentId String    @unique // registry.ts EXPERIMENTS[].id
+  status       String    @default("ACTIVE") // DRAFT | ACTIVE | PAUSED | CONCLUDED
+  owner        String?
+  startedAt    DateTime?
+  endedAt      DateTime?
+  note         String?   @db.Text // 진행 중 관찰 메모
+  conclusion   String?   @db.Text // 종료 시 결론/러닝
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
