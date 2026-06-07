@@ -458,8 +458,11 @@ export default function TipTapEditor({
           document.body.appendChild(videoEl)  // 일부 브라우저: DOM 미추가 시 onloadedmetadata 미발화
           videoEl.preload = 'metadata'
           const objUrl = URL.createObjectURL(file)
-          videoEl.onloadedmetadata = () => { document.body.removeChild(videoEl); URL.revokeObjectURL(objUrl); resolve(videoEl.duration) }
-          videoEl.onerror = () => { document.body.removeChild(videoEl); URL.revokeObjectURL(objUrl); reject(new Error('메타데이터 로드 실패')) }
+          const cleanup = () => { try { document.body.removeChild(videoEl) } catch { /* 이미 제거됨 */ } ; URL.revokeObjectURL(objUrl) }
+          // 메타데이터 로드가 무한정 안 끝나는 경우 방지 (5초 타임아웃 → catch에서 길이검사 스킵+업로드 진행)
+          const timer = setTimeout(() => { cleanup(); reject(new Error('메타데이터 타임아웃')) }, 5000)
+          videoEl.onloadedmetadata = () => { clearTimeout(timer); cleanup(); resolve(videoEl.duration) }
+          videoEl.onerror = () => { clearTimeout(timer); cleanup(); reject(new Error('메타데이터 로드 실패')) }
           videoEl.src = objUrl
         })
         if (duration > MAX_VIDEO_DURATION) {
