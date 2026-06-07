@@ -32,23 +32,27 @@ function VariantRow({ v, maxRate, enough }: { v: VariantStat; maxRate: number; e
   const width = maxRate > 0 ? Math.max(3, Math.round((v.rate / maxRate) * 100)) : 3
   const dim = !enough
   return (
-    <div className="flex items-center gap-3 py-1">
-      <span className="w-44 shrink-0 text-sm text-zinc-700">
-        {v.label}
-        {v.isWinner && <span className="ml-1 text-[#FF6F61]">★</span>}
-      </span>
-      <div className={`relative h-6 flex-1 rounded bg-zinc-100 ${dim ? 'border border-dashed border-zinc-300' : ''}`}>
-        <div
-          className={`absolute inset-y-0 left-0 rounded ${v.isWinner ? 'bg-[#FF6F61]/70' : 'bg-zinc-300'}`}
-          style={{ width: `${width}%` }}
-        />
-      </div>
-      <span className="w-36 shrink-0 text-right text-sm">
-        <b className={dim ? 'text-zinc-400' : v.isWinner ? 'text-[#FF6F61]' : 'text-zinc-800'}>{v.rate}%</b>
-        <span className="ml-1 text-xs text-zinc-400">
-          (가입 {v.converted}/{v.shown})
+    <div className="py-1.5">
+      <div className="flex items-center gap-3">
+        <span className="w-44 shrink-0 text-sm font-medium text-zinc-700">
+          {v.label}
+          {v.isWinner && <span className="ml-1 text-[#FF6F61]">★ 승자</span>}
         </span>
-      </span>
+        <div className={`relative h-6 flex-1 rounded bg-zinc-100 ${dim ? 'border border-dashed border-zinc-300' : ''}`}>
+          <div
+            className={`absolute inset-y-0 left-0 rounded ${v.isWinner ? 'bg-[#FF6F61]/70' : 'bg-zinc-300'}`}
+            style={{ width: `${width}%` }}
+          />
+        </div>
+        <span className="w-36 shrink-0 text-right text-sm">
+          <b className={dim ? 'text-zinc-400' : v.isWinner ? 'text-[#FF6F61]' : 'text-zinc-800'}>{v.rate}%</b>
+          <span className="ml-1 text-xs text-zinc-400">
+            (가입 {v.converted}/{v.shown})
+          </span>
+        </span>
+      </div>
+      {/* 이 variant가 실제 무엇인지 — 직원도 이해 */}
+      <p className="ml-44 mt-0.5 pl-3 text-xs leading-relaxed text-zinc-500">{v.description}</p>
     </div>
   )
 }

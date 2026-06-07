@@ -12,6 +12,7 @@ const DAY = 86400000
 export interface VariantStat {
   key: string
   label: string
+  description: string // 이 variant가 실제 무엇인지(문구/동작)
   shown: number // 노출 세션 수
   converted: number // 노출 후 전환(가입)한 세션 수
   rate: number // 전환율 %
@@ -115,6 +116,7 @@ const _getWebExperiments = unstable_cache(
         return {
           key: v.key,
           label: v.label,
+          description: v.description,
           shown: shownSet.size,
           converted,
           rate: conversionRate(shownSet.size, converted),

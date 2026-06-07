@@ -14,8 +14,10 @@
 export interface ExperimentVariant {
   /** EventLog properties 에 저장되는 값 (변경 금지) */
   key: string
-  /** 어드민 표시명 */
+  /** 어드민 표시명 (짧게) */
   label: string
+  /** 어드민 상세 설명 — 이 variant가 실제로 무엇인지(문구 전문·동작) */
+  description: string
   /** 배정 가중치 (정수, 합으로 분배) */
   weight: number
 }
@@ -57,9 +59,9 @@ export const EXPERIMENTS: ExperimentDef[] = [
       'signup_banner_shown(노출, content_variant) → 같은 sessionId 의 sign_up(가입)으로 variant별 전환율 비교. 봇·창업자 제외.',
     owner: '영석',
     variants: [
-      { key: 'A', label: 'A 혜택강조("더 많이 즐길 수")', weight: 1 },
-      { key: 'B', label: 'B 재미강조("재미있게 놀다")', weight: 1 },
-      { key: 'C', label: 'C 공감강조("나만 이런 게 아니었네")', weight: 1 },
+      { key: 'A', label: 'A · 혜택형', description: '제목 "가입하면 더 많이 즐길 수 있어요" / 부제 "소중한 내 일상과 생각들을 간직해봐요" / 버튼 "카카오로 바로 시작하기"', weight: 1 },
+      { key: 'B', label: 'B · 재미형', description: '제목 "가입하고 더 재미있게 놀다 가세요" / 부제 "혼자 읽기 아까운 글, 함께 나눠봐요" / 버튼 "3초만에 카카오로 시작"', weight: 1 },
+      { key: 'C', label: 'C · 공감형', description: '제목 "나만 이런 게 아니었네?" / 부제 "우리끼리 편하게 수다 떨어봐요" / 버튼 "카카오 한 번 클릭으로 가입"', weight: 1 },
     ],
     exposureEvent: 'signup_banner_shown',
     conversionEvent: 'sign_up',
@@ -77,8 +79,8 @@ export const EXPERIMENTS: ExperimentDef[] = [
       'signup_banner_shown(노출, trigger_variant) → 같은 sessionId 의 sign_up 으로 variant별 전환율 비교.',
     owner: '영석',
     variants: [
-      { key: 'read_complete', label: '정독 완료(85%) 후', weight: 1 },
-      { key: 'early', label: '현행(20초/50%)', weight: 1 },
+      { key: 'read_complete', label: '정독 완료 후(85%)', description: '글을 85%까지 읽으면 배너 표시. 안 읽고 떠나면 60초 후 표시(백스톱). 정독을 끊지 않는 방식.', weight: 1 },
+      { key: 'early', label: '현행(20초/50%)', description: '20초 머물거나 페이지 50% 스크롤 중 먼저 충족되면 배너 표시. 읽는 도중에도 뜰 수 있음.', weight: 1 },
     ],
     exposureEvent: 'signup_banner_shown',
     conversionEvent: 'sign_up',
