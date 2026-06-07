@@ -3,6 +3,7 @@ import { getWebExperiments } from '@/lib/queries/admin'
 import type { WebExperimentView, VariantStat } from '@/lib/queries/admin/admin.experiments-web'
 import type { Confidence } from '@/lib/experiments/stats'
 import PeriodFilter from './PeriodFilter'
+import ExperimentStatePanel from './ExperimentStatePanel'
 
 export const metadata: Metadata = { title: '웹 A/B 테스트' }
 export const dynamic = 'force-dynamic'
@@ -103,13 +104,22 @@ function ExperimentCard({ exp }: { exp: WebExperimentView }) {
         <span className="text-xs text-zinc-500">{conf.hint}</span>
       </div>
 
-      {/* 운영 메모/결론 (있으면) */}
+      {/* 운영 메모/결론 표시 */}
       {exp.note && (
         <p className="mt-2 rounded-lg bg-blue-50 p-2 text-xs text-blue-800">📝 {exp.note}</p>
       )}
       {exp.conclusion && (
         <p className="mt-2 rounded-lg bg-green-50 p-2 text-xs text-green-800">✅ 결론: {exp.conclusion}</p>
       )}
+
+      {/* 운영 편집 (상태·담당·메모·결론) */}
+      <ExperimentStatePanel
+        experimentId={exp.id}
+        status={exp.status}
+        owner={exp.owner}
+        note={exp.note}
+        conclusion={exp.conclusion}
+      />
     </div>
   )
 }
