@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { reportPost, reportComment } from '@/lib/actions/reports'
 import { useToast } from '@/components/common/Toast'
 
@@ -25,25 +25,24 @@ export default function ReportModal({ targetId, targetType, onClose }: ReportMod
   const { toast } = useToast()
   const [reason, setReason] = useState<ReportReason | null>(null)
   const [description, setDescription] = useState('')
-  const [error, setError] = useState('')
-  const [isPending, startTransition] = useTransition()
 
   function handleSubmit() {
-    if (!reason || isPending) return
-    setError('')
+    if (!reason) return
+    // 낙관적: 제출 즉시 모달 닫기 + 접수 토스트 (응답 대기 안 함)
+    // 모달이 닫히면 중복 제출 불가하므로 disabled/isPending 불필요
+    const submittedReason = reason
+    const submittedDescription = description
+    onClose()
+    toast('신고가 접수되었어요')
 
-    startTransition(async () => {
-      const result = targetType === 'post'
-        ? await reportPost(targetId, reason, description)
-        : await reportComment(targetId, reason, description)
-
-      if (result.error) {
-        setError(result.error)
-      } else {
-        onClose()
-        toast('신고가 접수되었어요')
-      }
-    })
+    void (targetType === 'post'
+      ? reportPost(targetId, submittedReason, submittedDescription)
+      : reportComment(targetId, submittedReason, submittedDescription)
+    )
+      .then((result) => {
+        if (result?.error) toast(result.error, 'error')
+      })
+      .catch(() => toast('신고 전송에 실패했어요. 다시 시도해 주세요', 'error'))
   }
 
   return (
@@ -95,10 +94,6 @@ export default function ReportModal({ targetId, targetType, onClose }: ReportMod
           </div>
         )}
 
-        {error && (
-          <p className="text-sm text-destructive font-medium mb-4">{error}</p>
-        )}
-
         {/* 버튼 */}
         <div className="flex gap-3">
           <button
@@ -111,10 +106,10 @@ export default function ReportModal({ targetId, targetType, onClose }: ReportMod
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!reason || isPending}
+            disabled={!reason}
             className="flex-1 min-h-[52px] px-4 py-3 bg-destructive text-white border-none rounded-xl text-sm font-bold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isPending ? '접수 중...' : '신고하기'}
+            신고하기
           </button>
         </div>
       </div>

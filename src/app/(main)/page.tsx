@@ -8,6 +8,7 @@ import StoriesSection from '@/components/features/home/StoriesSection'
 import HumorSection from '@/components/features/home/HumorSection'
 import FeedAd from '@/components/ad/FeedAd'
 import ResponsiveAd from '@/components/ad/ResponsiveAd'
+import LazyAd from '@/components/ad/LazyAd'
 import CoupangHome1 from '@/components/ad/CoupangHome1'
 import CoupangHome2 from '@/components/ad/CoupangHome2'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
@@ -28,6 +29,10 @@ export const metadata: Metadata = {
   description: '50·60대라면 누구나 "여기 오면 내 얘기가 있다"고 느끼는 중장년 연결 커뮤니티. 사는 이야기, 2막 준비, 일자리까지.',
   alternates: { canonical: '/' },
 }
+
+// ISR: 홈 HTML/RSC를 60초 캐시 → 매 요청 SSR 제거(TTFB↓). 글 작성/큐레이션 변경 시
+// posts.ts의 revalidatePath('/')가 즉시 무효화하므로 콘텐츠 즉시성 유지.
+export const revalidate = 60
 
 const getCachedJobs = unstable_cache(
   () => getLatestJobs(5),
@@ -102,7 +107,9 @@ async function HotContentSections() {
       {/* 모바일: 세로 배치 기존 완전 유지 */}
       <div className="block lg:hidden">
         <StoriesSection posts={stories} />
-        <CoupangHome1 className="my-4 mx-4 rounded-2xl overflow-hidden" />
+        <LazyAd minHeight={175} className="my-4 mx-4">
+          <CoupangHome1 className="rounded-2xl overflow-hidden" />
+        </LazyAd>
         <HumorSection posts={humor} />
       </div>
 
@@ -195,7 +202,11 @@ export default function HomePage() {
 
             {/* 쿠팡 2번 — 모바일 390×150 / 데스크탑 728×90 */}
             <ResponsiveAd
-              mobile={<CoupangHome2 className="my-4 mx-4 rounded-2xl overflow-hidden" />}
+              mobile={
+                <LazyAd minHeight={175} className="my-4 mx-4">
+                  <CoupangHome2 className="rounded-2xl overflow-hidden" />
+                </LazyAd>
+              }
               desktop={<CoupangDesktopBanner className="my-4 rounded-2xl overflow-hidden" />}
             />
 

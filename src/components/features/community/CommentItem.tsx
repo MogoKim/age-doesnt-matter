@@ -32,6 +32,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
   const [isPending, startTransition] = useTransition()
   const [guestModal, setGuestModal] = useState<'edit' | 'delete' | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [optimisticDeleted, setOptimisticDeleted] = useState(false)
 
   const handleLike = useCallback(() => {
     if (isPending) return
@@ -93,9 +94,12 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
   }, [isPending])
 
   const confirmDelete = useCallback(() => {
+    // 낙관적: 즉시 삭제 표시(로컬), 실패 시 복원
+    setOptimisticDeleted(true)
     startTransition(async () => {
       const result = await deleteComment(comment.id)
       if (result.error) {
+        setOptimisticDeleted(false)
         toast(result.error, 'error')
       } else {
         toast('댓글이 삭제되었어요')
@@ -103,7 +107,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
     })
   }, [comment.id, toast])
 
-  if (comment.isDeleted) {
+  if (comment.isDeleted || optimisticDeleted) {
     return (
       <div className="py-4 border-b border-border text-muted-foreground text-[17px] italic">
         삭제된 댓글입니다.

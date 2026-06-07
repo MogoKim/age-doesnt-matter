@@ -9,7 +9,7 @@ env:
 
 jobs:
   lighthouse:
-    name: Lighthouse Accessibility Audit
+    name: Lighthouse Performance + Accessibility Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
         with:
-          configPath: ./lighthouserc.json
+          configPath: ./lighthouserc.lowend.json
           uploadArtifacts: true
         env:
           AUTH_SECRET: ci-build-secret-not-real
