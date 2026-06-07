@@ -1,0 +1,92 @@
+/**
+ * A/B 실험 중앙 레지스트리 — 단일 진실의 원천(SSOT)
+ *
+ * 새 실험 추가 표준 절차:
+ *  1) 이 파일에 ExperimentDef 추가 (목적·배경·가설·확인방법 자연어 필수 — 다음 사람이 이해하게)
+ *  2) 컴포넌트에서 getExperimentVariant(id) 호출 (직접 해시 만들지 말 것 — assign.ts만 사용)
+ *  3) trackEvent(exposureEvent, { [variantProperty]: variant }) 로 노출 기록
+ *  4) 배포 → 어드민 /admin/ab-tests 에서 상태 ACTIVE + 담당·시작일 입력
+ *  5) 신뢰 배지가 "유의미(95%)" 뜨면 어드민에 결론 작성 + 종료
+ *
+ * variant.key 는 EventLog properties 에 그대로 저장되므로 한 번 정하면 변경 금지.
+ */
+
+export interface ExperimentVariant {
+  /** EventLog properties 에 저장되는 값 (변경 금지) */
+  key: string
+  /** 어드민 표시명 */
+  label: string
+  /** 배정 가중치 (정수, 합으로 분배) */
+  weight: number
+}
+
+export interface ExperimentDef {
+  id: string
+  name: string
+  /** 목적 — 왜 하나 */
+  purpose: string
+  /** 배경 — 어떤 문제/맥락에서 */
+  background: string
+  /** 가설 */
+  hypothesis: string
+  /** 확인방법 — 어떤 이벤트로 어떻게 측정하나 */
+  howToVerify: string
+  owner: string
+  variants: ExperimentVariant[]
+  /** 노출 이벤트명 (EventLog eventName) */
+  exposureEvent: string
+  /** 전환 이벤트명 (같은 sessionId join 으로 전환 판정) */
+  conversionEvent: string
+  /** 이벤트 properties 에서 이 실험의 variant 를 담는 키 */
+  variantProperty: string
+  /** 기존 하드코딩 배정과의 호환: localStorage 키 (없으면 exp_{id}) */
+  legacyStorageKey?: string
+  /** 기존 해시 분기 호환: 해시에 더하는 오프셋 (예: 타이밍 실험은 +7 로 콘텐츠와 직교) */
+  hashOffset?: number
+}
+
+export const EXPERIMENTS: ExperimentDef[] = [
+  {
+    id: 'f01_signup_content',
+    name: '가입 배너 문구 A/B/C',
+    purpose: '가입 유도 배너의 헤드라인·문구를 바꾸면 가입 전환이 오르는지 본다.',
+    background:
+      '비회원에게 뜨는 가입 배너(SignupPromptBanner)의 메시지 프레임이 클릭·가입에 영향을 주는지 검증 필요.',
+    hypothesis: '혜택/재미/공감 중 어떤 메시지 프레임이 50·60대 비회원의 가입 전환을 높인다.',
+    howToVerify:
+      'signup_banner_shown(노출, content_variant) → 같은 sessionId 의 sign_up(가입)으로 variant별 전환율 비교. 봇·창업자 제외.',
+    owner: '영석',
+    variants: [
+      { key: 'A', label: 'A 혜택강조("더 많이 즐길 수")', weight: 1 },
+      { key: 'B', label: 'B 재미강조("재미있게 놀다")', weight: 1 },
+      { key: 'C', label: 'C 공감강조("나만 이런 게 아니었네")', weight: 1 },
+    ],
+    exposureEvent: 'signup_banner_shown',
+    conversionEvent: 'sign_up',
+    variantProperty: 'content_variant',
+    legacyStorageKey: 'signup_variant',
+  },
+  {
+    id: 'f01_signup_timing',
+    name: '가입 배너 노출 타이밍 A/B',
+    purpose: '가입 배너를 정독 도중이 아니라 거의 다 읽었을 때 띄우면 가입이 오르는지 본다.',
+    background:
+      '정독자 재방문 100% vs 미정독 14%. 기존 배너는 20초/50% 스크롤로 정독을 끊어 정독을 방해.',
+    hypothesis: '글을 거의 다 읽은(85%) 시점에 유도하면 정독을 안 끊고 마음 동한 순간 포착 → 가입↑.',
+    howToVerify:
+      'signup_banner_shown(노출, trigger_variant) → 같은 sessionId 의 sign_up 으로 variant별 전환율 비교.',
+    owner: '영석',
+    variants: [
+      { key: 'read_complete', label: '정독 완료(85%) 후', weight: 1 },
+      { key: 'early', label: '현행(20초/50%)', weight: 1 },
+    ],
+    exposureEvent: 'signup_banner_shown',
+    conversionEvent: 'sign_up',
+    variantProperty: 'trigger_variant',
+    hashOffset: 7,
+  },
+]
+
+export function getExperiment(id: string): ExperimentDef | undefined {
+  return EXPERIMENTS.find((e) => e.id === id)
+}
