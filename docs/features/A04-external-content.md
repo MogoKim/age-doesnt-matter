@@ -213,6 +213,7 @@ scraped/{postKey}/{index}.{ext}
 | 2026-05-26 | sheet-scraper.ts rawContent/scrapePage 공통 content 변수 기준 ACCESS_BLOCKED_SIGNALS(6개) + BOARD_NOTICE_SIGNALS(2개) 필터 추가 — 동영상 차단 블록 앞 삽입, 감지 시 updateRow(FAILED) + continue | ea1ae6a 접근 차단 fix의 sheet-scraper 경로 구조적 누락 보완 — navercafe "검색 비허용/가입 필요" 안내문 발행 차단 |
 | 2026-05-29 | P0: todayhumor/natepann commentSelectors 셀렉터 수정(d44746c) + GHA 시스템 Chrome 전환(18c0051). P1: filterSourceComments() 추가(HARD_REMOVE_RE, @태그/URL 제거, 앞4자 dedup, 10자↑) + sc SKIP/PARTIAL/FULL 정책 — usable≤2→SHEET_WAVE_SKIP, usable=3→PARTIAL, usable≥4(일반)/7(화제성)→FULL. 좋아요 파동 sc 무관 항상 예약. PENDING details에 sourceComments(filtered)+sourceCommentsRaw(감사용) 분리 | 빈 sourceComments(sc=0) 100% 문제 해결 + 품질 낮은 댓글로 파동 소비 방지 |
 | 2026-05-29 | Shadow Mode 검수 도구 추가: `agents/scripts/_shadow-comment-pack.ts` — DB write 없이 raw댓글→P1필터→v2댓글팩 예상(MOCK/LLM)→Validator 7항목 콘솔 출력. `--dry-run`(기본, API키 불필요) / `--llm`(dynamic import, current-generator-preview) / `--postId` / `--limit` CLI 지원 | P1 운영 검증 후 창업자가 댓글 품질을 직접 검수할 수 있는 Shadow Mode 구현 |
+| 2026-06-07 | 미디어 파이프라인 개선(image-pipeline.ts): ① GIF/animated webp → mp4 변환(ffmpeg, sharp webp→gif 디코딩 경유) + content-type 우선 판정(네이버 `?type=w710_wp` webp 대응) ② 일반 이미지 5MB 초과 시 placeholder 대신 sharp 다운스케일 복구 ③ UI 아이콘은 placeholder→태그 제거 ④ sanitize.ts video `autoplay/loop/muted/playsinline` 허용 ⑤ `backfillPlaceholderMedia()` 추가 — 기존 placeholder 6개 전부 복구 + agents-scraper.yml ffmpeg 설치 | 14MB GIF 등 5MB 초과 미디어가 placeholder로 깨지던 문제 해결. GIF는 88% 압축 mp4(자동재생)로 시니어 모바일 데이터·OOM 절감 |
 
 ---
 

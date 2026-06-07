@@ -906,6 +906,80 @@ export async function main() {
   )
 }
 
+/**
+ * placeholder로 깨진 기존 글의 미디어 백필 — 원글(sourceUrl) 재스크랩 → content/thumbnailUrl 갱신.
+ * GIF→mp4 파이프라인 도입(2026-06) 이전에 5MB 초과로 placeholder 처리된 글 복구용.
+ * targetSlugs 미지정 시 placeholder 포함 글 전체. DB write는 sheet-scraper 권한 내에서 수행.
+ */
+export async function backfillPlaceholderMedia(targetSlugs?: string[]): Promise<void> {
+  const posts = await prisma.post.findMany({
+    where: {
+      content: { contains: 'image-placeholder' },
+      ...(targetSlugs && targetSlugs.length > 0 ? { slug: { in: targetSlugs } } : {}),
+    },
+    select: { id: true, slug: true, sourceUrl: true },
+  })
+  console.log(`[backfill] 대상 ${posts.length}개`)
+  if (posts.length === 0) return
+
+  const context = await launchBrowser()
+  let sessionContext: BrowserContext | null = null
+  let fixed = 0
+  let failed = 0
+  let stillBroken = 0
+
+  try {
+    for (const post of posts) {
+      if (!post.sourceUrl) {
+        console.log(`  SKIP ${post.slug} — sourceUrl 없음`)
+        failed++
+        continue
+      }
+      try {
+        const normalizedUrl = normalizeNaverCafeUrl(post.sourceUrl)
+        const siteConfig = detectSite(normalizedUrl)
+        if (!siteConfig) {
+          console.log(`  SKIP ${post.slug} — 사이트 미감지: ${post.sourceUrl}`)
+          failed++
+          continue
+        }
+
+        let ctx: BrowserContext = context
+        if (siteConfig.requiresSession) {
+          const storagePath = resolve(dirname(fileURLToPath(import.meta.url)), '../cafe/storage-state.json')
+          if (!existsSync(storagePath)) {
+            console.log(`  SKIP ${post.slug} — storage-state.json 없음 (세션 필요)`)
+            failed++
+            continue
+          }
+          if (!sessionContext) sessionContext = await launchBrowserWithSession(storagePath)
+          ctx = sessionContext
+        }
+
+        const result = await scrapePage(ctx, normalizedUrl, siteConfig)
+        const stillPlaceholder = /image-placeholder/.test(result.content)
+        await prisma.post.update({
+          where: { id: post.id },
+          data: {
+            content: result.content,
+            ...(result.thumbnailUrl ? { thumbnailUrl: result.thumbnailUrl } : {}),
+          },
+        })
+        if (stillPlaceholder) stillBroken++
+        console.log(`  ${stillPlaceholder ? '⚠️' : '✅'} ${post.slug} — img:${result.imageCount} vid:${result.videoCount}${stillPlaceholder ? ' (placeholder 잔존)' : ''}`)
+        fixed++
+      } catch (err) {
+        console.warn(`  ❌ ${post.slug} — ${err instanceof Error ? err.message : String(err)}`)
+        failed++
+      }
+    }
+  } finally {
+    await context.close()
+    if (sessionContext) await sessionContext.close()
+  }
+  console.log(`[backfill] 완료: 갱신 ${fixed} / 실패 ${failed} / placeholder잔존 ${stillBroken}`)
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().then(() => process.exit(0)).catch(() => process.exit(1))
 }

@@ -60,6 +60,10 @@ jobs:
       - name: Verify system Chrome
         run: google-chrome-stable --version
 
+      # GIF → mp4 변환용 (image-pipeline.ts convertGifToMp4) — 미설치 시 GIF는 placeholder fallback
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Run Sheet Scraper (펨코·뿜 제외 — 로컬 Mac에서 처리)
         run: cd agents && npx tsx cron/runner.ts community sheet-scrape
         env:

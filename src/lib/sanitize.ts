@@ -17,7 +17,7 @@ const SANITIZE_OPTIONS: sanitize.IOptions = {
     a: ['href', 'target', 'rel'],
     img: ['src', 'alt', 'width', 'height', 'class'],
     iframe: ['src', 'allowfullscreen', 'frameborder', 'allow', 'width', 'height'],
-    video: ['src', 'poster', 'controls', 'width', 'height', 'preload', 'class'],
+    video: ['src', 'poster', 'controls', 'width', 'height', 'preload', 'class', 'autoplay', 'loop', 'muted', 'playsinline'],
     source: ['src', 'type'],
     div: ['class', 'data-youtube-video'],
     aside: ['class'],
