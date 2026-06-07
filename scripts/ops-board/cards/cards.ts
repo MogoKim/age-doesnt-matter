@@ -244,7 +244,7 @@ export const CARDS: Card[] = [
   s('C-BL-AB-ADMIN', 'A/B 테스트 어드민', 'T2-성능', '백로그', '실험 상태/결과 관리 → 실험 누락 방지'),
   s('C-BL-COMMENT-CACHE', '댓글 per-user cache 분리', 'T2-성능', '백로그', '댓글 목록 캐시와 개인 상태 분리 → 인기글 DB 부하 감소'),
   s('C-BL-PERSONA-2', '페르소나 2차 정비 (후순위)', 'T3-봇', '백로그', 'STORY 편중/성별/중복 정리 (품질 악화 시 재개)'),
-  s('C-BL-NAVER-SEO', 'Naver Search Advisor 운영 점검', 'T1-검증', '백로그', '검색 노출/색인 상태'),
+  s('C-BL-NAVER-SEO', 'Naver Search Advisor 운영 점검', 'T1-검증', '완료됨', '코드측 점검 완료(2026-06-07): robots.txt 정상·sitemap 2908 URL·네이버 메타 2개(창업자+직원). 색인현황/노출수는 창업자 콘솔 확인사항(코드 이슈 없음)'),
   s('C-BL-SCRAPER-QUALITY', '스크래퍼 sourceSite 품질 리포트', 'T3-봇', '백로그', 'source별 발행/댓글 품질 집계'),
 
   // ═══════════ 제외/무시 (정적) ═══════════
