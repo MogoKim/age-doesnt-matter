@@ -222,7 +222,8 @@ export const CARDS: Card[] = [
   s('C-WORKTREE-SETUP', '병렬 세션 worktree 세팅', 'T1-검증', '백로그', '보류(2026-06-07): 현재 단일 작업 흐름이라 불필요. 멀티 AI 세션(Claude+Codex 동시) 시작 시 생성'),
 
   // ═══════════ 백로그 — 고객 임팩트/리텐션 순 (정적) ═══════════
-  s('C-BL-READ-FUNNEL', '가입 전 정독 동선 강화', 'T2-성능', '백로그', '비회원에게 좋은 글 노출→가입 유도. 정독자 재방문 100% vs 미정독 14% 근거(고객분석 46명). 리텐션 P1 최우선'),
+  s('C-BL-READ-FUNNEL', '가입 전 정독 동선 강화', 'T2-성능', '배포완료', 'Phase1·2 배포완료(c749d3d, 2026-06-07): 비회원 정독 측정(post_read/85%완료) + 가입배너 타이밍 A/B(정독85%후 vs 현행 50:50). 효과=배포후 trigger_variant별 가입퍼널 측정. 근거: 정독자 재방문 100% vs 14%'),
+  s('C-BL-READ-FUNNEL-P3', '정독 동선 Phase3 — 연속 정독', 'T2-성능', '백로그', '글 다 읽으면 관련글 추천(현재 무관한 최신글→카테고리 기반) + 매거진 PostViewBeacon 추가 + 이어서읽기 카드. 정독 깊이↑'),
   s('C-BL-FIRST-ACTION', '첫 활동 유도 강화', 'T2-성능', '백로그', '첫 댓글/공감/저장 유도 UX → 가입 후 첫 활동률 상승'),
   s('C-BL-GUEST-CONVERT', '비회원 댓글 → 가입 전환 측정', 'T1-검증', '백로그', '댓글 성공 후 가입 funnel 연결'),
   s('C-BL-CTA-MISSING', 'PostCTA 클릭 누락 원인', 'T1-검증', '완료됨', '진단완료(2026-06-07): 유실 가능지점 ①rate limit 30/분 공유버킷(events route:30, page_view 합산→cta 429 유실 유력) ②sendBeacon text/plain ③isBot 오분류시 리포트 제외. 조치=C-BL-CTA-FIX'),
