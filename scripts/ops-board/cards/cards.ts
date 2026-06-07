@@ -242,7 +242,7 @@ export const CARDS: Card[] = [
   s('C-BL-IMG-COMMENT', '이미지/초단문 글 댓글 정책 강화', 'T3-봇', '백로그', 'source 신뢰도 낮은 글 skip/저강도 댓글'),
   s('C-BL-OPS-REPORT-V2', '운영 리포트 v2', 'T1-검증', '백로그', '댓글 품질/source 품질/FAILED 리포트 확장'),
   s('C-BL-TWA-AB', 'TWA 첫 진입 A/B 테스트', 'T2-성능', '백로그', '실험 지표 정의 → 가입률/재방문'),
-  s('C-BL-AB-ADMIN', 'A/B 테스트 어드민', 'T2-성능', '백로그', '실험 상태/결과 관리 → 실험 누락 방지'),
+  s('C-BL-AB-ADMIN', 'A/B 테스트 어드민 (F16 인프라)', 'T2-성능', '배포완료', '배포완료(f63717c, 2026-06-07): 실험 레지스트리(SSOT) + /admin/ab-tests 현황(variant별 전환율+신뢰배지) + 상태/결론 편집 + 표준절차. 🔔 ExperimentState 마이그레이션 후 편집 작동(현황은 즉시). 단계5(F01 배정통일) 선택 보류'),
   s('C-BL-COMMENT-CACHE', '댓글 per-user cache 분리', 'T2-성능', '백로그', '댓글 목록 캐시와 개인 상태 분리 → 인기글 DB 부하 감소'),
   s('C-BL-PERSONA-2', '페르소나 2차 정비', 'T3-봇', '완료됨', '딥다이브 진단 완료(2026-06-07): 말투/주제 중복 0(이미 차별화)·게시판 편중은 스크래퍼 소스 의도·persona-data 79 정본 DB일치. 콘텐츠 건강 확인. 상세: docs/analysis/persona-health-2026-06.md'),
   s('C-BL-PERSONA-REGISTRY', '페르소나 레지스트리 통일(curator)', 'T3-봇', '백로그', 'curator-shared 죽은 정의 49 정리 + persona-data 일원화 + 특수4(JOB/HUMOR/CAREGIVING/HEALTH) 편입. 봇글 생성 로직 영향=careful. 체감 0(DB표시는 이미 persona-data)'),
