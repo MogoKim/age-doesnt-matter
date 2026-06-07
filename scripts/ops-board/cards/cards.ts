@@ -213,12 +213,12 @@ export const CARDS: Card[] = [
   // ═══════════ 지금 가능 (정적 — read-only 검증 작업) ═══════════
   s('C-KAKAO-SIGNUP-SPEED', '카카오 가입 시작 속도 진단', 'T1-검증', '지금가능', 'LoginForm/PostCTA/FAB 클릭 경로 내부 await/API 병목'),
   s('C-WRITE-SPEED-2', '글쓰기 속도 2차 진단', 'T1-검증', '지금가능', 'auth/editor/draft/upload/submit 중 원인 확정'),
-  s('C-MAG-JOB-SPEED', '/magazine·/jobs 속도 재측정', 'T1-검증', '지금가능', 'curl 헤더/TTFB 샘플링'),
-  s('C-DETAIL-SPEED', '게시글 상세 속도 재측정', 'T1-검증', '지금가능', '인기 상세 3~5개 TTFB/Total, MISS 비용 원인'),
+  s('C-MAG-JOB-SPEED', '/magazine·/jobs 속도 재측정', 'T1-검증', '완료됨', '측정완료(2026-06-07): magazine 0.89s(MISS)·jobs region 0.58s(PRERENDER)·목록 STALE 0.26s'),
+  s('C-DETAIL-SPEED', '게시글 상세 속도 재측정', 'T1-검증', '완료됨', '측정완료: 개별글 MISS 1.19s vs 목록 0.26s. MISS 절감은 C-BL-DETAIL-MISS 백로그'),
   s('C-LIGHTHOUSE', 'Lighthouse 접근성 진단', 'T1-검증', '지금가능', 'contrast/target-size 원인 정리'),
-  s('C-SEO-CHECK', 'SEO/Search Advisor 점검', 'T1-검증', '지금가능', 'sitemap/meta/canonical/robots 누락'),
+  s('C-SEO-CHECK', 'SEO/Search Advisor 점검', 'T1-검증', '완료됨', 'sitemap/robots 정상, jobs canonical 상대→절대경로 수정 완료. 네이버 Search Advisor는 창업자 토큰(B-20260530-012)'),
   s('C-ROADMAP-DOC', '로드맵 문서 재작성', 'T1-검증', '지금가능', '창업자가 바로 이해 가능한 운영판'),
-  s('C-DIRTY-FILES', 'dirty 파일 정리', 'T1-검증', '지금가능', 'agents/scripts/_*.ts, docs/analysis 분류'),
+  s('C-DIRTY-FILES', 'dirty 파일 정리', 'T1-검증', '완료됨', 'agents/scripts/_*.ts gitignore(측정 5개 보존)+진단 19개 삭제, docs/analysis 보존 완료'),
   s('C-WORKTREE-SETUP', '병렬 세션 worktree 세팅', 'T1-검증', '지금가능', 'worktree 생성 및 역할 분리, 세션별 파일 충돌 없음'),
 
   // ═══════════ 백로그 — 고객 임팩트/리텐션 순 (정적) ═══════════

@@ -45,7 +45,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseDescription = [rawDescription, `${job.location} 근무`, formatSalary(job.salary)]
     .filter(Boolean).join(' · ').slice(0, 155)
   const description = job.seoDescription ?? baseDescription
-  const url = `/jobs/${id}`
+  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
+  const url = `${BASE_URL}/jobs/${id}`
 
   return {
     title,

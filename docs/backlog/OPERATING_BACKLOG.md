@@ -32,6 +32,7 @@
 - 현재 운영 방식: 자율 위임(`.claude/rules/autonomy.md`) — 모든 작업을 AUTO / HANDOFF / WAIT로 자가 분류해 진행.
 - 여전히 승인 후(HANDOFF/WAIT): generator·wave 로직 변경, persona pool 확장, auth/prisma/CI 변경, DB write.
 - 운영 메모: SHEET 댓글 품질(B-20260530-002)과 스크래퍼 신규 소스(오늘의유머/네이트판/네이버카페/82cook) 품질은 source별 감사(B-20260530-017)와 함께 본다.
+- CI 확인(2026-06-07): cafe-wave/Cafe Hourly Curation/Prewarm 간헐 CI 실패는 일시 네트워크(`npm ci` ECONNRESET)·서버(일시 500)로 **코드 정상**. 보드 ci-probe가 "최근 10회 중 1실패=빨강" 기준이라 빨강이 잠시 남는 것(정상 동작). 후속 선택지: `.github/workflows` `npm ci`에 네트워크 retry 추가 시 간헐 실패 감소.
 
 ---
 
