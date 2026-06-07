@@ -267,7 +267,7 @@
 ## B-20260530-012 - 네이버 소유확인/사이트맵 SEO
 
 - Priority: P2
-- Status: Backlog
+- Status: Done (2026-06-07 종결 — 창업자 소유확인 f3e97b22 완료(데이터 조회 중) + 직원 소유확인 dd29f33d 완료 + 사이트맵 제출(2026-05-19) + 배포 메타 2개 HTML 검증. 검증기준 전부 충족)
 - Owner: TBD
 - 목적: 네이버 Search Advisor 소유확인과 사이트맵 상태를 확인해 브랜드 검색 안정성을 높인다.
 - 목표: 현재 verification meta와 Search Advisor 요구값, sitemap 제출 상태를 확인한다.
