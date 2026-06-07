@@ -211,15 +211,15 @@ export const CARDS: Card[] = [
   s('C-WRITE-SPEED', '글쓰기 진입 속도', 'T2-성능', '배포완료-적용확인', '로그인 후 /community/write 진입 지연 완화 (7448ba6)'),
 
   // ═══════════ 지금 가능 (정적 — read-only 검증 작업) ═══════════
-  s('C-KAKAO-SIGNUP-SPEED', '카카오 가입 시작 속도 진단', 'T1-검증', '지금가능', 'LoginForm/PostCTA/FAB 클릭 경로 내부 await/API 병목'),
-  s('C-WRITE-SPEED-2', '글쓰기 속도 2차 진단', 'T1-검증', '지금가능', 'auth/editor/draft/upload/submit 중 원인 확정'),
+  s('C-KAKAO-SIGNUP-SPEED', '카카오 가입 시작 속도 진단', 'T1-검증', '완료됨', '진단완료(2026-06-07): 3진입점(LoginForm/PostCTA/KakaoSignupButton) 트래킹 fire-and-forget+setTimeout(0) → 카카오 이동 블로킹 없음. 후속 불필요'),
+  s('C-WRITE-SPEED-2', '글쓰기 속도 2차 진단', 'T1-검증', '완료됨', '진단완료: 진입/draft/editor/제출 정상(a654b04·7448ba6). 잔여=이미지/동영상 업로드 병목 → 백로그 분리'),
   s('C-MAG-JOB-SPEED', '/magazine·/jobs 속도 재측정', 'T1-검증', '완료됨', '측정완료(2026-06-07): magazine 0.89s(MISS)·jobs region 0.58s(PRERENDER)·목록 STALE 0.26s'),
   s('C-DETAIL-SPEED', '게시글 상세 속도 재측정', 'T1-검증', '완료됨', '측정완료: 개별글 MISS 1.19s vs 목록 0.26s. MISS 절감은 C-BL-DETAIL-MISS 백로그'),
-  s('C-LIGHTHOUSE', 'Lighthouse 접근성 진단', 'T1-검증', '지금가능', 'contrast/target-size 원인 정리'),
+  s('C-LIGHTHOUSE', 'Lighthouse 접근성 진단', 'T1-검증', '완료됨', '진단완료: 홈 a11y 96점, target-size 위반없음(52px준수). color-contrast 1종(caption text-primary-text 3.45:1<4.5) → 개선 백로그 분리'),
   s('C-SEO-CHECK', 'SEO/Search Advisor 점검', 'T1-검증', '완료됨', 'sitemap/robots 정상, jobs canonical 상대→절대경로 수정 완료. 네이버 Search Advisor는 창업자 토큰(B-20260530-012)'),
-  s('C-ROADMAP-DOC', '로드맵 문서 재작성', 'T1-검증', '지금가능', '창업자가 바로 이해 가능한 운영판'),
+  s('C-ROADMAP-DOC', '로드맵 문서 재작성', 'T1-검증', '완료됨', 'project_roadmap.md 운영판 재작성(2026-06-07): P1리텐션(고객분석46명)/P2성능/P3봇 + board 카드ID 연계 + 6월 완료이력'),
   s('C-DIRTY-FILES', 'dirty 파일 정리', 'T1-검증', '완료됨', 'agents/scripts/_*.ts gitignore(측정 5개 보존)+진단 19개 삭제, docs/analysis 보존 완료'),
-  s('C-WORKTREE-SETUP', '병렬 세션 worktree 세팅', 'T1-검증', '지금가능', 'worktree 생성 및 역할 분리, 세션별 파일 충돌 없음'),
+  s('C-WORKTREE-SETUP', '병렬 세션 worktree 세팅', 'T1-검증', '백로그', '보류(2026-06-07): 현재 단일 작업 흐름이라 불필요. 멀티 AI 세션(Claude+Codex 동시) 시작 시 생성'),
 
   // ═══════════ 백로그 — 고객 임팩트/리텐션 순 (정적) ═══════════
   s('C-BL-FIRST-ACTION', '첫 활동 유도 강화', 'T2-성능', '백로그', '첫 댓글/공감/저장 유도 UX → 가입 후 첫 활동률 상승'),
@@ -229,6 +229,8 @@ export const CARDS: Card[] = [
   s('C-BL-GUEST-READ', '비회원 글 읽기 측정', 'T1-검증', '백로그', '익명 식별자 + PostView schema → 비회원 readPercent'),
   s('C-BL-DETAIL-MISS', '게시글 상세 첫 요청 MISS 비용 절감', 'T2-성능', '백로그', 'auth 개인화 분리/API화 → 상세 TTFB 안정'),
   s('C-BL-LIST-STATIC', '목록 정적화 확장', 'T2-성능', '백로그', '/community, /magazine, /jobs 정적화'),
+  s('C-BL-WRITE-UPLOAD', '글쓰기 업로드 병목 개선', 'T2-성능', '백로그', '이미지 presign 병렬화 + 동영상 메타 await 타임아웃 (TipTapEditor.tsx:368·454) — 진단 C-WRITE-SPEED-2 후속'),
+  s('C-BL-A11Y-CONTRAST', '접근성 대비 개선', 'T2-성능', '백로그', 'caption text-primary-text 대비 3.45:1<4.5 (홈 칩) — 색 조정/크기. 진단 C-LIGHTHOUSE 후속'),
   s('C-BL-WRITE-UX2', '글쓰기 UX/속도 2차', 'T2-성능', '백로그', '에디터 chunk/upload/submit 개선'),
   s('C-BL-SHEET-NGRAM', 'SHEET 말투/어미 반복 개선 v2', 'T3-봇', '백로그', 'n-gram 반복 guard → "근데 솔직히/했어" 감소'),
   s('C-BL-SHEET-HALLU', 'SHEET 순수 hallucination 방지', 'T3-봇', '백로그', 'source/본문 둘 다 없는 창작 사실 검출'),
