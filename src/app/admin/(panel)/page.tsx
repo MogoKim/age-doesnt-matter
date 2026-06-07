@@ -1,12 +1,9 @@
 import Link from 'next/link'
-import type { ExperimentStatus } from '@/generated/prisma/client'
 import {
   getDashboardStats,
   getMonthlyOkrStats,
   getDailyTrend,
   getBoardActivity,
-  getSocialExperiments,
-  getRecentBotLogs,
   getDailyBrief,
   getAutomationStatus,
   getAdminQueueCounts,
@@ -16,44 +13,6 @@ import DailyBriefWidget from '@/components/admin/DailyBriefWidget'
 import AutomationToggle from '@/components/admin/AutomationToggle'
 
 export const dynamic = 'force-dynamic'
-
-const BOT_TYPE_LABELS: Record<string, string> = {
-  JOB: '💼 일자리',
-  HUMOR: '😄 유머',
-  STORY: '💬 이야기',
-  THREAD: '🤖 스레드',
-  CEO: '👑 CEO',
-  CTO: '🔧 CTO',
-  CMO: '📣 CMO',
-  CPO: '📦 CPO',
-  CDO: '📊 CDO',
-  CFO: '💰 CFO',
-  COO: '⚙️ COO',
-  SEED: '🌱 SEED',
-  CAFE_CRAWLER: '☕ 카페 크롤러',
-}
-
-const BOT_STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  SUCCESS: { label: '✅ 정상', className: 'text-green-700 bg-green-50' },
-  PARTIAL: { label: '⚠️ 부분', className: 'text-yellow-700 bg-yellow-50' },
-  FAILED: { label: '❌ 실패', className: 'text-red-700 bg-red-50' },
-}
-
-function formatMaybeNumber(value: unknown): string {
-  if (typeof value === 'number' && Number.isFinite(value)) return value.toFixed(1)
-  if (typeof value === 'string') {
-    const n = Number(value)
-    if (Number.isFinite(n)) return n.toFixed(1)
-  }
-  return '—'
-}
-
-const EXPERIMENT_STATUS_LABELS: Record<ExperimentStatus, { label: string; className: string }> = {
-  PLANNING: { label: '기획 중', className: 'bg-zinc-100 text-zinc-600' },
-  ACTIVE: { label: '진행 중', className: 'bg-blue-50 text-blue-700' },
-  COMPLETED: { label: '완료', className: 'bg-green-50 text-green-700' },
-  ANALYZED: { label: '분석 완료', className: 'bg-purple-50 text-purple-700' },
-}
 
 const BOARD_TYPE_LABELS: Record<string, string> = {
   JOB: '일자리',
@@ -72,22 +31,16 @@ const Q2_OKR = {
 } as const
 
 export default async function AdminDashboardPage() {
-  const [stats, okr, trend, boards, botLogs, brief, isAutomationActive, queueCounts, experiments] =
+  const [stats, okr, trend, boards, brief, isAutomationActive, queueCounts] =
     await Promise.all([
       getDashboardStats(),
       getMonthlyOkrStats(),
       getDailyTrend(),
       getBoardActivity(),
-      getRecentBotLogs(),
       getDailyBrief(),
       getAutomationStatus(),
       getAdminQueueCounts(),
-      getSocialExperiments(20),
     ])
-
-  const errorBots = botLogs.filter((log) => log.dashboardState === 'error')
-  const activeBots = botLogs.filter((log) => log.dashboardState === 'active')
-  const dormantBots = botLogs.filter((log) => log.dashboardState === 'dormant')
 
   const cdoIsStale =
     !okr.cdoLastCollectedAt ||
@@ -343,144 +296,6 @@ export default async function AdminDashboardPage() {
         </section>
       )}
 
-      {/* ⑤ 봇 상태 — ERROR → ACTIVE → DORMANT */}
-      <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-zinc-900">🤖 봇 상태</h2>
-          <div className="flex items-center gap-3">
-            <AutomationToggle isActive={isAutomationActive} />
-            <Link
-              href="/admin/agents"
-              className="text-xs font-medium text-[#FF6F61] no-underline hover:underline"
-            >
-              전체 로그 →
-            </Link>
-          </div>
-        </div>
-        {botLogs.length === 0 ? (
-          <p className="text-sm text-zinc-500">봇 실행 기록이 없습니다.</p>
-        ) : (
-          <div className="space-y-5">
-            <BotStatusGroup
-              title="오류 에이전트"
-              tone="error"
-              logs={errorBots}
-              emptyText="현재 실패 상태인 에이전트가 없습니다."
-            />
-            <BotStatusGroup
-              title="활성 에이전트"
-              tone="active"
-              logs={activeBots}
-              emptyText="오늘 실행된 에이전트가 없습니다."
-            />
-            <BotStatusGroup
-              title="휴면 에이전트"
-              tone="dormant"
-              logs={dormantBots}
-              emptyText="오래된 실행 로그가 없습니다."
-            />
-          </div>
-        )}
-      </section>
-
-      {/* ⑥ SNS A/B 실험 */}
-      <section className="space-y-4">
-        <h2 className="text-sm font-bold text-zinc-900">📱 SNS A/B 실험 결과</h2>
-        {experiments.length === 0 ? (
-          <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-400">
-            SNS 실험 데이터가 없습니다.
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {experiments.map((exp) => {
-              const badge = EXPERIMENT_STATUS_LABELS[exp.status]
-              const results = exp.results as {
-                controlAvg?: unknown
-                testAvg?: unknown
-                winner?: unknown
-                delta?: unknown
-              } | null
-              return (
-                <div key={exp.id} className="rounded-xl border border-zinc-200 bg-white p-5">
-                  <div className="mb-3 flex items-start justify-between gap-4">
-                    <div>
-                      <div className="mb-1 flex items-center gap-2">
-                        <span className="text-xs font-medium text-zinc-400">
-                          {exp.weekNumber}주차
-                        </span>
-                        <span
-                          className={`rounded-md px-2 py-0.5 text-xs font-medium ${badge.className}`}
-                        >
-                          {badge.label}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-zinc-900">{exp.hypothesis}</h3>
-                    </div>
-                    <div className="shrink-0 text-right text-xs text-zinc-400">
-                      <div>{new Date(exp.startDate).toLocaleDateString('ko-KR')} ~</div>
-                      <div>{new Date(exp.endDate).toLocaleDateString('ko-KR')}</div>
-                    </div>
-                  </div>
-
-                  <div className="mb-3 flex gap-4 text-xs">
-                    <span className="rounded bg-zinc-100 px-2 py-1 text-zinc-600">
-                      변수: {exp.variable}
-                    </span>
-                    <span className="rounded bg-blue-50 px-2 py-1 text-blue-700">
-                      통제: {exp.controlValue}
-                    </span>
-                    <span className="rounded bg-[#FF6F61]/10 px-2 py-1 text-[#FF6F61]">
-                      실험: {exp.testValue}
-                    </span>
-                  </div>
-
-                  {results && (
-                    <div className="mb-3 grid grid-cols-3 gap-3">
-                      <div className="rounded-lg bg-zinc-50 p-3 text-center">
-                        <div className="text-xs text-zinc-400">통제군 평균</div>
-                        <div className="mt-1 text-lg font-bold text-zinc-700">
-                          {formatMaybeNumber(results.controlAvg)}
-                        </div>
-                      </div>
-                      <div className="rounded-lg bg-zinc-50 p-3 text-center">
-                        <div className="text-xs text-zinc-400">실험군 평균</div>
-                        <div className="mt-1 text-lg font-bold text-zinc-700">
-                          {formatMaybeNumber(results.testAvg)}
-                        </div>
-                      </div>
-                      <div className="rounded-lg bg-zinc-50 p-3 text-center">
-                        <div className="text-xs text-zinc-400">승자</div>
-                        <div className="mt-1 text-lg font-bold text-[#FF6F61]">
-                          {typeof results.winner === 'string' ? results.winner : '—'}
-                          {results.delta !== undefined && formatMaybeNumber(results.delta) !== '—' && (
-                            <span className="ml-1 text-sm text-zinc-500">
-                              (+{formatMaybeNumber(results.delta)})
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {exp.learnings && (
-                    <div className="rounded-lg bg-blue-50 p-3">
-                      <div className="mb-1 text-xs font-medium text-blue-700">💡 인사이트</div>
-                      <p className="text-sm text-blue-800">{exp.learnings}</p>
-                    </div>
-                  )}
-
-                  {exp.nextAction && (
-                    <div className="mt-2 text-xs text-zinc-500">
-                      다음 액션:{' '}
-                      <span className="font-medium text-zinc-700">{exp.nextAction}</span>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
     </div>
   )
 }
@@ -610,85 +425,4 @@ function KpiCard({
   )
   if (href) return <Link href={href} className="block no-underline">{inner}</Link>
   return inner
-}
-
-type DashboardBotLog = Awaited<ReturnType<typeof getRecentBotLogs>>[number]
-
-function BotStatusGroup({
-  title,
-  tone,
-  logs,
-  emptyText,
-}: {
-  title: string
-  tone: 'active' | 'error' | 'dormant'
-  logs: DashboardBotLog[]
-  emptyText: string
-}) {
-  const titleClassName =
-    tone === 'active' ? 'text-green-700' : tone === 'error' ? 'text-red-700' : 'text-zinc-500'
-  return (
-    <div>
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className={`text-xs font-bold ${titleClassName}`}>{title}</h3>
-        <span className="text-xs text-zinc-400">{logs.length}개</span>
-      </div>
-      {logs.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-zinc-200 px-4 py-3 text-xs text-zinc-400">
-          {emptyText}
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {logs.map((log) => (
-            <BotStatusRow key={log.id} log={log} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function BotStatusRow({ log }: { log: DashboardBotLog }) {
-  const statusBadge =
-    log.dashboardState === 'dormant'
-      ? { label: '🔇 휴면', className: 'text-zinc-600 bg-zinc-100' }
-      : BOT_STATUS_BADGE[log.status] || BOT_STATUS_BADGE.SUCCESS
-  const actionLabel = log.action ?? '최근 실행'
-
-  return (
-    <div className="rounded-lg border border-zinc-100 px-4 py-3">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-zinc-900">
-              {BOT_TYPE_LABELS[log.botType] || log.botType}
-            </span>
-            <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${statusBadge.className}`}>
-              {statusBadge.label}
-            </span>
-            <span className="text-xs text-zinc-400">{log.executedAtLabel}</span>
-            <span className="text-xs text-zinc-400">· {log.ageLabel}</span>
-          </div>
-          <p className="mt-1 truncate text-xs text-zinc-500">
-            {actionLabel}
-            {log.failureSummary ? ` · ${log.failureSummary}` : ''}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
-          <span>수집 {log.collectedCount}</span>
-          <span>발행 {log.publishedCount}</span>
-          {log.itemCount > 0 && <span>처리 {log.itemCount}</span>}
-          {log.reviewPendingCount > 0 && (
-            <span className="font-medium text-yellow-600">검수 {log.reviewPendingCount}</span>
-          )}
-          <Link
-            href={`/admin/agents?botType=${log.botType}`}
-            className="font-medium text-[#FF6F61] no-underline hover:underline"
-          >
-            로그 →
-          </Link>
-        </div>
-      </div>
-    </div>
-  )
 }

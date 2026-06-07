@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getBotLogsDetail, getBotLogStats } from '@/lib/queries/admin'
 import type { BotStatus, BotType } from '@/generated/prisma/client'
 import BotLogDetail from '@/components/admin/BotLogDetail'
+import BotStatusSummary from '@/components/admin/BotStatusSummary'
 import { prisma } from '@/lib/prisma'
 import { HANDLER_REGISTRY, HANDLER_GROUPS, type HandlerMeta } from '@/lib/agent-registry'
 
@@ -145,6 +146,9 @@ export default async function AgentsPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* 봇 상태 요약 (메인 대시보드에서 이동) */}
+      <BotStatusSummary />
+
       {/* 탭 */}
       <div className="flex gap-2 border-b border-zinc-200 pb-0">
         <Link
