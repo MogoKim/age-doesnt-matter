@@ -89,12 +89,12 @@ export default function JobsContent({ initialJobs, initialTotal }: JobsContentPr
         <div className="flex items-center gap-2 mb-4 text-body text-muted-foreground">
           <span className="font-medium">적용된 필터:</span>
           {region && (
-            <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary-text text-caption font-medium">
+            <span className="px-2.5 py-1 rounded-full bg-primary/10 text-[#B23B2E] text-caption font-medium">
               {region}
             </span>
           )}
           {tags?.map((tag) => (
-            <span key={tag} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary-text text-caption font-medium">
+            <span key={tag} className="px-2.5 py-1 rounded-full bg-primary/10 text-[#B23B2E] text-caption font-medium">
               {tag}
             </span>
           ))}

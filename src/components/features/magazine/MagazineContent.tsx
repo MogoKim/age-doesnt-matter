@@ -161,7 +161,7 @@ function MagazineCard({ post, priority }: { post: PostSummary; priority?: boolea
       )}
       <div className="flex-1 min-w-0">
         {post.category && (
-          <span className="text-caption text-primary-text font-bold mb-1 block">{post.category}</span>
+          <span className="text-caption text-[#B23B2E] font-bold mb-1 block">{post.category}</span>
         )}
         <p className="text-body font-bold text-foreground m-0 line-clamp-2 leading-snug">
           {post.title}

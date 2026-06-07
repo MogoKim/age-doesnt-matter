@@ -271,7 +271,7 @@ export default async function AboutPage() {
             >
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{card.emoji}</span>
-                <span className="text-caption text-primary-text font-bold bg-primary/10 rounded-full px-2.5 py-0.5">
+                <span className="text-caption text-[#B23B2E] font-bold bg-primary/10 rounded-full px-2.5 py-0.5">
                   {card.label}
                 </span>
               </div>

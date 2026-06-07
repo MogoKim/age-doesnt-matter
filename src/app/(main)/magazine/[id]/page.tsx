@@ -228,7 +228,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       {/* 헤더 */}
       <div className="mb-8 pb-6 border-b border-border">
         {post.category && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary-text text-caption font-bold w-fit mb-2">
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-[#B23B2E] text-caption font-bold w-fit mb-2">
             {post.category}
           </span>
         )}
@@ -342,7 +342,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
               >
                 <div className="flex-1 min-w-0">
                   {related.category && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary-text text-caption font-bold mb-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-[#B23B2E] text-caption font-bold mb-1">
                       {related.category}
                     </span>
                   )}

@@ -231,7 +231,7 @@ export const CARDS: Card[] = [
   s('C-BL-DETAIL-MISS', '게시글 상세 첫 요청 MISS 비용 절감', 'T2-성능', '백로그', 'auth 개인화 분리/API화 → 상세 TTFB 안정'),
   s('C-BL-LIST-STATIC', '목록 정적화 확장', 'T2-성능', '백로그', '/community, /magazine, /jobs 정적화'),
   s('C-BL-WRITE-UPLOAD', '글쓰기 업로드 병목 개선', 'T2-성능', '백로그', '이미지 presign 병렬화 + 동영상 메타 await 타임아웃 (TipTapEditor.tsx:368·454) — 진단 C-WRITE-SPEED-2 후속'),
-  s('C-BL-A11Y-CONTRAST', '접근성 대비 개선', 'T2-성능', '백로그', 'caption text-primary-text 대비 3.45:1<4.5 (홈 칩) — 색 조정/크기. 진단 C-LIGHTHOUSE 후속'),
+  s('C-BL-A11Y-CONTRAST', '접근성 대비 개선', 'T2-성능', '완료됨', 'caption 칩/배지 12곳 text-primary-text→#B23B2E(대비 5.4:1, 전역 톤 유지). 2026-06-07'),
   s('C-BL-WRITE-UX2', '글쓰기 UX/속도 2차', 'T2-성능', '백로그', '에디터 chunk/upload/submit 개선'),
   s('C-BL-SHEET-NGRAM', 'SHEET 말투/어미 반복 개선 v2', 'T3-봇', '백로그', 'n-gram 반복 guard → "근데 솔직히/했어" 감소'),
   s('C-BL-SHEET-HALLU', 'SHEET 순수 hallucination 방지', 'T3-봇', '백로그', 'source/본문 둘 다 없는 창작 사실 검출'),
