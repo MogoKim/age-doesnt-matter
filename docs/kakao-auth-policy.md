@@ -68,7 +68,7 @@ src/middleware.ts        ← Edge Runtime, auth() 호출 안 함
 
 [2] 우리 나이가 어때서  ← ✅ 실제 사용하는 키
     키: 4ec06c8a15dbb67bd92701f51c38ec2e
-    client_secret: 4ecTVlhWjjQR20NZUcEyZMPrtMv0Ukyq (활성화 ON)
+    client_secret: REDACTED_재발급완료_2026-06-07_env전용 (활성화 ON)
 ```
 
 > **핵심 규칙**: `KAKAO_CLIENT_ID`와 `KAKAO_CLIENT_SECRET`은 반드시 **같은 플랫폼 키 박스**에 속해야 한다. 다른 키의 시크릿을 혼용하면 KOE010 발생 (2026-05-18 실제 사고 원인).
@@ -102,7 +102,7 @@ src/middleware.ts        ← Edge Runtime, auth() 호출 안 함
 | 변수명 | 값 | 적용 환경 |
 |--------|----|----------|
 | `KAKAO_CLIENT_ID` | `4ec06c8a15dbb67bd92701f51c38ec2e` | Production Only |
-| `KAKAO_CLIENT_SECRET` | `4ecTVlhWjjQR20NZUcEyZMPrtMv0Ukyq` | Production Only |
+| `KAKAO_CLIENT_SECRET` | `REDACTED_재발급완료_2026-06-07_env전용` | Production Only |
 | `AUTH_SECRET` | (랜덤 문자열) | All Environments |
 | `AUTH_URL` | **설정하지 말 것** | — |
 
