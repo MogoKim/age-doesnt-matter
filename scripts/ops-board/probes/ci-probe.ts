@@ -25,8 +25,9 @@ interface GhRun {
 
 /**
  * 워크플로우 최근 N개 run의 건강도.
- * - 실패 0 & success>0: ok=true (latest 진행중이면 signal=ci-running, 아니면 ci-healthy)
- * - 실패 존재: ok=false (signal=ci-failures)
+ * - 최근 3개 완료 중 실패 2개 미만 & success>0: ok=true (latest 진행중 ci-running, 아니면 ci-healthy)
+ * - 최근 3개 완료 중 실패 2개 이상(반복 실패): ok=false (signal=ci-failures)
+ *   → 간헐 1회 실패(그 뒤 성공으로 회복)는 노이즈로 무시 (GHA 네트워크/일시 500 등)
  * - run 없음 / gh 조회 실패 / 타임아웃: ok=null (판정불가)
  *
  * gh CLI는 토큰을 stdout에 노출하지 않으며, detail에는 집계 수치만 담는다.
@@ -48,17 +49,21 @@ export async function ciWorkflowHealth(workflowName: string, limit = 10): Promis
     const failCount = completed.filter((r) => r.conclusion === 'failure' || r.conclusion === 'cancelled').length
     const latest = runs[0]
     const latestRunning = latest.status !== 'completed'
+    // 최근 3개 완료 run 중 실패 — 반복(2+) 실패만 빨강, 간헐 1회는 노이즈로 무시
+    const recentCompleted = completed.slice(0, 3)
+    const recentFail = recentCompleted.filter((r) => r.conclusion === 'failure' || r.conclusion === 'cancelled').length
 
     const detail = {
       workflow: workflowName.slice(0, 60),
       sampleSize: runs.length,
       successCount,
       failCount,
+      recentFail,
       latestStatus: latest.status,
       latestConclusion: latest.conclusion,
     }
 
-    if (failCount > 0) return base('ci', false, 'ci-failures', detail, start)
+    if (recentFail >= 2) return base('ci', false, 'ci-failures', detail, start)
     if (successCount === 0 && latestRunning) return base('ci', null, 'ci-running-only', detail, start)
     return base('ci', true, latestRunning ? 'ci-running' : 'ci-healthy', detail, start)
   } catch (err) {
