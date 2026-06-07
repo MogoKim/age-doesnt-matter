@@ -46,7 +46,8 @@ async function handleStatus(): Promise<SlackCommandResult> {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
   const [totalUsers, todayPosts, todayComments, totalPosts, monthJobs] = await Promise.all([
-    prisma.user.count({ where: { status: 'ACTIVE' } }),
+    // 총 유저 — 봇 제외(@unao.bot 이메일 + seed_ providerId)로 실유저만 카운트
+    prisma.user.count({ where: { status: 'ACTIVE', AND: [{ NOT: { email: { endsWith: '@unao.bot' } } }, { NOT: { providerId: { startsWith: 'seed_' } } }] } }),
     prisma.post.count({ where: { createdAt: { gte: todayStart }, status: 'PUBLISHED' } }),
     prisma.comment.count({ where: { createdAt: { gte: todayStart }, status: 'ACTIVE' } }),
     prisma.post.count({ where: { status: 'PUBLISHED' } }),

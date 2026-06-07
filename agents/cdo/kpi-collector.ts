@@ -46,7 +46,8 @@ class CDOKpiCollector extends BaseAgent {
       // EventLog page_view 기반 실방문 DAU — isBot:false 필터로 봇 트래픽 제외
       prisma.eventLog.groupBy({ by: ['userId'], where: { eventName: 'page_view', userId: { not: null }, isBot: false, createdAt: { gte: yesterday } } }).then(r => r.length),
       prisma.eventLog.groupBy({ by: ['userId'], where: { eventName: 'page_view', userId: { not: null }, isBot: false, createdAt: { gte: thirtyDaysAgo } } }).then(r => r.length),
-      prisma.user.count(),
+      // 총회원 — 봇 제외(@unao.bot 이메일 + seed_ providerId)로 실유저만 카운트
+      prisma.user.count({ where: { AND: [{ NOT: { email: { endsWith: '@unao.bot' } } }, { NOT: { providerId: { startsWith: 'seed_' } } }] } }),
       prisma.post.count({ where: { createdAt: { gte: yesterday }, status: 'PUBLISHED' } }),
       prisma.comment.count({ where: { createdAt: { gte: yesterday } } }),
       prisma.like.count({ where: { createdAt: { gte: yesterday } } }),
@@ -54,7 +55,8 @@ class CDOKpiCollector extends BaseAgent {
       prisma.post.count({ where: { status: 'PUBLISHED' } }),
       prisma.post.count({ where: { source: 'USER', status: 'PUBLISHED' } }),
       prisma.post.count({ where: { source: 'BOT', status: 'PUBLISHED' } }),
-      prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+      // 신규 7일 — 봇 제외로 실유저 신규만 카운트
+      prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo }, AND: [{ NOT: { email: { endsWith: '@unao.bot' } } }, { NOT: { providerId: { startsWith: 'seed_' } } }] } }),
       prisma.report.count({ where: { createdAt: { gte: yesterday } } }),
     ])
 
