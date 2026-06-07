@@ -67,11 +67,11 @@ jobs:
               return 0
             fi
 
-            if ! echo "$output" | grep -q "EMAXCONN"; then
+            if ! echo "$output" | grep -Eiq "EMAXCONN|Connection terminated due to connection timeout|Connection terminated unexpectedly"; then
               return "$status"
             fi
 
-            echo "::warning::$label hit DB connection limit (EMAXCONN); waiting 45s and retrying once."
+            echo "::warning::$label hit transient DB connection failure; waiting 45s and retrying once."
             sleep 45
 
             set +e
@@ -84,8 +84,8 @@ jobs:
               return 0
             fi
 
-            if echo "$output" | grep -q "EMAXCONN"; then
-              echo "::warning::$label still hit EMAXCONN after retry; skipping this tick. The next scheduled run will retry."
+            if echo "$output" | grep -Eiq "EMAXCONN|Connection terminated due to connection timeout|Connection terminated unexpectedly"; then
+              echo "::warning::$label still hit transient DB connection failure after retry; skipping this tick. The next scheduled run will retry."
               return 0
             fi
 
@@ -113,11 +113,11 @@ jobs:
               return 0
             fi
 
-            if ! echo "$output" | grep -q "EMAXCONN"; then
+            if ! echo "$output" | grep -Eiq "EMAXCONN|Connection terminated due to connection timeout|Connection terminated unexpectedly"; then
               return "$status"
             fi
 
-            echo "::warning::$label hit DB connection limit (EMAXCONN); waiting 45s and retrying once."
+            echo "::warning::$label hit transient DB connection failure; waiting 45s and retrying once."
             sleep 45
 
             set +e
@@ -130,8 +130,8 @@ jobs:
               return 0
             fi
 
-            if echo "$output" | grep -q "EMAXCONN"; then
-              echo "::warning::$label still hit EMAXCONN after retry; skipping this tick. The next scheduled run will retry."
+            if echo "$output" | grep -Eiq "EMAXCONN|Connection terminated due to connection timeout|Connection terminated unexpectedly"; then
+              echo "::warning::$label still hit transient DB connection failure after retry; skipping this tick. The next scheduled run will retry."
               return 0
             fi
 
@@ -164,11 +164,11 @@ jobs:
               return 0
             fi
 
-            if ! echo "$output" | grep -q "EMAXCONN"; then
+            if ! echo "$output" | grep -Eiq "EMAXCONN|Connection terminated due to connection timeout|Connection terminated unexpectedly"; then
               return "$status"
             fi
 
-            echo "::warning::$label hit DB connection limit (EMAXCONN); waiting 45s and retrying once."
+            echo "::warning::$label hit transient DB connection failure; waiting 45s and retrying once."
             sleep 45
 
             set +e
@@ -181,8 +181,8 @@ jobs:
               return 0
             fi
 
-            if echo "$output" | grep -q "EMAXCONN"; then
-              echo "::warning::$label still hit EMAXCONN after retry; skipping this tick. The next scheduled run will retry."
+            if echo "$output" | grep -Eiq "EMAXCONN|Connection terminated due to connection timeout|Connection terminated unexpectedly"; then
+              echo "::warning::$label still hit transient DB connection failure after retry; skipping this tick. The next scheduled run will retry."
               return 0
             fi
 
