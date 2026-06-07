@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import localFont from 'next/font/local'
 import dynamic from 'next/dynamic'
 import Script from 'next/script'
 import { GTMScript, GTMNoScript } from '@/components/common/GoogleTagManager'
@@ -28,13 +27,6 @@ const WebVitalsReporter = dynamic(
   () => import('@/components/common/WebVitalsReporter'),
   { loading: () => null, ssr: false },
 )
-
-const pretendard = localFont({
-  src: '../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2',
-  display: 'swap',
-  weight: '45 920',
-  variable: '--font-pretendard',
-})
 
 export const metadata: Metadata = {
   title: {
@@ -81,10 +73,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ko" className={pretendard.variable}>
+    <html lang="ko">
       <head>
         {/* 폰트 크기 flicker 방지 — localStorage 기반, SSR cookies() 의존 없음 */}
         <script dangerouslySetInnerHTML={{ __html: `try{var s=localStorage.getItem('unao-font-size');if(s==='LARGE'||s==='XLARGE'){document.documentElement.setAttribute('data-font-size',s)}}catch{}` }} />
+        {/* Pretendard Variable dynamic-subset — unicode-range 기반 분할 로드.
+            브라우저가 실제 렌더된 글자가 속한 서브셋(~30KB)만 다운로드 → 초기 폰트 전송 2.0MB→수십 KB.
+            font-display:swap 유지로 CLS 0. (next/font/local은 unicode-range 다중 @font-face 미지원이라 우회) */}
+        {/* eslint-disable-next-line @next/next/no-css-tags -- dynamic-subset은 next/font로 표현 불가, @import는 렌더 블로킹이라 link가 최적 */}
+        <link rel="stylesheet" href="/fonts/pretendard/pretendardvariable-dynamic-subset.css" />
         <link rel="preconnect" href="https://img.age-doesnt-matter.com" />
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
         <GTMScript />
@@ -95,7 +92,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className={pretendard.className}>
+      <body>
         <GTMNoScript />
         <AuthProvider>
           <ToastProvider>
