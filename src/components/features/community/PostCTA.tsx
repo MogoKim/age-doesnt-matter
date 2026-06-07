@@ -62,7 +62,8 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
       const props = { cta_type: 'signup', post_id: postId, post_title: postTitle }
       trackEvent('post_cta_shown', props)
       sendGtmEvent('post_cta_shown', props)
-      sessionStorage.setItem('signup_prompt_shown_this_session', '1')
+      // (2026-06-08) 띠배너 억제 제거 — 글 상세 정독 동선 배너(SignupPromptBanner read_complete) 허용.
+      //   PostCTA(하단 인라인)와 정독 완료 띠배너 공존, 효과는 타이밍 A/B로 측정.
       return
     }
 
