@@ -206,11 +206,14 @@ export const CARDS: Card[] = [
   s('C-COMM-DUP-URL', '커뮤니티 중복 목록 URL 리다이렉트', 'T2-성능', '완료됨', '중복 URL 정리 (614e579)'),
 
   // ═══════════ 배포완료·적용확인 (정적 — probe 없는 수동 검증) ═══════════
+  s('C-FONT-FCP', '신규방문 폰트 FCP 최적화', 'T2-성능', '배포완료-적용확인', '폰트 2.0MB→283KB(dynamic-subset) + CSS 렌더블로킹 제거(subset.91 preload+비동기 CSS, C1 1ede24d). 프로덕션 블로킹 stylesheet 0 확인. FCP 정량은 C-FCP-MEASURE'),
+  s('C-HOME-PAYLOAD', '홈 RSC/DB 페이로드 경감', 'T2-성능', '배포완료-적용확인', 'homeListSelect(author JOIN/summary 제거) + 글 후보 fetch 50%↓(C2 75e6ff7). 섹션 정상 렌더 확인. DB쿼리 경감(서버 이득), HTML 크기 효과는 미미(홈섹션=서버컴포넌트)'),
   s('C-GUEST-COMMENT-UX', '비회원 댓글 UX v1', 'T2-성능', '배포완료-적용확인', 'E2E: 비회원 모바일 댓글 작성 → 등록 성공 + 가입 유도 카드'),
   s('C-POSTCTA-CLICK', 'PostCTA 클릭/가입 시작', 'T2-성능', '배포완료-적용확인', '비회원 CTA 클릭 → 카카오 이동 전 내부 지연 없음'),
   s('C-WRITE-SPEED', '글쓰기 진입 속도', 'T2-성능', '배포완료-적용확인', '로그인 후 /community/write 진입 지연 완화 (7448ba6)'),
 
   // ═══════════ 지금 가능 (정적 — read-only 검증 작업) ═══════════
+  s('C-FCP-MEASURE', '신규유저 FCP 정량 측정', 'T2-성능', '지금가능', 'C1(폰트 렌더블로킹 제거) 효과를 PSI 모바일로 실측. PSI quota 회복(2026-06-09 09:00 KST 이후) 후 curl runPagespeed strategy=mobile로 LCP/FCP 전후 비교. 결과로 C3(Hero sizes)/하이드레이션 646KB 추가작업 필요성 판단'),
   s('C-KAKAO-SIGNUP-SPEED', '카카오 가입 시작 속도 진단', 'T1-검증', '완료됨', '진단완료(2026-06-07): 3진입점(LoginForm/PostCTA/KakaoSignupButton) 트래킹 fire-and-forget+setTimeout(0) → 카카오 이동 블로킹 없음. 후속 불필요'),
   s('C-WRITE-SPEED-2', '글쓰기 속도 2차 진단', 'T1-검증', '완료됨', '진단완료: 진입/draft/editor/제출 정상(a654b04·7448ba6). 잔여=이미지/동영상 업로드 병목 → 백로그 분리'),
   s('C-MAG-JOB-SPEED', '/magazine·/jobs 속도 재측정', 'T1-검증', '완료됨', '측정완료(2026-06-07): magazine 0.89s(MISS)·jobs region 0.58s(PRERENDER)·목록 STALE 0.26s'),
@@ -222,7 +225,7 @@ export const CARDS: Card[] = [
   s('C-WORKTREE-SETUP', '병렬 세션 worktree 세팅', 'T1-검증', '백로그', '보류(2026-06-07): 현재 단일 작업 흐름이라 불필요. 멀티 AI 세션(Claude+Codex 동시) 시작 시 생성'),
 
   // ═══════════ 백로그 — 고객 임팩트/리텐션 순 (정적) ═══════════
-  s('C-BL-READ-FUNNEL', '가입 전 정독 동선 강화', 'T2-성능', '배포완료', 'Phase1·2 배포완료(c749d3d, 2026-06-07): 비회원 정독 측정(post_read/85%완료) + 가입배너 타이밍 A/B(정독85%후 vs 현행 50:50). 효과=배포후 trigger_variant별 가입퍼널 측정. 근거: 정독자 재방문 100% vs 14%'),
+  s('C-BL-READ-FUNNEL', '가입 전 정독 동선 강화', 'T2-성능', '배포완료-적용확인', 'Phase1·2 배포완료(c749d3d, 2026-06-07): 비회원 정독 측정(post_read/85%완료) + 가입배너 타이밍 A/B(정독85%후 vs 현행 50:50). 효과=배포후 trigger_variant별 가입퍼널 측정. 근거: 정독자 재방문 100% vs 14%'),
   s('C-BL-READ-FUNNEL-P3', '정독 동선 Phase3 — 연속 정독', 'T2-성능', '백로그', '글 다 읽으면 관련글 추천(현재 무관한 최신글→카테고리 기반) + 매거진 PostViewBeacon 추가 + 이어서읽기 카드. 정독 깊이↑'),
   s('C-BL-FIRST-ACTION', '첫 활동 유도 강화', 'T2-성능', '백로그', '첫 댓글/공감/저장 유도 UX → 가입 후 첫 활동률 상승'),
   s('C-BL-GUEST-CONVERT', '비회원 댓글 → 가입 전환 측정', 'T1-검증', '백로그', '댓글 성공 후 가입 funnel 연결'),
@@ -242,7 +245,7 @@ export const CARDS: Card[] = [
   s('C-BL-IMG-COMMENT', '이미지/초단문 글 댓글 정책 강화', 'T3-봇', '백로그', 'source 신뢰도 낮은 글 skip/저강도 댓글'),
   s('C-BL-OPS-REPORT-V2', '운영 리포트 v2', 'T1-검증', '백로그', '댓글 품질/source 품질/FAILED 리포트 확장'),
   s('C-BL-TWA-AB', 'TWA 첫 진입 A/B 테스트', 'T2-성능', '백로그', '실험 지표 정의 → 가입률/재방문'),
-  s('C-BL-AB-ADMIN', 'A/B 테스트 어드민 (F16 인프라)', 'T2-성능', '배포완료', '배포완료(f63717c, 2026-06-07): 실험 레지스트리(SSOT) + /admin/ab-tests 현황(variant별 전환율+신뢰배지) + 상태/결론 편집 + 표준절차. 🔔 ExperimentState 마이그레이션 후 편집 작동(현황은 즉시). 단계5(F01 배정통일) 선택 보류'),
+  s('C-BL-AB-ADMIN', 'A/B 테스트 어드민 (F16 인프라)', 'T2-성능', '배포완료-적용확인', '배포완료(f63717c, 2026-06-07): 실험 레지스트리(SSOT) + /admin/ab-tests 현황(variant별 전환율+신뢰배지) + 상태/결론 편집 + 표준절차. 🔔 ExperimentState 마이그레이션 후 편집 작동(현황은 즉시). 단계5(F01 배정통일) 선택 보류'),
   s('C-BL-COMMENT-CACHE', '댓글 per-user cache 분리', 'T2-성능', '백로그', '댓글 목록 캐시와 개인 상태 분리 → 인기글 DB 부하 감소'),
   s('C-BL-PERSONA-2', '페르소나 2차 정비', 'T3-봇', '완료됨', '딥다이브 진단 완료(2026-06-07): 말투/주제 중복 0(이미 차별화)·게시판 편중은 스크래퍼 소스 의도·persona-data 79 정본 DB일치. 콘텐츠 건강 확인. 상세: docs/analysis/persona-health-2026-06.md'),
   s('C-BL-PERSONA-REGISTRY', '페르소나 레지스트리 통일(curator)', 'T3-봇', '백로그', 'curator-shared 죽은 정의 49 정리 + persona-data 일원화 + 특수4(JOB/HUMOR/CAREGIVING/HEALTH) 편입. 봇글 생성 로직 영향=careful. 체감 0(DB표시는 이미 persona-data)'),
