@@ -267,6 +267,10 @@ model User {
   // 온보딩
   isOnboarded       Boolean    @default(false)
 
+  // 가입 채널 (리텐션 4분면 분석용) — 'TWA' | 'WEB' | null(UNKNOWN)
+  // auth 무변경: api/events의 login 이벤트에서 browser_env/referrer로 1회 기록
+  signupSource      String?
+
   // 설정
   marketingOptIn    Boolean    @default(false)
   isGenderPublic    Boolean    @default(false)

@@ -1,5 +1,6 @@
 export * from './admin.dashboard'
 export * from './admin.insights'
+export * from './admin.retention'
 export * from './admin.bots'
 export * from './admin.content'
 export * from './admin.members'

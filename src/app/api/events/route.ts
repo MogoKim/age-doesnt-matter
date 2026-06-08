@@ -69,6 +69,17 @@ export async function POST(request: NextRequest) {
     },
   })
 
+  // login 이벤트 → 가입 채널(signupSource) 1회 기록 (비어있을 때만). auth 플로우 무변경.
+  if (body.eventName === 'login' && session?.user?.id) {
+    const env = typeof body.properties?.browser_env === 'string' ? body.properties.browser_env : ''
+    const ref = body.referrer ?? ''
+    const source = env === 'twa-android' || ref.startsWith('android-app://') ? 'TWA' : 'WEB'
+    await prisma.user.updateMany({
+      where: { id: session.user.id, signupSource: null },
+      data: { signupSource: source },
+    })
+  }
+
   const response = NextResponse.json({ ok: true })
   if (!isBot && sessionId) {
     response.cookies.set('_anon_sid', sessionId, {

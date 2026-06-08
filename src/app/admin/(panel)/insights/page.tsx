@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
-import { getInsights } from '@/lib/queries/admin'
+import { getInsights, getRetentionQuadrants, type RetentionData } from '@/lib/queries/admin'
 
 export const metadata: Metadata = { title: '인사이트' }
 export const revalidate = 120
 
 export default async function AdminInsightsPage() {
-  const data = await getInsights()
+  const [data, retention] = await Promise.all([getInsights(), getRetentionQuadrants()])
 
   const delta = data.northStar.current - data.northStar.previous
   const weeklyMax = Math.max(...data.northStar.weekly.map((w) => w.returning), 1)
@@ -132,7 +132,45 @@ export default async function AdminInsightsPage() {
           </div>
         </div>
       </section>
+
+      {/* ④ 리텐션 4분면 */}
+      <RetentionQuadrants retention={retention} />
     </div>
+  )
+}
+
+function RetentionQuadrants({ retention }: { retention: RetentionData }) {
+  const rows = [...retention.members, ...retention.guests]
+  return (
+    <section className="rounded-xl border border-zinc-200 bg-white p-5">
+      <h2 className="mb-1 text-sm font-bold text-zinc-900">④ 리텐션 4분면 — TWA/웹 × 회원/비회원</h2>
+      <p className="mb-4 text-xs text-zinc-400">
+        최근 {retention.windowDays}일 코호트 · D-N = 기준일+N일 이후 재방문(누적) · 괄호 = 표본수
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
+              <th className="py-2 pr-4 font-medium">세그먼트</th>
+              <th className="py-2 pr-4 text-right font-medium">D1</th>
+              <th className="py-2 pr-4 text-right font-medium">D3</th>
+              <th className="py-2 text-right font-medium">D7</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.segment} className="border-b border-zinc-100">
+                <td className="py-2 pr-4 font-medium text-zinc-800">{r.segment}</td>
+                <td className="py-2 pr-4 text-right text-zinc-700">{r.d1.rate}% <span className="text-zinc-400">({r.d1.cohort})</span></td>
+                <td className="py-2 pr-4 text-right text-zinc-700">{r.d3.rate}% <span className="text-zinc-400">({r.d3.cohort})</span></td>
+                <td className="py-2 text-right text-zinc-700">{r.d7.rate}% <span className="text-zinc-400">({r.d7.cohort})</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-3 text-xs text-zinc-400">{retention.note}</p>
+    </section>
   )
 }
 
