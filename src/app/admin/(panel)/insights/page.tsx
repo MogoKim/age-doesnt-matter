@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getInsights, getRetentionQuadrants, type RetentionData } from '@/lib/queries/admin'
+import InfoTip from '@/components/admin/InfoTip'
 
 export const metadata: Metadata = { title: '인사이트' }
 export const revalidate = 120
@@ -8,7 +9,7 @@ export default async function AdminInsightsPage() {
   const [data, retention] = await Promise.all([getInsights(), getRetentionQuadrants()])
 
   const delta = data.northStar.current - data.northStar.previous
-  const weeklyMax = Math.max(...data.northStar.weekly.map((w) => w.returning), 1)
+  const weeklyMax = Math.max(...data.northStar.weekly.map((w) => w.active), 1)
   const collectedLabel = new Date(data.generatedAt).toLocaleString('ko-KR', {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
@@ -22,12 +23,15 @@ export default async function AdminInsightsPage() {
         </p>
       </div>
 
-      {/* 🎯 북극성 */}
+      {/* 🎯 북극성 — 주간 활성 실고객(WAU) */}
       <section className="rounded-xl border border-[#FF6F61]/30 bg-[#FF6F61]/5 p-5">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-bold text-[#FF6F61]">🎯 북극성 — 주간 재방문 실고객 수</p>
-            <p className="mt-0.5 text-xs text-zinc-500">가입 이후의 주에 다시 온 진짜 손님 (봇 제외)</p>
+            <p className="text-xs font-bold text-[#FF6F61]">
+              🎯 북극성 — 주간 활성 실고객 (WAU)
+              <InfoTip text="최근 7일간 방문 또는 로그인한 실고객(봇 제외) 수. 매주 꾸준히 우나어를 쓰는 회원 규모를 나타냅니다. 이 숫자가 늘면 서비스가 건강하게 성장 중입니다." />
+            </p>
+            <p className="mt-0.5 text-xs text-zinc-500">이번 주에 활동한 진짜 회원 수</p>
           </div>
           <div className="text-right">
             <span className="text-3xl font-bold text-zinc-900">{data.northStar.current}</span>
@@ -40,11 +44,11 @@ export default async function AdminInsightsPage() {
         {/* 8주 추이 막대 */}
         <div className="mt-4 flex h-20 items-end gap-2">
           {data.northStar.weekly.map((w, i) => {
-            const h = Math.max(4, Math.round((w.returning / weeklyMax) * 72))
+            const h = Math.max(4, Math.round((w.active / weeklyMax) * 72))
             const isCurrent = i === data.northStar.weekly.length - 1
             return (
               <div key={w.weekLabel} className="flex flex-1 flex-col items-center gap-1">
-                <span className="text-xs font-medium text-zinc-600">{w.returning}</span>
+                <span className="text-xs font-medium text-zinc-600">{w.active}</span>
                 <div
                   className={`w-full rounded-t-sm ${isCurrent ? 'bg-[#FF6F61]' : 'bg-[#FF6F61]/40'}`}
                   style={{ height: `${h}px` }}
@@ -57,25 +61,42 @@ export default async function AdminInsightsPage() {
       </section>
 
       {/* 요약 카드 */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <MiniStat label="실고객 수" value={`${data.realUserCount}명`} sub={`봇 ${data.botUserCount}개 제외`} />
-        <MiniStat label="최근 7일 신규" value={`${data.new7d}명`} sub="실고객 가입" />
-        <MiniStat label="세션 재방문율" value={`${data.retention.sessionReturnRate}%`} sub={`${data.retention.sessionTotal}세션 중`} />
-        <MiniStat label="로그인 재방문율" value={`${data.retention.loginReturnRate}%`} sub={`${data.retention.loginUsers}명 중 2일+`} />
+      <div className="grid grid-cols-2 gap-4">
+        <MiniStat
+          label="실고객 수"
+          value={`${data.realUserCount}명`}
+          sub={`봇 ${data.botUserCount}개 제외`}
+          tip="providerId가 순수 숫자인 진짜 카카오 가입 회원 수입니다. curator·seed 등 봇 계정은 모두 제외했습니다."
+        />
+        <MiniStat
+          label="최근 7일 신규"
+          value={`${data.new7d}명`}
+          sub="실고객 가입"
+          tip="최근 7일간 새로 가입한 실고객 수(봇 제외)입니다."
+        />
       </div>
 
       {/* ① 들어오기 — 채널 효율 */}
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="mb-1 text-sm font-bold text-zinc-900">① 들어오기 — 유입 채널 효율</h2>
+        <h2 className="mb-1 text-sm font-bold text-zinc-900">
+          ① 들어오기 — 유입 채널 효율
+          <InfoTip text="어느 경로로 들어온 방문자가 가입하고 다시 오는지 비교합니다. 세션의 첫 referrer(유입 출처)로 분류하며, 최근 30일 기준입니다." />
+        </h2>
         <p className="mb-4 text-xs text-zinc-400">어디서 온 손님이 가입하고 다시 오는가 (세션 첫 referrer, 30일)</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
                 <th className="py-2 pr-4 font-medium">채널</th>
-                <th className="py-2 pr-4 text-right font-medium">세션</th>
-                <th className="py-2 pr-4 text-right font-medium">가입전환</th>
-                <th className="py-2 text-right font-medium">재방문율</th>
+                <th className="py-2 pr-4 text-right font-medium">
+                  세션<InfoTip text="그 채널로 들어온 방문 묶음 수. 같은 브라우저(쿠키)의 30일 내 재방문은 1세션으로 셉니다." />
+                </th>
+                <th className="py-2 pr-4 text-right font-medium">
+                  가입전환<InfoTip text="그 채널 세션 중 로그인(가입)까지 이어진 비율입니다. 높을수록 '질 좋은' 유입입니다." />
+                </th>
+                <th className="py-2 text-right font-medium">
+                  재방문율<InfoTip text="그 채널 세션 중 서로 다른 2일 이상 방문한 비율입니다. 높을수록 '다시 오는' 유입입니다." />
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -102,7 +123,10 @@ export default async function AdminInsightsPage() {
 
       {/* ② 첫 경험 — 활성화 퍼널 */}
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="mb-1 text-sm font-bold text-zinc-900">② 첫 경험 — 활성화 퍼널</h2>
+        <h2 className="mb-1 text-sm font-bold text-zinc-900">
+          ② 첫 경험 — 활성화 퍼널
+          <InfoTip text="가입한 실고객이 온보딩→글→댓글까지 얼마나 도달하는지 봅니다. 전체 기간 누적이며, 가입만 하고 안 쓰는 이탈 구간을 찾는 지표입니다." />
+        </h2>
         <p className="mb-4 text-xs text-zinc-400">가입한 실고객이 실제로 쓰기까지 (전체 기간 누적)</p>
         <FunnelBar label="가입 실고객" value={data.activation.total} base={data.activation.total} />
         <FunnelBar label="온보딩 완료" value={data.activation.onboarded} base={data.activation.total} />
@@ -111,29 +135,7 @@ export default async function AdminInsightsPage() {
         <FunnelBar label="활동(글 or 댓글)" value={data.activation.active} base={data.activation.total} highlight />
       </section>
 
-      {/* ③ 다시 오기 — 리텐션 */}
-      <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="mb-1 text-sm font-bold text-zinc-900">③ 다시 오기 — 리텐션</h2>
-        <p className="mb-4 text-xs text-zinc-400">한 번 온 사람이 다시 오는가 (30일)</p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-lg bg-zinc-50 p-4">
-            <p className="text-xs text-zinc-500">세션 재방문 (비회원 포함)</p>
-            <p className="mt-1 text-2xl font-bold text-zinc-900">{data.retention.sessionReturnRate}%</p>
-            <p className="mt-0.5 text-xs text-zinc-400">
-              전체 {data.retention.sessionTotal.toLocaleString()}세션 중 {data.retention.sessionReturn}세션이 2일+ 방문
-            </p>
-          </div>
-          <div className="rounded-lg bg-zinc-50 p-4">
-            <p className="text-xs text-zinc-500">로그인 재방문 (가입자)</p>
-            <p className="mt-1 text-2xl font-bold text-zinc-900">{data.retention.loginReturnRate}%</p>
-            <p className="mt-0.5 text-xs text-zinc-400">
-              login {data.retention.loginUsers}명 중 {data.retention.loginReturn}명이 2일+ 로그인
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ④ 리텐션 4분면 */}
+      {/* ③ 다시 오기 — 리텐션 4분면 */}
       <RetentionQuadrants retention={retention} />
     </div>
   )
@@ -143,7 +145,10 @@ function RetentionQuadrants({ retention }: { retention: RetentionData }) {
   const rows = [...retention.members, ...retention.guests]
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-5">
-      <h2 className="mb-1 text-sm font-bold text-zinc-900">④ 리텐션 4분면 — TWA/웹 × 회원/비회원</h2>
+      <h2 className="mb-1 text-sm font-bold text-zinc-900">
+        ③ 다시 오기 — 리텐션 (TWA/웹 × 회원/비회원)
+        <InfoTip text="한 번 온 사람이 다시 오는 비율을 4분면으로 비교합니다. D-N = 기준일(회원=가입일, 비회원=첫 방문일)로부터 N일 이후 다시 온 비율(누적). 괄호 안은 표본 수로, 작으면 참고용입니다." />
+      </h2>
       <p className="mb-4 text-xs text-zinc-400">
         최근 {retention.windowDays}일 코호트 · D-N = 기준일+N일 이후 재방문(누적) · 괄호 = 표본수
       </p>
@@ -152,9 +157,15 @@ function RetentionQuadrants({ retention }: { retention: RetentionData }) {
           <thead>
             <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
               <th className="py-2 pr-4 font-medium">세그먼트</th>
-              <th className="py-2 pr-4 text-right font-medium">D1</th>
-              <th className="py-2 pr-4 text-right font-medium">D3</th>
-              <th className="py-2 text-right font-medium">D7</th>
+              <th className="py-2 pr-4 text-right font-medium">
+                D1<InfoTip text="기준일 다음날(+1일) 이후 다시 온 비율." />
+              </th>
+              <th className="py-2 pr-4 text-right font-medium">
+                D3<InfoTip text="기준일+3일 이후 다시 온 비율." />
+              </th>
+              <th className="py-2 text-right font-medium">
+                D7<InfoTip text="기준일+7일 이후 다시 온 비율. 한 주 뒤에도 남아있는 핵심 정착 지표." />
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -174,10 +185,10 @@ function RetentionQuadrants({ retention }: { retention: RetentionData }) {
   )
 }
 
-function MiniStat({ label, value, sub }: { label: string; value: string; sub: string }) {
+function MiniStat({ label, value, sub, tip }: { label: string; value: string; sub: string; tip: string }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4">
-      <p className="text-xs text-zinc-500">{label}</p>
+      <p className="text-xs text-zinc-500">{label}<InfoTip text={tip} /></p>
       <p className="mt-1 text-xl font-bold text-zinc-900">{value}</p>
       <p className="mt-0.5 text-xs text-zinc-400">{sub}</p>
     </div>

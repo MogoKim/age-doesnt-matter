@@ -18,18 +18,10 @@ export interface InsightsData {
   northStar: {
     current: number
     previous: number
-    weekly: { weekLabel: string; returning: number }[]
+    weekly: { weekLabel: string; active: number }[]
   }
   channels: { channel: string; sessions: number; signups: number; signupRate: number; retentionRate: number }[]
   activation: { total: number; onboarded: number; wrote: number; commented: number; active: number }
-  retention: {
-    sessionTotal: number
-    sessionReturn: number
-    sessionReturnRate: number
-    loginUsers: number
-    loginReturn: number
-    loginReturnRate: number
-  }
 }
 
 function classifyChannel(ref: string): string {
@@ -58,8 +50,8 @@ export const getInsights = unstable_cache(
     const real = allUsers.filter((u) => isRealUser(u.providerId))
     const realIds = real.map((u) => u.id)
 
-    // ── 북극성: 주별 재방문 실고객 수 (page_view+userId / login 기반) ──
-    // weekBucket: 0=이번 주(최근 7일) … 7=8주 전. 가입버킷 > 활동버킷이면 "가입 이후 주에 다시 옴"=재방문.
+    // ── 북극성: 주간 활성 실고객(WAU) — 각 주에 방문/로그인한 실고객 수 ──
+    // weekBucket: 0=이번 주(최근 7일) … 7=8주 전. 활동=page_view(userId)/login.
     const weekBucket = (t: number) => Math.floor((now - t) / WEEK)
     const actEvents = realIds.length
       ? await prisma.eventLog.findMany({
@@ -80,20 +72,15 @@ export const getInsights = unstable_cache(
       if (!set) { set = new Set(); userActiveWeeks.set(e.userId, set) }
       set.add(b)
     }
-    const signupBucket = new Map<string, number>()
-    for (const u of real) signupBucket.set(u.id, weekBucket(u.createdAt.getTime()))
 
-    const weekly: { weekLabel: string; returning: number }[] = []
+    const weekly: { weekLabel: string; active: number }[] = []
     for (let b = 7; b >= 0; b--) {
-      let returning = 0
-      for (const u of real) {
-        const aw = userActiveWeeks.get(u.id)
-        if (aw?.has(b) && (signupBucket.get(u.id) ?? 0) > b) returning++
-      }
-      weekly.push({ weekLabel: b === 0 ? '이번 주' : `${b}주 전`, returning })
+      let active = 0
+      for (const u of real) if (userActiveWeeks.get(u.id)?.has(b)) active++
+      weekly.push({ weekLabel: b === 0 ? '이번 주' : `${b}주 전`, active })
     }
-    const current = weekly[weekly.length - 1]?.returning ?? 0
-    const previous = weekly[weekly.length - 2]?.returning ?? 0
+    const current = weekly[weekly.length - 1]?.active ?? 0
+    const previous = weekly[weekly.length - 2]?.active ?? 0
 
     // ── 30일 세션 이벤트 (채널·리텐션) ──
     const events = await prisma.eventLog.findMany({
@@ -143,17 +130,6 @@ export const getInsights = unstable_cache(
       active: real.filter((u) => u.postCount > 0 || u.commentCount > 0).length,
     }
 
-    // ── 리텐션 (세션 + login) ──
-    const sessIds = Object.keys(sVisitDays)
-    const sessionReturn = sessIds.filter((s) => sVisitDays[s].size >= 2).length
-    const loginDays: Record<string, Set<number>> = {}
-    for (const e of events) {
-      if (e.eventName !== 'login') continue
-      ;(loginDays[e.sessionId!] ??= new Set()).add(Math.floor((e.createdAt.getTime() + 9 * 3600000) / DAY))
-    }
-    const loginKeys = Object.keys(loginDays)
-    const loginReturn = loginKeys.filter((k) => loginDays[k].size >= 2).length
-
     return {
       generatedAt: new Date(now).toISOString(),
       realUserCount: real.length,
@@ -162,14 +138,6 @@ export const getInsights = unstable_cache(
       northStar: { current, previous, weekly },
       channels,
       activation,
-      retention: {
-        sessionTotal: sessIds.length,
-        sessionReturn,
-        sessionReturnRate: pct(sessionReturn, sessIds.length),
-        loginUsers: loginKeys.length,
-        loginReturn,
-        loginReturnRate: pct(loginReturn, loginKeys.length),
-      },
     }
   },
   ['admin-insights-v1'],
