@@ -271,10 +271,17 @@ export async function deletePost(postId: string): Promise<{ error?: string }> {
     return { error: '본인의 글만 삭제할 수 있습니다' }
   }
 
-  await prisma.post.update({
-    where: { id: postId },
-    data: { status: 'DELETED' },
-  })
+  // 글 삭제 + 작성자 postCount 감소를 단일 트랜잭션으로 (생성 시 increment와 대칭)
+  await prisma.$transaction([
+    prisma.post.update({
+      where: { id: postId },
+      data: { status: 'DELETED' },
+    }),
+    prisma.user.update({
+      where: { id: session.user.id },
+      data: { postCount: { decrement: 1 } },
+    }),
+  ])
 
   // R2 썸네일 삭제 (best-effort)
   if (post.thumbnailUrl) {

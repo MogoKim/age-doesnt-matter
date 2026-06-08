@@ -215,6 +215,11 @@ export async function deleteComment(commentId: string): Promise<CommentResult> {
       where: { id: comment.postId },
       data: { commentCount: { decrement: 1 } },
     }),
+    // 작성자 commentCount 감소 (생성 시 increment와 대칭 — 기존 누락분)
+    prisma.user.update({
+      where: { id: session.user.id },
+      data: { commentCount: { decrement: 1 } },
+    }),
   ])
 
   void (async () => {
