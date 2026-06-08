@@ -176,7 +176,6 @@ export function getBrowserEnv(): string {
   if (/iphone|ipad|ipod/i.test(ua)) return 'ios-safari'
   // TWA: android-app:// referrer = Play Store 설치 앱에서 실행 중
   if (document.referrer.startsWith('android-app://')) return 'twa-android'
-  if (matchMedia('(display-mode: standalone)').matches && /Android/i.test(ua) && !ua.includes('wv')) return 'twa-android'
   return 'android-chrome'
 }
 
