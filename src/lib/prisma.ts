@@ -36,7 +36,7 @@ function createPrismaClient() {
   const configuredPoolMax = Number.parseInt(process.env.WEB_DB_POOL_MAX ?? '', 10)
   const poolMax = Number.isFinite(configuredPoolMax) && configuredPoolMax > 0
     ? configuredPoolMax
-    : (isProduction ? 8 : 10)
+    : (isProduction ? 3 : 10)
 
   const pool = new Pool({
     host: parsed.host,
@@ -45,9 +45,10 @@ function createPrismaClient() {
     password: parsed.password,
     database: parsed.database,
     ssl: isProduction ? { rejectUnauthorized: false } : undefined,
-    // 서버리스 환경: 여러 Lambda/GHA가 동시에 뜨면 전체 DB 연결 200개를 빠르게 소진한다.
-    // production 기본 8개 — 어드민 대시보드가 7쿼리를 Promise.all로 동시 발사하므로 줄서기 방지.
-    // transaction pooler(6543)는 짧게 쓰고 즉시 반납하므로 8은 안전. footprint 우려 시 WEB_DB_POOL_MAX로 낮춘다.
+    // ⚠️ Supavisor(6543) client 연결 한도 200개 — 여러 Vercel 인스턴스 × pool + 에이전트가 이를 공유한다.
+    // pool을 키우면(인스턴스당 점유 ↑) 트래픽 많을 때 200을 더 빨리 소진해 전체가 연결을 못 얻는다.
+    // 그래서 production 기본 3개로 보수적 유지. 속도는 인덱스/캐시로 푼다(연결 추가 X).
+    // 2026-06-08: 8로 올렸다가 연결 포화(EMAXCONN) 확인하고 3으로 복귀. WEB_DB_POOL_MAX로 조정 가능.
     max: poolMax,
     // 15초: warm Lambda가 유휴 풀러(client) 슬롯을 빠르게 반납해 연결 footprint 축소
     // PgBouncer transaction mode → idle 연결이 PostgreSQL 슬롯 점유 없음
