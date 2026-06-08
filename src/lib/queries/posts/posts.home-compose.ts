@@ -77,8 +77,9 @@ async function _composeHomeSections(): Promise<HomeSectionsResult> {
         })
       : Promise.resolve([]),
     getTrendingQuotaPosts(),
-    getHomeBoardHotPostsRaw('STORY', 20),
-    getHomeBoardHotPostsRaw('HUMOR', 15),
+    // 최종 각 5개 사용. override(HIDE/PIN) + globallyShownIds 중복 제거 여유로 2배 풀 유지(20/15→10/8).
+    getHomeBoardHotPostsRaw('STORY', 10),
+    getHomeBoardHotPostsRaw('HUMOR', 8),
   ])
 
   const pinPostMap = new Map(pinPostsRaw.map(p => [p.id, toPostSummary(p)]))

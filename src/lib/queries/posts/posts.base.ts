@@ -56,14 +56,35 @@ export const postSelect = {
   },
 } as const
 
+/**
+ * 홈 섹션(지금뜨는이야기/사는이야기/웃음방) 전용 축소 select.
+ * 홈 카드는 썸네일 없는 텍스트 리스트(순위+제목+카테고리칩+댓글/조회수)만 렌더하므로
+ * summary(최대 500자)·thumbnailUrl·author(JOIN)·category·isPinned를 제외해 HTML 페이로드 축소.
+ * likeCount/commentCount/viewCount/createdAt은 calculateTrendingScore 재정렬 입력이라 유지.
+ * toPostSummary가 누락 필드를 기본값(''/null/DELETED_USER)으로 채워 PostSummary 타입 만족.
+ * [주의] author/썸네일을 표시하는 화면에 이 select를 쓰면 안 됨 — 홈 섹션 전용.
+ */
+export const homeListSelect = {
+  id: true,
+  boardType: true,
+  title: true,
+  slug: true,
+  likeCount: true,
+  commentCount: true,
+  viewCount: true,
+  promotionLevel: true,
+  trendingScore: true,
+  createdAt: true,
+} as const
+
 export function toPostSummary(
   post: {
     id: string
     boardType: BoardType
-    category: string | null
+    category?: string | null      // optional — homeListSelect 미포함 시 '' 기본값
     title: string
-    summary: string | null
-    thumbnailUrl: string | null
+    summary?: string | null       // optional — homeListSelect 미포함 시 '' 기본값
+    thumbnailUrl?: string | null  // optional — homeListSelect 미포함 시 null 기본값
     isPinned?: boolean
     likeCount: number
     commentCount: number
@@ -72,7 +93,7 @@ export function toPostSummary(
     trendingScore: number
     createdAt: Date
     slug?: string | null
-    author: { id: string; nickname: string; grade: string; profileImage: string | null } | null
+    author?: { id: string; nickname: string; grade: string; profileImage: string | null } | null  // optional — 미포함 시 DELETED_USER
     hotPromotedAt?: Date | null  // optional — 기존 7개 호출부 무변경
   },
 ): PostSummary {
@@ -82,8 +103,8 @@ export function toPostSummary(
     category: post.category ?? '',
     title: post.title,
     preview: post.summary ?? '',
-    thumbnailUrl: post.thumbnailUrl,
-    author: toUserSummary(post.author),
+    thumbnailUrl: post.thumbnailUrl ?? null,
+    author: toUserSummary(post.author ?? null),
     likeCount: post.likeCount,
     commentCount: post.commentCount,
     viewCount: post.viewCount,

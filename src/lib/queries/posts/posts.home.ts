@@ -2,7 +2,7 @@ import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
-import { postSelect, toPostSummary } from './posts.base'
+import { homeListSelect, toPostSummary } from './posts.base'
 
 // 24시간 롤링 기준 + engagement gate (글 작성 시점부터 24시간 이내 우선)
 // export: 뜨는이야기 쿼터 fetch(_getTrendingQuotaPosts)에서 uncached로 재사용
@@ -18,7 +18,7 @@ export async function getHomeBoardHotPostsRaw(boardType: BoardType, limit = 10):
       createdAt: { gte: since24h },
       OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
     },
-    select: postSelect,
+    select: homeListSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
     take: limit,
   })
@@ -31,7 +31,7 @@ export async function getHomeBoardHotPostsRaw(boardType: BoardType, limit = 10):
       boardType,
       createdAt: { gte: sevenDaysAgo },
     },
-    select: postSelect,
+    select: homeListSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
     take: limit,
   })

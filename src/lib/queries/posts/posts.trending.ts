@@ -145,7 +145,7 @@ export const getTrendingCommunityPosts = unstable_cache(
 async function _getTrendingQuotaPosts(): Promise<PostSummary[]> {
   // 후보 풀을 쿼터의 2배로 확장 — board별 currentScore 재정렬 후 쿼터만 선택 (P2)
   const [storyPosts, life2Posts, humorPosts] = await Promise.all([
-    getHomeBoardHotPostsRaw('STORY', 12),
+    getHomeBoardHotPostsRaw('STORY', 10),  // 쿼터 6의 약 1.7배 풀 (재정렬 품질 보존)
     getHomeBoardHotPostsRaw('LIFE2', 4),
     getHomeBoardHotPostsRaw('HUMOR', 4),
   ])
