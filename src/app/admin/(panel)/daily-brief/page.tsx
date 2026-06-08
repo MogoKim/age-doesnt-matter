@@ -1,22 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getDailyBrief, getDailyBriefs } from '@/lib/queries/admin'
+import { DESIRE_LABELS } from '@/lib/desire-labels'
 
 export const metadata: Metadata = { title: '욕망 지도' }
 export const dynamic = 'force-dynamic'
-
-const DESIRE_LABELS: Record<string, string> = {
-  HEALTH: '🏥 건강불안',
-  MONEY: '💰 경제불안',
-  RELATION: '🤝 연결갈망',
-  RETIRE: '🌅 인생2막',
-  JOB: '💼 일자리',
-  MEANING: '✨ 삶의의미',
-  HOBBY: '🎨 취미여가',
-  FAMILY: '👨‍👩‍👧 가족관계',
-  EMOTION: '💬 감정공감',
-  INFO: '📖 정보수집',
-}
 
 const EMOTION_LABELS: Record<string, string> = {
   LONELY: '외로움',

@@ -881,7 +881,7 @@ model CafePost {
 
   // AI 심리 분석 결과 (psych-analyzer.ts)
   emotionTags      String[] // ["ANXIOUS", "LONELY"] — docs/desire_taxonomy.md 참고
-  desireCategory   String?  // "HEALTH"|"FAMILY"|"MONEY"|"RETIRE"|"JOB"|"RELATION"|"HOBBY"|"MEANING"|"DIGNITY"|"LEGACY"|"CARE"|"FREEDOM"|"ENTERTAIN"
+  desireCategory   String?  // 정규 21개(SSOT: agents/cafe/desire-taxonomy.ts · src/lib/desire-labels.ts): HEALTH|FAMILY|MONEY|RETIRE|JOB|RELATION|HOBBY|MEANING|DIGNITY|LEGACY|CARE|FREEDOM|HUMOR|ENTERTAIN|BEAUTY|DIGITAL|FOOD|SPIRITUAL|HOUSING|FASHION|PET
   desireType       String?  // "big_desire" | "need" | "want" | "demerit"
   psychInsight     String?  // 1줄 심리 요약 (예: "갱년기 증상 불안, 정보 갈증")
   urgencyLevel     Int?     // 1(일상관심) ~ 5(즉각위기)

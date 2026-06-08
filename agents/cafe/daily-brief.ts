@@ -18,29 +18,16 @@ import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import type { DailyIntelligenceBrief, DesireRankItem, UrgentTopic, PersonaQuota, ContentDirective, DataSourceBias, ControversyTopic } from '../core/intelligence.js'
 import type { TrendAnalysis } from './types.js'
+import { DESIRE_CATEGORIES } from './desire-taxonomy.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BRIEF_PATH = resolve(__dirname, '../core/today-brief.json')
 
 const isPatch = process.argv.includes('--patch')
 
-// ── 욕망 카테고리 레이블 ──
+// ── 욕망 카테고리 레이블 (SSOT: desire-taxonomy.ts 21개) ──
 
-const DESIRE_LABELS: Record<string, string> = {
-  HEALTH:   '건강/증상/병원',
-  FAMILY:   '가족/자녀/남편/손주',
-  MONEY:    '돈/재테크/연금',
-  RETIRE:   '은퇴/노후/인생2막',
-  JOB:      '일자리/자격증/부업',
-  RELATION: '관계/외로움/소통',
-  HOBBY:    '취미/여가/활동',
-  MEANING:  '삶의 의미/철학',
-  DIGNITY:  '존중/인정/자존감',
-  LEGACY:   '자식에게 남기기/기억',
-  CARE:     '돌봄/간병/의존',
-  FREEDOM:  '자유/독립/나만의 시간',
-  ENTERTAIN:'연예/드라마/팬덤',
-}
+const DESIRE_LABELS: Record<string, string> = DESIRE_CATEGORIES
 
 // ── 콘텐츠 방향 규칙 ──
 

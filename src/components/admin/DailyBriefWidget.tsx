@@ -1,17 +1,5 @@
 import Link from 'next/link'
-
-const DESIRE_LABELS: Record<string, string> = {
-  HEALTH: '🏥 건강불안',
-  MONEY: '💰 경제불안',
-  RELATION: '🤝 연결갈망',
-  RETIRE: '🌅 인생2막',
-  JOB: '💼 일자리',
-  MEANING: '✨ 삶의의미',
-  HOBBY: '🎨 취미여가',
-  FAMILY: '👨‍👩‍👧 가족관계',
-  EMOTION: '💬 감정공감',
-  INFO: '📖 정보수집',
-}
+import { DESIRE_LABELS } from '@/lib/desire-labels'
 
 interface DesireItem {
   category: string
