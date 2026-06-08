@@ -24,7 +24,7 @@ import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
 import { generateCommunitySlug } from '../core/slug.js'
 import { readPendingRows, updateRow } from './sheets-client.js'
-import { detectSite, normalizeNaverCafeUrl, randomUserAgent, isCloudflareChallenge, type SiteConfig } from './site-configs.js'
+import { detectSite, normalizeNaverCafeUrl, resolveNaverShortUrl, randomUserAgent, isCloudflareChallenge, type SiteConfig } from './site-configs.js'
 import { processContentMedia } from './image-pipeline.js'
 import { transformContent, transformRawContent, classifyCategory } from './content-transformer.js'
 
@@ -397,8 +397,12 @@ export async function main() {
           console.log(`[sheet-scraper] [${totalProcessed}/${totalRows}] ${row.sourceUrl}`)
 
           try {
+            // naver.me 단축링크 → 실제 URL 해석 (naver.me 아니면 원본 그대로)
+            const resolvedUrl = await resolveNaverShortUrl(row.sourceUrl)
             // 네이버 카페 구형 URL → f-e article URL 정규화 (Sheet 원본 source_url은 불변)
-            const normalizedUrl = normalizeNaverCafeUrl(row.sourceUrl)
+            const normalizedUrl = normalizeNaverCafeUrl(resolvedUrl)
+            // dedup/저장 키: naver.me로 해석된 행만 정규화 URL 사용 (비-naver 행은 기존 동작 유지 → 회귀 방지)
+            const effectiveUrl = resolvedUrl !== row.sourceUrl ? normalizedUrl : row.sourceUrl
 
             // 사이트 감지 (필터링 전에 먼저 수행 — PROCESSING 마킹 방지)
             const siteConfig = detectSite(normalizedUrl)
@@ -435,7 +439,7 @@ export async function main() {
 
             // 중복 체크 — 삭제된 게시글은 재활용(update), 활성 게시글은 파동 유무 확인 후 처리
             const existingActive = await prisma.post.findFirst({
-              where: { sourceUrl: row.sourceUrl, status: { not: 'DELETED' } },
+              where: { sourceUrl: effectiveUrl, status: { not: 'DELETED' } },
               select: { id: true, title: true, content: true },
             })
             if (existingActive) {
@@ -544,7 +548,7 @@ export async function main() {
               continue
             }
             const existingDeleted = await prisma.post.findFirst({
-              where: { sourceUrl: row.sourceUrl, status: 'DELETED' },
+              where: { sourceUrl: effectiveUrl, status: 'DELETED' },
               select: { id: true, slug: true },
             })
 
@@ -642,7 +646,7 @@ export async function main() {
               authorId: userId,
               source: 'SHEET' as const,
               status: 'PUBLISHED' as const,
-              sourceUrl: row.sourceUrl,
+              sourceUrl: effectiveUrl,
               sourceSite: siteConfig.id,
               thumbnailUrl,
               publishedAt: new Date(),

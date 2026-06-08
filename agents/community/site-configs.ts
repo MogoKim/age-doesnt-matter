@@ -220,6 +220,34 @@ export function normalizeNaverCafeUrl(url: string): string {
 }
 
 /**
+ * naver.me 단축 리다이렉트 링크 → 실제 URL 해석
+ * - naver.me 가 아니면 원본 그대로 반환
+ * - naver.me/XXX → 307 Location 따라가 실제 cafe/blog URL 반환 (최대 3-hop)
+ * - 네트워크 실패/타임아웃 시 원본 반환 (기존대로 detectSite가 처리)
+ */
+export async function resolveNaverShortUrl(url: string): Promise<string> {
+  if (!/^https?:\/\/naver\.me\//i.test(url)) return url
+  try {
+    let cur = url
+    for (let i = 0; i < 3; i++) {
+      const res = await fetch(cur, {
+        method: 'GET',
+        redirect: 'manual',
+        headers: { 'User-Agent': randomUserAgent() },
+        signal: AbortSignal.timeout(8000),
+      })
+      const loc = res.headers.get('location')
+      if (!loc) return cur
+      cur = loc.startsWith('http') ? loc : new URL(loc, cur).toString()
+      if (!/^https?:\/\/naver\.me\//i.test(cur)) return cur
+    }
+    return cur
+  } catch {
+    return url
+  }
+}
+
+/**
  * Chrome User-Agent 로테이션
  */
 const USER_AGENTS = [

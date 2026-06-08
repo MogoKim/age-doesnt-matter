@@ -84,7 +84,13 @@ export async function readPendingRows(): Promise<SheetTab[]> {
       const sourceUrl = (r[0] ?? '').trim()
       if (!sourceUrl) continue
 
-      const status = (r[1] ?? '').trim().toUpperCase() || 'PENDING'
+      const rawStatus = (r[1] ?? '').trim().toUpperCase() || 'PENDING'
+      // 알려진 상태값이 아니면(예: 외부 요인으로 B칸에 URL/쓰레기값 유입) PENDING으로 간주 — 영구 스킵 방지(자가복구)
+      const KNOWN_STATUS = ['PENDING', 'PROCESSING', 'PUBLISHED', 'FAILED', 'SKIPPED', 'SKIP', 'PARTIAL', 'HOLD']
+      const status = KNOWN_STATUS.includes(rawStatus) ? rawStatus : 'PENDING'
+      if (status !== rawStatus) {
+        console.warn(`[sheets] 행 ${i + 1} status 비정상("${(r[1] ?? '').slice(0, 40)}") → PENDING 처리`)
+      }
 
       if (status === 'PENDING') {
         rows.push({
