@@ -5,13 +5,15 @@
 import { prisma } from '../core/db.js'
 import { sendSlackMessage } from '../core/notifier.js'
 import { readAllSheetUrls, countPendingTotal, appendRow } from '../community/sheets-client.js'
+import { isStoryGuarded } from './curator-shared.js'
 
 const DAY_CAP = 3
 const TAB_CAP = 1
 const PENDING_BACKLOG_LIMIT = 10
 
 const HUMOR_CATS = new Set(['HUMOR', 'ENTERTAIN'])
-const MONEY_CATS = new Set(['MONEY', 'RETIRE', 'HOUSING', 'JOB'])
+// JOB 제외 — JOB(자격증·정보성)은 STORY(사는이야기)로. 재취업 맥락은 psych가 RETIRE로 매겨 LIFE2.
+const MONEY_CATS = new Set(['MONEY', 'RETIRE', 'HOUSING'])
 
 function resolveTab(desireCategory: string | null, isPopular: boolean, killerScore: number): string {
   const hot = isPopular || killerScore >= 75
@@ -148,7 +150,9 @@ export async function main(): Promise<void> {
 
     for (const c of deduped) {
       if (selected.length >= remainingCap) break
-      const tab = resolveTab(c.desireCategory, c.isPopular, c.killerScore)
+      // 제목 guard 후처리 — psych가 LIFE2로 매겼어도 생활/소음/고장/돌봄 신호만 있으면 STORY로 강등
+      const effectiveDesire = isStoryGuarded(c.title) ? 'GENERAL' : c.desireCategory
+      const tab = resolveTab(effectiveDesire, c.isPopular, c.killerScore)
       if ((tabCount[tab] ?? 0) >= TAB_CAP) continue
       tabCount[tab] = (tabCount[tab] ?? 0) + 1
       selected.push({ tab, postUrl: c.postUrl, cafePostId: c.id, killerScore: c.killerScore })

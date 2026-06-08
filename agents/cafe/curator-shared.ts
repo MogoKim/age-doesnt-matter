@@ -958,8 +958,8 @@ export function resolveCommunityBoard(desire: string): { boardType: 'STORY' | 'H
 const DESIRE_KEYWORDS: Record<string, string[]> = {
   HEALTH:   ['건강', '병원', '약', '증상', '통증', '다이어트', '운동', '혈압', '당뇨', '갱년기', '검진'],
   FAMILY:   ['자녀', '아들', '딸', '남편', '며느리', '손주', '부모', '시어머니', '가족', '부부'],
-  MONEY:    ['돈', '재테크', '연금', '절약', '투자', '부동산', '물가', '주식', '적금', '노후', '코스피', '코스닥', '나스닥', 'etf', '커버드콜', '코덱스', 'kodex', '하이닉스', '삼성전자', '배당', '배당주', '미국주식'],
-  RETIRE:   ['은퇴', '퇴직', '노후', '일자리', '재취업', '인생2막', '정년'],
+  MONEY:    ['돈', '재테크', '연금', '절약', '투자', '부동산', '물가', '주식', '적금', '노후', '코스피', '코스닥', '나스닥', 'etf', '커버드콜', '코덱스', 'kodex', '하이닉스', '삼성전자', '배당', '배당주', '미국주식', '폭락', '폭락장', '검은월요일', '재산분배', '자산분배', '상속', '증여', '수익인증', '유지비'],
+  RETIRE:   ['은퇴', '퇴직', '노후', '일자리', '재취업', '인생2막', '정년', '임피', '임금피크', 'dc전환', 'db형', 'dc형', '퇴직연금', '정년연장', '제2의인생', '은퇴후일자리'],
   RELATION: ['친구', '모임', '갈등', '화해', '관계', '이웃', '섭섭'],
   HOBBY:    ['취미', '여행', '등산', '텃밭', '독서', '공예', '수영', '골프', '바둑', '자전거', '캠핑', '낚시', '뜨개질', '서예', '그림', '꽃꽂이'],
   MEANING:  ['삶', '의미', '행복', '감사', '성찰', '기억', '회고'],
@@ -969,7 +969,7 @@ const DESIRE_KEYWORDS: Record<string, string[]> = {
   DIGITAL:  ['스마트폰', '앱', '유튜브', '카카오', '키오스크', 'SNS', '유튜버', '인터넷'],
   FOOD:     ['맛집', '요리', '음식', '식당', '레시피', '먹방', '건강식', '식단'],
   SPIRITUAL:['종교', '기도', '사주', '운세', '교회', '절', '성당', '명상', '불교'],
-  HOUSING:  ['집', '이사', '인테리어', '전세', '월세', '아파트', '청약', '주거'],
+  HOUSING:  ['이사', '인테리어', '전세', '월세', '아파트', '청약', '주거', '집값', '매매', '분양가'],
   FASHION:  ['옷', '패션', '스타일', '코디', '쇼핑', '명품', '브랜드'],
   PET:      ['강아지', '고양이', '반려견', '반려묘', '동물병원', '펫', '반려동물'],
 }
@@ -1007,12 +1007,86 @@ export function matchPersona(topic: string, desireCat?: string): PersonaMatch {
   return bestMatch
 }
 
-/** 글 제목으로 욕망 카테고리 추론 */
+/**
+ * LIFE2 강신호 키워드 — guessDesire 스코어링에서 +3 가중 (일반 키워드 +1).
+ * "이 단어 하나면 LIFE2(재테크/은퇴/주거) 주제 확정" 수준의 신호.
+ */
+const STRONG_LIFE2_KEYWORDS = new Set([
+  // MONEY
+  '폭락', '폭락장', '검은월요일', '재산분배', '자산분배', '상속', '증여', '수익인증', '유지비',
+  '코스피', '코스닥', '나스닥', '배당', '미국주식', '재테크', '연금',
+  // RETIRE
+  '임피', '임금피크', 'dc전환', 'db형', 'dc형', '퇴직연금', '정년연장', '재취업', '제2의인생', '인생2막', '은퇴후일자리',
+  // HOUSING
+  '집값', '매매', '분양가',
+])
+
+/**
+ * STORY 보호 키워드 — 생활/소음/고장/돌봄 신호. 매칭 시 LIFE2(MONEY/HOUSING) 점수 감점.
+ * 단 돈·은퇴 신호(GUARD_OVERRIDE/강신호)가 함께 있으면 미적용 — "정리정돈으로 보는 노후자금"은 LIFE2 유지.
+ */
+export const STORY_GUARD_KEYWORDS = [
+  '집정리', '짐정리', '드레스룸', '미니멀', '비우기', '정리정돈',
+  '윗집', '아랫집', '발망치', '층간소음',
+  '고장', '수리', 'as신청', 'as기사',
+  '병간호', '간병', '돌봄',
+]
+
+/** STORY_GUARD를 무효화하는 돈·은퇴 핵심 신호 */
+const GUARD_OVERRIDE_KEYWORDS = ['노후', '은퇴', '퇴직', '재테크', '투자', '연금', '자금']
+
+/**
+ * 제목에 STORY_GUARD 신호만 있고 돈·은퇴 신호가 전혀 없으면 true (LIFE2 강등 대상).
+ * image-router(psych 경로)의 제목 후처리에서도 재사용.
+ */
+export function isStoryGuarded(topicStr: string | null | undefined): boolean {
+  if (!topicStr) return false
+  const lower = topicStr.toLowerCase()
+  const hasGuard = STORY_GUARD_KEYWORDS.some(kw => lower.includes(kw))
+  if (!hasGuard) return false
+  const hasMoneyRetire =
+    GUARD_OVERRIDE_KEYWORDS.some(kw => lower.includes(kw)) ||
+    [...STRONG_LIFE2_KEYWORDS].some(kw => lower.includes(kw))
+  return !hasMoneyRetire
+}
+
+/**
+ * 글 제목으로 욕망 카테고리 추론 (가중 스코어링).
+ * - LIFE2 강신호 +3, 일반 키워드 +1
+ * - STORY_GUARD(생활/소음/고장/돌봄)만 있고 돈·은퇴 신호 없으면 MONEY/HOUSING −3
+ * - argmax. 동점 시 STORY 계열 우선(over-classification 방지), LIFE2 내부 동점은 DESIRE_KEYWORDS 선언 순서(MONEY 우선).
+ */
 export function guessDesire(topicStr: string | null | undefined): string {
   if (!topicStr) return 'GENERAL'
   const lower = topicStr.toLowerCase()
+
+  const scores: Record<string, number> = {}
   for (const [cat, keywords] of Object.entries(DESIRE_KEYWORDS)) {
-    if (keywords.some(kw => lower.includes(kw))) return cat
+    for (const kw of keywords) {
+      if (lower.includes(kw)) {
+        scores[cat] = (scores[cat] ?? 0) + (STRONG_LIFE2_KEYWORDS.has(kw) ? 3 : 1)
+      }
+    }
   }
-  return 'GENERAL'
+
+  if (isStoryGuarded(topicStr)) {
+    if (scores['MONEY'] !== undefined) scores['MONEY'] -= 3
+    if (scores['HOUSING'] !== undefined) scores['HOUSING'] -= 3
+  }
+
+  // argmax — 동점 시 STORY 계열 우선(현재 best가 LIFE2이고 동점 후보가 STORY면 교체)
+  let best = 'GENERAL'
+  let bestScore = 0
+  let bestIsLife2 = false
+  for (const cat of Object.keys(DESIRE_KEYWORDS)) {
+    const s = scores[cat] ?? 0
+    if (s <= 0) continue
+    const isLife2 = DESIRE_TO_BOARD[cat]?.boardType === 'LIFE2'
+    if (s > bestScore || (s === bestScore && bestIsLife2 && !isLife2)) {
+      bestScore = s
+      best = cat
+      bestIsLife2 = isLife2
+    }
+  }
+  return best
 }
