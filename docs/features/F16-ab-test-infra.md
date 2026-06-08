@@ -32,11 +32,13 @@
 ## 현재 등록 실험
 - `f01_signup_content` — 가입배너 문구 A/B/C (혜택/재미/공감)
 - `f01_signup_timing` — 가입배너 타이밍 early(현행) vs read_complete(정독 85% 후)
+- `twa01_entry_gate` — TWA 첫 진입 가입 게이트 A(현행)/B(soft)/C(hard). 측정=가입 후 앱 재방문(D1/D7), funnel 아님.
 
 ## 이력
 | 날짜 | 변경 | 이유 |
 |---|---|---|
 | 2026-06-07 | 인프라 신규 — 레지스트리/배정/통계 + 어드민 현황·편집 + ExperimentState | A/B 다수 진행 위한 중앙 운영·기록·관리 |
+| 2026-06-08 | 어드민에 게이트 재방문(D1/D7) 카드 연결 + 게이트를 funnel 목록에서 분리 | 게이트 A(현행)는 노출 이벤트가 없어 funnel 분모 0 → A 0% 오표시. 게이트는 `getGateRetention` 재방문 지표로만 본다(`page.tsx` `GateExperimentCard`). |
 
 ## 비고 / 후속
 - **F01 SignupPromptBanner는 EventLog 이벤트로 이미 어드민에 집계됨** → 어드민 현황은 마이그레이션과 무관하게 F01 실데이터 표시.

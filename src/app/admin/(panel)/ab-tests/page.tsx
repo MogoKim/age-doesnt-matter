@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { getWebExperiments, getTwaSignupRetention } from '@/lib/queries/admin'
-import type { WebExperimentView, VariantStat, TwaRetention } from '@/lib/queries/admin/admin.experiments-web'
+import { getWebExperiments, getTwaSignupRetention, getGateRetention } from '@/lib/queries/admin'
+import type { WebExperimentView, VariantStat, TwaRetention, GateRetentionRow } from '@/lib/queries/admin/admin.experiments-web'
 import type { Confidence } from '@/lib/experiments/stats'
 import PeriodFilter from './PeriodFilter'
 import ExperimentStatePanel from './ExperimentStatePanel'
@@ -85,6 +85,95 @@ function TwaBaselineCard({ r }: { r: TwaRetention }) {
   )
 }
 
+// 실험 메타(목적·배경·가설·확인) — 펀넬 카드와 게이트 카드 공용
+function ExperimentMeta({ exp }: { exp: WebExperimentView }) {
+  return (
+    <dl className="mb-4 space-y-1.5 rounded-lg bg-zinc-50 p-3 text-sm">
+      <div className="flex gap-2">
+        <dt className="w-16 shrink-0 text-zinc-500">🎯 목적</dt>
+        <dd className="text-zinc-800">{exp.purpose}</dd>
+      </div>
+      <div className="flex gap-2">
+        <dt className="w-16 shrink-0 text-zinc-500">📌 배경</dt>
+        <dd className="text-zinc-700">{exp.background}</dd>
+      </div>
+      <div className="flex gap-2">
+        <dt className="w-16 shrink-0 text-zinc-500">💡 가설</dt>
+        <dd className="text-zinc-700">{exp.hypothesis}</dd>
+      </div>
+      <div className="flex gap-2">
+        <dt className="w-16 shrink-0 text-zinc-500">🔍 확인</dt>
+        <dd className="text-zinc-600">{exp.howToVerify}</dd>
+      </div>
+    </dl>
+  )
+}
+
+// 게이트 실험(twa01_entry_gate) 전용 카드 — funnel(전환율)이 아니라 그룹별 가입 후 재방문(D1/D7)으로 비교.
+//  게이트 A(현행)는 노출 이벤트가 없어 funnel 분모가 0 → A가 0%로 오독됨. 그래서 게이트는 재방문 지표로만 본다.
+function GateExperimentCard({ exp, rows }: { exp: WebExperimentView; rows: GateRetentionRow[] }) {
+  const total = rows.reduce((s, r) => s + r.signupCount, 0)
+  const isLive = exp.status !== 'CONCLUDED' && exp.status !== 'DRAFT'
+  return (
+    <div className={`rounded-xl border bg-white p-5 ${isLive ? 'border-[#FF6F61]/30' : 'border-zinc-200'}`}>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <StatusBadge status={exp.status} />
+        <h2 className="text-base font-bold text-zinc-900">{exp.name}</h2>
+        <span className="text-xs text-zinc-400">담당 {exp.owner}</span>
+        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">📱 앱 재방문으로 측정</span>
+      </div>
+
+      <ExperimentMeta exp={exp} />
+
+      <div className="overflow-hidden rounded-lg border border-zinc-200">
+        <table className="w-full text-sm">
+          <thead className="bg-zinc-50 text-xs text-zinc-500">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium">그룹</th>
+              <th className="px-3 py-2 text-right font-medium">가입자</th>
+              <th className="px-3 py-2 text-right font-medium">D1 재방문</th>
+              <th className="px-3 py-2 text-right font-medium">D7 재방문</th>
+              <th className="px-3 py-2 text-right font-medium">첫 활동</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.variant} className="border-t border-zinc-100">
+                <td className="px-3 py-2 font-medium text-zinc-700">{r.label}</td>
+                <td className="px-3 py-2 text-right text-zinc-800">{r.signupCount}명</td>
+                <td className="px-3 py-2 text-right text-zinc-800">{r.d1ReturnRate}%</td>
+                <td className="px-3 py-2 text-right text-zinc-800">{r.d7ReturnRate}%</td>
+                <td className="px-3 py-2 text-right text-zinc-800">{r.firstActionRate}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="mt-3 text-xs leading-relaxed text-zinc-500">
+        A(현행·대조군) 대비 B·C가 <b>가입 후 앱 재방문(D1/D7)</b>을 높이는지가 핵심입니다.
+        가입률(funnel)은 게이트 특성상 비교가 부적합해 제외했습니다. (최근 90일 · 봇 제외)
+      </p>
+      {total < 30 && (
+        <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-700">
+          ⚠️ 전체 가입 {total}명 — 표본이 적어 아직 판단 보류(방향성 참고용). 데이터가 더 쌓이면 자동 갱신됩니다.
+        </p>
+      )}
+
+      {exp.note && <p className="mt-2 rounded-lg bg-blue-50 p-2 text-xs text-blue-800">📝 {exp.note}</p>}
+      {exp.conclusion && <p className="mt-2 rounded-lg bg-green-50 p-2 text-xs text-green-800">✅ 결론: {exp.conclusion}</p>}
+
+      <ExperimentStatePanel
+        experimentId={exp.id}
+        status={exp.status}
+        owner={exp.owner}
+        note={exp.note}
+        conclusion={exp.conclusion}
+      />
+    </div>
+  )
+}
+
 function ExperimentCard({ exp }: { exp: WebExperimentView }) {
   const maxRate = Math.max(...exp.variants.map((v) => v.rate), 0)
   const enough = exp.confidence !== 'insufficient'
@@ -164,13 +253,17 @@ export default async function AdminAbTestsPage({
   const sp = await searchParams
   const period = sp.period ?? '30'
   const days = PERIOD_DAYS[period] ?? 30
-  const [experiments, twaRetention] = await Promise.all([
+  const [experiments, twaRetention, gateRetention] = await Promise.all([
     getWebExperiments(days),
     getTwaSignupRetention(90),
+    getGateRetention(90),
   ])
 
-  const active = experiments.filter((e) => e.status !== 'CONCLUDED')
-  const concluded = experiments.filter((e) => e.status === 'CONCLUDED')
+  // 게이트 실험은 funnel(전환율)이 아니라 재방문 지표로 별도 표시 → web 펀넬 목록에서 분리
+  const gateExp = experiments.find((e) => e.id === 'twa01_entry_gate')
+  const webExperiments = experiments.filter((e) => e.id !== 'twa01_entry_gate')
+  const active = webExperiments.filter((e) => e.status !== 'CONCLUDED')
+  const concluded = webExperiments.filter((e) => e.status === 'CONCLUDED')
 
   return (
     <div className="space-y-5">
@@ -186,7 +279,9 @@ export default async function AdminAbTestsPage({
 
       <TwaBaselineCard r={twaRetention} />
 
-      {experiments.length === 0 && (
+      {gateExp && <GateExperimentCard exp={gateExp} rows={gateRetention} />}
+
+      {webExperiments.length === 0 && (
         <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-zinc-400">
           등록된 실험이 없습니다. <code className="text-zinc-500">src/lib/experiments/registry.ts</code>에 추가하세요.
         </div>
