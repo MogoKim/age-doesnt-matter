@@ -28,6 +28,11 @@ export interface InsightsData {
 function classifyChannel(ref: string, utmSource: string, utmMedium: string): string {
   // 1) 레퍼럴(카카오 공유) — 띠배너/게시글 공유 URL의 utm_medium=kakao_share
   if (utmMedium === 'kakao_share') return '카카오 레퍼럴'
+  // 1-b) 캠페인 UTM 우선 — SNS 인앱/네이버 블로그는 referrer가 비어 referrer 분류로 안 잡힘
+  if (utmSource === 'threads') return 'Threads'
+  if (utmSource === 'instagram' && utmMedium === 'social') return 'Instagram'
+  if (utmSource === 'facebook' && utmMedium === 'social') return 'Facebook'
+  if (utmSource === 'naver' && utmMedium === 'blog') return '네이버 블로그'
   // 2) TWA 앱 — google-play utm 또는 android-app referrer
   if (utmSource === 'google-play' || ref.startsWith('android-app://')) return 'TWA 앱'
   // 3) 카카오 로그인 리다이렉트(내부 이동) = 유입 채널 아님 → 직접입력 처리
