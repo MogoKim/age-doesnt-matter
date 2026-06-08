@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
@@ -86,33 +87,70 @@ export default function TwaEntryGate() {
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col justify-end bg-black/50 sm:items-center sm:justify-center">
-      <div
-        className={
-          isHard
-            ? 'flex min-h-[100dvh] w-full flex-col items-center justify-center gap-6 bg-white px-6 text-center sm:min-h-0 sm:max-w-md sm:rounded-2xl sm:py-12'
-            : 'w-full rounded-t-2xl bg-white px-6 pb-8 pt-6 text-center sm:max-w-md sm:rounded-2xl'
-        }
-      >
-        <div>
-          <p className="text-2xl">💛</p>
-          <h2 className="mt-2 text-xl font-bold text-zinc-900">우리 또래 이야기, 같이 나눠요</h2>
-          <p className="mt-2 whitespace-pre-line text-[17px] leading-relaxed text-zinc-600">
-            {isHard ? '50·60대 이웃들과 매일 새 이야기.\n카카오로 1초만에 시작하세요.' : '더 보시려면 카카오로 시작하세요.\n내 글 저장·알림도 받을 수 있어요.'}
-          </p>
+      {isHard ? (
+        /* C(hard) — 정식 로그인 화면 디자인 재사용(로고+브랜드+카카오 버튼) + 탈출구 */
+        <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-background sm:min-h-0 sm:max-w-md sm:rounded-2xl">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-0"
+            style={{ background: 'linear-gradient(0deg, rgba(255,111,97,0.06) 0%, #fff 38%)' }}
+          />
+          <div className="relative z-10 flex flex-1 flex-col">
+            <div className="my-auto flex flex-col items-center gap-[22px] px-8 py-8">
+              <Image src="/logo.png" width={120} height={120} alt="우나어 로고" className="object-contain" priority />
+              <p className="text-center text-[30px] font-bold leading-[1.4]">
+                <span className="text-foreground">신중년 여성을 위한</span>
+                <br />
+                <span className="text-[#FF6F61]">고민 상담소</span>
+              </p>
+              <p className="text-center text-[18px] text-muted-foreground">지금 가입하고 나의 고민을 나눠보세요</p>
+            </div>
+            <div className="mt-auto px-6 pb-[68px] md:pb-[60px]">
+              <button
+                type="button"
+                onClick={onSignup}
+                disabled={starting}
+                aria-busy={starting}
+                className="flex h-[54px] w-full items-center justify-center gap-2 rounded-xl font-bold transition-all hover:brightness-95"
+                style={{ background: '#FEE500', color: '#191919', boxShadow: '0 2px 8px rgba(254,229,0,0.35)' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M10 2C5.582 2 2 4.925 2 8.5c0 2.26 1.37 4.25 3.46 5.43l-.9 3.3a.25.25 0 0 0 .38.27L8.8 15.5c.39.05.79.08 1.2.08 4.418 0 8-2.925 8-6.5S14.418 2 10 2Z" fill="currentColor" />
+                </svg>
+                {starting ? '카카오로 이동 중...' : '카카오로 3초 만에 시작하기'}
+              </button>
+              <button onClick={onEscape} className="mt-3 min-h-[44px] w-full text-[15px] text-muted-foreground underline">
+                먼저 둘러볼게요
+              </button>
+            </div>
+          </div>
         </div>
-
-        <button
-          onClick={onSignup}
-          disabled={starting}
-          className="min-h-[52px] w-full rounded-xl bg-[#FEE500] px-4 text-[17px] font-bold text-[#3C1E1E] disabled:opacity-60"
-        >
-          {starting ? '잠시만요…' : '카카오로 시작하기'}
-        </button>
-
-        <button onClick={onEscape} className="min-h-[44px] text-[15px] text-zinc-400 underline">
-          먼저 둘러볼게요
-        </button>
-      </div>
+      ) : (
+        /* B(soft) — 하단 시트(로그인 카카오 버튼 톤 통일) */
+        <div className="w-full rounded-t-2xl bg-background px-6 pb-8 pt-7 text-center sm:max-w-md sm:rounded-2xl">
+          <p className="text-2xl">💛</p>
+          <h2 className="mt-2 text-xl font-bold text-foreground">조금 더 보시겠어요?</h2>
+          <p className="mt-2 whitespace-pre-line text-[17px] leading-relaxed text-muted-foreground">
+            {'카카오로 가입하면 이어서 볼 수 있어요.\n내 글 저장·알림도 받아요.'}
+          </p>
+          <button
+            type="button"
+            onClick={onSignup}
+            disabled={starting}
+            aria-busy={starting}
+            className="mt-5 flex h-[54px] w-full items-center justify-center gap-2 rounded-xl font-bold transition-all hover:brightness-95"
+            style={{ background: '#FEE500', color: '#191919', boxShadow: '0 2px 8px rgba(254,229,0,0.35)' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 2C5.582 2 2 4.925 2 8.5c0 2.26 1.37 4.25 3.46 5.43l-.9 3.3a.25.25 0 0 0 .38.27L8.8 15.5c.39.05.79.08 1.2.08 4.418 0 8-2.925 8-6.5S14.418 2 10 2Z" fill="currentColor" />
+            </svg>
+            {starting ? '카카오로 이동 중...' : '카카오로 3초 만에 시작하기'}
+          </button>
+          <button onClick={onEscape} className="mt-3 min-h-[44px] text-[15px] text-muted-foreground underline">
+            먼저 둘러볼게요
+          </button>
+        </div>
+      )}
     </div>
   )
 }
