@@ -244,7 +244,7 @@ export const CARDS: Card[] = [
   s('C-BL-SHEET-HALLU', 'SHEET 순수 hallucination 방지', 'T3-봇', '백로그', 'source/본문 둘 다 없는 창작 사실 검출'),
   s('C-BL-IMG-COMMENT', '이미지/초단문 글 댓글 정책 강화', 'T3-봇', '백로그', 'source 신뢰도 낮은 글 skip/저강도 댓글'),
   s('C-BL-OPS-REPORT-V2', '운영 리포트 v2', 'T1-검증', '백로그', '댓글 품질/source 품질/FAILED 리포트 확장'),
-  s('C-BL-TWA-AB', 'TWA 첫 진입 A/B 테스트 (게이트)', 'T2-성능', '백로그', 'Phase0 측정인프라 배포완료(5aba2c9): TWA 가입자 D1/D7 재방문+첫활동 baseline 어드민 표시. Phase1 게이트(A34현행/B33soft/C33hard, 신규TWA만) UI는 baseline 보고 결정. 기획: plans/iterative. 함정=가입률단독, 정답=가입후재방문. 운영 3~6개월'),
+  s('C-BL-TWA-AB', 'TWA 첫 진입 A/B 테스트 (게이트)', 'T2-성능', '배포완료', 'Phase1 게이트 배포완료(a9c9a5c, 2026-06-08): 신규 TWA 사용자 A34현행/B33soft(글3개후)/C33hard(첫화면)+탈출구. sign_up 그룹기록·twa_gate_view 노출·getGateRetention 재방문측정·TWA배너OFF(오염차단). 함정=가입률단독, 정답=가입후 D1/D7재방문. ⚠️실기기(안드로이드) 테스트 필요. 운영 3~6개월·위너 유의시 100%도입'),
   s('C-BL-AB-ADMIN', 'A/B 테스트 어드민 (F16 인프라)', 'T2-성능', '배포완료-적용확인', '배포완료(f63717c, 2026-06-07): 실험 레지스트리(SSOT) + /admin/ab-tests 현황(variant별 전환율+신뢰배지) + 상태/결론 편집 + 표준절차. 🔔 ExperimentState 마이그레이션 후 편집 작동(현황은 즉시). 단계5(F01 배정통일) 선택 보류'),
   s('C-BL-COMMENT-CACHE', '댓글 per-user cache 분리', 'T2-성능', '백로그', '댓글 목록 캐시와 개인 상태 분리 → 인기글 DB 부하 감소'),
   s('C-BL-PERSONA-2', '페르소나 2차 정비', 'T3-봇', '완료됨', '딥다이브 진단 완료(2026-06-07): 말투/주제 중복 0(이미 차별화)·게시판 편중은 스크래퍼 소스 의도·persona-data 79 정본 DB일치. 콘텐츠 건강 확인. 상세: docs/analysis/persona-health-2026-06.md'),
