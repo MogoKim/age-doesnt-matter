@@ -79,9 +79,14 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: `try{var s=localStorage.getItem('unao-font-size');if(s==='LARGE'||s==='XLARGE'){document.documentElement.setAttribute('data-font-size',s)}}catch{}` }} />
         {/* Pretendard Variable dynamic-subset — unicode-range 기반 분할 로드.
             브라우저가 실제 렌더된 글자가 속한 서브셋(~30KB)만 다운로드 → 초기 폰트 전송 2.0MB→수십 KB.
-            font-display:swap 유지로 CLS 0. (next/font/local은 unicode-range 다중 @font-face 미지원이라 우회) */}
-        {/* eslint-disable-next-line @next/next/no-css-tags -- dynamic-subset은 next/font로 표현 불가, @import는 렌더 블로킹이라 link가 최적 */}
-        <link rel="stylesheet" href="/fonts/pretendard/pretendardvariable-dynamic-subset.css" />
+            ⚡ 렌더 블로킹 방지(C1): CSS를 preload(즉시 다운로드 시작) + 인라인 script로 stylesheet 비동기 주입.
+            → 첫 페인트를 막지 않음. font-display:swap이라 텍스트는 system-ui로 즉시 보이고 폰트 도착 시 swap.
+            subset.91(라틴/숫자/기호)은 초기 렌더 critical이라 폰트 자체를 preload. */}
+        <link rel="preload" as="font" type="font/woff2" href="/fonts/pretendard/woff2-dynamic-subset/PretendardVariable.subset.91.woff2" crossOrigin="anonymous" />
+        <link rel="preload" as="style" href="/fonts/pretendard/pretendardvariable-dynamic-subset.css" />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='/fonts/pretendard/pretendardvariable-dynamic-subset.css';document.head.appendChild(l)})()` }} />
+        {/* eslint-disable-next-line @next/next/no-css-tags -- JS 비활성 환경 fallback */}
+        <noscript><link rel="stylesheet" href="/fonts/pretendard/pretendardvariable-dynamic-subset.css" /></noscript>
         <link rel="preconnect" href="https://img.age-doesnt-matter.com" />
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
         <GTMScript />
