@@ -16,6 +16,8 @@ export interface QuadrantRetention {
   d1: { rate: number; cohort: number }
   d3: { rate: number; cohort: number }
   d7: { rate: number; cohort: number }
+  d14: { rate: number; cohort: number }
+  d30: { rate: number; cohort: number }
 }
 export interface RetentionData {
   generatedAt: string
@@ -28,9 +30,11 @@ export interface RetentionData {
 type Cohort = { firstDay: number; active: Set<number> }
 
 function calc(cohorts: Cohort[], nowIdx: number, segment: string): QuadrantRetention {
-  const acc: Record<number, { n: number; d: number }> = { 1: { n: 0, d: 0 }, 3: { n: 0, d: 0 }, 7: { n: 0, d: 0 } }
+  const acc: Record<number, { n: number; d: number }> = {
+    1: { n: 0, d: 0 }, 3: { n: 0, d: 0 }, 7: { n: 0, d: 0 }, 14: { n: 0, d: 0 }, 30: { n: 0, d: 0 },
+  }
   for (const c of cohorts) {
-    for (const off of [1, 3, 7]) {
+    for (const off of [1, 3, 7, 14, 30]) {
       if (c.firstDay + off > nowIdx) continue // 아직 N일 경과 안 됨 → 분모 제외
       acc[off].d++
       for (const d of c.active) {
@@ -44,6 +48,8 @@ function calc(cohorts: Cohort[], nowIdx: number, segment: string): QuadrantReten
     d1: { rate: pct(acc[1]), cohort: acc[1].d },
     d3: { rate: pct(acc[3]), cohort: acc[3].d },
     d7: { rate: pct(acc[7]), cohort: acc[7].d },
+    d14: { rate: pct(acc[14]), cohort: acc[14].d },
+    d30: { rate: pct(acc[30]), cohort: acc[30].d },
   }
 }
 
@@ -51,7 +57,7 @@ export const getRetentionQuadrants = unstable_cache(
   async (): Promise<RetentionData> => {
     const now = Date.now()
     const nowIdx = dayIdx(now)
-    const windowDays = 60
+    const windowDays = 90
     const since = new Date(now - windowDays * DAY)
 
     // ── 회원 ──
@@ -116,7 +122,7 @@ export const getRetentionQuadrants = unstable_cache(
       windowDays,
       members,
       guests,
-      note: '회원=가입일 코호트(providerId 순수숫자) / 비회원=첫방문 코호트(sessionId). D-N=기준일+N일 이후 재방문(누적). 분모는 N일 경과 코호트만. 채널미상=login 기록 없는 가입자(5/15 이전 등). 비회원은 30일 쿠키 한도.',
+      note: '회원=가입일 코호트(providerId 순수숫자) / 비회원=첫방문 코호트(sessionId). D-N=기준일+N일 이후 재방문(누적). 분모는 N일 경과 코호트만. 채널미상=login 기록 없는 가입자(5/15 이전 등). ⚠️ 비회원 D14·D30은 30일 쿠키 한도로 과소측정(쿠키 만료 후 같은 방문자 식별 불가).',
     }
   },
   ['admin-retention-quadrants-v1'],

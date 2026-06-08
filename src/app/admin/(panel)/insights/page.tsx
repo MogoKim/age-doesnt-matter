@@ -163,8 +163,14 @@ function RetentionQuadrants({ retention }: { retention: RetentionData }) {
               <th className="py-2 pr-4 text-right font-medium">
                 D3<InfoTip text="기준일+3일 이후 다시 온 비율." />
               </th>
-              <th className="py-2 text-right font-medium">
+              <th className="py-2 pr-4 text-right font-medium">
                 D7<InfoTip text="기준일+7일 이후 다시 온 비율. 한 주 뒤에도 남아있는 핵심 정착 지표." />
+              </th>
+              <th className="py-2 pr-4 text-right font-medium">
+                D14<InfoTip text="기준일+14일 이후 다시 온 비율. 비회원은 30일 쿠키 한계로 과소측정될 수 있음." />
+              </th>
+              <th className="py-2 text-right font-medium">
+                D30<InfoTip text="기준일+30일 이후 다시 온 비율. 한 달 정착 지표. 비회원은 쿠키 만료로 거의 0에 수렴(측정 한계)." />
               </th>
             </tr>
           </thead>
@@ -174,7 +180,9 @@ function RetentionQuadrants({ retention }: { retention: RetentionData }) {
                 <td className="py-2 pr-4 font-medium text-zinc-800">{r.segment}</td>
                 <td className="py-2 pr-4 text-right text-zinc-700">{r.d1.rate}% <span className="text-zinc-400">({r.d1.cohort})</span></td>
                 <td className="py-2 pr-4 text-right text-zinc-700">{r.d3.rate}% <span className="text-zinc-400">({r.d3.cohort})</span></td>
-                <td className="py-2 text-right text-zinc-700">{r.d7.rate}% <span className="text-zinc-400">({r.d7.cohort})</span></td>
+                <td className="py-2 pr-4 text-right text-zinc-700">{r.d7.rate}% <span className="text-zinc-400">({r.d7.cohort})</span></td>
+                <td className="py-2 pr-4 text-right text-zinc-700">{r.d14.rate}% <span className="text-zinc-400">({r.d14.cohort})</span></td>
+                <td className="py-2 text-right text-zinc-700">{r.d30.rate}% <span className="text-zinc-400">({r.d30.cohort})</span></td>
               </tr>
             ))}
           </tbody>
