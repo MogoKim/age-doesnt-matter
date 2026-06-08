@@ -82,21 +82,18 @@ export default async function AdminInsightsPage() {
           ① 들어오기 — 유입 채널 효율
           <InfoTip text="어느 경로로 들어온 방문자가 가입하고 다시 오는지 비교합니다. 세션의 첫 referrer(유입 출처)로 분류하며, 최근 30일 기준입니다." />
         </h2>
-        <p className="mb-4 text-xs text-zinc-400">어디서 온 손님이 가입하고 다시 오는가 (세션 첫 referrer, 30일)</p>
+        <p className="mb-1 text-xs text-zinc-400">어디서 온 손님이 가입하고 다시 오는가 (세션 첫 referrer, 30일)</p>
+        <p className="mb-4 text-xs text-zinc-400">
+          · <b>세션</b>=방문 묶음(같은 브라우저 30일 내 재방문은 1) · <b>가입전환</b>=세션 중 로그인까지 간 비율 · <b>재방문율</b>=서로 다른 2일+ 방문 비율
+        </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
                 <th className="py-2 pr-4 font-medium">채널</th>
-                <th className="py-2 pr-4 text-right font-medium">
-                  세션<InfoTip text="그 채널로 들어온 방문 묶음 수. 같은 브라우저(쿠키)의 30일 내 재방문은 1세션으로 셉니다." />
-                </th>
-                <th className="py-2 pr-4 text-right font-medium">
-                  가입전환<InfoTip text="그 채널 세션 중 로그인(가입)까지 이어진 비율입니다. 높을수록 '질 좋은' 유입입니다." />
-                </th>
-                <th className="py-2 text-right font-medium">
-                  재방문율<InfoTip text="그 채널 세션 중 서로 다른 2일 이상 방문한 비율입니다. 높을수록 '다시 오는' 유입입니다." />
-                </th>
+                <th className="py-2 pr-4 text-right font-medium">세션</th>
+                <th className="py-2 pr-4 text-right font-medium">가입전환</th>
+                <th className="py-2 text-right font-medium">재방문율</th>
               </tr>
             </thead>
             <tbody>
@@ -157,21 +154,11 @@ function RetentionQuadrants({ retention }: { retention: RetentionData }) {
           <thead>
             <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
               <th className="py-2 pr-4 font-medium">세그먼트</th>
-              <th className="py-2 pr-4 text-right font-medium">
-                D1<InfoTip text="기준일 다음날(+1일) 이후 다시 온 비율." />
-              </th>
-              <th className="py-2 pr-4 text-right font-medium">
-                D3<InfoTip text="기준일+3일 이후 다시 온 비율." />
-              </th>
-              <th className="py-2 pr-4 text-right font-medium">
-                D7<InfoTip text="기준일+7일 이후 다시 온 비율. 한 주 뒤에도 남아있는 핵심 정착 지표." />
-              </th>
-              <th className="py-2 pr-4 text-right font-medium">
-                D14<InfoTip text="기준일+14일 이후 다시 온 비율. 비회원은 30일 쿠키 한계로 과소측정될 수 있음." />
-              </th>
-              <th className="py-2 text-right font-medium">
-                D30<InfoTip text="기준일+30일 이후 다시 온 비율. 한 달 정착 지표. 비회원은 쿠키 만료로 거의 0에 수렴(측정 한계)." />
-              </th>
+              <th className="py-2 pr-4 text-right font-medium">D1</th>
+              <th className="py-2 pr-4 text-right font-medium">D3</th>
+              <th className="py-2 pr-4 text-right font-medium">D7</th>
+              <th className="py-2 pr-4 text-right font-medium">D14</th>
+              <th className="py-2 text-right font-medium">D30</th>
             </tr>
           </thead>
           <tbody>
