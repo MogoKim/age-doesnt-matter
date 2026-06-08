@@ -34,6 +34,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'cto:error-monitor': () => import('../cto/error-monitor.js').then(() => {}),
   'cto:security-audit': () => import('../cto/security-audit.js').then(() => {}),
   'cto:count-reconcile': () => import('../scripts/reconcile-counts.js').then((m) => m.reconcileCounts(false)), // DISPATCH ONLY — 비정규화 카운트 정합성 재계산. 야간 크론 활성화는 창업자 승인 대기(DB write)
+  'cto:purge-old-logs': () => import('../scripts/purge-old-logs.js').then((m) => m.purgeOldLogs(true)), // DISPATCH ONLY — dry(미삭제)만. ⚠️ 불가역 삭제라 dispatch로는 삭제 안 됨. 실제 삭제는 --apply 수동만
   'cmo:trend-analyzer': () => import('../cmo/trend-analyzer.js').then(() => {}), // DISPATCH ONLY — cron 중단 2026-05-16 (Slack 리포트만, 참고 안 함)
   'cpo:ux-analyzer': () => import('../cpo/ux-analyzer.js').then(() => {}),
   'cpo:feature-tracker': () => import('../cpo/feature-tracker.js').then(() => {}),
