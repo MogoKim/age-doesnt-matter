@@ -47,6 +47,16 @@ function decideCi(r: CardProbeResults, okLabel: string): { column: Column; label
   return { column: '배포완료-적용확인', label: `${okLabel} (${ok}/${n} success)` }
 }
 
+/** 안정화 졸업 카드: CI 정상이면 완료됨, 실패하면 지금가능(재발 자동 경보 유지) */
+function decideGraduatedCi(r: CardProbeResults, okLabel: string): { column: Column; label: string } {
+  const c = r.ci
+  if (!c || c.ok === null) return { column: '완료됨', label: `${okLabel} (CI 판정불가)` }
+  if (c.ok === false) return { column: '지금가능', label: '워크플로우 실패 — 재확인 필요' }
+  const ok = String(c.detail.successCount ?? '?')
+  const n = String(c.detail.sampleSize ?? '?')
+  return { column: '완료됨', label: `${okLabel} (${ok}/${n} success)` }
+}
+
 export const CARDS: Card[] = [
   // ═══════════ probe 카드 (자동 판정) ═══════════
   {
@@ -125,31 +135,31 @@ export const CARDS: Card[] = [
     id: 'C-AGENT-DB-SATURATION',
     title: 'Agent DB 포화 재발 방지(운영 관찰)',
     track: 'T3-봇',
-    baseCategory: '배포완료-적용확인',
+    baseCategory: '완료됨',
     probes: { ci: 'Agents — Cafe Comment Wave' },
     probeReviewedAt: REVIEWED,
-    note: '대표 워크플로우: Cafe Comment Wave(5분 간격). 실패 시 DB 포화/연결 재점검',
-    decide: (r) => decideCi(r, '운영 정상 관찰중'),
+    note: '대표 워크플로우: Cafe Comment Wave(5분 간격). 실패 시 DB 포화/연결 재점검 → 지금가능 자동 복귀',
+    decide: (r) => decideGraduatedCi(r, '운영 정상 — 재발 0'),
   },
   {
     id: 'C-CAFE-WAVE',
     title: 'Cafe Comment Wave 안정성',
     track: 'T3-봇',
-    baseCategory: '배포완료-적용확인',
+    baseCategory: '완료됨',
     probes: { ci: 'Agents — Cafe Comment Wave' },
     probeReviewedAt: REVIEWED,
-    note: 'success + EMAXCONN/timeout 없음',
-    decide: (r) => decideCi(r, '안정 가동중'),
+    note: 'success + EMAXCONN/timeout 없음. 실패 시 지금가능 자동 복귀',
+    decide: (r) => decideGraduatedCi(r, '안정 가동중'),
   },
   {
     id: 'C-CAFE-CURATION',
     title: 'Cafe Hourly Curation 안정성',
     track: 'T3-봇',
-    baseCategory: '배포완료-적용확인',
+    baseCategory: '완료됨',
     probes: { ci: 'Agents — Cafe Hourly Curation (08:20~01:15 KST, 45분 간격, 100건/일)' },
     probeReviewedAt: REVIEWED,
-    note: 'success, 실패/timeout 없음',
-    decide: (r) => decideCi(r, '안정 가동중'),
+    note: 'success, 실패/timeout 없음. 실패 시 지금가능 자동 복귀',
+    decide: (r) => decideGraduatedCi(r, '안정 가동중'),
   },
   {
     id: 'C-PREWARM',
@@ -165,11 +175,11 @@ export const CARDS: Card[] = [
     id: 'C-OPS-DAILY',
     title: 'Ops Daily Report',
     track: 'T1-검증',
-    baseCategory: '배포완료-적용확인',
+    baseCategory: '완료됨',
     probes: { ci: 'Ops — Daily Report' },
     probeReviewedAt: REVIEWED,
-    note: '08:30 KST summary/artifact 생성',
-    decide: (r) => decideCi(r, '정기 실행 정상'),
+    note: '08:30 KST summary/artifact 생성. 실패 시 지금가능 자동 복귀',
+    decide: (r) => decideGraduatedCi(r, '정기 실행 정상'),
   },
   {
     id: 'C-SPEED-CACHE',
