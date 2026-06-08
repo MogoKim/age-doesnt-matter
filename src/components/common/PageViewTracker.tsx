@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { trackEvent } from '@/lib/track'
-import { gtmPageView, gtmLogin, gtmSetUserProperties, captureUtm, getBrowserEnv } from '@/lib/gtm'
+import { gtmPageView, gtmLogin, gtmSetUserProperties, captureUtm, getBrowserEnv, getStoredUtm } from '@/lib/gtm'
 
 // 하드 리프레시마다 login 이벤트 중복 발사 방지.
 // useRef는 리프레시 시 초기화되므로 sessionStorage 플래그 사용.
@@ -40,9 +40,9 @@ export default function PageViewTracker() {
     }
   }, [status, session])
 
-  // 페이지 이동 시 page_view
+  // 페이지 이동 시 page_view (UTM 동봉 — 레퍼럴/유입 채널을 EventLog에서 추적)
   useEffect(() => {
-    trackEvent('page_view', { browser_env: getBrowserEnv() })
+    trackEvent('page_view', { browser_env: getBrowserEnv(), ...getStoredUtm() })
     gtmPageView(pathname)
   }, [pathname])
 

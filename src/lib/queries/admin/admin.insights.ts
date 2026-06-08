@@ -24,12 +24,18 @@ export interface InsightsData {
   activation: { total: number; onboarded: number; wrote: number; commented: number; active: number }
 }
 
-function classifyChannel(ref: string): string {
-  if (ref.startsWith('android-app://')) return 'TWA 앱'
+// UTM 우선 → referrer 보조. utm은 page_view properties(utm_source/utm_medium).
+function classifyChannel(ref: string, utmSource: string, utmMedium: string): string {
+  // 1) 레퍼럴(카카오 공유) — 띠배너/게시글 공유 URL의 utm_medium=kakao_share
+  if (utmMedium === 'kakao_share') return '카카오 레퍼럴'
+  // 2) TWA 앱 — google-play utm 또는 android-app referrer
+  if (utmSource === 'google-play' || ref.startsWith('android-app://')) return 'TWA 앱'
+  // 3) 카카오 로그인 리다이렉트(내부 이동) = 유입 채널 아님 → 직접입력 처리
+  if (ref.includes('kauth.kakao') || ref.includes('accounts.kakao')) return '직접입력'
   if (ref.includes('google')) return 'Google'
   if (ref.includes('naver')) return 'Naver'
   if (ref.includes('youtube')) return 'YouTube'
-  if (ref.includes('kakao')) return 'Kakao'
+  if (ref.includes('kakao')) return 'Kakao' // 그 외 진짜 카카오 유입(talk 등)
   if (ref.includes('t.co') || ref.includes('twitter') || ref.includes('x.com')) return 'Twitter/X'
   if (ref.includes('instagram')) return 'Instagram'
   if (ref.includes('facebook') || ref.includes('fb.')) return 'Facebook'
@@ -85,7 +91,7 @@ export const getInsights = unstable_cache(
     // ── 30일 세션 이벤트 (채널·리텐션) ──
     const events = await prisma.eventLog.findMany({
       where: { isBot: false, createdAt: { gte: start30 }, NOT: { sessionId: null } },
-      select: { sessionId: true, eventName: true, referrer: true, createdAt: true },
+      select: { sessionId: true, eventName: true, referrer: true, properties: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     })
 
@@ -97,15 +103,22 @@ export const getInsights = unstable_cache(
     const pvSessions = new Set(events.filter((e) => e.eventName === 'page_view').map((e) => e.sessionId!))
     const loginSessions = new Set(events.filter((e) => e.eventName === 'login').map((e) => e.sessionId!))
 
-    // 채널별 (세션 첫 referrer)
-    const firstRef: Record<string, string> = {}
+    // 채널별 (세션 첫 page_view의 referrer + utm)
+    const firstMeta: Record<string, { ref: string; src: string; med: string }> = {}
     for (const e of events) {
       if (e.eventName !== 'page_view') continue
-      if (!(e.sessionId! in firstRef)) firstRef[e.sessionId!] = typeof e.referrer === 'string' ? e.referrer : ''
+      if (e.sessionId! in firstMeta) continue
+      const p = e.properties as Record<string, unknown> | null
+      firstMeta[e.sessionId!] = {
+        ref: typeof e.referrer === 'string' ? e.referrer : '',
+        src: typeof p?.utm_source === 'string' ? p.utm_source : '',
+        med: typeof p?.utm_medium === 'string' ? p.utm_medium : '',
+      }
     }
     const chanMap: Record<string, { sessions: number; signups: number; multi: number }> = {}
     for (const s of pvSessions) {
-      const c = classifyChannel(firstRef[s] ?? '')
+      const m = firstMeta[s] ?? { ref: '', src: '', med: '' }
+      const c = classifyChannel(m.ref, m.src, m.med)
       const v = (chanMap[c] ??= { sessions: 0, signups: 0, multi: 0 })
       v.sessions++
       if (loginSessions.has(s)) v.signups++
