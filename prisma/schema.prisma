@@ -486,7 +486,7 @@ model Comment {
 
   post       Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
   author     User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  parent     Comment?   @relation("replies", fields: [parentId], references: [id])
+  parent     Comment?   @relation("replies", fields: [parentId], references: [id], onDelete: SetNull)
   replies    Comment[]  @relation("replies")
   likes      Like[]     @relation("commentLikes")
   guestLikes GuestLike[]
