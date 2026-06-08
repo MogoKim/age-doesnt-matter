@@ -25,6 +25,7 @@ env:
   DIRECT_URL: ${{ secrets.DIRECT_URL }}
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  CLAUDE_MODEL_STRATEGIC: claude-opus-4-7
   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
   SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
   SHEETS_SCRAPER_ID: ${{ secrets.SHEETS_SCRAPER_ID }}
@@ -70,3 +71,5 @@ jobs:
           # fmkorea(Cloudflare) + bboom(naver GHA 봇 차단 리스크) → 로컬 launchd 전용
           SHEET_SCRAPER_EXCLUDE_SITE: fmkorea,bboom
           PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: /usr/bin/google-chrome-stable
+          # 제목 SEO 다듬기 ON (agent-lifecycle.md: .env.local SHEET_TITLE_SEO와 동일 유지)
+          SHEET_TITLE_SEO: 'true'
