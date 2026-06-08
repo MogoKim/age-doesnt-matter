@@ -243,3 +243,83 @@ const _getTwaSignupRetention = unstable_cache(
 export function getTwaSignupRetention(days = 90): Promise<TwaRetention> {
   return _getTwaSignupRetention(days)
 }
+
+// ──────────────────────────────────────────────
+// TWA 게이트 그룹별 재방문 — A(baseline)/B/C 비교 (Phase 1)
+// sign_up properties.twa_gate_variant 로 그룹 분리 → 그룹별 가입자 D1/D7 재방문 + 첫 활동.
+// ──────────────────────────────────────────────
+export interface GateRetentionRow {
+  variant: string
+  label: string
+  signupCount: number
+  d1ReturnRate: number
+  d7ReturnRate: number
+  firstActionRate: number
+}
+
+const _getGateRetention = unstable_cache(
+  async (days: number): Promise<GateRetentionRow[]> => {
+    const exp = EXPERIMENTS.find((e) => e.id === 'twa01_entry_gate')
+    if (!exp) return []
+    const start = new Date(Date.now() - days * DAY)
+
+    // 그룹별 가입자 (sign_up + twa_gate_variant)
+    const signups = await prisma.eventLog.findMany({
+      where: { eventName: 'sign_up', userId: { not: null }, isBot: false, createdAt: { gte: start } },
+      select: { userId: true, createdAt: true, properties: true },
+    })
+    const byVariant = new Map<string, Map<string, Date>>() // variant → (userId → 가입시각)
+    for (const v of exp.variants) byVariant.set(v.key, new Map())
+    for (const s of signups) {
+      const g = typeof s.properties === 'object' && s.properties !== null
+        ? (s.properties as Record<string, unknown>).twa_gate_variant
+        : undefined
+      if (s.userId && typeof g === 'string' && byVariant.has(g) && !byVariant.get(g)!.has(s.userId)) {
+        byVariant.get(g)!.set(s.userId, s.createdAt)
+      }
+    }
+    const allUserIds = [...byVariant.values()].flatMap((m) => [...m.keys()])
+    if (allUserIds.length === 0) {
+      return exp.variants.map((v) => ({ variant: v.key, label: v.label, signupCount: 0, d1ReturnRate: 0, d7ReturnRate: 0, firstActionRate: 0 }))
+    }
+
+    const [views, users] = await Promise.all([
+      prisma.eventLog.findMany({
+        where: { eventName: 'page_view', userId: { in: allUserIds }, isBot: false },
+        select: { userId: true, createdAt: true, properties: true },
+      }),
+      prisma.user.findMany({ where: { id: { in: allUserIds } }, select: { id: true, postCount: true, commentCount: true } }),
+    ])
+    const twaViews = new Map<string, number[]>()
+    for (const v of views) {
+      if (!v.userId || !isTwa(v.properties)) continue
+      const arr = twaViews.get(v.userId) ?? []
+      arr.push(v.createdAt.getTime())
+      twaViews.set(v.userId, arr)
+    }
+    const activeSet = new Set(users.filter((u) => u.postCount > 0 || u.commentCount > 0).map((u) => u.id))
+
+    return exp.variants.map((v) => {
+      const map = byVariant.get(v.key)!
+      let d1 = 0
+      let d7 = 0
+      let act = 0
+      for (const [uid, at] of map) {
+        const t = at.getTime()
+        const vs = (twaViews.get(uid) ?? []).filter((ms) => ms > t + 3600_000)
+        if (vs.some((ms) => ms <= t + 2 * DAY)) d1++
+        if (vs.some((ms) => ms <= t + 7 * DAY)) d7++
+        if (activeSet.has(uid)) act++
+      }
+      const n = map.size
+      const pct = (x: number) => (n ? Math.round((x / n) * 1000) / 10 : 0)
+      return { variant: v.key, label: v.label, signupCount: n, d1ReturnRate: pct(d1), d7ReturnRate: pct(d7), firstActionRate: pct(act) }
+    })
+  },
+  ['admin-gate-retention-v1'],
+  { revalidate: 600 },
+)
+
+export function getGateRetention(days = 90): Promise<GateRetentionRow[]> {
+  return _getGateRetention(days)
+}

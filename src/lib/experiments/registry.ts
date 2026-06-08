@@ -87,6 +87,26 @@ export const EXPERIMENTS: ExperimentDef[] = [
     variantProperty: 'trigger_variant',
     hashOffset: 7,
   },
+  {
+    id: 'twa01_entry_gate',
+    name: 'TWA 첫 진입 가입 게이트',
+    purpose: '앱(TWA) 설치자에게 가입 허들을 앞에 두면(게이트) 진짜 회원이 늘고 재방문이 오르는지 본다.',
+    background:
+      '앱 설치자는 재방문 10%로 동기 높은데 가입은 4%로 낮음. 웹은 "정독 후 가입"(허들 뒤)이지만, 앱 설치자는 "가입 먼저"(허들 앞)가 나을 수 있다는 반대 가설.',
+    hypothesis: '동기 높은 앱 설치자는 게이트를 통과해 진성 가입 → 회원 경험으로 재방문↑. 단 함정=가입률(강제라 당연 높음), 정답=가입 후 재방문.',
+    howToVerify:
+      'twa_gate_view(노출, twa_gate_variant) → 같은 sessionId/userId 의 sign_up + 가입 후 TWA 재방문(D1/D7)으로 variant별 비교. A(현행)가 baseline. 봇 제외. 대상=신규 TWA만.',
+    owner: '영석',
+    variants: [
+      { key: 'A', label: 'A · 현행(대조군)', description: '게이트 없음. 앱 열면 홈이 바로 보이고 자유롭게 둘러봄(현재와 동일). baseline.', weight: 34 },
+      { key: 'B', label: 'B · soft 게이트', description: '둘러볼 수 있되 세션 내 글 2~3개 열람 시점에 "계속 보려면 카카오로 시작" 부드럽게 등장.', weight: 33 },
+      { key: 'C', label: 'C · hard 게이트', description: '첫 화면이 가입/로그인("우리 또래 이야기, 카카오로 1초" + 작게 "먼저 둘러볼게요" 탈출구).', weight: 33 },
+    ],
+    exposureEvent: 'twa_gate_view',
+    conversionEvent: 'sign_up',
+    variantProperty: 'twa_gate_variant',
+    hashOffset: 11,
+  },
 ]
 
 export function getExperiment(id: string): ExperimentDef | undefined {

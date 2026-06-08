@@ -17,8 +17,20 @@ function getDeviceUid(): string {
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(36).slice(2)}`
     localStorage.setItem('_uid', uid)
+    // 최초 생성 시각 기록 — 신규 사용자 판별용(기존 _uid 사용자는 이 값이 없음)
+    if (!localStorage.getItem('_uid_at')) localStorage.setItem('_uid_at', String(Date.now()))
   }
   return uid
+}
+
+/**
+ * 디바이스 최초 인식 시각(ms). 기존 사용자(_uid_at 없음)는 null.
+ * 실험 시작일 이후 첫 방문(신규)만 게이트 대상으로 거를 때 사용.
+ */
+export function getDeviceFirstSeen(): number | null {
+  if (typeof window === 'undefined') return null
+  const at = localStorage.getItem('_uid_at')
+  return at ? Number.parseInt(at, 10) : null
 }
 
 function hashString(s: string): number {

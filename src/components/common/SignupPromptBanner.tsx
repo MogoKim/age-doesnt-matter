@@ -14,6 +14,7 @@ import {
 import { startKakaoLogin } from '@/lib/kakao-start'
 import { detectEnv } from '@/components/common/AddToHomeScreen'
 import { trackEvent } from '@/lib/track'
+import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 
 // 인앱 환경 (카카오/네이버/구글 앱) 감지 — CTA를 외부브라우저 유도로 변경
 const INAPP_ENVS = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp'] as const
@@ -158,6 +159,7 @@ export function SignupPromptBanner() {
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
   const isLoggedIn = status === 'authenticated'
+  const { isTWA } = useAppEnvironment() // TWA(앱)는 게이트 실험(twa01_entry_gate)이 담당 → 웹 타이밍 배너 OFF(오염 차단)
   const createdAt = session?.user?.createdAt ? String(session.user.createdAt) : undefined
 
   // ?signup=1 + 유효 utm_source 감지 (클라이언트에서 직접 읽기 — layout은 searchParams 미지원)
@@ -239,7 +241,7 @@ export function SignupPromptBanner() {
   // ── 타이머 (Tab Visibility API 포함) ──
   useEffect(() => {
     if (status === 'loading') return
-    if (isLoggedIn || !isActivePath(pathname)) return
+    if (isLoggedIn || isTWA || !isActivePath(pathname)) return
 
     const triggerVar = getTriggerVariant()
     // read_complete: 스크롤(85%)이 주 트리거, 타이머는 60초 백스톱 / early: 20초 타이머
@@ -292,12 +294,12 @@ export function SignupPromptBanner() {
       document.removeEventListener('visibilitychange', handleVisibility)
       tryFireRef.current = () => {}
     }
-  }, [pathname, isLoggedIn, status])
+  }, [pathname, isLoggedIn, status, isTWA])
 
   // ── 스크롤 감지 ──
   useEffect(() => {
     if (status === 'loading') return
-    if (isLoggedIn || !isActivePath(pathname)) return
+    if (isLoggedIn || isTWA || !isActivePath(pathname)) return
     // 타이밍 variant별 스크롤 임계값 (early 50% / read_complete 85% 정독 완료)
     const scrollThreshold = getTriggerVariant() === 'read_complete' ? READ_COMPLETE_SCROLL : SCROLL_THRESHOLD
     // pathname 변경 시 현재 스크롤 위치로 초기화 (scroll effect가 timer effect보다 나중에 실행됨)
@@ -314,7 +316,7 @@ export function SignupPromptBanner() {
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [pathname, isLoggedIn, status])
+  }, [pathname, isLoggedIn, status, isTWA])
 
   // ── Body scroll lock ──
   useEffect(() => {

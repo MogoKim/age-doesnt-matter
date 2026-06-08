@@ -187,7 +187,13 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     localStorage.setItem('signup_welcome_toast', '1')
     const signupVariant = localStorage.getItem('signup_variant') ?? undefined
     gtmSignUp('kakao', signupVariant)
-    trackEvent('sign_up', { method: 'kakao', browser_env: getBrowserEnv() })
+    // TWA 게이트 실험 그룹(있으면) — TWA 신규 대상만 저장돼 있음(웹 가입자는 미기록)
+    const twaGateVariant = localStorage.getItem('twa_gate_assigned') ?? undefined
+    trackEvent('sign_up', {
+      method: 'kakao',
+      browser_env: getBrowserEnv(),
+      ...(twaGateVariant ? { twa_gate_variant: twaGateVariant } : {}),
+    })
     // gtag.js 로드 완료 대기 — _gtagReady=true 확인 후 navigate
     // window.gtag 존재 체크는 부족 (GTM stub이 미리 생성됨)
     await waitForGtagReady()
