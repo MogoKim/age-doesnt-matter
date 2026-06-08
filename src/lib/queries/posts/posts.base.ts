@@ -19,8 +19,11 @@ export function toUserSummary(user: {
   nickname: string
   grade: string
   profileImage: string | null
+  status?: string
 } | null): UserSummary {
   if (!user) return DELETED_USER
+  // 탈퇴(익명화) 회원은 저장된 익명 닉네임 대신 '탈퇴한 회원'으로 표시 마스킹
+  if (user.status === 'WITHDRAWN') return DELETED_USER
   const grade = user.grade as Grade
   return {
     id: user.id,
@@ -52,7 +55,7 @@ export const postSelect = {
   createdAt: true,
   slug: true,
   author: {
-    select: { id: true, nickname: true, grade: true, profileImage: true },
+    select: { id: true, nickname: true, grade: true, profileImage: true, status: true },
   },
 } as const
 

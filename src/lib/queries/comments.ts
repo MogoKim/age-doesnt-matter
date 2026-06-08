@@ -39,7 +39,7 @@ async function _getCommentsByPostId(
         authorId: true,
         guestNickname: true,
         author: {
-          select: { id: true, nickname: true, grade: true, profileImage: true },
+          select: { id: true, nickname: true, grade: true, profileImage: true, status: true },
         },
         replies: {
           where: { status: { notIn: ['HIDDEN', 'DELETED'] } },
@@ -52,7 +52,7 @@ async function _getCommentsByPostId(
             authorId: true,
             guestNickname: true,
             author: {
-              select: { id: true, nickname: true, grade: true, profileImage: true },
+              select: { id: true, nickname: true, grade: true, profileImage: true, status: true },
             },
           },
           orderBy: { createdAt: 'asc' },

@@ -36,7 +36,7 @@ const postSelect = {
   trendingScore: true,
   createdAt: true,
   author: {
-    select: { id: true, nickname: true, grade: true, profileImage: true },
+    select: { id: true, nickname: true, grade: true, profileImage: true, status: true },
   },
 } as const
 
