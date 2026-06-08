@@ -4,16 +4,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
-import { getExperimentVariant, getDeviceFirstSeen } from '@/lib/experiments/assign'
+import { getExperimentVariant } from '@/lib/experiments/assign'
 import { startKakaoLogin } from '@/lib/kakao-start'
 import { trackEvent } from '@/lib/track'
 
 // TWA 첫 진입 가입 게이트 (실험 twa01_entry_gate)
-//  - 대상: TWA(앱) + 비로그인 + 신규(_uid_at >= 실험시작일)
+//  - 대상: TWA(앱) + 비로그인 (전원). 가입의 대부분이 앱에서 일어나므로 신규 한정 제거(모수 확보).
 //  - A: 게이트 없음(현행) / B: 글 N개 후 soft 시트 / C: 첫 화면 hard 전체
-//  - 탈출(둘러보기) 시 해당 세션 동안 다시 안 뜸. auth 로직 무변경(트리거만).
+//  - 탈출(둘러보기) 시 해당 세션 동안 다시 안 뜸. 기존 사용자 충격은 C 탈출구·B soft로 완화. auth 로직 무변경(트리거만).
 
-const EXPERIMENT_START_MS = Date.parse('2026-06-08T00:00:00+09:00') // 실험 시작일(이후 첫 방문만 게이트)
 const ESCAPE_KEY = 'twa_gate_escaped'
 const VIEW_LOGGED_KEY = 'twa_gate_view_logged'
 const POST_COUNT_KEY = 'twa_session_post_views' // PostViewBeacon이 증가시킴
@@ -27,11 +26,9 @@ export default function TwaEntryGate() {
   const [show, setShow] = useState(false)
   const [starting, setStarting] = useState(false)
 
-  // 그룹 결정 (TWA + 비로그인 + 신규 + 미탈출)
+  // 그룹 결정 (TWA + 비로그인 + 미탈출). 전원 대상(신규 한정 제거 — 가입 대부분이 앱)
   useEffect(() => {
     if (status !== 'unauthenticated' || !isTWA) return
-    const firstSeen = getDeviceFirstSeen()
-    if (firstSeen === null || firstSeen < EXPERIMENT_START_MS) return // 신규만(기존 사용자 제외)
     if (sessionStorage.getItem(ESCAPE_KEY)) return
     const v = getExperimentVariant('twa01_entry_gate')
     // 가입 시 sign_up에 그룹을 실어 보내기 위해 저장(TWA 신규 대상만 → 웹 오염 방지)

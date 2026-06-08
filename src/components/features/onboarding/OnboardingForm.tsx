@@ -187,11 +187,14 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     localStorage.setItem('signup_welcome_toast', '1')
     const signupVariant = localStorage.getItem('signup_variant') ?? undefined
     gtmSignUp('kakao', signupVariant)
-    // TWA 게이트 실험 그룹(있으면) — TWA 신규 대상만 저장돼 있음(웹 가입자는 미기록)
+    // 배너/게이트 실험 그룹(있으면) — sign_up에 실어 전환을 userId 기반으로 측정(sessionId 단절 우회)
+    const triggerVariant = localStorage.getItem('signup_trigger_variant') ?? undefined
     const twaGateVariant = localStorage.getItem('twa_gate_assigned') ?? undefined
     trackEvent('sign_up', {
       method: 'kakao',
       browser_env: getBrowserEnv(),
+      ...(signupVariant ? { content_variant: signupVariant } : {}),
+      ...(triggerVariant ? { trigger_variant: triggerVariant } : {}),
       ...(twaGateVariant ? { twa_gate_variant: twaGateVariant } : {}),
     })
     // gtag.js 로드 완료 대기 — _gtagReady=true 확인 후 navigate

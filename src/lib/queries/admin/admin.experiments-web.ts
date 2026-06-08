@@ -75,51 +75,51 @@ const _getWebExperiments = unstable_cache(
     const exposureEvents = [...new Set(EXPERIMENTS.map((e) => e.exposureEvent))]
     const conversionEvents = [...new Set(EXPERIMENTS.map((e) => e.conversionEvent))]
 
+    // sessionId null 제외 안 함 — 전환(sign_up)은 userId 기반이라 sessionId 없어도 필요
     const events = await prisma.eventLog.findMany({
       where: {
         isBot: false,
         createdAt: { gte: start },
-        NOT: { sessionId: null },
         eventName: { in: [...exposureEvents, ...conversionEvents] },
       },
-      select: { sessionId: true, eventName: true, properties: true },
+      select: { sessionId: true, userId: true, eventName: true, properties: true },
     })
-
-    // 전환 이벤트별 세션 집합
-    const convSessions: Record<string, Set<string>> = {}
-    for (const ev of conversionEvents) convSessions[ev] = new Set()
-    for (const e of events) {
-      if (e.sessionId && convSessions[e.eventName]) convSessions[e.eventName]!.add(e.sessionId)
-    }
 
     const states = await loadStates()
 
     return EXPERIMENTS.map((exp) => {
-      // variant별 노출 세션 집합
+      // 노출 = sessionId 집합(분모) / 전환 = sign_up properties[variant]의 userId 집합(분자)
+      //  → 전환을 userId+properties로 직접 카운트해 인앱→외부 sessionId 단절을 우회.
       const variantSessions: Record<string, Set<string>> = {}
-      for (const v of exp.variants) variantSessions[v.key] = new Set()
+      const variantConv: Record<string, Set<string>> = {}
+      for (const v of exp.variants) {
+        variantSessions[v.key] = new Set()
+        variantConv[v.key] = new Set()
+      }
       for (const e of events) {
-        if (e.eventName !== exp.exposureEvent || !e.sessionId) continue
         const props =
           typeof e.properties === 'object' && e.properties !== null
             ? (e.properties as Record<string, unknown>)
             : {}
         const vk = props[exp.variantProperty]
-        if (typeof vk === 'string' && variantSessions[vk]) variantSessions[vk]!.add(e.sessionId)
+        if (typeof vk !== 'string') continue
+        if (e.eventName === exp.exposureEvent && e.sessionId && variantSessions[vk]) {
+          variantSessions[vk]!.add(e.sessionId)
+        } else if (e.eventName === exp.conversionEvent && e.userId && variantConv[vk]) {
+          variantConv[vk]!.add(e.userId)
+        }
       }
-      const convSet = convSessions[exp.conversionEvent] ?? new Set<string>()
 
       const stats: VariantStat[] = exp.variants.map((v) => {
-        const shownSet = variantSessions[v.key]!
-        let converted = 0
-        for (const sid of shownSet) if (convSet.has(sid)) converted++
+        const shown = variantSessions[v.key]!.size
+        const converted = variantConv[v.key]!.size
         return {
           key: v.key,
           label: v.label,
           description: v.description,
-          shown: shownSet.size,
+          shown,
           converted,
-          rate: conversionRate(shownSet.size, converted),
+          rate: conversionRate(shown, converted),
           isWinner: false,
         }
       })

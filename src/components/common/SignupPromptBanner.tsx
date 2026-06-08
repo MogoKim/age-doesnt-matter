@@ -124,7 +124,10 @@ function getTriggerVariant(): 'early' | 'read_complete' {
   }
   let hash = 0
   for (let i = 0; i < uid.length; i++) hash += uid.charCodeAt(i)
-  return (hash + 7) % 2 === 0 ? 'read_complete' : 'early'
+  const v = (hash + 7) % 2 === 0 ? 'read_complete' : 'early'
+  // 가입 시 sign_up에 실어 보내기 위해 저장(전환을 userId 기반으로 측정 — sessionId 단절 우회)
+  localStorage.setItem('signup_trigger_variant', v)
+  return v
 }
 
 function getPromptCount(): number {
