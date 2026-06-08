@@ -1,4 +1,5 @@
 // DISPATCH ONLY — cron 중단 2026-05-16 (Slack 리포트만, 참고 안 함)
+// @deprecated 2026-06-08 — 실행횟수×추정단가 방식은 부정확. 토큰/API 실측 기반 cost-monitor.ts로 대체.
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
 import { notifyAdmin, notifySlack } from '../core/notifier.js'
