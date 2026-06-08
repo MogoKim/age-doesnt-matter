@@ -12,7 +12,8 @@ import AdminQuickStart from '@/components/admin/AdminQuickStart'
 import DailyBriefWidget from '@/components/admin/DailyBriefWidget'
 import AutomationToggle from '@/components/admin/AutomationToggle'
 
-export const dynamic = 'force-dynamic'
+// 1~2분 캐시 허용(창업자 합의) — 매 접속 풀렌더 방지. 긴급 알림은 최대 2분 지연 가능.
+export const revalidate = 120
 
 const BOARD_TYPE_LABELS: Record<string, string> = {
   JOB: '일자리',

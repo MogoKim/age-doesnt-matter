@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { getInsights } from '@/lib/queries/admin'
 
 export const metadata: Metadata = { title: '인사이트' }
-export const dynamic = 'force-dynamic'
+export const revalidate = 120
 
 export default async function AdminInsightsPage() {
   const data = await getInsights()

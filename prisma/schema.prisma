@@ -789,6 +789,8 @@ model EventLog {
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
   @@index([isBot, createdAt(sort: Desc)])
+  // 어드민 대시보드·인사이트 핵심 쿼리: eventName='page_view' AND isBot=false AND createdAt>=X
+  @@index([eventName, isBot, createdAt(sort: Desc)])
 }
 
 model AdminAuditLog {

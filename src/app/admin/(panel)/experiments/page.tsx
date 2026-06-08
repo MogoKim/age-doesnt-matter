@@ -3,7 +3,7 @@ import type { ExperimentStatus } from '@/generated/prisma/client'
 import { getSocialExperiments } from '@/lib/queries/admin'
 
 export const metadata: Metadata = { title: 'SNS A/B 테스트' }
-export const dynamic = 'force-dynamic'
+export const revalidate = 120
 
 const EXPERIMENT_STATUS_LABELS: Record<ExperimentStatus, { label: string; className: string }> = {
   PLANNING: { label: '기획 중', className: 'bg-zinc-100 text-zinc-600' },
