@@ -36,7 +36,7 @@ function createPrismaClient() {
     // Full cert validation requires SUPABASE_SSL_CA secret (future improvement)
     ssl: { rejectUnauthorized: false },
     max: poolMax,              // GHA agent는 여러 workflow가 겹치므로 기본 1개로 연결 포화 방지
-    idleTimeoutMillis: 10000,  // 유휴 연결 10초 후 해제
+    idleTimeoutMillis: 5000,  // 유휴 연결 5초 후 해제 — Supavisor client 슬롯 빠른 반납(200 포화 완화)
     connectionTimeoutMillis: 10000, // 연결 실패 10초 후 에러 발생
   })
 

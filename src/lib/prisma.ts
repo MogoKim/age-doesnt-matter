@@ -50,9 +50,9 @@ function createPrismaClient() {
     // 그래서 production 기본 3개로 보수적 유지. 속도는 인덱스/캐시로 푼다(연결 추가 X).
     // 2026-06-08: 8로 올렸다가 연결 포화(EMAXCONN) 확인하고 3으로 복귀. WEB_DB_POOL_MAX로 조정 가능.
     max: poolMax,
-    // 15초: warm Lambda가 유휴 풀러(client) 슬롯을 빠르게 반납해 연결 footprint 축소
-    // PgBouncer transaction mode → idle 연결이 PostgreSQL 슬롯 점유 없음
-    idleTimeoutMillis: isProduction ? 15000 : 30000,
+    // 10초: warm Lambda가 유휴 Supavisor(client) 슬롯을 빠르게 반납해 200 한도 포화 완화
+    // transaction mode라 재연결 저렴 → 짧게 잡아도 안전(과단축 시 재연결 오버헤드라 10초 절충)
+    idleTimeoutMillis: isProduction ? 10000 : 30000,
     connectionTimeoutMillis: 10000,
   })
 

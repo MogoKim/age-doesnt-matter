@@ -1,6 +1,7 @@
 import { BaseAgent } from '../core/agent.js'
 import { prisma } from '../core/db.js'
 import { notifyAdmin } from '../core/notifier.js'
+import { isConnectionError } from '../core/connection-error.js'
 import type { AgentResult } from '../core/types.js'
 
 /**
@@ -21,6 +22,24 @@ class CTOErrorMonitor extends BaseAgent {
 
   protected async run(): Promise<Omit<AgentResult, 'durationMs' | 'timestamp'>> {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+
+    // ── DB 연결 포화(EMAXCONN) 가시화 — 최근 24h BotLog 실패 중 연결에러 집계 ──
+    // Supavisor client 연결 수는 앱에서 직접 못 봄 → 연결 실패 발생 빈도로 추적.
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const failedLogs = await prisma.botLog.findMany({
+      where: { status: 'FAILED', createdAt: { gte: dayAgo } },
+      select: { botType: true, details: true },
+      take: 500,
+    })
+    const connErrCount = failedLogs.filter((l) => isConnectionError(l.details ?? '')).length
+    if (connErrCount >= 5) {
+      await notifyAdmin({
+        level: connErrCount >= 20 ? 'critical' : 'important',
+        agent: 'CTO',
+        title: `DB 연결 포화(EMAXCONN) ${connErrCount}건/24h`,
+        body: 'Supabase Supavisor 연결 200 한도 도달 추정.\nSupabase 대시보드 → Database → Connection Pooling 사용량 확인 권장. 지속 시 Pro 업그레이드 검토.',
+      })
+    }
 
     const errorEvents = await prisma.eventLog.findMany({
       where: {
