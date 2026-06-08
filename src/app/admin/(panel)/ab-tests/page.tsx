@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { getWebExperiments } from '@/lib/queries/admin'
-import type { WebExperimentView, VariantStat } from '@/lib/queries/admin/admin.experiments-web'
+import { getWebExperiments, getTwaSignupRetention } from '@/lib/queries/admin'
+import type { WebExperimentView, VariantStat, TwaRetention } from '@/lib/queries/admin/admin.experiments-web'
 import type { Confidence } from '@/lib/experiments/stats'
 import PeriodFilter from './PeriodFilter'
 import ExperimentStatePanel from './ExperimentStatePanel'
@@ -53,6 +53,34 @@ function VariantRow({ v, maxRate, enough }: { v: VariantStat; maxRate: number; e
       </div>
       {/* 이 variant가 실제 무엇인지 — 직원도 이해 */}
       <p className="ml-44 mt-0.5 pl-3 text-xs leading-relaxed text-zinc-500">{v.description}</p>
+    </div>
+  )
+}
+
+function TwaBaselineCard({ r }: { r: TwaRetention }) {
+  const stats = [
+    { label: 'TWA 가입자', value: `${r.signupCount}명` },
+    { label: 'D1 재방문', value: `${r.d1ReturnRate}%` },
+    { label: 'D7 재방문', value: `${r.d7ReturnRate}%` },
+    { label: '첫 활동(글·댓글)', value: `${r.firstActionRate}%` },
+  ]
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white p-5">
+      <h2 className="text-base font-bold text-zinc-900">📱 TWA 가입자 재방문 (현행 baseline)</h2>
+      <p className="mt-1 text-xs text-zinc-500">
+        게이트 실험 전 기준선 — 앱(TWA)으로 가입한 회원이 이후 앱으로 다시 오는가 (최근 90일 · 봇 제외)
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {stats.map((s) => (
+          <div key={s.label} className="rounded-lg bg-zinc-50 p-3">
+            <p className="text-xs text-zinc-500">{s.label}</p>
+            <p className="mt-1 text-xl font-bold text-zinc-900">{s.value}</p>
+          </div>
+        ))}
+      </div>
+      {r.signupCount < 20 && (
+        <p className="mt-2 text-xs text-amber-600">⚠️ 표본 {r.signupCount}명 — 적어서 방향성 참고용(절대 수치 신뢰 보류)</p>
+      )}
     </div>
   )
 }
@@ -136,7 +164,10 @@ export default async function AdminAbTestsPage({
   const sp = await searchParams
   const period = sp.period ?? '30'
   const days = PERIOD_DAYS[period] ?? 30
-  const experiments = await getWebExperiments(days)
+  const [experiments, twaRetention] = await Promise.all([
+    getWebExperiments(days),
+    getTwaSignupRetention(90),
+  ])
 
   const active = experiments.filter((e) => e.status !== 'CONCLUDED')
   const concluded = experiments.filter((e) => e.status === 'CONCLUDED')
@@ -152,6 +183,8 @@ export default async function AdminAbTestsPage({
         </div>
         <PeriodFilter />
       </div>
+
+      <TwaBaselineCard r={twaRetention} />
 
       {experiments.length === 0 && (
         <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-zinc-400">

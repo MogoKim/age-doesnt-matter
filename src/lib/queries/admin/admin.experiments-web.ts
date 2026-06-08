@@ -166,3 +166,80 @@ const _getWebExperiments = unstable_cache(
 export function getWebExperiments(periodDays = 30): Promise<WebExperimentView[]> {
   return _getWebExperiments(periodDays)
 }
+
+// ──────────────────────────────────────────────
+// TWA 첫 진입 A/B (F-TWA) Phase 0 — 측정 인프라
+// "앱(TWA)으로 가입한 회원이 이후 앱으로 다시 오는가" 현행 베이스라인.
+// 게이트 실험(Phase 1) 시작 전, 그룹 없이 TWA 가입자 전체의 재방문/첫활동을 잰다.
+// TWA 식별: sign_up / page_view 이벤트의 properties.browser_env === 'twa-android'.
+// ──────────────────────────────────────────────
+export interface TwaRetention {
+  signupCount: number // 기간 내 TWA 가입자 수
+  d1ReturnRate: number // 가입 후 48h 내 앱 재방문율(%)
+  d7ReturnRate: number // 가입 후 7일 내 앱 재방문율(%)
+  firstActionRate: number // 가입자 중 글·댓글 1개+ 비율(%)
+}
+
+function isTwa(props: unknown): boolean {
+  return typeof props === 'object' && props !== null && (props as Record<string, unknown>).browser_env === 'twa-android'
+}
+
+const _getTwaSignupRetention = unstable_cache(
+  async (days: number): Promise<TwaRetention> => {
+    const start = new Date(Date.now() - days * DAY)
+
+    // 1) TWA 가입자 (sign_up + browser_env=twa-android)
+    const signups = await prisma.eventLog.findMany({
+      where: { eventName: 'sign_up', userId: { not: null }, isBot: false, createdAt: { gte: start } },
+      select: { userId: true, createdAt: true, properties: true },
+    })
+    const signupAt = new Map<string, Date>() // userId → 최초 가입시각
+    for (const s of signups) {
+      if (s.userId && isTwa(s.properties) && !signupAt.has(s.userId)) signupAt.set(s.userId, s.createdAt)
+    }
+    const userIds = [...signupAt.keys()]
+    if (userIds.length === 0) return { signupCount: 0, d1ReturnRate: 0, d7ReturnRate: 0, firstActionRate: 0 }
+
+    // 2) 가입자들의 이후 TWA page_view (재방문)
+    const views = await prisma.eventLog.findMany({
+      where: { eventName: 'page_view', userId: { in: userIds }, isBot: false },
+      select: { userId: true, createdAt: true, properties: true },
+    })
+    const twaViewsByUser = new Map<string, number[]>() // userId → 재방문 시각(ms) 목록
+    for (const v of views) {
+      if (!v.userId || !isTwa(v.properties)) continue
+      ;(twaViewsByUser.get(v.userId) ?? twaViewsByUser.set(v.userId, []).get(v.userId)!).push(v.createdAt.getTime())
+    }
+
+    // 3) 첫 활동 (가입자 User의 글/댓글)
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, postCount: true, commentCount: true },
+    })
+    const activeCount = users.filter((u) => u.postCount > 0 || u.commentCount > 0).length
+
+    // 4) D1/D7 재방문 (가입 1시간 후 ~ 해당 윈도우, rolling)
+    let d1 = 0
+    let d7 = 0
+    for (const [uid, at] of signupAt) {
+      const t = at.getTime()
+      const vs = (twaViewsByUser.get(uid) ?? []).filter((ms) => ms > t + 3600_000) // 가입 1h 후 이후
+      if (vs.some((ms) => ms <= t + 2 * DAY)) d1++ // 48h 내
+      if (vs.some((ms) => ms <= t + 7 * DAY)) d7++ // 7일 내
+    }
+
+    const pct = (n: number) => (userIds.length ? Math.round((n / userIds.length) * 1000) / 10 : 0)
+    return {
+      signupCount: userIds.length,
+      d1ReturnRate: pct(d1),
+      d7ReturnRate: pct(d7),
+      firstActionRate: pct(activeCount),
+    }
+  },
+  ['admin-twa-retention-v1'],
+  { revalidate: 600 },
+)
+
+export function getTwaSignupRetention(days = 90): Promise<TwaRetention> {
+  return _getTwaSignupRetention(days)
+}
