@@ -56,9 +56,15 @@ DATABASE_URL="$DIRECT_URL" npx tsx --env-file=.env.local agents/scripts/_audit-e
 - 이벤트별 properties 키 집합(샘플) → **정의 외 키·중복 키·타입 오염**
 - sessionId/userId null 비율, isBot/botType 분포
 - **oddball(debug_*/smoke_test) 의 isBot=false 건수**(실데이터 누수 확인)
-- 주요 이벤트(page_view/login)의 `browser_env` 실제 적재율(코드는 보내는데 DB에 있나)
+- 주요 이벤트 properties 부착률 — ⚠️ **반드시 `orderBy createdAt desc` + 그 필드 추가시점(`git log -S`) 이후 구간만** 대상 (browser_env 6/2 추가를 과거 샘플로 보면 "0% 누락"으로 오판함 — 실제 최신 98.8%)
+- **채널 분류 검증**: `referrer 'kakao'` 세션의 referrer **host 분포** — `kauth./accounts.kakao.com`(=카카오 로그인 리다이렉트=내부)이 'Kakao 유입'으로 잡히는지. (실측: 100%가 로그인 리다이렉트 → 채널표 Kakao 허구). google/naver도 OAuth/검색콘솔 도메인 혼입 점검.
 - variant 저장값 vs `registry.ts` 정의 key 일치
 → **실행 후 임시 스크립트 삭제** (gitignore `_*.ts`이나 명시 삭제).
+
+⚠️ **감사자 자기검증 규칙 (이번 교훈)**:
+- 날짜·타임존·경계 로직(`getKstMonthStart` 등)은 추론 말고 **`node -e` 계산으로 직접 확인** (Explore도 오판함 — getKstMonthStart "버그" 주장이 계산상 정상이었음).
+- "코드는 보내는데 DB에 없다"류 결론 전에 **그 필드의 git 추가시점**을 먼저 확인(최근추가→과거결손 함정).
+- seed/HTTP-less 봇은 자사 페이지 방문 안 함 → page_view 미생성 → DAU 무영향(누수 아님).
 
 ---
 
@@ -68,9 +74,12 @@ DATABASE_URL="$DIRECT_URL" npx tsx --env-file=.env.local agents/scripts/_audit-e
 핵심값 컬럼 승격+인덱스 / bot 일원화 / debug 차단 / PII 정책 — **제안만**) ⑥ 임시스크립트 삭제 확인.
 → `docs/analysis/data-audit-{YYYY-MM-DD}.md` 로 저장하고 직전 베이스라인과 추이 비교.
 
-## 알려진 베이스라인 리스크 (2026-06-08, 재확인 대상)
-- R1 page_view/login `browser_env` 100% 누락(코드는 전송, DB 0) → 디바이스 분석 불가
-- R2 `debug_stage` isBot=false 2,137건 실데이터 오염(서비스 코드엔 없음, 외부 발사)
+## 알려진 리스크 (2026-06-08, 3차 재검증 확정 — 재확인 대상)
+- **R0 [최우선] Kakao 채널 오분류**: `classifyChannel`이 kauth/accounts.kakao.com(로그인 리다이렉트)을 'Kakao 유입'으로 셈 → 채널표 Kakao 수치 허구. (실측 567건 100% 리다이렉트)
+- ~~R1 browser_env 누락~~ **철회**: 6/2 추가, 최신 98.8% 정상. (오판 — 샘플링 편향)
+- ~~R2 debug_stage~~ **해결**: 삭제 완료(3,033건).
 - R3 핵심값 properties Json 매장 + search `query`/`search_term` 중복 키
 - R4 이벤트명 레지스트리 부재 + CONVERSION 이중관리
-- R5 18개 GA4-only → EventLog 단독 퍼널 50~70%
+- R5 GA4-only 다수 → EventLog 단독 퍼널 일부 불가 (twa_gate_*는 EventLog만으로 정정)
+- R6 EventLog 보존정책 0(무한증가) / rate limit 면제 불완전 / D1 정의(같은날 미포함)
+- **무해 확정**: seed봇 DAU 누수 없음, 날짜경계(-9h) 정상

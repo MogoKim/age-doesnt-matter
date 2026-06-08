@@ -5,7 +5,39 @@
 
 ---
 
+## ⚠️ 3차 재검증 교정 (2026-06-08, 실측 확정) — 아래 본문보다 이 섹션이 우선
+
+베이스라인을 3회 적대적 재검증(코드+git+계산+실측)한 결과, **오판 2건 철회 + 무해 2건 확정 + 신규 중대 1건**:
+
+### 🔴 신규 중대 — "Kakao 최고 채널"은 허구 (채널표 R0)
+- 실측: `referrer`에 'kakao' 포함된 page_view **567건이 전부 `kauth.kakao.com`(487)+`accounts.kakao.com`(80)** = **100% 카카오 로그인 리다이렉트(내부)**. 진짜 카톡 공유 유입 0건.
+- `admin.insights.ts:31` `classifyChannel`이 `ref.includes('kakao')`로 **로그인 리다이렉트를 'Kakao 유입'으로 오분류** → 인사이트 채널표의 "Kakao 전환 30%·재방문 25%"는 **신뢰 불가(허구)**.
+- 권장(제안만): classifyChannel에서 `kauth./accounts.kakao.com` 제외 또는 OAuth 리다이렉트 referrer 필터.
+
+### ✅ 철회 — R1(browser_env "100% 누락")은 오판
+- 실측: 최신 page_view(6/2+) browser_env 부착 **98.8%**, signup_banner content_variant **100%**. browser_env는 `6a96689`(6/2) 추가라 과거 30일 결손 + 베이스라인 샘플이 정렬 없이 과거 위주로 뽑힌 **샘플링 편향**. → "깨짐" 아님, **정상 수집 중**. (단 "최근추가→과거결손"은 6/7 post_read·trigger_variant, 6/8 twa_gate_* 에도 동일 적용되는 체계적 함정 — 분석 시 기간 주의)
+
+### ✅ 무해 확정 (베이스라인 우려 철회)
+- **seed봇 DAU 누수 없음**: seed봇은 HTTP 요청 없이 Prisma 직접 INSERT → page_view 미생성 → DAU 무영향.
+- **날짜 경계 정상**: `getKstMonthStart/TodayStart` -9h는 KST 자정의 UTC 표현(계산 검증). 버그 아님.
+- **debug_stage(R2)**: 이미 삭제 완료(3,033건). 출혈 멈춤.
+
+### 목적지 재분류
+- `twa_gate_*` = EventLog만(GA4 아님), `signup_banner_shown` = 둘다. (베이스라인 "GA4만 18개" 중 3개 오분류 교정)
+
+### 추가 주의 (저~중)
+- D1 정의(`admin.retention.ts:37` `d>=firstDay+1`): 같은날 가입+활동 D1 미포함 → D1 과소 가능.
+- rate limit 면제 불완전(post_cta_shown·signup_banner_shown·twa_gate_* 고활동 시 유실).
+- EventLog 보존정책 0(무한증가).
+
+### 재산정 등급
+- 데이터 청결도: D → **C** (browser_env 정상 + debug 삭제), 단 **채널 정확도는 D**(Kakao 오분류).
+- **종합 C-** 유지(browser_env 호재 ↔ Kakao 채널 오분류 악재 상쇄). 최우선 수정: **Kakao 채널 분류**.
+
+---
+
 ## 0. 종합 등급
+> (아래는 1차 베이스라인 원본 — 위 교정 섹션이 최신·우선)
 
 | 차원 | 등급 | 한 줄 |
 |------|------|------|
