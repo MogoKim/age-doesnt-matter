@@ -27,6 +27,7 @@ import { readPendingRows, updateRow } from './sheets-client.js'
 import { detectSite, normalizeNaverCafeUrl, resolveNaverShortUrl, randomUserAgent, isCloudflareChallenge, type SiteConfig } from './site-configs.js'
 import { processContentMedia } from './image-pipeline.js'
 import { transformContent, transformRawContent, classifyCategory } from './content-transformer.js'
+import { polishTitleForSeo } from './title-seo.js'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -626,6 +627,11 @@ export async function main() {
               totalFailed++
               console.log(`  → FAILED: 동영상 포함 글 발행 제외 (videoCount=${videoCount})`)
               continue
+            }
+
+            // 제목 SEO 다듬기 (SHEET_TITLE_SEO=true + 시트 C열 수동 제목 없을 때만). 본문은 절대 불변.
+            if (process.env.SHEET_TITLE_SEO === 'true' && !row.title) {
+              title = await polishTitleForSeo(title, content, isImageLikePostContent(content))
             }
 
             // 카테고리 결정 (창업자 지정 우선, 아니면 게시판별 자동 분류)
