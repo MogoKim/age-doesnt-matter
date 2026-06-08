@@ -58,6 +58,8 @@ on:
     - cron: "11 11 * * *"
     # 07:00 KST = 22:00 UTC (전날) — CTO 크롤링 헬스
     - cron: "11 22 * * *"
+    # 04:00 KST = 19:00 UTC — 비정규화 카운트 정합성 재계산 (reconcile, 멱등)
+    - cron: "0 19 * * *"
     # 22:30 KST = 13:30 UTC — CDO 참여 최적화 (중단 2026-05-16 — DISPATCH ONLY)
     # - cron: "30 13 * * *"
     # 23:45 KST = 14:45 UTC — CTO QA 크론 실행 감사
@@ -190,6 +192,8 @@ jobs:
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=arch-review" >> $GITHUB_OUTPUT ;;
               "11 22 * * *")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=crawler-health" >> $GITHUB_OUTPUT ;;
+              "0 19 * * *")
+                echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=count-reconcile" >> $GITHUB_OUTPUT ;;
               "30 13 * * *")
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;; # 중단 2026-05-16
               "45 14 * * *")

@@ -1,4 +1,4 @@
-// DISPATCH ONLY — 야간 크론 활성화는 창업자 승인 대기(매일 DB write). 현재는 수동 dispatch/백필 전용.
+// 야간 크론 연결됨 (agents-daily.yml 04:00 KST, cto:count-reconcile). 수동 백필/dry도 가능.
 // 비정규화 카운트 드리프트 재계산·교정 (P1-1).
 // 삭제/신고/숨김 경로에서 카운트 감소가 누락돼 생기는 영구 드리프트를 실제 개수로 교정한다.
 //
