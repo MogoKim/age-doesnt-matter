@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { togglePostLike, togglePostScrap, incrementShareCount } from '@/lib/actions/likes'
 import { toggleGuestPostLike } from '@/lib/actions/guest-likes'
 import { useToast } from '@/components/common/Toast'
-import { shareToKakao, copyShareLink, KakaoUnavailableError, preloadKakaoSdk } from '@/lib/kakao-share'
+import { shareToKakao, copyShareLink, KakaoUnavailableError, preloadKakaoSdk, buildPostShareUrl } from '@/lib/kakao-share'
 import { logKakaoShareDebug, getKakaoRuntimeSnapshot } from '@/lib/kakao-share-debug'
 import { gtmLike, gtmShare } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
@@ -177,7 +177,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
       ...getKakaoRuntimeSnapshot(),
     })
     try {
-      await shareToKakao({ title, description, url: window.location.pathname })
+      await shareToKakao({ title, description, url: buildPostShareUrl(window.location.pathname, postId) })
       gtmShare('kakao', 'post', postId)
       trackEvent('share', { method: 'kakao', content_type: 'post', content_id: postId })
       void incrementShareCount(postId)

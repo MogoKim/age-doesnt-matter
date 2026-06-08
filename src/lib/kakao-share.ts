@@ -251,3 +251,18 @@ export function preloadKakaoSdk(): void {
   }
   document.head.appendChild(script)
 }
+
+/**
+ * 게시글 카카오 공유 유입 추적용 URL 생성 — utm 부착.
+ * - pathname: window.location.pathname(쿼리 없는 경로, 브라우저가 이미 인코딩)
+ * - URLSearchParams로 안전 구성. 상세 페이지는 canonical이 깨끗한 URL을 가리키므로 SEO 중복 없음.
+ * - 반환은 상대경로(+쿼리). shareToKakao가 APP_URL을 붙임.
+ */
+export function buildPostShareUrl(pathname: string, postId: string): string {
+  const params = new URLSearchParams({
+    utm_source: 'post_share',
+    utm_medium: 'kakao_share',
+    utm_content: postId,
+  })
+  return `${pathname}?${params.toString()}`
+}
