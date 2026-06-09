@@ -233,14 +233,14 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
       await page.waitForLoadState('networkidle')
     }
 
-    // 7. 스크롤 60% 후 21초 fast-forward (SESSION_SHOWN='1' → canShow()=false)
+    // 7. 정독 85% 초과 스크롤 (트리거 조건은 충족 → SESSION_SHOWN='1'이라 canShow()=false로 미발화 확인)
     await page.evaluate(() => {
       const docH = document.documentElement.scrollHeight - window.innerHeight
-      window.scrollTo(0, docH > 100 ? docH * 0.6 : 0)
+      window.scrollTo(0, docH > 100 ? docH * 0.9 : 0)
     })
     await page.clock.runFor(500)
     await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
-    await page.clock.runFor(21_000)
+    await page.clock.runFor(1_000)
     await page.waitForTimeout(300)
 
     // 8. 두 번째 배너 미발화 확인
@@ -361,19 +361,18 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
     await page.clock.install()
     await page.goto('/')
     await page.waitForLoadState('load') // 홈은 광고 요청 지속으로 networkidle 도달 불가
-    // AddToHomeScreen TIMER_MS=13초 → runFor(21s) 중 먼저 발화 → pwa_shown_this_session='1' 설정
-    // → SignupPromptBanner canShow()=false 충돌 방지
-    // pwa_installed='1' → getInstalled()=true → AddToHomeScreen canShow()=false → 미발화
+    // pwa_installed='1' → getInstalled()=true → AddToHomeScreen canShow()=false → 충돌 방지
     await page.evaluate(() => localStorage.setItem('pwa_installed', '1'))
     await installGtagSpy(page)
 
+    // 정독 85% 초과 스크롤 → read_complete 트리거로 즉시 발동 (60초 백스톱 불필요)
     await page.evaluate(() => {
       const docH = document.documentElement.scrollHeight - window.innerHeight
-      window.scrollTo(0, docH > 100 ? docH * 0.6 : 0)
+      window.scrollTo(0, docH > 100 ? docH * 0.9 : 0)
     })
     await page.clock.runFor(500)
     await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
-    await page.clock.runFor(21_000)
+    await page.clock.runFor(1_000)
 
     await page.waitForSelector('[data-testid="signup-banner-cta"]', { timeout: 5_000 })
 
