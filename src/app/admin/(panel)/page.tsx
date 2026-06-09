@@ -7,9 +7,12 @@ import {
   getDailyBrief,
   getAutomationStatus,
   getAdminQueueCounts,
+  getInsights,
+  getRetentionQuadrants,
 } from '@/lib/queries/admin'
 import AdminQuickStart from '@/components/admin/AdminQuickStart'
 import DailyBriefWidget from '@/components/admin/DailyBriefWidget'
+import InsightsSection from '@/components/admin/InsightsSection'
 import AutomationToggle from '@/components/admin/AutomationToggle'
 
 // 1~2분 캐시 허용(창업자 합의) — 매 접속 풀렌더 방지. 긴급 알림은 최대 2분 지연 가능.
@@ -32,7 +35,7 @@ const Q2_OKR = {
 } as const
 
 export default async function AdminDashboardPage() {
-  const [stats, okr, trend, boards, brief, isAutomationActive, queueCounts] =
+  const [stats, okr, trend, boards, brief, isAutomationActive, queueCounts, insights, retention] =
     await Promise.all([
       getDashboardStats(),
       getMonthlyOkrStats(),
@@ -41,6 +44,8 @@ export default async function AdminDashboardPage() {
       getDailyBrief(),
       getAutomationStatus(),
       getAdminQueueCounts(),
+      getInsights(),
+      getRetentionQuadrants(),
     ])
 
   const cdoIsStale =
@@ -259,7 +264,10 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* ④ 욕망 지도 + 게시판 활성도 */}
+      {/* ④ 인사이트 (구 /admin/insights 통합) */}
+      <InsightsSection data={insights} retention={retention} />
+
+      {/* ⑤ 욕망 지도 + 게시판 활성도 */}
       {brief && (
         <DailyBriefWidget
           dominantDesire={brief.dominantDesire}
