@@ -104,19 +104,35 @@ async function safeText(
   frame: Page | Frame,
   selectors: string[],
   fallback: string = '',
+  opts?: { preserveBreaks?: boolean },
 ): Promise<string> {
+  const preserveBreaks = opts?.preserveBreaks ?? false
   for (const sel of selectors) {
     try {
       const el = frame.locator(sel).first()
       const count = await el.count()
       if (count > 0) {
         // style/script/noscript 노드 제거 후 textContent (PZP UI 텍스트 오염 방어)
-        const text = await el.evaluate((node: Element) => {
+        // preserveBreaks: 본문 전용 — 블록 요소 경계/<br>를 \n으로 보존(문단 가독성).
+        //   인라인(span 등)은 절대 건드리지 않음 → 오염 필터 시그널 어구가 \n으로 쪼개지지 않게(R1).
+        const text = await el.evaluate((node: Element, preserve: boolean) => {
           const clone = node.cloneNode(true) as Element
           clone.querySelectorAll('style, script, noscript').forEach(e => e.remove())
+          if (preserve) {
+            clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'))
+            clone
+              .querySelectorAll('p, div, li, blockquote, h1, h2, h3, h4, h5, h6, .se-text-paragraph, .se-module')
+              .forEach(b => b.append('\n'))
+          }
           return clone.textContent ?? ''
-        })
-        if (text?.trim()) return text.trim()
+        }, preserveBreaks)
+        if (preserveBreaks) {
+          // 줄단위 trim + 빈 줄 최대 1개(문단 구분=\n\n)로 정규화
+          const norm = text.split('\n').map(l => l.trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim()
+          if (norm) return norm
+        } else if (text?.trim()) {
+          return text.trim()
+        }
       }
     } catch {
       // 다음 셀렉터 시도
@@ -798,7 +814,7 @@ async function buildPostFromTarget(
 ): Promise<RawCafePost | null> {
   if (!title || title.length < 2) return null
 
-  // 본문
+  // 본문 — preserveBreaks: 문단/줄바꿈 보존(가독성). 제목·작성자 등 다른 safeText 호출은 미적용.
   let content = await safeText(target, [
     '.se-main-container',
     '.ContentRenderer',
@@ -807,7 +823,7 @@ async function buildPostFromTarget(
     '.article_container .article_viewer',
     '#body',
     '.NHN_Writeform_Main',
-  ])
+  ], '', { preserveBreaks: true })
 
   if (content.length > CRAWL_LIMITS.maxContentLength) {
     content = content.slice(0, CRAWL_LIMITS.maxContentLength)
@@ -972,7 +988,8 @@ function isImageDependentContent(post: RawCafePost): boolean {
 
 /** 게시판 공지문 혼입 감지: NOTICE_SIGNALS 중 2개 이상 포함 */
 function isBoardNoticeContent(content: string): boolean {
-  const hits = NOTICE_SIGNALS.filter(s => content.includes(s)).length
+  const flat = content.replace(/\n/g, ' ') // 본문 줄바꿈(\n) 보존 후에도 시그널 어구 매칭 유지(R1)
+  const hits = NOTICE_SIGNALS.filter(s => flat.includes(s)).length
   return hits >= 2
 }
 
@@ -987,7 +1004,8 @@ const ACCESS_BLOCKED_SIGNALS = [
 
 /** 접근 차단 안내문 감지: ANY 1개 이상 포함 시 true (게시판 공지문과 성격이 다름) */
 function isAccessBlockedContent(content: string): boolean {
-  return ACCESS_BLOCKED_SIGNALS.some(s => content.includes(s))
+  const flat = content.replace(/\n/g, ' ') // R1: 줄바꿈 보존 후에도 안내문 매칭 유지
+  return ACCESS_BLOCKED_SIGNALS.some(s => flat.includes(s))
 }
 
 // 네이버 동영상 플레이어(PZP) UI 흔적 — videoUrls 추출 실패 시 2차 감지
@@ -1001,8 +1019,9 @@ const WEAK_PZP_SIGNALS = [
 
 /** PZP/동영상 플레이어 UI 텍스트 감지: strong 1개 이상 또는 weak 2개 이상 */
 function isVideoPlayerContent(content: string): boolean {
-  if (STRONG_PZP_SIGNALS.some(s => content.includes(s))) return true
-  return WEAK_PZP_SIGNALS.filter(s => content.includes(s)).length >= 2
+  const flat = content.replace(/\n/g, ' ') // R1: 줄바꿈 보존 후에도 PZP UI 텍스트 매칭 유지
+  if (STRONG_PZP_SIGNALS.some(s => flat.includes(s))) return true
+  return WEAK_PZP_SIGNALS.filter(s => flat.includes(s)).length >= 2
 }
 
 // ─── DB 저장 ─────────────────────────────────────────

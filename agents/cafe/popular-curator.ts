@@ -74,7 +74,7 @@ export async function main() {
   })
 
   const candidates = rawCandidates.filter(cp => {
-    const content = cp.content ?? ''
+    const content = (cp.content ?? '').replace(/\n/g, ' ') // R1: 본문 줄바꿈 보존 후에도 시그널 매칭 유지
     const blocked = ACCESS_BLOCKED_SIGNALS_PC.some(s => content.includes(s))
     if (blocked) { console.log(`[PopularCurator] 접근 차단 안내문 2차 필터 skip: "${cp.title.slice(0, 30)}"`)
       return false }

@@ -96,11 +96,12 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   ] as const
   const filterBlocked = <T extends { title: string; content: string }>(posts: T[]): T[] =>
     posts.filter(p => {
-      const blocked = ACCESS_BLOCKED_SIGNALS_CC.some(s => p.content.includes(s))
+      const flat = p.content.replace(/\n/g, ' ') // R1: 본문 줄바꿈 보존 후에도 시그널 매칭 유지
+      const blocked = ACCESS_BLOCKED_SIGNALS_CC.some(s => flat.includes(s))
       if (blocked) { console.log(`[ContentCurator] 접근 차단 안내문 2차 필터 skip: "${p.title.slice(0, 30)}"`)
         return false }
-      const hasStrongPzp = STRONG_PZP_SIGNALS_CC.some(s => p.content.includes(s))
-      const weakPzpCount = WEAK_PZP_SIGNALS_CC.filter(s => p.content.includes(s)).length
+      const hasStrongPzp = STRONG_PZP_SIGNALS_CC.some(s => flat.includes(s))
+      const weakPzpCount = WEAK_PZP_SIGNALS_CC.filter(s => flat.includes(s)).length
       const videoPzp = hasStrongPzp || weakPzpCount >= 2
       if (videoPzp) console.log(`[ContentCurator] PZP/동영상 2차 필터 skip: "${p.title.slice(0, 30)}"`)
       return !videoPzp
