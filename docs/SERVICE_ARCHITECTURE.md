@@ -537,7 +537,7 @@ CafeTrend → card-news/generator.ts
 |------|--------|------|
 | `ci.yml` | PR, push to main | Lint → Typecheck → Test → Build (E2E: webServer 자동 시작) |
 | `lighthouse.yml` | PR, push to main | Lighthouse 접근성 감사 |
-| `post-deploy-qa.yml` | deployment_status | Gate 2: Smoke+Visual QA(Claude Haiku)+Lighthouse → Slack #qa |
+| `post-deploy-qa.yml` | deployment_status | Gate 2: Smoke+Lighthouse → Slack #qa |
 | `run-script.yml` | workflow_dispatch | 일회성 스크립트 수동 실행 |
 
 ### 6.2 에이전트 크론 (13개)
@@ -903,7 +903,7 @@ Slack Workspace: 우나어-ops (14개 채널)
 - SEO JSON-LD + sitemap + Breadcrumbs + 동적 OG 이미지
 - GTM + GA4 애널리틱스 기반 (15개 커스텀 이벤트)
 - PWA (서비스 워커 + 푸시알림 + 오프라인 페이지)
-- Gate 1 (CI: tsc+lint+build) + Gate 2 (post-deploy: Smoke+Visual QA+Lighthouse)
+- Gate 1 (CI: tsc+lint+build) + Gate 2 (post-deploy: Smoke+Lighthouse)
 
 #### SNS 마케팅 시스템
 - SNS 바이럴 마케팅 실험 시스템 (A/B 테스트 8주 로드맵)
@@ -1033,7 +1033,7 @@ EXPERIMENT(설계) → EXECUTE(실행) → ⛔ Gate 2(사용자 피드백) → R
 | CI 빌드 검증 (ci.yml) | ✅ |
 | Lighthouse 접근성 (lighthouse.yml) | ✅ |
 | E2E Playwright (CI webServer 자동 시작) | ✅ |
-| 배포 후 Gate 2 (post-deploy-qa.yml) | ✅ Smoke + Visual QA(Claude Haiku) + Lighthouse |
+| 배포 후 Gate 2 (post-deploy-qa.yml) | ✅ Smoke + Lighthouse |
 | 크론 연결 검증 (check-cron-links.ts) | ✅ /done 자동 실행 |
 | 에이전트 프롬프트 QA | ⚠️ BotLog 기반 에러율 모니터링만 (eval 미구축) |
 
@@ -1043,7 +1043,7 @@ EXPERIMENT(설계) → EXECUTE(실행) → ⛔ Gate 2(사용자 피드백) → R
 Layer 0: 코드 편집 후 → auto-typecheck.sh (Hook, 즉시)
 Layer 1: /done → Gate 1 (tsc + cron-links + build)
 Layer 2: CI (PR/push) → lint+type+test+build+E2E
-Layer 3: 배포 후 → Smoke+Visual QA+Lighthouse → Slack #qa
+Layer 3: 배포 후 → Smoke+Lighthouse → Slack #qa
 ```
 
 ---
@@ -1129,7 +1129,7 @@ Layer 3: 배포 후 → Smoke+Visual QA+Lighthouse → Slack #qa
 | **GHA 17개 체계** | agents-sheet-viral/killer-post/weekly 확장 + post-deploy-qa + quarantine-check | 2026-04~05 |
 | **봇 게시글 Slug 자동생성** | `/api/bot/posts` + `generateCommunitySlug()`, Google 12,533개 URL 색인 복구 | 2026-05-11 |
 | **SEO Article JSON-LD image 필드** | 커뮤니티 게시글 Google 리치 결과 필수 필드 충족 (3-tier fallback) | 2026-05-11 |
-| **Gate 2 자동화** | post-deploy-qa.yml: Smoke+Visual QA(Claude Haiku)+Lighthouse → Slack #qa | 2026-04 |
+| **Gate 2 자동화** | post-deploy-qa.yml: Smoke+Lighthouse → Slack #qa | 2026-04 |
 
 ---
 

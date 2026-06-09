@@ -52,7 +52,7 @@
 
 ## QA 자동 트리거
 - **코드 편집 후**: tsc 자동 실행 (Hook)
-- **git push**: CI 변경 감지 → @smoke/@ads E2E / agents → cron-links | 배포 후: Smoke+Visual QA+Lighthouse
+- **git push**: CI 변경 감지 → @smoke/@ads E2E / agents → cron-links | 배포 후: Smoke+Lighthouse
 - **작업 완료**: `/done` → Gate 1 (tsc + cron-links + build) → 자동 커밋+푸시
 상세: `.claude/rules/qa-deploy.md`
 

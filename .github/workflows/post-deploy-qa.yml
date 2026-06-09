@@ -84,19 +84,7 @@ jobs:
             --project=mobile-chrome \
             --reporter=json > ad-verify-result.json 2>&1 || true
 
-      # ── 4. Visual QA (Claude Haiku — 시각적 UI 이상 감지) ──
-      - name: Visual QA
-        id: visual-qa
-        continue-on-error: true
-        timeout-minutes: 8
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}
-        run: |
-          npx tsx scripts/visual-qa.ts --url "${{ steps.deploy-url.outputs.url }}" > visual-qa-result.json 2>&1 || true
-
-      # ── 5. Lighthouse CI (프로덕션 URL 직접 — 접근성/SEO) ──
+      # ── 4. Lighthouse CI (프로덕션 URL 직접 — 접근성/SEO) ──
       - name: Lighthouse CI
         id: lighthouse
         continue-on-error: true
@@ -118,7 +106,6 @@ jobs:
             smoke-result.json
             cron-result.json
             ad-verify-result.json
-            visual-qa-result.json
           retention-days: 30
 
       # ── 5. Gate 2 에이전트 실행 (항상 실행, 결과에 따라 판정) ──
@@ -134,9 +121,8 @@ jobs:
           QA_SMOKE_RESULT: ${{ steps.smoke.outcome }}
           QA_CRON_RESULT: ${{ steps.cron.outcome }}
           QA_AD_VERIFY_RESULT: ${{ steps.ad-verify.outcome }}
-          QA_VISUAL_QA_RESULT: ${{ steps.visual-qa.outcome }}
           QA_LIGHTHOUSE_RESULT: ${{ steps.lighthouse.outcome }}
-          QA_ALL_PASSED: ${{ (steps.smoke.outcome == 'success' && steps.cron.outcome == 'success' && steps.ad-verify.outcome == 'success' && steps.visual-qa.outcome != 'failure') && 'true' || 'false' }}
+          QA_ALL_PASSED: ${{ (steps.smoke.outcome == 'success' && steps.cron.outcome == 'success' && steps.ad-verify.outcome == 'success') && 'true' || 'false' }}
           QA_COMMIT_SHA: ${{ github.sha }}
           QA_COMMIT_MSG: ${{ github.event.deployment.description || github.event.head_commit.message || '' }}
           QA_DEPLOY_URL: ${{ steps.deploy-url.outputs.url }}

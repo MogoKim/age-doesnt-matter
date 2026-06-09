@@ -21,16 +21,16 @@ description: 배포 QA 규칙 — 광고/에이전트/워크플로우 변경 시
 | `docs/**`, `*.md`, `.claude/**` | QA 스킵 |
 
 ### Layer 3: 배포 후 자동 (deployment_status — post-deploy-qa.yml)
-- Smoke Test → 광고 렌더링 → **Visual QA (Claude Haiku)** → **Lighthouse CI** → Gate 2 에이전트
+- Smoke Test → 광고 렌더링 → **Lighthouse CI** → Gate 2 에이전트
 - 모든 결과 Slack #qa 자동 보고
 
 ### 변경 유형별 QA 매핑
 | 변경 | Layer 0 | Layer 2 | Layer 3 |
 |------|---------|---------|---------|
-| 단어/스타일 수정 | tsc ✅ | @smoke | Smoke+Visual |
-| 광고 컴포넌트 | tsc ✅ | @smoke @ads | Smoke+Visual+Lighthouse |
+| 단어/스타일 수정 | tsc ✅ | @smoke | Smoke |
+| 광고 컴포넌트 | tsc ✅ | @smoke @ads | Smoke+Lighthouse |
 | 에이전트 코드 | tsc ✅ | cron-links | Smoke |
-| Prisma 스키마 | tsc ✅ | @smoke | Smoke+Visual |
+| Prisma 스키마 | tsc ✅ | @smoke | Smoke |
 | docs만 수정 | 스킵 | 스킵 | Smoke |
 
 ---
