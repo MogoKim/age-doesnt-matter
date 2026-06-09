@@ -178,6 +178,9 @@ export interface TwaRetention {
   d1ReturnRate: number // 가입 후 48h 내 앱 재방문율(%)
   d7ReturnRate: number // 가입 후 7일 내 앱 재방문율(%)
   firstActionRate: number // 가입자 중 글·댓글 1개+ 비율(%)
+  d1ReturnCount: number // D1 재방문 실제 명수 (표본 작을 때 % 착시 방지용)
+  d7ReturnCount: number
+  firstActionCount: number
 }
 
 function isTwa(props: unknown): boolean {
@@ -198,7 +201,7 @@ const _getTwaSignupRetention = unstable_cache(
       if (s.userId && isTwa(s.properties) && !signupAt.has(s.userId)) signupAt.set(s.userId, s.createdAt)
     }
     const userIds = [...signupAt.keys()]
-    if (userIds.length === 0) return { signupCount: 0, d1ReturnRate: 0, d7ReturnRate: 0, firstActionRate: 0 }
+    if (userIds.length === 0) return { signupCount: 0, d1ReturnRate: 0, d7ReturnRate: 0, firstActionRate: 0, d1ReturnCount: 0, d7ReturnCount: 0, firstActionCount: 0 }
 
     // 2) 가입자들의 이후 TWA page_view (재방문)
     const views = await prisma.eventLog.findMany({
@@ -234,6 +237,9 @@ const _getTwaSignupRetention = unstable_cache(
       d1ReturnRate: pct(d1),
       d7ReturnRate: pct(d7),
       firstActionRate: pct(activeCount),
+      d1ReturnCount: d1,
+      d7ReturnCount: d7,
+      firstActionCount: activeCount,
     }
   },
   ['admin-twa-retention-v1'],
@@ -255,6 +261,9 @@ export interface GateRetentionRow {
   d1ReturnRate: number
   d7ReturnRate: number
   firstActionRate: number
+  d1ReturnCount: number // 재방문 실제 명수 (표본 작을 때 % 착시 방지)
+  d7ReturnCount: number
+  firstActionCount: number
 }
 
 const _getGateRetention = unstable_cache(
@@ -280,7 +289,7 @@ const _getGateRetention = unstable_cache(
     }
     const allUserIds = [...byVariant.values()].flatMap((m) => [...m.keys()])
     if (allUserIds.length === 0) {
-      return exp.variants.map((v) => ({ variant: v.key, label: v.label, signupCount: 0, d1ReturnRate: 0, d7ReturnRate: 0, firstActionRate: 0 }))
+      return exp.variants.map((v) => ({ variant: v.key, label: v.label, signupCount: 0, d1ReturnRate: 0, d7ReturnRate: 0, firstActionRate: 0, d1ReturnCount: 0, d7ReturnCount: 0, firstActionCount: 0 }))
     }
 
     const [views, users] = await Promise.all([
@@ -313,7 +322,7 @@ const _getGateRetention = unstable_cache(
       }
       const n = map.size
       const pct = (x: number) => (n ? Math.round((x / n) * 1000) / 10 : 0)
-      return { variant: v.key, label: v.label, signupCount: n, d1ReturnRate: pct(d1), d7ReturnRate: pct(d7), firstActionRate: pct(act) }
+      return { variant: v.key, label: v.label, signupCount: n, d1ReturnRate: pct(d1), d7ReturnRate: pct(d7), firstActionRate: pct(act), d1ReturnCount: d1, d7ReturnCount: d7, firstActionCount: act }
     })
   },
   ['admin-gate-retention-v1'],

@@ -59,10 +59,10 @@ function VariantRow({ v, maxRate, enough }: { v: VariantStat; maxRate: number; e
 
 function TwaBaselineCard({ r }: { r: TwaRetention }) {
   const stats = [
-    { label: 'TWA 가입자', value: `${r.signupCount}명` },
-    { label: 'D1 재방문', value: `${r.d1ReturnRate}%` },
-    { label: 'D7 재방문', value: `${r.d7ReturnRate}%` },
-    { label: '첫 활동(글·댓글)', value: `${r.firstActionRate}%` },
+    { label: 'TWA 가입자', value: `${r.signupCount}명`, sub: '' },
+    { label: 'D1 재방문', value: `${r.d1ReturnRate}%`, sub: `${r.d1ReturnCount}/${r.signupCount}명` },
+    { label: 'D7 재방문', value: `${r.d7ReturnRate}%`, sub: `${r.d7ReturnCount}/${r.signupCount}명` },
+    { label: '첫 활동(글·댓글)', value: `${r.firstActionRate}%`, sub: `${r.firstActionCount}/${r.signupCount}명` },
   ]
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-5">
@@ -75,11 +75,15 @@ function TwaBaselineCard({ r }: { r: TwaRetention }) {
           <div key={s.label} className="rounded-lg bg-zinc-50 p-3">
             <p className="text-xs text-zinc-500">{s.label}</p>
             <p className="mt-1 text-xl font-bold text-zinc-900">{s.value}</p>
+            {s.sub && <p className="mt-0.5 text-xs text-zinc-400">{s.sub}</p>}
           </div>
         ))}
       </div>
+      <p className="mt-2 text-xs text-zinc-400">
+        · D1=가입 후 48시간 내, D7=7일 내 앱 재방문(누적) · 첫활동=현재 글·댓글 1개+ 보유 · 대상=browser_env가 앱(twa-android)인 가입자
+      </p>
       {r.signupCount < 20 && (
-        <p className="mt-2 text-xs text-amber-600">⚠️ 표본 {r.signupCount}명 — 적어서 방향성 참고용(절대 수치 신뢰 보류)</p>
+        <p className="mt-1 text-xs text-amber-600">⚠️ 표본 {r.signupCount}명 — 적어서 방향성 참고용(절대 수치 신뢰 보류)</p>
       )}
     </div>
   )
@@ -141,9 +145,9 @@ function GateExperimentCard({ exp, rows }: { exp: WebExperimentView; rows: GateR
               <tr key={r.variant} className="border-t border-zinc-100">
                 <td className="px-3 py-2 font-medium text-zinc-700">{r.label}</td>
                 <td className="px-3 py-2 text-right text-zinc-800">{r.signupCount}명</td>
-                <td className="px-3 py-2 text-right text-zinc-800">{r.d1ReturnRate}%</td>
-                <td className="px-3 py-2 text-right text-zinc-800">{r.d7ReturnRate}%</td>
-                <td className="px-3 py-2 text-right text-zinc-800">{r.firstActionRate}%</td>
+                <td className="px-3 py-2 text-right text-zinc-800">{r.d1ReturnRate}% <span className="text-xs text-zinc-400">({r.d1ReturnCount}/{r.signupCount})</span></td>
+                <td className="px-3 py-2 text-right text-zinc-800">{r.d7ReturnRate}% <span className="text-xs text-zinc-400">({r.d7ReturnCount}/{r.signupCount})</span></td>
+                <td className="px-3 py-2 text-right text-zinc-800">{r.firstActionRate}% <span className="text-xs text-zinc-400">({r.firstActionCount}/{r.signupCount})</span></td>
               </tr>
             ))}
           </tbody>
@@ -153,6 +157,10 @@ function GateExperimentCard({ exp, rows }: { exp: WebExperimentView; rows: GateR
       <p className="mt-3 text-xs leading-relaxed text-zinc-500">
         A(현행·대조군) 대비 B·C가 <b>가입 후 앱 재방문(D1/D7)</b>을 높이는지가 핵심입니다.
         가입률(funnel)은 게이트 특성상 비교가 부적합해 제외했습니다. (최근 90일 · 봇 제외)
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+        · 괄호 안 = 재방문/가입 <b>실제 명수</b>(%는 표본 작을 때 출렁이니 명수로 확인) · D1=가입 후 48시간 내, D7=7일 내 앱 재방문(누적, D7⊇D1)
+        · 첫활동=현재 글·댓글 1개+ 보유 · 그룹 분류=가입 시 twa_gate_variant. 위 baseline(21명)은 게이트 무관 전체 TWA 가입자라 모수가 다름(직접 비교 주의)
       </p>
       {total < 30 && (
         <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-700">
