@@ -289,12 +289,6 @@ export default async function AdminAbTestsPage({
 
       {gateExp && <GateExperimentCard exp={gateExp} rows={gateRetention} />}
 
-      {webExperiments.length === 0 && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-zinc-400">
-          등록된 실험이 없습니다. <code className="text-zinc-500">src/lib/experiments/registry.ts</code>에 추가하세요.
-        </div>
-      )}
-
       {active.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-xs font-medium text-zinc-400">진행 중</h2>

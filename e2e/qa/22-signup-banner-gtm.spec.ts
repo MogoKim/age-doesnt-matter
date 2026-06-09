@@ -77,13 +77,13 @@ async function triggerBanner(page: Page): Promise<void> {
 
   await page.evaluate(() => {
     const docH = document.documentElement.scrollHeight - window.innerHeight
-    window.scrollTo(0, docH > 100 ? docH * 0.6 : 0)
+    window.scrollTo(0, docH > 100 ? docH * 0.9 : 0)  // 정독 85% 초과 → read_complete 트리거
   })
 
-  // scroll 이벤트 처리 여유 후 21초 fast-forward
+  // scroll 이벤트 처리 여유 (85% 도달 시 즉시 발동, 60초 백스톱 불필요)
   await page.clock.runFor(500)
   await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
-  await page.clock.runFor(21_000)
+  await page.clock.runFor(1_000)
 
   // 배너 CTA: data-testid으로 식별 (Link → button 전환 후)
   await page.waitForSelector('[data-testid="signup-banner-cta"]', { timeout: 5_000 })
@@ -98,7 +98,6 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
       sessionStorage.clear()
       localStorage.removeItem('signup_prompt_done')
       localStorage.removeItem('signup_prompt_count')
-      localStorage.removeItem('signup_variant')
       // pwa_installed='1' — AddToHomeScreen(13초 타이머)이 SignupPromptBanner보다 먼저 발화해
       // pwa_shown_this_session='1'을 세팅하면 canShow()=false가 되어 배너 미노출.
       // 이 스위트는 SignupPromptBanner GTM만 검증하므로 PWA 팝업 간섭을 차단한다.
@@ -108,10 +107,8 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
 
   /**
    * T1: eligible + shown 이벤트 발화 + 파라미터 정합성
-   * - variant: A|B|C
    * - page_path: /community/로 시작
    * - show_count: 1 (첫 번째 노출)
-   * - eligible.variant === shown.variant
    */
   test('T1: eligible + shown 이벤트 발화 및 파라미터 정합성 @signup-banner', async ({ page }) => {
     await triggerBanner(page)
@@ -120,17 +117,12 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
 
     const eligible = spy.find(e => e.event === 'signup_banner_eligible')
     expect(eligible, 'signup_banner_eligible 이벤트 미발화').toBeTruthy()
-    expect(eligible!.params.variant, 'variant 파라미터 이상').toMatch(/^[ABC]$/)
     expect(String(eligible!.params.page_path), 'page_path 파라미터 이상').toMatch(/^\/community\//)
 
     const shown = spy.find(e => e.event === 'signup_banner_shown')
     expect(shown, 'signup_banner_shown 이벤트 미발화').toBeTruthy()
-    expect(shown!.params.variant, 'shown.variant 파라미터 이상').toMatch(/^[ABC]$/)
     expect(String(shown!.params.page_path), 'shown.page_path 파라미터 이상').toMatch(/^\/community\//)
     expect(shown!.params.show_count, 'show_count는 1이어야 함').toBe(1)
-
-    // eligible variant와 shown variant 반드시 일치
-    expect(eligible!.params.variant).toBe(shown!.params.variant)
   })
 
   /**
@@ -157,7 +149,6 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
     const spy = await getSpyEvents(page)
     const clicked = spy.find(e => e.event === 'signup_banner_clicked')
     expect(clicked, 'signup_banner_clicked 이벤트 미발화').toBeTruthy()
-    expect(clicked!.params.variant).toMatch(/^[ABC]$/)
   })
 
   /**
@@ -173,7 +164,6 @@ test.describe('SignupPromptBanner GTM 이벤트', () => {
     const spy = await getSpyEvents(page)
     const dismissed = spy.find(e => e.event === 'signup_banner_dismissed')
     expect(dismissed, 'signup_banner_dismissed 이벤트 미발화').toBeTruthy()
-    expect(dismissed!.params.variant).toMatch(/^[ABC]$/)
     expect(dismissed!.params.show_count as number, 'show_count > 0 이어야 함').toBeGreaterThan(0)
   })
 

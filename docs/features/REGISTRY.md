@@ -73,7 +73,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 트리거 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|--------|---------|------------|------|------|---------|
-| F01 | 회원가입 유도 배너 | `src/components/common/SignupPromptBanner.tsx` | 20초 체류 + 50% 스크롤 | RELATION | ALL | [F01](F01-signup-prompt.md) | ACTIVE | 2026-06-05 |
+| F01 | 회원가입 유도 배너 | `src/components/common/SignupPromptBanner.tsx` | 정독 85% + 60초 백스톱 (문구 C·타이밍 read_complete 고정, 실험 종료) | RELATION | ALL | [F01](F01-signup-prompt.md) | ACTIVE | 2026-06-09 |
 | F02 | PWA 설치 유도 | `src/components/common/AddToHomeScreen.tsx` + `src/lib/app-links.ts` | 4단계 트리거 (13s/3페이지/행동/주간) — 안드=Play/iOS=PWA | RELATION+HEALTH | P1·P2 | [F02](F02-pwa-install.md) | ACTIVE | 2026-06-05 |
 | F03 | 홈 페이지 | `src/components/features/home/` (21개 컴포넌트) | 홈 방문 | RELATION | P1·P2·P3 | [F03](F03-home-page.md) | ACTIVE | 2026-06-03 |
 | F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | RELATION+HEALTH | P1·P2·P5 | [F04](F04-community.md) | ACTIVE | 2026-06-03 |
@@ -88,7 +88,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F13 | 게시글 하단 CTA | `src/components/features/community/PostCTA.tsx` | 게시글/매거진 상세 열람 후 자동 표시 — 비회원→가입 / 모바일웹 로그인→앱설치 | RELATION | ALL | [F13](F13-post-cta.md) | ACTIVE | 2026-06-03 |
 | F14 | 목록 광고 띠배너 | `src/components/ad/ListBanner.tsx` + `ListBannerClient.tsx` + `src/app/api/ad-impression/route.ts` + AdBanner `LIST_HEADER` 슬롯 + `src/components/admin/AdBannerTable.tsx` | 6개 목록 페이지 GNB 아래 노출 (어드민 AdBanner 관리, 최대 3개 자동 슬라이드) | MONEY | ALL | [F14](F14-list-ad-banner.md) | ACTIVE | 2026-06-05 |
 | F15 | 팝업 (공지·이벤트·홍보) | `src/components/common/PopupRenderer.tsx` + `src/components/admin/PopupManager.tsx` + `src/lib/actions/popups.ts` + `src/lib/queries/popups.ts` + `src/app/api/popups/route.ts` + Popup 모델 | 대상 페이지 진입 시 노출 (어드민 Popup 관리 · 센터/바텀/전면 3종 · 기간·빈도 제어) | RELATION | ALL | [F15](F15-popup.md) | ACTIVE | 2026-06-06 |
-| F16 | 웹 A/B 테스트 인프라 | `src/lib/experiments/` + `src/app/admin/(panel)/ab-tests/` + `src/lib/queries/admin/admin.experiments-web.ts` + ExperimentState 모델 | 실험 레지스트리(코드 SSOT) + 어드민 현황·편집 (variant별 전환율 + 신뢰배지 + 게이트 재방문 D1/D7) | INFRA | — | [F16](F16-ab-test-infra.md) | ACTIVE | 2026-06-08 |
+| F16 | 웹 A/B 테스트 인프라 | `src/lib/experiments/` + `src/app/admin/(panel)/ab-tests/` + `src/lib/queries/admin/admin.experiments-web.ts` + ExperimentState 모델 | 실험 레지스트리(코드 SSOT) + 어드민 현황·편집. f01 문구·타이밍 종료(UT 위너 고정)→twa01 게이트만 운영, 인프라 유지 | INFRA | — | [F16](F16-ab-test-infra.md) | ACTIVE | 2026-06-09 |
 
 ---
 

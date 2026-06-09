@@ -5,9 +5,6 @@ import { getExperiment } from './registry'
  * - _uid(디바이스 고유 ID) 해시 기반 → 재방문 시 동일 variant 불변
  * - 가중치 누적 분배 → variant 비율 반영
  * - localStorage 캐시(검증 가능) — legacyStorageKey 있으면 기존 키 재사용(진행중 실험 보존)
- *
- * 기존 SignupPromptBanner의 getOrAssignVariant(hash%3)·getTriggerVariant((hash+7)%2)와
- * 동등(가중치 1/1/1 분배 = hash%3, hashOffset=7 = (hash+7)%2).
  */
 function getDeviceUid(): string {
   let uid = localStorage.getItem('_uid')

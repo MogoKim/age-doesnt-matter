@@ -27,12 +27,9 @@ function isInappEnv(env: string): env is InappEnv {
 // ──────────────────────────────────────────────
 // 상수
 // ──────────────────────────────────────────────
-const TIMER_MS = 20_000
-const SCROLL_THRESHOLD = 0.5
 const MAX_SHOWS = 4
 
-// 타이밍 A/B (리텐션 P1): early=현행(20초/50%) vs read_complete=정독 거의 완료(85%) 후 발동.
-// 근거: 정독자 재방문 100% — 정독을 끊지 않고 다 읽은 순간에 유도. 짧은 글/무스크롤은 백스톱으로 발동.
+// 노출 타이밍(UT 위너 고정): 정독 거의 완료(85%) 후 발동. 안 읽고 떠나면 60초 백스톱.
 const READ_COMPLETE_SCROLL = 0.85
 const BACKSTOP_MS = 60_000
 
@@ -45,37 +42,20 @@ const EXCLUDED_PATHS = [
 const CONTENT_PATHS = ['/community/', '/magazine/', '/jobs/', '/best']
 
 // localStorage keys
-const KEY_VARIANT = 'signup_variant'
 const KEY_COUNT = 'signup_prompt_count'
 const KEY_DONE = 'signup_prompt_done'
 // sessionStorage keys
 const SESSION_SHOWN = 'signup_prompt_shown_this_session'
 
 // ──────────────────────────────────────────────
-// 배리언트 콘텐츠
+// 배너 콘텐츠 (UT 위너: C 공감형 고정 — 문구 A/B/C 실험 종료 2026-06-09)
 // ──────────────────────────────────────────────
-const VARIANT_CONTENT = {
-  A: {
-    emoji: '👋',
-    headline: '가입하면 더 많이 즐길 수 있어요',
-    sub: '소중한 내 일상과 생각들을 간직해봐요',
-    cta: '카카오로 바로 시작하기',
-  },
-  B: {
-    emoji: '👋',
-    headline: '가입하고 더 재미있게 놀다 가세요',
-    sub: '혼자 읽기 아까운 글, 함께 나눠봐요',
-    cta: '3초만에 카카오로 시작',
-  },
-  C: {
-    emoji: '👋',
-    headline: '나만 이런 게 아니었네?',
-    sub: '우리끼리 편하게 수다 떨어봐요',
-    cta: '카카오 한 번 클릭으로 가입',
-  },
+const BANNER_CONTENT = {
+  emoji: '👋',
+  headline: '나만 이런 게 아니었네?',
+  sub: '우리끼리 편하게 수다 떨어봐요',
+  cta: '카카오 한 번 클릭으로 가입',
 } as const
-
-type Variant = keyof typeof VARIANT_CONTENT
 
 // ──────────────────────────────────────────────
 // 순수 유틸
@@ -92,42 +72,6 @@ function canShow(): boolean {
   if (localStorage.getItem(KEY_DONE) === '1') return false
   if (sessionStorage.getItem(SESSION_SHOWN)) return false
   return true
-}
-
-function getOrAssignVariant(): Variant {
-  const stored = localStorage.getItem(KEY_VARIANT) as Variant | null
-  if (stored && stored in VARIANT_CONTENT) return stored
-  const keys = Object.keys(VARIANT_CONTENT) as Variant[]
-  // 디바이스 고유 ID 기반 결정론적 배정 (재방문 시 배리언트 불변)
-  let uid = localStorage.getItem('_uid')
-  if (!uid) {
-    uid = (typeof crypto !== 'undefined' && crypto.randomUUID)
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
-    localStorage.setItem('_uid', uid)
-  }
-  let hash = 0
-  for (let i = 0; i < uid.length; i++) hash += uid.charCodeAt(i)
-  const assigned = keys[hash % keys.length]
-  localStorage.setItem(KEY_VARIANT, assigned)
-  return assigned
-}
-
-// 타이밍 A/B 배정: _uid 해시 기반 50:50 결정론적(재방문 시 불변). 콘텐츠 variant(%3)와 직교(+7 시드, %2).
-function getTriggerVariant(): 'early' | 'read_complete' {
-  let uid = localStorage.getItem('_uid')
-  if (!uid) {
-    uid = (typeof crypto !== 'undefined' && crypto.randomUUID)
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
-    localStorage.setItem('_uid', uid)
-  }
-  let hash = 0
-  for (let i = 0; i < uid.length; i++) hash += uid.charCodeAt(i)
-  const v = (hash + 7) % 2 === 0 ? 'read_complete' : 'early'
-  // 가입 시 sign_up에 실어 보내기 위해 저장(전환을 userId 기반으로 측정 — sessionId 단절 우회)
-  localStorage.setItem('signup_trigger_variant', v)
-  return v
 }
 
 function getPromptCount(): number {
@@ -171,7 +115,6 @@ export function SignupPromptBanner() {
     INAPP_UTM_SOURCES.includes(searchParams.get('utm_source') as typeof INAPP_UTM_SOURCES[number])
   const signupUtmSource = searchParams.get('utm_source') ?? ''
   const [visible, setVisible] = useState(false)
-  const [variant, setVariant] = useState<Variant>('A')
   const [isStarting, setIsStarting] = useState(false)
   const [currentEnv, setCurrentEnv] = useState<string>('android-chrome')
 
@@ -246,9 +189,8 @@ export function SignupPromptBanner() {
     if (status === 'loading') return
     if (isLoggedIn || isTWA || !isActivePath(pathname)) return
 
-    const triggerVar = getTriggerVariant()
-    // read_complete: 스크롤(85%)이 주 트리거, 타이머는 60초 백스톱 / early: 20초 타이머
-    const fireDelay = triggerVar === 'read_complete' ? BACKSTOP_MS : TIMER_MS
+    // 노출 타이밍 고정(UT 위너): 스크롤 85%가 주 트리거, 60초 백스톱
+    const fireDelay = BACKSTOP_MS
 
     let alreadyFired = false
     let timerFired = false
@@ -256,23 +198,21 @@ export function SignupPromptBanner() {
 
     const tryFire = () => {
       if (alreadyFired) return
-      if (!timerFired && !scrolledRef.current) return  // (early)타이머·50% / (read_complete)백스톱·85% 중 충족
+      if (!timerFired && !scrolledRef.current) return  // 백스톱(60초) 또는 정독 85% 중 충족
       if (!canShow()) return
       alreadyFired = true
       if (timerId) { clearTimeout(timerId); timerId = null }
 
-      const v = getOrAssignVariant()
       const count = getPromptCount()
       incrementCount()
       sessionStorage.setItem(SESSION_SHOWN, '1')
-      setVariant(v)
       setVisible(true)
-      gtmSignupBannerEligible(v, pathname)
-      gtmSignupBannerShown(v, pathname, count + 1)
-      // 타이밍 A/B 측정 (EventLog, _anon_sid 자동) — 발동 시점 정독률 + 콘텐츠/타이밍 variant
+      gtmSignupBannerEligible(pathname)
+      gtmSignupBannerShown(pathname, count + 1)
+      // 노출 측정 (EventLog, _anon_sid 자동) — 발동 시점 정독률
       const scrollableNow = document.documentElement.scrollHeight - window.innerHeight
       const scrollAt = scrollableNow <= 0 ? 100 : Math.min(100, Math.max(0, Math.round((window.scrollY / scrollableNow) * 100)))
-      trackEvent('signup_banner_shown', { trigger_variant: triggerVar, content_variant: v, scroll_at_show: scrollAt })
+      trackEvent('signup_banner_shown', { scroll_at_show: scrollAt })
     }
 
     tryFireRef.current = tryFire
@@ -303,8 +243,8 @@ export function SignupPromptBanner() {
   useEffect(() => {
     if (status === 'loading') return
     if (isLoggedIn || isTWA || !isActivePath(pathname)) return
-    // 타이밍 variant별 스크롤 임계값 (early 50% / read_complete 85% 정독 완료)
-    const scrollThreshold = getTriggerVariant() === 'read_complete' ? READ_COMPLETE_SCROLL : SCROLL_THRESHOLD
+    // 정독 85% 완료 시 발동(고정)
+    const scrollThreshold = READ_COMPLETE_SCROLL
     // pathname 변경 시 현재 스크롤 위치로 초기화 (scroll effect가 timer effect보다 나중에 실행됨)
     const docH0 = document.documentElement.scrollHeight - window.innerHeight
     scrolledRef.current = docH0 < 100 || window.scrollY / docH0 >= scrollThreshold
@@ -391,7 +331,7 @@ export function SignupPromptBanner() {
 
   if (!visible) return null
 
-  const content = VARIANT_CONTENT[variant]
+  const content = BANNER_CONTENT
 
   const inapp = isInappEnv(currentEnv)
 
@@ -401,14 +341,14 @@ export function SignupPromptBanner() {
     : '브라우저에서 가입하기'
 
   const handleDismiss = () => {
-    gtmSignupBannerDismissed(variant, pathname, getPromptCount())
+    gtmSignupBannerDismissed(pathname, getPromptCount())
     setVisible(false)
   }
 
   const handleCTAClick = () => {
     if (inapp) {
       // 인앱 환경: 외부브라우저로 현재 페이지 열기 + signup=1 파라미터
-      gtmSignupBannerClicked(variant, pathname, 'external_browser')
+      gtmSignupBannerClicked(pathname, 'external_browser')
       const targetUrl = new URL(window.location.href)
       targetUrl.searchParams.set('signup', '1')
       targetUrl.searchParams.set('utm_source', currentEnv)
@@ -438,7 +378,7 @@ export function SignupPromptBanner() {
       }
     } else {
       // 일반 브라우저: 직접 카카오 OAuth
-      gtmSignupBannerClicked(variant, pathname, 'kakao_oauth')
+      gtmSignupBannerClicked(pathname, 'kakao_oauth')
       setIsStarting(true)
       startKakaoLogin(pathname)
     }

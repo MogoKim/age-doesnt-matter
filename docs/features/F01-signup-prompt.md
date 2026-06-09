@@ -71,6 +71,7 @@
 | 2026-05-19 | EXCLUDED_PATHS에서 `/faq` 제거 | /faq 페이지 삭제 — /about#faq로 통합됨 |
 | 2026-06-02 | Props 제거, `useSession()` 도입, `status==='loading'` 가드 추가 | P0 2단계 auth island 제거 — CDN 캐시 활성화 |
 | 2026-06-05 | GA4 A/B/C 성과 집계 스크립트(`scripts/ga4-signup-ab.ts`) 추가 + 운영문서(`docs/signup-prompt-policy.html`) 코드 기준 전면 재작성 | 실험 데이터 가시화 — 명령 한 줄로 승자 확인. 본 문서(F01)의 A/B/C 카피·storage 키는 코드와 불일치분 잔존(별도 정정 예정) |
+| 2026-06-09 | 문구 A/B/C→**C 공감형 고정**, 타이밍→**read_complete(정독 85% + 60초 백스톱) 고정**. variant 배정·early 분기·VARIANT_CONTENT A/B 제거 | UT 위너 확정(정량 표본 1~2건 무의미, UT 정성 근거). 코드 단순화·레거시 제거 |
 
 ---
 
