@@ -14,6 +14,7 @@ import AdminQuickStart from '@/components/admin/AdminQuickStart'
 import DailyBriefWidget from '@/components/admin/DailyBriefWidget'
 import InsightsSection from '@/components/admin/InsightsSection'
 import AutomationToggle from '@/components/admin/AutomationToggle'
+import InfoTip from '@/components/admin/InfoTip'
 
 // 1~2분 캐시 허용(창업자 합의) — 매 접속 풀렌더 방지. 긴급 알림은 최대 2분 지연 가능.
 export const revalidate = 120
@@ -84,14 +85,15 @@ export default async function AdminDashboardPage() {
 
       {/* ① Today KPI */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <KpiCard label="오늘 방문 (UV)" value={stats.todayUniqueVisitors} icon="👁️" sub={`회원 ${stats.memberUv} · 비회원 ${stats.guestUv}`} />
-        <KpiCard label="오늘 PV" value={stats.todayPV} icon="📄" sub={`회원 ${stats.memberPv.toLocaleString()} · 비회원 ${stats.guestPv.toLocaleString()}`} />
-        <KpiCard label="신규 가입" value={stats.todaySignups} icon="🆕" sub="실고객만(봇 제외)" href="/admin/members" />
+        <KpiCard label="오늘 방문 (UV)" value={stats.todayUniqueVisitors} icon="👁️" sub={`회원 ${stats.memberUv} · 비회원 ${stats.guestUv}`} tip="오늘 방문한 고유 사용자(세션) 수. 봇 제외. 회원=오늘 로그인한 세션, 비회원=비로그인 세션, 합=전체. 비회원→회원 전환 유저는 회원으로 1회만(중복 없음)." />
+        <KpiCard label="오늘 PV" value={stats.todayPV} icon="📄" sub={`회원 ${stats.memberPv.toLocaleString()} · 비회원 ${stats.guestPv.toLocaleString()}`} tip="오늘 페이지 조회 수(봇 제외). 회원/비회원 분리, 합=전체. 같은 사람이 여러 번 봐도 다 카운트(UV와 달리 중복 포함)." />
+        <KpiCard label="신규 가입" value={stats.todaySignups} icon="🆕" sub="실고객만(봇 제외)" href="/admin/members" tip="오늘 가입한 실고객 수. providerId가 순수 숫자인 진짜 카카오 가입자만. seed·curator 등 봇 전부 제외." />
         <KpiCard
           label="방문→가입 전환율"
           value={stats.todayConversionRate !== null ? `${stats.todayConversionRate}%` : '—'}
           icon="📊"
           sub={stats.todayUniqueVisitors === 0 ? '방문 데이터 없음' : undefined}
+          tip="오늘 신규가입 ÷ 전체 UV(회원+비회원). 분모는 오늘 전체 방문자(회원 재방문 포함). 가입은 비회원만 하므로 회원 방문이 분모에 섞여 다소 보수적으로 잡힘."
         />
         <KpiCard
           label="오늘 글/댓글"
@@ -99,6 +101,7 @@ export default async function AdminDashboardPage() {
           icon="📝"
           sub="회원 글 / 회원 댓글(봇 제외)"
           href="/admin/content"
+          tip="오늘 실고객(카카오 가입 회원)이 쓴 글/댓글 수. 봇(wave·seed·curator)과 비회원 게스트 댓글은 제외. 글=source USER, 댓글=author가 실고객."
         />
         <KpiCard
           label="미처리 신고"
@@ -106,6 +109,7 @@ export default async function AdminDashboardPage() {
           icon="🛡️"
           sub={stats.pendingReports === 0 ? '이상 없음' : '즉시 처리 필요'}
           href="/admin/reports"
+          tip="아직 처리(승인/숨김/삭제)하지 않은 신고 건수. PENDING 상태 Report."
         />
       </div>
 
@@ -173,6 +177,7 @@ export default async function AdminDashboardPage() {
             target={Q2_OKR.uv.target}
             unit={Q2_OKR.uv.unit}
             desc={Q2_OKR.uv.desc}
+            tip="이달(1일~오늘) 고유 세션 누적 수. 봇·창업자 제외, 같은 세션은 한 달 내 중복 제거. (트렌드 그래프의 '30일 합'과 달리 월 단위 distinct라 더 작음)"
           />
           <OkrCard
             label={Q2_OKR.avgPv.label}
@@ -181,6 +186,7 @@ export default async function AdminDashboardPage() {
             unit={Q2_OKR.avgPv.unit}
             desc={Q2_OKR.avgPv.desc}
             decimals={1}
+            tip="이달 총 PV ÷ 이달 UV. 방문 한 번에 평균 몇 페이지 보는지. 콘텐츠 흡인력 지표."
           />
           <OkrCard
             label={Q2_OKR.conversion.label}
@@ -189,10 +195,11 @@ export default async function AdminDashboardPage() {
             unit={Q2_OKR.conversion.unit}
             desc={Q2_OKR.conversion.desc}
             decimals={1}
+            tip="이달 신규가입(실고객 providerId 숫자) ÷ 이달 UV. 상단 '오늘 전환율'과 봇 기준 동일, 기간만 월 단위."
           />
           {/* KR4 D7 — CDO 수집 상태에 따라 분기 */}
           <div className="rounded-xl border border-zinc-200 bg-white p-4">
-            <p className="text-xs font-bold text-zinc-700">{Q2_OKR.d7Retention.label}</p>
+            <p className="text-xs font-bold text-zinc-700">{Q2_OKR.d7Retention.label}<InfoTip text="GA4 코호트 기반 비회원 D7 재방문율. CDO 에이전트가 매일 22:00 수집. 현재 수집 중단 상태(에이전트 미동작)." /></p>
             {cdoIsStale ? (
               <div className="mt-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-500">
                 📡 수집 중단
@@ -246,6 +253,7 @@ export default async function AdminDashboardPage() {
             max={trendMaxUv}
             color="bg-[#FF6F61]"
             label="일별 UV"
+            tip="막대=각 날의 고유 방문자(일별 distinct), 큰 숫자=최근 30일 합계. 같은 사람이 여러 날 오면 날마다 세므로 월 UV(distinct)보다 큼."
           />
           <MiniBarChart
             data={trend}
@@ -253,6 +261,7 @@ export default async function AdminDashboardPage() {
             max={trendMaxPv}
             color="bg-blue-400"
             label="일별 PV"
+            tip="막대=각 날의 페이지뷰, 큰 숫자=최근 30일 합계. 봇 제외."
           />
           <MiniBarChart
             data={trend}
@@ -260,6 +269,7 @@ export default async function AdminDashboardPage() {
             max={trendMaxSignups}
             color="bg-green-400"
             label="일별 신규가입"
+            tip="막대=각 날의 신규가입(실고객 providerId 숫자만), 큰 숫자=최근 30일 합계. 인사이트 7일 신규와 봇 기준 동일."
           />
         </div>
       </section>
@@ -328,6 +338,7 @@ function OkrCard({
   unit,
   desc,
   decimals = 0,
+  tip,
 }: {
   label: string
   current: number
@@ -335,13 +346,14 @@ function OkrCard({
   unit: string
   desc: string
   decimals?: number
+  tip?: string
 }) {
   const pct = target <= 0 ? 0 : Math.min(100, Math.round((current / target) * 100))
   const displayCurrent = decimals > 0 ? current.toFixed(decimals) : current.toLocaleString()
   const displayTarget = decimals > 0 ? target.toFixed(decimals) : target.toLocaleString()
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4">
-      <p className="text-xs font-bold text-zinc-700">{label}</p>
+      <p className="text-xs font-bold text-zinc-700">{label}{tip && <InfoTip text={tip} />}</p>
       <div className="mt-2 flex items-baseline justify-between">
         <span className="text-xl font-bold text-zinc-900">
           {displayCurrent}
@@ -367,18 +379,20 @@ function MiniBarChart({
   max,
   color,
   label,
+  tip,
 }: {
   data: TrendDay[]
   accessor: 'uv' | 'pv' | 'signups'
   max: number
   color: string
   label: string
+  tip?: string
 }) {
   const total = data.reduce((s, d) => s + d[accessor], 0)
   return (
     <div>
       <div className="mb-2 flex items-baseline justify-between">
-        <span className="text-xs font-medium text-zinc-600">{label}</span>
+        <span className="text-xs font-medium text-zinc-600">{label}{tip && <InfoTip text={tip} />}</span>
         <span className="text-sm font-bold text-zinc-900">{total.toLocaleString()}</span>
       </div>
       <div className="flex h-16 items-end gap-px">
@@ -409,6 +423,7 @@ function KpiCard({
   prefix = '',
   href,
   sub,
+  tip,
 }: {
   label: string
   value: number | string
@@ -416,6 +431,7 @@ function KpiCard({
   prefix?: string
   href?: string
   sub?: string
+  tip?: string
 }) {
   const displayValue = typeof value === 'number' ? `${prefix}${value.toLocaleString()}` : value
   const inner = (
@@ -425,7 +441,7 @@ function KpiCard({
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm text-zinc-500">{label}</span>
+        <span className="text-sm text-zinc-500">{label}{tip && <InfoTip text={tip} />}</span>
         <span className="text-lg">{icon}</span>
       </div>
       <p className="mt-2 text-2xl font-bold text-zinc-900">{displayValue}</p>

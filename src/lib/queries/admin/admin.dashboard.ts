@@ -1,6 +1,10 @@
 import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 
+// 실고객 = providerId 순수 숫자(진짜 카카오 가입자). seed_/bot-/curator-/@unao.bot 봇 전부 제외.
+// 봇 판별 단일 기준 — 대시보드 전 지표 통일(트렌드·OKR·카드).
+const isReal = (pid?: string | null): boolean => !!pid && /^\d+$/.test(pid)
+
 // ─── KST 날짜 헬퍼 ───
 
 function getKstTodayStart(): Date {
@@ -20,9 +24,6 @@ function getKstMonthStart(): Date {
 export const getDashboardStats = unstable_cache(
   async () => {
     const today = getKstTodayStart()
-
-    // 실고객 = providerId 순수 숫자(진짜 카카오 가입자). seed_/bot-/curator-/@unao.bot 봇 전부 제외.
-    const isReal = (pid?: string | null) => !!pid && /^\d+$/.test(pid)
 
     const [
       pvRows,
@@ -157,13 +158,12 @@ export const getMonthlyOkrStats = unstable_cache(
     const avgPvPerUv =
       monthlyUv > 0 ? Math.round((monthlyPv / monthlyUv) * 10) / 10 : 0
 
-    // KR3: 월 신규가입 / UV
-    const monthlySignups = await prisma.user.count({
-      where: {
-        createdAt: { gte: monthStart },
-        NOT: { email: { endsWith: '@unao.bot' } },
-      },
+    // KR3: 월 신규가입(실고객 providerId ^\d+$) / UV — 카드 신규가입과 봇 기준 통일
+    const monthNewUsers = await prisma.user.findMany({
+      where: { createdAt: { gte: monthStart } },
+      select: { providerId: true },
     })
+    const monthlySignups = monthNewUsers.filter((u) => isReal(u.providerId)).length
     const conversionRate =
       monthlyUv > 0
         ? Math.round((monthlySignups / monthlyUv) * 1000) / 10
@@ -201,7 +201,7 @@ export const getMonthlyOkrStats = unstable_cache(
       cdoLastCollectedAt,
     }
   },
-  ['admin-monthly-okr-stats'],
+  ['admin-monthly-okr-stats-v2'],
   { revalidate: 600 }
 )
 
@@ -223,11 +223,8 @@ export const getDailyTrend = unstable_cache(
         select: { sessionId: true, createdAt: true },
       }),
       prisma.user.findMany({
-        where: {
-          createdAt: { gte: startDate },
-          NOT: { email: { endsWith: '@unao.bot' } },
-        },
-        select: { createdAt: true },
+        where: { createdAt: { gte: startDate } },
+        select: { createdAt: true, providerId: true }, // providerId로 실고객 필터(인사이트 7일신규와 봇 기준 통일)
       }),
     ])
 
@@ -249,6 +246,7 @@ export const getDailyTrend = unstable_cache(
     }
 
     for (const su of signups) {
+      if (!isReal(su.providerId)) continue // 실고객만(봇 제외)
       const key = new Date(su.createdAt.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
       if (buckets[key]) buckets[key].signups++
     }
@@ -262,7 +260,7 @@ export const getDailyTrend = unstable_cache(
         signups,
       }))
   },
-  ['admin-daily-trend'],
+  ['admin-daily-trend-v2'],
   { revalidate: 1800 }
 )
 

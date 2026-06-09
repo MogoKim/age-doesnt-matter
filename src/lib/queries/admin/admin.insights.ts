@@ -106,7 +106,8 @@ export const getInsights = unstable_cache(
       ;(sVisitDays[e.sessionId!] ??= new Set()).add(Math.floor((e.createdAt.getTime() + 9 * 3600000) / DAY))
     }
     const pvSessions = new Set(events.filter((e) => e.eventName === 'page_view').map((e) => e.sessionId!))
-    const loginSessions = new Set(events.filter((e) => e.eventName === 'login').map((e) => e.sessionId!))
+    // 가입전환 = 세션 중 sign_up(진짜 신규가입) 발생. (기존 login=재방문 로그인 포함이라 '가입'으로 오표기됐던 것 교정)
+    const signupSessions = new Set(events.filter((e) => e.eventName === 'sign_up').map((e) => e.sessionId!))
 
     // 채널별 (세션 첫 page_view의 referrer + utm)
     const firstMeta: Record<string, { ref: string; src: string; med: string }> = {}
@@ -126,7 +127,7 @@ export const getInsights = unstable_cache(
       const c = classifyChannel(m.ref, m.src, m.med)
       const v = (chanMap[c] ??= { sessions: 0, signups: 0, multi: 0 })
       v.sessions++
-      if (loginSessions.has(s)) v.signups++
+      if (signupSessions.has(s)) v.signups++
       if ((sVisitDays[s]?.size ?? 0) >= 2) v.multi++
     }
     const channels = Object.entries(chanMap)
@@ -158,6 +159,6 @@ export const getInsights = unstable_cache(
       activation,
     }
   },
-  ['admin-insights-v1'],
+  ['admin-insights-v2'],
   { revalidate: 1800 },
 )

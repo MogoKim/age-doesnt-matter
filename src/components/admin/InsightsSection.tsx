@@ -77,11 +77,11 @@ export default function InsightsSection({ data, retention }: { data: InsightsDat
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
         <h2 className="mb-1 text-sm font-bold text-zinc-900">
           ① 들어오기 — 유입 채널 효율
-          <InfoTip text="어느 경로로 들어온 방문자가 가입하고 다시 오는지 비교합니다. 세션의 첫 referrer(유입 출처)로 분류하며, 최근 30일 기준입니다." />
+          <InfoTip text="어느 경로로 들어온 방문자가 가입하고 다시 오는지 비교합니다. 세션의 첫 referrer(유입 출처)로 분류, 최근 30일. 가입전환=세션 중 신규가입(sign_up) 발생 비율(재방문 로그인은 제외), 재방문율=서로 다른 2일 이상 방문 비율." />
         </h2>
         <p className="mb-1 text-xs text-zinc-400">어디서 온 손님이 가입하고 다시 오는가 (세션 첫 referrer, 30일)</p>
         <p className="mb-4 text-xs text-zinc-400">
-          · <b>세션</b>=방문 묶음(같은 브라우저 30일 내 재방문은 1) · <b>가입전환</b>=세션 중 로그인까지 간 비율 · <b>재방문율</b>=서로 다른 2일+ 방문 비율
+          · <b>세션</b>=방문 묶음(같은 브라우저 30일 내 재방문은 1) · <b>가입전환</b>=세션 중 <b>신규가입(sign_up)</b>까지 간 비율 · <b>재방문율</b>=서로 다른 2일+ 방문 비율
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
