@@ -10,6 +10,9 @@ export default function PersonalGreeting() {
   const { data: session, status } = useSession()
   if (status !== 'authenticated' || !session?.user?.nickname) return null
   const nickname = session.user.nickname
+  // 온보딩 직후 세션 갱신 지연으로 옛 임시닉네임(user_숫자)이 잠깐 남는 경우 인사말을 숨긴다
+  // (세션이 갱신되면 진짜 닉네임으로 표시됨). 온보딩 미완 유저에게도 user_ 인사말은 부적절.
+  if (nickname.startsWith('user_')) return null
 
   return (
     <section
