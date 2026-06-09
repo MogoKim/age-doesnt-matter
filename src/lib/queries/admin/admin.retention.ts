@@ -29,27 +29,28 @@ export interface RetentionData {
 
 type Cohort = { firstDay: number; active: Set<number> }
 
+// 고정 코호트 생존곡선: 분모 = 세그먼트 전체 코호트(같은 사람들 끝까지 추적, 모든 D-N 동일).
+// 분자 = 가입 후 N일째(firstDay+N) 이후 재방문. off 클수록 분자가 부분집합 → D1≥D3≥…≥D30 단조 보장.
+// 아직 N일 안 지난 회원은 분자에 못 들어감(미달) → 시간 지나며 상승. 그래서 각 D-N은 같은 N명 기준.
 function calc(cohorts: Cohort[], nowIdx: number, segment: string): QuadrantRetention {
-  const acc: Record<number, { n: number; d: number }> = {
-    1: { n: 0, d: 0 }, 3: { n: 0, d: 0 }, 7: { n: 0, d: 0 }, 14: { n: 0, d: 0 }, 30: { n: 0, d: 0 },
-  }
+  const total = cohorts.length
+  const acc: Record<number, number> = { 1: 0, 3: 0, 7: 0, 14: 0, 30: 0 }
   for (const c of cohorts) {
     for (const off of [1, 3, 7, 14, 30]) {
-      if (c.firstDay + off > nowIdx) continue // 아직 N일 경과 안 됨 → 분모 제외
-      acc[off].d++
+      if (c.firstDay + off > nowIdx) continue // 아직 N일 미경과 → 분자 안 됨(분모엔 그대로 포함)
       for (const d of c.active) {
-        if (d >= c.firstDay + off) { acc[off].n++; break }
+        if (d >= c.firstDay + off) { acc[off]++; break }
       }
     }
   }
-  const pct = (x: { n: number; d: number }) => (x.d > 0 ? Math.round((x.n / x.d) * 1000) / 10 : 0)
+  const pct = (n: number) => (total > 0 ? Math.round((n / total) * 1000) / 10 : 0)
   return {
     segment,
-    d1: { rate: pct(acc[1]), cohort: acc[1].d },
-    d3: { rate: pct(acc[3]), cohort: acc[3].d },
-    d7: { rate: pct(acc[7]), cohort: acc[7].d },
-    d14: { rate: pct(acc[14]), cohort: acc[14].d },
-    d30: { rate: pct(acc[30]), cohort: acc[30].d },
+    d1: { rate: pct(acc[1]), cohort: total },
+    d3: { rate: pct(acc[3]), cohort: total },
+    d7: { rate: pct(acc[7]), cohort: total },
+    d14: { rate: pct(acc[14]), cohort: total },
+    d30: { rate: pct(acc[30]), cohort: total },
   }
 }
 
@@ -122,9 +123,9 @@ export const getRetentionQuadrants = unstable_cache(
       windowDays,
       members,
       guests,
-      note: '회원=가입일 코호트(providerId 순수숫자) / 비회원=첫방문 코호트(sessionId). D-N=기준일+N일 이후 재방문(누적). 분모는 N일 경과 코호트만. 채널미상=login 기록 없는 가입자(5/15 이전 등). ⚠️ 비회원 D14·D30은 30일 쿠키 한도로 과소측정(쿠키 만료 후 같은 방문자 식별 불가).',
+      note: '회원=가입일 코호트(providerId 순수숫자) / 비회원=첫방문 코호트(sessionId). 고정 코호트 생존곡선 — 분모는 세그먼트 전체(괄호=코호트 명수, 모든 D-N 동일), D-N=가입 후 N일째 이후 재방문. 같은 사람 기준이라 D1≥D3≥…≥D30 단조. ⚠️ 아직 N일 안 지난 회원은 미달로 집계돼 D14·D30이 낮게 시작→시간 지나며 상승. 표본 작으면 참고용. 비회원은 30일 쿠키 한도로 장기 과소측정.',
     }
   },
-  ['admin-retention-quadrants-v1'],
+  ['admin-retention-quadrants-v2'],
   { revalidate: 1800 },
 )

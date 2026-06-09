@@ -141,10 +141,10 @@ function RetentionQuadrants({ retention }: { retention: RetentionData }) {
     <section className="rounded-xl border border-zinc-200 bg-white p-5">
       <h2 className="mb-1 text-sm font-bold text-zinc-900">
         ③ 다시 오기 — 리텐션 (TWA/웹 × 회원/비회원)
-        <InfoTip text="한 번 온 사람이 다시 오는 비율을 4분면으로 비교합니다. D-N = 기준일(회원=가입일, 비회원=첫 방문일)로부터 N일 이후 다시 온 비율(누적). 괄호 안은 표본 수로, 작으면 참고용입니다." />
+        <InfoTip text="같은 코호트(같은 사람들)를 끝까지 추적하는 생존곡선입니다. D-N = 가입(첫방문) 후 N일째 이후 다시 온 비율. 분모는 세그먼트 전체로 고정돼 D1≥D3≥…≥D30로 단조 감소합니다. 아직 N일 안 지난 사람은 미달로 집계돼 D14·D30이 낮게 시작 후 시간이 지나며 오릅니다. 괄호=코호트 명수, 작으면 참고용." />
       </h2>
       <p className="mb-4 text-xs text-zinc-400">
-        최근 {retention.windowDays}일 코호트 · D-N = 기준일+N일 이후 재방문(누적) · 괄호 = 표본수
+        최근 {retention.windowDays}일 고정 코호트 생존곡선 · D-N = 가입 후 N일 생존(전체 분모, 단조) · 괄호 = 코호트 명수
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
