@@ -19,14 +19,7 @@ try {
 }
 
 function createPrismaClient() {
-  // AGENT_DB_USE_DIRECT=true → DIRECT_URL(5432 직접연결) 우선.
-  // GHA 크론을 Supavisor(6543) client lobby 200 경합에서 분리해 웹 인증 슬롯을 보호한다.
-  // ⚠️ 5432는 Nano max_connections 60 한도(웹 백엔드와 공유) → 무거운/빈번 GHA 크론부터 단계적 적용.
-  // 로컬 launchd 크롤러는 DIRECT_URL 호스트 DNS 미해석(IPv6 전용)이라 이 플래그를 켜지 않는다(기본 6543 유지).
-  const useDirect = process.env.AGENT_DB_USE_DIRECT === 'true'
-  const url = useDirect
-    ? (process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? '')
-    : (process.env.DATABASE_URL ?? process.env.DIRECT_URL ?? '')
+  const url = process.env.DATABASE_URL ?? process.env.DIRECT_URL ?? ''
   const u = new URL(url)
   const configuredPoolMax = Number.parseInt(process.env.AGENT_DB_POOL_MAX ?? '1', 10)
   const poolMax = Number.isFinite(configuredPoolMax) && configuredPoolMax > 0
