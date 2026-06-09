@@ -3,21 +3,24 @@
 import { useEffect, useState } from 'react'
 import { detectEnv } from './AddToHomeScreen'
 import { triggerAppInstall, isAndroidInstallEnv } from '@/lib/app-links'
+import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 
 const BLOCKED_ENVS = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp', 'instagram-inapp', 'crios', 'desktop'] as const
 
 export default function FooterPwaButton() {
+  const { isTWA, isStandalone } = useAppEnvironment()
   const [show, setShow] = useState(false)
   const [isAndroid, setIsAndroid] = useState(false)
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_PWA_INSTALL_ENABLED !== 'true') return
+    if (isTWA || isStandalone) return  // 이미 앱(TWA)/홈화면 설치(PWA) → 설치 유도 숨김
     const env = detectEnv()
     if (!(BLOCKED_ENVS as readonly string[]).includes(env)) {
       setShow(true)
       setIsAndroid(isAndroidInstallEnv())
     }
-  }, [])
+  }, [isTWA, isStandalone])
 
   if (!show) return null
 

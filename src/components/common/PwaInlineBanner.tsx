@@ -3,17 +3,20 @@
 import { useEffect, useState } from 'react'
 import { detectEnv } from './AddToHomeScreen'
 import { triggerAppInstall, isAndroidInstallEnv } from '@/lib/app-links'
+import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 
 const BLOCKED_ENVS = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp', 'instagram-inapp', 'crios', 'desktop'] as const
 const KEY_INSTALLED = 'pwa_installed'
 const SESSION_INLINE_SHOWN = 'pwa_inline_shown'
 
 export default function PwaInlineBanner() {
+  const { isTWA, isStandalone } = useAppEnvironment()
   const [show, setShow] = useState(false)
   const [isAndroid, setIsAndroid] = useState(false)
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_PWA_INSTALL_ENABLED !== 'true') return
+    if (isTWA || isStandalone) return  // 이미 앱(TWA)/홈화면 설치(PWA) → 설치 유도 숨김
     const env = detectEnv()
     if ((BLOCKED_ENVS as readonly string[]).includes(env)) return
     if (localStorage.getItem(KEY_INSTALLED) === '1') return
@@ -21,7 +24,7 @@ export default function PwaInlineBanner() {
     if (sessionStorage.getItem('signup_prompt_shown_this_session')) return  // 가입 유도 배너 노출 시 충돌 방지
     setShow(true)
     setIsAndroid(isAndroidInstallEnv())
-  }, [])
+  }, [isTWA, isStandalone])
 
   const handleInstall = () => {
     sessionStorage.setItem(SESSION_INLINE_SHOWN, '1')
