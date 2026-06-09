@@ -72,7 +72,7 @@ export default function TopPromoBannerClient({
       await shareToKakao({
         title: '우리 나이가 어때서 — 우나어',
         description: '우리 또래끼리 모이는 따뜻한 커뮤니티, 같이 해요!',
-        imageUrl: `${appUrl}/logo.png`,
+        imageUrl: `${appUrl}/og-image.png`,
         url: shareUrl,
       })
     } catch (err) {

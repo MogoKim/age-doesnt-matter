@@ -28,21 +28,21 @@ const STATIC_BOARD_CONFIGS: Record<string, {
     slug: 'stories',
     boardType: 'STORY',
     displayName: '사는이야기',
-    description: '50대 60대의 일상과 고민을 나누는 게시판',
+    description: '갱년기·가족·살림·자녀 걱정까지, 신중년 여성이 진짜 속마음을 나누는 곳.',
     categories: ['전체'],
   },
   humor: {
     slug: 'humor',
     boardType: 'HUMOR',
     displayName: '웃음방',
-    description: '우리 또래가 함께 웃고 공감하는 게시판',
+    description: '신중년 여성의 하루에 웃음 한 스푼. 소소한 즐거움을 같이 나눠요.',
     categories: ['전체'],
   },
   life2: {
     slug: 'life2',
     boardType: 'LIFE2',
     displayName: '2막준비',
-    description: '인생 2막과 은퇴 준비를 나누는 게시판',
+    description: '자식 다 키운 뒤, 이제는 나를 위한 시간. 신중년 여성의 인생 2막 준비.',
     categories: ['전체'],
   },
 }
@@ -68,9 +68,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         ? '/jobs'
         : `/community/${boardSlug}`
 
+    // 검색 노출 설명은 코드 정의(STATIC)를 우선 — 정체성 카피 일관 관리, DB 미동기화 방어
+    const staticDesc = STATIC_BOARD_CONFIGS[boardSlug]?.description
     return {
       title: board.displayName,
-      description: board.description,
+      description: staticDesc ?? board.description,
       alternates: { canonical },
     }
   } catch {

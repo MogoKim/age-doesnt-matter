@@ -26,7 +26,7 @@ interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
 export const dynamic = 'force-static'
 export const revalidate = 30
 

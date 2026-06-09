@@ -16,8 +16,8 @@ const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.inclu
 
 export const metadata: Metadata = {
   title: '내 일 찾기',
-  description: '50·60대 맞춤 일자리 정보, 나이 무관 채용공고',
-  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/jobs` },
+  description: '나이 걱정 없이 시작하는 신중년 여성 맞춤 일자리·채용 정보.',
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/jobs` },
 }
 
 async function getInitialJobsData() {

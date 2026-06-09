@@ -4,7 +4,8 @@ export const revalidate = 604800 // 7일 — 이용약관은 거의 불변
 
 export const metadata: Metadata = {
   title: '이용약관',
-  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/terms` },
+  description: '우나어 서비스 이용약관 안내.',
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/terms` },
 }
 
 export default function TermsPage() {

@@ -5,7 +5,7 @@ import { JOB_SIDO_LIST } from '@/lib/jobs-regions'
 
 export const dynamic = 'force-dynamic'
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
 
 const BOARD_SLUGS = ['stories', 'humor', 'life2']
 

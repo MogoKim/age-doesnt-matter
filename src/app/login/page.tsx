@@ -4,8 +4,8 @@ import LoginForm from '@/components/features/login/LoginForm'
 
 export const metadata: Metadata = {
   title: '로그인',
-  description: '카카오 계정으로 간편하게 로그인하세요',
-  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/login` },
+  description: '카카오로 1초, 신중년 여성 커뮤니티 우나어 시작하기.',
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/login` },
 }
 
 export default function LoginPage() {

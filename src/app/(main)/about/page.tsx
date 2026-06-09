@@ -6,8 +6,8 @@ import type { FaqItem } from '@/components/common/FaqAccordion'
 import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 
 export const metadata: Metadata = {
-  title: '우나어 소개',
-  description: '아이들은 크고, 내 이야기 들어줄 사람이 없어지는 그 조용함을 깨러 만든 50·60대 공간',
+  title: '소개',
+  description: '아이들 다 키우고 문득 찾아온 조용함. 갱년기·외로움을 같은 또래와 나누려 만든 40·50·60 신중년 여성 공간.',
   alternates: { canonical: '/about' },
 }
 

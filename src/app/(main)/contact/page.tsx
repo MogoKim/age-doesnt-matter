@@ -11,8 +11,8 @@ export const revalidate = 604800 // 7일 — 문의 안내는 거의 불변
 
 export const metadata: Metadata = {
   title: '문의',
-  description: '우나어에 문의하기',
-  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/contact` },
+  description: '우나어 이용 중 궁금한 점·불편한 점을 알려주세요.',
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/contact` },
 }
 
 export default function ContactPage() {

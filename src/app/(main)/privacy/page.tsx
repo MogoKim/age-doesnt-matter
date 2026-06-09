@@ -4,7 +4,8 @@ export const revalidate = 604800
 
 export const metadata: Metadata = {
   title: '개인정보처리방침',
-  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/privacy` },
+  description: '우나어가 회원 정보를 안전하게 다루는 방법 안내.',
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/privacy` },
 }
 
 export default function PrivacyPage() {

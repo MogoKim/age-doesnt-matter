@@ -157,7 +157,7 @@ export default function LandingClient({ posts, t = 'relation' }: { posts: Post[]
           <div className="flex items-center justify-center gap-4 mt-2 text-[12px]" style={{ color: '#aaa' }}>
             <span>✓ 닉네임만 공개</span>
             <span style={{ color: '#ddd' }}>|</span>
-            <span>✓ 10초 가입 · 무료</span>
+            <span>✓ 1초 가입 · 무료</span>
           </div>
         </div>
       </div>

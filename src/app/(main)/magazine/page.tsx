@@ -13,14 +13,14 @@ const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.inclu
 
 export const metadata: Metadata = {
   title: '매거진',
-  description: '건강, 재테크, 여행, 생활정보 등 50·60대를 위한 유익한 콘텐츠',
-  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/magazine` },
+  description: '갱년기·건강, 재테크, 여행, 생활정보까지 신중년 여성에게 꼭 필요한 정보.',
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/magazine` },
   openGraph: {
-    title: '매거진 | 우나어',
-    description: '건강, 재테크, 여행, 생활정보 등 50·60대를 위한 유익한 콘텐츠',
-    url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/magazine`,
+    title: '매거진 | 신중년 여성 커뮤니티 : 우리 나이가 어때서',
+    description: '갱년기·건강, 재테크, 여행, 생활정보까지 신중년 여성에게 꼭 필요한 정보.',
+    url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/magazine`,
     type: 'website',
-    images: [{ url: '/icon-1024.png', width: 1024, height: 1024, alt: '우나어' }],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '우리 나이가 어때서 — 신중년 여성 커뮤니티' }],
   },
 }
 
@@ -29,13 +29,13 @@ const magazineCollectionPageJsonLd = {
   '@type': 'CollectionPage',
   name: '우나어 매거진 — 50·60대를 위한 정보',
   description: '건강, 재테크, 여행, 생활정보 등 50대·60대를 위한 유익한 콘텐츠. 갱년기, 기초연금, 재취업, 인생 2막 정보.',
-  url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/magazine`,
+  url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/magazine`,
   publisher: {
     '@type': 'Organization',
     name: '우나어',
     logo: {
       '@type': 'ImageObject',
-      url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/logo-512.png`,
+      url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/logo.png`,
     },
   },
   about: [

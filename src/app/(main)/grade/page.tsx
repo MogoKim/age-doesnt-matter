@@ -5,8 +5,8 @@ export const revalidate = 604800 // 1주일 — 완전 정적 콘텐츠
 
 export const metadata: Metadata = {
   title: '회원 등급 안내',
-  description: '우나어 회원 등급 시스템 — 새싹부터 따뜻한이웃까지',
-  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/grade` },
+  description: '활동할수록 올라가는 우나어 회원 등급 — 새싹부터 따뜻한이웃까지.',
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/grade` },
 }
 
 const GRADES = [

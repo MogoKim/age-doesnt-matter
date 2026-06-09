@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>우나어 검색·공유 진단 리포트 (2026-06)</title>
+<style>
+  :root{
+    --brand:#FF6F61; --brand-d:#E85D50; --ink:#1A1A1A; --muted:#6B7280;
+    --line:#E5E7EB; --bg:#F7F8FA; --card:#FFFFFF;
+    --g:#15924B; --g-bg:#E7F6EE; --y:#B7791F; --y-bg:#FEF6E4; --r:#C2362B; --r-bg:#FCEBE9;
+    --blue:#1A0DAB; --green:#1A7D33;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.05);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    font-size:16.5px; line-height:1.7; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:0 20px 80px}
+  /* header */
+  header.hero{
+    background:linear-gradient(135deg,#FF6F61 0%,#E85D50 100%); color:#fff;
+    padding:48px 20px 40px; margin-bottom:0;
+  }
+  header.hero .inner{max-width:920px;margin:0 auto}
+  .badge-doc{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+    padding:4px 12px;border-radius:999px;font-size:13px;font-weight:600;letter-spacing:.3px}
+  header.hero h1{font-size:30px;line-height:1.3;margin:14px 0 8px;font-weight:800}
+  header.hero p{margin:0;font-size:16px;opacity:.95}
+  header.hero .meta{margin-top:16px;font-size:13px;opacity:.85}
+  /* sticky nav */
+  nav.toc{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);padding:10px 0}
+  nav.toc .inner{max-width:920px;margin:0 auto;padding:0 20px;display:flex;gap:6px;flex-wrap:wrap;overflow-x:auto}
+  nav.toc a{font-size:13px;color:var(--muted);text-decoration:none;padding:6px 11px;border-radius:8px;white-space:nowrap;font-weight:600}
+  nav.toc a:hover{background:var(--bg);color:var(--ink)}
+  /* section */
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:28px;margin-top:22px;box-shadow:var(--shadow)}
+  .secnum{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+    background:var(--brand);color:#fff;border-radius:9px;font-weight:800;font-size:15px;margin-right:10px}
+  h2{font-size:22px;margin:0 0 4px;display:flex;align-items:center;font-weight:800}
+  h3{font-size:17px;margin:26px 0 10px;font-weight:700}
+  p{margin:10px 0}
+  /* lead summary box */
+  .lead{border-left:5px solid var(--brand);background:#FFF7F5;border-radius:0 12px 12px 0;
+    padding:14px 18px;margin:14px 0 6px;font-size:16px}
+  .lead b{color:var(--brand-d)}
+  /* signal badges */
+  .sig{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap}
+  .sig.g{background:var(--g-bg);color:var(--g)}
+  .sig.y{background:var(--y-bg);color:var(--y)}
+  .sig.r{background:var(--r-bg);color:var(--r)}
+  /* table */
+  .tablewrap{overflow-x:auto;margin:14px 0}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:520px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#FAFBFC;font-weight:700;color:#374151;font-size:13.5px}
+  tr:last-child td{border-bottom:none}
+  code{background:#F3F4F6;padding:1px 6px;border-radius:5px;font-size:13.5px;font-family:"SF Mono",Menlo,Consolas,monospace}
+  /* terms cards */
+  .terms{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+  .term{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:#FCFCFD}
+  .term .t{font-weight:800;font-size:15px;color:var(--brand-d)}
+  .term .d{font-size:14px;color:#374151;margin-top:4px}
+  .term .w{font-size:12.5px;color:var(--muted);margin-top:6px}
+  /* mock: search result */
+  .mock-search{border:1px solid var(--line);border-radius:12px;padding:18px;background:#fff;margin:12px 0}
+  .ms-fav{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .ms-dot{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FF6F61,#F0A));display:inline-block}
+  .ms-url{font-size:13px;color:#202124}
+  .ms-title{color:var(--blue);font-size:19px;font-weight:500;line-height:1.3;margin:2px 0 3px}
+  .ms-desc{color:#4d5156;font-size:14px;line-height:1.55}
+  .ms-desc .hl{background:#fff3cd}
+  /* mock: share cards compare */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+  .ogcard{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .og-img{height:150px;display:flex;align-items:center;justify-content:center;position:relative;font-weight:800}
+  .og-good{background:linear-gradient(135deg,#FFF8F6,#FFF0ED);color:var(--ink);flex-direction:column;gap:6px;text-align:center}
+  .og-good .main{font-size:19px}
+  .og-good .sub{font-size:12px;color:var(--muted);font-weight:600}
+  .og-bad{background:repeating-linear-gradient(45deg,#eee,#eee 10px,#e4e4e4 10px,#e4e4e4 20px);color:#9aa}
+  .og-bad .crop{background:linear-gradient(135deg,#FFF0ED,#FFE);width:62%;height:100%;display:flex;align-items:center;justify-content:center;
+    color:var(--brand-d);font-weight:800;font-size:13px;border-left:2px dashed #d99;border-right:2px dashed #d99}
+  .og-meta{padding:12px 14px}
+  .og-meta .ot{font-weight:700;font-size:14px}
+  .og-meta .od{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .og-meta .ou{font-size:11.5px;color:#9aa;margin-top:6px}
+  .caplabel{font-size:12.5px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  /* problem cards */
+  .prob{border:1px solid var(--line);border-left:5px solid var(--r);border-radius:0 12px 12px 0;
+    padding:14px 16px;margin:12px 0;background:#fff}
+  .prob.p1{border-left-color:var(--y)}
+  .prob.p2{border-left-color:#9CA3AF}
+  .prob .pid{font-size:12px;font-weight:800;color:var(--r);letter-spacing:.5px}
+  .prob.p1 .pid{color:var(--y)} .prob.p2 .pid{color:#6B7280}
+  .prob .pt{font-weight:700;margin:2px 0 4px}
+  .prob .pd{font-size:14px;color:#374151}
+  /* callout */
+  .callout{background:#FFF7F5;border:1px solid #FAD9D3;border-radius:12px;padding:16px 18px;margin:14px 0}
+  .callout.ok{background:var(--g-bg);border-color:#bfe6cf}
+  .callout .ct{font-weight:800;margin-bottom:4px}
+  .arrowflow{font-family:"SF Mono",Menlo,monospace;font-size:13px;background:#1f2430;color:#e6e6e6;
+    border-radius:10px;padding:14px 16px;overflow-x:auto;line-height:1.6;white-space:pre}
+  ul.clean{margin:10px 0;padding-left:20px} ul.clean li{margin:6px 0}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+  .minicard{border:1px solid var(--line);border-radius:12px;padding:16px;background:#FCFCFD}
+  .minicard h4{margin:0 0 8px;font-size:15px}
+  .foot{text-align:center;color:var(--muted);font-size:13px;margin-top:30px}
+  @media(max-width:680px){
+    .terms,.compare,.twocol{grid-template-columns:1fr}
+    header.hero h1{font-size:24px}
+    section{padding:20px}
+  }
+  @media print{nav.toc{display:none} section{break-inside:avoid;box-shadow:none}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge-doc">진단 리포트 · 2026-06-09</span>
+    <h1>우나어, 검색·공유에서 우리는 어떻게 보이고 있나</h1>
+    <p>구글·네이버 검색결과와 카카오톡 공유 미리보기 현황 점검 — 배경지식 없이 읽는 문서</p>
+    <div class="meta">대상: age-doesnt-matter.com · 작성: 개발 점검 · 코드 변경 없음(현황 진단)</div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="inner">
+    <a href="#tldr">요약</a>
+    <a href="#who">1·정체성</a>
+    <a href="#terms">2·용어</a>
+    <a href="#four">3·4대요소</a>
+    <a href="#asis">4·현재상태</a>
+    <a href="#problems">5·문제</a>
+    <a href="#evidence">6·증거</a>
+    <a href="#ideas">7·개선안</a>
+    <a href="#next">8·다음</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- 0. TLDR -->
+<section id="tldr">
+  <h2>한눈 요약 <span style="font-size:13px;color:var(--muted);font-weight:600;margin-left:8px">(30초 컷)</span></h2>
+  <div class="lead">한 줄 결론: <b>검색·공유는 잘 굴러가지만, 정작 "우리 타겟(여성)"이 가장 많이 보이는 화면에서 빠져 있고, 공유 명함(이미지)이 깨져 있다.</b></div>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>영역</th><th>상태</th><th>쉽게</th></tr></thead>
+    <tbody>
+      <tr><td>검색 노출 제어 (Robots)</td><td><span class="sig g">🟢 완성</span></td><td>손댈 것 없음. 보일 페이지·숨길 페이지 잘 나눠짐</td></tr>
+      <tr><td>제목·설명 (Title·Description)</td><td><span class="sig y">🟡 보통</span></td><td>홈·글은 좋음. 목록이 밋밋 + 일부 빈 설명</td></tr>
+      <tr><td>공유 명함 (OG 이미지)</td><td><span class="sig r">🔴 문제</span></td><td>로고가 반쪽 잘림 + 공유버튼 이미지 깨짐(404)</td></tr>
+      <tr><td>타겟 정체성 (여성)</td><td><span class="sig r">🔴 문제</span></td><td>여성 카피는 숨김 페이지에만, 노출 페이지엔 없음</td></tr>
+      <tr><td>서비스 이름</td><td><span class="sig y">🟡 고민</span></td><td>이름 3개 혼용 + 트로트 곡명과 충돌</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted)">아래는 이 표를 누구나 이해하도록 처음부터 풀어 쓴 것입니다.</p>
+</section>
+
+<!-- 1. WHO -->
+<section id="who">
+  <h2><span class="secnum">1</span>우리는 누구를 위한 서비스인가</h2>
+  <div class="lead">모든 제목·설명·이미지는 결국 <b>"이 사람"</b>에게 가닿아야 합니다. 그 기준이 흔들리면 문구도 흔들립니다.</div>
+  <p>코드에 공식으로 박혀 있는 타겟 정의입니다 (추측 아님, 창업자 확정 기록):</p>
+  <div class="arrowflow">constitution.yaml  (창업자 확정 2026-04-13)
+  target.primary  : "40대 후반~60대 여성 (100%)"
+  target.secondary: null        ← 남성 타깃 제거</div>
+  <p>실제 페르소나 5명도 <b>전원 여성</b>입니다: 영숙(58)·정희(63)·미영(55)·순자(61)·현주(57).</p>
+  <div class="callout">
+    <div class="ct">👉 그래서 이 문서의 채점 기준은 하나입니다</div>
+    "지금 화면에 <b>40대 후반~60대 여성</b>이라는 우리 정체성이 잘 보이는가?"
+  </div>
+</section>
+
+<!-- 2. TERMS -->
+<section id="terms">
+  <h2><span class="secnum">2</span>먼저, 기초 용어 (가게로 비유)</h2>
+  <div class="lead">우리 사이트를 <b>길거리 가게</b>라고 생각하면 4가지만 알면 됩니다.</div>
+  <div class="terms">
+    <div class="term"><div class="t">🪧 Title (제목)</div><div class="d">가게 <b>간판 이름</b></div><div class="w">검색하면 뜨는 파란 제목 / 브라우저 탭 이름</div></div>
+    <div class="term"><div class="t">📝 Description (설명)</div><div class="d">간판 밑 <b>한 줄 소개문</b></div><div class="w">검색결과 제목 아래 회색 두세 줄</div></div>
+    <div class="term"><div class="t">🗺️ Robots (노출 제어)</div><div class="d">"지도에 표시할까?" <b>스위치</b></div><div class="w">검색에 보일지(index)·숨길지(noindex)</div></div>
+    <div class="term"><div class="t">📇 OG (공유 카드)</div><div class="d">카톡으로 보내는 <b>명함</b></div><div class="w">링크 공유 시 뜨는 미리보기(이미지+제목+설명)</div></div>
+  </div>
+  <h3>자잘한 용어도 한 번에</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>용어</th><th>쉬운 뜻</th><th>어디서 보이나</th></tr></thead>
+    <tbody>
+      <tr><td>메타 태그(메타 텍스트)</td><td>페이지가 자기 정보를 검색엔진·공유앱에 알려주는 <b>숨은 텍스트</b></td><td>검색결과·공유 미리보기</td></tr>
+      <tr><td>og:image</td><td>공유 카드에 뜨는 <b>그림</b> (= 썸네일)</td><td>카톡/SNS 카드 그림</td></tr>
+      <tr><td>og:title / og:description</td><td>공유 카드의 굵은 제목 / 회색 설명</td><td>카톡/SNS 카드 글자</td></tr>
+      <tr><td>동적 OG</td><td>코드가 글 제목을 박아 <b>자동으로 그리는</b> 공유 이미지</td><td>글 상세(이미 작동)</td></tr>
+      <tr><td>정적 OG</td><td>미리 만들어 올려둔 <b>그림 1장</b></td><td>홈·목록 공통(준비물)</td></tr>
+      <tr><td>favicon</td><td>탭·검색결과의 <b>아주 작은 동그란 아이콘</b></td><td>브라우저 탭 왼쪽</td></tr>
+      <tr><td>canonical</td><td>"이 페이지의 <b>정식 주소는 이거다</b>" 표시(중복 정리)</td><td>숨은 태그</td></tr>
+      <tr><td>사이트링크</td><td>검색결과 제목 밑 <b>줄줄이 뜨는 하위 메뉴</b></td><td>구글/네이버 결과</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h3>⭐ 가장 중요 — 공유에는 "두 가지 길"이 따로 있습니다</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>경로</th><th>어떻게</th><th>무엇을 읽나</th></tr></thead>
+    <tbody>
+      <tr><td><b>A. 주소 붙여넣기</b></td><td>카톡 채팅창에 주소를 직접 붙임</td><td>페이지의 <b>메타 태그(og:)</b>를 읽음</td></tr>
+      <tr><td><b>B. 앱 안 공유 버튼</b></td><td>사이트의 "카카오톡 공유" 버튼 클릭</td><td>메타 무시, <b>버튼이 직접 넘긴 값</b>을 씀</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted)">→ 이 두 길이 <b>서로 다른 그림</b>을 쓰고 있어서 지금 공유가 엉망입니다. (뒤에서 자세히)</p>
+</section>
+
+<!-- 3. FOUR -->
+<section id="four">
+  <h2><span class="secnum">3</span>4대 요소, 각각 어떻게 보이나</h2>
+
+  <h3>① Title — 검색결과 파란 제목</h3>
+  <div class="mock-search">
+    <div class="ms-fav"><span class="ms-dot"></span><span class="ms-url">age-doesnt-matter.com</span></div>
+    <div class="ms-title">우리 나이가 어때서 — 5060 세대 커뮤니티 | 우나어 &nbsp;←&nbsp;<span style="font-size:12px;color:var(--brand-d)">Title</span></div>
+    <div class="ms-desc">50·60대라면 누구나 "여기 오면 내 얘기가 있다"고 느끼는 중장년 연결 커뮤니티. &nbsp;←&nbsp;<span style="color:var(--brand-d)">Description</span></div>
+  </div>
+  <p>제목은 한 페이지에 딱 하나. 권장 길이는 <b>한글 15~30자</b>(넘으면 검색결과에서 <code>…</code>로 잘림).</p>
+
+  <h3>② Description — 제목 밑 회색 설명</h3>
+  <p>클릭을 유도하는 <b>미끼 문장</b>. 권장 <b>한글 40~80자</b>. 안 적으면 전역 기본 문구가 따라붙습니다.</p>
+
+  <h3>③ Robots — 검색에 보일지/숨길지</h3>
+  <div class="callout ok">
+    <div class="ct">🟢 이 부분은 이미 완벽합니다 — 안심하세요</div>
+    손님용 정문(홈·커뮤니티·매거진·일자리)은 <b>검색에 노출</b>, 관리자실·개인공간(admin·마이페이지·테스트)은 <b>검색에서 숨김</b>. 올바르게 나뉘어 있습니다.
+  </div>
+
+  <h3>④ OG — 카톡 공유 명함 (핵심 작업 대상)</h3>
+  <p>구성: <code>og:image</code>(그림) · <code>og:title</code>(제목) · <code>og:description</code>(설명) · <code>og:url</code>(주소). 권장 그림 크기는 <b>가로 1200×630</b>입니다.</p>
+</section>
+
+<!-- 4. AS-IS -->
+<section id="asis">
+  <h2><span class="secnum">4</span>지금 상태 (AS-IS)</h2>
+  <div class="lead">제목·설명은 대체로 OK, <b>공유 명함(OG)은 깨져 있고</b>, 목록 페이지는 밋밋합니다.</div>
+
+  <h3>제목(Title) 페이지별 현황</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>페이지</th><th>현재 제목</th><th>상태</th></tr></thead>
+    <tbody>
+      <tr><td>홈 /</td><td>우리 나이가 어때서 — 5060 세대 커뮤니티</td><td><span class="sig g">🟢 좋음</span></td></tr>
+      <tr><td>글·일자리 상세</td><td>글 제목 그대로</td><td><span class="sig g">🟢 좋음</span></td></tr>
+      <tr><td>/best, /magazine, /jobs (목록)</td><td>인기글 · 매거진 · 내 일 찾기</td><td><span class="sig y">🟡 밋밋</span></td></tr>
+      <tr><td>/about</td><td>우나어 소개</td><td><span class="sig y">🟡 축약</span></td></tr>
+      <tr><td>/terms, /privacy, /rules</td><td>제목만 (설명 없음)</td><td><span class="sig y">🟡</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted)">읽는 법: 목록이 "매거진"처럼만 떠서 <b>우리 매거진인지 남의 건지</b> 구분이 안 됩니다.</p>
+
+  <h3>공유 명함(OG) — 정상 vs 깨짐 비교</h3>
+  <div class="compare">
+    <div>
+      <div class="caplabel"><span class="sig g">🟢 이래야 정상</span></div>
+      <div class="ogcard">
+        <div class="og-img og-good"><div class="main">여기 오면 내 얘기가 있다</div><div class="sub">5060 인생2막 · 일·소통 커뮤니티</div></div>
+        <div class="og-meta"><div class="ot">우리 나이가 어때서</div><div class="od">가로 1200×630, 카피+정체성</div><div class="ou">age-doesnt-matter.com</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="caplabel"><span class="sig r">🔴 지금 (홈·목록)</span></div>
+      <div class="ogcard">
+        <div class="og-img og-bad"><div class="crop">…아 어때서</div></div>
+        <div class="og-meta"><div class="ot">우리 나이가 어때서 — 우나어</div><div class="od">정사각형 로고를 가로로 끼워 <b>양옆 잘림</b></div><div class="ou">age-doesnt-matter.com</div></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>OG는 "어디서 공유하느냐"에 따라 다릅니다</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>어디서 공유</th><th>지금 상태</th></tr></thead>
+    <tbody>
+      <tr><td>홈·목록 <b>주소 붙여넣기</b></td><td><span class="sig r">🔴 정사각형 잘림</span></td></tr>
+      <tr><td>글·일자리 상세 <b>주소 붙여넣기</b></td><td><span class="sig g">🟢 정상 (자동 명함 잘 만듦)</span></td></tr>
+      <tr><td>사이트 안 <b>"카카오 공유" 버튼</b></td><td><span class="sig r">🔴 그림 깨짐(404)/잘림</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>게시판 6개 — 설명에 정체성이 담겼나</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>게시판</th><th>현재 설명</th><th>정체성</th></tr></thead>
+    <tbody>
+      <tr><td>베스트</td><td>가장 인기 있는 글 모음</td><td><span class="sig r">❌ 없음</span></td></tr>
+      <tr><td>2막준비</td><td>인생 2막과 은퇴 준비를 나누는 게시판</td><td><span class="sig r">❌ 없음</span></td></tr>
+      <tr><td>사는이야기</td><td>50대 60대의 일상과 고민을…</td><td><span class="sig y">🟡 연령만</span></td></tr>
+      <tr><td>매거진</td><td>…50·60대를 위한 유익한 콘텐츠</td><td><span class="sig y">🟡 연령만</span></td></tr>
+      <tr><td>내일찾기</td><td>50·60대 맞춤 일자리…</td><td><span class="sig y">🟡 연령만</span></td></tr>
+      <tr><td>웃음방</td><td>우리 또래가 함께 웃고…</td><td><span class="sig y">🟡 '또래' 간접</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted)">→ 6개 중 <b>여성 명시 0개</b>, 2개(베스트·2막준비)는 정체성 자체가 없습니다.</p>
+</section>
+
+<!-- 5. PROBLEMS -->
+<section id="problems">
+  <h2><span class="secnum">5</span>문제 정의 (우선순위)</h2>
+  <div class="lead">채점 기준은 <b>"40대 후반~60대 여성"이 잘 보이나</b>. 이 기준으로 P0(급함)→P2(나중) 정렬.</div>
+
+  <div class="callout">
+    <div class="ct">🔴 가장 큰 모순 — 여성 정체성이 "검색되는 곳"에서 사라짐</div>
+    <div class="arrowflow">여성 카피가 있는 페이지  ─→ landing   ─→ 🚫 검색에서 숨김(noindex)
+검색·공유로 보이는 페이지 ─→ 홈·목록·글 ─→ 🟡 "5060 세대"(여성 없음)</div>
+    즉 <b>"여성"이라 써둔 페이지는 검색에 안 뜨게 막혀 있고</b>, 정작 사람들이 보는 페이지엔 여성이 빠져 있습니다.
+  </div>
+
+  <div class="prob"><div class="pid">P0 · 문제 1-1 / 2-1 / 4-1</div><div class="pt">검색·공유 메타에 여성 정체성이 전무</div><div class="pd">홈·목록·게시판 설명 전부 "5060 세대"(성별 중립). 우리 핵심 타겟이 가장 많이 보이는 화면에서 안 보입니다.</div></div>
+  <div class="prob"><div class="pid">P0 · 문제 3-1 / 3-2 / 3-3</div><div class="pt">공유 명함(OG)이 깨짐</div><div class="pd">기본 이미지가 정사각형이라 가로 카드에서 양옆 잘림 + 카피·정체성 없는 로고 한 장 + 카카오 버튼 fallback 그림은 아예 404로 안 뜸.</div></div>
+  <div class="prob p1"><div class="pid">P1 · 문제 1-2 / 4-2</div><div class="pt">목록·게시판 제목·설명이 밋밋</div><div class="pd">"인기글", "매거진"처럼 기능 설명만. 검색결과에서 차별성·정체성이 약합니다.</div></div>
+  <div class="prob p2"><div class="pid">참고 · 5-1 (문제 아님으로 정정)</div><div class="pt">커뮤니티 글은 본문 발췌가 검색 설명으로 나감 — 이게 정상</div><div class="pd">UGC(사용자·커뮤니티 글)는 인위적 SEO 설명보다 <b>본문 발췌가 더 적합</b>(네이버카페·레딧 방식). 매거진만 AI SEO 최적화, 커뮤니티는 본문 노출 — 이미 합리적으로 분리됨. 유일한 보강거리는 "발췌 첫 문장이 잡담 없이 맥락 있게 시작하나"(발췌 품질, SEO 아님).</div></div>
+  <div class="prob p2"><div class="pid">P2 · 문제 6-1~3</div><div class="pt">서비스 이름 3개 + 트로트 곡명 충돌</div><div class="pd">"우리 나이가 어때서" / "우나어" / 영어도메인 혼용. 게다가 동명의 트로트 곡 때문에 검색 시 노래가 먼저 뜸.</div></div>
+
+  <div class="callout ok">
+    <div class="ct">🟢 반대로, 이미 잘 되어 있는 것 (손댈 필요 없음)</div>
+    <ul class="clean" style="margin:6px 0 0">
+      <li>Robots(검색 노출 제어) — 보일·숨길 페이지 분리 완성</li>
+      <li>글·일자리 상세의 자동 공유 명함(동적 OG 1200×630)</li>
+      <li>매거진 글의 AI 자동 SEO(제목·설명에 "50대" 키워드 포함)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 6. EVIDENCE -->
+<section id="evidence">
+  <h2><span class="secnum">6</span>증거 — "마늘 한접 가격?" 스크린샷 해석</h2>
+  <div class="lead">첨부하신 네이버 검색결과 한 장에 위 문제 두 개가 동시에 찍혀 있습니다.</div>
+  <div class="mock-search">
+    <div class="ms-fav"><span class="ms-dot"></span><span class="ms-url">age-doesnt-matter.com › 마늘-한접-가격</span></div>
+    <div class="ms-title">마늘 한접 가격? | 우나어</div>
+    <div class="ms-desc">100개 실한거 한접 얼마하나요? 작년에 동네 어머님한테 1접 5만원에 샀어요. 6만원인데 5만원에 준다하더라구요…</div>
+    <div style="margin-top:8px;font-size:12px;color:var(--brand-d);font-weight:700">↑ 우측 썸네일엔 "…아 어때서" 글자 조각만 (정사각형 로고가 잘린 잔해)</div>
+  </div>
+  <div class="twocol">
+    <div class="minicard"><h4>① "마늘 한접 가격? | 우나어"</h4>
+      <p style="font-size:14px;margin:0">제목 뒤 <code>| 우나어</code>는 자동 규칙이라 <b>기술적으론 정상</b>. 설명에 본문("100개 실한거…")이 나오는 것도 <b>커뮤니티 글에선 정상</b> — 그 주제 보러 온 사람에겐 본문 발췌가 클릭 유도에 더 좋음. <span class="sig g" style="margin-top:6px;display:inline-block">의도된 동작</span></p>
+    </div>
+    <div class="minicard"><h4>② 우측 잘린 이미지</h4>
+      <p style="font-size:14px;margin:0">그건 <b>정사각형 로고(icon-1024.png)</b>입니다. 네이버가 가로로 자르며 "우리 나이가 어때서" 글자 일부만 남음. 카피·타겟 전무. <span class="sig r" style="margin-top:6px;display:inline-block">문제 3-1</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- 7. IDEAS -->
+<section id="ideas">
+  <h2><span class="secnum">7</span>개선 방향 (안만 — 아직 결정 전)</h2>
+  <div class="lead">아래는 <b>선택지</b>입니다. 확정·구현은 창업자 결정 후에만 진행합니다.</div>
+
+  <h3>서비스 이름</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>안</th><th>내용</th><th>영향</th></tr></thead>
+    <tbody>
+      <tr><td>(a) 현행 유지</td><td>풀네임+줄임말 병기</td><td>변경 0, 트로트 충돌 남음</td></tr>
+      <tr><td>(b) 표기 규칙 통일</td><td>"어디는 풀, 어디는 줄임말" 규칙화 + 한 곳 관리</td><td>작음, 깔끔</td></tr>
+      <tr><td>(c) 꼬리표 고정</td><td>항상 "· 5060 여성 커뮤니티" 붙여 노래와 구분</td><td>중간, 검색 구분↑</td></tr>
+      <tr><td>(d) 리브랜딩</td><td>새 이름 검토</td><td>큼(140곳+도메인+SNS), 별도 회의</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>정체성(여성)을 메타에 넣을지 — ⚖️ 트레이드오프</h3>
+  <div class="callout">
+    "여성"을 넣으면 <b>타겟엔 정확</b>하지만, 검색 키워드 폭이 좁아질 수 있습니다(남성 가족이 대신 검색하는 경우 등). → <b>전면 명시 / 은은하게 / 연령만 유지</b> 중 방향 결정 필요.
+  </div>
+
+  <h3>나머지</h3>
+  <ul class="clean">
+    <li><b>OG 이미지</b>: 가로 1장(카피+정체성) 만들어 홈·목록·카카오버튼에 공통 연결 + 404·도메인 픽스</li>
+    <li><b>목록 제목·설명</b>: "매거진" → "50·60대 매거진 — 건강·재테크·여행" 식 정체성 보강</li>
+    <li><b>커뮤니티 발췌 품질(선택)</b>: 본문 발췌는 그대로 두되, 첫 문장이 잡담 없이 맥락 있게 시작하게 — SEO 설명 추가가 아님</li>
+    <li><b>앱 이름(manifest)</b>: 홈화면 글자가 길어 "우나어"로 짧게(선택)</li>
+  </ul>
+</section>
+
+<!-- 8. NEXT -->
+<section id="next">
+  <h2><span class="secnum">8</span>그래서 — 결정·준비물·역할</h2>
+  <div class="twocol">
+    <div class="minicard"><h4>🙋 창업자님이 정할 것</h4>
+      <ul class="clean" style="margin:0">
+        <li>서비스 이름 방향 (a~d)</li>
+        <li>여성 정체성 노출 수위 (전면/은은/연령만)</li>
+        <li>목록·약관 문구 보강 여부</li>
+      </ul>
+    </div>
+    <div class="minicard"><h4>🎁 창업자님 준비물 (단 1개)</h4>
+      <p style="font-size:14px;margin:0 0 6px"><b>가로 공유 이미지 1장</b></p>
+      <ul class="clean" style="margin:0;font-size:13.5px">
+        <li>크기 <b>1200×630px</b> (가로형)</li>
+        <li>메인 카피 <b>~13자</b> + 서브 <b>~20자</b></li>
+        <li>중요 글자는 가장자리 60px 안쪽</li>
+        <li>파일명 <code>og-image.png</code></li>
+      </ul>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0">※ 카피만 주시면 이미지는 코드로 그려드릴 수도 있습니다.</p>
+    </div>
+  </div>
+  <div class="minicard" style="margin-top:16px"><h4>🛠️ 제가 코드로 처리할 것 (결정 후)</h4>
+    <ul class="clean" style="margin:0;font-size:14px">
+      <li>공유 이미지 전역 연결 (홈·목록 5곳 + 카카오 버튼)</li>
+      <li>깨진 그림 404 픽스 (og-image / logo-512)</li>
+      <li>주소 도메인 통일 (www → 정식 주소)</li>
+      <li>(결정 시) 목록 제목·설명 + 봇글 SEO + 앱 이름</li>
+    </ul>
+  </div>
+  <p class="foot">우나어 검색·공유 진단 리포트 · 2026-06-09 · 현황 진단(코드 변경 없음)<br>상세 근거는 개발 plan 파일에 문제 번호별로 보관</p>
+</section>
+
+</div>
+</body>
+</html>

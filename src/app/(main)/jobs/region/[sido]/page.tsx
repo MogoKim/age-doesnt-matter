@@ -14,7 +14,7 @@ interface PageProps {
 export const revalidate = 120
 export const dynamicParams = false // 화이트리스트 17개 시도만 허용, 나머지 404
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
 const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.includes('localhost:5432/dummy')
 
 export function generateStaticParams() {

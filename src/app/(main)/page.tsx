@@ -25,8 +25,7 @@ import {
 } from '@/lib/queries/posts'
 
 export const metadata: Metadata = {
-  title: '우리 나이가 어때서 — 5060 세대 커뮤니티',
-  description: '50·60대라면 누구나 "여기 오면 내 얘기가 있다"고 느끼는 중장년 연결 커뮤니티. 사는 이야기, 2막 준비, 일자리까지.',
+  // title·description은 layout.tsx 전역 기본값 사용 (우리 나이가 어때서 — 40·50·60 신중년 여성 커뮤니티)
   alternates: { canonical: '/' },
 }
 
@@ -146,8 +145,8 @@ export default function HomePage() {
     '@type': 'Organization',
     name: '우리 나이가 어때서',
     alternateName: '우나어',
-    url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com',
-    logo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/logo-512.png`,
+    url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com',
+    logo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/logo.png`,
     description: '50·60대가 나이 걱정 없이 일자리와 소통을 찾는 따뜻한 커뮤니티',
     sameAs: [
       'https://www.threads.net/@unaeo_official',
@@ -162,10 +161,10 @@ export default function HomePage() {
     '@type': 'WebSite',
     name: '우리 나이가 어때서',
     alternateName: '우나어',
-    url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com',
+    url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com',
     potentialAction: {
       '@type': 'SearchAction',
-      target: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/search?q={search_term_string}`,
+      target: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/search?q={search_term_string}`,
       'query-input': 'required name=search_term_string',
     },
   }
@@ -181,7 +180,7 @@ export default function HomePage() {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
         />
-        <h1 className="sr-only">우리 나이가 어때서 — 5060 세대 커뮤니티</h1>
+        <h1 className="sr-only">우리 나이가 어때서 — 40·50·60 신중년 여성 커뮤니티</h1>
         <div className="max-w-[1200px] mx-auto">
           <Suspense fallback={<HeroSkeleton />}>
             <HeroSlider />

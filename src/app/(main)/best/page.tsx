@@ -5,9 +5,9 @@ import type { PostSummary } from '@/types/api'
 import BestContent from '@/components/features/best/BestContent'
 
 export const metadata: Metadata = {
-  title: '인기글',
-  description: '우나어 커뮤니티에서 가장 인기 있는 글 모음',
-  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/best` },
+  title: '베스트',
+  description: '신중년 여성들이 가장 많이 공감하고 나눈 인기 글 모음.',
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/best` },
 }
 
 const LIMIT = 12

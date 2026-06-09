@@ -202,7 +202,7 @@ export default function GuestCommentInput({
           className="flex items-center justify-center w-full min-h-[52px] rounded-xl text-caption font-bold mb-2 transition-all hover:brightness-95"
           style={{ background: '#FEE500', color: '#191919' }}
         >
-          카카오로 3초 만에 시작하기
+          카카오로 1초 만에 시작하기
         </KakaoSignupButton>
         <button
           type="button"

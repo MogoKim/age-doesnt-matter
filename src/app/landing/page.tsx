@@ -26,7 +26,7 @@ const COPY: Record<string, { hook: string; sub: string }> = {
 
 export const metadata: Metadata = {
   title: '5060 여성 공감 커뮤니티 — 우리 나이가 어때서',
-  description: '나 같은 고민, 여기 다 있어요. 50·60대 여성만의 따뜻한 공감 커뮤니티. 카카오로 10초 무료 가입.',
+  description: '나 같은 고민, 여기 다 있어요. 50·60대 여성만의 따뜻한 공감 커뮤니티. 카카오로 1초 무료 가입.',
   robots: { index: false },
 }
 
