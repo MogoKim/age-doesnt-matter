@@ -1,7 +1,7 @@
 {
   "id": "/",
   "name": "우리 나이가 어때서",
-  "short_name": "우리 나이가 어때서",
+  "short_name": "우리나이가어때서",
   "description": "50·60대를 위한 커뮤니티 플랫폼",
   "start_url": "/",
   "display": "standalone",
