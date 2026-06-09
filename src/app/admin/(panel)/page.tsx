@@ -79,9 +79,9 @@ export default async function AdminDashboardPage() {
 
       {/* ① Today KPI */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <KpiCard label="오늘 방문 (UV)" value={stats.todayUniqueVisitors} icon="👁️" sub="비로그인 포함" />
-        <KpiCard label="오늘 PV" value={stats.todayPV} icon="📄" sub="페이지뷰" />
-        <KpiCard label="신규 가입" value={stats.todaySignups} icon="🆕" sub="봇 제외" href="/admin/members" />
+        <KpiCard label="오늘 방문 (UV)" value={stats.todayUniqueVisitors} icon="👁️" sub={`회원 ${stats.memberUv} · 비회원 ${stats.guestUv}`} />
+        <KpiCard label="오늘 PV" value={stats.todayPV} icon="📄" sub={`회원 ${stats.memberPv.toLocaleString()} · 비회원 ${stats.guestPv.toLocaleString()}`} />
+        <KpiCard label="신규 가입" value={stats.todaySignups} icon="🆕" sub="실고객만(봇 제외)" href="/admin/members" />
         <KpiCard
           label="방문→가입 전환율"
           value={stats.todayConversionRate !== null ? `${stats.todayConversionRate}%` : '—'}
@@ -92,7 +92,7 @@ export default async function AdminDashboardPage() {
           label="오늘 글/댓글"
           value={`+${stats.todayPosts.toLocaleString()} / +${stats.todayComments.toLocaleString()}`}
           icon="📝"
-          sub="사용자 글 / 전체 댓글"
+          sub="회원 글 / 회원 댓글(봇 제외)"
           href="/admin/content"
         />
         <KpiCard

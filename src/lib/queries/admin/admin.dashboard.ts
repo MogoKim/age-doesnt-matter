@@ -21,34 +21,23 @@ export const getDashboardStats = unstable_cache(
   async () => {
     const today = getKstTodayStart()
 
+    // 실고객 = providerId 순수 숫자(진짜 카카오 가입자). seed_/bot-/curator-/@unao.bot 봇 전부 제외.
+    const isReal = (pid?: string | null) => !!pid && /^\d+$/.test(pid)
+
     const [
-      todayUvRows,
-      todayPV,
+      pvRows,
       todayLogins,
-      todaySignups,
+      newUsers,
       todayUserPosts,
-      todayComments,
+      todayCmts,
       pendingReports,
       pendingBotReviews,
       pushSubCount,
     ] = await Promise.all([
-      // UV: isBot=false 필터로 founder(isBot=true) 자동 제외
+      // 오늘 page_view 전부(isBot=false). 회원/비회원/봇 분리는 아래 JS에서.
       prisma.eventLog.findMany({
-        where: {
-          eventName: 'page_view',
-          isBot: false,
-          sessionId: { not: null },
-          createdAt: { gte: today },
-        },
-        select: { sessionId: true },
-        distinct: ['sessionId'],
-      }),
-      prisma.eventLog.count({
-        where: {
-          eventName: 'page_view',
-          isBot: false,
-          createdAt: { gte: today },
-        },
+        where: { eventName: 'page_view', isBot: false, createdAt: { gte: today } },
+        select: { sessionId: true, userId: true },
       }),
       prisma.user.count({
         where: {
@@ -56,18 +45,19 @@ export const getDashboardStats = unstable_cache(
           NOT: { email: { endsWith: '@unao.bot' } },
         },
       }),
-      prisma.user.count({
-        where: {
-          createdAt: { gte: today },
-          NOT: { email: { endsWith: '@unao.bot' } },
-        },
+      // 신규가입 — 실고객 판별 위해 providerId 가져와 JS 필터
+      prisma.user.findMany({
+        where: { createdAt: { gte: today } },
+        select: { providerId: true },
       }),
       // 사용자 글만 (BOT/ADMIN 제외)
       prisma.post.count({
         where: { createdAt: { gte: today }, status: 'PUBLISHED', source: 'USER' },
       }),
-      prisma.comment.count({
+      // 댓글 — author.providerId로 실회원 판별(Comment에 source 없음). 봇·게스트 제외
+      prisma.comment.findMany({
         where: { createdAt: { gte: today }, status: 'ACTIVE' },
+        select: { author: { select: { providerId: true } } },
       }),
       prisma.report.count({
         where: { status: 'PENDING' },
@@ -78,7 +68,39 @@ export const getDashboardStats = unstable_cache(
       prisma.pushSubscription.count(),
     ])
 
-    const todayUniqueVisitors = todayUvRows.length
+    // UV/PV 회원·비회원·봇 분리 (등장 userId의 실고객 여부 조회)
+    const uids = [...new Set(pvRows.filter((r) => r.userId).map((r) => r.userId!))]
+    const userRows = uids.length
+      ? await prisma.user.findMany({ where: { id: { in: uids } }, select: { id: true, providerId: true } })
+      : []
+    const realUserSet = new Set(userRows.filter((u) => isReal(u.providerId)).map((u) => u.id))
+
+    const memberSessions = new Set<string>() // 실고객 userId 가진 세션
+    const botSessions = new Set<string>() // 비실고객 userId(seed 등) = 봇 → 제외
+    let memberPv = 0
+    let guestPv = 0
+    for (const r of pvRows) {
+      if (r.userId && realUserSet.has(r.userId)) {
+        memberPv++
+        if (r.sessionId) memberSessions.add(r.sessionId)
+      } else if (r.userId) {
+        if (r.sessionId) botSessions.add(r.sessionId)
+      } else {
+        guestPv++ // userId null = 진짜 익명(비회원)
+      }
+    }
+    const guestSessions = new Set<string>()
+    for (const r of pvRows) {
+      if (r.sessionId && !memberSessions.has(r.sessionId) && !botSessions.has(r.sessionId)) guestSessions.add(r.sessionId)
+    }
+    const memberUv = memberSessions.size
+    const guestUv = guestSessions.size
+    const todayUniqueVisitors = memberUv + guestUv // 봇 세션 제외 합
+    const todayPV = memberPv + guestPv // 봇 PV 제외 합
+
+    const todaySignups = newUsers.filter((u) => isReal(u.providerId)).length
+    const todayComments = todayCmts.filter((c) => isReal(c.author?.providerId)).length
+
     const todayConversionRate =
       todayUniqueVisitors > 0
         ? Math.round((todaySignups / todayUniqueVisitors) * 1000) / 10
@@ -86,7 +108,11 @@ export const getDashboardStats = unstable_cache(
 
     return {
       todayUniqueVisitors,
+      memberUv,
+      guestUv,
       todayPV,
+      memberPv,
+      guestPv,
       todayLogins,
       todaySignups,
       todayConversionRate,
@@ -97,7 +123,7 @@ export const getDashboardStats = unstable_cache(
       pushSubCount,
     }
   },
-  ['admin-dashboard-stats-v2'],
+  ['admin-dashboard-stats-v3'],
   { revalidate: 300 }
 )
 
