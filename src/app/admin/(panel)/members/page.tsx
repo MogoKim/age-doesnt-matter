@@ -17,12 +17,15 @@ interface Props {
 
 export default async function AdminMembersPage({ searchParams }: Props) {
   const params = await searchParams
+  // 기본값을 '실사용자만'(hide)으로 — 봇/시드 계정이 섞여 온보딩 현황 등이 오인되는 것 방지.
+  // 명시적 '전체'는 bot=all, '봇만'은 bot=only.
+  const botFilter = params.bot ?? 'hide'
   const { users, hasMore } = await getMemberList({
     status: params.status as UserStatus | undefined,
     search: params.search,
     cursor: params.cursor,
-    botOnly: params.bot === 'only',
-    hideBot: params.bot === 'hide',
+    botOnly: botFilter === 'only',
+    hideBot: botFilter === 'hide',
   })
 
   return (
@@ -33,7 +36,7 @@ export default async function AdminMembersPage({ searchParams }: Props) {
         filters={{
           status: params.status,
           search: params.search,
-          bot: params.bot,
+          bot: botFilter,
         }}
       />
     </div>

@@ -118,7 +118,7 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
         {/* 봇 계정 필터 */}
         <div className="flex gap-1">
           {[
-            { value: '', label: '전체' },
+            { value: 'all', label: '전체' },
             { value: 'hide', label: '실사용자만' },
             { value: 'only', label: '봇만' },
           ].map((opt) => (
@@ -126,7 +126,7 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
               key={opt.value}
               onClick={() => updateFilter('bot', opt.value)}
               className={`h-10 rounded-lg px-3 text-sm font-medium transition-colors ${
-                (filters.bot ?? '') === opt.value
+                (filters.bot ?? 'hide') === opt.value
                   ? 'bg-zinc-900 text-white'
                   : 'border border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-50'
               }`}

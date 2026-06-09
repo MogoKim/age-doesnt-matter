@@ -78,6 +78,12 @@ export async function POST(request: NextRequest) {
       where: { id: session.user.id, signupSource: null },
       data: { signupSource: source },
     })
+    // 마지막 접속 갱신 — login 이벤트는 새 방문 세션당 1회(PageViewTracker sessionStorage 가드).
+    // auth.ts jwt 콜백의 30분 throttle로 세션 유지 재방문이 lastLoginAt에 누락되던 것을 여기서 보완.
+    // 비크리티컬 — 실패해도 이벤트 기록을 막지 않는다.
+    await prisma.user
+      .update({ where: { id: session.user.id }, data: { lastLoginAt: new Date() } })
+      .catch(() => {})
   }
 
   const response = NextResponse.json({ ok: true })
