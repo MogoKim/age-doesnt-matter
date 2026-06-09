@@ -47,7 +47,7 @@ C1은 "TWA 관련 측정"에 영향을 주지만, **모든 게 망가지는 건 
 | C4 | SignupPromptBanner가 SSOT 미사용(자체 variant 함수 중복) | 실험 종료(9dca8fe)로 `getOrAssignVariant`/`getTriggerVariant` 삭제 |
 | C2 | TWA 게이트 긴급 OFF 스위치 마련 | 2026-06-09: `TwaEntryGate`에 `NEXT_PUBLIC_TWA_GATE_ENABLED==='false'` 가드 추가(미설정=ON, **현재 동작 무변경**). 끄려면 Vercel서 `='false'`. 죽은 `flags.twa`(non-public이라 클라이언트서 무용)는 제거 |
 | C5 | 죽은 FEATURE_* 정리 | 2026-06-09: `env.ts` export 3개 + `feature-flags.ts` twa 제거 + `.env.example`서 FEATURE_TWA 제거(FEATURE_PUSH_TOAST·WEB_PUSH는 사용 중이라 유지) |
-| C1 | TWA 측정 sticky 보강 | 2026-06-09: `getBrowserEnv`에 `_twa_confirmed` sticky 반영 → referrer 소실(OAuth 복귀)에도 twa-android 유지. baseline·재방문·signupSource 누락 방지(useAppEnvironment.isTWA와 동일 신호). **프로덕션 network 실측 검증 완료 시 확정** |
+| C1 | TWA 측정 sticky 보강 | 2026-06-09: `getBrowserEnv`에 `_twa_confirmed` sticky 반영 → referrer 소실(OAuth 복귀)에도 twa-android 유지. baseline·재방문·signupSource 누락 방지(useAppEnvironment.isTWA와 동일 신호). **프로덕션 network 실측 검증 완료** — referrer 소실 상황(referrer=자사도메인)에서 page_view.browser_env=`twa-android` 확인 |
 | C7 | detectEnv↔getBrowserEnv 역할 명확화 | 2026-06-09: 완전 통합 대신(순환의존·역할 차이) 양쪽 주석으로 역할 분리 명시 — getBrowserEnv=분석(twa+sticky), detectEnv=설치유도(상위 isTWA 가드 보호) |
 
 ---
