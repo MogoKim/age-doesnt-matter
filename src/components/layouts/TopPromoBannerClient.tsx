@@ -70,8 +70,8 @@ export default function TopPromoBannerClient({
     gtmReferralShare(type)
     try {
       await shareToKakao({
-        title: '우리 나이가 어때서 — 우나어',
-        description: '우리 또래끼리 모이는 따뜻한 커뮤니티, 같이 해요!',
+        title: '우리 나이가 어때서 — 40·50·60 신중년 여성 커뮤니티',
+        description: '엄마 말고, 아내 말고, 그냥 나로. 신중년 여성끼리 모이는 따뜻한 커뮤니티예요.',
         imageUrl: `${appUrl}/og-image.png`,
         url: shareUrl,
       })
