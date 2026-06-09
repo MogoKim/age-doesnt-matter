@@ -106,8 +106,6 @@ export const getInsights = unstable_cache(
       ;(sVisitDays[e.sessionId!] ??= new Set()).add(Math.floor((e.createdAt.getTime() + 9 * 3600000) / DAY))
     }
     const pvSessions = new Set(events.filter((e) => e.eventName === 'page_view').map((e) => e.sessionId!))
-    // 가입전환 = 세션 중 sign_up(진짜 신규가입) 발생. (기존 login=재방문 로그인 포함이라 '가입'으로 오표기됐던 것 교정)
-    const signupSessions = new Set(events.filter((e) => e.eventName === 'sign_up').map((e) => e.sessionId!))
 
     // 채널별 (세션 첫 page_view의 referrer + utm)
     const firstMeta: Record<string, { ref: string; src: string; med: string }> = {}
@@ -121,23 +119,51 @@ export const getInsights = unstable_cache(
         med: typeof p?.utm_medium === 'string' ? p.utm_medium : '',
       }
     }
-    const chanMap: Record<string, { sessions: number; signups: number; multi: number }> = {}
+    // 가입전환(가입자) = first-touch 귀속: 실고객의 '최초 page_view referrer' 채널로 1명씩.
+    // (세션단위 sign_up은 가입 순간이 항상 카카오 OAuth 복귀 세션이라 전부 '직접입력'으로 쏠려 왜곡 → first-touch로 교정)
+    const ftPv = realIds.length
+      ? await prisma.eventLog.findMany({
+          where: { userId: { in: realIds }, eventName: 'page_view' },
+          select: { userId: true, referrer: true, properties: true, createdAt: true },
+          orderBy: { createdAt: 'asc' },
+        })
+      : []
+    const ftSignups: Record<string, number> = {}
+    const seenFt = new Set<string>()
+    for (const e of ftPv) {
+      if (!e.userId || seenFt.has(e.userId)) continue
+      seenFt.add(e.userId)
+      const p = e.properties as Record<string, unknown> | null
+      const ch = classifyChannel(
+        typeof e.referrer === 'string' ? e.referrer : '',
+        typeof p?.utm_source === 'string' ? p.utm_source : '',
+        typeof p?.utm_medium === 'string' ? p.utm_medium : '',
+      )
+      ftSignups[ch] = (ftSignups[ch] ?? 0) + 1
+    }
+
+    const chanMap: Record<string, { sessions: number; multi: number }> = {}
     for (const s of pvSessions) {
       const m = firstMeta[s] ?? { ref: '', src: '', med: '' }
       const c = classifyChannel(m.ref, m.src, m.med)
-      const v = (chanMap[c] ??= { sessions: 0, signups: 0, multi: 0 })
+      const v = (chanMap[c] ??= { sessions: 0, multi: 0 })
       v.sessions++
-      if (signupSessions.has(s)) v.signups++
       if ((sVisitDays[s]?.size ?? 0) >= 2) v.multi++
     }
-    const channels = Object.entries(chanMap)
-      .map(([channel, v]) => ({
-        channel,
-        sessions: v.sessions,
-        signups: v.signups,
-        signupRate: pct(v.signups, v.sessions),
-        retentionRate: pct(v.multi, v.sessions),
-      }))
+    // 세션 있는 채널 ∪ first-touch 가입자 있는 채널
+    const allChannels = new Set([...Object.keys(chanMap), ...Object.keys(ftSignups)])
+    const channels = [...allChannels]
+      .map((channel) => {
+        const v = chanMap[channel] ?? { sessions: 0, multi: 0 }
+        const signups = ftSignups[channel] ?? 0
+        return {
+          channel,
+          sessions: v.sessions,
+          signups, // first-touch 가입자 명수(전체 기간)
+          signupRate: pct(signups, v.sessions), // 30일 유입 세션 대비 근사(기간차 주의)
+          retentionRate: pct(v.multi, v.sessions),
+        }
+      })
       .sort((a, b) => b.sessions - a.sessions)
 
     // ── 활성화 (실고객 User 기반) ──
@@ -159,6 +185,6 @@ export const getInsights = unstable_cache(
       activation,
     }
   },
-  ['admin-insights-v2'],
+  ['admin-insights-v3'],
   { revalidate: 1800 },
 )
