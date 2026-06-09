@@ -22,6 +22,8 @@ env:
   SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
   SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
   AGENT_DB_POOL_MAX: "1"
+  # 5분마다 도는 고빈도 잡 → 5432 직접연결로 라우팅해 Supavisor(6543) lobby 200 경합에서 분리 (EMAXCONN 완화)
+  AGENT_DB_USE_DIRECT: "true"
 
 concurrency:
   group: ${{ github.workflow }}
