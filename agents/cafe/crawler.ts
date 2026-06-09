@@ -120,9 +120,12 @@ async function safeText(
           clone.querySelectorAll('style, script, noscript').forEach(e => e.remove())
           if (preserve) {
             clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'))
+            // 문단성 블록 → \n\n (toCuratedHtmlContent가 <p>로 분리)
             clone
-              .querySelectorAll('p, div, li, blockquote, h1, h2, h3, h4, h5, h6, .se-text-paragraph, .se-module')
-              .forEach(b => b.append('\n'))
+              .querySelectorAll('p, li, blockquote, h1, h2, h3, h4, h5, h6, .se-text-paragraph')
+              .forEach(b => b.append('\n\n'))
+            // 레이아웃 블록 → \n (문단 아닐 수 있음, 과다 분리 방지)
+            clone.querySelectorAll('div, .se-module, .se-component').forEach(b => b.append('\n'))
           }
           return clone.textContent ?? ''
         }, preserveBreaks)
