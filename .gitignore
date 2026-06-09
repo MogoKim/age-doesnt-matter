@@ -140,3 +140,12 @@ test-query.ts
 
 # 백필 결과 CSV (일회성 산출물)
 agents/scripts/backfill-*.csv
+
+# 내부 재무/비용 리포트 (사업 비용·매출·운영 SOP 포함 — 공개 레포 노출 금지)
+docs/reports/cost-status-*.html
+
+# 루트 잡파일 — A/B/C UI 실험 스크린샷·HTML (민감정보 없으나 공개 불필요)
+/_abc.html
+/abc-real.png
+/banner-*.png
+/gate-*.png
