@@ -3,6 +3,7 @@
 import { auth, unstable_update } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
+import { retryOnConnError } from '@/lib/db-retry'
 import { getInterestBasedPosts } from '@/lib/queries/posts'
 import type { RecommendedPost } from '@/lib/queries/posts'
 
@@ -92,7 +93,7 @@ export async function completeOnboarding(
   const version = '1.0'
 
   try {
-    await prisma.$transaction([
+    await retryOnConnError(() => prisma.$transaction([
       prisma.user.update({
         where: { id: userId },
         data: {
@@ -121,7 +122,7 @@ export async function completeOnboarding(
             }),
           ]
         : []),
-    ])
+    ]))
   } catch (error) {
     console.error('[onboarding] transaction error:', error)
     return { error: '가입 처리 중 문제가 발생했습니다. 다시 시도해 주세요.' }

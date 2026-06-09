@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@/generated/prisma/client'
 import { authConfig } from '@/lib/auth.config'
 import { logAuthFailure } from '@/lib/auth-monitor'
+import { retryOnConnError } from '@/lib/db-retry'
 
 const TOKEN_REFRESH_WINDOW_MS = 30 * 60 * 1000
 
@@ -27,10 +28,10 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
 
         const providerId = String(profile.id)
 
-        const existing = await prisma.user.findUnique({
+        const existing = await retryOnConnError(() => prisma.user.findUnique({
           where: { providerId },
           select: { status: true, suspendedUntil: true },
-        })
+        }))
 
         // 탈퇴 유예 중인 계정 복구
         if (existing?.status === 'WITHDRAWN') {
@@ -78,10 +79,10 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           const kakaoData = kakaoAccount.kakao_account as Record<string, unknown>
           const kakaoProfile = kakaoData?.profile as Record<string, string> | undefined
 
-          let user = await prisma.user.findUnique({
+          let user = await retryOnConnError(() => prisma.user.findUnique({
             where: { providerId },
             select: { id: true, role: true, grade: true, nickname: true, profileImage: true, status: true, suspendedUntil: true, fontSize: true, createdAt: true },
-          })
+          }))
 
           if (!user) {
             const tempNickname = `user_${providerId.slice(-8)}`
@@ -96,9 +97,9 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
               phone: normalizeKakaoPhone(kakaoData?.phone_number as string | undefined),
             }
             try {
-              user = await prisma.user.create({
+              user = await retryOnConnError(() => prisma.user.create({
                 data: { ...newUserData, email: kakaoEmail },
-              })
+              }))
               token.needsOnboarding = true
             } catch (createError) {
               // 동시 콜백 race: 형제 요청이 먼저 같은 providerId(=같은 사람)로 생성하면서
@@ -120,9 +121,9 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
                   // 2) providerId로도 없음 = 다른 사람이 같은 email을 선점한 진짜 충돌.
                   //    email로 그 계정에 로그인/병합하지 않는다(계정 탈취 방어).
                   //    email 없이 신규 생성하여 제약 위반과 탈취를 동시에 회피한다.
-                  user = await prisma.user.create({
+                  user = await retryOnConnError(() => prisma.user.create({
                     data: { ...newUserData, email: undefined },
-                  })
+                  }))
                   token.needsOnboarding = true
                   // email 값(PII)은 기록하지 않고 충돌 발생 사실만 남긴다.
                   await logAuthFailure(
@@ -135,10 +136,11 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
               }
             }
           } else {
-            await prisma.user.update({
-              where: { id: user.id },
+            const existingUserId = user.id
+            await retryOnConnError(() => prisma.user.update({
+              where: { id: existingUserId },
               data: { lastLoginAt: new Date() },
-            })
+            }))
             token.needsOnboarding = user.nickname.startsWith('user_')
           }
 
@@ -160,11 +162,11 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           // 기존 세션 갱신: lastLoginAt 업데이트 겸 유저 존재 확인 (30분 throttle 내 스킵됨)
           const user = await (async () => {
             try {
-              return await prisma.user.update({
+              return await retryOnConnError(() => prisma.user.update({
                 where: { id: token.userId as string },
                 data: { lastLoginAt: new Date() },
                 select: { id: true, role: true, grade: true, nickname: true, profileImage: true, fontSize: true, createdAt: true },
-              })
+              }))
             } catch (e) {
               if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
                 return null // 유저 없음 → 토큰 초기화
