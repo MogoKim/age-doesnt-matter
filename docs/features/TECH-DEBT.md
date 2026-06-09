@@ -10,9 +10,7 @@
 
 | ID | 우선 | 한 줄 증상 | 근본 원인 (파일) | 근본 해결책 | 상태 |
 |----|------|-----------|----------------|------------|------|
-| **C1** | 🟡 Med | TWA 가입자 측정이 실제보다 적게 잡힐 수 있음 | `getBrowserEnv`([gtm.ts:167](../../src/lib/gtm.ts#L167))가 `android-app://` referrer만 보고 `_twa_confirmed` sticky 미반영. OAuth 콜백 후 referrer 소실 → `android-chrome` 오기록 | `getBrowserEnv`에 `_twa_confirmed` sticky 보강 (→ C7도 함께 정리) | 미착수 |
 | **C6** | ⚪ Low | "일자리 알림 받을래요?" 푸시가 영영 안 뜸 | `setPushToastTrigger('job')` 호출처 0 (UI·메시지는 완비, `'comment'`만 호출) | jobs 페이지/저장 시점에 `setPushToastTrigger('job')` 연결 | 미착수 |
-| **C7** | ⚪ Low | 환경 감지 함수 2벌 중복 (drift) | `detectEnv`([AddToHomeScreen.tsx:31](../../src/components/common/AddToHomeScreen.tsx#L31))와 `getBrowserEnv`([gtm.ts:167](../../src/lib/gtm.ts#L167)) UA 분기 복제. detectEnv엔 twa-android 분기 **없음** | 두 함수 통합 (C1 수정과 함께) | 미착수 |
 
 ---
 
@@ -49,6 +47,8 @@ C1은 "TWA 관련 측정"에 영향을 주지만, **모든 게 망가지는 건 
 | C4 | SignupPromptBanner가 SSOT 미사용(자체 variant 함수 중복) | 실험 종료(9dca8fe)로 `getOrAssignVariant`/`getTriggerVariant` 삭제 |
 | C2 | TWA 게이트 긴급 OFF 스위치 마련 | 2026-06-09: `TwaEntryGate`에 `NEXT_PUBLIC_TWA_GATE_ENABLED==='false'` 가드 추가(미설정=ON, **현재 동작 무변경**). 끄려면 Vercel서 `='false'`. 죽은 `flags.twa`(non-public이라 클라이언트서 무용)는 제거 |
 | C5 | 죽은 FEATURE_* 정리 | 2026-06-09: `env.ts` export 3개 + `feature-flags.ts` twa 제거 + `.env.example`서 FEATURE_TWA 제거(FEATURE_PUSH_TOAST·WEB_PUSH는 사용 중이라 유지) |
+| C1 | TWA 측정 sticky 보강 | 2026-06-09: `getBrowserEnv`에 `_twa_confirmed` sticky 반영 → referrer 소실(OAuth 복귀)에도 twa-android 유지. baseline·재방문·signupSource 누락 방지(useAppEnvironment.isTWA와 동일 신호). **프로덕션 network 실측 검증 완료 시 확정** |
+| C7 | detectEnv↔getBrowserEnv 역할 명확화 | 2026-06-09: 완전 통합 대신(순환의존·역할 차이) 양쪽 주석으로 역할 분리 명시 — getBrowserEnv=분석(twa+sticky), detectEnv=설치유도(상위 isTWA 가드 보호) |
 
 ---
 

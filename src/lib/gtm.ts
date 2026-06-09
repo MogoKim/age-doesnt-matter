@@ -160,9 +160,11 @@ export function getStoredUtm(): UtmParams {
 // ── 브라우저 환경 식별 ──
 
 /**
- * 현재 브라우저 환경을 문자열로 반환.
- * AddToHomeScreen의 detectEnv()와 동일한 로직 (순환 의존 방지를 위해 인라인).
- * 모든 이벤트의 browser_env 파라미터에 사용.
+ * 현재 브라우저 환경을 문자열로 반환 — **분석/이벤트 기록용**(EventLog.browser_env).
+ * UA 분기는 AddToHomeScreen의 detectEnv()와 겹치나 역할이 다르다(순환 의존 방지 위해 인라인 유지):
+ *   - getBrowserEnv(여기): 분석용. twa-android 분기 + sticky(_twa_confirmed) 반영 → 채널 통계 정확도.
+ *   - detectEnv(AddToHomeScreen): 설치유도용. TWA/standalone 미구분(상위 useAppEnvironment.isTWA 가드로 보호).
+ * → 두 함수를 통합하지 않는다(역할·반환셋 다름). 공통 UA 분기만 우연히 닮음.
  */
 export function getBrowserEnv(): string {
   if (typeof window === 'undefined') return 'server'
@@ -175,7 +177,10 @@ export function getBrowserEnv(): string {
   if (/CriOS/i.test(ua)) return 'crios'
   if (/iphone|ipad|ipod/i.test(ua)) return 'ios-safari'
   // TWA: android-app:// referrer = Play Store 설치 앱에서 실행 중
+  //   + sticky(_twa_confirmed): OAuth 복귀 등으로 referrer 소실돼도 TWA 유지 (C1 — useAppEnvironment.isTWA와 동일 신호 공유).
+  //   sign_up/page_view가 android-chrome으로 오기록돼 baseline·재방문 집계에서 TWA 누락되던 것 방지.
   if (document.referrer.startsWith('android-app://')) return 'twa-android'
+  try { if (localStorage.getItem('_twa_confirmed') === '1') return 'twa-android' } catch { /* localStorage 불가 환경 무시 */ }
   return 'android-chrome'
 }
 

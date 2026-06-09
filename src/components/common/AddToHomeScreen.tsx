@@ -28,6 +28,8 @@ type Env =
 const BLOCKED_ENVS: Env[] = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-inapp', 'instagram-inapp', 'crios', 'desktop']
 const ANDROID_ENVS: Env[] = ['android-chrome', 'other']  // Chrome + Samsung Internet
 
+// 설치유도 전용 환경 분류. TWA/standalone·sticky는 의도적으로 미구분(상위 useAppEnvironment.isTWA·getInstalled 가드로 보호).
+//   분석/이벤트 기록용 채널값은 gtm.ts getBrowserEnv() 사용(twa-android + _twa_confirmed sticky 포함). 두 함수는 역할이 달라 통합하지 않음.
 export function detectEnv(): Env {
   if (typeof window === 'undefined') return 'other'
   const ua = navigator.userAgent
