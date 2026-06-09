@@ -12,6 +12,7 @@ import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 import { checkAndPromote } from '@/lib/grade'
 import { generateCommunitySlug } from '@/lib/seo/slug'
 import { enqueueUserPostWave } from '@/lib/actions/wave-queue'
+import { getWriteBlockReason } from '@/lib/sanctions'
 
 interface CreatePostResult {
   error?: string
@@ -22,6 +23,12 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   const session = await auth()
   if (!session?.user?.id) {
     return { error: '로그인이 필요합니다' }
+  }
+
+  // 제재(정지/차단) 유저는 세션이 살아있어도 작성 차단
+  const blockReason = await getWriteBlockReason(session.user.id)
+  if (blockReason) {
+    return { error: blockReason }
   }
 
   const boardSlug = formData.get('boardSlug') as string

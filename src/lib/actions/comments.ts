@@ -10,6 +10,7 @@ import { checkAndPromotePost } from '@/lib/actions/promotion'
 import { calculateTrendingScore } from '@/lib/utils/trending'
 import { pushService } from '@/lib/push/service'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
+import { getWriteBlockReason } from '@/lib/sanctions'
 
 interface CommentResult {
   error?: string
@@ -23,6 +24,12 @@ export async function createComment(
   const session = await auth()
   if (!session?.user?.id) {
     return { error: '로그인이 필요합니다' }
+  }
+
+  // 제재(정지/차단) 유저는 세션이 살아있어도 작성 차단
+  const blockReason = await getWriteBlockReason(session.user.id)
+  if (blockReason) {
+    return { error: blockReason }
   }
 
   const trimmed = content.trim()
