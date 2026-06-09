@@ -50,9 +50,15 @@ function getBirthDecade(birthYear: number | null): string {
   return `${decade % 100}년대생`
 }
 
+// 정렬 가능한 컬럼 ↔ 헤더 라벨
+type SortField = 'postCount' | 'commentCount' | 'receivedLikes' | 'lastLoginAt' | 'createdAt'
+
 interface MemberTableProps {
   users: User[]
   hasMore: boolean
+  page: number
+  sort: string
+  order: string
   filters: {
     status?: string
     search?: string
@@ -60,7 +66,7 @@ interface MemberTableProps {
   }
 }
 
-export default function MemberTable({ users, hasMore, filters }: MemberTableProps) {
+export default function MemberTable({ users, hasMore, page, sort, order, filters }: MemberTableProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
@@ -72,8 +78,32 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
     const params = new URLSearchParams(searchParams.toString())
     if (value) params.set(key, value)
     else params.delete(key)
-    params.delete('cursor')
+    params.delete('page') // 필터 변경 시 첫 페이지로
     router.push(`/admin/members?${params.toString()}`)
+  }
+
+  // 컬럼 헤더 클릭 정렬: 같은 컬럼 재클릭 → asc↔desc 토글, 다른 컬럼 → desc부터
+  function toggleSort(field: SortField) {
+    const nextOrder = sort === field && order === 'desc' ? 'asc' : 'desc'
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('sort', field)
+    params.set('order', nextOrder)
+    params.delete('page') // 정렬 변경 시 첫 페이지로
+    router.push(`/admin/members?${params.toString()}`)
+  }
+
+  // 페이지 이동(offset)
+  function goToPage(nextPage: number) {
+    const params = new URLSearchParams(searchParams.toString())
+    if (nextPage <= 1) params.delete('page')
+    else params.set('page', String(nextPage))
+    router.push(`/admin/members?${params.toString()}`)
+  }
+
+  // 정렬 아이콘: 활성 컬럼이면 ↑/↓, 아니면 흐린 ↕
+  function sortIcon(field: SortField) {
+    if (sort !== field) return <span className="text-zinc-300">↕</span>
+    return <span className="text-zinc-900">{order === 'asc' ? '↑' : '↓'}</span>
   }
 
   function handleSearch(e: React.FormEvent) {
@@ -163,11 +193,31 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
               <th className="px-3 py-3 text-center font-medium text-zinc-600">등급</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">상태</th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">온보딩</th>
-              <th className="px-3 py-3 text-center font-medium text-zinc-600">글</th>
-              <th className="px-3 py-3 text-center font-medium text-zinc-600">댓글</th>
-              <th className="px-3 py-3 text-center font-medium text-zinc-600">받은❤️</th>
-              <th className="px-3 py-3 text-left font-medium text-zinc-600">마지막 접속</th>
-              <th className="px-3 py-3 text-left font-medium text-zinc-600">가입일</th>
+              <th className="px-3 py-3 text-center font-medium text-zinc-600">
+                <button onClick={() => toggleSort('postCount')} className="inline-flex items-center gap-1 hover:text-zinc-900">
+                  글 {sortIcon('postCount')}
+                </button>
+              </th>
+              <th className="px-3 py-3 text-center font-medium text-zinc-600">
+                <button onClick={() => toggleSort('commentCount')} className="inline-flex items-center gap-1 hover:text-zinc-900">
+                  댓글 {sortIcon('commentCount')}
+                </button>
+              </th>
+              <th className="px-3 py-3 text-center font-medium text-zinc-600">
+                <button onClick={() => toggleSort('receivedLikes')} className="inline-flex items-center gap-1 hover:text-zinc-900">
+                  받은❤️ {sortIcon('receivedLikes')}
+                </button>
+              </th>
+              <th className="px-3 py-3 text-left font-medium text-zinc-600">
+                <button onClick={() => toggleSort('lastLoginAt')} className="inline-flex items-center gap-1 hover:text-zinc-900">
+                  마지막 접속 {sortIcon('lastLoginAt')}
+                </button>
+              </th>
+              <th className="px-3 py-3 text-left font-medium text-zinc-600">
+                <button onClick={() => toggleSort('createdAt')} className="inline-flex items-center gap-1 hover:text-zinc-900">
+                  가입일 {sortIcon('createdAt')}
+                </button>
+              </th>
               <th className="px-3 py-3 text-center font-medium text-zinc-600">액션</th>
             </tr>
           </thead>
@@ -317,19 +367,22 @@ export default function MemberTable({ users, hasMore, filters }: MemberTableProp
         </table>
       </div>
 
-      {hasMore && (
-        <div className="text-center">
+      {(page > 1 || hasMore) && (
+        <div className="flex items-center justify-center gap-3">
           <button
-            onClick={() => {
-              const lastUser = users[users.length - 1]
-              if (!lastUser) return
-              const params = new URLSearchParams(searchParams.toString())
-              params.set('cursor', lastUser.createdAt.toISOString())
-              router.push(`/admin/members?${params.toString()}`)
-            }}
-            className="rounded-lg border border-zinc-300 px-6 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            onClick={() => goToPage(page - 1)}
+            disabled={page <= 1}
+            className="rounded-lg border border-zinc-300 px-5 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            더보기
+            ← 이전
+          </button>
+          <span className="text-sm font-medium text-zinc-500">{page}페이지</span>
+          <button
+            onClick={() => goToPage(page + 1)}
+            disabled={!hasMore}
+            className="rounded-lg border border-zinc-300 px-5 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            다음 →
           </button>
         </div>
       )}

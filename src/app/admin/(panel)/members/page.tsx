@@ -10,8 +10,10 @@ interface Props {
   searchParams: Promise<{
     status?: string
     search?: string
-    cursor?: string
     bot?: string
+    sort?: string
+    order?: string
+    page?: string
   }>
 }
 
@@ -20,12 +22,14 @@ export default async function AdminMembersPage({ searchParams }: Props) {
   // 기본값을 '실사용자만'(hide)으로 — 봇/시드 계정이 섞여 온보딩 현황 등이 오인되는 것 방지.
   // 명시적 '전체'는 bot=all, '봇만'은 bot=only.
   const botFilter = params.bot ?? 'hide'
-  const { users, hasMore } = await getMemberList({
+  const { users, hasMore, page, sort, order } = await getMemberList({
     status: params.status as UserStatus | undefined,
     search: params.search,
-    cursor: params.cursor,
     botOnly: botFilter === 'only',
     hideBot: botFilter === 'hide',
+    sort: params.sort,
+    order: params.order,
+    page: params.page ? Number(params.page) : 1,
   })
 
   return (
@@ -57,6 +61,9 @@ export default async function AdminMembersPage({ searchParams }: Props) {
       <MemberTable
         users={users}
         hasMore={hasMore}
+        page={page}
+        sort={sort}
+        order={order}
         filters={{
           status: params.status,
           search: params.search,
