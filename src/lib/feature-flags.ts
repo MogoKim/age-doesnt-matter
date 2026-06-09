@@ -6,5 +6,4 @@
 export const flags = {
   webPush: process.env.FEATURE_WEB_PUSH !== 'false',
   pushToast: process.env.FEATURE_PUSH_TOAST !== 'false',
-  twa: process.env.FEATURE_TWA !== 'false',
 } as const

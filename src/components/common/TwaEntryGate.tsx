@@ -29,6 +29,8 @@ export default function TwaEntryGate() {
 
   // 그룹 결정 (TWA + 비로그인 + 미탈출). 전원 대상(신규 한정 제거 — 가입 대부분이 앱)
   useEffect(() => {
+    // 긴급 OFF 스위치: Vercel에 NEXT_PUBLIC_TWA_GATE_ENABLED='false' 설정 시 게이트 비활성(기본 ON)
+    if (process.env.NEXT_PUBLIC_TWA_GATE_ENABLED === 'false') return
     if (status !== 'unauthenticated' || !isTWA) return
     if (sessionStorage.getItem(ESCAPE_KEY)) return
     const v = getExperimentVariant('twa01_entry_gate')

@@ -11,8 +11,6 @@
 | ID | 우선 | 한 줄 증상 | 근본 원인 (파일) | 근본 해결책 | 상태 |
 |----|------|-----------|----------------|------------|------|
 | **C1** | 🟡 Med | TWA 가입자 측정이 실제보다 적게 잡힐 수 있음 | `getBrowserEnv`([gtm.ts:167](../../src/lib/gtm.ts#L167))가 `android-app://` referrer만 보고 `_twa_confirmed` sticky 미반영. OAuth 콜백 후 referrer 소실 → `android-chrome` 오기록 | `getBrowserEnv`에 `_twa_confirmed` sticky 보강 (→ C7도 함께 정리) | 미착수 |
-| **C2** | 🟡 Med | TWA 진입 게이트를 **급히 끌 스위치가 없음** | `flags.twa`([feature-flags.ts:9](../../src/lib/feature-flags.ts#L9)) 정의만 있고 사용처 0 (dead) | `TwaEntryGate`에 `if (!flags.twa) return` 가드 연결 | 미착수 |
-| **C5** | ⚪ Low | 안 쓰는 환경변수 + 기본값 모순 | `env.ts:111-113` FEATURE_* export 미사용 (기본 `'false'`), `feature-flags.ts`는 기본 ON (`!=='false'`) — 정반대 | env.ts 죽은 export 제거 또는 단일화 | 미착수 |
 | **C6** | ⚪ Low | "일자리 알림 받을래요?" 푸시가 영영 안 뜸 | `setPushToastTrigger('job')` 호출처 0 (UI·메시지는 완비, `'comment'`만 호출) | jobs 페이지/저장 시점에 `setPushToastTrigger('job')` 연결 | 미착수 |
 | **C7** | ⚪ Low | 환경 감지 함수 2벌 중복 (drift) | `detectEnv`([AddToHomeScreen.tsx:31](../../src/components/common/AddToHomeScreen.tsx#L31))와 `getBrowserEnv`([gtm.ts:167](../../src/lib/gtm.ts#L167)) UA 분기 복제. detectEnv엔 twa-android 분기 **없음** | 두 함수 통합 (C1 수정과 함께) | 미착수 |
 
@@ -49,6 +47,8 @@ C1은 "TWA 관련 측정"에 영향을 주지만, **모든 게 망가지는 건 
 |----|------|----------|
 | C3 | 어드민 A/B 전환율 "근사치" 라벨 | bd3d58a(게이트 표 N/M명 병기·모집단 각주) + 배너 funnel은 실험 종료(9dca8fe)로 카드 소멸 |
 | C4 | SignupPromptBanner가 SSOT 미사용(자체 variant 함수 중복) | 실험 종료(9dca8fe)로 `getOrAssignVariant`/`getTriggerVariant` 삭제 |
+| C2 | TWA 게이트 긴급 OFF 스위치 마련 | 2026-06-09: `TwaEntryGate`에 `NEXT_PUBLIC_TWA_GATE_ENABLED==='false'` 가드 추가(미설정=ON, **현재 동작 무변경**). 끄려면 Vercel서 `='false'`. 죽은 `flags.twa`(non-public이라 클라이언트서 무용)는 제거 |
+| C5 | 죽은 FEATURE_* 정리 | 2026-06-09: `env.ts` export 3개 + `feature-flags.ts` twa 제거 + `.env.example`서 FEATURE_TWA 제거(FEATURE_PUSH_TOAST·WEB_PUSH는 사용 중이라 유지) |
 
 ---
 

@@ -107,11 +107,6 @@ export const UPSTASH_REDIS_REST_TOKEN = optionalEnv('UPSTASH_REDIS_REST_TOKEN', 
 export const RESEND_API_KEY = optionalEnv('RESEND_API_KEY', '')
 export const CONTACT_EMAIL = optionalEnv('CONTACT_EMAIL', 'korea.age.not.matter@gmail.com')
 
-/** Feature Flags */
-export const FEATURE_PUSH_TOAST = optionalEnv('FEATURE_PUSH_TOAST', 'false')
-export const FEATURE_TWA = optionalEnv('FEATURE_TWA', 'false')
-export const FEATURE_WEB_PUSH = optionalEnv('FEATURE_WEB_PUSH', 'false')
-
 /** Guest Like */
 export const GUEST_LIKE_SALT = optionalEnv('GUEST_LIKE_SALT', '')
 
