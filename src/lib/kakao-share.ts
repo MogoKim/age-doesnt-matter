@@ -41,6 +41,8 @@ interface KakaoShareOptions {
     title: string
     description: string
     imageUrl: string
+    imageWidth?: number
+    imageHeight?: number
     link: {
       mobileWebUrl: string
       webUrl: string
@@ -158,6 +160,9 @@ export async function shareToKakao(params: SharePostParams): Promise<void> {
         title: params.title,
         description: params.description,
         imageUrl: params.imageUrl || `${APP_URL}/og-image.png`,
+        // 가로형(1.91:1) 명시 — 미지정 시 카카오가 정사각으로 크롭함
+        imageWidth: 1200,
+        imageHeight: 630,
         link: {
           mobileWebUrl: fullUrl,
           webUrl: fullUrl,
