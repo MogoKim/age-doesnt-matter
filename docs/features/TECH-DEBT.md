@@ -22,12 +22,14 @@
 
 C1은 "TWA 관련 측정"에 영향을 주지만, **모든 게 망가지는 건 아닙니다.** 정확한 영향 범위:
 
-| 무엇 | C1 영향 | 이유 |
+| 무엇 | 취약도 | 이유 |
 |------|---------|------|
-| baseline "TWA 가입자 수" | ❌ **과소(확정)** | `sign_up.browser_env`로 카운트, OAuth 후 referrer 소실 |
-| 게이트 실험 **가입자 분류** | ✅ 무관 (정확) | `twa_gate_variant`로 분류 (커밋 48939bd가 보호) |
-| 게이트 실험 **재방문 분자** | ⚠️ 제한적 영향 | `page_view.browser_env` 사용. 단 재방문=앱 콜드스타트라 referrer 살아있을 가능성 높음 |
-| `User.signupSource` | ❌ 오염 가능 | login 이벤트 시점도 referrer 소실 후 |
+| baseline "TWA 가입자 수" (getTwaSignupRetention:198) | 🔴 **가장 취약** | `sign_up.browser_env` **단독, referrer 백업 없음** → 최약점 |
+| 게이트 **재방문 분자** (getGateRetention:294) | 🟡 제한적 | `page_view.browser_env`. 단 D1/D7은 가입 1h 후부터 = 앱 콜드스타트라 referrer 생존 가능성 높음 |
+| `User.signupSource` (route.ts:76) | 🟡 **덜 취약** | `browser_env \|\| referrer` **이중 판정** — browser_env 오염돼도 `ref.startsWith('android-app://')` 백업으로 TWA 잡힘. baseline보다 강건 |
+| 게이트 **가입자 분류** (분모) | 🟢 무관 | `twa_gate_variant`(localStorage sticky, 48939bd 보호) |
+
+> 정정 이력: 이 표의 `signupSource`는 2차 검수에서 baseline과 동급 `❌`로 과대 표기했으나, 3차 교차검증에서 route.ts:76의 **referrer 백업 이중판정**을 확인해 🟡(덜 취약)로 정정. **C1의 진짜 최약점은 baseline 가입자수**(백업 없는 유일한 집계).
 
 > 근본 맥락: 커밋 `245b2ce`("PWA TWA misclassify")가 PWA를 TWA로 오분류하던 걸 막으려 `getBrowserEnv`의 standalone 라인을 **의도적으로 제거**한 트레이드오프. 단순 버그가 아님. `useAppEnvironment.isTWA`만 sticky를 봐서 게이트 노출은 강건하지만, 이벤트 기록용 `getBrowserEnv`는 취약.
 
@@ -52,6 +54,8 @@ C1은 "TWA 관련 측정"에 영향을 주지만, **모든 게 망가지는 건 
 
 ## 검수 신뢰성 메모
 
-- 이 목록은 **2개 AI 세션 교차검증** 결과. 1차 세션이 ① 실재 커밋(245b2ce·48939bd)을 "환각"으로 오판 ② C1의 게이트 재방문 영향을 과소평가한 것을 2차에서 정정.
-- 교훈: 커밋 존재 확인은 `git log -20`(부분) 말고 `git show`/`git cat-file`로.
+- 이 목록은 **3개 AI 세션 교차검증** 결과.
+  - 1차: ① 실재 커밋(245b2ce·48939bd)을 "환각"으로 오판 ② C1 게이트 재방문 영향 과소평가 → 2차에서 정정.
+  - 3차(마스터 검수): signupSource를 baseline과 동급 ❌로 과대 표기한 것을 정정 → route.ts:76 referrer 백업 이중판정으로 🟡(덜 취약). C3 무해 근거도 정밀화(웹 펀넬 실험 0개라 `_getWebExperiments` rate가 화면 미노출).
+- 교훈: 커밋 존재 확인은 `git log -20`(부분) 말고 `git show`/`git cat-file`로. 누적 plan 문서는 실험 제거 등 큰 변경 전후 섹션이 모순되니 stale 주의.
 - 관련 전체 그림: [channel-architecture.html](../channel-architecture.html) (웹/PWA/TWA 채널 지도)
