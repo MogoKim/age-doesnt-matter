@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.34</title>
+<title>우나어 — 네이버 카페 파이프라인 핸드오버 v10.35</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -342,12 +342,12 @@
 
 <!-- ══════════ COVER ══════════ -->
 <div class="cover">
-  <div class="cover-badge">Handover Document v10.34</div>
+  <div class="cover-badge">Handover Document v10.35</div>
   <h1>우나어 — 네이버 카페 파이프라인</h1>
   <p class="subtitle">네이버 카페의 좋은 글을 자동으로 수집·재가공해 우나어 서비스에 발행하고, 발행 직후 봇들이 자연스럽게 댓글을 달아 커뮤니티를 활성화하는 전 과정을 담은 기술 문서.<br>
   처음 접하는 사람도 "왜 이렇게 설계됐는가"를 이해할 수 있도록 기술 사실뿐 아니라 배경·원칙·설계 이유까지 담았다.</p>
   <div class="cover-meta">
-    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.34 (2026-06-05)</div></div>
+    <div class="cover-meta-item"><div class="label">버전</div><div class="value ok">v10.35 (2026-06-10)</div></div>
     <div class="cover-meta-item"><div class="label">대상 카페</div><div class="value">wgang · dlxogns01 (2개)</div></div>
     <div class="cover-meta-item"><div class="label">크롤 방식</div><div class="value">Playwright headless:false (Mac 로컬)</div></div>
     <div class="cover-meta-item"><div class="label">GHA 자동화</div><div class="value ok">24시간 가동 중</div></div>
@@ -357,7 +357,7 @@
 
 <!-- 시스템 현황 -->
 <div class="status-box">
-  <div class="sb-title">시스템 현황 (2026-06-05)</div>
+  <div class="sb-title">시스템 현황 (2026-06-10)</div>
   <div class="status-item"><div class="status-dot on"></div>크롤링 (launchd, 하루 7회)</div>
   <div class="status-item"><div class="status-dot on"></div>큐레이션 (GHA, 45분 간격 20슬롯)</div>
   <div class="status-item"><div class="status-dot on"></div>Wave 댓글 (GHA, 5분 간격 24시간)</div>
@@ -367,6 +367,8 @@
   <div class="status-item"><div class="status-dot warn"></div>controversy봇 (사실상 사멸 — 신규 글 소스 없음)</div>
   <div class="status-item"><div class="status-dot on"></div>매거진봇 (launchd 12:00/14:00, 이미지=ChatGPT)</div>
   <div class="status-item"><div class="status-dot on"></div>DailyBrief 안전망 09:03 + 18:00 (GHA)</div>
+  <div class="status-item"><div class="status-dot on"></div>본문 줄바꿈·문단 보존 (crawler safeText preserveBreaks, 2026-06-09)</div>
+  <div class="status-item"><div class="status-dot on"></div>카운트 정합 reconcile (GHA 04:00 KST, 2026-06-08)</div>
 </div>
 
 <!-- ══════════ 파이프라인 비주얼 요약 ══════════ -->
@@ -682,7 +684,7 @@
     <div class="tl-item plist">
       <div class="tl-time">10:40 / 13:00 / 15:30 / 23:00 KST <span class="tl-label label-plist">plist</span></div>
       <div class="tl-mode">naver-cafe-sheet-scraper — <code>sheet-scraper.ts --site navercafe</code></div>
-      <div class="tl-detail">네이버 카페 URL 스크래핑. storage-state.json 로그인 세션 필요 → Mac 로컬 필수. GHA에서는 storage-state.json 없으면 PENDING 유지(자동 skip). Phase 1(2026-05-22)에서 10:40/15:30 슬롯 추가 → 4회/일. popular-sync(10:30) 완료 후 + cafe-crawler-afternoon(14:30) 완료 후 배치.</div>
+      <div class="tl-detail">네이버 카페 URL 스크래핑. storage-state.json 로그인 세션 필요 → Mac 로컬 필수. GHA에서는 storage-state.json 없으면 PENDING 유지(자동 skip). Phase 1(2026-05-22)에서 10:40/15:30 슬롯 추가 → 4회/일. popular-sync(10:30) 완료 후 + cafe-crawler-afternoon(14:30) 완료 후 배치. <span style="color:var(--muted);font-size:12px;">2026-06 지원 사이트 확장: busanmam·remonterrace + 구형 URL·naver.me 단축링크 자동 해석(§13 ㊿).</span></div>
     </div>
 
     <div class="tl-item" style="border-left:none;padding-left:0;margin:16px 0 8px;">
@@ -765,7 +767,8 @@
           <td>
             ① seed scheduler — <strong style="color:var(--red);">🔴 글쓰기 RETIRED</strong> (2026-06-03, 9c98ad7). <code>generatePost</code>/<code>generateKillerPost</code>가 <code>throw Error('retired')</code>, <code>runKillerPostCycle</code> no-op. 핸들러는 돌지만 글 생성 0. 댓글·좋아요(viral-waves)는 별도 동작.<br>
             ② controversy-chain — <strong style="color:var(--yellow);">🟡 사실상 사멸</strong>. 원래 <em>글이 아니라 댓글/대댓글</em>만 생성. 신규 체인은 글 생성(<code>scheduleChainFromPost</code>) 직후 예약되는데, seed 글쓰기 retired로 그 호출 경로가 소멸 → 새 PENDING step 생성 불가. 핸들러는 등록돼 있으나 처리할 신규 작업 없음.<br>
-            ③ magazine-generator — <strong>launchd 전용</strong> (GHA 미실행 · <code>com.unaeo.magazine-morning/late.plist</code> · <strong>12:00/14:00 KST · ChatGPT</strong>)
+            ③ magazine-generator — <strong>launchd 전용</strong> (GHA 미실행 · <code>com.unaeo.magazine-morning/late.plist</code> · <strong>12:00/14:00 KST · ChatGPT</strong>)<br>
+            ④ <code>agents-killer-post.yml</code>(별도 워크플로우) — <strong style="color:var(--muted);">⚫ 사실상 휴면</strong>. <strong>cron 없이 <code>workflow_dispatch</code> 전용</strong>, 마지막 실행 2026-05-14. runner <code>seed:killer-post</code>→<code>runKillerPostCycle()</code>는 no-op. 글쓰기 RETIRED라 수동 실행해도 글 생성 0. (gh run 실측 2026-06-10)
           </td>
         </tr>
         <tr>
@@ -787,14 +790,14 @@
           <td>11개 슬롯/일<br><span style="color:var(--muted);font-size:12px;">09:15~20:00 KST</span></td>
           <td><code>agents-daily.yml</code></td>
           <td>
-            COO 에이전트 11개: content-scheduler(14:00) · trending-scorer(12:00·18:00) · connection-facilitator(09:15·15:00) · comment-activator(10:30·14:30·20:00) · reply-chain-driver(12:15·18:30) · job-matcher(11:45). <span style="color:var(--muted);font-size:12px;">comment-activator·reply-chain-driver는 <code>bot-engagement-policy</code> 가드 적용. magazine cron은 전부 주석 처리(비활성).</span>
+            COO 에이전트 11개: content-scheduler(14:00) · trending-scorer(12:00·18:00) · connection-facilitator(09:15·15:00) · comment-activator(10:30·14:30·20:00) · reply-chain-driver(12:15·18:30) · job-matcher(11:45) <strong>+ count-reconcile(04:00 KST)</strong>. <span style="color:var(--muted);font-size:12px;">comment-activator·reply-chain-driver는 <code>bot-engagement-policy</code> 가드 적용. magazine cron은 전부 주석 처리(비활성). <strong>count-reconcile</strong>(2026-06-08, 5013bfe): <code>cron "0 19 * * *"</code> → <code>cto:count-reconcile</code>(reconcile-counts.js) — 삭제로 어긋난 비정규화 카운트(User 등)를 매일 04:00 KST 실제값으로 멱등 재계산(좋아요는 측정만).</span>
           </td>
         </tr>
         <tr>
           <td>07:30 / 09:00 / 12:00<br>15:00 / 21:00 KST</td>
           <td><code>agents-scraper.yml</code></td>
           <td>
-            SHEET 스크레이퍼(community sheet-scrape) — 오늘의유머·네이트판·82cook 등 GHA 처리. fmkorea·bboom은 <code>SHEET_SCRAPER_EXCLUDE_SITE</code>로 제외(로컬 launchd 전용). <span style="color:var(--muted);font-size:12px;">상세는 스크레이퍼 운영 문서 참조.</span>
+            SHEET 스크레이퍼(community sheet-scrape) — 오늘의유머·네이트판·82cook 등 GHA 처리. fmkorea·bboom은 <code>SHEET_SCRAPER_EXCLUDE_SITE</code>로 제외(로컬 launchd 전용). <span style="color:var(--muted);font-size:12px;">상세는 스크레이퍼 운영 문서 참조.</span><br><span style="color:var(--muted);font-size:12px;"><strong>2026-06 확장</strong>: 네이버 카페 신규 사이트 busanmam(29635040)·remonterrace + 구형 URL 정규화(100c878·e607beb). naver.me 단축링크 3-hop 자동 해석(7513bdf). <strong><code>SHEET_TITLE_SEO:'true'</code></strong>(L75) — 제목 네이버 SEO 다듬기 ON, 본문 불변(16886ed). bboom(네이버 뿜)은 코드(63ccfe6)는 있으나 <strong>launchd plist 미연결 → 로컬 수동 실행만</strong>. → §13 ㊿.</span>
           </td>
         </tr>
       </tbody>
@@ -804,6 +807,10 @@
   <div class="alert info" style="font-size:12.5px; padding:10px 14px; margin-top:12px;">
     <strong>UTC 주의:</strong> GHA cron 표현식은 GitHub 정책상 UTC 기준으로만 작성됨.
     이 표의 KST 시각은 UTC+9 변환값. 워크플로우 파일에서 UTC 숫자가 보이면 <strong>+9시간이 실제 KST 실행 시각</strong>.
+  </div>
+
+  <div class="alert" style="background:rgba(139,146,168,0.08);border:1px solid var(--border);font-size:12px;padding:10px 14px;margin-top:10px;line-height:1.7;">
+    <strong>카페 본체 아닌 active 워크플로우(참고)</strong>: <code>agents-killer-post.yml</code>(⚫ dispatch 전용·휴면, 위 seed 행 ④) / <code>ops-daily-report.yml</code>(Ops 일일 리포트) / <code>prewarm-detail-pages.yml</code>(상세페이지 프리웜) / <code>quarantine-check.yml</code>(격리 점검). gh workflow list상 active이나 카페 크롤→발행 파이프라인 본체는 아니다(2026-06-10 실측).
   </div>
 
   <h3 class="mt24">cron-job.org — 정확한 역할과 오해</h3>
@@ -944,6 +951,10 @@
           <strong>crawler.ts (CRAWL_MODE=crawl-only)</strong> — 신규 글 저장<br>
           각 카페 전체글보기에서 MAX(articleId) 이후의 새 글만 수집. savePosts에서 isUsable 즉시 설정.<br>
           <span style="font-size:12px;color:var(--muted);">실행 래퍼: <code>runCrawlWithRetry()</code> — 타임아웃 <strong>1500초</strong> (1500000ms). 일 최대 128건 기준 최장 소요 1228초 + 여유 마진. 커밋 77496c9.</span>
+          <div class="alert info" style="font-size:12px;padding:10px 14px;margin-top:8px;line-height:1.7;">
+            <strong>📐 본문 줄바꿈·문단 보존 (2026-06-09, 5a24b83+dfefe8b)</strong><br>
+            <code>safeText()</code>에 <code>preserveBreaks</code> 옵션 추가(crawler.ts L103~145) — <strong>본문 추출(L821)에만</strong> 적용. <code>&lt;br&gt;→\n</code>, 문단 블록(p/li/blockquote/h1~h6/<code>.se-text-paragraph</code>)→<code>\n\n</code>, 레이아웃 블록(div/<code>.se-module</code>/<code>.se-component</code>)→<code>\n</code> 치환 후 줄단위 trim + <code>\n{3,}→\n\n</code> 정규화. 제목·작성자·날짜·<code>safeNumber</code>는 옵션 미전달이라 무영향. 이전엔 <code>textContent</code>로 블록 구조를 버려 본문이 1개 거대 문단으로 뭉쳤으나, 이제 <code>\n</code> 공급 → <code>stripMarkdown</code>(\n 보존) → <code>toCuratedHtmlContent</code>(\n\n→&lt;p&gt;, \n→&lt;br&gt;)로 문단 자동 복원. 실측(2026-06-10 0:30 dawn): 신규 31건 중 28건 \n/\n\n 보유, 샘플 &lt;p&gt; 54개 분리. → §13 ㉟ 참조.
+          </div>
         </div>
       </div>
       <div class="step-row">
@@ -1301,6 +1312,11 @@ function isImageDependentContent(post: RawCafePost): boolean {
   <h3>MONEY 키워드 확장</h3>
   <div class="narrative">
     <p><code>curator-shared.ts</code>의 <code>guessDesire()</code> 함수는 키워드 기반으로 글의 desireCategory를 추정한다. MONEY 범주에 투자 관련 단어가 누락되어 코스피·나스닥·ETF 등 투자 글이 STORY/자유수다로 오분류되는 문제가 있었다. 아래 키워드를 MONEY 배열에 추가했다.</p>
+    <div class="alert info" style="font-size:12.5px;padding:12px 14px;margin-top:8px;line-height:1.7;">
+      <strong>📊 2026-06-08 분류 정확도 개선 (d3da2d6 + ab2efab)</strong><br>
+      ① <code>guessDesire</code>가 substring 첫매치 → <strong>가중 스코어링</strong>(강신호 +3, guard −3)으로 전환. LIFE2 강신호(폭락·재산분배·퇴직연금·집값) 추가, '집' 약신호 제거. <code>STORY_GUARD_KEYWORDS</code>(집정리·윗집·병간호)만 있고 돈·은퇴 신호가 없으면 <code>isStoryGuarded()</code>가 MONEY/HOUSING을 −3해 STORY로 강등 → 카페 글 STORY↔LIFE2 오분류 감소(회귀 21/21).<br>
+      ② desireCategory가 <code>agents/cafe/desire-taxonomy.ts</code>의 <strong>정규 21개 SSoT</strong>로 통일(psych-analyzer 프롬프트 + DB 실측 일치). daily-brief 13→21 참조, schema 주석 13→21. → §13 ㊾ 참조.
+    </div>
   </div>
   <details class="code-toggle">
     <summary>추가된 MONEY 키워드 보기</summary>
@@ -1541,7 +1557,7 @@ MONEY: [
   <h3>CafePost 저장 필드 전체</h3>
   <div class="narrative">
     <p>카페 글 한 건이 DB에 저장될 때 채워지는 필드는 총 20개다. 시점에 따라 세 그룹으로 나뉜다.</p>
-    <p><strong>① 크롤 즉시 (crawl-only 포함)</strong>: 글의 URL·제목·본문·작성자·게시판 분류·지표(좋아요·댓글수·조회수)·점수(qualityScore·killerScore)·isUsable. crawl-only 모드에서도 이 필드들은 모두 채워진다. <code>createdAt</code> 필드는 없고 대신 <code>crawledAt</code>(수집 시각)이 기록된다는 점에 주의.</p>
+    <p><strong>① 크롤 즉시 (crawl-only 포함)</strong>: 글의 URL·제목·본문·작성자·게시판 분류·지표(좋아요·댓글수·조회수)·점수(qualityScore·killerScore)·isUsable. crawl-only 모드에서도 이 필드들은 모두 채워진다. <code>createdAt</code> 필드는 없고 대신 <code>crawledAt</code>(수집 시각)이 기록된다는 점에 주의. <strong>content는 2026-06-09부터 줄바꿈(<code>\n</code>)·문단(<code>\n\n</code>)을 보존</strong>한다(safeText preserveBreaks) — 이전엔 <code>textContent</code>로 한 덩어리였다. → §3 step1 / §13 ㉟.</p>
     <p><strong>② full 모드 AI 분석 후 (11:30 KST)</strong>: 심리 분석 결과 — emotionTags·desireCategory·desireType·communitySignal·urgencyLevel·conflictTrigger·viralType·aiAnalyzed. (topComments는 ① 크롤 즉시 함께 수집된다 — 아래 "topComments 구조" 섹션 참조)</p>
     <p><strong>③ 큐레이션 발행 후</strong>: <code>usedAt</code>이 찍힌다. 이 필드가 NULL이어야 큐레이션 후보 풀에 다시 들어갈 수 있다. 한 번 발행된 글은 영구적으로 제외된다.</p>
   </div>
@@ -1710,7 +1726,8 @@ interface CommentData {
           <span class="chip muted" style="margin:4px 2px 0 0;">P1</span> 당일 3회 이상 발행된 키워드 skip (기능어 필터 OVERLAP_STOPWORDS 적용)<br>
           <span class="chip muted" style="margin:4px 2px 0 0;">P2</span> 유사 제목 (편집 거리 ≤5 또는 명사 2개 이상 겹침) skip<br>
           <span class="chip muted" style="margin:4px 2px 0 0;">P3</span> 현재 월과 맞지 않는 계절 키워드 skip<br>
-          <span class="chip muted" style="margin:4px 2px 0 0;">P4</span> <strong>filterBlocked()</strong> 2차 차단 — 동영상·접근차단 감지 (크롤러 isUsable=false 이후에도 DB에 잔존한 케이스 보완). content-curator.ts + popular-curator.ts 공통 적용. (커밋 9745f9e, 2026-05-26)
+          <span class="chip muted" style="margin:4px 2px 0 0;">P4</span> <strong>filterBlocked()</strong> 2차 차단 — 동영상·접근차단 감지 (크롤러 isUsable=false 이후에도 DB에 잔존한 케이스 보완). content-curator.ts + popular-curator.ts 공통 적용. (커밋 9745f9e, 2026-05-26)<br>
+          <span style="font-size:12px;color:var(--muted);">⚠️ 2026-06-09 본문 줄바꿈 보존 이후, 이 2차 필터는 <code>content.replace(/\n/g,' ')</code> 정규화 사본으로 시그널을 매칭한다(content-curator L99·popular-curator L77, R1). 줄바꿈이 시그널 어구 중간에 끼어 차단이 깨지는 것을 방지.</span>
         </div>
       </div>
       <div class="step-row">
@@ -3658,6 +3675,68 @@ await prisma.cafePost.create({
   </div>
   </details>
 
+  <div style="border-top:2px dashed var(--border);margin:24px 0 20px;padding-top:4px;">
+    <p style="font-size:12px;color:var(--muted);margin:0;">아래 ㊽㊾㊿은 2026-06-05~09 크롤러 파이프라인 동기화 배치에서 추가된 항목이다.</p>
+  </div>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㊽. 본문 줄바꿈·문단 보존 — safeText preserveBreaks + R1 오염필터 이중 완화</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㊽. 본문 줄바꿈·문단 보존 — safeText preserveBreaks (가독성)</div>
+    </div>
+    <div class="impl-body">
+      어드민 콘텐츠 점검에서 발행된 카페 원문이 문단·줄바꿈 없이 한 덩어리로 뭉쳐 표시되는 문제 발견(외부 스크랩 글은 정상). 시니어 독자 가독성이 콘텐츠 경쟁력의 핵심이므로 원문 문단을 그대로 보존하도록 수정.<br><br>
+      <strong>근본 원인</strong>: <code>crawler.ts</code> <code>safeText()</code>가 본문을 <code>textContent</code>로 추출 → <code>&lt;p&gt;</code>·<code>&lt;br&gt;</code> 블록 구조를 버려 평문 1덩어리. CafePost.content부터 이미 <code>\n</code>=0개. (대조: 외부 스크래퍼 <code>sheet-scraper.ts</code>는 <code>innerHTML</code> 사용 → 줄바꿈 보존)<br><br>
+      <strong>수정</strong>: <code>safeText(frame, selectors, fallback, opts?)</code>에 <code>opts.preserveBreaks</code> 추가(L103~145, 기본 false). true면 evaluate 내부에서:<br>
+      ① <code>&lt;br&gt;→\n</code> ② 문단 블록(<code>p, li, blockquote, h1~h6, .se-text-paragraph</code>)→<code>\n\n</code> ③ 레이아웃 블록(<code>div, .se-module, .se-component</code>)→<code>\n</code> → <code>clone.textContent</code>. 후처리: 줄단위 trim + <code>\n{3,}→\n\n</code> + trim.<br>
+      <strong>본문 호출(L821)만</strong> <code>{preserveBreaks:true}</code> 전달. 제목(L749·790)·작성자(L841)·카테고리(L853)·날짜(L892)·<code>safeNumber</code>(L243)는 미적용 → 회귀 0.<br><br>
+      <strong>연쇄 (코드 무변경으로 자동 작동)</strong>: <code>stripMarkdown</code>(curator-shared L58)은 <code>\n</code> 보존 → <code>toCuratedHtmlContent</code>(L33~48)가 <code>\n\n→&lt;p&gt;</code>, <code>\n→&lt;br&gt;</code>로 문단 복원. content-curator·popular-curator 둘 다 이 경로를 타므로 크롤러 1곳 수정으로 양쪽 해결.<br><br>
+      <strong>R1 — 오염필터 깨짐 방지 (이중 완화)</strong>: <code>&lt;br&gt;→\n</code> 치환이 시그널 어구 중간에 끼면 <code>includes</code> 매칭이 깨져 오염 글이 발행될 위험. ① safeText가 <strong>블록 경계에만</strong> <code>\n</code> 주입, 인라인(span 등) 절대 미변경(crawler.ts L116~117) ② 크롤러 3필터(<code>isBoardNoticeContent</code> L994·<code>isAccessBlockedContent</code> L1010·<code>isVideoPlayerContent</code> L1025) 모두 <code>const flat = content.replace(/\n/g,' ')</code> 정규화 사본으로 매칭 ③ 큐레이터 2차필터도 정규화(content-curator L99·popular-curator L77). 저장값은 <code>\n</code> 유지, 필터 입력만 보정.<br><br>
+      <strong>실측 검증 (2026-06-10 0:30 dawn 크롤, 새 코드 dfefe8b)</strong>: 신규 CafePost 31건 중 <strong>28건(90%)이 \n 보유 + 28건 \n\n(문단) 보유</strong>. 샘플을 <code>toCuratedHtmlContent</code> 통과 시 <code>&lt;p&gt;</code> 54개 분리 확인. SmartEditor selector(<code>.se-text-paragraph</code>) 실제 DOM과 일치.<br><br>
+      SHA: 5a24b83(구현) + dfefe8b(문단 \n\n 수정, QA 발견) (2026-06-09)
+    </div>
+    <div class="impl-file">📄 agents/cafe/crawler.ts — safeText preserveBreaks(L103~145) + 본문 호출(L821) + 3필터 \n 정규화(L994/L1010/L1025)<br>📄 agents/cafe/content-curator.ts L99 + popular-curator.ts L77 — 2차필터 \n 정규화<br>📄 agents/cafe/curator-shared.ts — stripMarkdown(L58, \n 보존) / toCuratedHtmlContent(L33~48, 문단 복원)</div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㊾. STORY↔LIFE2 자동분류 정확도 + desireCategory 정규 21개 SSoT</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㊾. STORY↔LIFE2 자동분류 + desireCategory SSoT 21개</div>
+    </div>
+    <div class="impl-body">
+      <strong>[d3da2d6] guessDesire 가중 스코어링</strong>: 기존 substring 첫매치 방식 → 가중 스코어링(강신호 +3, guard −3). LIFE2 강신호(폭락·재산분배·퇴직연금·집값) 추가, '집' 약신호 제거. <code>STORY_GUARD_KEYWORDS</code>(집정리·윗집·병간호) + <code>isStoryGuarded()</code> export — 제목에 STORY_GUARD 신호만 있고 돈·은퇴 신호가 전혀 없으면 MONEY/HOUSING −3(LIFE2 강등). image-router는 JOB→STORY + 제목 guard 후처리. 회귀검증 21/21, 분포 diff로 누수 제거 확인.<br><br>
+      <strong>[ab2efab] desireCategory SSoT 통일</strong>: <code>agents/cafe/desire-taxonomy.ts</code> 신규 — psych-analyzer 프롬프트 + DB 실측과 일치하는 <strong>정규 21개</strong> 단일 정의(<code>DESIRE_CATEGORIES</code>/<code>DESIRE_KEYS</code>). daily-brief 13→21개 참조, schema.prisma desireCategory 주석 13→21 갱신. (psych-analyzer 프롬프트 무변경) 실측 발견: 정의 외 오염 8건(TOURISM·WORK 등 AI 환각, 각 1건) — 데이터 정리는 별도.<br><br>
+      SHA: d3da2d6 + ab2efab (2026-06-08)
+    </div>
+    <div class="impl-file">📄 agents/cafe/curator-shared.ts — guessDesire 가중스코어(L1059) + STORY_GUARD_KEYWORDS(L1028) + isStoryGuarded(L1042)<br>📄 agents/cafe/desire-taxonomy.ts — 신규(정규 21개 SSoT)<br>📄 agents/cafe/daily-brief.ts — 13→21 참조 / prisma/schema.prisma — 주석 13→21</div>
+  </div>
+  </details>
+
+  <details class="impl-toggle">
+  <summary class="impl-summary">㊿. 외부 스크래퍼 확장 + 이미지·안정성 (사이트·naver.me·SEO제목·GIF→mp4·retry)</summary>
+  <div class="impl-card">
+    <div class="impl-header">
+      <div class="impl-tag">✅ 구현됨</div>
+      <div class="impl-title">㊿. 스크래퍼 확장 + 이미지·DB 안정성 묶음</div>
+    </div>
+    <div class="impl-body">
+      <strong>신규 네이버 카페 사이트</strong>: <code>site-configs.ts</code>에 busanmam(29635040)·remonterrace 추가(100c878), 구형 URL 정규화(e607beb). busanmam 본문은 <code>.content.CafeViewer</code>로 좁혀 공지(<code>.FormNoticeContent</code>) 오염 배제(v1.1).<br>
+      <strong>bboom(네이버 뿜) 시트 스크래퍼</strong>(63ccfe6): <code>m.bboom.naver.com/(best|board)/get</code> 지원. <strong>⚠️ launchd plist 없음 → GHA·로컬 크론 미연결, 로컬 수동 실행만</strong>(orphaned, 연결 시 .claude/rules/agent-lifecycle.md 체크리스트 준수).<br>
+      <strong>naver.me 단축링크 자동 해석</strong>(7513bdf): naver.me/XXX → 307 Location 따라 실제 cafe/blog URL 반환(최대 3-hop) + status칸 오염 자가복구.<br>
+      <strong>제목 SEO 다듬기 ON</strong>(16886ed+2b17cae): <code>agents-scraper.yml:75</code> <code>SHEET_TITLE_SEO:'true'</code> — 네이버 SEO용 제목 자연스럽게 다듬기, <strong>본문 불변</strong>. (.env.local SHEET_TITLE_SEO와 동일 유지)<br>
+      <strong>이미지·댓글·안정성</strong>: 큰 GIF/애니webp placeholder 복구 → mp4 변환(0467df4) / SHEET 이미지글 댓글 품질 v1.6(164d5d7) / legacy 작성자 대댓글 가짜 fallback 제거(0663d91) / 스크랩 이미지·영상 URL HTML 엔티티 디코딩 <code>&amp;amp;→&amp;</code>(0df6b02) / cafe wave·hourly-curation DB connection timeout·EMAXCONN retry(1f6bba4·3d5a106).<br>
+      <strong>GHA 5432 직접연결 분리</strong>는 EMAXCONN 완화로 시도했으나 <strong>revert</strong>(12c7849→5c41787, net no-op — .claude/rules/cafe-crawler.md "5432 분리 금지"와 정합).<br><br>
+      SHA: 100c878·e607beb·63ccfe6·7513bdf·16886ed·0467df4·164d5d7·0663d91·0df6b02·1f6bba4·3d5a106 (2026-06-05~07)
+    </div>
+    <div class="impl-file">📄 agents/community/site-configs.ts — busanmam·remonterrace·bboom + naver.me 해석<br>📄 agents/community/image-pipeline.ts — GIF→mp4 / sheet-scraper.ts — 제목 SEO·엔티티 디코딩<br>📄 .github/workflows/agents-scraper.yml:75 — SHEET_TITLE_SEO:'true'</div>
+  </div>
+  </details>
+
   </details>
 </div>
 
@@ -3824,6 +3903,21 @@ await prisma.cafePost.create({
   <div class="section-header">
     <div class="section-num">15</div>
     <h2>변경 이력</h2>
+  </div>
+
+  <div class="changelog-item">
+    <div class="changelog-ver">v10.35</div>
+    <div class="changelog-date">2026-06-10</div>
+    <div class="changelog-content">
+      <strong>2026-06-05~09 크롤러 파이프라인 변경 12건 전면 동기화 — 코드 한 줄·gh run 실측·launchctl 직접 재검증.</strong><br><br>
+      <strong>[A·최우선 — 본문 줄바꿈·문단 보존]</strong> <code>crawler.ts</code> <code>safeText()</code>에 <code>preserveBreaks</code> 옵션(L103~145, 본문 호출 L821만 적용). <code>&lt;br&gt;→\n</code> + 블록(p/li/blockquote/h1~h6/.se-text-paragraph)→<code>\n\n</code> + div/.se-module/.se-component→<code>\n</code>. <code>stripMarkdown</code>(\n 보존)→<code>toCuratedHtmlContent</code>(\n\n→&lt;p&gt;, \n→&lt;br&gt;)로 문단 복원. 제목·작성자·날짜·숫자 safeText는 미적용. <strong>R1 오염필터 이중 완화</strong>: safeText 블록경계 한정 + 크롤러 3필터(L994/L1010/L1025) + 큐레이터 2차필터(content L99·popular L77) 모두 <code>\n→공백</code> 정규화. 실측: 2026-06-10 0:30 dawn 크롤 신규 31건 중 28건(90%) \n/\n\n 보유, toCuratedHtmlContent 통과 시 &lt;p&gt; 54개 분리. SHA 5a24b83+dfefe8b. §3/§8/§9/§13 반영.<br>
+      <strong>[B — 분류 정확도]</strong> ① <code>guessDesire</code> substring 첫매치 → <strong>가중 스코어링</strong>(강신호+3, guard−3), LIFE2 강신호(폭락·재산분배·퇴직연금·집값) 추가, STORY_GUARD(집정리·윗집·병간호)+<code>isStoryGuarded()</code>, image-router JOB→STORY 후처리(d3da2d6). ② <code>desire-taxonomy.ts</code> 신규 = desireCategory <strong>정규 21개 SSoT</strong>, daily-brief 13→21 참조, schema 주석 13→21(ab2efab). §6/§9/§12 반영.<br>
+      <strong>[C — reconcile 크론 신규]</strong> <code>agents-daily.yml</code> <code>cron "0 19 * * *"</code>(04:00 KST) → <code>cto:count-reconcile</code>(reconcile-counts.js, 비정규화 카운트 멱등 재계산, 5013bfe). §2 GHA 표 반영.<br>
+      <strong>[D — 외부 스크래퍼 확장]</strong> 네이버 카페 신규 사이트 busanmam(29635040)·remonterrace + 구형 URL 정규화(100c878·e607beb), bboom 시트 스크래퍼(63ccfe6, <strong>launchd 미연결=로컬 수동</strong>), naver.me 단축링크 3-hop 해석+status 자가복구(7513bdf), 제목 SEO 다듬기 ON(<code>SHEET_TITLE_SEO:'true'</code>, 본문 불변, 16886ed). §2/§14 반영.<br>
+      <strong>[E — 이미지·댓글·안정성]</strong> 큰 GIF/애니webp→mp4 변환(0467df4), SHEET 이미지글 댓글 품질 v1.6(164d5d7), legacy 작성자 대댓글 가짜 fallback 제거(0663d91), 스크랩 URL HTML 엔티티 디코딩(0df6b02), wave/curation DB timeout·EMAXCONN retry(1f6bba4·3d5a106). GHA 5432 직접연결 분리는 <strong>시도 후 revert</strong>(12c7849→5c41787, net no-op).<br>
+      <strong>[F — 워크플로우 상태 실측 정정]</strong> <code>agents-killer-post.yml</code>은 <strong>workflow_dispatch 전용(cron 없음), 마지막 실행 2026-05-14 = 휴면</strong>(runKillerPostCycle no-op). seed "Seed Content" success 실행분은 글 아닌 engagement(<code>ENABLE_SEED_POSTS:'false'</code> 재확인). launchd에 bboom plist 없음. 신규 주변 워크플로우 Ops Daily Report·Prewarm Detail Pages·Quarantine Check 각주.<br>
+      cover badge·meta·footer v10.34→v10.35, status-box 날짜 2026-06-05→2026-06-10.
+    </div>
   </div>
 
   <div class="changelog-item">
@@ -4355,8 +4449,8 @@ await prisma.cafePost.create({
 </div>
 
 <div class="footer">
-  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.34<br>
-  최종 업데이트: 2026-06-05 | 작성: Claude Code + MogoKim<br>
+  우나어 (age-doesnt-matter.com) — 네이버 카페 파이프라인 핸드오버 v10.35<br>
+  최종 업데이트: 2026-06-10 | 작성: Claude Code + MogoKim<br>
   이 문서에 오류를 발견하면 즉시 수정할 것. 잘못된 문서는 잘못된 코드를 만든다.
 </div>
 
