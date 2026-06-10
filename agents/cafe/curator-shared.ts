@@ -975,12 +975,18 @@ const DESIRE_KEYWORDS: Record<string, string[]> = {
 }
 
 /** 트렌드 주제에 가장 적합한 페르소나 매칭 */
-export function matchPersona(topic: string, desireCat?: string): PersonaMatch {
+export function matchPersona(topic: string, desireCat?: string, targetBoard?: string): PersonaMatch {
+  // [B 2026-06-10] targetBoard 지정 시 해당 게시판 소속 페르소나만 후보로 한정.
+  // → STORY 담당 봇이 LIFE2 글을 쓰는 board 불일치 방지. (board에 페르소나가 없으면 안전망으로 전체)
+  const filtered = targetBoard ? PERSONAS.filter(p => p.board === targetBoard) : PERSONAS
+  const pool = filtered.length > 0 ? filtered : PERSONAS
+  const inPool = (id: string) => pool.some(p => p.id === id)
+
   const topicLower = topic.toLowerCase()
-  let bestMatch = PERSONAS[0]
+  let bestMatch = pool[0]
   let bestScore = 0
 
-  for (const persona of PERSONAS) {
+  for (const persona of pool) {
     let score = 0
     for (const t of persona.topics) {
       if (topicLower.includes(t) || t.includes(topicLower)) score += 2
@@ -989,19 +995,22 @@ export function matchPersona(topic: string, desireCat?: string): PersonaMatch {
     if (score > bestScore) { bestScore = score; bestMatch = persona }
   }
 
-  // LIFE2 카테고리(MONEY/RETIRE/HOUSING)는 bestScore 무관하게 전용 페르소나 강제 배정
+  // LIFE2 카테고리(MONEY/RETIRE/HOUSING)는 bestScore 무관하게 전용 페르소나 강제 배정 (board 후보 내에서만)
   // → keyword 매칭으로 엉뚱한 STORY 페르소나 선택되는 문제 방지
   const LIFE2_DESIRES = new Set(['MONEY', 'RETIRE', 'HOUSING'])
   if (desireCat && LIFE2_DESIRES.has(desireCat)) {
-    const pool = DESIRE_PERSONA_MAP[desireCat]
-    const id = pool[Math.floor(Math.random() * pool.length)]
-    return PERSONAS.find(p => p.id === id) ?? PERSONAS[0]
+    const ids = (DESIRE_PERSONA_MAP[desireCat] ?? []).filter(inPool)
+    if (ids.length > 0) {
+      const id = ids[Math.floor(Math.random() * ids.length)]
+      return pool.find(p => p.id === id) ?? bestMatch
+    }
   }
 
   if (bestScore === 0) {
-    const fallbackIds = DESIRE_PERSONA_MAP[desireCat ?? 'GENERAL'] ?? DESIRE_PERSONA_MAP['GENERAL']
-    const fallbackId = fallbackIds[Math.floor(Math.random() * fallbackIds.length)]
-    bestMatch = PERSONAS.find(p => p.id === fallbackId) ?? PERSONAS[0]
+    const fallbackIds = (DESIRE_PERSONA_MAP[desireCat ?? 'GENERAL'] ?? DESIRE_PERSONA_MAP['GENERAL']).filter(inPool)
+    const pickFrom = fallbackIds.length > 0 ? fallbackIds : pool.map(p => p.id)
+    const fallbackId = pickFrom[Math.floor(Math.random() * pickFrom.length)]
+    bestMatch = pool.find(p => p.id === fallbackId) ?? pool[0]
   }
 
   return bestMatch

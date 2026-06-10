@@ -52,7 +52,7 @@ type Tier = 'KILLER' | 'HOT' | 'NORMAL'
 // ── v2-E 상수 ──
 
 const KILLER_WAVE_COUNTS: Record<WaveNum, number> = { 1: 2, 2: 4, 3: 5, 4: 4 }
-const NORMAL_WAVE_COUNTS: Record<WaveNum, number> = { 1: 1, 2: 1, 3: 2, 4: 1 }
+const NORMAL_WAVE_COUNTS: Record<WaveNum, number> = { 1: 2, 2: 2, 3: 3, 4: 2 } // [E 2026-06-10] 5→9 (원문 좋은 댓글 더 활용, 실사용=min(상한,원문수))
 const HOT_WAVE_COUNTS: Record<number, Record<WaveNum, number>> = {
   8:  { 1: 1, 2: 2, 3: 3, 4: 2 },
   9:  { 1: 2, 2: 2, 3: 3, 4: 2 },
@@ -87,7 +87,7 @@ const BOT_DAILY_COMMENT_CAP = 8
 function getGlobalCap(tier: Tier): number {
   if (tier === 'KILLER') return 20
   if (tier === 'HOT')    return 14
-  return 6
+  return 10 // [E 2026-06-10] NORMAL 6→10 (댓글 상한 5→9 수용)
 }
 
 function getWaveTargetCount(tier: Tier, waveNum: WaveNum, cafePostId: string): number {
@@ -100,7 +100,7 @@ function getWaveTargetCount(tier: Tier, waveNum: WaveNum, cafePostId: string): n
 function getAllowedReplyCount(tier: Tier, waveNum: WaveNum): number {
   if (tier === 'KILLER') return waveNum === 2 ? 1 : waveNum === 3 ? 2 : 4
   if (tier === 'HOT')    return waveNum === 2 ? 1 : waveNum === 3 ? 2 : 3
-  return waveNum === 4 ? 1 : 0  // NORMAL: wave4에서만
+  return waveNum >= 2 ? 1 : 0  // NORMAL: wave2~4 각 1 (작성자답글 활용↑, 2026-06-10). 실제는 원문 작성자답글 있을 때만 생성
 }
 
 async function getQueueTier(postId: string, cafePostId: string): Promise<Tier> {
@@ -425,7 +425,7 @@ async function processWaveV2(
     const [cafePost, postForBoard] = await Promise.all([
       prisma.cafePost.findUnique({
         where: { id: queue.cafePostId },
-        select: { topComments: true },
+        select: { topComments: true, author: true },
       }),
       prisma.post.findUnique({
         where: { id: queue.postId },
@@ -461,9 +461,15 @@ async function processWaveV2(
 
     const usedContentSet = new Set(existingBotComments.map(c => c.content.trim()))
 
-    // 아직 복사되지 않은 원문 candidates 추출 (순서 유지)
+    // [E 2026-06-10] 작성자(원글쓴이)가 직접 답글 단 댓글을 앞으로 안정정렬 → 그 댓글이 발행되어야 작성자 대댓글이 달리므로 생성 기회↑
+    const cafeAuthorNick = normalizeNickname(cafePost.author ?? '')
+    const hasAuthorReply = (tc: { replies?: Array<{ author: string; content: string }> }) =>
+      (tc.replies ?? []).some(r => normalizeNickname(r.author) === cafeAuthorNick && (r.content?.trim().length ?? 0) >= 5)
+    const orderedTopComments = [...topComments].sort((a, b) => (hasAuthorReply(b) ? 1 : 0) - (hasAuthorReply(a) ? 1 : 0))
+
+    // 아직 복사되지 않은 원문 candidates 추출 (작성자답글 댓글 우선, 그 외 원문 순서 유지)
     const sourceCandidates: string[] = []
-    for (const tc of topComments) {
+    for (const tc of orderedTopComments) {
       const text = removeEmoji(replaceCafeReferences(tc.content?.trim() ?? ''))
       if (text.length < 10) continue
       if (usedContentSet.has(text)) continue

@@ -160,6 +160,24 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
 }
 
+/**
+ * [A 단방향 LIFE2 가드 2026-06-10] 글의 발행 게시판 결정.
+ * 글 자신의 desireCategory가 돈 계열(MONEY/RETIRE/HOUSING)이면 그 값으로, 아니면 버킷(bucketDesire)으로 게시판 산출.
+ * 단, 게시판이 LIFE2(재테크·연금/은퇴준비/주거)인데 글 자신이 돈 계열이 아니면 → 버킷 상속 오배치이므로
+ * 글 자신 카테고리(없으면 GENERAL=자유수다)로 STORY 재라우팅한다. 단방향(LIFE2→STORY)만 — STORY 글은 불변·새 오염 없음.
+ * B(페르소나 board 매칭)와 generateCuratedPost가 동일 결과를 쓰도록 단일 헬퍼로 통일.
+ */
+function resolveBoardForPost(ownDesire: string | null | undefined, bucketDesire: string): { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; category: string } {
+  const isOwnLife2 = !!(ownDesire && LIFE2_SOURCE_DESIRES.has(ownDesire))
+  const effectiveDesire = isOwnLife2 ? ownDesire! : bucketDesire
+  let board = resolveCommunityBoard(effectiveDesire)
+  if (board.boardType === 'LIFE2' && !isOwnLife2) {
+    board = resolveCommunityBoard(ownDesire ?? 'GENERAL')
+    if (board.boardType === 'LIFE2') board = resolveCommunityBoard('GENERAL')
+  }
+  return board
+}
+
 /** 큐레이션된 글 생성 — 원본 카페글 제목·본문 그대로 사용 (AI 각색 없음) */
 async function generateCuratedPost(
   persona: PersonaMatch,
@@ -170,10 +188,7 @@ async function generateCuratedPost(
   const mainRef = referencePosts[0]
   if (!mainRef) return null
 
-  const effectiveDesire = mainRef.desireCategory && LIFE2_SOURCE_DESIRES.has(mainRef.desireCategory)
-    ? mainRef.desireCategory
-    : (desireCat ?? 'GENERAL')
-  const boardInfo = resolveCommunityBoard(effectiveDesire)
+  const boardInfo = resolveBoardForPost(mainRef.desireCategory, desireCat ?? 'GENERAL')
 
   const title = replaceCafeReferences(stripMarkdown(mainRef.title.trim()))
   if (!title) return null
@@ -513,11 +528,27 @@ export async function main() {
       continue
     }
 
-    // 페르소나 선택 + AUTHOR_DAILY_CAP 체크
-    let persona = matchPersona(candidate.topic, desireCat)
+    // [B 2026-06-10] refs를 먼저 가져와 발행 게시판(A 가드 반영)을 정한 뒤, 그 게시판 소속 페르소나 중에서 글 제목으로 매칭
+    const { refs, candidatesBeforeUsableFilter, maxUsableCount } = await getReferencePosts(candidate.topic, desireCat, 3)
+
+    if (refs.length === 0) {
+      if (candidatesBeforeUsableFilter > 0) {
+        // refs는 있었지만 usable<5로 전부 탈락 — topicResults에 기록 (별도 BotLog 없음)
+        topicResults.push({ ...candidate, refsCount: 0, skipReason: 'LOW_USABLE_COMMENTS', candidatesBeforeUsableFilter, maxUsableCount, requiredUsableCount: 5 })
+      } else {
+        topicResults.push({ ...candidate, refsCount: 0, skipReason: 'REFS_EMPTY' })
+      }
+      continue
+    }
+
+    // 페르소나 선택 — 발행 게시판 소속(board 필터) + 글 제목 기반 매칭 + AUTHOR_DAILY_CAP 체크
+    const board = resolveBoardForPost(refs[0].desireCategory, desireCat)
+    let persona = matchPersona(refs[0].title, desireCat, board.boardType)
     const todayCount = await countTodayPostsByPersona(persona.id)
     if (todayCount >= AUTHOR_DAILY_POST_CAP) {
-      const altIds = DESIRE_PERSONA_MAP[desireCat] ?? DESIRE_PERSONA_MAP['GENERAL']
+      let altIds = (DESIRE_PERSONA_MAP[desireCat] ?? DESIRE_PERSONA_MAP['GENERAL'])
+        .filter(id => PERSONAS.find(p => p.id === id)?.board === board.boardType)
+      if (altIds.length === 0) altIds = PERSONAS.filter(p => p.board === board.boardType).map(p => p.id)
       let found = false
       for (const altId of altIds) {
         if (altId === persona.id) continue
@@ -529,23 +560,11 @@ export async function main() {
       }
       if (!found) {
         console.log(`[ContentCurator] "${candidate.topic}" 모든 페르소나 일간 한도 초과 — 스킵`)
-        topicResults.push({ ...candidate, refsCount: 0, skipReason: 'AUTHOR_DAILY_CAP' })
+        topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'AUTHOR_DAILY_CAP' })
         continue
       }
     }
-
-    const { refs, candidatesBeforeUsableFilter, maxUsableCount } = await getReferencePosts(candidate.topic, desireCat, 3)
-    console.log(`[ContentCurator] "${candidate.topic}" (${desireCat}) → ${persona.nickname} (참고글 ${refs.length}개)`)
-
-    if (refs.length === 0) {
-      if (candidatesBeforeUsableFilter > 0) {
-        // refs는 있었지만 usable<5로 전부 탈락 — topicResults에 기록 (별도 BotLog 없음)
-        topicResults.push({ ...candidate, refsCount: 0, skipReason: 'LOW_USABLE_COMMENTS', candidatesBeforeUsableFilter, maxUsableCount, requiredUsableCount: 5 })
-      } else {
-        topicResults.push({ ...candidate, refsCount: 0, skipReason: 'REFS_EMPTY' })
-      }
-      continue
-    }
+    console.log(`[ContentCurator] "${candidate.topic}" (${desireCat}) → ${board.boardType}/${board.category} → ${persona.nickname} (참고글 ${refs.length}개)`)
 
     const curated = await generateCuratedPost(persona, candidate.topic, refs, desireCat)
     if (!curated) {

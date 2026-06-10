@@ -115,7 +115,8 @@ export async function main() {
     const desire = post.desireCategory ?? guessDesire(post.title)
     if (desire === 'HEALTH' && healthCount >= HEALTH_CAP) continue
 
-    let persona = matchPersona(post.title, desire)
+    const boardInfo = resolveCommunityBoard(desire)
+    let persona = matchPersona(post.title, desire, boardInfo.boardType)  // [B 2026-06-10] 발행 게시판 소속 페르소나만
     const todayCount = await countTodayPostsByPersona(persona.id)
     if (todayCount >= AUTHOR_DAILY_POST_CAP) {
       const sameBoard = PERSONAS.filter(p => p.board === persona.board && p.id !== persona.id)
@@ -132,7 +133,6 @@ export async function main() {
       continue
     }
 
-    const boardInfo = resolveCommunityBoard(desire)
     const htmlContent = toCuratedHtmlContent(rawContent)
     const summary = toCuratedSummary(rawContent)
 
