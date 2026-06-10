@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     description: '갱년기·건강, 재테크, 여행, 생활정보까지 신중년 여성에게 꼭 필요한 정보.',
     url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/magazine`,
     type: 'website',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '우리 나이가 어때서 — 신중년 여성 커뮤니티' }],
+    images: [{ url: '/og-cover.png', width: 1200, height: 630, alt: '우리 나이가 어때서 — 신중년 여성 커뮤니티' }],
   },
 }
 

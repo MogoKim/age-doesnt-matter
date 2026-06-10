@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ko_KR',
     siteName: '우리 나이가 어때서',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '우리 나이가 어때서 — 신중년 여성 커뮤니티' }],
+    images: [{ url: '/og-cover.png', width: 1200, height: 630, alt: '우리 나이가 어때서 — 신중년 여성 커뮤니티' }],
   },
   robots: {
     index: true,
