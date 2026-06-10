@@ -13,7 +13,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    background:var(--bg);color:var(--ink);line-height:1.75;-webkit-font-smoothing:antialiased}
+    background:var(--bg);color:var(--ink);line-height:1.78;font-size:16.5px;-webkit-font-smoothing:antialiased}
   .wrap{max-width:920px;margin:0 auto;padding:32px 20px 80px}
   h1{font-size:30px;font-weight:800;letter-spacing:-.5px}
   h2{font-size:22px;font-weight:800;margin:0 0 4px;letter-spacing:-.3px}
@@ -61,9 +61,20 @@
   .ccard h4{font-size:16px;margin-bottom:6px}
   .ccard .ico{font-size:26px}
   /* 표 */
-  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px}
-  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
-  th{background:#f3f4f7;font-weight:700;font-size:13px}
+  .scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:14px}
+  .scroll-x table{min-width:580px;margin-top:0}
+  .scroll-x .hint{font-size:12px;color:var(--sub);margin:0 0 6px}
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:14.5px}
+  th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+  th{background:#f3f4f7;font-weight:700;font-size:13.5px}
+  tr:hover td{background:#fbfcfe}
+  /* 실제 화면 캡쳐 */
+  .shots{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;align-items:flex-start}
+  .shot{flex:0 0 auto;width:236px;max-width:47%;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.11);background:#fff}
+  @media(max-width:640px){.shot{max-width:100%;width:100%}}
+  .shot img{width:100%;display:block}
+  .shot .cap{font-size:13px;color:var(--sub);padding:10px 12px;background:#fafbfc;border-top:1px solid var(--line);line-height:1.55}
+  .shot .cap b{color:var(--coral-deep)}
   .bdg{display:inline-block;font-weight:700;font-size:12px;border-radius:999px;padding:2px 10px}
   .b-on{background:var(--green-bg);color:var(--green)}
   .b-off{background:var(--red-bg);color:var(--red)}
@@ -182,6 +193,8 @@
     <span class="sec-no">3</span>
     <h2>핵심 매트릭스 — 채널별로 뭐가 다른가</h2>
     <p><b>어느 화면에서 무엇이 뜨는지 한눈에.</b> (PWA=아이폰, TWA=안드 전용)</p>
+    <div class="scroll-x">
+    <p class="hint">↔ 표가 넓으면 좌우로 밀어서 보세요</p>
     <table>
       <tr><th>기능</th><th>웹 데스크탑</th><th>웹 안드</th><th>웹 아이폰</th><th>인앱</th><th>PWA</th><th>TWA</th></tr>
       <tr><td>가입 배너</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅<br><span class="muted">(외부 유도)</span></td><td class="yes">✅</td><td class="no">❌<br><span class="muted">게이트가 담당</span></td></tr>
@@ -192,6 +205,7 @@
       <tr><td>앱 설치 유도</td><td class="no">❌</td><td class="cond">(ON시)</td><td class="cond">(ON시)</td><td class="cond">(ON시)외부</td><td class="no">❌</td><td class="no">❌</td></tr>
       <tr><td>푸시 알림</td><td class="yes">✅</td><td class="yes">✅</td><td class="cond">PWA설치시</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
     </table>
+    </div>
     <div class="note">🔁 <b>상호배타</b>: 가입 배너(웹·PWA)와 TWA 게이트(TWA)는 <b>동시에 안 뜹니다</b>. TWA에선 배너가 꺼지고 게이트가 담당합니다.</div>
   </div>
 
@@ -206,6 +220,11 @@
       <li><b>홈 가입카드</b>(중반) · <b>글 하단 CTA</b>(비회원→가입)</li>
       <li><b>인앱브라우저</b>: 카카오 로그인이 막히므로 "외부 브라우저로 열기"로 우회</li>
     </ul>
+    <div class="shots">
+      <div class="shot"><img src="images/channel/signup-banner.png" alt="가입 배너 C 공감형" loading="lazy"><div class="cap"><b>가입 배너</b> — 글을 거의 다 읽으면 하단에 "나만 이런 게 아니었네?"(공감형 C)</div></div>
+      <div class="shot"><img src="images/channel/home-signup-card.png" alt="홈 가입카드" loading="lazy"><div class="cap"><b>홈 가입카드</b> — 홈 중반 "우리 또래 이야기, 여기 다 있어요"</div></div>
+      <div class="shot"><img src="images/channel/post-cta.png" alt="글 하단 가입 CTA" loading="lazy"><div class="cap"><b>글 하단 CTA</b> — 비회원에게 "같이 나눠보세요 / 1초 만에 가입하기"</div></div>
+    </div>
     <details><summary>개발자용 — 가입유도 파일</summary><div class="inner"><ul class="bul">
       <li><span class="kv">SignupPromptBanner.tsx</span> — 문구 C 고정(:55), read_complete(85%/60초 백스톱), MAX_SHOWS=4, isTWA시 OFF</li>
       <li><span class="kv">SignupCard.tsx</span>(홈) · <span class="kv">PostCTA.tsx</span>(글 하단)</li>
@@ -217,6 +236,9 @@
       <li>측정: 어느 방식이 <b>가입 후 재방문(D1/D7)</b>을 높이나</li>
       <li><b>OFF 스위치</b>: <span class="kv">NEXT_PUBLIC_TWA_GATE_ENABLED=false</span> (미설정=ON)</li>
     </ul>
+    <div class="shots">
+      <div class="shot"><img src="images/channel/twa-gate.png" alt="TWA 진입 게이트 C hard" loading="lazy"><div class="cap"><b>C(hard) 게이트</b> — 안드 앱 첫 화면 전체를 가입으로. 작게 "먼저 둘러볼게요" 탈출구 포함</div></div>
+    </div>
     <details><summary>개발자용 — 게이트 파일</summary><div class="inner"><ul class="bul">
       <li><span class="kv">TwaEntryGate.tsx:33</span> — <span class="kv">NEXT_PUBLIC_TWA_GATE_ENABLED==='false'</span> 가드</li>
       <li><span class="kv">src/lib/experiments/registry.ts</span> — 실험 <span class="kv">twa01_entry_gate</span> (A34/B33/C33)</li>
@@ -250,6 +272,9 @@
     <ul class="bul">
       <li>상단 아이콘 메뉴(Header) + 플로팅 <b>FAB "✏️ 글쓰기"</b>. <b>하단 탭바 없음</b>(시니어 친화 결정)</li>
     </ul>
+    <div class="shots">
+      <div class="shot"><img src="images/channel/nav.png" alt="상단 아이콘 메뉴" loading="lazy"><div class="cap"><b>상단 아이콘 메뉴</b> — 베스트·사는이야기·2막준비·웃음방·매거진·내일찾기 + 검색·글자크기·프로필</div></div>
+    </div>
     <details><summary>개발자용 — 네비 파일</summary><div class="inner"><ul class="bul">
       <li><span class="kv">src/components/layouts/FAB.tsx</span> · <span class="kv">layouts/MainLayout.tsx</span> (하단 탭바 컴포넌트 없음)</li>
     </ul></div></details>
