@@ -383,10 +383,10 @@
       이 문서는 스크래퍼가 왜 존재하고 어떻게 움직이는지를 처음부터 끝까지 설명한다.
     </div>
     <div class="cover-meta">
-      <div class="cover-meta-item"><div class="label">최종 업데이트</div><div class="val">2026-06-05 (코드 실측 검증)</div></div>
+      <div class="cover-meta-item"><div class="label">최종 업데이트</div><div class="val">2026-06-08 (코드 실측 재검증)</div></div>
       <div class="cover-meta-item"><div class="label">대상</div><div class="val">창업자 (비기술 독자)</div></div>
       <div class="cover-meta-item"><div class="label">스케줄</div><div class="val">5회/일 (GHA) + 6회/일 (로컬 Mac)</div></div>
-      <div class="cover-meta-item"><div class="label">AI 모델</div><div class="val">Sonnet(파동댓글)</div></div>
+      <div class="cover-meta-item"><div class="label">AI 모델</div><div class="val">Sonnet(파동댓글) + Opus(제목 SEO)</div></div>
       <div class="cover-meta-item"><div class="label">파동 실행</div><div class="val">5분마다 (GHA 상시)</div></div>
     </div>
   </div>
@@ -639,7 +639,7 @@
         <div class="flow-content">
           <div class="title">콘텐츠 변환 + 이미지/비디오 R2 업로드</div>
           <div class="desc">HTML 정제 8단계 실행 (광고 제거 → sanitize → YouTube iframe 변환 등).<br>
-          이미지는 sharp로 WebP 변환 후 R2에 업로드. GIF는 원본 유지. 비디오도 R2에 업로드.<br>
+          이미지는 sharp로 WebP 변환 후 R2에 업로드. GIF/애니메이션은 mp4로 변환. 비디오도 R2에 업로드.<br>
           외부 도메인 차단 시에도 이미지가 우나어 서버에서 서빙됨.</div>
         </div>
       </div>
@@ -690,11 +690,11 @@
   <!-- 5. AI 역할 -->
   <div class="section">
     <div class="section-label">05 — AI 역할</div>
-    <h2>AI가 실제로 하는 2가지</h2>
+    <h2>AI가 실제로 하는 일</h2>
 
     <div class="callout blue">
-      <p>스크래핑 파이프라인에서 AI가 직접 개입하는 단계는 <strong>2가지뿐</strong>이다.<br>
-      콘텐츠 수집·정제·게시는 AI 없이 규칙 기반으로 처리된다. 창업자가 넣은 URL은 필터 없이 전부 게시된다.</p>
+      <p>스크래핑 파이프라인에서 AI가 직접 개입하는 단계는 <strong>2가지</strong> — 파동 댓글(Sonnet)과 제목 SEO 다듬기(Opus)다.<br>
+      카테고리 분류는 키워드 매칭(AI 없음)이고, 콘텐츠 수집·정제·게시도 규칙 기반이다. 창업자가 넣은 URL은 필터 없이 전부 게시된다.</p>
     </div>
 
     <h3>① 카테고리 자동 분류 (키워드 기반, AI 없음)</h3>
@@ -748,6 +748,24 @@
       </table>
     </div>
     <p style="font-size: 13px; color: var(--sub);">max_tokens: 200, keyTerms 포함 여부 검증 후 최대 2회 시도. 5자 미만 댓글은 스킵.</p>
+
+    <div class="callout yellow" style="margin-top:16px;">
+      <p><strong>댓글 환각/누수 방지 가드 (2026-06-08 신규)</strong><br>
+      파동 댓글 생성 시 ① <strong>원문에 없는 사실 차단</strong> — 참고용 원본 댓글(source comments)에만 있고 본문엔 없는 단어(예: 다른 댓글러의 "크루아상")를 본문 사실처럼 끌어오면 재생성/폐기. ② <strong>메타 누설 차단</strong> — "본문이 잘려서 끝까지 못 봤지만" 같은 AI 티 나는 문장 차단. 코드: <code>generateSheetViralComment</code> source-only-anchor + leaky 필터.</p>
+    </div>
+
+    <h3>③ 제목 SEO 다듬기 (Claude Opus) <span class="badge badge-primary">2026-06-08 신규</span></h3>
+    <div class="callout blue">
+      <p><strong>발행 직전, 원문 제목을 네이버 검색에 잘 걸리게 "보수적으로" 다듬는다.</strong> 본문·이미지·댓글은 절대 안 건드린다.<br>
+      <code>SHEET_TITLE_SEO=true</code>일 때만 동작하고, 창업자가 C열에 제목을 직접 넣었으면 AI를 거치지 않는다.</p>
+    </div>
+    <ul>
+      <li><strong>원칙(보수적)</strong> — 원문 말투·길이 최대 존중. 본문에 실제 등장한 검색어 1개만 자연스럽게 노출. 이미 충분하면 원문 그대로 반환.</li>
+      <li><strong>이미지 전용 글</strong>(본문 글자 50자 미만) — 본문 참고를 끄고 제목 군더더기(.jpg 등)만 정리(환각 방지).</li>
+      <li><strong>안전장치</strong> — 본문에 없는 숫자·고유명사 주입, 길이 45자 초과, 마케팅/낚시 단어 → 원문 제목으로 폴백. AI 오류·타임아웃도 원문 유지.</li>
+      <li>예) <code>이게 맞나요</code> → <code>공복혈당 140 나와서 식단조절 중인데 이게 맞나요</code> (본문의 "공복혈당 140"만 자연 노출)</li>
+    </ul>
+    <p style="font-size: 13px; color: var(--sub);">모델: CLAUDE_MODEL_STRATEGIC(claude-opus-4-7), max_tokens 60. 코드: <code>agents/community/title-seo.ts</code> polishTitleForSeo. 환경변수 <code>SHEET_TITLE_SEO</code>로 ON/OFF.</p>
   </div>
 
   <!-- 6. AI 게시 페르소나 -->
@@ -760,6 +778,11 @@
     <div class="callout blue">
       <p>페르소나 선택 우선순위: <strong>① 창업자 E열 지정</strong> → ② 카테고리 매칭 → ③ 게시판 매칭 → ④ 전체 중 랜덤(최종 폴백)<br>
       E열에 지정하면 게시판 검증 없이 그대로 적용됨 (예: LIFE2 탭에 STORY 페르소나 지정도 허용).</p>
+    </div>
+
+    <div class="callout yellow">
+      <p><strong>⚠️ 아래 닉네임은 "E열에 입력하는 별칭"이다 — 실제 사이트에 표시되는 게시자 이름과 다를 수 있다.</strong><br>
+      일부 페르소나는 내부 별칭(E열 매칭용)과 실제 표시 닉네임이 다르다: <strong>E</strong> 봄바람→표시 <strong>미숙이맘</strong> / <strong>H</strong> 매일걷기→<strong>만보걷기</strong> / <strong>P</strong> 오후세시→<strong>오후햇살</strong> / <strong>U</strong> 부산아지매→<strong>부산언니</strong>. 나머지(ㅋㅋ요정·약국단골·멍멍이엄마 등)는 별칭=표시명 동일. (근거: <code>sheet-scraper.ts</code> PERSONAS 별칭 vs <code>persona-data.ts</code> 표시명. E열 지정 시에는 위 별칭으로 입력해야 매칭됨.)</p>
     </div>
 
     <h3 style="color: var(--orange);">HUMOR (웃음방) — 5명</h3>
@@ -1037,6 +1060,10 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
       </table>
     </div>
 
+    <div class="callout yellow" style="margin-top:16px;">
+      <p><strong>B열(상태) 오염 자가복구 (2026-06-08 신규):</strong> 외부 요인(다중칸 붙여넣기 등)으로 B열에 상태값이 아닌 값(URL·쓰레기)이 들어가도, 스크래퍼가 그 행을 <strong>PENDING으로 간주해 처리</strong>한다(영구 스킵 방지). 즉 B열이 알려진 상태값(PENDING/PROCESSING/PUBLISHED/FAILED/SKIPPED/HOLD)이 아니면 PENDING으로 본다. <em>HOLD</em>는 알려진 상태값이라 그대로 보존된다.</p>
+    </div>
+
     <div class="callout blue" style="margin-top:16px;">
       <p><strong>G열 에러 메시지 읽는 법</strong></p>
       <div class="tbl-wrap" style="margin-bottom:0;">
@@ -1048,7 +1075,7 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
             <tr><td><code>접근 차단 안내문 포함 — 발행 제외</code></td><td>네이버 카페 로그인 필요 안내 또는 가입 유도 문구 감지 (6종) — 세션 쿠키가 만료됐거나 해당 카페가 접근 제한 중일 때 발생</td><td>세션 쿠키 만료 여부 확인. Slack에 SESSION_HALTED 알림이 왔으면 storage-state.json 재추출 필요</td></tr>
             <tr><td><code>게시판 안내문 포함 — 발행 제외</code></td><td>네이버 카페 게시판 운영 안내문이 본문에 포함됨 — 실제 글이 아닌 공지·안내 글일 때 발생</td><td>재시도 불가. 해당 글은 게시판 공지이므로 A열 삭제</td></tr>
             <tr><td><code>타임아웃 — 45초 초과</code></td><td>페이지가 45초 내에 로드되지 않음 — 네트워크 불안정 또는 일시적 서버 부하</td><td>B열을 PENDING으로 변경하면 다음 실행 시 재시도</td></tr>
-            <tr><td><code>지원하지 않는 사이트</code></td><td>입력한 URL이 등록된 사이트 패턴과 맞지 않음</td><td>네이버 카페 URL이면 <code>ca-fe/</code> 또는 <code>f-e/</code> 경로가 포함돼 있는지 확인. 맞지 않으면 A열 교체</td></tr>
+            <tr><td><code>지원하지 않는 사이트</code></td><td>입력한 URL이 등록된 사이트 패턴과 맞지 않음. <strong>naver.me 단축링크는 이제 자동 해석되므로 더는 여기 해당하지 않는다 (2026-06-08~).</strong></td><td>네이버 카페 URL이면 <code>ca-fe/</code> 또는 <code>f-e/</code> 경로 포함 여부 확인. 그 외 미등록 사이트(블로그·뉴스 등)는 A열 교체</td></tr>
             <tr><td><code>제목 추출 실패</code></td><td>페이지는 로드됐지만 제목 셀렉터가 일치하는 요소를 찾지 못함 — 사이트 HTML 구조 변경 또는 페이지가 정상적으로 렌더링되지 않았을 때</td><td>B열을 PENDING으로 변경하면 재시도. 반복 발생 시 개발자 확인 필요</td></tr>
             <tr><td><code>본문 추출 실패</code></td><td>페이지는 로드됐지만 본문 셀렉터가 일치하는 요소를 찾지 못함 — 사이트 HTML 구조 변경 또는 페이지가 정상적으로 렌더링되지 않았을 때</td><td>B열을 PENDING으로 변경하면 재시도. 반복 발생 시 개발자 확인 필요</td></tr>
           </tbody>
@@ -1099,14 +1126,15 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
         <tbody>
           <tr><td>Playwright 크롤링</td><td>—</td><td><strong>무료</strong></td><td>오픈소스 브라우저 자동화</td></tr>
           <tr><td>Google Sheets API</td><td>—</td><td><strong>무료</strong></td><td>쿼터 범위 내</td></tr>
-          <tr><td><strong>파동 댓글 생성</strong></td><td>Claude Sonnet</td><td><strong>~$0.10~0.30/월</strong></td><td>화제성 글 수에 비례 (댓글 1개 ≈ $0.002)</td></tr>
+          <tr><td><strong>파동 댓글 생성</strong></td><td>Claude Sonnet</td><td><strong>~$13~27/월 (추정)</strong></td><td>댓글 1개 ≈ <strong>$0.009</strong> (이전 $0.002는 과소 정정). 발행·화제성 물량 비례 — 일 50~100개 기준</td></tr>
+          <tr><td><strong>제목 SEO 다듬기</strong> <span class="badge badge-primary">신규</span></td><td>Claude Opus</td><td><strong>~$4~6/월</strong></td><td>발행글 1건 ≈ $0.007, 20글/일 기준. 본문 불변·제목 1줄만</td></tr>
           <tr><td>R2 이미지 저장</td><td>—</td><td>~$0.05/월</td><td>Cloudflare R2</td></tr>
           <tr><td>GitHub Actions 실행</td><td>—</td><td><strong>무료</strong></td><td>월 2,000분 한도 내 여유 있음</td></tr>
           <tr>
             <td><strong>합계</strong></td>
             <td>—</td>
-            <td><strong>~$0.15~0.35/월</strong></td>
-            <td>파동 댓글(Sonnet) + R2만 — Haiku 필터 제거로 대폭 절감</td>
+            <td><strong>~$17~33/월 (추정)</strong></td>
+            <td>파동 댓글(Sonnet) + 제목 SEO(Opus) + R2. 물량 따라 변동 — constitution $40 경고/$50 critical로 추적</td>
           </tr>
         </tbody>
       </table>
@@ -1116,7 +1144,7 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
   <!-- 11. 현재 운영 현황 -->
   <div class="section">
     <div class="section-label">11 — 현재 운영 현황</div>
-    <h2>2026-06-05 기준 상태</h2>
+    <h2>2026-06-08 기준 상태</h2>
 
     <div class="tbl-wrap">
       <table>
@@ -1200,7 +1228,22 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
           <tr>
             <td>image-router 자동 append</td>
             <td><span class="badge badge-green">✅ 활성</span></td>
-            <td>CafePost DB → Sheet PENDING 자동 append. DAY_CAP=3건/일, TAB_CAP=1건/탭.</td>
+            <td>CafePost DB → Sheet PENDING 자동 append. DAY_CAP=3건/일, TAB_CAP=1건/탭. (GitHub Variables: ENABLE_IMAGE_ROUTER=true, DRY_RUN_IMAGE_ROUTER=false)</td>
+          </tr>
+          <tr>
+            <td>제목 SEO 다듬기 <span class="badge badge-primary">신규</span></td>
+            <td><span class="badge badge-green">✅ ON</span></td>
+            <td>Opus로 발행 제목만 보수적 다듬기(본문 불변). <code>SHEET_TITLE_SEO=true</code>(.env.local + agents-scraper.yml). C열 수동 제목 있으면 AI 미적용.</td>
+          </tr>
+          <tr>
+            <td>naver.me 단축링크 지원 <span class="badge badge-primary">신규</span></td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>naver.me/XXX → 307 Location 추적해 실제 cafe URL 해석 후 처리(resolveNaverShortUrl). 이전엔 "지원하지 않는 사이트" FAILED였음.</td>
+          </tr>
+          <tr>
+            <td>status칸 오염 자가복구 <span class="badge badge-primary">신규</span></td>
+            <td><span class="badge badge-green">✅ 정상</span></td>
+            <td>B열에 상태값이 아닌 값(URL 등)이 잘못 들어가도 PENDING으로 간주해 처리(영구 스킵 방지). sheets-client KNOWN_STATUS 가드.</td>
           </tr>
         </tbody>
       </table>
@@ -1343,10 +1386,10 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
             <td>5MB</td>
           </tr>
           <tr>
-            <td><strong>GIF</strong></td>
-            <td>원본 그대로 업로드 (WebP 변환 안 함 — 애니메이션 보존)</td>
-            <td><code>scraped/{date}/{timestamp}/{index}.gif</code></td>
-            <td>5MB</td>
+            <td><strong>GIF / 애니메이션</strong> <span class="badge badge-primary">변경</span></td>
+            <td><strong>mp4로 변환</strong>(ffmpeg) 후 <code>&lt;video&gt;</code>로 렌더. 애니메이션 GIF는 흔히 5~15MB → mp4로 ~1/10 압축(시니어 모바일 데이터·OOM 완화). 네이버 animated webp는 sharp로 gif 디코딩 후 변환. <strong>ffmpeg 미설치·실패·30MB 초과 시 placeholder.</strong></td>
+            <td><code>scraped/{date}/{timestamp}/{index}.mp4</code> (video)</td>
+            <td>소스 30MB</td>
           </tr>
           <tr>
             <td><strong>비디오 (mp4/webm)</strong></td>
@@ -1373,7 +1416,8 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
 
     <div class="callout yellow">
       <p><strong>이미지 업로드 실패 시:</strong> 태그를 삭제하지 않고 <code>&lt;div class="image-placeholder"&gt;이미지를 불러올 수 없습니다&lt;/div&gt;</code>로 대체한다. 레이아웃 파괴 없음.<br>
-      <strong>Referer 헤더</strong>를 자동으로 원본 도메인으로 설정해 핫링크 차단을 우회한다.</p>
+      <strong>Referer 헤더</strong>를 자동으로 원본 도메인으로 설정해 핫링크 차단을 우회한다.<br>
+      <strong>URL 엔티티 디코딩 (2026-06-08 신규):</strong> 다운로드 전 이미지/영상 URL의 <code>&amp;amp;</code>·<code>&amp;#38;</code>를 <code>&amp;</code>로 디코딩한다. sanitize가 <code>&amp;</code>를 <code>&amp;amp;</code>로 인코딩한 뒤 그대로 받아오면 <strong>쿼리스트링이 있는 외부 이미지(예: 트위터 <code>pbs.twimg.com/...?format=jpg&amp;name=small</code>)가 404</strong>나 placeholder가 되던 버그를 막는다.</p>
     </div>
   </div>
 
@@ -1567,24 +1611,27 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
         <tbody>
           <tr><td><code>agents/community/sheet-scraper.ts</code></td><td>핵심 스크래퍼 — PENDING 읽기 → 스크래핑 → 게시 → 파동 예약. SESSION_REQUIRED 분기(네이버 카페 GHA skip) + contentFrame 분기(cafe_main iframe) + slug 자동 생성(generateCommunitySlug) 포함.</td><td>—</td></tr>
           <tr><td><code>agents/core/slug.ts</code></td><td>게시글 제목 → URL-safe slug 생성 (한글 변환 포함). sheet-scraper, seed, curator, BOT 게시글 모두 사용.</td><td>—</td></tr>
-          <tr><td><code>agents/community/sheets-client.ts</code></td><td>Google Sheets A~J 10열 읽기/쓰기 (6탭: 사는이야기·웃음방·2막준비 × 일반/화제성). 없는 탭은 warning 후 skip.</td><td>googleapis</td></tr>
-          <tr><td><code>agents/community/site-configs.ts</code></td><td>6개 사이트 크롤링 설정 + 댓글 selector: <strong>오늘의유머·네이트판·82cook</strong>(GHA, 82cook은 postAuthorSelectors 포함) / <strong>펨코</strong>(LOCAL, cloudflareProtected) / <strong>네이버 카페</strong>(LOCAL, requiresSession·contentFrame) / <strong>네이버 뿜 bboom</strong>(LOCAL, GHA 제외)</td><td>—</td></tr>
+          <tr><td><code>agents/community/sheets-client.ts</code></td><td>Google Sheets A~J 10열 읽기/쓰기 (6탭: 사는이야기·웃음방·2막준비 × 일반/화제성). 없는 탭은 warning 후 skip. <strong>B열 상태값 오염 시 PENDING 자가복구(KNOWN_STATUS 가드).</strong></td><td>googleapis</td></tr>
+          <tr><td><code>agents/community/site-configs.ts</code></td><td>6개 사이트 크롤링 설정 + 댓글 selector: <strong>오늘의유머·네이트판·82cook</strong>(GHA, 82cook은 postAuthorSelectors 포함) / <strong>펨코</strong>(LOCAL, cloudflareProtected) / <strong>네이버 카페</strong>(LOCAL, requiresSession·contentFrame) / <strong>네이버 뿜 bboom</strong>(LOCAL, GHA 제외). <strong>naver.me 단축링크 해석(resolveNaverShortUrl)</strong> + 구형 카페 URL 정규화(normalizeNaverCafeUrl, 카페 4개 매핑).</td><td>—</td></tr>
           <tr><td><code>agents/community/content-transformer.ts</code></td><td>외부 HTML 정제 8단계 + 카테고리 키워드 분류. boardType: STORY·HUMOR·LIFE2 지원. HUMOR만 출처 표시.</td><td>sanitize-html</td></tr>
-          <tr><td><code>agents/community/image-pipeline.ts</code></td><td>이미지 WebP 변환·비디오·R2 업로드 통합 파이프라인</td><td>sharp</td></tr>
+          <tr><td><code>agents/community/image-pipeline.ts</code></td><td>이미지 WebP 변환·<strong>GIF/애니메이션→mp4(ffmpeg)</strong>·비디오·R2 업로드 통합. fetch 전 URL <strong>&amp;amp;/&amp;#38; 엔티티 디코딩</strong>(쿼리스트링 외부이미지 404 방지).</td><td>sharp, ffmpeg</td></tr>
+          <tr><td><code>agents/community/title-seo.ts</code> <span class="badge badge-primary">신규</span></td><td>발행 제목 SEO 다듬기 (polishTitleForSeo) — 보수적, 본문 불변, 이미지글 제목만 모드, fact-guard 폴백. <code>SHEET_TITLE_SEO=true</code> 게이트.</td><td>Claude Opus</td></tr>
           <tr><td><code>agents/community/run-local-fmkorea.ts</code></td><td>펨코 로컬 런처 (launchd 전용, dotenv 직접 로드, --site fmkorea)</td><td>LOCAL ONLY</td></tr>
           <tr><td><code>agents/community/run-local-naver-cafe.ts</code></td><td>네이버 카페 로컬 런처 (launchd 전용, --site navercafe, storage-state.json 세션 사용)</td><td>LOCAL ONLY</td></tr>
-          <tr><td><code>agents/seed/generator.ts</code></td><td>파동 댓글 AI 생성 (generateSheetViralComment)</td><td>Claude Sonnet</td></tr>
+          <tr><td><code>agents/seed/generator.ts</code></td><td>파동 댓글 AI 생성 (generateSheetViralComment) + <strong>환각/누수 가드</strong>(원문에 없는 사실·메타누설 차단)</td><td>Claude Sonnet</td></tr>
           <tr><td><code>agents/seed/scheduler.ts</code></td><td>파동 처리 함수 (processSheetEngagementWaves, processPendingSheetCommentWaves). 댓글·좋아요 투입 후 <code>refreshPostTrendingScore()</code> 즉시 실행 — 홈 점수 실시간 반영.</td><td>—</td></tr>
           <tr><td><code>agents/cafe/image-router.ts</code></td><td>CafePost DB → Sheet PENDING 자동 append 파이프라인. 활성 (ENABLE_IMAGE_ROUTER=true, DRY_RUN=false). DAY_CAP=3/TAB_CAP=1. agents-cafe-hourly-curation.yml 트리거.</td><td>활성</td></tr>
           <tr><td><code>agents/cron/runner.ts</code></td><td>모든 에이전트 핸들러 등록 테이블 (cron/worker entry point)</td><td>—</td></tr>
           <tr><td><code>src/lib/sanitize.ts</code></td><td>커뮤니티 이미지 프록시 처리 — proxyR2Images() (커스텀 도메인 + /_next/image)</td><td>—</td></tr>
-          <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>스크래핑·게시 GHA 스케줄 (5회/일, timeout 40분). <code>SHEET_SCRAPER_EXCLUDE_SITE=fmkorea,bboom</code> 로 펨코·뿜 제외(둘 다 로컬 전용).</td><td>AI 없음</td></tr>
+          <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>스크래핑·게시 GHA 스케줄 (5회/일, timeout 40분). <code>SHEET_SCRAPER_EXCLUDE_SITE=fmkorea,bboom</code> 로 펨코·뿜 제외. <strong>env: <code>SHEET_TITLE_SEO='true'</code> + <code>CLAUDE_MODEL_STRATEGIC=claude-opus-4-7</code>(제목 SEO용).</strong></td><td>Opus(제목)</td></tr>
           <tr><td><code>.github/workflows/agents-sheet-viral.yml</code></td><td>파동 실행 GHA 스케줄 (5분마다, timeout 10분)</td><td>claude-sonnet-4-6</td></tr>
           <tr><td><code>~/Library/LaunchAgents/com.unao.fmkorea-scraper.plist</code></td><td>펨코 로컬 launchd 스케줄 (11:30·21:30 KST, caffeinate -i 슬립 방지)</td><td>—</td></tr>
           <tr><td><code>~/Library/LaunchAgents/com.unao.naver-cafe-sheet-scraper.plist</code></td><td>네이버 카페 로컬 launchd 스케줄 (10:40·13:00·15:30·23:00 KST, 4회)</td><td>—</td></tr>
+          <tr><td><code>~/Library/LaunchAgents/com.unaeo.session-refresh.plist</code></td><td>네이버 세션 자동 갱신 launchd (02:00 KST). runner.ts <code>cafe:session-refresh</code> → session-manager ensureSession.</td><td>—</td></tr>
           <tr><td>Claude Haiku</td><td><del>AI 관련성 판단·카테고리 분류·제목 최적화</del> → <strong>완전 제거</strong> (비용 0원, AI 없이 원문 그대로 게시)</td><td>비활성</td></tr>
           <tr><td>Claude Sonnet</td><td>파동 댓글 생성 — 원본 댓글 각색·이미지 전용 반응</td><td>max_tokens: 200</td></tr>
-          <tr><td>Cloudflare R2</td><td>이미지·비디오 영구 저장 (<code>scraped/{date}/{timestamp}/{index}.webp</code>)</td><td>sharp WebP 80%</td></tr>
+          <tr><td>Claude Opus <span class="badge badge-primary">신규</span></td><td>제목 SEO 다듬기 (title-seo.ts) — 발행 제목만, 본문 불변</td><td>max_tokens: 60 (STRATEGIC)</td></tr>
+          <tr><td>Cloudflare R2</td><td>이미지·비디오·mp4(GIF변환) 영구 저장 (<code>scraped/{date}/{timestamp}/{index}.webp|.mp4</code>)</td><td>sharp WebP 80% / ffmpeg</td></tr>
         </tbody>
       </table>
     </div>
@@ -1607,6 +1654,12 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
           <tr><td>2026-05-23</td><td>trendingScore 즉시 갱신 도입 — 댓글·좋아요 투입 직후 refreshPostTrendingScore() 실행</td><td>홈 뜨는이야기 점수가 파동 투입 후 즉시 반영됨</td></tr>
           <tr><td>2026-05-24</td><td>image-router live 전환 — ENABLE_IMAGE_ROUTER=true, DRY_RUN=false</td><td>CafePost DB → Sheet PENDING 자동 append 파이프라인 실가동</td></tr>
           <tr><td>2026-05-26</td><td>네이버 카페 스크래퍼 개선 (커밋 9745f9e · 3f206b7) — contentFrame 처리 및 동영상 감지 로직 수정</td><td>navercafe 게시 안정성 향상</td></tr>
+          <tr><td>2026-06-03~04</td><td>네이버 카페 구형 URL 정규화(e607beb) + busanmam 카페(100c878) + 네이버 뿜 bboom 시트 스크래퍼(63ccfe6) 추가</td><td>지원 사이트 6개로 확대 (bboom·busanmam 로컬 전용)</td></tr>
+          <tr><td>2026-06-05</td><td>큰 GIF/이미지 placeholder 복구 — <strong>GIF/애니메이션 → mp4 변환(ffmpeg)</strong> (0467df4)</td><td>애니메이션 mp4 압축(~1/10), 시니어 모바일 데이터·OOM 완화</td></tr>
+          <tr><td>2026-06-05</td><td>SHEET 파동 댓글 <strong>환각/누수 가드</strong> — source comment 누수·메타누설 차단 (fd5ff2c)</td><td>본문에 없는 단어(예: 크루아상)·"본문이 잘려서" 류 댓글 차단</td></tr>
+          <tr><td>2026-06-06</td><td>스크랩 이미지/영상 URL <strong>&amp;amp; 엔티티 디코딩</strong> (0df6b02)</td><td>쿼리스트링 외부이미지(트위터 등) 404·placeholder 버그 해결</td></tr>
+          <tr><td>2026-06-08</td><td><strong>naver.me 단축링크 자동 해석</strong> + <strong>status칸 오염 자가복구</strong> (7513bdf)</td><td>naver.me 발행 가능, B열 오염 행 영구 스킵 방지</td></tr>
+          <tr><td>2026-06-08</td><td><strong>제목 SEO 다듬기</strong> 신규 — Opus로 발행 제목만 보수적 다듬기, 본문 불변 (16886ed) + ON 적용 (2b17cae, SHEET_TITLE_SEO=true)</td><td>네이버 검색 노출↑. 비용 ~$4~6/월(Opus)</td></tr>
         </tbody>
       </table>
     </div>
