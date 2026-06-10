@@ -5,6 +5,7 @@ on:
     # - cron: "5 0 * * 1,3,4,5"  # 전 DOW 케이스 skip 처리 2026-05-16 — 비활성화
     # 월요일 09:30 KST = 00:30 UTC — CTO 코드 품질 가비지 컬렉션
     - cron: "30 0 * * 1"
+    - cron: "0 1 * * 1"   # F-12: 매주 월 10:00 KST — 30일 경과 탈퇴회원 PII 자동 익명화
   workflow_dispatch:
     inputs:
       agent:
@@ -72,6 +73,8 @@ jobs:
                 esac ;;
               "30 0 * * 1")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=garbage-collect" >> $GITHUB_OUTPUT ;;
+              "0 1 * * 1")
+                echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=anonymize-withdrawn-apply" >> $GITHUB_OUTPUT ;;
               *)
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
             esac

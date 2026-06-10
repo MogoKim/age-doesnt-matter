@@ -1,7 +1,9 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { rateLimitDistributed } from '@/lib/rate-limit'
 import { checkAndPromote } from '@/lib/grade'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
 import { calculateTrendingScore } from '@/lib/utils/trending'
@@ -228,8 +230,15 @@ export async function toggleCommentLike(commentId: string): Promise<ToggleResult
 }
 
 export async function incrementShareCount(postId: string): Promise<void> {
-  await prisma.post.update({
-    where: { id: postId },
+  // F-5: 공유수 조작 방지 — IP당 1분 10회 제한
+  const h = await headers()
+  const ip = h.get('x-real-ip') ?? h.get('x-forwarded-for')?.split(',').at(-1)?.trim() ?? 'anon'
+  const rl = await rateLimitDistributed(`share:${ip}`, { max: 10, windowMs: 60_000 })
+  if (!rl.success) return // 공유는 UX상 에러 미표시 — 조용히 무시
+
+  // 발행글만 카운트(미발행/삭제글 조작 차단). updateMany는 미매칭 시 에러 없음
+  await prisma.post.updateMany({
+    where: { id: postId, status: 'PUBLISHED' },
     data: { shareCount: { increment: 1 } },
   })
 }
