@@ -3,21 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>채널 아키텍처 — 온보딩 가이드 | 우나어</title>
+<title>채널 정책 마스터 가이드 (웹·PWA·TWA) | 우나어</title>
 <style>
   :root{
     --coral:#FF6F61; --coral-deep:#E5503F; --ink:#1f2430; --sub:#5b6370;
     --line:#e7e9ee; --bg:#f6f7f9; --card:#fff;
     --green:#1f8a47; --green-bg:#e9f7ef; --red:#d24b3e; --red-bg:#fdecea;
     --blue:#1d6fd6; --blue-bg:#e9f1fd; --amber:#a4690a; --amber-bg:#fdf3e2;
+    --purple:#5b4bd6; --purple-bg:#eeecfb;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    background:var(--bg);color:var(--ink);line-height:1.78;font-size:16.5px;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:920px;margin:0 auto;padding:32px 20px 80px}
+    background:var(--bg);color:var(--ink);line-height:1.78;font-size:17px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:940px;margin:0 auto;padding:32px 20px 80px}
   h1{font-size:30px;font-weight:800;letter-spacing:-.5px}
-  h2{font-size:22px;font-weight:800;margin:0 0 4px;letter-spacing:-.3px}
-  h3{font-size:17px}
+  h2{font-size:23px;font-weight:800;margin:0 0 4px;letter-spacing:-.3px}
+  h3{font-size:18px;font-weight:800}
+  h4{font-size:16px;font-weight:800}
   .lead{color:var(--sub);font-size:16px;margin-top:6px}
   .sec{background:var(--card);border:1px solid var(--line);border-radius:18px;
     padding:26px 24px;margin-top:22px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
@@ -27,23 +29,21 @@
   strong{color:var(--ink)}
   .hl{color:var(--coral-deep);font-weight:700}
   p{margin-top:8px}
+  .keyline{font-size:18px;font-weight:800;margin:2px 0 2px}
   ul.bul{margin:10px 0 4px 0;padding-left:18px}
   ul.bul li{padding:3px 0}
+  .why{background:#f3f6fb;border-left:4px solid var(--blue);border-radius:0 10px 10px 0;padding:10px 14px;font-size:15px;color:#33405a;margin-top:12px}
+  .why b{color:var(--blue)}
   /* 헤더 */
-  .hero{background:linear-gradient(135deg,#fff6f4,#ffe4de 60%,#fff);border:1px solid #ffd9d2;
-    border-radius:22px;padding:30px 26px}
-  .hero .tag{display:inline-block;background:var(--coral);color:#fff;font-weight:700;font-size:12px;
-    border-radius:999px;padding:4px 12px;margin-bottom:12px}
-  .three{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
-  .three .pill{flex:1;min-width:200px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14px}
-  .three .pill b{color:var(--coral-deep)}
+  .hero{background:linear-gradient(135deg,#fff6f4,#ffe4de 60%,#fff);border:1px solid #ffd9d2;border-radius:22px;padding:30px 26px}
+  .hero .tag{display:inline-block;background:var(--coral);color:#fff;font-weight:700;font-size:12px;border-radius:999px;padding:4px 12px;margin-bottom:12px}
   .toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
   .toc a{font-size:13px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--sub);text-decoration:none}
   .toc a:hover{border-color:var(--coral);color:var(--coral-deep)}
-  /* 신호등 요약 */
+  /* 신호등 */
   .lights{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
   @media(max-width:640px){.lights{grid-template-columns:1fr}}
-  .light{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;font-size:14px}
+  .light{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;font-size:15px}
   .dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
   .dot.on{background:var(--green)} .dot.off{background:var(--red)} .dot.cond{background:var(--amber)}
   /* 갈림길 */
@@ -58,29 +58,68 @@
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
   @media(max-width:640px){.grid2{grid-template-columns:1fr}}
   .ccard{border:1px solid var(--line);border-radius:14px;padding:16px}
-  .ccard h4{font-size:16px;margin-bottom:6px}
+  .ccard h4{margin-bottom:6px}
   .ccard .ico{font-size:26px}
   /* 표 */
   .scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:14px}
-  .scroll-x table{min-width:580px;margin-top:0}
   .scroll-x .hint{font-size:12px;color:var(--sub);margin:0 0 6px}
   table{width:100%;border-collapse:collapse;margin-top:14px;font-size:14.5px}
+  .scroll-x table{min-width:640px;margin-top:0}
   th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
   th{background:#f3f4f7;font-weight:700;font-size:13.5px}
   tr:hover td{background:#fbfcfe}
-  /* 실제 화면 캡쳐 */
+  .same{color:var(--green);font-weight:700}
+  .diff{color:var(--coral-deep);font-weight:700}
+  .yes{color:var(--green);font-weight:800}
+  .no{color:var(--red);font-weight:800}
+  .bdg{display:inline-block;font-weight:700;font-size:12px;border-radius:999px;padding:2px 10px}
+  .b-on{background:var(--green-bg);color:var(--green)}
+  .b-off{background:var(--red-bg);color:var(--red)}
+  .b-cond{background:var(--amber-bg);color:var(--amber)}
+  /* 실제 캡쳐 */
   .shots{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;align-items:flex-start}
   .shot{flex:0 0 auto;width:236px;max-width:47%;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.11);background:#fff}
   @media(max-width:640px){.shot{max-width:100%;width:100%}}
   .shot img{width:100%;display:block}
   .shot .cap{font-size:13px;color:var(--sub);padding:10px 12px;background:#fafbfc;border-top:1px solid var(--line);line-height:1.55}
   .shot .cap b{color:var(--coral-deep)}
-  .bdg{display:inline-block;font-weight:700;font-size:12px;border-radius:999px;padding:2px 10px}
-  .b-on{background:var(--green-bg);color:var(--green)}
-  .b-off{background:var(--red-bg);color:var(--red)}
-  .b-cond{background:var(--amber-bg);color:var(--amber)}
-  .yes{color:var(--green);font-weight:800}
-  .no{color:var(--red);font-weight:800}
+  .shotbadge{display:inline-block;font-size:11px;font-weight:800;color:#fff;background:var(--green);border-radius:6px;padding:1px 7px;margin-bottom:6px}
+  .shotbadge.mock{background:var(--sub)}
+  /* 목업 */
+  .mockwrap{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:16px}
+  @media(max-width:640px){.mockwrap{grid-template-columns:1fr}}
+  .mock{background:#f0f1f4;border:1px solid var(--line);border-radius:16px;padding:18px;text-align:center}
+  .mock .label{font-size:12px;color:var(--sub);margin-bottom:10px;font-weight:700}
+  .modal{background:#fff;border-radius:18px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.12);max-width:300px;margin:0 auto;text-align:left}
+  .modal .logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#ffb4a2,var(--coral));margin:0 auto 10px}
+  .modal h5{text-align:center;font-size:17px;font-weight:800;line-height:1.4}
+  .modal .slogan{text-align:center;color:var(--coral-deep);font-weight:700;font-size:13px;margin:8px 0}
+  .modal ul{list-style:none;margin:10px 0;font-size:13px}
+  .modal ul li{padding:3px 0}
+  .modal ul li::before{content:"✓";color:var(--coral-deep);font-weight:800;margin-right:6px}
+  .mbtn{display:block;text-align:center;background:var(--coral);color:#fff;font-weight:800;border-radius:12px;padding:11px;margin-top:8px}
+  .mbtn.ghost{background:#eef0f3;color:var(--sub);font-weight:600;font-size:12px;margin-top:6px}
+  .mstep{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0}
+  .mstep .n{width:22px;height:22px;border-radius:50%;background:#ffe2dc;color:var(--coral-deep);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .botbanner{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;text-align:left;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+  .botbanner .lg{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#ffb4a2,var(--coral));flex-shrink:0}
+  .botbanner .txt{flex:1;font-size:13px;font-weight:600}
+  .botbanner .go{background:var(--coral);color:#fff;font-weight:800;font-size:12px;border-radius:8px;padding:8px 12px;white-space:nowrap}
+  /* 타임라인 */
+  .timeline{margin-top:16px}
+  .tl{display:flex;gap:14px;padding:14px 0;border-bottom:1px dashed var(--line)}
+  .tl:last-child{border-bottom:0}
+  .tl .num{width:34px;height:34px;border-radius:50%;background:var(--coral);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .tl .when{font-weight:800;color:var(--coral-deep)}
+  .tl .body{flex:1}
+  /* 플로우 */
+  .flow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:640px){.flow{grid-template-columns:1fr}}
+  .flowbox{border-radius:14px;padding:16px;border:2px solid}
+  .flowbox.aos{border-color:#bfe3c9;background:var(--green-bg)}
+  .flowbox.ios{border-color:#bcd6f7;background:var(--blue-bg)}
+  .arrow{text-align:center;color:var(--sub);font-size:13px;margin:4px 0}
+  .innerbox{background:#fff;border-radius:10px;padding:10px;text-align:center;font-weight:700;font-size:14px}
   /* details */
   details{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
   summary{cursor:pointer;padding:12px 16px;background:#f3f4f7;font-weight:700;font-size:14px;list-style:none}
@@ -90,8 +129,8 @@
   details .inner{padding:14px 16px}
   pre{background:#1e2430;color:#e6e9ef;border-radius:10px;padding:14px;overflow:auto;font-size:12.5px;line-height:1.6}
   code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-  .note{background:var(--amber-bg);border:1px solid #f0dcb5;border-radius:12px;padding:12px 14px;font-size:14px;color:#7a5408;margin-top:14px}
-  .warn{background:var(--red-bg);border:1px solid #f3c9c4;border-radius:12px;padding:12px 14px;font-size:14px;color:#9a352b;margin-top:14px}
+  .note{background:var(--amber-bg);border:1px solid #f0dcb5;border-radius:12px;padding:12px 14px;font-size:14.5px;color:#7a5408;margin-top:14px}
+  .warn{background:var(--red-bg);border:1px solid #f3c9c4;border-radius:12px;padding:12px 14px;font-size:14.5px;color:#9a352b;margin-top:14px}
   .kv{font-family:ui-monospace,monospace;background:#eef0f3;border-radius:6px;padding:1px 7px;font-size:13px}
   .foot{text-align:center;color:var(--sub);font-size:13px;margin-top:36px}
 </style>
@@ -101,258 +140,419 @@
 
   <!-- 헤더 -->
   <div class="hero">
-    <span class="tag">온보딩 가이드 · 신규 입사자 필독</span>
-    <h1>우나어 채널 아키텍처 — 한 장으로 이해하기</h1>
-    <p class="lead">우리 서비스는 <b>웹 · PWA · TWA · 인앱브라우저</b>로 들어오는 문이 여러 개입니다.
-    채널마다 <b>무엇이 · 왜 · 어디서</b> 뜨는지, <b>지금 켜진 것/꺼진 것</b>, <b>끄고 켜는 법</b>을 한 번에 정리했습니다.
-    코드를 몰라도 이해하게 썼고, 기술 내용은 접어뒀습니다(▸ 눌러 펼치기).</p>
+    <span class="tag">온보딩 가이드 · 신규 입사자 필독 · 통합본</span>
+    <h1>우나어 채널 정책 마스터 가이드</h1>
+    <p class="lead">우리 서비스는 <b>웹(안드로이드·아이폰·데스크탑) · PWA · TWA</b>, 그리고 카톡·네이버 같은 <b>인앱브라우저</b>로 들어오는 문이 여러 개입니다.
+    이 한 장이면 <b>채널마다 무엇이 같고 무엇이 다른지 · 실험은 어떻게 도는지 · 지금 켜진 것/꺼진 것 · 끄고 켜는 법</b>까지 전부 파악됩니다.
+    코드를 몰라도 이해하게 자연어로 썼고, 기술 내용은 접어뒀습니다(▸ 눌러 펼치기).</p>
     <div class="toc">
       <a href="#s0">0. 30초 요약</a>
-      <a href="#s1">1. 채널 개념</a>
-      <a href="#s2">2. 채널 감지</a>
-      <a href="#s3">3. 핵심 매트릭스</a>
-      <a href="#s4">4. 기능별 정책</a>
-      <a href="#s5">5. 측정·분석</a>
-      <a href="#s6">6. ON/OFF 스위치</a>
-      <a href="#s7">7. 부채·주의</a>
-      <a href="#s8">8. 파일 지도</a>
-      <a href="#s9">9. 링크</a>
+      <a href="#s1">1. 채널이란</a>
+      <a href="#s2">2. 공통 vs 차이</a>
+      <a href="#s3">3. 채널 감지</a>
+      <a href="#s4">4. 핵심 매트릭스</a>
+      <a href="#s5">5. 기능별 정책</a>
+      <a href="#s6">6. 실험 현황</a>
+      <a href="#s7">7. 측정·분석</a>
+      <a href="#s8">8. ON/OFF 스위치</a>
+      <a href="#s9">9. 부채·주의</a>
+      <a href="#s10">10. 파일 지도</a>
+      <a href="#s11">11. 링크</a>
     </div>
   </div>
 
   <!-- 0. TL;DR -->
   <div class="sec" id="s0">
     <span class="sec-no">0</span>
-    <h2>30초 요약 (TL;DR)</h2>
+    <h2>30초 요약</h2>
     <p class="muted">바쁘면 이것만 읽으세요.</p>
     <ul class="bul">
-      <li><b>들어오는 문 3개 + 인앱</b>: ① <b>웹</b>(안드 Chrome / 아이폰 Safari / 데스크탑) ② <b>PWA</b>(아이폰 홈화면 추가) ③ <b>TWA</b>(안드 Play스토어 앱) + 카톡·네이버 등 <b>인앱브라우저</b></li>
-      <li><b>안드</b>=웹 or TWA / <b>아이폰</b>=웹 or PWA / <b>데스크탑</b>=웹만</li>
+      <li><b>들어오는 문 3개 + 인앱</b>: ① <b>웹</b>(안드 Chrome / 아이폰 Safari / 데스크탑) ② <b>PWA</b>(아이폰 "홈 화면에 추가") ③ <b>TWA</b>(안드 플레이스토어 앱) + 카톡·네이버 등 <b>인앱브라우저</b></li>
+      <li><b>쉬운 매핑</b>: 안드로이드 = 웹 또는 TWA / 아이폰 = 웹 또는 PWA / 데스크탑 = 웹만</li>
+      <li><b>대부분은 모든 채널이 똑같이 동작</b>합니다(같은 웹 코드). 차이가 나는 건 <b>가입 유도 방식 · 앱 설치 유도 · 일부 측정</b>뿐 — 2번에서 정리.</li>
     </ul>
     <div class="lights">
       <div class="light"><span class="dot on"></span> 회원가입 유도 — <b>🟢 ON</b> (항상)</div>
       <div class="light"><span class="dot on"></span> TWA 진입 게이트 — <b>🟢 ON</b> (끌 수 있음)</div>
       <div class="light"><span class="dot off"></span> 앱 설치 유도 — <b>🔴 OFF</b> (현재 아무에게도 안 보임)</div>
-      <div class="light"><span class="dot cond"></span> 푸시 알림 — <b>🟢 ON</b> (단, 토스트 OFF 스위치는 부채)</div>
+      <div class="light"><span class="dot on"></span> 푸시 알림 — <b>🟢 ON</b> (토스트 OFF 스위치는 부채)</div>
     </div>
-    <div class="note">📖 <b>읽는 법</b>: 각 섹션은 ①한 줄 핵심 → ②자연어 설명 → ③표/그림 → ④<b>[▸ 개발자용]</b> 토글(코드·파일경로) 순입니다. 비개발자는 ①②③만, 개발자는 ④까지.</div>
+    <div class="note">📖 <b>읽는 법</b>: 각 섹션은 ① 한 줄 핵심 → ② 자연어 설명 → ③ 표·그림·실제 화면 → ④ <b>[▸ 개발자용]</b> 토글(코드·파일경로) 순서입니다. 비개발자는 ①②③만, 개발자는 ④까지.</div>
+    <div class="note" style="background:#eef0f3;border-color:var(--line);color:var(--sub)">🗂 이 문서는 기존 <b>channel-architecture · app-install-policy · signup-prompt-policy</b> 3개를 <b>하나로 통합</b>한 최신본입니다(나머지 2개는 삭제됨). 모든 내용은 현재 코드를 한 줄씩 검증한 사실입니다.</div>
   </div>
 
   <!-- 1. 채널 개념 -->
   <div class="sec" id="s1">
     <span class="sec-no">1</span>
-    <h2>채널 개념 — 누가 어디로 들어오나</h2>
-    <p><b>같은 웹사이트지만 "어떻게 실행됐는지"에 따라 채널이 갈립니다.</b></p>
+    <h2>채널이란 — 누가 어디로 들어오나</h2>
+    <p class="keyline">같은 웹사이트지만 "어떻게 실행됐는지"에 따라 채널이 갈립니다.</p>
     <div class="grid2">
-      <div class="ccard"><div class="ico">🌐</div><h4>웹 (브라우저)</h4><p class="muted">안드 Chrome · 아이폰 Safari · 데스크탑. 그냥 주소로 접속.</p></div>
-      <div class="ccard"><div class="ico">🍏</div><h4>PWA</h4><p class="muted">아이폰 "홈 화면에 추가"(standalone). 사실상 아이폰용.</p></div>
-      <div class="ccard"><div class="ico">🤖</div><h4>TWA</h4><p class="muted">안드 Play스토어 앱(<span class="kv">com.agenotmatter.app</span>). 안드 전용.</p></div>
-      <div class="ccard"><div class="ico">💬</div><h4>인앱브라우저</h4><p class="muted">카톡·네이버·인스타·구글앱 내부 브라우저. 설치·일부 기능 제약 → "외부 브라우저로 열기" 유도.</p></div>
+      <div class="ccard"><div class="ico">🌐</div><h4>웹 (브라우저)</h4><p class="muted">안드 Chrome · 아이폰 Safari · 데스크탑. 그냥 주소로 접속하는 보통의 웹.</p></div>
+      <div class="ccard"><div class="ico">🍏</div><h4>PWA</h4><p class="muted">아이폰에서 "홈 화면에 추가"한 형태(<span class="kv">standalone</span>). 주소창 없이 앱처럼. 사실상 아이폰용.</p></div>
+      <div class="ccard"><div class="ico">🤖</div><h4>TWA</h4><p class="muted">안드 플레이스토어 앱(<span class="kv">com.agenotmatter.app</span>). 우리 웹을 안드 앱 껍데기로 감싼 것. 안드 전용.</p></div>
+      <div class="ccard"><div class="ico">💬</div><h4>인앱브라우저</h4><p class="muted">카톡·네이버·인스타·구글앱 <b>안에서 열리는</b> 브라우저. 설치·일부 기능 제약 → "외부 브라우저로 열기"를 유도.</p></div>
     </div>
     <div class="fork">
       <div class="branch aos"><h3>🤖 안드로이드</h3><div class="way">웹 또는 TWA(앱)</div></div>
-      <div class="branch ios"><h3>🍏 아이폰</h3><div class="way">웹 또는 PWA(홈화면)</div></div>
+      <div class="branch ios"><h3>🍏 아이폰</h3><div class="way">웹 또는 PWA(홈 화면)</div></div>
       <div class="branch desk"><h3>💻 데스크탑</h3><div class="way">웹만</div></div>
     </div>
-    <details><summary>개발자용 — PWA/TWA 인프라 (manifest · assetlinks · sw)</summary>
-      <div class="inner">
-        <ul class="bul">
-          <li><span class="kv">public/manifest.json</span>: <span class="kv">display=standalone</span>, <span class="kv">prefer_related_applications=true</span> → 안드 Chrome은 PWA 대신 Play 앱을 권함. <span class="kv">related_applications=play / com.agenotmatter.app</span></li>
-          <li><span class="kv">public/.well-known/assetlinks.json</span>: TWA 도메인 소유 검증(sha256 지문) — 이게 있어야 안드 앱이 주소창 없이 우리 도메인을 띄움</li>
-          <li><span class="kv">public/sw.js</span>: 오프라인 캐시 <span class="kv">CACHE_NAME='unao-v3'</span> + 웹푸시 수신(<span class="kv">push</span>) / 클릭(<span class="kv">notificationclick</span>) 핸들러</li>
-        </ul>
-      </div>
-    </details>
-  </div>
-
-  <!-- 2. 감지 -->
-  <div class="sec" id="s2">
-    <span class="sec-no">2</span>
-    <h2>채널을 어떻게 알아내나 (감지)</h2>
-    <p><b>화면 크기 + 브라우저 종류(UA) + 어디서 왔나(referrer) + 과거 기억(sticky)을 종합해 판별합니다.</b></p>
-    <p class="muted">중요: 같은 일을 하는 감지 함수가 <b>3종</b> 있고 <b>역할이 다릅니다</b>(혼동 주의).</p>
-    <table>
-      <tr><th>함수</th><th>용도</th><th>TWA 구분</th><th>standalone 구분</th></tr>
-      <tr><td><span class="kv">getBrowserEnv</span></td><td>분석·이벤트 기록</td><td class="yes">✅ + sticky</td><td class="no">✕</td></tr>
-      <tr><td><span class="kv">detectEnv</span></td><td>설치 유도 환경</td><td class="no">✕ (상위 isTWA 가드가 보호)</td><td class="no">✕</td></tr>
-      <tr><td><span class="kv">useAppEnvironment</span></td><td>게이트·CTA 분기</td><td class="yes">✅ (referrer+sticky)</td><td class="yes">✅</td></tr>
-    </table>
-    <div class="note">🔑 <b>TWA sticky</b>(<span class="kv">_twa_confirmed</span>): "한 번 앱이면 계속 앱으로 기억". 카카오 로그인을 다녀오며 referrer가 사라져도 TWA로 유지됩니다. (측정 정확도 보강 — 최근 C1 수정으로 <span class="kv">getBrowserEnv</span>에도 적용)</div>
-    <p class="muted" style="margin-top:12px"><b>채널값 전체(10종)</b>: <span class="kv">desktop</span> · <span class="kv">kakao-android</span> · <span class="kv">kakao-ios</span> · <span class="kv">naver-inapp</span> · <span class="kv">instagram-inapp</span> · <span class="kv">google-inapp</span> · <span class="kv">crios</span> · <span class="kv">ios-safari</span> · <span class="kv">twa-android</span> · <span class="kv">android-chrome</span></p>
-    <details><summary>개발자용 — 3함수 코드 위치</summary>
+    <div class="why"><b>왜 이렇게 나뉘나?</b> 안드에는 플레이스토어가 있어 "앱(TWA)"으로 설치할 수 있지만, 아이폰엔 우리 앱이 없어 "홈 화면 추가(PWA)"가 유일한 앱화 방법입니다. 그래서 설치·유도 정책이 채널마다 달라집니다.</div>
+    <details><summary>개발자용 — PWA/TWA 인프라 (manifest · assetlinks · service worker)</summary>
       <div class="inner"><ul class="bul">
-        <li><span class="kv">src/lib/gtm.ts:167</span> getBrowserEnv() — UA 분기 + referrer(android-app://) + <span class="kv">_twa_confirmed</span> sticky</li>
-        <li><span class="kv">src/components/common/AddToHomeScreen.tsx:31</span> detectEnv() — 설치유도용, twa-android 분기 없음(android-chrome으로 떨어지나 상위 isTWA 가드로 보호)</li>
-        <li><span class="kv">src/hooks/useAppEnvironment.ts:12</span> useAppEnvironment() — isTWA(referrer+sticky) / isStandalone(display-mode)</li>
+        <li><span class="kv">public/manifest.json</span>: <span class="kv">display=standalone</span>, <b><span class="kv">prefer_related_applications=true</span></b> → 안드 Chrome은 PWA 대신 <b>플레이스토어 앱</b>을 권함. <span class="kv">related_applications = play / com.agenotmatter.app</span></li>
+        <li><span class="kv">public/.well-known/assetlinks.json</span>: TWA 도메인 소유 검증(sha256 지문) — 이게 있어야 안드 앱이 <b>주소창 없이</b> 우리 도메인을 띄움</li>
+        <li><span class="kv">public/sw.js</span>: 오프라인 캐시 <span class="kv">CACHE_NAME='unao-v3'</span> + 웹푸시 수신(<span class="kv">push</span>) / 클릭(<span class="kv">notificationclick</span>) / 구독갱신(<span class="kv">pushsubscriptionchange</span>)</li>
       </ul></div>
     </details>
   </div>
 
-  <!-- 3. 매트릭스 -->
+  <!-- 2. 공통 vs 차이 -->
+  <div class="sec" id="s2">
+    <span class="sec-no">2</span>
+    <h2>★ 공통 vs 차이 — 채널별로 뭐가 같고 뭐가 다른가</h2>
+    <p class="keyline">대부분은 모든 채널이 똑같습니다(같은 웹 코드). 다른 건 딱 3가지: 가입 유도 방식 · 앱 설치 유도 · 일부 측정.</p>
+    <div class="scroll-x">
+      <p class="hint">↔ 표가 넓으면 좌우로 밀어서 보세요</p>
+      <table>
+        <tr><th>항목</th><th>공통(모든 채널 동일)</th><th>채널별 차이</th></tr>
+        <tr>
+          <td><b>회원 인증</b></td>
+          <td class="same">카카오 1초 로그인 — 모든 채널 동일</td>
+          <td>인앱브라우저만 카카오 로그인이 막혀 "외부 브라우저로 열기" 우회</td>
+        </tr>
+        <tr>
+          <td><b>콘텐츠·글쓰기</b></td>
+          <td class="same">글/매거진/일자리/댓글/글쓰기 — 전 채널 100% 동일</td>
+          <td class="muted">차이 없음</td>
+        </tr>
+        <tr>
+          <td><b>가입 유도</b></td>
+          <td class="same">비회원에게 "가입하세요" 권유(목적 동일)</td>
+          <td class="diff">웹·PWA = <b>하단 가입 배너</b> / TWA = <b>진입 게이트</b>(배너 대신) / 인앱 = 외부 유도</td>
+        </tr>
+        <tr>
+          <td><b>앱/설치 유도</b></td>
+          <td class="muted">— (채널마다 방식이 다름)</td>
+          <td class="diff">안드 = <b>플레이스토어(TWA)</b> / 아이폰 = <b>홈 화면 추가(PWA)</b> / 데스크탑 = 없음 &nbsp;<b>(현재 전체 OFF)</b></td>
+        </tr>
+        <tr>
+          <td><b>푸시 알림</b></td>
+          <td class="same">댓글 단 뒤 "알림 받을래요?" 권유</td>
+          <td class="diff">아이폰은 <b>PWA로 설치했을 때만</b> 웹푸시 가능(브라우저 정책)</td>
+        </tr>
+        <tr>
+          <td><b>네비게이션</b></td>
+          <td class="same">상단 아이콘 메뉴 + 플로팅 "✏️글쓰기" — 전 채널 동일</td>
+          <td class="muted">차이 없음</td>
+        </tr>
+        <tr>
+          <td><b>측정(분석)</b></td>
+          <td class="same">모든 이벤트에 채널값(<span class="kv">browser_env</span>) 기록</td>
+          <td class="diff">채널값이 달라짐(twa-android / ios-safari / android-chrome …). TWA는 sticky로 정확도 보강</td>
+        </tr>
+      </table>
+    </div>
+    <div class="why"><b>왜 TWA만 게이트?</b> 앱(TWA)을 일부러 설치한 사람은 관심·동기가 높아, 가입을 먼저 권하는 편이 이탈보다 득이 클 수 있습니다. 그래서 "어떤 방식이 가입 후 재방문을 높이나"를 실험 중입니다(6번). 반대로 웹은 가볍게 들렀다 갈 수 있어 <b>정독을 방해하지 않는 하단 배너</b>를 씁니다.</div>
+  </div>
+
+  <!-- 3. 감지 -->
   <div class="sec" id="s3">
     <span class="sec-no">3</span>
-    <h2>핵심 매트릭스 — 채널별로 뭐가 다른가</h2>
-    <p><b>어느 화면에서 무엇이 뜨는지 한눈에.</b> (PWA=아이폰, TWA=안드 전용)</p>
-    <div class="scroll-x">
-    <p class="hint">↔ 표가 넓으면 좌우로 밀어서 보세요</p>
-    <table>
-      <tr><th>기능</th><th>웹 데스크탑</th><th>웹 안드</th><th>웹 아이폰</th><th>인앱</th><th>PWA</th><th>TWA</th></tr>
-      <tr><td>가입 배너</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅<br><span class="muted">(외부 유도)</span></td><td class="yes">✅</td><td class="no">❌<br><span class="muted">게이트가 담당</span></td></tr>
-      <tr><td>홈 가입카드</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
-      <tr><td>TWA 게이트</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="yes">✅<br><span class="muted">비로그인</span></td></tr>
-      <tr><td>글하단 CTA(비회원 가입)</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="no">❌</td></tr>
-      <tr><td>글하단 CTA(회원 설치)</td><td class="no">❌</td><td class="cond">(ON시)</td><td class="cond">(ON시)</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
-      <tr><td>앱 설치 유도</td><td class="no">❌</td><td class="cond">(ON시)</td><td class="cond">(ON시)</td><td class="cond">(ON시)외부</td><td class="no">❌</td><td class="no">❌</td></tr>
-      <tr><td>푸시 알림</td><td class="yes">✅</td><td class="yes">✅</td><td class="cond">PWA설치시</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
-    </table>
-    </div>
-    <div class="note">🔁 <b>상호배타</b>: 가입 배너(웹·PWA)와 TWA 게이트(TWA)는 <b>동시에 안 뜹니다</b>. TWA에선 배너가 꺼지고 게이트가 담당합니다.</div>
+    <h2>채널을 어떻게 알아내나 (감지)</h2>
+    <p class="keyline">화면 크기 + 브라우저 종류(UA) + 어디서 왔는지(referrer) + 과거 기억(sticky)을 종합해 판별합니다.</p>
+    <p class="muted">중요: 같은 일을 하는 감지 함수가 <b>3종</b>이고 <b>역할이 다릅니다</b>(혼동 주의).</p>
+    <div class="scroll-x"><table>
+      <tr><th>함수</th><th>용도</th><th>TWA 구분</th><th>standalone 구분</th></tr>
+      <tr><td><span class="kv">getBrowserEnv</span></td><td>분석·이벤트 기록</td><td class="yes">✅ + sticky</td><td class="no">✕</td></tr>
+      <tr><td><span class="kv">detectEnv</span></td><td>설치 유도 환경</td><td class="no">✕ (상위 isTWA 가드가 보호)</td><td class="no">✕</td></tr>
+      <tr><td><span class="kv">useAppEnvironment</span></td><td>게이트·CTA 분기</td><td class="yes">✅ (referrer+sticky)</td><td class="yes">✅</td></tr>
+    </table></div>
+    <div class="note">🔑 <b>TWA sticky</b>(<span class="kv">_twa_confirmed</span>): "한 번 앱이면 계속 앱으로 기억". 카카오 로그인을 다녀오며 referrer(어디서 왔는지)가 사라져도 TWA로 유지됩니다. 측정 정확도 보강(C1 수정으로 <span class="kv">getBrowserEnv</span>에도 적용).</div>
+    <p class="muted" style="margin-top:12px"><b>채널값 전체(10종)</b>: <span class="kv">desktop</span> · <span class="kv">kakao-android</span> · <span class="kv">kakao-ios</span> · <span class="kv">naver-inapp</span> · <span class="kv">instagram-inapp</span> · <span class="kv">google-inapp</span> · <span class="kv">crios</span>(아이폰 Chrome) · <span class="kv">ios-safari</span> · <span class="kv">twa-android</span> · <span class="kv">android-chrome</span></p>
+    <details><summary>개발자용 — 3함수 코드 위치</summary>
+      <div class="inner"><ul class="bul">
+        <li><span class="kv">src/lib/gtm.ts</span> getBrowserEnv() — UA 분기 + referrer(<span class="kv">android-app://</span>) + <span class="kv">_twa_confirmed</span> sticky</li>
+        <li><span class="kv">src/components/common/AddToHomeScreen.tsx:33</span> detectEnv() — 설치유도용. twa-android 분기 없음(android-chrome으로 떨어지나 상위 isTWA·getInstalled 가드로 보호)</li>
+        <li><span class="kv">src/hooks/useAppEnvironment.ts</span> useAppEnvironment() — isTWA(referrer+sticky) / isStandalone(display-mode)</li>
+      </ul></div>
+    </details>
   </div>
 
-  <!-- 4. 기능별 정책 -->
+  <!-- 4. 매트릭스 -->
   <div class="sec" id="s4">
     <span class="sec-no">4</span>
-    <h2>기능별 정책 상세</h2>
-
-    <h3 style="margin-top:6px">4-1. 회원가입 유도 <span class="bdg b-on">🟢 ON · 항상</span></h3>
-    <ul class="bul">
-      <li><b>가입 배너</b>: 콘텐츠 페이지(<span class="kv">/community·/magazine·/jobs·/best</span>)의 비회원에게. 문구는 <b>"나만 이런 게 아니었네?"</b>(공감형 C 고정), 타이밍은 <b>글 85% 읽은 후 또는 60초</b>(정독 방해 안 함). 최대 4회·세션 1회. <b>TWA는 게이트가 담당</b>해 제외.</li>
-      <li><b>홈 가입카드</b>(중반) · <b>글 하단 CTA</b>(비회원→가입)</li>
-      <li><b>인앱브라우저</b>: 카카오 로그인이 막히므로 "외부 브라우저로 열기"로 우회</li>
-    </ul>
-    <div class="shots">
-      <div class="shot"><img src="images/channel/signup-banner.png" alt="가입 배너 C 공감형" loading="lazy"><div class="cap"><b>가입 배너</b> — 글을 거의 다 읽으면 하단에 "나만 이런 게 아니었네?"(공감형 C)</div></div>
-      <div class="shot"><img src="images/channel/home-signup-card.png" alt="홈 가입카드" loading="lazy"><div class="cap"><b>홈 가입카드</b> — 홈 중반 "우리 또래 이야기, 여기 다 있어요"</div></div>
-      <div class="shot"><img src="images/channel/post-cta.png" alt="글 하단 가입 CTA" loading="lazy"><div class="cap"><b>글 하단 CTA</b> — 비회원에게 "같이 나눠보세요 / 1초 만에 가입하기"</div></div>
+    <h2>핵심 매트릭스 — 어느 화면에서 무엇이 뜨나</h2>
+    <p class="keyline">한눈에 보는 기능 × 채널 표. (PWA=아이폰, TWA=안드 전용)</p>
+    <div class="scroll-x">
+      <p class="hint">↔ 표가 넓으면 좌우로 밀어서 보세요</p>
+      <table>
+        <tr><th>기능</th><th>웹 데스크탑</th><th>웹 안드</th><th>웹 아이폰</th><th>인앱</th><th>PWA</th><th>TWA</th></tr>
+        <tr><td>가입 배너</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅<br><span class="muted">(외부 유도)</span></td><td class="yes">✅</td><td class="no">❌<br><span class="muted">게이트가 담당</span></td></tr>
+        <tr><td>홈 가입카드</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+        <tr><td>TWA 게이트</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="yes">✅<br><span class="muted">비로그인</span></td></tr>
+        <tr><td>글하단 CTA(비회원 가입)</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="no">❌</td></tr>
+        <tr><td>앱 설치 유도 <span class="bdg b-off">현재 OFF</span></td><td class="no">❌</td><td class="cond">(ON시)</td><td class="cond">(ON시)</td><td class="cond">(ON시)외부</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>푸시 알림</td><td class="yes">✅</td><td class="yes">✅</td><td class="cond">PWA설치시</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+        <tr><td>네비(상단+FAB)</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      </table>
     </div>
-    <details><summary>개발자용 — 가입유도 파일</summary><div class="inner"><ul class="bul">
-      <li><span class="kv">SignupPromptBanner.tsx</span> — 문구 C 고정(:55), read_complete(85%/60초 백스톱), MAX_SHOWS=4, isTWA시 OFF</li>
-      <li><span class="kv">SignupCard.tsx</span>(홈) · <span class="kv">PostCTA.tsx</span>(글 하단)</li>
-    </ul></div></details>
-
-    <h3 style="margin-top:18px">4-2. TWA 진입 게이트 <span class="bdg b-on">🟢 ON · 실험 중 · 끌 수 있음</span></h3>
-    <ul class="bul">
-      <li>안드 앱 첫 진입 비회원에게 가입 권유. 실험 <b>A(없음) / B(글 3개 본 뒤 시트) / C(첫 화면 전체)</b></li>
-      <li>측정: 어느 방식이 <b>가입 후 재방문(D1/D7)</b>을 높이나</li>
-      <li><b>OFF 스위치</b>: <span class="kv">NEXT_PUBLIC_TWA_GATE_ENABLED=false</span> (미설정=ON)</li>
-    </ul>
-    <div class="shots">
-      <div class="shot"><img src="images/channel/twa-gate.png" alt="TWA 진입 게이트 C hard" loading="lazy"><div class="cap"><b>C(hard) 게이트</b> — 안드 앱 첫 화면 전체를 가입으로. 작게 "먼저 둘러볼게요" 탈출구 포함</div></div>
-    </div>
-    <details><summary>개발자용 — 게이트 파일</summary><div class="inner"><ul class="bul">
-      <li><span class="kv">TwaEntryGate.tsx:33</span> — <span class="kv">NEXT_PUBLIC_TWA_GATE_ENABLED==='false'</span> 가드</li>
-      <li><span class="kv">src/lib/experiments/registry.ts</span> — 실험 <span class="kv">twa01_entry_gate</span> (A34/B33/C33)</li>
-    </ul></div></details>
-
-    <h3 style="margin-top:18px">4-3. 앱 설치 유도 <span class="bdg b-off">🔴 현재 OFF</span></h3>
-    <ul class="bul">
-      <li><b>마스터 스위치</b> <span class="kv">NEXT_PUBLIC_PWA_INSTALL_ENABLED</span> 미설정=OFF → <b>지금은 아무에게도 안 보임</b></li>
-      <li>켜지면: 안드→Play스토어 / 아이폰→홈 화면 추가 3단계 / 인앱→외부 유도</li>
-      <li>4단계 트리거: <b>첫 13초 / 가입 후 3페이지 / 첫 글·댓글 / 주간</b>, 거절 3회면 정지</li>
-      <li>TWA·PWA(이미 설치)에선 숨김</li>
-    </ul>
-    <details><summary>개발자용 — 설치유도 파일</summary><div class="inner"><ul class="bul">
-      <li><span class="kv">AddToHomeScreen.tsx</span> — 트리거 first_15s(13초)/signup(3p)/engagement/weekly, MAX_DECLINES=3, 가드 <span class="kv">NEXT_PUBLIC_PWA_INSTALL_ENABLED!=='true'</span></li>
-      <li><span class="kv">app-links.ts</span>(안드/아이폰 분기) · <span class="kv">FooterPwaButton.tsx</span> · <span class="kv">PwaInlineBanner.tsx</span></li>
-      <li>상세: <a href="app-install-policy.html">app-install-policy.html</a></li>
-    </ul></div></details>
-
-    <h3 style="margin-top:18px">4-4. 푸시 알림 <span class="bdg b-on">🟢 ON</span></h3>
-    <ul class="bul">
-      <li>댓글 단 후 "알림 받을래요?"(<b>comment</b> 트리거)</li>
-      <li><b>일자리(job) 알림은 아직 미연결</b> = 부채 <b>C6</b> (UI·문구는 완성, 부르는 곳이 없음)</li>
-      <li>채널별: <b>아이폰은 PWA 설치 시에만</b> 웹푸시 가능(브라우저 정책)</li>
-    </ul>
-    <details><summary>개발자용 — 푸시 파일</summary><div class="inner"><ul class="bul">
-      <li><span class="kv">PushPermissionToast.tsx</span> — <span class="kv">setPushToastTrigger('comment')</span>만 호출됨(CommentInput.tsx:37). 'job' 미연결</li>
-      <li><span class="kv">public/sw.js:94 push</span> / <span class="kv">:125 notificationclick</span> · <span class="kv">push/service.ts</span>(서버 발송)</li>
-    </ul></div></details>
-
-    <h3 style="margin-top:18px">4-5. 네비게이션 <span class="bdg b-on">전 채널 공통</span></h3>
-    <ul class="bul">
-      <li>상단 아이콘 메뉴(Header) + 플로팅 <b>FAB "✏️ 글쓰기"</b>. <b>하단 탭바 없음</b>(시니어 친화 결정)</li>
-    </ul>
-    <div class="shots">
-      <div class="shot"><img src="images/channel/nav.png" alt="상단 아이콘 메뉴" loading="lazy"><div class="cap"><b>상단 아이콘 메뉴</b> — 베스트·사는이야기·2막준비·웃음방·매거진·내일찾기 + 검색·글자크기·프로필</div></div>
-    </div>
-    <details><summary>개발자용 — 네비 파일</summary><div class="inner"><ul class="bul">
-      <li><span class="kv">src/components/layouts/FAB.tsx</span> · <span class="kv">layouts/MainLayout.tsx</span> (하단 탭바 컴포넌트 없음)</li>
-    </ul></div></details>
+    <div class="note">🔁 <b>상호배타</b>: 가입 배너(웹·PWA)와 TWA 게이트(TWA)는 <b>동시에 안 뜹니다</b>. TWA에선 배너가 꺼지고 게이트가 담당합니다. (코드에서도 게이트 노출 세션엔 배너가 차단됨)</div>
   </div>
 
-  <!-- 5. 측정 -->
+  <!-- 5. 기능별 정책 -->
   <div class="sec" id="s5">
     <span class="sec-no">5</span>
-    <h2>측정·분석 — 채널을 어떻게 세나</h2>
+    <h2>기능별 정책 상세</h2>
+
+    <!-- 5-1 가입유도 -->
+    <h3 style="margin-top:6px">5-1. 회원가입 유도 <span class="bdg b-on">🟢 ON · 항상</span></h3>
+    <p class="muted" style="margin-top:6px">비회원에게 가입을 권유하는 3가지 자리. 모두 <b>로그인 안 한 사람에게만</b> 보입니다.</p>
     <ul class="bul">
-      <li>모든 이벤트에 <span class="kv">browser_env</span> 기록(EventLog). TWA는 sticky로 정확도 보강 — referrer가 사라져도 <span class="kv">twa-android</span> 유지(C1 수정)</li>
-      <li><b>가입 채널</b>(<span class="kv">signupSource</span>): TWA / WEB. <span class="kv">browser_env</span> <b>또는</b> referrer <b>이중 판정</b>(한쪽만 살아도 TWA로 잡음)</li>
-      <li><b>어드민 채널별 가입전환</b> = <b>first-touch attribution</b>(최초 page_view referrer로 귀속). 카카오 OAuth 복귀가 전부 '직접입력'으로 쏠리던 왜곡을 교정</li>
-      <li><b>TWA 게이트 실험</b>: 어드민 <span class="kv">/admin/ab-tests</span> (게이트 재방문 D1/D7 + baseline)</li>
-      <li><b>봇/내부 제외</b>: detectBot · <span class="kv">x-bot-type</span> · <span class="kv">unao_internal</span>(founder=isBot)</li>
+      <li><b>① 가입 배너</b>(콘텐츠 페이지 하단): 글/매거진/일자리/베스트 페이지에서, 글을 <b>거의 다 읽으면</b>(85% 정독 또는 60초 경과) 화면 맨 아래에 뜸. 문구는 <b>"나만 이런 게 아니었네?"</b>(공감형, <b>단일 고정</b>). 한 세션에 1번, 최대 4번까지만.</li>
+      <li><b>② 홈 가입카드</b>: 홈 중간의 "우리 또래 이야기, 여기 다 있어요" 카드.</li>
+      <li><b>③ 글 하단 CTA</b>: 게시글 맨 아래 "같이 나눠보세요 / 1초 만에 가입하기".</li>
+      <li><b>인앱브라우저</b>(카톡·네이버 등): 카카오 로그인이 막히므로 버튼이 "외부 브라우저로 열기"로 바뀌어 Chrome/Safari로 안내.</li>
+      <li><b>자동 트리거</b>: 광고 등 외부 유입(utm)으로 들어오면 5초 카운트다운 후 배너를 1번 자동으로 띄움.</li>
     </ul>
-    <details><summary>개발자용 — 측정 파일</summary><div class="inner"><ul class="bul">
-      <li><span class="kv">gtm.ts</span>(browser_env) · <span class="kv">api/events/route.ts:76</span>(signupSource 이중판정) · <span class="kv">admin.experiments-web.ts</span>(게이트) · <span class="kv">admin.insights.ts:122</span>(first-touch)</li>
+    <div class="warn">⚠️ <b>과거의 "A/B/C 문구 실험 · 20초 · 50% 스크롤"은 끝났습니다(폐기).</b> 사용자 테스트로 <b>공감형(C) 문구가 승자</b>로 확정돼, 지금은 <b>단일 문구 + 정독 후(read_complete) 노출</b>로 고정입니다. 배리언트 배정·측정 코드도 제거됐습니다.</div>
+    <div class="shots">
+      <div class="shot"><span style="display:block;padding:8px 12px 0"><span class="shotbadge">실제 운영 화면</span></span><img src="images/channel/signup-banner.png" alt="가입 배너 C 공감형" loading="lazy"><div class="cap"><b>① 가입 배너</b> — 글을 거의 다 읽으면 하단에 "나만 이런 게 아니었네?"</div></div>
+      <div class="shot"><span style="display:block;padding:8px 12px 0"><span class="shotbadge">실제 운영 화면</span></span><img src="images/channel/home-signup-card.png" alt="홈 가입카드" loading="lazy"><div class="cap"><b>② 홈 가입카드</b> — "우리 또래 이야기, 여기 다 있어요"</div></div>
+      <div class="shot"><span style="display:block;padding:8px 12px 0"><span class="shotbadge">실제 운영 화면</span></span><img src="images/channel/post-cta.png" alt="글 하단 가입 CTA" loading="lazy"><div class="cap"><b>③ 글 하단 CTA</b> — "같이 나눠보세요 / 1초 만에 가입하기"</div></div>
+    </div>
+    <details><summary>개발자용 — 가입 배너 트리거·CTA·스토리지·GTM</summary><div class="inner">
+      <p><b>노출 트리거</b> (<span class="kv">SignupPromptBanner.tsx</span>)</p>
+<pre><code>READ_COMPLETE_SCROLL = 0.85   // 글 85% 정독 시
+BACKSTOP_MS = 60_000          // 또는 60초 경과(백스톱)
+MAX_SHOWS = 4                 // 4회 후 signup_prompt_done='1'
+노출 경로: /community/ · /magazine/ · /jobs/ · /best
+차단: 로그인 상태 / 세션 1회(signup_prompt_shown_this_session) / done='1'
+(과거 variant·20초 타이머·50% 스크롤·_uid 해시배정 → 전부 제거됨)</code></pre>
+      <p style="margin-top:10px"><b>CTA · 인앱 분기</b></p>
+<pre><code>일반 환경: startKakaoLogin(pathname)  // 카카오 로그인, 현재 경로로 복귀
+인앱(kakao/naver/google-inapp): 버튼 "외부 브라우저로 열기"
+  Android: intent:// 로 Chrome   iOS: 주소 클립보드 복사 + Safari 안내
+자동: 외부 utm 유입 시 5초 카운트다운 → 1회 자동 노출</code></pre>
+      <p style="margin-top:10px"><b>Storage 키</b></p>
+<pre><code>localStorage: signup_prompt_count · signup_prompt_done · signup_completed_at
+sessionStorage: signup_prompt_shown_this_session (세션1회 + 설치배너 충돌방지)</code></pre>
+      <p style="margin-top:10px"><b>파일</b>: <span class="kv">SignupPromptBanner.tsx</span>(배너) · <span class="kv">SignupCard.tsx</span>(홈) · <span class="kv">PostCTA.tsx</span>(글하단) · <span class="kv">OnboardingForm.tsx</span>(가입완료→signup_completed_at)</p>
+    </div></details>
+
+    <!-- 5-2 게이트 -->
+    <h3 style="margin-top:22px">5-2. TWA 진입 게이트 <span class="bdg b-on">🟢 ON · 실험 중 · 끌 수 있음</span></h3>
+    <p class="muted" style="margin-top:6px">안드 앱(TWA)에 처음 들어온 <b>비회원</b>에게 가입을 권하는 화면. 어떤 방식이 효과적인지 실험 중입니다.</p>
+    <ul class="bul">
+      <li><b>A (없음)</b>: 아무것도 안 띄움 — 대조군</li>
+      <li><b>B (소프트)</b>: 글 <b>3개</b>를 본 뒤 하단 시트로 권유</li>
+      <li><b>C (하드)</b>: 첫 화면을 통째로 가입 화면으로 ("먼저 둘러볼게요" 탈출구 포함)</li>
+      <li><b>측정</b>: 어느 방식이 <b>가입 후 재방문(D1/D7)</b>을 높이나</li>
+      <li><b>끄는 법</b>: Vercel에서 <span class="kv">NEXT_PUBLIC_TWA_GATE_ENABLED=false</span> (미설정 = ON)</li>
+    </ul>
+    <div class="shots">
+      <div class="shot"><span style="display:block;padding:8px 12px 0"><span class="shotbadge">실제 운영 화면</span></span><img src="images/channel/twa-gate.png" alt="TWA 진입 게이트 C hard" loading="lazy"><div class="cap"><b>C(하드) 게이트</b> — 안드 앱 첫 화면 전체. 작게 "먼저 둘러볼게요" 탈출구</div></div>
+    </div>
+    <details><summary>개발자용 — 게이트 코드</summary><div class="inner"><ul class="bul">
+      <li><span class="kv">TwaEntryGate.tsx</span> — 최상단 <span class="kv">if (process.env.NEXT_PUBLIC_TWA_GATE_ENABLED === 'false') return</span> 가드. 노출 조건 isTWA + 비로그인. variant는 <span class="kv">getExperimentVariant('twa01_entry_gate')</span></li>
+      <li>B variant: 본 글 수 누적 ≥ 3에서 시트. 배정/노출은 localStorage <span class="kv">twa_gate_assigned</span></li>
+      <li><span class="kv">src/lib/experiments/registry.ts</span> — 실험 SSOT, <span class="kv">twa01_entry_gate</span>(A/B/C)</li>
+    </ul></div></details>
+
+    <!-- 5-3 설치유도 -->
+    <h3 style="margin-top:22px">5-3. 앱 설치 유도 <span class="bdg b-off">🔴 현재 OFF</span></h3>
+    <div class="warn">⚠️ <b>지금은 아무에게도 안 보입니다.</b> 마스터 스위치 <span class="kv">NEXT_PUBLIC_PWA_INSTALL_ENABLED</span>가 미설정(OFF)이라, 설치 유도 코드 전체가 즉시 멈춥니다. 아래는 <b>"켜면 이렇게 동작한다"</b>는 설명입니다(그래서 실제 스크린샷 대신 목업).</div>
+    <p class="muted" style="margin-top:10px">켜지면, 이미 충분히 둘러본 사람에게 <b>안드는 플레이스토어, 아이폰은 홈 화면 추가</b>로 설치를 권합니다. TWA·PWA(이미 설치)·인앱(설치 불가)에는 안 띄웁니다.</p>
+    <div class="flow">
+      <div class="flowbox aos">
+        <h4>🤖 안드로이드</h4>
+        <div class="arrow">"앱 받기" 클릭 ▼</div>
+        <div class="innerbox">플레이스토어 앱 페이지로 이동</div>
+        <div class="arrow">▼</div>
+        <div class="innerbox">스토어에서 "설치"</div>
+      </div>
+      <div class="flowbox ios">
+        <h4>🍏 아이폰 (수동 3단계)</h4>
+        <div class="mstep"><span class="n">1</span> 하단 <b>공유 버튼</b> 탭</div>
+        <div class="mstep"><span class="n">2</span> <b>"홈 화면에 추가"</b> 선택</div>
+        <div class="mstep"><span class="n">3</span> 오른쪽 위 <b>"추가"</b> 탭</div>
+      </div>
+    </div>
+    <p class="keyline" style="margin-top:18px;font-size:16px">언제 뜨나 — 4단계로 차근차근(켜졌을 때)</p>
+    <div class="timeline">
+      <div class="tl"><div class="num">1</div><div class="body"><span class="when">첫 방문 13초 뒤</span> — 처음 들어와 13초쯤 둘러보면 한 번. (딱 1번)</div></div>
+      <div class="tl"><div class="num">2</div><div class="body"><span class="when">가입하고 3페이지 본 뒤</span> — 회원가입 마치고 3페이지쯤 구경하면.</div></div>
+      <div class="tl"><div class="num">3</div><div class="body"><span class="when">첫 글/댓글을 쓴 뒤</span> — 직접 참여(글·댓글)한 사람에게. (애착이 생긴 시점)</div></div>
+      <div class="tl"><div class="num">4</div><div class="body"><span class="when">그 뒤로는 7일에 한 번</span> — 앞이 다 안 떴으면 1주일 간격. 단 <b>3번 거절하면 더 안 띄움.</b></div></div>
+    </div>
+    <div class="mockwrap">
+      <div class="mock">
+        <div class="label"><span class="shotbadge mock">목업 · 현재 OFF</span> 설치 팝업(안드)</div>
+        <div class="modal">
+          <div class="logo"></div>
+          <h5>우리 또래 이야기,<br>언제든 꺼내 볼 수 있게</h5>
+          <div class="slogan">우리 — 서로를 안다</div>
+          <ul><li>혼자 답답할 때, 우리 또래 바로</li><li>나만의 이야기 편하게</li><li>검색 없이 항상 바로</li></ul>
+          <div class="mbtn">📱 무료로 다운받기</div>
+          <div class="mbtn ghost">다음에 할게요</div>
+        </div>
+      </div>
+      <div class="mock">
+        <div class="label"><span class="shotbadge mock">목업 · 현재 OFF</span> 인앱 외부유도 배너(카톡 등)</div>
+        <div class="botbanner">
+          <div class="lg"></div>
+          <div class="txt">앱처럼 쓰려면 Chrome/Safari에서 열기</div>
+          <div class="go">크롬으로 열기</div>
+        </div>
+        <p class="muted" style="font-size:12px;margin-top:10px">카톡·네이버·인스타 인앱에선 설치가 막혀, "진짜 브라우저로 열기"를 안내(3일에 한 번).</p>
+      </div>
+    </div>
+    <details><summary>개발자용 — 설치유도 트리거 조건·분기·스토리지·파일</summary><div class="inner">
+      <p><b>전체 가드</b>: <span class="kv">NEXT_PUBLIC_PWA_INSTALL_ENABLED !== 'true'</span> → 마운트·페이지·배너 effect 전부 <span class="kv">return</span>(현재 완전 OFF)</p>
+      <p style="margin-top:10px"><b>canShow 발동 조건</b> (<span class="kv">AddToHomeScreen.tsx:127-158</span>)</p>
+<pre><code>first_15s : shownCount===0                       // 첫 13초, 최초 1회
+signup    : shownCount&lt;2  (가입완료 + 3페이지)    // 페이지 카운터로 트리거
+engagement: shownCount&lt;3  (첫 글/댓글)            // CommentInput:36 · PostWriteForm:329 → pwa-prompt
+weekly    : declineCount&lt;3 && shownCount&gt;=2 && 마지막노출 7일 경과
+공통 차단 : getInstalled() / 세션1회(SESSION_SHOWN) / 가입배너 노출 세션(signup_prompt_shown_this_session)
+TIMER_MS=13_000 · MAX_DECLINES=3 · WEEKLY_MS=7일 · PAGE_VIEW_TRIGGER=3</code></pre>
+      <p style="margin-top:10px"><b>환경 분기 (detectEnv) · 설치 링크</b></p>
+<pre><code>BLOCKED_ENVS = kakao-* · naver-inapp · google-inapp · instagram-inapp · crios · desktop
+ANDROID_ENVS = android-chrome · other(삼성인터넷)  // beforeinstallprompt 사용
+triggerAppInstall(): 안드 → PLAY_STORE_URL(com.agenotmatter.app) / 그외 → pwa-prompt 'manual'(iOS 수동)
+인앱 외부유도: intent://(안드 Chrome 패키지 지정) / iOS 클립보드 복사 + Safari 안내, 3일 쿨다운
+  + utm_source 태깅(kakao_inapp/naver_inapp/instagram_inapp), utm_medium=pwa_banner</code></pre>
+      <p style="margin-top:10px"><b>Storage 키</b></p>
+<pre><code>pwa_shown_triggers · pwa_declined_count(max3) · pwa_installed · pwa_last_prompted_at
+pwa_shown_count · pwa_page_views_after_signup · pwa_{kakao|naver|instagram}_guide_at(3일)
+sessionStorage: pwa_shown_this_session · pwa_banner_shown_this_session</code></pre>
+      <p style="margin-top:10px"><b>파일</b>: <span class="kv">AddToHomeScreen.tsx</span> · <span class="kv">lib/app-links.ts</span>(triggerAppInstall) · <span class="kv">FooterPwaButton.tsx</span>·<span class="kv">PwaInlineBanner.tsx</span>·<span class="kv">PostCTA.tsx</span>(회원 설치버튼, <span class="kv">isTWA||isStandalone</span> 시 숨김) · <span class="kv">api/user/pwa-status/route.ts</span>(DB 기록) · <span class="kv">manifest.json</span></p>
+    </div></details>
+
+    <!-- 5-4 푸시 -->
+    <h3 style="margin-top:22px">5-4. 푸시 알림 <span class="bdg b-on">🟢 ON</span></h3>
+    <ul class="bul">
+      <li>댓글을 단 뒤 "알림 받을래요?" 토스트(<b>comment</b> 트리거)로 권유.</li>
+      <li><b>일자리(job) 알림은 아직 미연결</b> — UI·문구는 완성됐는데 부르는 곳이 없음(부채 <b>C6</b>).</li>
+      <li>채널별: <b>아이폰은 PWA로 설치했을 때만</b> 웹푸시 가능(브라우저 정책). 안드/PWA/TWA/데스크탑은 가능.</li>
+      <li>서비스워커(<span class="kv">sw.js</span>)가 푸시 수신·표시. 발송은 서버(VAPID 키 존재).</li>
+    </ul>
+    <details><summary>개발자용 — 푸시 코드</summary><div class="inner"><ul class="bul">
+      <li><span class="kv">PushPermissionToast.tsx</span> — <span class="kv">setPushToastTrigger('comment')</span>만 호출됨(<span class="kv">CommentInput.tsx:37</span>). <span class="kv">'job'</span> 미연결(C6)</li>
+      <li><span class="kv">public/sw.js</span> push/notificationclick/pushsubscriptionchange · <span class="kv">push/service.ts</span>(서버 발송) · <span class="kv">feature-flags.ts</span>(webPush·pushToast)</li>
+      <li>현재값: <span class="kv">FEATURE_WEB_PUSH</span> 미설정=ON, VAPID 키 존재 → 발송 작동. <span class="kv">FEATURE_PUSH_TOAST</span>는 클라이언트 죽은 스위치(항상 ON) — 8번 참고</li>
+    </ul></div></details>
+
+    <!-- 5-5 네비 -->
+    <h3 style="margin-top:22px">5-5. 네비게이션 <span class="bdg b-on">전 채널 공통</span></h3>
+    <ul class="bul">
+      <li>상단 아이콘 메뉴(베스트·사는이야기·2막준비·웃음방·매거진·내일찾기) + 검색·글자크기·프로필 + 플로팅 <b>FAB "✏️ 글쓰기"</b>.</li>
+      <li><b>하단 탭바 없음</b> — 우리 또래에게 익숙한 상단 메뉴 구조(브랜드 결정).</li>
+    </ul>
+    <div class="shots">
+      <div class="shot"><span style="display:block;padding:8px 12px 0"><span class="shotbadge">실제 운영 화면</span></span><img src="images/channel/nav.png" alt="상단 아이콘 메뉴" loading="lazy"><div class="cap"><b>상단 아이콘 메뉴</b> — 전 채널 동일</div></div>
+    </div>
+    <details><summary>개발자용 — 네비 파일</summary><div class="inner"><ul class="bul">
+      <li><span class="kv">src/components/layouts/Header.tsx</span>·<span class="kv">GNB.tsx</span>(상단) · <span class="kv">FAB.tsx</span>(글쓰기) · <span class="kv">MainLayout.tsx</span> (하단 탭바 컴포넌트 없음)</li>
     </ul></div></details>
   </div>
 
-  <!-- 6. ON/OFF -->
+  <!-- 6. 실험 현황 -->
   <div class="sec" id="s6">
     <span class="sec-no">6</span>
-    <h2>현재 ON/OFF + 스위치 (운영 핵심)</h2>
-    <table>
-      <tr><th>기능</th><th>현재</th><th>스위치(env)</th><th>끄고 켜는 법</th></tr>
-      <tr><td>회원가입 유도</td><td><span class="bdg b-on">🟢 ON</span></td><td class="muted">(없음·항상)</td><td>코드 변경만</td></tr>
-      <tr><td>TWA 게이트</td><td><span class="bdg b-on">🟢 ON</span></td><td><span class="kv">NEXT_PUBLIC_TWA_GATE_ENABLED</span></td><td>Vercel서 <span class="kv">=false</span> → OFF</td></tr>
-      <tr><td>앱 설치 유도</td><td><span class="bdg b-off">🔴 OFF</span></td><td><span class="kv">NEXT_PUBLIC_PWA_INSTALL_ENABLED</span></td><td>Vercel서 <span class="kv">=true</span> → ON</td></tr>
-      <tr><td>푸시 토스트</td><td><span class="bdg b-on">🟢 ON</span></td><td><span class="kv">FEATURE_PUSH_TOAST</span> <span class="bdg b-cond">⚠️ 현재 무효</span></td><td><b>코드 변경 필요</b> (아래 주의)</td></tr>
-      <tr><td>웹푸시 발송</td><td><span class="bdg b-on">🟢 ON</span></td><td><span class="kv">FEATURE_WEB_PUSH</span> (서버)</td><td>Vercel서 <span class="kv">=false</span> → OFF</td></tr>
-    </table>
-    <div class="warn">⚠️ <b>푸시 토스트는 지금 끌 수 없습니다(부채).</b> <span class="kv">FEATURE_PUSH_TOAST</span>는 <span class="kv">NEXT_PUBLIC_</span> 접두사가 없는데, 이 값을 쓰는 <span class="kv">PushPermissionToast</span>는 클라이언트 컴포넌트라 항상 ON으로 읽힙니다(=죽은 스위치). 끄려면 코드를 고쳐야 합니다. ↔ 웹푸시 <b>발송</b>(<span class="kv">FEATURE_WEB_PUSH</span>)은 서버에서 동작하므로 정상 OFF 가능. (자세히는 7번)</div>
+    <h2>실험 현황 — 지금 돌아가는 실험</h2>
+    <p class="keyline">현재 운영 중인 채널 실험은 <b>TWA 게이트(twa01) 단 1개</b>입니다.</p>
+    <div class="scroll-x"><table>
+      <tr><th>실험</th><th>대상</th><th>변형</th><th>상태</th></tr>
+      <tr><td><b>twa01_entry_gate</b></td><td>TWA 비회원</td><td>A(없음) / B(글3개후 시트) / C(첫화면 전체)</td><td><span class="bdg b-on">🟢 진행 중</span></td></tr>
+      <tr><td class="muted">f01_signup_content</td><td class="muted">가입 배너 문구</td><td class="muted">A/B/C</td><td><span class="bdg b-off">종료</span> <span class="muted">C 승자 → 단일 고정</span></td></tr>
+      <tr><td class="muted">f01_signup_timing</td><td class="muted">가입 배너 타이밍</td><td class="muted">20초/50% vs read_complete</td><td><span class="bdg b-off">종료</span> <span class="muted">read_complete 고정</span></td></tr>
+    </table></div>
+    <div class="note">📌 실험의 <b>단일 진실은 <span class="kv">src/lib/experiments/registry.ts</span></b>(SSOT)입니다. 배정은 기기 고정 ID 해시로 결정(재방문 불변), 상태는 <span class="kv">ExperimentState</span> DB. 결과는 어드민 <span class="kv">/admin/ab-tests</span>.</div>
+    <details><summary>개발자용 — 실험 인프라</summary><div class="inner"><ul class="bul">
+      <li><span class="kv">registry.ts</span>(정의) · <span class="kv">assign.ts</span>(<span class="kv">getExperimentVariant</span>·<span class="kv">getDeviceUid</span> 해시 배정) · <span class="kv">ExperimentState</span>(prisma)</li>
+      <li>어드민: <span class="kv">admin.experiments-web.ts</span> — getGateRetention(D1/D7, <span class="kv">twa_gate_variant</span> 그룹) · getTwaSignupRetention(baseline)</li>
+      <li>f01 종료(9dca8fe): registry에서 정의 삭제 + 배너 variant 함수·GTM variant 인자 제거</li>
+    </ul></div></details>
   </div>
 
-  <!-- 7. 부채 -->
+  <!-- 7. 측정 -->
   <div class="sec" id="s7">
     <span class="sec-no">7</span>
-    <h2>알려진 부채·주의점</h2>
+    <h2>측정·분석 — 채널을 어떻게 세나</h2>
     <ul class="bul">
-      <li><b>C6</b>(Low): 일자리 알림 푸시(<span class="kv">'job'</span>)가 영영 안 뜸 — 부르는 곳 미연결</li>
-      <li><b>푸시 토스트 OFF 스위치 부재</b>(C2와 동형): <span class="kv">FEATURE_PUSH_TOAST</span>가 클라이언트에서 무효 → 긴급 OFF 불가. <span class="kv">NEXT_PUBLIC_</span> 방식으로 고쳐야 함</li>
+      <li>모든 이벤트에 채널값 <span class="kv">browser_env</span> 기록(EventLog). TWA는 sticky로 정확도 보강 — referrer가 사라져도 <span class="kv">twa-android</span> 유지(C1).</li>
+      <li><b>가입 채널</b>(<span class="kv">signupSource</span>): TWA / WEB. <span class="kv">browser_env</span> <b>또는</b> referrer <b>이중 판정</b>(한쪽만 살아도 TWA로 잡음).</li>
+      <li><b>어드민 채널별 가입전환</b> = <b>first-touch attribution</b>(최초 page_view referrer로 귀속). 카카오 로그인 복귀가 전부 '직접입력'으로 쏠리던 왜곡을 교정.</li>
+      <li><b>TWA 게이트 실험</b>: 어드민 <span class="kv">/admin/ab-tests</span>(게이트 재방문 D1/D7 + baseline).</li>
+      <li><b>봇·내부 트래픽 제외</b>: detectBot · <span class="kv">x-bot-type</span> 헤더 · <span class="kv">unao_internal</span>(창업자=isBot 처리).</li>
     </ul>
-    <div class="note">📌 <b>부채의 단일 진실은 <a href="features/TECH-DEBT.md">docs/features/TECH-DEBT.md</a></b>입니다. 누적 작업 로그(<span class="kv">.claude/plans/...</span>)는 옛 내용이 섞여 있으니 신뢰하지 마세요. <b>채널 정책은 이 문서, 부채는 TECH-DEBT.md.</b></div>
+    <details><summary>개발자용 — 측정 파일</summary><div class="inner"><ul class="bul">
+      <li><span class="kv">gtm.ts</span>(browser_env) · <span class="kv">api/events/route.ts</span>(signupSource 이중판정, ~:76) · <span class="kv">admin.experiments-web.ts</span>(게이트) · <span class="kv">admin.insights.ts</span>(first-touch, ~:122)</li>
+    </ul></div></details>
   </div>
 
-  <!-- 8. 파일 지도 -->
+  <!-- 8. ON/OFF -->
   <div class="sec" id="s8">
     <span class="sec-no">8</span>
+    <h2>현재 ON/OFF + 스위치 (운영 핵심)</h2>
+    <div class="scroll-x"><table>
+      <tr><th>기능</th><th>현재</th><th>스위치(env)</th><th>끄고 켜는 법</th></tr>
+      <tr><td>회원가입 유도</td><td><span class="bdg b-on">🟢 ON</span></td><td class="muted">(없음·항상)</td><td>코드 변경만</td></tr>
+      <tr><td>TWA 게이트</td><td><span class="bdg b-on">🟢 ON</span></td><td><span class="kv">NEXT_PUBLIC_TWA_GATE_ENABLED</span></td><td>Vercel서 <span class="kv">=false</span> → OFF (미설정=ON)</td></tr>
+      <tr><td>앱 설치 유도</td><td><span class="bdg b-off">🔴 OFF</span></td><td><span class="kv">NEXT_PUBLIC_PWA_INSTALL_ENABLED</span></td><td>Vercel서 <span class="kv">=true</span> → ON (미설정=OFF)</td></tr>
+      <tr><td>푸시 토스트</td><td><span class="bdg b-on">🟢 ON</span></td><td><span class="kv">FEATURE_PUSH_TOAST</span> <span class="bdg b-cond">⚠️ 무효</span></td><td><b>코드 변경 필요</b>(아래 경고)</td></tr>
+      <tr><td>웹푸시 발송</td><td><span class="bdg b-on">🟢 ON</span></td><td><span class="kv">FEATURE_WEB_PUSH</span> (서버)</td><td>Vercel서 <span class="kv">=false</span> → OFF</td></tr>
+    </table></div>
+    <div class="warn">⚠️ <b>푸시 토스트는 지금 끌 수 없습니다(부채).</b> <span class="kv">FEATURE_PUSH_TOAST</span>는 <span class="kv">NEXT_PUBLIC_</span> 접두사가 없는데, 이 값을 쓰는 <span class="kv">PushPermissionToast</span>는 클라이언트 컴포넌트라 빌드 시 값이 안 박혀 <b>항상 ON으로 읽힙니다(죽은 스위치)</b>. 끄려면 코드 수정 필요. 반면 웹푸시 <b>발송</b>(<span class="kv">FEATURE_WEB_PUSH</span>)은 서버에서 동작하므로 정상 OFF 가능.</div>
+    <div class="note">🔎 위 "현재" 값은 <b>로컬 <span class="kv">.env.local</span> 4개 키 모두 미설정 = 기본값</b> 기준입니다(설치유도 OFF는 프로덕션 번들에서도 실측 확인). 운영 변경 시 <b>Vercel 환경변수</b>가 진실이니, ON/OFF 단정 전 Vercel을 확인하세요.</div>
+  </div>
+
+  <!-- 9. 부채 -->
+  <div class="sec" id="s9">
+    <span class="sec-no">9</span>
+    <h2>알려진 부채·주의점</h2>
+    <ul class="bul">
+      <li><b>C6</b>(Low): 일자리 알림 푸시(<span class="kv">'job'</span>)가 영영 안 뜸 — 부르는 곳 미연결(UI는 완비).</li>
+      <li><b>푸시 토스트 OFF 스위치 부재</b>: <span class="kv">FEATURE_PUSH_TOAST</span>가 클라이언트에서 무효 → 긴급 OFF 불가. <span class="kv">NEXT_PUBLIC_</span> 방식으로 고쳐야 함.</li>
+      <li><b>앱 설치 유도 ON 여부</b>는 창업자 결정 대기(현재 OFF 보류).</li>
+    </ul>
+    <div class="note">📌 <b>부채의 단일 진실은 <a href="features/TECH-DEBT.md">docs/features/TECH-DEBT.md</a></b>입니다. 누적 작업 로그(<span class="kv">.claude/plans/...</span>)는 옛 내용이 섞여 있으니 신뢰하지 마세요. <b>채널 정책은 이 문서, 부채는 TECH-DEBT.md.</b></div>
+    <div class="note" style="background:#eef0f3;border-color:var(--line);color:var(--sub)">🗂 <b>이 문서는 통합본입니다.</b> 기존 <span class="kv">app-install-policy.html</span>·<span class="kv">signup-prompt-policy.html</span>은 내용을 여기로 합치고 삭제했습니다. 설치 유도·가입 배너 상세는 위 5-3·5-1을 보세요.</div>
+  </div>
+
+  <!-- 10. 파일 지도 -->
+  <div class="sec" id="s10">
+    <span class="sec-no">10</span>
     <h2>개발자용 — 파일 지도 (전체)</h2>
-    <details open><summary>영역별 파일:line</summary><div class="inner">
-      <table>
+    <details open><summary>영역별 파일</summary><div class="inner">
+      <div class="scroll-x"><table>
         <tr><th>영역</th><th>파일</th></tr>
-        <tr><td>감지</td><td><span class="kv">gtm.ts:167</span> · <span class="kv">AddToHomeScreen.tsx:31</span> · <span class="kv">useAppEnvironment.ts:12</span></td></tr>
-        <tr><td>가입유도</td><td><span class="kv">SignupPromptBanner.tsx</span> · <span class="kv">SignupCard.tsx</span> · <span class="kv">PostCTA.tsx</span></td></tr>
-        <tr><td>게이트</td><td><span class="kv">TwaEntryGate.tsx</span> · <span class="kv">experiments/registry.ts</span></td></tr>
-        <tr><td>설치유도</td><td><span class="kv">AddToHomeScreen.tsx</span> · <span class="kv">app-links.ts</span> · <span class="kv">FooterPwaButton.tsx</span> · <span class="kv">PwaInlineBanner.tsx</span></td></tr>
+        <tr><td>감지</td><td><span class="kv">gtm.ts</span> getBrowserEnv · <span class="kv">AddToHomeScreen.tsx:33</span> detectEnv · <span class="kv">useAppEnvironment.ts</span></td></tr>
+        <tr><td>가입유도</td><td><span class="kv">SignupPromptBanner.tsx</span> · <span class="kv">SignupCard.tsx</span> · <span class="kv">PostCTA.tsx</span> · <span class="kv">OnboardingForm.tsx</span></td></tr>
+        <tr><td>게이트</td><td><span class="kv">TwaEntryGate.tsx</span> · <span class="kv">experiments/registry.ts</span> · <span class="kv">experiments/assign.ts</span></td></tr>
+        <tr><td>설치유도</td><td><span class="kv">AddToHomeScreen.tsx</span> · <span class="kv">app-links.ts</span> · <span class="kv">FooterPwaButton.tsx</span> · <span class="kv">PwaInlineBanner.tsx</span> · <span class="kv">api/user/pwa-status/route.ts</span></td></tr>
         <tr><td>푸시</td><td><span class="kv">PushPermissionToast.tsx</span> · <span class="kv">sw.js</span> · <span class="kv">push/service.ts</span> · <span class="kv">feature-flags.ts</span></td></tr>
         <tr><td>측정</td><td><span class="kv">gtm.ts</span> · <span class="kv">api/events/route.ts</span> · <span class="kv">admin.experiments-web.ts</span> · <span class="kv">admin.insights.ts</span></td></tr>
         <tr><td>인프라</td><td><span class="kv">public/manifest.json</span> · <span class="kv">public/sw.js</span> · <span class="kv">public/.well-known/assetlinks.json</span></td></tr>
-      </table>
+        <tr><td>네비</td><td><span class="kv">layouts/Header.tsx</span> · <span class="kv">GNB.tsx</span> · <span class="kv">FAB.tsx</span> · <span class="kv">MainLayout.tsx</span></td></tr>
+      </table></div>
     </div></details>
   </div>
 
-  <!-- 9. 링크 -->
-  <div class="sec" id="s9">
-    <span class="sec-no">9</span>
+  <!-- 11. 링크 -->
+  <div class="sec" id="s11">
+    <span class="sec-no">11</span>
     <h2>관련 문서</h2>
     <ul class="bul">
       <li><a href="features/TECH-DEBT.md">TECH-DEBT.md</a> — 부채 단일 진실</li>
-      <li><a href="app-install-policy.html">app-install-policy.html</a> — 앱 설치 유도 상세</li>
       <li><span class="kv">src/lib/experiments/registry.ts</span> — 실험 SSOT</li>
-      <li><span class="kv">/admin/ab-tests</span> — 실험 현황</li>
+      <li><span class="kv">/admin/ab-tests</span> — 실험 현황(어드민)</li>
+      <li><span class="kv">/admin</span> 인사이트 — 채널별 가입전환·리텐션</li>
     </ul>
   </div>
 
-  <div class="foot">우나어 채널 아키텍처 온보딩 가이드 · 코드 전수 검증 기반(파일:line) · 갱신 시 feature-lifecycle 준수</div>
+  <div class="foot">우나어 채널 정책 마스터 가이드 · 3문서 통합본 · 코드 한 줄 단위 검증 기반 · 갱신 시 feature-lifecycle 준수</div>
 
 </div>
 </body>

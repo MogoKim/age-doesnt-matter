@@ -72,6 +72,7 @@
 | 2026-06-02 | Props 제거, `useSession()` 도입, `status==='loading'` 가드 추가 | P0 2단계 auth island 제거 — CDN 캐시 활성화 |
 | 2026-06-05 | GA4 A/B/C 성과 집계 스크립트(`scripts/ga4-signup-ab.ts`) 추가 + 운영문서(`docs/signup-prompt-policy.html`) 코드 기준 전면 재작성 | 실험 데이터 가시화 — 명령 한 줄로 승자 확인. 본 문서(F01)의 A/B/C 카피·storage 키는 코드와 불일치분 잔존(별도 정정 예정) |
 | 2026-06-09 | 문구 A/B/C→**C 공감형 고정**, 타이밍→**read_complete(정독 85% + 60초 백스톱) 고정**. variant 배정·early 분기·VARIANT_CONTENT A/B 제거 | UT 위너 확정(정량 표본 1~2건 무의미, UT 정성 근거). 코드 단순화·레거시 제거 |
+| 2026-06-10 | 운영문서 `signup-prompt-policy.html`·`app-install-policy.html`을 **`docs/channel-architecture.html`(채널 정책 마스터 가이드)로 통합**하고 두 파일 삭제. stale(A/B/C·20초·배정로직) 전면 교정 | 분산 문서 단일화 + 실험 종료 미반영분 정정. 가입 배너 상세는 통합본 §5-1 |
 
 ---
 
