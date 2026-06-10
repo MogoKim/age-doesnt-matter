@@ -30,6 +30,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ uploadUrl, key, publicUrl })
   } catch (err) {
     console.error('[API/admin/uploads/presign] 실패:', err)
-    return NextResponse.json({ error: '업로드 준비 실패', detail: String(err) }, { status: 500 })
+    return NextResponse.json({ error: '업로드 준비 실패' }, { status: 500 })
   }
 }

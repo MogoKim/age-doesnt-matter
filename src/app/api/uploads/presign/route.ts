@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   } catch (err) {
     console.error('[API/uploads/presign] 실패:', err)
     return NextResponse.json(
-      { error: '업로드 준비에 실패했어요', detail: String(err) },
+      { error: '업로드 준비에 실패했어요' },
       { status: 500 },
     )
   }

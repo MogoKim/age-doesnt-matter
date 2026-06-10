@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
 
     if (!tokenRes.ok) {
       const body = await tokenRes.text()
-      return NextResponse.json({ error: 'Short-lived token 발급 실패', detail: body }, { status: 500 })
+      console.error('[threads/callback] short-lived token 발급 실패:', body)
+      return NextResponse.json({ error: 'Short-lived token 발급 실패' }, { status: 500 })
     }
 
     const shortLived = (await tokenRes.json()) as { access_token: string; user_id: string }
@@ -56,7 +57,8 @@ export async function GET(request: NextRequest) {
 
     if (!longRes.ok) {
       const body = await longRes.text()
-      return NextResponse.json({ error: 'Long-lived token 교환 실패', detail: body }, { status: 500 })
+      console.error('[threads/callback] long-lived token 교환 실패:', body)
+      return NextResponse.json({ error: 'Long-lived token 교환 실패' }, { status: 500 })
     }
 
     const longLived = (await longRes.json()) as { access_token: string; expires_in: number }
@@ -98,6 +100,7 @@ button{background:#FF6F61;color:white;border:none;padding:10px 20px;border-radiu
       },
     })
   } catch (err) {
-    return NextResponse.json({ error: 'Token exchange failed', detail: String(err) }, { status: 500 })
+    console.error('[threads/callback] token exchange failed:', err)
+    return NextResponse.json({ error: 'Token exchange failed' }, { status: 500 })
   }
 }

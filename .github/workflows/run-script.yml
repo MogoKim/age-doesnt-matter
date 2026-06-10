@@ -12,6 +12,9 @@ on:
         type: string
         default: ""
 
+permissions:
+  contents: read
+
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   DIRECT_URL: ${{ secrets.DIRECT_URL }}
@@ -31,4 +34,12 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - name: Run script
-        run: npx tsx ${{ inputs.script }} ${{ inputs.args }}
+        env:
+          SCRIPT_PATH: ${{ inputs.script }}
+          SCRIPT_ARGS: ${{ inputs.args }}
+        run: |
+          # injection 방지: 입력을 env로 받고 경로 allowlist 검증 (scripts/ 또는 agents/ 하위 .ts만)
+          if [[ ! "$SCRIPT_PATH" =~ ^(scripts|agents)/[a-zA-Z0-9/_-]+\.ts$ ]]; then
+            echo "::error::허용되지 않은 스크립트 경로: $SCRIPT_PATH"; exit 1
+          fi
+          npx tsx "$SCRIPT_PATH" $SCRIPT_ARGS

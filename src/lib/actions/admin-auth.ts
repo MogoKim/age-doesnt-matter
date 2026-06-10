@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { createAdminToken, setAdminCookie, clearAdminCookie } from '@/lib/admin-auth'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { rateLimitDistributed } from '@/lib/rate-limit'
 
 export async function adminLogin(
   _prevState: { error?: string } | null,
@@ -17,10 +17,10 @@ export async function adminLogin(
     return { error: '이메일과 비밀번호를 입력해 주세요.' }
   }
 
-  const rateCheck = checkRateLimit(`admin-login:${email}`, { limit: 5, windowMs: 15 * 60 * 1000 })
-  if (!rateCheck.allowed) {
-    const minutes = Math.ceil(rateCheck.remainingMs / 60_000)
-    return { error: `로그인 시도가 너무 많습니다. ${minutes}분 후 다시 시도해 주세요.` }
+  // 분산 rate limit (Upstash) — serverless 인스턴스 간 공유. in-memory는 콜드스타트마다 초기화돼 우회 가능
+  const rateCheck = await rateLimitDistributed(`admin-login:${email}`, { max: 5, windowMs: 15 * 60 * 1000 })
+  if (!rateCheck.success) {
+    return { error: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.' }
   }
 
   try {

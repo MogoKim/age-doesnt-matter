@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error('[API/uploads/video] 동영상 업로드 실패:', err)
     return NextResponse.json(
-      { error: '동영상 업로드에 실패했어요', detail: String(err) },
+      { error: '동영상 업로드에 실패했어요' },
       { status: 500 },
     )
   }

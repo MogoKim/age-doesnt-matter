@@ -65,6 +65,8 @@ jobs:
       - run: npx prisma generate
       - run: npm run lint
       - run: npm run typecheck
+      - name: 어드민 인증 가드 검사 (F-1 재발 방지)
+        run: npx tsx scripts/check-admin-auth-guards.ts
       - run: npm run test
       - name: Build
         run: npm run build

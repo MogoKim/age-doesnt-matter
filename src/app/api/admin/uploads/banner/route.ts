@@ -39,6 +39,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ publicUrl: url })
   } catch (err) {
     console.error('[API/admin/uploads/banner] 실패:', err)
-    return NextResponse.json({ error: '업로드 실패', detail: String(err) }, { status: 500 })
+    return NextResponse.json({ error: '업로드 실패' }, { status: 500 })
   }
 }

@@ -144,6 +144,10 @@ agents/scripts/backfill-*.csv
 # 내부 재무/비용 리포트 (사업 비용·매출·운영 SOP 포함 — 공개 레포 노출 금지)
 docs/reports/cost-status-*.html
 
+# 보안 감사 리포트 (취약점 위치·로드맵 포함 — 공개 레포 노출 절대 금지)
+docs/reports/security-*.md
+docs/security/
+
 # 루트 잡파일 — A/B/C UI 실험 스크린샷·HTML (민감정보 없으나 공개 불필요)
 /_abc.html
 /abc-real.png

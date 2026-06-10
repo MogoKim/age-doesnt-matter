@@ -45,9 +45,16 @@ jobs:
 
       - name: Determine agent and task
         id: determine
+        env:
+          INPUT_AGENT: ${{ github.event.inputs.agent }}
+          INPUT_TASK: ${{ github.event.inputs.task }}
         run: |
-          echo "agent=${{ github.event.inputs.agent }}" >> $GITHUB_OUTPUT
-          echo "task=${{ github.event.inputs.task }}" >> $GITHUB_OUTPUT
+          # injection 방지: 입력을 env로 받고 allowlist 검증 (소문자·숫자·:_- 만)
+          if [[ ! "$INPUT_AGENT" =~ ^[a-z0-9:_-]+$ ]] || [[ ! "$INPUT_TASK" =~ ^[a-z0-9:_-]+$ ]]; then
+            echo "::error::허용되지 않은 agent/task 입력"; exit 1
+          fi
+          echo "agent=$INPUT_AGENT" >> $GITHUB_OUTPUT
+          echo "task=$INPUT_TASK" >> $GITHUB_OUTPUT
 
       # Playwright: Google Ads 스크래핑용
       - name: Install Playwright Chromium

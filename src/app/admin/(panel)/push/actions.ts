@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { pushService } from '@/lib/push/service'
+import { getAdminSession } from '@/lib/admin-auth'
 import type { Grade } from '@/generated/prisma/client'
 
 interface BroadcastResult {
@@ -10,6 +11,10 @@ interface BroadcastResult {
 }
 
 export async function adminBroadcastPush(formData: FormData): Promise<BroadcastResult> {
+  // 보안 가드: 비인증 호출 차단 (Server Action은 미들웨어 우회 가능 → 액션 내부 인증 필수)
+  const session = await getAdminSession()
+  if (!session) return { error: '관리자 인증이 필요합니다.' }
+
   const title = (formData.get('title') as string)?.trim()
   const body = (formData.get('body') as string)?.trim()
   const url = (formData.get('url') as string)?.trim() || '/'

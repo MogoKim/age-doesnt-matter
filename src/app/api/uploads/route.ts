@@ -64,7 +64,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error('[API/uploads] 이미지 업로드 실패:', err)
     return NextResponse.json(
-      { error: '이미지 업로드에 실패했어요', detail: String(err) },
+      { error: '이미지 업로드에 실패했어요' },
       { status: 500 },
     )
   }
