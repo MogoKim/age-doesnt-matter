@@ -7,7 +7,7 @@ import type { ProvenSkill } from './types.js'
  * social-poster가 exploit 모드(70%)에서 이 스킬들을 활용합니다.
  *
  * 등록 프로세스:
- * 1. social-reviewer가 2주 연속 동일 패턴 우승 감지
+ * 1. 에이전트가 2주 연속 동일 패턴 우승 감지
  * 2. AdminQueue에 "스킬 등록 제안" 등록
  * 3. 창업자 승인 후 여기에 추가
  *

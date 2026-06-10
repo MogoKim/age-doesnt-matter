@@ -39,8 +39,6 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
   { key: 'cmo:humor-curator',             label: 'CMO 유머 큐레이터',  botType: 'CMO', action: 'HUMOR_CURATE',           schedule: '매일 11:15',           type: 'GHA',      workflow: 'agents-daily' },
   { key: 'cmo:social-poster',             label: 'CMO SNS 게시',       botType: 'CMO', action: 'SOCIAL_POST',            schedule: '07:00, 12:00, 15:00',  type: 'GHA',      workflow: 'agents-social' },
   { key: 'cmo:social-metrics',            label: 'CMO SNS 메트릭',     botType: 'CMO', action: 'SOCIAL_METRICS',         schedule: '매일 20:00',           type: 'GHA',      workflow: 'agents-social' },
-  { key: 'cmo:social-reviewer',           label: 'CMO SNS 리뷰',       botType: 'CMO', action: 'SOCIAL_REVIEW',          schedule: '월+목 10:00',          type: 'GHA',      workflow: 'agents-social' },
-  { key: 'cmo:social-strategy',           label: 'CMO SNS 전략',       botType: 'CMO', action: 'STRATEGY_MEMO',          schedule: '월+목 10:15',          type: 'GHA',      workflow: 'agents-social' },
   { key: 'cmo:threads-token-refresh',     label: 'CMO Threads 토큰',   botType: 'CMO', action: 'THREADS_TOKEN_REFRESH',  schedule: '수 10:00',             type: 'GHA',      workflow: 'agents-social' },
   { key: 'cmo:source-expander',           label: 'CMO 소스 확장',      botType: 'CMO', action: 'SOURCE_ANALYSIS',        schedule: '월 09:00',             type: 'GHA',      workflow: 'agents-weekly' },
   { key: 'cmo:content-gap-finder',        label: 'CMO 콘텐츠 갭',      botType: 'CMO', action: 'CONTENT_GAP_ANALYSIS',   schedule: '금 09:00',             type: 'GHA',      workflow: 'agents-weekly' },
@@ -105,7 +103,7 @@ export const HANDLER_REGISTRY: HandlerMeta[] = [
 export const HANDLER_GROUPS = [
   { team: 'CEO',          emoji: '👑', keys: ['ceo:morning-cycle','ceo:morning-sns-briefing','ceo:approval-reminder','ceo:weekly-report'] },
   { team: 'CTO',          emoji: '🔧', keys: ['cto:health-check','cto:error-monitor','cto:security-audit','cto:crawler-health','cto:arch-review','cto:garbage-collect','cto:qa-verify'] },
-  { team: 'CMO',          emoji: '📣', keys: ['cmo:trend-analyzer','cmo:caregiving-curator','cmo:health-anxiety-responder','cmo:humor-curator','cmo:social-poster','cmo:social-metrics','cmo:social-reviewer','cmo:social-strategy','cmo:threads-token-refresh','cmo:source-expander','cmo:content-gap-finder','cmo:channel-seeder','cmo:knowledge-responder','cmo:seo-optimizer','cmo:social-poster-visual','cmo:band-manager','cmo:google-ads-report'] },
+  { team: 'CMO',          emoji: '📣', keys: ['cmo:trend-analyzer','cmo:caregiving-curator','cmo:health-anxiety-responder','cmo:humor-curator','cmo:social-poster','cmo:social-metrics','cmo:threads-token-refresh','cmo:source-expander','cmo:content-gap-finder','cmo:channel-seeder','cmo:knowledge-responder','cmo:seo-optimizer','cmo:social-poster-visual','cmo:band-manager','cmo:google-ads-report'] },
   { team: 'COO',          emoji: '⚙️', keys: ['coo:moderator','coo:content-scheduler','coo:trending-scorer','coo:comment-activator','coo:reply-chain-driver','coo:connection-facilitator','coo:job-scraper','coo:job-matcher'] },
   { team: 'CPO',          emoji: '📦', keys: ['cpo:ux-analyzer','cpo:feature-tracker','cpo:journey-analyzer','cpo:persona-diversity-checker'] },
   { team: 'CDO',          emoji: '📊', keys: ['cdo:kpi-collector','cdo:anomaly-detector','cdo:engagement-optimizer'] },

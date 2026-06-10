@@ -335,12 +335,3 @@ export const getTotalCounts = unstable_cache(
   ['admin-total-counts'],
   { revalidate: 600 }
 )
-
-// ─── SocialExperiment ───
-
-export async function getSocialExperiments(limit = 10) {
-  return prisma.socialExperiment.findMany({
-    orderBy: { weekNumber: 'desc' },
-    take: limit,
-  })
-}

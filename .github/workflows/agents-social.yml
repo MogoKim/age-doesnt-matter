@@ -11,8 +11,6 @@ on:
         options:
           - social-poster
           - social-metrics
-          - social-reviewer
-          - social-strategy
           - channel-seeder
           - seo-optimizer
           - threads-token-refresh
@@ -113,63 +111,6 @@ jobs:
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
-
-  social-reviewer:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    # DISPATCH ONLY — 중단 2026-05-15 (Threads 단독 운영, 데이터 부족)
-    if: >-
-      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-reviewer'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 24, cache: npm }
-      - run: npm ci
-      - run: npx prisma generate
-      - run: cd agents && npm ci
-      - run: cd agents && npx tsx cron/runner.ts cmo social-reviewer
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLAUDE_MODEL_LIGHT: claude-haiku-4-5
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
-          SLACK_CHANNEL_DASHBOARD: ${{ secrets.SLACK_CHANNEL_DASHBOARD }}
-          SLACK_CHANNEL_REPORT: ${{ secrets.SLACK_CHANNEL_REPORT }}
-          SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}
-          SLACK_CHANNEL_SYSTEM: ${{ secrets.SLACK_CHANNEL_SYSTEM }}
-          SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
-          SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
-
-  social-strategy:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    # DISPATCH ONLY — 중단 2026-05-15 (Threads 단독 운영, 데이터 부족)
-    if: >-
-      github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'social-strategy'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 24, cache: npm }
-      - run: npm ci
-      - run: npx prisma generate
-      - run: cd agents && npm ci
-      - run: cd agents && npx tsx cron/runner.ts cmo social-strategy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLAUDE_MODEL_STRATEGIC: ${{ secrets.CLAUDE_MODEL_STRATEGIC }}
-          CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
-          SLACK_CHANNEL_DASHBOARD: ${{ secrets.SLACK_CHANNEL_DASHBOARD }}
-          SLACK_CHANNEL_REPORT: ${{ secrets.SLACK_CHANNEL_REPORT }}
-          SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}
-          SLACK_CHANNEL_SYSTEM: ${{ secrets.SLACK_CHANNEL_SYSTEM }}
-          SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
-          SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
 
   threads-token-refresh:
     runs-on: ubuntu-latest

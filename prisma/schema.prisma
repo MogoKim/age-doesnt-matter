@@ -228,13 +228,6 @@ enum SocialPostStatus {
   FAILED
 }
 
-enum ExperimentStatus {
-  PLANNING
-  ACTIVE
-  COMPLETED
-  ANALYZED
-}
-
 // ─────────────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────────────
@@ -1020,8 +1013,6 @@ model DailyBrief {
 model SocialPost {
   id              String            @id @default(cuid())
   platform        SocialPlatform
-  experimentId    String?
-  experiment      SocialExperiment? @relation(fields: [experimentId], references: [id])
 
   contentType     String            // PERSONA, COMMUNITY, JOB_ALERT, MAGAZINE, NOSTALGIA, HUMOR, PRACTICAL
   tone            String?           // warm, humorous, informational, emotional
@@ -1047,34 +1038,7 @@ model SocialPost {
   updatedAt       DateTime          @updatedAt
 
   @@index([platform, createdAt(sort: Desc)])
-  @@index([experimentId])
   @@index([status])
-}
-
-/// 7일 실험 사이클 — A/B 테스트 추적
-model SocialExperiment {
-  id            String           @id @default(cuid())
-  weekNumber    Int              // ISO 주차
-  startDate     DateTime
-  endDate       DateTime
-
-  hypothesis    String           // "커뮤니티 하이라이트가 페르소나보다 효과적일 것이다"
-  variable      String           // contentType, tone, postingTime, format, persona, promotionLevel
-  controlValue  String           // 통제군 값
-  testValue     String           // 실험군 값
-
-  status        ExperimentStatus @default(PLANNING)
-  results       Json?            // { controlAvg, testAvg, winner, delta }
-  learnings     String?          @db.Text // AI가 생성한 인사이트
-  nextAction    String?          // 다음 주에 무엇을 할지
-
-  posts         SocialPost[]
-
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-
-  @@index([status])
-  @@index([weekNumber])
 }
 
 /// 반자동 채널 마케팅 초안 (카카오/지식인/당근/커뮤니티)

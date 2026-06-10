@@ -90,5 +90,4 @@ export interface CollectedData {
     postsByDow: Array<{ dow: number; count: number }>
   }
   socialPerformance: Array<{ contentType: string; _count: number; avgMetrics: unknown }>
-  experimentLearnings: Array<{ hypothesis: string; variable: string; learnings: string | null; results: unknown }>
 }

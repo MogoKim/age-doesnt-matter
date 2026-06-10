@@ -87,14 +87,7 @@ class CEOWeeklyReport extends BaseAgent {
     }
 
     // 3. SNS 성과
-    const [snsPostCount, snsExperiment] = await Promise.all([
-      prisma.socialPost.count({ where: { status: 'POSTED', postedAt: { gte: weekAgo } } }),
-      prisma.socialExperiment.findFirst({
-        where: { status: { in: ['ACTIVE', 'ANALYZED'] } },
-        orderBy: { createdAt: 'desc' },
-        select: { weekNumber: true, variable: true, hypothesis: true, status: true, learnings: true },
-      }),
-    ])
+    const snsPostCount = await prisma.socialPost.count({ where: { status: 'POSTED', postedAt: { gte: weekAgo } } })
 
     // 최신 전략 메모 (social-strategy가 월요일에 생성)
     const strategyMemo = await prisma.botLog.findFirst({
@@ -160,7 +153,6 @@ class CEOWeeklyReport extends BaseAgent {
 - 일자리 수집: ${thisWeekJobs}건
 - SNS 게시: ${snsPostCount}건 (참여 ${totalEngagement})
 - 에이전트 실행: ${agentLogs.length}회
-${snsExperiment ? `- 현재 실험: ${snsExperiment.hypothesis} (${snsExperiment.status})` : ''}
 
 한국어로, 핵심만 간결하게.
 `, 256)
@@ -209,10 +201,6 @@ ${snsExperiment ? `- 현재 실험: ${snsExperiment.hypothesis} (${snsExperiment
           ...Object.entries(platformEngagement).map(([p, e]) => ({ type: 'mrkdwn' as const, text: `*${p}*\n참여 ${e}` })),
         ],
       },
-      ...(snsExperiment ? [{
-        type: 'section' as const,
-        text: { type: 'mrkdwn' as const, text: `*실험 Week ${snsExperiment.weekNumber}*: ${snsExperiment.hypothesis}\n상태: ${snsExperiment.status}${snsExperiment.learnings ? `\n인사이트: ${snsExperiment.learnings.slice(0, 200)}` : ''}` },
-      }] : []),
       ...(strategyMemo?.details ? (() => {
         const memo = typeof strategyMemo.details === 'string'
           ? JSON.parse(strategyMemo.details) as { weekNumber?: number; strategy?: string }

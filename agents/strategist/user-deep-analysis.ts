@@ -172,18 +172,11 @@ async function collectData(): Promise<CollectedData> {
   const postsByDowRaw = [...dowMap.entries()].sort((a, b) => a[0] - b[0]).map(([dow, count]) => ({ dow, count }))
 
   // 배치 G: SNS 성과
-  const [socialPerformance, experimentLearnings] = await Promise.all([
-    prisma.socialPost.groupBy({
-      by: ['contentType'],
-      _count: { id: true },
-      where: { status: 'POSTED' },
-    }),
-    prisma.socialExperiment.findMany({
-      where: { status: 'ANALYZED' },
-      select: { hypothesis: true, variable: true, learnings: true, results: true },
-      take: 20,
-    }),
-  ])
+  const socialPerformance = await prisma.socialPost.groupBy({
+    by: ['contentType'],
+    _count: { id: true },
+    where: { status: 'POSTED' },
+  })
 
   // 타입 캐스트 — prisma가 Record<string, unknown>으로 타입되어 any 회피
   type GroupByResult = { boardCategory?: string | null; sentiment?: string | null; _count: { id: number }; _avg?: Record<string, number | null> }
@@ -243,7 +236,6 @@ async function collectData(): Promise<CollectedData> {
       _count: s._count.id,
       avgMetrics: null,
     })),
-    experimentLearnings: experimentLearnings as CollectedData['experimentLearnings'],
   }
 }
 
@@ -392,12 +384,7 @@ ${data.timePatterns.postsByDow.map(d => `- ${dowNames[d.dow] ?? d.dow}: ${d.coun
   sections.push(`## G. SNS 외부 마케팅 성과
 
 ### 콘텐츠 유형별 발행 수:
-${data.socialPerformance.map(s => `- ${s.contentType}: ${s._count}건`).join('\n') || '(아직 SNS 발행 데이터 없음)'}
-
-### A/B 실험 인사이트:
-${data.experimentLearnings.length > 0
-    ? data.experimentLearnings.map(e => `- [${e.variable}] ${e.hypothesis}\n  결과: ${e.learnings ?? '분석 중'}`).join('\n')
-    : '(아직 완료된 실험 없음)'}`)
+${data.socialPerformance.map(s => `- ${s.contentType}: ${s._count}건`).join('\n') || '(아직 SNS 발행 데이터 없음)'}`)
 
   // 고품질 글 내용 샘플 (AI가 톤/주제/감정을 깊이 파악하도록) — 50개, 500자
   const contentSamples = data.topQualityPosts.slice(0, 50).map((p, i) =>
@@ -444,7 +431,6 @@ async function analyzeWithOpus(dataText: string): Promise<StrategicAnalysis> {
 - 네이버 카페 3곳(우리가남이가, 실버사랑, 5060세대)에서 크롤링한 수백 건의 게시글 + 내용
 - 플랫폼 내 사용자 행동 데이터 (90일)
 - 검색어, 참여도, 인구통계, 시간 패턴
-- SNS 마케팅 실험 결과
 
 ■ 절대 규칙:
 - "시니어", "액티브 시니어" 용어 절대 금지
@@ -729,7 +715,6 @@ async function main() {
     + data.searchTerms.length
     + data.topPages.length
     + data.socialPerformance.length
-    + data.experimentLearnings.length
 
   console.log(`[Strategist] 데이터 수집 완료 — ${dataPoints}개 데이터 포인트 (카페 ${totalCafePosts}건, 품질글 ${data.topQualityPosts.length}건, 트렌드 ${data.recentTrends.length}일, 사용자 ${data.userDemographics.totalUsers}명)`)
 

@@ -111,23 +111,14 @@ class MorningSNSBriefing extends BaseAgent {
     const topPostsSummary = topPosts.map((p, i) => formatPostSummary(p, i + 1)).join('\n')
     const bottomPostsSummary = bottomPosts.map((p, i) => formatPostSummary(p, i + 1)).join('\n')
 
-    // ── 3. 오늘의 실험 계획 ──
-    const activeExperiments = await prisma.socialExperiment.findMany({
-      where: { status: 'ACTIVE' },
-    })
-
+    // ── 3. 오늘의 계획 ──
     const dayStrategy = getDayStrategy(new Date())
-
-    const experimentSummary = activeExperiments.length > 0
-      ? activeExperiments.map((e) => `- [${e.variable}] ${e.hypothesis}`).join('\n')
-      : '진행 중인 실험 없음'
 
     const todayPlan = [
       `*요일 전략:* ${dayStrategy.dayName} -- ${dayStrategy.mood}`,
       `*콘텐츠 유형:* ${dayStrategy.contentTypes.join(', ')}`,
       `*포맷:* ${dayStrategy.format}`,
       `*토픽 방향:* #${dayStrategy.topicTagHint}`,
-      `*활성 실험:*\n${experimentSummary}`,
     ].join('\n')
 
     // ── 4. AI 분석 (haiku, max_tokens: 500) ──
@@ -187,7 +178,6 @@ ${bottomPostsSummary}
         postsCount: posts.length,
         totalEngagement,
         topPosts: topPosts.map((p) => ({ id: p.id, engagement: p.engagement })),
-        activeExperiments: activeExperiments.length,
         pendingDecisions: pendingItems.length,
       },
     }

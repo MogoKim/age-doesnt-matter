@@ -19,11 +19,10 @@ import { getCMOContext, type CMOContext } from './knowledge-base.js'
  * CMO Social Poster — SNS 자동 게시 에이전트
  *
  * 흐름:
- * 1. 현재 활성 실험(SocialExperiment) 읽기
- * 2. CMO 컨텍스트 로드 (knowledge-base 피드백 루프)
- * 3. 활성 플랫폼 어댑터별로 콘텐츠 생성
- * 4. 각 플랫폼에 실제 게시 (or AdminQueue 승인 대기)
- * 5. SocialPost DB 저장 + Slack 알림
+ * 1. CMO 컨텍스트 로드 (knowledge-base 피드백 루프)
+ * 2. 활성 플랫폼 어댑터별로 콘텐츠 생성
+ * 3. 각 플랫폼에 실제 게시 (or AdminQueue 승인 대기)
+ * 4. SocialPost DB 저장 + Slack 알림
  */
 
 // ─── Constitution에서 CMO 비율 로드 ───
@@ -31,8 +30,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const _constitution = parseYaml(
   readFileSync(resolve(__dirname, '../core/constitution.yaml'), 'utf-8')
-) as { cmo_content_ratios?: { exploit_ratio?: number; promotion_level?: { pure?: number; soft?: number } } }
-const EXPLOIT_RATIO = _constitution.cmo_content_ratios?.exploit_ratio ?? 0.7
+) as { cmo_content_ratios?: { promotion_level?: { pure?: number; soft?: number } } }
 const PROMO_PURE    = _constitution.cmo_content_ratios?.promotion_level?.pure  ?? 60
 const PROMO_SOFT    = _constitution.cmo_content_ratios?.promotion_level?.soft  ?? 25
 
@@ -88,30 +86,11 @@ async function getRecentJobs() {
   })
 }
 
-// ─── 현재 실험 조회 ───
-
-async function getActiveExperiment() {
-  return prisma.socialExperiment.findFirst({
-    where: { status: 'ACTIVE' },
-    orderBy: { createdAt: 'desc' },
-  })
-}
-
 // ─── 자동 게시 여부 판단 ───
-// 처음 2주: 모든 게시물 AdminQueue 승인 필요
-// 3주차~: exploit(검증된 우승 공식) → 자동, explore(새 실험) → 승인 필요
+// 검증된 공식 운영 — 항상 자동 게시
 
-async function shouldAutoPost(experiment: Awaited<ReturnType<typeof getActiveExperiment>>): Promise<boolean> {
-  const completedExperiments = await prisma.socialExperiment.count({
-    where: { status: 'ANALYZED' },
-  })
-  // 1인 운영: 초기부터 자동 게시 (실험 데이터 축적 후 explore만 승인제로 전환)
-  if (completedExperiments < 2) return true
-  // 활성 실험이 없으면 자동 게시 (검증된 공식 운영 중)
-  if (!experiment) return true
-  // 활성 실험이 있고, 현재 게시가 실험군이면 승인 필요
-  // → 70% exploit은 자동, 30% explore는 확률적으로 실험 참여
-  return Math.random() < EXPLOIT_RATIO // constitution.yaml cmo_content_ratios.exploit_ratio
+function shouldAutoPost(): boolean {
+  return true
 }
 
 // ─── 홍보 레벨 결정 (60/25/15 비율) ───
@@ -125,19 +104,13 @@ function decidePromotionLevel(): 'PURE' | 'SOFT' | 'DIRECT' {
 
 // ─── 콘텐츠 유형 결정 (요일 전략 기반) ───
 
-function decideContentType(experiment: Awaited<ReturnType<typeof getActiveExperiment>>, dayStrategy: ReturnType<typeof getDayStrategy>): string {
-  if (experiment?.variable === 'contentType') {
-    return Math.random() < 0.5 ? experiment.controlValue : experiment.testValue
-  }
+function decideContentType(dayStrategy: ReturnType<typeof getDayStrategy>): string {
   // 요일 전략의 contentTypes에서 랜덤 선택
   const types = dayStrategy.contentTypes
   return types[Math.floor(Math.random() * types.length)]
 }
 
-function decideTone(experiment: Awaited<ReturnType<typeof getActiveExperiment>>, dayStrategy: ReturnType<typeof getDayStrategy>): string {
-  if (experiment?.variable === 'tone') {
-    return Math.random() < 0.5 ? experiment.controlValue : experiment.testValue
-  }
+function decideTone(dayStrategy: ReturnType<typeof getDayStrategy>): string {
   // 요일 전략의 preferredPersonas에서 첫 번째 페르소나의 톤 사용, 나머지는 랜덤
   const preferredPersona = SNS_PERSONAS[dayStrategy.preferredPersonas[0]]
   if (preferredPersona && Math.random() < 0.7) return preferredPersona.tone
@@ -145,10 +118,7 @@ function decideTone(experiment: Awaited<ReturnType<typeof getActiveExperiment>>,
   return tones[Math.floor(Math.random() * tones.length)]
 }
 
-function decidePersona(experiment: Awaited<ReturnType<typeof getActiveExperiment>>, dayStrategy: ReturnType<typeof getDayStrategy>): string {
-  if (experiment?.variable === 'persona') {
-    return Math.random() < 0.5 ? experiment.controlValue : experiment.testValue
-  }
+function decidePersona(dayStrategy: ReturnType<typeof getDayStrategy>): string {
   // 요일 전략의 preferredPersonas에서 랜덤 선택
   const ids = dayStrategy.preferredPersonas
   return ids[Math.floor(Math.random() * ids.length)]
@@ -211,10 +181,6 @@ function buildCMOContextBlock(cmoContext: CMOContext): string {
     psychLines.push(`  직접 인용 금지. 당신의 개성으로 자연스럽게 녹여내세요.`)
 
     parts.push(`## 오늘의 커뮤니티 심리 프로파일\n${psychLines.join('\n')}`)
-  }
-
-  if (cmoContext.recentLearnings.length > 0) {
-    parts.push(`## 최근 학습 (지난 실험 결과)\n${cmoContext.recentLearnings.join('\n')}`)
   }
 
   if (cmoContext.strategyMemo) {
@@ -335,7 +301,6 @@ async function publishAndSave(params: {
   promotionLevel: string
   sourcePostId?: string
   linkUrl?: string
-  experimentId?: string
   slot: string
 }) {
   // 플랫폼별 최종 텍스트 구성
@@ -407,7 +372,6 @@ async function publishAndSave(params: {
   const post = await prisma.socialPost.create({
     data: {
       platform: params.platform,
-      experimentId: params.experimentId ?? null,
       contentType: params.contentType,
       tone: params.tone,
       personaId: params.personaId,
@@ -434,18 +398,11 @@ async function main() {
   const dayStrategy = getDayStrategy(new Date())
   const slot = detectOptimalSlot()
 
-  // 1. 현재 실험 조회 + CMO 컨텍스트 로드
-  const [experiment, cmoContext] = await Promise.all([
-    getActiveExperiment(),
-    getCMOContext(),
-  ])
+  // 1. CMO 컨텍스트 로드
+  const cmoContext = await getCMOContext()
 
-  if (experiment) {
-    console.log(`[SocialPoster] 활성 실험: ${experiment.hypothesis} (${experiment.variable}: ${experiment.controlValue} vs ${experiment.testValue})`)
-  }
-
-  if (cmoContext.recentLearnings.length > 0) {
-    console.log(`[SocialPoster] CMO 컨텍스트: 학습 ${cmoContext.recentLearnings.length}건, TOP 성과 ${cmoContext.topPerformingContent.length}건`)
+  if (cmoContext.topPerformingContent.length > 0) {
+    console.log(`[SocialPoster] CMO 컨텍스트: TOP 성과 ${cmoContext.topPerformingContent.length}건`)
   }
   if (cmoContext.todayDominantDesire) {
     console.log(`[SocialPoster] 오늘 심리 프로파일: 욕망=${cmoContext.todayDominantDesire}, 감정=${cmoContext.todayDominantEmotion ?? '없음'}, 긴급토픽=${cmoContext.urgentTopics.length}개`)
@@ -459,9 +416,9 @@ async function main() {
   ])
 
   // 3. 콘텐츠 파라미터 결정 (요일 전략 기반)
-  const contentType = decideContentType(experiment, dayStrategy)
-  const tone = decideTone(experiment, dayStrategy)
-  const personaId = decidePersona(experiment, dayStrategy)
+  const contentType = decideContentType(dayStrategy)
+  const tone = decideTone(dayStrategy)
+  const personaId = decidePersona(dayStrategy)
   const promotionLevel = decidePromotionLevel()
 
   console.log(`[SocialPoster] 결정: type=${contentType}, tone=${tone}, persona=${personaId}, promo=${promotionLevel}, slot=${slot}, day=${dayStrategy.dayName}`)
@@ -522,7 +479,7 @@ async function main() {
   }
 
   // 6. 자동 게시 여부 판단 (AdminQueue 승인 워크플로우)
-  const autoPost = await shouldAutoPost(experiment)
+  const autoPost = shouldAutoPost()
   const results: Array<{ platform: string; status: string; id?: string }> = []
 
   if (!autoPost) {
@@ -549,7 +506,7 @@ async function main() {
       payload: {
         contentType, tone, personaId, promotionLevel, slot, linkUrl,
         platformContents: payloadContents,
-        sourcePostId, experimentId: experiment?.id,
+        sourcePostId,
       },
       requestedBy: 'CMO_SOCIAL',
       status: 'PENDING',
@@ -559,7 +516,7 @@ async function main() {
     for (const [platform, content] of platformContents) {
       await prisma.socialPost.create({
         data: {
-          platform, experimentId: experiment?.id ?? null,
+          platform,
           contentType, tone, personaId, promotionLevel,
           postText: content.text,
           hashtags: platform === 'THREADS' ? (content.topicTag ? [content.topicTag] : []) : content.hashtags,
@@ -585,7 +542,7 @@ async function main() {
         topicTag: content.topicTag,
         hashtags: content.hashtags,
         contentType, tone, personaId, promotionLevel,
-        sourcePostId, linkUrl, experimentId: experiment?.id, slot,
+        sourcePostId, linkUrl, slot,
       })
       results.push({ platform, status: r.status, id: r.platformPostId })
     }

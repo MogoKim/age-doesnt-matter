@@ -24,10 +24,8 @@ export interface UrgentTopic {
 
 export interface CMOContext {
   topPerformingContent: Array<{ platform: string; contentType: string; avgEngagement: number }>
-  activeExperiment: { variable: string; controlValue: string; testValue: string; week: number } | null
   latestTrends: string[]
   strategyMemo: string | null
-  recentLearnings: string[]
   // 오늘의 심리 프로파일 (psych-analyzer + trend-analyzer 결과)
   todayDominantDesire: string | null   // "HEALTH"
   todayDominantEmotion: string | null  // "ANXIOUS"
@@ -64,17 +62,7 @@ export async function getCMOContext(): Promise<CMOContext> {
     .sort((a, b) => b.avgEngagement - a.avgEngagement)
     .slice(0, 3)
 
-  // 2. Active experiment
-  const experiment = await prisma.socialExperiment.findFirst({
-    where: { status: 'ACTIVE' },
-    orderBy: { createdAt: 'desc' },
-    select: { variable: true, controlValue: true, testValue: true, weekNumber: true },
-  })
-  const activeExperiment = experiment
-    ? { variable: experiment.variable, controlValue: experiment.controlValue, testValue: experiment.testValue, week: experiment.weekNumber }
-    : null
-
-  // 3. Latest trends from BotLog (CMO trend analyzer)
+  // 2. Latest trends from BotLog (CMO trend analyzer)
   const trendLog = await prisma.botLog.findFirst({
     where: { botType: 'CMO', action: { contains: 'trend' } },
     orderBy: { createdAt: 'desc' },
@@ -90,18 +78,7 @@ export async function getCMOContext(): Promise<CMOContext> {
   })
   const strategyMemo = strategyLog?.details?.slice(0, 1000) ?? null
 
-  // 5. Recent 3 experiment learnings
-  const experimentLearnings = await prisma.socialExperiment.findMany({
-    where: { learnings: { not: null } },
-    orderBy: { createdAt: 'desc' },
-    take: 3,
-    select: { learnings: true, variable: true, weekNumber: true },
-  })
-  const recentLearnings = experimentLearnings
-    .filter(e => e.learnings)
-    .map(e => `Week ${e.weekNumber} (${e.variable}): ${String(e.learnings).slice(0, 200)}`)
-
-  // 6. 오늘의 심리 프로파일 (CafeTrend 최신)
+  // 5. 오늘의 심리 프로파일 (CafeTrend 최신)
   const latestTrend = await prisma.cafeTrend.findFirst({
     orderBy: { createdAt: 'desc' },
     select: { dominantDesire: true, dominantEmotion: true, desireMap: true, urgentTopics: true },
@@ -115,10 +92,8 @@ export async function getCMOContext(): Promise<CMOContext> {
 
   return {
     topPerformingContent,
-    activeExperiment,
     latestTrends,
     strategyMemo,
-    recentLearnings,
     todayDominantDesire,
     todayDominantEmotion,
     desireMap,
