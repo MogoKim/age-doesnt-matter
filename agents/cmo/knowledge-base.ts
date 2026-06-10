@@ -25,7 +25,6 @@ export interface UrgentTopic {
 export interface CMOContext {
   topPerformingContent: Array<{ platform: string; contentType: string; avgEngagement: number }>
   latestTrends: string[]
-  strategyMemo: string | null
   // 오늘의 심리 프로파일 (psych-analyzer + trend-analyzer 결과)
   todayDominantDesire: string | null   // "HEALTH"
   todayDominantEmotion: string | null  // "ANXIOUS"
@@ -70,15 +69,7 @@ export async function getCMOContext(): Promise<CMOContext> {
   })
   const latestTrends = trendLog?.details ? [trendLog.details.slice(0, 500)] : []
 
-  // 4. Strategy memo from BotLog
-  const strategyLog = await prisma.botLog.findFirst({
-    where: { botType: 'CMO', action: { contains: 'strategy' } },
-    orderBy: { createdAt: 'desc' },
-    select: { details: true },
-  })
-  const strategyMemo = strategyLog?.details?.slice(0, 1000) ?? null
-
-  // 5. 오늘의 심리 프로파일 (CafeTrend 최신)
+  // 4. 오늘의 심리 프로파일 (CafeTrend 최신)
   const latestTrend = await prisma.cafeTrend.findFirst({
     orderBy: { createdAt: 'desc' },
     select: { dominantDesire: true, dominantEmotion: true, desireMap: true, urgentTopics: true },
@@ -93,7 +84,6 @@ export async function getCMOContext(): Promise<CMOContext> {
   return {
     topPerformingContent,
     latestTrends,
-    strategyMemo,
     todayDominantDesire,
     todayDominantEmotion,
     desireMap,

@@ -89,13 +89,6 @@ class CEOWeeklyReport extends BaseAgent {
     // 3. SNS 성과
     const snsPostCount = await prisma.socialPost.count({ where: { status: 'POSTED', postedAt: { gte: weekAgo } } })
 
-    // 최신 전략 메모 (social-strategy가 월요일에 생성)
-    const strategyMemo = await prisma.botLog.findFirst({
-      where: { botType: 'CMO', action: 'STRATEGY_MEMO' },
-      orderBy: { executedAt: 'desc' },
-      select: { details: true, executedAt: true },
-    })
-
     const snsPosts = await prisma.socialPost.findMany({
       where: { status: 'POSTED', postedAt: { gte: weekAgo }, metricsUpdatedAt: { not: null } },
       select: { platform: true, metrics: true },
@@ -201,15 +194,6 @@ class CEOWeeklyReport extends BaseAgent {
           ...Object.entries(platformEngagement).map(([p, e]) => ({ type: 'mrkdwn' as const, text: `*${p}*\n참여 ${e}` })),
         ],
       },
-      ...(strategyMemo?.details ? (() => {
-        const memo = typeof strategyMemo.details === 'string'
-          ? JSON.parse(strategyMemo.details) as { weekNumber?: number; strategy?: string }
-          : strategyMemo.details as { weekNumber?: number; strategy?: string }
-        return memo.strategy ? [{
-          type: 'section' as const,
-          text: { type: 'mrkdwn' as const, text: `*:clipboard: 금주 전략 (Week ${memo.weekNumber ?? '?'})*\n${memo.strategy.slice(0, 300)}${memo.strategy.length > 300 ? '...' : ''}` },
-        }] : []
-      })() : []),
       { type: 'divider' },
       {
         type: 'section',

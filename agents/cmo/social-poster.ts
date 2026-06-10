@@ -183,10 +183,6 @@ function buildCMOContextBlock(cmoContext: CMOContext): string {
     parts.push(`## 오늘의 커뮤니티 심리 프로파일\n${psychLines.join('\n')}`)
   }
 
-  if (cmoContext.strategyMemo) {
-    parts.push(`## 이번 주 전략\n${cmoContext.strategyMemo}`)
-  }
-
   if (cmoContext.topPerformingContent.length > 0) {
     parts.push(`## 성과 TOP 3\n${cmoContext.topPerformingContent.map(c => `${c.platform} ${c.contentType}: 평균 참여 ${c.avgEngagement.toFixed(1)}`).join('\n')}`)
   }
