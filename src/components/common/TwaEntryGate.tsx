@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
@@ -8,6 +7,7 @@ import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 import { getExperimentVariant } from '@/lib/experiments/assign'
 import { startKakaoLogin } from '@/lib/kakao-start'
 import { trackEvent } from '@/lib/track'
+import GateOnboardingSlides from './GateOnboardingSlides'
 
 // TWA 첫 진입 가입 게이트 (실험 twa01_entry_gate)
 //  - 대상: TWA(앱) + 비로그인 (전원). 가입의 대부분이 앱에서 일어나므로 신규 한정 제거(모수 확보).
@@ -90,43 +90,8 @@ export default function TwaEntryGate() {
   return (
     <div className="fixed inset-0 z-[200] flex flex-col justify-end bg-black/50 sm:items-center sm:justify-center">
       {isHard ? (
-        /* C(hard) — 정식 로그인 화면 디자인 재사용(로고+브랜드+카카오 버튼) + 탈출구 */
-        <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-background sm:min-h-0 sm:max-w-md sm:rounded-2xl">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-0"
-            style={{ background: 'linear-gradient(0deg, rgba(255,111,97,0.06) 0%, #fff 38%)' }}
-          />
-          <div className="relative z-10 flex flex-1 flex-col">
-            <div className="my-auto flex flex-col items-center gap-[22px] px-8 py-8">
-              <Image src="/logo.png" width={120} height={120} alt="우나어 로고" className="object-contain" priority />
-              <p className="text-center text-[30px] font-bold leading-[1.4]">
-                <span className="text-foreground">신중년 여성을 위한</span>
-                <br />
-                <span className="text-[#FF6F61]">고민 상담소</span>
-              </p>
-              <p className="text-center text-[18px] text-muted-foreground">지금 가입하고 나의 고민을 나눠보세요</p>
-            </div>
-            <div className="mt-auto px-6 pb-[68px] md:pb-[60px]">
-              <button
-                type="button"
-                onClick={onSignup}
-                disabled={starting}
-                aria-busy={starting}
-                className="flex h-[54px] w-full items-center justify-center gap-2 rounded-xl font-bold transition-all hover:brightness-95"
-                style={{ background: '#FEE500', color: '#191919', boxShadow: '0 2px 8px rgba(254,229,0,0.35)' }}
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path d="M10 2C5.582 2 2 4.925 2 8.5c0 2.26 1.37 4.25 3.46 5.43l-.9 3.3a.25.25 0 0 0 .38.27L8.8 15.5c.39.05.79.08 1.2.08 4.418 0 8-2.925 8-6.5S14.418 2 10 2Z" fill="currentColor" />
-                </svg>
-                {starting ? '카카오로 이동 중...' : '카카오로 3초 만에 시작하기'}
-              </button>
-              <button onClick={onEscape} className="mt-3 min-h-[44px] w-full text-[15px] text-muted-foreground underline">
-                먼저 둘러볼게요
-              </button>
-            </div>
-          </div>
-        </div>
+        /* C(hard) — 머니워크식 슬라이드 온보딩 (가입 가치 3장, 메인카피는 이미지 내장) */
+        <GateOnboardingSlides onSignup={onSignup} onEscape={onEscape} starting={starting} />
       ) : (
         /* B(soft) — 하단 시트(로그인 카카오 버튼 톤 통일) */
         <div className="w-full rounded-t-2xl bg-background px-6 pb-8 pt-7 text-center sm:max-w-md sm:rounded-2xl">
