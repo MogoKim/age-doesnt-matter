@@ -66,7 +66,7 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting }: P
   }
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-background sm:min-h-0 sm:max-w-[420px] sm:rounded-2xl">
+    <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-background sm:h-[86vh] sm:max-h-[760px] sm:max-w-[420px] sm:rounded-2xl">
       {/* 1. 상단 로고 (심볼+워드마크 일체형) */}
       <div className="flex shrink-0 justify-center px-6 pt-[max(18px,env(safe-area-inset-top))] pb-1">
         <Image src="/logo.png" width={76} height={76} alt="우리나이가어때서" className="object-contain" priority />
