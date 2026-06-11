@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
+import { notifyAuthorOfBotComment } from '../core/notify-author.js'
 
 /**
  * COO 에이전트 — 일자리-프로필 매칭
@@ -144,6 +145,9 @@ export async function main() {
           where: { id: story.id },
           data: { commentCount: { increment: 1 } },
         })
+
+        // 봇이 실고객 STORY 글에 일자리 추천 댓글 → 글쓴이에게 종 알림 (봇 글쓴이는 헬퍼에서 자동 제외)
+        await notifyAuthorOfBotComment({ recipientUserId: story.authorId, postId: story.id, botUserId })
 
         matchCount++
         console.log(`[COO] 일자리 매칭: "${story.title}" ← ${personaId}`)

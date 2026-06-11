@@ -15,6 +15,7 @@ import { prisma, disconnect } from '../core/db.js'
 import { getBotUser, generateUserPostComment } from '../seed/generator.js'
 import { getAllPersonaIds, getPersona } from '../seed/persona-data.js'
 import { sendSlackMessage } from '../core/notifier.js'
+import { notifyAuthorOfBotComment } from '../core/notify-author.js'
 import { COMPETITOR_KEYWORDS } from './config.js'
 
 type WaveNum = 1 | 2 | 3 | 4 | 5
@@ -152,6 +153,9 @@ async function processUserWave(
 
     successCount++
     console.log(`[UserPostWave] wave${waveNum} 자연 댓글 게시: postId=${queue.postId}, persona=${personaId}, nickname=${getPersona(personaId).nickname}`)
+
+    // 봇 댓글 → 실고객 글쓴이에게 종 알림 (봇 글쓴이는 헬퍼에서 자동 제외)
+    await notifyAuthorOfBotComment({ recipientUserId: queue.authorId, postId: queue.postId, botUserId: userId })
   }
 
   return successCount

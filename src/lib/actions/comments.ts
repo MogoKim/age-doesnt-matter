@@ -8,7 +8,7 @@ import { sanitizeHtml } from '@/lib/sanitize'
 import { checkAndPromote } from '@/lib/grade'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
 import { calculateTrendingScore } from '@/lib/utils/trending'
-import { pushService } from '@/lib/push/service'
+import { notifyUser } from '@/lib/notify'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { getWriteBlockReason } from '@/lib/sanctions'
 
@@ -117,39 +117,25 @@ export async function createComment(
   const postUrl = `/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${postId}`
 
   if (parentId && parentAuthorId && parentAuthorId !== session.user.id) {
-    // 대댓글 → 부모 댓글 작성자에게 알림
-    void prisma.notification.create({
-      data: {
-        userId: parentAuthorId,
-        type: 'COMMENT',
-        content: `${nickname}님이 회원님의 댓글에 답글을 남겼어요`,
-        postId,
-        fromUserId: session.user.id,
-      },
-    }).catch(() => {})
-    void pushService.notify(parentAuthorId, {
-      title: '새 답글이 달렸어요',
-      body: `${nickname}: ${trimmed.slice(0, 50)}`,
-      url: postUrl,
-      tag: `comment-${postId}`,
-    }, 'comment').catch(() => {})
+    // 대댓글 → 부모 댓글 작성자에게 알림 (봇 수신자는 notifyUser에서 자동 제외)
+    void notifyUser(parentAuthorId, {
+      type: 'COMMENT',
+      bellContent: `${nickname}님이 회원님의 댓글에 답글을 남겼어요`,
+      postId,
+      fromUserId: session.user.id,
+      push: { title: '새 답글이 달렸어요', body: `${nickname}: ${trimmed.slice(0, 50)}`, url: postUrl, tag: `comment-${postId}` },
+      campaign: 'comment',
+    })
   } else if (post.authorId !== session.user.id) {
-    // 댓글 → 게시글 작성자에게 알림
-    void prisma.notification.create({
-      data: {
-        userId: post.authorId,
-        type: 'COMMENT',
-        content: `${nickname}님이 회원님의 글에 댓글을 남겼어요`,
-        postId,
-        fromUserId: session.user.id,
-      },
-    }).catch(() => {})
-    void pushService.notify(post.authorId, {
-      title: '새 댓글이 달렸어요',
-      body: `${nickname}: ${trimmed.slice(0, 50)}`,
-      url: postUrl,
-      tag: `comment-${postId}`,
-    }, 'comment').catch(() => {})
+    // 댓글 → 게시글 작성자에게 알림 (봇 수신자는 notifyUser에서 자동 제외)
+    void notifyUser(post.authorId, {
+      type: 'COMMENT',
+      bellContent: `${nickname}님이 회원님의 글에 댓글을 남겼어요`,
+      postId,
+      fromUserId: session.user.id,
+      push: { title: '새 댓글이 달렸어요', body: `${nickname}: ${trimmed.slice(0, 50)}`, url: postUrl, tag: `comment-${postId}` },
+      campaign: 'comment',
+    })
   }
 
   revalidatePath('/community/[boardSlug]/[postId]', 'page')

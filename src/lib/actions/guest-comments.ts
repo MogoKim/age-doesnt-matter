@@ -5,6 +5,8 @@ import { verifyTurnstile } from '@/lib/turnstile'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import bcrypt from 'bcryptjs'
 import { calculateTrendingScore } from '@/lib/utils/trending'
+import { notifyUser } from '@/lib/notify'
+import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 
 interface GuestCommentResult {
   error?: string
@@ -52,11 +54,13 @@ export async function createGuestComment({
 
   const post = await prisma.post.findUnique({
     where: { id: postId, status: 'PUBLISHED' },
-    select: { id: true },
+    select: { id: true, boardType: true },
   })
   if (!post) return { error: '존재하지 않는 게시글입니다' }
 
   const guestPasswordHash = await bcrypt.hash(guestPassword, 10)
+
+  let notifyParentAuthorId: string | null = null
 
   const comment = await prisma.$transaction(async (tx) => {
     const created = await tx.comment.create({
@@ -81,21 +85,28 @@ export async function createGuestComment({
         where: { id: parentId },
         select: { authorId: true },
       })
-      if (parent?.authorId) {
-        await tx.notification.create({
-          data: {
-            userId: parent.authorId,
-            type: 'COMMENT',
-            content: `${trimmedNickname}(비회원)님이 회원님의 댓글에 답글을 남겼어요`,
-            postId,
-            fromUserId: null,
-          },
-        })
-      }
+      if (parent?.authorId) notifyParentAuthorId = parent.authorId
     }
 
     return created
   })
+
+  // 비회원 답글 → 부모(회원) 댓글 작성자에게 종 알림 + OS 푸시.
+  // notifyUser가 봇 수신자(providerId 비숫자)는 자동 제외 → 봇 댓글에 단 답글은 알림 안 감.
+  if (notifyParentAuthorId) {
+    void notifyUser(notifyParentAuthorId, {
+      type: 'COMMENT',
+      bellContent: `${trimmedNickname}(비회원)님이 회원님의 댓글에 답글을 남겼어요`,
+      postId,
+      push: {
+        title: '새 답글이 달렸어요',
+        body: `${trimmedNickname}(비회원): ${trimmedContent.slice(0, 50)}`,
+        url: `/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${postId}`,
+        tag: `comment-${postId}`,
+      },
+      campaign: 'comment',
+    })
+  }
 
   void (async () => {
     const p = await prisma.post.findUnique({

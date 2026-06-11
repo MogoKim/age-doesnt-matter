@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { pushService } from '@/lib/push/service'
+import { isRealUser } from '@/lib/notify'
 import { getAdminSession } from '@/lib/admin-auth'
 import type { Grade } from '@/generated/prisma/client'
 
@@ -24,12 +25,13 @@ export async function adminBroadcastPush(formData: FormData): Promise<BroadcastR
   if (title.length > 50) return { error: '제목은 50자 이내로 입력해 주세요' }
   if (body.length > 120) return { error: '내용은 120자 이내로 입력해 주세요' }
 
-  // 대상 유저 조회
+  // 대상 유저 조회 — 봇(providerId 비숫자) 제외, 실고객에게만 발송
   const whereGrade = targetGrade !== 'ALL' ? { grade: targetGrade as Grade } : undefined
-  const users = await prisma.user.findMany({
+  const allUsers = await prisma.user.findMany({
     where: { status: 'ACTIVE', ...whereGrade },
-    select: { id: true },
+    select: { id: true, providerId: true },
   })
+  const users = allUsers.filter((u) => isRealUser(u.providerId))
 
   // 100명씩 chunk 처리
   const chunkSize = 100
