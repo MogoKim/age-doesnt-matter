@@ -354,11 +354,19 @@ export default async function AdminAbTestsPage({
         <PeriodFilter />
       </div>
 
-      <TwaBaselineCard r={twaRetention} />
-
-      {gateExp && <GateExperimentCard exp={gateExp} rows={gateRetention} baselineCount={twaRetention.signupCount} />}
-
+      {/* 메인 지표: 배정 기준 ITT (오늘부터 공정 비교 — 위너 판단의 기준) */}
       {gateExp && <GateITTCard exp={gateExp} itt={gateITT} />}
+
+      {/* 과거 측정 — 분모가 그룹마다 달라(불공정)·과거 오분류 보정본. 위너 판단엔 부적합해 접어둠 */}
+      <details className="rounded-xl border border-zinc-200 bg-white">
+        <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50">
+          📂 과거 측정 (참고용 · 신뢰 보류) — 분모가 그룹마다 달라 위너 판단엔 부적합. 펼쳐보기 ▾
+        </summary>
+        <div className="space-y-5 border-t border-zinc-100 p-4">
+          <TwaBaselineCard r={twaRetention} />
+          {gateExp && <GateExperimentCard exp={gateExp} rows={gateRetention} baselineCount={twaRetention.signupCount} />}
+        </div>
+      </details>
 
       {active.length > 0 && (
         <section className="space-y-3">
