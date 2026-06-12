@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>우나어 — 네이버 유입자 락인 목업 (실제 화면 재현 + 개선)</title>
+<style>
+  :root{ --primary:#FF6F61; --primary-text:#E85D50; --bg:#fff; --fg:#222; --muted:#7b8190; --line:#eef0f2; --card:#fbfbfc; }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-text-size-adjust:100%; }
+  body{ background:#dfe3e8; font-family:"Pretendard","Apple SD Gothic Neo",sans-serif; color:var(--fg); line-height:1.7; }
+  .legend{ max-width:412px; margin:16px auto 8px; font-size:13px; color:#41464e; background:#fff; border-radius:12px; padding:12px 14px; line-height:1.6; }
+  .legend b{ color:var(--primary-text); }
+  .swatch{ display:inline-block; width:11px; height:11px; border:2px dashed var(--primary); border-radius:3px; vertical-align:middle; margin-right:3px; }
+  .phone{ max-width:412px; margin:10px auto 30px; background:var(--bg); box-shadow:0 6px 30px rgba(0,0,0,.16); border-radius:6px; overflow:hidden; }
+
+  /* 상단 추천 배너 (기존) */
+  .promo{ position:relative; display:flex; align-items:center; gap:10px; background:linear-gradient(90deg,#ff8978,#ff6f61); padding:11px 14px; }
+  .promo .tag{ font-size:12px; font-weight:800; color:#ff6f61; background:#fff; border-radius:999px; padding:3px 10px; white-space:nowrap; }
+  .promo .ptxt{ flex:1; font-size:15px; font-weight:700; color:#fff; text-align:center; }
+  .promo .px{ color:#ffe; font-size:16px; }
+
+  /* GNB (기존) */
+  .gnb{ display:flex; align-items:center; justify-content:space-between; height:56px; padding:0 16px; border-bottom:1px solid var(--line); }
+  .gnb .logo{ display:flex; align-items:center; gap:7px; }
+  .gnb .dots{ display:flex; }
+  .gnb .dots i{ width:13px; height:13px; border-radius:50%; display:block; margin-left:-5px; }
+  .gnb .logo b{ font-size:15px; font-weight:800; color:var(--primary); }
+  .gnb .icons{ display:flex; align-items:center; gap:16px; color:#555; font-size:18px; }
+  .gnb .icons .ap{ font-weight:800; color:var(--primary); position:relative; }
+  .gnb .icons .ap sup{ font-size:10px; }
+
+  /* 카테고리 아이콘 행 (기존) */
+  .cats{ display:flex; gap:14px; padding:14px 16px 12px; overflow-x:auto; border-bottom:1px solid var(--line); }
+  .cat{ flex:none; width:62px; text-align:center; }
+  .cat .ic{ width:58px; height:58px; border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 5px; }
+  .cat .lb{ font-size:13px; font-weight:700; color:#555; }
+  .cat.on .ic{ outline:2px solid var(--primary); }
+  .cat.on .lb{ color:var(--primary); border-bottom:2px solid var(--primary); padding-bottom:2px; }
+
+  .wrap{ padding:16px 18px 30px; }
+  .back{ font-size:16px; font-weight:600; color:var(--muted); margin-bottom:16px; display:inline-block; }
+  .board{ display:inline-block; font-size:14px; color:var(--primary-text); font-weight:700; background:rgba(255,111,97,.1); border-radius:999px; padding:4px 13px; margin-bottom:12px; }
+  h1.title{ font-size:25px; font-weight:800; line-height:1.38; letter-spacing:-.4px; }
+  .meta{ display:flex; align-items:center; gap:7px; margin:14px 0 18px; padding-bottom:16px; border-bottom:1px solid var(--line); font-size:14.5px; color:var(--muted); }
+
+  /* 신규 강조 박스 공통 */
+  .new-wrap{ position:relative; margin:18px 0; }
+  .new-wrap > .nb{ position:absolute; top:-10px; left:14px; z-index:2; background:var(--primary); color:#fff; font-size:11px; font-weight:800; padding:2px 9px; border-radius:7px; letter-spacing:.2px; }
+  .new-box{ border:2px dashed var(--primary); border-radius:14px; }
+
+  /* ① 정체성 배너 */
+  .identity{ display:flex; gap:12px; align-items:center; background:linear-gradient(0deg,#fff,rgba(255,111,97,.07)); border-radius:12px; padding:14px; }
+  .identity .emoji{ font-size:30px; }
+  .identity .logo3{ display:flex; flex:none; }
+  .identity .logo3 i{ width:18px; height:18px; border-radius:50%; display:block; margin-left:-7px; }
+  .identity .logo3 i:first-child{ margin-left:0; }
+  .identity .t{ font-size:16.5px; font-weight:800; color:#333; }
+  .identity .d{ font-size:14px; color:var(--muted); margin-top:3px; }
+
+  /* 본문 카드 (기존) */
+  .content{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px 20px; box-shadow:0 1px 3px rgba(0,0,0,.03); }
+  .content p{ font-size:18px; line-height:1.85; margin-bottom:16px; }
+  .content p:last-child{ margin-bottom:0; }
+
+  /* ② 본문 중간 관련글 */
+  .inline-related{ background:#fff7f6; border-radius:12px; padding:14px; }
+  .inline-related .h{ font-size:14.5px; font-weight:800; color:var(--primary-text); margin-bottom:10px; }
+  .rel{ display:flex; gap:10px; padding:10px 0; border-top:1px solid #f3e4e2; }
+  .rel:first-of-type{ border-top:none; }
+  .rel .num{ color:var(--primary); font-weight:800; width:16px; flex:none; }
+  .rel .rt{ font-size:16px; font-weight:600; }
+
+  /* 광고 (기존) */
+  .ad{ position:relative; border:1px solid var(--line); border-radius:12px; background:#f7f8fa; padding:26px 14px; text-align:center; color:#aab0ba; font-size:14px; margin:20px 0; }
+  .ad .gad{ position:absolute; top:8px; right:10px; font-size:11px; color:#9aa0aa; border:1px solid #d8dce1; border-radius:4px; padding:1px 6px; }
+
+  /* 액션바 (기존) — 공감/스크랩/공유/신고 */
+  .actionbar{ display:flex; justify-content:space-around; border:1px solid var(--line); border-radius:16px; padding:16px 8px; margin:20px 0; box-shadow:0 1px 3px rgba(0,0,0,.03); }
+  .actionbar div{ text-align:center; font-size:14px; font-weight:700; color:#555; }
+  .actionbar div .ico{ font-size:21px; display:block; margin-bottom:5px; }
+  .actionbar div.like{ color:var(--primary-text); }
+
+  /* 쿠팡 검색바 (기존) */
+  .coupang-search{ position:relative; display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:18px 0; }
+  .coupang-search .cp{ font-weight:800; font-size:15px; background:linear-gradient(90deg,#ee2737,#ff7a00,#ffb800,#00a862,#0074e4,#5a2d91); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .coupang-search .ph{ flex:1; color:#aab0ba; font-size:15px; }
+  .coupang-search .gad{ font-size:11px; color:#9aa0aa; border:1px solid #d8dce1; border-radius:4px; padding:1px 6px; }
+
+  /* ③ 가입 CTA (기존 — 비회원에게만 표시) */
+  .cta{ border-radius:16px; padding:20px 18px; text-align:center; background:linear-gradient(0deg,#fff,rgba(255,111,97,.05)); }
+  .cta .h{ font-size:18px; font-weight:800; }
+  .cta .s{ font-size:14.5px; color:var(--muted); margin:7px 0 14px; }
+  .kakao{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%; height:54px; border:none; border-radius:12px; background:#FEE500; color:#191919; font-size:17px; font-weight:800; }
+
+  /* 댓글 (기존) */
+  .comments{ margin:24px 0; }
+  .chead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .chead .ct{ font-size:19px; font-weight:800; }
+  .chead .ct em{ color:var(--primary); font-style:normal; }
+  .chead .sort{ font-size:14px; font-weight:700; color:#aab0ba; display:flex; gap:12px; }
+  .chead .sort .on{ color:var(--primary-text); background:rgba(255,111,97,.1); border-radius:999px; padding:5px 14px; }
+  .clist{ border-top:2px solid #222; }
+  .cmt{ display:flex; gap:11px; padding:16px 0; border-bottom:1px solid var(--line); }
+  .cmt .ca{ width:34px;height:34px;border-radius:50%;background:#eef0f3;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none; }
+  .cmt .cb{ flex:1; }
+  .cmt .cn{ font-size:14.5px; font-weight:700; }
+  .cmt .cn span{ font-weight:400; color:#aab0ba; margin-left:7px; font-size:13px; }
+  .cmt .cc{ font-size:16px; color:#333; margin:5px 0 8px; line-height:1.6; }
+  .cmt .cf{ font-size:14px; color:#9aa0aa; display:flex; gap:18px; align-items:center; }
+  /* 댓글 입력 (기존) */
+  .cwrite{ border:1px solid var(--line); border-radius:16px; padding:18px; margin-top:18px; box-shadow:0 1px 3px rgba(0,0,0,.03); }
+  .cwrite .wt{ font-size:17px; font-weight:800; margin-bottom:12px; }
+  .cwrite .ta{ border:1px solid var(--line); border-radius:12px; min-height:96px; padding:14px; color:#aab0ba; font-size:16px; }
+  .cwrite .cnt{ text-align:right; font-size:13px; color:#aab0ba; margin:8px 2px; }
+  .cwrite .sb{ height:54px; border-radius:12px; background:#e9eb0; background:#e8eaed; color:#9aa0aa; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; }
+
+  /* 쿠팡 배너 (기존) */
+  .cpbanner{ border-radius:12px; overflow:hidden; margin:22px 0 8px; }
+  .cpbanner .img{ background:#1c1f24; color:#fff; padding:22px 16px; position:relative; }
+  .cpbanner .img .gad{ position:absolute; top:8px; right:10px; font-size:11px; color:#cfd3d8; border:1px solid #4a4e55; border-radius:4px; padding:1px 6px; }
+  .cpbanner .img b{ font-size:20px; font-weight:800; }
+  .cpbanner .img .s{ font-size:13px; color:#9aa0aa; margin-top:4px; }
+  .cpbanner .disc{ font-size:12.5px; color:#aab0ba; text-align:center; padding:10px 6px; }
+
+  /* 하단 다른 글 (기존 위치 / 내용 개선) */
+  .bottom .bh{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .bottom .bh b{ font-size:18px; font-weight:800; }
+  .bottom .bh a{ font-size:14px; color:var(--primary); font-weight:700; }
+  .bottom .list{ border-top:2px solid #222; }
+  .li{ display:flex; gap:10px; padding:14px 2px; border-bottom:1px solid var(--line); }
+  .li .n{ font-weight:800; color:#444; width:18px; flex:none; }
+  .li .lt{ font-size:16.5px; font-weight:600; line-height:1.4; }
+  .li .lf{ font-size:13px; color:#9aa0aa; margin-top:6px; }
+
+  .vs{ display:flex; gap:8px; margin:8px 0 2px; }
+  .vs .col{ flex:1; border-radius:10px; padding:10px 11px; font-size:12.5px; line-height:1.5; }
+  .vs .now{ background:#f1f2f4; color:#6b7280; }
+  .vs .now b{ color:#444; }
+  .vs .nw{ background:#fff3f1; color:#9a564c; }
+  .vs .nw b{ color:var(--primary-text); }
+
+  .foot{ margin-top:24px; padding-top:18px; border-top:1px solid var(--line); font-size:13px; color:#aab0ba; line-height:2; }
+</style>
+</head>
+<body>
+
+<div class="legend">
+  📱 <b>네이버에서 "갱년기" 글 하나 보러 들어온 비회원</b> 시점 — 실제 글 상세 화면을 그대로 재현했습니다.<br>
+  <span class="swatch"></span> <b>빨강 점선 + NEW</b> = 새로 추가되는 것 (딱 3개) · 나머지는 <b>지금 그대로</b>입니다.
+</div>
+
+<div class="phone">
+
+  <!-- 상단 추천 배너 (기존) -->
+  <div class="promo">
+    <span class="tag">강력추천</span>
+    <span class="ptxt">지금 가입하면 무조건! '무료'</span>
+    <span class="px">✕</span>
+  </div>
+
+  <!-- GNB (기존) -->
+  <div class="gnb">
+    <div class="logo">
+      <span class="dots"><i style="background:#ffb3a8"></i><i style="background:#ff8978"></i><i style="background:#ffd0c8"></i></span>
+      <b>우리나이가어때서</b>
+    </div>
+    <div class="icons"><span>🔍</span><span class="ap">가<sup>+</sup></span><span>👤</span></div>
+  </div>
+
+  <!-- 카테고리 아이콘 행 (기존) -->
+  <div class="cats">
+    <div class="cat"><div class="ic" style="background:#ffe5e2">⭐</div><div class="lb">베스트</div></div>
+    <div class="cat on"><div class="ic" style="background:#ffe9d9">💬</div><div class="lb">사는이야기</div></div>
+    <div class="cat"><div class="ic" style="background:#e3f5e6">🌱</div><div class="lb">2막준비</div></div>
+    <div class="cat"><div class="ic" style="background:#fff4d6">⚡</div><div class="lb">웃음방</div></div>
+    <div class="cat"><div class="ic" style="background:#e1efff">📖</div><div class="lb">매거진</div></div>
+    <div class="cat"><div class="ic" style="background:#efe6ff">💼</div><div class="lb">내일찾기</div></div>
+  </div>
+
+  <div class="wrap">
+    <a class="back">← 사는 이야기</a>
+    <span class="board">건강</span>
+    <h1 class="title">갱년기 증상들 정말 힘드네요~ 빈뇨·열감·건조·두통</h1>
+    <div class="meta">☀️ 하늘바라기 · 5월 16일 · 👁 710</div>
+
+    <!-- ① 정체성 배너 (신규) -->
+    <div class="new-wrap">
+      <span class="nb">① NEW — 여기가 어떤 곳인지</span>
+      <div class="new-box identity">
+        <span class="logo3"><i style="background:#ffb3a8"></i><i style="background:#ff8978"></i><i style="background:#ffd0c8"></i></span>
+        <div>
+          <div class="t">비슷한 고민 나누는 40·50·60대 여성 공간</div>
+          <div class="d">우리 나이가 어때서 — 또래끼리 편하게 수다 떨어요</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 본문 (기존) -->
+    <div class="content">
+      <p>요즘 제 얘기인데 갱년기 신체 증상들이 정말 심하더라고요~ 빈뇨가 젤 힘든데 밤에 자다가도 자꾸 화장실을 가야 돼서 숙면이 안 되는 거 있죠. 낮에도 자주 가니까 외출할 때 조심스럽고~ 열감도 있어서 갑자기 얼굴이 화끈거리고 땀이 나는데 이게 언제까지 계속될지 모르겠어요 😅</p>
+      <p>아 맞다 피부 건조함도 심해서 립밤을 자주 들고 다니고 있어요~ 입술도 까지고 피부도 늘 당기는 느낌이 들더라고요. 그리고 요즘 자꾸만 두통이 생기는데 일과 중에 갑자기 머리가 아파서 일에 집중이 안 될 때가 많아요. 이런 증상들이 다 갱년기 때문인 거 같은데 관리하면서 버티고 있어요~ 같은 증상으로 고생하시는 분들 정말 많으실 것 같으니 함께 힘내요.</p>
+    </div>
+
+    <!-- ② 같은 고민 글 (신규 — 본문 밖 '글 끝'으로 이동: 본문 흐름 안 끊음) -->
+    <div class="new-wrap">
+      <span class="nb">② NEW — 글 다 읽은 직후 '같은 고민 글'</span>
+      <div class="new-box inline-related">
+        <div class="h">💬 이 글과 비슷한 고민, 또래들 이야기예요</div>
+        <div class="rel"><span class="num">1</span><span class="rt">호르몬제(안젤릭) 3년째인데 정말 살 만해져요</span></div>
+        <div class="rel"><span class="num">2</span><span class="rt">빈뇨 때문에 밤잠 설치시는 분 계세요?</span></div>
+        <div class="rel"><span class="num">3</span><span class="rt">갱년기 피부 건조·두통, 저는 이렇게 관리해요</span></div>
+      </div>
+    </div>
+
+    <!-- 인아티클 광고 (기존) -->
+    <div class="ad"><span class="gad">광고</span>애드센스 광고 (코골이/수면무호흡 …)</div>
+
+    <!-- 액션바 (기존) -->
+    <div class="actionbar">
+      <div class="like"><span class="ico">🤍</span>공감 2</div>
+      <div><span class="ico">🔖</span>스크랩</div>
+      <div><span class="ico">↑</span>공유</div>
+      <div><span class="ico">🚩</span>신고</div>
+    </div>
+
+    <!-- 쿠팡 검색바 (기존) -->
+    <div class="coupang-search"><span class="cp">coupang</span><span class="ph">쿠팡에서 검색</span><span class="gad">광고</span></div>
+
+    <!-- ③ 가입 CTA (기존 — 비회원에게만 뜸) -->
+    <div class="new-wrap">
+      <span class="nb" style="background:#9aa0aa;">③ 기존 — 비회원에게만 뜨는 가입 유도</span>
+      <div class="new-box cta" style="border-style:solid; border-color:rgba(255,111,97,.3);">
+        <div class="h">이 글에 공감되셨나요?</div>
+        <div class="s">카카오 한 번 클릭이면 댓글 남기고, 내 글도 쓸 수 있어요</div>
+        <button class="kakao">💬 카카오로 3초 만에 시작하기</button>
+      </div>
+    </div>
+
+    <!-- 댓글 (기존) -->
+    <div class="comments">
+      <div class="chead">
+        <div class="ct">💬 댓글 <em>4</em></div>
+        <div class="sort"><span class="on">등록순</span><span>공감순</span></div>
+      </div>
+      <div class="clist">
+        <div class="cmt"><div class="ca">🌿</div><div class="cb">
+          <div class="cn">비교분석왕 <span>5월 17일</span></div>
+          <div class="cc">저도 요즘 비슷한 증상들로 정말 힘들어요. 특히 밤에 자다가 깨는 게 일상이 되어버렸더라고요. 함께 이겨내요.</div>
+          <div class="cf"><span>🤍 답글</span></div>
+        </div></div>
+        <div class="cmt"><div class="ca">☀️</div><div class="cb">
+          <div class="cn">제주살이 <span>5월 17일</span></div>
+          <div class="cc">혹시 병원에서 호르몬 검사는 받아보셨어요? 저도 비슷한 증상이 있어서 치료 받고 있는데 도움이 많이…</div>
+          <div class="cf"><span>🤍 답글</span></div>
+        </div></div>
+        <div class="cmt"><div class="ca">🌱</div><div class="cb">
+          <div class="cn">정순씨 <span>5월 17일</span></div>
+          <div class="cc">저도 요즘 한 3년을 그렇게 보냈어요. 산부인과에서 호르몬제 처방받고 꾸준히 먹으니까 정말 많이 나아졌어요. 힘내세요!</div>
+          <div class="cf"><span>🤍 답글</span></div>
+        </div></div>
+      </div>
+
+      <div class="cwrite">
+        <div class="wt">댓글을 남겨보세요</div>
+        <div class="ta">댓글을 남겨주세요… (최대 500자)</div>
+        <div class="cnt">0/500</div>
+        <div class="sb">댓글 남기기</div>
+      </div>
+    </div>
+
+    <!-- 쿠팡 배너 (기존) -->
+    <div class="cpbanner">
+      <div class="img"><span class="gad">광고</span><b>🚀 신선식품 새벽배송</b><div class="s">coupang 로켓프레시 · 바로가기 ›</div></div>
+      <div class="disc">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
+    </div>
+
+    <!-- 하단 다른 글 (기존 위치 / 내용 개선) -->
+    <div class="bottom">
+      <div class="bh"><b>사는 이야기 다른 글</b><a>목록 →</a></div>
+
+      <div class="new-wrap">
+        <span class="nb">개선 — 내용만 "같은 고민 글"로</span>
+        <div class="new-box list" style="border-top:2px solid var(--primary); padding:0 10px;">
+          <div class="li"><span class="n">1</span><div><div class="lt">호르몬제(안젤릭) 3년째인데 정말 살 만해져요</div><div class="lf">💬 12 · 🤍 0 · 1시간 전</div></div></div>
+          <div class="li"><span class="n">2</span><div><div class="lt">빈뇨 때문에 밤잠 설치시는 분 계세요?</div><div class="lf">💬 8 · 🤍 0 · 2시간 전</div></div></div>
+          <div class="li"><span class="n">3</span><div><div class="lt">갱년기 피부 건조·두통, 저는 이렇게 관리해요</div><div class="lf">💬 6 · 🤍 0 · 3시간 전</div></div></div>
+          <div class="li"><span class="n">4</span><div><div class="lt">50대 건강검진 항목, 이건 꼭 챙기세요</div><div class="lf">💬 9 · 🤍 0 · 5시간 전</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">회사소개 · 이용약관 · 개인정보처리방침<br>© 2026 우리 나이가 어때서</div>
+  </div>
+</div>
+
+<div class="legend" style="margin-top:0;">
+  <b>정리 — 바뀌는 건 3가지뿐</b><br>
+  ① 제목 밑 <b>정체성 배너</b>(신규) — 손님에게 "여기 어떤 곳"인지 알려줌<br>
+  ② <b>글 끝(본문 바로 다음)</b>에 '같은 고민 글'(신규) — 본문 흐름은 안 끊고, 다 읽은 직후 다음 글로 자연스럽게 이어줌<br>
+  ③ 하단 "다른 글"을 <b>최신순 잡담 → 같은 고민 글</b>로 교체<br>
+  <span style="color:#9aa0aa">나머지(본문·광고·공감/스크랩/공유/신고·쿠팡·댓글·가입CTA)는 지금 그대로.</span>
+</div>
+
+</body>
+</html>

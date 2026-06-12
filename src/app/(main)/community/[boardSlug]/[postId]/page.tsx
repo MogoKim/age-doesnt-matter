@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 import { getBoardConfig } from '@/lib/queries/boards'
-import { getPostDetail } from '@/lib/queries/posts'
+import { getPostDetail, getRelatedCommunityPosts } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
 import ActionBar from '@/components/features/community/ActionBar'
 import PostCTA from '@/components/features/community/PostCTA'
@@ -16,6 +16,8 @@ import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import PostListBottom from '@/components/features/community/PostListBottom'
+import InlineRelatedPosts from '@/components/features/community/InlineRelatedPosts'
+import IdentityBanner from '@/components/features/community/IdentityBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
@@ -97,6 +99,9 @@ export default async function PostDetailPage({ params }: PageProps) {
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/likes FK 보장)
   const resolvedId = post.id
 
+  // 관련글 1회 조회 → 본문끝 ②(0~2) + 하단(3~14)로 분배 (category 우선, 부족 시 최신순 fallback)
+  const related = await getRelatedCommunityPosts(post.boardType, post.category || null, resolvedId, 15)
+
   const canonicalSlug = post.slug ?? postId
   const url = `${BASE_URL}/community/${boardSlug}/${canonicalSlug}`
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -176,11 +181,17 @@ export default async function PostDetailPage({ params }: PageProps) {
         </div>
       </div>
 
+      {/* 정체성 배너 (네이버 유입자 락인 ① — 비회원, 제목 밑) */}
+      <IdentityBanner boardSlug={boardSlug} />
+
       {/* 본문 */}
       <div
         className="post-content text-body text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:my-4 [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4 [&_video]:w-full [&_video]:rounded-xl [&_video]:my-4 [&_.image-placeholder]:py-6 [&_.image-placeholder]:px-4 [&_.image-placeholder]:bg-muted [&_.image-placeholder]:rounded-xl [&_.image-placeholder]:text-center [&_.image-placeholder]:text-muted-foreground [&_.image-placeholder]:text-[17px] [&_.image-placeholder]:my-4"
         dangerouslySetInnerHTML={{ __html: proxyR2Images(sanitizeHtml(post.content)) }}
       />
+
+      {/* 같은 고민 글 (네이버 유입자 락인 ② — 본문 직후, 흐름 안 끊음) */}
+      <InlineRelatedPosts posts={related.slice(0, 3)} boardSlug={boardSlug} />
 
       {/* 광고 — 인아티클 */}
       <div className="mb-8">
@@ -223,7 +234,8 @@ export default async function PostDetailPage({ params }: PageProps) {
           boardSlug={boardSlug}
           excludePostId={resolvedId}
           displayName={board.displayName}
-          mode="latest"
+          mode="related"
+          relatedPosts={related.slice(3, 15)}
         />
       </Suspense>
     </div>

@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
 import { getTrendingCommunityPosts, getPostsByBoardPage } from '@/lib/queries/posts'
-import type { BoardType } from '@/types/api'
+import type { BoardType, PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { formatTimeAgo } from './utils'
+import TrackedPostLink from './TrackedPostLink'
 
 const getCachedBoardBottomPosts = unstable_cache(
   async (boardType: BoardType) => (await getPostsByBoardPage(boardType, { limit: 13 })).posts,
@@ -16,13 +17,17 @@ interface Props {
   boardSlug: string
   excludePostId: string
   displayName: string
-  mode: 'trending' | 'latest'
+  mode: 'trending' | 'latest' | 'related'
+  // mode='related'일 때만 사용 — page.tsx에서 1회 조회한 관련글을 props로 전달(자체 재조회 안 함)
+  relatedPosts?: PostSummary[]
 }
 
-export default async function PostListBottom({ boardType, boardSlug, excludePostId, displayName, mode }: Props) {
-  const rawPosts = mode === 'trending'
-    ? await getTrendingCommunityPosts(13)
-    : await getCachedBoardBottomPosts(boardType)
+export default async function PostListBottom({ boardType, boardSlug, excludePostId, displayName, mode, relatedPosts }: Props) {
+  const rawPosts = mode === 'related'
+    ? (relatedPosts ?? [])
+    : mode === 'trending'
+      ? await getTrendingCommunityPosts(13)
+      : await getCachedBoardBottomPosts(boardType)
 
   const posts = rawPosts
     .filter(p => p.id !== excludePostId)
@@ -33,6 +38,7 @@ export default async function PostListBottom({ boardType, boardSlug, excludePost
   const title = mode === 'trending' ? '지금 뜨는 다른 글' : `${displayName} 다른 글`
   const moreHref = mode === 'trending' ? '/best' : `/community/${boardSlug}`
   const moreLabel = mode === 'trending' ? '베스트 →' : '목록 →'
+  const linkClass = 'flex items-start gap-3 py-3 no-underline text-inherit min-h-[52px] hover:bg-muted/40 transition-colors -mx-1 px-1 rounded-lg'
 
   return (
     <section className="mt-2 mb-8">
@@ -46,12 +52,10 @@ export default async function PostListBottom({ boardType, boardSlug, excludePost
         </Link>
       </div>
       <ol className="list-none m-0 p-0">
-        {posts.map((post, idx) => (
-          <li key={post.id} className="border-b border-border last:border-b-0">
-            <Link
-              href={`/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`}
-              className="flex items-start gap-3 py-3 no-underline text-inherit min-h-[52px] hover:bg-muted/40 transition-colors -mx-1 px-1 rounded-lg"
-            >
+        {posts.map((post, idx) => {
+          const href = `/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${post.slug ?? post.id}`
+          const inner = (
+            <>
               <span className="text-caption font-bold text-muted-foreground min-w-[24px] shrink-0 pt-0.5 text-right">
                 {idx + 1}
               </span>
@@ -65,9 +69,22 @@ export default async function PostListBottom({ boardType, boardSlug, excludePost
                   <span>· {formatTimeAgo(post.createdAt)}</span>
                 </div>
               </div>
-            </Link>
-          </li>
-        ))}
+            </>
+          )
+          return (
+            <li key={post.id} className="border-b border-border last:border-b-0">
+              {mode === 'related' ? (
+                <TrackedPostLink href={href} postId={post.id} position="bottom" boardSlug={boardSlug} className={linkClass}>
+                  {inner}
+                </TrackedPostLink>
+              ) : (
+                <Link href={href} className={linkClass}>
+                  {inner}
+                </Link>
+              )}
+            </li>
+          )
+        })}
       </ol>
     </section>
   )

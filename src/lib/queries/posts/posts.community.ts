@@ -230,6 +230,45 @@ export const getCachedBoardPage = unstable_cache(
   { revalidate: 30, tags: ['community-board-page'] },
 )
 
+/* ── 관련글 (글 상세 본문끝·하단 내부 링크용) ──
+ * 같은 게시판 + 같은 category 우선 → 부족하면 같은 게시판 최신순 fallback(중복 제거).
+ * category가 빈값('')/null이면 매칭 생략하고 곧장 최신순(글쓰기 시 category 미선택 글 대응).
+ * keyParts는 고유('related-community-posts') — getCachedBoardPage와 충돌 방지. tags만 공유. */
+async function _getRelatedCommunityPosts(
+  boardType: BoardType,
+  category: string | null,
+  excludeId: string,
+  limit = 15,
+): Promise<PostSummary[]> {
+  // 1순위: 같은 게시판 + 같은 category
+  const matched = category
+    ? await prisma.post.findMany({
+        where: { boardType, status: 'PUBLISHED', id: { not: excludeId }, category },
+        orderBy: [{ createdAt: 'desc' }],
+        take: limit,
+        select: postSelect,
+      })
+    : []
+
+  if (matched.length >= limit) return matched.map(toPostSummary)
+
+  // 2순위: 같은 게시판 최신순으로 채움 (이미 뽑은 글 + 본문글 제외)
+  const excludeIds = [excludeId, ...matched.map((r) => r.id)]
+  const fill = await prisma.post.findMany({
+    where: { boardType, status: 'PUBLISHED', id: { notIn: excludeIds } },
+    orderBy: [{ createdAt: 'desc' }],
+    take: limit - matched.length,
+    select: postSelect,
+  })
+
+  return [...matched, ...fill].map(toPostSummary)
+}
+export const getRelatedCommunityPosts = unstable_cache(
+  _getRelatedCommunityPosts,
+  ['related-community-posts'],
+  { revalidate: 300, tags: ['community-board-page'] },
+)
+
 function formatTimeAgoFromMs(ms: number): string {
   const minutes = Math.floor(ms / 60000)
   if (minutes < 1) return '방금 전'
