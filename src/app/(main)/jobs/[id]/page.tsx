@@ -220,12 +220,7 @@ export default async function JobDetailPage({ params }: PageProps) {
         )}
       </div>
 
-      {/* 광고 — 인아티클 */}
-      <div className="mb-8">
-        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
-      </div>
-
-      {/* 액션 바 */}
+      {/* 액션 바 — 본문/지원 직후 바로 공감 */}
       <ActionBar
         postId={id}
         title={job.title}
@@ -234,6 +229,11 @@ export default async function JobDetailPage({ params }: PageProps) {
         isLiked={false}
         isScrapped={false}
       />
+
+      {/* 광고 — 인아티클 */}
+      <div className="mb-8">
+        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
+      </div>
 
       {/* 댓글 */}
       <Suspense fallback={
@@ -251,6 +251,11 @@ export default async function JobDetailPage({ params }: PageProps) {
       <Suspense fallback={<div className="h-[300px] animate-pulse bg-muted/50 rounded-2xl" />}>
         <JobListBottom excludeJobId={id} />
       </Suspense>
+
+      {/* 하단 애드센스 띠배너 (신규 — 슬롯 발급 전 미렌더 가드: 쿠팡 폴백 방지) */}
+      {ADSENSE.POST_BOTTOM_BANNER !== 'REPLACE_WITH_SLOT_ID' && (
+        <AdSenseUnit slotId={ADSENSE.POST_BOTTOM_BANNER} format="horizontal" className="rounded-2xl overflow-hidden mt-6" />
+      )}
     </div>
   )
 }
