@@ -16,6 +16,7 @@ import GateOnboardingSlides from './GateOnboardingSlides'
 
 const ESCAPE_KEY = 'twa_gate_escaped'
 const VIEW_LOGGED_KEY = 'twa_gate_view_logged'
+const ASSIGN_LOGGED_KEY = 'twa_gate_assign_logged' // ITT 배정 이벤트 세션당 1회 가드
 const POST_COUNT_KEY = 'twa_session_post_views' // PostViewBeacon이 증가시킴
 const B_THRESHOLD = 3
 
@@ -39,6 +40,17 @@ export default function TwaEntryGate() {
       localStorage.setItem('twa_gate_assigned', v)
     } catch {
       /* ignore */
+    }
+    // ITT 분모: 배정 시점 1회 기록(A 포함 전원, 노출 전). 노출은 그룹별 조건이 달라 불공정 →
+    //   "보여주려 한 대상(배정)" 기준으로 D1/D3/D7·가입을 공정 비교하기 위한 최앞단 모수.
+    //   세션당 1회만(중복 분모 방지). sessionId(_anon_sid)가 배정→가입→재방문을 잇는다.
+    try {
+      if (!sessionStorage.getItem(ASSIGN_LOGGED_KEY)) {
+        sessionStorage.setItem(ASSIGN_LOGGED_KEY, '1')
+        trackEvent('twa_gate_assigned', { twa_gate_variant: v })
+      }
+    } catch {
+      /* sessionStorage 불가 환경 무시 */
     }
     setVariant(v)
   }, [status, isTWA])

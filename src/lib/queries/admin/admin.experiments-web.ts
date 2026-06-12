@@ -371,3 +371,107 @@ const _getGateRetention = unstable_cache(
 export function getGateRetention(days = 90): Promise<GateRetentionRow[]> {
   return _getGateRetention(days)
 }
+
+// ──────────────────────────────────────────────
+// TWA 게이트 ITT (Intention-To-Treat) — "보여주려 한 대상(배정)" 기준 공정 비교
+//   노출은 그룹별 조건이 달라(A 0·B 글3개후·C 즉시) 분모가 불공정 → 최앞단인 "배정"을 분모로 통일.
+//   배정 분모 = twa_gate_assigned 이벤트의 distinct sessionId(_anon_sid, 30일 유지로 배정→가입→재방문 연결).
+//   ⚠️ 배정 이벤트는 도입 시점부터 적재 → 과거 소급 불가. firstAssignedAt 이후만 유효.
+// ──────────────────────────────────────────────
+export interface GateITTRow {
+  variant: string
+  label: string
+  assignedCount: number // 배정 분모 (distinct sessionId) — "보여주려 한 전원"
+  signupCount: number // 배정 후 가입한 세션 수
+  signupRate: number | null // 배정→가입 전환율(%)
+  d1ReturnCount: number
+  d1ReturnRate: number // 배정 후 1일 내 재방문(%)
+  d3ReturnCount: number
+  d3ReturnRate: number // 배정 후 3일 내 재방문(%)
+  d7ReturnCount: number
+  d7ReturnRate: number // 배정 후 7일 내 재방문(%)
+}
+
+export interface GateITTResult {
+  rows: GateITTRow[]
+  firstAssignedAt: string | null // 배정 측정 시작 시각(ISO). null이면 아직 배정 데이터 없음
+}
+
+const _getGateITT = unstable_cache(
+  async (days: number): Promise<GateITTResult> => {
+    const exp = EXPERIMENTS.find((e) => e.id === 'twa01_entry_gate')
+    const empty = (): GateITTRow[] =>
+      (exp?.variants ?? []).map((v) => ({
+        variant: v.key, label: v.label, assignedCount: 0, signupCount: 0, signupRate: null,
+        d1ReturnCount: 0, d1ReturnRate: 0, d3ReturnCount: 0, d3ReturnRate: 0, d7ReturnCount: 0, d7ReturnRate: 0,
+      }))
+    if (!exp) return { rows: [], firstAssignedAt: null }
+    const start = new Date(Date.now() - days * DAY)
+
+    // 1) 배정 (분모) — variant별 sessionId → 최초 배정시각
+    const assigns = await prisma.eventLog.findMany({
+      where: { eventName: 'twa_gate_assigned', isBot: false, createdAt: { gte: start }, sessionId: { not: null } },
+      select: { sessionId: true, createdAt: true, properties: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    const byVariant = new Map<string, Map<string, Date>>() // variant → (sessionId → 최초 배정시각)
+    for (const v of exp.variants) byVariant.set(v.key, new Map())
+    let firstAssignedAt: Date | null = null
+    for (const a of assigns) {
+      const g = asProps(a.properties).twa_gate_variant
+      if (a.sessionId && typeof g === 'string' && byVariant.has(g) && !byVariant.get(g)!.has(a.sessionId)) {
+        byVariant.get(g)!.set(a.sessionId, a.createdAt)
+        if (!firstAssignedAt) firstAssignedAt = a.createdAt
+      }
+    }
+    const allSids = [...byVariant.values()].flatMap((m) => [...m.keys()])
+    if (allSids.length === 0) return { rows: empty(), firstAssignedAt: null }
+
+    // 2) 배정 sessionId들의 재방문(page_view) + 가입(sign_up)
+    const [views, signups] = await Promise.all([
+      prisma.eventLog.findMany({ where: { eventName: 'page_view', sessionId: { in: allSids }, isBot: false }, select: { sessionId: true, createdAt: true } }),
+      prisma.eventLog.findMany({ where: { eventName: 'sign_up', sessionId: { in: allSids }, isBot: false }, select: { sessionId: true, createdAt: true } }),
+    ])
+    const viewsBySid = new Map<string, number[]>()
+    for (const v of views) {
+      if (!v.sessionId) continue
+      const arr = viewsBySid.get(v.sessionId) ?? []
+      arr.push(v.createdAt.getTime())
+      viewsBySid.set(v.sessionId, arr)
+    }
+    const signupAtSid = new Map<string, number>() // sessionId → 최초 가입시각(ms)
+    for (const s of signups) {
+      if (s.sessionId && !signupAtSid.has(s.sessionId)) signupAtSid.set(s.sessionId, s.createdAt.getTime())
+    }
+
+    const rows: GateITTRow[] = exp.variants.map((v) => {
+      const map = byVariant.get(v.key)!
+      const n = map.size
+      let d1 = 0, d3 = 0, d7 = 0, su = 0
+      for (const [sid, at] of map) {
+        const t = at.getTime()
+        const vs = (viewsBySid.get(sid) ?? []).filter((ms) => ms > t + 3600_000) // 배정 1h 후 재방문만
+        if (vs.some((ms) => ms <= t + 1 * DAY)) d1++
+        if (vs.some((ms) => ms <= t + 3 * DAY)) d3++
+        if (vs.some((ms) => ms <= t + 7 * DAY)) d7++
+        const suAt = signupAtSid.get(sid)
+        if (suAt !== undefined && suAt >= t) su++ // 배정 후 가입
+      }
+      const pct = (x: number) => (n ? Math.round((x / n) * 1000) / 10 : 0)
+      return {
+        variant: v.key, label: v.label, assignedCount: n,
+        signupCount: su, signupRate: n ? pct(su) : null,
+        d1ReturnCount: d1, d1ReturnRate: pct(d1),
+        d3ReturnCount: d3, d3ReturnRate: pct(d3),
+        d7ReturnCount: d7, d7ReturnRate: pct(d7),
+      }
+    })
+    return { rows, firstAssignedAt: firstAssignedAt ? firstAssignedAt.toISOString() : null }
+  },
+  ['admin-gate-itt-v1'],
+  { revalidate: 600 },
+)
+
+export function getGateITT(days = 90): Promise<GateITTResult> {
+  return _getGateITT(days)
+}

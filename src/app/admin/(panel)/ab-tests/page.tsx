@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { getWebExperiments, getTwaSignupRetention, getGateRetention } from '@/lib/queries/admin'
-import type { WebExperimentView, VariantStat, TwaRetention, GateRetentionRow } from '@/lib/queries/admin/admin.experiments-web'
+import { getWebExperiments, getTwaSignupRetention, getGateRetention, getGateITT } from '@/lib/queries/admin'
+import type { WebExperimentView, VariantStat, TwaRetention, GateRetentionRow, GateITTResult } from '@/lib/queries/admin/admin.experiments-web'
 import type { Confidence } from '@/lib/experiments/stats'
 import PeriodFilter from './PeriodFilter'
 import ExperimentStatePanel from './ExperimentStatePanel'
@@ -190,6 +190,66 @@ function GateExperimentCard({ exp, rows, baselineCount }: { exp: WebExperimentVi
   )
 }
 
+// 배정 기준 ITT 카드 — 노출 불공정을 우회해 "보여주려 한 대상(배정)" 전원을 같은 분모로 A·B·C 공정 비교.
+function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult }) {
+  const totalAssigned = itt.rows.reduce((s, r) => s + r.assignedCount, 0)
+  const started = itt.firstAssignedAt ? new Date(itt.firstAssignedAt).toLocaleDateString('ko-KR') : null
+  return (
+    <div className="rounded-xl border border-[#FF6F61]/30 bg-white p-5">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-[#FF6F61]/10 px-2.5 py-1 text-xs font-medium text-[#E85D50]">⭐ 배정 기준 (ITT · 공정 비교)</span>
+        <h2 className="text-base font-bold text-zinc-900">{exp.name} — 배정 기준 리텐션</h2>
+      </div>
+      <p className="mb-3 rounded-lg bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-600">
+        노출은 그룹별 조건이 달라(A 없음 · B 글3개 후 · C 즉시) 분모가 불공정합니다. 그래서 <b>&ldquo;게이트를 보여주려 한 대상(배정) 전원&rdquo;</b>을 같은 분모로 놓고 A·B·C를 한 줄에서 비교합니다. 분모=배정 세션, 분자=배정 후 재방문·가입.
+      </p>
+      {totalAssigned === 0 ? (
+        <div className="rounded-lg bg-amber-50 p-4 text-sm leading-relaxed text-amber-800">
+          📭 아직 배정 데이터가 없습니다. <b>배정 측정을 방금 도입</b>했어요(과거 소급 불가). 신규 TWA 진입자가 쌓이면 여기에 A·B·C 공정 비교가 자동으로 채워집니다.
+        </div>
+      ) : (
+        <>
+          <div className="overflow-hidden rounded-lg border border-zinc-200">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-50 text-xs text-zinc-500">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">그룹</th>
+                  <th className="px-3 py-2 text-right font-medium">배정</th>
+                  <th className="px-3 py-2 text-right font-medium">가입(전환율)</th>
+                  <th className="px-3 py-2 text-right font-medium">D1 재방문</th>
+                  <th className="px-3 py-2 text-right font-medium">D3 재방문</th>
+                  <th className="px-3 py-2 text-right font-medium">D7 재방문</th>
+                </tr>
+              </thead>
+              <tbody>
+                {itt.rows.map((r) => (
+                  <tr key={r.variant} className="border-t border-zinc-100">
+                    <td className="px-3 py-2 font-medium text-zinc-700">{r.label}</td>
+                    <td className="px-3 py-2 text-right text-zinc-800">{r.assignedCount}명</td>
+                    <td className="px-3 py-2 text-right text-zinc-800">{r.signupCount}명 <span className="text-xs text-zinc-400">({r.signupRate === null ? '—' : `${r.signupRate}%`})</span></td>
+                    <td className="px-3 py-2 text-right text-zinc-800">{r.d1ReturnRate}% <span className="text-xs text-zinc-400">({r.d1ReturnCount}/{r.assignedCount})</span></td>
+                    <td className="px-3 py-2 text-right text-zinc-800">{r.d3ReturnRate}% <span className="text-xs text-zinc-400">({r.d3ReturnCount}/{r.assignedCount})</span></td>
+                    <td className="px-3 py-2 text-right text-zinc-800">{r.d7ReturnRate}% <span className="text-xs text-zinc-400">({r.d7ReturnCount}/{r.assignedCount})</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+            · 분모=배정 세션(sessionId) · 가입·재방문은 같은 세션 매칭(배정 후) · D1/D3/D7=배정 후 1·3·7일 내 재방문(누적)
+            {started && <> · 측정 시작 {started}</>}
+          </p>
+          {totalAssigned < 30 && (
+            <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-700">
+              ⚠️ 배정 {totalAssigned}건 — 표본이 적어 아직 방향성 참고용. 더 쌓이면 자동 갱신됩니다.
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 function ExperimentCard({ exp }: { exp: WebExperimentView }) {
   const maxRate = Math.max(...exp.variants.map((v) => v.rate), 0)
   const enough = exp.confidence !== 'insufficient'
@@ -269,10 +329,11 @@ export default async function AdminAbTestsPage({
   const sp = await searchParams
   const period = sp.period ?? '30'
   const days = PERIOD_DAYS[period] ?? 30
-  const [experiments, twaRetention, gateRetention] = await Promise.all([
+  const [experiments, twaRetention, gateRetention, gateITT] = await Promise.all([
     getWebExperiments(days),
     getTwaSignupRetention(90),
     getGateRetention(90),
+    getGateITT(90),
   ])
 
   // 게이트 실험은 funnel(전환율)이 아니라 재방문 지표로 별도 표시 → web 펀넬 목록에서 분리
@@ -296,6 +357,8 @@ export default async function AdminAbTestsPage({
       <TwaBaselineCard r={twaRetention} />
 
       {gateExp && <GateExperimentCard exp={gateExp} rows={gateRetention} baselineCount={twaRetention.signupCount} />}
+
+      {gateExp && <GateITTCard exp={gateExp} itt={gateITT} />}
 
       {active.length > 0 && (
         <section className="space-y-3">
