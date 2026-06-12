@@ -231,8 +231,9 @@ export const getCachedBoardPage = unstable_cache(
 )
 
 /* ── 관련글 (글 상세 본문끝·하단 내부 링크용) ──
- * 같은 게시판 + 같은 category 우선 → 부족하면 같은 게시판 최신순 fallback(중복 제거).
- * category가 빈값('')/null이면 매칭 생략하고 곧장 최신순(글쓰기 시 category 미선택 글 대응).
+ * 같은 게시판 + 같은 category 우선 → 부족하면 같은 게시판 fallback(중복 제거).
+ * 정렬: trendingScore(인기) 우선 + createdAt 보조 — 시드/저품질 글이 상위에 뜨는 것 방지.
+ * category가 빈값('')/null이면 매칭 생략하고 곧장 인기순(글쓰기 시 category 미선택 글 대응).
  * keyParts는 고유('related-community-posts') — getCachedBoardPage와 충돌 방지. tags만 공유. */
 async function _getRelatedCommunityPosts(
   boardType: BoardType,
@@ -244,7 +245,7 @@ async function _getRelatedCommunityPosts(
   const matched = category
     ? await prisma.post.findMany({
         where: { boardType, status: 'PUBLISHED', id: { not: excludeId }, category },
-        orderBy: [{ createdAt: 'desc' }],
+        orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
         take: limit,
         select: postSelect,
       })
@@ -256,7 +257,7 @@ async function _getRelatedCommunityPosts(
   const excludeIds = [excludeId, ...matched.map((r) => r.id)]
   const fill = await prisma.post.findMany({
     where: { boardType, status: 'PUBLISHED', id: { notIn: excludeIds } },
-    orderBy: [{ createdAt: 'desc' }],
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
     take: limit - matched.length,
     select: postSelect,
   })

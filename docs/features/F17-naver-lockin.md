@@ -30,18 +30,19 @@
 ## 표시 조건 (정체성 배너)
 | 상태 | 표시 |
 |------|------|
-| 비로그인 + 세션 내 미닫음 | 배너 표시 |
+| 비로그인 | 배너 표시 (✕·닫기 없음 — 안내 배너, 클릭 이동 없음) |
 | 로그인 | 숨김 |
-| 세션당 1회 닫음(`sessionStorage.identity_banner_dismissed`) | 숨김 |
 | 세션 확정 전(`status==='loading'`) | null (SSG HTML 미포함 → 회원 깜빡임 0) |
+
+문구: 메인 "우리 또래 여성들의 이야기 공간" / 서브 "40·50·60대 여성들의 진짜 이야기". 로고는 실제 `logo.png` 심볼(겹친 원)만 crop(텍스트 영역 overflow 가림).
 
 ## 이벤트 로그 (DB 스키마 변경 0 — eventName 문자열만 추가)
 | 이벤트 | 시점 | properties |
 |--------|------|-----------|
 | `identity_banner_view` | 배너 노출 1회 | `{ boardSlug }` |
-| `identity_banner_click` | 배너 클릭(→ 홈) | `{ boardSlug }` |
-| `identity_banner_dismiss` | ✕ 닫기 | `{ boardSlug }` |
 | `related_post_click` | 관련글 클릭 | `{ position: 'inline'\|'bottom', postId, boardSlug }` |
+
+(배너는 안내용 — 클릭/닫기 없음. `identity_banner_click`/`_dismiss`는 미사용)
 
 - `identity_banner_view`·`related_post_click`은 `/api/events` rate-limit 면제(비회원 글뷰마다 발생 → 429 유실 방지).
 - 봇은 `isBot=true` 마킹 저장 → 집계 시 `isBot=false` 필터 필수.
@@ -54,10 +55,11 @@
 - PostListBottom `relatedPosts` prop은 optional → 기존 latest/trending 경로 보존.
 
 ## 측정/효과 (후속 1~2주)
-- 세션당 PV 1.6 → 2.5 목표 / 가입률 1% → 3% / `related_post_click`·`identity_banner_click` 발생량.
+- 세션당 PV 1.6 → 2.5 목표 / 가입률 1% → 3% / `related_post_click`·`identity_banner_view` 발생량.
 - 선행 실측(2026-06-12): STORY(사는이야기) category 채움률 98% → 관련글 매칭 품질 확보 확인.
 
 ## 수정 이력
 | 날짜 | 변경 내용 | 이유 |
 |------|---------|------|
 | 2026-06-12 | 신규 생성 — 정체성 배너 + 같은 고민 글(본문끝·하단) + 측정 이벤트 4종 | 네이버 오가닉 유입자 락인(바운스 85%·가입 1% 개선) |
+| 2026-06-12 | QA 후속 — ①배너 클릭 이탈 제거(Link→div) ②관련글 정렬 인기순(trendingScore)으로 — 시드글 상위노출 방지 ③배너 재디자인(실제 로고 심볼+한 줄, ✕·서브2줄 제거, 문구 확정) | 실기기 QA 디자인 피드백 + 매칭 품질 |
