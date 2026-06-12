@@ -15,6 +15,8 @@ const BANNED_WORDS = ['운영자', '관리자', 'admin', '어드민', '관리인
 type NicknameStatus = 'idle' | 'checking' | 'valid' | 'error'
 
 function validateNickname(value: string): string | null {
+  // 띄어쓰기는 별도 안내 — "한글, 영문, 숫자만"으로 뭉뚱그리면 한글 친 유저가 공백이 문제인 줄 모름
+  if (/\s/.test(value)) return '닉네임에는 띄어쓰기를 넣을 수 없어요'
   if (value.length < 2) return '2자 이상 입력해 주세요'
   if (value.length > 10) return '10자 이하로 입력해 주세요'
   if (!NICKNAME_REGEX.test(value)) return '한글, 영문, 숫자만 사용할 수 있어요'
@@ -39,6 +41,10 @@ const TERMS: TermItem[] = [
   { id: 'marketing', label: '마케팅 수신 동의', required: false },
 ]
 
+// 진행 상태 영속화 키 — middleware가 온보딩 미완 유저를 /onboarding으로 강제 리다이렉트(:181)할 때
+// 페이지가 통째로 새로 로드돼 useState가 초기화되는 것을 방지(직전 단계로 복원).
+const PROGRESS_KEY = 'unao_onboarding_progress'
+
 // ── 메인 컴포넌트 ──
 export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }) {
   const router = useRouter()
@@ -46,6 +52,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
   const [isPending, startTransition] = useTransition()
   const [submitError, setSubmitError] = useState('')
   const [isNavigating, setIsNavigating] = useState(false)
+  const [hydrated, setHydrated] = useState(false) // sessionStorage 복원 완료 플래그(저장 effect 가드)
 
   // Step 1 - 닉네임
   const [nickname, setNickname] = useState('')
@@ -67,13 +74,23 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
 
   const checkDuplicateFromServer = useCallback(async (value: string) => {
     setNicknameStatus('checking')
-    const result = await checkNickname(value)
-    if (result.available) {
-      setNicknameStatus('valid')
-      setNicknameError('')
-    } else {
+    try {
+      // 8초 내 응답 없으면 타임아웃 — ⏳('중복 확인 중...') 무한 정체 방지 (모바일 네트워크 끊김 등)
+      const result = await Promise.race([
+        checkNickname(value),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
+      ])
+      if (result.available) {
+        setNicknameStatus('valid')
+        setNicknameError('')
+      } else {
+        setNicknameStatus('error')
+        setNicknameError(result.error || '사용할 수 없는 닉네임이에요')
+      }
+    } catch {
+      // 네트워크/서버 오류·타임아웃 — 멈추지 말고 재시도 안내 (재입력 시 handleNicknameChange가 재검증)
       setNicknameStatus('error')
-      setNicknameError(result.error || '사용할 수 없는 닉네임이에요')
+      setNicknameError('확인이 지연돼요. 잠시 후 다시 시도해 주세요')
     }
   }, [])
 
@@ -93,7 +110,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
       return
     }
 
-    debounceRef.current = setTimeout(() => checkDuplicateFromServer(value), 300)
+    debounceRef.current = setTimeout(() => checkDuplicateFromServer(value), 250)
   }
 
   useEffect(() => {
@@ -116,28 +133,61 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     }
   }, [step])
 
-  // stepRef 동기화 (beforeunload 클로저 스테일 방지)
+  // stepRef 동기화 (이탈 핸들러 클로저 스테일 방지)
   useEffect(() => { stepRef.current = step }, [step])
 
-  // 가입 이탈 감지 — 탭 닫기/새로고침 시 어느 단계에서 이탈했는지 GA4 기록
+  // 진행 상태 복원 (마운트 1회) — 재마운트/강제 리다이렉트로 페이지가 새로 떠도 직전 단계 유지
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(PROGRESS_KEY)
+      if (raw) {
+        const saved = JSON.parse(raw) as { step?: number; nickname?: string; agreed?: Record<string, boolean> }
+        if (saved.nickname) setNickname(saved.nickname)
+        if (saved.agreed) setAgreed((prev) => ({ ...prev, ...saved.agreed }))
+        if (saved.step === 2) setStep(2) // step3(완료)는 복원하지 않음 — 재진입 시 폼 처음부터
+        // 복원된 닉네임 재검증 (그새 다른 사람이 선점했을 수 있음 + step1 '다음' 버튼 활성화 위해 status 복구)
+        if (saved.nickname && !validateNickname(saved.nickname)) {
+          checkDuplicateFromServer(saved.nickname)
+        }
+      }
+    } catch { /* sessionStorage 불가 환경 무시 */ }
+    setHydrated(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 진행 상태 저장 (복원 완료 후에만 — 초기 default가 저장본을 덮어쓰는 것 방지)
+  useEffect(() => {
+    if (!hydrated) return
+    try {
+      sessionStorage.setItem(PROGRESS_KEY, JSON.stringify({ step, nickname, agreed }))
+    } catch { /* 무시 */ }
+  }, [hydrated, step, nickname, agreed])
+
+  // 가입 이탈 감지 — 어느 단계에서 이탈했는지 기록.
+  // beforeunload는 모바일(iOS/TWA)에서 자주 미발화 → visibilitychange(hidden)+pagehide로 신뢰화
+  // (PostViewBeacon.tsx와 동일 패턴). trackEvent는 이미 sendBeacon 사용(track.ts).
   useEffect(() => {
     const startTime = Date.now()
-    const handleUnload = () => {
-      if (!localStorage.getItem('signup_completed_at')) {
-        sendGtmEvent('signup_abandoned', {
-          abandoned_at_step: stepRef.current,
-          time_spent_ms: Date.now() - startTime,
-          browser_env: getBrowserEnv(),
-        })
-        trackEvent('signup_abandoned', {
-          abandoned_at_step: stepRef.current,
-          time_spent_ms: Date.now() - startTime,
-          browser_env: getBrowserEnv(),
-        })
+    let fired = false
+    const fire = () => {
+      if (fired) return
+      if (localStorage.getItem('signup_completed_at')) return
+      fired = true
+      const payload = {
+        abandoned_at_step: stepRef.current,
+        time_spent_ms: Date.now() - startTime,
+        browser_env: getBrowserEnv(),
       }
+      sendGtmEvent('signup_abandoned', payload)
+      trackEvent('signup_abandoned', payload)
     }
-    window.addEventListener('beforeunload', handleUnload)
-    return () => window.removeEventListener('beforeunload', handleUnload)
+    const onVisibility = () => { if (document.visibilityState === 'hidden') fire() }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('pagehide', fire)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pagehide', fire)
+    }
   }, [])
 
   function handleStep1Next() {
@@ -181,6 +231,8 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
 
   async function handleComplete() {
     setIsNavigating(true)
+    // 가입 완료 — 진행 상태 영속 데이터 정리 (다음 가입자에게 잔여 복원 방지)
+    try { sessionStorage.removeItem(PROGRESS_KEY) } catch { /* 무시 */ }
     // 인앱→외부브라우저 재접속 감지용 (sessionStorage는 탭 전환 시 유실됨)
     localStorage.setItem('signup_completed_at', new Date().toISOString())
     // 환영 토스트 1회 표시 트리거 (layout.tsx Phase 3에서 처리)
@@ -255,6 +307,9 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
               maxLength={10}
               autoFocus
               autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
             />
             <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xl pointer-events-none">
               {nicknameStatus === 'valid' && '✅'}
