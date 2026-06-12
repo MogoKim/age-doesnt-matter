@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import PostDeleteButton from './PostDeleteButton'
 
 interface PostOwnerActionsProps {
@@ -11,8 +11,8 @@ interface PostOwnerActionsProps {
 }
 
 export default function PostOwnerActions({ authorId, boardSlug, postId }: PostOwnerActionsProps) {
-  const { data: session, status } = useSession()
-  if (status !== 'authenticated' || !authorId || session.user.id !== authorId) return null
+  const { user, status } = useAppSession()
+  if (status !== 'authenticated' || !authorId || user?.id !== authorId) return null
 
   return (
     <div className="flex items-center gap-1">

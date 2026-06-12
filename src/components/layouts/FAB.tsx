@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import { cn } from '@/lib/utils'
 import LoginPromptModal from '@/components/features/auth/LoginPromptModal'
 
@@ -11,7 +11,7 @@ const FAB_PAGES = ['/community/stories', '/community/humor', '/community/life2']
 
 export default function FAB() {
   const pathname = usePathname()
-  const { status } = useSession()
+  const { status } = useAppSession()
   const isLoggedIn = status === 'authenticated'
   const [collapsed, setCollapsed] = useState(false)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)

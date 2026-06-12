@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import { cn } from '@/lib/utils'
 import NotificationBadge from '@/components/common/NotificationBadge'
 import HeaderFontSizeToggle from '@/components/common/HeaderFontSizeToggle'
@@ -22,7 +22,7 @@ const MENU_ITEMS = [
 export default function GNB() {
   const pathname = usePathname()
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const { data: session, status } = useAppSession()
   const isLoggedIn = status === 'authenticated'
   const nickname = session?.user?.nickname
   const [query, setQuery] = useState('')

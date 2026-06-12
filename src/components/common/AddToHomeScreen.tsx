@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import { gtmPwaPopupShown, gtmPwaInstall, gtmPwaBannerAction } from '@/lib/gtm'
 import { useToast } from '@/components/common/Toast'
 
@@ -168,7 +168,7 @@ function postPopupShown() {
 
 export default function AddToHomeScreen() {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const { data: session } = useAppSession()
   const [visible, setVisible] = useState(false)
   const [isManual, setIsManual] = useState(false)
   const [canNativeInstall, setCanNativeInstall] = useState(false)

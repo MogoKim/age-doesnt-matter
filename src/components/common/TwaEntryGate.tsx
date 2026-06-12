@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 import { getExperimentVariant } from '@/lib/experiments/assign'
 import { startKakaoLogin } from '@/lib/kakao-start'
@@ -21,7 +21,7 @@ const POST_COUNT_KEY = 'twa_session_post_views' // PostViewBeacon이 증가시�
 const B_THRESHOLD = 3
 
 export default function TwaEntryGate() {
-  const { status } = useSession()
+  const { status } = useAppSession()
   const { isTWA } = useAppEnvironment()
   const pathname = usePathname()
   const [variant, setVariant] = useState<string | null>(null)

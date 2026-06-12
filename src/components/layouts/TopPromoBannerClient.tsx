@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import { shareToKakao, KakaoUnavailableError, preloadKakaoSdk } from '@/lib/kakao-share'
 import { gtmReferralShare } from '@/lib/gtm'
 import { useToast } from '@/components/common/Toast'
@@ -23,7 +23,7 @@ export default function TopPromoBannerClient({
   guestSettings,
   memberSettings,
 }: TopPromoBannerClientProps) {
-  const { data: session, status } = useSession()
+  const { data: session, status } = useAppSession()
   const { toast } = useToast()
   const isLoggedIn = status === 'authenticated'
 

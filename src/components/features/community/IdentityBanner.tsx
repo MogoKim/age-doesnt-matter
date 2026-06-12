@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import { trackEvent } from '@/lib/track'
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
  *  "여기가 어떤 곳"인지 안내(클릭 이동·닫기 없음). force-static이라 클라에서 비회원 판단(PostCTA 패턴).
  *  로고는 실제 logo.png에서 심볼(겹친 원)만 crop(h-7 컨테이너 + 상단 노출, 텍스트 영역은 overflow로 가림). */
 export default function IdentityBanner({ boardSlug }: Props) {
-  const { status } = useSession()
+  const { status } = useAppSession()
   const authKnown = status !== 'loading'
   const isLoggedIn = status === 'authenticated'
 

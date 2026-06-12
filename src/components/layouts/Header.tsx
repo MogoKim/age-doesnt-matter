@@ -2,13 +2,13 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import NotificationBadge from '@/components/common/NotificationBadge'
 import HeaderFontSizeToggle from '@/components/common/HeaderFontSizeToggle'
 import { IconSearch, IconUser } from '@/components/icons'
 
 export default function Header() {
-  const { status } = useSession()
+  const { status } = useAppSession()
   const isLoggedIn = status === 'authenticated'
 
   return (

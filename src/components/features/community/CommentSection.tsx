@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useOptimistic, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import type { CommentItem as CommentItemType } from '@/types/api'
 import type { Grade } from '@/generated/prisma/client'
 
@@ -28,10 +28,10 @@ function sortComments(comments: CommentItemType[], sort: 'oldest' | 'likes'): Co
 }
 
 export default function CommentSection({ postId, comments, isLoggedIn, currentUser }: CommentSectionProps) {
-  const { data: session, status } = useSession()
+  const { user, status } = useAppSession()
   const authKnown = typeof isLoggedIn === 'boolean' || status !== 'loading'
   const resolvedIsLoggedIn = isLoggedIn ?? status === 'authenticated'
-  const resolvedCurrentUser = currentUser ?? (status === 'authenticated' ? session.user : undefined)
+  const resolvedCurrentUser = currentUser ?? (status === 'authenticated' ? user ?? undefined : undefined)
   const [personalizedComments, setPersonalizedComments] = useState(comments)
   const [sort, setSort] = useState<'oldest' | 'likes'>('oldest')
 

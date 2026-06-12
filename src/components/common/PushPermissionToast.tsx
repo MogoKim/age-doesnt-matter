@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 import { canAskPushPermission, recordDenied, recordGranted } from '@/lib/push/permission'
 import { flags } from '@/lib/feature-flags'
@@ -28,7 +28,7 @@ export function PushPermissionToast() {
   const [trigger, setTrigger] = useState<TriggerType | null>(null)
   const [visible, setVisible] = useState(false)
   const env = useAppEnvironment()
-  const { status } = useSession()
+  const { status } = useAppSession()
 
   const statusRef = useRef(status)
   const shownRef = useRef(false)   // 세션(마운트)당 1회 — 한번 띄우면 추가 트리거 무시

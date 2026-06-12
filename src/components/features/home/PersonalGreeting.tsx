@@ -1,13 +1,13 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import Link from 'next/link'
 
 /**
  * PersonalGreeting — 회원 전용 Hero 직후 인사 카드
  */
 export default function PersonalGreeting() {
-  const { data: session, status } = useSession()
+  const { data: session, status } = useAppSession()
   if (status !== 'authenticated' || !session?.user?.nickname) return null
   const nickname = session.user.nickname
   // 온보딩 직후 세션 갱신 지연으로 옛 임시닉네임(user_숫자)이 잠깐 남는 경우 인사말을 숨긴다

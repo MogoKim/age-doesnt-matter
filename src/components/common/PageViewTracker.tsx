@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import { trackEvent } from '@/lib/track'
 import { gtmPageView, gtmLogin, gtmSetUserProperties, captureUtm, getBrowserEnv, getStoredUtm } from '@/lib/gtm'
 
@@ -12,7 +12,7 @@ const SESSION_LOGIN_KEY = 'unao_login_ev'
 
 export default function PageViewTracker() {
   const pathname = usePathname()
-  const { data: session, status } = useSession()
+  const { user, status } = useAppSession()
   const utmCaptured = useRef(false)
 
   // 최초 마운트 시 UTM 캡처 (광고 소재 보존)
@@ -31,14 +31,14 @@ export default function PageViewTracker() {
     gtmLogin('kakao')
     trackEvent('login', { method: 'kakao', browser_env: getBrowserEnv() })
     // user_id undefined 전송 방지
-    if (session.user?.id) {
+    if (user?.id) {
       void gtmSetUserProperties({
-        user_id: session.user.id,
+        user_id: user.id,
         user_type: 'member',
         registration_method: 'kakao',
       })
     }
-  }, [status, session])
+  }, [status, user])
 
   // 페이지 이동 시 page_view (UTM 동봉 — 레퍼럴/유입 채널을 EventLog에서 추적)
   useEffect(() => {

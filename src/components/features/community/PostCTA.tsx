@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 import { trackEvent } from '@/lib/track'
 import { sendGtmEvent } from '@/lib/gtm'
@@ -24,7 +24,7 @@ interface PostCTAProps {
 
 export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps) {
   const { isTWA, isStandalone } = useAppEnvironment()
-  const { status } = useSession()
+  const { status } = useAppSession()
   const pathname = usePathname()
   const loggedRef = useRef(false)
   const authKnown = typeof isLoggedIn === 'boolean' || status !== 'loading'

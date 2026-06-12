@@ -27,6 +27,7 @@
     "qa:audit:user": "playwright test --project=qa-audit-user --workers=1",
     "qa:full": "playwright test --project=qa-audit --project=qa-audit-mobile --project=qa-audit-user --workers=1",
     "test:signup-banner": "playwright test --project=signup-banner",
+    "perf:measure": "tsx scripts/perf-measure.ts",
     "board": "tsx scripts/ops-board/server.ts",
     "board:check": "tsc --noEmit -p scripts/ops-board/tsconfig.json",
     "insights": "tsx --env-file=.env.local agents/scripts/insights.ts"

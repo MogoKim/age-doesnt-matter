@@ -27,7 +27,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <TopPromoBanner />
       </Suspense>
 
-      {/* 모바일: Header / 데스크탑: GNB — useSession() 기반, auth() 없음 */}
+      {/* 모바일: Header / 데스크탑: GNB — 클라이언트 세션 기반, auth() 없음 */}
       <Header />
       <GNB />
 
@@ -41,7 +41,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
       <main id="main-content" className="pb-[72px] lg:pb-0">{children}</main>
 
-      {/* FAB — useSession() 기반, auth() 없음 */}
+      {/* FAB — 클라이언트 세션 기반, auth() 없음 */}
       <FAB />
 
       <Footer />

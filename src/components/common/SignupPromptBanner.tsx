@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
 import {
   gtmSignupBannerEligible,
   gtmSignupBannerShown,
@@ -104,7 +104,7 @@ const INAPP_UTM_SOURCES = ['kakao-android', 'kakao-ios', 'naver-inapp', 'google-
 export function SignupPromptBanner() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { data: session, status } = useSession()
+  const { data: session, status } = useAppSession()
   const isLoggedIn = status === 'authenticated'
   const { isTWA } = useAppEnvironment() // TWA(앱)는 게이트 실험(twa01_entry_gate)이 담당 → 웹 타이밍 배너 OFF(오염 차단)
   const createdAt = session?.user?.createdAt ? String(session.user.createdAt) : undefined
