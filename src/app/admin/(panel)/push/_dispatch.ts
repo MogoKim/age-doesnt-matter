@@ -1,5 +1,5 @@
 // 푸시 발송 공용 로직 (즉시 발송 actions.ts + 예약 디스패치 route.ts 공용).
-// 'use server' 아님 — 일반 서버 모듈이라 server action·route 양쪽에서 import 가능.
+// 서버 액션 지시어 없음 — 일반 서버 모듈이라 server action·route 양쪽에서 import 가능.
 import { prisma } from '@/lib/prisma'
 import { pushService } from '@/lib/push/service'
 import { isRealUser } from '@/lib/notify'
