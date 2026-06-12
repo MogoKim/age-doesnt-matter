@@ -389,3 +389,14 @@ export function IconCopy({ size = 24, className }: IconProps) {
     </svg>
   )
 }
+
+/** 점 3개 — 더보기(스크랩·신고) */
+export function IconMore({ size = 24, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="12" r="2" />
+    </svg>
+  )
+}

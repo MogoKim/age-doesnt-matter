@@ -11,7 +11,8 @@ import { shareToKakao, copyShareLink, KakaoUnavailableError, preloadKakaoSdk, bu
 import { logKakaoShareDebug, getKakaoRuntimeSnapshot } from '@/lib/kakao-share-debug'
 import { gtmLike, gtmShare } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
-import { IconHeart, IconBookmark, IconShare, IconFlag, IconKakao, IconCopy } from '@/components/icons'
+import { IconHeart, IconBookmark, IconShare, IconFlag, IconKakao, IconCopy, IconMore } from '@/components/icons'
+import BottomSheet from '@/components/ui/BottomSheet'
 const ReportModal = dynamic(() => import('./ReportModal'))
 const LoginPromptModal = dynamic(() => import('@/components/features/auth/LoginPromptModal'))
 
@@ -169,6 +170,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
   }, [authChecked, resolvedIsLoggedIn, isPending, isScrapped, postId, toast])
 
   const [showShareMenu, setShowShareMenu] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
 
   async function handleKakaoShare(e: React.MouseEvent) {
     logKakaoShareDebug('SHARE_CLICK_KAKAO', {
@@ -207,13 +209,15 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
     setShowShareMenu(false)
   }
 
-  const btnBase = 'action-btn flex items-center gap-2 min-h-[52px] min-w-[52px] px-4 py-2 bg-none border-none text-muted-foreground text-[17px] font-medium cursor-pointer rounded-xl justify-center hover:bg-primary/5 hover:text-primary-text'
-
   return (
     <>
-      <div className="flex items-center justify-around bg-card border border-border rounded-2xl py-2 mb-8 shadow-sm">
+      <div className="flex items-center gap-2 border-y border-border py-1.5 mb-8">
+        {/* 공감 — 유일하게 강조되는 코랄 알약 */}
         <button
-          className={cn(btnBase, isLiked && 'text-primary-text font-bold')}
+          className={cn(
+            'action-btn flex items-center gap-2 h-11 px-4 rounded-full text-[17px] font-bold bg-primary/10 text-primary-text disabled:opacity-60',
+            isLiked && 'bg-primary/[0.18] text-[#D84A3E]'
+          )}
           onClick={handleLike}
           disabled={isPending || !authChecked}
           aria-label={isLiked ? '공감 취소' : '공감'}
@@ -223,24 +227,25 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
           </span>
           <span>공감{likes > 0 ? ` ${likes}` : ''}</span>
         </button>
-        <button
-          className={cn(btnBase, isScrapped && 'text-primary-text font-bold')}
-          onClick={handleScrap}
-          disabled={isPending || !authChecked}
-          aria-label={isScrapped ? '스크랩 취소' : '스크랩'}
-        >
-          <IconBookmark size={20} filled={isScrapped} />
-          <span>스크랩</span>
-        </button>
+
+        <div className="flex-1" />
+
+        {/* 공유 — 보조 (기존 카카오/링크복사 popover 유지) */}
         <div className="relative">
-          <button className={btnBase} onClick={(e) => { if (!showShareMenu) logKakaoShareDebug('SHARE_MENU_OPEN', { isTrusted: e.isTrusted, postId }); setShowShareMenu(!showShareMenu) }} aria-label="공유">
+          <button
+            className="action-btn flex items-center gap-1.5 h-11 min-w-[44px] px-2 rounded-xl text-[17px] font-medium text-muted-foreground hover:text-primary-text"
+            onClick={(e) => { if (!showShareMenu) logKakaoShareDebug('SHARE_MENU_OPEN', { isTrusted: e.isTrusted, postId }); setShowShareMenu(!showShareMenu) }}
+            aria-label="공유"
+            aria-haspopup="menu"
+            aria-expanded={showShareMenu}
+          >
             <IconShare size={20} />
             <span>공유</span>
           </button>
           {showShareMenu && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowShareMenu(false)} />
-              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg p-1 min-w-[140px]">
+              <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg p-1 min-w-[150px]">
                 <button
                   type="button"
                   onClick={handleKakaoShare}
@@ -261,11 +266,40 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
             </>
           )}
         </div>
-        <button className={btnBase} onClick={() => setShowReport(true)} aria-label="신고">
-          <IconFlag size={20} />
-          <span>신고</span>
+
+        {/* 더보기 — 스크랩·신고를 BottomSheet 안으로 */}
+        <button
+          className="action-btn flex items-center justify-center h-11 w-11 rounded-xl text-muted-foreground hover:text-primary-text"
+          onClick={() => setShowMoreMenu(true)}
+          aria-label="더보기"
+          aria-haspopup="menu"
+          aria-expanded={showMoreMenu}
+        >
+          <IconMore size={22} />
         </button>
       </div>
+
+      <BottomSheet open={showMoreMenu} onClose={() => setShowMoreMenu(false)} title="더보기">
+        <div className="flex flex-col">
+          <button
+            type="button"
+            className="action-btn flex items-center gap-3.5 min-h-[52px] px-1 text-[17px] font-semibold text-foreground rounded-xl hover:bg-primary/5 disabled:opacity-60"
+            onClick={() => { handleScrap(); setShowMoreMenu(false) }}
+            disabled={isPending || !authChecked}
+          >
+            <IconBookmark size={22} filled={isScrapped} />
+            <span>{isScrapped ? '스크랩 해제' : '스크랩'}</span>
+          </button>
+          <button
+            type="button"
+            className="action-btn flex items-center gap-3.5 min-h-[52px] px-1 text-[17px] font-semibold text-destructive rounded-xl hover:bg-destructive/5"
+            onClick={() => { setShowReport(true); setShowMoreMenu(false) }}
+          >
+            <IconFlag size={22} />
+            <span>신고</span>
+          </button>
+        </div>
+      </BottomSheet>
 
       {showReport && (
         <ReportModal
