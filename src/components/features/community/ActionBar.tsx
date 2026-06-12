@@ -211,7 +211,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
 
   return (
     <>
-      <div className="flex items-center gap-2 border-y border-border py-1.5 mb-8">
+      <div className="flex items-center gap-2 border-y border-border py-1.5 mb-6">
         {/* 공감 — 유일하게 강조되는 코랄 알약 */}
         <button
           className={cn(

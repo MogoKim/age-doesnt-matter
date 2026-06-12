@@ -197,7 +197,7 @@ export default async function JobDetailPage({ params }: PageProps) {
 
       {/* 본문 */}
       <div
-        className="post-content text-body text-foreground leading-[1.85] mb-8 break-keep bg-card p-6 rounded-xl shadow-sm [&_p]:mb-4"
+        className="post-content text-body text-foreground leading-[1.85] mb-3 break-keep [&_p]:mb-4"
         dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.content) }}
       />
 
