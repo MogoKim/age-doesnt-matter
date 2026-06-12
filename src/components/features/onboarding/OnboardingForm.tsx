@@ -7,25 +7,10 @@ import { Button } from '@/components/ui/Button'
 import { checkNickname, completeOnboarding } from '@/lib/actions/onboarding'
 import { gtmSignUp, sendGtmEvent, waitForGtagReady, getBrowserEnv } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
-
-// ── 닉네임 유효성 검사 ──
-const NICKNAME_REGEX = /^[가-힣a-zA-Z0-9]+$/
-const BANNED_WORDS = ['운영자', '관리자', 'admin', '어드민', '관리인']
+// 닉네임 규칙은 단일 진실(@/lib/nickname) — 가입/프로필변경 공통. 화면별 규칙 drift 방지
+import { validateNicknameFormat as validateNickname, NICKNAME_REGEX, BANNED_WORDS, NICKNAME_MIN, NICKNAME_MAX } from '@/lib/nickname'
 
 type NicknameStatus = 'idle' | 'checking' | 'valid' | 'error'
-
-function validateNickname(value: string): string | null {
-  // 띄어쓰기는 별도 안내 — "한글, 영문, 숫자만"으로 뭉뚱그리면 한글 친 유저가 공백이 문제인 줄 모름
-  if (/\s/.test(value)) return '닉네임에는 띄어쓰기를 넣을 수 없어요'
-  if (value.length < 2) return '2자 이상 입력해 주세요'
-  if (value.length > 10) return '10자 이하로 입력해 주세요'
-  if (!NICKNAME_REGEX.test(value)) return '한글, 영문, 숫자만 사용할 수 있어요'
-  const lower = value.toLowerCase()
-  for (const word of BANNED_WORDS) {
-    if (lower.includes(word)) return '사용할 수 없는 닉네임이에요'
-  }
-  return null
-}
 
 // ── 약관 항목 ──
 interface TermItem {
@@ -68,7 +53,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     marketing: false,
   })
 
-  const lengthOk = nickname.length >= 2 && nickname.length <= 10
+  const lengthOk = nickname.length >= NICKNAME_MIN && nickname.length <= NICKNAME_MAX
   const charOk = nickname.length === 0 || NICKNAME_REGEX.test(nickname)
   const noBanned = !BANNED_WORDS.some((w) => nickname.toLowerCase().includes(w))
 
@@ -304,7 +289,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
               placeholder="예: 행복한바리스타"
               value={nickname}
               onChange={(e) => handleNicknameChange(e.target.value)}
-              maxLength={10}
+              maxLength={NICKNAME_MAX}
               autoFocus
               autoComplete="off"
               autoCapitalize="off"
@@ -341,7 +326,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
           <p className="text-[17px] font-bold text-muted-foreground mb-2">닉네임 규칙</p>
           <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
             <li className={cn('text-[17px] flex items-center gap-1.5', lengthOk ? 'text-success' : 'text-muted-foreground')}>
-              {lengthOk ? '✓' : '·'} 2~10자
+              {lengthOk ? '✓' : '·'} {NICKNAME_MIN}~{NICKNAME_MAX}자
             </li>
             <li className={cn('text-[17px] flex items-center gap-1.5', charOk ? 'text-success' : 'text-muted-foreground')}>
               {charOk ? '✓' : '·'} 한글, 영문, 숫자만 (띄어쓰기 불가)

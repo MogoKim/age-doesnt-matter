@@ -6,11 +6,9 @@ import { prisma } from '@/lib/prisma'
 import { retryOnConnError } from '@/lib/db-retry'
 import { getInterestBasedPosts } from '@/lib/queries/posts'
 import type { RecommendedPost } from '@/lib/queries/posts'
+import { validateNicknameFormat } from '@/lib/nickname'
 
 export type { RecommendedPost }
-
-const NICKNAME_REGEX = /^[가-힣a-zA-Z0-9]+$/
-const BANNED_WORDS = ['운영자', '관리자', 'admin', '어드민', '관리인']
 
 interface OnboardingResult {
   error?: string
@@ -25,20 +23,8 @@ interface SaveInterestsResult {
 export async function checkNickname(nickname: string): Promise<{ available: boolean; error?: string }> {
   const trimmed = nickname.trim()
 
-  if (trimmed.length < 2 || trimmed.length > 10) {
-    return { available: false, error: '2~10자로 입력해 주세요' }
-  }
-
-  if (!NICKNAME_REGEX.test(trimmed)) {
-    return { available: false, error: '한글, 영문, 숫자만 사용할 수 있어요' }
-  }
-
-  const lower = trimmed.toLowerCase()
-  for (const word of BANNED_WORDS) {
-    if (lower.includes(word)) {
-      return { available: false, error: '사용할 수 없는 닉네임이에요' }
-    }
-  }
+  const formatError = validateNicknameFormat(trimmed)
+  if (formatError) return { available: false, error: formatError }
 
   const existing = await prisma.user.findUnique({
     where: { nickname: trimmed },
