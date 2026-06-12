@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { updateFontSize } from '@/lib/actions/settings'
+import { useFontSize } from '@/components/common/FontSizeProvider'
 
 const FONT_SIZES = [
   { value: 'NORMAL', label: '보통', desc: '본문 18px' },
@@ -17,6 +18,7 @@ interface FontSizeSettingsProps {
 
 export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps) {
   const router = useRouter()
+  const { setFontSize } = useFontSize()
   const [selected, setSelected] = useState(currentSize)
   const [isPending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
@@ -33,8 +35,8 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
       if (result.error) {
         setMessage(result.error)
       } else {
-        // localStorage에도 저장 → 다른 페이지에서 즉시 적용
-        localStorage.setItem('unao-font-size', selected)
+        // 즉시 반영: FontSizeProvider가 data-font-size + localStorage + cookie 처리 (footer 토글과 동일 경로)
+        setFontSize(selected as 'NORMAL' | 'LARGE' | 'XLARGE')
         setMessage('글자 크기가 변경되었어요')
         router.refresh()
       }

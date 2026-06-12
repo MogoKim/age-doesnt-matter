@@ -19,13 +19,15 @@ const config: Config = {
     },
     extend: {
       /* ── 시니어 맞춤형 폰트 스케일 (18px 베이스) ── */
+      /* 시니어 글씨크기 토글 반영: var(--text-*)가 data-font-size로 NORMAL/LARGE/XLARGE 전환.
+         NORMAL 값 = 기존 고정 px와 동일(회귀 0). 3xl/4xl(랜딩 초대형)은 고정 유지. */
       fontSize: {
-        xs: ['15px', { lineHeight: '1.4' }],
-        sm: ['16px', { lineHeight: '1.5' }],
-        base: ['18px', { lineHeight: '1.6' }],
-        lg: ['20px', { lineHeight: '1.6' }],
-        xl: ['24px', { lineHeight: '1.4' }],
-        '2xl': ['28px', { lineHeight: '1.3' }],
+        xs: ['var(--text-caption)', { lineHeight: '1.4' }],  // 15/17/20
+        sm: ['var(--text-sm)', { lineHeight: '1.5' }],       // 16/18/22
+        base: ['var(--text-body)', { lineHeight: '1.6' }],   // 18/20/24
+        lg: ['var(--text-title)', { lineHeight: '1.6' }],    // 20/24/28
+        xl: ['var(--text-heading)', { lineHeight: '1.4' }],  // 24/28/32
+        '2xl': ['var(--text-display)', { lineHeight: '1.3' }], // 28/32/38
         '3xl': ['36px', { lineHeight: '1.2' }],
         '4xl': ['44px', { lineHeight: '1.2' }],
       },
