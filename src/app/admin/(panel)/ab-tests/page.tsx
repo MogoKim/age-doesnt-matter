@@ -68,7 +68,7 @@ function TwaBaselineCard({ r }: { r: TwaRetention }) {
     <div className="rounded-xl border border-zinc-200 bg-white p-5">
       <h2 className="text-base font-bold text-zinc-900">📱 TWA 가입자 재방문 (현행 baseline)</h2>
       <p className="mt-1 text-xs text-zinc-500">
-        게이트 실험 전 기준선 — 앱(TWA)으로 가입한 회원이 이후 앱으로 다시 오는가 (최근 90일 · 봇 제외)
+        게이트 실험 전 기준선 — 앱(TWA)으로 가입한 회원이 이후 앱으로 다시 오는가 (최근 90일 고정 · 기간 버튼 무관 · 봇 제외)
       </p>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((s) => (
@@ -115,7 +115,7 @@ function ExperimentMeta({ exp }: { exp: WebExperimentView }) {
 
 // 게이트 실험(twa01_entry_gate) 전용 카드 — funnel(전환율)이 아니라 그룹별 가입 후 재방문(D1/D7)으로 비교.
 //  게이트 A(현행)는 노출 이벤트가 없어 funnel 분모가 0 → A가 0%로 오독됨. 그래서 게이트는 재방문 지표로만 본다.
-function GateExperimentCard({ exp, rows }: { exp: WebExperimentView; rows: GateRetentionRow[] }) {
+function GateExperimentCard({ exp, rows, baselineCount }: { exp: WebExperimentView; rows: GateRetentionRow[]; baselineCount: number }) {
   const total = rows.reduce((s, r) => s + r.signupCount, 0)
   const isLive = exp.status !== 'CONCLUDED' && exp.status !== 'DRAFT'
   return (
@@ -125,6 +125,7 @@ function GateExperimentCard({ exp, rows }: { exp: WebExperimentView; rows: GateR
         <h2 className="text-base font-bold text-zinc-900">{exp.name}</h2>
         <span className="text-xs text-zinc-400">담당 {exp.owner}</span>
         <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">📱 앱 재방문으로 측정</span>
+        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">🗓 최근 90일 고정 (기간 버튼 무관)</span>
       </div>
 
       <ExperimentMeta exp={exp} />
@@ -134,7 +135,9 @@ function GateExperimentCard({ exp, rows }: { exp: WebExperimentView; rows: GateR
           <thead className="bg-zinc-50 text-xs text-zinc-500">
             <tr>
               <th className="px-3 py-2 text-left font-medium">그룹</th>
+              <th className="px-3 py-2 text-right font-medium">노출</th>
               <th className="px-3 py-2 text-right font-medium">가입자</th>
+              <th className="px-3 py-2 text-right font-medium">전환율</th>
               <th className="px-3 py-2 text-right font-medium">D1 재방문</th>
               <th className="px-3 py-2 text-right font-medium">D7 재방문</th>
               <th className="px-3 py-2 text-right font-medium">첫 활동</th>
@@ -144,7 +147,9 @@ function GateExperimentCard({ exp, rows }: { exp: WebExperimentView; rows: GateR
             {rows.map((r) => (
               <tr key={r.variant} className="border-t border-zinc-100">
                 <td className="px-3 py-2 font-medium text-zinc-700">{r.label}</td>
+                <td className="px-3 py-2 text-right text-zinc-600">{r.exposure > 0 ? `${r.exposure}명` : '—'}</td>
                 <td className="px-3 py-2 text-right text-zinc-800">{r.signupCount}명</td>
+                <td className="px-3 py-2 text-right text-zinc-800">{r.signupRate === null ? '—' : `${r.signupRate}%`}</td>
                 <td className="px-3 py-2 text-right text-zinc-800">{r.d1ReturnRate}% <span className="text-xs text-zinc-400">({r.d1ReturnCount}/{r.signupCount})</span></td>
                 <td className="px-3 py-2 text-right text-zinc-800">{r.d7ReturnRate}% <span className="text-xs text-zinc-400">({r.d7ReturnCount}/{r.signupCount})</span></td>
                 <td className="px-3 py-2 text-right text-zinc-800">{r.firstActionRate}% <span className="text-xs text-zinc-400">({r.firstActionCount}/{r.signupCount})</span></td>
@@ -156,11 +161,14 @@ function GateExperimentCard({ exp, rows }: { exp: WebExperimentView; rows: GateR
 
       <p className="mt-3 text-xs leading-relaxed text-zinc-500">
         A(현행·대조군) 대비 B·C가 <b>가입 후 앱 재방문(D1/D7)</b>을 높이는지가 핵심입니다.
-        가입률(funnel)은 게이트 특성상 비교가 부적합해 제외했습니다. (최근 90일 · 봇 제외)
+        전환율(노출→가입)은 참고용으로 표시하되, 그룹별 노출 모집단 성격이 달라(아래 ⚠️) 단순 비교는 삼가세요. (최근 90일 · 봇 제외)
       </p>
       <p className="mt-1 text-xs leading-relaxed text-zinc-400">
         · 괄호 안 = 재방문/가입 <b>실제 명수</b>(%는 표본 작을 때 출렁이니 명수로 확인) · D1=가입 후 48시간 내, D7=7일 내 앱 재방문(누적, D7⊇D1)
-        · 첫활동=현재 글·댓글 1개+ 보유 · 그룹 분류=가입 시 twa_gate_variant. 위 baseline(21명)은 게이트 무관 전체 TWA 가입자라 모수가 다름(직접 비교 주의)
+        · 첫활동=현재 글·댓글 1개+ 보유 · 그룹 분류=가입 시 twa_gate_variant. 위 baseline({baselineCount}명)은 게이트 무관 전체 TWA 가입자라 모수가 다름(직접 비교 주의)
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-amber-600">
+        ⚠️ 노출 모수 성격 주의: <b>C</b>는 진입 즉시 노출(전원) · <b>B</b>는 글 3개 열람 후 노출(동기 높은 일부) · <b>A</b>는 게이트 없음(노출 0, 자연 가입만 집계). 분모 모집단이 달라 전환율 직접 비교는 신중히.
       </p>
       {total < 30 && (
         <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-700">
@@ -287,7 +295,7 @@ export default async function AdminAbTestsPage({
 
       <TwaBaselineCard r={twaRetention} />
 
-      {gateExp && <GateExperimentCard exp={gateExp} rows={gateRetention} />}
+      {gateExp && <GateExperimentCard exp={gateExp} rows={gateRetention} baselineCount={twaRetention.signupCount} />}
 
       {active.length > 0 && (
         <section className="space-y-3">

@@ -40,6 +40,7 @@
 | 2026-06-07 | 인프라 신규 — 레지스트리/배정/통계 + 어드민 현황·편집 + ExperimentState | A/B 다수 진행 위한 중앙 운영·기록·관리 |
 | 2026-06-08 | 어드민에 게이트 재방문(D1/D7) 카드 연결 + 게이트를 funnel 목록에서 분리 | 게이트 A(현행)는 노출 이벤트가 없어 funnel 분모 0 → A 0% 오표시. 게이트는 `getGateRetention` 재방문 지표로만 본다(`page.tsx` `GateExperimentCard`). |
 | 2026-06-09 | f01_signup_content·f01_signup_timing 종료(레지스트리 삭제), gtm/OnboardingForm variant 첨부 제거, e2e/22 read_complete 기준 수정, 임시 감사 스크립트 삭제 | UT 위너 확정 → 코드 고정·레거시 제거. 인프라·게이트 유지 |
+| 2026-06-12 | TWA baseline 판정 교차 보강(`getTwaSignupRetention`: browser_env OR twa_gate_variant OR TWA page_view) + 게이트 표에 노출 분모/전환율 컬럼 + 캡션 동적화 + 90일 고정 뱃지 | 카카오 OAuth 복귀 시 referrer 소실로 TWA 가입자 67%(33명 중 22명)가 android-chrome으로 오기록 → baseline 31명으로 과소집계(실제 57명)·D7 재방문율 왜곡. 측정 쿼리만 보강(가입 플로우 무수정). sticky 근본수정은 백로그. 캐시키 v1→v2 |
 
 ## 비고 / 후속
 - **F01 SignupPromptBanner는 EventLog 이벤트로 이미 어드민에 집계됨** → 어드민 현황은 마이그레이션과 무관하게 F01 실데이터 표시.

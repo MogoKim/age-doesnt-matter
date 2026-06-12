@@ -187,45 +187,64 @@ function isTwa(props: unknown): boolean {
   return typeof props === 'object' && props !== null && (props as Record<string, unknown>).browser_env === 'twa-android'
 }
 
+function asProps(props: unknown): Record<string, unknown> {
+  return typeof props === 'object' && props !== null ? (props as Record<string, unknown>) : {}
+}
+
 const _getTwaSignupRetention = unstable_cache(
   async (days: number): Promise<TwaRetention> => {
     const start = new Date(Date.now() - days * DAY)
+    const ZERO: TwaRetention = { signupCount: 0, d1ReturnRate: 0, d7ReturnRate: 0, firstActionRate: 0, d1ReturnCount: 0, d7ReturnCount: 0, firstActionCount: 0 }
 
-    // 1) TWA 가입자 (sign_up + browser_env=twa-android)
+    // 1) 전체 가입자 (browser_env 무관) — TWA 교차판정 위해 먼저 모은다.
+    //    sign_up 단건의 browser_env는 카카오 OAuth 복귀 시 referrer 소실로 android-chrome으로 오기록되므로
+    //    여기서 좁히지 않고, 게이트 변형·TWA page_view까지 교차해 판정한다(과소집계 방지).
     const signups = await prisma.eventLog.findMany({
       where: { eventName: 'sign_up', userId: { not: null }, isBot: false, createdAt: { gte: start } },
       select: { userId: true, createdAt: true, properties: true },
+      orderBy: { createdAt: 'asc' },
     })
     const signupAt = new Map<string, Date>() // userId → 최초 가입시각
+    const signupProps = new Map<string, Record<string, unknown>>()
     for (const s of signups) {
-      if (s.userId && isTwa(s.properties) && !signupAt.has(s.userId)) signupAt.set(s.userId, s.createdAt)
+      if (s.userId && !signupAt.has(s.userId)) {
+        signupAt.set(s.userId, s.createdAt)
+        signupProps.set(s.userId, asProps(s.properties))
+      }
     }
-    const userIds = [...signupAt.keys()]
-    if (userIds.length === 0) return { signupCount: 0, d1ReturnRate: 0, d7ReturnRate: 0, firstActionRate: 0, d1ReturnCount: 0, d7ReturnCount: 0, firstActionCount: 0 }
+    const allUserIds = [...signupAt.keys()]
+    if (allUserIds.length === 0) return ZERO
 
-    // 2) 가입자들의 이후 TWA page_view (재방문)
+    // 2) 전체 가입자의 TWA page_view (교차판정 + 재방문 계산 겸용)
     const views = await prisma.eventLog.findMany({
-      where: { eventName: 'page_view', userId: { in: userIds }, isBot: false },
+      where: { eventName: 'page_view', userId: { in: allUserIds }, isBot: false },
       select: { userId: true, createdAt: true, properties: true },
     })
-    const twaViewsByUser = new Map<string, number[]>() // userId → 재방문 시각(ms) 목록
+    const twaViewsByUser = new Map<string, number[]>() // userId → TWA 재방문 시각(ms)
     for (const v of views) {
       if (!v.userId || !isTwa(v.properties)) continue
       ;(twaViewsByUser.get(v.userId) ?? twaViewsByUser.set(v.userId, []).get(v.userId)!).push(v.createdAt.getTime())
     }
 
-    // 3) 첫 활동 (가입자 User의 글/댓글)
+    // 3) TWA 가입자 교차판정: sign_up이 twa-android  OR  twa_gate_variant 보유(게이트는 TWA에서만 노출)  OR  TWA page_view 존재
+    const userIds = allUserIds.filter((u) => {
+      const p = signupProps.get(u)!
+      return isTwa(p) || typeof p.twa_gate_variant === 'string' || twaViewsByUser.has(u)
+    })
+    if (userIds.length === 0) return ZERO
+
+    // 4) 첫 활동 (가입자 User의 글/댓글)
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, postCount: true, commentCount: true },
     })
     const activeCount = users.filter((u) => u.postCount > 0 || u.commentCount > 0).length
 
-    // 4) D1/D7 재방문 (가입 1시간 후 ~ 해당 윈도우, rolling)
+    // 5) D1/D7 재방문 (가입 1시간 후 ~ 해당 윈도우, rolling)
     let d1 = 0
     let d7 = 0
-    for (const [uid, at] of signupAt) {
-      const t = at.getTime()
+    for (const uid of userIds) {
+      const t = signupAt.get(uid)!.getTime()
       const vs = (twaViewsByUser.get(uid) ?? []).filter((ms) => ms > t + 3600_000) // 가입 1h 후 이후
       if (vs.some((ms) => ms <= t + 2 * DAY)) d1++ // 48h 내
       if (vs.some((ms) => ms <= t + 7 * DAY)) d7++ // 7일 내
@@ -242,7 +261,7 @@ const _getTwaSignupRetention = unstable_cache(
       firstActionCount: activeCount,
     }
   },
-  ['admin-twa-retention-v1'],
+  ['admin-twa-retention-v2'],
   { revalidate: 600 },
 )
 
@@ -264,6 +283,8 @@ export interface GateRetentionRow {
   d1ReturnCount: number // 재방문 실제 명수 (표본 작을 때 % 착시 방지)
   d7ReturnCount: number
   firstActionCount: number
+  exposure: number // 게이트 노출(twa_gate_view) distinct — "가입자 이전 모수". A(현행)는 노출 이벤트 없어 0
+  signupRate: number | null // 노출→가입 전환율(%). 노출 0이면 null(N/A). B/C 분모 모집단 성격 다름 주의
 }
 
 const _getGateRetention = unstable_cache(
@@ -280,16 +301,34 @@ const _getGateRetention = unstable_cache(
     const byVariant = new Map<string, Map<string, Date>>() // variant → (userId → 가입시각)
     for (const v of exp.variants) byVariant.set(v.key, new Map())
     for (const s of signups) {
-      const g = typeof s.properties === 'object' && s.properties !== null
-        ? (s.properties as Record<string, unknown>).twa_gate_variant
-        : undefined
+      const g = asProps(s.properties).twa_gate_variant
       if (s.userId && typeof g === 'string' && byVariant.has(g) && !byVariant.get(g)!.has(s.userId)) {
         byVariant.get(g)!.set(s.userId, s.createdAt)
       }
     }
+
+    // 노출 분모 (twa_gate_view distinct sessionId per variant) — "가입자 이전 모수"
+    //  A(현행)는 게이트를 안 띄워 노출 이벤트가 없으므로 0 (TwaEntryGate.tsx: variant==='A' return).
+    const gateViews = await prisma.eventLog.findMany({
+      where: { eventName: 'twa_gate_view', isBot: false, createdAt: { gte: start } },
+      select: { sessionId: true, userId: true, properties: true },
+    })
+    const exposureByVariant = new Map<string, Set<string>>()
+    for (const v of exp.variants) exposureByVariant.set(v.key, new Set())
+    for (const gv of gateViews) {
+      const g = asProps(gv.properties).twa_gate_variant
+      const id = gv.sessionId ?? gv.userId
+      if (typeof g === 'string' && exposureByVariant.has(g) && id) exposureByVariant.get(g)!.add(id)
+    }
+    const exposureOf = (k: string) => exposureByVariant.get(k)?.size ?? 0
+    const rateOf = (conv: number, k: string): number | null => {
+      const e = exposureOf(k)
+      return e > 0 ? Math.round((conv / e) * 1000) / 10 : null
+    }
+
     const allUserIds = [...byVariant.values()].flatMap((m) => [...m.keys()])
     if (allUserIds.length === 0) {
-      return exp.variants.map((v) => ({ variant: v.key, label: v.label, signupCount: 0, d1ReturnRate: 0, d7ReturnRate: 0, firstActionRate: 0, d1ReturnCount: 0, d7ReturnCount: 0, firstActionCount: 0 }))
+      return exp.variants.map((v) => ({ variant: v.key, label: v.label, signupCount: 0, d1ReturnRate: 0, d7ReturnRate: 0, firstActionRate: 0, d1ReturnCount: 0, d7ReturnCount: 0, firstActionCount: 0, exposure: exposureOf(v.key), signupRate: rateOf(0, v.key) }))
     }
 
     const [views, users] = await Promise.all([
@@ -322,10 +361,10 @@ const _getGateRetention = unstable_cache(
       }
       const n = map.size
       const pct = (x: number) => (n ? Math.round((x / n) * 1000) / 10 : 0)
-      return { variant: v.key, label: v.label, signupCount: n, d1ReturnRate: pct(d1), d7ReturnRate: pct(d7), firstActionRate: pct(act), d1ReturnCount: d1, d7ReturnCount: d7, firstActionCount: act }
+      return { variant: v.key, label: v.label, signupCount: n, d1ReturnRate: pct(d1), d7ReturnRate: pct(d7), firstActionRate: pct(act), d1ReturnCount: d1, d7ReturnCount: d7, firstActionCount: act, exposure: exposureOf(v.key), signupRate: rateOf(n, v.key) }
     })
   },
-  ['admin-gate-retention-v1'],
+  ['admin-gate-retention-v2'],
   { revalidate: 600 },
 )
 
