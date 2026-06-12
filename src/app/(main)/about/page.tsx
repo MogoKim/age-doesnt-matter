@@ -85,7 +85,7 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
               <li>💎 <strong>터줏대감</strong> — 게시글 20개 이상 + 받은 공감 100개 이상</li>
               <li>☀️ <strong>따뜻한이웃</strong> — 운영진이 직접 선정하는 특별 등급</li>
             </ul>
-            <p className="text-[17px] text-muted-foreground mt-2">등급이 올라가면 이미지·유튜브 첨부 등 더 많은 기능을 사용할 수 있어요.</p>
+            <p className="text-body text-muted-foreground mt-2">등급이 올라가면 이미지·유튜브 첨부 등 더 많은 기능을 사용할 수 있어요.</p>
           </div>
         ),
       },
@@ -108,7 +108,7 @@ const FAQ_GROUPS: Array<{ group: string; items: FaqItem[] }> = [
               <li><Link href="/community/life2" className="text-primary-text underline">2막준비</Link> — 재취업·은퇴·인생 2막</li>
               <li><Link href="/community/humor" className="text-primary-text underline">웃음방</Link> — 유머·재미있는 글</li>
             </ul>
-            <p className="text-[17px] text-muted-foreground">✏️ 버튼은 로그인 후에 보여요.</p>
+            <p className="text-body text-muted-foreground">✏️ 버튼은 로그인 후에 보여요.</p>
           </div>
         ),
       },
@@ -278,7 +278,7 @@ export default async function AboutPage() {
               <p className="text-body font-bold text-foreground leading-snug break-keep m-0">
                 {card.title}
               </p>
-              <p className="text-[17px] text-muted-foreground leading-relaxed break-keep m-0">
+              <p className="text-body text-muted-foreground leading-relaxed break-keep m-0">
                 {card.desc}
               </p>
             </Link>
