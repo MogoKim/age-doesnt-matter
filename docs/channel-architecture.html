@@ -175,7 +175,7 @@
       <div class="light"><span class="dot on"></span> 회원가입 유도 — <b>🟢 ON</b> (항상)</div>
       <div class="light"><span class="dot on"></span> TWA 진입 게이트 — <b>🟢 ON</b> (끌 수 있음)</div>
       <div class="light"><span class="dot off"></span> 앱 설치 유도 — <b>🔴 OFF</b> (현재 아무에게도 안 보임)</div>
-      <div class="light"><span class="dot on"></span> 푸시 알림 — <b>🟢 ON</b> (토스트 OFF 스위치는 부채)</div>
+      <div class="light"><span class="dot on"></span> 푸시 구독수집(4트리거)+마케팅동의 — <b>🟢 ON</b> (토스트 OFF 스위치는 부채)</div>
     </div>
     <div class="note">📖 <b>읽는 법</b>: 각 섹션은 ① 한 줄 핵심 → ② 자연어 설명 → ③ 표·그림·실제 화면 → ④ <b>[▸ 개발자용]</b> 토글(코드·파일경로) 순서입니다. 비개발자는 ①②③만, 개발자는 ④까지.</div>
     <div class="note" style="background:#eef0f3;border-color:var(--line);color:var(--sub)">🗂 이 문서는 기존 <b>channel-architecture · app-install-policy · signup-prompt-policy</b> 3개를 <b>하나로 통합</b>한 최신본입니다(나머지 2개는 삭제됨). 모든 내용은 현재 코드를 한 줄씩 검증한 사실입니다.</div>
@@ -238,8 +238,8 @@
         </tr>
         <tr>
           <td><b>푸시 알림</b></td>
-          <td class="same">댓글 단 뒤 "알림 받을래요?" 권유</td>
-          <td class="diff">아이폰은 <b>PWA로 설치했을 때만</b> 웹푸시 가능(브라우저 정책)</td>
+          <td class="same"><b>가입·글쓰기·댓글·방문</b> 시 "알림 받을래요?" 권유. "받을게요"=푸시 허용+<b>마케팅 수신 동의</b></td>
+          <td class="diff">아이폰은 <b>PWA로 설치했을 때만</b> 웹푸시 가능(브라우저 정책). 인앱·웹아이폰(미설치)은 미노출</td>
         </tr>
         <tr>
           <td><b>네비게이션</b></td>
@@ -293,7 +293,7 @@
         <tr><td>TWA 게이트</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="yes">✅<br><span class="muted">비로그인</span></td></tr>
         <tr><td>글하단 CTA(비회원 가입)</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="no">❌</td></tr>
         <tr><td>앱 설치 유도 <span class="bdg b-off">현재 OFF</span></td><td class="no">❌</td><td class="cond">(ON시)</td><td class="cond">(ON시)</td><td class="cond">(ON시)외부</td><td class="no">❌</td><td class="no">❌</td></tr>
-        <tr><td>푸시 알림</td><td class="yes">✅</td><td class="yes">✅</td><td class="cond">PWA설치시</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+        <tr><td>푸시 토스트(구독 권유)</td><td class="yes">✅</td><td class="yes">✅</td><td class="no">❌<br><span class="muted">미설치=불가</span></td><td class="no">❌<br><span class="muted">미지원+회원전용</span></td><td class="yes">✅</td><td class="yes">✅<br><span class="muted">⚠️실제전달 실기기검증</span></td></tr>
         <tr><td>네비(상단+FAB)</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
       </table>
     </div>
@@ -430,17 +430,62 @@ sessionStorage: pwa_shown_this_session · pwa_banner_shown_this_session</code></
     </div></details>
 
     <!-- 5-4 푸시 -->
-    <h3 style="margin-top:22px">5-4. 푸시 알림 <span class="bdg b-on">🟢 ON</span></h3>
+    <h3 style="margin-top:22px">5-4. 푸시 알림 — 구독 수집 · 마케팅 동의 · 광고 발송 <span class="bdg b-on">🟢 ON</span></h3>
+    <p class="muted" style="margin-top:6px">예전엔 "댓글 단 뒤"에만 물어봤고 그마저 버그로 안 떴습니다(구독자 0). 이제 <b>4가지 순간</b>에 물어보고, 받으면 답글 알림(리텐션)과 합법 광고를 보냅니다.</p>
+
+    <p class="keyline" style="font-size:16px;margin-top:14px">언제 뜨나 — 4개 트리거 (모두 로그인 회원·미구독에게만)</p>
     <ul class="bul">
-      <li>댓글을 단 뒤 "알림 받을래요?" 토스트(<b>comment</b> 트리거)로 권유.</li>
-      <li><b>일자리(job) 알림은 아직 미연결</b> — UI·문구는 완성됐는데 부르는 곳이 없음(부채 <b>C6</b>).</li>
-      <li>채널별: <b>아이폰은 PWA로 설치했을 때만</b> 웹푸시 가능(브라우저 정책). 안드/PWA/TWA/데스크탑은 가능.</li>
-      <li>서비스워커(<span class="kv">sw.js</span>)가 푸시 수신·표시. 발송은 서버(VAPID 키 존재).</li>
+      <li><b>① 가입 직후</b> — "🌱 환영해요! 알림 받으시겠어요?"</li>
+      <li><b>② 글쓰기 직후</b>(전환 최고) / <b>댓글 직후</b> — "🔔 답글 오면 바로 알려드릴까요?"</li>
+      <li><b>③ 회원 방문</b>(글 1개 정독 후 자동) — "🔔 내 글 소식, 알림 받으시겠어요?"</li>
+      <li>서브문구에 "소식·혜택"을 명시 → <b>"받을게요" 탭 = 푸시 허용 + 마케팅 수신 동의</b>. 버튼 [받을게요]/[나중에].</li>
+      <li>차단: 비회원 / 이미 허용·차단 / 쿨다운(거절 1일·2회+30일) / PWA·어드민 팝업 표시중 / 미지원 기기. 세션당 1회.</li>
+      <li><b>일자리(job) 알림은 여전히 미연결</b>(문구만 있고 부르는 곳 없음 — 부채 <b>C6</b>).</li>
     </ul>
+    <div class="warn">⚠️ <b>과거 버그 수정</b>: 토스트는 (main) 레이아웃에 한 번 붙어 안 사라지는데, 예전엔 "트리거 확인"을 마운트 때 1번만 해서 <b>같은 페이지/앱내 이동 시 글쓰기·댓글 토스트가 안 떴습니다</b>(구독 0의 진짜 원인). 이제 <b>이벤트(<span class="kv">unao:push-trigger</span>/<span class="kv">unao:engaged</span>)로 즉시 재평가</b>해 정상 노출됩니다.</div>
+
+    <h4 style="margin-top:18px">마케팅 수신 동의 (정보통신망법 §50)</h4>
+    <ul class="bul">
+      <li><b>"받을게요" = 마케팅 동의</b>: 문구에 "우나어 소식·혜택"을 명시했으므로 동의 근거(informed consent). 구독 성공 시 <span class="kv">marketingOptIn=true</span> + <span class="kv">Agreement(MARKETING,'1.0')</span> 기록(온보딩과 version 단일). ⚖️ 동의 묶음은 법무 확인 완료.</li>
+      <li><b>권한(기술) ≠ 동의(법)</b> — 헷갈리기 쉬움:</li>
+    </ul>
+    <div class="scroll-x"><table>
+      <tr><th>메시지</th><th>OS 푸시 권한(구독)</th><th>마케팅 동의(법)</th></tr>
+      <tr><td>정보성/서비스(답글·등급)</td><td class="yes">✅ 필요(기술)</td><td class="no">❌ 불필요</td></tr>
+      <tr><td>광고성(혜택·이벤트)</td><td class="yes">✅ 필요</td><td class="yes">✅ 필요(§50)</td></tr>
+      <tr><td>앱 안 종(🔔) 알림</td><td class="no">❌ 불필요</td><td class="no">❌ 불필요</td></tr>
+    </table></div>
+    <p class="muted" style="margin-top:8px">즉 정보성(답글)은 마케팅 동의 없이 보내도 되지만, <b>"폰 OS 푸시" 자체는 정보성이든 광고든 권한(구독)이 필수</b>입니다(앱 안 종 알림만 예외).</p>
+
+    <h4 style="margin-top:18px">발송 2종 (서비스 vs 광고)</h4>
+    <div class="scroll-x"><table>
+      <tr><th>종류</th><th>받는 사람</th><th>표기·제한</th></tr>
+      <tr><td class="same">서비스 알림</td><td>구독자 <b>전원</b>(댓글·답글·등급)</td><td>없음 · 자동 발송</td></tr>
+      <tr><td class="diff">광고/마케팅</td><td>구독 + <b><span class="kv">marketingOptIn=true</span></b>만</td><td><b>(광고) 표기</b> + <b>야간 21~08 차단</b> + 어드민 수동 발송</td></tr>
+    </table></div>
+    <div class="note">⚖️ 새 글·좋아요·스크랩 자동 푸시는 <b>없음</b>(남발 방지). 광고는 어드민 <span class="kv">/admin/push</span>에서 "유형: 광고" 선택 시 위 규제 자동 적용. <b>실제 광고 발송 전 법무 최종확인</b> 권장.</div>
+
+    <p class="keyline" style="font-size:16px;margin-top:18px">플랫폼별 푸시 동작 (웹 / 앱 / PWA)</p>
+    <div class="scroll-x">
+      <p class="hint">↔ 표가 넓으면 좌우로 밀어서 보세요</p>
+      <table>
+        <tr><th>채널</th><th>토스트 노출<br>(supportsWebPush)</th><th>받을게요→구독</th><th>실제 알림 도달</th></tr>
+        <tr><td>웹 — 데스크탑</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅ 데스크탑 알림</td></tr>
+        <tr><td>웹 — 안드(Chrome)</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+        <tr><td>웹 — 아이폰(Safari 미설치)</td><td class="no">❌ PushManager 없음</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>앱 — 안드(TWA)</td><td class="yes">✅</td><td class="yes">✅</td><td class="cond">⚠️ wrapper 알림위임 의존(실기기 검증)</td></tr>
+        <tr><td>PWA — 아이폰 홈설치(iOS16.4+)</td><td class="yes">✅ standalone</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+        <tr><td>인앱(카톡·네이버)</td><td class="no">❌ 미지원+회원전용</td><td class="no">—</td><td class="no">—</td></tr>
+      </table>
+    </div>
+    <div class="note">🔑 토스트는 <b>회원 전용</b>(authenticated)이라 가입유도 배너(비회원)와 <b>겹치지 않습니다</b>. 마케팅 동의는 토스트가 뜨는 플랫폼에서 "받을게요" 시 동일하게 기록.</div>
+
     <details><summary>개발자용 — 푸시 코드</summary><div class="inner"><ul class="bul">
-      <li><span class="kv">PushPermissionToast.tsx</span> — <span class="kv">setPushToastTrigger('comment')</span>만 호출됨(<span class="kv">CommentInput.tsx:37</span>). <span class="kv">'job'</span> 미연결(C6)</li>
-      <li><span class="kv">public/sw.js</span> push/notificationclick/pushsubscriptionchange · <span class="kv">push/service.ts</span>(서버 발송) · <span class="kv">feature-flags.ts</span>(webPush·pushToast)</li>
-      <li>현재값: <span class="kv">FEATURE_WEB_PUSH</span> 미설정=ON, VAPID 키 존재 → 발송 작동. <span class="kv">FEATURE_PUSH_TOAST</span>는 클라이언트 죽은 스위치(항상 ON) — 8번 참고</li>
+      <li><span class="kv">PushPermissionToast.tsx</span> — 트리거 4개: 명시 <span class="kv">setPushToastTrigger</span>(댓글 <span class="kv">CommentInput.tsx:37</span> / 가입 <span class="kv">OnboardingForm.tsx:227</span> / 글쓰기 <span class="kv">PostWriteForm.tsx:332</span>) + 자동 visit(정독 <span class="kv">PostViewBeacon.tsx</span> → <span class="kv">unao:engaged</span>). <span class="kv">'job'</span> 미연결(C6). eligible()=pushToast·supportsWebPush·authenticated·canAskPush·PWA/어드민팝업 양보</li>
+      <li>동의: <span class="kv">api/push/subscribe/route.ts:36,39-40</span>(marketingOptIn + Agreement) · <span class="kv">src/lib/agreements.ts</span>(version='1.0', 온보딩과 단일)</li>
+      <li>발송: <span class="kv">push/service.ts:38,46-51</span> <span class="kv">notify(...,category)</span> — ad면 marketingOptIn 차단·야간(21~08 KST)·(광고)prefix. 어드민 <span class="kv">push/actions.ts</span>+<span class="kv">PushBroadcastForm.tsx</span></li>
+      <li>측정: <span class="kv">push_prompt_shown/allowed/denied</span>(trigger 속성). 충돌양보: <span class="kv">PopupRenderer.tsx</span>가 <span class="kv">unao_admin_popup_visible</span> set/clear</li>
+      <li><span class="kv">public/sw.js</span> push/notificationclick/pushsubscriptionchange · <span class="kv">feature-flags.ts</span>. <span class="kv">FEATURE_WEB_PUSH</span> 미설정=ON(발송). <span class="kv">FEATURE_PUSH_TOAST</span>는 클라 죽은 스위치(항상 ON) — 8번</li>
     </ul></div></details>
 
     <!-- 5-5 네비 -->
@@ -501,8 +546,9 @@ sessionStorage: pwa_shown_this_session · pwa_banner_shown_this_session</code></
       <tr><td>회원가입 유도</td><td><span class="bdg b-on">🟢 ON</span></td><td class="muted">(없음·항상)</td><td>코드 변경만</td></tr>
       <tr><td>TWA 게이트</td><td><span class="bdg b-on">🟢 ON</span></td><td><span class="kv">NEXT_PUBLIC_TWA_GATE_ENABLED</span></td><td>Vercel서 <span class="kv">=false</span> → OFF (미설정=ON)</td></tr>
       <tr><td>앱 설치 유도</td><td><span class="bdg b-off">🔴 OFF</span></td><td><span class="kv">NEXT_PUBLIC_PWA_INSTALL_ENABLED</span></td><td>Vercel서 <span class="kv">=true</span> → ON (미설정=OFF)</td></tr>
-      <tr><td>푸시 토스트</td><td><span class="bdg b-on">🟢 ON</span></td><td><span class="kv">FEATURE_PUSH_TOAST</span> <span class="bdg b-cond">⚠️ 무효</span></td><td><b>코드 변경 필요</b>(아래 경고)</td></tr>
-      <tr><td>웹푸시 발송</td><td><span class="bdg b-on">🟢 ON</span></td><td><span class="kv">FEATURE_WEB_PUSH</span> (서버)</td><td>Vercel서 <span class="kv">=false</span> → OFF</td></tr>
+      <tr><td>푸시 토스트(구독수집 4트리거)</td><td><span class="bdg b-on">🟢 ON</span></td><td><span class="kv">FEATURE_PUSH_TOAST</span> <span class="bdg b-cond">⚠️ 무효</span></td><td><b>코드 변경 필요</b>(아래 경고 — 새 4트리거도 이 한계 상속)</td></tr>
+      <tr><td>웹푸시 발송(서비스)</td><td><span class="bdg b-on">🟢 ON</span></td><td><span class="kv">FEATURE_WEB_PUSH</span> (서버)</td><td>Vercel서 <span class="kv">=false</span> → OFF</td></tr>
+      <tr><td>광고 푸시 발송</td><td><span class="bdg b-cond">동의자만</span></td><td class="muted">코드 게이트(자동)</td><td>마케팅 미동의자엔 미발송 + (광고)표기 + 야간 21~08 차단(§50)</td></tr>
     </table></div>
     <div class="warn">⚠️ <b>푸시 토스트는 지금 끌 수 없습니다(부채).</b> <span class="kv">FEATURE_PUSH_TOAST</span>는 <span class="kv">NEXT_PUBLIC_</span> 접두사가 없는데, 이 값을 쓰는 <span class="kv">PushPermissionToast</span>는 클라이언트 컴포넌트라 빌드 시 값이 안 박혀 <b>항상 ON으로 읽힙니다(죽은 스위치)</b>. 끄려면 코드 수정 필요. 반면 웹푸시 <b>발송</b>(<span class="kv">FEATURE_WEB_PUSH</span>)은 서버에서 동작하므로 정상 OFF 가능.</div>
     <div class="note">🔎 위 "현재" 값은 <b>로컬 <span class="kv">.env.local</span> 4개 키 모두 미설정 = 기본값</b> 기준입니다(설치유도 OFF는 프로덕션 번들에서도 실측 확인). 운영 변경 시 <b>Vercel 환경변수</b>가 진실이니, ON/OFF 단정 전 Vercel을 확인하세요.</div>
@@ -513,8 +559,8 @@ sessionStorage: pwa_shown_this_session · pwa_banner_shown_this_session</code></
     <span class="sec-no">9</span>
     <h2>알려진 부채·주의점</h2>
     <ul class="bul">
-      <li><b>C6</b>(Low): 일자리 알림 푸시(<span class="kv">'job'</span>)가 영영 안 뜸 — 부르는 곳 미연결(UI는 완비).</li>
-      <li><b>푸시 토스트 OFF 스위치 부재</b>: <span class="kv">FEATURE_PUSH_TOAST</span>가 클라이언트에서 무효 → 긴급 OFF 불가. <span class="kv">NEXT_PUBLIC_</span> 방식으로 고쳐야 함.</li>
+      <li><b>C6</b>(Low): 일자리 알림 푸시(<span class="kv">'job'</span>)가 영영 안 뜸 — 부르는 곳 미연결(UI·문구는 완비).</li>
+      <li><b>푸시 토스트 OFF 스위치 부재</b>: <span class="kv">FEATURE_PUSH_TOAST</span>가 클라이언트에서 무효 → 긴급 OFF 불가. <b>구독수집 4트리거 확대로 영향 커짐</b>(토스트 전체를 끄려면 <span class="kv">NEXT_PUBLIC_</span> 방식으로 고쳐야 함). 단 <b>발송</b>은 <span class="kv">FEATURE_WEB_PUSH</span>(서버)로 정상 OFF 가능.</li>
       <li><b>앱 설치 유도 ON 여부</b>는 창업자 결정 대기(현재 OFF 보류).</li>
     </ul>
     <div class="note">📌 <b>부채의 단일 진실은 <a href="features/TECH-DEBT.md">docs/features/TECH-DEBT.md</a></b>입니다. 누적 작업 로그(<span class="kv">.claude/plans/...</span>)는 옛 내용이 섞여 있으니 신뢰하지 마세요. <b>채널 정책은 이 문서, 부채는 TECH-DEBT.md.</b></div>
@@ -532,7 +578,8 @@ sessionStorage: pwa_shown_this_session · pwa_banner_shown_this_session</code></
         <tr><td>가입유도</td><td><span class="kv">SignupPromptBanner.tsx</span> · <span class="kv">SignupCard.tsx</span> · <span class="kv">PostCTA.tsx</span> · <span class="kv">OnboardingForm.tsx</span></td></tr>
         <tr><td>게이트</td><td><span class="kv">TwaEntryGate.tsx</span> · <span class="kv">experiments/registry.ts</span> · <span class="kv">experiments/assign.ts</span></td></tr>
         <tr><td>설치유도</td><td><span class="kv">AddToHomeScreen.tsx</span> · <span class="kv">app-links.ts</span> · <span class="kv">FooterPwaButton.tsx</span> · <span class="kv">PwaInlineBanner.tsx</span> · <span class="kv">api/user/pwa-status/route.ts</span></td></tr>
-        <tr><td>푸시</td><td><span class="kv">PushPermissionToast.tsx</span> · <span class="kv">sw.js</span> · <span class="kv">push/service.ts</span> · <span class="kv">feature-flags.ts</span></td></tr>
+        <tr><td>푸시(수집)</td><td><span class="kv">PushPermissionToast.tsx</span>(트리거·문구·측정) · <span class="kv">CommentInput.tsx</span>·<span class="kv">OnboardingForm.tsx</span>·<span class="kv">PostWriteForm.tsx</span>·<span class="kv">PostViewBeacon.tsx</span>(트리거 호출) · <span class="kv">PopupRenderer.tsx</span>(충돌양보)</td></tr>
+        <tr><td>푸시(발송·동의)</td><td><span class="kv">api/push/subscribe/route.ts</span>(구독+마케팅동의) · <span class="kv">lib/agreements.ts</span>(version) · <span class="kv">push/service.ts</span>(service/ad) · <span class="kv">admin/(panel)/push/actions.ts</span>·<span class="kv">PushBroadcastForm.tsx</span> · <span class="kv">sw.js</span> · <span class="kv">feature-flags.ts</span></td></tr>
         <tr><td>측정</td><td><span class="kv">gtm.ts</span> · <span class="kv">api/events/route.ts</span> · <span class="kv">admin.experiments-web.ts</span> · <span class="kv">admin.insights.ts</span></td></tr>
         <tr><td>인프라</td><td><span class="kv">public/manifest.json</span> · <span class="kv">public/sw.js</span> · <span class="kv">public/.well-known/assetlinks.json</span></td></tr>
         <tr><td>네비</td><td><span class="kv">layouts/Header.tsx</span> · <span class="kv">GNB.tsx</span> · <span class="kv">FAB.tsx</span> · <span class="kv">MainLayout.tsx</span></td></tr>
