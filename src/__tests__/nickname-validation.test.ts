@@ -29,7 +29,7 @@ describe('checkNickname — 닉네임 검증', () => {
     it('1자 → 실패', async () => {
       const result = await checkNickname('가')
       expect(result.available).toBe(false)
-      expect(result.error).toContain('2~10자')
+      expect(result.error).toContain('2자 이상')
     })
 
     it('2자 → 성공', async () => {
