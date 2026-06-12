@@ -53,6 +53,14 @@ export const metadata: Metadata = {
     },
   },
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-96x96.png', type: 'image/png', sizes: '96x96' },
+    ],
+    shortcut: '/favicon.ico',
+    // apple 키 없음 → /apple-touch-icon.png 자동 사용 (iOS 앱 아이콘 불변)
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
