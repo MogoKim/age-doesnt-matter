@@ -12,6 +12,7 @@ import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import ActionBar from '@/components/features/community/ActionBar'
 import PostCTA from '@/components/features/community/PostCTA'
 import CommentSection from '@/components/features/community/CommentSection'
+import IdentityBanner from '@/components/features/community/IdentityBanner'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
@@ -243,6 +244,9 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           <span>👁 {post.viewCount}</span>
         </div>
       </div>
+
+      {/* 정체성 배너 (네이버 유입자 락인 ① — 비회원, 제목 밑). 매거진 유입자도 락인 */}
+      <IdentityBanner boardSlug="magazine" />
 
       {/* 시리즈 네비게이션 (연재물일 때만 표시) */}
       {post.seriesId && post.seriesTitle && post.seriesOrder && post.seriesCount && (

@@ -19,6 +19,7 @@
 - `src/components/features/community/PostListBottom.tsx` — `mode='related'` + `relatedPosts` prop 추가
 - `src/lib/queries/posts/posts.community.ts` — `getRelatedCommunityPosts()` 신규 쿼리
 - `src/app/(main)/community/[boardSlug]/[postId]/page.tsx` — 관련글 1회 조회 → 본문끝(0~2)·하단(3~14) 분배 + 배너 삽입
+- `src/app/(main)/magazine/[id]/page.tsx` — 정체성 배너만 삽입(`boardSlug="magazine"`). 관련글은 매거진 자체 `getRelatedMagazinePosts` 유지
 - `src/app/api/events/route.ts` — `CONVERSION_EVENTS`에 측정 이벤트 2개 면제
 
 ## 관련글 매칭 로직 (getRelatedCommunityPosts)
@@ -63,3 +64,4 @@
 |------|---------|------|
 | 2026-06-12 | 신규 생성 — 정체성 배너 + 같은 고민 글(본문끝·하단) + 측정 이벤트 4종 | 네이버 오가닉 유입자 락인(바운스 85%·가입 1% 개선) |
 | 2026-06-12 | QA 후속 — ①배너 클릭 이탈 제거(Link→div) ②관련글 정렬 인기순(trendingScore)으로 — 시드글 상위노출 방지 ③배너 재디자인(실제 로고 심볼+한 줄, ✕·서브2줄 제거, 문구 확정) | 실기기 QA 디자인 피드백 + 매칭 품질 |
+| 2026-06-12 | 배너 폰트 확대(text-body/caption 변수) — '가+' 글씨크기 조정 반응 + 18px화 / 매거진 글상세에도 배너 적용(boardSlug=magazine) | 실기기 피드백(폰트 작음·가+ 미반응) + 매거진 네이버 유입자 락인 |
