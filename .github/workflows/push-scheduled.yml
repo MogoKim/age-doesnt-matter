@@ -1,0 +1,23 @@
+name: "Push — Scheduled Dispatch"
+
+# 예약 푸시 디스패치 — 5분마다 due(PENDING·scheduledAt<=now) 항목을 발송.
+# 순수 HTTP 트리거: agents/ 핸들러가 아니므로 runner.ts 등록·check-cron-links 대상 아님.
+# 실제 발송은 Vercel 서버(/api/admin/push/dispatch-scheduled)가 수행(VAPID 키가 거기에만 존재).
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # 5분마다 due 픽업 (KST 무관 — 절대시각 비교)
+  workflow_dispatch: {}
+
+concurrency:
+  group: push-scheduled-dispatch
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger scheduled push dispatch
+        run: |
+          curl -fsS -X POST \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            https://age-doesnt-matter.com/api/admin/push/dispatch-scheduled

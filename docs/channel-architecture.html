@@ -464,6 +464,7 @@ sessionStorage: pwa_shown_this_session · pwa_banner_shown_this_session</code></
       <tr><td class="diff">광고/마케팅</td><td>구독 + <b><span class="kv">marketingOptIn=true</span></b>만</td><td><b>(광고) 표기</b> + <b>야간 21~08 차단</b> + 어드민 수동 발송</td></tr>
     </table></div>
     <div class="note">⚖️ 새 글·좋아요·스크랩 자동 푸시는 <b>없음</b>(남발 방지). 광고는 어드민 <span class="kv">/admin/push</span>에서 "유형: 광고" 선택 시 위 규제 자동 적용. <b>실제 광고 발송 전 법무 최종확인</b> 권장.</div>
+    <div class="note">⏰ <b>예약 발송(1회성)</b>: <span class="kv">/admin/push</span> "예약 발송" 선택 → <span class="kv">ScheduledPush</span> PENDING 저장. GHA 5분 크론(<span class="kv">push-scheduled.yml</span>) → <span class="kv">/api/admin/push/dispatch-scheduled</span>(<span class="kv">x-cron-secret</span>) → Vercel 서버가 발송(VAPID는 Vercel에만 존재). 발송 시점에 수신자 재계산 → 광고는 <b>야간 21~08시면 자동 스킵</b>(notify 게이트). 정밀도 ±5분.</div>
 
     <p class="keyline" style="font-size:16px;margin-top:18px">플랫폼별 푸시 동작 (웹 / 앱 / PWA)</p>
     <div class="scroll-x">

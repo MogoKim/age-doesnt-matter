@@ -1073,6 +1073,36 @@ model PushSubscription {
   @@index([userId])
 }
 
+// ── 예약 푸시 발송 (어드민 1회성) ──
+// GHA 5분 크론 → /api/admin/push/dispatch-scheduled → Vercel 서버가 발송(VAPID는 Vercel에만 존재)
+enum ScheduledPushStatus {
+  PENDING
+  SENT
+  CANCELED
+  FAILED
+}
+
+model ScheduledPush {
+  id            String              @id @default(cuid())
+  title         String
+  body          String
+  url           String              @default("/")
+  messageType   String              // 'service' | 'ad'
+  targetMode    String              // 'all' | 'grade' | 'user'
+  targetGrade   String              @default("ALL")
+  targetUserIds String[]            @default([])   // targetMode='user'일 때만
+  scheduledAt   DateTime                            // 예약 발송 시각(UTC)
+  status        ScheduledPushStatus @default(PENDING)
+  sentCount     Int?
+  sentAt        DateTime?
+  error         String?
+  createdBy     String                              // adminId
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([status, scheduledAt])
+}
+
 // ── 팝업 시스템 ──
 
 enum PopupType {
