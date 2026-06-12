@@ -226,6 +226,9 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         ← 매거진
       </Link>
 
+      {/* 정체성 배너 (네이버 유입자 락인 ① — 비회원, 제목 위). 매거진 유입자도 락인 */}
+      <IdentityBanner boardSlug="magazine" />
+
       {/* 헤더 */}
       <div className="mb-8 pb-6 border-b border-border">
         {post.category && (
@@ -244,9 +247,6 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           <span>👁 {post.viewCount}</span>
         </div>
       </div>
-
-      {/* 정체성 배너 (네이버 유입자 락인 ① — 비회원, 제목 밑). 매거진 유입자도 락인 */}
-      <IdentityBanner boardSlug="magazine" />
 
       {/* 시리즈 네비게이션 (연재물일 때만 표시) */}
       {post.seriesId && post.seriesTitle && post.seriesOrder && post.seriesCount && (

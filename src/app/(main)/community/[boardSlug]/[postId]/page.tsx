@@ -13,7 +13,6 @@ import CommentSection from '@/components/features/community/CommentSection'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeHtml, proxyR2Images } from '@/lib/sanitize'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
-import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import PostListBottom from '@/components/features/community/PostListBottom'
 import InlineRelatedPosts from '@/components/features/community/InlineRelatedPosts'
@@ -165,6 +164,9 @@ export default async function PostDetailPage({ params }: PageProps) {
         <PostOwnerActions authorId={post.author.id} boardSlug={boardSlug} postId={resolvedId} />
       </div>
 
+      {/* 정체성 배너 (네이버 유입자 락인 ① — 비회원, 제목 위) */}
+      <IdentityBanner boardSlug={boardSlug} />
+
       {/* 게시글 헤더 */}
       <div className="mb-8 pb-6 border-b border-border">
         {post.category && (
@@ -180,9 +182,6 @@ export default async function PostDetailPage({ params }: PageProps) {
           <span>👁 {post.viewCount}</span>
         </div>
       </div>
-
-      {/* 정체성 배너 (네이버 유입자 락인 ① — 비회원, 제목 밑) */}
-      <IdentityBanner boardSlug={boardSlug} />
 
       {/* 본문 */}
       <div
@@ -209,11 +208,6 @@ export default async function PostDetailPage({ params }: PageProps) {
       />
 
       <PostCTA postId={resolvedId} postTitle={post.title} />
-
-      {/* 쿠팡 관련 상품 */}
-      <div className="mb-8">
-        <CoupangSearchWidget />
-      </div>
 
       {/* 댓글 — Suspense로 지연 로딩 (본문 먼저 표시) */}
       <Suspense fallback={
