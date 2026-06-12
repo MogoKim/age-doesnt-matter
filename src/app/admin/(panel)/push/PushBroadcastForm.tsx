@@ -76,6 +76,24 @@ export default function PushBroadcastForm({ subCount }: Props) {
       </div>
 
       <div className="space-y-1">
+        <label className="block text-sm font-medium text-zinc-700" htmlFor="messageType">
+          메시지 유형
+        </label>
+        <select
+          id="messageType"
+          name="messageType"
+          defaultValue="service"
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+        >
+          <option value="service">서비스 알림 (공지·안내 — 구독자 전원)</option>
+          <option value="ad">광고/마케팅 (혜택·이벤트 — 마케팅 동의자만)</option>
+        </select>
+        <p className="text-xs text-zinc-500">
+          ⚖️ 광고 선택 시: 마케팅 동의자에게만 발송 + 제목 자동 <b>(광고)</b> 표기 + <b>야간 21~08시 차단</b> (정보통신망법 §50)
+        </p>
+      </div>
+
+      <div className="space-y-1">
         <label className="block text-sm font-medium text-zinc-700" htmlFor="targetGrade">
           발송 대상
         </label>

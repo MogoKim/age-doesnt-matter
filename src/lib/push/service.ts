@@ -31,17 +31,34 @@ class PushService {
     }
   }
 
-  async notify(userId: string, payload: PushPayload, campaign = 'notification'): Promise<void> {
+  async notify(
+    userId: string,
+    payload: PushPayload,
+    campaign = 'notification',
+    category: 'service' | 'ad' = 'service',
+  ): Promise<void> {
     if (!flags.webPush) return
     if (!initVapid()) return
     try {
+      // 광고성(정보통신망법 §50): 마케팅 동의자만 + (광고) 표기 + 야간(21~08 KST) 차단.
+      // 서비스 알림(기본 'service', 댓글·답글·등급)은 규제 무관 → 그대로.
+      let outgoing = payload
+      if (category === 'ad') {
+        const user = await prisma.user.findUnique({ where: { id: userId }, select: { marketingOptIn: true } })
+        if (!user?.marketingOptIn) return                  // ① 미동의자 광고 차단
+        const kstHour = (new Date().getUTCHours() + 9) % 24
+        if (kstHour >= 21 || kstHour < 8) return            // ③ 야간 21~08 KST 광고 차단
+        const title = payload.title.startsWith('(광고)') ? payload.title : `(광고) ${payload.title}`  // ② 표기
+        outgoing = { ...payload, title }
+      }
+
       const subs = await prisma.pushSubscription.findMany({ where: { userId } })
       if (subs.length === 0) return
 
       const enriched = {
-        ...payload,
-        url: this.buildUrl(payload.url, campaign),
-        icon: payload.icon ?? '/icons/icon-192x192.png',
+        ...outgoing,
+        url: this.buildUrl(outgoing.url, campaign),
+        icon: outgoing.icon ?? '/icons/icon-192x192.png',
       }
 
       await Promise.allSettled(

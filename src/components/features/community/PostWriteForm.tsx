@@ -9,6 +9,7 @@ import { deleteDraft as deleteDraftAction } from '@/lib/actions/drafts'
 import { useToast } from '@/components/common/Toast'
 import { gtmPostCreate, sendGtmEvent } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
+import { setPushToastTrigger } from '@/components/common/PushPermissionToast'
 import BottomSheet from '@/components/ui/BottomSheet'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { ChevronDown } from 'lucide-react'
@@ -327,6 +328,8 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           gtmPostCreate(selectedBoard, selectedCategory)
           trackEvent('post_create', { board_type: selectedBoard, category: selectedCategory })
           window.dispatchEvent(new CustomEvent('pwa-prompt', { detail: 'engagement' }))
+          // 글 작성 직후 푸시 구독 유도 (작성자=답글 알림 가치 최고). 글상세 이동 후에도 이벤트 재평가로 노출
+          setPushToastTrigger('post')
         }
         clearDraft()
         if (result?.postUrl) router.push(result.postUrl)

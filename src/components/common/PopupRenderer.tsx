@@ -79,6 +79,16 @@ export default function PopupRenderer() {
     return () => controller.abort()
   }, [pathname])
 
+  // 어드민 공지팝업(z-200) 표시 중엔 푸시 토스트(z-250)가 양보하도록 공용 플래그 set/clear (충돌 방지)
+  // PushPermissionToast.eligible()이 'unao_admin_popup_visible'를 체크 → 동시에 두 동의요청 안 뜸.
+  useEffect(() => {
+    try {
+      if (activePopup) sessionStorage.setItem('unao_admin_popup_visible', '1')
+      else sessionStorage.removeItem('unao_admin_popup_visible')
+    } catch { /* noop */ }
+    return () => { try { sessionStorage.removeItem('unao_admin_popup_visible') } catch { /* noop */ } }
+  }, [activePopup])
+
   const handleClose = useCallback(() => {
     if (!activePopup) return
     hidePopup(activePopup)

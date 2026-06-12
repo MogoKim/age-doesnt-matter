@@ -51,6 +51,8 @@ export default function PostViewBeacon({ postId }: PostViewBeaconProps) {
     try {
       const k = 'twa_session_post_views'
       sessionStorage.setItem(k, String(Number(sessionStorage.getItem(k) ?? '0') + 1))
+      // 정독(글 1개 열람) 신호 → 푸시 토스트가 'visit' 트리거 재평가 (회원 방문 구독 유도)
+      window.dispatchEvent(new CustomEvent('unao:engaged'))
     } catch {
       /* sessionStorage 불가 무시 */
     }

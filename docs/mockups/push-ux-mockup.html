@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>우나어 — 푸시 알림 동의 UX 전체 흐름</title>
+<style>
+  :root{
+    --primary:#FF6F61; --primary-text:#E85D50; --coral-pale:#FFF1EF;
+    --fg:#1A1A1A; --muted:#7b8190; --line:#E5E7EB; --bg:#F7F7F8;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:#dfe3e8; font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif; color:#222; line-height:1.6; padding:26px 14px 60px; }
+  .head{ max-width:880px; margin:0 auto 8px; text-align:center; }
+  .head h1{ font-size:22px; font-weight:800; }
+  .head p{ font-size:14px; color:#5b616b; margin-top:8px; }
+  .flowbar{ max-width:880px; margin:14px auto 26px; background:#fff; border-radius:14px; padding:14px 16px; box-shadow:0 3px 14px rgba(0,0,0,.08); font-size:14px; color:#444; text-align:center; }
+  .flowbar b{ color:var(--primary-text); }
+  .flowbar .arrow{ color:#bbb; margin:0 6px; }
+
+  .section{ max-width:880px; margin:0 auto 22px; background:#fff; border-radius:18px; padding:20px 20px 22px; box-shadow:0 3px 16px rgba(0,0,0,.09); }
+  .vlabel{ display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .vlabel .k{ font-size:14px; font-weight:800; color:#fff; background:var(--primary); border-radius:8px; padding:4px 12px; }
+  .vlabel .title{ font-size:17px; font-weight:800; color:#222; }
+  .vlabel .who{ font-size:12.5px; font-weight:700; color:#fff; background:#5b9; border-radius:7px; padding:3px 9px; }
+  .vlabel .who.gray{ background:#8a93a3; }
+  .desc{ font-size:14px; color:#5b616b; margin:2px 0 16px; }
+  .desc b{ color:var(--primary-text); }
+
+  .phones{ display:flex; gap:22px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+  .pcol{ display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .caption{ font-size:13px; color:#666; font-weight:600; text-align:center; max-width:300px; }
+  .caption .step{ display:inline-block; background:#222; color:#fff; border-radius:50%; width:20px; height:20px; line-height:20px; text-align:center; font-size:12px; margin-right:5px; }
+
+  /* ── 폰 프레임 ── */
+  .phone{ width:300px; height:600px; border:10px solid #15171c; border-radius:38px; background:var(--bg); position:relative; overflow:hidden; box-shadow:0 12px 34px rgba(0,0,0,.28); flex:none; }
+  .phone .notch{ position:absolute; top:0; left:50%; transform:translateX(-50%); width:120px; height:22px; background:#15171c; border-radius:0 0 14px 14px; z-index:40; }
+  .screen{ position:absolute; inset:0; overflow:hidden; }
+
+  .appbar{ display:flex; align-items:center; justify-content:space-between; padding:26px 14px 12px; background:#fff; border-bottom:1px solid #eee; }
+  .appbar .logo{ display:flex; align-items:center; gap:7px; }
+  .appbar .logo i{ width:24px; height:24px; border-radius:7px; background:var(--primary); display:block; }
+  .appbar .logo span{ font-size:16px; font-weight:800; color:var(--fg); }
+  .appbar .icons{ font-size:16px; color:#888; letter-spacing:3px; }
+
+  .iconrow{ display:flex; gap:12px; padding:12px 14px; }
+  .iconrow .it{ display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .iconrow .it i{ width:42px; height:42px; border-radius:14px; display:block; }
+  .iconrow .it span{ font-size:12px; color:#444; }
+
+  .greet{ margin:6px 14px; padding:14px 16px; border-radius:15px; background:var(--coral-pale); }
+  .greet .a{ font-size:16px; font-weight:700; color:var(--fg); }
+  .greet .b{ font-size:13px; color:#999; margin-top:3px; }
+
+  .skel{ margin:8px 14px; padding:13px 15px; border-radius:13px; background:#fff; border:1px solid #eee; }
+  .skel .l{ height:13px; background:#ECECEC; border-radius:6px; }
+  .skel .l2{ height:11px; width:88%; background:#F2F2F2; border-radius:6px; margin-top:9px; }
+
+  /* ── 토스트(실제 컴포넌트 스타일) ── */
+  .toast{ position:absolute; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line); box-shadow:0 -8px 24px rgba(0,0,0,.12); z-index:30; }
+  .toast .in{ padding:15px 18px 20px; display:flex; flex-direction:column; gap:11px; }
+  .toast p{ font-size:16px; line-height:1.4; color:var(--fg); font-weight:600; }
+  .toast .sub{ font-size:13px; line-height:1.4; color:var(--muted); margin-top:-6px; font-weight:500; }
+  .btn-primary{ height:50px; border:none; border-radius:12px; background:var(--primary); color:#fff; font-size:16px; font-weight:700; width:100%; }
+  .btn-ghost{ height:40px; border:none; background:transparent; color:var(--muted); font-size:14px; width:100%; }
+
+  /* ── 온보딩 환영 ── */
+  .onb{ position:absolute; inset:0; background:var(--bg); display:flex; flex-direction:column; padding:26px 22px 22px; }
+  .onb .prog{ display:flex; gap:7px; margin-bottom:22px; }
+  .onb .prog i{ flex:1; height:4px; border-radius:2px; background:#34C759; }
+  .onb .mid{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .onb .em{ font-size:54px; }
+  .onb h2{ font-size:22px; font-weight:800; color:var(--fg); margin:6px 0; }
+  .onb .sub{ font-size:15px; color:#666; line-height:1.5; }
+  .onb .badge{ display:inline-flex; align-items:center; gap:5px; padding:7px 18px; background:var(--coral-pale); border-radius:999px; font-size:15px; font-weight:700; color:var(--primary-text); margin-top:14px; }
+  .onb .startbtn{ height:50px; border:none; border-radius:12px; background:var(--primary); color:#fff; font-size:16px; font-weight:700; }
+
+  /* ── 글 상세 ── */
+  .pbar{ display:flex; align-items:center; gap:10px; padding:26px 14px 12px; background:#fff; border-bottom:1px solid #eee; }
+  .pbar .bk{ font-size:18px; color:#555; } .pbar .t{ font-size:16px; font-weight:700; color:var(--fg); }
+  .pcard{ margin:12px 14px; padding:16px; border-radius:13px; background:#fff; border:1px solid #eee; }
+  .pcard .au{ display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+  .pcard .au i{ width:36px; height:36px; border-radius:50%; background:#FFE7E3; display:block; }
+  .pcard .au .n{ font-size:15px; font-weight:700; color:var(--fg); } .pcard .au .m{ font-size:12px; color:#999; }
+  .pcard h3{ font-size:17px; font-weight:700; color:var(--fg); margin-bottom:7px; }
+  .pcard .body{ font-size:15px; color:#444; line-height:1.6; }
+  .pmeta{ margin:0 16px; display:flex; gap:14px; color:#999; font-size:14px; padding:6px 0; }
+
+  /* ── OS 권한창 ── */
+  .dim{ position:absolute; inset:0; background:rgba(0,0,0,.36); z-index:35; }
+  .osperm{ position:absolute; top:46px; left:12px; right:12px; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.3); overflow:hidden; z-index:36; }
+  .osperm .top{ display:flex; align-items:center; gap:11px; padding:16px 16px 12px; }
+  .osperm .top i{ width:34px; height:34px; border-radius:8px; background:var(--primary); flex:none; display:block; }
+  .osperm .top .tx{ font-size:14.5px; color:#202124; line-height:1.4; }
+  .osperm .btns{ display:flex; border-top:1px solid #eee; }
+  .osperm .btns button{ flex:1; height:48px; border:none; background:#fff; font-size:15px; }
+  .osperm .blk{ color:#5F6368; font-weight:600; border-right:1px solid #eee; }
+  .osperm .alw{ color:#1A73E8; font-weight:800; }
+
+  /* ── OS 알림 배너 ── */
+  .osnoti{ position:absolute; top:10px; left:10px; right:10px; background:rgba(252,252,253,.98); border-radius:16px; box-shadow:0 6px 22px rgba(0,0,0,.2); padding:11px 13px; display:flex; gap:11px; z-index:36; }
+  .osnoti i{ width:36px; height:36px; border-radius:9px; background:var(--primary); flex:none; display:block; }
+  .osnoti .h{ display:flex; justify-content:space-between; }
+  .osnoti .app{ font-size:12.5px; font-weight:700; color:#333; } .osnoti .tm{ font-size:11.5px; color:#999; }
+  .osnoti .ti{ font-size:14px; font-weight:700; color:var(--fg); margin-top:2px; }
+  .osnoti .bd{ font-size:13px; color:#555; line-height:1.4; margin-top:2px; }
+
+  .note{ font-size:13.5px; color:#555; line-height:1.6; margin-top:14px; background:#fafafa; border:1px solid #eee; border-left:4px solid var(--primary); border-radius:0 10px 10px 0; padding:12px 14px; }
+  .note b{ color:var(--primary-text); }
+  .note .warn{ color:#c0392b; font-weight:700; }
+
+  /* 문구 비교 */
+  .copyrow{ display:flex; gap:14px; flex-wrap:wrap; }
+  .copycard{ flex:1; min-width:230px; border:1px solid #eee; border-radius:13px; padding:14px; background:#fafbfc; }
+  .copycard .when{ font-size:12.5px; font-weight:800; color:#fff; background:#5b9; border-radius:7px; padding:3px 9px; display:inline-block; margin-bottom:9px; }
+  .copycard .msg{ font-size:15.5px; font-weight:600; color:var(--fg); line-height:1.45; }
+  .flowsteps{ display:flex; flex-direction:column; gap:8px; }
+  .fstep{ display:flex; gap:10px; align-items:flex-start; font-size:14px; }
+  .fstep .dot{ flex:none; width:22px; height:22px; border-radius:50%; background:var(--primary); color:#fff; font-size:12px; font-weight:800; text-align:center; line-height:22px; }
+  .fstep.deny .dot{ background:#8a93a3; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>🔔 푸시 알림 동의 — 전체 UI/UX 흐름</h1>
+    <p>새 페이지 없이, 이미 있는 하단 토스트를 가입 직후·회원 방문·글쓰기 직후에 띄웁니다. 모든 화면은 실제 컴포넌트 색·크기 기준(코랄 #FF6F61, 본문 17px, 버튼 52px).</p>
+  </div>
+
+  <div class="flowbar">
+    <b>① 신규 가입</b> <span class="arrow">·</span> <b>② 기존 회원 방문</b> <span class="arrow">·</span> <b>③ 글쓰기 직후</b>
+    <span class="arrow">→</span> 토스트 "예, 알려주세요" <span class="arrow">→</span> OS 권한창 <span class="arrow">→</span> 구독 저장 <span class="arrow">→</span> <b>실제 알림 수신(리텐션)</b>
+  </div>
+
+  <!-- ① 신규 -->
+  <div class="section">
+    <div class="vlabel"><span class="k">①</span><span class="title">신규 가입자 — 가입 직후</span><span class="who">신규</span></div>
+    <div class="desc">온보딩 마지막 환영 화면에서 <b>시작하기</b>를 누르면 홈으로 이동 → 가입 맥락 토스트가 하단에 뜸.</div>
+    <div class="phones">
+      <div class="pcol">
+        <div class="phone"><div class="notch"></div><div class="screen">
+          <div class="onb">
+            <div class="prog"><i></i><i></i></div>
+            <div class="mid">
+              <div class="em">🎉</div><h2>환영합니다!</h2>
+              <div class="sub"><b style="color:#1A1A1A">행복한바리스타</b>님,<br>우나어에 오신 것을 환영해요</div>
+              <div class="badge">🌱 새싹 등급</div>
+            </div>
+            <button class="startbtn">우나어 시작하기</button>
+          </div>
+        </div></div>
+        <div class="caption"><span class="step">1</span>온보딩 환영 화면 → "시작하기" 탭</div>
+      </div>
+      <div class="pcol">
+        <div class="phone"><div class="notch"></div><div class="screen">
+          <div class="appbar"><div class="logo"><i></i><span>우리 나이가 어때서</span></div><div class="icons">🔍 🔔 👤</div></div>
+          <div class="iconrow">
+            <div class="it"><i style="background:#FFE7E3"></i><span>베스트</span></div>
+            <div class="it"><i style="background:#FFF1D6"></i><span>사는얘기</span></div>
+            <div class="it"><i style="background:#E3F5E8"></i><span>2막준비</span></div>
+            <div class="it"><i style="background:#FFF0D0"></i><span>웃음방</span></div>
+          </div>
+          <div class="greet"><div class="a">행복한바리스타님, 반가워요 👋</div><div class="b">새로운 이야기가 기다리고 있어요</div></div>
+          <div class="skel"><div class="l"></div><div class="l2"></div></div>
+          <div class="toast"><div class="in"><p>🌱 환영해요! 알림 받으시겠어요?</p>
+            <div class="sub">답글·새 소식·혜택 · 언제든 끄기</div>
+            <button class="btn-primary">받을게요</button><button class="btn-ghost">나중에</button></div></div>
+        </div></div>
+        <div class="caption"><span class="step">2</span>홈 도착 → 하단에 토스트 ▲</div>
+      </div>
+    </div>
+    <div class="note">가입 의욕이 가장 높은 순간에 1회. TWA(안드로이드 앱·주력 채널)는 PWA 설치 팝업이 없어 충돌 없이 깔끔하게 노출됩니다.</div>
+  </div>
+
+  <!-- ② 기존 회원 -->
+  <div class="section">
+    <div class="vlabel"><span class="k">②</span><span class="title">기존 회원 — 다음 접속 때</span><span class="who">기존 94명</span><span class="who">신규</span></div>
+    <div class="desc"><b>이게 구독자 0명 → 확보의 핵심.</b> 로그인 회원이 앱/홈을 열면 약 4초 뒤 토스트가 자동으로 1회 뜸(세션당 1회).</div>
+    <div class="phones">
+      <div class="pcol">
+        <div class="phone"><div class="notch"></div><div class="screen">
+          <div class="appbar"><div class="logo"><i></i><span>우리 나이가 어때서</span></div><div class="icons">🔍 🔔 👤</div></div>
+          <div class="iconrow">
+            <div class="it"><i style="background:#FFE7E3"></i><span>베스트</span></div>
+            <div class="it"><i style="background:#FFF1D6"></i><span>사는얘기</span></div>
+            <div class="it"><i style="background:#E3F5E8"></i><span>2막준비</span></div>
+            <div class="it"><i style="background:#FFF0D0"></i><span>웃음방</span></div>
+          </div>
+          <div class="greet"><div class="a">행복한바리스타님, 반가워요 👋</div><div class="b">새로운 이야기가 기다리고 있어요</div></div>
+          <div class="skel"><div class="l"></div><div class="l2"></div></div>
+          <div class="skel"><div class="l"></div><div class="l2"></div></div>
+          <div class="toast"><div class="in"><p>🔔 내 글 소식, 알림 받으시겠어요?</p>
+            <div class="sub">답글·소식·혜택 · 언제든 끄기</div>
+            <button class="btn-primary">받을게요</button><button class="btn-ghost">나중에</button></div></div>
+        </div></div>
+        <div class="caption">앱 열고 약 4초 후 자동 노출</div>
+      </div>
+    </div>
+    <div class="note"><b>도배 방지:</b> "나중에"를 누르면 <b>1일</b> 동안 안 뜨고, 두 번째 거절하면 <b>30일</b> 동안 안 뜸. 이미 허용했거나 브라우저에서 차단한 사람에겐 다시 안 뜸.</div>
+  </div>
+
+  <!-- ③ 글쓰기 -->
+  <div class="section">
+    <div class="vlabel"><span class="k">③</span><span class="title">글 쓴 직후 — 신규·기존 공통</span><span class="who">신규</span><span class="who">기존 94명</span></div>
+    <div class="desc">글을 쓰면 답글 알림 가치가 커지는 순간. 작성자 맞춤 문구로 1회.</div>
+    <div class="phones">
+      <div class="pcol">
+        <div class="phone"><div class="notch"></div><div class="screen">
+          <div class="pbar"><span class="bk">←</span><span class="t">사는 이야기</span></div>
+          <div class="pcard">
+            <div class="au"><i></i><div><div class="n">행복한바리스타</div><div class="m">방금 전 · 🌱 새싹</div></div></div>
+            <h3>오늘 텃밭에서 상추를 수확했어요</h3>
+            <div class="body">아침에 일어나서 텃밭에 나가보니 상추가 이렇게 많이 자랐더라고요. 다들 어떻게 지내셨어요?</div>
+          </div>
+          <div class="pmeta"><span>❤️ 0</span><span>💬 0</span><span>🔖 스크랩</span></div>
+          <div class="toast"><div class="in"><p>🔔 답글 오면 바로 알려드릴까요?</p>
+            <div class="sub">우나어 소식·혜택도 함께 · 언제든 끄기</div>
+            <button class="btn-primary">받을게요</button><button class="btn-ghost">나중에</button></div></div>
+        </div></div>
+        <div class="caption">글 작성 완료 → 작성자 맞춤 토스트</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA → OS 권한 -->
+  <div class="section">
+    <div class="vlabel"><span class="k">CTA</span><span class="title">"예, 알려주세요" 누른 그 순간 → OS 권한창</span></div>
+    <div class="desc"><b>토스트의 "예"를 눌러야만</b> 진짜 OS 권한창이 뜸 → 무턱대고 안 띄워서 <b>영구 차단 위험을 피함</b>(pre-permission 패턴).</div>
+    <div class="phones">
+      <div class="pcol">
+        <div class="phone"><div class="notch"></div><div class="screen">
+          <div class="appbar"><div class="logo"><i></i><span>우리 나이가 어때서</span></div><div class="icons">🔍 🔔 👤</div></div>
+          <div class="greet" style="margin-top:80px"><div class="a">행복한바리스타님, 반가워요 👋</div><div class="b">새로운 이야기가 기다리고 있어요</div></div>
+          <div class="dim"></div>
+          <div class="osperm">
+            <div class="top"><i></i><div class="tx"><b>age-doesnt-matter.com</b>에서<br>알림을 보내려고 합니다</div></div>
+            <div class="btns"><button class="blk">차단</button><button class="alw">허용</button></div>
+          </div>
+        </div></div>
+        <div class="caption">OS 권한창 (Android/Chrome 예시)</div>
+      </div>
+    </div>
+    <div class="flowsteps" style="margin-top:16px">
+      <div class="fstep"><span class="dot">✓</span><div><b>[허용]</b> → 구독 정보가 DB에 저장됨. 이때부터 이 사람에게 푸시 발송 가능.</div></div>
+      <div class="fstep deny"><span class="dot">✕</span><div><b>[차단]</b> → 조용히 닫힘. 브라우저가 영구 차단하므로 우리는 다시 안 띄움.</div></div>
+      <div class="fstep deny"><span class="dot">–</span><div><b>토스트에서 "나중에"</b> → 권한창 안 뜸. 1일 뒤(2번째 거절 시 30일 뒤) 재시도.</div></div>
+    </div>
+  </div>
+
+  <!-- 허용 후 결실 -->
+  <div class="section">
+    <div class="vlabel"><span class="k">결실</span><span class="title">허용 후 — 며칠 뒤 실제 알림 수신 (리텐션)</span></div>
+    <div class="desc">내 글에 누가 댓글 달면 <b>앱을 안 켜놔도 휴대폰에 알림 도착</b>. 탭하면 그 글로 바로 들어옴 = 떠난 사용자가 다시 돌아옴.</div>
+    <div class="phones">
+      <div class="pcol">
+        <div class="phone"><div class="notch"></div><div class="screen">
+          <div class="appbar"><div class="logo"><i></i><span>우리 나이가 어때서</span></div><div class="icons">🔍 🔔 👤</div></div>
+          <div class="iconrow">
+            <div class="it"><i style="background:#FFE7E3"></i><span>베스트</span></div>
+            <div class="it"><i style="background:#FFF1D6"></i><span>사는얘기</span></div>
+            <div class="it"><i style="background:#E3F5E8"></i><span>2막준비</span></div>
+            <div class="it"><i style="background:#FFF0D0"></i><span>웃음방</span></div>
+          </div>
+          <div class="greet"><div class="a">행복한바리스타님, 반가워요 👋</div><div class="b">새로운 이야기가 기다리고 있어요</div></div>
+          <div class="osnoti">
+            <i></i>
+            <div style="flex:1">
+              <div class="h"><span class="app">우리 나이가 어때서</span><span class="tm">지금</span></div>
+              <div class="ti">새 댓글이 달렸어요 💬</div>
+              <div class="bd">'오늘 텃밭에서 상추를 수확했어요' 글에 댓글이 달렸어요. 확인해보세요!</div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption">잠금/홈 화면 상단에 푸시 알림</div>
+      </div>
+    </div>
+    <div class="note"><b>지금은 구독자 0명</b>이라 이 마지막 단계가 아무에게도 안 일어나고 있습니다(만들어둔 발송 파이프가 놀고 있음). 이번 작업이 ①②③로 구독자를 모아 이걸 켭니다.</div>
+  </div>
+
+  <!-- 문구 3종 -->
+  <div class="section">
+    <div class="vlabel"><span class="k">문구</span><span class="title">토스트 문구 3종 — 동의율 ↑ 버전</span></div>
+    <div class="desc">동의율 레버 = <b>① 구체적 이득(내 글 답글)</b> + <b>② 정직한 안심("언제든 끌 수 있어요")</b> + <b>③ 맥락 타이밍</b>. <b style="color:#E85D50">광고를 보낼 것이므로 "광고 안 보내요"는 삭제</b>, 대신 "우나어 소식·혜택" 명시 → "좋아요"가 곧 마케팅 동의(합법).</div>
+    <div class="copyrow">
+      <div class="copycard"><span class="when">① 가입 직후</span><div class="msg">🌱 환영해요! 알림 받으시겠어요?</div><div style="font-size:13px;color:#7b8190;margin-top:7px;">답글·새 소식·혜택 · 언제든 끄기</div></div>
+      <div class="copycard"><span class="when">② 회원 방문</span><div class="msg">🔔 내 글 소식, 알림 받으시겠어요?</div><div style="font-size:13px;color:#7b8190;margin-top:7px;">답글·소식·혜택 · 언제든 끄기</div></div>
+      <div class="copycard"><span class="when">③ 글쓰기 직후 <span style="color:#E85D50">★전환 최고</span></span><div class="msg">🔔 답글 오면 바로 알려드릴까요?</div><div style="font-size:13px;color:#7b8190;margin-top:7px;">우나어 소식·혜택도 함께 · 언제든 끄기</div></div>
+    </div>
+    <div class="note">버튼 공통: <b>받을게요</b>(코랄) / 나중에(회색). <b>③ 글쓰기 직후</b>가 "내 글 반응 기대" 최고조라 동의율이 가장 높음. 문구는 검토 중 자유롭게 수정 가능.</div>
+  </div>
+
+  <!-- 광고 컴플라이언스 -->
+  <div class="section">
+    <div class="vlabel"><span class="k">⚖️</span><span class="title">광고 푸시는 "이렇게만" 나갑니다 (정보통신망법 §50)</span></div>
+    <div class="desc">광고를 보낼 거라 토스트 문구를 정직하게 바꿨고(소식·혜택 명시), 실제 광고 발송엔 법적 표기·제한을 자동 적용합니다.</div>
+    <div class="phones">
+      <div class="pcol">
+        <div class="phone"><div class="notch"></div><div class="screen">
+          <div class="appbar"><div class="logo"><i></i><span>우리 나이가 어때서</span></div><div class="icons">🔍 🔔 👤</div></div>
+          <div class="greet" style="margin-top:6px"><div class="a">행복한바리스타님, 반가워요 👋</div><div class="b">새로운 이야기가 기다리고 있어요</div></div>
+          <div class="osnoti">
+            <i></i>
+            <div style="flex:1">
+              <div class="h"><span class="app">우리 나이가 어때서</span><span class="tm">오후 2:10</span></div>
+              <div class="ti">(광고) 이번 주 우나어 이벤트 🎁</div>
+              <div class="bd">또래 친구 초대하고 선물 받아가세요! · 알림 끄기: 설정</div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption">광고 푸시 — 제목에 (광고) + 수신거부 안내</div>
+      </div>
+    </div>
+    <div class="note">
+      <b>① 동의자에게만</b> — "좋아요"(소식·혜택 명시) 탭 또는 온보딩 마케팅 동의자(`marketingOptIn=true`)에게만. 미동의자는 <b>광고 안 감</b>(서비스 알림만).<br>
+      <b>② (광고) 표기</b> 자동 · <b>③ 야간 21~08시 차단</b> · <b>④ 수신거부</b> 안내.<br>
+      <span class="warn">⚠️ 댓글·답글 같은 서비스 알림엔 (광고) 안 붙음. 광고는 어드민이 직접 보낼 때만. 발송 전 법무 확인 권장.</span>
+    </div>
+  </div>
+
+</body>
+</html>

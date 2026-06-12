@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { checkNickname, completeOnboarding } from '@/lib/actions/onboarding'
 import { gtmSignUp, sendGtmEvent, waitForGtagReady, getBrowserEnv } from '@/lib/gtm'
 import { trackEvent } from '@/lib/track'
+import { setPushToastTrigger } from '@/components/common/PushPermissionToast'
 // 닉네임 규칙은 단일 진실(@/lib/nickname) — 가입/프로필변경 공통. 화면별 규칙 drift 방지
 import { validateNicknameFormat as validateNickname, NICKNAME_REGEX, BANNED_WORDS, NICKNAME_MIN, NICKNAME_MAX } from '@/lib/nickname'
 
@@ -222,6 +223,8 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     localStorage.setItem('signup_completed_at', new Date().toISOString())
     // 환영 토스트 1회 표시 트리거 (layout.tsx Phase 3에서 처리)
     localStorage.setItem('signup_welcome_toast', '1')
+    // 가입 직후 푸시 구독 유도 — 홈((main)) 진입 시 sessionStorage 폴백으로 토스트 노출
+    setPushToastTrigger('signup')
     gtmSignUp('kakao')
     // 게이트 실험 그룹(있으면) — sign_up에 실어 전환을 userId 기반으로 측정(sessionId 단절 우회)
     const twaGateVariant = localStorage.getItem('twa_gate_assigned') ?? undefined
