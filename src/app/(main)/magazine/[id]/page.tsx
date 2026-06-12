@@ -362,10 +362,8 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* 하단 애드센스 띠배너 (신규 — 슬롯 발급 전 미렌더 가드: 쿠팡 폴백 방지) */}
-      {ADSENSE.POST_BOTTOM_BANNER !== 'REPLACE_WITH_SLOT_ID' && (
-        <AdSenseUnit slotId={ADSENSE.POST_BOTTOM_BANNER} format="horizontal" className="rounded-2xl overflow-hidden mt-6" />
-      )}
+      {/* 하단 애드센스 띠배너 (반응형 디스플레이) */}
+      <AdSenseUnit slotId={ADSENSE.POST_BOTTOM_BANNER} format="auto" className="rounded-2xl overflow-hidden mt-6" />
     </div>
   )
 }
