@@ -15,7 +15,6 @@ import { sanitizeHtml, proxyR2Images } from '@/lib/sanitize'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import PostListBottom from '@/components/features/community/PostListBottom'
-import InlineRelatedPosts from '@/components/features/community/InlineRelatedPosts'
 import IdentityBanner from '@/components/features/community/IdentityBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
@@ -169,9 +168,6 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 게시글 헤더 */}
       <div className="mb-8 pb-6 border-b border-border">
-        {post.category && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-[#B23B2E] text-caption font-bold w-fit mb-2">{post.category}</span>
-        )}
         <h1 className="text-xl font-bold text-foreground m-0 mb-4 leading-[1.4]">{post.title}</h1>
         <div className="flex items-center gap-2 text-caption text-muted-foreground">
           <span title={post.author.gradeEmoji}>{post.author.gradeEmoji}</span>
@@ -189,15 +185,7 @@ export default async function PostDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: proxyR2Images(sanitizeHtml(post.content)) }}
       />
 
-      {/* 같은 고민 글 (네이버 유입자 락인 ② — 본문 직후, 흐름 안 끊음) */}
-      <InlineRelatedPosts posts={related.slice(0, 3)} boardSlug={boardSlug} />
-
-      {/* 광고 — 인아티클 */}
-      <div className="mb-8">
-        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
-      </div>
-
-      {/* 액션 바 */}
+      {/* 액션 바 — 본문 직후 바로 공감 (정독 동선) */}
       <ActionBar
         postId={resolvedId}
         title={post.title}
@@ -207,9 +195,12 @@ export default async function PostDetailPage({ params }: PageProps) {
         isScrapped={false}
       />
 
-      <PostCTA postId={resolvedId} postTitle={post.title} />
+      {/* 광고 — 인아티클 */}
+      <div className="mb-8">
+        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
+      </div>
 
-      {/* 댓글 — Suspense로 지연 로딩 (본문 먼저 표시) */}
+      {/* 댓글 — Suspense로 지연 로딩 */}
       <Suspense fallback={
         <div className="mb-12 space-y-4">
           <div className="h-8 bg-muted rounded animate-pulse w-32" />
@@ -220,6 +211,9 @@ export default async function PostDetailPage({ params }: PageProps) {
         <CommentsLoader postId={resolvedId} />
       </Suspense>
 
+      {/* 가입 유도 */}
+      <PostCTA postId={resolvedId} postTitle={post.title} />
+
       {/* 하단 연속 읽기 */}
       <CoupangBanner preset="mobile" className="my-6 rounded-2xl overflow-hidden" />
       <Suspense fallback={<div className="h-[300px] animate-pulse bg-muted/50 rounded-2xl" />}>
@@ -229,9 +223,14 @@ export default async function PostDetailPage({ params }: PageProps) {
           excludePostId={resolvedId}
           displayName={board.displayName}
           mode="related"
-          relatedPosts={related.slice(3, 15)}
+          relatedPosts={related}
         />
       </Suspense>
+
+      {/* 하단 애드센스 띠배너 (신규 — 슬롯 발급 전 미렌더 가드: 쿠팡 폴백 방지) */}
+      {ADSENSE.POST_BOTTOM_BANNER !== 'REPLACE_WITH_SLOT_ID' && (
+        <AdSenseUnit slotId={ADSENSE.POST_BOTTOM_BANNER} format="horizontal" className="rounded-2xl overflow-hidden mt-6" />
+      )}
     </div>
   )
 }

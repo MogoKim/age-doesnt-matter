@@ -30,6 +30,10 @@ export const ADSENSE = {
   /** 목록 페이지 페이지네이션 하단 — 베스트·커뮤니티·매거진·내일찾기 공통 */
   LIST_PAGINATION_BOTTOM: 'REPLACE_WITH_SLOT_ID',
 
+  /** 글상세 맨 하단 띠배너 — 커뮤니티·매거진·내일찾기 공통 (가로 디스플레이).
+   *  발급 전까지 'REPLACE_WITH_SLOT_ID' → 호출부에서 미렌더 가드(쿠팡 폴백 방지) */
+  POST_BOTTOM_BANNER: process.env.NEXT_PUBLIC_ADSENSE_POST_BOTTOM ?? 'REPLACE_WITH_SLOT_ID',
+
 } as const
 
 // ── Coupang Partners ──
