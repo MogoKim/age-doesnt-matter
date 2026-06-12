@@ -6,9 +6,10 @@ import { detectEnv } from './AddToHomeScreen'
 import { buildPlayStoreUrl } from '@/lib/app-links'
 import { gtmPlayStoreClick, gtmOutboundClick } from '@/lib/gtm'
 
-// footer 공식 채널 (SNS 전 채널 공통 + 구글플레이 채널 차등).
+// footer 공식 채널 (SNS 아이콘 = 전 채널 공통 / Google Play = 웹-안드·데스크탑만).
 //  - 구글플레이 노출 규칙: !isTWA && !isStandalone && env ∈ {android-chrome, other, desktop}
 //  - R1(하이드레이션): useState(null)+useEffect로만 노출 판정 → SSR/클라 동일=mismatch 0, TWA 깜빡임 0.
+//  - Play 섹션은 구분선 포함 통째로 조건 렌더 → TWA/PWA에선 섹션째 사라져 footer가 짧아짐.
 
 interface Sns {
   network: string
@@ -18,7 +19,7 @@ interface Sns {
   path: string
 }
 
-// 브랜드 아이콘(simple-icons) — currentColor 아닌 브랜드 컬러로 인식성↑
+// 브랜드 아이콘(simple-icons) — 브랜드 컬러로 인식성↑
 const SNS_LINKS: Sns[] = [
   {
     network: 'threads',
@@ -70,48 +71,52 @@ export default function FooterChannelLinks() {
   }, [isTWA, isStandalone])
 
   return (
-    <div className="flex flex-col items-center gap-3.5">
-      <p className="text-caption font-bold text-muted-foreground">공식 채널</p>
+    <>
+      {/* 섹션 2: 공식 채널 — SNS 원형 아이콘 버튼 한 줄 */}
+      <section className="flex w-full flex-col items-center gap-2.5 border-t border-[#f1f1f1] py-4">
+        <p className="text-[12px] font-bold text-muted-foreground">공식 채널</p>
+        <nav className="flex items-center justify-center gap-3" aria-label="공식 SNS 채널">
+          {SNS_LINKS.map((s) => (
+            <a
+              key={s.network}
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${s.label} (새 창)`}
+              onClick={() => gtmOutboundClick(s.network, 'footer')}
+              className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F6F6F8] transition-transform hover:-translate-y-0.5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill={s.color} aria-hidden="true">
+                  <path d={s.path} />
+                </svg>
+              </span>
+            </a>
+          ))}
+        </nav>
+      </section>
 
-      {/* SNS — 브랜드 아이콘 칩 (전 채널 공통) */}
-      <nav className="flex flex-wrap items-center justify-center gap-2" aria-label="공식 SNS 채널">
-        {SNS_LINKS.map((s) => (
+      {/* 섹션 3: Google Play (웹 전용) — 구분선 포함 통째로 조건 렌더. TWA/PWA/iOS는 미렌더 */}
+      {playChannel && (
+        <section className="flex w-full justify-center border-t border-[#f1f1f1] py-4">
           <a
-            key={s.network}
-            href={s.href}
+            href={buildPlayStoreUrl(playChannel)}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`${s.label} (새 창)`}
-            onClick={() => gtmOutboundClick(s.network, 'footer')}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-2 text-caption font-medium text-foreground no-underline transition-colors hover:border-primary hover:bg-secondary focus-visible:outline-2 focus-visible:outline-primary"
+            aria-label="안드로이드 앱 설치 — Google Play (새 창)"
+            onClick={() => gtmPlayStoreClick(`footer_${playChannel}`)}
+            className="inline-flex items-center gap-2.5 rounded-xl bg-[#1f2430] px-4 py-2.5 text-white no-underline shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-primary"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill={s.color} aria-hidden="true">
-              <path d={s.path} />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d={PLAY_PATH} />
             </svg>
-            {s.label}
+            <span className="flex flex-col text-left leading-tight">
+              <span className="text-[10px] uppercase tracking-wide opacity-75">Google Play</span>
+              <span className="text-[13px] font-bold">안드로이드 앱 설치</span>
+            </span>
           </a>
-        ))}
-      </nav>
-
-      {/* 구글플레이 — 웹-안드(강조)·데스크탑(보조)만. R1 effect 가드로 노출 */}
-      {playChannel && (
-        <a
-          href={buildPlayStoreUrl(playChannel)}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="안드로이드 앱 설치 — Google Play (새 창)"
-          onClick={() => gtmPlayStoreClick(`footer_${playChannel}`)}
-          className="mt-0.5 inline-flex items-center gap-2.5 rounded-xl bg-[#1f2430] px-5 py-2.5 text-white no-underline shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-primary"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d={PLAY_PATH} />
-          </svg>
-          <span className="flex flex-col text-left leading-tight">
-            <span className="text-[10px] uppercase tracking-wide opacity-75">Google Play</span>
-            <span className="text-caption font-bold">안드로이드 앱 설치</span>
-          </span>
-        </a>
+        </section>
       )}
-    </div>
+    </>
   )
 }
