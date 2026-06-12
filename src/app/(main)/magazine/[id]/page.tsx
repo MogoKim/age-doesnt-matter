@@ -230,11 +230,6 @@ export default async function MagazineDetailPage({ params }: PageProps) {
 
       {/* 헤더 */}
       <div className="mb-8 pb-6 border-b border-border">
-        {post.category && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-[#B23B2E] text-caption font-bold w-fit mb-2">
-            {post.category}
-          </span>
-        )}
         <h1 className="text-2xl font-bold text-foreground m-0 mb-4 leading-[1.4]">
           {post.title}
         </h1>
@@ -268,6 +263,16 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           dangerouslySetInnerHTML={{ __html: proxyMagazineImages(sanitizeMagazineHtml(post.content)) }}
         />
       )}
+
+      {/* 액션 바 — 본문 직후 바로 공감 (정독 동선) */}
+      <ActionBar
+        postId={resolvedId}
+        title={post.title}
+        description={post.preview}
+        likeCount={post.likeCount}
+        isLiked={false}
+        isScrapped={false}
+      />
 
       {/* 광고 — 인아티클 */}
       <div className="mb-8">
@@ -315,16 +320,18 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* 액션 바 */}
-      <ActionBar
-        postId={resolvedId}
-        title={post.title}
-        description={post.preview}
-        likeCount={post.likeCount}
-        isLiked={false}
-        isScrapped={false}
-      />
+      {/* 댓글 */}
+      <Suspense fallback={
+        <div className="space-y-4 mt-8">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-20 bg-muted animate-pulse rounded-xl" />
+          ))}
+        </div>
+      }>
+        <MagazineCommentsLoader postId={resolvedId} />
+      </Suspense>
 
+      {/* 가입 유도 */}
       <PostCTA postId={resolvedId} postTitle={post.title} />
 
       {/* 함께 읽어보세요 */}
@@ -355,16 +362,10 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* 댓글 */}
-      <Suspense fallback={
-        <div className="space-y-4 mt-8">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-20 bg-muted animate-pulse rounded-xl" />
-          ))}
-        </div>
-      }>
-        <MagazineCommentsLoader postId={resolvedId} />
-      </Suspense>
+      {/* 하단 애드센스 띠배너 (신규 — 슬롯 발급 전 미렌더 가드: 쿠팡 폴백 방지) */}
+      {ADSENSE.POST_BOTTOM_BANNER !== 'REPLACE_WITH_SLOT_ID' && (
+        <AdSenseUnit slotId={ADSENSE.POST_BOTTOM_BANNER} format="horizontal" className="rounded-2xl overflow-hidden mt-6" />
+      )}
     </div>
   )
 }
