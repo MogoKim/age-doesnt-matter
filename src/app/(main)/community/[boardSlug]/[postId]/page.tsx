@@ -135,7 +135,7 @@ export default async function PostDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
+    <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8 bg-[var(--surface-warm)] min-h-screen">
       {/* GA4 게시글 조회 이벤트 + PostView DB 기록 */}
       <GTMEventOnMount event="post_view" data={{ post_id: resolvedId, board_type: board.boardType, category: post.category ?? '' }} />
       <PostViewBeacon postId={resolvedId} />
@@ -166,8 +166,10 @@ export default async function PostDetailPage({ params }: PageProps) {
       {/* 정체성 배너 (네이버 유입자 락인 ① — 비회원, 제목 위) */}
       <IdentityBanner boardSlug={boardSlug} />
 
-      {/* 게시글 헤더 */}
-      <div className="mb-6 pb-5 border-b border-border">
+      {/* 글 카드: 헤더 + 본문 + 공감/공유 한 덩어리 */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-5 mb-4">
+      {/* 헤더 */}
+      <div className="pb-5 mb-5 border-b border-border">
         <h1 className="text-xl font-bold text-foreground m-0 mb-4 leading-[1.4]">{post.title}</h1>
         <div className="flex items-center gap-2 text-caption text-muted-foreground">
           <span title={post.author.gradeEmoji}>{post.author.gradeEmoji}</span>
@@ -181,11 +183,11 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 본문 */}
       <div
-        className="post-content text-body text-foreground leading-[1.85] mb-3 break-keep [&_p]:mb-4 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:my-4 [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4 [&_video]:w-full [&_video]:rounded-xl [&_video]:my-4 [&_.image-placeholder]:py-6 [&_.image-placeholder]:px-4 [&_.image-placeholder]:bg-muted [&_.image-placeholder]:rounded-xl [&_.image-placeholder]:text-center [&_.image-placeholder]:text-muted-foreground [&_.image-placeholder]:text-[17px] [&_.image-placeholder]:my-4"
+        className="post-content text-body text-foreground leading-[1.85] mb-5 break-keep [&_p]:mb-4 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:my-4 [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4 [&_video]:w-full [&_video]:rounded-xl [&_video]:my-4 [&_.image-placeholder]:py-6 [&_.image-placeholder]:px-4 [&_.image-placeholder]:bg-muted [&_.image-placeholder]:rounded-xl [&_.image-placeholder]:text-center [&_.image-placeholder]:text-muted-foreground [&_.image-placeholder]:text-[17px] [&_.image-placeholder]:my-4"
         dangerouslySetInnerHTML={{ __html: proxyR2Images(sanitizeHtml(post.content)) }}
       />
 
-      {/* 액션 바 — 본문 직후 바로 공감 (정독 동선) */}
+      {/* 액션 바 — 글 카드 안, 본문 직후 바로 공감 (정독 동선) */}
       <ActionBar
         postId={resolvedId}
         title={post.title}
@@ -193,7 +195,9 @@ export default async function PostDetailPage({ params }: PageProps) {
         likeCount={post.likeCount}
         isLiked={false}
         isScrapped={false}
+        className="border-y-0 border-t mb-0 pt-3"
       />
+      </div>
 
       {/* 광고 — 인아티클 */}
       <div className="mb-8">
