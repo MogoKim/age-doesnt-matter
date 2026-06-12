@@ -284,6 +284,16 @@ export function gtmPlayStoreClick(source: string): void {
   })
 }
 
+/**
+ * 외부 채널(SNS 등) 나가는 링크 클릭 추적.
+ * SNS는 우리→외부라 utm을 붙여도 상대가 안 읽으므로, 클릭만 GA4로 수집(어느 채널·어디서).
+ * @param network threads | instagram | facebook | naver_blog
+ * @param location 클릭 위치 (footer 등)
+ */
+export function gtmOutboundClick(network: string, location: string): void {
+  sendEvent('outbound_click', { network, location })
+}
+
 /** 쿠팡 CPS 상품 클릭 */
 export function gtmCpsClick(productName: string, category: string): void {
   sendEvent('cps_click', {

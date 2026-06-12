@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import FooterFontSizeToggle from '@/components/common/FooterFontSizeToggle'
 import FooterPwaButton from '@/components/common/FooterPwaButton'
+import FooterChannelLinks from '@/components/common/FooterChannelLinks'
 
 const FOOTER_LINKS = [
   { label: '회사소개', href: '/about' },
@@ -10,6 +11,9 @@ const FOOTER_LINKS = [
   { label: '커뮤니티 규칙', href: '/rules' },
   { label: '문의', href: '/contact' },
 ] as const
+
+// 공정거래위원회 통신판매사업자 정보공개 (사업자등록번호 457-24-01157)
+const BIZ_INFO_URL = 'https://www.ftc.go.kr/bizCommPop.do?wrkr_no=4572401157'
 
 export default function Footer() {
   return (
@@ -21,6 +25,12 @@ export default function Footer() {
           </Link>
         ))}
       </nav>
+
+      {/* 공식 채널 (SNS 공통 + 구글플레이 채널 차등) */}
+      <div className="mb-5 w-full">
+        <FooterChannelLinks />
+      </div>
+
       <div className="flex items-center gap-2 mb-4">
         <span className="text-caption text-muted-foreground">글씨 크기</span>
         <FooterFontSizeToggle />
@@ -29,12 +39,17 @@ export default function Footer() {
         <FooterPwaButton />
       </div>
       <p className="text-caption text-muted-foreground">&copy; 2026 우리 나이가 어때서</p>
-      <address className="not-italic mt-3 text-center space-y-1">
-        <p className="text-caption text-muted-foreground">
-          케이에이지랩(K-Agelab) &nbsp;|&nbsp; 대표 김용석 &nbsp;|&nbsp; 사업자등록번호 457-24-01157
+
+      {/* 사업자정보 — 전자상거래법 제10조: 전체 항목 항상 표시(접지 않음). 시각 위계만 낮춤. */}
+      <address className="not-italic mt-3 text-center leading-relaxed">
+        <p className="text-caption text-muted-foreground/70">
+          케이에이지랩(K-Agelab) &middot; 대표 김용석 &middot; 사업자등록번호 457-24-01157
+          <a href={BIZ_INFO_URL} target="_blank" rel="noopener noreferrer" className="ml-2 underline transition-colors hover:text-foreground">
+            사업자정보확인
+          </a>
         </p>
-        <p className="text-caption text-muted-foreground">
-          통신판매업 신고번호 제2023-서울서초-2160호 &nbsp;|&nbsp; 서울특별시 노원구 월계로55길 15, 302동 912호
+        <p className="text-caption text-muted-foreground/70">
+          통신판매업 제2023-서울서초-2160호 &middot; 서울특별시 노원구 월계로55길 15, 302동 912호
         </p>
       </address>
     </footer>

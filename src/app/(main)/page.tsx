@@ -149,10 +149,11 @@ export default function HomePage() {
     logo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/logo.png`,
     description: '50·60대가 나이 걱정 없이 일자리와 소통을 찾는 따뜻한 커뮤니티',
     sameAs: [
-      'https://www.threads.net/@unaeo_official',
-      'https://x.com/unaeo_official',
-      'https://www.instagram.com/unaeo_official',
-      'https://www.facebook.com/unaeo.official',
+      'https://www.threads.com/@age.no.matter',
+      'https://www.instagram.com/age.no.matter/',
+      'https://www.facebook.com/profile.php?id=61590818695710',
+      'https://blog.naver.com/age-doesnt-matter',
+      'https://play.google.com/store/apps/details?id=com.agenotmatter.app',
     ],
   }
 
