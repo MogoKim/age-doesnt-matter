@@ -18,7 +18,6 @@ import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import SeriesNav from '@/components/features/magazine/SeriesNav'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
-import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import CpsClickTracker from '@/components/ad/CpsClickTracker'
 import { ADSENSE } from '@/components/ad/ad-slots'
 
@@ -315,11 +314,6 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           </p>
         </div>
       )}
-
-      {/* 쿠팡 관련 상품 */}
-      <div className="mb-8">
-        <CoupangSearchWidget />
-      </div>
 
       {/* 액션 바 */}
       <ActionBar

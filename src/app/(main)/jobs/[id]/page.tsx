@@ -12,7 +12,6 @@ import { formatSalary } from '@/lib/format'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
-import CoupangSearchWidget from '@/components/ad/CoupangSearchWidget'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import JobListBottom from '@/components/features/jobs/JobListBottom'
@@ -235,11 +234,6 @@ export default async function JobDetailPage({ params }: PageProps) {
         isLiked={false}
         isScrapped={false}
       />
-
-      {/* 쿠팡 관련 상품 */}
-      <div className="mb-8">
-        <CoupangSearchWidget />
-      </div>
 
       {/* 댓글 */}
       <Suspense fallback={
