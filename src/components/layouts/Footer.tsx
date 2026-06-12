@@ -25,7 +25,7 @@ export default function Footer() {
           <div className="h-[19px] w-[52px] shrink-0 overflow-hidden" aria-hidden="true">
             <Image src="/images/logo.png" width={52} height={28} alt="" className="block" />
           </div>
-          <span className="text-[14px] font-extrabold text-primary">우리나이가어때서</span>
+          <span className="text-caption font-extrabold text-primary">우리나이가어때서</span>
         </div>
         <span className="text-caption text-muted-foreground/60">신중년 여성을 위한 커뮤니티</span>
       </div>
@@ -51,13 +51,13 @@ export default function Footer() {
       <div className="flex w-full flex-col items-center border-t border-[#f1f1f1] py-4">
         <p className="text-caption font-semibold text-muted-foreground">&copy; 2026 우리 나이가 어때서</p>
         <address className="mt-1.5 text-center not-italic leading-relaxed">
-          <p className="text-[11px] text-muted-foreground/70">
+          <p className="text-caption text-muted-foreground/70">
             케이에이지랩(K-Agelab) &middot; 대표 김용석 &middot; 사업자등록번호 457-24-01157
             <a href={BIZ_INFO_URL} target="_blank" rel="noopener noreferrer" className="ml-1.5 underline transition-colors hover:text-foreground">
               사업자정보확인
             </a>
           </p>
-          <p className="text-[11px] text-muted-foreground/70">
+          <p className="text-caption text-muted-foreground/70">
             통신판매업 제2023-서울서초-2160호 &middot; 서울특별시 노원구 월계로55길 15
           </p>
         </address>
