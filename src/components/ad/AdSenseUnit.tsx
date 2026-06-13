@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ADSENSE } from './ad-slots'
+import { ADSENSE_READY_EVENT } from './AdSenseScriptLoader'
 import CoupangBanner from './CoupangBanner'
 
 interface AdSenseUnitProps {
@@ -24,6 +25,8 @@ interface AdSenseUnitProps {
 declare global {
   interface Window {
     adsbygoogle: Record<string, unknown>[]
+    __unaoAdsenseLoaded?: boolean
+    __unaoAdsenseReadyPushIndex?: number
   }
 }
 
@@ -123,15 +126,40 @@ export default function AdSenseUnit({
     })
     observer.observe(ins, { attributes: true })
 
-    // adsbygoogle.push() — 스크립트가 로드되지 않았으면 큐에 쌓임
-    try {
-      ;(window.adsbygoogle = window.adsbygoogle || []).push({})
-    } catch {
-      // AdSense 스크립트 미로드 시 무시
+    let pushed = false
+
+    const pushAd = () => {
+      if (pushed || !ins.isConnected || !container.contains(ins)) return
+      if (
+        ins.getAttribute('data-adsbygoogle-status') ||
+        ins.getAttribute('data-ad-status')
+      ) {
+        return
+      }
+
+      pushed = true
+      try {
+        ;(window.adsbygoogle = window.adsbygoogle || []).push({})
+      } catch {
+        // AdSense가 슬롯을 처리하지 못해도 페이지 렌더링은 유지한다.
+      }
+    }
+
+    const onAdSenseReady = () => {
+      const pushIndex = window.__unaoAdsenseReadyPushIndex ?? 0
+      window.__unaoAdsenseReadyPushIndex = pushIndex + 1
+      window.setTimeout(pushAd, pushIndex * 250)
+    }
+
+    if (window.__unaoAdsenseLoaded) {
+      pushAd()
+    } else {
+      window.addEventListener(ADSENSE_READY_EVENT, onAdSenseReady)
     }
 
     return () => {
       observer.disconnect()
+      window.removeEventListener(ADSENSE_READY_EVENT, onAdSenseReady)
     }
   }, [slotId, format, responsive, layout, layoutKey, fixedWidth, fixedHeight])
 

@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import dynamic from 'next/dynamic'
-import Script from 'next/script'
 import { GTMScript, GTMNoScript } from '@/components/common/GoogleTagManager'
 import { ToastProvider } from '@/components/common/Toast'
 import AuthProvider from '@/components/common/AuthProvider'
+import AdSenseScriptLoader from '@/components/ad/AdSenseScriptLoader'
 import './globals.css'
 
 // PWA/트래킹 컴포넌트 — 초기 번들 제외, 인터랙션 후 로드
@@ -98,12 +98,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://img.age-doesnt-matter.com" />
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
         <GTMScript />
-        <Script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID ?? 'ca-pub-4117999106913048'}`}
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
       </head>
       <body>
         <GTMNoScript />
@@ -116,6 +110,7 @@ export default function RootLayout({
           <PageViewTracker />
           <GtagLoader />
           <WebVitalsReporter />
+          <AdSenseScriptLoader />
         </AuthProvider>
       </body>
     </html>

@@ -102,7 +102,7 @@ export default function HeroSliderClient({ slides }: Props) {
               fill
               className="object-cover object-center"
               priority={index === 0}
-              sizes="100vw"
+              sizes="(min-width: 1200px) 1200px, 100vw"
             />
           )}
 
