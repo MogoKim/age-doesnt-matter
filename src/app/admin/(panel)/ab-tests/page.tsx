@@ -201,7 +201,7 @@ function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult 
         <h2 className="text-base font-bold text-zinc-900">{exp.name} — 배정 기준 리텐션</h2>
       </div>
       <p className="mb-3 rounded-lg bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-600">
-        노출은 그룹별 조건이 달라(A 없음 · B 글3개 후 · C 즉시) 분모가 불공정합니다. 그래서 <b>&ldquo;게이트를 보여주려 한 대상(배정) 전원&rdquo;</b>을 같은 분모로 놓고 A·B·C를 한 줄에서 비교합니다. 분모=배정 세션, 분자=배정 후 재방문·가입.
+        노출은 그룹별 조건이 달라(A 없음 · B 글3개 후 · C 즉시) 분모가 불공정합니다. 그래서 <b>&ldquo;게이트를 보여주려 한 대상(배정) 전원&rdquo;</b>을 같은 분모로 놓고 A·B·C를 한 줄에서 비교합니다. 분모=배정 세션, 가입=배정 그룹(가입 시 실린 그룹)으로 매칭, 재방문=배정 세션 매칭.
       </p>
       {totalAssigned === 0 ? (
         <div className="rounded-lg bg-amber-50 p-4 text-sm leading-relaxed text-amber-800">
@@ -236,7 +236,7 @@ function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult 
             </table>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-            · 분모=배정 세션(sessionId) · 가입·재방문은 같은 세션 매칭(배정 후) · D1/D3/D7=배정 후 1·3·7일 내 재방문(누적)
+            · 분모=배정 세션(sessionId) · 가입=가입 시 실린 배정 그룹으로 매칭(카카오 OAuth로 세션이 끊겨 그룹값 사용) · 재방문=배정 세션 매칭 · D1/D3/D7=배정 후 1·3·7일 내 재방문(누적)
             {started && <> · 측정 시작 {started}</>}
           </p>
           {totalAssigned < 30 && (

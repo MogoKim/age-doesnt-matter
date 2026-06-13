@@ -375,7 +375,12 @@ export function getGateRetention(days = 90): Promise<GateRetentionRow[]> {
 // ──────────────────────────────────────────────
 // TWA 게이트 ITT (Intention-To-Treat) — "보여주려 한 대상(배정)" 기준 공정 비교
 //   노출은 그룹별 조건이 달라(A 0·B 글3개후·C 즉시) 분모가 불공정 → 최앞단인 "배정"을 분모로 통일.
-//   배정 분모 = twa_gate_assigned 이벤트의 distinct sessionId(_anon_sid, 30일 유지로 배정→가입→재방문 연결).
+//   배정 분모 = twa_gate_assigned 이벤트의 distinct sessionId(_anon_sid, 30일 유지로 배정→재방문 연결).
+//   측정 정의:
+//     · 가입 = sign_up properties.twa_gate_variant + userId distinct (sessionId 단절 우회, v2부터)
+//       — 가입은 카카오 OAuth 외부브라우저 왕복으로 _anon_sid가 끊겨 배정 sessionId 매칭이 전부 실패하던
+//         버그를 교정. 분모(배정 sessionId)와 분자(가입 userId)는 모집단 단위가 달라 signupRate는 참고용.
+//     · 재방문(D1/D3/D7) = 배정 sessionId의 후속 page_view (미가입 배정자 포함, OAuth 미경유라 유효)
 //   ⚠️ 배정 이벤트는 도입 시점부터 적재 → 과거 소급 불가. firstAssignedAt 이후만 유효.
 // ──────────────────────────────────────────────
 export interface GateITTRow {
@@ -427,10 +432,13 @@ const _getGateITT = unstable_cache(
     const allSids = [...byVariant.values()].flatMap((m) => [...m.keys()])
     if (allSids.length === 0) return { rows: empty(), firstAssignedAt: null }
 
-    // 2) 배정 sessionId들의 재방문(page_view) + 가입(sign_up)
+    // 2) 재방문(page_view)은 배정 sessionId 기반 — 미가입 배정자 포함(OAuth 미경유라 유효).
+    //    가입(sign_up)은 카카오 OAuth가 외부브라우저를 왕복하며 _anon_sid를 끊어 배정 sessionId로
+    //    매칭 불가(실측: 배정 sessionId ∩ sign_up sessionId = 0). → properties.twa_gate_variant + userId
+    //    distinct로 그룹별 가입을 센다(_getGateRetention·OnboardingForm L229 동일 우회).
     const [views, signups] = await Promise.all([
       prisma.eventLog.findMany({ where: { eventName: 'page_view', sessionId: { in: allSids }, isBot: false }, select: { sessionId: true, createdAt: true } }),
-      prisma.eventLog.findMany({ where: { eventName: 'sign_up', sessionId: { in: allSids }, isBot: false }, select: { sessionId: true, createdAt: true } }),
+      prisma.eventLog.findMany({ where: { eventName: 'sign_up', userId: { not: null }, isBot: false, createdAt: { gte: start } }, select: { userId: true, properties: true } }),
     ])
     const viewsBySid = new Map<string, number[]>()
     for (const v of views) {
@@ -439,24 +447,27 @@ const _getGateITT = unstable_cache(
       arr.push(v.createdAt.getTime())
       viewsBySid.set(v.sessionId, arr)
     }
-    const signupAtSid = new Map<string, number>() // sessionId → 최초 가입시각(ms)
+    // variant별 가입 userId 집합(분자). ⚠️ 분모=배정 sessionId 수와 모집단 단위가 다름(노출 세션 / 가입 userId)
+    //   → signupRate는 참고용 근사. _getWebExperiments(L91)가 쓰는 것과 동일하게 받아들인 트레이드오프.
+    const signupUidByVariant = new Map<string, Set<string>>()
+    for (const v of exp.variants) signupUidByVariant.set(v.key, new Set())
     for (const s of signups) {
-      if (s.sessionId && !signupAtSid.has(s.sessionId)) signupAtSid.set(s.sessionId, s.createdAt.getTime())
+      const g = asProps(s.properties).twa_gate_variant
+      if (s.userId && typeof g === 'string' && signupUidByVariant.has(g)) signupUidByVariant.get(g)!.add(s.userId)
     }
 
     const rows: GateITTRow[] = exp.variants.map((v) => {
       const map = byVariant.get(v.key)!
       const n = map.size
-      let d1 = 0, d3 = 0, d7 = 0, su = 0
+      let d1 = 0, d3 = 0, d7 = 0
       for (const [sid, at] of map) {
         const t = at.getTime()
         const vs = (viewsBySid.get(sid) ?? []).filter((ms) => ms > t + 3600_000) // 배정 1h 후 재방문만
         if (vs.some((ms) => ms <= t + 1 * DAY)) d1++
         if (vs.some((ms) => ms <= t + 3 * DAY)) d3++
         if (vs.some((ms) => ms <= t + 7 * DAY)) d7++
-        const suAt = signupAtSid.get(sid)
-        if (suAt !== undefined && suAt >= t) su++ // 배정 후 가입
       }
+      const su = signupUidByVariant.get(v.key)!.size // 가입 = variant별 가입 userId distinct(properties 기준)
       const pct = (x: number) => (n ? Math.round((x / n) * 1000) / 10 : 0)
       return {
         variant: v.key, label: v.label, assignedCount: n,
@@ -468,7 +479,7 @@ const _getGateITT = unstable_cache(
     })
     return { rows, firstAssignedAt: firstAssignedAt ? firstAssignedAt.toISOString() : null }
   },
-  ['admin-gate-itt-v1'],
+  ['admin-gate-itt-v2'],
   { revalidate: 600 },
 )
 
