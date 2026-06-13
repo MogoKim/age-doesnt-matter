@@ -48,3 +48,4 @@ updated: 2026-06-06
 | 날짜 | 내용 | 이유 |
 |------|------|------|
 | 2026-06-06 | 전면 리뉴얼: `POPUP_DISABLED` 제거(운영 활성화), 바텀시트 렌더 부활, X버튼 52px 가독성, 어드민 폼 개편(프리셋·미리보기·이미지업로드·규격명시·KST·HelpTip) | 그동안 꺼져 있어 노출 불가 + 어드민 사용성 최악 → 운영 가능 + 신입 직원도 이해 가능하게 |
+| 2026-06-13 | 성능(Phase 1.5): `getActivePopups`가 서버에서 content를 sanitize해 `sanitizedContentHtml`로 응답 → 공개 `PopupRenderer`에서 `sanitizeHtml`(sanitize-html) import 제거. 공개 클라이언트 번들에서 sanitize-html/entities/htmlparser2 ~91KB 제거(전 페이지 bootup JS↓). 어드민 미리보기 sanitize는 유지(별도 청크). XSS 방어 수준 불변 | best/jobs 등 텍스트 페이지가 팝업 유무와 무관하게 90KB HTML 파서를 다운로드·parse하던 문제 제거 |

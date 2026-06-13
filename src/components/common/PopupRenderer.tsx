@@ -4,13 +4,13 @@ import { useEffect, useState, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
-import { sanitizeHtml } from '@/lib/sanitize'
 
 interface PopupData {
   id: string
   type: 'BOTTOM_SHEET' | 'FULLSCREEN' | 'CENTER'
   title: string | null
-  content: string | null
+  /** 서버(/api/popups)에서 이미 정화된 HTML — 클라이언트는 sanitize 없이 그대로 주입 */
+  sanitizedContentHtml: string | null
   imageUrl: string | null
   linkUrl: string | null
   buttonText: string | null
@@ -276,10 +276,10 @@ function PopupBody({ popup, onClick, imageAspect = 'aspect-[4/3]' }: { popup: Po
           />
         </div>
       )}
-      {popup.content && (
+      {popup.sanitizedContentHtml && (
         <div
           className="text-body text-foreground leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(popup.content) }}
+          dangerouslySetInnerHTML={{ __html: popup.sanitizedContentHtml }}
         />
       )}
     </div>
