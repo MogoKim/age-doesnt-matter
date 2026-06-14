@@ -244,6 +244,40 @@ function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult 
               ⚠️ 배정 {totalAssigned}건 — 표본이 적어 아직 방향성 참고용. 더 쌓이면 자동 갱신됩니다.
             </p>
           )}
+
+          {/* 가입자 리텐션 — userId 기반 "진짜 숫자". 위 재방문(배정 세션 기준)은 가입자가 카카오 OAuth로
+              세션이 끊겨 누락되므로, 가입한 회원의 실제 재방문을 회원번호로 직접 추적해 나란히 보여준다. */}
+          <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/40 p-3">
+            <p className="mb-1 text-xs font-bold text-emerald-800">✅ 가입한 사람만 — 진짜 재방문 (회원번호 추적)</p>
+            <p className="mb-3 text-xs leading-relaxed text-zinc-500">
+              위 표의 재방문은 <b>배정 세션</b> 기준이라, 가입한 사람은 카카오 로그인으로 세션이 바뀌어 다시 와도 <b>누락</b>됩니다. 아래는 가입한 회원이 실제로 다시 왔는지 <b>회원번호로 직접</b> 추적한 값이라 세션 끊김 영향이 없습니다.
+            </p>
+            <div className="overflow-hidden rounded-lg border border-emerald-100 bg-white">
+              <table className="w-full text-sm">
+                <thead className="bg-emerald-50/60 text-xs text-emerald-700">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">그룹</th>
+                    <th className="px-3 py-2 text-right font-medium">가입자</th>
+                    <th className="px-3 py-2 text-right font-medium">D1 재방문</th>
+                    <th className="px-3 py-2 text-right font-medium">D7 재방문</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {itt.rows.map((r) => (
+                    <tr key={r.variant} className="border-t border-emerald-50">
+                      <td className="px-3 py-2 font-medium text-zinc-700">{r.label}</td>
+                      <td className="px-3 py-2 text-right text-zinc-800">{r.signupCount}명</td>
+                      <td className="px-3 py-2 text-right text-zinc-800">{r.signupD1Rate === null ? '—' : `${r.signupD1Rate}%`} <span className="text-xs text-zinc-400">({r.signupD1Count}/{r.signupCount})</span></td>
+                      <td className="px-3 py-2 text-right text-zinc-800">{r.signupD7Rate === null ? '—' : `${r.signupD7Rate}%`} <span className="text-xs text-zinc-400">({r.signupD7Count}/{r.signupCount})</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+              · 분모=가입자 · D1/D7=가입 후 1·7일 내 다시 방문(앱·웹 무관, 누적) · &ldquo;가입은 많지만 재방문은 약한&rdquo; 게이트를 가려내는 핵심 지표
+            </p>
+          </div>
         </>
       )}
     </div>

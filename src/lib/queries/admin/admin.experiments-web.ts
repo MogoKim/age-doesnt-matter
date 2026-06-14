@@ -395,6 +395,11 @@ export interface GateITTRow {
   d3ReturnRate: number // 배정 후 3일 내 재방문(%)
   d7ReturnCount: number
   d7ReturnRate: number // 배정 후 7일 내 재방문(%)
+  // 가입자 리텐션 — userId 기반(sessionId 단절 무관). 분모=가입자(signupCount). "가입한 사람이 다시 왔나" 직접 측정.
+  signupD1Count: number
+  signupD1Rate: number | null // 가입자 중 가입 후 1일 내 재방문(%). 가입자 0이면 null
+  signupD7Count: number
+  signupD7Rate: number | null // 가입자 중 가입 후 7일 내 재방문(%)
 }
 
 export interface GateITTResult {
@@ -409,6 +414,7 @@ const _getGateITT = unstable_cache(
       (exp?.variants ?? []).map((v) => ({
         variant: v.key, label: v.label, assignedCount: 0, signupCount: 0, signupRate: null,
         d1ReturnCount: 0, d1ReturnRate: 0, d3ReturnCount: 0, d3ReturnRate: 0, d7ReturnCount: 0, d7ReturnRate: 0,
+        signupD1Count: 0, signupD1Rate: null, signupD7Count: 0, signupD7Rate: null,
       }))
     if (!exp) return { rows: [], firstAssignedAt: null }
     const start = new Date(Date.now() - days * DAY)
@@ -438,7 +444,7 @@ const _getGateITT = unstable_cache(
     //    distinct로 그룹별 가입을 센다(_getGateRetention·OnboardingForm L229 동일 우회).
     const [views, signups] = await Promise.all([
       prisma.eventLog.findMany({ where: { eventName: 'page_view', sessionId: { in: allSids }, isBot: false }, select: { sessionId: true, createdAt: true } }),
-      prisma.eventLog.findMany({ where: { eventName: 'sign_up', userId: { not: null }, isBot: false, createdAt: { gte: start } }, select: { userId: true, properties: true } }),
+      prisma.eventLog.findMany({ where: { eventName: 'sign_up', userId: { not: null }, isBot: false, createdAt: { gte: start } }, select: { userId: true, createdAt: true, properties: true }, orderBy: { createdAt: 'asc' } }),
     ])
     const viewsBySid = new Map<string, number[]>()
     for (const v of views) {
@@ -447,13 +453,29 @@ const _getGateITT = unstable_cache(
       arr.push(v.createdAt.getTime())
       viewsBySid.set(v.sessionId, arr)
     }
-    // variant별 가입 userId 집합(분자). ⚠️ 분모=배정 sessionId 수와 모집단 단위가 다름(노출 세션 / 가입 userId)
-    //   → signupRate는 참고용 근사. _getWebExperiments(L91)가 쓰는 것과 동일하게 받아들인 트레이드오프.
-    const signupUidByVariant = new Map<string, Set<string>>()
-    for (const v of exp.variants) signupUidByVariant.set(v.key, new Set())
+    // variant별 가입 userId → 최초 가입시각(분자 + 가입자 리텐션용).
+    //   ⚠️ 재방문 분모=배정 sessionId 수와 모집단 단위가 다름(노출 세션 / 가입 userId) → signupRate는 참고용 근사
+    //   (_getWebExperiments L91 동일 트레이드오프).
+    const signupByVariant = new Map<string, Map<string, Date>>()
+    for (const v of exp.variants) signupByVariant.set(v.key, new Map())
     for (const s of signups) {
       const g = asProps(s.properties).twa_gate_variant
-      if (s.userId && typeof g === 'string' && signupUidByVariant.has(g)) signupUidByVariant.get(g)!.add(s.userId)
+      if (s.userId && typeof g === 'string' && signupByVariant.has(g) && !signupByVariant.get(g)!.has(s.userId)) {
+        signupByVariant.get(g)!.set(s.userId, s.createdAt)
+      }
+    }
+    // 가입자 리텐션 — userId 기반 재방문(page_view). 가입은 OAuth로 sessionId가 끊겨 배정 세션 재방문에서
+    //   누락되므로, "가입한 사람이 다시 왔나"는 userId로 직접 추적해야 정확("고장난 숫자 옆 진짜 숫자").
+    const allSupUids = [...signupByVariant.values()].flatMap((m) => [...m.keys()])
+    const supViews = allSupUids.length
+      ? await prisma.eventLog.findMany({ where: { eventName: 'page_view', userId: { in: allSupUids }, isBot: false }, select: { userId: true, createdAt: true } })
+      : []
+    const supViewsByUid = new Map<string, number[]>()
+    for (const v of supViews) {
+      if (!v.userId) continue
+      const arr = supViewsByUid.get(v.userId) ?? []
+      arr.push(v.createdAt.getTime())
+      supViewsByUid.set(v.userId, arr)
     }
 
     const rows: GateITTRow[] = exp.variants.map((v) => {
@@ -467,19 +489,31 @@ const _getGateITT = unstable_cache(
         if (vs.some((ms) => ms <= t + 3 * DAY)) d3++
         if (vs.some((ms) => ms <= t + 7 * DAY)) d7++
       }
-      const su = signupUidByVariant.get(v.key)!.size // 가입 = variant별 가입 userId distinct(properties 기준)
+      // 가입자 리텐션 (userId 기반) — 가입 1h 후 ~ D1/D7 내 재방문. 분모 = 가입자 수.
+      const supMap = signupByVariant.get(v.key)!
+      const su = supMap.size // 가입 = variant별 가입 userId distinct(properties 기준)
+      let sd1 = 0, sd7 = 0
+      for (const [uid, at] of supMap) {
+        const st = at.getTime()
+        const vs = (supViewsByUid.get(uid) ?? []).filter((ms) => ms > st + 3600_000) // 가입 1h 후 재방문만
+        if (vs.some((ms) => ms <= st + 1 * DAY)) sd1++
+        if (vs.some((ms) => ms <= st + 7 * DAY)) sd7++
+      }
       const pct = (x: number) => (n ? Math.round((x / n) * 1000) / 10 : 0)
+      const supPct = (x: number) => (su ? Math.round((x / su) * 1000) / 10 : null)
       return {
         variant: v.key, label: v.label, assignedCount: n,
         signupCount: su, signupRate: n ? pct(su) : null,
         d1ReturnCount: d1, d1ReturnRate: pct(d1),
         d3ReturnCount: d3, d3ReturnRate: pct(d3),
         d7ReturnCount: d7, d7ReturnRate: pct(d7),
+        signupD1Count: sd1, signupD1Rate: supPct(sd1),
+        signupD7Count: sd7, signupD7Rate: supPct(sd7),
       }
     })
     return { rows, firstAssignedAt: firstAssignedAt ? firstAssignedAt.toISOString() : null }
   },
-  ['admin-gate-itt-v2'],
+  ['admin-gate-itt-v3'],
   { revalidate: 600 },
 )
 
