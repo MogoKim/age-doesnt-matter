@@ -29,16 +29,16 @@ export default function SignupCard() {
         <KakaoSignupButton
           callbackUrl="/"
           gtmFrom="home_signup_card"
-          className="inline-flex items-center justify-center gap-3 w-full max-w-[320px] h-[52px] rounded-2xl font-bold text-body transition-opacity hover:opacity-90 active:scale-95"
+          className="inline-flex items-center justify-center gap-3 w-full max-w-[320px] min-h-[52px] px-4 py-2 rounded-2xl font-bold text-body text-center leading-tight break-keep transition-opacity hover:opacity-90 active:scale-95"
           style={{ background: '#FEE500', color: '#191919' }}
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path
               d="M10 2C5.582 2 2 4.925 2 8.5c0 2.26 1.37 4.25 3.46 5.43l-.9 3.3a.25.25 0 0 0 .38.27L8.8 15.5c.39.05.79.08 1.2.08 4.418 0 8-2.925 8-6.5S14.418 2 10 2Z"
               fill="currentColor"
             />
           </svg>
-          카카오로 1초 가입
+          <span className="min-w-0">카카오로 1초 가입</span>
         </KakaoSignupButton>
       </div>
     </section>

@@ -179,7 +179,7 @@ function FameEmptyState() {
       </div>
       <Link
         href="/best?tab=hot"
-        className="inline-flex items-center gap-1.5 h-[52px] px-6 rounded-xl bg-primary text-white font-bold text-base no-underline transition-colors hover:bg-primary/90"
+        className="inline-flex min-h-[52px] items-center gap-1.5 rounded-xl bg-primary px-6 py-2 text-center text-base font-bold leading-tight break-keep text-white no-underline transition-colors hover:bg-primary/90"
       >
         🔥 뜨는 이야기 보러가기 →
       </Link>
@@ -194,7 +194,7 @@ function EmptyState({ message, ctaHref, ctaLabel }: { message: string; ctaHref?:
       {ctaHref && ctaLabel && (
         <Link
           href={ctaHref}
-          className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
+          className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-primary px-6 py-2 text-center text-body font-bold leading-tight break-keep text-white no-underline hover:bg-primary/90"
         >
           {ctaLabel}
         </Link>

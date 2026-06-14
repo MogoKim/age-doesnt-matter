@@ -20,10 +20,10 @@ export default function PersonalGreeting() {
       aria-label="개인화 인사"
     >
       <div
-        className="rounded-2xl px-5 py-4 flex items-center justify-between gap-4"
+        className="rounded-2xl px-5 py-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
         style={{ background: 'var(--surface-coral-pale)' }}
       >
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <p className="text-body font-bold text-foreground break-keep">
             {nickname}님, 오늘도 반가워요 👋
           </p>
@@ -33,7 +33,7 @@ export default function PersonalGreeting() {
         </div>
         <Link
           href="/community/stories"
-          className="shrink-0 inline-flex items-center justify-center px-4 h-[52px] rounded-xl bg-primary text-white font-semibold text-body no-underline hover:opacity-90 active:scale-95 whitespace-nowrap"
+          className="shrink-0 inline-flex items-center justify-center px-4 min-h-[52px] py-2 rounded-xl bg-primary text-white font-semibold text-body no-underline hover:opacity-90 active:scale-95 whitespace-nowrap"
         >
           둘러보기
         </Link>

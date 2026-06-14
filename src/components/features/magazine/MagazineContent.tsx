@@ -104,7 +104,7 @@ export default function MagazineContent({ initialPosts, initialTotal }: Magazine
           {(q || category) && (
             <Link
               href="/magazine"
-              className="inline-flex items-center justify-center h-[52px] px-6 rounded-xl bg-primary text-white text-body font-bold no-underline hover:bg-primary/90"
+              className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-primary px-6 py-2 text-center text-body font-bold leading-tight break-keep text-white no-underline hover:bg-primary/90"
             >
               {q ? '검색 초기화' : '전체 매거진 보기'}
             </Link>

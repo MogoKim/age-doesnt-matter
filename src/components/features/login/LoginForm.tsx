@@ -68,20 +68,20 @@ export default function LoginForm() {
             onClick={handleKakaoClick}
             disabled={isStarting}
             aria-busy={isStarting}
-            className="flex items-center justify-center gap-2 w-full h-[54px] rounded-xl font-bold cursor-pointer transition-all hover:brightness-95 hover:-translate-y-0.5 active:translate-y-0"
+            className="flex min-h-[54px] w-full flex-wrap items-center justify-center gap-2 rounded-xl px-4 py-2 text-center font-bold leading-tight break-keep cursor-pointer transition-all hover:brightness-95 hover:-translate-y-0.5 active:translate-y-0"
             style={{
               background: '#FEE500',
               color: '#191919',
               boxShadow: '0 2px 8px rgba(254,229,0,0.35)',
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path
                 d="M10 2C5.582 2 2 4.925 2 8.5c0 2.26 1.37 4.25 3.46 5.43l-.9 3.3a.25.25 0 0 0 .38.27L8.8 15.5c.39.05.79.08 1.2.08 4.418 0 8-2.925 8-6.5S14.418 2 10 2Z"
                 fill="currentColor"
               />
             </svg>
-            {isStarting ? '카카오로 이동 중...' : '카카오로 3초 만에 시작하기'}
+            <span className="min-w-0">{isStarting ? '카카오로 이동 중...' : '카카오로 3초 만에 시작하기'}</span>
           </button>
         </div>
 

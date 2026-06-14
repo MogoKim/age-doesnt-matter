@@ -485,7 +485,7 @@ export default function AddToHomeScreen() {
           </p>
           <button
             onClick={handleKakaoGuide}
-            className="w-full h-[52px] bg-primary text-white rounded-xl font-bold text-[16px]"
+            className="w-full min-h-[52px] py-2 bg-primary text-white rounded-xl font-bold text-[16px] leading-tight break-keep"
           >
             {envRef.current === 'kakao-android' ? '크롬으로 열기' : '주소 복사하기'}
           </button>
@@ -519,7 +519,7 @@ export default function AddToHomeScreen() {
           </p>
           <button
             onClick={() => handleInappGuide('naver-inapp')}
-            className="w-full h-[52px] bg-primary text-white rounded-xl font-bold text-[16px]"
+            className="w-full min-h-[52px] py-2 bg-primary text-white rounded-xl font-bold text-[16px] leading-tight break-keep"
           >
             {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
               ? '크롬으로 열기'
@@ -555,7 +555,7 @@ export default function AddToHomeScreen() {
           </p>
           <button
             onClick={() => handleInappGuide('instagram-inapp')}
-            className="w-full h-[52px] bg-primary text-white rounded-xl font-bold text-[16px]"
+            className="w-full min-h-[52px] py-2 bg-primary text-white rounded-xl font-bold text-[16px] leading-tight break-keep"
           >
             {/android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
               ? '크롬으로 열기'
@@ -666,16 +666,16 @@ export default function AddToHomeScreen() {
                 {/* 설치 버튼 */}
                 <button
                   onClick={handleInstall}
-                  className="w-full h-[56px] bg-primary text-white rounded-xl font-bold text-[18px] flex items-center justify-center gap-2"
+                  className="w-full min-h-[56px] py-2 bg-primary text-white rounded-xl font-bold text-[18px] flex flex-wrap items-center justify-center gap-2 text-center leading-tight break-keep"
                 >
-                  <span>📱</span> 무료로 다운받기
+                  <span className="shrink-0">📱</span> <span className="min-w-0">무료로 다운받기</span>
                 </button>
               </>
             )}
 
             <button
               onClick={handleDismiss}
-              className="mt-3 w-full h-[44px] text-[11px] text-muted-foreground"
+              className="mt-3 w-full min-h-[44px] py-2 text-[11px] text-muted-foreground"
             >
               나중에 할게요
             </button>
@@ -706,7 +706,7 @@ export default function AddToHomeScreen() {
           </div>
 
           {/* 배너 본체 */}
-          <div className="h-[56px] flex items-center gap-3 px-4 pb-2">
+          <div className="min-h-[56px] flex flex-wrap items-center gap-3 px-4 py-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.png"
@@ -718,7 +718,7 @@ export default function AddToHomeScreen() {
             </p>
             <button
               onClick={handleBannerInstall}
-              className="h-[40px] px-4 bg-primary text-white rounded-lg text-sm font-bold shrink-0 whitespace-nowrap"
+              className="min-h-[52px] px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold leading-tight shrink-0 whitespace-nowrap"
             >
               무료 받기
             </button>

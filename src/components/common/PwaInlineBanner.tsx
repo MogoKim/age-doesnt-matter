@@ -56,7 +56,7 @@ export default function PwaInlineBanner() {
       </div>
       <button
         onClick={handleInstall}
-        className="h-[40px] px-4 bg-primary text-white rounded-lg text-sm font-bold shrink-0 whitespace-nowrap"
+        className="min-h-[52px] px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold leading-tight shrink-0 whitespace-nowrap"
       >
         {isAndroid ? '받기' : '추가하기'}
       </button>

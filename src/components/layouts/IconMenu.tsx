@@ -31,10 +31,10 @@ export default function IconMenu() {
             key={item.href}
             href={item.href}
             className={cn(
-              'flex flex-col items-center justify-center gap-1.5 shrink-0 min-h-[64px] py-2 px-1 no-underline text-muted-foreground relative [-webkit-tap-highlight-color:transparent] [scroll-snap-align:start]',
+              'flex flex-col items-center justify-center gap-1.5 shrink-0 min-h-[64px] py-2 px-1.5 no-underline text-muted-foreground relative [-webkit-tap-highlight-color:transparent] [scroll-snap-align:start]',
               isActive && 'after:content-[""] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-6 after:h-0.5 after:bg-primary after:rounded-sm'
             )}
-            style={{ width: 'var(--icon-container-w)' }}
+            style={{ minWidth: 'var(--icon-container-w)' }}
             aria-current={isActive ? 'page' : undefined}
           >
             <span
@@ -51,7 +51,7 @@ export default function IconMenu() {
             </span>
             <span
               className={cn(
-                'leading-none whitespace-nowrap',
+                'break-keep text-center leading-tight',
                 isActive ? 'font-semibold' : 'text-muted-foreground'
               )}
               style={{

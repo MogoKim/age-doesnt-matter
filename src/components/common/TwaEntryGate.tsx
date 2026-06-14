@@ -117,13 +117,13 @@ export default function TwaEntryGate() {
             onClick={onSignup}
             disabled={starting}
             aria-busy={starting}
-            className="mt-5 flex h-[54px] w-full items-center justify-center gap-2 rounded-xl font-bold transition-all hover:brightness-95"
+            className="mt-5 flex min-h-[54px] w-full flex-wrap items-center justify-center gap-2 rounded-xl px-4 py-2 text-center font-bold leading-tight break-keep transition-all hover:brightness-95"
             style={{ background: '#FEE500', color: '#191919', boxShadow: '0 2px 8px rgba(254,229,0,0.35)' }}
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M10 2C5.582 2 2 4.925 2 8.5c0 2.26 1.37 4.25 3.46 5.43l-.9 3.3a.25.25 0 0 0 .38.27L8.8 15.5c.39.05.79.08 1.2.08 4.418 0 8-2.925 8-6.5S14.418 2 10 2Z" fill="currentColor" />
             </svg>
-            {starting ? '카카오로 이동 중...' : '카카오로 3초 만에 시작하기'}
+            <span className="min-w-0">{starting ? '카카오로 이동 중...' : '카카오로 3초 만에 시작하기'}</span>
           </button>
           <button onClick={onEscape} className="mt-3 min-h-[44px] text-[15px] text-muted-foreground underline">
             먼저 둘러볼게요

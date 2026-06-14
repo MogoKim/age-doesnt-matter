@@ -65,7 +65,7 @@ export default function CategorySearchBar() {
             aria-label="검색 범위"
             value={field}
             onChange={(e) => setField(e.target.value as SearchField)}
-            className="h-[52px] appearance-none rounded-xl border border-border bg-background pl-4 pr-10 text-base text-foreground outline-none transition-colors focus:border-primary/60"
+            className="min-h-[52px] appearance-none rounded-xl border border-border bg-background py-2 pl-4 pr-10 text-base text-foreground outline-none transition-colors focus:border-primary/60"
           >
             {FIELD_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -86,13 +86,13 @@ export default function CategorySearchBar() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="검색어를 입력하세요"
-          className="h-[52px] min-w-[140px] flex-1 rounded-xl border border-border bg-background px-4 text-base text-foreground outline-none transition-colors placeholder:text-foreground/50 focus:border-primary/60"
+          className="min-h-[52px] min-w-[140px] flex-1 rounded-xl border border-border bg-background px-4 py-2 text-base text-foreground outline-none transition-colors placeholder:text-foreground/50 focus:border-primary/60"
         />
 
         {/* 검색 버튼 */}
         <button
           type="submit"
-          className="h-[52px] whitespace-nowrap rounded-xl border border-primary/30 bg-primary/10 px-6 text-base font-bold text-primary-text transition-colors hover:bg-primary/15"
+          className="min-h-[52px] whitespace-nowrap rounded-xl border border-primary/30 bg-primary/10 px-6 py-2 text-base font-bold text-primary-text transition-colors hover:bg-primary/15"
         >
           검색
         </button>
@@ -102,7 +102,7 @@ export default function CategorySearchBar() {
           <button
             type="button"
             onClick={handleClear}
-            className="h-[52px] whitespace-nowrap rounded-xl border border-border px-4 text-base font-medium text-muted-foreground transition-colors hover:bg-muted"
+            className="min-h-[52px] whitespace-nowrap rounded-xl border border-border px-4 py-2 text-base font-medium text-muted-foreground transition-colors hover:bg-muted"
           >
             초기화
           </button>

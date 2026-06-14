@@ -47,7 +47,7 @@ export default function JobSearchBar({ defaultValue }: JobSearchBarProps) {
         role="search"
         aria-label="일자리 검색"
         onSubmit={handleSubmit}
-        className="flex items-center h-[52px] bg-card border border-border rounded-xl px-4 gap-2 focus-within:border-primary transition-colors"
+        className="flex min-h-[52px] items-center gap-2 rounded-xl border border-border bg-card px-4 py-1 transition-colors focus-within:border-primary"
       >
         <input
           type="search"

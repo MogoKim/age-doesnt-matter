@@ -113,7 +113,7 @@ export default function SearchForm({ initialQuery = '', popularKeywords = [] }: 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="검색어를 입력해 주세요"
-          className="flex-1 min-w-0 h-[52px] px-4 bg-background border border-border rounded-xl text-body text-foreground outline-none transition-colors focus:border-primary placeholder:text-muted-foreground"
+          className="flex-1 min-w-0 min-h-[52px] px-4 py-2 bg-background border border-border rounded-xl text-body text-foreground outline-none transition-colors focus:border-primary placeholder:text-muted-foreground"
           aria-label="검색어 입력"
         />
         <button
