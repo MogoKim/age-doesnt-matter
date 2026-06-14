@@ -211,7 +211,7 @@ export default function PrivacyPage() {
           </p>
           <ul className="list-disc pl-5 space-y-1 mt-2">
             <li>개인정보 보호책임자: 우나어 운영자</li>
-            <li>문의: 서비스 내 문의 페이지를 통해 접수</li>
+            <li>문의 이메일: korea.age.not.matter@gmail.com</li>
           </ul>
         </section>
 
