@@ -412,8 +412,9 @@ const _getGateITT = unstable_cache(
     const exp = EXPERIMENTS.find((e) => e.id === 'twa01_entry_gate')
     const now = Date.now()
     const emptyDays = (): RetDay[] => ITT_DN.map((d) => ({ d, rate: null, returned: 0, matured: 0 }))
+    // weight 0(드랍된 그룹, 예: B)은 화면에서 제외 — 신규 배정 중단된 그룹은 비교 대상 아님(과거 데이터는 EventLog 보존)
     const empty = (): GateITTRow[] =>
-      (exp?.variants ?? []).map((v) => ({
+      (exp?.variants ?? []).filter((v) => v.weight > 0).map((v) => ({
         variant: v.key, label: v.label, assignedCount: 0, signupCount: 0, signupRate: null,
         retention: emptyDays(), guestCount: 0, guestRetention: emptyDays(),
       }))
@@ -489,7 +490,7 @@ const _getGateITT = unstable_cache(
         return { d, rate: matured ? Math.round((returned / matured) * 1000) / 10 : null, returned, matured }
       })
 
-    const rows: GateITTRow[] = exp.variants.map((v) => {
+    const rows: GateITTRow[] = exp.variants.filter((v) => v.weight > 0).map((v) => {
       const assignMap = byVariant.get(v.key)!
       const supMap = signupByVariant.get(v.key)!
       // 비회원 = 배정 세션 중 후속 page_view에 userId가 끝까지 안 붙은 것(순수 비회원, 가입·로그인 흔적 없음)
