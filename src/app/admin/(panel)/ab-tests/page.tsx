@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { getWebExperiments, getTwaSignupRetention, getGateRetention, getGateITT } from '@/lib/queries/admin'
-import type { WebExperimentView, VariantStat, TwaRetention, GateRetentionRow, GateITTResult, GateITTRow, RetDay } from '@/lib/queries/admin/admin.experiments-web'
+import { getWebExperiments, getGateITT } from '@/lib/queries/admin'
+import type { WebExperimentView, VariantStat, GateITTResult, RetDay } from '@/lib/queries/admin/admin.experiments-web'
 import type { Confidence } from '@/lib/experiments/stats'
 import PeriodFilter from './PeriodFilter'
 import ExperimentStatePanel from './ExperimentStatePanel'
@@ -57,178 +57,21 @@ function VariantRow({ v, maxRate, enough }: { v: VariantStat; maxRate: number; e
   )
 }
 
-function TwaBaselineCard({ r }: { r: TwaRetention }) {
-  const stats = [
-    { label: 'TWA 가입자', value: `${r.signupCount}명`, sub: '' },
-    { label: 'D1 재방문', value: `${r.d1ReturnRate}%`, sub: `${r.d1ReturnCount}/${r.signupCount}명` },
-    { label: 'D7 재방문', value: `${r.d7ReturnRate}%`, sub: `${r.d7ReturnCount}/${r.signupCount}명` },
-    { label: '첫 활동(글·댓글)', value: `${r.firstActionRate}%`, sub: `${r.firstActionCount}/${r.signupCount}명` },
-  ]
+// 가입자 리텐션 셀 — 재방문율% + (재방문/성숙표본). 성숙 0이면 '—'(신뢰불가), 5명 미만 흐리게.
+function RetCell({ d }: { d: RetDay }) {
+  if (d.rate === null) return <td className="px-2 py-2 text-right text-zinc-300">—</td>
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5">
-      <h2 className="text-base font-bold text-zinc-900">📱 TWA 가입자 재방문 (현행 baseline)</h2>
-      <p className="mt-1 text-xs text-zinc-500">
-        게이트 실험 전 기준선 — 앱(TWA)으로 가입한 회원이 이후 앱으로 다시 오는가 (최근 90일 고정 · 기간 버튼 무관 · 봇 제외)
-      </p>
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-lg bg-zinc-50 p-3">
-            <p className="text-xs text-zinc-500">{s.label}</p>
-            <p className="mt-1 text-xl font-bold text-zinc-900">{s.value}</p>
-            {s.sub && <p className="mt-0.5 text-xs text-zinc-400">{s.sub}</p>}
-          </div>
-        ))}
-      </div>
-      <p className="mt-2 text-xs text-zinc-400">
-        · D1=가입 후 48시간 내, D7=7일 내 앱 재방문(누적) · 첫활동=현재 글·댓글 1개+ 보유 · 대상=browser_env가 앱(twa-android)인 가입자
-      </p>
-      {r.signupCount < 20 && (
-        <p className="mt-1 text-xs text-amber-600">⚠️ 표본 {r.signupCount}명 — 적어서 방향성 참고용(절대 수치 신뢰 보류)</p>
-      )}
-    </div>
+    <td className="px-2 py-2 text-right">
+      <span className={d.matured < 5 ? 'text-zinc-400' : 'font-medium text-zinc-800'}>
+        {d.rate}%<br /><span className="text-[10px] font-normal text-zinc-400">{d.returned}/{d.matured}</span>
+      </span>
+    </td>
   )
 }
 
-// 실험 메타(목적·배경·가설·확인) — 펀넬 카드와 게이트 카드 공용
-function ExperimentMeta({ exp }: { exp: WebExperimentView }) {
-  return (
-    <dl className="mb-4 space-y-1.5 rounded-lg bg-zinc-50 p-3 text-sm">
-      <div className="flex gap-2">
-        <dt className="w-16 shrink-0 text-zinc-500">🎯 목적</dt>
-        <dd className="text-zinc-800">{exp.purpose}</dd>
-      </div>
-      <div className="flex gap-2">
-        <dt className="w-16 shrink-0 text-zinc-500">📌 배경</dt>
-        <dd className="text-zinc-700">{exp.background}</dd>
-      </div>
-      <div className="flex gap-2">
-        <dt className="w-16 shrink-0 text-zinc-500">💡 가설</dt>
-        <dd className="text-zinc-700">{exp.hypothesis}</dd>
-      </div>
-      <div className="flex gap-2">
-        <dt className="w-16 shrink-0 text-zinc-500">🔍 확인</dt>
-        <dd className="text-zinc-600">{exp.howToVerify}</dd>
-      </div>
-    </dl>
-  )
-}
-
-// 게이트 실험(twa01_entry_gate) 전용 카드 — funnel(전환율)이 아니라 그룹별 가입 후 재방문(D1/D7)으로 비교.
-//  게이트 A(현행)는 노출 이벤트가 없어 funnel 분모가 0 → A가 0%로 오독됨. 그래서 게이트는 재방문 지표로만 본다.
-function GateExperimentCard({ exp, rows, baselineCount }: { exp: WebExperimentView; rows: GateRetentionRow[]; baselineCount: number }) {
-  const total = rows.reduce((s, r) => s + r.signupCount, 0)
-  const isLive = exp.status !== 'CONCLUDED' && exp.status !== 'DRAFT'
-  return (
-    <div className={`rounded-xl border bg-white p-5 ${isLive ? 'border-[#FF6F61]/30' : 'border-zinc-200'}`}>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <StatusBadge status={exp.status} />
-        <h2 className="text-base font-bold text-zinc-900">{exp.name}</h2>
-        <span className="text-xs text-zinc-400">담당 {exp.owner}</span>
-        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">📱 앱 재방문으로 측정</span>
-        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">🗓 최근 90일 고정 (기간 버튼 무관)</span>
-      </div>
-
-      <ExperimentMeta exp={exp} />
-
-      <div className="overflow-hidden rounded-lg border border-zinc-200">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-xs text-zinc-500">
-            <tr>
-              <th className="px-3 py-2 text-left font-medium">그룹</th>
-              <th className="px-3 py-2 text-right font-medium">노출</th>
-              <th className="px-3 py-2 text-right font-medium">가입자</th>
-              <th className="px-3 py-2 text-right font-medium">전환율</th>
-              <th className="px-3 py-2 text-right font-medium">D1 재방문</th>
-              <th className="px-3 py-2 text-right font-medium">D7 재방문</th>
-              <th className="px-3 py-2 text-right font-medium">첫 활동</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.variant} className="border-t border-zinc-100">
-                <td className="px-3 py-2 font-medium text-zinc-700">{r.label}</td>
-                <td className="px-3 py-2 text-right text-zinc-600">{r.exposure > 0 ? `${r.exposure}명` : '—'}</td>
-                <td className="px-3 py-2 text-right text-zinc-800">{r.signupCount}명</td>
-                <td className="px-3 py-2 text-right text-zinc-800">{r.signupRate === null ? '—' : `${r.signupRate}%`}</td>
-                <td className="px-3 py-2 text-right text-zinc-800">{r.d1ReturnRate}% <span className="text-xs text-zinc-400">({r.d1ReturnCount}/{r.signupCount})</span></td>
-                <td className="px-3 py-2 text-right text-zinc-800">{r.d7ReturnRate}% <span className="text-xs text-zinc-400">({r.d7ReturnCount}/{r.signupCount})</span></td>
-                <td className="px-3 py-2 text-right text-zinc-800">{r.firstActionRate}% <span className="text-xs text-zinc-400">({r.firstActionCount}/{r.signupCount})</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-        A(현행·대조군) 대비 B·C가 <b>가입 후 앱 재방문(D1/D7)</b>을 높이는지가 핵심입니다.
-        전환율(노출→가입)은 참고용으로 표시하되, 그룹별 노출 모집단 성격이 달라(아래 ⚠️) 단순 비교는 삼가세요. (최근 90일 · 봇 제외)
-      </p>
-      <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-        · 괄호 안 = 재방문/가입 <b>실제 명수</b>(%는 표본 작을 때 출렁이니 명수로 확인) · D1=가입 후 48시간 내, D7=7일 내 앱 재방문(누적, D7⊇D1)
-        · 첫활동=현재 글·댓글 1개+ 보유 · 그룹 분류=가입 시 twa_gate_variant. 위 baseline({baselineCount}명)은 게이트 무관 전체 TWA 가입자라 모수가 다름(직접 비교 주의)
-      </p>
-      <p className="mt-1 text-xs leading-relaxed text-amber-600">
-        ⚠️ 노출 모수 성격 주의: <b>C</b>는 진입 즉시 노출(전원) · <b>B</b>는 글 3개 열람 후 노출(동기 높은 일부) · <b>A</b>는 게이트 없음(노출 0, 자연 가입만 집계). 분모 모집단이 달라 전환율 직접 비교는 신중히.
-      </p>
-      {total < 30 && (
-        <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-700">
-          ⚠️ 전체 가입 {total}명 — 표본이 적어 아직 판단 보류(방향성 참고용). 데이터가 더 쌓이면 자동 갱신됩니다.
-        </p>
-      )}
-
-      {exp.note && <p className="mt-2 rounded-lg bg-blue-50 p-2 text-xs text-blue-800">📝 {exp.note}</p>}
-      {exp.conclusion && <p className="mt-2 rounded-lg bg-green-50 p-2 text-xs text-green-800">✅ 결론: {exp.conclusion}</p>}
-
-      <ExperimentStatePanel
-        experimentId={exp.id}
-        status={exp.status}
-        owner={exp.owner}
-        note={exp.note}
-        conclusion={exp.conclusion}
-      />
-    </div>
-  )
-}
-
-// D1~D7 한 줄(종류별) — 각 셀 = 재방문율% + (재방문/성숙표본). 성숙 안 된 DN은 '—'.
-function RetRow({ label, days, accent }: { label: string; days: RetDay[]; accent?: string }) {
-  return (
-    <tr className="border-t border-zinc-50">
-      <td className={`whitespace-nowrap px-3 py-1.5 text-left text-xs ${accent ?? 'text-zinc-500'}`}>{label}</td>
-      {days.map((d) => (
-        <td key={d.d} className="px-2 py-1.5 text-right">
-          {d.rate === null ? (
-            <span className="text-zinc-300">—</span>
-          ) : (
-            <span className={d.matured < 5 ? 'text-zinc-400' : 'text-zinc-800'}>
-              {d.rate}%
-              <br />
-              <span className="text-[10px] text-zinc-400">{d.returned}/{d.matured}</span>
-            </span>
-          )}
-        </td>
-      ))}
-    </tr>
-  )
-}
-
-// 그룹 1개 블록 = 헤더행 + 3종(통합/가입자/미가입자) 행
-function GateGroupRows({ r }: { r: GateITTRow }) {
-  return (
-    <>
-      <tr className="bg-zinc-50/80">
-        <td colSpan={8} className="px-3 py-1.5 text-xs font-bold text-zinc-700">
-          {r.label} · 배정 {r.assignedCount}명 · 가입 {r.signupCount}명{r.signupRate !== null && <span className="font-normal text-zinc-400"> ({r.signupRate}%)</span>}
-        </td>
-      </tr>
-      <RetRow label="가입자 ★ (정확)" days={r.signup} accent="font-semibold text-emerald-700" />
-      <RetRow label="미가입 (둘러보기)" days={r.nonSignup} accent="text-zinc-500" />
-      <RetRow label="통합 (전원)" days={r.combined} accent="text-sky-700" />
-    </>
-  )
-}
-
-// 배정 기준 ITT 카드 — 노출 불공정을 우회해 "배정 전원"을 같은 분모로 A·B·C 공정 비교. D1~D7 코호트(가입자/미가입/통합).
+// 게이트 리텐션 카드 — 가입자(회원번호) 리텐션 D1~D7만 표시.
+//   딥다이브 검증(2026-06-15) 결과 sessionId 기반 지표(통합·미가입·전환율)는 신뢰도가 낮아 제거,
+//   유일하게 정확한 가입자(userId+코호트) 리텐션만 남김. 상세: docs/analysis/twa-gate-final-verify-*.
 function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult }) {
   const totalAssigned = itt.rows.reduce((s, r) => s + r.assignedCount, 0)
   const started = itt.firstAssignedAt ? new Date(itt.firstAssignedAt).toLocaleDateString('ko-KR') : null
@@ -238,23 +81,25 @@ function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult 
   return (
     <div className="rounded-xl border border-[#FF6F61]/30 bg-white p-5">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-[#FF6F61]/10 px-2.5 py-1 text-xs font-medium text-[#E85D50]">⭐ 배정 기준 (ITT · 공정 비교)</span>
-        <h2 className="text-base font-bold text-zinc-900">{exp.name} — 배정 기준 리텐션 (D1~D7)</h2>
+        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">✅ 가입자 리텐션 (검증된 지표)</span>
+        <h2 className="text-base font-bold text-zinc-900">{exp.name} — 가입자 재방문 (D1~D7)</h2>
       </div>
       <p className="mb-3 rounded-lg bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-600">
-        노출 조건이 그룹마다 달라(A 없음 · B 글3개 후 · C 즉시) 분모가 불공정하므로, <b>&ldquo;게이트를 보여주려 한 대상(배정) 전원&rdquo;</b>을 같은 분모로 A·B·C를 비교합니다. 그룹마다 <b className="text-emerald-700">가입자</b>(회원번호 추적·정확) / <b>미가입(둘러보기)</b> / <b className="text-sky-700">통합(전원)</b> 세 줄의 D1~D7 재방문을 봅니다.
+        그룹(A·B·C)별로 <b className="text-emerald-700">가입한 회원이 며칠에 다시 오는지</b>를 봅니다. <b>회원번호(userId) 기준</b>이라 카카오 로그인 세션 끊김·중복 세션의 영향이 없는 <b>유일하게 정확한 지표</b>입니다. (세션 기반 통합·미가입 지표는 신뢰도가 낮아 제거 — 딥다이브 검증 2026-06-15)
       </p>
       {totalAssigned === 0 ? (
         <div className="rounded-lg bg-amber-50 p-4 text-sm leading-relaxed text-amber-800">
-          📭 아직 배정 데이터가 없습니다. <b>배정 측정을 방금 도입</b>했어요(과거 소급 불가). 신규 TWA 진입자가 쌓이면 자동으로 채워집니다.
+          📭 아직 배정 데이터가 없습니다. 신규 TWA 진입자가 쌓이면 자동으로 채워집니다.
         </div>
       ) : (
         <>
           <div className="overflow-x-auto rounded-lg border border-zinc-200">
-            <table className="w-full min-w-[680px] text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-zinc-50 text-xs text-zinc-500">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium">그룹 / 종류</th>
+                  <th className="px-3 py-2 text-left font-medium">그룹</th>
+                  <th className="px-2 py-2 text-right font-medium">배정</th>
+                  <th className="px-2 py-2 text-right font-medium">가입(전환율)</th>
                   {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                     <th key={n} className="px-2 py-2 text-right font-medium">D{n}</th>
                   ))}
@@ -262,20 +107,24 @@ function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult 
               </thead>
               <tbody>
                 {itt.rows.map((r) => (
-                  <GateGroupRows key={r.variant} r={r} />
+                  <tr key={r.variant} className="border-t border-zinc-100">
+                    <td className="whitespace-nowrap px-3 py-2 font-medium text-zinc-700">{r.label}</td>
+                    <td className="px-2 py-2 text-right text-zinc-500">{r.assignedCount}명</td>
+                    <td className="px-2 py-2 text-right font-medium text-zinc-800">{r.signupCount}명{r.signupRate !== null && <span className="text-xs font-normal text-zinc-400"> ({r.signupRate}%)</span>}</td>
+                    {r.retention.map((d) => (
+                      <RetCell key={d.d} d={d} />
+                    ))}
+                  </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-            · 각 칸 = 재방문율% + (재방문수/<b>성숙표본</b>). <b>성숙표본</b>=가입·배정 후 그 일수가 <b>실제로 지난 사람만</b> 분모(안 지난 사람을 넣으면 DN이 가짜로 낮게 나옴). 표본 5명 미만은 흐리게 표시, 0명이면 <b>&lsquo;—&rsquo;</b>(아직 신뢰 불가).
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-            · <b className="text-emerald-700">가입자</b>=가입 회원이 다시 옴(회원번호, 카카오 세션 끊김 영향 없음·정확) · <b>미가입</b>=가입 안 하고 둘러본 세션 · <b className="text-sky-700">통합</b>=배정 전원(세션 기준, 가입자 OAuth 직후 일부 누락)
+            · 각 칸 = 가입자 재방문율% + (재방문수/<b>성숙표본</b>). <b>성숙표본</b>=가입 후 그 일수가 <b>실제로 지난 가입자만</b> 분모(안 지난 사람을 넣으면 가짜로 낮게 나옴). 5명 미만 흐리게, 0명은 <b>&lsquo;—&rsquo;</b>(신뢰 불가). 배정·전환율은 세션 기준이라 참고용.
           </p>
           {(started || d7Trust) && (
             <p className="mt-2 rounded-lg bg-sky-50 p-2 text-xs leading-relaxed text-sky-800">
-              📅 측정 시작 <b>{started}</b>. 리텐션은 그 날짜가 지나야 채워집니다 — <b>D7은 {d7Trust} 이후</b>부터 신뢰할 수 있습니다(그 전엔 성숙표본이 적어 &lsquo;—&rsquo;이거나 흐리게 표시). D1~D3은 지금도 신뢰 가능합니다.
+              📅 측정 시작 <b>{started}</b>. 리텐션은 그 일수가 지나야 채워집니다 — <b>D7은 {d7Trust} 이후</b>부터 신뢰 가능(그 전엔 &lsquo;—&rsquo; 또는 흐리게). D1~D3은 지금도 신뢰 가능합니다.
             </p>
           )}
           {totalAssigned < 30 && (
@@ -368,10 +217,8 @@ export default async function AdminAbTestsPage({
   const sp = await searchParams
   const period = sp.period ?? '30'
   const days = PERIOD_DAYS[period] ?? 30
-  const [experiments, twaRetention, gateRetention, gateITT] = await Promise.all([
+  const [experiments, gateITT] = await Promise.all([
     getWebExperiments(days),
-    getTwaSignupRetention(90),
-    getGateRetention(90),
     getGateITT(90),
   ])
 
@@ -393,19 +240,8 @@ export default async function AdminAbTestsPage({
         <PeriodFilter />
       </div>
 
-      {/* 메인 지표: 배정 기준 ITT (오늘부터 공정 비교 — 위너 판단의 기준) */}
+      {/* 메인 지표: 가입자 리텐션 (딥다이브 검증 결과 유일하게 신뢰 가능한 지표) */}
       {gateExp && <GateITTCard exp={gateExp} itt={gateITT} />}
-
-      {/* 과거 측정 — 분모가 그룹마다 달라(불공정)·과거 오분류 보정본. 위너 판단엔 부적합해 접어둠 */}
-      <details className="rounded-xl border border-zinc-200 bg-white">
-        <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50">
-          📂 과거 측정 (참고용 · 신뢰 보류) — 분모가 그룹마다 달라 위너 판단엔 부적합. 펼쳐보기 ▾
-        </summary>
-        <div className="space-y-5 border-t border-zinc-100 p-4">
-          <TwaBaselineCard r={twaRetention} />
-          {gateExp && <GateExperimentCard exp={gateExp} rows={gateRetention} baselineCount={twaRetention.signupCount} />}
-        </div>
-      </details>
 
       {active.length > 0 && (
         <section className="space-y-3">
