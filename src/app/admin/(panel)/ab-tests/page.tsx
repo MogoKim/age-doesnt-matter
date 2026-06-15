@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getWebExperiments, getGateITT } from '@/lib/queries/admin'
-import type { WebExperimentView, VariantStat, GateITTResult, RetDay } from '@/lib/queries/admin/admin.experiments-web'
+import type { WebExperimentView, VariantStat, GateITTResult, GateITTRow, RetDay } from '@/lib/queries/admin/admin.experiments-web'
 import type { Confidence } from '@/lib/experiments/stats'
 import PeriodFilter from './PeriodFilter'
 import ExperimentStatePanel from './ExperimentStatePanel'
@@ -69,9 +69,30 @@ function RetCell({ d }: { d: RetDay }) {
   )
 }
 
-// 게이트 리텐션 카드 — 가입자(회원번호) 리텐션 D1~D7만 표시.
-//   딥다이브 검증(2026-06-15) 결과 sessionId 기반 지표(통합·미가입·전환율)는 신뢰도가 낮아 제거,
-//   유일하게 정확한 가입자(userId+코호트) 리텐션만 남김. 상세: docs/analysis/twa-gate-final-verify-*.
+// 그룹 1개 = 헤더행(배정·가입·전환율·비회원) + 가입자 행(userId) + 비회원 행(세션)
+function GateGroupRows({ r }: { r: GateITTRow }) {
+  return (
+    <>
+      <tr className="bg-zinc-50/80">
+        <td colSpan={8} className="px-3 py-1.5 text-xs font-bold text-zinc-700">
+          {r.label} · 배정 {r.assignedCount}명 · 가입 {r.signupCount}명{r.signupRate !== null && <span className="font-normal text-zinc-400"> ({r.signupRate}%)</span>} · 비회원 {r.guestCount}명
+        </td>
+      </tr>
+      <tr className="border-t border-zinc-50">
+        <td className="whitespace-nowrap px-3 py-1.5 text-left text-xs font-semibold text-emerald-700">가입자 ★ (회원번호)</td>
+        {r.retention.map((d) => <RetCell key={d.d} d={d} />)}
+      </tr>
+      <tr className="border-t border-zinc-50">
+        <td className="whitespace-nowrap px-3 py-1.5 text-left text-xs text-sky-700">비회원 (둘러보기)</td>
+        {r.guestRetention.map((d) => <RetCell key={d.d} d={d} />)}
+      </tr>
+    </>
+  )
+}
+
+// 게이트 리텐션 카드 — 가입자(회원번호) + 비회원(세션) 재방문 D1~D7. 둘 다 코호트 보정.
+//   딥다이브 검증(2026-06-15): 통합·전환율 같은 sessionId 부풀림 지표는 제거. 가입자=가장 정확,
+//   비회원=OAuth 미경유라 세션 안정적(가입자 다음 신뢰). 상세: docs/analysis/twa-gate-final-verify-*.
 function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult }) {
   const totalAssigned = itt.rows.reduce((s, r) => s + r.assignedCount, 0)
   const started = itt.firstAssignedAt ? new Date(itt.firstAssignedAt).toLocaleDateString('ko-KR') : null
@@ -81,11 +102,11 @@ function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult 
   return (
     <div className="rounded-xl border border-[#FF6F61]/30 bg-white p-5">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">✅ 가입자 리텐션 (검증된 지표)</span>
-        <h2 className="text-base font-bold text-zinc-900">{exp.name} — 가입자 재방문 (D1~D7)</h2>
+        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">✅ 가입자 + 비회원 리텐션</span>
+        <h2 className="text-base font-bold text-zinc-900">{exp.name} — 재방문 (D1~D7)</h2>
       </div>
       <p className="mb-3 rounded-lg bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-600">
-        그룹(A·B·C)별로 <b className="text-emerald-700">가입한 회원이 며칠에 다시 오는지</b>를 봅니다. <b>회원번호(userId) 기준</b>이라 카카오 로그인 세션 끊김·중복 세션의 영향이 없는 <b>유일하게 정확한 지표</b>입니다. (세션 기반 통합·미가입 지표는 신뢰도가 낮아 제거 — 딥다이브 검증 2026-06-15)
+        그룹(A·B·C)별로 <b className="text-emerald-700">가입한 회원</b>과 <b className="text-sky-700">가입 안 한 비회원(둘러보기)</b>이 며칠에 다시 오는지 봅니다. 비회원도 우리의 중요한 잠재 회원이니 함께 봅니다. <b className="text-emerald-700">가입자</b>는 회원번호라 가장 정확하고, <b className="text-sky-700">비회원</b>은 카카오 로그인을 안 거쳐 세션이 안정적이라 그다음으로 신뢰할 수 있습니다.
       </p>
       {totalAssigned === 0 ? (
         <div className="rounded-lg bg-amber-50 p-4 text-sm leading-relaxed text-amber-800">
@@ -97,9 +118,7 @@ function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult 
             <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-zinc-50 text-xs text-zinc-500">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium">그룹</th>
-                  <th className="px-2 py-2 text-right font-medium">배정</th>
-                  <th className="px-2 py-2 text-right font-medium">가입(전환율)</th>
+                  <th className="px-3 py-2 text-left font-medium">그룹 / 종류</th>
                   {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                     <th key={n} className="px-2 py-2 text-right font-medium">D{n}</th>
                   ))}
@@ -107,20 +126,16 @@ function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult 
               </thead>
               <tbody>
                 {itt.rows.map((r) => (
-                  <tr key={r.variant} className="border-t border-zinc-100">
-                    <td className="whitespace-nowrap px-3 py-2 font-medium text-zinc-700">{r.label}</td>
-                    <td className="px-2 py-2 text-right text-zinc-500">{r.assignedCount}명</td>
-                    <td className="px-2 py-2 text-right font-medium text-zinc-800">{r.signupCount}명{r.signupRate !== null && <span className="text-xs font-normal text-zinc-400"> ({r.signupRate}%)</span>}</td>
-                    {r.retention.map((d) => (
-                      <RetCell key={d.d} d={d} />
-                    ))}
-                  </tr>
+                  <GateGroupRows key={r.variant} r={r} />
                 ))}
               </tbody>
             </table>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-            · 각 칸 = 가입자 재방문율% + (재방문수/<b>성숙표본</b>). <b>성숙표본</b>=가입 후 그 일수가 <b>실제로 지난 가입자만</b> 분모(안 지난 사람을 넣으면 가짜로 낮게 나옴). 5명 미만 흐리게, 0명은 <b>&lsquo;—&rsquo;</b>(신뢰 불가). 배정·전환율은 세션 기준이라 참고용.
+            · 각 칸 = 재방문율% + (재방문수/<b>성숙표본</b>). <b>성숙표본</b>=가입·배정 후 그 일수가 <b>실제로 지난 사람만</b> 분모(안 지난 사람을 넣으면 가짜로 낮게 나옴). 5명 미만 흐리게, 0명은 <b>&lsquo;—&rsquo;</b>(신뢰 불가).
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+            · <b className="text-emerald-700">가입자</b>=가입 회원이 다시 옴(회원번호, 가장 정확) · <b className="text-sky-700">비회원</b>=끝까지 가입 안 하고 둘러본 세션(OAuth 미경유라 세션 안정적·참고로 신뢰). 둘 다 코호트 보정 적용.
           </p>
           {(started || d7Trust) && (
             <p className="mt-2 rounded-lg bg-sky-50 p-2 text-xs leading-relaxed text-sky-800">

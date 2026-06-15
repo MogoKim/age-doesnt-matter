@@ -395,7 +395,9 @@ export interface GateITTRow {
   assignedCount: number // 배정 distinct sessionId — "보여주려 한 전원"
   signupCount: number // 가입 userId distinct
   signupRate: number | null // 배정→가입 전환율(%) — 모집단 단위 달라 참고용
-  retention: RetDay[] // 가입자 리텐션 D1~D7 (userId + 코호트보정) — 유일하게 신뢰 가능한 지표
+  retention: RetDay[] // 가입자 리텐션 D1~D7 (userId + 코호트보정) — 가장 정확
+  guestCount: number // 비회원(끝까지 가입·로그인 안 한 배정 세션) 수 — 비회원 리텐션 분모
+  guestRetention: RetDay[] // 비회원 재방문 D1~D7 (배정 세션 sessionId + 코호트보정). 비회원은 OAuth 미경유라 세션 안정적
 }
 
 export interface GateITTResult {
@@ -413,35 +415,45 @@ const _getGateITT = unstable_cache(
     const empty = (): GateITTRow[] =>
       (exp?.variants ?? []).map((v) => ({
         variant: v.key, label: v.label, assignedCount: 0, signupCount: 0, signupRate: null,
-        retention: emptyDays(),
+        retention: emptyDays(), guestCount: 0, guestRetention: emptyDays(),
       }))
     if (!exp) return { rows: [], firstAssignedAt: null }
     const start = new Date(now - days * DAY)
 
-    // 1) 배정 — variant별 distinct sessionId 수(분모 표시 + 전환율 분모) + 최초 배정시각(측정 시작일)
+    // 1) 배정 — variant별 sessionId → 최초 배정시각 (비회원 식별·코호트에 배정시각 필요)
     const assigns = await prisma.eventLog.findMany({
       where: { eventName: 'twa_gate_assigned', isBot: false, createdAt: { gte: start }, sessionId: { not: null } },
       select: { sessionId: true, createdAt: true, properties: true },
       orderBy: { createdAt: 'asc' },
     })
-    const assignedByVariant = new Map<string, Set<string>>()
-    for (const v of exp.variants) assignedByVariant.set(v.key, new Set())
+    const byVariant = new Map<string, Map<string, Date>>() // variant → (sessionId → 최초 배정시각)
+    for (const v of exp.variants) byVariant.set(v.key, new Map())
     let firstAssignedAt: Date | null = null
     for (const a of assigns) {
       const g = asProps(a.properties).twa_gate_variant
-      if (a.sessionId && typeof g === 'string' && assignedByVariant.has(g)) {
-        assignedByVariant.get(g)!.add(a.sessionId)
+      if (a.sessionId && typeof g === 'string' && byVariant.has(g) && !byVariant.get(g)!.has(a.sessionId)) {
+        byVariant.get(g)!.set(a.sessionId, a.createdAt)
         if (!firstAssignedAt) firstAssignedAt = a.createdAt
       }
     }
-    if (assigns.length === 0) return { rows: empty(), firstAssignedAt: null }
+    const allSids = [...byVariant.values()].flatMap((m) => [...m.keys()])
+    if (allSids.length === 0) return { rows: empty(), firstAssignedAt: null }
 
-    // 2) 가입자 — variant별 userId → 최초 가입시각 (OAuth sessionId 단절 우회: properties.twa_gate_variant)
-    //    가입자 리텐션은 userId 기반이라 sessionId 부풀림·세션단절 영향 없음 = 유일 신뢰 지표.
-    const signups = await prisma.eventLog.findMany({
-      where: { eventName: 'sign_up', userId: { not: null }, isBot: false, createdAt: { gte: start } },
-      select: { userId: true, createdAt: true, properties: true }, orderBy: { createdAt: 'asc' },
-    })
+    // 2) 배정 세션의 후속 page_view(sessionId + userId 동봉=가입/로그인 판정) + 가입(sign_up, userId)
+    const [views, signups] = await Promise.all([
+      prisma.eventLog.findMany({ where: { eventName: 'page_view', sessionId: { in: allSids }, isBot: false }, select: { sessionId: true, userId: true, createdAt: true } }),
+      prisma.eventLog.findMany({ where: { eventName: 'sign_up', userId: { not: null }, isBot: false, createdAt: { gte: start } }, select: { userId: true, createdAt: true, properties: true }, orderBy: { createdAt: 'asc' } }),
+    ])
+    const viewsBySid = new Map<string, number[]>()
+    const sessionHasUser = new Set<string>() // 후속 page_view에 userId 붙은 배정세션 = 가입/로그인 → 순수 비회원에서 제외
+    for (const v of views) {
+      if (!v.sessionId) continue
+      const arr = viewsBySid.get(v.sessionId) ?? []
+      arr.push(v.createdAt.getTime())
+      viewsBySid.set(v.sessionId, arr)
+      if (v.userId) sessionHasUser.add(v.sessionId)
+    }
+    // 가입자 — variant별 userId → 최초 가입시각 (OAuth sessionId 단절 우회: properties.twa_gate_variant). userId 기반=가장 정확.
     const signupByVariant = new Map<string, Map<string, Date>>()
     for (const v of exp.variants) signupByVariant.set(v.key, new Map())
     for (const s of signups) {
@@ -462,33 +474,40 @@ const _getGateITT = unstable_cache(
       supViewsByUid.set(v.userId, arr)
     }
 
-    // 코호트 D1~D7 — DN 분모는 "가입 후 N일 실제 경과(matured)"한 가입자만. 분자=그중 가입1h후~가입+ND 재방문.
-    const cohort = (members: Map<string, Date>): RetDay[] =>
+    // 코호트 D1~D7 — DN 분모는 "시작 후 N일 실제 경과(matured)"한 대상만. 분자=그중 시작1h후~시작+ND 재방문.
+    //   가입자: members=userId→가입시각, viewsOf=userId 재방문 / 비회원: members=sessionId→배정시각, viewsOf=세션 재방문
+    const cohort = (members: Map<string, Date>, viewsOf: (id: string) => number[]): RetDay[] =>
       ITT_DN.map((d) => {
         let matured = 0, returned = 0
-        for (const [uid, at] of members) {
+        for (const [id, at] of members) {
           const t = at.getTime()
           if (now - t < d * DAY) continue // 아직 N일 안 지남 → 분모 제외(과소측정 방지)
           matured++
-          const vs = (supViewsByUid.get(uid) ?? []).filter((ms) => ms > t + 3600_000) // 가입 1h 후 재방문만
+          const vs = viewsOf(id).filter((ms) => ms > t + 3600_000) // 시작 1h 후 재방문만
           if (vs.some((ms) => ms <= t + d * DAY)) returned++
         }
         return { d, rate: matured ? Math.round((returned / matured) * 1000) / 10 : null, returned, matured }
       })
 
     const rows: GateITTRow[] = exp.variants.map((v) => {
-      const n = assignedByVariant.get(v.key)!.size
+      const assignMap = byVariant.get(v.key)!
       const supMap = signupByVariant.get(v.key)!
+      // 비회원 = 배정 세션 중 후속 page_view에 userId가 끝까지 안 붙은 것(순수 비회원, 가입·로그인 흔적 없음)
+      const guestMap = new Map<string, Date>()
+      for (const [sid, at] of assignMap) if (!sessionHasUser.has(sid)) guestMap.set(sid, at)
+      const n = assignMap.size
       const su = supMap.size
       return {
         variant: v.key, label: v.label, assignedCount: n,
         signupCount: su, signupRate: n ? Math.round((su / n) * 1000) / 10 : null,
-        retention: cohort(supMap),
+        retention: cohort(supMap, (uid) => supViewsByUid.get(uid) ?? []),
+        guestCount: guestMap.size,
+        guestRetention: cohort(guestMap, (sid) => viewsBySid.get(sid) ?? []),
       }
     })
     return { rows, firstAssignedAt: firstAssignedAt ? firstAssignedAt.toISOString() : null }
   },
-  ['admin-gate-itt-v5'],
+  ['admin-gate-itt-v6'],
   { revalidate: 600 },
 )
 
