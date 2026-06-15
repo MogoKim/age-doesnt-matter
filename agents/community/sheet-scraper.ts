@@ -128,6 +128,47 @@ function pickPersona(
   return PERSONAS[Math.floor(Math.random() * PERSONAS.length)]
 }
 
+// ── 카테고리 결정 (하이브리드: 시트 D열 → 자동분류 → 게시판 기본값) ──
+// 스크래퍼는 큐레이션과 독립. 어떤 경우에도 DB BoardConfig에 존재하는 값만 저장한다.
+
+/** 게시판별 안전 기본값 — 각 게시판 BoardConfig 유효값 중 가장 중립적인 것 */
+const BOARD_DEFAULT_CATEGORY: Record<'STORY' | 'HUMOR' | 'LIFE2', string> = {
+  STORY: '자유수다',
+  HUMOR: '기타',
+  LIFE2: '은퇴준비',
+}
+
+/** DB BoardConfig에서 게시판별 유효 카테고리 set 로드 (스크랩 시작 시 1회, 메모리 캐시) */
+async function loadValidCategories(): Promise<Record<string, Set<string>>> {
+  const configs = await prisma.boardConfig.findMany({ select: { boardType: true, categories: true } })
+  const map: Record<string, Set<string>> = {}
+  for (const c of configs) map[c.boardType] = new Set(c.categories)
+  return map
+}
+
+/**
+ * 하이브리드 카테고리 결정.
+ *  ① 시트 D열(manual)이 해당 게시판 유효 set에 있으면 그대로
+ *  ② classifyCategory 결과가 유효 set에 있으면 그대로
+ *  ③ 둘 다 실패 시 게시판 안전 기본값
+ * BoardConfig 로드 실패(빈 set) 시에는 잘못된 자동분류 저장을 막기 위해 manual→기본값만 사용.
+ */
+function resolveScraperCategory(
+  manual: string | undefined,
+  title: string,
+  content: string,
+  boardType: 'STORY' | 'HUMOR' | 'LIFE2',
+  validSet: Set<string> | undefined,
+): string {
+  const fallback = BOARD_DEFAULT_CATEGORY[boardType]
+  const m = manual?.trim()
+  if (!validSet || validSet.size === 0) return m || fallback
+  if (m && validSet.has(m)) return m
+  const auto = classifyCategory(title, content, boardType)
+  if (validSet.has(auto)) return auto
+  return fallback
+}
+
 // ── 브라우저 관리 ──
 
 function chromiumLaunchOptions() {
@@ -386,6 +427,9 @@ export async function main() {
 
     const totalRows = tabs.reduce((sum, t) => sum + t.rows.length, 0)
     console.log(`[sheet-scraper] ${totalRows}건 PENDING 발견`)
+
+    // BoardConfig 유효 카테고리 set 로드 (게시판별, 1회) — 자동분류 결과를 실제 운영값과 대조
+    const validCategories = await loadValidCategories()
 
     // 2. 브라우저 시작
     const context = await launchBrowser()
@@ -648,8 +692,8 @@ export async function main() {
               title = await polishTitleForSeo(title, content, isImageLikePostContent(content))
             }
 
-            // 카테고리 결정 (창업자 지정 우선, 아니면 게시판별 자동 분류)
-            const category = row.category || classifyCategory(title, content, tab.boardType)
+            // 카테고리 결정 (하이브리드: 시트 D열 → 자동분류 → 게시판 기본값, 모두 BoardConfig 유효값으로 보장)
+            const category = resolveScraperCategory(row.category, title, content, tab.boardType, validCategories[tab.boardType])
             const finalTitle = title
 
             // 페르소나 선택
