@@ -264,7 +264,8 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
   // ── Step 1: 닉네임 설정 ──
   if (step === 1) {
     return (
-      <div className="w-full max-w-[480px] bg-card rounded-2xl p-8 px-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-md:max-w-none max-md:rounded-none max-md:min-h-dvh max-md:shadow-none max-md:flex max-md:flex-col">
+      <div className="w-full max-w-[480px] bg-card rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col max-md:max-w-none max-md:rounded-none max-md:h-dvh max-md:shadow-none">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-8">
         {renderProgress()}
 
         <div className="mb-8 text-center">
@@ -340,7 +341,8 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
           </ul>
         </div>
 
-        <div className="mt-auto pt-6 flex flex-col gap-2">
+        </div>
+        <div className="shrink-0 flex flex-col gap-2 border-t border-border px-6 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
           <Button disabled={nicknameStatus !== 'valid'} onClick={handleStep1Next}>
             다음
           </Button>
@@ -352,7 +354,8 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
   // ── Step 2: 약관 동의 ──
   if (step === 2) {
     return (
-      <div className="w-full max-w-[480px] bg-card rounded-2xl p-8 px-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-md:max-w-none max-md:rounded-none max-md:min-h-dvh max-md:shadow-none max-md:flex max-md:flex-col">
+      <div className="w-full max-w-[480px] bg-card rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col max-md:max-w-none max-md:rounded-none max-md:h-dvh max-md:shadow-none">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-8">
         {renderProgress()}
 
         <div className="mb-8 text-center">
@@ -435,7 +438,8 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
           </div>
         </div>
 
-        <div className="mt-auto pt-6 flex flex-col gap-2">
+        </div>
+        <div className="shrink-0 flex flex-col gap-2 border-t border-border px-6 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
           <Button disabled={!allRequired || isPending} onClick={handleSubmit}>
             {isPending ? '처리 중...' : '완료'}
           </Button>
@@ -449,7 +453,8 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
 
   // ── Step 3: 가입 완료 ──
   return (
-    <div className="w-full max-w-[480px] bg-card rounded-2xl p-8 px-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-md:max-w-none max-md:rounded-none max-md:min-h-dvh max-md:shadow-none max-md:flex max-md:flex-col">
+    <div className="w-full max-w-[480px] bg-card rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col max-md:max-w-none max-md:rounded-none max-md:h-dvh max-md:shadow-none">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-8">
       <div className="text-center py-8">
         <span className="text-7xl mb-6 block animate-in zoom-in-50 duration-500">🎉</span>
         <h1 className="text-2xl font-bold text-foreground mb-2">환영합니다!</h1>
@@ -472,7 +477,8 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
         </div>
       </div>
 
-      <div className="mt-auto pt-6 flex flex-col gap-3">
+      </div>
+      <div className="shrink-0 flex flex-col gap-3 border-t border-border px-6 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
         <Button disabled={isNavigating} onClick={handleComplete}>
           {isNavigating ? '이동 중...' : '우나어 시작하기'}
         </Button>

@@ -18,7 +18,7 @@ interface PageProps {
 export default async function OnboardingPage({ searchParams }: PageProps) {
   const { callbackUrl } = await searchParams
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-6 bg-background md:px-6 md:py-12">
+    <div className="bg-background max-md:min-h-dvh md:flex md:min-h-dvh md:flex-col md:items-center md:justify-center md:px-6 md:py-12">
       <OnboardingForm callbackUrl={callbackUrl} />
     </div>
   )
