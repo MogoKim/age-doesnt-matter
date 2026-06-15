@@ -8,8 +8,45 @@ interface Props {
 export default async function AuthErrorPage({ searchParams }: Props) {
   const error = searchParams.error ?? 'unknown'
 
-  await logAuthFailure('oauth_callback_error', error).catch(() => {})
+  // FemaleOnly는 여성 전용 정책 안내(시스템 오류 아님) → oauth_callback_error로 기록하지 않음.
+  // (signIn 차단 시 gender_blocked로 이미 1회 기록됨)
+  if (error !== 'FemaleOnly') {
+    await logAuthFailure('oauth_callback_error', error).catch(() => {})
+  }
 
+  // 여성 전용 안내 (신규 남성 차단)
+  if (error === 'FemaleOnly') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-background">
+        <div className="w-full max-w-sm text-center space-y-6">
+          <div className="text-5xl">🌸</div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-foreground">
+              우나어는 여성 전용 커뮤니티예요
+            </h1>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              카카오 계정 성별이 남성으로 확인되어 가입이 제한되었습니다.
+              <br />
+              성별 정보가 잘못되어 있다면 카카오 계정 정보를 확인하거나 문의해 주세요.
+            </p>
+            <p className="text-base text-muted-foreground pt-2">
+              문의: korea.age.not.matter@gmail.com
+            </p>
+          </div>
+
+          <Link
+            href="/"
+            className="flex items-center justify-center w-full h-[52px] rounded-xl bg-primary text-white text-lg font-bold transition-colors"
+          >
+            홈으로 돌아가기
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // 그 외 일반 오류 (기존 동작 유지)
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-background">
       <div className="w-full max-w-sm text-center space-y-6">

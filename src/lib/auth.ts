@@ -33,6 +33,19 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           select: { status: true, suspendedUntil: true },
         }))
 
+        // 여성 전용 — 신규 남성 차단 (User 생성 전, 가장 이른 지점)
+        // 신규(existing 없음) + 카카오 성별 male 일 때만. female·성별미상·기존회원은 통과.
+        if (!existing) {
+          const kakaoData = (profile as Record<string, unknown>).kakao_account as
+            | Record<string, unknown>
+            | undefined
+          if (kakaoData?.gender === 'male') {
+            // PII 미기록. 정책 차단은 SKIP status로 남겨 실패 급증 알림에서 제외됨.
+            await logAuthFailure('gender_blocked', 'kakao gender male blocked before user creation').catch(() => {})
+            return '/auth/error?error=FemaleOnly'
+          }
+        }
+
         // 탈퇴 유예 중인 계정 복구
         if (existing?.status === 'WITHDRAWN') {
           await prisma.user.update({
