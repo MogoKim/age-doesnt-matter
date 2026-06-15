@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getWebExperiments, getTwaSignupRetention, getGateRetention, getGateITT } from '@/lib/queries/admin'
-import type { WebExperimentView, VariantStat, TwaRetention, GateRetentionRow, GateITTResult } from '@/lib/queries/admin/admin.experiments-web'
+import type { WebExperimentView, VariantStat, TwaRetention, GateRetentionRow, GateITTResult, GateITTRow, RetDay } from '@/lib/queries/admin/admin.experiments-web'
 import type { Confidence } from '@/lib/experiments/stats'
 import PeriodFilter from './PeriodFilter'
 import ExperimentStatePanel from './ExperimentStatePanel'
@@ -190,66 +190,94 @@ function GateExperimentCard({ exp, rows, baselineCount }: { exp: WebExperimentVi
   )
 }
 
-// 배정 기준 ITT 카드 — 노출 불공정을 우회해 "보여주려 한 대상(배정)" 전원을 같은 분모로 A·B·C 공정 비교.
+// D1~D7 한 줄(종류별) — 각 셀 = 재방문율% + (재방문/성숙표본). 성숙 안 된 DN은 '—'.
+function RetRow({ label, days, accent }: { label: string; days: RetDay[]; accent?: string }) {
+  return (
+    <tr className="border-t border-zinc-50">
+      <td className={`whitespace-nowrap px-3 py-1.5 text-left text-xs ${accent ?? 'text-zinc-500'}`}>{label}</td>
+      {days.map((d) => (
+        <td key={d.d} className="px-2 py-1.5 text-right">
+          {d.rate === null ? (
+            <span className="text-zinc-300">—</span>
+          ) : (
+            <span className={d.matured < 5 ? 'text-zinc-400' : 'text-zinc-800'}>
+              {d.rate}%
+              <br />
+              <span className="text-[10px] text-zinc-400">{d.returned}/{d.matured}</span>
+            </span>
+          )}
+        </td>
+      ))}
+    </tr>
+  )
+}
+
+// 그룹 1개 블록 = 헤더행 + 3종(통합/가입자/미가입자) 행
+function GateGroupRows({ r }: { r: GateITTRow }) {
+  return (
+    <>
+      <tr className="bg-zinc-50/80">
+        <td colSpan={8} className="px-3 py-1.5 text-xs font-bold text-zinc-700">
+          {r.label} · 배정 {r.assignedCount}명 · 가입 {r.signupCount}명{r.signupRate !== null && <span className="font-normal text-zinc-400"> ({r.signupRate}%)</span>}
+        </td>
+      </tr>
+      <RetRow label="가입자 ★ (정확)" days={r.signup} accent="font-semibold text-emerald-700" />
+      <RetRow label="미가입 (둘러보기)" days={r.nonSignup} accent="text-zinc-500" />
+      <RetRow label="통합 (전원)" days={r.combined} accent="text-sky-700" />
+    </>
+  )
+}
+
+// 배정 기준 ITT 카드 — 노출 불공정을 우회해 "배정 전원"을 같은 분모로 A·B·C 공정 비교. D1~D7 코호트(가입자/미가입/통합).
 function GateITTCard({ exp, itt }: { exp: WebExperimentView; itt: GateITTResult }) {
   const totalAssigned = itt.rows.reduce((s, r) => s + r.assignedCount, 0)
   const started = itt.firstAssignedAt ? new Date(itt.firstAssignedAt).toLocaleDateString('ko-KR') : null
+  const d7Trust = itt.firstAssignedAt
+    ? new Date(new Date(itt.firstAssignedAt).getTime() + 7 * 86400000).toLocaleDateString('ko-KR')
+    : null
   return (
     <div className="rounded-xl border border-[#FF6F61]/30 bg-white p-5">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-[#FF6F61]/10 px-2.5 py-1 text-xs font-medium text-[#E85D50]">⭐ 배정 기준 (ITT · 공정 비교)</span>
-        <h2 className="text-base font-bold text-zinc-900">{exp.name} — 배정 기준 리텐션</h2>
+        <h2 className="text-base font-bold text-zinc-900">{exp.name} — 배정 기준 리텐션 (D1~D7)</h2>
       </div>
       <p className="mb-3 rounded-lg bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-600">
-        노출은 그룹별 조건이 달라(A 없음 · B 글3개 후 · C 즉시) 분모가 불공정합니다. 그래서 <b>&ldquo;게이트를 보여주려 한 대상(배정) 전원&rdquo;</b>을 같은 분모로 놓고 A·B·C를 한 줄에서 비교합니다. 한 줄에서 <b>가입을 얼마나 시키나 → 가입자가 돌아오나 → 둘러본 사람이 돌아오나</b>를 봅니다.
+        노출 조건이 그룹마다 달라(A 없음 · B 글3개 후 · C 즉시) 분모가 불공정하므로, <b>&ldquo;게이트를 보여주려 한 대상(배정) 전원&rdquo;</b>을 같은 분모로 A·B·C를 비교합니다. 그룹마다 <b className="text-emerald-700">가입자</b>(회원번호 추적·정확) / <b>미가입(둘러보기)</b> / <b className="text-sky-700">통합(전원)</b> 세 줄의 D1~D7 재방문을 봅니다.
       </p>
       {totalAssigned === 0 ? (
         <div className="rounded-lg bg-amber-50 p-4 text-sm leading-relaxed text-amber-800">
-          📭 아직 배정 데이터가 없습니다. <b>배정 측정을 방금 도입</b>했어요(과거 소급 불가). 신규 TWA 진입자가 쌓이면 여기에 A·B·C 공정 비교가 자동으로 채워집니다.
+          📭 아직 배정 데이터가 없습니다. <b>배정 측정을 방금 도입</b>했어요(과거 소급 불가). 신규 TWA 진입자가 쌓이면 자동으로 채워집니다.
         </div>
       ) : (
         <>
           <div className="overflow-x-auto rounded-lg border border-zinc-200">
-            <table className="w-full min-w-[560px] text-sm">
+            <table className="w-full min-w-[680px] text-sm">
               <thead className="bg-zinc-50 text-xs text-zinc-500">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium">그룹</th>
-                  <th className="px-3 py-2 text-right font-medium">배정</th>
-                  <th className="px-3 py-2 text-right font-medium">가입률</th>
-                  <th className="bg-emerald-50/60 px-3 py-2 text-right font-medium text-emerald-700">
-                    가입자 재방문<br /><span className="font-normal text-emerald-600/70">D1 / D7</span>
-                  </th>
-                  <th className="px-3 py-2 text-right font-medium">
-                    미가입자 재방문<br /><span className="font-normal text-zinc-400">D1 / D7</span>
-                  </th>
+                  <th className="px-3 py-2 text-left font-medium">그룹 / 종류</th>
+                  {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                    <th key={n} className="px-2 py-2 text-right font-medium">D{n}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {itt.rows.map((r) => (
-                  <tr key={r.variant} className="border-t border-zinc-100">
-                    <td className="px-3 py-2 font-medium text-zinc-700">{r.label}</td>
-                    <td className="px-3 py-2 text-right text-zinc-800">{r.assignedCount}명</td>
-                    <td className="px-3 py-2 text-right text-zinc-800">{r.signupCount}명 <span className="text-xs text-zinc-400">({r.signupRate === null ? '—' : `${r.signupRate}%`})</span></td>
-                    <td className="bg-emerald-50/40 px-3 py-2 text-right font-semibold text-emerald-800">
-                      {r.signupD1Rate === null ? '—' : `${r.signupD1Rate}%`} / {r.signupD7Rate === null ? '—' : `${r.signupD7Rate}%`}
-                      <br /><span className="text-xs font-normal text-zinc-400">가입 {r.signupCount}명 중</span>
-                    </td>
-                    <td className="px-3 py-2 text-right text-zinc-600">
-                      {r.d1ReturnRate}% / {r.d7ReturnRate}%
-                      <br /><span className="text-xs text-zinc-400">둘러본 {r.assignedCount}명 중</span>
-                    </td>
-                  </tr>
+                  <GateGroupRows key={r.variant} r={r} />
                 ))}
               </tbody>
             </table>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-            · <b className="text-emerald-700">가입자 재방문</b>=가입한 회원이 다시 옴(회원번호 추적, 정확) · <b>미가입자 재방문</b>=가입 안 하고 둘러본 사람이 다시 옴(세션 추적) · D1/D7=1·7일 내(누적) · 배정=게이트 보여준 전원(공정 분모)
-            {started && <> · 측정 시작 {started}</>}
+            · 각 칸 = 재방문율% + (재방문수/<b>성숙표본</b>). <b>성숙표본</b>=가입·배정 후 그 일수가 <b>실제로 지난 사람만</b> 분모(안 지난 사람을 넣으면 DN이 가짜로 낮게 나옴). 표본 5명 미만은 흐리게 표시, 0명이면 <b>&lsquo;—&rsquo;</b>(아직 신뢰 불가).
           </p>
           <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-            💡 가입자 재방문은 회원번호로 추적해 카카오 로그인 세션 끊김의 영향이 없습니다. &ldquo;가입은 많이 시켜도 재방문은 약한&rdquo; 게이트를 가려내는 핵심 지표입니다.
+            · <b className="text-emerald-700">가입자</b>=가입 회원이 다시 옴(회원번호, 카카오 세션 끊김 영향 없음·정확) · <b>미가입</b>=가입 안 하고 둘러본 세션 · <b className="text-sky-700">통합</b>=배정 전원(세션 기준, 가입자 OAuth 직후 일부 누락)
           </p>
+          {(started || d7Trust) && (
+            <p className="mt-2 rounded-lg bg-sky-50 p-2 text-xs leading-relaxed text-sky-800">
+              📅 측정 시작 <b>{started}</b>. 리텐션은 그 날짜가 지나야 채워집니다 — <b>D7은 {d7Trust} 이후</b>부터 신뢰할 수 있습니다(그 전엔 성숙표본이 적어 &lsquo;—&rsquo;이거나 흐리게 표시). D1~D3은 지금도 신뢰 가능합니다.
+            </p>
+          )}
           {totalAssigned < 30 && (
             <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-700">
               ⚠️ 배정 {totalAssigned}건 — 표본이 적어 아직 방향성 참고용. 더 쌓이면 자동 갱신됩니다.

@@ -373,33 +373,31 @@ export function getGateRetention(days = 90): Promise<GateRetentionRow[]> {
 }
 
 // ──────────────────────────────────────────────
-// TWA 게이트 ITT (Intention-To-Treat) — "보여주려 한 대상(배정)" 기준 공정 비교
-//   노출은 그룹별 조건이 달라(A 0·B 글3개후·C 즉시) 분모가 불공정 → 최앞단인 "배정"을 분모로 통일.
-//   배정 분모 = twa_gate_assigned 이벤트의 distinct sessionId(_anon_sid, 30일 유지로 배정→재방문 연결).
-//   측정 정의:
-//     · 가입 = sign_up properties.twa_gate_variant + userId distinct (sessionId 단절 우회, v2부터)
-//       — 가입은 카카오 OAuth 외부브라우저 왕복으로 _anon_sid가 끊겨 배정 sessionId 매칭이 전부 실패하던
-//         버그를 교정. 분모(배정 sessionId)와 분자(가입 userId)는 모집단 단위가 달라 signupRate는 참고용.
-//     · 재방문(D1/D3/D7) = 배정 sessionId의 후속 page_view (미가입 배정자 포함, OAuth 미경유라 유효)
-//   ⚠️ 배정 이벤트는 도입 시점부터 적재 → 과거 소급 불가. firstAssignedAt 이후만 유효.
+// TWA 게이트 ITT — 배정 기준 공정 비교 + D1~D7 코호트 리텐션 (3종: 가입자/미가입자/통합)
+//   배정 분모 = twa_gate_assigned distinct sessionId(_anon_sid, 30일 유지).
+//   재방문 3종 측정 정의:
+//     · 통합   = 배정 세션(전원)의 후속 page_view (sessionId 기준 — 회원·비회원 모두. 단 가입자 OAuth 직후 일부 누락)
+//     · 가입자 = 가입자 userId의 가입 후 page_view (정확, OAuth 세션단절 무관)
+//     · 미가입 = 배정 세션 중 "후속 page_view에 userId가 한 번도 안 붙은 세션"의 재방문(순수 둘러보기)
+//   ⚠️ 코호트 보정: D_N 분모 = "시작 후 N일이 실제 경과한 대상(matured)"만. 안 그러면 최근 가입자가
+//      분모를 부풀려 DN 과소측정(예: 측정 3일차 D7은 성숙 0명 → 무의미). 각 RetDay에 matured 동봉.
+//   ⚠️ 배정 이벤트는 도입(2026-06-12) 후만 적재 → firstAssignedAt 이후만 유효.
 // ──────────────────────────────────────────────
+export interface RetDay {
+  d: number // 1~7
+  rate: number | null // 재방문율(%). matured 0이면 null(아직 N일 안 지남 → 신뢰 불가)
+  returned: number // 재방문 인원
+  matured: number // N일 경과한 분모(성숙 코호트) — 신뢰도 판단용
+}
 export interface GateITTRow {
   variant: string
   label: string
-  assignedCount: number // 배정 분모 (distinct sessionId) — "보여주려 한 전원"
-  signupCount: number // 배정 후 가입한 세션 수
-  signupRate: number | null // 배정→가입 전환율(%)
-  d1ReturnCount: number
-  d1ReturnRate: number // 배정 후 1일 내 재방문(%)
-  d3ReturnCount: number
-  d3ReturnRate: number // 배정 후 3일 내 재방문(%)
-  d7ReturnCount: number
-  d7ReturnRate: number // 배정 후 7일 내 재방문(%)
-  // 가입자 리텐션 — userId 기반(sessionId 단절 무관). 분모=가입자(signupCount). "가입한 사람이 다시 왔나" 직접 측정.
-  signupD1Count: number
-  signupD1Rate: number | null // 가입자 중 가입 후 1일 내 재방문(%). 가입자 0이면 null
-  signupD7Count: number
-  signupD7Rate: number | null // 가입자 중 가입 후 7일 내 재방문(%)
+  assignedCount: number // 배정 distinct sessionId — "보여주려 한 전원"
+  signupCount: number // 가입 userId distinct
+  signupRate: number | null // 배정→가입 전환율(%) — 모집단 단위 달라 참고용
+  combined: RetDay[] // 통합(배정 전원, sessionId)
+  signup: RetDay[] // 가입자(userId)
+  nonSignup: RetDay[] // 미가입 세션(sessionId)
 }
 
 export interface GateITTResult {
@@ -407,19 +405,22 @@ export interface GateITTResult {
   firstAssignedAt: string | null // 배정 측정 시작 시각(ISO). null이면 아직 배정 데이터 없음
 }
 
+const ITT_DN = [1, 2, 3, 4, 5, 6, 7]
+
 const _getGateITT = unstable_cache(
   async (days: number): Promise<GateITTResult> => {
     const exp = EXPERIMENTS.find((e) => e.id === 'twa01_entry_gate')
+    const now = Date.now()
+    const emptyDays = (): RetDay[] => ITT_DN.map((d) => ({ d, rate: null, returned: 0, matured: 0 }))
     const empty = (): GateITTRow[] =>
       (exp?.variants ?? []).map((v) => ({
         variant: v.key, label: v.label, assignedCount: 0, signupCount: 0, signupRate: null,
-        d1ReturnCount: 0, d1ReturnRate: 0, d3ReturnCount: 0, d3ReturnRate: 0, d7ReturnCount: 0, d7ReturnRate: 0,
-        signupD1Count: 0, signupD1Rate: null, signupD7Count: 0, signupD7Rate: null,
+        combined: emptyDays(), signup: emptyDays(), nonSignup: emptyDays(),
       }))
     if (!exp) return { rows: [], firstAssignedAt: null }
-    const start = new Date(Date.now() - days * DAY)
+    const start = new Date(now - days * DAY)
 
-    // 1) 배정 (분모) — variant별 sessionId → 최초 배정시각
+    // 1) 배정 — variant별 sessionId → 최초 배정시각
     const assigns = await prisma.eventLog.findMany({
       where: { eventName: 'twa_gate_assigned', isBot: false, createdAt: { gte: start }, sessionId: { not: null } },
       select: { sessionId: true, createdAt: true, properties: true },
@@ -438,24 +439,21 @@ const _getGateITT = unstable_cache(
     const allSids = [...byVariant.values()].flatMap((m) => [...m.keys()])
     if (allSids.length === 0) return { rows: empty(), firstAssignedAt: null }
 
-    // 2) 재방문(page_view)은 배정 sessionId 기반 — 미가입 배정자 포함(OAuth 미경유라 유효).
-    //    가입(sign_up)은 카카오 OAuth가 외부브라우저를 왕복하며 _anon_sid를 끊어 배정 sessionId로
-    //    매칭 불가(실측: 배정 sessionId ∩ sign_up sessionId = 0). → properties.twa_gate_variant + userId
-    //    distinct로 그룹별 가입을 센다(_getGateRetention·OnboardingForm L229 동일 우회).
+    // 2) 배정 세션의 후속 page_view (sessionId 기준, userId 동봉=가입세션 판정) + 가입(sign_up, userId 기준)
     const [views, signups] = await Promise.all([
-      prisma.eventLog.findMany({ where: { eventName: 'page_view', sessionId: { in: allSids }, isBot: false }, select: { sessionId: true, createdAt: true } }),
+      prisma.eventLog.findMany({ where: { eventName: 'page_view', sessionId: { in: allSids }, isBot: false }, select: { sessionId: true, userId: true, createdAt: true } }),
       prisma.eventLog.findMany({ where: { eventName: 'sign_up', userId: { not: null }, isBot: false, createdAt: { gte: start } }, select: { userId: true, createdAt: true, properties: true }, orderBy: { createdAt: 'asc' } }),
     ])
     const viewsBySid = new Map<string, number[]>()
+    const sessionHasUser = new Set<string>() // 후속 page_view에 userId 붙은 배정세션 = 가입세션(미가입에서 제외)
     for (const v of views) {
       if (!v.sessionId) continue
       const arr = viewsBySid.get(v.sessionId) ?? []
       arr.push(v.createdAt.getTime())
       viewsBySid.set(v.sessionId, arr)
+      if (v.userId) sessionHasUser.add(v.sessionId)
     }
-    // variant별 가입 userId → 최초 가입시각(분자 + 가입자 리텐션용).
-    //   ⚠️ 재방문 분모=배정 sessionId 수와 모집단 단위가 다름(노출 세션 / 가입 userId) → signupRate는 참고용 근사
-    //   (_getWebExperiments L91 동일 트레이드오프).
+    // 가입자 — variant별 userId → 최초 가입시각 (OAuth sessionId 단절 우회: properties.twa_gate_variant)
     const signupByVariant = new Map<string, Map<string, Date>>()
     for (const v of exp.variants) signupByVariant.set(v.key, new Map())
     for (const s of signups) {
@@ -464,8 +462,6 @@ const _getGateITT = unstable_cache(
         signupByVariant.get(g)!.set(s.userId, s.createdAt)
       }
     }
-    // 가입자 리텐션 — userId 기반 재방문(page_view). 가입은 OAuth로 sessionId가 끊겨 배정 세션 재방문에서
-    //   누락되므로, "가입한 사람이 다시 왔나"는 userId로 직접 추적해야 정확("고장난 숫자 옆 진짜 숫자").
     const allSupUids = [...signupByVariant.values()].flatMap((m) => [...m.keys()])
     const supViews = allSupUids.length
       ? await prisma.eventLog.findMany({ where: { eventName: 'page_view', userId: { in: allSupUids }, isBot: false }, select: { userId: true, createdAt: true } })
@@ -478,42 +474,39 @@ const _getGateITT = unstable_cache(
       supViewsByUid.set(v.userId, arr)
     }
 
+    // 코호트 D1~D7 — DN 분모는 "시작 후 N일 실제 경과(matured)"한 대상만. 분자=그중 시작1h후~시작+ND 재방문.
+    const cohort = (members: Map<string, Date>, viewsOf: (id: string) => number[]): RetDay[] =>
+      ITT_DN.map((d) => {
+        let matured = 0, returned = 0
+        for (const [id, at] of members) {
+          const t = at.getTime()
+          if (now - t < d * DAY) continue // 아직 N일 안 지남 → 분모 제외(과소측정 방지)
+          matured++
+          const vs = viewsOf(id).filter((ms) => ms > t + 3600_000) // 시작 1h 후 재방문만
+          if (vs.some((ms) => ms <= t + d * DAY)) returned++
+        }
+        return { d, rate: matured ? Math.round((returned / matured) * 1000) / 10 : null, returned, matured }
+      })
+
     const rows: GateITTRow[] = exp.variants.map((v) => {
-      const map = byVariant.get(v.key)!
-      const n = map.size
-      let d1 = 0, d3 = 0, d7 = 0
-      for (const [sid, at] of map) {
-        const t = at.getTime()
-        const vs = (viewsBySid.get(sid) ?? []).filter((ms) => ms > t + 3600_000) // 배정 1h 후 재방문만
-        if (vs.some((ms) => ms <= t + 1 * DAY)) d1++
-        if (vs.some((ms) => ms <= t + 3 * DAY)) d3++
-        if (vs.some((ms) => ms <= t + 7 * DAY)) d7++
-      }
-      // 가입자 리텐션 (userId 기반) — 가입 1h 후 ~ D1/D7 내 재방문. 분모 = 가입자 수.
+      const assignMap = byVariant.get(v.key)!
       const supMap = signupByVariant.get(v.key)!
-      const su = supMap.size // 가입 = variant별 가입 userId distinct(properties 기준)
-      let sd1 = 0, sd7 = 0
-      for (const [uid, at] of supMap) {
-        const st = at.getTime()
-        const vs = (supViewsByUid.get(uid) ?? []).filter((ms) => ms > st + 3600_000) // 가입 1h 후 재방문만
-        if (vs.some((ms) => ms <= st + 1 * DAY)) sd1++
-        if (vs.some((ms) => ms <= st + 7 * DAY)) sd7++
-      }
-      const pct = (x: number) => (n ? Math.round((x / n) * 1000) / 10 : 0)
-      const supPct = (x: number) => (su ? Math.round((x / su) * 1000) / 10 : null)
+      // 미가입 세션 = 배정 세션 중 후속 page_view에 userId가 안 붙은 것(순수 둘러보기)
+      const nonSupMap = new Map<string, Date>()
+      for (const [sid, at] of assignMap) if (!sessionHasUser.has(sid)) nonSupMap.set(sid, at)
+      const n = assignMap.size
+      const su = supMap.size
       return {
         variant: v.key, label: v.label, assignedCount: n,
-        signupCount: su, signupRate: n ? pct(su) : null,
-        d1ReturnCount: d1, d1ReturnRate: pct(d1),
-        d3ReturnCount: d3, d3ReturnRate: pct(d3),
-        d7ReturnCount: d7, d7ReturnRate: pct(d7),
-        signupD1Count: sd1, signupD1Rate: supPct(sd1),
-        signupD7Count: sd7, signupD7Rate: supPct(sd7),
+        signupCount: su, signupRate: n ? Math.round((su / n) * 1000) / 10 : null,
+        combined: cohort(assignMap, (sid) => viewsBySid.get(sid) ?? []),
+        signup: cohort(supMap, (uid) => supViewsByUid.get(uid) ?? []),
+        nonSignup: cohort(nonSupMap, (sid) => viewsBySid.get(sid) ?? []),
       }
     })
     return { rows, firstAssignedAt: firstAssignedAt ? firstAssignedAt.toISOString() : null }
   },
-  ['admin-gate-itt-v3'],
+  ['admin-gate-itt-v4'],
   { revalidate: 600 },
 )
 
