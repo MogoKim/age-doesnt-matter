@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    // 모바일: 전체 화면 / 데스크탑: 중앙 정렬 카드
-    <div className="md:min-h-dvh md:flex md:items-center md:justify-center md:bg-background md:px-4 md:py-12">
+    // 모바일: 전체 화면 / 데스크탑: 중앙 정렬 카드 (슬라이드 카드가 sm: 기준이라 중앙정렬도 sm:로 일치)
+    <div className="sm:min-h-dvh sm:flex sm:items-center sm:justify-center sm:bg-background sm:px-4 sm:py-12">
       <Suspense fallback={null}>
         <LoginForm />
       </Suspense>

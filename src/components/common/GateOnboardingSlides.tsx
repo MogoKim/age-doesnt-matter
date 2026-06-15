@@ -27,9 +27,11 @@ interface Props {
   onSignup: () => void
   onEscape: () => void
   starting: boolean
+  /** 있으면 상단 좌측 "< 뒤로가기" 렌더 (예: /login). 미전달 시(C 게이트) 뒤로가기 없음. */
+  onBack?: () => void
 }
 
-export default function GateOnboardingSlides({ onSignup, onEscape, starting }: Props) {
+export default function GateOnboardingSlides({ onSignup, onEscape, starting, onBack }: Props) {
   const [index, setIndex] = useState(0)
   const [reduceMotion, setReduceMotion] = useState(false)
   const startX = useRef<number | null>(null)
@@ -67,6 +69,19 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting }: P
 
   return (
     <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-background sm:h-[86vh] sm:max-h-[760px] sm:max-w-[420px] sm:rounded-2xl">
+      {/* 0. (onBack 있을 때만) 좌상단 뒤로가기 — /login 전용. C 게이트는 onBack 미전달 → 렌더 안 됨 */}
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="뒤로가기"
+          className="absolute left-2 top-[max(10px,env(safe-area-inset-top))] z-10 flex min-h-[52px] items-center gap-1 px-2 text-foreground transition-colors hover:text-primary-text"
+        >
+          <span className="text-[26px] leading-none" aria-hidden="true">‹</span>
+          <span className="text-[18px] font-bold break-keep">뒤로가기</span>
+        </button>
+      )}
+
       {/* 1. 상단 로고 (심볼+워드마크 일체형) */}
       <div className="flex shrink-0 justify-center px-6 pt-[max(18px,env(safe-area-inset-top))] pb-1">
         <Image src="/logo.png" width={76} height={76} alt="우리나이가어때서" className="object-contain" priority />
