@@ -25,6 +25,28 @@ export function buildPlayStoreUrl(utmContent?: string): string {
   return `${PLAY_STORE_BASE}&referrer=${encodeURIComponent(utm)}`
 }
 
+// TWA(앱)와 연결된 서비스 도메인 (assetlinks.json 검증 대상)
+const APP_HOST = 'age-doesnt-matter.com'
+
+/**
+ * 안드로이드 intent:// URL 생성 — "앱 있으면 앱, 없으면 Play스토어".
+ *
+ * 카카오톡 등 인앱 브라우저에서 버튼 링크를 열어도 동작하도록 intent 스킴 사용:
+ *  - 앱 설치 시: TWA가 해당 https 경로를 핸들링 → 앱으로 열림
+ *  - 앱 미설치 시: `browser_fallback_url`(Play스토어, referrer UTM 포함)로 자동 이동
+ *
+ * @param targetPath 앱/웹에서 열 내부 경로 (기본 '/'). '/'로 시작하지 않으면 보정.
+ * @param utmContent Play스토어 referrer 식별자 (기본 'welcome_msg')
+ */
+export function buildAndroidIntentUrl(targetPath = '/', utmContent = 'welcome_msg'): string {
+  const path = targetPath.startsWith('/') ? targetPath : `/${targetPath}`
+  const fallback = encodeURIComponent(buildPlayStoreUrl(utmContent))
+  return (
+    `intent://${APP_HOST}${path}#Intent;scheme=https;` +
+    `package=com.agenotmatter.app;S.browser_fallback_url=${fallback};end`
+  )
+}
+
 /** 안드로이드(Chrome/Samsung Internet) = Play스토어로 유도하는 환경인지 */
 export function isAndroidInstallEnv(): boolean {
   const env = detectEnv()
