@@ -9,13 +9,15 @@ import { usePathname, useRouter } from 'next/navigation'
  * 네이티브 PTR은 globals.css의 `overscroll-behavior-y: contain`으로 꺼져 있고(에디터 충돌 방지),
  * TWA·iOS standalone은 네이티브 PTR 자체가 없으므로 커스텀으로 통일 구현한다.
  * - 스크롤러 = window(문서 자체). 최상단(scrollY<=0)에서 아래로 당길 때만 발동.
+ * - 발동 기준 = **손가락 실제 이동(dy) >= TRIGGER_DY(80px)** — 보통 당김으로도 새로고침되게.
+ *   (인디케이터 하강은 저항 곡선으로 damping하지만, 트리거는 원시 이동량 기준)
  * - 새로고침 = router.refresh()(soft, 흰 깜빡임 없는 서버데이터 갱신).
  * - 제외: 에디터(write/edit)·admin 라우트 / 모달·바텀시트(body overflow:hidden) / 가로스크롤 영역.
  */
 
-const THRESHOLD = 70 // 발동 임계치(px)
-const MAX_PULL = 90 // 최대 시각 당김(px)
-const RESISTANCE = 0.5 // 당김 저항(손가락 이동 대비)
+const TRIGGER_DY = 80 // 발동: 손가락 실제 이동(px) — 보통 당김 수준
+const MAX_VISUAL = 86 // 인디케이터 최대 하강(px)
+const RESISTANCE = 0.55 // 인디케이터 하강 damping
 
 function isExcludedPath(pathname: string): boolean {
   if (pathname.startsWith('/admin')) return true
@@ -49,20 +51,20 @@ export default function PullToRefresh() {
   const router = useRouter()
   const pathname = usePathname()
 
-  const [pull, setPull] = useState(0)
+  const [dy, setDy] = useState(0) // 손가락 실제 이동량(px, 당기는 중)
   const [refreshing, setRefreshing] = useState(false)
 
   // 핸들러가 최신값을 읽도록 ref 미러링(리스너 재구독 방지)
-  const pullRef = useRef(0)
+  const dyRef = useRef(0)
   const refreshingRef = useRef(false)
   const startYRef = useRef<number | null>(null)
   const activeRef = useRef(false)
   const pathnameRef = useRef(pathname)
   pathnameRef.current = pathname
 
-  const setPullBoth = (v: number) => {
-    pullRef.current = v
-    setPull(v)
+  const setDyBoth = (v: number) => {
+    dyRef.current = v
+    setDy(v)
   }
   const setRefreshingBoth = (v: boolean) => {
     refreshingRef.current = v
@@ -83,11 +85,11 @@ export default function PullToRefresh() {
 
     const onTouchMove = (e: TouchEvent) => {
       if (startYRef.current === null || refreshingRef.current) return
-      const dy = e.touches[0].clientY - startYRef.current
-      if (dy <= 0) {
+      const delta = e.touches[0].clientY - startYRef.current
+      if (delta <= 0) {
         if (activeRef.current) {
           activeRef.current = false
-          setPullBoth(0)
+          setDyBoth(0)
         }
         return
       }
@@ -96,36 +98,36 @@ export default function PullToRefresh() {
         startYRef.current = null
         if (activeRef.current) {
           activeRef.current = false
-          setPullBoth(0)
+          setDyBoth(0)
         }
         return
       }
       activeRef.current = true
       if (e.cancelable) e.preventDefault() // 네이티브 스크롤/바운스 억제
-      setPullBoth(Math.min(dy * RESISTANCE, MAX_PULL))
+      setDyBoth(delta)
     }
 
     const onTouchEnd = () => {
       if (startYRef.current === null) {
         if (activeRef.current) {
           activeRef.current = false
-          setPullBoth(0)
+          setDyBoth(0)
         }
         return
       }
-      const reached = pullRef.current >= THRESHOLD && activeRef.current
+      const reached = dyRef.current >= TRIGGER_DY && activeRef.current
       startYRef.current = null
       activeRef.current = false
       if (reached) {
         setRefreshingBoth(true)
-        setPullBoth(THRESHOLD)
+        setDyBoth(TRIGGER_DY)
         router.refresh()
         window.setTimeout(() => {
           setRefreshingBoth(false)
-          setPullBoth(0)
+          setDyBoth(0)
         }, 700)
       } else {
-        setPullBoth(0)
+        setDyBoth(0)
       }
     }
 
@@ -141,20 +143,21 @@ export default function PullToRefresh() {
     }
   }, [router])
 
-  const displayPull = refreshing ? THRESHOLD : pull
-  const progress = Math.min(pull / THRESHOLD, 1)
-  const visible = displayPull > 0 || refreshing
+  const armed = dy >= TRIGGER_DY // 놓으면 새로고침 도달
+  const progress = Math.min(dy / TRIGGER_DY, 1)
+  const visualOffset = refreshing ? 60 : Math.min(dy * RESISTANCE, MAX_VISUAL)
+  const visible = visualOffset > 0 || refreshing
   const dragging = startYRef.current !== null && !refreshing
 
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-x-0 top-0 z-[150] flex justify-center"
+      className="pointer-events-none fixed inset-x-0 top-0 z-[150] flex flex-col items-center"
     >
       <div
         className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md"
         style={{
-          transform: `translateY(${displayPull - 50}px) scale(${visible ? 1 : 0.8})`,
+          transform: `translateY(${visualOffset - 50}px) scale(${visible ? (armed && !refreshing ? 1.12 : 1) : 0.8})`,
           opacity: visible ? 1 : 0,
           transition: dragging ? 'none' : 'transform 0.25s ease, opacity 0.2s ease',
         }}
@@ -164,10 +167,22 @@ export default function PullToRefresh() {
           style={
             refreshing
               ? undefined
-              : { transform: `rotate(${progress * 270}deg)`, opacity: 0.4 + progress * 0.6 }
+              : { transform: `rotate(${progress * 270}deg)`, opacity: armed ? 1 : 0.4 + progress * 0.6 }
           }
         />
       </div>
+      {visible && !refreshing && (
+        <span
+          className="mt-1 rounded-full bg-white/90 px-2 py-0.5 text-[13px] font-semibold text-[#FF6F61] shadow-sm"
+          style={{
+            transform: `translateY(${visualOffset - 50}px)`,
+            opacity: Math.min(progress * 1.2, 1),
+            transition: dragging ? 'none' : 'transform 0.25s ease, opacity 0.2s ease',
+          }}
+        >
+          {armed ? '놓으면 새로고침' : '당겨서 새로고침'}
+        </span>
+      )}
     </div>
   )
 }
