@@ -25,9 +25,9 @@ import {
 } from '@/lib/queries/posts'
 
 export const metadata: Metadata = {
-  // title은 layout.tsx 전역 기본값 사용 (우리 나이가 어때서 — 40·50·60 신중년 여성 커뮤니티)
-  // description은 홈 전용 — "50대 커뮤니티" 키워드 타겟 (GSC 7.6위 → 상향, 브랜드 title은 유지)
-  description: "'우리 나이가 어때서'는 40·50·60대 신중년 여성을 위한 50대 커뮤니티예요. 갱년기·외로움·자녀 걱정, 혼자 삭이지 말고 같은 또래와 나눠요.",
+  // title은 layout.tsx 전역 기본값 사용
+  // description은 홈 전용 검색 노출 문구
+  description: '우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티',
   alternates: { canonical: '/' },
 }
 
@@ -149,7 +149,7 @@ export default function HomePage() {
     alternateName: '우나어',
     url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com',
     logo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/logo.png`,
-    description: '40·50·60대 신중년 여성을 위한 50대 커뮤니티. 나이 걱정 없이 일자리와 소통을 나누는 따뜻한 곳이에요.',
+    description: '우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티',
     sameAs: [
       'https://www.threads.com/@age.no.matter',
       'https://www.instagram.com/age.no.matter/',
@@ -183,7 +183,7 @@ export default function HomePage() {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
         />
-        <h1 className="sr-only">우리 나이가 어때서 — 40·50·60대 신중년 여성을 위한 50대 커뮤니티</h1>
+        <h1 className="sr-only">우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티</h1>
         <div className="max-w-[1200px] mx-auto">
           <Suspense fallback={<HeroSkeleton />}>
             <HeroSlider />

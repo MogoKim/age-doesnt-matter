@@ -30,8 +30,8 @@ const WebVitalsReporter = dynamic(
 
 export const metadata: Metadata = {
   title: {
-    default: '우리 나이가 어때서 — 40·50·60 신중년 여성 커뮤니티',
-    template: '%s | 신중년 여성 커뮤니티 : 우리 나이가 어때서',
+    default: '우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티',
+    template: '%s | 40대 50대 60대 여성 커뮤니티 : 우리 나이가 어때서',
   },
   description: '갱년기·외로움·우울·자녀 걱정 — "나만 이런가" 싶으셨죠. 혼자 삭이지 말고, 같은 또래와 나눠요.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'),
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ko_KR',
     siteName: '우리 나이가 어때서',
-    images: [{ url: '/og-cover.png', width: 1200, height: 630, alt: '우리 나이가 어때서 — 신중년 여성 커뮤니티' }],
+    images: [{ url: '/og-cover.png', width: 1200, height: 630, alt: '우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티' }],
   },
   robots: {
     index: true,
