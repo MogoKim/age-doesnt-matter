@@ -1,6 +1,6 @@
 # AdSense 광고 운영 기획서 (R01)
 
-> 최초 작성: 2026-04-27 | 최근 수정: 2026-04-27 (Feature Lifecycle 마이그레이션)
+> 최초 작성: 2026-04-27 | 최근 수정: 2026-06-15
 
 ---
 
@@ -26,9 +26,20 @@
 | 항목 | 값 |
 |------|-----|
 | **퍼블리셔 ID** | `ca-pub-4117999106913048` (하드코딩) |
-| **스크립트 로딩** | `afterInteractive` (페이지 상호작용 후 non-blocking 로드) |
+| **스크립트 로딩** | hydration 후 `AdSenseScriptLoader`가 동적 삽입 (`lazyOnload` 아님) |
 
 > ⚠️ `.env.example`에 `NEXT_PUBLIC_ADSENSE_PUB_ID=ca-pub-4937127825992215` 있으나 **실제 코드에서 사용되지 않음** (환경변수 값과 하드코딩 값 불일치). 환경변수로 전환 시 정정 필요.
+
+### 전역 스크립트 로딩
+
+**파일**: `src/components/ad/AdSenseScriptLoader.tsx`
+
+- `next/script strategy="afterInteractive"`를 쓰지 않는다.
+- RootLayout hydration 후 동일한 `adsbygoogle.js?client=...`를 `document.head`에 1회 삽입한다.
+- `async`, `crossOrigin="anonymous"`, 기존 client id와 URL을 유지한다.
+- 목적은 광고 슬롯/노출 기회 축소가 아니라, head preload/direct script를 없애 hero 이미지와의 초기 대역폭 경쟁을 줄이는 것이다.
+- AdSense 로드 완료 시 `unao:adsense-ready` 이벤트를 발생시켜 각 광고 유닛이 안전하게 push한다.
+- `preconnect`는 유지하여 DNS/TLS 준비는 살리고, 실제 `adsbygoogle.js` 다운로드만 hydration 이후로 넘긴다.
 
 ---
 
@@ -70,7 +81,9 @@
 pathname 변경 감지 (useEffect)
   → 기존 <ins> 태그 제거
   → 새 <ins> 태그 생성
-  → adsbygoogle.push({}) 실행
+  → AdSense 스크립트 로드 완료 후 adsbygoogle.push({}) 실행
+      └─ 로드 전에는 전역 큐에 여러 push를 쌓지 않음
+      └─ ready 이벤트 직후 250ms 간격으로 순차 push
   → MutationObserver로 data-ad-status 감시
       └─ "unfilled" → CoupangBanner 폴백 렌더링
 ```
@@ -142,6 +155,8 @@ pathname 변경 감지 (useEffect)
 ✅ IN_FEED, IN_ARTICLE, HOME_SECTION 슬롯 전 페이지 배치 완료  
 ✅ Unfilled → 쿠팡 배너 자동 폴백  
 ✅ SPA 라우팅 광고 재로드 처리  
+✅ AdSense head preload/direct script 제거 + hydration 후 로드로 홈 hero LCP 대역폭 경쟁 완화
+✅ 2026-06-14 배포 후 Gate 2 Smoke·Ad Verification·Lighthouse·QA Deploy Audit 통과
 ✅ CSP 완벽 설정  
 ⚠️ PC_SIDEBAR, MobileStickyAd 미사용 (코드 정리 필요)  
 ⚠️ 퍼블리셔 ID 하드코딩 (환경변수와 값 불일치)
@@ -151,6 +166,7 @@ pathname 변경 감지 (useEffect)
 ## 관련 링크
 
 - 핵심 컴포넌트: `src/components/ad/AdSenseUnit.tsx`
+- 전역 스크립트 로더: `src/components/ad/AdSenseScriptLoader.tsx`
 - 슬롯 설정: `src/components/ad/ad-slots.ts`
 - 클릭 추적: `src/components/ad/AdClickTracker.tsx`
 - 반응형 분기: `src/components/ad/ResponsiveAd.tsx`
@@ -168,6 +184,8 @@ pathname 변경 감지 (useEffect)
 | 2026-04-27 | Feature 문서 최초 생성 (코드 딥다이브 기반, specs/10-advertising.md 마이그레이션) | Feature Lifecycle 도입 |
 | 2026-05-14 | AdSenseUnit에 `fixedWidth`/`fixedHeight` prop 추가 + 홈 데스크탑 728×90(슬롯 3367428779)·728×250(슬롯 7055392341) 배치 신규 추가 | 홈 데스크탑 UI 전면 재설계 |
 | 2026-05-17 | `LIST_PAGINATION_BOTTOM` 슬롯 상수 추가 + `BoardPaginationFooter`에 페이지네이션 하단 광고 배치 (베스트·커뮤니티·매거진·내일찾기 6개 페이지 공통, 모바일 auto / 데스크탑 728×90) | 목록 페이지 광고 수익 증대 — 페이지 전환 후 시선 이동 구간 공략 |
+| 2026-06-14 | `next/script afterInteractive` 제거 후 `AdSenseScriptLoader`로 hydration 후 동적 삽입. `AdSenseUnit`은 `unao:adsense-ready` 이벤트 기반 순차 push로 중복 push 경합 방어 | 광고 슬롯/위치/노출 기회는 유지하면서 홈 hero 이미지와 `adsbygoogle.js` 초기 대역폭 경쟁 제거 |
+| 2026-06-15 | prod HTML 기준 AdSense direct/preload script 제거와 hero preload 유지 확인. Gate 2 Ad Verification 통과 상태 반영 | 성능 변경이 실제 운영 배포에 반영됐음을 문서화 |
 
 ---
 
