@@ -47,6 +47,29 @@ export function buildAndroidIntentUrl(targetPath = '/', utmContent = 'welcome_ms
   )
 }
 
+/**
+ * referrer 문자열(예: "utm_source=naver&utm_medium=blog&utm_campaign=magazine")을
+ * 그대로 받는 Play스토어 URL. 채널별 utm을 직접 제어 → Play Console 획득보고서에 분리 집계.
+ */
+export function buildPlayStoreUrlRaw(referrer: string): string {
+  return referrer
+    ? `${PLAY_STORE_BASE}&referrer=${encodeURIComponent(referrer)}`
+    : PLAY_STORE_BASE
+}
+
+/**
+ * referrer 문자열을 그대로 받는 안드로이드 intent URL.
+ * 앱 설치 → 앱 / 미설치 → Play스토어(referrer 포함) 폴백.
+ */
+export function buildAndroidIntentUrlRaw(targetPath: string, referrer: string): string {
+  const path = targetPath.startsWith('/') ? targetPath : `/${targetPath}`
+  const fallback = encodeURIComponent(buildPlayStoreUrlRaw(referrer))
+  return (
+    `intent://${APP_HOST}${path}#Intent;scheme=https;` +
+    `package=com.agenotmatter.app;S.browser_fallback_url=${fallback};end`
+  )
+}
+
 /** 안드로이드(Chrome/Samsung Internet) = Play스토어로 유도하는 환경인지 */
 export function isAndroidInstallEnv(): boolean {
   const env = detectEnv()
