@@ -15,8 +15,8 @@ export const revalidate = 120
 const CI_DUMMY_DB = process.env.CI === 'true' && process.env.DATABASE_URL?.includes('localhost:5432/dummy')
 
 export const metadata: Metadata = {
-  title: '내 일 찾기',
-  description: '나이 걱정 없이 시작하는 신중년 여성 맞춤 일자리·채용 정보.',
+  title: '50대 60대 일자리·재취업',
+  description: '경비·요양·돌봄·사무까지 — 나이 걱정 없는 40대 50대 60대 여성 맞춤 일자리·재취업을 매일 업데이트.',
   alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/jobs` },
 }
 

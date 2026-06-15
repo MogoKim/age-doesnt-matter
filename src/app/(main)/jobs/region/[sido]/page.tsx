@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const region = decodeURIComponent(sido)
   if (!isJobSido(region)) return {}
 
-  const title = `${region} 50·60대 일자리·시니어 채용 | 우리 나이가 어때서`
+  const title = `${region} 50·60대 일자리·재취업 | 우리 나이가 어때서`
   const description = `${region} 지역 50·60대 맞춤 일자리. 나이 무관 채용공고를 매일 업데이트합니다. 경비·요양·사무·돌봄 등 우리 또래 일자리를 한눈에.`
   const url = `${BASE_URL}/jobs/region/${encodeURIComponent(region)}`
 

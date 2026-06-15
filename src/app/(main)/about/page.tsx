@@ -7,7 +7,7 @@ import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
 
 export const metadata: Metadata = {
   title: '소개',
-  description: '아이들 다 키우고 문득 찾아온 조용함. 갱년기·외로움을 같은 또래와 나누려 만든 40·50·60 신중년 여성 공간.',
+  description: '아이들 다 키우고 문득 찾아온 조용함. 갱년기·외로움을 같은 또래와 나누려 만든 40·50·60대 여성 공간.',
   alternates: { canonical: '/about' },
 }
 

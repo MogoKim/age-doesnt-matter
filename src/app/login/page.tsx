@@ -4,7 +4,7 @@ import LoginForm from '@/components/features/login/LoginForm'
 
 export const metadata: Metadata = {
   title: '로그인',
-  description: '카카오로 1초, 신중년 여성 커뮤니티 우나어 시작하기.',
+  description: '카카오로 1초, 40대 50대 60대 여성 커뮤니티 우나어 시작하기.',
   alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/login` },
 }
 

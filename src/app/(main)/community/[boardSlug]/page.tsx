@@ -21,6 +21,7 @@ const STATIC_BOARD_CONFIGS: Record<string, {
   slug: string
   boardType: BoardType
   displayName: string
+  seoTitle: string
   description: string
   categories: string[]
 }> = {
@@ -28,21 +29,24 @@ const STATIC_BOARD_CONFIGS: Record<string, {
     slug: 'stories',
     boardType: 'STORY',
     displayName: '사는이야기',
-    description: '갱년기·가족·살림·자녀 걱정까지, 신중년 여성이 진짜 속마음을 나누는 곳.',
+    seoTitle: '사는이야기 — 갱년기·가족 고민 나눔',
+    description: '갱년기 우울, 부부·자녀 고민, 살림까지 — 40대 50대 60대 여성이 진짜 속마음을 나누는 곳.',
     categories: ['전체'],
   },
   humor: {
     slug: 'humor',
     boardType: 'HUMOR',
     displayName: '웃음방',
-    description: '신중년 여성의 하루에 웃음 한 스푼. 소소한 즐거움을 같이 나눠요.',
+    seoTitle: '웃음방 — 중년 유머·일상 짤',
+    description: '40대 50대 60대 여성의 하루에 웃음 한 스푼. 재밌는 짤·유머·일상을 같이 나눠요.',
     categories: ['전체'],
   },
   life2: {
     slug: 'life2',
     boardType: 'LIFE2',
     displayName: '2막준비',
-    description: '자식 다 키운 뒤, 이제는 나를 위한 시간. 신중년 여성의 인생 2막 준비.',
+    seoTitle: '2막준비 — 은퇴·노후 준비',
+    description: '은퇴·노후 준비, 새 취미와 일까지 — 자식 다 키운 40대 50대 60대 여성의 인생 2막.',
     categories: ['전체'],
   },
 }
@@ -71,7 +75,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // 검색 노출 설명은 코드 정의(STATIC)를 우선 — 정체성 카피 일관 관리, DB 미동기화 방어
     const staticDesc = STATIC_BOARD_CONFIGS[boardSlug]?.description
     return {
-      title: board.displayName,
+      title: STATIC_BOARD_CONFIGS[boardSlug]?.seoTitle ?? board.displayName,
       description: staticDesc ?? board.description,
       alternates: { canonical },
     }

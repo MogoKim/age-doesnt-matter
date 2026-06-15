@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 
 export const metadata: Metadata = {
   title: '검색',
-  description: '신중년 여성을 위한 일자리·커뮤니티 글·매거진을 한 번에 검색하세요.',
+  description: '40대 50대 60대 여성을 위한 일자리·커뮤니티 글·매거진을 한 번에 검색하세요.',
   alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/search` },
 }
 import { searchAll, getPopularKeywords, logSearchEvent, type SearchTab } from '@/lib/queries/search'
