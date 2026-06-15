@@ -572,6 +572,20 @@ export async function main() {
 
             if (row.rawContent) {
               // 수동 붙여넣기 모드
+              // [③ 가드 2026-06-15] 잘못된 행(본문이 링크 한 줄/내부 CUID뿐, 또는 제목 없음) 발행 차단.
+              // 원인: 시트 J열(rawContent)에 실제 글이 아닌 링크/ID가 수동 입력된 행 → "(제목 없음)" 깨진 글 발행되던 문제.
+              const _plain = row.rawContent.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+              const _isUrlOnly = /^https?:\/\/\S+$/.test(_plain)
+              const _isCuid = /^c[a-z0-9]{20,}$/.test(_plain)
+              if (!row.title?.trim() || _isUrlOnly || _isCuid) {
+                await updateRow(tab.tabName, row.rowIndex, {
+                  status: 'FAILED',
+                  error: '본문이 링크/ID뿐이거나 제목 없음 — 발행 제외 (rawContent 확인 필요)',
+                })
+                totalFailed++
+                console.log(`  → FAILED: 수동모드 본문 부적합(링크/ID/무제목)`)
+                continue
+              }
               title = row.title || '(제목 없음)'
               content = transformRawContent(row.rawContent, row.sourceUrl, siteConfig.name, tab.boardType)
               console.log(`  → raw_content 사용 (스크래핑 스킵)`)
