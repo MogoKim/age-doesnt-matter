@@ -29,12 +29,26 @@ interface Props {
   starting: boolean
   /** 있으면 상단 좌측 "< 뒤로가기" 렌더 (예: /login). 미전달 시(C 게이트) 뒤로가기 없음. */
   onBack?: () => void
+  /** true면 재방문자(localStorage 'unao_last_login'='kakao')에게 카카오 CTA에 "최근 로그인" 배지. /login 전용. */
+  showRecentBadge?: boolean
 }
 
-export default function GateOnboardingSlides({ onSignup, onEscape, starting, onBack }: Props) {
+export default function GateOnboardingSlides({ onSignup, onEscape, starting, onBack, showRecentBadge }: Props) {
   const [index, setIndex] = useState(0)
   const [reduceMotion, setReduceMotion] = useState(false)
+  const [hasRecentLogin, setHasRecentLogin] = useState(false)
   const startX = useRef<number | null>(null)
+
+  // showRecentBadge가 true(=/login)일 때만, 마운트 후 localStorage 읽음.
+  // C 게이트(showRecentBadge 미전달)는 localStorage조차 읽지 않음 → 실험 무영향 엄수 + 하이드레이션 안전.
+  useEffect(() => {
+    if (!showRecentBadge) return
+    try {
+      setHasRecentLogin(window.localStorage.getItem('unao_last_login') === 'kakao')
+    } catch {
+      /* localStorage 불가 환경 무시 */
+    }
+  }, [showRecentBadge])
 
   // prefers-reduced-motion: reduce → 자동재생/전환 애니메이션 끔
   useEffect(() => {
@@ -147,6 +161,13 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
 
       {/* 4. 하단 고정 CTA */}
       <div className="shrink-0 px-6 pb-[max(20px,env(safe-area-inset-bottom))]">
+        <div className="relative">
+        {/* 재방문자 전용 "최근 로그인" 배지 — /login에서 showRecentBadge=true일 때만. absolute라 버튼 텍스트 영역 안 밀림 */}
+        {showRecentBadge && hasRecentLogin && (
+          <span className="absolute -top-2.5 right-3 z-10 rounded-full bg-foreground px-2.5 py-1 text-caption font-bold text-background shadow-md">
+            최근 로그인🔑
+          </span>
+        )}
         <button
           type="button"
           onClick={onSignup}
@@ -163,6 +184,7 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
           </svg>
           <span className="min-w-0">{starting ? '카카오로 이동 중...' : '카카오로 3초 만에 시작하기'}</span>
         </button>
+        </div>
         <div className="mt-3 text-center">
           <button
             type="button"

@@ -31,6 +31,7 @@ export default function LoginForm() {
         starting={isStarting}
         onBack={() => router.back()}
         onEscape={() => router.push('/')}
+        showRecentBadge
       />
     </>
   )

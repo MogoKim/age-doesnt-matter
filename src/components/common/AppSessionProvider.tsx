@@ -64,6 +64,17 @@ export default function AppSessionProvider({ children }: { children: ReactNode }
     void loadSession()
   }, [loadSession])
 
+  // 로그인 성공 시 "최근 로그인" 마커 기록(재방문 넛지용 — /login 배지에서 읽음).
+  // 세션 로직 무관, 마커 기록만. 로그아웃해도 삭제하지 않음(다음 재방문 넛지 유지).
+  useEffect(() => {
+    if (status !== 'authenticated') return
+    try {
+      window.localStorage.setItem('unao_last_login', 'kakao')
+    } catch {
+      /* localStorage 불가 환경 무시 */
+    }
+  }, [status])
+
   const value = useMemo<AppSessionValue>(() => ({
     status,
     data,
