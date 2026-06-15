@@ -11,6 +11,10 @@ const AddToHomeScreen = dynamic(
   () => import('@/components/common/AddToHomeScreen'),
   { loading: () => null, ssr: false },
 )
+const PullToRefresh = dynamic(
+  () => import('@/components/common/PullToRefresh'),
+  { loading: () => null, ssr: false },
+)
 const ServiceWorkerRegister = dynamic(
   () => import('@/components/common/ServiceWorkerRegister'),
   { loading: () => null, ssr: false },
@@ -104,6 +108,7 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>
             {children}
+            <PullToRefresh />
             <AddToHomeScreen />
           </ToastProvider>
           <ServiceWorkerRegister />
