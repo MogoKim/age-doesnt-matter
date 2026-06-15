@@ -89,6 +89,7 @@ env:
   CLAUDE_MODEL_STRATEGIC: ${{ secrets.CLAUDE_MODEL_STRATEGIC }}
   CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
   CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  ENABLE_JOB_MATCHER: 'false'  # [2026-06-15] job-matcher OFF — 정책상 사는이야기 글에 일자리 광고 댓글 안 단다
   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
   SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
   SLACK_CHANNEL_DASHBOARD: ${{ secrets.SLACK_CHANNEL_DASHBOARD }}

@@ -790,7 +790,7 @@
           <td>11개 슬롯/일<br><span style="color:var(--muted);font-size:12px;">09:15~20:00 KST</span></td>
           <td><code>agents-daily.yml</code></td>
           <td>
-            COO 에이전트 11개: content-scheduler(14:00) · trending-scorer(12:00·18:00) · connection-facilitator(09:15·15:00) · comment-activator(10:30·14:30·20:00) · reply-chain-driver(12:15·18:30) · job-matcher(11:45) <strong>+ count-reconcile(04:00 KST)</strong>. <span style="color:var(--muted);font-size:12px;">comment-activator·reply-chain-driver는 <code>bot-engagement-policy</code> 가드 적용. magazine cron은 전부 주석 처리(비활성). <strong>count-reconcile</strong>(2026-06-08, 5013bfe): <code>cron "0 19 * * *"</code> → <code>cto:count-reconcile</code>(reconcile-counts.js) — 삭제로 어긋난 비정규화 카운트(User 등)를 매일 04:00 KST 실제값으로 멱등 재계산(좋아요는 측정만).</span>
+            COO 에이전트 11개: content-scheduler(14:00) · trending-scorer(12:00·18:00) · connection-facilitator(09:15·15:00) · comment-activator(10:30·14:30·20:00) · reply-chain-driver(12:15·18:30) · <s>job-matcher(11:45)</s> <strong style="color:var(--red,#e53e3e);">job-matcher OFF</strong> · <strong>+ count-reconcile(04:00 KST)</strong>. <span style="color:var(--muted);font-size:12px;">comment-activator·reply-chain-driver는 <code>bot-engagement-policy</code> 가드 적용. <strong>job-matcher OFF</strong>(2026-06-15): 사는이야기 글에 무관 일자리 광고 댓글 다는 문제로 <code>ENABLE_JOB_MATCHER=false</code> 비활성(main() 가드+yml env). 기존 광고 43건 HIDDEN. magazine cron은 전부 주석 처리(비활성). <strong>count-reconcile</strong>(2026-06-08, 5013bfe): <code>cron "0 19 * * *"</code> → <code>cto:count-reconcile</code>(reconcile-counts.js) — 삭제로 어긋난 비정규화 카운트(User 등)를 매일 04:00 KST 실제값으로 멱등 재계산(좋아요는 측정만).</span>
           </td>
         </tr>
         <tr>

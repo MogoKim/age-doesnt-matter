@@ -17,6 +17,16 @@ const client = new Anthropic()
 const JOB_KEYWORDS = ['일자리', '취업', '구직', '알바', '파트타임', '재취업', '채용', '구인']
 
 export async function main() {
+  // [기능 OFF 2026-06-15] 정책(bot-engagement-policy): JOB은 정보제공용 — 봇이 다른 글에 일자리 광고 댓글 안 단다.
+  // 무관한 사는이야기 글(혼술·맛집 등 본문에 일자리 단어 스친 글)에 광고가 달리는 문제로 비활성. 되돌리려면 ENABLE_JOB_MATCHER=true.
+  if (process.env.ENABLE_JOB_MATCHER !== 'true') {
+    console.log('[COO] job-matcher 기능 OFF (정책: JOB=정보제공, 광고댓글 안 함)')
+    await prisma.botLog.create({
+      data: { botType: 'COO', action: 'JOB_MATCH', status: 'SKIP', details: '기능 OFF (ENABLE_JOB_MATCHER!=true)', itemCount: 0, executionTimeMs: 0 },
+    })
+    return
+  }
+
   console.log('[COO] 일자리 매칭 시작')
   const start = Date.now()
   let matchCount = 0
