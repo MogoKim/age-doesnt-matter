@@ -32,6 +32,7 @@ export default function LoginForm() {
         onBack={() => router.back()}
         onEscape={() => router.push('/')}
         showRecentBadge
+        hideLogo
       />
     </>
   )

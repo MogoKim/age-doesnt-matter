@@ -31,9 +31,11 @@ interface Props {
   onBack?: () => void
   /** true면 재방문자(localStorage 'unao_last_login'='kakao')에게 카카오 CTA에 "최근 로그인" 배지. /login 전용. */
   showRecentBadge?: boolean
+  /** true면 상단 로고를 숨기고 카드를 위로 올림(/login 전용). 미전달 시(C 게이트) 로고 유지. */
+  hideLogo?: boolean
 }
 
-export default function GateOnboardingSlides({ onSignup, onEscape, starting, onBack, showRecentBadge }: Props) {
+export default function GateOnboardingSlides({ onSignup, onEscape, starting, onBack, showRecentBadge, hideLogo }: Props) {
   const [index, setIndex] = useState(0)
   const [reduceMotion, setReduceMotion] = useState(false)
   const [hasRecentLogin, setHasRecentLogin] = useState(false)
@@ -96,10 +98,14 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
         </button>
       )}
 
-      {/* 1. 상단 로고 (심볼+워드마크 일체형) */}
-      <div className="flex shrink-0 justify-center px-6 pt-[max(18px,env(safe-area-inset-top))] pb-1">
-        <Image src="/logo.png" width={76} height={76} alt="우리나이가어때서" className="object-contain" priority />
-      </div>
+      {/* 1. 상단 로고 — hideLogo(/login)면 로고 대신 뒤로가기 높이만큼 스페이서(카드 위로) / C 게이트는 로고 유지 */}
+      {hideLogo ? (
+        <div className="shrink-0 pt-[max(52px,calc(env(safe-area-inset-top)+44px))]" aria-hidden="true" />
+      ) : (
+        <div className="flex shrink-0 justify-center px-6 pt-[max(18px,env(safe-area-inset-top))] pb-1">
+          <Image src="/logo.png" width={76} height={76} alt="우리나이가어때서" className="object-contain" priority />
+        </div>
+      )}
 
       {/* 2. 이미지 캐러셀(남은 공간 차지) + 서브카피(하단 고정 — 겹침 구조적 차단) */}
       <div className="flex min-h-0 flex-1 flex-col px-6 py-2">
@@ -164,7 +170,7 @@ export default function GateOnboardingSlides({ onSignup, onEscape, starting, onB
         <div className="relative">
         {/* 재방문자 전용 "최근 로그인" 배지 — /login에서 showRecentBadge=true일 때만. absolute라 버튼 텍스트 영역 안 밀림 */}
         {showRecentBadge && hasRecentLogin && (
-          <span className="absolute -top-2.5 right-3 z-10 rounded-full bg-foreground px-2.5 py-1 text-caption font-bold text-background shadow-md">
+          <span className="absolute -top-4 right-3 z-10 rounded-full bg-foreground px-2.5 py-1 text-caption font-bold text-background shadow-md">
             최근 로그인🔑
           </span>
         )}
