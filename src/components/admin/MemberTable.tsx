@@ -50,6 +50,13 @@ function getBirthDecade(birthYear: number | null): string {
   return `${decade % 100}년대생`
 }
 
+/** 카카오 표준값('male'/'female') + 레거시('M'/'F') 모두 대응 */
+function genderLabel(gender: string | null): string | null {
+  if (gender === 'female' || gender === 'F') return '여'
+  if (gender === 'male' || gender === 'M') return '남'
+  return null
+}
+
 // 정렬 가능한 컬럼 ↔ 헤더 라벨
 type SortField = 'postCount' | 'commentCount' | 'receivedLikes' | 'lastLoginAt' | 'createdAt'
 
@@ -245,7 +252,7 @@ export default function MemberTable({ users, hasMore, page, sort, order, filters
                       ? <span className="text-zinc-400">{user.email}</span>
                       : getUserType(user.email, user.providerId) === 'seed'
                       ? <span className="text-blue-400">테스트 계정</span>
-                      : <span>{[user.gender === 'M' ? '남' : user.gender === 'F' ? '여' : null, getBirthDecade(user.birthYear)].filter(Boolean).join(' · ') || '-'}</span>
+                      : <span>{[genderLabel(user.gender), getBirthDecade(user.birthYear)].filter(Boolean).join(' · ') || '-'}</span>
                     }
                   </td>
                   <td className="px-3 py-3 text-center">
