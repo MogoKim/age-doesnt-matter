@@ -292,25 +292,22 @@ export async function setBestPinOrder(
 
   const expiresAt = calcExpiresAt(duration)
 
-  await prisma.$transaction(async tx => {
-    // 기존 active PIN 전부 비활성화 후 새 순서로 재생성
-    await tx.homeCurationOverride.updateMany({
-      where: { section, action: 'PIN', isActive: true },
-      data: { isActive: false },
-    })
-    for (let i = 0; i < orderedPostIds.length; i++) {
-      await tx.homeCurationOverride.create({
-        data: {
-          section,
-          postId: orderedPostIds[i],
-          action: 'PIN',
-          position: i + 1,
-          expiresAt,
-          createdByAdminId: admin.adminId,
-        },
-      })
-    }
-    await tx.adminAuditLog.create({
+  // 배열형 트랜잭션(왕복 최소) — 24개 sequential create는 시드니 DB 왕복×24로
+  // Prisma 인터랙티브 트랜잭션 타임아웃(5s)을 넘겨 롤백됨. createMany 1회로 대체.
+  // deleteMany로 기존 PIN(active+inactive) 제거 → 재정렬 반복 시 inactive 누적 방지.
+  await prisma.$transaction([
+    prisma.homeCurationOverride.deleteMany({ where: { section, action: 'PIN' } }),
+    prisma.homeCurationOverride.createMany({
+      data: orderedPostIds.map((postId, i) => ({
+        section,
+        postId,
+        action: 'PIN' as const,
+        position: i + 1,
+        expiresAt,
+        createdByAdminId: admin.adminId,
+      })),
+    }),
+    prisma.adminAuditLog.create({
       data: {
         adminId: admin.adminId,
         action: 'HOME_CURATION_REORDER',
@@ -318,8 +315,8 @@ export async function setBestPinOrder(
         targetId: section,
         note: JSON.stringify({ section, orderedPostIds, bulk: true }),
       },
-    })
-  })
+    }),
+  ])
 
   revalidateCuration(section)
 }
@@ -330,10 +327,7 @@ export async function clearBestPins(section: SectionType) {
   if (!BEST_SECTIONS.includes(section)) throw new Error('베스트 섹션만 가능합니다.')
 
   await prisma.$transaction([
-    prisma.homeCurationOverride.updateMany({
-      where: { section, action: 'PIN', isActive: true },
-      data: { isActive: false },
-    }),
+    prisma.homeCurationOverride.deleteMany({ where: { section, action: 'PIN' } }),
     prisma.adminAuditLog.create({
       data: {
         adminId: admin.adminId,

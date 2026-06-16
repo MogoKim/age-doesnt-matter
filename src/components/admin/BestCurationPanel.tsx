@@ -7,7 +7,6 @@ import type { PostSummary } from '@/types/api'
 import {
   createHomeCurationOverride,
   deactivateHomeCurationOverride,
-  reorderHomeCurationPin,
   setBestPinOrder,
   clearBestPins,
   searchCurationPostsAction,
@@ -73,18 +72,18 @@ export default function BestCurationPanel({ initial, previewHot, previewFame }: 
 
   const pinByPostId = new Map(sectionData.pins.map(p => [p.postId, p]))
   const pinnedOrder = previewPosts.filter(p => pinByPostId.has(p.id)).map(p => p.id)
-  const allPinned = previewPosts.length > 0 && pinnedOrder.length === previewPosts.length
   const isManaged = pinnedOrder.length > 0
 
   const run = (fn: () => Promise<unknown>) => startTransition(async () => { await fn(); router.refresh() })
 
-  // 행 순서 이동 — 보이는 리스트 전체를 새 순서로 잠금(전체 고정). 이미 전부 고정이면 가벼운 reorder.
+  // 행 순서 이동 — 보이는 리스트 전체를 새 순서로 잠금(전체 고정).
+  // 항상 setBestPinOrder(배치형 createMany) 사용 — 24개 sequential 쿼리는 시드니 DB 왕복으로 타임아웃.
   const move = (idx: number, dir: -1 | 1) => {
     const to = idx + dir
     if (to < 0 || to >= previewPosts.length) return
     const ids = previewPosts.map(p => p.id)
     ;[ids[idx], ids[to]] = [ids[to], ids[idx]]
-    run(() => (allPinned ? reorderHomeCurationPin(activeSection, ids) : setBestPinOrder(activeSection, ids, duration)))
+    run(() => setBestPinOrder(activeSection, ids, duration))
   }
 
   const hidePost = (postId: string) => run(() => createHomeCurationOverride({ section: activeSection, postId, action: 'HIDE', duration }))
