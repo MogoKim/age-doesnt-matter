@@ -10,6 +10,20 @@ const COMMUNITY_BOARD_SLUG: Record<'STORY' | 'HUMOR' | 'LIFE2', string> = {
   LIFE2: 'life2',
 }
 
+// 목록 페이지 cold MISS 완화 — 상세(detail)에 더해 목록 페이지도 prewarm (jobs 제외)
+const LIST_PATHS = [
+  '/best',
+  '/magazine',
+  '/community/stories',
+  '/community/humor',
+  '/community/life2',
+]
+// 목록 API cold MISS 완화 — /api/best 기본/명예 응답 prewarm (jobs API 제외)
+const API_PATHS = [
+  '/api/best?type=hot',
+  '/api/best?type=fame',
+]
+
 type PrewarmBody = {
   communityLimit?: number
   magazineLimit?: number
@@ -95,6 +109,9 @@ export async function POST(req: NextRequest) {
     }),
     ...magazinePosts.map((post) => `/magazine/${post.slug ?? post.id}`),
     ...jobPosts.map((post) => `/jobs/${post.id}`),
+    // 목록 페이지 + 목록 API prewarm 추가 (jobs 목록/API는 제외)
+    ...LIST_PATHS,
+    ...API_PATHS,
   ].filter((path, index, arr) => arr.indexOf(path) === index)
 
   if (body.dryRun) {

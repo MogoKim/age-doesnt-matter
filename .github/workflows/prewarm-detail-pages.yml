@@ -34,4 +34,4 @@ jobs:
             -X POST "${SITE_URL%/}/api/internal/prewarm-details" \
             -H "x-internal-token: ${INTERNAL_API_TOKEN}" \
             -H "content-type: application/json" \
-            --data '{"communityLimit":8,"magazineLimit":4,"jobsLimit":4}'
+            --data '{"communityLimit":10,"magazineLimit":6,"jobsLimit":4}'
