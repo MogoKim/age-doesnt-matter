@@ -26,7 +26,7 @@ import { generateCommunitySlug } from '../core/slug.js'
 import { readPendingRows, updateRow } from './sheets-client.js'
 import { detectSite, normalizeNaverCafeUrl, resolveNaverShortUrl, randomUserAgent, isCloudflareChallenge, type SiteConfig } from './site-configs.js'
 import { processContentMedia } from './image-pipeline.js'
-import { transformContent, transformRawContent, classifyCategory } from './content-transformer.js'
+import { transformContent, transformRawContent, classifyCategory, hasYoungDemographicMarker } from './content-transformer.js'
 import { polishTitleForSeo } from './title-seo.js'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -684,6 +684,18 @@ export async function main() {
               })
               totalFailed++
               console.log(`  → FAILED: 동영상 포함 글 발행 제외 (videoCount=${videoCount})`)
+              continue
+            }
+
+            // P2(2026-06-16): 50-60 커뮤니티 부적합 — 본인 임신/출산/산후/영아육아 단계 글(20-30대) 발행 제외.
+            //   레몬테라스 등 젊은층 카페 글 유입 차단. 손주/어린이집 등 모호어는 마커에서 제외(오탐 방지).
+            if (hasYoungDemographicMarker(`${title} ${content}`)) {
+              await updateRow(tab.tabName, row.rowIndex, {
+                status: 'FAILED',
+                error: '20-30대 데모그래픽(임신/출산/육아) 글 — 50-60 부적합으로 발행 제외',
+              })
+              totalFailed++
+              console.log('  → FAILED: 젊은층 데모그래픽 글 발행 제외')
               continue
             }
 

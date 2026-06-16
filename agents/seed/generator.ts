@@ -3,6 +3,7 @@ import { prisma } from '../core/db.js'
 import { getPersona, getAllPersonaIds, type Persona } from './persona-data.js'
 import type { ControversyTopic } from '../core/intelligence.js'
 import { parseTopComments } from '../cafe/types.js'
+import { hasYoungDemographicMarker } from '../community/content-transformer.js'
 
 // ── 욕망 카테고리 → 적합 페르소나 매핑 (v8 — 12카테고리 55명 완전매핑, EN1~EN5 제외) ──
 export const DESIRE_PERSONA_MAP: Record<string, { personas: string[]; topicHint: string }> = {
@@ -935,6 +936,12 @@ export async function generateSheetViralComment(
   sourceComments: string[] = [],
   options?: { sourceCommentIndex?: number; priorCommentTexts?: string[] },
 ): Promise<string> {
+  // P2(2026-06-16): 본인 임신/출산/육아 단계 글(20-30대)엔 50-60 봇 댓글 부적합 — 댓글 생성 skip.
+  //   스크래퍼가 발행을 막지만, 이미 발행된 글/우회 경로 보호용 백스톱.
+  if (hasYoungDemographicMarker(`${postTitle} ${rawContent}`)) {
+    console.log('  [SheetViral] 젊은층 데모그래픽 글 — 댓글 skip')
+    return ''
+  }
   // ── 이미지 전용 글 감지: 텍스트 50자 미만 ──
   const cleanText = rawContent.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
   const isImagePost = cleanText.length < 50
