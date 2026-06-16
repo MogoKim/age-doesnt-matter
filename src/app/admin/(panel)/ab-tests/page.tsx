@@ -154,7 +154,7 @@ function RetentionPanel({ data }: { data: ExperimentRetentionView }) {
           <thead>
             <tr className="text-xs text-zinc-500">
               <th className="py-1 text-left">variant</th>
-              <th>노출</th><th>3화면</th><th>추가탐색</th><th>D1</th><th>세션PV</th><th>inline클릭</th>
+              <th>노출</th><th>3화면</th><th>추가탐색</th><th>세션PV</th><th>inline클릭</th>
             </tr>
           </thead>
           <tbody>
@@ -164,7 +164,6 @@ function RetentionPanel({ data }: { data: ExperimentRetentionView }) {
                 <td className="text-center">{v.exposed}</td>
                 <td className="text-center"><b className="text-zinc-800">{v.reach3Rate}%</b><span className="text-xs text-zinc-400"> ({v.reach3}/{v.exposed})</span></td>
                 <td className="text-center text-zinc-600">{v.exploreRate}%</td>
-                <td className="text-center"><b className="text-zinc-800">{v.d1Rate}%</b><span className="text-xs text-zinc-400"> ({v.d1}/{v.d1Denom})</span></td>
                 <td className="text-center text-zinc-600">{v.avgPageviews}</td>
                 <td className="text-center text-zinc-600">{v.inlineClicks}</td>
               </tr>
@@ -172,9 +171,48 @@ function RetentionPanel({ data }: { data: ExperimentRetentionView }) {
           </tbody>
         </table>
       </div>
+      {/* D1~D7 재방문 (성숙 코호트만) */}
+      <div className="mt-4">
+        <p className="mb-1 text-xs font-medium text-zinc-600">D1~D7 재방문 (성숙 코호트만 · 기준일 {data.todayKst} KST)</p>
+        <p className="mb-2 text-xs leading-relaxed text-zinc-400">
+          D1~D7은 각 날짜까지 관찰이 끝난 코호트만 분모에 포함합니다. 최근 노출은 아직 D2~D7 분모에 들어가지 않습니다(표본 대기). D1만 유의 검정, D2~D7은 참고 지표.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-zinc-500">
+                <th className="py-1 text-left">variant</th>
+                {Array.from({ length: 7 }, (_, i) => (
+                  <th key={i}>D{i + 1}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.variants.map((v) => (
+                <tr key={v.key} className="border-t border-zinc-100">
+                  <td className="py-1.5 font-medium text-zinc-700">{v.key}</td>
+                  {v.retentionDays.map((d) => (
+                    <td key={d.day} className="text-center">
+                      {d.denom === 0 ? (
+                        <span className="text-zinc-300">대기</span>
+                      ) : (
+                        <>
+                          <b className="text-zinc-800">{d.rate}%</b>
+                          <span className="block text-[10px] text-zinc-400">{d.returned}/{d.denom}</span>
+                        </>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${conf3.cls}`}>3화면 {conf3.label}</span>
         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${confD1.cls}`}>D1 {confD1.label}</span>
+        <span className="text-xs text-zinc-400">· D2~D7 참고 지표(유의 검정 없음)</span>
       </div>
       {data.variants.some((v) => v.lowRelated > 0) && (
         <p className="mt-2 text-xs text-zinc-400">※ 관련글 3개 미만 노출(별도 세그먼트): {data.variants.map((v) => `${v.key} ${v.lowRelated}`).join(' · ')}</p>
