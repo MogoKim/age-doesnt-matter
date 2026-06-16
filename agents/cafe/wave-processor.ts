@@ -275,6 +275,19 @@ async function processWaveLegacy(
   }
   const commentText = refComment.trim()
 
+  // C1(2026-06-16): 같은 글에 동일 내용 봇댓글이 이미 있으면 스킵.
+  //   legacy는 원문 댓글을 인덱스 wrap-around로 골라 verbatim 게시 → 다른 wave가 같은 댓글을 다른 봇으로 중복 게시하던 버그.
+  const dupExisting = await prisma.comment.findFirst({
+    where: { postId: queue.postId, status: 'ACTIVE', content: commentText },
+    select: { id: true },
+  })
+  if (dupExisting) {
+    const doneFieldDup = `wave${waveNum}Done` as WaveDoneKey
+    await prisma.commentWaveQueue.update({ where: { id: queue.id }, data: { [doneFieldDup]: true } })
+    console.log(`[WaveProcessor] wave${waveNum}(legacy): 동일 내용 댓글 이미 존재 — 중복 스킵 (postId=${queue.postId})`)
+    return
+  }
+
   await prisma.$transaction([
     prisma.comment.create({
       data: {
@@ -505,6 +518,13 @@ async function processWaveV2(
     for (let slot = 0; slot < waveTargetCount; slot++) {
       const commentText = sourceCandidates[slot]
       if (!commentText) { skips.push('source_not_enough'); break }
+
+      // C1(2026-06-16): 삽입 직전 동일 내용 재확인 — run 간 경합/legacy 혼재로 같은 댓글 중복 게시 방지
+      const dupV2 = await prisma.comment.findFirst({
+        where: { postId: queue.postId, status: 'ACTIVE', content: commentText },
+        select: { id: true },
+      })
+      if (dupV2) { skips.push('dup_content'); continue }
 
       // global cap 체크
       const totalBotCount = await prisma.comment.count({
