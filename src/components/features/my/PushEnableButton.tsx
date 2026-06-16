@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
-import { subscribeToPush, unsubscribeFromPush } from '@/lib/push/subscribe'
+import { subscribeToPush, unsubscribeFromPush, resyncPushSubscription } from '@/lib/push/subscribe'
 
 /**
  * 설정 페이지 '휴대폰 알림 받기' — 자동 토스트와 별개의 영구 진입점.
@@ -15,13 +15,15 @@ export default function PushEnableButton() {
   const [msg, setMsg] = useState<string | null>(null)
   const [ok, setOk] = useState(false)
 
-  // 실제 구독 존재 여부 확인 (권한 granted라도 구독이 끊겼을 수 있음)
+  // 마운트 시: 폰에 구독이 있으면 서버 DB와 자동 재동기화(불일치 복구) 후 상태 반영.
+  // (폰엔 구독이 있는데 서버엔 없던 회원이 설정 화면을 여는 순간 서버에 재등록됨)
   useEffect(() => {
     if (!env.supportsWebPush) { setHasSub(false); return }
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((s) => setHasSub(!!s))
-      .catch(() => setHasSub(false))
+    let cancelled = false
+    resyncPushSubscription()
+      .then((has) => { if (!cancelled) setHasSub(has) })
+      .catch(() => { if (!cancelled) setHasSub(false) })
+    return () => { cancelled = true }
   }, [env.supportsWebPush])
 
   async function handleEnable() {

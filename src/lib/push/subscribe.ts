@@ -60,6 +60,29 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
 }
 
 /**
+ * 폰(브라우저)에 이미 있는 구독을 서버 DB와 재동기화한다.
+ * "폰엔 구독이 있는데 서버엔 없는"(과거 저장 실패/410 정리 등) 불일치를 자동 복구.
+ * 반환: 폰에 구독이 존재하면 true(=서버에도 등록 보장), 없으면 false.
+ */
+export async function resyncPushSubscription(): Promise<boolean> {
+  try {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return false
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    if (!sub) return false
+    // upsert라 중복 안전 — 서버에 없으면 생성, 있으면 갱신
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sub.toJSON()),
+    }).catch(() => {})
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * OS 푸시 구독 해제: 브라우저 구독 취소 + 서버 레코드 삭제.
  * 설정 '알림 끄기' 버튼에서 사용. (OS 권한 자체는 유지 — 다시 켜기 가능)
  */
