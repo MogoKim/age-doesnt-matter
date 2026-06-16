@@ -28,7 +28,6 @@ const SignupPromptBanner = dynamic(
   () => import('@/components/common/SignupPromptBanner').then(m => ({ default: m.SignupPromptBanner })),
   { loading: () => null, ssr: false },
 )
-const TwaEntryGate = dynamic(() => import('@/components/common/TwaEntryGate'), { ssr: false })
 
 export default function MainGroupLayout({
   children,
@@ -42,7 +41,6 @@ export default function MainGroupLayout({
       <OfflineBanner />
       <MainLayout>{children}</MainLayout>
       <SignupPromptBanner />
-      <TwaEntryGate />
       <PopupRenderer />
       <PushPermissionToast />
     </FontSizeProvider>

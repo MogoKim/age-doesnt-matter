@@ -50,31 +50,12 @@ export interface ExperimentDef {
 // [2026-06-09] f01_signup_content(문구 A/B/C)·f01_signup_timing(타이밍 A/B) 실험 종료.
 //   UT 정성 근거로 위너 확정 → 코드 고정: 문구=C 공감형 / 타이밍=read_complete(85%).
 //   과거 기록은 git 히스토리 + docs/features/REGISTRY.md ARCHIVED 참조.
-export const EXPERIMENTS: ExperimentDef[] = [
-  {
-    id: 'twa01_entry_gate',
-    name: 'TWA 첫 진입 가입 게이트',
-    purpose: '앱(TWA) 설치자에게 가입 허들을 앞에 두면(게이트) 진짜 회원이 늘고 재방문이 오르는지 본다.',
-    background:
-      '앱 설치자는 재방문 10%로 동기 높은데 가입은 4%로 낮음. 웹은 "정독 후 가입"(허들 뒤)이지만, 앱 설치자는 "가입 먼저"(허들 앞)가 나을 수 있다는 반대 가설.',
-    hypothesis: '동기 높은 앱 설치자는 게이트를 통과해 진성 가입 → 회원 경험으로 재방문↑. 단 함정=가입률(강제라 당연 높음), 정답=가입 후 재방문.',
-    howToVerify:
-      'twa_gate_view(노출, twa_gate_variant) → 같은 sessionId/userId 의 sign_up + 가입 후 TWA 재방문(D1/D7)으로 variant별 비교. A(현행)가 baseline. 봇 제외. 대상=신규 TWA만.',
-    owner: '영석',
-    // [2026-06-15] ABC → AC(50:50) 전환. B(soft)는 드랍 확정(가입·리텐션 모두 최저)이라 weight 0으로 신규 배정만 중단.
-    //   B 항목은 절대 삭제 금지 — assign.ts:46 `variants.some(key===stored)` 가 기존 B 사용자 캐시를 유지해 재배정(오염)을 막는다.
-    //   기존 B 회원은 그대로 B 유지(자연 소멸), 신규는 A:C 50:50. 화면은 _getGateITT가 weight>0만 표시. 과거 B 데이터 보존.
-    variants: [
-      { key: 'A', label: 'A · 현행(대조군)', description: '게이트 없음. 앱 열면 홈이 바로 보이고 자유롭게 둘러봄(현재와 동일). baseline.', weight: 50 },
-      { key: 'B', label: 'B · soft 게이트 (드랍)', description: '[2026-06-15 드랍] 신규 배정 중단(weight 0). 기존 배정자만 유지·자연소멸. 둘러보다 글 2~3개 시점 "계속 보려면 카카오로 시작".', weight: 0 },
-      { key: 'C', label: 'C · hard 게이트', description: '첫 화면이 가입/로그인("우리 또래 이야기, 카카오로 1초" + 작게 "먼저 둘러볼게요" 탈출구).', weight: 50 },
-    ],
-    exposureEvent: 'twa_gate_view',
-    conversionEvent: 'sign_up',
-    variantProperty: 'twa_gate_variant',
-    hashOffset: 11,
-  },
-]
+// [2026-06-13] twa01_entry_gate(TWA 첫 진입 가입 게이트) 종료 — A(게이트 없음) 위너 확정.
+//   근거: 가입자·비회원 재방문 모두 A 우세(비회원 D1 18.3% vs 6.7%, 통계 유의). hard 게이트(C)는
+//   가입수만 부풀리고 "다시 올 구경꾼"의 재방문을 소각 → 진성 효율 KPI에서 손해. 게이트 코드 제거, A/B 인프라 유지.
+//   상세: docs/features/F16-twa-gate-experiment-archive.md
+// 현재 운영 중인 실험 없음. 새 실험은 이 배열에 ExperimentDef 추가(파일 상단 표준 절차 참조).
+export const EXPERIMENTS: ExperimentDef[] = []
 
 export function getExperiment(id: string): ExperimentDef | undefined {
   return EXPERIMENTS.find((e) => e.id === id)

@@ -226,12 +226,9 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     // 가입 직후 푸시 구독 유도 — 홈((main)) 진입 시 sessionStorage 폴백으로 토스트 노출
     setPushToastTrigger('signup')
     gtmSignUp('kakao')
-    // 게이트 실험 그룹(있으면) — sign_up에 실어 전환을 userId 기반으로 측정(sessionId 단절 우회)
-    const twaGateVariant = localStorage.getItem('twa_gate_assigned') ?? undefined
     trackEvent('sign_up', {
       method: 'kakao',
       browser_env: getBrowserEnv(),
-      ...(twaGateVariant ? { twa_gate_variant: twaGateVariant } : {}),
     })
     // gtag.js 로드 완료 대기 — _gtagReady=true 확인 후 navigate
     // window.gtag 존재 체크는 부족 (GTM stub이 미리 생성됨)

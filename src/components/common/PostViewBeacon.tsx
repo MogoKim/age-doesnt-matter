@@ -47,7 +47,7 @@ export default function PostViewBeacon({ postId }: PostViewBeaconProps) {
     // 초기 측정 + 조회 기록 1회 (진입 시점 도달률)
     measure()
     send()
-    // TWA soft 게이트(B) 트리거용 — 세션 내 글 열람 수 카운트(글 상세 진입당 1)
+    // 세션 내 글 열람 수 카운트(글 상세 진입당 1) — PushPermissionToast의 정독 기반 'visit' 트리거용
     try {
       const k = 'twa_session_post_views'
       sessionStorage.setItem(k, String(Number(sessionStorage.getItem(k) ?? '0') + 1))

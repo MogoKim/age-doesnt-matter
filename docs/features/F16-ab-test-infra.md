@@ -30,9 +30,11 @@
 - 기간 토글 7/30/전체. 캐시 10분(unstable_cache).
 
 ## 현재 등록 실험
-- `twa01_entry_gate` — TWA 첫 진입 가입 게이트 A(현행)/B(soft)/C(hard). 측정=가입 후 앱 재방문(D1/D7), funnel 아님.
+- 없음 (`EXPERIMENTS = []`). 모든 실험 종료 — 인프라는 다음 실험 위해 유지.
 
 > **종료(2026-06-09, UT 위너 확정)**: `f01_signup_content`(문구)→**C 공감형 고정** / `f01_signup_timing`(타이밍)→**read_complete 고정**. 레지스트리에서 삭제, SignupPromptBanner 고정값. 과거 기록은 git 히스토리.
+
+> **종료(2026-06-13, A 위너 확정)**: `twa01_entry_gate`(TWA 첫 진입 게이트)→**A(게이트 없음) 채택**. C(hard)는 가입수만 늘리고 구경꾼 재방문을 소각(비회원 D1 18.3%→6.7%, 통계 유의) → 진성 효율 손해. 게이트 코드 제거, 인프라 유지. 상세: [F16-twa-gate-experiment-archive.md](F16-twa-gate-experiment-archive.md).
 
 ## 이력
 | 날짜 | 변경 | 이유 |
@@ -42,6 +44,7 @@
 | 2026-06-09 | f01_signup_content·f01_signup_timing 종료(레지스트리 삭제), gtm/OnboardingForm variant 첨부 제거, e2e/22 read_complete 기준 수정, 임시 감사 스크립트 삭제 | UT 위너 확정 → 코드 고정·레거시 제거. 인프라·게이트 유지 |
 | 2026-06-12 | TWA baseline 판정 교차 보강(`getTwaSignupRetention`: browser_env OR twa_gate_variant OR TWA page_view) + 게이트 표에 노출 분모/전환율 컬럼 + 캡션 동적화 + 90일 고정 뱃지 | 카카오 OAuth 복귀 시 referrer 소실로 TWA 가입자 67%(33명 중 22명)가 android-chrome으로 오기록 → baseline 31명으로 과소집계(실제 57명)·D7 재방문율 왜곡. 측정 쿼리만 보강(가입 플로우 무수정). sticky 근본수정은 백로그. 캐시키 v1→v2 |
 | 2026-06-12 | 게이트 ITT(배정 기준) 측정 추가 — `twa_gate_assigned` 이벤트(TwaEntryGate, A포함 전원·세션당 1회) + `getGateITT`(배정 sessionId 분모, D1/D3/D7 재방문+가입률) + 어드민 ITT 카드 | 노출이 그룹별 조건차로 불공정(A 0·B 23·C 120) → 노출 기준 비교 불가. "보여주려 한 대상(배정)"을 최앞단 분모로 A·B·C 공정 비교. sessionId(_anon_sid 30일)가 배정→가입→재방문 연결. **과거 소급 불가**(도입 시점부터 누적). 게이트 동작 무변경(이벤트 1줄만 추가) |
+| 2026-06-13 | `twa01_entry_gate` 종료 — A(게이트 없음) 위너 확정, 게이트 코드 제거(`TwaEntryGate` 삭제·layout 마운트·게이트 전용 쿼리 `getGateITT`/`getGateRetention`/`getTwaSignupRetention`·어드민 게이트 카드·`sign_up`의 `twa_gate_variant` 첨부), `EXPERIMENTS = []`. 인프라(registry 구조·`assign`·`stats`·`getWebExperiments`·`ExperimentState`)·공유 컴포넌트(`GateOnboardingSlides`=/login, `PostViewBeacon`=푸시토스트) 보존. 과거 `twa_gate_*` EventLog 보존 | 가입자·비회원 재방문 모두 A 우세(비회원 D1 통계 유의) + hard 게이트가 구경꾼 재방문 소각 → 진성 효율 KPI에서 게이트 폐기. 상세: [F16-twa-gate-experiment-archive.md](F16-twa-gate-experiment-archive.md) |
 
 ## 비고 / 후속
 - **F01 SignupPromptBanner는 EventLog 이벤트로 이미 어드민에 집계됨** → 어드민 현황은 마이그레이션과 무관하게 F01 실데이터 표시.

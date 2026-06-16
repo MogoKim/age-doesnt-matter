@@ -106,7 +106,7 @@ export function SignupPromptBanner() {
   const searchParams = useSearchParams()
   const { data: session, status } = useAppSession()
   const isLoggedIn = status === 'authenticated'
-  const { isTWA } = useAppEnvironment() // TWA(앱)는 게이트 실험(twa01_entry_gate)이 담당 → 웹 타이밍 배너 OFF(오염 차단)
+  const { isTWA } = useAppEnvironment() // TWA(앱)는 "게이트 없이 바로 둘러보기"가 위너(2026-06-13 게이트 종료) → 웹 타이밍 배너는 TWA 제외 유지
   const createdAt = session?.user?.createdAt ? String(session.user.createdAt) : undefined
 
   // ?signup=1 + 유효 utm_source 감지 (클라이언트에서 직접 읽기 — layout은 searchParams 미지원)

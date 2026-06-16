@@ -3,10 +3,11 @@
 import Image from 'next/image'
 import { useState, useEffect, useRef, useCallback } from 'react'
 
-// 머니워크식 슬라이드 온보딩 — TWA 진입 게이트 C(hard) 전용 화면.
+// 머니워크식 슬라이드 온보딩 — /login 가입 유도 화면.
+//  (과거 TWA 진입 게이트 C에서도 재사용했으나 2026-06-13 게이트 실험 종료 후 현재는 LoginForm 전용)
 //  - 가입 가치 3장(메인 카피는 이미지 안에 박혀 있음 / 화면엔 서브 카피만)
 //  - 스와이프·자동전환(5초, prefers-reduced-motion 시 끔)·점 탭
-//  - 카카오 OAuth(onSignup) / 게스트 진입(onEscape)은 상위 TwaEntryGate 로직 그대로 연결(변경 금지)
+//  - 카카오 OAuth(onSignup) / 게스트 진입(onEscape) 콜백은 호출처(LoginForm)에서 연결
 
 interface Slide {
   img: string
