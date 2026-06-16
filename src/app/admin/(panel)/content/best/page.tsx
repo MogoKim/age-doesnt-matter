@@ -8,10 +8,11 @@ export const metadata: Metadata = { title: '베스트 편성 관리' }
 export const dynamic = 'force-dynamic'
 
 export default async function AdminBestCurationPage() {
+  // 어드민은 2페이지 분량(24개)을 관리 — /best 공개 페이지는 12개씩 페이지네이션
   const [adminView, hot, fame] = await Promise.all([
     getBestCurationAdminView(),
-    composeBestHot({ limit: 12 }),
-    composeBestFame({ limit: 12 }),
+    composeBestHot({ limit: 24 }),
+    composeBestFame({ limit: 24 }),
   ])
 
   return (
