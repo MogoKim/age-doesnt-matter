@@ -71,6 +71,62 @@ export async function getHomeCurationAdminView(): Promise<HomeCurationAdminView>
   }
 }
 
+// ── 베스트 편성 어드민 뷰 (BEST_HOT / BEST_FAME) ──
+
+export interface BestCurationAdminView {
+  BEST_HOT: { pins: CurationOverrideView[]; hides: CurationOverrideView[] }
+  BEST_FAME: { pins: CurationOverrideView[]; hides: CurationOverrideView[] }
+}
+
+export async function getBestCurationAdminView(): Promise<BestCurationAdminView> {
+  const now = new Date()
+
+  const overrides = await prisma.homeCurationOverride.findMany({
+    where: {
+      section: { in: ['BEST_HOT', 'BEST_FAME'] },
+      isActive: true,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    },
+    select: {
+      id: true,
+      postId: true,
+      section: true,
+      action: true,
+      position: true,
+      note: true,
+      expiresAt: true,
+      createdAt: true,
+      post: { select: { title: true, boardType: true, thumbnailUrl: true } },
+      createdBy: { select: { nickname: true } },
+    },
+    orderBy: [{ section: 'asc' }, { position: 'asc' }, { createdAt: 'desc' }],
+  })
+
+  type RawOverride = (typeof overrides)[0]
+
+  const toView = (o: RawOverride): CurationOverrideView => ({
+    id: o.id,
+    postId: o.postId,
+    postTitle: o.post.title,
+    postBoardType: o.post.boardType,
+    postThumbnailUrl: o.post.thumbnailUrl,
+    action: o.action,
+    position: o.position,
+    note: o.note,
+    expiresAt: o.expiresAt?.toISOString() ?? null,
+    createdAt: o.createdAt.toISOString(),
+    createdByNickname: o.createdBy.nickname,
+  })
+
+  const by = (section: 'BEST_HOT' | 'BEST_FAME', action: 'PIN' | 'HIDE') =>
+    overrides.filter(o => o.section === section && o.action === action).map(toView)
+
+  return {
+    BEST_HOT: { pins: by('BEST_HOT', 'PIN'), hides: by('BEST_HOT', 'HIDE') },
+    BEST_FAME: { pins: by('BEST_FAME', 'PIN'), hides: by('BEST_FAME', 'HIDE') },
+  }
+}
+
 export interface PostSearchResult {
   id: string
   title: string

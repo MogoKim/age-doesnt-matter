@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { unstable_cache } from 'next/cache'
-import { getAccumulatedHotPosts } from '@/lib/queries/posts'
+import { composeBestHot } from '@/lib/queries/posts/posts.best-compose'
 import type { PostSummary } from '@/types/api'
 import BestContent from '@/components/features/best/BestContent'
 
@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 const LIMIT = 12
 
 const getCachedHot = unstable_cache(
-  () => getAccumulatedHotPosts({ limit: LIMIT }),
-  ['best-hot-p1'],
-  { revalidate: 60, tags: ['best-hot'] },
+  () => composeBestHot({ limit: LIMIT }),
+  ['best-hot-p1-curated'],
+  { revalidate: 60, tags: ['best-hot', 'home-curation'] },
 )
 
 export default async function BestPage() {

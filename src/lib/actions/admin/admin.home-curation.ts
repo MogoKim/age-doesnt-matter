@@ -5,14 +5,19 @@ import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import type { BoardType } from '@/generated/prisma/client'
 
-type SectionType = 'TRENDING' | 'STORIES' | 'HUMOR'
+type SectionType = 'TRENDING' | 'STORIES' | 'HUMOR' | 'BEST_HOT' | 'BEST_FAME'
 type ActionType = 'PIN' | 'HIDE'
 export type DurationPreset = 'FOUR_HOURS' | 'EIGHT_HOURS' | 'TODAY' | 'MANUAL'
 
+const BEST_SECTIONS: SectionType[] = ['BEST_HOT', 'BEST_FAME']
+
 const SECTION_ALLOWED_BOARDS: Record<SectionType, BoardType[]> = {
-  TRENDING: ['STORY', 'LIFE2', 'HUMOR'] as BoardType[],
-  STORIES:  ['STORY'] as BoardType[],
-  HUMOR:    ['HUMOR'] as BoardType[],
+  TRENDING:  ['STORY', 'LIFE2', 'HUMOR'] as BoardType[],
+  STORIES:   ['STORY'] as BoardType[],
+  HUMOR:     ['HUMOR'] as BoardType[],
+  // 베스트 두 탭 모두 커뮤니티 3개 보드 대상 (best 쿼리와 동일)
+  BEST_HOT:  ['STORY', 'LIFE2', 'HUMOR'] as BoardType[],
+  BEST_FAME: ['STORY', 'LIFE2', 'HUMOR'] as BoardType[],
 }
 
 async function requireAdmin() {
@@ -36,8 +41,18 @@ function calcExpiresAt(duration: DurationPreset): Date | null {
   return null // MANUAL = 수동 해제 시까지
 }
 
-function revalidateHome() {
+function revalidateCuration(section: SectionType) {
+  // 오버라이드 변경은 어느 섹션이든 공유 태그 home-curation 으로 묶임
   revalidateTag('home-curation')
+
+  if (BEST_SECTIONS.includes(section)) {
+    revalidateTag('best-hot')
+    revalidateTag('best-fame')
+    revalidatePath('/best')
+    revalidatePath('/admin/content/best')
+    return
+  }
+
   revalidateTag('home-trending')
   revalidateTag('home-stories')
   revalidateTag('home-humor')
@@ -158,7 +173,7 @@ export async function createHomeCurationOverride(input: CreateOverrideInput) {
     })
   })
 
-  revalidateHome()
+  revalidateCuration(input.section)
 }
 
 export async function deactivateHomeCurationOverride(overrideId: string) {
@@ -169,6 +184,7 @@ export async function deactivateHomeCurationOverride(overrideId: string) {
     select: { postId: true, section: true, action: true },
   })
   if (!override) throw new Error('존재하지 않는 편성 설정입니다.')
+  const overrideSection = override.section as SectionType
 
   await prisma.$transaction([
     prisma.homeCurationOverride.update({
@@ -186,7 +202,7 @@ export async function deactivateHomeCurationOverride(overrideId: string) {
     }),
   ])
 
-  revalidateHome()
+  revalidateCuration(overrideSection)
 }
 
 export async function searchCurationPostsAction(query: string, section: SectionType) {
@@ -259,5 +275,5 @@ export async function reorderHomeCurationPin(
     })
   })
 
-  revalidateHome()
+  revalidateCuration(section)
 }

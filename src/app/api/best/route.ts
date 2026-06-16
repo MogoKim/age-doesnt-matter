@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAccumulatedHotPosts, getHallOfFamePosts } from '@/lib/queries/posts'
+import { composeBestHot, composeBestFame } from '@/lib/queries/posts/posts.best-compose'
 import { handleApiError, parsePaginationParams } from '@/lib/api-utils'
 import { checkApiRateLimit } from '@/lib/api-rate-limit'
 
@@ -17,14 +17,14 @@ export async function GET(request: NextRequest) {
     const sf = sfParam === 'both' || sfParam === 'content' ? sfParam : 'title'
 
     if (type === 'fame') {
-      const result = await getHallOfFamePosts({ skip, limit, q, sf })
+      const result = await composeBestFame({ skip, limit, q, sf })
       return NextResponse.json(result, {
         headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
       })
     }
 
-    // type=hot: 영구 누적 인기글 (hotPromotedAt IS NOT NULL), offset pagination
-    const result = await getAccumulatedHotPosts({ skip, limit, q, sf })
+    // type=hot: 영구 누적 인기글 (hotPromotedAt IS NOT NULL) + 어드민 큐레이션, offset pagination
+    const result = await composeBestHot({ skip, limit, q, sf })
     return NextResponse.json(result, {
       headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
     })

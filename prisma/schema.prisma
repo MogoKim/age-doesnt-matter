@@ -198,6 +198,8 @@ enum HomeCurationSection {
   TRENDING
   STORIES
   HUMOR
+  BEST_HOT // 베스트 — 뜨는 이야기 탭 큐레이션
+  BEST_FAME // 베스트 — 명예의 전당 탭 큐레이션
 }
 
 enum HomeCurationAction {

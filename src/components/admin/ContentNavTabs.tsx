@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 const TABS = [
   { label: '콘텐츠 목록', href: '/admin/content' },
   { label: '홈 편성', href: '/admin/content/home' },
+  { label: '베스트 편성', href: '/admin/content/best' },
 ]
 
 export default function ContentNavTabs() {
