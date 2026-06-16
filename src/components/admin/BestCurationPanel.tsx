@@ -8,6 +8,8 @@ import {
   createHomeCurationOverride,
   deactivateHomeCurationOverride,
   reorderHomeCurationPin,
+  setBestPinOrder,
+  clearBestPins,
   searchCurationPostsAction,
   type DurationPreset,
 } from '@/lib/actions/admin/admin.home-curation'
@@ -69,25 +71,25 @@ export default function BestCurationPanel({ initial, previewHot, previewFame }: 
   const sectionData = initial[activeSection]
   const previewPosts = activeSection === 'BEST_HOT' ? previewHot : previewFame
 
-  // postId → 고정 override (해제·순서용)
   const pinByPostId = new Map(sectionData.pins.map(p => [p.postId, p]))
-  // 현재 리스트에서 고정된 글의 순서 (composeBest가 고정을 상단·position순으로 배치)
   const pinnedOrder = previewPosts.filter(p => pinByPostId.has(p.id)).map(p => p.id)
+  const allPinned = previewPosts.length > 0 && pinnedOrder.length === previewPosts.length
+  const isManaged = pinnedOrder.length > 0
 
   const run = (fn: () => Promise<unknown>) => startTransition(async () => { await fn(); router.refresh() })
 
-  const pinPost = (postId: string) => run(() => createHomeCurationOverride({ section: activeSection, postId, action: 'PIN', duration }))
+  // 행 순서 이동 — 보이는 리스트 전체를 새 순서로 잠금(전체 고정). 이미 전부 고정이면 가벼운 reorder.
+  const move = (idx: number, dir: -1 | 1) => {
+    const to = idx + dir
+    if (to < 0 || to >= previewPosts.length) return
+    const ids = previewPosts.map(p => p.id)
+    ;[ids[idx], ids[to]] = [ids[to], ids[idx]]
+    run(() => (allPinned ? reorderHomeCurationPin(activeSection, ids) : setBestPinOrder(activeSection, ids, duration)))
+  }
+
   const hidePost = (postId: string) => run(() => createHomeCurationOverride({ section: activeSection, postId, action: 'HIDE', duration }))
   const clearOverride = (overrideId: string) => run(() => deactivateHomeCurationOverride(overrideId))
-
-  const movePin = (postId: string, dir: -1 | 1) => {
-    const idx = pinnedOrder.indexOf(postId)
-    const to = idx + dir
-    if (idx < 0 || to < 0 || to >= pinnedOrder.length) return
-    const next = [...pinnedOrder]
-    ;[next[idx], next[to]] = [next[to], next[idx]]
-    run(() => reorderHomeCurationPin(activeSection, next))
-  }
+  const resetToAuto = () => run(() => clearBestPins(activeSection))
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
@@ -137,8 +139,21 @@ export default function BestCurationPanel({ initial, previewHot, previewFame }: 
       </div>
 
       <p className="text-xs text-zinc-400">
-        아래는 지금 <strong>/best {SECTION_LABELS[activeSection]}</strong>에 실제로 노출되는 순서입니다. 각 줄에서 바로 고정·숨김·순서를 조정하세요. (반영 최대 60초)
+        지금 <strong>/best {SECTION_LABELS[activeSection]}</strong>에 실제 노출되는 순서입니다. <strong>↑↓</strong>로 어느 줄이든 자유롭게 순서를 바꿀 수 있어요(처음 옮기면 현재 리스트가 그 순서로 잠깁니다). (반영 최대 60초)
       </p>
+
+      {/* 관리 상태 + 되돌리기 */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${isManaged ? 'bg-blue-100 text-blue-700' : 'bg-zinc-100 text-zinc-500'}`}>
+          {isManaged ? `📌 직접 관리 중 (${pinnedOrder.length}개 고정)` : '⚙️ 자동 편성 (인기순)'}
+        </span>
+        {isManaged && (
+          <button onClick={resetToAuto} disabled={isPending}
+            className="text-xs text-zinc-500 hover:text-zinc-800 underline disabled:opacity-50">
+            ↩︎ 자동 편성으로 되돌리기
+          </button>
+        )}
+      </div>
 
       {/* 메인: 현재 베스트 노출 순서 */}
       <div className="border border-zinc-200 rounded-xl overflow-hidden">
@@ -150,7 +165,7 @@ export default function BestCurationPanel({ initial, previewHot, previewFame }: 
         ) : (
           <ul className="divide-y divide-zinc-100">
             {previewPosts.map((post, idx) => {
-              const pinned = pinByPostId.get(post.id)
+              const pinned = pinByPostId.has(post.id)
               const badge = promoBadge(post.promotionLevel)
               return (
                 <li key={post.id} className={`flex items-center gap-3 px-3 py-2.5 ${pinned ? 'bg-blue-50/60' : 'bg-white'}`}>
@@ -165,7 +180,7 @@ export default function BestCurationPanel({ initial, previewHot, previewFame }: 
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      {pinned && <span className="text-[11px] font-bold text-blue-600 shrink-0">📌고정</span>}
+                      {pinned && <span className="text-[11px] font-bold text-blue-600 shrink-0">📌</span>}
                       {badge && <span className={`text-[11px] px-1 rounded shrink-0 ${badge.cls}`}>{badge.label}</span>}
                       <p className="text-sm font-medium text-zinc-800 truncate">{post.title}</p>
                     </div>
@@ -175,23 +190,12 @@ export default function BestCurationPanel({ initial, previewHot, previewFame }: 
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
-                    {pinned ? (
-                      <>
-                        <button onClick={() => movePin(post.id, -1)} disabled={isPending || pinnedOrder.indexOf(post.id) === 0}
-                          className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 disabled:opacity-25 text-sm" title="위로">↑</button>
-                        <button onClick={() => movePin(post.id, 1)} disabled={isPending || pinnedOrder.indexOf(post.id) === pinnedOrder.length - 1}
-                          className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 disabled:opacity-25 text-sm" title="아래로">↓</button>
-                        <button onClick={() => clearOverride(pinned.id)} disabled={isPending}
-                          className="ml-0.5 text-xs text-blue-500 hover:text-blue-700 px-1.5 py-0.5 rounded disabled:opacity-50">고정해제</button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={() => pinPost(post.id)} disabled={isPending}
-                          className="text-xs bg-blue-600 text-white hover:bg-blue-700 px-2 py-1 rounded-lg font-semibold disabled:opacity-50">📌 고정</button>
-                        <button onClick={() => hidePost(post.id)} disabled={isPending}
-                          className="text-xs bg-red-600 text-white hover:bg-red-700 px-2 py-1 rounded-lg font-semibold disabled:opacity-50">🚫 숨김</button>
-                      </>
-                    )}
+                    <button onClick={() => move(idx, -1)} disabled={isPending || idx === 0}
+                      className="w-7 h-7 flex items-center justify-center rounded border border-zinc-200 text-zinc-500 hover:bg-zinc-100 disabled:opacity-25 text-sm" title="위로">↑</button>
+                    <button onClick={() => move(idx, 1)} disabled={isPending || idx === previewPosts.length - 1}
+                      className="w-7 h-7 flex items-center justify-center rounded border border-zinc-200 text-zinc-500 hover:bg-zinc-100 disabled:opacity-25 text-sm" title="아래로">↓</button>
+                    <button onClick={() => hidePost(post.id)} disabled={isPending}
+                      className="ml-0.5 text-xs bg-red-600 text-white hover:bg-red-700 px-2 py-1 rounded-lg font-semibold disabled:opacity-50">🚫 숨김</button>
                   </div>
                 </li>
               )
@@ -235,7 +239,7 @@ export default function BestCurationPanel({ initial, previewHot, previewFame }: 
                     ? action === 'PIN' ? 'bg-blue-600 text-white' : 'bg-red-600 text-white'
                     : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
                 }`}>
-                {action === 'PIN' ? '📌 고정' : '🚫 숨김'}
+                {action === 'PIN' ? '📌 맨 위 고정' : '🚫 숨김'}
               </button>
             ))}
           </div>

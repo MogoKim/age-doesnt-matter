@@ -277,3 +277,73 @@ export async function reorderHomeCurationPin(
 
   revalidateCuration(section)
 }
+
+// ── 베스트 전용: 전체 순서 직접 관리 (24개 등 보이는 리스트 전체를 그 순서대로 고정) ──
+
+/** 보이는 리스트 전체를 orderedPostIds 순서대로 PIN. 기존 PIN은 교체. 자동글이 섞인 리스트를 "이 순서로 잠금". */
+export async function setBestPinOrder(
+  section: SectionType,
+  orderedPostIds: string[],
+  duration: DurationPreset = 'MANUAL',
+) {
+  const admin = await requireAdmin()
+  if (!BEST_SECTIONS.includes(section)) throw new Error('베스트 섹션만 전체 순서 관리가 가능합니다.')
+  if (orderedPostIds.length === 0) return
+
+  const expiresAt = calcExpiresAt(duration)
+
+  await prisma.$transaction(async tx => {
+    // 기존 active PIN 전부 비활성화 후 새 순서로 재생성
+    await tx.homeCurationOverride.updateMany({
+      where: { section, action: 'PIN', isActive: true },
+      data: { isActive: false },
+    })
+    for (let i = 0; i < orderedPostIds.length; i++) {
+      await tx.homeCurationOverride.create({
+        data: {
+          section,
+          postId: orderedPostIds[i],
+          action: 'PIN',
+          position: i + 1,
+          expiresAt,
+          createdByAdminId: admin.adminId,
+        },
+      })
+    }
+    await tx.adminAuditLog.create({
+      data: {
+        adminId: admin.adminId,
+        action: 'HOME_CURATION_REORDER',
+        targetType: 'POST',
+        targetId: section,
+        note: JSON.stringify({ section, orderedPostIds, bulk: true }),
+      },
+    })
+  })
+
+  revalidateCuration(section)
+}
+
+/** 베스트 섹션의 PIN(직접 관리) 전부 해제 → 자동 편성으로 복귀. HIDE는 유지. */
+export async function clearBestPins(section: SectionType) {
+  const admin = await requireAdmin()
+  if (!BEST_SECTIONS.includes(section)) throw new Error('베스트 섹션만 가능합니다.')
+
+  await prisma.$transaction([
+    prisma.homeCurationOverride.updateMany({
+      where: { section, action: 'PIN', isActive: true },
+      data: { isActive: false },
+    }),
+    prisma.adminAuditLog.create({
+      data: {
+        adminId: admin.adminId,
+        action: 'HOME_CURATION_CLEAR',
+        targetType: 'POST',
+        targetId: section,
+        note: JSON.stringify({ section, clearedAllPins: true }),
+      },
+    }),
+  ])
+
+  revalidateCuration(section)
+}
