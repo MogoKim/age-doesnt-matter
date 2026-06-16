@@ -71,6 +71,19 @@ function normalizeNickname(name: string): string {
     .trim()
 }
 
+// C2(2026-06-16): 원문 카페에서 수입되는 보험/대출 등 영업·광고 댓글 차단.
+//   고정밀 마커만 사용 — 일반 5060 대화에 거의 안 나오는 표현. '상담/문의/카톡' 단독 같은 광범위어는
+//   오탐 방지로 제외(정상 댓글이 잘림). 예: [16] "정식업체 보험119입니다…" 차단.
+const AD_COMMENT_MARKERS = [
+  '정식업체', '보험119', '손해사정', '무료상담', '무료 상담', '상담환영', '상담 환영',
+  '견적문의', '견적 문의', '업체입니다', '오픈톡', '오픈채팅', '카톡아이디', '카톡 아이디',
+  '디엠주세요', 'dm주세요', '쪽지주세요', '연락처 남겨', '대출문의', '저금리', '한도조회',
+]
+function isAdComment(text: string): boolean {
+  const t = text.toLowerCase()
+  return AD_COMMENT_MARKERS.some(m => t.includes(m.toLowerCase()))
+}
+
 function deterministicTargetCount(cafePostId: string, min: number, max: number): number {
   let h = 0
   for (let i = 0; i < cafePostId.length; i++) {
@@ -274,6 +287,14 @@ async function processWaveLegacy(
     return
   }
   const commentText = refComment.trim()
+
+  // C2(2026-06-16): 원문 영업/광고 댓글(보험119 등)이면 게시 제외
+  if (isAdComment(commentText)) {
+    const doneFieldAd = `wave${waveNum}Done` as WaveDoneKey
+    await prisma.commentWaveQueue.update({ where: { id: queue.id }, data: { [doneFieldAd]: true } })
+    console.log(`[WaveProcessor] wave${waveNum}(legacy): 영업/광고 댓글 — 게시 제외 (postId=${queue.postId})`)
+    return
+  }
 
   // C1(2026-06-16): 같은 글에 동일 내용 봇댓글이 이미 있으면 스킵.
   //   legacy는 원문 댓글을 인덱스 wrap-around로 골라 verbatim 게시 → 다른 wave가 같은 댓글을 다른 봇으로 중복 게시하던 버그.
@@ -485,6 +506,7 @@ async function processWaveV2(
     for (const tc of orderedTopComments) {
       const text = removeEmoji(replaceCafeReferences(tc.content?.trim() ?? ''))
       if (text.length < 10) continue
+      if (isAdComment(text)) continue   // C2: 영업/광고 댓글 제외
       if (usedContentSet.has(text)) continue
       sourceCandidates.push(text)
     }
@@ -652,6 +674,7 @@ async function getV2SourceCandidates(
   for (const tc of topComments) {
     const text = removeEmoji(replaceCafeReferences(tc.content?.trim() ?? ''))
     if (text.length < 10) continue
+    if (isAdComment(text)) continue   // C2: 영업/광고 댓글 제외
     if (usedContentSet.has(text)) continue
     candidates.push(text)
   }
