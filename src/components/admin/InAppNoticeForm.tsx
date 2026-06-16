@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { broadcastInAppNotice } from '@/app/admin/(panel)/push/notice-actions'
+import { useRef, useState, useTransition } from 'react'
+import { broadcastInAppNotice, sendNoticeTest } from '@/app/admin/(panel)/push/notice-actions'
 
 export default function InAppNoticeForm() {
+  const formRef = useRef<HTMLFormElement>(null)
   const [result, setResult] = useState<{ error?: string; bellSent?: number; pushSent?: number } | null>(null)
+  const [testResult, setTestResult] = useState<{ error?: string; ok?: string } | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [testPending, startTestTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -20,6 +23,15 @@ export default function InAppNoticeForm() {
     })
   }
 
+  function handleTest() {
+    setTestResult(null)
+    if (!formRef.current) return
+    const formData = new FormData(formRef.current)
+    startTestTransition(async () => {
+      setTestResult(await sendNoticeTest(formData))
+    })
+  }
+
   return (
     <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-6">
       <h2 className="text-lg font-bold text-zinc-900">📢 전체 공지 (인앱 종 알림)</h2>
@@ -28,7 +40,7 @@ export default function InAppNoticeForm() {
         그중 푸시 구독자에게는 OS 푸시도 함께 갑니다. <b className="text-red-600">공지·안내 등 서비스성 내용만</b> (광고·혜택 문구 금지).
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <form ref={formRef} onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div className="space-y-1">
           <label className="block text-sm font-medium text-zinc-700" htmlFor="notice-title">
             제목 <span className="text-zinc-400">(푸시 알림용 · 종 알림엔 내용만 표시)</span>
@@ -69,6 +81,30 @@ export default function InAppNoticeForm() {
             placeholder="/  또는  /community/stories/글ID"
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
           />
+        </div>
+
+        {/* 테스트(나에게만) — 전원 발송 전 본인 폰으로 확인 */}
+        <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-3">
+          <p className="text-xs font-medium text-zinc-600">🧪 먼저 나에게만 테스트 (위 내용으로 1명에게만 발송)</p>
+          <p className="mt-0.5 text-xs text-zinc-400">어드민 계정 ≠ 회원 계정이라, 본인이 가입한 <b>회원 닉네임</b>을 넣으세요. 그 계정으로 종+푸시가 갑니다.</p>
+          <div className="mt-2 flex gap-2">
+            <input
+              type="text"
+              name="testNickname"
+              placeholder="본인 회원 닉네임"
+              className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            />
+            <button
+              type="button"
+              onClick={handleTest}
+              disabled={testPending}
+              className="shrink-0 rounded-lg bg-zinc-800 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-50"
+            >
+              {testPending ? '발송 중…' : '🧪 테스트 발송'}
+            </button>
+          </div>
+          {testResult?.error && <p className="mt-2 text-xs text-red-600">{testResult.error}</p>}
+          {testResult?.ok && <p className="mt-2 text-xs font-medium text-green-700">✅ {testResult.ok}</p>}
         </div>
 
         <label className="flex items-start gap-2 text-sm text-zinc-700">

@@ -69,3 +69,35 @@ export async function broadcastInAppNotice(formData: FormData): Promise<NoticeRe
 
   return { bellSent: realIds.length, pushSent: pushIds.length }
 }
+
+/**
+ * 테스트 발송 — 닉네임으로 지정한 본인 회원 계정 1명에게만 종+푸시.
+ * (어드민 계정 ≠ 회원 계정이라, 테스트 받을 본인 닉네임을 입력받는다.)
+ */
+export async function sendNoticeTest(formData: FormData): Promise<{ error?: string; ok?: string }> {
+  const session = await getAdminSession()
+  if (!session) return { error: '관리자 인증이 필요합니다.' }
+
+  const title = (formData.get('title') as string)?.trim() || '우나어 공지'
+  const body = (formData.get('body') as string)?.trim()
+  const url = (formData.get('url') as string)?.trim() || '/'
+  const nickname = (formData.get('testNickname') as string)?.trim()
+
+  if (!body) return { error: '공지 내용을 먼저 입력해 주세요' }
+  if (!nickname) return { error: '테스트 받을 본인 닉네임을 입력해 주세요' }
+
+  const user = await prisma.user.findUnique({
+    where: { nickname },
+    select: { id: true, nickname: true, providerId: true, status: true, _count: { select: { pushSubscriptions: true } } },
+  })
+  if (!user || user.status !== 'ACTIVE') return { error: `'${nickname}' 회원을 찾을 수 없어요` }
+  if (!isRealUser(user.providerId)) return { error: '실고객 계정이 아니에요(봇/관리자 계정 불가)' }
+
+  await prisma.notification.create({ data: { userId: user.id, type: 'SYSTEM', content: body } })
+  await pushService.notify(user.id, { title, body, url, tag: 'notice' }, 'notice', 'service').catch(() => {})
+
+  const hasPush = user._count.pushSubscriptions > 0
+  return {
+    ok: `${user.nickname}님에게 종 알림 발송${hasPush ? ' + OS 푸시 발송' : ' (이 계정은 푸시 미구독 → 종 알림만 옴)'} 완료`,
+  }
+}
