@@ -26,8 +26,8 @@ import {
 
 export const metadata: Metadata = {
   // title은 layout.tsx 전역 기본값 사용
-  // description은 홈 전용 검색 노출 문구
-  description: '우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티',
+  // description은 홈 전용 검색 노출 문구 — 제목 복붙 금지(구글이 무시하고 본문 스니펫 자동생성). 정체성+공감형으로.
+  description: '남편·자녀·갱년기·노후… 누구에게도 못 했던 속마음을 또래 여성들과 털어놔요. "나만 이런가" 싶을 때 위로가 되는 따뜻한 커뮤니티.',
   alternates: { canonical: '/' },
 }
 
