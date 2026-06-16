@@ -28,8 +28,13 @@ declare global {
   interface Window {
     dataLayer?: Record<string, unknown>[]
     gtag?: (...args: unknown[]) => void
+    /** GtagLoader가 등록 — 전환 이벤트 직전 gtag 로드를 능동 시작 */
+    __unaoEnsureGtag?: () => void
   }
 }
+
+// gtag 지연 로드: GA4_ID 없으면(CI/local/preview) 대기 없이 즉시 resolve
+const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID
 
 // ── 이벤트 큐 (레이스 컨디션 방지) ──
 // gtag.js는 strategy="afterInteractive"로 비동기 로드됨.
@@ -60,6 +65,12 @@ export function markGtagReady(): void {
  */
 export async function waitForGtagReady(timeoutMs = 2000): Promise<void> {
   if (typeof window === 'undefined') return
+  // GA4_ID 없으면 gtag가 영영 로드되지 않음 → 전환 직전 불필요한 2초 대기 금지
+  if (!GA4_ID) return
+  // 전환 이벤트(sign_up/login) 직전 gtag 로드를 능동 시작 (트리거를 기다리지 않음).
+  // OnboardingForm: gtmSignUp() → waitForGtagReady() 순서이므로, 여기서 로드를 시작해야
+  // sign_up이 큐에만 남고 navigation 되는 유실을 막는다.
+  window.__unaoEnsureGtag?.()
   if (_gtagReady) return
   return new Promise((resolve) => {
     const t0 = Date.now()

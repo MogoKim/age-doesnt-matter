@@ -1,37 +1,17 @@
-import Script from 'next/script'
-
-const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID
-const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? 'AW-18086681147'
-
 /**
- * gtag 초기화 (Server Component)
+ * gtag 초기화 — 지연 로드로 이전됨.
  *
- * - gtag-init inline 스크립트 → window.gtag / dataLayer 정의
- * - gtag.js 외부 스크립트는 GtagLoader(Client Component)에서 별도 처리
- * - GTM 스크립트 제거: GTE 내부 트래픽 IP 규칙 직접 편집 권한 확보를 위해
- *   (GA4 추적은 GtagLoader의 gtag/js 직접 로드로 계속 작동)
+ * 이전: gtag-init inline 스크립트(afterInteractive)가 hydration 직후 dataLayer/gtag/config 실행
+ *   → gtag/js(GA4 66KB) + Ads(55KB)가 전 페이지 초기 메인스레드/네트워크 점유.
+ * 변경: dataLayer/gtag stub/config + 외부 gtag/js 삽입 전부를 GtagLoader(Client)가
+ *   3개 트리거(첫 상호작용/idle/4초 백스톱) 중 먼저 오는 시점에 1회 실행.
+ *   → GTMScript는 더 이상 head에 아무것도 주입하지 않는다(배치 유지용 no-op).
  *
- * 주의: 'use client'를 절대 추가하지 마라.
- * Client Component로 바뀌면 dangerouslySetInnerHTML 실행이 지연됨.
+ * 이벤트 유실 방어: gtm.ts _eventQueue가 로드 전 이벤트 보존 → onload markGtagReady() 플러시.
+ *   전환(sign_up)은 waitForGtagReady()→window.__unaoEnsureGtag로 로드 능동 시작.
  */
 export function GTMScript() {
-  return (
-    <>
-      {GA4_ID && (
-        <Script
-          id="gtag-init"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer=window.dataLayer||[];
-function gtag(){dataLayer.push(arguments);}
-gtag('js',new Date());
-gtag('config','${GA4_ID}',{send_page_view:false});
-gtag('config','${GOOGLE_ADS_ID}');`,
-          }}
-        />
-      )}
-    </>
-  )
+  return null
 }
 
 export function GTMNoScript() {
