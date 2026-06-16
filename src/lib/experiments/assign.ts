@@ -30,9 +30,13 @@ export function getDeviceFirstSeen(): number | null {
   return at ? Number.parseInt(at, 10) : null
 }
 
+// djb2 해시 — charCode 단순합(중심극한정리로 평균 몰림)을 곱셈 혼합으로 교체해 균등 분포(5:5 배정) 보장.
+// >>> 0 으로 unsigned 32bit 유지.
 function hashString(s: string): number {
-  let h = 0
-  for (let i = 0; i < s.length; i++) h += s.charCodeAt(i)
+  let h = 5381
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) + h + s.charCodeAt(i)) >>> 0
+  }
   return h
 }
 
@@ -40,6 +44,10 @@ export function getExperimentVariant(experimentId: string): string {
   if (typeof window === 'undefined') return ''
   const exp = getExperiment(experimentId)
   if (!exp || exp.variants.length === 0) return ''
+
+  // 시작 시각 게이트 — stored variant(localStorage 캐시) 읽기보다 **가장 먼저** 적용.
+  // 시작 전(now < startsAt)에는 기존 exp 캐시가 있어도 배정/노출/렌더가 일어나지 않게 빈 문자열 반환.
+  if (exp.startsAt && Date.now() < exp.startsAt) return ''
 
   const storageKey = exp.legacyStorageKey ?? `exp_${experimentId}`
   const stored = localStorage.getItem(storageKey)

@@ -82,12 +82,15 @@ const _getWebExperiments = unstable_cache(
         createdAt: { gte: start },
         eventName: { in: [...exposureEvents, ...conversionEvents] },
       },
-      select: { sessionId: true, userId: true, eventName: true, properties: true },
+      select: { sessionId: true, userId: true, eventName: true, properties: true, createdAt: true },
     })
 
     const states = await loadStates()
 
     return EXPERIMENTS.map((exp) => {
+      // 시작 시점 컷: ExperimentState.startedAt ?? registry startsAt 이전 이벤트 제외(과거 데이터 배제).
+      const st = states[exp.id]
+      const startedMs = st?.startedAt?.getTime() ?? exp.startsAt ?? 0
       // 노출 = sessionId 집합(분모) / 전환 = sign_up properties[variant]의 userId 집합(분자)
       //  → 전환을 userId+properties로 직접 카운트해 인앱→외부 sessionId 단절을 우회.
       const variantSessions: Record<string, Set<string>> = {}
@@ -97,6 +100,7 @@ const _getWebExperiments = unstable_cache(
         variantConv[v.key] = new Set()
       }
       for (const e of events) {
+        if (e.createdAt.getTime() < startedMs) continue // 실험 시작 전 이벤트 제외
         const props =
           typeof e.properties === 'object' && e.properties !== null
             ? (e.properties as Record<string, unknown>)
@@ -137,7 +141,6 @@ const _getWebExperiments = unstable_cache(
         }
       }
 
-      const st = states[exp.id]
       return {
         id: exp.id,
         name: exp.name,

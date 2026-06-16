@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
   // 전환 이벤트(가입 funnel)는 rate limit 면제 — page_view 등과 버킷(event:ip) 공유로 인한 429 유실 방지
   // 전환 + 측정 필수 이벤트는 rate limit 면제 — page_view와 버킷(event:ip) 공유로 인한 429 유실 방지
   // (identity_banner_view·related_post_click: 락인 효과 측정용, 비회원 글뷰마다 발생 → 면제 필요)
-  const CONVERSION_EVENTS = ['post_cta_clicked', 'sign_up', 'signup_step', 'identity_banner_view', 'related_post_click']
+  // (exp1_exposure: A/B 실험 노출=분모. 글뷰마다 발생, 429 유실 시 3화면/D1 비율 왜곡 → 면제 필수)
+  const CONVERSION_EVENTS = ['post_cta_clicked', 'sign_up', 'signup_step', 'identity_banner_view', 'related_post_click', 'exp1_exposure']
   if (!CONVERSION_EVENTS.includes(body.eventName)) {
     const rl = await checkApiRateLimit(request, 'event', { max: 30 })
     if (rl) return rl

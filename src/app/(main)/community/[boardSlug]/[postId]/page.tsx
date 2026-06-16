@@ -15,6 +15,7 @@ import { sanitizeHtml, proxyR2Images } from '@/lib/sanitize'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import PostListBottom from '@/components/features/community/PostListBottom'
+import NextPostsInline from '@/components/features/community/NextPostsInline'
 import IdentityBanner from '@/components/features/community/IdentityBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
@@ -203,6 +204,10 @@ export default async function PostDetailPage({ params }: PageProps) {
       <div className="mb-8">
         <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
       </div>
+
+      {/* 실험 exp1_related_flow — 본문 직후(광고① 다음, 댓글 전) "다음에 읽기 좋은 이야기".
+          B variant 만 카드 렌더, A/B 모두 노출 기록(클라). 하단 PostListBottom 은 그대로 유지. */}
+      <NextPostsInline postId={resolvedId} boardSlug={boardSlug} posts={related.slice(0, 3)} />
 
       {/* 댓글 — Suspense로 지연 로딩 */}
       <Suspense fallback={

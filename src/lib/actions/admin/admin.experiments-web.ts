@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 
@@ -48,4 +48,7 @@ export async function adminSaveExperimentState(
   })
 
   revalidatePath('/admin/ab-tests')
+  // 리텐션 집계(unstable_cache tags:['experiment-state'])를 즉시 무효화 — startedAt/status 변경이 화면에 바로 반영.
+  // (데이터 저장은 위 upsert 로 이미 정확. 이 태그 무효화는 "화면 지연"만 해소.)
+  revalidateTag('experiment-state')
 }

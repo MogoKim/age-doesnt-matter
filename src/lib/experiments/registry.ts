@@ -45,6 +45,12 @@ export interface ExperimentDef {
   legacyStorageKey?: string
   /** 기존 해시 분기 호환: 해시에 더하는 오프셋 (예: 타이밍 실험은 +7 로 콘텐츠와 직교) */
   hashOffset?: number
+  /**
+   * 실험 시작 시각 (epoch ms). 이 시각 전에는 assign.ts 가 variant 배정·노출·렌더를 모두 막는다(빈 문자열 반환).
+   * 배포와 실험 시작을 분리하는 클라이언트 게이트. 어드민 ExperimentState.startedAt 과 동일 시각으로 맞춘다.
+   * (status 는 어드민 기록·집계 상태일 뿐 클라이언트 중단 장치가 아니다 — 즉시 중단은 weight=0 또는 코드 배포)
+   */
+  startsAt?: number
 }
 
 // [2026-06-09] f01_signup_content(문구 A/B/C)·f01_signup_timing(타이밍 A/B) 실험 종료.
@@ -54,8 +60,36 @@ export interface ExperimentDef {
 //   근거: 가입자·비회원 재방문 모두 A 우세(비회원 D1 18.3% vs 6.7%, 통계 유의). hard 게이트(C)는
 //   가입수만 부풀리고 "다시 올 구경꾼"의 재방문을 소각 → 진성 효율 KPI에서 손해. 게이트 코드 제거, A/B 인프라 유지.
 //   상세: docs/features/F16-twa-gate-experiment-archive.md
-// 현재 운영 중인 실험 없음. 새 실험은 이 배열에 ExperimentDef 추가(파일 상단 표준 절차 참조).
-export const EXPERIMENTS: ExperimentDef[] = []
+// [2026-06-16] exp1_related_flow — 글 상세 본문 직후 "다음에 읽기 좋은 이야기" 카드(A/B 50:50).
+//   winner 판단은 어드민 RetentionPanel(3화면 도달률·D1·세션 page_view·inline 카드클릭) 기준.
+//   conversionEvent=sign_up 은 ExperimentDef 타입 필수값일 뿐 — sign_up 엔 related_flow 가 실리지 않으므로
+//   기존 가입 전환 카드(ExperimentCard)는 어드민에서 표시하지 않는다(가입 전환율 0/무의미 값 오해 방지).
+//   배정·노출은 startsAt 이후에만 발생.
+export const EXPERIMENTS: ExperimentDef[] = [
+  {
+    id: 'exp1_related_flow',
+    name: '글 상세 — 다음에 읽기 좋은 이야기 카드',
+    purpose: '본문 직후 관련글 3개 카드로 다음 글 이동을 유도해 3화면 도달률·D1을 높인다',
+    background:
+      '웹 유입 D1 1~3%(앱 12%의 1/10). 첫날 3화면+ 둘러보면 D1 12.7%. 현재 관련글은 맨 아래(광고·댓글 뒤)에만 있어 도달 전 이탈.',
+    hypothesis:
+      '광고① 다음에 "다음에 읽기 좋은 이야기" 3개를 노출하면 다음 글 클릭↑ → 3화면 도달↑ → D1↑. 광고·댓글·하단 관련글은 보존.',
+    howToVerify:
+      'winner 판단은 어드민 RetentionPanel(3화면 도달률·D1·세션 page_view·inline 카드클릭) 기준. sign_up 엔 related_flow 가 안 실려 가입 전환 카드는 표시하지 않는다(오해 방지). AdSense RPM 은 variant 분리 불가 → 전체 수익 가드레일.',
+    owner: '창업자',
+    // 시작 시각(KST) — 창업자 확정 후 이 값 교체 + 어드민 ExperimentState.startedAt 동일 설정.
+    // 현재는 먼 미래값이라 배포해도 노출/렌더 비활성(시작 전 안전).
+    startsAt: Date.parse('2026-12-31T00:00:00+09:00'),
+    variants: [
+      { key: 'A', label: 'A 대조군(현행)', description: '본문 직후 카드 없음 — 관련글은 하단에만(현행 유지)', weight: 50 },
+      { key: 'B', label: 'B 본문직후 카드', description: '광고① 다음에 "다음에 읽기 좋은 이야기" 3개 카드 노출(하단 관련글도 유지)', weight: 50 },
+    ],
+    exposureEvent: 'exp1_exposure',
+    // ExperimentDef 타입 필수값 — sign_up 엔 related_flow 가 안 실리므로 가입 전환 카드는 어드민에서 미표시(RetentionPanel 로만 판단).
+    conversionEvent: 'sign_up',
+    variantProperty: 'related_flow',
+  },
+]
 
 export function getExperiment(id: string): ExperimentDef | undefined {
   return EXPERIMENTS.find((e) => e.id === id)
