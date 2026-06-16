@@ -128,18 +128,21 @@ export async function createHomeCurationOverride(input: CreateOverrideInput) {
       })
     }
 
-    // 4. PIN position: operationally active PIN만 count
+    // 4. PIN position: 맨 위(1)에 삽입 — 기존 active PIN을 한 칸씩 뒤로 밀어 버튼('📌 맨 위 고정')과 일치시킨다.
+    //    (과거 'pinCount+1=맨 뒤' 방식은 best가 이미 24개 PIN으로 차 있을 때 새 PIN이 position 25가 되어
+    //     어드민 미리보기 24개 윈도우(composeBestHot limit:24)에서 잘려 "고정했는데 안 보이는" 버그였음)
     let position: number | null = input.position ?? null
     if (input.action === 'PIN' && position === null) {
-      const pinCount = await tx.homeCurationOverride.count({
+      await tx.homeCurationOverride.updateMany({
         where: {
           section: input.section,
           action: 'PIN',
           isActive: true,
           OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
         },
+        data: { position: { increment: 1 } },
       })
-      position = pinCount + 1
+      position = 1
     }
 
     // 5. 신규 override insert
