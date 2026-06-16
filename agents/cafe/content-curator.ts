@@ -167,7 +167,26 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
  * 글 자신 카테고리(없으면 GENERAL=자유수다)로 STORY 재라우팅한다. 단방향(LIFE2→STORY)만 — STORY 글은 불변·새 오염 없음.
  * B(페르소나 board 매칭)와 generateCuratedPost가 동일 결과를 쓰도록 단일 헬퍼로 통일.
  */
-function resolveBoardForPost(ownDesire: string | null | undefined, bucketDesire: string): { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; category: string } {
+// C4(2026-06-16): 우울·자살관념·암·사망·중병 등 '심각/민감' 글은 유머·취미 게시판에 배정 금지.
+//   원문 카페 인기글을 그대로 가져오다 보니 무거운 글이 HUMOR/엔터·TV·취미로 오배치됨
+//   (예: 갱년기 우울 "사라지고 싶다"→유머, 엄마 암 종양→취미). STORY 고민/건강으로 강제 보정.
+const SENSITIVE_DEPRESSION = ['사라지고 싶', '죽고 싶', '죽고싶', '살기 싫', '살기싫', '극단적 선택', '우울증', '의욕이 사라', '삶을 포기', '자해']
+const SENSITIVE_MEDICAL = ['암센터', '종양', '암 진단', '암진단', '시한부', '말기암', '임종', '장례', '호스피스', '중환자실', '뇌출혈', '투병', '복수가 차']
+function applySensitiveBoardOverride(
+  text: string,
+  board: { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; category: string },
+): { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; category: string } {
+  const med = SENSITIVE_MEDICAL.some(k => text.includes(k))
+  const dep = SENSITIVE_DEPRESSION.some(k => text.includes(k))
+  if (!med && !dep) return board
+  // 유머/엔터·TV/취미 배정만 보정(STORY 고민/건강으로). 이미 적절한 곳이면 그대로.
+  if (board.boardType === 'HUMOR' || board.category === '취미') {
+    return { boardType: 'STORY', category: med ? '건강' : '고민' }
+  }
+  return board
+}
+
+function resolveBoardForPost(ownDesire: string | null | undefined, bucketDesire: string, text?: string): { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; category: string } {
   const isOwnLife2 = !!(ownDesire && LIFE2_SOURCE_DESIRES.has(ownDesire))
   const effectiveDesire = isOwnLife2 ? ownDesire! : bucketDesire
   let board = resolveCommunityBoard(effectiveDesire)
@@ -175,6 +194,7 @@ function resolveBoardForPost(ownDesire: string | null | undefined, bucketDesire:
     board = resolveCommunityBoard(ownDesire ?? 'GENERAL')
     if (board.boardType === 'LIFE2') board = resolveCommunityBoard('GENERAL')
   }
+  if (text) board = applySensitiveBoardOverride(text, board)
   return board
 }
 
@@ -188,7 +208,7 @@ async function generateCuratedPost(
   const mainRef = referencePosts[0]
   if (!mainRef) return null
 
-  const boardInfo = resolveBoardForPost(mainRef.desireCategory, desireCat ?? 'GENERAL')
+  const boardInfo = resolveBoardForPost(mainRef.desireCategory, desireCat ?? 'GENERAL', `${mainRef.title} ${mainRef.content}`)
 
   const title = replaceCafeReferences(stripMarkdown(mainRef.title.trim()))
   if (!title) return null
@@ -542,7 +562,7 @@ export async function main() {
     }
 
     // 페르소나 선택 — 발행 게시판 소속(board 필터) + 글 제목 기반 매칭 + AUTHOR_DAILY_CAP 체크
-    const board = resolveBoardForPost(refs[0].desireCategory, desireCat)
+    const board = resolveBoardForPost(refs[0].desireCategory, desireCat, `${refs[0].title} ${refs[0].content}`)
     let persona = matchPersona(refs[0].title, desireCat, board.boardType)
     const todayCount = await countTodayPostsByPersona(persona.id)
     if (todayCount >= AUTHOR_DAILY_POST_CAP) {
