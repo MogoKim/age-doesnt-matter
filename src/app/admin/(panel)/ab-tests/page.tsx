@@ -245,7 +245,7 @@ export default async function AdminAbTestsPage({
         <div>
           <h1 className="text-xl font-bold text-zinc-900">🧪 웹 A/B 테스트</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            화면·문구·타이밍 실험의 variant별 가입 전환을 비교합니다. (봇 제외 · sessionId 기준)
+            화면·문구·타이밍 실험의 variant별 성과를 비교합니다. (실험별 가입 전환 또는 리텐션 · 봇 제외 · sessionId 기준)
           </p>
         </div>
         <PeriodFilter />
