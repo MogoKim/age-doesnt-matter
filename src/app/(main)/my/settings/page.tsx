@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { getMySettings } from '@/lib/queries/my'
 import FontSizeSettings from '@/components/features/my/FontSizeSettings'
+import PushEnableButton from '@/components/features/my/PushEnableButton'
 import NicknameSettings from '@/components/features/my/NicknameSettings'
 import BlockedUserList from '@/components/features/my/BlockedUserList'
 import PrivacySettings from '@/components/features/my/PrivacySettings'
@@ -43,6 +44,12 @@ export default async function MySettingsPage() {
         <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
           <h2 className="text-body font-bold text-foreground mb-4">글자 크기</h2>
           <FontSizeSettings currentSize={settings.fontSize} />
+        </section>
+
+        {/* 휴대폰 알림(OS 푸시) */}
+        <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
+          <h2 className="text-body font-bold text-foreground mb-4">휴대폰 알림</h2>
+          <PushEnableButton />
         </section>
 
         {/* 정보 공개 설정 */}

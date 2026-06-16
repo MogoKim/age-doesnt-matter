@@ -9,13 +9,16 @@ export default function InAppNoticeForm() {
   const [testResult, setTestResult] = useState<{ error?: string; ok?: string } | null>(null)
   const [isPending, startTransition] = useTransition()
   const [testPending, startTestTransition] = useTransition()
+  const [target, setTarget] = useState<'all' | 'no_sub'>('all')
+
+  const targetLabel = target === 'no_sub' ? '알림 미설정 회원(OS 푸시 구독 없는 회원)' : '전체 실고객 전원'
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setResult(null)
     const form = e.currentTarget
     const formData = new FormData(form)
-    if (!window.confirm('전체 실고객 전원에게 종 알림을 발송합니다. 되돌릴 수 없어요. 발송할까요?')) return
+    if (!window.confirm(`${targetLabel}에게 종 알림을 발송합니다. 되돌릴 수 없어요. 발송할까요?`)) return
     startTransition(async () => {
       const res = await broadcastInAppNotice(formData)
       setResult(res)
@@ -41,6 +44,20 @@ export default function InAppNoticeForm() {
       </p>
 
       <form ref={formRef} onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-zinc-700">발송 대상</label>
+          <div className="flex flex-col gap-2 rounded-lg border border-zinc-200 bg-white p-3">
+            <label className="flex items-center gap-2 text-sm text-zinc-700">
+              <input type="radio" name="target" value="all" checked={target === 'all'} onChange={() => setTarget('all')} className="h-4 w-4" />
+              <span>전체 회원 <span className="text-zinc-400">(구독·동의 무관 전원)</span></span>
+            </label>
+            <label className="flex items-center gap-2 text-sm text-zinc-700">
+              <input type="radio" name="target" value="no_sub" checked={target === 'no_sub'} onChange={() => setTarget('no_sub')} className="h-4 w-4" />
+              <span>알림 미설정 회원만 <span className="text-zinc-400">(OS 푸시 구독 0 · 재설정 안내용 → 이동 경로를 /my/settings 권장)</span></span>
+            </label>
+          </div>
+        </div>
+
         <div className="space-y-1">
           <label className="block text-sm font-medium text-zinc-700" htmlFor="notice-title">
             제목 <span className="text-zinc-400">(푸시 알림용 · 종 알림엔 내용만 표시)</span>
@@ -78,7 +95,7 @@ export default function InAppNoticeForm() {
             id="notice-url"
             name="url"
             type="text"
-            placeholder="/  또는  /community/stories/글ID"
+            placeholder="/my/settings (알림 켜기 안내)  또는  /community/stories/글ID"
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
           />
         </div>
@@ -109,7 +126,7 @@ export default function InAppNoticeForm() {
 
         <label className="flex items-start gap-2 text-sm text-zinc-700">
           <input type="checkbox" name="confirm" className="mt-0.5 h-4 w-4" />
-          <span>전체 실고객 전원에게 발송하는 것을 확인합니다 (되돌릴 수 없음).</span>
+          <span><b>{targetLabel}</b>에게 발송하는 것을 확인합니다 (되돌릴 수 없음).</span>
         </label>
 
         {result?.error && <p className="text-sm text-red-600">{result.error}</p>}

@@ -16,7 +16,10 @@ export function canAskPushPermission(): boolean {
   if (!deniedAt) return true  // 한 번도 안 물어봄
 
   const count = parseInt(localStorage.getItem('push_denied_count') ?? '1')
-  const waitMs = count >= 2 ? 30 * 86400_000 : 86400_000  // 2회 이상 = 30일
+  // 점증 쿨다운: 1회=1일 / 2회=7일 / 3회+=14일 (과거 30일 일괄 → 재요청 기회 확대)
+  const waitMs = count >= 3 ? 14 * 86400_000
+    : count === 2 ? 7 * 86400_000
+    : 86400_000
   return Date.now() - new Date(deniedAt).getTime() >= waitMs
 }
 

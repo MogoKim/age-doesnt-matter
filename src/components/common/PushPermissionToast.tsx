@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAppSession } from '@/components/common/AppSessionProvider'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 import { canAskPushPermission, recordDenied, recordGranted } from '@/lib/push/permission'
+import { subscribeToPush } from '@/lib/push/subscribe'
 import { flags } from '@/lib/feature-flags'
 import { trackEvent } from '@/lib/track'
 
@@ -98,34 +99,16 @@ export function PushPermissionToast() {
   async function handleAllow() {
     setVisible(false)
     const t = trigger
-    try {
-      const permission = await Notification.requestPermission()
-      if (permission !== 'granted') {
-        recordDenied()
-        trackEvent('push_prompt_denied', { trigger: t, reason: 'blocked' })
-        return
-      }
+    // 구독 생성은 공용 함수(설정 '알림 받기' 버튼과 공유). 후처리(기록/트래킹)는 여기서.
+    const result = await subscribeToPush()
+    if (result === 'granted') {
       recordGranted()
-
-      const reg = await navigator.serviceWorker.ready
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-      if (!vapidKey) return
-
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
-      })
-
-      // 구독 저장 — 라우트가 성공 시 마케팅 동의(marketingOptIn+Agreement)도 함께 기록(원자적, 주의#3)
-      await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sub.toJSON()),
-      })
       trackEvent('push_prompt_allowed', { trigger: t })
-    } catch {
-      // 실패해도 UI에 영향 없음
+    } else if (result === 'denied') {
+      recordDenied()
+      trackEvent('push_prompt_denied', { trigger: t, reason: 'blocked' })
     }
+    // unsupported/error: 권한 허용됐으나 저장 실패 등 — 기록 안 함(다음 기회에 재시도). UI 영향 없음.
   }
 
   function handleLater() {
@@ -174,12 +157,4 @@ export function setPushToastTrigger(type: TriggerType) {
     /* sessionStorage 불가 환경 무시 */
   }
   window.dispatchEvent(new CustomEvent('unao:push-trigger'))
-}
-
-// VAPID public key (URL-safe Base64) → Uint8Array 변환
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const rawData = window.atob(base64)
-  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)))
 }

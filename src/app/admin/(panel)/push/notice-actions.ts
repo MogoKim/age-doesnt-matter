@@ -27,14 +27,16 @@ export async function broadcastInAppNotice(formData: FormData): Promise<NoticeRe
   const body = (formData.get('body') as string)?.trim()
   const url = (formData.get('url') as string)?.trim() || '/'
   const confirmed = formData.get('confirm') === 'on'
+  // 발송 대상: 'all'=전체 실고객 / 'no_sub'=OS푸시 미구독자만(재구독 유도 안내용)
+  const target = (formData.get('target') as string) === 'no_sub' ? 'no_sub' : 'all'
 
   if (!body) return { error: '공지 내용을 입력해 주세요' }
   if (body.length > 200) return { error: '내용은 200자 이내로 입력해 주세요' }
   if (!confirmed) return { error: '전체 발송 확인란을 체크해 주세요' }
 
-  // 1. 대상: ACTIVE 실고객(providerId 순수숫자) — 봇 제외
+  // 1. 대상: ACTIVE 실고객(providerId 순수숫자) — 봇 제외. no_sub이면 푸시 구독 없는 회원만.
   const users = await prisma.user.findMany({
-    where: { status: 'ACTIVE' },
+    where: { status: 'ACTIVE', ...(target === 'no_sub' ? { pushSubscriptions: { none: {} } } : {}) },
     select: { id: true, providerId: true },
   })
   const realIds = users.filter(u => isRealUser(u.providerId)).map(u => u.id)
