@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import PushBroadcastForm from './PushBroadcastForm'
+import InAppNoticeForm from '@/components/admin/InAppNoticeForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,6 +51,9 @@ export default async function AdminPushPage() {
       </details>
 
       <PushBroadcastForm subUsers={subUsers} consentUsers={consentUsers} />
+
+      {/* 전체 공지(인앱 종 알림 전원 + 구독자 OS푸시) — 구독·동의 무관 전원 도달 */}
+      <InAppNoticeForm />
     </div>
   )
 }
