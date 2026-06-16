@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useTransition, type ReactNode } from 'react'
-import { markNotificationRead } from '@/lib/actions/notifications'
+import { recordNotificationClick } from '@/lib/actions/notifications'
 
 interface NotificationLinkProps {
   notificationId: string
@@ -15,11 +15,10 @@ export default function NotificationLink({ notificationId, href, isRead, childre
   const [, startTransition] = useTransition()
 
   function handleClick() {
-    if (!isRead) {
-      startTransition(async () => {
-        await markNotificationRead(notificationId)
-      })
-    }
+    // 항상 클릭 기록(읽음 여부 무관) — 최초 클릭 시각·읽음 처리
+    startTransition(async () => {
+      await recordNotificationClick(notificationId)
+    })
   }
 
   return (

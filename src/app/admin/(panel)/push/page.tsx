@@ -1,14 +1,17 @@
 import { prisma } from '@/lib/prisma'
 import PushBroadcastForm from './PushBroadcastForm'
 import InAppNoticeForm from '@/components/admin/InAppNoticeForm'
+import NoticeHistory from '@/components/admin/NoticeHistory'
+import { getNoticeHistory } from '@/lib/queries/admin/admin.notices'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminPushPage() {
   // 구독 회원(푸시 허용) / 그중 마케팅 동의(광고 발송 가능) — 실고객·ACTIVE 기준
-  const [subUsers, consentUsers] = await Promise.all([
+  const [subUsers, consentUsers, noticeHistory] = await Promise.all([
     prisma.user.count({ where: { status: 'ACTIVE', pushSubscriptions: { some: {} } } }),
     prisma.user.count({ where: { status: 'ACTIVE', pushSubscriptions: { some: {} }, marketingOptIn: true } }),
+    getNoticeHistory(),
   ])
 
   return (
@@ -54,6 +57,9 @@ export default async function AdminPushPage() {
 
       {/* 전체 공지(인앱 종 알림 전원 + 구독자 OS푸시) — 구독·동의 무관 전원 도달 */}
       <InAppNoticeForm />
+
+      {/* 공지 발송 이력 + 성과(읽음/클릭) */}
+      <NoticeHistory notices={noticeHistory} />
     </div>
   )
 }

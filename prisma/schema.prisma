@@ -581,16 +581,36 @@ model Notification {
   content    String
   postId     String?
   linkUrl    String?          // 공지 등 글과 무관한 알림의 이동 경로(예: /best). 없으면 postId→글, 그것도 없으면 알림목록.
+  noticeId   String?          // 전체 공지(Notice) 묶음 — 공지별 성과 집계용
+  clickedAt  DateTime?        // 알림 클릭 시각 — 공지 클릭(행동) 추적
   fromUserId String?
   isRead     Boolean          @default(false)
   createdAt  DateTime         @default(now())
 
-  user     User  @relation("notificationOwner", fields: [userId], references: [id], onDelete: Cascade)
-  fromUser User? @relation("notificationSender", fields: [fromUserId], references: [id])
-  post     Post? @relation("notificationPost", fields: [postId], references: [id], onDelete: SetNull)
+  user     User    @relation("notificationOwner", fields: [userId], references: [id], onDelete: Cascade)
+  fromUser User?   @relation("notificationSender", fields: [fromUserId], references: [id])
+  post     Post?   @relation("notificationPost", fields: [postId], references: [id], onDelete: SetNull)
+  notice   Notice? @relation(fields: [noticeId], references: [id], onDelete: SetNull)
 
   @@index([userId, isRead, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
+  @@index([noticeId])
+}
+
+// 전체 공지(인앱 종 알림) 1건 = 1행. 발송·성과 집계의 묶음 단위.
+model Notice {
+  id               String   @id @default(cuid())
+  title            String
+  body             String
+  url              String   @default("/")
+  sentBell         Int      @default(0) // 종 알림 발송 수
+  sentPush         Int      @default(0) // OS 푸시 발송 수
+  createdByAdminId String
+  createdAt        DateTime @default(now())
+
+  notifications Notification[]
+
+  @@index([createdAt(sort: Desc)])
 }
 
 model UserBlock {

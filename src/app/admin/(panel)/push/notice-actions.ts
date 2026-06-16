@@ -40,6 +40,11 @@ export async function broadcastInAppNotice(formData: FormData): Promise<NoticeRe
   const realIds = users.filter(u => isRealUser(u.providerId)).map(u => u.id)
   if (realIds.length === 0) return { error: '발송 대상 회원이 없습니다' }
 
+  // 1.5 공지 레코드 생성 — 성과 집계 묶음(이력 화면)
+  const notice = await prisma.notice.create({
+    data: { title, body, url, createdByAdminId: session.adminId },
+  })
+
   // 2. 종 알림 전원 — createMany 청크(시드니 DB 왕복 고려, 루프-단건 금지)
   const BELL_CHUNK = 500
   for (let i = 0; i < realIds.length; i += BELL_CHUNK) {
@@ -48,7 +53,8 @@ export async function broadcastInAppNotice(formData: FormData): Promise<NoticeRe
         userId: id,
         type: 'SYSTEM' as const,
         content: body,
-        linkUrl: url,  // 종 알림 클릭 시 이동 (예: /best)
+        linkUrl: url,         // 종 알림 클릭 시 이동 (예: /best)
+        noticeId: notice.id,  // 공지 묶음 — 성과 집계용
       })),
     })
   }
@@ -67,6 +73,12 @@ export async function broadcastInAppNotice(formData: FormData): Promise<NoticeRe
       ),
     )
   }
+
+  // 발송 수 기록(성과 화면용)
+  await prisma.notice.update({
+    where: { id: notice.id },
+    data: { sentBell: realIds.length, sentPush: pushIds.length },
+  })
 
   return { bellSent: realIds.length, pushSent: pushIds.length }
 }
