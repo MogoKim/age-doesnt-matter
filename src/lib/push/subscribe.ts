@@ -58,3 +58,26 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
     return 'error'
   }
 }
+
+/**
+ * OS 푸시 구독 해제: 브라우저 구독 취소 + 서버 레코드 삭제.
+ * 설정 '알림 끄기' 버튼에서 사용. (OS 권한 자체는 유지 — 다시 켜기 가능)
+ */
+export async function unsubscribeFromPush(): Promise<'ok' | 'error'> {
+  try {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return 'error'
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    if (!sub) return 'ok' // 이미 구독 없음
+    const endpoint = sub.endpoint
+    await sub.unsubscribe()
+    await fetch('/api/push/subscribe', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint }),
+    })
+    return 'ok'
+  } catch {
+    return 'error'
+  }
+}

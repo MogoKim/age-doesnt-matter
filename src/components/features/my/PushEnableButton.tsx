@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppEnvironment } from '@/hooks/useAppEnvironment'
-import { subscribeToPush } from '@/lib/push/subscribe'
+import { subscribeToPush, unsubscribeFromPush } from '@/lib/push/subscribe'
 
 /**
  * 설정 페이지 '휴대폰 알림 받기' — 자동 토스트와 별개의 영구 진입점.
@@ -43,6 +43,19 @@ export default function PushEnableButton() {
     }
   }
 
+  async function handleDisable() {
+    setBusy(true); setMsg(null)
+    const r = await unsubscribeFromPush()
+    setBusy(false)
+    if (r === 'ok') {
+      setHasSub(false); setOk(false)
+      setMsg('휴대폰 알림을 껐어요. 언제든 다시 켤 수 있어요.')
+    } else {
+      setOk(false)
+      setMsg('잠시 후 다시 시도해 주세요.')
+    }
+  }
+
   // 1) 미지원 환경
   if (!env.supportsWebPush) {
     return (
@@ -61,12 +74,23 @@ export default function PushEnableButton() {
     )
   }
 
-  // 3) 이미 구독 중
-  if (hasSub === true && !busy) {
+  // 3) 이미 구독 중 — 끄기 버튼 제공
+  if (hasSub === true) {
     return (
-      <div className="flex items-center gap-2">
-        <span className="text-[18px]" aria-hidden>🔔</span>
-        <p className="text-[17px] font-medium text-foreground">휴대폰 알림이 켜져 있어요</p>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[18px]" aria-hidden>🔔</span>
+          <p className="text-[17px] font-medium text-foreground">휴대폰 알림이 켜져 있어요</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleDisable}
+          disabled={busy}
+          className="h-[52px] w-full rounded-xl border border-border bg-background text-[17px] font-semibold text-muted-foreground active:opacity-80 disabled:opacity-50"
+        >
+          {busy ? '끄는 중…' : '🔕 알림 끄기'}
+        </button>
+        {msg && <p className="text-[15px] leading-snug text-muted-foreground">{msg}</p>}
       </div>
     )
   }

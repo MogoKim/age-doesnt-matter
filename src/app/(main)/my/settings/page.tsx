@@ -6,7 +6,6 @@ import FontSizeSettings from '@/components/features/my/FontSizeSettings'
 import PushEnableButton from '@/components/features/my/PushEnableButton'
 import NicknameSettings from '@/components/features/my/NicknameSettings'
 import BlockedUserList from '@/components/features/my/BlockedUserList'
-import PrivacySettings from '@/components/features/my/PrivacySettings'
 import WithdrawSection from '@/components/features/my/WithdrawSection'
 
 export const metadata = { title: '설정' }
@@ -30,6 +29,12 @@ export default async function MySettingsPage() {
       <h1 className="text-xl font-bold text-foreground mb-6">⚙️ 설정</h1>
 
       <div className="space-y-6">
+        {/* 휴대폰 알림(OS 푸시) — 중요도 상 최상단 */}
+        <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
+          <h2 className="text-body font-bold text-foreground mb-4">휴대폰 알림</h2>
+          <PushEnableButton />
+        </section>
+
         {/* 닉네임 변경 */}
         <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
           <h2 className="text-body font-bold text-foreground mb-4">닉네임 변경</h2>
@@ -44,21 +49,6 @@ export default async function MySettingsPage() {
         <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
           <h2 className="text-body font-bold text-foreground mb-4">글자 크기</h2>
           <FontSizeSettings currentSize={settings.fontSize} />
-        </section>
-
-        {/* 휴대폰 알림(OS 푸시) */}
-        <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
-          <h2 className="text-body font-bold text-foreground mb-4">휴대폰 알림</h2>
-          <PushEnableButton />
-        </section>
-
-        {/* 정보 공개 설정 */}
-        <section className="bg-card rounded-2xl p-4 md:p-6 border border-border">
-          <h2 className="text-body font-bold text-foreground mb-4">정보 공개 설정</h2>
-          <PrivacySettings
-            isGenderPublic={settings.isGenderPublic}
-            isRegionPublic={settings.isRegionPublic}
-          />
         </section>
 
         {/* 차단 관리 */}
