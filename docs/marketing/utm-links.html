@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우나어 UTM 링크 관리</title>
+<style>
+  :root{--primary:#FF6F61;--ink:#111827;--muted:#565E6B;--border:#E5E7EB;--bg:#F8F9FA;--card:#fff;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:-apple-system,'Pretendard',sans-serif;background:var(--bg);color:var(--ink);padding:28px 18px 60px;line-height:1.5;}
+  .wrap{max-width:920px;margin:0 auto;}
+  h1{font-size:24px;font-weight:800;margin-bottom:4px;}
+  .upd{color:var(--muted);font-size:14px;margin-bottom:24px;}
+  h2{font-size:19px;font-weight:700;margin:28px 0 6px;padding-top:18px;border-top:2px solid var(--border);}
+  h3{font-size:16px;font-weight:700;margin:18px 0 8px;color:var(--primary);}
+  p.desc{color:var(--muted);font-size:14px;margin-bottom:10px;}
+  .row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+  .row .label{font-weight:700;font-size:14px;min-width:130px;flex-shrink:0;}
+  .row code{flex:1;font-size:13px;color:#1d4ed8;word-break:break-all;font-family:ui-monospace,monospace;}
+  .row button{flex-shrink:0;border:none;background:var(--primary);color:#fff;font-size:13px;font-weight:700;padding:7px 12px;border-radius:8px;cursor:pointer;}
+  .row button:active{opacity:.7;}
+  .row button.done{background:#1F8A47;}
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card);border-radius:10px;overflow:hidden;margin-bottom:8px;}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--border);}
+  th{background:#F1F3F5;font-weight:700;}
+  .note{background:#FFF0ED;border-left:3px solid var(--primary);padding:10px 14px;border-radius:6px;font-size:13.5px;color:#7a3b34;margin:12px 0;}
+  .tag{display:inline-block;background:#EEF;color:#3730a3;font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔗 우나어 UTM 링크 관리</h1>
+  <p class="upd">최종 갱신: 2026-06-16 · 모든 유입 링크의 단일 진실 문서 · 링크 우측 <b>복사</b> 버튼 클릭</p>
+
+  <h2>A. 수동 공유 링크 (직접 뿌리는 것)</h2>
+  <p class="desc">채널별로 <b>하나만</b> 써야 GA4가 안 헷갈립니다. 앱유입(/go) vs 웹유입(/?utm) 목적 구분.</p>
+
+  <h3>A-1. 앱 유입용 <span class="tag">안드=앱 / iOS·PC=웹</span></h3>
+  <div id="app-links"></div>
+
+  <h3>A-2. 웹 유입용 <span class="tag">무조건 웹 홈</span></h3>
+  <div id="web-links"></div>
+
+  <div class="note">⚠️ 같은 채널이라도 A-1(/go)과 A-2(/?utm)를 <b>동시에 쓰지 마세요.</b> 앱 깔리길 원하면 /go, 웹으로 바로 보낼 거면(구글애즈 등) /?utm.</div>
+
+  <h2>B. 코드가 자동으로 붙이는 UTM <span class="tag">관리 불필요</span></h2>
+  <p class="desc">시스템이 자동 추적. 손대지 않아도 됩니다 (참고용).</p>
+  <table>
+    <tr><th>출처</th><th>utm_source / medium</th><th>코드 위치</th></tr>
+    <tr><td>추천 띠배너(카톡공유)</td><td>member_referral·guest_referral / kakao_share</td><td>TopPromoBannerClient.tsx</td></tr>
+    <tr><td>게시글 카톡공유</td><td>post_share / kakao_share</td><td>lib/kakao-share.ts</td></tr>
+    <tr><td>PWA 설치 배너</td><td>kakao_inapp·naver_inapp·instagram_inapp / pwa_banner</td><td>AddToHomeScreen.tsx</td></tr>
+    <tr><td>가입유도 배너</td><td>{환경} / signup_banner</td><td>SignupPromptBanner.tsx</td></tr>
+    <tr><td>웹푸시 알림</td><td>webpush / push (campaign=동적)</td><td>lib/push/service.ts</td></tr>
+    <tr><td>플레이스토어 설치 referrer</td><td>website / footer (app_install)</td><td>lib/app-links.ts</td></tr>
+    <tr><td>플레이스토어 유입 표시</td><td>google-play / organic</td><td>lib/gtm.ts</td></tr>
+  </table>
+
+  <h2>작명 규칙 & GA4</h2>
+  <p class="desc"><b>작명</b>: <code style="color:var(--ink)">{광고유형}_{목적}_{차수}</code> — 예: demandgen_여성가입_1차, search_브랜드_1차</p>
+  <p class="desc"><b>GA4 성과</b>: 탐색 → 세션 캠페인 필터 + 이벤트 sign_up → 광고비 ÷ 가입자 = 가입 1명당 광고비(CPA)</p>
+</div>
+
+<script>
+  const appLinks = [
+    ['네이버 매거진', 'https://age-doesnt-matter.com/go/naver-mag'],
+    ['네이버 체험단', 'https://age-doesnt-matter.com/go/naver-exp'],
+    ['스레드', 'https://age-doesnt-matter.com/go/threads'],
+    ['인스타그램', 'https://age-doesnt-matter.com/go/instagram'],
+    ['페이스북', 'https://age-doesnt-matter.com/go/facebook'],
+    ['카카오톡', 'https://age-doesnt-matter.com/go/kakao'],
+  ];
+  const webLinks = [
+    ['네이버 매거진', 'https://age-doesnt-matter.com/?utm_source=naver&utm_medium=blog&utm_campaign=magazine'],
+    ['네이버 체험단', 'https://age-doesnt-matter.com/?utm_source=naver&utm_medium=blog&utm_campaign=experience'],
+    ['스레드', 'https://age-doesnt-matter.com/?utm_source=threads&utm_medium=social&utm_campaign=post'],
+    ['인스타그램', 'https://age-doesnt-matter.com/?utm_source=instagram&utm_medium=social&utm_campaign=post'],
+    ['페이스북', 'https://age-doesnt-matter.com/?utm_source=facebook&utm_medium=social&utm_campaign=post'],
+    ['구글 애즈(디맨드젠)', 'https://age-doesnt-matter.com/?utm_source=google&utm_medium=cpc&utm_campaign=demandgen_여성가입_1차'],
+  ];
+  function render(id, list) {
+    const box = document.getElementById(id);
+    list.forEach(([label, url]) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const lbl = document.createElement('span'); lbl.className = 'label'; lbl.textContent = label;
+      const code = document.createElement('code'); code.textContent = url;
+      const btn = document.createElement('button'); btn.textContent = '복사';
+      btn.onclick = () => {
+        navigator.clipboard.writeText(url).then(() => {
+          btn.textContent = '복사됨 ✓'; btn.classList.add('done');
+          setTimeout(() => { btn.textContent = '복사'; btn.classList.remove('done'); }, 1500);
+        });
+      };
+      row.append(lbl, code, btn);
+      box.appendChild(row);
+    });
+  }
+  render('app-links', appLinks);
+  render('web-links', webLinks);
+</script>
+</body>
+</html>
