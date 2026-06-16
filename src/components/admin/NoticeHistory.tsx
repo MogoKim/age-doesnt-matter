@@ -38,18 +38,29 @@ export default function NoticeHistory({ notices }: { notices: NoticeHistoryItem[
                 <tr key={n.id} className="border-b border-zinc-100 align-top">
                   <td className="py-2.5 pr-3 whitespace-nowrap text-xs text-zinc-500">{fmt(n.createdAt)}</td>
                   <td className="py-2.5 pr-3">
+                    <span className={`inline-block mb-1 rounded px-1.5 py-0.5 text-[11px] font-medium ${n.sentBell > 0 ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                      {n.sentBell > 0 ? '🔔 종 알림' : '📱 OS 푸시'}
+                    </span>
                     <p className="text-zinc-800 line-clamp-2 max-w-[360px]">{n.body}</p>
                     {n.url && n.url !== '/' && <p className="text-xs text-zinc-400">→ {n.url}</p>}
                   </td>
-                  <td className="py-2.5 pr-3 text-right font-medium text-zinc-700">{n.sentBell.toLocaleString()}</td>
+                  <td className="py-2.5 pr-3 text-right font-medium text-zinc-700">{n.sentBell > 0 ? n.sentBell.toLocaleString() : '—'}</td>
                   <td className="py-2.5 pr-3 text-right text-zinc-500">{n.sentPush.toLocaleString()}</td>
                   <td className="py-2.5 pr-3 text-right">
-                    <span className="font-medium text-zinc-700">{n.readCount.toLocaleString()}</span>
-                    <span className="ml-1 text-xs text-zinc-400">{pct(n.readCount, n.sentBell)}</span>
+                    {n.sentBell > 0 ? (
+                      <>
+                        <span className="font-medium text-zinc-700">{n.readCount.toLocaleString()}</span>
+                        <span className="ml-1 text-xs text-zinc-400">{pct(n.readCount, n.sentBell)}</span>
+                      </>
+                    ) : <span className="text-zinc-400">—</span>}
                   </td>
                   <td className="py-2.5 text-right">
-                    <span className="font-bold text-indigo-700">{n.clickCount.toLocaleString()}</span>
-                    <span className="ml-1 text-xs text-indigo-400">{pct(n.clickCount, n.sentBell)}</span>
+                    {n.sentBell > 0 ? (
+                      <>
+                        <span className="font-bold text-indigo-700">{n.clickCount.toLocaleString()}</span>
+                        <span className="ml-1 text-xs text-indigo-400">{pct(n.clickCount, n.sentBell)}</span>
+                      </>
+                    ) : <span className="text-zinc-400">—</span>}
                   </td>
                 </tr>
               ))}

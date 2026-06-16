@@ -61,6 +61,13 @@ export async function adminBroadcastPush(formData: FormData): Promise<BroadcastR
   }
 
   const sent = await sendToRecipients(recipients, { title, body, url, tag: 'broadcast' }, isAd)
+
+  // OS 푸시 발송 이력 — 종 알림과 같은 "공지 발송 이력"에 표시.
+  // sentBell=0 → OS 푸시 직접발송으로 구분(종 알림은 sentBell>0). 읽음/클릭은 종 알림만 추적(OS는 별도 설계).
+  await prisma.notice
+    .create({ data: { title, body, url, sentBell: 0, sentPush: sent, createdByAdminId: session.adminId } })
+    .catch(() => {}) // 이력 기록 실패가 발송 결과를 막지 않게
+
   return { sent }
 }
 
