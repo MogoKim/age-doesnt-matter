@@ -224,6 +224,7 @@ export async function getMyNotifications(
       type: true,
       content: true,
       postId: true,
+      linkUrl: true,  // 공지 등 직접 지정 이동 경로(우선 적용)
       isRead: true,
       createdAt: true,
       post: { select: { boardType: true } },  // boardType 기반 올바른 URL 생성
@@ -235,11 +236,13 @@ export async function getMyNotifications(
 
   const hasMore = rows.length > limit
   const notifications: NotificationItem[] = rows.slice(0, limit).map((n) => {
-    let linkUrl = '/my/notifications'
-    if (n.postId) {
+    // 우선순위: 저장된 linkUrl(공지) → postId 기반 글 URL → 알림 목록
+    let linkUrl = n.linkUrl ?? ''
+    if (!linkUrl && n.postId) {
       const prefix = n.post?.boardType ? BOARD_URL_PREFIX[n.post.boardType] : null
       linkUrl = prefix ? `${prefix}/${n.postId}` : `/community/stories/${n.postId}`
     }
+    if (!linkUrl) linkUrl = '/my/notifications'
     return {
       id: n.id,
       type: n.type as NotificationItem['type'],

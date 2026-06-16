@@ -580,6 +580,7 @@ model Notification {
   type       NotificationType
   content    String
   postId     String?
+  linkUrl    String?          // 공지 등 글과 무관한 알림의 이동 경로(예: /best). 없으면 postId→글, 그것도 없으면 알림목록.
   fromUserId String?
   isRead     Boolean          @default(false)
   createdAt  DateTime         @default(now())

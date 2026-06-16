@@ -48,6 +48,7 @@ export async function broadcastInAppNotice(formData: FormData): Promise<NoticeRe
         userId: id,
         type: 'SYSTEM' as const,
         content: body,
+        linkUrl: url,  // 종 알림 클릭 시 이동 (예: /best)
       })),
     })
   }
@@ -93,7 +94,7 @@ export async function sendNoticeTest(formData: FormData): Promise<{ error?: stri
   if (!user || user.status !== 'ACTIVE') return { error: `'${nickname}' 회원을 찾을 수 없어요` }
   if (!isRealUser(user.providerId)) return { error: '실고객 계정이 아니에요(봇/관리자 계정 불가)' }
 
-  await prisma.notification.create({ data: { userId: user.id, type: 'SYSTEM', content: body } })
+  await prisma.notification.create({ data: { userId: user.id, type: 'SYSTEM', content: body, linkUrl: url } })
   await pushService.notify(user.id, { title, body, url, tag: 'notice' }, 'notice', 'service').catch(() => {})
 
   const hasPush = user._count.pushSubscriptions > 0
