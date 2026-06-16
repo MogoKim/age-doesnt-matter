@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'unao-v3'
+const CACHE_NAME = 'unao-v4'
 
 // VAPID 키 — ServiceWorkerRegister.tsx에서 postMessage로 주입받음
 let vapidPublicKey = null
@@ -16,6 +16,7 @@ const PRECACHE_URLS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
+  '/icons/badge-monochrome.png',
 ]
 
 // 설치: 프리캐시
@@ -97,7 +98,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || '새 알림이 있어요',
     icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    badge: '/icons/badge-monochrome.png',
     tag: data.tag || 'default',
     data: { url: data.url || '/' },
   }
