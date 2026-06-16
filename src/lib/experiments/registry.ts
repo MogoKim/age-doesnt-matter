@@ -77,9 +77,9 @@ export const EXPERIMENTS: ExperimentDef[] = [
     howToVerify:
       'winner 판단은 어드민 RetentionPanel(3화면 도달률·D1·세션 page_view·inline 카드클릭) 기준. sign_up 엔 related_flow 가 안 실려 가입 전환 카드는 표시하지 않는다(오해 방지). AdSense RPM 은 variant 분리 불가 → 전체 수익 가드레일.',
     owner: '창업자',
-    // 시작 시각(KST) — 창업자 확정 후 이 값 교체 + 어드민 ExperimentState.startedAt 동일 설정.
-    // 현재는 먼 미래값이라 배포해도 노출/렌더 비활성(시작 전 안전).
-    startsAt: Date.parse('2026-12-31T00:00:00+09:00'),
+    // 시작 시각(KST) = 2026-06-16 17:30. 이 시각 전엔 배정/노출/B카드 비활성(assign.ts 게이트).
+    // 어드민 ExperimentState.startedAt 도 동일 시각(2026-06-16 17:30 KST)으로 설정해야 집계 컷이 일치한다.
+    startsAt: Date.parse('2026-06-16T17:30:00+09:00'),
     variants: [
       { key: 'A', label: 'A 대조군(현행)', description: '본문 직후 카드 없음 — 관련글은 하단에만(현행 유지)', weight: 50 },
       { key: 'B', label: 'B 본문직후 카드', description: '광고① 다음에 "다음에 읽기 좋은 이야기" 3개 카드 노출(하단 관련글도 유지)', weight: 50 },
