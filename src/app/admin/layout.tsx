@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { AdminInternalFlag } from '@/components/admin/AdminInternalFlag'
 
 export const metadata: Metadata = {
   title: {
@@ -25,5 +26,10 @@ export default function AdminRootLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <div style={ADMIN_FONT_NORMAL}>{children}</div>
+  return (
+    <div style={ADMIN_FONT_NORMAL}>
+      <AdminInternalFlag />
+      {children}
+    </div>
+  )
 }

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
+import { getInternalSessionIds, getAdminUserIds } from './internal-sessions'
 
 // 실고객 = providerId 순수 숫자(진짜 카카오 가입자). seed_/bot-/curator-/@unao.bot 봇 전부 제외.
 // 봇 판별 단일 기준 — 대시보드 전 지표 통일(트렌드·OKR·카드).
@@ -69,18 +70,25 @@ export const getDashboardStats = unstable_cache(
       prisma.pushSubscription.count(),
     ])
 
+    // 창업자/어드민 트래픽 제외 — 내부 세션(/admin·founder플래그) + role=ADMIN 회원
+    const [internalSids, adminIds] = await Promise.all([
+      getInternalSessionIds(today),
+      getAdminUserIds(),
+    ])
+    const rows = pvRows.filter((r) => !(r.sessionId && internalSids.has(r.sessionId)))
+
     // UV/PV 회원·비회원·봇 분리 (등장 userId의 실고객 여부 조회)
-    const uids = [...new Set(pvRows.filter((r) => r.userId).map((r) => r.userId!))]
+    const uids = [...new Set(rows.filter((r) => r.userId).map((r) => r.userId!))]
     const userRows = uids.length
       ? await prisma.user.findMany({ where: { id: { in: uids } }, select: { id: true, providerId: true } })
       : []
-    const realUserSet = new Set(userRows.filter((u) => isReal(u.providerId)).map((u) => u.id))
+    const realUserSet = new Set(userRows.filter((u) => isReal(u.providerId) && !adminIds.has(u.id)).map((u) => u.id))
 
     const memberSessions = new Set<string>() // 실고객 userId 가진 세션
     const botSessions = new Set<string>() // 비실고객 userId(seed 등) = 봇 → 제외
     let memberPv = 0
     let guestPv = 0
-    for (const r of pvRows) {
+    for (const r of rows) {
       if (r.userId && realUserSet.has(r.userId)) {
         memberPv++
         if (r.sessionId) memberSessions.add(r.sessionId)
@@ -91,7 +99,7 @@ export const getDashboardStats = unstable_cache(
       }
     }
     const guestSessions = new Set<string>()
-    for (const r of pvRows) {
+    for (const r of rows) {
       if (r.sessionId && !memberSessions.has(r.sessionId) && !botSessions.has(r.sessionId)) guestSessions.add(r.sessionId)
     }
     const memberUv = memberSessions.size
@@ -134,7 +142,11 @@ export const getMonthlyOkrStats = unstable_cache(
   async () => {
     const monthStart = getKstMonthStart()
 
-    // KR1: 월 UV
+    // 창업자/어드민 내부 세션 제외 (KR1·KR2)
+    const internalSids = await getInternalSessionIds(monthStart)
+    const internalArr = [...internalSids]
+
+    // KR1: 월 UV (내부 세션 제외)
     const monthlyUvRows = await prisma.eventLog.findMany({
       where: {
         eventName: 'page_view',
@@ -145,14 +157,17 @@ export const getMonthlyOkrStats = unstable_cache(
       select: { sessionId: true },
       distinct: ['sessionId'],
     })
-    const monthlyUv = monthlyUvRows.length
+    const monthlyUv = monthlyUvRows.filter((r) => r.sessionId && !internalSids.has(r.sessionId)).length
 
-    // KR2: 월 PV
+    // KR2: 월 PV (내부 세션 제외 — null sessionId PV는 보존)
     const monthlyPv = await prisma.eventLog.count({
       where: {
         eventName: 'page_view',
         isBot: false,
         createdAt: { gte: monthStart },
+        ...(internalArr.length
+          ? { OR: [{ sessionId: null }, { sessionId: { notIn: internalArr } }] }
+          : {}),
       },
     })
     const avgPvPerUv =

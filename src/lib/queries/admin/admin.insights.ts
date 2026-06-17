@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
+import { getInternalSessionIds } from './internal-sessions'
 
 // 실고객 인사이트 — 봇 제외(실고객 = providerId 순수숫자 ^\d+$) 4대 지표.
 // agents/scripts/insights.ts(CLI)와 동일 기준의 서버판. 화면용으로 unstable_cache(30분).
@@ -56,9 +57,10 @@ export const getInsights = unstable_cache(
     const sevenAgo = new Date(now - 7 * DAY)
 
     const allUsers = await prisma.user.findMany({
-      select: { id: true, providerId: true, postCount: true, commentCount: true, isOnboarded: true, createdAt: true },
+      select: { id: true, providerId: true, postCount: true, commentCount: true, isOnboarded: true, createdAt: true, role: true },
     })
-    const real = allUsers.filter((u) => isRealUser(u.providerId))
+    // 창업자(role=ADMIN) 제외 — WAU·활성화·가입자 집계 오염 방지
+    const real = allUsers.filter((u) => isRealUser(u.providerId) && u.role !== 'ADMIN')
     const realIds = real.map((u) => u.id)
 
     // ── 북극성: 주간 활성 실고객(WAU) — 각 주에 방문/로그인한 실고객 수 ──
@@ -94,11 +96,14 @@ export const getInsights = unstable_cache(
     const previous = weekly[weekly.length - 2]?.active ?? 0
 
     // ── 30일 세션 이벤트 (채널·리텐션) ──
-    const events = await prisma.eventLog.findMany({
+    const internalSids = await getInternalSessionIds(start30)
+    const eventsRaw = await prisma.eventLog.findMany({
       where: { isBot: false, createdAt: { gte: start30 }, NOT: { sessionId: null } },
       select: { sessionId: true, eventName: true, referrer: true, properties: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     })
+    // 창업자 내부 세션(/admin·founder플래그) 제외
+    const events = eventsRaw.filter((e) => !(e.sessionId && internalSids.has(e.sessionId)))
 
     const sVisitDays: Record<string, Set<number>> = {}
     for (const e of events) {

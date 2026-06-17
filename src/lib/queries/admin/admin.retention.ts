@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
+import { getInternalSessionIds } from './internal-sessions'
 
 // 리텐션 4분면 (TWA/웹 × 회원/비회원) D1/D3/D7.
 // 회원 = providerId 순수숫자(^\d+$), 채널 = User.signupSource(없으면 UNKNOWN), 코호트 = 가입일.
@@ -63,9 +64,10 @@ export const getRetentionQuadrants = unstable_cache(
 
     // ── 회원 ──
     const users = await prisma.user.findMany({
-      select: { id: true, providerId: true, signupSource: true, createdAt: true },
+      select: { id: true, providerId: true, signupSource: true, createdAt: true, role: true },
     })
-    const real = users.filter((u) => isRealUser(u.providerId) && u.createdAt >= since)
+    // 창업자(role=ADMIN) 제외 — 매일 들어오는 어드민이 회원 리텐션을 부풀림
+    const real = users.filter((u) => isRealUser(u.providerId) && u.role !== 'ADMIN' && u.createdAt >= since)
     const realIds = real.map((u) => u.id)
     const memberEvents = realIds.length
       ? await prisma.eventLog.findMany({
@@ -91,7 +93,8 @@ export const getRetentionQuadrants = unstable_cache(
       calc(memberBuckets.UNKNOWN, nowIdx, '회원(채널미상)'),
     ]
 
-    // ── 비회원 ──
+    // ── 비회원 ── (창업자 내부 세션 /admin·founder플래그 제외)
+    const internalSids = await getInternalSessionIds(since)
     const guestEvents = await prisma.eventLog.findMany({
       where: { eventName: 'page_view', isBot: false, userId: null, sessionId: { not: null }, createdAt: { gte: since } },
       select: { sessionId: true, referrer: true, createdAt: true },
@@ -101,6 +104,7 @@ export const getRetentionQuadrants = unstable_cache(
     const guestFirstRef = new Map<string, string>()
     for (const e of guestEvents) {
       const sid = e.sessionId!
+      if (internalSids.has(sid)) continue
       let s = guestActive.get(sid)
       if (!s) { s = new Set(); guestActive.set(sid, s) }
       s.add(dayIdx(e.createdAt.getTime()))
