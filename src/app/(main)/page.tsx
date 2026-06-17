@@ -122,16 +122,16 @@ async function HotContentSections() {
         <HumorSection posts={humor} />
       </div>
 
-      {/* 신입환영 — 웃음방 아래, 모바일/데스크탑 공통 (실유저 환대 2층, Phase 3). 0건이면 null */}
-      <Suspense fallback={null}>
-        <NewcomerWelcomeSection />
-      </Suspense>
-
-      {/* 모바일: IN_FEED (데스크탑 쿠팡 → 매거진 아래로 이동) */}
+      {/* 웃음방 아래 Google 인피드 광고 */}
       <ResponsiveAd
         mobile={<FeedAd />}
         desktop={null}
       />
+
+      {/* 신입환영 — 웃음방 광고 아래, 모바일/데스크탑 공통 (실유저 환대 2층, Phase 3). 0건이면 null */}
+      <Suspense fallback={null}>
+        <NewcomerWelcomeSection />
+      </Suspense>
     </>
   )
 }

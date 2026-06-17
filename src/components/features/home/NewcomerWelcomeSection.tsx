@@ -15,24 +15,29 @@ export default async function NewcomerWelcomeSection() {
     // data-nosnippet: 가입인사(상세 noindex/sitemap 제외)가 홈(index 대상) HTML에 들어가므로
     // 검색 스니펫에 닉네임/미리보기가 노출되지 않도록 이 섹션을 스니펫에서 제외
     <section
-      className="my-4 mx-4 rounded-2xl border border-primary/20 bg-primary/5 p-4"
+      className="py-6 border-b-4 border-background lg:py-8 lg:border-b-0"
       aria-label="최근 새로 온 이웃"
       data-nosnippet
     >
-      <h2 className="mb-3 text-[18px] font-bold text-foreground">👋 최근 새로 온 이웃</h2>
-      <ul className="flex flex-col gap-2">
+      <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
+        <h2 className="text-title font-bold text-foreground flex items-center gap-2">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-primary/10 text-xl">👋</span>
+          최근 새로 온 이웃
+        </h2>
+      </div>
+      <ul className="list-none m-0 px-4 lg:px-0">
         {newcomers.map((n) => (
-          <li key={n.id}>
+          <li key={n.id} className="group">
             <Link
               href={`/community/stories/${n.slug ?? n.id}`}
-              className="block min-h-[52px] rounded-xl border border-border bg-background p-3 active:bg-muted"
+              className="group block py-3.5 border-b border-border/60 no-underline text-inherit min-h-[52px] motion-safe:transition-[border-color] motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:hover:border-primary active:border-primary"
             >
-              <div className="flex items-center gap-1.5">
-                <span className="text-[16px] font-bold text-primary-text">{n.nickname}</span>
-                <span className="text-[14px] text-muted-foreground">님이 인사를 남겼어요</span>
+              <div className="mb-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                <span className="text-body font-bold text-primary-text">{n.nickname}</span>
+                <span className="text-caption text-muted-foreground">님이 인사를 남겼어요</span>
               </div>
               {n.preview && (
-                <p className="mt-1 line-clamp-1 text-[15px] text-foreground">{n.preview}</p>
+                <p className="text-body font-medium text-foreground leading-[1.5] line-clamp-2 break-keep motion-safe:transition-colors motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:group-hover:text-primary-text group-active:text-primary-text">{n.preview}</p>
               )}
             </Link>
           </li>
