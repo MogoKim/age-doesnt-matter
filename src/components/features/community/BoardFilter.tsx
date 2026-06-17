@@ -14,6 +14,9 @@ export default function BoardFilter({ categories, boardSlug }: BoardFilterProps)
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const currentCategory = searchParams.get('category') || '전체'
+  const displayCategories = categories.includes('전체')
+    ? categories
+    : ['전체', ...categories]
 
   function handleSelect(category: string) {
     const params = new URLSearchParams(searchParams.toString())
@@ -30,7 +33,7 @@ export default function BoardFilter({ categories, boardSlug }: BoardFilterProps)
   return (
     <div className="relative min-w-0 overflow-hidden">
       <div className="flex gap-2 overflow-x-auto py-2 pb-4 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="카테고리 필터">
-        {categories.map((cat) => (
+        {displayCategories.map((cat) => (
           <button
             key={cat}
             aria-pressed={currentCategory === cat}
