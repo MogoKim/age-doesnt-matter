@@ -37,7 +37,7 @@ const _getBoardConfigCached = unstable_cache(
       categories: config.categories,
     }
   },
-  ['board-config'],
+  ['board-config-v2'],
   { revalidate: 3600, tags: ['board-config'] },
 )
 

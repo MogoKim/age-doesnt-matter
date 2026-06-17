@@ -15,7 +15,7 @@ async function main() {
       displayName: '사는이야기',
       description: '일상을 나누는 공간',
       // '가입인사' = 첫 참여 온보딩 서브카테고리. "전체" 탭/홈/베스트/검색 제외, "가입인사" 탭에서만 노출.
-      categories: ['전체', '가입인사', '일상', '건강', '고민', '자녀', '기타'],
+      categories: ['가입인사', '건강', '가족', '취미', '고민', '자유수다'],
     },
     {
       boardType: 'HUMOR' as const,
