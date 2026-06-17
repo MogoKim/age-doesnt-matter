@@ -310,32 +310,37 @@ export interface NewcomerGreeting {
 
 async function _getRecentGreetings(): Promise<NewcomerGreeting[]> {
   const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-  const rows = await prisma.post.findMany({
-    where: {
-      boardType: 'STORY',
-      category: GREETING_CATEGORY,
-      status: 'PUBLISHED',
-      createdAt: { gte: since },
-    },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      summary: true,
-      createdAt: true,
-      author: { select: { nickname: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 6,
-  })
-  return rows.map((r) => ({
-    id: r.id,
-    slug: r.slug,
-    title: r.title,
-    preview: r.summary ?? '',
-    nickname: r.author?.nickname ?? '새 이웃',
-    createdAt: r.createdAt.toISOString(),
-  }))
+  try {
+    const rows = await prisma.post.findMany({
+      where: {
+        boardType: 'STORY',
+        category: GREETING_CATEGORY,
+        status: 'PUBLISHED',
+        createdAt: { gte: since },
+      },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        summary: true,
+        createdAt: true,
+        author: { select: { nickname: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+    })
+    return rows.map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      title: r.title,
+      preview: r.summary ?? '',
+      nickname: r.author?.nickname ?? '새 이웃',
+      createdAt: r.createdAt.toISOString(),
+    }))
+  } catch {
+    // 빌드 시 dummy DB(CI) / 런타임 DB 에러 → 섹션 숨김(0건). 홈 prerender 보호.
+    return []
+  }
 }
 export const getRecentGreetings = unstable_cache(
   _getRecentGreetings,
