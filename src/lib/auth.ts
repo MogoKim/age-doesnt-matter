@@ -94,7 +94,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
 
           let user = await retryOnConnError(() => prisma.user.findUnique({
             where: { providerId },
-            select: { id: true, role: true, grade: true, nickname: true, profileImage: true, status: true, suspendedUntil: true, fontSize: true, createdAt: true },
+            select: { id: true, role: true, grade: true, nickname: true, profileImage: true, status: true, suspendedUntil: true, fontSize: true, createdAt: true, firstGreetingAt: true },
           }))
 
           if (!user) {
@@ -124,7 +124,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
                 // 1) 같은 사람(providerId) 계정이 방금 생겼는지 재조회 → 있으면 그 계정 채택
                 user = await prisma.user.findUnique({
                   where: { providerId },
-                  select: { id: true, role: true, grade: true, nickname: true, profileImage: true, status: true, suspendedUntil: true, fontSize: true, createdAt: true },
+                  select: { id: true, role: true, grade: true, nickname: true, profileImage: true, status: true, suspendedUntil: true, fontSize: true, createdAt: true, firstGreetingAt: true },
                 })
                 if (user) {
                   // 정상 회복 — BotLog FAILED로 남기지 않고 Vercel 로그로만 관측
@@ -164,6 +164,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           token.profileImage = user.profileImage
           token.fontSize = user.fontSize ?? 'NORMAL'
           token.createdAt = user.createdAt.toISOString()
+          token.firstGreetingAt = user.firstGreetingAt ? user.firstGreetingAt.toISOString() : null
         } else if (token.userId) {
           // 5분 이내 갱신됐으면 DB 스킵 (매 요청 DB 조회 방지)
           const now = Date.now()
@@ -178,7 +179,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
               return await retryOnConnError(() => prisma.user.update({
                 where: { id: token.userId as string },
                 data: { lastLoginAt: new Date() },
-                select: { id: true, role: true, grade: true, nickname: true, profileImage: true, fontSize: true, createdAt: true },
+                select: { id: true, role: true, grade: true, nickname: true, profileImage: true, fontSize: true, createdAt: true, firstGreetingAt: true },
               }))
             } catch (e) {
               if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
@@ -197,6 +198,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
             token.needsOnboarding = undefined
             token.fontSize = undefined
             token.createdAt = undefined
+            token.firstGreetingAt = undefined
           } else {
             // DB 최신 정보 반영
             token.tokenRefreshedAt = now
@@ -209,6 +211,8 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
             if (!token.createdAt) {
               token.createdAt = user.createdAt.toISOString()
             }
+            // 첫 인사 작성 시 변경되므로 가드 없이 매 refetch 갱신(다기기 위젯 숨김 반영)
+            token.firstGreetingAt = user.firstGreetingAt ? user.firstGreetingAt.toISOString() : null
           }
         }
       } catch (error) {

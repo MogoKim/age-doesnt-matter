@@ -16,6 +16,7 @@ import CoupangDesktopBanner from '@/components/ad/CoupangDesktopBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
 import PersonalGreeting from '@/components/features/home/PersonalGreeting'
+import FirstGreetingWidget from '@/components/features/home/FirstGreetingWidget'
 import SignupCard from '@/components/features/home/SignupCard'
 import HomeFaqSection from '@/components/features/home/HomeFaqSection'
 import {
@@ -190,6 +191,8 @@ export default function HomePage() {
           </Suspense>
 
           <div className="lg:px-8">
+            {/* 첫 인사 위젯 (client island — 가입 72h 이내·미작성 회원만, useAppSession 판별) */}
+            <FirstGreetingWidget />
             {/* 회원 전용 인사 카드 (클라이언트, useSession) */}
             <PersonalGreeting />
 

@@ -93,6 +93,7 @@ export const authConfig: NextAuthConfig = {
         session.user.needsOnboarding = token.needsOnboarding as boolean
         session.user.fontSize = token.fontSize as string | undefined
         session.user.createdAt = token.createdAt as string | undefined
+        session.user.firstGreetingAt = token.firstGreetingAt as string | null | undefined
       }
       return session
     },
