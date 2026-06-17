@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
 import { GRADE_INFO } from '@/lib/grade'
+import { EXCLUDE_GREETING } from '@/lib/greeting'
 import type { PostSummary, UserSummary, Grade } from '@/types/api'
 
 /* ── 헬퍼 (posts.ts와 동일 패턴) ── */
@@ -125,12 +126,12 @@ export async function searchAll(
     tab === 'all' || tab === 'posts'
       ? Promise.all([
           prisma.post.findMany({
-            where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] } },
+            where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] }, AND: [EXCLUDE_GREETING] },
             select: postSelect,
             orderBy: { createdAt: 'desc' },
             take: tab === 'posts' ? 20 : limit,
           }),
-          prisma.post.count({ where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] } } }),
+          prisma.post.count({ where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] }, AND: [EXCLUDE_GREETING] } }),
         ])
       : Promise.resolve([[], 0] as const),
 

@@ -282,6 +282,10 @@ model User {
   pwaBannerLastDismissAt  DateTime?
   pwaBannerHiddenUntil    DateTime?
 
+  // 첫 참여 온보딩(가입인사) — 첫 가입인사 작성 시각/글ID. 글 삭제해도 위젯 재노출 방지용 이력 플래그.
+  firstGreetingAt     DateTime?
+  firstGreetingPostId String?
+
   // 타임스탬프
   lastLoginAt     DateTime   @default(now())
   createdAt       DateTime   @default(now())

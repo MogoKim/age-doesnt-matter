@@ -6,6 +6,7 @@ import { getAdminSession } from '@/lib/admin-auth'
 import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
 import type { PostStatus, PromotionLevel, BoardType } from '@/generated/prisma/client'
+import { assertGreetingByMember } from '@/lib/greeting'
 
 async function requireAdmin() {
   const session = await getAdminSession()
@@ -370,9 +371,12 @@ export async function adminMovePost(
 
   const existing = await prisma.post.findUnique({
     where: { id: postId },
-    select: { boardType: true, category: true },
+    select: { boardType: true, category: true, source: true },
   })
   if (!existing) throw new Error('게시글을 찾을 수 없습니다.')
+
+  // '가입인사'는 회원 첫 참여 온보딩 전용 — BOT/SHEET/ADMIN 글을 가입인사 category로 이동 차단(회원 글만 허용)
+  assertGreetingByMember(normalizedCategory, existing.source)
 
   await prisma.post.update({
     where: { id: postId },

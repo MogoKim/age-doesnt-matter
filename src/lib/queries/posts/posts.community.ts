@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
 import { postSelect, toPostSummary, buildTextSearch, SearchField } from './posts.base'
+import { EXCLUDE_GREETING } from '@/lib/greeting'
 
 /* ── 게시판별 목록 ── */
 
@@ -13,12 +14,19 @@ export async function getPostsByBoard(
   const limit = options?.limit ?? 20
   const sort = options?.sort ?? 'latest'
 
+  // 가입인사 제외: 특정 카테고리 선택 시 그 카테고리만(가입인사 탭이면 가입인사 노출),
+  // "전체"/무카테고리면 EXCLUDE_GREETING. 검색 OR과 OR 키 충돌 방지 위해 AND로 결합.
+  const search = buildTextSearch(options?.q, options?.sf)
   const where = {
     boardType,
     status: 'PUBLISHED' as const,
-    ...(options?.category && options.category !== '전체' ? { category: options.category } : {}),
     ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
-    ...buildTextSearch(options?.q, options?.sf),
+    AND: [
+      options?.category && options.category !== '전체'
+        ? { category: options.category }
+        : EXCLUDE_GREETING,
+      ...(search.OR ? [search] : []),
+    ],
   }
 
   const orderBy = sort === 'likes'
@@ -48,11 +56,17 @@ export async function getPostsByBoardPage(
   const skip = options?.skip ?? 0
   const sort = options?.sort ?? 'latest'
 
+  // 가입인사 제외(getPostsByBoard와 동일 규칙). 검색 OR과 충돌 방지 AND 결합.
+  const search = buildTextSearch(options?.q, options?.sf)
   const where = {
     boardType,
     status: 'PUBLISHED' as const,
-    ...(options?.category && options.category !== '전체' ? { category: options.category } : {}),
-    ...buildTextSearch(options?.q, options?.sf),
+    AND: [
+      options?.category && options.category !== '전체'
+        ? { category: options.category }
+        : EXCLUDE_GREETING,
+      ...(search.OR ? [search] : []),
+    ],
   }
 
   const orderBy = sort === 'likes'
@@ -74,6 +88,7 @@ async function _getLatestCommunityPosts(limit = 5): Promise<PostSummary[]> {
     where: {
       status: 'PUBLISHED',
       boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] },
+      ...EXCLUDE_GREETING, // 홈/최신글에 가입인사 섞임 방지
     },
     select: postSelect,
     orderBy: { createdAt: 'desc' },
@@ -149,6 +164,7 @@ async function _getRecentActivities(limit = 8): Promise<RecentActivity[]> {
         createdAt: { gte: since },
         status: 'PUBLISHED',
         boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] },
+        ...EXCLUDE_GREETING, // 홈 최근활동 피드에 가입인사 글 노출 방지
       },
       select: {
         id: true,
@@ -256,7 +272,8 @@ async function _getRelatedCommunityPosts(
   // 2순위: 같은 게시판 최신순으로 채움 (이미 뽑은 글 + 본문글 제외)
   const excludeIds = [excludeId, ...matched.map((r) => r.id)]
   const fill = await prisma.post.findMany({
-    where: { boardType, status: 'PUBLISHED', id: { notIn: excludeIds } },
+    // 일반 글 관련글 fallback에 가입인사 섞임 방지(category 매칭은 호출 category 그대로라 안전)
+    where: { boardType, status: 'PUBLISHED', id: { notIn: excludeIds }, ...EXCLUDE_GREETING },
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
     take: limit - matched.length,
     select: postSelect,

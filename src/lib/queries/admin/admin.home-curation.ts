@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { EXCLUDE_GREETING } from '@/lib/greeting'
 
 type SectionKey = 'TRENDING' | 'STORIES' | 'HUMOR'
 
@@ -147,6 +148,7 @@ export async function searchHomeCurationPosts(
       status: 'PUBLISHED',
       title: { contains: query, mode: 'insensitive' },
       boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] },
+      ...EXCLUDE_GREETING, // 어드민 큐레이션 검색에서 가입인사 글 선택 차단
     },
     select: {
       id: true,

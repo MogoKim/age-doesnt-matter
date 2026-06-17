@@ -708,6 +708,13 @@ export async function main() {
             const category = resolveScraperCategory(row.category, title, content, tab.boardType, validCategories[tab.boardType])
             const finalTitle = title
 
+            // '가입인사'는 회원 첫 참여 온보딩 전용 — SHEET(시트 D열)로는 생성 차단.
+            // (src import 금지: 리터럴 비교. src/lib/greeting.ts GREETING_CATEGORY와 동기화)
+            if (category === '가입인사') {
+              console.warn(`[sheet-scraper] '가입인사'는 회원 전용 카테고리 — 행 건너뜀: ${finalTitle}`)
+              continue
+            }
+
             // 페르소나 선택
             const persona = pickPersona(category, tab.boardType, row.persona)
             const userId = await getBotUser(persona.id)

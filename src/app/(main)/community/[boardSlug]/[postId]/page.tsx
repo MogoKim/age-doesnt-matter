@@ -22,6 +22,7 @@ import Breadcrumbs from '@/components/common/Breadcrumbs'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import PostViewBeacon from '@/components/common/PostViewBeacon'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
+import { GREETING_CATEGORY } from '@/lib/greeting'
 
 interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
@@ -66,6 +67,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: post.seoTitle ?? post.title,
       description: post.seoDescription ?? description,
     },
+    // 가입인사 글은 검색엔진 색인 제외(환대 목적 내부 콘텐츠 — 목록/sitemap에서도 제외됨)
+    ...(post.category === GREETING_CATEGORY
+      ? { robots: { index: false, follow: false } }
+      : {}),
   }
 }
 

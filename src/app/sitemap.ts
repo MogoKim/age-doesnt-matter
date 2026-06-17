@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next'
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { JOB_SIDO_LIST } from '@/lib/jobs-regions'
+import { EXCLUDE_GREETING } from '@/lib/greeting'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,7 @@ const getSitemapPosts = unstable_cache(
     where: {
       status: { in: ['PUBLISHED', 'SEO_ONLY'] },
       boardType: { not: 'WEEKLY' },
+      ...EXCLUDE_GREETING, // 가입인사 글 sitemap 제외(noindex 보강)
     },
     select: { id: true, boardType: true, status: true, updatedAt: true, slug: true },
     orderBy: { createdAt: 'desc' },

@@ -6,6 +6,7 @@ type SectionKey = 'TRENDING' | 'STORIES' | 'HUMOR'
 import { postSelect, toPostSummary } from './posts.base'
 import { getTrendingQuotaPosts } from './posts.trending'
 import { getHomeBoardHotPostsRaw } from './posts.home'
+import { EXCLUDE_GREETING } from '@/lib/greeting'
 
 export interface HomeSectionsResult {
   trending: PostSummary[]
@@ -72,7 +73,7 @@ async function _composeHomeSections(): Promise<HomeSectionsResult> {
   const [pinPostsRaw, autoTrending, autoStories, autoHumor] = await Promise.all([
     pinPostIds.length > 0
       ? prisma.post.findMany({
-          where: { id: { in: pinPostIds }, status: 'PUBLISHED' },
+          where: { id: { in: pinPostIds }, status: 'PUBLISHED', ...EXCLUDE_GREETING },
           select: postSelect,
         })
       : Promise.resolve([]),
