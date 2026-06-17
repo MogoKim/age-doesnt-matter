@@ -15,7 +15,7 @@ export default async function NewcomerWelcomeSection() {
     // data-nosnippet: 가입인사(상세 noindex/sitemap 제외)가 홈(index 대상) HTML에 들어가므로
     // 검색 스니펫에 닉네임/미리보기가 노출되지 않도록 이 섹션을 스니펫에서 제외
     <section
-      className="py-6 border-b-4 border-background lg:py-8 lg:border-b-0"
+      className="pt-2 pb-6 border-b-4 border-background lg:pt-4 lg:pb-8 lg:border-b-0"
       aria-label="최근 새로 온 이웃"
       data-nosnippet
     >
