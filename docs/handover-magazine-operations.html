@@ -272,8 +272,8 @@
       <strong style="color:var(--blue);font-style:normal;">📌 댓글 정책 (2026-06-04~)</strong><br>
       매거진(MAGAZINE)은 SEO·정보 제공용 콘텐츠다. <strong style="color:var(--text);font-style:normal;">봇 댓글·대댓글·좋아요(wave 포함)는 운영하지 않는다.</strong>
       사람 댓글(회원·비회원)만 허용한다.<br>
-      구현: <code>agents/core/bot-engagement-policy.ts</code>의 <code>isBotEngagementEnabledBoard()</code>가 STORY/HUMOR/LIFE2만 허용하고,
-      모든 봇 engagement 생성 직전(comment-activator / reply-chain-driver / controversy-chain / wave-processor / seed·micro-scheduler)에서 MAGAZINE을 차단한다.
+      구현: <code>agents/core/bot-engagement-policy.ts</code>의 <code>BOT_ENGAGEMENT_BOARD_TYPES</code>가 <strong style="color:var(--text);font-style:normal;">STORY·HUMOR·LIFE2 3개만 허용</strong>하고(<code>isBotEngagementEnabledBoard()</code>),
+      나머지(MAGAZINE·JOB·WEEKLY·기타·null)는 전부 false다. 모든 봇 engagement 생성 직전(comment-activator / reply-chain-driver / controversy-chain / wave-processor / seed·micro-scheduler)에서 MAGAZINE을 포함한 비허용 board를 차단한다.
       레거시 commentWaveQueue가 남아도 생성 직전 guard로 막힌다(skip 사유: <code>board_engagement_disabled</code>).
     </div>
 
@@ -751,15 +751,15 @@
         <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:16px; font-size:13px; color:var(--muted); line-height:1.75; margin-bottom:16px;">
           ✅ <strong style="color:var(--text);">6/4 매거진 2건 발행 완료</strong><br>
           ──────────────────────────<br>
-          📰 <strong>오전 (11:00)</strong><br>
+          📰 <strong>오전 (12:00)</strong><br>
           · 베란다 상추 한 잎의 위로 — 요리<br>
           &nbsp;&nbsp;이미지: AI 생성 × 2장<br>
           📰 <strong>저녁 (14:00)</strong><br>
           · 은퇴 직전 연금 재편 — 재테크<br>
           &nbsp;&nbsp;이미지: AI 생성 × 2장
         </div>
-        <div class="alert warn" style="font-size:12.5px;margin-top:-8px;margin-bottom:16px;">
-          <strong>⚠️ Slack 라벨 "오전 (11:00)"은 stale</strong> — 실제 launchd 트리거는 <strong>12:00 KST</strong>(plist Hour=12)다. 코드(local-magazine-runner.ts)의 표기 라벨이 과거 11:00 시절 그대로 남아 Slack에 "11:00"으로 찍힌다. 무해(시각 라벨일 뿐)하나 헷갈리지 말 것.
+        <div class="alert ok" style="font-size:12.5px;margin-top:-8px;margin-bottom:16px;">
+          <strong>✅ 시각 라벨 정정 완료 (2026-06-16)</strong> — 과거 Slack 라벨이 "오전 (11:00)"으로 stale했으나, 실제 launchd 트리거(<strong>12:00 KST</strong>, plist Hour=12)에 맞춰 코드(<code>local-magazine-runner.ts</code>)·repo plist 라벨을 모두 <strong>12:00</strong>으로 통일했다. 이제 Slack에도 "오전 (12:00)"으로 찍힌다. (실제 로드본 <code>~/Library/LaunchAgents</code>는 원래 12:00이라 실행에는 영향 없었음)
         </div>
         <div class="alert ok" style="margin-top:8px;">
           <strong>알림이 없으면</strong>

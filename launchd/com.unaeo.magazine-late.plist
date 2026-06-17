@@ -21,7 +21,7 @@
   <key>WorkingDirectory</key>
   <string>/Users/yanadoo/Documents/New_Claude_agenotmatter</string>
 
-  <!-- 14:00 KST (오후 매거진 발행, IMAGE_GENERATOR=gemini) -->
+  <!-- 14:00 KST (오후 매거진 발행, IMAGE_GENERATOR=chatgpt) -->
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key>
@@ -47,7 +47,7 @@
     <key>SESSION_TIME</key>
     <string>late</string>
     <key>IMAGE_GENERATOR</key>
-    <string>gemini</string>
+    <string>chatgpt</string>
     <key>NODE_OPTIONS</key>
     <string>--require /Users/yanadoo/Documents/New_Claude_agenotmatter/agents/cafe/preload-eagain-retry.cjs</string>
   </dict>

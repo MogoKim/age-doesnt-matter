@@ -9,8 +9,8 @@
  *   IMAGE_GENERATOR=gemini|chatgpt
  *
  * 스케줄:
- *   morning (11:00 KST) — Gemini Imagen, 결과 JSON 저장
- *   late    (14:00 KST) — Gemini Imagen, 오전 결과 합산 Slack 알림
+ *   morning (12:00 KST) — ChatGPT 이미지, 결과 JSON 저장
+ *   late    (14:00 KST) — ChatGPT 이미지, 오전 결과 합산 Slack 알림
  *
  * 결과 파일: agents/cafe/.magazine-daily-YYYYMMDD.json (gitignore 포함)
  * Slack 채널: #매거진 (C0ARZET1X63)
@@ -112,10 +112,10 @@ function formatSuccessMessage(status: DailyStatus): string {
   const dateStr = `${kstDate.getMonth() + 1}/${kstDate.getDate()}`
 
   const morningSection = status.morningDone && status.morningArticles.length > 0
-    ? `📰 *오전 (11:00)*\n${status.morningArticles.map(a =>
+    ? `📰 *오전 (12:00)*\n${status.morningArticles.map(a =>
         `• ${a.title} — ${a.category}\n  이미지: ${formatImageSourceLabel(a)}`
       ).join('\n')}`
-    : `📰 *오전 (11:00)*\n• 발행 없음`
+    : `📰 *오전 (12:00)*\n• 발행 없음`
 
   const eveningSection = status.eveningDone && status.eveningArticles.length > 0
     ? `📰 *저녁 (14:00)*\n${status.eveningArticles.map(a =>
@@ -129,7 +129,7 @@ function formatSuccessMessage(status: DailyStatus): string {
 }
 
 function formatFailureMessage(session: 'morning' | 'evening', engine: string, stage: string, error: string): string {
-  const sessionLabel = session === 'morning' ? '오전 (11:00)' : '저녁 (14:00)'
+  const sessionLabel = session === 'morning' ? '오전 (12:00)' : '저녁 (14:00)'
   return `❌ *매거진 발행 실패 — ${sessionLabel} 세션*\n단계: ${stage}\n엔진: ${engine}\n원인: ${error}\n→ 이번 회차 건너뜀`
 }
 
@@ -159,9 +159,9 @@ async function closeImageBrowser(engine: string): Promise<void> {
 
 async function main(): Promise<void> {
   const rawSession = process.env.SESSION_TIME ?? 'morning'
-  // plist 값: morning(11:00 KST) / late(14:00 KST) → 마지막 세션 + 일일 Slack 전송
+  // plist 값: morning(12:00 KST) / late(14:00 KST) → 마지막 세션 + 일일 Slack 전송
   const sessionTime: 'morning' | 'evening' = (rawSession === 'late' || rawSession === 'afternoon') ? 'evening' : 'morning'
-  const engine = (process.env.IMAGE_GENERATOR ?? 'gemini') as 'gemini' | 'chatgpt'
+  const engine = (process.env.IMAGE_GENERATOR ?? 'chatgpt') as 'gemini' | 'chatgpt'
 
   console.log(`\n[MagazineRunner] 시작 — ${sessionTime} 세션 (${engine})`)
 
