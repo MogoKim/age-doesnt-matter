@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ADSENSE } from './ad-slots'
 import { ADSENSE_READY_EVENT } from './AdSenseScriptLoader'
 import CoupangBanner from './CoupangBanner'
+import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 
 interface AdSenseUnitProps {
   /** AdSense 광고 슬롯 ID */
@@ -62,8 +63,13 @@ export default function AdSenseUnit({
 }: AdSenseUnitProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [showFallback, setShowFallback] = useState(false)
+  const { isCapacitor } = useAppEnvironment()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
+    // Capacitor 네이티브 앱: 광고 미게재(AdSense 계정 보호) → push/observer 일절 실행 안 함.
+    if (isCapacitor) return
     const container = containerRef.current
     if (!container) return
 
@@ -161,7 +167,11 @@ export default function AdSenseUnit({
       observer.disconnect()
       window.removeEventListener(ADSENSE_READY_EVENT, onAdSenseReady)
     }
-  }, [slotId, format, responsive, layout, layoutKey, fixedWidth, fixedHeight])
+  }, [slotId, format, responsive, layout, layoutKey, fixedWidth, fixedHeight, isCapacitor])
+
+  // Capacitor 앱: 광고 영역 전체(aside·"광고" 라벨·예약 공간·Coupang fallback) 미렌더.
+  //   mounted 가드로 SSR/첫 페인트는 웹과 동일 → 하이드레이션 미스매치 없음(마운트 후 제거).
+  if (mounted && isCapacitor) return null
 
   return (
     <aside
