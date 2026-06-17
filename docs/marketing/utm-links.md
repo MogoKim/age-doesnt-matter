@@ -34,6 +34,16 @@
 | 카카오 채널 프로필(홈) | `https://age-doesnt-matter.com/?utm_source=kakao&utm_medium=social&utm_campaign=channel_profile` |
 | 카카오 채널 프로필(베스트) | `https://age-doesnt-matter.com/best?utm_source=kakao&utm_medium=social&utm_campaign=channel_best` |
 
+### A-3. 친구톡 (카카오 메시지 발송) — 채널 친구 대상
+**규칙**: `utm_source=kakao` / `utm_medium=friendtalk` / `utm_campaign=friendtalk_best_{회차}` (매 발송 회차 +1)
+
+- **개별 글 링크**: 글 URL에 UTM 부착 (기존 `?from=best` 있으면 `&`로, 없으면 `?`로 시작)
+  예: `…/community/stories/{글}?from=best&utm_source=kakao&utm_medium=friendtalk&utm_campaign=friendtalk_best_1`
+- **"오늘의 베스트" 버튼**: `https://age-doesnt-matter.com/best?utm_source=kakao&utm_medium=friendtalk&utm_campaign=friendtalk_best_1`
+- 한 번 발송의 모든 항목(글 N개 + 베스트 버튼)은 **같은 campaign**으로 묶는다 → GA4에서 한 발송으로 집계
+- **GA4 분석**: 캠페인 `friendtalk_best_1` 필터 → 랜딩 페이지로 구분(`/best`=버튼 클릭, `/community/…`=개별 글)
+- 다음 발송은 `friendtalk_best_2`, `_3` … 으로 회차 비교
+
 ---
 
 ## B. 코드가 자동으로 붙이는 UTM (관리 불필요 — 참고용)

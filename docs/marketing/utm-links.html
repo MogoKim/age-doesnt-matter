@@ -43,6 +43,11 @@
 
   <div class="note">⚠️ 같은 채널이라도 A-1(/go)과 A-2(/?utm)를 <b>동시에 쓰지 마세요.</b> 앱 깔리길 원하면 /go, 웹으로 바로 보낼 거면(구글애즈 등) /?utm.</div>
 
+  <h3>A-3. 친구톡 (카카오 메시지) <span class="tag">채널 친구 대상</span></h3>
+  <p class="desc"><b>규칙</b>: source=<code style="color:var(--ink)">kakao</code> / medium=<code style="color:var(--ink)">friendtalk</code> / campaign=<code style="color:var(--ink)">friendtalk_best_{회차}</code> (매 발송 +1). 개별 글은 글 URL에 붙이고, "오늘의 베스트" 버튼은 아래 고정 링크. 한 발송의 모든 항목은 <b>같은 campaign</b>으로 묶어 GA4에서 한 발송으로 집계.</p>
+  <div id="friendtalk-links"></div>
+  <div class="note">📊 GA4: 캠페인 <b>friendtalk_best_1</b> 필터 → 랜딩 페이지로 구분(<code style="color:var(--ink)">/best</code>=버튼 클릭, <code style="color:var(--ink)">/community/…</code>=개별 글). 다음 발송은 <b>_2</b>, <b>_3</b>으로 회차 비교.</div>
+
   <h2>B. 코드가 자동으로 붙이는 UTM <span class="tag">관리 불필요</span></h2>
   <p class="desc">시스템이 자동 추적. 손대지 않아도 됩니다 (참고용).</p>
   <table>
@@ -98,8 +103,12 @@
       box.appendChild(row);
     });
   }
+  const friendtalkLinks = [
+    ['오늘의 베스트 버튼', 'https://age-doesnt-matter.com/best?utm_source=kakao&utm_medium=friendtalk&utm_campaign=friendtalk_best_1'],
+  ];
   render('app-links', appLinks);
   render('web-links', webLinks);
+  render('friendtalk-links', friendtalkLinks);
 </script>
 </body>
 </html>
