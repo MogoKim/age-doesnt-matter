@@ -15,7 +15,7 @@ import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CoupangDesktopBanner from '@/components/ad/CoupangDesktopBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import MagazineSection from '@/components/features/home/MagazineSection'
-import PersonalGreeting from '@/components/features/home/PersonalGreeting'
+// import PersonalGreeting from '@/components/features/home/PersonalGreeting' // 당분간 비활성화(2026-06-17, 홈 회원 인사 카드)
 import FirstGreetingWidget from '@/components/features/home/FirstGreetingWidget'
 import SignupCard from '@/components/features/home/SignupCard'
 import HomeFaqSection from '@/components/features/home/HomeFaqSection'
@@ -193,8 +193,9 @@ export default function HomePage() {
           <div className="lg:px-8">
             {/* 첫 인사 위젯 (client island — 가입 72h 이내·미작성 회원만, useAppSession 판별) */}
             <FirstGreetingWidget />
-            {/* 회원 전용 인사 카드 (클라이언트, useSession) */}
-            <PersonalGreeting />
+            {/* 회원 인사 카드 — 2026-06-17 창업자 요청으로 당분간 비활성화
+                (가입=이미 둘러볼 의지 있음 + 첫인사 위젯과 환영 톤 중복). 재개 시 위 import와 함께 주석 해제 */}
+            {/* <PersonalGreeting /> */}
 
             {/* 지금뜨는이야기 + 사는이야기 + 웃음방 (trendingIds 중복 제거로 단일 Suspense) */}
             <Suspense fallback={<SectionSkeleton h="min-h-[1400px]" />}>
