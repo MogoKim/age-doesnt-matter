@@ -17,6 +17,8 @@ interface CommentSectionProps {
   comments: CommentItemType[]
   isLoggedIn?: boolean
   currentUser?: { id: string; nickname: string; grade: Grade; profileImage: string | null }
+  /** 가입인사 글이면 비회원 댓글 문구를 환영 톤으로(Phase 4, 문구 특화 전용) */
+  isGreeting?: boolean
 }
 
 function sortComments(comments: CommentItemType[], sort: 'oldest' | 'likes'): CommentItemType[] {
@@ -27,7 +29,7 @@ function sortComments(comments: CommentItemType[], sort: 'oldest' | 'likes'): Co
   return sorted
 }
 
-export default function CommentSection({ postId, comments, isLoggedIn, currentUser }: CommentSectionProps) {
+export default function CommentSection({ postId, comments, isLoggedIn, currentUser, isGreeting }: CommentSectionProps) {
   const { user, status } = useAppSession()
   const authKnown = typeof isLoggedIn === 'boolean' || status !== 'loading'
   const resolvedIsLoggedIn = isLoggedIn ?? status === 'authenticated'
@@ -177,7 +179,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
       ) : resolvedIsLoggedIn ? (
         <CommentInput postId={postId} onOptimisticAdd={resolvedCurrentUser ? handleOptimisticAdd : undefined} />
       ) : (
-        <GuestCommentInput postId={postId} onOptimisticAdd={handleGuestOptimisticAdd} />
+        <GuestCommentInput postId={postId} onOptimisticAdd={handleGuestOptimisticAdd} isGreeting={isGreeting} />
       )}
     </section>
   )

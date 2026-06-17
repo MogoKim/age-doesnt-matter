@@ -74,11 +74,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-async function CommentsLoader({ postId }: {
+async function CommentsLoader({ postId, isGreeting }: {
   postId: string
+  isGreeting?: boolean
 }) {
   const comments = await getCommentsByPostId(postId)
-  return <CommentSection postId={postId} comments={comments} />
+  return <CommentSection postId={postId} comments={comments} isGreeting={isGreeting} />
 }
 
 export default async function PostDetailPage({ params }: PageProps) {
@@ -222,7 +223,7 @@ export default async function PostDetailPage({ params }: PageProps) {
           <div className="h-20 bg-muted rounded-xl animate-pulse" />
         </div>
       }>
-        <CommentsLoader postId={resolvedId} />
+        <CommentsLoader postId={resolvedId} isGreeting={post.category === GREETING_CATEGORY} />
       </Suspense>
 
       {/* 가입 유도 */}
