@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
 import { postSelect, toPostSummary, buildTextSearch, SearchField } from './posts.base'
-import { EXCLUDE_GREETING } from '@/lib/greeting'
+import { EXCLUDE_GREETING, GREETING_CATEGORY } from '@/lib/greeting'
 
 /* ── 게시판별 목록 ── */
 
@@ -295,3 +295,50 @@ function formatTimeAgoFromMs(ms: number): string {
   if (hours < 24) return `${hours}시간 전`
   return `${Math.floor(hours / 24)}일 전`
 }
+
+/* ── 신입환영(홈) — 최근 3일 가입인사 글 (Phase 3, 실유저 환대 2층) ──
+ * 가입인사는 목록/홈/베스트/검색/sitemap에서 제외(EXCLUDE_GREETING)되지만,
+ * 이 쿼리는 홈 신입환영 섹션 "의도적 예외 창구"로 가입인사만 따로 노출한다. */
+export interface NewcomerGreeting {
+  id: string
+  slug: string | null
+  title: string
+  preview: string
+  nickname: string
+  createdAt: string
+}
+
+async function _getRecentGreetings(): Promise<NewcomerGreeting[]> {
+  const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+  const rows = await prisma.post.findMany({
+    where: {
+      boardType: 'STORY',
+      category: GREETING_CATEGORY,
+      status: 'PUBLISHED',
+      createdAt: { gte: since },
+    },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      summary: true,
+      createdAt: true,
+      author: { select: { nickname: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 6,
+  })
+  return rows.map((r) => ({
+    id: r.id,
+    slug: r.slug,
+    title: r.title,
+    preview: r.summary ?? '',
+    nickname: r.author?.nickname ?? '새 이웃',
+    createdAt: r.createdAt.toISOString(),
+  }))
+}
+export const getRecentGreetings = unstable_cache(
+  _getRecentGreetings,
+  ['recent-greetings'],
+  { revalidate: 60, tags: ['home-newcomers'] },
+)

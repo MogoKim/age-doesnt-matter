@@ -6,6 +6,7 @@ import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
 import StoriesSection from '@/components/features/home/StoriesSection'
 import HumorSection from '@/components/features/home/HumorSection'
+import NewcomerWelcomeSection from '@/components/features/home/NewcomerWelcomeSection'
 import FeedAd from '@/components/ad/FeedAd'
 import ResponsiveAd from '@/components/ad/ResponsiveAd'
 import LazyAd from '@/components/ad/LazyAd'
@@ -120,6 +121,11 @@ async function HotContentSections() {
         <StoriesSection posts={stories} />
         <HumorSection posts={humor} />
       </div>
+
+      {/* 신입환영 — 웃음방 아래, 모바일/데스크탑 공통 (실유저 환대 2층, Phase 3). 0건이면 null */}
+      <Suspense fallback={null}>
+        <NewcomerWelcomeSection />
+      </Suspense>
 
       {/* 모바일: IN_FEED (데스크탑 쿠팡 → 매거진 아래로 이동) */}
       <ResponsiveAd
