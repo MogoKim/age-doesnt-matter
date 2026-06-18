@@ -4,6 +4,8 @@ import { Prisma } from '@/generated/prisma/client'
 import { authConfig } from '@/lib/auth.config'
 import { logAuthFailure } from '@/lib/auth-monitor'
 import { retryOnConnError } from '@/lib/db-retry'
+import Credentials from 'next-auth/providers/credentials'
+import { verifyAndConsumeHandoffToken } from '@/lib/app-handoff'
 
 const TOKEN_REFRESH_WINDOW_MS = 30 * 60 * 1000
 
@@ -18,6 +20,33 @@ function normalizeKakaoPhone(raw: string | undefined): string | null {
  */
 export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
   ...authConfig,
+
+  // 앱(Capacitor) handoff 전용 Credentials provider — full 설정(auth.ts)에만 둔다.
+  //   auth.config.ts(Edge/미들웨어)에는 절대 추가하지 않는다(Prisma 포함 → Edge 붕괴).
+  //   남성차단/온보딩은 시스템 브라우저 OAuth(아래 signIn 콜백)에서 이미 처리됨 → 여기선 세션 발급만.
+  providers: [
+    ...authConfig.providers,
+    Credentials({
+      id: 'app-handoff',
+      credentials: { token: {} },
+      async authorize(credentials) {
+        const token = typeof credentials?.token === 'string' ? credentials.token : ''
+        const result = await verifyAndConsumeHandoffToken(token)
+        if (!result) return null
+        // userId 유저 존재 + 상태 재확인(발급~교환 사이 상태변경 방어)
+        const user = await prisma.user.findUnique({
+          where: { id: result.userId },
+          select: { id: true, status: true, suspendedUntil: true },
+        })
+        if (!user) return null
+        if (user.status === 'BANNED') return null
+        if (user.status === 'SUSPENDED' && user.suspendedUntil && user.suspendedUntil > new Date()) {
+          return null
+        }
+        return { id: user.id }
+      },
+    }),
+  ],
 
   callbacks: {
     ...authConfig.callbacks,
@@ -74,7 +103,14 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
       }
     },
 
-    async jwt({ token, account, profile, trigger, session }) {
+    async jwt({ token, account, profile, trigger, session, user }) {
+      // 앱 handoff(Credentials) 로그인: authorize가 반환한 user.id로 토큰 구성 →
+      //   아래 공통 경로(else if token.userId)에서 role/grade/needsOnboarding을 DB 재조회로 채운다.
+      if (account?.provider === 'app-handoff' && user?.id) {
+        token.userId = user.id
+        token.tokenRefreshedAt = 0 // throttle 무시하고 즉시 DB 재조회 강제
+      }
+
       // 온보딩 완료 등 세션 업데이트 시 토큰 갱신
       if (trigger === 'update' && session) {
         const updates = session.user || session

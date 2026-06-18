@@ -1,5 +1,7 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { logAuthFailure } from '@/lib/auth-monitor'
+import AppAuthErrorRedirect from './AppAuthErrorRedirect'
 
 interface Props {
   searchParams: { error?: string }
@@ -12,6 +14,12 @@ export default async function AuthErrorPage({ searchParams }: Props) {
   // (signIn 차단 시 gender_blocked로 이미 1회 기록됨)
   if (error !== 'FemaleOnly') {
     await logAuthFailure('oauth_callback_error', error).catch(() => {})
+  }
+
+  // 앱(Capacitor) 플로우(app_login 쿠키)면 결과를 딥링크로 앱에 복귀 — 웹/TWA는 기존 UI 그대로.
+  const isAppFlow = (await cookies()).get('app_login')?.value === '1'
+  if (isAppFlow) {
+    return <AppAuthErrorRedirect error={error} />
   }
 
   // 여성 전용 안내 (신규 남성 차단)

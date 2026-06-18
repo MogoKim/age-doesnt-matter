@@ -22,6 +22,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- OAuth handoff 딥링크 (custom scheme) — com.agenotmatter.app://auth?token=... -->
+            <!-- App Links(autoVerify + assetlinks)는 production 안정화 단계에서 보강 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.agenotmatter.app" />
+            </intent-filter>
+
         </activity>
 
         <provider

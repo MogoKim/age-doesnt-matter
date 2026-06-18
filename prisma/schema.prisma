@@ -1100,6 +1100,19 @@ model PushSubscription {
   @@index([userId])
 }
 
+// ── 앱(Capacitor) OAuth handoff — 1회성 토큰 nonce 저장 (replay 방지) ──
+// 시스템 브라우저 OAuth 성공 → handoff token 발급 시 nonce 기록 → WebView 교환 시 atomic consume.
+// User 역참조 없이 userId만 보관(handoff는 조회·검증 전용).
+model AppHandoffToken {
+  nonce      String    @id
+  userId     String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([expiresAt])
+}
+
 // ── 예약 푸시 발송 (어드민 1회성) ──
 // GHA 5분 크론 → /api/admin/push/dispatch-scheduled → Vercel 서버가 발송(VAPID는 Vercel에만 존재)
 enum ScheduledPushStatus {
