@@ -51,7 +51,9 @@ const STATIC_BOARD_CONFIGS: Record<string, {
   },
 }
 
-export const revalidate = 30
+// 90초: 글목록 ISR 재검증 빈도를 낮춰 백그라운드 DB 연결 점유를 줄임(연결풀 3 여유 확보).
+// 신선도(새 글 반영)는 최대 90초로 약간 늦어지나 시니어 커뮤니티 체감 미미.
+export const revalidate = 90
 
 export function generateStaticParams() {
   return [

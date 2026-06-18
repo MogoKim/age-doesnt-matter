@@ -9,7 +9,8 @@ import TrackedPostLink from './TrackedPostLink'
 const getCachedBoardBottomPosts = unstable_cache(
   async (boardType: BoardType) => (await getPostsByBoardPage(boardType, { limit: 13 })).posts,
   ['post-list-bottom-latest'],
-  { revalidate: 30, tags: ['community-board-page'] },
+  // 90초: 글목록 캐시 재검증 빈도↓ → 백그라운드 DB 연결 점유 완화(community/[boardSlug] revalidate와 동기).
+  { revalidate: 90, tags: ['community-board-page'] },
 )
 
 interface Props {
