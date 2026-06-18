@@ -212,6 +212,8 @@ export function SignupPromptBanner() {
       // 노출 측정 (EventLog, _anon_sid 자동) — 발동 시점 정독률
       const scrollableNow = document.documentElement.scrollHeight - window.innerHeight
       const scrollAt = scrollableNow <= 0 ? 100 : Math.min(100, Math.max(0, Math.round((window.scrollY / scrollableNow) * 100)))
+      // EventLog에도 GA4와 동일하게 기록 — EventLog 단독 배너 퍼널 재구성 가능하게 (eligible=분모)
+      trackEvent('signup_banner_eligible', { show_count: count + 1 })
       trackEvent('signup_banner_shown', { scroll_at_show: scrollAt })
     }
 
@@ -342,6 +344,7 @@ export function SignupPromptBanner() {
 
   const handleDismiss = () => {
     gtmSignupBannerDismissed(pathname, getPromptCount())
+    trackEvent('signup_banner_dismissed', { show_count: getPromptCount() })
     setVisible(false)
   }
 
@@ -349,6 +352,7 @@ export function SignupPromptBanner() {
     if (inapp) {
       // 인앱 환경: 외부브라우저로 현재 페이지 열기 + signup=1 파라미터
       gtmSignupBannerClicked(pathname, 'external_browser')
+      trackEvent('signup_banner_clicked', { cta_type: 'external_browser', env: currentEnv })
       const targetUrl = new URL(window.location.href)
       targetUrl.searchParams.set('signup', '1')
       targetUrl.searchParams.set('utm_source', currentEnv)
@@ -379,6 +383,7 @@ export function SignupPromptBanner() {
     } else {
       // 일반 브라우저: 직접 카카오 OAuth
       gtmSignupBannerClicked(pathname, 'kakao_oauth')
+      trackEvent('signup_banner_clicked', { cta_type: 'kakao_oauth', env: currentEnv })
       setIsStarting(true)
       startKakaoLogin(pathname)
     }
