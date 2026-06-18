@@ -52,6 +52,9 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
     ...authConfig.callbacks,
 
     async signIn({ account, profile }) {
+      // 앱 handoff(Credentials): authorize에서 HMAC+nonce 1회소비+status 검증 완료 → 여기선 통과만.
+      //   남성차단/상태검증은 시스템 브라우저 OAuth(kakao signIn)에서 이미 수행됨(handoff는 세션 발급 레이어).
+      if (account?.provider === 'app-handoff') return true
       try {
         if (account?.provider !== 'kakao' || !profile) return false
 
