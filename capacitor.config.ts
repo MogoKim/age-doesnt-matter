@@ -15,8 +15,8 @@ const config: CapacitorConfig = {
   appName: '우리 나이가 어때서',
   webDir: 'public',
   server: {
-    // PoC 검증용 Vercel Preview(poc/ios-capacitor-2-1, deployment 고정 URL). production 금지.
-    url: 'https://age-doesnt-matter-55bfl5ak8-mogoyongseok-8318s-projects.vercel.app',
+    // production 정식 빌드: 실서비스 도메인 로드. (Day2 검증은 Preview URL로 진행, main merge로 production에 코드 반영됨)
+    url: 'https://age-doesnt-matter.com',
     cleartext: false,
   },
   ios: {
