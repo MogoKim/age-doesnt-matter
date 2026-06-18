@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">우리 나이가 어때서</string>
+    <string name="title_activity_main">우리 나이가 어때서</string>
+    <string name="package_name">com.agenotmatter.app</string>
+    <string name="custom_url_scheme">com.agenotmatter.app</string>
+</resources>

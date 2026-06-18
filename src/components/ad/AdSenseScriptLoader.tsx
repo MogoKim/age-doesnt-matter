@@ -13,6 +13,11 @@ type AdSenseWindow = Window & {
 
 export default function AdSenseScriptLoader() {
   useEffect(() => {
+    // Capacitor 네이티브 앱(iOS/Android shell)에서는 AdSense 스크립트를 로드하지 않는다.
+    //   → 앱 내 WebView AdSense 게재는 정책 위반 위험(계정 보호). 웹/TWA(Chrome)는 영향 없음.
+    //   window.Capacitor는 네이티브 런타임만 주입(웹 미탑재) → 웹/TWA에선 항상 미발동.
+    if ((window as Window & { Capacitor?: unknown }).Capacitor) return
+
     const src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE.CLIENT_ID}`
     const win = window as AdSenseWindow
 

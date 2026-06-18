@@ -31,6 +31,11 @@ const WebVitalsReporter = dynamic(
   () => import('@/components/common/WebVitalsReporter'),
   { loading: () => null, ssr: false },
 )
+// 앱(Capacitor) 딥링크 핸들러 — 네이티브에서만 동작(웹/TWA no-op), client 전용
+const AppDeepLinkHandler = dynamic(
+  () => import('@/components/features/auth/AppDeepLinkHandler'),
+  { loading: () => null, ssr: false },
+)
 
 export const metadata: Metadata = {
   title: {
@@ -116,6 +121,7 @@ export default function RootLayout({
           <GtagLoader />
           <WebVitalsReporter />
           <AdSenseScriptLoader />
+          <AppDeepLinkHandler />
         </AuthProvider>
       </body>
     </html>

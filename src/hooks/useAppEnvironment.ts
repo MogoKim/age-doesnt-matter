@@ -4,9 +4,18 @@ import { useMemo } from 'react'
 
 export interface AppEnvironment {
   isTWA: boolean
+  /** Capacitor 네이티브 앱(iOS/Android shell) 내부 실행 여부. 네이티브 런타임이 주입하는 window.Capacitor로 감지. */
+  isCapacitor: boolean
   isStandalone: boolean
   supportsWebPush: boolean
   notificationPermission: NotificationPermission
+}
+
+/** Capacitor 네이티브 shell 감지 — window.Capacitor는 네이티브 런타임만 주입(웹에선 @capacitor/core 미탑재라 부재). */
+function detectCapacitor(): boolean {
+  const cap = (window as Window & { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
+  if (!cap) return false
+  return typeof cap.isNativePlatform === 'function' ? cap.isNativePlatform() : true
 }
 
 export function useAppEnvironment(): AppEnvironment {
@@ -14,6 +23,7 @@ export function useAppEnvironment(): AppEnvironment {
     if (typeof window === 'undefined') {
       return {
         isTWA: false,
+        isCapacitor: false,
         isStandalone: false,
         supportsWebPush: false,
         notificationPermission: 'default' as NotificationPermission,
@@ -36,6 +46,7 @@ export function useAppEnvironment(): AppEnvironment {
 
     return {
       isTWA,
+      isCapacitor: detectCapacitor(),
       isStandalone: matchMedia('(display-mode: standalone)').matches,
       supportsWebPush: 'PushManager' in window && 'serviceWorker' in navigator,
       notificationPermission: 'Notification' in window ? Notification.permission : 'denied',
