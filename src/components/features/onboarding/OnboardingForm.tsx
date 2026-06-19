@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { checkNickname, completeOnboarding } from '@/lib/actions/onboarding'
 import { gtmSignUp, sendGtmEvent, waitForGtagReady, getBrowserEnv } from '@/lib/gtm'
+import { appLogEvent, isAppNative } from '@/lib/analytics/app-analytics'
 import { trackEvent } from '@/lib/track'
 import { setPushToastTrigger } from '@/components/common/PushPermissionToast'
 // 닉네임 규칙은 단일 진실(@/lib/nickname) — 가입/프로필변경 공통. 화면별 규칙 drift 방지
@@ -208,7 +209,8 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
       if (result.error) {
         setSubmitError(result.error)
       } else {
-        sendGtmEvent('signup_step', { step: 3, step_name: 'welcome', browser_env: getBrowserEnv() })
+        // 앱: gtag(web stream) signup_step 미전송. 웹/TWA만 기존 sendGtmEvent 유지. EventLog는 공통.
+        if (!isAppNative()) sendGtmEvent('signup_step', { step: 3, step_name: 'welcome', browser_env: getBrowserEnv() })
         trackEvent('signup_step', { step: 3, step_name: 'welcome', browser_env: getBrowserEnv() })
         setStep(3)
       }
@@ -225,15 +227,23 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     localStorage.setItem('signup_welcome_toast', '1')
     // 가입 직후 푸시 구독 유도 — 홈((main)) 진입 시 sessionStorage 폴백으로 토스트 노출
     setPushToastTrigger('signup')
-    gtmSignUp('kakao')
+    if (isAppNative()) {
+      // 앱: 가입 완료(온보딩까지 끝)를 GA4 app stream에 native logEvent. gtag(web stream) 호출 금지.
+      appLogEvent('sign_up', { method: 'kakao' })
+      appLogEvent('onboarding_complete', { method: 'kakao' })
+    } else {
+      gtmSignUp('kakao')
+    }
     trackEvent('sign_up', {
       method: 'kakao',
       browser_env: getBrowserEnv(),
     })
-    // gtag.js 로드 완료 대기 — _gtagReady=true 확인 후 navigate
-    // window.gtag 존재 체크는 부족 (GTM stub이 미리 생성됨)
-    await waitForGtagReady()
-    await new Promise<void>((resolve) => setTimeout(resolve, 100))
+    // 웹 전용: gtag.js 로드 완료 대기 — _gtagReady=true 확인 후 navigate (전환 유실 방지).
+    //   window.gtag 존재 체크는 부족(GTM stub이 미리 생성됨). 앱은 gtag 미로드라 대기 불필요.
+    if (!isAppNative()) {
+      await waitForGtagReady()
+      await new Promise<void>((resolve) => setTimeout(resolve, 100))
+    }
     router.push(callbackUrl || '/')
     router.refresh()
   }

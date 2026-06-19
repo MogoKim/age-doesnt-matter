@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useAppSession } from '@/components/common/AppSessionProvider'
 import { trackEvent } from '@/lib/track'
 import { gtmPageView, gtmLogin, gtmSetUserProperties, captureUtm, getBrowserEnv, getStoredUtm } from '@/lib/gtm'
+import { appLogEvent, isAppNative } from '@/lib/analytics/app-analytics'
 
 // 하드 리프레시마다 login 이벤트 중복 발사 방지.
 // useRef는 리프레시 시 초기화되므로 sessionStorage 플래그 사용.
@@ -28,22 +29,28 @@ export default function PageViewTracker() {
     if (sessionStorage.getItem(SESSION_LOGIN_KEY)) return
     sessionStorage.setItem(SESSION_LOGIN_KEY, '1')
 
-    gtmLogin('kakao')
-    trackEvent('login', { method: 'kakao', browser_env: getBrowserEnv() })
-    // user_id undefined 전송 방지
-    if (user?.id) {
-      void gtmSetUserProperties({
-        user_id: user.id,
-        user_type: 'member',
-        registration_method: 'kakao',
-      })
+    if (isAppNative()) {
+      // 앱: GA4 app stream에만 native logEvent. gtag(web stream) 호출 금지(오염 방지).
+      appLogEvent('login', { method: 'kakao' })
+    } else {
+      gtmLogin('kakao')
+      // user_id undefined 전송 방지
+      if (user?.id) {
+        void gtmSetUserProperties({
+          user_id: user.id,
+          user_type: 'member',
+          registration_method: 'kakao',
+        })
+      }
     }
+    trackEvent('login', { method: 'kakao', browser_env: getBrowserEnv() })
   }, [status, user])
 
   // 페이지 이동 시 page_view (UTM 동봉 — 레퍼럴/유입 채널을 EventLog에서 추적)
   useEffect(() => {
     trackEvent('page_view', { browser_env: getBrowserEnv(), ...getStoredUtm() })
-    gtmPageView(pathname)
+    // 앱: gtag(web stream) page_view 미전송. 웹/TWA만 기존 gtmPageView 유지.
+    if (!isAppNative()) gtmPageView(pathname)
   }, [pathname])
 
   return null

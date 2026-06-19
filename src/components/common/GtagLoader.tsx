@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { markGtagReady } from '@/lib/gtm'
+import { isAppNative } from '@/lib/analytics/app-analytics'
 
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID
 const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? 'AW-18086681147'
@@ -66,6 +67,9 @@ function loadGtagOnce(): void {
 
 export default function GtagLoader() {
   useEffect(() => {
+    // 앱(Capacitor): gtag/GA4 web stream 전면 차단. 핵심 이벤트는 native Firebase Analytics로만 전송.
+    //   __unaoEnsureGtag 미등록 → 어떤 gtm 함수도 gtag를 로드/전송하지 못함(web stream 오염 0).
+    if (isAppNative()) return
     if (!GA4_ID) return
 
     // 전환 이벤트(sign_up/login)가 트리거를 기다리지 않고 로드를 시작할 수 있도록 hook 등록

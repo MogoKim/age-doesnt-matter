@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "757616369524",
+    "project_id": "agenotmatter-19615",
+    "storage_bucket": "agenotmatter-19615.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:757616369524:android:4f5a69a31a937bd6de1621",
+        "android_client_info": {
+          "package_name": "com.agenotmatter.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjViqL55LCmLLidSpWbtz1aO16oA6ySp8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
