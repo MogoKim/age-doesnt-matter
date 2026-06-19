@@ -16,6 +16,9 @@ import { safeKakaoCallbackUrl } from '@/lib/kakao-start'
 
 const SCHEME_PREFIX = 'com.agenotmatter.app://'
 
+// Android 하드웨어 뒤로가기에서 "앱 종료"로 처리할 루트 경로 (이 외엔 history.back)
+const ROOT_PATHS = ['/', '/onboarding']
+
 function b64urlDecodeCb(token: string): string {
   try {
     const body = token.split('.')[0]
@@ -33,7 +36,7 @@ export default function AppDeepLinkHandler() {
     const cap = (window as Window & { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
     if (!cap?.isNativePlatform?.()) return
 
-    let removeListener: (() => void) | undefined
+    const removers: Array<() => void> = []
 
     void import('@capacitor/app').then(({ App }) => {
       void App.addListener('appUrlOpen', async ({ url }) => {
@@ -59,11 +62,22 @@ export default function AppDeepLinkHandler() {
           window.location.href = '/auth/error?error=HandoffFailed'
         }
       }).then((handle) => {
-        removeListener = () => { void handle.remove() }
+        removers.push(() => { void handle.remove() })
+      })
+
+      // Android 하드웨어 뒤로가기: 루트 경로면 앱 종료, 그 외엔 이전 화면(history.back)
+      void App.addListener('backButton', () => {
+        if (ROOT_PATHS.includes(window.location.pathname)) {
+          void App.exitApp()
+        } else {
+          window.history.back()
+        }
+      }).then((handle) => {
+        removers.push(() => { void handle.remove() })
       })
     })
 
-    return () => { removeListener?.() }
+    return () => { removers.forEach((r) => r()) }
   }, [])
 
   return null
