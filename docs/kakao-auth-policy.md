@@ -118,6 +118,9 @@ cat .env.production.local | grep KAKAO
 
 > `AUTH_URL`이 설정되어 있으면 쿠키 domain 불일치로 `InvalidCheck: state value could not be parsed` 발생. **절대 설정하지 말 것.**
 
+> ⚠️ **Preview 환경 주의 (2026-06-18 사고 5)**: `KAKAO_CLIENT_SECRET`은 Production뿐 아니라 **Preview env도 4ec06 키 짝**이어야 한다. Preview에서 OAuth/handoff를 테스트하려면 Preview env의 `KAKAO_CLIENT_ID`·`KAKAO_CLIENT_SECRET`이 같은 4ec06 키 박스 짝인지 `vercel env pull --environment=preview`로 확인. (Preview는 별도 env라 값 누락/오값 가능)
+> ⚠️ **미해결 후속(창업자 액션)**: 4ec06 Client Secret이 디버깅 중 노출됨 → **재발급 후 production·Preview env 모두 교체** 필요.
+
 ---
 
 ## 4. DB 스키마 — 인증 관련 필드
@@ -372,6 +375,50 @@ curl -X POST https://kauth.kakao.com/oauth/token \
 
 ---
 
+### 사고 5: `KOE010 invalid_client` — Vercel **Preview** 환경 (2026-06-18)
+
+> **맥락**: Android Capacitor 앱 로그인은 **별도 구조**(시스템 브라우저 OAuth + 1회성 handoff token + Credentials provider)다. 아래는 그 검증을 Vercel **Preview** 배포에서 진행하던 중 발생.
+
+**증상**: Preview 배포에서 token 교환(`/api/auth/callback/kakao`) 시 `Configuration` / `KOE010 invalid_client`
+**원인**: Vercel **Preview** 환경의 `KAKAO_CLIENT_SECRET`이 4ec06 키와 짝이 안 맞는 오값. (Production env는 정상이었으나 Preview는 별도 env라 누락/오값)
+**해결**: Preview `KAKAO_CLIENT_SECRET`을 4ec06 키 시크릿(= Production과 동일 값)으로 교정. (Preview URL 변천: `yfqzk0hao`(KOE010) → `ma4q7mecg`(교정))
+**교훈**:
+- 사고 3(2026-05-18, Production KOE010)과 **동일 근본원인이 Preview에서 재발**. env는 Production / Preview / Local **분리** → Preview에서 OAuth 테스트 시 **Preview env의 ID·Secret도 같은 4ec06 키 박스 짝인지** 반드시 확인.
+- Preview는 deployment-URL마다 카카오 redirect 재등록이 필요(브랜치명이 길어 git-branch alias 미생성) → 반복 부담. **production 정식 전환으로 종료** 권장.
+- ⚠️ **미해결 후속(창업자 액션)**: 디버깅 중 `KAKAO_CLIENT_SECRET` 값이 스크린샷·로그에 노출됨 → 4ec06 키 Client Secret **재발급** → **production·Preview env 모두 새 값으로 교체 후 재배포**(기존 secret 무효화).
+
+### 사고 6: `AccessDenied` — app-handoff Credentials provider 차단 (2026-06-18)
+
+> **맥락**: 앱 로그인 = 시스템 브라우저에서 기존 카카오 OAuth(남성차단·상태검증 그대로) 통과 → 1회성 handoff token → 앱 WebView에서 `Credentials('app-handoff')` provider로 세션 재발급. (신규 구조, 커밋 `8e47896`)
+
+**증상**: `/api/auth/callback/app-handoff`에서 `AccessDenied` → 앱 세션 발급 실패
+**원인**: `auth.ts`의 `signIn` 콜백 첫 줄 `if (account?.provider !== 'kakao' || !profile) return false`가 Credentials `app-handoff`까지 차단
+**해결**: `signIn` 콜백 맨 위에 `if (account?.provider === 'app-handoff') return true` 분기 추가 (커밋 `f65a70a`). `app-handoff`는 `authorize`에서 HMAC 서명 + nonce 1회 소비 + status 검증을 **이미** 통과하므로 signIn은 통과만 시킨다. **kakao 남성차단/상태검증 로직 그대로 유지, `auth.config.ts` 무변경.**
+**교훈**:
+- `signIn` 콜백의 provider 화이트리스트 가드(`provider !== 'kakao' → return false`)는 **새 provider 추가 시 함께 갱신**. 누락 시 해당 provider 로그인 전면 차단.
+- Credentials provider는 자체 `authorize`에서 검증을 마치므로 `signIn`은 통과시켜야 한다(이중 차단 금지).
+- 앱 handoff는 **세션 발급 레이어만 추가**한 것 — 웹 카카오 로그인 코드(남성차단·온보딩 판정)는 그대로 재사용.
+
+### 사고 7: `KOE006` — Preview redirect_uri 미등록 (2026-06-19)
+
+> **맥락**: 이번 사고는 **코드 문제가 아니라 카카오 콘솔 운영 절차 문제**다. Android/iOS Capacitor를 Vercel Preview URL로 검증할 때마다 재발 가능성이 높다.
+
+**증상**: Android Capacitor debug APK에서 카카오 로그인 시작 시 `앱 관리자 설정 오류 (KOE006)` 발생
+**원인**: 앱이 Vercel Preview URL을 `server.url`로 로드했고, NextAuth가 다음 callback URL을 카카오에 전달했으나 카카오 콘솔 Redirect URI 목록에 등록되어 있지 않았음.
+`https://{vercel-preview-domain}/api/auth/callback/kakao`
+**해결**:
+- 카카오 Developers > 앱 1409330 > 플랫폼 키 > `우리 나이가 어때서` REST API 키(`4ec06...`) > 로그인 리다이렉트 URI에 Preview callback URI를 **임시 추가**
+- DebugView 검증 완료 후 해당 Preview URI **삭제**
+**교훈**:
+- Preview OAuth 검증 시에는 Preview env의 ID/Secret 짝(사고 5)뿐 아니라 **Redirect URI 등록**도 필요하다.
+- **기존 production/www/localhost URI는 절대 삭제하지 않는다.** (아래 3개는 항상 유지)
+  - `http://localhost:3000/api/auth/callback/kakao`
+  - `https://age-doesnt-matter.com/api/auth/callback/kakao`
+  - `https://www.age-doesnt-matter.com/api/auth/callback/kakao`
+- Preview URI는 검증용 임시값이므로 **문서에는 실제 URL을 영구 기록하지 않고 `{vercel-preview-domain}` 형태로 일반화**한다.
+
+---
+
 ### 비호환성 이슈: oauth4webapi v3 + 카카오
 
 | 문제 | 원인 | 해결 |
@@ -395,6 +442,7 @@ curl -X POST https://kauth.kakao.com/oauth/token \
 | `conform` 함수 제거 | oauth4webapi v3 파싱 실패 |
 | `token.url` 제거 | authjs.dev로 fallback → token 교환 실패 |
 | `auth.config.ts`에 Prisma 임포트 | Edge Runtime에서 Prisma 불가 → 미들웨어 크래시 |
+| `signIn` 콜백 provider 가드에 새 provider 누락 | Credentials(`app-handoff`) 등 차단 → 해당 경로 로그인 전면 불가 (사고 6) |
 
 ### 환경변수 수준
 
@@ -404,6 +452,7 @@ curl -X POST https://kauth.kakao.com/oauth/token \
 | `NEXTAUTH_SECRET` 사용 | NextAuth v5는 `AUTH_SECRET`만 인식 |
 | Default REST API Key(`3a0c2b...`) KAKAO_CLIENT_ID 사용 | 시크릿이 다른 키 박스에 속함 → KOE010 |
 | ID와 Secret을 다른 플랫폼 키에서 조합 | KOE010 |
+| **Preview** `KAKAO_CLIENT_SECRET`을 4ec06 짝 아닌 값으로 방치 | Preview는 별도 env → Preview OAuth 테스트 시 KOE010 (사고 5) |
 
 ### 카카오 콘솔 수준
 

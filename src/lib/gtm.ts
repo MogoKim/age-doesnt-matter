@@ -22,6 +22,8 @@
  * - post_view          : 커뮤니티 게시글 상세 조회
  */
 
+import { isAppNative } from '@/lib/analytics/app-analytics'
+
 // ── 타입 ──
 
 declare global {
@@ -65,6 +67,8 @@ export function markGtagReady(): void {
  */
 export async function waitForGtagReady(timeoutMs = 2000): Promise<void> {
   if (typeof window === 'undefined') return
+  // 앱(Capacitor): gtag 미로드(GtagLoader가 앱에서 차단) → 대기 불필요, 즉시 통과.
+  if (isAppNative()) return
   // GA4_ID 없으면 gtag가 영영 로드되지 않음 → 전환 직전 불필요한 2초 대기 금지
   if (!GA4_ID) return
   // 전환 이벤트(sign_up/login) 직전 gtag 로드를 능동 시작 (트리거를 기다리지 않음).
@@ -87,6 +91,9 @@ export async function waitForGtagReady(timeoutMs = 2000): Promise<void> {
 /** gtag()로 GA4에 직접 이벤트 전송. gtag 미로드 시 큐에 보관. */
 function sendEvent(eventName: string, params?: Record<string, unknown>): void {
   if (typeof window === 'undefined') return
+  // 앱(Capacitor): gtag(web stream) 전송·큐적재 전면 금지. 핵심 이벤트는 native Firebase Analytics로만.
+  //   모든 gtm 헬퍼(sendGtmEvent/gtmLogin/gtmSignUp/gtmPageView 등)가 이 함수를 경유 → 단일 차단점.
+  if (isAppNative()) return
   if (navigator.webdriver) return
   if (_gtagReady && window.gtag) {
     window.gtag('event', eventName, params)
