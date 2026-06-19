@@ -399,6 +399,24 @@ curl -X POST https://kauth.kakao.com/oauth/token \
 - Credentials provider는 자체 `authorize`에서 검증을 마치므로 `signIn`은 통과시켜야 한다(이중 차단 금지).
 - 앱 handoff는 **세션 발급 레이어만 추가**한 것 — 웹 카카오 로그인 코드(남성차단·온보딩 판정)는 그대로 재사용.
 
+### 사고 7: `KOE006` — Preview redirect_uri 미등록 (2026-06-19)
+
+> **맥락**: 이번 사고는 **코드 문제가 아니라 카카오 콘솔 운영 절차 문제**다. Android/iOS Capacitor를 Vercel Preview URL로 검증할 때마다 재발 가능성이 높다.
+
+**증상**: Android Capacitor debug APK에서 카카오 로그인 시작 시 `앱 관리자 설정 오류 (KOE006)` 발생
+**원인**: 앱이 Vercel Preview URL을 `server.url`로 로드했고, NextAuth가 다음 callback URL을 카카오에 전달했으나 카카오 콘솔 Redirect URI 목록에 등록되어 있지 않았음.
+`https://{vercel-preview-domain}/api/auth/callback/kakao`
+**해결**:
+- 카카오 Developers > 앱 1409330 > 플랫폼 키 > `우리 나이가 어때서` REST API 키(`4ec06...`) > 로그인 리다이렉트 URI에 Preview callback URI를 **임시 추가**
+- DebugView 검증 완료 후 해당 Preview URI **삭제**
+**교훈**:
+- Preview OAuth 검증 시에는 Preview env의 ID/Secret 짝(사고 5)뿐 아니라 **Redirect URI 등록**도 필요하다.
+- **기존 production/www/localhost URI는 절대 삭제하지 않는다.** (아래 3개는 항상 유지)
+  - `http://localhost:3000/api/auth/callback/kakao`
+  - `https://age-doesnt-matter.com/api/auth/callback/kakao`
+  - `https://www.age-doesnt-matter.com/api/auth/callback/kakao`
+- Preview URI는 검증용 임시값이므로 **문서에는 실제 URL을 영구 기록하지 않고 `{vercel-preview-domain}` 형태로 일반화**한다.
+
 ---
 
 ### 비호환성 이슈: oauth4webapi v3 + 카카오

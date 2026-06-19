@@ -1035,6 +1035,43 @@ curl -X POST https://kauth.kakao.com/oauth/token \
           </dl>
         </div>
       </div>
+
+      <div class="incident">
+        <div class="incident-header">
+          <span class="severity">사고 7</span>
+          <span class="date">2026-06-19</span>
+          <h3>KOE006 — Preview redirect_uri 미등록</h3>
+        </div>
+        <div class="incident-body">
+          <div class="alert alert-info" style="margin-bottom:14px;">
+            <strong>맥락 — 코드 문제가 아닌 콘솔 운영 절차 문제</strong>
+            이번 사고는 코드 문제가 아니라 카카오 콘솔 운영 절차 문제다. Android/iOS Capacitor를 Vercel Preview URL로 검증할 때마다 재발 가능성이 높다.
+          </div>
+          <dl>
+            <dt>증상</dt><dd>Android Capacitor debug APK에서 카카오 로그인 시작 시 <code>앱 관리자 설정 오류 (KOE006)</code> 발생</dd>
+            <dt>원인</dt><dd>앱이 Vercel Preview URL을 <code>server.url</code>로 로드했고, NextAuth가 다음 callback URL을 카카오에 전달했으나 카카오 콘솔 Redirect URI 목록에 등록되어 있지 않았음.<br><code>https://{vercel-preview-domain}/api/auth/callback/kakao</code></dd>
+            <dt>해결</dt><dd>
+              <ul style="margin-left:16px;font-size:14px;line-height:1.9;">
+                <li>카카오 Developers &gt; 앱 1409330 &gt; 플랫폼 키 &gt; <code>우리 나이가 어때서</code> REST API 키(<code>4ec06...</code>) &gt; 로그인 리다이렉트 URI에 Preview callback URI를 <strong>임시 추가</strong></li>
+                <li>DebugView 검증 완료 후 해당 Preview URI <strong>삭제</strong></li>
+              </ul>
+            </dd>
+            <dt>교훈</dt><dd>
+              <ul style="margin-left:16px;font-size:14px;line-height:1.9;">
+                <li>Preview OAuth 검증 시에는 Preview env의 ID/Secret 짝(사고 5)뿐 아니라 <strong>Redirect URI 등록</strong>도 필요하다.</li>
+                <li><strong>기존 production/www/localhost URI는 절대 삭제하지 않는다.</strong> (아래 3개는 항상 유지)
+                  <ul style="margin-left:16px;">
+                    <li><code>http://localhost:3000/api/auth/callback/kakao</code></li>
+                    <li><code>https://age-doesnt-matter.com/api/auth/callback/kakao</code></li>
+                    <li><code>https://www.age-doesnt-matter.com/api/auth/callback/kakao</code></li>
+                  </ul>
+                </li>
+                <li>Preview URI는 검증용 임시값이므로 <strong>문서에는 실제 URL을 영구 기록하지 않고 <code>{vercel-preview-domain}</code> 형태로 일반화</strong>한다.</li>
+              </ul>
+            </dd>
+          </dl>
+        </div>
+      </div>
     </section>
 
     <!-- 10. 절대 금지 -->
