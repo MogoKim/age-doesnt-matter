@@ -13,6 +13,11 @@ import { setPushToastTrigger } from '@/components/common/PushPermissionToast'
 import { validateNicknameFormat as validateNickname, NICKNAME_REGEX, BANNED_WORDS, NICKNAME_MIN, NICKNAME_MAX } from '@/lib/nickname'
 
 type NicknameStatus = 'idle' | 'checking' | 'valid' | 'error'
+type ProgressState = {
+  step: 1 | 2
+  nickname: string
+  agreed: Record<string, boolean>
+}
 
 // ── 약관 항목 ──
 interface TermItem {
@@ -31,10 +36,13 @@ const TERMS: TermItem[] = [
 // 진행 상태 영속화 키 — middleware가 온보딩 미완 유저를 /onboarding으로 강제 리다이렉트(:181)할 때
 // 페이지가 통째로 새로 로드돼 useState가 초기화되는 것을 방지(직전 단계로 복원).
 const PROGRESS_KEY = 'unao_onboarding_progress'
+const NICKNAME_CHECK_DELAY_MS = 450
+const PROGRESS_SAVE_DELAY_MS = 300
 
 // ── 메인 컴포넌트 ──
 export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }) {
   const router = useRouter()
+  const destinationUrl = callbackUrl?.startsWith('/') ? callbackUrl : '/'
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [isPending, startTransition] = useTransition()
   const [submitError, setSubmitError] = useState('')
@@ -46,6 +54,9 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>('idle')
   const [nicknameError, setNicknameError] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const progressSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const latestNicknameRequestRef = useRef(0)
+  const isComposingRef = useRef(false)
   const stepRef = useRef<1 | 2 | 3>(1)
 
   // Step 2 - 약관
@@ -60,6 +71,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
   const noBanned = !BANNED_WORDS.some((w) => nickname.toLowerCase().includes(w))
 
   const checkDuplicateFromServer = useCallback(async (value: string) => {
+    const requestId = ++latestNicknameRequestRef.current
     setNicknameStatus('checking')
     try {
       // 8초 내 응답 없으면 타임아웃 — ⏳('중복 확인 중...') 무한 정체 방지 (모바일 네트워크 끊김 등)
@@ -67,6 +79,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
         checkNickname(value),
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
       ])
+      if (requestId !== latestNicknameRequestRef.current) return
       if (result.available) {
         setNicknameStatus('valid')
         setNicknameError('')
@@ -75,6 +88,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
         setNicknameError(result.error || '사용할 수 없는 닉네임이에요')
       }
     } catch {
+      if (requestId !== latestNicknameRequestRef.current) return
       // 네트워크/서버 오류·타임아웃 — 멈추지 말고 재시도 안내 (재입력 시 handleNicknameChange가 재검증)
       setNicknameStatus('error')
       setNicknameError('확인이 지연돼요. 잠시 후 다시 시도해 주세요')
@@ -87,6 +101,9 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     setNicknameError('')
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
+    latestNicknameRequestRef.current += 1
+
+    if (isComposingRef.current) return
 
     const error = validateNickname(value)
     if (error) {
@@ -97,14 +114,19 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
       return
     }
 
-    debounceRef.current = setTimeout(() => checkDuplicateFromServer(value), 250)
+    debounceRef.current = setTimeout(() => checkDuplicateFromServer(value), NICKNAME_CHECK_DELAY_MS)
   }
 
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
+      if (progressSaveRef.current) clearTimeout(progressSaveRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (step >= 2) router.prefetch(destinationUrl)
+  }, [destinationUrl, router, step])
 
   // 가입 퍼널 추적 — Step 1 진입 (컴포넌트 첫 마운트 시)
   useEffect(() => {
@@ -145,9 +167,14 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
   // 진행 상태 저장 (복원 완료 후에만 — 초기 default가 저장본을 덮어쓰는 것 방지)
   useEffect(() => {
     if (!hydrated) return
-    try {
-      sessionStorage.setItem(PROGRESS_KEY, JSON.stringify({ step, nickname, agreed }))
-    } catch { /* 무시 */ }
+    if (progressSaveRef.current) clearTimeout(progressSaveRef.current)
+    if (step === 3) return
+    progressSaveRef.current = setTimeout(() => {
+      const progress: ProgressState = { step, nickname, agreed }
+      try {
+        sessionStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
+      } catch { /* 무시 */ }
+    }, PROGRESS_SAVE_DELAY_MS)
   }, [hydrated, step, nickname, agreed])
 
   // 가입 이탈 감지 — 어느 단계에서 이탈했는지 기록.
@@ -244,8 +271,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
       await waitForGtagReady()
       await new Promise<void>((resolve) => setTimeout(resolve, 100))
     }
-    router.push(callbackUrl || '/')
-    router.refresh()
+    router.replace(destinationUrl)
   }
 
   // ── 프로그레스 바 (Step 1, 2만) ──
@@ -300,6 +326,17 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
               placeholder="예: 행복한바리스타"
               value={nickname}
               onChange={(e) => handleNicknameChange(e.target.value)}
+              onCompositionStart={() => {
+                isComposingRef.current = true
+                if (debounceRef.current) clearTimeout(debounceRef.current)
+                latestNicknameRequestRef.current += 1
+                setNicknameStatus('idle')
+                setNicknameError('')
+              }}
+              onCompositionEnd={(e) => {
+                isComposingRef.current = false
+                handleNicknameChange(e.currentTarget.value)
+              }}
               maxLength={NICKNAME_MAX}
               autoFocus
               autoComplete="off"
