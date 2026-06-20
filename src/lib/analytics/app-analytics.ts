@@ -16,12 +16,20 @@ export function isAppNative(): boolean {
   return !!cap?.isNativePlatform?.()
 }
 
-/** 앱에서만 Firebase Analytics 이벤트 전송. 웹/TWA는 no-op. */
-export function appLogEvent(name: string, params?: EventParams): void {
+/**
+ * 앱에서만 Firebase Analytics 이벤트 전송. 웹/TWA는 no-op.
+ *
+ * `Promise<void>`를 반환한다 — 호출부가 `await`하면 동적 import + native logEvent 완료까지 기다린다.
+ * 전환 직후 곧바로 navigate(router.replace 등)하는 경로에서 `await` 없이 호출하면,
+ * 동적 import가 끝나기 전에 페이지가 전환돼 이벤트가 **유실**될 수 있다(sign_up/onboarding_complete 사례).
+ * navigate 직전 발화는 반드시 `await appLogEvent(...)`로 호출할 것.
+ */
+export async function appLogEvent(name: string, params?: EventParams): Promise<void> {
   if (!isAppNative()) return
-  void import('@capacitor-firebase/analytics')
-    .then(({ FirebaseAnalytics }) => FirebaseAnalytics.logEvent({ name, params }))
-    .catch(() => { /* 분석 실패가 사용자 흐름을 막지 않는다 */ })
+  try {
+    const { FirebaseAnalytics } = await import('@capacitor-firebase/analytics')
+    await FirebaseAnalytics.logEvent({ name, params })
+  } catch { /* 분석 실패가 사용자 흐름을 막지 않는다 */ }
 }
 
 /** 앱에서만 user property 설정(앱·웹 구분 등). 웹/TWA는 no-op. */

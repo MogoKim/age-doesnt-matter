@@ -256,8 +256,9 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     setPushToastTrigger('signup')
     if (isAppNative()) {
       // 앱: 가입 완료(온보딩까지 끝)를 GA4 app stream에 native logEvent. gtag(web stream) 호출 금지.
-      appLogEvent('sign_up', { method: 'kakao' })
-      appLogEvent('onboarding_complete', { method: 'kakao' })
+      //   navigate(router.replace) 전에 await — 동적 import+logEvent 완료를 보장해 이벤트 유실 방지.
+      await appLogEvent('sign_up', { method: 'kakao' })
+      await appLogEvent('onboarding_complete', { method: 'kakao' })
     } else {
       gtmSignUp('kakao')
     }
