@@ -8,6 +8,15 @@
  */
 
 type EventParams = Record<string, string | number | boolean>
+type FirebaseAnalyticsClient = typeof import('@capacitor-firebase/analytics')['FirebaseAnalytics']
+
+let firebaseAnalyticsClientPromise: Promise<FirebaseAnalyticsClient> | null = null
+
+function getFirebaseAnalyticsClient(): Promise<FirebaseAnalyticsClient> {
+  firebaseAnalyticsClientPromise ??= import('@capacitor-firebase/analytics')
+    .then(({ FirebaseAnalytics }) => FirebaseAnalytics)
+  return firebaseAnalyticsClientPromise
+}
 
 /** Capacitor 네이티브 앱 여부 (window.Capacitor.isNativePlatform). 웹/TWA=false. */
 export function isAppNative(): boolean {
@@ -27,7 +36,7 @@ export function isAppNative(): boolean {
 export async function appLogEvent(name: string, params?: EventParams): Promise<void> {
   if (!isAppNative()) return
   try {
-    const { FirebaseAnalytics } = await import('@capacitor-firebase/analytics')
+    const FirebaseAnalytics = await getFirebaseAnalyticsClient()
     await FirebaseAnalytics.logEvent({ name, params })
   } catch { /* 분석 실패가 사용자 흐름을 막지 않는다 */ }
 }
@@ -35,7 +44,7 @@ export async function appLogEvent(name: string, params?: EventParams): Promise<v
 /** 앱에서만 user property 설정(앱·웹 구분 등). 웹/TWA는 no-op. */
 export function appSetUserProperty(key: string, value: string): void {
   if (!isAppNative()) return
-  void import('@capacitor-firebase/analytics')
-    .then(({ FirebaseAnalytics }) => FirebaseAnalytics.setUserProperty({ key, value }))
+  void getFirebaseAnalyticsClient()
+    .then((FirebaseAnalytics) => FirebaseAnalytics.setUserProperty({ key, value }))
     .catch(() => {})
 }
