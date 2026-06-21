@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect, useTransition } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
@@ -67,9 +67,9 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     marketing: false,
   })
 
-  const lengthOk = nickname.length >= NICKNAME_MIN && nickname.length <= NICKNAME_MAX
-  const charOk = nickname.length === 0 || NICKNAME_REGEX.test(nickname)
-  const noBanned = !BANNED_WORDS.some((w) => nickname.toLowerCase().includes(w))
+  const lengthOk = useMemo(() => nickname.length >= NICKNAME_MIN && nickname.length <= NICKNAME_MAX, [nickname])
+  const charOk = useMemo(() => nickname.length === 0 || NICKNAME_REGEX.test(nickname), [nickname])
+  const noBanned = useMemo(() => !BANNED_WORDS.some((w) => nickname.toLowerCase().includes(w)), [nickname])
 
   const checkDuplicateFromServer = useCallback(async (value: string) => {
     const requestId = ++latestNicknameRequestRef.current
@@ -96,26 +96,44 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     }
   }, [])
 
+  // 같은 값으로의 중복 setState를 막아 입력 1회당 불필요한 리렌더를 줄인다.
+  const setStatusIfChanged = useCallback((next: NicknameStatus) => {
+    setNicknameStatus((prev) => (prev === next ? prev : next))
+  }, [])
+  const setErrorIfChanged = useCallback((next: string) => {
+    setNicknameError((prev) => (prev === next ? prev : next))
+  }, [])
+
   function handleNicknameChange(value: string) {
     latestNicknameValueRef.current = value
     setNickname(value)
-    setNicknameStatus('idle')
-    setNicknameError('')
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
     latestNicknameRequestRef.current += 1
 
-    if (isComposingRef.current) return
+    // 한글 IME 조합 중: 검증/서버확인 보류, 상태만 idle로(이미 idle/에러없음이면 setState 생략).
+    if (isComposingRef.current) {
+      setStatusIfChanged('idle')
+      setErrorIfChanged('')
+      return
+    }
 
     const error = validateNickname(value)
     if (error) {
+      // 형식 오류: idle을 거치지 않고 바로 error로(중간 상태 전환 제거). 빈 값은 조용히 idle.
       if (value.length > 0) {
-        setNicknameStatus('error')
-        setNicknameError(error)
+        setStatusIfChanged('error')
+        setErrorIfChanged(error)
+      } else {
+        setStatusIfChanged('idle')
+        setErrorIfChanged('')
       }
       return
     }
 
+    // 형식 유효: 서버 중복확인 debounce 전까지 상태는 idle 유지(이미 idle이면 생략).
+    setStatusIfChanged('idle')
+    setErrorIfChanged('')
     debounceRef.current = setTimeout(() => checkDuplicateFromServer(value), NICKNAME_CHECK_DELAY_MS)
   }
 
@@ -353,8 +371,9 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
                 isComposingRef.current = true
                 if (debounceRef.current) clearTimeout(debounceRef.current)
                 latestNicknameRequestRef.current += 1
-                setNicknameStatus('idle')
-                setNicknameError('')
+                // 이미 idle/에러없음이면 setState 생략(불필요 리렌더 방지).
+                setStatusIfChanged('idle')
+                setErrorIfChanged('')
               }}
               onCompositionEnd={(e) => {
                 isComposingRef.current = false
