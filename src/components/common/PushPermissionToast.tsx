@@ -51,7 +51,9 @@ export function PushPermissionToast() {
   const show = useCallback((type: TriggerType) => {
     shownRef.current = true
     setTrigger(type)
-    timerRef.current = setTimeout(() => setVisible(true), 500)  // 작업 직후 자연스럽게
+    // 가입 직후(signup)엔 홈 첫 전환 체감을 위해 더 늦게 표시. 나머지 트리거는 기존 500ms.
+    const delay = type === 'signup' ? 1800 : 500
+    timerRef.current = setTimeout(() => setVisible(true), delay)  // 작업 직후 자연스럽게
     trackEvent('push_prompt_shown', { trigger: type })
   }, [])
 
