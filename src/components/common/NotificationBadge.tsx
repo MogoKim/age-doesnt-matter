@@ -26,7 +26,16 @@ export default function NotificationBadge({ initialCount = 0 }: NotificationBadg
   }, [])
 
   useEffect(() => {
-    fetchCount()
+    // 최초 unread-count 조회는 홈 첫 렌더 후로 defer(idle 또는 1000ms 폴백) — 체감 우선.
+    //   60초 polling과 visibilitychange 동작은 그대로 유지.
+    let idleId: number | undefined
+    let kickoffId: ReturnType<typeof setTimeout> | undefined
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(() => fetchCount(), { timeout: 1000 })
+    } else {
+      kickoffId = setTimeout(() => fetchCount(), 1000)
+    }
+
     const timer = setInterval(fetchCount, POLL_INTERVAL)
 
     // 탭 비활성 시 polling 중지, 활성화 시 즉시 fetch + 재시작
@@ -38,6 +47,10 @@ export default function NotificationBadge({ initialCount = 0 }: NotificationBadg
     document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
+      if (idleId !== undefined && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId)
+      }
+      if (kickoffId !== undefined) clearTimeout(kickoffId)
       clearInterval(timer)
       document.removeEventListener('visibilitychange', handleVisibility)
     }

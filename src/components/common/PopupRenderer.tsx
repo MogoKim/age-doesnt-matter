@@ -60,23 +60,40 @@ export default function PopupRenderer() {
 
   useEffect(() => {
     const controller = new AbortController()
+    let idleId: number | undefined
+    let timerId: ReturnType<typeof setTimeout> | undefined
 
-    fetch(`/api/popups?path=${encodeURIComponent(pathname)}`, {
-      signal: controller.signal,
-    })
-      .then((res) => res.json())
-      .then((data: { popups: PopupData[] }) => {
-        const visible = data.popups.filter((p) => !isPopupHidden(p))
-        setPopups(visible)
-        if (visible.length > 0) {
-          setActivePopup(visible[0])
-        }
+    // 홈 첫 렌더 체감 우선 — 비필수 팝업 조회는 idle(또는 1200ms 폴백) 후 실행.
+    const run = () => {
+      fetch(`/api/popups?path=${encodeURIComponent(pathname)}`, {
+        signal: controller.signal,
       })
-      .catch(() => {
-        // 네트워크 에러 무시
-      })
+        .then((res) => res.json())
+        .then((data: { popups: PopupData[] }) => {
+          const visible = data.popups.filter((p) => !isPopupHidden(p))
+          setPopups(visible)
+          if (visible.length > 0) {
+            setActivePopup(visible[0])
+          }
+        })
+        .catch(() => {
+          // 네트워크 에러 무시
+        })
+    }
 
-    return () => controller.abort()
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(run, { timeout: 1200 })
+    } else {
+      timerId = setTimeout(run, 1200)
+    }
+
+    return () => {
+      controller.abort()
+      if (idleId !== undefined && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId)
+      }
+      if (timerId !== undefined) clearTimeout(timerId)
+    }
   }, [pathname])
 
   // 어드민 공지팝업(z-200) 표시 중엔 푸시 토스트(z-250)가 양보하도록 공용 플래그 set/clear (충돌 방지)
