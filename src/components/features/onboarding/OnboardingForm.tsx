@@ -53,6 +53,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
   const [nickname, setNickname] = useState('')
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>('idle')
   const [nicknameError, setNicknameError] = useState('')
+  const latestNicknameValueRef = useRef('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const progressSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const latestNicknameRequestRef = useRef(0)
@@ -96,6 +97,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
   }, [])
 
   function handleNicknameChange(value: string) {
+    latestNicknameValueRef.current = value
     setNickname(value)
     setNicknameStatus('idle')
     setNicknameError('')
@@ -125,8 +127,8 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
   }, [])
 
   useEffect(() => {
-    if (step >= 2) router.prefetch(destinationUrl)
-  }, [destinationUrl, router, step])
+    if (hydrated) router.prefetch(destinationUrl)
+  }, [destinationUrl, hydrated, router])
 
   // 가입 퍼널 추적 — Step 1 진입 (컴포넌트 첫 마운트 시)
   useEffect(() => {
@@ -151,7 +153,10 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
       const raw = sessionStorage.getItem(PROGRESS_KEY)
       if (raw) {
         const saved = JSON.parse(raw) as { step?: number; nickname?: string; agreed?: Record<string, boolean> }
-        if (saved.nickname) setNickname(saved.nickname)
+        if (saved.nickname) {
+          latestNicknameValueRef.current = saved.nickname
+          setNickname(saved.nickname)
+        }
         if (saved.agreed) setAgreed((prev) => ({ ...prev, ...saved.agreed }))
         if (saved.step === 2) setStep(2) // step3(완료)는 복원하지 않음 — 재진입 시 폼 처음부터
         // 복원된 닉네임 재검증 (그새 다른 사람이 선점했을 수 있음 + step1 '다음' 버튼 활성화 위해 status 복구)
@@ -170,12 +175,25 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     if (progressSaveRef.current) clearTimeout(progressSaveRef.current)
     if (step === 3) return
     progressSaveRef.current = setTimeout(() => {
-      const progress: ProgressState = { step, nickname, agreed }
+      const progress: ProgressState = { step, nickname: latestNicknameValueRef.current, agreed }
       try {
         sessionStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
       } catch { /* 무시 */ }
     }, PROGRESS_SAVE_DELAY_MS)
-  }, [hydrated, step, nickname, agreed])
+  }, [hydrated, step, agreed])
+
+  const persistProgress = useCallback((nextStep?: 1 | 2) => {
+    if (!hydrated) return
+    const progressStep = nextStep ?? (step === 3 ? 2 : step)
+    const progress: ProgressState = {
+      step: progressStep,
+      nickname: latestNicknameValueRef.current,
+      agreed,
+    }
+    try {
+      sessionStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
+    } catch { /* 무시 */ }
+  }, [agreed, hydrated, step])
 
   // 가입 이탈 감지 — 어느 단계에서 이탈했는지 기록.
   // beforeunload는 모바일(iOS/TWA)에서 자주 미발화 → visibilitychange(hidden)+pagehide로 신뢰화
@@ -206,6 +224,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
 
   function handleStep1Next() {
     if (nicknameStatus !== 'valid') return
+    persistProgress(2)
     setStep(2)
   }
 
@@ -246,6 +265,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
 
   async function handleComplete() {
     setIsNavigating(true)
+    const appNative = isAppNative()
     // 가입 완료 — 진행 상태 영속 데이터 정리 (다음 가입자에게 잔여 복원 방지)
     try { sessionStorage.removeItem(PROGRESS_KEY) } catch { /* 무시 */ }
     // 인앱→외부브라우저 재접속 감지용 (sessionStorage는 탭 전환 시 유실됨)
@@ -254,11 +274,13 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     localStorage.setItem('signup_welcome_toast', '1')
     // 가입 직후 푸시 구독 유도 — 홈((main)) 진입 시 sessionStorage 폴백으로 토스트 노출
     setPushToastTrigger('signup')
-    if (isAppNative()) {
+    if (appNative) {
       // 앱: 가입 완료(온보딩까지 끝)를 GA4 app stream에 native logEvent. gtag(web stream) 호출 금지.
       //   navigate(router.replace) 전에 await — 동적 import+logEvent 완료를 보장해 이벤트 유실 방지.
-      await appLogEvent('sign_up', { method: 'kakao' })
-      await appLogEvent('onboarding_complete', { method: 'kakao' })
+      await Promise.all([
+        appLogEvent('sign_up', { method: 'kakao' }),
+        appLogEvent('onboarding_complete', { method: 'kakao' }),
+      ])
     } else {
       gtmSignUp('kakao')
     }
@@ -268,7 +290,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
     })
     // 웹 전용: gtag.js 로드 완료 대기 — _gtagReady=true 확인 후 navigate (전환 유실 방지).
     //   window.gtag 존재 체크는 부족(GTM stub이 미리 생성됨). 앱은 gtag 미로드라 대기 불필요.
-    if (!isAppNative()) {
+    if (!appNative) {
       await waitForGtagReady()
       await new Promise<void>((resolve) => setTimeout(resolve, 100))
     }
@@ -338,6 +360,7 @@ export default function OnboardingForm({ callbackUrl }: { callbackUrl?: string }
                 isComposingRef.current = false
                 handleNicknameChange(e.currentTarget.value)
               }}
+              onBlur={() => persistProgress()}
               maxLength={NICKNAME_MAX}
               autoFocus
               autoComplete="off"
