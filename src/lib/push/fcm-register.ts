@@ -10,18 +10,13 @@ import { isAppNative } from '@/lib/analytics/app-analytics'
  * @capacitor-firebase/messaging는 client 전용 → 동적 import로 웹 번들 부담 0.
  *
  * 발송(서버)은 다음 단계(Firebase Admin SDK). 본 모듈은 token 수집까지만 책임.
+ *
+ * ⚠️ Capacitor 플러그인 프록시를 Promise resolution 값으로 반환하면 안 된다.
+ * 프록시는 모든 프로퍼티 접근(then 포함)을 네이티브 호출로 라우팅하므로, Promise가
+ * 프록시를 thenable로 보고 proxy.then()을 호출 → "FirebaseMessaging.then() is not
+ * implemented on android" throw. 그래서 import한 모듈에서 매번 직접 구조분해해 쓴다.
+ * (동일 버그가 app-analytics.ts에도 존재 — 별도 수정 필요)
  */
-
-type FcmMessagingClient = typeof import('@capacitor-firebase/messaging')['FirebaseMessaging']
-
-let fcmClientPromise: Promise<FcmMessagingClient> | null = null
-
-function getFcmClient(): Promise<FcmMessagingClient> {
-  fcmClientPromise ??= import('@capacitor-firebase/messaging').then(
-    ({ FirebaseMessaging }) => FirebaseMessaging,
-  )
-  return fcmClientPromise
-}
 
 function getPlatform(): 'android' | 'ios' {
   if (typeof window === 'undefined') return 'android'
@@ -55,7 +50,7 @@ async function saveToken(token: string): Promise<boolean> {
 export async function registerFcmToken(): Promise<FcmRegisterResult> {
   if (!isAppNative()) return 'unsupported'
   try {
-    const FirebaseMessaging = await getFcmClient()
+    const { FirebaseMessaging } = await import('@capacitor-firebase/messaging')
 
     let { receive } = await FirebaseMessaging.checkPermissions()
     if (receive === 'prompt' || receive === 'prompt-with-rationale') {
@@ -79,7 +74,7 @@ export async function registerFcmToken(): Promise<FcmRegisterResult> {
 export async function listenFcmTokenRefresh(): Promise<() => void> {
   if (!isAppNative()) return () => {}
   try {
-    const FirebaseMessaging = await getFcmClient()
+    const { FirebaseMessaging } = await import('@capacitor-firebase/messaging')
     const handle = await FirebaseMessaging.addListener('tokenReceived', ({ token }) => {
       if (token) void saveToken(token)
     })
@@ -96,7 +91,7 @@ export async function listenFcmTokenRefresh(): Promise<() => void> {
 export async function unregisterFcmToken(): Promise<void> {
   if (!isAppNative()) return
   try {
-    const FirebaseMessaging = await getFcmClient()
+    const { FirebaseMessaging } = await import('@capacitor-firebase/messaging')
     const { token } = await FirebaseMessaging.getToken().catch(() => ({ token: '' }))
     if (token) {
       await fetch('/api/push/fcm-token', {
