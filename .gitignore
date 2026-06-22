@@ -153,3 +153,6 @@ docs/security/
 /abc-real.png
 /banner-*.png
 /gate-*.png
+
+# 매거진 키워드 리서치 산출물·체크포인트 (대용량 생성물 — 커밋 제외)
+/agents/magazine/data/

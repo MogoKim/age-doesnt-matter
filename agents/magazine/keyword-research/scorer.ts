@@ -75,9 +75,12 @@ export interface SeedKeyword {
 
 // ─── 패턴 (분류 기준) ─────────────────────────────────────
 
-/** off-brand — 발행 큐 제외(raw 보관). "만남"은 포함하지 않는다(일반 만남 허용). */
+/**
+ * off-brand — 발행 큐 제외(raw 보관). "만남"은 포함하지 않는다(일반 만남 허용).
+ * `(?<!장)애인` = "장애인"의 부분일치 오탐 방지(중증장애인/장애인연금/장애인 취업 제외).
+ */
 const OFF_BRAND_PATTERNS: RegExp[] = [
-  /연하남/, /애인/, /불륜/, /바람/, /20대\s*남자/, /30대\s*남자/, /내연/,
+  /연하남/, /(?<!장)애인/, /불륜/, /바람/, /20대\s*남자/, /30대\s*남자/, /내연/,
 ]
 
 /** UGC/커뮤니티 신호 — 발행 안 함, SERP 침투 신호로만 보관 */
@@ -111,6 +114,42 @@ export function evaluateSensitivity(keyword: string): Sensitivity {
   if (SOFTENED_PATTERNS.some((re) => re.test(keyword)) || /이혼/.test(keyword)) return 'medium'
   if (/외로움|심리|만남|연애|혼자/.test(keyword)) return 'low'
   return 'none'
+}
+
+// ─── 클러스터 추정 (자식 키워드 재분류용) ────────────────
+
+/**
+ * 키워드 본문 기준 클러스터 추정 — 자식이 부모 클러스터를 맹목 상속하지 않도록.
+ *
+ * ⚠️ 우선순위(중요): 부부관계·성건강·성욕·질건조를 **넓은 갱년기보다 먼저** 판정한다.
+ *   그래야 "갱년기 성건강"은 부부성건강, "갱년기 건강검진"은 갱년기건강으로 정확 분류.
+ */
+export function inferCluster(keyword: string): ClusterId | 'uncategorized' {
+  // ① 부부성건강 — 갱년기보다 우선 (성 관련 구체 토큰)
+  if (/부부\s*관계|부부\s*생활|성건강|성생활|성\s*횟수|성욕|욕구|질건조|친밀|불륜|바람|연하남|(?<!장)애인/.test(keyword)) {
+    return '부부성건강'
+  }
+  // ② 외로움관계
+  if (/외로움|친구|커뮤니티|심리|만남|연애|이혼|인생2막|인생\s*2막|빈\s*둥지|혼자/.test(keyword)) {
+    return '외로움관계'
+  }
+  // ③ 일자리
+  if (/일자리|취업|알바|채용|자격증|재취업|구직|이력서|면접/.test(keyword)) {
+    return '일자리'
+  }
+  // ④ 돈연금
+  if (/연금|퇴직|노후|세액공제|건강보험|irp|연금저축|기초연금/i.test(keyword)) {
+    return '돈연금'
+  }
+  // ⑤ 갱년기건강 (넓음 — 뒤로)
+  if (/갱년기|건강\s*검진|혈압|당뇨|관절|무릎|영양제|수면|불면|다이어트|호르몬|골다공증|증상|병원/.test(keyword)) {
+    return '갱년기건강'
+  }
+  // ⑥ 패션생활
+  if (/패션|의류|옷|염색|살림|정리|취미|인테리어|화장품|레시피|반찬|여행/.test(keyword)) {
+    return '패션생활'
+  }
+  return 'uncategorized'
 }
 
 // ─── 브랜드핏 ────────────────────────────────────────────
@@ -162,13 +201,13 @@ export function classifyPublishPolicy(
 // ─── score 계산 ──────────────────────────────────────────
 
 export interface ScoreParams {
-  /** 자동완성 빈도 정규화 상한 (이 횟수 이상이면 1.0) */
+  /** 자동완성 빈도 정규화 상한 — 로그 스케일 분모(이 횟수에서 freqNorm≈1.0). 변별력 위해 상향 */
   freqCap: number
   /** UGC 침투 가능성 (0~1) — P2 SERP 분석 후 보강. P1에선 0 */
   ugcPenetration: number
 }
 
-export const DEFAULT_SCORE_PARAMS: ScoreParams = { freqCap: 5, ugcPenetration: 0 }
+export const DEFAULT_SCORE_PARAMS: ScoreParams = { freqCap: 50, ugcPenetration: 0 }
 
 const SENSITIVITY_PENALTY: Record<Sensitivity, number> = {
   none: 0,
@@ -194,7 +233,11 @@ export function computeScore(
   node: Pick<KeywordNode, 'demandSignal' | 'depth' | 'gsc' | 'keyword' | 'cluster' | 'sensitivity'>,
   params: ScoreParams = DEFAULT_SCORE_PARAMS,
 ): number {
-  const freqNorm = Math.min(node.demandSignal / params.freqCap, 1)
+  // 로그 스케일 — demandSignal이 즉시 상한에 닿아 TOP이 동점 포화되는 것을 방지(변별력)
+  const freqNorm = Math.min(
+    Math.log10(node.demandSignal + 1) / Math.log10(params.freqCap + 1),
+    1,
+  )
   const depthDecay = 1 / (1 + node.depth)
   const gscSig = gscSignalScore(node.gsc)
   const brandFit = estimateBrandFit(node.keyword, node.cluster)

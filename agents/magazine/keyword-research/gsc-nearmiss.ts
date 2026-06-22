@@ -15,10 +15,11 @@ import {
   classifyPublishPolicy,
   computeScore,
   evaluateSensitivity,
+  inferCluster,
   normalizeKeyword,
   DEFAULT_SCORE_PARAMS,
 } from './scorer.js'
-import type { ClusterId, KeywordNode, ScoreParams } from './scorer.js'
+import type { KeywordNode, ScoreParams } from './scorer.js'
 
 export interface GscNearMissOptions {
   /** 조회 기간(일) */
@@ -40,17 +41,6 @@ export const DEFAULT_GSC_NEARMISS_OPTIONS: GscNearMissOptions = {
   maxPosition: 50,
   minImpressions: 1,
   rowLimit: 1000,
-}
-
-/** GSC 쿼리 문자열 → 클러스터 추정 (실패 시 uncategorized) */
-function inferCluster(keyword: string): ClusterId | 'uncategorized' {
-  if (/갱년기|건강검진|혈압|당뇨|관절|무릎|영양제|수면|다이어트/.test(keyword)) return '갱년기건강'
-  if (/부부관계|성건강|성욕|성\s*횟수|질건조|부부\s*생활/.test(keyword)) return '부부성건강'
-  if (/외로움|친구|커뮤니티|심리|만남|연애|이혼|인생2막/.test(keyword)) return '외로움관계'
-  if (/일자리|취업|알바|채용|자격증|재취업|구직/.test(keyword)) return '일자리'
-  if (/연금|퇴직|노후|세액공제|건강보험/.test(keyword)) return '돈연금'
-  if (/패션|의류|옷|염색|살림|정리|취미/.test(keyword)) return '패션생활'
-  return 'uncategorized'
 }
 
 function ymd(daysAgo: number): string {
