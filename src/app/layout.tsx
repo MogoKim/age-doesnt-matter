@@ -36,6 +36,11 @@ const AppDeepLinkHandler = dynamic(
   () => import('@/components/features/auth/AppDeepLinkHandler'),
   { loading: () => null, ssr: false },
 )
+// AdMob 하단 배너 — 네이티브 앱에서만 동작(웹/TWA no-op, 테스트 ID), client 전용
+const AdMobBanner = dynamic(
+  () => import('@/components/ad/AdMobBanner'),
+  { loading: () => null, ssr: false },
+)
 
 export const metadata: Metadata = {
   title: {
@@ -122,6 +127,7 @@ export default function RootLayout({
           <WebVitalsReporter />
           <AdSenseScriptLoader />
           <AppDeepLinkHandler />
+          <AdMobBanner />
         </AuthProvider>
       </body>
     </html>

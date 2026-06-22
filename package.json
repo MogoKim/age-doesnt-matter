@@ -37,6 +37,7 @@
     "@auth/prisma-adapter": "^2.11.1",
     "@aws-sdk/client-s3": "^3.1014.0",
     "@aws-sdk/s3-request-presigner": "^3.1024.0",
+    "@capacitor-community/admob": "^8.0.0",
     "@capacitor-firebase/analytics": "^8.3.0",
     "@capacitor-firebase/app": "^8.3.0",
     "@capacitor/android": "^8.4.0",
