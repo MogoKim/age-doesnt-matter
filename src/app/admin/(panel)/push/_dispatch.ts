@@ -15,10 +15,14 @@ export interface ResolveInput {
 
 /** 발송 조건 → 실제 수신자 userId 목록 (구독 보유자만 + 광고면 마케팅 동의자만). count·send 공용. */
 export async function resolveRecipients({ targetMode, targetGrade, targetUserIds, isAd }: ResolveInput): Promise<string[]> {
-  // 구독 보유자만(pushSubscriptions 존재) — 미구독은 푸시 자체 불가
+  // 수신 가능자만 — 웹푸시 구독(pushSubscriptions) OR 앱 FCM 토큰(fcmTokens) 보유.
+  // 앱 전용 유저(웹 구독 없음)가 broadcast/예약에서 누락되지 않도록 OR로 포함.
   const where: Record<string, unknown> = {
     status: 'ACTIVE',
-    pushSubscriptions: { some: {} },
+    OR: [
+      { pushSubscriptions: { some: {} } },
+      { fcmTokens: { some: {} } },
+    ],
     ...(isAd ? { marketingOptIn: true } : {}),   // 광고는 마케팅 동의자만(§50)
   }
   if (targetMode === 'user') {

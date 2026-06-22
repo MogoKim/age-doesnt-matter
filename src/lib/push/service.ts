@@ -1,6 +1,7 @@
 import webpush from 'web-push'
 import { prisma } from '@/lib/prisma'
 import { flags } from '@/lib/feature-flags'
+import { isFcmConfigured, sendFcmToUser } from './fcm-sender'
 import type { PushPayload } from './types'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
@@ -38,10 +39,10 @@ class PushService {
     category: 'service' | 'ad' = 'service',
   ): Promise<void> {
     if (!flags.webPush) return
-    if (!initVapid()) return
     try {
       // 광고성(정보통신망법 §50): 마케팅 동의자만 + (광고) 표기 + 야간(21~08 KST) 차단.
       // 서비스 알림(기본 'service', 댓글·답글·등급)은 규제 무관 → 그대로.
+      // ※ 채널(FCM/웹푸시) 무관하게 동일 적용하려고 분기보다 앞에 둔다.
       let outgoing = payload
       if (category === 'ad') {
         const user = await prisma.user.findUnique({ where: { id: userId }, select: { marketingOptIn: true } })
@@ -52,14 +53,27 @@ class PushService {
         outgoing = { ...payload, title }
       }
 
-      const subs = await prisma.pushSubscription.findMany({ where: { userId } })
-      if (subs.length === 0) return
-
+      const enrichedUrl = this.buildUrl(outgoing.url, campaign)
       const enriched = {
         ...outgoing,
-        url: this.buildUrl(outgoing.url, campaign),
+        url: enrichedUrl,
         icon: outgoing.icon ?? '/icons/icon-192x192.png',
       }
+
+      // ── 배타 분기: 앱(FcmToken 보유) → FCM, 없으면 웹푸시 ──
+      // 스키마 주석 정책(schema.prisma FcmToken). 둘 다 보내면 중복 수신 → 한 채널만.
+      if (isFcmConfigured()) {
+        const fcmCount = await prisma.fcmToken.count({ where: { userId } })
+        if (fcmCount > 0) {
+          await sendFcmToUser(userId, enriched, enrichedUrl)
+          return
+        }
+      }
+
+      // ── 웹푸시 (VAPID) ──
+      if (!initVapid()) return
+      const subs = await prisma.pushSubscription.findMany({ where: { userId } })
+      if (subs.length === 0) return
 
       await Promise.allSettled(
         subs.map((sub) =>
