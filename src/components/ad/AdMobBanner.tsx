@@ -7,15 +7,15 @@ import { isAppNative } from '@/lib/analytics/app-analytics'
 /**
  * AdMob 하단 배너 — **Capacitor 네이티브 앱에서만** 동작. 웹/브라우저/TWA는 no-op.
  *
- * - 현재 광고 단위는 Google 공식 **테스트 ID**(수익 없음). 실제 광고 단위 ID는 확보 후 교체.
+ * - 광고 단위는 실제 AdMob banner 광고 단위 ID(우나어). app readiness 승인 후 정상 serve.
  * - WebView 위에 네이티브 배너를 anchored bottom으로 표시(@capacitor-community/admob).
  * - 홈 첫 진입 체감 우선 → 허용 라우트에서도 **최소 2초 defer 후** 표시.
  * - 금지 라우트(로그인·온보딩·인증·글쓰기)에서는 숨김.
  * - GA4 native 이벤트(sign_up/onboarding_complete/login) 경로와 무관. gtag 차단 유지(이 컴포넌트는 gtag 미사용).
  */
 
-// Google 공식 Android 테스트 banner ad unit ID (수익 없음). 실제 ID 확보 후 교체.
-const TEST_BANNER_ID = 'ca-app-pub-3940256099942544/6300978111'
+// 실제 Android banner 광고 단위 ID (AdMob — 우나어 홈 하단 배너).
+const BANNER_ID = 'ca-app-pub-4117999106913048/3137309547'
 
 // 배너를 숨길 라우트(접두사 매칭) — 로그인/온보딩/인증/글쓰기 흐름 방해 금지.
 const HIDE_PREFIXES = ['/login', '/onboarding', '/auth', '/community/write']
@@ -54,11 +54,10 @@ export default function AdMobBanner() {
       }
       if (cancelled) return
       await AdMob.showBanner({
-        adId: TEST_BANNER_ID,
+        adId: BANNER_ID,
         adSize: BannerAdSize.ADAPTIVE_BANNER,
         position: BannerAdPosition.BOTTOM_CENTER,
         margin: 0,
-        isTesting: true, // 테스트 ID와 함께 항상 테스트 모드(정책 안전)
       }).catch(() => {})
       shownRef.current = true
     }

@@ -4,6 +4,6 @@
     <string name="title_activity_main">우리 나이가 어때서</string>
     <string name="package_name">com.agenotmatter.app</string>
     <string name="custom_url_scheme">com.agenotmatter.app</string>
-    <!-- AdMob App ID — 현재는 Google 공식 테스트 App ID(수익 없음). 실제 App ID 확보 후 교체. -->
-    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <!-- AdMob App ID (실제 — 우나어 Android). -->
+    <string name="admob_app_id">ca-app-pub-4117999106913048~8809650070</string>
 </resources>
