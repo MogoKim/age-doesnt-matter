@@ -5,18 +5,15 @@
  * - **웹/TWA에서는 no-op** — 기존 `gtag`(GA4 web stream) 경로를 그대로 쓴다(호출부에서 분기).
  *   → 앱에서 gtag 동시 호출 금지(web stream 오염 방지). first_open/app_open은 native SDK 자동.
  * - @capacitor-firebase/analytics는 client 전용 → 동적 import로 웹 번들 부담 0.
+ *
+ * ⚠️ Capacitor 플러그인 프록시를 Promise resolution 값으로 반환하면 안 된다.
+ * 프록시는 모든 프로퍼티 접근(then 포함)을 네이티브 호출로 라우팅하므로, Promise가
+ * 프록시를 thenable로 보고 proxy.then()을 호출 → "FirebaseAnalytics.then() is not
+ * implemented on android" throw → 이벤트 유실. 그래서 import한 모듈에서 매번 직접 구조분해해 쓴다.
+ * (동일 버그가 fcm-register.ts에 있었고 동일 방식으로 수정됨)
  */
 
 type EventParams = Record<string, string | number | boolean>
-type FirebaseAnalyticsClient = typeof import('@capacitor-firebase/analytics')['FirebaseAnalytics']
-
-let firebaseAnalyticsClientPromise: Promise<FirebaseAnalyticsClient> | null = null
-
-function getFirebaseAnalyticsClient(): Promise<FirebaseAnalyticsClient> {
-  firebaseAnalyticsClientPromise ??= import('@capacitor-firebase/analytics')
-    .then(({ FirebaseAnalytics }) => FirebaseAnalytics)
-  return firebaseAnalyticsClientPromise
-}
 
 /** Capacitor 네이티브 앱 여부 (window.Capacitor.isNativePlatform). 웹/TWA=false. */
 export function isAppNative(): boolean {
@@ -36,7 +33,7 @@ export function isAppNative(): boolean {
 export async function appLogEvent(name: string, params?: EventParams): Promise<void> {
   if (!isAppNative()) return
   try {
-    const FirebaseAnalytics = await getFirebaseAnalyticsClient()
+    const { FirebaseAnalytics } = await import('@capacitor-firebase/analytics')
     await FirebaseAnalytics.logEvent({ name, params })
   } catch { /* 분석 실패가 사용자 흐름을 막지 않는다 */ }
 }
@@ -44,7 +41,10 @@ export async function appLogEvent(name: string, params?: EventParams): Promise<v
 /** 앱에서만 user property 설정(앱·웹 구분 등). 웹/TWA는 no-op. */
 export function appSetUserProperty(key: string, value: string): void {
   if (!isAppNative()) return
-  void getFirebaseAnalyticsClient()
-    .then((FirebaseAnalytics) => FirebaseAnalytics.setUserProperty({ key, value }))
-    .catch(() => {})
+  void (async () => {
+    try {
+      const { FirebaseAnalytics } = await import('@capacitor-firebase/analytics')
+      await FirebaseAnalytics.setUserProperty({ key, value })
+    } catch { /* 분석 실패가 사용자 흐름을 막지 않는다 */ }
+  })()
 }
