@@ -36,6 +36,11 @@ const AppDeepLinkHandler = dynamic(
   () => import('@/components/features/auth/AppDeepLinkHandler'),
   { loading: () => null, ssr: false },
 )
+// 앱(Capacitor) FCM 등록 — 네이티브 + 로그인 회원만 동작(웹/TWA no-op), client 전용
+const AppFcmRegister = dynamic(
+  () => import('@/components/features/push/AppFcmRegister'),
+  { loading: () => null, ssr: false },
+)
 
 export const metadata: Metadata = {
   title: {
@@ -122,6 +127,7 @@ export default function RootLayout({
           <WebVitalsReporter />
           <AdSenseScriptLoader />
           <AppDeepLinkHandler />
+          <AppFcmRegister />
         </AuthProvider>
       </body>
     </html>

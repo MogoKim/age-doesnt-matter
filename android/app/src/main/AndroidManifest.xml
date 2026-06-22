@@ -47,4 +47,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- FCM 푸시 알림 표시 권한 (Android 13+ 런타임 요청 — @capacitor-firebase/messaging) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

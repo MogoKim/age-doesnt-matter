@@ -304,6 +304,7 @@ model User {
   blocksReceived    UserBlock[]       @relation("blocked")
   draftPosts        DraftPost[]
   pushSubscriptions PushSubscription[]
+  fcmTokens         FcmToken[]
   postViews         PostView[]
 
   @@index([status])
@@ -1096,6 +1097,22 @@ model PushSubscription {
   p256dh    String
   auth      String
   createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ── 앱(Capacitor) FCM 디바이스 토큰 — native 푸시 전용 ──
+// 웹푸시(PushSubscription = endpoint/p256dh/auth, VAPID)는 Android WebView에서 동작 불가 →
+// 앱 사용자는 FCM token으로 별도 수신. 발송 분기: 같은 userId에 FcmToken 있으면 FCM, 없으면 웹푸시.
+// token unique(중복 디바이스 방지). 로그아웃/토큰 만료 시 DELETE로 정리.
+model FcmToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   // 'android' | 'ios'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
 }
