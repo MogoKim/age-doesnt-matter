@@ -81,8 +81,8 @@
     <div class="meta-grid">
       <div class="meta-item"><strong>작성일</strong> 2026-06-21</div>
       <div class="meta-item"><strong>대상 앱</strong> com.agenotmatter.app</div>
-      <div class="meta-item"><strong>현재</strong> vc18 / versionCode 18 / versionName 1.0.14</div>
-      <div class="meta-item"><strong>Play</strong> production 게시 완료</div>
+      <div class="meta-item"><strong>현재</strong> vc20 / versionCode 20 / versionName 1.0.15</div>
+      <div class="meta-item"><strong>Play</strong> vc20 production 제공 완료</div>
       <div class="meta-item"><strong>Firebase</strong> agenotmatter-19615</div>
       <div class="meta-item"><strong>GA4</strong> 481670969</div>
     </div>
@@ -110,7 +110,7 @@
       <li><a href="#s2">TWA 레거시 vs Capacitor 현재 구조</a></li>
       <li><a href="#s3">현재 Android Capacitor 아키텍처</a></li>
       <li><a href="#s4">파일 / 경로 지도</a></li>
-      <li><a href="#s5">Firebase / GA4 / Google Ads 정책</a></li>
+      <li><a href="#s5">Firebase / GA4 / Google Ads / FCM 정책</a></li>
       <li><a href="#s6">Google Ads AC 운영 정책</a></li>
       <li><a href="#s7">AAB / Play Console 배포 정책</a></li>
       <li><a href="#s8">Kakao OAuth 운영 정책</a></li>
@@ -132,8 +132,8 @@
       <tr><td>문서명</td><td>우리 나이가 어때서 — Android Capacitor AAB 운영 정책 문서</td><td>—</td></tr>
       <tr><td>작성일</td><td>2026-06-21</td><td>—</td></tr>
       <tr><td>대상 앱 패키지</td><td><code>com.agenotmatter.app</code></td><td><span class="badge code">google-services.json · build.gradle</span></td></tr>
-      <tr><td>현재 버전</td><td>vc18 / versionCode <strong>18</strong> / versionName <strong>1.0.14</strong></td><td><span class="badge code">android/app/build.gradle</span></td></tr>
-      <tr><td>Play Store 상태</td><td>1.0.14 production 게시 완료</td><td>운영 기록(handoff)</td></tr>
+      <tr><td>현재 버전</td><td>vc20 / versionCode <strong>20</strong> / versionName <strong>1.0.15</strong></td><td><span class="badge code">android/app/build.gradle</span></td></tr>
+      <tr><td>Play Store 상태</td><td>1.0.15 / vc20 production 제공 완료 (2026-06-23)</td><td>운영 기록(handoff)</td></tr>
       <tr><td>Firebase project</td><td><code>agenotmatter-19615</code></td><td><span class="badge code">google-services.json</span></td></tr>
       <tr><td>Firebase Android app id</td><td><code>1:757616369524:android:4f5a69a31a937bd6de1621</code></td><td><span class="badge code">google-services.json (mobilesdk_app_id)</span></td></tr>
       <tr><td>GA4 property</td><td><code>481670969</code> · 우리 나이가 어때서</td><td>운영 기록(handoff)</td></tr>
@@ -167,7 +167,7 @@
       <tr><th>레거시 전제</th><th>현재</th></tr>
       <tr><td>Chrome 쿠키 공유로 로그인 연속</td><td>WebView 쿠키 격리 → handoff token 로그인</td></tr>
       <tr><td>assetlinks.json 도메인 검증이 핵심</td><td>Capacitor는 server.url 직접 로드(별도 검증 체계)</td></tr>
-      <tr><td>네이티브 분석/푸시 불가</td><td>Firebase native Analytics 사용 중(vc18)</td></tr>
+      <tr><td>네이티브 분석/푸시 불가</td><td>Firebase native Analytics(vc18~) + FCM 네이티브 푸시(vc20) 사용 중</td></tr>
       <tr><td>Bubblewrap 빌드/업데이트 흐름</td><td>Gradle <code>bundleRelease</code> + Capacitor sync</td></tr>
     </table>
 
@@ -180,7 +180,7 @@
 
     <div class="callout">
       <span class="t">새 문서가 우선하는 기준</span>
-      Android 앱 관련 판단에서 본 문서가 <code>twa-policy.html</code>보다 <strong>우선한다.</strong> 충돌 시 본 문서를 따른다. 레거시 문서는 TWA 시절 맥락 보존용으로만 둔다.
+      Android 앱 관련 판단에서 본 문서가 <code>twa-policy.html</code>보다 <strong>우선한다.</strong> 충돌 시 본 문서를 따른다. 레거시 문서는 TWA 시절 맥락 보존용으로만 둔다. <strong>(2026-06-23)</strong> <code>twa-policy.md</code>/<code>twa-policy.html</code> 상단에 레거시 경고를 반영함(<code>da3ae8f</code>) — vc20/FCM/AdMob/Play 배포 판단에는 레거시 문서를 쓰지 말 것.
     </div>
   </div>
 
@@ -218,7 +218,9 @@
       <tr><th>역할</th><th>경로</th></tr>
       <tr><td>Capacitor config</td><td><code>capacitor.config.ts</code> (server.url = production)</td></tr>
       <tr><td>Android native(앱 모듈)</td><td><code>android/app/</code> · 진입 <code>android/app/src/main/java/com/agenotmatter/app/MainActivity.java</code></td></tr>
-      <tr><td>버전/서명/플러그인</td><td><code>android/app/build.gradle</code> (versionCode 18 / versionName 1.0.14 / google-services plugin)</td></tr>
+      <tr><td>버전/서명/플러그인</td><td><code>android/app/build.gradle</code> (versionCode 20 / versionName 1.0.15 / google-services plugin)</td></tr>
+      <tr><td>FCM 토큰 수집(클라이언트)</td><td><code>src/lib/push/fcm-register.ts</code> · 등록 <code>src/components/features/push/AppFcmRegister.tsx</code> · API <code>src/app/api/push/fcm-token/route.ts</code></td></tr>
+      <tr><td>FCM 서버 발송</td><td><code>src/lib/push/fcm-sender.ts</code> (firebase-admin) · 분기 <code>src/lib/push/service.ts</code> · 예약 <code>src/app/admin/(panel)/push/_dispatch.ts</code></td></tr>
       <tr><td>Firebase 설정</td><td><code>android/app/google-services.json</code> (mobilesdk_app_id 주입원)</td></tr>
       <tr><td>앱 native Analytics</td><td><code>src/lib/analytics/app-analytics.ts</code> (<code>appLogEvent</code> async, <code>isAppNative</code>)</td></tr>
       <tr><td>앱 gtag 차단(로더)</td><td><code>src/components/common/GtagLoader.tsx</code> (isAppNative early-return)</td></tr>
@@ -235,7 +237,7 @@
 
   <!-- ── 5 ── -->
   <div class="section" id="s5">
-    <h2>5. Firebase / GA4 / Google Ads 정책</h2>
+    <h2>5. Firebase / GA4 / Google Ads / FCM 정책</h2>
 
     <h3>5.1 앱 이벤트 수집 원칙 <span class="badge code">코드 근거</span></h3>
     <ul>
@@ -270,6 +272,17 @@
       <li>Ads 전환 확인은 <strong>광고 유입 후 보통 수 시간~24~48시간 지연</strong>을 감안한다.</li>
     </ul>
     <div class="alert ok"><span class="t">실측 확인됨 (2026-06-21)</span> GA4 실시간에서 앱 가입 시 <code>sign_up</code>이 집계됨을 확인 → <strong>native 이벤트 경로 작동</strong>. (DebugView "디버그 기기 0"은 setprop이 재설치로 꺼진 것이지 이벤트 미전송이 아니다.)</div>
+
+    <h3>5.4 FCM 푸시 (앱 알림) <span class="badge code">코드 근거</span> <span class="badge official">vc20</span></h3>
+    <ul>
+      <li><strong>토큰 수집(클라이언트)</strong>: 앱 로그인 후 <code>@capacitor-firebase/messaging</code>로 디바이스 토큰을 받아 <code>POST /api/push/fcm-token</code>에 upsert 저장. DB 테이블 <code>FcmToken</code>(userId · token <code>@unique</code> · platform · createdAt, RLS on).</li>
+      <li><strong>Android native token 수집 가드</strong>: 프록시를 Promise 해석값으로 반환하면 <code>proxy.then()</code> 네이티브 throw → 각 함수에서 <code>const { FirebaseMessaging } = await import(...)</code> 직접 구조분해(<code>fcm-register.ts</code>, 버그수정 <code>bf7b2a9</code>).</li>
+      <li><strong>Firebase Admin 서버 발송</strong>: <code>firebase-admin</code>(service account project <code>agenotmatter-19615</code>) <code>sendEachForMulticast</code>. <code>src/lib/push/fcm-sender.ts</code>. 자격은 Vercel/.env.local의 <code>FIREBASE_PROJECT_ID</code>/<code>FIREBASE_CLIENT_EMAIL</code>/<code>FIREBASE_PRIVATE_KEY</code>(값 비공개).</li>
+      <li><strong>FCM / WebPush 배타 분기</strong> <span class="badge code">service.ts notify()</span>: 같은 userId에 <code>FcmToken</code>이 있으면 FCM, 없으면 기존 VAPID 웹푸시. 광고게이트(marketingOptIn/야간/표기) 뒤에서 분기 → <strong>중복 발송 방지</strong>. 예약/broadcast는 <code>resolveRecipients</code>가 <code>OR[pushSubscriptions, fcmTokens]</code>로 앱 전용 유저 누락 방지.</li>
+      <li><strong>무효 토큰 자동 정리</strong>: 발송 응답이 <code>registration-token-not-registered</code> 등이면 해당 토큰 <code>deleteMany</code>로 자동 삭제.</li>
+    </ul>
+    <div class="alert ok"><span class="t">실기기 검증 PASS (2026-06-22~23)</span> 하이요 유저(Galaxy Note10) <strong>3회 연속 service 푸시 수신 성공</strong>(successCount=1, 백그라운드 트레이 표시). <strong>Android 12는 알림 권한 팝업 없이 기본 허용</strong>이 정상(미표시 ≠ 실패).</div>
+    <div class="alert warning"><span class="t">남은 작업 (클라이언트 수신 핸들러 미구현)</span> <code>AppFcmRegister.tsx</code>에 <code>notificationReceived</code>/<code>notificationActionPerformed</code> 부재 → <strong>포그라운드 알림 표시</strong>와 <strong>탭 시 <code>data.url</code> 딥링크 라우팅</strong>은 아직 안 됨(백그라운드 트레이 표시·탭 시 앱 열림은 됨).</div>
   </div>
 
   <!-- ── 6 ── -->
@@ -305,7 +318,7 @@
     <ul>
       <li><strong>versionCode는 매 AAB 업로드마다 증가</strong>(정수, 단조 증가). 한 번 쓴 값 재사용 불가 → Play가 거부.</li>
       <li><strong>versionName</strong>은 사용자 표시용 문자열(예: 1.0.14). 운영 기준: native/기능 변경 시 patch/minor 증가, 명확히 추적.</li>
-      <li>현재: versionCode <strong>18</strong> / versionName <strong>1.0.14</strong> (다음 native 빌드는 19부터).</li>
+      <li>현재: versionCode <strong>20</strong> / versionName <strong>1.0.15</strong> (vc19는 AD_ID 누락분을 한 번 업로드해 소비됨 → vc20으로 게시. 다음 native 빌드는 <strong>21</strong>부터).</li>
     </ul>
     <h3>7.2 Play App Signing & 업로드 키 <span class="badge official">공식</span> <span class="badge code">코드/운영</span></h3>
     <ul>
@@ -313,7 +326,7 @@
       <li>업로드 키 keystore: <code>/Users/yanadoo/migration-backup/android/android.keystore</code>, alias <code>android</code> (인증서 CN=Yongseok Kim).</li>
       <li><span class="badge code">코드 근거</span> <code>build.gradle</code>에 <code>signingConfig</code>가 없음 → <code>bundleRelease</code>는 <strong>unsigned AAB</strong>를 만든다. 업로드 전 <code>jarsigner</code>로 업로드 키 서명 필요(과거 "모든 번들에 서명해야 합니다" 사고 원인).</li>
     </ul>
-    <pre><code># vc18 서명 예시 (창업자가 keystore 비번 직접 입력)
+    <pre><code># AAB 서명 (창업자가 keystore 비번 직접 입력 — 매 빌드 동일, vc20도 동일 절차로 서명함)
 cd android/app/build/outputs/bundle/release
 jarsigner -keystore /Users/yanadoo/migration-backup/android/android.keystore \
   -sigalg SHA256withRSA -digestalg SHA-256 app-release.aab android
@@ -329,7 +342,7 @@ jarsigner -verify app-release.aab   # "jar verified." 확인</code></pre>
       <tr><td>아이콘/스플래시/권한/MainActivity</td><td><span class="badge red">필요</span></td></tr>
     </table>
     <h3>7.4 Play Console 광고 ID 선언</h3>
-    <p>광고 식별자(AD_ID) 사용 여부를 Play Console 데이터 보안/광고 ID 설문에 정확히 선언한다. 현재 앱은 광고 미집행이나, Firebase Analytics가 광고 ID를 쓸 수 있으므로 <strong>선언 일관성</strong>을 유지(이미 처리됨). <span class="badge guess">추측</span> AdMob 도입 시 선언 갱신 필요.</p>
+    <p>광고 ID 선언 = <strong>예</strong>(Google Ads 전환측정 + Firebase Analytics가 광고 ID 사용). 이에 맞춰 <strong>AndroidManifest에 <code>com.google.android.gms.permission.AD_ID</code> 권한을 추가</strong>함(main <code>af9fd11</code>, vc20). 권한이 없으면 Play가 "활성 아티팩트에 AD_ID 없음" 오류를 낸다(vc20 빌드에 포함). 과거 게시 vc18에는 권한이 없어 출시 검토 시 "권한 없이 출시"로 진행함(vc20 사용자는 정상). <span class="badge guess">추측</span> AdMob 도입 시 선언/권한 재확인 필요.</p>
   </div>
 
   <!-- ── 8 ── -->
@@ -373,6 +386,18 @@ https://www.age-doesnt-matter.com/api/auth/callback/kakao</code></pre>
       <li><strong>AdMob은 후순위</strong> — 도입 시 Google Mobile Ads SDK + 정책 검토 + Play 광고 ID 선언 갱신 등 별도 설계.</li>
       <li>쿠팡 CPS 배너의 앱 노출 여부는 제휴 약관·UX 관점 별도 검토(2-1 범위 밖, 정책 트랙).</li>
       <li><strong>계정 보호 관점 금지</strong>: 앱 WebView에서 AdSense 다시 켜지 않는다.</li>
+      <li><strong>앱 내 PWA/설치 CTA 차단</strong>(2026-06-23, main <code>409971a</code>): Capacitor 앱(<code>isCapacitor</code>)에서 "앱 다운받기"/PWA 설치 팝업·배너를 노출하지 않는다 — <code>PostCTA</code>·<code>AddToHomeScreen</code>·<code>PwaInlineBanner</code>·<code>FooterPwaButton</code>에 <code>isCapacitor</code> 가드. 웹/PWA/TWA 동작 회귀 없음.</li>
+    </ul>
+
+    <h3>9.3 AdMob 현황 (2026-06-23) <span class="badge code">코드 근거</span></h3>
+    <ul>
+      <li><strong>app-ads.txt 성공</strong>: <code>public/app-ads.txt</code>(<code>google.com, pub-4117999106913048, DIRECT, f08c47fec0942fa0</code>, mogoyongseok 계정) main 반영(<code>5aea664</code>) + production <code>/app-ads.txt</code> HTTP 200 exact match 확인.</li>
+      <li><strong>AdMob 앱은 아직 "준비 중"(미승인)</strong> — 광고 게재 제한/검토 중. 승인 전에는 광고가 게재되지 않는다.</li>
+      <li><strong>실제 광고 코드 main 미반영</strong>: <code>AdMobBanner.tsx</code> · <code>strings.xml</code> 앱 ID 등은 <code>poc/admob-test</code> 브랜치에만 존재(main·vc20 미포함).</li>
+      <li>코드 AdMob 계정 = <code>pub-4117999106913048</code>(mogoyongseok — AdSense·Firebase·Google Ads 메인). <code>mogo.kim1023</code> 계정의 광고단위는 코드에서 쓰지 않는다.</li>
+      <li><span class="badge red">금지</span> <strong>app readiness(앱 승인) 전 production AdMob 코드 반영 금지.</strong></li>
+      <li><span class="badge red">금지</span> <code>poc/admob-test</code> 통째 merge 금지(매거진·<code>app-analytics</code> 옛 버전이 FCM/vc20을 덮을 위험) → <strong>AdMob 파일만 cherry-pick</strong>.</li>
+      <li><span class="badge guess">추측</span> 승인 후 반영 시 native plugin 추가라 <strong>vc21 이상 새 AAB</strong>가 필요할 수 있다(내부 테스트 트랙 우선 권장).</li>
     </ul>
   </div>
 
@@ -410,6 +435,10 @@ https://www.age-doesnt-matter.com/api/auth/callback/kakao</code></pre>
       <li><span class="badge red">금지</span> 구버전 AAB(<code>app-release-signed.aab</code> 등) 업로드</li>
       <li><span class="badge red">금지</span> GA4엔 있는데 Ads 0이라는 이유만으로 추적 고장 단정</li>
       <li><span class="badge red">금지</span> 남성 차단(정상 정책)을 가입 실패로 오판</li>
+      <li><span class="badge red">금지</span> Firebase Admin private key(<code>FIREBASE_PRIVATE_KEY</code>) 값 출력·commit·채팅</li>
+      <li><span class="badge red">금지</span> FCM token 전체값 출력(로그·보고 시 항상 마스킹)</li>
+      <li><span class="badge red">금지</span> AdMob 테스트 광고 단위 ID를 production에 사용</li>
+      <li><span class="badge red">금지</span> AdMob 앱 readiness(승인) 전 production AdMob 코드 반영</li>
     </ul>
   </div>
 
@@ -503,12 +532,18 @@ Client Secret rotation 영향. 영구 redirect URI 삭제 금지. 변경 시 /ap
       <tr><td>2026-06-21</td><td>온보딩 닉네임 입력 리렌더 개선(main <code>1ee6849</code>)</td></tr>
       <tr><td>2026-06-21</td><td>홈 첫 렌더 비필수 작업 defer(main <code>db4288b</code>)</td></tr>
       <tr><td>2026-06-21</td><td><strong>본 Capacitor 운영 정책 문서 작성</strong> — TWA 레거시 대체</td></tr>
+      <tr><td>2026-06-22</td><td><strong>FCM 안드로이드 푸시</strong> — 토큰 수집 + firebase-admin 서버 발송(배타 분기·무효 토큰 정리) main 반영(<code>33f6a97</code>·<code>bf7b2a9</code>·<code>701ecf0</code>) + app-analytics thenable 버그 수정(<code>8f91c1f</code>)</td></tr>
+      <tr><td>2026-06-22</td><td><strong>vc20 AAB Play production 게시</strong> — AD_ID 권한 추가 + versionCode 20 / versionName 1.0.15(<code>af9fd11</code>). vc19는 AD_ID 누락분 업로드로 소비</td></tr>
+      <tr><td>2026-06-23</td><td>FCM 실기기 <strong>3회 수신 PASS</strong>(하이요/Galaxy Note10) · app-ads.txt main+production 일치 확인 · AdMob 앱은 아직 준비 중(코드 main 미반영)</td></tr>
+      <tr><td>2026-06-23</td><td><strong>Capacitor 앱 내 PWA/설치 CTA 차단</strong>(<code>409971a</code>) — PostCTA·AddToHomeScreen·PwaInlineBanner·FooterPwaButton에 <code>isCapacitor</code> 가드</td></tr>
+      <tr><td>2026-06-23</td><td><code>twa-policy.md</code>/<code>twa-policy.html</code> 상단에 <strong>레거시 경고</strong> 반영(<code>da3ae8f</code>) — 본 문서가 Android 운영 단일 기준</td></tr>
+      <tr><td>2026-06-23</td><td>본 문서를 vc20 / FCM / AdMob 기준으로 최신화</td></tr>
     </table>
     <hr class="s">
     <p class="legend">관련 문서: <code>docs/handoff-operating-master-android-vc18-performance-ads-2026-06-21.md</code> · <code>docs/handoff-vc18-signup-event-loss-2026-06-21.md</code> · <code>docs/design/vc18-firebase-fcm-analytics.md</code> · <code>docs/kakao-auth-policy.html</code> · (레거시) <code>docs/twa-policy.html</code></p>
   </div>
 
-  <p style="text-align:center; color:#999; font-size:12px; margin-top:24px;">우리 나이가 어때서 — Android Capacitor AAB 운영 정책 · 2026-06-21 · 단일 기준 문서</p>
+  <p style="text-align:center; color:#999; font-size:12px; margin-top:24px;">우리 나이가 어때서 — Android Capacitor AAB 운영 정책 · 2026-06-21 (최신화 2026-06-23: vc20 / FCM / AdMob) · 단일 기준 문서</p>
 
 </div>
 </body>
