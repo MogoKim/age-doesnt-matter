@@ -7,9 +7,10 @@ import { buildPlayStoreUrl } from '@/lib/app-links'
 import { gtmPlayStoreClick, gtmOutboundClick } from '@/lib/gtm'
 
 // footer 공식 채널 (SNS 아이콘 = 전 채널 공통 / Google Play = 웹-안드·데스크탑만).
-//  - 구글플레이 노출 규칙: !isTWA && !isStandalone && env ∈ {android-chrome, other, desktop}
+//  - 구글플레이 노출 규칙: !isCapacitor && !isTWA && !isStandalone && env ∈ {android-chrome, other, desktop}
+//    (Capacitor 앱/TWA/PWA standalone에선 이미 설치된 상태 → 앱 내부 설치 CTA 미노출)
 //  - R1(하이드레이션): useState(null)+useEffect로만 노출 판정 → SSR/클라 동일=mismatch 0, TWA 깜빡임 0.
-//  - Play 섹션은 구분선 포함 통째로 조건 렌더 → TWA/PWA에선 섹션째 사라져 footer가 짧아짐.
+//  - Play 섹션은 구분선 포함 통째로 조건 렌더 → Capacitor/TWA/PWA에선 섹션째 사라져 footer가 짧아짐.
 
 interface Sns {
   network: string
@@ -56,11 +57,12 @@ const PLAY_PATH =
   'M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.41 12l2.488-2.49zM5.864 2.658L16.802 8.99l-2.303 2.303-8.635-8.635z'
 
 export default function FooterChannelLinks() {
-  const { isTWA, isStandalone } = useAppEnvironment()
+  const { isTWA, isStandalone, isCapacitor } = useAppEnvironment()
   const [playChannel, setPlayChannel] = useState<string | null>(null) // null=숨김 / 'web_android' / 'web_desktop'
 
   useEffect(() => {
-    if (isTWA || isStandalone) {
+    // Capacitor 앱/TWA/PWA standalone = 이미 설치됨 → Play(설치 CTA) 미노출
+    if (isCapacitor || isTWA || isStandalone) {
       setPlayChannel(null)
       return
     }
@@ -68,12 +70,12 @@ export default function FooterChannelLinks() {
     if (env === 'desktop') setPlayChannel('web_desktop')
     else if (env === 'android-chrome' || env === 'other') setPlayChannel('web_android')
     else setPlayChannel(null)
-  }, [isTWA, isStandalone])
+  }, [isCapacitor, isTWA, isStandalone])
 
   return (
     <>
       {/* 섹션 2: 공식 채널 — SNS 원형 아이콘 버튼 한 줄 */}
-      <section className="flex w-full flex-col items-center gap-2.5 border-t border-[#f1f1f1] py-4">
+      <section className="flex w-full flex-col items-center gap-2.5 border-t border-border py-4">
         <p className="text-caption font-bold text-muted-foreground">공식 채널</p>
         <nav className="flex items-center justify-center gap-3" aria-label="공식 SNS 채널">
           {SNS_LINKS.map((s) => (
@@ -86,7 +88,7 @@ export default function FooterChannelLinks() {
               onClick={() => gtmOutboundClick(s.network, 'footer')}
               className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-primary"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F6F6F8] transition-transform hover:-translate-y-0.5">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted transition-transform hover:-translate-y-0.5">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill={s.color} aria-hidden="true">
                   <path d={s.path} />
                 </svg>
@@ -98,7 +100,7 @@ export default function FooterChannelLinks() {
 
       {/* 섹션 3: Google Play (웹 전용) — 구분선 포함 통째로 조건 렌더. TWA/PWA/iOS는 미렌더 */}
       {playChannel && (
-        <section className="flex w-full justify-center border-t border-[#f1f1f1] py-4">
+        <section className="flex w-full justify-center border-t border-border py-4">
           <a
             href={buildPlayStoreUrl(playChannel)}
             target="_blank"

@@ -16,7 +16,7 @@ export default function FooterFontSizeToggle() {
 
   return (
     <div
-      className="inline-flex items-center gap-1 rounded-full bg-[#F7F7F8] py-1 pl-3.5 pr-1.5"
+      className="inline-flex items-center gap-1 rounded-full bg-muted py-1 pl-3.5 pr-1.5"
       role="radiogroup"
       aria-label="글씨 크기 조절"
     >
@@ -30,7 +30,7 @@ export default function FooterFontSizeToggle() {
           aria-label={`글씨 ${s.a11y}`}
           onClick={() => setFontSize(s.key)}
           className={cn(
-            'flex min-h-[34px] min-w-[34px] items-center justify-center rounded-full px-1.5 transition-all',
+            'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-2 transition-all',
             fontSize === s.key ? 'bg-white font-bold text-primary-text shadow-sm' : 'text-muted-foreground hover:bg-white/60'
           )}
         >
