@@ -25,6 +25,21 @@ export default function NotificationBadge({ initialCount = 0 }: NotificationBadg
     }
   }, [])
 
+  // 알림 페이지의 클릭/모두읽음 즉시 반영 — window custom event로 count를 곧바로 갱신(polling 대기 없음).
+  useEffect(() => {
+    function handleUnreadChange(e: Event) {
+      const detail = (e as CustomEvent<{ count?: number; delta?: number }>).detail
+      if (!detail) return
+      if (typeof detail.count === 'number') {
+        setCount(Math.max(0, detail.count))
+      } else if (typeof detail.delta === 'number') {
+        setCount((c) => Math.max(0, c + detail.delta!))
+      }
+    }
+    window.addEventListener('notifications:unread-count-change', handleUnreadChange)
+    return () => window.removeEventListener('notifications:unread-count-change', handleUnreadChange)
+  }, [])
+
   useEffect(() => {
     // 최초 unread-count 조회는 홈 첫 렌더 후로 defer(idle 또는 1000ms 폴백) — 체감 우선.
     //   60초 polling과 visibilitychange 동작은 그대로 유지.

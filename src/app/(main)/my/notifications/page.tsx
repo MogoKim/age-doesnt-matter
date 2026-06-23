@@ -1,27 +1,21 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
-import { getMyNotifications } from '@/lib/queries/my'
-import { formatTimeAgo } from '@/components/features/community/utils'
-import MarkAllReadButton from '@/components/features/my/MarkAllReadButton'
-import NotificationLink from '@/components/features/my/NotificationLink'
+import { getMyNotifications, getUnreadNotificationCount } from '@/lib/queries/my'
+import NotificationList from '@/components/features/my/NotificationList'
 
 export const metadata = { title: '알림' }
-
-const NOTIFICATION_ICON: Record<string, string> = {
-  COMMENT: '💬',
-  LIKE: '❤️',
-  GRADE_UP: '🎉',
-  SYSTEM: '📢',
-  CONTENT_HIDDEN: '⚠️',
-}
 
 export default async function MyNotificationsPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  const { notifications } = await getMyNotifications(session.user.id).catch(() => ({ notifications: [] }))
-  const hasUnread = notifications.some((n) => !n.isRead)
+  // 초기 목록(기본 20개)과 함께 전체 unread count를 병렬 조회.
+  // rollback 시 badge를 화면 로드분이 아닌 전체 unread 기준으로 정확히 복구하기 위함.
+  const [{ notifications }, initialUnreadCount] = await Promise.all([
+    getMyNotifications(session.user.id).catch(() => ({ notifications: [] })),
+    getUnreadNotificationCount(session.user.id).catch(() => 0),
+  ])
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
@@ -32,47 +26,7 @@ export default async function MyNotificationsPage() {
         ← 마이페이지
       </Link>
 
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-foreground">🔔 알림</h1>
-        {hasUnread && <MarkAllReadButton />}
-      </div>
-
-      {notifications.length > 0 ? (
-        <div className="space-y-2">
-          {notifications.map((notification) => (
-            <NotificationLink
-              key={notification.id}
-              notificationId={notification.id}
-              href={notification.linkUrl}
-              isRead={notification.isRead}
-            >
-              <div className="flex items-start gap-3">
-                <span className="text-lg shrink-0 mt-0.5">
-                  {NOTIFICATION_ICON[notification.type] ?? '🔔'}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-body text-foreground m-0 leading-relaxed">
-                    {notification.message}
-                  </p>
-                  <p className="text-[17px] text-muted-foreground m-0 mt-1">
-                    {formatTimeAgo(notification.createdAt)}
-                  </p>
-                </div>
-                {!notification.isRead && (
-                  <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0 mt-2" />
-                )}
-              </div>
-            </NotificationLink>
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center p-8 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-          <p className="text-body text-muted-foreground leading-relaxed">
-            아직 알림이 없어요.<br />
-            글에 댓글이 달리거나 공감을 받으면 알림이 와요.
-          </p>
-        </div>
-      )}
+      <NotificationList notifications={notifications} initialUnreadCount={initialUnreadCount} />
     </div>
   )
 }
