@@ -128,6 +128,113 @@ export function buildMagazineHtml(data: MagazineTemplateData): string {
     </article>`
 }
 
+/**
+ * 매거진 리치 HTML — editorial v2 (직접답변/3줄요약 박스 + 커뮤니티 연결박스).
+ * v1(buildMagazineHtml)은 변경하지 않는다. inline-style만 사용하며
+ * sanitizeMagazineHtml allowedStyles 화이트리스트를 벗어나는 속성
+ * (position/list-style/min-height 등)은 쓰지 않는다. table 미사용.
+ */
+export function buildMagazineHtmlV2(
+  data: MagazineTemplateData & { directAnswer?: string; summaryPoints?: string[] },
+): string {
+  const icon = CATEGORY_ICONS[data.category] ?? '📖'
+  const badgeColor = CATEGORY_COLORS[data.category] ?? '#FF6F61'
+
+  const heroSection = data.heroImageUrl
+    ? `<div style="margin:-24px -24px 24px -24px;border-radius:16px 16px 0 0;overflow:hidden;">
+        <img src="${data.heroImageUrl}" alt="${data.heroAlt ?? data.title}" style="width:100%;height:auto;display:block;" />
+       </div>`
+    : ''
+
+  const metaBar = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <span style="background:${badgeColor};color:#fff;padding:6px 14px;border-radius:20px;font-size:14px;font-weight:600;">
+        ${icon} ${data.category}
+      </span>
+      <span style="color:#888;font-size:14px;">📖 ${data.readingTime}분 읽기</span>
+      <span style="color:#888;font-size:14px;">📅 ${data.publishedDate}</span>
+    </div>`
+
+  // 직접답변 박스 (값 없으면 생략 — degrade)
+  const directAnswer = (data.directAnswer ?? '').trim()
+  const answerBox = directAnswer
+    ? `<div style="border:2px solid #FF6F61;border-radius:16px;padding:18px 20px;margin:0 0 22px;">
+        <p style="margin:0;font-size:17px;line-height:1.6;font-weight:600;color:#333;">${directAnswer}</p>
+       </div>`
+    : ''
+
+  // 3줄 핵심 요약 박스 (포인트 없으면 생략 — degrade). list-style 미사용(div+✓ 텍스트)
+  const points = (data.summaryPoints ?? []).map((p) => (p ?? '').trim()).filter(Boolean).slice(0, 3)
+  const summaryBox = points.length
+    ? `<div style="background:#f7f8fa;border:1px solid #e7e9ee;border-radius:14px;padding:16px 18px;margin:0 0 24px;">
+        <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#888;">📌 핵심 요약</p>
+        ${points.map((p) => `<div style="font-size:16px;line-height:1.55;color:#444;padding:4px 0;">✓ ${p}</div>`).join('')}
+       </div>`
+    : ''
+
+  const titleBlock = `
+    <p style="font-size:17px;color:#666;margin:0 0 24px 0;line-height:1.5;">
+      ${data.subtitle}
+    </p>
+    <hr style="border:none;border-top:2px solid #f0f0f0;margin:0 0 28px 0;" />`
+
+  const sectionsHtml = data.sections.map((section) => {
+    let html = ''
+    if (section.heading) {
+      html += `<h2 style="font-size:21px;font-weight:700;color:#333;margin:32px 0 16px 0;line-height:1.4;">${section.heading}</h2>`
+    }
+    html += `<div style="font-size:17px;line-height:1.8;color:#444;">${section.body}</div>`
+    if (section.tipBox) {
+      html += `
+        <div style="background:#FFF8E1;border-left:4px solid #FFB300;padding:16px 20px;margin:20px 0;border-radius:0 12px 12px 0;">
+          <p style="margin:0;font-size:16px;line-height:1.6;color:#5D4037;">
+            <strong>💡 꿀팁</strong><br/>${section.tipBox}
+          </p>
+        </div>`
+    }
+    if (section.quote) {
+      html += `
+        <blockquote style="border-left:4px solid #FF6F61;padding:16px 20px;margin:20px 0;background:#FFF5F4;border-radius:0 12px 12px 0;">
+          <p style="margin:0;font-size:17px;font-style:italic;color:#555;line-height:1.6;">
+            "${section.quote}"
+          </p>
+        </blockquote>`
+    }
+    return html
+  }).join('')
+
+  const authorCard = `
+    <div style="margin-top:40px;padding:20px;background:#f8f9fa;border-radius:12px;display:flex;align-items:center;gap:16px;">
+      <div style="width:48px;height:48px;background:#FF6F61;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700;">
+        우
+      </div>
+      <div>
+        <p style="margin:0;font-size:16px;font-weight:600;color:#333;">${data.authorName}</p>
+        <p style="margin:4px 0 0;font-size:14px;color:#888;">우리 나이가 어때서 매거진</p>
+      </div>
+    </div>`
+
+  // 커뮤니티 연결박스 (외부 검색 유입자용 — v1 ctaBlock 대체). min-height 대신 padding으로 터치 영역 확보
+  const communityBox = `
+    <div style="margin-top:28px;padding:20px;background:linear-gradient(135deg,#FFF5F4 0%,#FFF0EF 100%);border-radius:18px;border:1px solid #FFD9D4;">
+      <p style="margin:0;font-size:18px;font-weight:700;color:#333;">40대 50대 60대 여성 커뮤니티</p>
+      <p style="margin:4px 0 16px;font-size:15px;color:#666;line-height:1.45;">건강, 가족, 노후, 일상 고민을 함께 나눠요</p>
+      <a href="/community/stories" style="display:inline-flex;align-items:center;padding:15px 24px;background:#fff;border:2px solid #FF6F61;border-radius:26px;font-size:16px;font-weight:700;color:#E85D50;text-decoration:none;">커뮤니티 둘러보기 →</a>
+    </div>`
+
+  return `
+    <article style="max-width:680px;margin:0 auto;padding:24px;font-family:'Pretendard Variable',sans-serif;">
+      ${heroSection}
+      ${metaBar}
+      ${answerBox}
+      ${summaryBox}
+      ${titleBlock}
+      ${sectionsHtml}
+      ${communityBox}
+      ${authorCard}
+    </article>`
+}
+
 /** AI 응답에서 섹션 파싱 */
 export function parseSectionsFromAI(content: string): MagazineSection[] {
   const sections: MagazineSection[] = []
