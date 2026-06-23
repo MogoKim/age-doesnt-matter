@@ -17,6 +17,7 @@ import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import SeriesNav from '@/components/features/magazine/SeriesNav'
+import MagazineExploreLinks from '@/components/features/magazine/MagazineExploreLinks'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import CpsClickTracker from '@/components/ad/CpsClickTracker'
 import { ADSENSE } from '@/components/ad/ad-slots'
@@ -333,6 +334,10 @@ export default async function MagazineDetailPage({ params }: PageProps) {
 
       {/* 가입 유도 */}
       <PostCTA postId={resolvedId} postTitle={post.title} />
+
+      {/* 우나어 더 둘러보기 — 검색 유입자 락인 동선 (홈/사는이야기/2막준비/베스트).
+          매거진 관련글에 갇히기 전에 사이트 전체 입구를 먼저 노출 */}
+      <MagazineExploreLinks postId={resolvedId} postTitle={post.title} />
 
       {/* 함께 읽어보세요 */}
       {relatedPosts.length > 0 && (
