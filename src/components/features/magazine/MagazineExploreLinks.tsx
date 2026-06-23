@@ -9,18 +9,20 @@ interface MagazineExploreLinksProps {
   postTitle: string
 }
 
-type ExploreTarget = 'home' | 'stories' | 'life2' | 'best'
+// 'community' = 대표 배너 CTA(보조 'stories'와 분석 구분), 나머지는 보조 링크 4개
+type ExploreTarget = 'community' | 'home' | 'stories' | 'life2' | 'best'
 
-const LINKS: { target: ExploreTarget; href: string; icon: string; label: string; desc: string }[] = [
-  { target: 'home', href: '/', icon: '🏠', label: '우나어 홈', desc: '오늘 인기 글' },
-  { target: 'stories', href: '/community/stories', icon: '💬', label: '사는 이야기', desc: '우리 또래 이야기' },
-  { target: 'life2', href: '/community/life2', icon: '🌱', label: '2막 준비', desc: '인생 2막 준비' },
-  { target: 'best', href: '/best', icon: '🔥', label: '인기 글', desc: '많이 보는 글' },
+const SUB_LINKS: { target: ExploreTarget; href: string; icon: string; label: string }[] = [
+  { target: 'home', href: '/', icon: '🏠', label: '홈' },
+  { target: 'stories', href: '/community/stories', icon: '💬', label: '커뮤니티' },
+  { target: 'life2', href: '/community/life2', icon: '🌱', label: '인생 2막' },
+  { target: 'best', href: '/best', icon: '🔥', label: '인기 글' },
 ]
 
 /**
- * 매거진 상세 락인 동선 — 검색 유입자가 매거진 1편만 보고 나가지 않도록
- * 홈/사는이야기/2막준비/베스트로 이동할 입구를 제공한다. (매거진 전용)
+ * 매거진 상세 락인 동선 — 외부 검색 유입자가 우나어를 모르는 상태에서도
+ * 타겟·가치를 즉시 이해하고 사이트로 이동하도록, 대표 배너 + 보조 링크 4개를 제공한다.
+ * (매거진 전용)
  */
 export default function MagazineExploreLinks({ postId, postTitle }: MagazineExploreLinksProps) {
   function handleClick(target: ExploreTarget) {
@@ -31,20 +33,34 @@ export default function MagazineExploreLinks({ postId, postTitle }: MagazineExpl
 
   return (
     <nav className="mb-8" aria-label="우나어 더 둘러보기">
-      <h3 className="text-body font-bold text-foreground mb-4">우나어 더 둘러보기</h3>
-      <div className="grid grid-cols-2 gap-3">
-        {LINKS.map(({ target, href, icon, label, desc }) => (
+      {/* 대표 배너 — 연한 테두리 중심(과한 배경/강조 금지), outline CTA(앱 설치 CTA와 구분) */}
+      <div className="rounded-2xl border border-primary/20 bg-card p-5 mb-3">
+        <p className="text-lg font-bold text-foreground leading-snug break-keep">
+          40대 50대 60대 여성 커뮤니티
+        </p>
+        <p className="text-[15px] text-muted-foreground mt-1 mb-4 leading-snug break-keep">
+          건강, 가족, 노후, 일상 고민을 함께 나눠요
+        </p>
+        <Link
+          href="/community/stories"
+          onClick={() => handleClick('community')}
+          className="inline-flex items-center gap-1.5 min-h-[52px] px-6 rounded-full border-2 border-primary bg-transparent text-primary-text font-bold text-body no-underline transition-colors hover:bg-primary/5"
+        >
+          커뮤니티 둘러보기 →
+        </Link>
+      </div>
+
+      {/* 보조 링크 4개 */}
+      <div className="grid grid-cols-4 gap-2">
+        {SUB_LINKS.map(({ target, href, icon, label }) => (
           <Link
             key={target}
             href={href}
             onClick={() => handleClick(target)}
-            className="flex items-center gap-3 p-4 min-h-[52px] bg-card rounded-xl border border-border no-underline transition-colors hover:border-primary/30 hover:shadow-sm"
+            className="flex flex-col items-center justify-center gap-1 min-h-[52px] py-2 rounded-xl border border-border bg-card no-underline text-foreground text-caption font-bold transition-colors hover:border-primary/30"
           >
-            <span className="text-2xl flex-shrink-0" aria-hidden="true">{icon}</span>
-            <span className="flex flex-col min-w-0">
-              <span className="text-body font-bold text-foreground leading-tight">{label}</span>
-              <span className="text-caption text-muted-foreground leading-snug mt-0.5 line-clamp-1">{desc}</span>
-            </span>
+            <span className="text-lg" aria-hidden="true">{icon}</span>
+            <span>{label}</span>
           </Link>
         ))}
       </div>
