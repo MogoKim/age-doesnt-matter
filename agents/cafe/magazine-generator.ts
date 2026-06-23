@@ -17,6 +17,9 @@ import { buildMagazineSystemPrompt, DESIRE_TO_CATEGORY, DESIRE_TOPIC_HINTS } fro
 import { pickLongtailKeywords } from '../magazine/longtail-keywords.js'
 import { getActiveSeriesToday } from '../magazine/series-plan.js'
 import { requestGoogleIndexing } from './indexing-api.js'
+import * as keywordQueue from '../magazine/keyword-queue.js'
+import type { QueueEvent, QueueState } from '../magazine/keyword-queue.js'
+import type { PublishPolicy } from '../magazine/keyword-research/scorer.js'
 
 const CLAUDE_MODEL_HEAVY = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const CLAUDE_MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-6'
@@ -418,7 +421,13 @@ export async function main(): Promise<MagazineRunResult[]> {
   console.log('[MagazineGenerator] 시작')
   const startTime = Date.now()
 
-  // 중복 발행 가드 — 로컬 launchd(10:00/15:00/17:00) 일일 최대 3편
+  // 키워드 큐 모드 (env 플래그) — false면 기존 동작 그대로 유지(byte-identical)
+  const QUEUE_ENABLED = process.env.MAGAZINE_KEYWORD_QUEUE_ENABLED === 'true'
+  const SESSION = process.env.SESSION_TIME ?? 'morning'
+  const dailyCap = QUEUE_ENABLED ? 2 : 3 // 큐 모드: 하루 2편
+  const sessionPublishCap = QUEUE_ENABLED ? 1 : 3 // 큐 모드: 세션당 1편
+
+  // 중복 발행 가드 — 로컬 launchd 일일 한도
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -429,8 +438,8 @@ export async function main(): Promise<MagazineRunResult[]> {
       publishedAt: { gte: today },
     },
   })
-  if (todayPublished >= 3) {
-    console.log(`[MagazineGenerator] 오늘 이미 ${todayPublished}편 발행됨 — 일일 최대 3편 초과, 스킵`)
+  if (todayPublished >= dailyCap) {
+    console.log(`[MagazineGenerator] 오늘 이미 ${todayPublished}편 발행됨 — 일일 최대 ${dailyCap}편 초과, 스킵`)
     await notifySlack({ level: 'info', agent: 'MAGAZINE_GENERATOR', title: 'ℹ️ 일일 한도 도달', body: `오늘 ${todayPublished}편 발행 완료 — 이후 실행 스킵` })
     await disconnect()
     return []
@@ -488,6 +497,52 @@ export async function main(): Promise<MagazineRunResult[]> {
     ...((trend?.magazineTopics ?? []) as unknown as MagazineSuggestion[]),
   ]
 
+  // 키워드 큐 1순위 주입 (env 플래그 ON일 때만) — 기존 시리즈/GEO/트렌드는 fallback으로 강등
+  const queueMeta = new Map<string, { normalized: string; publishPolicy: PublishPolicy; cluster: string }>()
+  let queueState: QueueState | null = null
+  if (QUEUE_ENABLED) {
+    try {
+      queueState = keywordQueue.loadState()
+      const universe = keywordQueue.loadUniverse()
+      const consumed = new Set(queueState.consumedNormalized)
+      const candidates = keywordQueue.selectOrderedCandidates(universe, { limit: 30, excludeNormalized: consumed })
+      const queueTopics: MagazineSuggestion[] = candidates.map((c) => ({
+        title: c.keyword,
+        reason: `queue:${c.cluster}/${c.intent}`,
+        relatedPosts: [],
+        score: 8, // 사전 검증된 후보 — 점수 게이트(>=7) 통과용 합성값
+      }))
+      for (const c of candidates) {
+        queueMeta.set(c.keyword, { normalized: c.normalized, publishPolicy: c.publishPolicy, cluster: c.cluster })
+      }
+      magazineTopics.unshift(...queueTopics)
+      console.log(`[MagazineGenerator] 키워드 큐 후보 ${candidates.length}개 1순위 주입 (session=${SESSION})`)
+    } catch (err) {
+      console.warn('[MagazineGenerator] 키워드 큐 로드 실패 — 기존 fallback 사용:', err)
+      queueState = null
+    }
+  }
+
+  // 큐 이벤트 기록 헬퍼 — 큐 토픽일 때만 동작(state 파일 기록, DB 아님). published/skipped_duplicate만 소비.
+  const recordQueueEvent = (topicTitle: string, event: QueueEvent, postId?: string): void => {
+    if (!queueState) return
+    const qm = queueMeta.get(topicTitle)
+    if (!qm) return
+    keywordQueue.recordEvent(queueState, {
+      event,
+      keyword: topicTitle,
+      normalized: qm.normalized,
+      cluster: qm.cluster,
+      publishPolicy: qm.publishPolicy,
+      session: SESSION,
+      postId,
+    })
+    if (event === 'published' || event === 'skipped_duplicate') {
+      keywordQueue.markConsumed(queueState, qm.normalized)
+    }
+    keywordQueue.saveState(queueState)
+  }
+
   // 욕망 지도 로드 — 주제 보강에 활용
   const brief = await loadTodayBrief({ fallbackToPrevious: true, consumedBy: 'magazine-generator' })
   const dominantDesire = brief?.dominantDesire ?? 'HEALTH'
@@ -524,14 +579,22 @@ export async function main(): Promise<MagazineRunResult[]> {
   // 2) 최근 매거진 제목 (중복 방지)
   const recentTitles = await getRecentMagazineTitles(7)
 
-  // 3) 상위 1~2개 주제로 매거진 생성
-  const maxArticles = 3
+  // 3) 주제 생성 — 큐 모드: 여러 후보 시도하되 sessionPublishCap(1)로 발행 제한
+  const maxArticles = QUEUE_ENABLED ? magazineTopics.length : 3
   let publishedCount = 0
   let totalCpsCount = 0
   const publishedTitles: string[] = []
   const publishedResults: MagazineRunResult[] = []
 
   for (const topic of magazineTopics.slice(0, maxArticles)) {
+    // 큐 토픽 식별 + 이중 no_publish 가드 (큐 후보가 혹시 no_publish면 발행 차단·보관)
+    const qm = QUEUE_ENABLED ? queueMeta.get(topic.title) : undefined
+    if (qm && qm.publishPolicy !== 'publish' && qm.publishPolicy !== 'publish_softened_title') {
+      recordQueueEvent(topic.title, 'failed_no_publish_guard')
+      console.warn(`[MagazineGenerator] no_publish 가드 차단: "${topic.title}" (${qm.publishPolicy})`)
+      continue
+    }
+
     // 점수 7 이상만 발행
     if (topic.score < 7) {
       console.log(`[MagazineGenerator] "${topic.title}" (${topic.score}/10) — 점수 미달, 스킵`)
@@ -541,6 +604,7 @@ export async function main(): Promise<MagazineRunResult[]> {
     // 의미 중복 주제 스킵
     const allRecentTitles = [...recentTitles, ...publishedTitles]
     if (isSimilarTitle(topic.title, allRecentTitles)) {
+      recordQueueEvent(topic.title, 'skipped_duplicate')
       console.log(`[MagazineGenerator] "${topic.title}" — 최근 7일 유사 주제 이미 발행, 스킵`)
       continue
     }
@@ -552,18 +616,21 @@ export async function main(): Promise<MagazineRunResult[]> {
 
     const article = await generateMagazineArticle(topic, category, refs, recentTitles)
     if (!article) {
+      recordQueueEvent(topic.title, 'failed_generation')
       console.log(`[MagazineGenerator] "${topic.title}" — 생성 실패`)
       continue
     }
 
     // 전체 기간 중복 가드 — 7일 윈도우 밖의 쌍둥이(어순만 다름·완전 동일) 차단
     if (await isDuplicateAllTime(article.title)) {
+      recordQueueEvent(topic.title, 'skipped_duplicate')
       console.log(`[MagazineGenerator] "${article.title}" — 전체기간 중복 제목 이미 발행, 스킵`)
       continue
     }
 
     // seoTitle exact duplicate 체크 (DB 실패 시 발행 계속)
     if (article.seoTitle && await isSeoTitleDuplicate(article.seoTitle)) {
+      recordQueueEvent(topic.title, 'skipped_duplicate')
       console.log(`[MagazineGenerator] "${topic.title}" — seoTitle 중복, 다음 topic으로`)
       continue
     }
@@ -583,6 +650,7 @@ export async function main(): Promise<MagazineRunResult[]> {
     if (image) {
       console.log(`[MagazineGenerator] 히어로 이미지 (${ctxList[0].type}, ${image.source}): ${image.url.slice(0, 50)}...`)
     } else {
+      recordQueueEvent(topic.title, 'failed_image')
       console.warn(`[MagazineGenerator] ⚠️ 히어로 이미지 없음 — "${topic.title}" 발행 보류`)
       await notifySlack({ level: 'important', agent: 'CAFE_CRAWLER', title: '매거진 히어로 이미지 생성 실패', body: `제목: ${topic.title}\n카테고리: ${category}\n→ 이미지 없음, 발행 보류됩니다.` })
       continue
@@ -647,6 +715,7 @@ export async function main(): Promise<MagazineRunResult[]> {
         title: '⚠️ 매거진 본문 미달',
         body: `"${article.title}" — ${textLength}자 (기준 1500자)\n→ 본문 미달, 발행 건너뜀`,
       })
+      recordQueueEvent(topic.title, 'failed_body_short')
       console.warn(`[MagazineGenerator] ⚠️ 본문 짧음(${textLength}자, 기준 1500자) — 발행 건너뜀: "${article.title}"`)
       continue
     }
@@ -678,7 +747,12 @@ export async function main(): Promise<MagazineRunResult[]> {
     publishedCount++
     publishedTitles.push(article.title)
     publishedResults.push({ title: article.title, category, postId, heroImageSource: image.source })
+    // 발행 성공 후에만 published + postId를 state에 기록(소비 확정)
+    recordQueueEvent(topic.title, 'published', postId)
     console.log(`[MagazineGenerator] 발행: "${article.title}" (${postId}) — 히어로 ${image ? `1장(${image.source})` : '없음'} + 본문 ${bodyImageUrls.size}장`)
+
+    // 세션당 발행 한도(큐 모드 1편) 도달 시 중단 — missed slot 보충 없음
+    if (publishedCount >= sessionPublishCap) break
   }
 
   const durationMs = Date.now() - startTime

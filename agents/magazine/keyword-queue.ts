@@ -14,12 +14,13 @@
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { readFileSync, writeFileSync } from 'node:fs'
-import type { ClusterId, KeywordNode, PublishPolicy } from './keyword-research/scorer.js'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import type { ClusterId, Intent, KeywordNode, PublishPolicy } from './keyword-research/scorer.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const UNIVERSE_PATH = path.resolve(__dirname, 'data/keyword-universe.json')
 const PREVIEW_PATH = path.resolve(__dirname, 'data/keyword-queue-preview.dry-run.json')
+const STATE_PATH = path.resolve(__dirname, 'data/keyword-queue-state.json')
 
 export const PUBLISHABLE_POLICIES: readonly PublishPolicy[] = ['publish', 'publish_softened_title']
 
@@ -186,6 +187,145 @@ export function buildQueuePreview(
     })
   }
   return { rows, subtopicFallbacks }
+}
+
+// ─── 운영 state API (generator 연결용) ───────────────────────────────────────
+
+export type QueueEvent =
+  | 'published'
+  | 'skipped_duplicate'
+  | 'failed_generation'
+  | 'failed_image'
+  | 'failed_body_short'
+  | 'failed_no_publish_guard'
+
+export interface QueueCandidate {
+  keyword: string
+  normalized: string
+  cluster: ClusterId | 'uncategorized'
+  intent: Intent
+  publishPolicy: PublishPolicy
+  score: number
+  subtopicKey: string
+}
+
+export interface QueueEventRow {
+  ts: string
+  event: QueueEvent
+  keyword: string
+  normalized: string
+  cluster: string
+  publishPolicy: PublishPolicy
+  session?: string
+  postId?: string
+  note?: string
+}
+
+export interface QueueState {
+  version: number
+  updatedAt: string
+  consumedNormalized: string[]
+  counts: Record<QueueEvent, number>
+  events: QueueEventRow[]
+}
+
+const MAX_EVENTS = 500
+
+function emptyState(): QueueState {
+  return {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    consumedNormalized: [],
+    counts: {
+      published: 0,
+      skipped_duplicate: 0,
+      failed_generation: 0,
+      failed_image: 0,
+      failed_body_short: 0,
+      failed_no_publish_guard: 0,
+    },
+    events: [],
+  }
+}
+
+export function loadUniverse(): KeywordNode[] {
+  const u = JSON.parse(readFileSync(UNIVERSE_PATH, 'utf-8')) as { keywords: KeywordNode[] }
+  return u.keywords
+}
+
+/** state 파일 로드 — 없거나 손상 시 빈 state 반환(읽기 실패가 발행을 막지 않음) */
+export function loadState(): QueueState {
+  try {
+    const parsed = JSON.parse(readFileSync(STATE_PATH, 'utf-8')) as Partial<QueueState>
+    const base = emptyState()
+    return {
+      version: parsed.version ?? base.version,
+      updatedAt: parsed.updatedAt ?? base.updatedAt,
+      consumedNormalized: parsed.consumedNormalized ?? [],
+      counts: { ...base.counts, ...(parsed.counts ?? {}) },
+      events: parsed.events ?? [],
+    }
+  } catch {
+    return emptyState()
+  }
+}
+
+/** state 저장 (data/ 디렉토리 보장, gitignore 대상). DB 아님. */
+export function saveState(state: QueueState): void {
+  mkdirSync(path.dirname(STATE_PATH), { recursive: true })
+  state.updatedAt = new Date().toISOString()
+  if (state.events.length > MAX_EVENTS) state.events = state.events.slice(-MAX_EVENTS)
+  writeFileSync(STATE_PATH, JSON.stringify(state, null, 2))
+}
+
+/** 소비 표시 (중복 추가 방지) */
+export function markConsumed(state: QueueState, normalized: string): void {
+  if (!state.consumedNormalized.includes(normalized)) state.consumedNormalized.push(normalized)
+}
+
+/** 이벤트 기록 (counts 증가 + events 추가) */
+export function recordEvent(state: QueueState, row: Omit<QueueEventRow, 'ts'>): void {
+  state.counts[row.event] = (state.counts[row.event] ?? 0) + 1
+  state.events.push({ ts: new Date().toISOString(), ...row })
+}
+
+/**
+ * 소비되지 않은 publishable 후보를 우선순위 순서로 반환.
+ * (클러스터 라운드로빈 + subtopic 분산 = buildQueuePreview 순서 재사용, consumed 제외, 이중가드)
+ */
+export function selectOrderedCandidates(
+  nodes: KeywordNode[],
+  opts: { limit: number; excludeNormalized: Set<string> },
+): QueueCandidate[] {
+  const byKeyword = new Map<string, KeywordNode>()
+  for (const n of nodes) byKeyword.set(n.keyword, n)
+
+  const publishableCount = nodes.filter((n) => PUBLISHABLE_POLICIES.includes(n.publishPolicy)).length
+  const horizonDays = Math.ceil(publishableCount / SESSION_SLOTS.length) + 2
+  const { rows } = buildQueuePreview(nodes, horizonDays)
+
+  const out: QueueCandidate[] = []
+  const seen = new Set<string>()
+  for (const r of rows) {
+    const node = byKeyword.get(r.keyword)
+    if (!node) continue
+    if (seen.has(node.normalized)) continue
+    if (opts.excludeNormalized.has(node.normalized)) continue
+    // 이중 가드: publishable만 (no_publish 절대 제외)
+    if (!PUBLISHABLE_POLICIES.includes(node.publishPolicy)) continue
+    seen.add(node.normalized)
+    out.push({
+      keyword: node.keyword,
+      normalized: node.normalized,
+      cluster: node.cluster,
+      intent: node.intent,
+      publishPolicy: node.publishPolicy,
+      score: node.score,
+      subtopicKey: r.subtopicKey,
+    })
+    if (out.length >= opts.limit) break
+  }
+  return out
 }
 
 function runPreview(): void {
