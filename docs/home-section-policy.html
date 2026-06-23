@@ -389,9 +389,10 @@
 <body>
 
 <div class="page-header">
-  <h1>홈 섹션 노출 정책</h1>
-  <p>뜨는이야기 · 사는이야기 · 웃음방 · 매거진 · 오늘의 추천 일자리</p>
-  <div class="date">코드 직접 검토 기준 · 2026년 6월 4일 · v2 (코드 재대조 갱신)</div>
+  <h1>홈·글상세 노출/추천 정책 — 우나어</h1>
+  <p>홈 섹션: 어떤 글이 첫 화면에 보이는가 · 글상세 관련글: 읽은 뒤 어떤 다음 글을 추천하는가</p>
+  <p style="font-size:13px; opacity:0.85; margin-top:4px;">목적 — PV 증가 · 3화면 도달률 개선 · 내부 순환 강화</p>
+  <div class="date">코드 직접 검토 기준 · 2026년 6월 23일 · v3 · 관련글 추천 v2 반영</div>
 </div>
 
 <div class="container">
@@ -419,6 +420,13 @@
         <div class="text">
           <strong>어드민 홈 큐레이션 — 이제 직접 편성 가능 (신규)</strong>
           <span>어드민이 뜨는이야기·사는이야기·웃음방 섹션에 글을 <strong>고정(PIN)/숨김(HIDE)</strong>할 수 있습니다(만료 4종). 단, 이와 별개인 <strong>"집중"(featured) 체크는 여전히 홈 노출과 무관</strong>합니다.</span>
+        </div>
+      </div>
+      <div class="summary-card" style="background:#f8f0ff; border-left:4px solid #9b59b6;">
+        <div class="icon">📖</div>
+        <div class="text">
+          <strong>글상세 관련글 추천 v2 — 내부 순환 추천 (신규)</strong>
+          <span>홈 알고리즘이 "첫 화면 노출 정책"이라면, 관련글 추천 v2는 <strong>"글상세 내부 순환 추천 정책"</strong>입니다. A/B 실험(<code>exp1_related_flow</code>) 종료 후 <strong>B 방향 채택</strong> → 이제 항상 <strong>📖 다음에 읽기 좋은 이야기</strong> 카드 3개를 노출합니다. 추천 기준은 <strong>맥락 × 흥미도</strong>. 현재 글·이번 세션에서 이미 본 글·가입인사 글은 제외합니다. <strong>추가 DB 쿼리 없이</strong> 서버가 후보 24개를 가져와 <strong>브라우저(클라이언트)에서 점수화</strong>합니다.</span>
         </div>
       </div>
     </div>
@@ -1044,9 +1052,150 @@
     </div>
   </div>
 
+  <!-- 7. 글상세 관련글 추천 v2 -->
+  <div class="section" style="border:2px solid #9b59b6;">
+    <div class="section-header" style="background:#f8f0ff;">
+      <div class="num" style="color:#9b59b6;">글상세 추천 (신규 v2)</div>
+      <h2>📖 글상세 관련글 추천 v2 — 다음에 읽기 좋은 이야기</h2>
+      <div class="subtitle">홈 섹션 정책과 별개 — 사용자가 글을 읽은 뒤 "다음 글"을 추천하는 내부 순환 정책</div>
+    </div>
+    <div class="section-body">
+
+      <div class="special-note" style="margin-bottom:16px;">⚠️ 이 섹션은 <strong>홈 섹션 노출 정책이 아니라 글상세 추천 정책</strong>입니다. 홈 첫 화면(위 1~6번)과 혼동하지 마세요.</div>
+
+      <!-- 기본 정보 카드 -->
+      <div class="policy-card" style="margin-bottom:20px;">
+        <div class="policy-card-header" style="background:#f8f0ff;">
+          <div class="emoji">📖</div>
+          <div class="title-wrap">
+            <div class="pname">다음에 읽기 좋은 이야기</div>
+            <div class="count">상위 3개 노출 · 클라이언트 점수화</div>
+          </div>
+          <div class="gate not-required">A/B 종료·B 채택</div>
+        </div>
+        <div class="policy-card-body">
+          <div class="policy-row">
+            <div class="policy-label">위치</div>
+            <div class="policy-value">글상세 본문 아래, <strong>광고① 다음 · 댓글 전</strong></div>
+          </div>
+          <div class="policy-row">
+            <div class="policy-label">UI</div>
+            <div class="policy-value"><strong>📖 다음에 읽기 좋은 이야기</strong> 카드 — 제목 + reason 라벨</div>
+          </div>
+          <div class="policy-row">
+            <div class="policy-label">노출 개수</div>
+            <div class="policy-value">상위 <strong>3개</strong> (후보가 0개면 섹션 자체 미렌더, 1~2개면 있는 만큼)</div>
+          </div>
+          <div class="policy-row">
+            <div class="policy-label">A/B 상태</div>
+            <div class="policy-value"><code>exp1_related_flow</code> <strong>종료</strong> · B(본문직후 카드) 방향 채택 · 신규 <code>exp1_exposure</code> 발생 없음(자연 종료)</div>
+          </div>
+          <div class="policy-row">
+            <div class="policy-label">알고리즘</div>
+            <div class="policy-value">버전 <code>rec_v1_2026-06-23</code> (<code>src/lib/recommend/related.ts</code>)</div>
+          </div>
+          <div class="policy-row">
+            <div class="policy-label">후보 pool</div>
+            <div class="policy-value"><code>getRelatedCommunityPosts(..., limit=24)</code> — 서버가 24개 후보를 한 번 조회(추가 DB 쿼리·라운드트립 0)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2단 흐름: 서버 후보 → 클라 점수화 -->
+      <div style="background:#f8f0ff;border-left:4px solid #9b59b6;border-radius:0 12px 12px 0;padding:14px 16px;margin-bottom:20px;">
+        <div style="font-size:13px;font-weight:800;color:#6a1b9a;margin-bottom:8px;">🔁 2단 구조 — 서버 후보 조회 → 브라우저 점수화</div>
+        <div style="font-size:13px;display:flex;flex-direction:column;gap:8px;color:#3c3c43;">
+          <div><strong style="color:#1c1c1e;">1단계 — 서버 후보 24개 (캐시)</strong><br>① 같은 게시판 + 같은 category 우선 → ② 부족하면 같은 게시판 fallback. 정렬 <code>trendingScore desc, createdAt desc</code>. 캐시 <code>revalidate: 300</code>(5분, 사용자 무관이라 안전).</div>
+          <div><strong style="color:#1c1c1e;">2단계 — 브라우저 점수화 + 제외</strong><br>받은 24개에서 현재 글·이미 본 글·가입인사 제외 후 <strong>맥락 × 흥미도</strong> 점수 계산 → 상위 3개만 표시. <strong>이 계산은 폰 안에서 일어나 추가 서버 요청 0.</strong></div>
+        </div>
+      </div>
+
+      <!-- reason 라벨 -->
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;">추천 이유(reason) 라벨 — 각 카드에 "왜 추천했는지" 표시</h4>
+      <table style="margin-bottom:20px;">
+        <thead><tr><th>내부 코드</th><th>화면 라벨</th><th>언제 붙나</th></tr></thead>
+        <tbody>
+          <tr><td><code>topic</code></td><td><strong>같은 주제</strong></td><td>같은 category + 제목/요약 키워드 겹침이 가장 큼</td></tr>
+          <tr><td><code>comment</code></td><td><strong>댓글 많은 글</strong></td><td>댓글 수 기여가 가장 큼</td></tr>
+          <tr><td><code>like</code></td><td><strong>많이 공감한 글</strong></td><td>좋아요 수 기여가 가장 큼</td></tr>
+          <tr><td><code>trending</code></td><td><strong>요즘 많이 보는 글</strong></td><td>trendingScore/조회수 기여가 가장 큼</td></tr>
+          <tr><td><code>recent</code></td><td><strong>최근 이야기</strong></td><td>최신성 기여가 가장 큼</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 점수표 REC_WEIGHTS -->
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;">점수 가중치 (<code>REC_WEIGHTS</code>) — 맥락 점수 + 흥미도 점수를 섞는다</h4>
+      <div class="decay-note" style="margin-bottom:14px;">
+        💡 <strong>맥락만 맞는 재미없는 글도, 인기만 높은 엉뚱한 글도 피하기 위해 맥락 점수와 흥미도 점수를 섞는다.</strong><br>
+        각 후보 글에 아래 점수를 더해 합산하고, 높은 3개를 뽑는다. 흥미도 항목은 후보 24개 안에서의 상대 비율로 정규화한다(가장 높은 글이 만점).
+      </div>
+      <table style="margin-bottom:20px;">
+        <thead><tr><th>구분</th><th>항목</th><th>최대 점수</th><th>쉽게</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="3" style="background:#f8f0ff;font-weight:700;color:#6a1b9a;">맥락</td><td>sameCategory</td><td><strong>+30</strong></td><td>지금 글과 같은 주제(카테고리)</td></tr>
+          <tr><td>titleOverlap</td><td><strong>+20</strong></td><td>제목에 같은 단어가 겹칠수록</td></tr>
+          <tr><td>previewOverlap</td><td><strong>+10</strong></td><td>요약(미리보기)에 같은 단어</td></tr>
+          <tr><td rowspan="6" style="background:#e6f4ea;font-weight:700;color:#137333;">흥미도</td><td>trending</td><td><strong>+15</strong></td><td>요즘 뜨는 글(trendingScore)</td></tr>
+          <tr><td>comment</td><td><strong>+12</strong></td><td>댓글 많은 글</td></tr>
+          <tr><td>like</td><td><strong>+8</strong></td><td>공감(좋아요) 많은 글</td></tr>
+          <tr><td>view</td><td><strong>+5</strong></td><td>조회수 높은 글</td></tr>
+          <tr><td>recency7</td><td><strong>+8</strong></td><td>7일 이내 최신 글</td></tr>
+          <tr><td>recency30</td><td><strong>+4</strong></td><td>30일 이내 글</td></tr>
+        </tbody>
+      </table>
+      <div class="conclusion-box" style="margin-bottom:20px;">💡 점수 기준(+30, +20…)은 <code>REC_WEIGHTS</code> 상수 한 곳에서 관리합니다. "댓글 많은 글을 더 밀자" 같은 조정은 숫자만 바꾸면 됩니다(코드 구조 변경 불필요). 롤백도 숫자만 되돌리면 됩니다.</div>
+
+      <!-- 제외 정책 -->
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;">제외 정책 — 무엇을 추천하지 않는가</h4>
+      <div class="policy-card" style="margin-bottom:20px;">
+        <div class="policy-card-body">
+          <div class="policy-row"><div class="policy-label">현재 글</div><div class="policy-value"><strong>지금 읽는 글은 추천하지 않음</strong></div></div>
+          <div class="policy-row"><div class="policy-label">본 글</div><div class="policy-value"><strong>이번 세션에서 이미 본 글은 추천하지 않음</strong></div></div>
+          <div class="policy-row"><div class="policy-label">저장 위치</div><div class="policy-value">sessionStorage <code>unao_viewed_posts</code> · 최대 <strong>50개</strong> 저장(FIFO)</div></div>
+          <div class="policy-row"><div class="policy-label">fallback</div><div class="policy-value">sessionStorage 불가(사파리 프라이빗 등) 시 <strong>빈 배열</strong> → 제외 없이 현행대로 동작(안전)</div></div>
+          <div class="policy-row"><div class="policy-label">가입인사</div><div class="policy-value"><strong>가입인사 카테고리</strong>는 일반 관련글 추천에서 제외</div></div>
+          <div class="policy-row"><div class="policy-label">후보 0개</div><div class="policy-value">추천 후보가 0개면 <strong>섹션 자체를 렌더하지 않음</strong></div></div>
+        </div>
+      </div>
+
+      <!-- 측정/관찰 -->
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;">측정 / 관찰 이벤트</h4>
+      <table style="margin-bottom:14px;">
+        <thead><tr><th>이벤트</th><th>properties</th></tr></thead>
+        <tbody>
+          <tr><td><strong>노출</strong><br><code>related_recommend_view</code></td><td><code>algo_version</code> · <code>count</code> · <code>reasons[]</code> (세션당 1회)</td></tr>
+          <tr><td><strong>클릭</strong><br><code>related_post_click</code></td><td><code>position=inline</code> · <code>algoVersion</code> · <code>rank</code> · <code>reason</code> · <code>sourcePostId</code> · <code>targetPostId</code></td></tr>
+        </tbody>
+      </table>
+      <div class="special-note" style="margin-bottom:14px;">🛡️ <code>related_recommend_view</code>는 <strong>rate-limit 면제 대상</strong>입니다. 이유: 이 이벤트가 노출 분모인데, page_view와 버킷을 공유해 유실되면 <strong>CTR 측정이 왜곡</strong>되기 때문입니다(<code>exp1_exposure</code> 면제와 같은 이유).</div>
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;">관찰 지표</h4>
+      <ul class="fallback-list" style="margin-bottom:20px;">
+        <li data-step="①">inline CTR — 클릭 세션 / 노출 세션</li>
+        <li data-step="②">세션PV — 추천 도입 전후 비교</li>
+        <li data-step="③">3화면 도달률 — 한 세션에 글 3개+ 읽는 비율</li>
+        <li data-step="④">현재글/이미 본 글이 추천에 안 나오는지 샘플 확인</li>
+        <li data-step="⑤"><code>/api/events</code> 4xx/5xx 여부</li>
+      </ul>
+
+      <!-- 운영 판단 -->
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;">운영 판단 — 현재 상태</h4>
+      <div class="summary-card green" style="margin-bottom:12px;">
+        <div class="icon">✅</div>
+        <div class="text">
+          <strong>구현 / production 반영 완료</strong>
+          <span>실사용 효과는 <strong>24~48시간 뒤 관찰</strong>합니다. 1차 관찰 <strong>2026-06-24 09:00 KST 이후</strong>, 48h 관찰 <strong>2026-06-25 이후</strong> 권장. 즉시 승패 판단 금지.</span>
+        </div>
+      </div>
+      <div class="decay-note">
+        🧭 <strong>관련글 추천 v2는 배포 완료 상태지만, 효과 판정은 운영 데이터가 쌓인 뒤 한다. 배포 직후 smoke 데이터나 봇 데이터로 CTR/PV 결론을 내리지 않는다.</strong>
+      </div>
+
+    </div>
+  </div>
+
   <!-- 하단 여백 -->
   <div style="margin-top:24px; text-align:center; font-size:13px; color:#8e8e93;">
-    이 문서는 코드를 직접 검토하여 작성되었습니다 · 2026년 6월 4일 v2 · 우나어 운영팀
+    이 문서는 코드를 직접 검토하여 작성되었습니다 · 2026년 6월 23일 v3 (관련글 추천 v2 반영) · 우나어 운영팀
   </div>
 
 </div>
