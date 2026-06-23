@@ -25,6 +25,8 @@ interface GuestCommentInputProps {
   onSuccess?: () => void
   /** top-level 댓글 성공 시 즉시 목록에 반영하기 위한 optimistic 추가 콜백 */
   onOptimisticAdd?: (data: { content: string; guestNickname: string }) => void
+  /** 가입인사 글이면 환영 톤 문구로(Phase 4, 문구 특화 전용). 기능/허용범위 무변경 */
+  isGreeting?: boolean
 }
 
 export default function GuestCommentInput({
@@ -34,6 +36,7 @@ export default function GuestCommentInput({
   onCancel,
   onSuccess,
   onOptimisticAdd,
+  isGreeting,
 }: GuestCommentInputProps) {
   const { toast } = useToast()
   const pathname = usePathname()
@@ -192,9 +195,13 @@ export default function GuestCommentInput({
   if (showSignupPrompt) {
     return (
       <div className="bg-card border border-border rounded-2xl p-4 mt-4">
-        <p className="text-body font-bold text-foreground mb-1">댓글이 등록됐어요</p>
+        <p className="text-body font-bold text-foreground mb-1">
+          {isGreeting ? '환영해주셔서 감사해요' : '댓글이 등록됐어요'}
+        </p>
         <p className="text-caption text-muted-foreground mb-4">
-          다음부터는 닉네임·번호 없이 바로 댓글을 남길 수 있어요
+          {isGreeting
+            ? '가입하면 이웃들과 더 가까워져요'
+            : '다음부터는 닉네임·번호 없이 바로 댓글을 남길 수 있어요'}
         </p>
         <KakaoSignupButton
           callbackUrl={pathname}
@@ -217,7 +224,9 @@ export default function GuestCommentInput({
 
   return (
     <div className="bg-card border border-border rounded-2xl p-4 mt-4">
-      <p className="text-body font-bold text-foreground mb-3">댓글을 남겨보세요</p>
+      <p className="text-body font-bold text-foreground mb-3">
+        {isGreeting ? '새 이웃을 환영해주세요' : '댓글을 남겨보세요'}
+      </p>
 
       <textarea
         placeholder={placeholder}

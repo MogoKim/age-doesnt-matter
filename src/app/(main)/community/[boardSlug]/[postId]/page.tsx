@@ -74,11 +74,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-async function CommentsLoader({ postId }: {
+async function CommentsLoader({ postId, isGreeting }: {
   postId: string
+  isGreeting?: boolean
 }) {
   const comments = await getCommentsByPostId(postId)
-  return <CommentSection postId={postId} comments={comments} />
+  return <CommentSection postId={postId} comments={comments} isGreeting={isGreeting} />
 }
 
 export default async function PostDetailPage({ params }: PageProps) {
@@ -103,8 +104,8 @@ export default async function PostDetailPage({ params }: PageProps) {
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/likes FK 보장)
   const resolvedId = post.id
 
-  // 관련글 1회 조회 → 본문끝 ②(0~2) + 하단(3~14)로 분배 (category 우선, 부족 시 최신순 fallback)
-  const related = await getRelatedCommunityPosts(post.boardType, post.category || null, resolvedId, 15)
+  // 관련글 1회 조회 → 본문끝 추천 v2(후보 24 → 클라 점수화 상위 3) + 하단 목록(slice 12) 공용
+  const related = await getRelatedCommunityPosts(post.boardType, post.category || null, resolvedId, 24)
 
   const canonicalSlug = post.slug ?? postId
   const url = `${BASE_URL}/community/${boardSlug}/${canonicalSlug}`
@@ -210,9 +211,16 @@ export default async function PostDetailPage({ params }: PageProps) {
         <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
       </div>
 
-      {/* 실험 exp1_related_flow — 본문 직후(광고① 다음, 댓글 전) "다음에 읽기 좋은 이야기".
-          B variant 만 카드 렌더, A/B 모두 노출 기록(클라). 하단 PostListBottom 은 그대로 유지. */}
-      <NextPostsInline postId={resolvedId} boardSlug={boardSlug} posts={related.slice(0, 3)} />
+      {/* 관련글 추천 v2 — 본문 직후(광고① 다음, 댓글 전) "다음에 읽기 좋은 이야기".
+          후보 전체(24)를 넘기고 클라에서 본 글 제외 + 맥락×흥미도 점수화 상위 3개 노출. 하단 PostListBottom 유지. */}
+      <NextPostsInline
+        postId={resolvedId}
+        boardSlug={boardSlug}
+        currentCategory={post.category || null}
+        currentTitle={post.title}
+        currentPreview={post.preview ?? ''}
+        posts={related}
+      />
 
       {/* 댓글 — Suspense로 지연 로딩 */}
       <Suspense fallback={
@@ -222,7 +230,7 @@ export default async function PostDetailPage({ params }: PageProps) {
           <div className="h-20 bg-muted rounded-xl animate-pulse" />
         </div>
       }>
-        <CommentsLoader postId={resolvedId} />
+        <CommentsLoader postId={resolvedId} isGreeting={post.category === GREETING_CATEGORY} />
       </Suspense>
 
       {/* 가입 유도 */}

@@ -65,6 +65,11 @@ export interface ExperimentDef {
 //   conversionEvent=sign_up 은 ExperimentDef 타입 필수값일 뿐 — sign_up 엔 related_flow 가 실리지 않으므로
 //   기존 가입 전환 카드(ExperimentCard)는 어드민에서 표시하지 않는다(가입 전환율 0/무의미 값 오해 방지).
 //   배정·노출은 startsAt 이후에만 발생.
+// [2026-06-23] ⛔ exp1_related_flow 종료 — B(본문직후 카드) 방향 채택 확정.
+//   A/B 모두 3화면·D1 유의차 없었으나 카드 노출 자체는 무해 + inline 클릭(추가 동선) 확인 → B 상시 노출로 전환.
+//   NextPostsInline 이 더 이상 getExperimentVariant(exp1) 를 호출하지 않으므로 신규 배정·exp1_exposure 발생 안 함(자연 종료).
+//   관련글은 추천 v2(src/lib/recommend/related.ts, 맥락×흥미도 점수화)로 대체. 새 A/B 실험은 추가하지 않는다.
+//   이 정의는 어드민 RetentionPanel 의 과거 데이터 조회를 위해 보존(제거 시 getExperiment 호출처 깨짐).
 export const EXPERIMENTS: ExperimentDef[] = [
   {
     id: 'exp1_related_flow',
