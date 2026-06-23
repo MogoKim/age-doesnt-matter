@@ -18,9 +18,9 @@ export default function Footer() {
   return (
     // full-width band → 내부 container(max-w-lg)로 분리. 상단 브랜드 블록은 제거.
     <footer className="w-full bg-background">
-      <div className="mx-auto flex w-full max-w-lg flex-col items-center px-4 pb-6 lg:pb-8">
+      <div className="mx-auto flex w-full max-w-lg flex-col items-center px-4 pb-4 lg:pb-6">
         {/* 1. 정책 링크 — 전부 동일 굵기/색상(개인정보처리방침 강조 제거), 2줄 여유 gap */}
-        <nav className="flex w-full flex-wrap justify-center gap-x-3 gap-y-1.5 py-4" aria-label="하단 링크">
+        <nav className="flex w-full flex-wrap justify-center gap-x-3 gap-y-1.5 py-3" aria-label="하단 링크">
           {FOOTER_LINKS.map((link) => (
             <Link key={link.href} href={link.href} className="inline-flex min-h-11 items-center px-1 py-1.5 text-caption text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary">
               {link.label}
@@ -32,12 +32,12 @@ export default function Footer() {
         <FooterChannelLinks />
 
         {/* 4. 글씨 크기 — 컴팩트 알약 그룹 */}
-        <div className="flex w-full justify-center border-t border-border py-3.5">
+        <div className="flex w-full justify-center border-t border-border py-3">
           <FooterFontSizeToggle />
         </div>
 
         {/* 5. 저작권 + 사업자정보 (전자상거래법 제10조: 전체 항목 표시. 보조 정보로 조용하게 톤다운) */}
-        <div className="flex w-full flex-col items-center border-t border-border py-4">
+        <div className="flex w-full flex-col items-center border-t border-border py-3.5">
           <p className="text-caption text-muted-foreground/60">&copy; 2026 우리 나이가 어때서</p>
           <address className="mt-1 text-center not-italic leading-relaxed">
             <p className="text-caption text-muted-foreground/60">

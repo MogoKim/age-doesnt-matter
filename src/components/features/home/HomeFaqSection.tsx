@@ -1,18 +1,22 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { useAppSession } from '@/components/common/AppSessionProvider'
 import { FaqAccordion } from '@/components/common/FaqAccordion'
 import type { FaqItem } from '@/components/common/FaqAccordion'
+import AppInstallFaqAnswer from '@/components/features/home/AppInstallFaqAnswer'
 
 // 단일 소스 — 표시 항목(FaqAccordion)과 JSON-LD(FAQPage)를 같은 질문/답변으로 생성한다.
-const HOME_FAQ: { q: string; a: string }[] = [
+//   a: schema(JSON-LD text)용 string. display: 표시용 ReactNode(있으면 표시는 display, schema는 항상 a).
+const HOME_FAQ: { q: string; a: string; display?: ReactNode }[] = [
   {
     q: '우나어가 뭐예요?',
     a: '50·60대를 위한 온라인 커뮤니티예요. 일상 이야기, 인생 2막 준비, 웃음방, 내일찾기(일자리), 건강·재테크 매거진까지 — 우리 또래 이야기가 다 모여 있어요.',
   },
   {
     q: '앱을 설치해야 하나요?',
-    a: '꼭 설치하지 않아도 돼요. 안드로이드 폰은 구글 플레이스토어에서 앱으로 설치할 수 있어요. 아이폰은 별도 앱 대신 사파리(Safari)에서 “홈 화면에 추가”를 누르면 앱처럼 쓸 수 있어요. PC는 웹 브라우저에서 주소로 바로 이용하면 됩니다.',
+    a: '안드로이드(삼성 등)는 구글 플레이스토어에서 우나어 앱을 받을 수 있어요. 아이폰은 사파리에서 “홈 화면에 추가”로 앱처럼 쓸 수 있어요.',
+    display: <AppInstallFaqAnswer />,
   },
   {
     q: '가입비가 있나요?',
@@ -28,7 +32,7 @@ const HOME_FAQ: { q: string; a: string }[] = [
   },
 ]
 
-const HOME_FAQ_ITEMS: FaqItem[] = HOME_FAQ.map((f) => ({ q: f.q, a: f.a }))
+const HOME_FAQ_ITEMS: FaqItem[] = HOME_FAQ.map((f) => ({ q: f.q, a: f.display ?? f.a }))
 
 const HOME_FAQ_SCHEMA = {
   '@context': 'https://schema.org',
@@ -48,7 +52,7 @@ export default function HomeFaqSection() {
   if (status === 'loading' || status === 'authenticated') return null
 
   return (
-    <section className="px-4 py-6 lg:px-0">
+    <section className="px-4 py-4 lg:px-0">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(HOME_FAQ_SCHEMA) }}

@@ -75,7 +75,7 @@ export default function FooterChannelLinks() {
   return (
     <>
       {/* 섹션 2: 공식 채널 — SNS 원형 아이콘 버튼 한 줄 */}
-      <section className="flex w-full flex-col items-center gap-2.5 border-t border-border py-4">
+      <section className="flex w-full flex-col items-center gap-2.5 border-t border-border py-3.5">
         <p className="text-caption font-medium text-muted-foreground/80">공식 채널</p>
         <nav className="flex items-center justify-center gap-3" aria-label="공식 SNS 채널">
           {SNS_LINKS.map((s) => (
@@ -100,7 +100,7 @@ export default function FooterChannelLinks() {
 
       {/* 섹션 3: Google Play (웹 전용) — 구분선 포함 통째로 조건 렌더. TWA/PWA/iOS는 미렌더 */}
       {playChannel && (
-        <section className="flex w-full justify-center border-t border-border py-4">
+        <section className="flex w-full justify-center border-t border-border py-3.5">
           <a
             href={buildPlayStoreUrl(playChannel)}
             target="_blank"
