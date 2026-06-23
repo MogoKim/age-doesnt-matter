@@ -79,7 +79,7 @@
     <div class="kicker">Operating Policy · 단일 기준 문서</div>
     <h1>우리 나이가 어때서 — Android Capacitor AAB 운영 정책 문서</h1>
     <div class="meta-grid">
-      <div class="meta-item"><strong>작성일</strong> 2026-06-21</div>
+      <div class="meta-item"><strong>작성일</strong> 2026-06-21 · <strong>갱신</strong> 2026-06-23 (코드 재대조)</div>
       <div class="meta-item"><strong>대상 앱</strong> com.agenotmatter.app</div>
       <div class="meta-item"><strong>현재</strong> vc20 / versionCode 20 / versionName 1.0.15</div>
       <div class="meta-item"><strong>Play</strong> vc20 production 제공 완료</div>
@@ -213,7 +213,7 @@
   <!-- ── 4 ── -->
   <div class="section" id="s4">
     <h2>4. 파일 / 경로 지도</h2>
-    <p class="legend">전부 <span class="badge code">코드 근거</span> 기준. 경로는 저장소 루트 <code>/Users/yanadoo/Documents/New_Claude_agenotmatter</code> 기준.</p>
+    <p class="legend">전부 <span class="badge code">코드 근거</span> 기준. 경로는 저장소 루트 <code>&lt;repo root&gt;</code> 기준.</p>
     <table>
       <tr><th>역할</th><th>경로</th></tr>
       <tr><td>Capacitor config</td><td><code>capacitor.config.ts</code> (server.url = production)</td></tr>
@@ -229,7 +229,7 @@
       <tr><td>앱 AdSense 차단(스크립트)</td><td><code>src/components/ad/AdSenseScriptLoader.tsx</code> (<code>window.Capacitor</code>면 return)</td></tr>
       <tr><td>앱 AdSense 차단(유닛)</td><td><code>src/components/ad/AdSenseUnit.tsx</code> (<code>isCapacitor</code>면 null)</td></tr>
       <tr><td>AAB 산출물</td><td><code>android/app/build/outputs/bundle/release/app-release.aab</code> (서명 후 업로드 대상)</td></tr>
-      <tr><td>keystore(업로드 키)</td><td><code>/Users/yanadoo/migration-backup/android/android.keystore</code> · alias <code>android</code></td></tr>
+      <tr><td>keystore(업로드 키)</td><td>로컬 업로드 키 보관 경로(내부 관리) · alias <code>android</code> · <em>비밀번호는 문서화하지 않음(창업자 보관)</em></td></tr>
       <tr><td>Vercel 반영 src</td><td><code>src/**</code> 전체 — main 배포로 앱에 반영(AAB 무관)</td></tr>
     </table>
     <div class="alert warning"><span class="t">민감 파일 주의</span> <code>google-services.json</code>은 client config라 commit 가능 범주지만 전체 내용을 채팅/이슈에 붙이지 않는다. <strong>Firebase Admin service account JSON / keystore 비밀번호는 절대 commit·채팅 금지</strong>(Vercel env·로컬 관리).</div>
@@ -273,7 +273,8 @@
     </ul>
     <div class="alert ok"><span class="t">실측 확인됨 (2026-06-21)</span> GA4 실시간에서 앱 가입 시 <code>sign_up</code>이 집계됨을 확인 → <strong>native 이벤트 경로 작동</strong>. (DebugView "디버그 기기 0"은 setprop이 재설치로 꺼진 것이지 이벤트 미전송이 아니다.)</div>
 
-    <h3>5.4 FCM 푸시 (앱 알림) <span class="badge code">코드 근거</span> <span class="badge official">vc20</span></h3>
+    <h3>5.4 푸시 — Web Push/VAPID(웹·PWA) + native FCM(Capacitor 앱) 배타 분기 <span class="badge code">코드 근거</span> <span class="badge official">vc20</span></h3>
+    <div class="alert info"><span class="t">용어 정정</span> "푸시 = FCM"이 아니다. <strong>웹/PWA 구독은 VAPID Web Push</strong>(<code>subscribe.ts</code> applicationServerKey · <code>service.ts</code> <code>web-push</code> · <code>PushSubscription</code> 모델), <strong>Capacitor 앱은 native FCM</strong>(<code>@capacitor-firebase/messaging</code> 토큰 · <code>FcmToken</code> 모델 · <code>fcm-sender.ts</code> firebase-admin). 같은 userId에 <code>FcmToken</code>이 있으면 FCM, 없으면 VAPID로 <strong>배타 발송</strong>(중복 방지).</div>
     <ul>
       <li><strong>토큰 수집(클라이언트)</strong>: 앱 로그인 후 <code>@capacitor-firebase/messaging</code>로 디바이스 토큰을 받아 <code>POST /api/push/fcm-token</code>에 upsert 저장. DB 테이블 <code>FcmToken</code>(userId · token <code>@unique</code> · platform · createdAt, RLS on).</li>
       <li><strong>Android native token 수집 가드</strong>: 프록시를 Promise 해석값으로 반환하면 <code>proxy.then()</code> 네이티브 throw → 각 함수에서 <code>const { FirebaseMessaging } = await import(...)</code> 직접 구조분해(<code>fcm-register.ts</code>, 버그수정 <code>bf7b2a9</code>).</li>
@@ -317,19 +318,19 @@
     <h3>7.1 버전 규칙 <span class="badge official">공식</span></h3>
     <ul>
       <li><strong>versionCode는 매 AAB 업로드마다 증가</strong>(정수, 단조 증가). 한 번 쓴 값 재사용 불가 → Play가 거부.</li>
-      <li><strong>versionName</strong>은 사용자 표시용 문자열(예: 1.0.14). 운영 기준: native/기능 변경 시 patch/minor 증가, 명확히 추적.</li>
+      <li><strong>versionName</strong>은 사용자 표시용 문자열(현재 1.0.15). 운영 기준: native/기능 변경 시 patch/minor 증가, 명확히 추적.</li>
       <li>현재: versionCode <strong>20</strong> / versionName <strong>1.0.15</strong> (vc19는 AD_ID 누락분을 한 번 업로드해 소비됨 → vc20으로 게시. 다음 native 빌드는 <strong>21</strong>부터).</li>
     </ul>
     <h3>7.2 Play App Signing & 업로드 키 <span class="badge official">공식</span> <span class="badge code">코드/운영</span></h3>
     <ul>
       <li><strong>Play App Signing 사용 중</strong> — Google이 앱 서명키를 보관·관리. 개발자는 <strong>업로드 키</strong>로만 AAB를 서명하고, Google이 최종 재서명한다.</li>
-      <li>업로드 키 keystore: <code>/Users/yanadoo/migration-backup/android/android.keystore</code>, alias <code>android</code> (인증서 CN=Yongseok Kim).</li>
+      <li>업로드 키 keystore: <strong>로컬 업로드 키 보관 경로(내부 관리)</strong>, alias <code>android</code> (운영 참고용). <strong>실제 보관 경로·인증서 주체·비밀번호는 문서화하지 않는다</strong>(창업자 로컬 보관).</li>
       <li><span class="badge code">코드 근거</span> <code>build.gradle</code>에 <code>signingConfig</code>가 없음 → <code>bundleRelease</code>는 <strong>unsigned AAB</strong>를 만든다. 업로드 전 <code>jarsigner</code>로 업로드 키 서명 필요(과거 "모든 번들에 서명해야 합니다" 사고 원인).</li>
     </ul>
-    <pre><code># AAB 서명 (창업자가 keystore 비번 직접 입력 — 매 빌드 동일, vc20도 동일 절차로 서명함)
+    <pre><code># AAB 서명 (창업자가 keystore 비번 직접 입력 — 비밀번호는 문서화하지 않음. 매 빌드 동일, vc20도 동일 절차)
 cd android/app/build/outputs/bundle/release
-jarsigner -keystore /Users/yanadoo/migration-backup/android/android.keystore \
-  -sigalg SHA256withRSA -digestalg SHA-256 app-release.aab android
+jarsigner -keystore &lt;로컬 업로드 키 보관 경로(내부)&gt; \
+  -sigalg SHA256withRSA -digestalg SHA-256 app-release.aab android   # 마지막 인자 = alias
 jarsigner -verify app-release.aab   # "jar verified." 확인</code></pre>
     <div class="alert warning"><span class="t">구버전 산출물 업로드 금지</span> <code>app-release-signed.aab</code>(과거 vc17, Firebase Analytics 없음)는 <strong>업로드 금지</strong>. 업로드 대상은 항상 <strong>최신 빌드 <code>app-release.aab</code></strong>(서명 후). 두 파일이 폴더에 공존하니 빌드 시각·버전 확인.</div>
     <h3>7.3 언제 AAB 재빌드가 필요한가 <span class="badge code">코드 근거</span></h3>
@@ -383,7 +384,7 @@ https://www.age-doesnt-matter.com/api/auth/callback/kakao</code></pre>
     <h3>9.2 정책</h3>
     <ul>
       <li><strong>앱 광고와 웹 광고를 분리 판단.</strong> 앱은 AdSense OFF, 웹은 AdSense/Coupang 유지.</li>
-      <li><strong>AdMob은 후순위</strong> — 도입 시 Google Mobile Ads SDK + 정책 검토 + Play 광고 ID 선언 갱신 등 별도 설계.</li>
+      <li><strong>AdMob 네이티브 배너 — 구현 존재(브랜치), main 미반영·운영 검증 대기</strong> <span class="badge code">코드 근거</span>: AdMob 테스트 배너 MVP→실 ID 전환 구현이 <code>poc/admob-test</code> 브랜치에 있다(커밋 <code>2c85293</code> test banner MVP, <code>f257818</code> real IDs). 단 <strong>origin/main에는 미반영</strong> — main의 <code>src/components/ad/</code>에 <code>AdMobBanner</code>가 없고, <code>package.json</code>에 AdMob 플러그인 의존성도, AndroidManifest에 AdMob App ID meta-data도 없다(실제 광고 단위 ID는 문서화하지 않음). main에는 <code>AD_ID</code> 권한만 선언돼 있는데 이는 <strong>Google Ads 전환 측정·Firebase Analytics용</strong>이지 AdMob 광고 노출용이 아니다. AdMob 네이티브 배너는 <strong>Capacitor 앱에서만</strong> 동작 설계이며, 운영 적용은 <strong>AdMob 콘솔 승인/배너 운영 검증 + main 머지 결정 대기</strong> 상태다.</li>
       <li>쿠팡 CPS 배너의 앱 노출 여부는 제휴 약관·UX 관점 별도 검토(2-1 범위 밖, 정책 트랙).</li>
       <li><strong>계정 보호 관점 금지</strong>: 앱 WebView에서 AdSense 다시 켜지 않는다.</li>
       <li><strong>앱 내 PWA/설치 CTA 차단</strong>(2026-06-23, main <code>409971a</code>): Capacitor 앱(<code>isCapacitor</code>)에서 "앱 다운받기"/PWA 설치 팝업·배너를 노출하지 않는다 — <code>PostCTA</code>·<code>AddToHomeScreen</code>·<code>PwaInlineBanner</code>·<code>FooterPwaButton</code>에 <code>isCapacitor</code> 가드. 웹/PWA/TWA 동작 회귀 없음.</li>
@@ -391,10 +392,10 @@ https://www.age-doesnt-matter.com/api/auth/callback/kakao</code></pre>
 
     <h3>9.3 AdMob 현황 (2026-06-23) <span class="badge code">코드 근거</span></h3>
     <ul>
-      <li><strong>app-ads.txt 성공</strong>: <code>public/app-ads.txt</code>(<code>google.com, pub-4117999106913048, DIRECT, f08c47fec0942fa0</code>, mogoyongseok 계정) main 반영(<code>5aea664</code>) + production <code>/app-ads.txt</code> HTTP 200 exact match 확인.</li>
+      <li><strong>app-ads.txt 성공</strong>: <code>public/app-ads.txt</code>(google.com · mogoyongseok publisher ID · DIRECT — <em>publisher ID·인증ID는 app-ads.txt 공개 표준값이라 secret 아님이나, 본 문서엔 full 값을 적지 않는다</em>) main 반영(<code>5aea664</code>) + production <code>/app-ads.txt</code> HTTP 200 exact match 확인.</li>
       <li><strong>AdMob 앱은 아직 "준비 중"(미승인)</strong> — 광고 게재 제한/검토 중. 승인 전에는 광고가 게재되지 않는다.</li>
       <li><strong>실제 광고 코드 main 미반영</strong>: <code>AdMobBanner.tsx</code> · <code>strings.xml</code> 앱 ID 등은 <code>poc/admob-test</code> 브랜치에만 존재(main·vc20 미포함).</li>
-      <li>코드 AdMob 계정 = <code>pub-4117999106913048</code>(mogoyongseok — AdSense·Firebase·Google Ads 메인). <code>mogo.kim1023</code> 계정의 광고단위는 코드에서 쓰지 않는다.</li>
+      <li>코드 광고 계정 = <strong>mogoyongseok</strong> publisher(AdSense·Firebase·Google Ads 메인 — publisher ID는 운영 참고용 식별자이며 full 값은 문서화하지 않음, secret 아님). <code>mogo.kim1023</code> 계정의 광고단위는 코드에서 쓰지 않는다.</li>
       <li><span class="badge red">금지</span> <strong>app readiness(앱 승인) 전 production AdMob 코드 반영 금지.</strong></li>
       <li><span class="badge red">금지</span> <code>poc/admob-test</code> 통째 merge 금지(매거진·<code>app-analytics</code> 옛 버전이 FCM/vc20을 덮을 위험) → <strong>AdMob 파일만 cherry-pick</strong>.</li>
       <li><span class="badge guess">추측</span> 승인 후 반영 시 native plugin 추가라 <strong>vc21 이상 새 AAB</strong>가 필요할 수 있다(내부 테스트 트랙 우선 권장).</li>
@@ -466,8 +467,8 @@ https://www.age-doesnt-matter.com/api/auth/callback/kakao</code></pre>
 npm run lint
 npm run build</code></pre>
     <h4>Android DebugView (앱 native 이벤트)</h4>
-    <pre><code>/Users/yanadoo/.bubblewrap/android_sdk/platform-tools/adb devices
-/Users/yanadoo/.bubblewrap/android_sdk/platform-tools/adb shell setprop debug.firebase.analytics.app com.agenotmatter.app
+    <pre><code>&lt;Android SDK&gt;/platform-tools/adb devices
+&lt;Android SDK&gt;/platform-tools/adb shell setprop debug.firebase.analytics.app com.agenotmatter.app
 # 재설치하면 setprop 초기화됨 → 다시 실행 + 앱 재시작 → DebugView "디버그 기기 1" 먼저 확인</code></pre>
     <h4>앱 WebView 콘솔 (chrome://inspect)</h4>
     <ul>
