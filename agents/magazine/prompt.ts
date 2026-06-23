@@ -65,8 +65,26 @@ export const TITLE_PATTERNS: Record<string, string[]> = {
   일자리: ['OO 지원 자격 총정리', '나이 무관 OO 일자리', 'OO 자격증으로 취업하는 법'],
 }
 
-/** 매거진 편집장 시스템 프롬프트 */
-export function buildMagazineSystemPrompt(category: string): string {
+/**
+ * editorial v2 — 응답에 추가로 요청하는 필드(직접답변/핵심요약).
+ * generator의 응답 형식(user message)에 주입한다. seoDescription 다음, 이미지컨텍스트1 앞.
+ */
+export const EDITORIAL_V2_FIELDS = `직접답변: (제목이 던지는 검색 질문에 2~3문장으로 곧바로 답변 — 첫 화면 노출용, 한 줄)
+핵심요약:
+- (이 글의 요점 1)
+- (이 글의 요점 2)
+- (이 글의 요점 3)`
+
+/** editorial v2 — 시스템 프롬프트에 덧붙이는 추가 규칙 */
+const EDITORIAL_V2_SYSTEM_SUFFIX = `
+
+[editorial v2 추가 규칙]
+- 응답에 '직접답변'(2~3문장)과 '핵심요약'(요점 3줄)을 반드시 포함한다.
+- 직접답변은 제목이 던지는 검색 질문에 곧바로 답하는 문장으로 쓴다(첫 화면에 단독 노출됨).
+- 표(table)·비교표를 절대 만들지 마라. <table> 태그 금지. 비교가 필요하면 문장이나 <ul> 목록으로 표현한다.`
+
+/** 매거진 편집장 시스템 프롬프트 (editorialV2=true 시 v2 추가 규칙 덧붙임) */
+export function buildMagazineSystemPrompt(category: string, editorialV2 = false): string {
   const seoHint = Object.entries(SEO_KEYWORDS)
     .filter(([key]) => {
       const catMap: Record<string, string> = {
@@ -144,7 +162,7 @@ HTML 형식:
 [기사 길이 — 필수]
 본문은 반드시 1,500자 이상이어야 한다 (HTML 태그 제외 순수 텍스트 기준).
 각 소제목 섹션은 최소 3~4문장. 작성 후 자체 점검: 1,500자 미만이면
-가장 얇은 섹션을 보충해서 채울 것. 짧은 기사는 독자에게 도움이 되지 않는다.`
+가장 얇은 섹션을 보충해서 채울 것. 짧은 기사는 독자에게 도움이 되지 않는다.${editorialV2 ? EDITORIAL_V2_SYSTEM_SUFFIX : ''}`
 }
 
 /** 욕망 → 매거진 카테고리 매핑 */

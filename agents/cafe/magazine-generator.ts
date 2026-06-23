@@ -11,9 +11,9 @@ import { loadTodayBrief } from '../core/intelligence.js'
 import type { MagazineSuggestion } from './types.js'
 import { matchCpsProducts, saveCpsLinks } from './cps-matcher.js'
 import { generateMagazineImageByContext } from './image-generator.js'
-import { buildMagazineHtml, parseSectionsFromAI } from './magazine-template.js'
+import { buildMagazineHtml, buildMagazineHtmlV2, parseSectionsFromAI } from './magazine-template.js'
 import { getDefaultImagePlan, type ImageContext } from '../core/image-prompt-builder.js'
-import { buildMagazineSystemPrompt, DESIRE_TO_CATEGORY, DESIRE_TOPIC_HINTS } from '../magazine/prompt.js'
+import { buildMagazineSystemPrompt, EDITORIAL_V2_FIELDS, DESIRE_TO_CATEGORY, DESIRE_TOPIC_HINTS } from '../magazine/prompt.js'
 import { pickLongtailKeywords } from '../magazine/longtail-keywords.js'
 import { getActiveSeriesToday } from '../magazine/series-plan.js'
 import { requestGoogleIndexing } from './indexing-api.js'
@@ -149,7 +149,7 @@ async function generateMagazineArticle(
   category: string,
   referencePosts: { title: string; content: string; cafeName: string }[],
   recentTitles: string[],
-): Promise<{ title: string; content: string; summary: string; imageContexts: ImageContext[]; seoTitle: string | null; seoDescription: string | null } | null> {
+): Promise<{ title: string; content: string; summary: string; imageContexts: ImageContext[]; seoTitle: string | null; seoDescription: string | null; directAnswer: string; summaryPoints: string[] } | null> {
   const refs = referencePosts.map((p, i) =>
     `[${i + 1}] (${p.cafeName}) "${p.title}"\n${p.content.slice(0, 300)}`,
   ).join('\n\n')
@@ -168,10 +168,13 @@ async function generateMagazineArticle(
   const model = isSunday ? CLAUDE_MODEL_STRATEGIC : CLAUDE_MODEL_HEAVY
   console.log(`[Magazine] 모델: ${isSunday ? 'Opus (일요일 특집)' : 'Sonnet (평일)'}`)
 
+  // editorial v2 — flag ON 시에만 직접답변/핵심요약 요청 (기본 false = v1)
+  const editorialV2 = process.env.MAGAZINE_EDITORIAL_V2_ENABLED === 'true'
+
   const response = await client.messages.create({
     model,
     max_tokens: 4500,
-    system: buildMagazineSystemPrompt(category),
+    system: buildMagazineSystemPrompt(category, editorialV2),
     messages: [{
       role: 'user',
       content: `"${topic.title}" 주제로 매거진 기사를 작성해주세요.
@@ -188,7 +191,7 @@ ${longtailSection ? `SEO 타겟 롱테일 키워드 (아래 중 1~2개를 제목
 제목: (20자 이내, 핵심을 담은 제목)
 요약: (40자 이내, 한 줄 요약)
 seoTitle: (50자 이내, 주요 키워드 앞에 배치, 숫자 포함 권장. 연도는 쓰지 말 것. 예: "50대 갱년기 증상 7가지 완벽 정리")
-seoDescription: (120자 이내, 첫 문장에 직접 답변, "50대" "갱년기" 등 핵심 키워드 포함, 공감 유도)
+seoDescription: (120자 이내, 첫 문장에 직접 답변, "50대" "갱년기" 등 핵심 키워드 포함, 공감 유도)${editorialV2 ? `\n${EDITORIAL_V2_FIELDS}` : ''}
 이미지컨텍스트1: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(FOOD_PHOTO·SCENE_PHOTO·OBJECT_PHOTO만 영문 검색어 작성 — PERSON_REAL과 ILLUSTRATION은 이 필드 생략), altKo:(한국어 이미지 설명 20자 이내)
 이미지컨텍스트2: type:PERSON_REAL|FOOD_PHOTO|SCENE_PHOTO|OBJECT_PHOTO|ILLUSTRATION, gender:female|male(인물일 때만), context:(영문 이미지 설명), unsplash:(FOOD_PHOTO·SCENE_PHOTO·OBJECT_PHOTO만 영문 검색어 작성 — PERSON_REAL과 ILLUSTRATION은 이 필드 생략), altKo:(한국어 이미지 설명 20자 이내)
 본문: (HTML, 1500~2000자, 소제목 3~4개, 각 15자 이내)
@@ -233,6 +236,13 @@ seoDescription: (120자 이내, 첫 문장에 직접 답변, "50대" "갱년기"
 
   if (!titleMatch || !bodyMatch) return null
 
+  // editorial v2 — 직접답변/핵심요약 파싱 (없으면 빈값 → 템플릿이 박스 생략 = degrade)
+  const directAnswer = text.match(/직접답변:\s*(.+)/)?.[1]?.trim() ?? ''
+  const summaryBlock = text.match(/핵심요약:\s*\n?([\s\S]*?)(?=\n\s*(?:이미지컨텍스트1:|seoTitle:|본문:))/)
+  const summaryPoints = summaryBlock
+    ? summaryBlock[1].split('\n').map((l) => l.replace(/^[\s\-•*]+/, '').trim()).filter(Boolean).slice(0, 3)
+    : []
+
   // 이미지 컨텍스트 파싱
   const imageContexts: ImageContext[] = []
   for (let n = 1; n <= 2; n++) {
@@ -271,6 +281,8 @@ seoDescription: (120자 이내, 첫 문장에 직접 답변, "50대" "갱년기"
     imageContexts,
     seoTitle: seoTitleMatch?.[1]?.trim().slice(0, 50) ?? null,
     seoDescription: seoDescriptionMatch?.[1]?.trim().slice(0, 120) ?? null,
+    directAnswer,
+    summaryPoints,
   }
 }
 
@@ -604,7 +616,7 @@ export async function main(): Promise<MagazineRunResult[]> {
     const kstDate = new Date(todayDate.getTime() + 9 * 60 * 60 * 1000)
     const dateStr = kstDate.toISOString().split('T')[0]
 
-    let finalHtml = buildMagazineHtml({
+    const templateData = {
       title: article.title,
       subtitle: article.summary ?? '',
       category,
@@ -614,7 +626,20 @@ export async function main(): Promise<MagazineRunResult[]> {
       sections,
       authorName: '우나어 매거진 편집팀',
       publishedDate: dateStr,
-    })
+    }
+    // editorial v2 — flag ON 시 v2 빌더. 실패 시 v1 fallback (발행 롤백 안 함)
+    const editorialV2 = process.env.MAGAZINE_EDITORIAL_V2_ENABLED === 'true'
+    let finalHtml: string
+    if (editorialV2) {
+      try {
+        finalHtml = buildMagazineHtmlV2({ ...templateData, directAnswer: article.directAnswer, summaryPoints: article.summaryPoints })
+      } catch (err) {
+        console.warn('[MagazineGenerator] ⚠️ v2 빌드 실패 → v1 fallback:', err instanceof Error ? err.message : String(err))
+        finalHtml = buildMagazineHtml(templateData)
+      }
+    } else {
+      finalHtml = buildMagazineHtml(templateData)
+    }
 
     // 본문 <!-- [IMAGE:N] --> 플레이스홀더를 실제 이미지로 치환
     for (const [n, url] of bodyImageUrls) {
