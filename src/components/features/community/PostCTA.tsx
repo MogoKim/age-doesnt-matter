@@ -23,7 +23,7 @@ interface PostCTAProps {
 }
 
 export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps) {
-  const { isTWA, isStandalone } = useAppEnvironment()
+  const { isTWA, isStandalone, isCapacitor } = useAppEnvironment()
   const { status } = useAppSession()
   const pathname = usePathname()
   const loggedRef = useRef(false)
@@ -44,14 +44,14 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
     }
     const env = detectEnv()
     const pwaInstalled = localStorage.getItem('pwa_installed') === '1'
-    const blocked = INSTALL_BLOCKED_ENVS.includes(env) || pwaInstalled || isTWA || isStandalone
+    const blocked = INSTALL_BLOCKED_ENVS.includes(env) || pwaInstalled || isTWA || isStandalone || isCapacitor
     setInstallCtaVisible(!blocked)
     setIsAndroid(isAndroidInstallEnv())
-  }, [authKnown, resolvedIsLoggedIn, isTWA, isStandalone])
+  }, [authKnown, resolvedIsLoggedIn, isTWA, isStandalone, isCapacitor])
 
   // 노출 이벤트 — 실제 렌더되는 CTA에 대해서만 1회 전송
   useEffect(() => {
-    if (isTWA || isStandalone) return
+    if (isTWA || isStandalone || isCapacitor) return
     if (loggedRef.current) return
 
     if (!authKnown) return
@@ -75,10 +75,10 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
     const props = { cta_type: 'install', post_id: postId, post_title: postTitle }
     trackEvent('post_cta_shown', props)
     sendGtmEvent('post_cta_shown', props)
-  }, [isTWA, isStandalone, authKnown, resolvedIsLoggedIn, installCtaVisible, postId, postTitle])
+  }, [isTWA, isStandalone, isCapacitor, authKnown, resolvedIsLoggedIn, installCtaVisible, postId, postTitle])
 
-  // TWA/standalone → 전체 숨김
-  if (isTWA || isStandalone) return null
+  // TWA/standalone/Capacitor 앱 → 전체 숨김
+  if (isTWA || isStandalone || isCapacitor) return null
 
   function handleClick() {
     const ctaType = resolvedIsLoggedIn ? 'install' : 'signup'
