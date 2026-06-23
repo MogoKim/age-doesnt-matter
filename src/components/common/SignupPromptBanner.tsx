@@ -106,7 +106,7 @@ export function SignupPromptBanner() {
   const searchParams = useSearchParams()
   const { data: session, status } = useAppSession()
   const isLoggedIn = status === 'authenticated'
-  const { isTWA } = useAppEnvironment() // TWA(앱)는 "게이트 없이 바로 둘러보기"가 위너(2026-06-13 게이트 종료) → 웹 타이밍 배너는 TWA 제외 유지
+  const { isTWA, isCapacitor } = useAppEnvironment() // 웹 정독 배너: TWA(2026-06-13 게이트 종료) + Capacitor 앱 제외(앱 글상세 가입 유도는 PostCTA 인라인 CTA가 담당)
   const createdAt = session?.user?.createdAt ? String(session.user.createdAt) : undefined
 
   // ?signup=1 + 유효 utm_source 감지 (클라이언트에서 직접 읽기 — layout은 searchParams 미지원)
@@ -187,7 +187,7 @@ export function SignupPromptBanner() {
   // ── 타이머 (Tab Visibility API 포함) ──
   useEffect(() => {
     if (status === 'loading') return
-    if (isLoggedIn || isTWA || !isActivePath(pathname)) return
+    if (isLoggedIn || isTWA || isCapacitor || !isActivePath(pathname)) return
 
     // 노출 타이밍 고정(UT 위너): 스크롤 85%가 주 트리거, 60초 백스톱
     const fireDelay = BACKSTOP_MS
@@ -239,12 +239,12 @@ export function SignupPromptBanner() {
       document.removeEventListener('visibilitychange', handleVisibility)
       tryFireRef.current = () => {}
     }
-  }, [pathname, isLoggedIn, status, isTWA])
+  }, [pathname, isLoggedIn, status, isTWA, isCapacitor])
 
   // ── 스크롤 감지 ──
   useEffect(() => {
     if (status === 'loading') return
-    if (isLoggedIn || isTWA || !isActivePath(pathname)) return
+    if (isLoggedIn || isTWA || isCapacitor || !isActivePath(pathname)) return
     // 정독 85% 완료 시 발동(고정)
     const scrollThreshold = READ_COMPLETE_SCROLL
     // pathname 변경 시 현재 스크롤 위치로 초기화 (scroll effect가 timer effect보다 나중에 실행됨)
@@ -261,7 +261,7 @@ export function SignupPromptBanner() {
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [pathname, isLoggedIn, status, isTWA])
+  }, [pathname, isLoggedIn, status, isTWA, isCapacitor])
 
   // ── Body scroll lock ──
   useEffect(() => {

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { useAppSession } from '@/components/common/AppSessionProvider'
+import { useAppEnvironment } from '@/hooks/useAppEnvironment'
 import { FaqAccordion } from '@/components/common/FaqAccordion'
 import type { FaqItem } from '@/components/common/FaqAccordion'
 import AppInstallFaqAnswer from '@/components/features/home/AppInstallFaqAnswer'
@@ -32,8 +33,6 @@ const HOME_FAQ: { q: string; a: string; display?: ReactNode }[] = [
   },
 ]
 
-const HOME_FAQ_ITEMS: FaqItem[] = HOME_FAQ.map((f) => ({ q: f.q, a: f.display ?? f.a }))
-
 const HOME_FAQ_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -49,7 +48,13 @@ const HOME_FAQ_SCHEMA = {
 
 export default function HomeFaqSection() {
   const { status } = useAppSession()
+  const { isCapacitor } = useAppEnvironment()
   if (status === 'loading' || status === 'authenticated') return null
+
+  // 앱(Capacitor)에서는 "앱을 설치해야 하나요?"(display=AppInstallFaqAnswer) 항목 제외 — 이미 앱 사용자
+  // schema(JSON-LD)는 전체 유지(웹 SEO용, 앱 WebView는 크롤러 아님)
+  const items: FaqItem[] = (isCapacitor ? HOME_FAQ.filter((f) => !f.display) : HOME_FAQ)
+    .map((f) => ({ q: f.q, a: f.display ?? f.a }))
 
   return (
     <section className="px-4 py-4 lg:px-0">
@@ -59,7 +64,7 @@ export default function HomeFaqSection() {
       />
       <h2 className="text-title font-bold text-foreground mb-4">자주 묻는 질문</h2>
       <div className="flex flex-col gap-3">
-        {HOME_FAQ_ITEMS.map((item) => (
+        {items.map((item) => (
           <FaqAccordion key={item.q} item={item} />
         ))}
       </div>

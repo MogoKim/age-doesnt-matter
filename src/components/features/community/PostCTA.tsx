@@ -50,8 +50,9 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
   }, [authKnown, resolvedIsLoggedIn, isTWA, isStandalone, isCapacitor])
 
   // 노출 이벤트 — 실제 렌더되는 CTA에 대해서만 1회 전송
+  // (환경 가드 제거: 비회원 가입 CTA는 앱/TWA/standalone 포함 모든 환경에서 노출/기록.
+  //  회원 설치 CTA는 아래 installCtaVisible 가드(blocked에 isCapacitor·isTWA·isStandalone 포함)로 차단됨)
   useEffect(() => {
-    if (isTWA || isStandalone || isCapacitor) return
     if (loggedRef.current) return
 
     if (!authKnown) return
@@ -77,8 +78,8 @@ export default function PostCTA({ postId, postTitle, isLoggedIn }: PostCTAProps)
     sendGtmEvent('post_cta_shown', props)
   }, [isTWA, isStandalone, isCapacitor, authKnown, resolvedIsLoggedIn, installCtaVisible, postId, postTitle])
 
-  // TWA/standalone/Capacitor 앱 → 전체 숨김
-  if (isTWA || isStandalone || isCapacitor) return null
+  // 비회원 가입 CTA는 환경 무관 항상 노출(앱에서도 가입 전환 유지).
+  // 회원 설치 CTA는 installCtaVisible 가드(blocked = isCapacitor·isTWA·isStandalone·인앱·desktop 포함)에서 차단된다.
 
   function handleClick() {
     const ctaType = resolvedIsLoggedIn ? 'install' : 'signup'
