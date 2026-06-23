@@ -36,6 +36,16 @@ const CHATGPT_URL = 'https://chatgpt.com/images'
  */
 const IMG_MIN_URL_LEN = 60
 
+/**
+ * 완성 이미지 최소 해상도(px) — ChatGPT /images 갤러리·대화에 뜨는 저해상 미리보기
+ * (약 512px WebP)를 grab하지 않기 위한 naturalWidth/naturalHeight 가드.
+ * 정품 생성 이미지는 보통 1024px 이상. 미만이면 "아직 로딩 중이거나 미리보기"로 보고
+ * 계속 대기 → 완성 full-res 이미지만 채택한다.
+ * (이전 버그: 히어로의 갤러리 썸네일 URL이 beforeSrcs와 달라 '새 이미지'로 잡혀
+ *  본문에 512px 축소판이 그대로 박혔음 — 해상도 가드로 차단)
+ */
+const IMG_MIN_NATURAL_PX = 800
+
 /** aspectRatio → 프롬프트 suffix */
 const SIZE_SUFFIX: Record<string, string> = {
   '16:9': 'wide landscape 16:9 aspect ratio, horizontal composition',
@@ -192,14 +202,19 @@ async function downloadGeneratedImage(page: Page, beforeSrcs: string[] = []): Pr
       (function() {
         var before = ${beforeJson};
         var minLen = ${IMG_MIN_URL_LEN};
+        var minNat = ${IMG_MIN_NATURAL_PX};
         var found = null;
         function walk(root) {
           if (!root || found) return;
           try {
             var imgs = root.querySelectorAll('img[src]');
             for (var i = 0; i < imgs.length; i++) {
-              var s = imgs[i].src;
-              if (s && s.length > minLen && before.indexOf(s) === -1) {
+              var img = imgs[i];
+              var s = img.src;
+              // full-res 완성 이미지만 채택: 저해상 미리보기(약 512px WebP)와
+              // 아직 디코드 전(naturalWidth=0)인 이미지는 건너뛰고 계속 대기
+              if (s && s.length > minLen && before.indexOf(s) === -1 &&
+                  img.naturalWidth >= minNat && img.naturalHeight >= minNat) {
                 found = s; return;
               }
             }
@@ -215,14 +230,16 @@ async function downloadGeneratedImage(page: Page, beforeSrcs: string[] = []): Pr
     `)) as string | null
 
     if (newImgSrc) {
-      console.log('  [ChatGPT] 새 이미지 감지!')
+      console.log('  [ChatGPT] 새 full-res 이미지 감지!')
       break
     }
     await delay(2_000, 3_000)
   }
 
   if (!newImgSrc) {
-    throw new Error('이미지 생성 완료를 120초 내 감지하지 못함 (새 img 미출현)')
+    // 저해상 미리보기만 뜨고 full-res(>=IMG_MIN_NATURAL_PX)가 끝내 안 뜬 경우 포함 →
+    // 상위(generator)에서 안전 degrade 하도록 throw
+    throw new Error(`이미지 생성 완료를 120초 내 감지하지 못함 (full-res ${IMG_MIN_NATURAL_PX}px+ 새 img 미출현)`)
   }
 
   // 1차: CDN URL 직접 fetch (page 컨텍스트 — 쿠키 포함)

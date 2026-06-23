@@ -175,6 +175,14 @@ export async function generateMagazineImageLocally(
       return null
     }
 
+    // 콘텐츠 타입 불일치 감지 (warning만 — 확장자/콘텐츠타입 정정은 별도 작업으로 분리)
+    // 버퍼가 PNG가 아닌데 항상 .png로 저장됨 → WebP 미리보기가 .png로 박히는 정황 로깅.
+    const isPng = buffer.length > 8 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47
+    const isWebp = buffer.length > 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP'
+    if (!isPng) {
+      console.warn(`[LocalImageGen] ⚠️ 버퍼가 PNG 아님(${isWebp ? 'WebP' : 'unknown'})인데 .png로 저장됨 — 확장자/콘텐츠타입 불일치(별도 작업 예정). 크기 ${Math.round(buffer.length / 1024)}KB`)
+    }
+
     const filename = `magazine-${engine}-${Date.now()}.png`
     const r2Url = await uploadBufferToR2(buffer, filename)
     if (!r2Url) {

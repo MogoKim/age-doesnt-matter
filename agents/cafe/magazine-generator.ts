@@ -18,12 +18,105 @@ import { pickLongtailKeywords } from '../magazine/longtail-keywords.js'
 import { getActiveSeriesToday } from '../magazine/series-plan.js'
 import { requestGoogleIndexing } from './indexing-api.js'
 import * as keywordQueue from '../magazine/keyword-queue.js'
+import { createHash } from 'crypto'
 import type { QueueEvent, QueueState } from '../magazine/keyword-queue.js'
 import type { PublishPolicy } from '../magazine/keyword-research/scorer.js'
 
 const CLAUDE_MODEL_HEAVY = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const CLAUDE_MODEL_STRATEGIC = process.env.CLAUDE_MODEL_STRATEGIC ?? 'claude-opus-4-6'
 const client = new Anthropic()
+
+// ─── 히어로↔본문 이미지 distinctness 가드 ──────────────────────────────────────
+// 본문 이미지가 히어로와 동일/저해상으로 발행되는 것을 막기 위한 검사.
+// (근본 버그: ChatGPT 갤러리 썸네일(약 512px)이 본문에 그대로 박힘 — scraper에서도
+//  해상도 가드를 추가했고, 여기서는 발행 직전 2차 방어선으로 동일/저해상을 잡아낸다.)
+
+/** 본문 이미지가 "정상"으로 인정되는 최소 해상도(px). 미만이면 저해상 미리보기로 간주. */
+const MIN_BODY_IMAGE_PX = 800
+
+type ImageMeta = { bytes: number; width: number; height: number; md5: string }
+
+/** PNG/WebP(VP8·VP8L·VP8X)/JPEG 헤더에서 해상도를 파싱 (외부 의존성 없음). 실패 시 null */
+function readImageDimensions(buf: Buffer): { width: number; height: number } | null {
+  // PNG: \x89PNG\r\n\x1a\n + IHDR(width@16, height@20, big-endian)
+  if (buf.length >= 24 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+    return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) }
+  }
+  // WebP: 'RIFF'....'WEBP'
+  if (buf.length >= 30 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') {
+    const fmt = buf.toString('ascii', 12, 16)
+    if (fmt === 'VP8 ') {
+      return { width: buf.readUInt16LE(26) & 0x3fff, height: buf.readUInt16LE(28) & 0x3fff }
+    }
+    if (fmt === 'VP8L') {
+      const b1 = buf[21], b2 = buf[22], b3 = buf[23], b4 = buf[24]
+      const width = 1 + (((b2 & 0x3f) << 8) | b1)
+      const height = 1 + (((b4 & 0x0f) << 10) | (b3 << 2) | ((b2 & 0xc0) >> 6))
+      return { width, height }
+    }
+    if (fmt === 'VP8X') {
+      const width = 1 + (buf[24] | (buf[25] << 8) | (buf[26] << 16))
+      const height = 1 + (buf[27] | (buf[28] << 8) | (buf[29] << 16))
+      return { width, height }
+    }
+  }
+  // JPEG: SOF0..SOF3/5..7/9..11/13..15 마커에서 height@5, width@7
+  if (buf.length >= 4 && buf[0] === 0xff && buf[1] === 0xd8) {
+    let off = 2
+    while (off + 9 < buf.length) {
+      if (buf[off] !== 0xff) { off++; continue }
+      const marker = buf[off + 1]
+      if ((marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7) ||
+          (marker >= 0xc9 && marker <= 0xcb) || (marker >= 0xcd && marker <= 0xcf)) {
+        return { height: buf.readUInt16BE(off + 5), width: buf.readUInt16BE(off + 7) }
+      }
+      if (marker === 0xd8 || marker === 0xd9 || (marker >= 0xd0 && marker <= 0xd7)) { off += 2; continue }
+      const segLen = buf.readUInt16BE(off + 2)
+      if (segLen < 2) break
+      off += 2 + segLen
+    }
+  }
+  return null
+}
+
+/** R2 이미지 URL을 받아 바이트수·해상도·md5를 조회. 실패 시 null (검사 실패가 발행을 막지 않게 fail-open) */
+async function inspectImage(url: string): Promise<ImageMeta | null> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 8_000)
+  try {
+    const res = await fetch(url, { signal: controller.signal })
+    if (!res.ok) return null
+    const buf = Buffer.from(await res.arrayBuffer())
+    const dim = readImageDimensions(buf)
+    return {
+      bytes: buf.length,
+      width: dim?.width ?? 0,
+      height: dim?.height ?? 0,
+      md5: createHash('md5').update(buf).digest('hex'),
+    }
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/**
+ * 본문 이미지가 히어로와 동일/유사·저해상인지 판정.
+ * - URL 동일 → 'duplicate-url'
+ * - 바이트 md5 동일 → 'duplicate-bytes'
+ * - 본문 해상도가 MIN_BODY_IMAGE_PX 미만 → 'low-res' (저해상 미리보기 의심)
+ * 메타 조회 실패 시 fail-open(flagged=false) — 검사가 발행을 막지 않도록.
+ */
+async function flagBodyImage(heroUrl: string, bodyUrl: string): Promise<{ flagged: boolean; reason: string }> {
+  if (heroUrl === bodyUrl) return { flagged: true, reason: 'duplicate-url' }
+  const [hero, body] = await Promise.all([inspectImage(heroUrl), inspectImage(bodyUrl)])
+  if (body && hero && body.md5 === hero.md5) return { flagged: true, reason: 'duplicate-bytes' }
+  if (body && body.width > 0 && (body.width < MIN_BODY_IMAGE_PX || body.height < MIN_BODY_IMAGE_PX)) {
+    return { flagged: true, reason: `low-res(${body.width}x${body.height})` }
+  }
+  return { flagged: false, reason: '' }
+}
 
 /** 카테고리 자동 매핑 */
 function detectCategory(title: string, reason: string): string {
@@ -658,12 +751,32 @@ export async function main(): Promise<MagazineRunResult[]> {
 
     // 본문 이미지 (두 번째 컨텍스트)
     const bodyImageUrls = new Map<number, string>()
-    const bodyImg = await generateMagazineImageByContext(ctxList[1])
+    let bodyImg = await generateMagazineImageByContext(ctxList[1])
+
+    // distinctness 가드: 본문이 히어로와 동일/저해상이면 1회 재생성, 그래도 불량이면 본문 이미지 폐기
+    if (bodyImg) {
+      const verdict = await flagBodyImage(image.url, bodyImg.url)
+      if (verdict.flagged) {
+        console.warn(`[MagazineGenerator] ⚠️ 본문 이미지 불량(${verdict.reason}) — 1회 재생성 시도: "${topic.title}"`)
+        const retry = await generateMagazineImageByContext(ctxList[1])
+        const retryOk = retry ? !(await flagBodyImage(image.url, retry.url)).flagged : false
+        if (retry && retryOk) {
+          bodyImg = retry
+          console.log(`[MagazineGenerator] 본문 이미지 재생성 성공`)
+        } else {
+          // 재생성도 불량/실패 → 본문 이미지 없이 발행 (히어로는 유지, 발행 롤백 안 함)
+          bodyImg = null
+          console.warn(`[MagazineGenerator] ⚠️ 본문 이미지 재생성 실패 — 본문 이미지 없이 발행 (${verdict.reason})`)
+          await notifySlack({ level: 'important', agent: 'CAFE_CRAWLER', title: '매거진 본문 이미지 중복/저해상 — 본문 이미지 없이 발행', body: `제목: ${topic.title}\n사유: ${verdict.reason}\n→ 히어로 1장만으로 발행됩니다(발행은 정상 진행).` })
+        }
+      }
+    }
+
     if (bodyImg) {
       bodyImageUrls.set(1, bodyImg.url)
       console.log(`[MagazineGenerator] 본문 이미지 1 (${ctxList[1].type}, ${bodyImg.source}): ${bodyImg.url.slice(0, 50)}...`)
     } else {
-      console.warn(`[MagazineGenerator] ⚠️ 본문 이미지 생성 실패 — "${topic.title}" (<!-- [IMAGE:1] --> 플레이스홀더 제거됨)`)
+      console.warn(`[MagazineGenerator] ⚠️ 본문 이미지 없음 — "${topic.title}" (<!-- [IMAGE:1] --> 플레이스홀더 제거됨)`)
     }
 
     // 리치 HTML 템플릿으로 최종 콘텐츠 빌드
