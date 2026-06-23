@@ -76,7 +76,7 @@ export default function FooterChannelLinks() {
     <>
       {/* 섹션 2: 공식 채널 — SNS 원형 아이콘 버튼 한 줄 */}
       <section className="flex w-full flex-col items-center gap-2.5 border-t border-border py-4">
-        <p className="text-caption font-bold text-muted-foreground">공식 채널</p>
+        <p className="text-caption font-medium text-muted-foreground/80">공식 채널</p>
         <nav className="flex items-center justify-center gap-3" aria-label="공식 SNS 채널">
           {SNS_LINKS.map((s) => (
             <a
