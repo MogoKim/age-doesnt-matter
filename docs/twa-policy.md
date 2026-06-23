@@ -1,3 +1,10 @@
+> ⚠️ **레거시 문서 경고**
+> 이 문서는 TWA/Bubblewrap 시절의 레거시 기록입니다.
+> 2026-06-21 이후 Android 운영 기준은 `docs/android-capacitor-policy-2026-06-21.html` 입니다.
+> Capacitor vc20/FCM/AdMob/Play 배포 판단에는 이 문서를 사용하지 마세요.
+
+---
+
 # 우리 나이가 어때서 — TWA 정책 문서
 
 > **용도**: TWA 수정·개선·배포 시 반드시 참조하는 단일 진실의 원천  
