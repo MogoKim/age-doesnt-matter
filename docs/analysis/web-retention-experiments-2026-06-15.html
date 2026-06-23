@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>웹 유입 리텐션 실험 제안서 v3 — AS-IS 코드검증 기반</title>
+<style>
+  :root{
+    --primary:#FF6F61; --primary-dark:#E85D50;
+    --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --green:#16a34a; --green-bg:#f0fdf4; --green-line:#bbf7d0;
+    --red:#dc2626; --red-bg:#fef2f2; --red-line:#fecaca;
+    --amber:#d97706; --amber-bg:#fffbeb; --amber-line:#fde68a;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-line:#bfdbfe;
+    --purple:#7c3aed; --purple-bg:#f5f3ff; --purple-line:#ddd6fe;
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Pretendard,Roboto,sans-serif;
+    color:var(--ink); line-height:1.7; margin:0; background:#f8fafc; font-size:17px;}
+  .wrap{max-width:980px; margin:0 auto; padding:32px 20px 80px;}
+  h1{font-size:29px; line-height:1.3; margin:0 0 8px;}
+  h2{font-size:23px; margin:46px 0 14px; padding-bottom:10px; border-bottom:3px solid var(--primary);}
+  h3{font-size:19px; margin:24px 0 10px;}
+  .sub{color:var(--muted); font-size:16px; margin:0 0 22px;}
+  .tag{display:inline-block; background:var(--primary); color:#fff; font-size:13px; font-weight:700; padding:3px 10px; border-radius:999px;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px; margin:16px 0; box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .lead{background:linear-gradient(135deg,#fff5f4,#fff); border-left:5px solid var(--primary);}
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:14.5px;}
+  th,td{border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top;}
+  th{background:#f9fafb; font-weight:700;}
+  .num{text-align:center; white-space:nowrap;}
+  .hi{color:var(--green); font-weight:700;} .lo{color:var(--red); font-weight:700;}
+  .box{border-radius:12px; padding:15px 17px; margin:13px 0; font-size:15.5px;}
+  .box-green{background:var(--green-bg); border:1px solid var(--green-line);}
+  .box-red{background:var(--red-bg); border:1px solid var(--red-line);}
+  .box-amber{background:var(--amber-bg); border:1px solid var(--amber-line);}
+  .box-blue{background:var(--blue-bg); border:1px solid var(--blue-line);}
+  .box-purple{background:var(--purple-bg); border:1px solid var(--purple-line);}
+  .box b{display:block; margin-bottom:3px;}
+  .pill{display:inline-block; font-size:12.5px; font-weight:700; padding:2px 8px; border-radius:6px; margin-right:5px;}
+  .p-green{background:var(--green-bg); color:var(--green); border:1px solid var(--green-line);}
+  .p-blue{background:var(--blue-bg); color:var(--blue); border:1px solid var(--blue-line);}
+  .p-gray{background:#f3f4f6; color:var(--muted); border:1px solid var(--line);}
+  .p-red{background:var(--red-bg); color:var(--red); border:1px solid var(--red-line);}
+  .codeloc{font-family:ui-monospace,Menlo,monospace; font-size:12px; background:#f3f4f6; padding:1px 6px; border-radius:5px; color:#4b5563;}
+
+  /* mockup */
+  .mock-row{display:flex; gap:13px; flex-wrap:wrap; margin:16px 0;}
+  .mock-col{flex:1; min-width:215px;}
+  .mock-label{font-size:13.5px; font-weight:700; margin-bottom:7px; padding:4px 9px; border-radius:6px; display:inline-block;}
+  .ml-now{background:#f3f4f6; color:#6b7280;}
+  .ml-b{background:var(--green-bg); color:var(--green);}
+  .ml-c{background:var(--blue-bg); color:var(--blue);}
+  .phone{border:2px solid #d1d5db; border-radius:16px; background:#fff; padding:9px;}
+  .phone-head{font-size:10.5px; color:#9ca3af; text-align:center; padding-bottom:5px; border-bottom:1px solid var(--line); margin-bottom:7px;}
+  .blk{border-radius:7px; padding:7px 9px; margin:5px 0; font-size:12px; line-height:1.32;}
+  .b-title{background:#fff; border:1px solid #e5e7eb; font-weight:700;}
+  .b-body{background:#fafafa; border:1px dashed #d1d5db; color:#6b7280; min-height:40px;}
+  .b-ad{background:#fffbeb; border:1px solid #fde68a; color:#b45309; text-align:center; font-size:10.5px;}
+  .b-comment{background:#f5f3ff; border:1px solid #ddd6fe; color:#6d28d9;}
+  .b-signup{background:#fff1f0; border:1px solid #ffccc7; color:#cf1322; text-align:center; font-weight:700;}
+  .b-signup-band{background:#fef9c3; border:1px solid #fde047; color:#854d0e; text-align:center; font-weight:700; font-size:11px;}
+  .b-identity{background:#fff5f4; border:1px solid #ffd9d4; color:#c2410c; font-size:10.5px;}
+  .b-related{background:var(--green-bg); border:2px solid var(--green); color:#15803d; font-weight:700;}
+  .b-related-list{background:#f0fdf4; border:1px solid #bbf7d0; color:#16a34a; font-size:11px;}
+  .b-install{background:#eff6ff; border:2px solid #2563eb; color:#1d4ed8; text-align:center; font-weight:700;}
+  .b-quiet{background:#f9fafb; border:1px dashed #e5e7eb; color:#9ca3af; text-align:center; font-size:10.5px;}
+  .arrow-down{text-align:center; color:#cbd5e1; font-size:12px; margin:-2px 0;}
+
+  .toc{columns:2; font-size:15px;}
+  .toc a{color:var(--blue); text-decoration:none;}
+  .footnote{font-size:13px; color:var(--muted); margin-top:5px;}
+  .prio{font-size:12.5px; font-weight:800; padding:3px 10px; border-radius:999px; color:#fff; background:var(--primary);}
+  ul.tight{margin:7px 0; padding-left:21px;} ul.tight li{margin:4px 0;}
+  .kpi{display:flex; gap:11px; flex-wrap:wrap; margin:13px 0;}
+  .kpi > div{flex:1; min-width:140px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:13px; text-align:center;}
+  .kpi .big{font-size:28px; font-weight:800; line-height:1;}
+  .kpi .cap{font-size:12.5px; color:var(--muted); margin-top:5px;}
+  .ab-demo{display:flex; gap:11px; flex-wrap:wrap; margin:11px 0;}
+  .ab-demo > div{flex:1; min-width:145px; border-radius:10px; padding:13px; text-align:center; font-size:14px;}
+  .ab-a{background:#f3f4f6; border:1px solid var(--line);}
+  .ab-b{background:var(--green-bg); border:1px solid var(--green-line);}
+  .ab-win{background:#fff; border:2px dashed var(--primary);}
+  .verified{display:inline-block; font-size:12px; font-weight:700; color:var(--green); background:var(--green-bg); border:1px solid var(--green-line); border-radius:6px; padding:2px 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="tag">실험 제안서 v3 · 2026-06-15 · AS-IS 코드검증판</span>
+  <h1>디멘드젠 웹 유입, D1 리텐션을 어떻게 올릴까</h1>
+  <p class="sub">광고를 <b>디멘드젠(여성 45~70 · 웹 랜딩=베스트)</b>으로 전환합니다. 웹 유입을 <b>다음 날 다시 오게(D1)</b> 만들기 위한 실험 제안서.<br>
+  <span class="verified">✔ 이 버전은 현재 화면(AS-IS)을 코드 8개 파일과 1:1 대조해 확정했습니다</span></p>
+
+  <div class="card lead">
+    <b style="font-size:18px;">📋 이 문서 30초 요약</b>
+    <ul class="tight" style="font-size:16px;">
+      <li><b>문제</b>: 웹 유입 D1 <b class="lo">1~3%</b> (앱 12%의 1/10).</li>
+      <li><b>아는 정답</b>: 첫날 <b class="hi">3화면 이상</b> 둘러보면 D1 <b class="hi">12.7%</b>. → "한 글만 보고 나가지 않게".</li>
+      <li><b>방향</b>: 정답을 미리 정하지 않고 <b>실험으로 비교</b>. 실험은 <b>2개</b>.</li>
+      <li><b>이번 v3 차이</b>: 과거 관리문서 대신 <b>코드를 직접 읽어 현재 화면(대조군)을 확정</b>했습니다 — 실험군을 정확히 나누려면 대조군이 정확해야 하므로.</li>
+    </ul>
+    <div class="box box-amber" style="margin:12px 0 0;">
+      <b>⚠️ 코드는 한 줄도 안 바꿨습니다.</b> 이건 제안서입니다. 실험 방식을 정해주시면 그때 개발합니다.
+    </div>
+  </div>
+
+  <!-- A/B 개념 -->
+  <div class="card">
+    <h3 style="margin-top:0;">🔰 "A/B 테스트"가 뭔가요? (변형이 헷갈릴 때)</h3>
+    <p style="margin-top:0;">같은 자리에서 <b>서로 다른 버전을 방문자에게 무작위로 나눠</b> 보여주고, <b>어느 쪽 D1이 높은지 데이터로</b> 확인합니다. 우리가 추측으로 정하지 않고 사용자가 정답을 알려주게 하는 것.</p>
+    <div class="ab-demo">
+      <div class="ab-a"><b>변형 A (현행)</b><br>지금 화면 그대로<br><span class="footnote">방문자 절반</span></div>
+      <div class="ab-b"><b>변형 B (새 안)</b><br>바꾼 화면<br><span class="footnote">나머지 절반</span></div>
+      <div class="ab-win"><b>→ 며칠 뒤</b><br><b style="color:var(--primary)">D1 높은 쪽 = 승자</b></div>
+    </div>
+    <p class="footnote">※ "변형 3개"는 비교 대상이 셋(A·B·C)이라는 뜻일 뿐. 헷갈리면 A vs B 2개로 시작해도 됩니다.</p>
+  </div>
+
+  <div class="card">
+    <b>목차</b>
+    <div class="toc">
+      <a href="#bg">0. 데이터 배경</a><br>
+      <a href="#now">1. 지금 화면 (AS-IS · 코드검증) ⭐</a><br>
+      <a href="#exp1">2. 실험 1 · 다음 글 동선</a><br>
+      <a href="#exp2">3. 실험 2 · 첫날 1차 목표</a><br>
+      <a href="#measure">4. 측정</a><br>
+      <a href="#roadmap">5. 추진 순서</a><br>
+      <a href="#risk">6. 리스크</a>
+    </div>
+  </div>
+
+  <!-- 0 -->
+  <h2 id="bg">0. 왜 이 실험인가 — 데이터</h2>
+  <div class="kpi">
+    <div><div class="big lo">1~3%</div><div class="cap">웹 유입 D1</div></div>
+    <div><div class="big hi">12.7%</div><div class="cap">첫날 3화면+ 웹유저 D1</div></div>
+    <div><div class="big" style="color:var(--blue)">17.7%</div><div class="cap">베스트 소비자 재방문 1위</div></div>
+    <div><div class="big" style="color:var(--primary)">8.5</div><div class="cap">골든유저 첫날 화면 수</div></div>
+  </div>
+  <table>
+    <tr><th>데이터</th><th>해석</th></tr>
+    <tr><td><b>1화면 0.3% → 3화면+ 12.7%</b></td><td>매직넘버=3화면. 첫 방문에 3개 화면 둘러보게 하면 D1이 앱 수준. → <b>실험 1 근거.</b></td></tr>
+    <tr><td><b>앱 D1 12% = 웹의 4~10배</b></td><td>앱에 들어오면 확실히 재방문. 가입·설치를 언제 권하나가 중요. → <b>실험 2 근거.</b></td></tr>
+  </table>
+
+  <!-- 1. AS-IS -->
+  <h2 id="now">1. 지금 화면은 이렇습니다 — AS-IS <span class="verified">✔ 코드 검증</span></h2>
+  <p>실험군(B·C)을 정확히 나누려면 <b>대조군(A=현행)</b>이 정확해야 합니다. 그래서 과거 문서가 아니라 <b>코드를 직접 읽어</b> 확정했습니다.</p>
+
+  <div class="card">
+    <h3 style="margin-top:0;">📱 비로그인 신규 웹유저 = 디멘드젠 타깃이 보는 글 상세</h3>
+    <div class="mock-row">
+      <div class="mock-col" style="max-width:290px;">
+        <div class="phone">
+          <div class="phone-head">글 상세 · 비로그인 ▾</div>
+          <div class="blk b-identity">🏷️ 정체성 배너 <b style="display:inline;color:#cf1322;">[가입①]</b> "우리 또래 여성들의 이야기 공간"</div>
+          <div class="blk b-title">📰 글 제목</div>
+          <div class="blk b-body">본문</div>
+          <div class="blk b-quiet">❤️ 좋아요 (본문 직후 · 관련글 없음)</div>
+          <div class="blk b-ad">— 인아티클 광고 —</div>
+          <div class="blk b-comment">💬 댓글</div>
+          <div class="blk b-signup">💛 "1초 만에 가입하기" <b style="display:inline;">[가입②]</b></div>
+          <div class="blk b-ad">— 쿠팡 광고 —</div>
+          <div class="blk b-related-list">📄 관련글 <b style="display:inline;">목록 최대 12개</b><br>"○○ 다른 글" (같은 게시판 인기순)</div>
+          <div class="blk b-ad">— 하단 광고 —</div>
+          <div class="blk b-signup-band">🟡 [가입③] 정독 85%/60초 → <b style="display:inline;">풀스크린 딤 띠배너</b> "나만 이런 게 아니었네?" (세션 1회·최대 4회)</div>
+        </div>
+      </div>
+      <div class="mock-col">
+        <div class="box box-red" style="margin-top:0;">
+          <b>🔴 코드로 확인된 사실</b>
+          <ul class="tight" style="font-size:14.5px;">
+            <li><b>가입 유도 3겹</b> — ①정체성 배너 + ②"1초 가입" 인라인 + ③정독 후 풀스크린 띠.</li>
+            <li><b>관련글은 "1개"가 아니라 목록 최대 12개</b> — 맨 아래, 광고·댓글·가입CTA 다 지나야 나옴. <span class="codeloc">PostListBottom</span></li>
+            <li><b>본문 직후엔 관련글이 전혀 없음</b> — 페이지 주석엔 "본문끝에 0~2개 분배"라 적혀 있으나 <b>실제 코드는 전량 하단으로</b> 보냄(죽은 주석). <span class="codeloc">page.tsx:100,230</span></li>
+            <li><b>설치 유도 안 뜸</b> — 마스터스위치 OFF. <span class="codeloc">NEXT_PUBLIC_PWA_INSTALL_ENABLED</span></li>
+            <li><b>푸시 유도 안 뜸</b> — 로그인 회원에게만. <span class="codeloc">PushPermissionToast:41</span></li>
+          </ul>
+        </div>
+        <div class="box box-blue" style="margin-bottom:0;">
+          <b>📌 "관련글"은 어떻게 골라지나 <span class="verified">✔</span></b>
+          같은 게시판에서 <b>인기점수(trendingScore) 높은 순</b>. 같은 카테고리 먼저, 부족하면 게시판 전체로 채움. <b>이미 있는 로직</b>입니다(새 추천엔진 아님). <span class="codeloc">posts.community.ts:248,260</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>비로그인 vs 로그인 — 무엇이 다른가</h3>
+    <table>
+      <tr><th>유도</th><th>비로그인 (디멘드젠 신규)</th><th>로그인 (이미 회원)</th></tr>
+      <tr><td><b>가입 유도</b></td><td class="hi">3겹 (①②③)</td><td>없음 (이미 회원)</td></tr>
+      <tr><td><b>설치 유도</b></td><td class="lo">없음 (마스터 OFF)</td><td>PostCTA가 설치 CTA로 바뀜 — 안드 크롬·iOS 사파리만 <span class="footnote">(마스터스위치와 무관하게 작동)</span></td></tr>
+      <tr><td><b>푸시 유도</b></td><td class="lo">없음 (회원 전용)</td><td>정독/댓글/글쓰기 트리거 시</td></tr>
+    </table>
+    <div class="box box-amber" style="margin-bottom:0;">
+      <b>📍 과거 관리문서(channel-architecture.html)와 다른 점</b>
+      그 문서는 "설치 유도 전체 OFF"라 했지만 — <b>로그인 유저용 설치 CTA(PostCTA)는 마스터스위치와 무관하게 실제로 뜹니다.</b> 나머지(가입 3겹·푸시 회원전용·관련글 인기순)는 일치. <b>→ 과거 문서를 그대로 믿지 않고 코드로 다시 확인한 결과입니다.</b>
+    </div>
+  </div>
+
+  <!-- 실험 1 -->
+  <h2 id="exp1">2. 실험 1 · "다음 글" 동선 <span class="prio">⭐ 1순위</span></h2>
+  <div class="card">
+    <div class="box box-green">
+      <b>💡 가설</b> 글을 다 읽은 직후 <b>"다음 글"이 바로 보이면</b> 한 글 더 클릭 → <b>3화면 도달 ↑ → D1 ↑.</b>
+      현재는 관련글 12개가 <b>맨 아래</b>(광고·댓글·가입CTA 뒤)에만 있어 대부분 도달 전에 이탈.
+    </div>
+
+    <div class="box box-amber">
+      <b>🧭 딥다이브 — 두 가지를 절대 안 건드린다: 광고 수익 · 댓글</b>
+      <div style="font-size:14.5px;margin-top:6px;">
+      글 상세 광고는 3개이고 위치가 이렇습니다(코드 확인):<br>
+      <span class="codeloc" style="display:block;margin:8px 0;padding:8px 11px;line-height:1.9;">본문 → [광고① 인아티클·애드센스] → 댓글 → 가입CTA → [광고② 쿠팡] → 관련글 12개 → [광고③ 하단·애드센스]</span>
+      <b>광고 노출 = 사용자가 그 자리까지 스크롤해야 발생</b>합니다. 그래서 다음 글 카드를 <b>광고① "다음"</b>에 둡니다 →
+      가장 비싼 광고①은 본문 직후 그대로 노출, 광고②③·쿠팡·관련글 12개는 하단 그대로. <b>광고도 댓글도 안 희생</b>하면서 다음 글만 끌어올립니다.
+      </div>
+    </div>
+
+    <h3>📱 변형 A vs B (광고·댓글 보존 균형안) <span class="footnote">— C(댓글 내림) 안은 폐기</span></h3>
+    <div class="mock-row">
+      <div class="mock-col" style="max-width:300px;">
+        <span class="mock-label ml-now">A · 현행 (대조군)</span>
+        <div class="phone">
+          <div class="phone-head">지금 그대로</div>
+          <div class="blk b-body">본문</div>
+          <div class="blk b-ad">광고① 인아티클</div>
+          <div class="blk b-comment">💬 댓글</div>
+          <div class="blk b-signup">💛 가입②</div>
+          <div class="blk b-ad">광고② 쿠팡</div>
+          <div class="blk b-related-list">📄 관련글 12개 (맨 아래)</div>
+          <div class="blk b-ad">광고③ 하단</div>
+        </div>
+      </div>
+      <div class="mock-col" style="max-width:300px;">
+        <span class="mock-label ml-b">B · 균형안 (광고·댓글 보존)</span>
+        <div class="phone">
+          <div class="phone-head">광고① 뒤 다음글 추가</div>
+          <div class="blk b-body">본문</div>
+          <div class="blk b-ad">광고① 인아티클 <b style="display:inline;">(자리 그대로)</b></div>
+          <div class="blk b-related">👉 다음 인기글 3개 <b style="display:inline;">(신규)</b><br><span style="font-weight:400;font-size:10.5px;">광고① 다음 · 댓글 위</span></div>
+          <div class="blk b-comment">💬 댓글 (안 내림)</div>
+          <div class="blk b-signup">💛 가입②</div>
+          <div class="blk b-ad">광고② 쿠팡</div>
+          <div class="blk b-related-list">📄 관련글 12개 (유지)</div>
+          <div class="blk b-ad">광고③ 하단</div>
+        </div>
+      </div>
+    </div>
+    <table>
+      <tr><th style="width:60px;">변형</th><th>설명</th></tr>
+      <tr><td><span class="pill p-gray">A</span></td><td>현행 — 관련글 12개가 맨 아래 (비교 기준)</td></tr>
+      <tr><td><span class="pill p-green">B</span></td><td><b>본문 → 광고① → 다음글 3개 → 댓글</b> 순. 광고①은 자리 보존, 댓글 안 내림, 하단 12개 목록·광고②③ 그대로. <span class="footnote">(page.tsx 주석에 흔적 남은 "본문끝 0~2개 분배"를 실제로 살리는 안)</span></td></tr>
+      <tr><td><span class="pill p-red" style="opacity:.6;">C 폐기</span></td><td><s>관련글을 댓글 위로(댓글 내림)</s> — 댓글 중시로 폐기</td></tr>
+    </table>
+    <table>
+      <tr><th style="width:130px;">측정</th><th>판단</th></tr>
+      <tr><td>선행: 3화면 도달률</td><td>B가 첫날 3화면+ 도달을 늘리는가</td></tr>
+      <tr><td>최종: D1</td><td>다음날 재방문율 (95% 유의 시 승자)</td></tr>
+      <tr><td><b>광고 수익 ①</b> 세션당 페이지뷰</td><td>다음 글 이동↑이 세션 페이지뷰를 늘리는가 (우리 EventLog로 측정) — 광고① 반복 노출 기회</td></tr>
+      <tr><td><b>광고 수익 ②</b> 애드센스 RPM·노출</td><td>실험 기간 전후 애드센스 대시보드 비교 — "다음 글 늘렸더니 광고 수익이 순감소했나" 직접 판정</td></tr>
+    </table>
+    <div class="box box-blue" style="margin-bottom:0;">
+      <b>🎯 이 설계의 핵심</b> "다음 글 동선"과 "광고 수익"은 부분 상충하지만, 균형안 B는 <b>가장 비싼 광고①을 보존</b>하고 <b>세션 페이지뷰↑로 광고 노출 기회를 오히려 늘릴</b> 수 있습니다. 그 순효과를 위 ①② 지표로 실험이 직접 답합니다.
+    </div>
+    <p class="footnote">난이도 중 · 위험 낮음(본문 직후 카드 1개 추가, 하단·광고·댓글 전부 유지).</p>
+  </div>
+
+  <!-- 실험 2 -->
+  <h2 id="exp2">3. 실험 2 · "첫날 1차 목표" — 가입·설치 동선 <span class="prio">⭐ 2순위</span></h2>
+  <div class="card">
+    <div class="box box-purple">
+      <b>🧩 왜 가입·설치를 한 실험으로</b>
+      AS-IS 검증 결과 <b>비로그인 = 가입 3겹 / 로그인 = 설치 CTA</b>로 갈립니다. 둘은 같은 자리(PostCTA)에서 로그인 여부로 바뀌므로, "신규에게 무엇을 먼저 들이밀까"라는 <b>하나의 동선</b>입니다.
+    </div>
+    <div class="box box-blue">
+      <b>📖 "압박 ↓"의 정확한 뜻 (창업자 질문 반영)</b>
+      v2의 "첫 3화면 압박↓"이 모호했습니다. 정확히는 — <b>비로그인이 3화면 이상 둘러보기 전까지, ③풀스크린 가입 띠배너(SignupPromptBanner)의 발동을 미룬다</b>는 뜻입니다. ①정체성 배너·②"1초 가입" 인라인은 <b>화면을 가리지 않으니 그대로 유지</b>. 가장 침투적인 ③만 뒤로 미뤄 둘러보기를 먼저 시키는 것.
+    </div>
+
+    <h3>📱 세 가지 변형</h3>
+    <div class="mock-row">
+      <div class="mock-col">
+        <span class="mock-label ml-now">A · 현행 (대조군)</span>
+        <div class="phone">
+          <div class="phone-head">가입 3겹 유지</div>
+          <div class="blk b-identity">🏷️ 가입① 정체성 배너</div>
+          <div class="blk b-body">본문</div>
+          <div class="blk b-comment">💬 댓글</div>
+          <div class="blk b-signup">💛 가입② 1초 가입</div>
+          <div class="blk b-signup-band">🟡 가입③ 정독후 풀스크린 띠<br><span style="font-weight:400;">(1화면째부터 발동 가능)</span></div>
+        </div>
+      </div>
+      <div class="mock-col">
+        <span class="mock-label ml-b">B · 둘러보기 우선</span>
+        <div class="phone">
+          <div class="phone-head">③만 뒤로 미룸</div>
+          <div class="blk b-identity">🏷️ 가입① (유지)</div>
+          <div class="blk b-body">본문</div>
+          <div class="blk b-comment">💬 댓글</div>
+          <div class="blk b-signup">💛 가입② (유지)</div>
+          <div class="blk b-quiet">가입③ 풀스크린 띠 = <b style="display:inline;color:#9ca3af;">3화면+ 본 뒤에만 발동</b></div>
+        </div>
+      </div>
+      <div class="mock-col">
+        <span class="mock-label ml-c">C · 설치 우선</span>
+        <div class="phone">
+          <div class="phone-head">3화면 후 앱 제안</div>
+          <div class="blk b-identity">🏷️ 가입① (유지)</div>
+          <div class="blk b-body">본문</div>
+          <div class="blk b-comment">💬 댓글</div>
+          <div class="blk b-install">📲 3화면+ 둘러본 비로그인에게<br>"앱으로 더 편하게" 설치 제안</div>
+        </div>
+      </div>
+    </div>
+    <table>
+      <tr><th style="width:60px;">변형</th><th>설명</th><th>노린 것</th></tr>
+      <tr><td><span class="pill p-gray">A</span></td><td>현행 — 가입 3겹 유지(③은 1화면째부터 발동 가능)</td><td>가입 전환</td></tr>
+      <tr><td><span class="pill p-green">B</span></td><td>①②는 유지, <b>③풀스크린 띠만 "3화면+ 본 뒤"로 지연</b></td><td>3화면 도달</td></tr>
+      <tr><td><span class="pill p-blue">C</span></td><td>3화면+ 둘러본 비로그인에게 ③ 대신 <b>앱 설치</b> 제안</td><td>앱 락인(D1 12%)</td></tr>
+    </table>
+    <table>
+      <tr><th style="width:120px;">측정</th><th>판단</th></tr>
+      <tr><td>3화면 도달률</td><td>B가 둘러보기를 실제로 늘리는가</td></tr>
+      <tr><td>가입 전환율</td><td>A의 ③ 압박이 정말 가입을 더 만드는가 (압박의 값어치)</td></tr>
+      <tr><td>설치→D1</td><td>C의 설치자가 앱 D1 12% 수준으로 오는가</td></tr>
+    </table>
+    <div class="box box-amber" style="margin-bottom:0;">
+      <b>⚠️ 주의</b> 가입 3겹은 <b>유지(A=대조군)</b>가 기본. B(③지연)는 가입수 하락 위험이 있어 반드시 A와 동시 비교. C는 설치 노출 로직 신설이 필요 → <b>실행은 승인 후</b>. 실험 1 결과(둘러보기가 실제 늘었나)를 본 뒤 B·C를 확정하길 권장.
+    </div>
+  </div>
+
+  <!-- 측정 -->
+  <h2 id="measure">4. 어떻게 측정하나 — 기존 인프라 재사용</h2>
+  <div class="card">
+    <table>
+      <tr><th>구성요소</th><th>역할</th><th>상태</th></tr>
+      <tr><td><span class="codeloc">registry.ts</span></td><td>실험 정의 등록처</td><td><span class="pill p-green">있음</span> 비어있음 → 추가만</td></tr>
+      <tr><td><span class="codeloc">assign.ts</span></td><td>방문자 무작위 배정</td><td><span class="pill p-green">있음</span></td></tr>
+      <tr><td><span class="codeloc">/admin/ab-tests</span></td><td>변형별 성과·승자(95%)</td><td><span class="pill p-green">있음</span></td></tr>
+      <tr><td>집계</td><td>현재 "노출→가입"만</td><td><span class="pill p-amber">보강</span> "3화면·D1" 추가</td></tr>
+    </table>
+    <div class="box box-blue" style="margin-bottom:0;">
+      <b>유일한 개발 추가점</b> — 핵심 지표 <b>3화면 도달률·D1</b>을 어드민에서 보려면 집계에 두 지표를 더해야 합니다. (실행 단계에서)
+    </div>
+  </div>
+
+  <!-- 로드맵 -->
+  <h2 id="roadmap">5. 추진 순서</h2>
+  <div class="card">
+    <table>
+      <tr><th style="width:60px;">순서</th><th>실험</th><th>이유</th></tr>
+      <tr><td><b>1순위</b></td><td>실험 1 · 다음 글 동선</td><td>위험 낮고 3화면 병목을 직접 해소. 기존 관련글 데이터 재사용.</td></tr>
+      <tr><td><b>2순위</b></td><td>실험 2 · 첫날 1차 목표</td><td>가입 압박을 건드려 신중. 실험 1 결과 보고 B·C 확정.</td></tr>
+    </table>
+    <div class="box box-green" style="margin-bottom:0;"><b>✅ 첫 스텝</b> — 실험 1부터. "더 둘러보게"가 검증되면 그 위에 실험 2.</div>
+  </div>
+
+  <!-- 리스크 -->
+  <h2 id="risk">6. 리스크와 한계</h2>
+  <div class="card">
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>"3화면" 인과</td><td>3화면+ D1 높음은 데이터로 확실하나, "둘러보게 하면 정말 D1↑"는 실험으로만 증명 → 실험 1 이유.</td></tr>
+      <tr><td>B의 가입 하락</td><td>실험 2-B(③지연)는 둘러보기↑여도 가입수↓ 가능. A와 동시 비교로 순효과 판단.</td></tr>
+      <tr><td>실험 1 광고 수익</td><td>균형안 B는 광고①(본문 직후)은 보존하나, 다음 글로 빨리 이탈하면 광고②③(하단) 노출이 줄 수 있음. 그래서 측정에 세션 페이지뷰·애드센스 RPM을 넣어 순효과를 직접 확인.</td></tr>
+      <tr><td>웹 구조적 한계</td><td>웹 D1은 앱보다 본질적으로 낮음(쿠키 휘발). 결국 실험 2-C(앱 전환)가 가장 확실한 락인.</td></tr>
+      <tr><td>표본 시간</td><td>디멘드젠 유입량 적으면 95% 유의까지 시간 소요.</td></tr>
+    </table>
+  </div>
+
+  <div class="card lead" style="margin-top:30px;">
+    <b style="font-size:18px;">🔔 다음 단계 — 정해주세요</b>
+    <ul class="tight" style="font-size:16px;">
+      <li><b>실험 1</b> — <b>A vs B(균형안)로 확정.</b> 광고①·댓글·하단 목록 보존 + 본문 직후 다음글 3개. → 구현 착수 OK 시 알려주세요.</li>
+      <li><b>실험 2</b> — 확정 보류. <b>실험 1 결과를 본 뒤 딥다이브</b>(창업자 합의).</li>
+    </ul>
+    <p style="margin:6px 0 0;">정해주시면 ① 실험 정의 등록 → ② 화면 구현 → ③ 어드민 측정 보강 순으로 개발 착수.<br>
+    <span class="footnote">현재까지 코드 변경 0줄. 이 HTML 1개만 갱신.</span></p>
+  </div>
+
+  <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:38px;">
+    우리 나이가 어때서 · 웹 리텐션 실험 제안서 v3 · 2026-06-15<br>
+    AS-IS 코드검증: page.tsx · PostCTA · SignupPromptBanner · IdentityBanner · PostListBottom · AddToHomeScreen · PushPermissionToast · posts.community.ts
+  </p>
+
+</div>
+</body>
+</html>

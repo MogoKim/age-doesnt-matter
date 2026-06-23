@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>첫 참여 온보딩 v3 — 동선 정밀 설계</title>
+<style>
+  :root{
+    --primary:#FF6F61; --primary-dark:#E85D50;
+    --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --green:#16a34a; --green-bg:#f0fdf4; --green-line:#bbf7d0;
+    --red:#dc2626; --red-bg:#fef2f2; --red-line:#fecaca;
+    --amber:#d97706; --amber-bg:#fffbeb; --amber-line:#fde68a;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-line:#bfdbfe;
+    --purple:#7c3aed; --purple-bg:#f5f3ff; --purple-line:#ddd6fe;
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Pretendard,Roboto,sans-serif;
+    color:var(--ink); line-height:1.7; margin:0; background:#f8fafc; font-size:17px;}
+  .wrap{max-width:1000px; margin:0 auto; padding:32px 20px 80px;}
+  h1{font-size:29px; line-height:1.3; margin:0 0 8px;}
+  h2{font-size:23px; margin:46px 0 14px; padding-bottom:10px; border-bottom:3px solid var(--primary);}
+  h3{font-size:19px; margin:24px 0 10px;}
+  .sub{color:var(--muted); font-size:16px; margin:0 0 22px;}
+  .tag{display:inline-block; background:var(--primary); color:#fff; font-size:13px; font-weight:700; padding:3px 10px; border-radius:999px;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px; margin:16px 0; box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .lead{background:linear-gradient(135deg,#fff5f4,#fff); border-left:5px solid var(--primary);}
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:14.5px;}
+  th,td{border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top;}
+  .hi{color:var(--green); font-weight:700;} .lo{color:var(--red); font-weight:700;}
+  th{background:#f9fafb; font-weight:700;}
+  .box{border-radius:12px; padding:15px 17px; margin:13px 0; font-size:15.5px;}
+  .box-green{background:var(--green-bg); border:1px solid var(--green-line);}
+  .box-red{background:var(--red-bg); border:1px solid var(--red-line);}
+  .box-amber{background:var(--amber-bg); border:1px solid var(--amber-line);}
+  .box-blue{background:var(--blue-bg); border:1px solid var(--blue-line);}
+  .box b{display:block; margin-bottom:3px;}
+  .codeloc{font-family:ui-monospace,Menlo,monospace; font-size:12px; background:#f3f4f6; padding:1px 6px; border-radius:5px; color:#4b5563;}
+  .pill{display:inline-block; font-size:12.5px; font-weight:700; padding:2px 8px; border-radius:6px;}
+  .p-green{background:var(--green-bg); color:var(--green); border:1px solid var(--green-line);}
+  .p-gray{background:#f3f4f6; color:var(--muted); border:1px solid var(--line);}
+  .footnote{font-size:13px; color:var(--muted); margin-top:5px;}
+  .prio{font-size:12.5px; font-weight:800; padding:3px 10px; border-radius:999px; color:#fff; background:var(--primary);}
+  ul.tight{margin:7px 0; padding-left:21px;} ul.tight li{margin:4px 0;}
+  .toc{columns:2; font-size:15px;} .toc a{color:var(--blue); text-decoration:none;}
+  .verified{display:inline-block; font-size:12px; font-weight:700; color:var(--green); background:var(--green-bg); border:1px solid var(--green-line); border-radius:6px; padding:2px 8px;}
+  /* 폰 목업 */
+  .mock-row{display:flex; gap:14px; flex-wrap:wrap; margin:16px 0;}
+  .mock-col{flex:1; min-width:225px; max-width:290px;}
+  .ml{font-size:13.5px; font-weight:700; margin-bottom:7px; padding:4px 10px; border-radius:6px; display:inline-block;}
+  .ml-now{background:#f3f4f6; color:#6b7280;} .ml-a{background:#fff1f0; color:#cf1322;}
+  .ml-b{background:var(--green-bg); color:var(--green);} .ml-c{background:var(--purple-bg); color:var(--purple);}
+  .phone{border:2px solid #d1d5db; border-radius:16px; background:#fff; padding:9px;}
+  .phone-head{font-size:10.5px; color:#9ca3af; text-align:center; padding-bottom:5px; border-bottom:1px solid var(--line); margin-bottom:7px;}
+  .nav-row{display:flex; gap:3px; font-size:9px; color:#9ca3af; padding:4px 0; border-bottom:1px solid var(--line); margin-bottom:6px; flex-wrap:wrap;}
+  .nav-row span{padding:2px 4px; white-space:nowrap;}
+  .nav-row .on{background:#fff1f0; color:var(--primary); border-radius:4px; font-weight:700;}
+  .subtab{display:flex; gap:3px; font-size:9px; padding:3px 0; margin-bottom:5px; flex-wrap:wrap;}
+  .subtab span{padding:2px 5px; border:1px solid var(--line); border-radius:999px; color:#9ca3af; white-space:nowrap;}
+  .subtab .on{background:var(--primary); color:#fff; border-color:var(--primary); font-weight:700;}
+  .blk{border-radius:7px; padding:7px 9px; margin:5px 0; font-size:12px; line-height:1.35;}
+  .b-step{background:#f9fafb; border:1px solid #e5e7eb; color:#9ca3af; text-align:center; font-size:11px;}
+  .b-step.cur{background:#fff5f4; border:1.5px solid var(--primary); color:var(--primary); font-weight:700;}
+  .b-greet{background:#fff5f4; border:1px solid #ffd9d4; color:#c2410c;}
+  .b-widget{background:var(--green-bg); border:2px solid var(--green); color:#15803d; font-weight:700;}
+  .b-hero{background:#fafafa; border:1px dashed #d1d5db; color:#9ca3af; text-align:center; min-height:28px;}
+  .b-sec{background:#fff; border:1px solid #e5e7eb; color:#6b7280; text-align:center; font-size:11px;}
+  .b-input{background:#fff; border:1.5px solid var(--primary); border-radius:8px; color:#9ca3af; padding:8px; font-size:11px;}
+  .b-btn{background:var(--primary); color:#fff; text-align:center; font-weight:700; border-radius:7px; padding:7px; font-size:11px;}
+  .b-welcome{background:var(--green-bg); border:1px solid #bbf7d0; color:#15803d; font-size:11px;}
+  .b-ad{background:#fffbeb; border:1px solid #fde68a; color:#b45309; text-align:center; font-size:10px;}
+  .b-skip{text-align:center; color:#9ca3af; font-size:10px; padding:3px;}
+  .arrow-d{text-align:center; color:#cbd5e1; font-size:13px;}
+  .kpi{display:flex; gap:11px; flex-wrap:wrap; margin:13px 0;}
+  .kpi > div{flex:1; min-width:140px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:13px; text-align:center;}
+  .kpi .big{font-size:26px; font-weight:800; line-height:1;}
+  .kpi .cap{font-size:12.5px; color:var(--muted); margin-top:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="tag">제품 기획 v3 · 동선 정밀 · 2026-06-17</span>
+  <h1>첫 참여 온보딩 — 동선을 정확히 그렸습니다</h1>
+  <p class="sub">"가입인사를 언제·어디서·어떻게" — 실제 카테고리·온보딩 구조를 코드로 확인해 동선을 정밀하게 그렸습니다.<br>
+  <span class="verified">✔ 데이터(참여 D1 4.7배) + 코드 검증</span></p>
+
+  <div class="card lead">
+    <b style="font-size:18px;">📋 30초 요약</b>
+    <ul class="tight" style="font-size:16px;">
+      <li><b>왜</b>: 참여한 사람 D1 <b class="hi">35.7%</b> vs 안 함 7.6%(4.7배). 단 참여율 <b class="lo">1.2%</b> — 첫 글 동선이 없어서.</li>
+      <li><b>핵심 질문 답</b>: ① 회원은 <b>언제</b> 가입인사? → 트리거 3동선 mockup ② 홈 섹션은 <b>뭘</b> 보여주나? → "오늘 새로 온 이웃" 구체화 ③ 카테고리는 <b>어떻게</b>? → 실제값 반영</li>
+      <li><b>확정</b>: 봇+실유저 2층 환대 / 사는이야기 "가입인사" 서브카테고리(메뉴 안 늘림) / 비회원 Turnstile</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <b>목차</b>
+    <div class="toc">
+      <a href="#final">✅ 최종 확정 — 정한 전부 ⭐</a><br>
+      <a href="#overview">🏠 홈 전체 화면 (먼저 보세요) ⭐</a><br>
+      <a href="#cat">1. 사는이야기 카테고리 (실제값)</a><br>
+      <a href="#when">2. 회원은 언제 인사? — 3동선 ⭐</a><br>
+      <a href="#home">3. 홈 "신입 환영" 섹션 — 뭘 보여주나 ⭐</a><br>
+      <a href="#guest">4. 비회원 동선</a><br>
+      <a href="#control">5. 노출 제어 (언제 뜨고 사라지나) ⭐</a><br>
+      <a href="#full">6. 전체 흐름 한눈에</a><br>
+      <a href="#ab">7. A/B · 로드맵</a>
+    </div>
+  </div>
+
+  <!-- 최종 확정 -->
+  <h2 id="final">✅ 최종 확정 — 우리가 정한 전부 <span class="prio">결정 완료 · 2026-06-17</span></h2>
+  <div class="card">
+    <table>
+      <tr><th style="width:30px;">#</th><th style="width:130px;">항목</th><th>확정 내용</th></tr>
+      <tr><td class="num">1</td><td><b>가입인사 공간</b></td><td>"사는 이야기" <b>서브카테고리 "가입인사"</b> (게시판 신설 X, 메뉴 안 늘림). "전체" 탭 제외 + "가입인사" 탭에만 노출</td></tr>
+      <tr><td class="num">2</td><td><b>회원 트리거</b></td><td><b>B 홈 최상단 "첫 인사 위젯"</b> — 가입 후 <b>3일(72h) 이내 + 미작성</b>만. 인사하면/3일 지나면 사라짐. 회원 전용</td></tr>
+      <tr><td class="num">3</td><td><b>홈 신입환영 섹션</b></td><td><b>웃음방 아래</b>(광고 사이). "오늘 새로 온 이웃" + 환영. <b>상시</b>(신입 있는 날만)</td></tr>
+      <tr><td class="num">4</td><td><b>환대 2층</b></td><td><b>봇 wave</b>(즉시·보장, 기존 자산) + <b>실유저</b>(신입환영 섹션 노출로 기존 유저가 환영)</td></tr>
+      <tr><td class="num">5</td><td><b>글쓰기 후 푸시</b></td><td>이미 작동(<span class="codeloc">PostWriteForm:332</span>) → <b>추가 개발 0</b>. 환대 댓글 알림으로 재방문</td></tr>
+      <tr><td class="num">6</td><td><b>비회원</b></td><td><b>A+C 조합</b> — 신입 인사글에 <b>환영 댓글</b>(스키마 변경 0) + <b>"내 글 쓰고 알림 받으려면 가입"</b> 유도. B위젯 X. 신입환영 섹션에서만</td></tr>
+      <tr><td class="num">7</td><td><b>A/B 검증</b></td><td>exp1(다음글 카드)과 <b>별개</b>. 참여율(현재 1.2%)·환대·D1 측정(리텐션 패널 재사용). 웹+앱 공통</td></tr>
+    </table>
+    <div class="box box-green">
+      <b>🛠 개발 단계 (착수 시)</b> ① 가입인사 카테고리 + 전체 제외 → ② 한 줄 인사 폼 + 홈 B위젯(3일/미작성) → ③ 홈 신입환영 섹션(웃음방 아래) → ④ 비회원 환영댓글 + 가입유도 → ⑤ 첫글→wave 환대 연결 → ⑥ A/B 등록·측정.
+    </div>
+    <div class="box box-amber" style="margin-bottom:0;">
+      <b>⚠️ 규모가 커서 권장</b> exp1 때처럼 <b>개발 착수 전 정밀 인프라 설계 1회</b>(데이터 모델·노출 판별·A/B 측정·엣지케이스)로 버그·빵꾸 방지. 현재까지 <b>코드 변경 0줄</b>(기획 확정 단계).
+    </div>
+  </div>
+
+  <!-- 0 홈 전체 -->
+  <h2 id="overview">🏠 홈 전체 화면 — 뭐가 어디 있는지 한눈에 <span class="prio">먼저 보세요</span></h2>
+  <div class="card">
+    <div class="box box-amber">
+      <b>📍 홈에 첫인사 관련이 2곳, 위치가 다릅니다</b>
+      <b>①</b> 최상단 "첫인사 위젯"(회원·가입 3일내) ≠ <b>②</b> 웃음방 아래 "신입 환영 섹션"(모두·상시). 헷갈리지 않게 홈 전체를 그렸습니다.
+    </div>
+    <div class="mock-row">
+      <!-- 회원 홈 전체 -->
+      <div class="mock-col" style="max-width:270px;">
+        <span class="ml ml-b">회원 홈 (가입 3일 내)</span>
+        <div class="phone">
+          <div class="phone-head">홈 — 위에서 아래로 ▾</div>
+          <div class="nav-row"><span class="on">홈</span><span>베스트</span><span>사는얘기</span><span>웃음방</span></div>
+          <div class="blk b-widget" style="text-align:left;">① 👋 첫 인사 위젯 <span style="font-size:9px;">(최상단)</span><br><span style="font-weight:400;font-size:10px;">"환영! 첫 인사 남겨볼까요?"</span></div>
+          <div class="blk b-hero">🔥 베스트 슬라이더</div>
+          <div class="blk b-ad">— 구글 광고 —</div>
+          <div class="blk b-sec">💬 사는 이야기 섹션</div>
+          <div class="blk b-ad">— 쿠팡 광고 —</div>
+          <div class="blk b-sec">😄 웃음방 섹션</div>
+          <div class="blk b-ad">— 구글 광고 —</div>
+          <div class="blk b-widget" style="text-align:left;">② 👋 신입 환영 섹션 <span style="font-size:9px;">(웃음방 아래)</span><br><span style="font-weight:400;font-size:10px;">"오늘 새로 온 이웃" + 환영</span></div>
+          <div class="blk b-ad">— 구글 광고 —</div>
+          <div class="blk b-sec">📖 매거진 섹션</div>
+        </div>
+      </div>
+      <!-- 비회원 홈 전체 -->
+      <div class="mock-col" style="max-width:270px;">
+        <span class="ml ml-c">비회원 홈</span>
+        <div class="phone">
+          <div class="phone-head">홈 — 위에서 아래로 ▾</div>
+          <div class="nav-row"><span class="on">홈</span><span>베스트</span><span>사는얘기</span><span>웃음방</span></div>
+          <div class="blk b-sec" style="opacity:.4;border-style:dashed;">① 첫인사 위젯 <b style="display:inline;">없음</b><br><span style="font-size:9px;">(회원 전용)</span></div>
+          <div class="blk b-hero">🔥 베스트 슬라이더</div>
+          <div class="blk b-ad">— 구글 광고 —</div>
+          <div class="blk b-sec">💬 사는 이야기 섹션</div>
+          <div class="blk b-ad">— 쿠팡 광고 —</div>
+          <div class="blk b-sec">😄 웃음방 섹션</div>
+          <div class="blk b-ad">— 구글 광고 —</div>
+          <div class="blk b-widget" style="text-align:left;border-width:3px;">② 👋 신입 환영 섹션 <span style="font-size:9px;">⭐비회원 입구</span><br><span style="font-weight:400;font-size:10px;">"나도 인사하기"로 첫 참여</span></div>
+          <div class="blk b-ad">— 구글 광고 —</div>
+          <div class="blk b-sec">📖 매거진 섹션</div>
+        </div>
+      </div>
+      <!-- 신입환영 클릭 펼침 -->
+      <div class="mock-col" style="max-width:270px;">
+        <span class="ml ml-new">②섹션 "나도 인사하기" 클릭 → 펼침</span>
+        <div class="phone">
+          <div class="phone-head">신입 환영 섹션 (확대)</div>
+          <div class="blk b-widget" style="text-align:left;">👋 오늘 새로 온 이웃<br><span style="font-weight:400;font-size:10px;">· 햇살맘 "처음이라 떨려요"<br>· 민들레 "반갑습니다 😊"</span></div>
+          <div class="arrow-d">↓ "나도 인사하기" 클릭</div>
+          <div class="b-input">닉네임</div>
+          <div class="b-input">"오늘 가입했어요 😊" (한 줄)</div>
+          <div class="blk b-sec" style="font-size:10px;">🛡️ Turnstile (비회원만)</div>
+          <div class="blk b-btn">인사 남기기</div>
+          <div class="b-welcome">→ 봇·실유저 환대 댓글</div>
+        </div>
+        <p class="footnote">클릭하면 섹션 안에서 입력창이 <b>인라인으로 펼쳐짐</b>(별도 페이지 X).</p>
+      </div>
+    </div>
+    <div class="box box-blue" style="margin-bottom:0;">
+      <b>한 줄 정리</b> 홈 첫인사 관련 2곳 = <b>① 최상단 위젯</b>(회원·3일내·"네가 인사해") + <b>② 웃음방 아래 신입환영 섹션</b>(모두·상시·"신입 환영해줘" + 비회원 입구). 비회원은 ①이 없고 <b>②에서만</b> 참여합니다.
+    </div>
+  </div>
+
+  <!-- 1 -->
+  <h2 id="cat">1. "사는 이야기" 카테고리 — 실제값 <span class="verified">✔ 코드 확인</span></h2>
+  <div class="card">
+    <div class="box box-amber">
+      <b>📌 먼저 — 실제 카테고리는 예시와 다릅니다</b>
+      말씀하신 "건강·가족·취미·고민·자유수다"가 아니라, 코드상 실제는 이렇습니다 (<span class="codeloc">prisma/seed.ts:17</span>):
+    </div>
+    <div class="mock-row">
+      <div class="mock-col">
+        <span class="ml ml-now">현재 — 사는 이야기</span>
+        <div class="phone">
+          <div class="phone-head">사는 이야기</div>
+          <div class="subtab"><span class="on">전체</span><span>일상</span><span>건강</span><span>고민</span><span>자녀</span><span>기타</span></div>
+          <div class="blk b-sec">일반 글…</div>
+        </div>
+      </div>
+      <div class="mock-col">
+        <span class="ml ml-b">제안 — 가입인사 추가</span>
+        <div class="phone">
+          <div class="phone-head">사는 이야기</div>
+          <div class="subtab"><span class="on">전체</span><span style="background:var(--green-bg);color:var(--green);border-color:var(--green-line);font-weight:700;">가입인사</span><span>일상</span><span>건강</span><span>고민</span><span>자녀</span><span>기타</span></div>
+          <div class="blk b-sec">일반 글…</div>
+        </div>
+      </div>
+    </div>
+    <div class="box box-green" style="margin-bottom:0;">
+      <b>✅ "가입인사" 한 카테고리만 추가</b> — DB의 categories 값에 한 줄 추가(<span class="codeloc">boards.ts:37</span>). <b>게시판 신설·메뉴 추가 없음.</b> 카테고리 탭은 이미 작동 중(<span class="codeloc">BoardFilter</span>). <br>
+      <b>중요</b>: "전체" 탭에선 가입인사를 <b>섞지 않고</b>(일반 글 보호), "가입인사" 탭을 눌러야 보이게 합니다.
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <h2 id="when">2. 회원은 "언제" 가입인사? — 트리거 3동선 <span class="prio">핵심 질문</span></h2>
+  <p>창업자님 질문 — "온보딩 끝나고? 홈 도착해서 최상단 처음만?" 정확히 3가지로 그렸습니다. (온보딩은 현재 <b>3단계</b>: 닉네임→약관→완료, <span class="codeloc">OnboardingForm</span>)</p>
+  <div class="card">
+    <div class="mock-row">
+      <!-- A -->
+      <div class="mock-col">
+        <span class="ml ml-a">A · 온보딩 4단계로</span>
+        <div class="phone">
+          <div class="phone-head">가입 흐름 안</div>
+          <div class="blk b-step">1 닉네임</div>
+          <div class="blk b-step">2 약관</div>
+          <div class="blk b-step">3 완료</div>
+          <div class="blk b-step cur">4 첫 인사 ✨</div>
+          <div class="b-input">"오늘 가입했어요 😊"</div>
+          <div class="blk b-btn">남기고 시작</div>
+        </div>
+        <p class="footnote"><b>강제력 ★★★</b> 거의 다 함. 단 <b class="lo">가입이 길어져 이탈 위험</b>(가입 자체 포기).</p>
+      </div>
+      <!-- B -->
+      <div class="mock-col">
+        <span class="ml ml-b">B · 홈 최상단 위젯(1회)</span>
+        <div class="phone">
+          <div class="phone-head">가입 완료 → 홈</div>
+          <div class="nav-row"><span>베스트</span><span>사는얘기</span><span>웃음방</span></div>
+          <div class="blk b-widget">👋 환영해요! 첫 인사 남겨볼까요?<br><span style="font-weight:400;font-size:10px;">한 줄이면 충분해요</span></div>
+          <div class="b-skip">나중에 할게요</div>
+          <div class="blk b-hero">🔥 인기글…</div>
+        </div>
+        <p class="footnote"><b>강제력 ★★</b> 가입 흐름 방해 0. 인사하면 사라짐, 안 하면 며칠 노출. <b class="hi">추천</b>.</p>
+      </div>
+      <!-- C -->
+      <div class="mock-col">
+        <span class="ml ml-c">C · 가입 직후 전용 화면</span>
+        <div class="phone">
+          <div class="phone-head">가입 완료 → (홈 전)</div>
+          <div class="blk b-greet" style="text-align:center;font-weight:700;">🎉 환영해요!<br>첫 인사 남겨볼까요?</div>
+          <div class="b-input">"오늘 가입했어요 😊"</div>
+          <div class="blk b-btn">인사 남기기</div>
+          <div class="b-skip">건너뛰고 홈으로</div>
+        </div>
+        <p class="footnote"><b>강제력 ★★</b> 홈 전 한 화면. 중간 강도. 건너뛰기 제공.</p>
+      </div>
+    </div>
+    <table>
+      <tr><th>트리거</th><th>강제력</th><th>이탈 위험</th><th>한 줄 평</th></tr>
+      <tr><td>A 온보딩 4단계</td><td class="hi">★★★</td><td class="lo">높음(가입 포기)</td><td>가장 많이 쓰나, 가입 자체를 막을 위험</td></tr>
+      <tr><td><b>B 홈 최상단 위젯</b></td><td>★★</td><td>낮음</td><td><b>추천</b> — 가입 막지 않고 자연스럽게 유도</td></tr>
+      <tr><td>C 전용 화면</td><td>★★</td><td>중</td><td>중간 — 홈 전 한 박자</td></tr>
+    </table>
+    <div class="box box-green" style="margin-bottom:0;">
+      <b>✅ 추천: B (홈 최상단 1회 위젯)</b> — 가입을 길게 만들어 <b>가입 자체를 포기하게 하면 본말전도</b>입니다. 가입은 빠르게 끝내고, 홈에서 자연스럽게 첫 인사를 유도합니다. "처음 1회만" 노출(인사하면 사라짐)이라 거슬리지 않습니다. <span class="footnote">(A vs B는 A/B 실험으로 비교도 가능)</span>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <h2 id="home">3. 홈 "신입 환영" 섹션 — 뭘 보여주나 <span class="prio">핵심 질문</span></h2>
+  <p>"웃음방 아래 섹션, 이건 뭘 어떻게?" — 구체적으로 그렸습니다. <b>이게 "실유저 환대"의 핵심 채널</b>입니다.</p>
+  <div class="card">
+    <div class="mock-row">
+      <div class="mock-col" style="max-width:300px;">
+        <span class="ml ml-b">홈 — 웃음방 아래</span>
+        <div class="phone">
+          <div class="phone-head">홈 (스크롤)</div>
+          <div class="blk b-sec">😄 웃음방 섹션</div>
+          <div class="blk b-ad">— 구글 광고 —</div>
+          <div class="blk b-widget" style="text-align:left;">
+            👋 오늘 새로 온 이웃<br>
+            <span style="font-weight:400;font-size:10.5px;display:block;margin-top:3px;">
+            · 햇살맘 "처음이라 떨려요"<br>
+            · 두번째인생 "잘 부탁해요~"<br>
+            · 민들레 "반갑습니다 😊"</span>
+            <div style="background:#fff;border:1px solid var(--green);border-radius:6px;text-align:center;padding:4px;margin-top:5px;font-size:10px;">환영 인사 남기기 →</div>
+          </div>
+          <div class="blk b-ad">— 구글 광고 —</div>
+          <div class="blk b-sec">📖 매거진 섹션…</div>
+          <div class="blk b-ad">— 쿠팡 광고 —</div>
+        </div>
+      </div>
+      <div class="mock-col" style="flex:1.6; max-width:none;">
+        <div class="box box-blue" style="margin-top:0;">
+          <b>📋 이 섹션이 하는 일</b>
+          <ul class="tight" style="font-size:14.5px;">
+            <li><b>오늘 가입인사 쓴 신입 N명</b>을 카드로 보여줌(닉네임 + 첫인사 미리보기).</li>
+            <li><b>기존 유저가 보고</b> → 카드 클릭 → 가입인사 글 → <b>"환영해요!" 실유저 댓글</b>. (= 진짜 환대)</li>
+            <li><b>신규/비회원도</b> "나도 인사하기" 버튼으로 여기서 첫 인사.</li>
+          </ul>
+        </div>
+        <div class="box box-green" style="margin-bottom:0;">
+          <b>🎯 왜 이게 핵심인가</b>
+          가입인사를 "전체" 목록에서 뺐기 때문에(일반 글 보호), <b>이 홈 섹션이 신입을 기존 유저에게 노출하는 메인 통로</b>입니다. 봇 환대(자동)만으로는 가짜 — <b>이 섹션 덕에 진짜 사람이 신입을 보고 환영</b>하게 됩니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <h2 id="guest">4. 비회원 첫 참여 — 3가지 안 비교 (mockup) <span class="prio">결정 필요</span></h2>
+  <div class="card">
+    <div class="box box-amber">
+      <b>⚠️ 왜 3가지를 비교하나 (코드 현실)</b>
+      <ul class="tight" style="font-size:14.5px;">
+        <li><b>비회원 댓글은 이미 됨</b>(Comment에 guest 필드 있음) / <b>비회원 "글쓰기"는 Post 스키마 변경 필요</b>(authorId 필수 → 마이그레이션, 무거움).</li>
+        <li><b>비회원은 알림을 못 받음</b>(userId 없음, <span class="codeloc">guest-comments.ts:94</span>) → 인사 써도 환대 댓글이 온 걸 즉시 못 느낌(다시 와야).</li>
+      </ul>
+    </div>
+    <div class="mock-row">
+      <!-- A 환영 댓글 -->
+      <div class="mock-col">
+        <span class="ml ml-b">A · 환영 댓글로 참여</span>
+        <div class="phone">
+          <div class="phone-head">비회원</div>
+          <div class="blk b-widget">👋 신입 인사글 보기</div>
+          <div class="arrow-d">↓ 댓글로 환영</div>
+          <div class="b-input">닉네임 + "환영해요!"</div>
+          <div class="blk b-sec" style="font-size:10px;">🛡️ Turnstile</div>
+          <div class="blk b-btn">환영 댓글 남기기</div>
+          <div class="b-welcome">참여 경험 → "더 하려면 가입"</div>
+        </div>
+        <p class="footnote"><b>Post 변경 X</b>(댓글은 이미 됨). 가장 가볍다. 단 "자기 인사글"은 아님(댓글로 참여).</p>
+      </div>
+      <!-- B 인사글 -->
+      <div class="mock-col">
+        <span class="ml ml-a">B · 비회원도 인사글</span>
+        <div class="phone">
+          <div class="phone-head">비회원</div>
+          <div class="blk b-widget">👋 나도 인사하기</div>
+          <div class="arrow-d">↓</div>
+          <div class="b-input">닉네임 + "오늘 가입했어요"</div>
+          <div class="blk b-sec" style="font-size:10px;">🛡️ Turnstile</div>
+          <div class="blk b-btn">인사글 남기기</div>
+          <div class="b-welcome" style="background:#fef2f2;border-color:#fecaca;color:#cf1322;">❌ 알림 못 받음 → 다시 와야 봄</div>
+        </div>
+        <p class="footnote"><b class="lo">Post 스키마 변경(무거움)</b> + 알림 약점. 진짜 첫 글이나 환대 효과 반감.</p>
+      </div>
+      <!-- C 가입 유도 -->
+      <div class="mock-col">
+        <span class="ml ml-c">C · 가입하고 인사</span>
+        <div class="phone">
+          <div class="phone-head">비회원</div>
+          <div class="blk b-widget">👋 나도 인사하기</div>
+          <div class="arrow-d">↓</div>
+          <div class="blk b-greet" style="text-align:center;">1초 가입하고<br>인사할까요?</div>
+          <div class="blk b-btn" style="background:#FEE500;color:#191919;">💛 카카오로 가입</div>
+          <div class="b-welcome">가입 후 인사 → <b style="display:inline;">알림 받음 ✓</b></div>
+        </div>
+        <p class="footnote"><b>가볍고 알림 O</b>(가입 후 회원). 단 비회원이 첫 참여 전에 가입 허들.</p>
+      </div>
+    </div>
+    <h3>비교표</h3>
+    <table>
+      <tr><th>기준</th><th>A 환영 댓글</th><th>B 비회원 인사글</th><th>C 가입하고 인사</th></tr>
+      <tr><td>Post 스키마 변경</td><td class="hi">없음</td><td class="lo">필요(마이그레이션)</td><td class="hi">없음</td></tr>
+      <tr><td>비회원 환대 알림</td><td>해당 없음(댓글)</td><td class="lo">못 받음(다시 와야)</td><td class="hi">받음(가입 후)</td></tr>
+      <tr><td>자산감</td><td>중(댓글 참여)</td><td>강(자기 글)</td><td>강(가입 후 글)</td></tr>
+      <tr><td>가입 전환</td><td>중</td><td>약(알림 약점)</td><td class="hi">강(직접)</td></tr>
+      <tr><td>개발 무게</td><td class="hi">하</td><td class="lo">상</td><td class="hi">하</td></tr>
+    </table>
+    <div class="box box-green" style="margin-bottom:0;">
+      <b>💡 추천: A(환영 댓글)부터, 또는 C(가입 유도)</b>
+      <ul class="tight" style="font-size:14.5px;">
+        <li><b>A</b>: 가장 가볍고(개발 0에 가까움), 비회원이 댓글로 참여 → 데이터상 댓글도 D1 효과. <b>회원=인사글 / 비회원=환영댓글</b> 역할 분담이 자연스러움. 효과 보고 확장.</li>
+        <li><b>C</b>: 가입 전환이 진짜 목적이면 가장 직접적. 알림도 됨. 단 비회원 첫 참여(가입 전 경험)는 포기.</li>
+        <li><b>B</b>는 비추 — Post 뜯어고치는 무게에 비해 알림 약점으로 환대 효과가 반감.</li>
+      </ul>
+      <b style="margin-top:6px;">→ A로 가볍게 시작 + 비회원에게 "가입하면 알림·내 글"(C 요소) 유도 조합이 현실적.</b>
+    </div>
+  </div>
+
+  <!-- 노출 제어 -->
+  <h2 id="control">5. 노출 제어 — 언제 뜨고 언제 사라지나 <span class="prio">핵심 질문</span></h2>
+  <div class="card">
+    <div class="box box-amber">
+      <b>🔑 "B 위젯"과 "신입환영 섹션"은 역할이 다릅니다 (혼동 포인트)</b>
+      하나는 "<b>너</b>가 인사해"(다 하면 꺼야 함), 하나는 "<b>신입을 환영해</b>"(계속 떠야 함).
+    </div>
+    <table>
+      <tr><th></th><th>B 첫인사 위젯 (홈 최상단)</th><th>신입환영 섹션 (웃음방 아래)</th></tr>
+      <tr><td><b>누구한테</b></td><td>신규 회원 <b>본인</b></td><td><b>모든 사람</b> (회원·비회원)</td></tr>
+      <tr><td><b>메시지</b></td><td>"너가 인사해"</td><td>"신입을 환영해줘"</td></tr>
+      <tr><td><b>언제 뜨나</b></td><td>가입 후 <b>3일(72시간) 이내 + 가입인사 아직 안 씀</b> · <b>회원 전용</b></td><td><b>상시</b> (오늘 새로 온 신입이 있을 때)</td></tr>
+      <tr><td><b>언제 사라지나</b></td><td>① 인사 쓰면 즉시 ② <b>3일(72시간) 지나면</b> ③ "나중에" 눌러도 횟수 제한</td><td>오늘 신입 0명인 날만 숨김</td></tr>
+    </table>
+    <div class="box box-green">
+      <b>✅ 창업자 결정 반영</b>
+      <ul class="tight" style="font-size:14.5px;">
+        <li><b>이미 가입인사 남긴 사람</b> → B 위젯 <b>안 뜸</b> (가입인사 작성 여부로 판별)</li>
+        <li><b>며칠 지난 사람</b> → B 위젯 <b>안 뜸</b> (<b>가입 후 3일/72시간</b> + 미작성 조건)</li>
+        <li><b>비회원</b> → B 위젯 <b>안 뜸</b> (회원 전용 — 비회원은 신입환영 섹션만)</li>
+        <li><b>신입환영 섹션은 계속 떠야 맞습니다</b> — 매일 "오늘 온 신입"이 바뀌는 콘텐츠라 거슬리지 않고, 끄면 실유저 환대가 안 됩니다.</li>
+      </ul>
+    </div>
+    <div class="box box-blue">
+      <b>🔔 글 쓰면 "푸시 알림 받기" 요청 — 이미 작동 (추가 개발 0)</b>
+      회원이 가입인사를 쓰면 <b>"답글 오면 바로 알려드릴까요?"</b> 푸시 동의 요청이 자동으로 뜹니다(<span class="codeloc">PostWriteForm:332</span> 이미 있음). → <b>환대 댓글이 오면 푸시 알림 → 다시 들어옴(D1↑).</b> 가입인사에도 그대로 적용됩니다.
+    </div>
+    <div class="box box-blue" style="margin-bottom:0;">
+      <b>🛡️ 비회원 — 언제·어디서</b>
+      비회원은 "가입 직후"라는 시점이 없으니 <b>B 위젯이 없습니다.</b> 입구는 <b>홈 신입환영 섹션의 "나도 인사하기"(상시)</b> + 사는이야기 가입인사 탭. → 가입 안 해도 언제든 첫 인사(Turnstile).
+      <br><b>별도 비회원 전용 배너는 안 띄웁니다</b> — 이미 가입 유도가 3겹(정체성배너·인라인·띠배너)이라 충돌·피로를 줍니다.
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <h2 id="full">6. 전체 흐름 한눈에</h2>
+  <div class="card">
+    <table>
+      <tr><th>누구</th><th>입구(언제·어디)</th><th>첫 인사</th><th>환대</th><th>결과</th></tr>
+      <tr><td><b>신규 회원</b></td><td>가입 직후 홈 최상단 위젯(1회)</td><td rowspan="3">사는이야기 "가입인사" 카테고리에 글로 쌓임</td><td rowspan="3"><b>봇</b>(즉시 보장) + <b>실유저</b>(홈 신입환영 섹션 보고 환영)</td><td>소속감 → D1↑</td></tr>
+      <tr><td><b>기존 회원</b></td><td>홈 신입환영 섹션 — 신입 보고 환영</td><td>환영 댓글 → 유대</td></tr>
+      <tr><td><b>비회원</b></td><td>홈 신입환영 섹션 "나도 인사"(상시·Turnstile)</td><td>환대 경험 → 가입·재방문</td></tr>
+    </table>
+  </div>
+
+  <!-- 6 -->
+  <h2 id="ab">7. A/B 검증 · 로드맵</h2>
+  <div class="card">
+    <table>
+      <tr><th style="width:70px;">변형</th><th>내용</th></tr>
+      <tr><td><span class="pill p-gray">A 대조군</span></td><td>현행 — 첫 참여 유도 없음</td></tr>
+      <tr><td><span class="pill p-green">B</span></td><td>홈 첫인사 위젯 + 신입환영 섹션 + 가입인사 카테고리</td></tr>
+    </table>
+    <p><b>측정</b>: 첫날 참여율(현재 1.2%) → 실유저 댓글 받은 비율 → D1~D7(리텐션 패널 재사용) → 비회원 가입전환. exp1과 동시 가능(다른 화면).</p>
+    <table>
+      <tr><th>단계</th><th>내용</th><th>무게</th></tr>
+      <tr><td>1</td><td>사는이야기 "가입인사" 카테고리 추가 + "전체"에서 제외</td><td>하</td></tr>
+      <tr><td>2</td><td>"한 줄 인사" 폼(비회원 Turnstile) + 홈 첫인사 위젯(1회) + 홈 신입환영 섹션</td><td>중</td></tr>
+      <tr><td>3</td><td>첫 글 → 봇 wave 환대 연결(기존 자산) + 신입환영 섹션 노출로 실유저 환대</td><td>중</td></tr>
+      <tr><td>4</td><td>A/B 등록 + 참여율·환대·D1 측정</td><td>중</td></tr>
+    </table>
+  </div>
+
+  <div class="card lead" style="margin-top:30px;">
+    <b style="font-size:18px;">🔔 정해주실 것 — 회원 트리거</b>
+    <p style="margin:10px 0 0;">회원 가입인사를 <b>언제</b> 유도할지 골라주세요:</p>
+    <ul class="tight" style="font-size:16px;">
+      <li><b>B 홈 최상단 위젯(1회)</b> — 추천 (가입 안 막고 자연스럽게)</li>
+      <li>A 온보딩 4단계 (강제력↑·이탈위험) / C 전용 화면 (중간)</li>
+      <li>또는 <b>A vs B 실험으로 비교</b></li>
+    </ul>
+    <p style="margin:6px 0 0;"><span class="footnote">나머지(가입인사 카테고리·홈 신입환영 섹션·봇+실유저 환대·비회원 Turnstile)는 확정. 트리거만 정하면 개발 들어갑니다. 코드 변경 0줄.</span></p>
+  </div>
+
+  <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:38px;">
+    우리 나이가 어때서 · 첫 참여 온보딩 v3(동선 정밀) · 2026-06-17<br>
+    코드 확인: seed.ts(카테고리)·OnboardingForm(3단계)·BoardFilter·guest-comments·user-post-wave-processor·(main)/page
+  </p>
+
+</div>
+</body>
+</html>

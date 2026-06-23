@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실험 1 인프라 설계서 — 다음 글 동선 (A vs B)</title>
+<style>
+  :root{
+    --primary:#FF6F61; --primary-dark:#E85D50;
+    --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --green:#16a34a; --green-bg:#f0fdf4; --green-line:#bbf7d0;
+    --red:#dc2626; --red-bg:#fef2f2; --red-line:#fecaca;
+    --amber:#d97706; --amber-bg:#fffbeb; --amber-line:#fde68a;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-line:#bfdbfe;
+    --purple:#7c3aed; --purple-bg:#f5f3ff; --purple-line:#ddd6fe;
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Pretendard,Roboto,sans-serif;
+    color:var(--ink); line-height:1.7; margin:0; background:#f8fafc; font-size:17px;}
+  .wrap{max-width:980px; margin:0 auto; padding:32px 20px 80px;}
+  h1{font-size:28px; line-height:1.3; margin:0 0 8px;}
+  h2{font-size:22px; margin:44px 0 14px; padding-bottom:9px; border-bottom:3px solid var(--primary);}
+  h3{font-size:18px; margin:22px 0 9px;}
+  .sub{color:var(--muted); font-size:16px; margin:0 0 20px;}
+  .tag{display:inline-block; background:var(--primary); color:#fff; font-size:13px; font-weight:700; padding:3px 10px; border-radius:999px;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px; margin:16px 0; box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .lead{background:linear-gradient(135deg,#fff5f4,#fff); border-left:5px solid var(--primary);}
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:14.5px;}
+  th,td{border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top;}
+  th{background:#f9fafb; font-weight:700;}
+  .num{text-align:center; white-space:nowrap;}
+  .hi{color:var(--green); font-weight:700;} .lo{color:var(--red); font-weight:700;}
+  .box{border-radius:12px; padding:15px 17px; margin:13px 0; font-size:15.5px;}
+  .box-green{background:var(--green-bg); border:1px solid var(--green-line);}
+  .box-red{background:var(--red-bg); border:1px solid var(--red-line);}
+  .box-amber{background:var(--amber-bg); border:1px solid var(--amber-line);}
+  .box-blue{background:var(--blue-bg); border:1px solid var(--blue-line);}
+  .box-purple{background:var(--purple-bg); border:1px solid var(--purple-line);}
+  .box b{display:block; margin-bottom:3px;}
+  .codeloc{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; background:#f3f4f6; padding:1px 6px; border-radius:5px; color:#4b5563;}
+  .req{display:flex; gap:10px; flex-wrap:wrap; margin:14px 0;}
+  .req > div{flex:1; min-width:150px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:13px; font-size:14px;}
+  .req .t{font-weight:700; margin-bottom:3px;}
+  .chk{color:var(--green); font-weight:800;}
+  .toc{columns:2; font-size:15px;}
+  .toc a{color:var(--blue); text-decoration:none;}
+  .footnote{font-size:13px; color:var(--muted); margin-top:5px;}
+  ul.tight{margin:7px 0; padding-left:21px;} ul.tight li{margin:4px 0;}
+
+  /* 다이어그램 박스 */
+  .flow{display:flex; flex-direction:column; gap:7px; margin:12px 0;}
+  .frow{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .fbox{border-radius:9px; padding:9px 13px; font-size:14px; font-weight:600; border:1.5px solid;}
+  .fb-gray{background:#f3f4f6; border-color:var(--line); color:#4b5563;}
+  .fb-green{background:var(--green-bg); border-color:var(--green-line); color:#15803d;}
+  .fb-blue{background:var(--blue-bg); border-color:var(--blue-line); color:#1d4ed8;}
+  .fb-amber{background:var(--amber-bg); border-color:var(--amber-line); color:#b45309;}
+  .fb-purple{background:var(--purple-bg); border-color:var(--purple-line); color:#6d28d9;}
+  .farrow{color:#cbd5e1; font-weight:800;}
+
+  /* 분배 막대 */
+  .dist{display:flex; height:34px; border-radius:8px; overflow:hidden; border:1px solid var(--line); margin:8px 0; font-size:13px; font-weight:700;}
+  .dist > div{display:flex; align-items:center; justify-content:center; color:#fff;}
+  .da{background:#94a3b8;} .db{background:var(--primary);}
+  .skew .da{flex:58;} .skew .db{flex:42;}
+  .even .da{flex:50;} .even .db{flex:50;}
+
+  /* 폰 목업 */
+  .mock-row{display:flex; gap:13px; flex-wrap:wrap; margin:14px 0;}
+  .phone{border:2px solid #d1d5db; border-radius:16px; background:#fff; padding:9px; max-width:280px;}
+  .phone-head{font-size:10.5px; color:#9ca3af; text-align:center; padding-bottom:5px; border-bottom:1px solid var(--line); margin-bottom:7px;}
+  .blk{border-radius:7px; padding:7px 9px; margin:5px 0; font-size:12px; line-height:1.32;}
+  .b-body{background:#fafafa; border:1px dashed #d1d5db; color:#6b7280; min-height:38px;}
+  .b-ad{background:#fffbeb; border:1px solid #fde68a; color:#b45309; text-align:center; font-size:10.5px;}
+  .b-comment{background:#f5f3ff; border:1px solid #ddd6fe; color:#6d28d9;}
+  .b-related{background:var(--green-bg); border:2px solid var(--green); color:#15803d; font-weight:700;}
+  .b-related-list{background:#f0fdf4; border:1px solid #bbf7d0; color:#16a34a; font-size:11px;}
+  .ml{font-size:13px; font-weight:700; margin-bottom:6px; padding:3px 9px; border-radius:6px; display:inline-block;}
+  .ml-a{background:#f3f4f6; color:#6b7280;} .ml-b{background:var(--green-bg); color:var(--green);}
+  .pill{display:inline-block; font-size:12px; font-weight:700; padding:2px 8px; border-radius:6px;}
+  .p-on{background:var(--green-bg); color:var(--green); border:1px solid var(--green-line);}
+  .p-new{background:var(--blue-bg); color:var(--blue); border:1px solid var(--blue-line);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="tag">인프라 설계서 · 2026-06-15 · 개발 착수 전</span>
+  <h1>실험 1 인프라 설계서 — "다음 글" 동선 (A vs B)</h1>
+  <p class="sub">실험을 켜기 전에 <b>데이터 인프라·배정·측정·드랍</b>을 어떻게 깔지 정한 문서입니다.<br>
+  창업자 요구 6가지를 각각 어떻게 보장하는지 코드 근거와 함께 설명합니다. <b>아직 코드는 한 줄도 안 바꿨습니다.</b></p>
+
+  <div class="card lead">
+    <b style="font-size:18px;">📋 이 설계가 보장하는 것 (창업자 요구 6)</b>
+    <div class="req">
+      <div><div class="t"><span class="chk">✔</span> 5:5 균등 배정</div>배정 해시를 djb2로 교체 → 검증까지</div>
+      <div><div class="t"><span class="chk">✔</span> 시작 시점 데이터</div>실험 시작일 이후만 집계(과거 배제)</div>
+      <div><div class="t"><span class="chk">✔</span> 코드 안 꼬임</div>클라 분기 단일 컴포넌트 격리</div>
+      <div><div class="t"><span class="chk">✔</span> 버그 0</div>tsc·build·분포 시뮬·엣지케이스</div>
+      <div><div class="t"><span class="chk">✔</span> 위너 즉시 드랍</div>weight 0 → def 제거 2단계</div>
+      <div><div class="t"><span class="chk">✔</span> AS-IS 정확</div>코드 8개 파일 전수 검증 완료</div>
+    </div>
+    <div class="box box-amber" style="margin:10px 0 0;">
+      <b>🔎 핵심 발견</b> 기존 A/B 인프라를 코드로 뜯어보니 <b>갭 4개</b>가 있었습니다 — ①배정 5:5가 안 맞을 위험 ②시작일 컷 없음 ③3화면·D1 측정 자체가 없음 ④배정과 측정의 ID 단위가 다름. 이 설계는 그 4개를 메웁니다.
+    </div>
+  </div>
+
+  <div class="card">
+    <b>목차</b>
+    <div class="toc">
+      <a href="#exp">0. 실험 1 무엇을 비교하나</a><br>
+      <a href="#g1">1. 5:5 균등 배정 ⭐</a><br>
+      <a href="#g2">2. 시작 시점 데이터 컷 ⭐</a><br>
+      <a href="#g3">3. 3화면·D1 측정 신설 ⭐</a><br>
+      <a href="#g4">4. B카드 화면 구현</a><br>
+      <a href="#drop">5. 위너 즉시 드랍</a><br>
+      <a href="#safe">6. 버그·코드 안 꼬임</a><br>
+      <a href="#patch">7. 2차 보완 — 4구멍 ⭐</a><br>
+      <a href="#steps">8. 개발 단계</a>
+    </div>
+  </div>
+
+  <!-- 0 -->
+  <h2 id="exp">0. 실험 1 — 무엇을 비교하나</h2>
+  <div class="card">
+    <div class="mock-row">
+      <div>
+        <span class="ml ml-a">A · 대조군 (현행)</span>
+        <div class="phone">
+          <div class="phone-head">지금 그대로</div>
+          <div class="blk b-body">본문</div>
+          <div class="blk b-ad">광고① 인아티클</div>
+          <div class="blk b-comment">💬 댓글</div>
+          <div class="blk b-ad">광고② 쿠팡</div>
+          <div class="blk b-related-list">📄 관련글 12개 (맨 아래)</div>
+          <div class="blk b-ad">광고③ 하단</div>
+        </div>
+      </div>
+      <div>
+        <span class="ml ml-b">B · 균형안</span>
+        <div class="phone">
+          <div class="phone-head">광고① 뒤 다음글 추가</div>
+          <div class="blk b-body">본문</div>
+          <div class="blk b-ad">광고① 인아티클 (그대로)</div>
+          <div class="blk b-related">👉 다음에 읽기 좋은 이야기 (신규)</div>
+          <div class="blk b-comment">💬 댓글 (안 내림)</div>
+          <div class="blk b-ad">광고② 쿠팡</div>
+          <div class="blk b-related-list">📄 관련글 12개 (유지)</div>
+          <div class="blk b-ad">광고③ 하단</div>
+        </div>
+      </div>
+    </div>
+    <div class="box box-blue" style="margin-bottom:0;">
+      <b>위너 판정 주지표</b> ① 3화면 도달률 ② D1 재방문 ③ 세션당 페이지뷰(광고 노출 기회 proxy) ④ 본문 직후 카드 클릭(inline). <b>가드레일</b> 애드센스 RPM·노출(전체 수익) — 큰 하락 시 롤백/재검토. 가입은 보조. <b>광고·댓글은 그대로 보존</b>(앞 제안서에서 확정).
+    </div>
+  </div>
+
+  <!-- 1. 배정 -->
+  <h2 id="g1">1. 5:5 균등 배정 — 해시를 바꿉니다 <span class="pill p-new">갭①</span></h2>
+  <div class="card">
+    <div class="box box-red">
+      <b>🔴 지금 문제</b>
+      방문자를 A/B로 가르는 <b>배정 해시</b>가 약합니다(<span class="codeloc">assign.ts</span>의 글자 코드 단순 합산). 기기 ID(UUID)의 글자값을 더하면 값이 <b>가운데로 몰려</b>, 절반으로 나눠도 <b>5:5가 안 맞고 한쪽으로 치우칠 수 있습니다.</b>
+      <div class="dist skew" style="margin-top:8px;"><div class="da">A 58%</div><div class="db">B 42%</div></div>
+      <span class="footnote">↑ 치우치면 실험 결과를 신뢰할 수 없습니다(표본 불균형).</span>
+    </div>
+    <div class="box box-green">
+      <b>✅ 해결 (djb2 해시로 교체 — 창업자 승인)</b>
+      검증된 균등 분배 해시(djb2)로 바꿉니다. 글자를 더하지 않고 <b>곱셈으로 섞어</b> 값이 고르게 퍼집니다.
+      <div class="dist even" style="margin-top:8px;"><div class="da">A 50%</div><div class="db">B 50%</div></div>
+    </div>
+    <ul class="tight">
+      <li><b>안전한 이유</b>: 지금 <b>진행 중인 실험이 0개</b>라(어드민에서 확인됨) 공용 해시를 바꿔도 깨질 실험이 없습니다. 앞으로의 모든 실험이 5:5로 정확해집니다.</li>
+      <li><b>검증 방법</b>: 가짜 기기 ID <b>1만 개</b>를 만들어 배정을 돌려 <b>49~51% 안</b>인지 확인하는 임시 스크립트(통과 후 삭제). 배포 후 실측 배정 비율도 어드민에서 모니터링.</li>
+      <li><b>재방문 일관성</b>: 한번 A로 배정된 기기는 다시 와도 A(기기 ID 기반 + 로컬 캐시). 실험 도중 variant가 바뀌어 데이터가 오염되지 않습니다.</li>
+    </ul>
+  </div>
+
+  <!-- 2. 시작시점 -->
+  <h2 id="g2">2. 시작 시점 데이터 컷 — 과거 데이터를 배제합니다 <span class="pill p-new">갭②</span></h2>
+  <div class="card">
+    <div class="box box-amber">
+      <b>📌 창업자 요구</b> "시작 기간을 기점으로 정확한 데이터가 나와야지 과거 데이터 들고 오면 안 된다."
+    </div>
+    <p>두 겹으로 보장합니다:</p>
+    <div class="flow">
+      <div class="frow"><span class="fbox fb-green">① 노출 이벤트는 실험 배포 후에만 발생</span><span class="farrow">→</span><span class="fbox fb-gray">시작 전 데이터는 애초에 존재하지 않음</span></div>
+      <div class="frow"><span class="fbox fb-blue">② 집계에서 "시작일 이후"로 한 번 더 자름</span><span class="farrow">→</span><span class="fbox fb-gray">start = max(최근 N일, 실험 시작일)</span></div>
+    </div>
+    <div class="box box-blue" style="margin-bottom:0;">
+      <b>운영 주의</b> 실험을 등록한 뒤 어드민에서 <b>상태=진행중 + 시작일을 입력</b>해야 이 컷이 작동합니다. (어드민 <span class="codeloc">/admin/ab-tests</span>에 이미 있는 기능) → 시작일 이전 트래픽은 절대 안 섞입니다.
+    </div>
+  </div>
+
+  <!-- 3. 측정 -->
+  <h2 id="g3">3. 3화면·D1 측정을 새로 깝니다 <span class="pill p-new">갭③ · 가장 큰 작업</span></h2>
+  <div class="card">
+    <div class="box box-red">
+      <b>🔴 지금은 "가입" 밖에 못 봅니다</b>
+      현재 어드민 A/B는 <b>"노출 → 가입 전환율"</b>만 측정합니다. 그런데 실험 1의 핵심 지표는 <b>3화면 도달률·D1 재방문</b>입니다 — 이걸 보는 기능이 <b>아예 없습니다.</b> 새로 만들어야 합니다.
+    </div>
+    <h3>어떻게 측정하나 (이미 쌓이는 데이터 활용)</h3>
+    <div class="flow">
+      <div class="frow"><span class="fbox fb-purple">노출</span><span class="farrow">→</span><span class="fbox fb-gray">글 상세 들어오면 "이 사람은 A(또는 B)였다" 1회 기록</span></div>
+      <div class="frow"><span class="fbox fb-green">3화면 도달(기본)</span><span class="farrow">→</span><span class="fbox fb-gray">그 사람이 노출과 같은 날 화면을 3개+ 봤나 (기존 D1 분석과 비교 가능)</span></div>
+      <div class="frow"><span class="fbox fb-blue">추가 탐색(보조)</span><span class="farrow">→</span><span class="fbox fb-gray">노출 "이후" 글을 더 봤나 / 카드를 클릭했나 (B카드가 실제 다음 글을 만들었나)</span></div>
+      <div class="frow"><span class="fbox fb-blue">D1</span><span class="farrow">→</span><span class="fbox fb-gray">그 사람이 다음날 다시 왔나 (다음날 페이지뷰 있나)</span></div>
+      <div class="frow"><span class="fbox fb-amber">광고</span><span class="farrow">→</span><span class="fbox fb-gray">세션당 페이지뷰(노출 기회 proxy) · 애드센스는 전체 수익 가드레일</span></div>
+    </div>
+    <table>
+      <tr><th>지표</th><th>정의</th><th>역할</th></tr>
+      <tr><td><b>3화면 도달률</b> (기본)</td><td>같은 sessionId, <b>노출과 같은 KST 날짜 page_view ≥ 3</b></td><td>주지표 · 기존 D1 분석과 비교 가능</td></tr>
+      <tr><td><b>노출 이후 추가 탐색</b> (보조)</td><td><b>노출 이후</b> 같은 sessionId page_view +1 이상 <b>또는</b> 카드 클릭(inline) 발생</td><td>B카드가 실제로 다음 글 클릭을 만들었나</td></tr>
+      <tr><td><b>D1 재방문율</b></td><td>노출 <b>다음날(KST)</b> page_view ≥ 1</td><td>주지표(최종) · 95% 유의 검정</td></tr>
+      <tr><td>세션 페이지뷰</td><td>A·B 각 그룹 세션당 화면 수 평균</td><td>주지표 · 광고 노출 기회 proxy</td></tr>
+      <tr><td>카드 클릭(inline)</td><td>related_post_click(position='inline')</td><td>주지표 · B 전용(이미 있는 기능)</td></tr>
+      <tr><td><span class="muted">애드센스 RPM·노출</span></td><td><span class="muted">애드센스 대시보드(variant 분리 불가, 전체값)</span></td><td><b>가드레일</b> — 큰 하락 시 롤백/재검토</td></tr>
+    </table>
+    <div class="box box-amber">
+      <b>⚖️ 애드센스 수익은 "직접 답"이 아니라 "가드레일"</b>
+      현재 인프라로는 <b>A/B별 애드센스 RPM을 분리 측정하지 못합니다</b>(애드센스 대시보드는 전체값). 그래서 수익은 <b>세션당 페이지뷰(노출 기회 proxy)로 비교</b>하고, 애드센스 RPM·노출은 <b>전체 수익이 크게 빠지지 않는지 지키는 가드레일</b>로 둡니다. 위너는 3화면·D1·페이지뷰·카드클릭으로 판정하고, 애드센스가 크게 하락하면 롤백/재검토합니다.
+    </div>
+    <div class="box box-green" style="margin-bottom:0;">
+      <b>핵심</b> 화면수·재방문의 원천 데이터(<span class="codeloc">page_view</span>)는 <b>이미 모든 페이지에서 쌓이고 있습니다.</b> 새로 만드는 건 "실험 그룹별로 그걸 묶어 보여주는 집계 + 어드민 카드"뿐입니다.
+    </div>
+  </div>
+
+  <!-- 4. B카드 구현 -->
+  <h2 id="g4">4. B카드 화면 구현 — "코드가 꼬이지 않게" <span class="pill p-new">갭④</span></h2>
+  <div class="card">
+    <div class="box box-amber">
+      <b>⚙️ 제약</b> 글 상세 페이지는 <b>미리 만들어 캐시(force-static)</b>됩니다 → 서버는 이 방문자가 A인지 B인지 모릅니다. 그래서 <b>브라우저(클라이언트)에서 A/B를 가릅니다.</b>
+    </div>
+    <ul class="tight">
+      <li><b>다음글 3개 데이터</b>는 서버가 이미 뽑아 둔 관련글에서 <b>상위 3개</b>를 그대로 씁니다(새 추천엔진 불필요).</li>
+      <li><b>새 컴포넌트 하나</b>(NextPostsInline)만 추가 — 광고① 다음 자리에 둡니다. 그 안에서 "나는 A냐 B냐" 확인:
+        <ul class="tight">
+          <li><b>B</b> → 다음글 3개를 보여줌 <span class="pill p-on">글 진입 즉시(창업자 결정)</span></li>
+          <li><b>A</b> → 아무것도 안 보여줌(현행 유지)</li>
+          <li>단 <b>노출 기록은 A·B 둘 다</b> 남김(비교 분모를 정확히).</li>
+        </ul>
+      </li>
+      <li><b>화면 안 튀게(CLS 방지)</b>: 판정 전엔 빈 상태, 확정 후 표시 — 기존 배너들이 쓰는 검증된 패턴 그대로.</li>
+      <li><b>코드 격리</b>: 변경은 <b>새 컴포넌트 1개 + 글 상세에 한 줄 삽입</b>뿐. 광고·댓글·기존 로직은 안 건드립니다 → 다른 기능과 안 꼬임.</li>
+    </ul>
+    <div class="box box-blue" style="margin-bottom:0;"><b>엣지케이스</b> 관련글이 3개 미만인 글은 있는 만큼만 보여주고(0개면 B=A 동일), 분석에서 따로 표기합니다.</div>
+  </div>
+
+  <!-- 5. 드랍 -->
+  <h2 id="drop">5. 위너 결정되면 나머지 즉시 드랍</h2>
+  <div class="card">
+    <div class="box box-amber">
+      <b>📌 창업자 요구</b> "위너가 결정되면 나머지는 드랍 바로 가능하게." → 과거 실험(TWA 게이트 등)에서 쓴 검증된 2단계 방식.
+    </div>
+    <div class="flow">
+      <div class="frow"><span class="fbox fb-amber">1단계 · 즉시 중단</span><span class="farrow">→</span><span class="fbox fb-gray">진 쪽 비중을 0으로(registry) → 신규 방문자는 더 이상 그쪽에 안 배정 <b>(어드민 상태 변경이 아니라 비중 0/코드 배포)</b></span></div>
+      <div class="frow"><span class="fbox fb-green">2단계 · 완전 종료</span><span class="farrow">→</span><span class="fbox fb-gray">실험 정의 제거 + 위너 코드만 남김(분기 삭제) + 결론 기록</span></div>
+    </div>
+    <table>
+      <tr><th>위너</th><th>최종 처리</th></tr>
+      <tr><td>B 승</td><td>다음글 3개를 <b>항상 표시</b>로 고정(A/B 분기 제거)</td></tr>
+      <tr><td>A 승</td><td>새 컴포넌트를 <b>제거</b>(현행으로 복귀)</td></tr>
+    </table>
+    <p class="footnote">두 경우 모두 tsc·build 통과 확인 후 반영. 실험 흔적이 깔끔히 사라집니다.</p>
+  </div>
+
+  <!-- 6. 안전 -->
+  <h2 id="safe">6. 버그·코드 안 꼬임 보장</h2>
+  <div class="card">
+    <table>
+      <tr><th>위험</th><th>대비</th></tr>
+      <tr><td>5:5 안 맞음</td><td>djb2 교체 + 1만개 시뮬 49~51% + 배포 후 실측 모니터링</td></tr>
+      <tr><td>과거 데이터 섞임</td><td>노출 이벤트 시작 후 발생 + 시작일 컷 이중</td></tr>
+      <tr><td>화면 튐(CLS)</td><td>판정 전 빈 상태 → 확정 후 표시(기존 패턴)</td></tr>
+      <tr><td>다음날 추적 끊김</td><td>쿠키 삭제 시 D1 일부 누락 가능 — 단 A·B 동일 영향이라 비교는 유효(분석서 명시)</td></tr>
+      <tr><td>다른 기능과 충돌</td><td>변경 = 새 컴포넌트 1개 + 한 줄 삽입으로 격리. 광고·댓글·인증 무변경</td></tr>
+      <tr><td>봇 섞임</td><td>집계에서 봇 제외(기존 기준 재사용)</td></tr>
+    </table>
+    <div class="box box-green" style="margin-bottom:0;"><b>검증 게이트</b> 개발 시 <span class="codeloc">tsc --noEmit</span> 0 · <span class="codeloc">build</span> 성공 · 배정 분포 시뮬 · 노출/3화면/D1 집계 수동 확인 · 어드민 표시 확인 · 드랍 리허설.</div>
+  </div>
+
+  <!-- 7. 2차 보완 -->
+  <h2 id="patch">7. 2차 보완 — 다시 점검해서 막은 구멍 4개 <span class="pill p-new">중요</span></h2>
+  <div class="card">
+    <p style="margin-top:0;">1차 설계 후 코드를 한 번 더 뜯어보니 <b>실험을 망가뜨릴 수 있는 구멍 4개</b>가 더 있었습니다. 전부 막는 설계를 포함합니다.</p>
+
+    <h3>① 배포 ≠ 시작 — "올려둬도 시작 전엔 아무 일 안 일어나게" <span class="lo">가장 치명적</span></h3>
+    <div class="box box-red">
+      <b>🔴 구멍</b> 앞서 말한 "시작일 컷"은 <b>어드민 집계에만</b> 적용됩니다. 정작 <b>방문자 화면(클라이언트)에는 시작 시각을 막는 장치가 없어</b>, 실험 코드를 배포하는 순간 시작일 전에도 A/B 배정·노출이 일어납니다 → 시작 전 데이터가 섞입니다.
+    </div>
+    <div class="box box-green">
+      <b>✅ 해결</b> 실험에 <b>시작 시각(startsAt)</b>을 넣고, <b>지금 시각이 시작 전이면 배정·노출·B카드 표시를 전부 건너뜁니다.</b>
+      <div class="flow" style="margin-top:8px;">
+        <div class="frow"><span class="fbox fb-gray">실험 코드 미리 배포</span><span class="farrow">→</span><span class="fbox fb-amber">시작 시각 전 = 아무 일 없음(현행과 동일)</span><span class="farrow">→</span><span class="fbox fb-green">시작 시각부터 노출 시작</span></div>
+      </div>
+      <span class="footnote">→ 배포와 실험 시작을 분리. 클라 시작 시각 = 어드민 시작일을 동일하게 맞춰 데이터가 정확히 시작점부터.</span>
+    </div>
+    <div class="box box-blue">
+      <b>📌 적용 순서(중요)</b> 이 시작 시각 체크는 <b>로컬에 저장된 기존 배정(캐시)을 읽기 전, 가장 먼저</b> 적용됩니다. 시작 전이면 캐시가 있어도 <b>variant 반환·노출·B카드 표시가 전부 없습니다.</b><br>
+      <b>또 하나</b> 어드민의 실험 상태(진행/종료)는 <b>"기록·집계용"일 뿐 방문자 화면을 막는 장치가 아닙니다.</b> 진행 중 <b>즉시 중단</b>이 필요하면 비중을 0으로 바꾸거나(registry) 코드를 배포해야 합니다.
+    </div>
+
+    <h3>② 노출 데이터 유실 방지 — "분모가 빠지면 실험이 망가진다"</h3>
+    <div class="box box-red">
+      <b>🔴 구멍</b> 노출 기록(exp1_exposure)이 <b>요청 제한(rate limit)에 안 걸리게 면제</b>돼 있지 않습니다. 노출은 글 볼 때마다 발생하는데, 다른 이벤트와 한도(분당 30)를 공유해 <b>초과분이 버려지면(429)</b> 비교의 <b>분모(전체 노출 수)가 빠져</b> 3화면·D1 비율이 왜곡됩니다.
+    </div>
+    <div class="box box-green"><b>✅ 해결</b> exp1_exposure를 <b>필수 측정 이벤트로 분류해 rate limit 면제 목록에 추가.</b> (가입·관련글 클릭 등은 이미 면제돼 있음 — 같은 처리.)</div>
+
+    <h3>③ 어드민 화면 즉시 반영 — "저장은 정확한데 화면이 10분 늦던 것"</h3>
+    <div class="box box-red">
+      <b>🔴 구멍</b> 실험 상태(시작/진행)를 바꾸면 <b>DB 저장은 즉시 정확</b>하지만, 집계 화면은 <b>10분 캐시</b>에 막혀 늦게 반영됩니다(저장 시 캐시를 안 깨서).
+    </div>
+    <div class="box box-green"><b>✅ 해결</b> 진행 중 실험 집계는 <b>저장 즉시 캐시를 무효화</b>(태그 방식)하거나 짧은 캐시로. → <b>데이터는 항상 정확, 화면도 바로 반영.</b></div>
+
+    <h3>④ B카드 문구 정합성 — 데이터와 안 어긋나게</h3>
+    <div class="box box-amber">
+      <b>📌 구멍</b> 본문 직후 보여줄 글은 <b>"전체 인기글"이 아니라 같은 게시판의 비슷한 글(관련글)</b>입니다. 그래서 <b>"다음 인기글"이라 쓰면 데이터와 어긋납니다.</b>
+    </div>
+    <table>
+      <tr><th>문구안</th><th>정합성</th></tr>
+      <tr><td><s>다음 인기글</s></td><td class="lo">✗ 전체 인기글 아님 — 어긋남</td></tr>
+      <tr><td>이 글과 비슷한 이야기</td><td>△ 인기 보충분은 안 비슷할 수 있음</td></tr>
+      <tr><td><b>다음에 읽기 좋은 이야기</b> <span class="pill p-on">추천</span></td><td class="hi">✓ 비슷한 글·인기 보충 모두 포괄, 단정 안 함</td></tr>
+    </table>
+
+    <h3 style="margin-top:22px">📐 측정 정의 확정 (재현 가능하게 못박음)</h3>
+    <table>
+      <tr><th>항목</th><th>정의</th></tr>
+      <tr><td>노출 기록</td><td>exp1_exposure에 <b>variant·글ID·게시판·관련글개수·실제표시여부</b> 포함. 시작 전/미배정은 발송 안 함.</td></tr>
+      <tr><td>3화면 도달률 (기본)</td><td>같은 방문자, <b>노출과 같은 날(KST)의 화면수 ≥ 3</b>. (D1과 날짜 기준 통일·단순·재현가능, 기존 D1 분석과 비교 가능)</td></tr>
+      <tr><td>노출 이후 추가 탐색 (보조)</td><td><b>노출 이후</b> 같은 방문자 page_view +1 이상 <b>또는</b> 카드 클릭(inline). B카드가 실제 다음 글 클릭을 만들었는지.</td></tr>
+      <tr><td>D1</td><td><b>노출 다음날(KST) 재방문(화면 1+)</b></td></tr>
+      <tr><td>관련글 3개 미만</td><td>별도 세그먼트로 분리(0개 = A와 동일 → 제외, 1~2개 = 약효과 표기)</td></tr>
+      <tr><td>보조: 카드 클릭</td><td>related_post_click(inline) — <b>이미 있는 기능</b>이라 B카드에 붙이면 공짜</td></tr>
+      <tr><td>위너 드랍 후</td><td>노출 기록 중단. 단 <b>과거 데이터는 보존</b>(삭제 안 함 — 기록·재현용)</td></tr>
+    </table>
+  </div>
+
+  <!-- 8. 단계 -->
+  <h2 id="steps">8. 개발 단계 (착수 승인 시)</h2>
+  <div class="card">
+    <table>
+      <tr><th>#</th><th>작업</th><th>파일</th></tr>
+      <tr><td>1</td><td>배정 해시 djb2 교체 <b>+ 시작 시각(startsAt) 게이트</b> + 분포 시뮬 검증</td><td><span class="codeloc">assign.ts</span> + 임시 스크립트</td></tr>
+      <tr><td>2</td><td>실험 정의 등록(A/B 50:50) <b>+ startsAt 필드</b></td><td><span class="codeloc">registry.ts</span></td></tr>
+      <tr><td>3</td><td>노출 이벤트 <b>rate limit 면제</b>(분모 유실 방지)</td><td><span class="codeloc">events/route.ts</span></td></tr>
+      <tr><td>4</td><td>B카드 컴포넌트(문구="다음에 읽기 좋은 이야기", 카드 클릭 추적) + 글 상세 삽입(광고① 다음)</td><td>신규 <span class="codeloc">NextPostsInline.tsx</span> · <span class="codeloc">page.tsx</span></td></tr>
+      <tr><td>5</td><td>3화면·D1·페이지뷰 집계(<b>태그 캐시 즉시 무효화</b>) + 어드민 카드</td><td>신규 <span class="codeloc">admin.experiments-retention.ts</span> · <span class="codeloc">ab-tests/page.tsx</span> · <span class="codeloc">actions/…experiments-web.ts</span></td></tr>
+      <tr><td>6</td><td>시작일 컷 보강(어드민 집계)</td><td><span class="codeloc">admin.experiments-web.ts</span></td></tr>
+      <tr><td>7</td><td>검증 게이트 전체 통과 → 배포 → 어드민에서 <b>시작일=startsAt 동일 설정</b></td><td>—</td></tr>
+    </table>
+    <div class="box box-purple" style="margin-bottom:0;">
+      <b>🔔 다음 결정</b> 이 설계서대로 <b>개발 착수</b>할지 알려주세요. 착수 시 1~6단계를 <span class="codeloc">/done</span> 게이트(tsc·build·검증)를 거쳐 진행하고, 단계마다 결과를 보고합니다. <b>지금까지 코드 변경 0줄.</b>
+    </div>
+  </div>
+
+  <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:38px;">
+    우리 나이가 어때서 · 실험 1 인프라 설계서 · 2026-06-15<br>
+    코드검증: assign.ts · stats.ts · registry.ts · admin.experiments-web.ts · track.ts · PageViewTracker.tsx · PostViewBeacon.tsx · EventLog(prisma) · page.tsx
+  </p>
+
+</div>
+</body>
+</html>

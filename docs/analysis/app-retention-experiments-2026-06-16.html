@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>앱(TWA) D1 리텐션 — 데이터 분석 & 실험 제안</title>
+<style>
+  :root{
+    --primary:#FF6F61; --primary-dark:#E85D50;
+    --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --green:#16a34a; --green-bg:#f0fdf4; --green-line:#bbf7d0;
+    --red:#dc2626; --red-bg:#fef2f2; --red-line:#fecaca;
+    --amber:#d97706; --amber-bg:#fffbeb; --amber-line:#fde68a;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-line:#bfdbfe;
+    --purple:#7c3aed; --purple-bg:#f5f3ff; --purple-line:#ddd6fe;
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Pretendard,Roboto,sans-serif;
+    color:var(--ink); line-height:1.7; margin:0; background:#f8fafc; font-size:17px;}
+  .wrap{max-width:960px; margin:0 auto; padding:32px 20px 80px;}
+  h1{font-size:29px; line-height:1.3; margin:0 0 8px;}
+  h2{font-size:23px; margin:46px 0 14px; padding-bottom:10px; border-bottom:3px solid var(--primary);}
+  h3{font-size:19px; margin:24px 0 10px;}
+  .sub{color:var(--muted); font-size:16px; margin:0 0 22px;}
+  .tag{display:inline-block; background:var(--primary); color:#fff; font-size:13px; font-weight:700; padding:3px 10px; border-radius:999px;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px; margin:16px 0; box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .lead{background:linear-gradient(135deg,#fff5f4,#fff); border-left:5px solid var(--primary);}
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:14.5px;}
+  th,td{border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top;}
+  th{background:#f9fafb; font-weight:700;}
+  .num{text-align:center; white-space:nowrap;}
+  .hi{color:var(--green); font-weight:700;} .lo{color:var(--red); font-weight:700;}
+  .box{border-radius:12px; padding:15px 17px; margin:13px 0; font-size:15.5px;}
+  .box-green{background:var(--green-bg); border:1px solid var(--green-line);}
+  .box-red{background:var(--red-bg); border:1px solid var(--red-line);}
+  .box-amber{background:var(--amber-bg); border:1px solid var(--amber-line);}
+  .box-blue{background:var(--blue-bg); border:1px solid var(--blue-line);}
+  .box-purple{background:var(--purple-bg); border:1px solid var(--purple-line);}
+  .box b{display:block; margin-bottom:3px;}
+  .pill{display:inline-block; font-size:12.5px; font-weight:700; padding:2px 8px; border-radius:6px;}
+  .p-green{background:var(--green-bg); color:var(--green); border:1px solid var(--green-line);}
+  .p-blue{background:var(--blue-bg); color:var(--blue); border:1px solid var(--blue-line);}
+  .p-amber{background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-line);}
+  .p-gray{background:#f3f4f6; color:var(--muted); border:1px solid var(--line);}
+  .footnote{font-size:13px; color:var(--muted); margin-top:5px;}
+  .prio{font-size:12.5px; font-weight:800; padding:3px 10px; border-radius:999px; color:#fff; background:var(--primary);}
+  ul.tight{margin:7px 0; padding-left:21px;} ul.tight li{margin:4px 0;}
+  .toc{columns:2; font-size:15px;} .toc a{color:var(--blue); text-decoration:none;}
+  .kpi{display:flex; gap:11px; flex-wrap:wrap; margin:13px 0;}
+  .kpi > div{flex:1; min-width:140px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:13px; text-align:center;}
+  .kpi .big{font-size:27px; font-weight:800; line-height:1;}
+  .kpi .cap{font-size:12.5px; color:var(--muted); margin-top:5px;}
+  /* 바 차트 */
+  .bars{margin:10px 0;}
+  .bar-row{display:flex; align-items:center; gap:10px; margin:5px 0; font-size:14px;}
+  .bar-row .lbl{width:80px; flex-shrink:0; text-align:right; color:var(--muted);}
+  .bar-row .track{flex:1; background:#f3f4f6; border-radius:6px; height:26px; position:relative; overflow:hidden;}
+  .bar-row .fill{position:absolute; inset:0 auto 0 0; border-radius:6px; display:flex; align-items:center; padding-left:8px; color:#fff; font-size:12.5px; font-weight:700; white-space:nowrap;}
+  .bar-row .n{width:90px; flex-shrink:0; font-size:12.5px; color:var(--muted);}
+  .verified{display:inline-block; font-size:12px; font-weight:700; color:var(--green); background:var(--green-bg); border:1px solid var(--green-line); border-radius:6px; padding:2px 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="tag">앱 리텐션 분석·제안 · 2026-06-16</span>
+  <h1>앱(TWA) D1 리텐션 — 데이터가 말한 것</h1>
+  <p class="sub">웹 실험(다음 글 동선)에 이어 앱(안드로이드 앱)의 D1을 높이는 실험을 제안합니다.<br>
+  <span class="verified">✔ 추측이 아니라 최근 30일 앱 트래픽(1,200 세션)을 직접 분석한 결과입니다</span></p>
+
+  <div class="card lead">
+    <b style="font-size:18px;">📋 30초 요약 — 데이터가 제 가설을 뒤집었습니다</b>
+    <ul class="tight" style="font-size:16px;">
+      <li>처음엔 <b>"앱은 푸시가 최강 무기"</b>라고 봤습니다. 그런데 데이터를 보니 <b class="lo">앱 푸시 구독률이 1.6%</b>밖에 안 돼 — <b>푸시로 다시 부를 사람이 거의 없습니다.</b></li>
+      <li>진짜 앱 D1 동인은 웹과 똑같이 <b class="hi">"첫날 얼마나 둘러봤나"</b>였습니다. 1화면 3.1% → 6화면+ <b class="hi">16.9%</b> (5배).</li>
+      <li>그리고 <b class="hi">댓글·글쓰기 한 사람 D1 35.7%</b>(안 한 사람의 4.7배) — 참여가 가장 강력. 단 참여하는 사람이 적습니다.</li>
+      <li>→ <b>실험 방향: ① 더 둘러보게 ② 첫 참여 유도 ③ 푸시는 "구독률부터" 올리고 그 다음 리인게이지.</b></li>
+    </ul>
+    <div class="box box-amber" style="margin:12px 0 0;">
+      <b>⚠️ 이건 분석 + 제안입니다. 코드는 한 줄도 안 바꿨습니다.</b> 어떤 실험을 할지 정해주시면 그때 설계·개발합니다.
+    </div>
+  </div>
+
+  <div class="card">
+    <b>목차</b>
+    <div class="toc">
+      <a href="#how">0. 어떻게 분석했나</a><br>
+      <a href="#find">1. 앱 D1 동인 (데이터) ⭐</a><br>
+      <a href="#push">2. 푸시의 진실 (구독률 1.6%)</a><br>
+      <a href="#exp">3. 실험 후보 3개</a><br>
+      <a href="#road">4. 추진 순서</a><br>
+      <a href="#risk">5. 한계·주의</a>
+    </div>
+  </div>
+
+  <!-- 0 -->
+  <h2 id="how">0. 어떻게 분석했나</h2>
+  <div class="card">
+    <p style="margin-top:0;">웹 실험 때와 똑같은 방식입니다 — <b>추측으로 실험을 정하지 않고, 앱에서 "다시 오는 사람"의 공통점을 데이터로 먼저 찾았습니다.</b></p>
+    <ul class="tight">
+      <li><b>대상</b>: 최근 30일 앱(TWA) 트래픽. 앱 식별 = <code>browser_env=twa-android</code>. 봇 제외.</li>
+      <li><b>표본</b>: 앱 세션 1,339개 중 <b>D1 관찰 가능한 성숙 코호트 1,200개</b>(노출 다음날이 이미 지난 세션만).</li>
+      <li><b>본 것</b>: 첫날 화면수 / 푸시 구독 / 참여(댓글·글쓰기) / 콘텐츠 종류 — 각각이 D1을 얼마나 가르는지.</li>
+    </ul>
+    <div class="kpi">
+      <div><div class="big lo">7.9%</div><div class="cap">앱 전체 D1<br>(95/1,200)</div></div>
+      <div><div class="big hi">16.9%</div><div class="cap">6~9화면 본 앱유저 D1</div></div>
+      <div><div class="big hi">35.7%</div><div class="cap">댓글·글쓰기 한 유저 D1</div></div>
+      <div><div class="big lo">1.6%</div><div class="cap">앱 푸시 구독률<br>(19/1,200)</div></div>
+    </div>
+    <p class="footnote">※ D1을 sessionId(30일 쿠키) 기준으로 측정해 절대값은 다소 보수적입니다. 하지만 <b>그룹 간 상대 비교</b>(둘러본 사람 vs 아닌 사람)는 유효합니다.</p>
+  </div>
+
+  <!-- 1 -->
+  <h2 id="find">1. 앱 D1 동인 — "더 둘러보게"가 핵심 <span class="verified">✔ 표본 1,200</span></h2>
+  <div class="card">
+    <h3 style="margin-top:0;">📊 첫날 화면수가 늘수록 D1이 급증 (웹과 같은 패턴)</h3>
+    <div class="bars">
+      <div class="bar-row"><span class="lbl">1화면</span><div class="track"><div class="fill" style="width:18%;background:#dc2626">3.1%</div></div><span class="n">18/577</span></div>
+      <div class="bar-row"><span class="lbl">2화면</span><div class="track"><div class="fill" style="width:49%;background:#f59e0b">8.3%</div></div><span class="n">10/121</span></div>
+      <div class="bar-row"><span class="lbl">3화면</span><div class="track"><div class="fill" style="width:42%;background:#f59e0b">7.1%</div></div><span class="n">8/113</span></div>
+      <div class="bar-row"><span class="lbl">4~5화면</span><div class="track"><div class="fill" style="width:72%;background:#16a34a">12.1%</div></div><span class="n">14/116</span></div>
+      <div class="bar-row"><span class="lbl">6~9화면</span><div class="track"><div class="fill" style="width:100%;background:#15803d">16.9%</div></div><span class="n">21/124</span></div>
+      <div class="bar-row"><span class="lbl">10+화면</span><div class="track"><div class="fill" style="width:95%;background:#15803d">16.1%</div></div><span class="n">24/149</span></div>
+    </div>
+    <div class="box box-green">
+      <b>💡 해석</b> 앱도 웹과 똑같이 <b>"첫날 얼마나 둘러봤나"가 D1을 가릅니다.</b> 1화면만 보고 나간 사람은 3.1%, <b>6화면 이상 둘러본 사람은 16.9%</b> — <b>5배 차이</b>. 앱 매직넘버 ≈ <b>4화면부터(12%~17%로 점프)</b>.
+    </div>
+
+    <h3>📊 참여(댓글·글쓰기)한 사람이 가장 잘 돌아옴</h3>
+    <table>
+      <tr><th>그룹</th><th>D1</th><th>표본</th></tr>
+      <tr><td><b>댓글/글쓰기 함</b></td><td class="hi">35.7%</td><td>5/14</td></tr>
+      <tr><td>안 함</td><td>7.6%</td><td>90/1,186</td></tr>
+    </table>
+    <div class="box box-amber" style="margin-bottom:0;">
+      <b>⚠️ 참여는 강력하지만 표본이 작습니다(14명)</b> — D1 35.7%는 신뢰도가 낮으니 "방향"으로만 보세요. 핵심은 <b>참여한 사람이 압도적으로 잘 돌아온다는 신호 + 참여하는 사람이 너무 적다(1,200명 중 14명)</b>는 점입니다.
+    </div>
+
+    <h3>📊 콘텐츠 종류별 — 베스트·일자리·커뮤니티가 재방문 견인</h3>
+    <table>
+      <tr><th>콘텐츠</th><th>D1</th><th>표본</th></tr>
+      <tr><td>일자리(jobs)</td><td class="hi">26.7%</td><td>4/15</td></tr>
+      <tr><td>베스트(best)</td><td class="hi">23.5%</td><td>16/68</td></tr>
+      <tr><td>커뮤니티(community)</td><td class="hi">18.2%</td><td>46/253</td></tr>
+      <tr><td>매거진(magazine)</td><td>14.3%</td><td>1/7</td></tr>
+    </table>
+    <p class="footnote">→ 웹과 동일하게 <b>베스트·커뮤니티 소비자가 잘 돌아옵니다.</b> 일자리도 높지만 표본이 적어 참고.</p>
+  </div>
+
+  <!-- 2 -->
+  <h2 id="push">2. 푸시의 진실 — 구독률이 1.6%라 지금은 쓸 수 없는 무기</h2>
+  <div class="card">
+    <div class="box box-red">
+      <b>🔴 제 초기 가설이 틀렸습니다</b>
+      "앱은 푸시로 다음날 다시 부르면 된다"고 봤는데 — 앱 유저 <b>1,200명 중 푸시 구독자는 19명(1.6%)뿐</b>입니다. <b>다시 부를 사람이 거의 없습니다.</b>
+    </div>
+    <table>
+      <tr><th>그룹</th><th>D1</th><th>표본</th></tr>
+      <tr><td>푸시 구독함</td><td>10.5%</td><td>2/19</td></tr>
+      <tr><td>구독 안 함</td><td>7.9%</td><td>93/1,181</td></tr>
+    </table>
+    <div class="box box-amber" style="margin-bottom:0;">
+      <b>판단</b> 구독자 D1이 약간 높아 보이지만 <b>표본 19명</b>이라 의미 없습니다. 진짜 문제는 <b>구독률 1.6% 자체.</b>
+      → 푸시 리인게이지(다음날 알림)를 하려면 <b>먼저 구독률을 올려야</b> 합니다. 푸시는 "지금 당장의 무기"가 아니라 "구독률부터 키워야 할 미래 무기"입니다.
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <h2 id="exp">3. 실험 후보 3개 (데이터가 정한 우선순위)</h2>
+
+  <div class="card">
+    <h3 style="margin-top:0;">🥇 앱-A · 더 둘러보게 (화면수↑) <span class="prio">1순위</span></h3>
+    <div class="box box-green">
+      <b>💡 가설</b> 첫날 화면수가 D1 최강 동인(1→6화면 = 3%→17%). <b>앱에서 다음 글·관련 콘텐츠 동선을 강화</b>하면 화면수↑ → D1↑.
+    </div>
+    <ul class="tight">
+      <li><b>이미 진행 중</b>: 웹 실험 1(본문 직후 "다음에 읽기 좋은 이야기" 카드)은 <b>앱에도 적용되고 있습니다</b>(TWA 제외 안 함). → 먼저 <b>실험 1의 앱 세그먼트 결과</b>를 봐서 앱에서도 화면수가 느는지 확인.</li>
+      <li><b>추가 안</b>: 앱 홈/글 하단에 "다음 글 이어보기" 동선 강화, 베스트·커뮤니티 추천(재방문 견인 콘텐츠).</li>
+    </ul>
+    <p class="footnote">난이도 낮음(웹 실험 자산 재사용). 표본 충분(1,200). <b>가장 확실.</b></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">🥈 앱-B · 첫 참여 유도 (댓글·공감) <span class="prio">2순위</span></h3>
+    <div class="box box-green">
+      <b>💡 가설</b> 참여한 사람 D1 35.7%(안 한 사람 4.7배). 단 참여율이 낮음(1.2%). <b>첫 댓글/공감 한 번을 쉽게</b> 만들면 D1↑.
+    </div>
+    <ul class="tight">
+      <li>예: 글 하단에 "한 줄 공감" 빠른 버튼, 댓글 입력 허들 낮추기, 첫 댓글 유도 문구.</li>
+      <li><b>주의</b>: 참여 표본(14명)이 작아 "참여→D1" 인과는 아직 약함. 실험으로 검증 필요(참여를 늘렸을 때 D1이 정말 오르나).</li>
+    </ul>
+    <p class="footnote">난이도 중. 효과 잠재력 큼(5배 신호)이나 검증 필요.</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">🥉 앱-C · 푸시 구독률↑ → 이후 리인게이지 <span class="prio">3순위(2단계)</span></h3>
+    <div class="box box-amber">
+      <b>💡 가설</b> 현재 구독률 1.6%. <b>1단계</b>: 앱 회원 푸시 구독 유도 강화(타이밍·문구) → 구독률↑. <b>2단계</b>: 구독자에게 다음날 "새 인기글/내 글 반응" 리인게이지 푸시 → D1↑.
+    </div>
+    <ul class="tight">
+      <li>구독률이 의미 있는 수준(예: 10%+)으로 오른 <b>뒤에야</b> 리인게이지 푸시가 효과를 냅니다.</li>
+      <li>비용·정책: 리인게이지 푸시는 마케팅 동의·야간(21~08) 차단 정책 준수 필요.</li>
+    </ul>
+    <p class="footnote">난이도 중~상(구독 유도 + 자동발송 신설). 지금 당장은 효과 미미 → 둘러보기·참여 다음.</p>
+  </div>
+
+  <!-- 4 -->
+  <h2 id="road">4. 추진 순서</h2>
+  <div class="card">
+    <table>
+      <tr><th style="width:60px;">순서</th><th>실험</th><th>이유</th></tr>
+      <tr><td><b>1순위</b></td><td>앱-A 더 둘러보게</td><td>화면수 = 최강 동인(표본 충분). 웹 실험 1 자산 재사용. 먼저 실험 1의 앱 결과 확인.</td></tr>
+      <tr><td><b>2순위</b></td><td>앱-B 첫 참여 유도</td><td>D1 5배 신호. 단 표본 작아 실험으로 검증.</td></tr>
+      <tr><td><b>3순위</b></td><td>앱-C 푸시(구독률→리인게이지)</td><td>구독률 1.6% → 먼저 올려야. 2단계 작업.</td></tr>
+    </table>
+    <div class="box box-green" style="margin-bottom:0;">
+      <b>✅ 추천 첫 스텝</b> — <b>실험 1(다음 글 카드)의 "앱 세그먼트" D1을 먼저 봅니다.</b> 앱에서도 둘러보기가 늘고 D1이 오르면, 그 위에 앱 전용 둘러보기 강화(앱-A)를 올립니다. 별도 신규 개발 없이 시작 가능.
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <h2 id="risk">5. 한계·주의 (솔직하게)</h2>
+  <div class="card">
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>D1 절대값</td><td>sessionId(쿠키) 기준이라 7.9%로 보수적(기존 "앱 12%"보다 낮음). <b>상대 비교는 유효</b>, 절대값은 참고.</td></tr>
+      <tr><td>참여·푸시 표본</td><td>참여 14명·푸시 19명으로 작음 → D1 비율은 "방향"으로만. 화면수·콘텐츠는 표본 충분.</td></tr>
+      <tr><td>상관 ≠ 인과</td><td>"많이 둘러본 사람이 D1 높다"는 상관. "둘러보게 만들면 D1 오르나"는 실험으로 증명(웹 실험 1과 동일 논리).</td></tr>
+      <tr><td>실험 1 중첩</td><td>실험 1(다음글 카드)이 앱에도 적용 중 → 앱 둘러보기 실험은 실험 1 효과와 겹침. 분리 측정 필요.</td></tr>
+      <tr><td>푸시 정책</td><td>리인게이지 푸시는 마케팅 동의·야간 차단·비용 영향 → 구현은 승인 후 별도 설계.</td></tr>
+    </table>
+  </div>
+
+  <div class="card lead" style="margin-top:30px;">
+    <b style="font-size:18px;">🔔 다음 결정</b>
+    <ul class="tight" style="font-size:16px;">
+      <li><b>앱-A부터</b> — 실험 1의 앱 세그먼트 결과를 먼저 보고, 앱 둘러보기 강화로 진행 (추천)</li>
+      <li><b>앱-B 참여 유도</b>를 먼저 딥다이브할지</li>
+      <li><b>앱-C 푸시 구독률</b>을 별도 트랙으로 시작할지</li>
+    </ul>
+    <p style="margin:6px 0 0;"><span class="footnote">현재까지 코드 변경 0줄. 분석 스크립트는 임시(실행 후 삭제). 이 HTML 제안서 1개만 생성.</span></p>
+  </div>
+
+  <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:38px;">
+    우리 나이가 어때서 · 앱(TWA) D1 리텐션 분석·제안 · 2026-06-16<br>
+    데이터: 최근 30일 EventLog(browser_env=twa-android, 봇 제외, 성숙 코호트 1,200세션) · 코드 확인: useAppEnvironment·manifest·push-scheduled
+  </p>
+
+</div>
+</body>
+</html>

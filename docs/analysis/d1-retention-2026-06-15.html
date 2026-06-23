@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D0→D1 리텐션 종합 분석 (2026-06-01~) | 우나어</title>
+<style>
+  :root{--coral:#FF6F61;--coral-deep:#E5503F;--ink:#1f2430;--sub:#5b6370;--line:#e7e9ee;--bg:#f6f7f9;--card:#fff;
+    --green:#1f8a47;--green-bg:#e9f7ef;--red:#d24b3e;--red-bg:#fdecea;--blue:#1d6fd6;--blue-bg:#e9f1fd;--amber:#a4690a;--amber-bg:#fdf3e2;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.72;font-size:16px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:30px 20px 80px}
+  h1{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  h2{font-size:21px;font-weight:800;margin:0 0 4px;letter-spacing:-.3px}
+  h3{font-size:16px;font-weight:800;margin:14px 0 4px}
+  .lead{color:var(--sub);font-size:14.5px;margin-top:6px}
+  .sec{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 22px;margin-top:18px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+  .qno{display:inline-block;background:var(--coral);color:#fff;font-weight:800;font-size:13px;border-radius:8px;padding:2px 11px;margin-bottom:8px}
+  .hero{background:linear-gradient(135deg,#fff6f4,#ffe4de 60%,#fff);border:1px solid #ffd9d2;border-radius:20px;padding:28px 24px}
+  .tag{display:inline-block;background:var(--coral);color:#fff;font-weight:700;font-size:12px;border-radius:999px;padding:4px 12px;margin-bottom:10px}
+  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:middle}
+  th{background:#f3f4f7;font-weight:700;font-size:12.5px}
+  .hi{color:var(--green);font-weight:800}.lo{color:var(--red);font-weight:800}.mid{color:var(--amber);font-weight:700}
+  .bar{display:inline-block;height:10px;border-radius:5px;background:var(--coral);vertical-align:middle;margin-right:6px}
+  .small{color:#888;font-size:12px}
+  .note{background:var(--amber-bg);border:1px solid #f0dcb5;border-radius:10px;padding:11px 14px;font-size:14px;color:#7a5408;margin-top:12px}
+  .warn{background:var(--red-bg);border:1px solid #f3c9c4;border-radius:10px;padding:11px 14px;font-size:14px;color:#9a352b;margin-top:12px}
+  .good{background:var(--green-bg);border:1px solid #bfe3c9;border-radius:10px;padding:11px 14px;font-size:14px;color:#176b38;margin-top:12px}
+  .why{background:#f3f6fb;border-left:4px solid var(--blue);border-radius:0 10px 10px 0;padding:10px 14px;font-size:14px;color:#33405a;margin-top:12px}
+  .why b{color:var(--blue)}
+  .act{background:#fff4f2;border:1px dashed var(--coral);border-radius:10px;padding:10px 14px;font-size:14px;margin-top:10px}
+  .act b{color:var(--coral-deep)}
+  .kv{font-family:ui-monospace,monospace;background:#eef0f3;border-radius:5px;padding:1px 6px;font-size:12.5px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}}
+  .lights{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  @media(max-width:680px){.lights{grid-template-columns:1fr}}
+  .light{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;font-size:14px}
+  .dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}.on{background:var(--green)}.off{background:var(--red)}.cond{background:var(--amber)}
+  .toc{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .toc a{font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 11px;color:var(--sub);text-decoration:none}
+  .takeaway{background:#1e2430;color:#e6e9ef;border-radius:12px;padding:16px 18px;margin-top:12px;font-size:15px}
+  .takeaway b{color:#ffd9d2}
+  ul{margin:6px 0 4px 20px}li{padding:2px 0}
+  .foot{text-align:center;color:var(--sub);font-size:13px;margin-top:34px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <span class="tag">D0 → D1 리텐션 · 종합 분석</span>
+    <h1>고객이 내일 다시 오게 — 무엇이 진짜 동인인가</h1>
+    <p class="lead">기간 <b>2026-06-01 ~ 06-15</b> · 비회원 성숙 세션 <b>2,986개</b>(신뢰 표본) + 회원 108명(보조) · 봇 제외 · 코호트 보정<br>
+    정의 — <span class="kv">화면 수</span>=page_view(목록 포함 이동) · <span class="kv">글 클릭</span>=post_read(커뮤니티·일자리 글 상세) · <span class="kv">D1</span>=첫방문 다음날 이후 재방문</p>
+    <div class="toc">
+      <a href="#s0">0. 30초 요약</a><a href="#s1">1. 진짜 동인</a><a href="#s2">2. 누가 오나</a><a href="#s3">3. 진입·이탈</a><a href="#s4">4. 인과 검증</a><a href="#s5">5. 홈 해부</a><a href="#s6">6. 할 일</a><a href="#s7">7. 신뢰·한계</a>
+    </div>
+  </div>
+
+  <!-- 0 -->
+  <div class="sec" id="s0">
+    <span class="qno">0</span><h2>30초 요약</h2>
+    <div class="takeaway">
+      <p>📌 <b>D1을 가르는 건 "글을 봤나"가 아니라 "한 번 더 둘러봤나(2번째 화면)" 하나다.</b> 첫 화면만 보고 나가면 2%, 한 번 더 클릭하면 12% — <b>5.6배.</b></p>
+      <p style="margin-top:8px">💥 <b>매직넘버 = 2번째 화면.</b> 그 한 번을 <b>"베스트"로 보내면 24%</b>까지 오른다(글 8.7%보다 압도적).</p>
+      <p style="margin-top:8px">🧱 <b>장치는 이미 다 있다</b>(홈 피드·관련글·베스트·앱설치). 새로 만들 게 아니라 <b>약한 걸 강화하고, 꺼진 걸(앱 설치 유도) 켜는</b> 문제다.</p>
+    </div>
+    <div class="lights">
+      <div class="light"><span class="dot off"></span> 비회원 <b>74.6%</b>가 1페이지만 보고 이탈 — 최대 누수</div>
+      <div class="light"><span class="dot on"></span> 베스트 = 인과적 D1 <b>4~6배</b> (강화 가치 큼)</div>
+      <div class="light"><span class="dot on"></span> 앱 = 구조적 D1 <b>8~13배</b> (단 설치유도 OFF)</div>
+      <div class="light"><span class="dot cond"></span> 매거진·일자리 진입자 = D1 0~0.4% (막다른 길)</div>
+    </div>
+  </div>
+
+  <!-- 1 -->
+  <div class="sec" id="s1">
+    <span class="qno">1</span><h2>진짜 동인 = "글 클릭"이 아니라 "둘러봤나(화면 수)"</h2>
+    <p class="lead">막대=D1% · 괄호=(재방문/세션) · <span class="small">회색=표본 30 미만(출렁이니 참고만)</span></p>
+    <div class="grid">
+      <div>
+        <h3>본 글 수(클릭)별 D1 — 0~3개 평평</h3>
+        <table>
+          <tr><th>글 수</th><th style="width:60%">D1</th></tr>
+          <tr><td>0개(목록만)</td><td><span class="bar" style="width:19px"></span>4.8% <span class="small">(113/2375)</span></td></tr>
+          <tr><td>1개</td><td><span class="bar" style="width:10px;background:#d24b3e"></span><b class="lo">2.4%</b> <span class="small">(5/210)</span></td></tr>
+          <tr><td>2개</td><td><span class="bar" style="width:22px"></span>5.5% <span class="small">(11/200)</span></td></tr>
+          <tr><td>3개</td><td><span class="bar" style="width:20px"></span>5.1% <span class="small">(4/78)</span></td></tr>
+          <tr style="color:#999"><td>4개</td><td><span class="bar" style="width:38px;opacity:.5"></span>9.4% <span>(3/32)</span></td></tr>
+          <tr style="color:#999"><td>5개</td><td><span class="bar" style="width:73px;opacity:.5"></span>18.2% <span>(2/11)</span></td></tr>
+          <tr style="color:#999"><td>6~9개</td><td><span class="bar" style="width:60px;opacity:.5"></span>~18% <span>(표본 ≤25)</span></td></tr>
+          <tr><td>10개+</td><td><span class="bar" style="width:100px;background:var(--green)"></span><b class="hi">30.8%</b> <span class="small">(12/39)</span></td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>본 화면 수(둘러봄)별 D1 — 1→2 폭발 💥</h3>
+        <table>
+          <tr><th>화면 수</th><th style="width:60%">D1</th></tr>
+          <tr><td>1화면</td><td><span class="bar" style="width:8px;background:#d24b3e"></span><b class="lo">2.1%</b> <span class="small">(41/1946)</span></td></tr>
+          <tr><td>2화면 💥</td><td><span class="bar" style="width:47px;background:var(--green)"></span><b class="hi">11.8%</b> <span class="small">(20/169)</span></td></tr>
+          <tr><td>3화면</td><td><span class="bar" style="width:55px;background:var(--green)"></span><b class="hi">13.7%</b> <span class="small">(18/131)</span></td></tr>
+          <tr><td>4화면</td><td><span class="bar" style="width:48px"></span>12.0% <span class="small">(6/50)</span></td></tr>
+          <tr><td>5화면</td><td><span class="bar" style="width:59px"></span>14.7% <span class="small">(10/68)</span></td></tr>
+          <tr><td>6~9화면</td><td><span class="bar" style="width:80px"></span>~20% <span class="small">(표본 23~41)</span></td></tr>
+          <tr><td>10화면+</td><td><span class="bar" style="width:92px;background:var(--green)"></span><b class="hi">23.1%</b> <span class="small">(30/130)</span></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="why"><b>해석</b>: 글 수는 0~3개가 4~5%로 <b>평평</b>(글 1~2개 더 눌러도 안 오름). 화면 수는 <b>1→2에서 2.1%→11.8%(5.6배) 단 한 번 폭발</b> 후 완만. → <b>"글 하나 누르게"가 아니라 "한 번 더 둘러보게"가 동인.</b></div>
+    <div class="note"><b>미리 답</b> — "글 1개만 보면?" 오히려 2.4%로 낮음(검색으로 글 직진입 후 이탈). "매직넘버 5페이지?" 아님, <b>2번째 화면</b>(표본 1,946→169로 신뢰). "화면 통제 검증"(둘 다 2화면+): 글0개 15.6% vs 글1개+ 19.4% → 차이 작음 = 글 안 눌러도 둘러보면 D1 높음.</div>
+  </div>
+
+  <!-- 2 -->
+  <div class="sec" id="s2">
+    <span class="qno">2</span><h2>누가 다시 오나 — 세그먼트·채널</h2>
+    <div class="grid">
+      <div>
+        <h3>세그먼트별 D1</h3>
+        <table>
+          <tr><th>세그먼트</th><th>D1</th><th>표본</th></tr>
+          <tr><td>웹 회원</td><td class="hi">39.4%</td><td>33명</td></tr>
+          <tr><td>앱 회원</td><td>22.7%</td><td>75명</td></tr>
+          <tr><td>앱 비회원</td><td class="hi">12.1%</td><td>1,089</td></tr>
+          <tr><td>웹 비회원</td><td class="lo">1.8%</td><td>3,955</td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>채널별 비회원 D1</h3>
+        <table>
+          <tr><th>채널</th><th>D1</th></tr>
+          <tr><td>TWA앱</td><td class="hi">12.1%</td></tr>
+          <tr><td>YouTube</td><td>4.7%</td></tr>
+          <tr><td>Google</td><td>3.1%</td></tr>
+          <tr><td>Naver</td><td class="lo">1.0%</td></tr>
+          <tr><td>직접입력</td><td class="lo">0.9%</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="why"><b>해석</b>: 비회원은 <b>앱이 웹의 6~13배</b>. 웹 비회원(1.8%)·Naver·직접입력은 사실상 1회성. 회원은 반대로 <b>웹>앱</b>(웹은 스스로 가입=자발성↑, 앱은 게이트로 가입 먼저 한 비중 → 약함, 표본 작아 가설).</div>
+  </div>
+
+  <!-- 3 -->
+  <div class="sec" id="s3">
+    <span class="qno">3</span><h2>어디로 들어와서 어디서 멈추나</h2>
+    <table>
+      <tr><th>첫 진입 페이지</th><th>세션</th><th>글로 넘어간 비율</th><th>D1</th></tr>
+      <tr><td>홈 <span class="kv">/</span></td><td>1,394</td><td>9.6%</td><td>8.5%</td></tr>
+      <tr><td>글상세 단발진입(검색 등)</td><td>808</td><td>56%</td><td class="lo">1.9%</td></tr>
+      <tr><td>매거진목록 <span class="kv">/magazine</span></td><td>232</td><td class="lo">0%</td><td class="lo">0.4%</td></tr>
+      <tr><td>게시판목록</td><td>223</td><td>4.9%</td><td>4.5%</td></tr>
+      <tr><td>일자리목록 <span class="kv">/jobs</span></td><td>180</td><td class="lo">1.1%</td><td class="lo">0%</td></tr>
+      <tr><td>베스트 <span class="kv">/best</span></td><td>65</td><td>15.4%</td><td class="hi">12.3%</td></tr>
+    </table>
+    <div class="warn"><b>1페이지 이탈 = 74.6%</b>(비회원 4명 중 3명). 이탈자 채널: 직접입력 49.6% · 앱 29.8% · Naver 17.9%. 이탈자 진입: 홈 45.6% · 커뮤니티 28.2% · 매거진 13.9% · 일자리 10%.</div>
+    <div class="why"><b>해석</b>: <b>홈 진입이 최다(1,394)인데 90%가 글을 안 누른다</b> → 최대 모수의 최대 누수. 검색으로 글 하나 보고 온 808명(D1 1.9%)·매거진·일자리는 <b>다음 클릭이 안 나오는 막다른 길</b>.</div>
+  </div>
+
+  <!-- 4 -->
+  <div class="sec" id="s4">
+    <span class="qno">4</span><h2>무엇이 "인과"인가 — 베스트·앱 (상관 아님)</h2>
+    <p class="lead">같은 "본 글 수" 구간 안에서 비교 = 행동을 똑같이 맞췄는데도 차이나면 <b>인과</b>.</p>
+    <div class="grid">
+      <div>
+        <h3>베스트 (글 수 통제)</h3>
+        <table>
+          <tr><th>구간</th><th>봄</th><th>안봄</th></tr>
+          <tr><td>글 0개</td><td class="hi">15.7%</td><td>3.8%</td></tr>
+          <tr><td>글 1개+</td><td class="hi">26.3%</td><td>4.1%</td></tr>
+        </table>
+        <p class="small" style="margin-top:4px">→ 4~6배. 베스트는 D1을 만든다.</p>
+      </div>
+      <div>
+        <h3>앱 (글 수 통제)</h3>
+        <table>
+          <tr><th>구간</th><th>앱</th><th>웹</th></tr>
+          <tr><td>글 0개</td><td class="hi">10.4%</td><td class="lo">1.2%</td></tr>
+          <tr><td>글 1개+</td><td class="hi">21.7%</td><td class="lo">1.6%</td></tr>
+        </table>
+        <p class="small" style="margin-top:4px">→ 8~13배. 앱은 구조적 동인.</p>
+      </div>
+    </div>
+    <div class="good"><b>결론</b>: 베스트·앱은 "원래 활발한 사람이 보는 것"(상관)이 아니라, <b>보게 하면 D1이 오르는 인과적 효과</b>. → 베스트 노출 강화, 앱 설치 유도가 직접적 레버.</div>
+  </div>
+
+  <!-- 5 -->
+  <div class="sec" id="s5">
+    <span class="qno">5</span><h2>홈 집중 해부 — "홈에서 1클릭하면 급상승?" (가설 검증)</h2>
+    <div class="grid">
+      <div>
+        <h3>홈 진입자(1,395명) 클릭 수별 D1</h3>
+        <table>
+          <tr><th>홈에서 한 행동</th><th>D1</th></tr>
+          <tr><td>0클릭(홈만 보고 나감)</td><td class="lo">4.3% <span class="small">(38/888)</span></td></tr>
+          <tr><td><b>1클릭</b></td><td class="hi">12.6% <span class="small">(14/111)</span></td></tr>
+          <tr><td>2클릭</td><td class="hi">13.0% <span class="small">(15/115)</span></td></tr>
+          <tr><td>3클릭+</td><td class="hi">17.8% <span class="small">(50/281)</span></td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>"1클릭"으로 어디 갔나별 D1</h3>
+        <table>
+          <tr><th>간 곳</th><th>D1</th></tr>
+          <tr><td><b>베스트</b></td><td class="hi">23.8% <span class="small">(5/21)</span></td></tr>
+          <tr><td>게시판목록</td><td class="hi">18.8% <span class="small">(3/16)</span></td></tr>
+          <tr><td>홈(재방문)</td><td>10.8% <span class="small">(4/37)</span></td></tr>
+          <tr><td>글상세</td><td class="mid">8.7% <span class="small">(2/23)</span></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="good"><b>가설 확정 + 정밀 교정</b>: "홈에서 1클릭 → D1 4.3%→12.6% (<b>2.9배</b>)" 맞음. <b>단 그 1클릭을 "글"(8.7%)이 아니라 "베스트"(23.8%)로 보내면 압도적.</b> 참고: 홈 진입자 글 클릭함 19.3% vs 안함 5.8%(이건 보통 여러 클릭의 일부라 상관 섞임).</div>
+    <div class="act"><b>액션 신호</b>: 홈 첫 화면에서 "한 번 클릭"을 만들되, 그 도착지를 <b>베스트/인기글</b>로 설계하는 게 D1 최대 레버(모수 1,394 × 인과 효과).</div>
+  </div>
+
+  <!-- 6 -->
+  <div class="sec" id="s6">
+    <span class="qno">6</span><h2>그래서 뭘 하나 — D1 향상 레버</h2>
+    <p class="lead">장치는 이미 다 있음 → <b>신규 개발이 아니라 "강화·켜기·실험"</b>. 공통 성공지표 = <b>2화면 도달률</b> + D1.</p>
+    <table>
+      <tr><th>우선</th><th>레버</th><th>왜(데이터)</th><th>현재 상태</th><th>방향</th></tr>
+      <tr><td><b>1</b></td><td>홈 첫 화면 → 베스트로 1클릭</td><td>홈 진입 1,394(최대) · 1클릭 2.9배 · 베스트 인과 4~6배</td><td>섹션 피드 있으나 90% 미클릭</td><td>첫 스크롤에 베스트·인기 사연 강조</td></tr>
+      <tr><td><b>1</b></td><td>베스트 전면 노출</td><td>인과적 D1 4~6배</td><td><span class="kv">/best</span> 있으나 노출 약함</td><td>홈 상단·글 하단·네비에 상시</td></tr>
+      <tr><td><b>2</b></td><td>검색 단발진입 회수</td><td>글 직진입 808명 D1 1.9%(최악)</td><td>글 하단 관련글 있으나 약함</td><td>글 끝 관련글·다음글·베스트 강조</td></tr>
+      <tr><td><b>3</b></td><td>매거진·일자리 탈출 동선</td><td>두 목록 글클릭 0~1%·D1 0~0.4%</td><td>교차 동선 거의 없음</td><td>커뮤니티·베스트로 넘기는 추천</td></tr>
+      <tr><td><b>4</b></td><td>앱 설치 유도 켜기</td><td>앱 구조적 D1 8~13배</td><td><b class="lo">전체 OFF</b> <span class="kv">PWA_INSTALL_ENABLED</span></td><td>충분히 둘러본 사람에게 ON</td></tr>
+    </table>
+    <div class="note">각 레버는 A/B 실험으로 검증하며 올릴 수 있음(예: 홈 첫 화면 베스트 강조 on/off). 게이트 실험 인프라(registry·assign·getGateITT) 재사용 가능. <b>단 실험 설계·구현은 다음 단계 — 이 문서는 "방향 확정"용.</b></div>
+  </div>
+
+  <!-- 7 -->
+  <div class="sec" id="s7">
+    <span class="qno">7</span><h2>신뢰·한계 (이 수치를 어디까지 믿나)</h2>
+    <ul>
+      <li>✅ <b>비회원 2,986세션</b> = 채널·행동을 교차·통제해도 신뢰. 인과는 "행동 통제 후에도 차이 유지"로 강한 근거(완전 증명은 실험 필요).</li>
+      <li>🟡 <b>회원 108명</b>(웹 33·앱 75)은 표본 작아 방향만.</li>
+      <li>⚠️ <b>매거진 글 소비</b>는 post_read 미측정(매거진 상세에 측정 코드 없음) → 매거진은 page_view로만.</li>
+      <li>⚠️ 비회원은 sessionId(OAuth·30일 쿠키) 기반이라 <b>절대값은 과소 가능</b>. 단 세그먼트·통제 <b>상대 비교는 유효</b>.</li>
+      <li>📅 기간 2026-06-01~06-15(최근 2주). 봇·내부 트래픽 제외, 코호트 보정(첫방문 1일 경과만 분모).</li>
+    </ul>
+  </div>
+
+  <div class="foot">우나어 · D0→D1 리텐션 종합 분석 · 2026-06-01~06-15 · 코드 무변경 읽기 조회 · 모든 수치 실측 기반</div>
+
+</div>
+</body>
+</html>

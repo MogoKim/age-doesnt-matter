@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>첫 참여 온보딩 v0.9 — 인프라 정밀 설계서</title>
+<style>
+  :root{
+    --primary:#FF6F61; --primary-dark:#E85D50;
+    --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --green:#16a34a; --green-bg:#f0fdf4; --green-line:#bbf7d0;
+    --red:#dc2626; --red-bg:#fef2f2; --red-line:#fecaca;
+    --amber:#d97706; --amber-bg:#fffbeb; --amber-line:#fde68a;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-line:#bfdbfe;
+    --purple:#7c3aed; --purple-bg:#f5f3ff; --purple-line:#ddd6fe;
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Pretendard,Roboto,sans-serif;
+    color:var(--ink); line-height:1.7; margin:0; background:#f8fafc; font-size:16px;}
+  .wrap{max-width:1000px; margin:0 auto; padding:32px 20px 80px;}
+  h1{font-size:27px; line-height:1.3; margin:0 0 8px;}
+  h2{font-size:21px; margin:42px 0 13px; padding-bottom:9px; border-bottom:3px solid var(--primary);}
+  h3{font-size:17px; margin:20px 0 8px;}
+  .sub{color:var(--muted); font-size:15px; margin:0 0 20px;}
+  .tag{display:inline-block; background:var(--primary); color:#fff; font-size:13px; font-weight:700; padding:3px 10px; border-radius:999px;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:14px; padding:20px; margin:15px 0; box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .lead{background:linear-gradient(135deg,#fff5f4,#fff); border-left:5px solid var(--primary);}
+  table{width:100%; border-collapse:collapse; margin:11px 0; font-size:14px;}
+  th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top;}
+  th{background:#f9fafb; font-weight:700;}
+  .hi{color:var(--green); font-weight:700;} .lo{color:var(--red); font-weight:700;}
+  .box{border-radius:12px; padding:14px 16px; margin:12px 0; font-size:14.5px;}
+  .box-green{background:var(--green-bg); border:1px solid var(--green-line);}
+  .box-red{background:var(--red-bg); border:1px solid var(--red-line);}
+  .box-amber{background:var(--amber-bg); border:1px solid var(--amber-line);}
+  .box-blue{background:var(--blue-bg); border:1px solid var(--blue-line);}
+  .box b{display:block; margin-bottom:3px;}
+  .codeloc{font-family:ui-monospace,Menlo,monospace; font-size:11.5px; background:#f3f4f6; padding:1px 6px; border-radius:5px; color:#4b5563;}
+  pre{background:#1e2430;color:#e6e9ef;border-radius:10px;padding:13px;overflow:auto;font-size:12.5px;line-height:1.6; margin:10px 0;}
+  .footnote{font-size:12.5px; color:var(--muted); margin-top:5px;}
+  ul.tight{margin:6px 0; padding-left:20px;} ul.tight li{margin:3px 0;}
+  .toc{columns:2; font-size:14px;} .toc a{color:var(--blue); text-decoration:none;}
+  .verified{display:inline-block; font-size:12px; font-weight:700; color:var(--green); background:var(--green-bg); border:1px solid var(--green-line); border-radius:6px; padding:2px 8px;}
+  .goal{display:flex; gap:10px; flex-wrap:wrap; margin:12px 0;}
+  .goal > div{flex:1; min-width:200px; border-radius:12px; padding:13px; font-size:14px;}
+  .g-bg{background:#fff5f4; border:1px solid #ffd9d4;} .g-mok{background:var(--blue-bg); border:1px solid var(--blue-line);} .g-tgt{background:var(--green-bg); border:1px solid var(--green-line);}
+  .prio{font-size:12px; font-weight:800; padding:3px 9px; border-radius:999px; color:#fff; background:var(--primary);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="tag">인프라 정밀 설계서 v0.92 · 2026-06-17 · 개발 착수 전</span>
+  <h1>첫 참여 온보딩 v0.92 — 인프라 정밀 설계</h1>
+  <p class="sub">확정 정책(회원만 가입인사글 / 비회원 환영댓글+가입유도 / firstGreeting 이력필드) 반영판.<br>
+  <span class="verified">✔ 코드 전수 확인 기반 · 서비스 코드 0줄(설계 문서)</span></p>
+
+  <div class="card lead">
+    <b style="font-size:18px;">📌 배경 · 목적 · 목표</b>
+    <div class="goal">
+      <div class="g-bg"><b>배경</b>참여한 사람 <b class="hi">D1 35.7%</b> vs 안 함 7.6%(4.7배). 참여율 <b class="lo">1.2%</b>. 환대 자산(wave)은 있으나 첫 글 동선 0.</div>
+      <div class="g-mok"><b>목적</b>첫 참여 → (봇+실유저)환대 → 소속감 → 회원 D1↑ + 비회원 가입전환.</div>
+      <div class="g-tgt"><b>목표</b>A/B로 "유도(B)가 참여율·D1을 A보다 유의하게 높이나" 검증. 위너=B 상시화 / A 제거.</div>
+    </div>
+    <div class="box box-purple" style="margin:10px 0 0;background:var(--purple-bg);border:1px solid var(--purple-line);">
+      <b>🔒 v0.9 확정 정책</b>
+      <ul class="tight" style="font-size:14px;">
+        <li><b>① 가입인사 글 = 회원만</b> (`createPost` 로그인 필수 구조 그대로 사용).</li>
+        <li><b>② 비회원 = 가입인사 글 안 씀. 신입환영 섹션에서 환영댓글만</b> + 댓글 후 가입 유도.</li>
+        <li><b>③ 위젯 재노출 방지 = User에 `firstGreetingAt`·`firstGreetingPostId` 최소 이력 필드</b>(삭제/숨김 후에도 위젯 안 뜸).</li>
+      </ul>
+    </div>
+    <div class="box box-amber" style="margin-bottom:0;">⚠️ 설계 문서입니다. <b>코드 0줄.</b> exp1과 동시 진행 — <b>"교란 0"이 아니라 "교란 관리 가능"</b>: hashOffset 독립 배정(<span class="codeloc">assign.ts:56</span>) + 2×2 세그먼트(exp1 A/B × greeting A/B)로 상호작용 통제. (9번·끝 참고)</div>
+  </div>
+
+  <div class="card">
+    <b>목차</b>
+    <div class="toc">
+      <a href="#flow">1. 회원 전용 가입인사 플로우</a><br>
+      <a href="#guest">2. 비회원 = 환영댓글 + 가입유도</a><br>
+      <a href="#field">3. firstGreeting 필드 (schema~rollback) ⭐</a><br>
+      <a href="#expose">4. A/B exposure — A도 기록 ⭐</a><br>
+      <a href="#exclude">5. 가입인사 제외 쿼리 전수 ⭐</a><br>
+      <a href="#perf">6. 홈 성능 — server auth() 금지 ⭐</a><br>
+      <a href="#metric">7. 이벤트·면제·metric 정의</a><br>
+      <a href="#wave">8. wave 댓글 품질·전용 prompt</a><br>
+      <a href="#drop">9. 위너 드랍 + PASS 기준 ⭐</a><br>
+      <a href="#seo">10. SEO 제외·봇 차단·회원만 ⭐</a><br>
+      <a href="#ops">11. 변경파일·단계·검증·롤백</a>
+    </div>
+  </div>
+
+  <!-- 1 -->
+  <h2 id="flow">1. 회원 전용 가입인사 플로우 <span class="verified">✔ 정책①</span></h2>
+  <div class="card">
+    <div class="box box-green">
+      <b>✅ 기존 구조가 정책과 정확히 맞음</b>
+      <span class="codeloc">createPost</span>(<span class="codeloc">posts.ts:23-25</span>)는 <span class="codeloc">auth()</span> 없으면 "로그인이 필요합니다" 반환. <span class="codeloc">Post.authorId</span>는 필수(NOT NULL). → <b>가입인사 글도 같은 경로 = 회원만.</b> 별도 권한 로직 불필요.
+    </div>
+    <h3>한 줄 인사 전용 폼 (경량)</h3>
+    <ul class="tight">
+      <li>전용 경량 폼: 제목 없이 한 줄, <b>category='가입인사' 고정</b>, boardType=STORY. 기존 글쓰기 페이지(<span class="codeloc">write/page.tsx</span>) 아님(허들↓).</li>
+      <li>제출 → <span class="codeloc">createPost</span>(또는 전용 액션 `createGreetingPost`) → ① Post 생성 ② <b>User.firstGreetingAt/PostId set</b>(3번) ③ <span class="codeloc">enqueueUserPostWave</span> 자동 환대(기존).</li>
+      <li>입구: <b>B위젯</b>(가입 직후 홈 최상단·72h·미작성) + <b>신입환영 섹션</b>(상시).</li>
+    </ul>
+  </div>
+
+  <!-- 2 -->
+  <h2 id="guest">2. 비회원 = 환영댓글만 + 가입유도 <span class="verified">✔ 정책②</span></h2>
+  <div class="card">
+    <ul class="tight">
+      <li><b>비회원은 가입인사 글을 쓰지 않는다</b>(Post 스키마 변경 0, 무거운 마이그레이션 회피).</li>
+      <li><b>신입환영 섹션의 신입글에 "환영 댓글"만</b> 작성: 기존 <span class="codeloc">createGuestComment</span>(닉네임+비번+Turnstile) 재사용.</li>
+      <li><b>댓글 후 가입 유도</b>: "환영 댓글 고마워요! 내 글 쓰고 알림 받으려면 가입" → 카카오 가입 깔때기.</li>
+      <li>비회원은 알림 못 받음(userId 없음) — 이 약점을 <b>가입 전환 트리거</b>로 사용.</li>
+    </ul>
+    <div class="box box-blue" style="margin-bottom:0;">
+      <b>역할 분담</b> 회원 = 가입인사 <b>글</b> 작성(자산감 강) / 비회원 = <b>환영 댓글</b> 참여(가벼움) + 가입 전환. 둘 다 "참여 → 리텐션/전환".
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <h2 id="field">3. firstGreeting 이력 필드 — schema·migration·write·read·rollback <span class="prio">정책③</span></h2>
+  <div class="card">
+    <h3>schema (User 모델)</h3>
+    <pre>model User {
+  ...
+  firstGreetingAt     DateTime?   // 첫 가입인사 작성 시각 (없으면 미작성)
+  firstGreetingPostId String?     // 그 글 id (삭제돼도 이력 유지 → 위젯 재노출 방지)
+}</pre>
+    <p class="footnote">기존 <span class="codeloc">pwaInstalledAt</span>·<span class="codeloc">nicknameChangedAt</span> 등 nullable DateTime 패턴과 동일. 신규 컬럼 2개.</p>
+
+    <h3>migration</h3>
+    <ul class="tight">
+      <li><b>ADD COLUMN (nullable)</b> 2개 — 무중단(기존 행은 NULL=미작성). <span class="codeloc">npx prisma migrate</span>. 인덱스 불필요(User PK 조회).</li>
+    </ul>
+
+    <h3>write path</h3>
+    <ul class="tight">
+      <li>가입인사 글 생성 액션에서 <b>firstGreetingAt이 NULL일 때만</b> `firstGreetingAt=now, firstGreetingPostId=post.id` set(최초 1회 고정). 두 번째 인사글은 이력 안 바꿈.</li>
+      <li>트랜잭션: Post create + User update 원자적(또는 Post 후 User update, 실패해도 비크리티컬).</li>
+    </ul>
+
+    <h3>read path</h3>
+    <ul class="tight">
+      <li><b>B위젯 노출 판별</b>: `User.createdAt < 72h` AND `firstGreetingAt == null`. → <b>글을 삭제·숨김해도 firstGreetingAt이 남아 재노출 안 됨</b>(정책③ 핵심).</li>
+      <li>판별 데이터는 <b>세션(JWT)에 firstGreetingAt 포함</b> 권장(홈 server auth 금지 — 6번). source of truth = DB.</li>
+    </ul>
+    <div class="box box-blue">
+      <b>🆕 v0.92 — 작성 직후 위젯 즉시 숨김 (방식 1개로 확정)</b>
+      <span class="codeloc">auth.ts:79-84</span>는 <span class="codeloc">trigger==='update'</span> 시 <span class="codeloc">tokenRefreshedAt=0</span>으로 <b>"다음 요청"에 DB 재조회</b> — 즉 firstGreetingAt을 JWT에 넣어도 <b>작성 직후 즉시 클라 세션엔 반영 안 됨</b>. 그래서:
+      <table style="margin-top:8px;">
+        <tr><th>순서</th><th>처리</th><th>역할</th></tr>
+        <tr><td><b>① 주 방식</b></td><td>작성 성공 → <b>로컬 상태(setHidden)로 위젯 즉시 숨김</b></td><td>즉각 UX(현재 화면)</td></tr>
+        <tr><td>②</td><td>localStorage <span class="codeloc">first_greeting_done</span> 플래그</td><td>같은 기기 새로고침 시 JWT 갱신 전이라도 재노출 방지</td></tr>
+        <tr><td>③</td><td><span class="codeloc">unstable_update()</span> 호출(tokenRefreshedAt=0)</td><td>JWT firstGreetingAt 다음 로드 반영(다른 기기·장기, DB가 진실)</td></tr>
+      </table>
+      <b>채택 안 함</b>: eligibility API(매 홈 로드 요청 = 홈 성능·6번 server auth 금지 원칙 위배).
+    </div>
+
+    <h3>rollback</h3>
+    <table>
+      <tr><th>롤백 종류</th><th>영향</th></tr>
+      <tr><td>코드만 롤백</td><td>컬럼 nullable이라 <b>안전</b> — 코드가 컬럼 안 읽으면 무시됨. 데이터 손실 0</td></tr>
+      <tr><td>컬럼 DROP</td><td>별도 마이그레이션. 이력 데이터 손실 → <b>롤백 시엔 컬럼 유지 권장</b>(미사용 컬럼은 무해)</td></tr>
+    </table>
+  </div>
+
+  <!-- 4 -->
+  <h2 id="expose">4. A/B exposure — A가 UI 안 그려도 기록 <span class="prio">핵심</span></h2>
+  <div class="card">
+    <div class="box box-green">
+      <b>✅ exp1에서 검증된 패턴 그대로</b>
+      <span class="codeloc">NextPostsInline</span>: variant 확정 시 <b>A·B 모두 1회 노출 기록</b>(분모), variant==='' 만 skip, rendered는 B 여부로 구분.
+    </div>
+    <ul class="tight">
+      <li><b>eligible 기준 기록</b>: B위젯/신입환영 컴포넌트가 마운트되어 <b>"노출 자격"(가입 72h내·미작성 등)을 만족하면</b>, A는 UI를 안 그려도 <span class="codeloc">trackEvent('first_greeting_exposure',{variant, surface, rendered})</span> 1회.</li>
+      <li>이래야 <b>분모(A·B 노출 세션)가 공정</b> → 참여율·D1 비교가 정확. (A만 안 기록하면 분모 왜곡 = exp1과 동일 함정)</li>
+      <li><span class="codeloc">firedRef</span>로 세션당 1회. variant 미확정/시작 전('')은 skip.</li>
+    </ul>
+  </div>
+
+  <!-- 5 -->
+  <h2 id="exclude">5. 가입인사 제외 쿼리 — 전수 열거 <span class="prio">구멍 0</span></h2>
+  <div class="card">
+    <div class="box box-red">
+      <b>🔴 가장 흔한 구멍</b> 가입인사가 "전체"·인기글·홈·관련글·검색에 섞이면 일반 콘텐츠가 오염됩니다. <b>STORY 글을 노출하는 모든 쿼리에 `category:{not:'가입인사'}`</b>를 빠짐없이 넣어야 합니다.
+    </div>
+    <table>
+      <tr><th>파일</th><th>함수 (제외 적용 대상)</th></tr>
+      <tr><td rowspan="6"><span class="codeloc">posts.community.ts</span></td><td><b>getPostsByBoardPage</b> — "전체" 탭(category 미지정 시)</td></tr>
+      <tr><td><b>getPostsByBoard</b> — 게시판 목록</td></tr>
+      <tr><td><b>getCachedBoardPage</b> — 캐시 게시판</td></tr>
+      <tr><td><b>getLatestCommunityPosts</b> — 최신</td></tr>
+      <tr><td><b>getRecentActivities</b> — 최근 활동</td></tr>
+      <tr><td><b>getRelatedCommunityPosts</b> — 관련글(글 상세 하단·exp1 카드)</td></tr>
+      <tr><td rowspan="5"><span class="codeloc">posts.trending.ts</span></td><td><b>getTrendingCommunityPosts</b> · <b>getTrendingPosts</b> · <b>getTrendingQuotaPosts</b></td></tr>
+      <tr><td><b>getDailyTrendingPosts</b> · <b>getWeeklyTrendingPosts</b></td></tr>
+      <tr><td><b>getHotPosts</b> · <b>getHallOfFamePosts</b> · <b>getEditorsPicks</b></td></tr>
+      <tr><td><b>getInterestBasedPosts</b></td></tr>
+      <tr><td><b>getAccumulatedHotPosts</b> — ⭐ <b>베스트</b>(`boardType in STORY·HUMOR·LIFE2` 확인됨)</td></tr>
+      <tr><td><span class="codeloc">posts.home-compose.ts</span></td><td><b>getCachedHomeSections</b> — 홈 trending·stories·humor</td></tr>
+      <tr><td><span class="codeloc">검색</span></td><td>검색 쿼리(커뮤니티 검색) — <b>개발 시 위치 확정 후 동일 제외</b></td></tr>
+    </table>
+    <div class="box box-amber">
+      <b>제외 안 할 곳(반대)</b> <b>신입환영 섹션 쿼리</b>(가입인사만 뽑음) · <b>가입인사 서브탭</b>(category='가입인사' 필터) · <b>글 상세</b>(getPostDetail, 단건). 일자리(jobs)는 STORY 아님 → 무관.
+    </div>
+    <div class="box box-green" style="margin-bottom:0;">
+      <b>구현 권장</b> 공통 상수 <span class="codeloc">const EXCLUDE_GREETING = { category: { not: '가입인사' } }</span>를 STORY 대상 쿼리 where에 spread. 한 곳에 정의 → 누락 방지 + 검증 용이.
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <h2 id="perf">6. 홈 성능 회귀 방지 — server auth() 금지 <span class="prio">핵심</span></h2>
+  <div class="card">
+    <div class="box box-green">
+      <b>✅ 현재 홈은 auth() 안 씀</b> (<span class="codeloc">(main)/page.tsx</span> 확인). 홈은 정적·캐시 친화. <b>여기에 server <span class="codeloc">auth()</span>를 넣으면 매 요청 세션조회 = 캐시 깨짐·성능 회귀.</b> 절대 금지.
+    </div>
+    <table>
+      <tr><th>요소</th><th>렌더</th><th>회원 판별</th></tr>
+      <tr><td><b>B 첫인사 위젯</b></td><td>클라 컴포넌트('use client')</td><td><span class="codeloc">useAppSession</span>(클라) — createdAt·firstGreetingAt 세션에서. <b>server auth X</b></td></tr>
+      <tr><td><b>신입환영 섹션</b></td><td>server 컴포넌트(캐시)</td><td><b>회원 판별 불필요</b>(모두 노출). 오늘 가입인사 글만 쿼리(unstable_cache)</td></tr>
+    </table>
+    <div class="box box-blue" style="margin-bottom:0;">
+      <b>세션에 firstGreetingAt 포함</b> 권장(JWT 콜백). 그러면 B위젯이 클라에서 추가 API 없이 판별 → 성능 0 영향. (PostCTA·SignupPromptBanner가 쓰는 <span class="codeloc">useAppSession</span> + createdAt 패턴 동일)
+    </div>
+  </div>
+
+  <!-- 7 -->
+  <h2 id="metric">7. first_greeting 이벤트 · rate limit 면제 · metric 확장</h2>
+  <div class="card">
+    <h3>이벤트</h3>
+    <table>
+      <tr><th>이벤트</th><th>언제</th><th>properties</th></tr>
+      <tr><td><span class="codeloc">first_greeting_exposure</span></td><td>B위젯/신입환영 eligible(A·B 모두)</td><td>variant, surface(widget|section), rendered</td></tr>
+      <tr><td><span class="codeloc">first_greeting_post</span></td><td>회원 가입인사 글 작성(참여율 분자 — 회원)</td><td>variant, postId</td></tr>
+      <tr><td><b><span class="codeloc">first_greeting_welcome_comment</span></b> 🆕</td><td><b>비회원 환영댓글 작성 성공</b>(참여율 분자 — 비회원). <span class="codeloc">GuestCommentInput</span> 성공 경로(createGuestComment resolve 후 클라)에서 trackEvent</td><td>variant, postId(대상 신입글), guest:true</td></tr>
+      <tr><td><span class="codeloc">related_post_click</span>(재사용)</td><td>신입환영 카드 클릭</td><td>position</td></tr>
+    </table>
+    <h3>rate limit 면제</h3>
+    <ul class="tight">
+      <li><span class="codeloc">events/route.ts</span> CONVERSION_EVENTS에 <b>first_greeting_exposure + first_greeting_post + first_greeting_welcome_comment 추가</b>(분모·분자 유실 방지 — exp1 패턴). welcome_comment는 참여율 분자라 면제 필수.</li>
+    </ul>
+    <h3>retention/admin metric 확장</h3>
+    <ul class="tight">
+      <li>실험 id <span class="codeloc">first_greeting</span>를 <span class="codeloc">registry.ts</span> 등록(A/B 50:50, startsAt, exposureEvent=first_greeting_exposure).</li>
+      <li>리텐션 패널(<span class="codeloc">admin.experiments-retention.ts</span>)에 추가: <b>참여율</b>(노출 세션 중 first_greeting_post 또는 환영댓글 작성) + <b>D1~D7</b>(기존 코호트 로직) + 비회원 가입전환(보조).</li>
+      <li>비율 지표 <span class="codeloc">confidenceLevel</span>. 어드민 <span class="codeloc">/admin/ab-tests</span>에 카드 추가.</li>
+      <li><b>🆕 exp1과 동시 진행 — 교란 "관리 가능"(0 아님)</b>: first_greeting에 exp1과 <b>다른 hashOffset</b> 부여(<span class="codeloc">registry.ts hashOffset</span> · <span class="codeloc">assign.ts:56</span>) → 두 실험 배정 <b>무상관</b>(독립 랜덤). 분석은 <b>2×2 세그먼트</b>(exp1 A/B × greeting A/B = 4그룹)로 상호작용 확인 / 또는 각 실험 내에서 상대 실험이 균등 분포돼 평균 통제. <b>같은 화면을 동시에 안 건드리므로 직접 충돌은 없고, 상호작용만 세그먼트로 관리.</b></li>
+    </ul>
+  </div>
+
+  <!-- 8 -->
+  <h2 id="wave">8. wave 댓글 품질 — 가입인사 전용 prompt 분기</h2>
+  <div class="card">
+    <ul class="tight">
+      <li><span class="codeloc">generateUserPostComment</span>(<span class="codeloc">generator.ts:604</span>)는 <b>일반 글 가정</b>. "오늘 가입했어요" 인사글에 일반 댓글 prompt면 <b>어색할 수 있음</b>(예: 인사글에 공감/조언 댓글).</li>
+      <li><b>설계</b>: <span class="codeloc">user-post-wave-processor</span>가 <b>post.category==='가입인사' 감지 → 전용 환영 prompt</b>로 분기(generateGreetingWelcome 또는 generateUserPostComment에 kind 인자). "환영해요~", "반가워요 ^^" 류 자연스러운 환영 멘트.</li>
+      <li>개발 시 <b>실제 생성 댓글 샘플 검수</b>(인사글 5건 → wave 댓글 자연스러운지) 후 prompt 조정.</li>
+    </ul>
+  </div>
+
+  <!-- 9 -->
+  <h2 id="drop">9. 위너 드랍 절차 + PASS 기준 <span class="prio">언제든 드랍</span></h2>
+  <div class="card">
+    <h3>드랍 절차 (exp1 동일)</h3>
+    <table>
+      <tr><th>단계</th><th>처리</th></tr>
+      <tr><td>1 즉시 중단</td><td><span class="codeloc">registry</span> 진 쪽 weight=0 → 신규 배정 중단</td></tr>
+      <tr><td>2 완전 종료(B승)</td><td>def 제거 + B위젯·신입환영 분기 제거(상시화). 가입인사 카테고리·firstGreeting 컬럼 보존</td></tr>
+      <tr><td>2 완전 종료(A승)</td><td>def 제거 + B위젯·신입환영 컴포넌트 제거(현행 복귀). 카테고리·컬럼은 무해하게 보존</td></tr>
+    </table>
+    <h3>PASS 기준 (개발 검증)</h3>
+    <ul class="tight">
+      <li>배정 <b>A/B 49~51%</b>(djb2 시뮬 1만).</li>
+      <li><b>A도 exposure 기록</b>(eligible 기준, UI 미렌더 시에도).</li>
+      <li><b>가입인사 0건 누출</b> — 전체·베스트·홈 trending/stories·관련글·검색에서 가입인사 글이 안 보임(5번 전수).</li>
+      <li><b>B위젯 판별 정확</b> — 72h+firstGreetingAt null만 노출. 작성/삭제/72h후 미노출.</li>
+      <li><b>삭제 후 재노출 0</b> — 글 삭제해도 firstGreetingAt 유지로 위젯 안 뜸.</li>
+      <li><b>wave 환대 적절</b> — 가입인사 글에 환영 댓글(전용 prompt) 자연스러움.</li>
+      <li>홈 성능 — server auth() 없음, 홈 캐시 유지.</li>
+      <li><b>🆕 작성 직후 위젯 즉시 숨김</b> — 작성 성공 시 <b>로컬 상태로 즉시 사라짐</b> / 같은 기기 새로고침 후 <b>재노출 0</b>(localStorage) / 다른 기기·장기는 firstGreetingAt(DB·JWT). eligibility API 미사용.</li>
+      <li><b>🆕 비회원 환영댓글 측정</b> — 환영댓글 성공 시 <span class="codeloc">first_greeting_welcome_comment</span> 1건 기록 + <b>참여율 분자에 포함</b> + rate limit 면제.</li>
+      <li><b>SEO 제외</b> — 가입인사 글이 <b>sitemap 0건</b>(getSitemapPosts category 제외) · 글 상세 <b>robots noindex,nofollow</b>(가입인사만) · <b>내부 검색 0건</b>. (단 신입환영 섹션·가입인사 탭엔 노출)</li>
+      <li><b>봇 발행 차단</b> — /api/bot/posts·/api/posts·seed·cafe로 category='가입인사' 글 생성 시도 <b>전부 거부</b>. (단 wave 댓글은 허용)</li>
+      <li><b>회원만 작성</b> — 가입인사 글은 <b>source=USER + 실제 회원 authorId</b>만. 봇/SHEET/ADMIN source 생성 0건(공통 가드).</li>
+      <li><span class="codeloc">tsc</span>·<span class="codeloc">lint</span>·<span class="codeloc">build</span> 통과 · 위너 드랍 리허설(weight 0).</li>
+    </ul>
+  </div>
+
+  <!-- 10 SEO·봇·회원만 -->
+  <h2 id="seo">10. SEO 제외 · 봇 발행 차단 · 회원만 작성 <span class="prio">v0.91 추가 정책</span></h2>
+  <div class="card">
+    <h3>① 가입인사 = SEO 노출 대상 아님</h3>
+    <table>
+      <tr><th>경로</th><th>처리</th></tr>
+      <tr><td><b><span class="codeloc">getSitemapPosts</span></b>(sitemap.ts:28 호출)</td><td>🆕 <b>현재 category select 없음</b> → ① select에 <span class="codeloc">category</span> 추가 ② where에 <span class="codeloc">category:{not:'가입인사'}</span> 추가. (sitemap.ts 본문 아니라 getSitemapPosts 함수 수정)</td></tr>
+      <tr><td>글 상세 색인 <span class="codeloc">[postId]/page.tsx generateMetadata</span></td><td>가입인사 글이면 <span class="codeloc">robots:{index:false, follow:false}</span>. (현재 글 상세는 robots 미설정=기본 index → 가입인사만 추가)</td></tr>
+      <tr><td>사이트 내부 검색 <span class="codeloc">search/page.tsx · posts.base</span></td><td>가입인사 <b>기본 제외</b>(5번 EXCLUDE_GREETING 동일 적용)</td></tr>
+      <tr><td>읽기 API <span class="codeloc">/api/posts/route.ts (GET)</span> 🆕</td><td><b>정정: 생성 API 아님 = GET 목록 API</b> → 가입인사 <b>제외 읽기</b> 대상(내부 목록 호출이면 EXCLUDE_GREETING)</td></tr>
+      <tr><td class="hi">내부 노출(반대)</td><td><b>신입환영 섹션 · 가입인사 탭은 노출</b>(SEO와 무관한 내부 동선)</td></tr>
+    </table>
+    <h3>② 가입인사 글 "생성" 차단 — 생성 경로만 (읽기 API 제외) 🆕정정</h3>
+    <table>
+      <tr><th>생성 경로</th><th>처리</th></tr>
+      <tr><td><span class="codeloc">src/lib/actions/posts.ts</span> createPost / 전용 createGreetingPost</td><td>회원 가입인사만 통과. 그 외 거부</td></tr>
+      <tr><td><span class="codeloc">/api/bot/posts/route.ts</span></td><td>category='가입인사' 요청 <b>거부(400)</b></td></tr>
+      <tr><td>agent 글 생성(<span class="codeloc">prisma.post.create</span>): seed(<span class="codeloc">scheduler·micro-scheduler</span>) · cmo(<span class="codeloc">humor-curator·health-anxiety-responder·caregiving-curator</span>) · cafe(<span class="codeloc">content-curator·popular-curator</span>) · <span class="codeloc">community/sheet-scraper</span></td><td>category='가입인사' <b>거부/스킵</b></td></tr>
+      <tr><td class="lo">⚠️ /api/posts(GET)</td><td>여기엔 <b>없음</b> — GET 목록 API라 생성 차단 대상 아님(①의 읽기 제외로 처리)</td></tr>
+      <tr><td class="hi">wave 댓글(예외 허용)</td><td>봇이 가입인사 "글"엔 못 쓰지만 <b>"댓글"은 OK</b> — <span class="codeloc">user-post-wave</span> 전용 환영 댓글(8번). 정책상 명시적 허용</td></tr>
+    </table>
+    <h3>③ 작성 주체 = 실제 회원만 (방어)</h3>
+    <ul class="tight">
+      <li>가입인사 글 = <b>source=USER + authorId 실제 회원</b>. 봇/SHEET/ADMIN source 로는 가입인사 카테고리 글 생성 차단.</li>
+      <li><b>방어</b>: 가입인사 글은 전용 액션(<span class="codeloc">createGreetingPost</span>)으로만 + 모든 <b>생성</b> 경로에 공통 가드 호출.</li>
+    </ul>
+    <div class="box box-amber" style="margin-bottom:0;">
+      <b>🛡️ assertGreetingByMember 적용 write path 전수 (실제 파일)</b>
+      <span class="codeloc">assertGreetingByMember(category, source, authorId)</span> = "category==='가입인사' && (source!==USER || authorId가 봇) → throw". 아래 <b>모든 생성 경로</b>에서 호출:
+      <ul class="tight" style="margin-top:6px;">
+        <li><span class="codeloc">src/lib/actions/posts.ts</span> (createPost)</li>
+        <li><span class="codeloc">src/app/api/bot/posts/route.ts</span></li>
+        <li><span class="codeloc">agents/community/sheet-scraper.ts</span></li>
+        <li><span class="codeloc">agents/seed/scheduler.ts</span> · <span class="codeloc">agents/seed/micro-scheduler.ts</span></li>
+        <li><span class="codeloc">agents/cmo/humor-curator.ts</span> · <span class="codeloc">agents/cmo/health-anxiety-responder.ts</span> · <span class="codeloc">agents/cmo/caregiving-curator.ts</span></li>
+        <li><span class="codeloc">agents/cafe/content-curator.ts</span> · <span class="codeloc">agents/cafe/popular-curator.ts</span></li>
+        <li>그 외 <span class="codeloc">prisma.post.create</span>로 커뮤니티(STORY) 글 만드는 모든 agent 경로 — grep <span class="codeloc">prisma.post.create</span> agents/ 로 전수 재확인(개발 시)</li>
+      </ul>
+      <span class="footnote">※ /api/posts(GET)·job-scraper(일자리)·magazine-generator(매거진)는 STORY 가입인사와 무관하나, 가드 호출은 무해(방어).</span>
+    </div>
+  </div>
+
+  <!-- 11 -->
+  <h2 id="ops">11. 변경 파일 · 구현 단계 · 검증 · 운영 리스크·롤백</h2>
+  <div class="card">
+    <h3>변경 파일 후보</h3>
+    <ul class="tight">
+      <li><b>schema/DB</b>: <span class="codeloc">prisma/schema.prisma</span>(User firstGreetingAt·firstGreetingPostId) + migration · <span class="codeloc">prisma/seed.ts</span> 또는 어드민(BoardConfig "가입인사")</li>
+      <li><b>쿼리 제외</b>: <span class="codeloc">posts.community.ts</span> · <span class="codeloc">posts.trending.ts</span> · <span class="codeloc">posts.home-compose.ts</span> · 검색 쿼리 (5번 전수)</li>
+      <li><b>작성</b>: 신규 한 줄 인사 폼 + 액션(category 고정 + firstGreeting set) · <span class="codeloc">auth.ts</span>(JWT firstGreetingAt + <span class="codeloc">unstable_update</span>로 갱신)</li>
+      <li><b>UI</b>: 신규 B위젯(클라 — <b>작성성공 시 로컬 즉시숨김 + localStorage 플래그 + unstable_update</b>) · 신규 신입환영 섹션(server) · <span class="codeloc">(main)/page.tsx</span>(auth 추가 금지)</li>
+      <li><b>비회원</b>: <span class="codeloc">guest-comments</span> 재사용 + <span class="codeloc">GuestCommentInput</span>에 <b>first_greeting_welcome_comment trackEvent</b> + 가입유도</li>
+      <li><b>SEO(v0.92)</b>: <span class="codeloc">getSitemapPosts</span>(category select+제외) · <span class="codeloc">[postId]/page.tsx</span> generateMetadata(가입인사 robots noindex,nofollow) · 검색 제외 · <span class="codeloc">/api/posts</span>(GET 읽기 제외)</li>
+      <li><b>생성 차단·회원만(v0.92)</b>: <span class="codeloc">actions/posts.ts</span> · <span class="codeloc">api/bot/posts/route.ts</span> · seed(<span class="codeloc">scheduler·micro-scheduler</span>) · cmo(<span class="codeloc">humor·health-anxiety·caregiving curator</span>) · cafe(<span class="codeloc">content·popular curator</span>) · <span class="codeloc">community/sheet-scraper</span> + 공통 가드 <span class="codeloc">assertGreetingByMember</span>. <b>(/api/posts는 GET이라 제외)</b></li>
+      <li><b>환대</b>: <span class="codeloc">user-post-wave-processor</span>·<span class="codeloc">generator.ts</span>(가입인사 전용 prompt)</li>
+      <li><b>A/B</b>: <span class="codeloc">registry.ts</span>(first_greeting def + <b>hashOffset</b> 독립) · <span class="codeloc">admin.experiments-retention.ts</span> · <span class="codeloc">ab-tests/page.tsx</span> · <span class="codeloc">events/route.ts</span>(exposure·post·welcome_comment 면제)</li>
+    </ul>
+    <h3>구현 단계</h3>
+    <ol class="tight">
+      <li>schema: firstGreeting 필드 + migration / BoardConfig "가입인사" / 쿼리 전수 제외.</li>
+      <li>한 줄 인사 폼 + 액션(category 고정, firstGreeting set, wave 자동).</li>
+      <li>B위젯(클라·72h·firstGreetingAt) + JWT 세션 포함 + 신입환영 섹션(server).</li>
+      <li>비회원 환영댓글 + 가입유도. wave 가입인사 전용 prompt.</li>
+      <li>A/B 등록 + exposure(A도 eligible 기록) + 면제 + 리텐션 패널.</li>
+    </ol>
+    <h3>검증 명령</h3>
+    <pre>npx tsc --noEmit
+npx eslint . --ext .ts,.tsx
+npm run build
+node -e "djb2 배정 1만 시뮬 → A/B 49~51% 확인"
+# 가입인사 0건 누출: 베스트/홈/관련글 응답에 category='가입인사' 없는지 확인
+# B위젯 판별: 72h·firstGreetingAt null/존재 케이스 트레이스</pre>
+    <h3>운영 리스크 · 롤백</h3>
+    <table>
+      <tr><th>리스크</th><th>롤백</th></tr>
+      <tr><td>가입인사 누출(쿼리 빠뜨림)</td><td>해당 쿼리 핫픽스(where 추가). EXCLUDE_GREETING 공통상수로 누락 최소화</td></tr>
+      <tr><td>홈 성능 저하</td><td>server auth 안 썼는지 확인. B위젯 클라 분리 유지</td></tr>
+      <tr><td>wave 댓글 어색</td><td>전용 prompt 조정 또는 가입인사 글만 wave off(설정)</td></tr>
+      <tr><td>실험 자체 문제</td><td>registry weight 0(즉시 중단) → def 제거. firstGreeting 컬럼·카테고리는 보존(무해)</td></tr>
+      <tr><td>migration</td><td>nullable ADD COLUMN이라 무중단. 코드 롤백 시 컬럼 유지(미사용 무해)</td></tr>
+      <tr><td><b>SEO 누출</b>(가입인사 색인됨)</td><td>sitemap·noindex·검색 제외 핫픽스. EXCLUDE_GREETING 공통상수로 누락 최소화. 이미 색인된 건 noindex 후 GSC 제거 요청</td></tr>
+      <tr><td><b>봇이 가입인사 글 생성</b></td><td>공통 가드 <span class="codeloc">assertGreetingByMember</span> 누락 경로 핫픽스. 잘못 생성된 글은 source 기준 일괄 정리(HIDDEN)</td></tr>
+    </table>
+    <div class="box box-amber" style="margin-bottom:0;">
+      <b>🔔 다음</b> 이 v0.9 설계 확인 후 <b>개발 착수 승인</b> 시 1~5단계를 <span class="codeloc">/done</span> 게이트로 진행. <b>지금까지 코드 변경 0줄.</b>
+    </div>
+  </div>
+
+  <p style="text-align:center;color:var(--muted);font-size:12.5px;margin-top:36px;">
+    우리 나이가 어때서 · 첫 참여 온보딩 인프라 설계서 v0.9 · 2026-06-17<br>
+    코드 확인: posts.ts·wave-queue.ts·posts.community.ts·posts.trending.ts·posts.home-compose.ts·boards.ts·OnboardingForm·guest-comments·PostWriteForm·generator.ts·NextPostsInline·User schema·(main)/page.tsx
+  </p>
+
+</div>
+</body>
+</html>
