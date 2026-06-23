@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우나어 — 매거진 운영 딥다이브 V2 (2026-06-23)</title>
+<title>우나어 — 매거진 운영 딥다이브 V3 (2026-06-23)</title>
 <style>
   :root{
     --bg:#0d1117; --bg2:#161b22; --bg3:#1f2533; --border:#2a3042;
@@ -26,7 +26,7 @@
   .cover::before{content:'';position:absolute;top:-80px;right:-80px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(96,165,250,.10),transparent 70%)}
   .cover-badge{display:inline-block;background:var(--blue-dim);color:var(--blue);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:4px;border:1px solid rgba(96,165,250,.3);margin-bottom:18px}
   .cover h1{font-size:29px;font-weight:800;margin-bottom:10px;line-height:1.3}
-  .cover .subtitle{font-size:14.5px;color:var(--muted);margin-bottom:32px;max-width:680px;line-height:1.7}
+  .cover .subtitle{font-size:14.5px;color:var(--muted);margin-bottom:32px;max-width:720px;line-height:1.7}
   .cover-meta{display:flex;gap:30px;flex-wrap:wrap;padding-top:26px;border-top:1px solid var(--border)}
   .cover-meta .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--sub);font-weight:600;margin-bottom:3px}
   .cover-meta .value{font-size:13px;color:var(--muted);font-weight:500}
@@ -105,292 +105,298 @@
   <!-- COVER -->
   <div class="cover">
     <div class="cover-badge">Founder Deep-Dive · 2026-06-23</div>
-    <h1>매거진 운영 딥다이브 V2</h1>
-    <p class="subtitle">키워드 큐(keyword queue)가 매거진 주제 선택의 1순위로 연결됐습니다. 기존 자동발행은 꺼지지 않았고, "무슨 주제로 쓸지 고르는 부분"만 바뀌었습니다. 이 문서는 실제 코드·커밋 기준으로 운영 구조를 설명합니다(코드 변경 아님).</p>
+    <h1>매거진 운영 딥다이브 V3</h1>
+    <p class="subtitle">keyword queue 기반 자동발행이 운영 중이고, 이미지 품질이 1차 안정화됐으며, 매거진 상세의 락인 동선(P1)이 production에 반영됐습니다. editorial v2(직접답변·요약·커뮤니티 박스)는 코드가 배포됐고 flag로 시범 적용 대기 중입니다. 이 문서는 실제 코드·커밋·flag·launchd 실측 기준입니다(코드 변경 아님).</p>
     <div class="cover-meta">
       <div><div class="label">기준일</div><div class="value">2026-06-23</div></div>
-      <div><div class="label">상태</div><div class="value wait">연결 완료 · 운영 첫 실측 대기</div></div>
-      <div><div class="label">하루 최대 편수</div><div class="value live">2편 (큐 모드)</div></div>
-      <div><div class="label">실행</div><div class="value ok">12:00 + 14:00 KST</div></div>
-      <div><div class="label">이미지</div><div class="value ok">ChatGPT</div></div>
+      <div><div class="label">발행</div><div class="value ok">keyword queue 운영 중 · 하루 2편</div></div>
+      <div><div class="label">실행</div><div class="value ok">12:00 + 14:00 KST (launchd)</div></div>
+      <div><div class="label">이미지</div><div class="value ok">ChatGPT · 800px+ 가드</div></div>
+      <div><div class="label">P1 락인</div><div class="value live">production 반영</div></div>
+      <div><div class="label">editorial v2</div><div class="value wait">코드 배포 · flag 시범 대기</div></div>
     </div>
   </div>
 
   <!-- STATUS -->
   <div class="status-box">
-    <div class="sb-title">현재 시스템 상태 (2026-06-23)</div>
-    <div class="status-item"><div class="dot on"></div>launchd 자동 실행 — morning 12:00 · late 14:00 KST</div>
-    <div class="status-item"><div class="dot on"></div>keyword queue 연결 — <code>MAGAZINE_KEYWORD_QUEUE_ENABLED=true</code></div>
-    <div class="status-item"><div class="dot on"></div>이미지 — ChatGPT(웹 자동화) + R2 업로드</div>
-    <div class="status-item"><div class="dot on"></div>AdSense + 쿠팡 배너 — 활성</div>
-    <div class="status-item"><div class="dot wait"></div>운영 첫 실측 — 오늘 12:00/14:00 결과 대기</div>
-    <div class="status-item"><div class="dot warn"></div>main/push 미반영 — 로컬 launchd 기준 동작</div>
+    <div class="sb-title">현재 시스템 상태 (2026-06-23 실측)</div>
+    <div class="status-item"><div class="dot on"></div>launchd 자동 실행 — morning 12:00 · late 14:00 KST (loaded)</div>
+    <div class="status-item"><div class="dot on"></div>keyword queue — <code>MAGAZINE_KEYWORD_QUEUE_ENABLED=true</code></div>
+    <div class="status-item"><div class="dot on"></div>이미지 — ChatGPT(웹 자동화) + 저해상/중복 가드(800px+)</div>
+    <div class="status-item"><div class="dot on"></div>P1 "우나어 더 둘러보기" — production 노출 확인</div>
+    <div class="status-item"><div class="dot wait"></div>editorial v2 — 코드 main 배포 + flag ON, 다음 발행 1건 시범 대기</div>
+    <div class="status-item"><div class="dot warn"></div>main(Vercel 웹) ↔ poc(launchd 발행) 배포 경로 분리 — §10 참고</div>
+    <div class="status-item"><div class="dot warn"></div>on-demand revalidate — secret 미설정, 보류(별도 작업)</div>
   </div>
 
   <!-- TOC -->
   <div class="toc">
     <h2>목차</h2>
     <ol>
-      <li>현재 판정</li>
-      <li>AS-IS와 TO-BE</li>
+      <li>현재 판정 (무엇이 끝났고 무엇이 대기인가)</li>
       <li>전체 파이프라인</li>
       <li>keyword queue 설명</li>
+      <li>이미지 운영 + 품질 가드</li>
+      <li>editorial v2 (flag · 구조 · 시범)</li>
+      <li>P1 락인 동선 (둘러보기)</li>
+      <li>글 / 문구 정책</li>
+      <li>수익화 · 광고/자체 배너 정책</li>
       <li>예외 처리 Q&amp;A</li>
-      <li>글 / SEO 품질</li>
-      <li>이미지 운영</li>
-      <li>수익화 · 봇 정책</li>
-      <li>운영 체크리스트</li>
-      <li>창업자가 알아야 할 것</li>
-      <li>남은 작업 우선순위</li>
+      <li>배포 경로 (main↔poc) · 위험/주의</li>
+      <li>완료된 작업 · 대기 중인 작업</li>
       <li>Claude Code read-only 점검 프롬프트</li>
     </ol>
   </div>
 
   <!-- 1 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">1</div><h2>현재 판정</h2></div>
+    <div class="section-header"><div class="section-num">1</div><h2>현재 판정 — 무엇이 끝났고 무엇이 대기인가</h2></div>
     <div class="alert ok">
-      <strong>구현 완료 ≠ 운영 검증 완료</strong>
-      코드 연결과 설정은 끝났습니다. 하지만 <strong>실제 12:00/14:00 자동 실행으로 한 편이 제대로 발행되는 것은 아직 보지 못했습니다.</strong> "끝났다"가 아니라 "준비 끝, 첫 실측 대기"가 정확한 표현입니다.
+      <strong>keyword queue·이미지 가드·P1 락인은 운영/반영 완료. editorial v2만 시범 대기.</strong>
+      매거진은 keyword queue 기반으로 매일 발행 중이고, 이미지 저해상/중복 결함은 가드로 차단됩니다. 매거진 상세의 사이트 탐색 동선(P1)도 production에 떠 있습니다. 남은 건 editorial v2를 다음 발행 1건으로 실측하는 것입니다.
     </div>
     <div class="table-wrap"><table>
-      <thead><tr><th>항목</th><th>상태</th></tr></thead>
+      <thead><tr><th>항목</th><th>상태</th><th>핵심 커밋</th></tr></thead>
       <tbody>
-        <tr><td>키워드 큐 → generator 연결 구현</td><td><span class="chip green">완료</span> 커밋 <code>6a92d91</code></td></tr>
-        <tr><td>글 품질 프롬프트 보강</td><td><span class="chip green">완료</span> 커밋 <code>7ca9f5e</code></td></tr>
-        <tr><td>env 플래그 ON</td><td><span class="chip green">완료</span> <code>MAGAZINE_KEYWORD_QUEUE_ENABLED=true</code></td></tr>
-        <tr><td>운영 실측(자동 발행 결과)</td><td><span class="chip yellow">대기</span> 오늘 12:00/14:00 이후 확인</td></tr>
-        <tr><td>main 반영 / push</td><td><span class="chip muted">미반영</span> 로컬 launchd로 동작(push 불필요)</td></tr>
+        <tr><td>keyword queue → generator 연결</td><td><span class="chip green">운영 중</span></td><td><code>6a92d91</code> (poc/launchd)</td></tr>
+        <tr><td>글 품질 프롬프트 보강</td><td><span class="chip green">운영 중</span></td><td><code>7ca9f5e</code> (poc/launchd)</td></tr>
+        <tr><td>이미지 저해상/중복 재발 방지</td><td><span class="chip green">운영 중</span></td><td><code>3cf88f0</code> (poc/launchd)</td></tr>
+        <tr><td>P1 "우나어 더 둘러보기" + 문구</td><td><span class="chip green">production 반영</span></td><td><code>a127577</code> · <code>ee4c873</code> (main)</td></tr>
+        <tr><td>editorial v2 템플릿 (flag)</td><td><span class="chip yellow">코드 배포 · 시범 대기</span></td><td><code>2ea8278</code> (main) · <code>6fdac2c</code> (poc)</td></tr>
+        <tr><td>on-demand revalidate</td><td><span class="chip muted">보류</span> secret 미설정</td><td>별도 작업</td></tr>
       </tbody>
     </table></div>
-    <p class="narrative">검색 노출(SEO) 성과는 <strong>이 문서로 판정할 수 없습니다.</strong> 구글이 새 글을 색인하고 순위를 매기는 데 시간이 걸리며, 성과는 추후 Search Console(GSC)로 봐야 합니다. 지금은 "발행 파이프라인이 도는가"까지만 봅니다.</p>
+    <p class="narrative">SEO 검색 성과는 이 문서로 판정하지 않습니다. 색인·순위는 시간이 걸리며 추후 Search Console(GSC)로 봅니다. 여기서는 "파이프라인이 도는가 · 화면 품질이 좋은가"까지만 봅니다.</p>
   </div>
 
   <!-- 2 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">2</div><h2>AS-IS와 TO-BE — 무엇이 바뀌었나</h2></div>
-    <div class="alert info">
-      <strong>핵심: 기존 시스템이 꺼진 게 아니라, "주제 선택"만 바뀌었습니다.</strong>
-      launchd → runner → generator → Claude 글쓰기 → 이미지 → DB 발행 → Slack 보고 흐름은 <strong>그대로</strong>입니다. 그 흐름의 맨 앞 "오늘 무슨 주제로 쓸까"를 정하는 부분이 keyword queue로 교체됐습니다.
+    <div class="section-header"><div class="section-num">2</div><h2>전체 파이프라인</h2></div>
+    <div class="pipeline">
+      <div class="pstep"><div class="pbadge b-auto">launchd 12:00/14:00</div><div class="pcontent"><strong>자동 트리거 (Mac 로컬)</strong>plist가 정해진 시각에 <code>scripts/run-magazine.sh</code> 실행. morning=12:00, late=14:00. plist EnvironmentVariables로 <code>SESSION_TIME</code>(morning/late), <code>IMAGE_GENERATOR=chatgpt</code> 주입.</div></div>
+      <div class="pstep"><div class="pbadge b-auto">runner</div><div class="pcontent"><strong>local-magazine-runner.ts</strong><code>.env.local</code>을 코드에서 직접 로드(launchd는 .env 자동 주입 못 함) → generator 호출 → 결과 Slack 보고.</div></div>
+      <div class="pstep"><div class="pbadge b-data">queue</div><div class="pcontent"><strong>keyword-universe.json → keyword-queue.ts → keyword-queue-state.json</strong>발행 후보 키워드를 우선순위로 골라 generator에 1순위 주제로 넘김. 소비 내역은 state 파일에 기록.</div></div>
+      <div class="pstep"><div class="pbadge b-auto">generator</div><div class="pcontent"><strong>magazine-generator.ts</strong>큐 후보를 받아 중복·정책·이미지·길이 검사 통과분만 발행. 세션당 1편에서 멈춤. <code>MAGAZINE_EDITORIAL_V2_ENABLED=true</code>면 v2 빌더 사용(실패 시 v1 fallback).</div></div>
+      <div class="pstep"><div class="pbadge b-ai">Claude</div><div class="pcontent"><strong>글 작성</strong>평일 Sonnet / 일요일 Opus. 품질 프롬프트(키워드 반영·환각 금지·FAQ 질문형). v2면 직접답변·핵심요약도 함께 요청.</div></div>
+      <div class="pstep"><div class="pbadge b-ai">ChatGPT image</div><div class="pcontent"><strong>이미지 생성 + 가드</strong>ChatGPT 웹 자동화로 히어로/본문 이미지 생성 → R2 업로드. 저해상 미리보기(≈512px) 차단·히어로↔본문 중복 시 재생성/degrade.</div></div>
+      <div class="pstep"><div class="pbadge b-data">DB</div><div class="pcontent"><strong>발행</strong>제목·본문(렌더된 HTML)·이미지·SEO 메타·FAQ를 <code>boardType=MAGAZINE</code> 게시글로 저장, 구글 색인 요청. (발행 시점 외 DB write 없음)</div></div>
+      <div class="pstep"><div class="pbadge b-auto">Slack · /magazine</div><div class="pcontent"><strong>보고 · 노출</strong>Slack #매거진 발행 보고, <code>age-doesnt-matter.com/magazine</code>에 노출. 상세 하단에 P1 "우나어 더 둘러보기" 동선 포함.</div></div>
     </div>
-    <div class="grid-2">
-      <div>
-        <h3>AS-IS (과거)</h3>
-        <ul class="narrative" style="padding-left:18px">
-          <li>주제 선택 = 시리즈 → GEO → 카페 트렌드 → 욕망지도</li>
-          <li>하루 최대 3편(과거 기준)</li>
-          <li>한 세션이 여러 편을 몰아 발행하기도 함</li>
-        </ul>
-      </div>
-      <div>
-        <h3>TO-BE (현재, 큐 모드)</h3>
-        <ul class="narrative" style="padding-left:18px">
-          <li>주제 선택 1순위 = <strong>keyword queue</strong>(검색 수요 기반 키워드)</li>
-          <li>기존 시리즈/GEO/트렌드/욕망지도는 <strong>fallback(보조)</strong>으로 강등 — 삭제 아님</li>
-          <li>하루 최대 <strong>2편</strong> · 세션당 <strong>1편</strong></li>
-        </ul>
-      </div>
-    </div>
-    <p class="narrative">즉 <strong>"하루 3편"은 과거 AS-IS 설명일 뿐</strong>, 현재 큐 모드 기준은 하루 2편입니다. 큐를 끄면(<code>=false</code>) 즉시 기존 AS-IS 방식으로 복귀합니다.</p>
   </div>
 
   <!-- 3 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">3</div><h2>전체 파이프라인</h2></div>
-    <div class="pipeline">
-      <div class="pstep"><div class="pbadge b-auto">launchd 12:00/14:00</div><div class="pcontent"><strong>자동 트리거 (Mac 로컬)</strong>plist가 정해진 시각에 실행. morning=12:00, late=14:00. 환경변수 <code>SESSION_TIME</code>, <code>IMAGE_GENERATOR=chatgpt</code> 주입.</div></div>
-      <div class="pstep"><div class="pbadge b-auto">runner</div><div class="pcontent"><strong>local-magazine-runner.ts</strong><code>.env.local</code>을 코드에서 직접 로드(launchd는 .env를 자동 주입 못 함) → generator 호출 → 결과 Slack 보고.</div></div>
-      <div class="pstep"><div class="pbadge b-data">queue</div><div class="pcontent"><strong>keyword-universe.json → keyword-queue.ts → keyword-queue-state.json</strong>발행 후보 키워드를 우선순위로 골라 generator에 1순위 주제로 넘김. 무엇을 발행했는지는 state 파일에 기록.</div></div>
-      <div class="pstep"><div class="pbadge b-auto">generator</div><div class="pcontent"><strong>magazine-generator.ts</strong>큐 후보를 받아 중복·정책·이미지·길이 검사를 통과한 것만 발행. 세션당 1편에서 멈춤.</div></div>
-      <div class="pstep"><div class="pbadge b-ai">Claude</div><div class="pcontent"><strong>글 작성</strong>평일 Sonnet / 일요일 Opus. 보강된 품질 프롬프트(키워드 반영·환각 금지·FAQ 질문형)로 1,500자 이상 HTML 기사 생성.</div></div>
-      <div class="pstep"><div class="pbadge b-ai">ChatGPT image</div><div class="pcontent"><strong>이미지 생성</strong>ChatGPT 웹 자동화로 히어로/본문 이미지 생성 → Cloudflare R2 업로드.</div></div>
-      <div class="pstep"><div class="pbadge b-data">DB</div><div class="pcontent"><strong>발행</strong>제목·본문·이미지·SEO 메타·FAQ를 <code>boardType=MAGAZINE</code> 게시글로 저장, 구글 색인 요청.</div></div>
-      <div class="pstep"><div class="pbadge b-auto">Slack · /magazine</div><div class="pcontent"><strong>보고 · 노출</strong>Slack #매거진에 발행 보고, <code>age-doesnt-matter.com/magazine</code>에 즉시 노출.</div></div>
-    </div>
-  </div>
-
-  <!-- 4 -->
-  <div class="section">
-    <div class="section-header"><div class="section-num">4</div><h2>keyword queue 설명</h2></div>
+    <div class="section-header"><div class="section-num">3</div><h2>keyword queue 설명</h2></div>
     <div class="narrative">
-      <p><strong>keyword-universe.json</strong> — 구글 자동완성 등으로 모은 약 1,300개 키워드 우주(발행 후보 약 1,188개). 각 키워드에 클러스터·검색의도·민감도·발행정책(publishPolicy)·점수가 붙어 있습니다. <strong>gitignore 대상</strong>이라 커밋엔 안 들어갑니다.</p>
-      <p><strong>selector (keyword-queue.ts)</strong> — 후보를 우선순위 순서로 정렬해 다음에 쓸 키워드를 고릅니다. 정렬 규칙:</p>
+      <p><strong>keyword-universe.json</strong> — 구글 자동완성 등으로 모은 약 1,300개 키워드 우주(발행 후보 약 1,188개). 각 키워드에 클러스터·검색의도·민감도·발행정책(publishPolicy)·점수가 붙어 있습니다. <strong>gitignore 대상</strong>.</p>
+      <p><strong>selector (keyword-queue.ts)</strong> — 후보를 우선순위로 정렬해 다음 키워드를 고릅니다.</p>
     </div>
     <div class="table-wrap"><table>
       <thead><tr><th>규칙</th><th>의미</th></tr></thead>
       <tbody>
         <tr><td>클러스터 라운드로빈</td><td>건강·관계·일자리 등 주제군을 번갈아 → 하루 2편이 서로 다른 주제군</td></tr>
         <tr><td>클러스터 내 점수순</td><td>같은 주제군 안에서는 수요·적합도 높은 것 우선</td></tr>
-        <tr><td>서브토픽 분산</td><td>"국민연금 조기수령 ○○"처럼 같은 세부주제가 7일 안에 반복되지 않게 분산</td></tr>
+        <tr><td>서브토픽 분산</td><td>같은 세부주제가 7일 안에 반복되지 않게 분산</td></tr>
         <tr><td>publishPolicy 필터</td><td><span class="chip green">publish</span> / <span class="chip blue">publish_softened_title</span>만 후보. <span class="chip red">no_publish_*</span>는 절대 제외</td></tr>
       </tbody>
     </table></div>
-    <h3>publishPolicy 이중 가드</h3>
-    <div class="narrative"><p>① <strong>선택 단계</strong>: selector가 publish/softened만 반환. ② <strong>발행 직전</strong>: generator가 다시 한 번 검사해 no_publish면 <code>failed_no_publish_guard</code>로 차단. 민감/부적합 키워드(보관용)는 절대 발행되지 않습니다.</p></div>
-    <h3>state 파일 (소비 추적)</h3>
-    <div class="narrative"><p><code>agents/magazine/data/keyword-queue-state.json</code> — <strong>DB가 아니라 로컬 파일</strong>(gitignore). 무엇을 어디까지 썼는지 기록합니다.</p></div>
+    <h3>이중 가드 · state 소비 추적</h3>
     <ul class="narrative" style="padding-left:18px">
-      <li><strong>consumed(소비, 재사용 안 함)</strong> = <code>published</code> + <code>skipped_duplicate</code>만</li>
-      <li><strong>failed_* (생성·이미지·본문짧음·가드)</strong> = 미소비 → 다음 실행에서 다시 시도</li>
-      <li>최근 이벤트 <strong>500개</strong>만 보관</li>
-      <li>⚠️ state 파일 손상/백업 정책은 <strong>아직 미비</strong> — 후속 과제(§11)</li>
+      <li><strong>publishPolicy 이중 가드</strong>: 선택 단계(publish/softened만) + 발행 직전(no_publish면 <code>failed_no_publish_guard</code> 차단)</li>
+      <li><strong>state</strong> <code>agents/magazine/data/keyword-queue-state.json</code>(DB 아님, gitignore): <code>consumed</code> = published + skipped_duplicate / <code>failed_*</code>(생성·이미지·짧음·가드) = 미소비 → 재시도 / 이벤트 최근 500개</li>
+      <li>⚠️ state 손상/백업 정책은 미비 — 후속 과제(§11)</li>
     </ul>
   </div>
 
-  <!-- 5 -->
+  <!-- 4 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">5</div><h2>예외 처리 Q&amp;A</h2></div>
-    <div class="qa"><div class="q">Q. 주제(키워드)가 다 떨어지면?</div><div class="a">consumed에 없는 키워드를 순서대로 씁니다. 발행 후보가 약 1,188개라 하루 2편 기준 <strong>1.6년치</strong> 분량입니다. 그래도 비면 기존 fallback(시리즈/트렌드/욕망지도)으로 넘어가 빈손으로 끝나지 않습니다.</div></div>
-    <div class="qa"><div class="q">Q. Mac이 꺼져 있으면?</div><div class="a">그 시각엔 발행이 안 됩니다. <strong>중요: 키워드는 소비되지 않고 다음 실행에서 이어 씁니다.</strong> 단, 빠진 분량을 <strong>다음 날 몰아서 보충 발행하지는 않습니다</strong>(여전히 세션당 1편). "다음 날 자동 재시도로 2배 발행" 같은 동작은 없습니다.</div></div>
-    <div class="qa"><div class="q">Q. 이미지가 실패하면?</div><div class="a">인물(PERSON_REAL)은 외국 스톡 방지를 위해 <strong>fallback 없이 발행 보류</strong>(<code>failed_image</code>). 음식·장면·사물(FOOD/SCENE/OBJECT)은 Unsplash로 대체 가능. ChatGPT 세션이 만료되면 이미지가 실패하므로 재로그인이 필요합니다(§7).</div></div>
-    <div class="qa"><div class="q">Q. 글 생성이 실패하면?</div><div class="a"><code>failed_generation</code> 기록 후 다음 후보로 넘어갑니다. 소비되지 않아 다음에 재시도됩니다.</div></div>
-    <div class="qa"><div class="q">Q. 본문이 너무 짧으면?</div><div class="a">1,500자 미만이면 <code>failed_body_short</code>로 건너뜁니다(미소비).</div></div>
-    <div class="qa"><div class="q">Q. 제목이 중복이면?</div><div class="a">최근 7일 유사 제목·전체기간 쌍둥이·seoTitle 중복은 <code>skipped_duplicate</code>로 건너뛰고 <strong>소비 처리</strong>(다시 시도 안 함). 기존 중복가드(isSimilarTitle / isDuplicateAllTime / seoTitle / unique slug)가 그대로 작동합니다.</div></div>
-    <div class="qa"><div class="q">Q. state 파일이 깨지면?</div><div class="a">읽기 실패 시 <strong>빈 state로 시작</strong>해 발행이 멈추지는 않습니다. 다만 그동안의 소비 기록을 잃을 수 있어, 같은 글은 중복가드가 막아주지만 <strong>백업 정책은 미비</strong>(후속 과제).</div></div>
-    <div class="qa"><div class="q">Q. no_publish 키워드가 섞이면?</div><div class="a">선택·발행 직전 <strong>이중 가드</strong>로 차단됩니다. 발행될 수 없습니다.</div></div>
-    <div class="qa"><div class="q">Q. 하루 2편을 초과할 수 있나?</div><div class="a">아니요. 일일 카운트가 2 이상이면 실행 자체가 스킵되고, 세션당 1편에서 멈춥니다.</div></div>
-    <div class="qa"><div class="q">Q. push 안 했는데 실행되나?</div><div class="a">됩니다. 매거진은 <strong>창업자 Mac의 launchd 로컬 실행</strong>이라 GitHub/원격과 무관합니다. main 반영은 별도(cherry-pick) 과제입니다.</div></div>
-    <div class="qa"><div class="q">Q. 큐를 끄려면?</div><div class="a"><code>.env.local</code>의 <code>MAGAZINE_KEYWORD_QUEUE_ENABLED</code>을 <code>=false</code>로 바꾸면 즉시 기존 방식(시리즈/트렌드, 과거 동작)으로 복귀합니다.</div></div>
-  </div>
-
-  <!-- 6 -->
-  <div class="section">
-    <div class="section-header"><div class="section-num">6</div><h2>글 / SEO 품질</h2></div>
-    <h3>이번에 좋아진 것 (prompt.ts 보강)</h3>
-    <ul class="narrative" style="padding-left:18px">
-      <li>핵심 키워드를 <strong>제목·첫 문단·FAQ</strong>에 자연스럽게 반영</li>
-      <li>첫 문단에서 검색 질문에 곧바로 답하기</li>
-      <li>확실하지 않은 통계·수치·출처를 <strong>지어내지 않기</strong>(환각 방지)</li>
-      <li>과장·단정 표현 줄이고 사실 위주</li>
-      <li>FAQ를 실제 검색 질문형으로 작성</li>
-      <li>제품 문구에 쓰지 않기로 한 표현(예: "시니어")은 쓰지 않고 "우리 또래/50·60대"로</li>
-    </ul>
-    <h3>아직 남은 것</h3>
-    <ul class="narrative" style="padding-left:18px">
-      <li>topic hub / 시리즈 페이지 같은 SEO 구조 고도화</li>
-      <li>Article JSON-LD의 <code>inLanguage</code> 등 구조화 데이터 보강</li>
-      <li>실제 글 품질의 사람 검수 루틴</li>
-    </ul>
-    <div class="alert warn"><strong>검색 성과는 오늘 판정 불가</strong>글이 잘 나오는 것과 검색 상위 노출은 다른 문제입니다. 색인·순위는 시간이 걸리며, 성과는 추후 GSC로만 확인합니다.</div>
-  </div>
-
-  <!-- 7 -->
-  <div class="section">
-    <div class="section-header"><div class="section-num">7</div><h2>이미지 운영</h2></div>
-    <div class="narrative"><p>현재 이미지는 <strong>ChatGPT</strong>입니다. launchd morning/late 둘 다 <code>IMAGE_GENERATOR=chatgpt</code>로 실행됩니다. ChatGPT 웹 UI를 자동화해 이미지를 만든 뒤 Cloudflare R2에 업로드합니다.</p></div>
+    <div class="section-header"><div class="section-num">4</div><h2>이미지 운영 + 품질 가드</h2></div>
+    <div class="narrative"><p>이미지는 <strong>ChatGPT</strong>입니다(plist <code>IMAGE_GENERATOR=chatgpt</code>, morning/late 동일). ChatGPT 웹 UI를 자동화해 생성 후 R2 업로드.</p></div>
+    <div class="alert ok">
+      <strong>저해상/중복 재발 방지 (커밋 3cf88f0, launchd 경로 적용)</strong>
+      이전에 본문 이미지가 히어로의 저해상 미리보기(≈512px WebP)로 박히던 결함을 차단했습니다. ① <strong>scraper</strong>가 naturalWidth/Height <strong>800px+ full-res만</strong> 채택(미리보기 무시), ② <strong>generator</strong>가 히어로↔본문 동일·저해상 판정 시 본문 이미지 <strong>1회 재생성 → 그래도 불량이면 본문 이미지 없이 발행(degrade)</strong>. 발행은 롤백하지 않습니다.
+    </div>
     <div class="table-wrap"><table>
       <thead><tr><th>이미지 타입</th><th>처리</th></tr></thead>
       <tbody>
         <tr><td><strong>PERSON_REAL</strong> (인물)</td><td>ChatGPT 전용. 실패 시 <strong>fallback 없이 발행 보류</strong>(외국 스톡 방지)</td></tr>
         <tr><td>FOOD / SCENE / OBJECT</td><td>실패 시 <strong>Unsplash</strong> 대체 가능</td></tr>
         <tr><td>ILLUSTRATION</td><td>현재 비활성(레거시 DALL-E 경로)</td></tr>
+        <tr><td>본문 이미지 장수</td><td>현재 <strong>2장</strong>(히어로 + 본문 1). 3장 확장은 후속(비용·가드 다중적용 필요)</td></tr>
       </tbody>
     </table></div>
-    <div class="alert info"><strong>Gemini는 레거시(과거)</strong>과거에는 Gemini를 썼으나 <strong>현재 값은 ChatGPT</strong>입니다. (참고: morning plist 주석에 옛 <code>gemini</code> 표기가 남아 있으나 실제 환경변수 값은 <code>chatgpt</code>라 동작엔 무관 — <strong>경미한 주석 정리 대상</strong>일 뿐.)</div>
-    <div class="alert warn"><strong>ChatGPT 세션 만료 시</strong>이미지가 실패해 인물 글은 보류되고 Slack 알림이 옵니다. 그때 <code>chatgpt.com</code>에 다시 로그인하면 됩니다(프로필 <code>~/.chrome-chatgpt-profile</code>).</div>
+    <div class="alert warn"><strong>ChatGPT 세션 만료 시</strong>이미지가 실패해 인물 글은 보류되고 Slack 알림이 옵니다. <code>chatgpt.com</code> 재로그인 필요(프로필 <code>~/.chrome-chatgpt-profile</code>).</div>
+    <p class="narrative"><strong>참고(과거):</strong> 과거에는 Gemini로 이미지를 만들었으나 현재 값은 ChatGPT입니다(레거시). morning plist 주석에 옛 <code>gemini</code> 표기가 남아 있을 수 있으나 실제 환경변수 값은 <code>chatgpt</code>라 동작엔 무관합니다.</p>
+  </div>
+
+  <!-- 5 -->
+  <div class="section">
+    <div class="section-header"><div class="section-num">5</div><h2>editorial v2 (flag · 구조 · 시범)</h2></div>
+    <div class="alert info">
+      <strong>editorial v2 = 가독성 개선 템플릿. flag 뒤에 있고 기본 OFF.</strong>
+      코드는 main(<code>2ea8278</code>)·poc(<code>6fdac2c</code>) 양쪽에 배포됐으나, <code>MAGAZINE_EDITORIAL_V2_ENABLED</code>가 꺼져 있으면 기존 v1로 발행됩니다. 발행은 launchd(poc 체크아웃) 경로이므로 <strong>v2 동작은 poc 코드 + flag로 결정</strong>됩니다.
+    </div>
+    <h3>v2가 추가하는 것 (v1 대비)</h3>
+    <ul class="narrative" style="padding-left:18px">
+      <li><strong>직접답변 박스</strong> — 제목의 검색 질문에 첫 화면에서 곧바로 답</li>
+      <li><strong>핵심 요약 3줄</strong> — 글 요점을 스캔 가능하게</li>
+      <li>기존 본문 sections + <strong>FAQ(details/summary)</strong> 유지</li>
+      <li><strong>40대 50대 60대 여성 커뮤니티 연결박스</strong> (외부 검색 유입자용)</li>
+      <li><strong>제외</strong>: <code>&lt;table&gt;</code>(sanitize 미허용) · 이미지 3장 · 본문 중간 광고</li>
+    </ul>
+    <h3>안전장치</h3>
+    <ul class="narrative" style="padding-left:18px">
+      <li>flag OFF면 v1과 <strong>byte-identical</strong>(v1 함수 무변경, 순수 추가)</li>
+      <li>직접답변/요약 파싱 실패 → 해당 박스만 생략(degrade), 발행 계속</li>
+      <li>v2 빌드 throw → <strong>v1 fallback</strong>, 발행 롤백 안 함</li>
+      <li>inline-style만 사용 → <code>sanitizeMagazineHtml</code> 화이트리스트 통과(table/position/list-style 등 미사용)</li>
+    </ul>
+    <div class="alert warn">
+      <strong>시범 상태 (2026-06-23 기준)</strong>
+      <code>.env.local</code>에 <code>MAGAZINE_EDITORIAL_V2_ENABLED=true</code>가 설정됐습니다(로컬 시범, gitignore — Vercel/GHA env 미설정). 다음 launchd 발행 1편이 v2로 생성될 예정이며, <strong>아직 v2 발행글 실측은 안 됨</strong>. QA 후 유지/롤백 판단(§12).
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="section">
+    <div class="section-header"><div class="section-num">6</div><h2>P1 락인 동선 (우나어 더 둘러보기)</h2></div>
+    <div class="alert ok"><strong>production 반영 완료 (커밋 a127577 · ee4c873).</strong>매거진 상세 하단(가입 CTA 다음, 관련글 앞)에 사이트 탐색 동선이 떠 있습니다. production HTML에서 "40대 50대 60대 여성 커뮤니티" 노출 확인됨.</div>
+    <ul class="narrative" style="padding-left:18px">
+      <li><strong>대표 배너</strong>: "40대 50대 60대 여성 커뮤니티 / 건강, 가족, 노후, 일상 고민을 함께 나눠요" + outline CTA "커뮤니티 둘러보기"(<code>/community/stories</code>)</li>
+      <li><strong>보조 링크 4개</strong>: 홈(<code>/</code>) · 커뮤니티(<code>/community/stories</code>) · 인생 2막(<code>/community/life2</code>) · 인기 글(<code>/best</code>)</li>
+      <li>컴포넌트: <code>src/components/features/magazine/MagazineExploreLinks.tsx</code> — 클릭 시 <code>magazine_explore_click</code> 이벤트(trackEvent + GA4), target = community/home/stories/life2/best</li>
+      <li>CTA는 <strong>outline 스타일</strong>(primary fill 아님) → 가입(카카오 노랑)·앱 설치 CTA와 시각 구분, 앱 설치 오인 방지</li>
+    </ul>
+  </div>
+
+  <!-- 7 -->
+  <div class="section">
+    <div class="section-header"><div class="section-num">7</div><h2>글 / 문구 정책</h2></div>
+    <ul class="narrative" style="padding-left:18px">
+      <li><strong>"시니어" 금지</strong> — "50·60대", "40대 50대 60대 여성", "인생 2막"으로 표현</li>
+      <li><strong>외부 검색 유입 노출 영역</strong>(매거진 P1 배너·v2 커뮤니티 박스 등)에서는 <strong>"40대 50대 60대 여성"으로 타겟을 명확히</strong> 표기. 모호한 내부 표현은 지양</li>
+      <li>"우리 또래" 같은 표현은 내부 친화 톤이라 외부 노출 영역에서는 지양(현재 P1/v2 문구는 "40대 50대 60대 여성"으로 통일). 과거 일부 프롬프트/시리즈 문구에 잔존할 수 있으며, 노출 영역 우선으로 점진 정리</li>
+      <li>품질: 핵심 키워드를 제목·첫 문단·FAQ에 자연 반영 / 첫 문단 검색질문 직답 / 통계·출처 환각 금지 / 과장 줄이고 사실 위주 / FAQ는 검색질문형</li>
+    </ul>
   </div>
 
   <!-- 8 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">8</div><h2>수익화 · 봇 정책</h2></div>
-    <h3>수익화 (이번 변경 없음 — 기존 유지)</h3>
+    <div class="section-header"><div class="section-num">8</div><h2>수익화 · 광고/자체 배너 정책</h2></div>
     <div class="table-wrap"><table>
       <thead><tr><th>요소</th><th>상태</th></tr></thead>
       <tbody>
-        <tr><td>Google AdSense (상세 페이지)</td><td><span class="chip green">활성</span></td></tr>
+        <tr><td>Google AdSense (상세 페이지)</td><td><span class="chip green">활성</span> (본문 직후 인아티클 + 하단 띠배너)</td></tr>
         <tr><td>쿠팡 배너</td><td><span class="chip green">활성</span></td></tr>
-        <tr><td>쿠팡 CPS 링크</td><td><span class="chip yellow">화면 비활성</span> 발행 시 DB 저장은 가능하나 프론트 <code>CPS_ENABLED=false</code>로 노출 OFF(상품 준비 후 활성 예정)</td></tr>
-        <tr><td>Coupang API 401</td><td>발행에 무영향(원본 URL 폴백)</td></tr>
+        <tr><td>쿠팡 CPS 링크</td><td><span class="chip yellow">화면 비활성</span> 프론트 <code>CPS_ENABLED=false</code> (상품 준비 후)</td></tr>
+        <tr><td>editorial 본문 중간 Google 광고</td><td><span class="chip muted">미확정</span> mockup 후보로만 검토, 현재 적용 안 함</td></tr>
       </tbody>
     </table></div>
+    <div class="alert info">
+      <strong>광고/배너 정책 (확정 사항)</strong>
+      ① editorial 본문 중간에 Google 광고를 넣는 계획은 <strong>현재 확정 아님</strong>(가독성 우선, mockup 후보 단계). ② 웹에서는 <strong>우나어 자체 프로모션/커뮤니티 유도 배너</strong>(P1 둘러보기 · v2 커뮤니티 박스)를 우선 검토. ③ 앱/Capacitor/PWA/TWA 환경에서는 <strong>앱 설치 CTA 재노출 금지</strong>. ④ <strong>AdMob은 별도 트랙</strong>이며, 이 매거진 문서에서 "구현 완료"로 기술하지 않습니다.
+    </div>
     <h3>봇 정책 (유지)</h3>
-    <div class="alert info"><strong>매거진은 봇 댓글·대댓글·좋아요·wave를 운영하지 않습니다.</strong>매거진은 SEO·정보 제공용 콘텐츠라 <strong>사람 댓글만</strong> 허용합니다. 이 정책은 이번에도 그대로 유지됩니다.</div>
+    <div class="alert info"><strong>매거진은 봇 댓글·대댓글·좋아요·wave를 운영하지 않습니다.</strong>SEO·정보 제공용 콘텐츠라 사람 댓글만 허용합니다.</div>
   </div>
 
   <!-- 9 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">9</div><h2>운영 체크리스트 (첫 실측)</h2></div>
-    <ul class="check">
-      <li><strong>12:05 — morning</strong> <code>logs/magazine-morning.log</code> 시각이 오늘인지 + "키워드 큐 후보 N개 1순위 주입 (session=morning)" 로그</li>
-      <li><strong>발행 수</strong> "발행: …(postId)" <strong>1편</strong> + "완료 — 1편 발행"</li>
-      <li><strong>14:05 — late</strong> 동일하게 late 세션 1편 확인 (하루 합계 2편)</li>
-      <li><strong>state</strong> <code>keyword-queue-state.json</code> 생성 + <code>counts.published</code> 증가</li>
-      <li><strong>가드</strong> <code>failed_no_publish_guard</code> / no_publish 누출 0</li>
-      <li><strong>Slack</strong> #매거진 발행 보고 도착</li>
-      <li><strong>/magazine</strong> 최상단 신규 글 노출</li>
-      <li><strong>품질</strong> 금지 표현 없음 · 키워드 제목/첫문단/FAQ 반영 · 출처 환각 의심 없음</li>
-    </ul>
+    <div class="section-header"><div class="section-num">9</div><h2>예외 처리 Q&amp;A</h2></div>
+    <div class="qa"><div class="q">Q. 주제(키워드)가 다 떨어지면?</div><div class="a">consumed에 없는 키워드를 순서대로 씁니다. 후보 약 1,188개 = 하루 2편 기준 <strong>1.6년치</strong>. 그래도 비면 fallback(시리즈/트렌드/욕망지도)으로 넘어가 빈손으로 끝나지 않습니다.</div></div>
+    <div class="qa"><div class="q">Q. Mac이 꺼져 있으면?</div><div class="a">그 시각엔 발행이 안 됩니다. <strong>키워드는 소비되지 않고 다음 실행에서 이어 씁니다.</strong> 빠진 분량을 다음 날 몰아서 보충 발행하지는 않습니다(세션당 1편 유지).</div></div>
+    <div class="qa"><div class="q">Q. 이미지가 저해상/중복으로 나오면?</div><div class="a">scraper가 800px+ full-res만 채택하고, generator가 히어로↔본문 동일·저해상 판정 시 본문 이미지를 1회 재생성, 그래도 불량이면 본문 이미지 없이 발행(degrade). 인물 이미지 실패는 발행 보류.</div></div>
+    <div class="qa"><div class="q">Q. v2가 켜졌는데 v2 블록이 안 보이면?</div><div class="a">직접답변/요약 파싱 실패 시 해당 박스만 생략됩니다(정상 degrade). v2 빌드 자체가 실패하면 v1으로 fallback해 발행은 계속됩니다.</div></div>
+    <div class="qa"><div class="q">Q. 글 생성/본문 짧음/제목 중복은?</div><div class="a">생성 실패=<code>failed_generation</code>(미소비·재시도) / 1,500자 미만=<code>failed_body_short</code>(미소비) / 제목 중복=<code>skipped_duplicate</code>(소비, 재시도 안 함). 기존 중복가드 유지.</div></div>
+    <div class="qa"><div class="q">Q. no_publish 키워드가 섞이면?</div><div class="a">선택·발행 직전 이중 가드로 차단됩니다. 발행될 수 없습니다.</div></div>
+    <div class="qa"><div class="q">Q. v2/queue를 끄려면?</div><div class="a"><code>.env.local</code>에서 <code>MAGAZINE_EDITORIAL_V2_ENABLED</code> 또는 <code>MAGAZINE_KEYWORD_QUEUE_ENABLED</code>를 <code>=false</code>로 바꾸면 즉시 이전 동작으로 복귀(기존 글 무영향).</div></div>
   </div>
 
   <!-- 10 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">10</div><h2>창업자가 알아야 할 것</h2></div>
-    <div class="grid-2">
-      <div>
-        <h3>지금 직접 할 것</h3>
-        <ul class="narrative" style="padding-left:18px">
-          <li><strong>Mac 켜두기</strong> — 시스템 잠자기만 피하면 됨(화면 꺼짐 무관). 꺼져 있으면 그 시각 발행은 건너뜀</li>
-          <li><strong>Slack #매거진 보기</strong> — 매 실행 결과가 옴. 알림이 없으면 그날 미발행</li>
-          <li>이미지 실패 알림이 오면 <code>chatgpt.com</code> 재로그인</li>
-        </ul>
-      </div>
-      <div>
-        <h3>지금 하지 말 것</h3>
-        <ul class="narrative" style="padding-left:18px">
-          <li>수동 발행/DB 직접 수정 — 자동 실행으로 관찰</li>
-          <li>launchd/plist 임의 변경</li>
-          <li><code>poc/admob-test</code> 전체를 main에 올리기(섞인 커밋 多 — cherry-pick만)</li>
-        </ul>
-      </div>
+    <div class="section-header"><div class="section-num">10</div><h2>배포 경로 (main↔poc) · 위험/주의</h2></div>
+    <div class="alert err">
+      <strong>가장 중요: "발행 동작"과 "웹 화면"은 서로 다른 코드 경로에서 옵니다.</strong>
+      매거진 <strong>발행(에이전트)</strong>은 창업자 Mac의 launchd가 <strong>로컬 체크아웃(<code>poc/admob-test</code>)</strong>을 실행합니다. 매거진 <strong>웹 상세 화면</strong>은 <strong>origin/main → Vercel</strong>이 렌더합니다. 그래서 어떤 변경이 "어디에 있어야 효과가 나는지"가 다릅니다.
     </div>
-    <div class="alert ok"><strong>실패가 떠도 당황하지 마세요</strong>대부분의 실패(이미지·생성·짧음)는 <strong>그 키워드를 소비하지 않고 다음에 다시 시도</strong>합니다. 중복은 의도된 스킵입니다. 끄고 싶으면 env 플래그 <code>=false</code> 한 줄이면 즉시 기존 방식으로 돌아갑니다.</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>변경</th><th>성격</th><th>효과 경로</th><th>현재 위치</th></tr></thead>
+      <tbody>
+        <tr><td>keyword queue (6a92d91)</td><td>발행 에이전트</td><td>launchd(poc)</td><td>poc ✅ / main 미반영</td></tr>
+        <tr><td>글 품질 prompt (7ca9f5e)</td><td>발행 에이전트</td><td>launchd(poc)</td><td>poc ✅ / main 미반영</td></tr>
+        <tr><td>이미지 가드 (3cf88f0)</td><td>발행 에이전트</td><td>launchd(poc)</td><td>poc ✅ / main 미반영</td></tr>
+        <tr><td>editorial v2 (6fdac2c→2ea8278)</td><td>발행 에이전트</td><td>launchd(poc) + flag</td><td>poc ✅ + main ✅(cherry)</td></tr>
+        <tr><td>P1 둘러보기/문구 (f482f15·7a3d9a7→a127577·ee4c873)</td><td>웹 화면</td><td>Vercel(main)</td><td>main ✅(cherry) / production 반영</td></tr>
+      </tbody>
+    </table></div>
+    <ul class="narrative" style="padding-left:18px">
+      <li><strong>poc/admob-test 전체 merge 금지</strong> — 섞인 커밋이 많아 위험. 필요한 커밋만 <strong>origin/main 기준 clean worktree에서 cherry-pick</strong>.</li>
+      <li><strong>DB write / 기존 발행글 수정은 별도 승인</strong>. 발행 시점(launchd) 외 임의 DB write 금지.</li>
+      <li><strong>secret/token/env 값 출력 금지</strong>. flag 존재 여부는 키 이름만 확인.</li>
+      <li>P1 같은 웹 화면 변경은 발행 에이전트와 무관하므로 main(Vercel) 반영이 핵심. 반대로 queue/prompt/이미지/v2는 launchd(poc) 반영이 핵심.</li>
+    </ul>
   </div>
 
   <!-- 11 -->
   <div class="section">
-    <div class="section-header"><div class="section-num">11</div><h2>남은 작업 우선순위</h2></div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>우선</th><th>작업</th></tr></thead>
-      <tbody>
-        <tr><td><span class="chip red">P0</span></td><td>운영 실측 — 12:00/14:00 자동 발행 1편씩 정상 확인</td></tr>
-        <tr><td><span class="chip yellow">P1</span></td><td>문서/주석 정리(plist gemini 주석 등 stale)</td></tr>
-        <tr><td><span class="chip yellow">P1</span></td><td>state 안정화 — 손상/백업 정책, 실패 키워드 반복 방지</td></tr>
-        <tr><td><span class="chip blue">P2</span></td><td>키워드 universe 자동 보충(고갈 대비) · 운영 대시보드</td></tr>
-        <tr><td><span class="chip blue">P2</span></td><td>디자인 고도화(목록/상세 히어로, 고급 매거진 느낌)</td></tr>
-        <tr><td><span class="chip muted">P3</span></td><td>CPS 활성화 · topic hub/시리즈 페이지 SEO · Article JSON-LD inLanguage · GSC 성과 모니터링 자동화</td></tr>
-      </tbody>
-    </table></div>
-    <p class="narrative">이번 변경은 <strong>디자인 변경이 아닙니다.</strong> 현재 디자인은 운영 가능한 수준이며, 목록/상세 고급화는 후속 개선 과제입니다. AdSense/CPS/댓글/CTA 구조도 기존 그대로입니다.</p>
+    <div class="section-header"><div class="section-num">11</div><h2>완료된 작업 · 대기 중인 작업</h2></div>
+    <div class="grid-2">
+      <div>
+        <h3>완료</h3>
+        <ul class="narrative" style="padding-left:18px">
+          <li>keyword queue 연결 (6a92d91)</li>
+          <li>글 품질 prompt 보강 (7ca9f5e)</li>
+          <li>이미지 저해상/중복 재발 방지 (3cf88f0)</li>
+          <li>P1 "우나어 더 둘러보기" + 문구 개선 — production 반영 (a127577·ee4c873)</li>
+          <li>editorial v2 템플릿 behind flag — main 배포 (2ea8278)</li>
+        </ul>
+      </div>
+      <div>
+        <h3>대기 / 후속</h3>
+        <ul class="narrative" style="padding-left:18px">
+          <li><span class="chip red">P0</span> 다음 launchd 발행 1건 <strong>editorial v2 QA</strong> (PASS면 유지 / FAIL이면 flag <code>=false</code> 롤백)</li>
+          <li><span class="chip yellow">P1</span> 기존 저해상 이미지 글 정리(별도 승인 — DB write)</li>
+          <li><span class="chip yellow">P1</span> state 손상/백업 정책</li>
+          <li><span class="chip blue">P2</span> on-demand revalidate 재검토(secret 미설정, 보류)</li>
+          <li><span class="chip blue">P2</span> 매거진↔커뮤니티 cross-link 추천 (cross-link)</li>
+          <li><span class="chip muted">P3</span> 키워드 클러스터 hub 페이지 SEO · 키워드 universe 자동 보충</li>
+        </ul>
+      </div>
+    </div>
+    <h3>editorial v2 PASS/FAIL 기준 · 롤백</h3>
+    <ul class="narrative" style="padding-left:18px">
+      <li><strong>PASS 조건</strong>: 직접답변·요약·FAQ·커뮤니티 박스 정상 렌더 + <code>&lt;table&gt;</code> 0 + 이미지 2장 800px+ + 모바일/데스크탑 가독성 양호 + v1 대비 읽기 편함</li>
+      <li><strong>롤백</strong>: FAIL이면 <code>.env.local</code>의 <code>MAGAZINE_EDITORIAL_V2_ENABLED</code>를 <code>=false</code> 또는 제거 → 다음 발행부터 v1. <strong>기존 글은 수정하지 않음</strong>.</li>
+    </ul>
   </div>
 
   <!-- 12 -->
   <div class="section">
     <div class="section-header"><div class="section-num">12</div><h2>Claude Code read-only 점검 프롬프트</h2></div>
-    <h3>12:00 morning 결과 점검</h3>
-    <pre>read-only로 12:00 매거진 morning 실행 결과를 점검해줘.
-금지: 코드 수정·커밋·수동 발행·DB write.
-확인:
-1. logs/magazine-morning.log 시각이 오늘 12:0x인지 + "키워드 큐 후보 … 1순위 주입 (session=morning)"
-2. 발행 0/1편, 발행 시 제목·category·postId
-3. agents/magazine/data/keyword-queue-state.json 생성 + counts.published
-4. no_publish 누출 / failed_no_publish_guard 0
-5. /magazine 최신 글 노출 + 품질(금지표현·키워드 반영·출처 환각)
-결과만 보고.</pre>
-    <h3>14:00 late 결과 점검</h3>
-    <pre>read-only로 14:00 매거진 late 실행 결과를 점검해줘.
-확인: logs/magazine-late.log 오늘 시각 + late 세션 1편 + 하루 합계 2편 + state counts 증가 + Slack 보고.
-결과만 보고.</pre>
-    <h3>실패 시 점검</h3>
-    <pre>read-only로 매거진 실패 원인을 점검해줘.
-확인: keyword-queue-state.json events의 failed_* 종류,
-이미지 실패면 ChatGPT 세션, 생성 실패면 모델/프롬프트, 본문짧음/중복 여부.
-키워드 소비 여부(failed는 미소비)도 확인. 결과만 보고.</pre>
+    <h3>editorial v2 발행글 QA (2026-06-24 12:10 KST 이후)</h3>
+    <pre>매거진 editorial v2 시범 발행 QA 해줘. read-only, 수정/커밋/push/DB write 금지.
+대상: 2026-06-24 12:00 KST 이후 새 발행글 1건.
+확인: 제목/slug/postId/발행시각 · 직접답변 박스 · 핵심요약 3줄 · FAQ details/summary ·
+40대 50대 60대 여성 커뮤니티 박스 · &lt;table&gt; 0건 · 이미지 2장(URL/포맷/해상도/크기) ·
+모바일 390 / 데스크탑 720 화면 · v1 대비 가독성 PASS/PARTIAL/FAIL · 롤백 필요 여부.</pre>
+    <h3>이미지 품질 QA</h3>
+    <pre>read-only로 최신 매거진 발행글 이미지 품질을 점검해줘.
+확인: 히어로/본문 2장의 포맷·해상도(800px+)·바이트·md5 · 히어로↔본문 중복(URL/바이트/시각) ·
+로그의 '새 full-res 이미지 감지' / '본문 이미지 재생성' / '본문 이미지 없이 발행' 흔적. 결과만 보고.</pre>
+    <h3>P1 링크 / 이벤트 QA</h3>
+    <pre>read-only로 매거진 상세 P1 '우나어 더 둘러보기'를 점검해줘.
+확인: 대표 배너 문구('40대 50대 60대 여성') · 보조 4링크(/, /community/stories, /community/life2, /best) ·
+outline CTA(앱 설치 CTA와 구분) · magazine_explore_click 이벤트 정상 · 모바일/데스크탑. 결과만 보고.</pre>
+    <h3>failure / rollback 점검</h3>
+    <pre>read-only로 매거진 실패·롤백 상태를 점검해줘.
+확인: keyword-queue-state.json events의 failed_* · v2 fallback 발생 여부 · 이미지 보류 ·
+flag(.env.local 키 존재 여부만, 값 출력 금지). FAIL 시 권장 롤백(flag=false) 안내. 결과만 보고.</pre>
   </div>
 
   <!-- FOOTER -->
   <div class="footer">
-    우나어(우리 나이가 어때서) — 매거진 운영 딥다이브 V2<br>
-    기준일: 2026-06-23 · HEAD <code>7ca9f5e</code> (keyword queue 연결 완료, 운영 첫 실측 대기) · 작성: Claude Opus 4.8 (코드·커밋 실측 기준)<br>
+    우나어(우리 나이가 어때서) — 매거진 운영 딥다이브 V3<br>
+    기준일: 2026-06-23 · keyword queue 운영 중 · 이미지 품질 1차 안정화 · P1 락인 production 반영 · editorial v2 코드 배포(flag 시범 대기) · 작성: Claude Opus 4.8 (코드·커밋·flag·launchd 실측 기준)<br>
     <span style="color:var(--blue)">age-doesnt-matter.com/magazine</span>
   </div>
 
