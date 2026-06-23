@@ -255,7 +255,7 @@ async function _getRelatedCommunityPosts(
   boardType: BoardType,
   category: string | null,
   excludeId: string,
-  limit = 15,
+  limit = 24, // v2 추천: 후보 pool 확대(클라에서 본 글 제외 + 점수화 여유). 기존 인덱스·2단 구조 그대로.
 ): Promise<PostSummary[]> {
   // 1순위: 같은 게시판 + 같은 category
   const matched = category

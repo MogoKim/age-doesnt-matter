@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
   // (identity_banner_view·related_post_click: 락인 효과 측정용, 비회원 글뷰마다 발생 → 면제 필요)
   // (exp1_exposure: A/B 실험 노출=분모. 글뷰마다 발생, 429 유실 시 3화면/D1 비율 왜곡 → 면제 필수)
   // (signup_banner_*: 가입 배너 퍼널. 세션당 소수 발생이나 page_view와 버킷 공유 시 429 유실 → EventLog 단독 퍼널 보존 위해 면제)
-  const CONVERSION_EVENTS = ['post_cta_clicked', 'sign_up', 'signup_step', 'identity_banner_view', 'related_post_click', 'exp1_exposure', 'signup_banner_eligible', 'signup_banner_shown', 'signup_banner_clicked', 'signup_banner_dismissed']
+  // (related_recommend_view: 추천 v2 노출=분모. 글뷰마다 발생, 유실 시 추천 효과 측정 왜곡 → 면제 필수)
+  const CONVERSION_EVENTS = ['post_cta_clicked', 'sign_up', 'signup_step', 'identity_banner_view', 'related_post_click', 'exp1_exposure', 'signup_banner_eligible', 'signup_banner_shown', 'signup_banner_clicked', 'signup_banner_dismissed', 'related_recommend_view']
   if (!CONVERSION_EVENTS.includes(body.eventName)) {
     const rl = await checkApiRateLimit(request, 'event', { max: 30 })
     if (rl) return rl
