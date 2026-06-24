@@ -63,6 +63,55 @@ type PublishResult =
 const CANDIDATE_POOL_SIZE = 15
 const LIFE2_SOURCE_DESIRES = new Set(['MONEY', 'RETIRE', 'HOUSING'])
 
+function getDominantSkipReason(results: TopicResult[]): SkipReason | null {
+  const skipped = results.filter((r): r is TopicResult & { skipReason: SkipReason } => r.skipReason !== null)
+  if (skipped.length === 0 || skipped.length !== results.length) return null
+
+  const counts = new Map<SkipReason, number>()
+  for (const result of skipped) {
+    counts.set(result.skipReason, (counts.get(result.skipReason) ?? 0) + 1)
+  }
+
+  let dominant: { reason: SkipReason; count: number } | null = null
+  for (const [reason, count] of counts.entries()) {
+    if (!dominant || count > dominant.count) dominant = { reason, count }
+  }
+
+  return dominant?.count === results.length ? dominant.reason : null
+}
+
+function parseTopicResults(details: string | null): TopicResult[] {
+  if (!details) return []
+  try {
+    const parsed = JSON.parse(details) as { topicResults?: unknown }
+    return Array.isArray(parsed.topicResults) ? parsed.topicResults as TopicResult[] : []
+  } catch {
+    return []
+  }
+}
+
+async function getRepeatedZeroPublishAlert(currentResults: TopicResult[]): Promise<{ count: number; reason: SkipReason } | null> {
+  const reason = getDominantSkipReason(currentResults)
+  if (!reason) return null
+
+  const recentLogs = await prisma.botLog.findMany({
+    where: { botType: 'CAFE_CRAWLER', action: 'CONTENT_CURATE' },
+    orderBy: { createdAt: 'desc' },
+    take: 2,
+    select: { status: true, itemCount: true, details: true },
+  })
+
+  let count = 1
+  for (const log of recentLogs) {
+    if (log.status !== 'FAILED' || log.itemCount !== 0) break
+    const previousReason = getDominantSkipReason(parseTopicResults(log.details))
+    if (previousReason !== reason) break
+    count++
+  }
+
+  return count >= 3 ? { count, reason } : null
+}
+
 
 /** 참고용 원본 글 가져오기 — 3단계 fallback (B19+B24)
  * 1단계: 48h + 키워드 / 2단계: 7일 + 키워드 / 3단계: 7일 + desireCategory만
@@ -634,13 +683,17 @@ export async function main() {
   }
 
   const durationMs = Date.now() - startTime
+  const status = publishedCount >= maxPosts ? 'SUCCESS' : publishedCount > 0 ? 'PARTIAL' : 'FAILED'
+  const repeatedZeroPublishAlert = status === 'FAILED' && publishedCount === 0
+    ? await getRepeatedZeroPublishAlert(topicResults)
+    : null
 
   // BotLog — topicsUsed: 실제 시도한 topic만 (candidatePool 전체 아님)
   await prisma.botLog.create({
     data: {
       botType: 'CAFE_CRAWLER',
       action: 'CONTENT_CURATE',
-      status: publishedCount >= maxPosts ? 'SUCCESS' : publishedCount > 0 ? 'PARTIAL' : 'FAILED',
+      status,
       details: JSON.stringify({
         topicsUsed: topicResults.map(r => r.topic),
         candidatePoolSize: candidatePool.length,
@@ -653,10 +706,15 @@ export async function main() {
   })
 
   await notifySlack({
-    level: 'info',
+    level: repeatedZeroPublishAlert ? 'important' : 'info',
     agent: 'CONTENT_CURATOR',
     title: '트렌드 기반 콘텐츠 게시',
-    body: `핫토픽 ${hotTopics.length}개 중 ${publishedCount}개 글 게시`,
+    body: [
+      `핫토픽 ${hotTopics.length}개 중 ${publishedCount}개 글 게시`,
+      repeatedZeroPublishAlert
+        ? `⚠️ 같은 사유(${repeatedZeroPublishAlert.reason})로 CONTENT_CURATE 0개 발행이 ${repeatedZeroPublishAlert.count}회 연속 발생했습니다. 즉시 원인 확인이 필요합니다.`
+        : null,
+    ].filter(Boolean).join('\n\n'),
   })
 
   console.log(`[ContentCurator] 완료 — ${publishedCount}개 게시, ${Math.round(durationMs / 1000)}초`)
