@@ -67,6 +67,9 @@ const BACKUP_DIR = resolve(__dirname, 'session-backups')
 export const SESSION_HALTED_FLAG = resolve(__dirname, '.session-halted')
 const SESSION_HALTED_ALERT_FLAG = resolve(__dirname, '.session-halted-alerted')
 const HALTED_ALERT_COOLDOWN_MS = 30 * 60 * 1000  // 30분
+// NID_AUT 만료 경보 throttle — 크롤러 실행마다 반복 발송 방지(하루 1회). SESSION_HALTED 알림과 무관.
+const NID_AUT_ALERT_FLAG = resolve(__dirname, '.nid-aut-alerted')
+const NID_AUT_ALERT_COOLDOWN_MS = 24 * 60 * 60 * 1000  // 24시간
 
 // ── 임계값 상수 ──
 const NID_SES_REFRESH_THRESHOLD_DAYS = 5  // NID_SES 이 일수 이하면 갱신
@@ -366,6 +369,18 @@ async function notifyAlreadyHalted(): Promise<void> {
 }
 
 async function notifyAutWarning(autDays: number): Promise<void> {
+  // 하루 1회 throttle — ensureSession()이 크롤러 실행마다 호출돼 같은 NID_AUT 경보가 반복 발송되는 것 방지.
+  // mtime 기반(파일 내용 깨짐 방어). 24h 이내 이미 보냈으면 Slack 생략하고 console log만.
+  if (existsSync(NID_AUT_ALERT_FLAG)) {
+    try {
+      const { mtimeMs } = statSync(NID_AUT_ALERT_FLAG)
+      if (Date.now() - mtimeMs < NID_AUT_ALERT_COOLDOWN_MS) {
+        console.log(`[SessionManager] NID_AUT 경보 throttle — 24h 이내 이미 발송 (${Math.ceil(autDays)}일 남음)`)
+        return
+      }
+    } catch { /* statSync 실패 시 보수적으로 발송 허용 */ }
+  }
+
   const isCritical = autDays <= NID_AUT_CRITICAL_DAYS
   const expiryDate = new Date(Date.now() + autDays * 86_400_000)
     .toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })
@@ -396,6 +411,9 @@ async function notifyAutWarning(autDays: number): Promise<void> {
     await sendSlackMessage('SYSTEM', msg)
       .catch(e => console.error('[SessionManager] NID_AUT 경보 오류:', e))
   }
+
+  // 발송 완료 → throttle 플래그 mtime 갱신(다음 24h 동안 재발송 방지)
+  try { writeFileSync(NID_AUT_ALERT_FLAG, '') } catch { /* 플래그 기록 실패는 비크리티컬 */ }
 }
 
 async function notifyRefreshSuccess(sesDays: number, autDays: number): Promise<void> {
