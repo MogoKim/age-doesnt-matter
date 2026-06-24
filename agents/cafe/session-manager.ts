@@ -1,6 +1,6 @@
 // LOCAL ONLY — 네이버 카페 세션 자동 갱신 (launchd 매일 02:00 KST)
 /**
- * 세션 매니저 — NID_AUT(~1년)로 NID_SES(~30일) 자동 갱신
+ * 세션 매니저 — NID_AUT(계정별 상이, 메인 카페 계정은 약 30일 실측)로 NID_SES(~30일) 자동 갱신
  *
  * 실행 모드:
  *   1. launchd 독립 실행 (매일 02:00 KST) — main() 진입
@@ -73,8 +73,10 @@ const NID_AUT_ALERT_COOLDOWN_MS = 24 * 60 * 60 * 1000  // 24시간
 
 // ── 임계값 상수 ──
 const NID_SES_REFRESH_THRESHOLD_DAYS = 5  // NID_SES 이 일수 이하면 갱신
-const NID_AUT_WARNING_DAYS = 60           // NID_AUT 60일 이하: #시스템 경보
-const NID_AUT_CRITICAL_DAYS = 30          // NID_AUT 30일 이하: 매일 #대시보드+#시스템
+// 메인 카페 계정은 "로그인 상태 유지"를 켜도 NID_AUT가 ~30일까지만 발급됨(1년 불가, 3회 실측).
+// → 월간 수동 갱신(export-cookies.ts로 NID_AUT/NID_SES 함께 재추출) 운영. 30일 쿠키 기준으로 경고 임계값 재설계.
+const NID_AUT_WARNING_DAYS = 14           // NID_AUT 14일 이하: #시스템 준비 경보
+const NID_AUT_CRITICAL_DAYS = 7           // NID_AUT 7일 이하: 매일 #대시보드+#시스템 중요 경보
 const MAX_REFRESH_RETRIES = 3
 const RETRY_DELAY_MS = 30_000
 
@@ -183,7 +185,7 @@ async function refreshNidSes(): Promise<boolean> {
 
   const nidAutCookie = state.cookies.find(c => c.name === 'NID_AUT')
   if (!nidAutCookie) {
-    console.error('[SessionManager] NID_AUT 쿠키 없음 — 연간 수동 갱신 필요')
+    console.error('[SessionManager] NID_AUT 쿠키 없음 — 월간 쿠키 재추출 필요(export-cookies.ts)')
     writeFileSync(SESSION_HALTED_FLAG, kstNow())
     return false
   }
@@ -386,18 +388,20 @@ async function notifyAutWarning(autDays: number): Promise<void> {
     .toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })
 
   const msg = [
-    `${isCritical ? '🚨' : '⚠️'} *NID_AUT 만료 ${Math.ceil(autDays)}일 전 — 연간 수동 갱신 필요*`,
+    `${isCritical ? '🚨' : '⚠️'} *NID_AUT 만료 ${Math.ceil(autDays)}일 전 — 월간 쿠키 재추출 필요*`,
     '',
     `만료일: ${expiryDate}`,
+    '※ 메인 카페 계정은 NID_AUT가 ~30일 단위라 export-cookies.ts로 NID_AUT/NID_SES를 함께 월간 재추출합니다.',
     '',
     '📋 *조치 방법*:',
-    '1. Chrome 완전 종료 (Cmd+Q)',
-    '2. `npx tsx agents/cafe/export-cookies.ts` 실행 (약 5분)',
-    '3. NID_AUT ✅ NID_SES ✅ 확인',
+    '1. Chrome에서 네이버 로그인 상태 확인 (풀렸으면 재로그인)',
+    '2. Chrome 완전 종료 (Cmd+Q)',
+    '3. `npx tsx agents/cafe/export-cookies.ts` 실행',
+    '4. NID_AUT ✅ NID_SES ✅ 둘 다 확인',
     '',
     isCritical
-      ? `⚠️ 미조치 시 약 ${Math.ceil(autDays)}일 후 크롤링 영구 중단`
-      : `→ 30일 이내가 되면 매일 #대시보드 알림 발송 예정`,
+      ? `⚠️ 미조치 시 약 ${Math.ceil(autDays)}일 후 크롤링 중단`
+      : `→ ${NID_AUT_CRITICAL_DAYS}일 이내가 되면 매일 #대시보드 알림 발송 예정`,
   ].join('\n')
 
   if (isCritical) {
