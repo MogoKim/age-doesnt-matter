@@ -14,8 +14,8 @@
  * 리스크 헷징:
  *   - NID_SES ≤5일: 자동 갱신
  *   - 갱신 3회 실패: SESSION_HALTED + #대시보드/#시스템/#qa 동시 알림
- *   - NID_AUT ≤30일: 매일 2채널 경보
- *   - NID_AUT ≤60일: SYSTEM 경보
+ *   - NID_AUT ≤7일: 매일 #대시보드+#시스템 중요 경보
+ *   - NID_AUT ≤14일: #시스템 준비 경보
  *   - 크롤러 재실행 시 차단 중: 매번 2채널 재알림
  */
 import {
@@ -405,13 +405,13 @@ async function notifyAutWarning(autDays: number): Promise<void> {
   ].join('\n')
 
   if (isCritical) {
-    // 30일 이내: 매일 2채널 경보
+    // 7일 이내: 매일 2채널 중요 경보
     await Promise.all([
       sendSlackMessage('DASHBOARD', msg),
       sendSlackMessage('SYSTEM', msg),
     ]).catch(e => console.error('[SessionManager] NID_AUT 위험 경보 오류:', e))
   } else {
-    // 60일 이내: SYSTEM만
+    // 14일 이내: SYSTEM만
     await sendSlackMessage('SYSTEM', msg)
       .catch(e => console.error('[SessionManager] NID_AUT 경보 오류:', e))
   }
