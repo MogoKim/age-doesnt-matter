@@ -598,13 +598,15 @@ async function processWaveV2(
       actualCount++
     }
 
-    // bot_cap/global_cap으로 50% 미만 생성 시 Slack warning
+    // bot daily cap 부족으로 50% 미만 생성 시에만 Slack warning.
+    // global_cap은 "글당 댓글 상한 도달"(정상 동작)이라 장애가 아니므로 QA 경고에서 제외.
+    // bot_cap은 페르소나 일일 댓글 한도 부족일 수 있어 경고 유지.
     if (
       actualCount < waveTargetCount / 2 &&
-      skips.some(s => s === 'bot_cap' || s === 'global_cap')
+      skips.includes('bot_cap')
     ) {
       await sendSlackMessage('QA',
-        `[WaveProcessor v2] wave${waveNum} cap 부족 — postId=${queue.postId}, tier=${tier}, target=${waveTargetCount}, actual=${actualCount}`
+        `[WaveProcessor v2] wave${waveNum} bot daily cap 부족 — postId=${queue.postId}, tier=${tier}, target=${waveTargetCount}, actual=${actualCount}`
       )
     }
 
