@@ -96,6 +96,13 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   ] as const
   const filterBlocked = <T extends { title: string; content: string }>(posts: T[]): T[] =>
     posts.filter(p => {
+      // 계절 불일치 reference 선제 제외 — poison reference(예: 6월에 '크리스마스' 본문)가
+      // 생성 본문을 오염시켜 publishCuratedContent의 SEASON_MISMATCH로 반복 차단되는 것 방지.
+      // refs 후보에서 빠지므로 usedAt 미마킹으로 인한 sticky poison(같은 글이 반복 첫 후보)도 해소.
+      if (isSeasonMismatch(p.title, p.content)) {
+        console.log(`[ContentCurator] 계절 불일치 reference 제외: "${p.title.slice(0, 20)}"`)
+        return false
+      }
       const flat = p.content.replace(/\n/g, ' ') // R1: 본문 줄바꿈 보존 후에도 시그널 매칭 유지
       const blocked = ACCESS_BLOCKED_SIGNALS_CC.some(s => flat.includes(s))
       if (blocked) { console.log(`[ContentCurator] 접근 차단 안내문 2차 필터 skip: "${p.title.slice(0, 30)}"`)
@@ -226,7 +233,7 @@ async function generateCuratedPost(
 
 const SEASONAL_KEYWORDS: Record<string, number[]> = {
   '벚꽃': [3, 4], '꽃구경': [3, 4, 5], '벚꽃놀이': [3, 4],
-  '장마': [6, 7], '여름휴가': [7, 8], '피서': [7, 8], '물놀이': [7, 8],
+  '장마': [6, 7], '여름휴가': [6, 7, 8], '피서': [7, 8], '물놀이': [7, 8],
   '단풍': [10, 11], '단풍놀이': [10, 11],
   '크리스마스': [12], '눈썰매': [12, 1, 2], '설날': [1, 2],
 }
