@@ -214,13 +214,9 @@ export function buildMagazineHtmlV2(
       </div>
     </div>`
 
-  // 커뮤니티 연결박스 (외부 검색 유입자용 — v1 ctaBlock 대체). min-height 대신 padding으로 터치 영역 확보
-  const communityBox = `
-    <div style="margin-top:28px;padding:20px;background:linear-gradient(135deg,#FFF5F4 0%,#FFF0EF 100%);border-radius:18px;border:1px solid #FFD9D4;">
-      <p style="margin:0;font-size:18px;font-weight:700;color:#333;">40대 50대 60대 여성 커뮤니티</p>
-      <p style="margin:4px 0 16px;font-size:15px;color:#666;line-height:1.45;">건강, 가족, 노후, 일상 고민을 함께 나눠요</p>
-      <a href="/community/stories" style="display:inline-flex;align-items:center;padding:15px 24px;background:#fff;border:2px solid #FF6F61;border-radius:26px;font-size:16px;font-weight:700;color:#E85D50;text-decoration:none;">커뮤니티 둘러보기 →</a>
-    </div>`
+  // 커뮤니티 연결박스는 v2 저장 HTML에서 제거.
+  // 사유: 페이지 레벨 P1 MagazineExploreLinks가 동일한 "40대 50대 60대 여성 커뮤니티 / 커뮤니티 둘러보기"
+  //       유입 동선을 이미 담당 → 본문 끝 박스와 중복. 커뮤니티 유입은 P1에 위임한다.
 
   return `
     <article style="max-width:680px;margin:0 auto;padding:24px;font-family:'Pretendard Variable',sans-serif;">
@@ -230,7 +226,6 @@ export function buildMagazineHtmlV2(
       ${summaryBox}
       ${titleBlock}
       ${sectionsHtml}
-      ${communityBox}
       ${authorCard}
     </article>`
 }
