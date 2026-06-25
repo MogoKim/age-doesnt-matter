@@ -16,6 +16,15 @@ import { QUALITY_THRESHOLDS } from './config.js'
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
 
+// KST 자정 instant (머신 타임존 무관) — CafeTrend date 키를 로컬(launchd)·GHA 일관되게 (P0-B)
+// setHours(0,0,0,0)는 실행 머신 타임존에 의존 → 로컬(KST) 저장 ↔ GHA(UTC) 조회 9h 불일치 유발
+function startOfKstDay(): Date {
+  const KST_OFFSET = 9 * 60 * 60 * 1000
+  const nowKst = new Date(Date.now() + KST_OFFSET)
+  nowKst.setUTCHours(0, 0, 0, 0)
+  return new Date(nowKst.getTime() - KST_OFFSET)
+}
+
 /** 네이버 카페 텍스트의 lone surrogate 문자 제거 (Anthropic API JSON 직렬화 오류 방지)
  *
  * 정규식 lookbehind 방식은 surrogate pair 경계에서 오작동 가능 →
@@ -46,8 +55,7 @@ function sanitizeForApi(text: string): string {
 
 /** 오늘 크롤링된 글 가져오기 */
 async function getTodayPosts() {
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
+  const todayStart = startOfKstDay()
 
   return prisma.cafePost.findMany({
     where: {
@@ -468,8 +476,7 @@ async function saveTrend(
   psychData: ReturnType<typeof aggregatePsychData>,
   speechTone: ReturnType<typeof aggregateSpeechTone>,
 ) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = startOfKstDay()
 
   // Fix 13-B: controversy 집계 (saveTrend 내부 호출 필수 — 단독 정의만으로는 저장 안 됨)
   const controversyTopics = await aggregateControversyTopics()
