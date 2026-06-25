@@ -94,8 +94,19 @@ function deterministicTargetCount(cafePostId: string, min: number, max: number):
 }
 
 
-// bot당 일일 최대 댓글 수 (legacy/v2 공통) — bot_cap 문제 완화를 위해 3→8로 상향 (2026-05-30)
-const BOT_DAILY_COMMENT_CAP = 8
+// bot당 일일 최대 댓글 수 (legacy/v2 공통) — 신규 글 댓글 0개 방치(bot_cap) 방지 위해 8→20 상향 (2026-06-25)
+const BOT_DAILY_COMMENT_CAP = 20
+
+// bot_cap으로 wave target 미달 시 재시도 간격 — Done 마킹 대신 waveAt을 미뤄 transient retry (15~30분 범위)
+const WAVE_BOT_CAP_RETRY_MS = 20 * 60 * 1000  // 20분
+
+// KST 자정 기준 — daily cap 집계가 로컬/UTC가 아닌 KST 하루 경계를 쓰도록 (seed/scheduler.ts와 동일 패턴)
+function startOfKstDay(): Date {
+  const KST_OFFSET = 9 * 60 * 60 * 1000
+  const nowKst = new Date(Date.now() + KST_OFFSET)
+  nowKst.setUTCHours(0, 0, 0, 0)
+  return new Date(nowKst.getTime() - KST_OFFSET)
+}
 
 function getGlobalCap(tier: Tier): number {
   if (tier === 'KILLER') return 20
@@ -180,8 +191,7 @@ async function processWaveLegacy(
   queue: { id: string; postId: string; cafePostId: string; authorPersonaId: string },
   waveNum: WaveNum,
 ) {
-  const todayCommentStart = new Date()
-  todayCommentStart.setHours(0, 0, 0, 0)
+  const todayCommentStart = startOfKstDay()
 
   const [legacyTier, legacyPost] = await Promise.all([
     getQueueTier(queue.postId, queue.cafePostId),
@@ -451,6 +461,7 @@ async function processWaveV2(
   let actualCount = 0
   let normalExit = false
   const doneField = `wave${waveNum}Done` as WaveDoneKey
+  const atField = `wave${waveNum}At` as WaveAtKey
   const waveTargetCount = getWaveTargetCount(tier, waveNum, queue.cafePostId)
   const globalCap = getGlobalCap(tier)
 
@@ -517,9 +528,8 @@ async function processWaveV2(
       return
     }
 
-    // bot daily cap 집계
-    const todayCommentStart = new Date()
-    todayCommentStart.setHours(0, 0, 0, 0)
+    // bot daily cap 집계 (KST 하루 경계)
+    const todayCommentStart = startOfKstDay()
     const botUsers = await prisma.user.findMany({
       where: { email: { endsWith: '@unao.bot' } },
       select: { id: true },
@@ -598,50 +608,83 @@ async function processWaveV2(
       actualCount++
     }
 
-    // bot daily cap 부족으로 50% 미만 생성 시에만 Slack warning.
-    // global_cap은 "글당 댓글 상한 도달"(정상 동작)이라 장애가 아니므로 QA 경고에서 제외.
-    // bot_cap은 페르소나 일일 댓글 한도 부족일 수 있어 경고 유지.
-    if (
-      actualCount < waveTargetCount / 2 &&
-      skips.includes('bot_cap')
-    ) {
-      await sendSlackMessage('QA',
-        `[WaveProcessor v2] wave${waveNum} bot daily cap 부족 — postId=${queue.postId}, tier=${tier}, target=${waveTargetCount}, actual=${actualCount}`
-      )
-    }
-
     normalExit = true
 
   } finally {
-    // normalExit=true인 경우만 waveXDone 마킹 (exception 시 false → 재시도 허용)
+    // normalExit=true인 경우만 마킹 (exception 시 false → 재시도 허용)
     if (normalExit) {
-      await prisma.commentWaveQueue.update({
+      // ── bot_cap = transient(나중에 다시 시도해야 하는 상태) ──
+      // bot_cap으로 target 미달이면 Done 마킹하지 않고 waveAt을 미뤄 재예약한다.
+      // source_not_found/source_not_enough/dup_content/global_cap 등은 terminal → 정상 Done.
+      // global_cap("글당 댓글 상한 도달")은 정상 동작이라 retry/경고 대상 아님.
+      const hasBotCap = skips.includes('bot_cap')
+      const shortfall = actualCount < waveTargetCount
+      const retryAt = new Date(Date.now() + WAVE_BOT_CAP_RETRY_MS)
+      const queueRow = await prisma.commentWaveQueue.findUnique({
         where: { id: queue.id },
-        data: { [doneField]: true },
+        select: { expiresAt: true },
       })
+      // 재예약 후에도 만료 전이어야 재시도(무한 재시도 방지 — expiresAt 넘기지 않음)
+      const canRetry = !!queueRow && retryAt < queueRow.expiresAt
 
-      await prisma.botLog.create({
-        data: {
-          botType: 'CAFE_CRAWLER',
-          action: 'WAVE_PROCESS_V2',
-          status: actualCount === 0 ? 'SKIP'
-                 : actualCount < waveTargetCount ? 'PARTIAL' : 'SUCCESS',
-          details: JSON.stringify({
-            postId:         queue.postId,
-            waveNum,
-            tier,
-            targetCount:    waveTargetCount,
-            actualCreated:  actualCount,
-            skippedReasons: skips,
-          }),
-          itemCount: actualCount,
-        },
-      })
-
-      console.log(
-        `[WaveProcessor] wave${waveNum}(v2) 완료: postId=${queue.postId}, tier=${tier}, created=${actualCount}/${waveTargetCount}`
-      )
-      if (actualCount > 0) await refreshPostTrendingScore(queue.postId).catch(() => {})
+      if (hasBotCap && shortfall && canRetry) {
+        // 재예약: Done 마킹 안 함, waveAt만 미룸 → WaveProcessor가 다시 돈다
+        await prisma.commentWaveQueue.update({
+          where: { id: queue.id },
+          data: { [atField]: retryAt },
+        })
+        await prisma.botLog.create({
+          data: {
+            botType: 'CAFE_CRAWLER',
+            action: 'WAVE_PROCESS_V2',
+            status: 'PARTIAL',
+            details: JSON.stringify({
+              postId: queue.postId, waveNum, tier,
+              targetCount: waveTargetCount, actualCreated: actualCount,
+              skippedReasons: skips,
+              botCapRetryScheduledAt: retryAt.toISOString(),
+            }),
+            itemCount: actualCount,
+          },
+        })
+        console.log(
+          `[WaveProcessor] wave${waveNum}(v2) bot_cap 미달 → Done 보류·재예약: postId=${queue.postId}, created=${actualCount}/${waveTargetCount}, retryAt=${retryAt.toISOString()}`
+        )
+        if (actualCount > 0) await refreshPostTrendingScore(queue.postId).catch(() => {})
+      } else {
+        // 정상 완료 / terminal skip / 만료 임박(재시도 불가) → Done 마킹
+        await prisma.commentWaveQueue.update({
+          where: { id: queue.id },
+          data: { [doneField]: true },
+        })
+        await prisma.botLog.create({
+          data: {
+            botType: 'CAFE_CRAWLER',
+            action: 'WAVE_PROCESS_V2',
+            status: actualCount === 0 ? 'SKIP'
+                   : actualCount < waveTargetCount ? 'PARTIAL' : 'SUCCESS',
+            details: JSON.stringify({
+              postId:         queue.postId,
+              waveNum,
+              tier,
+              targetCount:    waveTargetCount,
+              actualCreated:  actualCount,
+              skippedReasons: skips,
+            }),
+            itemCount: actualCount,
+          },
+        })
+        // bot_cap 미달인데 만료로 재시도 종료된 경우에만 Slack 경고(글당 1회). 정상·global_cap·재예약은 조용히.
+        if (hasBotCap && shortfall && !canRetry) {
+          await sendSlackMessage('QA',
+            `[WaveProcessor v2] wave${waveNum} bot daily cap 부족 — 만료로 재시도 종료(created=${actualCount}/${waveTargetCount}, postId=${queue.postId})`
+          )
+        }
+        console.log(
+          `[WaveProcessor] wave${waveNum}(v2) 완료: postId=${queue.postId}, tier=${tier}, created=${actualCount}/${waveTargetCount}`
+        )
+        if (actualCount > 0) await refreshPostTrendingScore(queue.postId).catch(() => {})
+      }
     }
   }
 }
