@@ -160,11 +160,20 @@ const PERSONA_DESIRE_AFFINITY: Record<string, Partial<Record<string, number>>> =
   EN5: { ENTERTAIN: 0.8, FAMILY: 0.4, RELATION: 0.3 },
 }
 
+// KST 자정 instant (머신 타임존 무관) — CafeTrend date 키를 로컬(launchd)·GHA 일관되게 (P0-B)
+// setHours(0,0,0,0)는 실행 머신 타임존 의존 → 로컬(KST) 저장 ↔ GHA(UTC, content-curator) 조회 9h 불일치로
+// loadTodayBrief가 오늘 CafeTrend를 못 찾아 fallback(yesterday/recent) → Slack 경고 반복. KST 통일로 해소.
+function startOfKstDay(): Date {
+  const KST_OFFSET = 9 * 60 * 60 * 1000
+  const nowKst = new Date(Date.now() + KST_OFFSET)
+  nowKst.setUTCHours(0, 0, 0, 0)
+  return new Date(nowKst.getTime() - KST_OFFSET)
+}
+
 // ── 오늘의 CafeTrend 조회 ──
 
 async function getTodayCafeTrend() {
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
+  const todayStart = startOfKstDay()
 
   return prisma.cafeTrend.findUnique({
     where: { date_period: { date: todayStart, period: 'daily' } },
@@ -259,8 +268,7 @@ function buildContentDirective(
 // ── dataSourceBias 계산 ──
 
 async function computeDataSourceBias(): Promise<DataSourceBias> {
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
+  const todayStart = startOfKstDay()
 
   const [wgangCount, dlxognsCount] = await Promise.all([
     prisma.cafePost.count({ where: { cafeId: 'wgang', crawledAt: { gte: todayStart } } }),
@@ -598,8 +606,7 @@ export async function loadTodayBrief(): Promise<{
   desireMap: Record<string, number> | null
   source: string
 }> {
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
+  const todayStart = startOfKstDay()
 
   // 1순위: 오늘 CafeTrend
   const todayTrend = await prisma.cafeTrend.findUnique({

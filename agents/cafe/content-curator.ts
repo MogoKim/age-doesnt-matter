@@ -423,9 +423,11 @@ export async function main() {
     return
   }
   console.log(`[ContentCurator] 핫토픽 ${hotTopics.length}개 로드 (source: ${briefSource})`)
-  // DailyBrief fallback 경고 (B12) — 오늘 데이터 없음 → 욕망 신뢰도 낮음
+  // DailyBrief fallback 시 Slack 경고 제거 (P0-B): 큐레이션 슬롯마다 반복 발화해 스팸이 됨.
+  // 진짜 실패(브리프 자체 없음/어제 데이터도 없음)는 brief-monitor.ts와 daily-brief.ts가 이미 알림.
+  // 여기선 로그로만 남기고 Slack은 보내지 않는다.
   if (briefSource === 'yesterday_trend' || briefSource === 'recent_trend') {
-    await sendSlackMessage('SYSTEM', `[큐레이션] DailyBrief fallback 모드 (source=${briefSource}) — 오늘 트렌드 없음, 욕망 데이터 신뢰도 낮음`)
+    console.warn(`[ContentCurator] DailyBrief fallback 모드 (source=${briefSource}) — Slack 경고 생략(brief-monitor가 커버)`)
   }
 
   // 2) 카테고리 다양화 — desireMap 기반으로 HEALTH 독점 방지
