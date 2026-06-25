@@ -120,8 +120,7 @@ async function getRepeatedZeroPublishAlert(currentResults: TopicResult[]): Promi
 async function getReferencePosts(topic: string, desireCat: string, limit: number) {
   const base = {
     isUsable: true, usedAt: null, isPopular: false,
-    // Stage 1: imageUrls 하드 제외 제거 → 이미지 첨부 killer글도 ref 후보. 단 아래 filterBlocked의 text-safe로 걸러냄. videoUrls 제외는 유지.
-    videoUrls: { isEmpty: true },
+    imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true },
     commentCrawled: true,  // topComments가 한 번이라도 수집된 글만 (usable 필터 사전 조건)
     NOT: { AND: [{ cafeId: 'dlxogns01' }, { boardName: { notIn: DLXOGNS01_ALLOWED_BOARDS } }] },
   }
@@ -151,11 +150,6 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
       // refs 후보에서 빠지므로 usedAt 미마킹으로 인한 sticky poison(같은 글이 반복 첫 후보)도 해소.
       if (isSeasonMismatch(p.title, p.content)) {
         console.log(`[ContentCurator] 계절 불일치 reference 제외: "${p.title.slice(0, 20)}"`)
-        return false
-      }
-      // Stage 1: 이미지 없이는 의미가 깨지는 글 제외 (이미지 의존 신호 + 본문 자립 길이<80)
-      if (!isTextSafe(p.title, p.content)) {
-        console.log(`[ContentCurator] text-safe 제외(이미지 의존/본문 빈약): "${p.title.slice(0, 20)}"`)
         return false
       }
       const flat = p.content.replace(/\n/g, ' ') // R1: 본문 줄바꿈 보존 후에도 시그널 매칭 유지
@@ -261,39 +255,6 @@ function resolveBoardForPost(ownDesire: string | null | undefined, bucketDesire:
 }
 
 /** 큐레이션된 글 생성 — 원본 카페글 제목·본문 그대로 사용 (AI 각색 없음) */
-// ── Stage 1: 이미지 첨부 killer글 안전 활용 (DailyBrief/AI 무관) ──
-// 이미지 있다고 무조건 버리지 않되, 사진 없이는 의미가 깨지는 글은 제외(text-safe). 이미지 자체는 재발행 안 함(텍스트만).
-const IMAGE_DEPENDENT_SIGNALS = [
-  '사진 보세요', '사진보세요', '첨부', '캡처', '캡쳐', '아래 사진', '위 사진', '아래 그림', '위 그림',
-  '사진처럼', '봐주세요', '보시다시피', '스크린샷', '짤방', '움짤', '그림 참고', '이 사진', '그 사진', '사진과 같이',
-] as const
-
-/** 발행 본문에서 이미지 마커 제거 (이미지 자체는 재발행하지 않고 텍스트만 남김) */
-function stripImageMarkers(text: string): string {
-  return text
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')                                  // markdown 이미지 ![alt](url)
-    .replace(/<img[^>]*>/gi, '')                                           // html <img ...>
-    .replace(/<figure[^>]*>[\s\S]*?<\/figure>/gi, '')                      // <figure>…</figure>
-    .replace(/https?:\/\/\S+\.(?:jpg|jpeg|png|gif|webp|bmp)(?:\?\S*)?/gi, '') // bare 이미지 URL
-    .replace(/\[이미지\]|\[사진\]|\[그림\]/g, '')                            // 텍스트 플레이스홀더
-    .replace(/[ \t]{2,}/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-}
-
-/** 정제 텍스트 길이(이미지 마커 제거 + 공백 제외 글자수) */
-function cleanTextLength(text: string): number {
-  return stripImageMarkers(text).replace(/\s/g, '').length
-}
-
-/** 이미지 없이도 글이 성립하는가 — 이미지 의존 신호 없음 + 본문 자립 길이 ≥ 80자 */
-function isTextSafe(title: string, content: string): boolean {
-  const t = `${title} ${content}`
-  if (IMAGE_DEPENDENT_SIGNALS.some(s => t.includes(s))) return false
-  if (cleanTextLength(content) < 80) return false
-  return true
-}
-
 async function generateCuratedPost(
   persona: PersonaMatch,
   topic: string,
@@ -305,15 +266,13 @@ async function generateCuratedPost(
 
   const boardInfo = resolveBoardForPost(mainRef.desireCategory, desireCat ?? 'GENERAL', `${mainRef.title} ${mainRef.content}`)
 
-  // F1: 이미지 마커 제거(stripImageMarkers)를 먼저, markdown 정리(stripMarkdown)를 나중에 —
-  // 순서가 반대면 stripMarkdown이 ![alt](url)를 !alt로 바꿔 이미지 정규식이 못 잡고 잔재가 남음.
-  const title = replaceCafeReferences(stripMarkdown(stripImageMarkers(mainRef.title.trim())))
+  const title = replaceCafeReferences(stripMarkdown(mainRef.title.trim()))
   if (!title) return null
 
   return {
     personaId: persona.id,
     title,
-    content: replaceCafeReferences(stripMarkdown(stripImageMarkers(mainRef.content.trim()))),
+    content: replaceCafeReferences(stripMarkdown(mainRef.content.trim())),
     boardType: boardInfo.boardType,
     category: boardInfo.category,
     sourceTopic: topic,
@@ -545,24 +504,16 @@ export async function main() {
   // ─── killerPosts 날짜 제한 7일 (Fix 1) ───────────────────────
   // 날짜 제한으로 34일된 "청국장" 등 오래된 글의 영구 재선발 차단
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  // Stage 1: imageUrls 하드 제외 제거(이미지 첨부 killer글 허용) + videoUrls 제외 유지.
-  // text-safe·usable는 코드에서 적용하므로 넉넉히 fetch 후 상위 KILLER_TAKE건만 사용. take:2→4.
-  const KILLER_TAKE = 4
-  const killerRaw = await prisma.cafePost.findMany({
+  const killerPosts = await prisma.cafePost.findMany({
     where: {
-      killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false,
-      videoUrls: { isEmpty: true },
+      killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true },
       crawledAt: { gte: sevenDaysAgo },  // crawledAt은 항상 설정됨(NOT NULL) — postedAt null 허용
       NOT: { AND: [{ cafeId: 'dlxogns01' }, { boardName: { notIn: DLXOGNS01_ALLOWED_BOARDS } }] },
     },
     orderBy: { killerScore: 'desc' },
-    take: 60,
-    select: { id: true, title: true, content: true, postedAt: true, killerScore: true, desireCategory: true, topComments: true },
+    take: 2,
+    select: { id: true, title: true, postedAt: true, killerScore: true, desireCategory: true },
   })
-  // text-safe(이미지 의존/본문 자립길이) + usable 댓글≥5 통과만, killerScore 상위 KILLER_TAKE건
-  const killerPosts = killerRaw
-    .filter(p => isTextSafe(p.title, p.content) && computeUsableCount(p.topComments) >= 5)
-    .slice(0, KILLER_TAKE)
 
   // ─── candidatePool 구성 (Fix 2-B) ─────────────────────────────
   const killerCandidates: CandidateTopic[] = killerPosts
