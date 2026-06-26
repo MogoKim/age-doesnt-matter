@@ -179,7 +179,7 @@ export function generateDisplayTags(job: FilteredJob): string[] {
   } else if (titleLower.includes('60대') || titleLower.includes('65세')) {
     tags.push('60대환영')
   } else if (titleLower.includes('50대') || titleLower.includes('시니어')) {
-    tags.push('시니어환영')
+    tags.push('50대환영')
   }
 
   // 2순위: 경력/초보
