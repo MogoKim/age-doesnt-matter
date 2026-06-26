@@ -108,6 +108,9 @@ jobs:
         env:
           ENABLE_IMAGE_ROUTER: ${{ vars.ENABLE_IMAGE_ROUTER || 'false' }}
           DRY_RUN_IMAGE_ROUTER: ${{ vars.DRY_RUN_IMAGE_ROUTER || 'true' }}
+          IMAGE_ROUTER_DAY_CAP: ${{ vars.IMAGE_ROUTER_DAY_CAP }}
+          IMAGE_ROUTER_TAB_CAP: ${{ vars.IMAGE_ROUTER_TAB_CAP }}
+          IMAGE_ROUTER_PENDING_BACKLOG_LIMIT: ${{ vars.IMAGE_ROUTER_PENDING_BACKLOG_LIMIT }}
           SHEETS_SCRAPER_ID: ${{ secrets.SHEETS_SCRAPER_ID }}
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
 
