@@ -23,6 +23,7 @@ import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
 import { generateCommunitySlug } from '../core/slug.js'
+import { findPoliticalKeyword } from '../core/political-blocklist.js'
 import { readPendingRows, updateRow } from './sheets-client.js'
 import { detectSite, normalizeNaverCafeUrl, resolveNaverShortUrl, randomUserAgent, isCloudflareChallenge, type SiteConfig } from './site-configs.js'
 import { processContentMedia } from './image-pipeline.js'
@@ -696,6 +697,19 @@ export async function main() {
               })
               totalFailed++
               console.log('  → FAILED: 젊은층 데모그래픽 글 발행 제외')
+              continue
+            }
+
+            // 정치 키워드 hard block (P0) — 제목/본문에 정치 키워드가 있으면 자동 발행 제외.
+            //   이미지 제거 발행 X, Post 생성 X. row만 FAILED 처리.
+            const political = findPoliticalKeyword(title, content)
+            if (political) {
+              await updateRow(tab.tabName, row.rowIndex, {
+                status: 'FAILED',
+                error: `정치 키워드 포함 — 자동 발행 제외: ${political.keyword}`,
+              })
+              totalFailed++
+              console.log(`  → FAILED: 정치 키워드 포함 (${political.keyword}/${political.field})`)
               continue
             }
 

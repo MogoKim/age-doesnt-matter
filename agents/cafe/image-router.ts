@@ -6,6 +6,7 @@ import { prisma } from '../core/db.js'
 import { sendSlackMessage } from '../core/notifier.js'
 import { readAllSheetUrls, countPendingTotal, appendRow } from '../community/sheets-client.js'
 import { isStoryGuarded } from './curator-shared.js'
+import { hasPoliticalKeyword } from '../core/political-blocklist.js'
 
 // cap을 운영 변수(GitHub Variables / env)로 조절. 미설정·비정상 값이면 기본값 사용.
 function envInt(name: string, fallback: number): number {
@@ -124,6 +125,7 @@ export async function main(): Promise<void> {
         id: true,
         postUrl: true,
         title: true,
+        content: true,
         desireCategory: true,
         killerScore: true,
         isPopular: true,
@@ -146,8 +148,12 @@ export async function main(): Promise<void> {
       c => !publishedSet.has(c.postUrl) && !sheetUrlSet.has(c.postUrl),
     )
 
+    // 정치 키워드 hard block — Sheet append 전 정치색 후보 제외 (P0)
+    const politicalFiltered = deduped.filter(c => !hasPoliticalKeyword(c.title, c.content ?? ''))
+    const politicalBlockedCount = deduped.length - politicalFiltered.length
+
     console.log(
-      `[ImageRouter] 후보: ${candidates.length}건 → postUrl 있음: ${withUrl.length}건 → 중복제외: ${deduped.length}건`,
+      `[ImageRouter] 후보: ${candidates.length}건 → postUrl 있음: ${withUrl.length}건 → 중복제외: ${deduped.length}건 → 정치제외: ${politicalBlockedCount}건`,
     )
 
     // 탭 배정 + cap 적용
@@ -155,7 +161,7 @@ export async function main(): Promise<void> {
     type Selected = { tab: string; postUrl: string; cafePostId: string; killerScore: number }
     const selected: Selected[] = []
 
-    for (const c of deduped) {
+    for (const c of politicalFiltered) {
       if (selected.length >= remainingCap) break
       // 제목 guard 후처리 — psych가 LIFE2로 매겼어도 생활/소음/고장/돌봄 신호만 있으면 STORY로 강등
       const effectiveDesire = isStoryGuarded(c.title) ? 'GENERAL' : c.desireCategory
@@ -223,6 +229,7 @@ export async function main(): Promise<void> {
           failedCount: failCount,
           todayTotal: todayAppended + successCount,
           tabBreakdown: tabCount,
+          politicalBlockedCount,
           dayCap: DAY_CAP,
           tabCap: TAB_CAP,
           pendingBacklogLimit: PENDING_BACKLOG_LIMIT,
