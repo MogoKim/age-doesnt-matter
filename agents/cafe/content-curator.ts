@@ -115,6 +115,33 @@ async function getRepeatedZeroPublishAlert(currentResults: TopicResult[]): Promi
   return count >= 3 ? { count, reason } : null
 }
 
+// P0-A: 후보 재시도 루프 차단.
+// DUPLICATE_TITLE 스킵은 usedAt 마킹(발행 성공 시에만 수행)보다 먼저 return하므로,
+// 중복 스킵된 killer/trend 후보가 매 run 최상위 후보로 재선발되며 같은 토픽을 반복 시도한다.
+// 오늘 BotLog(기존 로그=state, DB write 없음)에서 DUPLICATE_TITLE을 임계 이상 낸
+// topic/cafePostId를 읽어 그날 후보 구성에서 제외한다. "발행됨"으로 마킹하지 않음.
+const DUP_QUARANTINE_THRESHOLD = 2
+async function getDupQuarantine(since: Date): Promise<{ topics: Set<string>; cafeIds: Set<string> }> {
+  const logs = await prisma.botLog.findMany({
+    where: { botType: 'CAFE_CRAWLER', action: 'CONTENT_CURATE', createdAt: { gte: since } },
+    orderBy: { createdAt: 'desc' },
+    take: 60,
+    select: { details: true },
+  })
+  const topicCount = new Map<string, number>()
+  const cafeCount = new Map<string, number>()
+  for (const log of logs) {
+    for (const t of parseTopicResults(log.details)) {
+      if (t.skipReason !== 'DUPLICATE_TITLE') continue
+      if (t.topic) topicCount.set(t.topic, (topicCount.get(t.topic) ?? 0) + 1)
+      if (t.cafePostId) cafeCount.set(t.cafePostId, (cafeCount.get(t.cafePostId) ?? 0) + 1)
+    }
+  }
+  const topics = new Set([...topicCount].filter(([, n]) => n >= DUP_QUARANTINE_THRESHOLD).map(([k]) => k))
+  const cafeIds = new Set([...cafeCount].filter(([, n]) => n >= DUP_QUARANTINE_THRESHOLD).map(([k]) => k))
+  return { topics, cafeIds }
+}
+
 
 /** 참고용 원본 글 가져오기 — 3단계 fallback (B19+B24)
  * 1단계: 48h + 키워드 / 2단계: 7일 + 키워드 / 3단계: 7일 + desireCategory만
@@ -467,6 +494,12 @@ export async function main() {
     where: { source: 'BOT', createdAt: { gte: todayStart } },
     select: { title: true },
   })
+
+  // P0-A: 오늘 반복 DUPLICATE_TITLE을 낸 후보 격리 (재시도 루프 차단)
+  const dupQuarantine = await getDupQuarantine(todayStart)
+  if (dupQuarantine.topics.size || dupQuarantine.cafeIds.size) {
+    console.log(`[ContentCurator] 중복루프 격리: topic ${dupQuarantine.topics.size}개 / cafePost ${dupQuarantine.cafeIds.size}개 (오늘 DUPLICATE_TITLE ≥${DUP_QUARANTINE_THRESHOLD}회)`)
+  }
   // keyword overlap 오탐 방지 — 어미·조사·기능어는 주제어가 아니므로 제외
   const OVERLAP_STOPWORDS = new Set([
     '해요', '이요', '에요', '어요', '아요', '해서', '하고', '해도',
@@ -526,13 +559,14 @@ export async function main() {
       NOT: { AND: [{ cafeId: 'dlxogns01' }, { boardName: { notIn: DLXOGNS01_ALLOWED_BOARDS } }] },
     },
     orderBy: { killerScore: 'desc' },
-    take: 2,
+    take: 30,  // P0-A: 격리 후보를 건너뛰고 상위 2건을 확보하기 위해 넉넉히 조회(풀 크기는 slice로 2 유지)
     select: { id: true, title: true, postedAt: true, killerScore: true, desireCategory: true },
   })
 
   // ─── candidatePool 구성 (Fix 2-B) ─────────────────────────────
   const killerCandidates: CandidateTopic[] = killerPosts
-    .filter(p => !isDesireExhausted(p.desireCategory ?? 'GENERAL'))
+    .filter(p => !isDesireExhausted(p.desireCategory ?? 'GENERAL') && !dupQuarantine.cafeIds.has(p.id))
+    .slice(0, 2)  // killer 후보 풀 크기 기존과 동일(2). 격리/소진 후보는 건너뛰고 다음 상위로 회전.
     .map(p => ({
       topic: p.title,
       source: 'killer' as const,
@@ -558,7 +592,7 @@ export async function main() {
     if (trendCandidates.length >= maxTrendCandidates) break
     if (isDesireExhausted(desire)) continue
     const match = categorizedTopics.find(
-      t => t.desireCategory === desire && !usedCategories.has(desire) && !inPool(t.topic)
+      t => t.desireCategory === desire && !usedCategories.has(desire) && !inPool(t.topic) && !dupQuarantine.topics.has(t.topic)
     )
     if (match) {
       trendCandidates.push({ topic: match.topic, source: 'trend', desireCategory: match.desireCategory })
@@ -569,7 +603,7 @@ export async function main() {
   for (const t of categorizedTopics) {
     if (trendCandidates.length >= maxTrendCandidates) break
     if (isDesireExhausted(t.desireCategory)) continue
-    if (!usedCategories.has(t.desireCategory) && !inPool(t.topic)) {
+    if (!usedCategories.has(t.desireCategory) && !inPool(t.topic) && !dupQuarantine.topics.has(t.topic)) {
       trendCandidates.push({ topic: t.topic, source: 'trend', desireCategory: t.desireCategory })
       usedCategories.add(t.desireCategory)
     }
