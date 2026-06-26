@@ -7,9 +7,16 @@ import { sendSlackMessage } from '../core/notifier.js'
 import { readAllSheetUrls, countPendingTotal, appendRow } from '../community/sheets-client.js'
 import { isStoryGuarded } from './curator-shared.js'
 
-const DAY_CAP = 3
-const TAB_CAP = 1
-const PENDING_BACKLOG_LIMIT = 10
+// cap을 운영 변수(GitHub Variables / env)로 조절. 미설정·비정상 값이면 기본값 사용.
+function envInt(name: string, fallback: number): number {
+  const raw = process.env[name]
+  if (raw === undefined || raw === '') return fallback
+  const n = Number(raw)
+  return Number.isInteger(n) && n > 0 ? n : fallback
+}
+const DAY_CAP = envInt('IMAGE_ROUTER_DAY_CAP', 3)
+const TAB_CAP = envInt('IMAGE_ROUTER_TAB_CAP', 1)
+const PENDING_BACKLOG_LIMIT = envInt('IMAGE_ROUTER_PENDING_BACKLOG_LIMIT', 10)
 
 const HUMOR_CATS = new Set(['HUMOR', 'ENTERTAIN'])
 // JOB 제외 — JOB(자격증·정보성)은 STORY(사는이야기)로. 재취업 맥락은 psych가 RETIRE로 매겨 LIFE2.
@@ -60,7 +67,7 @@ export async function main(): Promise<void> {
           action: 'IMAGE_ROUTE',
           publishedCount: 0,
           executionTimeMs: Date.now() - startTime,
-          logData: { reason: 'day_cap', todayAppended },
+          logData: { reason: 'day_cap', todayAppended, dayCap: DAY_CAP, tabCap: TAB_CAP, pendingBacklogLimit: PENDING_BACKLOG_LIMIT },
         },
       })
       return
@@ -97,7 +104,7 @@ export async function main(): Promise<void> {
           action: 'IMAGE_ROUTE',
           publishedCount: 0,
           executionTimeMs: Date.now() - startTime,
-          logData: { reason: 'pending_backlog', pendingTotal },
+          logData: { reason: 'pending_backlog', pendingTotal, dayCap: DAY_CAP, tabCap: TAB_CAP, pendingBacklogLimit: PENDING_BACKLOG_LIMIT },
         },
       })
       return
@@ -174,6 +181,9 @@ export async function main(): Promise<void> {
           logData: {
             reason: 'dry_run',
             wouldAppend: selected.map(s => ({ tab: s.tab, url: s.postUrl, killerScore: s.killerScore })),
+            dayCap: DAY_CAP,
+            tabCap: TAB_CAP,
+            pendingBacklogLimit: PENDING_BACKLOG_LIMIT,
           },
         },
       })
@@ -213,6 +223,9 @@ export async function main(): Promise<void> {
           failedCount: failCount,
           todayTotal: todayAppended + successCount,
           tabBreakdown: tabCount,
+          dayCap: DAY_CAP,
+          tabCap: TAB_CAP,
+          pendingBacklogLimit: PENDING_BACKLOG_LIMIT,
         },
       },
     })
