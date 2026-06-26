@@ -384,11 +384,13 @@ seoDescription: (120자 이내, 첫 문장에 직접 답변, "50대" "갱년기"
 
 /** title로부터 SEO-friendly URL slug 생성 (DB 중복 체크로 uniqueness 보장) */
 async function generateMagazineSlug(title: string): Promise<string> {
-  const base = title
-    .replace(/[^\w\s가-힣]/g, '')  // 한글, 영숫자, 공백만 허용
+  const cleaned = (title ?? '')
+    .replace(/[^\w\s가-힣]/g, ' ')  // 기호(— · , 등)는 공백=단어 구분자로 치환 → "허전함·빈둥지"가 붙지 않게
     .trim()
     .replace(/\s+/g, '-')
     .slice(0, 50)
+    .replace(/-+$/, '')  // 50자 컷이 하이픈 위치에서 잘릴 때 꼬리 정리
+  const base = cleaned || `magazine-${Date.now()}`  // 빈 문자열 방어
 
   // 중복 없으면 clean slug 그대로 사용
   const exists = await prisma.post.findUnique({ where: { slug: base }, select: { id: true } })
@@ -420,7 +422,8 @@ async function publishMagazine(
 ): Promise<{ id: string; slug: string }> {
   // 매거진 전용 봇 — 페르소나 B(정순씨) 사용 (차분한 일기체 정보형)
   const editorUserId = await getBotUser('B')
-  const slug = await generateMagazineSlug(article.title)
+  // slug는 seoTitle(롱테일 키워드 보존) 우선 — 없으면 visible title fallback. 신규 발행에만 적용, 기존 글 slug 불변.
+  const slug = await generateMagazineSlug(article.seoTitle?.trim() || article.title)
 
   const post = await prisma.post.create({
     data: {
