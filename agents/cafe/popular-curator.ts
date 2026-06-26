@@ -15,6 +15,7 @@ import {
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
 import { generateCommunitySlug } from '../core/slug.js'
+import { findPoliticalKeyword } from '../core/political-blocklist.js'
 import { computeUsableCount } from './compute-usable-count.js'
 
 const HEALTH_CAP = 2
@@ -130,6 +131,13 @@ export async function main() {
     const rawContent = replaceCafeReferences(stripMarkdown(post.content.trim()))
     if (!title || !rawContent) {
       console.warn(`[PopularCurator] 원본 내용 없음 스킵: ${post.title.slice(0, 30)}`)
+      continue
+    }
+
+    // 정치 키워드 hard block (P0) — 정치색 글은 발행 안 함.
+    const political = findPoliticalKeyword(title, rawContent)
+    if (political) {
+      console.log(`[PopularCurator] 정치 키워드 발행 차단: "${title.slice(0, 20)}" (kw=${political.keyword}/${political.field})`)
       continue
     }
 

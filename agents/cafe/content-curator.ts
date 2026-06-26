@@ -7,6 +7,7 @@
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack, sendSlackMessage } from '../core/notifier.js'
+import { findPoliticalKeyword, hasPoliticalKeyword } from '../core/political-blocklist.js'
 import type { CuratedContent } from './types.js'
 import { loadTodayBrief } from './daily-brief.js'
 
@@ -38,6 +39,7 @@ type SkipReason =
   | 'SEASON_MISMATCH'
   | 'DUPLICATE_TITLE'
   | 'PUBLISH_FAILED'
+  | 'POLITICAL_BLOCK'
 
 interface CandidateTopic {
   topic: string
@@ -54,11 +56,12 @@ interface TopicResult extends CandidateTopic {
   candidatesBeforeUsableFilter?: number
   maxUsableCount?: number
   requiredUsableCount?: number
+  matchedKeyword?: string
 }
 
 type PublishResult =
   | { success: true; postId: string }
-  | { success: false; skipReason: Extract<SkipReason, 'SEASON_MISMATCH' | 'DUPLICATE_TITLE' | 'PUBLISH_FAILED'> }
+  | { success: false; skipReason: Extract<SkipReason, 'SEASON_MISMATCH' | 'DUPLICATE_TITLE' | 'PUBLISH_FAILED' | 'POLITICAL_BLOCK'>; matchedKeyword?: string }
 
 const CANDIDATE_POOL_SIZE = 15
 const LIFE2_SOURCE_DESIRES = new Set(['MONEY', 'RETIRE', 'HOUSING'])
@@ -150,6 +153,11 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
       // refs 후보에서 빠지므로 usedAt 미마킹으로 인한 sticky poison(같은 글이 반복 첫 후보)도 해소.
       if (isSeasonMismatch(p.title, p.content)) {
         console.log(`[ContentCurator] 계절 불일치 reference 제외: "${p.title.slice(0, 20)}"`)
+        return false
+      }
+      // 정치 키워드 hard block — 정치색 reference는 후보에서 선제 제외 (P0)
+      if (hasPoliticalKeyword(p.title, p.content)) {
+        console.log(`[ContentCurator] 정치 키워드 reference 제외: "${p.title.slice(0, 20)}"`)
         return false
       }
       const flat = p.content.replace(/\n/g, ' ') // R1: 본문 줄바꿈 보존 후에도 시그널 매칭 유지
@@ -314,6 +322,13 @@ async function publishCuratedContent(curated: CuratedContent): Promise<PublishRe
 
   const htmlContent = toCuratedHtmlContent(curated.content)
   const summary = toCuratedSummary(curated.content)
+
+  // 정치 키워드 hard block — publish 직전 최종 검사 (P0). 정치색 글은 절대 발행 안 함.
+  const political = findPoliticalKeyword(curated.title, curated.content)
+  if (political) {
+    console.log(`[ContentCurator] 정치 키워드 발행 차단: "${curated.title.slice(0, 20)}" (kw=${political.keyword}/${political.field})`)
+    return { success: false, skipReason: 'POLITICAL_BLOCK', matchedKeyword: political.keyword }
+  }
 
   // 계절 불일치 필터 (P3)
   if (isSeasonMismatch(curated.title, curated.content)) {
@@ -653,7 +668,7 @@ export async function main() {
 
     const publishResult = await publishCuratedContent(curated)
     if (!publishResult.success) {
-      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: publishResult.skipReason })
+      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: publishResult.skipReason, matchedKeyword: publishResult.matchedKeyword })
       continue
     }
 
