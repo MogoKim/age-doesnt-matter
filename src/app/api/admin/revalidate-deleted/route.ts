@@ -21,16 +21,27 @@ export async function POST() {
 
   const posts = await prisma.post.findMany({
     where: { status: { in: ['DELETED', 'HIDDEN'] } },
-    select: { id: true, boardType: true, status: true },
+    select: { id: true, boardType: true, slug: true, status: true },
   })
 
   const invalidated: string[] = []
+  const boardPaths = new Set<string>()
   for (const post of posts) {
     const bp = BOARD_PATHS[post.boardType]
     if (bp) {
+      boardPaths.add(bp)
       revalidatePath(`${bp}/${post.id}`)
       invalidated.push(`${bp}/${post.id}`)
+      if (post.slug && post.slug !== post.id) {
+        revalidatePath(`${bp}/${post.slug}`)
+        invalidated.push(`${bp}/${post.slug}`)
+      }
     }
+  }
+
+  for (const bp of boardPaths) {
+    revalidatePath(bp)
+    invalidated.push(bp)
   }
 
   revalidatePath('/')
