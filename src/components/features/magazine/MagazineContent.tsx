@@ -141,21 +141,21 @@ function MagazineCard({ post, priority }: { post: PostSummary; priority?: boolea
   return (
     <Link
       href={`/magazine/${post.slug ?? post.id}`}
-      className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border overflow-hidden no-underline transition-colors hover:border-primary/30 min-h-[52px]"
+      className="flex items-start gap-3 p-3 md:p-4 bg-card rounded-xl border border-border overflow-hidden no-underline transition-colors hover:border-primary/30 min-h-[52px]"
     >
       {post.thumbnailUrl ? (
-        <div className="relative flex-shrink-0 w-24 h-20 rounded-lg overflow-hidden">
+        <div className="relative flex-shrink-0 w-28 h-24 rounded-lg overflow-hidden">
           <Image
             src={post.thumbnailUrl}
             alt={post.title}
             fill
             className="object-cover"
-            sizes="96px"
+            sizes="112px"
             priority={priority}
           />
         </div>
       ) : (
-        <div className="flex-shrink-0 w-24 h-20 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-2xl">
+        <div className="flex-shrink-0 w-28 h-24 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-2xl">
           📖
         </div>
       )}
