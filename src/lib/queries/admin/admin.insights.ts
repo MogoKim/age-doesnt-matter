@@ -21,7 +21,7 @@ export interface InsightsData {
     previous: number
     weekly: { weekLabel: string; active: number }[]
   }
-  channels: { channel: string; sessions: number; signups: number; signupRate: number; retentionRate: number }[]
+  channels: { channel: string; sessions: number; signups: number; signups30d: number; signupRate: number; retentionRate: number }[]
   activation: { total: number; onboarded: number; wrote: number; commented: number; active: number }
 }
 
@@ -133,7 +133,10 @@ export const getInsights = unstable_cache(
           orderBy: { createdAt: 'asc' },
         })
       : []
+    // 기간 일치(req #6): signupRate 분자 = 최근 30일 가입자만. signups(전체기간 누적)와 분리.
+    const real30Ids = new Set(real.filter((u) => u.createdAt >= start30).map((u) => u.id))
     const ftSignups: Record<string, number> = {}
+    const ftSignups30: Record<string, number> = {}
     const seenFt = new Set<string>()
     for (const e of ftPv) {
       if (!e.userId || seenFt.has(e.userId)) continue
@@ -145,6 +148,7 @@ export const getInsights = unstable_cache(
         typeof p?.utm_medium === 'string' ? p.utm_medium : '',
       )
       ftSignups[ch] = (ftSignups[ch] ?? 0) + 1
+      if (real30Ids.has(e.userId)) ftSignups30[ch] = (ftSignups30[ch] ?? 0) + 1
     }
 
     const chanMap: Record<string, { sessions: number; multi: number }> = {}
@@ -161,11 +165,13 @@ export const getInsights = unstable_cache(
       .map((channel) => {
         const v = chanMap[channel] ?? { sessions: 0, multi: 0 }
         const signups = ftSignups[channel] ?? 0
+        const signups30d = ftSignups30[channel] ?? 0
         return {
           channel,
-          sessions: v.sessions,
-          signups, // first-touch 가입자 명수(전체 기간)
-          signupRate: pct(signups, v.sessions), // 30일 유입 세션 대비 근사(기간차 주의)
+          sessions: v.sessions, // 최근 30일 유입 세션
+          signups, // first-touch 가입자 명수(전체 기간 누적, 참고용)
+          signups30d, // 최근 30일 가입자(first-touch 귀속)
+          signupRate: pct(signups30d, v.sessions), // 30일 가입자 / 30일 세션 (기간 일치)
           retentionRate: pct(v.multi, v.sessions),
         }
       })
@@ -190,6 +196,6 @@ export const getInsights = unstable_cache(
       activation,
     }
   },
-  ['admin-insights-v3'],
+  ['admin-insights-v4'], // v4: 채널 signupRate = 30일 가입자/30일 세션(기간 일치), signups30d 추가
   { revalidate: 1800 },
 )

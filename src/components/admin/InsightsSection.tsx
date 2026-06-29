@@ -77,11 +77,11 @@ export default function InsightsSection({ data, retention }: { data: InsightsDat
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
         <h2 className="mb-1 text-sm font-bold text-zinc-900">
           ① 들어오기 — 유입 채널 효율
-          <InfoTip text="어느 경로로 들어온 손님이 가입하고 다시 오는지. 세션=세션 첫 referrer로 분류한 30일 유입량. 가입자=실고객의 '최초 유입(first-touch) 채널'로 귀속한 누적 가입 명수(가입은 항상 카카오 로그인 세션이라, 세션단위로 세면 전부 직접입력으로 쏠려 first-touch로 교정함). 재방문율=서로 다른 2일+ 방문 비율." />
+          <InfoTip text="어느 경로로 들어온 손님이 가입하고 다시 오는지. 세션=세션 첫 referrer로 분류한 최근 30일 유입량. 가입=최근 30일 가입한 실고객을 '최초 유입(first-touch) 채널'로 귀속한 명수(가입은 항상 카카오 로그인 세션이라 세션단위로 세면 전부 직접입력으로 쏠려 first-touch로 교정). 가입률%=30일 가입 ÷ 30일 세션(기간 일치). 재방문율=서로 다른 2일+ 방문 비율." />
         </h2>
         <p className="mb-1 text-xs text-zinc-400">어디서 온 손님이 가입하고 다시 오는가 (세션 첫 referrer, 30일)</p>
         <p className="mb-4 text-xs text-zinc-400">
-          · <b>세션</b>=30일 유입(세션 첫 referrer) · <b>가입자</b>=<b>최초 유입(first-touch)</b> 채널로 귀속한 누적 가입 실고객(%는 30일 세션 대비 근사) · <b>재방문율</b>=서로 다른 2일+ 방문 비율
+          · <b>세션</b>=최근 30일 유입(세션 첫 referrer) · <b>가입</b>=<b>최근 30일</b> 가입 실고객(first-touch 귀속) · <b>%</b>=30일 가입 ÷ 30일 세션(기간 일치) · <b>재방문율</b>=서로 다른 2일+ 방문 비율
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -89,7 +89,7 @@ export default function InsightsSection({ data, retention }: { data: InsightsDat
               <tr className="border-b border-zinc-200 text-left text-xs text-zinc-500">
                 <th className="py-2 pr-4 font-medium">채널</th>
                 <th className="py-2 pr-4 text-right font-medium">유입 세션</th>
-                <th className="py-2 pr-4 text-right font-medium">가입자(최초유입)</th>
+                <th className="py-2 pr-4 text-right font-medium">가입(최근30일)</th>
                 <th className="py-2 text-right font-medium">재방문율</th>
               </tr>
             </thead>
@@ -100,8 +100,9 @@ export default function InsightsSection({ data, retention }: { data: InsightsDat
                   <td className="py-2 pr-4 text-right text-zinc-600">{c.sessions.toLocaleString()}</td>
                   <td className="py-2 pr-4 text-right">
                     <span className={c.signupRate >= 10 ? 'font-bold text-green-700' : 'text-zinc-600'}>
-                      {c.signups}명 {c.signupRate}%
+                      {c.signups30d}명 {c.signupRate}%
                     </span>
+                    <span className="ml-1 text-xs text-zinc-400">(누적 {c.signups})</span>
                   </td>
                   <td className="py-2 text-right">
                     <span className={c.retentionRate >= 10 ? 'font-bold text-green-700' : 'text-zinc-600'}>
@@ -137,14 +138,16 @@ export default function InsightsSection({ data, retention }: { data: InsightsDat
 
 function RetentionQuadrants({ retention }: { retention: RetentionData }) {
   const rows = [...retention.members, ...retention.guests]
+  // rate=null(분모 0=성숙 코호트 없음)은 '–'로 표시
+  const rt = (p: { rate: number | null }) => (p.rate === null ? '–' : `${p.rate}%`)
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-5">
       <h2 className="mb-1 text-sm font-bold text-zinc-900">
         ③ 다시 오기 — 리텐션 (TWA/웹 × 회원/비회원)
-        <InfoTip text="같은 코호트(같은 사람들)를 끝까지 추적하는 생존곡선입니다. D-N = 가입(첫방문) 후 N일째 이후 다시 온 비율. 분모는 세그먼트 전체로 고정돼 D1≥D3≥…≥D30로 단조 감소합니다. 아직 N일 안 지난 사람은 미달로 집계돼 D14·D30이 낮게 시작 후 시간이 지나며 오릅니다. 괄호=코호트 명수, 작으면 참고용." />
+        <InfoTip text="D-N = 가입(첫방문) 후 N일째 이후 다시 온 비율. 각 D-N의 분모 = N일이 경과한(성숙) 코호트만 — 아직 N일 안 지난 코호트는 실패가 아니라 분모에서 제외합니다. 괄호 = 해당 D-N의 분모(성숙 코호트 수)로 D-N마다 다를 수 있어 단조 보장은 없습니다. KR4(EventLog 비회원 D7)와 동일 정의. 분모 작으면 참고용." />
       </h2>
       <p className="mb-4 text-xs text-zinc-400">
-        최근 {retention.windowDays}일 고정 코호트 생존곡선 · D-N = 가입 후 N일 생존(전체 분모, 단조) · 괄호 = 코호트 명수
+        최근 {retention.windowDays}일 · D-N = 가입 후 N일 생존(성숙 코호트만 분모) · 괄호 = 해당 D-N 분모
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -162,11 +165,11 @@ function RetentionQuadrants({ retention }: { retention: RetentionData }) {
             {rows.map((r) => (
               <tr key={r.segment} className="border-b border-zinc-100">
                 <td className="py-2 pr-4 font-medium text-zinc-800">{r.segment}</td>
-                <td className="py-2 pr-4 text-right text-zinc-700">{r.d1.rate}% <span className="text-zinc-400">({r.d1.cohort})</span></td>
-                <td className="py-2 pr-4 text-right text-zinc-700">{r.d3.rate}% <span className="text-zinc-400">({r.d3.cohort})</span></td>
-                <td className="py-2 pr-4 text-right text-zinc-700">{r.d7.rate}% <span className="text-zinc-400">({r.d7.cohort})</span></td>
-                <td className="py-2 pr-4 text-right text-zinc-700">{r.d14.rate}% <span className="text-zinc-400">({r.d14.cohort})</span></td>
-                <td className="py-2 text-right text-zinc-700">{r.d30.rate}% <span className="text-zinc-400">({r.d30.cohort})</span></td>
+                <td className="py-2 pr-4 text-right text-zinc-700">{rt(r.d1)} <span className="text-zinc-400">({r.d1.denom})</span></td>
+                <td className="py-2 pr-4 text-right text-zinc-700">{rt(r.d3)} <span className="text-zinc-400">({r.d3.denom})</span></td>
+                <td className="py-2 pr-4 text-right text-zinc-700">{rt(r.d7)} <span className="text-zinc-400">({r.d7.denom})</span></td>
+                <td className="py-2 pr-4 text-right text-zinc-700">{rt(r.d14)} <span className="text-zinc-400">({r.d14.denom})</span></td>
+                <td className="py-2 text-right text-zinc-700">{rt(r.d30)} <span className="text-zinc-400">({r.d30.denom})</span></td>
               </tr>
             ))}
           </tbody>

@@ -20,6 +20,52 @@ function getKstMonthStart(): Date {
   return new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), 1, -9, 0, 0, 0))
 }
 
+const DAY_MS = 86400000
+const kstDayIdx = (t: number) => Math.floor((t + 9 * 3600000) / DAY_MS)
+
+export interface RetentionPoint { denom: number; returned: number; rate: number | null }
+export interface GuestRetention { d1: RetentionPoint; d3: RetentionPoint; d7: RetentionPoint; d14: RetentionPoint; d30: RetentionPoint }
+
+// EventLog 비회원(userId=null) D-N 재방문율 — 공식 리텐션(GA4 대체).
+// 코호트 = sessionId 첫 page_view일(KST). 분모 = N일 경과한(성숙) 코호트만 — 아직 N일 안 지난 코호트는
+// '실패'로 세지 않고 분모에서 제외. 분자 = 첫방문+N일 이후 재방문 존재. 내부 세션(/admin·founder) 제외.
+async function computeGuestRetention(now: number, windowDays = 60): Promise<GuestRetention> {
+  const nowIdx = kstDayIdx(now)
+  const since = new Date(now - windowDays * DAY_MS)
+  const internalSids = await getInternalSessionIds(since)
+  const events = await prisma.eventLog.findMany({
+    where: { eventName: 'page_view', isBot: false, userId: null, sessionId: { not: null }, createdAt: { gte: since } },
+    select: { sessionId: true, createdAt: true },
+    orderBy: { createdAt: 'asc' },
+  })
+  const active = new Map<string, Set<number>>()
+  for (const e of events) {
+    const sid = e.sessionId!
+    if (internalSids.has(sid)) continue
+    let s = active.get(sid)
+    if (!s) { s = new Set(); active.set(sid, s) }
+    s.add(kstDayIdx(e.createdAt.getTime()))
+  }
+  const offs = [1, 3, 7, 14, 30] as const
+  const denom: Record<number, number> = { 1: 0, 3: 0, 7: 0, 14: 0, 30: 0 }
+  const ret: Record<number, number> = { 1: 0, 3: 0, 7: 0, 14: 0, 30: 0 }
+  for (const days of active.values()) {
+    let firstDay = Infinity
+    for (const d of days) if (d < firstDay) firstDay = d
+    for (const off of offs) {
+      if (firstDay + off > nowIdx) continue // 미성숙 코호트 → 분모 제외(실패 아님)
+      denom[off]++
+      for (const d of days) { if (d >= firstDay + off) { ret[off]++; break } }
+    }
+  }
+  const pt = (off: number): RetentionPoint => ({
+    denom: denom[off],
+    returned: ret[off],
+    rate: denom[off] > 0 ? Math.round((ret[off] / denom[off]) * 1000) / 10 : null,
+  })
+  return { d1: pt(1), d3: pt(3), d7: pt(7), d14: pt(14), d30: pt(30) }
+}
+
 // ─── 오늘 핵심 KPI (5분 캐시) ───
 
 export const getDashboardStats = unstable_cache(
@@ -184,24 +230,28 @@ export const getMonthlyOkrStats = unstable_cache(
         ? Math.round((monthlySignups / monthlyUv) * 1000) / 10
         : 0
 
-    // KR4: CDO GA4 Cohort D7
+    // KR4(공식): EventLog 비회원 D7 재방문율 — 성숙 코호트만 분모.
+    // GA4/CDO cohort는 수집 중단(stale)이라 공식 지표에서 제외 → 아래 legacy 값으로만 참고 노출.
+    const guestRetention = await computeGuestRetention(Date.now())
+    const d7RetentionPct = guestRetention.d7.rate
+    const d1RetentionPct = guestRetention.d1.rate
+
+    // (legacy/stale) GA4 CDO Cohort D7 — 공식 지표 아님. 마지막 수집 시각과 함께 참고용으로만 보존.
     const latestCdoLog = await prisma.botLog.findFirst({
       where: { botType: 'CDO', action: 'KPI_DAILY', status: 'SUCCESS' },
       orderBy: { createdAt: 'desc' },
       select: { details: true, createdAt: true },
     })
-
-    let d7RetentionPct: number | null = null
-    let cdoLastCollectedAt: string | null = null
-
+    let ga4D7RetentionPctLegacy: number | null = null
+    let ga4LastCollectedAt: string | null = null
     if (latestCdoLog) {
-      cdoLastCollectedAt = latestCdoLog.createdAt.toISOString()
+      ga4LastCollectedAt = latestCdoLog.createdAt.toISOString()
       try {
         const kpi = JSON.parse(latestCdoLog.details as string) as {
           cohortRetention?: { d7RetentionRate?: number }
         }
         if (kpi.cohortRetention?.d7RetentionRate !== undefined) {
-          d7RetentionPct = Math.round(kpi.cohortRetention.d7RetentionRate * 100)
+          ga4D7RetentionPctLegacy = Math.round(kpi.cohortRetention.d7RetentionRate * 100)
         }
       } catch { /* ignore */ }
     }
@@ -212,11 +262,17 @@ export const getMonthlyOkrStats = unstable_cache(
       avgPvPerUv,
       monthlySignups,
       conversionRate,
+      // 공식 리텐션 = EventLog 비회원
+      retentionSource: 'eventlog' as const,
+      d1RetentionPct,
       d7RetentionPct,
-      cdoLastCollectedAt,
+      guestRetention,
+      // legacy 참고(수집중단)
+      ga4D7RetentionPctLegacy,
+      ga4LastCollectedAt,
     }
   },
-  ['admin-monthly-okr-stats-v2'],
+  ['admin-monthly-okr-stats-v3'], // v3: KR4 = EventLog 비회원 D7(성숙 코호트)로 교체, GA4는 legacy
   { revalidate: 600 }
 )
 

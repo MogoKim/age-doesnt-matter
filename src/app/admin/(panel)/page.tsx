@@ -49,10 +49,6 @@ export default async function AdminDashboardPage() {
       getRetentionQuadrants(),
     ])
 
-  const cdoIsStale =
-    !okr.cdoLastCollectedAt ||
-    Date.now() - new Date(okr.cdoLastCollectedAt).getTime() > 48 * 60 * 60 * 1000
-
   const boardMax = boards.length > 0 ? Math.max(...boards.map((b) => b.total)) : 1
   const trendMaxUv = Math.max(...trend.map((d) => d.uv), 1)
   const trendMaxPv = Math.max(...trend.map((d) => d.pv), 1)
@@ -197,46 +193,30 @@ export default async function AdminDashboardPage() {
             decimals={1}
             tip="이달 신규가입(실고객 providerId 숫자) ÷ 이달 UV. 상단 '오늘 전환율'과 봇 기준 동일, 기간만 월 단위."
           />
-          {/* KR4 D7 — CDO 수집 상태에 따라 분기 */}
+          {/* KR4 D7 — 공식: EventLog 비회원 D7(성숙 코호트). GA4는 legacy(수집중단) */}
           <div className="rounded-xl border border-zinc-200 bg-white p-4">
-            <p className="text-xs font-bold text-zinc-700">{Q2_OKR.d7Retention.label}<InfoTip text="GA4 코호트 기반 비회원 D7 재방문율. CDO 에이전트가 매일 22:00 수집. 현재 수집 중단 상태(에이전트 미동작)." /></p>
-            {cdoIsStale ? (
-              <div className="mt-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-500">
-                📡 수집 중단
-                {okr.cdoLastCollectedAt && (
-                  <span className="mt-0.5 block text-zinc-400">
-                    최종:{' '}
-                    {new Date(okr.cdoLastCollectedAt).toLocaleDateString('ko-KR', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="mt-2 flex items-baseline justify-between">
-                  <span className="text-xl font-bold text-zinc-900">
-                    {okr.d7RetentionPct ?? 0}
-                    {Q2_OKR.d7Retention.unit}
-                  </span>
-                  <span className="text-xs text-zinc-500">
-                    / {Q2_OKR.d7Retention.target}
-                    {Q2_OKR.d7Retention.unit}
-                  </span>
-                </div>
-                <ProgressBar value={okr.d7RetentionPct ?? 0} max={Q2_OKR.d7Retention.target} />
-                <p className="mt-1.5 text-right text-xs font-bold text-zinc-500">
-                  {Math.min(
-                    100,
-                    Math.round(((okr.d7RetentionPct ?? 0) / Q2_OKR.d7Retention.target) * 100),
-                  )}
-                  %
-                </p>
-              </>
-            )}
+            <p className="text-xs font-bold text-zinc-700">{Q2_OKR.d7Retention.label}<InfoTip text="EventLog 기반 비회원 D7 재방문율(공식). 성숙 코호트(첫방문 후 7일 경과)만 분모에 포함 — 아직 7일 안 지난 코호트는 실패로 세지 않음. GA4 코호트는 수집 중단되어 공식 지표에서 제외(아래 legacy 참고만)." /></p>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-xl font-bold text-zinc-900">
+                {okr.d7RetentionPct ?? 0}
+                {Q2_OKR.d7Retention.unit}
+              </span>
+              <span className="text-xs text-zinc-500">
+                / {Q2_OKR.d7Retention.target}
+                {Q2_OKR.d7Retention.unit}
+              </span>
+            </div>
+            <ProgressBar value={okr.d7RetentionPct ?? 0} max={Q2_OKR.d7Retention.target} />
+            <p className="mt-1.5 flex items-center justify-between text-xs text-zinc-500">
+              <span>코호트 {okr.guestRetention.d7.denom}명 · 재방문 {okr.guestRetention.d7.returned}명 (D1 {okr.d1RetentionPct ?? '–'}%)</span>
+              <span className="font-bold">
+                {Math.min(100, Math.round(((okr.d7RetentionPct ?? 0) / Q2_OKR.d7Retention.target) * 100))}%
+              </span>
+            </p>
+            <p className="mt-1 text-xs text-zinc-400">
+              GA4(legacy·수집중단): {okr.ga4D7RetentionPctLegacy ?? '–'}%
+              {okr.ga4LastCollectedAt && ` · 최종 ${new Date(okr.ga4LastCollectedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}`}
+            </p>
             <p className="mt-2 text-xs text-zinc-400">{Q2_OKR.d7Retention.desc}</p>
           </div>
         </div>
