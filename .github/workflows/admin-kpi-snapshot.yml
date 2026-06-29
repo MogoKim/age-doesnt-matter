@@ -1,0 +1,53 @@
+name: "Agents — Admin KPI Snapshot"
+
+# admin dashboard 일자별 공식지표(DailyKpiSnapshot)를 매일 1회 자동 수집.
+# 집계 기준 = EventLog 내부 DB(실고객 providerId 숫자 · 봇/내부 제외 · KST). GA4 미사용.
+# 저장 날짜 = '어제 KST' 1일치(자정 직후 실행이라 그날치가 완결됨).
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "저장할 날짜 YYYY-MM-DD (미입력 시 어제 KST)"
+        required: false
+        type: string
+  schedule:
+    - cron: "20 15 * * *" # 00:20 KST (= 15:20 UTC) — 어제 KST 1일치 집계
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  AGENT_DB_POOL_MAX: "1"
+
+concurrency:
+  group: admin-kpi-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Compute snapshot date (어제 KST, 또는 dispatch 입력)
+        run: |
+          SNAPSHOT_DATE="${{ github.event.inputs.date }}"
+          if [ -z "$SNAPSHOT_DATE" ]; then
+            SNAPSHOT_DATE=$(TZ="Asia/Seoul" date -d "yesterday" +%F)
+          fi
+          echo "SNAPSHOT_DATE=$SNAPSHOT_DATE" >> "$GITHUB_ENV"
+          echo "저장 날짜(어제 KST 또는 입력): $SNAPSHOT_DATE"
+
+      - name: Collect daily KPI snapshot
+        run: npx tsx agents/scripts/collect-dashboard-snapshot.ts --date="$SNAPSHOT_DATE"
