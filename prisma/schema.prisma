@@ -1327,3 +1327,45 @@ model ExperimentState {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
+
+// ──────────────────────────────────────────────
+// 일자별 공식 운영지표 스냅샷 (admin dashboard 신뢰 회복)
+// ──────────────────────────────────────────────
+// 단일 진실의 원천: EventLog 내부 DB. GA4/CDO D7은 수집중단(stale)이라 공식 지표에서 제외.
+// 집계 표준(전 지표 통일): 실고객=providerId 순수숫자(^\d+$) AND role!=ADMIN /
+//   봇제외=EventLog.isBot=false / 내부제외=path '/admin' OR botType 'founder' 세션 + ADMIN user / 날짜=KST.
+// 매일 collect-dashboard-snapshot.ts 가 KST 1일치를 upsert. 과거 추적용 히스토리.
+model DailyKpiSnapshot {
+  id             String   @id @default(cuid())
+  date           String   @unique // KST YYYY-MM-DD (그 날짜의 KST 00:00~24:00 집계)
+
+  // 방문 (봇·내부 세션 제외)
+  uv             Int      @default(0) // 총 UV = 회원UV + 비회원UV
+  pv             Int      @default(0) // 총 PV
+  memberUv       Int      @default(0)
+  guestUv        Int      @default(0)
+  memberPv       Int      @default(0)
+  guestPv        Int      @default(0)
+
+  // 전환
+  newSignups     Int      @default(0) // 실고객 신규가입
+  conversionRate Float? // newSignups / uv * 100 (같은 날 기준, 기간 일치)
+
+  // 콘텐츠 (사용자 작성분)
+  userPosts      Int      @default(0)
+  userComments   Int      @default(0)
+
+  // 활성·고객
+  wau            Int      @default(0) // 해당일 기준 최근 7일 활성 실고객
+  realCustomers  Int      @default(0) // 실고객 누적(ACTIVE, role!=ADMIN, providerId 숫자)
+
+  // 분해/리텐션/품질 (JSON)
+  channels       Json? // [{ channel, sessions, signups, signupRate, retentionRate }] — 30일/30일 기간 일치
+  retention      Json? // { d1:{denom,returned,rate}, d3, d7, d14, d30 } — 성숙 코호트만 분모(비회원 EventLog 기준)
+  dataQuality    Json? // { ga4:'stale', eventLogRows, internalSessionsExcluded, immatureCohortsExcluded, ... }
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([date])
+}

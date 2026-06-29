@@ -12,13 +12,14 @@ const isRealUser = (pid: string) => /^\d+$/.test(pid)
 const dayIdx = (t: number) => Math.floor((t + 9 * 3600000) / DAY)
 const isTwaRef = (ref: string) => ref.startsWith('android-app://')
 
+interface RetentionPoint { denom: number; returned: number; rate: number | null }
 export interface QuadrantRetention {
   segment: string
-  d1: { rate: number; cohort: number }
-  d3: { rate: number; cohort: number }
-  d7: { rate: number; cohort: number }
-  d14: { rate: number; cohort: number }
-  d30: { rate: number; cohort: number }
+  d1: RetentionPoint
+  d3: RetentionPoint
+  d7: RetentionPoint
+  d14: RetentionPoint
+  d30: RetentionPoint
 }
 export interface RetentionData {
   generatedAt: string
@@ -30,29 +31,29 @@ export interface RetentionData {
 
 type Cohort = { firstDay: number; active: Set<number> }
 
-// 고정 코호트 생존곡선: 분모 = 세그먼트 전체 코호트(같은 사람들 끝까지 추적, 모든 D-N 동일).
-// 분자 = 가입 후 N일째(firstDay+N) 이후 재방문. off 클수록 분자가 부분집합 → D1≥D3≥…≥D30 단조 보장.
-// 아직 N일 안 지난 회원은 분자에 못 들어감(미달) → 시간 지나며 상승. 그래서 각 D-N은 같은 N명 기준.
+// 성숙 코호트 생존곡선: 각 D-N의 분모 = firstDay+N일이 경과한(성숙) 코호트만.
+// 아직 N일 안 지난 코호트는 '실패'가 아니라 분모에서 제외. 분자 = 그 중 firstDay+N일 이후 재방문.
+// denom/returned/rate 각각 반환. KR4(EventLog 비회원 D7)와 동일 정의로 통일.
+// ※ 분모가 D-N마다 달라 단조(D1≥…≥D30) 보장은 없음(정의상 의도).
 function calc(cohorts: Cohort[], nowIdx: number, segment: string): QuadrantRetention {
-  const total = cohorts.length
-  const acc: Record<number, number> = { 1: 0, 3: 0, 7: 0, 14: 0, 30: 0 }
+  const offs = [1, 3, 7, 14, 30] as const
+  const denom: Record<number, number> = { 1: 0, 3: 0, 7: 0, 14: 0, 30: 0 }
+  const ret: Record<number, number> = { 1: 0, 3: 0, 7: 0, 14: 0, 30: 0 }
   for (const c of cohorts) {
-    for (const off of [1, 3, 7, 14, 30]) {
-      if (c.firstDay + off > nowIdx) continue // 아직 N일 미경과 → 분자 안 됨(분모엔 그대로 포함)
+    for (const off of offs) {
+      if (c.firstDay + off > nowIdx) continue // 미성숙 코호트 → 분모 제외(실패 아님)
+      denom[off]++
       for (const d of c.active) {
-        if (d >= c.firstDay + off) { acc[off]++; break }
+        if (d >= c.firstDay + off) { ret[off]++; break }
       }
     }
   }
-  const pct = (n: number) => (total > 0 ? Math.round((n / total) * 1000) / 10 : 0)
-  return {
-    segment,
-    d1: { rate: pct(acc[1]), cohort: total },
-    d3: { rate: pct(acc[3]), cohort: total },
-    d7: { rate: pct(acc[7]), cohort: total },
-    d14: { rate: pct(acc[14]), cohort: total },
-    d30: { rate: pct(acc[30]), cohort: total },
-  }
+  const pt = (off: number): RetentionPoint => ({
+    denom: denom[off],
+    returned: ret[off],
+    rate: denom[off] > 0 ? Math.round((ret[off] / denom[off]) * 1000) / 10 : null,
+  })
+  return { segment, d1: pt(1), d3: pt(3), d7: pt(7), d14: pt(14), d30: pt(30) }
 }
 
 export const getRetentionQuadrants = unstable_cache(
@@ -127,9 +128,9 @@ export const getRetentionQuadrants = unstable_cache(
       windowDays,
       members,
       guests,
-      note: '회원=가입일 코호트(providerId 순수숫자) / 비회원=첫방문 코호트(sessionId). 고정 코호트 생존곡선 — 분모는 세그먼트 전체(괄호=코호트 명수, 모든 D-N 동일), D-N=가입 후 N일째 이후 재방문. 같은 사람 기준이라 D1≥D3≥…≥D30 단조. ⚠️ 아직 N일 안 지난 회원은 미달로 집계돼 D14·D30이 낮게 시작→시간 지나며 상승. 표본 작으면 참고용. 비회원은 30일 쿠키 한도로 장기 과소측정.',
+      note: '회원=가입일 코호트(providerId 순수숫자, role≠ADMIN) / 비회원=첫방문 코호트(sessionId). 각 D-N은 N일이 경과한(성숙) 코호트만 분모에 포함 — 아직 N일 안 지난 코호트는 실패가 아니라 분모에서 제외. 괄호=해당 D-N의 분모(성숙 코호트 수)로 D-N마다 다를 수 있음. KR4(EventLog 비회원 D7)와 동일 정의. 표본 작으면 참고용. 비회원은 30일 쿠키 한도로 장기 과소측정.',
     }
   },
-  ['admin-retention-quadrants-v2'],
+  ['admin-retention-quadrants-v3'], // v3: 성숙 코호트만 분모(per-Dn denom/returned/rate)로 정의 변경
   { revalidate: 1800 },
 )
