@@ -174,7 +174,7 @@ export default async function PostDetailPage({ params }: PageProps) {
       <IdentityBanner boardSlug={boardSlug} />
 
       {/* 글 카드: 헤더 + 본문 + 공감/공유 한 덩어리 */}
-      <div className="bg-card rounded-2xl border border-border shadow-sm p-5 mb-4">
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-4 md:p-5 mb-4">
       {/* 헤더 */}
       <div className="pb-5 mb-5 border-b border-border">
         <h1 className="text-xl font-bold text-foreground m-0 mb-4 leading-[1.4]">{post.title}</h1>
@@ -190,7 +190,7 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 본문 */}
       <div
-        className="post-content text-body text-foreground leading-[1.85] mb-5 break-keep [&_p]:mb-4 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:my-4 [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4 [&_video]:w-full [&_video]:rounded-xl [&_video]:my-4 [&_.image-placeholder]:py-6 [&_.image-placeholder]:px-4 [&_.image-placeholder]:bg-muted [&_.image-placeholder]:rounded-xl [&_.image-placeholder]:text-center [&_.image-placeholder]:text-muted-foreground [&_.image-placeholder]:text-[17px] [&_.image-placeholder]:my-4"
+        className="post-content text-body text-foreground leading-[1.85] mb-5 break-keep [&_p]:mb-4 [&_img]:h-auto [&_img]:my-4 [&_img]:rounded-xl [&_img]:-mx-4 [&_img]:w-[calc(100%+2rem)] [&_img]:max-w-[calc(100%+2rem)] md:[&_img]:mx-0 md:[&_img]:w-full md:[&_img]:max-w-full [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4 [&_video]:my-4 [&_video]:rounded-xl [&_video]:-mx-4 [&_video]:w-[calc(100%+2rem)] md:[&_video]:mx-0 md:[&_video]:w-full [&_.image-placeholder]:py-6 [&_.image-placeholder]:px-4 [&_.image-placeholder]:bg-muted [&_.image-placeholder]:rounded-xl [&_.image-placeholder]:text-center [&_.image-placeholder]:text-muted-foreground [&_.image-placeholder]:text-[17px] [&_.image-placeholder]:my-4"
         dangerouslySetInnerHTML={{ __html: proxyR2Images(sanitizeHtml(post.content)) }}
       />
 
