@@ -38,6 +38,7 @@ export default function KpiHistoryPanel({ rows }: { rows: SnapshotRow[] }) {
     : k.badges.some((b) => b.level === '주의')
       ? 'border-amber-400'
       : 'border-green-400'
+  const cardDelta = (key: string) => k.cards.find((c) => c.key === key)?.deltaPct ?? null
 
   return (
     <section className="space-y-3 rounded-2xl border border-zinc-300 bg-white p-4 shadow-sm">
@@ -47,32 +48,35 @@ export default function KpiHistoryPanel({ rows }: { rows: SnapshotRow[] }) {
         <span className="text-xs text-zinc-500">최신 완료일 <b className="text-zinc-700">{k.latestDate}</b> · EventLog 스냅샷(봇/내부 제외·KST) · 갱신 {new Date(k.updatedAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
       </div>
 
-      {/* ① 상태 요약 — HERO(가장 먼저 읽히게) */}
+      {/* ① 상태 요약 — HERO(핵심 숫자 먼저, 그다음 문장) */}
       <div className={`rounded-xl border-l-4 ${overallBorder} bg-zinc-50 p-4`}>
-        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
           {k.badges.map((b) => (
             <span key={b.key} className={`rounded-full px-3 py-1 text-sm font-bold ${LEVEL_CLS[b.level]}`}>{b.key} {b.level}</span>
+          ))}
+        </div>
+        {/* 핵심 숫자 — 크게(한눈에). 모바일 2열 → 가로스크롤 없음 */}
+        <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {[
+            { l: 'UV', v: fmt(k.uv), d: cardDelta('uv'), sub: k.uvVsAvg7Pct === null ? '' : `7일평균 ${k.uvVsAvg7Pct > 0 ? '+' : ''}${k.uvVsAvg7Pct}%` },
+            { l: '신규가입', v: fmt(k.newSignups), d: cardDelta('signups'), sub: '실고객' },
+            { l: 'WAU', v: fmt(k.wau), d: cardDelta('wau'), sub: '주간활성' },
+            { l: 'D7', v: k.d7 === null ? '–' : `${k.d7}%`, d: null, sub: '비회원 재방문' },
+          ].map((n) => (
+            <div key={n.l} className="rounded-lg bg-white px-3 py-2 shadow-sm">
+              <div className="text-xs text-zinc-500">{n.l}</div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-extrabold text-zinc-900">{n.v}</span>
+                <span className="text-xs"><Delta pct={n.d} /></span>
+              </div>
+              {n.sub && <div className="text-[11px] text-zinc-400">{n.sub}</div>}
+            </div>
           ))}
         </div>
         <ul className="space-y-1 text-sm font-medium text-zinc-800">{k.statusSentences.map((s, i) => <li key={i}>· {s}</li>)}</ul>
       </div>
 
-      {/* ② KPI 카드 + 7일 스파크라인 */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {k.cards.map((c) => (
-          <div key={c.key} className="rounded-xl border border-zinc-200 p-3">
-            <div className="text-xs font-bold text-zinc-500">{c.label}</div>
-            <div className="mt-0.5 flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-zinc-900">{c.value}</span>
-              <span className="text-xs"><Delta pct={c.deltaPct} /></span>
-            </div>
-            <Sparkline values={c.spark} width={170} height={30} color={c.key === 'd7' ? '#2563eb' : '#FF6F61'} />
-            <div className="mt-0.5 text-[11px] text-zinc-400">{c.note}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ③ 채널 품질 */}
+      {/* ② 채널 품질 — 첫 화면(어디서 온 사람이 가입하나) */}
       <div className="rounded-xl border border-zinc-200 p-3">
         <div className="mb-1 text-sm font-bold text-zinc-900">채널 품질 (최근 30일 · 어디서 온 사람이 가입하나)</div>
         <div className="overflow-x-auto">
@@ -95,6 +99,23 @@ export default function KpiHistoryPanel({ rows }: { rows: SnapshotRow[] }) {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* ③ KPI 7일 추이 — 모바일은 숫자+전일대비만(2열), 스파크라인/설명은 데스크탑 */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
+        {k.cards.map((c) => (
+          <div key={c.key} className="rounded-xl border border-zinc-200 p-3">
+            <div className="text-xs font-bold text-zinc-500">{c.label}</div>
+            <div className="mt-0.5 flex items-baseline gap-2">
+              <span className="text-xl font-extrabold text-zinc-900 sm:text-2xl">{c.value}</span>
+              <span className="text-xs"><Delta pct={c.deltaPct} /></span>
+            </div>
+            <div className="hidden sm:block">
+              <Sparkline values={c.spark} width={170} height={30} color={c.key === 'd7' ? '#2563eb' : '#FF6F61'} />
+              <div className="mt-0.5 text-[11px] text-zinc-400">{c.note}</div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* 전주 대비 */}
