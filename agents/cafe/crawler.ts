@@ -1206,6 +1206,66 @@ export async function refreshRecentPosts(): Promise<number> {
     }
   }
 
+  // ── 댓글 재추출 부활 패스 (wgang 전용) ───────────────────────────────
+  // 첫 크롤 당시 댓글이 적어 topComments usable<5로 죽은 글을, 댓글이 늘어난 지금 재추출해 되살린다.
+  // refresh의 기존 루프는 commentCount/killerScore만 갱신하고 topComments는 안 건드려(=발행 게이트가 보는 값 미갱신)
+  // 일반글이 영구 부적격으로 남던 문제 보완. extractComments=DOM 파싱(AI 호출 0). cap으로 요청량 상한.
+  // 같은 page/browser 재사용 — 신규 네비게이션만 ≤cap. popular-sync·content-curator·requiredUsableCount(5) 무변경.
+  const REVIVE_CAP = Number.parseInt(process.env.COMMENT_REVIVE_CAP ?? '10', 10)
+  let rvScanned = 0, rvRefreshed = 0, rvRevived = 0, rvSkipped = 0, rvFailed = 0
+  if (Number.isFinite(REVIVE_CAP) && REVIVE_CAP > 0) {
+    // 대상: wgang · 7일 · 미사용 · isUsable · 댓글≥5 (usable<5는 Json이라 JS에서 필터)
+    const candidates = await prisma.cafePost.findMany({
+      where: { cafeId: 'wgang', crawledAt: { gte: cutoff7d }, usedAt: null, isUsable: true, commentCount: { gte: 5 } },
+      select: { id: true, postUrl: true, commentCount: true, likeCount: true, topComments: true },
+      orderBy: [{ commentCrawled: 'asc' }, { commentCount: 'desc' }], // 미수집 우선 → 댓글 많은 순
+      take: REVIVE_CAP * 5,
+    })
+    const targets = candidates.filter(p => computeUsableCount(p.topComments) < 5).slice(0, REVIVE_CAP)
+    console.log(`[CommentRevive] wgang 부활 대상 ${targets.length}건 (cap ${REVIVE_CAP})`)
+    for (const post of targets) {
+      rvScanned++
+      try {
+        await page.goto(post.postUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
+        await page.waitForTimeout(800)
+        const newComments = await extractComments(page, 15)
+        if (newComments.length === 0) { rvSkipped++; continue } // 추출 0 → 기존 topComments 보존
+        rvRefreshed++
+        const newUsable = computeUsableCount(newComments)
+        if (newUsable >= 5) {
+          // killerScore 재계산 — refresh 기존 루프와 동일 inline 공식. 신 수치 읽기 실패(0/0)면 DB값 유지
+          const nc = await safeNumber(page, ['.u_cbox_count', '.CommentCount', '.comment_count', '.num_comment .num'])
+          const nl = await safeNumber(page, ['.like_article .u_cnt', '.sympathy_count', '.u_likeit_list_count .u_cnt'])
+          const newCommentCount = nc > 0 ? nc : post.commentCount
+          const newLikeCount = nl > 0 ? nl : post.likeCount
+          const commentScore = Math.min(newCommentCount * 10, 100) * 0.55
+          const likeScore = Math.min(newLikeCount * 20, 100) * 0.35
+          const newKillerScore = Math.round(commentScore + likeScore)
+          await prisma.cafePost.update({
+            where: { id: post.id },
+            data: { topComments: newComments, commentCrawled: true, commentCount: newCommentCount, likeCount: newLikeCount, killerScore: newKillerScore },
+          })
+          rvRevived++
+          console.log(`[CommentRevive] 부활: usable→${newUsable} 댓글 ${post.commentCount}→${newCommentCount} k=${newKillerScore} ${post.postUrl}`)
+        } else {
+          rvSkipped++ // usable<5 → 기존 topComments 절대 미변경(보존)
+        }
+      } catch (err) {
+        rvFailed++
+        console.warn(`[CommentRevive] 실패: ${post.postUrl}`, err)
+      }
+    }
+    await prisma.botLog.create({
+      data: {
+        botType: 'CAFE_CRAWLER', action: 'COMMENT_REVIVE',
+        status: rvFailed > 0 && rvRevived === 0 ? 'PARTIAL' : 'SUCCESS',
+        itemCount: rvRevived,
+        details: JSON.stringify({ scanned: rvScanned, refreshed: rvRefreshed, revivedToUsable5: rvRevived, skipped: rvSkipped, failed: rvFailed, cap: REVIVE_CAP }),
+      },
+    })
+    console.log(`[CommentRevive] 완료: scanned ${rvScanned} · revived ${rvRevived} · skipped ${rvSkipped} · failed ${rvFailed}`)
+  }
+
   // close timeout 보호 — headless:false Chromium이 차단 상태에서 IPC 정리 중 deadlock 방지
   // browser 참조는 context.close() 전에 확보 (close 후에는 null 반환 가능)
   const browser = context.browser()
