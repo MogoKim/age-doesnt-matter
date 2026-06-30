@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 import { getBoardConfig } from '@/lib/queries/boards'
-import { getPostDetail, getRelatedCommunityPosts } from '@/lib/queries/posts'
+import { getPostDetail, getRelatedCommunityPosts, getCrossBoardCandidates } from '@/lib/queries/posts'
 import { getCommentsByPostId } from '@/lib/queries/comments'
 import ActionBar from '@/components/features/community/ActionBar'
 import PostCTA from '@/components/features/community/PostCTA'
@@ -104,8 +104,12 @@ export default async function PostDetailPage({ params }: PageProps) {
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/likes FK 보장)
   const resolvedId = post.id
 
-  // 관련글 1회 조회 → 본문끝 추천 v2(후보 24 → 클라 점수화 상위 3) + 하단 목록(slice 12) 공용
-  const related = await getRelatedCommunityPosts(post.boardType, post.category || null, resolvedId, 24)
+  // 관련글 1회 조회 → 본문끝 추천(후보 24 → 클라 점수화 상위 3) + 하단 목록(slice 12) 공용
+  // crossBoard: algo v2(A/B) 전용 크로스보드 후보. v1·하단 목록은 related(같은 보드)만 사용.
+  const [related, crossBoard] = await Promise.all([
+    getRelatedCommunityPosts(post.boardType, post.category || null, resolvedId, 24),
+    getCrossBoardCandidates(post.boardType, post.category || null, resolvedId, 12),
+  ])
 
   const canonicalSlug = post.slug ?? postId
   const url = `${BASE_URL}/community/${boardSlug}/${canonicalSlug}`
@@ -219,7 +223,9 @@ export default async function PostDetailPage({ params }: PageProps) {
         currentCategory={post.category || null}
         currentTitle={post.title}
         currentPreview={post.preview ?? ''}
+        currentBoardType={post.boardType}
         posts={related}
+        crossBoardPosts={crossBoard}
       />
 
       {/* 댓글 — Suspense로 지연 로딩 */}

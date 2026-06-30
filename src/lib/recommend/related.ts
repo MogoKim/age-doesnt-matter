@@ -6,7 +6,7 @@
  *
  * 튜닝은 REC_WEIGHTS 상수만 바꾼다. 롤백 = weight 0 또는 호출 제거(기존 trendingScore 정렬 복귀).
  */
-import type { PostSummary } from '@/types/api'
+import type { PostSummary, BoardType } from '@/types/api'
 import { GREETING_CATEGORY } from '@/lib/greeting'
 
 /** 알고리즘 버전 — tracking properties 에 동봉해 버전별 효과 비교 */
@@ -48,6 +48,8 @@ export interface ScoreCurrent {
   category: string | null
   title: string
   preview: string
+  /** v2 전용 — 크로스보드 판별용. v1은 무시(미전달 시 영향 0) */
+  boardType?: BoardType
 }
 
 export interface ScoreOpts {
@@ -161,4 +163,91 @@ export function scoreRelated(
 
   scored.sort((a, b) => b.score - a.score || Date.parse(b.post.createdAt) - Date.parse(a.post.createdAt))
   return scored.slice(0, take).map((s, i) => ({ ...s, rank: i + 1 }))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 관련글 추천 v2 (A/B 실험 arm) — 후보 품질 개선.
+//   목적: 네이버 랜딩(토픽성 유입)의 next-page 이동률↑. 같은 category 우선 + 제목/요약 키워드 가중 강화
+//        + 부족 시 크로스보드(stories/life2/humor) fallback(키워드 hit 있는 후보만).
+//   v1은 한 줄도 바꾸지 않는다(scoreRelated 그대로 = control). v2는 본 함수만 사용.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const REC_ALGO_VERSION_V2 = 'rec_v2_2026-06-30'
+
+/** v2 가중치 — 키워드(제목/요약) 비중을 v1보다 크게(토픽 적합도 우선). */
+export const REC_WEIGHTS_V2 = {
+  sameCategory: 30,
+  titleOverlap: 36, // v1 20 → 강화
+  previewOverlap: 18, // v1 10 → 강화
+  trending: 12,
+  comment: 10,
+  like: 6,
+  view: 4,
+  recency7: 8,
+  recency30: 4,
+} as const
+
+/** 무관글 차단 — 토픽 신호(같은 category 또는 키워드 overlap>0)가 있어야 후보 자격. 크로스보드는 키워드 hit 필수. */
+function v2Parts(current: ScoreCurrent, c: PostSummary, curTitle: string[], curPreview: string[], now: number, maxes: { t: number; c: number; l: number; v: number }) {
+  const sameCat = current.category && c.category === current.category
+  const titleOverlap = overlapScore(curTitle, tokenize(c.title), REC_WEIGHTS_V2.titleOverlap)
+  const previewOverlap = overlapScore(curPreview, tokenize(c.preview), REC_WEIGHTS_V2.previewOverlap)
+  const parts: ScoreParts = {
+    category: sameCat ? REC_WEIGHTS_V2.sameCategory : 0,
+    titleOverlap,
+    previewOverlap,
+    trending: (c.trendingScore / maxes.t) * REC_WEIGHTS_V2.trending,
+    comment: (c.commentCount / maxes.c) * REC_WEIGHTS_V2.comment,
+    like: (c.likeCount / maxes.l) * REC_WEIGHTS_V2.like,
+    view: (c.viewCount / maxes.v) * REC_WEIGHTS_V2.view,
+    recency: 0,
+  }
+  const ageDays = (now - Date.parse(c.createdAt)) / 86400000
+  parts.recency = ageDays <= 7 ? REC_WEIGHTS_V2.recency7 : ageDays <= 30 ? REC_WEIGHTS_V2.recency30 : 0
+  const keywordHit = titleOverlap > 0 || previewOverlap > 0
+  const score = parts.category + parts.titleOverlap + parts.previewOverlap + parts.trending + parts.comment + parts.like + parts.view + parts.recency
+  return { parts, score, sameCat: !!sameCat, keywordHit }
+}
+
+export function scoreRelatedV2(
+  current: ScoreCurrent,
+  candidates: PostSummary[],
+  opts: ScoreOpts,
+): ScoredPost[] {
+  const { excludeIds, now, take = 3 } = opts
+  const exclude = new Set<string>([current.id, ...excludeIds])
+  const pool = candidates.filter((c) => !exclude.has(c.id) && c.category !== GREETING_CATEGORY)
+  if (pool.length === 0) return []
+
+  const maxes = {
+    t: Math.max(1, ...pool.map((c) => c.trendingScore)),
+    c: Math.max(1, ...pool.map((c) => c.commentCount)),
+    l: Math.max(1, ...pool.map((c) => c.likeCount)),
+    v: Math.max(1, ...pool.map((c) => c.viewCount)),
+  }
+  const curTitle = tokenize(current.title)
+  const curPreview = tokenize(current.preview)
+  const curBoard = current.boardType
+
+  const evaluated = pool.map((c) => {
+    const r = v2Parts(current, c, curTitle, curPreview, now, maxes)
+    const crossBoard = curBoard !== undefined && c.boardType !== curBoard
+    // 토픽 자격: 같은 category 또는 키워드 hit. 크로스보드는 키워드 hit 필수(인기만으로 못 들어옴).
+    const topical = crossBoard ? r.keywordHit : (r.sameCat || r.keywordHit)
+    return { post: c, score: r.score, reason: decideReason(r.parts), crossBoard, topical }
+  })
+
+  const byScore = (a: { score: number; post: PostSummary }, b: { score: number; post: PostSummary }) =>
+    b.score - a.score || Date.parse(b.post.createdAt) - Date.parse(a.post.createdAt)
+
+  // 1순위: 토픽 적합 후보(무관글 차단). 부족하면 같은 보드 인기/최신으로 채워 v1 대비 노출 수 감소 방지.
+  const topical = evaluated.filter((e) => e.topical).sort(byScore)
+  let chosen = topical
+  if (chosen.length < take) {
+    const filler = evaluated
+      .filter((e) => !e.topical && (curBoard === undefined || e.post.boardType === curBoard))
+      .sort(byScore)
+    chosen = [...topical, ...filler.slice(0, take - topical.length)]
+  }
+  return chosen.slice(0, take).map((s, i) => ({ post: s.post, score: s.score, reason: s.reason, rank: i + 1 }))
 }

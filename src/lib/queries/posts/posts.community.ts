@@ -287,6 +287,43 @@ export const getRelatedCommunityPosts = unstable_cache(
   { revalidate: 300, tags: ['community-board-page'] },
 )
 
+// 관련글 추천 v2(A/B) 전용 — 크로스보드 후보 pool. 네이버 트래픽 보드(STORY/LIFE2/HUMOR) 중심.
+// v1·PostListBottom이 쓰는 getRelatedCommunityPosts(같은 보드)는 건드리지 않는다(컨트롤 보존).
+// 점수/토픽 적합 판정은 클라(scoreRelatedV2)에서 — 여기선 가벼운 후보 공급만.
+const CROSS_BOARD_POOL: BoardType[] = ['STORY', 'LIFE2', 'HUMOR']
+async function _getCrossBoardCandidates(
+  currentBoardType: BoardType,
+  category: string | null,
+  excludeId: string,
+  limit = 12,
+): Promise<PostSummary[]> {
+  const boards = CROSS_BOARD_POOL.filter((b) => b !== currentBoardType)
+  if (boards.length === 0) return []
+  // 같은 category 우선(있으면) → 부족분은 트렌딩/최신. 가입인사 제외.
+  const matched = category
+    ? await prisma.post.findMany({
+        where: { boardType: { in: boards }, status: 'PUBLISHED', id: { not: excludeId }, category, ...EXCLUDE_GREETING },
+        orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
+        take: limit,
+        select: postSelect,
+      })
+    : []
+  if (matched.length >= limit) return matched.map(toPostSummary)
+  const excludeIds = [excludeId, ...matched.map((r) => r.id)]
+  const fill = await prisma.post.findMany({
+    where: { boardType: { in: boards }, status: 'PUBLISHED', id: { notIn: excludeIds }, ...EXCLUDE_GREETING },
+    orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
+    take: limit - matched.length,
+    select: postSelect,
+  })
+  return [...matched, ...fill].map(toPostSummary)
+}
+export const getCrossBoardCandidates = unstable_cache(
+  _getCrossBoardCandidates,
+  ['cross-board-candidates'],
+  { revalidate: 300, tags: ['community-board-page'] },
+)
+
 function formatTimeAgoFromMs(ms: number): string {
   const minutes = Math.floor(ms / 60000)
   if (minutes < 1) return '방금 전'
