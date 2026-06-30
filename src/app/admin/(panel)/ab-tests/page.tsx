@@ -4,6 +4,8 @@ import type { WebExperimentView, VariantStat } from '@/lib/queries/admin/admin.e
 import { getExperimentRetention } from '@/lib/queries/admin/admin.experiments-retention'
 import type { ExperimentRetentionView } from '@/lib/queries/admin/admin.experiments-retention'
 import type { Confidence } from '@/lib/experiments/stats'
+import { getRelatedAlgoAbStats } from '@/lib/queries/admin/admin.experiments-related-algo'
+import type { RelatedAlgoView } from '@/lib/queries/admin/admin.experiments-related-algo'
 import PeriodFilter from './PeriodFilter'
 import ExperimentStatePanel from './ExperimentStatePanel'
 
@@ -221,6 +223,55 @@ function RetentionPanel({ data }: { data: ExperimentRetentionView }) {
   )
 }
 
+// 진행 중 실험 — 관련글 추천 algo v1/v2(related_algo_v2, PR #30). registry/assign 이 아니라 algo_version 기반 집계.
+// 지표: 노출·인라인 클릭·CTR·네이버 next-page rate·네이버 PV/session. 표본 부족이면 "표본 부족"으로 표시.
+function RelatedAlgoPanel({ data }: { data: RelatedAlgoView }) {
+  const conf = CONFIDENCE_META[data.ctrConfidence]
+  return (
+    <div className="rounded-xl border border-[#FF6F61]/30 bg-white p-5">
+      <div className="mb-1 flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">진행 중</span>
+        <span className="rounded-full bg-[#FF6F61]/10 px-2.5 py-1 text-xs font-bold text-[#FF6F61]">📊 데이터 수집 중</span>
+        <h2 className="text-base font-bold text-zinc-900">related_algo_v2 · 관련글 추천 알고리즘 v1/v2</h2>
+      </div>
+      <dl className="mb-3 space-y-1 rounded-lg bg-zinc-50 p-3 text-sm">
+        <div className="flex gap-2"><dt className="w-8 shrink-0 font-bold text-zinc-500">A</dt><dd className="text-zinc-700">rec_v1 — 기존 추천(같은 보드 맥락×흥미도)</dd></div>
+        <div className="flex gap-2"><dt className="w-8 shrink-0 font-bold text-zinc-500">B</dt><dd className="text-zinc-700">rec_v2_2026-06-30 — 새 추천(키워드 가중↑·크로스보드, 50:50)</dd></div>
+      </dl>
+      <p className="mb-2 text-xs leading-relaxed text-zinc-500">
+        봇/내부 제외 · sessionId 기준 · related_recommend_view / related_post_click 의 algo_version 으로 arm 판정{data.startFrom ? ` · ${data.startFrom}~` : ''}.
+        <b>CTR</b>(클릭/노출) 목표 <b>≥6%</b>(baseline 2.8%). 네이버 next-page·PV/s 는 <b>관련글 노출 세션 기준 v1↔v2 비교</b>(전체 네이버 5.9%/1.26과 모집단 다름 — 절대값 아닌 arm 우열로 판단).
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-xs text-zinc-500">
+              <th className="py-1 text-left">arm</th>
+              <th>노출</th><th>인라인클릭</th><th>CTR</th><th>네이버 next-page<span className="font-normal text-zinc-400">(노출세션)</span></th><th>네이버 PV/s</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.arms.map((a) => (
+              <tr key={a.key} className="border-t border-zinc-100">
+                <td className="py-1.5 font-medium text-zinc-700">{a.label}</td>
+                <td className="text-center text-zinc-600">{a.shown}</td>
+                <td className="text-center text-zinc-600">{a.inlineClicks}</td>
+                <td className="text-center"><b className="text-zinc-800">{a.ctr}%</b></td>
+                <td className="text-center text-zinc-600">{a.naverNextPageRate}%<span className="text-xs text-zinc-400"> ({a.naverSessions})</span></td>
+                <td className="text-center text-zinc-600">{a.naverPvPerSession}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-3">
+        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${conf.cls}`}>CTR {conf.label}</span>
+        <span className="text-xs text-zinc-500">{data.ctrConfidence === 'insufficient' ? '아직 표본이 적어요 — 수집 중입니다.' : conf.hint}</span>
+      </div>
+    </div>
+  )
+}
+
 export default async function AdminAbTestsPage({
   searchParams,
 }: {
@@ -231,6 +282,7 @@ export default async function AdminAbTestsPage({
   const days = PERIOD_DAYS[period] ?? 30
   const experiments = await getWebExperiments(days)
   const retention = await getExperimentRetention('exp1_related_flow', days)
+  const relatedAlgo = await getRelatedAlgoAbStats(days)
 
   // exp1_related_flow 는 가입 전환이 아니라 리텐션(RetentionPanel)으로 판단 → 기존 가입 전환 카드에서 제외.
   // (sign_up 엔 related_flow 가 안 실려 가입 전환율이 0/무의미하게 보이는 오해 방지)
@@ -251,30 +303,28 @@ export default async function AdminAbTestsPage({
         <PeriodFilter />
       </div>
 
-      {retention && <RetentionPanel data={retention} />}
+      {/* 진행 중 — related_algo_v2(현재 운영 실험) 최상단 + registry ACTIVE 카드 */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-medium text-zinc-400">진행 중</h2>
+        <RelatedAlgoPanel data={relatedAlgo} />
+        {active.map((exp) => (
+          <ExperimentCard key={exp.id} exp={exp} />
+        ))}
+      </section>
 
-      {active.length === 0 && concluded.length === 0 && !retention && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 text-sm leading-relaxed text-zinc-500">
-          현재 진행 중인 실험이 없습니다. 새 실험은 <code className="rounded bg-zinc-100 px-1 text-zinc-700">src/lib/experiments/registry.ts</code>에 등록하면 여기에 표시됩니다.
-        </div>
-      )}
-
-      {active.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-xs font-medium text-zinc-400">진행 중</h2>
-          {active.map((exp) => (
-            <ExperimentCard key={exp.id} exp={exp} />
-          ))}
-        </section>
-      )}
-
-      {concluded.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-xs font-medium text-zinc-400">종료</h2>
-          {concluded.map((exp) => (
-            <ExperimentCard key={exp.id} exp={exp} />
-          ))}
-        </section>
+      {/* 종료됨 — 기본 접힘. 과거 데이터 보존(삭제 안 함). exp1_related_flow 리텐션 + registry CONCLUDED 카드 */}
+      {(retention || concluded.length > 0) && (
+        <details className="rounded-xl border border-zinc-200 bg-zinc-50/50">
+          <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-zinc-500 select-none">
+            종료됨 ({(retention ? 1 : 0) + concluded.length}) · 펼쳐서 보기
+          </summary>
+          <div className="space-y-3 p-4 pt-0">
+            {retention && <RetentionPanel data={retention} />}
+            {concluded.map((exp) => (
+              <ExperimentCard key={exp.id} exp={exp} />
+            ))}
+          </div>
+        </details>
       )}
     </div>
   )
