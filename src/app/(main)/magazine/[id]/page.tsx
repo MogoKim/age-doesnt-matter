@@ -195,7 +195,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
   const faqJsonLd = post.content ? extractFaqJsonLd(post.content) : null
 
   return (
-    <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8">
+    <div className="max-w-[720px] mx-auto px-3 py-6 md:px-6 md:py-8">
       {/* GA4 매거진 조회 이벤트 */}
       <GTMEventOnMount event="magazine_view" data={{ article_id: id, article_title: post.title, category: post.category ?? '' }} />
       {/* 구조화 데이터 */}
