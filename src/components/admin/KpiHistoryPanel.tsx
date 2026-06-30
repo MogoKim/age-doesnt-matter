@@ -33,28 +33,28 @@ export default function KpiHistoryPanel({ rows }: { rows: SnapshotRow[] }) {
   const windowRows = rows.slice(0, period)
   const weekly = aggregateWeekly(windowRows)
 
+  const overallBorder = k.badges.some((b) => b.level === '위험')
+    ? 'border-red-400'
+    : k.badges.some((b) => b.level === '주의')
+      ? 'border-amber-400'
+      : 'border-green-400'
+
   return (
-    <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-      {/* 헤더 + 기준 안내 */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-base font-bold text-zinc-900">운영 상황판 — 완료 데이터</h2>
-          <p className="text-xs text-zinc-500">
-            최신 완료일 <b>{k.latestDate}</b>(EventLog 스냅샷 · 봇/내부 제외 · KST) · 갱신 {new Date(k.updatedAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-            <span className="ml-1 text-zinc-400">— 아래 “오늘 실시간”은 당일 partial</span>
-          </p>
-        </div>
+    <section className="space-y-3 rounded-2xl border border-zinc-300 bg-white p-4 shadow-sm">
+      {/* 완료 데이터 라벨 (실시간과 시각 구분) */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-white">✓ 완료 데이터</span>
+        <span className="text-xs text-zinc-500">최신 완료일 <b className="text-zinc-700">{k.latestDate}</b> · EventLog 스냅샷(봇/내부 제외·KST) · 갱신 {new Date(k.updatedAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
       </div>
 
-      {/* ① 상태 요약 */}
-      <div className="rounded-xl bg-zinc-50 p-3">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="text-sm font-bold text-zinc-900">오늘 상태 ({k.latestDate})</span>
+      {/* ① 상태 요약 — HERO(가장 먼저 읽히게) */}
+      <div className={`rounded-xl border-l-4 ${overallBorder} bg-zinc-50 p-4`}>
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
           {k.badges.map((b) => (
-            <span key={b.key} className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${LEVEL_CLS[b.level]}`}>{b.key} {b.level}</span>
+            <span key={b.key} className={`rounded-full px-3 py-1 text-sm font-bold ${LEVEL_CLS[b.level]}`}>{b.key} {b.level}</span>
           ))}
         </div>
-        <ul className="space-y-0.5 text-sm text-zinc-700">{k.statusSentences.map((s, i) => <li key={i}>· {s}</li>)}</ul>
+        <ul className="space-y-1 text-sm font-medium text-zinc-800">{k.statusSentences.map((s, i) => <li key={i}>· {s}</li>)}</ul>
       </div>
 
       {/* ② KPI 카드 + 7일 스파크라인 */}

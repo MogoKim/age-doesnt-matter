@@ -89,9 +89,13 @@ export default async function AdminDashboardPage() {
       {/* 운영 상황판 — 완료 데이터(DailyKpiSnapshot 스냅샷). 첫 화면 최상단 */}
       <KpiHistoryPanel rows={snapshotRows} />
 
-      {/* ① 오늘 실시간 (당일 partial) */}
-      <div className="text-sm font-bold text-zinc-700">오늘 실시간 <span className="font-normal text-zinc-400">(당일 partial · 완료 데이터는 위 상황판)</span></div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      {/* ② 오늘 실시간 (당일 partial) — 완료 데이터와 시각 구분 */}
+      <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/40 p-4">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center rounded-full bg-amber-500 px-3 py-1 text-xs font-bold text-white">⏳ 오늘 실시간</span>
+        <span className="text-xs text-amber-700">당일 미완결(partial) · 확정 수치는 위 “완료 데이터” 상황판</span>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard label="오늘 방문 (UV)" value={stats.todayUniqueVisitors} icon="👁️" sub={`회원 ${stats.memberUv} · 비회원 ${stats.guestUv}`} tip="오늘 방문한 고유 사용자(세션) 수. 봇 제외. 회원=오늘 로그인한 세션, 비회원=비로그인 세션, 합=전체. 비회원→회원 전환 유저는 회원으로 1회만(중복 없음)." />
         <KpiCard label="오늘 PV" value={stats.todayPV} icon="📄" sub={`회원 ${stats.memberPv.toLocaleString()} · 비회원 ${stats.guestPv.toLocaleString()}`} tip="오늘 페이지 조회 수(봇 제외). 회원/비회원 분리, 합=전체. 같은 사람이 여러 번 봐도 다 카운트(UV와 달리 중복 포함)." />
         <KpiCard label="신규 가입" value={stats.todaySignups} icon="🆕" sub="실고객만(봇 제외)" href="/admin/members" tip="오늘 가입한 실고객 수. providerId가 순수 숫자인 진짜 카카오 가입자만. seed·curator 등 봇 전부 제외." />
@@ -118,6 +122,7 @@ export default async function AdminDashboardPage() {
           href="/admin/reports"
           tip="아직 처리(승인/숨김/삭제)하지 않은 신고 건수. PENDING 상태 Report."
         />
+      </div>
       </div>
 
       {/* 긴급 알림 */}
