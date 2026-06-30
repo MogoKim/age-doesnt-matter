@@ -81,7 +81,7 @@
     <div class="meta-grid">
       <div class="meta-item"><strong>작성일</strong> 2026-06-21</div>
       <div class="meta-item"><strong>대상 앱</strong> com.agenotmatter.app</div>
-      <div class="meta-item"><strong>현재</strong> vc18 / versionCode 18 / versionName 1.0.14</div>
+      <div class="meta-item"><strong>현재</strong> vc20 / versionCode 20 / versionName 1.0.15</div>
       <div class="meta-item"><strong>Play</strong> production 게시 완료</div>
       <div class="meta-item"><strong>Firebase</strong> agenotmatter-19615</div>
       <div class="meta-item"><strong>GA4</strong> 481670969</div>
@@ -132,8 +132,8 @@
       <tr><td>문서명</td><td>우리 나이가 어때서 — Android Capacitor AAB 운영 정책 문서</td><td>—</td></tr>
       <tr><td>작성일</td><td>2026-06-21</td><td>—</td></tr>
       <tr><td>대상 앱 패키지</td><td><code>com.agenotmatter.app</code></td><td><span class="badge code">google-services.json · build.gradle</span></td></tr>
-      <tr><td>현재 버전</td><td>vc18 / versionCode <strong>18</strong> / versionName <strong>1.0.14</strong></td><td><span class="badge code">android/app/build.gradle</span></td></tr>
-      <tr><td>Play Store 상태</td><td>1.0.14 production 게시 완료</td><td>운영 기록(handoff)</td></tr>
+      <tr><td>현재 버전</td><td>vc20 / versionCode <strong>20</strong> / versionName <strong>1.0.15</strong></td><td><span class="badge code">android/app/build.gradle</span></td></tr>
+      <tr><td>Play Store 상태</td><td>1.0.15 production 게시 완료</td><td>운영 기록(handoff)</td></tr>
       <tr><td>Firebase project</td><td><code>agenotmatter-19615</code></td><td><span class="badge code">google-services.json</span></td></tr>
       <tr><td>Firebase Android app id</td><td><code>1:757616369524:android:4f5a69a31a937bd6de1621</code></td><td><span class="badge code">google-services.json (mobilesdk_app_id)</span></td></tr>
       <tr><td>GA4 property</td><td><code>481670969</code> · 우리 나이가 어때서</td><td>운영 기록(handoff)</td></tr>
@@ -218,7 +218,7 @@
       <tr><th>역할</th><th>경로</th></tr>
       <tr><td>Capacitor config</td><td><code>capacitor.config.ts</code> (server.url = production)</td></tr>
       <tr><td>Android native(앱 모듈)</td><td><code>android/app/</code> · 진입 <code>android/app/src/main/java/com/agenotmatter/app/MainActivity.java</code></td></tr>
-      <tr><td>버전/서명/플러그인</td><td><code>android/app/build.gradle</code> (versionCode 18 / versionName 1.0.14 / google-services plugin)</td></tr>
+      <tr><td>버전/서명/플러그인</td><td><code>android/app/build.gradle</code> (versionCode 20 / versionName 1.0.15 / google-services plugin)</td></tr>
       <tr><td>Firebase 설정</td><td><code>android/app/google-services.json</code> (mobilesdk_app_id 주입원)</td></tr>
       <tr><td>앱 native Analytics</td><td><code>src/lib/analytics/app-analytics.ts</code> (<code>appLogEvent</code> async, <code>isAppNative</code>)</td></tr>
       <tr><td>앱 gtag 차단(로더)</td><td><code>src/components/common/GtagLoader.tsx</code> (isAppNative early-return)</td></tr>
@@ -305,7 +305,7 @@
     <ul>
       <li><strong>versionCode는 매 AAB 업로드마다 증가</strong>(정수, 단조 증가). 한 번 쓴 값 재사용 불가 → Play가 거부.</li>
       <li><strong>versionName</strong>은 사용자 표시용 문자열(예: 1.0.14). 운영 기준: native/기능 변경 시 patch/minor 증가, 명확히 추적.</li>
-      <li>현재: versionCode <strong>18</strong> / versionName <strong>1.0.14</strong> (다음 native 빌드는 19부터).</li>
+      <li>현재: versionCode <strong>20</strong> / versionName <strong>1.0.15</strong> (다음 native 빌드는 21부터).</li>
     </ul>
     <h3>7.2 Play App Signing & 업로드 키 <span class="badge official">공식</span> <span class="badge code">코드/운영</span></h3>
     <ul>
@@ -313,7 +313,7 @@
       <li>업로드 키 keystore: <code>/Users/yanadoo/migration-backup/android/android.keystore</code>, alias <code>android</code> (인증서 CN=Yongseok Kim).</li>
       <li><span class="badge code">코드 근거</span> <code>build.gradle</code>에 <code>signingConfig</code>가 없음 → <code>bundleRelease</code>는 <strong>unsigned AAB</strong>를 만든다. 업로드 전 <code>jarsigner</code>로 업로드 키 서명 필요(과거 "모든 번들에 서명해야 합니다" 사고 원인).</li>
     </ul>
-    <pre><code># vc18 서명 예시 (창업자가 keystore 비번 직접 입력)
+    <pre><code># vc20 서명 예시 (창업자가 keystore 비번 직접 입력)
 cd android/app/build/outputs/bundle/release
 jarsigner -keystore /Users/yanadoo/migration-backup/android/android.keystore \
   -sigalg SHA256withRSA -digestalg SHA-256 app-release.aab android
@@ -498,6 +498,7 @@ Client Secret rotation 영향. 영구 redirect URI 삭제 금지. 변경 시 /ap
       <tr><td>TWA 시절</td><td><code>twa-policy.html</code> 최초 운용(Bubblewrap/TWA 기준)</td></tr>
       <tr><td>vc18</td><td>Firebase native Analytics 도입(<code>456663e</code>) — 앱 app stream 이벤트 + 앱 gtag 차단</td></tr>
       <tr><td>vc18</td><td>Play production 1.0.14 / versionCode 18 게시</td></tr>
+      <tr><td>vc19~vc20</td><td>native 빌드 versionName 1.0.15 / versionCode 20 (vc20 AAB Play 제출 2026-06-22) — 운영 main 기준</td></tr>
       <tr><td>2026-06-21</td><td>Google Ads에 Android login/sign_up 전환 import 완료</td></tr>
       <tr><td>2026-06-21</td><td>sign_up/onboarding_complete 라우팅 전 await 보정(<code>9fb891e</code>) + 병렬화(<code>ea89fd2</code>)</td></tr>
       <tr><td>2026-06-21</td><td>온보딩 닉네임 입력 리렌더 개선(main <code>1ee6849</code>)</td></tr>

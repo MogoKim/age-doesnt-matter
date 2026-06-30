@@ -10,7 +10,7 @@
 
 | ID | 우선 | 한 줄 증상 | 근본 원인 (파일) | 근본 해결책 | 상태 |
 |----|------|-----------|----------------|------------|------|
-| **C6** | ⚪ Low | "일자리 알림 받을래요?" 푸시가 영영 안 뜸 | `setPushToastTrigger('job')` 호출처 0 (UI·메시지는 완비, `'comment'`만 호출) | jobs 페이지/저장 시점에 `setPushToastTrigger('job')` 연결 | 미착수 |
+| **C6** | ⚪ Low | "일자리 알림 받을래요?" 푸시가 영영 안 뜸 | `setPushToastTrigger('job')` 호출처 0 (UI·메시지는 완비. comment·post·signup·visit 트리거는 연결됨, `'job'`만 미연결) | jobs 페이지/저장 시점에 `setPushToastTrigger('job')` 연결 | 미착수 |
 
 ---
 
