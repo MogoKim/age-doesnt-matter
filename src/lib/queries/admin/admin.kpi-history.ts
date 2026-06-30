@@ -17,7 +17,7 @@ export interface SnapshotRow {
   channels: unknown
   retention: unknown
   dataQuality: unknown
-  updatedAt: Date
+  updatedAt: Date | string // 서버→클라이언트 직렬화 시 string
 }
 
 export interface ChannelStat { channel: string; sessions: number; signups30d: number; signupRate: number | null }
@@ -174,4 +174,47 @@ export function deriveKpiHistory(rows: SnapshotRow[]): KpiHistory | null {
     weekOverWeek,
     hasPrev,
   }
+}
+
+// ── 주별 집계 (KST 주차, 월~일) ──
+export interface WeekRow {
+  key: string // 주 시작(월) YYYY-MM-DD
+  label: string // "MM/DD~MM/DD"
+  days: number
+  uv: number
+  pv: number
+  newSignups: number
+  wau: number // 주 평균
+  d7: number | null // 주 평균(있는 값만)
+}
+function weekOf(dateStr: string): { key: string; label: string } {
+  const d = new Date(`${dateStr}T12:00:00Z`) // 정오 UTC로 TZ 경계 회피
+  const dow = (d.getUTCDay() + 6) % 7 // 월=0 … 일=6
+  const mon = new Date(d.getTime() - dow * 86400000)
+  const sun = new Date(mon.getTime() + 6 * 86400000)
+  const f = (x: Date) => `${String(x.getUTCMonth() + 1).padStart(2, '0')}/${String(x.getUTCDate()).padStart(2, '0')}`
+  return { key: mon.toISOString().slice(0, 10), label: `${f(mon)}~${f(sun)}` }
+}
+// rows: date desc → 주별 desc
+export function aggregateWeekly(rows: SnapshotRow[]): WeekRow[] {
+  const map = new Map<string, { label: string; rows: SnapshotRow[] }>()
+  for (const r of rows) {
+    const w = weekOf(r.date)
+    const e = map.get(w.key) ?? { label: w.label, rows: [] }
+    e.rows.push(r)
+    map.set(w.key, e)
+  }
+  const out: WeekRow[] = []
+  for (const [key, { label, rows: rs }] of map) {
+    const d7s = rs.map((r) => retRate(r.retention, 'd7')).filter((v): v is number => v !== null)
+    out.push({
+      key, label, days: rs.length,
+      uv: rs.reduce((s, r) => s + r.uv, 0),
+      pv: rs.reduce((s, r) => s + r.pv, 0),
+      newSignups: rs.reduce((s, r) => s + r.newSignups, 0),
+      wau: Math.round(rs.reduce((s, r) => s + r.wau, 0) / rs.length),
+      d7: d7s.length ? round1(d7s.reduce((s, v) => s + v, 0) / d7s.length) : null,
+    })
+  }
+  return out.sort((a, b) => (a.key < b.key ? 1 : -1))
 }
