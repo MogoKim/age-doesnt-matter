@@ -4,7 +4,7 @@
  * 변경 시 세 파일 모두 자동 반영됨.
  */
 export const BOT_UA_PATTERN =
-  /googlebot|bingbot|yandex|baidu|facebookexternalhit|twitterbot|^node\b|node-fetch|python-requests|python\/|axios|HeadlessChrome|Playwright|curl|wget/i
+  /googlebot|bingbot|yandex|baidu|facebookexternalhit|meta-externalagent|facebot|twitterbot|^node\b|node-fetch|python-requests|python\/|axios|HeadlessChrome|Playwright|curl|wget/i
 
 /**
  * 데이터센터 봇 IP 패턴 — GA4 스크립트 차단용 (layout.tsx)
