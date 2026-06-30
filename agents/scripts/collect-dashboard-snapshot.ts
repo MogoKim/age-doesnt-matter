@@ -28,6 +28,19 @@ const isReal = (pid?: string | null): boolean => !!pid && /^\d+$/.test(pid)
 const kstDayIdx = (t: number) => Math.floor((t + 9 * 3_600_000) / DAY)
 const pct = (n: number, d: number): number | null => (d > 0 ? Math.round((n / d) * 1000) / 10 : null)
 
+// PC직접 봇(B룰) 집계 필터 — src/lib/queries/admin/pc-direct-filter.ts와 동일 기준 복제(agents→src import 금지).
+// EventLog.isBot 무변경. desktop·무referrer·1PV·비회원·무활동 세션을 KPI 집계에서만 제외.
+const ACTIVITY_EVENTS = ['login', 'sign_up', 'signup_step', 'post_cta_clicked', 'comment', 'comment_created', 'signup_banner_clicked']
+const BOT_FILTER_VERSION = 'a-ua+b-heuristic-v1'
+const PC_DIRECT_FILTER_FROM = '2026-06-30'
+const beOf = (p: unknown): string => {
+  const v = (p as Record<string, unknown> | null)?.browser_env
+  return typeof v === 'string' ? v : ''
+}
+function isPcDirectBot(s: { be: string; firstRef: string; pv: number; hasUserId: boolean; hasActivity: boolean }): boolean {
+  return s.be === 'desktop' && s.firstRef === '' && s.pv === 1 && !s.hasUserId && !s.hasActivity
+}
+
 // KST 날짜 문자열(YYYY-MM-DD) → 그 날 00:00~24:00 KST 경계(UTC Date)
 function kstDayBounds(dateStr: string): { start: Date; end: Date } {
   const start = new Date(`${dateStr}T00:00:00+09:00`)
@@ -120,11 +133,17 @@ async function collect(dateStr: string) {
   ])
   const adminIds = new Set(adminUsers.map((u: { id: string }) => u.id))
 
-  // 그 날 page_view (봇 제외) — 회원/비회원/봇세션 분리
+  // 그 날 page_view (봇 제외) — 회원/비회원/봇/PC직접봇 분리
   const pvRows = await prisma.eventLog.findMany({
     where: { eventName: 'page_view', isBot: false, createdAt: { gte: start, lt: end } },
-    select: { sessionId: true, userId: true },
+    select: { sessionId: true, userId: true, referrer: true, properties: true },
   })
+  // 그 날 활동(login/가입/댓글 등) 있는 세션id — B룰 면제용
+  const activeRows = await prisma.eventLog.findMany({
+    where: { eventName: { in: [...ACTIVITY_EVENTS] }, isBot: false, sessionId: { not: null }, createdAt: { gte: start, lt: end } },
+    select: { sessionId: true }, distinct: ['sessionId'],
+  })
+  const activeSids = new Set((activeRows as { sessionId: string | null }[]).map((r) => r.sessionId).filter((s): s is string => !!s))
   const rows = pvRows.filter((r: { sessionId: string | null }) => !(r.sessionId && internalSids.has(r.sessionId)))
   const uids = [...new Set(rows.filter((r) => r.userId).map((r) => r.userId as string))]
   const userRows = uids.length
@@ -137,22 +156,38 @@ async function collect(dateStr: string) {
   )
   const memberSessions = new Set<string>()
   const botSessions = new Set<string>()
+  const sMeta = new Map<string, { pv: number; firstRef: string; be: string }>()
   let memberPv = 0
-  let guestPv = 0
-  for (const r of rows as { sessionId: string | null; userId: string | null }[]) {
+  let guestPvAll = 0
+  for (const r of rows as { sessionId: string | null; userId: string | null; referrer: string | null; properties: unknown }[]) {
+    const sid = r.sessionId
+    if (sid && !sMeta.has(sid)) sMeta.set(sid, { pv: 0, firstRef: typeof r.referrer === 'string' ? r.referrer : '', be: beOf(r.properties) })
+    if (sid) sMeta.get(sid)!.pv++
     if (r.userId && realUserSet.has(r.userId)) {
       memberPv++
-      if (r.sessionId) memberSessions.add(r.sessionId)
+      if (sid) memberSessions.add(sid)
     } else if (r.userId) {
-      if (r.sessionId) botSessions.add(r.sessionId)
+      if (sid) botSessions.add(sid)
     } else {
-      guestPv++
+      guestPvAll++
     }
   }
+  // 비회원 세션 — PC직접 봇(B룰: desktop·무referrer·1PV·비회원·무활동) 집계 제외(EventLog.isBot 무변경)
   const guestSessions = new Set<string>()
-  for (const r of rows as { sessionId: string | null; userId: string | null }[]) {
-    if (r.sessionId && !memberSessions.has(r.sessionId) && !botSessions.has(r.sessionId)) guestSessions.add(r.sessionId)
+  let pcDirectBotPv = 0
+  let pcDirectExcluded = 0
+  for (const r of rows as { sessionId: string | null }[]) {
+    const sid = r.sessionId
+    if (!sid || memberSessions.has(sid) || botSessions.has(sid) || guestSessions.has(sid)) continue
+    const m = sMeta.get(sid)!
+    if (isPcDirectBot({ be: m.be, firstRef: m.firstRef, pv: m.pv, hasUserId: false, hasActivity: activeSids.has(sid) })) {
+      pcDirectExcluded++
+      pcDirectBotPv += m.pv
+      continue
+    }
+    guestSessions.add(sid)
   }
+  const guestPv = guestPvAll - pcDirectBotPv
   const memberUv = memberSessions.size
   const guestUv = guestSessions.size
   const uv = memberUv + guestUv
@@ -251,6 +286,10 @@ async function collect(dateStr: string) {
     eventLogPageViews: pvRows.length,
     internalSessionsExcluded: internalSids.size,
     botSessionsExcluded: botSessions.size,
+    // PC직접 봇(B룰) 집계 제외 — A룰(UA, ingestion)로 못 잡는 desktop·무referrer·1PV·비회원·무활동
+    pcDirectHeuristicExcludedSessions: pcDirectExcluded,
+    botFilterVersion: BOT_FILTER_VERSION,
+    filterAppliedFrom: PC_DIRECT_FILTER_FROM,
     immatureCohortsExcludedD7: immatureExcluded,
     // realCustomers 공식 기준 = ACTIVE 실고객(providerId 숫자 & role!=ADMIN). BANNED/WITHDRAWN 제외.
     // (insights realUserCount는 상태무관 누적이라 더 큼 — 의도된 다른 정의)
