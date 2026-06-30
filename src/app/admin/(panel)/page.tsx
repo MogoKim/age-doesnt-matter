@@ -15,6 +15,9 @@ import DailyBriefWidget from '@/components/admin/DailyBriefWidget'
 import InsightsSection from '@/components/admin/InsightsSection'
 import AutomationToggle from '@/components/admin/AutomationToggle'
 import InfoTip from '@/components/admin/InfoTip'
+import { prisma } from '@/lib/prisma'
+import KpiHistoryPanel from '@/components/admin/KpiHistoryPanel'
+import type { SnapshotRow } from '@/lib/queries/admin/admin.kpi-history'
 
 // 1~2분 캐시 허용(창업자 합의) — 매 접속 풀렌더 방지. 긴급 알림은 최대 2분 지연 가능.
 export const revalidate = 120
@@ -49,6 +52,12 @@ export default async function AdminDashboardPage() {
       getRetentionQuadrants(),
     ])
 
+  // 운영 상황판용 완료 스냅샷(DailyKpiSnapshot) — 테이블 부재 등은 빈 배열로 폴백(패널이 안내)
+  let snapshotRows: SnapshotRow[] = []
+  try {
+    snapshotRows = (await prisma.dailyKpiSnapshot.findMany({ orderBy: { date: 'desc' }, take: 90 })) as unknown as SnapshotRow[]
+  } catch { /* 패널이 빈 상태 안내 */ }
+
   const boardMax = boards.length > 0 ? Math.max(...boards.map((b) => b.total)) : 1
   const trendMaxUv = Math.max(...trend.map((d) => d.uv), 1)
   const trendMaxPv = Math.max(...trend.map((d) => d.pv), 1)
@@ -77,9 +86,11 @@ export default async function AdminDashboardPage() {
         </div>
       )}
 
-      <AdminQuickStart />
+      {/* 운영 상황판 — 완료 데이터(DailyKpiSnapshot 스냅샷). 첫 화면 최상단 */}
+      <KpiHistoryPanel rows={snapshotRows} />
 
-      {/* ① Today KPI */}
+      {/* ① 오늘 실시간 (당일 partial) */}
+      <div className="text-sm font-bold text-zinc-700">오늘 실시간 <span className="font-normal text-zinc-400">(당일 partial · 완료 데이터는 위 상황판)</span></div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard label="오늘 방문 (UV)" value={stats.todayUniqueVisitors} icon="👁️" sub={`회원 ${stats.memberUv} · 비회원 ${stats.guestUv}`} tip="오늘 방문한 고유 사용자(세션) 수. 봇 제외. 회원=오늘 로그인한 세션, 비회원=비로그인 세션, 합=전체. 비회원→회원 전환 유저는 회원으로 1회만(중복 없음)." />
         <KpiCard label="오늘 PV" value={stats.todayPV} icon="📄" sub={`회원 ${stats.memberPv.toLocaleString()} · 비회원 ${stats.guestPv.toLocaleString()}`} tip="오늘 페이지 조회 수(봇 제외). 회원/비회원 분리, 합=전체. 같은 사람이 여러 번 봐도 다 카운트(UV와 달리 중복 포함)." />
@@ -295,6 +306,8 @@ export default async function AdminDashboardPage() {
         </section>
       )}
 
+      {/* 어드민 가이드 — 하단 이동(운영 상황판 우선) */}
+      <AdminQuickStart />
     </div>
   )
 }
