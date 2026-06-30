@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 import { getInternalSessionIds, getAdminUserIds } from './internal-sessions'
-import { isPcDirectBotSession, ACTIVITY_EVENTS } from './pc-direct-filter'
+import { isLowQualityDirectSession, ACTIVITY_EVENTS } from './pc-direct-filter'
 
 // 실고객 = providerId 순수 숫자(진짜 카카오 가입자). seed_/bot-/curator-/@unao.bot 봇 전부 제외.
 // 봇 판별 단일 기준 — 대시보드 전 지표 통일(트렌드·OKR·카드).
@@ -87,7 +87,7 @@ export const getDashboardStats = unstable_cache(
       pendingBotReviews,
       pushSubCount,
     ] = await Promise.all([
-      // 오늘 page_view 전부(isBot=false). 회원/비회원/봇/PC직접봇 분리는 아래 JS에서.
+      // 오늘 page_view 전부(isBot=false). 회원/비회원/시드봇/PC직접 무활동 분리는 아래 JS에서.
       prisma.eventLog.findMany({
         where: { eventName: 'page_view', isBot: false, createdAt: { gte: today } },
         select: { sessionId: true, userId: true, referrer: true, properties: true },
@@ -160,26 +160,26 @@ export const getDashboardStats = unstable_cache(
         guestPvAll++ // userId null = 진짜 익명(비회원)
       }
     }
-    // 비회원(게스트) 세션 — PC직접 봇(B룰: desktop·무referrer·1PV·비회원·무활동) 집계 제외
+    // 비회원(게스트) 세션 — PC 직접 단일조회·무활동 세션(B룰: desktop·무referrer·1PV·비회원·무활동) 품질 필터로 제외
     const guestSessions = new Set<string>()
-    let pcDirectBotPv = 0
-    let pcDirectExcluded = 0
+    let lowQualityPv = 0
+    let lowQualityExcluded = 0
     for (const r of rows) {
       const sid = r.sessionId
       if (!sid || memberSessions.has(sid) || botSessions.has(sid) || guestSessions.has(sid)) continue
       const m = sMeta.get(sid)!
-      if (isPcDirectBotSession({ browserEnv: m.be, firstReferrer: m.firstRef, pv: m.pv, hasUserId: false, hasActivity: activeSids.has(sid) })) {
-        pcDirectExcluded++
-        pcDirectBotPv += m.pv
+      if (isLowQualityDirectSession({ browserEnv: m.be, firstReferrer: m.firstRef, pv: m.pv, hasUserId: false, hasActivity: activeSids.has(sid) })) {
+        lowQualityExcluded++
+        lowQualityPv += m.pv
         continue
       }
       guestSessions.add(sid)
     }
-    const guestPv = guestPvAll - pcDirectBotPv
+    const guestPv = guestPvAll - lowQualityPv
     const memberUv = memberSessions.size
     const guestUv = guestSessions.size
-    const todayUniqueVisitors = memberUv + guestUv // 봇·PC직접봇 세션 제외 합
-    const todayPV = memberPv + guestPv // 봇·PC직접봇 PV 제외 합
+    const todayUniqueVisitors = memberUv + guestUv // 시드봇 + PC직접 무활동 세션 제외 합
+    const todayPV = memberPv + guestPv // 시드봇 + PC직접 무활동 PV 제외 합
 
     const todaySignups = newUsers.filter((u) => isReal(u.providerId)).length
     const todayComments = todayCmts.filter((c) => isReal(c.author?.providerId)).length
@@ -196,7 +196,7 @@ export const getDashboardStats = unstable_cache(
       todayPV,
       memberPv,
       guestPv,
-      pcDirectExcluded, // PC직접 봇(B룰) 집계 제외 세션 수(오늘)
+      lowQualityExcluded, // PC직접 단일조회·무활동 세션(B룰) 품질 필터 제외 수(오늘)
       todayLogins,
       todaySignups,
       todayConversionRate,

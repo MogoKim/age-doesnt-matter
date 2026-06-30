@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 import { getInternalSessionIds } from './internal-sessions'
-import { isPcDirectBotSession, ACTIVITY_EVENTS } from './pc-direct-filter'
+import { isLowQualityDirectSession, ACTIVITY_EVENTS } from './pc-direct-filter'
 
 // 실고객 인사이트 — 봇 제외(실고객 = providerId 순수숫자 ^\d+$) 4대 지표.
 // agents/scripts/insights.ts(CLI)와 동일 기준의 서버판. 화면용으로 unstable_cache(30분).
@@ -106,7 +106,7 @@ export const getInsights = unstable_cache(
     // 창업자 내부 세션(/admin·founder플래그) 제외
     const events = eventsRaw.filter((e) => !(e.sessionId && internalSids.has(e.sessionId)))
 
-    // PC직접 봇(B룰) 세션 식별 → 채널표/세션 집계에서 제외(EventLog.isBot 무변경, 집계 필터)
+    // PC 직접 단일조회·무활동 세션(B룰) 식별 → 채널표/세션 집계에서 제외(EventLog.isBot 무변경, 품질 필터)
     const sMeta = new Map<string, { pv: number; firstRef: string; be: string; hasUserId: boolean; hasActivity: boolean }>()
     for (const e of events) {
       const sid = e.sessionId!
@@ -123,9 +123,9 @@ export const getInsights = unstable_cache(
       if (e.userId) m.hasUserId = true
       if ((ACTIVITY_EVENTS as readonly string[]).includes(e.eventName)) m.hasActivity = true
     }
-    const pcDirectSids = new Set<string>()
+    const lowQualitySids = new Set<string>()
     for (const [sid, m] of sMeta) {
-      if (isPcDirectBotSession({ browserEnv: m.be, firstReferrer: m.firstRef, pv: m.pv, hasUserId: m.hasUserId, hasActivity: m.hasActivity })) pcDirectSids.add(sid)
+      if (isLowQualityDirectSession({ browserEnv: m.be, firstReferrer: m.firstRef, pv: m.pv, hasUserId: m.hasUserId, hasActivity: m.hasActivity })) lowQualitySids.add(sid)
     }
 
     const sVisitDays: Record<string, Set<number>> = {}
@@ -133,7 +133,7 @@ export const getInsights = unstable_cache(
       if (e.eventName !== 'page_view') continue
       ;(sVisitDays[e.sessionId!] ??= new Set()).add(Math.floor((e.createdAt.getTime() + 9 * 3600000) / DAY))
     }
-    const pvSessions = new Set(events.filter((e) => e.eventName === 'page_view' && !pcDirectSids.has(e.sessionId!)).map((e) => e.sessionId!))
+    const pvSessions = new Set(events.filter((e) => e.eventName === 'page_view' && !lowQualitySids.has(e.sessionId!)).map((e) => e.sessionId!))
 
     // 채널별 (세션 첫 page_view의 referrer + utm)
     const firstMeta: Record<string, { ref: string; src: string; med: string }> = {}

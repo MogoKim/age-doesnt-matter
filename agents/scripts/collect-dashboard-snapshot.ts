@@ -28,16 +28,17 @@ const isReal = (pid?: string | null): boolean => !!pid && /^\d+$/.test(pid)
 const kstDayIdx = (t: number) => Math.floor((t + 9 * 3_600_000) / DAY)
 const pct = (n: number, d: number): number | null => (d > 0 ? Math.round((n / d) * 1000) / 10 : null)
 
-// PC직접 봇(B룰) 집계 필터 — src/lib/queries/admin/pc-direct-filter.ts와 동일 기준 복제(agents→src import 금지).
-// EventLog.isBot 무변경. desktop·무referrer·1PV·비회원·무활동 세션을 KPI 집계에서만 제외.
+// 트래픽 품질 필터(B룰) — src/lib/queries/admin/pc-direct-filter.ts와 동일 기준 복제(agents→src import 금지).
+// ⚠️ '봇 확정' 아님. PC 직접 단일조회·무활동 세션(실제 사람의 1페이지 이탈 포함 가능)을 운영 KPI 집계에서만 제외.
+// EventLog.isBot 무변경(가역). A룰(확정 크롤러 봇, UA·ingestion)과 다른 성격의 품질 필터.
 const ACTIVITY_EVENTS = ['login', 'sign_up', 'signup_step', 'post_cta_clicked', 'comment', 'comment_created', 'signup_banner_clicked']
-const BOT_FILTER_VERSION = 'a-ua+b-heuristic-v1'
-const PC_DIRECT_FILTER_FROM = '2026-06-30'
+const TRAFFIC_QUALITY_FILTER_VERSION = 'traffic-quality-v1'
+const TRAFFIC_QUALITY_FILTER_FROM = '2026-06-30'
 const beOf = (p: unknown): string => {
   const v = (p as Record<string, unknown> | null)?.browser_env
   return typeof v === 'string' ? v : ''
 }
-function isPcDirectBot(s: { be: string; firstRef: string; pv: number; hasUserId: boolean; hasActivity: boolean }): boolean {
+function isLowQualityDirectSession(s: { be: string; firstRef: string; pv: number; hasUserId: boolean; hasActivity: boolean }): boolean {
   return s.be === 'desktop' && s.firstRef === '' && s.pv === 1 && !s.hasUserId && !s.hasActivity
 }
 
@@ -133,7 +134,7 @@ async function collect(dateStr: string) {
   ])
   const adminIds = new Set(adminUsers.map((u: { id: string }) => u.id))
 
-  // 그 날 page_view (봇 제외) — 회원/비회원/봇/PC직접봇 분리
+  // 그 날 page_view (isBot=false) — 회원/비회원/시드봇/PC직접 무활동 분리
   const pvRows = await prisma.eventLog.findMany({
     where: { eventName: 'page_view', isBot: false, createdAt: { gte: start, lt: end } },
     select: { sessionId: true, userId: true, referrer: true, properties: true },
@@ -172,22 +173,22 @@ async function collect(dateStr: string) {
       guestPvAll++
     }
   }
-  // 비회원 세션 — PC직접 봇(B룰: desktop·무referrer·1PV·비회원·무활동) 집계 제외(EventLog.isBot 무변경)
+  // 비회원 세션 — PC 직접 단일조회·무활동 세션(B룰: desktop·무referrer·1PV·비회원·무활동) 품질 필터로 제외(EventLog.isBot 무변경)
   const guestSessions = new Set<string>()
-  let pcDirectBotPv = 0
-  let pcDirectExcluded = 0
+  let lowQualityPv = 0
+  let lowQualityExcluded = 0
   for (const r of rows as { sessionId: string | null }[]) {
     const sid = r.sessionId
     if (!sid || memberSessions.has(sid) || botSessions.has(sid) || guestSessions.has(sid)) continue
     const m = sMeta.get(sid)!
-    if (isPcDirectBot({ be: m.be, firstRef: m.firstRef, pv: m.pv, hasUserId: false, hasActivity: activeSids.has(sid) })) {
-      pcDirectExcluded++
-      pcDirectBotPv += m.pv
+    if (isLowQualityDirectSession({ be: m.be, firstRef: m.firstRef, pv: m.pv, hasUserId: false, hasActivity: activeSids.has(sid) })) {
+      lowQualityExcluded++
+      lowQualityPv += m.pv
       continue
     }
     guestSessions.add(sid)
   }
-  const guestPv = guestPvAll - pcDirectBotPv
+  const guestPv = guestPvAll - lowQualityPv
   const memberUv = memberSessions.size
   const guestUv = guestSessions.size
   const uv = memberUv + guestUv
@@ -286,10 +287,10 @@ async function collect(dateStr: string) {
     eventLogPageViews: pvRows.length,
     internalSessionsExcluded: internalSids.size,
     botSessionsExcluded: botSessions.size,
-    // PC직접 봇(B룰) 집계 제외 — A룰(UA, ingestion)로 못 잡는 desktop·무referrer·1PV·비회원·무활동
-    pcDirectHeuristicExcludedSessions: pcDirectExcluded,
-    botFilterVersion: BOT_FILTER_VERSION,
-    filterAppliedFrom: PC_DIRECT_FILTER_FROM,
+    // 트래픽 품질 필터(B룰) 제외 — PC 직접 단일조회·무활동(desktop·무referrer·1PV·비회원·무활동). 봇 확정 아님(가역)
+    trafficQualityExcludedSessions: lowQualityExcluded,
+    trafficQualityFilterVersion: TRAFFIC_QUALITY_FILTER_VERSION,
+    trafficQualityFilterFrom: TRAFFIC_QUALITY_FILTER_FROM,
     immatureCohortsExcludedD7: immatureExcluded,
     // realCustomers 공식 기준 = ACTIVE 실고객(providerId 숫자 & role!=ADMIN). BANNED/WITHDRAWN 제외.
     // (insights realUserCount는 상태무관 누적이라 더 큼 — 의도된 다른 정의)
