@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { unstable_cache } from 'next/cache'
 import { getInternalSessionIds } from './internal-sessions'
+import { isLowQualityDirectSession, ACTIVITY_EVENTS } from './pc-direct-filter'
 
 // 실고객 인사이트 — 봇 제외(실고객 = providerId 순수숫자 ^\d+$) 4대 지표.
 // agents/scripts/insights.ts(CLI)와 동일 기준의 서버판. 화면용으로 unstable_cache(30분).
@@ -99,18 +100,40 @@ export const getInsights = unstable_cache(
     const internalSids = await getInternalSessionIds(start30)
     const eventsRaw = await prisma.eventLog.findMany({
       where: { isBot: false, createdAt: { gte: start30 }, NOT: { sessionId: null } },
-      select: { sessionId: true, eventName: true, referrer: true, properties: true, createdAt: true },
+      select: { sessionId: true, userId: true, eventName: true, referrer: true, properties: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     })
     // 창업자 내부 세션(/admin·founder플래그) 제외
     const events = eventsRaw.filter((e) => !(e.sessionId && internalSids.has(e.sessionId)))
+
+    // PC 직접 단일조회·무활동 세션(B룰) 식별 → 채널표/세션 집계에서 제외(EventLog.isBot 무변경, 품질 필터)
+    const sMeta = new Map<string, { pv: number; firstRef: string; be: string; hasUserId: boolean; hasActivity: boolean }>()
+    for (const e of events) {
+      const sid = e.sessionId!
+      let m = sMeta.get(sid)
+      if (!m) {
+        const p = e.properties as Record<string, unknown> | null
+        m = { pv: 0, firstRef: '', be: typeof p?.browser_env === 'string' ? p.browser_env : '', hasUserId: false, hasActivity: false }
+        sMeta.set(sid, m)
+      }
+      if (e.eventName === 'page_view') {
+        if (m.pv === 0) m.firstRef = typeof e.referrer === 'string' ? e.referrer : ''
+        m.pv++
+      }
+      if (e.userId) m.hasUserId = true
+      if ((ACTIVITY_EVENTS as readonly string[]).includes(e.eventName)) m.hasActivity = true
+    }
+    const lowQualitySids = new Set<string>()
+    for (const [sid, m] of sMeta) {
+      if (isLowQualityDirectSession({ browserEnv: m.be, firstReferrer: m.firstRef, pv: m.pv, hasUserId: m.hasUserId, hasActivity: m.hasActivity })) lowQualitySids.add(sid)
+    }
 
     const sVisitDays: Record<string, Set<number>> = {}
     for (const e of events) {
       if (e.eventName !== 'page_view') continue
       ;(sVisitDays[e.sessionId!] ??= new Set()).add(Math.floor((e.createdAt.getTime() + 9 * 3600000) / DAY))
     }
-    const pvSessions = new Set(events.filter((e) => e.eventName === 'page_view').map((e) => e.sessionId!))
+    const pvSessions = new Set(events.filter((e) => e.eventName === 'page_view' && !lowQualitySids.has(e.sessionId!)).map((e) => e.sessionId!))
 
     // 채널별 (세션 첫 page_view의 referrer + utm)
     const firstMeta: Record<string, { ref: string; src: string; med: string }> = {}
@@ -196,6 +219,6 @@ export const getInsights = unstable_cache(
       activation,
     }
   },
-  ['admin-insights-v4'], // v4: 채널 signupRate = 30일 가입자/30일 세션(기간 일치), signups30d 추가
+  ['admin-insights-v5'], // v4: 채널 signupRate = 30일 가입자/30일 세션(기간 일치), signups30d 추가
   { revalidate: 1800 },
 )

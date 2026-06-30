@@ -47,6 +47,8 @@ export default function KpiHistoryPanel({ rows }: { rows: SnapshotRow[] }) {
         <span className="inline-flex items-center rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-white">✓ 완료 데이터</span>
         <span className="text-xs text-zinc-500">최신 완료일 <b className="text-zinc-700">{k.latestDate}</b> · EventLog 스냅샷(봇/내부 제외·KST) · 갱신 {new Date(k.updatedAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
       </div>
+      {/* 단차 안내 — 트래픽 품질 필터 적용일(이전 데이터는 필터 미적용) */}
+      <p className="text-[11px] text-zinc-400">ℹ️ 2026-06-30부터 PC 직접 단일조회·무활동 세션을 운영 KPI에서 제외(+ 확정 크롤러 봇은 수집 단계 제외). 이전 데이터는 필터 미적용 — 추세 비교는 적용일 이후 권장.</p>
 
       {/* ① 상태 요약 — HERO(핵심 숫자 먼저, 그다음 문장) */}
       <div className={`rounded-xl border-l-4 ${overallBorder} bg-zinc-50 p-4`}>
