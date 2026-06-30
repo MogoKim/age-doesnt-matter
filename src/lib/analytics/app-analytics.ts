@@ -22,6 +22,14 @@ export function isAppNative(): boolean {
   return !!cap?.isNativePlatform?.()
 }
 
+/** Capacitor 네이티브 플랫폼 ('android' | 'ios') — 네이티브 아니면 null. (window.Capacitor.getPlatform) */
+export function getAppPlatform(): 'android' | 'ios' | null {
+  if (typeof window === 'undefined') return null
+  const cap = (window as Window & { Capacitor?: { getPlatform?: () => string } }).Capacitor
+  const p = cap?.getPlatform?.()
+  return p === 'android' || p === 'ios' ? p : null
+}
+
 /**
  * 앱에서만 Firebase Analytics 이벤트 전송. 웹/TWA는 no-op.
  *

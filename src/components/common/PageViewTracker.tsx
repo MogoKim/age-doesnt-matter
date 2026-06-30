@@ -5,11 +5,19 @@ import { usePathname } from 'next/navigation'
 import { useAppSession } from '@/components/common/AppSessionProvider'
 import { trackEvent } from '@/lib/track'
 import { gtmPageView, gtmLogin, gtmSetUserProperties, captureUtm, getBrowserEnv, getStoredUtm } from '@/lib/gtm'
-import { appLogEvent, isAppNative } from '@/lib/analytics/app-analytics'
+import { appLogEvent, isAppNative, getAppPlatform } from '@/lib/analytics/app-analytics'
 
 // 하드 리프레시마다 login 이벤트 중복 발사 방지.
 // useRef는 리프레시 시 초기화되므로 sessionStorage 플래그 사용.
 const SESSION_LOGIN_KEY = 'unao_login_ev'
+
+// EventLog properties에 넣을 환경 마커. Capacitor 앱이면 browser_env를 capacitor-*로 분리(android-chrome 혼입 방지)
+// + app_native/app_platform 추가. 웹/TWA/인앱은 기존 getBrowserEnv() 유지. (DB schema 무변경 — properties JSON만 확장)
+function envMarker(): Record<string, unknown> {
+  if (!isAppNative()) return { browser_env: getBrowserEnv(), app_native: false }
+  const platform = getAppPlatform() ?? 'android' // 'android' | 'ios'
+  return { browser_env: `capacitor-${platform}`, app_native: true, app_platform: platform }
+}
 
 export default function PageViewTracker() {
   const pathname = usePathname()
@@ -43,12 +51,12 @@ export default function PageViewTracker() {
         })
       }
     }
-    trackEvent('login', { method: 'kakao', browser_env: getBrowserEnv() })
+    trackEvent('login', { method: 'kakao', ...envMarker() })
   }, [status, user])
 
   // 페이지 이동 시 page_view (UTM 동봉 — 레퍼럴/유입 채널을 EventLog에서 추적)
   useEffect(() => {
-    trackEvent('page_view', { browser_env: getBrowserEnv(), ...getStoredUtm() })
+    trackEvent('page_view', { ...envMarker(), ...getStoredUtm() })
     // 앱: gtag(web stream) page_view 미전송. 웹/TWA만 기존 gtmPageView 유지.
     if (!isAppNative()) gtmPageView(pathname)
   }, [pathname])
