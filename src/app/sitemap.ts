@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { JOB_SIDO_LIST } from '@/lib/jobs-regions'
 import { EXCLUDE_GREETING } from '@/lib/greeting'
+import { GUIDE_SLUGS } from '@/lib/guides'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,6 +42,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${BASE_URL}/community/${slug}`,
       changeFrequency: 'daily' as const,
       priority: 0.8,
+    })),
+    // 생활형 대표 가이드(정적 /guide) — 파일럿부터 자동 반영
+    ...GUIDE_SLUGS.map((slug) => ({
+      url: `${BASE_URL}/guide/${encodeURI(slug)}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
     })),
     // 지역별 일자리 랜딩페이지 (롱테일 SEO)
     ...JOB_SIDO_LIST.map((sido) => ({
