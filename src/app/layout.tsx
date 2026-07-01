@@ -41,6 +41,11 @@ const AppFcmRegister = dynamic(
   () => import('@/components/features/push/AppFcmRegister'),
   { loading: () => null, ssr: false },
 )
+// AdMob 하단 배너 — 네이티브 앱에서만 동작(웹/TWA no-op), client 전용
+const AdMobBanner = dynamic(
+  () => import('@/components/ad/AdMobBanner'),
+  { loading: () => null, ssr: false },
+)
 
 export const metadata: Metadata = {
   title: {
@@ -128,6 +133,7 @@ export default function RootLayout({
           <AdSenseScriptLoader />
           <AppDeepLinkHandler />
           <AppFcmRegister />
+          <AdMobBanner />
         </AuthProvider>
       </body>
     </html>
