@@ -36,6 +36,13 @@ export const ADSENSE = {
 
 } as const
 
+// ── AdMob (Capacitor 네이티브 앱 전용) ──
+// 웹/TWA에서는 사용 안 함. Native Advanced는 커스텀 플러그인(AdMobNative)으로만 렌더.
+export const ADMOB = {
+  /** Native Advanced — 앱 인피드(홈 FeedAd 자리 PoC). 우나어 Android 인피드 네이티브. */
+  NATIVE_INFEED: 'ca-app-pub-4117999106913048/8732877425',
+} as const
+
 // ── Coupang Partners ──
 export const COUPANG = {
   TRACKING_CODE: 'AF3181348',
