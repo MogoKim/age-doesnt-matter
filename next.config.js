@@ -53,18 +53,27 @@ const nextConfig = {
     },
   },
   async redirects() {
+    // 구 아임웹 "개별 글/검색결과" 파라미터(?idx=·?bmode=·?q=)가 붙은 레거시 URL은 아래 경로 redirect를
+    // "양보"시켜(middleware가 410 Gone 처리) soft-404 정크를 명확히 폐기한다. idx→새 글 매핑이 DB에 없어 복구 불가.
+    // 파라미터 없는 맨-경로(/Humor 등)는 기존대로 현재 경로로 redirect(정상 진입점 유지).
+    // (Next.js 실행순서상 redirects()가 middleware보다 먼저 → 여기서 양보해야 middleware의 410이 실행됨)
+    const legacyMissParams = [
+      { type: 'query', key: 'idx' },
+      { type: 'query', key: 'bmode' },
+      { type: 'query', key: 'q' },
+    ]
     return [
       // www → non-www 권위 통합 (SEO: GSC 도메인 분열 방지)
       { source: '/:path*', has: [{ type: 'host', value: 'www.age-doesnt-matter.com' }], destination: 'https://age-doesnt-matter.com/:path*', permanent: true },
-      // 아임웹 레거시 경로 → 현재 경로 301 영구 리다이렉트
-      { source: '/Humor',          destination: '/community/humor',  permanent: true },
-      { source: '/Humor/:path*',   destination: '/community/humor',  permanent: true },
-      { source: '/Free-Board',     destination: '/community/stories', permanent: true },
-      { source: '/Free-Board/:path*', destination: '/community/stories', permanent: true },
-      { source: '/job',            destination: '/jobs',             permanent: true },
-      { source: '/job/:path*',     destination: '/jobs',             permanent: true },
-      { source: '/blog',           destination: '/magazine',         permanent: true },
-      { source: '/blog/:path*',    destination: '/magazine',         permanent: true },
+      // 아임웹 레거시 경로 → 현재 경로 301 영구 리다이렉트 (레거시 파라미터 없을 때만 — 있으면 middleware 410)
+      { source: '/Humor',          destination: '/community/humor',  permanent: true, missing: legacyMissParams },
+      { source: '/Humor/:path*',   destination: '/community/humor',  permanent: true, missing: legacyMissParams },
+      { source: '/Free-Board',     destination: '/community/stories', permanent: true, missing: legacyMissParams },
+      { source: '/Free-Board/:path*', destination: '/community/stories', permanent: true, missing: legacyMissParams },
+      { source: '/job',            destination: '/jobs',             permanent: true, missing: legacyMissParams },
+      { source: '/job/:path*',     destination: '/jobs',             permanent: true, missing: legacyMissParams },
+      { source: '/blog',           destination: '/magazine',         permanent: true, missing: legacyMissParams },
+      { source: '/blog/:path*',    destination: '/magazine',         permanent: true, missing: legacyMissParams },
       // 커뮤니티 동적 라우트로 잘못 열리던 목록 중복 URL → 권위 URL로 통합
       { source: '/community/magazine', destination: '/magazine', permanent: true },
       { source: '/community/jobs',     destination: '/jobs',     permanent: true },

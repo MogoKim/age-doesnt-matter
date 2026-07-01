@@ -89,6 +89,19 @@ async function resolveSlug(cuid: string): Promise<string | null> {
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // ── 구 아임웹 레거시 "개별 글/검색결과" URL → 410 Gone (legacy imweb parameter URLs only) ──
+  // 대상: /Humor·/Free-Board·/blog·/job·/magazine 경로 + query에 idx 또는 bmode 또는 q 존재.
+  // 예: /Humor/?idx=164815302 · /magazine/?idx=167023913&bmode=view · /Free-Board/?q=...(검색결과)
+  // 이유: 아임웹 idx→새 글 매핑이 DB에 없어 복구 불가 → 목록 301(soft-404) 대신 410으로 명확히 폐기(크롤버짓 회수).
+  // 범위 제한: 파라미터 없는 맨-경로·정상 /community/*·/magazine 목록·글 상세·www→apex·CUID→slug·sitemap 무영향.
+  // (next.config redirects가 이 경로들의 param URL을 missing 가드로 양보 → 여기 410 도달)
+  const LEGACY_IMWEB_PREFIXES = ['/Humor', '/Free-Board', '/blog', '/job', '/magazine']
+  const sp = request.nextUrl.searchParams
+  const hasLegacyParam = sp.has('idx') || sp.has('bmode') || sp.has('q')
+  if (hasLegacyParam && LEGACY_IMWEB_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+    return new NextResponse(null, { status: 410 })
+  }
+
   // ── 레거시 경로 즉시 301 (getToken/addAnonSession 실행 없음) ──
   for (const [src, dest] of Object.entries(LEGACY_REDIRECTS)) {
     if (pathname === src || pathname.startsWith(src + '/')) {
