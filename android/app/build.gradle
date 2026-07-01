@@ -36,6 +36,9 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    // AdMob Native Advanced (커스텀 플러그인) — native ad 클래스 직접 사용. admob 플러그인의
+    // implementation 의존성은 transitive 비노출이라 app 모듈에 명시. 버전은 admob 플러그인과 동일 라인.
+    implementation "com.google.android.gms:play-services-ads:24.9.+"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
