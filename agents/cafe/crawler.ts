@@ -1209,11 +1209,18 @@ export async function refreshRecentPosts(): Promise<number> {
   // ── 댓글 재추출 부활 패스 (wgang 전용) ───────────────────────────────
   // 첫 크롤 당시 댓글이 적어 topComments usable<5로 죽은 글을, 댓글이 늘어난 지금 재추출해 되살린다.
   // refresh의 기존 루프는 commentCount/killerScore만 갱신하고 topComments는 안 건드려(=발행 게이트가 보는 값 미갱신)
-  // 일반글이 영구 부적격으로 남던 문제 보완. extractComments=DOM 파싱(AI 호출 0). cap으로 요청량 상한.
-  // 같은 page/browser 재사용 — 신규 네비게이션만 ≤cap. popular-sync·content-curator·requiredUsableCount(5) 무변경.
+  // 일반글이 영구 부적격으로 남던 문제 보완. crawlPost=DOM 파싱(AI 호출 0). cap으로 요청량 상한.
+  //
+  // [경로 재사용] 초기 크롤에서 검증된 crawlPost(→crawlNewFormat) 경로를 그대로 호출한다.
+  //   crawlNewFormat은 goto 후 sleep(≈3~5초)로 cafe_main iframe 마운트를 기다린 뒤 target을 해석한다.
+  //   과거 revive의 bespoke 경로(goto+800ms 후 즉시 frame 해석)는 신 f-e SPA가 아직 미렌더(iframe 0개, body≈245자)라
+  //   cafeFrame=null→렌더대기 스킵→extract []→refreshed=0 이 반복됐다(PR#40 스크롤 보완으로도 미해결).
+  //   crawlPost가 topComments/commentCount/likeCount를 채워 반환하므로 bespoke iframe 탐지·스크롤·extract를 제거한다.
+  //   같은 page/browser 재사용 — 신규 네비게이션만 ≤cap. popular-sync·content-curator·requiredUsableCount(5) 무변경.
   const REVIVE_CAP = Number.parseInt(process.env.COMMENT_REVIVE_CAP ?? '10', 10)
   let rvScanned = 0, rvRefreshed = 0, rvRevived = 0, rvSkipped = 0, rvFailed = 0
-  if (Number.isFinite(REVIVE_CAP) && REVIVE_CAP > 0) {
+  const wgangCafe = CAFE_CONFIGS.find(c => c.id === 'wgang')
+  if (Number.isFinite(REVIVE_CAP) && REVIVE_CAP > 0 && wgangCafe) {
     // 대상: wgang · 7일 · 미사용 · isUsable · 댓글≥5 (usable<5는 Json이라 JS에서 필터)
     const candidates = await prisma.cafePost.findMany({
       where: { cafeId: 'wgang', crawledAt: { gte: cutoff7d }, usedAt: null, isUsable: true, commentCount: { gte: 5 } },
@@ -1226,37 +1233,25 @@ export async function refreshRecentPosts(): Promise<number> {
     for (const post of targets) {
       rvScanned++
       try {
-        await page.goto(post.postUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
-        await page.waitForTimeout(800)
-        // 댓글은 cafe_main iframe(ca-fe URL) 안에 있음 — crawlNewFormat과 동일 frame 해석.
-        // 외부 page(f-e 셸)는 빈 React wrapper라 댓글 DOM 0건 → 반드시 iframe target에서 추출.
-        const cafeFrame = page.frame('cafe_main')
-          ?? page.frames().find(f => f.url().includes('ca-fe/cafes') || f.url().includes('ArticleRead'))
-        const target = cafeFrame ?? page
-        if (cafeFrame) {
-          await cafeFrame.waitForSelector('.title_text, .se-title-text, .article_header, .ContentRenderer', { timeout: 8000 }).catch(() => {})
-          await page.waitForTimeout(1000)
+        // 검증된 크롤 경로 재사용 — f-e URL에서 articleId 파싱해 ArticleInfo 구성 후 crawlPost 호출.
+        // crawlNewFormat의 goto+sleep(≈3~5초)이 iframe 마운트를 보장 → topComments/commentCount/likeCount 반환.
+        const articleId = post.postUrl.split('/articles/')[1]?.split(/[/?#]/)[0] ?? ''
+        const article: ArticleInfo = {
+          articleId,
+          newFormatUrl: post.postUrl,
+          oldFormatUrl: `${wgangCafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${wgangCafe.numericId}%2526articleid%3D${articleId}`,
+          boardName: null,
+          boardCategory: null,
         }
-        // 댓글 lazy-load 유도 — cold deep-link goto는 title(SSR)은 떠도 댓글 위젯이 미마운트되어
-        // extractComments가 []를 반환하던 문제(refreshed=0) 보완. 하단 스크롤로 위젯 마운트를 트리거하고
-        // 댓글 컨테이너를 짧게 대기(실패해도 non-fatal — 기존 topComments 미변경). AI 호출 0 · 신규 navigation 0.
-        try { await target.evaluate(() => window.scrollTo(0, document.body.scrollHeight)) } catch { /* frame 스크롤 실패 무시 */ }
-        if (cafeFrame) {
-          try { await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)) } catch { /* 외부 셸 스크롤 무시 */ }
-        }
-        await target.waitForSelector('.CommentItem, .comment_item, .u_cbox_comment', { timeout: 6000 }).catch(() => {})
-        await page.waitForTimeout(600)
-        let newComments = await extractComments(target, 15)
-        if (newComments.length === 0 && cafeFrame) newComments = await extractComments(page, 15) // iframe 미매칭 폴백
-        if (newComments.length === 0) { rvSkipped++; continue } // 추출 0 → 기존 topComments 보존
+        const result = await crawlPost(page, article, wgangCafe, true) // includeComments=true → topComments 채움(AI 호출 0)
+        const newComments = result?.topComments ?? []
+        if (newComments.length === 0) { rvSkipped++; continue } // 추출 0(또는 크롤 실패) → 기존 topComments 보존
         rvRefreshed++
         const newUsable = computeUsableCount(newComments)
         if (newUsable >= 5) {
-          // killerScore 재계산 — refresh 기존 루프와 동일 inline 공식. 신 수치는 iframe target에서 읽고, 실패(0/0)면 DB값 유지
-          const nc = await safeNumber(target, ['.u_cbox_count', '.CommentCount', '.comment_count', '.num_comment .num'])
-          const nl = await safeNumber(target, ['.like_article .u_cnt', '.sympathy_count', '.u_likeit_list_count .u_cnt'])
-          const newCommentCount = nc > 0 ? nc : post.commentCount
-          const newLikeCount = nl > 0 ? nl : post.likeCount
+          // killerScore 재계산 — refresh 기존 루프와 동일 inline 공식. 신 수치는 crawlPost 결과에서 읽고, 0이면 DB값 유지
+          const newCommentCount = result && result.commentCount > 0 ? result.commentCount : post.commentCount
+          const newLikeCount = result && result.likeCount > 0 ? result.likeCount : post.likeCount
           const commentScore = Math.min(newCommentCount * 10, 100) * 0.55
           const likeScore = Math.min(newLikeCount * 20, 100) * 0.35
           const newKillerScore = Math.round(commentScore + likeScore)
