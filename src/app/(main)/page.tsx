@@ -97,7 +97,7 @@ async function HotContentSections() {
 
       {/* 모바일: 앱=AdMob Native Advanced(PoC, 홈 인피드 1곳) / 웹=AdSense IN_FEED / 데스크탑: AdSense 728×90 */}
       <ResponsiveAd
-        mobile={<NativeAdSlot slotId="home-feed-1" minHeight={300} fallback={<FeedAd />} />}
+        mobile={<NativeAdSlot slotId="home-feed-1" minHeight={230} fallback={<FeedAd />} />}
         desktop={
           <AdSenseUnit
             slotId={ADSENSE.DESKTOP_LEADERBOARD}
@@ -123,9 +123,9 @@ async function HotContentSections() {
         <HumorSection posts={humor} />
       </div>
 
-      {/* 웃음방 아래 Google 인피드 광고 */}
+      {/* 웃음방 아래 인피드 광고 — 앱=Native Advanced(home-feed-2, 화면당 1개 제한으로 feed-1 점유 시 자동 접힘) / 웹=AdSense */}
       <ResponsiveAd
-        mobile={<FeedAd />}
+        mobile={<NativeAdSlot slotId="home-feed-2" minHeight={230} fallback={<FeedAd />} />}
         desktop={null}
       />
 

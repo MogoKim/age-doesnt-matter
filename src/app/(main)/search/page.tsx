@@ -12,6 +12,7 @@ import SearchForm from '@/components/features/search/SearchForm'
 import SearchTabs from '@/components/features/search/SearchTabs'
 import SearchResults from '@/components/features/search/SearchResults'
 import FeedAd from '@/components/ad/FeedAd'
+import NativeAdSlot from '@/components/ad/NativeAdSlot'
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string; tab?: string }>
@@ -56,9 +57,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
       <SearchResults result={result} query={query} tab={tab} />
 
-      {/* 검색 결과 하단 광고 */}
+      {/* 검색 결과 하단 광고 — 앱=Native Advanced(search-feed) / 웹=AdSense */}
       <div className="px-4 pb-6">
-        <FeedAd />
+        <NativeAdSlot slotId="search-feed" minHeight={230} fallback={<FeedAd />} />
       </div>
     </div>
   )
