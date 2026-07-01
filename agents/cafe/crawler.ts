@@ -1228,14 +1228,24 @@ export async function refreshRecentPosts(): Promise<number> {
       try {
         await page.goto(post.postUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
         await page.waitForTimeout(800)
-        const newComments = await extractComments(page, 15)
+        // 댓글은 cafe_main iframe(ca-fe URL) 안에 있음 — crawlNewFormat과 동일 frame 해석.
+        // 외부 page(f-e 셸)는 빈 React wrapper라 댓글 DOM 0건 → 반드시 iframe target에서 추출.
+        const cafeFrame = page.frame('cafe_main')
+          ?? page.frames().find(f => f.url().includes('ca-fe/cafes') || f.url().includes('ArticleRead'))
+        const target = cafeFrame ?? page
+        if (cafeFrame) {
+          await cafeFrame.waitForSelector('.title_text, .se-title-text, .article_header, .ContentRenderer', { timeout: 8000 }).catch(() => {})
+          await page.waitForTimeout(1000)
+        }
+        let newComments = await extractComments(target, 15)
+        if (newComments.length === 0 && cafeFrame) newComments = await extractComments(page, 15) // iframe 미매칭 폴백
         if (newComments.length === 0) { rvSkipped++; continue } // 추출 0 → 기존 topComments 보존
         rvRefreshed++
         const newUsable = computeUsableCount(newComments)
         if (newUsable >= 5) {
-          // killerScore 재계산 — refresh 기존 루프와 동일 inline 공식. 신 수치 읽기 실패(0/0)면 DB값 유지
-          const nc = await safeNumber(page, ['.u_cbox_count', '.CommentCount', '.comment_count', '.num_comment .num'])
-          const nl = await safeNumber(page, ['.like_article .u_cnt', '.sympathy_count', '.u_likeit_list_count .u_cnt'])
+          // killerScore 재계산 — refresh 기존 루프와 동일 inline 공식. 신 수치는 iframe target에서 읽고, 실패(0/0)면 DB값 유지
+          const nc = await safeNumber(target, ['.u_cbox_count', '.CommentCount', '.comment_count', '.num_comment .num'])
+          const nl = await safeNumber(target, ['.like_article .u_cnt', '.sympathy_count', '.u_likeit_list_count .u_cnt'])
           const newCommentCount = nc > 0 ? nc : post.commentCount
           const newLikeCount = nl > 0 ? nl : post.likeCount
           const commentScore = Math.min(newCommentCount * 10, 100) * 0.55
