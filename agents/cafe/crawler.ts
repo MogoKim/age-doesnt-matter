@@ -1237,6 +1237,15 @@ export async function refreshRecentPosts(): Promise<number> {
           await cafeFrame.waitForSelector('.title_text, .se-title-text, .article_header, .ContentRenderer', { timeout: 8000 }).catch(() => {})
           await page.waitForTimeout(1000)
         }
+        // 댓글 lazy-load 유도 — cold deep-link goto는 title(SSR)은 떠도 댓글 위젯이 미마운트되어
+        // extractComments가 []를 반환하던 문제(refreshed=0) 보완. 하단 스크롤로 위젯 마운트를 트리거하고
+        // 댓글 컨테이너를 짧게 대기(실패해도 non-fatal — 기존 topComments 미변경). AI 호출 0 · 신규 navigation 0.
+        try { await target.evaluate(() => window.scrollTo(0, document.body.scrollHeight)) } catch { /* frame 스크롤 실패 무시 */ }
+        if (cafeFrame) {
+          try { await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)) } catch { /* 외부 셸 스크롤 무시 */ }
+        }
+        await target.waitForSelector('.CommentItem, .comment_item, .u_cbox_comment', { timeout: 6000 }).catch(() => {})
+        await page.waitForTimeout(600)
         let newComments = await extractComments(target, 15)
         if (newComments.length === 0 && cafeFrame) newComments = await extractComments(page, 15) // iframe 미매칭 폴백
         if (newComments.length === 0) { rvSkipped++; continue } // 추출 0 → 기존 topComments 보존
