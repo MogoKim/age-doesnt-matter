@@ -119,7 +119,6 @@ export default function BestContent({ initialPosts, initialTotal }: BestContentP
                 post={post}
                 boardSlug={BOARD_TYPE_TO_SLUG[post.boardType] ?? 'stories'}
                 showBoardBadge={true}
-                fromParam="best"
               />
             )}
             className="space-y-3"
