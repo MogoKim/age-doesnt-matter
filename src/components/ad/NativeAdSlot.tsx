@@ -14,8 +14,17 @@ import { ADMOB } from './ad-slots'
  *   네이티브 NativeAdView를 WebView 위 오버레이로 표시(플러그인 setRect). 콘텐츠가 광고 자리를 비워 준다.
  * - **각 슬롯은 자기 slotId 기준으로 독립적으로** load/setRect/hide/destroy 한다(화면당 개수 제한 없음).
  *   → 웹 모바일 광고 배치와 동일하게 한 화면에 여러 슬롯(예: 홈 feed-1/feed-2)이 각각 노출된다.
- * - 스크롤/리사이즈 시 rAF 스로틀로 좌표 갱신, 화면 밖이면 hide, 라우트 이탈·언마운트 시 destroy.
  * - no-fill(loaded=false)/로드 실패/플러그인 미탑재 → **해당 슬롯만** 접어서 공간 제거.
+ *
+ * [위치 갱신 — 뷰포트 진입 보장]
+ *   과거 버그: scroll 이벤트(rAF)에만 의존 → 페이지 하단 슬롯(feed-2)이 스크롤 정착 시 마지막 샘플이
+ *   offscreen(hide)이면 그대로 숨김 유지되어 표시 안 됨.
+ *   보강:
+ *     (1) 로드 직후 1회 pushRect
+ *     (2) scroll/resize rAF 갱신
+ *     (3) **IntersectionObserver**로 placeholder가 뷰포트에 진입/이탈하는 순간 pushRect 강제 호출
+ *     (4) scroll 정착 후 trailing timeout 1회 보정
+ *   ⇒ 슬롯이 뷰포트에 들어오면 반드시 setRect가 호출되어 표시된다.
  */
 
 interface NativeAdSlotProps {
@@ -55,7 +64,9 @@ export default function NativeAdSlot({
 
     let cancelled = false
     let rafId = 0
+    let settleTimer: ReturnType<typeof setTimeout> | undefined
     let loaded = false
+    let io: IntersectionObserver | undefined
 
     const pushRect = () => {
       if (cancelled || !loaded) return
@@ -67,9 +78,11 @@ export default function NativeAdSlot({
         AdMobNative.setRect({ slotId, x: r.left, y: r.top, width: r.width, height: r.height }).catch(() => {})
       }
     }
+    // scroll/resize: rAF 1회 + 정착 후 trailing 보정 1회(마지막 샘플이 offscreen이어도 정착 위치로 재갱신)
     const onScroll = () => {
-      if (rafId) return
-      rafId = requestAnimationFrame(() => { rafId = 0; pushRect() })
+      if (!rafId) rafId = requestAnimationFrame(() => { rafId = 0; pushRect() })
+      if (settleTimer) clearTimeout(settleTimer)
+      settleTimer = setTimeout(() => { pushRect() }, 180)
     }
 
     AdMobNative.load({ slotId, adUnitId })
@@ -77,15 +90,20 @@ export default function NativeAdSlot({
         if (cancelled) return
         if (!res?.loaded) { setCollapsed(true); return } // no-fill → 이 슬롯만 공간 제거
         loaded = true
-        pushRect()
+        pushRect() // 로드 직후 1회
         window.addEventListener('scroll', onScroll, { passive: true })
         window.addEventListener('resize', onScroll, { passive: true })
+        // 뷰포트 진입/이탈 순간 확실히 갱신 — 스크롤 정착 상태에서도 진입 시 setRect 보장.
+        io = new IntersectionObserver(() => { pushRect() }, { threshold: [0, 0.01, 1] })
+        io.observe(el)
       })
       .catch(() => { if (!cancelled) setCollapsed(true) }) // 플러그인 미탑재/실패 → 이 슬롯만 공간 제거
 
     return () => {
       cancelled = true
       if (rafId) cancelAnimationFrame(rafId)
+      if (settleTimer) clearTimeout(settleTimer)
+      if (io) io.disconnect()
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
       AdMobNative.destroy({ slotId }).catch(() => {})
