@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- AdMob Native Advanced 광고 뷰 (PoC — 홈 인피드). AdMob 정책: "광고" 라벨 + AdChoices(자동) 필수. -->
+<!-- AdMob Native Advanced 광고 뷰 (운영 compact — 인피드). AdMob 정책: "광고" 라벨 + AdChoices(자동) 필수.
+     목표 높이 ≈ 224px(placeholder minHeight 230과 정합, 글 카드보다 과하게 튀지 않게). -->
 <com.google.android.gms.ads.nativead.NativeAdView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/native_ad_view"
@@ -11,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="10dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -21,8 +22,8 @@
 
             <ImageView
                 android:id="@+id/ad_app_icon"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:layout_marginEnd="8dp"
                 android:scaleType="fitCenter"
                 android:contentDescription="ad icon" />
@@ -32,10 +33,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:maxLines="2"
+                android:maxLines="1"
                 android:ellipsize="end"
                 android:textColor="#111111"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -53,7 +54,7 @@
         <com.google.android.gms.ads.nativead.MediaView
             android:id="@+id/ad_media"
             android:layout_width="match_parent"
-            android:layout_height="144dp"
+            android:layout_height="96dp"
             android:layout_marginTop="8dp" />
 
         <TextView
@@ -64,14 +65,20 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:textColor="#444444"
-            android:textSize="14sp" />
+            android:textSize="13sp" />
 
         <Button
             android:id="@+id/ad_call_to_action"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:layout_marginTop="8dp"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:paddingVertical="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
             android:textAllCaps="false"
+            android:textSize="14sp"
             android:textColor="#FFFFFF"
             android:backgroundTint="#FF6F61" />
     </LinearLayout>
