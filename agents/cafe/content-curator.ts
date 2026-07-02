@@ -27,6 +27,7 @@ import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } fr
 import { DLXOGNS01_ALLOWED_BOARDS } from './config.js'
 import { generateCommunitySlug } from '../core/slug.js'
 import { computeUsableCount } from './compute-usable-count.js'
+import { buildPopularSeoMeta } from './popular-seo.js'
 
 // ─── 후보 풀 / skipReason 타입 ─────────────────────────────────
 type SkipReason =
@@ -60,7 +61,7 @@ interface TopicResult extends CandidateTopic {
 }
 
 type PublishResult =
-  | { success: true; postId: string }
+  | { success: true; postId: string; seoTransformed: boolean }
   | { success: false; skipReason: Extract<SkipReason, 'SEASON_MISMATCH' | 'DUPLICATE_TITLE' | 'PUBLISH_FAILED' | 'POLITICAL_BLOCK'>; matchedKeyword?: string }
 
 const CANDIDATE_POOL_SIZE = 15
@@ -350,6 +351,11 @@ async function publishCuratedContent(curated: CuratedContent): Promise<PublishRe
   const htmlContent = toCuratedHtmlContent(curated.content)
   const summary = toCuratedSummary(curated.content)
 
+  // SEO 메타 생성(추출적 · AI 미사용) — 화면 title/summary/slug·본문(htmlContent)은 그대로 두고
+  // 검색용 seoTitle/seoDescription만 추가한다. 실패·정책위반 시 seoTitle/seoDescription=null(fallback).
+  // popular-curator와 동일한 buildPopularSeoMeta 재사용(원문 title/content의 단어만 사용).
+  const seo = buildPopularSeoMeta({ title: curated.title, rawContent: curated.content, summary })
+
   // 정치 키워드 hard block — publish 직전 최종 검사 (P0). 정치색 글은 절대 발행 안 함.
   const political = findPoliticalKeyword(curated.title, curated.content)
   if (political) {
@@ -399,6 +405,8 @@ async function publishCuratedContent(curated: CuratedContent): Promise<PublishRe
           title: curated.title,
           content: htmlContent,
           summary,
+          seoTitle: seo.seoTitle,
+          seoDescription: seo.seoDescription,
           boardType: curated.boardType as 'STORY' | 'HUMOR' | 'LIFE2' | 'JOB',
           category: curated.category ?? '자유수다',
           authorId: userId,
@@ -428,7 +436,7 @@ async function publishCuratedContent(curated: CuratedContent): Promise<PublishRe
       }
       return post.id
     })
-    return { success: true, postId }
+    return { success: true, postId, seoTransformed: seo.transformed }
   } catch (err) {
     console.error('[ContentCurator] publishCuratedContent 트랜잭션 실패:', err)
     return { success: false, skipReason: 'PUBLISH_FAILED' }
@@ -475,6 +483,8 @@ export async function main() {
   // 2) 카테고리 다양화 — desireMap 기반으로 HEALTH 독점 방지
   const maxPosts = 3
   let publishedCount = 0
+  let seoTransformedCount = 0
+  let seoFallbackCount = 0
 
   // 오늘 이미 발행된 욕망 집계 — 시간당 동일 욕망 반복 방지 (B20)
   const todayStart = new Date()
@@ -709,6 +719,8 @@ export async function main() {
     // 발행 성공
     topicResults.push({ ...candidate, refsCount: refs.length, skipReason: null })
     publishedCount++
+    if (publishResult.seoTransformed) seoTransformedCount++
+    else seoFallbackCount++
     desireUsedCount[desireCat] = (desireUsedCount[desireCat] ?? 0) + 1
     console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
 
@@ -749,6 +761,8 @@ export async function main() {
         topicsUsed: topicResults.map(r => r.topic),
         candidatePoolSize: candidatePool.length,
         published: publishedCount,
+        seoTransformedCount,
+        seoFallbackCount,
         topicResults,
       }),
       itemCount: publishedCount,
