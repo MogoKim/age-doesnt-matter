@@ -17,6 +17,7 @@ import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } fr
 import { generateCommunitySlug } from '../core/slug.js'
 import { findPoliticalKeyword } from '../core/political-blocklist.js'
 import { computeUsableCount } from './compute-usable-count.js'
+import { buildPopularSeoMeta } from './popular-seo.js'
 
 const HEALTH_CAP = 2
 const MAX_PUBLISH = 5
@@ -110,6 +111,8 @@ export async function main() {
 
   let healthCount = 0
   let publishedCount = 0
+  let seoTransformedCount = 0
+  let seoFallbackCount = 0
 
   for (const post of usableCandidates) {
     if (publishedCount >= MAX_PUBLISH) break
@@ -167,14 +170,21 @@ export async function main() {
     try {
       const userId = await getCuratorBotUser(persona)
 
-      const slug = await generateCommunitySlug(title)
+      // SEO 메타 생성(추출적 · AI 미사용) — 본문(htmlContent)은 그대로 두고 검색용 메타만 보수적으로 개선.
+      // 실패·정책위반 시 원문 title + 기존 summary로 fallback(seoTitle/seoDescription=null).
+      const seo = buildPopularSeoMeta({ title, rawContent, summary })
+
+      // slug는 seoTitle(있으면) 우선 — 없으면 화면 title fallback. 신규 발행에만 적용.
+      const slug = await generateCommunitySlug(seo.seoTitle?.trim() || seo.title || title)
 
       const postId = await prisma.$transaction(async tx => {
         const newPost = await tx.post.create({
           data: {
-            title,
-            content: htmlContent,
-            summary,
+            title: seo.title,
+            content: htmlContent, // 원문 본문 그대로 — SEO 최적화가 본문을 건드리지 않음
+            summary: seo.summary,
+            seoTitle: seo.seoTitle,
+            seoDescription: seo.seoDescription,
             cafePostId: post.id,
             boardType: boardInfo.boardType,
             category: boardInfo.category ?? '자유수다',
@@ -216,7 +226,9 @@ export async function main() {
 
       if (desire === 'HEALTH') healthCount++
       publishedCount++
-      console.log(`[PopularCurator] 발행: ${title.slice(0, 30)} (${persona.nickname})`)
+      if (seo.transformed) seoTransformedCount++
+      else seoFallbackCount++
+      console.log(`[PopularCurator] 발행: ${seo.title.slice(0, 30)} (${persona.nickname}) seo=${seo.transformed ? 'v1' : 'fallback'}`)
     } catch (err) {
       console.error(`[PopularCurator] 발행 실패 스킵:`, err)
     }
@@ -235,6 +247,8 @@ export async function main() {
         usableCount: usableCandidates.length,
         lowUsableCount,
         maxUsableCount,
+        seoTransformedCount,
+        seoFallbackCount,
       }),
       executionTimeMs: durationMs,
     },
