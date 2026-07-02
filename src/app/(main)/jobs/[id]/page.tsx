@@ -11,6 +11,7 @@ import { sanitizeHtml } from '@/lib/sanitize'
 import { formatSalary } from '@/lib/format'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
+import NativeAdSlot from '@/components/ad/NativeAdSlot'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import CoupangBanner from '@/components/ad/CoupangBanner'
 import { ADSENSE } from '@/components/ad/ad-slots'
@@ -232,7 +233,7 @@ export default async function JobDetailPage({ params }: PageProps) {
 
       {/* 광고 — 인아티클 */}
       <div className="mb-8">
-        <AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />
+        <NativeAdSlot slotId="jobs-detail-inarticle" minHeight={230} fallback={<AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />} />
       </div>
 
       {/* 댓글 */}
@@ -253,7 +254,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       </Suspense>
 
       {/* 하단 애드센스 띠배너 (반응형 디스플레이) */}
-      <AdSenseUnit slotId={ADSENSE.POST_BOTTOM_BANNER} format="auto" className="rounded-2xl overflow-hidden mt-6" />
+      <NativeAdSlot slotId="jobs-detail-bottom" minHeight={230} fallback={<AdSenseUnit slotId={ADSENSE.POST_BOTTOM_BANNER} format="auto" className="rounded-2xl overflow-hidden mt-6" />} />
     </div>
   )
 }
