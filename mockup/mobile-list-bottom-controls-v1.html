@@ -47,11 +47,12 @@
   .search-res{font-size:16px;font-weight:700;color:var(--coral-text);margin-top:10px;padding-left:2px}
 
   /* ── 2) 메인 페이지 이동 줄 ── */
-  .pager-main{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:18px}
-  .pbtn{flex:0 0 auto;height:52px;padding:0 14px;display:flex;align-items:center;justify-content:center;
+  /* gap 4px·padding 11px·input 52px — 글씨 최대 확대(1.3~1.5x)에서도 메인 줄 1줄 유지 */
+  .pager-main{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:18px}
+  .pbtn{flex:0 0 auto;height:52px;padding:0 11px;display:flex;align-items:center;justify-content:center;
         border:1px solid var(--border);background:#fff;border-radius:14px;font-size:16px;font-weight:700;color:var(--fg);text-decoration:none;cursor:pointer}
   .pbtn:active{border-color:var(--coral-border);background:var(--coral-soft)}
-  .pinput{flex:0 0 auto;width:60px;height:52px;text-align:center;font-size:18px;font-weight:800;color:var(--coral-text);
+  .pinput{flex:0 0 auto;width:52px;height:52px;text-align:center;font-size:18px;font-weight:800;color:var(--coral-text);
           border:1px solid var(--coral-border);background:var(--coral-soft);border-radius:14px;outline:none}
 
   /* ── 3) 근처 페이지 번호 줄 ── */

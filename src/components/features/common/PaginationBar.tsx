@@ -38,7 +38,8 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
 
   const box = 'h-[52px] rounded-xl border text-base font-bold transition-colors flex items-center justify-center'
   const on = 'border-border text-foreground hover:border-primary/40 active:bg-primary/10'
-  const txt = 'px-3 shrink-0'
+  // px-2.5(min 52px 폭 유지)·gap-1·input 52px — 글씨 최대 확대(1.3~1.5x)에서도 메인 줄 1줄 유지
+  const txt = 'px-2.5 shrink-0'
   const sq = 'w-[52px] shrink-0'
 
   function handleJump(e: FormEvent) {
@@ -51,7 +52,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
   return (
     <nav aria-label="페이지 이동" className="mt-6">
       {/* 메인 이동 줄: (이전) · (맨앞) · 현재쪽 입력 · 이동 · (다음) — 불가능한 액션은 숨김 */}
-      <form onSubmit={handleJump} className="flex items-center justify-center gap-1.5">
+      <form onSubmit={handleJump} className="flex items-center justify-center gap-1">
         {!isFirst && (
           <Link href={buildHref(currentPage - 1)} rel="prev" className={`${box} ${txt} ${on}`}>이전</Link>
         )}
@@ -66,7 +67,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
           value={jump}
           onChange={(e) => setJump(e.target.value.replace(/[^0-9]/g, ''))}
           aria-label={`이동할 페이지 번호 (1부터 ${totalPages}). 현재 ${currentPage} 페이지`}
-          className="h-[52px] w-[60px] shrink-0 rounded-xl border border-primary/40 bg-primary/10 text-center text-lg font-extrabold text-primary-text outline-none transition-colors focus:border-primary/70"
+          className="h-[52px] w-[52px] shrink-0 rounded-xl border border-primary/40 bg-primary/10 text-center text-lg font-extrabold text-primary-text outline-none transition-colors focus:border-primary/70"
         />
 
         <button type="submit" className={`${box} ${txt} ${on}`}>이동</button>
