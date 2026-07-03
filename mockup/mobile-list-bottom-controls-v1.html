@@ -47,20 +47,21 @@
   .search-res{font-size:16px;font-weight:700;color:var(--coral-text);margin-top:10px;padding-left:2px}
 
   /* ── 2) 메인 페이지 이동 줄 ── */
-  /* gap 4px·padding 11px·input 52px — 글씨 최대 확대(1.3~1.5x)에서도 메인 줄 1줄 유지 */
-  .pager-main{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:18px}
+  /* v1.1 밀도 보정: gap 3px·padding 11px·input 52px 유지(1.5x 1줄), 톤다운(font 500·radius 10·연한 border) */
+  .pager-main{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:12px}
   .pbtn{flex:0 0 auto;height:52px;padding:0 11px;display:flex;align-items:center;justify-content:center;
-        border:1px solid var(--border);background:#fff;border-radius:14px;font-size:16px;font-weight:700;color:var(--fg);text-decoration:none;cursor:pointer}
-  .pbtn:active{border-color:var(--coral-border);background:var(--coral-soft)}
-  .pinput{flex:0 0 auto;width:52px;height:52px;text-align:center;font-size:18px;font-weight:800;color:var(--coral-text);
-          border:1px solid var(--coral-border);background:var(--coral-soft);border-radius:14px;outline:none}
+        border:1px solid #eceef1;background:#fff;border-radius:10px;font-size:16px;font-weight:500;color:var(--fg);text-decoration:none;cursor:pointer}
+  .pbtn:active{border-color:var(--coral-border);background:#fafafb}
+  /* 입력칸: 코랄 강조 제거 → 일반 흰색 입력칸 (현재 페이지 강조는 아래 번호 줄에서만) */
+  .pinput{flex:0 0 auto;width:52px;height:52px;text-align:center;font-size:16px;font-weight:500;color:var(--fg);
+          border:1px solid #eceef1;background:#fff;border-radius:10px;outline:none}
 
-  /* ── 3) 근처 페이지 번호 줄 ── */
-  .pager-near{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px}
+  /* ── 3) 근처 페이지 번호 줄 (유일한 강조 위치) ── */
+  .pager-near{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px}
   .nbtn{flex:0 0 auto;width:52px;height:52px;display:flex;align-items:center;justify-content:center;
-        border:1px solid var(--border);background:#fff;border-radius:14px;font-size:17px;font-weight:700;color:var(--fg);text-decoration:none;cursor:pointer}
-  .nbtn:active{border-color:var(--coral-border);background:var(--coral-soft)}
-  .nbtn.cur{background:var(--coral);border-color:var(--coral);color:#fff;font-weight:800}
+        border:1px solid #eceef1;background:#fff;border-radius:10px;font-size:16px;font-weight:500;color:var(--fg);text-decoration:none;cursor:pointer}
+  .nbtn:active{border-color:var(--coral-border);background:#fafafb}
+  .nbtn.cur{background:var(--coral);border-color:var(--coral);color:#fff;font-weight:600}
   .nbtn .ic{font-size:20px;line-height:1}
 
   /* 향후 광고(별도 PR) — 이번 서비스 코드엔 미포함, 목업 안내만 */
@@ -189,6 +190,7 @@
     · 우나어식 변경: 펨코 <code>-/+</code> 대신 <b>방향 화살표 ‹ ›</b>(묶음 이동, aria-label). <code>+</code>는 FAB·가+와 의미 충돌, <code>-</code>는 삭제 오인 → 미사용. <b>맨뒤 버튼 없음</b>(끝은 직접 입력). "N/총" 표시 폐기.<br>
     · 근처 번호는 <b>현재±1 3개 중심</b>(큰 버튼이라 억지로 5+ 노출 안 함, 모바일 최대 3개). 현재=코랄 배경. 모두 52px.<br>
     · <b>불가능한 액션은 숨김</b>: 첫 페이지=이전·맨앞 미노출(<code>[현재][이동][다음]</code>), 마지막 페이지=다음 미노출(<code>[이전][맨앞][현재][이동]</code>). disabled 회색 버튼으로 남기지 않음 → 390px 글씨 최대에서도 1줄 유지.<br>
+    · <b>v1.1 밀도 보정</b>: 버튼 톤다운(font 500·radius 10·연한 border, 그림자 없음), 입력칸 <b>코랄 강조 제거</b>(일반 흰색). <b>현재 페이지 강조는 근처 번호 줄 코랄 fill 한 곳만</b>(입력칸 중복 강조 제거). 검색↔페이지 간격·메인↔번호 간격 축소.<br>
     · <code>‹</code>=이전 묶음(현재-3), <code>›</code>=다음 묶음(현재+3), 클램프 [1,총].<br>
     · 광고: 이번 미구현. 향후 조작부 <b>아래 구분선+간격</b> 두고 별도 PR. 앱은 라이브 웹 로드 → 웹 변경 반영, AAB 불필요.
   </div>
