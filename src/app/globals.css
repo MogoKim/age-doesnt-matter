@@ -375,24 +375,25 @@ textarea {
 .magazine-body div[style*="border-radius:50%"][style*="#FF6F61"] {
   display: none !important;
 }
-/* 자주 묻는 질문(FAQ) 섹션 과한 여백 축소 — 기존/신규 공통 */
+/* 자주 묻는 질문(FAQ) 섹션 과한 여백 축소 — 기존/신규 공통. 읽기 편한 line-height는 유지 */
 .magazine-body .faq-section {
-  margin-top: 24px;
+  margin-top: 16px;
 }
 .magazine-body .faq-section h2 {
   margin-top: 0 !important;
-  margin-bottom: 12px !important;
+  margin-bottom: 8px !important;
 }
 .magazine-body .faq-section details {
-  margin: 0 0 8px !important;
-  padding-bottom: 8px;
+  margin: 0 !important;
+  padding: 5px 0;
   border-bottom: 1px solid var(--border);
 }
 .magazine-body .faq-section summary {
-  padding: 8px 0;
+  padding: 4px 0;
   cursor: pointer;
   font-weight: 600;
 }
 .magazine-body .faq-section p {
-  margin: 6px 0 0 !important;
+  margin: 4px 0 8px !important;
+  line-height: 1.7;
 }
