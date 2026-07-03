@@ -51,9 +51,9 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
   }
 
   return (
-    <nav aria-label="페이지 이동" className="mt-5 rounded-[18px] bg-muted/50 px-2 py-[18px]">
+    <nav aria-label="페이지 이동" className="mt-5 rounded-[18px] bg-muted/50 px-[8px] py-[18px]">
       {/* 메인 이동 줄: (이전) · (맨앞) · 현재쪽 입력 · 이동 · (다음) — 불가능한 액션은 숨김 */}
-      <form onSubmit={handleJump} className="flex items-center justify-center gap-[4px]">
+      <form onSubmit={handleJump} className="flex items-center justify-center gap-[3px]">
         {!isFirst && (
           <Link href={buildHref(currentPage - 1)} rel="prev" className={`${box} ${txt} ${on}`}>이전</Link>
         )}
@@ -79,7 +79,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
       </form>
 
       {/* 근처 번호 줄: ‹묶음 · 번호 · ›묶음 */}
-      <div className="mt-4 flex items-center justify-center gap-2.5">
+      <div className="mt-4 flex items-center justify-center gap-[10px]">
         {hasPrevBunch && (
           <Link href={buildHref(prevBunch)} aria-label="이전 페이지 묶음" className={`${box} ${sq} ${on}`}>
             <span className="text-xl leading-none">‹</span>
