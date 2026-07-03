@@ -10,9 +10,9 @@ interface Props {
   buildHref: (page: number) => string
 }
 
-// 모바일 목록 하단 페이지 이동 v1 — 시니어 친화(52px 터치, 큰 글씨, 현재 페이지 명확).
-//  1줄: « 맨앞 · ‹ 이전 · [현재 N / 총] · 다음 › · 맨뒤 »  (첫/끝에선 해당 버튼 비활성)
-//  2줄: 페이지 직접 이동(input + 가기) — 페이지가 많을 때 특정 페이지로 바로 이동
+// 모바일 목록 하단 페이지 이동 v1 — 우리 또래 친화(큰 터치·큰 글씨, 현재 페이지 명확).
+//  1줄: « 맨앞 · ‹ 이전 · [현재 N / 총] · 다음 › · 맨뒤 »  (첫/끝은 비활성)
+//  2줄: 페이지 직접 이동(input + 가기)
 export default function PaginationBar({ currentPage, totalPages, buildHref }: Props) {
   const router = useRouter()
   const [jump, setJump] = useState('')
@@ -22,7 +22,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
   const isFirst = currentPage <= 1
   const isLast = currentPage >= totalPages
 
-  // 52px 터치 타겟 유지. 아이콘 버튼은 정사각, 텍스트 버튼(이전/다음)은 살짝 넓게.
+  // 52px 터치 타겟. 아이콘 버튼=정사각, 텍스트 버튼(이전/다음)=조금 넓게.
   const box = 'h-[52px] rounded-xl border text-base font-bold transition-colors flex items-center justify-center gap-1'
   const active = 'border-border text-foreground hover:border-primary/40 active:bg-primary/10'
   const disabled = 'border-border/60 text-muted-foreground/40 pointer-events-none'
