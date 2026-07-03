@@ -129,7 +129,7 @@ test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우
     }
   })
 
-  test('매거진 상세 — 액션바 + 댓글 섹션', async ({ page }) => {
+  test('매거진 상세 — 읽기 전용 액션 영역', async ({ page }) => {
     await page.goto('/magazine')
 
     const firstMag = page.locator('a[href*="/magazine/"]').first()
@@ -139,9 +139,15 @@ test.describe('시나리오 3: 일자리 목록 → 상세 + 매거진 플로우
       await firstMag.click()
       await expect(page).toHaveURL(/\/magazine\//)
 
-      // 댓글 영역
-      const commentSection = page.getByText(/댓글/)
-      await expect(commentSection.first()).toBeVisible({ timeout: 5000 })
+      // 읽기 전용 콘텐츠: 제목·본문이 노출된다
+      await expect(page.locator('main')).toBeVisible()
+      await expect(page.locator('h1').first()).toBeVisible()
+
+      // PR #68 이후 매거진 상세는 읽기 전용 — 댓글 섹션이 없어야 한다(커뮤니티/일자리 댓글은 별도 유지)
+      await expect(page.locator('main').getByText(/댓글/)).toHaveCount(0)
+
+      // 하단 읽기 전용 동선(우나어 소개·둘러보기)만 유지
+      await expect(page.getByText(/우나어 둘러보기/).first()).toBeVisible({ timeout: 5000 })
     }
   })
 
