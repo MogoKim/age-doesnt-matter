@@ -38,8 +38,8 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
 
   const box = 'h-[52px] rounded-xl border text-base font-bold transition-colors flex items-center justify-center'
   const on = 'border-border text-foreground hover:border-primary/40 active:bg-primary/10'
-  // px-2.5(min 52px 폭 유지)·gap-1·input 52px — 글씨 최대 확대(1.3~1.5x)에서도 메인 줄 1줄 유지
-  const txt = 'px-2.5 shrink-0'
+  // 간격은 고정 px(px-[11px]/gap-[4px])로 — rem이면 글씨 확대 시 간격까지 커져 오버플로. 폰트만 커지고 간격은 유지되게.
+  const txt = 'px-[11px] shrink-0'
   const sq = 'w-[52px] shrink-0'
 
   function handleJump(e: FormEvent) {
@@ -52,7 +52,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
   return (
     <nav aria-label="페이지 이동" className="mt-6">
       {/* 메인 이동 줄: (이전) · (맨앞) · 현재쪽 입력 · 이동 · (다음) — 불가능한 액션은 숨김 */}
-      <form onSubmit={handleJump} className="flex items-center justify-center gap-1">
+      <form onSubmit={handleJump} className="flex items-center justify-center gap-[4px]">
         {!isFirst && (
           <Link href={buildHref(currentPage - 1)} rel="prev" className={`${box} ${txt} ${on}`}>이전</Link>
         )}
