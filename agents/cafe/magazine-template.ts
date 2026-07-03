@@ -100,13 +100,13 @@ export function buildMagazineHtml(data: MagazineTemplateData): string {
   }).join('')
 
   const authorCard = `
-    <div style="margin-top:40px;padding:20px;background:#f8f9fa;border-radius:12px;display:flex;align-items:center;gap:16px;">
-      <div style="width:48px;height:48px;background:#FF6F61;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700;">
-        우
+    <div style="margin-top:40px;padding:16px 18px;background:#f8f9fa;border-radius:12px;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">
+        📖
       </div>
       <div>
-        <p style="margin:0;font-size:16px;font-weight:600;color:#333;">${data.authorName}</p>
-        <p style="margin:4px 0 0;font-size:14px;color:#888;">우리 나이가 어때서 매거진</p>
+        <p style="margin:0;font-size:15px;font-weight:700;color:#333;">우나어 매거진 편집팀</p>
+        <p style="margin:3px 0 0;font-size:13px;color:#888;">50·60대 여성에게 필요한 정보를 쉽게 정리합니다</p>
       </div>
     </div>`
 
@@ -204,13 +204,13 @@ export function buildMagazineHtmlV2(
   }).join('')
 
   const authorCard = `
-    <div style="margin-top:40px;padding:20px;background:#f8f9fa;border-radius:12px;display:flex;align-items:center;gap:16px;">
-      <div style="width:48px;height:48px;background:#FF6F61;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700;">
-        우
+    <div style="margin-top:40px;padding:16px 18px;background:#f8f9fa;border-radius:12px;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">
+        📖
       </div>
       <div>
-        <p style="margin:0;font-size:16px;font-weight:600;color:#333;">${data.authorName}</p>
-        <p style="margin:4px 0 0;font-size:14px;color:#888;">우리 나이가 어때서 매거진</p>
+        <p style="margin:0;font-size:15px;font-weight:700;color:#333;">우나어 매거진 편집팀</p>
+        <p style="margin:3px 0 0;font-size:13px;color:#888;">50·60대 여성에게 필요한 정보를 쉽게 정리합니다</p>
       </div>
     </div>`
 
