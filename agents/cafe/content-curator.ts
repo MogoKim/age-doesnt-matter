@@ -28,6 +28,7 @@ import { DLXOGNS01_ALLOWED_BOARDS } from './config.js'
 import { generateCommunitySlug } from '../core/slug.js'
 import { computeUsableCount } from './compute-usable-count.js'
 import { buildPopularSeoMeta } from './popular-seo.js'
+import { findMedicalAdviceRequest } from '../core/medical-advice-blocklist.js'
 
 // ─── 후보 풀 / skipReason 타입 ─────────────────────────────────
 type SkipReason =
@@ -157,7 +158,8 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   }
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
   const firstWord = topicWords[0] ?? topic
-  const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true, desireCategory: true } as const
+  // commentCount 추가 — usable4 조건부 후보 판정용(cnt>=8). usable>=5 경로는 이 필드를 읽지 않아 동작 무변경.
+  const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true, desireCategory: true, commentCount: true } as const
   // killerScore 상위권(~63위)이 usable<5인 경우가 많아 넉넉히 조회 후 usable 필터 적용.
   // 실측: killerScore top-63 전체가 usable<5, 64위부터 usable≥5 등장 → 최소 150개 필요.
   const candidateTake = Math.max(limit * 50, 150)
@@ -202,11 +204,14 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   // usable 메타데이터 누적 (LOW_USABLE_COMMENTS topicResults 기록용)
   let totalCandidatesChecked = 0
   let maxUsableCount = 0
+  const u4Pool: Array<{ id: string; title: string; content: string; cafeName: string; topComments: unknown; desireCategory: string | null; commentCount: number }> = []
   const withUsableFilter = <T extends { topComments: unknown }>(posts: T[]): T[] => {
     totalCandidatesChecked += posts.length
     for (const p of posts) {
       const u = computeUsableCount(p.topComments)
       if (u > maxUsableCount) maxUsableCount = u
+      // usable==4 후보를 별도 수집(원본 그대로) — 조건 판정/발행은 호출부에서. usable>=5 필터에는 영향 없음.
+      if (u === 4) u4Pool.push(p as unknown as (typeof u4Pool)[number])
     }
     return posts.filter(p => computeUsableCount(p.topComments) >= 5)
   }
@@ -218,7 +223,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: candidateTake, select: selectFields,
   })))
-  if (s1.length >= limit) return { refs: s1.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
+  if (s1.length >= limit) return { refs: s1.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
 
   // 2단계: 7일 + 키워드
   const cutoff7d = new Date(Date.now() - 7 * 24 * 3600_000)
@@ -227,7 +232,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: candidateTake, select: selectFields,
   })))
-  if (s2.length >= limit) return { refs: s2.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
+  if (s2.length >= limit) return { refs: s2.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
 
   // 3단계: 7일 + desireCategory만 (키워드 없이)
   const s3 = withUsableFilter(filterBlocked(await prisma.cafePost.findMany({
@@ -235,7 +240,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: candidateTake, select: selectFields,
   })))
-  if (s3.length >= limit) return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
+  if (s3.length >= limit) return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
 
   // 4단계: desireCategory 무관 전체 pool — DB 카테고리 분류 97% NULL 상태 보완
   // GENERAL은 stage 3와 동일 쿼리라 스킵
@@ -247,9 +252,9 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
       take: candidateTake, select: selectFields,
     }))).filter(p => !s3ids.has(p.id))
     if (s4.length > 0) console.log(`[ContentCurator] stage4 fallback (${desireCat}→NULL pool): ${s4.length}개 발견`)
-    return { refs: [...s3, ...s4].slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
+    return { refs: [...s3, ...s4].slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
   }
-  return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount }
+  return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
 }
 
 /**
@@ -492,6 +497,28 @@ export async function main() {
   let publishedCount = 0
   let seoTransformedCount = 0
   let seoFallbackCount = 0
+  // usable4 조건부 허용 — env flag OFF(기본)면 완전 비활성(usable>=5 현행과 동일). 회차당 최대 1건.
+  const ENABLE_CONDITIONAL_USABLE4 = process.env.ENABLE_CONDITIONAL_USABLE4 === 'true'
+  let conditionalU4Used = 0
+  let conditionalU4CandidateCount = 0
+  let conditionalU4PublishedCount = 0
+  let conditionalU4SkippedCount = 0
+  let medicalAdviceSkippedCount = 0
+  const SENSITIVE_RE = /자살|죽고싶|이혼하|불륜|바람났|폭력|학대|성폭|사이비|파산했|빚더미/
+  // usable==4 후보 중 안전한 글 1개 선별 — 본문>=150 · cnt>=8 · 민감/의료조언 제외.
+  // 정치는 getReferencePosts.filterBlocked(hasPoliticalKeyword)에서 이미 제외됨. duplicate/keyword는 이후 발행 흐름이 처리.
+  const pickConditionalUsable4 = <T extends { title: string; content: string; commentCount: number }>(pool: T[]): T | null => {
+    for (const p of pool) {
+      const t = replaceCafeReferences(stripMarkdown((p.title ?? '').trim()))
+      const b = replaceCafeReferences(stripMarkdown((p.content ?? '').trim()))
+      if (b.length < 150 || (p.commentCount ?? 0) < 8) { conditionalU4SkippedCount++; continue }
+      if (SENSITIVE_RE.test(`${t} ${b}`)) { conditionalU4SkippedCount++; continue }
+      if (findMedicalAdviceRequest(t, b)) { medicalAdviceSkippedCount++; conditionalU4SkippedCount++; continue }
+      conditionalU4CandidateCount++
+      return p
+    }
+    return null
+  }
 
   // 오늘 이미 발행된 욕망 집계 — 시간당 동일 욕망 반복 방지 (B20)
   const todayStart = new Date()
@@ -673,7 +700,17 @@ export async function main() {
     }
 
     // [B 2026-06-10] refs를 먼저 가져와 발행 게시판(A 가드 반영)을 정한 뒤, 그 게시판 소속 페르소나 중에서 글 제목으로 매칭
-    const { refs, candidatesBeforeUsableFilter, maxUsableCount } = await getReferencePosts(candidate.topic, desireCat, 3)
+    const refResult = await getReferencePosts(candidate.topic, desireCat, 3)
+    const { candidatesBeforeUsableFilter, maxUsableCount, u4Pool } = refResult
+    let refs = refResult.refs
+    let usedConditionalU4 = false
+
+    // usable>=5 후보가 전무(LOW_USABLE)하고 flag ON·회차 1건 미만이면, 안전한 usable==4 후보 1개로 fallback.
+    // 기본 usable>=5 경로는 그대로. flag OFF면 아래 블록은 실행되지 않음(현행과 100% 동일).
+    if (refs.length === 0 && candidatesBeforeUsableFilter > 0 && ENABLE_CONDITIONAL_USABLE4 && conditionalU4Used < 1) {
+      const u4Ref = pickConditionalUsable4(u4Pool)
+      if (u4Ref) { refs = [u4Ref]; usedConditionalU4 = true }
+    }
 
     if (refs.length === 0) {
       if (candidatesBeforeUsableFilter > 0) {
@@ -728,6 +765,7 @@ export async function main() {
     publishedCount++
     if (publishResult.seoTransformed) seoTransformedCount++
     else seoFallbackCount++
+    if (usedConditionalU4) { conditionalU4Used++; conditionalU4PublishedCount++ }
     desireUsedCount[desireCat] = (desireUsedCount[desireCat] ?? 0) + 1
     console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
 
@@ -770,6 +808,10 @@ export async function main() {
         published: publishedCount,
         seoTransformedCount,
         seoFallbackCount,
+        conditionalU4CandidateCount,
+        conditionalU4PublishedCount,
+        conditionalU4SkippedCount,
+        medicalAdviceSkippedCount,
         topicResults,
       }),
       itemCount: publishedCount,
