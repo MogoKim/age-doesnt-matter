@@ -19,8 +19,8 @@ function getNearby(current: number, total: number): number[] {
 }
 
 // 모바일 목록 하단 페이지 이동 v1 — 큰 터치·큰 글씨. 맨뒤 없음(끝은 직접 입력), "N/총" 표시 없음.
-//  1줄(메인): 이전 · 맨앞 · [현재쪽 입력] · 이동 · 다음
-//  2줄(근처): ‹묶음 · [현재±1 번호] · ›묶음   (묶음 이동은 ±3, 화살표에 aria-label)
+//  1줄(메인): (이전) · (맨앞) · [현재쪽 입력] · 이동 · (다음)   — 불가능한 액션(첫: 이전·맨앞 / 끝: 다음)은 숨김(disabled 버튼 미노출)
+//  2줄(근처): ‹묶음 · [현재±1 번호 최대 3개] · ›묶음   (묶음 이동은 ±3, 화살표에 aria-label)
 export default function PaginationBar({ currentPage, totalPages, buildHref }: Props) {
   const router = useRouter()
   const [jump, setJump] = useState(String(currentPage))
@@ -38,7 +38,6 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
 
   const box = 'h-[52px] rounded-xl border text-base font-bold transition-colors flex items-center justify-center'
   const on = 'border-border text-foreground hover:border-primary/40 active:bg-primary/10'
-  const off = 'border-border/60 text-muted-foreground/40 pointer-events-none'
   const txt = 'px-3 shrink-0'
   const sq = 'w-[52px] shrink-0'
 
@@ -51,15 +50,15 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
 
   return (
     <nav aria-label="페이지 이동" className="mt-6">
-      {/* 메인 이동 줄: 이전 · 맨앞 · 현재쪽 입력 · 이동 · 다음 */}
+      {/* 메인 이동 줄: (이전) · (맨앞) · 현재쪽 입력 · 이동 · (다음) — 불가능한 액션은 숨김 */}
       <form onSubmit={handleJump} className="flex items-center justify-center gap-1.5">
-        {isFirst
-          ? <span className={`${box} ${txt} ${off}`} aria-hidden="true">이전</span>
-          : <Link href={buildHref(currentPage - 1)} rel="prev" className={`${box} ${txt} ${on}`}>이전</Link>}
+        {!isFirst && (
+          <Link href={buildHref(currentPage - 1)} rel="prev" className={`${box} ${txt} ${on}`}>이전</Link>
+        )}
 
-        {isFirst
-          ? <span className={`${box} ${txt} ${off}`} aria-hidden="true">맨앞</span>
-          : <Link href={buildHref(1)} aria-label="맨 앞 페이지로" className={`${box} ${txt} ${on}`}>맨앞</Link>}
+        {!isFirst && (
+          <Link href={buildHref(1)} aria-label="맨 앞 페이지로" className={`${box} ${txt} ${on}`}>맨앞</Link>
+        )}
 
         <input
           inputMode="numeric"
@@ -72,9 +71,9 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
 
         <button type="submit" className={`${box} ${txt} ${on}`}>이동</button>
 
-        {isLast
-          ? <span className={`${box} ${txt} ${off}`} aria-hidden="true">다음</span>
-          : <Link href={buildHref(currentPage + 1)} rel="next" className={`${box} ${txt} ${on}`}>다음</Link>}
+        {!isLast && (
+          <Link href={buildHref(currentPage + 1)} rel="next" className={`${box} ${txt} ${on}`}>다음</Link>
+        )}
       </form>
 
       {/* 근처 번호 줄: ‹묶음 · 번호 · ›묶음 */}
