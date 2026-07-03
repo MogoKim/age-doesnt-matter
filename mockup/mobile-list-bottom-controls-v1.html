@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우나어 — 모바일 목록 하단 조작부 UX v1 (목업 · 구현 아님)</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --fg:#111827; --muted:#6b7280; --muted2:#9ca3af;
+    --border:#e5e7eb; --coral:#FF6F61; --coral-text:#E85D50; --coral-soft:#FFECE9; --coral-border:#FFD4CC;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#e9ecf1;color:var(--fg);line-height:1.55}
+  .doc{max-width:520px;margin:0 auto;padding:20px 12px 60px}
+  .doc-h{font-size:15px;font-weight:800;color:#1F2D45;margin:6px 4px 4px}
+  .doc-sub{font-size:12.5px;color:#555;margin:0 4px 18px}
+  .note{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px;color:#444;margin:0 2px 18px}
+  .note b{color:var(--coral-text)}
+
+  .state-label{font-size:12px;font-weight:800;color:#fff;background:#1F2D45;display:inline-block;padding:4px 12px;border-radius:20px;margin:22px 4px 8px}
+  .screen{position:relative;background:var(--bg);border:1px solid #dfe3ea;border-radius:20px;padding:14px 14px 0;overflow:hidden}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
+  .cat{display:inline-block;font-size:13px;font-weight:700;color:#3f6212;background:#ecfccb;padding:3px 10px;border-radius:20px;margin-bottom:8px}
+  .cat.b{color:#9a3412;background:#ffedd5}
+  .title{font-size:18px;font-weight:700;color:var(--fg);margin-bottom:8px}
+  .meta{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+  .meta .dot{color:var(--muted2)}
+  .cardstats{display:flex;gap:16px;font-size:14px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid #f1f2f4}
+
+  /* ── 1) 검색 (1줄) ── */
+  .search{display:flex;align-items:center;gap:8px}
+  .search .sel{position:relative;flex:0 0 auto}
+  .search select{height:52px;appearance:none;-webkit-appearance:none;border:1px solid var(--border);background:#fff;border-radius:14px;
+                 padding:0 34px 0 14px;font-size:16px;font-weight:600;color:var(--fg);outline:none}
+  .search .sel .caret{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted)}
+  .search .field{position:relative;flex:1 1 auto;min-width:0}
+  .search input{width:100%;height:52px;min-width:0;border:1px solid var(--border);background:#fff;border-radius:14px;
+                padding:0 42px 0 16px;font-size:17px;color:var(--fg);outline:none}
+  .search input::placeholder{color:#9aa0aa}
+  .search .clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:none;background:#eef0f3;border-radius:50%;
+                 color:var(--muted);font-size:15px;cursor:pointer;display:none;align-items:center;justify-content:center}
+  .search .clear.on{display:flex}
+  .search .go{flex:0 0 auto;height:52px;padding:0 16px;display:flex;align-items:center;gap:6px;border:none;background:var(--coral);color:#fff;
+              border-radius:14px;font-size:16px;font-weight:800;white-space:nowrap;cursor:pointer}
+  .search .go svg{width:19px;height:19px}
+  .search-res{font-size:16px;font-weight:700;color:var(--coral-text);margin-top:10px;padding-left:2px}
+
+  /* ── 2) 메인 페이지 이동 줄 ── */
+  /* gap 4px·padding 11px·input 52px — 글씨 최대 확대(1.3~1.5x)에서도 메인 줄 1줄 유지 */
+  .pager-main{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:18px}
+  .pbtn{flex:0 0 auto;height:52px;padding:0 11px;display:flex;align-items:center;justify-content:center;
+        border:1px solid var(--border);background:#fff;border-radius:14px;font-size:16px;font-weight:700;color:var(--fg);text-decoration:none;cursor:pointer}
+  .pbtn:active{border-color:var(--coral-border);background:var(--coral-soft)}
+  .pinput{flex:0 0 auto;width:52px;height:52px;text-align:center;font-size:18px;font-weight:800;color:var(--coral-text);
+          border:1px solid var(--coral-border);background:var(--coral-soft);border-radius:14px;outline:none}
+
+  /* ── 3) 근처 페이지 번호 줄 ── */
+  .pager-near{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px}
+  .nbtn{flex:0 0 auto;width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+        border:1px solid var(--border);background:#fff;border-radius:14px;font-size:17px;font-weight:700;color:var(--fg);text-decoration:none;cursor:pointer}
+  .nbtn:active{border-color:var(--coral-border);background:var(--coral-soft)}
+  .nbtn.cur{background:var(--coral);border-color:var(--coral);color:#fff;font-weight:800}
+  .nbtn .ic{font-size:20px;line-height:1}
+
+  /* 향후 광고(별도 PR) — 이번 서비스 코드엔 미포함, 목업 안내만 */
+  .ad-divider{height:1px;background:var(--border);margin:24px 0 0}
+  .ad-future{margin-top:16px;border:1.5px dashed #d5d8de;border-radius:14px;background:#fbfbfc;padding:14px;text-align:center;color:#9aa0a8}
+  .ad-future .t{font-size:12.5px;font-weight:700;color:#8a8f98}
+  .ad-future .b{font-size:11px;font-weight:800;color:#7a3d00;background:#ffe0b2;border-radius:20px;padding:2px 10px;display:inline-block;margin-top:6px}
+
+  .bottom-space{height:96px}
+  .fab{position:absolute;right:16px;bottom:20px;height:56px;padding:0 22px;display:flex;align-items:center;gap:8px;
+       background:var(--coral);color:#fff;border:none;border-radius:30px;font-size:17px;font-weight:800;box-shadow:0 6px 18px rgba(255,111,97,.4);cursor:pointer}
+
+  .legend{font-size:11.5px;color:#666;margin:24px 4px 0;line-height:1.7}
+  .legend code{background:#eef0f3;padding:1px 5px;border-radius:4px;font-size:11px}
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="doc-h">우나어 · 모바일 목록 하단 조작부 UX v1 (목업 — 구현 아님)</div>
+  <div class="doc-sub">순서: 검색 1줄 → 메인 페이지 이동 줄 → 근처 번호 줄 → 하단 여백. 펨코식 페이지 이동을 우나어(큰 터치·큰 글씨·코랄)로. 390px 우선, 430px 대응.</div>
+  <div class="note"><b>구현 아님</b> — 실제 서비스 코드는 이 목업과 별개. 광고는 이번 범위 <b>미구현</b>(하단은 향후 별도 PR 안내만).</div>
+
+  <!-- ─── 상태 1: 첫 페이지 ─── -->
+  <div class="state-label">상태 1 · 첫 페이지 (1 / 264)</div>
+  <div class="screen">
+    <article class="card"><span class="cat">사는이야기</span><div class="title">인기글을 보니까 죄다 돈 얘기네요…</div><div class="meta">🌱 동창모임장 <span class="dot">·</span> 2시간 전</div><div class="cardstats"><span>❤ 6</span><span>💬 10</span><span>👁 54</span></div></article>
+
+    <!-- 검색 -->
+    <form class="search" onsubmit="return false">
+      <div class="sel"><select aria-label="검색 범위"><option>제목+내용</option><option>제목</option><option>내용</option></select><span class="caret">▾</span></div>
+      <div class="field"><input type="search" placeholder="검색어" aria-label="검색어 입력"><button type="button" class="clear" aria-label="검색어 지우기">✕</button></div>
+      <button type="submit" class="go" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>검색</button>
+    </form>
+
+    <!-- 메인 이동 줄(첫 페이지): [현재쪽] · 이동 · 다음 — 이전·맨앞은 불가 → 숨김 -->
+    <div class="pager-main">
+      <input class="pinput" value="1" inputmode="numeric" aria-label="이동할 페이지 (현재 1)">
+      <button class="pbtn">이동</button>
+      <a class="pbtn" role="button">다음</a>
+    </div>
+    <!-- 근처 번호 줄: [1][2][3][›] -->
+    <nav class="pager-near" aria-label="근처 페이지">
+      <span class="nbtn cur" aria-current="page">1</span>
+      <a class="nbtn" role="button">2</a>
+      <a class="nbtn" role="button">3</a>
+      <a class="nbtn" role="button" aria-label="다음 페이지 묶음"><span class="ic">›</span></a>
+    </nav>
+
+    <div class="ad-divider"></div>
+    <div class="ad-future"><div class="t">향후 광고 영역 (구분선·간격 아래) — 이번 미구현</div><div class="b">별도 PR · 웹 AdSense / 앱 AdMob Native</div></div>
+
+    <div class="bottom-space"></div>
+    <button class="fab">✏️ 글쓰기</button>
+  </div>
+
+  <!-- ─── 상태 2: 중간 페이지 (검색 중) ─── -->
+  <div class="state-label">상태 2 · 중간 페이지 (5 / 264) · 검색 중</div>
+  <div class="screen">
+    <article class="card"><span class="cat b">건강</span><div class="title">갱년기가 최고조로 올 때는 언제인가요?</div><div class="meta">🌱 베란다텃밭 <span class="dot">·</span> 3시간 전</div><div class="cardstats"><span>❤ 3</span><span>💬 10</span><span>👁 76</span></div></article>
+
+    <form class="search" onsubmit="return false">
+      <div class="sel"><select aria-label="검색 범위"><option>제목+내용</option><option>제목</option><option>내용</option></select><span class="caret">▾</span></div>
+      <div class="field"><input type="search" value="여행" aria-label="검색어 입력"><button type="button" class="clear on" aria-label="검색어 지우기">✕</button></div>
+      <button type="submit" class="go" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>검색</button>
+    </form>
+    <div class="search-res">“여행” 검색 결과</div>
+
+    <div class="pager-main">
+      <a class="pbtn" role="button">이전</a>
+      <a class="pbtn" role="button">맨앞</a>
+      <input class="pinput" value="5" inputmode="numeric" aria-label="이동할 페이지 (현재 5)">
+      <button class="pbtn">이동</button>
+      <a class="pbtn" role="button">다음</a>
+    </div>
+    <nav class="pager-near" aria-label="근처 페이지">
+      <a class="nbtn" role="button" aria-label="이전 페이지 묶음"><span class="ic">‹</span></a>
+      <a class="nbtn" role="button">4</a>
+      <span class="nbtn cur" aria-current="page">5</span>
+      <a class="nbtn" role="button">6</a>
+      <a class="nbtn" role="button" aria-label="다음 페이지 묶음"><span class="ic">›</span></a>
+    </nav>
+
+    <div class="ad-divider"></div>
+    <div class="ad-future"><div class="t">향후 광고 영역 (구분선·간격 아래) — 이번 미구현</div><div class="b">별도 PR · 웹 AdSense / 앱 AdMob Native</div></div>
+
+    <div class="bottom-space"></div>
+    <button class="fab">✏️ 글쓰기</button>
+  </div>
+
+  <!-- ─── 상태 3: 마지막 페이지 ─── -->
+  <div class="state-label">상태 3 · 마지막 페이지 (264 / 264)</div>
+  <div class="screen">
+    <article class="card"><span class="cat">사는이야기</span><div class="title">오래된 이야기지만 남겨봅니다</div><div class="meta">🌱 새벽기도 <span class="dot">·</span> 1일 전</div><div class="cardstats"><span>❤ 2</span><span>💬 0</span><span>👁 31</span></div></article>
+
+    <form class="search" onsubmit="return false">
+      <div class="sel"><select aria-label="검색 범위"><option>제목+내용</option><option>제목</option><option>내용</option></select><span class="caret">▾</span></div>
+      <div class="field"><input type="search" placeholder="검색어" aria-label="검색어 입력"><button type="button" class="clear" aria-label="검색어 지우기">✕</button></div>
+      <button type="submit" class="go" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>검색</button>
+    </form>
+
+    <!-- 메인 이동 줄(마지막 페이지): 이전 · 맨앞 · [현재쪽] · 이동 — 다음은 불가 → 숨김 -->
+    <div class="pager-main">
+      <a class="pbtn" role="button">이전</a>
+      <a class="pbtn" role="button">맨앞</a>
+      <input class="pinput" value="264" inputmode="numeric" aria-label="이동할 페이지 (현재 264)">
+      <button class="pbtn">이동</button>
+    </div>
+    <nav class="pager-near" aria-label="근처 페이지">
+      <a class="nbtn" role="button" aria-label="이전 페이지 묶음"><span class="ic">‹</span></a>
+      <a class="nbtn" role="button">262</a>
+      <a class="nbtn" role="button">263</a>
+      <span class="nbtn cur" aria-current="page">264</span>
+    </nav>
+
+    <div class="ad-divider"></div>
+    <div class="ad-future"><div class="t">향후 광고 영역 (구분선·간격 아래) — 이번 미구현</div><div class="b">별도 PR · 웹 AdSense / 앱 AdMob Native</div></div>
+
+    <div class="bottom-space"></div>
+    <button class="fab">✏️ 글쓰기</button>
+  </div>
+
+  <div class="legend">
+    <b>설계 메모</b><br>
+    · 순서: 게시글 → <b>검색 1줄</b> → <b>메인 이동 줄</b>(이전·맨앞·현재쪽 입력·이동·다음) → <b>근처 번호 줄</b>(‹묶음·현재±1·›묶음) → 하단 여백.<br>
+    · 펨코에서 가져옴: 검색 아래 메인 이동 줄 + 현재쪽 직접 입력·이동 + 근처 번호 + 묶음 이동.<br>
+    · 우나어식 변경: 펨코 <code>-/+</code> 대신 <b>방향 화살표 ‹ ›</b>(묶음 이동, aria-label). <code>+</code>는 FAB·가+와 의미 충돌, <code>-</code>는 삭제 오인 → 미사용. <b>맨뒤 버튼 없음</b>(끝은 직접 입력). "N/총" 표시 폐기.<br>
+    · 근처 번호는 <b>현재±1 3개 중심</b>(큰 버튼이라 억지로 5+ 노출 안 함, 모바일 최대 3개). 현재=코랄 배경. 모두 52px.<br>
+    · <b>불가능한 액션은 숨김</b>: 첫 페이지=이전·맨앞 미노출(<code>[현재][이동][다음]</code>), 마지막 페이지=다음 미노출(<code>[이전][맨앞][현재][이동]</code>). disabled 회색 버튼으로 남기지 않음 → 390px 글씨 최대에서도 1줄 유지.<br>
+    · <code>‹</code>=이전 묶음(현재-3), <code>›</code>=다음 묶음(현재+3), 클램프 [1,총].<br>
+    · 광고: 이번 미구현. 향후 조작부 <b>아래 구분선+간격</b> 두고 별도 PR. 앱은 라이브 웹 로드 → 웹 변경 반영, AAB 불필요.
+  </div>
+</div>
+</body>
+</html>
