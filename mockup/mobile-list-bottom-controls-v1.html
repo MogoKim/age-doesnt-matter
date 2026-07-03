@@ -46,22 +46,22 @@
   .search .go svg{width:19px;height:19px}
   .search-res{font-size:16px;font-weight:700;color:var(--coral-text);margin-top:10px;padding-left:2px}
 
-  /* ── 2) 메인 페이지 이동 줄 ── */
-  /* v1.1 밀도 보정: gap 3px·padding 11px·input 52px 유지(1.5x 1줄), 톤다운(font 500·radius 10·연한 border) */
-  .pager-main{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:12px}
+  /* ── 2·3) 페이지 조작부 = B3 구분 카드(트레이) ── */
+  /* v1.2 B3: 메인+근처를 연한 트레이로 묶어 여백을 담음. 버튼은 소프트칩(연회색 채움·테두리 0). 메인 gap 4px(1.5x 1줄) */
+  .pager-tray{margin-top:20px;background:#f7f8fa;border-radius:18px;padding:18px 6px}
+  .pager-main{display:flex;align-items:center;justify-content:center;gap:3px}
   .pbtn{flex:0 0 auto;height:52px;padding:0 11px;display:flex;align-items:center;justify-content:center;
-        border:1px solid #eceef1;background:#fff;border-radius:10px;font-size:16px;font-weight:500;color:var(--fg);text-decoration:none;cursor:pointer}
-  .pbtn:active{border-color:var(--coral-border);background:#fafafb}
-  /* 입력칸: 코랄 강조 제거 → 일반 흰색 입력칸 (현재 페이지 강조는 아래 번호 줄에서만) */
-  .pinput{flex:0 0 auto;width:52px;height:52px;text-align:center;font-size:16px;font-weight:500;color:var(--fg);
-          border:1px solid #eceef1;background:#fff;border-radius:10px;outline:none}
+        border:none;background:#f1f3f5;border-radius:12px;font-size:16px;font-weight:600;color:#374151;text-decoration:none;cursor:pointer}
+  .pbtn:active{background:#e9ecef}
+  /* 입력칸: 흰색 = 소프트칩 위에서 '입력 필드'로 구분 (현재 페이지 강조는 아래 번호 줄에서만) */
+  .pinput{flex:0 0 auto;width:52px;height:52px;text-align:center;font-size:16px;font-weight:600;color:var(--fg);
+          border:1px solid #e5e7eb;background:#fff;border-radius:12px;outline:none}
 
-  /* ── 3) 근처 페이지 번호 줄 (유일한 강조 위치) ── */
-  .pager-near{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px}
+  .pager-near{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px}
   .nbtn{flex:0 0 auto;width:52px;height:52px;display:flex;align-items:center;justify-content:center;
-        border:1px solid #eceef1;background:#fff;border-radius:10px;font-size:16px;font-weight:500;color:var(--fg);text-decoration:none;cursor:pointer}
-  .nbtn:active{border-color:var(--coral-border);background:#fafafb}
-  .nbtn.cur{background:var(--coral);border-color:var(--coral);color:#fff;font-weight:600}
+        border:none;background:#f1f3f5;border-radius:12px;font-size:16px;font-weight:600;color:#374151;text-decoration:none;cursor:pointer}
+  .nbtn:active{background:#e9ecef}
+  .nbtn.cur{background:var(--coral);color:#fff;font-weight:700}
   .nbtn .ic{font-size:20px;line-height:1}
 
   /* 향후 광고(별도 PR) — 이번 서비스 코드엔 미포함, 목업 안내만 */
@@ -96,19 +96,22 @@
       <button type="submit" class="go" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>검색</button>
     </form>
 
-    <!-- 메인 이동 줄(첫 페이지): [현재쪽] · 이동 · 다음 — 이전·맨앞은 불가 → 숨김 -->
-    <div class="pager-main">
-      <input class="pinput" value="1" inputmode="numeric" aria-label="이동할 페이지 (현재 1)">
-      <button class="pbtn">이동</button>
-      <a class="pbtn" role="button">다음</a>
+    <!-- B3 트레이: 메인+근처를 연한 카드로 묶음 -->
+    <div class="pager-tray">
+      <!-- 메인 이동 줄(첫 페이지): [현재쪽] · 이동 · 다음 — 이전·맨앞은 불가 → 숨김 -->
+      <div class="pager-main">
+        <input class="pinput" value="1" inputmode="numeric" aria-label="이동할 페이지 (현재 1)">
+        <button class="pbtn">이동</button>
+        <a class="pbtn" role="button">다음</a>
+      </div>
+      <!-- 근처 번호 줄: [1][2][3][›] -->
+      <nav class="pager-near" aria-label="근처 페이지">
+        <span class="nbtn cur" aria-current="page">1</span>
+        <a class="nbtn" role="button">2</a>
+        <a class="nbtn" role="button">3</a>
+        <a class="nbtn" role="button" aria-label="다음 페이지 묶음"><span class="ic">›</span></a>
+      </nav>
     </div>
-    <!-- 근처 번호 줄: [1][2][3][›] -->
-    <nav class="pager-near" aria-label="근처 페이지">
-      <span class="nbtn cur" aria-current="page">1</span>
-      <a class="nbtn" role="button">2</a>
-      <a class="nbtn" role="button">3</a>
-      <a class="nbtn" role="button" aria-label="다음 페이지 묶음"><span class="ic">›</span></a>
-    </nav>
 
     <div class="ad-divider"></div>
     <div class="ad-future"><div class="t">향후 광고 영역 (구분선·간격 아래) — 이번 미구현</div><div class="b">별도 PR · 웹 AdSense / 앱 AdMob Native</div></div>
@@ -129,20 +132,22 @@
     </form>
     <div class="search-res">“여행” 검색 결과</div>
 
-    <div class="pager-main">
-      <a class="pbtn" role="button">이전</a>
-      <a class="pbtn" role="button">맨앞</a>
-      <input class="pinput" value="5" inputmode="numeric" aria-label="이동할 페이지 (현재 5)">
-      <button class="pbtn">이동</button>
-      <a class="pbtn" role="button">다음</a>
+    <div class="pager-tray">
+      <div class="pager-main">
+        <a class="pbtn" role="button">이전</a>
+        <a class="pbtn" role="button">맨앞</a>
+        <input class="pinput" value="5" inputmode="numeric" aria-label="이동할 페이지 (현재 5)">
+        <button class="pbtn">이동</button>
+        <a class="pbtn" role="button">다음</a>
+      </div>
+      <nav class="pager-near" aria-label="근처 페이지">
+        <a class="nbtn" role="button" aria-label="이전 페이지 묶음"><span class="ic">‹</span></a>
+        <a class="nbtn" role="button">4</a>
+        <span class="nbtn cur" aria-current="page">5</span>
+        <a class="nbtn" role="button">6</a>
+        <a class="nbtn" role="button" aria-label="다음 페이지 묶음"><span class="ic">›</span></a>
+      </nav>
     </div>
-    <nav class="pager-near" aria-label="근처 페이지">
-      <a class="nbtn" role="button" aria-label="이전 페이지 묶음"><span class="ic">‹</span></a>
-      <a class="nbtn" role="button">4</a>
-      <span class="nbtn cur" aria-current="page">5</span>
-      <a class="nbtn" role="button">6</a>
-      <a class="nbtn" role="button" aria-label="다음 페이지 묶음"><span class="ic">›</span></a>
-    </nav>
 
     <div class="ad-divider"></div>
     <div class="ad-future"><div class="t">향후 광고 영역 (구분선·간격 아래) — 이번 미구현</div><div class="b">별도 PR · 웹 AdSense / 앱 AdMob Native</div></div>
@@ -162,19 +167,21 @@
       <button type="submit" class="go" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>검색</button>
     </form>
 
-    <!-- 메인 이동 줄(마지막 페이지): 이전 · 맨앞 · [현재쪽] · 이동 — 다음은 불가 → 숨김 -->
-    <div class="pager-main">
-      <a class="pbtn" role="button">이전</a>
-      <a class="pbtn" role="button">맨앞</a>
-      <input class="pinput" value="264" inputmode="numeric" aria-label="이동할 페이지 (현재 264)">
-      <button class="pbtn">이동</button>
+    <div class="pager-tray">
+      <!-- 메인 이동 줄(마지막 페이지): 이전 · 맨앞 · [현재쪽] · 이동 — 다음은 불가 → 숨김 -->
+      <div class="pager-main">
+        <a class="pbtn" role="button">이전</a>
+        <a class="pbtn" role="button">맨앞</a>
+        <input class="pinput" value="264" inputmode="numeric" aria-label="이동할 페이지 (현재 264)">
+        <button class="pbtn">이동</button>
+      </div>
+      <nav class="pager-near" aria-label="근처 페이지">
+        <a class="nbtn" role="button" aria-label="이전 페이지 묶음"><span class="ic">‹</span></a>
+        <a class="nbtn" role="button">262</a>
+        <a class="nbtn" role="button">263</a>
+        <span class="nbtn cur" aria-current="page">264</span>
+      </nav>
     </div>
-    <nav class="pager-near" aria-label="근처 페이지">
-      <a class="nbtn" role="button" aria-label="이전 페이지 묶음"><span class="ic">‹</span></a>
-      <a class="nbtn" role="button">262</a>
-      <a class="nbtn" role="button">263</a>
-      <span class="nbtn cur" aria-current="page">264</span>
-    </nav>
 
     <div class="ad-divider"></div>
     <div class="ad-future"><div class="t">향후 광고 영역 (구분선·간격 아래) — 이번 미구현</div><div class="b">별도 PR · 웹 AdSense / 앱 AdMob Native</div></div>
@@ -190,7 +197,8 @@
     · 우나어식 변경: 펨코 <code>-/+</code> 대신 <b>방향 화살표 ‹ ›</b>(묶음 이동, aria-label). <code>+</code>는 FAB·가+와 의미 충돌, <code>-</code>는 삭제 오인 → 미사용. <b>맨뒤 버튼 없음</b>(끝은 직접 입력). "N/총" 표시 폐기.<br>
     · 근처 번호는 <b>현재±1 3개 중심</b>(큰 버튼이라 억지로 5+ 노출 안 함, 모바일 최대 3개). 현재=코랄 배경. 모두 52px.<br>
     · <b>불가능한 액션은 숨김</b>: 첫 페이지=이전·맨앞 미노출(<code>[현재][이동][다음]</code>), 마지막 페이지=다음 미노출(<code>[이전][맨앞][현재][이동]</code>). disabled 회색 버튼으로 남기지 않음 → 390px 글씨 최대에서도 1줄 유지.<br>
-    · <b>v1.1 밀도 보정</b>: 버튼 톤다운(font 500·radius 10·연한 border, 그림자 없음), 입력칸 <b>코랄 강조 제거</b>(일반 흰색). <b>현재 페이지 강조는 근처 번호 줄 코랄 fill 한 곳만</b>(입력칸 중복 강조 제거). 검색↔페이지 간격·메인↔번호 간격 축소.<br>
+    · <b>v1.1 밀도 보정</b>: 버튼 톤다운, 입력칸 <b>코랄 강조 제거</b>(일반 흰색). 현재 페이지 강조는 근처 번호 줄 코랄 한 곳만.<br>
+    · <b>v1.2 B3 구분 카드</b>: 메인+근처를 <b>연한 트레이(#f7f8fa)</b>로 묶어 여백을 담고 검색과 분리. 버튼은 <b>소프트칩</b>(연회색 #f1f3f5 채움·테두리 0), 입력칸만 흰색으로 '입력 필드' 구분. 메인 gap 4px(글씨 최대 1줄), 근처 gap 10px·세로 간격 확대로 여유.<br>
     · <code>‹</code>=이전 묶음(현재-3), <code>›</code>=다음 묶음(현재+3), 클램프 [1,총].<br>
     · 광고: 이번 미구현. 향후 조작부 <b>아래 구분선+간격</b> 두고 별도 PR. 앱은 라이브 웹 로드 → 웹 변경 반영, AAB 불필요.
   </div>

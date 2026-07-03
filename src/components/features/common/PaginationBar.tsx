@@ -36,9 +36,9 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
   const prevBunch = Math.max(1, currentPage - 3)
   const nextBunch = Math.min(totalPages, currentPage + 3)
 
-  // v1.1 밀도 보정: 톤다운(font-medium·rounded-lg·연한 border). 강조는 아래 근처 줄의 현재 페이지에만.
-  const box = 'h-[52px] rounded-lg border text-base font-medium transition-colors flex items-center justify-center'
-  const on = 'border-border/70 text-foreground hover:border-primary/40 active:bg-primary/5'
+  // v1.2 B3 구분 카드: 조작부를 연한 트레이로 묶고 버튼은 소프트칩(연회색 채움·테두리 0). 강조는 근처 줄 현재 페이지 코랄만.
+  const box = 'h-[52px] rounded-lg text-base font-medium transition-colors flex items-center justify-center'
+  const on = 'bg-muted text-foreground hover:bg-muted/80 active:bg-muted/60'
   // 간격은 고정 px(px-[11px]/gap-[4px])로 — rem이면 글씨 확대 시 간격까지 커져 오버플로. 폰트만 커지고 간격은 유지되게.
   const txt = 'px-[11px] shrink-0'
   const sq = 'w-[52px] shrink-0'
@@ -51,7 +51,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
   }
 
   return (
-    <nav aria-label="페이지 이동" className="mt-4">
+    <nav aria-label="페이지 이동" className="mt-5 rounded-[18px] bg-muted/50 px-[6px] py-[18px]">
       {/* 메인 이동 줄: (이전) · (맨앞) · 현재쪽 입력 · 이동 · (다음) — 불가능한 액션은 숨김 */}
       <form onSubmit={handleJump} className="flex items-center justify-center gap-[3px]">
         {!isFirst && (
@@ -79,7 +79,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
       </form>
 
       {/* 근처 번호 줄: ‹묶음 · 번호 · ›묶음 */}
-      <div className="mt-2 flex items-center justify-center gap-1.5">
+      <div className="mt-4 flex items-center justify-center gap-[10px]">
         {hasPrevBunch && (
           <Link href={buildHref(prevBunch)} aria-label="이전 페이지 묶음" className={`${box} ${sq} ${on}`}>
             <span className="text-xl leading-none">‹</span>
@@ -87,7 +87,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
         )}
         {nums.map((n) =>
           n === currentPage ? (
-            <span key={n} aria-current="page" className={`${box} ${sq} border-primary bg-primary font-semibold text-white`}>{n}</span>
+            <span key={n} aria-current="page" className={`${box} ${sq} bg-primary font-semibold text-white`}>{n}</span>
           ) : (
             <Link key={n} href={buildHref(n)} aria-label={`${n} 페이지`} className={`${box} ${sq} ${on}`}>{n}</Link>
           )
