@@ -122,7 +122,8 @@ async function getRepeatedZeroPublishAlert(currentResults: TopicResult[]): Promi
 // 중복 스킵된 killer/trend 후보가 매 run 최상위 후보로 재선발되며 같은 토픽을 반복 시도한다.
 // 오늘 BotLog(기존 로그=state, DB write 없음)에서 DUPLICATE_TITLE을 임계 이상 낸
 // topic/cafePostId를 읽어 그날 후보 구성에서 제외한다. "발행됨"으로 마킹하지 않음.
-const DUP_QUARANTINE_THRESHOLD = 2
+// [2026-07-03] 2→1: 1회성 DUPLICATE_TITLE 후보도 그날 즉시 격리(재시도 루프 완화). BotLog state만 사용, DB write 0.
+const DUP_QUARANTINE_THRESHOLD = 1
 async function getDupQuarantine(since: Date): Promise<{ topics: Set<string>; cafeIds: Set<string> }> {
   const logs = await prisma.botLog.findMany({
     where: { botType: 'CAFE_CRAWLER', action: 'CONTENT_CURATE', createdAt: { gte: since } },
