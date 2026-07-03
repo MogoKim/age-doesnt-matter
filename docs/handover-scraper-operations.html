@@ -590,19 +590,21 @@
       <strong>예시</strong>: 창업자가 오전 10시에 URL 5개를 넣으면 → <strong>12:00 KST</strong>에 자동 처리된다.
     </p>
 
-    <h3>실행 시간표 — 로컬 Mac (하루 6회, Mac이 켜져 있어야 실행)</h3>
+    <h3>실행 시간표 — 로컬 Mac (하루 8회: 네이버 카페 6회 + 펨코 2회, Mac이 켜져 있어야 실행)</h3>
     <div class="card" style="margin-bottom:20px;">
       <div class="timeline">
-        <div class="tl-item"><div class="tl-time">10:40</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (1차)</div><div class="note">오전 입력분 처리. popular-sync 10:30 완료 후, cafe-crawler-lunch 11:30 이전. launchd: com.unao.naver-cafe-sheet-scraper.plist</div></div></div>
+        <div class="tl-item"><div class="tl-time">02:00</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (1차)</div><div class="note">새벽 입력분 처리. run-local-naver-cafe.ts. ⚠️ 별개로 이 시각에 로그인 세션(NID_SES) 만료 자동 체크도 도는데, 스크래핑 실행 자체는 이 02:00 회차다(혼동 주의). naver-cafe-sheet-scraper.plist</div></div></div>
+        <div class="tl-item"><div class="tl-time">06:00</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (2차)</div><div class="note">이른 아침 입력분 처리. naver-cafe-sheet-scraper.plist</div></div></div>
+        <div class="tl-item"><div class="tl-time">10:40</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (3차)</div><div class="note">오전 입력분 처리. popular-sync 10:30 완료 후, cafe-crawler-lunch 11:30 이전. launchd: com.unao.naver-cafe-sheet-scraper.plist</div></div></div>
         <div class="tl-item"><div class="tl-time">11:30</div><div class="tl-body"><div class="title">펨코 크롤링 (1차)</div><div class="note">fmkorea.com — Cloudflare 보호로 로컬 Mac 필수. launchd: com.unao.fmkorea-scraper.plist</div></div></div>
-        <div class="tl-item"><div class="tl-time">13:00</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (2차)</div><div class="note">점심 입력분 처리. 로그인 세션(storage-state.json) 사용. launchd: com.unao.naver-cafe-sheet-scraper.plist</div></div></div>
-        <div class="tl-item"><div class="tl-time">15:30</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (3차)</div><div class="note">오후 입력분 처리. cafe-crawler-afternoon 14:30 완료 후, popular-sync 16:00 이전. naver-cafe-sheet-scraper.plist</div></div></div>
+        <div class="tl-item"><div class="tl-time">13:00</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (4차)</div><div class="note">점심 입력분 처리. 로그인 세션(storage-state.json) 사용. launchd: com.unao.naver-cafe-sheet-scraper.plist</div></div></div>
+        <div class="tl-item"><div class="tl-time">15:30</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (5차)</div><div class="note">오후 입력분 처리. cafe-crawler-afternoon 14:30 완료 후, popular-sync 16:00 이전. naver-cafe-sheet-scraper.plist</div></div></div>
         <div class="tl-item"><div class="tl-time">21:30</div><div class="tl-body"><div class="title">펨코 크롤링 (2차)</div><div class="note">저녁 시간대 추가 처리. fmkorea-scraper.plist</div></div></div>
-        <div class="tl-item"><div class="tl-time">23:00</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (4차)</div><div class="note">저녁 입력분 처리. naver-cafe-sheet-scraper.plist</div></div></div>
+        <div class="tl-item"><div class="tl-time">23:00</div><div class="tl-body"><div class="title">네이버 카페 스크래핑 (6차)</div><div class="note">저녁 입력분 처리. naver-cafe-sheet-scraper.plist</div></div></div>
       </div>
     </div>
     <div class="callout red">
-      <p><strong>로컬 Mac 실행 6회는 Mac이 켜져 있어야 한다.</strong> Mac이 슬립 상태이거나 꺼져 있으면 그 회차는 건너뛴다.<br>
+      <p><strong>로컬 Mac 실행 8회(네이버 카페 6 + 펨코 2)는 Mac이 켜져 있어야 한다.</strong> Mac이 슬립 상태이거나 꺼져 있으면 그 회차는 건너뛴다. launchd는 잠자던 시간의 미실행분을 나중에 몰아 실행하지 않는다(catch-up 없음).<br>
       오유·네이트판·82cook은 Mac 상태와 무관하게 GitHub에서 자동 처리된다.</p>
     </div>
 
@@ -905,13 +907,20 @@
         <thead><tr><th>항목</th><th>GHA (클라우드)</th><th>펨코</th><th>네이버 카페</th></tr></thead>
         <tbody>
           <tr><td>실행 서버</td><td>GitHub 클라우드 (미국)</td><td><strong>창업자 Mac</strong></td><td><strong>창업자 Mac</strong></td></tr>
-          <tr><td>실행 시간</td><td>07:30·09:00·12:00·15:00·21:00 KST</td><td>11:30 · 21:30 KST</td><td>10:40 · 13:00 · 15:30 · 23:00 KST</td></tr>
+          <tr><td>실행 시간</td><td>07:30·09:00·12:00·15:00·21:00 KST</td><td>11:30 · 21:30 KST</td><td>02:00 · 06:00 · 10:40 · 13:00 · 15:30 · 23:00 KST (6회)</td></tr>
           <tr><td>Mac 필요 여부</td><td>불필요 (꺼져 있어도 됨)</td><td><strong>필요</strong></td><td><strong>필요</strong></td></tr>
           <tr><td>로컬 전용 이유</td><td>—</td><td>Cloudflare 보호 — 해외 IP 차단</td><td>네이버 로그인 세션 필요 (storage-state.json)</td></tr>
           <tr><td>실행 스크립트</td><td><code>agents-scraper.yml</code></td><td><code>run-local-fmkorea.ts</code></td><td><code>run-local-naver-cafe.ts</code></td></tr>
           <tr><td>launchd plist</td><td>—</td><td><code>com.unao.fmkorea-scraper.plist</code></td><td><code>com.unao.naver-cafe-sheet-scraper.plist</code></td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="callout red">
+      <p><strong>⚠️ 배포 경로 차이 — 코드 반영 규칙 (2026-07-03 기준)</strong><br>
+      <strong>GHA 실행</strong>(agents-scraper.yml, content-curate·popular-curate 등)은 실행 시 <code>origin/main</code>을 checkout한다 → <strong>main에 merge만 하면 다음 실행부터 자동 반영</strong>(cherry-pick 불필요).<br>
+      <strong>로컬 launchd 실행</strong>(cafe-crawler 수집 / popular-sync / naver-cafe·fmkorea scraper)은 <strong>plist WorkingDirectory(<code>/Users/yanadoo/Documents/New_Claude_agenotmatter</code>)의 로컬 working tree를 그대로 실행</strong>한다(현재 체크아웃 브랜치 <code>poc/admob-test</code> 기준) → <strong>main merge만으로는 로컬에 반영되지 않는다. crawler류 수정은 fix 커밋을 로컬 브랜치에 cherry-pick(또는 working tree 반영)해야 실제 운영에 적용된다.</strong> (예: COMMENT_REVIVE PR #41은 main merge 후 poc에 cherry-pick해 crawler.ts 로컬 반영함.)<br>
+      요약: <strong>수집·스크래퍼(로컬)=cherry-pick 필요 / 큐레이터(GHA main)=merge만으로 반영.</strong></p>
     </div>
 
     <h3 style="margin-top:28px;">펨코 — Cloudflare 차단</h3>
@@ -1168,7 +1177,7 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
           <tr>
             <td>네이버 카페 로컬 Mac 자동화</td>
             <td><span class="badge badge-green">✅ 정상</span></td>
-            <td>4회/일 (10:40·13:00·15:30·23:00 KST), launchd. 로그인 세션(storage-state.json) 사용. GHA에서는 PENDING 유지.</td>
+            <td>6회/일 (02:00·06:00·10:40·13:00·15:30·23:00 KST), launchd. 로그인 세션(storage-state.json) 사용. GHA에서는 PENDING 유지. ⚠️ 02:00 스크래핑 실행은 별도의 세션 만료 자동 체크(02:00)와 시각만 같을 뿐 별개다.</td>
           </tr>
           <tr>
             <td>네이버 뿜(bboom) 로컬 Mac</td>
@@ -1387,7 +1396,7 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
           </tr>
           <tr>
             <td><strong>GIF / 애니메이션</strong> <span class="badge badge-primary">변경</span></td>
-            <td><strong>mp4로 변환</strong>(ffmpeg) 후 <code>&lt;video&gt;</code>로 렌더. 애니메이션 GIF는 흔히 5~15MB → mp4로 ~1/10 압축(시니어 모바일 데이터·OOM 완화). 네이버 animated webp는 sharp로 gif 디코딩 후 변환. <strong>ffmpeg 미설치·실패·30MB 초과 시 placeholder.</strong></td>
+            <td><strong>mp4로 변환</strong>(ffmpeg) 후 <code>&lt;video&gt;</code>로 렌더. 애니메이션 GIF는 흔히 5~15MB → mp4로 ~1/10 압축(50·60대 모바일 데이터·OOM 완화). 네이버 animated webp는 sharp로 gif 디코딩 후 변환. <strong>ffmpeg 미설치·실패·30MB 초과 시 placeholder.</strong></td>
             <td><code>scraped/{date}/{timestamp}/{index}.mp4</code> (video)</td>
             <td>소스 30MB</td>
           </tr>
@@ -1626,7 +1635,7 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
           <tr><td><code>.github/workflows/agents-scraper.yml</code></td><td>스크래핑·게시 GHA 스케줄 (5회/일, timeout 40분). <code>SHEET_SCRAPER_EXCLUDE_SITE=fmkorea,bboom</code> 로 펨코·뿜 제외. <strong>env: <code>SHEET_TITLE_SEO='true'</code> + <code>CLAUDE_MODEL_STRATEGIC=claude-opus-4-7</code>(제목 SEO용).</strong></td><td>Opus(제목)</td></tr>
           <tr><td><code>.github/workflows/agents-sheet-viral.yml</code></td><td>파동 실행 GHA 스케줄 (5분마다, timeout 10분)</td><td>claude-sonnet-4-6</td></tr>
           <tr><td><code>~/Library/LaunchAgents/com.unao.fmkorea-scraper.plist</code></td><td>펨코 로컬 launchd 스케줄 (11:30·21:30 KST, caffeinate -i 슬립 방지)</td><td>—</td></tr>
-          <tr><td><code>~/Library/LaunchAgents/com.unao.naver-cafe-sheet-scraper.plist</code></td><td>네이버 카페 로컬 launchd 스케줄 (10:40·13:00·15:30·23:00 KST, 4회)</td><td>—</td></tr>
+          <tr><td><code>~/Library/LaunchAgents/com.unao.naver-cafe-sheet-scraper.plist</code></td><td>네이버 카페 로컬 launchd 스케줄 (02:00·06:00·10:40·13:00·15:30·23:00 KST, 6회)</td><td>—</td></tr>
           <tr><td><code>~/Library/LaunchAgents/com.unaeo.session-refresh.plist</code></td><td>네이버 세션 자동 갱신 launchd (02:00 KST). runner.ts <code>cafe:session-refresh</code> → session-manager ensureSession.</td><td>—</td></tr>
           <tr><td>Claude Haiku</td><td><del>AI 관련성 판단·카테고리 분류·제목 최적화</del> → <strong>완전 제거</strong> (비용 0원, AI 없이 원문 그대로 게시)</td><td>비활성</td></tr>
           <tr><td>Claude Sonnet</td><td>파동 댓글 생성 — 원본 댓글 각색·이미지 전용 반응</td><td>max_tokens: 200</td></tr>
@@ -1655,7 +1664,7 @@ PZP WEAK  (7종): 재생 속도 / 해상도 / 자막 / 음소거 / 전체 화면
           <tr><td>2026-05-24</td><td>image-router live 전환 — ENABLE_IMAGE_ROUTER=true, DRY_RUN=false</td><td>CafePost DB → Sheet PENDING 자동 append 파이프라인 실가동</td></tr>
           <tr><td>2026-05-26</td><td>네이버 카페 스크래퍼 개선 (커밋 9745f9e · 3f206b7) — contentFrame 처리 및 동영상 감지 로직 수정</td><td>navercafe 게시 안정성 향상</td></tr>
           <tr><td>2026-06-03~04</td><td>네이버 카페 구형 URL 정규화(e607beb) + busanmam 카페(100c878) + 네이버 뿜 bboom 시트 스크래퍼(63ccfe6) 추가</td><td>지원 사이트 6개로 확대 (bboom·busanmam 로컬 전용)</td></tr>
-          <tr><td>2026-06-05</td><td>큰 GIF/이미지 placeholder 복구 — <strong>GIF/애니메이션 → mp4 변환(ffmpeg)</strong> (0467df4)</td><td>애니메이션 mp4 압축(~1/10), 시니어 모바일 데이터·OOM 완화</td></tr>
+          <tr><td>2026-06-05</td><td>큰 GIF/이미지 placeholder 복구 — <strong>GIF/애니메이션 → mp4 변환(ffmpeg)</strong> (0467df4)</td><td>애니메이션 mp4 압축(~1/10), 50·60대 모바일 데이터·OOM 완화</td></tr>
           <tr><td>2026-06-05</td><td>SHEET 파동 댓글 <strong>환각/누수 가드</strong> — source comment 누수·메타누설 차단 (fd5ff2c)</td><td>본문에 없는 단어(예: 크루아상)·"본문이 잘려서" 류 댓글 차단</td></tr>
           <tr><td>2026-06-06</td><td>스크랩 이미지/영상 URL <strong>&amp;amp; 엔티티 디코딩</strong> (0df6b02)</td><td>쿼리스트링 외부이미지(트위터 등) 404·placeholder 버그 해결</td></tr>
           <tr><td>2026-06-08</td><td><strong>naver.me 단축링크 자동 해석</strong> + <strong>status칸 오염 자가복구</strong> (7513bdf)</td><td>naver.me 발행 가능, B열 오염 행 영구 스킵 방지</td></tr>

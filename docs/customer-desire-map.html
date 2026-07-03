@@ -430,14 +430,14 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>고객 욕망 지도</h2>
-    <div class="version">v4.1 · 2026-04-15 창업자 확정</div>
+    <div class="version">사람용 전략 요약 · 2026-06-25 갱신</div>
   </div>
   <nav>
     <a href="#overview" class="depth-1">개요</a>
 
     <a href="#taxonomy" class="depth-1">1. 욕망 분류 체계</a>
     <a href="#four-axis" class="depth-2">1-1. 4축 분류</a>
-    <a href="#categories" class="depth-2">1-2. 욕망 카테고리 13개</a>
+    <a href="#categories" class="depth-2">1-2. 욕망 카테고리 21개</a>
     <a href="#emotions" class="depth-2">1-3. 감정 태그 10종</a>
     <a href="#urgency" class="depth-2">1-4. 긴급도 1-5</a>
     <a href="#community-signal" class="depth-2">1-5. 커뮤니티 신호</a>
@@ -480,23 +480,32 @@
     <h1>우나어 고객 욕망 지도</h1>
     <div class="subtitle">50·60대 고객의 심리·욕망·니즈 분류 체계 + 데이터 분석 + 서비스 북극성</div>
     <div class="tags">
-      <span class="badge badge-primary">v4.1</span>
-      <span class="badge badge-light">2026-04-15 창업자 확정</span>
-      <span class="badge badge-gray">CafePost 355건 분석</span>
+      <span class="badge badge-primary">사람용 전략 요약</span>
+      <span class="badge badge-light">2026-06-25 갱신</span>
+      <span class="badge badge-gray">분류 SSOT 21개</span>
     </div>
   </div>
 
   <div class="card-highlight">
-    <strong>이 문서의 역할</strong><br>
-    크롤러 AI 분석 · 시드봇 · 매거진봇 · 트렌드 분석 에이전트가 공통으로 참조하는 욕망 기준입니다.<br>
-    50-60대 커뮤니티 게시글에서 심리/욕망/니즈를 추출할 때 이 분류를 사용합니다.
+    <strong>이 문서의 역할 — 사람용 전략 요약 + SSOT 링크 허브</strong><br>
+    <span style="font-size:13.5px;">이 문서는 <strong>창업자·운영자가 읽는 전략 요약본</strong>입니다. 에이전트가 런타임에 직접 읽는 파일이 아닙니다(코드 참조 0건).
+    에이전트의 실제 판단 기준은 아래 SSOT 파일입니다.</span>
+    <table style="margin:12px 0 0;font-size:13px;">
+      <tbody>
+        <tr><td style="width:130px;color:var(--text-muted);">욕망 분류(21)</td><td><code>agents/cafe/desire-taxonomy.ts</code> · <code>src/lib/desire-labels.ts</code> · <code>prisma/schema.prisma</code></td></tr>
+        <tr><td style="color:var(--text-muted);">헌법</td><td><code>agents/core/constitution.yaml</code> (v5.0 · 2026-05-21)</td></tr>
+        <tr><td style="color:var(--text-muted);">북극성</td><td><code>docs/constitution/NORTH_STAR.md</code> (v4.0 · 2026-05-21)</td></tr>
+        <tr><td style="color:var(--text-muted);">페르소나</td><td><code>agents/core/constitution-audience.yaml</code> (P1~P5)</td></tr>
+        <tr><td style="color:var(--text-muted);">archive baseline</td><td><code>docs/archive/desire_taxonomy-archived.md</code> · <code>desire_analysis-archived.md</code> (현 SSOT 아님)</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <hr>
 
   <!-- ── 1. 욕망 분류 체계 ── -->
   <h2 id="taxonomy">1. 욕망 분류 체계 (Desire Taxonomy)</h2>
-  <div class="section-meta">출처: desire_taxonomy-archived.md · v4.1</div>
+  <div class="section-meta">현 SSOT: <code>agents/cafe/desire-taxonomy.ts</code> · <code>src/lib/desire-labels.ts</code> · <code>prisma/schema.prisma</code> | archive baseline: <code>docs/archive/desire_taxonomy-archived.md</code> (현 SSOT 아님)</div>
 
   <h3 id="four-axis">1-1. 4축 분류 (Desire Type)</h3>
   <table>
@@ -529,8 +538,17 @@
     </tbody>
   </table>
 
-  <h3 id="categories">1-2. 욕망 카테고리 (Desire Category) — 13개</h3>
+  <h3 id="categories">1-2. 욕망 카테고리 (Desire Category) — 분류 SSOT 21개</h3>
+  <div class="card" style="background:var(--primary-light);border:1px solid var(--primary);">
+    <strong>분류 체계 = 21개 (현 SSOT)</strong><br>
+    <span style="font-size:13px;color:var(--text-muted);">
+      실제 분류 기준은 <code>agents/cafe/desire-taxonomy.ts</code> · <code>src/lib/desire-labels.ts</code>의 <strong>21개</strong>입니다.
+      아래 ⭐ <strong>전략 핵심군 13종</strong>은 창업자가 욕망 순위·페르소나 설계에 쓰는 핵심 묶음이고,
+      그 뒤 <strong>확장 분류 8종</strong>은 크롤러·psych-analyzer가 실제로 더 세분해 태깅하는 카테고리입니다. (13 + 8 = 21 = SSOT)
+    </span>
+  </div>
 
+  <h4 style="color:var(--text-muted);">⭐ 전략 핵심군 13종 — 욕망 순위·페르소나 설계 기준</h4>
   <div class="desire-grid">
     <div class="desire-card">
       <div class="code">HEALTH</div>
@@ -609,6 +627,58 @@
       <div class="cat">🎵 연예/팬덤</div>
       <div class="topic">드라마, 트로트, 연예인 팬덤 (소비형)</div>
       <div class="signal">"임영웅", "트로트", "드라마 결말", "콘서트"</div>
+    </div>
+  </div>
+
+  <h4 style="color:var(--text-muted);">➕ 확장 분류 8종 — 크롤러·psych-analyzer 세분 태깅 (SSOT 포함)</h4>
+  <div class="desire-grid">
+    <div class="desire-card">
+      <div class="code">HUMOR</div>
+      <div class="cat">😆 유머</div>
+      <div class="topic">웃긴 상황, 실수담, 빵터짐, 남편이·손주가 웃겨</div>
+      <div class="signal">"ㅋㅋ", "황당함", "빵 터졌다"</div>
+    </div>
+    <div class="desire-card">
+      <div class="code">BEAUTY</div>
+      <div class="cat">💄 뷰티</div>
+      <div class="topic">피부관리, 미용, 성형, 보톡스, 안티에이징, 화장품</div>
+      <div class="signal">"피부과", "주름", "관리받고 싶다"</div>
+    </div>
+    <div class="desire-card">
+      <div class="code">DIGITAL</div>
+      <div class="cat">📱 디지털</div>
+      <div class="topic">스마트폰, 앱, 유튜브, SNS, 키오스크, 디지털기기</div>
+      <div class="signal">"이거 어떻게 해요", "앱 깔았는데"</div>
+    </div>
+    <div class="desire-card">
+      <div class="code">FOOD</div>
+      <div class="cat">🍱 음식/요리</div>
+      <div class="topic">음식, 요리, 맛집, 건강식, 식단 (먹는 것 자체)</div>
+      <div class="signal">"레시피", "맛집", "이거 만들어봤어요"</div>
+    </div>
+    <div class="desire-card">
+      <div class="code">SPIRITUAL</div>
+      <div class="cat">🙏 종교/영성</div>
+      <div class="topic">종교, 기도, 명상, 사주, 운세, 절, 교회, 성당</div>
+      <div class="signal">"기도", "운세", "마음이 편해진다"</div>
+    </div>
+    <div class="desire-card">
+      <div class="code">HOUSING</div>
+      <div class="cat">🏠 주거</div>
+      <div class="topic">집, 이사, 인테리어, 전세·월세, 노후 주거, 청약</div>
+      <div class="signal">"이사", "전세", "어디서 살까"</div>
+    </div>
+    <div class="desire-card">
+      <div class="code">FASHION</div>
+      <div class="cat">👗 패션</div>
+      <div class="topic">옷, 스타일, 코디, 쇼핑, 브랜드, 옷 추천</div>
+      <div class="signal">"이 옷 어때요", "뭐 입을까"</div>
+    </div>
+    <div class="desire-card">
+      <div class="code">PET</div>
+      <div class="cat">🐶 반려동물</div>
+      <div class="topic">강아지, 고양이, 동물병원, 펫시터, 반려견·반려묘</div>
+      <div class="signal">"우리 강아지", "동물병원", "입양"</div>
     </div>
   </div>
 
@@ -745,14 +815,31 @@
 
   <!-- ── 2. 고객 욕망 분석 ── -->
   <h2 id="analysis">2. 고객 욕망 분석 보고서</h2>
-  <div class="section-meta">출처: desire_analysis-archived.md · 2026-04-04 기준 · CafePost 355건 (isUsable 58건) · CafeTrend 8일치</div>
+  <div class="section-meta">현재 운영 기준 = ⬇ 2026-06 재집계 우선 | archive baseline: <code>docs/archive/desire_analysis-archived.md</code> · 2026-04-04 · CafePost 355건(isUsable 58)</div>
 
-  <h3 id="paradox">2-1. 데이터와 반응의 역설</h3>
+  <div class="card-highlight">
+    <strong>📊 현재 욕망 분포 (2026-06-25 read-only 재집계 — 운영 판단 우선 기준)</strong>
+    <div class="insight-box" style="margin-top:12px;">
+      <div class="insight-item"><div class="num">13,219</div><div class="label">CafePost total</div></div>
+      <div class="insight-item"><div class="num">11,138</div><div class="label">aiAnalyzed</div></div>
+      <div class="insight-item"><div class="num">16.0%</div><div class="label">desireCategory null</div><div class="sub">2,120건</div></div>
+      <div class="insight-item"><div class="num">4.2%</div><div class="label">최근 30일 null</div><div class="sub">325 / 7,795</div></div>
+    </div>
+    <div style="margin-top:8px;font-size:13px;color:var(--text-muted);">
+      <strong>최근 30일 상위 욕망:</strong> MONEY 1,440 · HOBBY 982 · HEALTH 931 · FAMILY 577 · MEANING 485
+      <br><span style="font-size:12px;">※ 이전 "97% NULL"은 <code>content-curator.ts</code> stale 주석이었음 — 실제 분류율은 위와 같음(미분류 16.0%, 최근 30일 4.2%).</span>
+    </div>
+  </div>
+
+  <h3 id="paradox">2-1. 데이터와 반응의 역설 <span class="badge badge-gray" style="font-size:10px;">archive baseline 2026-04</span></h3>
 
   <div class="blockquote">
     결론: 건강은 "쏟아내는" 욕망, 인생설계는 "공감하는" 욕망이다.
+    <span style="font-size:12px;font-weight:400;display:block;margin-top:6px;">(이 정성 인사이트는 현재도 유효 — 아래 수치는 2026-04 355건 표본 기준의 역사적 판단 근거)</span>
   </div>
 
+  <details>
+    <summary style="cursor:pointer;font-weight:600;color:var(--text-muted);font-size:13px;margin-bottom:8px;">📦 2026-04 355건 표본 수치 펼치기 (역사적 판단 근거 · 현 운영 수치는 위 2026-06 박스)</summary>
   <table>
     <thead><tr><th>카테고리</th><th>글 수</th><th>평균 반응 점수</th><th>해석</th></tr></thead>
     <tbody>
@@ -788,8 +875,9 @@
       </tr>
     </tbody>
   </table>
+  </details>
 
-  <h3 id="top-posts">2-2. 반응 폭발 TOP 글 분석</h3>
+  <h3 id="top-posts">2-2. 반응 폭발 TOP 글 분석 <span class="badge badge-gray" style="font-size:10px;">archive baseline 2026-04</span></h3>
   <p style="font-size:13px;color:var(--text-muted);">패턴: 퇴사·주거·철학·연금 공통 키워드 — <strong>"다음 인생을 어떻게 살까"</strong>가 진짜 관심사.</p>
 
   <div class="card">
@@ -837,7 +925,7 @@
     </div>
   </div>
 
-  <h3 id="keywords">2-3. 키워드 빈도 TOP20</h3>
+  <h3 id="keywords">2-3. 키워드 빈도 TOP20 <span class="badge badge-gray" style="font-size:10px;">archive baseline 2026-04</span></h3>
   <table>
     <thead><tr><th>순위</th><th>키워드</th><th>빈도</th><th>해석</th></tr></thead>
     <tbody>
@@ -957,7 +1045,7 @@
 
   <!-- ── 3. NORTH STAR ── -->
   <h2 id="northstar">3. 북극성 문서 (NORTH STAR)</h2>
-  <div class="section-meta">출처: docs/constitution/NORTH_STAR.md · v3.1 · 2026-03-16 · 모든 의사결정의 기준</div>
+  <div class="section-meta">현 SSOT: <code>docs/constitution/NORTH_STAR.md</code> · <strong>v4.0 · 2026-05-21</strong> · 모든 의사결정의 기준</div>
 
   <div class="blockquote">
     이 문서는 모든 의사결정의 기준입니다.<br>
@@ -985,8 +1073,8 @@
   <p><strong>MISSION:</strong> 50·60대가 다시 사회와 연결되고, 자신만의 속도로 새로운 삶을 시작할 수 있도록 돕는다.</p>
   <p><strong>VISION:</strong> 나이가 가능성의 한계가 되지 않는 세상, 누구나 설레는 마음으로 두 번째 전성기를 맞이하는 라이프 플랫폼</p>
 
-  <h3 id="persona">3-2. 타겟 페르소나 4종</h3>
-  <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">핵심 타겟: 40대 후반~60대 여성 100%</p>
+  <h3 id="persona">3-2. 타겟 페르소나 — 개념적 원형 4종 (B/D/C/A)</h3>
+  <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">핵심 타겟: 40대 후반~60대 여성 100% · <strong>⚠️ NORTH_STAR v4.0 기준 이 4-타입은 "개념적 원형"이며, 검증된 운영 페르소나는 아래 <a href="#persona-v5">4-3 P1~P5</a>로 일원화됨</strong> (SSOT: <code>agents/core/constitution-audience.yaml</code>)</p>
 
   <div class="persona-grid">
     <div class="persona-card">
@@ -1092,9 +1180,22 @@
     <thead><tr><th>유입 채널</th><th>방법</th><th>우선순위</th></tr></thead>
     <tbody>
       <tr><td>카카오톡</td><td>밴드·카톡방 바이럴, 매거진 링크 공유</td><td><span class="badge badge-primary">1순위</span></td></tr>
-      <tr><td>네이버 밴드</td><td>시니어 커뮤니티 크로스 포스팅</td><td><span class="badge badge-light">2순위</span></td></tr>
+      <tr><td>네이버 밴드</td><td>우리 또래(50대 60대) 커뮤니티 크로스 포스팅</td><td><span class="badge badge-light">2순위</span></td></tr>
       <tr><td>구글 SEO</td><td>매거진 검색 유입 (기초연금, 건강 등)</td><td><span class="badge badge-gray">3순위</span></td></tr>
       <tr><td>유튜브</td><td>매거진 숏폼 → 사이트 유도</td><td><span class="badge badge-gray">Phase 2</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ops-2026-07">3-4-1. 2026-07 운영 반영 현황 (실제 코드/워크플로우 기준)</h3>
+  <table>
+    <thead><tr><th>영역</th><th>현재 상태 (2026-07-03)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Guide 8개 SEO</strong></td><td>8개 guide URL 전부 HTTP 200 · self canonical · robots index,follow · JSON-LD(Article/FAQ/Breadcrumb) · sitemap 포함 · SSR 본문 렌더 정상. <strong>07-08 GSC 색인/노출 확인만 남음</strong>.</td></tr>
+      <tr><td><strong>광고 — 웹</strong></td><td>AdSense. Web AdSense 미노출 버그 <strong>PR #53 수정 완료</strong>(Capacitor 차단 기준 isNativePlatform()===true).</td></tr>
+      <tr><td><strong>광고 — 앱(Android)</strong></td><td><strong>AdMob Native Advanced</strong>. 홈/목록/검색/상세에 적용, 화면당 1개 제한 게이트 제거(슬롯별 독립), 운영크기 230px. <strong>하단 anchored banner 제거 완료</strong>. <strong>앱 내 AdSense는 OFF 유지</strong>(앱=AdMob / 웹=AdSense 분리).</td></tr>
+      <tr><td><strong>모바일 UX</strong></td><td>상단 아이콘 메뉴 + 플로팅 FAB("✏️ 글쓰기") 유지, 하단 탭바 없음. <strong>Footer 간소화 완료</strong>(채널/SNS/Play 버튼 제거, 법정 고지·글씨크기 토글 유지). 모바일 목록 하단 조작부 v1(PR #59)은 <strong>진행 중</strong>. 터치 52px·본문 17~18px 유지.</td></tr>
+      <tr><td><strong>큐레이션 SEO</strong></td><td>POPULAR_CURATOR SEO v1(#51)·CONTENT_CURATOR SEO v1(#54) 적용 완료 — 발행글에 seoTitle/seoDescription 자동 채움(추출형·AI 0, 본문 무변경). DUPLICATE_TITLE 짧은 제목 오탐 수정(#55) 완료.</td></tr>
+      <tr><td><strong>usable4 조건부</strong></td><td>코드는 main에 있으나 <code>ENABLE_CONDITIONAL_USABLE4</code> flag <strong>OFF</strong>(GHA·env 미설정)라 <strong>운영 영향 0</strong>. 기본 usable≥5 유지.</td></tr>
     </tbody>
   </table>
 
@@ -1128,7 +1229,7 @@
 
   <!-- ── 4. 회사 헌법 ── -->
   <h2 id="constitution">4. 회사 헌법 (Constitution v5.0)</h2>
-  <div class="section-meta">출처: agents/core/constitution.yaml · v5.0 · 2026-04-04 갱신 · 모든 AI 에이전트 System Prompt에 주입</div>
+  <div class="section-meta">현 SSOT: <code>agents/core/constitution.yaml</code> · <strong>v5.0 · 2026-05-21 갱신</strong> · 모든 AI 에이전트 System Prompt에 주입 <span style="font-size:11px;">(2026-04-04는 <code>constitution-core.yaml</code> — 혼동 주의)</span></div>
 
   <div class="card-highlight">
     <strong>헌법의 역할</strong><br>
@@ -1260,7 +1361,7 @@
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
         <div>
           <strong>P3 미영씨 — 유머 소비</strong>
-          <span class="badge" style="background:#fefce8;color:#854d0e;margin-left:8px;">ENTERTAINMENT</span>
+          <span class="badge" style="background:#fefce8;color:#854d0e;margin-left:8px;">HUMOR / ENTERTAIN</span>
         </div>
         <span style="font-size:12px;color:var(--text-muted);">55세 · 일상 무기력함</span>
       </div>
@@ -1365,7 +1466,7 @@
     <div class="card">
       <strong>경쟁 해자 (Moat) 3가지</strong>
       <div style="margin-top:10px;font-size:13px;line-height:1.8;color:var(--text-muted);">
-        <div style="margin-bottom:8px;"><strong>전용 공간</strong><br>'시니어 플랫폼'이 아닌 50·60대가 스스로 만드는 커뮤니티</div>
+        <div style="margin-bottom:8px;"><strong>전용 공간</strong><br>'연령 낙인 플랫폼'이 아닌 50·60대가 스스로 만드는 커뮤니티</div>
         <div style="margin-bottom:8px;"><strong>욕망 설계 구조</strong><br>RELATION+RETIRE+MONEY 3축으로 설계된 카테고리</div>
         <div><strong>AI 운영 플라이휠</strong><br>시드봇 콘텐츠 → 실사용자 유입 → 데이터 학습 → 재유입</div>
       </div>
@@ -1593,8 +1694,9 @@
   <hr>
 
   <div style="text-align:center;padding:20px 0;color:var(--text-muted);font-size:13px;">
-    우나어 고객 욕망 지도 + 회사 헌법 v5.0 · 2026-04-15 창업자 확정<br>
-    출처: desire_taxonomy-archived.md · desire_analysis-archived.md · NORTH_STAR.md · constitution.yaml · RULE_MAINTENANCE.md
+    우나어 고객 욕망 지도 (사람용 전략 요약) · 2026-06-25 갱신<br>
+    현 SSOT: agents/cafe/desire-taxonomy.ts · src/lib/desire-labels.ts · constitution.yaml(v5.0/2026-05-21) · NORTH_STAR.md(v4.0/2026-05-21)<br>
+    archive baseline: docs/archive/desire_taxonomy-archived.md · docs/archive/desire_analysis-archived.md
   </div>
 
 </main>

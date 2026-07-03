@@ -357,7 +357,7 @@
 
 <!-- 시스템 현황 -->
 <div class="status-box">
-  <div class="sb-title">시스템 현황 (2026-06-10)</div>
+  <div class="sb-title">시스템 현황 (2026-07-03 갱신)</div>
   <div class="status-item"><div class="status-dot on"></div>크롤링 (launchd, 하루 7회)</div>
   <div class="status-item"><div class="status-dot on"></div>큐레이션 (GHA, 45분 간격 20슬롯)</div>
   <div class="status-item"><div class="status-dot on"></div>Wave 댓글 (GHA, 5분 간격 24시간)</div>
@@ -369,6 +369,18 @@
   <div class="status-item"><div class="status-dot on"></div>DailyBrief 안전망 09:03 + 18:00 (GHA)</div>
   <div class="status-item"><div class="status-dot on"></div>본문 줄바꿈·문단 보존 (crawler safeText preserveBreaks, 2026-06-09)</div>
   <div class="status-item"><div class="status-dot on"></div>카운트 정합 reconcile (GHA 04:00 KST, 2026-06-08)</div>
+</div>
+
+<!-- 2026-07 최신 반영 (main merge 기준) -->
+<div class="status-box">
+  <div class="sb-title">2026-07 큐레이션·발행 파이프라인 업데이트 (main 반영)</div>
+  <div class="status-item"><div class="status-dot on"></div><strong>COMMENT_REVIVE (PR #41)</strong> — 죽은 wgang 글의 댓글을 재추출해 usable 4→5로 되살리는 패스. bespoke 경로 대신 <strong>검증된 crawlPost 재사용</strong>으로 전환해 <code>refreshed=0</code> 문제 해소. 운영 PASS(refreshed&gt;0·revivedToUsable5 정상·failed 급증 없음). crawler는 <strong>로컬 launchd 실행</strong>이라 로컬 브랜치에 cherry-pick 반영함. BotLog: scanned/refreshed/revivedToUsable5/skipped/failed/cap.</div>
+  <div class="status-item"><div class="status-dot on"></div><strong>POPULAR_CURATOR SEO v1 (PR #51)</strong> — <strong>GHA main 실행</strong>(launchd 아님). 발행 시 <code>buildPopularSeoMeta</code>(추출형·AI 호출 0)로 seoTitle/seoDescription만 추가, <strong>본문/댓글 무변경</strong>. BotLog: <code>seoTransformedCount</code>/<code>seoFallbackCount</code>.</div>
+  <div class="status-item"><div class="status-dot on"></div><strong>CONTENT_CURATOR SEO v1 (PR #54)</strong> — <strong>GHA main 실행</strong>. publishCuratedContent에 seoTitle/seoDescription만 추가, <strong>AI 비용 0</strong>(원문 정제, 재창작 없음), title/content/summary/usedAt/commentWaveQueue/topComments 무변경. BotLog: <code>seoTransformedCount</code>/<code>seoFallbackCount</code>.</div>
+  <div class="status-item"><div class="status-dot on"></div><strong>DUPLICATE_TITLE 오탐 수정 (PR #55)</strong> — 짧은 제목끼리 editDistance만으로 오차단되던 버그 수정(예 "축구화?"↔"학폭ㅡㅡ"). editDistance 근사중복은 <strong>두 제목 모두 정규화 길이 ≥8일 때만</strong> 적용, <strong>완전 동일(edit=0)·명사 교집합 ≥2 차단은 유지</strong>.</div>
+  <div class="status-item"><div class="status-dot warn"></div><strong>usable4 조건부 허용 (PR #56) — flag OFF, 운영 영향 0</strong>. 기본 <code>usable&gt;=5</code> 유지. usable≥5 후보가 전무할 때만 <strong>usable==4 fallback(본문≥150·댓글≥8·정치/민감/의료조언 제외·회차당 1건)</strong> — <strong>5→4 전면 완화가 아니라 조건부 fallback</strong>. env <code>ENABLE_CONDITIONAL_USABLE4</code> 기본 <code>false</code>이고 GHA·.env.local 미설정이라 <strong>미작동</strong>. BotLog: <code>conditionalU4CandidateCount</code>/<code>conditionalU4PublishedCount</code>/<code>conditionalU4SkippedCount</code>/<code>medicalAdviceSkippedCount</code>.</div>
+  <div class="status-item"><div class="status-dot on"></div><strong>medical-advice-blocklist.ts (PR #56)</strong> — 질환명 자체가 아니라 <strong>"의료 조언/판단 요청 의도"만 차단</strong>. 허용=입원/수술/응급실/저혈당/우울증 약 등 <strong>경험담</strong>. 차단=진단 요청("이 병인가요")·치료/수술 판단·약 복용/부작용 상담·검사 수치 해석·병원/명의 추천·응급 대처법 요청. political-blocklist(정치 하드블록)와 별개로 유지.</div>
+  <div class="status-item"><div class="status-dot on"></div><strong>발행 기준·정책</strong> — usable&gt;=5 기본 유지. 본문/댓글 rewrite 금지, Raw SQL 금지, 수동 CONTENT_CURATE 실행 금지. POPULAR(인기글 isPopular)·CONTENT(트렌드 topic) 모두 원문 기반(AI 재창작 없음).</div>
 </div>
 
 <!-- ══════════ 파이프라인 비주얼 요약 ══════════ -->
@@ -682,9 +694,9 @@
       <div class="tl-detail">펨코 인기글 Playwright 스크래핑 → Google Sheet PENDING URL 처리 → 우나어 발행. Cloudflare 해외 IP 차단으로 GHA 실행 불가 → Mac 로컬 필수. cafe-crawler-lunch(11:30) / cafe-crawler-evening(21:30)과 동시 실행됨.</div>
     </div>
     <div class="tl-item plist">
-      <div class="tl-time">10:40 / 13:00 / 15:30 / 23:00 KST <span class="tl-label label-plist">plist</span></div>
+      <div class="tl-time">02:00 / 06:00 / 10:40 / 13:00 / 15:30 / 23:00 KST <span class="tl-label label-plist">plist</span></div>
       <div class="tl-mode">naver-cafe-sheet-scraper — <code>sheet-scraper.ts --site navercafe</code></div>
-      <div class="tl-detail">네이버 카페 URL 스크래핑. storage-state.json 로그인 세션 필요 → Mac 로컬 필수. GHA에서는 storage-state.json 없으면 PENDING 유지(자동 skip). Phase 1(2026-05-22)에서 10:40/15:30 슬롯 추가 → 4회/일. popular-sync(10:30) 완료 후 + cafe-crawler-afternoon(14:30) 완료 후 배치. <span style="color:var(--muted);font-size:12px;">2026-06 지원 사이트 확장: busanmam·remonterrace + 구형 URL·naver.me 단축링크 자동 해석(§13 ㊿).</span></div>
+      <div class="tl-detail">네이버 카페 URL 스크래핑. storage-state.json 로그인 세션 필요 → Mac 로컬 필수. GHA에서는 storage-state.json 없으면 PENDING 유지(자동 skip). Phase 1(2026-05-22)에서 4슬롯으로 확장했고, 이후 02:00·06:00이 추가돼 <strong>현재 6회/일 (02:00·06:00·10:40·13:00·15:30·23:00 KST)</strong>. popular-sync(10:30) 완료 후 + cafe-crawler-afternoon(14:30) 완료 후 배치. <span style="color:var(--muted);font-size:12px;">2026-06 지원 사이트 확장: busanmam·remonterrace + 구형 URL·naver.me 단축링크 자동 해석(§13 ㊿).</span></div>
     </div>
 
     <div class="tl-item" style="border-left:none;padding-left:0;margin:16px 0 8px;">
@@ -3384,7 +3396,7 @@ await prisma.cafePost.create({
       · <code>content-curator.ts</code> L340 killerPosts where에도 동일 필터 추가<br>
       · <code>content-curator.ts</code> L229 <code>maxPosts: 5 → 3</code> (이미지 글 배제로 발행량 감소 허용)<br>
       · <code>popular-curator.ts</code> L43 candidates where에 <code>imageUrls: { isEmpty: true }</code> 추가<br><br>
-      <strong>Phase 1 — naver-cafe-sheet-scraper 4슬롯 확장</strong><br>
+      <strong>Phase 1 — naver-cafe-sheet-scraper 4슬롯 확장</strong> <span style="color:var(--sub);font-size:11px;">(⚠️ 과거 구현 이력 — 이후 02:00·06:00이 추가돼 현재는 6슬롯/6회: 02:00·06:00·10:40·13:00·15:30·23:00 KST)</span><br>
       · launchd plist: 10:40 / 15:30 슬롯 신규 추가 → 13:00/23:00 → 10:40/13:00/15:30/23:00 (4회/일)<br>
       · 슬롯 선정 근거: popular-sync(10:30) 완료 후 + cafe-crawler-afternoon(14:30) 완료 후 충돌 없는 시간대<br><br>
       <strong>P3 — image-router 신규 (GHA, DRY_RUN 기본)</strong><br>
@@ -3687,7 +3699,7 @@ await prisma.cafePost.create({
       <div class="impl-title">㊽. 본문 줄바꿈·문단 보존 — safeText preserveBreaks (가독성)</div>
     </div>
     <div class="impl-body">
-      어드민 콘텐츠 점검에서 발행된 카페 원문이 문단·줄바꿈 없이 한 덩어리로 뭉쳐 표시되는 문제 발견(외부 스크랩 글은 정상). 시니어 독자 가독성이 콘텐츠 경쟁력의 핵심이므로 원문 문단을 그대로 보존하도록 수정.<br><br>
+      어드민 콘텐츠 점검에서 발행된 카페 원문이 문단·줄바꿈 없이 한 덩어리로 뭉쳐 표시되는 문제 발견(외부 스크랩 글은 정상). 우리 또래(50·60대) 독자 가독성이 콘텐츠 경쟁력의 핵심이므로 원문 문단을 그대로 보존하도록 수정.<br><br>
       <strong>근본 원인</strong>: <code>crawler.ts</code> <code>safeText()</code>가 본문을 <code>textContent</code>로 추출 → <code>&lt;p&gt;</code>·<code>&lt;br&gt;</code> 블록 구조를 버려 평문 1덩어리. CafePost.content부터 이미 <code>\n</code>=0개. (대조: 외부 스크래퍼 <code>sheet-scraper.ts</code>는 <code>innerHTML</code> 사용 → 줄바꿈 보존)<br><br>
       <strong>수정</strong>: <code>safeText(frame, selectors, fallback, opts?)</code>에 <code>opts.preserveBreaks</code> 추가(L103~145, 기본 false). true면 evaluate 내부에서:<br>
       ① <code>&lt;br&gt;→\n</code> ② 문단 블록(<code>p, li, blockquote, h1~h6, .se-text-paragraph</code>)→<code>\n\n</code> ③ 레이아웃 블록(<code>div, .se-module, .se-component</code>)→<code>\n</code> → <code>clone.textContent</code>. 후처리: 줄단위 trim + <code>\n{3,}→\n\n</code> + trim.<br>
@@ -3827,7 +3839,7 @@ await prisma.cafePost.create({
     <div class="faq-a">
       <strong>§3 스케줄 섹션의 "Mac 켜짐/꺼짐 경계" 표를 참고.</strong> 요약:
       <ul style="margin:8px 0 8px 20px;line-height:1.8;">
-        <li><strong>Mac 필요 (하루 14회)</strong>: 00:30, 07:40, 09:30, 10:30, 10:40, 11:30★, 13:00, 14:30, 15:30, 16:00, 17:30, 21:15, 21:30, 23:00<br>
+        <li><strong>Mac 필요 (하루 16회)</strong>: 00:30, 02:00, 06:00, 07:40, 09:30, 10:30, 10:40, 11:30★, 13:00, 14:30, 15:30, 16:00, 17:30, 21:15, 21:30, 23:00 <span style="color:var(--sub);font-size:11px;">(02:00·06:00 = naver-cafe-sheet-scraper 신규 슬롯 추가로 14→16회. 매거진 12:00/14:00은 별도 launchd)</span><br>
           — 카페 Playwright 크롤링(headless:false 필수) + 펨코 시트 스크래퍼(11:30/21:30, Cloudflare 차단) + 네이버 카페 시트 스크래퍼(10:40/13:00/15:30/23:00, session 필요)</li>
         <li><strong>Mac 불필요</strong>: 큐레이션 발행, wave 댓글, 시드봇 댓글/좋아요, DailyBrief fallback, brief-monitor, 오늘의유머·네이트판·82cook 시트 스크래핑 — GHA가 24시간 자동 처리</li>
       </ul>

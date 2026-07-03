@@ -120,7 +120,7 @@
   <!-- STATUS -->
   <div class="status-box">
     <div class="sb-title">현재 시스템 상태 (2026-06-23 실측)</div>
-    <div class="status-item"><div class="dot on"></div>launchd 자동 실행 — morning 12:00 · late 14:00 KST (loaded)</div>
+    <div class="status-item"><div class="dot on"></div>launchd 자동 실행 — morning 12:00 · late 14:00 KST (loaded). plist: <code>com.unaeo.magazine-morning.plist</code> / <code>com.unaeo.magazine-late.plist</code> → <code>local-magazine-runner.ts</code>. ⚠️ <strong>GHA 아님</strong> — <code>.github/workflows/agents-daily.yml</code>의 magazine-generate cron은 주석 처리(비활성)로 <strong>로컬 launchd에 이관</strong>됨.</div>
     <div class="status-item"><div class="dot on"></div>keyword queue — <code>MAGAZINE_KEYWORD_QUEUE_ENABLED=true</code></div>
     <div class="status-item"><div class="dot on"></div>이미지 — ChatGPT(웹 자동화) + 저해상/중복 가드(800px+)</div>
     <div class="status-item"><div class="dot on"></div>P1 "우나어 더 둘러보기" — production 노출 확인</div>
@@ -317,7 +317,7 @@
     <div class="section-header"><div class="section-num">10</div><h2>배포 경로 (main↔poc) · 위험/주의</h2></div>
     <div class="alert err">
       <strong>가장 중요: "발행 동작"과 "웹 화면"은 서로 다른 코드 경로에서 옵니다.</strong>
-      매거진 <strong>발행(에이전트)</strong>은 창업자 Mac의 launchd가 <strong>로컬 체크아웃(<code>poc/admob-test</code>)</strong>을 실행합니다. 매거진 <strong>웹 상세 화면</strong>은 <strong>origin/main → Vercel</strong>이 렌더합니다. 그래서 어떤 변경이 "어디에 있어야 효과가 나는지"가 다릅니다.
+      매거진 <strong>발행(에이전트)</strong>은 창업자 Mac의 launchd가 <strong>로컬 working tree(plist WorkingDirectory: <code>/Users/yanadoo/Documents/New_Claude_agenotmatter</code>, 현재 <code>poc/admob-test</code> 브랜치 체크아웃)</strong>를 실행합니다. 매거진 <strong>웹 상세 화면</strong>은 <strong>origin/main → Vercel</strong>이 렌더합니다. 그래서 어떤 변경이 "어디에 있어야 효과가 나는지"가 다릅니다.
     </div>
     <div class="table-wrap"><table>
       <thead><tr><th>변경</th><th>성격</th><th>효과 경로</th><th>현재 위치</th></tr></thead>
