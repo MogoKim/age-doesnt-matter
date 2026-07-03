@@ -36,8 +36,9 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
   const prevBunch = Math.max(1, currentPage - 3)
   const nextBunch = Math.min(totalPages, currentPage + 3)
 
-  const box = 'h-[52px] rounded-xl border text-base font-bold transition-colors flex items-center justify-center'
-  const on = 'border-border text-foreground hover:border-primary/40 active:bg-primary/10'
+  // v1.1 밀도 보정: 톤다운(font-medium·rounded-lg·연한 border). 강조는 아래 근처 줄의 현재 페이지에만.
+  const box = 'h-[52px] rounded-lg border text-base font-medium transition-colors flex items-center justify-center'
+  const on = 'border-border/70 text-foreground hover:border-primary/40 active:bg-primary/5'
   // 간격은 고정 px(px-[11px]/gap-[4px])로 — rem이면 글씨 확대 시 간격까지 커져 오버플로. 폰트만 커지고 간격은 유지되게.
   const txt = 'px-[11px] shrink-0'
   const sq = 'w-[52px] shrink-0'
@@ -50,7 +51,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
   }
 
   return (
-    <nav aria-label="페이지 이동" className="mt-6">
+    <nav aria-label="페이지 이동" className="mt-4">
       {/* 메인 이동 줄: (이전) · (맨앞) · 현재쪽 입력 · 이동 · (다음) — 불가능한 액션은 숨김 */}
       <form onSubmit={handleJump} className="flex items-center justify-center gap-[3px]">
         {!isFirst && (
@@ -67,7 +68,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
           value={jump}
           onChange={(e) => setJump(e.target.value.replace(/[^0-9]/g, ''))}
           aria-label={`이동할 페이지 번호 (1부터 ${totalPages}). 현재 ${currentPage} 페이지`}
-          className="h-[52px] w-[52px] shrink-0 rounded-xl border border-primary/40 bg-primary/10 text-center text-lg font-extrabold text-primary-text outline-none transition-colors focus:border-primary/70"
+          className="h-[52px] w-[52px] shrink-0 rounded-lg border border-border/70 bg-background text-center text-base font-medium text-foreground outline-none transition-colors focus:border-primary/50"
         />
 
         <button type="submit" className={`${box} ${txt} ${on}`}>이동</button>
@@ -78,7 +79,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
       </form>
 
       {/* 근처 번호 줄: ‹묶음 · 번호 · ›묶음 */}
-      <div className="mt-2.5 flex items-center justify-center gap-1.5">
+      <div className="mt-2 flex items-center justify-center gap-1.5">
         {hasPrevBunch && (
           <Link href={buildHref(prevBunch)} aria-label="이전 페이지 묶음" className={`${box} ${sq} ${on}`}>
             <span className="text-xl leading-none">‹</span>
@@ -86,7 +87,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
         )}
         {nums.map((n) =>
           n === currentPage ? (
-            <span key={n} aria-current="page" className={`${box} ${sq} border-primary bg-primary text-white`}>{n}</span>
+            <span key={n} aria-current="page" className={`${box} ${sq} border-primary bg-primary font-semibold text-white`}>{n}</span>
           ) : (
             <Link key={n} href={buildHref(n)} aria-label={`${n} 페이지`} className={`${box} ${sq} ${on}`}>{n}</Link>
           )
