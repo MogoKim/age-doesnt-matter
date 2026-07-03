@@ -32,21 +32,21 @@ export default function MagazineExploreLinks({ postId, postTitle }: MagazineExpl
   }
 
   return (
-    <nav className="mb-8" aria-label="우나어 더 둘러보기">
-      {/* 대표 배너 — 연한 테두리 중심(과한 배경/강조 금지), outline CTA(앱 설치 CTA와 구분) */}
+    <nav className="mb-8" aria-label="우나어 소개">
+      {/* 우나어 소개 카드 — 가입 유도가 아니라 서비스 소개. 연한 테두리 중심, outline CTA */}
       <div className="rounded-2xl border border-primary/20 bg-card p-5 mb-3">
         <p className="text-lg font-bold text-foreground leading-snug break-keep">
-          40대 50대 60대 여성 커뮤니티
+          우나어는 40·50·60대 여성 커뮤니티예요
         </p>
         <p className="text-[15px] text-muted-foreground mt-1 mb-4 leading-snug break-keep">
-          건강, 가족, 노후, 일상 고민을 함께 나눠요
+          건강·가족·노후·일상 이야기를 편하게 나누는 곳이에요
         </p>
         <Link
           href="/community/stories"
           onClick={() => handleClick('community')}
           className="inline-flex items-center gap-1.5 min-h-[52px] px-6 rounded-full border-2 border-primary bg-transparent text-primary-text font-bold text-body no-underline transition-colors hover:bg-primary/5"
         >
-          커뮤니티 둘러보기 →
+          우나어 둘러보기 →
         </Link>
       </div>
 

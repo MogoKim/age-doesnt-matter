@@ -1,17 +1,13 @@
 import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
 
 import { getPostDetail } from '@/lib/queries/posts'
 import { getRelatedMagazinePosts } from '@/lib/queries/posts/posts.magazine'
-import { getCommentsByPostId } from '@/lib/queries/comments'
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import ActionBar from '@/components/features/community/ActionBar'
-import PostCTA from '@/components/features/community/PostCTA'
-import CommentSection from '@/components/features/community/CommentSection'
 import IdentityBanner from '@/components/features/community/IdentityBanner'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
@@ -322,22 +318,9 @@ export default async function MagazineDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* 댓글 */}
-      <Suspense fallback={
-        <div className="space-y-4 mt-8">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-20 bg-muted animate-pulse rounded-xl" />
-          ))}
-        </div>
-      }>
-        <MagazineCommentsLoader postId={resolvedId} />
-      </Suspense>
+      {/* 매거진 상세는 읽기 전용 — 댓글/가입 CTA 없음. 우나어 소개·탐색 동선만 유지 */}
 
-      {/* 가입 유도 */}
-      <PostCTA postId={resolvedId} postTitle={post.title} />
-
-      {/* 우나어 더 둘러보기 — 검색 유입자 락인 동선 (홈/사는이야기/2막준비/베스트).
-          매거진 관련글에 갇히기 전에 사이트 전체 입구를 먼저 노출 */}
+      {/* 우나어 소개 & 더 둘러보기 — 검색 유입자가 우나어를 이해하고 이동하도록 (홈/커뮤니티/2막/베스트) */}
       <MagazineExploreLinks postId={resolvedId} postTitle={post.title} />
 
       {/* 함께 읽어보세요 */}
@@ -372,9 +355,4 @@ export default async function MagazineDetailPage({ params }: PageProps) {
       <NativeAdSlot slotId="magazine-detail-bottom" minHeight={230} fallback={<AdSenseUnit slotId={ADSENSE.POST_BOTTOM_BANNER} format="auto" className="rounded-2xl overflow-hidden mt-6" />} />
     </div>
   )
-}
-
-async function MagazineCommentsLoader({ postId }: { postId: string }) {
-  const comments = await getCommentsByPostId(postId)
-  return <CommentSection postId={postId} comments={comments} />
 }
