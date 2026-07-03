@@ -105,6 +105,10 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // QA 에이전트 — 콘텐츠 품질 감사 (매일 08:20 KST)
   'qa:content-audit': () => import('../qa/content-audit.js').then(() => {}),
   'community:sheet-scrape': () => import('../community/sheet-scraper.js').then(m => m.main()),
+  // 새벽 전용 시트 스크랩 (GHA dawn, 01:00~07:00 KST). SHEET_SCRAPER_MODE=dawn + SHEET_SCRAPER_ONLY_SITE=cook82는 workflow env로 주입.
+  'community:dawn-sheet-scrape': () => { if (!process.env.SHEET_SCRAPER_MODE) process.env.SHEET_SCRAPER_MODE = 'dawn'; return import('../community/sheet-scraper.js').then(m => m.main()) },
+  // 새벽 시트 미처리 정리 (GHA 07:10 KST) — PENDING 남은 새벽 행 FAILED 처리
+  'community:dawn-sheet-cleanup': () => import('../community/dawn-cleanup.js').then(m => m.main()),
   // LOCAL ONLY — 펨코 Cloudflare 차단으로 로컬 Mac launchd에서만 실행 (GitHub Actions 불가)
   // launchd: com.unao.fmkorea-scraper.plist (11:30, 21:30 KST)
   'community:fmkorea-scrape': () => import('../community/run-local-fmkorea.js').then(() => {}),

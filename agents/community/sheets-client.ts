@@ -21,6 +21,7 @@ export interface SheetRow {
   publishedAt: string
   note: string
   rawContent: string
+  scheduledHourKst?: number  // K열 — 새벽 탭 전용. "01:00"~"07:00" → 1~7. 없거나 범위 밖이면 undefined
 }
 
 /** 시트 탭 정보 */
@@ -28,16 +29,26 @@ export interface SheetTab {
   tabName: string
   boardType: 'STORY' | 'HUMOR' | 'LIFE2'
   isFeatured: boolean  // _화제성 탭: 즉각 HOT 파이프라인 발동
+  isDawn: boolean      // 새벽 전용 탭(사는이야기_새벽): scheduled_hour_kst 필터 대상
   rows: SheetRow[]
 }
 
-const TAB_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; isFeatured: boolean }> = {
+const TAB_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; isFeatured: boolean; isDawn?: boolean }> = {
   '사는이야기': { boardType: 'STORY', isFeatured: false },
   '웃음방': { boardType: 'HUMOR', isFeatured: false },
   '사는이야기_화제성': { boardType: 'STORY', isFeatured: true },
   '웃음방_화제성': { boardType: 'HUMOR', isFeatured: true },
   '2막준비': { boardType: 'LIFE2', isFeatured: false },
   '2막준비_화제성': { boardType: 'LIFE2', isFeatured: true },
+  '사는이야기_새벽': { boardType: 'STORY', isFeatured: false, isDawn: true }, // 01:00~07:00 KST 새벽 전용 공급 큐
+}
+
+/** K열 scheduled_hour_kst("01:00"~"07:00")를 hour 정수(1~7)로. 범위 밖/파싱 실패 → undefined */
+function parseScheduledHour(raw: string): number | undefined {
+  const m = raw.trim().match(/^(\d{1,2})(?::\d{2})?$/)
+  if (!m) return undefined
+  const h = Number.parseInt(m[1], 10)
+  return h >= 1 && h <= 7 ? h : undefined
 }
 
 function getSheetId(): string {
@@ -56,13 +67,17 @@ function getSheets() {
  * 탭(사는이야기/웃음방/2막준비 등)에서 PENDING 행 읽기
  * 탭이 Sheet에 아직 없으면 warning 후 skip (GHA 실패 방지)
  */
-export async function readPendingRows(): Promise<SheetTab[]> {
+export async function readPendingRows(opts?: { mode?: 'daytime' | 'dawn' }): Promise<SheetTab[]> {
+  const mode = opts?.mode ?? 'daytime' // 기본 daytime — 기존 호출부는 새벽 탭 제외(회귀 방지)
   const sheets = getSheets()
   const spreadsheetId = getSheetId()
   const tabs: SheetTab[] = []
 
-  for (const [tabName, { boardType, isFeatured }] of Object.entries(TAB_TO_BOARD)) {
-    const range = `${tabName}!A:J`
+  for (const [tabName, { boardType, isFeatured, isDawn = false }] of Object.entries(TAB_TO_BOARD)) {
+    // 탭 모드 분리: daytime은 새벽 탭 제외, dawn은 새벽 탭만 (이중 처리 방지)
+    if (mode === 'daytime' && isDawn) continue
+    if (mode === 'dawn' && !isDawn) continue
+    const range = `${tabName}!A:K`
     let res
     try {
       res = await sheets.spreadsheets.values.get({ spreadsheetId, range })
@@ -105,16 +120,40 @@ export async function readPendingRows(): Promise<SheetTab[]> {
           publishedAt: (r[7] ?? '').trim(),
           note: (r[8] ?? '').trim(),
           rawContent: (r[9] ?? '').trim(),
+          // K열 — 새벽 탭만 의미 있음. 일반 탭은 K가 비어 undefined(회귀 없음).
+          scheduledHourKst: parseScheduledHour(r[10] ?? ''),
         })
       }
     }
 
     if (rows.length > 0) {
-      tabs.push({ tabName, boardType, isFeatured, rows })
+      tabs.push({ tabName, boardType, isFeatured, isDawn, rows })
     }
   }
 
   return tabs
+}
+
+/**
+ * 새벽 탭 미처리 정리 — 07:10 KST cleanup.
+ * `사는이야기_새벽`에서 status=PENDING이고 scheduled_hour_kst가 01:00~07:00(유효)인 행만
+ * B=FAILED, G="스케줄 시간 경과"로 마킹한다. readPendingRows는 PENDING만 반환하므로
+ * PROCESSING/PUBLISHED/FAILED/HOLD는 애초에 대상이 아니다(절대 미변경).
+ * @returns 처리(FAILED 마킹)한 행 수
+ */
+export async function markMissedDawnRows(): Promise<number> {
+  const dawnTabs = await readPendingRows({ mode: 'dawn' })
+  let failed = 0
+  for (const tab of dawnTabs) {
+    for (const row of tab.rows) {
+      // 유효 스케줄값(1~7)인 PENDING만 — 범위 밖/미입력(undefined)은 건드리지 않음
+      if (row.scheduledHourKst === undefined) continue
+      await updateRow(tab.tabName, row.rowIndex, { status: 'FAILED', error: '스케줄 시간 경과' })
+      failed++
+      console.log(`[dawn-cleanup] ${tab.tabName} 행 ${row.rowIndex} → FAILED (스케줄 ${row.scheduledHourKst}:00 경과)`)
+    }
+  }
+  return failed
 }
 
 /**

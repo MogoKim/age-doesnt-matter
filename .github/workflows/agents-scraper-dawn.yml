@@ -1,0 +1,87 @@
+name: "Agents — Dawn Sheet Scraper (새벽 사는이야기)"
+
+# 새벽 전용 시트 큐 `사는이야기_새벽` (01:00~07:00 KST).
+# - scrape: 01~07 KST 매시. 82cook(cloud-safe)만 처리. navercafe/bboom/fmkorea는 --site 필터로 SKIP(PENDING 유지, 실패 아님).
+# - cleanup: 07:10 KST. 예약시각 지났는데 PENDING인 새벽 행만 FAILED("스케줄 시간 경과").
+# daytime scraper(agents-scraper.yml)는 SHEET_SCRAPER_MODE 미설정(=daytime)이라 새벽 탭을 읽지 않는다(이중 처리 방지).
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "실행 단계"
+        required: true
+        default: "dawn-sheet-scrape"
+        type: choice
+        options:
+          - dawn-sheet-scrape
+          - dawn-sheet-cleanup
+
+  schedule:
+    - cron: "0 16-22 * * *"  # 01:00~07:00 KST 매시 — dawn-sheet-scrape (82cook만)
+    - cron: "10 22 * * *"    # 07:10 KST — dawn-sheet-cleanup (missed PENDING → FAILED)
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  CLAUDE_MODEL_STRATEGIC: claude-opus-4-7
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
+  SHEETS_SCRAPER_ID: ${{ secrets.SHEETS_SCRAPER_ID }}
+  GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_R2_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
+  CLOUDFLARE_R2_SECRET_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}
+  CLOUDFLARE_R2_BUCKET: ${{ secrets.CLOUDFLARE_R2_BUCKET }}
+  NEXT_PUBLIC_R2_PUBLIC_URL: ${{ secrets.NEXT_PUBLIC_R2_PUBLIC_URL }}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  dawn-sheet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: cd agents && npm ci
+
+      - name: Verify system Chrome
+        run: google-chrome-stable --version
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Determine task (schedule → task)
+        id: determine
+        run: |
+          if [ "${{ github.event.schedule }}" = "10 22 * * *" ]; then
+            echo "task=dawn-sheet-cleanup" >> $GITHUB_OUTPUT
+          elif [ -n "${{ github.event.inputs.task }}" ]; then
+            echo "task=${{ github.event.inputs.task }}" >> $GITHUB_OUTPUT
+          else
+            echo "task=dawn-sheet-scrape" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Dawn Sheet (${{ steps.determine.outputs.task }})
+        # cron-link-check: runner.ts community dawn-sheet-scrape
+        # cron-link-check: runner.ts community dawn-sheet-cleanup
+        run: cd agents && npx tsx cron/runner.ts community ${{ steps.determine.outputs.task }}
+        env:
+          # 새벽 탭만 + 82cook만 실처리. navercafe/bboom/fmkorea는 SKIP(PENDING 유지).
+          SHEET_SCRAPER_MODE: dawn
+          SHEET_SCRAPER_ONLY_SITE: cook82
+          PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: /usr/bin/google-chrome-stable
+          SHEET_TITLE_SEO: 'true'
