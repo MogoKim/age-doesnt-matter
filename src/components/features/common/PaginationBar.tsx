@@ -51,7 +51,7 @@ export default function PaginationBar({ currentPage, totalPages, buildHref }: Pr
   }
 
   return (
-    <nav aria-label="페이지 이동" className="mt-5 rounded-[18px] bg-muted/50 px-[8px] py-[18px]">
+    <nav aria-label="페이지 이동" className="mt-5 rounded-[18px] bg-muted/50 px-[6px] py-[18px]">
       {/* 메인 이동 줄: (이전) · (맨앞) · 현재쪽 입력 · 이동 · (다음) — 불가능한 액션은 숨김 */}
       <form onSubmit={handleJump} className="flex items-center justify-center gap-[3px]">
         {!isFirst && (
