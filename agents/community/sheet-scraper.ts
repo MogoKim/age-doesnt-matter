@@ -402,13 +402,17 @@ function parseSiteList(value: string | null | undefined): string[] {
 function parseSiteFilter(): { siteOnly: string[]; siteExclude: string[] } {
   const args = process.argv.slice(2)
   const siteIdx = args.indexOf('--site')
-  const siteOnly = parseSiteList(siteIdx !== -1 ? args[siteIdx + 1] : null)
+  // --site(argv) 우선, 없으면 SHEET_SCRAPER_ONLY_SITE(env) — runner 경유(GHA dawn)에서 argv가 모호하므로 env도 지원
+  const argvOnly = parseSiteList(siteIdx !== -1 ? args[siteIdx + 1] : null)
+  const siteOnly = argvOnly.length > 0 ? argvOnly : parseSiteList(process.env.SHEET_SCRAPER_ONLY_SITE)
   const siteExclude = parseSiteList(process.env.SHEET_SCRAPER_EXCLUDE_SITE)
   return { siteOnly, siteExclude }
 }
 
 export async function main() {
   const { siteOnly, siteExclude } = parseSiteFilter()
+  // 탭 모드: SHEET_SCRAPER_MODE=dawn 이면 새벽 탭만, 기본 daytime(기존 6탭, 새벽 탭 제외 — 회귀 방지)
+  const sheetMode: 'daytime' | 'dawn' = process.env.SHEET_SCRAPER_MODE === 'dawn' ? 'dawn' : 'daytime'
   const filterLabel = siteOnly.length > 0 ? `[${siteOnly.join(',')} only]` : siteExclude.length > 0 ? `[${siteExclude.join(',')} 제외]` : ''
   console.log(`[sheet-scraper]${filterLabel} 시작:`, kstNow())
 
@@ -418,8 +422,8 @@ export async function main() {
   let totalSkippedFilter = 0
 
   try {
-    // 1. Sheet에서 PENDING 행 읽기
-    const tabs = await readPendingRows()
+    // 1. Sheet에서 PENDING 행 읽기 (daytime=기존 6탭 / dawn=사는이야기_새벽만)
+    const tabs = await readPendingRows({ mode: sheetMode })
 
     if (tabs.length === 0) {
       console.log('[sheet-scraper] 처리할 PENDING 행 없음')
@@ -464,6 +468,21 @@ export async function main() {
               console.log(`  → SKIP (제외: ${siteConfig.id})`)
               totalSkippedFilter++
               continue
+            }
+            // 새벽 탭 scheduled_hour_kst 필터 (dawn 탭 전용) — 일반 탭은 tab.isDawn=false라 영향 없음.
+            // 예약시각(1~7) 없거나 범위 밖 → PENDING 유지(처리 안 함). 현재 KST hour보다 미래 → PENDING 유지.
+            if (tab.isDawn) {
+              if (row.scheduledHourKst === undefined) {
+                console.log(`  → SKIP (새벽: scheduled_hour_kst 범위밖/미입력, PENDING 유지)`)
+                totalSkippedFilter++
+                continue
+              }
+              const nowKstHour = new Date(Date.now() + 9 * 3600_000).getUTCHours()
+              if (nowKstHour < row.scheduledHourKst) {
+                console.log(`  → SKIP (새벽: 예약 ${row.scheduledHourKst}:00 > 현재 ${nowKstHour}시, PENDING 유지)`)
+                totalSkippedFilter++
+                continue
+              }
             }
 
             // SESSION_REQUIRED 사이트: storage-state.json 없으면 PENDING 유지 (GHA skip)
