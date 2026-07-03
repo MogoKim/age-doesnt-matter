@@ -74,7 +74,7 @@ export default async function PostListBottom({ boardType, boardSlug, excludePost
           return (
             <li key={post.id} className="border-b border-border last:border-b-0">
               {mode === 'related' ? (
-                <TrackedPostLink href={href} postId={post.id} position="bottom" boardSlug={boardSlug} className={linkClass}>
+                <TrackedPostLink href={href} postId={post.id} position="bottom" boardSlug={boardSlug} rank={idx} sourcePostId={excludePostId} className={linkClass}>
                   {inner}
                 </TrackedPostLink>
               ) : (
