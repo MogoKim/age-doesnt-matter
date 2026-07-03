@@ -34,8 +34,14 @@ export interface RelatedAlgoView {
   startFrom?: string
 }
 
+// related_algo_v2 실험 시작(rec_v2 최초 배정). 이 시각 전 rec_v1 노출/클릭은 A/B 이전 트래픽이라
+// v1 arm 에 섞이면 노출·CTR 을 오염시킨다(예: 30일 롤링 시 5:1 착시) → since 를 실험 시작일로 하한 클램프.
+// startFrom 라벨('2026-06-30')과 일치. 실험/추천/배정 로직과 무관한 집계 윈도우 보정.
+const EXPERIMENT_START_MS = Date.UTC(2026, 5, 30) // 2026-06-30T00:00:00Z (month 0-based: 5=June)
+
 async function _getRelatedAlgoAbStats(periodDays = 30): Promise<RelatedAlgoView> {
-  const since = new Date(Date.now() - periodDays * 86400000)
+  // 롤링 시작과 실험 시작 중 더 늦은 쪽(= 실험 시작 이전으로 내려가지 않음)
+  const since = new Date(Math.max(Date.now() - periodDays * 86400000, EXPERIMENT_START_MS))
 
   // 내부 세션(/admin·founder) 제외용
   const internalRows = await prisma.eventLog.findMany({
