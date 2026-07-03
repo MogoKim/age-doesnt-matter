@@ -100,14 +100,9 @@ export function buildMagazineHtml(data: MagazineTemplateData): string {
   }).join('')
 
   const authorCard = `
-    <div style="margin-top:40px;padding:16px 18px;background:#f8f9fa;border-radius:12px;display:flex;align-items:center;gap:12px;">
-      <div style="width:40px;height:40px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">
-        📖
-      </div>
-      <div>
-        <p style="margin:0;font-size:15px;font-weight:700;color:#333;">우나어 매거진 편집팀</p>
-        <p style="margin:3px 0 0;font-size:13px;color:#888;">50·60대 여성에게 필요한 정보를 쉽게 정리합니다</p>
-      </div>
+    <div style="margin-top:32px;padding:14px 0 0;border-top:1px solid #eee;">
+      <p style="margin:0;font-size:14px;font-weight:700;color:#333;">우나어 매거진 편집팀</p>
+      <p style="margin:2px 0 0;font-size:13px;color:#888;">40·50·60대 여성을 위한 커뮤니티</p>
     </div>`
 
   const ctaBlock = `
@@ -204,14 +199,9 @@ export function buildMagazineHtmlV2(
   }).join('')
 
   const authorCard = `
-    <div style="margin-top:40px;padding:16px 18px;background:#f8f9fa;border-radius:12px;display:flex;align-items:center;gap:12px;">
-      <div style="width:40px;height:40px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">
-        📖
-      </div>
-      <div>
-        <p style="margin:0;font-size:15px;font-weight:700;color:#333;">우나어 매거진 편집팀</p>
-        <p style="margin:3px 0 0;font-size:13px;color:#888;">50·60대 여성에게 필요한 정보를 쉽게 정리합니다</p>
-      </div>
+    <div style="margin-top:32px;padding:14px 0 0;border-top:1px solid #eee;">
+      <p style="margin:0;font-size:14px;font-weight:700;color:#333;">우나어 매거진 편집팀</p>
+      <p style="margin:2px 0 0;font-size:13px;color:#888;">40·50·60대 여성을 위한 커뮤니티</p>
     </div>`
 
   // 커뮤니티 연결박스 (외부 검색 유입자용 — v1 ctaBlock 대체). min-height 대신 padding으로 터치 영역 확보
