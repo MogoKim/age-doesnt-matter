@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우나어 — 목록 하단 광고 슬롯 배치 목업 (구현 아님)</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --fg:#111827; --sub:#374151; --muted:#6b7280;
+    --border:#e5e7eb; --coral:#FF6F61;
+    --tray:#f7f8fa; --soft:#f1f3f5; --soft2:#e9ecef;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#e9ecf1;color:var(--fg);line-height:1.55}
+  .doc{max-width:460px;margin:0 auto;padding:20px 12px 60px}
+  .doc-h{font-size:15px;font-weight:800;color:#1F2D45;margin:6px 4px 4px}
+  .doc-sub{font-size:12.5px;color:#555;margin:0 4px 14px}
+  .note{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px;color:#444;margin:0 2px 20px}
+  .note b{color:#E85D50}
+
+  .state-label{font-size:12px;font-weight:800;color:#fff;background:#1F2D45;display:inline-block;padding:4px 12px;border-radius:20px;margin:22px 4px 8px}
+  .screen{position:relative;background:var(--bg);border:1px solid #dfe3ea;border-radius:20px;padding:14px 14px 0;overflow:hidden}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px}
+  .cat{display:inline-block;font-size:13px;font-weight:700;color:#9a3412;background:#ffedd5;padding:3px 10px;border-radius:20px;margin-bottom:8px}
+  .title{font-size:18px;font-weight:700;margin-bottom:6px}
+  .meta{font-size:14px;color:var(--muted)}
+
+  /* 검색 1줄 */
+  .search{display:flex;align-items:center;gap:8px}
+  .search .sel{position:relative;flex:0 0 auto}
+  .search select{height:52px;appearance:none;-webkit-appearance:none;border:1px solid var(--border);background:#fff;border-radius:13px;padding:0 32px 0 13px;font-size:15px;font-weight:600;color:var(--fg);outline:none}
+  .search .sel .caret{position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);font-size:12px}
+  .search .field{position:relative;flex:1 1 auto;min-width:0}
+  .search input{width:100%;height:52px;min-width:0;border:1px solid var(--border);background:#fff;border-radius:13px;padding:0 14px;font-size:16px;color:var(--fg);outline:none}
+  .search input::placeholder{color:#9aa0aa}
+  .search .go{flex:0 0 auto;height:52px;padding:0 16px;display:flex;align-items:center;gap:6px;border:none;background:var(--coral);color:#fff;border-radius:13px;font-size:16px;font-weight:800;white-space:nowrap}
+  .search .go svg{width:18px;height:18px}
+
+  /* B3 트레이 + 소프트칩 (PR #63) — 트레이 padding 미변경(18/6). 광고를 -margin으로 당겨 인접 */
+  .pager-tray{margin-top:20px;background:var(--tray);border-radius:18px;padding:18px 6px}
+  .pager-main,.pager-near{display:flex;align-items:center;justify-content:center}
+  .pager-main{gap:3px}
+  .pager-near{gap:10px;margin-top:16px}
+  .pbtn,.nbtn,.pinput{height:52px;min-width:52px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;text-decoration:none;box-sizing:border-box}
+  .pbtn{padding:0 11px;flex:0 0 auto;background:var(--soft);color:var(--sub);border:none;border-radius:12px}
+  .pinput{width:52px;flex:0 0 auto;text-align:center;background:#fff;border:1px solid var(--border);color:var(--fg);border-radius:12px}
+  .nbtn{width:52px;flex:0 0 auto;background:var(--soft);color:var(--sub);border:none;border-radius:12px}
+  .nbtn.cur{background:var(--coral);color:#fff;font-weight:700}
+  .ic{font-size:20px;line-height:1}
+
+  /* ── 광고 영역 ── 실제 구현과 동일: 트레이 미변경 + 광고를 -11px 당김 → 버튼→광고 ≈ 7px */
+  .ad-gap{height:0}                             /* 실제 구현엔 별도 gap div 없음 */
+  .ad-divider{border:none}                      /* 구분선 미사용(라벨·별도 블록으로 구분) */
+  .ad-zone{position:relative;margin-top:-11px;border:1.5px dashed #cbd5e1;border-radius:14px;background:#fff;
+           min-height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px}
+  .ad-label{position:absolute;top:8px;left:10px;font-size:11px;font-weight:700;color:#6b7280;background:#fff;border:1px solid var(--border);border-radius:5px;padding:1px 7px}
+  .ad-choices{position:absolute;top:8px;right:10px;font-size:11px;font-weight:600;color:#9aa0aa;display:flex;align-items:center;gap:3px}
+  .ad-choices .i{width:14px;height:14px;border:1px solid #b6bcc6;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800}
+  .ad-kind{font-size:12.5px;font-weight:800;color:#64748b}
+  .ad-sz{font-size:11.5px;color:#94a3b8}
+  .ad-cta{margin-top:6px;font-size:12px;font-weight:700;color:#fff;background:#94a3b8;border-radius:8px;padding:7px 16px}  /* Native CTA 위치 표시 */
+
+  /* 광고 ↔ FAB 여백: 기존 h-20(80px) 유지 */
+  .fab-space{height:80px}
+  .fab{position:absolute;right:16px;bottom:16px;height:54px;padding:0 20px;display:flex;align-items:center;gap:8px;background:var(--coral);color:#fff;border:none;border-radius:28px;font-size:16px;font-weight:800;box-shadow:0 6px 16px rgba(255,111,97,.36)}
+
+  .legend{font-size:11.5px;color:#666;margin:26px 4px 0;line-height:1.75}
+  .legend code{background:#eef0f3;padding:1px 5px;border-radius:4px;font-size:11px}
+  .legend b{color:#1F2D45}
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="doc-h">우나어 · 목록 하단 광고 슬롯 배치 (목업 — 구현 아님)</div>
+  <div class="doc-sub">검색 → 페이지 이동(B3 트레이) → <b>페이지 이동 직후 인접</b>(버튼→광고 ≈ 7px) → 광고 → h-20(80px) FAB 여백. <b>트레이(18px)는 미변경</b>, 광고 wrapper를 -11px 당겨 인접시킴(BoardPaginationFooter에서 처리). 터치 영역은 겹치지 않음.</div>
+  <div class="note"><b>구현 아님</b> — 배치 검증용. 광고 자리는 placeholder. 웹=AdSense responsive / 앱=AdMob Native 230px. "광고" 라벨 좌상단, AdChoices ⓘ 우상단(실제 광고 표준 위치). 광고는 큰 dashed 블록+라벨이라 52px 버튼과 시각적으로 구분됨.</div>
+
+  <!-- 상태 1: 첫 페이지 -->
+  <div class="state-label">상태 1 · 첫 페이지 (1 / 264)</div>
+  <div class="screen">
+    <article class="card"><span class="cat">건강</span><div class="title">갱년기가 최고조로 올 때는 언제인가요?</div><div class="meta">🌱 베란다텃밭 · 3시간 전</div></article>
+    <form class="search" onsubmit="return false">
+      <div class="sel"><select><option>제목+내용</option></select><span class="caret">▾</span></div>
+      <div class="field"><input type="search" placeholder="검색어"></div>
+      <button class="go" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>검색</button>
+    </form>
+    <div class="pager-tray">
+      <div class="pager-main"><input class="pinput" value="1" inputmode="numeric"><button class="pbtn">이동</button><a class="pbtn">다음</a></div>
+      <nav class="pager-near" aria-label="근처 페이지"><span class="nbtn cur">1</span><a class="nbtn">2</a><a class="nbtn">3</a><a class="nbtn" aria-label="다음 페이지 묶음"><span class="ic">›</span></a></nav>
+    </div>
+    <div class="ad-gap"></div><div class="ad-divider"></div>
+    <div class="ad-zone">
+      <span class="ad-label">광고</span>
+      <span class="ad-choices"><span class="i">i</span>AdChoices</span>
+      <span class="ad-kind">웹: AdSense responsive · 앱: AdMob Native</span>
+      <span class="ad-sz">웹 format=auto · 앱 230px (slotId: list-pagination-bottom)</span>
+      <span class="ad-cta">자세히 보기</span>
+    </div>
+    <div class="fab-space"></div><button class="fab">✏️ 글쓰기</button>
+  </div>
+
+  <!-- 상태 2: 중간 페이지 -->
+  <div class="state-label">상태 2 · 중간 페이지 (5 / 264)</div>
+  <div class="screen">
+    <article class="card"><span class="cat">건강</span><div class="title">갱년기가 최고조로 올 때는 언제인가요?</div><div class="meta">🌱 베란다텃밭 · 3시간 전</div></article>
+    <form class="search" onsubmit="return false">
+      <div class="sel"><select><option>제목+내용</option></select><span class="caret">▾</span></div>
+      <div class="field"><input type="search" placeholder="검색어"></div>
+      <button class="go" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>검색</button>
+    </form>
+    <div class="pager-tray">
+      <div class="pager-main"><a class="pbtn">이전</a><a class="pbtn">맨앞</a><input class="pinput" value="5" inputmode="numeric"><button class="pbtn">이동</button><a class="pbtn">다음</a></div>
+      <nav class="pager-near" aria-label="근처 페이지"><a class="nbtn" aria-label="이전 페이지 묶음"><span class="ic">‹</span></a><a class="nbtn">4</a><span class="nbtn cur">5</span><a class="nbtn">6</a><a class="nbtn" aria-label="다음 페이지 묶음"><span class="ic">›</span></a></nav>
+    </div>
+    <div class="ad-gap"></div><div class="ad-divider"></div>
+    <div class="ad-zone">
+      <span class="ad-label">광고</span>
+      <span class="ad-choices"><span class="i">i</span>AdChoices</span>
+      <span class="ad-kind">웹: AdSense responsive · 앱: AdMob Native</span>
+      <span class="ad-sz">웹 format=auto · 앱 230px (slotId: list-pagination-bottom)</span>
+      <span class="ad-cta">자세히 보기</span>
+    </div>
+    <div class="fab-space"></div><button class="fab">✏️ 글쓰기</button>
+  </div>
+
+  <!-- 상태 3: 마지막 페이지 -->
+  <div class="state-label">상태 3 · 마지막 페이지 (264 / 264)</div>
+  <div class="screen">
+    <article class="card"><span class="cat">건강</span><div class="title">갱년기가 최고조로 올 때는 언제인가요?</div><div class="meta">🌱 베란다텃밭 · 3시간 전</div></article>
+    <form class="search" onsubmit="return false">
+      <div class="sel"><select><option>제목+내용</option></select><span class="caret">▾</span></div>
+      <div class="field"><input type="search" placeholder="검색어"></div>
+      <button class="go" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>검색</button>
+    </form>
+    <div class="pager-tray">
+      <div class="pager-main"><a class="pbtn">이전</a><a class="pbtn">맨앞</a><input class="pinput" value="264" inputmode="numeric"><button class="pbtn">이동</button></div>
+      <nav class="pager-near" aria-label="근처 페이지"><a class="nbtn" aria-label="이전 페이지 묶음"><span class="ic">‹</span></a><a class="nbtn">262</a><a class="nbtn">263</a><span class="nbtn cur">264</span></nav>
+    </div>
+    <div class="ad-gap"></div><div class="ad-divider"></div>
+    <div class="ad-zone">
+      <span class="ad-label">광고</span>
+      <span class="ad-choices"><span class="i">i</span>AdChoices</span>
+      <span class="ad-kind">웹: AdSense responsive · 앱: AdMob Native</span>
+      <span class="ad-sz">웹 format=auto · 앱 230px (slotId: list-pagination-bottom)</span>
+      <span class="ad-cta">자세히 보기</span>
+    </div>
+    <div class="fab-space"></div><button class="fab">✏️ 글쓰기</button>
+  </div>
+
+  <div class="legend">
+    <b>인접 배치(pull-up)</b>: PaginationBar 트레이(py-18px)는 미변경, 광고 wrapper를 <code>-mt-[11px]</code>로 트레이 하단 여백 안으로 당김 → <b>버튼→광고 ≈ 7px</b>. 페이지 이동 직후 광고가 바로 이어지되 <b>터치 영역 겹침은 0</b>(버튼 52px 하단과 광고 상단 사이 7px 물리 간격).<br>
+    · 광고는 <b>큰 dashed 블록 + "광고" 라벨 + AdChoices</b>라 52px 소프트칩 버튼과 시각적으로 구분 — 버튼처럼 보이지 않음.<br>
+    · 광고↔FAB: 광고 아래 <code>h-20(80px)</code> 여백 유지 → FAB(fixed, 하단 16px) 탭이 광고 CTA와 안 겹침.<br>
+    · 웹/앱 분기: 웹=AdSenseUnit(format=auto, "광고" 라벨 내장, unfilled 시 Coupang 폴백) · 앱=NativeAdSlot 230px(AdMob Native, no-fill 시 접힘). 앱 AdSense는 OFF 유지.<br>
+    · 앱 하단 anchored banner 재도입 아님(in-flow 슬롯). 광고 미구현 — placeholder만.
+  </div>
+</div>
+</body>
+</html>

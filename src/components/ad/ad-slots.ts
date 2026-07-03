@@ -27,8 +27,8 @@ export const ADSENSE = {
   /** 데스크탑 728×250 하단 배너 (SignupCard 아래) */
   DESKTOP_BOTTOM: '7055392341',
 
-  /** 목록 페이지 페이지네이션 하단 — 베스트·커뮤니티·매거진·내일찾기 공통 */
-  LIST_PAGINATION_BOTTOM: 'REPLACE_WITH_SLOT_ID',
+  /** 목록 페이지 페이지네이션 하단 — 베스트·커뮤니티·매거진·내일찾기 공통 (2026-07-03 발급) */
+  LIST_PAGINATION_BOTTOM: '7232997454',
 
   /** 글상세 맨 하단 띠배너 — 커뮤니티·매거진·내일찾기 공통 (반응형 디스플레이, format=auto).
    *  애드센스 광고단위 "글상세 하단 띠배너" (2026-06-12 발급) */
