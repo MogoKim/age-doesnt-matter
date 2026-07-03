@@ -28,15 +28,17 @@ export default function BoardPaginationFooter({ total, page, pageSize, buildHref
       <PaginationBar currentPage={page} totalPages={totalPages} buildHref={buildHref} />
 
       {/* 페이지 이동 직후 인접 광고 — 트레이 하단 여백(18px) 안으로 -11px 당겨 버튼→광고 ≈ 7px.
-          웹=AdSense responsive(광고 라벨 내장, unfilled 시 Coupang 폴백) / 앱=AdMob Native 230px(no-fill 시 접힘). */}
+          웹=AdSense In-feed(fluid+layoutKey, 목록 카드와 매칭·라벨 내장, unfilled 시 Coupang 폴백) / 앱=AdMob Native 230px(no-fill 시 접힘).
+          (display slot LIST_PAGINATION_BOTTOM 상수는 ad-slots.ts에 보존, 이 위치에선 In-feed로 대체) */}
       <div className="-mt-[11px]">
         <NativeAdSlot
           slotId="list-pagination-bottom"
           minHeight={230}
           fallback={
             <AdSenseUnit
-              slotId={ADSENSE.LIST_PAGINATION_BOTTOM}
-              format="auto"
+              slotId={ADSENSE.IN_FEED}
+              format="fluid"
+              layoutKey={ADSENSE.IN_FEED_LAYOUT_KEY}
               className="rounded-2xl overflow-hidden"
             />
           }
