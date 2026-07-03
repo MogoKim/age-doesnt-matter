@@ -382,9 +382,16 @@ async function publishCuratedContent(curated: CuratedContent): Promise<PublishRe
       const isDuplicate = recentPosts.some(
         p => toNouns(p.title).filter(n => newNouns.has(n)).length >= 2
       )
-      const isTitleNearDuplicate = recentPosts.some(
-        p => editDistance(p.title, curated.title) <= 5
-      )
+      // editDistance 오탐 방지 — 짧은 제목끼리는 우연히 편집거리가 작아 전혀 다른 글이 중복 처리됨
+      // (예: "축구화?"↔"학폭ㅡㅡ" edit=4, 명사 교집합 0). 완전 동일(edit=0)은 길이 무관 차단하고,
+      // 근사 중복(edit 1~5)은 두 제목 모두 normalized length >= 8 일 때만 적용. 명사 교집합(isDuplicate)은 무변경.
+      const norm = (t: string) => t.replace(/\s+/g, '').trim()
+      const curTitleLongEnough = norm(curated.title).length >= 8
+      const isTitleNearDuplicate = recentPosts.some(p => {
+        const ed = editDistance(p.title, curated.title)
+        if (ed === 0) return true
+        return curTitleLongEnough && norm(p.title).length >= 8 && ed <= 5
+      })
       if (isDuplicate || isTitleNearDuplicate) {
         console.log(`[ContentCurator] ${curated.boardType} 중복 스킵: "${curated.title.slice(0, 20)}"`)
         return { success: false, skipReason: 'DUPLICATE_TITLE' }
