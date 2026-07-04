@@ -654,10 +654,11 @@ export async function main() {
     }
   }
   // 3순위: 폴백 — isDesireExhausted 체크 포함 (Fix 3: 소진 카테고리 재진입 차단)
+  // dupQuarantine.topics 체크 추가 — 1·2순위와 동일 패턴. 격리된 DUPLICATE_TITLE topic이 폴백으로 재투입되는 것 차단.
   for (const t of categorizedTopics) {
     if (trendCandidates.length >= maxTrendCandidates) break
     if (isDesireExhausted(t.desireCategory)) continue
-    if (!inPool(t.topic)) {
+    if (!inPool(t.topic) && !dupQuarantine.topics.has(t.topic)) {
       trendCandidates.push({ topic: t.topic, source: 'trend', desireCategory: t.desireCategory })
     }
   }
