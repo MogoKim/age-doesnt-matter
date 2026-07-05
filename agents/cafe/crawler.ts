@@ -1244,16 +1244,51 @@ export async function refreshRecentPosts(): Promise<number> {
   //   같은 page/browser 재사용 — 신규 네비게이션만 ≤cap. popular-sync·content-curator·requiredUsableCount(5) 무변경.
   const REVIVE_CAP = Number.parseInt(process.env.COMMENT_REVIVE_CAP ?? '10', 10)
   let rvScanned = 0, rvRefreshed = 0, rvRevived = 0, rvSkipped = 0, rvFailed = 0
+  const rvSkippedIds: string[] = []  // 이번 run에서 usable<5로 skip된 cafePostId → details에 기록(당일 쿨다운용)
   const wgangCafe = CAFE_CONFIGS.find(c => c.id === 'wgang')
   if (Number.isFinite(REVIVE_CAP) && REVIVE_CAP > 0 && wgangCafe) {
+    // 당일 자정 이후 COMMENT_REVIVE 에서 usable<5로 skip된 cafePostId → 오늘 재스캔 제외.
+    // BotLog details(기존 로그=state)만 읽음. schema 변경·DB write 추가 없음. 자정 자동 리셋(영구 배제 방지).
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const reviveCooldown = new Set<string>()
+    try {
+      const prevLogs = await prisma.botLog.findMany({
+        where: { botType: 'CAFE_CRAWLER', action: 'COMMENT_REVIVE', createdAt: { gte: todayStart } },
+        orderBy: { createdAt: 'desc' }, take: 60, select: { details: true },
+      })
+      for (const log of prevLogs) {
+        try {
+          const parsed: unknown = JSON.parse(log.details ?? '{}')
+          const ids = (parsed as { skippedIds?: unknown }).skippedIds
+          if (Array.isArray(ids)) for (const id of ids) if (typeof id === 'string') reviveCooldown.add(id)
+        } catch { /* 이 로그 details 파싱 실패 → 스킵(빈 Set fallback) */ }
+      }
+    } catch { /* BotLog 조회 실패 → 쿨다운 없이 진행(기존 동작) */ }
+
     // 대상: wgang · 7일 · 미사용 · isUsable · 댓글≥5 (usable<5는 Json이라 JS에서 필터)
     const candidates = await prisma.cafePost.findMany({
       where: { cafeId: 'wgang', crawledAt: { gte: cutoff7d }, usedAt: null, isUsable: true, commentCount: { gte: 5 } },
-      select: { id: true, postUrl: true, commentCount: true, likeCount: true, topComments: true },
-      orderBy: [{ commentCrawled: 'asc' }, { commentCount: 'desc' }], // 미수집 우선 → 댓글 많은 순
+      select: { id: true, postUrl: true, commentCount: true, likeCount: true, topComments: true, commentCrawled: true },
+      orderBy: [{ commentCrawled: 'asc' }, { commentCount: 'desc' }],
       take: REVIVE_CAP * 5,
     })
-    const targets = candidates.filter(p => computeUsableCount(p.topComments) < 5).slice(0, REVIVE_CAP)
+    // 살릴 가능성 순 재정렬(DB 정렬은 commentCount만 가능 → JS 재정렬) + 당일 skip 쿨다운 제외.
+    // 우선순위(rank 작을수록 우선): 미수집(commentCrawled=false) > usable 3~4 > length 4~9 > gap(cc-len) 작음.
+    const targets = candidates
+      .filter(p => computeUsableCount(p.topComments) < 5 && !reviveCooldown.has(p.id))
+      .map(p => {
+        const len = Array.isArray(p.topComments) ? p.topComments.length : 0
+        const u = computeUsableCount(p.topComments)
+        let rank = 0
+        if (p.commentCrawled) rank += 1000        // 미수집(false)을 최우선
+        if (!(u === 3 || u === 4)) rank += 100      // usable 3~4 우선(한두 개만 더 살리면 되는 글)
+        if (!(len >= 4 && len <= 9)) rank += 10     // length 4~9 우선(수집 여지)
+        return { post: p, rank, gap: (p.commentCount ?? 0) - len }
+      })
+      .sort((a, b) => a.rank - b.rank || a.gap - b.gap)  // rank 오름차순, 동률이면 gap 작은(원천 짧음) 순
+      .slice(0, REVIVE_CAP)
+      .map(s => s.post)
     console.log(`[CommentRevive] wgang 부활 대상 ${targets.length}건 (cap ${REVIVE_CAP})`)
     for (const post of targets) {
       rvScanned++
@@ -1288,6 +1323,7 @@ export async function refreshRecentPosts(): Promise<number> {
           console.log(`[CommentRevive] 부활: usable→${newUsable} 댓글 ${post.commentCount}→${newCommentCount} k=${newKillerScore} ${post.postUrl}`)
         } else {
           rvSkipped++ // usable<5 → 기존 topComments 절대 미변경(보존)
+          rvSkippedIds.push(post.id) // 당일 재스캔 쿨다운 대상(반복 실패 후보 slot 낭비 방지)
         }
       } catch (err) {
         rvFailed++
@@ -1299,7 +1335,7 @@ export async function refreshRecentPosts(): Promise<number> {
         botType: 'CAFE_CRAWLER', action: 'COMMENT_REVIVE',
         status: rvFailed > 0 && rvRevived === 0 ? 'PARTIAL' : 'SUCCESS',
         itemCount: rvRevived,
-        details: JSON.stringify({ scanned: rvScanned, refreshed: rvRefreshed, revivedToUsable5: rvRevived, skipped: rvSkipped, failed: rvFailed, cap: REVIVE_CAP }),
+        details: JSON.stringify({ scanned: rvScanned, refreshed: rvRefreshed, revivedToUsable5: rvRevived, skipped: rvSkipped, failed: rvFailed, cap: REVIVE_CAP, skippedIds: rvSkippedIds }),
       },
     })
     console.log(`[CommentRevive] 완료: scanned ${rvScanned} · revived ${rvRevived} · skipped ${rvSkipped} · failed ${rvFailed}`)
