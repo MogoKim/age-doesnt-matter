@@ -230,7 +230,7 @@ async function assertCrawlQuality(withComments = true): Promise<void> {
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
   const posts = await prisma.cafePost.findMany({
-    where: { crawledAt: { gte: todayStart } },
+    where: { crawledAt: { gte: todayStart }, cafeId: { in: PRODUCTION_CAFE_IDS } },  // shadow 제외 — 품질 가드 오탐 중단 방지
     select: { commentCount: true, topComments: true },
   })
 
@@ -449,7 +449,7 @@ async function reportPipelineStage(stage: 'crawl' | 'psych' | 'trend' | 'brief' 
     if (stage === 'crawl') {
       const perCafe = await prisma.cafePost.groupBy({
         by: ['cafeId'],
-        where: { crawledAt: { gte: todayStart } },
+        where: { crawledAt: { gte: todayStart }, cafeId: { in: PRODUCTION_CAFE_IDS } },  // production 경고 기준에서 shadow 제외
         _count: { id: true },
       })
       const total = perCafe.reduce((s, r) => s + r._count.id, 0)
@@ -460,8 +460,8 @@ async function reportPipelineStage(stage: 'crawl' | 'psych' | 'trend' | 'brief' 
 
     else if (stage === 'psych') {
       const [total, analyzed] = await Promise.all([
-        prisma.cafePost.count({ where: { crawledAt: { gte: todayStart } } }),
-        prisma.cafePost.count({ where: { crawledAt: { gte: todayStart }, aiAnalyzed: true } }),
+        prisma.cafePost.count({ where: { crawledAt: { gte: todayStart }, cafeId: { in: PRODUCTION_CAFE_IDS } } }),
+        prisma.cafePost.count({ where: { crawledAt: { gte: todayStart }, aiAnalyzed: true, cafeId: { in: PRODUCTION_CAFE_IDS } } }),
       ])
       const rate = total > 0 ? Math.round((analyzed / total) * 100) : 0
       lines.push(`2️⃣ 심리분석 ${rate >= 95 ? '✅' : '⚠️'}: ${analyzed}/${total}건 완료 (${rate}%)`)

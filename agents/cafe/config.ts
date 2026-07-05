@@ -133,6 +133,23 @@ export const CAFE_CONFIGS: CafeConfig[] = [
       { name: '운동 이야기', menuId: 103, maxPages: 1, priority: 'high', category: 'health' },
     ],
   },
+  // ─────────────────────────────────────────────────────────
+  // 3. 레몬테라스 (10298136) — shadow 소스(관찰 전용)
+  //    sourceStage:'shadow' → content-curator/trend/run-pipeline 품질가드에서 격리(발행·trend 미편입).
+  //    legacyCrawler:true + allArticlesUrl 미지정 → 전체글보기 우회, boards 루프(menuId 23)만 수집.
+  //    육아·살림 카페라 연령 필터(passesShadowAgeFilter, crawler.ts)로 isUsable 보정.
+  // ─────────────────────────────────────────────────────────
+  {
+    id: 'remonterrace',
+    name: '레몬테라스',
+    url: 'https://cafe.naver.com/f-e/cafes/10298136',
+    numericId: 10298136,
+    legacyCrawler: true,
+    sourceStage: 'shadow',
+    boards: [
+      { name: '쫑알쫑알', menuId: 23, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+    ],
+  },
 ]
 
 /**
