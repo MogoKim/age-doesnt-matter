@@ -11,7 +11,7 @@ import type { TrendAnalysis } from './types.js'
 import { parseTopComments, classifyCommentAtmosphere } from './types.js'
 import type { ControversyTopic } from '../core/intelligence.js'
 import { calcControversyScore } from './psych-analyzer.js'
-import { QUALITY_THRESHOLDS } from './config.js'
+import { QUALITY_THRESHOLDS, PRODUCTION_CAFE_IDS } from './config.js'
 
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
@@ -59,6 +59,7 @@ async function getTodayPosts() {
 
   return prisma.cafePost.findMany({
     where: {
+      cafeId: { in: PRODUCTION_CAFE_IDS },  // production 카페만 trend 소스로 (shadow 격리)
       crawledAt: { gte: todayStart },
       qualityScore: { gte: 30 }, // 최소 품질 점수 이상만 분석
       postedAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) }, // 14일 이내 원본 포스팅만 (날짜 파싱 실패 글 오염 차단)
@@ -381,6 +382,7 @@ function inferControversyType(desire: string, signal: string): ControversyTopic[
 async function aggregateControversyTopics(): Promise<ControversyTopic[]> {
   const recentPosts = await prisma.cafePost.findMany({
     where: {
+      cafeId: { in: PRODUCTION_CAFE_IDS },  // production 카페만 controversy 소스로 (shadow 격리)
       aiAnalyzed: true,
       isUsable: true,
       OR: [{ urgencyLevel: { gte: 3 } }, { communitySignal: 'complaint' }],
@@ -426,6 +428,7 @@ async function aggregateKillerTopics(): Promise<TrendAnalysis['hotTopics']> {
   const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 3600_000)
   const posts = await prisma.cafePost.findMany({
     where: {
+      cafeId: { in: PRODUCTION_CAFE_IDS },  // production 카페만 killerTopics 소스로 (shadow 격리)
       killerScore: { gte: 25 },
       isUsable: true,
       postedAt: { gte: fourteenDaysAgo },

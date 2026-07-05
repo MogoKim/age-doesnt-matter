@@ -17,6 +17,11 @@ export interface CafeConfig {
   legacyCrawler?: boolean
   /** 수집할 게시판 경로 (인기글, 최신글 등) */
   boards: CafeBoardConfig[]
+  /**
+   * 소스 스테이지. 'production'(기본, 미지정 포함)은 발행/trend/재시도 판정에 사용.
+   * 'shadow'는 크롤·저장·psych 분석만 하고 content-curator/trend/run-pipeline에서 격리(관찰 전용).
+   */
+  sourceStage?: 'production' | 'shadow'
 }
 
 export interface CafeBoardConfig {

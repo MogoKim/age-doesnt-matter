@@ -135,6 +135,16 @@ export const CAFE_CONFIGS: CafeConfig[] = [
   },
 ]
 
+/**
+ * 소스 스테이지 격리 — 신규 카페(shadow)가 content-curator/trend/run-pipeline을 오염시키지 않게 한다.
+ * sourceStage 미지정은 production 으로 간주(기존 wgang/dlxogns01 동작 불변).
+ */
+export const isProductionCafe = (c: CafeConfig): boolean => c.sourceStage !== 'shadow'
+/** 발행/trend/재시도 판정에 쓰는 production 카페 id (현재: wgang, dlxogns01) */
+export const PRODUCTION_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isProductionCafe).map(c => c.id)
+/** 관찰 전용 shadow 카페 id (현재: 없음) */
+export const SHADOW_CAFE_IDS: string[] = CAFE_CONFIGS.filter(c => c.sourceStage === 'shadow').map(c => c.id)
+
 /** dlxogns01(은퇴 후 50년) 창업자 지정 허용 게시판 13개 — content-curator 후보 필터용 */
 export const DLXOGNS01_ALLOWED_BOARDS: string[] = [
   '귀농·귀촌 이야기', '일자리·자격증 이야기', '취미 이야기', '자유로운 이야기',

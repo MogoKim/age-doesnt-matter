@@ -63,6 +63,7 @@ loadEnvFile(resolve(projectRoot, '.env'))
 // notifier는 db.ts를 import하므로, 반드시 env 로드 후 동적 import
 const { notifySlack, sendSlackMessage } = await import('../core/notifier.js')
 const { prisma, disconnect } = await import('../core/db.js')
+const { PRODUCTION_CAFE_IDS } = await import('./config.js')
 
 const PIPELINE_THRESHOLDS = {
   MIN_CRAWL_POSTS_TOTAL: 10,        // 당일 크롤 10건 미만 = 이상
@@ -139,7 +140,7 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
   console.log(`[Pipeline] ${label} 시작`)
   console.log('='.repeat(50))
 
-  const CONFIGURED_CAFE_IDS = ['wgang', 'dlxogns01']
+  const CONFIGURED_CAFE_IDS = PRODUCTION_CAFE_IDS  // production 카페만 재시도 성공판정 (shadow 실패는 전체 재시도/critical로 번지지 않음)
   let lastError = ''
   let lastFailedCafes: string[] = []
 
