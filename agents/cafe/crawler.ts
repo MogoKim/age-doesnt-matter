@@ -261,6 +261,31 @@ async function extractComments(
     console.warn('[extractComments] 댓글 셀렉터 미매칭 — 댓글 없거나 DOM 구조 변경 가능성')
   }
 
+  // ─── 댓글 목록 렌더 확장 (lazy-load 대응) ───
+  // 네이버 카페 신형 댓글은 초기 3~4개만 렌더되고 나머지는 스크롤 시 로드된다(수집 커버리지 ~40%).
+  // 마지막 댓글을 scrollIntoView → 대기 → item count 재측정. maxComments 도달 / 증가 멈춤 2회 / 최대 4회면 종료.
+  // 더보기 클릭은 미사용(1차): scroll 만으로 lazy-load 유도. 네이버 요청·시간 부하는 pass 4회·조기종료로 제한.
+  const COUNT_SELECTOR = '.CommentItem, .comment_item, .u_cbox_comment'
+  {
+    let prevCount = -1
+    let stagnant = 0
+    for (let pass = 0; pass < 4; pass++) {
+      let curCount = 0
+      try { curCount = await target.locator(COUNT_SELECTOR).count() } catch { break }
+      if (curCount >= maxComments) break
+      if (curCount <= prevCount) {
+        if (++stagnant >= 2) break  // 2회 연속 증가 없음 → 종료
+      } else {
+        stagnant = 0
+      }
+      prevCount = curCount
+      try {
+        await target.locator(COUNT_SELECTOR).last().scrollIntoViewIfNeeded({ timeout: 2000 })
+      } catch { break }
+      await sleep(randomDelay(1150, 0.7, 1.3))  // 800~1500ms 랜덤 대기 (lazy-load 여유)
+    }
+  }
+
   // 네이버 카페 신/구 형식 댓글 컨테이너 셀렉터
   const containerSelectors = [
     '.CommentItem',
