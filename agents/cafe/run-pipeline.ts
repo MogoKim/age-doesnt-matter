@@ -156,6 +156,8 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
 
     // 스크립트 실행
     let scriptFailed = false
+    // 이 attempt 저장분만 성공판정에 반영 (이전 run 저장분·skeleton으로 인한 오판 방지)
+    const attemptStart = new Date()
     try {
       execFileSync('npx', ['tsx', resolve(__dirname, script)], {
         env: { ...process.env },
@@ -169,12 +171,12 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
       console.error(`[Pipeline] ${label} 스크립트 오류 (${attempt}회차):`, lastError.slice(0, 200))
     }
 
-    // 오늘 카페별 저장 수 확인 (CafePost 직접 조회)
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
+    // 이 attempt에서 상세 크롤 저장된 카페 확인 (CafePost 직접 조회)
+    // content: { not: '' } — skeleton/pending(content='')은 저장 성공으로 보지 않는다.
+    //   commentCrawled:true 금지(댓글0 정상 상세글 오판), isUsable:true 금지(usable 낮아도 상세 크롤은 성공).
     const perCafe = await prisma.cafePost.groupBy({
       by: ['cafeId'],
-      where: { crawledAt: { gte: todayStart } },
+      where: { crawledAt: { gte: attemptStart }, content: { not: '' } },
       _count: { id: true },
     })
     lastFailedCafes = CONFIGURED_CAFE_IDS.filter(id => {
