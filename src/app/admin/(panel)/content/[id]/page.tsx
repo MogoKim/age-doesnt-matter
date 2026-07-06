@@ -48,7 +48,7 @@ export default async function AdminPostDetailPage({
         <span>{post.createdAt.toLocaleDateString('ko-KR')}</span>
       </div>
 
-      <PostEditForm postId={post.id} title={post.title} content={post.content} />
+      <PostEditForm postId={post.id} title={post.title} content={post.content} seoTitle={post.seoTitle} seoDescription={post.seoDescription} />
 
       <CommentsPanel comments={post.comments} />
     </div>

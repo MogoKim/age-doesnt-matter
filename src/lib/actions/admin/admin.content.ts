@@ -283,7 +283,7 @@ export async function adminBulkAction(
 
 export async function adminUpdatePostContent(
   postId: string,
-  data: { title: string; content: string }
+  data: { title: string; content: string; seoTitle?: string; seoDescription?: string }
 ) {
   await requireAdmin()
   const trimmedTitle = data.title.trim()
@@ -295,9 +295,19 @@ export async function adminUpdatePostContent(
   })
   if (!post) throw new Error('게시글을 찾을 수 없습니다')
 
+  // SEO 메타: 필드가 전달됐을 때만 갱신. 빈 문자열/공백 → null(구글이 본문 스니펫 자동생성).
+  // undefined(폼에서 미전달)면 update data에서 제외해 기존값 유지.
+  const seoTitle = data.seoTitle === undefined ? undefined : (data.seoTitle.trim() || null)
+  const seoDescription = data.seoDescription === undefined ? undefined : (data.seoDescription.trim() || null)
+
   await prisma.post.update({
     where: { id: postId },
-    data: { title: trimmedTitle, content: data.content },
+    data: {
+      title: trimmedTitle,
+      content: data.content,
+      ...(seoTitle !== undefined ? { seoTitle } : {}),
+      ...(seoDescription !== undefined ? { seoDescription } : {}),
+    },
   })
 
   revalidatePath(`/admin/content/${postId}`)
