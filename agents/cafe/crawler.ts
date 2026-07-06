@@ -251,8 +251,8 @@ async function extractComments(
 ): Promise<CommentData[]> {
   const comments: CommentData[] = []
 
-  // 댓글 렌더링 대기 (동적 로드)
-  await sleep(randomDelay(3000, 0.8, 1.3))
+  // 댓글 렌더링 초기 대기 (동적 로드) — 아래 count 안정화 폴링이 실제 완료를 기다리므로 고정 대기는 최소화
+  await sleep(randomDelay(1000, 0.8, 1.3))
   const selectorFound = await target.waitForSelector(
     '.u_cbox_comment, .CommentItem, .comment_item',
     { timeout: 5000 },
@@ -261,28 +261,28 @@ async function extractComments(
     console.warn('[extractComments] 댓글 셀렉터 미매칭 — 댓글 없거나 DOM 구조 변경 가능성')
   }
 
-  // ─── 댓글 목록 렌더 확장 (lazy-load 대응) ───
-  // 네이버 카페 신형 댓글은 초기 3~4개만 렌더되고 나머지는 스크롤 시 로드된다(수집 커버리지 ~40%).
-  // 마지막 댓글을 scrollIntoView → 대기 → item count 재측정. maxComments 도달 / 증가 멈춤 2회 / 최대 4회면 종료.
-  // 더보기 클릭은 미사용(1차): scroll 만으로 lazy-load 유도. 네이버 요청·시간 부하는 pass 4회·조기종료로 제한.
+  // ─── 댓글 렌더 완료 대기 (네이버 신형: comments/pages XHR 일괄 로드) ───
+  // 실측(2026-07-06, Playwright): 더보기 버튼 없음, 댓글은 comments/pages XHR로 일괄 렌더됨.
+  // 과거 scrollIntoViewIfNeeded loop이 유실 주범 — 마지막 .CommentItem으로 스크롤하면 네이버 댓글
+  // 가상 스크롤이 뷰포트 밖 앞쪽 항목을 detach시켜, 추출 시 3~4개만 남음(수집 ~40% 고착).
+  // 해결: scroll 완전 제거. .CommentItem count가 안정화(3회 연속 동일)될 때까지 500ms 폴링만.
+  // 실측 검증: 동일 글에서 수집 3개 → top-level 5~6개(usable≥5)로 회복. maxComments 도달/10초 상한.
   const COUNT_SELECTOR = '.CommentItem, .comment_item, .u_cbox_comment'
   {
     let prevCount = -1
-    let stagnant = 0
-    for (let pass = 0; pass < 4; pass++) {
-      let curCount = 0
+    let stable = 0
+    const deadline = Date.now() + 10_000  // 최대 10초 (XHR 지연 여유)
+    while (Date.now() < deadline) {
+      let curCount = -1
       try { curCount = await target.locator(COUNT_SELECTOR).count() } catch { break }
       if (curCount >= maxComments) break
-      if (curCount <= prevCount) {
-        if (++stagnant >= 2) break  // 2회 연속 증가 없음 → 종료
+      if (curCount > 0 && curCount === prevCount) {
+        if (++stable >= 3) break  // 3회 연속 동일(≈1.5s) → 렌더 완료
       } else {
-        stagnant = 0
+        stable = 0
       }
       prevCount = curCount
-      try {
-        await target.locator(COUNT_SELECTOR).last().scrollIntoViewIfNeeded({ timeout: 2000 })
-      } catch { break }
-      await sleep(randomDelay(1150, 0.7, 1.3))  // 800~1500ms 랜덤 대기 (lazy-load 여유)
+      await sleep(500)
     }
   }
 
