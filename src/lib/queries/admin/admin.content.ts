@@ -100,6 +100,8 @@ export async function getAdminPostDetail(id: string) {
       category: true,
       title: true,
       content: true,
+      seoTitle: true,
+      seoDescription: true,
       status: true,
       source: true,
       createdAt: true,
