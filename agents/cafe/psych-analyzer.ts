@@ -294,8 +294,10 @@ async function getMiniPsychCandidates(): Promise<{
     take: MINI_CANDIDATE_TAKE,
     select: { id: true, title: true, content: true, topComments: true, boardName: true, killerScore: true },
   })
-  const usable = candidates.filter(p => computeUsableCount(p.topComments) >= 5)
-  const sliced = usable.slice(0, MINI_LIMIT)
+  // usable5 재필터 제거 — usable5 희소 시 mini가 0개만 처리하던 문제(대형 PSYCH_ANALYSIS는 이 필터 없음).
+  // mini도 qualityScore>=30 후보를 killerScore 순으로 MINI_LIMIT까지 실시간 분석해 desireCategory 적체를 줄인다.
+  const sliced = candidates.slice(0, MINI_LIMIT)
+  const usableCount = candidates.filter(p => computeUsableCount(p.topComments) >= 5).length  // 지표/로깅용(분석 대상 필터엔 미사용)
   const maxKillerScore = sliced.length > 0 ? (sliced[0].killerScore ?? 0) : 0
   const posts = sliced.map(p => ({
     id: p.id,
@@ -304,7 +306,7 @@ async function getMiniPsychCandidates(): Promise<{
     topComments: p.topComments,
     boardName: p.boardName,
   })) as PostForAnalysis[]
-  return { posts, candidateCount: candidates.length, usableCount: usable.length, maxKillerScore }
+  return { posts, candidateCount: candidates.length, usableCount, maxKillerScore }
 }
 
 // ── 미분석 글 조회 (7일 rolling window) ──
