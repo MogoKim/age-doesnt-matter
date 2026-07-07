@@ -147,7 +147,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     legacyCrawler: true,
     sourceStage: 'shadow',
     boards: [
-      { name: '쫑알쫑알', menuId: 23, maxPages: 5, priority: 'medium', category: 'lifestyle' },  // 2026-07-07 1→5: 최신1p만 보면 댓글 덜 익어 c5+ 부족 → page2~5(댓글 익은 글) 수집으로 pre-visit 후보 확보
+      { name: '쫑알쫑알', menuId: 23, maxPages: 15, priority: 'medium', category: 'lifestyle' },  // 2026-07-07 5→15: 글이 빨라 1h에 10p+ 밀림. 목록만 넓게 스캔하고 pre-visit(c>=5) 통과 글만 상세, detailCap 30으로 상세 방문 폭증 차단
     ],
   },
 ]
