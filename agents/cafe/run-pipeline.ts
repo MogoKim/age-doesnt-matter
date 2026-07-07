@@ -140,7 +140,12 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
   console.log(`[Pipeline] ${label} 시작`)
   console.log('='.repeat(50))
 
-  const CONFIGURED_CAFE_IDS = PRODUCTION_CAFE_IDS  // production 카페만 재시도 성공판정 (shadow 실패는 전체 재시도/critical로 번지지 않음)
+  // 재시도 성공판정 대상 카페 (기본 production 카페만 — shadow 실패는 전체 재시도/critical로 번지지 않음).
+  // CRAWL_CAFE_FILTER로 일부 카페 신규 크롤을 중단할 때, 성공판정 기대 카페를 CRAWL_EXPECTED_CAFE_IDS로
+  // 좁혀 "크롤 안 하는 카페 0건 → 실패 오판 → 불필요 재시도/critical"을 방지한다. 미설정 시 기존 동작 불변.
+  const CONFIGURED_CAFE_IDS = process.env.CRAWL_EXPECTED_CAFE_IDS
+    ? process.env.CRAWL_EXPECTED_CAFE_IDS.split(',').map(s => s.trim()).filter(Boolean)
+    : PRODUCTION_CAFE_IDS
   let lastError = ''
   let lastFailedCafes: string[] = []
 
