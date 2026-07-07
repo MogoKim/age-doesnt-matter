@@ -19,6 +19,12 @@ on:
     - cron: "0 3 * * *"    # 12:00 KST
     - cron: "0 6 * * *"    # 15:00 KST
     - cron: "0 12 * * *"   # 21:00 KST
+    # 증설 (2026-07-07) — wgang 신규 크롤 2주 중단 공급 보강 (네이버 카페/82cook 시트 URL 처리 빈도↑)
+    - cron: "20 1 * * *"   # 10:20 KST
+    - cron: "40 4 * * *"   # 13:40 KST
+    - cron: "0 8 * * *"    # 17:00 KST
+    - cron: "40 9 * * *"   # 18:40 KST
+    - cron: "30 13 * * *"  # 22:30 KST
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
