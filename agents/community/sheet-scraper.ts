@@ -443,6 +443,22 @@ function extractKeyTerms(title: string): string[] {
 
 const HARD_REMOVE_RE = /^[ㄱ-ㅎㅏ-ㅣ\s!?.,♡♥★☆]+$|^[\d\s.,!?]+$/
 
+// 원문 댓글 직접 사용(2차 PR) 전 위험 댓글 차단 (2026-07-07 안전장치).
+// 복합 패턴 중심 — "보험/투자/카톡" 단독어는 정상 경험담 오탐이라 차단하지 않는다.
+const SC_HARD_REJECT_PATTERNS: RegExp[] = [
+  // 1. 광고/홍보/오픈채팅 (유도 문구 복합)
+  /오픈\s*채팅/, /카톡\s*(검색|추가|아디|아이디)/, /검색\s*후\s*(연락|문의)/,
+  /상담\s*(문의|가능)/, /문의\s*주세요/, /프로필\s*(참고|링크)/,
+  // 2. PII (전화번호/이메일)
+  /01[0-9][-\s.]?\d{3,4}[-\s.]?\d{4}/, /[\w.+-]+@[\w-]+\.[\w.]+/,
+  // 3. 정치/정당/선거
+  /좌파|우파|민주당|국민의힘|이재명|윤석열|정권|종북/,
+  // 4. 노골 욕설
+  /씨발|시발|병신|개새끼|좆|지랄/,
+  // 5. 노골 성적 표현
+  /섹스리스|자위|야동|성기/,
+]
+
 function filterSourceComments(raw: string[]): string[] {
   const seen = new Set<string>()
   return raw
@@ -454,6 +470,7 @@ function filterSourceComments(raw: string[]): string[] {
     .filter(c => {
       if (c.length < 5) return false
       if (HARD_REMOVE_RE.test(c)) return false
+      if (SC_HARD_REJECT_PATTERNS.some(re => re.test(c))) return false  // 광고/PII/정치/욕설/성적 차단
       const key = c.slice(0, 4)
       if (seen.has(key)) return false
       seen.add(key)
