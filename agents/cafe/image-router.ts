@@ -19,6 +19,10 @@ const DAY_CAP = envInt('IMAGE_ROUTER_DAY_CAP', 3)
 const TAB_CAP = envInt('IMAGE_ROUTER_TAB_CAP', 1)
 const PENDING_BACKLOG_LIMIT = envInt('IMAGE_ROUTER_PENDING_BACKLOG_LIMIT', 10)
 
+// 이미지 글 자동 게시(Sheet PENDING append)에서 제외할 카페.
+// wgang(우아한 갱년기): 이미지 글은 게시하지 않음. 수집(crawler)·텍스트 글 활용(trend/content-curator)은 유지.
+const IMAGE_ROUTER_EXCLUDED_CAFE_IDS = ['wgang']
+
 const HUMOR_CATS = new Set(['HUMOR', 'ENTERTAIN'])
 // JOB 제외 — JOB(자격증·정보성)은 STORY(사는이야기)로. 재취업 맥락은 psych가 RETIRE로 매겨 LIFE2.
 const MONEY_CATS = new Set(['MONEY', 'RETIRE', 'HOUSING'])
@@ -114,6 +118,7 @@ export async function main(): Promise<void> {
     // 후보 조회: imageUrls 있음, isUsable=true, usedAt=null, killerScore≥50
     const candidates = await prisma.cafePost.findMany({
       where: {
+        cafeId: { notIn: IMAGE_ROUTER_EXCLUDED_CAFE_IDS },  // wgang 이미지 글 자동 게시 제외
         isUsable: true,
         usedAt: null,
         imageUrls: { isEmpty: false },
