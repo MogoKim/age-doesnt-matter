@@ -24,7 +24,7 @@ import {
   toCuratedSummary,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
-import { DLXOGNS01_ALLOWED_BOARDS, PRODUCTION_CAFE_IDS } from './config.js'
+import { DLXOGNS01_ALLOWED_BOARDS, PRODUCTION_CAFE_IDS, SHADOW_CAFE_IDS } from './config.js'
 import { generateCommunitySlug } from '../core/slug.js'
 import { computeUsableCount } from './compute-usable-count.js'
 import { buildPopularSeoMeta } from './popular-seo.js'
@@ -161,7 +161,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
   const firstWord = topicWords[0] ?? topic
   // commentCount 추가 — usable4 조건부 후보 판정용(cnt>=8). usable>=5 경로는 이 필드를 읽지 않아 동작 무변경.
-  const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true, desireCategory: true, commentCount: true } as const
+  const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true, desireCategory: true, commentCount: true, cafeId: true } as const
   // killerScore 상위권(~63위)이 usable<5인 경우가 많아 넉넉히 조회 후 usable 필터 적용.
   // 실측: killerScore top-63 전체가 usable<5, 64위부터 usable≥5 등장 → 최소 150개 필요.
   const candidateTake = Math.max(limit * 50, 150)
@@ -244,6 +244,22 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   })))
   if (s3.length >= limit) return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
 
+  // shadow fallback (2026-07-07 응급): production refs가 limit 미달일 때만 remon(shadow) usable5로 보충.
+  //   wgang 2주 크롤 중단으로 7일 이내 production usable5 재고 고갈 → 발행 중단 완화용.
+  //   remon refs는 "생성 참고"로만 쓰이며 usedAt 마킹은 하지 않는다(sourcePostIds에서 shadow 제외 — generateCuratedPost).
+  //   trend/hotTopics/killerPosts 정규 후보에는 절대 편입하지 않음(이 함수 refs 반환에만).
+  const fillWithShadow = async (prodRefs: typeof s3): Promise<typeof s3> => {
+    if (prodRefs.length >= limit || SHADOW_CAFE_IDS.length === 0) return prodRefs
+    const prodIds = new Set(prodRefs.map(p => p.id))
+    const shadowRefs = withUsableFilter(filterBlocked(await prisma.cafePost.findMany({
+      where: { ...base, cafeId: { in: SHADOW_CAFE_IDS }, postedAt: { gte: cutoff7d } },
+      orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
+      take: candidateTake, select: selectFields,
+    }))).filter(p => !prodIds.has(p.id))
+    if (shadowRefs.length > 0) console.log(`[ContentCurator] shadow fallback (production ${prodRefs.length}<${limit}): remon usable5 ${shadowRefs.length}개 보충`)
+    return [...prodRefs, ...shadowRefs].slice(0, limit)
+  }
+
   // 4단계: desireCategory 무관 전체 pool — DB 카테고리 분류 97% NULL 상태 보완
   // GENERAL은 stage 3와 동일 쿼리라 스킵
   if (desireCat !== 'GENERAL') {
@@ -254,9 +270,9 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
       take: candidateTake, select: selectFields,
     }))).filter(p => !s3ids.has(p.id))
     if (s4.length > 0) console.log(`[ContentCurator] stage4 fallback (${desireCat}→NULL pool): ${s4.length}개 발견`)
-    return { refs: [...s3, ...s4].slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
+    return { refs: await fillWithShadow([...s3, ...s4].slice(0, limit)), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
   }
-  return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
+  return { refs: await fillWithShadow(s3.slice(0, limit)), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
 }
 
 /**
@@ -301,7 +317,7 @@ function resolveBoardForPost(ownDesire: string | null | undefined, bucketDesire:
 async function generateCuratedPost(
   persona: PersonaMatch,
   topic: string,
-  referencePosts: { id: string; title: string; content: string; cafeName: string; desireCategory?: string | null }[],
+  referencePosts: { id: string; title: string; content: string; cafeName: string; desireCategory?: string | null; cafeId?: string }[],
   desireCat?: string,
 ): Promise<CuratedContent | null> {
   const mainRef = referencePosts[0]
@@ -319,7 +335,9 @@ async function generateCuratedPost(
     boardType: boardInfo.boardType,
     category: boardInfo.category,
     sourceTopic: topic,
-    sourcePostIds: [mainRef.id],
+    // shadow(remon) ref는 usedAt 마킹하지 않는다(reference fallback 전용) → sourcePostIds에서 제외.
+    // production ref면 기존대로 마킹. shadow만일 땐 빈 배열 → cafePostId=null, usedAt 미마킹.
+    sourcePostIds: (mainRef.cafeId && SHADOW_CAFE_IDS.includes(mainRef.cafeId)) ? [] : [mainRef.id],
   }
 }
 
