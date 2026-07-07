@@ -68,30 +68,76 @@ interface PersonaMapping {
 // 기존 E/H/P 별칭(봄바람/매일걷기/오후세시)은 Google Sheet E열 override 호환성 유지를 위해 유지.
 // 실제 서비스 표시 닉네임은 persona-data.ts(getBotUser) 기준: E=미숙이맘, H=걷기매니아58, P=love1961
 // E열 수동 지정은 boardType 검증 없이 존중 (창업자가 LIFE2 탭에 STORY 페르소나를 지정해도 허용)
+// 2026-07-07 다양화: 게시글 작성자 쏠림(오후햇살 22%) 완화. persona-data.ts 미사용 봇을 category별로 편입.
+// - 기존 19명의 nickname(별칭)은 E열 override 호환 위해 유지(봄바람=E, 매일걷기=H, 오후세시=P 등).
+// - 신규 추가분은 persona-data.ts 실제 nickname 사용. id는 persona-data key(getBotUser 매핑).
+// - BI~BW는 댓글 wave 전용(WAVE_PERSONAS)이라 게시글 풀에 넣지 않음. JOB/EN/N 특수 persona 제외.
 const PERSONAS: PersonaMapping[] = [
-  // ── HUMOR ──
+  // ── HUMOR (7) ──
   { id: 'C',  nickname: 'ㅋㅋ요정',   categories: ['유머'],         boards: ['HUMOR'] },
-  { id: 'R',  nickname: '밤새봤다',   categories: ['유머', '힐링'], boards: ['HUMOR'] },
-  { id: 'AF', nickname: '하하호호',   categories: ['유머', '자랑'], boards: ['HUMOR'] },
-  { id: 'I',  nickname: '한페이지',   categories: ['힐링', '추천'], boards: ['HUMOR'] },
+  { id: 'AF', nickname: '하하호호',   categories: ['유머'],         boards: ['HUMOR'] },
+  { id: 'AY', nickname: '웃음보따리', categories: ['유머'],         boards: ['HUMOR'] },
+  { id: 'R',  nickname: '밤새봤다',   categories: ['힐링'],         boards: ['HUMOR'] },
   { id: 'AO', nickname: '웃음충전',   categories: ['힐링', '추천'], boards: ['HUMOR'] },
-  // ── STORY ──
-  { id: 'E',  nickname: '봄바람',     categories: ['일상', '고민'], boards: ['STORY'] },
-  { id: 'A',  nickname: '하늘바라기', categories: ['일상', '고민'], boards: ['STORY'] },
-  { id: 'H',  nickname: '매일걷기',   categories: ['건강'],         boards: ['STORY'] },
-  { id: 'M',  nickname: '등산만보',   categories: ['건강'],         boards: ['STORY'] },
-  { id: 'AN', nickname: '약국단골',   categories: ['건강'],         boards: ['STORY'] },
-  { id: 'L',  nickname: '손주러브',   categories: ['자녀'],         boards: ['STORY'] },
-  { id: 'K',  nickname: '예쁘게살자', categories: ['자랑', '추천'], boards: ['STORY'] },
-  // ── 만능 fallback (STORY+HUMOR) ──
-  { id: 'P',  nickname: '오후세시',   categories: ['기타'],         boards: ['STORY', 'HUMOR'] },
-  { id: 'U',  nickname: '부산아지매', categories: ['기타'],         boards: ['STORY'] },
-  { id: 'Q',  nickname: '멍멍이엄마', categories: ['기타'],         boards: ['STORY'] },
-  // ── LIFE2 (2막준비 게시판) ──
+  { id: 'AP', nickname: '짤방요정',   categories: ['힐링'],         boards: ['HUMOR'] },
+  { id: 'AX', nickname: '밴드여왕',   categories: ['추천'],         boards: ['HUMOR'] },
+  // ── STORY 일상 ──
+  { id: 'A',  nickname: '하늘바라기', categories: ['일상'], boards: ['STORY'] },
+  { id: 'E',  nickname: '봄바람',     categories: ['일상'], boards: ['STORY'] },
+  { id: 'I',  nickname: '한페이지',   categories: ['일상'], boards: ['STORY'] },
+  { id: 'F',  nickname: '경기댁',     categories: ['일상'], boards: ['STORY'] },
+  { id: 'G',  nickname: '혼자여행ok', categories: ['일상'], boards: ['STORY'] },
+  { id: 'S',  nickname: '제주살이',   categories: ['일상'], boards: ['STORY'] },
+  { id: 'AC', nickname: '느긋이',     categories: ['일상'], boards: ['STORY'] },
+  { id: 'AI', nickname: '마당있는집', categories: ['일상'], boards: ['STORY'] },
+  { id: 'AV', nickname: '혼밥일기',   categories: ['일상'], boards: ['STORY'] },
+  { id: 'AW', nickname: '손뜨개',     categories: ['일상'], boards: ['STORY'] },
+  { id: 'AQ', nickname: '조용한수다', categories: ['일상'], boards: ['STORY'] },
+  // ── STORY 고민 ──
+  { id: 'X',  nickname: '걱정인형',     categories: ['고민'], boards: ['STORY'] },
+  { id: 'AA', nickname: '어휴답답',     categories: ['고민'], boards: ['STORY'] },
+  { id: 'AM', nickname: '불안한밤',     categories: ['고민'], boards: ['STORY'] },
+  { id: 'AH', nickname: '피곤해요',     categories: ['고민'], boards: ['STORY'] },
+  { id: 'BC', nickname: '억울한아내',   categories: ['고민'], boards: ['STORY'] },
+  { id: 'BD', nickname: '고부갈등맘',   categories: ['고민'], boards: ['STORY'] },
+  { id: 'BF', nickname: '속터지는현실', categories: ['고민'], boards: ['STORY'] },
+  { id: 'AJ', nickname: '가족곁에서',   categories: ['고민', '자녀'], boards: ['STORY'] },
+  // ── STORY 건강 ──
+  { id: 'H',  nickname: '매일걷기', categories: ['건강'],         boards: ['STORY'] },
+  { id: 'M',  nickname: '등산만보', categories: ['건강'],         boards: ['STORY'] },
+  { id: 'AN', nickname: '약국단골', categories: ['건강'],         boards: ['STORY'] },
+  { id: 'AL', nickname: '헬스덕후', categories: ['건강'],         boards: ['STORY'] },
+  { id: 'AU', nickname: '체력왕',   categories: ['건강', '자랑'], boards: ['STORY'] },
+  // ── STORY 자녀 ──
+  { id: 'L',  nickname: '손주러브',   categories: ['자녀'], boards: ['STORY'] },
+  { id: 'AK', nickname: '엄마뭐해요', categories: ['자녀'], boards: ['STORY'] },
+  // ── STORY 자랑 ──
+  { id: 'K',  nickname: '예쁘게살자', categories: ['자랑'], boards: ['STORY'] },
+  { id: 'J',  nickname: '이밥차밥',   categories: ['자랑'], boards: ['STORY'] },
+  // ── STORY 추천 ──
+  { id: 'T',  nickname: '배움은즐거워', categories: ['추천'], boards: ['STORY'] },
+  { id: 'AT', nickname: '자격증도전',   categories: ['추천'], boards: ['STORY'] },
+  { id: 'AG', nickname: '비교분석왕',   categories: ['추천'], boards: ['STORY'] },
+  { id: 'O',  nickname: '올드팝',       categories: ['추천'], boards: ['STORY'] },
+  { id: 'AR', nickname: '요즘세상',     categories: ['추천'], boards: ['STORY'] },
+  // ── STORY 기타 ──
+  { id: 'P',  nickname: '오후세시',   categories: ['기타'], boards: ['STORY'] },
+  { id: 'U',  nickname: '부산아지매', categories: ['기타'], boards: ['STORY'] },
+  { id: 'Q',  nickname: '멍멍이엄마', categories: ['기타'], boards: ['STORY'] },
+  { id: 'AD', nickname: '그때그시절', categories: ['기타'], boards: ['STORY'] },
+  { id: 'AE', nickname: '새벽감성',   categories: ['기타'], boards: ['STORY'] },
+  { id: 'V',  nickname: '웃음천만개', categories: ['기타'], boards: ['STORY'] },
+  { id: 'W',  nickname: '참나진짜',   categories: ['기타'], boards: ['STORY'] },
+  { id: 'Z',  nickname: '혼자잘산다', categories: ['기타'], boards: ['STORY'] },
+  { id: 'BG', nickname: '황당목격자', categories: ['기타'], boards: ['STORY'] },
+  { id: 'BH', nickname: '반전언니',   categories: ['기타'], boards: ['STORY'] },
+  // ── LIFE2 (6, category 세분 없이 board pool 공유) ──
   { id: 'B',  nickname: '정순씨',     categories: ['일상', '고민', '은퇴'], boards: ['LIFE2'] },
   { id: 'Y',  nickname: '솔직히말해서', categories: ['고민', '기타'],        boards: ['LIFE2'] },
   { id: 'AB', nickname: '따져보자',   categories: ['일상', '기타'],         boards: ['LIFE2'] },
   { id: 'BX', nickname: '말티즈엄마', categories: ['일상', '기타'],         boards: ['LIFE2'] },
+  { id: 'AZ', nickname: '돈공부중',   categories: ['재테크', '은퇴', '기타'], boards: ['LIFE2'] },
+  { id: 'BA', nickname: '은퇴준비중', categories: ['은퇴', '기타'],         boards: ['LIFE2'] },
 ]
 
 function getBoardSlug(boardType: 'STORY' | 'HUMOR' | 'LIFE2'): string {
@@ -100,12 +146,32 @@ function getBoardSlug(boardType: 'STORY' | 'HUMOR' | 'LIFE2'): string {
   return 'life2'
 }
 
-function pickPersona(
+// cooldown: 최근 같은 boardType SHEET 게시글에서 쓴 persona를 자동 선택 후보에서 제외.
+const PERSONA_COOLDOWN_RECENT = 10   // 최근 N개 SHEET 게시글 조회
+const PERSONA_CATEGORY_MIN = 5       // categoryPool이 이 수 미만이면 boardPool로 확장
+
+/** 최근 같은 board SHEET 게시글 author.email에서 최근 사용 persona id 추출 (getBotUser 미호출) */
+async function recentSheetPersonaIds(boardType: 'STORY' | 'HUMOR' | 'LIFE2'): Promise<Set<string>> {
+  const recent = await prisma.post.findMany({
+    where: { source: 'SHEET', boardType },
+    orderBy: { createdAt: 'desc' },
+    take: PERSONA_COOLDOWN_RECENT,
+    select: { author: { select: { email: true } } },
+  })
+  const ids = new Set<string>()
+  for (const p of recent) {
+    const m = p.author?.email?.match(/^bot-(.+)@unao\.bot$/i)
+    if (m) ids.add(m[1].toUpperCase())
+  }
+  return ids
+}
+
+async function pickPersona(
   category: string,
   boardType: 'STORY' | 'HUMOR' | 'LIFE2',
   overrideNickname?: string,
-): PersonaMapping {
-  // 창업자가 지정한 닉네임/ID 우선
+): Promise<PersonaMapping> {
+  // 창업자가 지정한 닉네임/ID 우선 (cooldown보다 최우선 — 기존 동작 유지)
   if (overrideNickname) {
     const match = PERSONAS.find(
       (p) => p.nickname === overrideNickname || p.id === overrideNickname.toUpperCase(),
@@ -113,20 +179,27 @@ function pickPersona(
     if (match) return match
   }
 
-  // category + boardType 매칭 풀에서 랜덤 선택
-  const categoryPool = PERSONAS.filter(
-    (p) => p.categories.includes(category) && p.boards.includes(boardType),
+  // 최근 사용 persona 제외 (cooldown)
+  const recentIds = await recentSheetPersonaIds(boardType)
+  const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
+
+  // category + boardType 매칭 풀 (cooldown 적용)
+  let categoryPool = PERSONAS.filter(
+    (p) => p.categories.includes(category) && p.boards.includes(boardType) && !recentIds.has(p.id),
   )
-  if (categoryPool.length > 0)
-    return categoryPool[Math.floor(Math.random() * categoryPool.length)]
+  // cooldown 후 5명 미만이면 boardPool로 확장 (cooldown 유지)
+  if (categoryPool.length < PERSONA_CATEGORY_MIN) {
+    const boardPoolCooled = PERSONAS.filter((p) => p.boards.includes(boardType) && !recentIds.has(p.id))
+    if (boardPoolCooled.length > categoryPool.length) categoryPool = boardPoolCooled
+  }
+  if (categoryPool.length > 0) return pick(categoryPool)
 
-  // boardType만 매칭 풀에서 랜덤 선택
+  // fallback 1: cooldown 무시하고 boardType 매칭
   const boardPool = PERSONAS.filter((p) => p.boards.includes(boardType))
-  if (boardPool.length > 0)
-    return boardPool[Math.floor(Math.random() * boardPool.length)]
+  if (boardPool.length > 0) return pick(boardPool)
 
-  // 최종 fallback: 전체 풀 랜덤
-  return PERSONAS[Math.floor(Math.random() * PERSONAS.length)]
+  // fallback 2: 전체 풀 랜덤
+  return pick(PERSONAS)
 }
 
 // ── 카테고리 결정 (하이브리드: 시트 D열 → 자동분류 → 게시판 기본값) ──
@@ -749,7 +822,7 @@ export async function main() {
             }
 
             // 페르소나 선택
-            const persona = pickPersona(category, tab.boardType, row.persona)
+            const persona = await pickPersona(category, tab.boardType, row.persona)
             const userId = await getBotUser(persona.id)
 
             // 게시 (삭제된 게시글 재활용 또는 신규 생성)
