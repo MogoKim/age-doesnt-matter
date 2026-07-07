@@ -484,6 +484,47 @@ interface ArticleInfo {
   oldFormatUrl: string   // cafe.naver.com/{name}?iframe_url_utf8=...
   boardName: string | null
   boardCategory: ContentCategory | null
+  // ── 목록 pre-visit 메타 (shadow 카페 collectPostUrls에서만 채움. 미채움=undefined) ──
+  title?: string
+  commentCount?: number
+  viewCount?: number
+  likeCount?: number
+  postedAt?: string      // 원문 표기 (HH:mm 또는 YYYY.MM.DD)
+  isNotice?: boolean     // 공지/필독/체험단/추천 상단고정 row
+  noticeType?: string    // board-notice type_required|main|menu|up
+}
+
+// ── shadow 카페 pre-visit 필터 (PR-B) ─────────────────────────
+// 목적: 목록 DOM에서 commentCount 등을 읽어, 저-engagement/공지/HARD_REJECT 글을
+//       상세 방문 전에 보류(전수 상세 방문 낭비 제거). shadow 카페(현재 remonterrace)만 적용.
+// production(wgang/dlxogns01)은 이 경로를 타지 않아 동작 불변.
+const PREVISIT_MIN_COMMENTS = 5
+
+/** 목록 row 하나에서 pre-visit 메타 파싱 (page.evaluate 컨텍스트에서 실행되는 순수 함수용 텍스트 파서) */
+function parseListRowMeta(rowText: string): { commentCount: number; viewCount: number; likeCount: number; postedAt: string } {
+  // 댓글수: "댓글수 ... [N]" 라벨 뒤 대괄호 숫자. 없으면 0.
+  const cm = rowText.match(/댓글수[\s\S]{0,6}\[(\d[\d,]*)\]/)
+  const commentCount = cm ? Number(cm[1].replace(/,/g, '')) : 0
+  // 마지막 라인: (HH:mm | YYYY.MM.DD.) <view> <like>  — view는 "1.5만" 축약 가능
+  const tail = rowText.match(/(\d{1,2}:\d{2}|\d{4}\.\d{2}\.\d{2}\.?)\s+([\d.,]+만?)\s+([\d,]+)\s*$/)
+  const toNum = (s: string): number => s.includes('만')
+    ? Math.round(parseFloat(s.replace('만', '').replace(/,/g, '')) * 10000)
+    : Number(s.replace(/,/g, '')) || 0
+  return {
+    commentCount,
+    viewCount: tail ? toNum(tail[2]) : 0,
+    likeCount: tail ? toNum(tail[3]) : 0,
+    postedAt: tail ? tail[1] : '',
+  }
+}
+
+/** shadow 카페 상세 방문 여부 판정 — 공지/HARD_REJECT/저댓글 보류 */
+function passesPreVisit(a: ArticleInfo): boolean {
+  if (a.isNotice) return false                                   // 공지·필독·체험단·광고·추천 상단고정
+  if (a.commentCount === undefined) return true                  // 목록 파싱 실패 → 안전하게 통과(전수 방문 폴백)
+  const title = a.title ?? ''
+  if (SHADOW_AGE_HARD_REJECT.some(k => title.includes(k))) return false  // 육아 등 HARD_REJECT title
+  return a.commentCount >= PREVISIT_MIN_COMMENTS                 // commentCount 기준(최소안 — freshHold/score는 PR-C)
 }
 
 /** 글 목록 URL 수집 — 게시판별 크롤링 + 메인 페이지 폴백 */
@@ -534,22 +575,59 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
         console.log(`[CafeCrawler] 인기글 셀렉터 매칭: ${links.length}개 링크 발견`)
       }
       let boardCount = 0
-      for (const link of links) {
-        const href = await link.getAttribute('href')
-        if (!href) continue
-        // 인기글: articleid=N 패턴, 일반: /articles/N 패턴
-        const match = board.isPopular
-          ? href.match(/articleid=(\d+)/)
-          : href.match(/\/articles\/(\d+)/)
-        if (match && !collectedMap.has(match[1])) {
-          collectedMap.set(match[1], {
-            articleId: match[1],
-            newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${match[1]}`,
-            oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${match[1]}`,
+      // shadow 카페(remonterrace 등): 목록 row 메타(commentCount/view/like/notice) 파싱 → pre-visit 필터용.
+      // production(wgang/dlxogns01)·인기글은 기존 href 정규식 경로 그대로(동작 불변).
+      if (SHADOW_CAFE_IDS.includes(cafe.id) && !board.isPopular) {
+        const rawRows = await page.evaluate(() => {
+          const anchors = Array.from(document.querySelectorAll('a[href*="/articles/"]')) as HTMLAnchorElement[]
+          const seen = new Set<string>()
+          const out: { id: string; title: string; rowText: string; cls: string }[] = []
+          for (const a of anchors) {
+            const m = a.href.match(/\/articles\/(\d+)/)
+            if (!m) continue
+            const id = m[1]
+            if (seen.has(id)) continue
+            seen.add(id)
+            const row = a.closest('.board-notice') || a.closest('tr') || a.closest('li') || a.parentElement
+            const el = row as HTMLElement | null
+            out.push({ id, title: (a.innerText || '').trim(), rowText: (el?.innerText || ''), cls: (el?.className || '').toString() })
+          }
+          return out
+        })
+        for (const r of rawRows) {
+          if (collectedMap.has(r.id)) continue
+          const meta = parseListRowMeta(r.rowText)
+          collectedMap.set(r.id, {
+            articleId: r.id,
+            newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${r.id}`,
+            oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${r.id}`,
             boardName: board.name,
             boardCategory: board.category,
+            title: r.title,
+            isNotice: r.cls.includes('board-notice'),
+            noticeType: (r.cls.match(/type_\w+/) || [])[0],
+            ...meta,
           })
           boardCount++
+        }
+      } else {
+        for (const link of links) {
+          const href = await link.getAttribute('href')
+          if (!href) continue
+          // 인기글: articleid=N 패턴, 일반: /articles/N 패턴
+          const match = board.isPopular
+            ? href.match(/articleid=(\d+)/)
+            : href.match(/\/articles\/(\d+)/)
+          if (match && !collectedMap.has(match[1])) {
+            collectedMap.set(match[1], {
+              articleId: match[1],
+              newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${match[1]}`,
+              oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${match[1]}`,
+              boardName: board.name,
+              boardCategory: board.category,
+            })
+            boardCount++
+          }
         }
       }
       console.log(`[CafeCrawler] ${cafe.name} 게시판 "${board.name}": ${boardCount}개 신규 수집 (총 ${collectedMap.size}개)`)
@@ -1536,6 +1614,14 @@ async function main() {
         if (consecutiveFails >= MAX_CONSECUTIVE_FAILS) {
           console.warn(`[CafeCrawler] ${cafe.name}: 연속 ${MAX_CONSECUTIVE_FAILS}회 실패 — 차단 의심, 이 카페 스킵`)
           break
+        }
+
+        // Pre-visit 필터 (shadow 카페만) — 공지/HARD_REJECT/저댓글 글은 상세 방문 전 보류.
+        // production(wgang/dlxogns01)은 article에 목록 메타가 없어 이 블록을 타지 않는다(동작 불변).
+        if (SHADOW_CAFE_IDS.includes(cafe.id) && article.commentCount !== undefined && !passesPreVisit(article)) {
+          console.log(`[CafeCrawler] ${cafe.name} pre-visit 보류: c${article.commentCount}${article.isNotice ? '/공지' : ''} "${(article.title ?? '').slice(0, 24)}"`)
+          totalSkipped++
+          continue
         }
 
         // Pre-crawl 중복 체크 — 이미 DB에 있는 글은 브라우저 방문 없이 스킵
