@@ -147,7 +147,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     legacyCrawler: true,
     sourceStage: 'shadow',
     boards: [
-      { name: '쫑알쫑알', menuId: 23, maxPages: 1, priority: 'medium', category: 'lifestyle' },
+      { name: '쫑알쫑알', menuId: 23, maxPages: 5, priority: 'medium', category: 'lifestyle' },  // 2026-07-07 1→5: 최신1p만 보면 댓글 덜 익어 c5+ 부족 → page2~5(댓글 익은 글) 수집으로 pre-visit 후보 확보
     ],
   },
 ]

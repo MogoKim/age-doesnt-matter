@@ -668,7 +668,9 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
   }
 
   // 방법 2: 카페 메인 페이지 (보충 — 총 수집이 10개 미만일 때)
-  if (collectedMap.size < 10) {
+  // shadow 카페(remonterrace 등)는 메인 보충 금지 — 메인은 전 게시판 최신글이라 지정 board(쫑알쫑알) 밖을
+  // 방문하게 되고, pre-visit 필터(shadow board 분기)도 우회한다. 지정 board만 수집한다.
+  if (collectedMap.size < 10 && !SHADOW_CAFE_IDS.includes(cafe.id)) {
     try {
       console.log(`[CafeCrawler] ${cafe.name} — 메인 페이지 보충 수집...`)
       await page.goto(cafe.url, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
@@ -1249,8 +1251,18 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
 export async function refreshRecentPosts(): Promise<number> {
   const cutoff7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
 
+  // CRAWL_CAFE_FILTER를 refresh에도 적용 — 미적용 시 wgang 등 차단 카페 글을 네이버 재방문(정책 위반).
+  // main crawl loop(1595)와 동일 env를 공유해, 지정 카페만 refresh 대상으로 한다.
+  const refreshCafeFilter = process.env.CRAWL_CAFE_FILTER
+    ? process.env.CRAWL_CAFE_FILTER.split(',').map(s => s.trim()).filter(Boolean)
+    : null
+
   const posts = await prisma.cafePost.findMany({
-    where: { crawledAt: { gte: cutoff7d }, postUrl: { not: '' } },
+    where: {
+      crawledAt: { gte: cutoff7d },
+      postUrl: { not: '' },
+      ...(refreshCafeFilter ? { cafeId: { in: refreshCafeFilter } } : {}),
+    },
     select: { id: true, postUrl: true, commentCount: true, likeCount: true },
     orderBy: { commentCount: 'desc' },
     take: 50,
@@ -1610,9 +1622,19 @@ async function main() {
       let consecutiveFails = 0
       const MAX_CONSECUTIVE_FAILS = 5
 
+      // shadow 상세 방문 상한 (detailCapPerRun) — maxPages 상향(1→5)으로 pre-visit 통과 후보가 늘어도
+      // 1회 실행당 신규 상세 방문을 30건으로 제한(리소스·차단위험 보호). production은 무제한(동작 불변).
+      const SHADOW_DETAIL_CAP = 30
+      const isShadowCafe = SHADOW_CAFE_IDS.includes(cafe.id)
+      let shadowDetailVisits = 0
+
       for (const article of articles) {
         if (consecutiveFails >= MAX_CONSECUTIVE_FAILS) {
           console.warn(`[CafeCrawler] ${cafe.name}: 연속 ${MAX_CONSECUTIVE_FAILS}회 실패 — 차단 의심, 이 카페 스킵`)
+          break
+        }
+        if (isShadowCafe && shadowDetailVisits >= SHADOW_DETAIL_CAP) {
+          console.log(`[CafeCrawler] ${cafe.name}: detailCap ${SHADOW_DETAIL_CAP} 도달 — 남은 후보 이번 회차 보류`)
           break
         }
 
@@ -1634,6 +1656,7 @@ async function main() {
           continue
         }
 
+        if (isShadowCafe) shadowDetailVisits++  // 실제 상세 방문(중복 스킵 제외)만 detailCap에 계상
         const post = await crawlPost(page, article, cafe, includeComments)
         if (post) {
           posts.push(post)
