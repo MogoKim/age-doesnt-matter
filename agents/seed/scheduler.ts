@@ -771,6 +771,21 @@ function clampImageLikeTargetCount(targetCount: number | undefined, sourceCommen
   return Math.min(targetCount, maxForImageLike)
 }
 
+// ── 원문 댓글 직접 사용(2차 PR, 2026-07-07) — SHEET 파동 AI 호출 생략 ──
+// data.sourceComments는 sheet-scraper의 filterSourceComments(광고/PII/정치/욕설/성적 차단)를 이미 통과한 것.
+// 여기서는 "맥락 의존" 댓글만 추가 제거한다 — 원 글/이전 댓글/외부 링크를 지시대로 봐야 뜻이 통하는 것.
+// 정상 경험담을 과잉 차단하지 않도록 협소하게: 원글님/글쓴이님/님은/본문에/영상보면/사진보니 등은 통과시킨다.
+const SC_CONTEXT_DEPENDENT_RE = /윗분|위에분|위\s*댓글|윗글|대댓글|여기\s*댓글|위\s*링크|링크\s*보니|링크\s*눌러|링크\s*클릭|캡처\s*보니/
+function pickDirectSourceComments(filtered: string[]): string[] {
+  return filtered.filter(c => !SC_CONTEXT_DEPENDENT_RE.test(c))
+}
+/** 파동 baseOffset만큼 회전한 원문 큐 — 파동 간 시작점을 달리해 중복 완화(파동 내 index로 유니크 보장). */
+function rotateSource(directSource: string[], baseOffset: number): string[] {
+  if (directSource.length === 0) return []
+  const k = baseOffset % directSource.length
+  return [...directSource.slice(k), ...directSource.slice(0, k)]
+}
+
 /** SHEET 화제성 글 좋아요 파동 — promotionLevel HOT 트랜잭션 포함 (Risk B 대응) */
 async function processViralLikeWave(postId: string, personaIds: string[]): Promise<number> {
   let liked = 0
@@ -902,6 +917,11 @@ export async function processSheetEngagementWaves(): Promise<void> {
 
         const sourceComments = data.sourceComments ?? []
         const rawContent = post.content ?? ''
+        // 원문 직접 사용(AI 생략) 준비 — sc>=5 && 맥락통과>=3이면 generateSheetViralComment 호출 생략.
+        // 이 파동(engagement 일반)은 waveType 개념이 없어 baseOffset=0.
+        const directSource = pickDirectSourceComments(sourceComments)
+        const useDirectSource = sourceComments.length >= 5 && directSource.length >= 3
+        const rotatedSource = useDirectSource ? rotateSource(directSource, 0) : []
         const imageLikePost = isImageLikeSheetContent(rawContent)
         const targetCount = imageLikePost
           ? clampImageLikeTargetCount(data.targetCount, sourceComments.length)
@@ -932,18 +952,21 @@ export async function processSheetEngagementWaves(): Promise<void> {
           if (existing) { skipReasons.existingComment++; continue }
 
           const priorCommentTexts = [...existingPriorTexts, ...generatedTexts].slice(-3)
-          const commentText = await generateSheetViralComment(
-            personaId,
-            post.title,
-            rawContent,
-            'empathy',
-            [],
-            sourceComments,
-            {
-              sourceCommentIndex: sourceComments.length > 1 ? inserted % sourceComments.length : undefined,
-              priorCommentTexts: priorCommentTexts.length > 0 ? priorCommentTexts : undefined,
-            },
-          )
+          // 조건 충족 & 원문 남음 → AI 호출 없이 원문 직접 사용(파동 내 index로 유니크). 소진/미충족 → 기존 Sonnet.
+          const commentText = (useDirectSource && inserted < rotatedSource.length)
+            ? rotatedSource[inserted]
+            : await generateSheetViralComment(
+                personaId,
+                post.title,
+                rawContent,
+                'empathy',
+                [],
+                sourceComments,
+                {
+                  sourceCommentIndex: sourceComments.length > 1 ? inserted % sourceComments.length : undefined,
+                  priorCommentTexts: priorCommentTexts.length > 0 ? priorCommentTexts : undefined,
+                },
+              )
           if (!commentText) { skipReasons.emptyGenerated++; continue }
 
           await prisma.$transaction([
@@ -1119,6 +1142,11 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
         const insertedAuthorIds = new Set<string>()
         const WAVE_BASE_OFFSET: Record<string, number> = { empathy: 0, critical: 3, reversal: 5 }
         const baseOffset = WAVE_BASE_OFFSET[waveType] ?? 0
+        // 원문 직접 사용(AI 생략) 준비 — sc>=5 && 맥락통과>=3이면 generateSheetViralComment 호출 생략.
+        // waveType별 baseOffset만큼 회전해 파동 간 원문 시작점을 달리한다(파동 내 index로 유니크).
+        const directSource = pickDirectSourceComments(sourceComments)
+        const useDirectSource = sourceComments.length >= 5 && directSource.length >= 3
+        const rotatedSource = useDirectSource ? rotateSource(directSource, baseOffset) : []
         const generatedTexts: string[] = []
         const existingPriorTexts = (await prisma.comment.findMany({
           where: { postId: data.postId, author: { email: { endsWith: '@unao.bot' } } },
@@ -1143,18 +1171,21 @@ export async function processPendingSheetCommentWaves(): Promise<void> {
           if (existing) { skipReasons.existingComment++; continue }
 
           const priorCommentTexts = [...existingPriorTexts, ...generatedTexts].slice(-3)
-          const commentText = await generateSheetViralComment(
-            personaId,
-            post.title,
-            rawContent,
-            waveType,
-            keyTerms,
-            sourceComments,
-            {
-              sourceCommentIndex: sourceComments.length > 1 ? (baseOffset + inserted) % sourceComments.length : undefined,
-              priorCommentTexts: priorCommentTexts.length > 0 ? priorCommentTexts : undefined,
-            },
-          )
+          // 조건 충족 & 원문 남음 → AI 호출 없이 원문 직접 사용(파동 내 index로 유니크). 소진/미충족 → 기존 Sonnet.
+          const commentText = (useDirectSource && inserted < rotatedSource.length)
+            ? rotatedSource[inserted]
+            : await generateSheetViralComment(
+                personaId,
+                post.title,
+                rawContent,
+                waveType,
+                keyTerms,
+                sourceComments,
+                {
+                  sourceCommentIndex: sourceComments.length > 1 ? (baseOffset + inserted) % sourceComments.length : undefined,
+                  priorCommentTexts: priorCommentTexts.length > 0 ? priorCommentTexts : undefined,
+                },
+              )
           if (!commentText || commentText.length < 5) {
             skipReasons.emptyGenerated++
             console.log(`  [SheetViral] ⚠️ 댓글 스킵 — 빈값 또는 5자 미만 (persona=${personaId}, post=${data.postId.slice(0, 8)})`)
