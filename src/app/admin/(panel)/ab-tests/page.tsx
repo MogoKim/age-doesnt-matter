@@ -223,24 +223,25 @@ function RetentionPanel({ data }: { data: ExperimentRetentionView }) {
   )
 }
 
-// 진행 중 실험 — 관련글 추천 algo v1/v2(related_algo_v2, PR #30). registry/assign 이 아니라 algo_version 기반 집계.
-// 지표: 노출·인라인 클릭·CTR·네이버 next-page rate·네이버 PV/session. 표본 부족이면 "표본 부족"으로 표시.
+// 종료된 실험 — 관련글 추천 algo v1/v2(related_algo_v2, PR #30). registry/assign 이 아니라 algo_version 기반 집계.
+// 2026-07-08 창업자 제품 결정으로 B(rec_v2) winner 채택 → 전 사용자 rec_v2 고정(코드 배포). 아래 표는 종료 시점까지의 누적 집계.
+// 지표: 노출·인라인 클릭·CTR·네이버 next-page rate·네이버 PV/session.
 function RelatedAlgoPanel({ data }: { data: RelatedAlgoView }) {
   const conf = CONFIDENCE_META[data.ctrConfidence]
   return (
     <div className="rounded-xl border border-[#FF6F61]/30 bg-white p-5">
       <div className="mb-1 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">진행 중</span>
-        <span className="rounded-full bg-[#FF6F61]/10 px-2.5 py-1 text-xs font-bold text-[#FF6F61]">📊 데이터 수집 중</span>
+        <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">종료</span>
+        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">✅ B(rec_v2) 채택 · 전면 적용</span>
         <h2 className="text-base font-bold text-zinc-900">related_algo_v2 · 관련글 추천 알고리즘 v1/v2</h2>
       </div>
       <dl className="mb-3 space-y-1 rounded-lg bg-zinc-50 p-3 text-sm">
-        <div className="flex gap-2"><dt className="w-8 shrink-0 font-bold text-zinc-500">A</dt><dd className="text-zinc-700">rec_v1 — 기존 추천(같은 보드 맥락×흥미도)</dd></div>
-        <div className="flex gap-2"><dt className="w-8 shrink-0 font-bold text-zinc-500">B</dt><dd className="text-zinc-700">rec_v2_2026-06-30 — 새 추천(키워드 가중↑·크로스보드, 50:50)</dd></div>
+        <div className="flex gap-2"><dt className="w-8 shrink-0 font-bold text-zinc-500">A</dt><dd className="text-zinc-700">rec_v1 — 기존 추천(같은 보드 맥락×흥미도) · <span className="text-zinc-400">종료(미적용, rollback용 코드 보존)</span></dd></div>
+        <div className="flex gap-2"><dt className="w-8 shrink-0 font-bold text-emerald-700">B</dt><dd className="text-zinc-700">rec_v2_2026-06-30 — 새 추천(키워드 가중↑·크로스보드) · <b className="text-emerald-700">winner, 전 사용자 적용</b></dd></div>
       </dl>
       <p className="mb-2 text-xs leading-relaxed text-zinc-500">
         봇/내부 제외 · sessionId 기준 · related_recommend_view / related_post_click 의 algo_version 으로 arm 판정{data.startFrom ? ` · ${data.startFrom}~` : ''}.
-        <b>CTR</b>(클릭/노출) 목표 <b>≥6%</b>(baseline 2.8%). 네이버 next-page·PV/s 는 <b>관련글 노출 세션 기준 v1↔v2 비교</b>(전체 네이버 5.9%/1.26과 모집단 다름 — 절대값 아닌 arm 우열로 판단).
+        <b>2026-07-08 종료</b> — 통계 유의성은 표본 부족(need_more)이었으나 창업자 제품 결정으로 B 채택. 이후 노출은 전부 rec_v2 로 기록됨. 아래는 종료 시점까지 누적치.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
