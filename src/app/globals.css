@@ -397,3 +397,49 @@ textarea {
   margin: 4px 0 8px !important;
   line-height: 1.7;
 }
+
+/* ── 최상단 띠배너(TopPromoBanner) 주목 애니메이션 — 전부 유한 재생(무한 깜빡임 금지) ── */
+/* 최초 렌더 1회: 위에서 slide-down + fade-in */
+@keyframes top-promo-slide-down {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+.top-promo-enter {
+  animation: top-promo-slide-down 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+/* 태그 칩: pulse 2회(유한). 크기 미세 변화만 — 레이아웃 흔들림/과한 흔들림 없음 */
+@keyframes top-promo-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+.top-promo-tag-pulse {
+  animation: top-promo-pulse 0.9s ease-in-out 2;
+}
+/* CTA 광택(shimmer) 1회 — 배너 위로 흰 하이라이트 바가 한 번 훑고 지나감.
+   텍스트는 흰색 그대로 유지(가독성 우선) + pointer-events:none 으로 클릭 방해 없음. 컨테이너 overflow-hidden 로 밖으로 안 넘침. */
+@keyframes top-promo-sheen-sweep {
+  from { transform: translateX(-120%); }
+  to   { transform: translateX(120%); }
+}
+.top-promo-sheen::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 60%;
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 255, 255, 0.35) 50%, transparent 100%);
+  pointer-events: none;
+  animation: top-promo-sheen-sweep 1.1s ease-out 0.35s 1 both;
+}
+/* 접근성: 모션 최소화 선호 시 전부 정지(즉시 최종 상태) */
+@media (prefers-reduced-motion: reduce) {
+  .top-promo-enter,
+  .top-promo-tag-pulse,
+  .top-promo-sheen::after {
+    animation: none;
+  }
+  .top-promo-sheen::after {
+    display: none;
+  }
+}
