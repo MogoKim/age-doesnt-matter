@@ -500,6 +500,20 @@ interface ArticleInfo {
 // production(wgang/dlxogns01)은 이 경로를 타지 않아 동작 불변.
 const PREVISIT_MIN_COMMENTS = 5
 
+// 상단고정/공지(isNotice) 글 중 "고댓글 비광고 경험담"을 살리기 위한 기준 (2026-07-08).
+// 네이버 카페가 인기글을 board-notice 영역에 상단 노출 → isNotice=true로 오판되어 양질글이 전량 보류되던 문제 해소.
+// 광고/체험단/모집/브랜드/운영 공지는 title 패턴으로 계속 차단하고, 그 외 c>=NOTICE_MIN_COMMENTS만 통과.
+const NOTICE_MIN_COMMENTS = 10
+const NOTICE_AD_PATTERNS: RegExp[] = [
+  // 대괄호 태그 안에 광고/모집/운영/브랜드 키워드 → 차단. "필독"은 대괄호 안([필독공지])에서만 매칭돼
+  // 소괄호 "(필독,긴글주의)"는 통과한다.
+  /\[[^\]]*(체험단|이벤트|모집|공지|필독|안내|당첨|추첨|증정|나눔|전자|LG|삼성|현대|롯데|파트너스|공식)/,
+  // 대괄호 없이 등장하는 협찬/브랜드 키워드
+  /(체험단이벤트|오드그로서|올인원|협찬|후원|무료나눔|파트너스)/,
+  // ★로 시작하는 프로모션 제목
+  /^\s*★/,
+]
+
 /** 목록 row 하나에서 pre-visit 메타 파싱 (page.evaluate 컨텍스트에서 실행되는 순수 함수용 텍스트 파서) */
 function parseListRowMeta(rowText: string): { commentCount: number; viewCount: number; likeCount: number; postedAt: string } {
   // 댓글수: "댓글수 ... [N]" 라벨 뒤 대괄호 숫자. 없으면 0.
@@ -520,11 +534,16 @@ function parseListRowMeta(rowText: string): { commentCount: number; viewCount: n
 
 /** shadow 카페 상세 방문 여부 판정 — 공지/HARD_REJECT/저댓글 보류 */
 function passesPreVisit(a: ArticleInfo): boolean {
-  if (a.isNotice) return false                                   // 공지·필독·체험단·광고·추천 상단고정
-  if (a.commentCount === undefined) return true                  // 목록 파싱 실패 → 안전하게 통과(전수 방문 폴백)
   const title = a.title ?? ''
-  if (SHADOW_AGE_HARD_REJECT.some(k => title.includes(k))) return false  // 육아 등 HARD_REJECT title
-  return a.commentCount >= PREVISIT_MIN_COMMENTS                 // commentCount 기준(최소안 — freshHold/score는 PR-C)
+  if (SHADOW_AGE_HARD_REJECT.some(k => title.includes(k))) return false  // 육아 등 HARD_REJECT title (최우선)
+  if (a.isNotice) {
+    // 상단고정/공지: 광고·체험단·모집·브랜드·운영 공지는 제외, 고댓글 비광고 경험담만 허용.
+    // (네이버가 인기글을 board-notice로 노출 → isNotice 오판되던 양질글 구제)
+    if (NOTICE_AD_PATTERNS.some(re => re.test(title))) return false
+    return (a.commentCount ?? 0) >= NOTICE_MIN_COMMENTS          // 공지는 c>=10(엄격). 파싱 실패(undefined)면 0 → 보류
+  }
+  if (a.commentCount === undefined) return true                  // 일반글 목록 파싱 실패 → 안전하게 통과(전수 방문 폴백)
+  return a.commentCount >= PREVISIT_MIN_COMMENTS                 // 일반글 c>=5 (기존 정책 유지)
 }
 
 /** 글 목록 URL 수집 — 게시판별 크롤링 + 메인 페이지 폴백 */
