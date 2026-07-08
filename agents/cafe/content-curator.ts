@@ -150,6 +150,9 @@ async function getDupQuarantine(since: Date): Promise<{ topics: Set<string>; caf
  * 1단계: 48h + 키워드 / 2단계: 7일 + 키워드 / 3단계: 7일 + desireCategory만
  * usable≥5 필터: wave-processor BLOCK2 기준(usableCount<5)과 통일, wave4 full run 보장
  */
+// refs 조회 공통 select — getReferencePosts refs 와 killer self-ref fast lane 이 동일 shape 를 공유(타입 일치)
+const REF_SELECT_FIELDS = { id: true, title: true, content: true, cafeName: true, topComments: true, desireCategory: true, commentCount: true, cafeId: true } as const
+
 async function getReferencePosts(topic: string, desireCat: string, limit: number) {
   const base = {
     isUsable: true, usedAt: null, isPopular: false,
@@ -161,7 +164,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
   const firstWord = topicWords[0] ?? topic
   // commentCount 추가 — usable4 조건부 후보 판정용(cnt>=8). usable>=5 경로는 이 필드를 읽지 않아 동작 무변경.
-  const selectFields = { id: true, title: true, content: true, cafeName: true, topComments: true, desireCategory: true, commentCount: true, cafeId: true } as const
+  const selectFields = REF_SELECT_FIELDS
   // killerScore 상위권(~63위)이 usable<5인 경우가 많아 넉넉히 조회 후 usable 필터 적용.
   // 실측: killerScore top-63 전체가 usable<5, 64위부터 usable≥5 등장 → 최소 150개 필요.
   const candidateTake = Math.max(limit * 50, 150)
@@ -311,6 +314,45 @@ function resolveBoardForPost(ownDesire: string | null | undefined, bucketDesire:
   }
   if (text) board = applySensitiveBoardOverride(text, board)
   return board
+}
+
+/**
+ * killer self-ref fast lane — killer candidate 의 production 원문이 발행 자격을 모두 충족하면
+ * 그 원문 자체를 refs[0] 로 반환한다(다른 refs 재검색 없이 발행). 자격 미달·shadow·미존재 시 null → 기존 getReferencePosts fallback.
+ * getReferencePosts base 와 동일한 게이트(isUsable/usedAt/commentCrawled/img·vid빈/usable>=5/season/access·PZP 2차방어)를 적용해 품질 불변.
+ * shadow(remon/goondae)는 절대 제외 — production(PRODUCTION_CAFE_IDS) 만. DB write 없음(findUnique read only).
+ */
+async function loadEligibleKillerSelfRef(
+  cafePostId: string,
+  _desireCat: string,
+): Promise<{ id: string; title: string; content: string; cafeName: string; topComments: unknown; desireCategory: string | null; commentCount: number; cafeId: string | null } | null> {
+  const p = await prisma.cafePost.findUnique({
+    where: { id: cafePostId },
+    select: { ...REF_SELECT_FIELDS, isUsable: true, usedAt: true, commentCrawled: true, imageUrls: true, videoUrls: true, boardName: true },
+  })
+  if (!p) return null
+  // production 한정 (shadow 절대 제외) — killerPosts 가 이미 PRODUCTION 필터지만 방어적 재확인
+  if (!p.cafeId || SHADOW_CAFE_IDS.includes(p.cafeId) || !PRODUCTION_CAFE_IDS.includes(p.cafeId)) return null
+  // dlxogns01 허용 board 만 (getReferencePosts base 와 동일)
+  if (p.cafeId === 'dlxogns01' && !DLXOGNS01_ALLOWED_BOARDS.includes(p.boardName ?? '')) return null
+  // 발행 자격 게이트 (getReferencePosts base 와 동일 + usable>=5)
+  if (!p.isUsable || p.usedAt !== null || !p.commentCrawled) return null
+  if ((p.imageUrls ?? []).length > 0 || (p.videoUrls ?? []).length > 0) return null
+  if (computeUsableCount(p.topComments) < 5) return null
+  if (isSeasonMismatch(p.title, p.content)) return null
+  // access blocked / PZP 2차 방어 (getReferencePosts filterBlocked 와 동일 기준 — isUsable=true 라도 오염 잔존분 차단)
+  const flat = p.content.replace(/\n/g, ' ')
+  const ACCESS_BLOCKED = ['검색 비허용 게시물', '가입이 필요합니다', '카페의 멤버가 되어보세요', '카페에 가입하면 바로 글을 볼 수 있어요', '10초 만에 가입하기']
+  const STRONG_PZP = ['.pzp', 'pzp-pc', 'pzp-poster', 'webplayer-internal-video', '광고 후 계속됩니다', '디버그 정보 다운로드', '고화질 재생이 가능한 영상입니다']
+  const WEAK_PZP = ['재생 속도', '해상도', '자막', '음소거', '전체 화면', '자동 (480p)', '0초']
+  if (ACCESS_BLOCKED.some(s => flat.includes(s))) return null
+  if (STRONG_PZP.some(s => flat.includes(s)) || WEAK_PZP.filter(s => flat.includes(s)).length >= 2) return null
+  // refs[0] shape 로 반환 (REF_SELECT_FIELDS 필드만 — 게이트 전용 필드 제외)
+  return {
+    id: p.id, title: p.title, content: p.content, cafeName: p.cafeName,
+    topComments: p.topComments, desireCategory: p.desireCategory,
+    commentCount: p.commentCount, cafeId: p.cafeId,
+  }
 }
 
 /** 큐레이션된 글 생성 — 원본 카페글 제목·본문 그대로 사용 (AI 각색 없음) */
@@ -721,17 +763,34 @@ export async function main() {
       continue
     }
 
+    // [killer self-ref fast lane 2026-07-08] killer candidate 는 이미 cafePostId 를 가진 production 고품질 원문.
+    //   generateCuratedPost 가 mainRef(refs[0]) 1개만 사용하므로, 원문이 발행 자격을 충족하면 다른 refs 재검색 없이
+    //   그 원문 자체를 refs[0] 로 쓴다(AI 호출 0, DB write 없음). 자격 미달·shadow·trend candidate 는 기존 getReferencePosts fallback.
+    const selfRef = (candidate.source === 'killer' && candidate.cafePostId)
+      ? await loadEligibleKillerSelfRef(candidate.cafePostId, desireCat)
+      : null
+
     // [B 2026-06-10] refs를 먼저 가져와 발행 게시판(A 가드 반영)을 정한 뒤, 그 게시판 소속 페르소나 중에서 글 제목으로 매칭
-    const refResult = await getReferencePosts(candidate.topic, desireCat, 3)
-    const { candidatesBeforeUsableFilter, maxUsableCount, u4Pool } = refResult
-    let refs = refResult.refs
+    let candidatesBeforeUsableFilter = 0
+    let maxUsableCount = 0
+    let refs: Awaited<ReturnType<typeof getReferencePosts>>['refs']
     let usedConditionalU4 = false
 
-    // usable>=5 후보가 전무(LOW_USABLE)하고 flag ON·회차 1건 미만이면, 안전한 usable==4 후보 1개로 fallback.
-    // 기본 usable>=5 경로는 그대로. flag OFF면 아래 블록은 실행되지 않음(현행과 100% 동일).
-    if (refs.length === 0 && candidatesBeforeUsableFilter > 0 && ENABLE_CONDITIONAL_USABLE4 && conditionalU4Used < 1) {
-      const u4Ref = pickConditionalUsable4(u4Pool)
-      if (u4Ref) { refs = [u4Ref]; usedConditionalU4 = true }
+    if (selfRef) {
+      refs = [selfRef]
+      maxUsableCount = computeUsableCount(selfRef.topComments)
+    } else {
+      const refResult = await getReferencePosts(candidate.topic, desireCat, 3)
+      candidatesBeforeUsableFilter = refResult.candidatesBeforeUsableFilter
+      maxUsableCount = refResult.maxUsableCount
+      refs = refResult.refs
+
+      // usable>=5 후보가 전무(LOW_USABLE)하고 flag ON·회차 1건 미만이면, 안전한 usable==4 후보 1개로 fallback.
+      // 기본 usable>=5 경로는 그대로. flag OFF면 아래 블록은 실행되지 않음(현행과 100% 동일).
+      if (refs.length === 0 && candidatesBeforeUsableFilter > 0 && ENABLE_CONDITIONAL_USABLE4 && conditionalU4Used < 1) {
+        const u4Ref = pickConditionalUsable4(refResult.u4Pool)
+        if (u4Ref) { refs = [u4Ref]; usedConditionalU4 = true }
+      }
     }
 
     if (refs.length === 0) {
