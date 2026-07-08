@@ -132,7 +132,11 @@ export default function TopPromoBannerClient({
   }
 
   const linkContent = (
-    <span className="text-white text-[17px] font-semibold leading-snug line-clamp-2 flex-1 min-w-0">
+    <span
+      className={`text-white text-[17px] font-semibold leading-snug line-clamp-2 flex-1 min-w-0${
+        isKakaoLogin ? ' top-promo-cta-wiggle' : ''
+      }`}
+    >
       {text}
     </span>
   )

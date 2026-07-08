@@ -102,18 +102,26 @@ export default function TopPromoBannerPanel({ type, settings }: TopPromoBannerPa
         {/* 라이브 미리보기 */}
         <div>
           <p className="mb-2 text-xs font-medium text-zinc-500">미리보기</p>
+          {/* key={form.hrefType}: 링크 유형 변경 시 remount → 실제 배너와 동일한 주목 애니메이션 1회 재생(체감 확인용) */}
           <div
-            className="flex items-center justify-center gap-2 h-[44px] px-4 rounded-xl overflow-hidden"
+            key={form.hrefType}
+            className={`flex items-center justify-center gap-2 h-[44px] px-4 rounded-xl overflow-hidden top-promo-enter${
+              form.hrefType === 'kakao_login' ? ' top-promo-sheen relative' : ''
+            }`}
             style={{ background: previewBg }}
           >
             {form.enabled && form.text ? (
               <>
                 {form.tag && (
-                  <span className="shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full bg-white/20 text-white text-xs font-semibold whitespace-nowrap">
+                  <span className={`shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full bg-white/20 text-white text-xs font-semibold whitespace-nowrap${
+                    form.hrefType === 'kakao_login' ? ' top-promo-tag-pulse' : ''
+                  }`}>
                     {form.tag}
                   </span>
                 )}
-                <span className="text-white text-sm font-semibold truncate flex-1 min-w-0 text-center">
+                <span className={`text-white text-sm font-semibold truncate flex-1 min-w-0 text-center${
+                  form.hrefType === 'kakao_login' ? ' top-promo-cta-wiggle' : ''
+                }`}>
                   {form.text}
                 </span>
                 {form.hrefType === 'external' && (
