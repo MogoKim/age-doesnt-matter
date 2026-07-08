@@ -572,64 +572,77 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
       // 인기글과 일반 게시판 URL 분기
       // 인기글: 구 format URL (f-e/popular는 JS 렌더링으로 비로그인 상태에서 링크 미노출)
       // 일반 게시판: f-e 신 format
-      const boardUrl = board.isPopular
-        ? `${cafe.url}?iframe_url_utf8=%2FCommunityReadTop.nhn%3Fclubid%3D${cafe.numericId}`
-        : `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/${board.menuId}`
       const boardLabel = board.isPopular ? '인기글(구format)' : `menuId=${board.menuId}`
       console.log(`[CafeCrawler] ${cafe.name} — 게시판 "${board.name}" (${boardLabel}) 수집 중...`)
-      await page.goto(boardUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
-      await sleep(randomDelay(3000, 0.8, 1.5))
 
-      // 스크롤하여 더 많은 글 로드 (QUICK 모드: 1페이지만)
-      const scrollCount = quickMode ? 1 : Math.min(board.maxPages, 3)
-      for (let i = 0; i < scrollCount; i++) {
-        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-        await sleep(1500)
-      }
-
-      // 인기글: 구 format href 패턴 (articleid=N), 일반: 신 format (/articles/N)
-      const selector = board.isPopular ? 'a[href*="articleid"]' : 'a[href*="/articles/"]'
-      const links = await page.locator(selector).all()
-      if (board.isPopular) {
-        console.log(`[CafeCrawler] 인기글 셀렉터 매칭: ${links.length}개 링크 발견`)
-      }
       let boardCount = 0
-      // shadow 카페(remonterrace 등): 목록 row 메타(commentCount/view/like/notice) 파싱 → pre-visit 필터용.
-      // production(wgang/dlxogns01)·인기글은 기존 href 정규식 경로 그대로(동작 불변).
+      // shadow 카페(remonterrace/goondae 등): true page loop — ?viewType=L&page=N이 실제 다른 글 반환
+      // (실측 page1↔page2 교집합 0). maxPages만큼 페이지 순회(3 하드캡 없음). 목록 row 메타(commentCount/
+      // view/like/notice) 파싱 → pre-visit 필터용. production(wgang/dlxogns01)·인기글은 기존 scroll 방식 그대로(동작 불변).
       if (SHADOW_CAFE_IDS.includes(cafe.id) && !board.isPopular) {
-        const rawRows = await page.evaluate(() => {
-          const anchors = Array.from(document.querySelectorAll('a[href*="/articles/"]')) as HTMLAnchorElement[]
-          const seen = new Set<string>()
-          const out: { id: string; title: string; rowText: string; cls: string }[] = []
-          for (const a of anchors) {
-            const m = a.href.match(/\/articles\/(\d+)/)
-            if (!m) continue
-            const id = m[1]
-            if (seen.has(id)) continue
-            seen.add(id)
-            const row = a.closest('.board-notice') || a.closest('tr') || a.closest('li') || a.parentElement
-            const el = row as HTMLElement | null
-            out.push({ id, title: (a.innerText || '').trim(), rowText: (el?.innerText || ''), cls: (el?.className || '').toString() })
-          }
-          return out
-        })
-        for (const r of rawRows) {
-          if (collectedMap.has(r.id)) continue
-          const meta = parseListRowMeta(r.rowText)
-          collectedMap.set(r.id, {
-            articleId: r.id,
-            newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${r.id}`,
-            oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${r.id}`,
-            boardName: board.name,
-            boardCategory: board.category,
-            title: r.title,
-            isNotice: r.cls.includes('board-notice'),
-            noticeType: (r.cls.match(/type_\w+/) || [])[0],
-            ...meta,
+        const maxPg = quickMode ? 1 : board.maxPages
+        for (let pg = 1; pg <= maxPg; pg++) {
+          const pageUrl = `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/${board.menuId}?viewType=L&page=${pg}`
+          await page.goto(pageUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
+          await sleep(randomDelay(2500, 0.8, 1.5))
+          const rawRows = await page.evaluate(() => {
+            const anchors = Array.from(document.querySelectorAll('a[href*="/articles/"]')) as HTMLAnchorElement[]
+            const seen = new Set<string>()
+            const out: { id: string; title: string; rowText: string; cls: string }[] = []
+            for (const a of anchors) {
+              const m = a.href.match(/\/articles\/(\d+)/)
+              if (!m) continue
+              const id = m[1]
+              if (seen.has(id)) continue
+              seen.add(id)
+              const row = a.closest('.board-notice') || a.closest('tr') || a.closest('li') || a.parentElement
+              const el = row as HTMLElement | null
+              out.push({ id, title: (a.innerText || '').trim(), rowText: (el?.innerText || ''), cls: (el?.className || '').toString() })
+            }
+            return out
           })
-          boardCount++
+          let newCount = 0
+          for (const r of rawRows) {
+            if (collectedMap.has(r.id)) continue
+            const meta = parseListRowMeta(r.rowText)
+            collectedMap.set(r.id, {
+              articleId: r.id,
+              newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${r.id}`,
+              oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${r.id}`,
+              boardName: board.name,
+              boardCategory: board.category,
+              title: r.title,
+              isNotice: r.cls.includes('board-notice'),
+              noticeType: (r.cls.match(/type_\w+/) || [])[0],
+              ...meta,
+            })
+            boardCount++
+            newCount++
+          }
+          console.log(`[CafeCrawler] ${cafe.name} "${board.name}" page ${pg}: raw ${rawRows.length}, new ${newCount}, total ${collectedMap.size}`)
+          if (rawRows.length === 0) break   // 빈 페이지 → 조기 종료
         }
       } else {
+        // production/인기글: 기존 scroll 방식 (동작 불변)
+        const boardUrl = board.isPopular
+          ? `${cafe.url}?iframe_url_utf8=%2FCommunityReadTop.nhn%3Fclubid%3D${cafe.numericId}`
+          : `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/${board.menuId}`
+        await page.goto(boardUrl, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
+        await sleep(randomDelay(3000, 0.8, 1.5))
+
+        // 스크롤하여 더 많은 글 로드 (QUICK 모드: 1페이지만)
+        const scrollCount = quickMode ? 1 : Math.min(board.maxPages, 3)
+        for (let i = 0; i < scrollCount; i++) {
+          await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+          await sleep(1500)
+        }
+
+        // 인기글: 구 format href 패턴 (articleid=N), 일반: 신 format (/articles/N)
+        const selector = board.isPopular ? 'a[href*="articleid"]' : 'a[href*="/articles/"]'
+        const links = await page.locator(selector).all()
+        if (board.isPopular) {
+          console.log(`[CafeCrawler] 인기글 셀렉터 매칭: ${links.length}개 링크 발견`)
+        }
         for (const link of links) {
           const href = await link.getAttribute('href')
           if (!href) continue

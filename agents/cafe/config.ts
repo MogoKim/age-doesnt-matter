@@ -147,7 +147,23 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     legacyCrawler: true,
     sourceStage: 'shadow',
     boards: [
-      { name: '쫑알쫑알', menuId: 23, maxPages: 15, priority: 'medium', category: 'lifestyle' },  // 2026-07-07 5→15: 글이 빨라 1h에 10p+ 밀림. 목록만 넓게 스캔하고 pre-visit(c>=5) 통과 글만 상세, detailCap 30으로 상세 방문 폭증 차단
+      { name: '쫑알쫑알', menuId: 23, maxPages: 15, priority: 'medium', category: 'lifestyle' },  // 2026-07-07 5→15: 글이 빨라 1h에 10p+ 밀림. shadow page loop(crawler.ts)로 실제 page1~15 순회. pre-visit(c>=5) 통과만 상세, detailCap 30
+    ],
+  },
+  // ─────────────────────────────────────────────────────────
+  // 4. goondae (10797658) — shadow 파일럿(2026-07-08 추가, 관찰 전용)
+  //    걱정/고민/위로 수다방(menuId 997): 405060 관계·남편·아들·고민 글 적합(실측 c>=5 다수, 오파싱 없음).
+  //    sourceStage:'shadow' → content-curator/trend/run-pipeline 격리(발행·trend 미편입). shadow page loop 적용.
+  //    ⚠️ CRAWL_CAFE_FILTER에 'goondae' 추가해야 실제 크롤됨. CRAWL_EXPECTED_CAFE_IDS엔 추가 금지(성공판정 오판 방지).
+  // ─────────────────────────────────────────────────────────
+  {
+    id: 'goondae',
+    name: '군대카페',
+    url: 'https://cafe.naver.com/f-e/cafes/10797658',
+    numericId: 10797658,
+    sourceStage: 'shadow',
+    boards: [
+      { name: '걱정/고민/위로 수다방', menuId: 997, maxPages: 5, priority: 'medium', category: 'lifestyle' },
     ],
   },
 ]
