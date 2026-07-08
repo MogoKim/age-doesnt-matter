@@ -161,6 +161,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     name: '군대카페',
     url: 'https://cafe.naver.com/f-e/cafes/10797658',
     numericId: 10797658,
+    legacyCrawler: true,   // allArticlesUrl 미지정 → collectAllArticleUrls(전체글보기) 우회하고 boards page loop만 사용 (remon과 동일). 누락 시 crawl-only에서 0개 수집됨.
     sourceStage: 'shadow',
     boards: [
       { name: '걱정/고민/위로 수다방', menuId: 997, maxPages: 5, priority: 'medium', category: 'lifestyle' },
