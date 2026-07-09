@@ -199,6 +199,9 @@ export const PUBLISHABLE_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isPublishableS
 export const SECONDARY_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isSecondarySource).map(c => c.id)
 /** 발행 금지 관찰 전용 shadow 카페 id (현재: 없음 — remon/goondae는 publishable로 승격) */
 export const SHADOW_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isShadowSource).map(c => c.id)
+/** publishable 전용(비-production) 카페 id — source-backed candidate lane 용 (Phase 1-b, 현재: remonterrace, goondae).
+ *  trend/killer(PRODUCTION)와 분리된 별도 lane 키 — PRODUCTION_CAFE_IDS에는 절대 편입되지 않는다. */
+export const PUBLISHABLE_ONLY_CAFE_IDS: string[] = CAFE_CONFIGS.filter(c => c.sourceStage === 'publishable').map(c => c.id)
 
 /** cafeId → sourceStage 판정 (BotLog refSourceStage 기록용 — content-curator에서 사용) */
 export function sourceStageOfCafe(cafeId: string): 'production' | 'publishable' | 'shadow' | 'unknown' {
