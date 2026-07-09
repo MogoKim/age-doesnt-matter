@@ -20,7 +20,7 @@ const getSitemapPosts = unstable_cache(
     },
     select: { id: true, boardType: true, status: true, updatedAt: true, slug: true },
     orderBy: { createdAt: 'desc' },
-    take: 5000,
+    take: 20000, // 예방: eligible ~5242 > 5000 cap 으로 오래된 글 274개(2026-03~04) 누락 → 20000 상향(Google 한도 50000 이내). SEO 순위 개선 아니라 sitemap 커버리지 보정.
   }),
   ['sitemap-posts'],
   { revalidate: 3600, tags: ['sitemap-posts'] },
