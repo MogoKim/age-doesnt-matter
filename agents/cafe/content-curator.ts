@@ -673,7 +673,7 @@ export async function main() {
   // ─── candidatePool 구성 (Fix 2-B) ─────────────────────────────
   const killerCandidates: CandidateTopic[] = killerPosts
     .filter(p => !isDesireExhausted(p.desireCategory ?? 'GENERAL') && !dupQuarantine.cafeIds.has(p.id))
-    .slice(0, 2)  // killer 후보 풀 크기 기존과 동일(2). 격리/소진 후보는 건너뛰고 다음 상위로 회전.
+    .slice(0, 4)  // [1단계 완화 2026-07-09] killer 후보 2→4. self-ref(source-backed, 효율 34%)를 늘려 topic-only trend(효율 5%) 시도를 줄인다(maxTrendCandidates 자동 축소). 근본 해결 아님(→ docs/analysis/content-curation-candidate-redesign-2026-07-09.md). 격리/소진 후보는 건너뛰고 다음 상위로 회전.
     .map(p => ({
       topic: p.title,
       source: 'killer' as const,
@@ -743,6 +743,7 @@ export async function main() {
   // ─── 실행 루프 (Fix 2-C) ──────────────────────────────────────
   // refs=0 / 생성실패 / 발행실패 시 다음 후보로 이동 (continue 기반)
   const topicResults: TopicResult[] = []
+  let selfRefUsedCount = 0  // [1단계 가시성] killer self-ref 실사용 횟수(loadEligibleKillerSelfRef 성공 시 +1)
 
   for (const candidate of candidatePool) {
     if (publishedCount >= maxPosts) break
@@ -779,6 +780,7 @@ export async function main() {
     if (selfRef) {
       refs = [selfRef]
       maxUsableCount = computeUsableCount(selfRef.topComments)
+      selfRefUsedCount++
     } else {
       const refResult = await getReferencePosts(candidate.topic, desireCat, 3)
       candidatesBeforeUsableFilter = refResult.candidatesBeforeUsableFilter
@@ -871,6 +873,18 @@ export async function main() {
     }
   }
 
+  // [1단계 가시성] source(killer/trend)별 skip/published 집계 — "왜 0개 게시됐는지" 즉시 판독용.
+  const skipBySource: Record<string, Record<string, number>> = {}
+  const publishedBySource: Record<string, number> = {}
+  for (const r of topicResults) {
+    if (r.skipReason) {
+      if (!skipBySource[r.source]) skipBySource[r.source] = {}
+      skipBySource[r.source][r.skipReason] = (skipBySource[r.source][r.skipReason] ?? 0) + 1
+    } else {
+      publishedBySource[r.source] = (publishedBySource[r.source] ?? 0) + 1
+    }
+  }
+
   const durationMs = Date.now() - startTime
   const status = publishedCount >= maxPosts ? 'SUCCESS' : publishedCount > 0 ? 'PARTIAL' : 'FAILED'
   const repeatedZeroPublishAlert = status === 'FAILED' && publishedCount === 0
@@ -886,6 +900,12 @@ export async function main() {
       details: JSON.stringify({
         topicsUsed: topicResults.map(r => r.topic),
         candidatePoolSize: candidatePool.length,
+        // [1단계 가시성] 기존 필드 유지 + source별 후보/발행/skip 집계 추가(파서 호환)
+        killerCandidateCount: killerCandidates.length,
+        trendCandidateCount: trendCandidates.length,
+        selfRefUsedCount,
+        skipBySource,
+        publishedBySource,
         published: publishedCount,
         seoTransformedCount,
         seoFallbackCount,
