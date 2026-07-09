@@ -29,6 +29,7 @@ import { generateCommunitySlug } from '../core/slug.js'
 import { computeUsableCount } from './compute-usable-count.js'
 import { buildPopularSeoMeta } from './popular-seo.js'
 import { findMedicalAdviceRequest } from '../core/medical-advice-blocklist.js'
+import { buildDailyQuarantine, type DailyQuarantine } from './curator-quarantine.js'
 
 // ─── 후보 풀 / skipReason 타입 ─────────────────────────────────
 type SkipReason =
@@ -59,6 +60,26 @@ interface TopicResult extends CandidateTopic {
   maxUsableCount?: number
   requiredUsableCount?: number
   matchedKeyword?: string
+  // [Phase 0-b] 실제 발행물(refs[0]) 추적 — candidate(topic/cafePostId)와 구분.
+  // refs 확보 전에 skip된 엔트리에는 없다(optional). 기존 필드 제거·개명 없음(파서 호환).
+  refCafePostId?: string
+  refTitle?: string
+  refCafeId?: string
+  isShadowRef?: boolean
+}
+
+/** refs[0] 메타 — refs 확보 후의 topicResults 기록에 spread. ref 없으면 빈 객체(필드 미기록).
+ * 파라미터를 unknown으로 받는 이유: refs 요소 타입이 getReferencePosts 제네릭 추론에 따라 좁아져
+ * (u4Pool 경로 등) 호출부마다 달라짐 — 런타임 shape(id/title/cafeId)만 읽으므로 내부에서 안전 접근. */
+function refMeta(ref?: unknown): Pick<TopicResult, 'refCafePostId' | 'refTitle' | 'refCafeId' | 'isShadowRef'> {
+  const r = ref as { id?: string; title?: string; cafeId?: string | null } | undefined
+  if (!r?.id || typeof r.title !== 'string') return {}
+  return {
+    refCafePostId: r.id,
+    refTitle: r.title.slice(0, 30),
+    refCafeId: r.cafeId ?? undefined,
+    isShadowRef: !!r.cafeId && SHADOW_CAFE_IDS.includes(r.cafeId),
+  }
 }
 
 type PublishResult =
@@ -120,29 +141,20 @@ async function getRepeatedZeroPublishAlert(currentResults: TopicResult[]): Promi
 // P0-A: 후보 재시도 루프 차단.
 // DUPLICATE_TITLE 스킵은 usedAt 마킹(발행 성공 시에만 수행)보다 먼저 return하므로,
 // 중복 스킵된 killer/trend 후보가 매 run 최상위 후보로 재선발되며 같은 토픽을 반복 시도한다.
-// 오늘 BotLog(기존 로그=state, DB write 없음)에서 DUPLICATE_TITLE을 임계 이상 낸
-// topic/cafePostId를 읽어 그날 후보 구성에서 제외한다. "발행됨"으로 마킹하지 않음.
+// 오늘 BotLog(기존 로그=state, DB write 없음)에서 임계 이상 낸 키를 읽어
+// 그날 후보 구성에서 제외한다. "발행됨"으로 마킹하지 않음(usedAt 무변경).
 // [2026-07-03] 2→1: 1회성 DUPLICATE_TITLE 후보도 그날 즉시 격리(재시도 루프 완화). BotLog state만 사용, DB write 0.
+// [Phase 0-c] POLITICAL_BLOCK도 동일 격리 + refCafePostId(실제 발행물) 키 추가.
+//   집계는 curator-quarantine.ts 순수 함수 — 과거 로그(ref 필드 없음)에도 안전.
 const DUP_QUARANTINE_THRESHOLD = 1
-async function getDupQuarantine(since: Date): Promise<{ topics: Set<string>; cafeIds: Set<string> }> {
+async function getDailyQuarantine(since: Date): Promise<DailyQuarantine> {
   const logs = await prisma.botLog.findMany({
     where: { botType: 'CAFE_CRAWLER', action: 'CONTENT_CURATE', createdAt: { gte: since } },
     orderBy: { createdAt: 'desc' },
     take: 60,
     select: { details: true },
   })
-  const topicCount = new Map<string, number>()
-  const cafeCount = new Map<string, number>()
-  for (const log of logs) {
-    for (const t of parseTopicResults(log.details)) {
-      if (t.skipReason !== 'DUPLICATE_TITLE') continue
-      if (t.topic) topicCount.set(t.topic, (topicCount.get(t.topic) ?? 0) + 1)
-      if (t.cafePostId) cafeCount.set(t.cafePostId, (cafeCount.get(t.cafePostId) ?? 0) + 1)
-    }
-  }
-  const topics = new Set([...topicCount].filter(([, n]) => n >= DUP_QUARANTINE_THRESHOLD).map(([k]) => k))
-  const cafeIds = new Set([...cafeCount].filter(([, n]) => n >= DUP_QUARANTINE_THRESHOLD).map(([k]) => k))
-  return { topics, cafeIds }
+  return buildDailyQuarantine(logs.map((log: { details: string | null }) => parseTopicResults(log.details)), DUP_QUARANTINE_THRESHOLD)
 }
 
 
@@ -601,10 +613,16 @@ export async function main() {
     select: { title: true },
   })
 
-  // P0-A: 오늘 반복 DUPLICATE_TITLE을 낸 후보 격리 (재시도 루프 차단)
-  const dupQuarantine = await getDupQuarantine(todayStart)
-  if (dupQuarantine.topics.size || dupQuarantine.cafeIds.size) {
-    console.log(`[ContentCurator] 중복루프 격리: topic ${dupQuarantine.topics.size}개 / cafePost ${dupQuarantine.cafeIds.size}개 (오늘 DUPLICATE_TITLE ≥${DUP_QUARANTINE_THRESHOLD}회)`)
+  // P0-A + Phase 0-c: 오늘 DUPLICATE_TITLE·POLITICAL_BLOCK을 낸 후보/refs 격리 (재시도 루프 차단)
+  const quarantine = await getDailyQuarantine(todayStart)
+  // 후보(cafePostId)든 실제 발행물(refCafePostId)이든 오늘 차단된 글은 재시도하지 않는다 — 어차피 publish 게이트에서 다시 차단될 시도만 제거(가드 무변경)
+  const quarantinedTopics = new Set([...quarantine.dup.topics, ...quarantine.political.topics])
+  const quarantinedPostIds = new Set([
+    ...quarantine.dup.cafeIds, ...quarantine.dup.refIds,
+    ...quarantine.political.cafeIds, ...quarantine.political.refIds,
+  ])
+  if (quarantinedTopics.size || quarantinedPostIds.size) {
+    console.log(`[ContentCurator] 당일 격리: topic ${quarantinedTopics.size}개 / cafePost ${quarantinedPostIds.size}개 (DUP ${quarantine.dup.cafeIds.size}+refs ${quarantine.dup.refIds.size} / POL ${quarantine.political.cafeIds.size}+refs ${quarantine.political.refIds.size}, ≥${DUP_QUARANTINE_THRESHOLD}회)`)
   }
   // keyword overlap 오탐 방지 — 어미·조사·기능어는 주제어가 아니므로 제외
   const OVERLAP_STOPWORDS = new Set([
@@ -676,7 +694,7 @@ export async function main() {
   //   skip 돼도 다음 killer 후보를 계속 시도해 published=0 회차를 줄인다. 가드는 그대로(완화 아님, 후보 보충).
   //   설계: docs/analysis/content-curation-candidate-redesign-2026-07-09.md
   const killerCandidatesAll: CandidateTopic[] = killerPosts
-    .filter(p => !isDesireExhausted(p.desireCategory ?? 'GENERAL') && !dupQuarantine.cafeIds.has(p.id))
+    .filter(p => !isDesireExhausted(p.desireCategory ?? 'GENERAL') && !quarantinedPostIds.has(p.id))
     .map(p => ({
       topic: p.title,
       source: 'killer' as const,
@@ -703,7 +721,7 @@ export async function main() {
     if (trendCandidates.length >= maxTrendCandidates) break
     if (isDesireExhausted(desire)) continue
     const match = categorizedTopics.find(
-      t => t.desireCategory === desire && !usedCategories.has(desire) && !inPool(t.topic) && !dupQuarantine.topics.has(t.topic)
+      t => t.desireCategory === desire && !usedCategories.has(desire) && !inPool(t.topic) && !quarantinedTopics.has(t.topic)
     )
     if (match) {
       trendCandidates.push({ topic: match.topic, source: 'trend', desireCategory: match.desireCategory })
@@ -714,17 +732,17 @@ export async function main() {
   for (const t of categorizedTopics) {
     if (trendCandidates.length >= maxTrendCandidates) break
     if (isDesireExhausted(t.desireCategory)) continue
-    if (!usedCategories.has(t.desireCategory) && !inPool(t.topic) && !dupQuarantine.topics.has(t.topic)) {
+    if (!usedCategories.has(t.desireCategory) && !inPool(t.topic) && !quarantinedTopics.has(t.topic)) {
       trendCandidates.push({ topic: t.topic, source: 'trend', desireCategory: t.desireCategory })
       usedCategories.add(t.desireCategory)
     }
   }
   // 3순위: 폴백 — isDesireExhausted 체크 포함 (Fix 3: 소진 카테고리 재진입 차단)
-  // dupQuarantine.topics 체크 추가 — 1·2순위와 동일 패턴. 격리된 DUPLICATE_TITLE topic이 폴백으로 재투입되는 것 차단.
+  // 격리 topic 체크 — 1·2순위와 동일 패턴. 격리된 topic이 폴백으로 재투입되는 것 차단.
   for (const t of categorizedTopics) {
     if (trendCandidates.length >= maxTrendCandidates) break
     if (isDesireExhausted(t.desireCategory)) continue
-    if (!inPool(t.topic) && !dupQuarantine.topics.has(t.topic)) {
+    if (!inPool(t.topic) && !quarantinedTopics.has(t.topic)) {
       trendCandidates.push({ topic: t.topic, source: 'trend', desireCategory: t.desireCategory })
     }
   }
@@ -785,6 +803,7 @@ export async function main() {
     let maxUsableCount = 0
     let refs: Awaited<ReturnType<typeof getReferencePosts>>['refs']
     let usedConditionalU4 = false
+    let refsQuarantinedCount = 0  // [Phase 0-c] 당일 격리로 걸러진 refs 수 (REFS_EMPTY 오라벨 방지용)
 
     if (selfRef) {
       refs = [selfRef]
@@ -794,21 +813,24 @@ export async function main() {
       const refResult = await getReferencePosts(candidate.topic, desireCat, 3)
       candidatesBeforeUsableFilter = refResult.candidatesBeforeUsableFilter
       maxUsableCount = refResult.maxUsableCount
-      refs = refResult.refs
+      // [Phase 0-c] 오늘 DUP/POL로 차단됐던 글은 refs로도 재사용 금지 — 같은 발행물로 수렴해 반복 차단되는 루프 제거
+      refs = refResult.refs.filter(r => !quarantinedPostIds.has((r as unknown as { id: string }).id))
+      refsQuarantinedCount = refResult.refs.length - refs.length
 
       // usable>=5 후보가 전무(LOW_USABLE)하고 flag ON·회차 1건 미만이면, 안전한 usable==4 후보 1개로 fallback.
       // 기본 usable>=5 경로는 그대로. flag OFF면 아래 블록은 실행되지 않음(현행과 100% 동일).
       if (refs.length === 0 && candidatesBeforeUsableFilter > 0 && ENABLE_CONDITIONAL_USABLE4 && conditionalU4Used < 1) {
-        const u4Ref = pickConditionalUsable4(refResult.u4Pool)
+        const u4Ref = pickConditionalUsable4(refResult.u4Pool.filter(p => !quarantinedPostIds.has(p.id)))
         if (u4Ref) { refs = [u4Ref]; usedConditionalU4 = true }
       }
     }
 
     if (refs.length === 0) {
-      if (candidatesBeforeUsableFilter > 0) {
+      if (candidatesBeforeUsableFilter > 0 && refsQuarantinedCount === 0) {
         // refs는 있었지만 usable<5로 전부 탈락 — topicResults에 기록 (별도 BotLog 없음)
         topicResults.push({ ...candidate, refsCount: 0, skipReason: 'LOW_USABLE_COMMENTS', candidatesBeforeUsableFilter, maxUsableCount, requiredUsableCount: 5 })
       } else {
+        // 격리 필터로 비워진 경우 포함 — usable 문제가 아니므로 REFS_EMPTY로 기록
         topicResults.push({ ...candidate, refsCount: 0, skipReason: 'REFS_EMPTY' })
       }
       continue
@@ -833,7 +855,7 @@ export async function main() {
       }
       if (!found) {
         console.log(`[ContentCurator] "${candidate.topic}" 모든 페르소나 일간 한도 초과 — 스킵`)
-        topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'AUTHOR_DAILY_CAP' })
+        topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'AUTHOR_DAILY_CAP', ...refMeta(refs[0]) })
         continue
       }
     }
@@ -842,18 +864,18 @@ export async function main() {
     const curated = await generateCuratedPost(persona, candidate.topic, refs, desireCat)
     if (!curated) {
       // refs는 있었지만 curated content 생성 결과가 null
-      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'GENERATION_FAILED' })
+      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'GENERATION_FAILED', ...refMeta(refs[0]) })
       continue
     }
 
     const publishResult = await publishCuratedContent(curated)
     if (!publishResult.success) {
-      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: publishResult.skipReason, matchedKeyword: publishResult.matchedKeyword })
+      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: publishResult.skipReason, matchedKeyword: publishResult.matchedKeyword, ...refMeta(refs[0]) })
       continue
     }
 
     // 발행 성공
-    topicResults.push({ ...candidate, refsCount: refs.length, skipReason: null })
+    topicResults.push({ ...candidate, refsCount: refs.length, skipReason: null, ...refMeta(refs[0]) })
     publishedCount++
     if (publishResult.seoTransformed) seoTransformedCount++
     else seoFallbackCount++
