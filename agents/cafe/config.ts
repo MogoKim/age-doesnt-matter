@@ -134,10 +134,11 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     ],
   },
   // ─────────────────────────────────────────────────────────
-  // 3. 레몬테라스 (10298136) — shadow 소스(관찰 전용)
-  //    sourceStage:'shadow' → content-curator/trend/run-pipeline 품질가드에서 격리(발행·trend 미편입).
+  // 3. 레몬테라스 (10298136) — publishable 소스 (Phase 1-a-② 승격, 2026-07-09)
+  //    sourceStage:'publishable' → 발행(refs)만 정식 편입. trend/killer/성공판정은 여전히 미편입.
+  //    발행 시 production과 동일하게 usedAt 마킹 + Post.cafePostId 연결 (몰래 fallback 아님).
   //    legacyCrawler:true + allArticlesUrl 미지정 → 전체글보기 우회, boards 루프(menuId 23)만 수집.
-  //    육아·살림 카페라 연령 필터(passesShadowAgeFilter, crawler.ts)로 isUsable 보정.
+  //    육아·살림 카페라 연령 필터(passesShadowAgeFilter, crawler.ts — SECONDARY 키)로 isUsable 보정 유지.
   // ─────────────────────────────────────────────────────────
   {
     id: 'remonterrace',
@@ -145,15 +146,15 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/f-e/cafes/10298136',
     numericId: 10298136,
     legacyCrawler: true,
-    sourceStage: 'shadow',
+    sourceStage: 'publishable',
     boards: [
       { name: '쫑알쫑알', menuId: 23, maxPages: 15, priority: 'medium', category: 'lifestyle' },  // 2026-07-07 5→15: 글이 빨라 1h에 10p+ 밀림. shadow page loop(crawler.ts)로 실제 page1~15 순회. pre-visit(c>=5) 통과만 상세, detailCap 30
     ],
   },
   // ─────────────────────────────────────────────────────────
-  // 4. goondae (10797658) — shadow 파일럿(2026-07-08 추가, 관찰 전용)
+  // 4. goondae (10797658) — publishable 소스 (Phase 1-a-② 승격, 2026-07-09. 2026-07-08 shadow 파일럿으로 추가)
   //    걱정/고민/위로 수다방(menuId 997): 405060 관계·남편·아들·고민 글 적합(실측 c>=5 다수, 오파싱 없음).
-  //    sourceStage:'shadow' → content-curator/trend/run-pipeline 격리(발행·trend 미편입). shadow page loop 적용.
+  //    sourceStage:'publishable' → 발행(refs)만 편입, trend/killer/성공판정 미편입. SECONDARY page loop 유지.
   //    ⚠️ CRAWL_CAFE_FILTER에 'goondae' 추가해야 실제 크롤됨. CRAWL_EXPECTED_CAFE_IDS엔 추가 금지(성공판정 오판 방지).
   // ─────────────────────────────────────────────────────────
   {
@@ -162,7 +163,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/f-e/cafes/10797658',
     numericId: 10797658,
     legacyCrawler: true,   // allArticlesUrl 미지정 → collectAllArticleUrls(전체글보기) 우회하고 boards page loop만 사용 (remon과 동일). 누락 시 crawl-only에서 0개 수집됨.
-    sourceStage: 'shadow',
+    sourceStage: 'publishable',
     boards: [
       { name: '걱정/고민/위로 수다방', menuId: 997, maxPages: 5, priority: 'medium', category: 'lifestyle' },
     ],
@@ -192,12 +193,20 @@ export const isShadowSource = (c: Pick<CafeConfig, 'sourceStage'>): boolean =>
 
 /** trend/killer/성공판정에 쓰는 production 카페 id (현재: wgang, dlxogns01) */
 export const PRODUCTION_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isProductionCafe).map(c => c.id)
-/** 발행(refs) 가능 카페 id = production + publishable (현재: production과 동일 — 승격 전) */
+/** 발행(refs) 가능 카페 id = production + publishable (현재: wgang, dlxogns01, remonterrace, goondae — Phase 1-a-② 승격) */
 export const PUBLISHABLE_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isPublishableSource).map(c => c.id)
 /** 비핵심 소스(shadow+publishable) — 크롤 전략(페이지 루프·pre-visit·연령필터) 전용 키 (현재: remonterrace, goondae) */
 export const SECONDARY_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isSecondarySource).map(c => c.id)
-/** 발행 금지 관찰 전용 shadow 카페 id (현재: remonterrace, goondae) */
+/** 발행 금지 관찰 전용 shadow 카페 id (현재: 없음 — remon/goondae는 publishable로 승격) */
 export const SHADOW_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isShadowSource).map(c => c.id)
+
+/** cafeId → sourceStage 판정 (BotLog refSourceStage 기록용 — content-curator에서 사용) */
+export function sourceStageOfCafe(cafeId: string): 'production' | 'publishable' | 'shadow' | 'unknown' {
+  const c = CAFE_CONFIGS.find(x => x.id === cafeId)
+  if (!c) return 'unknown'
+  if (isProductionCafe(c)) return 'production'
+  return c.sourceStage === 'publishable' ? 'publishable' : 'shadow'
+}
 
 /** dlxogns01(은퇴 후 50년) 창업자 지정 허용 게시판 13개 — content-curator 후보 필터용 */
 export const DLXOGNS01_ALLOWED_BOARDS: string[] = [

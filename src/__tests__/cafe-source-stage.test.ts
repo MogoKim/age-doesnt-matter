@@ -8,33 +8,44 @@ import {
   isPublishableSource,
   isSecondarySource,
   isShadowSource,
+  sourceStageOfCafe,
 } from '../../agents/cafe/config'
 
-// Phase 1-a-① (2026-07-09): source 정책 축 분리 — 동작 무변경 기반 작업.
-// 핵심 가드: remon/goondae가 publishable로 승격돼도 PRODUCTION_CAFE_IDS(trend/killer/
+// Phase 1-a-① 축 분리 + Phase 1-a-② remon/goondae publishable 승격 (2026-07-09).
+// 핵심 가드: 승격 후에도 remon/goondae는 PRODUCTION_CAFE_IDS(trend/killer/
 // CRAWL_EXPECTED 성공판정)에 절대 유입되지 않아야 한다.
 // 정책: docs/analysis/content-curate-source-policy-phase1a-2026-07-09.md
 
-describe('파생 상수 — 현재 상태 (remon/goondae = shadow, 승격 전)', () => {
-  it('PRODUCTION_CAFE_IDS = wgang, dlxogns01 만', () => {
+describe('파생 상수 — 현재 상태 (Phase 1-a-② 승격 후: remon/goondae = publishable)', () => {
+  it('PRODUCTION_CAFE_IDS = wgang, dlxogns01 만 (승격 후에도 불변)', () => {
     expect(PRODUCTION_CAFE_IDS.sort()).toEqual(['dlxogns01', 'wgang'])
   })
 
-  it('PUBLISHABLE_CAFE_IDS = production과 동일 (승격 전)', () => {
-    expect(PUBLISHABLE_CAFE_IDS.sort()).toEqual(['dlxogns01', 'wgang'])
+  it('PUBLISHABLE_CAFE_IDS = production + remon/goondae (발행 refs 확대)', () => {
+    expect(PUBLISHABLE_CAFE_IDS.sort()).toEqual(['dlxogns01', 'goondae', 'remonterrace', 'wgang'])
   })
 
-  it('SECONDARY_CAFE_IDS = remonterrace, goondae (크롤 전략 키)', () => {
+  it('SECONDARY_CAFE_IDS = remonterrace, goondae 유지 (크롤 전략 불변)', () => {
     expect(SECONDARY_CAFE_IDS.sort()).toEqual(['goondae', 'remonterrace'])
   })
 
-  it('SHADOW_CAFE_IDS = remonterrace, goondae (발행 금지)', () => {
-    expect(SHADOW_CAFE_IDS.sort()).toEqual(['goondae', 'remonterrace'])
+  it('SHADOW_CAFE_IDS = 빈 배열 (발행 금지 소스 현재 없음)', () => {
+    expect(SHADOW_CAFE_IDS).toEqual([])
   })
 
   it('remon/goondae는 PRODUCTION에 절대 미포함 (trend/killer/성공판정 오염 방지)', () => {
     expect(PRODUCTION_CAFE_IDS).not.toContain('remonterrace')
     expect(PRODUCTION_CAFE_IDS).not.toContain('goondae')
+  })
+})
+
+describe('sourceStageOfCafe — BotLog refSourceStage 기록용', () => {
+  it('production/publishable/unknown 판정', () => {
+    expect(sourceStageOfCafe('wgang')).toBe('production')
+    expect(sourceStageOfCafe('dlxogns01')).toBe('production')
+    expect(sourceStageOfCafe('remonterrace')).toBe('publishable')
+    expect(sourceStageOfCafe('goondae')).toBe('publishable')
+    expect(sourceStageOfCafe('없는카페')).toBe('unknown')
   })
 })
 

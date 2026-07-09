@@ -24,7 +24,7 @@ import {
   toCuratedSummary,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
-import { DLXOGNS01_ALLOWED_BOARDS, PRODUCTION_CAFE_IDS, SHADOW_CAFE_IDS } from './config.js'
+import { DLXOGNS01_ALLOWED_BOARDS, PRODUCTION_CAFE_IDS, PUBLISHABLE_CAFE_IDS, SHADOW_CAFE_IDS, sourceStageOfCafe } from './config.js'
 import { generateCommunitySlug } from '../core/slug.js'
 import { computeUsableCount } from './compute-usable-count.js'
 import { buildPopularSeoMeta } from './popular-seo.js'
@@ -66,12 +66,14 @@ interface TopicResult extends CandidateTopic {
   refTitle?: string
   refCafeId?: string
   isShadowRef?: boolean
+  // [Phase 1-a-②] ref 소스 단계 — production/publishable/shadow 구분 (additive optional)
+  refSourceStage?: 'production' | 'publishable' | 'shadow' | 'unknown'
 }
 
 /** refs[0] 메타 — refs 확보 후의 topicResults 기록에 spread. ref 없으면 빈 객체(필드 미기록).
  * 파라미터를 unknown으로 받는 이유: refs 요소 타입이 getReferencePosts 제네릭 추론에 따라 좁아져
  * (u4Pool 경로 등) 호출부마다 달라짐 — 런타임 shape(id/title/cafeId)만 읽으므로 내부에서 안전 접근. */
-function refMeta(ref?: unknown): Pick<TopicResult, 'refCafePostId' | 'refTitle' | 'refCafeId' | 'isShadowRef'> {
+function refMeta(ref?: unknown): Pick<TopicResult, 'refCafePostId' | 'refTitle' | 'refCafeId' | 'isShadowRef' | 'refSourceStage'> {
   const r = ref as { id?: string; title?: string; cafeId?: string | null } | undefined
   if (!r?.id || typeof r.title !== 'string') return {}
   return {
@@ -79,6 +81,7 @@ function refMeta(ref?: unknown): Pick<TopicResult, 'refCafePostId' | 'refTitle' 
     refTitle: r.title.slice(0, 30),
     refCafeId: r.cafeId ?? undefined,
     isShadowRef: !!r.cafeId && SHADOW_CAFE_IDS.includes(r.cafeId),
+    refSourceStage: r.cafeId ? sourceStageOfCafe(r.cafeId) : undefined,
   }
 }
 
@@ -170,7 +173,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     isUsable: true, usedAt: null, isPopular: false,
     imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true },
     commentCrawled: true,  // topComments가 한 번이라도 수집된 글만 (usable 필터 사전 조건)
-    cafeId: { in: PRODUCTION_CAFE_IDS },  // production 카페만 발행 후보로 (shadow 격리)
+    cafeId: { in: PUBLISHABLE_CAFE_IDS },  // [Phase 1-a-②] 발행 refs = production + publishable (shadow는 계속 격리)
     NOT: { AND: [{ cafeId: 'dlxogns01' }, { boardName: { notIn: DLXOGNS01_ALLOWED_BOARDS } }] },
   }
   const topicWords = topic.split(/[\s·,]+/).filter(w => w.length >= 2)
@@ -259,21 +262,9 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   })))
   if (s3.length >= limit) return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
 
-  // shadow fallback (2026-07-07 응급): production refs가 limit 미달일 때만 remon(shadow) usable5로 보충.
-  //   wgang 2주 크롤 중단으로 7일 이내 production usable5 재고 고갈 → 발행 중단 완화용.
-  //   remon refs는 "생성 참고"로만 쓰이며 usedAt 마킹은 하지 않는다(sourcePostIds에서 shadow 제외 — generateCuratedPost).
-  //   trend/hotTopics/killerPosts 정규 후보에는 절대 편입하지 않음(이 함수 refs 반환에만).
-  const fillWithShadow = async (prodRefs: typeof s3): Promise<typeof s3> => {
-    if (prodRefs.length >= limit || SHADOW_CAFE_IDS.length === 0) return prodRefs
-    const prodIds = new Set(prodRefs.map(p => p.id))
-    const shadowRefs = withUsableFilter(filterBlocked(await prisma.cafePost.findMany({
-      where: { ...base, cafeId: { in: SHADOW_CAFE_IDS }, postedAt: { gte: cutoff7d } },
-      orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
-      take: candidateTake, select: selectFields,
-    }))).filter(p => !prodIds.has(p.id))
-    if (shadowRefs.length > 0) console.log(`[ContentCurator] shadow fallback (production ${prodRefs.length}<${limit}): remon usable5 ${shadowRefs.length}개 보충`)
-    return [...prodRefs, ...shadowRefs].slice(0, limit)
-  }
+  // [Phase 1-a-② 2026-07-09] shadow fallback(fillWithShadow, PR #90 응급) 제거.
+  //   remon/goondae는 publishable로 승격되어 base 쿼리(PUBLISHABLE_CAFE_IDS)의 stage 1~4에 정식 편입 —
+  //   "몰래 보충 + usedAt 미마킹 + cafePostId null" 경로 소멸. 진짜 shadow(현재 없음)는 base에서 계속 격리.
 
   // 4단계: desireCategory 무관 전체 pool — DB 카테고리 분류 97% NULL 상태 보완
   // GENERAL은 stage 3와 동일 쿼리라 스킵
@@ -285,9 +276,9 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
       take: candidateTake, select: selectFields,
     }))).filter(p => !s3ids.has(p.id))
     if (s4.length > 0) console.log(`[ContentCurator] stage4 fallback (${desireCat}→NULL pool): ${s4.length}개 발견`)
-    return { refs: await fillWithShadow([...s3, ...s4].slice(0, limit)), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
+    return { refs: [...s3, ...s4].slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
   }
-  return { refs: await fillWithShadow(s3.slice(0, limit)), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
+  return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
 }
 
 /**
@@ -332,7 +323,8 @@ function resolveBoardForPost(ownDesire: string | null | undefined, bucketDesire:
  * killer self-ref fast lane — killer candidate 의 production 원문이 발행 자격을 모두 충족하면
  * 그 원문 자체를 refs[0] 로 반환한다(다른 refs 재검색 없이 발행). 자격 미달·shadow·미존재 시 null → 기존 getReferencePosts fallback.
  * getReferencePosts base 와 동일한 게이트(isUsable/usedAt/commentCrawled/img·vid빈/usable>=5/season/access·PZP 2차방어)를 적용해 품질 불변.
- * shadow(remon/goondae)는 절대 제외 — production(PRODUCTION_CAFE_IDS) 만. DB write 없음(findUnique read only).
+ * killer 후보는 production(PRODUCTION_CAFE_IDS) 한정 유지 — publishable(remon/goondae)은 refs로만 편입되고
+ * killer/self-ref 대상은 아니다(Phase 1-a-② 범위 제한). DB write 없음(findUnique read only).
  */
 async function loadEligibleKillerSelfRef(
   cafePostId: string,
@@ -389,9 +381,9 @@ async function generateCuratedPost(
     boardType: boardInfo.boardType,
     category: boardInfo.category,
     sourceTopic: topic,
-    // shadow(remon) ref는 usedAt 마킹하지 않는다(reference fallback 전용) → sourcePostIds에서 제외.
-    // production ref면 기존대로 마킹. shadow만일 땐 빈 배열 → cafePostId=null, usedAt 미마킹.
-    sourcePostIds: (mainRef.cafeId && SHADOW_CAFE_IDS.includes(mainRef.cafeId)) ? [] : [mainRef.id],
+    // [Phase 1-a-②] publishable ref도 production과 동일 — 항상 usedAt 마킹 + Post.cafePostId 연결.
+    // (구 shadow 분기(sourcePostIds=[])는 cafePostId=null 발행·반복 재발행의 원천이라 제거)
+    sourcePostIds: [mainRef.id],
   }
 }
 
