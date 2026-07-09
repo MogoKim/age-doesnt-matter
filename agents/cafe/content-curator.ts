@@ -671,9 +671,12 @@ export async function main() {
   })
 
   // ─── candidatePool 구성 (Fix 2-B) ─────────────────────────────
-  const killerCandidates: CandidateTopic[] = killerPosts
+  // [2단계 보충 2026-07-09] killer 후보를 slice 없이 전량 보유(최대 take 30). base 4개 유지 + trend가 못 채운
+  //   빈자리를 killer 5번째~로 보충 → pool 을 CANDIDATE_POOL_SIZE(15) 근접 유지. 상위 후보가 정치/중복/저품질로
+  //   skip 돼도 다음 killer 후보를 계속 시도해 published=0 회차를 줄인다. 가드는 그대로(완화 아님, 후보 보충).
+  //   설계: docs/analysis/content-curation-candidate-redesign-2026-07-09.md
+  const killerCandidatesAll: CandidateTopic[] = killerPosts
     .filter(p => !isDesireExhausted(p.desireCategory ?? 'GENERAL') && !dupQuarantine.cafeIds.has(p.id))
-    .slice(0, 4)  // [1단계 완화 2026-07-09] killer 후보 2→4. self-ref(source-backed, 효율 34%)를 늘려 topic-only trend(효율 5%) 시도를 줄인다(maxTrendCandidates 자동 축소). 근본 해결 아님(→ docs/analysis/content-curation-candidate-redesign-2026-07-09.md). 격리/소진 후보는 건너뛰고 다음 상위로 회전.
     .map(p => ({
       topic: p.title,
       source: 'killer' as const,
@@ -682,8 +685,9 @@ export async function main() {
       killerScore: p.killerScore ?? undefined,
       desireCategory: p.desireCategory ?? undefined,
     }))
+  const killerCandidates: CandidateTopic[] = killerCandidatesAll.slice(0, 4)  // base 4 유지(격리/소진 후보는 filter로 이미 제외)
   if (killerCandidates.length > 0) {
-    console.log(`[ContentCurator] 킬러글 후보: ${killerCandidates.length}건`)
+    console.log(`[ContentCurator] 킬러글 후보: ${killerCandidates.length}건 (raw ${killerCandidatesAll.length})`)
   }
 
   const maxTrendCandidates = CANDIDATE_POOL_SIZE - killerCandidates.length
@@ -736,9 +740,14 @@ export async function main() {
     })
   }
 
-  // killerCandidates 앞, trendCandidates 뒤
-  const candidatePool: CandidateTopic[] = [...killerCandidates, ...trendCandidates]
-  console.log(`[ContentCurator] 후보 풀: ${candidatePool.length}개 (killer=${killerCandidates.length}, trend=${trendCandidates.length})`)
+  // [2단계 보충] trend 가 maxTrendCandidates(11)를 못 채운 빈자리를 killer 5번째~로 보충 → pool 을 15 근접 유지.
+  //   killerCandidatesAll 은 이미 filter(격리/소진 제외) 통과분이라 추가 가드 불필요. self-ref/발행 시점 가드는 그대로.
+  const supplementalCount = Math.max(0, CANDIDATE_POOL_SIZE - killerCandidates.length - trendCandidates.length)
+  const supplementalKiller = killerCandidatesAll.slice(4, 4 + supplementalCount)
+
+  // killerCandidates(base) 앞, trendCandidates 중간, supplementalKiller(보충) 뒤
+  const candidatePool: CandidateTopic[] = [...killerCandidates, ...trendCandidates, ...supplementalKiller]
+  console.log(`[ContentCurator] 후보 풀: ${candidatePool.length}개 (killer base=${killerCandidates.length} +보충=${supplementalKiller.length}, trend=${trendCandidates.length})`)
 
   // ─── 실행 루프 (Fix 2-C) ──────────────────────────────────────
   // refs=0 / 생성실패 / 발행실패 시 다음 후보로 이동 (continue 기반)
@@ -900,8 +909,11 @@ export async function main() {
       details: JSON.stringify({
         topicsUsed: topicResults.map(r => r.topic),
         candidatePoolSize: candidatePool.length,
-        // [1단계 가시성] 기존 필드 유지 + source별 후보/발행/skip 집계 추가(파서 호환)
-        killerCandidateCount: killerCandidates.length,
+        // [1단계 가시성 + 2단계 보충] 기존 필드 유지, killerCandidateCount 는 final(base+보충) 의미로 기록(숫자만 증가, 파서 호환)
+        killerCandidateCount: killerCandidates.length + supplementalKiller.length,  // final killer 수
+        baseKillerCandidateCount: killerCandidates.length,
+        supplementalKillerCandidateCount: supplementalKiller.length,
+        finalKillerCandidateCount: killerCandidates.length + supplementalKiller.length,
         trendCandidateCount: trendCandidates.length,
         selfRefUsedCount,
         skipBySource,
