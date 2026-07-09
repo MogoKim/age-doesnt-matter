@@ -9,6 +9,7 @@ import {
   isSecondarySource,
   isShadowSource,
   sourceStageOfCafe,
+  PUBLISHABLE_ONLY_CAFE_IDS,
 } from '../../agents/cafe/config'
 
 // Phase 1-a-① 축 분리 + Phase 1-a-② remon/goondae publishable 승격 (2026-07-09).
@@ -36,6 +37,13 @@ describe('파생 상수 — 현재 상태 (Phase 1-a-② 승격 후: remon/goond
   it('remon/goondae는 PRODUCTION에 절대 미포함 (trend/killer/성공판정 오염 방지)', () => {
     expect(PRODUCTION_CAFE_IDS).not.toContain('remonterrace')
     expect(PRODUCTION_CAFE_IDS).not.toContain('goondae')
+  })
+
+  // [Phase 1-b] publishable source-backed candidate lane 키
+  it('PUBLISHABLE_ONLY_CAFE_IDS = remonterrace, goondae (candidate lane 전용, production 미포함)', () => {
+    expect(PUBLISHABLE_ONLY_CAFE_IDS.sort()).toEqual(['goondae', 'remonterrace'])
+    expect(PUBLISHABLE_ONLY_CAFE_IDS).not.toContain('wgang')
+    expect(PUBLISHABLE_ONLY_CAFE_IDS).not.toContain('dlxogns01')
   })
 })
 

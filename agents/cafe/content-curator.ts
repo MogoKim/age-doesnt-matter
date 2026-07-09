@@ -24,7 +24,7 @@ import {
   toCuratedSummary,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
-import { DLXOGNS01_ALLOWED_BOARDS, PRODUCTION_CAFE_IDS, PUBLISHABLE_CAFE_IDS, SHADOW_CAFE_IDS, sourceStageOfCafe } from './config.js'
+import { DLXOGNS01_ALLOWED_BOARDS, PRODUCTION_CAFE_IDS, PUBLISHABLE_CAFE_IDS, PUBLISHABLE_ONLY_CAFE_IDS, SHADOW_CAFE_IDS, sourceStageOfCafe } from './config.js'
 import { generateCommunitySlug } from '../core/slug.js'
 import { computeUsableCount } from './compute-usable-count.js'
 import { buildPopularSeoMeta } from './popular-seo.js'
@@ -46,7 +46,8 @@ type SkipReason =
 
 interface CandidateTopic {
   topic: string
-  source: 'killer' | 'trend'
+  // [Phase 1-b] 'publishable' = remon/goondae source-backed 보충 lane (production killer/trend가 항상 우선)
+  source: 'killer' | 'trend' | 'publishable'
   cafePostId?: string
   postedAt?: Date
   killerScore?: number
@@ -336,7 +337,8 @@ async function loadEligibleKillerSelfRef(
   })
   if (!p) return null
   // production 한정 (shadow 절대 제외) — killerPosts 가 이미 PRODUCTION 필터지만 방어적 재확인
-  if (!p.cafeId || SHADOW_CAFE_IDS.includes(p.cafeId) || !PRODUCTION_CAFE_IDS.includes(p.cafeId)) return null
+  // [Phase 1-b] self-ref 자격: production + publishable (shadow는 계속 배제) — publishable 후보의 자기 원문 발행 허용
+  if (!p.cafeId || SHADOW_CAFE_IDS.includes(p.cafeId) || !PUBLISHABLE_CAFE_IDS.includes(p.cafeId)) return null
   // dlxogns01 허용 board 만 (getReferencePosts base 와 동일)
   if (p.cafeId === 'dlxogns01' && !DLXOGNS01_ALLOWED_BOARDS.includes(p.boardName ?? '')) return null
   // 발행 자격 게이트 (getReferencePosts base 와 동일 + usable>=5)
@@ -755,9 +757,41 @@ export async function main() {
   const supplementalCount = Math.max(0, CANDIDATE_POOL_SIZE - killerCandidates.length - trendCandidates.length)
   const supplementalKiller = killerCandidatesAll.slice(4, 4 + supplementalCount)
 
-  // killerCandidates(base) 앞, trendCandidates 중간, supplementalKiller(보충) 뒤
-  const candidatePool: CandidateTopic[] = [...killerCandidates, ...trendCandidates, ...supplementalKiller]
-  console.log(`[ContentCurator] 후보 풀: ${candidatePool.length}개 (killer base=${killerCandidates.length} +보충=${supplementalKiller.length}, trend=${trendCandidates.length})`)
+  // [Phase 1-b] publishable source-backed 보충 lane — production killer/trend가 채우지 못한 빈자리만.
+  //   remon/goondae 좋은 원문이 refs 재료로만 있고 후보로 못 올라와 pool=0이 되는 구조 병목 해소
+  //   (실측 2026-07-09: production killer 30→격리 후 0, trend 0, publishable 발행가능 재고 31건 방치).
+  //   PRODUCTION lane(trend/killer)과 완전 분리 — 임계(killerScore>=50)·가드 동일, 완화 없음.
+  const publishableSlots = Math.max(0, CANDIDATE_POOL_SIZE - killerCandidates.length - trendCandidates.length - supplementalKiller.length)
+  let publishableCandidates: CandidateTopic[] = []
+  if (publishableSlots > 0 && PUBLISHABLE_ONLY_CAFE_IDS.length > 0) {
+    const publishablePosts = await prisma.cafePost.findMany({
+      where: {
+        killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false,
+        imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true }, commentCrawled: true,
+        postedAt: { gte: sevenDaysAgo },
+        cafeId: { in: PUBLISHABLE_ONLY_CAFE_IDS },
+      },
+      orderBy: { killerScore: 'desc' },
+      take: 30,
+      select: { id: true, title: true, postedAt: true, killerScore: true, desireCategory: true },
+    })
+    type PublishablePostRow = { id: string; title: string; postedAt: Date | null; killerScore: number | null; desireCategory: string | null }
+    publishableCandidates = (publishablePosts as PublishablePostRow[])
+      .filter((p: PublishablePostRow) => !isDesireExhausted(p.desireCategory ?? 'GENERAL') && !quarantinedPostIds.has(p.id) && !quarantinedTopics.has(p.title))
+      .slice(0, publishableSlots)
+      .map((p: PublishablePostRow) => ({
+        topic: p.title,
+        source: 'publishable' as const,
+        cafePostId: p.id,
+        postedAt: p.postedAt ?? undefined,
+        killerScore: p.killerScore ?? undefined,
+        desireCategory: p.desireCategory ?? undefined,
+      }))
+  }
+
+  // killerCandidates(base) 앞, trendCandidates 중간, supplementalKiller(보충), publishable(마지막 보충) 뒤
+  const candidatePool: CandidateTopic[] = [...killerCandidates, ...trendCandidates, ...supplementalKiller, ...publishableCandidates]
+  console.log(`[ContentCurator] 후보 풀: ${candidatePool.length}개 (killer base=${killerCandidates.length} +보충=${supplementalKiller.length}, trend=${trendCandidates.length}, publishable=${publishableCandidates.length})`)
 
   // ─── 실행 루프 (Fix 2-C) ──────────────────────────────────────
   // refs=0 / 생성실패 / 발행실패 시 다음 후보로 이동 (continue 기반)
@@ -786,7 +820,7 @@ export async function main() {
     // [killer self-ref fast lane 2026-07-08] killer candidate 는 이미 cafePostId 를 가진 production 고품질 원문.
     //   generateCuratedPost 가 mainRef(refs[0]) 1개만 사용하므로, 원문이 발행 자격을 충족하면 다른 refs 재검색 없이
     //   그 원문 자체를 refs[0] 로 쓴다(AI 호출 0, DB write 없음). 자격 미달·shadow·trend candidate 는 기존 getReferencePosts fallback.
-    const selfRef = (candidate.source === 'killer' && candidate.cafePostId)
+    const selfRef = ((candidate.source === 'killer' || candidate.source === 'publishable') && candidate.cafePostId)
       ? await loadEligibleKillerSelfRef(candidate.cafePostId, desireCat)
       : null
 
@@ -929,6 +963,9 @@ export async function main() {
         supplementalKillerCandidateCount: supplementalKiller.length,
         finalKillerCandidateCount: killerCandidates.length + supplementalKiller.length,
         trendCandidateCount: trendCandidates.length,
+        // [Phase 1-b] publishable lane 카운트 (additive — 기존 필드 제거·개명 없음). lane이 보충 전용이라 두 값 동일.
+        publishableCandidateCount: publishableCandidates.length,
+        supplementalPublishableCandidateCount: publishableCandidates.length,
         selfRefUsedCount,
         skipBySource,
         publishedBySource,
