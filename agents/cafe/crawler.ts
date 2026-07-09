@@ -19,7 +19,9 @@ import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { ensureSession, SESSION_HALTED_FLAG } from './session-manager.js'
-import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS, COMPETITOR_KEYWORDS, SHADOW_CAFE_IDS } from './config.js'
+// SECONDARY_CAFE_IDS(shadow+publishable): 크롤 전략(페이지 루프·pre-visit·연령필터·detailCap)은
+// 발행 정책(sourceStage)과 별개 축 — publishable 승격 후에도 크롤 방식은 유지된다 (Phase 1-a-①).
+import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_THRESHOLDS, COMPETITOR_KEYWORDS, SECONDARY_CAFE_IDS } from './config.js'
 import type { RawCafePost, CafeConfig, ContentCategory, CommentData } from './types.js'
 import { calculateQualityScore, calculateKillerScore } from './quality-scorer.js'
 import { computeUsableCount } from './compute-usable-count.js'
@@ -579,7 +581,7 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
       // shadow 카페(remonterrace/goondae 등): true page loop — ?viewType=L&page=N이 실제 다른 글 반환
       // (실측 page1↔page2 교집합 0). maxPages만큼 페이지 순회(3 하드캡 없음). 목록 row 메타(commentCount/
       // view/like/notice) 파싱 → pre-visit 필터용. production(wgang/dlxogns01)·인기글은 기존 scroll 방식 그대로(동작 불변).
-      if (SHADOW_CAFE_IDS.includes(cafe.id) && !board.isPopular) {
+      if (SECONDARY_CAFE_IDS.includes(cafe.id) && !board.isPopular) {
         const maxPg = quickMode ? 1 : board.maxPages
         for (let pg = 1; pg <= maxPg; pg++) {
           const pageUrl = `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/menus/${board.menuId}?viewType=L&page=${pg}`
@@ -702,7 +704,7 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
   // 방법 2: 카페 메인 페이지 (보충 — 총 수집이 10개 미만일 때)
   // shadow 카페(remonterrace 등)는 메인 보충 금지 — 메인은 전 게시판 최신글이라 지정 board(쫑알쫑알) 밖을
   // 방문하게 되고, pre-visit 필터(shadow board 분기)도 우회한다. 지정 board만 수집한다.
-  if (collectedMap.size < 10 && !SHADOW_CAFE_IDS.includes(cafe.id)) {
+  if (collectedMap.size < 10 && !SECONDARY_CAFE_IDS.includes(cafe.id)) {
     try {
       console.log(`[CafeCrawler] ${cafe.name} — 메인 페이지 보충 수집...`)
       await page.goto(cafe.url, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
@@ -1133,8 +1135,8 @@ function isBoardNoticeContent(content: string): boolean {
   return hits >= 2
 }
 
-// shadow 소스(레몬테라스 등) 연령/타깃 필터 — 우나어(40·50·60대)에 부적합한 육아·학부모 글을 isUsable=false로 걸러낸다.
-// production 카페(wgang/dlxogns01)에는 호출되지 않음(savePosts에서 SHADOW_CAFE_IDS 여부로만 적용).
+// 비핵심 소스(레몬테라스 등 shadow/publishable) 연령/타깃 필터 — 우나어(40·50·60대)에 부적합한 육아·학부모 글을 isUsable=false로 걸러낸다.
+// production 카페(wgang/dlxogns01)에는 호출되지 않음(savePosts에서 SECONDARY_CAFE_IDS 여부로만 적용).
 const SHADOW_AGE_HARD_REJECT = ['임신', '출산', '산후', '신생아', '아기', '돌잔치', '이유식', '기저귀', '어린이집', '유치원', '유아', '초등학생', '초등', '워킹맘 복직']
 const SHADOW_AGE_SOFT_REJECT = ['중학생', '고등학생', '수능', '입시', '내신', '학원', '사춘기 자녀']
 const SHADOW_AGE_POSITIVE = ['40대 중후반', '50대', '60대', '갱년기', '폐경', '중년', '남편', '시댁', '친정', '성인 자녀', '대학생 자녀', '취업 자녀', '손주', '은퇴', '노후']
@@ -1233,7 +1235,7 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
       const accessBlocked = isAccessBlockedContent(post.content)
       const videoBlocked = post.videoUrls.length > 0 || isVideoPlayerContent(post.content)
       // shadow 소스(레몬테라스 등) 전용 연령 필터 — production(wgang/dlxogns01)은 shadowAgeReject=false로 무영향.
-      const shadowAgeReject = SHADOW_CAFE_IDS.includes(post.cafeId) && !passesShadowAgeFilter(post.title, post.content)
+      const shadowAgeReject = SECONDARY_CAFE_IDS.includes(post.cafeId) && !passesShadowAgeFilter(post.title, post.content)
       if (imageDep) console.log(`[CafeCrawler] 이미지 의존 글 isUsable=false: "${post.title.slice(0, 25)}"`)
       if (noticeText) console.log(`[CafeCrawler] 게시판 공지문 isUsable=false: "${post.title.slice(0, 25)}"`)
       if (accessBlocked) console.log(`[CafeCrawler] 접근 차단 안내문 isUsable=false: "${post.title.slice(0, 25)}"`)
@@ -1657,7 +1659,7 @@ async function main() {
       // shadow 상세 방문 상한 (detailCapPerRun) — maxPages 상향(1→5)으로 pre-visit 통과 후보가 늘어도
       // 1회 실행당 신규 상세 방문을 30건으로 제한(리소스·차단위험 보호). production은 무제한(동작 불변).
       const SHADOW_DETAIL_CAP = 30
-      const isShadowCafe = SHADOW_CAFE_IDS.includes(cafe.id)
+      const isShadowCafe = SECONDARY_CAFE_IDS.includes(cafe.id)
       let shadowDetailVisits = 0
 
       for (const article of articles) {
@@ -1672,7 +1674,7 @@ async function main() {
 
         // Pre-visit 필터 (shadow 카페만) — 공지/HARD_REJECT/저댓글 글은 상세 방문 전 보류.
         // production(wgang/dlxogns01)은 article에 목록 메타가 없어 이 블록을 타지 않는다(동작 불변).
-        if (SHADOW_CAFE_IDS.includes(cafe.id) && article.commentCount !== undefined && !passesPreVisit(article)) {
+        if (SECONDARY_CAFE_IDS.includes(cafe.id) && article.commentCount !== undefined && !passesPreVisit(article)) {
           console.log(`[CafeCrawler] ${cafe.name} pre-visit 보류: c${article.commentCount}${article.isNotice ? '/공지' : ''} "${(article.title ?? '').slice(0, 24)}"`)
           totalSkipped++
           continue

@@ -18,10 +18,12 @@ export interface CafeConfig {
   /** 수집할 게시판 경로 (인기글, 최신글 등) */
   boards: CafeBoardConfig[]
   /**
-   * 소스 스테이지. 'production'(기본, 미지정 포함)은 발행/trend/재시도 판정에 사용.
-   * 'shadow'는 크롤·저장·psych 분석만 하고 content-curator/trend/run-pipeline에서 격리(관찰 전용).
+   * 소스 스테이지. 'production'(기본, 미지정 포함)은 발행/trend/killer/성공판정 전부에 사용.
+   * 'publishable'은 발행(refs)만 가능 — trend/killer/성공판정 미편입 (Phase 1-a 승격 단계).
+   * 'shadow'는 크롤·저장·psych 분석만 하고 발행 경로에서 격리(관찰 전용).
+   * 정책 문서: docs/analysis/content-curate-source-policy-phase1a-2026-07-09.md
    */
-  sourceStage?: 'production' | 'shadow'
+  sourceStage?: 'production' | 'publishable' | 'shadow'
 }
 
 export interface CafeBoardConfig {

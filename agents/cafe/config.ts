@@ -170,14 +170,34 @@ export const CAFE_CONFIGS: CafeConfig[] = [
 ]
 
 /**
- * 소스 스테이지 격리 — 신규 카페(shadow)가 content-curator/trend/run-pipeline을 오염시키지 않게 한다.
- * sourceStage 미지정은 production 으로 간주(기존 wgang/dlxogns01 동작 불변).
+ * 소스 스테이지 3단계 (Phase 1-a-①: 축 분리 — 동작 무변경 기반 작업)
+ *   production(미지정 포함): 발행 + trend/killer + CRAWL_EXPECTED 성공판정 전부
+ *   publishable: 발행(refs)만 — trend/killer/성공판정 미편입 (승격 중간 단계)
+ *   shadow: 발행 금지 관찰 전용
+ * 크롤 전략(페이지 루프·pre-visit·연령필터)은 발행 정책과 별개 축 — SECONDARY_CAFE_IDS 사용.
+ * 정책 문서: docs/analysis/content-curate-source-policy-phase1a-2026-07-09.md
+ *
+ * ⚠️ isProductionCafe는 "미지정 또는 명시적 production"만 인정한다.
+ *    (기존 `!== 'shadow'` 판정은 publishable 승격 시 remon/goondae가 PRODUCTION_CAFE_IDS에
+ *     자동 편입되어 trend·성공판정·killer 후보를 오염시키는 함정이 있었음)
  */
-export const isProductionCafe = (c: CafeConfig): boolean => c.sourceStage !== 'shadow'
-/** 발행/trend/재시도 판정에 쓰는 production 카페 id (현재: wgang, dlxogns01) */
+export const isProductionCafe = (c: Pick<CafeConfig, 'sourceStage'>): boolean =>
+  !c.sourceStage || c.sourceStage === 'production'
+export const isPublishableSource = (c: Pick<CafeConfig, 'sourceStage'>): boolean =>
+  isProductionCafe(c) || c.sourceStage === 'publishable'
+export const isSecondarySource = (c: Pick<CafeConfig, 'sourceStage'>): boolean =>
+  c.sourceStage === 'shadow' || c.sourceStage === 'publishable'
+export const isShadowSource = (c: Pick<CafeConfig, 'sourceStage'>): boolean =>
+  c.sourceStage === 'shadow'
+
+/** trend/killer/성공판정에 쓰는 production 카페 id (현재: wgang, dlxogns01) */
 export const PRODUCTION_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isProductionCafe).map(c => c.id)
-/** 관찰 전용 shadow 카페 id (현재: 없음) */
-export const SHADOW_CAFE_IDS: string[] = CAFE_CONFIGS.filter(c => c.sourceStage === 'shadow').map(c => c.id)
+/** 발행(refs) 가능 카페 id = production + publishable (현재: production과 동일 — 승격 전) */
+export const PUBLISHABLE_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isPublishableSource).map(c => c.id)
+/** 비핵심 소스(shadow+publishable) — 크롤 전략(페이지 루프·pre-visit·연령필터) 전용 키 (현재: remonterrace, goondae) */
+export const SECONDARY_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isSecondarySource).map(c => c.id)
+/** 발행 금지 관찰 전용 shadow 카페 id (현재: remonterrace, goondae) */
+export const SHADOW_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isShadowSource).map(c => c.id)
 
 /** dlxogns01(은퇴 후 50년) 창업자 지정 허용 게시판 13개 — content-curator 후보 필터용 */
 export const DLXOGNS01_ALLOWED_BOARDS: string[] = [
