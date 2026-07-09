@@ -23,7 +23,7 @@ export const POLITICAL_KEYWORDS: readonly string[] = [
   '검수완박', '공수처', '탄핵소추', '탄핵', '특검', '검찰개혁', '검찰총장', '국정조사', '국정감사', '청문회',
   '패스트트랙', '필리버스터', '본회의',
   // ── 선거 ──
-  '총선백서', '총선', '대선', '보궐선거', '비례대표', '사전투표', '부정선거', '공천', '경선',
+  '총선백서', '총선', '대선', '대선후보', '대선주자', '대선출마', '보궐선거', '비례대표', '사전투표', '부정선거', '공천', '경선',
   '정권교체', '정권심판', '지지율',
   // ── 정책 이슈 ──
   '연금개혁', '금투세', '종부세', '의대증원', '의료대란', '노란봉투법', '채상병', '채해병특검',
@@ -47,6 +47,21 @@ function normalizeText(s: string): string {
     .trim()
 }
 
+// 짧은 키워드 문맥 매칭 — bare substring이 일상어를 정치어로 오인하는 키워드만 정규식으로 제한.
+// 키워드 삭제 없음: 매칭 방식만 문맥 제한 (정치 문맥은 계속 차단).
+// '사드': "감사드려요/인사드립니다"(앞 한글) 및 "사드릴까/사드렸어요"(드리다 활용) 오탐 차단.
+//         뒤가 드리다-활용 음절(리려렸립린릴림)이 아니면 매칭 → "사드 배치"는 물론 "사드배치/사드를"도 차단 유지.
+// '대선': "깍깍대선"류 오탐 차단 — 앞뒤 한글 경계 요구. 무공백 복합어는 목록의 '대선후보/대선주자/대선출마'가 커버.
+const KEYWORD_MATCHERS: Partial<Record<string, RegExp>> = {
+  '사드': /(?<![가-힣])사드(?![리려렸립린릴림])/,
+  '대선': /(?<![가-힣])대선(?![가-힣])/,
+}
+
+function matchesKeyword(text: string, keyword: string): boolean {
+  const matcher = KEYWORD_MATCHERS[keyword]
+  return matcher ? matcher.test(text) : text.includes(keyword)
+}
+
 /**
  * 제목·본문에서 정치 키워드를 찾는다. 제목 우선, 없으면 본문.
  * @returns 매칭된 { keyword, field } 또는 null
@@ -58,8 +73,8 @@ export function findPoliticalKeyword(
   const t = normalizeText(title)
   const c = normalizeText(content)
   for (const k of POLITICAL_KEYWORDS) {
-    if (t.includes(k)) return { keyword: k, field: 'title' }
-    if (c.includes(k)) return { keyword: k, field: 'content' }
+    if (matchesKeyword(t, k)) return { keyword: k, field: 'title' }
+    if (matchesKeyword(c, k)) return { keyword: k, field: 'content' }
   }
   return null
 }
