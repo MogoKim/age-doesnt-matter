@@ -14,7 +14,8 @@ import { generateMagazineImageByContext } from './image-generator.js'
 import { buildMagazineHtml, buildMagazineHtmlV2, parseSectionsFromAI } from './magazine-template.js'
 import { getDefaultImagePlan, type ImageContext } from '../core/image-prompt-builder.js'
 import { buildMagazineSystemPrompt, EDITORIAL_V2_FIELDS, DESIRE_TO_CATEGORY, DESIRE_TOPIC_HINTS } from '../magazine/prompt.js'
-import { pickLongtailKeywords } from '../magazine/longtail-keywords.js'
+import { pickLongtailKeywords, LONGTAIL_KEYWORDS } from '../magazine/longtail-keywords.js'
+import { pickNextGeoTopic } from '../magazine/geo-refill.js'
 import { getActiveSeriesToday } from '../magazine/series-plan.js'
 import { requestGoogleIndexing } from './indexing-api.js'
 
@@ -414,6 +415,8 @@ export interface MagazineRunResult {
   category: string
   postId: string
   heroImageSource: 'local' | 'unsplash' | 'dalle' | 'none'
+  /** [D-mag(a)] 주제 공급원 (additive optional) */
+  topicSource?: 'series' | 'geo_seed' | 'trend' | 'fallback'
 }
 
 /** 메인 실행 */
@@ -466,9 +469,49 @@ export async function main(): Promise<MagazineRunResult[]> {
   }
 
   // GEO 시드 주제 확인 — period='geo_seed'로 미리 INSERT된 주제가 있으면 최우선 처리
-  const geoSeed = await prisma.cafeTrend.findUnique({
+  let geoSeed = await prisma.cafeTrend.findUnique({
     where: { date_period: { date: today, period: 'geo_seed' } },
   })
+
+  // [D-mag(a) 2026-07-10] geo_seed lazy self-refill — trend-analyzer 의존 제거 선행.
+  //   오늘 geo_seed가 없으면 longtail-keywords(main 자산)에서 미사용 주제 1개를 골라 오늘자 행 생성.
+  //   실측(2026-07-10): 기존 geo_seed는 일회성 시드 12편뿐, 2026-05-02 이후 고갈 — 평일 주제가
+  //   trend.magazineTopics에 전담되던 상태를 해소. 후보 소진 시 생성 생략 → 기존 폴백 체계로 자연 강등.
+  if (!geoSeed) {
+    const pastGeo = await prisma.cafeTrend.findMany({
+      where: { period: 'geo_seed' },
+      select: { magazineTopics: true },
+    })
+    const usedGeoTitles = new Set<string>(
+      pastGeo.flatMap((r: { magazineTopics: unknown }) =>
+        (Array.isArray(r.magazineTopics) ? r.magazineTopics : []).map((t: { title?: string }) => String(t?.title ?? ''))),
+    )
+    const recent90Titles = await getRecentMagazineTitles(90)
+    const kstDayIndex = Math.floor((Date.now() + 9 * 60 * 60 * 1000) / 86_400_000)  // KST 날짜 기반 카테고리 순환
+    const pick = pickNextGeoTopic(LONGTAIL_KEYWORDS, usedGeoTitles, recent90Titles, kstDayIndex)
+    if (pick) {
+      geoSeed = await prisma.cafeTrend.create({
+        data: {
+          date: today,
+          period: 'geo_seed',
+          hotTopics: [],
+          keywords: [],
+          sentimentMap: { positive: 0, neutral: 0, negative: 0 },
+          magazineTopics: [{
+            title: pick.keyword,
+            reason: `[geo-refill] ${pick.intent}${pick.pillar ? ` · ${pick.pillar}` : ''} (${pick.category})`,
+            score: 9,  // 시리즈(10)보다 아래, 발행 게이트(>=7) 통과 — 기존 우선순위 유지
+            relatedPosts: [],
+          }],
+          totalPosts: 0,
+        },
+      })
+      console.log(`[MagazineGenerator] geo_seed self-refill: "${pick.keyword}" (${pick.category})`)
+    } else {
+      console.log('[MagazineGenerator] geo_seed refill 후보 소진 — 기존 폴백 체계로 진행')
+    }
+  }
+
   const geoTopics = geoSeed
     ? (geoSeed.magazineTopics as unknown as MagazineSuggestion[])
     : []
@@ -494,10 +537,11 @@ export async function main(): Promise<MagazineRunResult[]> {
     console.log(`[MagazineGenerator] 📚 시리즈 주제: ${item.series.title} ${item.episodeIndex + 1}/${item.series.topics.length}편 — "${item.episodeTitle}"`)
   }
 
-  const magazineTopics = [
-    ...seriesTopics,  // 시리즈 최우선
-    ...geoTopics,
-    ...((trend?.magazineTopics ?? []) as unknown as MagazineSuggestion[]),
+  // [D-mag(a)] topicSource 태깅 — 발행 주제의 공급원을 BotLog로 관측 (trend 중단 가능 판정 지표)
+  const magazineTopics: MagazineSuggestion[] = [
+    ...seriesTopics.map(t => ({ ...t, topicSource: 'series' as const })),  // 시리즈 최우선
+    ...geoTopics.map(t => ({ ...t, topicSource: 'geo_seed' as const })),
+    ...((trend?.magazineTopics ?? []) as unknown as MagazineSuggestion[]).map(t => ({ ...t, topicSource: 'trend' as const })),
   ]
 
   // 욕망 지도 로드 — 주제 보강에 활용
@@ -513,6 +557,7 @@ export async function main(): Promise<MagazineRunResult[]> {
       reason: `오늘 커뮤니티 지배 욕망: ${dominantDesire}`,
       relatedPosts: [],
       score: 8,
+      topicSource: 'fallback',
     }
     console.log(`[MagazineGenerator] 욕망지도 폴백 주제 사용: "${fallbackTopic.title}"`)
     const category = DESIRE_TO_CATEGORY[dominantDesire] ?? '생활'
@@ -702,7 +747,7 @@ export async function main(): Promise<MagazineRunResult[]> {
 
     publishedCount++
     publishedTitles.push(article.title)
-    publishedResults.push({ title: article.title, category, postId, heroImageSource: image.source })
+    publishedResults.push({ title: article.title, category, postId, heroImageSource: image.source, topicSource: topic.topicSource ?? 'trend' })
     console.log(`[MagazineGenerator] 발행: "${article.title}" (${postId}) — 히어로 ${image ? `1장(${image.source})` : '없음'} + 본문 ${bodyImageUrls.size}장`)
   }
 
@@ -719,6 +764,8 @@ export async function main(): Promise<MagazineRunResult[]> {
         published: publishedCount,
         titles: publishedTitles,
         cpsMatched: totalCpsCount,
+        // [D-mag(a)] 발행별 주제 공급원 — trend 중단 가능 판정 지표 (additive, 기존 필드 무변경)
+        topicSources: publishedResults.map(r => ({ title: r.title, topicSource: r.topicSource ?? 'trend' })),
       }),
       itemCount: publishedCount,
       executionTimeMs: durationMs,
