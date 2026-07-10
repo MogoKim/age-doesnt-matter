@@ -134,9 +134,9 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     ],
   },
   // ─────────────────────────────────────────────────────────
-  // 3. 레몬테라스 (10298136) — publishable 소스 (Phase 1-a-② 승격, 2026-07-09)
-  //    sourceStage:'publishable' → 발행(refs)만 정식 편입. trend/killer/성공판정은 여전히 미편입.
-  //    발행 시 production과 동일하게 usedAt 마킹 + Post.cafePostId 연결 (몰래 fallback 아님).
+  // 3. 레몬테라스 (10298136) — core 소스 (Phase 2-a 승격, 2026-07-10. 1-a-② publishable 경유)
+  //    sourceStage:'core' → 발행 + killer 후보 경쟁 동급(killerScore 순). trend/성공판정은 미편입(2-b 이후).
+  //    발행 시 production과 동일: usedAt 마킹 + Post.cafePostId 연결 + 전체 가드.
   //    legacyCrawler:true + allArticlesUrl 미지정 → 전체글보기 우회, boards 루프(menuId 23)만 수집.
   //    육아·살림 카페라 연령 필터(passesShadowAgeFilter, crawler.ts — SECONDARY 키)로 isUsable 보정 유지.
   // ─────────────────────────────────────────────────────────
@@ -146,15 +146,15 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/f-e/cafes/10298136',
     numericId: 10298136,
     legacyCrawler: true,
-    sourceStage: 'publishable',
+    sourceStage: 'core',
     boards: [
       { name: '쫑알쫑알', menuId: 23, maxPages: 15, priority: 'medium', category: 'lifestyle' },  // 2026-07-07 5→15: 글이 빨라 1h에 10p+ 밀림. shadow page loop(crawler.ts)로 실제 page1~15 순회. pre-visit(c>=5) 통과만 상세, detailCap 30
     ],
   },
   // ─────────────────────────────────────────────────────────
-  // 4. goondae (10797658) — publishable 소스 (Phase 1-a-② 승격, 2026-07-09. 2026-07-08 shadow 파일럿으로 추가)
+  // 4. goondae (10797658) — core 소스 (Phase 2-a 승격, 2026-07-10. shadow 파일럿→1-a-② publishable 경유)
   //    걱정/고민/위로 수다방(menuId 997): 405060 관계·남편·아들·고민 글 적합(실측 c>=5 다수, 오파싱 없음).
-  //    sourceStage:'publishable' → 발행(refs)만 편입, trend/killer/성공판정 미편입. SECONDARY page loop 유지.
+  //    sourceStage:'core' → 발행 + killer 후보 동급. trend/성공판정 미편입(2-b 이후). SECONDARY page loop 유지.
   //    ⚠️ CRAWL_CAFE_FILTER에 'goondae' 추가해야 실제 크롤됨. CRAWL_EXPECTED_CAFE_IDS엔 추가 금지(성공판정 오판 방지).
   // ─────────────────────────────────────────────────────────
   {
@@ -163,7 +163,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/f-e/cafes/10797658',
     numericId: 10797658,
     legacyCrawler: true,   // allArticlesUrl 미지정 → collectAllArticleUrls(전체글보기) 우회하고 boards page loop만 사용 (remon과 동일). 누락 시 crawl-only에서 0개 수집됨.
-    sourceStage: 'publishable',
+    sourceStage: 'core',
     boards: [
       { name: '걱정/고민/위로 수다방', menuId: 997, maxPages: 5, priority: 'medium', category: 'lifestyle' },
     ],
@@ -171,43 +171,50 @@ export const CAFE_CONFIGS: CafeConfig[] = [
 ]
 
 /**
- * 소스 스테이지 3단계 (Phase 1-a-①: 축 분리 — 동작 무변경 기반 작업)
- *   production(미지정 포함): 발행 + trend/killer + CRAWL_EXPECTED 성공판정 전부
- *   publishable: 발행(refs)만 — trend/killer/성공판정 미편입 (승격 중간 단계)
+ * 소스 스테이지 사다리 (Phase 2-a: production > core > publishable > shadow)
+ *   production(미지정 포함): 발행 + killer 후보 + trend + CRAWL_EXPECTED 성공판정 전부
+ *   core: 발행 + killer 후보 경쟁 동급 — trend/성공판정/크롤품질 미편입 (Phase 2-b 이후)
+ *   publishable: 발행(refs) + 보충 lane — 신규 카페 온보딩 단계
  *   shadow: 발행 금지 관찰 전용
- * 크롤 전략(페이지 루프·pre-visit·연령필터)은 발행 정책과 별개 축 — SECONDARY_CAFE_IDS 사용.
- * 정책 문서: docs/analysis/content-curate-source-policy-phase1a-2026-07-09.md
+ * 크롤 전략(페이지 루프·pre-visit·연령필터·detailCap)은 발행 정책과 별개 축 — SECONDARY_CAFE_IDS 사용
+ * (core/publishable/shadow 모두 포함 — 승격해도 연령필터가 꺼지지 않는 것이 이 축 분리의 핵심).
+ * 정책 문서: docs/analysis/content-curate-phase2-core-promotion-design-2026-07-10.md
  *
  * ⚠️ isProductionCafe는 "미지정 또는 명시적 production"만 인정한다.
- *    (기존 `!== 'shadow'` 판정은 publishable 승격 시 remon/goondae가 PRODUCTION_CAFE_IDS에
- *     자동 편입되어 trend·성공판정·killer 후보를 오염시키는 함정이 있었음)
+ *    (core/publishable을 PRODUCTION에 넣으면 trend·CRAWL_EXPECTED 성공판정·크롤품질 기준이
+ *     자동 오염되는 함정 — Phase 1-a-①에서 교정된 원칙 유지)
  */
 export const isProductionCafe = (c: Pick<CafeConfig, 'sourceStage'>): boolean =>
   !c.sourceStage || c.sourceStage === 'production'
+export const isCurationCoreSource = (c: Pick<CafeConfig, 'sourceStage'>): boolean =>
+  isProductionCafe(c) || c.sourceStage === 'core'
 export const isPublishableSource = (c: Pick<CafeConfig, 'sourceStage'>): boolean =>
-  isProductionCafe(c) || c.sourceStage === 'publishable'
+  isCurationCoreSource(c) || c.sourceStage === 'publishable'
 export const isSecondarySource = (c: Pick<CafeConfig, 'sourceStage'>): boolean =>
-  c.sourceStage === 'shadow' || c.sourceStage === 'publishable'
+  c.sourceStage === 'shadow' || c.sourceStage === 'publishable' || c.sourceStage === 'core'
 export const isShadowSource = (c: Pick<CafeConfig, 'sourceStage'>): boolean =>
   c.sourceStage === 'shadow'
 
-/** trend/killer/성공판정에 쓰는 production 카페 id (현재: wgang, dlxogns01) */
+/** trend/CRAWL_EXPECTED 성공판정/크롤품질에 쓰는 production 카페 id (현재: wgang, dlxogns01 — core 승격과 무관하게 불변) */
 export const PRODUCTION_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isProductionCafe).map(c => c.id)
-/** 발행(refs) 가능 카페 id = production + publishable (현재: wgang, dlxogns01, remonterrace, goondae — Phase 1-a-② 승격) */
+/** killer 후보 경쟁군 = production + core (Phase 2-a, 현재: wgang, dlxogns01, remonterrace, goondae) — content-curator killer 쿼리 전용 */
+export const CURATION_CORE_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isCurationCoreSource).map(c => c.id)
+/** 발행(refs) 가능 카페 id = production + core + publishable (현재: wgang, dlxogns01, remonterrace, goondae) */
 export const PUBLISHABLE_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isPublishableSource).map(c => c.id)
-/** 비핵심 소스(shadow+publishable) — 크롤 전략(페이지 루프·pre-visit·연령필터) 전용 키 (현재: remonterrace, goondae) */
+/** 비핵심 소스(core+publishable+shadow) — 크롤 전략(페이지 루프·pre-visit·연령필터) 전용 키 (현재: remonterrace, goondae) */
 export const SECONDARY_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isSecondarySource).map(c => c.id)
-/** 발행 금지 관찰 전용 shadow 카페 id (현재: 없음 — remon/goondae는 publishable로 승격) */
+/** 발행 금지 관찰 전용 shadow 카페 id (현재: 없음) */
 export const SHADOW_CAFE_IDS: string[] = CAFE_CONFIGS.filter(isShadowSource).map(c => c.id)
-/** publishable 전용(비-production) 카페 id — source-backed candidate lane 용 (Phase 1-b, 현재: remonterrace, goondae).
- *  trend/killer(PRODUCTION)와 분리된 별도 lane 키 — PRODUCTION_CAFE_IDS에는 절대 편입되지 않는다. */
+/** publishable 전용(비-core) 카페 id — source-backed 보충 lane 용 (Phase 1-b, 현재: 없음 — remon/goondae는 core 승격).
+ *  신규 카페 온보딩 경로로 유지: shadow → publishable(보충 lane) → core(동급 경쟁) → production. */
 export const PUBLISHABLE_ONLY_CAFE_IDS: string[] = CAFE_CONFIGS.filter(c => c.sourceStage === 'publishable').map(c => c.id)
 
 /** cafeId → sourceStage 판정 (BotLog refSourceStage 기록용 — content-curator에서 사용) */
-export function sourceStageOfCafe(cafeId: string): 'production' | 'publishable' | 'shadow' | 'unknown' {
+export function sourceStageOfCafe(cafeId: string): 'production' | 'core' | 'publishable' | 'shadow' | 'unknown' {
   const c = CAFE_CONFIGS.find(x => x.id === cafeId)
   if (!c) return 'unknown'
   if (isProductionCafe(c)) return 'production'
+  if (c.sourceStage === 'core') return 'core'
   return c.sourceStage === 'publishable' ? 'publishable' : 'shadow'
 }
 
