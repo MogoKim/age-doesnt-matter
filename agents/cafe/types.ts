@@ -112,6 +112,8 @@ export interface MagazineSuggestion {
   reason: string
   score: number
   relatedPosts: string[]
+  /** [D-mag(a)] 주제 공급원 — BotLog 관측용 (additive optional, trend 중단 가능 판정 지표) */
+  topicSource?: 'series' | 'geo_seed' | 'trend' | 'fallback'
 }
 
 export interface PersonaHint {
