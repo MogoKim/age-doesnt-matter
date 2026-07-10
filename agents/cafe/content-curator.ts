@@ -24,7 +24,7 @@ import {
   toCuratedSummary,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
-import { DLXOGNS01_ALLOWED_BOARDS, PRODUCTION_CAFE_IDS, PUBLISHABLE_CAFE_IDS, PUBLISHABLE_ONLY_CAFE_IDS, SHADOW_CAFE_IDS, sourceStageOfCafe } from './config.js'
+import { CURATION_CORE_CAFE_IDS, DLXOGNS01_ALLOWED_BOARDS, PUBLISHABLE_CAFE_IDS, PUBLISHABLE_ONLY_CAFE_IDS, SHADOW_CAFE_IDS, sourceStageOfCafe } from './config.js'
 import { generateCommunitySlug } from '../core/slug.js'
 import { computeUsableCount } from './compute-usable-count.js'
 import { buildPopularSeoMeta } from './popular-seo.js'
@@ -67,8 +67,8 @@ interface TopicResult extends CandidateTopic {
   refTitle?: string
   refCafeId?: string
   isShadowRef?: boolean
-  // [Phase 1-a-②] ref 소스 단계 — production/publishable/shadow 구분 (additive optional)
-  refSourceStage?: 'production' | 'publishable' | 'shadow' | 'unknown'
+  // [Phase 1-a-②/2-a] ref 소스 단계 — production/core/publishable/shadow 구분 (additive optional)
+  refSourceStage?: 'production' | 'core' | 'publishable' | 'shadow' | 'unknown'
 }
 
 /** refs[0] 메타 — refs 확보 후의 topicResults 기록에 spread. ref 없으면 빈 객체(필드 미기록).
@@ -324,8 +324,8 @@ function resolveBoardForPost(ownDesire: string | null | undefined, bucketDesire:
  * killer self-ref fast lane — killer candidate 의 production 원문이 발행 자격을 모두 충족하면
  * 그 원문 자체를 refs[0] 로 반환한다(다른 refs 재검색 없이 발행). 자격 미달·shadow·미존재 시 null → 기존 getReferencePosts fallback.
  * getReferencePosts base 와 동일한 게이트(isUsable/usedAt/commentCrawled/img·vid빈/usable>=5/season/access·PZP 2차방어)를 적용해 품질 불변.
- * killer 후보는 production(PRODUCTION_CAFE_IDS) 한정 유지 — publishable(remon/goondae)은 refs로만 편입되고
- * killer/self-ref 대상은 아니다(Phase 1-a-② 범위 제한). DB write 없음(findUnique read only).
+ * killer 후보는 CURATION_CORE(production+core) — remon/goondae는 Phase 2-a로 core 승격되어 self-ref 대상.
+ * publishable(온보딩 단계)은 refs/보충 lane으로만, shadow는 계속 배제. DB write 없음(findUnique read only).
  */
 async function loadEligibleKillerSelfRef(
   cafePostId: string,
@@ -674,7 +674,7 @@ export async function main() {
     where: {
       killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true },
       crawledAt: { gte: sevenDaysAgo },  // crawledAt은 항상 설정됨(NOT NULL) — postedAt null 허용
-      cafeId: { in: PRODUCTION_CAFE_IDS },  // production 카페만 killer 후보로 (shadow 격리)
+      cafeId: { in: CURATION_CORE_CAFE_IDS },  // [Phase 2-a] killer 후보 = production + core (killerScore 순 동등 경쟁, publishable/shadow는 계속 격리)
       NOT: { AND: [{ cafeId: 'dlxogns01' }, { boardName: { notIn: DLXOGNS01_ALLOWED_BOARDS } }] },
     },
     orderBy: { killerScore: 'desc' },

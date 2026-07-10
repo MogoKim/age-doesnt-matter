@@ -18,12 +18,15 @@ export interface CafeConfig {
   /** 수집할 게시판 경로 (인기글, 최신글 등) */
   boards: CafeBoardConfig[]
   /**
-   * 소스 스테이지. 'production'(기본, 미지정 포함)은 발행/trend/killer/성공판정 전부에 사용.
-   * 'publishable'은 발행(refs)만 가능 — trend/killer/성공판정 미편입 (Phase 1-a 승격 단계).
-   * 'shadow'는 크롤·저장·psych 분석만 하고 발행 경로에서 격리(관찰 전용).
-   * 정책 문서: docs/analysis/content-curate-source-policy-phase1a-2026-07-09.md
+   * 소스 스테이지 사다리 (production > core > publishable > shadow).
+   * 'production'(기본, 미지정 포함): 발행 + killer 후보 + trend + CRAWL_EXPECTED 성공판정 전부.
+   * 'core'(Phase 2-a): 발행 + killer 후보 경쟁 동급 — trend/성공판정은 미편입(Phase 2-b 이후).
+   * 'publishable'(Phase 1-a): 발행(refs)만 + 보충 lane — 신규 카페 온보딩 단계.
+   * 'shadow': 크롤·저장·psych 분석만 하고 발행 경로에서 격리(관찰 전용).
+   * 크롤 전략(페이지 루프·연령필터)은 별개 축 — core/publishable/shadow 모두 SECONDARY 유지.
+   * 정책 문서: docs/analysis/content-curate-phase2-core-promotion-design-2026-07-10.md
    */
-  sourceStage?: 'production' | 'publishable' | 'shadow'
+  sourceStage?: 'production' | 'core' | 'publishable' | 'shadow'
 }
 
 export interface CafeBoardConfig {
