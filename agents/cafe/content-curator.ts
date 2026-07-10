@@ -9,7 +9,6 @@ import { prisma, disconnect } from '../core/db.js'
 import { notifySlack, sendSlackMessage } from '../core/notifier.js'
 import { findPoliticalKeyword, hasPoliticalKeyword } from '../core/political-blocklist.js'
 import type { CuratedContent } from './types.js'
-import { loadTodayBrief } from './daily-brief.js'
 
 import {
   type PersonaMatch,
@@ -542,25 +541,14 @@ async function enqueueCommentWave(postId: string, cafePostId: string, authorPers
 
 /** 메인 실행 */
 export async function main() {
-  console.log('[ContentCurator] 시작 — 트렌드 기반 콘텐츠 큐레이션')
+  console.log('[ContentCurator] 시작 — source-backed 콘텐츠 큐레이션')
   const startTime = Date.now()
 
-  // 1) 핫토픽 조회 (오늘 트렌드 → 어제 → 최근 순으로 fallback)
-  const { hotTopics, desireMap: trendDesireMap, source: briefSource } = await loadTodayBrief()
-  if (!hotTopics || hotTopics.length === 0) {
-    console.log(`[ContentCurator] 핫토픽 없음 (source: ${briefSource}) — 트렌드 분석 먼저 필요`)
-    await disconnect()
-    return
-  }
-  console.log(`[ContentCurator] 핫토픽 ${hotTopics.length}개 로드 (source: ${briefSource})`)
-  // DailyBrief fallback 시 Slack 경고 제거 (P0-B): 큐레이션 슬롯마다 반복 발화해 스팸이 됨.
-  // 진짜 실패(브리프 자체 없음/어제 데이터도 없음)는 brief-monitor.ts와 daily-brief.ts가 이미 알림.
-  // 여기선 로그로만 남기고 Slack은 보내지 않는다.
-  if (briefSource === 'yesterday_trend' || briefSource === 'recent_trend') {
-    console.warn(`[ContentCurator] DailyBrief fallback 모드 (source=${briefSource}) — Slack 경고 생략(brief-monitor가 커버)`)
-  }
-
-  // 2) 카테고리 다양화 — desireMap 기반으로 HEALTH 독점 방지
+  // [trend 제거 1차 2026-07-10] loadTodayBrief/hotTopics 의존 제거.
+  //   기존: hotTopics 없으면 early return(발행 전체 중단) + trendCandidates lane(7일 발행률 5.2%, 격리 빈발).
+  //   현행: source-backed 후보(killer=production+core, publishable 온보딩 lane)만으로 발행 —
+  //   CafeTrend/DailyBrief가 전무해도 회차가 정상 진행된다. trend-analyzer/daily-brief 자체는 계속 실행됨(소비만 중단).
+  //   감사: docs/analysis/content-curate-trend-psych-removal-audit-2026-07-10.md
   const maxPosts = 3
   let publishedCount = 0
   let seoTransformedCount = 0
@@ -649,23 +637,8 @@ export async function main() {
     return (desireUsedCount[desire] ?? 0) >= (MAX_PER_DESIRE[desire] ?? DEFAULT_MAX_DESIRE)
   }
 
-  // desireMap 기반 다양화: HEALTH 30% 상한 적용 후 재정규화 (B10 — 구조적 편중 완화)
-  const DESIRE_CAPS: Partial<Record<string, number>> = { HEALTH: 30 }
-  const rawDesireMap = trendDesireMap ?? {}
-  const cappedMap: Record<string, number> = {}
-  let totalPct = 0
-  for (const [d, pct] of Object.entries(rawDesireMap)) {
-    cappedMap[d] = Math.min(Number(pct), DESIRE_CAPS[d] ?? 100)
-    totalPct += cappedMap[d]
-  }
-  const desireMap: Record<string, number> = {}
-  for (const d of Object.keys(cappedMap)) {
-    desireMap[d] = totalPct > 0 ? (cappedMap[d] / totalPct) * 100 : 0
-  }
-  const topDesires = Object.entries(desireMap).sort(([, a], [, b]) => b - a).map(([k]) => k)
-
-  // categorizedTopics: hotTopics에 desireCategory 부여 (desireCategory 필드 보장)
-  const categorizedTopics = hotTopics.map(t => ({ ...t, desireCategory: guessDesire(t.topic) }))
+  // [trend 제거 1차] desireMap(topDesires) 재정규화 제거 — trendCandidates 정렬 전용이었음.
+  //   욕망 분산은 MAX_PER_DESIRE + desireUsedCount(usedAt 실적 기반, psych desireCategory ?? guessDesire)로 유지.
 
   // ─── killerPosts 날짜 제한 7일 (Fix 1) ───────────────────────
   // 날짜 제한으로 34일된 "청국장" 등 오래된 글의 영구 재선발 차단
@@ -702,66 +675,20 @@ export async function main() {
     console.log(`[ContentCurator] 킬러글 후보: ${killerCandidates.length}건 (raw ${killerCandidatesAll.length})`)
   }
 
-  const maxTrendCandidates = CANDIDATE_POOL_SIZE - killerCandidates.length
-  const trendCandidates: CandidateTopic[] = []
-  const usedCategories = new Set<string>()
+  // [trend 제거 1차 2026-07-10] trendCandidates lane(topic-only) 삭제 —
+  //   topic이 검색 키일 뿐 발행물과 동일성이 없어 REFS_EMPTY/LOW_USABLE/DUPLICATE를 양산했고(7일 시도 1,623 → 발행 84),
+  //   01:15 새벽 정렬도 trend 전용이라 함께 제거. CandidateTopic.source의 'trend' 유니온은 과거 BotLog 파서 호환용으로 유지.
 
-  // 풀 내 중복 확인 (클로저가 배열 참조를 추적)
-  const inPool = (topic: string) =>
-    killerCandidates.some(c => c.topic === topic) || trendCandidates.some(c => c.topic === topic)
-
-  // 1순위: desireMap 순서대로 카테고리별 첫 번째 topic (소진된 욕망 제외)
-  for (const desire of topDesires) {
-    if (trendCandidates.length >= maxTrendCandidates) break
-    if (isDesireExhausted(desire)) continue
-    const match = categorizedTopics.find(
-      t => t.desireCategory === desire && !usedCategories.has(desire) && !inPool(t.topic) && !quarantinedTopics.has(t.topic)
-    )
-    if (match) {
-      trendCandidates.push({ topic: match.topic, source: 'trend', desireCategory: match.desireCategory })
-      usedCategories.add(desire)
-    }
-  }
-  // 2순위: 미달 시 나머지 categorizedTopics에서 카테고리 중복 없이 채움 (소진된 욕망 제외)
-  for (const t of categorizedTopics) {
-    if (trendCandidates.length >= maxTrendCandidates) break
-    if (isDesireExhausted(t.desireCategory)) continue
-    if (!usedCategories.has(t.desireCategory) && !inPool(t.topic) && !quarantinedTopics.has(t.topic)) {
-      trendCandidates.push({ topic: t.topic, source: 'trend', desireCategory: t.desireCategory })
-      usedCategories.add(t.desireCategory)
-    }
-  }
-  // 3순위: 폴백 — isDesireExhausted 체크 포함 (Fix 3: 소진 카테고리 재진입 차단)
-  // 격리 topic 체크 — 1·2순위와 동일 패턴. 격리된 topic이 폴백으로 재투입되는 것 차단.
-  for (const t of categorizedTopics) {
-    if (trendCandidates.length >= maxTrendCandidates) break
-    if (isDesireExhausted(t.desireCategory)) continue
-    if (!inPool(t.topic) && !quarantinedTopics.has(t.topic)) {
-      trendCandidates.push({ topic: t.topic, source: 'trend', desireCategory: t.desireCategory })
-    }
-  }
-
-  // 01:15 KST 특별 슬롯: 저녁/새벽 감성글 우선 정렬 (trendCandidates만, killerCandidates 순서 유지)
-  const kstHour = (new Date().getUTCHours() + 9) % 24
-  const DAWN_DESIRES = ['MEANING', 'SPIRITUAL', 'RELATION', 'FAMILY']
-  if (kstHour === 1) {
-    trendCandidates.sort((a, b) => {
-      const aIsDawn = DAWN_DESIRES.includes(a.desireCategory ?? '')
-      const bIsDawn = DAWN_DESIRES.includes(b.desireCategory ?? '')
-      return (bIsDawn ? 1 : 0) - (aIsDawn ? 1 : 0)
-    })
-  }
-
-  // [2단계 보충] trend 가 maxTrendCandidates(11)를 못 채운 빈자리를 killer 5번째~로 보충 → pool 을 15 근접 유지.
+  // [2단계 보충] killer 5번째~로 pool 을 15 근접 유지.
   //   killerCandidatesAll 은 이미 filter(격리/소진 제외) 통과분이라 추가 가드 불필요. self-ref/발행 시점 가드는 그대로.
-  const supplementalCount = Math.max(0, CANDIDATE_POOL_SIZE - killerCandidates.length - trendCandidates.length)
+  const supplementalCount = Math.max(0, CANDIDATE_POOL_SIZE - killerCandidates.length)
   const supplementalKiller = killerCandidatesAll.slice(4, 4 + supplementalCount)
 
   // [Phase 1-b] publishable source-backed 보충 lane — production killer/trend가 채우지 못한 빈자리만.
   //   remon/goondae 좋은 원문이 refs 재료로만 있고 후보로 못 올라와 pool=0이 되는 구조 병목 해소
   //   (실측 2026-07-09: production killer 30→격리 후 0, trend 0, publishable 발행가능 재고 31건 방치).
   //   PRODUCTION lane(trend/killer)과 완전 분리 — 임계(killerScore>=50)·가드 동일, 완화 없음.
-  const publishableSlots = Math.max(0, CANDIDATE_POOL_SIZE - killerCandidates.length - trendCandidates.length - supplementalKiller.length)
+  const publishableSlots = Math.max(0, CANDIDATE_POOL_SIZE - killerCandidates.length - supplementalKiller.length)
   let publishableCandidates: CandidateTopic[] = []
   if (publishableSlots > 0 && PUBLISHABLE_ONLY_CAFE_IDS.length > 0) {
     const publishablePosts = await prisma.cafePost.findMany({
@@ -789,9 +716,9 @@ export async function main() {
       }))
   }
 
-  // killerCandidates(base) 앞, trendCandidates 중간, supplementalKiller(보충), publishable(마지막 보충) 뒤
-  const candidatePool: CandidateTopic[] = [...killerCandidates, ...trendCandidates, ...supplementalKiller, ...publishableCandidates]
-  console.log(`[ContentCurator] 후보 풀: ${candidatePool.length}개 (killer base=${killerCandidates.length} +보충=${supplementalKiller.length}, trend=${trendCandidates.length}, publishable=${publishableCandidates.length})`)
+  // source-backed only: killerCandidates(base) 앞, supplementalKiller(보충), publishable(온보딩 lane) 뒤
+  const candidatePool: CandidateTopic[] = [...killerCandidates, ...supplementalKiller, ...publishableCandidates]
+  console.log(`[ContentCurator] 후보 풀: ${candidatePool.length}개 (killer base=${killerCandidates.length} +보충=${supplementalKiller.length}, publishable=${publishableCandidates.length}, trend lane 제거됨)`)
 
   // ─── 실행 루프 (Fix 2-C) ──────────────────────────────────────
   // refs=0 / 생성실패 / 발행실패 시 다음 후보로 이동 (continue 기반)
@@ -962,7 +889,8 @@ export async function main() {
         baseKillerCandidateCount: killerCandidates.length,
         supplementalKillerCandidateCount: supplementalKiller.length,
         finalKillerCandidateCount: killerCandidates.length + supplementalKiller.length,
-        trendCandidateCount: trendCandidates.length,
+        trendCandidateCount: 0,  // [trend 제거 1차] lane 삭제 — 파서 호환용 0 고정
+        trendLaneRemoved: true,
         // [Phase 1-b] publishable lane 카운트 (additive — 기존 필드 제거·개명 없음). lane이 보충 전용이라 두 값 동일.
         publishableCandidateCount: publishableCandidates.length,
         supplementalPublishableCandidateCount: publishableCandidates.length,
@@ -988,7 +916,7 @@ export async function main() {
     agent: 'CONTENT_CURATOR',
     title: '트렌드 기반 콘텐츠 게시',
     body: [
-      `핫토픽 ${hotTopics.length}개 중 ${publishedCount}개 글 게시`,
+      `source-backed 후보 ${candidatePool.length}개 중 ${publishedCount}개 글 게시`,
       repeatedZeroPublishAlert
         ? `⚠️ 같은 사유(${repeatedZeroPublishAlert.reason})로 CONTENT_CURATE 0개 발행이 ${repeatedZeroPublishAlert.count}회 연속 발생했습니다. 즉시 원인 확인이 필요합니다.`
         : null,
