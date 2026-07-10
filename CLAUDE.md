@@ -64,7 +64,7 @@
 2. **끝까지 이어가라**: 단계 완료 후 "최종 목표 달성됐나?" 자문. 안 됐으면 "다음은 [X]입니다. 진행할까요?" 제시.
 3. **커밋+푸시는 /done으로**: Gate 1 PASS → 자동 커밋+푸시. 읽기·분석만 / 플랜·메모리 파일 / 임시 디버그는 제외.
 4. **수동 블로킹 작업 먼저 요청**: DB 마이그레이션 / GitHub Secrets / 외부 서비스 활성화 / .env.local 추가 → 코드보다 먼저, 한 번에 완전하게.
-5. **완료 여부 확인**: 작업 전 memory/project_status.md 교차 검증. 이미 완료된 것 다시 시키지 마라.
+5. **완료 여부 확인**: 작업 전 CC auto-memory(`pending_founder_actions.md` 등, 세션 자동 로드)와 교차 검증. 이미 완료된 것 다시 시키지 마라.
 6. **직접 확인 후 안내**: tsc 통과 + curl 200 확인 필수. 검증 없이 "완료" 금지.
 7. **한 번에 완전하게**: 외부 작업 요청 시 찔끔 금지. 전부 파악 후 스텝 바이 스텝으로.
 8. **완료 보고 필수**: ① 뭘 했는지 ② 어디에 기록했는지 ③ 앞으로 뭐가 달라지는지.
@@ -79,8 +79,9 @@
 - **Figma-First**: `/prd` 명세 → 승인 → 코딩 → 역공학. 상세: `/figma-first 스킬`
 
 ## 컨텍스트 관리
-- 작업 완료 시 memory/project_status.md 즉시 업데이트
-- 대규모 작업 전 memory 파일 먼저 읽기
+- 작업 완료 시 CC auto-memory(`/memory`, `~/.claude/projects/.../memory/`) 즉시 업데이트
+- 대규모 작업 전 CC auto-memory 파일 먼저 읽기
+- ⚠️ repo `memory/`(MEMORY.md·project_status.md)는 CC auto-memory 도입 전 **stale 잔재** — 읽지도 갱신하지도 말 것 (`.claude/rules/autonomy.md` §0)
 - 상세: `.claude/rules/context-management.md`
 
 ## 기능 라이프사이클 규칙 (자동 적용)

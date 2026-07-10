@@ -78,7 +78,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F02 | PWA 설치 유도 | `src/components/common/AddToHomeScreen.tsx` + `src/lib/app-links.ts` | 4단계 트리거 (13s/3페이지/행동/주간) — 안드=Play/iOS=PWA | RELATION+HEALTH | P1·P2 | [F02](F02-pwa-install.md) | ACTIVE | 2026-06-05 |
 | F03 | 홈 페이지 | `src/components/features/home/` (21개 컴포넌트) | 홈 방문 | RELATION | P1·P2·P3 | [F03](F03-home-page.md) | ACTIVE | 2026-06-03 |
 | F04 | 커뮤니티 게시판 | `src/app/(main)/community/` | 사용자 작성 | RELATION+HEALTH | P1·P2·P5 | [F04](F04-community.md) | ACTIVE | 2026-06-03 |
-| F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-14 |
+| F05 | 매거진 | `src/app/(main)/magazine/` | 자동생성(A02) + 사용자 탐색 — 주제 공급에 geo_seed self-refill 추가(PR #113) | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-07-10 |
 | F06 | 일자리 게시판 | `src/app/(main)/jobs/` | 자동수집(A03) + 사용자 탐색 | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-06-05 |
 | F07 | 베스트 탭 | `src/app/(main)/best/` | hotPromotedAt 기반 누적 | RELATION | P3 | [F07](F07-best-tab.md) | ACTIVE | 2026-05-14 |
 | F08 | 검색 | `src/app/(main)/search/` | 사용자 검색 | ALL | ALL | `docs/specs/04-search.md` | ACTIVE | 2026-06-03 |
@@ -98,8 +98,8 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 
 | ID | 기능명 | 코드 위치 | 스케줄/트리거 | 실행환경 | 충족욕망 | 타겟페르소나 | 문서 | 상태 | 최근변경 |
 |----|--------|----------|-------------|---------|---------|------------|------|------|---------|
-| A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` + `content-curator.ts` + `run-pipeline.ts` | launchd 07:40·09:30·11:30·14:30·17:30·21:30·00:30 KST + GHA 45분 간격 20슬롯 | LOCAL_ONLY | INFRA | — | [A01](A01-cafe-crawler.md) | ACTIVE | 2026-06-09 |
-| A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 11:00, 14:00 KST | LOCAL_ONLY | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-05-13 |
+| A01 | 카페 크롤러 파이프라인 | `agents/cafe/crawler.ts` + `psych-analyzer.ts` + `trend-analyzer.ts` + `daily-brief.ts` + `content-curator.ts` + `run-pipeline.ts` | 크롤·분석: launchd 07:40·09:30·11:30·14:30·17:30·21:30·00:30 KST / 큐레이션(content-curator): GHA `agents-cafe-hourly-curation.yml` 45분 간격 일 21슬롯 (2026-07-09~10 PR #106~#113 반영: 정치 blocklist 경계매칭·refs 기록+당일격리·source 3축 분리·remon/goondae publishable→core 승격·shadow fallback 제거·trend lane 제거 — 상세 [A01](A01-cafe-crawler.md) 현행 정정) | LOCAL(크롤·분석)+GHA(큐레이션) | INFRA | — | [A01](A01-cafe-crawler.md) | ACTIVE | 2026-07-10 |
+| A02 | 매거진 자동생성 | `agents/cafe/magazine-generator.ts` + `local-magazine-runner.ts` | launchd 12:00, 14:00 KST (plist 실측 2026-07-10) — PR #113 geo_seed lazy self-refill + topicSource 관측 반영 | LOCAL_ONLY | HEALTH+MONEY+RETIRE | P2·P4 | [F05](F05-magazine.md) | ACTIVE | 2026-07-10 |
 | A03 | 일자리봇 | `agents/coo/job-scraper.ts` | GHA 12:00·16:00·20:00 KST | GHA | MONEY | P4 | [A03](A03-job-scraper.md) | ACTIVE | 2026-04-27 |
 | A04 | 외부 콘텐츠 스크래퍼 | `agents/community/sheet-scraper.ts` + `agents/community/fmkorea-scraper.ts` | agents-scraper.yml 07:30·09:00·12:00·15:00·21:00 KST (오유·네이트판) / launchd 11:30·21:30 KST (펨코) | GHA+LOCAL | RELATION | P1·P3 | [A04](A04-external-content.md) | ACTIVE | 2026-06-07 |
 | A05 | 시드봇 35명 | `agents/seed/` | GHA 하루 16회 (08~23시) — 댓글/좋아요/대댓글만 (글쓰기 제거) | GHA | RELATION+HEALTH | ALL | [A05](A05-seed-bot.md) | ACTIVE | 2026-06-03 |

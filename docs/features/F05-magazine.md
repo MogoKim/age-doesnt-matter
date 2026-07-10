@@ -1,6 +1,6 @@
 # 매거진 운영 기획서 (F05 + A02)
 
-> 최초 작성: 2026-04-27 | 최근 수정: 2026-05-15
+> 최초 작성: 2026-04-27 | 최근 수정: 2026-07-10 (PR #113 geo_seed self-refill + topicSource 관측 + 스케줄 실측 반영)
 
 ---
 
@@ -32,21 +32,26 @@
 09:00 KST — GHA 폴백
   daily-brief-fallback.ts → Mac 미실행 시 어제 DailyBrief 복사
 
-11:00 KST — Mac launchd (SESSION_TIME=morning, IMAGE_GENERATOR=gemini)
+12:00 KST — Mac launchd (SESSION_TIME=morning, IMAGE_GENERATOR=chatgpt) ← 시각·이미지엔진 2026-07-10 실측 정정 (구판: 11:00·gemini — Gemini 구독 종료 2026-06-04)
   local-magazine-runner.ts → magazine-generator.ts → 1~2편 발행
 
-14:00 KST — Mac launchd (SESSION_TIME=late, IMAGE_GENERATOR=gemini)
+14:00 KST — Mac launchd (SESSION_TIME=late, IMAGE_GENERATOR=chatgpt)
   local-magazine-runner.ts → magazine-generator.ts → 최종 Slack 알림
 ```
 
-### 주제 선택 우선순위
+### 주제 선택 우선순위 (2026-07-10 현행)
 
 ```
 1순위: 시리즈 편 (score=10, 월요일만, agents/magazine/series-plan.ts)
-2순위: GEO_SEED 지역 주제
-3순위: CafeTrend.magazineTopics (score ≥ 7)
+2순위: GEO_SEED 지역 주제 — 오늘자 행이 없으면 longtail-keywords(~81개)에서
+       lazy self-refill로 자동 생성 (score=9, PR #113, agents/magazine/geo-refill.ts)
+3순위: CafeTrend.magazineTopics (score ≥ 7) — ⚠️ trend-analyzer는 아직 중단되지 않았고
+       이 라인은 유효한 3순위 보조 공급원이다 (중단 여부는 1주 topicSource 관찰 후 별도 결정)
 4순위: 욕망 힌트 폴백 (DESIRE_TOPIC_HINTS[dominantDesire])
 ```
+
+> 관측성 (PR #113): 발행 시 BotLog `details.topicSources`에 편별 topicSource
+> (`series` / `geo_seed` / `trend` / `fallback`)가 기록된다 — trend 의존도 측정 지표.
 
 ### 가드레일
 
