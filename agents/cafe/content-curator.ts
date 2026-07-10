@@ -168,7 +168,7 @@ async function getDailyQuarantine(since: Date): Promise<DailyQuarantine> {
 // refs 조회 공통 select — getReferencePosts refs 와 killer self-ref fast lane 이 동일 shape 를 공유(타입 일치)
 const REF_SELECT_FIELDS = { id: true, title: true, content: true, cafeName: true, topComments: true, desireCategory: true, commentCount: true, cafeId: true } as const
 
-async function getReferencePosts(topic: string, desireCat: string, limit: number) {
+async function getReferencePosts(topic: string, desireCat: string, limit: number, quarantinedPostIds: ReadonlySet<string> = new Set()) {
   const base = {
     isUsable: true, usedAt: null, isPopular: false,
     imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true },
@@ -196,8 +196,14 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   const WEAK_PZP_SIGNALS_CC = [
     '재생 속도', '해상도', '자막', '음소거', '전체 화면', '자동 (480p)', '0초',
   ] as const
+  // [REFS_EMPTY fix 2026-07-10] 당일 격리(DUP/POL) 글을 slice(limit) "이전"에 선제 제외.
+  //   격리된 상위 killerScore 글이 refs top-3를 점유하면, 그 아래 비격리 유효 refs가 존재해도
+  //   호출부 사후 필터에서 refs가 통째로 비어 REFS_EMPTY 전멸(2026-07-10 15:17~ 6연속 FAILED 실측)하던
+  //   순서 결함 교정. 가드 완화 아님 — 같은 격리를 더 이른 단계에 적용. 호출부의 사후 filter는 이중 방어로 유지.
   const filterBlocked = <T extends { title: string; content: string }>(posts: T[]): T[] =>
     posts.filter(p => {
+      // 당일 격리 글 선제 제외 (위 REFS_EMPTY fix) — slice(limit) 이전, 4개 stage 공통 적용
+      if (quarantinedPostIds.size > 0 && quarantinedPostIds.has((p as unknown as { id: string }).id)) return false
       // 계절 불일치 reference 선제 제외 — poison reference(예: 6월에 '크리스마스' 본문)가
       // 생성 본문을 오염시켜 publishCuratedContent의 SEASON_MISMATCH로 반복 차단되는 것 방지.
       // refs 후보에서 빠지므로 usedAt 미마킹으로 인한 sticky poison(같은 글이 반복 첫 후보)도 해소.
@@ -763,7 +769,8 @@ export async function main() {
       maxUsableCount = computeUsableCount(selfRef.topComments)
       selfRefUsedCount++
     } else {
-      const refResult = await getReferencePosts(candidate.topic, desireCat, 3)
+      // [REFS_EMPTY fix 2026-07-10] 당일 격리 Set을 전달해 slice(limit) 이전에 선제 제외 — 아래 사후 filter는 이중 방어
+      const refResult = await getReferencePosts(candidate.topic, desireCat, 3, quarantinedPostIds)
       candidatesBeforeUsableFilter = refResult.candidatesBeforeUsableFilter
       maxUsableCount = refResult.maxUsableCount
       // [Phase 0-c] 오늘 DUP/POL로 차단됐던 글은 refs로도 재사용 금지 — 같은 발행물로 수렴해 반복 차단되는 루프 제거
