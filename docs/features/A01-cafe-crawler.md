@@ -1,6 +1,14 @@
 # 카페 크롤러 파이프라인 운영 기획서 (A01)
 
-> 최초 작성: 2026-04-27 | 최근 수정: 2026-04-27 (Feature Lifecycle 마이그레이션)
+> 최초 작성: 2026-04-27 | 최근 수정: 2026-07-10 (실행환경·소스 정책 현행 정정 — PR #106~#113 반영)
+
+> ⚠️ **현행 정정 (2026-07-10)** — 아래 본문 일부는 초판(2026-04-27) 시점 서술이다. 현행 기준은 다음과 같다:
+> - **실행 환경 분리**: 크롤(crawler)·심리분석(psych-analyzer)·트렌드(trend-analyzer)·브리프(daily-brief)·run-pipeline = **로컬 launchd** / **content-curator(발행 큐레이션) = GHA** `agents-cafe-hourly-curation.yml`(origin/main 코드, 45분 간격 일 21슬롯). 본문의 "LOCAL_ONLY" 단정은 큐레이션에는 해당 없음 — Mac 장애와 발행 중단은 별개다.
+> - **launchd plist 접두사**: 크롤러는 `com.unao.cafe-crawler-*` (7회/일: 07:40·09:30·11:30·14:30·17:30·21:30·00:30 KST). `com.unaeo.*`는 매거진(12:00/14:00 KST)·opsboard 전용이다. 아래 "3-Mode 크롤링" 시간표와 plist명은 구판.
+> - **소스 사다리 (PR #108~#111, 2026-07-09~10)**: production=`dlxogns01`·`wgang` / **core=`remonterrace`·`goondae`** (killer 후보로 production과 killerScore 동등 경쟁, 연령필터 등 SECONDARY 크롤 전략은 유지) / publishable·shadow=빈 집합. **shadow fallback은 PR #109/#110에서 제거됨** — 부활 금지.
+> - **wgang(우아한 갱년기)**: 2026-07-21까지 신규 크롤 중단 관찰 (`.env.local` `CRAWL_CAFE_FILTER=dlxogns01,remonterrace,goondae`). 기존 DB 글 사용은 계속 허용. 복원은 창업자 결정 사항.
+> - **trend lane 제거 (PR #112)**: content-curator의 발행 후보는 source-backed(killer)만 — trend 후보 lane·hotTopics 조기중단(early return) 삭제. **trend-analyzer 에이전트 자체는 계속 실행 중**(매거진 3순위 보조 공급 등).
+> - 그 외: 정치 blocklist 경계 매칭(#106) · BotLog refs 기록+당일 격리(#107) · 매거진 geo_seed self-refill(#113, F05 문서 참조).
 
 ---
 
@@ -21,16 +29,18 @@
 
 ## 세부 기획
 
-### 수집 대상 카페
+### 수집 대상 카페 (2026-07-10 현행)
 
-| 카페 ID | 카페명 | 특성 |
-|--------|--------|------|
-| `wgang` | 우아한 갱년기 | 50대 여성 중심 |
-| `dlxogns01` | 은퇴 후 50년 | 남녀 혼합, 재취업·여행·건강 |
+| 카페 ID | 카페명 | sourceStage | 특성 |
+|--------|--------|--------|------|
+| `dlxogns01` | 은퇴 후 50년 | production | 남녀 혼합, 재취업·여행·건강 |
+| `wgang` | 우아한 갱년기 | production — ⚠️ 2026-07-21까지 신규 크롤 중단 관찰 | 50대 여성 중심 |
+| `remonterrace` | 레몬테라스 | **core** (2026-07-10 승격, PR #111) | 주부·가족 중심, 연령필터 적용 |
+| `goondae` | 군대 커뮤니티 카페 | **core** (2026-07-10 승격, PR #111) | "걱정/고민/위로 수다방" 게시판만, 연령필터 적용 |
 
 ---
 
-### 3-Mode 크롤링
+### 3-Mode 크롤링 (⚠️ 초판 시간표 — 구판)
 
 | 모드 | 스케줄(KST) | 소요시간 | 처리량 | 설명 |
 |------|-----------|--------|--------|------|
@@ -38,8 +48,8 @@
 | `QUICK` | 12:30 | 5~10분 | 최대 15건/카페 | 심리분석 스킵, 트렌드 업데이트만 |
 | `ALL` | 20:40 | 40~50분 | 최대 50건/카페 | DEEP와 동일 (저녁 전량 수집) |
 
-> 실행 환경: LOCAL_ONLY (launchd, Mac)  
-> launchd plist: `~/Library/LaunchAgents/com.unaeo.cafe-crawler-*.plist`
+> ⚠️ 위 시간표는 초판(2026-04-27) 기준 **구판**이다. 현행: launchd **7회/일** (07:40·09:30·11:30·14:30·17:30·21:30·00:30 KST), plist는 `~/Library/LaunchAgents/com.unao.cafe-crawler-*.plist` (**com.unaeo 아님** — unaeo는 매거진·opsboard 전용).
+> 실행 환경: 크롤·분석 = LOCAL(launchd) / **content-curator(발행) = GHA** — 상단 "현행 정정" 참조. 정확한 현행 시각은 `~/Library/LaunchAgents/` 실물 확인.
 
 ---
 

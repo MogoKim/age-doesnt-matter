@@ -1,5 +1,8 @@
 # 프로젝트 현황 (2026-05-08)
 
+> ⚠️ **DEPRECATED (2026-07-10)** — repo `memory/`는 stale 잔재 (`.claude/rules/autonomy.md` §0). **단일 운영 메모리 = CC auto-memory.**
+> 아래 KPI·자동화 현황·LaunchAgents 시간표(매거진 3회/일 등)는 2026-05-08 시점이며 현재와 다르다 (실측 예: 매거진 launchd는 12:00/14:00 KST 2회, magazine-afternoon plist는 존재하지 않음). 현재 상태 판단에 사용 금지.
+
 ## KPI 스냅샷
 
 | 지표 | 현재 | 목표 |

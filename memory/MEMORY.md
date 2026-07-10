@@ -1,5 +1,9 @@
 # Memory — 우리 나이가 어때서 (우나어)
 
+> ⚠️ **DEPRECATED (2026-07-10)** — 이 repo `memory/` 폴더는 CC auto-memory 도입 전의 **stale 잔재**다 (`.claude/rules/autonomy.md` §0).
+> **단일 운영 메모리 = CC auto-memory**(`~/.claude/projects/.../memory/`, 세션 자동 로드, `/memory`로 관리).
+> 아래 내용은 2026-05-20 시점 스냅샷이며 이후 갱신되지 않는다. 현재 상태 판단에 사용 금지.
+
 ## 현재 상태 (2026-05-20)
 - 자동화: 시드봇 OFF (ENABLE_SEED_POSTS=false, 2026-05-16 중단) / 카페 파이프라인 ✅ / CEO·CFO 크론 중단
 - SNS: Threads/IG/FB ✅ / X ✅ / Band API 심사중

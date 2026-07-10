@@ -87,7 +87,8 @@
 ## B-20260530-002 - SHEET 댓글 AI티 개선
 
 - Priority: P1-1
-- Status: Backlog
+- Status: **Archived (2026-07-10 — SUPERSEDED)**
+- ⚠️ SUPERSEDED (2026-07-10): 본 항목이 전제한 **Shadow Mode(sourceStage=shadow 장기 운영)는 PR #109/#110(2026-07-09)에서 폐기**됐다 — 아래 AS-IS/TO-BE/검증 기준의 "Shadow Mode" 부분은 현행 구조에서 실행 불가. 신규 source 온보딩은 core/publishable 사다리 정책(docs/analysis/content-curate-source-policy-phase1a-2026-07-09.md)을 따른다. SHEET 댓글 품질 자체는 PR #91(sourceComments 필터 강화)·#93(원문 댓글 직접 사용, Sonnet 호출 99% 감소)으로 상당 부분 대체됨 — 재개하려면 항목 재정의 필요.
 - Owner: TBD
 - 목적: 스크래퍼/SHEET 댓글이 실제 사람의 참여처럼 보여 커뮤니티 신뢰를 유지한다.
 - 목표: 같은 글의 댓글들이 동일 키워드나 동일 소재에 몰리지 않고, 원본 댓글의 다양한 관점을 반영한다.
