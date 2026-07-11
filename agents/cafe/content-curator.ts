@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack, sendSlackMessage } from '../core/notifier.js'
 import { findPoliticalKeyword, hasPoliticalKeyword } from '../core/political-blocklist.js'
+import { findAgeFitViolation } from '../core/age-fit-blocklist.js'
 import type { CuratedContent } from './types.js'
 
 import {
@@ -42,6 +43,7 @@ type SkipReason =
   | 'DUPLICATE_TITLE'
   | 'PUBLISH_FAILED'
   | 'POLITICAL_BLOCK'
+  | 'AGE_FIT_BLOCK'
 
 interface CandidateTopic {
   topic: string
@@ -216,6 +218,13 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
         console.log(`[ContentCurator] 정치 키워드 reference 제외: "${p.title.slice(0, 20)}"`)
         return false
       }
+      // [age-fit 1차 기계필터 2026-07-11] 발화자 타깃 부적합(젊은 연령 자기소개·저연령 육아·입시 학부모·미혼 연애)
+      //   reference 선제 제외 — crawler 필터가 못 막는 기존 재고·production 글의 발행 방어선.
+      const ageFitRef = findAgeFitViolation(p.title, p.content)
+      if (ageFitRef) {
+        console.log(`[ContentCurator] age-fit reference 제외(${ageFitRef}): "${p.title.slice(0, 20)}"`)
+        return false
+      }
       const flat = p.content.replace(/\n/g, ' ') // R1: 본문 줄바꿈 보존 후에도 시그널 매칭 유지
       const blocked = ACCESS_BLOCKED_SIGNALS_CC.some(s => flat.includes(s))
       if (blocked) { console.log(`[ContentCurator] 접근 차단 안내문 2차 필터 skip: "${p.title.slice(0, 30)}"`)
@@ -351,6 +360,8 @@ async function loadEligibleKillerSelfRef(
   if ((p.imageUrls ?? []).length > 0 || (p.videoUrls ?? []).length > 0) return null
   if (computeUsableCount(p.topComments) < 5) return null
   if (isSeasonMismatch(p.title, p.content)) return null
+  // [age-fit 1차 기계필터 2026-07-11] self-ref는 getReferencePosts filterBlocked를 거치지 않으므로 동일 게이트 적용
+  if (findAgeFitViolation(p.title, p.content)) return null
   // access blocked / PZP 2차 방어 (getReferencePosts filterBlocked 와 동일 기준 — isUsable=true 라도 오염 잔존분 차단)
   const flat = p.content.replace(/\n/g, ' ')
   const ACCESS_BLOCKED = ['검색 비허용 게시물', '가입이 필요합니다', '카페의 멤버가 되어보세요', '카페에 가입하면 바로 글을 볼 수 있어요', '10초 만에 가입하기']
@@ -793,6 +804,16 @@ export async function main() {
         // 격리 필터로 비워진 경우 포함 — usable 문제가 아니므로 REFS_EMPTY로 기록
         topicResults.push({ ...candidate, refsCount: 0, skipReason: 'REFS_EMPTY' })
       }
+      continue
+    }
+
+    // [age-fit 1차 기계필터 2026-07-11] 발행물(refs[0]) 최종 게이트 — filterBlocked/self-ref 게이트의
+    //   이중 방어 + usable4 조건부 경로 커버. 사유를 matchedKeyword로 BotLog topicResults에 남긴다.
+    const mainRefText = refs[0] as unknown as { title: string; content: string }
+    const ageFitMain = findAgeFitViolation(mainRefText.title, mainRefText.content)
+    if (ageFitMain) {
+      console.log(`[ContentCurator] age-fit 발행 차단(${ageFitMain}): "${mainRefText.title.slice(0, 24)}"`)
+      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'AGE_FIT_BLOCK', matchedKeyword: ageFitMain, ...refMeta(refs[0]) })
       continue
     }
 
