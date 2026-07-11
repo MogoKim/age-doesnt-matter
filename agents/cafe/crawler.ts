@@ -18,6 +18,7 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
+import { PARENTING_HARD_KEYWORDS } from '../core/age-fit-blocklist.js'
 import { ensureSession, SESSION_HALTED_FLAG } from './session-manager.js'
 // SECONDARY_CAFE_IDS(shadow+publishable): 크롤 전략(페이지 루프·pre-visit·연령필터·detailCap)은
 // 발행 정책(sourceStage)과 별개 축 — publishable 승격 후에도 크롤 방식은 유지된다 (Phase 1-a-①).
@@ -1135,9 +1136,10 @@ function isBoardNoticeContent(content: string): boolean {
   return hits >= 2
 }
 
-// 비핵심 소스(레몬테라스 등 shadow/publishable) 연령/타깃 필터 — 우나어(40·50·60대)에 부적합한 육아·학부모 글을 isUsable=false로 걸러낸다.
-// production 카페(wgang/dlxogns01)에는 호출되지 않음(savePosts에서 SECONDARY_CAFE_IDS 여부로만 적용).
-const SHADOW_AGE_HARD_REJECT = ['임신', '출산', '산후', '신생아', '아기', '돌잔치', '이유식', '기저귀', '어린이집', '유치원', '유아', '초등학생', '초등', '워킹맘 복직']
+// 비핵심 소스(레몬테라스 등 core/publishable) 연령/타깃 필터 — 우나어(40·50·60대)에 부적합한 육아·학부모 글을 isUsable=false로 걸러낸다.
+// production 카페(wgang/dlxogns01)에는 호출되지 않음(savePosts에서 SECONDARY_CAFE_IDS 여부로만 적용) — 확대 금지, 발행 방어는 content-curator age-fit 게이트가 담당.
+// [age-fit 단일 진실 2026-07-11] HARD 목록은 agents/core/age-fit-blocklist.ts 와 공유 — 값 추가/수정은 그 파일에서 (crawler·curator 동시 반영).
+const SHADOW_AGE_HARD_REJECT: readonly string[] = PARENTING_HARD_KEYWORDS
 const SHADOW_AGE_SOFT_REJECT = ['중학생', '고등학생', '수능', '입시', '내신', '학원', '사춘기 자녀']
 const SHADOW_AGE_POSITIVE = ['40대 중후반', '50대', '60대', '갱년기', '폐경', '중년', '남편', '시댁', '친정', '성인 자녀', '대학생 자녀', '취업 자녀', '손주', '은퇴', '노후']
 /** true면 우나어 타깃 적합(isUsable 허용), false면 부적합(isUsable=false). shadow 단계는 보수적으로 판정. */
