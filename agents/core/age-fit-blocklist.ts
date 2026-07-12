@@ -56,6 +56,7 @@ export const PARENTING_HARD_KEYWORDS: readonly string[] = [
   '임신', '출산', '산후', '신생아', '아기', '돌잔치', '이유식', '기저귀',
   '어린이집', '유치원', '유아', '초등학생', '초등', '워킹맘 복직',
   '등하원', '등원시키', // 2026-07-11 추가 — 24h 톤 감사에서 확인된 누수 계열
+  '초산', // 2026-07-12 추가 — 맘카페 온보딩 사전조사("초산모님들 나이가…"). '산후'는 산후도우미를 부분 매칭으로 이미 커버.
 ] as const
 
 // ── 3) STUDENT — 입시·학원 학부모 (단독 단어 금지 — 결합 패턴만) ──
@@ -66,6 +67,7 @@ export const STUDENT_COMBO_PATTERNS: readonly RegExp[] = [
   /학부모 ?(모임|상담|총회|참관|면담)/,
   /특별전형/,
   /(딸|아들|애|아이) ?(학원|과외) ?(보내|다니|숙제|픽업|라이딩)/,
+  /(남아|여아|아들|딸|아이|애) ?사춘기|사춘기 ?(남아|여아|아들|딸|아이|애|팬티|자녀)/, // 2026-07-12 — "남아 사춘기 팬티" 계열 (단독 '사춘기'는 갱년기 비유 오탐 위험이라 결합만)
 ] as const
 
 // ── 4) ROMANCE — 미혼·연애 (발화자 본인의 연애 신호) ──
@@ -75,9 +77,32 @@ export const ROMANCE_KEYWORDS: readonly string[] = [
   '남자친구가', '남자친구랑', '남자친구와', '여자친구가', '여자친구랑',
 ] as const
 
+// ── 5) TRADE — 지역 거래/홍보/공구/동네 Q&A (2026-07-12, 맘카페 온보딩 대비 — cafeId 무관 전역) ──
+// 우나어는 전국 독자 커뮤니티 — 특정 지역 시설 추천 Q&A·중고 거래·공구·체험단 글은 발행 부적합.
+// ⚠️ bare 단어 금지: '분양'(아파트 분양=LIFE2 정보글)·'공구'(연장)·'나눔'(이웃 정) → 결합 패턴만.
+export const LOCAL_TRADE_KEYWORDS: readonly string[] = [
+  '삽니다', '팝니다', '구해요', '구합니다', '판매합니다', '판매해요',
+  '공동구매', '체험단', '나눔합니다', '무료나눔',
+] as const
+export const LOCAL_TRADE_PATTERNS: readonly RegExp[] = [
+  /(햄스터|강아지|고양이|앵무|토끼|병아리|물고기) ?분양|분양(해요|합니다|받으실 ?분)/, // 동물 분양 (아파트 분양 미해당)
+  /공구 ?(해요|합니다|모집|진행|링크|오픈)/,                                            // 공동구매 (연장 '공구' 미해당)
+  /(병원|의원|치과|한의원|소아과|학원|맛집|미용실|네일|숙소|산후조리원|업체)[가-힣 ]{0,12}(추천|어디|잘하는|괜찮은 ?곳|어때요|어떤가요)/, // 지역 시설 Q&A (사이 수식어 허용: "병원 정신의학과 어때요")
+  /잘하는 ?곳 ?(추천|어디|있|아시)/, // 시설명 없이도 "잘하는곳 추천" 자체가 지역 Q&A 신호 ("임플란트 잘하는곳 추천")
+] as const
+export function findLocalTradeSignal(title: string, content: string): string | null {
+  const flat = `${title} ${content}`.replace(/\n/g, ' ')
+  for (const k of LOCAL_TRADE_KEYWORDS) if (flat.includes(k)) return `TRADE:${k}`
+  for (const re of LOCAL_TRADE_PATTERNS) {
+    const m = flat.match(re)
+    if (m) return `TRADE:${m[0]}`
+  }
+  return null
+}
+
 /**
  * 발화자 타깃 부적합 검사. 위반 시 "카테고리:매칭어" 문자열, 통과 시 null.
- * 카테고리: AGE(연령 자기언급) / PARENT(저연령 육아) / STUDENT(입시 학부모) / ROMANCE(미혼 연애)
+ * 카테고리: AGE(연령 자기언급) / PARENT(저연령 육아) / STUDENT(입시 학부모) / ROMANCE(미혼 연애) / TRADE(지역 거래·홍보)
  */
 export function findAgeFitViolation(title: string, content: string): string | null {
   let flat = `${title} ${content}`.replace(/\n/g, ' ')
@@ -96,5 +121,5 @@ export function findAgeFitViolation(title: string, content: string): string | nu
   for (const k of ROMANCE_KEYWORDS) {
     if (flat.includes(k)) return `ROMANCE:${k}`
   }
-  return null
+  return findLocalTradeSignal(title, content)
 }

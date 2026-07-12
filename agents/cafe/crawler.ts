@@ -18,7 +18,7 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
-import { PARENTING_HARD_KEYWORDS } from '../core/age-fit-blocklist.js'
+import { PARENTING_HARD_KEYWORDS, findLocalTradeSignal } from '../core/age-fit-blocklist.js'
 import { ensureSession, SESSION_HALTED_FLAG } from './session-manager.js'
 // SECONDARY_CAFE_IDS(shadow+publishable): 크롤 전략(페이지 루프·pre-visit·연령필터·detailCap)은
 // 발행 정책(sourceStage)과 별개 축 — publishable 승격 후에도 크롤 방식은 유지된다 (Phase 1-a-①).
@@ -1146,6 +1146,7 @@ const SHADOW_AGE_POSITIVE = ['40대 중후반', '50대', '60대', '갱년기', '
 function passesShadowAgeFilter(title: string, content: string): boolean {
   const flat = `${title} ${content}`.replace(/\n/g, ' ')
   if (SHADOW_AGE_HARD_REJECT.some(k => flat.includes(k))) return false // hard reject → 무조건 제외
+  if (findLocalTradeSignal(title, content)) return false // 지역 거래/홍보/공구/동네 Q&A hard reject (2026-07-12, age-fit 모듈과 단일 진실)
   const hasPositive = SHADOW_AGE_POSITIVE.some(k => flat.includes(k))
   const hasSoftReject = SHADOW_AGE_SOFT_REJECT.some(k => flat.includes(k))
   if (hasSoftReject && !hasPositive) return false // soft reject + positive 없음 → 제외
