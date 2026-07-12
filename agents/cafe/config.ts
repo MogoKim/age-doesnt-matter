@@ -168,6 +168,27 @@ export const CAFE_CONFIGS: CafeConfig[] = [
       { name: '걱정/고민/위로 수다방', menuId: 997, maxPages: 5, priority: 'medium', category: 'lifestyle' },
     ],
   },
+  // ─────────────────────────────────────────────────────────
+  // 5. masanmam 줌마렐라 (14793916) — publishable 온보딩 (2026-07-12 사전조사 기반)
+  //    자유이야기방(menuId 87): 경남 주부 카페 — 시댁·가족·중년 담론 일부 적합(사전조사 적합 ~23%,
+  //    육아 ~17%·지역/홍보 ~10%는 age-fit LOCAL_TRADE 필터로 차단). 활성도 ~180건/일, c>=5 ≈ 20%.
+  //    sourceStage:'publishable' → refs 발행 + PUBLISHABLE_ONLY 보충 lane(production 우선, killer 미편입).
+  //    24h 운영검증 PASS 시 core 승격 = 이 줄 'publishable'→'core' + 테스트 기대값만 (로직 0줄 — remon/goondae 선례).
+  //    ⚠️ readLevel(멤버 등급) 본문 제한 가능성 — 첫 크롤에서 ACCESS_BLOCKED 안내문 비율 실측(100%면 온보딩 철회).
+  //    ⚠️ CRAWL_CAFE_FILTER에 'masanmam' 추가해야 실제 크롤됨(.env.local 수동 — wgang 관찰 필터와 공존,
+  //       2026-07-21 wgang 원복으로 필터 삭제 시 자동 포함). CRAWL_EXPECTED_CAFE_IDS엔 추가 금지.
+  // ─────────────────────────────────────────────────────────
+  {
+    id: 'masanmam',
+    name: '줌마렐라',
+    url: 'https://cafe.naver.com/f-e/cafes/14793916',
+    numericId: 14793916,
+    legacyCrawler: true,   // goondae/remon과 동일 — boards page loop 전용
+    sourceStage: 'publishable',
+    boards: [
+      { name: '자유이야기방', menuId: 87, maxPages: 5, priority: 'medium', category: 'lifestyle' },
+    ],
+  },
 ]
 
 /**
