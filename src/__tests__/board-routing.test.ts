@@ -97,3 +97,29 @@ describe('hasHumorEntitlement', () => {
     expect(hasHumorEntitlement('넷플릭스 드라마 추천')).toBe(true)
   })
 })
+
+describe('보정 1 (2026-07-12) — 배우자 substring 오탐 제거', () => {
+  it('배우자 담론은 STORY (배우 부분 매칭 금지)', () => {
+    expect(resolveBoardFromRef(null, '여자가 나이가 들어도 배우자 고르는 눈을 낮출필요는 없습니다', '본인이 업그레이드 되었다면 눈을 높이고 걸맞는 배우자 찾으세요').boardType).toBe('STORY')
+    expect(resolveBoardFromRef(null, '배우자 조건 때문에 고민입니다', '어떤 조건을 봐야 할까요').boardType).toBe('STORY')
+  })
+  it('진짜 배우/드라마/연예 글은 HUMOR 유지', () => {
+    expect(resolveBoardFromRef('ENTERTAIN', '그 배우 연기 대박이네요', '어제 드라마에서 연기가 정말 좋았어요').boardType).toBe('HUMOR')
+    expect(resolveBoardFromRef(null, '드라마 배우 이야기', '요즘 드라마에 나오는 배우 얘기 좀 해요 연예인 소식도요').boardType).toBe('HUMOR')
+  })
+})
+
+describe('보정 2 (2026-07-12) — 가족 갈등 우선 룰 (FAMILY_CONFLICT)', () => {
+  it('가족/부부 주어 + 갈등 신호가 제목에 있으면 돈 단어가 있어도 STORY', () => {
+    const r = resolveBoardFromRef('MONEY', '시댁재산을 자기 동생한테 다주자 하는데 와이프가 열받는게 당연한거 맞죠?', '시댁은 하나도 없고 맞벌이부부예요. 남편이 연봉은 1500 많은데 모든 조건이 월등히 여자가 낫습니다. 시댁 재산을 상속이니 증여니 하며 동생한테 다 주자는데 화가 나요')
+    expect(r.boardType).toBe('STORY')
+    expect(r.routingGuard).toContain('FAMILY_CONFLICT')
+    expect(resolveBoardFromRef(null, '시댁 돈 문제로 남편과 싸웠어요', '명절에 돈 문제로 크게 싸웠습니다').boardType).toBe('STORY')
+  })
+  it('진짜 증여/상속/연금/부동산 거래 정보글은 LIFE2 유지', () => {
+    expect(resolveBoardFromRef(null, '남편 연금 500이면 노후 생활 가능할까요?', '국민연금과 퇴직연금 합산 기준입니다').boardType).toBe('LIFE2')
+    expect(resolveBoardFromRef(null, '부모님 현금증여 세금 어떻게 하나요?', '증여세 한도가 궁금합니다').boardType).toBe('LIFE2')
+    expect(resolveBoardFromRef(null, '상속세 신고 준비해야 하나요?', '아버지 재산 상속 절차가 궁금해요').boardType).toBe('LIFE2')
+    expect(resolveBoardFromRef(null, '부동산 증여 계약 관련 질문', '자녀에게 아파트 증여 시 절차요').boardType).toBe('LIFE2')
+  })
+})
