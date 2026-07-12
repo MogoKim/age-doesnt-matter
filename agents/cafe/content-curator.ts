@@ -299,11 +299,9 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
 }
 
 /**
- * [A 단방향 LIFE2 가드 2026-06-10] 글의 발행 게시판 결정.
- * 글 자신의 desireCategory가 돈 계열(MONEY/RETIRE/HOUSING)이면 그 값으로, 아니면 버킷(bucketDesire)으로 게시판 산출.
- * 단, 게시판이 LIFE2(재테크·연금/은퇴준비/주거)인데 글 자신이 돈 계열이 아니면 → 버킷 상속 오배치이므로
- * 글 자신 카테고리(없으면 GENERAL=자유수다)로 STORY 재라우팅한다. 단방향(LIFE2→STORY)만 — STORY 글은 불변·새 오염 없음.
- * B(페르소나 board 매칭)와 generateCuratedPost가 동일 결과를 쓰도록 단일 헬퍼로 통일.
+ * 글의 발행 게시판 결정 — [2026-07-12] candidate desire(버킷) 상속 방식 폐기, 발행 원문(ref) 기준으로 전환.
+ * (구 "A 단방향 LIFE2 가드 2026-06-10"의 버킷 상속 로직은 curator-shared.resolveBoardFromRef 로 대체됨)
+ * B(페르소나 board 매칭)와 generateCuratedPost가 동일 결과를 쓰도록 단일 헬퍼로 유지.
  */
 // C4(2026-06-16): 우울·자살관념·암·사망·중병 등 '심각/민감' 글은 유머·취미 게시판에 배정 금지.
 //   원문 카페 인기글을 그대로 가져오다 보니 무거운 글이 HUMOR/엔터·TV·취미로 오배치됨
