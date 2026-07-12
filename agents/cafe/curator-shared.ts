@@ -2186,15 +2186,40 @@ export interface BoardRouting {
   routingGuard: string   // 발동 경로/가드 (BotLog 관측용)
 }
 
+// ── 가족 갈등 우선 룰 (2026-07-12 라이브 보정) ──
+// 돈/재산 단어가 있어도 제목이 "가족/부부 주어 + 감정/갈등 신호"면 글의 중심은 갈등 사연 → STORY.
+// 라이브 사고: "시댁재산을 자기 동생한테 다주자 하는데 와이프가 열받는게 당연한거 맞죠?" → LIFE2 오분류.
+// 제목만 본다 — 본문의 스침 단어로 정보글(증여·상속·연금 질문)을 STORY로 끌어내리지 않기 위함.
+const FAMILY_CONFLICT_SUBJECTS: readonly string[] = [
+  '시댁', '시어머니', '시아버지', '시누', '형님', '동서', '며느리',
+  '남편', '와이프', '아내', '배우자', '친정', '부모님', '형제', '동생',
+]
+const FAMILY_CONFLICT_SIGNALS: readonly string[] = [
+  '열받', '화나', '서운', '짜증', '억울', '싸우', '다투', '갈등', '속상', '미치겠', '당연한가요', '당연한거', '맞죠', '맞나요',
+]
+function isFamilyConflictTitle(title: string): boolean {
+  return FAMILY_CONFLICT_SUBJECTS.some(s => title.includes(s)) && FAMILY_CONFLICT_SIGNALS.some(s => title.includes(s))
+}
+
 /** 발행 원문(ref) 기준 게시판 결정 — candidate desire 미개입.
  *  ① 원문 텍스트에 LIFE2 주제어가 있으면 LIFE2 보정 (own 오태깅·미태깅 무관 — gold B)
+ *     단 제목이 가족 갈등형이면 보정 억제(FAMILY_CONFLICT) — 돈 얘기라도 갈등 사연은 STORY
  *  ② own이 돈 계열인데 텍스트 뒷받침이 없으면 오태깅으로 보고 텍스트 기준 (gold A)
  *  ③ 그 외 own 우선, 없으면 guessDesire(원문 텍스트)
  *  ④ HUMOR 산출 시 원문 유머/엔터 자격 신호 없으면 STORY 폴백 (gold C) */
 export function resolveBoardFromRef(ownDesire: string | null | undefined, title: string, content: string): BoardRouting {
   const text = `${title} ${content}`
-  const textDesire = guessDesire(text)
-  const life2Fix = matchLife2Correction(title, content)
+  // '배우자'의 '배우'가 ENTERTAIN/HUMOR 키워드에 부분 매칭되는 오탐 소거 —
+  // 라이브 사고(2026-07-12): "배우자 고르는 눈…" 연애 담론이 HUMOR/엔터·TV로 발행됨.
+  // guessDesire·HUMOR 자격 게이트 양쪽에 동일 적용. 진짜 배우/드라마 글은 다른 신호(드라마·연예인 등)로 유지.
+  const judgeText = text.replace(/배우자/g, ' ')
+  const textDesire = guessDesire(judgeText)
+  let life2Fix = matchLife2Correction(title, content)
+  let familyConflict = false
+  if (life2Fix && isFamilyConflictTitle(title)) {
+    life2Fix = null
+    familyConflict = true
+  }
   let effective: string
   let guard: string
   if (life2Fix) {
@@ -2211,15 +2236,16 @@ export function resolveBoardFromRef(ownDesire: string | null | undefined, title:
     effective = textDesire
     guard = 'TEXT'
   }
+  if (familyConflict) guard += '+FAMILY_CONFLICT'
   let board = resolveCommunityBoard(effective)
-  if (board.boardType === 'HUMOR' && !hasHumorEntitlement(text)) {
+  if (board.boardType === 'HUMOR' && !hasHumorEntitlement(judgeText)) {
     board = { boardType: 'STORY', category: '자유수다' }
     guard += '+HUMOR_GATE'
   }
   // LIFE2 진입도 주제어 근거(life2Fix) 필수 — guessDesire의 광역 1점 매칭('아파트' 등)만으로
   // 생활 불편 글이 2막준비에 가는 과보정 방지 (HUMOR 자격 게이트와 대칭)
   if (board.boardType === 'LIFE2' && !life2Fix) {
-    board = { boardType: 'STORY', category: '자유수다' }
+    board = { boardType: 'STORY', category: familyConflict ? '가족' : '자유수다' }
     guard += '+LIFE2_GATE'
   }
   return { ...board, routingDesire: effective, routingGuard: guard }
