@@ -16,7 +16,7 @@ import {
   PERSONAS,
   DESIRE_PERSONA_MAP,
   matchPersona,
-  resolveCommunityBoard,
+  resolveBoardFromRef,
   guessDesire,
   stripMarkdown,
   replaceCafeReferences,
@@ -70,6 +70,9 @@ interface TopicResult extends CandidateTopic {
   isShadowRef?: boolean
   // [Phase 1-a-②/2-a] ref 소스 단계 — production/core/publishable/shadow 구분 (additive optional)
   refSourceStage?: 'production' | 'core' | 'publishable' | 'shadow' | 'unknown'
+  // [board routing 2026-07-12] 게시판 산출 근거 — 발행 성공 엔트리에만 기록 (additive optional, 파서 호환)
+  routingDesire?: string
+  routingGuard?: string
 }
 
 /** refs[0] 메타 — refs 확보 후의 topicResults 기록에 spread. ref 없으면 빈 객체(필드 미기록).
@@ -92,7 +95,6 @@ type PublishResult =
   | { success: false; skipReason: Extract<SkipReason, 'SEASON_MISMATCH' | 'DUPLICATE_TITLE' | 'PUBLISH_FAILED' | 'POLITICAL_BLOCK'>; matchedKeyword?: string }
 
 const CANDIDATE_POOL_SIZE = 15
-const LIFE2_SOURCE_DESIRES = new Set(['MONEY', 'RETIRE', 'HOUSING'])
 
 function getDominantSkipReason(results: TopicResult[]): SkipReason | null {
   const skipped = results.filter((r): r is TopicResult & { skipReason: SkipReason } => r.skipReason !== null)
@@ -322,16 +324,17 @@ function applySensitiveBoardOverride(
   return board
 }
 
-function resolveBoardForPost(ownDesire: string | null | undefined, bucketDesire: string, text?: string): { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; category: string } {
-  const isOwnLife2 = !!(ownDesire && LIFE2_SOURCE_DESIRES.has(ownDesire))
-  const effectiveDesire = isOwnLife2 ? ownDesire! : bucketDesire
-  let board = resolveCommunityBoard(effectiveDesire)
-  if (board.boardType === 'LIFE2' && !isOwnLife2) {
-    board = resolveCommunityBoard(ownDesire ?? 'GENERAL')
-    if (board.boardType === 'LIFE2') board = resolveCommunityBoard('GENERAL')
+// [board routing 2026-07-12] candidate desire(bucket) 상속 제거 — 게시판은 발행 원문(ref)의
+//   own desire + 원문 텍스트 신호만으로 결정한다(curator-shared.resolveBoardFromRef).
+//   gold label 17건 실측: bucket 상속이 HUMOR 오분류 ~80%(candidate ENTERTAIN 상속)의 주범.
+//   sensitive override(우울/의료 → STORY)는 기존대로 최종 적용.
+function resolveBoardForPost(ownDesire: string | null | undefined, title: string, content: string): { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; category: string; routingDesire: string; routingGuard: string } {
+  const routed = resolveBoardFromRef(ownDesire, title, content)
+  const overridden = applySensitiveBoardOverride(`${title} ${content}`, routed)
+  if (overridden.boardType !== routed.boardType || overridden.category !== routed.category) {
+    return { ...overridden, routingDesire: routed.routingDesire, routingGuard: `${routed.routingGuard}+SENSITIVE` }
   }
-  if (text) board = applySensitiveBoardOverride(text, board)
-  return board
+  return routed
 }
 
 /**
@@ -382,12 +385,12 @@ async function generateCuratedPost(
   persona: PersonaMatch,
   topic: string,
   referencePosts: { id: string; title: string; content: string; cafeName: string; desireCategory?: string | null; cafeId?: string }[],
-  desireCat?: string,
+  _desireCat?: string,  // [board routing 2026-07-12] 라우팅이 ref 원문 기준으로 바뀌며 미사용 — 호출부 시그니처 호환용 유지
 ): Promise<CuratedContent | null> {
   const mainRef = referencePosts[0]
   if (!mainRef) return null
 
-  const boardInfo = resolveBoardForPost(mainRef.desireCategory, desireCat ?? 'GENERAL', `${mainRef.title} ${mainRef.content}`)
+  const boardInfo = resolveBoardForPost(mainRef.desireCategory, mainRef.title, mainRef.content)
 
   const title = replaceCafeReferences(stripMarkdown(mainRef.title.trim()))
   if (!title) return null
@@ -818,7 +821,7 @@ export async function main() {
     }
 
     // 페르소나 선택 — 발행 게시판 소속(board 필터) + 글 제목 기반 매칭 + AUTHOR_DAILY_CAP 체크
-    const board = resolveBoardForPost(refs[0].desireCategory, desireCat, `${refs[0].title} ${refs[0].content}`)
+    const board = resolveBoardForPost(refs[0].desireCategory, mainRefText.title, mainRefText.content)
     let persona = matchPersona(refs[0].title, desireCat, board.boardType)
     const todayCount = await countTodayPostsByPersona(persona.id)
     if (todayCount >= AUTHOR_DAILY_POST_CAP) {
@@ -856,7 +859,7 @@ export async function main() {
     }
 
     // 발행 성공
-    topicResults.push({ ...candidate, refsCount: refs.length, skipReason: null, ...refMeta(refs[0]) })
+    topicResults.push({ ...candidate, refsCount: refs.length, skipReason: null, ...refMeta(refs[0]), routingDesire: board.routingDesire, routingGuard: board.routingGuard })
     publishedCount++
     if (publishResult.seoTransformed) seoTransformedCount++
     else seoFallbackCount++
