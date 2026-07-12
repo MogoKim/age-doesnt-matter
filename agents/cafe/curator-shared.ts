@@ -2126,3 +2126,101 @@ export function guessDesire(topicStr: string | null | undefined): string {
   }
   return best
 }
+
+// ─── ref 원문 기준 게시판 라우팅 (2026-07-12 오분류 개선) ────────────────────
+// 배경: 게시판이 candidate(topic) desire의 bucket 상속으로 결정되어 실제 발행 원문과 무관한
+//   HUMOR/LIFE2 오배치가 발생(gold label 17건 실측 — HUMOR 오분류율 ~80%).
+//   본 함수는 발행 원문(ref)의 psych desire(own)와 원문 텍스트 신호만으로 게시판을 정한다.
+//   candidate desire는 입력에서 완전히 제외한다.
+
+/** LIFE2 텍스트 보정 키워드 — "글의 주제 자체가 돈/은퇴/부동산 거래"임을 뒷받침하는 신호.
+ *  ⚠️ '돈' 같은 일상 광역어는 절대 넣지 않는다(텐트 처분 글의 "비싼 돈주고" 오탐 — gold A1).
+ *  founder 관리: 2막준비로 보내야 할 주제어를 여기 추가한다. */
+const LIFE2_CORRECTION_KEYWORDS: readonly string[] = [
+  '은퇴', '연금', '노후', '재취업', '정년', '퇴직금', '퇴직연금', '자격증',
+  '증여', '상속', '주식', '투자', '배당', '건강보험', '건보료', '국민연금', '보험', '소득', '경제',
+  '청약', '분양', '매매가', '전세가', '집값', '월세', '전세', '대출', '금리', '환율', '부동산',
+  '반도체', '코스피', '코스닥', '나스닥', '하이닉스', '삼성전자', '삼전', '주가', '증시', '매수', '매도', '반대매매',
+]
+const LIFE2_AREA_RE = /\d+\s*평/ // "170평" 등 부동산 면적 자기언급 (gold B4)
+const LIFE2_KEYWORD_TO_DESIRE: Array<[RegExp, string]> = [
+  [/은퇴|재취업|정년|퇴직|노후|자격증/, 'RETIRE'],
+  [/청약|분양|매매가|전세가|집값|월세|전세|\d+\s*평/, 'HOUSING'],
+]
+
+/** 제목 매칭이면 즉시 보정, 본문뿐이면 서로 다른 키워드 2개 이상일 때만 —
+ *  잡담 본문에 스친 단어 1개("재취업 얘기도 나왔는데…")로 LIFE2에 가는 과보정 방지 (dry-run 실측). */
+function matchLife2Correction(title: string, content: string): string | null {
+  const all = LIFE2_CORRECTION_KEYWORDS.concat(Array.from(STRONG_LIFE2_KEYWORDS))
+  const titleLower = title.toLowerCase()
+  const titleHit = all.some(k => titleLower.includes(k)) || LIFE2_AREA_RE.test(title)
+  let ok = titleHit
+  if (!ok) {
+    const contentLower = content.toLowerCase()
+    const distinct = new Set(all.filter(k => contentLower.includes(k)))
+    if (LIFE2_AREA_RE.test(content)) distinct.add('평수')
+    ok = distinct.size >= 2
+  }
+  if (!ok) return null
+  const text = `${title} ${content}`
+  for (const [re, desire] of LIFE2_KEYWORD_TO_DESIRE) if (re.test(titleHit ? title : text)) return desire
+  return 'MONEY'
+}
+
+/** HUMOR 게시판 자격 신호 — ref 원문 자체에 유머 의도 또는 엔터 잡담 신호가 있어야 HUMOR 진입.
+ *  고민·가족·질문·하소연은 제목이 가벼워도(단발 ㅋ 등) HUMOR 금지 — 'ㅋㅋ'·'TV'·'유튜브'는
+ *  일상 대화에 흔해 자격 신호로 쓰지 않는다(gold C "여보 바지 세벌 ~ ㅋ" / A2 "TV 사망" 오탐). */
+const HUMOR_ENTITLEMENT_KEYWORDS: readonly string[] = [
+  // '황당'은 불만·하소연 서사에 흔해 제외 (gold C "여보 바지 세벌" 본문 오탐 실측)
+  '웃긴', '웃겨', '웃기', '빵터', '폭소', '개그', '유머', '웃음', '코미디',
+  '드라마', '예능', '연예인', '배우', '아이돌', '넷플릭스', '가수', '노래',
+]
+export function hasHumorEntitlement(text: string): boolean {
+  return HUMOR_ENTITLEMENT_KEYWORDS.some(k => text.includes(k))
+}
+
+export interface BoardRouting {
+  boardType: 'STORY' | 'HUMOR' | 'LIFE2'
+  category: string
+  routingDesire: string  // 게시판 산출에 실제 사용된 desire
+  routingGuard: string   // 발동 경로/가드 (BotLog 관측용)
+}
+
+/** 발행 원문(ref) 기준 게시판 결정 — candidate desire 미개입.
+ *  ① 원문 텍스트에 LIFE2 주제어가 있으면 LIFE2 보정 (own 오태깅·미태깅 무관 — gold B)
+ *  ② own이 돈 계열인데 텍스트 뒷받침이 없으면 오태깅으로 보고 텍스트 기준 (gold A)
+ *  ③ 그 외 own 우선, 없으면 guessDesire(원문 텍스트)
+ *  ④ HUMOR 산출 시 원문 유머/엔터 자격 신호 없으면 STORY 폴백 (gold C) */
+export function resolveBoardFromRef(ownDesire: string | null | undefined, title: string, content: string): BoardRouting {
+  const text = `${title} ${content}`
+  const textDesire = guessDesire(text)
+  const life2Fix = matchLife2Correction(title, content)
+  let effective: string
+  let guard: string
+  if (life2Fix) {
+    effective = DESIRE_TO_BOARD[textDesire]?.boardType === 'LIFE2' ? textDesire : life2Fix
+    guard = 'TEXT_LIFE2'
+  } else if (ownDesire && DESIRE_TO_BOARD[ownDesire]?.boardType === 'LIFE2') {
+    // own이 MONEY/RETIRE/HOUSING인데 원문에 LIFE2 주제어가 전혀 없음 → psych 오태깅 판정
+    effective = DESIRE_TO_BOARD[textDesire]?.boardType === 'LIFE2' ? 'GENERAL' : textDesire
+    guard = 'OWN_LIFE2_UNSUPPORTED'
+  } else if (ownDesire && ownDesire !== 'GENERAL') {
+    effective = ownDesire
+    guard = 'OWN'
+  } else {
+    effective = textDesire
+    guard = 'TEXT'
+  }
+  let board = resolveCommunityBoard(effective)
+  if (board.boardType === 'HUMOR' && !hasHumorEntitlement(text)) {
+    board = { boardType: 'STORY', category: '자유수다' }
+    guard += '+HUMOR_GATE'
+  }
+  // LIFE2 진입도 주제어 근거(life2Fix) 필수 — guessDesire의 광역 1점 매칭('아파트' 등)만으로
+  // 생활 불편 글이 2막준비에 가는 과보정 방지 (HUMOR 자격 게이트와 대칭)
+  if (board.boardType === 'LIFE2' && !life2Fix) {
+    board = { boardType: 'STORY', category: '자유수다' }
+    guard += '+LIFE2_GATE'
+  }
+  return { ...board, routingDesire: effective, routingGuard: guard }
+}
