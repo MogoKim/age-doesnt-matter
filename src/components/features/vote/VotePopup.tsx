@@ -121,75 +121,81 @@ export default function VotePopup() {
 
   const pctA = vote.total > 0 ? Math.round((vote.displayA / vote.total) * 100) : 50
   const pctB = 100 - pctA
+  const labelA = vote.optionA === '잔소리형' ? '🔥 잔소리형' : vote.optionA
+  const labelB = vote.optionB === '무뚝뚝형' ? '🧊 무뚝뚝형' : vote.optionB
 
   return (
     <BottomSheet open={open} onClose={close}>
       {phase === 'vote' ? (
-        <>
-          <p className="text-[15px] font-bold text-primary-text m-0 mb-2">오늘의 투표</p>
-          <h3 className="text-[21px] font-bold text-foreground leading-[1.45] break-keep m-0 mb-5">
+        <div className="px-1 pb-2 pt-1">
+          <p className="mb-8 mt-0 inline-flex h-9 items-center rounded-full bg-[#FFF0EE] px-4 text-[18px] font-extrabold leading-none text-primary-text">
+            오늘의 투표
+          </p>
+          <h3 className="m-0 mb-5 max-w-[320px] break-keep text-[32px] font-extrabold leading-[1.35] tracking-normal text-foreground">
             {vote.question}
           </h3>
-          <div className="flex flex-col gap-3">
+          <p className="m-0 mb-8 break-keep text-[20px] font-semibold leading-[1.45] text-muted-foreground">
+            탭 한 번이면 끝 — 다른 분들의 선택이 바로 보여요.
+          </p>
+          <div className="flex flex-col gap-4">
             <button
               onClick={() => void cast('A')}
               disabled={pending}
-              className="w-full min-h-[56px] rounded-xl border-2 border-border bg-background text-[18px] font-bold text-foreground hover:border-primary hover:text-primary-text transition-colors disabled:opacity-60"
+              className="w-full min-h-[72px] rounded-[22px] border-2 border-[#E3E7EC] bg-white text-[24px] font-extrabold text-foreground shadow-none transition-colors hover:border-primary hover:text-primary-text disabled:opacity-60"
             >
-              {vote.optionA}
+              {labelA}
             </button>
             <button
               onClick={() => void cast('B')}
               disabled={pending}
-              className="w-full min-h-[56px] rounded-xl border-2 border-border bg-background text-[18px] font-bold text-foreground hover:border-primary hover:text-primary-text transition-colors disabled:opacity-60"
+              className="w-full min-h-[72px] rounded-[22px] border-2 border-[#E3E7EC] bg-white text-[24px] font-extrabold text-foreground shadow-none transition-colors hover:border-primary hover:text-primary-text disabled:opacity-60"
             >
-              {vote.optionB}
+              {labelB}
             </button>
           </div>
           {failed && (
-            <p className="text-[15px] text-muted-foreground m-0 mt-3">
+            <p className="m-0 mt-4 text-[16px] text-muted-foreground">
               투표가 안 됐어요. 한 번 더 눌러주세요.{' '}
               <button onClick={goToPost} className="underline font-bold text-foreground bg-transparent border-none p-0">
                 게시글에서 투표하기
               </button>
             </p>
           )}
-          <p className="text-[15px] text-muted-foreground m-0 mt-4">
-            지금 {vote.total.toLocaleString()}명 참여 · 밤 8시 마감
-          </p>
           <button
             onClick={close}
-            className="w-full min-h-[48px] mt-3 text-[16px] text-muted-foreground bg-transparent border-none"
+            className="mt-8 w-full min-h-[52px] bg-transparent text-[22px] font-semibold text-muted-foreground"
           >
             오늘은 그만 보기
           </button>
-        </>
+        </div>
       ) : (
-        <>
-          <p className="text-[15px] font-bold text-primary-text m-0 mb-2">투표 완료!</p>
-          <h3 className="text-[21px] font-bold text-foreground leading-[1.45] break-keep m-0 mb-5">
+        <div className="px-1 pb-2 pt-1">
+          <p className="mb-5 mt-0 inline-flex h-9 items-center rounded-full bg-[#FFF0EE] px-4 text-[18px] font-extrabold leading-none text-primary-text">
+            투표 완료!
+          </p>
+          <h3 className="m-0 mb-6 max-w-[320px] break-keep text-[28px] font-extrabold leading-[1.35] tracking-normal text-foreground">
             {vote.question}
           </h3>
           <div className="flex flex-col gap-4">
             <ResultRow label={vote.optionA} pct={pctA} mine={vote.myChoice === 'A'} animate />
             <ResultRow label={vote.optionB} pct={pctB} mine={vote.myChoice === 'B'} animate delayMs={80} />
           </div>
-          <p className="text-[15px] text-muted-foreground m-0 mt-4">
-            {vote.total.toLocaleString()}명 참여 · 마감 전까지 선택을 바꿀 수 있어요
+          <p className="m-0 mt-5 break-keep text-[17px] font-semibold leading-[1.45] text-muted-foreground">
+            마감 전까지 선택을 바꿀 수 있어요.
           </p>
           <button
             onClick={goToPost}
-            className="w-full min-h-[52px] mt-4 rounded-xl bg-primary text-white text-[17px] font-bold hover:bg-primary/90 transition-colors"
+            className="mt-6 w-full min-h-[56px] rounded-[18px] bg-primary text-[18px] font-extrabold text-white transition-colors hover:bg-primary/90"
           >
             사람들은 왜 그쪽인지 보러가기
           </button>
           <button
             onClick={close}
-            className="w-full min-h-[48px] mt-1 text-[16px] text-muted-foreground bg-transparent border-none"
+            className="mt-2 w-full min-h-[50px] bg-transparent text-[18px] font-semibold text-muted-foreground"
           >
             닫기
           </button>
-        </>
+        </div>
       )}
     </BottomSheet>
   )
