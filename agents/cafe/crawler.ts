@@ -18,7 +18,8 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
-import { PARENTING_HARD_KEYWORDS, findLocalTradeSignal } from '../core/age-fit-blocklist.js'
+import { PARENTING_HARD_KEYWORDS } from '../core/age-fit-blocklist.js'
+import { classifyShadowAge } from './shadow-age-policy.js'
 import { ensureSession, SESSION_HALTED_FLAG } from './session-manager.js'
 // SECONDARY_CAFE_IDS(shadow+publishable): 크롤 전략(페이지 루프·pre-visit·연령필터·detailCap)은
 // 발행 정책(sourceStage)과 별개 축 — publishable 승격 후에도 크롤 방식은 유지된다 (Phase 1-a-①).
@@ -1140,18 +1141,9 @@ function isBoardNoticeContent(content: string): boolean {
 // production 카페(wgang/dlxogns01)에는 호출되지 않음(savePosts에서 SECONDARY_CAFE_IDS 여부로만 적용) — 확대 금지, 발행 방어는 content-curator age-fit 게이트가 담당.
 // [age-fit 단일 진실 2026-07-11] HARD 목록은 agents/core/age-fit-blocklist.ts 와 공유 — 값 추가/수정은 그 파일에서 (crawler·curator 동시 반영).
 const SHADOW_AGE_HARD_REJECT: readonly string[] = PARENTING_HARD_KEYWORDS
-const SHADOW_AGE_SOFT_REJECT = ['중학생', '고등학생', '수능', '입시', '내신', '학원', '사춘기 자녀']
-const SHADOW_AGE_POSITIVE = ['40대 중후반', '50대', '60대', '갱년기', '폐경', '중년', '남편', '시댁', '친정', '성인 자녀', '대학생 자녀', '취업 자녀', '손주', '은퇴', '노후']
-/** true면 우나어 타깃 적합(isUsable 허용), false면 부적합(isUsable=false). shadow 단계는 보수적으로 판정. */
-function passesShadowAgeFilter(title: string, content: string): boolean {
-  const flat = `${title} ${content}`.replace(/\n/g, ' ')
-  if (SHADOW_AGE_HARD_REJECT.some(k => flat.includes(k))) return false // hard reject → 무조건 제외
-  if (findLocalTradeSignal(title, content)) return false // 지역 거래/홍보/공구/동네 Q&A hard reject (2026-07-12, age-fit 모듈과 단일 진실)
-  const hasPositive = SHADOW_AGE_POSITIVE.some(k => flat.includes(k))
-  const hasSoftReject = SHADOW_AGE_SOFT_REJECT.some(k => flat.includes(k))
-  if (hasSoftReject && !hasPositive) return false // soft reject + positive 없음 → 제외
-  return hasPositive // 보수적: positive signal 있어야만 허용(애매글 제외)
-}
+// [neutral_daily 1차 2026-07-13] positive 필수 제거 — 판정은 shadow-age-policy.ts classifyShadowAge로 이관.
+// HARD/TRADE/SOFT 차단 유지 + AGE/ROMANCE/STUDENT hard negative를 크롤 단계로 승격,
+// 통과 글은 ageSignal='POSITIVE'|'NEUTRAL_DAILY'로 관측. (SHADOW_AGE_HARD_REJECT는 pre-visit 제목 필터 전용으로 잔존)
 
 // 네이버가 실제 글 대신 반환하는 접근 차단/가입 유도 안내문 시그널
 const ACCESS_BLOCKED_SIGNALS = [
@@ -1237,13 +1229,15 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
       const noticeText = isBoardNoticeContent(post.content)
       const accessBlocked = isAccessBlockedContent(post.content)
       const videoBlocked = post.videoUrls.length > 0 || isVideoPlayerContent(post.content)
-      // shadow 소스(레몬테라스 등) 전용 연령 필터 — production(wgang/dlxogns01)은 shadowAgeReject=false로 무영향.
-      const shadowAgeReject = SECONDARY_CAFE_IDS.includes(post.cafeId) && !passesShadowAgeFilter(post.title, post.content)
+      // shadow 소스(레몬테라스 등) 전용 연령 필터 — production(wgang/dlxogns01)은 shadowAge=null로 무영향.
+      const shadowAge = SECONDARY_CAFE_IDS.includes(post.cafeId) ? classifyShadowAge(post.title, post.content) : null
+      const shadowAgeReject = shadowAge !== null && !shadowAge.usable
       if (imageDep) console.log(`[CafeCrawler] 이미지 의존 글 isUsable=false: "${post.title.slice(0, 25)}"`)
       if (noticeText) console.log(`[CafeCrawler] 게시판 공지문 isUsable=false: "${post.title.slice(0, 25)}"`)
       if (accessBlocked) console.log(`[CafeCrawler] 접근 차단 안내문 isUsable=false: "${post.title.slice(0, 25)}"`)
       if (videoBlocked) console.log(`[CafeCrawler] 동영상/PZP 포함 isUsable=false: "${post.title.slice(0, 25)}"`)
-      if (shadowAgeReject) console.log(`[CafeCrawler] shadow 연령 필터 isUsable=false: "${post.title.slice(0, 25)}"`)
+      if (shadowAge && shadowAge.usable === false) console.log(`[CafeCrawler] shadow 연령 필터 isUsable=false (${shadowAge.reason}): "${post.title.slice(0, 25)}"`)
+      if (shadowAge && shadowAge.usable === true && shadowAge.ageSignal === 'NEUTRAL_DAILY') console.log(`[CafeCrawler] NEUTRAL_DAILY 허용 (부적합 신호 없음·positive 없음): "${post.title.slice(0, 25)}"`)
 
       // 6. 새 필드 포함하여 저장
       await prisma.cafePost.create({
@@ -1260,6 +1254,8 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
           qualityScore,
           killerScore,
           isUsable: qualityScore >= QUALITY_THRESHOLDS.minUsable && !imageDep && !noticeText && !accessBlocked && !videoBlocked && !shadowAgeReject,
+          // SECONDARY 통과 사유 관측 (기존 컬럼 재사용 — 마이그레이션 없음). ⚠️ psych-analyzer가 분석한 글은 이후 "50s" 등으로 덮어씀 — 크롤 로그가 원본 관측 소스.
+          ageSignal: shadowAge?.usable ? shadowAge.ageSignal : undefined,
           likeCount: post.likeCount,
           commentCount: post.commentCount,
           viewCount: post.viewCount,
