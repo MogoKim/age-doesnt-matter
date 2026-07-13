@@ -1426,7 +1426,8 @@ model VoteBallot {
   voteEvent VoteEvent @relation(fields: [voteEventId], references: [id], onDelete: Cascade)
 
   @@unique([voteEventId, userId])
-  @@unique([voteEventId, ipHash])
+  // (voteEventId, ipHash) unique는 2026-07-13 제거 — 같은 IP 다중 게스트 허용 (파일럿 UX 우선).
+  // ipHash 컬럼은 어뷰징 분석용으로 유지, 중복 투표 차단 기준은 회원=userId / 비회원=cookieId만.
   @@unique([voteEventId, cookieId])
   @@index([voteEventId, voterType, choice])
   @@index([userId])
