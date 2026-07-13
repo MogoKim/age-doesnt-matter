@@ -88,6 +88,15 @@ export default function VoteEventManager({
       <h1 className="text-xl font-bold">🎛 오늘의 투표 통제판</h1>
       {msg && <div className="rounded-lg bg-zinc-100 px-4 py-2 text-sm">{msg}</div>}
 
+      {/* linkedPostId 누락 — HERO teaser·팝업이 게시글로 못 보내고 fallback으로 동작 */}
+      {event && !event.linkedPostId && (
+        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+          ⚠️ <b>연동 게시글(linkedPostId)이 비어 있습니다.</b> 홈 HERO 투표 슬라이드가 커뮤니티
+          목록(/community/stories)으로 fallback 이동하고, 투표 안내 팝업은 노출되지 않으며, 게시글 내
+          투표 모듈도 없습니다. ① 섹션에서 연동 게시글 ID를 설정해 주세요.
+        </div>
+      )}
+
       {/* ── 통계 카드 (표시 수치) ── */}
       {event && stats && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
