@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
-import VotePopup from '@/components/features/vote/VotePopup'
+// import VotePopup from '@/components/features/vote/VotePopup' // 2026-07-13 창업자 요청으로 비노출 (디자인 재검토까지)
 import HeroSlider from '@/components/features/home/HeroSlider'
 import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
@@ -198,8 +198,8 @@ export default function HomePage() {
             <HeroSlider />
           </Suspense>
 
-          {/* 오늘의 투표 안내 바텀시트 — 하루 1회, 어드민 팝업 활성 시 양보 (client island) */}
-          <VotePopup />
+          {/* 오늘의 투표 바텀시트 — 2026-07-13 창업자 요청으로 비노출 (디자인 재검토까지). 재개 시 위 import와 함께 주석 해제 */}
+          {/* <VotePopup /> */}
 
           <div className="lg:px-8">
             {/* 첫 인사 위젯 (client island — 가입 72h 이내·미작성 회원만, useAppSession 판별) */}
