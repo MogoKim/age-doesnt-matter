@@ -77,9 +77,11 @@ async function findMyBallot(
   identity: VoteIdentity,
 ): Promise<{ id: string; choice: VoteChoice } | null> {
   return prisma.voteBallot.findFirst({
+    // 비회원 '내 표' 판정은 cookieId만 — ipHash 매칭 시 같은 IP(가족·시크릿·다른 브라우저)가 오탐됨.
+    // ipHash는 저장만 하고(어뷰징 분석용) 중복 차단 기준으로 쓰지 않는다 (DB unique도 제거됨, 2026-07-13).
     where: userId
       ? { voteEventId, userId }
-      : { voteEventId, voterType: 'GUEST', OR: [{ cookieId: identity.cookieId }, { ipHash: identity.ipHash }] },
+      : { voteEventId, voterType: 'GUEST', cookieId: identity.cookieId },
     select: { id: true, choice: true },
   })
 }
