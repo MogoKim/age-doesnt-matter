@@ -84,8 +84,8 @@ async function findMyBallot(
   })
 }
 
-/** 연동 게시글 URL 계산 — boardType 역매핑 + slug 우선 */
-async function resolveLinkedPostUrl(linkedPostId: string | null): Promise<string | null> {
+/** 연동 게시글 URL 계산 — boardType 역매핑 + slug 우선 (HERO teaser 슬라이드에서도 사용) */
+export async function resolveLinkedPostUrl(linkedPostId: string | null): Promise<string | null> {
   if (!linkedPostId) return null
   const post = await prisma.post.findUnique({
     where: { id: linkedPostId },
@@ -103,13 +103,30 @@ export async function getTodayVoteStatus(
 ): Promise<VoteStatusPayload | null> {
   const event = await prisma.voteEvent.findUnique({ where: { date: getKstToday() } })
   if (!event) return null
+  return buildStatusPayload(event, userId, identity)
+}
 
+/** 특정 투표 ID 현황 — 지난 투표가 연동된 게시글에서도 결과 열람 가능 */
+export async function getVoteStatusById(
+  voteEventId: string,
+  userId: string | null,
+  identity: VoteIdentity,
+): Promise<VoteStatusPayload | null> {
+  const event = await prisma.voteEvent.findUnique({ where: { id: voteEventId } })
+  if (!event) return null
+  return buildStatusPayload(event, userId, identity)
+}
+
+async function buildStatusPayload(
+  event: VoteEvent,
+  userId: string | null,
+  identity: VoteIdentity,
+): Promise<VoteStatusPayload> {
   const [real, mine, linkedPostUrl] = await Promise.all([
     countRealBallots(event.id),
     findMyBallot(event.id, userId, identity),
     resolveLinkedPostUrl(event.linkedPostId),
   ])
-
   return toPayload(event, real, mine?.choice ?? null, linkedPostUrl)
 }
 

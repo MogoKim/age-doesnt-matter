@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { castVote, getVoteIdentity } from '@/lib/votes'
+import { castVote, getVoteIdentity, getVoteStatusById } from '@/lib/votes'
 
 export const dynamic = 'force-dynamic'
+
+// 특정 투표 현황 (지난 투표 게시글에서 결과 열람용)
+export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params
+  try {
+    const [session, identity] = await Promise.all([auth(), getVoteIdentity()])
+    const payload = await getVoteStatusById(id, session?.user?.id ?? null, identity)
+    return NextResponse.json({ vote: payload }, { headers: { 'Cache-Control': 'no-store' } })
+  } catch (e) {
+    console.error('[votes/id] 조회 실패:', e)
+    return NextResponse.json({ vote: null }, { status: 200 })
+  }
+}
 
 // 투표하기 / 선택 변경 (OPEN 상태에서만) — 회원=세션, 비회원=쿠키+IP 해시
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
