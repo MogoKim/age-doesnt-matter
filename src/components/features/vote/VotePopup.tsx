@@ -22,18 +22,124 @@ function dismissToday(voteId: string): void {
   localStorage.setItem(`${LS_PREFIX}${voteId}`, String(midnight.getTime()))
 }
 
+export type VotePopupPhase = 'vote' | 'done'
+
+export interface VotePopupViewProps {
+  vote: VoteStatus
+  phase: VotePopupPhase
+  pending?: boolean
+  failed?: boolean
+  /** preview 전용 — 마감 상태 화면 (실제 홈에서는 CLOSED면 팝업 자체가 안 뜸) */
+  closed?: boolean
+  onCast: (choice: 'A' | 'B') => void
+  onGoToPost: () => void
+  onClose: () => void
+}
+
+/**
+ * 팝업 콘텐츠 (순수 프레젠테이션) — VotePopup(홈 컨테이너)과 dev preview가 공유.
+ * 디자인 기준(창업자 2026-07-13): 시트 높이 화면 42~50% 이내 / pill 작게 / 질문 24~26px /
+ * 설명문 없음 / 버튼 56~60px·글자 18~20px·간격 10~12px / "그만 보기" 15~16px 보조 텍스트 /
+ * 미투표 화면에 참여자 수 문구 없음.
+ */
+export function VotePopupView({
+  vote,
+  phase,
+  pending = false,
+  failed = false,
+  closed = false,
+  onCast,
+  onGoToPost,
+  onClose,
+}: VotePopupViewProps) {
+  const pctA = vote.total > 0 ? Math.round((vote.displayA / vote.total) * 100) : 50
+  const pctB = 100 - pctA
+  const labelA = vote.optionA === '잔소리형' ? '🔥 잔소리형' : vote.optionA
+  const labelB = vote.optionB === '무뚝뚝형' ? '🧊 무뚝뚝형' : vote.optionB
+  const showResult = phase === 'done' || closed
+
+  return !showResult ? (
+    <div>
+      <p className="m-0 mb-2.5 inline-flex h-7 items-center rounded-full bg-[#FFF0EE] px-3 text-[13px] font-bold leading-none text-primary-text">
+        오늘의 투표
+      </p>
+      <h3 className="m-0 mb-4 break-keep text-[25px] font-bold leading-[1.4] text-foreground">
+        {vote.question}
+      </h3>
+      <div className="flex flex-col gap-2.5">
+        <button
+          onClick={() => onCast('A')}
+          disabled={pending}
+          className="w-full min-h-[58px] rounded-2xl border border-[#E3E7EC] bg-white text-[19px] font-bold text-foreground transition-colors hover:border-primary hover:text-primary-text disabled:opacity-60"
+        >
+          {labelA}
+        </button>
+        <button
+          onClick={() => onCast('B')}
+          disabled={pending}
+          className="w-full min-h-[58px] rounded-2xl border border-[#E3E7EC] bg-white text-[19px] font-bold text-foreground transition-colors hover:border-primary hover:text-primary-text disabled:opacity-60"
+        >
+          {labelB}
+        </button>
+      </div>
+      {failed && (
+        <p className="m-0 mt-2 text-[14px] text-muted-foreground">
+          투표가 안 됐어요. 한 번 더 눌러주세요.{' '}
+          <button onClick={onGoToPost} className="underline font-bold text-foreground bg-transparent border-none p-0">
+            게시글에서 투표하기
+          </button>
+        </p>
+      )}
+      <button
+        onClick={onClose}
+        className="mt-2 w-full min-h-[44px] bg-transparent text-[15px] text-muted-foreground"
+      >
+        오늘은 그만 보기
+      </button>
+    </div>
+  ) : (
+    <div>
+      <p className="m-0 mb-2.5 inline-flex h-7 items-center rounded-full bg-[#FFF0EE] px-3 text-[13px] font-bold leading-none text-primary-text">
+        {closed ? '오늘의 결과' : '투표 완료!'}
+      </p>
+      <h3 className="m-0 mb-3 break-keep text-[18px] font-bold leading-[1.4] text-foreground">
+        {vote.question}
+      </h3>
+      <div className="flex flex-col gap-2.5">
+        <ResultRow label={vote.optionA} pct={pctA} mine={vote.myChoice === 'A'} animate />
+        <ResultRow label={vote.optionB} pct={pctB} mine={vote.myChoice === 'B'} animate delayMs={80} />
+      </div>
+      {!closed && (
+        <p className="m-0 mt-2 text-[14px] text-muted-foreground">마감 전까지 선택을 바꿀 수 있어요.</p>
+      )}
+      <button
+        onClick={onGoToPost}
+        className="mt-3 w-full min-h-[52px] rounded-2xl bg-primary text-[17px] font-bold text-white transition-colors hover:bg-primary/90"
+      >
+        {closed ? '사람들의 이야기 보러가기' : '사람들은 왜 그쪽인지 보러가기'}
+      </button>
+      <button
+        onClick={onClose}
+        className="mt-0.5 w-full min-h-[40px] bg-transparent text-[15px] text-muted-foreground"
+      >
+        닫기
+      </button>
+    </div>
+  )
+}
+
 /**
  * 홈 진입 시 오늘의 투표 직접투표 바텀시트 (미투표자 전용, 하루 1회).
- * - 목적: 첫 진입에서 바로 한 표 → 결과 확인 → 게시글 댓글 동선
- * - 이미 투표한 사용자(myChoice 있음)는 노출하지 않는다 — 확정 정책 5
- * - 어드민 Popup이 활성 상태면 그쪽 우선 — 이 팝업은 띄우지 않는다 (기존 Popup 구조 무접촉)
- * - 투표 성공 시점에 당일 재노출 차단(LS) — 결과 화면은 그 자리에서 1회만
+ * ⚠️ 2026-07-13 창업자 요청으로 홈 비노출 중 — page.tsx 주석 해제 전까지 프로덕션 미사용.
+ * - 이미 투표한 사용자(myChoice 있음)는 노출하지 않는다
+ * - 어드민 Popup이 활성 상태면 그쪽 우선 (기존 Popup 구조 무접촉)
+ * - 투표 성공 시점에 당일 재노출 차단(LS)
  */
 export default function VotePopup() {
   const router = useRouter()
   const [vote, setVote] = useState<VoteStatus | null>(null)
   const [open, setOpen] = useState(false)
-  const [phase, setPhase] = useState<'vote' | 'done'>('vote')
+  const [phase, setPhase] = useState<VotePopupPhase>('vote')
   const [pending, setPending] = useState(false)
   const [failed, setFailed] = useState(false)
 
@@ -119,84 +225,17 @@ export default function VotePopup() {
     }
   }
 
-  const pctA = vote.total > 0 ? Math.round((vote.displayA / vote.total) * 100) : 50
-  const pctB = 100 - pctA
-  const labelA = vote.optionA === '잔소리형' ? '🔥 잔소리형' : vote.optionA
-  const labelB = vote.optionB === '무뚝뚝형' ? '🧊 무뚝뚝형' : vote.optionB
-
   return (
     <BottomSheet open={open} onClose={close}>
-      {phase === 'vote' ? (
-        <div className="px-1 pb-2 pt-1">
-          <p className="mb-8 mt-0 inline-flex h-9 items-center rounded-full bg-[#FFF0EE] px-4 text-[18px] font-extrabold leading-none text-primary-text">
-            오늘의 투표
-          </p>
-          <h3 className="m-0 mb-5 max-w-[320px] break-keep text-[32px] font-extrabold leading-[1.35] tracking-normal text-foreground">
-            {vote.question}
-          </h3>
-          <p className="m-0 mb-8 break-keep text-[20px] font-semibold leading-[1.45] text-muted-foreground">
-            탭 한 번이면 끝 — 다른 분들의 선택이 바로 보여요.
-          </p>
-          <div className="flex flex-col gap-4">
-            <button
-              onClick={() => void cast('A')}
-              disabled={pending}
-              className="w-full min-h-[72px] rounded-[22px] border-2 border-[#E3E7EC] bg-white text-[24px] font-extrabold text-foreground shadow-none transition-colors hover:border-primary hover:text-primary-text disabled:opacity-60"
-            >
-              {labelA}
-            </button>
-            <button
-              onClick={() => void cast('B')}
-              disabled={pending}
-              className="w-full min-h-[72px] rounded-[22px] border-2 border-[#E3E7EC] bg-white text-[24px] font-extrabold text-foreground shadow-none transition-colors hover:border-primary hover:text-primary-text disabled:opacity-60"
-            >
-              {labelB}
-            </button>
-          </div>
-          {failed && (
-            <p className="m-0 mt-4 text-[16px] text-muted-foreground">
-              투표가 안 됐어요. 한 번 더 눌러주세요.{' '}
-              <button onClick={goToPost} className="underline font-bold text-foreground bg-transparent border-none p-0">
-                게시글에서 투표하기
-              </button>
-            </p>
-          )}
-          <button
-            onClick={close}
-            className="mt-8 w-full min-h-[52px] bg-transparent text-[22px] font-semibold text-muted-foreground"
-          >
-            오늘은 그만 보기
-          </button>
-        </div>
-      ) : (
-        <div className="px-1 pb-2 pt-1">
-          <p className="mb-5 mt-0 inline-flex h-9 items-center rounded-full bg-[#FFF0EE] px-4 text-[18px] font-extrabold leading-none text-primary-text">
-            투표 완료!
-          </p>
-          <h3 className="m-0 mb-6 max-w-[320px] break-keep text-[28px] font-extrabold leading-[1.35] tracking-normal text-foreground">
-            {vote.question}
-          </h3>
-          <div className="flex flex-col gap-4">
-            <ResultRow label={vote.optionA} pct={pctA} mine={vote.myChoice === 'A'} animate />
-            <ResultRow label={vote.optionB} pct={pctB} mine={vote.myChoice === 'B'} animate delayMs={80} />
-          </div>
-          <p className="m-0 mt-5 break-keep text-[17px] font-semibold leading-[1.45] text-muted-foreground">
-            마감 전까지 선택을 바꿀 수 있어요.
-          </p>
-          <button
-            onClick={goToPost}
-            className="mt-6 w-full min-h-[56px] rounded-[18px] bg-primary text-[18px] font-extrabold text-white transition-colors hover:bg-primary/90"
-          >
-            사람들은 왜 그쪽인지 보러가기
-          </button>
-          <button
-            onClick={close}
-            className="mt-2 w-full min-h-[50px] bg-transparent text-[18px] font-semibold text-muted-foreground"
-          >
-            닫기
-          </button>
-        </div>
-      )}
+      <VotePopupView
+        vote={vote}
+        phase={phase}
+        pending={pending}
+        failed={failed}
+        onCast={(c) => void cast(c)}
+        onGoToPost={goToPost}
+        onClose={close}
+      />
     </BottomSheet>
   )
 }
