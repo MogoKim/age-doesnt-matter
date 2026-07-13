@@ -147,7 +147,31 @@ export default function VoteWidget({ voteEventId, initialVote }: VoteWidgetProps
   )
 }
 
-function ResultRow({ label, pct, mine }: { label: string; pct: number; mine: boolean }) {
+/** 결과 막대 한 줄 — VotePopup과 공용. animate=true면 mount 시 0%→pct 펼침(500ms, delayMs 지연). */
+export function ResultRow({
+  label,
+  pct,
+  mine,
+  animate = false,
+  delayMs = 0,
+}: {
+  label: string
+  pct: number
+  mine: boolean
+  animate?: boolean
+  delayMs?: number
+}) {
+  // 펼침 애니: 첫 페인트를 0%로 커밋한 뒤 실값으로 전환 (% 숫자는 즉시 표시 — 카운트업 금지)
+  const [barPct, setBarPct] = useState(animate ? 0 : pct)
+  useEffect(() => {
+    if (!animate) {
+      setBarPct(pct)
+      return
+    }
+    const timer = setTimeout(() => setBarPct(pct), 30 + delayMs)
+    return () => clearTimeout(timer)
+  }, [animate, pct, delayMs])
+
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1.5">
@@ -172,8 +196,12 @@ function ResultRow({ label, pct, mine }: { label: string; pct: number; mine: boo
         aria-label={`${label} ${pct}%`}
       >
         <div
-          className={cn('h-full rounded-lg transition-[width] duration-300', mine ? 'bg-primary' : 'bg-[#C9CFD6]')}
-          style={{ width: `${pct}%` }}
+          className={cn(
+            'h-full rounded-lg transition-[width] ease-out motion-reduce:transition-none',
+            animate ? 'duration-500' : 'duration-300',
+            mine ? 'bg-primary' : 'bg-[#C9CFD6]',
+          )}
+          style={{ width: `${barPct}%` }}
         />
       </div>
     </div>
