@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import VoteHeroSlide, { type VoteHeroData } from '@/components/features/vote/VoteHeroSlide'
 
 export interface SlideData {
   id: string
@@ -15,6 +16,8 @@ export interface SlideData {
   ctaText?: string
   ctaUrl: string
   imageUrl?: string
+  /** 오늘의 투표 슬라이드 — 있으면 일반 렌더 대신 VoteHeroSlide (직접투표) */
+  vote?: VoteHeroData
 }
 
 const AUTO_PLAY_INTERVAL = 7000
@@ -34,6 +37,8 @@ interface Props {
 export default function HeroSliderClient({ slides }: Props) {
   const [current, setCurrent] = useState(0)
   const [paused, setPaused] = useState(false)
+  // 투표 슬라이드에서 투표하면 자동재생 정지 — 결과를 읽기 전에 슬라이드가 넘어가지 않도록
+  const [voteLock, setVoteLock] = useState(false)
   const touchStartX = useRef<number | null>(null)
 
   const goPrev = useCallback(() => {
@@ -44,14 +49,14 @@ export default function HeroSliderClient({ slides }: Props) {
     setCurrent((prev) => (prev + 1) % slides.length)
   }, [slides.length])
 
-  // 자동재생 — 호버/포커스 시 일시정지
+  // 자동재생 — 호버/포커스/투표 직후 일시정지
   useEffect(() => {
-    if (slides.length <= 1 || paused) return
+    if (slides.length <= 1 || paused || voteLock) return
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length)
     }, AUTO_PLAY_INTERVAL)
     return () => clearInterval(timer)
-  }, [slides.length, paused])
+  }, [slides.length, paused, voteLock])
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
@@ -92,8 +97,13 @@ export default function HeroSliderClient({ slides }: Props) {
             'absolute inset-0 transition-opacity duration-500',
             index === current ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
           )}
-          style={{ background: slide.imageUrl ? undefined : buildGradient(slide) }}
+          style={{ background: slide.imageUrl || slide.vote ? undefined : buildGradient(slide) }}
         >
+          {/* 오늘의 투표 슬라이드 — 일반 렌더 대신 직접투표 미니 투표판 */}
+          {slide.vote ? (
+            <VoteHeroSlide vote={slide.vote} onVoted={() => setVoteLock(true)} />
+          ) : (
+            <>
           {/* 이미지 배경 */}
           {slide.imageUrl && (
             <Image
@@ -150,6 +160,8 @@ export default function HeroSliderClient({ slides }: Props) {
               </span>
             )}
           </Link>
+            </>
+          )}
         </div>
       ))}
 
