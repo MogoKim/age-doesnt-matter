@@ -17,6 +17,7 @@ import CoupangBanner from '@/components/ad/CoupangBanner'
 import PostListBottom from '@/components/features/community/PostListBottom'
 import NextPostsInline from '@/components/features/community/NextPostsInline'
 import IdentityBanner from '@/components/features/community/IdentityBanner'
+import VoteWidget from '@/components/features/vote/VoteWidget'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
@@ -205,6 +206,9 @@ export default async function PostDetailPage({ params }: PageProps) {
         className="border-y-0 border-t mb-0 pt-3"
       />
       </div>
+
+      {/* 오늘의 투표 — 이 글이 연동 글일 때만 클라에서 렌더 (content HTML 밖, 댓글 위) */}
+      <VoteWidget source="post" postId={resolvedId} />
 
       {/* 광고 — 인아티클 */}
       <div className="mb-8">

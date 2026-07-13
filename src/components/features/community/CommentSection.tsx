@@ -29,6 +29,13 @@ function sortComments(comments: CommentItemType[], sort: 'oldest' | 'likes'): Co
   return sorted
 }
 
+/** 오늘의 투표 진영 배지 — /api/votes/badges 응답 */
+interface VoteBadges {
+  optionA: string
+  optionB: string
+  byUserId: Record<string, 'A' | 'B'>
+}
+
 export default function CommentSection({ postId, comments, isLoggedIn, currentUser, isGreeting }: CommentSectionProps) {
   const { user, status } = useAppSession()
   const authKnown = typeof isLoggedIn === 'boolean' || status !== 'loading'
@@ -36,6 +43,24 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
   const resolvedCurrentUser = currentUser ?? (status === 'authenticated' ? user ?? undefined : undefined)
   const [personalizedComments, setPersonalizedComments] = useState(comments)
   const [sort, setSort] = useState<'oldest' | 'likes'>('oldest')
+  const [voteBadges, setVoteBadges] = useState<VoteBadges | null>(null)
+
+  // 진영 배지 — 이 글에 연동된 투표가 있을 때만 값이 옴 (1회 fetch)
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch(`/api/votes/badges?postId=${encodeURIComponent(postId)}`, { cache: 'no-store' })
+        if (!res.ok) return
+        const data = (await res.json()) as { badges: VoteBadges | null }
+        if (!cancelled && data.badges) setVoteBadges(data.badges)
+      } catch {
+        // 배지는 부가 기능 — 실패해도 댓글 렌더 유지
+      }
+    })()
+    return () => { cancelled = true }
+  }, [postId])
+
 
   useEffect(() => {
     setPersonalizedComments(comments)
@@ -126,6 +151,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
               postId={postId}
               isLoggedIn={resolvedIsLoggedIn}
               isBest
+              campBadges={voteBadges}
             />
           ))}
         </div>
@@ -161,7 +187,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
       {sorted.length > 0 ? (
         <div>
           {sorted.map((comment) => (
-            <CommentItemComponent key={comment.id} comment={comment} postId={postId} isLoggedIn={resolvedIsLoggedIn} />
+            <CommentItemComponent key={comment.id} comment={comment} postId={postId} isLoggedIn={resolvedIsLoggedIn} campBadges={voteBadges} />
           ))}
         </div>
       ) : (
@@ -173,6 +199,9 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
           </p>
         </div>
       )}
+
+      {/* 투표 위젯 "한마디 남기기" CTA 스크롤 목적지 */}
+      <div id="vote-comment-anchor" aria-hidden="true" />
 
       {!authKnown ? (
         <div className="h-24 bg-muted rounded-2xl animate-pulse" aria-hidden="true" />

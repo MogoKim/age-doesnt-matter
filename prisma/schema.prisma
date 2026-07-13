@@ -1310,3 +1310,64 @@ model ExperimentState {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
+
+// ──────────────────────────────────────────────
+// 참여형 이벤트 — 오늘의 투표 (파일럿 MVP)
+//  - 하루 1투표: date는 KST 기준 "오늘" (src/lib/votes.ts getKstToday 경유 필수)
+//  - 표시 표수 = seedCountA/B + count(ballots WHERE voterType IN (USER, GUEST))
+//  - BOT ballot은 댓글 진영 배지 표시 전용 — 표시/실측 표수 어디에도 포함 금지
+// ──────────────────────────────────────────────
+enum VoteEventStatus {
+  OPEN
+  CLOSED
+}
+
+enum VoteChoice {
+  A
+  B
+}
+
+enum VoteVoterType {
+  USER  // 회원 실 표
+  GUEST // 비회원 실 표
+  BOT   // 어드민 봇 댓글 배지용 — 집계 제외
+}
+
+model VoteEvent {
+  id           String          @id @default(cuid())
+  date         DateTime        @unique @db.Date // KST 기준 하루 1투표
+  question     String
+  optionA      String
+  optionB      String
+  status       VoteEventStatus @default(OPEN)
+  linkedPostId String?
+  seedCountA   Int             @default(0) // 판깔기 표시용 — 실측과 분리
+  seedCountB   Int             @default(0)
+  displayViews Int             @default(0) // 표시 조회수 (어드민 조정)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  ballots VoteBallot[]
+
+  @@index([status, date])
+  @@index([linkedPostId])
+}
+
+model VoteBallot {
+  id          String        @id @default(cuid())
+  voteEventId String
+  voterType   VoteVoterType
+  userId      String? // USER·BOT 표. GUEST는 null
+  ipHash      String // SHA-256(IP+salt). BOT은 synthetic "bot:{botUserId}"
+  cookieId    String // 쿠키 식별자.     BOT은 synthetic "bot:{botUserId}"
+  choice      VoteChoice
+  createdAt   DateTime      @default(now())
+
+  voteEvent VoteEvent @relation(fields: [voteEventId], references: [id], onDelete: Cascade)
+
+  @@unique([voteEventId, userId])
+  @@unique([voteEventId, ipHash])
+  @@unique([voteEventId, cookieId])
+  @@index([voteEventId, voterType, choice])
+  @@index([userId])
+}
