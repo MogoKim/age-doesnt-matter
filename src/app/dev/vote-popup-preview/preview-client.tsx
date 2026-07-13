@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import BottomSheet from '@/components/ui/BottomSheet'
 import { VotePopupView } from '@/components/features/vote/VotePopup'
 import type { VoteStatus } from '@/components/features/vote/VoteWidget'
 
@@ -24,7 +23,10 @@ const MOCK_VOTE: VoteStatus = {
   myChoice: null,
 }
 
-/** 상태 강제 렌더 — 실제 API 호출 없음, 순수 디자인 검토용 */
+/**
+ * 팝업 디자인 검토 하네스 — 데스크탑 브라우저에서도 devtools 없이 바로 폰(375×812)처럼 보이게
+ * 자체 폰 프레임 + 자체 바텀시트로 렌더한다 (공용 BottomSheet는 실제 홈에서만 사용, 여기선 미사용).
+ */
 export default function VotePopupPreviewClient() {
   const [state, setState] = useState<PreviewState>('미투표')
   const [open, setOpen] = useState(true)
@@ -33,22 +35,13 @@ export default function VotePopupPreviewClient() {
     ...MOCK_VOTE,
     myChoice: state === '투표 완료' ? 'A' : state === 'CLOSED' ? 'B' : null,
   }
+  const sheetHeightPct =
+    state === '미투표' ? '42%' : state === 'CLOSED' ? '48%' : '52%'
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* 가짜 홈 콘텐츠 — dim 뒤로 홈이 얼마나 보이는지 확인용 */}
-      <div className="p-4 space-y-3">
-        <div className="h-[150px] rounded-2xl bg-gradient-to-br from-primary to-[#FF9E8C]" />
-        <div className="h-6 w-40 rounded bg-muted" />
-        <div className="h-20 rounded-xl bg-muted/70" />
-        <div className="h-20 rounded-xl bg-muted/70" />
-        <div className="h-6 w-32 rounded bg-muted" />
-        <div className="h-20 rounded-xl bg-muted/70" />
-        <div className="h-20 rounded-xl bg-muted/70" />
-      </div>
-
-      {/* 상태 전환 컨트롤 — 시트 위에 떠 있게 상단 고정 */}
-      <div className="fixed top-2 left-2 right-2 z-[60] flex gap-1.5 rounded-xl bg-black/70 p-2">
+    <div className="min-h-screen bg-neutral-200 flex flex-col items-center gap-4 py-6">
+      {/* 상태 전환 컨트롤 */}
+      <div className="flex flex-wrap items-center justify-center gap-2">
         {STATES.map((s) => (
           <button
             key={s}
@@ -56,36 +49,69 @@ export default function VotePopupPreviewClient() {
               setState(s)
               setOpen(true)
             }}
-            className={`flex-1 rounded-lg px-1 py-2 text-[13px] font-bold ${
-              s === state ? 'bg-white text-black' : 'bg-white/15 text-white'
+            className={`rounded-lg px-4 py-2.5 text-[15px] font-bold ${
+              s === state ? 'bg-black text-white' : 'bg-white text-neutral-700 border border-neutral-300'
             }`}
           >
             {s}
           </button>
         ))}
         <button
-          onClick={() => setOpen(true)}
-          className="rounded-lg bg-primary px-2 py-2 text-[13px] font-bold text-white"
+          onClick={() => setOpen((v) => !v)}
+          className="rounded-lg bg-primary px-4 py-2.5 text-[15px] font-bold text-white"
         >
-          열기
+          {open ? '시트 닫기' : '시트 열기'}
         </button>
       </div>
+      <p className="text-[13px] text-neutral-500">
+        375×812 폰 프레임 · 현재 시트 높이 화면의 {sheetHeightPct}
+      </p>
 
-      <BottomSheet open={open} onClose={() => setOpen(false)}>
-        <VotePopupView
-          vote={vote}
-          phase={state === '투표 완료' ? 'done' : 'vote'}
-          failed={state === '실패'}
-          closed={state === 'CLOSED'}
-          onCast={() => setState('투표 완료')}
-          onGoToPost={() => setOpen(false)}
-          onClose={() => setOpen(false)}
-        />
-      </BottomSheet>
+      {/* 폰 프레임 375×812 — 데스크탑에서도 폰처럼 보임 */}
+      <div
+        className="relative overflow-hidden rounded-[36px] border-[10px] border-black bg-white shadow-2xl"
+        style={{ width: 375, height: 812 }}
+      >
+        {/* 가짜 홈 배경 — dim 뒤로 얼마나 보이는지 확인용 */}
+        <div className="absolute inset-0 overflow-hidden p-4 space-y-3">
+          <div className="h-[150px] rounded-2xl bg-gradient-to-br from-primary to-[#FF9E8C]" />
+          <div className="h-6 w-40 rounded bg-neutral-200" />
+          <div className="h-24 rounded-xl bg-neutral-100" />
+          <div className="h-24 rounded-xl bg-neutral-100" />
+          <div className="h-6 w-32 rounded bg-neutral-200" />
+          <div className="h-24 rounded-xl bg-neutral-100" />
+        </div>
+
+        {/* dim + 자체 바텀시트 (프레임 내부만 덮음) */}
+        {open && (
+          <>
+            <button
+              aria-label="닫기"
+              onClick={() => setOpen(false)}
+              className="absolute inset-0 bg-black/45 border-none"
+            />
+            <div
+              className="absolute inset-x-0 bottom-0 rounded-t-2xl bg-white px-6 pt-3 pb-7 overflow-y-auto"
+              style={{ maxHeight: sheetHeightPct }}
+            >
+              <div className="mx-auto mb-4 h-1 w-12 rounded-full bg-neutral-300" />
+              <VotePopupView
+                vote={vote}
+                phase={state === '투표 완료' ? 'done' : 'vote'}
+                failed={state === '실패'}
+                closed={state === 'CLOSED'}
+                onCast={() => setState('투표 완료')}
+                onGoToPost={() => setOpen(false)}
+                onClose={() => setOpen(false)}
+              />
+            </div>
+          </>
+        )}
+      </div>
 
       {state === 'CLOSED' && (
-        <p className="fixed bottom-2 left-2 right-2 z-[60] rounded-lg bg-black/70 p-2 text-center text-[12px] text-white">
-          참고: 실제 홈에서는 CLOSED면 팝업 자체가 뜨지 않음 — 이 화면은 디자인 검토용
+        <p className="text-[12px] text-neutral-500">
+          참고: 실제 홈에서는 CLOSED면 팝업 자체가 안 뜸 — 이 화면은 디자인 검토용
         </p>
       )}
     </div>
