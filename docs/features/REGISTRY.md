@@ -40,6 +40,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | `src/components/features/community/PostCTA*` | F13 |
 | `src/lib/experiments*`, `src/app/admin/(panel)/ab-tests*`, `src/lib/queries/admin/admin.experiments-web*` | F16 |
 | `src/components/features/community/IdentityBanner*`, `.../InlineRelatedPosts*`, `.../TrackedPostLink*` | F17 |
+| `src/lib/votes*`, `src/lib/vote-status*`, `src/lib/ai/vote-draft*`, `src/app/api/votes*`, `src/components/features/vote*`, `src/app/admin/(panel)/vote-events*`, `src/components/admin/VoteEventManager*` | F18 |
 | `src/components/ad/ListBanner*`, `src/app/api/ad-impression*` | F14 |
 | `src/app/(main)/magazine*`, `src/components/features/magazine*`, `agents/cafe/magazine*`, `agents/magazine*` | F05 |
 | `src/app/(main)/jobs*`, `src/components/features/jobs*`, `agents/coo/job*` | F06 |
@@ -91,6 +92,7 @@ Claude는 변경 파일 경로를 아래 패턴과 매칭해 영향받는 Featur
 | F15 | 팝업 (공지·이벤트·홍보) | `src/components/common/PopupRenderer.tsx` + `src/components/admin/PopupManager.tsx` + `src/lib/actions/popups.ts` + `src/lib/queries/popups.ts` + `src/app/api/popups/route.ts` + Popup 모델 | 대상 페이지 진입 시 노출 (어드민 Popup 관리 · 센터/바텀/전면 3종 · 기간·빈도 제어) | RELATION | ALL | [F15](F15-popup.md) | ACTIVE | 2026-06-13 |
 | F16 | 웹 A/B 테스트 인프라 | `src/lib/experiments/` + `src/app/admin/(panel)/ab-tests/` + `src/lib/queries/admin/admin.experiments-web.ts` + ExperimentState 모델 | 실험 레지스트리(코드 SSOT) + 어드민 현황·편집. f01 문구·타이밍 + twa01 게이트 모두 종료(위너 고정), 현재 운영 실험 없음·인프라 유지(다음 실험 대기) | INFRA | — | [F16](F16-ab-test-infra.md) | ACTIVE | 2026-06-13 |
 | F17 | 네이버 유입자 락인 (글 상세) | `IdentityBanner`+`InlineRelatedPosts`+`TrackedPostLink` + `getRelatedCommunityPosts`(posts.community) + `community/[boardSlug]/[postId]/page.tsx` + events/route.ts 면제 | 비회원 글상세에 ①정체성 배너 ②본문끝 같은 고민 글 ③하단 관련글 교체 + 측정 4종. 네이버 오가닉 유입자 락인 | RELATION | ALL | [F17](F17-naver-lockin.md) | ACTIVE | 2026-06-12 |
+| F18 | 오늘의 투표 (참여형 이벤트 MVP) | `src/lib/votes.ts`+`vote-status.ts`+`ai/vote-draft.ts` + `src/app/api/votes/*` + `src/components/features/vote/VoteWidget.tsx` + HeroSlider 분기 + 글상세 위젯·댓글 진영배지(CommentSection/Item) + `src/app/admin/(panel)/vote-events/*`+`VoteEventManager` + VoteEvent/VoteBallot 모델 | 하루 1투표(KST 20시 자동마감): 홈 배너·게시글에서 비회원 포함 즉시 투표·실시간 %·댓글 진영 배지 + 어드민 통제판(seed 조작·봇 댓글 AI 초안 batch·실측 분리 집계) | RELATION | ALL | [F18](F18-daily-vote.md) | ACTIVE | 2026-07-13 |
 
 ---
 

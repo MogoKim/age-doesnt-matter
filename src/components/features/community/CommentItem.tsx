@@ -14,15 +14,23 @@ import GuestCommentInput from './GuestCommentInput'
 import GuestPasswordModal from './GuestPasswordModal'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
+/** 오늘의 투표 진영 배지 데이터 (CommentSection에서 1회 fetch 후 전달) */
+export interface VoteCampBadges {
+  optionA: string
+  optionB: string
+  byUserId: Record<string, 'A' | 'B'>
+}
+
 interface CommentItemProps {
   comment: CommentItemType
   postId: string
   isReply?: boolean
   isLoggedIn?: boolean
   isBest?: boolean
+  campBadges?: VoteCampBadges | null
 }
 
-function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isBest = false }: CommentItemProps) {
+function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isBest = false, campBadges = null }: CommentItemProps) {
   const { toast } = useToast()
   const [isLiked, setIsLiked] = useState(comment.isLiked)
   const [likeCount, setLikeCount] = useState(comment.likeCount)
@@ -114,7 +122,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         {comment.replies.length > 0 && (
           <div>
             {comment.replies.map((reply) => (
-              <CommentItem key={reply.id} comment={reply} postId={postId} isReply isLoggedIn={isLoggedIn} />
+              <CommentItem key={reply.id} comment={reply} postId={postId} isReply isLoggedIn={isLoggedIn} campBadges={campBadges} />
             ))}
           </div>
         )}
@@ -144,6 +152,16 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
           <>
             <span className="text-[17px]">{comment.author.gradeEmoji}</span>
             <span className="text-[17px] font-bold text-foreground">{comment.author.nickname}</span>
+            {(() => {
+              const choice = campBadges?.byUserId[comment.author.id]
+              if (!choice) return null
+              const label = choice === 'A' ? `${campBadges!.optionA}파` : `${campBadges!.optionB}파`
+              return (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[12px] font-bold bg-primary/10 text-primary-text leading-none shrink-0">
+                  {label}
+                </span>
+              )
+            })()}
           </>
         ) : null}
         <span className="text-[17px] text-muted-foreground">· {formatTimeAgo(comment.createdAt)}</span>
@@ -262,7 +280,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
       {!isReply && comment.replies.length > 0 && (
         <div>
           {comment.replies.map((reply) => (
-            <CommentItem key={reply.id} comment={reply} postId={postId} isReply isLoggedIn={isLoggedIn} />
+            <CommentItem key={reply.id} comment={reply} postId={postId} isReply isLoggedIn={isLoggedIn} campBadges={campBadges} />
           ))}
         </div>
       )}
@@ -298,5 +316,6 @@ export default memo(CommentItem, (prev, next) =>
   prev.postId === next.postId &&
   prev.isReply === next.isReply &&
   prev.isLoggedIn === next.isLoggedIn &&
-  prev.isBest === next.isBest
+  prev.isBest === next.isBest &&
+  prev.campBadges === next.campBadges
 )
