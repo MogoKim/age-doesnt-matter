@@ -38,12 +38,13 @@ const FALLBACK_SLIDES: SlideData[] = [
   },
 ]
 
-/** 오늘의 투표 teaser 슬라이드 — 직접 투표 없음, 클릭 시 연동 게시글로 이동 */
+/** 오늘의 투표 슬라이드 — 5:2 안 직접투표 미니 투표판 (VoteHeroSlide가 렌더).
+ *  myChoice/집계는 클라 fetch로만 — 홈 ISR(60s) 캐시에 사용자별 값이 섞이면 안 됨. */
 async function buildVoteTeaserSlide(): Promise<SlideData | null> {
   try {
     const todayVote = await prisma.voteEvent.findUnique({
       where: { date: getKstToday() },
-      select: { id: true, question: true, date: true, status: true, linkedPostId: true },
+      select: { id: true, question: true, optionA: true, optionB: true, date: true, status: true, linkedPostId: true },
     })
     if (!todayVote) return null
 
@@ -60,6 +61,14 @@ async function buildVoteTeaserSlide(): Promise<SlideData | null> {
       ctaText: closed ? '결과 보러가기' : '투표하러 가기',
       // linkedPostUrl 없으면 커뮤니티 목록 fallback (어드민 통제판에 누락 경고 표시됨)
       ctaUrl: linkedPostUrl ?? '/community/stories',
+      vote: {
+        id: todayVote.id,
+        question: todayVote.question,
+        optionA: todayVote.optionA,
+        optionB: todayVote.optionB,
+        status: closed ? 'CLOSED' : 'OPEN',
+        linkedPostUrl,
+      },
     }
   } catch {
     return null
