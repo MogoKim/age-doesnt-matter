@@ -85,16 +85,25 @@ async function createVotePost(
   return { id: post.id }
 }
 
+/** 'YYYY-MM-DD'(KST) → getKstToday와 동일 형식(그날 자정 UTC). 없거나 형식 오류면 오늘. */
+function resolveEventDate(dateStr?: string): Date {
+  if (!dateStr) return getKstToday()
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr.trim())
+  if (!m) return getKstToday()
+  return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
+}
+
 /**
- * 오늘 투표 생성/수정 (date는 KST 오늘 고정 — 하루 1투표 MVP).
- * linkedPostId 비어 있으면 연동 게시글 자동 생성 후 연결(운영자가 DB id를 찾을 필요 없음).
- * 직접 입력 시(고급 옵션)에는 기존 존재 검증 유지.
+ * 투표 생성/수정 — date 미지정 시 오늘(KST), 지정 시 예약(미래 날짜 가능).
+ * 같은 날짜 중복은 VoteEvent.date @unique + upsert로 방지(자동).
+ * linkedPostId 비어 있으면 연동 게시글 자동 생성 후 연결. 직접 입력 시(고급)엔 기존 존재 검증.
  */
 export async function upsertTodayVoteEvent(input: {
   question: string
   optionA: string
   optionB: string
   linkedPostId: string | null
+  date?: string // 'YYYY-MM-DD' (KST). 없으면 오늘 — 예약 시 미래 날짜 지정
 }): Promise<ActionResult & { linkedPostId?: string; autoCreated?: boolean }> {
   const denied = await requireAdmin()
   if (denied) return denied
@@ -104,6 +113,8 @@ export async function upsertTodayVoteEvent(input: {
   const optionB = input.optionB.trim()
   if (!question || !optionA || !optionB) return { error: '질문과 선택지 A/B를 모두 입력해 주세요' }
 
+  const eventDate = resolveEventDate(input.date)
+
   let linkedPostId = input.linkedPostId?.trim() || null
   let autoCreated = false
 
@@ -112,9 +123,9 @@ export async function upsertTodayVoteEvent(input: {
     const post = await prisma.post.findUnique({ where: { id: linkedPostId }, select: { id: true } })
     if (!post) return { error: `연동 게시글을 찾을 수 없습니다: ${linkedPostId}` }
   } else {
-    // 자동: 오늘 투표에 이미 게시글 연결돼 있으면 유지, 없으면 새로 생성
+    // 자동: 해당 날짜 투표에 이미 게시글 연결돼 있으면 유지, 없으면 새로 생성
     const existing = await prisma.voteEvent.findUnique({
-      where: { date: getKstToday() },
+      where: { date: eventDate },
       select: { linkedPostId: true },
     })
     if (existing?.linkedPostId) {
@@ -128,8 +139,8 @@ export async function upsertTodayVoteEvent(input: {
   }
 
   await prisma.voteEvent.upsert({
-    where: { date: getKstToday() },
-    create: { date: getKstToday(), question, optionA, optionB, linkedPostId },
+    where: { date: eventDate },
+    create: { date: eventDate, question, optionA, optionB, linkedPostId },
     update: { question, optionA, optionB, linkedPostId },
   })
 

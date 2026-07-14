@@ -1,13 +1,19 @@
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { getKstToday } from '@/lib/votes'
-import VoteEventManager, { type VoteEventData, type VoteStats, type BotOption } from '@/components/admin/VoteEventManager'
+import VoteEventManager, {
+  type VoteEventData,
+  type VoteStats,
+  type BotOption,
+  type VoteEventListItem,
+} from '@/components/admin/VoteEventManager'
 
-export const metadata: Metadata = { title: '오늘의 투표 통제판' }
+export const metadata: Metadata = { title: '참여 이벤트 — 오늘의 투표' }
 export const dynamic = 'force-dynamic'
 
 export default async function AdminVoteEventsPage() {
-  const event = await prisma.voteEvent.findUnique({ where: { date: getKstToday() } })
+  const today = getKstToday()
+  const event = await prisma.voteEvent.findUnique({ where: { date: today } })
 
   let stats: VoteStats | null = null
   let eventData: VoteEventData | null = null
@@ -73,9 +79,48 @@ export default async function AdminVoteEventsPage() {
   })
   const botOptions: BotOption[] = botUsers.map((b) => ({ id: b.id, nickname: b.nickname }))
 
+  // 예약(미래 날짜) / 지난(과거) 목록
+  const [upcomingRows, pastRows] = await Promise.all([
+    prisma.voteEvent.findMany({ where: { date: { gt: today } }, orderBy: { date: 'asc' } }),
+    prisma.voteEvent.findMany({ where: { date: { lt: today } }, orderBy: { date: 'desc' }, take: 30 }),
+  ])
+  // 지난 목록 실 표(USER/GUEST) 집계 — 한 번에 groupBy
+  const pastIds = pastRows.map((r) => r.id)
+  const pastBallots = pastIds.length
+    ? await prisma.voteBallot.groupBy({
+        by: ['voteEventId', 'voterType', 'choice'],
+        where: { voteEventId: { in: pastIds }, voterType: { in: ['USER', 'GUEST'] } },
+        _count: { _all: true },
+      })
+    : []
+  const realVotesOf = (id: string) =>
+    pastBallots.filter((b) => b.voteEventId === id).reduce((s, b) => s + b._count._all, 0)
+
+  const toListItem = (r: (typeof pastRows)[number], withReal: boolean): VoteEventListItem => ({
+    id: r.id,
+    date: r.date.toISOString().slice(0, 10),
+    question: r.question,
+    optionA: r.optionA,
+    optionB: r.optionB,
+    status: r.status,
+    linkedPostId: r.linkedPostId,
+    seedTotal: r.seedCountA + r.seedCountB,
+    realVotes: withReal ? realVotesOf(r.id) : 0,
+    displayViews: r.displayViews,
+  })
+
+  const upcoming = upcomingRows.map((r) => toListItem(r, false))
+  const past = pastRows.map((r) => toListItem(r, true))
+
   return (
     <div className="space-y-4">
-      <VoteEventManager event={eventData} stats={stats} botOptions={botOptions} />
+      <VoteEventManager
+        event={eventData}
+        stats={stats}
+        botOptions={botOptions}
+        upcoming={upcoming}
+        past={past}
+      />
     </div>
   )
 }

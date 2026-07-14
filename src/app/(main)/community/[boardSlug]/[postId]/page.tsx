@@ -20,7 +20,7 @@ import NextPostsInline from '@/components/features/community/NextPostsInline'
 import IdentityBanner from '@/components/features/community/IdentityBanner'
 import VoteWidget from '@/components/features/vote/VoteWidget'
 import { prisma } from '@/lib/prisma'
-import { effectiveVoteStatus } from '@/lib/vote-status'
+import { effectiveVoteStatus, voteVisibleStatus } from '@/lib/vote-status'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
@@ -116,7 +116,7 @@ export default async function PostDetailPage({ params }: PageProps) {
   ])
 
   // 투표형 게시글 판별 — 이 글이 오늘의 투표 연동 글이면 레이아웃 전환 (모듈 상단 배치 + 댓글 우선)
-  const linkedVote = await prisma.voteEvent
+  const linkedVoteRaw = await prisma.voteEvent
     .findFirst({
       where: { linkedPostId: resolvedId },
       orderBy: { date: 'desc' },
@@ -126,6 +126,12 @@ export default async function PostDetailPage({ params }: PageProps) {
       },
     })
     .catch(() => null)
+  // 09:00 KST 전(HIDDEN)에는 투표 모듈을 노출하지 않는다(예약 게시글이 새벽에 투표판을 보이지 않게).
+  // → 일반 글로 렌더. 09:00~20:00 OPEN / 20:00 이후 CLOSED(결과)만 투표형 레이아웃.
+  const linkedVote =
+    linkedVoteRaw && voteVisibleStatus(linkedVoteRaw.status, linkedVoteRaw.date) !== 'HIDDEN'
+      ? linkedVoteRaw
+      : null
 
   const canonicalSlug = post.slug ?? postId
   const url = `${BASE_URL}/community/${boardSlug}/${canonicalSlug}`

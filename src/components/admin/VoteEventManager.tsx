@@ -8,6 +8,7 @@ import {
   requestVoteDrafts,
   registerBotComments,
 } from '@/app/admin/(panel)/vote-events/actions'
+import { voteVisibleStatus } from '@/lib/vote-status'
 
 export interface VoteEventData {
   id: string
@@ -19,6 +20,31 @@ export interface VoteEventData {
   seedCountA: number
   seedCountB: number
   displayViews: number
+}
+
+/** 예약/지난 목록 항목 (page.tsx에서 조립) */
+export interface VoteEventListItem {
+  id: string
+  date: string // 'YYYY-MM-DD'
+  question: string
+  optionA: string
+  optionB: string
+  status: 'OPEN' | 'CLOSED'
+  linkedPostId: string | null
+  seedTotal: number
+  realVotes: number
+  displayViews: number
+}
+
+/** 'YYYY-MM-DD'(KST 자정 UTC) → 운영 상태 라벨 (voteVisibleStatus + linkedPostId 조합) */
+function statusLabel(item: { date: string; status: 'OPEN' | 'CLOSED'; linkedPostId: string | null }): string {
+  const d = new Date(`${item.date}T00:00:00.000Z`)
+  const vis = voteVisibleStatus(item.status, d)
+  const linked = item.linkedPostId ? '게시글 연결됨' : '게시글 없음'
+  if (vis === 'HIDDEN') return `⏰ 09:00 전 대기 · ${linked}`
+  if (vis === 'CLOSED') return item.status === 'CLOSED' ? `🔒 수동 마감 · ${linked}` : `✅ 자동 마감 · ${linked}`
+  // OPEN
+  return item.linkedPostId ? '🟢 진행 중 · 팝업/HERO 노출 가능' : '🟠 진행 중 · 게시글 없음(노출 불가)'
 }
 
 export interface VoteStats {
@@ -47,13 +73,24 @@ export default function VoteEventManager({
   event,
   stats,
   botOptions,
+  upcoming = [],
+  past = [],
 }: {
   event: VoteEventData | null
   stats: VoteStats | null
   botOptions: BotOption[]
+  upcoming?: VoteEventListItem[]
+  past?: VoteEventListItem[]
 }) {
   const [pending, startTransition] = useTransition()
   const [msg, setMsg] = useState<string | null>(null)
+  const [tab, setTab] = useState<'today' | 'upcoming' | 'past'>('today')
+
+  // 예약 생성 폼 (예약/예정 탭)
+  const [schedDate, setSchedDate] = useState('')
+  const [schedQuestion, setSchedQuestion] = useState('')
+  const [schedOptionA, setSchedOptionA] = useState('')
+  const [schedOptionB, setSchedOptionB] = useState('')
 
   // 투표 생성/수정 폼
   const [question, setQuestion] = useState(event?.question ?? '')
@@ -85,9 +122,26 @@ export default function VoteEventManager({
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">🎛 오늘의 투표 통제판</h1>
+      <h1 className="text-xl font-bold">🎛 참여 이벤트 — 오늘의 투표</h1>
+      <div className="flex gap-2 border-b border-zinc-200">
+        {([
+          ['today', '오늘 진행'],
+          ['upcoming', `예약·예정${upcoming.length ? ` (${upcoming.length})` : ''}`],
+          ['past', `지난 투표${past.length ? ` (${past.length})` : ''}`],
+        ] as const).map(([k, label]) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={`px-4 py-2 text-sm font-bold border-b-2 ${tab === k ? 'border-[#FF6F61] text-[#FF6F61]' : 'border-transparent text-zinc-500'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       {msg && <div className="rounded-lg bg-zinc-100 px-4 py-2 text-sm">{msg}</div>}
 
+      {tab === 'today' && (
+        <>
       {/* linkedPostId 누락 — 저장 시 자동 생성으로 해소 */}
       {event && !event.linkedPostId && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -380,12 +434,150 @@ export default function VoteEventManager({
           </section>
         </>
       )}
+        </>
+      )}
+
+      {/* ── 예약·예정 탭 ── */}
+      {tab === 'upcoming' && (
+        <section className="space-y-4">
+          <div className="rounded-xl border bg-white p-4">
+            <h2 className="mb-3 font-bold">
+              새 예약 만들기{' '}
+              <span className="text-xs font-normal text-zinc-500">
+                (미래 날짜 · 09:00 오픈 / 20:00 마감 · 연동 게시글 자동 생성)
+              </span>
+            </h2>
+            <div className="space-y-2">
+              <input
+                type="date"
+                value={schedDate}
+                onChange={(e) => setSchedDate(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2"
+              />
+              <input
+                className="w-full rounded-lg border px-3 py-2"
+                placeholder="질문 — 예: 갱년기, 더 힘든 건 어느 쪽인가요?"
+                value={schedQuestion}
+                onChange={(e) => setSchedQuestion(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 rounded-lg border px-3 py-2"
+                  placeholder="선택지 A"
+                  value={schedOptionA}
+                  onChange={(e) => setSchedOptionA(e.target.value)}
+                />
+                <input
+                  className="flex-1 rounded-lg border px-3 py-2"
+                  placeholder="선택지 B"
+                  value={schedOptionB}
+                  onChange={(e) => setSchedOptionB(e.target.value)}
+                />
+              </div>
+              <button
+                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                disabled={pending}
+                onClick={() =>
+                  run(
+                    () =>
+                      upsertTodayVoteEvent({
+                        question: schedQuestion,
+                        optionA: schedOptionA,
+                        optionB: schedOptionB,
+                        linkedPostId: null,
+                        date: schedDate,
+                      }),
+                    '예약 저장 (연동 게시글 자동 생성·연결)됨',
+                  )
+                }
+              >
+                예약 저장 (게시글 자동 생성)
+              </button>
+              <p className="text-xs text-zinc-500">같은 날짜 중복은 자동 방지(수정으로 처리). 날짜 비우면 오늘로 저장됩니다.</p>
+            </div>
+          </div>
+          <EventList items={upcoming} emptyText="예약된 투표가 없습니다." />
+        </section>
+      )}
+
+      {/* ── 지난 투표 탭 ── */}
+      {tab === 'past' && (
+        <section className="space-y-4">
+          <EventList
+            items={past}
+            emptyText="지난 투표가 없습니다."
+            showResult
+            onDuplicate={(item) => {
+              setTab('upcoming')
+              setSchedQuestion(item.question)
+              setSchedOptionA(item.optionA)
+              setSchedOptionB(item.optionB)
+              setSchedDate('')
+              setMsg('📋 복제됨 — 예약·예정 탭에서 날짜만 선택 후 저장하세요')
+            }}
+          />
+        </section>
+      )}
     </div>
   )
 
   function updateRow(index: number, patch: Partial<BotRow>) {
     setBotRows((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)))
   }
+}
+
+/** 예약/지난 목록 렌더 — 날짜·질문·상태라벨·표수·게시글링크·복제 */
+function EventList({
+  items,
+  emptyText,
+  showResult = false,
+  onDuplicate,
+}: {
+  items: VoteEventListItem[]
+  emptyText: string
+  showResult?: boolean
+  onDuplicate?: (item: VoteEventListItem) => void
+}) {
+  if (items.length === 0) {
+    return <p className="rounded-lg bg-zinc-50 px-4 py-6 text-center text-sm text-zinc-500">{emptyText}</p>
+  }
+  return (
+    <div className="space-y-2">
+      {items.map((item) => (
+        <div key={item.id} className="rounded-xl border bg-white p-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-bold text-zinc-700">{item.date}</span>
+            <span className="text-xs text-zinc-500">{statusLabel(item)}</span>
+          </div>
+          <p className="mt-1 font-bold text-zinc-900 break-keep">{item.question}</p>
+          <p className="mt-0.5 text-sm text-zinc-500">
+            {item.optionA} vs {item.optionB}
+            {showResult && ` · 표 ${item.seedTotal + item.realVotes} (seed ${item.seedTotal}+실표 ${item.realVotes}) · 조회 ${item.displayViews}`}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {item.linkedPostId && (
+              <a
+                href={`/community/stories/${item.linkedPostId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-700"
+              >
+                게시글 열기 ↗
+              </a>
+            )}
+            {onDuplicate && (
+              <button
+                onClick={() => onDuplicate(item)}
+                className="rounded-lg border border-[#FF6F61] px-3 py-1.5 text-xs font-bold text-[#FF6F61]"
+              >
+                복제
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 function StatCard({ label, value, accent = false }: { label: string; value: number | string; accent?: boolean }) {

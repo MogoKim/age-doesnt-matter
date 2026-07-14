@@ -2,7 +2,7 @@ import { cookies, headers } from 'next/headers'
 import { createHash, randomUUID } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
-import { effectiveVoteStatus, voteCloseAtMs } from '@/lib/vote-status'
+import { effectiveVoteStatus, voteCloseAtMs, voteVisibleStatus } from '@/lib/vote-status'
 import type { VoteChoice, VoteEvent } from '@/generated/prisma/client'
 
 const VOTE_COOKIE = 'guest_vote_id'
@@ -107,6 +107,8 @@ export async function resolveLinkedPostUrl(linkedPostId: string | null): Promise
 export async function getTodayPublic(): Promise<{ vote: VoteStatusPayload; closeAtMs: number } | null> {
   const event = await prisma.voteEvent.findUnique({ where: { date: getKstToday() } })
   if (!event) return null
+  // 09:00 KST 전(HIDDEN)에는 public 노출 금지 — 팝업/HERO 미노출 (예약 투표 새벽 노출 방지)
+  if (voteVisibleStatus(event.status, event.date) === 'HIDDEN') return null
   const linkedPostUrl = await resolveLinkedPostUrl(event.linkedPostId)
   const vote = toPayload(event, { a: 0, b: 0 }, null, linkedPostUrl)
   return { vote, closeAtMs: voteCloseAtMs(event.date) }
@@ -134,6 +136,8 @@ export async function getVoteStatusById(
 ): Promise<VoteStatusPayload | null> {
   const event = await prisma.voteEvent.findUnique({ where: { id: voteEventId } })
   if (!event) return null
+  // 09:00 전(HIDDEN)은 게시글 결과도 노출 금지 (예약 투표 직접 URL 접근 방어)
+  if (voteVisibleStatus(event.status, event.date) === 'HIDDEN') return null
   return buildStatusPayload(event, userId, identity)
 }
 
@@ -188,9 +192,10 @@ export async function castVote(
 ): Promise<CastResult> {
   const event = await prisma.voteEvent.findUnique({ where: { id: voteEventId } })
   if (!event) return { ok: false, error: '투표를 찾을 수 없습니다' }
-  // 시간 규칙 포함 마감 판정 — KST 20:00 이후 투표/선택 변경 거부 (payload status와 동일 기준)
-  if (effectiveVoteStatus(event.status, event.date) !== 'OPEN') {
-    return { ok: false, error: '마감된 투표입니다' }
+  // 시간 규칙 포함 판정 — 09:00 전(HIDDEN)·20:00 이후(CLOSED)엔 투표/변경 거부. OPEN에서만 허용
+  const visible = voteVisibleStatus(event.status, event.date)
+  if (visible !== 'OPEN') {
+    return { ok: false, error: visible === 'HIDDEN' ? '아직 시작 전인 투표입니다' : '마감된 투표입니다' }
   }
 
   const existing = await findMyBallot(voteEventId, userId, identity)
