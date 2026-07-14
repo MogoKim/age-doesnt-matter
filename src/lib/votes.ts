@@ -98,14 +98,23 @@ export async function resolveLinkedPostUrl(linkedPostId: string | null): Promise
   return `/community/${boardSlug}/${post.slug ?? linkedPostId}`
 }
 
-/** 오늘(KST)의 투표 + 표시 집계 + 내 표 */
+/**
+ * 오늘(KST)의 투표 — 팝업/HERO 입구 전용 경량 조회.
+ * 소비처(VotePopup·VoteHeroSlide)는 id·status·myChoice·linkedPostUrl만 사용 → 실 표 집계(countRealBallots groupBy) 생략.
+ * displayA/B/total은 seed 기반 최소값(팝업/HERO 미사용). 실 표 집계가 필요한 게시글 결과는 getVoteStatusById 사용.
+ */
 export async function getTodayVoteStatus(
   userId: string | null,
   identity: VoteIdentity,
 ): Promise<VoteStatusPayload | null> {
   const event = await prisma.voteEvent.findUnique({ where: { date: getKstToday() } })
   if (!event) return null
-  return buildStatusPayload(event, userId, identity)
+  const [mine, linkedPostUrl] = await Promise.all([
+    findMyBallot(event.id, userId, identity),
+    resolveLinkedPostUrl(event.linkedPostId),
+  ])
+  // 실 표 집계 제외 — real={a:0,b:0} → displayA/B는 seed만(팝업/HERO 미사용). status/myChoice/linkedPostUrl은 정확.
+  return toPayload(event, { a: 0, b: 0 }, mine?.choice ?? null, linkedPostUrl)
 }
 
 /** 특정 투표 ID 현황 — 지난 투표가 연동된 게시글에서도 결과 열람 가능 */
