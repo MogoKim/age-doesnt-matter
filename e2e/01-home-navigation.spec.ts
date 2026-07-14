@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test'
+import { dismissGlobalPopups } from './helpers/global-popup'
 
 test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', { tag: ['@smoke', '@public'] }, () => {
   test('홈페이지 정상 로딩 — 핵심 섹션 렌더링', async ({ page }) => {
     await page.goto('/')
+    await dismissGlobalPopups(page) // 투표/공지 팝업 오버레이 optional 닫기 (CI blocker hotfix)
     await expect(page).toHaveTitle(/우리 나이가 어때서/)
     await expect(page.locator('main')).toBeVisible()
 
@@ -14,6 +16,7 @@ test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', {
   test('모바일 헤더: 로고, 검색, 유저 아이콘 노출', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/')
+    await dismissGlobalPopups(page) // 투표/공지 팝업 오버레이 optional 닫기 (CI blocker hotfix)
 
     // 로고 (홈 링크)
     const logo = page.locator('header a[href="/"]').first()
@@ -27,6 +30,7 @@ test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', {
   test('모바일 아이콘 메뉴: 5개 네비게이션 탭', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/')
+    await dismissGlobalPopups(page) // 투표/공지 팝업 오버레이 optional 닫기 (CI blocker hotfix)
 
     const navLinks = [
       { href: '/best', label: '베스트' },
@@ -47,6 +51,7 @@ test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', {
   test('데스크탑 GNB: 로고 + 메뉴 + 검색', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/')
+    await dismissGlobalPopups(page) // 투표/공지 팝업 오버레이 optional 닫기 (CI blocker hotfix)
 
     // 검색 인풋 존재
     const searchInput = page.locator('input[type="search"]')
@@ -69,6 +74,7 @@ test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', {
   test('네비게이션 클릭 → 각 페이지 이동', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/')
+    await dismissGlobalPopups(page) // 투표/공지 팝업 오버레이 optional 닫기 (CI blocker hotfix)
 
     // 일자리 페이지
     await page.getByRole('link', { name: '내일찾기' }).click()
@@ -89,6 +95,7 @@ test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', {
   test('데스크탑 검색 폼 → 검색 결과 이동', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/')
+    await dismissGlobalPopups(page) // 투표/공지 팝업 오버레이 optional 닫기 (CI blocker hotfix)
 
     const searchInput = page.locator('input[type="search"]')
     await searchInput.fill('일자리')
@@ -102,6 +109,7 @@ test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', {
   test('모바일 검색 아이콘 → 검색 페이지 이동', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/')
+    await dismissGlobalPopups(page) // 투표/공지 팝업 오버레이 optional 닫기 (CI blocker hotfix)
 
     await page.locator('header a[href="/search"]').click()
     await page.waitForURL(/\/search/, { waitUntil: 'domcontentloaded' })
