@@ -88,12 +88,11 @@ export default function VoteEventManager({
       <h1 className="text-xl font-bold">🎛 오늘의 투표 통제판</h1>
       {msg && <div className="rounded-lg bg-zinc-100 px-4 py-2 text-sm">{msg}</div>}
 
-      {/* linkedPostId 누락 — HERO teaser·팝업이 게시글로 못 보내고 fallback으로 동작 */}
+      {/* linkedPostId 누락 — 저장 시 자동 생성으로 해소 */}
       {event && !event.linkedPostId && (
-        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-          ⚠️ <b>연동 게시글(linkedPostId)이 비어 있습니다.</b> 홈 HERO 투표 슬라이드가 커뮤니티
-          목록(/community/stories)으로 fallback 이동하고, 투표 안내 팝업은 노출되지 않으며, 게시글 내
-          투표 모듈도 없습니다. ① 섹션에서 연동 게시글 ID를 설정해 주세요.
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          ⚠️ <b>연동 게시글이 아직 없습니다.</b> 지금은 홈 팝업·HERO 투표 입구가 노출되지 않습니다.
+          아래 ① 섹션에서 <b>&ldquo;수정 저장&rdquo;</b>을 누르면 투표용 게시글이 자동 생성·연결됩니다.
         </div>
       )}
 
@@ -152,23 +151,47 @@ export default function VoteEventManager({
               onChange={(e) => setOptionB(e.target.value)}
             />
           </div>
-          <input
-            className="w-full rounded-lg border px-3 py-2"
-            placeholder="연동 게시글 ID (linkedPostId) — 댓글 수다 공간"
-            value={linkedPostId}
-            onChange={(e) => setLinkedPostId(e.target.value)}
-          />
+          {/* 연동 게시글 상태 — 운영자는 DB id를 다룰 필요 없음 */}
+          {event?.linkedPostId ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+              ✅ 연동 게시글 연결됨
+              <a
+                href={`/community/stories/${event.linkedPostId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="font-bold underline"
+              >
+                연동 게시글 열기 ↗
+              </a>
+            </div>
+          ) : (
+            <p className="rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-500">
+              연동 게시글: <b>자동 생성됨</b> — 저장하면 투표용 게시글이 만들어지고 자동으로 연결됩니다.
+            </p>
+          )}
+
+          {/* 고급: 기존 게시글 ID를 직접 연결할 때만 (비우면 자동 생성) */}
+          <details className="text-sm">
+            <summary className="cursor-pointer text-zinc-500">고급 · 기존 게시글 ID 직접 연결</summary>
+            <input
+              className="mt-2 w-full rounded-lg border px-3 py-2"
+              placeholder="linkedPostId 직접 입력 (비우면 자동 생성)"
+              value={linkedPostId}
+              onChange={(e) => setLinkedPostId(e.target.value)}
+            />
+          </details>
+
           <button
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
             disabled={pending}
             onClick={() =>
               run(
                 () => upsertTodayVoteEvent({ question, optionA, optionB, linkedPostId: linkedPostId || null }),
-                '저장되었습니다',
+                '저장되었습니다 (연동 게시글 자동 생성·연결)',
               )
             }
           >
-            {event ? '수정 저장' : '오늘 투표 생성'}
+            {event ? '수정 저장' : '오늘 투표 생성 (게시글 자동 생성)'}
           </button>
         </div>
       </section>

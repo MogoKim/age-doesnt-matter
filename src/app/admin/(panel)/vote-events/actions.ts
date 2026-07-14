@@ -32,13 +32,70 @@ async function revalidateLinkedPost(linkedPostId: string | null) {
   revalidatePath(`/community/${boardSlug}/${post.slug ?? linkedPostId}`)
 }
 
-/** 오늘 투표 생성/수정 (date는 KST 오늘 고정 — 하루 1투표 MVP) */
+/**
+ * 투표 연동 게시글 작성자 — 기존 투표 게시글 author 재사용(하드코딩 금지, 런타임 조회).
+ * 없으면 활성 @unao.bot 중 가장 오래된 운영 계정. 둘 다 없으면 null.
+ */
+async function resolveVotePostAuthorId(): Promise<string | null> {
+  const prev = await prisma.voteEvent.findFirst({
+    where: { linkedPostId: { not: null } },
+    orderBy: { date: 'desc' },
+    select: { linkedPostId: true },
+  })
+  if (prev?.linkedPostId) {
+    const post = await prisma.post.findUnique({ where: { id: prev.linkedPostId }, select: { authorId: true } })
+    if (post) return post.authorId
+  }
+  const bot = await prisma.user.findFirst({
+    where: { email: { endsWith: '@unao.bot' } },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true },
+  })
+  return bot?.id ?? null
+}
+
+/** 투표 유도 짧은 본문 — 옵션 기반, 질문 중복 없이(제목=질문) 투표+댓글만 유도 */
+function buildVotePostContent(optionA: string, optionB: string): string {
+  return [
+    `<p>${optionA} 쪽인 분도 있고, ${optionB} 쪽인 분도 있어요.</p>`,
+    `<p>어느 쪽에 더 가까우신가요? 한 표 남기고, 왜 그런지도 댓글로 나눠주세요.</p>`,
+  ].join('\n')
+}
+
+/** 투표용 게시글 자동 생성 (STORY·PUBLISHED·ADMIN). 제목=질문, slug=null(id 접근). */
+async function createVotePost(
+  question: string,
+  optionA: string,
+  optionB: string,
+): Promise<{ id: string } | { error: string }> {
+  const authorId = await resolveVotePostAuthorId()
+  if (!authorId) return { error: '게시글 작성자(운영 봇 계정)를 찾을 수 없습니다. @unao.bot 계정을 확인해 주세요.' }
+  const post = await prisma.post.create({
+    data: {
+      boardType: 'STORY',
+      status: 'PUBLISHED',
+      source: 'ADMIN',
+      title: question,
+      content: buildVotePostContent(optionA, optionB),
+      authorId,
+      publishedAt: new Date(),
+    },
+    select: { id: true },
+  })
+  return { id: post.id }
+}
+
+/**
+ * 오늘 투표 생성/수정 (date는 KST 오늘 고정 — 하루 1투표 MVP).
+ * linkedPostId 비어 있으면 연동 게시글 자동 생성 후 연결(운영자가 DB id를 찾을 필요 없음).
+ * 직접 입력 시(고급 옵션)에는 기존 존재 검증 유지.
+ */
 export async function upsertTodayVoteEvent(input: {
   question: string
   optionA: string
   optionB: string
   linkedPostId: string | null
-}): Promise<ActionResult> {
+}): Promise<ActionResult & { linkedPostId?: string; autoCreated?: boolean }> {
   const denied = await requireAdmin()
   if (denied) return denied
 
@@ -47,10 +104,27 @@ export async function upsertTodayVoteEvent(input: {
   const optionB = input.optionB.trim()
   if (!question || !optionA || !optionB) return { error: '질문과 선택지 A/B를 모두 입력해 주세요' }
 
-  const linkedPostId = input.linkedPostId?.trim() || null
+  let linkedPostId = input.linkedPostId?.trim() || null
+  let autoCreated = false
+
   if (linkedPostId) {
+    // 고급: 직접 입력한 id는 기존 검증 유지
     const post = await prisma.post.findUnique({ where: { id: linkedPostId }, select: { id: true } })
     if (!post) return { error: `연동 게시글을 찾을 수 없습니다: ${linkedPostId}` }
+  } else {
+    // 자동: 오늘 투표에 이미 게시글 연결돼 있으면 유지, 없으면 새로 생성
+    const existing = await prisma.voteEvent.findUnique({
+      where: { date: getKstToday() },
+      select: { linkedPostId: true },
+    })
+    if (existing?.linkedPostId) {
+      linkedPostId = existing.linkedPostId
+    } else {
+      const created = await createVotePost(question, optionA, optionB)
+      if ('error' in created) return { error: created.error }
+      linkedPostId = created.id
+      autoCreated = true
+    }
   }
 
   await prisma.voteEvent.upsert({
@@ -59,9 +133,10 @@ export async function upsertTodayVoteEvent(input: {
     update: { question, optionA, optionB, linkedPostId },
   })
 
-  await revalidateLinkedPost(linkedPostId)
+  await revalidateLinkedPost(linkedPostId) // '/' + 게시글 상세
   revalidatePath('/admin/vote-events')
-  return { ok: true }
+  revalidatePath('/community/stories')
+  return { ok: true, linkedPostId, autoCreated }
 }
 
 /** seed 표수·표시 조회수 조정 (판깔기 — 실측과 분리) */
