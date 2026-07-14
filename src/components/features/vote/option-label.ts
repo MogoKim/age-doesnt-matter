@@ -30,6 +30,15 @@ export function campLabel(option: string): string {
   return `${last} 쪽`
 }
 
+/**
+ * 진영 CTA/입력창 문구 — "🔥 잔소리파 편에서 한마디" / "몸 쪽에서 한마디".
+ * 이모지 진영(Day1)은 "편에서", 텍스트 진영(Day2 "○○ 쪽")은 "에서"로 자연스럽게 잇는다.
+ */
+export function campPhrase(option: string, tail: string): string {
+  const connector = optionEmoji(option) ? ' 편에서' : '에서'
+  return `${campLabel(option)}${connector} ${tail}`
+}
+
 /** 을/를 조사 — 마지막 한글의 받침 유무로 결정 (이모지·공백 무시) */
 export function eulReul(word: string): string {
   const last = word.replace(/[^가-힣]/g, '').slice(-1)

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { optionLabel, campLabel, eulReul } from './option-label'
+import { optionLabel, campPhrase, eulReul } from './option-label'
 
 /** /api/votes/[id] 응답 payload (src/lib/votes.ts VoteStatusPayload와 동일 형태) */
 export interface VoteStatus {
@@ -148,7 +148,7 @@ export default function VoteWidget({ voteEventId, initialVote }: VoteWidgetProps
             onClick={scrollToComment}
             className="mt-4 w-full min-h-[52px] rounded-xl bg-primary text-white text-[17px] font-bold hover:bg-primary/90 transition-colors"
           >
-            {closed ? '결과 보고 한마디 남기기' : voted ? `${campLabel(myOption)}에서 한마디` : '한마디 남기기'}
+            {closed ? '결과 보고 한마디 남기기' : voted ? campPhrase(myOption, '한마디') : '한마디 남기기'}
           </button>
         </>
       )}

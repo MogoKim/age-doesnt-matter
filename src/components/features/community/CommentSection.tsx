@@ -11,7 +11,7 @@ const GRADE_EMOJI: Record<string, string> = {
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
-import { campLabel } from '@/components/features/vote/option-label'
+import { campLabel, campPhrase } from '@/components/features/vote/option-label'
 
 interface CommentSectionProps {
   postId: string
@@ -162,7 +162,12 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
 
   // 입력창 위 진영 문구 — 회원이 투표했으면 내 진영 기준, 아니면 투표 유도
   const myChoice = voteBadges && resolvedCurrentUser ? voteBadges.byUserId[resolvedCurrentUser.id] : undefined
-  const myCampLabel = myChoice === 'A' ? campLabel(voteBadges!.optionA) : myChoice === 'B' ? campLabel(voteBadges!.optionB) : null
+  const myCampPhrase =
+    myChoice === 'A'
+      ? campPhrase(voteBadges!.optionA, '한마디 남겨보세요')
+      : myChoice === 'B'
+        ? campPhrase(voteBadges!.optionB, '한마디 남겨보세요')
+        : null
 
   return (
     <section className="mb-12">
@@ -184,6 +189,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
       <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-foreground">
         {camp && voteBadges ? (
           <h3 className="text-lg font-bold text-foreground m-0">
+            <span className="text-[14px] font-normal text-muted-foreground">댓글 진영 · </span>
             <span className="text-primary-text">{campLabel(voteBadges.optionA)} {camp.a}</span>
             <span className="text-muted-foreground font-normal"> · </span>
             <span className="text-slate-600">{campLabel(voteBadges.optionB)} {camp.b}</span>
@@ -239,7 +245,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
       {/* 투표형 글: 입력창 위 진영 문구 */}
       {voteBadges && (
         <p className="mb-2 text-[15px] font-bold text-primary-text">
-          {myCampLabel ? `${myCampLabel}에서 한마디 남겨보세요` : '먼저 투표하고 참여해보세요'}
+          {myCampPhrase ?? '먼저 투표하고 참여해보세요'}
         </p>
       )}
 
