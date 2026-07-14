@@ -19,13 +19,13 @@ import {
 // CRAWL_EXPECTED 성공판정/크롤품질)에 절대 유입되지 않아야 한다.
 // 정책: docs/analysis/content-curate-phase2-core-promotion-design-2026-07-10.md
 
-describe('파생 상수 — 현재 상태 (Phase 2-a 승격 + masanmam publishable 온보딩 2026-07-12)', () => {
-  it('PRODUCTION_CAFE_IDS = wgang, dlxogns01 만 (온보딩 후에도 불변)', () => {
+describe('파생 상수 — 현재 상태 (Phase 2-a 승격 + masanmam core 승격 2026-07-14)', () => {
+  it('PRODUCTION_CAFE_IDS = wgang, dlxogns01 만 (승격 후에도 불변)', () => {
     expect(PRODUCTION_CAFE_IDS.sort()).toEqual(['dlxogns01', 'wgang'])
   })
 
-  it('CURATION_CORE_CAFE_IDS = production + core (killer 후보 경쟁군 — masanmam 미포함)', () => {
-    expect(CURATION_CORE_CAFE_IDS.sort()).toEqual(['dlxogns01', 'goondae', 'remonterrace', 'wgang'])
+  it('CURATION_CORE_CAFE_IDS = production + core (killer 후보 경쟁군 — masanmam 포함, 2026-07-14 승격)', () => {
+    expect(CURATION_CORE_CAFE_IDS.sort()).toEqual(['dlxogns01', 'goondae', 'masanmam', 'remonterrace', 'wgang'])
   })
 
   it('PUBLISHABLE_CAFE_IDS = production + core + publishable (refs·self-ref — masanmam 포함)', () => {
@@ -36,19 +36,18 @@ describe('파생 상수 — 현재 상태 (Phase 2-a 승격 + masanmam publishab
     expect(SECONDARY_CAFE_IDS.sort()).toEqual(['goondae', 'masanmam', 'remonterrace'])
   })
 
-  it('SHADOW_CAFE_IDS = 빈 배열 (masanmam은 shadow가 아니라 정식 publishable)', () => {
+  it('SHADOW_CAFE_IDS = 빈 배열 (masanmam은 shadow가 아니라 정식 core)', () => {
     expect(SHADOW_CAFE_IDS).toEqual([])
   })
 
-  it('PUBLISHABLE_ONLY_CAFE_IDS = masanmam (보충 lane 가동 — production 우선, killer 미편입)', () => {
-    expect(PUBLISHABLE_ONLY_CAFE_IDS).toEqual(['masanmam'])
+  it('PUBLISHABLE_ONLY_CAFE_IDS = 빈 배열 (masanmam core 승격으로 보충 lane 졸업 — 온보딩 경로로 유지)', () => {
+    expect(PUBLISHABLE_ONLY_CAFE_IDS).toEqual([])
   })
 
   it('remon/goondae/masanmam은 PRODUCTION에 절대 미포함 (trend/성공판정/크롤품질 오염 방지)', () => {
     expect(PRODUCTION_CAFE_IDS).not.toContain('remonterrace')
     expect(PRODUCTION_CAFE_IDS).not.toContain('goondae')
     expect(PRODUCTION_CAFE_IDS).not.toContain('masanmam')
-    expect(CURATION_CORE_CAFE_IDS).not.toContain('masanmam')
   })
 })
 
@@ -58,7 +57,7 @@ describe('sourceStageOfCafe — BotLog refSourceStage 기록용', () => {
     expect(sourceStageOfCafe('dlxogns01')).toBe('production')
     expect(sourceStageOfCafe('remonterrace')).toBe('core')
     expect(sourceStageOfCafe('goondae')).toBe('core')
-    expect(sourceStageOfCafe('masanmam')).toBe('publishable')
+    expect(sourceStageOfCafe('masanmam')).toBe('core')
     expect(sourceStageOfCafe('없는카페')).toBe('unknown')
   })
 })
