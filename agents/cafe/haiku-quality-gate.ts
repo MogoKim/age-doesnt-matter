@@ -83,7 +83,7 @@ export async function evaluateContentQualityWithHaiku(input: HaikuQualityInput):
     await prisma.botLog
       .create({
         data: {
-          botType: 'CONTENT_CURATOR',
+          botType: 'CAFE_CRAWLER', // BotType enum에 CONTENT_CURATOR 없음 — CONTENT_CURATE 로그와 동일 관례 (hotfix: enum 불일치로 캐시 기록이 조용히 실패하던 버그)
           status: 'SUCCESS',
           action: HAIKU_GATE_ACTION,
           executionTimeMs: Date.now() - started,
