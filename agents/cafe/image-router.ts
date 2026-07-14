@@ -7,6 +7,7 @@ import { sendSlackMessage } from '../core/notifier.js'
 import { readAllSheetUrls, countPendingTotal, appendRow } from '../community/sheets-client.js'
 import { isStoryGuarded } from './curator-shared.js'
 import { hasPoliticalKeyword } from '../core/political-blocklist.js'
+import { findSheetContentQualityViolation } from '../core/content-quality-rules.js'
 
 // cap을 운영 변수(GitHub Variables / env)로 조절. 미설정·비정상 값이면 기본값 사용.
 function envInt(name: string, fallback: number): number {
@@ -157,8 +158,21 @@ export async function main(): Promise<void> {
     const politicalFiltered = deduped.filter(c => !hasPoliticalKeyword(c.title, c.content ?? ''))
     const politicalBlockedCount = deduped.length - politicalFiltered.length
 
+    // 콘텐츠 품질 rule gate (PR-1, 2026-07-14) — 날짜 스탬프 연재/브리핑·원카페 흔적·광고를
+    // Sheet append 전에 차단. 숨김 70건 감사에서 이 경로 형식 사고 17건 실측. cap/선별 조건 무변경.
+    const ruleBlocked: { url: string; reason: string }[] = []
+    const qualityFiltered = politicalFiltered.filter(c => {
+      const violation = findSheetContentQualityViolation(c.title, c.content ?? '', new Date())
+      if (violation) {
+        ruleBlocked.push({ url: c.postUrl, reason: violation })
+        console.log(`[ImageRouter] rule 차단 (${violation}): "${c.title.slice(0, 30)}"`)
+        return false
+      }
+      return true
+    })
+
     console.log(
-      `[ImageRouter] 후보: ${candidates.length}건 → postUrl 있음: ${withUrl.length}건 → 중복제외: ${deduped.length}건 → 정치제외: ${politicalBlockedCount}건`,
+      `[ImageRouter] 후보: ${candidates.length}건 → postUrl 있음: ${withUrl.length}건 → 중복제외: ${deduped.length}건 → 정치제외: ${politicalBlockedCount}건 → rule제외: ${ruleBlocked.length}건`,
     )
 
     // 탭 배정 + cap 적용
@@ -166,7 +180,7 @@ export async function main(): Promise<void> {
     type Selected = { tab: string; postUrl: string; cafePostId: string; killerScore: number }
     const selected: Selected[] = []
 
-    for (const c of politicalFiltered) {
+    for (const c of qualityFiltered) {
       if (selected.length >= remainingCap) break
       // 제목 guard 후처리 — psych가 LIFE2로 매겼어도 생활/소음/고장/돌봄 신호만 있으면 STORY로 강등
       const effectiveDesire = isStoryGuarded(c.title) ? 'GENERAL' : c.desireCategory
@@ -192,6 +206,8 @@ export async function main(): Promise<void> {
           logData: {
             reason: 'dry_run',
             wouldAppend: selected.map(s => ({ tab: s.tab, url: s.postUrl, killerScore: s.killerScore })),
+            ruleBlockedCount: ruleBlocked.length,
+            ruleBlocked,
             dayCap: DAY_CAP,
             tabCap: TAB_CAP,
             pendingBacklogLimit: PENDING_BACKLOG_LIMIT,
@@ -235,6 +251,8 @@ export async function main(): Promise<void> {
           todayTotal: todayAppended + successCount,
           tabBreakdown: tabCount,
           politicalBlockedCount,
+          ruleBlockedCount: ruleBlocked.length,
+          ruleBlocked,
           dayCap: DAY_CAP,
           tabCap: TAB_CAP,
           pendingBacklogLimit: PENDING_BACKLOG_LIMIT,
