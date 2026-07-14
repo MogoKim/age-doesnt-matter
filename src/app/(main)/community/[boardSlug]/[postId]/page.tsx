@@ -126,12 +126,11 @@ export default async function PostDetailPage({ params }: PageProps) {
       },
     })
     .catch(() => null)
-  // 09:00 KST 전(HIDDEN)에는 투표 모듈을 노출하지 않는다(예약 게시글이 새벽에 투표판을 보이지 않게).
-  // → 일반 글로 렌더. 09:00~20:00 OPEN / 20:00 이후 CLOSED(결과)만 투표형 레이아웃.
-  const linkedVote =
-    linkedVoteRaw && voteVisibleStatus(linkedVoteRaw.status, linkedVoteRaw.date) !== 'HIDDEN'
-      ? linkedVoteRaw
-      : null
+  // 09:00 KST 전(HIDDEN) 투표 연동 게시글은 상세도 노출 금지 — 일반 글로도 보이면 안 됨(예약 새벽 노출 차단).
+  // 예약 게시글은 DRAFT라 getPostDetail에서 이미 걸러지지만, 수동 PUBLISHED 케이스까지 방어적으로 notFound.
+  if (linkedVoteRaw && voteVisibleStatus(linkedVoteRaw.status, linkedVoteRaw.date) === 'HIDDEN') notFound()
+  // 09:00~20:00 OPEN / 20:00 이후 CLOSED(결과)만 투표형 레이아웃
+  const linkedVote = linkedVoteRaw
 
   const canonicalSlug = post.slug ?? postId
   const url = `${BASE_URL}/community/${boardSlug}/${canonicalSlug}`

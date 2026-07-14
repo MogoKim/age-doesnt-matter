@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import { getKstToday } from '@/lib/votes'
+import { voteOpenAtMs } from '@/lib/vote-status'
 import { generateVoteDraftBatch, type VoteDraftRow } from '@/lib/ai/vote-draft'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { VoteChoice, VoteEventStatus } from '@/generated/prisma/client'
@@ -62,23 +63,29 @@ function buildVotePostContent(optionA: string, optionB: string): string {
   ].join('\n')
 }
 
-/** 투표용 게시글 자동 생성 (STORY·PUBLISHED·ADMIN). 제목=질문, slug=null(id 접근). */
+/**
+ * 투표용 게시글 자동 생성 (STORY·ADMIN). 제목=질문, slug=null(id 접근).
+ * 09:00 오픈 전(예약 미래 날짜)이면 **DRAFT** — 목록/상세 status 필터에서 자동 제외(09:00 전 노출 차단).
+ * 09:00 이후 오픈 시점에 getTodayPublic이 DRAFT→PUBLISHED로 lazy 전환(크론 없음).
+ */
 async function createVotePost(
   question: string,
   optionA: string,
   optionB: string,
+  eventDate: Date,
 ): Promise<{ id: string } | { error: string }> {
   const authorId = await resolveVotePostAuthorId()
   if (!authorId) return { error: '게시글 작성자(운영 봇 계정)를 찾을 수 없습니다. @unao.bot 계정을 확인해 주세요.' }
+  const opensInFuture = Date.now() < voteOpenAtMs(eventDate)
   const post = await prisma.post.create({
     data: {
       boardType: 'STORY',
-      status: 'PUBLISHED',
+      status: opensInFuture ? 'DRAFT' : 'PUBLISHED',
       source: 'ADMIN',
       title: question,
       content: buildVotePostContent(optionA, optionB),
       authorId,
-      publishedAt: new Date(),
+      publishedAt: new Date(voteOpenAtMs(eventDate)), // 09:00 오픈 시각
     },
     select: { id: true },
   })
@@ -131,7 +138,7 @@ export async function upsertTodayVoteEvent(input: {
     if (existing?.linkedPostId) {
       linkedPostId = existing.linkedPostId
     } else {
-      const created = await createVotePost(question, optionA, optionB)
+      const created = await createVotePost(question, optionA, optionB, eventDate)
       if ('error' in created) return { error: created.error }
       linkedPostId = created.id
       autoCreated = true

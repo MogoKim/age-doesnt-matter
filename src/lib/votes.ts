@@ -1,4 +1,5 @@
 import { cookies, headers } from 'next/headers'
+import { revalidatePath } from 'next/cache'
 import { createHash, randomUUID } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
@@ -109,6 +110,15 @@ export async function getTodayPublic(): Promise<{ vote: VoteStatusPayload; close
   if (!event) return null
   // 09:00 KST 전(HIDDEN)에는 public 노출 금지 — 팝업/HERO 미노출 (예약 투표 새벽 노출 방지)
   if (voteVisibleStatus(event.status, event.date) === 'HIDDEN') return null
+  // 09:00 도달 → 예약 시 DRAFT로 숨겨둔 연동 게시글을 lazy 공개 (크론 없음, idempotent)
+  if (event.linkedPostId) {
+    const post = await prisma.post.findUnique({ where: { id: event.linkedPostId }, select: { status: true } })
+    if (post?.status === 'DRAFT') {
+      await prisma.post.update({ where: { id: event.linkedPostId }, data: { status: 'PUBLISHED' } })
+      revalidatePath('/')
+      revalidatePath('/community/stories')
+    }
+  }
   const linkedPostUrl = await resolveLinkedPostUrl(event.linkedPostId)
   const vote = toPayload(event, { a: 0, b: 0 }, null, linkedPostUrl)
   return { vote, closeAtMs: voteCloseAtMs(event.date) }
