@@ -9,6 +9,7 @@ import { prisma, disconnect } from '../core/db.js'
 import { notifySlack, sendSlackMessage } from '../core/notifier.js'
 import { findPoliticalKeyword, hasPoliticalKeyword } from '../core/political-blocklist.js'
 import { findAgeFitViolation } from '../core/age-fit-blocklist.js'
+import { evaluateContentQualityWithHaiku, summarizeHaikuResult, type HaikuQualityResult } from './haiku-quality-gate.js'
 import type { CuratedContent } from './types.js'
 
 import {
@@ -70,6 +71,8 @@ interface TopicResult extends CandidateTopic {
   isShadowRef?: boolean
   // [Phase 1-a-②/2-a] ref 소스 단계 — production/core/publishable/shadow 구분 (additive optional)
   refSourceStage?: 'production' | 'core' | 'publishable' | 'shadow' | 'unknown'
+  // [PR-2 Haiku dry-run 2026-07-14] main ref 품질 판정 기록 — 발행 직전 도달한 엔트리에만 (additive optional, 차단 없음)
+  haiku?: Record<string, unknown>
   // [board routing 2026-07-12] 게시판 산출 근거 — 발행 성공 엔트리에만 기록 (additive optional, 파서 호환)
   routingDesire?: string
   routingGuard?: string
@@ -843,21 +846,35 @@ export async function main() {
     }
     console.log(`[ContentCurator] "${candidate.topic}" (${desireCat}) → ${board.boardType}/${board.category} → ${persona.nickname} (참고글 ${refs.length}개)`)
 
+    // [PR-2 Haiku dry-run] 발행 직전 main ref 1건만 품질 판정 — 기록 전용, 차단 없음.
+    //   REJECT여도 발행은 계속된다(wouldReject만 남김). 실패 시 haikuStatus='ERROR' 후 발행 지속.
+    const mainRef = refs[0] as unknown as { id: string; title: string; content: string | null }
+    const haikuResult: HaikuQualityResult = await evaluateContentQualityWithHaiku({
+      cafePostId: mainRef.id,
+      title: mainRef.title,
+      content: mainRef.content ?? '',
+      boardType: board.boardType,
+    })
+    const haiku = summarizeHaikuResult(haikuResult)
+    if (haikuResult.haikuStatus !== 'ERROR' && haikuResult.wouldReject) {
+      console.log(`[ContentCurator] Haiku dry-run wouldReject (${haikuResult.speakerRole}/${haikuResult.risks.join(',')}): "${mainRef.title.slice(0, 30)}" — 발행은 계속`)
+    }
+
     const curated = await generateCuratedPost(persona, candidate.topic, refs, desireCat)
     if (!curated) {
       // refs는 있었지만 curated content 생성 결과가 null
-      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'GENERATION_FAILED', ...refMeta(refs[0]) })
+      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'GENERATION_FAILED', ...refMeta(refs[0]), haiku })
       continue
     }
 
     const publishResult = await publishCuratedContent(curated)
     if (!publishResult.success) {
-      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: publishResult.skipReason, matchedKeyword: publishResult.matchedKeyword, ...refMeta(refs[0]) })
+      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: publishResult.skipReason, matchedKeyword: publishResult.matchedKeyword, ...refMeta(refs[0]), haiku })
       continue
     }
 
     // 발행 성공
-    topicResults.push({ ...candidate, refsCount: refs.length, skipReason: null, ...refMeta(refs[0]), routingDesire: board.routingDesire, routingGuard: board.routingGuard })
+    topicResults.push({ ...candidate, refsCount: refs.length, skipReason: null, ...refMeta(refs[0]), routingDesire: board.routingDesire, routingGuard: board.routingGuard, haiku })
     publishedCount++
     if (publishResult.seoTransformed) seoTransformedCount++
     else seoFallbackCount++
