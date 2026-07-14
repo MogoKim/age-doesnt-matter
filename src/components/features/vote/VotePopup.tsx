@@ -130,20 +130,23 @@ export default function VotePopup() {
 
     const run = async () => {
       try {
-        // 어드민 팝업 우선 — 홈 경로 활성 팝업이 있으면 양보
-        const popupRes = await fetch('/api/popups?path=%2F', { credentials: 'same-origin' })
+        // 어드민 팝업 우선 규칙 유지 — 단 두 요청은 병렬(직렬 대기 제거)
+        const [popupRes, todayRes] = await Promise.all([
+          fetch('/api/popups?path=%2F', { credentials: 'same-origin' }),
+          fetch('/api/votes/today', { cache: 'no-store', credentials: 'same-origin' }),
+        ])
+        // 홈 경로 활성 팝업이 있으면 양보
         if (popupRes.ok) {
           const popupData = (await popupRes.json()) as { popups?: unknown[] }
           if ((popupData.popups?.length ?? 0) > 0) return
         }
-
-        const res = await fetch('/api/votes/today', { cache: 'no-store', credentials: 'same-origin' })
-        if (!res.ok) return
-        const data = (await res.json()) as { vote: VoteStatus | null }
+        if (!todayRes.ok) return
+        const data = (await todayRes.json()) as { vote: VoteStatus | null }
         const v = data.vote
         // 미투표 + 진행 중 + 연동 게시글 있는 경우만, 하루 1회
         if (!v || v.status !== 'OPEN' || v.myChoice !== null || !v.linkedPostUrl || isDismissedToday(v.id)) return
         if (!cancelled) {
+          router.prefetch(v.linkedPostUrl) // 선택 시 즉시 이동 대비 프리페치
           setVote(v)
           setOpen(true)
         }
@@ -152,19 +155,13 @@ export default function VotePopup() {
       }
     }
 
-    let idleId: number | undefined
-    let timerId: ReturnType<typeof setTimeout> | undefined
-    if ('requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(() => void run())
-    } else {
-      timerId = setTimeout(() => void run(), 1500)
-    }
+    // requestIdleCallback 제거 — 홈 진입 직후 짧은 지연으로 후보 로딩 시작(체감 속도 우선)
+    const timerId = setTimeout(() => void run(), 200)
     return () => {
       cancelled = true
-      if (idleId !== undefined) window.cancelIdleCallback?.(idleId)
-      if (timerId !== undefined) clearTimeout(timerId)
+      clearTimeout(timerId)
     }
-  }, [])
+  }, [router])
 
   if (!vote) return null
 
@@ -191,14 +188,13 @@ export default function VotePopup() {
         credentials: 'same-origin',
         body: JSON.stringify({ choice }),
       })
-      const data = (await res.json()) as { vote?: VoteStatus }
-      if (res.ok && data.vote) {
-        // 입구 역할 종료 — 결과는 게시글에서. 당일 재노출 차단 후 즉시 이동.
+      if (res.ok) {
+        // 입구 역할 종료 — 응답 파싱을 기다리지 않고 이미 아는 linkedPostUrl로 즉시 이동(결과는 게시글에서)
         dismissToday(vote.id)
-        const url = data.vote.linkedPostUrl ?? vote.linkedPostUrl
         setOpen(false)
-        if (url) router.push(url)
+        if (vote.linkedPostUrl) router.push(vote.linkedPostUrl)
       } else {
+        // 409(마감/중복)·기타 실패 시 이동하지 않고 재시도 유도
         setFailed(true)
         setActiveChoice(null)
         setPending(false)

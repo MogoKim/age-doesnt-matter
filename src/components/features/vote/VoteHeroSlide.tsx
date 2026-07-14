@@ -154,13 +154,15 @@ export default function VoteHeroSlide({
 
   useEffect(() => {
     mounted.current = true
+    // 선택 시 즉시 이동 대비 프리페치 (연동 게시글 있을 때만)
+    if (initial.linkedPostUrl) router.prefetch(postUrl)
     void refresh()
     const timer = setInterval(() => void refresh(), REFRESH_MS)
     return () => {
       mounted.current = false
       clearInterval(timer)
     }
-  }, [refresh])
+  }, [refresh, router, postUrl, initial.linkedPostUrl])
 
   const cast = async (choice: 'A' | 'B') => {
     if (pending) return
@@ -173,10 +175,11 @@ export default function VoteHeroSlide({
         credentials: 'same-origin',
         body: JSON.stringify({ choice }),
       })
-      const data = (await res.json()) as { vote?: VoteStatus }
-      if (res.ok && data.vote) {
-        router.push(data.vote.linkedPostUrl ?? postUrl)
+      if (res.ok) {
+        // 응답 파싱을 기다리지 않고 이미 아는 postUrl로 즉시 이동 (결과는 게시글에서)
+        router.push(postUrl)
       } else {
+        // 409(마감/중복)·기타 실패 시 이동하지 않음
         setPending(false)
         setActiveChoice(null)
       }
