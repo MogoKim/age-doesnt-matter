@@ -184,7 +184,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/f-e/cafes/14793916',
     numericId: 14793916,
     legacyCrawler: true,   // goondae/remon과 동일 — boards page loop 전용
-    sourceStage: 'publishable',
+    sourceStage: 'core',   // 2026-07-14 core 승격 — 24h 운영검증 PASS(usable5 0→16, 발행 1건 정합, 톤 무사고). 필터·크롤 전략 무변경(SECONDARY 유지)
     boards: [
       { name: '자유이야기방', menuId: 87, maxPages: 5, priority: 'medium', category: 'lifestyle' },
     ],
