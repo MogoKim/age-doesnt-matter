@@ -5,15 +5,19 @@ import { VotePopupView } from '@/components/features/vote/VotePopup'
 import { VoteHeroSlideView } from '@/components/features/vote/VoteHeroSlide'
 import VoteWidget, { type VoteStatus } from '@/components/features/vote/VoteWidget'
 
-const MOCK = { question: '우리 집 남편은 어느 쪽인가요?', optionA: '잔소리형', optionB: '무뚝뚝형' }
+const THEMES = {
+  'Day1 남편': { question: '우리 집 남편은 어느 쪽인가요?', optionA: '잔소리형', optionB: '무뚝뚝형' },
+  'Day2 갱년기': { question: '갱년기, 더 힘든 건 어느 쪽인가요?', optionA: '화끈거리는 몸', optionB: '오르락내리락 마음' },
+} as const
+type ThemeKey = keyof typeof THEMES
 
 /** 게시글 VoteWidget 검토용 mock (실 API 없이 initialVote로 상태 강제 — refresh는 404로 무시됨) */
-function mockVote(over: Partial<VoteStatus>): VoteStatus {
+function mockVote(theme: (typeof THEMES)[ThemeKey], over: Partial<VoteStatus>): VoteStatus {
   return {
     id: 'preview-post-vote',
-    question: MOCK.question,
-    optionA: MOCK.optionA,
-    optionB: MOCK.optionB,
+    question: theme.question,
+    optionA: theme.optionA,
+    optionB: theme.optionB,
     status: 'OPEN',
     linkedPostId: null,
     linkedPostUrl: null,
@@ -32,6 +36,7 @@ function mockVote(over: Partial<VoteStatus>): VoteStatus {
  * 실제 이동 대신 상단에 이동 안내를 표시해 동작을 확인한다.
  */
 export default function VotePopupPreviewClient() {
+  const [themeKey, setThemeKey] = useState<ThemeKey>('Day1 남편')
   const [tab, setTab] = useState<'팝업' | 'HERO' | '게시글'>('팝업')
   const [heroStatus, setHeroStatus] = useState<'OPEN' | 'CLOSED'>('OPEN')
   const [postState, setPostState] = useState<'미투표' | '투표완료' | 'CLOSED'>('투표완료')
@@ -39,12 +44,13 @@ export default function VotePopupPreviewClient() {
   const [active, setActive] = useState<'A' | 'B' | null>(null)
   const [nav, setNav] = useState<string>('')
 
+  const MOCK = THEMES[themeKey]
   const postVote =
     postState === '미투표'
-      ? mockVote({ myChoice: null })
+      ? mockVote(MOCK, { myChoice: null })
       : postState === 'CLOSED'
-        ? mockVote({ status: 'CLOSED', myChoice: 'A' })
-        : mockVote({ myChoice: 'A' })
+        ? mockVote(MOCK, { status: 'CLOSED', myChoice: 'A' })
+        : mockVote(MOCK, { myChoice: 'A' })
 
   const simulateCast = (c: 'A' | 'B') => {
     setActive(c)
@@ -55,6 +61,25 @@ export default function VotePopupPreviewClient() {
 
   return (
     <div className="min-h-screen bg-neutral-200 flex flex-col items-center gap-3 py-6">
+      {/* 주제(Day) 토글 */}
+      <div className="flex gap-2">
+        {(Object.keys(THEMES) as ThemeKey[]).map((k) => (
+          <button
+            key={k}
+            onClick={() => {
+              setThemeKey(k)
+              setNav('')
+              setActive(null)
+            }}
+            className={`rounded-lg px-4 py-2 text-[14px] font-bold ${
+              k === themeKey ? 'bg-primary text-white' : 'bg-white text-neutral-600 border border-neutral-300'
+            }`}
+          >
+            {k}
+          </button>
+        ))}
+      </div>
+
       {/* 탭 */}
       <div className="flex gap-2">
         {(['팝업', 'HERO', '게시글'] as const).map((t) => (
@@ -105,14 +130,14 @@ export default function VotePopupPreviewClient() {
       >
         {tab === '게시글' ? (
           <div className="absolute inset-0 overflow-y-auto bg-white px-5 py-4">
+            {/* 게시글 제목 = 질문 (위젯에서 질문 반복 없는지 확인) */}
             <h1 className="m-0 mb-1 text-[22px] font-bold leading-[1.4] text-foreground break-keep">
-              우리 집 남편은 어느 쪽인가요?
+              {MOCK.question}
             </h1>
             <p className="m-0 text-[14px] text-neutral-400">우나어지기 · 오전 10:00 · 👁 412</p>
-            <VoteWidget key={postState} voteEventId={postVote.id} initialVote={postVote} />
+            <VoteWidget key={`${themeKey}-${postState}`} voteEventId={postVote.id} initialVote={postVote} />
             <p className="text-[16px] leading-[1.8] text-foreground break-keep">
-              🔥 잔소리형 — 하나부터 열까지 참견, 그래도 관심은 많음<br />
-              🧊 무뚝뚝형 — 하루 세 마디, 속은 깊다는데 알 길이 없음
+              {MOCK.optionA} · {MOCK.optionB} 중 당신의 선택은?
             </p>
             <div className="mt-6 border-t border-neutral-200 pt-4">
               <p className="text-[15px] font-bold text-neutral-500">↓ 댓글 진영판·pill은 실제 게시글에서 확인</p>

@@ -11,7 +11,7 @@ const GRADE_EMOJI: Record<string, string> = {
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
-import { campLabel, optionLabel } from '@/components/features/vote/option-label'
+import { campLabel } from '@/components/features/vote/option-label'
 
 interface CommentSectionProps {
   postId: string
@@ -162,7 +162,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
 
   // 입력창 위 진영 문구 — 회원이 투표했으면 내 진영 기준, 아니면 투표 유도
   const myChoice = voteBadges && resolvedCurrentUser ? voteBadges.byUserId[resolvedCurrentUser.id] : undefined
-  const myCampLabel = myChoice === 'A' ? optionLabel(voteBadges!.optionA) : myChoice === 'B' ? optionLabel(voteBadges!.optionB) : null
+  const myCampLabel = myChoice === 'A' ? campLabel(voteBadges!.optionA) : myChoice === 'B' ? campLabel(voteBadges!.optionB) : null
 
   return (
     <section className="mb-12">
@@ -239,7 +239,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
       {/* 투표형 글: 입력창 위 진영 문구 */}
       {voteBadges && (
         <p className="mb-2 text-[15px] font-bold text-primary-text">
-          {myCampLabel ? `${myCampLabel} 편에서 한마디 남겨보세요` : '먼저 투표하고 참여해보세요'}
+          {myCampLabel ? `${myCampLabel}에서 한마디 남겨보세요` : '먼저 투표하고 참여해보세요'}
         </p>
       )}
 

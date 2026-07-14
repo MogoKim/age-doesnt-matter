@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { optionLabel } from './option-label'
+import { optionLabel, campLabel, eulReul } from './option-label'
 
 /** /api/votes/[id] 응답 payload (src/lib/votes.ts VoteStatusPayload와 동일 형태) */
 export interface VoteStatus {
@@ -90,24 +90,23 @@ export default function VoteWidget({ voteEventId, initialVote }: VoteWidgetProps
   const voted = vote.myChoice !== null
   const showResult = voted || closed
 
-  const myLabel = vote.myChoice === 'A' ? optionLabel(vote.optionA) : vote.myChoice === 'B' ? optionLabel(vote.optionB) : ''
+  const myOption = vote.myChoice === 'A' ? vote.optionA : vote.myChoice === 'B' ? vote.optionB : ''
   const gap = Math.abs(pctA - pctB)
-  const leadLabel = pctA >= pctB ? optionLabel(vote.optionA) : optionLabel(vote.optionB)
+  const leadOption = pctA >= pctB ? vote.optionA : vote.optionB
   // 우세/팽팽 마이크로카피 — 과장 없이, 격차 구간별
-  const leadCopy = gap <= 3 ? '지금 팽팽해요' : gap > 8 ? `지금은 ${leadLabel} 쪽이 조금 앞서요` : ''
-  const closedHeadline = gap <= 3 ? '오늘은 딱 반반이었어요' : `오늘은 ${leadLabel} 쪽이 더 많았어요`
+  const leadCopy = gap <= 3 ? '지금 팽팽해요' : gap > 8 ? `지금은 ${optionLabel(leadOption)} 쪽이 조금 앞서요` : ''
+  const votedHeadline = myOption ? `${optionLabel(myOption)}${eulReul(myOption)} 고르셨네요` : ''
+  const closedHeadline = gap <= 3 ? '오늘은 딱 반반이었어요' : `오늘은 ${optionLabel(leadOption)} 쪽이 더 많았어요`
 
   const scrollToComment = () =>
     document.getElementById('vote-comment-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
   return (
     <div className="my-5 border-y border-border py-6">
-      <p className="text-[13px] font-bold text-primary-text m-0 mb-2 tracking-[0.2px]">
+      {/* 제목이 곧 질문(투표형 게시글 제목=질문 기반) — 위젯에서 질문 반복 금지, 라벨만 */}
+      <p className="text-[13px] font-bold text-primary-text m-0 mb-4 tracking-[0.2px]">
         {closed ? '오늘의 결과' : '오늘의 투표 · 밤 8시 마감'}
       </p>
-      <h2 className="text-[21px] font-bold text-foreground leading-[1.45] break-keep m-0 mb-4">
-        {vote.question}
-      </h2>
 
       {!showResult ? (
         /* 미투표 + 진행 중: 결과 비공개 + 선택 버튼 */
@@ -134,7 +133,7 @@ export default function VoteWidget({ voteEventId, initialVote }: VoteWidgetProps
         /* 결과: 내 진영 헤드라인 + 막대(내 진영 진하게) + 우세 카피 + 진영 CTA */
         <>
           <p className="text-[17px] font-bold text-foreground m-0 mb-4 break-keep">
-            {closed ? closedHeadline : `${myLabel} 쪽을 고르셨네요`}
+            {closed ? closedHeadline : votedHeadline}
           </p>
           <div className="flex flex-col gap-4">
             <ResultRow label={optionLabel(vote.optionA)} pct={pctA} mine={vote.myChoice === 'A'} />
@@ -149,7 +148,7 @@ export default function VoteWidget({ voteEventId, initialVote }: VoteWidgetProps
             onClick={scrollToComment}
             className="mt-4 w-full min-h-[52px] rounded-xl bg-primary text-white text-[17px] font-bold hover:bg-primary/90 transition-colors"
           >
-            {closed ? '결과 보고 한마디 남기기' : voted ? `${myLabel} 편에서 한마디` : '한마디 남기기'}
+            {closed ? '결과 보고 한마디 남기기' : voted ? `${campLabel(myOption)}에서 한마디` : '한마디 남기기'}
           </button>
         </>
       )}
