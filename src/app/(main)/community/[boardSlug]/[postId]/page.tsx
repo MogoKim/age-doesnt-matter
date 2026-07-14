@@ -34,7 +34,9 @@ interface PageProps {
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
 export const dynamic = 'force-static'
-export const revalidate = 30
+// ISR Writes 절감: 봇 순회 재생성 완화(30→300s). 회원 댓글은 CommentSection의 no-store
+// 재조회 + 댓글 작성 revalidatePath/Tag가 즉시성 담당 → TTL은 비로그인 노출 주기만 결정.
+export const revalidate = 300
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { boardSlug, postId: rawPostId } = await params

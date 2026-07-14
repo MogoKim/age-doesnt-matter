@@ -100,5 +100,6 @@ async function _getCommentsByPostId(
 export const getCommentsByPostId = unstable_cache(
   _getCommentsByPostId,
   ['comments-by-post'],
-  { revalidate: 30, tags: ['comments-by-post'] },
+  // 댓글 작성/수정/삭제 시 revalidateTag('comments-by-post')로 즉시 무효화 → TTL은 봇 순회 대비 상한
+  { revalidate: 300, tags: ['comments-by-post'] },
 )

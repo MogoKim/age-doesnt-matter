@@ -35,19 +35,19 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 }
 
-// ISR: 홈 HTML/RSC를 60초 캐시 → 매 요청 SSR 제거(TTFB↓). 글 작성/큐레이션 변경 시
-// posts.ts의 revalidatePath('/')가 즉시 무효화하므로 콘텐츠 즉시성 유지.
-export const revalidate = 60
+// ISR: 홈 HTML/RSC를 300초 캐시 → 매 요청 SSR 제거(TTFB↓) + 봇 순회 ISR Writes 절감.
+// 글 작성/큐레이션 변경 시 posts.ts의 revalidatePath('/')가 즉시 무효화하므로 콘텐츠 즉시성 유지.
+export const revalidate = 300
 
 const getCachedJobs = unstable_cache(
   () => getLatestJobs(5),
   ['home-jobs'],
-  { revalidate: 60, tags: ['home-jobs'] }
+  { revalidate: 300, tags: ['home-jobs'] }
 )
 const getCachedMagazine = unstable_cache(
   () => getLatestMagazinePosts(4),
   ['home-magazine'],
-  { revalidate: 60, tags: ['home-magazine'] }
+  { revalidate: 300, tags: ['home-magazine'] }
 )
 
 type HomeSections = Awaited<ReturnType<typeof getCachedHomeSections>>

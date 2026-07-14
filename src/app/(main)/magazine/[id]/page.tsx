@@ -26,7 +26,7 @@ interface PageProps {
 }
 
 export const dynamicParams = true
-export const revalidate = 30
+export const revalidate = 300
 
 export async function generateStaticParams() {
   // 상세 사전생성은 build 중 DB 연결을 많이 사용한다.

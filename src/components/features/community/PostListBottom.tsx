@@ -9,7 +9,7 @@ import TrackedPostLink from './TrackedPostLink'
 const getCachedBoardBottomPosts = unstable_cache(
   async (boardType: BoardType) => (await getPostsByBoardPage(boardType, { limit: 13 })).posts,
   ['post-list-bottom-latest'],
-  { revalidate: 30, tags: ['community-board-page'] },
+  { revalidate: 300, tags: ['community-board-page'] },
 )
 
 interface Props {
