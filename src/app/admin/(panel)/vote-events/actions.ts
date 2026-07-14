@@ -223,8 +223,10 @@ export async function deleteReservedVoteEvent(voteEventId: string): Promise<Acti
   })
   if (realVotes > 0) return { error: `실 표가 ${realVotes}개 있어 삭제할 수 없습니다.` }
 
-  // 조건 4: 연동 게시글 — 없거나 DRAFT만. PUBLISHED면 거부.
-  let draftPostIdToDelete: string | null = null
+  // 조건 4: 연동 게시글 — 없거나 '비공개(DRAFT·HIDDEN)'만 함께 삭제. 공개(PUBLISHED·SEO_ONLY)면 거부.
+  // 예약글은 DRAFT로 생성되나 audit-and-hide 등으로 HIDDEN이 될 수 있어 DRAFT 단독 조건은 과협소(삭제 불가 버그).
+  // HIDDEN도 비공개이므로 예약 삭제 시 함께 제거 가능. 공개/색인(PUBLISHED·SEO_ONLY)만 하드 거부.
+  let postIdToDelete: string | null = null
   let linkedPathToRevalidate: string | null = null
   if (event.linkedPostId) {
     const post = await prisma.post.findUnique({
@@ -232,21 +234,21 @@ export async function deleteReservedVoteEvent(voteEventId: string): Promise<Acti
       select: { id: true, status: true, slug: true, boardType: true },
     })
     if (post) {
-      if (post.status !== 'DRAFT') {
-        return { error: '연동 게시글이 이미 공개(PUBLISHED)되어 삭제할 수 없습니다.' }
+      if (post.status === 'PUBLISHED' || post.status === 'SEO_ONLY') {
+        return { error: '연동 게시글이 공개(PUBLISHED) 상태라 삭제할 수 없습니다.' }
       }
-      draftPostIdToDelete = post.id
+      postIdToDelete = post.id
       const boardSlug = BOARD_TYPE_TO_SLUG[post.boardType] ?? post.boardType.toLowerCase()
       linkedPathToRevalidate = `/community/${boardSlug}/${post.slug ?? post.id}`
     }
   }
 
-  // 삭제 — VoteEvent(→ ballots cascade) + DRAFT 게시글을 트랜잭션으로 원자 처리
+  // 삭제 — VoteEvent(→ ballots cascade) + 비공개 연동 게시글을 트랜잭션으로 원자 처리
   // (게시글 삭제가 FK 등으로 실패하면 전체 롤백 → VoteEvent 고아 방지)
   await prisma.$transaction(async (tx) => {
     await tx.voteEvent.delete({ where: { id: event.id } })
-    if (draftPostIdToDelete) {
-      await tx.post.delete({ where: { id: draftPostIdToDelete } })
+    if (postIdToDelete) {
+      await tx.post.delete({ where: { id: postIdToDelete } })
     }
   })
 
