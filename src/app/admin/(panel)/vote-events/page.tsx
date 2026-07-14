@@ -61,6 +61,7 @@ export default async function AdminVoteEventsPage() {
     }
     eventData = {
       id: event.id,
+      date: event.date.toISOString().slice(0, 10),
       question: event.question,
       optionA: event.optionA,
       optionB: event.optionB,

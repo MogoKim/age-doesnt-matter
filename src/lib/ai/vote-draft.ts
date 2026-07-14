@@ -103,3 +103,69 @@ ${rowLines}
     return { ok: false, error: msg }
   }
 }
+
+/**
+ * 투표 게시글 **본문** 초안 — 사연형 5~8줄 HTML. (봇 댓글과 동일 하드가드/격리)
+ * - 클릭 1회 = API 호출 1회. CLAUDE_MODEL_LIGHT(haiku)만 허용.
+ * - 실패 시 에러 문자열만 — 템플릿 기본문 유지는 호출부가 담당(투표/게시글 생성 무관하게 정상).
+ */
+export type VotePostDraftResult = { ok: true; body: string } | { ok: false; error: string }
+
+const POST_BODY_SCHEMA = {
+  type: 'object',
+  properties: { body: { type: 'string' } },
+  required: ['body'],
+  additionalProperties: false,
+} as const
+
+export async function generateVotePostDraft(input: {
+  question: string
+  optionA: string
+  optionB: string
+}): Promise<VotePostDraftResult> {
+  const model = process.env.CLAUDE_MODEL_LIGHT
+  if (!model) return { ok: false, error: 'AI 초안 생성 실패 — 기본문을 수정해 주세요 (CLAUDE_MODEL_LIGHT 없음)' }
+  if (!model.includes('haiku')) return { ok: false, error: `AI 초안 생성 실패 — CLAUDE_MODEL_LIGHT(${model})가 light 모델이 아닙니다` }
+  if (!process.env.ANTHROPIC_API_KEY) return { ok: false, error: 'AI 초안 생성 실패 — 기본문을 수정해 주세요 (ANTHROPIC_API_KEY 없음)' }
+
+  try {
+    const client = new Anthropic()
+    const response = await client.messages.create({
+      model,
+      max_tokens: 700,
+      output_config: {
+        format: { type: 'json_schema', schema: POST_BODY_SCHEMA },
+      },
+      messages: [
+        {
+          role: 'user',
+          content: `40~60대 한국 여성 커뮤니티의 밸런스 투표 게시글 **본문**을 써줘.
+
+투표 질문: "${input.question}"
+선택지: A=${input.optionA} / B=${input.optionB}
+
+규칙:
+- 정보성 매거진 글 금지. 짧은 사연·공감형.
+- 5~8줄. 각 줄은 <p>...</p> 한 문단.
+- 공감 사연 → 양쪽 선택지를 자연스럽게 언급 → "여러분은 어느 쪽이 더 힘드세요?"류 질문 → 댓글 유도 한 줄.
+- 따뜻한 존댓말·구어체. "시니어"라는 단어 금지. 과한 이모지 금지.
+- 제목(질문)을 본문에서 그대로 반복하지 말 것.
+- body 필드에 <p>문단</p>들을 이어붙인 HTML 문자열로 반환.`,
+        },
+      ],
+    })
+
+    const textBlock = response.content.find((b) => b.type === 'text')
+    if (!textBlock || textBlock.type !== 'text') return { ok: false, error: 'AI 초안 생성 실패 — 응답이 비어 있습니다' }
+    const parsed = JSON.parse(textBlock.text) as { body: string }
+    if (!parsed.body || typeof parsed.body !== 'string') return { ok: false, error: 'AI 초안 생성 실패 — 형식 오류' }
+    return { ok: true, body: parsed.body }
+  } catch (e) {
+    console.error('[vote-post-draft] AI 본문 초안 실패:', e)
+    const msg =
+      e instanceof Anthropic.RateLimitError
+        ? '호출 한도 초과 — 잠시 후 다시 시도해 주세요'
+        : 'AI 초안 생성 실패 — 기본문을 수정해 주세요'
+    return { ok: false, error: msg }
+  }
+}

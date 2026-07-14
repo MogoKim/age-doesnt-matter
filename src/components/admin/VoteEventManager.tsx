@@ -6,12 +6,14 @@ import {
   updateVoteDisplayNumbers,
   setVoteStatus,
   requestVoteDrafts,
+  requestVotePostDraft,
   registerBotComments,
 } from '@/app/admin/(panel)/vote-events/actions'
 import { voteVisibleStatus } from '@/lib/vote-status'
 
 export interface VoteEventData {
   id: string
+  date: string // 'YYYY-MM-DD' (KST) — 09:00 전 노출 판정용
   question: string
   optionA: string
   optionB: string
@@ -91,12 +93,31 @@ export default function VoteEventManager({
   const [schedQuestion, setSchedQuestion] = useState('')
   const [schedOptionA, setSchedOptionA] = useState('')
   const [schedOptionB, setSchedOptionB] = useState('')
+  const [schedContent, setSchedContent] = useState('') // AI/직접 본문 (비우면 템플릿)
 
   // 투표 생성/수정 폼
   const [question, setQuestion] = useState(event?.question ?? '')
   const [optionA, setOptionA] = useState(event?.optionA ?? '')
   const [optionB, setOptionB] = useState(event?.optionB ?? '')
   const [linkedPostId, setLinkedPostId] = useState(event?.linkedPostId ?? '')
+  const [postContent, setPostContent] = useState('') // AI/직접 본문 (비우면 템플릿, 신규 생성 시만)
+  const [aiPending, setAiPending] = useState(false)
+
+  // 본문 AI 초안 — 클릭 1회 = API 1회. 실패해도 폼 저장은 무관(템플릿 유지)
+  const draftPostBody = (q: string, a: string, b: string, set: (v: string) => void) => {
+    if (aiPending) return
+    setMsg(null)
+    setAiPending(true)
+    startTransition(async () => {
+      const result = await requestVotePostDraft({ question: q, optionA: a, optionB: b })
+      setAiPending(false)
+      if (result.error) setMsg(`❌ ${result.error}`)
+      else if (result.body) {
+        set(result.body)
+        setMsg('✅ AI 본문 초안을 채웠습니다 — 수정 후 저장하세요')
+      }
+    })
+  }
 
   // 수치 조작
   const [seedA, setSeedA] = useState(event?.seedCountA ?? 0)
@@ -205,19 +226,28 @@ export default function VoteEventManager({
               onChange={(e) => setOptionB(e.target.value)}
             />
           </div>
-          {/* 연동 게시글 상태 — 운영자는 DB id를 다룰 필요 없음 */}
+          {/* 연동 게시글 상태 — 운영자는 DB id를 다룰 필요 없음. 09:00 전 DRAFT면 공개 URL 대신 어드민 편집 */}
           {event?.linkedPostId ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-              ✅ 연동 게시글 연결됨
-              <a
-                href={`/community/stories/${event.linkedPostId}`}
-                target="_blank"
-                rel="noreferrer"
-                className="font-bold underline"
-              >
-                연동 게시글 열기 ↗
-              </a>
-            </div>
+            voteVisibleStatus(event.status, new Date(`${event.date}T00:00:00.000Z`)) === 'HIDDEN' ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-600">
+                🔒 09:00 전 비공개
+                <a href={`/admin/content/${event.linkedPostId}`} target="_blank" rel="noreferrer" className="font-bold underline">
+                  예약 글 미리보기·수정
+                </a>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                ✅ 연동 게시글 연결됨
+                <a
+                  href={`/community/stories/${event.linkedPostId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold underline"
+                >
+                  연동 게시글 열기 ↗
+                </a>
+              </div>
+            )
           ) : (
             <p className="rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-500">
               연동 게시글: <b>자동 생성됨</b> — 저장하면 투표용 게시글이 만들어지고 자동으로 연결됩니다.
@@ -235,12 +265,45 @@ export default function VoteEventManager({
             />
           </details>
 
+          {/* 게시글 본문 초안 — 신규 생성 시에만 적용. 비우면 템플릿. 기존 글은 '예약 글 미리보기·수정'에서 편집 */}
+          {!event?.linkedPostId && (
+            <div className="rounded-lg border border-dashed border-zinc-300 p-3">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-zinc-700">게시글 본문 (선택 · 비우면 기본 템플릿)</span>
+                <button
+                  className="rounded-lg border border-[#4A6CF7] px-3 py-1.5 text-xs font-bold text-[#4A6CF7] disabled:opacity-50"
+                  disabled={pending || aiPending || !question || !optionA || !optionB}
+                  onClick={() => draftPostBody(question, optionA, optionB, setPostContent)}
+                >
+                  ✨ AI 본문 초안 (1회 호출)
+                </button>
+              </div>
+              <textarea
+                className="w-full rounded-lg border px-3 py-2 text-sm"
+                rows={5}
+                placeholder="AI 초안을 받거나 직접 입력 (사연형 5~8줄 HTML). 비우면 기본 템플릿으로 생성됩니다."
+                value={postContent}
+                onChange={(e) => setPostContent(e.target.value)}
+              />
+              <p className="mt-1 text-xs text-zinc-400">
+                AI는 초안만 채웁니다 — 자동 발행하지 않습니다. 저장 시 이 본문으로 게시글이 생성됩니다.
+              </p>
+            </div>
+          )}
+
           <button
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
             disabled={pending}
             onClick={() =>
               run(
-                () => upsertTodayVoteEvent({ question, optionA, optionB, linkedPostId: linkedPostId || null }),
+                () =>
+                  upsertTodayVoteEvent({
+                    question,
+                    optionA,
+                    optionB,
+                    linkedPostId: linkedPostId || null,
+                    content: postContent.trim() || undefined,
+                  }),
                 '저장되었습니다 (연동 게시글 자동 생성·연결)',
               )
             }
@@ -474,6 +537,29 @@ export default function VoteEventManager({
                   onChange={(e) => setSchedOptionB(e.target.value)}
                 />
               </div>
+              {/* 예약 게시글 본문 초안 — 비우면 템플릿. AI는 초안만(자동 발행 없음) */}
+              <div className="rounded-lg border border-dashed border-zinc-300 p-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-zinc-700">게시글 본문 (선택 · 비우면 기본 템플릿)</span>
+                  <button
+                    className="rounded-lg border border-[#4A6CF7] px-3 py-1.5 text-xs font-bold text-[#4A6CF7] disabled:opacity-50"
+                    disabled={pending || aiPending || !schedQuestion || !schedOptionA || !schedOptionB}
+                    onClick={() => draftPostBody(schedQuestion, schedOptionA, schedOptionB, setSchedContent)}
+                  >
+                    ✨ AI 본문 초안 (1회 호출)
+                  </button>
+                </div>
+                <textarea
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  rows={5}
+                  placeholder="AI 초안을 받거나 직접 입력 (사연형 5~8줄 HTML). 비우면 기본 템플릿."
+                  value={schedContent}
+                  onChange={(e) => setSchedContent(e.target.value)}
+                />
+                <p className="mt-1 text-xs text-zinc-400">
+                  09:00 전에는 &lsquo;예약 글 미리보기·수정&rsquo;에서 더 다듬을 수 있습니다.
+                </p>
+              </div>
               <button
                 className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
                 disabled={pending}
@@ -486,6 +572,7 @@ export default function VoteEventManager({
                         optionB: schedOptionB,
                         linkedPostId: null,
                         date: schedDate,
+                        content: schedContent.trim() || undefined,
                       }),
                     '예약 저장 (연동 게시글 자동 생성·연결)됨',
                   )
@@ -554,17 +641,30 @@ function EventList({
             {item.optionA} vs {item.optionB}
             {showResult && ` · 표 ${item.seedTotal + item.realVotes} (seed ${item.seedTotal}+실표 ${item.realVotes}) · 조회 ${item.displayViews}`}
           </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {item.linkedPostId && (
-              <a
-                href={`/community/stories/${item.linkedPostId}`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-700"
-              >
-                게시글 열기 ↗
-              </a>
-            )}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {item.linkedPostId &&
+              (voteVisibleStatus(item.status, new Date(`${item.date}T00:00:00.000Z`)) === 'HIDDEN' ? (
+                <>
+                  <span className="rounded-lg bg-zinc-100 px-2 py-1 text-xs font-bold text-zinc-500">🔒 09:00 전 비공개</span>
+                  <a
+                    href={`/admin/content/${item.linkedPostId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-700"
+                  >
+                    예약 글 미리보기·수정
+                  </a>
+                </>
+              ) : (
+                <a
+                  href={`/community/stories/${item.linkedPostId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-700"
+                >
+                  게시글 열기 ↗
+                </a>
+              ))}
             {onDuplicate && (
               <button
                 onClick={() => onDuplicate(item)}

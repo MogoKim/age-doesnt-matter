@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import { getKstToday } from '@/lib/votes'
 import { voteOpenAtMs } from '@/lib/vote-status'
-import { generateVoteDraftBatch, type VoteDraftRow } from '@/lib/ai/vote-draft'
+import { generateVoteDraftBatch, generateVotePostDraft, type VoteDraftRow } from '@/lib/ai/vote-draft'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { VoteChoice, VoteEventStatus } from '@/generated/prisma/client'
 
@@ -73,17 +73,19 @@ async function createVotePost(
   optionA: string,
   optionB: string,
   eventDate: Date,
+  content?: string, // AI 초안/직접 입력 본문 — 비우면 템플릿 기본문
 ): Promise<{ id: string } | { error: string }> {
   const authorId = await resolveVotePostAuthorId()
   if (!authorId) return { error: '게시글 작성자(운영 봇 계정)를 찾을 수 없습니다. @unao.bot 계정을 확인해 주세요.' }
   const opensInFuture = Date.now() < voteOpenAtMs(eventDate)
+  const body = content?.trim() ? content.trim() : buildVotePostContent(optionA, optionB)
   const post = await prisma.post.create({
     data: {
       boardType: 'STORY',
       status: opensInFuture ? 'DRAFT' : 'PUBLISHED',
       source: 'ADMIN',
       title: question,
-      content: buildVotePostContent(optionA, optionB),
+      content: body,
       authorId,
       publishedAt: new Date(voteOpenAtMs(eventDate)), // 09:00 오픈 시각
     },
@@ -111,6 +113,7 @@ export async function upsertTodayVoteEvent(input: {
   optionB: string
   linkedPostId: string | null
   date?: string // 'YYYY-MM-DD' (KST). 없으면 오늘 — 예약 시 미래 날짜 지정
+  content?: string // 자동 생성 게시글 본문(AI 초안/직접 입력). 비우면 템플릿 기본문
 }): Promise<ActionResult & { linkedPostId?: string; autoCreated?: boolean }> {
   const denied = await requireAdmin()
   if (denied) return denied
@@ -138,7 +141,7 @@ export async function upsertTodayVoteEvent(input: {
     if (existing?.linkedPostId) {
       linkedPostId = existing.linkedPostId
     } else {
-      const created = await createVotePost(question, optionA, optionB, eventDate)
+      const created = await createVotePost(question, optionA, optionB, eventDate, input.content)
       if ('error' in created) return { error: created.error }
       linkedPostId = created.id
       autoCreated = true
@@ -210,6 +213,28 @@ export async function requestVoteDrafts(input: {
   })
   if (!result.ok) return { error: result.error }
   return { drafts: result.drafts }
+}
+
+/**
+ * 게시글 **본문** AI 초안 — 버튼 클릭 1회 = API 호출 1회 (light-only).
+ * 실패해도 투표/게시글 생성은 무관 — 호출부가 템플릿 기본문을 유지한다.
+ */
+export async function requestVotePostDraft(input: {
+  question: string
+  optionA: string
+  optionB: string
+}): Promise<{ body?: string; error?: string }> {
+  const denied = await requireAdmin()
+  if (denied) return { error: denied.error }
+
+  const question = input.question.trim()
+  const optionA = input.optionA.trim()
+  const optionB = input.optionB.trim()
+  if (!question || !optionA || !optionB) return { error: '질문과 선택지 A/B를 먼저 입력해 주세요' }
+
+  const result = await generateVotePostDraft({ question, optionA, optionB })
+  if (!result.ok) return { error: result.error }
+  return { body: result.body }
 }
 
 export interface BotCommentRow {
