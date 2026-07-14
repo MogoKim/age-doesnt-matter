@@ -130,10 +130,12 @@ export default function VotePopup() {
 
     const run = async () => {
       try {
-        // 어드민 팝업 우선 규칙 유지 — 단 두 요청은 병렬(직렬 대기 제거)
-        const [popupRes, todayRes] = await Promise.all([
+        // 어드민 팝업 우선 규칙 유지 — 세 요청 병렬:
+        //  · popups(양보 판정) · today(public, 캐시) · today/mine(내 선택, no-store)
+        const [popupRes, todayRes, mineRes] = await Promise.all([
           fetch('/api/popups?path=%2F', { credentials: 'same-origin' }),
-          fetch('/api/votes/today', { cache: 'no-store', credentials: 'same-origin' }),
+          fetch('/api/votes/today', { credentials: 'same-origin' }),
+          fetch('/api/votes/today/mine', { cache: 'no-store', credentials: 'same-origin' }),
         ])
         // 홈 경로 활성 팝업이 있으면 양보
         if (popupRes.ok) {
@@ -142,12 +144,17 @@ export default function VotePopup() {
         }
         if (!todayRes.ok) return
         const data = (await todayRes.json()) as { vote: VoteStatus | null }
-        const v = data.vote
+        const pub = data.vote // public: myChoice는 항상 null
+        if (!pub) return
+        // 내 선택은 no-store 경량 조회에서 (사용자별 정확성 유지)
+        const myChoice = mineRes.ok
+          ? ((await mineRes.json()) as { myChoice: 'A' | 'B' | null }).myChoice
+          : null
         // 미투표 + 진행 중 + 연동 게시글 있는 경우만, 하루 1회
-        if (!v || v.status !== 'OPEN' || v.myChoice !== null || !v.linkedPostUrl || isDismissedToday(v.id)) return
+        if (pub.status !== 'OPEN' || myChoice !== null || !pub.linkedPostUrl || isDismissedToday(pub.id)) return
         if (!cancelled) {
-          router.prefetch(v.linkedPostUrl) // 선택 시 즉시 이동 대비 프리페치
-          setVote(v)
+          router.prefetch(pub.linkedPostUrl) // 선택 시 즉시 이동 대비 프리페치
+          setVote({ ...pub, myChoice })
           setOpen(true)
         }
       } catch {

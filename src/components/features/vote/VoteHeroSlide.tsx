@@ -143,7 +143,8 @@ export default function VoteHeroSlide({
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch('/api/votes/today', { cache: 'no-store', credentials: 'same-origin' })
+      // public(캐시) today의 status만 사용 — HERO는 myChoice를 쓰지 않음. 20:00 경계는 s-maxage가 마감에 맞춰 만료
+      const res = await fetch('/api/votes/today', { credentials: 'same-origin' })
       if (!res.ok) return
       const data = (await res.json()) as { vote: VoteStatus | null }
       if (mounted.current && data.vote && data.vote.id === initial.id) setStatus(data.vote.status)

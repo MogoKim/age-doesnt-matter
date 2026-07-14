@@ -2,7 +2,7 @@ import { cookies, headers } from 'next/headers'
 import { createHash, randomUUID } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
-import { effectiveVoteStatus } from '@/lib/vote-status'
+import { effectiveVoteStatus, voteCloseAtMs } from '@/lib/vote-status'
 import type { VoteChoice, VoteEvent } from '@/generated/prisma/client'
 
 const VOTE_COOKIE = 'guest_vote_id'
@@ -99,22 +99,31 @@ export async function resolveLinkedPostUrl(linkedPostId: string | null): Promise
 }
 
 /**
- * 오늘(KST)의 투표 — 팝업/HERO 입구 전용 경량 조회.
- * 소비처(VotePopup·VoteHeroSlide)는 id·status·myChoice·linkedPostUrl만 사용 → 실 표 집계(countRealBallots groupBy) 생략.
- * displayA/B/total은 seed 기반 최소값(팝업/HERO 미사용). 실 표 집계가 필요한 게시글 결과는 getVoteStatusById 사용.
+ * 오늘(KST)의 투표 — 팝업/HERO 입구용 **public** payload (사용자 무관, 캐시 가능).
+ * myChoice는 항상 null(사용자별 값은 getTodayMyChoice로 분리) → CDN s-maxage 캐시 안전.
+ * 실 표 집계(groupBy) 생략 — displayA/B는 seed만(팝업/HERO 미사용). 게시글 결과는 getVoteStatusById.
+ * closeAtMs: 라우트의 20:00 경계 동적 캐시(s-maxage) 계산용.
  */
-export async function getTodayVoteStatus(
-  userId: string | null,
-  identity: VoteIdentity,
-): Promise<VoteStatusPayload | null> {
+export async function getTodayPublic(): Promise<{ vote: VoteStatusPayload; closeAtMs: number } | null> {
   const event = await prisma.voteEvent.findUnique({ where: { date: getKstToday() } })
   if (!event) return null
-  const [mine, linkedPostUrl] = await Promise.all([
-    findMyBallot(event.id, userId, identity),
-    resolveLinkedPostUrl(event.linkedPostId),
-  ])
-  // 실 표 집계 제외 — real={a:0,b:0} → displayA/B는 seed만(팝업/HERO 미사용). status/myChoice/linkedPostUrl은 정확.
-  return toPayload(event, { a: 0, b: 0 }, mine?.choice ?? null, linkedPostUrl)
+  const linkedPostUrl = await resolveLinkedPostUrl(event.linkedPostId)
+  const vote = toPayload(event, { a: 0, b: 0 }, null, linkedPostUrl)
+  return { vote, closeAtMs: voteCloseAtMs(event.date) }
+}
+
+/**
+ * 오늘(KST) 투표의 **내 선택**만 — 사용자별(쿠키/회원). 절대 캐시 금지(no-store).
+ * 팝업 노출 판정(myChoice null 여부)용 경량 조회.
+ */
+export async function getTodayMyChoice(
+  userId: string | null,
+  identity: VoteIdentity,
+): Promise<'A' | 'B' | null> {
+  const event = await prisma.voteEvent.findUnique({ where: { date: getKstToday() }, select: { id: true } })
+  if (!event) return null
+  const mine = await findMyBallot(event.id, userId, identity)
+  return mine?.choice ?? null
 }
 
 /** 특정 투표 ID 현황 — 지난 투표가 연동된 게시글에서도 결과 열람 가능 */
