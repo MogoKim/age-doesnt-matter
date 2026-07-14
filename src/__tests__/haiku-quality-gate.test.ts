@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildHaikuQualityPrompt, parseHaikuQualityDecision } from '../../agents/cafe/haiku-quality-gate'
+import { buildHaikuQualityPrompt, parseHaikuQualityDecision } from '../../agents/cafe/haiku-quality-prompt'
 
 /** Haiku 품질 게이트 dry-run (PR-2) — 순수부(프롬프트 빌더·파서) 고정. API 호출은 mock 없이 범위 밖 */
 
