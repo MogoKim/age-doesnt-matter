@@ -73,8 +73,14 @@ export default async function AdminVoteEventsPage() {
     }
   }
 
+  // 봇 댓글/판깔기 페르소나 드롭다운 — 공식 이벤트 계정("우리 나이가 어때서"/official@unao.bot)은 제외
   const botUsers = await prisma.user.findMany({
-    where: { email: { endsWith: '@unao.bot' }, status: 'ACTIVE' },
+    where: {
+      email: { endsWith: '@unao.bot' },
+      status: 'ACTIVE',
+      nickname: { not: '우리 나이가 어때서' },
+      NOT: { email: 'official@unao.bot' },
+    },
     select: { id: true, nickname: true },
     orderBy: { nickname: 'asc' },
   })

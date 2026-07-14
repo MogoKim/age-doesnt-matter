@@ -331,15 +331,20 @@ export async function registerBotComments(input: {
   if (!event.linkedPostId) return { error: '연동 게시글(linkedPostId)을 먼저 설정해 주세요' }
   const postId = event.linkedPostId
 
-  // 봇 계정 검증 (@unao.bot만 허용)
+  // 봇 계정 검증 (@unao.bot 페르소나만 허용 — 공식 이벤트 계정은 봇 댓글 author로 금지)
   const botIds = rows.map((r) => r.botUserId)
   const bots = await prisma.user.findMany({
-    where: { id: { in: botIds }, email: { endsWith: '@unao.bot' } },
+    where: {
+      id: { in: botIds },
+      email: { endsWith: '@unao.bot' },
+      nickname: { not: OFFICIAL_VOTE_AUTHOR_NICKNAME },
+      NOT: { email: OFFICIAL_VOTE_AUTHOR_EMAIL },
+    },
     select: { id: true },
   })
   const validBotIds = new Set(bots.map((b) => b.id))
   if (rows.some((r) => !validBotIds.has(r.botUserId))) {
-    return { error: '봇 계정이 아닌 사용자가 포함되어 있습니다' }
+    return { error: '봇 계정이 아닌 사용자(또는 공식 이벤트 계정)가 포함되어 있습니다' }
   }
 
   await prisma.$transaction(async (tx) => {
