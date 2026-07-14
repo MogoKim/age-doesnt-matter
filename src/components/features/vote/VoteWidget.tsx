@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { optionLabel } from './option-label'
 
 /** /api/votes/[id] 응답 payload (src/lib/votes.ts VoteStatusPayload와 동일 형태) */
 export interface VoteStatus {
@@ -89,59 +90,68 @@ export default function VoteWidget({ voteEventId, initialVote }: VoteWidgetProps
   const voted = vote.myChoice !== null
   const showResult = voted || closed
 
+  const myLabel = vote.myChoice === 'A' ? optionLabel(vote.optionA) : vote.myChoice === 'B' ? optionLabel(vote.optionB) : ''
+  const gap = Math.abs(pctA - pctB)
+  const leadLabel = pctA >= pctB ? optionLabel(vote.optionA) : optionLabel(vote.optionB)
+  // 우세/팽팽 마이크로카피 — 과장 없이, 격차 구간별
+  const leadCopy = gap <= 3 ? '지금 팽팽해요' : gap > 8 ? `지금은 ${leadLabel} 쪽이 조금 앞서요` : ''
+  const closedHeadline = gap <= 3 ? '오늘은 딱 반반이었어요' : `오늘은 ${leadLabel} 쪽이 더 많았어요`
+
+  const scrollToComment = () =>
+    document.getElementById('vote-comment-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
   return (
     <div className="my-5 border-y border-border py-6">
-      <p className="text-[15px] font-bold text-primary-text m-0 mb-2">
-        {closed ? '오늘의 투표 · 마감' : '오늘의 투표'}
+      <p className="text-[13px] font-bold text-primary-text m-0 mb-2 tracking-[0.2px]">
+        {closed ? '오늘의 결과' : '오늘의 투표 · 밤 8시 마감'}
       </p>
-      <h2 className="text-[21px] font-bold text-foreground leading-[1.45] break-keep m-0 mb-5">
+      <h2 className="text-[21px] font-bold text-foreground leading-[1.45] break-keep m-0 mb-4">
         {vote.question}
       </h2>
 
       {!showResult ? (
-        /* 미투표 + 진행 중: 선택 버튼 (52px+, 큰 글씨) */
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={() => cast('A')}
-            disabled={pending}
-            className="w-full min-h-[56px] rounded-xl border-2 border-border bg-background text-[18px] font-bold text-foreground hover:border-primary hover:text-primary-text transition-colors disabled:opacity-60"
-          >
-            {vote.optionA}
-          </button>
-          <button
-            onClick={() => cast('B')}
-            disabled={pending}
-            className="w-full min-h-[56px] rounded-xl border-2 border-border bg-background text-[18px] font-bold text-foreground hover:border-primary hover:text-primary-text transition-colors disabled:opacity-60"
-          >
-            {vote.optionB}
-          </button>
-        </div>
+        /* 미투표 + 진행 중: 결과 비공개 + 선택 버튼 */
+        <>
+          <p className="text-[16px] text-muted-foreground m-0 mb-4">먼저 한 표 고르면 결과가 보여요.</p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => cast('A')}
+              disabled={pending}
+              className="w-full min-h-[56px] rounded-xl border border-[#E3E7EC] bg-white text-[18px] font-bold text-foreground hover:border-primary hover:text-primary-text active:bg-primary/5 transition-colors disabled:opacity-60"
+            >
+              {optionLabel(vote.optionA)}
+            </button>
+            <button
+              onClick={() => cast('B')}
+              disabled={pending}
+              className="w-full min-h-[56px] rounded-xl border border-[#E3E7EC] bg-white text-[18px] font-bold text-foreground hover:border-primary hover:text-primary-text active:bg-primary/5 transition-colors disabled:opacity-60"
+            >
+              {optionLabel(vote.optionB)}
+            </button>
+          </div>
+        </>
       ) : (
-        /* 결과: 두꺼운 막대 + 내 선택 표시 */
-        <div className="flex flex-col gap-4">
-          <ResultRow label={vote.optionA} pct={pctA} mine={vote.myChoice === 'A'} />
-          <ResultRow label={vote.optionB} pct={pctB} mine={vote.myChoice === 'B'} />
-        </div>
-      )}
-
-      <p className="text-[15px] text-muted-foreground m-0 mt-4">
-        {vote.total.toLocaleString()}명 참여
-        {!closed && !voted && ' · 밤 8시 마감'}
-        {!closed && voted && ' · 마감 전까지 선택을 바꿀 수 있어요'}
-        {closed && ' · 오늘 투표가 마감됐어요'}
-      </p>
-
-      {voted && !closed && (
-        <button
-          onClick={() => {
-            document
-              .getElementById('vote-comment-anchor')
-              ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          }}
-          className="mt-4 w-full min-h-[52px] rounded-xl bg-primary text-white text-[17px] font-bold hover:bg-primary/90 transition-colors"
-        >
-          왜 그쪽인지 댓글로 남기기
-        </button>
+        /* 결과: 내 진영 헤드라인 + 막대(내 진영 진하게) + 우세 카피 + 진영 CTA */
+        <>
+          <p className="text-[17px] font-bold text-foreground m-0 mb-4 break-keep">
+            {closed ? closedHeadline : `${myLabel} 쪽을 고르셨네요`}
+          </p>
+          <div className="flex flex-col gap-4">
+            <ResultRow label={optionLabel(vote.optionA)} pct={pctA} mine={vote.myChoice === 'A'} />
+            <ResultRow label={optionLabel(vote.optionB)} pct={pctB} mine={vote.myChoice === 'B'} />
+          </div>
+          <p className="text-[15px] text-muted-foreground m-0 mt-3">
+            {vote.total.toLocaleString()}명 참여
+            {!closed && leadCopy && ` · ${leadCopy}`}
+            {!closed && !leadCopy && ' · 마감 전까지 선택을 바꿀 수 있어요'}
+          </p>
+          <button
+            onClick={scrollToComment}
+            className="mt-4 w-full min-h-[52px] rounded-xl bg-primary text-white text-[17px] font-bold hover:bg-primary/90 transition-colors"
+          >
+            {closed ? '결과 보고 한마디 남기기' : voted ? `${myLabel} 편에서 한마디` : '한마디 남기기'}
+          </button>
+        </>
       )}
     </div>
   )

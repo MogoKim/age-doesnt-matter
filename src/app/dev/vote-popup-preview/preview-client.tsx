@@ -3,8 +3,28 @@
 import { useState } from 'react'
 import { VotePopupView } from '@/components/features/vote/VotePopup'
 import { VoteHeroSlideView } from '@/components/features/vote/VoteHeroSlide'
+import VoteWidget, { type VoteStatus } from '@/components/features/vote/VoteWidget'
 
 const MOCK = { question: '우리 집 남편은 어느 쪽인가요?', optionA: '잔소리형', optionB: '무뚝뚝형' }
+
+/** 게시글 VoteWidget 검토용 mock (실 API 없이 initialVote로 상태 강제 — refresh는 404로 무시됨) */
+function mockVote(over: Partial<VoteStatus>): VoteStatus {
+  return {
+    id: 'preview-post-vote',
+    question: MOCK.question,
+    optionA: MOCK.optionA,
+    optionB: MOCK.optionB,
+    status: 'OPEN',
+    linkedPostId: null,
+    linkedPostUrl: null,
+    displayA: 77,
+    displayB: 54,
+    total: 131,
+    displayViews: 412,
+    myChoice: null,
+    ...over,
+  }
+}
 
 /**
  * 투표 입구(팝업/HERO) 디자인 검토 하네스 — 로컬 전용.
@@ -12,11 +32,19 @@ const MOCK = { question: '우리 집 남편은 어느 쪽인가요?', optionA: '
  * 실제 이동 대신 상단에 이동 안내를 표시해 동작을 확인한다.
  */
 export default function VotePopupPreviewClient() {
-  const [tab, setTab] = useState<'팝업' | 'HERO'>('팝업')
+  const [tab, setTab] = useState<'팝업' | 'HERO' | '게시글'>('팝업')
   const [heroStatus, setHeroStatus] = useState<'OPEN' | 'CLOSED'>('OPEN')
+  const [postState, setPostState] = useState<'미투표' | '투표완료' | 'CLOSED'>('투표완료')
   const [failed, setFailed] = useState(false)
   const [active, setActive] = useState<'A' | 'B' | null>(null)
   const [nav, setNav] = useState<string>('')
+
+  const postVote =
+    postState === '미투표'
+      ? mockVote({ myChoice: null })
+      : postState === 'CLOSED'
+        ? mockVote({ status: 'CLOSED', myChoice: 'A' })
+        : mockVote({ myChoice: 'A' })
 
   const simulateCast = (c: 'A' | 'B') => {
     setActive(c)
@@ -29,7 +57,7 @@ export default function VotePopupPreviewClient() {
     <div className="min-h-screen bg-neutral-200 flex flex-col items-center gap-3 py-6">
       {/* 탭 */}
       <div className="flex gap-2">
-        {(['팝업', 'HERO'] as const).map((t) => (
+        {(['팝업', 'HERO', '게시글'] as const).map((t) => (
           <button
             key={t}
             onClick={() => {
@@ -53,10 +81,16 @@ export default function VotePopupPreviewClient() {
             <StateChip label="정상" on={!failed} onClick={() => setFailed(false)} />
             <StateChip label="POST 실패" on={failed} onClick={() => setFailed(true)} />
           </>
-        ) : (
+        ) : tab === 'HERO' ? (
           <>
             <StateChip label="OPEN(입구)" on={heroStatus === 'OPEN'} onClick={() => setHeroStatus('OPEN')} />
             <StateChip label="CLOSED(결과 teaser)" on={heroStatus === 'CLOSED'} onClick={() => setHeroStatus('CLOSED')} />
+          </>
+        ) : (
+          <>
+            <StateChip label="미투표" on={postState === '미투표'} onClick={() => setPostState('미투표')} />
+            <StateChip label="투표완료" on={postState === '투표완료'} onClick={() => setPostState('투표완료')} />
+            <StateChip label="CLOSED" on={postState === 'CLOSED'} onClick={() => setPostState('CLOSED')} />
           </>
         )}
       </div>
@@ -69,7 +103,22 @@ export default function VotePopupPreviewClient() {
         className="relative overflow-hidden rounded-[36px] border-[10px] border-black bg-white shadow-2xl"
         style={{ width: 375, height: 812 }}
       >
-        {tab === 'HERO' ? (
+        {tab === '게시글' ? (
+          <div className="absolute inset-0 overflow-y-auto bg-white px-5 py-4">
+            <h1 className="m-0 mb-1 text-[22px] font-bold leading-[1.4] text-foreground break-keep">
+              우리 집 남편은 어느 쪽인가요?
+            </h1>
+            <p className="m-0 text-[14px] text-neutral-400">우나어지기 · 오전 10:00 · 👁 412</p>
+            <VoteWidget key={postState} voteEventId={postVote.id} initialVote={postVote} />
+            <p className="text-[16px] leading-[1.8] text-foreground break-keep">
+              🔥 잔소리형 — 하나부터 열까지 참견, 그래도 관심은 많음<br />
+              🧊 무뚝뚝형 — 하루 세 마디, 속은 깊다는데 알 길이 없음
+            </p>
+            <div className="mt-6 border-t border-neutral-200 pt-4">
+              <p className="text-[15px] font-bold text-neutral-500">↓ 댓글 진영판·pill은 실제 게시글에서 확인</p>
+            </div>
+          </div>
+        ) : tab === 'HERO' ? (
           <div className="absolute inset-0">
             {/* HERO 영역 — 실제 HeroSliderClient와 동일(aspect 5:2 + minHeight 200) */}
             <div className="relative w-full [aspect-ratio:5/2]" style={{ minHeight: 200 }}>

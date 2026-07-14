@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import BottomSheet from '@/components/ui/BottomSheet'
+import { optionLabel } from './option-label'
 import type { VoteStatus } from './VoteWidget'
 
 const LS_PREFIX = 'unao-vote-popup-hide-'
@@ -40,9 +41,9 @@ function PopupChoice({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'w-full min-h-[58px] rounded-2xl bg-white text-[19px] font-bold text-foreground shadow-sm border transition-colors duration-150',
-        active ? 'border-primary bg-primary/10 text-primary-text' : 'border-[#EAECEF]',
-        'active:border-primary active:bg-primary/10 disabled:opacity-70',
+        'w-full min-h-[58px] rounded-2xl bg-white text-[19px] font-bold shadow-sm transition-colors duration-150',
+        active ? 'bg-primary/10 text-primary-text' : 'text-foreground',
+        'active:bg-primary/10 active:text-primary-text disabled:opacity-70',
       )}
     >
       {label}
@@ -76,8 +77,8 @@ export function VotePopupView({
   onClose,
   onGoToPost,
 }: VotePopupViewProps) {
-  const labelA = vote.optionA === '잔소리형' ? '🔥 잔소리형' : vote.optionA
-  const labelB = vote.optionB === '무뚝뚝형' ? '🧊 무뚝뚝형' : vote.optionB
+  const labelA = optionLabel(vote.optionA)
+  const labelB = optionLabel(vote.optionB)
 
   return (
     <div>

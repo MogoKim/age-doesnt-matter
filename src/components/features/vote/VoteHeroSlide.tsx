@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { optionLabel } from './option-label'
 import type { VoteStatus } from './VoteWidget'
 
 /** HERO 슬라이드용 서버 초기 데이터 — 입구 렌더에 필요한 정적 정보만 (집계·myChoice 없음) */
@@ -17,13 +18,6 @@ export interface VoteHeroData {
 }
 
 const REFRESH_MS = 30_000
-
-/** Day 1 전용 이모지 매핑 — 팝업과 동일 규칙 (그 외 옵션은 텍스트 그대로) */
-function optionLabel(option: string): string {
-  if (option === '잔소리형') return '🔥 잔소리형'
-  if (option === '무뚝뚝형') return '🧊 무뚝뚝형'
-  return option
-}
 
 /** HERO 안 흰 버튼 — 누르면 코랄 채움 피드백만 (결과 아님, 이동 직전 표시) */
 function HeroChoice({

@@ -13,6 +13,7 @@ import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
 import GuestPasswordModal from './GuestPasswordModal'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { campLabel } from '@/components/features/vote/option-label'
 
 /** 오늘의 투표 진영 배지 데이터 (CommentSection에서 1회 fetch 후 전달) */
 export interface VoteCampBadges {
@@ -155,9 +156,11 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
             {(() => {
               const choice = campBadges?.byUserId[comment.author.id]
               if (!choice) return null
-              const label = choice === 'A' ? `${campBadges!.optionA}파` : `${campBadges!.optionB}파`
+              const label = choice === 'A' ? campLabel(campBadges!.optionA) : campLabel(campBadges!.optionB)
+              // A진영=코랄 / B진영=슬레이트 — 진영 구분
+              const tone = choice === 'A' ? 'bg-primary/10 text-primary-text' : 'bg-slate-100 text-slate-600'
               return (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[12px] font-bold bg-primary/10 text-primary-text leading-none shrink-0">
+                <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded-full text-[12px] font-bold leading-none shrink-0', tone)}>
                   {label}
                 </span>
               )
