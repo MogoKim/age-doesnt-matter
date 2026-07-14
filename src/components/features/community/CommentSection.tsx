@@ -11,6 +11,7 @@ const GRADE_EMOJI: Record<string, string> = {
 import CommentItemComponent from './CommentItem'
 import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
+import { campLabel, campPhrase } from '@/components/features/vote/option-label'
 
 interface CommentSectionProps {
   postId: string
@@ -139,6 +140,35 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
 
   const sorted = useMemo(() => sortComments(optimisticComments, sort), [optimisticComments, sort])
 
+  // 투표형 진영 카운트 — 댓글 작성자(회원+봇) 중 진영 유니크 카운트. 게스트(userId 없음)는 제외.
+  const camp = useMemo(() => {
+    if (!voteBadges) return null
+    const seen = new Set<string>()
+    let a = 0
+    let b = 0
+    const walk = (list: CommentItemType[]) => {
+      for (const c of list) {
+        const uid = c.author?.id
+        if (uid && !seen.has(uid)) {
+          const ch = voteBadges.byUserId[uid]
+          if (ch === 'A') { seen.add(uid); a++ } else if (ch === 'B') { seen.add(uid); b++ }
+        }
+        if (c.replies?.length) walk(c.replies)
+      }
+    }
+    walk(optimisticComments)
+    return a + b > 0 ? { a, b } : null
+  }, [voteBadges, optimisticComments])
+
+  // 입력창 위 진영 문구 — 회원이 투표했으면 내 진영 기준, 아니면 투표 유도
+  const myChoice = voteBadges && resolvedCurrentUser ? voteBadges.byUserId[resolvedCurrentUser.id] : undefined
+  const myCampPhrase =
+    myChoice === 'A'
+      ? campPhrase(voteBadges!.optionA, '한마디 남겨보세요')
+      : myChoice === 'B'
+        ? campPhrase(voteBadges!.optionB, '한마디 남겨보세요')
+        : null
+
   return (
     <section className="mb-12">
       {bestComments.length > 0 && (
@@ -157,9 +187,18 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
         </div>
       )}
       <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-foreground">
-        <h3 className="text-lg font-bold text-foreground m-0">
-          💬 댓글 <span className="text-primary-text font-bold">{totalCount}</span>
-        </h3>
+        {camp && voteBadges ? (
+          <h3 className="text-lg font-bold text-foreground m-0">
+            <span className="text-[14px] font-normal text-muted-foreground">댓글 진영 · </span>
+            <span className="text-primary-text">{campLabel(voteBadges.optionA)} {camp.a}</span>
+            <span className="text-muted-foreground font-normal"> · </span>
+            <span className="text-slate-600">{campLabel(voteBadges.optionB)} {camp.b}</span>
+          </h3>
+        ) : (
+          <h3 className="text-lg font-bold text-foreground m-0">
+            💬 댓글 <span className="text-primary-text font-bold">{totalCount}</span>
+          </h3>
+        )}
         <div className="flex gap-1">
           <button
             className={`px-4 py-2 rounded-full text-[17px] font-bold cursor-pointer min-h-[52px] transition-colors ${
@@ -202,6 +241,13 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
 
       {/* 투표 위젯 "한마디 남기기" CTA 스크롤 목적지 */}
       <div id="vote-comment-anchor" aria-hidden="true" />
+
+      {/* 투표형 글: 입력창 위 진영 문구 */}
+      {voteBadges && (
+        <p className="mb-2 text-[15px] font-bold text-primary-text">
+          {myCampPhrase ?? '먼저 투표하고 참여해보세요'}
+        </p>
+      )}
 
       {!authKnown ? (
         <div className="h-24 bg-muted rounded-2xl animate-pulse" aria-hidden="true" />
