@@ -33,26 +33,29 @@ async function revalidateLinkedPost(linkedPostId: string | null) {
   revalidatePath(`/community/${boardSlug}/${post.slug ?? linkedPostId}`)
 }
 
+/** 공식 이벤트 계정 식별자 (런타임 조회 — 하드코딩 id 금지) */
+const OFFICIAL_VOTE_AUTHOR_NICKNAME = '우리 나이가 어때서'
+const OFFICIAL_VOTE_AUTHOR_EMAIL = 'official@unao.bot'
+
 /**
- * 투표 연동 게시글 작성자 — 기존 투표 게시글 author 재사용(하드코딩 금지, 런타임 조회).
- * 없으면 활성 @unao.bot 중 가장 오래된 운영 계정. 둘 다 없으면 null.
+ * 투표 자동 생성 게시글 작성자 = 공식 계정 "우리 나이가 어때서"로 고정.
+ * ① 닉네임이 공식명인 ACTIVE 계정 → ② 운영용 official@unao.bot 계정 → ③ 없으면 null(에러로 막음).
+ * ⚠️ 개인 페르소나(하늘바라기 등) 재사용/폴백 금지 — 없으면 게시글 생성을 막는다(과거 게시글 소급 변경 없음).
  */
 async function resolveVotePostAuthorId(): Promise<string | null> {
-  const prev = await prisma.voteEvent.findFirst({
-    where: { linkedPostId: { not: null } },
-    orderBy: { date: 'desc' },
-    select: { linkedPostId: true },
-  })
-  if (prev?.linkedPostId) {
-    const post = await prisma.post.findUnique({ where: { id: prev.linkedPostId }, select: { authorId: true } })
-    if (post) return post.authorId
-  }
-  const bot = await prisma.user.findFirst({
-    where: { email: { endsWith: '@unao.bot' } },
-    orderBy: { createdAt: 'asc' },
+  const byNickname = await prisma.user.findFirst({
+    where: { nickname: OFFICIAL_VOTE_AUTHOR_NICKNAME, status: 'ACTIVE' },
     select: { id: true },
   })
-  return bot?.id ?? null
+  if (byNickname) return byNickname.id
+
+  const byEmail = await prisma.user.findFirst({
+    where: { email: OFFICIAL_VOTE_AUTHOR_EMAIL, status: 'ACTIVE' },
+    select: { id: true },
+  })
+  if (byEmail) return byEmail.id
+
+  return null
 }
 
 /** 투표 유도 짧은 본문 — 옵션 기반, 질문 중복 없이(제목=질문) 투표+댓글만 유도 */
@@ -76,7 +79,7 @@ async function createVotePost(
   content?: string, // AI 초안/직접 입력 본문 — 비우면 템플릿 기본문
 ): Promise<{ id: string } | { error: string }> {
   const authorId = await resolveVotePostAuthorId()
-  if (!authorId) return { error: '게시글 작성자(운영 봇 계정)를 찾을 수 없습니다. @unao.bot 계정을 확인해 주세요.' }
+  if (!authorId) return { error: '공식 이벤트 계정("우리 나이가 어때서")을 찾을 수 없습니다. 공식 계정을 먼저 생성해 주세요.' }
   const opensInFuture = Date.now() < voteOpenAtMs(eventDate)
   const body = content?.trim() ? content.trim() : buildVotePostContent(optionA, optionB)
   const post = await prisma.post.create({
