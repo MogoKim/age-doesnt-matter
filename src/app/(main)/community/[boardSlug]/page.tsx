@@ -51,7 +51,8 @@ const STATIC_BOARD_CONFIGS: Record<string, {
   },
 }
 
-export const revalidate = 30
+// ISR Writes 절감(30→300s): 글 작성 시 revalidateTag('community-board-page')가 즉시 무효화
+export const revalidate = 300
 
 export function generateStaticParams() {
   return [

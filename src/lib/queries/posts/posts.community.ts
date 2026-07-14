@@ -233,7 +233,7 @@ export const getRecentActivities = unstable_cache(
   { revalidate: 60 },
 )
 
-// 커뮤니티 게시판 1페이지 — 모듈 최상위 생성으로 함수 참조 안정 → 30s 캐시 실제 동작
+// 커뮤니티 게시판 1페이지 — 모듈 최상위 생성으로 함수 참조 안정 → 300s 캐시 실제 동작
 export const getCachedBoardPage = unstable_cache(
   (boardType: BoardType, category: string, sort: string) =>
     getPostsByBoardPage(boardType, {
@@ -243,7 +243,7 @@ export const getCachedBoardPage = unstable_cache(
       limit: 12,
     }),
   ['community-board-page'],
-  { revalidate: 30, tags: ['community-board-page'] },
+  { revalidate: 300, tags: ['community-board-page'] },
 )
 
 /* ── 관련글 (글 상세 본문끝·하단 내부 링크용) ──
