@@ -24,6 +24,7 @@ import { notifySlack } from '../core/notifier.js'
 import { getBotUser } from '../seed/generator.js'
 import { generateCommunitySlug } from '../core/slug.js'
 import { findPoliticalKeyword } from '../core/political-blocklist.js'
+import { findSheetContentQualityViolation } from '../core/content-quality-rules.js'
 import { readPendingRows, updateRow } from './sheets-client.js'
 import { detectSite, normalizeNaverCafeUrl, resolveNaverShortUrl, randomUserAgent, isCloudflareChallenge, type SiteConfig } from './site-configs.js'
 import { processContentMedia } from './image-pipeline.js'
@@ -819,6 +820,20 @@ export async function main() {
               })
               totalFailed++
               console.log(`  → FAILED: 정치 키워드 포함 (${political.keyword}/${political.field})`)
+              continue
+            }
+
+            // 콘텐츠 품질 rule gate (PR-1, 2026-07-14) — 날짜 스탬프 연재/브리핑·원카페 흔적·광고 차단.
+            //   image-router append 게이트의 2차 방어(수동/외부 row 커버). title-seo가 원문 제목의
+            //   날짜/연재 신호를 약화시키므로 반드시 SEO 다듬기 **전**에 검사한다.
+            const quality = findSheetContentQualityViolation(title, content, new Date())
+            if (quality) {
+              await updateRow(tab.tabName, row.rowIndex, {
+                status: 'FAILED',
+                error: `콘텐츠 품질 rule 차단: ${quality}`,
+              })
+              totalFailed++
+              console.log(`  → FAILED: 콘텐츠 품질 rule 차단 (${quality})`)
               continue
             }
 
