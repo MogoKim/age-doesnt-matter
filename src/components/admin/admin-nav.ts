@@ -6,6 +6,7 @@ export interface NavItem {
 
 export const adminNavItems: NavItem[] = [
   { label: '대시보드', icon: '📊', href: '/admin' },
+  { label: '참여 이벤트', icon: '🗳', href: '/admin/vote-events' },
   { label: '웹 A/B', icon: '🧪', href: '/admin/ab-tests' },
   { label: '회원 관리', icon: '👥', href: '/admin/members' },
   { label: '콘텐츠 관리', icon: '📝', href: '/admin/content' },
@@ -22,6 +23,7 @@ export const adminNavItems: NavItem[] = [
 
 export const adminPageTitles: Record<string, string> = {
   '/admin': '대시보드',
+  '/admin/vote-events': '참여 이벤트 — 오늘의 투표',
   '/admin/ab-tests': '웹 A/B 테스트',
   '/admin/members': '회원 관리',
   '/admin/content': '콘텐츠 관리',

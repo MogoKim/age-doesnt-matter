@@ -85,17 +85,17 @@ export default async function AdminVoteEventsPage() {
     prisma.voteEvent.findMany({ where: { date: { gt: today } }, orderBy: { date: 'asc' } }),
     prisma.voteEvent.findMany({ where: { date: { lt: today } }, orderBy: { date: 'desc' }, take: 30 }),
   ])
-  // 지난 목록 실 표(USER/GUEST) 집계 — 한 번에 groupBy
-  const pastIds = pastRows.map((r) => r.id)
-  const pastBallots = pastIds.length
+  // 예약+지난 목록 실 표(USER/GUEST) 집계 — 한 번에 groupBy (예약 삭제 가드용으로 upcoming도 포함)
+  const listIds = [...upcomingRows, ...pastRows].map((r) => r.id)
+  const listBallots = listIds.length
     ? await prisma.voteBallot.groupBy({
         by: ['voteEventId', 'voterType', 'choice'],
-        where: { voteEventId: { in: pastIds }, voterType: { in: ['USER', 'GUEST'] } },
+        where: { voteEventId: { in: listIds }, voterType: { in: ['USER', 'GUEST'] } },
         _count: { _all: true },
       })
     : []
   const realVotesOf = (id: string) =>
-    pastBallots.filter((b) => b.voteEventId === id).reduce((s, b) => s + b._count._all, 0)
+    listBallots.filter((b) => b.voteEventId === id).reduce((s, b) => s + b._count._all, 0)
 
   const toListItem = (r: (typeof pastRows)[number], withReal: boolean): VoteEventListItem => ({
     id: r.id,
@@ -110,7 +110,7 @@ export default async function AdminVoteEventsPage() {
     displayViews: r.displayViews,
   })
 
-  const upcoming = upcomingRows.map((r) => toListItem(r, false))
+  const upcoming = upcomingRows.map((r) => toListItem(r, true))
   const past = pastRows.map((r) => toListItem(r, true))
 
   return (

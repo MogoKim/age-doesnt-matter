@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import { getKstToday } from '@/lib/votes'
-import { voteOpenAtMs } from '@/lib/vote-status'
+import { voteOpenAtMs, voteVisibleStatus } from '@/lib/vote-status'
 import { generateVoteDraftBatch, generateVotePostDraft, type VoteDraftRow } from '@/lib/ai/vote-draft'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { VoteChoice, VoteEventStatus } from '@/generated/prisma/client'
@@ -191,6 +191,70 @@ export async function setVoteStatus(voteEventId: string, status: VoteEventStatus
   const event = await prisma.voteEvent.update({ where: { id: voteEventId }, data: { status } })
   await revalidateLinkedPost(event.linkedPostId)
   revalidatePath('/admin/vote-events')
+  return { ok: true }
+}
+
+/**
+ * 예약 투표 삭제 — 09:00 오픈 전(HIDDEN) 예약만. 서버에서 조건 전면 재검증(클라 버튼 숨김과 무관).
+ * 거부: OPEN/CLOSED·오늘/지난 투표 / 실 표(USER·GUEST) 1개↑ / 연동 게시글 PUBLISHED.
+ * 삭제: VoteEvent(→ ballots cascade) + 연동 게시글이 DRAFT면 함께(트랜잭션 원자 처리).
+ */
+export async function deleteReservedVoteEvent(voteEventId: string): Promise<ActionResult> {
+  const denied = await requireAdmin()
+  if (denied) return denied
+
+  const event = await prisma.voteEvent.findUnique({
+    where: { id: voteEventId },
+    select: { id: true, date: true, status: true, linkedPostId: true },
+  })
+  if (!event) return { error: '삭제할 예약 투표를 찾을 수 없습니다' }
+
+  // 조건 1·2·5: 09:00 오픈 전 예약(HIDDEN)만 — 진행 중/종료/오늘/지난 투표 거부
+  if (voteVisibleStatus(event.status, event.date) !== 'HIDDEN') {
+    return { error: '진행 중이거나 종료된 투표는 삭제할 수 없습니다 (09:00 오픈 전 예약만 삭제 가능).' }
+  }
+  if (Date.now() >= voteOpenAtMs(event.date)) {
+    return { error: '이미 오픈 시각(09:00)이 지나 삭제할 수 없습니다.' }
+  }
+
+  // 조건 3: 실 표(USER/GUEST) 0 — 봇 배지 ballot은 cascade로 함께 삭제되므로 집계 제외
+  const realVotes = await prisma.voteBallot.count({
+    where: { voteEventId: event.id, voterType: { in: ['USER', 'GUEST'] } },
+  })
+  if (realVotes > 0) return { error: `실 표가 ${realVotes}개 있어 삭제할 수 없습니다.` }
+
+  // 조건 4: 연동 게시글 — 없거나 DRAFT만. PUBLISHED면 거부.
+  let draftPostIdToDelete: string | null = null
+  let linkedPathToRevalidate: string | null = null
+  if (event.linkedPostId) {
+    const post = await prisma.post.findUnique({
+      where: { id: event.linkedPostId },
+      select: { id: true, status: true, slug: true, boardType: true },
+    })
+    if (post) {
+      if (post.status !== 'DRAFT') {
+        return { error: '연동 게시글이 이미 공개(PUBLISHED)되어 삭제할 수 없습니다.' }
+      }
+      draftPostIdToDelete = post.id
+      const boardSlug = BOARD_TYPE_TO_SLUG[post.boardType] ?? post.boardType.toLowerCase()
+      linkedPathToRevalidate = `/community/${boardSlug}/${post.slug ?? post.id}`
+    }
+  }
+
+  // 삭제 — VoteEvent(→ ballots cascade) + DRAFT 게시글을 트랜잭션으로 원자 처리
+  // (게시글 삭제가 FK 등으로 실패하면 전체 롤백 → VoteEvent 고아 방지)
+  await prisma.$transaction(async (tx) => {
+    await tx.voteEvent.delete({ where: { id: event.id } })
+    if (draftPostIdToDelete) {
+      await tx.post.delete({ where: { id: draftPostIdToDelete } })
+    }
+  })
+
+  revalidatePath('/admin/vote-events')
+  revalidatePath('/')
+  revalidatePath('/community/stories')
+  if (linkedPathToRevalidate) revalidatePath(linkedPathToRevalidate)
+
   return { ok: true }
 }
 

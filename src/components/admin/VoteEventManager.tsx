@@ -8,6 +8,7 @@ import {
   requestVoteDrafts,
   requestVotePostDraft,
   registerBotComments,
+  deleteReservedVoteEvent,
 } from '@/app/admin/(panel)/vote-events/actions'
 import { voteVisibleStatus } from '@/lib/vote-status'
 
@@ -136,6 +137,12 @@ export default function VoteEventManager({
       setMsg(result.error ? `❌ ${result.error}` : `✅ ${okMsg}`)
       if (!result.error) window.location.reload()
     })
+  }
+
+  // 예약 투표 삭제 — confirm 후 서버 action. 서버가 조건 재검증하므로 클라 가드는 UX용
+  const deleteEvent = (item: VoteEventListItem) => {
+    if (!confirm(`${item.date} 예약 투표를 삭제할까요?\n연결된 임시(DRAFT) 게시글도 함께 삭제됩니다. 되돌릴 수 없습니다.`)) return
+    run(() => deleteReservedVoteEvent(item.id), '예약 투표가 삭제되었습니다 (같은 날짜로 다시 만들 수 있어요)')
   }
 
   const displayA = event ? seedA + (stats ? stats.displayA - event.seedCountA : 0) : 0
@@ -583,7 +590,7 @@ export default function VoteEventManager({
               <p className="text-xs text-zinc-500">같은 날짜 중복은 자동 방지(수정으로 처리). 날짜 비우면 오늘로 저장됩니다.</p>
             </div>
           </div>
-          <EventList items={upcoming} emptyText="예약된 투표가 없습니다." />
+          <EventList items={upcoming} emptyText="예약된 투표가 없습니다." onDelete={deleteEvent} />
         </section>
       )}
 
@@ -619,11 +626,13 @@ function EventList({
   emptyText,
   showResult = false,
   onDuplicate,
+  onDelete,
 }: {
   items: VoteEventListItem[]
   emptyText: string
   showResult?: boolean
   onDuplicate?: (item: VoteEventListItem) => void
+  onDelete?: (item: VoteEventListItem) => void
 }) {
   if (items.length === 0) {
     return <p className="rounded-lg bg-zinc-50 px-4 py-6 text-center text-sm text-zinc-500">{emptyText}</p>
@@ -673,6 +682,17 @@ function EventList({
                 복제
               </button>
             )}
+            {/* 삭제: 09:00 오픈 전(HIDDEN) + 실 표 0 예약만 노출 (서버가 조건 재검증) */}
+            {onDelete &&
+              voteVisibleStatus(item.status, new Date(`${item.date}T00:00:00.000Z`)) === 'HIDDEN' &&
+              item.realVotes === 0 && (
+                <button
+                  onClick={() => onDelete(item)}
+                  className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50"
+                >
+                  삭제
+                </button>
+              )}
           </div>
         </div>
       ))}
