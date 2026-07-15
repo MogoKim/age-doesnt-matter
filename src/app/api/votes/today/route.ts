@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getTodayPublic } from '@/lib/votes'
 
+// ⚠️ force-dynamic 필수: 이 GET은 cookies/headers 등 dynamic API를 안 써서 Next가 정적 최적화(Full Route Cache)해버린다.
+// 그러면 09:00 오픈 전 캐시된 {vote:null}이 고착되어 getTodayPublic(09:00 lazy 공개)이 호출되지 않아 예약 투표가 지연 공개된다.
+// 응답별 Cache-Control(s-maxage 15s / no-store)로 CDN 캐시는 그대로 제어하되, origin 렌더는 매 요청 실행되게 강제한다.
+// (동일 폴더 /api/votes/today/mine 은 이미 force-dynamic)
+export const dynamic = 'force-dynamic'
+
 /**
  * 오늘의 투표 **public** 현황 (팝업/HERO 입구용, 사용자 무관).
  * myChoice 없음 → CDN 캐시 가능. 내 선택은 /api/votes/today/mine(no-store).
