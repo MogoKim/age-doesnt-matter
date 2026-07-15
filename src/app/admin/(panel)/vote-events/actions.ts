@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import { getKstToday } from '@/lib/votes'
-import { voteCloseAtMs, voteOpenAtMs, voteVisibleStatus } from '@/lib/vote-status'
+import { voteOpenAtMs, voteVisibleStatus } from '@/lib/vote-status'
 import { generateVoteDraftBatch, generateVotePostDraft, type VoteDraftRow } from '@/lib/ai/vote-draft'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { EVENT_CATEGORY } from '@/lib/event-category'
@@ -117,7 +117,10 @@ function isMissingEventTable(e: unknown): boolean {
 
 /**
  * 투표(VOTE) 생성/수정 시 노출 계층 Event를 동반 생성/갱신 (Phase 1 기반, 투표 로직 무접촉).
- *  - Event = 노출 계층: type=VOTE, voteEventId 1:1, 노출창=그날 09:00~20:00 KST, tier=PRIMARY, 팝업+HERO on.
+ *  - Event = 노출 계층: type=VOTE, voteEventId 1:1, tier=PRIMARY, 팝업+HERO on.
+ *  - ⭐ Phase 2(D1) 노출창: startAt=그날 09:00 KST ~ endAt=**그날 24:00 KST(당일 끝)**.
+ *    · endAt = 채널 **노출 종료** (HERO는 20:00 이후에도 '결과 보러 가기' 티저 유지 → 자정까지 노출).
+ *    · 투표 가능/마감(09:00 open·20:00 close)은 **VoteEvent status + effectiveVoteStatus**가 담당(분리).
  *  - PRIMARY 충돌 가드: 같은 채널(팝업/HERO)·시간 겹침·isActive·tier=PRIMARY인 **다른** Event가 있으면 저장 차단.
  *  - createdByAdminId = getAdminSession().adminId.
  *  - ⚠️ Event 테이블 미적용(마이그레이션 HANDOFF 전) 구간은 P2021로 실패 → **투표 생성 회귀 0**을 위해
@@ -129,8 +132,9 @@ async function syncVoteExposureEvent(params: {
   eventDate: Date
   title: string
 }): Promise<{ error: string } | null> {
-  const startAt = new Date(voteOpenAtMs(params.eventDate))
-  const endAt = new Date(voteCloseAtMs(params.eventDate))
+  const startAt = new Date(voteOpenAtMs(params.eventDate)) // 그날 09:00 KST (채널 노출 시작)
+  // 그날 24:00 KST(당일 끝 = 다음날 자정) — eventDate는 KST 09:00 instant(= date+0h), +15h = KST 24:00
+  const endAt = new Date(params.eventDate.getTime() + 15 * 60 * 60 * 1000)
   const session = await getAdminSession()
   const adminId = session?.adminId
   if (!adminId) return null // requireAdmin 통과 후이므로 사실상 도달 안 함 — 방어적으로 스킵

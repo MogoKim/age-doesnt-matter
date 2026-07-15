@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getTodayPublic } from '@/lib/votes'
+import { resolveChannelVote } from '@/lib/events/exposure'
 
 // ⚠️ force-dynamic 필수: 이 GET은 cookies/headers 등 dynamic API를 안 써서 Next가 정적 최적화(Full Route Cache)해버린다.
 // 그러면 09:00 오픈 전 캐시된 {vote:null}이 고착되어 getTodayPublic(09:00 lazy 공개)이 호출되지 않아 예약 투표가 지연 공개된다.
@@ -22,8 +23,20 @@ function todayCacheControl(secsToClose: number): string {
   return `public, s-maxage=${Math.min(15, secsToClose - 60)}, must-revalidate`
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    // Phase 2 — 팝업 노출 게이트: ?channel=bottomPopup 이면 Event 오케스트레이션 계층으로 선택.
+    //  · 노출 대상 없음(채널 OFF/비-PRIMARY/window 밖/FEEDBACK·NOTICE) → {vote:null}
+    //  · 노출 대상 있음 → 아래 getTodayPublic 경로 그대로(오늘 투표 == 선택된 vote, lazy publish·캐시 유지)
+    //  ⚠️ channel 파라미터가 없으면 이 블록을 건너뛰어 **기존 응답과 완전히 동일**하다(HERO status refresh 무영향).
+    const channel = new URL(req.url).searchParams.get('channel')
+    if (channel === 'bottomPopup') {
+      const showVoteId = await resolveChannelVote('bottomPopup')
+      if (!showVoteId) {
+        return NextResponse.json({ vote: null }, { status: 200, headers: { 'Cache-Control': 'no-store' } })
+      }
+    }
+
     const result = await getTodayPublic()
     if (!result) {
       return NextResponse.json({ vote: null }, { status: 200, headers: { 'Cache-Control': 'no-store' } })

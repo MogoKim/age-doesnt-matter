@@ -134,7 +134,9 @@ export default function VotePopup() {
         //  · popups(양보 판정) · today(public, 캐시) · today/mine(내 선택, no-store)
         const [popupRes, todayRes, mineRes] = await Promise.all([
           fetch('/api/popups?path=%2F', { credentials: 'same-origin' }),
-          fetch('/api/votes/today', { credentials: 'same-origin' }),
+          // Phase 2 — Event 오케스트레이션 계층 게이트: bottomPopup 채널로 노출 대상 선택.
+          //  (Event 없는 날은 오늘 투표 fallback / 채널 OFF·비-VOTE면 {vote:null})
+          fetch('/api/votes/today?channel=bottomPopup', { credentials: 'same-origin' }),
           fetch('/api/votes/today/mine', { cache: 'no-store', credentials: 'same-origin' }),
         ])
         // 홈 경로 활성 팝업이 있으면 양보
