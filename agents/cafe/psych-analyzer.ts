@@ -17,6 +17,7 @@
  *   npx tsx agents/cafe/psych-analyzer.ts          # 오늘 미분석 글 전체
  *   npx tsx agents/cafe/psych-analyzer.ts --test   # 샘플 5개 테스트 출력
  */
+import { createWithUsage } from '../core/ai-usage.js'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
@@ -175,7 +176,7 @@ async function callAnalyzeApi(posts: PostForAnalysis[]): Promise<PsychResult[] |
     return `[글 ${i + 1}] ${boardHint}제목: ${sanitizeForApi(p.title)}\n본문: ${sanitizeForApi(p.content.slice(0, 1200))}${commentText}`
   }).join('\n\n---\n\n')
 
-  const response = await client.messages.create({
+  const response = await createWithUsage(client, 'PSYCH_ANALYZE', {
     model: MODEL,
     max_tokens: 3500,
     system: SYSTEM_PROMPT,

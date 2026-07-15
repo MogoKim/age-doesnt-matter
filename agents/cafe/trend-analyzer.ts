@@ -4,6 +4,7 @@
  * 크롤링된 카페 글들을 Claude AI가 분석하여
  * 핫토픽, 키워드, 매거진 주제 추천, 페르소나 힌트 추출
  */
+import { createWithUsage } from '../core/ai-usage.js'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
@@ -187,7 +188,7 @@ async function analyzeTrends(posts: Awaited<ReturnType<typeof getTodayPosts>>): 
     ? '\n현재 저녁/심야 크롤링입니다. relation/meaning 영역 hotTopics를 우선 추출해주세요.'
     : '\n현재 낮 크롤링입니다. 고르게 추출해주세요.'
 
-  const response = await client.messages.create({
+  const response = await createWithUsage(client, 'TREND_ANALYZE', {
     model: MODEL,
     max_tokens: 5000,
     system: `당신은 50~60대 커뮤니티 트렌드 분석가입니다.

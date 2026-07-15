@@ -15,6 +15,7 @@
  *
  * 프롬프트·파서·타입은 haiku-quality-prompt.ts(순수부) — vitest는 그쪽만 로드한다.
  */
+import { createWithUsage } from '../core/ai-usage.js'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../core/db.js'
 import {
@@ -64,7 +65,7 @@ export async function evaluateContentQualityWithHaiku(input: HaikuQualityInput):
     }
 
     const started = Date.now()
-    const res = await client.messages.create(
+    const res = await createWithUsage(client, 'HAIKU_GATE', 
       {
         model: MODEL,
         max_tokens: 400,

@@ -10,6 +10,7 @@
  * 비용 최적화: 업무추출/자격추출은 원문에서 직접 파싱 (AI 불필요)
  */
 
+import { createWithUsage } from '../core/ai-usage.js'
 import Anthropic from '@anthropic-ai/sdk'
 import type { FilteredJob, ProcessedJob, PickPoint, QnA } from './job-types.js'
 import { normalizeSalary, generateDisplayTags } from './job-types.js'
@@ -237,7 +238,7 @@ JSON 배열로만 응답 (3개):
 
   /** Claude Haiku 호출 */
   private async chat(prompt: string): Promise<string> {
-    const response = await this.client.messages.create({
+    const response = await createWithUsage(this.client, 'JOB_PROCESS', {
       model: MODEL,
       max_tokens: 512,
       messages: [{ role: 'user', content: prompt }],
