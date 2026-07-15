@@ -14,6 +14,7 @@
  * 호출: sheet-scraper.ts (SHEET_TITLE_SEO=true 이고 시트 C열 수동 제목이 없을 때만)
  */
 
+import { createWithUsage } from '../core/ai-usage.js'
 import Anthropic from '@anthropic-ai/sdk'
 
 const client = new Anthropic()
@@ -110,7 +111,7 @@ export async function polishTitleForSeo(
   const body = stripText(content)
 
   try {
-    const res = await client.messages.create({
+    const res = await createWithUsage(client, 'TITLE_SEO', {
       model,
       max_tokens: 60,
       system: SYS_TEXT,

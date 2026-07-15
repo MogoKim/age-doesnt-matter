@@ -2,6 +2,7 @@
  * CPS 상품 매칭 — 매거진 카테고리별 쿠팡 상품 추천
  * 매거진 글에 관련 상품 CPS 링크를 자동 삽입
  */
+import { createWithUsage } from '../core/ai-usage.js'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../core/db.js'
 import { createDeepLink } from '../core/coupang.js'
@@ -50,7 +51,7 @@ export async function matchCpsProducts(
   if (!products || products.length === 0) return []
 
   // AI에게 매칭 요청
-  const response = await client.messages.create({
+  const response = await createWithUsage(client, 'CPS_MATCH', {
     model: MODEL,
     max_tokens: 300,
     system: `매거진 기사와 가장 관련 있는 상품을 1~2개 골라주세요.

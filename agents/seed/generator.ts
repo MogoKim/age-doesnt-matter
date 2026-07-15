@@ -1,3 +1,4 @@
+import { createWithUsage } from '../core/ai-usage.js'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../core/db.js'
 import { getPersona, getAllPersonaIds, type Persona } from './persona-data.js'
@@ -482,7 +483,7 @@ ${topN.map((c, i) => `${i + 1}. ${c.content}`).join('\n')}
 
 출력: 번호 없이 변환된 댓글만, 한 줄씩, 정확히 ${topN.length}줄`
 
-  const response = await client.messages.create({
+  const response = await createWithUsage(client, 'SEED_KILLER_COMMENT', {
     model: process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5',
     max_tokens: 600,
     system: '댓글을 최소한만 변형하여 자연스럽게 옮겨 쓰는 역할. 내용 추가 절대 금지.',
@@ -554,7 +555,7 @@ export async function generateComment(
       priorComments.map(c => `- "${c.slice(0, 80)}"`).join('\n')
     : ''
 
-  const response = await client.messages.create({
+  const response = await createWithUsage(client, 'SEED_COMMENT', {
     model: getModelForPersona(personaId),
     max_tokens: 200,
     system: getKstContext() + '\n\n' + buildSystemPrompt(p, personaId, 'comment') + trendContext + seriousOverride,
@@ -667,7 +668,7 @@ ${priorCommentsHint}
 ${recentCommentHint}${forbiddenSection}`
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const response = await client.messages.create({
+    const response = await createWithUsage(client, 'SEED_USER_POST_COMMENT', {
       model: USER_POST_COMMENT_MODEL,
       max_tokens: 180,
       system,
@@ -1053,7 +1054,7 @@ ${WAVE_PROMPTS[waveType]}`
 
   const maxAttempts = 3
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const response = await client.messages.create({
+    const response = await createWithUsage(client, 'SEED_SHEET_VIRAL_COMMENT', {
       model: process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6',
       max_tokens: 200,
       system: getKstContext() + '\n\n' + systemPrompt,
@@ -1117,7 +1118,7 @@ export async function generateReply(
   const trend = await getLatestTrend()
   const trendContext = buildTrendContext(trend, personaId, p)
 
-  const response = await client.messages.create({
+  const response = await createWithUsage(client, 'SEED_REPLY', {
     model: getModelForPersona(personaId),
     max_tokens: 150,
     system: buildSystemPrompt(p, personaId, 'reply') + trendContext,

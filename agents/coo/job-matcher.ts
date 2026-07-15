@@ -1,3 +1,4 @@
+import { createWithUsage } from '../core/ai-usage.js'
 import { fileURLToPath } from 'url'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
@@ -115,7 +116,7 @@ export async function main() {
         // 관련 일자리 추천 댓글 생성
         const relevantJobs = jobPosts.slice(0, 3).map(j => `"${j.title}"`).join(', ')
 
-        const commentResult = await client.messages.create({
+        const commentResult = await createWithUsage(client, 'JOB_MATCH', {
           model: MODEL,
           max_tokens: 300,
           system: `당신은 50-60대 커뮤니티 회원입니다. 따뜻하고 도움이 되는 톤으로 일자리 정보를 공유하세요.

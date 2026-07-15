@@ -3,6 +3,7 @@
  * CafeTrend.magazineTopics를 기반으로 에디터 스타일 매거진 글 생성
  * LOCAL ONLY — launchd 12:00 KST 실행
  */
+import { createWithUsage } from '../core/ai-usage.js'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
@@ -172,7 +173,7 @@ async function generateMagazineArticle(
   // editorial v2 — flag ON 시에만 직접답변/핵심요약 요청 (기본 false = v1)
   const editorialV2 = process.env.MAGAZINE_EDITORIAL_V2_ENABLED === 'true'
 
-  const response = await client.messages.create({
+  const response = await createWithUsage(client, 'MAGAZINE_GENERATE', {
     model,
     max_tokens: 4500,
     system: buildMagazineSystemPrompt(category, editorialV2),
