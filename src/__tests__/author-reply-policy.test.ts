@@ -5,8 +5,47 @@ import {
   parseAuthorReplyDecision,
   type CandidateInput,
 } from '../../agents/coo/author-reply-policy'
+import { resolveAuthorPersonaContext } from '../../agents/coo/author-reply-persona'
 
-/** 작성자 봇 대댓글 dry-run — 구조 필터·프롬프트·파서 고정 */
+/** 작성자 봇 대댓글 dry-run — 구조 필터·프롬프트·파서·페르소나 역추적 고정 */
+
+describe('resolveAuthorPersonaContext — bot-*/curator-* 양 체계 역추적 (사각 15% 해소)', () => {
+  it('bot-a@unao.bot → persona-data A 정상 변환 (기존 동작 회귀 0)', () => {
+    const p = resolveAuthorPersonaContext('bot-a@unao.bot')
+    expect(p).not.toBeNull()
+    expect(p?.personaId).toBe('A')
+    expect(p?.nickname).toBeTruthy()
+    expect(p?.personality).toBeTruthy()
+    expect(Array.isArray(p?.speechPatterns)).toBe(true)
+  })
+
+  it('curator-a@unao.bot → curator PERSONAS A 변환 (신규 지원)', () => {
+    const p = resolveAuthorPersonaContext('curator-a@unao.bot')
+    expect(p).not.toBeNull()
+    expect(p?.personaId).toBe('curator-A')
+    expect(p?.nickname).toBe('새날바라기')
+    expect(p?.personality).toContain('습관')
+    expect(p?.speechPatterns.length).toBeGreaterThan(0)
+  })
+
+  it('숫자 포함 curator id(curator-s028)도 인식', () => {
+    const p = resolveAuthorPersonaContext('curator-s028@unao.bot')
+    expect(p).not.toBeNull()
+    expect(p?.personaId.toLowerCase()).toBe('curator-s028')
+    expect(p?.nickname).toBeTruthy()
+  })
+
+  it('알 수 없는 bot/curator id는 null (기존처럼 skip)', () => {
+    expect(resolveAuthorPersonaContext('bot-zzzz9@unao.bot')).toBeNull()
+    expect(resolveAuthorPersonaContext('curator-zzzz9@unao.bot')).toBeNull()
+  })
+
+  it('실회원/기타 이메일은 null (개입 금지)', () => {
+    expect(resolveAuthorPersonaContext('someone@gmail.com')).toBeNull()
+    expect(resolveAuthorPersonaContext('official-unao@unao.bot')).toBeNull()
+    expect(resolveAuthorPersonaContext('')).toBeNull()
+  })
+})
 
 const base: CandidateInput = {
   postSource: 'BOT',
