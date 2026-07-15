@@ -8,7 +8,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma, disconnect } from '../core/db.js'
 import { notifySlack } from '../core/notifier.js'
 import { createWithUsage } from '../core/ai-usage.js'
-import { getPersona } from '../seed/persona-data.js'
+import { resolveAuthorPersonaContext } from './author-reply-persona.js'
 import {
   findIneligibleReason,
   buildAuthorReplyPrompt,
@@ -103,22 +103,18 @@ export async function main(): Promise<void> {
     })
     if (ineligible) continue
 
-    // 글쓴이 봇 페르소나 역추적: bot-{personaId}@unao.bot
+    // 글쓴이 봇 페르소나 역추적 — bot-*(persona-data) + curator-*(curator-shared) 양 체계 지원.
+    // curator-* 사각(실회원 댓글 ~15% skip) 해소 (2026-07-15). 알 수 없는 id는 기존처럼 skip.
     const authorEmail = c.post.author?.email ?? ''
-    const personaId = authorEmail.match(/^bot-([a-z]+)@unao\.bot$/i)?.[1]?.toUpperCase()
-    if (!personaId) continue
-    let persona
-    try {
-      persona = getPersona(personaId)
-    } catch {
-      continue
-    }
+    const persona = resolveAuthorPersonaContext(authorEmail)
+    if (!persona) continue
+    const personaId = persona.personaId
 
     const prompt = buildAuthorReplyPrompt({
       personaNickname: persona.nickname,
       personaPersonality: persona.personality,
       personaStyle: persona.style,
-      personaSpeechPatterns: persona.speech_patterns,
+      personaSpeechPatterns: persona.speechPatterns,
       postTitle: c.post.title,
       postExcerpt: strip(c.post.content).slice(0, 600),
       priorComments: c.post.comments.filter(x => x.id !== c.id && !x.parentId).slice(0, 3).map(x => strip(x.content).slice(0, 80)),
