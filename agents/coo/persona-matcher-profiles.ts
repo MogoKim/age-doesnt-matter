@@ -28,6 +28,12 @@ export interface PersonaProfile {
   hasGrandchildren: boolean
   /** wave 전용(BI~BW) — 원글 작성 배정 절대 불가 */
   reactionOnly: boolean
+  /** 정체성이 가벼운 리액션/짤/유머형 — 건강 글 배정 금지, 은퇴/돈 글 감점 (calibration 2026-07-16) */
+  lightTone: boolean
+  /** 닉네임만 유머형(웃음○○ 등) — 정체성이 정상이면 배정 가능하되 nicknameToneMismatch flag */
+  nicknameLightTone: boolean
+  /** 정체성이 건강/공감형 — 건강 글에서 유머형 닉네임이라도 예외 허용되는 유일 조건 (calibration 1) */
+  empathyTone: boolean
   /** GENERAL/동네일상 위주의 범용 성향 — reserve fallback 후보 근사 (본설계는 380명 확장 PR에서) */
   reserveCandidate: boolean
   depth: 'deep' | 'shallow'
@@ -41,6 +47,7 @@ export function inferFamilyStatus(text: string): FamilyStatus {
   if (/이혼/.test(text)) return 'divorced'
   if (/혼자\s?(산|살|지내)|독거|1인\s?가구|싱글/.test(text)) return 'solo'
   if (/남편|신랑|그이|영감|부부|시댁|시어머니|며느리|사위/.test(text)) return 'married' // 시댁·며느리 화자는 기혼 신호
+  if (/아들|딸|자녀|애들|손주|손녀|손자|시집|장가/.test(text)) return 'married' // 자녀·손주 존재 = 기혼 추론 강화(calibration 5 — 사별/이혼/혼자 신호 선순위 유지)
   return 'unknown'
 }
 
@@ -59,6 +66,10 @@ function toProfile(input: {
 }): PersonaProfile {
   const groups = classifyTopicGroups(input.text, input.board)
   const substantive = groups.filter(g => g !== 'GENERAL')
+  // 정체성 톤: 리액션/짤/밈/개그 전문 서술 = 가벼운 톤 (닉네임과 별개로 판별)
+  const lightTone = /리액션\s?(전문|의)|짤|밈|이모지|개그|웃긴\s?(걸|일|거)|유머\s?(감각|모음|공유)/.test(input.text)
+  const nicknameLightTone = /웃음|유머|하하|호호|빵터|개그|ㅋㅋ|짤/.test(input.nickname)
+  const empathyTone = /건강|갱년기|공감|위로|걱정|다정|따뜻|보살/.test(input.text)
   return {
     key: input.key,
     authorEmail: input.authorEmail,
@@ -69,6 +80,9 @@ function toProfile(input: {
     familyStatus: inferFamilyStatus(input.text),
     hasGrandchildren: /손주|손녀|손자/.test(input.text),
     reactionOnly: input.origin === 'bot' && REACTION_ONLY_KEYS.has(input.key),
+    lightTone,
+    nicknameLightTone,
+    empathyTone,
     // 범용 성향: 실질 주제군이 없거나 동네일상뿐 → '조용한 이웃형' fallback 근사
     reserveCandidate: substantive.length === 0 || substantive.every(g => g === 'LOCAL_DAILY'),
     depth: input.origin === 'bot' ? 'deep' : 'shallow',
