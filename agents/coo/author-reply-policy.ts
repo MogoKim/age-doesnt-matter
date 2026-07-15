@@ -44,6 +44,25 @@ export interface CandidateInput {
 const ELIGIBLE_SOURCES = new Set(['BOT', 'SHEET'])
 const ELIGIBLE_BOARDS = new Set(['STORY', 'LIFE2', 'HUMOR']) // MAGAZINE/JOB 제외
 
+/**
+ * 후보 조회(DB where)에서 봇 작성 댓글을 먼저 제외하는 조건 — 상류 잘림 hotfix (2026-07-15).
+ * 배경: 48h 최상위 댓글 1,696건 중 대부분이 봇 wave 댓글이라 take 200(createdAt asc)이
+ * 봇 댓글로만 소진되어, 비봇 댓글 6건 전원이 구조 필터에 도달하기 전에 잘렸다(첫 회차 판정 0건).
+ * 이 조건은 take 상한을 사람 댓글 후보로 채우기 위한 것이고,
+ * 최종 안전망은 여전히 findIneligibleReason의 COMMENT_BY_BOT이다(이중 방어).
+ * 글(post) 작성자 조건은 걸지 않는다 — curator-* 작성글의 실회원 댓글도 후보에 남아야 한다.
+ */
+export const NON_BOT_COMMENT_AUTHOR_WHERE = {
+  OR: [
+    // 게스트 댓글: 회원 없음 + 게스트 닉 존재
+    { authorId: null, guestNickname: { not: null } },
+    // 실회원 댓글: 이메일이 봇 도메인(@unao.bot)이 아님
+    { author: { is: { email: { not: { endsWith: '@unao.bot' } } } } },
+    // 실회원 댓글: 이메일 자체가 없는 계정 (not endsWith는 null을 매칭하지 않으므로 별도 브랜치)
+    { author: { is: { email: null } } },
+  ],
+} as const
+
 /** 후보 자격 판정 — 부적격 사유 문자열 반환, 적격이면 null */
 export function findIneligibleReason(c: CandidateInput): string | null {
   if (c.postStatus !== 'PUBLISHED') return 'POST_NOT_PUBLISHED' // 숨김/삭제/DRAFT 글 — 판정·Slack 알림 자체 금지
