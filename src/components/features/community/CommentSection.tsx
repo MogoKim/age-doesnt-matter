@@ -20,6 +20,10 @@ interface CommentSectionProps {
   currentUser?: { id: string; nickname: string; grade: Grade; profileImage: string | null }
   /** 가입인사 글이면 비회원 댓글 문구를 환영 톤으로(Phase 4, 문구 특화 전용) */
   isGreeting?: boolean
+  /** 의견수렴형(FEEDBACK) 이벤트면 '댓글'→'의견' 문구로 표기(Phase 3a, 기능/로직 무변경) */
+  variant?: 'default' | 'feedback'
+  /** 마감(endAt 이후) 등 입력창을 숨기고 목록만 읽기 전용으로 */
+  readOnly?: boolean
 }
 
 function sortComments(comments: CommentItemType[], sort: 'oldest' | 'likes'): CommentItemType[] {
@@ -37,7 +41,11 @@ interface VoteBadges {
   byUserId: Record<string, 'A' | 'B'>
 }
 
-export default function CommentSection({ postId, comments, isLoggedIn, currentUser, isGreeting }: CommentSectionProps) {
+export default function CommentSection({ postId, comments, isLoggedIn, currentUser, isGreeting, variant = 'default', readOnly = false }: CommentSectionProps) {
+  const isFeedback = variant === 'feedback'
+  const L = isFeedback
+    ? { unit: '의견', popular: '많이 공감한 의견', emptyTitle: '아직 의견이 없어요', emptyBody: '첫 의견을 남겨주세요!' }
+    : { unit: '댓글', popular: '인기 댓글', emptyTitle: '아직 댓글이 없어요', emptyBody: '따뜻한 한마디를 남겨보세요!' }
   const { user, status } = useAppSession()
   const authKnown = typeof isLoggedIn === 'boolean' || status !== 'loading'
   const resolvedIsLoggedIn = isLoggedIn ?? status === 'authenticated'
@@ -173,7 +181,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
     <section className="mb-12">
       {bestComments.length > 0 && (
         <div className="mb-6 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-          <p className="text-caption font-bold text-[#B23B2E] mb-2">인기 댓글</p>
+          <p className="text-caption font-bold text-[#B23B2E] mb-2">{L.popular}</p>
           {bestComments.map((comment) => (
             <CommentItemComponent
               key={`best-${comment.id}`}
@@ -196,7 +204,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
           </h3>
         ) : (
           <h3 className="text-lg font-bold text-foreground m-0">
-            💬 댓글 <span className="text-primary-text font-bold">{totalCount}</span>
+            {isFeedback ? '🗣' : '💬'} {L.unit} <span className="text-primary-text font-bold">{totalCount}</span>
           </h3>
         )}
         <div className="flex gap-1">
@@ -231,10 +239,10 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
-          <div className="text-[48px]">💬</div>
+          <div className="text-[48px]">{isFeedback ? '🗣' : '💬'}</div>
           <p className="text-body text-muted-foreground leading-[1.8]">
-            아직 댓글이 없어요.<br />
-            따뜻한 한마디를 남겨보세요!
+            {L.emptyTitle}.<br />
+            {L.emptyBody}
           </p>
         </div>
       )}
@@ -249,12 +257,16 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
         </p>
       )}
 
-      {!authKnown ? (
+      {readOnly ? (
+        <p className="mt-2 rounded-2xl bg-muted/60 px-4 py-4 text-center text-[15px] text-muted-foreground">
+          {isFeedback ? '의견 받기가 마감됐어요. 남겨주신 의견은 소중히 반영할게요.' : '댓글이 마감됐어요.'}
+        </p>
+      ) : !authKnown ? (
         <div className="h-24 bg-muted rounded-2xl animate-pulse" aria-hidden="true" />
       ) : resolvedIsLoggedIn ? (
         <CommentInput postId={postId} onOptimisticAdd={resolvedCurrentUser ? handleOptimisticAdd : undefined} />
       ) : (
-        <GuestCommentInput postId={postId} onOptimisticAdd={handleGuestOptimisticAdd} isGreeting={isGreeting} />
+        <GuestCommentInput postId={postId} onOptimisticAdd={handleGuestOptimisticAdd} isGreeting={isGreeting} isFeedback={isFeedback} />
       )}
     </section>
   )

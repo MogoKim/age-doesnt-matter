@@ -6,6 +6,7 @@ import { voteVisibleStatus } from '@/lib/vote-status'
 import { getCommentsByPostId } from '@/lib/queries/comments'
 import CommentSection from '@/components/features/community/CommentSection'
 import EventDetail from '@/components/features/event/EventDetail'
+import FeedbackDetail from '@/components/features/event/FeedbackDetail'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -24,8 +25,53 @@ async function EventCommentsLoader({ postId }: { postId: string }) {
   return <CommentSection postId={postId} comments={comments} />
 }
 
+/** 의견수렴형(FEEDBACK) 의견 목록 — CommentSection을 '의견' 문구로, 마감 시 입력창 숨김 */
+async function FeedbackCommentsLoader({ postId, readOnly }: { postId: string; readOnly: boolean }) {
+  const comments = await getCommentsByPostId(postId)
+  return <CommentSection postId={postId} comments={comments} variant="feedback" readOnly={readOnly} />
+}
+
+const CommentsFallback = (
+  <div className="max-w-[720px] mx-auto px-4 space-y-4">
+    <div className="h-8 bg-muted rounded animate-pulse w-32" />
+    <div className="h-20 bg-muted rounded-xl animate-pulse" />
+  </div>
+)
+
 export default async function EventDetailPage({ params }: PageProps) {
   const { id } = await params
+
+  // Phase 3a — 의견수렴형(FEEDBACK) 우선 분기. VOTE는 id=voteEventId라 아래 기존 경로로 통과(회귀 0).
+  //  /events/[eventId] 또는 (커뮤니티 리다이렉트 대비) /events/[bodyPostId] 둘 다 해석.
+  const fb = await prisma.event
+    .findFirst({
+      where: { type: 'FEEDBACK', OR: [{ id }, { bodyPostId: id }] },
+      select: { id: true, title: true, description: true, bodyPostId: true, startAt: true, endAt: true, isActive: true },
+    })
+    .catch(() => null)
+  if (fb) {
+    const now = Date.now()
+    // startAt 전(예약)·비활성·본문 없음/비공개면 공개 화면에서 숨김
+    if (!fb.isActive || now < fb.startAt.getTime() || !fb.bodyPostId) notFound()
+    const bodyPost = await prisma.post
+      .findUnique({ where: { id: fb.bodyPostId }, select: { content: true, status: true } })
+      .catch(() => null)
+    if (!bodyPost || bodyPost.status !== 'PUBLISHED') notFound()
+    const closed = now >= fb.endAt.getTime() // endAt 이후 = 입력창 숨김, 목록만
+    const bodyPostId = fb.bodyPostId
+    return (
+      <FeedbackDetail
+        event={{ id: fb.id, title: fb.title, description: fb.description }}
+        bodyHtml={bodyPost.content}
+        closed={closed}
+        commentsSlot={
+          <Suspense fallback={CommentsFallback}>
+            <FeedbackCommentsLoader postId={bodyPostId} readOnly={closed} />
+          </Suspense>
+        }
+      />
+    )
+  }
 
   const select = {
     id: true, question: true, optionA: true, optionB: true, date: true,
