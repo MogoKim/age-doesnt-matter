@@ -6,6 +6,7 @@ import { postSelect, toPostSummary, buildTextSearch, SearchField } from './posts
 import { getLastNoon, calculateTrendingScore } from '@/lib/utils/trending'
 import { getHomeBoardHotPostsRaw } from './posts.home'
 import { EXCLUDE_GREETING } from '@/lib/greeting'
+import { EXCLUDE_EVENT } from '@/lib/event-category'
 
 /* ── 인기 게시글 (Trending) ── */
 
@@ -20,7 +21,7 @@ async function _getTrendingPosts(limit = 5): Promise<PostSummary[]> {
       status: 'PUBLISHED',
       createdAt: { gte: noon },
       OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
-      AND: [EXCLUDE_GREETING], // 가입인사 제외(OR engagement와 교집합)
+      AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(OR engagement와 교집합)
     },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
@@ -34,7 +35,7 @@ async function _getTrendingPosts(limit = 5): Promise<PostSummary[]> {
       status: 'PUBLISHED',
       createdAt: { gte: prevNoon },
       OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
-      AND: [EXCLUDE_GREETING], // 가입인사 제외(OR engagement와 교집합)
+      AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(OR engagement와 교집합)
     },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
@@ -48,7 +49,7 @@ async function _getTrendingPosts(limit = 5): Promise<PostSummary[]> {
       status: 'PUBLISHED',
       createdAt: { gte: sevenDaysAgo },
       promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] as PromotionLevel[] },
-      AND: [EXCLUDE_GREETING], // 가입인사 제외
+      AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외
     },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
@@ -58,7 +59,7 @@ async function _getTrendingPosts(limit = 5): Promise<PostSummary[]> {
 
   // 4차: fallback — engagement 무시, trendingScore desc
   const rows4 = await prisma.post.findMany({
-    where: { status: 'PUBLISHED', createdAt: { gte: sevenDaysAgo }, AND: [EXCLUDE_GREETING] },
+    where: { status: 'PUBLISHED', createdAt: { gte: sevenDaysAgo }, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
     take: limit,
@@ -87,7 +88,7 @@ async function _getTrendingCommunityPosts(limit = 5): Promise<PostSummary[]> {
       boardType: { in: COMMUNITY_BOARDS },
       createdAt: { gte: noon },
       OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
-      AND: [EXCLUDE_GREETING], // 가입인사 제외(OR engagement와 교집합)
+      AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(OR engagement와 교집합)
     },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
@@ -103,7 +104,7 @@ async function _getTrendingCommunityPosts(limit = 5): Promise<PostSummary[]> {
       boardType: { in: COMMUNITY_BOARDS },
       createdAt: { gte: prevNoon, lt: noon },
       OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
-      AND: [EXCLUDE_GREETING], // 가입인사 제외(OR engagement와 교집합)
+      AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(OR engagement와 교집합)
     },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
@@ -119,7 +120,7 @@ async function _getTrendingCommunityPosts(limit = 5): Promise<PostSummary[]> {
       boardType: { in: COMMUNITY_BOARDS },
       createdAt: { gte: sevenDaysAgo },
       promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] as PromotionLevel[] },
-      AND: [EXCLUDE_GREETING], // 가입인사 제외
+      AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외
     },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
@@ -133,7 +134,7 @@ async function _getTrendingCommunityPosts(limit = 5): Promise<PostSummary[]> {
       status: 'PUBLISHED',
       boardType: { in: COMMUNITY_BOARDS },
       createdAt: { gte: sevenDaysAgo },
-      AND: [EXCLUDE_GREETING], // 가입인사 제외
+      AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외
     },
     select: postSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
@@ -192,7 +193,7 @@ export async function getDailyTrendingPosts(
     status: 'PUBLISHED' as const,
     createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
     ...buildTextSearch(q, sf),
-    AND: [EXCLUDE_GREETING], // 가입인사 제외(검색 OR과 교집합)
+    AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(검색 OR과 교집합)
   }
   const [rows, total] = await Promise.all([
     prisma.post.findMany({ where, select: postSelect, orderBy: [{ trendingScore: 'desc' }], skip, take: limit }),
@@ -214,7 +215,7 @@ export async function getWeeklyTrendingPosts(
     status: 'PUBLISHED' as const,
     createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
     ...buildTextSearch(q, sf),
-    AND: [EXCLUDE_GREETING], // 가입인사 제외(검색 OR과 교집합)
+    AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(검색 OR과 교집합)
   }
   const [rows, rawTotal] = await Promise.all([
     prisma.post.findMany({ where, select: postSelect, orderBy: [{ trendingScore: 'desc' }], skip: effectiveSkip, take: effectiveTake }),
@@ -232,13 +233,13 @@ async function _getEditorsPicks(limit: number): Promise<PostSummary[]> {
 
   const [withThumb, allMonth, hotRecent] = await Promise.all([
     prisma.post.findMany({
-      where: { status: 'PUBLISHED', createdAt: { gte: startOfMonth }, thumbnailUrl: { not: null }, AND: [EXCLUDE_GREETING] },
+      where: { status: 'PUBLISHED', createdAt: { gte: startOfMonth }, thumbnailUrl: { not: null }, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] },
       select: postSelect,
       orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
       take: limit,
     }),
     prisma.post.findMany({
-      where: { status: 'PUBLISHED', createdAt: { gte: startOfMonth }, AND: [EXCLUDE_GREETING] },
+      where: { status: 'PUBLISHED', createdAt: { gte: startOfMonth }, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] },
       select: postSelect,
       orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
       take: limit,
@@ -248,7 +249,7 @@ async function _getEditorsPicks(limit: number): Promise<PostSummary[]> {
         status: 'PUBLISHED',
         promotionLevel: { in: ['HOT', 'HALL_OF_FAME'] as PromotionLevel[] },
         createdAt: { gte: threeMonthsAgo },
-        AND: [EXCLUDE_GREETING], // 가입인사 제외
+        AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외
       },
       select: postSelect,
       orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
@@ -292,7 +293,7 @@ export async function getHotPosts(
         { promotionLevel: 'HALL_OF_FAME' as PromotionLevel },
         { promotionLevel: 'HOT' as PromotionLevel, createdAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) } },
       ],
-      AND: [EXCLUDE_GREETING], // 가입인사 제외(OR promotionLevel과 교집합)
+      AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(OR promotionLevel과 교집합)
       ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
     },
     select: postSelect,
@@ -317,7 +318,7 @@ export async function getHallOfFamePosts(
     boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] as BoardType[] },
     promotionLevel: 'HALL_OF_FAME' as PromotionLevel,
     ...buildTextSearch(q, sf),
-    AND: [EXCLUDE_GREETING], // 가입인사 제외(검색 OR과 교집합)
+    AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(검색 OR과 교집합)
   }
   const [rows, total] = await Promise.all([
     prisma.post.findMany({ where, select: postSelect, orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }], skip, take: limit }),
@@ -360,7 +361,7 @@ export async function getInterestBasedPosts(
   const where = {
     status: 'PUBLISHED' as const,
     ...(boardTypes.length > 0 && { boardType: { in: boardTypes } }),
-    AND: [EXCLUDE_GREETING], // 가입인사 제외
+    AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외
   }
 
   const posts = await prisma.post.findMany({
@@ -401,7 +402,7 @@ export async function getAccumulatedHotPosts(
     boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] as BoardType[] },
     hotPromotedAt: { not: null },
     ...buildTextSearch(q, sf),
-    AND: [EXCLUDE_GREETING], // 가입인사 제외(검색 OR과 교집합)
+    AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(검색 OR과 교집합)
   }
   const [rows, total] = await Promise.all([
     prisma.post.findMany({

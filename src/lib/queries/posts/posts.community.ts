@@ -4,6 +4,7 @@ import type { BoardType } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
 import { postSelect, toPostSummary, buildTextSearch, SearchField } from './posts.base'
 import { EXCLUDE_GREETING, GREETING_CATEGORY } from '@/lib/greeting'
+import { EXCLUDE_EVENT } from '@/lib/event-category'
 
 /* ── 게시판별 목록 ── */
 
@@ -25,6 +26,7 @@ export async function getPostsByBoard(
       options?.category && options.category !== '전체'
         ? { category: options.category }
         : EXCLUDE_GREETING,
+      EXCLUDE_EVENT, // 이벤트 연동글은 카테고리 선택 무관 항상 제외
       ...(search.OR ? [search] : []),
     ],
   }
@@ -65,6 +67,7 @@ export async function getPostsByBoardPage(
       options?.category && options.category !== '전체'
         ? { category: options.category }
         : EXCLUDE_GREETING,
+      EXCLUDE_EVENT, // 이벤트 연동글은 카테고리 선택 무관 항상 제외
       ...(search.OR ? [search] : []),
     ],
   }
@@ -88,7 +91,7 @@ async function _getLatestCommunityPosts(limit = 5): Promise<PostSummary[]> {
     where: {
       status: 'PUBLISHED',
       boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] },
-      ...EXCLUDE_GREETING, // 홈/최신글에 가입인사 섞임 방지
+      AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 홈/최신글에 가입인사 섞임 방지
     },
     select: postSelect,
     orderBy: { createdAt: 'desc' },
@@ -164,7 +167,7 @@ async function _getRecentActivities(limit = 8): Promise<RecentActivity[]> {
         createdAt: { gte: since },
         status: 'PUBLISHED',
         boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] },
-        ...EXCLUDE_GREETING, // 홈 최근활동 피드에 가입인사 글 노출 방지
+        AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 홈 최근활동 피드에 가입인사 글 노출 방지
       },
       select: {
         id: true,
@@ -273,7 +276,7 @@ async function _getRelatedCommunityPosts(
   const excludeIds = [excludeId, ...matched.map((r) => r.id)]
   const fill = await prisma.post.findMany({
     // 일반 글 관련글 fallback에 가입인사 섞임 방지(category 매칭은 호출 category 그대로라 안전)
-    where: { boardType, status: 'PUBLISHED', id: { notIn: excludeIds }, ...EXCLUDE_GREETING },
+    where: { boardType, status: 'PUBLISHED', id: { notIn: excludeIds }, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] },
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
     take: limit - matched.length,
     select: postSelect,
@@ -302,7 +305,7 @@ async function _getCrossBoardCandidates(
   // 같은 category 우선(있으면) → 부족분은 트렌딩/최신. 가입인사 제외.
   const matched = category
     ? await prisma.post.findMany({
-        where: { boardType: { in: boards }, status: 'PUBLISHED', id: { not: excludeId }, category, ...EXCLUDE_GREETING },
+        where: { boardType: { in: boards }, status: 'PUBLISHED', id: { not: excludeId }, category, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] },
         orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
         take: limit,
         select: postSelect,
@@ -311,7 +314,7 @@ async function _getCrossBoardCandidates(
   if (matched.length >= limit) return matched.map(toPostSummary)
   const excludeIds = [excludeId, ...matched.map((r) => r.id)]
   const fill = await prisma.post.findMany({
-    where: { boardType: { in: boards }, status: 'PUBLISHED', id: { notIn: excludeIds }, ...EXCLUDE_GREETING },
+    where: { boardType: { in: boards }, status: 'PUBLISHED', id: { notIn: excludeIds }, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] },
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
     take: limit - matched.length,
     select: postSelect,

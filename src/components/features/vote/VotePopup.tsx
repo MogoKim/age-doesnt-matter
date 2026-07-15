@@ -153,7 +153,7 @@ export default function VotePopup() {
         // 미투표 + 진행 중 + 연동 게시글 있는 경우만, 하루 1회
         if (pub.status !== 'OPEN' || myChoice !== null || !pub.linkedPostUrl || isDismissedToday(pub.id)) return
         if (!cancelled) {
-          router.prefetch(pub.linkedPostUrl) // 선택 시 즉시 이동 대비 프리페치
+          router.prefetch(`/events/${pub.id}`) // 선택/닫기 시 공식 이벤트 상세로 이동 대비 프리페치
           setVote({ ...pub, myChoice })
           setOpen(true)
         }
@@ -180,7 +180,7 @@ export default function VotePopup() {
   const goToPost = () => {
     dismissToday(vote.id)
     setOpen(false)
-    if (vote.linkedPostUrl) router.push(vote.linkedPostUrl)
+    router.push(`/events/${vote.id}`)
   }
 
   const cast = async (choice: 'A' | 'B') => {
@@ -196,10 +196,10 @@ export default function VotePopup() {
         body: JSON.stringify({ choice }),
       })
       if (res.ok) {
-        // 입구 역할 종료 — 응답 파싱을 기다리지 않고 이미 아는 linkedPostUrl로 즉시 이동(결과는 게시글에서)
+        // 입구 역할 종료 — 투표 후 공식 이벤트 상세(/events)로 즉시 이동(결과는 상세에서)
         dismissToday(vote.id)
         setOpen(false)
-        if (vote.linkedPostUrl) router.push(vote.linkedPostUrl)
+        router.push(`/events/${vote.id}`)
       } else {
         // 409(마감/중복)·기타 실패 시 이동하지 않고 재시도 유도
         setFailed(true)

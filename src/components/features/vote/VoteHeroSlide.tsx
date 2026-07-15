@@ -167,7 +167,7 @@ export default function VoteHeroSlide({
   const [pending, setPending] = useState(false)
   const [activeChoice, setActiveChoice] = useState<'A' | 'B' | null>(null)
   const mounted = useRef(true)
-  const postUrl = initial.linkedPostUrl ?? '/community/stories'
+  const postUrl = `/events/${initial.id}` // 공식 이벤트 상세(히든 목적지) — 사는이야기 게시글 아님
 
   const refresh = useCallback(async () => {
     try {
@@ -191,15 +191,15 @@ export default function VoteHeroSlide({
 
   useEffect(() => {
     mounted.current = true
-    // 선택/영역 클릭 시 즉시 이동 대비 프리페치 (연동 게시글 있을 때만)
-    if (initial.linkedPostUrl) router.prefetch(postUrl)
+    // 선택/영역 클릭 시 즉시 이동 대비 프리페치 (공식 이벤트 상세 /events/[id])
+    router.prefetch(postUrl)
     void refresh()
     const timer = setInterval(() => void refresh(), REFRESH_MS)
     return () => {
       mounted.current = false
       clearInterval(timer)
     }
-  }, [refresh, router, postUrl, initial.linkedPostUrl])
+  }, [refresh, router, postUrl])
 
   const cast = async (choice: 'A' | 'B') => {
     if (pending) return

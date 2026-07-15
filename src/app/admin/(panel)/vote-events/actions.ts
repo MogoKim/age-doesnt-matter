@@ -7,6 +7,7 @@ import { getKstToday } from '@/lib/votes'
 import { voteOpenAtMs, voteVisibleStatus } from '@/lib/vote-status'
 import { generateVoteDraftBatch, generateVotePostDraft, type VoteDraftRow } from '@/lib/ai/vote-draft'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
+import { EVENT_CATEGORY } from '@/lib/event-category'
 import type { VoteChoice, VoteEventStatus } from '@/generated/prisma/client'
 
 interface ActionResult {
@@ -87,6 +88,7 @@ async function createVotePost(
       boardType: 'STORY',
       status: opensInFuture ? 'DRAFT' : 'PUBLISHED',
       source: 'ADMIN',
+      category: EVENT_CATEGORY, // 이벤트 연동글 — 사는이야기 목록/홈/검색/sitemap 제외 + 상세는 /events로 리다이렉트
       title: question,
       content: body,
       authorId,

@@ -4,6 +4,7 @@ import type { BoardType } from '@/generated/prisma/client'
 import type { PostSummary } from '@/types/api'
 import { homeListSelect, toPostSummary } from './posts.base'
 import { EXCLUDE_GREETING } from '@/lib/greeting'
+import { EXCLUDE_EVENT } from '@/lib/event-category'
 
 // 24시간 롤링 기준 + engagement gate (글 작성 시점부터 24시간 이내 우선)
 // export: 뜨는이야기 쿼터 fetch(_getTrendingQuotaPosts)에서 uncached로 재사용
@@ -18,7 +19,7 @@ export async function getHomeBoardHotPostsRaw(boardType: BoardType, limit = 10):
       boardType,
       createdAt: { gte: since24h },
       OR: [{ likeCount: { gte: 1 } }, { commentCount: { gte: 1 } }],
-      AND: [EXCLUDE_GREETING], // 가입인사 제외(STORY 호출 시 홈 stories/quota 오염 방지)
+      AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(STORY 호출 시 홈 stories/quota 오염 방지)
     },
     select: homeListSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],
@@ -32,7 +33,7 @@ export async function getHomeBoardHotPostsRaw(boardType: BoardType, limit = 10):
       status: 'PUBLISHED',
       boardType,
       createdAt: { gte: sevenDaysAgo },
-      AND: [EXCLUDE_GREETING], // 가입인사 제외
+      AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외
     },
     select: homeListSelect,
     orderBy: [{ trendingScore: 'desc' }, { createdAt: 'desc' }],

@@ -4,6 +4,7 @@ import { authenticateBot } from '@/lib/bot-auth'
 import { sanitizeHtml, stripMarkdownSyntax } from '@/lib/sanitize'
 import { generateCommunitySlug } from '@/lib/seo/slug'
 import { GREETING_CATEGORY } from '@/lib/greeting'
+import { EVENT_CATEGORY } from '@/lib/event-category'
 
 /** POST /api/bot/posts — 유머/이야기 발행 */
 export async function POST(req: NextRequest) {
@@ -27,6 +28,10 @@ export async function POST(req: NextRequest) {
     // '가입인사'는 회원 첫 참여 온보딩 전용 — 봇/API로는 생성 차단(회원 createPost만 허용)
     if (category === GREETING_CATEGORY) {
       return NextResponse.json({ error: "'가입인사'는 회원만 작성할 수 있습니다" }, { status: 403 })
+    }
+    // '이벤트'는 공식 참여 이벤트 전용 내부 예약 카테고리 — 봇/API 생성 차단(createVotePost(source=ADMIN)만 허용)
+    if (category === EVENT_CATEGORY) {
+      return NextResponse.json({ error: "'이벤트'는 공식 이벤트 전용 카테고리입니다" }, { status: 403 })
     }
 
     const slug = await generateCommunitySlug(title)

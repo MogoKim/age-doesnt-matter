@@ -4,6 +4,7 @@ import type { PostSummary } from '@/types/api'
 import { postSelect, toPostSummary, type SearchField } from './posts.base'
 import { getAccumulatedHotPosts, getHallOfFamePosts } from './posts.trending'
 import { EXCLUDE_GREETING } from '@/lib/greeting'
+import { EXCLUDE_EVENT } from '@/lib/event-category'
 
 /**
  * 베스트 페이지 큐레이션 컴포즈.
@@ -82,11 +83,11 @@ function withExclude(base: Record<string, unknown>, excludeIds: string[]): Recor
   return excludeIds.length ? { ...base, id: { notIn: excludeIds } } : base
 }
 
-const PIN_WHERE = (ids: string[]) => ({ id: { in: ids }, status: 'PUBLISHED' as const, boardType: { in: COMMUNITY_BOARDS }, ...EXCLUDE_GREETING })
+const PIN_WHERE = (ids: string[]) => ({ id: { in: ids }, status: 'PUBLISHED' as const, boardType: { in: COMMUNITY_BOARDS }, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] })
 
 /** 뜨는 이야기(BEST_HOT) — 누적 인기글 + 큐레이션 */
 export function composeBestHot(opts: BestComposeOptions = {}): Promise<{ posts: PostSummary[]; total: number }> {
-  const base = { status: 'PUBLISHED' as const, boardType: { in: COMMUNITY_BOARDS }, hotPromotedAt: { not: null }, AND: [EXCLUDE_GREETING] }
+  const base = { status: 'PUBLISHED' as const, boardType: { in: COMMUNITY_BOARDS }, hotPromotedAt: { not: null }, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] }
   return composeWithOverrides('BEST_HOT', opts, {
     rawSearch: getAccumulatedHotPosts,
     fetchPins: async ids =>
@@ -99,7 +100,7 @@ export function composeBestHot(opts: BestComposeOptions = {}): Promise<{ posts: 
 
 /** 명예의 전당(BEST_FAME) — HALL_OF_FAME + 큐레이션 */
 export function composeBestFame(opts: BestComposeOptions = {}): Promise<{ posts: PostSummary[]; total: number }> {
-  const base = { status: 'PUBLISHED' as const, boardType: { in: COMMUNITY_BOARDS }, promotionLevel: 'HALL_OF_FAME' as PromotionLevel, AND: [EXCLUDE_GREETING] }
+  const base = { status: 'PUBLISHED' as const, boardType: { in: COMMUNITY_BOARDS }, promotionLevel: 'HALL_OF_FAME' as PromotionLevel, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] }
   return composeWithOverrides('BEST_FAME', opts, {
     rawSearch: getHallOfFamePosts,
     fetchPins: async ids =>

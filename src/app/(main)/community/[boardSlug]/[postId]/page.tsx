@@ -18,15 +18,13 @@ import CoupangBanner from '@/components/ad/CoupangBanner'
 import PostListBottom from '@/components/features/community/PostListBottom'
 import NextPostsInline from '@/components/features/community/NextPostsInline'
 import IdentityBanner from '@/components/features/community/IdentityBanner'
-import VoteWidget from '@/components/features/vote/VoteWidget'
-import { prisma } from '@/lib/prisma'
-import { effectiveVoteStatus, voteVisibleStatus } from '@/lib/vote-status'
 import { ADSENSE } from '@/components/ad/ad-slots'
 import Breadcrumbs from '@/components/common/Breadcrumbs'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import PostViewBeacon from '@/components/common/PostViewBeacon'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import { GREETING_CATEGORY } from '@/lib/greeting'
+import { EVENT_CATEGORY } from '@/lib/event-category'
 
 interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
@@ -73,8 +71,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: post.seoTitle ?? post.title,
       description: post.seoDescription ?? description,
     },
-    // 가입인사 글은 검색엔진 색인 제외(환대 목적 내부 콘텐츠 — 목록/sitemap에서도 제외됨)
-    ...(post.category === GREETING_CATEGORY
+    // 가입인사·참여이벤트 글은 검색엔진 색인 제외(내부 콘텐츠 — 목록/sitemap에서도 제외, 이벤트는 /events로 redirect)
+    ...(post.category === GREETING_CATEGORY || post.category === EVENT_CATEGORY
       ? { robots: { index: false, follow: false } }
       : {}),
   }
@@ -117,22 +115,11 @@ export default async function PostDetailPage({ params }: PageProps) {
     getCrossBoardCandidates(post.boardType, post.category || null, resolvedId, 12),
   ])
 
-  // 투표형 게시글 판별 — 이 글이 오늘의 투표 연동 글이면 레이아웃 전환 (모듈 상단 배치 + 댓글 우선)
-  const linkedVoteRaw = await prisma.voteEvent
-    .findFirst({
-      where: { linkedPostId: resolvedId },
-      orderBy: { date: 'desc' },
-      select: {
-        id: true, question: true, optionA: true, optionB: true, date: true,
-        status: true, seedCountA: true, seedCountB: true, displayViews: true,
-      },
-    })
-    .catch(() => null)
-  // 09:00 KST 전(HIDDEN) 투표 연동 게시글은 상세도 노출 금지 — 일반 글로도 보이면 안 됨(예약 새벽 노출 차단).
-  // 예약 게시글은 DRAFT라 getPostDetail에서 이미 걸러지지만, 수동 PUBLISHED 케이스까지 방어적으로 notFound.
-  if (linkedVoteRaw && voteVisibleStatus(linkedVoteRaw.status, linkedVoteRaw.date) === 'HIDDEN') notFound()
-  // 09:00~20:00 OPEN / 20:00 이후 CLOSED(결과)만 투표형 레이아웃
-  const linkedVote = linkedVoteRaw
+  // 참여 이벤트 연동글은 공식 상세(/events)로 이관 — 사는이야기 게시글 상세로 노출하지 않는다.
+  // 판정은 getPostDetail의 category(캐시 안정)만 사용. 대상 vote id 해석·HIDDEN 판정은 /events(force-dynamic)가 담당.
+  // (force-static 페이지에서 직접 voteEvent 조회는 렌더 시 불안정 → category 기준으로만 redirect)
+  if (post.category === EVENT_CATEGORY) permanentRedirect(`/events/${resolvedId}`)
+  // ↑ 여기까지 통과하면 이벤트글이 아님 → 일반 사는이야기 글로 렌더(투표 레이아웃은 /events가 담당)
 
   const canonicalSlug = post.slug ?? postId
   const url = `${BASE_URL}/community/${boardSlug}/${canonicalSlug}`
@@ -215,27 +202,6 @@ export default async function PostDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* 투표형 게시글: 참여 모듈을 제목/작성자 바로 아래, 본문 위에 배치 */}
-      {linkedVote && (
-        <VoteWidget
-          voteEventId={linkedVote.id}
-          initialVote={{
-            id: linkedVote.id,
-            question: linkedVote.question,
-            optionA: linkedVote.optionA,
-            optionB: linkedVote.optionB,
-            status: effectiveVoteStatus(linkedVote.status, linkedVote.date),
-            linkedPostId: resolvedId,
-            linkedPostUrl: null,
-            displayA: linkedVote.seedCountA,
-            displayB: linkedVote.seedCountB,
-            total: linkedVote.seedCountA + linkedVote.seedCountB,
-            displayViews: linkedVote.displayViews,
-            myChoice: null, // 클라 refetch로 보정
-          }}
-        />
-      )}
-
       {/* 본문 */}
       <div
         className="post-content text-body text-foreground leading-[1.85] mb-5 break-keep [&_p]:mb-4 [&_img]:h-auto [&_img]:my-4 [&_img]:rounded-xl [&_img]:-mx-4 [&_img]:w-[calc(100%+2rem)] [&_img]:max-w-[calc(100%+2rem)] md:[&_img]:mx-0 md:[&_img]:w-full md:[&_img]:max-w-full [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4 [&_video]:my-4 [&_video]:rounded-xl [&_video]:-mx-4 [&_video]:w-[calc(100%+2rem)] md:[&_video]:mx-0 md:[&_video]:w-full [&_.image-placeholder]:py-6 [&_.image-placeholder]:px-4 [&_.image-placeholder]:bg-muted [&_.image-placeholder]:rounded-xl [&_.image-placeholder]:text-center [&_.image-placeholder]:text-muted-foreground [&_.image-placeholder]:text-[17px] [&_.image-placeholder]:my-4"
@@ -253,19 +219,6 @@ export default async function PostDetailPage({ params }: PageProps) {
         className="border-y-0 border-t mb-0 pt-3"
       />
       </div>
-
-      {/* 투표형 게시글은 댓글 참여가 목표 — 댓글을 광고/관련글보다 먼저. 일반 글은 기존 순서 유지 */}
-      {linkedVote && (
-        <Suspense fallback={
-          <div className="mb-12 space-y-4">
-            <div className="h-8 bg-muted rounded animate-pulse w-32" />
-            <div className="h-20 bg-muted rounded-xl animate-pulse" />
-            <div className="h-20 bg-muted rounded-xl animate-pulse" />
-          </div>
-        }>
-          <CommentsLoader postId={resolvedId} isGreeting={post.category === GREETING_CATEGORY} />
-        </Suspense>
-      )}
 
       {/* 광고 — 인아티클 */}
       <div className="mb-8">
@@ -285,18 +238,16 @@ export default async function PostDetailPage({ params }: PageProps) {
         crossBoardPosts={crossBoard}
       />
 
-      {/* 댓글 — 일반 게시글은 기존 위치(광고/관련글 뒤) 유지 */}
-      {!linkedVote && (
-        <Suspense fallback={
-          <div className="mb-12 space-y-4">
-            <div className="h-8 bg-muted rounded animate-pulse w-32" />
-            <div className="h-20 bg-muted rounded-xl animate-pulse" />
-            <div className="h-20 bg-muted rounded-xl animate-pulse" />
-          </div>
-        }>
-          <CommentsLoader postId={resolvedId} isGreeting={post.category === GREETING_CATEGORY} />
-        </Suspense>
-      )}
+      {/* 댓글 (광고/관련글 뒤) */}
+      <Suspense fallback={
+        <div className="mb-12 space-y-4">
+          <div className="h-8 bg-muted rounded animate-pulse w-32" />
+          <div className="h-20 bg-muted rounded-xl animate-pulse" />
+          <div className="h-20 bg-muted rounded-xl animate-pulse" />
+        </div>
+      }>
+        <CommentsLoader postId={resolvedId} isGreeting={post.category === GREETING_CATEGORY} />
+      </Suspense>
 
       {/* 가입 유도 */}
       <PostCTA postId={resolvedId} postTitle={post.title} />
