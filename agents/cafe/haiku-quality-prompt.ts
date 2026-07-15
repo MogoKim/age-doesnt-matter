@@ -9,6 +9,7 @@ export type HaikuSpeakerRole =
   | 'parenting_current' | 'other_person_story' | 'unknown'
 export type HaikuRisk =
   | 'young_self' | 'male_self' | 'parenting_current' | 'newlywed'
+  | 'romance_self' | 'sexualized_age_gap'
   | 'original_cafe_context' | 'mocking_or_inside_joke' | 'stale_time'
   | 'board_mismatch' | 'thin_or_contextless'
 
@@ -19,6 +20,7 @@ const SPEAKER_ROLES: readonly HaikuSpeakerRole[] = [
 ]
 const RISKS: readonly HaikuRisk[] = [
   'young_self', 'male_self', 'parenting_current', 'newlywed',
+  'romance_self', 'sexualized_age_gap',
   'original_cafe_context', 'mocking_or_inside_joke', 'stale_time',
   'board_mismatch', 'thin_or_contextless',
 ]
@@ -69,11 +71,22 @@ export function buildHaikuQualityPrompt(input: HaikuQualityInput): string {
 - 지역 언급(동네 맛집/지역 병원 후기/마트/동네 생활)은 차단 사유가 절대 아니다.
 - 발화자 나이가 불명확해도 타깃 여성이 공감할 무해한 생활글(음식/날씨/살림/가전/건강 루틴)은 PASS(neutral_daily).
 - 배우자/남편/시댁/친정/돈/은퇴/연금 이야기는 타깃의 핵심 관심사 — 강한 PASS 후보.
+- 가족 갈등 사연(딸·며느리·사위·시댁의 차별/서운함/속상함)은 톤이 어둡거나 거칠어도 기본 PASS 후보다 —
+  타깃 여성이 가장 공감하는 영역이므로 갈등 소재 자체를 차단 사유로 쓰지 마라.
+- 글에 '50살/50대/60대' 같은 타깃 연령 자기언급이 있으면 성별 불명이어도 male_self로 단정 금지 —
+  타깃 공감 가능한 생활/여행/건강 질문이면 PASS.
+- 단, 예외(창업자 확정): 40대 중반~60대 화자라는 근거가 전혀 없는 상태에서 "애 낳기/출산 계획/
+  현재 임신/영유아 양육"이 화자 본인 일로 나오면 2030 자기발화로 간주하고 young_self 또는
+  parenting_current로 강하게 REJECT하라. 애매하다고 NEEDS_REVIEW로 미루지 마라.
 
 [REJECT 후보 — 위험이 발화자 본인일 때만 강하게]
 - 본인이 20~30대/40대 초반(나이 자기언급, 신혼 자기발화 "아직 신혼이라")
 - 남성 본인 발화("와이프한테 한소리 들었다", "50대 남자입니다")
 - 본인이 현재 영유아~중등 자녀 양육 중(어린이집/초1~초6/중등 학부모 고민, "우리 아이 품새")
+- 화자 근거 없는 본인 출산 계획/임신/애 낳기 담론(예: "애 낳고 사는 거 어때보여요") → young_self/parenting_current
+- 본인 연애/남친/여친/소개팅/미혼 담론(romance_self)
+- 남성 욕망·젊은 여성 외모 평가 담론(예: "남자들은 어리고 예쁜 여자가 좋다") → sexualized_age_gap —
+  커뮤니티 톤 불일치, 화자 성별과 무관하게 REJECT 후보
 - 원 카페 내부 맥락("회원님이~", 특정 회원 저격/조롱, 카페 운영 언급) — 우리 사이트에서 맥락 단절
 - 날짜 지난 브리핑/연재/매매일지, 발행 시점과 어긋난 시간 선언
 - 너무 얇거나 맥락 없는 글(펑 글, 한 줄 감탄)
@@ -86,7 +99,7 @@ export function buildHaikuQualityPrompt(input: HaikuQualityInput): string {
 본문: ${input.content.slice(0, 2000)}
 
 아래 JSON만 출력하라. 다른 텍스트 금지.
-{"decision":"PASS|REJECT|NEEDS_REVIEW","confidence":0.0,"speakerRole":"target_woman_45_60|neutral_daily|young_self|male_self|parenting_current|other_person_story|unknown","risks":["young_self|male_self|parenting_current|newlywed|original_cafe_context|mocking_or_inside_joke|stale_time|board_mismatch|thin_or_contextless"],"reason":"짧은 한국어 근거 1문장 (발화자 판정 근거 포함)"}`
+{"decision":"PASS|REJECT|NEEDS_REVIEW","confidence":0.0,"speakerRole":"target_woman_45_60|neutral_daily|young_self|male_self|parenting_current|other_person_story|unknown","risks":["young_self|male_self|parenting_current|newlywed|romance_self|sexualized_age_gap|original_cafe_context|mocking_or_inside_joke|stale_time|board_mismatch|thin_or_contextless"],"reason":"짧은 한국어 근거 1문장 (발화자 판정 근거 포함)"}`
 }
 
 /** 응답 텍스트에서 JSON을 추출·검증. 실패 시 null (호출부가 ERROR 처리) */
