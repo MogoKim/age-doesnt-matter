@@ -1,7 +1,8 @@
 import { getActiveBanners } from '@/lib/queries/banners'
 import { prisma } from '@/lib/prisma'
-import { getKstToday, resolveLinkedPostUrl } from '@/lib/votes'
+import { resolveLinkedPostUrl } from '@/lib/votes'
 import { effectiveVoteStatus } from '@/lib/vote-status'
+import { resolveChannelVote } from '@/lib/events/exposure'
 import HeroSliderClient, { type SlideData } from './HeroSliderClient'
 
 /** 폴백 슬라이드 — DB 배너 없을 때 (그라디언트 CSS 변수 기반) */
@@ -39,11 +40,18 @@ const FALLBACK_SLIDES: SlideData[] = [
 ]
 
 /** 오늘의 투표 슬라이드 — 5:2 안 직접투표 미니 투표판 (VoteHeroSlide가 렌더).
- *  myChoice/집계는 클라 fetch로만 — 홈 ISR(60s) 캐시에 사용자별 값이 섞이면 안 됨. */
+ *  myChoice/집계는 클라 fetch로만 — 홈 ISR(60s) 캐시에 사용자별 값이 섞이면 안 됨.
+ *  Phase 2: 노출 대상은 Event 오케스트레이션 계층(resolveChannelVote('hero'))이 선택.
+ *   - hero 채널 Event(VOTE) 노출 중이면 그 voteEventId / Event 없는 날은 오늘 투표로 fallback.
+ *   - showHero=false·tier≠PRIMARY·isActive=false·window 밖이면 null → 티저 미노출.
+ *   - OPEN/CLOSED 렌더는 기존 effectiveVoteStatus가 담당(투표 마감 20:00과 채널 노출 종료 분리). */
 async function buildVoteTeaserSlide(): Promise<SlideData | null> {
   try {
+    const showVoteId = await resolveChannelVote('hero')
+    if (!showVoteId) return null
+
     const todayVote = await prisma.voteEvent.findUnique({
-      where: { date: getKstToday() },
+      where: { id: showVoteId },
       select: { id: true, question: true, optionA: true, optionB: true, date: true, status: true, linkedPostId: true },
     })
     if (!todayVote) return null
