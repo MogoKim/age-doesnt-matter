@@ -7,6 +7,7 @@ import VoteEventManager, {
   type BotOption,
   type VoteEventListItem,
 } from '@/components/admin/VoteEventManager'
+import { type FeedbackEventItem } from '@/components/admin/FeedbackEventForm'
 
 export const metadata: Metadata = { title: '참여 이벤트 — 오늘의 투표' }
 export const dynamic = 'force-dynamic'
@@ -119,6 +120,44 @@ export default async function AdminVoteEventsPage() {
   const upcoming = upcomingRows.map((r) => toListItem(r, true))
   const past = pastRows.map((r) => toListItem(r, true))
 
+  // ── 의견수렴형(FEEDBACK) 이벤트 목록 (Phase 3a) — 실 의견 수 + 오늘/예약/지난 버킷
+  let feedbackEvents: FeedbackEventItem[] = []
+  try {
+    const feedbackRows = await prisma.event.findMany({ where: { type: 'FEEDBACK' }, orderBy: { startAt: 'desc' } })
+    const fbPostIds = feedbackRows.map((e) => e.bodyPostId).filter((x): x is string => !!x)
+    const allBots = await prisma.user.findMany({ where: { email: { endsWith: '@unao.bot' } }, select: { id: true } })
+    const botIds = allBots.map((b) => b.id)
+    const opinionGroups = fbPostIds.length
+      ? await prisma.comment.groupBy({
+          by: ['postId'],
+          where: {
+            postId: { in: fbPostIds },
+            status: 'ACTIVE',
+            OR: [{ authorId: null }, { authorId: { notIn: botIds } }],
+          },
+          _count: { _all: true },
+        })
+      : []
+    const opinionOf = (pid: string | null) => (pid ? opinionGroups.find((g) => g.postId === pid)?._count._all ?? 0 : 0)
+    const nowMs = Date.now()
+    const bucketOf = (s: Date, e: Date): 'today' | 'upcoming' | 'past' =>
+      nowMs < s.getTime() ? 'upcoming' : nowMs >= e.getTime() ? 'past' : 'today'
+    feedbackEvents = feedbackRows.map((e) => ({
+      id: e.id,
+      title: e.title,
+      description: e.description,
+      bodyPostId: e.bodyPostId,
+      startAt: e.startAt.toISOString(),
+      endAt: e.endAt.toISOString(),
+      isActive: e.isActive,
+      tier: e.tier,
+      realOpinions: opinionOf(e.bodyPostId),
+      bucket: bucketOf(e.startAt, e.endAt),
+    }))
+  } catch (err) {
+    console.error('[admin/vote-events] FEEDBACK 이벤트 조회 실패:', err)
+  }
+
   return (
     <div className="space-y-4">
       <VoteEventManager
@@ -127,6 +166,7 @@ export default async function AdminVoteEventsPage() {
         botOptions={botOptions}
         upcoming={upcoming}
         past={past}
+        feedbackEvents={feedbackEvents}
       />
     </div>
   )

@@ -11,6 +11,7 @@ import {
   deleteReservedVoteEvent,
 } from '@/app/admin/(panel)/vote-events/actions'
 import { voteVisibleStatus } from '@/lib/vote-status'
+import FeedbackEventForm, { type FeedbackEventItem } from '@/components/admin/FeedbackEventForm'
 
 export interface VoteEventData {
   id: string
@@ -78,16 +79,19 @@ export default function VoteEventManager({
   botOptions,
   upcoming = [],
   past = [],
+  feedbackEvents = [],
 }: {
   event: VoteEventData | null
   stats: VoteStats | null
   botOptions: BotOption[]
   upcoming?: VoteEventListItem[]
   past?: VoteEventListItem[]
+  feedbackEvents?: FeedbackEventItem[]
 }) {
   const [pending, startTransition] = useTransition()
   const [msg, setMsg] = useState<string | null>(null)
   const [tab, setTab] = useState<'today' | 'upcoming' | 'past'>('today')
+  const [eventKind, setEventKind] = useState<'vote' | 'feedback'>('vote')
 
   // 예약 생성 폼 (예약/예정 탭)
   const [schedDate, setSchedDate] = useState('')
@@ -150,7 +154,24 @@ export default function VoteEventManager({
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">🎛 참여 이벤트 — 오늘의 투표</h1>
+      <h1 className="text-xl font-bold">🎛 참여 이벤트</h1>
+      {/* 타입 토글 — 투표 / 의견수렴(Phase 3a) */}
+      <div className="flex gap-2">
+        {([['vote', '🗳 투표'], ['feedback', '🗣 의견수렴']] as const).map(([k, label]) => (
+          <button
+            key={k}
+            onClick={() => setEventKind(k)}
+            className={`rounded-full px-4 py-2 text-sm font-bold ${eventKind === k ? 'bg-[#FF6F61] text-white' : 'bg-zinc-100 text-zinc-600'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {eventKind === 'feedback' ? (
+        <FeedbackEventForm items={feedbackEvents} />
+      ) : (
+      <>
       <div className="flex gap-2 border-b border-zinc-200">
         {([
           ['today', '오늘 진행'],
@@ -611,6 +632,8 @@ export default function VoteEventManager({
             }}
           />
         </section>
+      )}
+      </>
       )}
     </div>
   )

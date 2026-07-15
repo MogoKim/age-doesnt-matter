@@ -6,9 +6,10 @@ import { getAdminSession } from '@/lib/admin-auth'
 import { getKstToday } from '@/lib/votes'
 import { voteOpenAtMs, voteVisibleStatus } from '@/lib/vote-status'
 import { generateVoteDraftBatch, generateVotePostDraft, type VoteDraftRow } from '@/lib/ai/vote-draft'
+import { generateFeedbackDraft } from '@/lib/ai/feedback-draft'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { EVENT_CATEGORY } from '@/lib/event-category'
-import type { VoteChoice, VoteEventStatus } from '@/generated/prisma/client'
+import type { VoteChoice, VoteEventStatus, EventTier } from '@/generated/prisma/client'
 
 interface ActionResult {
   error?: string
@@ -462,4 +463,192 @@ export async function registerBotComments(input: {
   await revalidateLinkedPost(postId)
   revalidatePath('/admin/vote-events')
   return { ok: true, registered: rows.length }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Phase 3a — 의견수렴형(FEEDBACK) 이벤트
+//  · Event.type=FEEDBACK + bodyPostId→Post(category='이벤트', 공식계정). 사용자 의견=Comment 재사용.
+//  · schema/DB 변경 없음. 팝업/HERO 노출은 Phase 3b(3a에서 채널 저장은 되나 렌더 안 함).
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** datetime-local 문자열('YYYY-MM-DDTHH:mm', KST 기준 입력)을 UTC Date로. */
+function kstLocalToDate(s: string): Date | null {
+  const t = s.trim()
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(t)) return null
+  const withSec = t.length === 16 ? `${t}:00` : t
+  const d = new Date(`${withSec}+09:00`)
+  return isNaN(d.getTime()) ? null : d
+}
+
+/** 의견수렴 본문 기본 템플릿 (비우면 사용) */
+function buildFeedbackPostContent(): string {
+  return [
+    `<p>여러분의 생각이 궁금해요.</p>`,
+    `<p>불편했던 점이나 바라는 점, 무엇이든 편하게 남겨주세요. 하나하나 소중히 읽고 반영할게요.</p>`,
+  ].join('\n')
+}
+
+/**
+ * 의견수렴 본문 게시글 생성 — 공식 계정("우리 나이가 어때서")·category='이벤트'·PUBLISHED.
+ * 사는이야기 목록/홈/검색/sitemap은 EXCLUDE_EVENT로 제외, 상세 접근은 /events/[eventId]만.
+ */
+async function createFeedbackPost(title: string, content?: string): Promise<{ id: string } | { error: string }> {
+  const authorId = await resolveVotePostAuthorId()
+  if (!authorId) return { error: '공식 이벤트 계정("우리 나이가 어때서")을 찾을 수 없습니다. 공식 계정을 먼저 생성해 주세요.' }
+  const body = content?.trim() ? content.trim() : buildFeedbackPostContent()
+  const post = await prisma.post.create({
+    data: {
+      boardType: 'STORY',
+      status: 'PUBLISHED', // /events/[id]는 startAt으로 노출 게이트 — 본문은 PUBLISHED 유지
+      source: 'ADMIN',
+      category: EVENT_CATEGORY,
+      title,
+      content: body,
+      authorId,
+      publishedAt: new Date(),
+    },
+    select: { id: true },
+  })
+  return { id: post.id }
+}
+
+/** 의견수렴 이벤트가 참조하는 bodyPost의 실 의견 수(ACTIVE·봇 제외 — 회원/비회원 실 댓글) */
+async function realOpinionCount(bodyPostId: string): Promise<number> {
+  const bots = await prisma.user.findMany({ where: { email: { endsWith: '@unao.bot' } }, select: { id: true } })
+  return prisma.comment.count({
+    where: {
+      postId: bodyPostId,
+      status: 'ACTIVE',
+      OR: [{ authorId: null }, { authorId: { notIn: bots.map((b) => b.id) } }],
+    },
+  })
+}
+
+/**
+ * 의견수렴 이벤트 생성/수정 (Phase 3a).
+ *  - 신규: bodyPost 생성 → Event(type=FEEDBACK, bodyPostId) 생성.
+ *  - 수정: Event(title/description/기간/tier/채널) + bodyPost(title/content) 갱신.
+ *  - 채널 플래그(showBottomPopup/showHero)는 저장되나 Phase 3a에선 팝업/HERO 미노출(resolveChannelVote가 VOTE만).
+ */
+export async function upsertFeedbackEvent(input: {
+  eventId?: string
+  title: string
+  description?: string
+  content?: string
+  startAt: string // 'YYYY-MM-DDTHH:mm' (KST)
+  endAt: string
+  tier?: EventTier
+  showBottomPopup?: boolean
+  showHero?: boolean
+  sendPush?: boolean
+  sendNotification?: boolean
+}): Promise<ActionResult & { eventId?: string }> {
+  const denied = await requireAdmin()
+  if (denied) return denied
+  const session = await getAdminSession()
+  const adminId = session?.adminId
+  if (!adminId) return { error: '관리자 인증이 필요합니다' }
+
+  const title = input.title.trim()
+  const description = input.description?.trim() || null
+  if (!title) return { error: '제목을 입력해 주세요' }
+
+  const startAt = kstLocalToDate(input.startAt)
+  const endAt = kstLocalToDate(input.endAt)
+  if (!startAt || !endAt) return { error: '시작/종료 시간을 올바르게 입력해 주세요 (KST)' }
+  if (endAt.getTime() <= startAt.getTime()) return { error: '종료 시간은 시작 시간보다 뒤여야 합니다' }
+
+  const tier: EventTier = input.tier ?? 'SECONDARY'
+  const channels = {
+    showBottomPopup: input.showBottomPopup ?? false,
+    showHero: input.showHero ?? false,
+    sendPush: input.sendPush ?? false,
+    sendNotification: input.sendNotification ?? false,
+  }
+
+  try {
+    if (input.eventId) {
+      // 수정
+      const ev = await prisma.event.findUnique({ where: { id: input.eventId }, select: { id: true, type: true, bodyPostId: true } })
+      if (!ev || ev.type !== 'FEEDBACK') return { error: '수정할 의견수렴 이벤트를 찾을 수 없습니다' }
+      await prisma.event.update({
+        where: { id: ev.id },
+        data: { title, description, startAt, endAt, tier, ...channels },
+      })
+      if (ev.bodyPostId) {
+        await prisma.post.update({
+          where: { id: ev.bodyPostId },
+          data: { title, ...(input.content?.trim() ? { content: input.content.trim() } : {}) },
+        })
+        revalidatePath(`/events/${ev.id}`)
+      }
+      revalidatePath('/admin/vote-events')
+      return { ok: true, eventId: ev.id }
+    }
+
+    // 신규
+    const created = await createFeedbackPost(title, input.content)
+    if ('error' in created) return { error: created.error }
+    const ev = await prisma.event.create({
+      data: {
+        type: 'FEEDBACK',
+        title,
+        description,
+        bodyPostId: created.id,
+        startAt,
+        endAt,
+        tier,
+        ...channels,
+        createdByAdminId: adminId,
+      },
+      select: { id: true },
+    })
+    revalidatePath('/admin/vote-events')
+    return { ok: true, eventId: ev.id }
+  } catch (e) {
+    if (isMissingEventTable(e)) {
+      return { error: 'Event 테이블이 아직 준비되지 않았습니다 (마이그레이션 필요)' }
+    }
+    console.error('[feedback-event] upsert 실패:', e)
+    return { error: '의견수렴 이벤트 저장에 실패했습니다' }
+  }
+}
+
+/**
+ * 의견수렴 이벤트 삭제 — **실 의견(ACTIVE·봇 제외) 0건일 때만** 허용.
+ * Event + bodyPost(및 그 댓글)를 트랜잭션으로 원자 삭제.
+ */
+export async function deleteFeedbackEvent(eventId: string): Promise<ActionResult> {
+  const denied = await requireAdmin()
+  if (denied) return denied
+
+  const ev = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true, type: true, bodyPostId: true } })
+  if (!ev || ev.type !== 'FEEDBACK') return { error: '삭제할 의견수렴 이벤트를 찾을 수 없습니다' }
+
+  if (ev.bodyPostId) {
+    const opinions = await realOpinionCount(ev.bodyPostId)
+    if (opinions > 0) return { error: `실 의견이 ${opinions}개 있어 삭제할 수 없습니다 (의견이 없을 때만 삭제 가능).` }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    if (ev.bodyPostId) {
+      await tx.comment.deleteMany({ where: { postId: ev.bodyPostId } }) // 봇/숨김 등 잔여 댓글 정리(실 의견 0 확인됨)
+      await tx.post.delete({ where: { id: ev.bodyPostId } }).catch(() => {})
+    }
+    await tx.event.delete({ where: { id: ev.id } })
+  })
+
+  revalidatePath('/admin/vote-events')
+  return { ok: true }
+}
+
+/** 의견수렴 본문 AI 초안 — 클릭 1회 = API 1회(light). 실패해도 직접 입력/템플릿 유지. */
+export async function requestFeedbackDraft(input: { title: string; description?: string }): Promise<{ body?: string; error?: string }> {
+  const denied = await requireAdmin()
+  if (denied) return { error: denied.error }
+  const title = input.title.trim()
+  if (!title) return { error: '제목을 먼저 입력해 주세요' }
+  const result = await generateFeedbackDraft({ title, description: input.description })
+  if (!result.ok) return { error: result.error }
+  return { body: result.body }
 }

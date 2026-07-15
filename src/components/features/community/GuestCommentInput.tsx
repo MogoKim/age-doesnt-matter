@@ -27,17 +27,21 @@ interface GuestCommentInputProps {
   onOptimisticAdd?: (data: { content: string; guestNickname: string }) => void
   /** 가입인사 글이면 환영 톤 문구로(Phase 4, 문구 특화 전용). 기능/허용범위 무변경 */
   isGreeting?: boolean
+  /** 의견수렴형(FEEDBACK) 이벤트면 '댓글'→'의견' 문구로(Phase 3a). 기능/허용범위 무변경 */
+  isFeedback?: boolean
 }
 
 export default function GuestCommentInput({
   postId,
   parentId,
-  placeholder = '댓글을 남겨주세요... (최대 500자)',
+  placeholder,
   onCancel,
   onSuccess,
   onOptimisticAdd,
   isGreeting,
+  isFeedback,
 }: GuestCommentInputProps) {
+  const resolvedPlaceholder = placeholder ?? (isFeedback ? '의견을 남겨주세요... (최대 500자)' : '댓글을 남겨주세요... (최대 500자)')
   const { toast } = useToast()
   const pathname = usePathname()
   const router = useRouter()
@@ -196,12 +200,14 @@ export default function GuestCommentInput({
     return (
       <div className="bg-card border border-border rounded-2xl p-4 mt-4">
         <p className="text-body font-bold text-foreground mb-1">
-          {isGreeting ? '환영해주셔서 감사해요' : '댓글이 등록됐어요'}
+          {isGreeting ? '환영해주셔서 감사해요' : isFeedback ? '의견 고맙습니다 · 소중히 반영할게요' : '댓글이 등록됐어요'}
         </p>
         <p className="text-caption text-muted-foreground mb-4">
           {isGreeting
             ? '가입하면 이웃들과 더 가까워져요'
-            : '다음부터는 닉네임·번호 없이 바로 댓글을 남길 수 있어요'}
+            : isFeedback
+              ? '가입하면 다음부터 이름·번호 없이 바로 의견을 남길 수 있어요'
+              : '다음부터는 닉네임·번호 없이 바로 댓글을 남길 수 있어요'}
         </p>
         <KakaoSignupButton
           callbackUrl={pathname}
@@ -225,11 +231,11 @@ export default function GuestCommentInput({
   return (
     <div className="bg-card border border-border rounded-2xl p-4 mt-4">
       <p className="text-body font-bold text-foreground mb-3">
-        {isGreeting ? '새 이웃을 환영해주세요' : '댓글을 남겨보세요'}
+        {isGreeting ? '새 이웃을 환영해주세요' : isFeedback ? '의견을 남겨주세요' : '댓글을 남겨보세요'}
       </p>
 
       <textarea
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         value={content}
         onChange={(e) => setContent(e.target.value.slice(0, 500))}
         maxLength={500}
@@ -277,7 +283,7 @@ export default function GuestCommentInput({
           disabled={isLoading || isPending || !canSubmit}
           className="flex-1 flex items-center justify-center min-h-[52px] px-4 bg-primary text-white rounded-xl text-caption font-bold hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading || isPending ? '등록 중...' : '댓글 남기기'}
+          {isLoading || isPending ? '등록 중...' : isFeedback ? '의견 남기기' : '댓글 남기기'}
         </button>
         {onCancel && (
           <button
