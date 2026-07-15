@@ -76,6 +76,33 @@ describe('buildHaikuQualityPrompt — 판정 기준 고정', () => {
     expect(prompt).toContain('NEEDS_REVIEW로 넘겨라')
   })
 
+  // ── calibration v2 (2026-07-15 창업자 표본 4건) ──
+  it('[표본1: lh 애 낳고=REJECT] 무근거 출산·임신은 2030 간주 강 REJECT 지침', () => {
+    expect(prompt).toContain('2030 자기발화로 간주')
+    expect(prompt).toContain('NEEDS_REVIEW로 미루지 마라')
+  })
+
+  it('[표본2: 딸 며느리 차별=PASS] 가족 갈등 사연은 어두운 톤이어도 기본 PASS 후보', () => {
+    expect(prompt).toContain('가족 갈등 사연')
+    expect(prompt).toContain('갈등 소재 자체를 차단 사유로 쓰지 마라')
+  })
+
+  it('[표본3: 50살 여행=PASS] 타깃 연령 자기언급 글의 male_self 단정 금지', () => {
+    expect(prompt).toContain('male_self로 단정 금지')
+  })
+
+  it('[표본4: 남성 욕망 담론=REJECT] sexualized_age_gap 축 포함', () => {
+    expect(prompt).toContain('sexualized_age_gap')
+    expect(prompt).toContain('어리고 예쁜 여자')
+  })
+
+  it('신규 risk enum이 파서에서 수용됨 (romance_self·sexualized_age_gap)', () => {
+    const r = parseHaikuQualityDecision(
+      '{"decision":"REJECT","confidence":0.9,"speakerRole":"unknown","risks":["sexualized_age_gap","romance_self"],"reason":"x"}',
+    )
+    expect(r?.risks).toEqual(['sexualized_age_gap', 'romance_self'])
+  })
+
   it('본문 2000자 절단', () => {
     const long = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'a'.repeat(5000), boardType: 'STORY' })
     expect(long.length).toBeLessThan(4600)
