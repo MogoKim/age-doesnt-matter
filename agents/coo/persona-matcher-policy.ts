@@ -25,9 +25,9 @@ const TOPIC_PATTERNS: Array<[TopicGroup, RegExp]> = [
   ['INLAW', /시댁|시어머니|시엄니|시모|시아버지|시부모|며느리|고부|시누이|동서|사위/],
   ['FAMILY_SPOUSE', /남편|신랑|그이|영감|와이프|아내|부부|각방|결혼\s?생활|재혼|황혼\s?이혼/],
   ['RETIRE_MONEY', /은퇴|연금|국민연금|노후|퇴직|재테크|적금|예금|주식|부동산|목돈|생활비|월세|전세/],
-  ['HEALTH', /갱년기|건강|병원|검진|관절|무릎|허리|혈압|당뇨|콜레스테롤|불면|수면|우울|증상|다이어트|영양제/],
+  ['HEALTH', /갱년기|건강|병원|검진|관절|무릎|허리|혈압|당뇨|콜레스테롤|불면|수면|우울|증상|다이어트|영양제|피곤|기운|몸살|예민/],
   ['CARE_SOLO', /간병|요양|치매|독거|혼자\s?사는|1인\s?가구|고독/],
-  ['LOCAL_DAILY', /동네|시장|마트|맛집|카페|장보|물가|계란|날씨|산책|여행|버스|지하철|아파트|반찬|요리|김치|빨래|건조기|세탁|청소|살림|폭염|더위|장마|에어컨|복날|초복|중복|말복|삼계탕|수박/],
+  ['LOCAL_DAILY', /동네|시장|마트|맛집|카페|장보|물가|계란|날씨|산책|여행|버스|지하철|아파트|반찬|요리|김치|빨래|건조기|세탁|청소|살림|폭염|더위|장마|에어컨|복날|초복|중복|말복|삼계탕|수박|제습기|습도|가전|세탁기|냉장고|선풍기|모임|약속|메뉴|간식|과일|고기|생선|오징어|햄|통조림|라면|빵|커피/],
   ['HUMOR_LIGHT', /유머|웃긴|웃음|짤|개그|빵\s?터/],
 ]
 
@@ -66,7 +66,9 @@ export interface SpeakerClues {
   grandchildren: boolean // 손주 — 배정 가능
   youngChildCare: boolean // 초등 이하 현재 양육 — 세계관 위반
   pregnancy: boolean // 임신/출산 자기발화 — 무근거 시 2030 간주 (Haiku calibration 원칙 ①)
-  maleSelf: boolean // 남성 자기발화 — 세계관 위반
+  maleSelf: boolean // 남성 1인칭 명시 — 세계관 위반 (배정 불가)
+  /** 남초 일반론/3인칭 어투('남자들은 와이프가~') — 위반 아님, 여성 페르소나 발행 적절성 needsReview (calibration 2026-07-16) */
+  maleDiscourse: boolean
   youngSelf: boolean // 2030 자기발화 — 세계관 위반
 }
 
@@ -85,10 +87,16 @@ export function analyzePost(input: { title: string; content: string; boardType: 
     husbandPresent: /남편[이은한과랑]|남편\s|신랑[이은]|우리\s?그이/.test(text) && !/사별|남편[을이]?\s?(먼저|일찍)?\s?(보내|떠나|여의)/.test(text),
     adultChildren: /(장성한|다\s?큰|취직한?|대학생|시집|장가)\s?(아들|딸|자녀|애)|아들네|딸네/.test(text),
     grandchildren: /손주|손녀|손자/.test(text),
-    youngChildCare: /초[1-6]\b|초등학생|초딩|유치원|어린이집|영유아|돌쟁이|신생아|등하교|학원\s?(픽업|라이딩)|육아휴직/.test(text),
+    // '맞벌이+육아'·'독박육아' 결합은 현재 양육 강신호 (calibration 6 — "맞벌이면서 집안일 육아 혼자" 표본)
+    youngChildCare:
+      /초[1-6]\b|초등학생|초딩|유치원|어린이집|영유아|돌쟁이|신생아|등하교|학원\s?(픽업|라이딩)|육아휴직|독박\s?육아/.test(text) ||
+      (/맞벌이/.test(text) && /육아/.test(text)),
     pregnancy: /(제가|저\s|저는).{0,14}(임신|출산|만삭|산후)|임신\s?\d+\s?주/.test(text),
-    // 아내 지칭어 = 남성 화자 강신호. 단 '와이프분' 존칭·타인(친구/지인/아들/사위) 인용은 제외 (Haiku calibration '명시적 남성 1인칭만' 원칙 정합)
-    maleSelf: /(제가|저는|나는).{0,10}(남자|남편으로서|아빠로서)|(?<!(친구|지인|아들|사위)\s?)(와이프|집사람|마누라)(?!분)/.test(text),
+    // MALE_SELF는 명시적 남성 1인칭만: 1인칭 소유의 아내 지칭('제/내/우리 와이프') 또는 1인칭 남성 서술.
+    // '와이프' 단어만으로 확정하지 않는다 (calibration 3 — "남편 대기업 퇴직근황" 남초 일반론 오탐 표본)
+    maleSelf: /(제|내|우리)\s?(와이프|집사람|마누라)|(제가|저는|나는).{0,10}(남자(인데|입니다|예요|이고)|남편으로서|아빠로서)/.test(text),
+    // 남초 일반론/3인칭 어투: 아내 지칭어가 1인칭 소유 없이 등장 — 별도 risk (배정은 가능, needsReview)
+    maleDiscourse: /와이프|집사람|마누라/.test(text) && !/(제|내|우리)\s?(와이프|집사람|마누라)/.test(text),
     youngSelf: /(20대|30대|이십대|삼십대).{0,8}(인데|이고|입니다|예요|에요)|남자친구|남친/.test(text),
   }
   let violation: WorldviewViolation = null
@@ -102,6 +110,12 @@ export function analyzePost(input: { title: string; content: string; boardType: 
 
 export function findHardConstraintViolation(p: PersonaProfile, a: PostAnalysis): string | null {
   if (p.reactionOnly) return 'REACTION_ONLY' // 댓글/좋아요 전용 — 원글 배정 절대 불가
+  // 건강/갱년기/불면 글에 유머형은 닉네임 기준으로도 기본 제외 (calibration 1 — "갱년기→웃음충전"·"병원웃음사냥" 표본)
+  // 유일한 예외: 정체성이 건강/공감형인 경우 배정 허용 + matchPersona가 nicknameToneMismatch flag를 남긴다
+  if (a.topicGroups.includes('HEALTH')) {
+    if (p.lightTone) return 'TONE_MISMATCH_HEALTH'
+    if (p.nicknameLightTone && !p.empathyTone) return 'TONE_MISMATCH_HEALTH'
+  }
   // 가족상태 충돌: 남편 현재형 글을 사별/이혼/혼자 사는 페르소나가 맡지 않는다 (unknown은 통과 + 검수 플래그)
   if (a.speakerClues.husbandPresent && (p.familyStatus === 'widowed' || p.familyStatus === 'divorced' || p.familyStatus === 'solo')) {
     return `FAMILY_CONFLICT_${p.familyStatus.toUpperCase()}`
@@ -177,6 +191,16 @@ export function scoreCandidate(p: PersonaProfile, a: PostAnalysis, e: ExposureSt
     score -= 30
     penalties.push('CONSECUTIVE_SAME_GROUP')
   }
+  // 은퇴/연금/재테크 글에 유머형은 감점 (calibration 2) — 정체성까지 가벼우면 더 크게
+  if (a.topicGroups.includes('RETIRE_MONEY')) {
+    if (p.lightTone) {
+      score -= 60
+      penalties.push('LIGHT_TONE_ON_MONEY')
+    } else if (p.nicknameLightTone) {
+      score -= 30
+      penalties.push('NICKNAME_TONE_ON_MONEY')
+    }
+  }
   return { key: p.key, score, penalties, overQuota }
 }
 
@@ -199,10 +223,12 @@ export interface MatchResult {
   needsReview: boolean
   reviewReasons: string[]
   haikuSampleCandidate: boolean
+  /** finalPick 닉네임은 유머형인데 글이 건강/돈 주제 — 정체성은 정상이라 배정했으나 창업자 검수용 flag (calibration 1·2) */
+  nicknameToneMismatch: boolean
 }
 
 export function matchPersona(profiles: PersonaProfile[], a: PostAnalysis, e: ExposureState): MatchResult {
-  const base: Omit<MatchResult, 'excluded' | 'eligible' | 'eligibleCount' | 'singleCandidateWarning' | 'reserveFallback' | 'finalPick' | 'pickReason' | 'needsReview' | 'reviewReasons' | 'haikuSampleCandidate'> = {
+  const base: Omit<MatchResult, 'excluded' | 'eligible' | 'eligibleCount' | 'singleCandidateWarning' | 'reserveFallback' | 'finalPick' | 'pickReason' | 'needsReview' | 'reviewReasons' | 'haikuSampleCandidate' | 'nicknameToneMismatch'> = {
     topicGroups: a.topicGroups,
     speakerClues: a.speakerClues,
     worldviewViolation: a.worldviewViolation,
@@ -222,6 +248,7 @@ export function matchPersona(profiles: PersonaProfile[], a: PostAnalysis, e: Exp
       needsReview: true,
       reviewReasons: [`세계관 위반(${a.worldviewViolation}) — 발행 차단/숨김 검토 + Haiku 표본`],
       haikuSampleCandidate: true,
+      nicknameToneMismatch: false,
     }
   }
 
@@ -274,6 +301,7 @@ export function matchPersona(profiles: PersonaProfile[], a: PostAnalysis, e: Exp
         needsReview: true,
         reviewReasons: ['후보 전멸 — 페르소나 수급/상한 재검토 필요'],
         haikuSampleCandidate: false,
+        nicknameToneMismatch: false,
       }
     }
   }
@@ -288,6 +316,12 @@ export function matchPersona(profiles: PersonaProfile[], a: PostAnalysis, e: Exp
   if (a.speakerClues.husbandPresent && winnerProfile.familyStatus === 'unknown') {
     reviewReasons.push('남편 현재형 글에 가족상태 unknown 페르소나 배정 — 프로필 보강 필요')
   }
+  if (a.speakerClues.maleDiscourse) {
+    reviewReasons.push('MALE_DISCOURSE — 남초 일반론/3인칭 어투 원문, 여성 페르소나 발행 적절성 검토')
+  }
+  const nicknameToneMismatch =
+    winnerProfile.nicknameLightTone && !winnerProfile.lightTone && (a.topicGroups.includes('HEALTH') || a.topicGroups.includes('RETIRE_MONEY'))
+  if (nicknameToneMismatch) reviewReasons.push('닉네임 톤 불일치 — 유머형 닉네임이나 정체성은 정상 (건강/돈 글)')
   const singleCandidateWarning = !reserveFallback && available.length === 1
   if (singleCandidateWarning) reviewReasons.push(`주제군 ${primary} 후보가 1명뿐 — 수급 1~3순위 계획 참조`)
 
@@ -309,5 +343,6 @@ export function matchPersona(profiles: PersonaProfile[], a: PostAnalysis, e: Exp
     needsReview: reviewReasons.length > 0,
     reviewReasons,
     haikuSampleCandidate: false,
+    nicknameToneMismatch,
   }
 }

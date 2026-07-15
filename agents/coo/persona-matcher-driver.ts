@@ -117,6 +117,7 @@ export async function main(): Promise<void> {
           recommendationDiffers: differs,
           needsReview: result.needsReview,
           reviewReasons: result.reviewReasons,
+          nicknameToneMismatch: result.nicknameToneMismatch,
         },
       },
     })
