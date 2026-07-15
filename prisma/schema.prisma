@@ -1432,3 +1432,48 @@ model VoteBallot {
   @@index([voteEventId, voterType, choice])
   @@index([userId])
 }
+
+// ──────────────────────────────────────────────
+// 참여형 이벤트 — Event 오케스트레이션 계층 (Phase 1 기반)
+//  - 노출 계층만 담당: 어떤 타입(VOTE/FEEDBACK/NOTICE)을 어떤 채널·기간·tier로 노출할지
+//  - 본체는 참조만: VOTE→VoteEvent(voteEventId), FEEDBACK/NOTICE→Post(bodyPostId)
+//  - voteEventId/bodyPostId는 String 참조(FK relation/back-relation 없음) — 기존 모델 무변경, 삭제연쇄 위험 0
+//  - tier=PRIMARY만 팝업/HERO 노출. resolver: src/lib/events/exposure.ts (fallback 없음 — Event만 조회, 없으면 null)
+//  - 팝업/HERO 전환은 Phase 2. Phase 1은 기반 추가만(기존 투표형 회귀 0).
+// ──────────────────────────────────────────────
+enum EventType {
+  VOTE
+  FEEDBACK
+  NOTICE
+}
+
+enum EventTier {
+  PRIMARY   // 팝업/HERO 강노출 대상
+  SECONDARY // 푸시/알림/링크만
+  HIDDEN    // 링크(직접 URL)만
+}
+
+model Event {
+  id               String    @id @default(cuid())
+  type             EventType
+  title            String
+  description      String?
+  bodyPostId       String? // FEEDBACK/NOTICE 본체 Post (String 참조, FK 없음)
+  voteEventId      String?   @unique // VOTE → VoteEvent 1:1 링크 (String 참조, FK 없음)
+  startAt          DateTime // 채널 노출 시작 (VOTE=그날 09:00 KST)
+  endAt            DateTime // 채널 노출 종료 (VOTE=그날 20:00 KST)
+  showBottomPopup  Boolean   @default(false)
+  showHero         Boolean   @default(false)
+  sendPush         Boolean   @default(false)
+  sendNotification Boolean   @default(false)
+  tier             EventTier @default(SECONDARY)
+  preset           String    @default("coral") // coral | calm | warm (코드 상수 화이트리스트)
+  isActive         Boolean   @default(true)
+  createdByAdminId String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([isActive, showBottomPopup, startAt, endAt])
+  @@index([isActive, showHero, startAt, endAt])
+  @@index([type, startAt])
+}

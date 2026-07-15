@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import { getKstToday } from '@/lib/votes'
-import { voteOpenAtMs, voteVisibleStatus } from '@/lib/vote-status'
+import { voteCloseAtMs, voteOpenAtMs, voteVisibleStatus } from '@/lib/vote-status'
 import { generateVoteDraftBatch, generateVotePostDraft, type VoteDraftRow } from '@/lib/ai/vote-draft'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { EVENT_CATEGORY } from '@/lib/event-category'
@@ -107,6 +107,82 @@ function resolveEventDate(dateStr?: string): Date {
   return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
 }
 
+/** Prisma 에러가 "Event 테이블 미존재"인지 판정 — 마이그레이션 HANDOFF 전 전환 안전장치용 */
+function isMissingEventTable(e: unknown): boolean {
+  const code = (e as { code?: string })?.code
+  if (code === 'P2021' || code === 'P2022') return true // table/column does not exist
+  const msg = (e as { message?: string })?.message ?? ''
+  return /does not exist|undefined table|no such table/i.test(msg)
+}
+
+/**
+ * 투표(VOTE) 생성/수정 시 노출 계층 Event를 동반 생성/갱신 (Phase 1 기반, 투표 로직 무접촉).
+ *  - Event = 노출 계층: type=VOTE, voteEventId 1:1, 노출창=그날 09:00~20:00 KST, tier=PRIMARY, 팝업+HERO on.
+ *  - PRIMARY 충돌 가드: 같은 채널(팝업/HERO)·시간 겹침·isActive·tier=PRIMARY인 **다른** Event가 있으면 저장 차단.
+ *  - createdByAdminId = getAdminSession().adminId.
+ *  - ⚠️ Event 테이블 미적용(마이그레이션 HANDOFF 전) 구간은 P2021로 실패 → **투표 생성 회귀 0**을 위해
+ *    조용히 스킵(가드/동반생성 미동작). 테이블 적용 후부터 정상 작동. (우회가 아니라 전환 안전장치)
+ * @returns 충돌 차단 시 { error }, 그 외 null
+ */
+async function syncVoteExposureEvent(params: {
+  voteEventId: string
+  eventDate: Date
+  title: string
+}): Promise<{ error: string } | null> {
+  const startAt = new Date(voteOpenAtMs(params.eventDate))
+  const endAt = new Date(voteCloseAtMs(params.eventDate))
+  const session = await getAdminSession()
+  const adminId = session?.adminId
+  if (!adminId) return null // requireAdmin 통과 후이므로 사실상 도달 안 함 — 방어적으로 스킵
+
+  try {
+    // PRIMARY 충돌 가드 — 같은 채널(팝업/HERO)·시간 겹침·자기 자신(VOTE 재-upsert) 제외
+    const conflict = await prisma.event.findFirst({
+      where: {
+        isActive: true,
+        tier: 'PRIMARY',
+        voteEventId: { not: params.voteEventId },
+        startAt: { lt: endAt },
+        endAt: { gt: startAt },
+        OR: [{ showBottomPopup: true }, { showHero: true }], // VOTE는 팝업+HERO 둘 다 사용
+      },
+      select: { id: true, title: true },
+    })
+    if (conflict) {
+      return {
+        error: `이 시간대의 팝업/HERO를 이미 다른 이벤트가 사용 중입니다: "${conflict.title}". 기존 이벤트를 내리거나 시간을 조정한 뒤 다시 시도해 주세요.`,
+      }
+    }
+
+    // 동반 생성/갱신 (voteEventId @unique로 1:1 upsert)
+    await prisma.event.upsert({
+      where: { voteEventId: params.voteEventId },
+      create: {
+        type: 'VOTE',
+        title: params.title,
+        voteEventId: params.voteEventId,
+        startAt,
+        endAt,
+        showBottomPopup: true,
+        showHero: true,
+        tier: 'PRIMARY',
+        createdByAdminId: adminId,
+      },
+      update: { title: params.title, startAt, endAt },
+    })
+    return null
+  } catch (e) {
+    if (isMissingEventTable(e)) {
+      console.warn(
+        '[vote-events] Event 테이블 미적용 — 노출 Event 동반 생성 스킵(마이그레이션 HANDOFF 후 정상화):',
+        (e as Error)?.message,
+      )
+      return null
+    }
+    throw e
+  }
+}
+
 /**
  * 투표 생성/수정 — date 미지정 시 오늘(KST), 지정 시 예약(미래 날짜 가능).
  * 같은 날짜 중복은 VoteEvent.date @unique + upsert로 방지(자동).
@@ -153,11 +229,16 @@ export async function upsertTodayVoteEvent(input: {
     }
   }
 
-  await prisma.voteEvent.upsert({
+  const voteEvent = await prisma.voteEvent.upsert({
     where: { date: eventDate },
     create: { date: eventDate, question, optionA, optionB, linkedPostId },
     update: { question, optionA, optionB, linkedPostId },
+    select: { id: true },
   })
+
+  // 노출 계층 Event(VOTE) 동반 생성/갱신 + PRIMARY 충돌 가드 (Phase 1 기반, 투표 upsert 뒤 append)
+  const exposure = await syncVoteExposureEvent({ voteEventId: voteEvent.id, eventDate, title: question })
+  if (exposure?.error) return { error: exposure.error }
 
   await revalidateLinkedPost(linkedPostId) // '/' + 게시글 상세
   revalidatePath('/admin/vote-events')
