@@ -3,11 +3,47 @@ import {
   findIneligibleReason,
   buildAuthorReplyPrompt,
   parseAuthorReplyDecision,
+  NON_BOT_COMMENT_AUTHOR_WHERE,
   type CandidateInput,
 } from '../../agents/coo/author-reply-policy'
 import { resolveAuthorPersonaContext } from '../../agents/coo/author-reply-persona'
 
 /** 작성자 봇 대댓글 dry-run — 구조 필터·프롬프트·파서·페르소나 역추적 고정 */
+
+describe('NON_BOT_COMMENT_AUTHOR_WHERE — 후보 조회 상류 잘림 hotfix (봇 댓글 DB단 제외)', () => {
+  // Prisma where 의미를 재현하는 순수 평가기 — 조건 계약을 케이스로 고정
+  type CommentLike = { authorId: string | null; guestNickname: string | null; authorEmail: string | null }
+  const matches = (c: CommentLike): boolean =>
+    NON_BOT_COMMENT_AUTHOR_WHERE.OR.some(branch => {
+      if ('authorId' in branch) return c.authorId === null && c.guestNickname !== null
+      // author.is 브랜치는 관계 존재(회원 댓글)가 전제
+      if (c.authorId === null) return false
+      const emailCond = branch.author.is.email
+      if (emailCond === null) return c.authorEmail === null
+      // not endsWith — Prisma 문자열 필터는 null을 매칭하지 않음
+      return c.authorEmail !== null && !c.authorEmail.endsWith(emailCond.not.endsWith)
+    })
+
+  it('봇 댓글(@unao.bot)은 후보 조회에서 제외', () => {
+    expect(matches({ authorId: 'u1', guestNickname: null, authorEmail: 'bot-a@unao.bot' })).toBe(false)
+    expect(matches({ authorId: 'u2', guestNickname: null, authorEmail: 'curator-s028@unao.bot' })).toBe(false)
+  })
+  it('게스트 댓글(authorId null + guestNickname 존재)은 유지', () => {
+    expect(matches({ authorId: null, guestNickname: '나그네', authorEmail: null })).toBe(true)
+  })
+  it('작성자 정보가 아예 없는 댓글은 후보 아님 (구조 필터 NO_COMMENT_AUTHOR와 정합)', () => {
+    expect(matches({ authorId: null, guestNickname: null, authorEmail: null })).toBe(false)
+  })
+  it('실회원 댓글(일반 이메일 또는 이메일 없음)은 유지', () => {
+    expect(matches({ authorId: 'u3', guestNickname: null, authorEmail: 'someone@gmail.com' })).toBe(true)
+    expect(matches({ authorId: 'u4', guestNickname: null, authorEmail: null })).toBe(true)
+  })
+  it('글(post) 작성자 조건은 걸지 않음 — curator-* 작성글의 실회원 댓글도 후보에 남음', () => {
+    // where가 댓글 작성자 필드만 참조하는지 계약 고정 (post 조건이 섞이면 curator 글 후보가 다시 잘린다)
+    expect(JSON.stringify(NON_BOT_COMMENT_AUTHOR_WHERE)).not.toContain('post')
+    expect(matches({ authorId: 'real-user', guestNickname: null, authorEmail: 'member@naver.com' })).toBe(true)
+  })
+})
 
 describe('resolveAuthorPersonaContext — bot-*/curator-* 양 체계 역추적 (사각 15% 해소)', () => {
   it('bot-a@unao.bot → persona-data A 정상 변환 (기존 동작 회귀 0)', () => {

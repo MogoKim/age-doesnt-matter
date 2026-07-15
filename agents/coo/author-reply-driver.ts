@@ -13,6 +13,7 @@ import {
   findIneligibleReason,
   buildAuthorReplyPrompt,
   parseAuthorReplyDecision,
+  NON_BOT_COMMENT_AUTHOR_WHERE,
 } from './author-reply-policy.js'
 
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6' // 판단 품질 우선 — Haiku 강등 금지(창업자 확정)
@@ -50,13 +51,15 @@ export async function main(): Promise<void> {
     pastLogs.map(l => (l.logData as { commentId?: string } | null)?.commentId).filter(Boolean) as string[],
   )
 
-  // 후보: 최근 48h, BOT/SHEET 글의 최상위 댓글 (부모글·작성자·답글까지 로드)
+  // 후보: 최근 48h, BOT/SHEET 글의 최상위 **비봇** 댓글 (부모글·작성자·답글까지 로드)
+  // 봇 wave 댓글을 DB단에서 먼저 제외 — take 200이 봇 댓글로 소진되어 사람 댓글이 잘리던 문제(NON_BOT_COMMENT_AUTHOR_WHERE 주석 참조)
   const candidates = await prisma.comment.findMany({
     where: {
       createdAt: { gte: new Date(Date.now() - LOOKBACK_HOURS * 3600_000) },
       parentId: null,
       status: 'ACTIVE', // 숨김/삭제 댓글 판정 금지
       post: { source: { in: ['BOT', 'SHEET'] }, boardType: { in: ['STORY', 'LIFE2', 'HUMOR'] }, status: 'PUBLISHED' },
+      ...NON_BOT_COMMENT_AUTHOR_WHERE,
     },
     orderBy: { createdAt: 'asc' },
     take: 200,
