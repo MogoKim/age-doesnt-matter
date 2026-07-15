@@ -25,6 +25,9 @@ on:
     - cron: "11 3 * * *"
     # 18:00 KST = 09:00 UTC — COO 트렌딩 스코어 (2차)
     - cron: "11 9 * * *"
+    # 12:45 / 19:45 KST — COO 작성자 대댓글 dry-run (실회원 댓글 판정, write 없음)
+    - cron: "45 3 * * *"
+    - cron: "45 10 * * *"
     # 06:00 KST = 21:00 UTC (전날) — CTO 보안 감사
     - cron: "11 21 * * *"
     # 11:30 KST = 02:30 UTC (월요일) — CPO 기능 사용률 (중단 2026-05-16 — DISPATCH ONLY)
@@ -188,6 +191,10 @@ jobs:
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=job-matcher" >> $GITHUB_OUTPUT ;;
               "15 3 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=reply-chain-driver" >> $GITHUB_OUTPUT ;;
+              "45 3 * * *")
+                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=author-reply-dryrun" >> $GITHUB_OUTPUT ;;
+              "45 10 * * *")
+                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=author-reply-dryrun" >> $GITHUB_OUTPUT ;;
               "30 5 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=comment-activator" >> $GITHUB_OUTPUT ;;
               "11 6 * * *")
