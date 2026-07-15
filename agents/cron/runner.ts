@@ -94,6 +94,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   'coo:comment-activator': () => import('../coo/comment-activator.js').then(m => m.main()),
   'coo:reply-chain-driver': () => import('../coo/reply-chain-driver.js').then(m => m.main()),
   'coo:author-reply-dryrun': () => import('../coo/author-reply-driver.js').then(m => m.main()),
+  'coo:persona-matcher-dryrun': () => import('../coo/persona-matcher-driver.js').then(m => m.main()), // DISPATCH ONLY — dry-run 검수 단계, 크론 미연결
   'controversy-chain:execute': () => import('../seed/controversy-chain.js').then(m => m.main()),
   'cto:crawler-health': () => import('../cto/crawler-health.js').then(() => {}),
   'cpo:persona-diversity-checker': () => import('../cpo/persona-diversity-checker.js').then(() => {}),
