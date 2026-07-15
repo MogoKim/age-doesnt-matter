@@ -11,6 +11,8 @@ import {
 const base: CandidateInput = {
   postSource: 'BOT',
   postBoardType: 'STORY',
+  postStatus: 'PUBLISHED',
+  commentStatus: 'ACTIVE',
   postAuthorId: 'bot-user-1',
   comment: { parentId: null, authorId: 'real-user-1', guestNickname: null, isBotAuthor: false },
   replies: [],
@@ -22,6 +24,15 @@ describe('findIneligibleReason — 구조 필터 (필수 원칙 고정)', () => 
   })
   it('적격: SHEET 글 + 게스트 댓글', () => {
     expect(findIneligibleReason({ ...base, postSource: 'SHEET', comment: { ...base.comment, authorId: null, guestNickname: '나그네' } })).toBeNull()
+  })
+  it('PUBLISHED가 아닌 글(HIDDEN/DELETED/DRAFT)은 판정 자체 금지', () => {
+    expect(findIneligibleReason({ ...base, postStatus: 'HIDDEN' })).toBe('POST_NOT_PUBLISHED')
+    expect(findIneligibleReason({ ...base, postStatus: 'DELETED' })).toBe('POST_NOT_PUBLISHED')
+    expect(findIneligibleReason({ ...base, postStatus: 'DRAFT' })).toBe('POST_NOT_PUBLISHED')
+  })
+  it('HIDDEN/DELETED 댓글은 부적격', () => {
+    expect(findIneligibleReason({ ...base, commentStatus: 'HIDDEN' })).toBe('COMMENT_NOT_ACTIVE')
+    expect(findIneligibleReason({ ...base, commentStatus: 'DELETED' })).toBe('COMMENT_NOT_ACTIVE')
   })
   it('실회원 글(USER)은 절대 개입 금지', () => {
     expect(findIneligibleReason({ ...base, postSource: 'USER' })).toBe('POST_NOT_BOT_SHEET')

@@ -23,6 +23,10 @@ const VERDICTS: readonly AuthorReplyVerdict[] = ['REPLY', 'SKIP', 'ESCALATE']
 export interface CandidateInput {
   postSource: string
   postBoardType: string
+  /** 숨김/삭제/DRAFT 글 판정 금지 — PUBLISHED만 (DB 조회 필터와 이중 방어) */
+  postStatus: string
+  /** 숨김/삭제 댓글 판정 금지 — ACTIVE만 (이중 방어) */
+  commentStatus: string
   /** 글쓴이 봇 User id */
   postAuthorId: string | null
   comment: {
@@ -42,6 +46,8 @@ const ELIGIBLE_BOARDS = new Set(['STORY', 'LIFE2', 'HUMOR']) // MAGAZINE/JOB 제
 
 /** 후보 자격 판정 — 부적격 사유 문자열 반환, 적격이면 null */
 export function findIneligibleReason(c: CandidateInput): string | null {
+  if (c.postStatus !== 'PUBLISHED') return 'POST_NOT_PUBLISHED' // 숨김/삭제/DRAFT 글 — 판정·Slack 알림 자체 금지
+  if (c.commentStatus !== 'ACTIVE') return 'COMMENT_NOT_ACTIVE' // 숨김/삭제 댓글 동일
   if (!ELIGIBLE_SOURCES.has(c.postSource)) return 'POST_NOT_BOT_SHEET' // 실회원 글 개입 금지
   if (!ELIGIBLE_BOARDS.has(c.postBoardType)) return 'BOARD_EXCLUDED'
   if (!c.postAuthorId) return 'NO_POST_AUTHOR'

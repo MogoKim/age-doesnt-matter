@@ -55,7 +55,8 @@ export async function main(): Promise<void> {
     where: {
       createdAt: { gte: new Date(Date.now() - LOOKBACK_HOURS * 3600_000) },
       parentId: null,
-      post: { source: { in: ['BOT', 'SHEET'] }, boardType: { in: ['STORY', 'LIFE2', 'HUMOR'] } },
+      status: 'ACTIVE', // 숨김/삭제 댓글 판정 금지
+      post: { source: { in: ['BOT', 'SHEET'] }, boardType: { in: ['STORY', 'LIFE2', 'HUMOR'] }, status: 'PUBLISHED' },
     },
     orderBy: { createdAt: 'asc' },
     take: 200,
@@ -65,12 +66,14 @@ export async function main(): Promise<void> {
       authorId: true,
       guestNickname: true,
       parentId: true,
+      status: true,
       author: { select: { email: true } },
       post: {
         select: {
-          id: true, title: true, content: true, source: true, boardType: true, authorId: true,
+          id: true, title: true, content: true, source: true, boardType: true, authorId: true, status: true,
           author: { select: { email: true } },
-          comments: { select: { id: true, content: true, parentId: true, authorId: true, author: { select: { email: true } } } },
+          // ACTIVE 답글만 — 숨김/삭제 답글이 REAL_USERS_IN_THREAD/ALREADY_REPLIED_BY_AUTHOR를 오판시키지 않게
+          comments: { where: { status: 'ACTIVE' }, select: { id: true, content: true, parentId: true, authorId: true, author: { select: { email: true } } } },
         },
       },
     },
@@ -87,6 +90,8 @@ export async function main(): Promise<void> {
     const ineligible = findIneligibleReason({
       postSource: c.post.source,
       postBoardType: c.post.boardType,
+      postStatus: c.post.status,
+      commentStatus: c.status,
       postAuthorId: c.post.authorId,
       comment: {
         parentId: c.parentId,
