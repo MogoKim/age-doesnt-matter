@@ -31,6 +31,7 @@ import { computeUsableCount } from './compute-usable-count.js'
 import { buildPopularSeoMeta } from './popular-seo.js'
 import { findMedicalAdviceRequest } from '../core/medical-advice-blocklist.js'
 import { buildDailyQuarantine, type DailyQuarantine } from './curator-quarantine.js'
+import { recordPersonaMatcherShadow } from './persona-matcher-shadow.js'
 
 // ─── 후보 풀 / skipReason 타입 ─────────────────────────────────
 type SkipReason =
@@ -881,6 +882,16 @@ export async function main() {
     if (usedConditionalU4) { conditionalU4Used++; conditionalU4PublishedCount++ }
     desireUsedCount[desireCat] = (desireUsedCount[desireCat] ?? 0) + 1
     console.log(`[ContentCurator] 게시: "${curated.title}" by ${persona.nickname}`)
+
+    // persona matcher shadow — 실발행 author는 위 로직 그대로, 신 matcher 추천만 BotLog 기록 (PERSONA_MATCHER_MODE, 실패 무영향)
+    await recordPersonaMatcherShadow({
+      postId: publishResult.postId ?? '',
+      title: curated.title,
+      content: curated.content,
+      boardType: curated.boardType,
+      category: curated.category ?? null,
+      actualPersonaId: persona.id,
+    })
 
     // 댓글 파동 큐 등록 — WAVE_SKIP_USABLE_ZERO: refs 필터 통과 후에도 usable=0이면 최후 방어선 BotLog
     const refCafePost = refs[0]
