@@ -96,6 +96,35 @@ describe('buildHaikuQualityPrompt — 판정 기준 고정', () => {
     expect(prompt).toContain('어리고 예쁜 여자')
   })
 
+  it('[보정1 2026-07-16] 현재 양육 우선 규칙 — 가족 갈등 PASS보다 parenting_current가 우선', () => {
+    const prompt = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'c', boardType: 'STORY' })
+    expect(prompt).toContain('현재 양육 우선 규칙')
+    expect(prompt).toContain('가족 갈등 PASS보다 항상 우선')
+    expect(prompt).toContain('구몬')
+    expect(prompt).toContain('초1,초3 애둘')
+    expect(prompt).toContain('가족 갈등이라는 이유로 PASS시키지 마라')
+  })
+  it('[보정2 2026-07-16] 원카페 호칭·맥락 신호 — 레테님들 등, 일반 님 단독 금지', () => {
+    const prompt = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'c', boardType: 'STORY' })
+    expect(prompt).toContain('레테님들')
+    expect(prompt).toContain('인기글에서 봤는데')
+    expect(prompt).toContain("일반적인 '님' 존칭 하나만으로 잡지 마라")
+  })
+  it('[보정3 2026-07-16] early_marriage_tone — 단어 단독 차단 금지 + 중장년 단서 부재 결합 판정', () => {
+    const prompt = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'c', boardType: 'STORY' })
+    expect(prompt).toContain('early_marriage_tone')
+    expect(prompt).toContain('절대 단독 차단하지 마라')
+    expect(prompt).toContain('부부싸움을 양가에 알릴지')
+    expect(prompt).toContain('중장년 회고·오래된 부부·성인자녀 맥락이면 PASS')
+    expect(prompt).toContain('early_marriage_tone risk를 달았으면 decision을 PASS로 두지 마라')
+    expect(prompt).toContain('결혼 20~30년차는 그런 고민을 하지 않는다')
+  })
+  it('[보정3] 파서가 early_marriage_tone risk 수용', () => {
+    const r = parseHaikuQualityDecision(
+      '{"decision":"NEEDS_REVIEW","confidence":0.6,"speakerRole":"unknown","risks":["early_marriage_tone"],"reason":"x"}',
+    )
+    expect(r?.risks).toEqual(['early_marriage_tone'])
+  })
   it('신규 risk enum이 파서에서 수용됨 (romance_self·sexualized_age_gap)', () => {
     const r = parseHaikuQualityDecision(
       '{"decision":"REJECT","confidence":0.9,"speakerRole":"unknown","risks":["sexualized_age_gap","romance_self"],"reason":"x"}',
@@ -105,6 +134,6 @@ describe('buildHaikuQualityPrompt — 판정 기준 고정', () => {
 
   it('본문 2000자 절단', () => {
     const long = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'a'.repeat(5000), boardType: 'STORY' })
-    expect(long.length).toBeLessThan(4600)
+    expect(long.length).toBeLessThan(6200) // 2026-07-16 보정 3축으로 고정부 증가 — 본문 절단(2000자) 검증이 목적
   })
 })
