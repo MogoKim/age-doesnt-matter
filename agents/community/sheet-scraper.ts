@@ -30,6 +30,7 @@ import { detectSite, normalizeNaverCafeUrl, resolveNaverShortUrl, randomUserAgen
 import { processContentMedia } from './image-pipeline.js'
 import { transformContent, transformRawContent, classifyCategory, hasYoungDemographicMarker } from './content-transformer.js'
 import { polishTitleForSeo } from './title-seo.js'
+import { normalizeSourceReferences } from '../cafe/normalize-source-references.js'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -857,11 +858,21 @@ export async function main() {
             const persona = await pickPersona(category, tab.boardType, row.persona)
             const userId = await getBotUser(persona.id)
 
+            // 원문 사이트명/카페 호칭 정규화 — 발행 직전, CafePost/시트 원본 보존 (P0 2026-07-16)
+            const normTitle = normalizeSourceReferences(finalTitle)
+            const normContent = normalizeSourceReferences(content)
+            if (normTitle.replacements.length + normContent.replacements.length > 0) {
+              console.log(`[sheet-scraper] 출처 정규화 ${normTitle.replacements.length + normContent.replacements.length}건: "${finalTitle.slice(0, 24)}"`)
+            }
+            if (normContent.flags.length > 0) {
+              console.warn(`[sheet-scraper] 맥락 의존 신호(${normContent.flags.join(',')}) — 치환 없이 기록만: "${finalTitle.slice(0, 24)}"`)
+            }
+
             // 게시 (삭제된 게시글 재활용 또는 신규 생성)
-            const slug = await generateCommunitySlug(finalTitle)
+            const slug = await generateCommunitySlug(normTitle.text)
             const postData = {
-              title: finalTitle,
-              content,
+              title: normTitle.text,
+              content: normContent.text,
               boardType: tab.boardType,
               category,
               authorId: userId,

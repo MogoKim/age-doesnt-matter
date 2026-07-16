@@ -68,7 +68,8 @@ export function transformContent(
 
   // 8. 출처 표시 — STORY(사는이야기)는 개인 글처럼 보이므로 출처 없음
   if (boardType === 'HUMOR') {
-    processed = `${processed}\n<p>출처: ${escapeHtml(siteConfig.name)}</p>`
+    // 외부 커뮤니티명 노출 금지 — 출처 문구는 유지하되 일반화 (P0 2026-07-16, siteConfig.name 직접 노출 금지)
+    processed = `${processed}\n<p>출처: 온라인 커뮤니티</p>`
   }
 
   return processed
@@ -102,7 +103,8 @@ export function transformRawContent(
 
   // STORY(사는이야기)는 개인 글처럼 보여야 하므로 출처 없음
   if (boardType === 'HUMOR') {
-    content = `${content}\n<p>출처: ${escapeHtml(siteName)}</p>`
+    // 외부 커뮤니티명 노출 금지 — 출처 문구는 유지하되 일반화 (P0 2026-07-16)
+    content = `${content}\n<p>출처: 온라인 커뮤니티</p>`
   }
 
   return content
