@@ -34,6 +34,36 @@ export const HAIKU_GATE_ACTION = 'HAIKU_QUALITY_DRYRUN'
 
 const client = new Anthropic()
 
+
+export const HAIKU_BLOCKED_ACTION = 'HAIKU_QUALITY_BLOCKED'
+
+/** enforcement 차단 기록 — Post는 생성하지 않는다. 기록 실패해도 흐름 무영향. */
+export async function recordHaikuBlocked(input: {
+  title: string
+  cafePostId: string
+  cafeId: string | null
+  source: string
+  decision: string
+  confidence: number
+  risks: string[]
+  reason: string
+  boardType: string
+  category: string | null
+  refSourceStage: string | undefined
+  mode: string
+}): Promise<void> {
+  await prisma.botLog
+    .create({
+      data: {
+        botType: 'CAFE_CRAWLER',
+        status: 'SUCCESS',
+        action: HAIKU_BLOCKED_ACTION,
+        logData: { ...input, title: input.title.slice(0, 80), reason: input.reason.slice(0, 200), model: MODEL },
+      },
+    })
+    .catch(() => {})
+}
+
 /** 당일(KST) 같은 cafePostId 판정 재사용 — 중복 API 호출 방지 */
 async function findTodayCachedDecision(cafePostId: string): Promise<HaikuQualityDecision | null> {
   const kstMidnight = new Date(new Date(Date.now() + 9 * 3600_000).setUTCHours(0, 0, 0, 0) - 9 * 3600_000)

@@ -126,6 +126,39 @@ export function buildHaikuQualityPrompt(input: HaikuQualityInput): string {
 {"decision":"PASS|REJECT|NEEDS_REVIEW","confidence":0.0,"speakerRole":"target_woman_45_60|neutral_daily|young_self|male_self|parenting_current|other_person_story|unknown","risks":["young_self|male_self|parenting_current|newlywed|early_marriage_tone|romance_self|sexualized_age_gap|original_cafe_context|mocking_or_inside_joke|stale_time|board_mismatch|thin_or_contextless"],"reason":"짧은 한국어 근거 1문장 (발화자 판정 근거 포함)"}`
 }
 
+
+// ── PR-3 enforcement (2026-07-16 창업자 승인) — 고신뢰 REJECT만 차단하는 순수 판정 ──
+
+export type HaikuGateMode = 'off' | 'dryrun' | 'enforce'
+
+/** 미설정·오타는 전부 dryrun(현행 유지 — 안전 기본값). enforce는 명시 설정 시에만. */
+export function resolveHaikuGateMode(raw: string | undefined): HaikuGateMode {
+  const v = (raw ?? '').trim().toLowerCase()
+  if (v === 'enforce') return 'enforce'
+  if (v === 'off') return 'off'
+  return 'dryrun'
+}
+
+/** 차단 허용 risk 축 — 세계관/맥락 위반만. thin_or_contextless·board_mismatch는 절대 포함 금지(오탐 경계축). */
+export const BLOCKING_RISKS: readonly HaikuRisk[] = [
+  'parenting_current', 'young_self', 'romance_self', 'sexualized_age_gap',
+  'male_self', 'early_marriage_tone', 'newlywed', 'original_cafe_context',
+]
+const BLOCK_MIN_CONFIDENCE = 0.9
+
+/**
+ * 발행 차단 여부 — mode=enforce에서만 true 가능.
+ * REJECT + confidence>=0.9 + 차단 축 risk 1개 이상일 때만 차단.
+ * NEEDS_REVIEW/PASS/ERROR(실패·timeout)는 어떤 경우에도 차단하지 않는다(발행 지속).
+ */
+export function shouldBlockPublish(result: HaikuQualityResult, mode: HaikuGateMode): boolean {
+  if (mode !== 'enforce') return false
+  if (result.haikuStatus === 'ERROR') return false // 실패/timeout — 발행 지속, 운영 중단 금지
+  if (result.decision !== 'REJECT') return false // NEEDS_REVIEW 전면 차단 금지
+  if (result.confidence < BLOCK_MIN_CONFIDENCE) return false
+  return result.risks.some(r => BLOCKING_RISKS.includes(r)) // thin/board_mismatch 단독은 자동 불차단
+}
+
 /** 응답 텍스트에서 JSON을 추출·검증. 실패 시 null (호출부가 ERROR 처리) */
 export function parseHaikuQualityDecision(response: string): HaikuQualityDecision | null {
   const jsonMatch = response.match(/\{[\s\S]*\}/)

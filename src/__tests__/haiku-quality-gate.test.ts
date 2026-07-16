@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildHaikuQualityPrompt, parseHaikuQualityDecision } from '../../agents/cafe/haiku-quality-prompt'
+import { buildHaikuQualityPrompt, parseHaikuQualityDecision, resolveHaikuGateMode, shouldBlockPublish } from '../../agents/cafe/haiku-quality-prompt'
 
 /** Haiku 품질 게이트 dry-run (PR-2) — 순수부(프롬프트 빌더·파서) 고정. API 호출은 mock 없이 범위 밖 */
 
@@ -135,5 +135,52 @@ describe('buildHaikuQualityPrompt — 판정 기준 고정', () => {
   it('본문 2000자 절단', () => {
     const long = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'a'.repeat(5000), boardType: 'STORY' })
     expect(long.length).toBeLessThan(6200) // 2026-07-16 보정 3축으로 고정부 증가 — 본문 절단(2000자) 검증이 목적
+  })
+})
+
+describe('PR-3 enforcement — shouldBlockPublish (고신뢰 REJECT만 차단)', () => {
+  const ok = (over: Record<string, unknown>) => ({
+    haikuStatus: 'OK' as const, wouldReject: true, decision: 'REJECT' as const,
+    confidence: 0.95, speakerRole: 'parenting_current' as const,
+    risks: ['parenting_current' as const], reason: 'x', ...over,
+  })
+  it('REJECT + conf>=0.9 + 차단 축 risk → 차단 (mode=enforce에서만)', () => {
+    expect(shouldBlockPublish(ok({}) as never, 'enforce')).toBe(true)
+    expect(shouldBlockPublish(ok({}) as never, 'dryrun')).toBe(false)
+    expect(shouldBlockPublish(ok({}) as never, 'off')).toBe(false)
+  })
+  it('차단 축 전체 — young/romance/sexualized/male/early_marriage/newlywed/cafe_context', () => {
+    for (const r of ['young_self', 'romance_self', 'sexualized_age_gap', 'male_self', 'early_marriage_tone', 'newlywed', 'original_cafe_context']) {
+      expect(shouldBlockPublish(ok({ risks: [r] }) as never, 'enforce')).toBe(true)
+    }
+  })
+  it('thin/board_mismatch 단독은 REJECT 0.95여도 차단 금지', () => {
+    expect(shouldBlockPublish(ok({ risks: ['thin_or_contextless'] }) as never, 'enforce')).toBe(false)
+    expect(shouldBlockPublish(ok({ risks: ['board_mismatch'] }) as never, 'enforce')).toBe(false)
+    expect(shouldBlockPublish(ok({ risks: ['thin_or_contextless', 'board_mismatch'] }) as never, 'enforce')).toBe(false)
+  })
+  it('NEEDS_REVIEW는 고위험 risk여도 차단 금지 (전면 차단 아님)', () => {
+    expect(shouldBlockPublish(ok({ decision: 'NEEDS_REVIEW' }) as never, 'enforce')).toBe(false)
+  })
+  it('confidence < 0.9는 차단 금지', () => {
+    expect(shouldBlockPublish(ok({ confidence: 0.85 }) as never, 'enforce')).toBe(false)
+  })
+  it('실패/timeout(ERROR)은 발행 지속 — 차단 금지', () => {
+    expect(shouldBlockPublish({ haikuStatus: 'ERROR', error: 'timeout' }, 'enforce')).toBe(false)
+  })
+  it('정상 글(PASS)은 당연히 차단 금지', () => {
+    expect(shouldBlockPublish(ok({ decision: 'PASS', risks: [] }) as never, 'enforce')).toBe(false)
+  })
+})
+
+describe('resolveHaikuGateMode — 안전 기본값', () => {
+  it('enforce/off는 명시 시에만, 미설정·오타는 전부 dryrun(현행 유지)', () => {
+    expect(resolveHaikuGateMode('enforce')).toBe('enforce')
+    expect(resolveHaikuGateMode(' Enforce ')).toBe('enforce')
+    expect(resolveHaikuGateMode('off')).toBe('off')
+    expect(resolveHaikuGateMode(undefined)).toBe('dryrun')
+    expect(resolveHaikuGateMode('')).toBe('dryrun')
+    expect(resolveHaikuGateMode('enforcee')).toBe('dryrun')
+    expect(resolveHaikuGateMode('true')).toBe('dryrun')
   })
 })
