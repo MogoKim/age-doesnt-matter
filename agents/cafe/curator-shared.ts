@@ -11,20 +11,13 @@ export function sanitizeForApi(text: string): string {
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
 }
 
-/** 카페 원본 명칭을 우나어 브랜드명으로 치환 — 발행 직전에만 적용, CafePost 원본 DB 보존 */
-const CAFE_NAME_MAP: [RegExp, string][] = [
-  [/우아한\s*갱년기/g, '우나어'],
-  [/은퇴\s*후\s*50년/g, '우나어'],
-  [/우갱/g, '우나어'],
-  [/은오/g, '우나어'],
-]
+/** 원문 출처 정규화 — 구현은 normalize-source-references.ts (순수 전용 모듈), 여기서 re-export */
+export { normalizeSourceReferences, type NormalizedSourceResult } from './normalize-source-references.js'
+import { normalizeSourceReferences as _norm } from './normalize-source-references.js'
 
+/** @deprecated 호환 유지용 — 내부적으로 normalizeSourceReferences를 사용 (기존 호출부 자동 커버) */
 export function replaceCafeReferences(text: string): string {
-  let result = text
-  for (const [pattern, replacement] of CAFE_NAME_MAP) {
-    result = result.replace(pattern, replacement)
-  }
-  return result
+  return _norm(text).text
 }
 
 /** 평문 텍스트 → 큐레이션 발행용 HTML 변환
