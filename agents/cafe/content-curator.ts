@@ -9,7 +9,7 @@ import { prisma, disconnect } from '../core/db.js'
 import { notifySlack, sendSlackMessage } from '../core/notifier.js'
 import { findPoliticalKeyword, hasPoliticalKeyword } from '../core/political-blocklist.js'
 import { findAgeFitViolation } from '../core/age-fit-blocklist.js'
-import { evaluateContentQualityWithHaiku, summarizeHaikuResult, type HaikuQualityResult } from './haiku-quality-gate.js'
+import { evaluateContentQualityWithHaiku, summarizeHaikuResult, resolveHaikuGateMode, shouldBlockPublish, recordHaikuBlocked, type HaikuQualityResult } from './haiku-quality-gate.js'
 import type { CuratedContent } from './types.js'
 
 import {
@@ -38,6 +38,7 @@ type SkipReason =
   | 'DESIRE_EXHAUSTED'
   | 'KEYWORD_OVERLAP'
   | 'REFS_EMPTY'
+  | 'HAIKU_BLOCKED' // PR-3 enforcement — 고신뢰 REJECT 차단 (mode=enforce에서만)
   | 'LOW_USABLE_COMMENTS'
   | 'AUTHOR_DAILY_CAP'
   | 'GENERATION_FAILED'
@@ -857,8 +858,32 @@ export async function main() {
       boardType: board.boardType,
     })
     const haiku = summarizeHaikuResult(haikuResult)
+    // [PR-3 enforcement] 고신뢰 REJECT + 차단 축 risk만 실제 차단 (HAIKU_GATE_MODE=enforce에서만).
+    // NEEDS_REVIEW/thin·board_mismatch 단독/실패·timeout은 차단하지 않는다 — 발행 지속.
+    const haikuGateMode = resolveHaikuGateMode(process.env.HAIKU_GATE_MODE)
+    if (shouldBlockPublish(haikuResult, haikuGateMode)) {
+      const blocked = haikuResult as Extract<HaikuQualityResult, { haikuStatus: 'OK' | 'CACHED' }>
+      const refCafeId = (refs[0] as unknown as { cafeId?: string | null }).cafeId ?? null
+      await recordHaikuBlocked({
+        title: mainRef.title,
+        cafePostId: mainRef.id,
+        cafeId: refCafeId,
+        source: 'CONTENT_CURATE',
+        decision: blocked.decision,
+        confidence: blocked.confidence,
+        risks: blocked.risks,
+        reason: blocked.reason,
+        boardType: board.boardType,
+        category: board.category ?? null,
+        refSourceStage: refCafeId ? sourceStageOfCafe(refCafeId) : undefined,
+        mode: haikuGateMode,
+      })
+      console.log(`[ContentCurator] HAIKU_BLOCKED (${blocked.risks.join(',')}, conf=${blocked.confidence}): "${mainRef.title.slice(0, 30)}" — 발행 차단`)
+      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'HAIKU_BLOCKED', ...refMeta(refs[0]), haiku })
+      continue
+    }
     if (haikuResult.haikuStatus !== 'ERROR' && haikuResult.wouldReject) {
-      console.log(`[ContentCurator] Haiku dry-run wouldReject (${haikuResult.speakerRole}/${haikuResult.risks.join(',')}): "${mainRef.title.slice(0, 30)}" — 발행은 계속`)
+      console.log(`[ContentCurator] Haiku ${haikuGateMode === 'enforce' ? 'REJECT(비차단 축/저신뢰)' : 'dry-run wouldReject'} (${haikuResult.speakerRole}/${haikuResult.risks.join(',')}): "${mainRef.title.slice(0, 30)}" — 발행은 계속`)
     }
 
     const curated = await generateCuratedPost(persona, candidate.topic, refs, desireCat)
