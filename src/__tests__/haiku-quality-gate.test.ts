@@ -125,6 +125,24 @@ describe('buildHaikuQualityPrompt — 판정 기준 고정', () => {
     )
     expect(r?.risks).toEqual(['early_marriage_tone'])
   })
+  it('[v4 축1 2026-07-17] 연령대 자기 호출 — 30,40대/3040 자기 집단 호출은 REJECT 후보, 타인 지칭 제외', () => {
+    const prompt = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'c', boardType: 'STORY' })
+    expect(prompt).toContain('연령대 자기 호출')
+    expect(prompt).toContain('young_self 계열 REJECT 후보')
+    expect(prompt).toContain('"30대 자녀"/"40대 아들"/"30대 후배"처럼 타인을 지칭하는 경우와 "50,60대 분들" 자기 호출은 제외')
+  })
+  it('[v4 축2] 결혼 연차 산술 — 15년차 이하+미성년 자녀+중장년 단서 부재는 낙관 추정 금지', () => {
+    const prompt = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'c', boardType: 'STORY' })
+    expect(prompt).toContain('결혼 연차 산술')
+    expect(prompt).toContain('40대 중반 이상으로 추정해 PASS시키지 마라')
+    expect(prompt).toContain('결혼 13년차 외동자녀')
+  })
+  it('[v4 축3] 또래 문맥 전이 — 친구/또래의 임신·난임·영유아 문맥은 other_person_story 예외', () => {
+    const prompt = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'c', boardType: 'STORY' })
+    expect(prompt).toContain('또래 문맥 전이')
+    expect(prompt).toContain('6살 애 자랑')
+    expect(prompt).toContain('자녀·손주·며느리·사위 세대 이야기는 기존처럼 정상')
+  })
   it('신규 risk enum이 파서에서 수용됨 (romance_self·sexualized_age_gap)', () => {
     const r = parseHaikuQualityDecision(
       '{"decision":"REJECT","confidence":0.9,"speakerRole":"unknown","risks":["sexualized_age_gap","romance_self"],"reason":"x"}',
@@ -134,7 +152,7 @@ describe('buildHaikuQualityPrompt — 판정 기준 고정', () => {
 
   it('본문 2000자 절단', () => {
     const long = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'a'.repeat(5000), boardType: 'STORY' })
-    expect(long.length).toBeLessThan(6200) // 2026-07-16 보정 3축으로 고정부 증가 — 본문 절단(2000자) 검증이 목적
+    expect(long.length).toBeLessThan(7600) // 2026-07-16 보정 3축으로 고정부 증가 — 본문 절단(2000자) 검증이 목적
   })
 })
 
