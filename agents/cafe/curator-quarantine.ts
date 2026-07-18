@@ -66,3 +66,19 @@ export function buildDailyQuarantine(runs: QuarantineEntry[][], threshold = 1): 
 
   return { dup: toSets(counts.dup), political: toSets(counts.political) }
 }
+
+/**
+ * HAIKU_QUALITY_BLOCKED BotLog logData → 차단된 cafePostId 추출 — 순수 (2026-07-18 재선정 루프 hotfix).
+ * 배경: 차단 시 usedAt 미마킹으로 같은 원문이 매 회차 재선정 → 당일 캐시 만료 후 판정 요동 시
+ * 발행 우회 2건 실증("학폭"·"유부남"). 한 번 차단된 원문은 후보/refs에서 제외한다.
+ * 불량 logData(null·cafePostId 없음·비문자열)는 조용히 무시 — 발행 흐름을 깨지 않는다.
+ */
+export function extractBlockedRefIds(logDatas: ReadonlyArray<unknown>): Set<string> {
+  const ids = new Set<string>()
+  for (const d of logDatas) {
+    if (typeof d !== 'object' || d === null) continue
+    const id = (d as { cafePostId?: unknown }).cafePostId
+    if (typeof id === 'string' && id.length > 0) ids.add(id)
+  }
+  return ids
+}

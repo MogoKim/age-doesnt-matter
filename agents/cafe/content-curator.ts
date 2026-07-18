@@ -30,7 +30,7 @@ import { generateCommunitySlug } from '../core/slug.js'
 import { computeUsableCount } from './compute-usable-count.js'
 import { buildPopularSeoMeta } from './popular-seo.js'
 import { findMedicalAdviceRequest } from '../core/medical-advice-blocklist.js'
-import { buildDailyQuarantine, type DailyQuarantine } from './curator-quarantine.js'
+import { buildDailyQuarantine, extractBlockedRefIds, type DailyQuarantine } from './curator-quarantine.js'
 import { recordPersonaMatcherShadow } from './persona-matcher-shadow.js'
 
 // ─── 후보 풀 / skipReason 타입 ─────────────────────────────────
@@ -167,6 +167,22 @@ async function getDailyQuarantine(since: Date): Promise<DailyQuarantine> {
     select: { details: true },
   })
   return buildDailyQuarantine(logs.map((log: { details: string | null }) => parseTopicResults(log.details)), DUP_QUARANTINE_THRESHOLD)
+}
+
+/** HAIKU_QUALITY_BLOCKED 이력 cafePostId — 한 번 차단된 원문은 재선정하지 않는다 (90일 lookback, 실패 시 빈 Set으로 발행 지속) */
+async function getHaikuBlockedRefIds(): Promise<Set<string>> {
+  try {
+    const logs = await prisma.botLog.findMany({
+      where: { action: 'HAIKU_QUALITY_BLOCKED', createdAt: { gte: new Date(Date.now() - 90 * 24 * 3600_000) } },
+      orderBy: { createdAt: 'desc' },
+      take: 1000,
+      select: { logData: true },
+    })
+    return extractBlockedRefIds(logs.map(l => l.logData))
+  } catch (err) {
+    console.warn(`[ContentCurator] BLOCKED 격리 조회 실패(발행 지속): ${err instanceof Error ? err.message : err}`)
+    return new Set()
+  }
 }
 
 
@@ -622,12 +638,15 @@ export async function main() {
   const quarantine = await getDailyQuarantine(todayStart)
   // 후보(cafePostId)든 실제 발행물(refCafePostId)이든 오늘 차단된 글은 재시도하지 않는다 — 어차피 publish 게이트에서 다시 차단될 시도만 제거(가드 무변경)
   const quarantinedTopics = new Set([...quarantine.dup.topics, ...quarantine.political.topics])
+  // [2026-07-18 hotfix] Haiku 차단 이력 원문 영구 격리 — 재선정→캐시 만료 재판정 요동→발행 우회 루프 차단
+  const haikuBlockedIds = await getHaikuBlockedRefIds()
   const quarantinedPostIds = new Set([
     ...quarantine.dup.cafeIds, ...quarantine.dup.refIds,
     ...quarantine.political.cafeIds, ...quarantine.political.refIds,
+    ...haikuBlockedIds,
   ])
   if (quarantinedTopics.size || quarantinedPostIds.size) {
-    console.log(`[ContentCurator] 당일 격리: topic ${quarantinedTopics.size}개 / cafePost ${quarantinedPostIds.size}개 (DUP ${quarantine.dup.cafeIds.size}+refs ${quarantine.dup.refIds.size} / POL ${quarantine.political.cafeIds.size}+refs ${quarantine.political.refIds.size}, ≥${DUP_QUARANTINE_THRESHOLD}회)`)
+    console.log(`[ContentCurator] 격리: topic ${quarantinedTopics.size}개 / cafePost ${quarantinedPostIds.size}개 (HAIKU_BLOCKED ${haikuBlockedIds.size}개 포함) (DUP ${quarantine.dup.cafeIds.size}+refs ${quarantine.dup.refIds.size} / POL ${quarantine.political.cafeIds.size}+refs ${quarantine.political.refIds.size}, ≥${DUP_QUARANTINE_THRESHOLD}회)`)
   }
   // keyword overlap 오탐 방지 — 어미·조사·기능어는 주제어가 아니므로 제외
   const OVERLAP_STOPWORDS = new Set([
