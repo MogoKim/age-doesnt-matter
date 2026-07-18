@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildDailyQuarantine, type QuarantineEntry } from '../../agents/cafe/curator-quarantine'
+import { buildDailyQuarantine, extractBlockedRefIds, type QuarantineEntry } from '../../agents/cafe/curator-quarantine'
 
 // Phase 0-b/c (2026-07-09): DUPLICATE_TITLE(기존 P0-A) + POLITICAL_BLOCK(신규) 당일 격리를
 // topic/cafePostId/refCafePostId 3키로 계산하는 순수 함수 검증.
@@ -87,5 +87,26 @@ describe('buildDailyQuarantine — 안전성/경계', () => {
     expect(q.political.cafeIds.has('p1')).toBe(true)
     expect(q.political.cafeIds.has('p2')).toBe(true)
     expect(q.dup.cafeIds.has('d1')).toBe(true)
+  })
+})
+
+describe('extractBlockedRefIds — HAIKU_BLOCKED 재선정 루프 hotfix (2026-07-18)', () => {
+  it('BLOCKED logData에서 cafePostId 추출', () => {
+    const ids = extractBlockedRefIds([
+      { cafePostId: 'ref-a', title: '학폭' },
+      { cafePostId: 'ref-b', title: '유부남' },
+      { cafePostId: 'ref-a' }, // 중복은 Set으로 수렴
+    ])
+    expect(ids).toEqual(new Set(['ref-a', 'ref-b']))
+  })
+  it('불량 logData(null·필드 없음·비문자열·빈 문자열)는 조용히 무시 — 발행 흐름 무영향', () => {
+    const ids = extractBlockedRefIds([null, undefined, 'str', 42, {}, { cafePostId: null }, { cafePostId: 7 }, { cafePostId: '' }, { cafePostId: 'ok' }])
+    expect(ids).toEqual(new Set(['ok']))
+  })
+  it('union 시 BLOCKED id가 격리 세트에 포함되는 계약 (기존 DUP/POL 흐름과 합류)', () => {
+    const blocked = extractBlockedRefIds([{ cafePostId: 'blk-1' }])
+    const merged = new Set(['dup-1', 'pol-1', ...blocked])
+    expect(merged.has('blk-1')).toBe(true)
+    expect(merged.has('dup-1')).toBe(true)
   })
 })
