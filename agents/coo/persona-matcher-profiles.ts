@@ -11,6 +11,7 @@
  */
 import { PERSONAS as BOT_PERSONAS } from '../seed/persona-data.js'
 import { PERSONAS as CURATOR_PERSONAS } from '../cafe/curator-shared.js'
+import { CURATOR_PERSONA_META } from '../cafe/curator-persona-meta.js'
 import { classifyTopicGroups, type TopicGroup } from './persona-matcher-policy.js'
 
 export type FamilyStatus = 'married' | 'widowed' | 'divorced' | 'solo' | 'unknown'
@@ -34,6 +35,10 @@ export interface PersonaProfile {
   nicknameLightTone: boolean
   /** 정체성이 건강/공감형 — 건강 글에서 유머형 닉네임이라도 예외 허용되는 유일 조건 (calibration 1) */
   empathyTone: boolean
+  /** 무거운 사연(간병/사별/학대 등) 배정 가능 — 메타 명시 없으면 true (2026-07-19 shadow 보강) */
+  heavyOk: boolean
+  /** 페르소나 원본 토픽 텍스트 — 글 키워드 겹침 보너스용 */
+  rawTopics: string
   /** GENERAL/동네일상 위주의 범용 성향 — reserve fallback 후보 근사 (본설계는 380명 확장 PR에서) */
   reserveCandidate: boolean
   depth: 'deep' | 'shallow'
@@ -62,12 +67,15 @@ function toProfile(input: {
   origin: 'bot' | 'curator'
   board: string
   text: string
+  rawTopics: string
   gender?: string
+  /** curator 보강 메타 (curator-persona-meta.ts) — 있으면 휴리스틱 override */
+  meta?: import('../cafe/curator-persona-meta.js').CuratorPersonaMeta
 }): PersonaProfile {
-  const groups = classifyTopicGroups(input.text, input.board)
+  const groups = input.meta?.topicGroups ?? classifyTopicGroups(input.text, input.board)
   const substantive = groups.filter(g => g !== 'GENERAL')
   // 정체성 톤: 리액션/짤/밈/개그 전문 서술 = 가벼운 톤 (닉네임과 별개로 판별)
-  const lightTone = /리액션\s?(전문|의)|짤|밈|이모지|개그|웃긴\s?(걸|일|거)|유머\s?(감각|모음|공유)/.test(input.text)
+  const lightTone = input.meta ? input.meta.tone === 'light' : /리액션\s?(전문|의)|짤|밈|이모지|개그|웃긴\s?(걸|일|거)|유머\s?(감각|모음|공유)/.test(input.text)
   const nicknameLightTone = /웃음|유머|하하|호호|빵터|개그|ㅋㅋ|짤/.test(input.nickname)
   const empathyTone = /건강|갱년기|공감|위로|걱정|다정|따뜻|보살/.test(input.text)
   return {
@@ -77,12 +85,14 @@ function toProfile(input: {
     origin: input.origin,
     board: input.board,
     topicGroups: groups,
-    familyStatus: inferFamilyStatus(input.text),
+    familyStatus: input.meta?.familyStatus ?? inferFamilyStatus(input.text),
     hasGrandchildren: /손주|손녀|손자/.test(input.text),
     reactionOnly: input.origin === 'bot' && REACTION_ONLY_KEYS.has(input.key),
     lightTone,
     nicknameLightTone,
     empathyTone,
+    heavyOk: input.meta?.heavyOk ?? true,
+    rawTopics: input.rawTopics,
     // 범용 성향: 실질 주제군이 없거나 동네일상뿐 → '조용한 이웃형' fallback 근사
     reserveCandidate: substantive.length === 0 || substantive.every(g => g === 'LOCAL_DAILY'),
     depth: input.origin === 'bot' ? 'deep' : 'shallow',
@@ -102,6 +112,7 @@ export function buildAllProfiles(): PersonaProfile[] {
         origin: 'bot',
         board: p.board,
         text: profileText([p.personality, p.style, p.topics, p.quirks, p.never]),
+        rawTopics: p.topics.join(' '),
       }),
     )
   }
@@ -114,6 +125,8 @@ export function buildAllProfiles(): PersonaProfile[] {
         origin: 'curator',
         board: p.board,
         text: profileText([p.style, p.topics, p.quirks]),
+        rawTopics: [p.style, ...p.topics].join(' '),
+        meta: CURATOR_PERSONA_META[p.id],
       }),
     )
   }
