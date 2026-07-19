@@ -143,6 +143,14 @@ describe('buildHaikuQualityPrompt — 판정 기준 고정', () => {
     expect(prompt).toContain('6살 애 자랑')
     expect(prompt).toContain('자녀·손주·며느리·사위 세대 이야기는 기존처럼 정상')
   })
+  it('[v5 2026-07-19] 고등 자녀 예외 — 고딩 학부모 시점은 타깃, 학생 본인·3040·초중등 병행은 예외 아님', () => {
+    const prompt = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'c', boardType: 'STORY' })
+    expect(prompt).toContain('고등 자녀 예외')
+    expect(prompt).toContain('차단 범위는 영유아~중등까지다')
+    expect(prompt).toContain('여고딩끼리 가평')
+    expect(prompt).toContain('학생 본인 1인칭 발화')
+    expect(prompt).toContain('초등~중등 형제 병행 양육 동반')
+  })
   it('신규 risk enum이 파서에서 수용됨 (romance_self·sexualized_age_gap)', () => {
     const r = parseHaikuQualityDecision(
       '{"decision":"REJECT","confidence":0.9,"speakerRole":"unknown","risks":["sexualized_age_gap","romance_self"],"reason":"x"}',
@@ -152,7 +160,7 @@ describe('buildHaikuQualityPrompt — 판정 기준 고정', () => {
 
   it('본문 2000자 절단', () => {
     const long = buildHaikuQualityPrompt({ cafePostId: 'x', title: 't', content: 'a'.repeat(5000), boardType: 'STORY' })
-    expect(long.length).toBeLessThan(7600) // 2026-07-16 보정 3축으로 고정부 증가 — 본문 절단(2000자) 검증이 목적
+    expect(long.length).toBeLessThan(8600) // 2026-07-16 보정 3축으로 고정부 증가 — 본문 절단(2000자) 검증이 목적
   })
 })
 
