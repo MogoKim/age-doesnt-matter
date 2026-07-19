@@ -26,6 +26,8 @@ const mk = (over: Partial<PersonaProfile>): PersonaProfile => ({
   lightTone: false,
   nicknameLightTone: false,
   empathyTone: false,
+  heavyOk: true,
+  rawTopics: '',
   depth: 'deep',
   ...over,
 })
@@ -256,5 +258,49 @@ describe('inferFamilyStatus — 텍스트 휴리스틱', () => {
     expect(inferFamilyStatus('아들 도시락 싸주던 시절 이야기')).toBe('married')
     expect(inferFamilyStatus('손녀 재롱에 하루가 간다')).toBe('married')
     expect(inferFamilyStatus('이혼 후 딸과 둘이 산다')).toBe('divorced')
+  })
+})
+
+describe('shadow 보강 (2026-07-19) — 메타 override·heavy 제외·키워드 보너스', () => {
+  it('무거운 사연(요양원/간병) 글에 heavyOk=false 페르소나 hard 제외', () => {
+    const heavy = analyzePost({ title: '언니는 아버지를 요양원에 보내자고 합니다', content: '간병을 누가 하나요', boardType: 'STORY' })
+    expect(heavy.heavyTone).toBe(true)
+    expect(findHardConstraintViolation(mk({ heavyOk: false }), heavy)).toBe('TONE_LIGHT_ON_HEAVY')
+    expect(findHardConstraintViolation(mk({ heavyOk: true }), heavy)).toBeNull()
+  })
+  it('가벼운 건강 질문(임플란트)은 heavy 아님 — heavyOk=false도 통과', () => {
+    const light = analyzePost({ title: '임플란트 많이 아픈가요??ㅠㅠ', content: '', boardType: 'STORY' })
+    expect(light.heavyTone).toBe(false)
+    expect(findHardConstraintViolation(mk({ heavyOk: false }), light)).toBeNull()
+  })
+  it('제목 키워드 ↔ rawTopics 겹침 보너스(+10/개, 최대 +30) — 동점 해소', () => {
+    const a = analyzePost({ title: '임플란트 통증 문의', content: '', boardType: 'STORY' })
+    const base = scoreCandidate(mk({ topicGroups: ['HEALTH'] }), a, emptyExposure())
+    const boosted = scoreCandidate(mk({ topicGroups: ['HEALTH'], rawTopics: '병원 검진 임플란트 통증 관리' }), a, emptyExposure())
+    expect(boosted.score).toBeGreaterThan(base.score)
+    expect(boosted.score - base.score).toBeLessThanOrEqual(30)
+  })
+  it('curator 메타 override — H014 늦잠대장은 HEALTH에서 제외되고 유머 전용/heavyOk=false', () => {
+    const profiles = buildAllProfiles()
+    const h014 = profiles.find(p => p.key === 'curator-H014')!
+    expect(h014.topicGroups).toEqual(['HUMOR_LIGHT'])
+    expect(h014.heavyOk).toBe(false)
+    const ak = profiles.find(p => p.key === 'curator-AK')!
+    expect(ak.topicGroups).toEqual(expect.arrayContaining(['HEALTH', 'CARE_SOLO']))
+    expect(ak.heavyOk).toBe(true)
+    expect(ak.reserveCandidate).toBe(false)
+  })
+  it('메타 없는 curator는 기존 휴리스틱 유지 (225 전체 수정 아님)', () => {
+    const profiles = buildAllProfiles()
+    const a2 = profiles.find(p => p.key === 'curator-A')!
+    expect(a2.heavyOk).toBe(true) // 기본값
+  })
+  it('대표 FAIL 사례 계약 — 요양원 글에서 유머 4인방(H010/H015/H006/H014) 전원 제외, 간병 계열이 pick', () => {
+    const profiles = buildAllProfiles().filter(p => p.origin === 'curator')
+    const heavy = analyzePost({ title: '언니는 아버지를 요양원에 보내자고 합니다', content: '치매 초기신데 간병 문제로 다퉜어요', boardType: 'STORY' })
+    const r = matchPersona(profiles, heavy, emptyExposure())
+    expect(['curator-H010', 'curator-H015', 'curator-H006', 'curator-H014']).not.toContain(r.finalPick?.key)
+    expect(r.excluded['curator-H010']).toBe('TONE_LIGHT_ON_HEAVY')
+    expect(['curator-AK', 'curator-CK', 'curator-DB', 'curator-S053', 'curator-DP']).toContain(r.finalPick?.key)
   })
 })

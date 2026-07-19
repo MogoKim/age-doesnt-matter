@@ -77,6 +77,10 @@ export type WorldviewViolation = 'CURRENT_PARENTING' | 'MALE_SELF' | 'YOUNG_SELF
 export interface PostAnalysis {
   topicGroups: TopicGroup[]
   speakerClues: SpeakerClues
+  /** 무거운 사연 신호(간병/사별/학대/소송 등) — heavyOk=false 페르소나 hard 제외 (2026-07-19) */
+  heavyTone: boolean
+  /** 제목 키워드(2글자 이상) — 페르소나 rawTopics 겹침 보너스용 */
+  keywords: string[]
   /** null이 아니면 어떤 페르소나에게도 배정 불가 + Haiku 표본 후보 */
   worldviewViolation: WorldviewViolation
 }
@@ -103,7 +107,9 @@ export function analyzePost(input: { title: string; content: string; boardType: 
   if (clues.maleSelf) violation = 'MALE_SELF'
   else if (clues.youngSelf || clues.pregnancy) violation = 'YOUNG_SELF'
   else if (clues.youngChildCare) violation = 'CURRENT_PARENTING'
-  return { topicGroups: classifyTopicGroups(text, input.boardType, input.category), speakerClues: clues, worldviewViolation: violation }
+  const heavyTone = /요양원|요양병원|치매|간병|사별|장례|위독|중환자|학대|고소|소송|이혼\s?소송|파산|빚더미|우울증/.test(text)
+  const keywords = input.title.split(/[\s.,?!~()\[\]"']+/).filter(w => w.length >= 2).slice(0, 10)
+  return { topicGroups: classifyTopicGroups(text, input.boardType, input.category), speakerClues: clues, worldviewViolation: violation, heavyTone, keywords }
 }
 
 // ── 2. hard constraint ─────────────────────────────────────
@@ -120,6 +126,8 @@ export function findHardConstraintViolation(p: PersonaProfile, a: PostAnalysis):
   if (a.speakerClues.husbandPresent && (p.familyStatus === 'widowed' || p.familyStatus === 'divorced' || p.familyStatus === 'solo')) {
     return `FAMILY_CONFLICT_${p.familyStatus.toUpperCase()}`
   }
+  // 무거운 사연(간병/사별/학대 등)에 유머·자조 전용 페르소나 배정 금지 (07-19 채점: "요양원 글→계단이무서워" FAIL 표본)
+  if (a.heavyTone && !p.heavyOk) return 'TONE_LIGHT_ON_HEAVY'
   return null
 }
 
@@ -162,6 +170,9 @@ export function scoreCandidate(p: PersonaProfile, a: PostAnalysis, e: ExposureSt
   if (p.topicGroups.includes(primary)) score += 100 // core 주제군
   else if (a.topicGroups.some(g => p.topicGroups.includes(g))) score += 50 // 인접 주제군
   else if (p.topicGroups.includes('GENERAL') || primary === 'GENERAL') score += 10
+  // 글 키워드 ↔ 페르소나 토픽 직접 겹침 보너스(+10/개, 최대 +30) — 동점 뭉침 해소, tie-break는 최후 수단으로 (07-19 채점: tie-break 결정 46% 보정)
+  const kwHits = a.keywords.filter(w => p.rawTopics.includes(w)).length
+  if (kwHits > 0) score += Math.min(30, kwHits * 10)
 
   const daily = e.daily[p.key] ?? 0
   const weekly = e.weekly[p.key] ?? 0
