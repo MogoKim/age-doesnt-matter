@@ -64,9 +64,16 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { boardSlug } = await params
+  // getBoardConfig 예외만 try로 격리 — notFound()는 내부적으로 예외를 던지므로 catch에 삼켜지면 무력화된다
+  let boardOrNull = null
   try {
-    const board = await getBoardConfig(boardSlug)
-    if (!board) return { title: '게시판', robots: { index: false, follow: false } } // 미존재 board — 루트 index 상속 차단
+    boardOrNull = await getBoardConfig(boardSlug)
+  } catch {
+    return { title: '게시판' }
+  }
+  if (!boardOrNull) notFound() // 미존재 board — metadata 단계 404 (스트리밍 전이라 상태코드 확정)
+  try {
+    const board = boardOrNull
     const canonical = boardSlug === 'magazine'
       ? '/magazine'
       : boardSlug === 'jobs'
