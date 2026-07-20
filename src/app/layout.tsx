@@ -60,10 +60,6 @@ export const metadata: Metadata = {
     siteName: '우리 나이가 어때서',
     images: [{ url: '/og-cover.png', width: 1200, height: 630, alt: '우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티' }],
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
   verification: {
     google: process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? undefined,
     other: {
