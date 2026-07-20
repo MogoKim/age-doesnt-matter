@@ -42,9 +42,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // getPostDetail(postId) without user state is shared with the page render through Data Cache.
   // This avoids a separate getPostMeta DB round trip on the first ISR/MISS request.
   const post = await getPostDetail(postId)
-  // 미존재·HIDDEN·DELETED(getPostDetail은 PUBLISHED/SEO_ONLY만 조회) — noindex 단일 신호.
-  // 렌더 단계 notFound()는 스트리밍 시작 후라 상태코드를 못 바꾸는 경우가 있어 메타에서 먼저 차단 (GSC Soft 404 243건 원인)
-  if (!post) return { robots: { index: false, follow: false } }
+  // 미존재·HIDDEN·DELETED(getPostDetail은 PUBLISHED/SEO_ONLY만 조회) — metadata 단계는 스트리밍
+  // 시작 전이므로 여기서 notFound()를 던져야 HTTP 404가 확정된다(렌더 단계 notFound는 loading.tsx/
+  // Suspense 스트리밍이 200 헤더를 먼저 보내 무력화). Next가 noindex를 자동 삽입 — 명시 robots 불필요(중복 해소)
+  if (!post) notFound()
 
   // CUID로 접근 시 streaming 시작 전에 308 redirect
   if (post.slug && postId !== post.slug) {
