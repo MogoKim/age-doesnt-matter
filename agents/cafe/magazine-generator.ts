@@ -18,6 +18,7 @@ import { pickLongtailKeywords } from '../magazine/longtail-keywords.js'
 import { getActiveSeriesToday } from '../magazine/series-plan.js'
 import { requestGoogleIndexing } from './indexing-api.js'
 import * as keywordQueue from '../magazine/keyword-queue.js'
+import { loadPublishedMagazineNorms } from '../magazine/queue-db-guard.js'
 import { createHash } from 'crypto'
 import type { QueueEvent, QueueState } from '../magazine/keyword-queue.js'
 import type { PublishPolicy } from '../magazine/keyword-research/scorer.js'
@@ -613,7 +614,14 @@ export async function main(): Promise<MagazineRunResult[]> {
       queueState = keywordQueue.loadState()
       const universe = keywordQueue.loadUniverse()
       const consumed = new Set(queueState.consumedNormalized)
-      const candidates = keywordQueue.selectOrderedCandidates(universe, { limit: 30, excludeNormalized: consumed })
+      // [PR-1] forward safety — 이미 발행된 매거진과 같은 subtopic 후보 제외(자기잠식 방지) + brand-fit
+      const publishedNorms = await loadPublishedMagazineNorms(prisma)
+      const candidates = keywordQueue.selectOrderedCandidates(universe, {
+        limit: 30,
+        excludeNormalized: consumed,
+        publishedNorms,
+        applyBrandFit: true,
+      })
       const queueTopics: MagazineSuggestion[] = candidates.map((c) => ({
         title: c.keyword,
         reason: `queue:${c.cluster}/${c.intent}`,
@@ -631,7 +639,8 @@ export async function main(): Promise<MagazineRunResult[]> {
     }
   }
 
-  // 큐 이벤트 기록 헬퍼 — 큐 토픽일 때만 동작(state 파일 기록, DB 아님). published/skipped_duplicate만 소비.
+  // 큐 이벤트 기록 헬퍼 — 큐 토픽일 때만 동작(state 파일 기록, DB 아님).
+  // [PR-1] 소비 정책은 applyFailurePolicy로 위임(성공·중복·no_publish=소비 / 이미지실패=재시도 / 생성·본문실패=1회 재시도 후 소비).
   const recordQueueEvent = (topicTitle: string, event: QueueEvent, postId?: string): void => {
     if (!queueState) return
     const qm = queueMeta.get(topicTitle)
@@ -645,7 +654,7 @@ export async function main(): Promise<MagazineRunResult[]> {
       session: SESSION,
       postId,
     })
-    if (event === 'published' || event === 'skipped_duplicate') {
+    if (keywordQueue.applyFailurePolicy(queueState, qm.normalized, event)) {
       keywordQueue.markConsumed(queueState, qm.normalized)
     }
     keywordQueue.saveState(queueState)

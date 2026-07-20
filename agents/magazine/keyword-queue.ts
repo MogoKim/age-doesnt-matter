@@ -14,7 +14,7 @@
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import type { ClusterId, Intent, KeywordNode, PublishPolicy } from './keyword-research/scorer.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -67,6 +67,31 @@ export function extractSubtopicKey(keyword: string): string {
     .map((t) => t.replace(/[층들]$/, ''))
     .filter(Boolean)
   return tokens.slice(0, 2).join(' ')
+}
+
+/**
+ * 공백·문장부호 제거 정규화 — DB 발행분 title/seoTitle과 큐 keyword를 띄어쓰기 차이에 무관하게 대조.
+ * (extractSubtopicKey는 공백 기준이라 "빈 둥지 증후군" ≠ "빈둥지 증후군"을 놓침 → 이 함수로 보강)
+ */
+export function normalizeText(s: string): string {
+  return (s ?? '').replace(/[^가-힣0-9a-z]/gi, '')
+}
+
+/** 큐 keyword의 핵심 subtopic — 앞 2토큰을 공백 제거 결합. DB 부분문자열 매칭용. */
+export function keywordCore(keyword: string): string {
+  return normalizeText(keyword.trim().split(/\s+/).slice(0, 2).join(''))
+}
+
+/**
+ * brand-fit 제외 판정 — 우나어 타깃(40대 중반~60대 한국 여성)에 안 맞는 후보.
+ * 보수적: 명백한 남성 중심(남편 제외) + 과도 broad만. borderline은 통과시킨다.
+ */
+export function brandFitExclusion(keyword: string): 'male_centric' | 'broad_community' | 'broad_health' | null {
+  const k = keyword.trim()
+  if (/(남자|남성)/.test(k) && !/남편/.test(k)) return 'male_centric'
+  if (/커뮤니티/.test(k)) return 'broad_community'
+  if (/^[456]0대\s*(여성\s*)?건강$/.test(k)) return 'broad_health'
+  return null
 }
 
 /** magazine-generator.ts detectCategory(title, reason)를 그대로 미러링한 예상 카테고리 */
@@ -227,6 +252,8 @@ export interface QueueState {
   consumedNormalized: string[]
   counts: Record<QueueEvent, number>
   events: QueueEventRow[]
+  /** [PR-1] normalized → 누적 실패 횟수. failed_generation/failed_body_short 1회 재시도 후 소비 판정용. */
+  retryCount?: Record<string, number>
 }
 
 const MAX_EVENTS = 500
@@ -245,6 +272,7 @@ function emptyState(): QueueState {
       failed_no_publish_guard: 0,
     },
     events: [],
+    retryCount: {},
   }
 }
 
@@ -264,18 +292,35 @@ export function loadState(): QueueState {
       consumedNormalized: parsed.consumedNormalized ?? [],
       counts: { ...base.counts, ...(parsed.counts ?? {}) },
       events: parsed.events ?? [],
+      retryCount: parsed.retryCount ?? {},
     }
   } catch {
     return emptyState()
   }
 }
 
-/** state 저장 (data/ 디렉토리 보장, gitignore 대상). DB 아님. */
+/**
+ * state 저장 (data/ 디렉토리 보장, gitignore 대상). DB 아님.
+ * [PR-1] 원자적 write(tmp→rename) + 저장 직전 디스크 consumed 병합 —
+ *   launchd morning/late 세션이 겹쳐도 소비 이력 유실 방지(합집합), 중간 크래시 시 기존 파일 보존.
+ */
 export function saveState(state: QueueState): void {
   mkdirSync(path.dirname(STATE_PATH), { recursive: true })
+  // 저장 직전 디스크 재로드 후 consumed 합집합 — 다른 세션이 그 사이 소비한 항목 보존
+  try {
+    const onDisk = JSON.parse(readFileSync(STATE_PATH, 'utf-8')) as Partial<QueueState>
+    if (Array.isArray(onDisk.consumedNormalized)) {
+      const merged = new Set([...onDisk.consumedNormalized, ...state.consumedNormalized])
+      state.consumedNormalized = [...merged]
+    }
+  } catch {
+    // 파일 없음/손상 — 현재 state 그대로 기록
+  }
   state.updatedAt = new Date().toISOString()
   if (state.events.length > MAX_EVENTS) state.events = state.events.slice(-MAX_EVENTS)
-  writeFileSync(STATE_PATH, JSON.stringify(state, null, 2))
+  const tmp = `${STATE_PATH}.tmp`
+  writeFileSync(tmp, JSON.stringify(state, null, 2))
+  renameSync(tmp, STATE_PATH) // POSIX rename = 원자적 교체
 }
 
 /** 소비 표시 (중복 추가 방지) */
@@ -290,12 +335,37 @@ export function recordEvent(state: QueueState, row: Omit<QueueEventRow, 'ts'>): 
 }
 
 /**
+ * [PR-1] 실패/성공 이벤트에 따른 소비 정책 — 반환 true면 markConsumed(재선택 방지) 대상.
+ *  - published / skipped_duplicate / failed_no_publish_guard → 소비(재시도 무의미)
+ *  - failed_image → 소비 안 함(키워드 무관 이미지 오류 → 다음 회차 재시도)
+ *  - failed_generation / failed_body_short → 1회 재시도 후 소비(2번째 실패부터 소비 = 무한루프 방지)
+ */
+export function applyFailurePolicy(state: QueueState, normalized: string, event: QueueEvent): boolean {
+  if (event === 'published' || event === 'skipped_duplicate' || event === 'failed_no_publish_guard') return true
+  if (event === 'failed_image') return false
+  if (event === 'failed_generation' || event === 'failed_body_short') {
+    state.retryCount = state.retryCount ?? {}
+    const next = (state.retryCount[normalized] ?? 0) + 1
+    state.retryCount[normalized] = next
+    return next >= 2 // 1회 재시도(첫 실패=false) → 2번째 실패부터 소비
+  }
+  return false
+}
+
+/**
  * 소비되지 않은 publishable 후보를 우선순위 순서로 반환.
  * (클러스터 라운드로빈 + subtopic 분산 = buildQueuePreview 순서 재사용, consumed 제외, 이중가드)
  */
 export function selectOrderedCandidates(
   nodes: KeywordNode[],
-  opts: { limit: number; excludeNormalized: Set<string> },
+  opts: {
+    limit: number
+    excludeNormalized: Set<string>
+    /** [PR-1] 발행된 매거진 title/seoTitle 정규화 문자열 — keywordCore가 부분문자열이면 DB subtopic 중복으로 제외 */
+    publishedNorms?: string[]
+    /** [PR-1] brand-fit 필터(남성 중심·과도 broad 제외) 적용 여부 */
+    applyBrandFit?: boolean
+  },
 ): QueueCandidate[] {
   const byKeyword = new Map<string, KeywordNode>()
   for (const n of nodes) byKeyword.set(n.keyword, n)
@@ -303,6 +373,10 @@ export function selectOrderedCandidates(
   const publishableCount = nodes.filter((n) => PUBLISHABLE_POLICIES.includes(n.publishPolicy)).length
   const horizonDays = Math.ceil(publishableCount / SESSION_SLOTS.length) + 2
   const { rows } = buildQueuePreview(nodes, horizonDays)
+
+  const publishedNorms = opts.publishedNorms ?? []
+  let dbDupBlocked = 0
+  let brandBlocked = 0
 
   const out: QueueCandidate[] = []
   const seen = new Set<string>()
@@ -313,6 +387,19 @@ export function selectOrderedCandidates(
     if (opts.excludeNormalized.has(node.normalized)) continue
     // 이중 가드: publishable만 (no_publish 절대 제외)
     if (!PUBLISHABLE_POLICIES.includes(node.publishPolicy)) continue
+    // [PR-1] DB subtopic 중복 가드 — 이미 발행된 매거진과 같은 subtopic이면 제외 (자기잠식 방지)
+    if (publishedNorms.length > 0) {
+      const core = keywordCore(node.keyword)
+      if (core.length >= 5 && publishedNorms.some((p) => p.includes(core))) {
+        dbDupBlocked++
+        continue
+      }
+    }
+    // [PR-1] brand-fit 제외 (남성 중심·과도 broad)
+    if (opts.applyBrandFit && brandFitExclusion(node.keyword) !== null) {
+      brandBlocked++
+      continue
+    }
     seen.add(node.normalized)
     out.push({
       keyword: node.keyword,
@@ -324,6 +411,11 @@ export function selectOrderedCandidates(
       subtopicKey: r.subtopicKey,
     })
     if (out.length >= opts.limit) break
+  }
+  if (publishedNorms.length > 0 || opts.applyBrandFit) {
+    console.log(
+      `[queue] forward-safety 제외 — DB subtopic 중복 ${dbDupBlocked}건 / brand-fit ${brandBlocked}건 → 최종 후보 ${out.length}개`,
+    )
   }
   return out
 }
