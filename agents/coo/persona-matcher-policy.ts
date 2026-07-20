@@ -25,8 +25,8 @@ const TOPIC_PATTERNS: Array<[TopicGroup, RegExp]> = [
   ['INLAW', /시댁|시어머니|시엄니|시모|시아버지|시부모|며느리|고부|시누이|동서|사위/],
   ['FAMILY_SPOUSE', /남편|신랑|그이|영감|와이프|아내|부부|각방|결혼\s?생활|재혼|황혼\s?이혼/],
   ['RETIRE_MONEY', /은퇴|연금|국민연금|노후|퇴직|재테크|적금|예금|주식|부동산|목돈|생활비|월세|전세/],
+  ['CARE_SOLO', /간병|요양|치매|독거|혼자\s?사는|1인\s?가구|고독/], // HEALTH보다 먼저 — 간병/요양 글은 간병 페르소나가 core 매칭 (2차: "요양원 글→마라톤여왕" 애매 해소)
   ['HEALTH', /갱년기|건강|병원|검진|관절|무릎|허리|혈압|당뇨|콜레스테롤|불면|수면|우울|증상|다이어트|영양제|피곤|기운|몸살|예민/],
-  ['CARE_SOLO', /간병|요양|치매|독거|혼자\s?사는|1인\s?가구|고독/],
   ['LOCAL_DAILY', /동네|시장|마트|맛집|카페|장보|물가|계란|날씨|산책|여행|버스|지하철|아파트|반찬|요리|김치|빨래|건조기|세탁|청소|살림|폭염|더위|장마|에어컨|복날|초복|중복|말복|삼계탕|수박|제습기|습도|가전|세탁기|냉장고|선풍기|모임|약속|메뉴|간식|과일|고기|생선|오징어|햄|통조림|라면|빵|커피/],
   ['HUMOR_LIGHT', /유머|웃긴|웃음|짤|개그|빵\s?터/],
 ]
@@ -107,7 +107,7 @@ export function analyzePost(input: { title: string; content: string; boardType: 
   if (clues.maleSelf) violation = 'MALE_SELF'
   else if (clues.youngSelf || clues.pregnancy) violation = 'YOUNG_SELF'
   else if (clues.youngChildCare) violation = 'CURRENT_PARENTING'
-  const heavyTone = /요양원|요양병원|치매|간병|사별|장례|위독|중환자|학대|고소|소송|이혼\s?소송|파산|빚더미|우울증/.test(text)
+  const heavyTone = /요양원|요양병원|치매|간병|사별|장례|위독|중환자|학대|고소|소송|이혼\s?소송|파산|빚더미|우울증|능력없|한심|화병|억울|서럽|막막|비참|절망/.test(text) // 2차: 무거운 가족 한탄 계열 확장("내 아들은 능력없고" FAIL 표본)
   const keywords = input.title.split(/[\s.,?!~()\[\]"']+/).filter(w => w.length >= 2).slice(0, 10)
   return { topicGroups: classifyTopicGroups(text, input.boardType, input.category), speakerClues: clues, worldviewViolation: violation, heavyTone, keywords }
 }
@@ -168,11 +168,11 @@ export function scoreCandidate(p: PersonaProfile, a: PostAnalysis, e: ExposureSt
   const primary = a.topicGroups[0]
   let score = 0
   if (p.topicGroups.includes(primary)) score += 100 // core 주제군
-  else if (a.topicGroups.some(g => p.topicGroups.includes(g))) score += 50 // 인접 주제군
+  else if (a.topicGroups.some(g => p.topicGroups.includes(g))) score += 25 // 인접 주제군 (2차: +50→+25 — 부주제 매칭이 정합을 이기던 애매 해소)
   else if (p.topicGroups.includes('GENERAL') || primary === 'GENERAL') score += 10
   // 글 키워드 ↔ 페르소나 토픽 직접 겹침 보너스(+10/개, 최대 +30) — 동점 뭉침 해소, tie-break는 최후 수단으로 (07-19 채점: tie-break 결정 46% 보정)
   const kwHits = a.keywords.filter(w => p.rawTopics.includes(w)).length
-  if (kwHits > 0) score += Math.min(30, kwHits * 10)
+  if (kwHits > 0) score += Math.min(50, kwHits * 15) // 2차: 정합 성분 상향(max 30→50) — 인접 매칭·로테이션보다 우선
 
   const daily = e.daily[p.key] ?? 0
   const weekly = e.weekly[p.key] ?? 0

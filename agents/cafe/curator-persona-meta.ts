@@ -90,4 +90,38 @@ export const CURATOR_PERSONA_META: Record<string, CuratorPersonaMeta> = {
   CB: { topicGroups: ['RETIRE_MONEY'], heavyOk: true, tone: 'normal' }, // 주식입문자
   CD: { topicGroups: ['RETIRE_MONEY'], heavyOk: true, tone: 'normal' }, // 연금저축연구
   CE: { topicGroups: ['RETIRE_MONEY'], heavyOk: true, tone: 'normal' }, // 부동산정보통
+
+  // ── 2차 보강 (2026-07-20 창업자 승인): 빈발 pick 상위 32명 — 실제 주제 명시 (무관 배정 애매 해소) ──
+  R: { topicGroups: ['HUMOR_LIGHT'], heavyOk: false, tone: 'light' }, // 밤새드라마
+  A: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 새날바라기
+  Q: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 강아지집사
+  DK: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 골프배우는중
+  DV: { topicGroups: ['HUMOR_LIGHT'], heavyOk: false, tone: 'light' }, // 웃음전도사
+  S035: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 집밥이최고
+  AT: { topicGroups: ['RETIRE_MONEY', 'LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 해외이민꿈꾸다
+  CI: { topicGroups: ['RETIRE_MONEY'], heavyOk: true, tone: 'normal' }, // 창업꿈꾸다
+  P: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 커피한잔
+  X: { topicGroups: ['HEALTH', 'LOCAL_DAILY'], heavyOk: false, tone: 'normal' }, // 마라톤여왕 — 운동/체력 (가벼운 건강만, 간병 글 부적합)
+  Y: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 식물집사
+  AA: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 한복입는날
+  AB: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 손편지쓰는여자
+  AL: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 전원생활일기
+  CW: { topicGroups: ['HUMOR_LIGHT'], heavyOk: false, tone: 'light' }, // TV마니아
+  AP: { topicGroups: ['RETIRE_MONEY', 'CARE_SOLO'], heavyOk: true, tone: 'normal' }, // 인생정리중 — 상속/유언(무거운 얘기 적합)
+  CC: { topicGroups: ['RETIRE_MONEY', 'LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 절약퀸
+  S068: { topicGroups: ['HEALTH', 'LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 동네산책모임
+  EA: { topicGroups: ['HUMOR_LIGHT'], heavyOk: false, tone: 'light' }, // 실수연발
+  CQ: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 셀프인테리어
+  S002: { topicGroups: ['LOCAL_DAILY', 'CARE_SOLO'], heavyOk: true, tone: 'normal' }, // 노견나비랑 — 노견 돌봄
+  AM: { topicGroups: ['RETIRE_MONEY', 'CARE_SOLO'], heavyOk: true, tone: 'normal' }, // 집이고민 — 실버타운/노년 주거
+  CO: { topicGroups: ['RETIRE_MONEY'], heavyOk: true, tone: 'normal' }, // 내집마련기
+  S036: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 발효음식연구
+  L010: { topicGroups: ['RETIRE_MONEY', 'HEALTH'], heavyOk: true, tone: 'normal' }, // 실비보험점검중
+  L012: { topicGroups: ['RETIRE_MONEY', 'LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 물가와싸우기
+  E: { topicGroups: ['FAMILY_SPOUSE', 'CARE_SOLO'], heavyOk: true, tone: 'normal' }, // 봄바람 — 긴 공감·위로(무거운 사연 적합)
+  I: { topicGroups: ['LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 책갈피
+  CP: { topicGroups: ['LOCAL_DAILY', 'RETIRE_MONEY'], heavyOk: true, tone: 'normal' }, // 이사전문가
+  C: { topicGroups: ['HUMOR_LIGHT'], heavyOk: false, tone: 'light' }, // 웃음한스푼
+  AH: { topicGroups: ['RETIRE_MONEY'], heavyOk: true, tone: 'normal' }, // 재취업성공기
+  K: { topicGroups: ['HEALTH', 'LOCAL_DAILY'], heavyOk: true, tone: 'normal' }, // 오늘도예쁘게 — 뷰티/자기관리
 }
