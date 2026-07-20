@@ -1,42 +1,8 @@
-import { Suspense } from 'react'
 import Link from 'next/link'
 import { IconSearch } from '@/components/icons'
-import { getLatestMagazinePosts } from '@/lib/queries/posts/posts.magazine'
 
-async function LatestMagazineSection() {
-  const latestMagazine = await getLatestMagazinePosts(3).catch(() => [])
-  if (latestMagazine.length === 0) return null
-
-  return (
-    <div className="mb-10">
-      <h2 className="text-body font-bold text-foreground mb-4">
-        이런 글은 어떠세요?
-      </h2>
-      <div className="space-y-3">
-        {latestMagazine.map((post) => (
-          <Link
-            key={post.id}
-            href={`/magazine/${post.slug ?? post.id}`}
-            className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border no-underline transition-all hover:border-primary/30 hover:shadow-sm min-h-[52px]"
-          >
-            <div className="flex-1 min-w-0">
-              {post.category && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-[#B23B2E] text-caption font-bold mb-1">
-                  {post.category}
-                </span>
-              )}
-              <p className="text-body font-medium text-foreground m-0 line-clamp-2 leading-[1.4]">
-                {post.title}
-              </p>
-            </div>
-            <span className="text-caption text-muted-foreground flex-shrink-0 mt-1">→</span>
-          </Link>
-        ))}
-      </div>
-    </div>
-  )
-}
-
+// not-found는 완전 정적이어야 한다 — async fetch/Suspense가 있으면 스트리밍 응답이 되어
+// HTTP 404 대신 200이 나가고(GSC Soft 404), 루트 robots까지 상속된다 (2026-07-20 SEO P0)
 export default function NotFound() {
   return (
     <div className="min-h-screen px-4 pt-16 pb-12 max-w-[720px] mx-auto">
@@ -66,11 +32,6 @@ export default function NotFound() {
           </Link>
         </div>
       </div>
-
-      {/* 최신 매거진 */}
-      <Suspense fallback={null}>
-        <LatestMagazineSection />
-      </Suspense>
 
       {/* 인기 게시판 바로가기 */}
       <div>

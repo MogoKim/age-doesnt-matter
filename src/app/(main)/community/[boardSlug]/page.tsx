@@ -66,7 +66,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { boardSlug } = await params
   try {
     const board = await getBoardConfig(boardSlug)
-    if (!board) return { title: '게시판' }
+    if (!board) return { title: '게시판', robots: { index: false, follow: false } } // 미존재 board — 루트 index 상속 차단
     const canonical = boardSlug === 'magazine'
       ? '/magazine'
       : boardSlug === 'jobs'
