@@ -161,6 +161,30 @@ describe('buildAuthorReplyPrompt — 판정 규칙 고정', () => {
     expect(prompt).toContain('분당아짐')
     expect(prompt).toContain('땀이 비오듯')
   })
+
+  // ── 작성자 연속성 보정(2026-07-20) — 문자열 계약만 검증. 실제 REPLY/SKIP 판정은 LLM이 내므로
+  //    vitest로 보장하지 않는다(merge 후 dry-run 1~2회차로 확인). 아래는 프롬프트에 규칙이 실렸는지만 확인.
+  it('[작성자 연속성 — 절대 규칙] 블록 포함', () => {
+    expect(prompt).toContain('[작성자 연속성 — 절대 규칙]')
+    expect(prompt).toContain('상담사·전문가·제3자·일반 회원이 아니라')
+    expect(prompt).toContain('새로 지어내지 마라')
+  })
+  it('[무엇이 REPLY인가] 블록 포함 — 과잉 SKIP 방지 균형추', () => {
+    expect(prompt).toContain('[무엇이 REPLY인가]')
+    expect(prompt).toContain('대단한 경험담이 없어도 된다')
+  })
+  it('해결책·서비스 지시 화법 금지(상담사 톤 차단) 규칙 포함', () => {
+    expect(prompt).toContain('해결책·서비스·방법을 지시하지 마라')
+    expect(prompt).toContain('관찰자 화법 금지')
+  })
+  it('충돌 제거 증거 — 기존 갱년기 REPLY 강제 예시 문구가 프롬프트에서 사라졌다', () => {
+    // 이 문구는 "없는 증상·경험 창작"을 유발해 골든 갱년기 SKIP과 충돌 → 제거 확인
+    expect(prompt).not.toContain('같은 고민을 나누러 온 것이므로 글쓴이로서 공감과 경험을 나눠라')
+    expect(prompt).not.toContain('주제 이탈로 보지 마라')
+  })
+  it('SKIP 기준에 "없는 증상·경험 지어내야 하는 경우" 명시', () => {
+    expect(prompt).toContain('지어내야만 이을 수 있는 경우')
+  })
 })
 
 describe('parseAuthorReplyDecision — 파서', () => {
