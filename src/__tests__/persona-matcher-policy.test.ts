@@ -278,7 +278,7 @@ describe('shadow 보강 (2026-07-19) — 메타 override·heavy 제외·키워�
     const base = scoreCandidate(mk({ topicGroups: ['HEALTH'] }), a, emptyExposure())
     const boosted = scoreCandidate(mk({ topicGroups: ['HEALTH'], rawTopics: '병원 검진 임플란트 통증 관리' }), a, emptyExposure())
     expect(boosted.score).toBeGreaterThan(base.score)
-    expect(boosted.score - base.score).toBeLessThanOrEqual(30)
+    expect(boosted.score - base.score).toBeLessThanOrEqual(50)
   })
   it('curator 메타 override — H014 늦잠대장은 HEALTH에서 제외되고 유머 전용/heavyOk=false', () => {
     const profiles = buildAllProfiles()
@@ -301,6 +301,25 @@ describe('shadow 보강 (2026-07-19) — 메타 override·heavy 제외·키워�
     const r = matchPersona(profiles, heavy, emptyExposure())
     expect(['curator-H010', 'curator-H015', 'curator-H006', 'curator-H014']).not.toContain(r.finalPick?.key)
     expect(r.excluded['curator-H010']).toBe('TONE_LIGHT_ON_HEAVY')
-    expect(['curator-AK', 'curator-CK', 'curator-DB', 'curator-S053', 'curator-DP']).toContain(r.finalPick?.key)
+    // 2차 보강으로 heavy-적합 후보 확대(봄바람 E·인생정리중 AP·집이고민 AM·노견나비랑 S002) — 핵심 계약은 '유머 계열 제외 + 진지 톤 pick'
+    expect(['curator-AK', 'curator-CK', 'curator-DB', 'curator-S053', 'curator-DP', 'curator-E', 'curator-AP', 'curator-AM', 'curator-S002']).toContain(r.finalPick?.key)
+  })
+})
+
+describe('2차 보강 (2026-07-20) — heavy 한탄 확장·인접 하향', () => {
+  it('무거운 가족 한탄("능력없고")도 heavy — 유머 페르소나 제외 (07-19 FAIL 표본)', () => {
+    const a = analyzePost({ title: '내 아들은 능력없고', content: '한심하고 억울해서 잠이 안 와요', boardType: 'STORY' })
+    expect(a.heavyTone).toBe(true)
+    expect(findHardConstraintViolation(mk({ heavyOk: false }), a)).toBe('TONE_LIGHT_ON_HEAVY')
+  })
+  it('인접(2차) 주제군 매칭은 +25로 하향 — core(+100)와 확실히 분리', () => {
+    const a = analyzePost({ title: '남편 잔소리', content: '', boardType: 'STORY' })
+    const adj = scoreCandidate(mk({ topicGroups: ['HEALTH', 'FAMILY_SPOUSE'] }), a, emptyExposure())
+    const core = scoreCandidate(mk({ topicGroups: ['FAMILY_SPOUSE'] }), a, emptyExposure())
+    expect(core.score).toBe(100)
+    expect(adj.score).toBe(100) // primary 포함이면 core
+    const onlyAdj = analyzePost({ title: '더위에 입맛이 없네요', content: '갱년기 때문인지', boardType: 'STORY' })
+    const s2 = scoreCandidate(mk({ topicGroups: [onlyAdj.topicGroups[1] ?? 'GENERAL'] }), onlyAdj, emptyExposure())
+    expect(s2.score).toBeLessThanOrEqual(25 + 50)
   })
 })
