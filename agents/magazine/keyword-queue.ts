@@ -72,9 +72,11 @@ export function extractSubtopicKey(keyword: string): string {
 /**
  * 공백·문장부호 제거 정규화 — DB 발행분 title/seoTitle과 큐 keyword를 띄어쓰기 차이에 무관하게 대조.
  * (extractSubtopicKey는 공백 기준이라 "빈 둥지 증후군" ≠ "빈둥지 증후군"을 놓침 → 이 함수로 보강)
+ * [case-fix 2026-07-21] 소문자 폴딩 — autocomplete 키워드는 소문자(irp), 발행 제목은 대문자(IRP)라
+ *   case-sensitive .includes()가 near-dup을 놓쳤음(canary IRP 사고). toLowerCase로 대소문자 무관 매칭.
  */
 export function normalizeText(s: string): string {
-  return (s ?? '').replace(/[^가-힣0-9a-z]/gi, '')
+  return (s ?? '').toLowerCase().replace(/[^가-힣0-9a-z]/g, '')
 }
 
 /** 큐 keyword의 핵심 subtopic — 앞 2토큰을 공백 제거 결합. DB 부분문자열 매칭용. */
