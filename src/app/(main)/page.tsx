@@ -159,6 +159,14 @@ export default function HomePage() {
     url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com',
     logo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/logo.png`,
     description: '우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티',
+    // [SEO 2026-07-21] "50대 커뮤니티" 쿼리 신호 보강 — 타깃 독자·주제 명시 (화면 비노출)
+    audience: {
+      '@type': 'PeopleAudience',
+      suggestedMinAge: 40,
+      suggestedGender: 'female',
+      audienceType: '40대·50대·60대 한국 여성',
+    },
+    knowsAbout: ['갱년기', '노후 준비', '중장년 재취업', '부부·가족 관계', '50대 커뮤니티', '60대 커뮤니티'],
     sameAs: [
       'https://www.threads.com/@age.no.matter',
       'https://www.instagram.com/age.no.matter/',
@@ -174,6 +182,7 @@ export default function HomePage() {
     name: '우리 나이가 어때서',
     alternateName: '우나어',
     url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com',
+    description: '40대·50대·60대 여성들이 모여 이야기 나누는 또래 커뮤니티',
     potentialAction: {
       '@type': 'SearchAction',
       target: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/search?q={search_term_string}`,

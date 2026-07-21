@@ -43,6 +43,10 @@ export default function Footer() {
 
         {/* 3. 저작권 + 사업자정보(details 접기) — 전자상거래법 제10조: 완전 삭제 없이 조용하게 유지 */}
         <div className="flex w-full flex-col items-center border-t border-border py-3.5">
+          {/* 브랜드 한 줄 소개 — "50대 커뮤니티" 검색 신호 보강 (SEO 2026-07-21). 링크·버튼 없음, 조용한 톤 유지 */}
+          <p className="mb-1 break-keep text-center text-caption text-muted-foreground">
+            40대·50대·60대 여성들이 모여 이야기 나누는 또래 커뮤니티
+          </p>
           <p className="text-caption text-muted-foreground/60">&copy; 2026 우리 나이가 어때서</p>
           <details className="mt-1 w-full">
             <summary className="mx-auto flex min-h-11 w-fit cursor-pointer list-none items-center justify-center px-2 text-caption text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
