@@ -243,12 +243,23 @@ export default async function MagazineDetailPage({ params }: PageProps) {
 
       {/* 시리즈 네비게이션 (연재물일 때만 표시) */}
       {post.seriesId && post.seriesTitle && post.seriesOrder && post.seriesCount && (
-        <SeriesNav
-          seriesId={post.seriesId}
-          seriesTitle={post.seriesTitle}
-          seriesOrder={post.seriesOrder}
-          seriesCount={post.seriesCount}
-        />
+        <>
+          <SeriesNav
+            seriesId={post.seriesId}
+            seriesTitle={post.seriesTitle}
+            seriesOrder={post.seriesOrder}
+            seriesCount={post.seriesCount}
+          />
+          {/* 시리즈 허브 역링크 — 이전/다음(SeriesNav)과 별개로 전체 묶음 랜딩으로 이동 */}
+          <div className="mb-6 -mt-2">
+            <Link
+              href={`/magazine/series/${post.seriesId}`}
+              className="text-caption text-primary-text no-underline hover:underline"
+            >
+              이 시리즈 전체 보기 →
+            </Link>
+          </div>
+        </>
       )}
 
       {/* 본문 */}
