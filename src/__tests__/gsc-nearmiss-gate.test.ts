@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { classifyNearMissQuery } from '../../agents/magazine/keyword-research/gsc-nearmiss'
+import { classifyNearMissQuery } from '../../agents/magazine/keyword-research/nearmiss-gate'
 
 /**
  * 우나어 SEO 화이트 검색어 기준표 v2 — 타깃 게이트 계약 고정 (2026-07-21 창업자 확정).
