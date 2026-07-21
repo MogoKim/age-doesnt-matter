@@ -14,6 +14,7 @@ import { sanitizeMagazineHtml, proxyMagazineImages } from '@/lib/sanitize'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
 import SeriesNav from '@/components/features/magazine/SeriesNav'
 import MagazineExploreLinks from '@/components/features/magazine/MagazineExploreLinks'
+import MagazineDisclosure from '@/components/features/magazine/MagazineDisclosure'
 import AdSenseUnit from '@/components/ad/AdSenseUnit'
 import NativeAdSlot from '@/components/ad/NativeAdSlot'
 import CpsClickTracker from '@/components/ad/CpsClickTracker'
@@ -261,6 +262,9 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           dangerouslySetInnerHTML={{ __html: proxyMagazineImages(sanitizeMagazineHtml(post.content)) }}
         />
       )}
+
+      {/* 편집 고지 (E-E-A-T) — 본문 끝, 액션바 앞. YMYL 카테고리에 주의 문구 추가 */}
+      <MagazineDisclosure category={post.category} />
 
       {/* 액션 바 — 본문 직후 바로 공감 (정독 동선) */}
       <ActionBar
