@@ -20,6 +20,9 @@ import {
   DEFAULT_SCORE_PARAMS,
 } from './scorer.js'
 import type { KeywordNode, ScoreParams } from './scorer.js'
+import { classifyNearMissQuery } from './nearmiss-gate.js'
+
+export { classifyNearMissQuery, type NearMissGate } from './nearmiss-gate.js'
 
 export interface GscNearMissOptions {
   /** 조회 기간(일) */
@@ -46,6 +49,7 @@ export const DEFAULT_GSC_NEARMISS_OPTIONS: GscNearMissOptions = {
 function ymd(daysAgo: number): string {
   return new Date(Date.now() - daysAgo * 86400000).toISOString().slice(0, 10)
 }
+
 
 /**
  * Search Console에서 near-miss 쿼리를 추출해 KeywordNode[] 반환.
@@ -93,6 +97,8 @@ export async function fetchGscNearMiss(
 
   const params = options.scoreParams ?? DEFAULT_SCORE_PARAMS
   const nodes: KeywordNode[] = []
+  let gateBlocked = 0
+  const gateReview: string[] = []
 
   for (const row of rows) {
     const keyword = row.keys?.[0] ?? ''
@@ -101,6 +107,17 @@ export async function fetchGscNearMiss(
     if (!keyword) continue
     if (impressions < options.minImpressions) continue
     if (position < options.minPosition || position > options.maxPosition) continue
+
+    // [타깃 게이트] 비타깃(연예·이슈·법률·의약품·젊은층)은 drop, 경계는 needsReview 로그만 남기고 drop
+    const gate = classifyNearMissQuery(keyword)
+    if (gate === 'blocked') {
+      gateBlocked++
+      continue
+    }
+    if (gate === 'needs_review') {
+      gateReview.push(keyword)
+      continue
+    }
 
     const cluster = inferCluster(keyword)
     const sensitivity = evaluateSensitivity(keyword)
@@ -134,6 +151,10 @@ export async function fetchGscNearMiss(
       status: 'candidate',
     })
   }
+
+  console.log(
+    `[gsc-nearmiss] 타깃 게이트 — 채택 ${nodes.length} / 차단 ${gateBlocked} / 수동검토 drop ${gateReview.length}${gateReview.length ? ` (${gateReview.slice(0, 10).join(', ')})` : ''}`,
+  )
 
   return nodes
 }
