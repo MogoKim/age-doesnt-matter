@@ -102,5 +102,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     })
 
-  return [...staticPages, ...postPages]
+  // 매거진 시리즈 허브 — 발행 3편 이상 시리즈만 포함(1~2편은 thin page → noindex·제외)
+  const seriesGroups = await prisma.post.groupBy({
+    by: ['seriesId'],
+    where: { boardType: 'MAGAZINE', status: 'PUBLISHED', seriesId: { not: null } },
+    _count: true,
+  })
+  const seriesHubPages: MetadataRoute.Sitemap = seriesGroups
+    .filter((g) => g.seriesId != null && g._count >= 3)
+    .map((g) => ({
+      url: `${BASE_URL}/magazine/series/${g.seriesId}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }))
+
+  return [...staticPages, ...postPages, ...seriesHubPages]
 }
