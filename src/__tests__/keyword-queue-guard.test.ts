@@ -24,6 +24,23 @@ describe('normalizeText / keywordCore — 띄어쓰기 무관 subtopic 매칭', 
     const published2 = normalizeText('갱년기 다이어트 식단, 이렇게')
     expect(published2.includes(keywordCore('갱년기 다이어트 방법'))).toBe(true)
   })
+
+  // [case-fix 2026-07-21] 영문 약어 대소문자 near-dup — canary IRP 사고 회귀 방지.
+  //   autocomplete 키워드는 소문자(irp/etf/isa), 발행 제목은 대문자(IRP/ETF/ISA) → 대소문자 무관 매칭 필수.
+  it('영문 약어 대소문자 무관 매칭 — 소문자 키워드 vs 대문자 제목', () => {
+    // 사고 재현: "퇴직금 irp" 키워드가 기존 "퇴직금 IRP..." 매거진에 매칭돼야 함
+    expect(normalizeText('퇴직금 IRP, 세금 얼마나 아낄까').includes(keywordCore('퇴직금 irp 이유'))).toBe(true)
+    // ETF/ISA도 동일
+    expect(normalizeText('50대 ETF 왕초보 가이드').includes(keywordCore('50대 etf 투자'))).toBe(true)
+    expect(normalizeText('ISA 계좌 완벽 정리').includes(keywordCore('isa 계좌'))).toBe(true)
+    // 역방향(대문자 키워드 vs 소문자 제목)도 무관
+    expect(normalizeText('연금저축 irp 비교').includes(keywordCore('연금저축 IRP'))).toBe(true)
+  })
+  it('normalizeText는 영문을 소문자로 폴딩(한글은 대소문자 없음)', () => {
+    expect(normalizeText('IRP')).toBe('irp')
+    expect(normalizeText('퇴직금 IRP')).toBe('퇴직금irp')
+    expect(normalizeText('갱년기 증상')).toBe('갱년기증상') // 한글 정규화 기존 동작 유지
+  })
 })
 
 describe('brandFitExclusion — 보수적 제외', () => {
