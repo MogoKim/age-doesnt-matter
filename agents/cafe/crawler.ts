@@ -734,6 +734,26 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
   }
 
   const articles = Array.from(collectedMap.values())
+
+  // [goondae-diag] per-board 수집 후보 계측 (관찰 전용 — 동작 무변경). menuId/raw/notice/scoped를 게시판별 로그.
+  //   목적: "997·996 2개 게시판만 본다" 실측 확인 + saved≈0 원인(공지 비중/저활성) 규명. 다른 카페엔 미적용.
+  if (cafe.id === 'goondae') {
+    const menuOf = new Map(cafe.boards.map(b => [b.name, b.menuId]))
+    const byBoard = new Map<string, { raw: number; notice: number; scoped: number }>()
+    for (const a of articles) {
+      const key = a.boardName ?? '(null)'
+      const t = byBoard.get(key) ?? { raw: 0, notice: 0, scoped: 0 }
+      t.raw++
+      if (a.isNotice) t.notice++
+      else t.scoped++
+      byBoard.set(key, t)
+    }
+    for (const [name, t] of byBoard) {
+      console.log(`[goondae-diag] collect menuId=${menuOf.get(name) ?? '?'} board="${name}" raw=${t.raw} notice=${t.notice} scoped=${t.scoped}`)
+    }
+    if (byBoard.size === 0) console.log('[goondae-diag] collect: 후보 0 — 두 게시판 페이지에서 수집된 글 없음')
+  }
+
   // QUICK 모드: 카페당 최대 15개로 제한 (전체 50개 이내)
   const limit = quickMode ? 15 : CRAWL_LIMITS.maxPostsPerCafe
   const limited = articles.slice(0, limit)
@@ -1661,6 +1681,17 @@ async function main() {
       const isShadowCafe = SECONDARY_CAFE_IDS.includes(cafe.id)
       let shadowDetailVisits = 0
 
+      // [goondae-diag] per-board 파이프라인 계측 (관찰 전용 — 동작 무변경). preVisit/detail 단계를 게시판별 집계.
+      const goondaeDiag = cafe.id === 'goondae'
+        ? new Map<string, { pass: number; skipNotice: number; skipHardReject: number; skipLowComment: number; detailVisited: number; detailSuccess: number }>()
+        : null
+      const gd = (name: string | null) => {
+        const key = name ?? '(null)'
+        let t = goondaeDiag!.get(key)
+        if (!t) { t = { pass: 0, skipNotice: 0, skipHardReject: 0, skipLowComment: 0, detailVisited: 0, detailSuccess: 0 }; goondaeDiag!.set(key, t) }
+        return t
+      }
+
       for (const article of articles) {
         if (consecutiveFails >= MAX_CONSECUTIVE_FAILS) {
           console.warn(`[CafeCrawler] ${cafe.name}: 연속 ${MAX_CONSECUTIVE_FAILS}회 실패 — 차단 의심, 이 카페 스킵`)
@@ -1674,10 +1705,18 @@ async function main() {
         // Pre-visit 필터 (shadow 카페만) — 공지/HARD_REJECT/저댓글 글은 상세 방문 전 보류.
         // production(wgang/dlxogns01)은 article에 목록 메타가 없어 이 블록을 타지 않는다(동작 불변).
         if (SECONDARY_CAFE_IDS.includes(cafe.id) && article.commentCount !== undefined && !passesPreVisit(article)) {
+          if (goondaeDiag) {
+            const t = gd(article.boardName)
+            const title = article.title ?? ''
+            if (SHADOW_AGE_HARD_REJECT.some(k => title.includes(k))) t.skipHardReject++
+            else if (article.isNotice) t.skipNotice++
+            else t.skipLowComment++
+          }
           console.log(`[CafeCrawler] ${cafe.name} pre-visit 보류: c${article.commentCount}${article.isNotice ? '/공지' : ''} "${(article.title ?? '').slice(0, 24)}"`)
           totalSkipped++
           continue
         }
+        if (goondaeDiag) gd(article.boardName).pass++
 
         // Pre-crawl 중복 체크 — 이미 DB에 있는 글은 브라우저 방문 없이 스킵
         const alreadySaved = await prisma.cafePost.findUnique({
@@ -1690,9 +1729,11 @@ async function main() {
         }
 
         if (isShadowCafe) shadowDetailVisits++  // 실제 상세 방문(중복 스킵 제외)만 detailCap에 계상
+        if (goondaeDiag) gd(article.boardName).detailVisited++
         const post = await crawlPost(page, article, cafe, includeComments)
         if (post) {
           posts.push(post)
+          if (goondaeDiag) gd(article.boardName).detailSuccess++
           consecutiveFails = 0
         } else {
           consecutiveFails++
@@ -1709,6 +1750,14 @@ async function main() {
       const saved = await savePosts(posts)
       totalSaved += saved
       console.log(`[CafeCrawler] ${cafe.name}: ${saved}개 신규 저장 (${posts.length - saved}개 중복)`)
+
+      // [goondae-diag] 게시판별 파이프라인 요약 (관찰 전용). saved는 카페 단위(게시판별 DB-신규분리는 미계측 — pre-dedup detailSuccess로 근사).
+      if (goondaeDiag) {
+        for (const [name, t] of goondaeDiag) {
+          console.log(`[goondae-diag] pipeline board="${name}" preVisitPass=${t.pass} skip{notice=${t.skipNotice},hardReject=${t.skipHardReject},lowComment=${t.skipLowComment}} detailVisited=${t.detailVisited} detailSuccess=${t.detailSuccess}`)
+        }
+        console.log(`[goondae-diag] cafe saved(new,this run)=${saved} detailSuccess(pre-dedup total)=${posts.length}`)
+      }
     }
   } finally {
     // close() 타임아웃 보호 — headless:false 브라우저가 OS 레벨에서 응답 불가 시 무한 hang 방지
