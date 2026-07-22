@@ -153,7 +153,14 @@ export const CAFE_CONFIGS: CafeConfig[] = [
   },
   // ─────────────────────────────────────────────────────────
   // 4. goondae (10797658) — core 소스 (Phase 2-a 승격, 2026-07-10. shadow 파일럿→1-a-② publishable 경유)
-  //    걱정/고민/위로 수다방(menuId 997): 405060 관계·남편·아들·고민 글 적합(실측 c>=5 다수, 오파싱 없음).
+  //    ⚠️ 실제 카페 정체(2026-07-22 read-only dry-run 실측): id는 'goondae'지만 numericId 10797658은
+  //       "수원광교동탄맘"(115만 지역 맘카페)이다. 기존 'name: 군대카페' 및 "405060 관계·남편·아들" 설명은
+  //       사실과 불일치(오식별). id/name/sourceStage는 이 PR에서 변경하지 않음(리플 방지) — core 유지 여부는
+  //       "996 추가 후 saved 관찰" 별도 판단(창업자). 콘텐츠가 이벤트/등업/육아/지역 중심이라 age-fit/pre-visit이
+  //       대부분 정상 hard-reject → 07-08 이후 saved≈0의 원인은 "저활성"이 아니라 소스-타깃 성격 불일치일 가능성.
+  //    게시판(2026-07-22 실측 게시판명): menuId 997 = "걱정/고민/위로 수다방", menuId 996 = "친해져요 수다방".
+  //    goondae가 보는 게시판은 이 2개(997, 996)뿐. 메뉴 URL은 게시판별로 스코프되며(실측: 두 게시판 일반글 ID 교집합 0),
+  //    겹치는 상단 공지/이벤트만 공통 노출 → passesPreVisit(isNotice/광고패턴/c<10)가 상세 방문 전 거부(격리 보장).
   //    sourceStage:'core' → 발행 + killer 후보 동급. trend/성공판정 미편입(2-b 이후). SECONDARY page loop 유지.
   //    ⚠️ CRAWL_CAFE_FILTER에 'goondae' 추가해야 실제 크롤됨. CRAWL_EXPECTED_CAFE_IDS엔 추가 금지(성공판정 오판 방지).
   // ─────────────────────────────────────────────────────────
@@ -166,6 +173,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     sourceStage: 'core',
     boards: [
       { name: '걱정/고민/위로 수다방', menuId: 997, maxPages: 5, priority: 'medium', category: 'lifestyle' },
+      { name: '친해져요 수다방', menuId: 996, maxPages: 5, priority: 'medium', category: 'lifestyle' },  // 2026-07-22 추가: 997 단일 후보 부족 보완. 실측 게시판명.
     ],
   },
   // ─────────────────────────────────────────────────────────
