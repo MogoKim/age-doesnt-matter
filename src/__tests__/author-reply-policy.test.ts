@@ -3,8 +3,11 @@ import {
   findIneligibleReason,
   buildAuthorReplyPrompt,
   parseAuthorReplyDecision,
+  resolveAuthorReplyMode,
+  shouldWriteReply,
   NON_BOT_COMMENT_AUTHOR_WHERE,
   type CandidateInput,
+  type AuthorReplyVerdict,
 } from '../../agents/coo/author-reply-policy'
 import { resolveAuthorPersonaContext } from '../../agents/coo/author-reply-persona'
 
@@ -206,5 +209,57 @@ describe('parseAuthorReplyDecision — 파서', () => {
   })
   it('JSON 아님 → null', () => {
     expect(parseAuthorReplyDecision('죄송합니다')).toBeNull()
+  })
+})
+
+describe('resolveAuthorReplyMode — 기본 dry-run, write만 실제 작성', () => {
+  it('미설정(undefined) → dry-run (기본값)', () => {
+    expect(resolveAuthorReplyMode(undefined)).toBe('dry-run')
+  })
+  it('빈 문자열 → dry-run', () => {
+    expect(resolveAuthorReplyMode('')).toBe('dry-run')
+  })
+  it("'dry-run' → dry-run", () => {
+    expect(resolveAuthorReplyMode('dry-run')).toBe('dry-run')
+  })
+  it("오타/임의값('WRITE'·'yes' 등) → dry-run (정확히 'write'만 허용)", () => {
+    expect(resolveAuthorReplyMode('WRITE')).toBe('dry-run')
+    expect(resolveAuthorReplyMode('true')).toBe('dry-run')
+    expect(resolveAuthorReplyMode('on')).toBe('dry-run')
+  })
+  it("'write' → write", () => {
+    expect(resolveAuthorReplyMode('write')).toBe('write')
+  })
+})
+
+describe('shouldWriteReply — REPLY만 작성, SKIP/ESCALATE·dry-run은 절대 write 안 함', () => {
+  const verdicts: AuthorReplyVerdict[] = ['REPLY', 'SKIP', 'ESCALATE']
+
+  it('dry-run 모드: 모든 verdict에서 write 안 함 (초안 있어도)', () => {
+    for (const v of verdicts) {
+      expect(shouldWriteReply('dry-run', v, true)).toBe(false)
+      expect(shouldWriteReply('dry-run', v, false)).toBe(false)
+    }
+  })
+
+  it('write 모드: REPLY + 초안 있음 → write', () => {
+    expect(shouldWriteReply('write', 'REPLY', true)).toBe(true)
+  })
+
+  it('write 모드: REPLY지만 초안 없음 → write 안 함', () => {
+    expect(shouldWriteReply('write', 'REPLY', false)).toBe(false)
+  })
+
+  it('write 모드: SKIP·ESCALATE는 초안 유무 무관 write 안 함', () => {
+    expect(shouldWriteReply('write', 'SKIP', true)).toBe(false)
+    expect(shouldWriteReply('write', 'SKIP', false)).toBe(false)
+    expect(shouldWriteReply('write', 'ESCALATE', true)).toBe(false)
+    expect(shouldWriteReply('write', 'ESCALATE', false)).toBe(false)
+  })
+
+  it('write 모드: REPLY 여러 건이면 각각 true (건수 제한 없음 — DAILY_JUDGE_CAP은 판정 단계에서 제어)', () => {
+    expect(shouldWriteReply('write', 'REPLY', true)).toBe(true)
+    expect(shouldWriteReply('write', 'REPLY', true)).toBe(true)
+    expect(shouldWriteReply('write', 'REPLY', true)).toBe(true)
   })
 })

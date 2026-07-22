@@ -25,7 +25,7 @@ on:
     - cron: "11 3 * * *"
     # 18:00 KST = 09:00 UTC — COO 트렌딩 스코어 (2차)
     - cron: "11 9 * * *"
-    # 12:45 / 19:45 KST — COO 작성자 대댓글 dry-run (실회원 댓글 판정, write 없음)
+    # 12:45 / 19:45 KST — COO 작성자 대댓글 (실회원 댓글 판정). 기본 dry-run, AUTHOR_REPLY_MODE=write일 때만 실제 작성
     - cron: "45 3 * * *"
     - cron: "45 10 * * *"
     # 06:00 KST = 21:00 UTC (전날) — CTO 보안 감사
@@ -92,6 +92,8 @@ env:
   CLAUDE_MODEL_STRATEGIC: ${{ secrets.CLAUDE_MODEL_STRATEGIC }}
   CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
   CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  # 작성자 대댓글 모드 — 기본 dry-run(초안만). 실제 작성은 repo/environment variable로만 전환: AUTHOR_REPLY_MODE=write
+  AUTHOR_REPLY_MODE: ${{ vars.AUTHOR_REPLY_MODE || 'dry-run' }}
   ENABLE_JOB_MATCHER: 'false'  # [2026-06-15] job-matcher OFF — 정책상 사는이야기 글에 일자리 광고 댓글 안 단다
   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
   SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}

@@ -144,6 +144,23 @@ ${i.priorComments.slice(0, 3).map(c => `- ${c}`).join('\n') || '- (없음)'}
 {"verdict":"REPLY|SKIP|ESCALATE","reason":"판정 근거 한 문장","reply":"REPLY일 때만 답글, 아니면 null"}`
 }
 
+// ── write 모드 게이트 (순수 — 테스트 대상) ─────────────────────────────
+
+export type AuthorReplyMode = 'dry-run' | 'write'
+
+/** env(AUTHOR_REPLY_MODE) → 모드. 'write'만 실제 작성, 그 외/미설정은 dry-run(기본값). */
+export function resolveAuthorReplyMode(envValue: string | undefined): AuthorReplyMode {
+  return envValue === 'write' ? 'write' : 'dry-run'
+}
+
+/**
+ * 실제 Comment write 여부 — write 모드 + verdict === 'REPLY' + 초안 존재일 때만 true.
+ * dry-run / SKIP / ESCALATE / 초안 없음은 반드시 false (실제 작성 금지).
+ */
+export function shouldWriteReply(mode: AuthorReplyMode, verdict: AuthorReplyVerdict, hasReplyDraft: boolean): boolean {
+  return mode === 'write' && verdict === 'REPLY' && hasReplyDraft
+}
+
 /** 응답 파싱 — 실패 시 null (호출부가 ESCALATE 처리) */
 export function parseAuthorReplyDecision(response: string): AuthorReplyDecision | null {
   const m = response.match(/\{[\s\S]*\}/)
