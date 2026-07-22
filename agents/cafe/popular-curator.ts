@@ -6,6 +6,7 @@ import { notifySlack } from '../core/notifier.js'
 import {
   stripMarkdown,
   replaceCafeReferences,
+  stripCafeBoilerplate,
   toCuratedHtmlContent,
   toCuratedSummary,
   matchPersona,
@@ -131,7 +132,8 @@ export async function main() {
     }
     // 원문 기반 발행 — AI 재창작 없이 원본 CafePost title/content 그대로 사용
     const title = replaceCafeReferences(stripMarkdown(post.title.trim()))
-    const rawContent = replaceCafeReferences(stripMarkdown(post.content.trim()))
+    // 발행 본문 정화: stripMarkdown → replaceCafeReferences → stripCafeBoilerplate(맨 앞 게시판 안내문 제거). 원문 미수정.
+    const rawContent = stripCafeBoilerplate(replaceCafeReferences(stripMarkdown(post.content.trim())))
     if (!title || !rawContent) {
       console.warn(`[PopularCurator] 원본 내용 없음 스킵: ${post.title.slice(0, 30)}`)
       continue
