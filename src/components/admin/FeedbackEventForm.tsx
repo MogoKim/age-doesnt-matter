@@ -16,6 +16,8 @@ export interface FeedbackEventItem {
   endAt: string // ISO(UTC)
   isActive: boolean
   tier: 'PRIMARY' | 'SECONDARY' | 'HIDDEN'
+  showBottomPopup: boolean
+  showHero: boolean
   realOpinions: number
   bucket: 'today' | 'upcoming' | 'past'
 }
@@ -45,9 +47,12 @@ export default function FeedbackEventForm({ items }: { items: FeedbackEventItem[
   const [startAt, setStartAt] = useState('')
   const [endAt, setEndAt] = useState('')
   const [tier, setTier] = useState<'PRIMARY' | 'SECONDARY' | 'HIDDEN'>('SECONDARY')
+  const [showBottomPopup, setShowBottomPopup] = useState(false)
+  const [showHero, setShowHero] = useState(false)
 
   const resetForm = () => {
     setEditingId(null); setTitle(''); setDescription(''); setContent(''); setStartAt(''); setEndAt(''); setTier('SECONDARY')
+    setShowBottomPopup(false); setShowHero(false)
   }
 
   const startEdit = (it: FeedbackEventItem) => {
@@ -58,6 +63,8 @@ export default function FeedbackEventForm({ items }: { items: FeedbackEventItem[
     setStartAt(toKstLocal(it.startAt))
     setEndAt(toKstLocal(it.endAt))
     setTier(it.tier)
+    setShowBottomPopup(it.showBottomPopup)
+    setShowHero(it.showHero)
     setMsg('✏️ 수정 모드 — 본문을 비워두면 기존 본문이 유지됩니다')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -87,7 +94,7 @@ export default function FeedbackEventForm({ items }: { items: FeedbackEventItem[
       () => upsertFeedbackEvent({
         eventId: editingId ?? undefined,
         title, description, content: content.trim() || undefined,
-        startAt, endAt, tier,
+        startAt, endAt, tier, showBottomPopup, showHero,
       }),
       editingId ? '의견수렴 이벤트가 수정되었습니다' : '의견수렴 이벤트가 생성되었습니다',
     )
@@ -162,9 +169,22 @@ export default function FeedbackEventForm({ items }: { items: FeedbackEventItem[
               </select>
             </label>
           </div>
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-            ⓘ 팝업·HERO 노출은 <b>Phase 3b 예정</b>입니다. 지금은 <b>푸시·직접 링크</b>로만 진입합니다.
-          </p>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5">
+            <p className="mb-2 text-xs font-semibold text-zinc-600">홈 노출 채널 (tier=PRIMARY일 때만 실제 노출)</p>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={showBottomPopup} onChange={(e) => setShowBottomPopup(e.target.checked)} />
+                하단 팝업
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={showHero} onChange={(e) => setShowHero(e.target.checked)} />
+                HERO 배너
+              </label>
+            </div>
+            <p className="mt-2 text-xs text-zinc-400">
+              같은 시간대·같은 채널에 이미 PRIMARY 이벤트(투표/의견)가 있으면 저장이 차단됩니다. 팝업/HERO는 입구 역할만 — 클릭 시 상세로 이동(의견 입력·결과 없음).
+            </p>
+          </div>
           <div className="flex gap-2">
             <button
               className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"

@@ -117,6 +117,37 @@ function isMissingEventTable(e: unknown): boolean {
 }
 
 /**
+ * 채널(팝업/HERO) PRIMARY 충돌 검사 (VOTE·FEEDBACK 공용, Phase 3b).
+ *  같은 채널(showBottomPopup/showHero)·시간 겹침·isActive·tier=PRIMARY인 **다른** Event가 있으면 그 Event 반환(없으면 null).
+ *  exclude로 자기 자신 제외: 투표 wrapper는 voteEventId로, 의견 이벤트는 id로.
+ *  ⚠️ Prisma `{ not }`은 null 포함 → voteEventId=null(FEEDBACK)도 검사 대상에 들어옴(양방향 충돌 감지).
+ */
+async function findChannelConflict(params: {
+  showBottomPopup: boolean
+  showHero: boolean
+  startAt: Date
+  endAt: Date
+  exclude?: { eventId?: string; voteEventId?: string }
+}): Promise<{ id: string; title: string } | null> {
+  const channelOr: Array<{ showBottomPopup: true } | { showHero: true }> = []
+  if (params.showBottomPopup) channelOr.push({ showBottomPopup: true })
+  if (params.showHero) channelOr.push({ showHero: true })
+  if (channelOr.length === 0) return null // 채널 미사용 → 충돌 없음
+
+  const where: Record<string, unknown> = {
+    isActive: true,
+    tier: 'PRIMARY',
+    startAt: { lt: params.endAt },
+    endAt: { gt: params.startAt },
+    OR: channelOr,
+  }
+  if (params.exclude?.eventId) where.id = { not: params.exclude.eventId }
+  if (params.exclude?.voteEventId) where.voteEventId = { not: params.exclude.voteEventId }
+
+  return prisma.event.findFirst({ where, select: { id: true, title: true } })
+}
+
+/**
  * 투표(VOTE) 생성/수정 시 노출 계층 Event를 동반 생성/갱신 (Phase 1 기반, 투표 로직 무접촉).
  *  - Event = 노출 계층: type=VOTE, voteEventId 1:1, tier=PRIMARY, 팝업+HERO on.
  *  - ⭐ Phase 2(D1) 노출창: startAt=그날 09:00 KST ~ endAt=**그날 24:00 KST(당일 끝)**.
@@ -141,17 +172,13 @@ async function syncVoteExposureEvent(params: {
   if (!adminId) return null // requireAdmin 통과 후이므로 사실상 도달 안 함 — 방어적으로 스킵
 
   try {
-    // PRIMARY 충돌 가드 — 같은 채널(팝업/HERO)·시간 겹침·자기 자신(VOTE 재-upsert) 제외
-    const conflict = await prisma.event.findFirst({
-      where: {
-        isActive: true,
-        tier: 'PRIMARY',
-        voteEventId: { not: params.voteEventId },
-        startAt: { lt: endAt },
-        endAt: { gt: startAt },
-        OR: [{ showBottomPopup: true }, { showHero: true }], // VOTE는 팝업+HERO 둘 다 사용
-      },
-      select: { id: true, title: true },
+    // PRIMARY 충돌 가드(공용 헬퍼) — VOTE는 팝업+HERO 둘 다 사용, 자기 wrapper(voteEventId)는 제외
+    const conflict = await findChannelConflict({
+      showBottomPopup: true,
+      showHero: true,
+      startAt,
+      endAt,
+      exclude: { voteEventId: params.voteEventId },
     })
     if (conflict) {
       return {
@@ -567,6 +594,22 @@ export async function upsertFeedbackEvent(input: {
   }
 
   try {
+    // PRIMARY 충돌 가드(공용 헬퍼) — 팝업/HERO 켜고 tier=PRIMARY일 때만. 충돌 시 저장 차단(자동 교체 없음).
+    if (tier === 'PRIMARY' && (channels.showBottomPopup || channels.showHero)) {
+      const conflict = await findChannelConflict({
+        showBottomPopup: channels.showBottomPopup,
+        showHero: channels.showHero,
+        startAt,
+        endAt,
+        exclude: { eventId: input.eventId },
+      })
+      if (conflict) {
+        return {
+          error: `같은 시간대에 이미 HERO/팝업 노출 이벤트가 있습니다: "${conflict.title}". 기존 이벤트 노출을 끄고 다시 저장하세요.`,
+        }
+      }
+    }
+
     if (input.eventId) {
       // 수정
       const ev = await prisma.event.findUnique({ where: { id: input.eventId }, select: { id: true, type: true, bodyPostId: true } })
