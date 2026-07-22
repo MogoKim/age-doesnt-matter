@@ -1445,6 +1445,7 @@ enum EventType {
   VOTE
   FEEDBACK
   NOTICE
+  SURVEY
 }
 
 enum EventTier {
@@ -1476,4 +1477,50 @@ model Event {
   @@index([isActive, showBottomPopup, startAt, endAt])
   @@index([isActive, showHero, startAt, endAt])
   @@index([type, startAt])
+}
+
+// ──────────────────────────────────────────────
+// 참여형 이벤트 — 1분 의견함(SURVEY, Phase 5)
+//  - 비공개 설문/폼형. 응답은 사용자 화면에 공개하지 않는다(운영자만 열람).
+//  - Event(type=SURVEY) 1:1 SurveyForm(질문지) + N SurveyResponse(응답).
+//  - Comment 재사용 금지 — 별도 응답 계층.
+// ──────────────────────────────────────────────
+model SurveyForm {
+  id               String   @id @default(cuid())
+  eventId          String   @unique // Event(type=SURVEY) 1:1 (String 참조, FK 없음)
+  title            String
+  description      String?
+  questions        Json // [{id, type: single_choice|multiple_choice|rating_1_5|short_text|long_text|consent, label, options?, required}]
+  consentText      String? // 응답 전 동의 문구(없으면 기본 문구)
+  createdByAdminId String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  responses SurveyResponse[]
+
+  @@index([eventId])
+}
+
+model SurveyResponse {
+  id               String   @id @default(cuid())
+  surveyFormId     String
+  eventId          String // 조회 편의(SurveyForm.eventId와 동일)
+  userId           String? // 회원 응답
+  guestId          String? // 비회원 쿠키 id(unao_survey_guest_id)
+  answers          Json // { [questionId]: value }
+  source           String? // popup | hero | direct | push
+  path             String?
+  referrer         String?
+  userAgent        String?
+  ipHash           String? // sha256(ip+salt) — 어뷰징 분석용
+  consentAccepted  Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  surveyForm SurveyForm @relation(fields: [surveyFormId], references: [id], onDelete: Cascade)
+
+  // 중복 응답 방지: 한 설문당 회원 1회 / 비회원(guestId) 1회
+  @@unique([surveyFormId, userId])
+  @@unique([surveyFormId, guestId])
+  @@index([surveyFormId, createdAt])
+  @@index([eventId])
 }

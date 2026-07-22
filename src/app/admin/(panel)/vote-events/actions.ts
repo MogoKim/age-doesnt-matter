@@ -9,6 +9,7 @@ import { generateVoteDraftBatch, generateVotePostDraft, type VoteDraftRow } from
 import { generateFeedbackDraft } from '@/lib/ai/feedback-draft'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { EVENT_CATEGORY } from '@/lib/event-category'
+import { validateQuestions, summarizeQuestion, type SurveyQuestion, type SurveyAnswers, type QuestionSummary } from '@/lib/events/survey'
 import type { VoteChoice, VoteEventStatus, EventTier } from '@/generated/prisma/client'
 
 interface ActionResult {
@@ -699,4 +700,115 @@ export async function requestFeedbackDraft(input: { title: string; description?:
   const result = await generateFeedbackDraft({ title, description: input.description })
   if (!result.ok) return { error: result.error }
   return { body: result.body }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Phase 5 — 1분 의견함(SURVEY)
+//  · Event(type=SURVEY) 1:1 SurveyForm(질문지) + N SurveyResponse(비공개 응답).
+//  · Comment 재사용 안 함. 팝업/HERO는 입구만(SurveyDetail이 폼 렌더).
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** 1분 의견함 생성/수정 — Event(SURVEY) + SurveyForm 동반. 팝업/HERO PRIMARY 충돌 저장 차단(공용 가드). */
+export async function upsertSurveyEvent(input: {
+  eventId?: string
+  title: string
+  description?: string
+  questions: unknown // SurveyQuestion[] (클라 편집본)
+  consentText?: string
+  startAt: string
+  endAt: string
+  tier?: EventTier
+  showBottomPopup?: boolean
+  showHero?: boolean
+}): Promise<ActionResult & { eventId?: string }> {
+  const denied = await requireAdmin()
+  if (denied) return denied
+  const session = await getAdminSession()
+  const adminId = session?.adminId
+  if (!adminId) return { error: '관리자 인증이 필요합니다' }
+
+  const title = input.title.trim()
+  if (!title) return { error: '제목을 입력해 주세요' }
+  const description = input.description?.trim() || null
+  const startAt = kstLocalToDate(input.startAt)
+  const endAt = kstLocalToDate(input.endAt)
+  if (!startAt || !endAt) return { error: '시작/종료 시간을 올바르게 입력해 주세요 (KST)' }
+  if (endAt.getTime() <= startAt.getTime()) return { error: '종료 시간은 시작 시간보다 뒤여야 합니다' }
+  const vq = validateQuestions(input.questions)
+  if ('error' in vq) return { error: vq.error }
+  const consentText = input.consentText?.trim() || null
+  const tier: EventTier = input.tier ?? 'SECONDARY'
+  const channels = { showBottomPopup: input.showBottomPopup ?? false, showHero: input.showHero ?? false }
+
+  try {
+    if (tier === 'PRIMARY' && (channels.showBottomPopup || channels.showHero)) {
+      const conflict = await findChannelConflict({ showBottomPopup: channels.showBottomPopup, showHero: channels.showHero, startAt, endAt, exclude: { eventId: input.eventId } })
+      if (conflict) return { error: `같은 시간대에 이미 HERO/팝업 노출 이벤트가 있습니다: "${conflict.title}". 기존 이벤트 노출을 끄고 다시 저장하세요.` }
+    }
+
+    if (input.eventId) {
+      const ev = await prisma.event.findUnique({ where: { id: input.eventId }, select: { id: true, type: true } })
+      if (!ev || ev.type !== 'SURVEY') return { error: '수정할 의견함을 찾을 수 없습니다' }
+      await prisma.event.update({ where: { id: ev.id }, data: { title, description, startAt, endAt, tier, ...channels } })
+      await prisma.surveyForm.update({ where: { eventId: ev.id }, data: { title, description, questions: vq.questions as object, consentText } })
+      revalidatePath(`/events/${ev.id}`)
+      revalidatePath('/admin/vote-events')
+      return { ok: true, eventId: ev.id }
+    }
+
+    const ev = await prisma.event.create({
+      data: { type: 'SURVEY', title, description, startAt, endAt, tier, ...channels, createdByAdminId: adminId },
+      select: { id: true },
+    })
+    await prisma.surveyForm.create({
+      data: { eventId: ev.id, title, description, questions: vq.questions as object, consentText, createdByAdminId: adminId },
+    })
+    revalidatePath('/admin/vote-events')
+    return { ok: true, eventId: ev.id }
+  } catch (e) {
+    if (isMissingEventTable(e)) return { error: 'Event/Survey 테이블이 아직 준비되지 않았습니다 (마이그레이션 필요)' }
+    console.error('[survey-event] upsert 실패:', e)
+    return { error: '의견함 저장에 실패했습니다' }
+  }
+}
+
+/** 1분 의견함 삭제 — **응답 0건일 때만**. Event + SurveyForm(→ responses cascade) 원자 삭제. */
+export async function deleteSurveyEvent(eventId: string): Promise<ActionResult> {
+  const denied = await requireAdmin()
+  if (denied) return denied
+  const ev = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true, type: true } })
+  if (!ev || ev.type !== 'SURVEY') return { error: '삭제할 의견함을 찾을 수 없습니다' }
+  const form = await prisma.surveyForm.findUnique({ where: { eventId: ev.id }, select: { id: true } })
+  if (form) {
+    const responses = await prisma.surveyResponse.count({ where: { surveyFormId: form.id } })
+    if (responses > 0) return { error: `응답이 ${responses}건 있어 삭제할 수 없습니다 (응답 0건일 때만 삭제 가능).` }
+  }
+  await prisma.$transaction(async (tx) => {
+    if (form) await tx.surveyForm.delete({ where: { id: form.id } }) // 응답 0건, FK cascade
+    await tx.event.delete({ where: { id: ev.id } })
+  })
+  revalidatePath('/admin/vote-events')
+  return { ok: true }
+}
+
+export interface SurveyResultsData {
+  total: number
+  memberCount: number
+  guestCount: number
+  summaries: QuestionSummary[]
+}
+
+/** 1분 의견함 결과 — 총 응답/회원·비회원 비율/문항별 요약. */
+export async function getSurveyResults(eventId: string): Promise<{ error?: string; results?: SurveyResultsData }> {
+  const denied = await requireAdmin()
+  if (denied) return { error: denied.error }
+  const form = await prisma.surveyForm.findUnique({ where: { eventId }, select: { id: true, questions: true } })
+  if (!form) return { error: '설문을 찾을 수 없습니다' }
+  const responses = await prisma.surveyResponse.findMany({ where: { surveyFormId: form.id }, select: { userId: true, answers: true } })
+  const total = responses.length
+  const memberCount = responses.filter((r) => r.userId).length
+  const questions = form.questions as unknown as SurveyQuestion[]
+  const allAnswers = responses.map((r) => r.answers as unknown as SurveyAnswers)
+  const summaries = questions.map((q) => summarizeQuestion(q, allAnswers))
+  return { results: { total, memberCount, guestCount: total - memberCount, summaries } }
 }

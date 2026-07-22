@@ -7,9 +7,13 @@ import { getCommentsByPostId } from '@/lib/queries/comments'
 import CommentSection from '@/components/features/community/CommentSection'
 import EventDetail from '@/components/features/event/EventDetail'
 import FeedbackDetail from '@/components/features/event/FeedbackDetail'
+import SurveyDetail from '@/components/features/event/SurveyDetail'
+import { getSurveyResponseStatus } from '@/lib/actions/survey'
+import { DEFAULT_CONSENT_TEXT, type SurveyQuestion } from '@/lib/events/survey'
 
 interface PageProps {
   params: Promise<{ id: string }>
+  searchParams?: Promise<{ src?: string }>
 }
 
 // 참여 이벤트는 기간성·참여형 히든 목적지 — 검색 색인 제외(사는이야기 글로 색인 방지)
@@ -38,8 +42,36 @@ const CommentsFallback = (
   </div>
 )
 
-export default async function EventDetailPage({ params }: PageProps) {
+export default async function EventDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params
+  const src = (await searchParams)?.src
+
+  // Phase 5 — 1분 의견함(SURVEY) 우선 분기. VOTE는 id=voteEventId, FEEDBACK은 아래, 회귀 0.
+  const sv = await prisma.event
+    .findFirst({ where: { type: 'SURVEY', id }, select: { id: true, title: true, description: true, startAt: true, endAt: true, isActive: true } })
+    .catch(() => null)
+  if (sv) {
+    const now = Date.now()
+    if (!sv.isActive || now < sv.startAt.getTime()) notFound() // startAt 전(예약)·비활성 숨김
+    const form = await prisma.surveyForm.findUnique({ where: { eventId: sv.id }, select: { questions: true, consentText: true } }).catch(() => null)
+    if (!form) notFound()
+    const closed = now >= sv.endAt.getTime()
+    const { alreadyResponded } = await getSurveyResponseStatus(sv.id)
+    return (
+      <SurveyDetail
+        data={{
+          eventId: sv.id,
+          title: sv.title,
+          description: sv.description,
+          questions: form.questions as unknown as SurveyQuestion[],
+          consentText: form.consentText ?? DEFAULT_CONSENT_TEXT,
+        }}
+        closed={closed}
+        alreadyResponded={alreadyResponded}
+        source={src}
+      />
+    )
+  }
 
   // Phase 3a — 의견수렴형(FEEDBACK) 우선 분기. VOTE는 id=voteEventId라 아래 기존 경로로 통과(회귀 0).
   //  /events/[eventId] 또는 (커뮤니티 리다이렉트 대비) /events/[bodyPostId] 둘 다 해석.
