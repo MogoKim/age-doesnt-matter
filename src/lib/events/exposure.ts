@@ -46,6 +46,27 @@ export async function getEventById(id: string): Promise<Event | null> {
   return prisma.event.findUnique({ where: { id } })
 }
 
+export interface ExposedFeedback {
+  eventId: string
+  title: string
+  description: string | null
+}
+
+/**
+ * 채널(팝업/HERO)에 지금 노출할 **FEEDBACK(의견수렴형) 이벤트**를 반환한다. 없으면 null. (Phase 3b)
+ * ⚠️ `getExposedEvent`(PRIMARY·show{채널}·window 1개)를 그대로 쓰되 **type=FEEDBACK일 때만** 반환.
+ *    - getExposedEvent가 1개만 반환 → VOTE(resolveChannelVote)와 **자연 배타**(같은 채널 동시 2개 불가).
+ *    - 노출 대상이 VOTE거나 없으면 null → FEEDBACK 팝업/HERO 미노출(VOTE 우선).
+ */
+export async function getExposedFeedback(
+  channel: EventChannel,
+  now: Date = new Date(),
+): Promise<ExposedFeedback | null> {
+  const ev = await getExposedEvent(channel, now)
+  if (!ev || ev.type !== 'FEEDBACK') return null
+  return { eventId: ev.id, title: ev.title, description: ev.description }
+}
+
 /**
  * 채널(팝업/HERO)에 지금 노출할 **투표(VoteEvent) id**를 선택한다. 노출 안 하면 null.
  * ⚠️ selection 전용 — `getTodayPublic()`/`revalidatePath`를 호출하지 않는다(서버 렌더에서 안전).

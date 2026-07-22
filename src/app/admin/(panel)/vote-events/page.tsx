@@ -151,6 +151,8 @@ export default async function AdminVoteEventsPage() {
       endAt: e.endAt.toISOString(),
       isActive: e.isActive,
       tier: e.tier,
+      showBottomPopup: e.showBottomPopup,
+      showHero: e.showHero,
       realOpinions: opinionOf(e.bodyPostId),
       bucket: bucketOf(e.startAt, e.endAt),
     }))
