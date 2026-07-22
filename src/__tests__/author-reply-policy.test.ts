@@ -5,9 +5,11 @@ import {
   parseAuthorReplyDecision,
   resolveAuthorReplyMode,
   shouldWriteReply,
+  checkWritePreconditions,
   NON_BOT_COMMENT_AUTHOR_WHERE,
   type CandidateInput,
   type AuthorReplyVerdict,
+  type WritePreconditionInput,
 } from '../../agents/coo/author-reply-policy'
 import { resolveAuthorPersonaContext } from '../../agents/coo/author-reply-persona'
 
@@ -261,5 +263,74 @@ describe('shouldWriteReply — REPLY만 작성, SKIP/ESCALATE·dry-run은 절대
     expect(shouldWriteReply('write', 'REPLY', true)).toBe(true)
     expect(shouldWriteReply('write', 'REPLY', true)).toBe(true)
     expect(shouldWriteReply('write', 'REPLY', true)).toBe(true)
+  })
+})
+
+describe('checkWritePreconditions — write 직전 parent+post 재검증', () => {
+  const base: WritePreconditionInput = {
+    targetPostId: 'post1',
+    parent: { status: 'ACTIVE', parentId: null, postId: 'post1' },
+    post: { status: 'PUBLISHED', source: 'SHEET', boardType: 'STORY', authorId: 'author1' },
+    authorAlreadyReplied: false,
+  }
+
+  it('모든 조건 통과 → ok', () => {
+    expect(checkWritePreconditions(base)).toEqual({ ok: true, reason: null })
+  })
+
+  it('parent 미존재 → PARENT_NOT_FOUND', () => {
+    expect(checkWritePreconditions({ ...base, parent: null }).reason).toBe('PARENT_NOT_FOUND')
+  })
+
+  it('parent 숨김(status HIDDEN) → PARENT_NOT_ACTIVE (write 안 함)', () => {
+    const r = checkWritePreconditions({ ...base, parent: { status: 'HIDDEN', parentId: null, postId: 'post1' } })
+    expect(r.ok).toBe(false)
+    expect(r.reason).toBe('PARENT_NOT_ACTIVE')
+  })
+
+  it('parent가 대댓글(parentId != null) → PARENT_NOT_TOP_LEVEL (write 안 함)', () => {
+    const r = checkWritePreconditions({ ...base, parent: { status: 'ACTIVE', parentId: 'someParent', postId: 'post1' } })
+    expect(r.ok).toBe(false)
+    expect(r.reason).toBe('PARENT_NOT_TOP_LEVEL')
+  })
+
+  it('parent.postId가 대상 postId와 불일치 → PARENT_POST_MISMATCH', () => {
+    const r = checkWritePreconditions({ ...base, parent: { status: 'ACTIVE', parentId: null, postId: 'otherPost' } })
+    expect(r.reason).toBe('PARENT_POST_MISMATCH')
+  })
+
+  it('post 미존재 → POST_NOT_FOUND', () => {
+    expect(checkWritePreconditions({ ...base, post: null }).reason).toBe('POST_NOT_FOUND')
+  })
+
+  it('post 숨김(status HIDDEN) → POST_NOT_PUBLISHED (write 안 함)', () => {
+    const r = checkWritePreconditions({ ...base, post: { status: 'HIDDEN', source: 'SHEET', boardType: 'STORY', authorId: 'author1' } })
+    expect(r.ok).toBe(false)
+    expect(r.reason).toBe('POST_NOT_PUBLISHED')
+  })
+
+  it('post source가 USER(실회원 글) → POST_NOT_BOT_SHEET', () => {
+    const r = checkWritePreconditions({ ...base, post: { status: 'PUBLISHED', source: 'USER', boardType: 'STORY', authorId: 'author1' } })
+    expect(r.reason).toBe('POST_NOT_BOT_SHEET')
+  })
+
+  it('post boardType이 MAGAZINE → BOARD_EXCLUDED', () => {
+    const r = checkWritePreconditions({ ...base, post: { status: 'PUBLISHED', source: 'SHEET', boardType: 'MAGAZINE', authorId: 'author1' } })
+    expect(r.reason).toBe('BOARD_EXCLUDED')
+  })
+
+  it('post authorId 없음 → NO_POST_AUTHOR', () => {
+    const r = checkWritePreconditions({ ...base, post: { status: 'PUBLISHED', source: 'SHEET', boardType: 'STORY', authorId: null } })
+    expect(r.reason).toBe('NO_POST_AUTHOR')
+  })
+
+  it('이미 작성자 봇이 답글 있음 → ALREADY_REPLIED_BY_AUTHOR', () => {
+    const r = checkWritePreconditions({ ...base, authorAlreadyReplied: true })
+    expect(r.reason).toBe('ALREADY_REPLIED_BY_AUTHOR')
+  })
+
+  it('BOT source + LIFE2/HUMOR board도 통과', () => {
+    expect(checkWritePreconditions({ ...base, post: { status: 'PUBLISHED', source: 'BOT', boardType: 'LIFE2', authorId: 'a' } }).ok).toBe(true)
+    expect(checkWritePreconditions({ ...base, post: { status: 'PUBLISHED', source: 'BOT', boardType: 'HUMOR', authorId: 'a' } }).ok).toBe(true)
   })
 })
