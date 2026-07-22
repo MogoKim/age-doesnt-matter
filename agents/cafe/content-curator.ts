@@ -21,6 +21,7 @@ import {
   guessDesire,
   stripMarkdown,
   replaceCafeReferences,
+  stripCafeBoilerplate,
   toCuratedHtmlContent,
   toCuratedSummary,
 } from './curator-shared.js'
@@ -414,10 +415,15 @@ async function generateCuratedPost(
   const title = replaceCafeReferences(stripMarkdown(mainRef.title.trim()))
   if (!title) return null
 
+  // 발행 본문 정화: stripMarkdown → replaceCafeReferences → stripCafeBoilerplate(맨 앞 게시판 안내문 제거).
+  // 원문(CafePost)은 미수정. 안내문만 있던 글은 content=''가 될 수 있어 empty guard로 스킵(빈 본문 발행 방지).
+  const content = stripCafeBoilerplate(replaceCafeReferences(stripMarkdown(mainRef.content.trim())))
+  if (!content) return null
+
   return {
     personaId: persona.id,
     title,
-    content: replaceCafeReferences(stripMarkdown(mainRef.content.trim())),
+    content,
     boardType: boardInfo.boardType,
     category: boardInfo.category,
     sourceTopic: topic,

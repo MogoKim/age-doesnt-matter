@@ -20,6 +20,38 @@ export function replaceCafeReferences(text: string): string {
   return _norm(text).text
 }
 
+/** 카페 게시판 안내/예절 보일러플레이트 — 본문 "맨 앞" 첫 줄만 제거 (원문 CafePost는 미수정, 발행 본문만 정화).
+ *
+ * 제거 대상: 게시판 상단 예절 안내 문구가 본문 첫 문단으로 딸려오는 케이스. 좁게 시작한다.
+ *  - "서로 배려하는 마음으로 예쁜 글 부탁드려요" (앞뒤 하트/이모지/공백/제로폭 허용, 뒤따르는 빈 줄까지 제거)
+ * 보존: 본문 중간에 같은 표현이 있어도 제거하지 않는다(^ 앵커). 문구 뒤에 실제 본문이 같은 줄에 이어지면 제거하지 않는다.
+ *       "배려", "예쁜 글" 같은 단어 단독으로는 매칭하지 않는다(정확 구절만).
+ * 주의: 원문 전체가 안내문뿐이면 빈 문자열이 될 수 있다 → 호출부 empty guard(!content)가 동작해야 한다.
+ */
+// 하트/이모지/기호/공백/제로폭 — 구절 앞뒤 장식 허용 문자군 (구절 앵커가 있어 broad해도 안전)
+const BOILERPLATE_DECOR = '\\s\\u200B-\\u200D\\uFEFF\\uFE0F\\u2190-\\u21FF\\u2300-\\u27BF\\u2B00-\\u2BFF\\u{1F000}-\\u{1FAFF}'
+const CAFE_BOILERPLATE_LEADING_PATTERNS: RegExp[] = [
+  new RegExp(
+    `^[${BOILERPLATE_DECOR}]*서로\\s*배려하는\\s*마음으로\\s*예쁜\\s*글\\s*부탁드려요[${BOILERPLATE_DECOR}]*(?:\\n+|$)`,
+    'u',
+  ),
+]
+
+export function stripCafeBoilerplate(text: string): string {
+  if (!text) return text
+  let out = text
+  // 첫 줄에 안내 문구가 여러 줄 쌓인 경우까지(최대 5회) 앞에서만 제거
+  for (let i = 0; i < 5; i++) {
+    let changed = false
+    for (const re of CAFE_BOILERPLATE_LEADING_PATTERNS) {
+      const next = out.replace(re, '')
+      if (next !== out) { out = next; changed = true }
+    }
+    if (!changed) break
+  }
+  return out.trimStart()
+}
+
 /** 평문 텍스트 → 큐레이션 발행용 HTML 변환
  * 이미지가 있던 자리의 과도한 빈 줄/빈 단락을 제거하고 단락 구조를 정규화.
  */
