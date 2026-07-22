@@ -144,6 +144,65 @@ ${i.priorComments.slice(0, 3).map(c => `- ${c}`).join('\n') || '- (없음)'}
 {"verdict":"REPLY|SKIP|ESCALATE","reason":"판정 근거 한 문장","reply":"REPLY일 때만 답글, 아니면 null"}`
 }
 
+// ── write 모드 게이트 (순수 — 테스트 대상) ─────────────────────────────
+
+export type AuthorReplyMode = 'dry-run' | 'write'
+
+/** env(AUTHOR_REPLY_MODE) → 모드. 'write'만 실제 작성, 그 외/미설정은 dry-run(기본값). */
+export function resolveAuthorReplyMode(envValue: string | undefined): AuthorReplyMode {
+  return envValue === 'write' ? 'write' : 'dry-run'
+}
+
+/**
+ * 실제 Comment write 여부 — write 모드 + verdict === 'REPLY' + 초안 존재일 때만 true.
+ * dry-run / SKIP / ESCALATE / 초안 없음은 반드시 false (실제 작성 금지).
+ */
+export function shouldWriteReply(mode: AuthorReplyMode, verdict: AuthorReplyVerdict, hasReplyDraft: boolean): boolean {
+  return mode === 'write' && verdict === 'REPLY' && hasReplyDraft
+}
+
+// ── write 직전 사전조건 재검증 (순수 — 테스트 대상) ─────────────────────────────
+// 후보 조회~판정 사이 시간차로 글/댓글이 숨김·삭제·이동될 수 있어, 실제 write 직전 DB 재조회 스냅샷으로 재검증.
+// 실패 시 Comment.create 금지 + AUTHOR_REPLY_WRITE 로그에 outcome/reason 기록.
+
+export type WritePreconditionReason =
+  | 'PARENT_NOT_FOUND'
+  | 'PARENT_NOT_ACTIVE'
+  | 'PARENT_NOT_TOP_LEVEL'
+  | 'PARENT_POST_MISMATCH'
+  | 'POST_NOT_FOUND'
+  | 'POST_NOT_PUBLISHED'
+  | 'POST_NOT_BOT_SHEET'
+  | 'BOARD_EXCLUDED'
+  | 'NO_POST_AUTHOR'
+  | 'ALREADY_REPLIED_BY_AUTHOR'
+
+export interface WritePreconditionInput {
+  /** driver가 write하려는 대상 postId (parent.postId와 일치해야 함) */
+  targetPostId: string
+  /** write 직전 재조회한 parent(대상 유저 댓글) 스냅샷. 미존재 시 null */
+  parent: { status: string; parentId: string | null; postId: string } | null
+  /** write 직전 재조회한 post 스냅샷. 미존재 시 null */
+  post: { status: string; source: string; boardType: string; authorId: string | null } | null
+  /** 같은 parentId에 post.authorId가 이미 ACTIVE 답글을 달았는지 (재조회 결과) */
+  authorAlreadyReplied: boolean
+}
+
+/** write 직전 재검증 — 통과 시 {ok:true}, 실패 시 {ok:false, reason}. 후보 조회 필터와 동일 기준(ELIGIBLE_*) 재적용. */
+export function checkWritePreconditions(i: WritePreconditionInput): { ok: boolean; reason: WritePreconditionReason | null } {
+  if (!i.parent) return { ok: false, reason: 'PARENT_NOT_FOUND' }
+  if (i.parent.status !== 'ACTIVE') return { ok: false, reason: 'PARENT_NOT_ACTIVE' } // 숨김/삭제 댓글에 답 금지
+  if (i.parent.parentId !== null) return { ok: false, reason: 'PARENT_NOT_TOP_LEVEL' } // 대댓글엔 답 금지
+  if (i.parent.postId !== i.targetPostId) return { ok: false, reason: 'PARENT_POST_MISMATCH' }
+  if (!i.post) return { ok: false, reason: 'POST_NOT_FOUND' }
+  if (i.post.status !== 'PUBLISHED') return { ok: false, reason: 'POST_NOT_PUBLISHED' } // 숨김/삭제 글에 답 금지
+  if (!ELIGIBLE_SOURCES.has(i.post.source)) return { ok: false, reason: 'POST_NOT_BOT_SHEET' } // 실회원 글 개입 금지
+  if (!ELIGIBLE_BOARDS.has(i.post.boardType)) return { ok: false, reason: 'BOARD_EXCLUDED' } // MAGAZINE/JOB 제외
+  if (!i.post.authorId) return { ok: false, reason: 'NO_POST_AUTHOR' }
+  if (i.authorAlreadyReplied) return { ok: false, reason: 'ALREADY_REPLIED_BY_AUTHOR' } // 1댓글 1답변
+  return { ok: true, reason: null }
+}
+
 /** 응답 파싱 — 실패 시 null (호출부가 ESCALATE 처리) */
 export function parseAuthorReplyDecision(response: string): AuthorReplyDecision | null {
   const m = response.match(/\{[\s\S]*\}/)

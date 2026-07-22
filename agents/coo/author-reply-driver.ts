@@ -13,15 +13,76 @@ import {
   findIneligibleReason,
   buildAuthorReplyPrompt,
   parseAuthorReplyDecision,
+  resolveAuthorReplyMode,
+  shouldWriteReply,
+  checkWritePreconditions,
   NON_BOT_COMMENT_AUTHOR_WHERE,
 } from './author-reply-policy.js'
 
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6' // 판단 품질 우선 — Haiku 강등 금지(창업자 확정)
 const client = new Anthropic()
 
-export const AUTHOR_REPLY_ACTION = 'AUTHOR_REPLY_DRYRUN'
-const DAILY_JUDGE_CAP = 10 // 하루 최대 판정 수
+export const AUTHOR_REPLY_ACTION = 'AUTHOR_REPLY_DRYRUN'   // 판정 로그(일 상한 카운트 + 중복 dedup 소스) — mode 무관 항상 기록
+export const AUTHOR_REPLY_WRITE_ACTION = 'AUTHOR_REPLY_WRITE' // write 모드 실제 작성 성공/실패 전용 로그
+const DAILY_JUDGE_CAP = 10 // 하루 최대 판정 수 (write 모드에서도 불변 — REPLY는 이 상한 내에서 전부 작성)
 const LOOKBACK_HOURS = 48
+
+type WriteOutcome = 'WRITTEN' | 'DUP_SKIP' | 'PRECONDITION_SKIP'
+
+/**
+ * write 모드: 대상 유저 댓글(parentCommentId)에 글쓴이 봇의 대댓글을 실제 생성.
+ * - write **직전** parent comment + post 상태를 재조회해 사전조건 전체 재검증(checkWritePreconditions):
+ *   parent 존재/ACTIVE/최상위/postId 일치, post 존재/PUBLISHED/BOT·SHEET/STORY·LIFE2·HUMOR/authorId 존재,
+ *   같은 parent에 작성자 봇 ACTIVE 답글 없음. 하나라도 실패 → create 없이 skip(outcome/reason 반환).
+ * - authorId는 재조회한 post.authorId를 authoritative로 사용.
+ * - Comment.create + post.commentCount++ + 작성자 user.commentCount++ + lastEngagedAt 갱신(원자적)
+ *   (trendingScore는 src/lib import 금지로 미갱신 — reply-chain-driver와 동일 수준)
+ */
+async function writeAuthorReply(p: {
+  postId: string
+  parentCommentId: string
+  content: string
+}): Promise<{ outcome: WriteOutcome; commentId: string | null; reason: string | null }> {
+  // write 직전 재조회 스냅샷
+  const [parent, post] = await Promise.all([
+    prisma.comment.findUnique({
+      where: { id: p.parentCommentId },
+      select: { status: true, parentId: true, postId: true },
+    }),
+    prisma.post.findUnique({
+      where: { id: p.postId },
+      select: { status: true, source: true, boardType: true, authorId: true },
+    }),
+  ])
+
+  // 같은 parent에 작성자 봇이 이미 ACTIVE 답글을 달았는지 (재조회 — 중복 방어)
+  let authorAlreadyReplied = false
+  if (post?.authorId) {
+    const existing = await prisma.comment.findFirst({
+      where: { postId: p.postId, parentId: p.parentCommentId, authorId: post.authorId, status: 'ACTIVE' },
+      select: { id: true },
+    })
+    authorAlreadyReplied = Boolean(existing)
+  }
+
+  const pre = checkWritePreconditions({ targetPostId: p.postId, parent, post, authorAlreadyReplied })
+  if (!pre.ok) {
+    // 이미 답글 존재 = DUP_SKIP, 그 외 조건 실패 = PRECONDITION_SKIP
+    const outcome: WriteOutcome = pre.reason === 'ALREADY_REPLIED_BY_AUTHOR' ? 'DUP_SKIP' : 'PRECONDITION_SKIP'
+    return { outcome, commentId: null, reason: pre.reason }
+  }
+
+  const authorId = post!.authorId as string
+  const [created] = await prisma.$transaction([
+    prisma.comment.create({
+      data: { postId: p.postId, authorId, content: p.content, parentId: p.parentCommentId, status: 'ACTIVE' },
+      select: { id: true },
+    }),
+    prisma.post.update({ where: { id: p.postId }, data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() } }),
+    prisma.user.update({ where: { id: authorId }, data: { commentCount: { increment: 1 } } }),
+  ])
+  return { outcome: 'WRITTEN', commentId: created.id, reason: null }
+}
 
 const strip = (h: string | null) => (h ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 const isBotEmail = (email: string | null | undefined) => (email ?? '').endsWith('@unao.bot')
@@ -32,6 +93,8 @@ function kstMidnight(): Date {
 
 export async function main(): Promise<void> {
   const started = Date.now()
+  const MODE = resolveAuthorReplyMode(process.env.AUTHOR_REPLY_MODE) // 기본 dry-run — 'write'일 때만 실제 작성
+  console.log(`[AuthorReply] 모드: ${MODE}${MODE === 'write' ? ' (verdict=REPLY 후보 실제 작성)' : ' (초안만 기록, Comment write 없음)'}`)
 
   // 일 상한 + 이미 판정한 댓글(중복 방지) — 과거 전체 BotLog에서 commentId 수집
   const todayCount = await prisma.botLog.count({
@@ -83,6 +146,7 @@ export async function main(): Promise<void> {
   })
 
   let judged = 0
+  let written = 0 // write 모드 실제 작성 성공 수
   const summary: Record<string, number> = { REPLY: 0, SKIP: 0, ESCALATE: 0, ERROR: 0 }
 
   for (const c of candidates) {
@@ -137,13 +201,51 @@ export async function main(): Promise<void> {
       const verdict = decision?.verdict ?? 'ESCALATE' // 파싱 실패는 보수적으로 사람 검토
       summary[decision ? verdict : 'ERROR']++
 
+      // ── write 모드: verdict=REPLY만 실제 대댓글 생성. SKIP/ESCALATE/ERROR/dry-run은 절대 write 금지 ──
+      let writtenCommentId: string | null = null
+      let writeOutcome: 'WRITTEN' | 'DUP_SKIP' | 'PRECONDITION_SKIP' | 'FAILED' | null = null
+      if (shouldWriteReply(MODE, verdict, Boolean(decision?.reply)) && decision?.reply) {
+        try {
+          const w = await writeAuthorReply({
+            postId: c.post.id,
+            parentCommentId: c.id,
+            content: decision.reply,
+          })
+          writeOutcome = w.outcome
+          if (w.outcome === 'WRITTEN') {
+            writtenCommentId = w.commentId
+          } else {
+            // DUP_SKIP / PRECONDITION_SKIP — create 없이 skip. AUTHOR_REPLY_WRITE 로그에 outcome/reason 기록.
+            console.log(`[AuthorReply] write 스킵(${w.outcome}/${w.reason}): parent=${c.id}`)
+            await prisma.botLog.create({
+              data: {
+                botType: 'COO', status: 'SKIPPED', action: AUTHOR_REPLY_WRITE_ACTION,
+                logData: { dryRun: false, mode: 'write', outcome: w.outcome, reason: w.reason, postId: c.post.id, commentId: c.id, parentCommentId: c.id, personaId, verdict, replyDraft: decision?.reply ?? null },
+              },
+            }).catch(() => {})
+          }
+        } catch (werr) {
+          writeOutcome = 'FAILED'
+          const msg = werr instanceof Error ? werr.message : String(werr)
+          console.warn(`[AuthorReply] write 실패(다음 후보 계속): parent=${c.id} — ${msg}`)
+          await prisma.botLog.create({
+            data: {
+              botType: 'COO', status: 'FAILED', action: AUTHOR_REPLY_WRITE_ACTION,
+              logData: { dryRun: false, mode: 'write', outcome: 'FAILED', postId: c.post.id, commentId: c.id, parentCommentId: c.id, personaId, verdict, reason: decision?.reason ?? '', replyDraft: decision?.reply ?? null, error: msg },
+            },
+          }).catch(() => {})
+        }
+      }
+
+      // 판정 로그 — mode 무관 항상 기록(일 상한 카운트 + dedup 소스). write 결과 반영.
       await prisma.botLog.create({
         data: {
           botType: 'COO',
           status: 'SUCCESS',
           action: AUTHOR_REPLY_ACTION,
           logData: {
-            dryRun: true,
+            dryRun: MODE !== 'write',
+            mode: MODE,
             commentId: c.id,
             postId: c.post.id,
             personaId,
@@ -151,9 +253,23 @@ export async function main(): Promise<void> {
             verdict,
             reason: decision?.reason ?? '파싱 실패 — ESCALATE 처리',
             replyDraft: decision?.reply ?? null,
+            writtenCommentId,
           },
         },
       })
+
+      // write 성공 별도 로그 (writtenCommentId 등 상세)
+      if (writeOutcome === 'WRITTEN' && writtenCommentId) {
+        written++
+        await prisma.botLog.create({
+          data: {
+            botType: 'COO', status: 'SUCCESS', action: AUTHOR_REPLY_WRITE_ACTION,
+            logData: { dryRun: false, mode: 'write', postId: c.post.id, commentId: c.id, parentCommentId: c.id, writtenCommentId, personaId, verdict, reason: decision?.reason ?? '', replyDraft: decision?.reply ?? null },
+          },
+        })
+        console.log(`[AuthorReply] ✍️ WRITE 성공 (${personaId}) → comment ${writtenCommentId} (post ${c.post.id})`)
+      }
+
       console.log(`[AuthorReply] ${verdict} (${personaId}) "${strip(c.content).slice(0, 30)}" — ${decision?.reason ?? '파싱 실패'}`)
 
       if (verdict === 'ESCALATE') {
@@ -171,7 +287,8 @@ export async function main(): Promise<void> {
   }
 
   console.log(
-    `[AuthorReply] dry-run 완료 — 판정 ${judged}건 (REPLY ${summary.REPLY} / SKIP ${summary.SKIP} / ESCALATE ${summary.ESCALATE} / ERROR ${summary.ERROR}), ${Math.round((Date.now() - started) / 1000)}s`,
+    `[AuthorReply] ${MODE} 완료 — 판정 ${judged}건 (REPLY ${summary.REPLY} / SKIP ${summary.SKIP} / ESCALATE ${summary.ESCALATE} / ERROR ${summary.ERROR})` +
+    `${MODE === 'write' ? ` / 실제 작성 ${written}건` : ''}, ${Math.round((Date.now() - started) / 1000)}s`,
   )
 }
 
