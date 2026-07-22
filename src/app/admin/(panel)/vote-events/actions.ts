@@ -119,15 +119,16 @@ function isMissingEventTable(e: unknown): boolean {
 /**
  * 채널(팝업/HERO) PRIMARY 충돌 검사 (VOTE·FEEDBACK 공용, Phase 3b).
  *  같은 채널(showBottomPopup/showHero)·시간 겹침·isActive·tier=PRIMARY인 **다른** Event가 있으면 그 Event 반환(없으면 null).
- *  exclude로 자기 자신 제외: 투표 wrapper는 voteEventId로, 의견 이벤트는 id로.
- *  ⚠️ Prisma `{ not }`은 null 포함 → voteEventId=null(FEEDBACK)도 검사 대상에 들어옴(양방향 충돌 감지).
+ *  자기 자신 제외는 **Event.id 기준**(excludeEventId).
+ *  ⚠️ voteEventId 기준 제외 금지 — Prisma `{ not: id }`가 voteEventId=null(FEEDBACK) 행을 함께 배제해 충돌을 놓친다.
+ *     투표 wrapper도 자기 Event.id를 조회해 excludeEventId로 넘긴다(양방향 VOTE↔FEEDBACK 충돌 감지).
  */
 async function findChannelConflict(params: {
   showBottomPopup: boolean
   showHero: boolean
   startAt: Date
   endAt: Date
-  exclude?: { eventId?: string; voteEventId?: string }
+  exclude?: { eventId?: string }
 }): Promise<{ id: string; title: string } | null> {
   const channelOr: Array<{ showBottomPopup: true } | { showHero: true }> = []
   if (params.showBottomPopup) channelOr.push({ showBottomPopup: true })
@@ -142,7 +143,6 @@ async function findChannelConflict(params: {
     OR: channelOr,
   }
   if (params.exclude?.eventId) where.id = { not: params.exclude.eventId }
-  if (params.exclude?.voteEventId) where.voteEventId = { not: params.exclude.voteEventId }
 
   return prisma.event.findFirst({ where, select: { id: true, title: true } })
 }
@@ -172,13 +172,18 @@ async function syncVoteExposureEvent(params: {
   if (!adminId) return null // requireAdmin 통과 후이므로 사실상 도달 안 함 — 방어적으로 스킵
 
   try {
-    // PRIMARY 충돌 가드(공용 헬퍼) — VOTE는 팝업+HERO 둘 다 사용, 자기 wrapper(voteEventId)는 제외
+    // 자기 wrapper 제외는 **Event.id 기준**(voteEventId 기준 제외는 Prisma가 null 행=FEEDBACK을 함께 배제 → 충돌 미감지 버그).
+    const existingWrapper = await prisma.event.findUnique({
+      where: { voteEventId: params.voteEventId },
+      select: { id: true },
+    })
+    // PRIMARY 충돌 가드(공용 헬퍼) — VOTE는 팝업+HERO 둘 다 사용. FEEDBACK(voteEventId=null)도 감지되도록 id로 제외.
     const conflict = await findChannelConflict({
       showBottomPopup: true,
       showHero: true,
       startAt,
       endAt,
-      exclude: { voteEventId: params.voteEventId },
+      exclude: { eventId: existingWrapper?.id },
     })
     if (conflict) {
       return {
