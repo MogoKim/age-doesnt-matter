@@ -161,16 +161,24 @@ export default function FeedbackEventForm({ items }: { items: FeedbackEventItem[
               <input type="datetime-local" className="rounded-lg border px-3 py-2 text-sm" value={endAt} onChange={(e) => setEndAt(e.target.value)} />
             </label>
             <label className="flex flex-col text-xs text-zinc-500">
-              tier
+              노출 등급 (tier)
               <select className="rounded-lg border px-3 py-2 text-sm" value={tier} onChange={(e) => setTier(e.target.value as 'PRIMARY' | 'SECONDARY' | 'HIDDEN')}>
-                <option value="SECONDARY">SECONDARY</option>
-                <option value="PRIMARY">PRIMARY</option>
-                <option value="HIDDEN">HIDDEN</option>
+                <option value="PRIMARY">PRIMARY · 홈 대표 노출</option>
+                <option value="SECONDARY">SECONDARY · 링크/푸시용</option>
+                <option value="HIDDEN">HIDDEN · 숨김/준비중</option>
               </select>
             </label>
           </div>
+
+          {/* tier 의미 안내 — 운영자 혼동 방지(문구 전용, 로직 무변경) */}
+          <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-2.5 text-xs leading-relaxed text-zinc-600">
+            <p className="mb-1"><b className="text-zinc-800">PRIMARY · 홈 대표 노출</b> — 하단 팝업/HERO 배너에 노출 가능. 같은 시간대·같은 채널엔 <b>1개만</b>.</p>
+            <p className="mb-1"><b className="text-zinc-800">SECONDARY · 링크/푸시용</b> — 직접 링크·푸시·알림용. <b>하단 팝업/HERO에는 노출되지 않음.</b></p>
+            <p><b className="text-zinc-800">HIDDEN · 숨김/준비중</b> — 홈 노출 없음. 내부 확인·나중에 켤 이벤트.</p>
+          </div>
+
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5">
-            <p className="mb-2 text-xs font-semibold text-zinc-600">홈 노출 채널 (tier=PRIMARY일 때만 실제 노출)</p>
+            <p className="mb-2 text-xs font-semibold text-zinc-600">홈 노출 채널 <span className="font-normal text-zinc-400">(tier=PRIMARY일 때만 실제 노출)</span></p>
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={showBottomPopup} onChange={(e) => setShowBottomPopup(e.target.checked)} />
@@ -181,6 +189,11 @@ export default function FeedbackEventForm({ items }: { items: FeedbackEventItem[
                 HERO 배너
               </label>
             </div>
+            {tier !== 'PRIMARY' && (showBottomPopup || showHero) && (
+              <p className="mt-2 rounded-md bg-amber-100 px-2.5 py-2 text-xs font-semibold text-amber-800">
+                ⚠️ 현재 노출 등급이 <b>{tier}</b>라서 팝업/HERO를 켜도 <b>홈에 노출되지 않습니다.</b> 홈에 띄우려면 위 <b>노출 등급을 PRIMARY</b>로 바꾸세요.
+              </p>
+            )}
             <p className="mt-2 text-xs text-zinc-400">
               같은 시간대·같은 채널에 이미 PRIMARY 이벤트(투표/의견)가 있으면 저장이 차단됩니다. 팝업/HERO는 입구 역할만 — 클릭 시 상세로 이동(의견 입력·결과 없음).
             </p>
