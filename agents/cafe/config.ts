@@ -172,7 +172,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     legacyCrawler: true,   // allArticlesUrl 미지정 → collectAllArticleUrls(전체글보기) 우회하고 boards page loop만 사용 (remon과 동일). 누락 시 crawl-only에서 0개 수집됨.
     sourceStage: 'core',
     boards: [
-      { name: '걱정/고민/위로 수다방', menuId: 997, maxPages: 5, priority: 'medium', category: 'lifestyle' },
+      { name: '걱정/고민/위로 수다방', menuId: 997, maxPages: 3, priority: 'medium', category: 'lifestyle' },  // 2026-07-22 5→3: 997이 maxPostsPerCafe=80을 혼자 채워(5p≈82) 996이 slice로 컷되던 문제 — 996 pipeline 진입 실험(전역 cap·순서·crawler 무변경)
       { name: '친해져요 수다방', menuId: 996, maxPages: 5, priority: 'medium', category: 'lifestyle' },  // 2026-07-22 추가: 997 단일 후보 부족 보완. 실측 게시판명.
     ],
   },
