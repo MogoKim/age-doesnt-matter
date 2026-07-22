@@ -12,6 +12,7 @@ import {
 } from '@/app/admin/(panel)/vote-events/actions'
 import { voteVisibleStatus } from '@/lib/vote-status'
 import FeedbackEventForm, { type FeedbackEventItem } from '@/components/admin/FeedbackEventForm'
+import SurveyEventForm, { type SurveyEventItem } from '@/components/admin/SurveyEventForm'
 
 export interface VoteEventData {
   id: string
@@ -80,6 +81,7 @@ export default function VoteEventManager({
   upcoming = [],
   past = [],
   feedbackEvents = [],
+  surveyEvents = [],
 }: {
   event: VoteEventData | null
   stats: VoteStats | null
@@ -87,11 +89,12 @@ export default function VoteEventManager({
   upcoming?: VoteEventListItem[]
   past?: VoteEventListItem[]
   feedbackEvents?: FeedbackEventItem[]
+  surveyEvents?: SurveyEventItem[]
 }) {
   const [pending, startTransition] = useTransition()
   const [msg, setMsg] = useState<string | null>(null)
   const [tab, setTab] = useState<'today' | 'upcoming' | 'past'>('today')
-  const [eventKind, setEventKind] = useState<'vote' | 'feedback'>('vote')
+  const [eventKind, setEventKind] = useState<'vote' | 'feedback' | 'survey'>('vote')
 
   // 예약 생성 폼 (예약/예정 탭)
   const [schedDate, setSchedDate] = useState('')
@@ -157,7 +160,7 @@ export default function VoteEventManager({
       <h1 className="text-xl font-bold">🎛 참여 이벤트</h1>
       {/* 타입 토글 — 투표 / 의견수렴(Phase 3a) */}
       <div className="flex gap-2">
-        {([['vote', '🗳 투표'], ['feedback', '🗣 의견수렴']] as const).map(([k, label]) => (
+        {([['vote', '🗳 투표'], ['feedback', '🗣 의견수렴'], ['survey', '📝 1분 의견함']] as const).map(([k, label]) => (
           <button
             key={k}
             onClick={() => setEventKind(k)}
@@ -170,6 +173,8 @@ export default function VoteEventManager({
 
       {eventKind === 'feedback' ? (
         <FeedbackEventForm items={feedbackEvents} />
+      ) : eventKind === 'survey' ? (
+        <SurveyEventForm items={surveyEvents} />
       ) : (
       <>
       <div className="flex gap-2 border-b border-zinc-200">

@@ -8,6 +8,7 @@ import VoteEventManager, {
   type VoteEventListItem,
 } from '@/components/admin/VoteEventManager'
 import { type FeedbackEventItem } from '@/components/admin/FeedbackEventForm'
+import { type SurveyEventItem } from '@/components/admin/SurveyEventForm'
 
 export const metadata: Metadata = { title: '참여 이벤트 — 오늘의 투표' }
 export const dynamic = 'force-dynamic'
@@ -160,6 +161,51 @@ export default async function AdminVoteEventsPage() {
     console.error('[admin/vote-events] FEEDBACK 이벤트 조회 실패:', err)
   }
 
+  // ── 1분 의견함(SURVEY) 목록 (Phase 5) — 응답 수(회원/비회원) + 오늘/예약/지난 버킷
+  let surveyEvents: SurveyEventItem[] = []
+  try {
+    const surveyRows = await prisma.event.findMany({ where: { type: 'SURVEY' }, orderBy: { startAt: 'desc' } })
+    const forms = await prisma.surveyForm.findMany({
+      where: { eventId: { in: surveyRows.map((e) => e.id) } },
+      select: { id: true, eventId: true, questions: true, description: true, consentText: true },
+    })
+    const formByEvent = new Map(forms.map((f) => [f.eventId, f]))
+    const respGroups = forms.length
+      ? await prisma.surveyResponse.groupBy({ by: ['surveyFormId', 'userId'], where: { surveyFormId: { in: forms.map((f) => f.id) } }, _count: { _all: true } })
+      : []
+    const countsOf = (formId: string) => {
+      const rows = respGroups.filter((g) => g.surveyFormId === formId)
+      const member = rows.filter((g) => g.userId).reduce((s, g) => s + g._count._all, 0)
+      const guest = rows.filter((g) => !g.userId).reduce((s, g) => s + g._count._all, 0)
+      return { total: member + guest, member, guest }
+    }
+    const nowMs2 = Date.now()
+    const bucketOf2 = (s: Date, e: Date): 'today' | 'upcoming' | 'past' => (nowMs2 < s.getTime() ? 'upcoming' : nowMs2 >= e.getTime() ? 'past' : 'today')
+    surveyEvents = surveyRows.map((e) => {
+      const f = formByEvent.get(e.id)
+      const c = f ? countsOf(f.id) : { total: 0, member: 0, guest: 0 }
+      return {
+        id: e.id,
+        title: e.title,
+        startAt: e.startAt.toISOString(),
+        endAt: e.endAt.toISOString(),
+        isActive: e.isActive,
+        tier: e.tier,
+        showBottomPopup: e.showBottomPopup,
+        showHero: e.showHero,
+        responseCount: c.total,
+        memberCount: c.member,
+        guestCount: c.guest,
+        bucket: bucketOf2(e.startAt, e.endAt),
+        questions: (f?.questions as unknown as SurveyEventItem['questions']) ?? [],
+        description: f?.description ?? e.description,
+        consentText: f?.consentText ?? null,
+      }
+    })
+  } catch (err) {
+    console.error('[admin/vote-events] SURVEY 이벤트 조회 실패:', err)
+  }
+
   return (
     <div className="space-y-4">
       <VoteEventManager
@@ -169,6 +215,7 @@ export default async function AdminVoteEventsPage() {
         upcoming={upcoming}
         past={past}
         feedbackEvents={feedbackEvents}
+        surveyEvents={surveyEvents}
       />
     </div>
   )

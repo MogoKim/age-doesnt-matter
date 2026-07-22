@@ -2,7 +2,7 @@ import { getActiveBanners } from '@/lib/queries/banners'
 import { prisma } from '@/lib/prisma'
 import { resolveLinkedPostUrl } from '@/lib/votes'
 import { effectiveVoteStatus } from '@/lib/vote-status'
-import { resolveChannelVote, getExposedFeedback } from '@/lib/events/exposure'
+import { resolveChannelVote, getExposedFeedback, getExposedSurvey } from '@/lib/events/exposure'
 import HeroSliderClient, { type SlideData } from './HeroSliderClient'
 
 /** 폴백 슬라이드 — DB 배너 없을 때 (그라디언트 CSS 변수 기반) */
@@ -107,6 +107,26 @@ async function buildFeedbackTeaserSlide(): Promise<SlideData | null> {
   }
 }
 
+/** 1분 의견함(SURVEY) HERO 슬라이드 — Phase 5. vote 없는 일반 배너 → 클릭 시 /events/[eventId]?src=hero. */
+async function buildSurveyTeaserSlide(): Promise<SlideData | null> {
+  try {
+    const s = await getExposedSurvey('hero')
+    if (!s) return null
+    return {
+      id: `survey-teaser-${s.eventId}`,
+      title: s.title,
+      subtitle: s.description ?? '1분이면 충분해요 — 의견을 들려주세요',
+      themeColor: '#3730A3',
+      themeColorMid: '#4F46E5',
+      themeColorEnd: '#818CF8',
+      ctaText: '1분 의견 남기러 가기',
+      ctaUrl: `/events/${s.eventId}?src=hero`,
+    }
+  } catch {
+    return null
+  }
+}
+
 export default async function HeroSlider() {
   let slides: SlideData[]
 
@@ -134,8 +154,9 @@ export default async function HeroSlider() {
 
   // 참여 이벤트 teaser — 기존 배너 유지하고 3번째 위치에 삽입 (배너 2개 미만이면 맨 뒤).
   //  VOTE 우선(안전장치): voteSlide 있으면 그것, 없을 때만 FEEDBACK 확인 → 같은 채널 동시 2개 방지.
+  //  VOTE 우선(안전장치) → FEEDBACK → SURVEY. getExposedEvent 채널당 1개라 실제로 동시 노출은 없음.
   const voteSlide = await buildVoteTeaserSlide()
-  const teaser = voteSlide ?? (await buildFeedbackTeaserSlide())
+  const teaser = voteSlide ?? (await buildFeedbackTeaserSlide()) ?? (await buildSurveyTeaserSlide())
   if (teaser) {
     slides = [...slides.slice(0, 2), teaser, ...slides.slice(2)]
   }

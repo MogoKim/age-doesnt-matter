@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
 import VotePopup from '@/components/features/vote/VotePopup'
 import FeedbackPopup from '@/components/features/event/FeedbackPopup'
+import SurveyPopup from '@/components/features/event/SurveyPopup'
 import HeroSlider from '@/components/features/home/HeroSlider'
 import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
@@ -212,6 +213,8 @@ export default function HomePage() {
           <VotePopup />
           {/* 의견수렴형 이벤트 입구 바텀시트 (Phase 3b) — VOTE와 배타(서버 getExposedEvent 1개), 하루 1회, 어드민 팝업 양보 */}
           <FeedbackPopup />
+          {/* 1분 의견함(SURVEY) 입구 바텀시트 (Phase 5) — VOTE/FEEDBACK과 배타, 하루 1회, 입구만(설문 폼 없음) */}
+          <SurveyPopup />
 
           <div className="lg:px-8">
             {/* 첫 인사 위젯 (client island — 가입 72h 이내·미작성 회원만, useAppSession 판별) */}

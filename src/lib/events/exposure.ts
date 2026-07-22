@@ -67,6 +67,26 @@ export async function getExposedFeedback(
   return { eventId: ev.id, title: ev.title, description: ev.description }
 }
 
+export interface ExposedSurvey {
+  eventId: string
+  title: string
+  description: string | null
+}
+
+/**
+ * 채널(팝업/HERO)에 지금 노출할 **1분 의견함(SURVEY)** 을 반환한다. 없으면 null. (Phase 5)
+ * getExposedEvent(PRIMARY·show{채널}·window 1개)를 그대로 쓰되 **type=SURVEY일 때만** 반환.
+ *  - VOTE/FEEDBACK/없음이면 null → SURVEY 팝업/HERO 미노출(채널당 1개 배타).
+ */
+export async function getExposedSurvey(
+  channel: EventChannel,
+  now: Date = new Date(),
+): Promise<ExposedSurvey | null> {
+  const ev = await getExposedEvent(channel, now)
+  if (!ev || ev.type !== 'SURVEY') return null
+  return { eventId: ev.id, title: ev.title, description: ev.description }
+}
+
 /**
  * 채널(팝업/HERO)에 지금 노출할 **투표(VoteEvent) id**를 선택한다. 노출 안 하면 null.
  * ⚠️ selection 전용 — `getTodayPublic()`/`revalidatePath`를 호출하지 않는다(서버 렌더에서 안전).
