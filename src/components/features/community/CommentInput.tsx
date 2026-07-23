@@ -54,6 +54,7 @@ export default function CommentInput({ postId, parentId, onCancel, placeholder, 
           placeholder={placeholder || '댓글을 남겨주세요...'}
           value={value}
           onChange={(e) => setValue(e.target.value)}
+          maxLength={500}
           maxHeight={160}
           rows={1}
         />
