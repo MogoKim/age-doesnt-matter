@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
-import VotePopup from '@/components/features/vote/VotePopup'
-import FeedbackPopup from '@/components/features/event/FeedbackPopup'
-import SurveyPopup from '@/components/features/event/SurveyPopup'
+import dynamic from 'next/dynamic'
 import HeroSlider from '@/components/features/home/HeroSlider'
 import JobSection from '@/components/features/home/JobSection'
 import TrendingSection from '@/components/features/home/TrendingSection'
@@ -29,6 +27,13 @@ import {
   getLatestMagazinePosts,
   getCachedHomeSections,
 } from '@/lib/queries/posts'
+
+// 첫 진입 성능(P1): 조건부 모달 팝업 3종은 above-the-fold가 아니므로 클라이언트 지연 로딩(ssr:false)으로
+// 초기 번들/hydration에서 제외 → 홈 핵심 콘텐츠 우선 인터랙티브. 팝업 기능·트리거는 그대로(마운트 후 로드).
+// (layout.tsx의 PopupRenderer/PushPermissionToast 등과 동일 패턴. 모달이라 CLS 0.)
+const VotePopup = dynamic(() => import('@/components/features/vote/VotePopup'), { ssr: false, loading: () => null })
+const FeedbackPopup = dynamic(() => import('@/components/features/event/FeedbackPopup'), { ssr: false, loading: () => null })
+const SurveyPopup = dynamic(() => import('@/components/features/event/SurveyPopup'), { ssr: false, loading: () => null })
 
 export const metadata: Metadata = {
   // title은 layout.tsx 전역 기본값 사용
