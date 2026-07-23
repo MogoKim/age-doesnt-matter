@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkBannedWords } from '@/lib/banned-words'
 import { sanitizeHtml } from '@/lib/sanitize'
+import { normalizeCommentBody, toNotificationPreview } from '@/lib/comment-normalize'
 import { checkAndPromote } from '@/lib/grade'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
 import { calculateTrendingScore } from '@/lib/utils/trending'
@@ -32,7 +33,8 @@ export async function createComment(
     return { error: blockReason }
   }
 
-  const trimmed = content.trim()
+  // 줄바꿈 정규화(CRLF→LF·3+연속→2·trim). 내부 줄바꿈은 보존.
+  const trimmed = normalizeCommentBody(content)
   if (!trimmed) {
     return { error: '댓글 내용을 입력해 주세요' }
   }
@@ -123,7 +125,7 @@ export async function createComment(
       bellContent: `${nickname}님이 회원님의 댓글에 답글을 남겼어요`,
       postId,
       fromUserId: session.user.id,
-      push: { title: '새 답글이 달렸어요', body: `${nickname}: ${trimmed.slice(0, 50)}`, url: postUrl, tag: `comment-${postId}` },
+      push: { title: '새 답글이 달렸어요', body: `${nickname}: ${toNotificationPreview(trimmed)}`, url: postUrl, tag: `comment-${postId}` },
       campaign: 'comment',
     })
   } else if (post.authorId !== session.user.id) {
@@ -133,7 +135,7 @@ export async function createComment(
       bellContent: `${nickname}님이 회원님의 글에 댓글을 남겼어요`,
       postId,
       fromUserId: session.user.id,
-      push: { title: '새 댓글이 달렸어요', body: `${nickname}: ${trimmed.slice(0, 50)}`, url: postUrl, tag: `comment-${postId}` },
+      push: { title: '새 댓글이 달렸어요', body: `${nickname}: ${toNotificationPreview(trimmed)}`, url: postUrl, tag: `comment-${postId}` },
       campaign: 'comment',
     })
   }
@@ -153,7 +155,7 @@ export async function editComment(
   const session = await auth()
   if (!session?.user?.id) return { error: '로그인이 필요합니다' }
 
-  const trimmed = newContent.trim()
+  const trimmed = normalizeCommentBody(newContent)
   if (!trimmed) return { error: '댓글 내용을 입력해 주세요' }
   if (trimmed.length > 500) return { error: '댓글은 500자 이내로 입력해 주세요' }
 

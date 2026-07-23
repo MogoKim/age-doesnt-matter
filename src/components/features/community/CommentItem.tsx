@@ -13,6 +13,7 @@ import CommentInput from './CommentInput'
 import GuestCommentInput from './GuestCommentInput'
 import GuestPasswordModal from './GuestPasswordModal'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import AutoResizeTextarea from '@/components/common/AutoResizeTextarea'
 import { campLabel } from '@/components/features/vote/option-label'
 
 /** 오늘의 투표 진영 배지 데이터 (CommentSection에서 1회 fetch 후 전달) */
@@ -211,9 +212,11 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
 
       {isEditing ? (
         <div className="mb-2">
-          <textarea
-            className="w-full min-h-[80px] px-4 py-2.5 border border-border rounded-xl text-body text-foreground bg-background resize-none outline-none transition-colors focus:border-primary"
+          <AutoResizeTextarea
+            className="w-full min-h-[80px] px-4 py-2.5 border border-border rounded-xl text-body text-foreground bg-background outline-none transition-colors focus:border-primary"
             value={editValue}
+            maxLength={500}
+            maxHeight={240}
             onChange={(e) => setEditValue(e.target.value)}
           />
           <div className="flex justify-end gap-2 mt-2">
@@ -233,7 +236,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
           </div>
         </div>
       ) : (
-        <p className="text-body text-foreground m-0 mb-2 break-keep leading-[1.7]">{comment.content}</p>
+        <p className="text-body text-foreground m-0 mb-2 break-keep leading-[1.7] whitespace-pre-wrap [overflow-wrap:anywhere]">{comment.content}</p>
       )}
 
       <div className="flex items-center gap-4">

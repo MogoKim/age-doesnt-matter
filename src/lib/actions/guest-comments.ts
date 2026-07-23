@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs'
 import { calculateTrendingScore } from '@/lib/utils/trending'
 import { notifyUser } from '@/lib/notify'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
+import { normalizeCommentBody, toNotificationPreview } from '@/lib/comment-normalize'
 
 interface GuestCommentResult {
   error?: string
@@ -34,7 +35,8 @@ export async function createGuestComment({
   if (!isHuman) return { error: '봇으로 판단되어 작성이 거부되었어요' }
 
   const trimmedNickname = guestNickname.trim()
-  const trimmedContent = content.trim()
+  // 줄바꿈 정규화(CRLF→LF·3+연속→2·trim). 내부 줄바꿈 보존. XSS는 표시단 텍스트 렌더(자동 escape)로 방어.
+  const trimmedContent = normalizeCommentBody(content)
 
   if (!trimmedNickname || trimmedNickname.length > 10) {
     return { error: '닉네임은 1~10자로 입력해 주세요' }
@@ -100,7 +102,7 @@ export async function createGuestComment({
       postId,
       push: {
         title: '새 답글이 달렸어요',
-        body: `${trimmedNickname}(비회원): ${trimmedContent.slice(0, 50)}`,
+        body: `${trimmedNickname}(비회원): ${toNotificationPreview(trimmedContent)}`,
         url: `/community/${BOARD_TYPE_TO_SLUG[post.boardType]}/${postId}`,
         tag: `comment-${postId}`,
       },
@@ -180,7 +182,7 @@ export async function editGuestComment(
   content: string,
   password: string,
 ): Promise<GuestCommentResult> {
-  const trimmedContent = content.trim()
+  const trimmedContent = normalizeCommentBody(content)
   if (!trimmedContent || trimmedContent.length > 500) {
     return { error: '댓글 내용은 1~500자로 입력해 주세요' }
   }

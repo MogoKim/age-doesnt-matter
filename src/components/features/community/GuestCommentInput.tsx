@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import KakaoSignupButton from '@/components/features/auth/KakaoSignupButton'
+import AutoResizeTextarea from '@/components/common/AutoResizeTextarea'
 import { useToast } from '@/components/common/Toast'
 import { createGuestComment } from '@/lib/actions/guest-comments'
 import { trackEvent } from '@/lib/track'
@@ -234,13 +235,14 @@ export default function GuestCommentInput({
         {isGreeting ? '새 이웃을 환영해주세요' : isFeedback ? '의견을 남겨주세요' : '댓글을 남겨보세요'}
       </p>
 
-      <textarea
+      <AutoResizeTextarea
         placeholder={resolvedPlaceholder}
         value={content}
         onChange={(e) => setContent(e.target.value.slice(0, 500))}
         maxLength={500}
         rows={3}
-        className="w-full px-3 py-2 border border-border rounded-xl text-body text-foreground bg-background resize-none outline-none focus:border-primary transition-colors mb-1"
+        maxHeight={200}
+        className="w-full px-3 py-2 border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors mb-1"
       />
       <p className="text-caption text-muted-foreground text-right mb-3">{content.length}/500</p>
 

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useToast } from '@/components/common/Toast'
+import AutoResizeTextarea from '@/components/common/AutoResizeTextarea'
 import { editGuestComment, deleteGuestComment } from '@/lib/actions/guest-comments'
 
 interface GuestPasswordModalProps {
@@ -55,11 +56,13 @@ export default function GuestPasswordModal({
         </h3>
 
         {mode === 'edit' && (
-          <textarea
+          <AutoResizeTextarea
             value={newContent}
             onChange={(e) => setNewContent(e.target.value.slice(0, 500))}
             rows={3}
-            className="w-full px-3 py-2 border border-border rounded-xl text-body text-foreground bg-background resize-none outline-none focus:border-primary transition-colors mb-3"
+            maxLength={500}
+            maxHeight={200}
+            className="w-full px-3 py-2 border border-border rounded-xl text-body text-foreground bg-background outline-none focus:border-primary transition-colors mb-3"
           />
         )}
 
