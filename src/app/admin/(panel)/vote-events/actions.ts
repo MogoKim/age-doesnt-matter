@@ -10,7 +10,7 @@ import { generateFeedbackDraft } from '@/lib/ai/feedback-draft'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { EVENT_CATEGORY } from '@/lib/event-category'
 import { validateQuestions, summarizeQuestion, type SurveyQuestion, type SurveyAnswers, type QuestionSummary } from '@/lib/events/survey'
-import type { VoteChoice, VoteEventStatus, EventTier } from '@/generated/prisma/client'
+import type { VoteChoice, VoteEventStatus, EventTier, EventAudience } from '@/generated/prisma/client'
 
 interface ActionResult {
   error?: string
@@ -124,11 +124,20 @@ function isMissingEventTable(e: unknown): boolean {
  *  ⚠️ voteEventId 기준 제외 금지 — Prisma `{ not: id }`가 voteEventId=null(FEEDBACK) 행을 함께 배제해 충돌을 놓친다.
  *     투표 wrapper도 자기 Event.id를 조회해 excludeEventId로 넘긴다(양방향 VOTE↔FEEDBACK 충돌 감지).
  */
+/** audience 교집합 — 신규 audience와 실사용자가 겹치는 기존 audience 집합.
+ *  ALL↔any 겹침 / GUEST↔MEMBER는 안 겹침(교집합 ∅ → 동시 허용). */
+function conflictingAudiences(audience: EventAudience): EventAudience[] {
+  if (audience === 'ALL') return ['ALL', 'GUEST', 'MEMBER']
+  if (audience === 'GUEST') return ['ALL', 'GUEST']
+  return ['ALL', 'MEMBER'] // MEMBER
+}
+
 async function findChannelConflict(params: {
   showBottomPopup: boolean
   showHero: boolean
   startAt: Date
   endAt: Date
+  audience?: EventAudience
   exclude?: { eventId?: string }
 }): Promise<{ id: string; title: string } | null> {
   const channelOr: Array<{ showBottomPopup: true } | { showHero: true }> = []
@@ -142,6 +151,8 @@ async function findChannelConflict(params: {
     startAt: { lt: params.endAt },
     endAt: { gt: params.startAt },
     OR: channelOr,
+    // audience 교집합이 있는 기존 이벤트만 충돌 — GUEST↔MEMBER는 겹치지 않아 동시 허용
+    audience: { in: conflictingAudiences(params.audience ?? 'ALL') },
   }
   if (params.exclude?.eventId) where.id = { not: params.exclude.eventId }
 
@@ -718,6 +729,7 @@ export async function upsertSurveyEvent(input: {
   startAt: string
   endAt: string
   tier?: EventTier
+  audience?: EventAudience
   showBottomPopup?: boolean
   showHero?: boolean
 }): Promise<ActionResult & { eventId?: string }> {
@@ -738,18 +750,20 @@ export async function upsertSurveyEvent(input: {
   if ('error' in vq) return { error: vq.error }
   const consentText = input.consentText?.trim() || null
   const tier: EventTier = input.tier ?? 'SECONDARY'
+  const audience: EventAudience = input.audience ?? 'ALL'
   const channels = { showBottomPopup: input.showBottomPopup ?? false, showHero: input.showHero ?? false }
 
   try {
     if (tier === 'PRIMARY' && (channels.showBottomPopup || channels.showHero)) {
-      const conflict = await findChannelConflict({ showBottomPopup: channels.showBottomPopup, showHero: channels.showHero, startAt, endAt, exclude: { eventId: input.eventId } })
-      if (conflict) return { error: `같은 시간대에 이미 HERO/팝업 노출 이벤트가 있습니다: "${conflict.title}". 기존 이벤트 노출을 끄고 다시 저장하세요.` }
+      // audience 교집합 기준 충돌 — GUEST↔MEMBER는 겹치지 않아 같은 시간대 동시 허용
+      const conflict = await findChannelConflict({ showBottomPopup: channels.showBottomPopup, showHero: channels.showHero, startAt, endAt, audience, exclude: { eventId: input.eventId } })
+      if (conflict) return { error: `같은 시간대·같은 대상에 이미 HERO/팝업 노출 이벤트가 있습니다: "${conflict.title}". 기존 이벤트 노출을 끄거나 노출 대상을 다르게(회원↔비회원) 하세요.` }
     }
 
     if (input.eventId) {
       const ev = await prisma.event.findUnique({ where: { id: input.eventId }, select: { id: true, type: true } })
       if (!ev || ev.type !== 'SURVEY') return { error: '수정할 의견함을 찾을 수 없습니다' }
-      await prisma.event.update({ where: { id: ev.id }, data: { title, description, startAt, endAt, tier, ...channels } })
+      await prisma.event.update({ where: { id: ev.id }, data: { title, description, startAt, endAt, tier, audience, ...channels } })
       await prisma.surveyForm.update({ where: { eventId: ev.id }, data: { title, description, questions: vq.questions as object, consentText } })
       revalidatePath(`/events/${ev.id}`)
       revalidatePath('/admin/vote-events')
@@ -757,7 +771,7 @@ export async function upsertSurveyEvent(input: {
     }
 
     const ev = await prisma.event.create({
-      data: { type: 'SURVEY', title, description, startAt, endAt, tier, ...channels, createdByAdminId: adminId },
+      data: { type: 'SURVEY', title, description, startAt, endAt, tier, audience, ...channels, createdByAdminId: adminId },
       select: { id: true },
     })
     await prisma.surveyForm.create({

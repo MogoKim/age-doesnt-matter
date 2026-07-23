@@ -127,6 +127,19 @@ export default function SurveyDetail({
                 ))}
               </div>
             )}
+            {q.type === 'scale_0_10' && (
+              <div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                    <button key={n} type="button" onClick={() => set(q.id, n)}
+                      className={`min-h-[48px] min-w-[44px] flex-1 rounded-lg border text-[16px] font-bold transition-colors ${answers[q.id] === n ? 'border-primary bg-primary text-white' : 'border-border bg-background text-foreground'}`}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-1 flex justify-between text-[12px] text-muted-foreground"><span>전혀 아니다 (0)</span><span>매우 그렇다 (10)</span></div>
+              </div>
+            )}
             {q.type === 'short_text' && (
               <input type="text" maxLength={200} value={(answers[q.id] as string) ?? ''} onChange={(e) => set(q.id, e.target.value)}
                 className="w-full min-h-[52px] px-3 rounded-xl border border-border bg-background text-[16px] text-foreground outline-none focus:border-primary" placeholder="짧게 적어주세요" />

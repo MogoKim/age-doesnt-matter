@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { voteVisibleStatus } from '@/lib/vote-status'
 import { getCommentsByPostId } from '@/lib/queries/comments'
@@ -48,11 +49,14 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
 
   // Phase 5 — 1분 의견함(SURVEY) 우선 분기. VOTE는 id=voteEventId, FEEDBACK은 아래, 회귀 0.
   const sv = await prisma.event
-    .findFirst({ where: { type: 'SURVEY', id }, select: { id: true, title: true, description: true, startAt: true, endAt: true, isActive: true } })
+    .findFirst({ where: { type: 'SURVEY', id }, select: { id: true, title: true, description: true, startAt: true, endAt: true, isActive: true, audience: true } })
     .catch(() => null)
   if (sv) {
     const now = Date.now()
     if (!sv.isActive || now < sv.startAt.getTime()) notFound() // startAt 전(예약)·비활성 숨김
+    // audience(노출 대상) ↔ 로그인 여부 불일치 시 직접 URL 접근 차단
+    const isMember = !!(await auth())?.user?.id
+    if ((sv.audience === 'MEMBER' && !isMember) || (sv.audience === 'GUEST' && isMember)) notFound()
     const form = await prisma.surveyForm.findUnique({ where: { eventId: sv.id }, select: { questions: true, consentText: true } }).catch(() => null)
     if (!form) notFound()
     const closed = now >= sv.endAt.getTime()

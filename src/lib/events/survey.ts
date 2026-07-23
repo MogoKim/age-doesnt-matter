@@ -5,6 +5,7 @@ export type SurveyQuestionType =
   | 'single_choice'
   | 'multiple_choice'
   | 'rating_1_5'
+  | 'scale_0_10' // NPS 0~10 (추천 가능성)
   | 'short_text'
   | 'long_text'
   | 'consent'
@@ -25,6 +26,7 @@ export const QUESTION_TYPE_LABEL: Record<SurveyQuestionType, string> = {
   single_choice: '단일 선택',
   multiple_choice: '복수 선택',
   rating_1_5: '1~5점 척도',
+  scale_0_10: '0~10점(NPS)',
   short_text: '짧은 주관식',
   long_text: '긴 주관식',
   consent: '동의 체크',
@@ -85,6 +87,12 @@ export function validateAnswers(questions: SurveyQuestion[], answersRaw: unknown
         out[q.id] = n
         break
       }
+      case 'scale_0_10': {
+        const n = Number(v)
+        if (!Number.isInteger(n) || n < 0 || n > 10) return { error: `"${q.label}" 점수는 0~10 사이여야 합니다` }
+        out[q.id] = n
+        break
+      }
       case 'short_text':
         out[q.id] = String(v).slice(0, SHORT_MAX)
         break
@@ -103,6 +111,7 @@ export function validateAnswers(questions: SurveyQuestion[], answersRaw: unknown
 export type QuestionSummary =
   | { id: string; label: string; type: 'single_choice' | 'multiple_choice'; counts: { option: string; count: number; ratio: number }[]; answered: number }
   | { id: string; label: string; type: 'rating_1_5'; average: number; distribution: number[]; answered: number }
+  | { id: string; label: string; type: 'scale_0_10'; average: number; distribution: number[]; promoters: number; passives: number; detractors: number; nps: number; answered: number }
   | { id: string; label: string; type: 'short_text' | 'long_text'; texts: string[]; answered: number }
   | { id: string; label: string; type: 'consent'; accepted: number; answered: number }
 
@@ -122,6 +131,17 @@ export function summarizeQuestion(q: SurveyQuestion, allAnswers: SurveyAnswers[]
     nums.forEach((n) => { distribution[n - 1]++ })
     const average = nums.length ? nums.reduce((s, n) => s + n, 0) / nums.length : 0
     return { id: q.id, label: q.label, type: 'rating_1_5', average, distribution, answered: nums.length }
+  }
+  if (q.type === 'scale_0_10') {
+    const nums = values.map(Number).filter((n) => n >= 0 && n <= 10)
+    const distribution = Array(11).fill(0) as number[]
+    nums.forEach((n) => { distribution[n]++ })
+    const average = nums.length ? nums.reduce((s, n) => s + n, 0) / nums.length : 0
+    const promoters = nums.filter((n) => n >= 9).length // NPS 추천군
+    const detractors = nums.filter((n) => n <= 6).length // 비추천군
+    const passives = nums.length - promoters - detractors
+    const nps = nums.length ? Math.round(((promoters - detractors) / nums.length) * 100) : 0
+    return { id: q.id, label: q.label, type: 'scale_0_10', average, distribution, promoters, passives, detractors, nps, answered: nums.length }
   }
   if (q.type === 'consent') {
     const accepted = values.filter((v) => v === true).length
