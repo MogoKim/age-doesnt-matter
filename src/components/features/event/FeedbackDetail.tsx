@@ -34,23 +34,23 @@ export default function FeedbackDetail({
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 overflow-hidden shrink-0">
             <Image src="/logo-symbol.png" alt="우리 나이가 어때서" width={28} height={28} className="object-contain" />
           </span>
-          <span className="text-[15px] font-bold text-foreground">우리 나이가 어때서</span>
-          <span className="text-[13px] font-bold text-primary-text bg-primary/10 rounded-full px-2.5 py-1 leading-none">
+          <span className="text-caption font-bold text-foreground">우리 나이가 어때서</span>
+          <span className="text-caption font-bold text-primary-text bg-primary/10 rounded-full px-2.5 py-1 leading-none">
             {closed ? '마감된 의견' : '의견 모아요'}
           </span>
         </div>
 
         {/* ── 제목 + 안내문 ── */}
-        <h1 className="text-xl md:text-2xl font-bold text-foreground m-0 leading-[1.35] break-keep">
+        <h1 className="text-heading font-bold text-foreground m-0 leading-[1.35] break-keep">
           {event.title}
         </h1>
         {event.description && (
-          <p className="text-[16px] text-muted-foreground m-0 mt-2 break-keep">{event.description}</p>
+          <p className="text-body text-muted-foreground m-0 mt-2 break-keep">{event.description}</p>
         )}
 
         {/* ── 운영자 본문(안내글) ── */}
         <div
-          className="mt-4 text-[17px] leading-[1.7] text-foreground break-keep [&_p]:m-0 [&_p]:mb-2.5 [&_p:last-child]:mb-0"
+          className="mt-4 post-content leading-[1.7] text-foreground break-keep [&_p]:m-0 [&_p]:mb-2.5 [&_p:last-child]:mb-0"
           dangerouslySetInnerHTML={{ __html: bodyHtml }}
         />
       </div>
@@ -59,7 +59,7 @@ export default function FeedbackDetail({
       {commentsSlot}
 
       {/* ── 운영 안내 ── */}
-      <p className="mt-6 text-center text-[14px] text-muted-foreground">
+      <p className="mt-6 text-center text-caption text-muted-foreground">
         {closed
           ? '남겨주신 의견은 우나어 운영에 소중히 반영됩니다. (의견 받기가 마감됐어요)'
           : '남겨주신 의견은 우나어 운영에 소중히 반영됩니다.'}

@@ -22,7 +22,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-[640px] mx-auto px-4 py-6 md:px-6 md:py-8 bg-[var(--surface-warm)] min-h-screen">
       <div className="rounded-2xl bg-card border border-border shadow-sm p-4 md:p-5">{children}</div>
-      <p className="mt-6 text-center text-[14px] text-muted-foreground">남겨주신 응답은 운영자만 확인하며 서비스 개선에 소중히 반영됩니다.</p>
+      <p className="mt-6 text-center text-caption text-muted-foreground">남겨주신 응답은 운영자만 확인하며 서비스 개선에 소중히 반영됩니다.</p>
     </div>
   )
 }
@@ -72,33 +72,33 @@ export default function SurveyDetail({
       <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#EEF2FF] overflow-hidden shrink-0">
         <Image src="/logo-symbol.png" alt="우리 나이가 어때서" width={28} height={28} className="object-contain" />
       </span>
-      <span className="text-[15px] font-bold text-foreground">우리 나이가 어때서</span>
-      <span className="text-[13px] font-bold text-[#4F46E5] bg-[#EEF2FF] rounded-full px-2.5 py-1 leading-none">📝 1분 의견함</span>
+      <span className="text-caption font-bold text-foreground">우리 나이가 어때서</span>
+      <span className="text-caption font-bold text-[#4F46E5] bg-[#EEF2FF] rounded-full px-2.5 py-1 leading-none">📝 1분 의견함</span>
     </div>
   )
 
-  if (closed) return <Shell>{Header}<h1 className="text-xl font-bold text-foreground m-0">{data.title}</h1><p className="mt-4 text-[16px] text-muted-foreground">마감된 의견함입니다. 참여해 주셔서 고맙습니다 🙏</p></Shell>
-  if (done) return <Shell>{Header}<h1 className="text-xl font-bold text-foreground m-0">의견 고맙습니다 · 소중히 반영할게요</h1><p className="mt-3 text-[16px] text-muted-foreground">남겨주신 1분이 우나어를 더 좋게 만듭니다.</p></Shell>
-  if (already) return <Shell>{Header}<h1 className="text-xl font-bold text-foreground m-0">{data.title}</h1><p className="mt-4 text-[16px] text-muted-foreground">이미 의견을 남겨주셨어요. 고맙습니다! (한 번만 참여할 수 있어요)</p></Shell>
+  if (closed) return <Shell>{Header}<h1 className="text-heading font-bold text-foreground m-0">{data.title}</h1><p className="mt-4 text-body text-muted-foreground">마감된 의견함입니다. 참여해 주셔서 고맙습니다 🙏</p></Shell>
+  if (done) return <Shell>{Header}<h1 className="text-heading font-bold text-foreground m-0">의견 고맙습니다 · 소중히 반영할게요</h1><p className="mt-3 text-body text-muted-foreground">남겨주신 1분이 우나어를 더 좋게 만듭니다.</p></Shell>
+  if (already) return <Shell>{Header}<h1 className="text-heading font-bold text-foreground m-0">{data.title}</h1><p className="mt-4 text-body text-muted-foreground">이미 의견을 남겨주셨어요. 고맙습니다! (한 번만 참여할 수 있어요)</p></Shell>
 
   return (
     <Shell>
       {Header}
-      <h1 className="text-xl md:text-2xl font-bold text-foreground m-0 leading-[1.35] break-keep">{data.title}</h1>
-      {data.description && <p className="text-[16px] text-muted-foreground m-0 mt-2 break-keep">{data.description}</p>}
-      <p className="mt-1 text-[14px] font-semibold text-[#4F46E5]">⏱ 예상 소요 1분</p>
+      <h1 className="text-heading font-bold text-foreground m-0 leading-[1.35] break-keep">{data.title}</h1>
+      {data.description && <p className="text-body text-muted-foreground m-0 mt-2 break-keep">{data.description}</p>}
+      <p className="mt-1 text-caption font-semibold text-[#4F46E5]">⏱ 예상 소요 1분</p>
 
       <div className="mt-5 space-y-6">
         {data.questions.filter((q) => q.type !== 'consent').map((q) => (
           <div key={q.id}>
-            <p className="text-[17px] font-bold text-foreground m-0 mb-2.5 break-keep">
+            <p className="text-title font-bold text-foreground m-0 mb-2.5 break-keep">
               {q.label}{q.required && <span className="text-primary"> *</span>}
             </p>
             {q.type === 'single_choice' && (
               <div className="flex flex-col gap-2">
                 {(q.options ?? []).map((o) => (
                   <button key={o} type="button" onClick={() => set(q.id, o)}
-                    className={`text-left w-full min-h-[52px] px-4 rounded-xl border text-[16px] transition-colors ${answers[q.id] === o ? 'border-primary bg-primary/10 text-primary-text font-bold' : 'border-border bg-background text-foreground'}`}>
+                    className={`text-left w-full min-h-[52px] px-4 rounded-xl border text-body transition-colors ${answers[q.id] === o ? 'border-primary bg-primary/10 text-primary-text font-bold' : 'border-border bg-background text-foreground'}`}>
                     {o}
                   </button>
                 ))}
@@ -110,7 +110,7 @@ export default function SurveyDetail({
                   const on = ((answers[q.id] as string[]) ?? []).includes(o)
                   return (
                     <button key={o} type="button" onClick={() => toggleMulti(q.id, o)}
-                      className={`text-left w-full min-h-[52px] px-4 rounded-xl border text-[16px] transition-colors ${on ? 'border-primary bg-primary/10 text-primary-text font-bold' : 'border-border bg-background text-foreground'}`}>
+                      className={`text-left w-full min-h-[52px] px-4 rounded-xl border text-body transition-colors ${on ? 'border-primary bg-primary/10 text-primary-text font-bold' : 'border-border bg-background text-foreground'}`}>
                       {on ? '☑' : '☐'} {o}
                     </button>
                   )
@@ -121,7 +121,7 @@ export default function SurveyDetail({
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button key={n} type="button" onClick={() => set(q.id, n)}
-                    className={`flex-1 min-h-[52px] rounded-xl border text-[18px] font-bold transition-colors ${answers[q.id] === n ? 'border-primary bg-primary text-white' : 'border-border bg-background text-foreground'}`}>
+                    className={`flex-1 min-h-[52px] rounded-xl border text-title font-bold transition-colors ${answers[q.id] === n ? 'border-primary bg-primary text-white' : 'border-border bg-background text-foreground'}`}>
                     {n}
                   </button>
                 ))}
@@ -132,21 +132,21 @@ export default function SurveyDetail({
                 <div className="flex flex-wrap gap-1.5">
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                     <button key={n} type="button" onClick={() => set(q.id, n)}
-                      className={`min-h-[48px] min-w-[44px] flex-1 rounded-lg border text-[16px] font-bold transition-colors ${answers[q.id] === n ? 'border-primary bg-primary text-white' : 'border-border bg-background text-foreground'}`}>
+                      className={`min-h-[48px] min-w-[44px] flex-1 rounded-lg border text-body font-bold transition-colors ${answers[q.id] === n ? 'border-primary bg-primary text-white' : 'border-border bg-background text-foreground'}`}>
                       {n}
                     </button>
                   ))}
                 </div>
-                <div className="mt-1 flex justify-between text-[12px] text-muted-foreground"><span>전혀 아니다 (0)</span><span>매우 그렇다 (10)</span></div>
+                <div className="mt-1 flex justify-between text-caption text-muted-foreground"><span>전혀 아니다 (0)</span><span>매우 그렇다 (10)</span></div>
               </div>
             )}
             {q.type === 'short_text' && (
               <input type="text" maxLength={200} value={(answers[q.id] as string) ?? ''} onChange={(e) => set(q.id, e.target.value)}
-                className="w-full min-h-[52px] px-3 rounded-xl border border-border bg-background text-[16px] text-foreground outline-none focus:border-primary" placeholder="짧게 적어주세요" />
+                className="w-full min-h-[52px] px-3 rounded-xl border border-border bg-background text-body text-foreground outline-none focus:border-primary" placeholder="짧게 적어주세요" />
             )}
             {q.type === 'long_text' && (
               <textarea maxLength={1000} rows={4} value={(answers[q.id] as string) ?? ''} onChange={(e) => set(q.id, e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-border bg-background text-[16px] text-foreground outline-none focus:border-primary resize-none" placeholder="자유롭게 적어주세요 (개인정보·민감한 내용은 적지 말아 주세요)" />
+                className="w-full px-3 py-2 rounded-xl border border-border bg-background text-body text-foreground outline-none focus:border-primary resize-none" placeholder="자유롭게 적어주세요 (개인정보·민감한 내용은 적지 말아 주세요)" />
             )}
           </div>
         ))}
@@ -155,18 +155,18 @@ export default function SurveyDetail({
         {data.questions.filter((q) => q.type === 'consent').map((q) => (
           <label key={q.id} className="flex items-start gap-2.5 rounded-xl bg-muted/40 p-3 cursor-pointer">
             <input type="checkbox" className="mt-1" checked={answers[q.id] === true} onChange={(e) => set(q.id, e.target.checked)} />
-            <span className="text-[15px] leading-[1.6] text-foreground">
+            <span className="text-caption leading-[1.6] text-foreground">
               {q.label}{q.required && <span className="text-primary"> *</span>}
-              <span className="block mt-1 text-[13px] text-muted-foreground">{data.consentText}</span>
+              <span className="block mt-1 text-caption text-muted-foreground">{data.consentText}</span>
             </span>
           </label>
         ))}
       </div>
 
-      {error && <p className="mt-3 text-[15px] font-semibold text-red-600">{error}</p>}
+      {error && <p className="mt-3 text-caption font-semibold text-red-600">{error}</p>}
 
       <button type="button" onClick={submit} disabled={pending}
-        className="mt-6 w-full min-h-[56px] rounded-2xl bg-primary text-[18px] font-bold text-white shadow-sm disabled:opacity-60">
+        className="mt-6 w-full min-h-[56px] rounded-2xl bg-primary text-title font-bold text-white shadow-sm disabled:opacity-60">
         {pending ? '제출 중…' : '의견 제출하기'}
       </button>
     </Shell>
