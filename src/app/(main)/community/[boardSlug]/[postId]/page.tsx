@@ -5,7 +5,8 @@ import type { Metadata } from 'next'
 
 import { getBoardConfig } from '@/lib/queries/boards'
 import { getPostDetail, getRelatedCommunityPosts, getCrossBoardCandidates } from '@/lib/queries/posts'
-import { getCommentsByPostId } from '@/lib/queries/comments'
+import { getCommentsByPostId, getForumCommentsForJsonLd } from '@/lib/queries/comments'
+import { buildDiscussionForumJsonLd, DFP_COMMENT_LIMIT } from '@/lib/seo/discussion-forum'
 import ActionBar from '@/components/features/community/ActionBar'
 import PostCTA from '@/components/features/community/PostCTA'
 import PostOwnerActions from '@/components/features/community/PostOwnerActions'
@@ -135,28 +136,27 @@ export default async function PostDetailPage({ params }: PageProps) {
     ? (post.content.match(/<img[^>]+src="([^"]+)"/)?.[1] ?? null)
     : null
   const ogImage = post.thumbnailUrl || firstContentImage || `${BASE_URL}/icon-1024.png`
-  const contentText = post.content
-    ? post.content.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 150)
+  const plainText = post.content
+    ? post.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
     : ''
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: post.title,
-    description: contentText || post.preview || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티',
-    image: ogImage,
+  // 커뮤니티 글 = 포럼/토론 → Article 대신 DiscussionForumPosting (GSC 권장). Breadcrumb은 별도 유지.
+  // JSON-LD comment[]용 ACTIVE 최상위 댓글만 별도 경량 조회(HIDDEN/DELETED 제외, 상한 DFP_COMMENT_LIMIT).
+  const forumComments = await getForumCommentsForJsonLd(resolvedId, DFP_COMMENT_LIMIT)
+  const jsonLd = buildDiscussionForumJsonLd({
+    title: post.title,
+    text: plainText || post.preview || '50·60대가 나이 걱정 없이 소통하는 따뜻한 커뮤니티',
+    authorName: post.author.nickname,
+    datePublished: new Date(post.createdAt).toISOString(),
+    dateModified: new Date(post.updatedAt).toISOString(),
     url,
-    datePublished: post.createdAt,
-    dateModified: post.updatedAt,
-    publisher: {
-      '@type': 'Organization',
-      name: '우리 나이가 어때서',
-      url: BASE_URL,
-    },
-    author: {
-      '@type': 'Person',
-      name: post.author.nickname,
-    },
-  }
+    image: ogImage,
+    likeCount: post.likeCount ?? 0,
+    viewCount: post.viewCount ?? 0,
+    commentCount: post.commentCount ?? 0,
+    publisherName: '우리 나이가 어때서',
+    publisherUrl: BASE_URL,
+    comments: forumComments,
+  })
 
   return (
     <div className="max-w-[720px] mx-auto px-4 py-6 md:px-6 md:py-8 bg-[var(--surface-warm)] min-h-screen">

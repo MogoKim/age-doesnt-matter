@@ -103,3 +103,33 @@ export const getCommentsByPostId = unstable_cache(
   // 댓글 작성/수정/삭제 시 revalidateTag('comments-by-post')로 즉시 무효화 → TTL은 봇 순회 대비 상한
   { revalidate: 300, tags: ['comments-by-post'] },
 )
+
+/**
+ * DiscussionForumPosting JSON-LD 전용 경량 조회 — ACTIVE 최상위 댓글만(HIDDEN/DELETED 제외),
+ * 화면 노출 닉네임·본문·작성일만. 답글/좋아요/프로필 미조회. 상한 limit개.
+ * getCommentsByPostId(트리·표시용)와 별개 — HIDDEN이 JSON-LD에 새지 않게 status='ACTIVE'로 엄격 필터.
+ */
+async function _getForumCommentsForJsonLd(
+  postId: string,
+  limit: number,
+): Promise<Array<{ authorName: string; text: string; datePublished: string }>> {
+  const rows = await prisma.comment.findMany({
+    where: { postId, parentId: null, status: 'ACTIVE' },
+    select: { content: true, createdAt: true, guestNickname: true, author: { select: { nickname: true } } },
+    orderBy: { createdAt: 'asc' },
+    take: limit,
+  })
+  return rows
+    .map((r) => ({
+      authorName: (r.author?.nickname ?? r.guestNickname ?? '').trim(),
+      text: (r.content ?? '').trim(),
+      datePublished: r.createdAt.toISOString(),
+    }))
+    .filter((c) => c.authorName && c.text)
+}
+
+export const getForumCommentsForJsonLd = unstable_cache(
+  _getForumCommentsForJsonLd,
+  ['forum-comments-jsonld'],
+  { revalidate: 300, tags: ['comments-by-post'] },
+)
