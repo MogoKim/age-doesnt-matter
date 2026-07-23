@@ -27,6 +27,7 @@ import { CAFE_CONFIGS, CRAWL_LIMITS, BOARD_BLACKLIST, TOPIC_BLACKLIST, QUALITY_T
 import type { RawCafePost, CafeConfig, ContentCategory, CommentData } from './types.js'
 import { calculateQualityScore, calculateKillerScore } from './quality-scorer.js'
 import { computeUsableCount } from './compute-usable-count.js'
+import { shouldSkipWgangMediaPost } from './copyright-guard.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const STORAGE_STATE_PATH = resolve(__dirname, 'storage-state.json')
@@ -1244,6 +1245,13 @@ async function savePosts(posts: RawCafePost[]): Promise<number> {
       })
       if (existing) continue
 
+      // 5.1. [저작권 안전장치] wgang 미디어 글 전체 차단 — img/vid 1개라도 있으면 저장 자체를 skip
+      // (이미지만 제거하고 텍스트만 살리는 방식 아님. wgang 텍스트-only 글만 저장.) 다른 카페는 무영향.
+      if (shouldSkipWgangMediaPost(post)) {
+        console.log(`[CafeCrawler] wgang 미디어 글 전체 차단(저작권): img=${post.imageUrls.length} vid=${post.videoUrls.length} "${post.title.slice(0, 25)}"`)
+        continue
+      }
+
       // 5.5. 이미지 의존·공지문·접근 차단·동영상 필터
       const imageDep = isImageDependentContent(post)
       const noticeText = isBoardNoticeContent(post.content)
@@ -1429,7 +1437,8 @@ export async function refreshRecentPosts(): Promise<number> {
 
     // 대상: wgang · 7일 · 미사용 · isUsable · 댓글≥5 (usable<5는 Json이라 JS에서 필터)
     const candidates = await prisma.cafePost.findMany({
-      where: { cafeId: 'wgang', crawledAt: { gte: cutoff7d }, usedAt: null, isUsable: true, commentCount: { gte: 5 } },
+      // [저작권 안전장치] wgang 미디어 글은 revive 후보에서도 제외(미래 COMMENT_REVIVE_CAP>0 대비). 기존 저장분 중 media 글도 차단.
+      where: { cafeId: 'wgang', crawledAt: { gte: cutoff7d }, usedAt: null, isUsable: true, commentCount: { gte: 5 }, imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true } },
       select: { id: true, postUrl: true, commentCount: true, likeCount: true, topComments: true, commentCrawled: true },
       orderBy: [{ commentCrawled: 'asc' }, { commentCount: 'desc' }],
       take: REVIVE_CAP * 5,
@@ -1564,6 +1573,11 @@ export async function syncPopularPosts(page: Page, cafe: CafeConfig): Promise<{ 
         // Case B: DB 없는 글 → /popular 탭이 참여도 보증, 큐레이션 적합성은 추가 확인
         const crawled = await crawlPost(page, article, cafe, true)
         if (!crawled) continue // 삭제/비공개 → 스킵
+        // [저작권 안전장치] wgang 미디어 인기글 전체 차단 — popular-sync도 동일 정책(img/vid 1개라도 있으면 저장 skip).
+        if (shouldSkipWgangMediaPost(crawled)) {
+          console.log(`[PopularSync] wgang 미디어 인기글 전체 차단(저작권): img=${crawled.imageUrls.length} vid=${crawled.videoUrls.length} "${crawled.title.slice(0, 25)}"`)
+          continue
+        }
         const qualityScore = calculateQualityScore(crawled)
         const killerScore = calculateKillerScore(crawled)
         const imageDep = isImageDependentContent(crawled)
