@@ -41,17 +41,17 @@ export default function EventDetail({
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 overflow-hidden shrink-0">
             <Image src="/logo-symbol.png" alt="우리 나이가 어때서" width={28} height={28} className="object-contain" />
           </span>
-          <span className="text-[15px] font-bold text-foreground">우리 나이가 어때서</span>
-          <span className="text-[13px] font-bold text-primary-text bg-primary/10 rounded-full px-2.5 py-1 leading-none">
+          <span className="text-caption font-bold text-foreground">우리 나이가 어때서</span>
+          <span className="text-caption font-bold text-primary-text bg-primary/10 rounded-full px-2.5 py-1 leading-none">
             {closed ? '오늘의 결과' : '오늘의 참여'}
           </span>
         </div>
 
         {/* ── 제목(질문) + 짧은 설명 ── */}
-        <h1 className="text-xl md:text-2xl font-bold text-foreground m-0 leading-[1.35] break-keep">
+        <h1 className="text-heading font-bold text-foreground m-0 leading-[1.35] break-keep">
           {vote.question}
         </h1>
-        <p className="text-[16px] text-muted-foreground m-0 mt-2 break-keep">
+        <p className="text-body text-muted-foreground m-0 mt-2 break-keep">
           {closed
             ? '오늘 참여해주신 결과예요. 아래에서 한마디도 나눠보세요.'
             : '우나어가 오늘 여러분께 여쭤봐요. 한 표 고르고, 이유도 댓글로 들려주세요.'}
@@ -81,7 +81,7 @@ export default function EventDetail({
       {commentsSlot}
 
       {/* ── 운영 안내 ── */}
-      <p className="mt-6 text-center text-[14px] text-muted-foreground">
+      <p className="mt-6 text-center text-caption text-muted-foreground">
         남겨주신 참여와 의견은 우나어 운영에 소중히 반영됩니다.
       </p>
     </div>
