@@ -1,5 +1,6 @@
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
+import { buildNotificationLinkUrl } from '@/lib/notifications/link'
 import { GRADE_INFO } from '@/lib/grade'
 import type { PostSummary, NotificationItem, UserSummary, Grade } from '@/types/api'
 import type { PromotionLevel, BoardType } from '@/generated/prisma/client'
@@ -200,16 +201,6 @@ export async function getMyComments(
   return { comments, hasMore }
 }
 
-// BoardType → 서비스 URL 접두사 (알림 링크 생성용)
-const BOARD_URL_PREFIX: Record<string, string> = {
-  STORY: '/community/stories',
-  HUMOR: '/community/humor',
-  LIFE2: '/community/life2',
-  WEEKLY: '/community/weekly',
-  MAGAZINE: '/magazine',
-  JOB: '/jobs',
-}
-
 /** 알림 목록 */
 export async function getMyNotifications(
   userId: string,
@@ -227,7 +218,7 @@ export async function getMyNotifications(
       linkUrl: true,  // 공지 등 직접 지정 이동 경로(우선 적용)
       isRead: true,
       createdAt: true,
-      post: { select: { boardType: true } },  // boardType 기반 올바른 URL 생성
+      post: { select: { boardType: true, slug: true } },  // boardType 기반 URL + slug(canonical 이동으로 CUID→slug 리다이렉트 제거)
     },
     orderBy: { createdAt: 'desc' },
     take: limit + 1,
@@ -236,13 +227,12 @@ export async function getMyNotifications(
 
   const hasMore = rows.length > limit
   const notifications: NotificationItem[] = rows.slice(0, limit).map((n) => {
-    // 우선순위: 저장된 linkUrl(공지) → postId 기반 글 URL → 알림 목록
-    let linkUrl = n.linkUrl ?? ''
-    if (!linkUrl && n.postId) {
-      const prefix = n.post?.boardType ? BOARD_URL_PREFIX[n.post.boardType] : null
-      linkUrl = prefix ? `${prefix}/${n.postId}` : `/community/stories/${n.postId}`
-    }
-    if (!linkUrl) linkUrl = '/my/notifications'
+    const linkUrl = buildNotificationLinkUrl({
+      linkUrl: n.linkUrl,
+      postId: n.postId,
+      boardType: n.post?.boardType ?? null,
+      slug: n.post?.slug ?? null,
+    })
     return {
       id: n.id,
       type: n.type as NotificationItem['type'],
