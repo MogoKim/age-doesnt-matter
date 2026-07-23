@@ -25,9 +25,15 @@ on:
     - cron: "11 3 * * *"
     # 18:00 KST = 09:00 UTC — COO 트렌딩 스코어 (2차)
     - cron: "11 9 * * *"
-    # 12:45 / 19:45 KST — COO 작성자 대댓글 (실회원 댓글 판정). 기본 dry-run, AUTHOR_REPLY_MODE=write일 때만 실제 작성
+    # 작성자 대댓글 하루 7회 — 실회원 댓글에 빠르게 응답(재방문 유도). 기본 dry-run, AUTHOR_REPLY_MODE=write일 때만 실제 작성
+    # 09:45/12:45/14:45/16:45/18:45/20:45/22:15 KST = 00:45/03:45/05:45/07:45/09:45/11:45/13:15 UTC
+    - cron: "45 0 * * *"
     - cron: "45 3 * * *"
-    - cron: "45 10 * * *"
+    - cron: "45 5 * * *"
+    - cron: "45 7 * * *"
+    - cron: "45 9 * * *"
+    - cron: "45 11 * * *"
+    - cron: "15 13 * * *"
     # 06:00 KST = 21:00 UTC (전날) — CTO 보안 감사
     - cron: "11 21 * * *"
     # 11:30 KST = 02:30 UTC (월요일) — CPO 기능 사용률 (중단 2026-05-16 — DISPATCH ONLY)
@@ -193,9 +199,7 @@ jobs:
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=job-matcher" >> $GITHUB_OUTPUT ;;
               "15 3 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=reply-chain-driver" >> $GITHUB_OUTPUT ;;
-              "45 3 * * *")
-                echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=author-reply-dryrun" >> $GITHUB_OUTPUT ;;
-              "45 10 * * *")
+              "45 0 * * *"|"45 3 * * *"|"45 5 * * *"|"45 7 * * *"|"45 9 * * *"|"45 11 * * *"|"15 13 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=author-reply-dryrun" >> $GITHUB_OUTPUT ;;
               "30 5 * * *")
                 echo "agent=coo" >> $GITHUB_OUTPUT; echo "task=comment-activator" >> $GITHUB_OUTPUT ;;
