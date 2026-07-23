@@ -191,6 +191,7 @@ export default async function AdminVoteEventsPage() {
         endAt: e.endAt.toISOString(),
         isActive: e.isActive,
         tier: e.tier,
+        audience: e.audience,
         showBottomPopup: e.showBottomPopup,
         showHero: e.showHero,
         responseCount: c.total,

@@ -35,31 +35,65 @@ function buildGradient(slide: SlideData): string {
 
 interface Props {
   slides: SlideData[]
+  /** SURVEY HERO를 client에서 세션 기준으로 삽입 허용(서버 teaser 없을 때만 true — 슬롯 중복 방지) */
+  allowSurveyIsland?: boolean
 }
 
-export default function HeroSliderClient({ slides }: Props) {
+interface ExposedSurveyResp {
+  survey: { eventId: string; title: string } | null
+}
+
+export default function HeroSliderClient({ slides, allowSurveyIsland = false }: Props) {
   const [current, setCurrent] = useState(0)
   const [paused, setPaused] = useState(false)
   // 투표 슬라이드에서 투표하면 자동재생 정지 — 결과를 읽기 전에 슬라이드가 넘어가지 않도록
   const [voteLock, setVoteLock] = useState(false)
+  // SURVEY HERO(audience 분리) — 마운트 시 세션 포함 fetch. 홈 ISR을 안 깨면서 회원/비회원 분리 노출.
+  const [surveySlide, setSurveySlide] = useState<SlideData | null>(null)
   const touchStartX = useRef<number | null>(null)
 
+  useEffect(() => {
+    if (!allowSurveyIsland) return
+    let cancelled = false
+    fetch('/api/events/exposed?channel=hero', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: ExposedSurveyResp | null) => {
+        const s = d?.survey
+        if (!s || cancelled) return
+        const url = `/events/${s.eventId}?src=hero`
+        setSurveySlide({
+          id: `survey-teaser-${s.eventId}`,
+          title: s.title,
+          themeColor: '#3730A3',
+          themeColorMid: '#4F46E5',
+          themeColorEnd: '#818CF8',
+          ctaUrl: url,
+          survey: { label: '1분 의견함', title: s.title, subtitle: '딱 1분만 들려주세요', ctaText: '의견 남기기', ctaUrl: url },
+        })
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [allowSurveyIsland])
+
+  // 서버 슬라이드 + (있으면) client survey 슬라이드 3번째 삽입
+  const allSlides = surveySlide ? [...slides.slice(0, 2), surveySlide, ...slides.slice(2)] : slides
+
   const goPrev = useCallback(() => {
-    setCurrent((prev) => (prev - 1 + slides.length) % slides.length)
-  }, [slides.length])
+    setCurrent((prev) => (prev - 1 + allSlides.length) % allSlides.length)
+  }, [allSlides.length])
 
   const goNext = useCallback(() => {
-    setCurrent((prev) => (prev + 1) % slides.length)
-  }, [slides.length])
+    setCurrent((prev) => (prev + 1) % allSlides.length)
+  }, [allSlides.length])
 
   // 자동재생 — 호버/포커스/투표 직후 일시정지
   useEffect(() => {
-    if (slides.length <= 1 || paused || voteLock) return
+    if (allSlides.length <= 1 || paused || voteLock) return
     const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % slides.length)
+      setCurrent((prev) => (prev + 1) % allSlides.length)
     }, AUTO_PLAY_INTERVAL)
     return () => clearInterval(timer)
-  }, [slides.length, paused, voteLock])
+  }, [allSlides.length, paused, voteLock])
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
@@ -74,7 +108,7 @@ export default function HeroSliderClient({ slides }: Props) {
     touchStartX.current = null
   }, [goNext, goPrev])
 
-  if (slides.length === 0) return null
+  if (allSlides.length === 0) return null
 
   return (
     <section
@@ -89,12 +123,12 @@ export default function HeroSliderClient({ slides }: Props) {
       aria-label="홈 배너 슬라이더"
       aria-roledescription="carousel"
     >
-      {slides.map((slide, index) => (
+      {allSlides.map((slide, index) => (
         <div
           key={slide.id}
           role="group"
           aria-roledescription="slide"
-          aria-label={`슬라이드 ${index + 1} / ${slides.length}`}
+          aria-label={`슬라이드 ${index + 1} / ${allSlides.length}`}
           aria-hidden={index !== current}
           className={cn(
             'absolute inset-0 transition-opacity duration-500',
@@ -172,13 +206,13 @@ export default function HeroSliderClient({ slides }: Props) {
       ))}
 
       {/* 우하단 카운터 pill — 비인터랙티브 */}
-      {slides.length > 1 && (
+      {allSlides.length > 1 && (
         <div
           className="absolute right-3 bottom-3 z-10 rounded-full bg-black/35 px-3 h-8 inline-flex items-center justify-center text-[13px] font-semibold leading-none tabular-nums text-white shadow-[0_1px_4px_rgba(0,0,0,0.25)]"
           aria-live="polite"
-          aria-label={`현재 슬라이드 ${current + 1} / ${slides.length}`}
+          aria-label={`현재 슬라이드 ${current + 1} / ${allSlides.length}`}
         >
-          {current + 1} / {slides.length}
+          {current + 1} / {allSlides.length}
         </div>
       )}
     </section>

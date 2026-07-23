@@ -2,7 +2,7 @@ import { getActiveBanners } from '@/lib/queries/banners'
 import { prisma } from '@/lib/prisma'
 import { resolveLinkedPostUrl } from '@/lib/votes'
 import { effectiveVoteStatus } from '@/lib/vote-status'
-import { resolveChannelVote, getExposedFeedback, getExposedSurvey } from '@/lib/events/exposure'
+import { resolveChannelVote, getExposedFeedback } from '@/lib/events/exposure'
 import HeroSliderClient, { type SlideData } from './HeroSliderClient'
 
 /** 폴백 슬라이드 — DB 배너 없을 때 (그라디언트 CSS 변수 기반) */
@@ -107,33 +107,11 @@ async function buildFeedbackTeaserSlide(): Promise<SlideData | null> {
   }
 }
 
-/** 1분 의견함(SURVEY) HERO 슬라이드 — Phase 5 핫픽스.
- *  **입구 전용** SurveyHeroSlide로 렌더(slide.survey). 라벨+짧은 제목(≤2줄)+짧은 보조문구(≤1줄)+CTA만.
- *  ⚠️ 설문 상세 설명(s.description)은 HERO에 넣지 않는다 → 과밀 방지. 상세는 /events 에서만.
- *  themeColor는 배경 그라디언트(buildGradient)용. VOTE/FEEDBACK HERO 무접촉. */
-async function buildSurveyTeaserSlide(): Promise<SlideData | null> {
-  try {
-    const s = await getExposedSurvey('hero')
-    if (!s) return null
-    return {
-      id: `survey-teaser-${s.eventId}`,
-      title: s.title,
-      themeColor: '#3730A3',
-      themeColorMid: '#4F46E5',
-      themeColorEnd: '#818CF8',
-      ctaUrl: `/events/${s.eventId}?src=hero`,
-      survey: {
-        label: '1분 의견함',
-        title: s.title,
-        subtitle: '딱 1분만 들려주세요',
-        ctaText: '의견 남기기',
-        ctaUrl: `/events/${s.eventId}?src=hero`,
-      },
-    }
-  } catch {
-    return null
-  }
-}
+// ⚠️ SURVEY HERO 슬라이드는 **서버에서 만들지 않는다.**
+//  홈은 revalidate=300 ISR 서버 컴포넌트라 audience(로그인 여부)를 모른 채 캐시된다 →
+//  회원용 설문이 비회원에게 새는 문제. 그래서 SURVEY HERO는 HeroSliderClient(클라이언트)가
+//  마운트 시 /api/events/exposed?channel=hero (세션 포함, no-store) fetch로 audience별로 삽입한다.
+//  VOTE/FEEDBACK HERO는 audience=ALL 전용이라 기존대로 서버 렌더 유지(회귀 0).
 
 export default async function HeroSlider() {
   let slides: SlideData[]
@@ -160,14 +138,13 @@ export default async function HeroSlider() {
     slides = FALLBACK_SLIDES
   }
 
-  // 참여 이벤트 teaser — 기존 배너 유지하고 3번째 위치에 삽입 (배너 2개 미만이면 맨 뒤).
-  //  VOTE 우선(안전장치): voteSlide 있으면 그것, 없을 때만 FEEDBACK 확인 → 같은 채널 동시 2개 방지.
-  //  VOTE 우선(안전장치) → FEEDBACK → SURVEY. getExposedEvent 채널당 1개라 실제로 동시 노출은 없음.
+  // 참여 이벤트 teaser(서버) — VOTE 우선 → FEEDBACK(둘 다 audience=ALL). 3번째 위치 삽입.
+  //  SURVEY(audience 분리)는 여기서 넣지 않고 HeroSliderClient가 세션 기준 client fetch로 삽입.
   const voteSlide = await buildVoteTeaserSlide()
-  const teaser = voteSlide ?? (await buildFeedbackTeaserSlide()) ?? (await buildSurveyTeaserSlide())
+  const teaser = voteSlide ?? (await buildFeedbackTeaserSlide())
   if (teaser) {
     slides = [...slides.slice(0, 2), teaser, ...slides.slice(2)]
   }
-
-  return <HeroSliderClient slides={slides} />
+  // hasServerTeaser=true면 client survey 삽입을 생략(같은 슬롯 중복 방지 — 충돌가드로 실제 공존은 없지만 방어).
+  return <HeroSliderClient slides={slides} allowSurveyIsland={!teaser} />
 }

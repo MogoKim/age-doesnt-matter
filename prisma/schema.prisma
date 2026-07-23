@@ -1454,25 +1454,34 @@ enum EventTier {
   HIDDEN    // 링크(직접 URL)만
 }
 
+// 노출 대상 — 로그인 여부로 자동 분리 노출(주로 SURVEY 회원/비회원 리서치용).
+//  ALL=전체 / GUEST=비로그인만 / MEMBER=로그인만. default ALL이라 기존 이벤트 회귀 0.
+enum EventAudience {
+  ALL
+  GUEST
+  MEMBER
+}
+
 model Event {
-  id               String    @id @default(cuid())
+  id               String        @id @default(cuid())
   type             EventType
   title            String
   description      String?
   bodyPostId       String? // FEEDBACK/NOTICE 본체 Post (String 참조, FK 없음)
-  voteEventId      String?   @unique // VOTE → VoteEvent 1:1 링크 (String 참조, FK 없음)
+  voteEventId      String?       @unique // VOTE → VoteEvent 1:1 링크 (String 참조, FK 없음)
   startAt          DateTime // 채널 노출 시작 (VOTE=그날 09:00 KST)
   endAt            DateTime // 채널 노출 종료 (VOTE=그날 20:00 KST)
-  showBottomPopup  Boolean   @default(false)
-  showHero         Boolean   @default(false)
-  sendPush         Boolean   @default(false)
-  sendNotification Boolean   @default(false)
-  tier             EventTier @default(SECONDARY)
-  preset           String    @default("coral") // coral | calm | warm (코드 상수 화이트리스트)
-  isActive         Boolean   @default(true)
+  showBottomPopup  Boolean       @default(false)
+  showHero         Boolean       @default(false)
+  sendPush         Boolean       @default(false)
+  sendNotification Boolean       @default(false)
+  tier             EventTier     @default(SECONDARY)
+  audience         EventAudience @default(ALL) // 노출 대상(로그인 여부 분리) — SURVEY 회원/비회원 리서치
+  preset           String        @default("coral") // coral | calm | warm (코드 상수 화이트리스트)
+  isActive         Boolean       @default(true)
   createdByAdminId String
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   @@index([isActive, showBottomPopup, startAt, endAt])
   @@index([isActive, showHero, startAt, endAt])

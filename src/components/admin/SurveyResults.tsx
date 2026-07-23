@@ -49,6 +49,27 @@ export default function SurveyResults({ data }: { data: SurveyResultsData }) {
             </div>
           )}
 
+          {s.type === 'scale_0_10' && (
+            <div>
+              <div className="mb-3 flex flex-wrap gap-2 text-sm">
+                <span className="rounded-lg bg-indigo-50 px-2.5 py-1.5">NPS <b className="text-indigo-700 text-lg">{s.nps}</b></span>
+                <span className="rounded-lg bg-zinc-50 px-2.5 py-1.5">평균 <b>{s.average.toFixed(2)}</b> / 10</span>
+                <span className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-emerald-700">추천 {s.promoters}</span>
+                <span className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-amber-700">중립 {s.passives}</span>
+                <span className="rounded-lg bg-rose-50 px-2.5 py-1.5 text-rose-700">비추천 {s.detractors}</span>
+              </div>
+              <div className="space-y-1">
+                {s.distribution.map((cnt, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <span className="w-8 text-zinc-500">{i}점</span>
+                    <div className="flex-1 h-2 rounded-full bg-zinc-100 overflow-hidden"><div className="h-full bg-indigo-400" style={{ width: `${pct(cnt, s.answered)}%` }} /></div>
+                    <span className="w-10 text-right text-zinc-500">{cnt}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {s.type === 'consent' && <p className="text-sm text-zinc-700">동의 {s.accepted} / {s.answered}건</p>}
 
           {(s.type === 'short_text' || s.type === 'long_text') && (

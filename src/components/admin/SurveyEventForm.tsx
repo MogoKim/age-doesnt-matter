@@ -12,6 +12,7 @@ export interface SurveyEventItem {
   endAt: string
   isActive: boolean
   tier: 'PRIMARY' | 'SECONDARY' | 'HIDDEN'
+  audience: 'ALL' | 'GUEST' | 'MEMBER'
   showBottomPopup: boolean
   showHero: boolean
   responseCount: number
@@ -43,6 +44,7 @@ export default function SurveyEventForm({ items }: { items: SurveyEventItem[] })
   const [startAt, setStartAt] = useState('')
   const [endAt, setEndAt] = useState('')
   const [tier, setTier] = useState<'PRIMARY' | 'SECONDARY' | 'HIDDEN'>('SECONDARY')
+  const [audience, setAudience] = useState<'ALL' | 'GUEST' | 'MEMBER'>('ALL')
   const [showBottomPopup, setShowBottomPopup] = useState(false)
   const [showHero, setShowHero] = useState(false)
   const [questions, setQuestions] = useState<SurveyQuestion[]>([])
@@ -50,7 +52,7 @@ export default function SurveyEventForm({ items }: { items: SurveyEventItem[] })
 
   const resetForm = () => {
     setEditingId(null); setTitle(''); setDescription(''); setConsentText(''); setStartAt(''); setEndAt('')
-    setTier('SECONDARY'); setShowBottomPopup(false); setShowHero(false); setQuestions([])
+    setTier('SECONDARY'); setAudience('ALL'); setShowBottomPopup(false); setShowHero(false); setQuestions([])
   }
   const loadTemplate = (key: string) => {
     const t = SURVEY_TEMPLATES.find((x) => x.key === key)
@@ -61,7 +63,7 @@ export default function SurveyEventForm({ items }: { items: SurveyEventItem[] })
   }
   const startEdit = (it: SurveyEventItem) => {
     setEditingId(it.id); setTitle(it.title); setDescription(it.description ?? ''); setConsentText(it.consentText ?? '')
-    setStartAt(toKstLocal(it.startAt)); setEndAt(toKstLocal(it.endAt)); setTier(it.tier)
+    setStartAt(toKstLocal(it.startAt)); setEndAt(toKstLocal(it.endAt)); setTier(it.tier); setAudience(it.audience)
     setShowBottomPopup(it.showBottomPopup); setShowHero(it.showHero); setQuestions(it.questions)
     setResults(null); setMsg('✏️ 수정 모드'); window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -80,7 +82,7 @@ export default function SurveyEventForm({ items }: { items: SurveyEventItem[] })
   }
 
   const save = () => run(() => upsertSurveyEvent({
-    eventId: editingId ?? undefined, title, description, consentText, startAt, endAt, tier, showBottomPopup, showHero,
+    eventId: editingId ?? undefined, title, description, consentText, startAt, endAt, tier, audience, showBottomPopup, showHero,
     questions: questions.map((q) => CHOICE_TYPES.includes(q.type)
       ? { ...q, options: (q.options ?? []).map((o) => o.trim()).filter(Boolean) }
       : { id: q.id, type: q.type, label: q.label, required: q.required }),
@@ -163,7 +165,17 @@ export default function SurveyEventForm({ items }: { items: SurveyEventItem[] })
                 <option value="HIDDEN">HIDDEN · 숨김/준비중</option>
               </select>
             </label>
+            <label className="flex flex-col text-xs text-zinc-500">노출 대상
+              <select className="rounded-lg border px-3 py-2 text-sm" value={audience} onChange={(e) => setAudience(e.target.value as 'ALL' | 'GUEST' | 'MEMBER')}>
+                <option value="ALL">전체 (로그인 무관)</option>
+                <option value="GUEST">비회원만 (비로그인)</option>
+                <option value="MEMBER">회원만 (로그인)</option>
+              </select>
+            </label>
           </div>
+          {audience !== 'ALL' && (
+            <p className="rounded-md bg-indigo-50 px-2.5 py-2 text-xs font-semibold text-indigo-700">👥 로그인 여부로 자동 분리 노출됩니다 — {audience === 'GUEST' ? '비회원(비로그인)에게만' : '회원(로그인)에게만'} 팝업/HERO/상세가 보입니다. 회원↔비회원 설문은 같은 시간대에 동시 운영할 수 있어요.</p>
+          )}
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5">
             <p className="mb-2 text-xs font-semibold text-zinc-600">홈 노출 채널 <span className="font-normal text-zinc-400">(tier=PRIMARY일 때만 실제 노출 · 입구만, 설문 폼은 상세에서)</span></p>
             <div className="flex flex-wrap gap-4">
@@ -197,7 +209,14 @@ export default function SurveyEventForm({ items }: { items: SurveyEventItem[] })
           {list.map((it) => (
             <div key={it.id} className="rounded-xl border bg-white p-4">
               <div className="flex items-center justify-between gap-2">
-                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">📝 의견함</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">📝 의견함</span>
+                  {it.audience !== 'ALL' && (
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${it.audience === 'GUEST' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      👥 {it.audience === 'GUEST' ? '비회원' : '회원'}
+                    </span>
+                  )}
+                </div>
                 <span className="text-xs text-zinc-500">{it.isActive ? '' : '⏸ 비활성 · '}{toKstLocal(it.startAt).replace('T', ' ')} ~ {toKstLocal(it.endAt).replace('T', ' ')}</span>
               </div>
               <p className="mt-1 font-bold text-zinc-900 break-keep">{it.title}</p>

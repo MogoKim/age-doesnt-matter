@@ -16,24 +16,36 @@ import type { Event } from '@/generated/prisma/client'
 /** 팝업/HERO 노출 채널 */
 export type EventChannel = 'bottomPopup' | 'hero'
 
+/** 노출 대상 뷰어(로그인 여부). audience 분리 노출용 — undefined면 audience 필터 안 함(VOTE/FEEDBACK 등 ALL 전용 경로). */
+export type EventViewer = 'guest' | 'member'
+
+/** viewer가 볼 수 있는 audience 값 집합 — member=[ALL,MEMBER] / guest=[ALL,GUEST] */
+function audienceFilterFor(viewer: EventViewer): Array<'ALL' | 'GUEST' | 'MEMBER'> {
+  return viewer === 'member' ? ['ALL', 'MEMBER'] : ['ALL', 'GUEST']
+}
+
 /**
  * 지정 채널에 지금 노출할 Event 1개를 반환한다.
  *  조건: isActive && tier=PRIMARY && show{채널}=true && startAt <= now < endAt
+ *   (+ viewer 지정 시 audience ∈ [ALL, viewer전용] — 회원/비회원 분리 노출)
  *  여러 개면 startAt 최신 1개(슬롯당 1개 보장 — 저장 시 충돌 가드가 중복을 애초에 막는다).
  *  없으면 null (fallback 없음 — 호출부 책임).
  */
 export async function getExposedEvent(
   channel: EventChannel,
   now: Date = new Date(),
+  viewer?: EventViewer,
 ): Promise<Event | null> {
   const channelFilter =
     channel === 'bottomPopup' ? { showBottomPopup: true } : { showHero: true }
+  const audienceFilter = viewer ? { audience: { in: audienceFilterFor(viewer) } } : {}
 
   return prisma.event.findFirst({
     where: {
       isActive: true,
       tier: 'PRIMARY',
       ...channelFilter,
+      ...audienceFilter,
       startAt: { lte: now },
       endAt: { gt: now },
     },
@@ -74,15 +86,17 @@ export interface ExposedSurvey {
 }
 
 /**
- * 채널(팝업/HERO)에 지금 노출할 **1분 의견함(SURVEY)** 을 반환한다. 없으면 null. (Phase 5)
- * getExposedEvent(PRIMARY·show{채널}·window 1개)를 그대로 쓰되 **type=SURVEY일 때만** 반환.
- *  - VOTE/FEEDBACK/없음이면 null → SURVEY 팝업/HERO 미노출(채널당 1개 배타).
+ * 채널(팝업/HERO)에 지금 **viewer(회원/비회원)** 에게 노출할 **1분 의견함(SURVEY)** 을 반환한다. 없으면 null. (Phase 5 + audience)
+ * getExposedEvent(PRIMARY·show{채널}·window·audience 1개)를 그대로 쓰되 **type=SURVEY일 때만** 반환.
+ *  - viewer 필수: audience ∈ [ALL, viewer전용] 필터 → 비회원은 GUEST/ALL 설문만, 회원은 MEMBER/ALL 설문만.
+ *  - VOTE/FEEDBACK/없음이면 null → SURVEY 팝업/HERO 미노출(채널·viewer당 1개 배타).
  */
 export async function getExposedSurvey(
   channel: EventChannel,
+  viewer: EventViewer,
   now: Date = new Date(),
 ): Promise<ExposedSurvey | null> {
-  const ev = await getExposedEvent(channel, now)
+  const ev = await getExposedEvent(channel, now, viewer)
   if (!ev || ev.type !== 'SURVEY') return null
   return { eventId: ev.id, title: ev.title, description: ev.description }
 }
