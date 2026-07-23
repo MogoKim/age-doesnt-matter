@@ -6,6 +6,8 @@ import {
   resolveAuthorReplyMode,
   shouldWriteReply,
   checkWritePreconditions,
+  shouldNotifyAuthorReply,
+  isRealUserProviderId,
   NON_BOT_COMMENT_AUTHOR_WHERE,
   type CandidateInput,
   type AuthorReplyVerdict,
@@ -332,5 +334,45 @@ describe('checkWritePreconditions — write 직전 parent+post 재검증', () =>
   it('BOT source + LIFE2/HUMOR board도 통과', () => {
     expect(checkWritePreconditions({ ...base, post: { status: 'PUBLISHED', source: 'BOT', boardType: 'LIFE2', authorId: 'a' } }).ok).toBe(true)
     expect(checkWritePreconditions({ ...base, post: { status: 'PUBLISHED', source: 'BOT', boardType: 'HUMOR', authorId: 'a' } }).ok).toBe(true)
+  })
+})
+
+describe('isRealUserProviderId — 카카오 실회원(숫자 providerId)만', () => {
+  it('숫자 문자열 → true', () => {
+    expect(isRealUserProviderId('123456789')).toBe(true)
+  })
+  it('null/빈값/비숫자(봇·게스트) → false', () => {
+    expect(isRealUserProviderId(null)).toBe(false)
+    expect(isRealUserProviderId(undefined)).toBe(false)
+    expect(isRealUserProviderId('')).toBe(false)
+    expect(isRealUserProviderId('bot-abc')).toBe(false)
+    expect(isRealUserProviderId('123a')).toBe(false)
+  })
+})
+
+describe('shouldNotifyAuthorReply — 종모양 알림 생성 게이트', () => {
+  const realUser = { id: 'u1', providerId: '99887766', status: 'ACTIVE' }
+
+  it('실회원·ACTIVE·자기아님 → ok', () => {
+    expect(shouldNotifyAuthorReply(realUser, 'bot1')).toEqual({ ok: true, reason: null })
+  })
+
+  it('수신자 없음(게스트: recipient null 또는 id null) → NO_RECIPIENT', () => {
+    expect(shouldNotifyAuthorReply(null, 'bot1').reason).toBe('NO_RECIPIENT')
+    expect(shouldNotifyAuthorReply({ id: null, providerId: '123', status: 'ACTIVE' }, 'bot1').reason).toBe('NO_RECIPIENT')
+  })
+
+  it('비활성(탈퇴/정지) → RECIPIENT_INACTIVE', () => {
+    expect(shouldNotifyAuthorReply({ ...realUser, status: 'BANNED' }, 'bot1').reason).toBe('RECIPIENT_INACTIVE')
+    expect(shouldNotifyAuthorReply({ ...realUser, status: 'WITHDRAWN' }, 'bot1').reason).toBe('RECIPIENT_INACTIVE')
+  })
+
+  it('봇/게스트(providerId 비숫자·null) → RECIPIENT_NOT_REAL_USER', () => {
+    expect(shouldNotifyAuthorReply({ ...realUser, providerId: null }, 'bot1').reason).toBe('RECIPIENT_NOT_REAL_USER')
+    expect(shouldNotifyAuthorReply({ ...realUser, providerId: 'bot-k' }, 'bot1').reason).toBe('RECIPIENT_NOT_REAL_USER')
+  })
+
+  it('수신자 == 답글 작성자 → SELF_NOTIFY', () => {
+    expect(shouldNotifyAuthorReply({ ...realUser, id: 'same' }, 'same').reason).toBe('SELF_NOTIFY')
   })
 })
