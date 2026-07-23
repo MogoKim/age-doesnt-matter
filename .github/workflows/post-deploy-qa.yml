@@ -84,6 +84,20 @@ jobs:
             --project=mobile-chrome \
             --reporter=json > ad-verify-result.json 2>&1 || true
 
+      # ── 3b. 참여 이벤트 입구 UI 회귀 (계층 B — DB·secret 불필요) ──
+      #   /dev/event-preview(noindex)에서 VOTE·FEEDBACK·SURVEY HERO 입구 UI 회귀만 검증.
+      #   계층 A(상세·fixture)는 @events-ui 태그가 없어 제외 → 명시 실행 전용(DB fixture 필요).
+      - name: Participation Event UI Regression (계층 B)
+        id: event-ui
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          E2E_BASE_URL: ${{ steps.deploy-url.outputs.url }}
+        run: |
+          npx playwright test --project=qa-participation-events --grep @events-ui \
+            --reporter=list > event-ui-result.txt 2>&1 || true
+          cat event-ui-result.txt
+
       # ── 4. Lighthouse CI (프로덕션 URL 직접 — 접근성/SEO) ──
       - name: Lighthouse CI
         id: lighthouse

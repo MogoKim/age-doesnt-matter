@@ -19,8 +19,8 @@ import { test, expect } from '@playwright/test'
 const LONG_DESC_FRAGMENT = '절대로 노출되면 안 되는' // EventPreviewClient LONG_DESC 조각
 const SURVEY_EVENT_ID = process.env.QA_SURVEY_EVENT_ID
 
-// ── 계층 B: 입구 UI (DB 불필요, 항상 실행) ─────────────────────────────
-test.describe('참여 이벤트 계층B — HERO 입구 UI (노출 0, /dev/event-preview)', () => {
+// ── 계층 B: 입구 UI (DB 불필요, 항상 실행) — @events-ui: CI 상시 등록 대상 ──
+test.describe('참여 이벤트 계층B — HERO 입구 UI (노출 0, /dev/event-preview)', { tag: '@events-ui' }, () => {
   test('SURVEY HERO = 입구 전용: 라벨·짧은문구·CTA 노출, 긴 설명·폼 미노출', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/dev/event-preview')
