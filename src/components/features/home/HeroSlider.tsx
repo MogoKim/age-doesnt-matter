@@ -107,7 +107,10 @@ async function buildFeedbackTeaserSlide(): Promise<SlideData | null> {
   }
 }
 
-/** 1분 의견함(SURVEY) HERO 슬라이드 — Phase 5. vote 없는 일반 배너 → 클릭 시 /events/[eventId]?src=hero. */
+/** 1분 의견함(SURVEY) HERO 슬라이드 — Phase 5 핫픽스.
+ *  **입구 전용** SurveyHeroSlide로 렌더(slide.survey). 라벨+짧은 제목(≤2줄)+짧은 보조문구(≤1줄)+CTA만.
+ *  ⚠️ 설문 상세 설명(s.description)은 HERO에 넣지 않는다 → 과밀 방지. 상세는 /events 에서만.
+ *  themeColor는 배경 그라디언트(buildGradient)용. VOTE/FEEDBACK HERO 무접촉. */
 async function buildSurveyTeaserSlide(): Promise<SlideData | null> {
   try {
     const s = await getExposedSurvey('hero')
@@ -115,12 +118,17 @@ async function buildSurveyTeaserSlide(): Promise<SlideData | null> {
     return {
       id: `survey-teaser-${s.eventId}`,
       title: s.title,
-      subtitle: s.description ?? '1분이면 충분해요 — 의견을 들려주세요',
       themeColor: '#3730A3',
       themeColorMid: '#4F46E5',
       themeColorEnd: '#818CF8',
-      ctaText: '1분 의견 남기러 가기',
       ctaUrl: `/events/${s.eventId}?src=hero`,
+      survey: {
+        label: '1분 의견함',
+        title: s.title,
+        subtitle: '딱 1분만 들려주세요',
+        ctaText: '의견 남기기',
+        ctaUrl: `/events/${s.eventId}?src=hero`,
+      },
     }
   } catch {
     return null

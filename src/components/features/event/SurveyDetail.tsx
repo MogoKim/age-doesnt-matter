@@ -14,6 +14,20 @@ export interface SurveyDetailData {
 }
 
 /**
+ * 페이지 래퍼(카드 셸). **반드시 모듈 최상위에 정의**한다.
+ * ⚠️ SurveyDetail 함수 본문 안에 정의하면 매 렌더마다 새 컴포넌트 타입이 되어
+ *    입력 시 서브트리가 unmount/remount → textarea 포커스 상실("한 글자만 입력됨" 버그).
+ */
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="max-w-[640px] mx-auto px-4 py-6 md:px-6 md:py-8 bg-[var(--surface-warm)] min-h-screen">
+      <div className="rounded-2xl bg-card border border-border shadow-sm p-4 md:p-5">{children}</div>
+      <p className="mt-6 text-center text-[14px] text-muted-foreground">남겨주신 응답은 운영자만 확인하며 서비스 개선에 소중히 반영됩니다.</p>
+    </div>
+  )
+}
+
+/**
  * 공식 참여 이벤트 상세 — **1분 의견함(SURVEY)** (Phase 5).
  * 구글폼 유사 비공개 설문. 응답은 공개되지 않음(운영자만). 팝업/HERO/링크에서 진입하는 히든 목적지.
  * VoteWidget/댓글/의견 목록 없음. 제출 후 "의견 고맙습니다".
@@ -60,13 +74,6 @@ export default function SurveyDetail({
       </span>
       <span className="text-[15px] font-bold text-foreground">우리 나이가 어때서</span>
       <span className="text-[13px] font-bold text-[#4F46E5] bg-[#EEF2FF] rounded-full px-2.5 py-1 leading-none">📝 1분 의견함</span>
-    </div>
-  )
-
-  const Shell = ({ children }: { children: React.ReactNode }) => (
-    <div className="max-w-[640px] mx-auto px-4 py-6 md:px-6 md:py-8 bg-[var(--surface-warm)] min-h-screen">
-      <div className="rounded-2xl bg-card border border-border shadow-sm p-4 md:p-5">{children}</div>
-      <p className="mt-6 text-center text-[14px] text-muted-foreground">남겨주신 응답은 운영자만 확인하며 서비스 개선에 소중히 반영됩니다.</p>
     </div>
   )
 
