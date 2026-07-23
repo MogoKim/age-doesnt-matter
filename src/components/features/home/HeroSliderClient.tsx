@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import VoteHeroSlide, { type VoteHeroData } from '@/components/features/vote/VoteHeroSlide'
+import SurveyHeroSlide, { type SurveyHeroData } from '@/components/features/event/SurveyHeroSlide'
 
 export interface SlideData {
   id: string
@@ -18,6 +19,8 @@ export interface SlideData {
   imageUrl?: string
   /** 오늘의 투표 슬라이드 — 있으면 일반 렌더 대신 VoteHeroSlide (직접투표) */
   vote?: VoteHeroData
+  /** 1분 의견함(SURVEY) 슬라이드 — 있으면 일반 렌더 대신 SurveyHeroSlide (입구 전용) */
+  survey?: SurveyHeroData
 }
 
 const AUTO_PLAY_INTERVAL = 7000
@@ -102,6 +105,9 @@ export default function HeroSliderClient({ slides }: Props) {
           {/* 오늘의 투표 슬라이드 — 일반 렌더 대신 직접투표 미니 투표판 */}
           {slide.vote ? (
             <VoteHeroSlide vote={slide.vote} onVoted={() => setVoteLock(true)} />
+          ) : slide.survey ? (
+            /* 1분 의견함 — 일반 배너 대신 입구 전용 렌더러(라벨+짧은 제목+CTA) */
+            <SurveyHeroSlide data={slide.survey} active={index === current} />
           ) : (
             <>
           {/* 이미지 배경 */}
