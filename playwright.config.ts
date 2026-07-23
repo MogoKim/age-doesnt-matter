@@ -126,6 +126,17 @@ export default defineConfig({
         storageState: USER_AUTH,
       },
     },
+    // 9b. 참여 이벤트 QA (VOTE·FEEDBACK·SURVEY) — 노출 리스크 0 격리
+    //   계층B(입구 UI)=/dev/event-preview(noindex), 계층A(상세)=HIDDEN fixture.
+    //   baseURL은 preview/production 지정: QA_EVENT_URL 또는 E2E_BASE_URL.
+    {
+      name: 'qa-participation-events',
+      testMatch: /qa\/24-.*\.spec\.ts/,
+      use: {
+        ...desktopChrome,
+        baseURL: process.env.QA_EVENT_URL || process.env.E2E_BASE_URL || 'http://localhost:3000',
+      },
+    },
 
     // ── 감사(Audit) QA — 프로덕션 대상 검수 ──
 
