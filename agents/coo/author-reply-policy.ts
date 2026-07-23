@@ -203,6 +203,32 @@ export function checkWritePreconditions(i: WritePreconditionInput): { ok: boolea
   return { ok: true, reason: null }
 }
 
+// ── 종모양 알림 생성 게이트 (순수 — 테스트 대상) ─────────────────────────────
+// write REPLY 성공 후 원댓글 작성자에게 "답글 달렸어요" Notification을 생성할지 판정.
+// 실회원(providerId 숫자) + ACTIVE + 게스트 아님 + 자기 자신 아님일 때만. (src notifyUser의 isRealUser와 동일 규칙 복제)
+
+export type AuthorReplyNotifySkipReason =
+  | 'NO_RECIPIENT'          // authorId 없음(게스트 댓글)
+  | 'RECIPIENT_INACTIVE'    // 탈퇴/정지
+  | 'RECIPIENT_NOT_REAL_USER' // 봇/게스트(providerId 비숫자 또는 null)
+  | 'SELF_NOTIFY'           // 수신자 == 답글 작성자(자기 알림 금지)
+
+/** providerId가 숫자(카카오 실회원)인지 — src/lib/notify.ts isRealUser와 동일 규칙. agents→src import 금지로 복제. */
+export function isRealUserProviderId(providerId: string | null | undefined): boolean {
+  return !!providerId && /^\d+$/.test(providerId)
+}
+
+export function shouldNotifyAuthorReply(
+  recipient: { id: string | null; providerId: string | null; status: string } | null,
+  fromUserId: string,
+): { ok: boolean; reason: AuthorReplyNotifySkipReason | null } {
+  if (!recipient || !recipient.id) return { ok: false, reason: 'NO_RECIPIENT' }
+  if (recipient.status !== 'ACTIVE') return { ok: false, reason: 'RECIPIENT_INACTIVE' }
+  if (!isRealUserProviderId(recipient.providerId)) return { ok: false, reason: 'RECIPIENT_NOT_REAL_USER' }
+  if (recipient.id === fromUserId) return { ok: false, reason: 'SELF_NOTIFY' }
+  return { ok: true, reason: null }
+}
+
 /** 응답 파싱 — 실패 시 null (호출부가 ESCALATE 처리) */
 export function parseAuthorReplyDecision(response: string): AuthorReplyDecision | null {
   const m = response.match(/\{[\s\S]*\}/)

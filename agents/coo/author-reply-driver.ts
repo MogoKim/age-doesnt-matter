@@ -16,6 +16,7 @@ import {
   resolveAuthorReplyMode,
   shouldWriteReply,
   checkWritePreconditions,
+  shouldNotifyAuthorReply,
   NON_BOT_COMMENT_AUTHOR_WHERE,
 } from './author-reply-policy.js'
 
@@ -84,6 +85,44 @@ async function writeAuthorReply(p: {
   return { outcome: 'WRITTEN', commentId: created.id, reason: null }
 }
 
+/**
+ * write REPLY 성공 후 원댓글 작성자에게 "답글 달렸어요" 종모양 알림(Notification) 생성.
+ * - 일반 대댓글 경로(src notifyUser)와 동일 규격: type=COMMENT, content, postId, fromUserId.
+ *   src notifyUser는 agents→src import 금지라 못 부르므로 Notification 생성만 여기서 직접 수행(OS 푸시는 이번 범위 밖).
+ * - 수신자 실회원(providerId 숫자)+ACTIVE+게스트/봇/자기자신 아님일 때만(shouldNotifyAuthorReply).
+ * - 중복 방지: 같은 (수신자·글·발신봇·COMMENT) 알림이 이미 있으면 skip.
+ * - 실패는 catch — 댓글 작성/발행에 영향 없음(부가 기능).
+ */
+async function createAuthorReplyNotification(p: {
+  recipient: { id: string | null; providerId: string | null; status: string } | null
+  fromUserId: string
+  postId: string
+  fromNickname: string
+}): Promise<{ created: boolean; reason: string | null }> {
+  const gate = shouldNotifyAuthorReply(p.recipient, p.fromUserId)
+  if (!gate.ok) return { created: false, reason: gate.reason }
+  const recipientId = p.recipient!.id as string
+  try {
+    const dup = await prisma.notification.findFirst({
+      where: { userId: recipientId, type: 'COMMENT', postId: p.postId, fromUserId: p.fromUserId },
+      select: { id: true },
+    })
+    if (dup) return { created: false, reason: 'NOTIF_DUP' }
+    await prisma.notification.create({
+      data: {
+        userId: recipientId,
+        type: 'COMMENT',
+        content: `${p.fromNickname}님이 회원님의 댓글에 답글을 남겼어요`,
+        postId: p.postId,
+        fromUserId: p.fromUserId,
+      },
+    })
+    return { created: true, reason: null }
+  } catch (err) {
+    return { created: false, reason: `ERROR:${err instanceof Error ? err.message.slice(0, 40) : String(err).slice(0, 40)}` }
+  }
+}
+
 const strip = (h: string | null) => (h ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 const isBotEmail = (email: string | null | undefined) => (email ?? '').endsWith('@unao.bot')
 
@@ -133,7 +172,7 @@ export async function main(): Promise<void> {
       guestNickname: true,
       parentId: true,
       status: true,
-      author: { select: { email: true } },
+      author: { select: { email: true, providerId: true, status: true } }, // providerId/status: 종모양 알림 실회원 판정용
       post: {
         select: {
           id: true, title: true, content: true, source: true, boardType: true, authorId: true, status: true,
@@ -261,13 +300,20 @@ export async function main(): Promise<void> {
       // write 성공 별도 로그 (writtenCommentId 등 상세)
       if (writeOutcome === 'WRITTEN' && writtenCommentId) {
         written++
+        // 종모양 알림 — 원댓글 작성자에게 "답글 달렸어요"(리텐션 루프 연결). 실패해도 발행/댓글에 영향 없음.
+        const notif = await createAuthorReplyNotification({
+          recipient: c.authorId ? { id: c.authorId, providerId: c.author?.providerId ?? null, status: c.author?.status ?? 'UNKNOWN' } : null,
+          fromUserId: c.post.authorId!,
+          postId: c.post.id,
+          fromNickname: persona.nickname,
+        })
         await prisma.botLog.create({
           data: {
             botType: 'COO', status: 'SUCCESS', action: AUTHOR_REPLY_WRITE_ACTION,
-            logData: { dryRun: false, mode: 'write', postId: c.post.id, commentId: c.id, parentCommentId: c.id, writtenCommentId, personaId, verdict, reason: decision?.reason ?? '', replyDraft: decision?.reply ?? null },
+            logData: { dryRun: false, mode: 'write', postId: c.post.id, commentId: c.id, parentCommentId: c.id, writtenCommentId, personaId, verdict, reason: decision?.reason ?? '', replyDraft: decision?.reply ?? null, notificationCreated: notif.created, notificationSkipReason: notif.created ? null : notif.reason },
           },
         })
-        console.log(`[AuthorReply] ✍️ WRITE 성공 (${personaId}) → comment ${writtenCommentId} (post ${c.post.id})`)
+        console.log(`[AuthorReply] ✍️ WRITE 성공 (${personaId}) → comment ${writtenCommentId} (post ${c.post.id}) · 알림 ${notif.created ? '생성' : `skip(${notif.reason})`}`)
       }
 
       console.log(`[AuthorReply] ${verdict} (${personaId}) "${strip(c.content).slice(0, 30)}" — ${decision?.reason ?? '파싱 실패'}`)
