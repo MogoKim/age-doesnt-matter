@@ -12,6 +12,7 @@ import { IconSearch, IconUser } from '@/components/icons'
 
 const MENU_ITEMS = [
   { label: '베스트',     href: '/best' },
+  { label: '갱년기 톡',  href: '/community/menopause' },
   { label: '사는이야기', href: '/community/stories' },
   { label: '2막준비',    href: '/community/life2' },
   { label: '웃음방',     href: '/community/humor' },

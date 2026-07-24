@@ -7,7 +7,7 @@ import { useAppSession } from '@/components/common/AppSessionProvider'
 import { cn } from '@/lib/utils'
 import LoginPromptModal from '@/components/features/auth/LoginPromptModal'
 
-const FAB_PAGES = ['/community/stories', '/community/humor', '/community/life2']
+const FAB_PAGES = ['/community/stories', '/community/humor', '/community/life2', '/community/menopause']
 
 export default function FAB() {
   const pathname = usePathname()
@@ -35,7 +35,7 @@ export default function FAB() {
 
   if (!showFAB) return null
 
-  const board = pathname.includes('stories') ? 'stories' : pathname.includes('life2') ? 'life2' : 'humor'
+  const board = pathname.includes('menopause') ? 'menopause' : pathname.includes('stories') ? 'stories' : pathname.includes('life2') ? 'life2' : 'humor'
 
   const fabClassName = cn(
     'group fixed bottom-6 right-6 z-[97] flex items-center gap-2 h-[52px] px-6 bg-primary text-white rounded-full shadow-[0_4px_20px_rgba(255,111,97,0.35)] text-body font-bold cursor-pointer transition-all duration-200 no-underline [-webkit-tap-highlight-color:transparent] active:scale-95',
