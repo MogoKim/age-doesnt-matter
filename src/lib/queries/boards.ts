@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
 import { BOARD_SLUG_MAP } from '@/types/api'
+import { BOARD_TYPE_TO_SLUG_MAP } from '@/lib/board-registry'
 
 export interface BoardConfigData {
   slug: string
@@ -50,14 +51,8 @@ export const getAllBoardConfigs = unstable_cache(
       where: { isActive: true },
     })
 
-    const slugMap: Record<string, string> = {
-      STORY: 'stories',
-      HUMOR: 'humor',
-      MAGAZINE: 'magazine',
-      JOB: 'jobs',
-      WEEKLY: 'weekly',
-      LIFE2: 'life2',
-    }
+    // SSoT: board-registry (구 로컬 중복 정의 제거 — PR-1)
+    const slugMap: Record<string, string> = BOARD_TYPE_TO_SLUG_MAP
 
     return configs.map((c) => ({
       slug: slugMap[c.boardType] ?? c.boardType.toLowerCase(),

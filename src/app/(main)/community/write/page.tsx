@@ -13,8 +13,8 @@ interface PageProps {
   searchParams: Promise<{ board?: string }>
 }
 
-// 글쓰기 가능한 보드 타입
-const WRITABLE_BOARD_TYPES = ['STORY', 'HUMOR', 'LIFE2']
+// 글쓰기 가능한 보드 타입 (MENOPAUSE: PR-1 — BoardConfig row 생성 후 보드 선택기에 노출됨)
+const WRITABLE_BOARD_TYPES = ['STORY', 'HUMOR', 'LIFE2', 'MENOPAUSE']
 
 export default async function WritePage({ searchParams }: PageProps) {
   const [session, { board }, allBoards] = await Promise.all([

@@ -61,7 +61,7 @@ export const GRADE_ORDER: Record<Grade, number> = {
 
 // ── 게시판 ──
 
-export type BoardType = 'JOB' | 'STORY' | 'HUMOR' | 'MAGAZINE' | 'WEEKLY' | 'LIFE2'
+export type BoardType = 'JOB' | 'STORY' | 'HUMOR' | 'MAGAZINE' | 'WEEKLY' | 'LIFE2' | 'MENOPAUSE'
 export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'HIDDEN' | 'DELETED'
 export type PromotionLevel = 'NORMAL' | 'HOT' | 'HALL_OF_FAME'
 

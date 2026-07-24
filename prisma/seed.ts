@@ -47,6 +47,14 @@ async function main() {
       description: '건강, 재테크, 생활정보 등 유익한 콘텐츠',
       categories: ['전체', '건강', '재테크', '여행', '생활정보'],
     },
+    {
+      // 갱년기 톡(PR-1): 경험·공감 커뮤니티 — 의료상담 게시판 아님. 탭 노출은 PR-2.
+      // ⚠️ production은 seed 전체 재실행 금지(기존 보드 설정 덮어씀) — MENOPAUSE row는 SQL Editor INSERT로 단독 생성
+      boardType: 'MENOPAUSE' as const,
+      displayName: '갱년기 톡',
+      description: '몸과 마음의 변화, 나만 겪는 게 아니에요. 우리 또래와 편하게 나누는 갱년기 이야기.',
+      categories: ['나만 이런가요', '몸의 변화', '완경·호르몬', '마음의 변화', '가족·관계'],
+    },
   ]
 
   for (const config of boardConfigs) {

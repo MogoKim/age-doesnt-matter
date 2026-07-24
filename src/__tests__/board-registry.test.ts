@@ -13,12 +13,11 @@ import { BOARD_SLUG_MAP, BOARD_TYPE_TO_SLUG } from '../types/api'
 import { BOARD_URL_PREFIX as NOTIFICATION_BOARD_URL_PREFIX } from '../lib/notifications/link'
 
 /**
- * PR-0 동작 불변 스냅샷 — 아래 기대값은 리팩토링 **이전** 각 파일에 흩어져 있던
- * 리터럴을 그대로 박제한 것이다. registry 파생 결과가 1글자라도 다르면 FAIL.
- * (새 보드 추가 시에는 이 스냅샷도 의도적으로 함께 갱신한다)
+ * 동작 스냅샷 — PR-0에서 리팩토링 이전 리터럴을 박제했고,
+ * PR-1에서 MENOPAUSE(갱년기 톡, /community/menopause) 추가에 맞춰 **의도적으로 갱신**했다.
+ * registry 파생 결과가 이 기대값과 1글자라도 다르면 FAIL.
  */
 
-// 구 src/types/api.ts BOARD_SLUG_MAP 리터럴
 const BEFORE_SLUG_MAP = {
   stories: 'STORY',
   humor: 'HUMOR',
@@ -26,9 +25,9 @@ const BEFORE_SLUG_MAP = {
   jobs: 'JOB',
   weekly: 'WEEKLY',
   life2: 'LIFE2',
+  menopause: 'MENOPAUSE',
 }
 
-// 구 src/types/api.ts BOARD_TYPE_TO_SLUG 리터럴
 const BEFORE_TYPE_TO_SLUG = {
   STORY: 'stories',
   HUMOR: 'humor',
@@ -36,9 +35,9 @@ const BEFORE_TYPE_TO_SLUG = {
   JOB: 'jobs',
   WEEKLY: 'weekly',
   LIFE2: 'life2',
+  MENOPAUSE: 'menopause',
 }
 
-// 구 notifications/link.ts·queries/home.ts BOARD_URL_PREFIX = 구 admin×4·revalidate-deleted BOARD_PATHS 리터럴 (완전 동일했음)
 const BEFORE_URL_PREFIX = {
   STORY: '/community/stories',
   HUMOR: '/community/humor',
@@ -46,6 +45,7 @@ const BEFORE_URL_PREFIX = {
   WEEKLY: '/community/weekly',
   MAGAZINE: '/magazine',
   JOB: '/jobs',
+  MENOPAUSE: '/community/menopause',
 }
 
 describe('board-registry — PR-0 동작 불변 스냅샷', () => {
@@ -70,14 +70,14 @@ describe('board-registry — PR-0 동작 불변 스냅샷', () => {
     expect(NOTIFICATION_BOARD_URL_PREFIX).toEqual(BEFORE_URL_PREFIX)
   })
 
-  it('sitemap 커뮤니티 목록 slug = 구 BOARD_SLUGS 리터럴 순서 포함 동일', () => {
-    expect(COMMUNITY_SITEMAP_SLUGS).toEqual(['stories', 'humor', 'life2'])
+  it('sitemap 커뮤니티 목록 slug (PR-1: menopause 포함)', () => {
+    expect(COMMUNITY_SITEMAP_SLUGS).toEqual(['stories', 'humor', 'life2', 'menopause'])
   })
 
-  it('prewarm 파생값 = 구 리터럴과 동일 (쿼리 대상·slug 맵·목록 경로)', () => {
-    expect(ACTIVE_COMMUNITY_BOARD_TYPES).toEqual(['STORY', 'HUMOR', 'LIFE2'])
-    expect(ACTIVE_COMMUNITY_BOARD_SLUG).toEqual({ STORY: 'stories', HUMOR: 'humor', LIFE2: 'life2' })
-    expect(ACTIVE_COMMUNITY_LIST_PATHS).toEqual(['/community/stories', '/community/humor', '/community/life2'])
+  it('활성 커뮤니티 파생값 (PR-1: MENOPAUSE 포함)', () => {
+    expect(ACTIVE_COMMUNITY_BOARD_TYPES).toEqual(['STORY', 'HUMOR', 'LIFE2', 'MENOPAUSE'])
+    expect(ACTIVE_COMMUNITY_BOARD_SLUG).toEqual({ STORY: 'stories', HUMOR: 'humor', LIFE2: 'life2', MENOPAUSE: 'menopause' })
+    expect(ACTIVE_COMMUNITY_LIST_PATHS).toEqual(['/community/stories', '/community/humor', '/community/life2', '/community/menopause'])
   })
 
   it('registry 무결성: type/slug 중복 없음 + 커뮤니티 urlPrefix 규칙', () => {

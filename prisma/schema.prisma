@@ -54,6 +54,7 @@ enum BoardType {
   MAGAZINE  // 매거진
   WEEKLY    // 수다방 (숨김 — LIFE2로 대체)
   LIFE2     // 2막 준비
+  MENOPAUSE // 갱년기 톡 (PR-1: 뼈대만 — 탭 노출은 PR-2)
 }
 
 enum PostStatus {

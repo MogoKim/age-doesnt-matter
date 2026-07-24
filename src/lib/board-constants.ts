@@ -2,12 +2,13 @@ import type { BoardType } from '@/generated/prisma/client'
 
 /** BoardType → 화면 표시명 (단일 진실 소스) */
 export const BOARD_DISPLAY_NAMES: Record<BoardType, string> = {
-  STORY:    '사는이야기',
-  HUMOR:    '웃음방',
-  LIFE2:    '2막준비',
-  JOB:      '일자리',
-  MAGAZINE: '매거진',
-  WEEKLY:   '수다방',
+  STORY:     '사는이야기',
+  HUMOR:     '웃음방',
+  LIFE2:     '2막준비',
+  JOB:       '일자리',
+  MAGAZINE:  '매거진',
+  WEEKLY:    '수다방',
+  MENOPAUSE: '갱년기 톡',
 }
 
 /** string을 안전하게 표시명으로 변환 */

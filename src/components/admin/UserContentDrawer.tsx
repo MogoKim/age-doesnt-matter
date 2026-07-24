@@ -15,6 +15,7 @@ const BOARD_LABELS: Record<string, string> = {
   MAGAZINE: '매거진',
   JOB: '일자리',
   WEEKLY: '주간',
+  MENOPAUSE: '갱년기 톡',
 }
 
 const POST_STATUS: Record<string, { label: string; className: string }> = {
