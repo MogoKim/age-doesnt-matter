@@ -26,6 +26,7 @@ import PostViewBeacon from '@/components/common/PostViewBeacon'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
 import { GREETING_CATEGORY } from '@/lib/greeting'
 import { EVENT_CATEGORY } from '@/lib/event-category'
+import { resolveCommunityCanonicalPath } from '@/lib/community-canonical'
 
 interface PageProps {
   params: Promise<{ boardSlug: string; postId: string }>
@@ -48,10 +49,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // Suspense 스트리밍이 200 헤더를 먼저 보내 무력화). Next가 noindex를 자동 삽입 — 명시 robots 불필요(중복 해소)
   if (!post) notFound()
 
-  // CUID로 접근 시 streaming 시작 전에 308 redirect
-  if (post.slug && postId !== post.slug) {
-    permanentRedirect(`/community/${boardSlug}/${post.slug}`)
-  }
+  // 정본 URL 교정(PR-M0): CUID 접근 + 보드 불일치(글 이동 후 옛 보드 URL)를 한 번의 308로.
+  // metadata 단계는 streaming 시작 전이라 여기서 redirect해야 상태코드가 확정된다.
+  const canonicalPath = resolveCommunityCanonicalPath({ boardSlug, postId, post })
+  if (canonicalPath) permanentRedirect(canonicalPath)
 
   const canonicalId = post.slug ?? postId
   const url = `${BASE_URL}/community/${boardSlug}/${canonicalId}`
@@ -104,10 +105,9 @@ export default async function PostDetailPage({ params }: PageProps) {
   const backHref = `/community/${boardSlug}`
   const backLabel = board.displayName
 
-  // CUID로 접근했는데 slug가 있으면 slug URL로 308 영구 redirect
-  if (post.slug && postId !== post.slug) {
-    permanentRedirect(`/community/${boardSlug}/${post.slug}`)
-  }
+  // 정본 URL 교정(PR-M0): CUID→slug + 보드 불일치(글 이동 후 옛 보드 URL) 통합 308 — metadata와 동일 규칙
+  const canonicalPath = resolveCommunityCanonicalPath({ boardSlug, postId, post })
+  if (canonicalPath) permanentRedirect(canonicalPath)
 
   // slug로 접근한 경우에도 DB의 실제 CUID를 사용 (comments/likes FK 보장)
   const resolvedId = post.id
