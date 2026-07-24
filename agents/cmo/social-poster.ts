@@ -126,8 +126,11 @@ function decidePersona(dayStrategy: ReturnType<typeof getDayStrategy>): string {
 
 // ─── boardType slug 매핑 ───
 
+// LIFE2 누락 버그 수정(PR-0): 2막준비 글 공유 URL이 fallback 'stories'로 오생성되던 문제.
+// agents/ → src/ 런타임 import 금지 규칙으로 src/lib/board-registry.ts를 import할 수 없어 로컬 유지
+// — registry(slug) 값 변경 시 여기도 수동 동기화 필요.
 const BOARD_SLUG: Record<string, string> = {
-  STORY: 'stories', HUMOR: 'humor', JOB: 'jobs', MAGAZINE: 'magazine', WEEKLY: 'weekly',
+  STORY: 'stories', HUMOR: 'humor', JOB: 'jobs', MAGAZINE: 'magazine', WEEKLY: 'weekly', LIFE2: 'life2',
 }
 
 // ─── 플랫폼별 AI 콘텐츠 생성 ───

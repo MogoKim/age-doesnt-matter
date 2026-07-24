@@ -7,6 +7,7 @@ import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 import { checkAndPromotePost } from '@/lib/actions/promotion'
 import type { PostStatus, PromotionLevel, BoardType } from '@/generated/prisma/client'
 import { assertGreetingByMember } from '@/lib/greeting'
+import { BOARD_URL_PREFIX } from '@/lib/board-registry'
 
 async function requireAdmin() {
   const session = await getAdminSession()
@@ -17,15 +18,8 @@ async function requireAdmin() {
 // 1차 이동 허용 게시판 (커뮤니티 3개 — MAGAZINE/JOB/WEEKLY는 별도 영향도 검토 필요)
 const MOVABLE_BOARD_TYPES: BoardType[] = ['STORY', 'LIFE2', 'HUMOR']
 
-// BoardType → 서비스 페이지 경로 매핑
-const BOARD_PATHS: Record<string, string> = {
-  STORY: '/community/stories',
-  HUMOR: '/community/humor',
-  LIFE2: '/community/life2',
-  MAGAZINE: '/magazine',
-  JOB: '/jobs',
-  WEEKLY: '/community/weekly',
-}
+// BoardType → 서비스 페이지 경로 매핑 (SSoT: board-registry — 구 로컬 중복 정의 제거)
+const BOARD_PATHS: Record<string, string> = BOARD_URL_PREFIX
 
 /** 게시글 상태 변경 시 서비스 페이지 캐시 무효화 */
 function revalidateServicePaths(boardType?: string | null, postId?: string) {

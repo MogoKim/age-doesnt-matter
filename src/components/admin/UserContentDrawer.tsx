@@ -3,15 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { adminGetUserPosts, adminGetUserComments } from '@/lib/actions/admin/admin.members'
 import type { UserPostItem, UserCommentItem } from '@/lib/actions/admin/admin.members'
+import { BOARD_URL_PREFIX } from '@/lib/board-registry'
 
-const BOARD_PATHS: Record<string, string> = {
-  STORY: '/community/stories',
-  HUMOR: '/community/humor',
-  LIFE2: '/community/life2',
-  MAGAZINE: '/magazine',
-  JOB: '/jobs',
-  WEEKLY: '/community/weekly',
-}
+// BoardType → 경로 (SSoT: board-registry — 구 로컬 중복 정의 제거. 라벨은 어드민 고유라 아래 유지)
+const BOARD_PATHS: Record<string, string> = BOARD_URL_PREFIX
 
 const BOARD_LABELS: Record<string, string> = {
   STORY: '뜨는이야기',

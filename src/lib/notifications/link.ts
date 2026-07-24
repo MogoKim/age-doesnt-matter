@@ -3,15 +3,10 @@
  * my.ts에서 분리: 서버 import(prisma) 없이 단독 로드/테스트 가능하게.
  */
 
-/** BoardType → 서비스 URL 접두사 (알림 링크 생성용) */
-export const BOARD_URL_PREFIX: Record<string, string> = {
-  STORY: '/community/stories',
-  HUMOR: '/community/humor',
-  LIFE2: '/community/life2',
-  WEEKLY: '/community/weekly',
-  MAGAZINE: '/magazine',
-  JOB: '/jobs',
-}
+import { BOARD_URL_PREFIX as REGISTRY_BOARD_URL_PREFIX } from '@/lib/board-registry'
+
+/** BoardType → 서비스 URL 접두사 (알림 링크 생성용 — SSoT: board-registry, 순수 모듈이라 안전) */
+export const BOARD_URL_PREFIX: Record<string, string> = REGISTRY_BOARD_URL_PREFIX
 
 /**
  * 우선순위: 저장 linkUrl(공지 등) → postId 기반 글 URL → 알림 목록 fallback.

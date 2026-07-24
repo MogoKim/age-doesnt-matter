@@ -1,5 +1,7 @@
 /* API 공통 타입 — API_CONTRACT.md 기준 */
 
+import { BOARD_SLUG_TO_TYPE, BOARD_TYPE_TO_SLUG_MAP } from '@/lib/board-registry'
+
 // ── 응답 래퍼 ──
 
 export interface ApiSuccessResponse<T> {
@@ -63,24 +65,10 @@ export type BoardType = 'JOB' | 'STORY' | 'HUMOR' | 'MAGAZINE' | 'WEEKLY' | 'LIF
 export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'HIDDEN' | 'DELETED'
 export type PromotionLevel = 'NORMAL' | 'HOT' | 'HALL_OF_FAME'
 
-/** URL slug ↔ Prisma BoardType 변환 */
-export const BOARD_SLUG_MAP: Record<string, BoardType> = {
-  stories: 'STORY',
-  humor: 'HUMOR',
-  magazine: 'MAGAZINE',
-  jobs: 'JOB',
-  weekly: 'WEEKLY',
-  life2: 'LIFE2',
-}
+/** URL slug ↔ Prisma BoardType 변환 (SSoT: src/lib/board-registry.ts) */
+export const BOARD_SLUG_MAP: Record<string, BoardType> = BOARD_SLUG_TO_TYPE
 
-export const BOARD_TYPE_TO_SLUG: Record<BoardType, string> = {
-  STORY: 'stories',
-  HUMOR: 'humor',
-  MAGAZINE: 'magazine',
-  JOB: 'jobs',
-  WEEKLY: 'weekly',
-  LIFE2: 'life2',
-}
+export const BOARD_TYPE_TO_SLUG: Record<BoardType, string> = BOARD_TYPE_TO_SLUG_MAP
 
 // ── 리소스 타입 ──
 

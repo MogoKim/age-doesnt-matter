@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import type { ReportAction } from '@/generated/prisma/client'
+import { BOARD_URL_PREFIX } from '@/lib/board-registry'
 
 async function requireAdmin() {
   const session = await getAdminSession()
@@ -11,15 +12,8 @@ async function requireAdmin() {
   return session
 }
 
-// BoardType → 서비스 페이지 경로 매핑
-const BOARD_PATHS: Record<string, string> = {
-  STORY: '/community/stories',
-  HUMOR: '/community/humor',
-  LIFE2: '/community/life2',
-  MAGAZINE: '/magazine',
-  JOB: '/jobs',
-  WEEKLY: '/community/weekly',
-}
+// BoardType → 서비스 페이지 경로 매핑 (SSoT: board-registry — 구 로컬 중복 정의 제거)
+const BOARD_PATHS: Record<string, string> = BOARD_URL_PREFIX
 
 /** 게시글 상태 변경 시 서비스 페이지 캐시 무효화 */
 function revalidateServicePaths(boardType?: string | null, postId?: string) {
