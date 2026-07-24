@@ -4,6 +4,7 @@ import { getToken } from 'next-auth/jwt'
 import { Redis } from '@upstash/redis'
 import { verifyAdminToken } from '@/lib/admin-auth'
 import { BOT_UA_PATTERN } from '@/lib/bot-patterns'
+import { getMovedPostRedirect } from '@/lib/moved-posts'
 
 // 로그인이 필요한 경로
 const PROTECTED_PATHS = ['/my', '/community/write']
@@ -107,6 +108,13 @@ export default async function middleware(request: NextRequest) {
     if (pathname === src || pathname.startsWith(src + '/')) {
       return NextResponse.redirect(new URL(dest, request.url), { status: 301 })
     }
+  }
+
+  // ── 갱년기 톡 이동 글 정본 HTTP 308 (PR-M1) — moved-posts 확정 30건, GSC 안정화 후 맵 제거 가능 ──
+  // CUID URL은 맵에 없음(의도) — PR-M0 상세 라우트 가드가 정본으로 수렴시킨다.
+  const movedDest = getMovedPostRedirect(pathname)
+  if (movedDest) {
+    return NextResponse.redirect(new URL(movedDest, request.url), { status: 308 })
   }
 
   // ── /community 인덱스 → /community/stories (RSC redirect보다 먼저 처리) ──
