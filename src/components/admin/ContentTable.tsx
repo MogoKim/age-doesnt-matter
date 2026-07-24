@@ -558,7 +558,7 @@ function PromotionButton({
 }
 
 // 1차 허용 게시판 (UI 표시용)
-const MOVABLE_BOARD_TYPES = ['STORY', 'LIFE2', 'HUMOR']
+const MOVABLE_BOARD_TYPES = ['STORY', 'LIFE2', 'HUMOR', 'MENOPAUSE']
 
 function BoardCategoryCell({
   postId,

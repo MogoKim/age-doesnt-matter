@@ -15,8 +15,8 @@ async function requireAdmin() {
   return session
 }
 
-// 1차 이동 허용 게시판 (커뮤니티 3개 — MAGAZINE/JOB/WEEKLY는 별도 영향도 검토 필요)
-const MOVABLE_BOARD_TYPES: BoardType[] = ['STORY', 'LIFE2', 'HUMOR']
+// 1차 이동 허용 게시판 (MAGAZINE/JOB/WEEKLY는 별도 영향도 검토 필요)
+const MOVABLE_BOARD_TYPES: BoardType[] = ['STORY', 'LIFE2', 'HUMOR', 'MENOPAUSE']
 
 // BoardType → 서비스 페이지 경로 매핑 (SSoT: board-registry — 구 로컬 중복 정의 제거)
 const BOARD_PATHS: Record<string, string> = BOARD_URL_PREFIX
@@ -353,9 +353,9 @@ export async function adminMovePost(
 ) {
   const admin = await requireAdmin()
 
-  // 1차: 커뮤니티 3개만 허용
+  // 1차: 운영 검증된 커뮤니티 보드만 허용
   if (!MOVABLE_BOARD_TYPES.includes(boardType)) {
-    throw new Error('이동할 수 없는 게시판입니다. (STORY / LIFE2 / HUMOR만 가능)')
+    throw new Error('이동할 수 없는 게시판입니다. (STORY / LIFE2 / HUMOR / MENOPAUSE만 가능)')
   }
 
   // category 정규화: '' | '전체' → null
