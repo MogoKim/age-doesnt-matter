@@ -3,10 +3,11 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { IconBest, IconJobs, IconStories, IconEnergy, IconMagazine, IconLife2 } from '@/components/icons'
+import { IconBest, IconJobs, IconStories, IconEnergy, IconMagazine, IconLife2, IconHeart } from '@/components/icons'
 
 const MENU_ITEMS = [
   { icon: IconBest,     label: '베스트',    href: '/best',             bgVar: '--icon-best-bg',     strokeVar: '--icon-best-stroke',     textVar: '--cat-best-text' },
+  { icon: IconHeart,    label: '갱년기 톡',  href: '/community/menopause', bgVar: '--icon-meno-bg',  strokeVar: '--icon-meno-stroke',     textVar: '--cat-meno-text' },
   { icon: IconStories,  label: '사는이야기', href: '/community/stories', bgVar: '--icon-life-bg',     strokeVar: '--icon-life-stroke',     textVar: '--cat-life-text' },
   { icon: IconLife2,    label: '2막준비',   href: '/community/life2',  bgVar: '--icon-life2-bg',    strokeVar: '--icon-life2-stroke',    textVar: '--cat-life2-text' },
   { icon: IconEnergy,   label: '웃음방',    href: '/community/humor',  bgVar: '--icon-laugh-bg',    strokeVar: '--icon-laugh-stroke',    textVar: '--cat-laugh-text' },
