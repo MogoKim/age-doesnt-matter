@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'title, content, boardType, authorId 필수' }, { status: 400 })
     }
 
-    if (!['STORY', 'HUMOR', 'LIFE2'].includes(boardType)) {
-      return NextResponse.json({ error: 'boardType은 STORY, HUMOR, LIFE2 중 하나' }, { status: 400 })
+    if (!['STORY', 'HUMOR', 'LIFE2', 'MENOPAUSE'].includes(boardType)) {
+      return NextResponse.json({ error: 'boardType은 STORY, HUMOR, LIFE2, MENOPAUSE 중 하나' }, { status: 400 })
     }
 
     // '가입인사'는 회원 첫 참여 온보딩 전용 — 봇/API로는 생성 차단(회원 createPost만 허용)

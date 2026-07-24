@@ -7,14 +7,14 @@
  *
  * 새 보드 추가 시: 이 배열에 1항목 추가하면 파생 맵(BOARD_SLUG_TO_TYPE, BOARD_TYPE_TO_SLUG_MAP,
  * BOARD_URL_PREFIX, sitemap/prewarm 목록)이 자동 반영된다.
- * ※ 다음 단계 제품 결정: 새 보드 MENOPAUSE의 사용자 표시명은 "갱년기 톡" (이번 PR에는 미추가).
+ * ※ MENOPAUSE(갱년기 톡, PR-1 추가): 시스템 뼈대만 — IconMenu/GNB 탭 노출은 PR-2에서.
  * ※ 표시명(displayName)·카테고리는 여기 두지 않는다 — DB BoardConfig(seed.ts)와
  *   src/lib/board-constants.ts(BOARD_DISPLAY_NAMES)가 담당(기존 구조 유지).
  * ※ agents/ 쪽은 src/ 런타임 import 금지 규칙 때문에 이 파일을 import할 수 없다
  *   (예: agents/cmo/social-poster.ts는 로컬 맵 유지 — 값 변경 시 수동 동기화 필요).
  */
 
-export type BoardTypeId = 'JOB' | 'STORY' | 'HUMOR' | 'MAGAZINE' | 'WEEKLY' | 'LIFE2'
+export type BoardTypeId = 'JOB' | 'STORY' | 'HUMOR' | 'MAGAZINE' | 'WEEKLY' | 'LIFE2' | 'MENOPAUSE'
 
 export interface BoardRegistryEntry {
   /** Prisma BoardType enum 값 */
@@ -36,6 +36,7 @@ export const BOARD_REGISTRY = [
   { type: 'STORY', slug: 'stories', urlPrefix: '/community/stories', isCommunity: true, hasListRoute: true },
   { type: 'HUMOR', slug: 'humor', urlPrefix: '/community/humor', isCommunity: true, hasListRoute: true },
   { type: 'LIFE2', slug: 'life2', urlPrefix: '/community/life2', isCommunity: true, hasListRoute: true },
+  { type: 'MENOPAUSE', slug: 'menopause', urlPrefix: '/community/menopause', isCommunity: true, hasListRoute: true },
   { type: 'MAGAZINE', slug: 'magazine', urlPrefix: '/magazine', isCommunity: false, hasListRoute: true },
   { type: 'JOB', slug: 'jobs', urlPrefix: '/jobs', isCommunity: false, hasListRoute: true },
   { type: 'WEEKLY', slug: 'weekly', urlPrefix: '/community/weekly', isCommunity: true, hasListRoute: false },
@@ -77,7 +78,7 @@ export const ACTIVE_COMMUNITY_BOARD_TYPES: BoardTypeId[] = ACTIVE_COMMUNITY.map(
 /** 활성 커뮤니티 BoardType → slug (구 prewarm COMMUNITY_BOARD_SLUG와 동일) */
 export const ACTIVE_COMMUNITY_BOARD_SLUG = Object.fromEntries(
   ACTIVE_COMMUNITY.map((b) => [b.type, b.slug]),
-) as Record<'STORY' | 'HUMOR' | 'LIFE2', string>
+) as Record<'STORY' | 'HUMOR' | 'LIFE2' | 'MENOPAUSE', string>
 
 /** 활성 커뮤니티 목록 경로 (prewarm LIST_PATHS의 커뮤니티 부분과 동일) */
 export const ACTIVE_COMMUNITY_LIST_PATHS: string[] = ACTIVE_COMMUNITY.map((b) => b.urlPrefix)

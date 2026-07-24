@@ -29,6 +29,7 @@ const BOARD_TYPE_LABELS: Record<string, string> = {
   MAGAZINE: '매거진',
   WEEKLY: '수다방',
   LIFE2: '2막 준비',
+  MENOPAUSE: '갱년기 톡',
 }
 
 const Q2_OKR = {
