@@ -1,22 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import type { BoardType } from '@/generated/prisma/client'
+import { ACTIVE_COMMUNITY_BOARD_SLUG, ACTIVE_COMMUNITY_LIST_PATHS } from '@/lib/board-registry'
 
 const INTERNAL_TOKEN = process.env.INTERNAL_API_TOKEN
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
-const COMMUNITY_BOARD_SLUG: Record<'STORY' | 'HUMOR' | 'LIFE2', string> = {
-  STORY: 'stories',
-  HUMOR: 'humor',
-  LIFE2: 'life2',
-}
+// 활성 커뮤니티 보드 slug/경로 (SSoT: board-registry — 구 로컬 중복 정의 제거)
+const COMMUNITY_BOARD_SLUG = ACTIVE_COMMUNITY_BOARD_SLUG
 
 // 목록 페이지 cold MISS 완화 — 상세(detail)에 더해 목록 페이지도 prewarm (jobs 제외)
 const LIST_PATHS = [
   '/best',
   '/magazine',
-  '/community/stories',
-  '/community/humor',
-  '/community/life2',
+  ...ACTIVE_COMMUNITY_LIST_PATHS,
 ]
 // 목록 API cold MISS 완화 — /api/best 기본/명예 응답 prewarm (jobs API 제외)
 const API_PATHS = [

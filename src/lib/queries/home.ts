@@ -1,15 +1,7 @@
 import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-
-// BoardType → URL 접두사 (my.ts의 BOARD_URL_PREFIX와 동일)
-const BOARD_URL_PREFIX: Record<string, string> = {
-  STORY: '/community/stories',
-  HUMOR: '/community/humor',
-  LIFE2: '/community/life2',
-  WEEKLY: '/community/weekly',
-  MAGAZINE: '/magazine',
-  JOB: '/jobs',
-}
+// BoardType → URL 접두사 (SSoT: board-registry — 구 로컬 중복 정의 제거)
+import { BOARD_URL_PREFIX } from '@/lib/board-registry'
 
 export interface ActivityPulseData {
   activeCount: number

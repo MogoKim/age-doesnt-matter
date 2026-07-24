@@ -5,12 +5,14 @@ import { JOB_SIDO_LIST } from '@/lib/jobs-regions'
 import { EXCLUDE_GREETING } from '@/lib/greeting'
 import { EXCLUDE_EVENT } from '@/lib/event-category'
 import { GUIDE_SLUGS } from '@/lib/guides'
+// 커뮤니티 목록 slug + BoardType→slug (SSoT: board-registry — 구 로컬 중복 정의 제거)
+import { COMMUNITY_SITEMAP_SLUGS, BOARD_TYPE_TO_SLUG_MAP } from '@/lib/board-registry'
 
 export const dynamic = 'force-dynamic'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
 
-const BOARD_SLUGS = ['stories', 'humor', 'life2']
+const BOARD_SLUGS = COMMUNITY_SITEMAP_SLUGS
 
 const getSitemapPosts = unstable_cache(
   () => prisma.post.findMany({
@@ -62,13 +64,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // WEEKLY 제외: /community/weekly 라우트 없음 (LIFE2로 대체된 숨겨진 게시판) → 포함 시 404 대량 발생
   const posts = await getSitemapPosts()
 
-  const BOARD_TYPE_TO_SLUG: Record<string, string> = {
-    STORY: 'stories',
-    HUMOR: 'humor',
-    MAGAZINE: 'magazine',
-    JOB: 'jobs',
-    LIFE2: 'life2',
-  }
+  // WEEKLY는 위 쿼리에서 제외되므로(boardType not WEEKLY) 전체 맵 사용해도 결과 동일
+  const BOARD_TYPE_TO_SLUG: Record<string, string> = BOARD_TYPE_TO_SLUG_MAP
 
   const postPages: MetadataRoute.Sitemap = posts
     .filter((post) => {
