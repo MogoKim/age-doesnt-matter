@@ -22,11 +22,11 @@ const MOVABLE_BOARD_TYPES: BoardType[] = ['STORY', 'LIFE2', 'HUMOR', 'MENOPAUSE'
 const BOARD_PATHS: Record<string, string> = BOARD_URL_PREFIX
 
 /** 게시글 상태 변경 시 서비스 페이지 캐시 무효화 */
-function revalidateServicePaths(boardType?: string | null, postId?: string) {
+function revalidateServicePaths(boardType?: string | null, postIdentifier?: string | null) {
   const boardPath = boardType ? BOARD_PATHS[boardType] : null
   if (boardPath) {
     revalidatePath(boardPath)
-    if (postId) revalidatePath(`${boardPath}/${postId}`)
+    if (postIdentifier) revalidatePath(`${boardPath}/${postIdentifier}`)
   }
   revalidatePath('/')
   revalidatePath('/best')
@@ -375,7 +375,7 @@ export async function adminMovePost(
 
   const existing = await prisma.post.findUnique({
     where: { id: postId },
-    select: { boardType: true, category: true, source: true },
+    select: { boardType: true, category: true, source: true, slug: true },
   })
   if (!existing) throw new Error('게시글을 찾을 수 없습니다.')
 
@@ -398,13 +398,19 @@ export async function adminMovePost(
     },
   })
 
-  // 이전 게시판 + 새 게시판 revalidation
-  revalidateServicePaths(existing.boardType, postId)
-  revalidateServicePaths(boardType, postId)
+  // 이전 게시판 + 새 게시판 revalidation.
+  // 상세 공개 URL은 slug이므로 id와 slug를 모두 무효화해야 이동 직후 정본 보드가 맞는다.
+  const postIdentifiers = Array.from(new Set([postId, existing.slug].filter(Boolean)))
+  for (const identifier of postIdentifiers) {
+    revalidateServicePaths(existing.boardType, identifier)
+    revalidateServicePaths(boardType, identifier)
+  }
   revalidatePath('/admin/content')
   revalidatePath('/')
   revalidatePath('/best')
   revalidatePath('/search')
+  revalidateTag('post-detail')
+  revalidateTag('post-meta')
   revalidateTag('home-trending')
   revalidateTag('home-stories')
   revalidateTag('home-humor')
