@@ -8,6 +8,8 @@ import type { PostSummary } from '@/types/api'
 import PostCard from '@/components/features/community/PostCard'
 import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
+import ScrollableChipRow from '@/components/ui/ScrollableChipRow'
+import { chipClassName } from '@/components/ui/Chip'
 
 const LIMIT = 12
 
@@ -87,25 +89,22 @@ export default function BestContent({ initialPosts, initialTotal }: BestContentP
   return (
     <>
       <nav className="max-w-[960px] mx-auto px-4 pt-4 pb-2">
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <ScrollableChipRow innerClassName="pb-1" fade={false}>
           {TABS.map((tab) => (
             <Link
               key={tab.key}
               href={`/best?tab=${tab.key}${qSuffix}`}
-              className={`
-                flex items-center gap-1.5 px-4 py-3 rounded-full text-body font-bold
-                no-underline transition-colors min-h-[52px] whitespace-nowrap flex-shrink-0
-                ${currentTab === tab.key
-                  ? 'bg-primary text-white border-2 border-primary'
-                  : 'bg-card border-2 border-border text-foreground hover:border-primary/30'
-                }
-              `}
+              className={chipClassName({
+                active: currentTab === tab.key,
+                tone: 'solid',
+                className: 'no-underline',
+              })}
             >
               <span>{tab.emoji}</span>
               <span>{tab.label}</span>
             </Link>
           ))}
-        </div>
+        </ScrollableChipRow>
       </nav>
 
       <section className="max-w-[960px] mx-auto px-4 pb-8">

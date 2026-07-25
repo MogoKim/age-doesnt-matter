@@ -2,7 +2,8 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useCallback } from 'react'
-import { cn } from '@/lib/utils'
+import Chip from '@/components/ui/Chip'
+import ScrollableChipRow from '@/components/ui/ScrollableChipRow'
 
 const QUICK_TAGS = ['나이무관', '초보환영', '오전', '오후', '주3일', '주5일']
 
@@ -33,27 +34,20 @@ export default function JobQuickTags() {
   )
 
   return (
-    <div className="relative">
-      <div className="flex gap-2 overflow-x-auto [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <ScrollableChipRow>
         {QUICK_TAGS.map((tag) => {
           const isActive = activeTags.includes(tag)
           return (
-            <button
+            <Chip
               key={tag}
-              className={cn(
-                'shrink-0 px-5 py-2.5 rounded-full border-2 text-body font-medium min-h-[52px] cursor-pointer transition-all',
-                isActive
-                  ? 'bg-primary/10 text-primary-text border-primary font-bold'
-                  : 'bg-card text-muted-foreground border-border hover:border-primary hover:text-primary-text hover:bg-primary/5',
-              )}
+              active={isActive}
+              muted
               onClick={() => toggleTag(tag)}
             >
               {tag}
-            </button>
+            </Chip>
           )
         })}
-      </div>
-      <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-    </div>
+    </ScrollableChipRow>
   )
 }

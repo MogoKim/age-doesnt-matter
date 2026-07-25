@@ -1,6 +1,7 @@
 'use client'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import Chip from '@/components/ui/Chip'
+import ScrollableChipRow from '@/components/ui/ScrollableChipRow'
 
 const MAGAZINE_CATEGORIES = ['전체', '건강', '재테크', '은퇴준비', '일자리', '생활', '여행', '문화', '요리']
 
@@ -20,29 +21,16 @@ export default function MagazineFilter({ currentCategory }: { currentCategory?: 
   }
 
   return (
-    <div className="relative">
-      <div
-        className="flex gap-2 overflow-x-auto py-2 pb-4 mb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        role="group"
-        aria-label="매거진 카테고리 필터"
-      >
+    <ScrollableChipRow innerClassName="py-2 pb-4 mb-4" role="group" aria-label="매거진 카테고리 필터">
         {MAGAZINE_CATEGORIES.map((cat) => (
-          <button
+          <Chip
             key={cat}
-            aria-pressed={active === cat}
+            active={active === cat}
             onClick={() => handleSelect(cat)}
-            className={cn(
-              'shrink-0 px-5 py-2.5 rounded-full border-2 text-body font-medium transition-all min-h-[52px] whitespace-nowrap',
-              active === cat
-                ? 'bg-primary/10 text-primary-text border-primary font-bold'
-                : 'bg-card text-foreground border-border hover:border-primary hover:text-primary-text',
-            )}
           >
             {cat}
-          </button>
+          </Chip>
         ))}
-      </div>
-      <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-    </div>
+    </ScrollableChipRow>
   )
 }

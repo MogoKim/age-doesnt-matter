@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Chip from '@/components/ui/Chip'
 import { JOB_SIDO_LIST } from '@/lib/jobs-regions'
 
 interface JobRegionSheetProps {
@@ -69,24 +70,20 @@ export default function JobRegionSheet({ onClose }: JobRegionSheetProps) {
 
         <div className="p-6">
           <div className="flex flex-wrap gap-2">
-            <button
-              className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                !current ? 'bg-primary/10 text-primary-text border-primary' : 'bg-card text-foreground border-border'
-              }`}
+            <Chip
+              active={!current}
               onClick={() => select('')}
             >
               전체
-            </button>
+            </Chip>
             {JOB_SIDO_LIST.map((r) => (
-              <button
+              <Chip
                 key={r}
-                className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                  current === r ? 'bg-primary/10 text-primary-text border-primary' : 'bg-card text-foreground border-border'
-                }`}
+                active={current === r}
                 onClick={() => select(r)}
               >
                 {r}
-              </button>
+              </Chip>
             ))}
           </div>
         </div>

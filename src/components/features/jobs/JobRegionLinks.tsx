@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { JOB_SIDO_LIST, type JobSido } from '@/lib/jobs-regions'
+import { chipClassName } from '@/components/ui/Chip'
 
 /**
  * JobRegionLinks — 시도별 일자리 페이지로 가는 내부 링크 행 (SEO 내부링크 + UX)
@@ -16,11 +17,11 @@ export default function JobRegionLinks({ active }: { active?: JobSido }) {
               <Link
                 href={`/jobs/region/${encodeURIComponent(sido)}`}
                 aria-current={isActive ? 'page' : undefined}
-                className={
-                  isActive
-                    ? 'inline-flex items-center min-h-[52px] px-4 rounded-full text-body font-bold whitespace-nowrap bg-primary text-white no-underline'
-                    : 'inline-flex items-center min-h-[52px] px-4 rounded-full text-body font-medium whitespace-nowrap bg-muted text-foreground no-underline transition-colors hover:bg-primary/10 hover:text-primary-text'
-                }
+                className={chipClassName({
+                  active: isActive,
+                  tone: 'solid',
+                  className: isActive ? 'no-underline' : 'no-underline bg-muted',
+                })}
               >
                 {sido}
               </Link>

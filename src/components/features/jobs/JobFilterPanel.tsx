@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import Chip from '@/components/ui/Chip'
 
 const REGIONS = ['서울', '경기', '인천', '부산', '대구', '대전', '광주', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주']
 const WORK_TIMES = ['오전', '오후', '풀타임']
@@ -83,24 +84,20 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
           <div>
             <h3 className="text-body font-bold text-foreground mb-3">지역</h3>
             <div className="flex flex-wrap gap-2">
-              <button
-                className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                  !region ? 'bg-primary/10 text-primary-text border-primary' : 'bg-card text-foreground border-border'
-                }`}
+              <Chip
+                active={!region}
                 onClick={() => setRegion('')}
               >
                 전체
-              </button>
+              </Chip>
               {REGIONS.map((r) => (
-                <button
+                <Chip
                   key={r}
-                  className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                    region === r ? 'bg-primary/10 text-primary-text border-primary' : 'bg-card text-foreground border-border'
-                  }`}
+                  active={region === r}
                   onClick={() => setRegion(region === r ? '' : r)}
                 >
                   {r}
-                </button>
+                </Chip>
               ))}
             </div>
           </div>
@@ -110,15 +107,13 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
             <h3 className="text-body font-bold text-foreground mb-3">근무 시간</h3>
             <div className="flex flex-wrap gap-2">
               {WORK_TIMES.map((t) => (
-                <button
+                <Chip
                   key={t}
-                  className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                    tags.includes(t) ? 'bg-primary/10 text-primary-text border-primary' : 'bg-card text-foreground border-border'
-                  }`}
+                  active={tags.includes(t)}
                   onClick={() => toggleTag(t)}
                 >
                   {t}
-                </button>
+                </Chip>
               ))}
             </div>
           </div>
@@ -128,15 +123,13 @@ export default function JobFilterPanel({ onClose }: JobFilterPanelProps) {
             <h3 className="text-body font-bold text-foreground mb-3">조건</h3>
             <div className="flex flex-wrap gap-2">
               {CONDITIONS.map((c) => (
-                <button
+                <Chip
                   key={c}
-                  className={`px-4 py-2 rounded-full text-body font-medium min-h-[52px] lg:min-h-[44px] cursor-pointer transition-all border ${
-                    tags.includes(c) ? 'bg-primary/10 text-primary-text border-primary' : 'bg-card text-foreground border-border'
-                  }`}
+                  active={tags.includes(c)}
                   onClick={() => toggleTag(c)}
                 >
                   {c}
-                </button>
+                </Chip>
               ))}
             </div>
           </div>
