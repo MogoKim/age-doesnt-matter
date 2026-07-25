@@ -2,7 +2,8 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTransition } from 'react'
-import { cn } from '@/lib/utils'
+import Chip from '@/components/ui/Chip'
+import ScrollableChipRow from '@/components/ui/ScrollableChipRow'
 
 interface BoardFilterProps {
   categories: string[]
@@ -31,26 +32,17 @@ export default function BoardFilter({ categories, boardSlug }: BoardFilterProps)
   }
 
   return (
-    <div className="relative min-w-0 overflow-hidden">
-      <div className="flex gap-2 overflow-x-auto py-2 pb-4 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="카테고리 필터">
+    <ScrollableChipRow innerClassName="py-2 pb-4" role="group" aria-label="카테고리 필터">
         {displayCategories.map((cat) => (
-          <button
+          <Chip
             key={cat}
-            aria-pressed={currentCategory === cat}
-            className={cn(
-              'shrink-0 px-5 py-2.5 rounded-full border-2 text-body font-medium cursor-pointer transition-colors min-h-[52px] flex items-center whitespace-nowrap',
-              currentCategory === cat
-                ? 'bg-primary/10 text-primary-text border-primary font-bold'
-                : 'bg-card text-foreground border-border hover:border-primary hover:text-primary-text hover:bg-muted',
-              isPending && 'opacity-60',
-            )}
+            active={currentCategory === cat}
+            className={isPending ? 'opacity-60' : undefined}
             onClick={() => handleSelect(cat)}
           >
             {cat}
-          </button>
+          </Chip>
         ))}
-      </div>
-      <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-    </div>
+    </ScrollableChipRow>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useCallback } from 'react'
+import Chip from '@/components/ui/Chip'
 
 export default function SortToggle() {
   const router = useRouter()
@@ -22,32 +23,22 @@ export default function SortToggle() {
     [router, pathname, searchParams],
   )
 
-  const btnBase = 'px-4 py-2 rounded-full text-body font-bold cursor-pointer min-h-[52px] lg:min-h-[48px] transition-colors'
-
   return (
     <div className="flex gap-1" role="group" aria-label="정렬 방식">
-      <button
-        aria-pressed={current === 'latest'}
-        className={`${btnBase} ${
-          current === 'latest'
-            ? 'bg-primary/10 border border-primary text-primary-text'
-            : 'bg-none border border-transparent text-foreground hover:bg-background'
-        }`}
+      <Chip
+        active={current === 'latest'}
+        className={current === 'latest' ? undefined : 'bg-transparent border-transparent hover:bg-background'}
         onClick={() => handleSort('latest')}
       >
         최신순
-      </button>
-      <button
-        aria-pressed={current === 'likes'}
-        className={`${btnBase} ${
-          current === 'likes'
-            ? 'bg-primary/10 border border-primary text-primary-text'
-            : 'bg-none border border-transparent text-foreground hover:bg-background'
-        }`}
+      </Chip>
+      <Chip
+        active={current === 'likes'}
+        className={current === 'likes' ? undefined : 'bg-transparent border-transparent hover:bg-background'}
         onClick={() => handleSort('likes')}
       >
         공감순
-      </button>
+      </Chip>
     </div>
   )
 }
