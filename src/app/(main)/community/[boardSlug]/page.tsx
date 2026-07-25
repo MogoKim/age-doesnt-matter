@@ -61,7 +61,8 @@ const STATIC_BOARD_CONFIGS: Record<string, {
 
 // ISR Writes 절감(30→300s): 글 작성 시 revalidateTag('community-board-page')가 즉시 무효화
 export const revalidate = 300
-const SHOW_COMMUNITY_BOARD_CONTROLS = false
+const SHOW_COMMUNITY_CATEGORY_FILTER = false
+const SHOW_COMMUNITY_SORT_TOGGLE = true
 
 export function generateStaticParams() {
   return [
@@ -208,17 +209,23 @@ export default async function BoardListPage({ params }: PageProps) {
       {/* PWA 인라인 배너 (미설치 + 비차단 환경에서만 노출) */}
       <PwaInlineBanner />
 
-      {/* 카테고리 필터 + 정렬 — 임시 숨김. query 기반 접근은 유지한다. */}
-      {SHOW_COMMUNITY_BOARD_CONTROLS && (
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-          {board.categories.length > 1 && (
+      {/* 카테고리 필터는 임시 숨김, 정렬은 유지. query 기반 접근은 유지한다. */}
+      {(SHOW_COMMUNITY_CATEGORY_FILTER || SHOW_COMMUNITY_SORT_TOGGLE) && (
+        <div
+          className={`flex items-center flex-wrap gap-2 mb-2 ${
+            SHOW_COMMUNITY_CATEGORY_FILTER ? 'justify-between' : 'justify-end'
+          }`}
+        >
+          {SHOW_COMMUNITY_CATEGORY_FILTER && board.categories.length > 1 && (
             <Suspense fallback={null}>
               <BoardFilter categories={board.categories} boardSlug={boardSlug} />
             </Suspense>
           )}
-          <Suspense fallback={null}>
-            <SortToggle />
-          </Suspense>
+          {SHOW_COMMUNITY_SORT_TOGGLE && (
+            <Suspense fallback={null}>
+              <SortToggle />
+            </Suspense>
+          )}
         </div>
       )}
 
