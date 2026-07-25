@@ -12,6 +12,7 @@ import ScrollableChipRow from '@/components/ui/ScrollableChipRow'
 import { chipClassName } from '@/components/ui/Chip'
 
 const LIMIT = 12
+const SHOW_BEST_SUBTABS = false
 
 type TabType = 'hot' | 'fame'
 const TABS: Array<{ key: TabType; label: string; emoji: string }> = [
@@ -88,24 +89,26 @@ export default function BestContent({ initialPosts, initialTotal }: BestContentP
 
   return (
     <>
-      <nav className="max-w-[960px] mx-auto px-4 pt-4 pb-2">
-        <ScrollableChipRow innerClassName="pb-1" fade={false}>
-          {TABS.map((tab) => (
-            <Link
-              key={tab.key}
-              href={`/best?tab=${tab.key}${qSuffix}`}
-              className={chipClassName({
-                active: currentTab === tab.key,
-                tone: 'solid',
-                className: 'no-underline',
-              })}
-            >
-              <span>{tab.emoji}</span>
-              <span>{tab.label}</span>
-            </Link>
-          ))}
-        </ScrollableChipRow>
-      </nav>
+      {SHOW_BEST_SUBTABS && (
+        <nav className="max-w-[960px] mx-auto px-4 pt-4 pb-2">
+          <ScrollableChipRow innerClassName="pb-1" fade={false}>
+            {TABS.map((tab) => (
+              <Link
+                key={tab.key}
+                href={`/best?tab=${tab.key}${qSuffix}`}
+                className={chipClassName({
+                  active: currentTab === tab.key,
+                  tone: 'solid',
+                  className: 'no-underline',
+                })}
+              >
+                <span>{tab.emoji}</span>
+                <span>{tab.label}</span>
+              </Link>
+            ))}
+          </ScrollableChipRow>
+        </nav>
+      )}
 
       <section className="max-w-[960px] mx-auto px-4 pb-8">
         {loading ? (

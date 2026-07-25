@@ -61,6 +61,7 @@ const STATIC_BOARD_CONFIGS: Record<string, {
 
 // ISR Writes 절감(30→300s): 글 작성 시 revalidateTag('community-board-page')가 즉시 무효화
 export const revalidate = 300
+const SHOW_COMMUNITY_BOARD_CONTROLS = false
 
 export function generateStaticParams() {
   return [
@@ -207,17 +208,19 @@ export default async function BoardListPage({ params }: PageProps) {
       {/* PWA 인라인 배너 (미설치 + 비차단 환경에서만 노출) */}
       <PwaInlineBanner />
 
-      {/* 카테고리 필터 + 정렬 */}
-      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-        {board.categories.length > 1 && (
+      {/* 카테고리 필터 + 정렬 — 임시 숨김. query 기반 접근은 유지한다. */}
+      {SHOW_COMMUNITY_BOARD_CONTROLS && (
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+          {board.categories.length > 1 && (
+            <Suspense fallback={null}>
+              <BoardFilter categories={board.categories} boardSlug={boardSlug} />
+            </Suspense>
+          )}
           <Suspense fallback={null}>
-            <BoardFilter categories={board.categories} boardSlug={boardSlug} />
+            <SortToggle />
           </Suspense>
-        )}
-        <Suspense fallback={null}>
-          <SortToggle />
-        </Suspense>
-      </div>
+        </div>
+      )}
 
       {/* 게시글 목록 + 페이지네이션 + 검색 — 스트리밍 */}
       <Suspense fallback={<PostListSkeleton />}>
