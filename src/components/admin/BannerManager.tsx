@@ -124,6 +124,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     startTransition(async () => {
+      const imageUrl = optionalText(form.imageUrl)
       const payload = {
         title: form.title.trim(),
         subtitle: optionalText(form.subtitle),
@@ -132,7 +133,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
         themeColorEnd: optionalText(form.themeColorEnd),
         ctaText: optionalText(form.ctaText),
         ctaUrl: optionalText(form.ctaUrl),
-        imageUrl: optionalText(form.imageUrl),
+        ...(imageUrl !== null && { imageUrl }),
         displayOrder: form.displayOrder,
         slot: form.slot,
         startsAt: optionalText(form.startsAt),

@@ -30,7 +30,8 @@ function normalizeBannerText(value: string | null | undefined) {
 }
 
 function normalizeBannerImageUrl(value: string | null | undefined) {
-  return value?.trim() ?? ''
+  if (typeof value !== 'string') return undefined
+  return value.trim()
 }
 
 function normalizeBannerTitle(value: string) {
@@ -84,7 +85,7 @@ export async function adminCreateBanner(data: {
       isActive: data.isActive ?? true,
       startsAt: startsAtDate,
       endsAt: endsAtDate,
-      imageUrl: normalizeBannerImageUrl(data.imageUrl),
+      imageUrl: normalizeBannerImageUrl(data.imageUrl) ?? '',
       startDate: startsAtDate ?? new Date(),
       endDate: endsAtDate ?? new Date('2099-12-31'),
       priority: data.displayOrder ?? 0,
@@ -142,7 +143,11 @@ export async function adminUpdateBanner(
       ...(data.themeColorEnd !== undefined && { themeColorEnd: normalizeBannerText(data.themeColorEnd) }),
       ...(data.ctaText !== undefined && { ctaText: normalizeBannerText(data.ctaText) }),
       ...(data.ctaUrl !== undefined && { ctaUrl: normalizeBannerText(data.ctaUrl) }),
-      ...(data.imageUrl !== undefined && { imageUrl: normalizeBannerImageUrl(data.imageUrl) }),
+      // `null` means the current admin form did not provide an image value.
+      // Preserve the existing image so text-only edits cannot clear it.
+      ...(normalizeBannerImageUrl(data.imageUrl) !== undefined && {
+        imageUrl: normalizeBannerImageUrl(data.imageUrl),
+      }),
       ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder, priority: data.displayOrder }),
       ...(data.slot !== undefined && { slot: data.slot }),
       ...(data.isActive !== undefined && { isActive: data.isActive }),
