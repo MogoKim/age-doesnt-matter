@@ -133,6 +133,10 @@
     --text-heading: 1.5rem;   /* 24px — 페이지 제목 */
     --text-sm: 1rem;          /* 16px — tailwind sm 매핑 */
     --text-display: 1.75rem;  /* 28px — tailwind 2xl 매핑 */
+    /* 홈 히어로 전용: 배너는 viewport clamp를 유지하되 가+ 설정도 함께 따른다. */
+    --text-hero-title: clamp(26px, 6.8vw, 40px);
+    --text-hero-subtitle: clamp(18px, 4.4vw, 22px);
+    --text-hero-cta: clamp(16px, 3.8vw, 18px);
 
     /* ── HomePage.module.css 연결 (CSS 변수 시스템과 통일) ── */
     --font-size-xs: var(--text-caption);   /* 15px → 설정에 따라 확대 */
@@ -154,6 +158,9 @@
     --text-heading: 1.75rem;  /* 28px */
     --text-sm: 1.125rem;      /* 18px */
     --text-display: 2rem;     /* 32px */
+    --text-hero-title: clamp(29px, 7.4vw, 44px);
+    --text-hero-subtitle: clamp(20px, 4.8vw, 24px);
+    --text-hero-cta: clamp(17px, 4vw, 19px);
     --icon-box-size: 3.5rem;       /* 56px */
     --icon-svg-size: 1.625rem;     /* 26px */
     --icon-container-w: 5.125rem;  /* 82px */
@@ -167,6 +174,9 @@
     --text-heading: 2rem;     /* 32px */
     --text-sm: 1.375rem;      /* 22px */
     --text-display: 2.375rem; /* 38px */
+    --text-hero-title: clamp(31px, 8vw, 48px);
+    --text-hero-subtitle: clamp(22px, 5.2vw, 27px);
+    --text-hero-cta: clamp(18px, 4.2vw, 20px);
     --icon-box-size: 4rem;        /* 64px */
     --icon-svg-size: 1.875rem;    /* 30px */
     --icon-container-w: 6rem;     /* 96px */

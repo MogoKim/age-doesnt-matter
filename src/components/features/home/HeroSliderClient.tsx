@@ -177,7 +177,7 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
           >
             <h2
               className="text-white font-bold leading-[1.4] break-keep max-w-[72%] lg:max-w-none"
-              style={{ fontSize: 'clamp(22px, 6vw, 32px)', whiteSpace: 'pre-line', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
+              style={{ fontSize: 'var(--text-hero-title)', whiteSpace: 'pre-line', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
             >
               {slide.title.replace(/\\n/g, '\n')}
             </h2>
@@ -185,7 +185,7 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
             {slide.subtitle && (
               <p
                 className="text-white/90 leading-snug break-keep max-w-[72%] lg:max-w-none"
-                style={{ fontSize: 'clamp(17px, 4vw, 20px)', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
+                style={{ fontSize: 'var(--text-hero-subtitle)', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
               >
                 {slide.subtitle}
               </p>
@@ -194,7 +194,7 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
             {slide.ctaText && (
               <span
                 className="mt-1 inline-flex items-center justify-center px-4 h-11 rounded-full bg-black/30 backdrop-blur-sm text-white font-semibold"
-                style={{ fontSize: 'clamp(16px, 3.8vw, 17px)' }}
+                style={{ fontSize: 'var(--text-hero-cta)' }}
               >
                 {slide.ctaText}
               </span>
