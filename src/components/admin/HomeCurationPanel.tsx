@@ -31,6 +31,7 @@ const SECTION_LABELS: Record<SectionKey, string> = {
 }
 
 const BOARD_LABELS: Record<string, string> = {
+  MENOPAUSE: '갱년기톡',
   STORY: '사는이야기',
   HUMOR: '웃음방',
   LIFE2: '2막준비',

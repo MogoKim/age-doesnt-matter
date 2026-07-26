@@ -7,6 +7,12 @@ import { getLastNoon, calculateTrendingScore } from '@/lib/utils/trending'
 import { getHomeBoardHotPostsRaw } from './posts.home'
 import { EXCLUDE_GREETING } from '@/lib/greeting'
 import { EXCLUDE_EVENT } from '@/lib/event-category'
+import {
+  HOME_TRENDING_QUOTAS,
+  selectHomeTrendingPosts,
+  type HomeTrendingBoardType,
+  type ScoredHomeTrendingPost,
+} from '@/lib/home-trending-quota'
 
 /* ── 인기 게시글 (Trending) ── */
 
@@ -149,16 +155,9 @@ export const getTrendingCommunityPosts = unstable_cache(
   { revalidate: 60, tags: ['home-trending', 'trending-community-posts'] },
 )
 
-/* ── 홈 뜨는이야기 쿼터 기반 (STORY 6 + LIFE2 2 + HUMOR 2 → trendingScore 재정렬) ── */
+/* ── 홈 뜨는이야기 쿼터 기반 (MENOPAUSE 2 + STORY 4 + LIFE2 2 + HUMOR 2, 부족분 STORY 보충) ── */
 
 async function _getTrendingQuotaPosts(): Promise<PostSummary[]> {
-  // 후보 풀을 쿼터의 2배로 확장 — board별 currentScore 재정렬 후 쿼터만 선택 (P2)
-  const [storyPosts, life2Posts, humorPosts] = await Promise.all([
-    getHomeBoardHotPostsRaw('STORY', 10),  // 쿼터 6의 약 1.7배 풀 (재정렬 품질 보존)
-    getHomeBoardHotPostsRaw('LIFE2', 4),
-    getHomeBoardHotPostsRaw('HUMOR', 4),
-  ])
-
   // 현재 시각 기준 currentScore 계산 (DB trendingScore는 변경하지 않음)
   const withCurrentScore = (posts: PostSummary[]) =>
     posts.map(p => ({
@@ -166,15 +165,16 @@ async function _getTrendingQuotaPosts(): Promise<PostSummary[]> {
       score: calculateTrendingScore(p.likeCount, p.commentCount, p.viewCount, new Date(p.createdAt)),
     }))
 
-  // board별: currentScore desc 정렬 후 쿼터만큼 선택
-  const story = withCurrentScore(storyPosts).sort((a, b) => b.score - a.score).slice(0, 6)
-  const life2 = withCurrentScore(life2Posts).sort((a, b) => b.score - a.score).slice(0, 2)
-  const humor = withCurrentScore(humorPosts).sort((a, b) => b.score - a.score).slice(0, 2)
+  const pools: Partial<Record<HomeTrendingBoardType, ScoredHomeTrendingPost<PostSummary>[]>> = {}
 
-  // 선택된 10개를 currentScore 기준 최종 정렬 후 PostSummary만 반환
-  return [...story, ...life2, ...humor]
-    .sort((a, b) => b.score - a.score)
-    .map(s => s.post)
+  await Promise.all(
+    HOME_TRENDING_QUOTAS.map(async item => {
+      const posts = await getHomeBoardHotPostsRaw(item.boardType, item.fetchLimit)
+      pools[item.boardType] = withCurrentScore(posts)
+    }),
+  )
+
+  return selectHomeTrendingPosts(pools)
 }
 
 export const getTrendingQuotaPosts = unstable_cache(
