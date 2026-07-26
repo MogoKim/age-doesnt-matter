@@ -5,6 +5,7 @@
 
 import { google } from 'googleapis'
 import { getGoogleAuth } from '../core/google-api.js'
+import { SHEET_TAB_TO_BOARD, type SheetBoardType } from './sheet-board-routing.js'
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
@@ -27,20 +28,10 @@ export interface SheetRow {
 /** 시트 탭 정보 */
 export interface SheetTab {
   tabName: string
-  boardType: 'STORY' | 'HUMOR' | 'LIFE2'
+  boardType: SheetBoardType
   isFeatured: boolean  // _화제성 탭: 즉각 HOT 파이프라인 발동
   isDawn: boolean      // 새벽 전용 탭(사는이야기_새벽): scheduled_hour_kst 필터 대상
   rows: SheetRow[]
-}
-
-const TAB_TO_BOARD: Record<string, { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; isFeatured: boolean; isDawn?: boolean }> = {
-  '사는이야기': { boardType: 'STORY', isFeatured: false },
-  '웃음방': { boardType: 'HUMOR', isFeatured: false },
-  '사는이야기_화제성': { boardType: 'STORY', isFeatured: true },
-  '웃음방_화제성': { boardType: 'HUMOR', isFeatured: true },
-  '2막준비': { boardType: 'LIFE2', isFeatured: false },
-  '2막준비_화제성': { boardType: 'LIFE2', isFeatured: true },
-  '사는이야기_새벽': { boardType: 'STORY', isFeatured: false, isDawn: true }, // 01:00~07:00 KST 새벽 전용 공급 큐
 }
 
 /** K열 scheduled_hour_kst("01:00"~"07:00")를 hour 정수(1~7)로. 범위 밖/파싱 실패 → undefined */
@@ -73,7 +64,7 @@ export async function readPendingRows(opts?: { mode?: 'daytime' | 'dawn' }): Pro
   const spreadsheetId = getSheetId()
   const tabs: SheetTab[] = []
 
-  for (const [tabName, { boardType, isFeatured, isDawn = false }] of Object.entries(TAB_TO_BOARD)) {
+  for (const [tabName, { boardType, isFeatured, isDawn = false }] of Object.entries(SHEET_TAB_TO_BOARD)) {
     // 탭 모드 분리: daytime은 새벽 탭 제외, dawn은 새벽 탭만 (이중 처리 방지)
     if (mode === 'daytime' && isDawn) continue
     if (mode === 'dawn' && !isDawn) continue
@@ -231,7 +222,7 @@ export async function readAllSheetUrls(): Promise<Set<string>> {
   const sheets = getSheets()
   const spreadsheetId = getSheetId()
   const urlSet = new Set<string>()
-  for (const tabName of Object.keys(TAB_TO_BOARD)) {
+  for (const tabName of Object.keys(SHEET_TAB_TO_BOARD)) {
     try {
       const res = await sheets.spreadsheets.values.get({
         spreadsheetId,

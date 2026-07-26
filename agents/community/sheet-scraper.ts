@@ -31,6 +31,7 @@ import { processContentMedia } from './image-pipeline.js'
 import { transformContent, transformRawContent, classifyCategory, hasYoungDemographicMarker } from './content-transformer.js'
 import { polishTitleForSeo } from './title-seo.js'
 import { normalizeSourceReferences } from '../cafe/normalize-source-references.js'
+import { SHEET_BOARD_DEFAULT_CATEGORY, getSheetBoardSlug, type SheetBoardType } from './sheet-board-routing.js'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -64,7 +65,7 @@ interface PersonaMapping {
   id: string
   nickname: string
   categories: string[]
-  boards: Array<'STORY' | 'HUMOR' | 'LIFE2'>
+  boards: SheetBoardType[]
 }
 
 // 기존 E/H/P 별칭(봄바람/매일걷기/오후세시)은 Google Sheet E열 override 호환성 유지를 위해 유지.
@@ -96,19 +97,19 @@ const PERSONAS: PersonaMapping[] = [
   { id: 'AW', nickname: '손뜨개',     categories: ['일상'], boards: ['STORY'] },
   { id: 'AQ', nickname: '조용한수다', categories: ['일상'], boards: ['STORY'] },
   // ── STORY 고민 ──
-  { id: 'X',  nickname: '걱정인형',     categories: ['고민'], boards: ['STORY'] },
+  { id: 'X',  nickname: '걱정인형',     categories: ['고민', '나만 이런가요', '마음의 변화'], boards: ['STORY', 'MENOPAUSE'] },
   { id: 'AA', nickname: '어휴답답',     categories: ['고민'], boards: ['STORY'] },
-  { id: 'AM', nickname: '불안한밤',     categories: ['고민'], boards: ['STORY'] },
-  { id: 'AH', nickname: '피곤해요',     categories: ['고민'], boards: ['STORY'] },
+  { id: 'AM', nickname: '불안한밤',     categories: ['고민', '마음의 변화', '나만 이런가요'], boards: ['STORY', 'MENOPAUSE'] },
+  { id: 'AH', nickname: '피곤해요',     categories: ['고민', '몸의 변화', '마음의 변화', '나만 이런가요'], boards: ['STORY', 'MENOPAUSE'] },
   { id: 'BC', nickname: '억울한아내',   categories: ['고민'], boards: ['STORY'] },
   { id: 'BD', nickname: '고부갈등맘',   categories: ['고민'], boards: ['STORY'] },
-  { id: 'BF', nickname: '속터지는현실', categories: ['고민'], boards: ['STORY'] },
-  { id: 'AJ', nickname: '가족곁에서',   categories: ['고민', '자녀'], boards: ['STORY'] },
+  { id: 'BF', nickname: '속터지는현실', categories: ['고민', '마음의 변화', '나만 이런가요'], boards: ['STORY', 'MENOPAUSE'] },
+  { id: 'AJ', nickname: '가족곁에서',   categories: ['고민', '자녀', '가족·관계'], boards: ['STORY', 'MENOPAUSE'] },
   // ── STORY 건강 ──
-  { id: 'H',  nickname: '매일걷기', categories: ['건강'],         boards: ['STORY'] },
+  { id: 'H',  nickname: '매일걷기', categories: ['건강', '몸의 변화', '완경·호르몬', '나만 이런가요'], boards: ['STORY', 'MENOPAUSE'] },
   { id: 'M',  nickname: '등산만보', categories: ['건강'],         boards: ['STORY'] },
-  { id: 'AN', nickname: '약국단골', categories: ['건강'],         boards: ['STORY'] },
-  { id: 'AL', nickname: '헬스덕후', categories: ['건강'],         boards: ['STORY'] },
+  { id: 'AN', nickname: '약국단골', categories: ['건강', '완경·호르몬', '몸의 변화'], boards: ['STORY', 'MENOPAUSE'] },
+  { id: 'AL', nickname: '헬스덕후', categories: ['건강', '몸의 변화'], boards: ['STORY', 'MENOPAUSE'] },
   { id: 'AU', nickname: '체력왕',   categories: ['건강', '자랑'], boards: ['STORY'] },
   // ── STORY 자녀 ──
   { id: 'L',  nickname: '손주러브',   categories: ['자녀'], boards: ['STORY'] },
@@ -142,18 +143,12 @@ const PERSONAS: PersonaMapping[] = [
   { id: 'BA', nickname: '은퇴준비중', categories: ['은퇴', '기타'],         boards: ['LIFE2'] },
 ]
 
-function getBoardSlug(boardType: 'STORY' | 'HUMOR' | 'LIFE2'): string {
-  if (boardType === 'STORY') return 'stories'
-  if (boardType === 'HUMOR') return 'humor'
-  return 'life2'
-}
-
 // cooldown: 최근 같은 boardType SHEET 게시글에서 쓴 persona를 자동 선택 후보에서 제외.
 const PERSONA_COOLDOWN_RECENT = 10   // 최근 N개 SHEET 게시글 조회
 const PERSONA_CATEGORY_MIN = 5       // categoryPool이 이 수 미만이면 boardPool로 확장
 
 /** 최근 같은 board SHEET 게시글 author.email에서 최근 사용 persona id 추출 (getBotUser 미호출) */
-async function recentSheetPersonaIds(boardType: 'STORY' | 'HUMOR' | 'LIFE2'): Promise<Set<string>> {
+async function recentSheetPersonaIds(boardType: SheetBoardType): Promise<Set<string>> {
   const recent = await prisma.post.findMany({
     where: { source: 'SHEET', boardType },
     orderBy: { createdAt: 'desc' },
@@ -170,7 +165,7 @@ async function recentSheetPersonaIds(boardType: 'STORY' | 'HUMOR' | 'LIFE2'): Pr
 
 async function pickPersona(
   category: string,
-  boardType: 'STORY' | 'HUMOR' | 'LIFE2',
+  boardType: SheetBoardType,
   overrideNickname?: string,
 ): Promise<PersonaMapping> {
   // 창업자가 지정한 닉네임/ID 우선 (cooldown보다 최우선 — 기존 동작 유지)
@@ -208,12 +203,6 @@ async function pickPersona(
 // 스크래퍼는 큐레이션과 독립. 어떤 경우에도 DB BoardConfig에 존재하는 값만 저장한다.
 
 /** 게시판별 안전 기본값 — 각 게시판 BoardConfig 유효값 중 가장 중립적인 것 */
-const BOARD_DEFAULT_CATEGORY: Record<'STORY' | 'HUMOR' | 'LIFE2', string> = {
-  STORY: '자유수다',
-  HUMOR: '기타',
-  LIFE2: '은퇴준비',
-}
-
 /** DB BoardConfig에서 게시판별 유효 카테고리 set 로드 (스크랩 시작 시 1회, 메모리 캐시) */
 async function loadValidCategories(): Promise<Record<string, Set<string>>> {
   const configs = await prisma.boardConfig.findMany({ select: { boardType: true, categories: true } })
@@ -233,10 +222,10 @@ function resolveScraperCategory(
   manual: string | undefined,
   title: string,
   content: string,
-  boardType: 'STORY' | 'HUMOR' | 'LIFE2',
+  boardType: SheetBoardType,
   validSet: Set<string> | undefined,
 ): string {
-  const fallback = BOARD_DEFAULT_CATEGORY[boardType]
+  const fallback = SHEET_BOARD_DEFAULT_CATEGORY[boardType]
   const m = manual?.trim()
   if (!validSet || validSet.size === 0) return m || fallback
   if (m && validSet.has(m)) return m
@@ -302,7 +291,7 @@ async function scrapePage(
   context: BrowserContext,
   url: string,
   siteConfig: SiteConfig,
-  boardType: 'STORY' | 'HUMOR' | 'LIFE2' = 'HUMOR',
+  boardType: SheetBoardType = 'HUMOR',
 ): Promise<ScrapeResult> {
   const page = await context.newPage()
 
@@ -618,7 +607,7 @@ export async function main() {
               if (waveCount === 0) {
                 // 파동 없음 → 재예약 (FAILED 후 B~J 공백 재시도 케이스)
                 const retryNow = new Date()
-                const retryPostUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${getBoardSlug(tab.boardType)}/${existingActive.id}`
+                const retryPostUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${getSheetBoardSlug(tab.boardType)}/${existingActive.id}`
                 const imageLikePost = isImageLikePostContent(existingActive.content ?? '')
 
                 if (tab.isFeatured) {
@@ -894,7 +883,7 @@ export async function main() {
               : await prisma.post.create({ data: { ...postData, slug } })
 
             // 게시글 URL 생성 (slug 우선)
-            const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${getBoardSlug(tab.boardType)}/${post.slug ?? post.id}`
+            const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${getSheetBoardSlug(tab.boardType)}/${post.slug ?? post.id}`
 
             // BotLog 파동 예약 — details는 scheduler가 JSON.parse()로 읽는 구조
             const now = new Date()
