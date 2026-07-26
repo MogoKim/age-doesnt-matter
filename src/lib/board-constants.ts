@@ -8,7 +8,7 @@ export const BOARD_DISPLAY_NAMES: Record<BoardType, string> = {
   JOB:       '일자리',
   MAGAZINE:  '매거진',
   WEEKLY:    '수다방',
-  MENOPAUSE: '갱년기 톡',
+  MENOPAUSE: '갱년기톡',
 }
 
 /** string을 안전하게 표시명으로 변환 */

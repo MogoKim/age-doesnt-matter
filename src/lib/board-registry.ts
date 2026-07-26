@@ -7,7 +7,7 @@
  *
  * 새 보드 추가 시: 이 배열에 1항목 추가하면 파생 맵(BOARD_SLUG_TO_TYPE, BOARD_TYPE_TO_SLUG_MAP,
  * BOARD_URL_PREFIX, sitemap/prewarm 목록)이 자동 반영된다.
- * ※ MENOPAUSE(갱년기 톡, PR-1 추가): 시스템 뼈대만 — IconMenu/GNB 탭 노출은 PR-2에서.
+ * ※ MENOPAUSE(갱년기톡, PR-1 추가): 시스템 뼈대만 — IconMenu/GNB 탭 노출은 PR-2에서.
  * ※ 표시명(displayName)·카테고리는 여기 두지 않는다 — DB BoardConfig(seed.ts)와
  *   src/lib/board-constants.ts(BOARD_DISPLAY_NAMES)가 담당(기존 구조 유지).
  * ※ agents/ 쪽은 src/ 런타임 import 금지 규칙 때문에 이 파일을 import할 수 없다

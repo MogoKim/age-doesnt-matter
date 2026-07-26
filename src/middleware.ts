@@ -110,7 +110,7 @@ export default async function middleware(request: NextRequest) {
     }
   }
 
-  // ── 갱년기 톡 이동 글 정본 HTTP 308 (PR-M1) — moved-posts 확정 30건, GSC 안정화 후 맵 제거 가능 ──
+  // ── 갱년기톡 이동 글 정본 HTTP 308 (PR-M1) — moved-posts 확정 30건, GSC 안정화 후 맵 제거 가능 ──
   // CUID URL은 맵에 없음(의도) — PR-M0 상세 라우트 가드가 정본으로 수렴시킨다.
   const movedDest = getMovedPostRedirect(pathname)
   if (movedDest) {

@@ -1,5 +1,5 @@
 /**
- * 갱년기 톡(MENOPAUSE) 이동 글 확정 목록 (PR-M1 — 창업자 승인본, 순수 데이터)
+ * 갱년기톡(MENOPAUSE) 이동 글 확정 목록 (PR-M1 — 창업자 승인본, 순수 데이터)
  *
  * 용도:
  * 1) middleware: 옛 URL `/community/stories/{slug}` → 새 URL `/community/menopause/{slug}` HTTP 308
@@ -20,7 +20,7 @@ export interface MovedPost {
   slug: string
   /** 참고용 제목 */
   title: string
-  /** 이동 후 갱년기 톡 카테고리 */
+  /** 이동 후 갱년기톡 카테고리 */
   newCategory: '나만 이런가요' | '몸의 변화' | '완경·호르몬' | '마음의 변화' | '가족·관계'
 }
 

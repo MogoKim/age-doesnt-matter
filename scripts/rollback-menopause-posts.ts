@@ -1,5 +1,5 @@
 /**
- * 갱년기 톡 이동 롤백 스크립트 (PR-M1)
+ * 갱년기톡 이동 롤백 스크립트 (PR-M1)
  *
  * 입력: move-menopause-posts.ts --apply가 생성한 백업 JSON
  * 동작: 백업의 boardType/category로 원복 (조건: 현재 boardType=MENOPAUSE인 글만 — 이중 롤백 방지)
