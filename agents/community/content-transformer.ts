@@ -4,6 +4,7 @@
 
 import sanitize from 'sanitize-html'
 import type { SiteConfig } from './site-configs.js'
+import type { SheetBoardType } from './sheet-board-routing.js'
 
 /** sanitize-html 허용 규칙 */
 const SANITIZE_OPTIONS: sanitize.IOptions = {
@@ -40,7 +41,7 @@ export function transformContent(
   rawHtml: string,
   sourceUrl: string,
   siteConfig: SiteConfig,
-  boardType: 'STORY' | 'HUMOR' | 'LIFE2' = 'HUMOR',
+  boardType: SheetBoardType = 'HUMOR',
 ): string {
   // 1. 불필요 요소 제거 (사이트별)
   let cleaned = rawHtml
@@ -82,7 +83,7 @@ export function transformRawContent(
   rawContent: string,
   sourceUrl: string,
   siteName: string,
-  boardType: 'STORY' | 'HUMOR' | 'LIFE2' = 'HUMOR',
+  boardType: SheetBoardType = 'HUMOR',
 ): string {
   const isHtml = /<[a-z][\s\S]*>/i.test(rawContent)
 
@@ -138,6 +139,13 @@ const HUMOR_KEYWORDS: Record<string, string[]> = {
   '추천·리뷰': ['추천', '강추', '꿀팁', '리뷰', '후기', '맛집', '소개', '제품', '구매', '써보니', '내돈내산'],
 }
 
+const MENOPAUSE_KEYWORDS: Record<string, string[]> = {
+  '완경·호르몬': ['폐경', '완경', '호르몬', '생리', '호르몬제', '에스트로겐'],
+  '몸의 변화': ['안면홍조', '홍조', '열감', '식은땀', '불면', '잠', '수면', '관절', '골다공', '체중', '뱃살', '피로', '통증', '방광염', '질건조'],
+  '마음의 변화': ['우울', '예민', '짜증', '불안', '눈물', '화', '감정기복', '외로'],
+  '가족·관계': ['남편', '아내', '가족', '자녀', '딸', '아들', '며느리', '시댁', '친정', '직장', '관계'],
+}
+
 // ── 데모그래픽 부적합 마커 (P2 2026-06-16) ──
 // 우나어는 50-60대 대상. 본인 임신·출산·산후·영아 육아 단계 글(20-30대)이 레몬테라스 등
 // 젊은층 큰 카페에서 유입돼 봇이 "임신중에 대단" 식으로 또래처럼 공감하는 사고가 있었다.
@@ -161,11 +169,17 @@ export function hasYoungDemographicMarker(text: string): boolean {
 export function classifyCategory(
   title: string,
   content: string,
-  boardType: 'STORY' | 'HUMOR' | 'LIFE2' = 'STORY',
+  boardType: SheetBoardType = 'STORY',
 ): string {
   const text = `${title} ${content}`.toLowerCase()
   const keywords =
-    boardType === 'HUMOR' ? HUMOR_KEYWORDS : boardType === 'LIFE2' ? LIFE2_KEYWORDS : STORY_KEYWORDS
+    boardType === 'HUMOR'
+      ? HUMOR_KEYWORDS
+      : boardType === 'LIFE2'
+        ? LIFE2_KEYWORDS
+        : boardType === 'MENOPAUSE'
+          ? MENOPAUSE_KEYWORDS
+          : STORY_KEYWORDS
 
   let bestCategory = '기타'
   let bestScore = 0
