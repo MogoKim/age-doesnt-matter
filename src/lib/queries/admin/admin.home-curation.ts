@@ -148,7 +148,7 @@ export async function searchHomeCurationPosts(
     where: {
       status: 'PUBLISHED',
       title: { contains: query, mode: 'insensitive' },
-      boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] },
+      boardType: { in: ['MENOPAUSE', 'STORY', 'HUMOR', 'LIFE2'] },
       AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 어드민 큐레이션 검색에서 가입인사·이벤트글 선택 차단
     },
     select: {

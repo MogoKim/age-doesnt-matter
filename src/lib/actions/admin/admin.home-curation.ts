@@ -12,7 +12,7 @@ export type DurationPreset = 'FOUR_HOURS' | 'EIGHT_HOURS' | 'TODAY' | 'MANUAL'
 const BEST_SECTIONS: SectionType[] = ['BEST_HOT', 'BEST_FAME']
 
 const SECTION_ALLOWED_BOARDS: Record<SectionType, BoardType[]> = {
-  TRENDING:  ['STORY', 'LIFE2', 'HUMOR'] as BoardType[],
+  TRENDING:  ['MENOPAUSE', 'STORY', 'LIFE2', 'HUMOR'] as BoardType[],
   STORIES:   ['STORY'] as BoardType[],
   HUMOR:     ['HUMOR'] as BoardType[],
   // 베스트 두 탭 모두 커뮤니티 3개 보드 대상 (best 쿼리와 동일)
