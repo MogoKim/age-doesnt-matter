@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { MENOPAUSE_MOVED_POSTS, MOVED_POST_REDIRECTS, getMovedPostRedirect } from '@/lib/moved-posts'
 
-describe('moved-posts — 갱년기 톡 이동 30건 확정 목록 (PR-M1)', () => {
+describe('moved-posts — 갱년기톡 이동 30건 확정 목록 (PR-M1)', () => {
   it('정확히 30건, id/slug 중복 없음', () => {
     expect(MENOPAUSE_MOVED_POSTS.length).toBe(30)
     expect(new Set(MENOPAUSE_MOVED_POSTS.map((p) => p.id)).size).toBe(30)

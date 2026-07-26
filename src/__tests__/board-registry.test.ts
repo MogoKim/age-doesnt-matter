@@ -14,7 +14,7 @@ import { BOARD_URL_PREFIX as NOTIFICATION_BOARD_URL_PREFIX } from '../lib/notifi
 
 /**
  * 동작 스냅샷 — PR-0에서 리팩토링 이전 리터럴을 박제했고,
- * PR-1에서 MENOPAUSE(갱년기 톡, /community/menopause) 추가에 맞춰 **의도적으로 갱신**했다.
+ * PR-1에서 MENOPAUSE(갱년기톡, /community/menopause) 추가에 맞춰 **의도적으로 갱신**했다.
  * registry 파생 결과가 이 기대값과 1글자라도 다르면 FAIL.
  */
 

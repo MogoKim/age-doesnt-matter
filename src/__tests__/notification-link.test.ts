@@ -19,7 +19,7 @@ describe('buildNotificationLinkUrl — 알림 이동 URL(slug canonical로 리�
     expect(buildNotificationLinkUrl({ linkUrl: null, postId: 'c1', boardType: 'LIFE2', slug: 's2' })).toBe('/community/life2/s2')
   })
 
-  it('MENOPAUSE(갱년기 톡, PR-1) + slug → /community/menopause/{slug}', () => {
+  it('MENOPAUSE(갱년기톡, PR-1) + slug → /community/menopause/{slug}', () => {
     expect(buildNotificationLinkUrl({ linkUrl: null, postId: 'c1', boardType: 'MENOPAUSE', slug: '갱년기-불면-경험' })).toBe('/community/menopause/갱년기-불면-경험')
     expect(buildNotificationLinkUrl({ linkUrl: null, postId: 'cmCUID2', boardType: 'MENOPAUSE', slug: null })).toBe('/community/menopause/cmCUID2')
   })
