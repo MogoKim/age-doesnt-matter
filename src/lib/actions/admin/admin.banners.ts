@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 import type { AdSlot, AdType } from '@/generated/prisma/client'
@@ -22,26 +22,44 @@ async function requireAdmin() {
   return session
 }
 
+function normalizeBannerText(value: string | null | undefined) {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  const normalized = value.trim()
+  return normalized.length > 0 ? normalized : null
+}
+
+function normalizeBannerTitle(value: string) {
+  return value.trim().replace(/\\n/g, '\n')
+}
+
+function revalidateHeroBanners() {
+  revalidateTag('hero-banners')
+  revalidatePath('/admin/banners')
+  revalidatePath('/')
+}
+
 // ─── 히어로 배너 (Phase 3 신규 스키마 기반) ───
 
 export async function adminCreateBanner(data: {
   title: string
-  subtitle?: string
+  subtitle?: string | null
   themeColor: string
-  themeColorMid?: string
-  themeColorEnd?: string
-  ctaText?: string
-  ctaUrl?: string
+  themeColorMid?: string | null
+  themeColorEnd?: string | null
+  ctaText?: string | null
+  ctaUrl?: string | null
   displayOrder?: number
   slot?: string
-  startsAt?: string   // ISO date string, optional
-  endsAt?: string     // ISO date string, optional
+  startsAt?: string | null   // ISO date string, optional
+  endsAt?: string | null     // ISO date string, optional
   isActive?: boolean
 }) {
   const admin = await requireAdmin()
 
   const startsAtDate = data.startsAt ? new Date(data.startsAt) : null
   const endsAtDate = data.endsAt ? new Date(data.endsAt) : null
+  const ctaUrl = normalizeBannerText(data.ctaUrl)
 
   if (startsAtDate && endsAtDate && startsAtDate >= endsAtDate) {
     throw new Error('시작일은 종료일보다 이전이어야 합니다.')
@@ -49,13 +67,13 @@ export async function adminCreateBanner(data: {
 
   const banner = await prisma.banner.create({
     data: {
-      title: data.title,
-      subtitle: data.subtitle,
+      title: normalizeBannerTitle(data.title),
+      subtitle: normalizeBannerText(data.subtitle),
       themeColor: data.themeColor,
-      themeColorMid: data.themeColorMid,
-      themeColorEnd: data.themeColorEnd,
-      ctaText: data.ctaText,
-      ctaUrl: data.ctaUrl,
+      themeColorMid: normalizeBannerText(data.themeColorMid),
+      themeColorEnd: normalizeBannerText(data.themeColorEnd),
+      ctaText: normalizeBannerText(data.ctaText),
+      ctaUrl,
       displayOrder: data.displayOrder ?? 0,
       slot: data.slot ?? 'HERO',
       isActive: data.isActive ?? true,
@@ -78,53 +96,54 @@ export async function adminCreateBanner(data: {
     },
   })
 
-  revalidatePath('/admin/banners')
-  revalidatePath('/')
+  revalidateHeroBanners()
 }
 
 export async function adminUpdateBanner(
   bannerId: string,
   data: {
     title?: string
-    subtitle?: string
+    subtitle?: string | null
     themeColor?: string
-    themeColorMid?: string
-    themeColorEnd?: string
-    ctaText?: string
-    ctaUrl?: string
+    themeColorMid?: string | null
+    themeColorEnd?: string | null
+    ctaText?: string | null
+    ctaUrl?: string | null
     displayOrder?: number
     slot?: string
-    startsAt?: string
-    endsAt?: string
+    startsAt?: string | null
+    endsAt?: string | null
     isActive?: boolean
   }
 ) {
   const admin = await requireAdmin()
 
-  const startsAtDate = data.startsAt ? new Date(data.startsAt) : undefined
-  const endsAtDate = data.endsAt ? new Date(data.endsAt) : undefined
+  const startsAtDate = data.startsAt === undefined ? undefined : data.startsAt ? new Date(data.startsAt) : null
+  const endsAtDate = data.endsAt === undefined ? undefined : data.endsAt ? new Date(data.endsAt) : null
 
   if (startsAtDate && endsAtDate && startsAtDate >= endsAtDate) {
     throw new Error('시작일은 종료일보다 이전이어야 합니다.')
   }
 
   const existing = await prisma.banner.findUnique({ where: { id: bannerId } })
+  const nextSlot = data.slot ?? existing?.slot
 
   await prisma.banner.update({
     where: { id: bannerId },
     data: {
-      ...(data.title !== undefined && { title: data.title }),
-      ...(data.subtitle !== undefined && { subtitle: data.subtitle }),
+      ...(data.title !== undefined && { title: normalizeBannerTitle(data.title) }),
+      ...(data.subtitle !== undefined && { subtitle: normalizeBannerText(data.subtitle) }),
       ...(data.themeColor !== undefined && { themeColor: data.themeColor }),
-      ...(data.themeColorMid !== undefined && { themeColorMid: data.themeColorMid }),
-      ...(data.themeColorEnd !== undefined && { themeColorEnd: data.themeColorEnd }),
-      ...(data.ctaText !== undefined && { ctaText: data.ctaText }),
-      ...(data.ctaUrl !== undefined && { ctaUrl: data.ctaUrl }),
+      ...(data.themeColorMid !== undefined && { themeColorMid: normalizeBannerText(data.themeColorMid) }),
+      ...(data.themeColorEnd !== undefined && { themeColorEnd: normalizeBannerText(data.themeColorEnd) }),
+      ...(data.ctaText !== undefined && { ctaText: normalizeBannerText(data.ctaText) }),
+      ...(data.ctaUrl !== undefined && { ctaUrl: normalizeBannerText(data.ctaUrl) }),
       ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder, priority: data.displayOrder }),
       ...(data.slot !== undefined && { slot: data.slot }),
       ...(data.isActive !== undefined && { isActive: data.isActive }),
-      ...(startsAtDate !== undefined && { startsAt: startsAtDate, startDate: startsAtDate }),
-      ...(endsAtDate !== undefined && { endsAt: endsAtDate, endDate: endsAtDate }),
+      ...(startsAtDate !== undefined && { startsAt: startsAtDate, startDate: startsAtDate ?? new Date() }),
+      ...(endsAtDate !== undefined && { endsAt: endsAtDate, endDate: endsAtDate ?? new Date('2099-12-31') }),
+      ...(nextSlot === 'HERO' && { imageUrl: '' }),
     },
   })
 
@@ -139,8 +158,7 @@ export async function adminUpdateBanner(
     },
   })
 
-  revalidatePath('/admin/banners')
-  revalidatePath('/')
+  revalidateHeroBanners()
 }
 
 export async function adminDeleteBanner(bannerId: string) {
@@ -157,8 +175,7 @@ export async function adminDeleteBanner(bannerId: string) {
     },
   })
 
-  revalidatePath('/admin/banners')
-  revalidatePath('/')
+  revalidateHeroBanners()
 }
 
 // ─── 광고 배너 ───

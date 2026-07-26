@@ -44,6 +44,11 @@ function buildGradient(color: string, mid?: string | null, end?: string | null) 
   return `linear-gradient(135deg, ${color}, ${color}dd)`
 }
 
+function optionalText(value: string) {
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
 function isActiveNow(banner: Banner) {
   const now = new Date()
   if (!banner.isActive) return false
@@ -115,17 +120,17 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
     e.preventDefault()
     startTransition(async () => {
       const payload = {
-        title: form.title,
-        subtitle: form.subtitle || undefined,
+        title: form.title.trim(),
+        subtitle: optionalText(form.subtitle),
         themeColor: form.themeColor,
-        themeColorMid: form.themeColorMid || undefined,
-        themeColorEnd: form.themeColorEnd || undefined,
-        ctaText: form.ctaText || undefined,
-        ctaUrl: form.ctaUrl || undefined,
+        themeColorMid: optionalText(form.themeColorMid),
+        themeColorEnd: optionalText(form.themeColorEnd),
+        ctaText: optionalText(form.ctaText),
+        ctaUrl: optionalText(form.ctaUrl),
         displayOrder: form.displayOrder,
         slot: form.slot,
-        startsAt: form.startsAt || undefined,
-        endsAt: form.endsAt || undefined,
+        startsAt: optionalText(form.startsAt),
+        endsAt: optionalText(form.endsAt),
         isActive: form.isActive,
       }
       if (editId) {
@@ -134,18 +139,23 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
         await adminCreateBanner(payload)
       }
       resetForm()
+      router.refresh()
     })
   }
 
   function handleDelete(bannerId: string) {
     if (!confirm('이 배너를 삭제하시겠습니까?')) return
-    startTransition(() => adminDeleteBanner(bannerId))
+    startTransition(async () => {
+      await adminDeleteBanner(bannerId)
+      router.refresh()
+    })
   }
 
   function handleToggleActive(banner: Banner) {
-    startTransition(() =>
-      adminUpdateBanner(banner.id, { isActive: !banner.isActive })
-    )
+    startTransition(async () => {
+      await adminUpdateBanner(banner.id, { isActive: !banner.isActive })
+      router.refresh()
+    })
   }
 
   return (
