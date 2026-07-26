@@ -15,6 +15,7 @@ interface Banner {
   themeColorEnd: string | null
   ctaText: string | null
   ctaUrl: string | null
+  imageUrl: string | null
   displayOrder: number
   slot: string
   isActive: boolean
@@ -60,6 +61,7 @@ function isActiveNow(banner: Banner) {
 export default function BannerManager({ banners, activeTab }: BannerManagerProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [uploading, setUploading] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
 
@@ -71,6 +73,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
     themeColorEnd: '',
     ctaText: '',
     ctaUrl: '',
+    imageUrl: '',
     displayOrder: 0,
     slot: 'HERO',
     startsAt: '',
@@ -87,6 +90,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
       themeColorEnd: '',
       ctaText: '',
       ctaUrl: '',
+      imageUrl: '',
       displayOrder: 0,
       slot: 'HERO',
       startsAt: '',
@@ -106,6 +110,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
       themeColorEnd: banner.themeColorEnd || '',
       ctaText: banner.ctaText || '',
       ctaUrl: banner.ctaUrl || '',
+      imageUrl: banner.imageUrl || '',
       displayOrder: banner.displayOrder,
       slot: banner.slot,
       startsAt: formatDate(banner.startsAt),
@@ -127,6 +132,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
         themeColorEnd: optionalText(form.themeColorEnd),
         ctaText: optionalText(form.ctaText),
         ctaUrl: optionalText(form.ctaUrl),
+        imageUrl: optionalText(form.imageUrl),
         displayOrder: form.displayOrder,
         slot: form.slot,
         startsAt: optionalText(form.startsAt),
@@ -141,6 +147,26 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
       resetForm()
       router.refresh()
     })
+  }
+
+  async function handleImageUpload(file: File) {
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/admin/uploads/banner', { method: 'POST', body: fd })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error ?? '업로드 실패 (JPG·PNG·WebP, 4MB 이하)')
+        return
+      }
+      const { publicUrl } = (await res.json()) as { publicUrl: string }
+      setForm((f) => ({ ...f, imageUrl: publicUrl }))
+    } catch {
+      alert('업로드 중 오류가 발생했습니다.')
+    } finally {
+      setUploading(false)
+    }
   }
 
   function handleDelete(bannerId: string) {
@@ -183,7 +209,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
           <p className="font-semibold">📋 히어로 배너 운영 가이드 (담당자 필독)</p>
           <ul className="space-y-1 list-none pl-0 text-blue-700">
             <li>• 최대 <strong>5장</strong> 동시 노출 가능 — 표시순서 숫자가 낮을수록 먼저 표시</li>
-            <li>• 배너 배경은 <strong>그라디언트 컬러</strong>로 설정 (이미지 없음)</li>
+            <li>• 이미지가 있으면 <strong>이미지 배경 + 왼쪽 정렬</strong>, 없으면 그라디언트 배경으로 표시됩니다</li>
             <li>• 시작/종료일을 비워두면 <strong>항상 노출</strong>됩니다</li>
             <li>• <strong>노출 조건</strong>: 활성화 AND 현재 날짜가 시작일~종료일 사이</li>
             <li>• 배너가 없으면 홈 히어로 영역은 표시되지 않습니다</li>
@@ -215,15 +241,21 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
             {editId ? '배너 수정' : '새 배너 등록'}
           </h3>
 
-          {/* 그라디언트 미리보기 */}
+          {/* 미리보기 */}
           <div
-            className="h-20 w-full rounded-xl flex items-center justify-center text-white text-sm font-semibold shadow-inner"
-            style={{ background: buildGradient(form.themeColor, form.themeColorMid, form.themeColorEnd) }}
+            className="relative h-28 w-full overflow-hidden rounded-xl bg-cover bg-center shadow-inner"
+            style={{
+              background: form.imageUrl
+                ? `linear-gradient(to right, rgba(0,0,0,0.55), rgba(0,0,0,0.16)), url("${form.imageUrl}") center / cover`
+                : buildGradient(form.themeColor, form.themeColorMid, form.themeColorEnd),
+            }}
           >
-            <span className="drop-shadow">{form.title || '제목 미리보기'}</span>
-            {form.subtitle && (
-              <span className="ml-2 text-xs opacity-80">— {form.subtitle}</span>
-            )}
+            <div className={`flex h-full flex-col justify-center gap-1 px-6 text-white ${form.imageUrl ? 'items-start text-left' : 'items-center text-center'}`}>
+              <span className="text-sm font-bold drop-shadow">{form.title || '제목 미리보기'}</span>
+              {form.subtitle && (
+                <span className="text-xs opacity-90 drop-shadow">{form.subtitle}</span>
+              )}
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -327,6 +359,35 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
               />
             </div>
 
+            {/* 이미지 */}
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-zinc-600">
+                이미지 <span className="text-zinc-400">(선택)</span>
+              </label>
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                <p className="mb-2 text-xs text-zinc-500">
+                  권장: 1920×1080 이상 JPG·PNG·WebP, 4MB 이하. 비우면 그라디언트 배경으로 표시됩니다.
+                </p>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) void handleImageUpload(file)
+                  }}
+                  className="block text-sm"
+                />
+                {uploading && <p className="mt-1 text-xs text-zinc-500">업로드 중…</p>}
+                <input
+                  value={form.imageUrl}
+                  onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                  className="mt-2 h-10 w-full rounded-lg border border-zinc-300 px-3 font-mono text-sm outline-none focus:border-zinc-500"
+                  placeholder="/images/hero/hero_1.jpg 또는 업로드 URL"
+                />
+              </div>
+            </div>
+
             {/* 표시순서 */}
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600">
@@ -425,12 +486,18 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                 active ? 'border-green-200' : 'border-zinc-200 opacity-60'
               }`}
             >
-              {/* 그라디언트 미리보기 */}
+              {/* 배경 미리보기 */}
               <div
-                className="h-16 w-28 flex-shrink-0 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shadow-inner"
-                style={{ background: buildGradient(banner.themeColor, banner.themeColorMid, banner.themeColorEnd) }}
+                className="h-16 w-28 flex-shrink-0 rounded-lg bg-cover bg-center shadow-inner"
+                style={{
+                  background: banner.imageUrl
+                    ? `linear-gradient(to right, rgba(0,0,0,0.45), rgba(0,0,0,0.12)), url("${banner.imageUrl}") center / cover`
+                    : buildGradient(banner.themeColor, banner.themeColorMid, banner.themeColorEnd),
+                }}
               >
-                {banner.ctaText && <span className="drop-shadow px-1 text-center leading-tight">{banner.ctaText}</span>}
+                <div className={`flex h-full items-center px-2 text-white text-[10px] font-bold ${banner.imageUrl ? 'justify-start text-left' : 'justify-center text-center'}`}>
+                  {banner.ctaText && <span className="drop-shadow leading-tight">{banner.ctaText}</span>}
+                </div>
               </div>
 
               {/* 정보 */}
@@ -450,7 +517,9 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                   {banner.startsAt ? formatDate(banner.startsAt) : '즉시'} ~{' '}
                   {banner.endsAt ? formatDate(banner.endsAt) : '무기한'} · 순서 {banner.displayOrder}
                 </p>
-                <p className="mt-0.5 text-xs text-zinc-400 font-mono">{banner.themeColor}</p>
+                <p className="mt-0.5 text-xs text-zinc-400 font-mono">
+                  {banner.imageUrl ? banner.imageUrl : banner.themeColor}
+                </p>
               </div>
 
               {/* 액션 */}
