@@ -83,12 +83,6 @@ function SectionSkeleton({ h = 'h-[200px]' }: { h?: string }) {
   return <div className={`${h} animate-pulse bg-muted/50 rounded-2xl mx-4 my-3 lg:mx-0`} />
 }
 
-function HeroSkeleton() {
-  return (
-    <div className="w-full [aspect-ratio:5/2] lg:[aspect-ratio:8/3] animate-pulse bg-gradient-to-br from-primary/20 to-primary/10" />
-  )
-}
-
 /* ── 섹션별 async 서버 컴포넌트 (독립 스트리밍) ── */
 
 // 지금뜨는이야기 + 사는이야기 + 웃음방 — compose 레이어에서 중복 제거 + override 반영
@@ -210,9 +204,7 @@ export default function HomePage() {
         />
         <h1 className="sr-only">우리 나이가 어때서 — 40대 50대 60대 여성 커뮤니티</h1>
         <div className="max-w-[1200px] mx-auto">
-          <Suspense fallback={<HeroSkeleton />}>
-            <HeroSlider />
-          </Suspense>
+          <HeroSlider />
 
           {/* 오늘의 투표 입구 바텀시트 — 미투표자 하루 1회, 선택 즉시 게시글 이동(결과 미표시), 어드민 팝업 양보 */}
           <VotePopup />
