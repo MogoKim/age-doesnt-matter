@@ -74,6 +74,30 @@ describe('resolveBoardFromRef — LIFE2 기준 (돈/은퇴/제도) vs 생활글'
   })
 })
 
+describe('resolveBoardFromRef — 갱년기톡 자동 라우팅은 제목 강신호만', () => {
+  it('제목에 갱년기/폐경/완경/호르몬 강신호가 있으면 MENOPAUSE로 보낸다', () => {
+    expect(resolveBoardFromRef('HEALTH', '갱년기 때문에 잠을 못 자요', '식은땀도 나고 밤마다 깨요')).toMatchObject({
+      boardType: 'MENOPAUSE',
+      category: '몸의 변화',
+      routingDesire: 'MENOPAUSE',
+      routingGuard: 'MENOPAUSE_TITLE_STRONG',
+    })
+    expect(resolveBoardFromRef(null, '폐경 이후 호르몬제 고민입니다', '병원에서 권유받았는데 고민돼요')).toMatchObject({
+      boardType: 'MENOPAUSE',
+      category: '완경·호르몬',
+    })
+  })
+
+  it('본문에만 갱년기가 있거나 약신호만 있으면 기존 보드에 남긴다', () => {
+    expect(resolveBoardFromRef('HEALTH', '요즘 잠을 못 자요', '갱년기 때문인지 모르겠어요').boardType).toBe('STORY')
+    expect(resolveBoardFromRef(null, '요즘 불안하고 눈물이 나요', '잠도 잘 안 와요').boardType).toBe('STORY')
+  })
+
+  it('구강작열감 같은 열감 부분매칭은 MENOPAUSE로 보내지 않는다', () => {
+    expect(resolveBoardFromRef('HEALTH', '구강작열감 치료해보신 분', '입안이 화끈거려요').boardType).toBe('STORY')
+  })
+})
+
 describe('routing 관측 필드', () => {
   it('routingDesire/routingGuard를 반환한다', () => {
     const r = resolveBoardFromRef('MONEY', '텐트 버려도 되겠죠?', '비싼 돈주고 산 텐트 캠핑 안 가서 버리려구요')

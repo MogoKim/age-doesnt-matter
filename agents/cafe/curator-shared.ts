@@ -14,6 +14,7 @@ export function sanitizeForApi(text: string): string {
 /** 원문 출처 정규화 — 구현은 normalize-source-references.ts (순수 전용 모듈), 여기서 re-export */
 export { normalizeSourceReferences, type NormalizedSourceResult } from './normalize-source-references.js'
 import { normalizeSourceReferences as _norm } from './normalize-source-references.js'
+import { classifyMenopauseCandidate } from '../core/menopause-classifier.js'
 
 /** @deprecated 호환 유지용 — 내부적으로 normalizeSourceReferences를 사용 (기존 호출부 자동 커버) */
 export function replaceCafeReferences(text: string): string {
@@ -2007,6 +2008,36 @@ export function resolveCommunityBoard(desire: string): { boardType: 'STORY' | 'H
   return { boardType: entry.boardType, category: entry.category }
 }
 
+export type CommunityPublishBoardType = 'STORY' | 'HUMOR' | 'LIFE2' | 'MENOPAUSE'
+
+export interface MenopauseRouteOverride {
+  boardType: 'MENOPAUSE'
+  category: string
+  routingDesire: 'MENOPAUSE'
+  routingGuard: 'MENOPAUSE_TITLE_STRONG'
+  matchedKeywords: string[]
+}
+
+/** 갱년기톡 자동 라우팅은 제목 강신호만 허용한다.
+ * 본문에만 갱년기가 스치거나 우울/불안/잠 같은 약신호만 있는 글은 기존 보드에 남겨 오분류를 막는다. */
+export function resolveMenopauseRouteOverride(title: string, content: string): MenopauseRouteOverride | null {
+  const classification = classifyMenopauseCandidate({ title, content })
+  if (!classification.shouldRoute) return null
+  return {
+    boardType: 'MENOPAUSE',
+    category: classification.category,
+    routingDesire: 'MENOPAUSE',
+    routingGuard: 'MENOPAUSE_TITLE_STRONG',
+    matchedKeywords: classification.matchedKeywords,
+  }
+}
+
+/** MENOPAUSE 전용 페르소나 풀은 별도 정책(PR 후속)에서 정한다.
+ * 그 전까지는 기존 STORY 봇 풀을 사용해 빈 후보 fallback으로 전체 persona가 섞이는 일을 막는다. */
+export function personaBoardForRouting(boardType: CommunityPublishBoardType): 'STORY' | 'HUMOR' | 'LIFE2' {
+  return boardType === 'MENOPAUSE' ? 'STORY' : boardType
+}
+
 const DESIRE_KEYWORDS: Record<string, string[]> = {
   HEALTH:   ['건강', '병원', '약', '증상', '통증', '다이어트', '운동', '혈압', '당뇨', '갱년기', '검진'],
   FAMILY:   ['자녀', '아들', '딸', '남편', '며느리', '손주', '부모', '시어머니', '가족', '부부'],
@@ -2205,7 +2236,7 @@ export function hasHumorEntitlement(text: string): boolean {
 }
 
 export interface BoardRouting {
-  boardType: 'STORY' | 'HUMOR' | 'LIFE2'
+  boardType: CommunityPublishBoardType
   category: string
   routingDesire: string  // 게시판 산출에 실제 사용된 desire
   routingGuard: string   // 발동 경로/가드 (BotLog 관측용)
@@ -2234,6 +2265,9 @@ function isFamilyConflictTitle(title: string): boolean {
  *  ④ HUMOR 산출 시 원문 유머/엔터 자격 신호 없으면 STORY 폴백 (gold C) */
 export function resolveBoardFromRef(ownDesire: string | null | undefined, title: string, content: string): BoardRouting {
   const text = `${title} ${content}`
+  const menopauseOverride = resolveMenopauseRouteOverride(title, content)
+  if (menopauseOverride) return menopauseOverride
+
   // '배우자'의 '배우'가 ENTERTAIN/HUMOR 키워드에 부분 매칭되는 오탐 소거 —
   // 라이브 사고(2026-07-12): "배우자 고르는 눈…" 연애 담론이 HUMOR/엔터·TV로 발행됨.
   // guessDesire·HUMOR 자격 게이트 양쪽에 동일 적용. 진짜 배우/드라마 글은 다른 신호(드라마·연예인 등)로 유지.
