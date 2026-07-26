@@ -18,6 +18,7 @@ env:
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   CLAUDE_MODEL_HEAVY: claude-sonnet-4-6
   CLAUDE_MODEL_LIGHT: claude-haiku-4-5
+  HAIKU_GATE_MODE: 'enforce'
   INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
   SLACK_CHANNEL_QA: ${{ secrets.SLACK_CHANNEL_QA }}

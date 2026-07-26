@@ -19,6 +19,14 @@ import { generateCommunitySlug } from '../core/slug.js'
 import { findPoliticalKeyword } from '../core/political-blocklist.js'
 import { computeUsableCount } from './compute-usable-count.js'
 import { buildPopularSeoMeta } from './popular-seo.js'
+import { sourceStageOfCafe } from './config.js'
+import {
+  evaluateContentQualityWithHaiku,
+  recordHaikuBlocked,
+  resolveHaikuGateMode,
+  shouldBlockPublish,
+  type HaikuQualityResult,
+} from './haiku-quality-gate.js'
 
 const HEALTH_CAP = 2
 const MAX_PUBLISH = 5
@@ -66,6 +74,7 @@ export async function main() {
     take: 15,
     select: {
       id: true,
+      cafeId: true,
       title: true,
       content: true,
       desireCategory: true,
@@ -114,6 +123,11 @@ export async function main() {
   let publishedCount = 0
   let seoTransformedCount = 0
   let seoFallbackCount = 0
+  let haikuCheckedCount = 0
+  let haikuBlockedCount = 0
+  let haikuErrorCount = 0
+  let haikuNonBlockingRejectCount = 0
+  const haikuGateMode = resolveHaikuGateMode(process.env.HAIKU_GATE_MODE)
 
   for (const post of usableCandidates) {
     if (publishedCount >= MAX_PUBLISH) break
@@ -167,6 +181,42 @@ export async function main() {
           continue
         }
       }
+    }
+
+    // ContentCurator와 동일한 Haiku 품질 게이트.
+    // popular-sync 경로는 이미 검증된 인기글만 다루지만, 발화자/맥락 위험은 발행 직전 한 번 더 막는다.
+    // 실패/timeout은 발행을 중단하지 않는다(fail-open). 고신뢰 REJECT + 차단 risk만 차단한다.
+    const haikuResult: HaikuQualityResult = await evaluateContentQualityWithHaiku({
+      cafePostId: post.id,
+      title,
+      content: rawContent,
+      boardType: boardInfo.boardType,
+    })
+    haikuCheckedCount++
+    if (haikuResult.haikuStatus === 'ERROR') {
+      haikuErrorCount++
+      console.warn(`[PopularCurator] Haiku ERROR — 발행 지속: "${title.slice(0, 30)}" (${haikuResult.error})`)
+    } else if (shouldBlockPublish(haikuResult, haikuGateMode)) {
+      haikuBlockedCount++
+      await recordHaikuBlocked({
+        title,
+        cafePostId: post.id,
+        cafeId: post.cafeId,
+        source: 'POPULAR_CURATE',
+        decision: haikuResult.decision,
+        confidence: haikuResult.confidence,
+        risks: haikuResult.risks,
+        reason: haikuResult.reason,
+        boardType: boardInfo.boardType,
+        category: boardInfo.category ?? null,
+        refSourceStage: post.cafeId ? sourceStageOfCafe(post.cafeId) : undefined,
+        mode: haikuGateMode,
+      })
+      console.log(`[PopularCurator] HAIKU_BLOCKED (${haikuResult.risks.join(',')}, conf=${haikuResult.confidence}): "${title.slice(0, 30)}" — 발행 차단`)
+      continue
+    } else if (haikuResult.wouldReject) {
+      haikuNonBlockingRejectCount++
+      console.log(`[PopularCurator] Haiku ${haikuGateMode === 'enforce' ? 'REJECT(비차단 축/저신뢰)' : 'dry-run wouldReject'} (${haikuResult.speakerRole}/${haikuResult.risks.join(',')}): "${title.slice(0, 30)}" — 발행은 계속`)
     }
 
     try {
@@ -251,6 +301,11 @@ export async function main() {
         maxUsableCount,
         seoTransformedCount,
         seoFallbackCount,
+        haikuGateMode,
+        haikuCheckedCount,
+        haikuBlockedCount,
+        haikuErrorCount,
+        haikuNonBlockingRejectCount,
       }),
       executionTimeMs: durationMs,
     },
