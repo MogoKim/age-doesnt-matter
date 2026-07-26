@@ -29,6 +29,10 @@ function normalizeBannerText(value: string | null | undefined) {
   return normalized.length > 0 ? normalized : null
 }
 
+function normalizeBannerImageUrl(value: string | null | undefined) {
+  return value?.trim() ?? ''
+}
+
 function normalizeBannerTitle(value: string) {
   return value.trim().replace(/\\n/g, '\n')
 }
@@ -49,6 +53,7 @@ export async function adminCreateBanner(data: {
   themeColorEnd?: string | null
   ctaText?: string | null
   ctaUrl?: string | null
+  imageUrl?: string | null
   displayOrder?: number
   slot?: string
   startsAt?: string | null   // ISO date string, optional
@@ -79,8 +84,7 @@ export async function adminCreateBanner(data: {
       isActive: data.isActive ?? true,
       startsAt: startsAtDate,
       endsAt: endsAtDate,
-      // 레거시 NOT NULL 필드 — 구버전 HeroSlider 호환용 (imageUrl: 미사용, 빈 문자열 유지)
-      imageUrl: '',
+      imageUrl: normalizeBannerImageUrl(data.imageUrl),
       startDate: startsAtDate ?? new Date(),
       endDate: endsAtDate ?? new Date('2099-12-31'),
       priority: data.displayOrder ?? 0,
@@ -109,6 +113,7 @@ export async function adminUpdateBanner(
     themeColorEnd?: string | null
     ctaText?: string | null
     ctaUrl?: string | null
+    imageUrl?: string | null
     displayOrder?: number
     slot?: string
     startsAt?: string | null
@@ -126,7 +131,6 @@ export async function adminUpdateBanner(
   }
 
   const existing = await prisma.banner.findUnique({ where: { id: bannerId } })
-  const nextSlot = data.slot ?? existing?.slot
 
   await prisma.banner.update({
     where: { id: bannerId },
@@ -138,12 +142,12 @@ export async function adminUpdateBanner(
       ...(data.themeColorEnd !== undefined && { themeColorEnd: normalizeBannerText(data.themeColorEnd) }),
       ...(data.ctaText !== undefined && { ctaText: normalizeBannerText(data.ctaText) }),
       ...(data.ctaUrl !== undefined && { ctaUrl: normalizeBannerText(data.ctaUrl) }),
+      ...(data.imageUrl !== undefined && { imageUrl: normalizeBannerImageUrl(data.imageUrl) }),
       ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder, priority: data.displayOrder }),
       ...(data.slot !== undefined && { slot: data.slot }),
       ...(data.isActive !== undefined && { isActive: data.isActive }),
       ...(startsAtDate !== undefined && { startsAt: startsAtDate, startDate: startsAtDate ?? new Date() }),
       ...(endsAtDate !== undefined && { endsAt: endsAtDate, endDate: endsAtDate ?? new Date('2099-12-31') }),
-      ...(nextSlot === 'HERO' && { imageUrl: '' }),
     },
   })
 

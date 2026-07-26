@@ -46,12 +46,14 @@ export const getActiveBanners = unstable_cache(
         themeColorEnd: true,
         ctaText: true,
         ctaUrl: true,
+        imageUrl: true,
       },
     })
 
-    // 히어로 배너 v2 정책은 이미지 없는 그라디언트 배너다.
-    // 기존 DB 행에 남아 있는 legacy imageUrl이 색상 수정을 가리지 않도록 렌더 경로에서 차단한다.
-    return banners.map((banner) => ({ ...banner, imageUrl: null }))
+    return banners.map((banner) => ({
+      ...banner,
+      imageUrl: banner.imageUrl.trim().length > 0 ? banner.imageUrl : null,
+    }))
   },
   ['hero-banners'],
   { revalidate: 300, tags: ['hero-banners'] },
