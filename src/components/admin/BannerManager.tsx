@@ -186,7 +186,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
             <li>• 배너 배경은 <strong>그라디언트 컬러</strong>로 설정 (이미지 없음)</li>
             <li>• 시작/종료일을 비워두면 <strong>항상 노출</strong>됩니다</li>
             <li>• <strong>노출 조건</strong>: 활성화 AND 현재 날짜가 시작일~종료일 사이</li>
-            <li>• 배너가 없으면 폴백 슬라이드가 자동 표시됩니다</li>
+            <li>• 배너가 없으면 홈 히어로 영역은 표시되지 않습니다</li>
           </ul>
         </div>
       )}

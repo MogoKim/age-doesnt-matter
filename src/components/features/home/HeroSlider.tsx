@@ -5,40 +5,6 @@ import { effectiveVoteStatus } from '@/lib/vote-status'
 import { resolveChannelVote, getExposedFeedback } from '@/lib/events/exposure'
 import HeroSliderClient, { type SlideData } from './HeroSliderClient'
 
-/** 폴백 슬라이드 — DB 배너 없을 때 (그라디언트 CSS 변수 기반) */
-const FALLBACK_SLIDES: SlideData[] = [
-  {
-    id: 'fallback-1',
-    title: '우리 또래끼리\n나이 걱정 없이',
-    subtitle: '50·60대 커뮤니티, 우나어',
-    themeColor: '#C4453B',
-    themeColorMid: '#FF6F61',
-    themeColorEnd: '#FFB4A2',
-    ctaText: '시작하기',
-    ctaUrl: '/about',
-  },
-  {
-    id: 'fallback-2',
-    title: '사는 이야기\n함께 나눠요',
-    subtitle: '공감이 넘치는 소통 공간',
-    themeColor: '#C7651E',
-    themeColorMid: '#E89456',
-    themeColorEnd: '#FAC775',
-    ctaText: '이야기 보러가기',
-    ctaUrl: '/community/stories',
-  },
-  {
-    id: 'fallback-3',
-    title: '인생 2막\n같이 준비해요',
-    subtitle: '일자리부터 재취업까지',
-    themeColor: '#1B5E20',
-    themeColorMid: '#4A8C3A',
-    themeColorEnd: '#97C459',
-    ctaText: '내일 찾기',
-    ctaUrl: '/jobs',
-  },
-]
-
 /** 오늘의 투표 슬라이드 — 5:2 안 직접투표 미니 투표판 (VoteHeroSlide가 렌더).
  *  myChoice/집계는 클라 fetch로만 — 홈 ISR(60s) 캐시에 사용자별 값이 섞이면 안 됨.
  *  Phase 2: 노출 대상은 Event 오케스트레이션 계층(resolveChannelVote('hero'))이 선택.
@@ -114,7 +80,7 @@ async function buildFeedbackTeaserSlide(): Promise<SlideData | null> {
 //  VOTE/FEEDBACK HERO는 audience=ALL 전용이라 기존대로 서버 렌더 유지(회귀 0).
 
 export default async function HeroSlider() {
-  let slides: SlideData[]
+  let slides: SlideData[] | null = null
 
   try {
     const banners = await getActiveBanners()
@@ -131,12 +97,12 @@ export default async function HeroSlider() {
         ctaUrl: b.ctaUrl ?? '/',
         imageUrl: b.imageUrl && b.imageUrl.length > 0 ? b.imageUrl : undefined,
       }))
-    } else {
-      slides = FALLBACK_SLIDES
     }
   } catch {
-    slides = FALLBACK_SLIDES
+    slides = null
   }
+
+  if (!slides) return null
 
   // 참여 이벤트 teaser(서버) — VOTE 우선 → FEEDBACK(둘 다 audience=ALL). 3번째 위치 삽입.
   //  SURVEY(audience 분리)는 여기서 넣지 않고 HeroSliderClient가 세션 기준 client fetch로 삽입.

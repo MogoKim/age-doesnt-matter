@@ -66,6 +66,7 @@ export default function AdSenseUnit({
   const { isCapacitor } = useAppEnvironment()
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
+  const reservedHeight = fixedHeight ?? FORMAT_MIN_HEIGHT[format] ?? 90
 
   useEffect(() => {
     // Capacitor 네이티브 앱: 광고 미게재(AdSense 계정 보호) → push/observer 일절 실행 안 함.
@@ -178,6 +179,7 @@ export default function AdSenseUnit({
       className={`relative ${className ?? ''}`}
       role="complementary"
       aria-label="광고"
+      style={{ minHeight: reservedHeight }}
     >
       <span className="absolute top-2 right-3 text-caption text-muted-foreground bg-white/80 px-1.5 py-0.5 rounded border border-border z-10">
         광고
@@ -187,7 +189,7 @@ export default function AdSenseUnit({
       <div
         ref={containerRef}
         style={{
-          minHeight: showFallback ? 0 : (fixedHeight ?? FORMAT_MIN_HEIGHT[format] ?? 90),
+          minHeight: showFallback ? 0 : reservedHeight,
           maxWidth: '100%',
           overflowX: 'hidden',
         }}
