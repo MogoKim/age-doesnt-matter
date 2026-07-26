@@ -12,6 +12,8 @@ import {
   matchPersona,
   guessDesire,
   resolveCommunityBoard,
+  resolveMenopauseRouteOverride,
+  personaBoardForRouting,
   PERSONAS,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
@@ -132,18 +134,6 @@ export async function main() {
   for (const post of usableCandidates) {
     if (publishedCount >= MAX_PUBLISH) break
     const desire = post.desireCategory ?? guessDesire(post.title)
-    if (desire === 'HEALTH' && healthCount >= HEALTH_CAP) continue
-
-    const boardInfo = resolveCommunityBoard(desire)
-    let persona = matchPersona(post.title, desire, boardInfo.boardType)  // [B 2026-06-10] 발행 게시판 소속 페르소나만
-    const todayCount = await countTodayPostsByPersona(persona.id)
-    if (todayCount >= AUTHOR_DAILY_POST_CAP) {
-      const sameBoard = PERSONAS.filter(p => p.board === persona.board && p.id !== persona.id)
-      for (const alt of sameBoard) {
-        const altCount = await countTodayPostsByPersona(alt.id)
-        if (altCount < AUTHOR_DAILY_POST_CAP) { persona = alt; break }
-      }
-    }
     // 원문 기반 발행 — AI 재창작 없이 원본 CafePost title/content 그대로 사용
     const title = replaceCafeReferences(stripMarkdown(post.title.trim()))
     // 발행 본문 정화: stripMarkdown → replaceCafeReferences → stripCafeBoilerplate(맨 앞 게시판 안내문 제거). 원문 미수정.
@@ -158,6 +148,24 @@ export async function main() {
     if (political) {
       console.log(`[PopularCurator] 정치 키워드 발행 차단: "${title.slice(0, 20)}" (kw=${political.keyword}/${political.field})`)
       continue
+    }
+
+    const baseBoardInfo = resolveCommunityBoard(desire)
+    const menopauseBoardInfo = resolveMenopauseRouteOverride(title, rawContent)
+    const boardInfo = menopauseBoardInfo ?? baseBoardInfo
+
+    // 갱년기톡 강신호 글은 HEALTH_CAP에 막히지 않게 별도 공급원으로 본다.
+    if (desire === 'HEALTH' && boardInfo.boardType !== 'MENOPAUSE' && healthCount >= HEALTH_CAP) continue
+
+    const personaTargetBoard = personaBoardForRouting(boardInfo.boardType)
+    let persona = matchPersona(post.title, desire, personaTargetBoard)  // [B 2026-06-10] 발행 게시판 소속 페르소나만
+    const todayCount = await countTodayPostsByPersona(persona.id)
+    if (todayCount >= AUTHOR_DAILY_POST_CAP) {
+      const sameBoard = PERSONAS.filter(p => p.board === personaTargetBoard && p.id !== persona.id)
+      for (const alt of sameBoard) {
+        const altCount = await countTodayPostsByPersona(alt.id)
+        if (altCount < AUTHOR_DAILY_POST_CAP) { persona = alt; break }
+      }
     }
 
     const htmlContent = toCuratedHtmlContent(rawContent)
@@ -276,7 +284,7 @@ export async function main() {
         await enqueueCommentWave(postId, post.id, persona.id)
       }
 
-      if (desire === 'HEALTH') healthCount++
+      if (desire === 'HEALTH' && boardInfo.boardType !== 'MENOPAUSE') healthCount++
       publishedCount++
       if (seo.transformed) seoTransformedCount++
       else seoFallbackCount++

@@ -18,12 +18,14 @@ import {
   DESIRE_PERSONA_MAP,
   matchPersona,
   resolveBoardFromRef,
+  personaBoardForRouting,
   guessDesire,
   stripMarkdown,
   replaceCafeReferences,
   stripCafeBoilerplate,
   toCuratedHtmlContent,
   toCuratedSummary,
+  type CommunityPublishBoardType,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
 import { CURATION_CORE_CAFE_IDS, DLXOGNS01_ALLOWED_BOARDS, PUBLISHABLE_CAFE_IDS, PUBLISHABLE_ONLY_CAFE_IDS, SHADOW_CAFE_IDS, sourceStageOfCafe } from './config.js'
@@ -332,8 +334,9 @@ const SENSITIVE_DEPRESSION = ['사라지고 싶', '죽고 싶', '죽고싶', '�
 const SENSITIVE_MEDICAL = ['암센터', '종양', '암 진단', '암진단', '시한부', '말기암', '임종', '장례', '호스피스', '중환자실', '뇌출혈', '투병', '복수가 차']
 function applySensitiveBoardOverride(
   text: string,
-  board: { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; category: string },
-): { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; category: string } {
+  board: { boardType: CommunityPublishBoardType; category: string },
+): { boardType: CommunityPublishBoardType; category: string } {
+  if (board.boardType === 'MENOPAUSE') return board
   const med = SENSITIVE_MEDICAL.some(k => text.includes(k))
   const dep = SENSITIVE_DEPRESSION.some(k => text.includes(k))
   if (!med && !dep) return board
@@ -348,7 +351,7 @@ function applySensitiveBoardOverride(
 //   own desire + 원문 텍스트 신호만으로 결정한다(curator-shared.resolveBoardFromRef).
 //   gold label 17건 실측: bucket 상속이 HUMOR 오분류 ~80%(candidate ENTERTAIN 상속)의 주범.
 //   sensitive override(우울/의료 → STORY)는 기존대로 최종 적용.
-function resolveBoardForPost(ownDesire: string | null | undefined, title: string, content: string): { boardType: 'STORY' | 'HUMOR' | 'LIFE2'; category: string; routingDesire: string; routingGuard: string } {
+function resolveBoardForPost(ownDesire: string | null | undefined, title: string, content: string): { boardType: CommunityPublishBoardType; category: string; routingDesire: string; routingGuard: string } {
   const routed = resolveBoardFromRef(ownDesire, title, content)
   const overridden = applySensitiveBoardOverride(`${title} ${content}`, routed)
   if (overridden.boardType !== routed.boardType || overridden.category !== routed.category) {
@@ -487,10 +490,10 @@ async function publishCuratedContent(curated: CuratedContent): Promise<PublishRe
   }
 
   // 크로스소스 중복 방지 (LIFE2·STORY·HUMOR — Seed·PopularCurator와 동일 주제 중복 차단)
-  if (['LIFE2', 'STORY', 'HUMOR'].includes(curated.boardType)) {
+  if (['LIFE2', 'STORY', 'HUMOR', 'MENOPAUSE'].includes(curated.boardType)) {
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const recentPosts = await prisma.post.findMany({
-      where: { boardType: curated.boardType as 'LIFE2' | 'STORY' | 'HUMOR', createdAt: { gte: since24h } },
+      where: { boardType: curated.boardType as 'LIFE2' | 'STORY' | 'HUMOR' | 'MENOPAUSE', createdAt: { gte: since24h } },
       select: { title: true },
     })
     if (recentPosts.length > 0) {
@@ -531,7 +534,7 @@ async function publishCuratedContent(curated: CuratedContent): Promise<PublishRe
           summary,
           seoTitle: seo.seoTitle,
           seoDescription: seo.seoDescription,
-          boardType: curated.boardType as 'STORY' | 'HUMOR' | 'LIFE2' | 'JOB',
+          boardType: curated.boardType as 'STORY' | 'HUMOR' | 'LIFE2' | 'MENOPAUSE' | 'JOB',
           category: curated.category ?? '자유수다',
           authorId: userId,
           source: 'BOT',
@@ -850,12 +853,13 @@ export async function main() {
 
     // 페르소나 선택 — 발행 게시판 소속(board 필터) + 글 제목 기반 매칭 + AUTHOR_DAILY_CAP 체크
     const board = resolveBoardForPost(refs[0].desireCategory, mainRefText.title, mainRefText.content)
-    let persona = matchPersona(refs[0].title, desireCat, board.boardType)
+    const personaTargetBoard = personaBoardForRouting(board.boardType)
+    let persona = matchPersona(refs[0].title, desireCat, personaTargetBoard)
     const todayCount = await countTodayPostsByPersona(persona.id)
     if (todayCount >= AUTHOR_DAILY_POST_CAP) {
       let altIds = (DESIRE_PERSONA_MAP[desireCat] ?? DESIRE_PERSONA_MAP['GENERAL'])
-        .filter(id => PERSONAS.find(p => p.id === id)?.board === board.boardType)
-      if (altIds.length === 0) altIds = PERSONAS.filter(p => p.board === board.boardType).map(p => p.id)
+        .filter(id => PERSONAS.find(p => p.id === id)?.board === personaTargetBoard)
+      if (altIds.length === 0) altIds = PERSONAS.filter(p => p.board === personaTargetBoard).map(p => p.id)
       let found = false
       for (const altId of altIds) {
         if (altId === persona.id) continue
