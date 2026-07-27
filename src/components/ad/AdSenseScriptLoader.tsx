@@ -6,8 +6,9 @@ import { ADSENSE } from './ad-slots'
 const ADSENSE_SCRIPT_ID = 'unao-adsbygoogle-script'
 export const ADSENSE_READY_EVENT = 'unao:adsense-ready'
 
-const INTERACTION_EVENTS = ['pointerdown', 'keydown', 'touchstart', 'scroll'] as const
-const BACKSTOP_MS = 4000
+const INTERACTION_EVENTS = ['pointerdown', 'keydown', 'touchstart'] as const
+const IDLE_AFTER_LOAD_MS = 4000
+const BACKSTOP_MS = 8000
 
 type AdSenseWindow = Window & {
   adsbygoogle?: Record<string, unknown>[]
@@ -82,10 +83,23 @@ export default function AdSenseScriptLoader() {
       window.addEventListener(e, onInteract, { once: true, passive: true }),
     )
 
-    // 트리거 ②: idle (메인스레드 한가할 때 — LCP 이후로 자연 후행)
+    // 트리거 ②: load 이후 idle (첫 화면 렌더와 경쟁하지 않게 후행)
     let idleId: number | undefined
-    if ('requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(() => loadAdSenseOnce())
+    let fallbackIdleTimerId: ReturnType<typeof setTimeout> | undefined
+    const scheduleIdle = () => {
+      if ('requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(() => loadAdSenseOnce(), { timeout: 3000 })
+      } else {
+        fallbackIdleTimerId = setTimeout(loadAdSenseOnce, 3000)
+      }
+    }
+    const scheduleAfterLoad = () => {
+      fallbackIdleTimerId = setTimeout(scheduleIdle, IDLE_AFTER_LOAD_MS)
+    }
+    if (document.readyState === 'complete') {
+      scheduleAfterLoad()
+    } else {
+      window.addEventListener('load', scheduleAfterLoad, { once: true })
     }
 
     // 트리거 ③: 백스톱 타이머 (무상호작용·무idle 세션에도 광고 노출 보장 — 제거 아님)
@@ -93,9 +107,11 @@ export default function AdSenseScriptLoader() {
 
     return () => {
       INTERACTION_EVENTS.forEach((e) => window.removeEventListener(e, onInteract))
+      window.removeEventListener('load', scheduleAfterLoad)
       if (idleId !== undefined && 'cancelIdleCallback' in window) {
         window.cancelIdleCallback(idleId)
       }
+      if (fallbackIdleTimerId !== undefined) clearTimeout(fallbackIdleTimerId)
       window.clearTimeout(timerId)
     }
   }, [])

@@ -40,6 +40,7 @@ export default function SurveyHeroSlide({
       {/* 전체 영역 클릭 → 상세로 이동 */}
       <Link
         href={(data.ctaUrl ?? '/').trim() || '/'}
+        prefetch={false}
         className="absolute inset-0 flex flex-col items-start justify-end gap-2 px-5 pb-7 text-left lg:justify-center lg:gap-3 lg:px-16 lg:pb-0 no-underline [-webkit-tap-highlight-color:transparent]"
         tabIndex={active ? 0 : -1}
       >

@@ -31,6 +31,7 @@ export default function IconMenu() {
           <Link
             key={item.href}
             href={item.href}
+            prefetch={false}
             className={cn(
               'flex flex-col items-center justify-center gap-1.5 shrink-0 min-h-[64px] py-2 px-1.5 no-underline text-muted-foreground relative [-webkit-tap-highlight-color:transparent] [scroll-snap-align:start]',
               isActive && 'after:content-[""] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-6 after:h-0.5 after:bg-primary after:rounded-sm'

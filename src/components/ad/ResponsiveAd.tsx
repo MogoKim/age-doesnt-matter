@@ -1,25 +1,32 @@
+'use client'
+
+import { useEffect, useState, type ReactNode } from 'react'
+
 interface ResponsiveAdProps {
-  mobile: React.ReactNode
-  desktop: React.ReactNode
+  mobile: ReactNode
+  desktop: ReactNode
 }
 
 /**
- * CSS 기반 반응형 광고 래퍼 (v2 — hydration mismatch 근본 해결)
+ * 실제 viewport에 맞는 광고만 mount한다.
  *
- * 이전 버전 문제:
- * - 'use client' + useIsDesktop() → SSR 기본값 false → 데스크탑 hydration mismatch
- * - 데스크탑에서 모바일 콘텐츠 플래시 후 사라짐
- *
- * v2 변경:
- * - 서버 컴포넌트 (use client 제거)
- * - CSS display로 반응형 분기 → hydration 불일치 원천 차단
- * - 양쪽 모두 SSR 렌더링 → SEO 개선
+ * CSS hide 방식은 모바일에서도 데스크탑 iframe이 만들어질 수 있어 첫 진입 네트워크를
+ * 잡아먹었다. hydration 전에는 아무 광고도 mount하지 않고, matchMedia 판정 후
+ * 한쪽 branch만 렌더한다.
  */
 export default function ResponsiveAd({ mobile, desktop }: ResponsiveAdProps) {
-  return (
-    <>
-      {mobile && <div className="block lg:hidden">{mobile}</div>}
-      {desktop && <div className="hidden lg:block">{desktop}</div>}
-    </>
-  )
+  const [isDesktop, setIsDesktop] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)')
+    const update = () => setIsDesktop(media.matches)
+
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  if (isDesktop === null) return null
+  if (isDesktop) return desktop ? <div>{desktop}</div> : null
+  return mobile ? <div>{mobile}</div> : null
 }

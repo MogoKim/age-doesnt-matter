@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { optionLabel } from './option-label'
 import type { VoteStatus } from './VoteWidget'
+import { getTodayMineOnce } from '@/lib/client/home-exposure-cache'
 
 /** HERO 슬라이드용 서버 초기 데이터 — 입구 렌더에 필요한 정적 정보만 (집계 없음) */
 export interface VoteHeroData {
@@ -88,7 +89,7 @@ export function VoteHeroSlideView({
         style={{ background: 'linear-gradient(135deg, #23303F 0%, #3A4A5C 100%)' }}
       >
         {/* 배경 전체 클릭 → 게시글(결과)로 이동 */}
-        <Link href={postUrl} aria-label="오늘의 투표 결과 보러 가기" className="absolute inset-0 z-0" />
+        <Link href={postUrl} prefetch={false} aria-label="오늘의 투표 결과 보러 가기" className="absolute inset-0 z-0" />
         <div className="pointer-events-none relative z-10 flex h-full flex-col justify-between px-5 py-3.5 lg:px-16 lg:py-7">
           <span className="text-[14px] lg:text-[16px] font-bold tracking-[0.3px] opacity-95">오늘의 결과</span>
           <h2
@@ -111,7 +112,7 @@ export function VoteHeroSlideView({
       style={{ background: 'linear-gradient(135deg, #FF6F61 0%, #FF8E7A 100%)' }}
     >
       {/* 배경 전체 클릭 → 투표 없이 게시글로 이동 (버튼은 위에서 pointer-events로 가로챔) */}
-      <Link href={postUrl} aria-label="오늘의 투표 게시글 보기" className="absolute inset-0 z-0" />
+      <Link href={postUrl} prefetch={false} aria-label="오늘의 투표 게시글 보기" className="absolute inset-0 z-0" />
       <div className="pointer-events-none relative z-10 flex h-full flex-col justify-between px-5 py-3.5 lg:px-16 lg:py-7">
         <div className="flex items-center justify-between">
           <span className="text-[14px] lg:text-[16px] font-bold tracking-[0.3px] opacity-95">오늘의 투표</span>
@@ -169,21 +170,23 @@ export default function VoteHeroSlide({
   const mounted = useRef(true)
   const postUrl = `/events/${initial.id}` // 공식 이벤트 상세(히든 목적지) — 사는이야기 게시글 아님
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (sharedMine = false) => {
     try {
       // public(캐시) status + 사용자별 myChoice(no-store) 병렬 조회 — HERO는 결과 집계는 쓰지 않는다
       const [pubRes, mineRes] = await Promise.all([
         fetch('/api/votes/today', { credentials: 'same-origin' }),
-        fetch('/api/votes/today/mine', { credentials: 'same-origin', cache: 'no-store' }),
+        sharedMine
+          ? getTodayMineOnce()
+          : fetch('/api/votes/today/mine', { credentials: 'same-origin', cache: 'no-store' }).then((res) => {
+              if (!res.ok) return { myChoice: null as 'A' | 'B' | null }
+              return res.json() as Promise<{ myChoice: 'A' | 'B' | null }>
+            }),
       ])
       if (mounted.current && pubRes.ok) {
         const data = (await pubRes.json()) as { vote: VoteStatus | null }
         if (data.vote && data.vote.id === initial.id) setStatus(data.vote.status)
       }
-      if (mounted.current && mineRes.ok) {
-        const mine = (await mineRes.json()) as { myChoice: 'A' | 'B' | null }
-        setMyChoice(mine.myChoice)
-      }
+      if (mounted.current) setMyChoice(mineRes.myChoice)
     } catch {
       /* 서버 초기 status 유지 */
     }
@@ -191,9 +194,7 @@ export default function VoteHeroSlide({
 
   useEffect(() => {
     mounted.current = true
-    // 선택/영역 클릭 시 즉시 이동 대비 프리페치 (공식 이벤트 상세 /events/[id])
-    router.prefetch(postUrl)
-    void refresh()
+    void refresh(true)
     const timer = setInterval(() => void refresh(), REFRESH_MS)
     return () => {
       mounted.current = false

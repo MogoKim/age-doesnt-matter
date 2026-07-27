@@ -14,10 +14,11 @@ interface Props extends Omit<ComponentProps<typeof Link>, 'onClick'> {
   action?: 'card' | 'more'
 }
 
-export default function HomeCardLink({ section, position, contentId, action = 'card', ...props }: Props) {
+export default function HomeCardLink({ section, position, contentId, action = 'card', prefetch = false, ...props }: Props) {
   return (
     <Link
       {...props}
+      prefetch={prefetch}
       onClick={() => {
         gtmHomeCardClick(section, position, contentId, action)
         trackEvent('home_card_click', { section, position, content_id: contentId, action })
