@@ -17,6 +17,7 @@ import {
   shouldWriteReply,
   checkWritePreconditions,
   shouldNotifyAuthorReply,
+  findMenopauseAuthorReplySafetySkip,
   NON_BOT_COMMENT_AUTHOR_WHERE,
 } from './author-reply-policy.js'
 
@@ -33,7 +34,7 @@ type WriteOutcome = 'WRITTEN' | 'DUP_SKIP' | 'PRECONDITION_SKIP'
 /**
  * write 모드: 대상 유저 댓글(parentCommentId)에 글쓴이 봇의 대댓글을 실제 생성.
  * - write **직전** parent comment + post 상태를 재조회해 사전조건 전체 재검증(checkWritePreconditions):
- *   parent 존재/ACTIVE/최상위/postId 일치, post 존재/PUBLISHED/BOT·SHEET/STORY·LIFE2·HUMOR/authorId 존재,
+ *   parent 존재/ACTIVE/최상위/postId 일치, post 존재/PUBLISHED/BOT·SHEET/STORY·LIFE2·HUMOR·MENOPAUSE/authorId 존재,
  *   같은 parent에 작성자 봇 ACTIVE 답글 없음. 하나라도 실패 → create 없이 skip(outcome/reason 반환).
  * - authorId는 재조회한 post.authorId를 authoritative로 사용.
  * - Comment.create + post.commentCount++ + 작성자 user.commentCount++ + lastEngagedAt 갱신(원자적)
@@ -160,7 +161,7 @@ export async function main(): Promise<void> {
       createdAt: { gte: new Date(Date.now() - LOOKBACK_HOURS * 3600_000) },
       parentId: null,
       status: 'ACTIVE', // 숨김/삭제 댓글 판정 금지
-      post: { source: { in: ['BOT', 'SHEET'] }, boardType: { in: ['STORY', 'LIFE2', 'HUMOR'] }, status: 'PUBLISHED' },
+      post: { source: { in: ['BOT', 'SHEET'] }, boardType: { in: ['STORY', 'LIFE2', 'HUMOR', 'MENOPAUSE'] }, status: 'PUBLISHED' },
       ...NON_BOT_COMMENT_AUTHOR_WHERE,
     },
     orderBy: { createdAt: 'asc' },
@@ -215,16 +216,52 @@ export async function main(): Promise<void> {
     const persona = resolveAuthorPersonaContext(authorEmail)
     if (!persona) continue
     const personaId = persona.personaId
+    const postExcerpt = strip(c.post.content).slice(0, 600)
+    const targetComment = strip(c.content).slice(0, 500)
+
+    const menopauseSafetySkip = findMenopauseAuthorReplySafetySkip({
+      postBoardType: c.post.boardType,
+      postTitle: c.post.title,
+      targetComment,
+    })
+    if (menopauseSafetySkip) {
+      judged++
+      summary.SKIP++
+      await prisma.botLog.create({
+        data: {
+          botType: 'COO',
+          status: 'SUCCESS',
+          action: AUTHOR_REPLY_ACTION,
+          logData: {
+            dryRun: MODE !== 'write',
+            mode: MODE,
+            commentId: c.id,
+            postId: c.post.id,
+            boardType: c.post.boardType,
+            personaId,
+            commentPreview: targetComment.slice(0, 100),
+            verdict: 'SKIP',
+            reason: menopauseSafetySkip,
+            replyDraft: null,
+            writtenCommentId: null,
+            menopauseSafetySkipReason: menopauseSafetySkip,
+          },
+        },
+      })
+      console.log(`[AuthorReply] SKIP (${personaId}/${menopauseSafetySkip}) "${targetComment.slice(0, 30)}"`)
+      continue
+    }
 
     const prompt = buildAuthorReplyPrompt({
+      postBoardType: c.post.boardType,
       personaNickname: persona.nickname,
       personaPersonality: persona.personality,
       personaStyle: persona.style,
       personaSpeechPatterns: persona.speechPatterns,
       postTitle: c.post.title,
-      postExcerpt: strip(c.post.content).slice(0, 600),
+      postExcerpt,
       priorComments: c.post.comments.filter(x => x.id !== c.id && !x.parentId).slice(0, 3).map(x => strip(x.content).slice(0, 80)),
-      targetComment: strip(c.content).slice(0, 500),
+      targetComment,
       targetAuthorLabel: c.authorId ? '회원' : `게스트 ${c.guestNickname ?? ''}`.trim(),
     })
 
@@ -259,7 +296,7 @@ export async function main(): Promise<void> {
             await prisma.botLog.create({
               data: {
                 botType: 'COO', status: 'SKIPPED', action: AUTHOR_REPLY_WRITE_ACTION,
-                logData: { dryRun: false, mode: 'write', outcome: w.outcome, reason: w.reason, postId: c.post.id, commentId: c.id, parentCommentId: c.id, personaId, verdict, replyDraft: decision?.reply ?? null },
+                logData: { dryRun: false, mode: 'write', outcome: w.outcome, reason: w.reason, postId: c.post.id, boardType: c.post.boardType, commentId: c.id, parentCommentId: c.id, personaId, verdict, replyDraft: decision?.reply ?? null },
               },
             }).catch(() => {})
           }
@@ -270,7 +307,7 @@ export async function main(): Promise<void> {
           await prisma.botLog.create({
             data: {
               botType: 'COO', status: 'FAILED', action: AUTHOR_REPLY_WRITE_ACTION,
-              logData: { dryRun: false, mode: 'write', outcome: 'FAILED', postId: c.post.id, commentId: c.id, parentCommentId: c.id, personaId, verdict, reason: decision?.reason ?? '', replyDraft: decision?.reply ?? null, error: msg },
+              logData: { dryRun: false, mode: 'write', outcome: 'FAILED', postId: c.post.id, boardType: c.post.boardType, commentId: c.id, parentCommentId: c.id, personaId, verdict, reason: decision?.reason ?? '', replyDraft: decision?.reply ?? null, error: msg },
             },
           }).catch(() => {})
         }
@@ -287,6 +324,7 @@ export async function main(): Promise<void> {
             mode: MODE,
             commentId: c.id,
             postId: c.post.id,
+            boardType: c.post.boardType,
             personaId,
             commentPreview: strip(c.content).slice(0, 100),
             verdict,
@@ -310,7 +348,7 @@ export async function main(): Promise<void> {
         await prisma.botLog.create({
           data: {
             botType: 'COO', status: 'SUCCESS', action: AUTHOR_REPLY_WRITE_ACTION,
-            logData: { dryRun: false, mode: 'write', postId: c.post.id, commentId: c.id, parentCommentId: c.id, writtenCommentId, personaId, verdict, reason: decision?.reason ?? '', replyDraft: decision?.reply ?? null, notificationCreated: notif.created, notificationSkipReason: notif.created ? null : notif.reason },
+            logData: { dryRun: false, mode: 'write', postId: c.post.id, boardType: c.post.boardType, commentId: c.id, parentCommentId: c.id, writtenCommentId, personaId, verdict, reason: decision?.reason ?? '', replyDraft: decision?.reply ?? null, notificationCreated: notif.created, notificationSkipReason: notif.created ? null : notif.reason },
           },
         })
         console.log(`[AuthorReply] ✍️ WRITE 성공 (${personaId}) → comment ${writtenCommentId} (post ${c.post.id}) · 알림 ${notif.created ? '생성' : `skip(${notif.reason})`}`)

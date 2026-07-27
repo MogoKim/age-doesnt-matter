@@ -42,7 +42,7 @@ export interface CandidateInput {
 }
 
 const ELIGIBLE_SOURCES = new Set(['BOT', 'SHEET'])
-const ELIGIBLE_BOARDS = new Set(['STORY', 'LIFE2', 'HUMOR']) // MAGAZINE/JOB 제외
+const ELIGIBLE_BOARDS = new Set(['STORY', 'LIFE2', 'HUMOR', 'MENOPAUSE']) // MAGAZINE/JOB/WEEKLY 제외
 
 /**
  * 후보 조회(DB where)에서 봇 작성 댓글을 먼저 제외하는 조건 — 상류 잘림 hotfix (2026-07-15).
@@ -82,9 +82,53 @@ export function findIneligibleReason(c: CandidateInput): string | null {
   return null
 }
 
+// ── MENOPAUSE 전용 안전 게이트 (순수 — 테스트 대상) ─────────────────────────
+// 갱년기톡은 의료·성·정신건강 경계가 가까운 보드라, write 모드에서 LLM 호출 전에
+// 위험 댓글을 SKIP으로 확정한다. 답글 목적은 조언이 아니라 "글쓴이의 짧은 공감"이다.
+
+export type MenopauseAuthorReplySafetySkipReason =
+  | 'MENOPAUSE_MEDICAL_ADVICE_REQUEST'
+  | 'MENOPAUSE_SEXUAL_CONTENT'
+  | 'MENOPAUSE_MENTAL_HEALTH_CRISIS'
+
+export interface MenopauseAuthorReplySafetyInput {
+  postBoardType: string
+  postTitle: string
+  targetComment: string
+}
+
+const compactKorean = (s: string) => s.replace(/\s+/g, '').toLowerCase()
+
+export function findMenopauseAuthorReplySafetySkip(i: MenopauseAuthorReplySafetyInput): MenopauseAuthorReplySafetySkipReason | null {
+  if (i.postBoardType !== 'MENOPAUSE') return null
+
+  const title = compactKorean(i.postTitle)
+  const comment = compactKorean(i.targetComment)
+  const titleAndComment = `${title} ${comment}`
+
+  if (/(죽고싶|죽을것같|살기싫|자해|극단적|공황|우울증|자살)/.test(comment)) {
+    return 'MENOPAUSE_MENTAL_HEALTH_CRISIS'
+  }
+
+  if (/(성욕|성관계|성생활|잠자리|섹스|리스|부부관계)/.test(titleAndComment)) {
+    return 'MENOPAUSE_SEXUAL_CONTENT'
+  }
+
+  const commentForMedical = comment.replace(/금융치료/g, '')
+  const hasMedicalTerm = /(호르몬제|호르몬치료|질유산균|항생제|보약|흑염소|영양제|약|처방|주사|수술|시술|검사|피검사|초음파|진단|치료|산부인과|유방외과|병원|방광염|질염|당뇨|유두통증|부작용|수치|갱년기키트)/.test(commentForMedical)
+  const asksAdvice = /(먹어도|먹으면|효과|어떻게|어디|가야|가보|해야|될까|인가요|맞나요|좋나요|추천|문의|관리|도움|나을까|해보|받아|상담|찾아|찾으)/.test(commentForMedical)
+  const givesAdvice = /(드셔|드시|먹으|챙겨|가보|상담|검사|치료|처방|추천|받아보|찾아|찾으)/.test(commentForMedical)
+  if (hasMedicalTerm && (asksAdvice || givesAdvice)) {
+    return 'MENOPAUSE_MEDICAL_ADVICE_REQUEST'
+  }
+
+  return null
+}
+
 // ── Sonnet 프롬프트 (판단+초안 1콜) ─────────────────────────────
 
 export interface AuthorReplyPromptInput {
+  postBoardType?: string
   personaNickname: string
   personaPersonality: string
   personaStyle: string
@@ -97,6 +141,15 @@ export interface AuthorReplyPromptInput {
 }
 
 export function buildAuthorReplyPrompt(i: AuthorReplyPromptInput): string {
+  const menopauseSafetyBlock = i.postBoardType === 'MENOPAUSE'
+    ? `
+[갱년기톡 추가 안전 규칙]
+- 갱년기톡에서는 의료·성·정신건강 조언을 절대 하지 않는다. 병원/검사/약/호르몬제/영양제/치료/진단/성적 내용/위기 표현은 답하지 말고 ESCALATE한다.
+- REPLY는 오직 [내 글]에 이미 드러난 감정·불편·막막함을 짧게 공감하는 수준으로만 쓴다.
+- "병원 가보세요", "검사 받아보세요", "약/영양제 드셔보세요", "호르몬 문제예요" 같은 해결책·판단·권유는 금지다.
+`
+    : ''
+
   return `당신은 '우나어'(40대 중반~60대 한국 여성 커뮤니티)의 회원 ${i.personaNickname}이다.
 성격: ${i.personaPersonality}
 말투: ${i.personaStyle} / 자주 쓰는 표현: ${i.personaSpeechPatterns.slice(0, 3).join(', ')}
@@ -125,6 +178,7 @@ export function buildAuthorReplyPrompt(i: AuthorReplyPromptInput): string {
 - ESCALATE(사람 검토): 표절·도용 지적("본인 글 아니지 않냐"류) / 공격·시비 / 정치 / 성적 내용 /
   법률 분쟁 / 위험한 의료 상담(약물·진단 요구) / 판정이 불확실한 모든 경우
 표절·도용 지적에 절대 답글을 시도하지 마라 — 무조건 ESCALATE다.
+${menopauseSafetyBlock}
 
 [답글 작성 규칙 — REPLY일 때만]
 - 1~2문장, 위 말투 유지. 댓글 내용의 구체적 지점에 반응하라(형식적 "감사합니다" 금지)
