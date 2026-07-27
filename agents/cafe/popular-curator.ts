@@ -14,7 +14,7 @@ import {
   resolveCommunityBoard,
   resolveMenopauseRouteOverride,
   personaBoardForRouting,
-  PERSONAS,
+  personasForRoutingBoard,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
 import { generateCommunitySlug } from '../core/slug.js'
@@ -161,7 +161,7 @@ export async function main() {
     let persona = matchPersona(post.title, desire, personaTargetBoard)  // [B 2026-06-10] 발행 게시판 소속 페르소나만
     const todayCount = await countTodayPostsByPersona(persona.id)
     if (todayCount >= AUTHOR_DAILY_POST_CAP) {
-      const sameBoard = PERSONAS.filter(p => p.board === personaTargetBoard && p.id !== persona.id)
+      const sameBoard = personasForRoutingBoard(personaTargetBoard).filter(p => p.id !== persona.id)
       for (const alt of sameBoard) {
         const altCount = await countTodayPostsByPersona(alt.id)
         if (altCount < AUTHOR_DAILY_POST_CAP) { persona = alt; break }
