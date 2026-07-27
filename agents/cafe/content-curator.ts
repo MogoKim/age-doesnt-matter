@@ -19,6 +19,7 @@ import {
   matchPersona,
   resolveBoardFromRef,
   personaBoardForRouting,
+  personaIdsForRoutingBoard,
   guessDesire,
   stripMarkdown,
   replaceCafeReferences,
@@ -857,9 +858,10 @@ export async function main() {
     let persona = matchPersona(refs[0].title, desireCat, personaTargetBoard)
     const todayCount = await countTodayPostsByPersona(persona.id)
     if (todayCount >= AUTHOR_DAILY_POST_CAP) {
+      const allowedPersonaIds = new Set(personaIdsForRoutingBoard(personaTargetBoard))
       let altIds = (DESIRE_PERSONA_MAP[desireCat] ?? DESIRE_PERSONA_MAP['GENERAL'])
-        .filter(id => PERSONAS.find(p => p.id === id)?.board === personaTargetBoard)
-      if (altIds.length === 0) altIds = PERSONAS.filter(p => p.board === personaTargetBoard).map(p => p.id)
+        .filter(id => allowedPersonaIds.has(id))
+      if (altIds.length === 0) altIds = Array.from(allowedPersonaIds)
       let found = false
       for (const altId of altIds) {
         if (altId === persona.id) continue

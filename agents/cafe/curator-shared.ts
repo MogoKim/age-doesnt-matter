@@ -2032,10 +2032,53 @@ export function resolveMenopauseRouteOverride(title: string, content: string): M
   }
 }
 
-/** MENOPAUSE 전용 페르소나 풀은 별도 정책(PR 후속)에서 정한다.
- * 그 전까지는 기존 STORY 봇 풀을 사용해 빈 후보 fallback으로 전체 persona가 섞이는 일을 막는다. */
-export function personaBoardForRouting(boardType: CommunityPublishBoardType): 'STORY' | 'HUMOR' | 'LIFE2' {
-  return boardType === 'MENOPAUSE' ? 'STORY' : boardType
+/** 갱년기톡 자동 큐레이션 전용 curator persona allowlist.
+ * 약/진단/검진 분석형보다 생활·수면·걷기·공감·가족 관계형을 우선해 의료 조언 톤을 낮춘다.
+ * Sheet 경로의 bot-* 페르소나는 agents/community/sheet-scraper.ts의 별도 매핑을 따른다.
+ */
+export const MENOPAUSE_CURATOR_PERSONA_IDS = [
+  'E',    // 봄바람 — 공감/위로
+  'H',    // 매일걷기 — 걷기/생활 건강
+  'DT',   // 숙면연구가 — 수면/불면
+  'CU',   // 건강밥상연구 — 식단/생활 관리
+  'S011', // 온천순례중 — 휴식/몸 돌봄
+  'S013', // 둘레길걷는날 — 산책
+  'S064', // 아침스트레칭
+  'S065', // 물한잔습관
+  'S066', // 계단오르기중
+  'S067', // 저염밥상
+  'S068', // 동네산책모임
+  'S069', // 호흡명상시간
+  'DB',   // 혼자도괜찮아 — 외로움/마음
+  'S053', // 혼밥도맛나 — 혼자 생활
+  'S028', // 며느리랑장보기 — 가족/며느리
+  'S031', // 영감님이랑산책 — 부부/가족
+] as const
+
+const MENOPAUSE_CURATOR_PERSONA_ID_SET = new Set<string>(MENOPAUSE_CURATOR_PERSONA_IDS)
+
+export function isMenopauseCuratorPersona(persona: PersonaMatch): boolean {
+  return persona.board === 'STORY' && MENOPAUSE_CURATOR_PERSONA_ID_SET.has(persona.id)
+}
+
+export function personasForRoutingBoard(boardType: CommunityPublishBoardType): PersonaMatch[] {
+  if (boardType === 'MENOPAUSE') {
+    const menopausePool = MENOPAUSE_CURATOR_PERSONA_IDS
+      .map(id => PERSONAS.find(p => p.id === id))
+      .filter((p): p is PersonaMatch => Boolean(p))
+    return menopausePool.length > 0 ? menopausePool : PERSONAS.filter(p => p.board === 'STORY')
+  }
+  return PERSONAS.filter(p => p.board === boardType)
+}
+
+export function personaIdsForRoutingBoard(boardType: CommunityPublishBoardType): string[] {
+  return personasForRoutingBoard(boardType).map(p => p.id)
+}
+
+/** 발행 게시판에 맞는 페르소나 후보군 key.
+ * MENOPAUSE는 matchPersona/personasForRoutingBoard에서 별도 allowlist로 제한한다. */
+export function personaBoardForRouting(boardType: CommunityPublishBoardType): CommunityPublishBoardType {
+  return boardType
 }
 
 const DESIRE_KEYWORDS: Record<string, string[]> = {
@@ -2058,10 +2101,14 @@ const DESIRE_KEYWORDS: Record<string, string[]> = {
 }
 
 /** 트렌드 주제에 가장 적합한 페르소나 매칭 */
-export function matchPersona(topic: string, desireCat?: string, targetBoard?: string): PersonaMatch {
+export function matchPersona(topic: string, desireCat?: string, targetBoard?: CommunityPublishBoardType | string): PersonaMatch {
   // [B 2026-06-10] targetBoard 지정 시 해당 게시판 소속 페르소나만 후보로 한정.
   // → STORY 담당 봇이 LIFE2 글을 쓰는 board 불일치 방지. (board에 페르소나가 없으면 안전망으로 전체)
-  const filtered = targetBoard ? PERSONAS.filter(p => p.board === targetBoard) : PERSONAS
+  const filtered = targetBoard
+    ? (targetBoard === 'MENOPAUSE'
+      ? personasForRoutingBoard('MENOPAUSE')
+      : PERSONAS.filter(p => p.board === targetBoard))
+    : PERSONAS
   const pool = filtered.length > 0 ? filtered : PERSONAS
   const inPool = (id: string) => pool.some(p => p.id === id)
 
