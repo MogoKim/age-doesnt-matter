@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomSheet from '@/components/ui/BottomSheet'
+import {
+  getBottomPopupExposure,
+  hasHomeAdminPopupCandidate,
+  type ExposedSurvey,
+} from '@/lib/client/home-exposure-cache'
 
 const LS_PREFIX = 'unao-survey-popup-hide-'
 
@@ -17,12 +22,6 @@ function dismissToday(eventId: string): void {
   const midnight = new Date()
   midnight.setHours(23, 59, 59, 999)
   localStorage.setItem(`${LS_PREFIX}${eventId}`, String(midnight.getTime()))
-}
-
-interface ExposedSurvey {
-  eventId: string
-  title: string
-  description: string | null
 }
 
 /**
@@ -40,16 +39,11 @@ export default function SurveyPopup() {
     let cancelled = false
     const run = async () => {
       try {
-        const [popupRes, exposedRes] = await Promise.all([
-          fetch('/api/popups?path=%2F', { credentials: 'same-origin' }),
-          fetch('/api/events/exposed?channel=bottomPopup', { credentials: 'same-origin' }),
+        const [hasAdminPopup, data] = await Promise.all([
+          hasHomeAdminPopupCandidate(),
+          getBottomPopupExposure(),
         ])
-        if (popupRes.ok) {
-          const popupData = (await popupRes.json()) as { popups?: unknown[] }
-          if ((popupData.popups?.length ?? 0) > 0) return
-        }
-        if (!exposedRes.ok) return
-        const data = (await exposedRes.json()) as { survey: ExposedSurvey | null }
+        if (hasAdminPopup) return
         const s = data.survey
         if (!s || isDismissedToday(s.eventId)) return
         if (!cancelled) {

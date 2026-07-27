@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import BottomSheet from '@/components/ui/BottomSheet'
 import { optionLabel } from './option-label'
 import type { VoteStatus } from './VoteWidget'
+import { getTodayMineOnce, hasHomeAdminPopupCandidate } from '@/lib/client/home-exposure-cache'
 
 const LS_PREFIX = 'unao-vote-popup-hide-'
 
@@ -132,26 +133,21 @@ export default function VotePopup() {
       try {
         // 어드민 팝업 우선 규칙 유지 — 세 요청 병렬:
         //  · popups(양보 판정) · today(public, 캐시) · today/mine(내 선택, no-store)
-        const [popupRes, todayRes, mineRes] = await Promise.all([
-          fetch('/api/popups?path=%2F', { credentials: 'same-origin' }),
+        const [hasAdminPopup, todayRes, mineRes] = await Promise.all([
+          hasHomeAdminPopupCandidate(),
           // Phase 2 — Event 오케스트레이션 계층 게이트: bottomPopup 채널로 노출 대상 선택.
           //  (Event 없는 날은 오늘 투표 fallback / 채널 OFF·비-VOTE면 {vote:null})
           fetch('/api/votes/today?channel=bottomPopup', { credentials: 'same-origin' }),
-          fetch('/api/votes/today/mine', { cache: 'no-store', credentials: 'same-origin' }),
+          getTodayMineOnce(),
         ])
         // 홈 경로 활성 팝업이 있으면 양보
-        if (popupRes.ok) {
-          const popupData = (await popupRes.json()) as { popups?: unknown[] }
-          if ((popupData.popups?.length ?? 0) > 0) return
-        }
+        if (hasAdminPopup) return
         if (!todayRes.ok) return
         const data = (await todayRes.json()) as { vote: VoteStatus | null }
         const pub = data.vote // public: myChoice는 항상 null
         if (!pub) return
         // 내 선택은 no-store 경량 조회에서 (사용자별 정확성 유지)
-        const myChoice = mineRes.ok
-          ? ((await mineRes.json()) as { myChoice: 'A' | 'B' | null }).myChoice
-          : null
+        const myChoice = mineRes.myChoice
         // 미투표 + 진행 중 + 연동 게시글 있는 경우만, 하루 1회
         if (pub.status !== 'OPEN' || myChoice !== null || !pub.linkedPostUrl || isDismissedToday(pub.id)) return
         if (!cancelled) {

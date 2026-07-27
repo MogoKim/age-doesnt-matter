@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { getPopupDataForPath } from '@/lib/client/home-exposure-cache'
 
 interface PopupData {
   id: string
@@ -59,18 +60,17 @@ export default function PopupRenderer() {
   const [activePopup, setActivePopup] = useState<PopupData | null>(null)
 
   useEffect(() => {
-    const controller = new AbortController()
+    let cancelled = false
     let idleId: number | undefined
     let timerId: ReturnType<typeof setTimeout> | undefined
 
     // 홈 첫 렌더 체감 우선 — 비필수 팝업 조회는 idle(또는 1200ms 폴백) 후 실행.
     const run = () => {
-      fetch(`/api/popups?path=${encodeURIComponent(pathname)}`, {
-        signal: controller.signal,
-      })
-        .then((res) => res.json())
-        .then((data: { popups: PopupData[] }) => {
-          const visible = data.popups.filter((p) => !isPopupHidden(p))
+      getPopupDataForPath(pathname)
+        .then((data) => {
+          if (cancelled) return
+          const candidates = (data.popups ?? []) as PopupData[]
+          const visible = candidates.filter((p) => !isPopupHidden(p))
           setPopups(visible)
           if (visible.length > 0) {
             setActivePopup(visible[0])
@@ -88,7 +88,7 @@ export default function PopupRenderer() {
     }
 
     return () => {
-      controller.abort()
+      cancelled = true
       if (idleId !== undefined && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
         window.cancelIdleCallback(idleId)
       }

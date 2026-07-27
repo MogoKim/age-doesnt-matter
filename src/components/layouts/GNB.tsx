@@ -43,7 +43,7 @@ export default function GNB() {
   return (
     <nav className="hidden lg:flex sticky top-0 z-[100] h-16 bg-card border-b border-border items-center justify-center" aria-label="메인 네비게이션">
       <div className="flex items-center w-full max-w-[1200px] px-8 gap-4">
-        <Link href="/" className="flex items-center no-underline shrink-0" aria-label="우나어 홈">
+        <Link href="/" prefetch={false} className="flex items-center no-underline shrink-0" aria-label="우나어 홈">
           <Image
             src="/images/logo2.png"
             alt="우리나이가어때서"
@@ -61,6 +61,7 @@ export default function GNB() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={cn(
                   'inline-flex items-center h-12 text-body no-underline px-3 rounded-lg transition-colors duration-150 whitespace-nowrap',
                   isActive
@@ -101,12 +102,12 @@ export default function GNB() {
           {isLoggedIn ? (
             <>
               <NotificationBadge />
-              <Link href="/my" className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-muted-foreground no-underline hover:text-foreground ml-1" aria-label={nickname ? `${nickname} — 내 페이지` : '내 페이지'} title={nickname}>
+              <Link href="/my" prefetch={false} className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-muted-foreground no-underline hover:text-foreground ml-1" aria-label={nickname ? `${nickname} — 내 페이지` : '내 페이지'} title={nickname}>
                 <IconUser size={18} />
               </Link>
             </>
           ) : (
-            <Link href="/login" className="flex items-center gap-2 text-base text-muted-foreground no-underline whitespace-nowrap hover:text-foreground ml-1">
+            <Link href="/login" prefetch={false} className="flex items-center gap-2 text-base text-muted-foreground no-underline whitespace-nowrap hover:text-foreground ml-1">
               로그인
             </Link>
           )}

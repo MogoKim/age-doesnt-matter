@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomSheet from '@/components/ui/BottomSheet'
+import {
+  getBottomPopupExposure,
+  hasHomeAdminPopupCandidate,
+  type ExposedFeedback,
+} from '@/lib/client/home-exposure-cache'
 
 const LS_PREFIX = 'unao-feedback-popup-hide-'
 
@@ -20,12 +25,6 @@ function dismissToday(eventId: string): void {
   localStorage.setItem(`${LS_PREFIX}${eventId}`, String(midnight.getTime()))
 }
 
-interface ExposedFeedback {
-  eventId: string
-  title: string
-  description: string | null
-}
-
 /**
  * 홈 진입 시 **의견수렴형(FEEDBACK) 이벤트** 입구 바텀시트 (Phase 3b, 하루 1회).
  * - 입구 역할만: 제목 + 안내 + "의견 남기러 가기" → /events/[eventId] 이동. **의견 입력·결과·카운트 없음.**
@@ -41,17 +40,12 @@ export default function FeedbackPopup() {
     let cancelled = false
     const run = async () => {
       try {
-        const [popupRes, exposedRes] = await Promise.all([
-          fetch('/api/popups?path=%2F', { credentials: 'same-origin' }),
-          fetch('/api/events/exposed?channel=bottomPopup', { credentials: 'same-origin' }),
+        const [hasAdminPopup, data] = await Promise.all([
+          hasHomeAdminPopupCandidate(),
+          getBottomPopupExposure(),
         ])
         // 홈 경로 활성 어드민 팝업이 있으면 양보
-        if (popupRes.ok) {
-          const popupData = (await popupRes.json()) as { popups?: unknown[] }
-          if ((popupData.popups?.length ?? 0) > 0) return
-        }
-        if (!exposedRes.ok) return
-        const data = (await exposedRes.json()) as { feedback: ExposedFeedback | null }
+        if (hasAdminPopup) return
         const fb = data.feedback
         if (!fb || isDismissedToday(fb.eventId)) return
         if (!cancelled) {
