@@ -8,6 +8,7 @@ import {
   checkWritePreconditions,
   shouldNotifyAuthorReply,
   isRealUserProviderId,
+  findMenopauseAuthorReplySafetySkip,
   NON_BOT_COMMENT_AUTHOR_WHERE,
   type CandidateInput,
   type AuthorReplyVerdict,
@@ -123,6 +124,9 @@ describe('findIneligibleReason — 구조 필터 (필수 원칙 고정)', () => 
     expect(findIneligibleReason({ ...base, postBoardType: 'MAGAZINE' })).toBe('BOARD_EXCLUDED')
     expect(findIneligibleReason({ ...base, postBoardType: 'JOB' })).toBe('BOARD_EXCLUDED')
   })
+  it('MENOPAUSE(갱년기톡)는 author-reply 대상 보드로 허용', () => {
+    expect(findIneligibleReason({ ...base, postBoardType: 'MENOPAUSE' })).toBeNull()
+  })
   it('대댓글(parentId 있음)은 대상 아님 — 최상위만', () => {
     expect(findIneligibleReason({ ...base, comment: { ...base.comment, parentId: 'c-parent' } })).toBe('NOT_TOP_LEVEL')
   })
@@ -191,6 +195,91 @@ describe('buildAuthorReplyPrompt — 판정 규칙 고정', () => {
   })
   it('SKIP 기준에 "없는 증상·경험 지어내야 하는 경우" 명시', () => {
     expect(prompt).toContain('지어내야만 이을 수 있는 경우')
+  })
+
+  it('MENOPAUSE 보드에서는 의료·성·정신건강 조언 금지 블록을 추가한다', () => {
+    const menopausePrompt = buildAuthorReplyPrompt({
+      postBoardType: 'MENOPAUSE',
+      personaNickname: '분당아짐',
+      personaPersonality: '따뜻하고 수다스러움',
+      personaStyle: '구어체 존댓말',
+      personaSpeechPatterns: ['~네요'],
+      postTitle: '갱년기 증상인가요?',
+      postExcerpt: '요즘 얼굴이 화끈거려요',
+      priorComments: [],
+      targetComment: '저도 비슷해서 마음이 힘드네요',
+      targetAuthorLabel: '회원',
+    })
+    expect(menopausePrompt).toContain('[갱년기톡 추가 안전 규칙]')
+    expect(menopausePrompt).toContain('병원/검사/약/호르몬제/영양제/치료/진단')
+    expect(menopausePrompt).toContain('공감하는 수준')
+  })
+
+  it('STORY 보드에는 MENOPAUSE 전용 안전 블록을 넣지 않는다', () => {
+    expect(prompt).not.toContain('[갱년기톡 추가 안전 규칙]')
+  })
+})
+
+describe('findMenopauseAuthorReplySafetySkip — 갱년기톡 write 전 안전 게이트', () => {
+  it('MENOPAUSE가 아니면 민감 키워드가 있어도 이 게이트는 관여하지 않는다', () => {
+    expect(findMenopauseAuthorReplySafetySkip({
+      postBoardType: 'STORY',
+      postTitle: '갱년기 증상',
+      targetComment: '호르몬제 먹어도 될까요?',
+    })).toBeNull()
+  })
+
+  it('단순 공감 댓글은 통과 — 조언이 아니라 짧은 공감 답글 가능', () => {
+    expect(findMenopauseAuthorReplySafetySkip({
+      postBoardType: 'MENOPAUSE',
+      postTitle: '자꾸 눈물이 나는 갱년기',
+      targetComment: '저도 갱년기인데 슬프고 가슴아프고 정말 힘드네요 같이 잘 이겨내요',
+    })).toBeNull()
+  })
+
+  it('약·호르몬·병원·검사 등 의료 조언/질문은 SKIP', () => {
+    expect(findMenopauseAuthorReplySafetySkip({
+      postBoardType: 'MENOPAUSE',
+      postTitle: '갱년기 오기 전에 어떻게 관리하셨나요?',
+      targetComment: '호르몬제 먹어도 될까요? 병원 가야 하나요?',
+    })).toBe('MENOPAUSE_MEDICAL_ADVICE_REQUEST')
+    expect(findMenopauseAuthorReplySafetySkip({
+      postBoardType: 'MENOPAUSE',
+      postTitle: '갱년기 넘 힘들어요',
+      targetComment: '영양제라도 챙겨드시고 무릎은 병원 상담 받아보세요',
+    })).toBe('MENOPAUSE_MEDICAL_ADVICE_REQUEST')
+  })
+
+  it('성적 내용은 SKIP', () => {
+    expect(findMenopauseAuthorReplySafetySkip({
+      postBoardType: 'MENOPAUSE',
+      postTitle: '폐경 즘이면 성욕이 아예 사라지나요?',
+      targetComment: '저도 궁금해요',
+    })).toBe('MENOPAUSE_SEXUAL_CONTENT')
+  })
+
+  it('위기성 정신건강 표현은 SKIP', () => {
+    expect(findMenopauseAuthorReplySafetySkip({
+      postBoardType: 'MENOPAUSE',
+      postTitle: '갱년기 증상인가요?',
+      targetComment: '요즘 정말 죽고 싶다는 생각까지 들어요',
+    })).toBe('MENOPAUSE_MENTAL_HEALTH_CRISIS')
+  })
+
+  it('잠·피로 같은 약신호 단독 공감은 의료 조언이 없으면 통과', () => {
+    expect(findMenopauseAuthorReplySafetySkip({
+      postBoardType: 'MENOPAUSE',
+      postTitle: '요즘 왜 이렇게 졸릴까요? 갱년기 증상일까요?',
+      targetComment: '저도 오후만 되면 눈이 감겨서 힘드네요',
+    })).toBeNull()
+  })
+
+  it('금융치료 같은 관용 표현은 의료 조언으로 오탐하지 않는다', () => {
+    expect(findMenopauseAuthorReplySafetySkip({
+      postBoardType: 'MENOPAUSE',
+      postTitle: '자꾸 눈물이 나는 갱년기',
+      targetComment: '허무함을 잔돈푼으로 금융치료를 하고 살아요',
+    })).toBeNull()
   })
 })
 
@@ -331,9 +420,10 @@ describe('checkWritePreconditions — write 직전 parent+post 재검증', () =>
     expect(r.reason).toBe('ALREADY_REPLIED_BY_AUTHOR')
   })
 
-  it('BOT source + LIFE2/HUMOR board도 통과', () => {
+  it('BOT source + LIFE2/HUMOR/MENOPAUSE board도 통과', () => {
     expect(checkWritePreconditions({ ...base, post: { status: 'PUBLISHED', source: 'BOT', boardType: 'LIFE2', authorId: 'a' } }).ok).toBe(true)
     expect(checkWritePreconditions({ ...base, post: { status: 'PUBLISHED', source: 'BOT', boardType: 'HUMOR', authorId: 'a' } }).ok).toBe(true)
+    expect(checkWritePreconditions({ ...base, post: { status: 'PUBLISHED', source: 'BOT', boardType: 'MENOPAUSE', authorId: 'a' } }).ok).toBe(true)
   })
 })
 
