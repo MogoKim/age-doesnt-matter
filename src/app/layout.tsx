@@ -101,7 +101,7 @@ export default function RootLayout({
         {/* 폰트 크기 flicker 방지 — localStorage 기반, SSR cookies() 의존 없음 */}
         <script dangerouslySetInnerHTML={{ __html: `try{var s=localStorage.getItem('unao-font-size');if(s==='LARGE'||s==='XLARGE'){document.documentElement.setAttribute('data-font-size',s)}}catch{}` }} />
         {/* Pretendard dynamic subset은 첫 화면 이후 로드한다.
-            첫 진입에서는 system-ui로 즉시 페인트하고, load/idle 뒤 Pretendard로 swap한다. */}
+            첫 진입에서는 system-ui로 즉시 페인트하고, optional font-display로 늦은 swap CLS를 막는다. */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){var loaded=false;function load(){if(loaded)return;loaded=true;var l=document.createElement('link');l.rel='stylesheet';l.href='/fonts/pretendard/pretendardvariable-dynamic-subset.css';document.head.appendChild(l)}function idle(){if('requestIdleCallback'in window){requestIdleCallback(load,{timeout:2000})}else{setTimeout(load,1200)}}function schedule(){setTimeout(idle,4500)}if(document.readyState==='complete'){schedule()}else{window.addEventListener('load',schedule,{once:true})}})()` }} />
         {/* eslint-disable-next-line @next/next/no-css-tags -- JS 비활성 환경 fallback */}
         <noscript><link rel="stylesheet" href="/fonts/pretendard/pretendardvariable-dynamic-subset.css" /></noscript>
