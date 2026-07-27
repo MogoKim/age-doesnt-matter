@@ -35,7 +35,7 @@ export default function CommunitySection({ posts }: Props) {
               contentId={post.id}
             >
               <div className="flex items-center gap-2 mb-1">
-                <span className={`px-2 py-0.5 rounded text-caption font-medium ${getCategoryChipClass(post.boardType)}`}>{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
+                <span className={`px-2 py-0.5 rounded text-caption font-normal ${getCategoryChipClass(post.boardType)}`}>{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
                 <span className="text-caption text-muted-foreground">{post.author.nickname}</span>
               </div>
               <p className="text-body text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep">{post.title}</p>

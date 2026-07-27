@@ -36,11 +36,11 @@ export default function TrendingSection({ posts }: Props) {
               position={index}
               contentId={post.id}
             >
-              <span className="text-[28px] font-black italic text-primary-text min-w-[32px] text-center shrink-0 leading-none">{index + 1}</span>
+              <span className="text-[22px] font-bold italic text-primary-text min-w-[32px] text-center shrink-0 leading-none">{index + 1}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-body font-medium text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep motion-safe:transition-colors motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:group-hover:text-primary-text group-active:text-primary-text">{post.title}</p>
                 <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-caption text-muted-foreground">
-                  <span className={`rounded-full px-2 py-0.5 text-caption font-bold leading-[1.4] ${getCategoryChipClass(post.boardType)}`}>{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-caption font-normal leading-[1.4] ${getCategoryChipClass(post.boardType)}`}>{BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}</span>
                   <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
                   <span className="flex items-center gap-1"><IconEye size={15} /> {post.viewCount}</span>
                 </div>
