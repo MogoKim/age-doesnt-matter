@@ -94,7 +94,7 @@ async function HotContentSections() {
   )
 
   return (
-    <>
+    <div className="min-h-[1400px]">
       <TrendingSection posts={trending} />
 
       {/* 모바일: 앱=AdMob Native Advanced(PoC, 홈 인피드 1곳) / 웹=AdSense IN_FEED / 데스크탑: AdSense 728×90 */}
@@ -135,7 +135,7 @@ async function HotContentSections() {
       <Suspense fallback={null}>
         <NewcomerWelcomeSection />
       </Suspense>
-    </>
+    </div>
   )
 }
 
