@@ -5,6 +5,8 @@ import { useEffect, useState, type ReactNode } from 'react'
 interface ResponsiveAdProps {
   mobile: ReactNode
   desktop: ReactNode
+  mobilePlaceholderHeight?: number
+  desktopPlaceholderHeight?: number
 }
 
 /**
@@ -14,7 +16,12 @@ interface ResponsiveAdProps {
  * 잡아먹었다. hydration 전에는 아무 광고도 mount하지 않고, matchMedia 판정 후
  * 한쪽 branch만 렌더한다.
  */
-export default function ResponsiveAd({ mobile, desktop }: ResponsiveAdProps) {
+export default function ResponsiveAd({
+  mobile,
+  desktop,
+  mobilePlaceholderHeight = 0,
+  desktopPlaceholderHeight = 0,
+}: ResponsiveAdProps) {
   const [isDesktop, setIsDesktop] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -26,7 +33,18 @@ export default function ResponsiveAd({ mobile, desktop }: ResponsiveAdProps) {
     return () => media.removeEventListener('change', update)
   }, [])
 
-  if (isDesktop === null) return null
+  if (isDesktop === null) {
+    return (
+      <>
+        {mobile && mobilePlaceholderHeight > 0 ? (
+          <div className="lg:hidden" style={{ minHeight: mobilePlaceholderHeight }} aria-hidden />
+        ) : null}
+        {desktop && desktopPlaceholderHeight > 0 ? (
+          <div className="hidden lg:block" style={{ minHeight: desktopPlaceholderHeight }} aria-hidden />
+        ) : null}
+      </>
+    )
+  }
   if (isDesktop) return desktop ? <div>{desktop}</div> : null
   return mobile ? <div>{mobile}</div> : null
 }
