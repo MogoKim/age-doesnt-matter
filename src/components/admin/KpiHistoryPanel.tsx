@@ -21,7 +21,7 @@ const GRAIN_LABEL: Record<Grain, string> = { day: '일별', week: '주별', mont
 
 export default function KpiHistoryPanel({ rows }: { rows: SnapshotRow[] }) {
   const [period, setPeriod] = useState<Period>(30)
-  const [grain, setGrain] = useState<Grain>('day')
+  const [grain, setGrain] = useState<Grain>('week') // 기본 주별 — 일별 원장이 처음부터 길어 스캔 부담(period 기본 30일)
 
   const k = deriveKpiHistory(rows) // 요약/카드/채널 = 최신 완료일 기준(고정)
   if (!k) {
