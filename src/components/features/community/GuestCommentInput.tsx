@@ -51,6 +51,7 @@ export default function GuestCommentInput({
   const [password, setPassword] = useState('')
   const [content, setContent] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSignupPrompt, setShowSignupPrompt] = useState(false)
   const turnstileRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
@@ -131,6 +132,7 @@ export default function GuestCommentInput({
     if (password.length < 4) { toast('수정·삭제용 번호를 4자리로 입력해 주세요', 'error'); return }
 
     setIsLoading(true)
+    setIsSubmitting(false)
     // 성공 시 입력값이 초기화되므로 제출 시점 값을 캡처
     const submittedContent = content.trim()
     const submittedNickname = nickname.trim()
@@ -142,52 +144,66 @@ export default function GuestCommentInput({
         return
       }
 
+      setIsSubmitting(true)
       // useTransition으로 감싸야 useOptimistic 추가가 server action 완료까지 유지됨
-      startTransition(async () => {
-        // top-level: server 응답 전에 즉시 목록 최상단에 optimistic 추가
-        // (에러 시 transition 종료와 함께 자동 롤백됨)
-        if (isTopLevel) {
-          onOptimisticAdd?.({ content: submittedContent, guestNickname: submittedNickname })
-        }
+      startTransition(() => {
+        void (async () => {
+          try {
+            // top-level: server 응답 전에 즉시 목록 최상단에 optimistic 추가
+            // (에러 시 transition 종료와 함께 자동 롤백됨)
+            if (isTopLevel) {
+              onOptimisticAdd?.({ content: submittedContent, guestNickname: submittedNickname })
+            }
 
-        const result = await createGuestComment({
-          postId,
-          parentId,
-          content: submittedContent,
-          guestNickname: submittedNickname,
-          guestPassword: submittedPassword,
-          turnstileToken: token,
-        })
+            const result = await createGuestComment({
+              postId,
+              parentId,
+              content: submittedContent,
+              guestNickname: submittedNickname,
+              guestPassword: submittedPassword,
+              turnstileToken: token,
+            })
 
-        if (result.error) {
-          toast(result.error, 'error')
-          tokenRef.current = ''
-          if (window.turnstile && widgetIdRef.current) {
-            window.turnstile.reset(widgetIdRef.current)
+            if (result.error) {
+              toast(result.error, 'error')
+              tokenRef.current = ''
+              if (window.turnstile && widgetIdRef.current) {
+                window.turnstile.reset(widgetIdRef.current)
+              }
+              return
+            }
+
+            // 성공 — content 초기화 → showExtraFields=false → widget cleanup은 effect가 처리
+            trackEvent('comment_create', {
+              content_type: 'post',
+              content_id: postId,
+              comment_type: parentId ? 'guest_reply' : 'guest_comment',
+            })
+
+            setContent('')
+            setNickname('')
+            setPassword('')
+            onSuccess?.()
+
+            if (isTopLevel) {
+              sessionStorage.setItem('signup_prompt_shown_this_session', '1')
+              setShowSignupPrompt(true)
+            } else {
+              toast('댓글이 등록됐어요!')
+              // 답글은 optimistic 미적용 → 최신 댓글 트리를 가져와 즉시 반영
+              router.refresh()
+            }
+          } catch (error) {
+            console.error('[GuestCommentInput] submit failed', error)
+            toast('댓글 등록 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.', 'error')
+            tokenRef.current = ''
+            if (window.turnstile && widgetIdRef.current) {
+              window.turnstile.reset(widgetIdRef.current)
+            }
+          } finally {
+            setIsSubmitting(false)
           }
-          return
-        }
-
-        // 성공 — content 초기화 → showExtraFields=false → widget cleanup은 effect가 처리
-        trackEvent('comment_create', {
-          content_type: 'post',
-          content_id: postId,
-          comment_type: parentId ? 'guest_reply' : 'guest_comment',
-        })
-
-        setContent('')
-        setNickname('')
-        setPassword('')
-        onSuccess?.()
-
-        if (isTopLevel) {
-          sessionStorage.setItem('signup_prompt_shown_this_session', '1')
-          setShowSignupPrompt(true)
-        } else {
-          toast('댓글이 등록됐어요!')
-          // 답글은 optimistic 미적용 → 최신 댓글 트리를 가져와 즉시 반영
-          router.refresh()
-        }
+        })()
       })
     } finally {
       setIsLoading(false)
@@ -195,6 +211,14 @@ export default function GuestCommentInput({
   }
 
   const canSubmit = content.trim().length > 0 && nickname.trim().length > 0 && password.length === 4
+  const submitDisabled = isLoading || isSubmitting || isPending || !canSubmit
+  const submitLabel = isLoading
+    ? '보안 확인 중...'
+    : isSubmitting || isPending
+      ? '등록 중...'
+      : isFeedback
+        ? '의견 남기기'
+        : '댓글 남기기'
 
   // 댓글 등록 성공 후 가입 유도 카드 (top-level 전용)
   if (showSignupPrompt) {
@@ -282,10 +306,10 @@ export default function GuestCommentInput({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={isLoading || isPending || !canSubmit}
+          disabled={submitDisabled}
           className="flex-1 flex items-center justify-center min-h-[52px] px-4 bg-primary text-white rounded-xl text-caption font-bold hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading || isPending ? '등록 중...' : isFeedback ? '의견 남기기' : '댓글 남기기'}
+          {submitLabel}
         </button>
         {onCancel && (
           <button

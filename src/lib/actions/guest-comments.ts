@@ -60,43 +60,61 @@ export async function createGuestComment({
   })
   if (!post) return { error: '존재하지 않는 게시글입니다' }
 
-  const guestPasswordHash = await bcrypt.hash(guestPassword, 10)
-
-  let notifyParentAuthorId: string | null = null
-
-  const comment = await prisma.$transaction(async (tx) => {
-    const created = await tx.comment.create({
-      data: {
-        postId,
-        parentId: parentId ?? null,
-        content: trimmedContent,
-        guestNickname: trimmedNickname,
-        guestPasswordHash,
-        authorId: null,
+  let parentAuthorId: string | null = null
+  if (parentId) {
+    const parent = await prisma.comment.findUnique({
+      where: { id: parentId },
+      select: {
+        postId: true,
+        parentId: true,
+        authorId: true,
+        status: true,
       },
-      select: { id: true },
     })
 
-    await tx.post.update({
-      where: { id: postId },
-      data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() },
-    })
-
-    if (parentId) {
-      const parent = await tx.comment.findUnique({
-        where: { id: parentId },
-        select: { authorId: true },
-      })
-      if (parent?.authorId) notifyParentAuthorId = parent.authorId
+    if (!parent || parent.postId !== postId || parent.status !== 'ACTIVE') {
+      return { error: '존재하지 않는 댓글입니다' }
+    }
+    if (parent.parentId) {
+      return { error: '대댓글에는 답글을 달 수 없습니다' }
     }
 
-    return created
-  })
+    parentAuthorId = parent.authorId
+  }
+
+  const guestPasswordHash = await bcrypt.hash(guestPassword, 10)
+
+  let comment: { id: string }
+  try {
+    comment = await prisma.$transaction(async (tx) => {
+      const created = await tx.comment.create({
+        data: {
+          postId,
+          parentId: parentId ?? null,
+          content: trimmedContent,
+          guestNickname: trimmedNickname,
+          guestPasswordHash,
+          authorId: null,
+        },
+        select: { id: true },
+      })
+
+      await tx.post.update({
+        where: { id: postId },
+        data: { commentCount: { increment: 1 }, lastEngagedAt: new Date() },
+      })
+
+      return created
+    })
+  } catch (error) {
+    console.error('[guest-comments] createGuestComment failed', error)
+    return { error: '댓글 등록 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요' }
+  }
 
   // 비회원 답글 → 부모(회원) 댓글 작성자에게 종 알림 + OS 푸시.
   // notifyUser가 봇 수신자(providerId 비숫자)는 자동 제외 → 봇 댓글에 단 답글은 알림 안 감.
-  if (notifyParentAuthorId) {
-    void notifyUser(notifyParentAuthorId, {
+  if (parentAuthorId) {
+    void notifyUser(parentAuthorId, {
       type: 'COMMENT',
       bellContent: `${trimmedNickname}(비회원)님이 회원님의 댓글에 답글을 남겼어요`,
       postId,
