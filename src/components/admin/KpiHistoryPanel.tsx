@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Sparkline from '@/components/admin/Sparkline'
-import { deriveKpiHistory, aggregateWeekly, type SnapshotRow, type Level } from '@/lib/queries/admin/admin.kpi-history'
+import { deriveKpiHistory, aggregateWeekly, aggregateMonthly, type SnapshotRow, type Level } from '@/lib/queries/admin/admin.kpi-history'
 
 const LEVEL_CLS: Record<Level, string> = {
   좋음: 'bg-green-100 text-green-700',
@@ -16,7 +16,8 @@ function Delta({ pct }: { pct: number | null }) {
   return <span className={pct > 0 ? 'font-bold text-green-600' : 'font-bold text-red-600'}>{pct > 0 ? '▲' : '▼'}{Math.abs(pct)}%</span>
 }
 type Period = 7 | 30 | 90
-type Grain = 'day' | 'week'
+type Grain = 'day' | 'week' | 'month'
+const GRAIN_LABEL: Record<Grain, string> = { day: '일별', week: '주별', month: '월별' }
 
 export default function KpiHistoryPanel({ rows }: { rows: SnapshotRow[] }) {
   const [period, setPeriod] = useState<Period>(30)
@@ -32,6 +33,8 @@ export default function KpiHistoryPanel({ rows }: { rows: SnapshotRow[] }) {
   }
   const windowRows = rows.slice(0, period)
   const weekly = aggregateWeekly(windowRows)
+  // 월별은 period(7/30/90일)와 무관 — 로드된 전 기간을 달력월로 집계
+  const monthly = aggregateMonthly(rows)
 
   const overallBorder = k.badges.some((b) => b.level === '위험')
     ? 'border-red-400'
@@ -132,15 +135,18 @@ export default function KpiHistoryPanel({ rows }: { rows: SnapshotRow[] }) {
       {/* ④ 필터 + 정밀표 */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex gap-1">
-          {(['day', 'week'] as Grain[]).map((g) => (
-            <button key={g} onClick={() => setGrain(g)} className={`rounded-lg px-3 py-1.5 text-sm font-bold ${grain === g ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600'}`}>{g === 'day' ? '일별' : '주별'}</button>
+          {(['day', 'week', 'month'] as Grain[]).map((g) => (
+            <button key={g} onClick={() => setGrain(g)} className={`rounded-lg px-3 py-1.5 text-sm font-bold ${grain === g ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600'}`}>{GRAIN_LABEL[g]}</button>
           ))}
         </div>
-        <div className="flex gap-1">
-          {([7, 30, 90] as Period[]).map((p) => (
-            <button key={p} onClick={() => setPeriod(p)} className={`rounded-lg px-3 py-1.5 text-sm font-bold ${period === p ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600'}`}>{p}일</button>
-          ))}
-        </div>
+        {/* 기간(일수) 필터는 일별·주별 전용 — 월별은 로드된 전 기간을 달력월로 집계 */}
+        {grain !== 'month' && (
+          <div className="flex gap-1">
+            {([7, 30, 90] as Period[]).map((p) => (
+              <button key={p} onClick={() => setPeriod(p)} className={`rounded-lg px-3 py-1.5 text-sm font-bold ${period === p ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600'}`}>{p}일</button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-zinc-200">
@@ -171,7 +177,7 @@ export default function KpiHistoryPanel({ rows }: { rows: SnapshotRow[] }) {
               })}
             </tbody>
           </table>
-        ) : (
+        ) : grain === 'week' ? (
           <table className="w-full min-w-[520px] text-right text-sm">
             <thead className="bg-zinc-50 text-xs text-zinc-500"><tr>
               <th className="px-3 py-2 text-left">주(월~일)</th><th className="px-3 py-2">일수</th><th className="px-3 py-2">UV 합</th><th className="px-3 py-2">PV 합</th><th className="px-3 py-2">신규 합</th><th className="px-3 py-2">WAU 평균</th><th className="px-3 py-2">D7 평균</th>
@@ -186,6 +192,29 @@ export default function KpiHistoryPanel({ rows }: { rows: SnapshotRow[] }) {
                   <td className="px-3 py-2 font-bold text-zinc-900">{fmt(w.newSignups)}</td>
                   <td className="px-3 py-2">{fmt(w.wau)}</td>
                   <td className="px-3 py-2 font-bold">{w.d7 == null ? '–' : `${w.d7}%`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <table className="w-full min-w-[560px] text-right text-sm">
+            <thead className="bg-zinc-50 text-xs text-zinc-500"><tr>
+              <th className="px-3 py-2 text-left">월</th><th className="px-3 py-2">일수</th><th className="px-3 py-2">UV 합</th><th className="px-3 py-2">PV 합</th><th className="px-3 py-2">신규 합</th><th className="px-3 py-2">전환%</th><th className="px-3 py-2">WAU 평균</th><th className="px-3 py-2">D1</th><th className="px-3 py-2">D7</th>
+            </tr></thead>
+            <tbody>
+              {monthly.length === 0 ? (
+                <tr><td colSpan={9} className="px-3 py-6 text-center text-zinc-400">집계할 월 데이터가 없습니다.</td></tr>
+              ) : monthly.map((m) => (
+                <tr key={m.key} className="border-t border-zinc-100">
+                  <td className="px-3 py-2 text-left font-bold text-zinc-700">{m.label}</td>
+                  <td className="px-3 py-2 text-zinc-500">{m.days}일</td>
+                  <td className="px-3 py-2">{fmt(m.uv)}</td>
+                  <td className="px-3 py-2">{fmt(m.pv)}</td>
+                  <td className="px-3 py-2 font-bold text-zinc-900">{fmt(m.newSignups)}</td>
+                  <td className="px-3 py-2">{m.conversionRate == null ? '–' : `${m.conversionRate}%`}</td>
+                  <td className="px-3 py-2">{fmt(m.wau)}</td>
+                  <td className="px-3 py-2 text-zinc-500">{m.d1 == null ? '–' : `${m.d1}%`}</td>
+                  <td className="px-3 py-2 font-bold">{m.d7 == null ? '–' : `${m.d7}%`}</td>
                 </tr>
               ))}
             </tbody>

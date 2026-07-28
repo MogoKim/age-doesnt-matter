@@ -56,7 +56,16 @@ export default async function AdminDashboardPage() {
   // 운영 상황판용 완료 스냅샷(DailyKpiSnapshot) — 테이블 부재 등은 빈 배열로 폴백(패널이 안내)
   let snapshotRows: SnapshotRow[] = []
   try {
-    snapshotRows = (await prisma.dailyKpiSnapshot.findMany({ orderBy: { date: 'desc' }, take: 90 })) as unknown as SnapshotRow[]
+    // 월별 뷰(YoY)용 ~13개월 로드. 하루 1행이라 400행. 패널이 실제 쓰는 필드만 select
+    // (memberUv/guestUv/userPosts/userComments/realCustomers/dataQuality 미사용 → 페이로드 슬림화)
+    snapshotRows = (await prisma.dailyKpiSnapshot.findMany({
+      orderBy: { date: 'desc' },
+      take: 400,
+      select: {
+        id: true, date: true, uv: true, pv: true, newSignups: true,
+        conversionRate: true, wau: true, retention: true, channels: true, updatedAt: true,
+      },
+    })) as unknown as SnapshotRow[]
   } catch { /* 패널이 빈 상태 안내 */ }
 
   const boardMax = boards.length > 0 ? Math.max(...boards.map((b) => b.total)) : 1

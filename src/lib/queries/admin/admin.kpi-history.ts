@@ -218,3 +218,61 @@ export function aggregateWeekly(rows: SnapshotRow[]): WeekRow[] {
   }
   return out.sort((a, b) => (a.key < b.key ? 1 : -1))
 }
+
+// ── 월별 집계 (KST 달력월, YYYY-MM) ──
+export interface MonthRow {
+  key: string // YYYY-MM
+  label: string // "YYYY.MM"
+  days: number
+  uv: number
+  pv: number
+  newSignups: number
+  conversionRate: number | null // 월 합 재계산: newSignups합/uv합*100 (일별 %의 단순평균 아님)
+  wau: number // 월 평균
+  d1: number | null // 분모가중 재계산: returned합/denom합*100
+  d7: number | null // 분모가중 재계산
+}
+// retention JSON에서 denom·returned raw 추출 (월 집계 분모가중용). rate만 있는 retRate와 별개.
+function retRaw(retention: unknown, key: 'd1' | 'd7'): { denom: number; returned: number } | null {
+  const r = retention as Record<string, { denom?: number; returned?: number }> | null
+  const e = r?.[key]
+  if (!e || typeof e.denom !== 'number' || typeof e.returned !== 'number') return null
+  return { denom: e.denom, returned: e.returned }
+}
+// rows: date desc → 월별 desc
+export function aggregateMonthly(rows: SnapshotRow[]): MonthRow[] {
+  const map = new Map<string, SnapshotRow[]>()
+  for (const r of rows) {
+    const key = r.date.slice(0, 7) // YYYY-MM
+    const arr = map.get(key) ?? []
+    arr.push(r)
+    map.set(key, arr)
+  }
+  // 비율은 분자·분모 raw 합으로 재계산 (%의 단순평균 금지)
+  const weighted = (rs: SnapshotRow[], dk: 'd1' | 'd7'): number | null => {
+    let denom = 0, returned = 0, any = false
+    for (const r of rs) {
+      const x = retRaw(r.retention, dk)
+      if (x) { denom += x.denom; returned += x.returned; any = true }
+    }
+    return any && denom > 0 ? round1((returned / denom) * 100) : null
+  }
+  const out: MonthRow[] = []
+  for (const [key, rs] of map) {
+    const uv = rs.reduce((s, r) => s + r.uv, 0)
+    const newSignups = rs.reduce((s, r) => s + r.newSignups, 0)
+    out.push({
+      key,
+      label: key.replace('-', '.'),
+      days: rs.length,
+      uv,
+      pv: rs.reduce((s, r) => s + r.pv, 0),
+      newSignups,
+      conversionRate: uv > 0 ? round1((newSignups / uv) * 100) : null,
+      wau: Math.round(rs.reduce((s, r) => s + r.wau, 0) / rs.length),
+      d1: weighted(rs, 'd1'),
+      d7: weighted(rs, 'd7'),
+    })
+  }
+  return out.sort((a, b) => (a.key < b.key ? 1 : -1))
+}
