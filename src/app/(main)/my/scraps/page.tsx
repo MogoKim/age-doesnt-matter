@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth'
 import { getMyScraps } from '@/lib/queries/my'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import PostCard from '@/components/features/community/PostCard'
+import EmptyState from '@/components/ui/EmptyState'
 
 export const metadata: Metadata = {
   title: '스크랩한 글',
@@ -39,18 +40,16 @@ export default async function MyScrapsPage() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-8 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-          <p className="text-body text-muted-foreground leading-[1.8]">
-            아직 스크랩한 글이 없어요.<br />
-            글 아래 북마크 아이콘을 누르면 스크랩할 수 있어요!
-          </p>
+        <EmptyState
+          message={<>아직 스크랩한 글이 없어요.<br />글 아래 북마크 아이콘을 누르면 스크랩할 수 있어요!</>}
+        >
           <Link
             href="/best"
-            className="mt-4 inline-flex items-center justify-center min-h-[52px] px-6 py-3 bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center min-h-[52px] px-6 py-3 bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90"
           >
             스크랩할 글 보러가기
           </Link>
-        </div>
+        </EmptyState>
       )}
     </div>
   )
