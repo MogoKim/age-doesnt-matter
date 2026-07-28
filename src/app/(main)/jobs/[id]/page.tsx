@@ -4,9 +4,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
 import { getJobDetailPublic, type JobDetailPublicItem } from '@/lib/queries/posts'
-import { getCommentsByPostId } from '@/lib/queries/comments'
 import ActionBar from '@/components/features/community/ActionBar'
-import CommentSection from '@/components/features/community/CommentSection'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { formatSalary } from '@/lib/format'
 import GTMEventOnMount from '@/components/common/GTMEventOnMount'
@@ -236,16 +234,9 @@ export default async function JobDetailPage({ params }: PageProps) {
         <NativeAdSlot slotId="jobs-detail-inarticle" minHeight={230} fallback={<AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />} />
       </div>
 
-      {/* 댓글 */}
-      <Suspense fallback={
-        <div className="space-y-4 mt-8">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-20 bg-muted animate-pulse rounded-xl" />
-          ))}
-        </div>
-      }>
-        <JobCommentsLoader postId={id} />
-      </Suspense>
+      {/* 댓글 없음 — 내일찾기는 매거진과 같은 정보성 콘텐츠(공고)라 소통 영역을 두지 않는다.
+          커뮤니티형 게시판(사는이야기·갱년기톡·2막준비·웃음방)만 CommentSection을 렌더한다.
+          ※ 기존 댓글 데이터(Comment 레코드)는 보존한다 — 매거진과 동일하게 UI에서만 미노출. */}
 
       {/* 쿠팡 배너 + 다른 일자리 */}
       <CoupangBanner preset="mobile" className="my-6 rounded-2xl overflow-hidden" />
@@ -257,11 +248,6 @@ export default async function JobDetailPage({ params }: PageProps) {
       <NativeAdSlot slotId="jobs-detail-bottom" minHeight={230} fallback={<AdSenseUnit slotId={ADSENSE.POST_BOTTOM_BANNER} format="auto" className="rounded-2xl overflow-hidden mt-6" />} />
     </div>
   )
-}
-
-async function JobCommentsLoader({ postId }: { postId: string }) {
-  const comments = await getCommentsByPostId(postId)
-  return <CommentSection postId={postId} comments={comments} />
 }
 
 function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
