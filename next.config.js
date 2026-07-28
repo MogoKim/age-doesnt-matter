@@ -65,6 +65,10 @@ const nextConfig = {
     return [
       // www → non-www 권위 통합 (SEO: GSC 도메인 분열 방지)
       { source: '/:path*', has: [{ type: 'host', value: 'www.age-doesnt-matter.com' }], destination: 'https://age-doesnt-matter.com/:path*', permanent: true },
+      // Vercel production alias → canonical 도메인 통합.
+      // Turnstile은 canonical 도메인 기준으로 동작하므로, 실사용자가 vercel.app으로 진입하면 비회원 댓글 보안 검증이 실패할 수 있다.
+      // preview 배포 URL(age-doesnt-matter-*.vercel.app)은 건드리지 않도록 정확한 production alias만 리다이렉트한다.
+      { source: '/:path*', has: [{ type: 'host', value: 'age-doesnt-matter.vercel.app' }], destination: 'https://age-doesnt-matter.com/:path*', permanent: true },
       // 아임웹 레거시 경로 → 현재 경로 301 영구 리다이렉트 (레거시 파라미터 없을 때만 — 있으면 middleware 410)
       { source: '/Humor',          destination: '/community/humor',  permanent: true, missing: legacyMissParams },
       { source: '/Humor/:path*',   destination: '/community/humor',  permanent: true, missing: legacyMissParams },
