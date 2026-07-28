@@ -45,7 +45,7 @@ export default function JobSection({ jobs }: Props) {
                 <span className="h-[26px] px-2.5 bg-destructive text-white rounded-md text-caption font-semibold flex items-center whitespace-nowrap">긴급</span>
               )}
               {job.tags.slice(0, 2).map((tag) => (
-                <span key={tag} className="h-[26px] px-2.5 bg-primary/10 text-[#B23B2E] rounded-md text-caption font-semibold flex items-center whitespace-nowrap">
+                <span key={tag} className="h-[26px] px-2.5 bg-primary/10 text-primary-strong rounded-md text-caption font-semibold flex items-center whitespace-nowrap">
                   {tag}
                 </span>
               ))}
@@ -54,7 +54,7 @@ export default function JobSection({ jobs }: Props) {
             <div className="text-caption text-muted-foreground mb-2 flex items-center gap-1.5">
               <span>{job.location}</span>
               <span>·</span>
-              <span className="text-[#B23B2E] font-bold">{formatSalary(job.salary)}</span>
+              <span className="text-primary-strong font-bold">{formatSalary(job.salary)}</span>
             </div>
             {job.highlight && <p className="text-caption text-muted-foreground leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis">{job.highlight}</p>}
           </HomeCardLink>

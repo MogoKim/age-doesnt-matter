@@ -41,6 +41,8 @@ const config: Config = {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
           text: 'hsl(var(--primary-text))',
+          // 작은 글씨(배지·태그·caption)용 진한 코랄 #B23B2E — text-primary-text가 대비 경계라 별도 토큰.
+          strong: 'hsl(var(--primary-strong))',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
