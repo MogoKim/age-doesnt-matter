@@ -315,7 +315,9 @@ export async function getHallOfFamePosts(
   const { skip = 0, limit = 12, q, sf } = options ?? {}
   const where = {
     status: 'PUBLISHED' as const,
-    boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] as BoardType[] },
+    // /best 명예의전당 탭 "검색" 경로 전용 배열 — 비검색 경로는 best-compose.ts의 COMMUNITY_BOARDS가 담당.
+    // 두 배열이 어긋나면 "목록엔 뜨는데 검색하면 안 나오는" 상태가 된다(MENOPAUSE 누락 사례).
+    boardType: { in: ['STORY', 'HUMOR', 'LIFE2', 'MENOPAUSE'] as BoardType[] },
     promotionLevel: 'HALL_OF_FAME' as PromotionLevel,
     ...buildTextSearch(q, sf),
     AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(검색 OR과 교집합)
@@ -399,7 +401,9 @@ export async function getAccumulatedHotPosts(
   const { skip = 0, limit = 12, q, sf } = options ?? {}
   const where = {
     status: 'PUBLISHED' as const,
-    boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] as BoardType[] },
+    // /best 뜨는이야기 탭 "검색" 경로 전용 배열 — 비검색 경로는 best-compose.ts의 COMMUNITY_BOARDS가 담당.
+    // 두 배열이 어긋나면 "목록엔 뜨는데 검색하면 안 나오는" 상태가 된다(MENOPAUSE 누락 사례).
+    boardType: { in: ['STORY', 'HUMOR', 'LIFE2', 'MENOPAUSE'] as BoardType[] },
     hotPromotedAt: { not: null },
     ...buildTextSearch(q, sf),
     AND: [EXCLUDE_GREETING, EXCLUDE_EVENT], // 가입인사 제외(검색 OR과 교집합)
