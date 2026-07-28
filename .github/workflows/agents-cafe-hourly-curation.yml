@@ -161,3 +161,9 @@ jobs:
           }
 
           run_with_emaxconn_retry "content curator" bash -lc "cd agents && npx tsx cron/runner.ts cafe_crawler content-curate"
+        env:
+          # source 편중 완화 1차 실험 ON (2026-07-28) — 같은 killerScore 10점 밴드 안에서만
+          # 최근 7일 발행 참조 점유가 낮은 cafeId를 먼저 세운다(품질 floor·후보 쿼리·캡 불변).
+          # 목적: 레몬테라스/우갱 편중 완화로 40~60대 고객에게 다양한 커뮤니티 글 공급.
+          # 롤백 = 이 env 줄 삭제(코드 revert 불필요, 코드 기본값 off).
+          SOURCE_DIVERSITY_SORT: 'on'
