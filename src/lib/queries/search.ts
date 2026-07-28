@@ -6,6 +6,13 @@ import { EXCLUDE_GREETING } from '@/lib/greeting'
 import { EXCLUDE_EVENT } from '@/lib/event-category'
 import type { PostSummary, UserSummary, Grade } from '@/types/api'
 
+/**
+ * 검색 '게시글' 탭 대상 커뮤니티 게시판.
+ * findMany와 count 두 곳에서 쓰므로 상수로 고정한다 — 한쪽만 바꾸면 목록과 건수가 어긋난다.
+ * (MENOPAUSE 누락으로 갱년기톡 글이 검색에 안 잡히던 것을 2026-07-27 보강)
+ */
+const COMMUNITY_SEARCH_BOARDS: BoardType[] = ['STORY', 'HUMOR', 'LIFE2', 'MENOPAUSE']
+
 /* ── 헬퍼 (posts.ts와 동일 패턴) ── */
 
 function toUserSummary(user: {
@@ -127,12 +134,12 @@ export async function searchAll(
     tab === 'all' || tab === 'posts'
       ? Promise.all([
           prisma.post.findMany({
-            where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] }, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] },
+            where: { ...textFilter, boardType: { in: COMMUNITY_SEARCH_BOARDS }, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] },
             select: postSelect,
             orderBy: { createdAt: 'desc' },
             take: tab === 'posts' ? 20 : limit,
           }),
-          prisma.post.count({ where: { ...textFilter, boardType: { in: ['STORY', 'HUMOR', 'LIFE2'] }, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] } }),
+          prisma.post.count({ where: { ...textFilter, boardType: { in: COMMUNITY_SEARCH_BOARDS }, AND: [EXCLUDE_GREETING, EXCLUDE_EVENT] } }),
         ])
       : Promise.resolve([[], 0] as const),
 

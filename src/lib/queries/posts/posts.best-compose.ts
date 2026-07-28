@@ -15,7 +15,10 @@ import { EXCLUDE_EVENT } from '@/lib/event-category'
  * 검색어(q)가 있으면 큐레이션 미적용 — 원본 결과 그대로.
  */
 
-const COMMUNITY_BOARDS = ['STORY', 'HUMOR', 'LIFE2'] as BoardType[]
+// 베스트 후보 게시판. MENOPAUSE 누락 시 갱년기톡 글은 아무리 인기가 높아도 /best에 영구 미노출된다.
+// ※ 이 배열은 목록·PIN·카운트 경로만 담당한다. 베스트 탭 내 검색(q)은 rawSearch로 위임되며
+//   getAccumulatedHotPosts / getHallOfFamePosts(posts.trending.ts)가 자체 배열을 들고 있다 — 함께 맞출 것.
+const COMMUNITY_BOARDS = ['STORY', 'HUMOR', 'LIFE2', 'MENOPAUSE'] as BoardType[]
 // 뜨는이야기 select은 hotPromotedAt 포함(표시용). toPostSummary가 optional 처리.
 const hotSelect = { ...postSelect, hotPromotedAt: true } as const
 
