@@ -1,6 +1,7 @@
 import { notFound, permanentRedirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { getBoardConfig } from '@/lib/queries/boards'
 import { getCachedBoardPage } from '@/lib/queries/posts'
 import BoardFilter from '@/components/features/community/BoardFilter'
@@ -205,6 +206,19 @@ export default async function BoardListPage({ params }: PageProps) {
       {/* GA4 게시판 조회 이벤트 */}
       <BoardViewTracker boardType={board.boardType} boardSlug={boardSlug} />
       <h1 className="sr-only">{board.displayName}</h1>
+
+      {/* 갱년기톡 ↔ 갱년기 주제 허브 양방향 연결 (허브는 매거진·갱년기톡 글을 주제별로 묶는다) */}
+      {boardSlug === 'menopause' && (
+        <Link
+          href="/topic/menopause"
+          className="mb-3 flex min-h-[52px] items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+        >
+          <span className="text-body font-bold leading-[1.5] text-foreground">
+            폐경·완경, 몸의 변화, 감정과 관계, 병원 선택 — 갱년기 이야기 주제별로 모아보기
+          </span>
+          <span aria-hidden className="shrink-0 text-body font-bold text-primary-text">›</span>
+        </Link>
+      )}
 
       {/* PWA 인라인 배너 (미설치 + 비차단 환경에서만 노출) */}
       <PwaInlineBanner />

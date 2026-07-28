@@ -37,6 +37,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/jobs`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE_URL}/magazine`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE_URL}/guide`, changeFrequency: 'weekly', priority: 0.7 },
+    // 갱년기 주제 허브 — 매거진·갱년기톡의 갱년기 글을 주제별로 묶는 내부링크 축
+    { url: `${BASE_URL}/topic/menopause`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE_URL}/best`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${BASE_URL}/search`, changeFrequency: 'weekly', priority: 0.4 },
     { url: `${BASE_URL}/terms`, changeFrequency: 'yearly', priority: 0.2 },
