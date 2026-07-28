@@ -6,6 +6,7 @@ on:
     # 월요일 09:30 KST = 00:30 UTC — CTO 코드 품질 가비지 컬렉션
     - cron: "30 0 * * 1"
     - cron: "0 1 * * 1"   # F-12: 매주 월 10:00 KST — 30일 경과 탈퇴회원 PII 자동 익명화
+    - cron: "30 1 * * 1"  # PR-E: 매주 월 10:30 KST — 주간 Google SEO 스냅샷 (GSC read-only 관측)
   workflow_dispatch:
     inputs:
       agent:
@@ -31,6 +32,10 @@ env:
   SLACK_CHANNEL_LOG: ${{ secrets.SLACK_CHANNEL_LOG }}
   SLACK_CHANNEL_AGENT: ${{ secrets.SLACK_CHANNEL_AGENT }}
   SITE_URL: ${{ secrets.SITE_URL }}
+  # PR-E 주간 SEO 스냅샷 — GSC read-only 조회용 서비스 계정(base64 JSON)
+  GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+  # 미설정 시 코드가 sc-domain:age-doesnt-matter.com 으로 fallback 한다
+  SEARCH_CONSOLE_SITE_URL: ${{ secrets.SEARCH_CONSOLE_SITE_URL }}
 
 concurrency:
   group: ${{ github.workflow }}
@@ -75,6 +80,8 @@ jobs:
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=garbage-collect" >> $GITHUB_OUTPUT ;;
               "0 1 * * 1")
                 echo "agent=cto" >> $GITHUB_OUTPUT; echo "task=anonymize-withdrawn-apply" >> $GITHUB_OUTPUT ;;
+              "30 1 * * 1")
+                echo "agent=cmo" >> $GITHUB_OUTPUT; echo "task=seo-snapshot" >> $GITHUB_OUTPUT ;;
               *)
                 echo "agent=skip" >> $GITHUB_OUTPUT; echo "task=skip" >> $GITHUB_OUTPUT ;;
             esac

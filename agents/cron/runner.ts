@@ -25,6 +25,7 @@ const MONITORING_TASKS = new Set([
   'cdo:anomaly-detector',
   'cto:qa-verify',
   'cafe:session-refresh',  // LOCKED 상태에서도 세션 유지 필수 (크롤러 재가동 보장)
+  'cmo:seo-snapshot',      // read-only 관측 — 자동화 중단 중에도 SEO 추이는 계속 봐야 한다
 ])
 
 const HANDLERS: Record<string, () => Promise<void>> = {
@@ -123,6 +124,7 @@ const HANDLERS: Record<string, () => Promise<void>> = {
   // cmo:card-news-generator — 삭제됨 2026-05-15 (카드뉴스 중단, 코드 삭제)
   // cmo:social-poster-visual — 삭제됨 2026-05-15 (카드뉴스 SNS 게시 중단, 코드 삭제)
   'cmo:seo-optimizer': () => import('../cmo/seo-optimizer.js').then(() => {}),
+  'cmo:seo-snapshot': () => import('../cmo/seo-snapshot.js').then(() => {}), // 주간 GSC 관측 (read-only)
   'cmo:threads-token-refresh': () => import('../cmo/platforms/threads-token-refresh.js').then(() => {}),
 
   // Design 에이전트 (LOCAL ONLY — Gemini API + Playwright)
