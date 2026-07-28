@@ -62,6 +62,47 @@ interface CandidateTopic {
   desireCategory?: string
 }
 
+// ─── source 편중 완화 정렬 (1차 실험 2026-07-28, 기본 OFF) ─────────────────
+// 배경: killerScore 전역 desc 정렬 + remonterrace 고품질 재고 압도(7일 usedAt 63%)로
+//   후보 상위가 특정 카페에 자연 독점되는 문제. 고정 % cap 대신 "같은 품질 밴드(10점)
+//   안에서만" 최근 7일 발행 참조 점유율이 낮은 source를 먼저 세운다.
+//   → 품질 순위(밴드 간)는 불변, floor(killerScore≥50·isUsable 등)도 불변.
+//   플래그 off면 조회·정렬 모두 기존과 100% 동일(추가 쿼리 0).
+const SOURCE_DIVERSITY_SORT = process.env.SOURCE_DIVERSITY_SORT === 'on'
+
+/** 최근 7일 usedAt(발행 참조 소모) 기준 cafeId별 점유율(0~1) */
+async function fetchUsedShare7d(): Promise<Map<string, number>> {
+  const grouped = await prisma.cafePost.groupBy({
+    by: ['cafeId'],
+    where: { usedAt: { gte: new Date(Date.now() - 7 * 24 * 3600_000) } },
+    _count: true,
+  })
+  const total = grouped.reduce((s, g) => s + g._count, 0)
+  const map = new Map<string, number>()
+  if (total === 0) return map
+  for (const g of grouped) map.set(g.cafeId, g._count / total)
+  return map
+}
+
+/**
+ * 같은 killerScore 10점 밴드 안에서만 저점유 cafeId 우선.
+ * 정렬 키: 밴드 desc → 7일 점유율 asc → killerScore desc (밴드 간 품질 순위 불훼손)
+ */
+function applyDiversitySort<T extends { killerScore: number | null; cafeId: string }>(
+  rows: T[],
+  usedShare: Map<string, number>,
+): T[] {
+  return [...rows].sort((a, b) => {
+    const bandA = Math.floor((a.killerScore ?? 0) / 10)
+    const bandB = Math.floor((b.killerScore ?? 0) / 10)
+    if (bandA !== bandB) return bandB - bandA
+    const shareA = usedShare.get(a.cafeId) ?? 0
+    const shareB = usedShare.get(b.cafeId) ?? 0
+    if (shareA !== shareB) return shareA - shareB
+    return (b.killerScore ?? 0) - (a.killerScore ?? 0)
+  })
+}
+
 interface TopicResult extends CandidateTopic {
   refsCount: number
   skipReason: SkipReason | null
@@ -695,7 +736,9 @@ export async function main() {
   // ─── killerPosts 날짜 제한 7일 (Fix 1) ───────────────────────
   // 날짜 제한으로 34일된 "청국장" 등 오래된 글의 영구 재선발 차단
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  const killerPosts = await prisma.cafePost.findMany({
+  // [source diversity] 플래그 on일 때만 7일 점유율 1회 조회 — off면 추가 쿼리 0, 기존 동작과 완전 동일
+  const usedShare7d = SOURCE_DIVERSITY_SORT ? await fetchUsedShare7d() : null
+  const killerPostsRaw = await prisma.cafePost.findMany({
     where: {
       killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true },
       crawledAt: { gte: sevenDaysAgo },  // crawledAt은 항상 설정됨(NOT NULL) — postedAt null 허용
@@ -704,8 +747,14 @@ export async function main() {
     },
     orderBy: { killerScore: 'desc' },
     take: 30,  // P0-A: 격리 후보를 건너뛰고 상위 2건을 확보하기 위해 넉넉히 조회(풀 크기는 slice로 2 유지)
-    select: { id: true, title: true, postedAt: true, killerScore: true, desireCategory: true },
+    select: { id: true, title: true, postedAt: true, killerScore: true, desireCategory: true, cafeId: true },
   })
+  // [source diversity] 같은 10점 밴드 안에서만 저점유 source 우선(밴드 간 품질 순위·floor 불변)
+  const killerPosts = usedShare7d ? applyDiversitySort(killerPostsRaw, usedShare7d) : killerPostsRaw
+  if (usedShare7d) {
+    const shareLog = [...usedShare7d.entries()].map(([c, s]) => `${c}:${Math.round(s * 100)}%`).join(' ')
+    console.log(`[ContentCurator] source diversity ON — 7일 점유 ${shareLog}`)
+  }
 
   // ─── candidatePool 구성 (Fix 2-B) ─────────────────────────────
   // [2단계 보충 2026-07-09] killer 후보를 slice 없이 전량 보유(최대 take 30). base 4개 유지 + trend가 못 채운
@@ -743,7 +792,7 @@ export async function main() {
   const publishableSlots = Math.max(0, CANDIDATE_POOL_SIZE - killerCandidates.length - supplementalKiller.length)
   let publishableCandidates: CandidateTopic[] = []
   if (publishableSlots > 0 && PUBLISHABLE_ONLY_CAFE_IDS.length > 0) {
-    const publishablePosts = await prisma.cafePost.findMany({
+    const publishablePostsRaw = await prisma.cafePost.findMany({
       where: {
         killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false,
         imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true }, commentCrawled: true,
@@ -752,9 +801,11 @@ export async function main() {
       },
       orderBy: { killerScore: 'desc' },
       take: 30,
-      select: { id: true, title: true, postedAt: true, killerScore: true, desireCategory: true },
+      select: { id: true, title: true, postedAt: true, killerScore: true, desireCategory: true, cafeId: true },
     })
-    type PublishablePostRow = { id: string; title: string; postedAt: Date | null; killerScore: number | null; desireCategory: string | null }
+    // [source diversity] killer lane과 동일한 밴드 내 재정렬 (off면 원본 그대로)
+    const publishablePosts = usedShare7d ? applyDiversitySort(publishablePostsRaw, usedShare7d) : publishablePostsRaw
+    type PublishablePostRow = { id: string; title: string; postedAt: Date | null; killerScore: number | null; desireCategory: string | null; cafeId: string }
     publishableCandidates = (publishablePosts as PublishablePostRow[])
       .filter((p: PublishablePostRow) => !isDesireExhausted(p.desireCategory ?? 'GENERAL') && !quarantinedPostIds.has(p.id) && !quarantinedTopics.has(p.title))
       .slice(0, publishableSlots)
@@ -988,6 +1039,12 @@ export async function main() {
     ? await getRepeatedZeroPublishAlert(topicResults)
     : null
 
+  // [source diversity] 이번 회차 발행 참조(cafeId) 분포 — 편중 관찰 계측(플래그 off여도 기록해 before/after 비교 가능)
+  const publishedCafeIds: Record<string, number> = await prisma.cafePost
+    .groupBy({ by: ['cafeId'], where: { usedAt: { gte: new Date(startTime) } }, _count: true })
+    .then((g) => Object.fromEntries(g.map((x) => [x.cafeId, x._count])))
+    .catch(() => ({}))
+
   // BotLog — topicsUsed: 실제 시도한 topic만 (candidatePool 전체 아님)
   await prisma.botLog.create({
     data: {
@@ -1007,6 +1064,12 @@ export async function main() {
         // [Phase 1-b] publishable lane 카운트 (additive — 기존 필드 제거·개명 없음). lane이 보충 전용이라 두 값 동일.
         publishableCandidateCount: publishableCandidates.length,
         supplementalPublishableCandidateCount: publishableCandidates.length,
+        // [source diversity 1차 실험] additive 계측 — 편중 관찰용(파서 호환: 신규 키만 추가)
+        sourceDiversity: {
+          enabled: SOURCE_DIVERSITY_SORT,
+          usedShare7d: usedShare7d ? Object.fromEntries([...usedShare7d.entries()].map(([c, s]) => [c, Math.round(s * 1000) / 1000])) : null,
+          publishedCafeIds,
+        },
         selfRefUsedCount,
         skipBySource,
         publishedBySource,
