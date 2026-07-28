@@ -181,7 +181,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
     <section className="mb-12">
       {bestComments.length > 0 && (
         <div className="mb-6 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-          <p className="text-caption font-bold text-[#B23B2E] mb-2">{L.popular}</p>
+          <p className="text-caption font-bold text-primary-strong mb-2">{L.popular}</p>
           {bestComments.map((comment) => (
             <CommentItemComponent
               key={`best-${comment.id}`}
