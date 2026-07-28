@@ -23,13 +23,13 @@ describe('shouldGoogleNoindexCommunityPost — 구글 전용 저품질 색인 �
     expect(shouldGoogleNoindexCommunityPost(post(), NOW)).toBe(true)
   })
 
-  it('대상 보드 3종 전부 적용', () => {
-    for (const boardType of ['STORY', 'LIFE2', 'HUMOR']) {
+  it('글 단위 판단 대상 보드 2종 적용', () => {
+    for (const boardType of ['STORY', 'LIFE2']) {
       expect(shouldGoogleNoindexCommunityPost(post({ boardType }), NOW), boardType).toBe(true)
     }
   })
 
-  it('MENOPAUSE는 1차 전면 보호 → false', () => {
+  it('MENOPAUSE는 전면 보호 → false', () => {
     expect(shouldGoogleNoindexCommunityPost(post({ boardType: 'MENOPAUSE' }), NOW)).toBe(false)
   })
 
@@ -84,5 +84,70 @@ describe('shouldGoogleNoindexCommunityPost — 구글 전용 저품질 색인 �
   it('content null/빈 문자열은 길이 0 → 대상', () => {
     expect(shouldGoogleNoindexCommunityPost(post({ content: null }), NOW)).toBe(true)
     expect(shouldGoogleNoindexCommunityPost(post({ content: '' }), NOW)).toBe(true)
+  })
+})
+
+describe('shouldGoogleNoindexCommunityPost — HUMOR 보드 전면 제외 (PR-B2)', () => {
+  const humor = (o: Partial<CommunityGoogleNoindexInput> = {}) => post({ boardType: 'HUMOR', ...o })
+
+  it('기본 HUMOR → true', () => {
+    expect(shouldGoogleNoindexCommunityPost(humor(), NOW)).toBe(true)
+  })
+
+  it('본문이 길어도 true (B1 길이 조건 무시)', () => {
+    expect(shouldGoogleNoindexCommunityPost(humor({ content: `<p>${'가'.repeat(3000)}</p>` }), NOW)).toBe(true)
+  })
+
+  it('댓글이 많아도 true (B1 반응 조건 무시)', () => {
+    expect(shouldGoogleNoindexCommunityPost(humor({ commentCount: 50 }), NOW)).toBe(true)
+  })
+
+  it('SEO 메타가 완비돼도 true (B1 메타 조건 무시)', () => {
+    expect(shouldGoogleNoindexCommunityPost(humor({ seoTitle: 'T', seoDescription: 'D' }), NOW)).toBe(true)
+  })
+
+  it('작성 14일 미만 신규 글도 true (B1 유예 무시)', () => {
+    expect(shouldGoogleNoindexCommunityPost(humor({ createdAt: FRESH }), NOW)).toBe(true)
+    expect(shouldGoogleNoindexCommunityPost(humor({ createdAt: NOW }), NOW)).toBe(true)
+  })
+
+  it('createdAt이 파싱 불가여도 true (보드 판정이 먼저)', () => {
+    expect(shouldGoogleNoindexCommunityPost(humor({ createdAt: 'not-a-date' }), NOW)).toBe(true)
+  })
+
+  it('모든 보호 조건을 동시에 갖춘 HUMOR도 true', () => {
+    expect(
+      shouldGoogleNoindexCommunityPost(
+        humor({
+          content: `<p>${'가'.repeat(1500)}</p>`,
+          commentCount: 30,
+          seoTitle: 'T',
+          seoDescription: 'D',
+          createdAt: NOW,
+        }),
+        NOW,
+      ),
+    ).toBe(true)
+  })
+
+  it('MENOPAUSE는 B2 확대 대상이 아니다 → 조건 무관하게 false', () => {
+    const menopause = (o: Partial<CommunityGoogleNoindexInput> = {}) => post({ boardType: 'MENOPAUSE', ...o })
+    expect(shouldGoogleNoindexCommunityPost(menopause(), NOW)).toBe(false)
+    expect(shouldGoogleNoindexCommunityPost(menopause({ content: null, commentCount: 0 }), NOW)).toBe(false)
+  })
+
+  it('STORY/LIFE2는 B2 영향 없음 — 보호 조건 하나라도 있으면 false 유지', () => {
+    for (const boardType of ['STORY', 'LIFE2']) {
+      expect(shouldGoogleNoindexCommunityPost(post({ boardType, commentCount: 1 }), NOW), boardType).toBe(false)
+      expect(
+        shouldGoogleNoindexCommunityPost(post({ boardType, content: `<p>${'가'.repeat(400)}</p>` }), NOW),
+        boardType,
+      ).toBe(false)
+      expect(
+        shouldGoogleNoindexCommunityPost(post({ boardType, seoTitle: 'T', seoDescription: 'D' }), NOW),
+        boardType,
+      ).toBe(false)
+      expect(shouldGoogleNoindexCommunityPost(post({ boardType, createdAt: FRESH }), NOW), boardType).toBe(false)
+    }
   })
 })

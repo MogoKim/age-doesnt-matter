@@ -78,7 +78,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: post.seoDescription ?? description,
     },
     // 가입인사·참여이벤트 글은 검색엔진 색인 제외(내부 콘텐츠 — 목록/sitemap에서도 제외, 이벤트는 /events로 redirect).
-    // 이 정책이 항상 우선한다. 해당되지 않는 일반 글 중 저품질(PR-B1 조건)만 **구글에만** 색인 제외하고,
+    // 이 정책이 항상 우선한다. 해당되지 않는 일반 글 중 STORY/LIFE2 저품질(PR-B1)과 HUMOR 전체(PR-B2)를 **구글에만** 색인 제외하고,
     // 네이버 등 다른 봇에는 index/follow를 유지한다(sitemap·robots.txt 무변경 — 네이버 수집 경로 보존).
     ...(post.category === GREETING_CATEGORY || post.category === EVENT_CATEGORY
       ? { robots: { index: false, follow: false } }
