@@ -798,7 +798,7 @@ export async function main(): Promise<MagazineRunResult[]> {
     await postPublishQA({ ...richArticle, thumbnailUrl }, category)
 
     // Google 인덱싱 요청 (환경변수 미설정 시 자동 skip)
-    const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/magazine/${postSlug}`
+    const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/magazine/${postSlug}`
     await requestGoogleIndexing(postUrl).catch(err => console.warn('[Indexing] 실패 (무시):', err))
 
     // CPS 상품 매칭 + 저장
