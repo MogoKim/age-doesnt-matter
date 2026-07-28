@@ -112,6 +112,13 @@ function ResultSection({
 
 /* ── 검색 결과 카드 ── */
 
+/**
+ * 댓글 영역이 없는 정보성 보드 — 검색 결과에서도 댓글 수를 표시하지 않는다.
+ * 상세(매거진·내일찾기)에 CommentSection이 없으므로, 검색에만 "댓글 3"이 보이면
+ * 눌러도 댓글이 없는 불일치가 된다. 커뮤니티 4보드(STORY/MENOPAUSE/LIFE2/HUMOR)는 그대로 노출.
+ */
+const INFO_ONLY_BOARDS = new Set<string>(['JOB', 'MAGAZINE'])
+
 function SearchResultCard({ post, query }: { post: PostSummary; query: string }) {
   const boardSlug = BOARD_TYPE_TO_SLUG[post.boardType] ?? 'stories'
   const href = post.boardType === 'JOB'
@@ -142,7 +149,9 @@ function SearchResultCard({ post, query }: { post: PostSummary; query: string })
       <div className="flex items-center gap-3 text-caption text-muted-foreground mt-2">
         <span>{post.author.gradeEmoji} {post.author.nickname}</span>
         <span>❤️ {post.likeCount}</span>
-        <span>💬 {post.commentCount}</span>
+        {/* 매거진·내일찾기는 상세에 댓글 영역이 없는 정보성 콘텐츠 → 검색에서도 댓글 수를 숨긴다.
+            (좋아요는 세 보드 모두 상세에 ActionBar가 있어 그대로 노출) */}
+        {!INFO_ONLY_BOARDS.has(post.boardType) && <span>💬 {post.commentCount}</span>}
         <span>{formatTimeAgo(post.createdAt)}</span>
       </div>
     </Link>
