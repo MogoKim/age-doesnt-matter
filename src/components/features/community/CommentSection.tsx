@@ -197,7 +197,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
       <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-foreground">
         {camp && voteBadges ? (
           <h3 className="text-lg font-bold text-foreground m-0">
-            <span className="text-[14px] font-normal text-muted-foreground">댓글 진영 · </span>
+            <span className="text-caption font-normal text-muted-foreground">댓글 진영 · </span>
             <span className="text-primary-text">{campLabel(voteBadges.optionA)} {camp.a}</span>
             <span className="text-muted-foreground font-normal"> · </span>
             <span className="text-slate-600">{campLabel(voteBadges.optionB)} {camp.b}</span>
@@ -209,7 +209,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
         )}
         <div className="flex gap-1">
           <button
-            className={`px-4 py-2 rounded-full text-[17px] font-bold cursor-pointer min-h-[52px] transition-colors ${
+            className={`px-4 py-2 rounded-full text-caption font-bold cursor-pointer min-h-[52px] transition-colors ${
               sort === 'oldest'
                 ? 'bg-primary/5 border border-primary text-primary-text'
                 : 'bg-none border border-transparent text-foreground hover:bg-background'
@@ -219,7 +219,7 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
             등록순
           </button>
           <button
-            className={`px-4 py-2 rounded-full text-[17px] font-bold cursor-pointer min-h-[52px] transition-colors ${
+            className={`px-4 py-2 rounded-full text-caption font-bold cursor-pointer min-h-[52px] transition-colors ${
               sort === 'likes'
                 ? 'bg-primary/5 border border-primary text-primary-text'
                 : 'bg-none border border-transparent text-foreground hover:bg-background'
@@ -252,13 +252,13 @@ export default function CommentSection({ postId, comments, isLoggedIn, currentUs
 
       {/* 투표형 글: 입력창 위 진영 문구 */}
       {voteBadges && (
-        <p className="mb-2 text-[15px] font-bold text-primary-text">
+        <p className="mb-2 text-caption font-bold text-primary-text">
           {myCampPhrase ?? '먼저 투표하고 참여해보세요'}
         </p>
       )}
 
       {readOnly ? (
-        <p className="mt-2 rounded-2xl bg-muted/60 px-4 py-4 text-center text-[15px] text-muted-foreground">
+        <p className="mt-2 rounded-2xl bg-muted/60 px-4 py-4 text-center text-caption text-muted-foreground">
           {isFeedback ? '의견 받기가 마감됐어요. 남겨주신 의견은 소중히 반영할게요.' : '댓글이 마감됐어요.'}
         </p>
       ) : !authKnown ? (

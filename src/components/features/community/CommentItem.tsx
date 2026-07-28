@@ -119,7 +119,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
 
   if (comment.isDeleted || optimisticDeleted) {
     return (
-      <div className="py-4 border-b border-border text-muted-foreground text-[17px] italic">
+      <div className="py-4 border-b border-border text-muted-foreground text-body italic">
         삭제된 댓글입니다.
         {comment.replies.length > 0 && (
           <div>
@@ -141,19 +141,19 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
     >
       <div className="flex items-center gap-1.5 mb-1.5">
         {isBest && (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-primary text-white leading-none shrink-0">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-caption font-bold bg-primary text-white leading-none shrink-0">
             BEST
           </span>
         )}
         {comment.isGuest ? (
           <>
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-caption bg-muted text-muted-foreground font-medium leading-none">비회원</span>
-            <span className="text-[17px] font-bold text-foreground">{comment.guestNickname}</span>
+            <span className="text-body font-bold text-foreground">{comment.guestNickname}</span>
           </>
         ) : comment.author ? (
           <>
-            <span className="text-[17px]">{comment.author.gradeEmoji}</span>
-            <span className="text-[17px] font-bold text-foreground">{comment.author.nickname}</span>
+            <span className="text-body">{comment.author.gradeEmoji}</span>
+            <span className="text-body font-bold text-foreground">{comment.author.nickname}</span>
             {(() => {
               const choice = campBadges?.byUserId[comment.author.id]
               if (!choice) return null
@@ -161,28 +161,28 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
               // A진영=코랄 / B진영=슬레이트 — 진영 구분
               const tone = choice === 'A' ? 'bg-primary/10 text-primary-text' : 'bg-slate-100 text-slate-600'
               return (
-                <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded-full text-[12px] font-bold leading-none shrink-0', tone)}>
+                <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded-full text-caption font-bold leading-none shrink-0', tone)}>
                   {label}
                 </span>
               )
             })()}
           </>
         ) : null}
-        <span className="text-[17px] text-muted-foreground">· {formatTimeAgo(comment.createdAt)}</span>
+        <span className="text-caption text-muted-foreground">· {formatTimeAgo(comment.createdAt)}</span>
 
         {/* 회원 본인 댓글 수정/삭제 */}
         {comment.isOwn && !comment.isGuest && (
           <div className="ml-auto flex items-center gap-1">
             {comment.canEdit && (
               <button
-                className="text-[17px] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary-text transition-colors"
+                className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary-text transition-colors"
                 onClick={() => { setIsEditing(!isEditing); setEditValue(comment.content) }}
               >
                 수정
               </button>
             )}
             <button
-              className="text-[17px] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
+              className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
               onClick={handleDelete}
               disabled={isPending}
             >
@@ -195,13 +195,13 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         {comment.isGuest && (
           <div className="ml-auto flex items-center gap-1">
             <button
-              className="text-[17px] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary-text transition-colors"
+              className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-primary-text transition-colors"
               onClick={() => setGuestModal('edit')}
             >
               수정
             </button>
             <button
-              className="text-[17px] text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
+              className="text-caption text-muted-foreground px-3 py-2 min-h-[52px] hover:text-destructive transition-colors"
               onClick={() => setGuestModal('delete')}
             >
               삭제
@@ -221,13 +221,13 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
           />
           <div className="flex justify-end gap-2 mt-2">
             <button
-              className="px-4 py-2 text-[17px] font-bold text-muted-foreground min-h-[52px] rounded-lg hover:text-foreground transition-colors"
+              className="px-4 py-2 text-caption font-bold text-muted-foreground min-h-[52px] rounded-lg hover:text-foreground transition-colors"
               onClick={() => setIsEditing(false)}
             >
               취소
             </button>
             <button
-              className="px-4 py-2 text-[17px] font-bold text-white bg-primary rounded-lg min-h-[52px] hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-caption font-bold text-white bg-primary rounded-lg min-h-[52px] hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed transition-colors"
               onClick={handleEdit}
               disabled={isPending || !editValue.trim()}
             >
@@ -242,7 +242,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
       <div className="flex items-center gap-4">
         <button
           className={cn(
-            'flex items-center gap-1 bg-none border-none text-muted-foreground text-[17px] cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5',
+            'flex items-center gap-1 bg-none border-none text-muted-foreground text-caption cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5',
             isLiked && 'text-primary-text font-bold'
           )}
           onClick={handleLike}
@@ -253,7 +253,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         </button>
         {!isReply && (
           <button
-            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-[17px] cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
+            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-caption cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
             onClick={() => setShowReplyInput(!showReplyInput)}
             aria-label="답글"
           >
