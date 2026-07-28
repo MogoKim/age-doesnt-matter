@@ -139,7 +139,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         isReply && 'pl-8 bg-background rounded-lg p-4 pl-8 mt-1 border-b-0 relative before:content-[""] before:absolute before:left-4 before:top-4 before:bottom-4 before:w-0.5 before:bg-primary/20 before:rounded-sm'
       )}
     >
-      <div className="flex items-center gap-1.5 mb-1.5">
+      <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
         {isBest && (
           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-caption font-bold bg-primary text-white leading-none shrink-0">
             BEST
@@ -161,7 +161,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
               // A진영=코랄 / B진영=슬레이트 — 진영 구분
               const tone = choice === 'A' ? 'bg-primary/10 text-primary-text' : 'bg-slate-100 text-slate-600'
               return (
-                <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded-full text-caption font-bold leading-none shrink-0', tone)}>
+                <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold leading-none shrink-0', tone)}>
                   {label}
                 </span>
               )
@@ -242,7 +242,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
       <div className="flex items-center gap-4">
         <button
           className={cn(
-            'flex items-center gap-1 bg-none border-none text-muted-foreground text-caption cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5',
+            'flex items-center gap-1 bg-none border-none text-muted-foreground text-xs cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5',
             isLiked && 'text-primary-text font-bold'
           )}
           onClick={handleLike}
@@ -253,7 +253,7 @@ function CommentItem({ comment, postId, isReply = false, isLoggedIn = false, isB
         </button>
         {!isReply && (
           <button
-            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-caption cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
+            className="flex items-center gap-1 bg-none border-none text-muted-foreground text-xs cursor-pointer min-h-[52px] px-2 py-1 rounded-lg transition-colors hover:text-primary-text hover:bg-primary/5"
             onClick={() => setShowReplyInput(!showReplyInput)}
             aria-label="답글"
           >

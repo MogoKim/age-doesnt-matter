@@ -217,7 +217,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         {/* 공감 — 유일하게 강조되는 코랄 알약 */}
         <button
           className={cn(
-            'action-btn flex items-center gap-2 h-11 px-4 rounded-full text-[17px] font-bold bg-primary/10 text-primary-text disabled:opacity-60',
+            'action-btn flex items-center gap-2 h-11 px-4 rounded-full text-xs font-bold bg-primary/10 text-primary-text disabled:opacity-60',
             isLiked && 'bg-primary/[0.18] text-[#D84A3E]'
           )}
           onClick={handleLike}
@@ -235,7 +235,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         {/* 공유 — 보조 (기존 카카오/링크복사 popover 유지) */}
         <div className="relative">
           <button
-            className="action-btn flex items-center gap-1.5 h-11 min-w-[44px] px-2 rounded-xl text-[17px] font-medium text-muted-foreground hover:text-primary-text"
+            className="action-btn flex items-center gap-1.5 h-11 min-w-[44px] px-2 rounded-xl text-caption font-medium text-muted-foreground hover:text-primary-text"
             onClick={(e) => { if (!showShareMenu) logKakaoShareDebug('SHARE_MENU_OPEN', { isTrusted: e.isTrusted, postId }); setShowShareMenu(!showShareMenu) }}
             aria-label="공유"
             aria-haspopup="menu"
@@ -251,7 +251,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
                 <button
                   type="button"
                   onClick={handleKakaoShare}
-                  className="action-btn flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[52px] text-[17px] text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text"
+                  className="action-btn flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[52px] text-body text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text"
                 >
                   <IconKakao size={18} />
                   <span>카카오톡</span>
@@ -259,7 +259,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="action-btn flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[52px] text-[17px] text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text"
+                  className="action-btn flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[52px] text-body text-foreground font-medium rounded-lg hover:bg-primary/5 hover:text-primary-text"
                 >
                   <IconCopy size={18} />
                   <span>링크 복사</span>
@@ -285,7 +285,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         <div className="flex flex-col">
           <button
             type="button"
-            className="action-btn flex items-center gap-3.5 min-h-[52px] px-1 text-[17px] font-semibold text-foreground rounded-xl hover:bg-primary/5 disabled:opacity-60"
+            className="action-btn flex items-center gap-3.5 min-h-[52px] px-1 text-body font-semibold text-foreground rounded-xl hover:bg-primary/5 disabled:opacity-60"
             onClick={() => { handleScrap(); setShowMoreMenu(false) }}
             disabled={isPending || !authChecked}
           >
@@ -294,7 +294,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
           </button>
           <button
             type="button"
-            className="action-btn flex items-center gap-3.5 min-h-[52px] px-1 text-[17px] font-semibold text-destructive rounded-xl hover:bg-destructive/5"
+            className="action-btn flex items-center gap-3.5 min-h-[52px] px-1 text-body font-semibold text-destructive rounded-xl hover:bg-destructive/5"
             onClick={() => { setShowReport(true); setShowMoreMenu(false) }}
           >
             <IconFlag size={22} />
