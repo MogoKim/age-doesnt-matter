@@ -7,8 +7,10 @@ import { getMenopauseHubSections, type HubLink } from '@/lib/seo/topic-menopause
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'
 const CANONICAL = `${BASE_URL}/topic/menopause`
 
-// 자료는 매거진·갱년기톡 발행 주기에 맞춰 1시간이면 충분하다(내부 조회도 unstable_cache로 한 번 더 묶여 있다).
-export const revalidate = 3600
+// 빌드 시 prerender하지 않는다 — CI 빌드 환경에는 DB가 없어(ECONNREFUSED) export가 실패하고,
+// 실패를 삼키면 "섹션 0개인 빈 허브"가 배포될 수 있다. sitemap.ts와 같은 방식이다.
+// 실제 DB 조회는 getMenopauseHubSections 내부 unstable_cache(1시간)가 막아준다.
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: '갱년기 — 폐경·완경부터 몸과 마음의 변화까지 | 40대 50대 60대 여성',
