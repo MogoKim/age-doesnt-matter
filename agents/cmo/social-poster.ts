@@ -36,7 +36,7 @@ const PROMO_SOFT    = _constitution.cmo_content_ratios?.promotion_level?.soft  ?
 
 const MODEL = process.env.CLAUDE_MODEL_HEAVY ?? 'claude-sonnet-4-6'
 const client = new Anthropic()
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? 'https://www.age-doesnt-matter.com').trim()
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? 'https://age-doesnt-matter.com').trim()
 
 // ─── 페르소나 정의 (SNS용 4명) ───
 

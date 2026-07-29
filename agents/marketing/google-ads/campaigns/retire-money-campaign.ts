@@ -7,7 +7,7 @@
  * 그룹4: 정보/실용 — 건강·취미·여행 검색자
  *
  * 일예산: 10,000원 (4그룹 공유)
- * 랜딩: https://www.age-doesnt-matter.com/ (홈)
+ * 랜딩: https://age-doesnt-matter.com/ (홈)
  */
 
 import type { CampaignConfig } from './relation-campaign.js'
@@ -34,7 +34,7 @@ export const RETIRE_MONEY_CAMPAIGN: CampaignConfig = {
   desireCode: 'RETIRE',
   dailyBudgetKrw: 10000,
   maxCpcKrw: 500,
-  landingUrl: 'https://www.age-doesnt-matter.com/',
+  landingUrl: 'https://age-doesnt-matter.com/',
   adSchedule: {
     startHour: 8,
     endHour: 22,
@@ -61,7 +61,7 @@ export const RETIRE_MONEY_CAMPAIGN: CampaignConfig = {
   keywords: [],
   headlines: [],
   descriptions: [],
-  finalUrl: 'https://www.age-doesnt-matter.com/',
+  finalUrl: 'https://age-doesnt-matter.com/',
   displayPath: ['우나어', '무료가입'],
 
   // ── 4개 광고그룹 ──
@@ -91,7 +91,7 @@ export const RETIRE_MONEY_CAMPAIGN: CampaignConfig = {
         { text: '인생 2막 함께 시작해요' },
       ],
       descriptions: SHARED_DESCRIPTIONS,
-      finalUrl: 'https://www.age-doesnt-matter.com/?utm_source=google&utm_medium=cpc&utm_campaign=retire_money_sa&utm_content=empty_nest',
+      finalUrl: 'https://age-doesnt-matter.com/?utm_source=google&utm_medium=cpc&utm_campaign=retire_money_sa&utm_content=empty_nest',
       displayPath: ['우나어', '공감커뮤니티'],
     },
     {
@@ -119,7 +119,7 @@ export const RETIRE_MONEY_CAMPAIGN: CampaignConfig = {
         { text: '인생 2막 함께 시작해요' },
       ],
       descriptions: SHARED_DESCRIPTIONS,
-      finalUrl: 'https://www.age-doesnt-matter.com/?utm_source=google&utm_medium=cpc&utm_campaign=retire_money_sa&utm_content=community',
+      finalUrl: 'https://age-doesnt-matter.com/?utm_source=google&utm_medium=cpc&utm_campaign=retire_money_sa&utm_content=community',
       displayPath: ['우나어', '무료가입'],
     },
     {
@@ -147,7 +147,7 @@ export const RETIRE_MONEY_CAMPAIGN: CampaignConfig = {
         { text: '또래 경험담이 제일 솔직합니다' },
       ],
       descriptions: SHARED_DESCRIPTIONS,
-      finalUrl: 'https://www.age-doesnt-matter.com/?utm_source=google&utm_medium=cpc&utm_campaign=retire_money_sa&utm_content=job_life2',
+      finalUrl: 'https://age-doesnt-matter.com/?utm_source=google&utm_medium=cpc&utm_campaign=retire_money_sa&utm_content=job_life2',
       displayPath: ['우나어', '일자리정보'],
     },
     {
@@ -175,7 +175,7 @@ export const RETIRE_MONEY_CAMPAIGN: CampaignConfig = {
         { text: '또래 경험담이 제일 솔직합니다' },
       ],
       descriptions: SHARED_DESCRIPTIONS,
-      finalUrl: 'https://www.age-doesnt-matter.com/?utm_source=google&utm_medium=cpc&utm_campaign=retire_money_sa&utm_content=info',
+      finalUrl: 'https://age-doesnt-matter.com/?utm_source=google&utm_medium=cpc&utm_campaign=retire_money_sa&utm_content=info',
       displayPath: ['우나어', '건강정보'],
     },
   ],
