@@ -213,12 +213,17 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
 
   return (
     <>
-      <div className={cn('flex items-center gap-2 border-y border-border py-1.5 mb-6', className)}>
-        {/* 공감 — 유일하게 강조되는 코랄 알약 */}
+      {/* 위 구분선 1줄만 — 기존 border-y(위아래 2줄)는 본문과 광고 사이를 과하게 끊었다 */}
+      <div className={cn('flex items-center gap-2 border-t border-border py-1.5 mb-6', className)}>
+        {/* 공감 — 비활성은 흰 배경 + 윤곽선(코랄 덩어리 제거), 활성은 채움으로 상태 차이를 크게.
+            ⚠️ border-solid 필수: globals.css의 전역 `button { border: none }`이 border-style을 none으로
+            눌러버려, Tailwind의 `border`(width만 지정)만으로는 선이 안 그려진다(실측 0px).
+            폰트는 cn() 안이라 text-xs 사용(= var(--text-caption)). text-caption은 tailwind-merge가
+            글자색으로 오인해 지워버린다 → .claude/rules/ui-components.md */}
         <button
           className={cn(
-            'action-btn flex items-center gap-2 h-11 px-4 rounded-full text-xs font-bold bg-primary/10 text-primary-text disabled:opacity-60',
-            isLiked && 'bg-primary/[0.18] text-[#D84A3E]'
+            'action-btn flex items-center gap-2 min-h-[52px] px-4 rounded-full text-xs font-bold border-[1.5px] border-solid border-primary/30 bg-white text-primary-text disabled:opacity-60',
+            isLiked && 'border-primary bg-primary text-white'
           )}
           onClick={handleLike}
           disabled={isPending || !authChecked}
@@ -235,7 +240,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
         {/* 공유 — 보조 (기존 카카오/링크복사 popover 유지) */}
         <div className="relative">
           <button
-            className="action-btn flex items-center gap-1.5 h-11 min-w-[44px] px-2 rounded-xl text-caption font-medium text-muted-foreground hover:text-primary-text"
+            className="action-btn flex items-center justify-center gap-1.5 min-h-[52px] min-w-[52px] px-3 rounded-xl text-caption font-medium text-muted-foreground hover:text-primary-text"
             onClick={(e) => { if (!showShareMenu) logKakaoShareDebug('SHARE_MENU_OPEN', { isTrusted: e.isTrusted, postId }); setShowShareMenu(!showShareMenu) }}
             aria-label="공유"
             aria-haspopup="menu"
@@ -271,7 +276,7 @@ export default function ActionBar({ postId, title, description, likeCount, isLik
 
         {/* 더보기 — 스크랩·신고를 BottomSheet 안으로 */}
         <button
-          className="action-btn flex items-center justify-center h-11 w-11 rounded-xl text-muted-foreground hover:text-primary-text"
+          className="action-btn flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-muted-foreground hover:text-primary-text"
           onClick={() => setShowMoreMenu(true)}
           aria-label="더보기"
           aria-haspopup="menu"
