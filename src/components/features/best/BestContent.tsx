@@ -10,6 +10,7 @@ import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import ScrollableChipRow from '@/components/ui/ScrollableChipRow'
 import { chipClassName } from '@/components/ui/Chip'
+import EmptyState from '@/components/ui/EmptyState'
 
 const LIMIT = 12
 const SHOW_BEST_SUBTABS = false
@@ -130,9 +131,16 @@ export default function BestContent({ initialPosts, initialTotal }: BestContentP
         ) : (
           <EmptyState
             message={q ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.` : getEmptyMessage(currentTab)}
-            ctaHref={q ? `/best?tab=${currentTab}` : undefined}
-            ctaLabel={q ? '검색 초기화' : undefined}
-          />
+          >
+            {q && (
+              <Link
+                href={`/best?tab=${currentTab}`}
+                className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-primary px-6 py-2 text-center text-body font-bold leading-tight break-keep text-white no-underline hover:bg-primary/90"
+              >
+                검색 초기화
+              </Link>
+            )}
+          </EmptyState>
         )}
 
         {!loading && (
@@ -169,37 +177,22 @@ function getEmptyMessage(tab: TabType): string {
 
 function FameEmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center p-8 text-center bg-card rounded-2xl border-2 border-dashed border-border gap-4">
-      <p className="text-4xl">👑</p>
-      <div>
-        <p className="text-body font-bold text-foreground mb-1">아직 명예의 전당이 비어있어요!</p>
-        <p className="text-[17px] text-muted-foreground leading-relaxed">
+    <EmptyState
+      icon="👑"
+      title="아직 명예의 전당이 비어있어요!"
+      message={
+        <>
           공감 + 댓글 합계 30개를 달성한 글이 이곳에 입성합니다.<br />
           지금 인기글에 공감을 눌러보세요! 🔥
-        </p>
-      </div>
+        </>
+      }
+    >
       <Link
         href="/best?tab=hot"
         className="inline-flex min-h-[52px] items-center gap-1.5 rounded-xl bg-primary px-6 py-2 text-center text-base font-bold leading-tight break-keep text-white no-underline transition-colors hover:bg-primary/90"
       >
         🔥 뜨는 이야기 보러가기 →
       </Link>
-    </div>
-  )
-}
-
-function EmptyState({ message, ctaHref, ctaLabel }: { message: string; ctaHref?: string; ctaLabel?: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-      <p className="text-body text-muted-foreground leading-relaxed">{message}</p>
-      {ctaHref && ctaLabel && (
-        <Link
-          href={ctaHref}
-          className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-primary px-6 py-2 text-center text-body font-bold leading-tight break-keep text-white no-underline hover:bg-primary/90"
-        >
-          {ctaLabel}
-        </Link>
-      )}
-    </div>
+    </EmptyState>
   )
 }
