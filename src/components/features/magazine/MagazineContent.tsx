@@ -9,6 +9,7 @@ import type { SearchField } from '@/lib/queries/posts/posts.base'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
+import EmptyState from '@/components/ui/EmptyState'
 
 const LIMIT = 12
 
@@ -93,14 +94,16 @@ export default function MagazineContent({ initialPosts, initialTotal }: Magazine
   if (data.posts.length === 0) {
     return (
       <>
-        <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-4">
-          <p className="text-body text-muted-foreground leading-relaxed">
-            {q
+        <EmptyState
+          className="mt-4"
+          message={
+            q
               ? `"${q}" 검색 결과가 없어요. 다른 검색어를 입력해 보세요.`
               : category
                 ? `${category} 카테고리 매거진이 아직 없어요. 곧 올라올 거예요!`
-                : '아직 매거진이 없어요. 곧 유익한 글이 올라올 거예요!'}
-          </p>
+                : '아직 매거진이 없어요. 곧 유익한 글이 올라올 거예요!'
+          }
+        >
           {(q || category) && (
             <Link
               href="/magazine"
@@ -109,7 +112,7 @@ export default function MagazineContent({ initialPosts, initialTotal }: Magazine
               {q ? '검색 초기화' : '전체 매거진 보기'}
             </Link>
           )}
-        </div>
+        </EmptyState>
         <BoardPaginationFooter
           total={data.total}
           page={page}
