@@ -31,6 +31,7 @@ import { processContentMedia } from './image-pipeline.js'
 import { transformContent, transformRawContent, classifyCategory, hasYoungDemographicMarker } from './content-transformer.js'
 import { polishTitleForSeo } from './title-seo.js'
 import { normalizeSourceReferences } from '../cafe/normalize-source-references.js'
+import { buildSummary } from '../core/summary.js'
 import { SHEET_BOARD_DEFAULT_CATEGORY, getSheetBoardSlug, type SheetBoardType } from './sheet-board-routing.js'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -862,6 +863,10 @@ export async function main() {
             const postData = {
               title: normTitle.text,
               content: normContent.text,
+              // 목록·검색 미리보기. 이 경로는 그동안 summary를 넣지 않아 크롤 유입 글의
+              // 미리보기가 전부 비어 있었다(2026-07-30 기준 커뮤니티 4보드 2,163건).
+              // 텍스트가 없는 글(이미지·영상뿐)은 null → 화면에서 미리보기를 렌더하지 않는다.
+              summary: buildSummary(normContent.text),
               boardType: tab.boardType,
               category,
               authorId: userId,
