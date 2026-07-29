@@ -764,15 +764,22 @@ export async function main() {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   // [source diversity] 플래그 on일 때만 7일 점유율 1회 조회 — off면 추가 쿼리 0, 기존 동작과 완전 동일
   const usedShare7d = SOURCE_DIVERSITY_SORT ? await fetchUsedShare7d() : null
+  // [pool 구조 2026-07-29] 격리 제외를 take **이전** where 조건으로 이동.
+  //   기존에는 take:30으로 상위 30건을 뽑은 뒤 사후 filter로 격리를 걸렀는데,
+  //   격리(HAIKU 90일 누적)가 상위 killerScore에 몰려 30건 중 18건(60%)을 잠식했다.
+  //   그 결과 유효 후보가 12건으로 줄어 candidatePoolSize가 4~13에 머물렀다.
+  //   임계·정렬·격리 정책은 그대로 두고 **적용 순서만** 바꾼다(완화 아님).
+  const excludedPostIds = [...quarantinedPostIds]
   const killerPostsRaw = await prisma.cafePost.findMany({
     where: {
       killerScore: { gte: 50 }, isUsable: true, usedAt: null, isPopular: false, imageUrls: { isEmpty: true },
       crawledAt: { gte: sevenDaysAgo },  // crawledAt은 항상 설정됨(NOT NULL) — postedAt null 허용
       cafeId: { in: CURATION_CORE_CAFE_IDS },  // [Phase 2-a] killer 후보 = production + core (killerScore 순 동등 경쟁, publishable/shadow는 계속 격리)
       NOT: { AND: [{ cafeId: 'dlxogns01' }, { boardName: { notIn: DLXOGNS01_ALLOWED_BOARDS } }] },
+      ...(excludedPostIds.length > 0 ? { id: { notIn: excludedPostIds } } : {}),
     },
     orderBy: { killerScore: 'desc' },
-    take: 30,  // P0-A: 격리 후보를 건너뛰고 상위 2건을 확보하기 위해 넉넉히 조회(풀 크기는 slice로 2 유지)
+    take: 60,  // 격리를 where에서 이미 제외하므로 조회분이 그대로 유효 후보가 된다(구 30 + 사후 격리 → 실효 12)
     select: { id: true, title: true, postedAt: true, killerScore: true, desireCategory: true, cafeId: true },
   })
   // [source diversity] 같은 10점 밴드 안에서만 저점유 source 우선(밴드 간 품질 순위·floor 불변)
