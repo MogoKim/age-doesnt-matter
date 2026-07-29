@@ -25,6 +25,11 @@ interface PostCardProps {
  *
  * preview는 값이 있을 때만 렌더한다. 보드별 충전율이 25~83%로 크게 갈려
  * (갱년기톡 33% · 웃음방 25%) 자리를 항상 확보하면 빈 줄이 생긴다.
+ *
+ * 구성: 제목 → preview(2줄, 있을 때만) → 메타 줄 → 통계 줄.
+ * 메타와 통계를 한 줄에 두던 때는 폭이 모자라 12행 중 최대 12행이 2줄로 접혔다.
+ * 접힌 메타(57px)가 제목 1줄(27px)의 2배라 행 높이가 88~215px로 튀었고, 그 편차가
+ * "빽빽하고 어색한" 느낌의 원인이었다. 역할이 다른 두 정보를 나눠 각각 1줄로 만든다.
  */
 function PostCard({ post, boardSlug, showBoardBadge = false }: PostCardProps) {
   // 공백만 있는 preview도 빈 값으로 취급 — 빈 줄 방지
@@ -33,7 +38,7 @@ function PostCard({ post, boardSlug, showBoardBadge = false }: PostCardProps) {
   return (
     <Link
       href={`/community/${boardSlug}/${post.slug ?? post.id}`}
-      className="block border-b border-border py-3.5 no-underline text-inherit transition-colors last:border-b-0 hover:bg-muted/40"
+      className="block border-b border-border py-4 no-underline text-inherit transition-colors last:border-b-0 hover:bg-muted/40"
     >
       <h2 className="text-body font-bold text-foreground m-0 line-clamp-2 leading-[1.5]">
         {post.isPinned && (
@@ -49,13 +54,16 @@ function PostCard({ post, boardSlug, showBoardBadge = false }: PostCardProps) {
       </h2>
 
       {preview && (
-        <p className="text-caption text-muted-foreground m-0 mt-1 line-clamp-1 leading-[1.5]">
+        <p className="text-caption text-muted-foreground m-0 mt-2 line-clamp-2 leading-[1.5]">
           {preview}
         </p>
       )}
 
-      {/* 메타 + 통계 한 줄. XLARGE에서 좁으면 flex-wrap으로 줄바꿈한다(truncate로 자르지 않는다). */}
-      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
+      {/* 메타 줄 — 카테고리 · 작성자 · 시간. 통계는 아래 별도 줄로 분리한다.
+          한 줄에 몰려 있을 때는 폭이 모자라 12행 중 최대 12행이 2줄로 접혔고(제목 1줄의 2배 높이),
+          그 들쭉날쭉함이 목록 리듬을 깨뜨렸다. 역할이 다른 두 정보를 나누면 각각 1줄에 들어간다.
+          flex-wrap은 그대로 둔다 — 예상 못 한 긴 닉네임/카테고리에서 잘리는 것보다 접히는 편이 낫다. */}
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
         {/* /best는 여러 보드가 섞이므로 색 배지가 출처 표시 역할을 한다(보드별로 색이 실제로 갈림).
             반면 게시판 목록은 이미 그 보드 안이라 12행의 배지 색이 전부 같아 정보가 아니라 반복 노이즈다.
             → showBoardBadge일 때만 배지, 그 외에는 조용한 muted 텍스트. */}
@@ -79,17 +87,18 @@ function PostCard({ post, boardSlug, showBoardBadge = false }: PostCardProps) {
         </span>
         <span className="text-border">·</span>
         <span>{formatTimeAgo(post.createdAt)}</span>
+      </div>
 
-        <span className="ml-auto flex items-center gap-3">
-          <span className="flex items-center gap-1" aria-label={`좋아요 ${post.likeCount}개`}>
-            <IconHeart size={16} /> {post.likeCount}
-          </span>
-          <span className="flex items-center gap-1" aria-label={`댓글 ${post.commentCount}개`}>
-            <IconComment size={16} /> {post.commentCount}
-          </span>
-          <span className="flex items-center gap-1" aria-label={`조회 ${post.viewCount}회`}>
-            <IconEye size={16} /> {post.viewCount}
-          </span>
+      {/* 통계 줄 — 반응 수치만 모은다. 세 항목이 ~130px라 XLARGE에서도 한 줄에 들어간다. */}
+      <div className="mt-2 flex items-center gap-4 text-caption text-muted-foreground">
+        <span className="flex items-center gap-1" aria-label={`좋아요 ${post.likeCount}개`}>
+          <IconHeart size={16} /> {post.likeCount}
+        </span>
+        <span className="flex items-center gap-1" aria-label={`댓글 ${post.commentCount}개`}>
+          <IconComment size={16} /> {post.commentCount}
+        </span>
+        <span className="flex items-center gap-1" aria-label={`조회 ${post.viewCount}회`}>
+          <IconEye size={16} /> {post.viewCount}
         </span>
       </div>
     </Link>

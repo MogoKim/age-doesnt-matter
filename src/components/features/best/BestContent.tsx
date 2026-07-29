@@ -155,15 +155,20 @@ export default function BestContent({ initialPosts, initialTotal }: BestContentP
   )
 }
 
-/** 목록 행 스켈레톤 — PostCard 실제 행 구조(제목/preview/메타)와 높이를 맞춘다. */
+/** 목록 행 스켈레톤 — PostCard 실제 행 구조(제목/preview 2줄/메타/통계)와 높이를 맞춘다. */
 function BestListSkeleton() {
   return (
     <div>
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="border-b border-border py-3.5 last:border-b-0 animate-pulse">
-          <div className="h-[27px] bg-muted rounded w-3/4" />
-          <div className="h-[22px] bg-muted rounded w-full mt-1" />
-          <div className="h-[25px] bg-muted rounded w-2/3 mt-1.5" />
+        <div key={i} className="border-b border-border py-4 last:border-b-0 animate-pulse">
+          {/* 제목 1줄 */}
+          <div className="h-[27px] w-3/4 rounded bg-muted" />
+          {/* preview 2줄 */}
+          <div className="h-[46px] w-full rounded bg-muted mt-2" />
+          {/* 메타(보드배지·작성자·시간) */}
+          <div className="h-[26px] w-2/3 rounded bg-muted mt-2.5" />
+          {/* 통계(공감·댓글·조회) */}
+          <div className="h-[26px] w-1/3 rounded bg-muted mt-2" />
         </div>
       ))}
     </div>
