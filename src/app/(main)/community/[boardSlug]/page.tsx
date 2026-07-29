@@ -220,6 +220,19 @@ export default async function BoardListPage({ params }: PageProps) {
         </Link>
       )}
 
+      {/* 2막준비 ↔ 인생 2막 주제 허브 양방향 연결 (허브는 재취업·연금·생활비 글을 주제별로 묶는다) */}
+      {boardSlug === 'life2' && (
+        <Link
+          href="/topic/second-act"
+          className="mb-3 flex min-h-[52px] items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+        >
+          <span className="text-body font-bold leading-[1.5] text-foreground">
+            재취업, 퇴직금·연금, 은퇴 후 생활비 — 인생 2막 이야기 주제별로 모아보기
+          </span>
+          <span aria-hidden className="shrink-0 text-body font-bold text-primary-text">›</span>
+        </Link>
+      )}
+
       {/* PWA 인라인 배너 (미설치 + 비차단 환경에서만 노출) */}
       <PwaInlineBanner />
 
