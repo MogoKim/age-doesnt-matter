@@ -56,18 +56,23 @@ function PostCard({ post, boardSlug, showBoardBadge = false }: PostCardProps) {
 
       {/* 메타 + 통계 한 줄. XLARGE에서 좁으면 flex-wrap으로 줄바꿈한다(truncate로 자르지 않는다). */}
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
-        {showBoardBadge
-          ? (
-            <CategoryBadge
-              boardType={post.boardType as string}
-              label={BOARD_DISPLAY_NAMES[post.boardType as BoardType] ?? post.boardType}
-              variant="compact"
-            />
-          )
-          : post.category && (
-            <CategoryBadge boardType={post.boardType as string} label={post.category} variant="compact" />
-          )
-        }
+        {/* /best는 여러 보드가 섞이므로 색 배지가 출처 표시 역할을 한다(보드별로 색이 실제로 갈림).
+            반면 게시판 목록은 이미 그 보드 안이라 12행의 배지 색이 전부 같아 정보가 아니라 반복 노이즈다.
+            → showBoardBadge일 때만 배지, 그 외에는 조용한 muted 텍스트. */}
+        {showBoardBadge ? (
+          <CategoryBadge
+            boardType={post.boardType as string}
+            label={BOARD_DISPLAY_NAMES[post.boardType as BoardType] ?? post.boardType}
+            variant="compact"
+          />
+        ) : post.category ? (
+          <>
+            {/* 크기·색은 메타행에서 상속(text-caption / text-muted-foreground).
+                굵기는 상속 기본값 — 닉네임(font-medium)보다 한 단계 조용하게 둔다. */}
+            <span>{post.category}</span>
+            <span className="text-border">·</span>
+          </>
+        ) : null}
         <span className="flex items-center gap-1">
           <span>{post.author.gradeEmoji}</span>
           <span className="font-medium">{post.author.nickname}</span>
