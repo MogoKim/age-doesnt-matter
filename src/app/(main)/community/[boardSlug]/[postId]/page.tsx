@@ -202,8 +202,9 @@ export default async function PostDetailPage({ params }: PageProps) {
       {/* 정체성 배너 (네이버 유입자 락인 ① — 비회원, 제목 위) */}
       <IdentityBanner boardSlug={boardSlug} />
 
-      {/* 글 카드: 헤더 + 본문 + 공감/공유 한 덩어리 */}
-      <div className="bg-card rounded-2xl border border-border shadow-sm p-4 md:p-5 mb-4">
+      {/* 글 본문 영역 — 카드 wrapper 없이 wrapper padding만 사용.
+          (구 구조: bg-card rounded-2xl border shadow-sm p-4 로 감쌌더니 wrapper px-4와 이중이 되어
+           375px에서 본문 폭이 303px까지 줄고 글이 문서가 아니라 위젯처럼 보였다) */}
       {/* 헤더 */}
       <div className="pb-5 mb-5 border-b border-border">
         <h1 className="text-xl font-bold text-foreground m-0 mb-4 leading-[1.4]">{post.title}</h1>
@@ -223,7 +224,8 @@ export default async function PostDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: proxyR2Images(sanitizeHtml(post.content)) }}
       />
 
-      {/* 액션 바 — 글 카드 안, 본문 직후 바로 공감 (정독 동선) */}
+      {/* 액션 바 — 본문 직후 바로 공감 (정독 동선). 순서·디자인 그대로.
+          mb-0 → mb-4: 없어진 카드 wrapper의 mb-4(16px)를 그대로 승계해 광고까지 간격 유지 */}
       <ActionBar
         postId={resolvedId}
         title={post.title}
@@ -231,9 +233,8 @@ export default async function PostDetailPage({ params }: PageProps) {
         likeCount={post.likeCount}
         isLiked={false}
         isScrapped={false}
-        className="border-y-0 border-t mb-0 pt-3"
+        className="border-y-0 border-t mb-4 pt-3"
       />
-      </div>
 
       {/* 광고 — 인아티클 */}
       <div className="mb-8">
