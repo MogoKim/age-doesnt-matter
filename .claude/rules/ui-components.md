@@ -23,6 +23,25 @@ globs: src/components/**/*.tsx
 - `cn()` 밖의 일반 문자열 className에서는 `text-caption` / `text-body` 사용 가능하다.
 - `cn()`으로 조건부 색상(`text-primary-text`, `text-muted-foreground`, `text-foreground`)과 폰트 크기를 함께 합칠 때는 computed font-size를 NORMAL/LARGE/XLARGE에서 확인한다.
 
+## button 테두리 규칙 (재발 방지)
+
+`<button>`에 테두리를 의도할 때는 **width + style + color를 모두 명시**한다.
+
+- ❌ `border border-primary/30` — 선이 **안 보인다**
+- ✅ `border-[1.5px] border-solid border-primary/30`
+
+**이유**: `src/app/globals.css`의 전역 리셋에 `button { border: none }`이 있다. Tailwind의 `border`는 **width만** 지정하고 style은 preflight의 `border-style: solid`(`*` 선택자, 특이도 0)에 의존하는데, `button` 요소 선택자가 이를 이겨 `border-style: none`이 남는다. **style이 `none`이면 브라우저가 width를 0으로 계산**하므로 클래스는 살아 있는데 선만 사라진다.
+
+**실제 사례 (PR #237)**: ActionBar 공감 버튼을 윤곽선형으로 바꾸며 `border border-primary/30`으로 구현 → DOM에 클래스는 그대로 있는데 computed `borderWidth: 0px` / `borderStyle: none`. `border-[1.5px] border-solid`로 수정해 해결.
+
+**검증 방법**: `typecheck` / `eslint` / `build` **전부 통과하므로 잡히지 않는다.** 브라우저 computed style로 `borderWidth`·`borderStyle`을 직접 확인해야 한다.
+
+> ⚠️ 이 함정은 위 **cn() + 글씨 크기 토큰 규칙**과 같은 계열이다 —
+> **"빌드는 통과하지만 런타임에 스타일이 사라지는 함정".**
+> 두 경우 모두 클래스 문자열은 DOM에 남아 있어 코드 리뷰로는 발견되지 않고,
+> **computed style 실측으로만** 드러난다. UI 작업 후 스타일이 의도대로 보이는지
+> 브라우저에서 반드시 확인할 것.
+
 ## Primary Color 컨트라스트 규칙 (절대 준수 — WCAG)
 - `bg-primary` 사용 시: `text-white` 필수 (`text-foreground` / `text-muted` 금지)
 - `bg-primary/10~30` (투명도) 사용 시: `text-primary-text` (#E85D50) 사용
