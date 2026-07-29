@@ -100,6 +100,33 @@ export function stripMarkdown(text: string): string {
     .trim()
 }
 
+/**
+ * 발행용 제목 정화 — generateCuratedPost와 후보 필터가 **같은 결과**를 쓰도록 단일화한 헬퍼.
+ * 비면 발행할 수 없다(빈 제목 발행 방지).
+ */
+export function cleanCuratedTitle(rawTitle: string): string {
+  return replaceCafeReferences(stripMarkdown((rawTitle ?? '').trim()))
+}
+
+/**
+ * 발행용 본문 정화 — stripMarkdown → replaceCafeReferences → stripCafeBoilerplate.
+ *
+ * 카페 안내문만 있던 글은 여기서 ''가 된다. 실제 사고(2026-07-28): 본문이
+ * "💗서로 배려하는 마음으로 예쁜 글 부탁드려요💗" 27자뿐인 원문 1건이 정화 후 0자가 되어
+ * 93회 연속 생성 실패를 만들었다. 댓글 54개·killerScore 73이라 앞선 게이트를 전부 통과했다.
+ */
+export function cleanCuratedContent(rawContent: string): string {
+  return stripCafeBoilerplate(replaceCafeReferences(stripMarkdown((rawContent ?? '').trim())))
+}
+
+/**
+ * 정화 후에도 제목·본문이 남는 글인지 — 후보 단계에서 "발행 불가 원문"을 미리 거른다.
+ * 원문(CafePost)은 수정하지 않는다. 판정만 한다.
+ */
+export function hasPublishableBody(rawTitle: string, rawContent: string): boolean {
+  return cleanCuratedTitle(rawTitle).length > 0 && cleanCuratedContent(rawContent).length > 0
+}
+
 /** KST 현재 날짜/요일/시간대 */
 export function getKstContext(): string {
   const kst = new Date(Date.now() + 9 * 60 * 60 * 1000)
