@@ -390,6 +390,69 @@ textarea {
 .magazine-body div[style*="border-radius:50%"][style*="#FF6F61"] {
   display: none !important;
 }
+
+/* 카테고리 배지: 진한 불투명 채움 → 흰 배경 + 카테고리색 윤곽선 (화면에서만, 본문 rewrite 없음).
+ *
+ * 배경: 본문 최상단 첫 화면에 초록·파랑·보라·주황 등 진한 채움 배지가 놓여 브랜드 톤과 무관한
+ * 색 덩어리가 됐다. 채움만 걷어내고 카테고리 색 구분은 테두리로 남긴다.
+ *
+ * [선택자 근거] 이 배지는 React 컴포넌트가 아니라 magazine-template.ts가 찍는 본문 HTML의 span이다.
+ * 템플릿에서 border-radius:20px는 이 배지에만 쓴다(요약박스 16px · CTA 26px · 팁박스/인용 12px ·
+ * 카드 14/18px). 게다가 색 hex까지 함께 요구하므로 메타행의 다른 span(color:#888인 읽기시간·날짜)이나
+ * FAQ·대표이미지·광고는 잡히지 않는다. 위 아바타 숨김 규칙과 같은 패턴이다.
+ *
+ * [색] 프로덕션 매거진 60건 전수 조사에서 실제로 쓰이는 6종만 다룬다(관계·생활이 같은 코랄).
+ * magazine-template.ts에 정의만 있고 실물이 없는 요리(#E91E63)·간병(#795548)은 의도적으로 제외 —
+ * 실물이 생기면 그때 추가한다(추측으로 넓히지 않는다).
+ *
+ * [글자색] 테두리는 원색 그대로 두되 글자는 어두운 변형을 쓴다. 원색을 흰 배경 위 글자로 쓰면
+ * 대비가 2.2~3.1:1까지 떨어져(주황 2.16 · 코랄 2.70 · 초록 2.78) 본문 첫 줄이 읽기 어려워진다.
+ * 어두운 변형은 5:1 이상을 확보하면서 같은 색 계열이라 카테고리 식별은 그대로다.
+ * 코랄은 프로젝트 토큰 --primary-strong(#B23B2E)과 같은 값을 쓴다.
+ *
+ * font-size는 건드리지 않는다 — 위 .post-content span 규칙이 var(--text-body)로 지배해
+ * 가+ 3단계 반응(18/20/24px)이 유지된다. border-radius도 인라인(20px)을 그대로 둬 pill을 유지한다. */
+.magazine-body span[style*="border-radius:20px"][style*="#4CAF50"],
+.magazine-body span[style*="border-radius:20px"][style*="#FF6F61"],
+.magazine-body span[style*="border-radius:20px"][style*="#2196F3"],
+.magazine-body span[style*="border-radius:20px"][style*="#607D8B"],
+.magazine-body span[style*="border-radius:20px"][style*="#FF9800"],
+.magazine-body span[style*="border-radius:20px"][style*="#9C27B0"] {
+  background: hsl(var(--card)) !important;
+  border: 1.5px solid !important;
+  padding: 4px 12px !important;
+}
+/* 건강 */
+.magazine-body span[style*="border-radius:20px"][style*="#4CAF50"] {
+  color: #2e7d32 !important;
+  border-color: #4caf50 !important;
+}
+/* 관계·생활 */
+.magazine-body span[style*="border-radius:20px"][style*="#FF6F61"] {
+  color: #b23b2e !important;
+  border-color: #ff6f61 !important;
+}
+/* 재테크 */
+.magazine-body span[style*="border-radius:20px"][style*="#2196F3"] {
+  color: #1565c0 !important;
+  border-color: #2196f3 !important;
+}
+/* 일자리 */
+.magazine-body span[style*="border-radius:20px"][style*="#607D8B"] {
+  color: #455a64 !important;
+  border-color: #607d8b !important;
+}
+/* 여행 */
+.magazine-body span[style*="border-radius:20px"][style*="#FF9800"] {
+  color: #b45309 !important;
+  border-color: #ff9800 !important;
+}
+/* 문화 */
+.magazine-body span[style*="border-radius:20px"][style*="#9C27B0"] {
+  color: #7b1fa2 !important;
+  border-color: #9c27b0 !important;
+}
+
 /* 자주 묻는 질문(FAQ) 섹션 과한 여백 축소 — 기존/신규 공통. 읽기 편한 line-height는 유지 */
 .magazine-body .faq-section {
   margin-top: 16px;
