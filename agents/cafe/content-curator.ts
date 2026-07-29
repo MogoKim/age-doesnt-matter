@@ -23,10 +23,12 @@ import {
   guessDesire,
   stripMarkdown,
   replaceCafeReferences,
-  stripCafeBoilerplate,
   toCuratedHtmlContent,
   toCuratedSummary,
   type CommunityPublishBoardType,
+  cleanCuratedTitle,
+  cleanCuratedContent,
+  hasPublishableBody,
 } from './curator-shared.js'
 import { getCuratorBotUser, countTodayPostsByPersona, AUTHOR_DAILY_POST_CAP } from './curator-users.js'
 import { CURATION_CORE_CAFE_IDS, DLXOGNS01_ALLOWED_BOARDS, PUBLISHABLE_CAFE_IDS, PUBLISHABLE_ONLY_CAFE_IDS, SHADOW_CAFE_IDS, sourceStageOfCafe } from './config.js'
@@ -45,7 +47,10 @@ type SkipReason =
   | 'HAIKU_BLOCKED' // PR-3 enforcement — 고신뢰 REJECT 차단 (mode=enforce에서만)
   | 'LOW_USABLE_COMMENTS'
   | 'AUTHOR_DAILY_CAP'
-  | 'GENERATION_FAILED'
+  | 'GENERATION_FAILED' // 세분화 불가한 잔여 실패 (아래 3종에 해당하지 않는 경우)
+  | 'NO_MAIN_REF' // refs[0] 없음
+  | 'EMPTY_TITLE_AFTER_CLEAN' // 정화 후 제목 0자
+  | 'EMPTY_CONTENT_AFTER_CLEAN' // 정화 후 본문 0자 (카페 안내문만 있던 원문 등)
   | 'SEASON_MISMATCH'
   | 'DUPLICATE_TITLE'
   | 'PUBLISH_FAILED'
@@ -293,6 +298,13 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
         console.log(`[ContentCurator] age-fit reference 제외(${ageFitRef}): "${p.title.slice(0, 20)}"`)
         return false
       }
+      // [empty-content 2026-07-29] 정화하면 제목/본문이 0자가 되는 원문 선제 제외.
+      //   생성 단계에서만 걸러도 되지만, 그러면 같은 글이 매 회차 mainRef로 다시 뽑혀
+      //   회차 전체가 실패로 전멸한다(실측: 1건이 93회 반복 → 12회 연속 0발행).
+      if (!hasPublishableBody(p.title, p.content)) {
+        console.log(`[ContentCurator] 정화 후 본문 없음 reference 제외: "${p.title.slice(0, 20)}"`)
+        return false
+      }
       const flat = p.content.replace(/\n/g, ' ') // R1: 본문 줄바꿈 보존 후에도 시그널 매칭 유지
       const blocked = ACCESS_BLOCKED_SIGNALS_CC.some(s => flat.includes(s))
       if (blocked) { console.log(`[ContentCurator] 접근 차단 안내문 2차 필터 skip: "${p.title.slice(0, 30)}"`)
@@ -430,6 +442,8 @@ async function loadEligibleKillerSelfRef(
   if (isSeasonMismatch(p.title, p.content)) return null
   // [age-fit 1차 기계필터 2026-07-11] self-ref는 getReferencePosts filterBlocked를 거치지 않으므로 동일 게이트 적용
   if (findAgeFitViolation(p.title, p.content)) return null
+  // [empty-content 2026-07-29] filterBlocked와 동일 — 정화 후 제목/본문이 비는 원문 제외
+  if (!hasPublishableBody(p.title, p.content)) return null
   // access blocked / PZP 2차 방어 (getReferencePosts filterBlocked 와 동일 기준 — isUsable=true 라도 오염 잔존분 차단)
   const flat = p.content.replace(/\n/g, ' ')
   const ACCESS_BLOCKED = ['검색 비허용 게시물', '가입이 필요합니다', '카페의 멤버가 되어보세요', '카페에 가입하면 바로 글을 볼 수 있어요', '10초 만에 가입하기']
@@ -445,27 +459,38 @@ async function loadEligibleKillerSelfRef(
   }
 }
 
+/**
+ * 생성 실패 사유를 호출부에 그대로 전달한다 — BotLog skipReason 세분화용.
+ * 실패 지점에서 바로 사유를 붙이므로 호출부가 원인을 다시 계산할 필요가 없다.
+ */
+type CuratedResult =
+  | { ok: true; curated: CuratedContent }
+  | { ok: false; reason: Extract<SkipReason, 'NO_MAIN_REF' | 'EMPTY_TITLE_AFTER_CLEAN' | 'EMPTY_CONTENT_AFTER_CLEAN'> }
+
 /** 큐레이션된 글 생성 — 원본 카페글 제목·본문 그대로 사용 (AI 각색 없음) */
 async function generateCuratedPost(
   persona: PersonaMatch,
   topic: string,
   referencePosts: { id: string; title: string; content: string; cafeName: string; desireCategory?: string | null; cafeId?: string }[],
   _desireCat?: string,  // [board routing 2026-07-12] 라우팅이 ref 원문 기준으로 바뀌며 미사용 — 호출부 시그니처 호환용 유지
-): Promise<CuratedContent | null> {
+): Promise<CuratedResult> {
   const mainRef = referencePosts[0]
-  if (!mainRef) return null
+  if (!mainRef) return { ok: false, reason: 'NO_MAIN_REF' }
 
   const boardInfo = resolveBoardForPost(mainRef.desireCategory, mainRef.title, mainRef.content)
 
-  const title = replaceCafeReferences(stripMarkdown(mainRef.title.trim()))
-  if (!title) return null
+  // 후보 필터(filterBlocked/self-ref)와 **같은 헬퍼**를 쓴다 — 두 곳의 판정이 갈리면
+  // 후보는 통과했는데 생성만 실패하는 상태가 다시 생긴다.
+  const title = cleanCuratedTitle(mainRef.title)
+  if (!title) return { ok: false, reason: 'EMPTY_TITLE_AFTER_CLEAN' }
 
-  // 발행 본문 정화: stripMarkdown → replaceCafeReferences → stripCafeBoilerplate(맨 앞 게시판 안내문 제거).
   // 원문(CafePost)은 미수정. 안내문만 있던 글은 content=''가 될 수 있어 empty guard로 스킵(빈 본문 발행 방지).
-  const content = stripCafeBoilerplate(replaceCafeReferences(stripMarkdown(mainRef.content.trim())))
-  if (!content) return null
+  const content = cleanCuratedContent(mainRef.content)
+  if (!content) return { ok: false, reason: 'EMPTY_CONTENT_AFTER_CLEAN' }
 
   return {
+    ok: true,
+    curated: {
     personaId: persona.id,
     title,
     content,
@@ -475,6 +500,7 @@ async function generateCuratedPost(
     // [Phase 1-a-②] publishable ref도 production과 동일 — 항상 usedAt 마킹 + Post.cafePostId 연결.
     // (구 shadow 분기(sourcePostIds=[])는 cafePostId=null 발행·반복 재발행의 원천이라 제거)
     sourcePostIds: [mainRef.id],
+    },
   }
 }
 
@@ -968,12 +994,14 @@ export async function main() {
       console.log(`[ContentCurator] Haiku ${haikuGateMode === 'enforce' ? 'REJECT(비차단 축/저신뢰)' : 'dry-run wouldReject'} (${haikuResult.speakerRole}/${haikuResult.risks.join(',')}): "${mainRef.title.slice(0, 30)}" — 발행은 계속`)
     }
 
-    const curated = await generateCuratedPost(persona, candidate.topic, refs, desireCat)
-    if (!curated) {
-      // refs는 있었지만 curated content 생성 결과가 null
-      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'GENERATION_FAILED', ...refMeta(refs[0]), haiku })
+    const generated = await generateCuratedPost(persona, candidate.topic, refs, desireCat)
+    if (!generated.ok) {
+      // refs는 있었지만 생성이 불가했던 경우 — 사유를 세분화해 기록한다.
+      // (후보 필터가 선제 제외하므로 정상 운영에서는 거의 발생하지 않아야 한다)
+      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: generated.reason, ...refMeta(refs[0]), haiku })
       continue
     }
+    const curated = generated.curated
 
     const publishResult = await publishCuratedContent(curated)
     if (!publishResult.success) {
