@@ -108,6 +108,14 @@ function applyDiversitySort<T extends { killerScore: number | null; cafeId: stri
   })
 }
 
+/** [ref 계측 2026-07-29] 발행 원문이 선택된 fallback stage — 관측 전용 */
+type RefStage = 's1' | 's2' | 's3' | 's4' | 'self'
+interface RefMetrics {
+  refStage: RefStage
+  refPoolSize: number
+  refCandidateSourceCounts: Record<string, number>
+}
+
 interface TopicResult extends CandidateTopic {
   refsCount: number
   skipReason: SkipReason | null
@@ -123,6 +131,20 @@ interface TopicResult extends CandidateTopic {
   isShadowRef?: boolean
   // [Phase 1-a-②/2-a] ref 소스 단계 — production/core/publishable/shadow 구분 (additive optional)
   refSourceStage?: 'production' | 'core' | 'publishable' | 'shadow' | 'unknown'
+  /**
+   * [ref 계측 2026-07-29] 발행 원문이 **어느 fallback stage에서** 선택됐는지와 그 stage의 후보 source 분포.
+   * 관측 전용 — 후보 선택·정렬·발행 결과에 일절 관여하지 않는다(additive optional, 파서 호환).
+   * 목적: source 편중이 어느 단계에서 생기는지 실데이터로 확정. self-ref 경로는 'self'.
+   */
+  refStage?: RefStage
+  /** 그 stage에서 filter 통과한 후보 수 */
+  refPoolSize?: number
+  /** 그 stage 후보의 cafeId 분포 (예: { remonterrace: 12, wgang: 5 }) */
+  refCandidateSourceCounts?: Record<string, number>
+  /** 선택된 mainRef의 cafeId — refCafeId와 동일 값이나 계측 파서 편의를 위해 별도 기록 */
+  refSelectedSource?: string
+  /** diversity 정렬 적용 여부 — PR-1은 계측만이므로 항상 false */
+  refDiversityApplied?: boolean
   // [PR-2 Haiku dry-run 2026-07-14] main ref 품질 판정 기록 — 발행 직전 도달한 엔트리에만 (additive optional, 차단 없음)
   haiku?: Record<string, unknown>
   // [board routing 2026-07-12] 게시판 산출 근거 — 발행 성공 엔트리에만 기록 (additive optional, 파서 호환)
@@ -133,7 +155,7 @@ interface TopicResult extends CandidateTopic {
 /** refs[0] 메타 — refs 확보 후의 topicResults 기록에 spread. ref 없으면 빈 객체(필드 미기록).
  * 파라미터를 unknown으로 받는 이유: refs 요소 타입이 getReferencePosts 제네릭 추론에 따라 좁아져
  * (u4Pool 경로 등) 호출부마다 달라짐 — 런타임 shape(id/title/cafeId)만 읽으므로 내부에서 안전 접근. */
-function refMeta(ref?: unknown): Pick<TopicResult, 'refCafePostId' | 'refTitle' | 'refCafeId' | 'isShadowRef' | 'refSourceStage'> {
+function refMeta(ref?: unknown): Pick<TopicResult, 'refCafePostId' | 'refTitle' | 'refCafeId' | 'isShadowRef' | 'refSourceStage' | 'refSelectedSource'> {
   const r = ref as { id?: string; title?: string; cafeId?: string | null } | undefined
   if (!r?.id || typeof r.title !== 'string') return {}
   return {
@@ -142,6 +164,8 @@ function refMeta(ref?: unknown): Pick<TopicResult, 'refCafePostId' | 'refTitle' 
     refCafeId: r.cafeId ?? undefined,
     isShadowRef: !!r.cafeId && SHADOW_CAFE_IDS.includes(r.cafeId),
     refSourceStage: r.cafeId ? sourceStageOfCafe(r.cafeId) : undefined,
+    // [ref 계측 2026-07-29] refCafeId와 같은 값 — 계측 파서가 refStage/refCandidateSourceCounts와 한 묶음으로 읽도록 별도 키로도 남긴다
+    refSelectedSource: r.cafeId ?? undefined,
   }
 }
 
@@ -320,6 +344,18 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
   let totalCandidatesChecked = 0
   let maxUsableCount = 0
   const u4Pool: Array<{ id: string; title: string; content: string; cafeName: string; topComments: unknown; desireCategory: string | null; commentCount: number }> = []
+  /** [ref 계측] stage·후보 수·source 분포 — 관측 전용, 반환 refs에 영향 없음 */
+  //   pool 원소 타입은 withUsableFilter 제네릭을 거치며 { topComments: unknown }으로 좁혀지므로
+  //   unknown[]로 받고 cafeId만 좁혀 읽는다(any 미사용).
+  const metricsOf = (stage: RefStage, pool: readonly unknown[]): RefMetrics => {
+    const m: Record<string, number> = {}
+    for (const q of pool) {
+      const c = (q as { cafeId?: string | null }).cafeId ?? 'unknown'
+      m[c] = (m[c] ?? 0) + 1
+    }
+    return { refStage: stage, refPoolSize: pool.length, refCandidateSourceCounts: m }
+  }
+
   const withUsableFilter = <T extends { topComments: unknown }>(posts: T[]): T[] => {
     totalCandidatesChecked += posts.length
     for (const p of posts) {
@@ -338,7 +374,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: candidateTake, select: selectFields,
   })))
-  if (s1.length >= limit) return { refs: s1.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
+  if (s1.length >= limit) return { refs: s1.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s1', s1) }
 
   // 2단계: 7일 + 키워드
   const cutoff7d = new Date(Date.now() - 7 * 24 * 3600_000)
@@ -347,7 +383,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: candidateTake, select: selectFields,
   })))
-  if (s2.length >= limit) return { refs: s2.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
+  if (s2.length >= limit) return { refs: s2.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s2', s2) }
 
   // 3단계: 7일 + desireCategory만 (키워드 없이)
   const s3 = withUsableFilter(filterBlocked(await prisma.cafePost.findMany({
@@ -355,7 +391,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: candidateTake, select: selectFields,
   })))
-  if (s3.length >= limit) return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
+  if (s3.length >= limit) return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s3', s3) }
 
   // [Phase 1-a-② 2026-07-09] shadow fallback(fillWithShadow, PR #90 응급) 제거.
   //   remon/goondae는 publishable로 승격되어 base 쿼리(PUBLISHABLE_CAFE_IDS)의 stage 1~4에 정식 편입 —
@@ -371,9 +407,10 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
       take: candidateTake, select: selectFields,
     }))).filter(p => !s3ids.has(p.id))
     if (s4.length > 0) console.log(`[ContentCurator] stage4 fallback (${desireCat}→NULL pool): ${s4.length}개 발견`)
-    return { refs: [...s3, ...s4].slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
+    const s34 = [...s3, ...s4]
+    return { refs: s34.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s4', s34) }
   }
-  return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool }
+  return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s3', s3) }
 }
 
 /**
@@ -896,16 +933,25 @@ export async function main() {
     let refs: Awaited<ReturnType<typeof getReferencePosts>>['refs']
     let usedConditionalU4 = false
     let refsQuarantinedCount = 0  // [Phase 0-c] 당일 격리로 걸러진 refs 수 (REFS_EMPTY 오라벨 방지용)
+    // [ref 계측 2026-07-29] 관측 전용 — 여기 담기는 값은 후보 선택·정렬·발행에 일절 쓰이지 않는다.
+    //   목적: 발행 원문이 어느 fallback stage에서 나왔고 그 stage의 source 분포가 어땠는지 확정.
+    let refMetrics: Pick<TopicResult, 'refStage' | 'refPoolSize' | 'refCandidateSourceCounts'> = {}
 
     if (selfRef) {
       refs = [selfRef]
       maxUsableCount = computeUsableCount(selfRef.topComments)
       selfRefUsedCount++
+      refMetrics = { refStage: 'self', refPoolSize: 1, refCandidateSourceCounts: { [selfRef.cafeId ?? 'unknown']: 1 } }
     } else {
       // [REFS_EMPTY fix 2026-07-10] 당일 격리 Set을 전달해 slice(limit) 이전에 선제 제외 — 아래 사후 filter는 이중 방어
       const refResult = await getReferencePosts(candidate.topic, desireCat, 3, quarantinedPostIds)
       candidatesBeforeUsableFilter = refResult.candidatesBeforeUsableFilter
       maxUsableCount = refResult.maxUsableCount
+      refMetrics = {
+        refStage: refResult.refStage,
+        refPoolSize: refResult.refPoolSize,
+        refCandidateSourceCounts: refResult.refCandidateSourceCounts,
+      }
       // [Phase 0-c] 오늘 DUP/POL로 차단됐던 글은 refs로도 재사용 금지 — 같은 발행물로 수렴해 반복 차단되는 루프 제거
       refs = refResult.refs.filter(r => !quarantinedPostIds.has((r as unknown as { id: string }).id))
       refsQuarantinedCount = refResult.refs.length - refs.length
@@ -921,10 +967,10 @@ export async function main() {
     if (refs.length === 0) {
       if (candidatesBeforeUsableFilter > 0 && refsQuarantinedCount === 0) {
         // refs는 있었지만 usable<5로 전부 탈락 — topicResults에 기록 (별도 BotLog 없음)
-        topicResults.push({ ...candidate, refsCount: 0, skipReason: 'LOW_USABLE_COMMENTS', candidatesBeforeUsableFilter, maxUsableCount, requiredUsableCount: 5 })
+        topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: 0, skipReason: 'LOW_USABLE_COMMENTS', candidatesBeforeUsableFilter, maxUsableCount, requiredUsableCount: 5 })
       } else {
         // 격리 필터로 비워진 경우 포함 — usable 문제가 아니므로 REFS_EMPTY로 기록
-        topicResults.push({ ...candidate, refsCount: 0, skipReason: 'REFS_EMPTY' })
+        topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: 0, skipReason: 'REFS_EMPTY' })
       }
       continue
     }
@@ -935,7 +981,7 @@ export async function main() {
     const ageFitMain = findAgeFitViolation(mainRefText.title, mainRefText.content)
     if (ageFitMain) {
       console.log(`[ContentCurator] age-fit 발행 차단(${ageFitMain}): "${mainRefText.title.slice(0, 24)}"`)
-      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'AGE_FIT_BLOCK', matchedKeyword: ageFitMain, ...refMeta(refs[0]) })
+      topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: 'AGE_FIT_BLOCK', matchedKeyword: ageFitMain, ...refMeta(refs[0]) })
       continue
     }
 
@@ -960,7 +1006,7 @@ export async function main() {
       }
       if (!found) {
         console.log(`[ContentCurator] "${candidate.topic}" 모든 페르소나 일간 한도 초과 — 스킵`)
-        topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'AUTHOR_DAILY_CAP', ...refMeta(refs[0]) })
+        topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: 'AUTHOR_DAILY_CAP', ...refMeta(refs[0]) })
         continue
       }
     }
@@ -997,7 +1043,7 @@ export async function main() {
         mode: haikuGateMode,
       })
       console.log(`[ContentCurator] HAIKU_BLOCKED (${blocked.risks.join(',')}, conf=${blocked.confidence}): "${mainRef.title.slice(0, 30)}" — 발행 차단`)
-      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: 'HAIKU_BLOCKED', ...refMeta(refs[0]), haiku })
+      topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: 'HAIKU_BLOCKED', ...refMeta(refs[0]), haiku })
       continue
     }
     if (haikuResult.haikuStatus !== 'ERROR' && haikuResult.wouldReject) {
@@ -1008,19 +1054,19 @@ export async function main() {
     if (!generated.ok) {
       // refs는 있었지만 생성이 불가했던 경우 — 사유를 세분화해 기록한다.
       // (후보 필터가 선제 제외하므로 정상 운영에서는 거의 발생하지 않아야 한다)
-      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: generated.reason, ...refMeta(refs[0]), haiku })
+      topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: generated.reason, ...refMeta(refs[0]), haiku })
       continue
     }
     const curated = generated.curated
 
     const publishResult = await publishCuratedContent(curated)
     if (!publishResult.success) {
-      topicResults.push({ ...candidate, refsCount: refs.length, skipReason: publishResult.skipReason, matchedKeyword: publishResult.matchedKeyword, ...refMeta(refs[0]), haiku })
+      topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: publishResult.skipReason, matchedKeyword: publishResult.matchedKeyword, ...refMeta(refs[0]), haiku })
       continue
     }
 
     // 발행 성공
-    topicResults.push({ ...candidate, refsCount: refs.length, skipReason: null, ...refMeta(refs[0]), routingDesire: board.routingDesire, routingGuard: board.routingGuard, haiku })
+    topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: null, ...refMeta(refs[0]), routingDesire: board.routingDesire, routingGuard: board.routingGuard, haiku })
     publishedCount++
     if (publishResult.seoTransformed) seoTransformedCount++
     else seoFallbackCount++
