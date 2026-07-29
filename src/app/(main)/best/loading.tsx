@@ -7,21 +7,16 @@ export default function BestLoading() {
         <div className="h-[52px] w-32 rounded-full bg-muted animate-pulse" />
       </div>
 
-      {/* PostCard skeleton — 실제 카드 구조와 일치 */}
-      <div className="space-y-3">
+      {/* 목록 행 skeleton — PostCard 실제 행 구조(제목/preview/메타)와 높이 일치 */}
+      <div>
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-card rounded-2xl p-6 border border-border flex flex-col gap-2.5">
-            {/* 배지 */}
-            <div className="h-6 w-16 rounded-full bg-muted animate-pulse" />
-            {/* 제목 */}
-            <div className="h-5 w-3/4 rounded bg-muted animate-pulse" />
-            {/* preview 2줄 */}
-            <div className="h-4 w-full rounded bg-muted animate-pulse" />
-            <div className="h-4 w-2/3 rounded bg-muted animate-pulse" />
-            {/* 작성자/시간 */}
-            <div className="h-4 w-40 rounded bg-muted animate-pulse" />
-            {/* 메타 행 */}
-            <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+          <div key={i} className="border-b border-border py-3.5 last:border-b-0 animate-pulse">
+            {/* 제목 1줄 */}
+            <div className="h-[27px] w-3/4 rounded bg-muted" />
+            {/* preview 1줄 */}
+            <div className="h-[22px] w-full rounded bg-muted mt-1" />
+            {/* 메타(보드배지·작성자·시간 + 통계) */}
+            <div className="h-[25px] w-2/3 rounded bg-muted mt-1.5" />
           </div>
         ))}
       </div>

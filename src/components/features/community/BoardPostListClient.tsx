@@ -25,14 +25,15 @@ interface BoardPostsResponse {
   total: number
 }
 
+/** 목록 행 스켈레톤 — PostCard 실제 행 구조(제목/preview/메타)와 높이를 맞춘다. */
 function PostListSkeleton() {
   return (
-    <div className="space-y-3">
+    <div>
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="bg-card rounded-xl p-5 border border-border animate-pulse">
-          <div className="h-4 bg-muted rounded w-3/4 mb-3" />
-          <div className="h-3 bg-muted rounded w-full mb-2" />
-          <div className="h-3 bg-muted rounded w-1/2" />
+        <div key={i} className="border-b border-border py-3.5 last:border-b-0 animate-pulse">
+          <div className="h-[27px] bg-muted rounded w-3/4" />
+          <div className="h-[22px] bg-muted rounded w-full mt-1" />
+          <div className="h-[25px] bg-muted rounded w-2/3 mt-1.5" />
         </div>
       ))}
     </div>
@@ -160,7 +161,6 @@ export default function BoardPostListClient({
       <PostListWithAds
         items={data.posts}
         renderCard={(post) => <PostCard post={post} boardSlug={boardSlug} />}
-        className="space-y-3"
       />
       <BoardPaginationFooter
         total={data.total}

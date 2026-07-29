@@ -13,24 +13,28 @@ interface PostCardProps {
   showBoardBadge?: boolean
 }
 
+/**
+ * 게시글 목록 한 줄(리스트 행).
+ *
+ * 카드가 아니라 구분선으로 나뉜 행이다. 카드형이던 시절 배지가 제목 위에 있어
+ * 첫 시선이 제목으로 가지 않았고, 카드 하나가 191px이라 12개 목록이 3000px였다.
+ * 제목을 맨 위로 올리고 라운드·그림자·4면 테두리를 걷어냈다.
+ *
+ * 좌우 padding을 두지 않는다 — 소비처 4곳의 상위 컨테이너가 이미 px-4(md:px-6)를
+ * 가지고 있어, 여기서 또 주면 본문이 안쪽으로 한 번 더 밀린다.
+ *
+ * preview는 값이 있을 때만 렌더한다. 보드별 충전율이 25~83%로 크게 갈려
+ * (갱년기톡 33% · 웃음방 25%) 자리를 항상 확보하면 빈 줄이 생긴다.
+ */
 function PostCard({ post, boardSlug, showBoardBadge = false }: PostCardProps) {
+  // 공백만 있는 preview도 빈 값으로 취급 — 빈 줄 방지
+  const preview = post.preview?.trim()
+
   return (
     <Link
       href={`/community/${boardSlug}/${post.slug ?? post.id}`}
-      className="bg-card rounded-2xl p-4 border border-border shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-200 flex flex-col gap-2.5 no-underline text-inherit relative overflow-hidden after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[3px] after:bg-primary after:scale-x-0 after:transition-transform after:duration-300 hover:after:scale-x-100 lg:p-5 lg:hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] lg:hover:-translate-y-[3px] lg:hover:border-primary/20"
+      className="block border-b border-border py-3.5 no-underline text-inherit transition-colors last:border-b-0 hover:bg-muted/40"
     >
-      {showBoardBadge
-        ? (
-          <CategoryBadge
-            boardType={post.boardType as string}
-            label={BOARD_DISPLAY_NAMES[post.boardType as BoardType] ?? post.boardType}
-          />
-        )
-        : post.category && (
-          <CategoryBadge boardType={post.boardType as string} label={post.category} />
-        )
-      }
-
       <h2 className="text-body font-bold text-foreground m-0 line-clamp-2 leading-[1.5]">
         {post.isPinned && (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caption font-bold tracking-wide mr-1 bg-foreground text-background">공지 </span>
@@ -44,22 +48,43 @@ function PostCard({ post, boardSlug, showBoardBadge = false }: PostCardProps) {
         {post.title}
       </h2>
 
-      <div className="flex items-center gap-1.5 text-caption text-muted-foreground pt-1">
-        <span>{post.author.gradeEmoji}</span>
-        <span className="font-medium text-muted-foreground">{post.author.nickname}</span>
+      {preview && (
+        <p className="text-caption text-muted-foreground m-0 mt-1 line-clamp-1 leading-[1.5]">
+          {preview}
+        </p>
+      )}
+
+      {/* 메타 + 통계 한 줄. XLARGE에서 좁으면 flex-wrap으로 줄바꿈한다(truncate로 자르지 않는다). */}
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
+        {showBoardBadge
+          ? (
+            <CategoryBadge
+              boardType={post.boardType as string}
+              label={BOARD_DISPLAY_NAMES[post.boardType as BoardType] ?? post.boardType}
+              variant="compact"
+            />
+          )
+          : post.category && (
+            <CategoryBadge boardType={post.boardType as string} label={post.category} variant="compact" />
+          )
+        }
+        <span className="flex items-center gap-1">
+          <span>{post.author.gradeEmoji}</span>
+          <span className="font-medium">{post.author.nickname}</span>
+        </span>
         <span className="text-border">·</span>
         <span>{formatTimeAgo(post.createdAt)}</span>
-      </div>
 
-      <div className="flex items-center gap-4 text-caption text-muted-foreground pt-1.5 border-t border-border mt-0.5">
-        <span className="flex items-center gap-1.5" aria-label={`좋아요 ${post.likeCount}개`}>
-          <IconHeart size={16} /> {post.likeCount}
-        </span>
-        <span className="flex items-center gap-1.5" aria-label={`댓글 ${post.commentCount}개`}>
-          <IconComment size={16} /> {post.commentCount}
-        </span>
-        <span className="flex items-center gap-1.5" aria-label={`조회 ${post.viewCount}회`}>
-          <IconEye size={16} /> {post.viewCount}
+        <span className="ml-auto flex items-center gap-3">
+          <span className="flex items-center gap-1" aria-label={`좋아요 ${post.likeCount}개`}>
+            <IconHeart size={16} /> {post.likeCount}
+          </span>
+          <span className="flex items-center gap-1" aria-label={`댓글 ${post.commentCount}개`}>
+            <IconComment size={16} /> {post.commentCount}
+          </span>
+          <span className="flex items-center gap-1" aria-label={`조회 ${post.viewCount}회`}>
+            <IconEye size={16} /> {post.viewCount}
+          </span>
         </span>
       </div>
     </Link>
