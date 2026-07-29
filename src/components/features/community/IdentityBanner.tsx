@@ -47,8 +47,15 @@ export default function IdentityBanner({ boardSlug, className = '' }: Props) {
       className={`mb-6 border-b border-primary/15 bg-primary/[0.04] py-2 transition-opacity duration-300 ${shown ? 'opacity-100' : 'opacity-0'} ${className}`}
     >
       <div className="flex items-center gap-2.5">
-        {/* 실제 로고 심볼만 — 원 부분(상단)만 노출, 텍스트는 overflow로 가림 */}
-        <div className="h-[19px] w-[52px] shrink-0 overflow-hidden" aria-hidden="true">
+        {/* 실제 로고 심볼만 — 원 부분(상단)만 노출, 텍스트는 overflow로 가림.
+            좁은 화면(≤400px) + 가+ XLARGE에서만 숨긴다: 로고 52px + gap 10px 때문에
+            1줄째가 2줄로 wrap돼 띠가 113px까지 커졌다(문구 축약·truncate는 금지).
+            로고를 접으면 텍스트 가용 폭이 275 → 337px로 늘어 1줄이 유지된다.
+            그 외 조건(NORMAL/LARGE, 430px 이상)에서는 로고가 그대로 보인다. */}
+        <div
+          className="h-[19px] w-[52px] shrink-0 overflow-hidden max-[400px]:[[data-font-size=XLARGE]_&]:hidden"
+          aria-hidden="true"
+        >
           <Image src="/images/logo.png" width={52} height={28} alt="" className="block" />
         </div>
         {/* 폰트: text-body/text-caption = CSS 변수 기반 → '가+' 3단계에 반응(고정 px 금지) */}
