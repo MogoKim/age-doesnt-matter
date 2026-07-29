@@ -794,6 +794,9 @@ export async function main() {
   //   빈자리를 killer 5번째~로 보충 → pool 을 CANDIDATE_POOL_SIZE(15) 근접 유지. 상위 후보가 정치/중복/저품질로
   //   skip 돼도 다음 killer 후보를 계속 시도해 published=0 회차를 줄인다. 가드는 그대로(완화 아님, 후보 보충).
   //   설계: docs/analysis/content-curation-candidate-redesign-2026-07-09.md
+  //   [pool 구조 2026-07-29] 격리 제외의 **주 경로는 위 where의 id notIn**이다.
+  //   여기 quarantinedPostIds.has 는 동일 Set을 쓰는 방어용 safety net(실측 제거 0건).
+  //   isDesireExhausted 는 desire별 발행 실적 기반 동적 판정이라 where로 옮길 수 없어 이 자리에 남는다.
   const killerCandidatesAll: CandidateTopic[] = killerPosts
     .filter(p => !isDesireExhausted(p.desireCategory ?? 'GENERAL') && !quarantinedPostIds.has(p.id))
     .map(p => ({
