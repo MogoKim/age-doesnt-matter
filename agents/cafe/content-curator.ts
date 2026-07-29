@@ -93,7 +93,10 @@ async function fetchUsedShare7d(): Promise<Map<string, number>> {
  * 같은 killerScore 10점 밴드 안에서만 저점유 cafeId 우선.
  * 정렬 키: 밴드 desc → 7일 점유율 asc → killerScore desc (밴드 간 품질 순위 불훼손)
  */
-function applyDiversitySort<T extends { killerScore: number | null; cafeId: string }>(
+// [PR-2 2026-07-29] cafeId 제약을 `string | null`로 완화 — getReferencePosts refs(select 결과)의
+//   cafeId가 nullable이라 같은 helper를 공유하기 위함. 기존 killer/publishable 호출은 더 좁은 타입이라
+//   그대로 통과하며, 정렬 로직·결과는 불변(null은 점유율 0으로 취급 = 기존 미등록 cafeId와 동일 처리).
+function applyDiversitySort<T extends { killerScore: number | null; cafeId: string | null }>(
   rows: T[],
   usedShare: Map<string, number>,
 ): T[] {
@@ -101,8 +104,8 @@ function applyDiversitySort<T extends { killerScore: number | null; cafeId: stri
     const bandA = Math.floor((a.killerScore ?? 0) / 10)
     const bandB = Math.floor((b.killerScore ?? 0) / 10)
     if (bandA !== bandB) return bandB - bandA
-    const shareA = usedShare.get(a.cafeId) ?? 0
-    const shareB = usedShare.get(b.cafeId) ?? 0
+    const shareA = usedShare.get(a.cafeId ?? '') ?? 0
+    const shareB = usedShare.get(b.cafeId ?? '') ?? 0
     if (shareA !== shareB) return shareA - shareB
     return (b.killerScore ?? 0) - (a.killerScore ?? 0)
   })
@@ -114,6 +117,8 @@ interface RefMetrics {
   refStage: RefStage
   refPoolSize: number
   refCandidateSourceCounts: Record<string, number>
+  /** [PR-2] 이 stage의 최종 선택에 diversity 정렬이 실제로 적용됐는지 — 플래그 실값과 일치 */
+  refDiversityApplied: boolean
 }
 
 interface TopicResult extends CandidateTopic {
@@ -143,7 +148,7 @@ interface TopicResult extends CandidateTopic {
   refCandidateSourceCounts?: Record<string, number>
   /** 선택된 mainRef의 cafeId — refCafeId와 동일 값이나 계측 파서 편의를 위해 별도 기록 */
   refSelectedSource?: string
-  /** diversity 정렬 적용 여부 — PR-1은 계측만이므로 항상 false */
+  /** diversity 정렬 적용 여부 — SOURCE_DIVERSITY_SORT 실값과 일치(self-ref는 단건이라 항상 false) */
   refDiversityApplied?: boolean
   // [PR-2 Haiku dry-run 2026-07-14] main ref 품질 판정 기록 — 발행 직전 도달한 엔트리에만 (additive optional, 차단 없음)
   haiku?: Record<string, unknown>
@@ -265,9 +270,15 @@ async function getHaikuBlockedRefIds(): Promise<Set<string>> {
  * usable≥5 필터: wave-processor BLOCK2 기준(usableCount<5)과 통일, wave4 full run 보장
  */
 // refs 조회 공통 select — getReferencePosts refs 와 killer self-ref fast lane 이 동일 shape 를 공유(타입 일치)
-const REF_SELECT_FIELDS = { id: true, title: true, content: true, cafeName: true, topComments: true, desireCategory: true, commentCount: true, cafeId: true } as const
+// [PR-2 2026-07-29] killerScore 추가 — applyDiversitySort가 품질 밴드(10점) 계산에 쓴다.
+//   select 1필드 증가일 뿐 where/orderBy/take는 불변이며, 플래그 off면 이 값을 읽지 않는다.
+const REF_SELECT_FIELDS = { id: true, title: true, content: true, cafeName: true, topComments: true, desireCategory: true, commentCount: true, cafeId: true, killerScore: true } as const
 
-async function getReferencePosts(topic: string, desireCat: string, limit: number, quarantinedPostIds: ReadonlySet<string> = new Set()) {
+/**
+ * @param usedShare7d 최근 7일 source별 발행 점유율. null이면 diversity 정렬 미적용(기존 동작과 100% 동일).
+ *   killer lane(runCuration)에서 계산한 것과 **같은 Map을 그대로 전달**받아 두 lane이 하나의 기준을 공유한다.
+ */
+async function getReferencePosts(topic: string, desireCat: string, limit: number, quarantinedPostIds: ReadonlySet<string> = new Set(), usedShare7d: Map<string, number> | null = null) {
   const base = {
     isUsable: true, usedAt: null, isPopular: false,
     imageUrls: { isEmpty: true }, videoUrls: { isEmpty: true },
@@ -353,8 +364,26 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
       const c = (q as { cafeId?: string | null }).cafeId ?? 'unknown'
       m[c] = (m[c] ?? 0) + 1
     }
-    return { refStage: stage, refPoolSize: pool.length, refCandidateSourceCounts: m }
+    // refCandidateSourceCounts/refPoolSize는 **정렬 전 필터 통과 후보** 기준(PR-1과 동일 의미).
+    //   정렬은 순서만 바꾸고 구성원을 더하거나 빼지 않으므로 정렬 전/후 값이 같다.
+    return { refStage: stage, refPoolSize: pool.length, refCandidateSourceCounts: m, refDiversityApplied: usedShare7d !== null }
   }
+
+  /**
+   * [PR-2 2026-07-29] **4개 fallback stage 공통 최종 선택 정책**.
+   *   slice(0, limit) 직전에 반드시 이 helper 하나만 거친다 — stage별로 다른 선택 규칙이 존재하지 않는다.
+   *   usedShare7d가 null(플래그 off)이면 입력 배열을 그대로 반환하므로 기존 반환 순서와 100% 동일하다.
+   *   정렬 기준은 killer lane과 같은 applyDiversitySort(품질 10점 밴드 내에서만 저점유 source 우선)라
+   *   밴드 간 품질 순위와 floor는 불변이다.
+   */
+  //   T를 제약 없이 받는 이유: pool 원소 타입이 withUsableFilter 제네릭을 거치며 { topComments: unknown }으로
+  //   좁혀져(PR-1에서 metricsOf가 unknown[]을 받은 것과 같은 현상), 제약을 걸면 반환 타입이 그 제약으로 붕괴해
+  //   호출부가 id/title/topComments를 잃는다. 정렬에 필요한 killerScore·cafeId는 REF_SELECT_FIELDS가 항상
+  //   포함하므로 런타임에 반드시 존재한다 — 그 사실만 캐스팅으로 알려주고 원소 타입 T는 그대로 보존한다(any 미사용).
+  const selectRefs = <T,>(pool: T[]): T[] =>
+    usedShare7d
+      ? applyDiversitySort(pool as Array<T & { killerScore: number | null; cafeId: string | null }>, usedShare7d)
+      : pool
 
   const withUsableFilter = <T extends { topComments: unknown }>(posts: T[]): T[] => {
     totalCandidatesChecked += posts.length
@@ -374,7 +403,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: candidateTake, select: selectFields,
   })))
-  if (s1.length >= limit) return { refs: s1.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s1', s1) }
+  if (s1.length >= limit) return { refs: selectRefs(s1).slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s1', s1) }
 
   // 2단계: 7일 + 키워드
   const cutoff7d = new Date(Date.now() - 7 * 24 * 3600_000)
@@ -383,7 +412,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: candidateTake, select: selectFields,
   })))
-  if (s2.length >= limit) return { refs: s2.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s2', s2) }
+  if (s2.length >= limit) return { refs: selectRefs(s2).slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s2', s2) }
 
   // 3단계: 7일 + desireCategory만 (키워드 없이)
   const s3 = withUsableFilter(filterBlocked(await prisma.cafePost.findMany({
@@ -391,7 +420,7 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     orderBy: [{ killerScore: 'desc' }, { likeCount: 'desc' }],
     take: candidateTake, select: selectFields,
   })))
-  if (s3.length >= limit) return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s3', s3) }
+  if (s3.length >= limit) return { refs: selectRefs(s3).slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s3', s3) }
 
   // [Phase 1-a-② 2026-07-09] shadow fallback(fillWithShadow, PR #90 응급) 제거.
   //   remon/goondae는 publishable로 승격되어 base 쿼리(PUBLISHABLE_CAFE_IDS)의 stage 1~4에 정식 편입 —
@@ -408,9 +437,9 @@ async function getReferencePosts(topic: string, desireCat: string, limit: number
     }))).filter(p => !s3ids.has(p.id))
     if (s4.length > 0) console.log(`[ContentCurator] stage4 fallback (${desireCat}→NULL pool): ${s4.length}개 발견`)
     const s34 = [...s3, ...s4]
-    return { refs: s34.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s4', s34) }
+    return { refs: selectRefs(s34).slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s4', s34) }
   }
-  return { refs: s3.slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s3', s3) }
+  return { refs: selectRefs(s3).slice(0, limit), candidatesBeforeUsableFilter: totalCandidatesChecked, maxUsableCount, u4Pool, ...metricsOf('s3', s3) }
 }
 
 /**
@@ -935,22 +964,23 @@ export async function main() {
     let refsQuarantinedCount = 0  // [Phase 0-c] 당일 격리로 걸러진 refs 수 (REFS_EMPTY 오라벨 방지용)
     // [ref 계측 2026-07-29] 관측 전용 — 여기 담기는 값은 후보 선택·정렬·발행에 일절 쓰이지 않는다.
     //   목적: 발행 원문이 어느 fallback stage에서 나왔고 그 stage의 source 분포가 어땠는지 확정.
-    let refMetrics: Pick<TopicResult, 'refStage' | 'refPoolSize' | 'refCandidateSourceCounts'> = {}
+    let refMetrics: Pick<TopicResult, 'refStage' | 'refPoolSize' | 'refCandidateSourceCounts' | 'refDiversityApplied'> = {}
 
     if (selfRef) {
       refs = [selfRef]
       maxUsableCount = computeUsableCount(selfRef.topComments)
       selfRefUsedCount++
-      refMetrics = { refStage: 'self', refPoolSize: 1, refCandidateSourceCounts: { [selfRef.cafeId ?? 'unknown']: 1 } }
+      refMetrics = { refStage: 'self', refPoolSize: 1, refCandidateSourceCounts: { [selfRef.cafeId ?? 'unknown']: 1 }, refDiversityApplied: false }
     } else {
       // [REFS_EMPTY fix 2026-07-10] 당일 격리 Set을 전달해 slice(limit) 이전에 선제 제외 — 아래 사후 filter는 이중 방어
-      const refResult = await getReferencePosts(candidate.topic, desireCat, 3, quarantinedPostIds)
+      const refResult = await getReferencePosts(candidate.topic, desireCat, 3, quarantinedPostIds, usedShare7d)
       candidatesBeforeUsableFilter = refResult.candidatesBeforeUsableFilter
       maxUsableCount = refResult.maxUsableCount
       refMetrics = {
         refStage: refResult.refStage,
         refPoolSize: refResult.refPoolSize,
         refCandidateSourceCounts: refResult.refCandidateSourceCounts,
+        refDiversityApplied: refResult.refDiversityApplied,
       }
       // [Phase 0-c] 오늘 DUP/POL로 차단됐던 글은 refs로도 재사용 금지 — 같은 발행물로 수렴해 반복 차단되는 루프 제거
       refs = refResult.refs.filter(r => !quarantinedPostIds.has((r as unknown as { id: string }).id))
@@ -967,10 +997,10 @@ export async function main() {
     if (refs.length === 0) {
       if (candidatesBeforeUsableFilter > 0 && refsQuarantinedCount === 0) {
         // refs는 있었지만 usable<5로 전부 탈락 — topicResults에 기록 (별도 BotLog 없음)
-        topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: 0, skipReason: 'LOW_USABLE_COMMENTS', candidatesBeforeUsableFilter, maxUsableCount, requiredUsableCount: 5 })
+        topicResults.push({ ...candidate, ...refMetrics, refsCount: 0, skipReason: 'LOW_USABLE_COMMENTS', candidatesBeforeUsableFilter, maxUsableCount, requiredUsableCount: 5 })
       } else {
         // 격리 필터로 비워진 경우 포함 — usable 문제가 아니므로 REFS_EMPTY로 기록
-        topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: 0, skipReason: 'REFS_EMPTY' })
+        topicResults.push({ ...candidate, ...refMetrics, refsCount: 0, skipReason: 'REFS_EMPTY' })
       }
       continue
     }
@@ -981,7 +1011,7 @@ export async function main() {
     const ageFitMain = findAgeFitViolation(mainRefText.title, mainRefText.content)
     if (ageFitMain) {
       console.log(`[ContentCurator] age-fit 발행 차단(${ageFitMain}): "${mainRefText.title.slice(0, 24)}"`)
-      topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: 'AGE_FIT_BLOCK', matchedKeyword: ageFitMain, ...refMeta(refs[0]) })
+      topicResults.push({ ...candidate, ...refMetrics, refsCount: refs.length, skipReason: 'AGE_FIT_BLOCK', matchedKeyword: ageFitMain, ...refMeta(refs[0]) })
       continue
     }
 
@@ -1006,7 +1036,7 @@ export async function main() {
       }
       if (!found) {
         console.log(`[ContentCurator] "${candidate.topic}" 모든 페르소나 일간 한도 초과 — 스킵`)
-        topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: 'AUTHOR_DAILY_CAP', ...refMeta(refs[0]) })
+        topicResults.push({ ...candidate, ...refMetrics, refsCount: refs.length, skipReason: 'AUTHOR_DAILY_CAP', ...refMeta(refs[0]) })
         continue
       }
     }
@@ -1043,7 +1073,7 @@ export async function main() {
         mode: haikuGateMode,
       })
       console.log(`[ContentCurator] HAIKU_BLOCKED (${blocked.risks.join(',')}, conf=${blocked.confidence}): "${mainRef.title.slice(0, 30)}" — 발행 차단`)
-      topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: 'HAIKU_BLOCKED', ...refMeta(refs[0]), haiku })
+      topicResults.push({ ...candidate, ...refMetrics, refsCount: refs.length, skipReason: 'HAIKU_BLOCKED', ...refMeta(refs[0]), haiku })
       continue
     }
     if (haikuResult.haikuStatus !== 'ERROR' && haikuResult.wouldReject) {
@@ -1054,19 +1084,19 @@ export async function main() {
     if (!generated.ok) {
       // refs는 있었지만 생성이 불가했던 경우 — 사유를 세분화해 기록한다.
       // (후보 필터가 선제 제외하므로 정상 운영에서는 거의 발생하지 않아야 한다)
-      topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: generated.reason, ...refMeta(refs[0]), haiku })
+      topicResults.push({ ...candidate, ...refMetrics, refsCount: refs.length, skipReason: generated.reason, ...refMeta(refs[0]), haiku })
       continue
     }
     const curated = generated.curated
 
     const publishResult = await publishCuratedContent(curated)
     if (!publishResult.success) {
-      topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: publishResult.skipReason, matchedKeyword: publishResult.matchedKeyword, ...refMeta(refs[0]), haiku })
+      topicResults.push({ ...candidate, ...refMetrics, refsCount: refs.length, skipReason: publishResult.skipReason, matchedKeyword: publishResult.matchedKeyword, ...refMeta(refs[0]), haiku })
       continue
     }
 
     // 발행 성공
-    topicResults.push({ ...candidate, ...refMetrics, refDiversityApplied: false, refsCount: refs.length, skipReason: null, ...refMeta(refs[0]), routingDesire: board.routingDesire, routingGuard: board.routingGuard, haiku })
+    topicResults.push({ ...candidate, ...refMetrics, refsCount: refs.length, skipReason: null, ...refMeta(refs[0]), routingDesire: board.routingDesire, routingGuard: board.routingGuard, haiku })
     publishedCount++
     if (publishResult.seoTransformed) seoTransformedCount++
     else seoFallbackCount++
