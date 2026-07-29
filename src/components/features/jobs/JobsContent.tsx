@@ -8,6 +8,7 @@ import type { SearchField } from '@/lib/queries/posts/posts.base'
 import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
 import JobCard from '@/components/features/jobs/JobCard'
+import EmptyState from '@/components/ui/EmptyState'
 
 const LIMIT = 12
 
@@ -114,16 +115,17 @@ export default function JobsContent({ initialJobs, initialTotal }: JobsContentPr
           className="space-y-3"
         />
       ) : (
-        <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-          <p className="text-body text-muted-foreground leading-relaxed">
-            {q ? (
+        <EmptyState
+          message={
+            q ? (
               <>&ldquo;{q}&rdquo; 검색 결과가 없어요.<br />다른 검색어를 입력해 보세요.</>
             ) : hasFilters ? (
               <>조건에 맞는 일자리가 없어요.<br />필터를 변경해 보세요!</>
             ) : (
               <>아직 등록된 일자리가 없어요.<br />곧 새로운 일자리가 올라올 거예요!</>
-            )}
-          </p>
+            )
+          }
+        >
           {(q || hasFilters) && (
             <Link
               href="/jobs"
@@ -132,7 +134,7 @@ export default function JobsContent({ initialJobs, initialTotal }: JobsContentPr
               {q ? '검색 초기화' : '필터 초기화'}
             </Link>
           )}
-        </div>
+        </EmptyState>
       )}
 
       <BoardPaginationFooter

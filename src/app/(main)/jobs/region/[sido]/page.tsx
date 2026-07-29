@@ -6,6 +6,7 @@ import JobCard from '@/components/features/jobs/JobCard'
 import JobRegionLinks from '@/components/features/jobs/JobRegionLinks'
 import { JOB_SIDO_LIST, isJobSido } from '@/lib/jobs-regions'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/breadcrumb'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface PageProps {
   params: Promise<{ sido: string }>
@@ -115,17 +116,16 @@ export default async function RegionJobsPage({ params }: PageProps) {
             ))}
           </ul>
         ) : (
-          <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-            <p className="text-body text-muted-foreground leading-relaxed">
-              아직 {region} 지역 일자리가 없어요.<br />곧 새로운 일자리가 올라올 거예요!
-            </p>
+          <EmptyState
+            message={<>아직 {region} 지역 일자리가 없어요.<br />곧 새로운 일자리가 올라올 거예요!</>}
+          >
             <Link
               href="/jobs"
               className="inline-flex items-center justify-center h-[52px] px-6 bg-primary text-white rounded-xl text-body font-bold no-underline hover:bg-primary/90"
             >
               전체 일자리 보기
             </Link>
-          </div>
+          </EmptyState>
         )}
       </div>
     </div>
