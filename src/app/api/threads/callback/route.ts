@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   const appId = (process.env.THREADS_APP_ID ?? '').trim()
   const appSecret = (process.env.THREADS_APP_SECRET ?? '').trim()
-  const siteUrl = (process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.age-doesnt-matter.com').trim()
+  const siteUrl = (process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://age-doesnt-matter.com').trim()
   const redirectUri = `${siteUrl}/api/threads/callback`
 
   try {

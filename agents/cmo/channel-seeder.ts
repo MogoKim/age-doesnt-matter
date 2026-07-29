@@ -15,7 +15,7 @@ import { createApprovalRequest } from '../core/approval-helper.js'
 
 const MODEL = process.env.CLAUDE_MODEL_LIGHT ?? 'claude-haiku-4-5'
 const client = new Anthropic()
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? 'https://www.age-doesnt-matter.com').trim()
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? 'https://age-doesnt-matter.com').trim()
 
 type ChannelType = 'KAKAO_OPENCHAT' | 'DANGGEUN' | 'COMMUNITY'
 

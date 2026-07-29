@@ -607,7 +607,7 @@ export async function main() {
               if (waveCount === 0) {
                 // 파동 없음 → 재예약 (FAILED 후 B~J 공백 재시도 케이스)
                 const retryNow = new Date()
-                const retryPostUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${getSheetBoardSlug(tab.boardType)}/${existingActive.id}`
+                const retryPostUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/community/${getSheetBoardSlug(tab.boardType)}/${existingActive.id}`
                 const imageLikePost = isImageLikePostContent(existingActive.content ?? '')
 
                 if (tab.isFeatured) {
@@ -883,7 +883,7 @@ export async function main() {
               : await prisma.post.create({ data: { ...postData, slug } })
 
             // 게시글 URL 생성 (slug 우선)
-            const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.age-doesnt-matter.com'}/community/${getSheetBoardSlug(tab.boardType)}/${post.slug ?? post.id}`
+            const postUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://age-doesnt-matter.com'}/community/${getSheetBoardSlug(tab.boardType)}/${post.slug ?? post.id}`
 
             // BotLog 파동 예약 — details는 scheduler가 JSON.parse()로 읽는 구조
             const now = new Date()

@@ -19,6 +19,13 @@ import { safeBotLog } from '../core/safe-log.js'
 import { sendSlackMessage } from '../core/notifier.js'
 
 const SITE_URL = process.env.SEARCH_CONSOLE_SITE_URL ?? 'sc-domain:age-doesnt-matter.com'
+
+/**
+ * GSC 속성 정본은 도메인 속성(sc-domain)이다. www URL 접두어 속성에는 데이터가 거의 없다.
+ * 2026-07-28에 secret이 www 속성을 가리키는 바람에 클릭 0·노출 14로 수집돼 스냅샷 2건이
+ * 오염됐다. 실패시키면 관측이 통째로 멈추므로, 경고를 남기고 PARTIAL로 기록해 눈에 띄게 한다.
+ */
+const isWwwProperty = SITE_URL.includes('www.age-doesnt-matter.com')
 /** GSC 데이터는 2~3일 지연된다 — 기준 종료일을 3일 전으로 잡아야 빈 구간을 세지 않는다 */
 const LAG_DAYS = 3
 const DAY_MS = 86_400_000
@@ -158,6 +165,8 @@ function pct(current: number, previous: number | undefined): string {
 interface PreviousSnapshot {
   week?: string
   createdAt: Date
+  /** 그 스냅샷이 실제로 조회한 GSC 속성. 구버전 스냅샷에는 없다(undefined) */
+  siteUrl?: string
   identityClicks?: number
   identityImpressions?: number
   totalClicks?: number
@@ -186,6 +195,7 @@ async function loadPreviousSnapshot(): Promise<{ snapshot: PreviousSnapshot | nu
   try {
     const parsed = JSON.parse(last.details ?? '{}') as {
       week?: string
+      siteUrl?: string
       totals?: { d28?: Totals }
       segments?: { identity?: Totals }
       trackedPages?: Record<string, Totals>
@@ -194,6 +204,7 @@ async function loadPreviousSnapshot(): Promise<{ snapshot: PreviousSnapshot | nu
       snapshot: {
         week: parsed.week,
         createdAt: last.createdAt,
+        siteUrl: parsed.siteUrl,
         identityClicks: parsed.segments?.identity?.clicks,
         identityImpressions: parsed.segments?.identity?.impressions,
         totalClicks: parsed.totals?.d28?.clicks,
@@ -332,20 +343,39 @@ async function main(): Promise<void> {
     const gapDays = prev ? Math.floor((Date.now() - prev.createdAt.getTime()) / DAY_MS) : null
     const gapWarning = gapDays !== null && gapDays >= 14
 
+    /**
+     * 조회 속성이 바뀌었으면 delta를 계산하지 않는다.
+     * 다른 GSC 속성끼리 빼면 "노출 +4114%" 같은 가짜 신호가 나온다(2026-07-29에 실제로 겪었다).
+     * 구버전 스냅샷은 siteUrl을 기록하지 않았으므로(undefined) 그것도 비교 대상에서 뺀다.
+     */
+    const siteUrlMismatch = prev !== null && prev.siteUrl !== SITE_URL
+    const skipReason = prev === null
+      ? null
+      : prev.siteUrl === undefined
+        ? 'siteUrl 미기록 스냅샷(구버전)과는 비교하지 않음'
+        : siteUrlMismatch
+          ? `GSC 속성 변경(${prev.siteUrl} → ${SITE_URL})으로 delta 생략`
+          : null
+
     const topicMenopauseImpressions = trackedPages['/topic/menopause']?.impressions ?? 0
+    const comparable = prev !== null && skipReason === null
     const deltaVsLastWeek = {
       previousWeek: prev?.week ?? null,
+      previousSiteUrl: prev?.siteUrl ?? null,
       gapDays,
-      identityClicks: pct(segments.identity.clicks, prev?.identityClicks),
-      identityImpressions: pct(segments.identity.impressions, prev?.identityImpressions),
-      totalClicks: pct(totals.d28.clicks, prev?.totalClicks),
-      totalImpressions: pct(totals.d28.impressions, prev?.totalImpressions),
-      topicMenopauseImpressions: pct(topicMenopauseImpressions, prev?.topicMenopauseImpressions),
+      skipped: skipReason,
+      identityClicks: comparable ? pct(segments.identity.clicks, prev.identityClicks) : 'n/a',
+      identityImpressions: comparable ? pct(segments.identity.impressions, prev.identityImpressions) : 'n/a',
+      totalClicks: comparable ? pct(totals.d28.clicks, prev.totalClicks) : 'n/a',
+      totalImpressions: comparable ? pct(totals.d28.impressions, prev.totalImpressions) : 'n/a',
+      topicMenopauseImpressions: comparable
+        ? pct(topicMenopauseImpressions, prev.topicMenopauseImpressions)
+        : 'n/a',
     }
 
-    // ── 이번 주 판정
+    // ── 이번 주 판정 (비교 불가하면 판정하지 않는다)
     let verdict: string
-    const prevIdentityImp = prev?.identityImpressions
+    const prevIdentityImp = comparable ? prev.identityImpressions : undefined
     if (segments.identity.impressions < 10 || prevIdentityImp === undefined) {
       verdict = '데이터 부족'
     } else if (segments.identity.impressions >= prevIdentityImp * 1.1) {
@@ -356,10 +386,16 @@ async function main(): Promise<void> {
       verdict = '관찰 정상'
     }
 
+    if (isWwwProperty && !partialReason) {
+      partialReason = `SEARCH_CONSOLE_SITE_URL이 www 속성(${SITE_URL})입니다 — 정본은 sc-domain:age-doesnt-matter.com. 수집값이 실제보다 훨씬 작습니다.`
+    }
+
     const week = isoWeek(rangeEndDate)
     const details = {
       week,
       rangeEnd,
+      /** 이번 스냅샷이 실제로 조회한 GSC 속성 — 다음 주 delta 비교의 전제 조건이다 */
+      siteUrl: SITE_URL,
       totals,
       segments,
       areas,
@@ -389,6 +425,7 @@ async function main(): Promise<void> {
 
     const text = [
       `📊 *주간 Google SEO 스냅샷 — ${week}* (기준 ${rangeEnd}까지)`,
+      `_GSC 속성: ${SITE_URL}_`,
       '',
       `*1. 전체 28일*: 클릭 ${totals.d28.clicks} / 노출 ${totals.d28.impressions} / 평균순위 ${totals.d28.position}`,
       `   7일 클릭 ${totals.d7.clicks}·노출 ${totals.d7.impressions} | 90일 클릭 ${totals.d90.clicks}·노출 ${totals.d90.impressions}`,
@@ -415,6 +452,7 @@ async function main(): Promise<void> {
         : ['  • 해당 없음']),
       '',
       `*7. 이번 주 판정*: ${verdict}`,
+      ...(skipReason ? [`  ⚠️ 전주 대비 변화 생략 — ${skipReason}`] : []),
       ...(gapWarning ? [`  ⚠️ 직전 스냅샷이 ${gapDays}일 전입니다 — 주간 수집이 끊겼는지 확인 필요`] : []),
       ...(partialReason ? [`  ⚠️ ${partialReason}`] : []),
       '',

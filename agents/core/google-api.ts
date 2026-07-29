@@ -269,11 +269,18 @@ export async function fetchSearchConsoleReport(
   startDate: string,
   endDate: string,
 ): Promise<SearchConsoleReport | null> {
+  // GSC 속성 정본은 도메인 속성(sc-domain)이다. www URL 접두어 속성에는 데이터가 거의 없다
+  // — 2026-07-28 주간 스냅샷이 www 속성을 보는 바람에 클릭 0·노출 14로 수집된 사고가 있었다.
   const siteUrl =
-    process.env.SEARCH_CONSOLE_SITE_URL ?? 'https://www.age-doesnt-matter.com'
+    process.env.SEARCH_CONSOLE_SITE_URL ?? 'sc-domain:age-doesnt-matter.com'
   if (!process.env.SEARCH_CONSOLE_SITE_URL) {
     console.warn('[google-api] SEARCH_CONSOLE_SITE_URL 미설정 — SC 수집 건너뜀')
     return null
+  }
+  if (siteUrl.includes('www.age-doesnt-matter.com')) {
+    console.warn(
+      `[google-api] SEARCH_CONSOLE_SITE_URL이 www 속성(${siteUrl})입니다 — 정본은 sc-domain:age-doesnt-matter.com. 수집값이 실제보다 훨씬 작을 수 있습니다.`,
+    )
   }
 
   const auth = getGoogleAuth([
