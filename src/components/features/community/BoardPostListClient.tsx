@@ -9,6 +9,7 @@ import type { SearchField } from '@/lib/queries/posts/posts.base'
 import PostCard from '@/components/features/community/PostCard'
 import PostListWithAds from '@/components/features/common/PostListWithAds'
 import BoardPaginationFooter from '@/components/features/common/BoardPaginationFooter'
+import EmptyState from '@/components/ui/EmptyState'
 
 const LIMIT = 12
 
@@ -118,12 +119,16 @@ export default function BoardPostListClient({
 
     return (
       <>
-        <div className="flex flex-col items-center justify-center p-8 gap-4 text-center bg-card rounded-2xl border-2 border-dashed border-border mt-6">
-          <div className="text-[56px]">📝</div>
-          <p className="text-body text-muted-foreground leading-[1.8]">
-            {q ? `"${q}" 검색 결과가 없어요.` : '아직 작성된 글이 없어요.'}<br />
-            {q ? '다른 검색어를 입력해 보세요.' : '첫 번째 글을 남겨보세요!'}
-          </p>
+        <EmptyState
+          className="mt-6"
+          icon="📝"
+          message={
+            <>
+              {q ? `"${q}" 검색 결과가 없어요.` : '아직 작성된 글이 없어요.'}<br />
+              {q ? '다른 검색어를 입력해 보세요.' : '첫 번째 글을 남겨보세요!'}
+            </>
+          }
+        >
           {q ? (
             <Link
               href={searchResetHref}
@@ -139,7 +144,7 @@ export default function BoardPostListClient({
               ✏️ 글쓰기
             </Link>
           )}
-        </div>
+        </EmptyState>
         <BoardPaginationFooter
           total={data.total}
           page={page}
