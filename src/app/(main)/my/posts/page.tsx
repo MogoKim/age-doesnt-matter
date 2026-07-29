@@ -30,7 +30,7 @@ export default async function MyPostsPage() {
       <h1 className="text-xl font-bold text-foreground mb-6">📝 내가 쓴 글</h1>
 
       {posts.length > 0 ? (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col">
           {posts.map((post) => (
             <PostCard
               key={post.id}
