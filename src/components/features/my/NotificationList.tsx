@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { formatTimeAgo } from '@/components/features/community/utils'
 import type { NotificationItem } from '@/types/api'
+import EmptyState from '@/components/ui/EmptyState'
 
 const NOTIFICATION_ICON: Record<string, string> = {
   COMMENT: '💬',
@@ -117,12 +118,9 @@ export default function NotificationList({ notifications, initialUnreadCount }: 
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-8 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-          <p className="text-body text-muted-foreground leading-relaxed">
-            아직 알림이 없어요.<br />
-            글에 댓글이 달리거나 공감을 받으면 알림이 와요.
-          </p>
-        </div>
+        <EmptyState
+          message={<>아직 알림이 없어요.<br />글에 댓글이 달리거나 공감을 받으면 알림이 와요.</>}
+        />
       )}
 
       {allReadFailed && (

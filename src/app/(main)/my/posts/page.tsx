@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth'
 import { getMyPosts } from '@/lib/queries/my'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import PostCard from '@/components/features/community/PostCard'
+import EmptyState from '@/components/ui/EmptyState'
 
 export const metadata: Metadata = {
   title: '내가 쓴 글',
@@ -39,18 +40,16 @@ export default async function MyPostsPage() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-8 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-          <p className="text-body text-muted-foreground leading-[1.8]">
-            아직 작성한 글이 없어요.<br />
-            일상 이야기, 고민, 유머 등 편하게 나눠보세요!
-          </p>
+        <EmptyState
+          message={<>아직 작성한 글이 없어요.<br />일상 이야기, 고민, 유머 등 편하게 나눠보세요!</>}
+        >
           <Link
             href="/community/write"
-            className="mt-4 inline-flex items-center justify-center min-h-[52px] px-6 py-3 bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center min-h-[52px] px-6 py-3 bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90"
           >
             글쓰기
           </Link>
-        </div>
+        </EmptyState>
       )}
     </div>
   )

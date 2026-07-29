@@ -5,6 +5,7 @@ import { getMyComments } from '@/lib/queries/my'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { BoardType } from '@/types/api'
 import { formatTimeAgo } from '@/components/features/community/utils'
+import EmptyState from '@/components/ui/EmptyState'
 
 export const metadata = { title: '내 댓글' }
 
@@ -49,19 +50,16 @@ export default async function MyCommentsPage() {
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-8 text-center bg-card rounded-2xl border-2 border-dashed border-border">
-          <p className="text-body text-muted-foreground leading-relaxed">
-            아직 작성한 댓글이 없어요.
-            <br />
-            다른 분들의 글에 댓글을 남겨보세요!
-          </p>
+        <EmptyState
+          message={<>아직 작성한 댓글이 없어요.<br />다른 분들의 글에 댓글을 남겨보세요!</>}
+        >
           <Link
             href="/best"
-            className="mt-4 inline-flex items-center justify-center min-h-[52px] px-6 py-3 bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center min-h-[52px] px-6 py-3 bg-primary text-white rounded-xl text-body font-bold no-underline transition-colors hover:bg-primary/90"
           >
             인기글 보러가기
           </Link>
-        </div>
+        </EmptyState>
       )}
     </div>
   )
