@@ -3,7 +3,7 @@ import type { PostSummary } from '@/types/api'
 import { BOARD_TYPE_TO_SLUG } from '@/types/api'
 import { BOARD_DISPLAY_NAMES } from '@/lib/board-constants'
 import { IconComment, IconEye, IconEnergy } from '@/components/icons'
-import { getCategoryChipClass } from '@/lib/category-chip'
+import CategoryBadge from '@/components/ui/CategoryBadge'
 
 interface Props {
   posts: PostSummary[]
@@ -40,9 +40,12 @@ export default function HumorSection({ posts }: Props) {
               position={index}
               contentId={post.id}
             >
-              <span className={`inline-block rounded-full px-2 py-0.5 text-caption font-normal leading-[1.4] mb-1.5 ${getCategoryChipClass(post.boardType)}`}>
-                {BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}
-              </span>
+              <CategoryBadge
+                boardType={post.boardType}
+                label={BOARD_DISPLAY_NAMES[post.boardType] ?? post.boardType}
+                variant="compact"
+                className="mb-1.5"
+              />
               <p className="text-body font-medium text-foreground leading-[1.5] line-clamp-2 mb-1.5 break-keep motion-safe:transition-colors motion-safe:duration-[250ms] motion-reduce:transition-none [@media(hover:hover)]:group-hover:text-primary-text group-active:text-primary-text">{post.title}</p>
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-caption text-muted-foreground">
                 <span className="flex items-center gap-1"><IconComment size={15} /> {post.commentCount}</span>
