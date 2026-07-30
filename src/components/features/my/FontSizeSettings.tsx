@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { updateFontSize } from '@/lib/actions/settings'
@@ -18,16 +18,26 @@ interface FontSizeSettingsProps {
 
 export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps) {
   const router = useRouter()
-  const { setFontSize } = useFontSize()
-  const [selected, setSelected] = useState(currentSize)
+  // 화면에 실제 적용된 값이 기준이다. DB(currentSize)는 기본값 '크게' 상향 이후 실제 화면과 어긋날 수 있다
+  // (미설정 사용자는 DB=NORMAL이지만 화면은 LARGE) → 이 값으로 맞춰야 헤더 가+ 표시와 일치한다.
+  const { fontSize: applied, setFontSize } = useFontSize()
+  const [selected, setSelected] = useState<string>(currentSize)
   const [isPending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
+
+  // 마운트 후 localStorage 폴백까지 끝난 실제 적용값으로 동기화
+  useEffect(() => {
+    setSelected(applied)
+  }, [applied])
 
   const PREVIEW_SIZE_MAP: Record<string, string> = { NORMAL: '18px', LARGE: '20px', XLARGE: '24px' }
   const previewSize = PREVIEW_SIZE_MAP[selected] ?? '18px'
 
+  // 화면과 다르거나 DB와 다르면 저장 가능 (DB만 어긋난 경우도 정합성을 맞출 수 있게)
+  const isDirty = selected !== applied || selected !== currentSize
+
   function handleSave() {
-    if (selected === currentSize) return
+    if (!isDirty) return
     setMessage('')
 
     startTransition(async () => {
@@ -81,7 +91,7 @@ export default function FontSizeSettings({ currentSize }: FontSizeSettingsProps)
       <button
         type="button"
         onClick={handleSave}
-        disabled={isPending || selected === currentSize}
+        disabled={isPending || !isDirty}
         className="w-full h-[52px] bg-primary text-white rounded-xl text-body font-bold transition-colors hover:bg-primary/90 disabled:bg-border disabled:cursor-not-allowed lg:h-12"
       >
         {isPending ? '적용 중...' : '적용하기'}
