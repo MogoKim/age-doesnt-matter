@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateBot } from '@/lib/bot-auth'
 import { sanitizeHtml, stripMarkdownSyntax } from '@/lib/sanitize'
+import { buildSummary } from '@/lib/summary'
 import { generateCommunitySlug } from '@/lib/seo/slug'
 import { GREETING_CATEGORY } from '@/lib/greeting'
 import { EVENT_CATEGORY } from '@/lib/event-category'
@@ -35,10 +36,14 @@ export async function POST(req: NextRequest) {
     }
 
     const slug = await generateCommunitySlug(title)
+    const safeContent = sanitizeHtml(stripMarkdownSyntax(content))
     const post = await prisma.post.create({
       data: {
         title,
-        content: sanitizeHtml(stripMarkdownSyntax(content)),
+        content: safeContent,
+        // 이 경로만 summary를 비워 두던 탓에 목록 미리보기가 빈 글이 쌓였다.
+        // 다른 src 런타임 경로와 같은 buildSummary를 쓴다.
+        summary: buildSummary(safeContent),
         boardType,
         category,
         authorId,
