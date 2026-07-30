@@ -1,3 +1,5 @@
+import { normalizeSourceReferences } from '../cafe/normalize-source-references.js'
+
 /**
  * 게시글 목록 미리보기(Post.summary) 생성.
  *
@@ -9,6 +11,7 @@
  *
  * ⚠️ agents/ → src/ 런타임 import 금지 규칙(.claude/rules/agents.md)에 따라
  * src/lib/sanitize.ts의 stripHtmlTags를 쓰지 않고 여기서 직접 정의한다.
+ * normalizeSourceReferences는 agents/cafe 안에 있고 src 의존이 0이라 그대로 쓴다.
  *
  * 사용자 작성 경로(src/lib/actions/posts.ts)와 100자 규칙은 같지만, 텍스트 추출은
  * 아래 두 가지가 다르다 — 둘 다 실제 데이터에서 확인된 문제를 고친 것이다.
@@ -57,13 +60,60 @@ export function htmlToPlainText(html: string): string {
 }
 
 /**
- * 목록 미리보기 문자열. 텍스트가 없으면(이미지·영상뿐인 글) null을 반환해
- * 미리보기를 렌더하지 않게 한다 — 빈 문자열로 두면 화면에 빈 줄이 생긴다.
+ * 문장 끝에 붙은 출처 꼬리표. 크롤 원문은 "…버거킹도 변하네요 ㅠ 출처: 네이버 카페"처럼
+ * 본문 끝에 출처를 달고 온다. 콜론이 없는 형태("출처 https://x.com/…")도 있다.
+ * 뒤쪽 40자로 제한해 본문 한가운데의 "출처" 언급까지 잘라내지 않는다.
+ */
+const TAIL_SOURCE = /\s*(출처|자료\s*출처|원문)\s*[:：]?\s*[^]{0,40}$/
+/** 문장 끝 URL — 본문 중간 인용 URL은 건드리지 않는다. */
+const TAIL_URL = /\s*(https?:\/\/|www\.)\S*\s*$/i
+
+/**
+ * "출처 + URL"이 붙은 형태는 위치를 가리지 않고 지운다.
+ * 실데이터에서 꼬리표보다 머리표가 더 많았다 —
+ * "출처 https://instiz.net/pt/78523 강아지랑…"처럼 앞에 와서 정작 본문을 밀어낸다.
+ * 출처 뒤 URL은 어느 위치에 있든 출처 표기가 분명하므로 제거해도 본문이 상하지 않는다.
+ */
+const SOURCE_URL_ANYWHERE = /(출처|자료\s*출처|원문)\s*[:：]?\s*(https?:\/\/|www\.)\S+/gi
+
+/**
+ * 미리보기에서만 출처 표기를 걷어낸다. 본문(content)은 그대로 둔다 —
+ * 상세 페이지의 출처 표기는 유지해야 한다.
+ * 표기가 둘 이상 겹칠 수 있어(예: "… 출처: 펨코 https://…") 반복 적용한다.
+ */
+function stripTailSource(text: string): string {
+  let t = text.replace(SOURCE_URL_ANYWHERE, ' ').replace(/\s+/g, ' ').trim()
+  for (let i = 0; i < 3; i++) {
+    const before = t
+    t = t.replace(TAIL_URL, '').replace(TAIL_SOURCE, '').trim()
+    if (t === before) break
+  }
+  return t
+}
+
+/**
+ * 목록 미리보기 문자열. 텍스트가 없으면(이미지·영상뿐인 글, 또는 출처 문구만 있던 글)
+ * null을 반환해 미리보기를 렌더하지 않게 한다 — 빈 문자열로 두면 화면에 빈 줄이 생긴다.
+ *
+ * 출처 처리(2026-07-30):
+ * 백필 대상 2,275건 전수 dry-run에서 285건(13%)의 미리보기에 원본 사이트명이
+ * 그대로 노출되는 것이 확인됐다("출처: 펨코" 93건 등). PR #141에서 창업자 승인으로
+ * 종결한 P0 이슈가 목록 미리보기로 재발하는 셈이라, 두 단계로 막는다.
+ *   1) normalizeSourceReferences — 사이트명을 '온라인 커뮤니티'로 일반화(#141과 같은 규칙)
+ *   2) stripTailSource          — 미리보기에서 꼬리표 자체를 제거
+ * 전수 시뮬레이션: 285건 → 4건, 출처만 있던 글 121건은 미리보기 없음으로 남는다.
+ *
+ * 100자 컷은 꼬리표를 걷어낸 뒤에 한다. 먼저 자르면 "출처: 온라인 커뮤니티"(12자)가
+ * 자리를 차지해 정작 보여줄 첫 문장이 밀려난다.
  *
  * 100자 규칙은 사용자 작성 경로와 동일: 초과 시 97자 + '...'.
  */
 export function buildSummary(html: string): string | null {
-  const text = htmlToPlainText(html)
+  const plain = htmlToPlainText(html)
+  if (!plain) return null
+  // 사이트명 일반화는 원문 텍스트 기준으로 한 번만 — 결과의 replacements/flags는 여기선 쓰지 않는다.
+  const normalized = normalizeSourceReferences(plain).text
+  const text = stripTailSource(normalized)
   if (!text) return null
   return text.length > 100 ? text.slice(0, 97) + '...' : text
 }
