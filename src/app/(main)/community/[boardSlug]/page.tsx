@@ -70,17 +70,9 @@ const SHOW_COMMUNITY_SORT_TOGGLE = true
  * DB 글이 아니라 정적 문구다 — 허브는 여러 게시판·매거진 글을 주제별로 묶는 SEO 페이지라
  * 게시글로 만들 대상이 아니고, 만들면 목록 정렬·통계에 섞인다.
  */
-const TOPIC_HUB: Record<string, { href: string; title: string; preview: string } | undefined> = {
-  menopause: {
-    href: '/topic/menopause',
-    title: '갱년기 이야기, 주제별로 모아봤어요',
-    preview: '폐경·완경, 몸의 변화, 감정과 관계, 병원 선택 — 우나어님들이 자주 나눈 이야기를 모았습니다',
-  },
-  life2: {
-    href: '/topic/second-act',
-    title: '재취업과 은퇴 후 돈 이야기, 한곳에 모아봤어요',
-    preview: '다시 일하기, 퇴직금·연금, 건강보험과 생활비 — 인생 2막 이야기를 주제별로 정리했습니다',
-  },
+const TOPIC_HUB: Record<string, { href: string; title: string } | undefined> = {
+  menopause: { href: '/topic/menopause', title: '갱년기 이야기, 주제별로 모아봤어요' },
+  life2: { href: '/topic/second-act', title: '재취업과 은퇴 후 돈 이야기, 한곳에 모아봤어요' },
 }
 
 export function generateStaticParams() {
@@ -257,10 +249,18 @@ export default async function BoardListPage({ params }: PageProps) {
           이전에는 정렬 칩 위에 rounded-lg 카드(높이 92px)로 있어서, 375px 첫 화면에서
           게시글이 2개밖에 보이지 않았다(실측: 첫 게시글 top 315px). 광고처럼 읽혀
           건너뛰게 되는 것도 문제였다.
+
           목록 안(BoardPostListClient)이 아니라 밖에 두는 이유: 그 컴포넌트는 client이고
-          정렬·페이지·검색이 바뀌면 /api로 목록을 통째로 교체한다. 배열에 끼워 넣으면
-          응답에 없는 항목이라 사라지거나 병합 로직이 필요하다. 여기 두면 정렬 탭과
-          무관하게 항상 같은 자리에 남고, 서버 HTML에 <a>가 그대로 나온다(내부링크 유지).
+          useSearchParams를 쓴다. 이 페이지는 revalidate=300으로 정적 렌더되므로 그 부분은
+          CSR로 bail out되어 서버 HTML에 목록이 담기지 않는다(실측: 프로덕션 HTML의
+          게시글 링크 0개, 스켈레톤만 1개). 목록 안에 두면 <a href="/topic/…">가 서버
+          HTML에서 사라져 내부링크가 끊긴다. 여기 두면 서버 컴포넌트라 링크가 확실히 남고,
+          정렬 탭·페이지 이동과도 무관하게 같은 자리를 지킨다.
+
+          preview 줄은 두지 않는다. 있으면 행이 158px로 카드(92px)보다 커져 첫 화면을 더
+          밀어낸다. PostCard도 preview가 없는 글은 제목+메타만 렌더하므로 목록과 어긋나지
+          않는다. 통계(공감·댓글·조회)도 실제 글이 아니라 숫자를 지어낼 수 없어 뺀다 —
+          메타의 "모아보기"가 성격을 알린다.
           위 정렬 칩 div가 border-b라서 이 행이 목록의 첫 줄로 자연스럽게 이어진다. */}
       {topicHub && (
         <Link
@@ -270,9 +270,6 @@ export default async function BoardListPage({ params }: PageProps) {
           <h2 className="text-body font-bold text-foreground m-0 line-clamp-2 leading-[1.4]">
             {topicHub.title}
           </h2>
-          <p className="text-caption text-muted-strong m-0 mt-1.5 line-clamp-2 leading-[1.6]">
-            {topicHub.preview}
-          </p>
           <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-subtle">
             <span>우나어 편집팀</span>
             <span aria-hidden="true">·</span>
