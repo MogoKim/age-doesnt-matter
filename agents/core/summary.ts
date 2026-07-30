@@ -65,8 +65,6 @@ export function htmlToPlainText(html: string): string {
  * 뒤쪽 40자로 제한해 본문 한가운데의 "출처" 언급까지 잘라내지 않는다.
  */
 const TAIL_SOURCE = /\s*(출처|자료\s*출처|원문)\s*[:：]?\s*[^]{0,40}$/
-/** 문장 끝 URL — 본문 중간 인용 URL은 건드리지 않는다. */
-const TAIL_URL = /\s*(https?:\/\/|www\.)\S*\s*$/i
 
 /**
  * "출처 + URL"이 붙은 형태는 위치를 가리지 않고 지운다.
@@ -76,18 +74,80 @@ const TAIL_URL = /\s*(https?:\/\/|www\.)\S*\s*$/i
  */
 const SOURCE_URL_ANYWHERE = /(출처|자료\s*출처|원문)\s*[:：]?\s*(https?:\/\/|www\.)\S+/gi
 
+/*
+ * 아래 5종은 2026-07-30 백필 dry-run(대상 2,168건 전수)에서 실제로 잔존이 확인된 형태만
+ * 좁게 처리한다. 그 dry-run에서 사이트명 1 · 출처문구 4 · URL 19 · 'ㅊㅊ' 44건이 남았다.
+ * 원인은 기존 규칙이 "문자열 꼬리"만 보는 데 있었다. 신규 크롤 글은 출처가 대개 본문 끝에
+ * 붙어 통과했지만, 과거 글은 출처가 앞·중간에 있어 그대로 미리보기에 실린다.
+ * 백필용 임시 처리가 아니라 buildSummary의 상시 규칙이다 — 신규 글에도 같이 적용된다.
+ */
+
+/**
+ * 출처를 뜻하는 초성 은어. "ㅊㅊ: https://…" 형태로 링크를 달고 온다.
+ * URL이 따라오거나 문자열 끝일 때만 지운다 — "ㅊㅊ해요"(추천) 같은 일반 사용은 남긴다.
+ */
+const SLANG_SOURCE_URL = /\s*ㅊㅊ\s*[:：]?\s*(?:https?:\/\/|www\.)\S+/gi
+const SLANG_SOURCE_TAIL = /\s*ㅊㅊ\s*[:：]?\s*$/
+
+/**
+ * 괄호로 묶인 무특정 출처. "(자료출처:인터넷) ☞ 국민연금 월 167만원…"처럼 머리에 와서
+ * 본문을 밀어낸다. 괄호 안이 20자 이하일 때만 지워 긴 괄호 주석은 보존한다.
+ */
+const PAREN_SOURCE = /\s*[（(]\s*(?:자료|그림|사진)?\s*출처\s*[:：]?\s*[^)）]{0,20}[)）]/g
+
+/**
+ * 위치를 가리지 않는 URL. 미리보기에 URL이 남아 봐야 읽을 수 없고,
+ * "https://youtube.com/shorts/… 쇼츠에 떠서 해봤는데"처럼 앞에 오면 본문을 밀어낸다.
+ * (본문 content는 그대로 두므로 상세 페이지의 링크는 유지된다.)
+ */
+const URL_ANYWHERE = /\s*(?:https?:\/\/|www\.)\S+/gi
+
+/**
+ * 스킴 없이 도메인만 남은 링크카드 흔적. 카페 원문의 링크 미리보기 카드가 텍스트로
+ * 펼쳐지면서 "…그거 생각난다 instiz.net"처럼 꼬리에 도메인만 붙는다.
+ * dry-run에서 실제 발견된 도메인만 나열한다 — 모든 도메인을 지우려 하지 않는다.
+ */
+const LINK_CARD_DOMAIN = /\s*\b(?:m\.)?(?:instiz\.net|blog\.naver\.com|n\.news\.naver\.com|naver\.me|cafe\.daum\.net|cafe\.naver\.com|goodgag\.net|youtube\.com|youtu\.be|threads\.com|chosun\.com|x\.com)(?:\/\S*)?/gi
+
+/**
+ * 본문 중간의 "출처: 매체명" 표기. 꼬리가 아니라 뒤에 본문이 더 있는 경우다 —
+ * 실측: "…'안 산 사람이 승자' 확산 출처 : SBS | 네이버 포모대신 조모 새로운 신조어랍니다…"
+ *
+ * 콜론을 필수로 둔다. "이 자료의 출처를 찾다가"처럼 조사가 붙는 일반 문장을 지우지 않기 위해서다.
+ * 매체명은 공백 없는 토큰 1개(+ 파이프로 이어진 토큰들)까지만 먹는다.
+ * "출처: 네이버 카페"처럼 공백이 든 매체명은 꼬리 규칙(TAIL_SOURCE)이 먼저 처리하므로
+ * 이 규칙은 꼬리 정리가 끝난 뒤에 적용한다.
+ */
+const MIDDLE_SOURCE_LABEL = /\s*(?:자료\s*|그림\s*|사진\s*)?출처\s*[:：]\s*[^\s|｜]{1,20}(?:\s*[|｜]\s*[^\s|｜]{1,20})*/g
+
 /**
  * 미리보기에서만 출처 표기를 걷어낸다. 본문(content)은 그대로 둔다 —
  * 상세 페이지의 출처 표기는 유지해야 한다.
  * 표기가 둘 이상 겹칠 수 있어(예: "… 출처: 펨코 https://…") 반복 적용한다.
  */
 function stripTailSource(text: string): string {
-  let t = text.replace(SOURCE_URL_ANYWHERE, ' ').replace(/\s+/g, ' ').trim()
+  const squash = (s: string) => s.replace(/\s+/g, ' ').trim()
+
+  // 1) 출처 라벨이 분명한 것부터 — 라벨과 URL을 함께 지운다
+  let t = squash(text.replace(SOURCE_URL_ANYWHERE, ' '))
+  t = squash(t.replace(SLANG_SOURCE_URL, ' '))
+  t = squash(t.replace(PAREN_SOURCE, ' '))
+
+  // 2) 라벨 없이 남은 링크 — URL과 링크카드 도메인
+  t = squash(t.replace(URL_ANYWHERE, ' '))
+  t = squash(t.replace(LINK_CARD_DOMAIN, ' '))
+
+  // 3) 꼬리 정리 — 공백 든 매체명("출처: 네이버 카페")은 여기서 먹는다
   for (let i = 0; i < 3; i++) {
     const before = t
-    t = t.replace(TAIL_URL, '').replace(TAIL_SOURCE, '').trim()
+    t = t.replace(TAIL_SOURCE, '').trim()
     if (t === before) break
   }
+  t = squash(t.replace(SLANG_SOURCE_TAIL, ' '))
+
+  // 4) 꼬리가 아닌 중간 출처 — 위 3)이 끝난 뒤라야 매체명 토큰 규칙이 안전하다
+  t = squash(t.replace(MIDDLE_SOURCE_LABEL, ' '))
+
   return t
 }
 
