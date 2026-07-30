@@ -34,7 +34,10 @@ let step = process.argv[2] ?? 'all'
 
 // Bug 8: 중복 실행 방지 락파일
 const LOCK_FILE = '/tmp/unao-crawler.lock'
-const LOCK_MAX_AGE_MS = 30 * 60 * 1000 // 30분 (크롤링 최대 23분 + 여유 7분)
+// 2026-07-27: 실제 main crawl이 45분을 넘기며 같은 회차가 재시도되는 사고가 있었다.
+// 락은 crawler subprocess timeout보다 길어야 다음 launchd 회차와 겹치지 않는다.
+const CRAWL_SCRIPT_TIMEOUT_MS = 90 * 60 * 1000
+const LOCK_MAX_AGE_MS = 120 * 60 * 1000
 
 // ⚠️ launchd 실행 시 .env.local 환경변수가 없으므로 직접 로드
 // 반드시 notifier 등 DB 의존 모듈 import 전에 실행해야 함 (ESM top-level import 순서)
@@ -166,7 +169,7 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
     try {
       execFileSync('npx', ['tsx', resolve(__dirname, script)], {
         env: { ...process.env },
-        timeout: 2700000, // 45분 — 급증일 3카페 순차 크롤(wgang 89건 25분+dlxogns/remon 17분≈42분) 완주 여유. 25분은 wgang 혼자 소진→timeout→같은 크롤 재시도 유발(2026-07-06 afternoon)
+        timeout: CRAWL_SCRIPT_TIMEOUT_MS,
         stdio: 'inherit',
       })
       lastError = ''
@@ -192,6 +195,12 @@ async function runCrawlWithRetry(script: string, label: string): Promise<void> {
     // 성공: 스크립트 정상 + 모든 카페 1건 이상 저장
     if (!scriptFailed && lastFailedCafes.length === 0) {
       console.log(`[Pipeline] ${label} ✅ 완료 (${attempt}회 시도)`)
+      return
+    }
+    // 스크립트가 timeout/종료 오류를 냈더라도 기대 카페가 모두 저장된 경우에는 재시도하지 않는다.
+    // 같은 회차를 다시 돌리면 이미 저장한 글을 다시 방문해 네이버 부하와 중복 로그만 키운다.
+    if (scriptFailed && lastFailedCafes.length === 0) {
+      console.warn(`[Pipeline] ⚠️ ${label} 스크립트 오류 후 저장 성공 감지 — 중복 재시도 없이 완료 처리`)
       return
     }
 
@@ -413,7 +422,7 @@ export async function main(stepOverride?: string) {
       process.env.CRAWL_MODE = 'crawl-only'
       await runCrawlWithRetry('crawler.ts', '1단계: 전체글보기 크롤링 (증분)')
       await checkCookieExpiry()
-      await assertCrawlQuality(false)     // crawl-curate 모드: 댓글 미수집 → 비율 검사 스킵
+      await assertCrawlQuality()          // crawl-only는 댓글 포함 수집이므로 commentCount/topComments 품질을 검사한다
       // 큐레이션은 agents-cafe-hourly-curation.yml (GHA hourly)에서 처리
     }
 
