@@ -114,3 +114,59 @@ describe('buildSummary — 운영 데이터 형태', () => {
     expect(buildSummary(html)).toBe('오늘 설치했어요 기사님가시고 오후에 바로 냉방으로')
   })
 })
+
+describe('buildSummary — 출처 꼬리표 제거 (미리보기 전용)', () => {
+  it('원본 사이트명이 미리보기에 남지 않는다', () => {
+    // PR #141에서 종결한 P0가 미리보기로 재발하지 않게 한다
+    expect(buildSummary('<p>잊지말자. 제발좀. 출처: 오늘의유머</p>')).toBe('잊지말자. 제발좀.')
+    expect(buildSummary('<p>미쳤다 출처: 네이트판</p>')).toBe('미쳤다')
+    expect(buildSummary('<p>가격이 올랐네요 출처: 펨코</p>')).toBe('가격이 올랐네요')
+    expect(buildSummary('<p>신상 사먹었어요 출처: 네이버 카페</p>')).toBe('신상 사먹었어요')
+  })
+
+  it('일반화된 "온라인 커뮤니티" 꼬리표도 남지 않는다', () => {
+    expect(buildSummary('<p>버거킹도 변하네요 출처: 온라인 커뮤니티</p>')).toBe('버거킹도 변하네요')
+  })
+
+  it('콜론 없는 출처 표기도 제거한다', () => {
+    expect(buildSummary('<p>재밌네요 출처 https://x.com/abc/123</p>')).toBe('재밌네요')
+  })
+
+  it('문장 끝 URL 꼬리표를 제거한다', () => {
+    expect(buildSummary('<p>기사 보세요 https://n.news.naver.com/article/001</p>')).toBe('기사 보세요')
+    expect(buildSummary('<p>여기예요 www.example.com</p>')).toBe('여기예요')
+  })
+
+  it('출처 문구만 있으면 null (미리보기 미렌더)', () => {
+    expect(buildSummary('<p>출처: 펨코</p>')).toBeNull()
+    expect(buildSummary('<p>출처: 오늘의유머</p>')).toBeNull()
+    expect(buildSummary('<p>출처: 온라인 커뮤니티</p>')).toBeNull()
+    expect(buildSummary('<p>출처 https://x.com/a</p>')).toBeNull()
+  })
+
+  it('출처+URL은 문장 앞·중간에 있어도 제거한다', () => {
+    // 실데이터에서 꼬리표보다 머리표가 많았다 — 앞에 와서 본문을 밀어낸다
+    expect(buildSummary('<p>출처 https://instiz.net/pt/78523 강아지랑 산책했어요</p>')).toBe('강아지랑 산책했어요')
+    expect(buildSummary('<p>웃기다 출처 https://x.com/abc 그래서 어떻게 됐냐면</p>')).toBe('웃기다 그래서 어떻게 됐냐면')
+  })
+
+  it('꼬리표가 겹쳐 있어도 모두 제거한다', () => {
+    expect(buildSummary('<p>웃기다 출처: 펨코 https://fmkorea.com/123</p>')).toBe('웃기다')
+  })
+
+  it('본문 한가운데의 "출처" 언급은 보존한다', () => {
+    // 뒤 40자 제한 — 문장 끝 꼬리표만 노린다
+    const long = '이 자료의 출처를 찾다가 결국 원본을 못 찾았는데요 혹시 아시는 분 계신가요 정말 궁금해서 여쭤봅니다 도와주세요'
+    expect(buildSummary(`<p>${long}</p>`)).toContain('출처를 찾다가')
+  })
+
+  it('출처 표기가 없는 정상 본문은 그대로 둔다', () => {
+    expect(buildSummary('<p>고양이 합사해 보신 분 계신가요?</p>')).toBe('고양이 합사해 보신 분 계신가요?')
+  })
+
+  it('꼬리표를 걷어낸 뒤에 100자를 센다', () => {
+    // 먼저 자르면 꼬리표가 자리를 차지해 본문이 밀려난다
+    const body = '가'.repeat(100)
+    expect(buildSummary(`<p>${body} 출처: 펨코</p>`)).toBe(body)
+  })
+})
