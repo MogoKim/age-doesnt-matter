@@ -170,3 +170,118 @@ describe('buildSummary — 출처 꼬리표 제거 (미리보기 전용)', () =>
     expect(buildSummary(`<p>${body} 출처: 펨코</p>`)).toBe(body)
   })
 })
+
+/**
+ * 아래는 2026-07-30 백필 dry-run(대상 2,168건 전수)에서 실제로 잔존이 확인된 형태다.
+ * 기존 규칙이 "문자열 꼬리"만 봐서, 출처가 앞·중간에 있는 과거 글에서 새어 나왔다.
+ * 사이트명 1 · 출처문구 4 · URL 19 · 'ㅊㅊ' 44건 → 이 케이스들을 계약으로 고정한다.
+ */
+describe('buildSummary — 출처 초성 은어 (ㅊㅊ)', () => {
+  it('꼬리에 남은 "ㅊㅊ:"를 제거한다', () => {
+    expect(buildSummary('<p>사자 갈기 숱이 적어진다고 ㅊㅊ:</p>')).toBe('사자 갈기 숱이 적어진다고')
+  })
+
+  it('콜론 없이 꼬리에 붙은 "ㅊㅊ"도 제거한다', () => {
+    expect(buildSummary('<p>이거 진짜 맛있어요 ㅊㅊ</p>')).toBe('이거 진짜 맛있어요')
+  })
+
+  it('"ㅊㅊ: URL" 형태를 통째로 제거한다', () => {
+    expect(buildSummary('<p>좋은 글 ㅊㅊ: https://example.com/abc</p>')).toBe('좋은 글')
+  })
+
+  it('콜론 없는 "ㅊㅊ URL"도 제거한다', () => {
+    expect(buildSummary('<p>먹고싶다 ㅊㅊ https://cafe.daum.net/ssaumjil/LnOm/3328201</p>')).toBe('먹고싶다')
+  })
+
+  it('출처 은어만 있으면 null (미리보기 미렌더)', () => {
+    expect(buildSummary('<p>ㅊㅊ: https://example.com/abc</p>')).toBeNull()
+  })
+
+  it('추천 뜻으로 쓰인 "ㅊㅊ해요"는 보존한다', () => {
+    // 뒤에 글자가 이어지면 출처 표기가 아니다 — 무리하게 지우지 않는다
+    expect(buildSummary('<p>이 영화 ㅊㅊ해요 정말 재밌었어요</p>')).toBe('이 영화 ㅊㅊ해요 정말 재밌었어요')
+  })
+})
+
+describe('buildSummary — 위치 무관 URL / 링크카드 도메인', () => {
+  it('문장 끝이 아닌 URL도 제거한다', () => {
+    expect(buildSummary('<p>쇼츠에 떠서해봤는데 https://youtube.com/shorts/abc</p>')).toBe('쇼츠에 떠서해봤는데')
+  })
+
+  it('머리에 온 URL이 본문을 밀어내지 않는다', () => {
+    expect(buildSummary('<p>https://youtube.com/shorts/w9LE9 쇼츠에 떠서해봤는데 바로되네요.</p>')).toBe(
+      '쇼츠에 떠서해봤는데 바로되네요.'
+    )
+  })
+
+  it('문장 중간에 끼어든 URL을 제거한다', () => {
+    expect(buildSummary('<p>다니던 정형외과에서 https://www.threads.com/@a/post/DZ 도수치료실 없앤대요</p>')).toBe(
+      '다니던 정형외과에서 도수치료실 없앤대요'
+    )
+  })
+
+  it('스킴 없는 링크카드 도메인을 제거한다', () => {
+    expect(buildSummary('<p>충청 화법하니까 그거 생각난다 instiz.net</p>')).toBe('충청 화법하니까 그거 생각난다')
+    expect(buildSummary('<p>스마트폰 생기기전 2007년 모습 blog.naver.com</p>')).toBe('스마트폰 생기기전 2007년 모습')
+    expect(buildSummary('<p>막상 해보면 그저 그렇다는 의견도 있다 x.com</p>')).toBe('막상 해보면 그저 그렇다는 의견도 있다')
+  })
+
+  it('URL만 있으면 null', () => {
+    expect(buildSummary('<p>https://youtube.com/shorts/abc</p>')).toBeNull()
+    expect(buildSummary('<p>instiz.net</p>')).toBeNull()
+  })
+
+  it('목록에 없는 일반 도메인 언급은 보존한다', () => {
+    // 모든 도메인을 지우려 하지 않는다 — dry-run에서 확인된 링크카드만 처리
+    expect(buildSummary('<p>회사 메일이 example.co.kr 로 바뀌었어요</p>')).toBe('회사 메일이 example.co.kr 로 바뀌었어요')
+  })
+})
+
+describe('buildSummary — 괄호형 무특정 출처', () => {
+  it('(자료출처:인터넷) 을 제거한다', () => {
+    expect(buildSummary('<p>(자료출처:인터넷) 국민연금 월 167만원이 중요한 이유</p>')).toBe(
+      '국민연금 월 167만원이 중요한 이유'
+    )
+  })
+
+  it('(그림출처:인터넷) / (사진출처:인터넷) 도 제거한다', () => {
+    expect(buildSummary('<p>(그림출처:인터넷) 대한민국 50대 은퇴 후 90%가 겪는 문제</p>')).toBe(
+      '대한민국 50대 은퇴 후 90%가 겪는 문제'
+    )
+    expect(buildSummary('<p>(사진출처:인터넷) 오늘의 풍경</p>')).toBe('오늘의 풍경')
+  })
+
+  it('긴 괄호 주석은 보존한다', () => {
+    // 괄호 안 20자 제한 — 출처 표기가 아닌 설명은 남긴다
+    const text = '올해부터 (기초연금과 국민연금을 함께 받는 경우 감액될 수 있습니다) 확인이 필요해요'
+    expect(buildSummary(`<p>${text}</p>`)).toBe(text)
+  })
+})
+
+describe('buildSummary — 본문 중간 출처 표기', () => {
+  it('꼬리가 아닌 "출처 : 매체 | 매체"를 제거하고 뒤 본문은 남긴다', () => {
+    // dry-run 실측 문자열. 출처 뒤로 본문이 40자 넘게 이어져 기존 꼬리 규칙이 닿지 않았다.
+    const real =
+      '포모 가고 조모 온다…"안 산 사람이 승자" 확산 출처 : SBS | 네이버 포모대신 조모 새로운 신조어랍니다 ~ 포모 가고 조모 온다네요 어떻게라도 주식시장에 열기가 돌면 좋겠어요'
+    const r = buildSummary(`<p>${real}</p>`)
+    expect(r).not.toContain('출처')
+    expect(r).not.toContain('SBS')
+    expect(r).toContain('포모대신 조모')
+  })
+
+  it('출처 뒤가 짧으면 꼬리로 보고 통째로 지운다 (기존 계약)', () => {
+    // 뒤 40자 이내는 꼬리표로 간주한다 — 중간 출처 규칙보다 꼬리 규칙이 먼저다
+    expect(buildSummary('<p>기사 잘 봤어요 출처 : SBS | 네이버 참고하세요</p>')).toBe('기사 잘 봤어요')
+  })
+
+  it('조사가 붙은 일반 문장의 "출처"는 보존한다', () => {
+    // 콜론을 필수로 둬서 "출처를 찾다가" 같은 문장을 지우지 않는다
+    const long = '이 자료의 출처를 찾다가 결국 원본을 못 찾았는데요 혹시 아시는 분 계신가요 정말 궁금해서 여쭤봅니다'
+    expect(buildSummary(`<p>${long}</p>`)).toContain('출처를 찾다가')
+  })
+
+  it('제거 후 남는 텍스트가 없으면 null', () => {
+    expect(buildSummary('<p>출처 : SBS | 네이버</p>')).toBeNull()
+    expect(buildSummary('<p>(자료출처:인터넷)</p>')).toBeNull()
+  })
+})
