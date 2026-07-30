@@ -55,6 +55,9 @@ const config: Config = {
         muted: {
           DEFAULT: 'hsl(var(--muted))',
           foreground: 'hsl(var(--muted-foreground))',
+          // 목록 3단 위계 — strong=미리보기 / subtle=메타·통계 (primary.strong과 같은 네이밍 규칙)
+          strong: 'hsl(var(--muted-strong))',
+          subtle: 'hsl(var(--muted-subtle))',
         },
         accent: {
           DEFAULT: 'hsl(var(--accent))',
