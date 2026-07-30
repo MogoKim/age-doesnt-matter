@@ -236,10 +236,14 @@ export default async function BoardListPage({ params }: PageProps) {
       {/* PWA 인라인 배너 (미설치 + 비차단 환경에서만 노출) */}
       <PwaInlineBanner />
 
-      {/* 카테고리 필터는 임시 숨김, 정렬은 유지. query 기반 접근은 유지한다. */}
+      {/* 카테고리 필터는 임시 숨김, 정렬은 유지. query 기반 접근은 유지한다.
+          하단 border는 목록의 시작선 역할 — 이전에는 선 없이 여백 8px뿐이라
+          정렬 칩이 목록 위에 떠 있고 목록이 어디서 시작하는지 불분명했다.
+          목록 첫 행에 border-top을 주는 방식은 빈 상태·검색 결과 없음에서
+          선만 남아 떠 보이므로, 헤더 쪽에 붙인다. */}
       {(SHOW_COMMUNITY_CATEGORY_FILTER || SHOW_COMMUNITY_SORT_TOGGLE) && (
         <div
-          className={`flex items-center flex-wrap gap-2 mb-2 ${
+          className={`flex items-center flex-wrap gap-2 border-b border-border ${
             SHOW_COMMUNITY_CATEGORY_FILTER ? 'justify-between' : 'justify-end'
           }`}
         >
