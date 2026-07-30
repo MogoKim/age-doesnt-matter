@@ -501,8 +501,8 @@ interface ArticleInfo {
 
 // ── shadow 카페 pre-visit 필터 (PR-B) ─────────────────────────
 // 목적: 목록 DOM에서 commentCount 등을 읽어, 저-engagement/공지/HARD_REJECT 글을
-//       상세 방문 전에 보류(전수 상세 방문 낭비 제거). shadow 카페(현재 remonterrace)만 적용.
-// production(wgang/dlxogns01)은 이 경로를 타지 않아 동작 불변.
+//       상세 방문 전에 보류(전수 상세 방문 낭비 제거).
+//       2026-07-27부터 wgang/dlxogns01 production 카페에도 적용한다.
 const PREVISIT_MIN_COMMENTS = 5
 
 // 상단고정/공지(isNotice) 글 중 "고댓글 비광고 경험담"을 살리기 위한 기준 (2026-07-08).
@@ -520,10 +520,16 @@ const NOTICE_AD_PATTERNS: RegExp[] = [
 ]
 
 /** 목록 row 하나에서 pre-visit 메타 파싱 (page.evaluate 컨텍스트에서 실행되는 순수 함수용 텍스트 파서) */
-function parseListRowMeta(rowText: string): { commentCount: number; viewCount: number; likeCount: number; postedAt: string } {
-  // 댓글수: "댓글수 ... [N]" 라벨 뒤 대괄호 숫자. 없으면 0.
-  const cm = rowText.match(/댓글수[\s\S]{0,6}\[(\d[\d,]*)\]/)
-  const commentCount = cm ? Number(cm[1].replace(/,/g, '')) : 0
+function parseListRowMeta(rowText: string): { commentCount?: number; viewCount: number; likeCount: number; postedAt: string } {
+  const normalized = rowText.replace(/\s+/g, ' ').trim()
+  // 댓글수 표기는 카페/목록 종류마다 "댓글수 [5]", "댓글 5", "댓글수 5"처럼 흔들린다.
+  // undefined는 "0댓글"이 아니라 "목록에서 판단 실패"이며, pre-visit 적용 카페에서는 상세 방문하지 않는다.
+  const cm = [
+    normalized.match(/댓글수[\s:：]{0,4}\[?(\d[\d,]*)\]?/),
+    normalized.match(/댓글[\s:：]{1,4}\[?(\d[\d,]*)\]?/),
+    normalized.match(/댓글수[\s\S]{0,12}\[(\d[\d,]*)\]/),
+  ].find(Boolean)
+  const commentCount = cm ? Number(cm[1].replace(/,/g, '')) : undefined
   // 마지막 라인: (HH:mm | YYYY.MM.DD.) <view> <like>  — view는 "1.5만" 축약 가능
   const tail = rowText.match(/(\d{1,2}:\d{2}|\d{4}\.\d{2}\.\d{2}\.?)\s+([\d.,]+만?)\s+([\d,]+)\s*$/)
   const toNum = (s: string): number => s.includes('만')
@@ -537,6 +543,19 @@ function parseListRowMeta(rowText: string): { commentCount: number; viewCount: n
   }
 }
 
+/** 상세 방문 전 댓글수 필터를 적용할 카페. production 중 wgang/dlxogns01도 목록 메타 기반으로 보류한다. */
+function usesPreVisit(cafe: CafeConfig): boolean {
+  return SECONDARY_CAFE_IDS.includes(cafe.id) || cafe.id === 'wgang' || cafe.id === 'dlxogns01'
+}
+
+/** 1회 실행당 상세 방문 상한. 큰 카페가 한 회차를 독점하지 않게 하는 운영 안전장치. */
+function detailCapForCafe(cafe: CafeConfig): number | null {
+  if (SECONDARY_CAFE_IDS.includes(cafe.id)) return 30
+  if (cafe.id === 'wgang') return 24
+  if (cafe.id === 'dlxogns01') return 30
+  return null
+}
+
 /** shadow 카페 상세 방문 여부 판정 — 공지/HARD_REJECT/저댓글 보류 */
 function passesPreVisit(a: ArticleInfo): boolean {
   const title = a.title ?? ''
@@ -547,7 +566,7 @@ function passesPreVisit(a: ArticleInfo): boolean {
     if (NOTICE_AD_PATTERNS.some(re => re.test(title))) return false
     return (a.commentCount ?? 0) >= NOTICE_MIN_COMMENTS          // 공지는 c>=10(엄격). 파싱 실패(undefined)면 0 → 보류
   }
-  if (a.commentCount === undefined) return true                  // 일반글 목록 파싱 실패 → 안전하게 통과(전수 방문 폴백)
+  if (a.commentCount === undefined) return false                 // 목록 파싱 실패 → 상세 방문 금지(무분별한 전수 방문 방지)
   return a.commentCount >= PREVISIT_MIN_COMMENTS                 // 일반글 c>=5 (기존 정책 유지)
 }
 
@@ -581,9 +600,9 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
       console.log(`[CafeCrawler] ${cafe.name} — 게시판 "${board.name}" (${boardLabel}) 수집 중...`)
 
       let boardCount = 0
-      // shadow 카페(remonterrace/goondae 등): true page loop — ?viewType=L&page=N이 실제 다른 글 반환
+      // secondary 카페(remonterrace/goondae/masanmam 등): true page loop — ?viewType=L&page=N이 실제 다른 글 반환
       // (실측 page1↔page2 교집합 0). maxPages만큼 페이지 순회(3 하드캡 없음). 목록 row 메타(commentCount/
-      // view/like/notice) 파싱 → pre-visit 필터용. production(wgang/dlxogns01)·인기글은 기존 scroll 방식 그대로(동작 불변).
+      // view/like/notice) 파싱 → pre-visit 필터용. production(dlxogns01)·인기글은 기존 scroll 방식 그대로.
       if (SECONDARY_CAFE_IDS.includes(cafe.id) && !board.isPopular) {
         const maxPg = quickMode ? 1 : board.maxPages
         for (let pg = 1; pg <= maxPg; pg++) {
@@ -642,26 +661,43 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
           await sleep(1500)
         }
 
-        // 인기글: 구 format href 패턴 (articleid=N), 일반: 신 format (/articles/N)
-        const selector = board.isPopular ? 'a[href*="articleid"]' : 'a[href*="/articles/"]'
-        const links = await page.locator(selector).all()
+        // 인기글: 구 format href 패턴(articleid=N), 일반: 신 format(/articles/N).
+        // production 게시판(dlxogns01)도 rowText를 같이 읽어 댓글수 pre-visit에 활용한다.
+        const rawRows = await page.evaluate((isPopular) => {
+          const selector = isPopular ? 'a[href*="articleid"]' : 'a[href*="/articles/"]'
+          const anchors = Array.from(document.querySelectorAll(selector)) as HTMLAnchorElement[]
+          const out: { href: string; title: string; rowText: string; cls: string }[] = []
+          for (const a of anchors) {
+            const row = a.closest('.board-notice') || a.closest('tr') || a.closest('li') || a.parentElement
+            const el = row as HTMLElement | null
+            out.push({
+              href: a.href,
+              title: (a.innerText || '').trim(),
+              rowText: el?.innerText || '',
+              cls: (el?.className || '').toString(),
+            })
+          }
+          return out
+        }, board.isPopular)
         if (board.isPopular) {
-          console.log(`[CafeCrawler] 인기글 셀렉터 매칭: ${links.length}개 링크 발견`)
+          console.log(`[CafeCrawler] 인기글 셀렉터 매칭: ${rawRows.length}개 링크 발견`)
         }
-        for (const link of links) {
-          const href = await link.getAttribute('href')
-          if (!href) continue
-          // 인기글: articleid=N 패턴, 일반: /articles/N 패턴
+        for (const row of rawRows) {
           const match = board.isPopular
-            ? href.match(/articleid=(\d+)/)
-            : href.match(/\/articles\/(\d+)/)
+            ? row.href.match(/articleid=(\d+)/)
+            : row.href.match(/\/articles\/(\d+)/)
           if (match && !collectedMap.has(match[1])) {
+            const meta = parseListRowMeta(row.rowText)
             collectedMap.set(match[1], {
               articleId: match[1],
               newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${match[1]}`,
               oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${match[1]}`,
               boardName: board.name,
               boardCategory: board.category,
+              title: row.title,
+              isNotice: row.cls.includes('board-notice'),
+              noticeType: (row.cls.match(/type_\w+/) || [])[0],
+              ...meta,
             })
             boardCount++
           }
@@ -705,8 +741,8 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
   }
 
   // 방법 2: 카페 메인 페이지 (보충 — 총 수집이 10개 미만일 때)
-  // shadow 카페(remonterrace 등)는 메인 보충 금지 — 메인은 전 게시판 최신글이라 지정 board(쫑알쫑알) 밖을
-  // 방문하게 되고, pre-visit 필터(shadow board 분기)도 우회한다. 지정 board만 수집한다.
+  // secondary 카페(remonterrace 등)는 메인 보충 금지 — 메인은 전 게시판 최신글이라 지정 board 밖을
+  // 방문하게 된다. production 카페 보충분은 댓글수 메타가 없어 pre-visit에서 상세 방문 보류된다.
   if (collectedMap.size < 10 && !SECONDARY_CAFE_IDS.includes(cafe.id)) {
     try {
       console.log(`[CafeCrawler] ${cafe.name} — 메인 페이지 보충 수집...`)
@@ -764,7 +800,7 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
 
 // ─── 전체글보기 URL 수집 (V6 — allArticles 방식) ──────────
 
-const ALL_ARTICLES_MAX_PAGES = 14 // 페이지당 15건 × 14 = 210건 상한
+const ALL_ARTICLES_DEFAULT_MAX_PAGES = 14 // 페이지당 15건 × 14 = 210건 상한. 카페별 override 가능.
 
 /**
  * 전체글보기에서 신규 글 URL 수집 (MAX(articleId) 기준 증분 크롤)
@@ -781,36 +817,59 @@ async function collectAllArticleUrls(playwrightPage: Page, cafe: CafeConfig): Pr
     select: { articleId: true },
   })
   const maxKnownId = latest?.articleId ?? 0
-  console.log(`[CafeCrawler] ${cafe.name} — 전체글보기 크롤 시작. DB MAX articleId: ${maxKnownId}`)
+  const maxPages = cafe.allArticlesMaxPages ?? ALL_ARTICLES_DEFAULT_MAX_PAGES
+  console.log(`[CafeCrawler] ${cafe.name} — 전체글보기 크롤 시작. DB MAX articleId: ${maxKnownId}, maxPages=${maxPages}`)
 
   const collected: ArticleInfo[] = []
   let pageNum = 1
 
-  while (pageNum <= ALL_ARTICLES_MAX_PAGES) {
+  while (pageNum <= maxPages) {
     const url = `${cafe.allArticlesUrl}&page=${pageNum}`
     try {
       await playwrightPage.goto(url, { waitUntil: 'domcontentloaded', timeout: CRAWL_LIMITS.pageTimeout })
       await sleep(randomDelay(2000))
 
-      const links = await playwrightPage.locator('a[href*="/articles/"]').all()
+      const rawRows = await playwrightPage.evaluate(() => {
+        const anchors = Array.from(document.querySelectorAll('a[href*="/articles/"]')) as HTMLAnchorElement[]
+        const seen = new Set<string>()
+        const out: { href: string; title: string; rowText: string; cls: string }[] = []
+        for (const a of anchors) {
+          const match = a.href.match(/\/articles\/(\d+)/)
+          if (!match) continue
+          if (seen.has(match[1])) continue
+          seen.add(match[1])
+          const row = a.closest('.board-notice') || a.closest('tr') || a.closest('li') || a.parentElement
+          const el = row as HTMLElement | null
+          out.push({
+            href: a.href,
+            title: (a.innerText || '').trim(),
+            rowText: el?.innerText || '',
+            cls: (el?.className || '').toString(),
+          })
+        }
+        return out
+      })
       const pageIds: number[] = []
       const pageArticles: ArticleInfo[] = []
 
-      for (const link of links) {
-        const href = await link.getAttribute('href')
-        if (!href) continue
-        const match = href.match(/\/articles\/(\d+)/)
+      for (const row of rawRows) {
+        const match = row.href.match(/\/articles\/(\d+)/)
         if (!match) continue
         const id = parseInt(match[1])
         pageIds.push(id)
         if (id <= maxKnownId) continue // 이미 DB에 있음
         if (collected.some(a => a.articleId === match[1])) continue
+        const meta = parseListRowMeta(row.rowText)
         pageArticles.push({
           articleId: match[1],
           newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${match[1]}`,
           oldFormatUrl: `${cafe.url}?iframe_url_utf8=%2FArticleRead.nhn%253Fclubid%3D${cafe.numericId}%2526articleid%3D${match[1]}`,
           boardName: null,
           boardCategory: null,
+          title: row.title,
+          isNotice: row.cls.includes('board-notice'),
+          noticeType: (row.cls.match(/type_\w+/) || [])[0],
+          ...meta,
         })
       }
 
@@ -1689,20 +1748,20 @@ async function main() {
       let consecutiveFails = 0
       const MAX_CONSECUTIVE_FAILS = 5
 
-      // shadow 상세 방문 상한 (detailCapPerRun) — maxPages 상향(1→5)으로 pre-visit 통과 후보가 늘어도
-      // 1회 실행당 신규 상세 방문을 30건으로 제한(리소스·차단위험 보호). production은 무제한(동작 불변).
-      const SHADOW_DETAIL_CAP = 30
-      const isShadowCafe = SECONDARY_CAFE_IDS.includes(cafe.id)
-      let shadowDetailVisits = 0
+      // 상세 방문 상한(detailCapPerRun) — pre-visit 통과 후보가 늘어도 1회 실행당 상세 방문량을 제한한다.
+      // wgang/dlxogns01 같은 production 대형 카페도 cap을 둬 한 회차 독점과 네이버 부하를 막는다.
+      const detailCap = detailCapForCafe(cafe)
+      const usePreVisit = usesPreVisit(cafe)
+      let detailVisits = 0
 
       // [goondae-diag] per-board 파이프라인 계측 (관찰 전용 — 동작 무변경). preVisit/detail 단계를 게시판별 집계.
       const goondaeDiag = cafe.id === 'goondae'
-        ? new Map<string, { pass: number; skipNotice: number; skipHardReject: number; skipLowComment: number; detailVisited: number; detailSuccess: number }>()
+        ? new Map<string, { pass: number; skipNotice: number; skipHardReject: number; skipLowComment: number; skipMetaUnknown: number; detailVisited: number; detailSuccess: number }>()
         : null
       const gd = (name: string | null) => {
         const key = name ?? '(null)'
         let t = goondaeDiag!.get(key)
-        if (!t) { t = { pass: 0, skipNotice: 0, skipHardReject: 0, skipLowComment: 0, detailVisited: 0, detailSuccess: 0 }; goondaeDiag!.set(key, t) }
+        if (!t) { t = { pass: 0, skipNotice: 0, skipHardReject: 0, skipLowComment: 0, skipMetaUnknown: 0, detailVisited: 0, detailSuccess: 0 }; goondaeDiag!.set(key, t) }
         return t
       }
 
@@ -1711,22 +1770,24 @@ async function main() {
           console.warn(`[CafeCrawler] ${cafe.name}: 연속 ${MAX_CONSECUTIVE_FAILS}회 실패 — 차단 의심, 이 카페 스킵`)
           break
         }
-        if (isShadowCafe && shadowDetailVisits >= SHADOW_DETAIL_CAP) {
-          console.log(`[CafeCrawler] ${cafe.name}: detailCap ${SHADOW_DETAIL_CAP} 도달 — 남은 후보 이번 회차 보류`)
+        if (detailCap !== null && detailVisits >= detailCap) {
+          console.log(`[CafeCrawler] ${cafe.name}: detailCap ${detailCap} 도달 — 남은 후보 이번 회차 보류`)
           break
         }
 
-        // Pre-visit 필터 (shadow 카페만) — 공지/HARD_REJECT/저댓글 글은 상세 방문 전 보류.
-        // production(wgang/dlxogns01)은 article에 목록 메타가 없어 이 블록을 타지 않는다(동작 불변).
-        if (SECONDARY_CAFE_IDS.includes(cafe.id) && article.commentCount !== undefined && !passesPreVisit(article)) {
+        // Pre-visit 필터 — 댓글수/HARD_REJECT/공지성 글을 상세 방문 전에 보류한다.
+        // 댓글수 파싱 실패(undefined)도 보류해 0댓글/광고/이미지 글 전수 방문으로 번지는 것을 막는다.
+        if (usePreVisit && !passesPreVisit(article)) {
           if (goondaeDiag) {
             const t = gd(article.boardName)
             const title = article.title ?? ''
             if (SHADOW_AGE_HARD_REJECT.some(k => title.includes(k))) t.skipHardReject++
             else if (article.isNotice) t.skipNotice++
+            else if (article.commentCount === undefined) t.skipMetaUnknown++
             else t.skipLowComment++
           }
-          console.log(`[CafeCrawler] ${cafe.name} pre-visit 보류: c${article.commentCount}${article.isNotice ? '/공지' : ''} "${(article.title ?? '').slice(0, 24)}"`)
+          const countLabel = article.commentCount === undefined ? 'unknown' : String(article.commentCount)
+          console.log(`[CafeCrawler] ${cafe.name} pre-visit 보류: c${countLabel}${article.isNotice ? '/공지' : ''} "${(article.title ?? '').slice(0, 24)}"`)
           totalSkipped++
           continue
         }
@@ -1742,7 +1803,7 @@ async function main() {
           continue
         }
 
-        if (isShadowCafe) shadowDetailVisits++  // 실제 상세 방문(중복 스킵 제외)만 detailCap에 계상
+        if (detailCap !== null) detailVisits++  // 실제 상세 방문(중복 스킵 제외)만 detailCap에 계상
         if (goondaeDiag) gd(article.boardName).detailVisited++
         const post = await crawlPost(page, article, cafe, includeComments)
         if (post) {
@@ -1768,7 +1829,7 @@ async function main() {
       // [goondae-diag] 게시판별 파이프라인 요약 (관찰 전용). saved는 카페 단위(게시판별 DB-신규분리는 미계측 — pre-dedup detailSuccess로 근사).
       if (goondaeDiag) {
         for (const [name, t] of goondaeDiag) {
-          console.log(`[goondae-diag] pipeline board="${name}" preVisitPass=${t.pass} skip{notice=${t.skipNotice},hardReject=${t.skipHardReject},lowComment=${t.skipLowComment}} detailVisited=${t.detailVisited} detailSuccess=${t.detailSuccess}`)
+          console.log(`[goondae-diag] pipeline board="${name}" preVisitPass=${t.pass} skip{notice=${t.skipNotice},hardReject=${t.skipHardReject},lowComment=${t.skipLowComment},metaUnknown=${t.skipMetaUnknown}} detailVisited=${t.detailVisited} detailSuccess=${t.detailSuccess}`)
         }
         console.log(`[goondae-diag] cafe saved(new,this run)=${saved} detailSuccess(pre-dedup total)=${posts.length}`)
       }

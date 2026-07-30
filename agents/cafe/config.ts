@@ -62,6 +62,7 @@ export const CAFE_CONFIGS: CafeConfig[] = [
     url: 'https://cafe.naver.com/wgang',
     numericId: 29349320,
     allArticlesUrl: 'https://cafe.naver.com/f-e/cafes/29349320/menus/0?viewType=L',
+    allArticlesMaxPages: 10, // 전체글보기 유지하되 14p 과탐색을 줄임. 목록 댓글수 pre-visit과 함께 상세 방문량 절감.
     boards: [
       // ── 인기글 (커뮤니티 검증 최고품질 — 2026-04-08 추가) ──
       { name: '인기글', menuId: 0, isPopular: true, maxPages: 2, priority: 'high', category: 'general' },

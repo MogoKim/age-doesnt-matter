@@ -13,6 +13,8 @@ export interface CafeConfig {
   numericId: number // 네이버 내부 카페 숫자 ID (URL에서 추출)
   /** 전체글보기 URL (V6 — allArticles 방식) */
   allArticlesUrl?: string
+  /** 전체글보기 최대 페이지 수. 미지정 시 crawler 기본값 사용 */
+  allArticlesMaxPages?: number
   /** true면 board 루프 방식 사용 (R02 롤백 feature flag) */
   legacyCrawler?: boolean
   /** 수집할 게시판 경로 (인기글, 최신글 등) */
