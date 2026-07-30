@@ -8,6 +8,10 @@ const LS_KEY = 'unao-font-size'
 const COOKIE_KEY = 'unao-font-size'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1년
 
+/** 설정을 만지지 않은 사용자(신규 포함)의 기본 글자 크기.
+ *  ⚠️ layout.tsx <head> inline script의 폴백과 반드시 같은 값으로 유지할 것 — 다르면 첫 페인트에 크기 점프가 생긴다. */
+const DEFAULT_SIZE: FontSizeValue = 'LARGE'
+
 // ── Context ──────────────────────────────────────────────────────────────────
 interface FontSizeContextValue {
   fontSize: FontSizeValue
@@ -15,7 +19,7 @@ interface FontSizeContextValue {
 }
 
 const FontSizeContext = createContext<FontSizeContextValue>({
-  fontSize: 'NORMAL',
+  fontSize: DEFAULT_SIZE,
   setFontSize: () => {},
 })
 
@@ -33,12 +37,10 @@ function saveFontSizeCookie(size: FontSizeValue) {
 }
 
 // ── DOM 적용 헬퍼 ────────────────────────────────────────────────────────────
+// NORMAL도 속성으로 명시한다 — "설정을 안 만짐(=LARGE)"과 "기본을 직접 고름(=NORMAL)"을 DOM에서 구분하기 위함.
+// globals.css에는 LARGE/XLARGE 규칙만 있어 NORMAL은 어디에도 안 걸리고 :root(본문 18px)가 그대로 적용된다.
 function applyFontSize(size: FontSizeValue) {
-  if (size === 'NORMAL') {
-    document.documentElement.removeAttribute('data-font-size')
-  } else {
-    document.documentElement.setAttribute('data-font-size', size)
-  }
+  document.documentElement.setAttribute('data-font-size', size)
 }
 
 // ── Provider ─────────────────────────────────────────────────────────────────
@@ -63,10 +65,12 @@ export default function FontSizeProvider({
     if (serverSize && VALID_SIZES.includes(serverSize as FontSizeValue)) {
       return serverSize as FontSizeValue
     }
-    return 'NORMAL'
+    return DEFAULT_SIZE
   })
 
   // 마운트 시: localStorage 폴백 (서버 값 없는 비로그인 첫 접속)
+  // 저장값이 없으면 DEFAULT_SIZE 유지 — head script가 이미 같은 값을 DOM에 적용해둔 상태다.
+  // NORMAL→LARGE 1회 승격은 head script가 끝내므로 여기서는 저장값을 그대로 신뢰하면 된다.
   useEffect(() => {
     if (!serverSize) {
       const stored = localStorage.getItem(LS_KEY)
