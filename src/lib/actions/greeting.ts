@@ -4,7 +4,8 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkBannedWords } from '@/lib/banned-words'
-import { sanitizeHtml, stripHtmlTags } from '@/lib/sanitize'
+import { sanitizeHtml } from '@/lib/sanitize'
+import { buildSummary } from '@/lib/summary'
 import { generateCommunitySlug } from '@/lib/seo/slug'
 import { checkAndPromote } from '@/lib/grade'
 import { enqueueUserPostWave } from '@/lib/actions/wave-queue'
@@ -70,8 +71,8 @@ export async function submitGreeting(message: string): Promise<SubmitGreetingRes
   const title = `${user.nickname}님의 첫인사`
   // 한 줄 평문 → escape 후 <p>로 감싸고 sanitize(허용 태그만 통과)
   const safeContent = sanitizeHtml(`<p>${escapeHtml(text)}</p>`)
-  const plain = stripHtmlTags(safeContent)
-  const summary = plain.length > 100 ? plain.slice(0, 97) + '...' : plain
+  // 미리보기는 @/lib/summary의 buildSummary 하나로 만든다(경로별 자체 절단 금지)
+  const summary = buildSummary(safeContent)
   const slug = await generateCommunitySlug(title)
 
   try {

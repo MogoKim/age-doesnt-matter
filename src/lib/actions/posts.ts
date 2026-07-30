@@ -8,6 +8,7 @@ import { BOARD_SLUG_MAP, BOARD_TYPE_TO_SLUG } from '@/types/api'
 import type { BoardType } from '@/generated/prisma/client'
 import { checkBannedWords } from '@/lib/banned-words'
 import { sanitizeHtml, stripHtmlTags } from '@/lib/sanitize'
+import { buildSummary } from '@/lib/summary'
 import { deleteFromR2, extractR2KeyFromUrl } from '@/lib/r2'
 import { checkAndPromote } from '@/lib/grade'
 import { generateCommunitySlug } from '@/lib/seo/slug'
@@ -103,10 +104,8 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
 
   // 게시글 생성 — HTML 새니타이즈 (TipTap HTML 지원)
   const safeContent = sanitizeHtml(content)
-  const plainText = stripHtmlTags(safeContent)
-  const summary = plainText.length > 100
-    ? plainText.slice(0, 97) + '...'
-    : plainText
+  // 미리보기는 @/lib/summary의 buildSummary 하나로 만든다(경로별 자체 절단 금지)
+  const summary = buildSummary(safeContent)
 
   // 이미지 URL을 본문에 추가 (검증 완료된 URL만)
   let finalContent = safeContent
@@ -228,10 +227,8 @@ export async function updatePost(postId: string, formData: FormData): Promise<Cr
   }
 
   const safeContent = sanitizeHtml(content)
-  const plainText = stripHtmlTags(safeContent)
-  const summary = plainText.length > 100
-    ? plainText.slice(0, 97) + '...'
-    : plainText
+  // 생성 경로와 같은 규칙으로 다시 만든다 — 수정 후 미리보기가 어긋나지 않게
+  const summary = buildSummary(safeContent)
 
   let finalContent = safeContent
   if (imageUrls.length > 0) {
