@@ -65,6 +65,24 @@ export const revalidate = 300
 const SHOW_COMMUNITY_CATEGORY_FILTER = false
 const SHOW_COMMUNITY_SORT_TOGGLE = true
 
+/**
+ * 주제 허브(/topic/*)로 가는 목록 내 안내 행. 해당 boardSlug에서만 렌더한다.
+ * DB 글이 아니라 정적 문구다 — 허브는 여러 게시판·매거진 글을 주제별로 묶는 SEO 페이지라
+ * 게시글로 만들 대상이 아니고, 만들면 목록 정렬·통계에 섞인다.
+ */
+const TOPIC_HUB: Record<string, { href: string; title: string; preview: string } | undefined> = {
+  menopause: {
+    href: '/topic/menopause',
+    title: '갱년기 이야기, 주제별로 모아봤어요',
+    preview: '폐경·완경, 몸의 변화, 감정과 관계, 병원 선택 — 우나어님들이 자주 나눈 이야기를 모았습니다',
+  },
+  life2: {
+    href: '/topic/second-act',
+    title: '재취업과 은퇴 후 돈 이야기, 한곳에 모아봤어요',
+    preview: '다시 일하기, 퇴직금·연금, 건강보험과 생활비 — 인생 2막 이야기를 주제별로 정리했습니다',
+  },
+}
+
 export function generateStaticParams() {
   return [
     { boardSlug: 'stories' },
@@ -184,6 +202,7 @@ export default async function BoardListPage({ params }: PageProps) {
   if (!board) notFound()
 
   const initialData = await getInitialBoardData(board.boardType)
+  const topicHub = TOPIC_HUB[boardSlug]
 
   const boardFaqJsonLd = getBoardFaqJsonLd(boardSlug)
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -206,32 +225,6 @@ export default async function BoardListPage({ params }: PageProps) {
       {/* GA4 게시판 조회 이벤트 */}
       <BoardViewTracker boardType={board.boardType} boardSlug={boardSlug} />
       <h1 className="sr-only">{board.displayName}</h1>
-
-      {/* 갱년기톡 ↔ 갱년기 주제 허브 양방향 연결 (허브는 매거진·갱년기톡 글을 주제별로 묶는다) */}
-      {boardSlug === 'menopause' && (
-        <Link
-          href="/topic/menopause"
-          className="mb-3 flex min-h-[52px] items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
-        >
-          <span className="text-body font-bold leading-[1.5] text-foreground">
-            폐경·완경, 몸의 변화, 감정과 관계, 병원 선택 — 갱년기 이야기 주제별로 모아보기
-          </span>
-          <span aria-hidden className="shrink-0 text-body font-bold text-primary-text">›</span>
-        </Link>
-      )}
-
-      {/* 2막준비 ↔ 인생 2막 주제 허브 양방향 연결 (허브는 재취업·연금·생활비 글을 주제별로 묶는다) */}
-      {boardSlug === 'life2' && (
-        <Link
-          href="/topic/second-act"
-          className="mb-3 flex min-h-[52px] items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
-        >
-          <span className="text-body font-bold leading-[1.5] text-foreground">
-            재취업, 퇴직금·연금, 은퇴 후 생활비 — 인생 2막 이야기 주제별로 모아보기
-          </span>
-          <span aria-hidden className="shrink-0 text-body font-bold text-primary-text">›</span>
-        </Link>
-      )}
 
       {/* PWA 인라인 배너 (미설치 + 비차단 환경에서만 노출) */}
       <PwaInlineBanner />
@@ -258,6 +251,34 @@ export default async function BoardListPage({ params }: PageProps) {
             </Suspense>
           )}
         </div>
+      )}
+
+      {/* 주제 허브 안내 — 목록의 첫 행 자리에 게시글과 같은 구조로 둔다.
+          이전에는 정렬 칩 위에 rounded-lg 카드(높이 92px)로 있어서, 375px 첫 화면에서
+          게시글이 2개밖에 보이지 않았다(실측: 첫 게시글 top 315px). 광고처럼 읽혀
+          건너뛰게 되는 것도 문제였다.
+          목록 안(BoardPostListClient)이 아니라 밖에 두는 이유: 그 컴포넌트는 client이고
+          정렬·페이지·검색이 바뀌면 /api로 목록을 통째로 교체한다. 배열에 끼워 넣으면
+          응답에 없는 항목이라 사라지거나 병합 로직이 필요하다. 여기 두면 정렬 탭과
+          무관하게 항상 같은 자리에 남고, 서버 HTML에 <a>가 그대로 나온다(내부링크 유지).
+          위 정렬 칩 div가 border-b라서 이 행이 목록의 첫 줄로 자연스럽게 이어진다. */}
+      {topicHub && (
+        <Link
+          href={topicHub.href}
+          className="block border-b border-border py-[18px] no-underline text-inherit transition-colors hover:bg-muted/40"
+        >
+          <h2 className="text-body font-bold text-foreground m-0 line-clamp-2 leading-[1.4]">
+            {topicHub.title}
+          </h2>
+          <p className="text-caption text-muted-strong m-0 mt-1.5 line-clamp-2 leading-[1.6]">
+            {topicHub.preview}
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-subtle">
+            <span>우나어 편집팀</span>
+            <span aria-hidden="true">·</span>
+            <span>모아보기</span>
+          </div>
+        </Link>
       )}
 
       {/* 게시글 목록 + 페이지네이션 + 검색 — 스트리밍 */}
