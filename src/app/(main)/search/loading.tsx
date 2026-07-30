@@ -22,18 +22,18 @@ export default function SearchLoading() {
         {/* 검색 결과 수 */}
         <div className="h-5 w-40 rounded bg-muted animate-pulse" />
 
-        {/* 결과 카드 */}
-        <div className="space-y-3">
+        {/* 결과 행 skeleton — SearchResultCard 실제 행 구조(제목/preview 2줄/메타/통계)와 높이 일치 */}
+        <div>
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="p-4 bg-card rounded-xl border border-border space-y-2">
-              <div className="h-4 w-16 rounded-full bg-muted animate-pulse" />
-              <div className="h-5 w-full rounded bg-muted animate-pulse" />
-              <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
-              <div className="flex gap-3 mt-1">
-                <div className="h-3 w-16 rounded bg-muted animate-pulse" />
-                <div className="h-3 w-10 rounded bg-muted animate-pulse" />
-                <div className="h-3 w-10 rounded bg-muted animate-pulse" />
-              </div>
+            <div key={i} className="border-b border-border py-[18px] last:border-b-0 animate-pulse">
+              {/* 제목 1줄 */}
+              <div className="h-[25px] w-3/4 rounded bg-muted" />
+              {/* preview 2줄 */}
+              <div className="h-[48px] w-full rounded bg-muted mt-1.5" />
+              {/* 메타(카테고리·작성자·시간) */}
+              <div className="h-[26px] w-2/3 rounded bg-muted mt-4" />
+              {/* 통계(좋아요·댓글) */}
+              <div className="h-[26px] w-1/4 rounded bg-muted mt-1.5" />
             </div>
           ))}
         </div>
