@@ -220,12 +220,19 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* 본문 */}
       <div
-        className="post-content text-body text-foreground leading-[1.85] mb-5 break-keep [&_p]:mb-4 [&_img]:h-auto [&_img]:my-4 [&_img]:rounded-xl [&_img]:-mx-4 [&_img]:w-[calc(100%+2rem)] [&_img]:max-w-[calc(100%+2rem)] md:[&_img]:mx-0 md:[&_img]:w-full md:[&_img]:max-w-full [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4 [&_video]:my-4 [&_video]:rounded-xl [&_video]:-mx-4 [&_video]:w-[calc(100%+2rem)] md:[&_video]:mx-0 md:[&_video]:w-full [&_.image-placeholder]:py-6 [&_.image-placeholder]:px-4 [&_.image-placeholder]:bg-muted [&_.image-placeholder]:rounded-xl [&_.image-placeholder]:text-center [&_.image-placeholder]:text-muted-foreground [&_.image-placeholder]:text-[17px] [&_.image-placeholder]:my-4"
+        className="post-content text-body text-foreground leading-[1.85] mb-6 break-keep [&_p]:mb-4 [&_img]:h-auto [&_img]:my-4 [&_img]:rounded-xl [&_img]:-mx-4 [&_img]:w-[calc(100%+2rem)] [&_img]:max-w-[calc(100%+2rem)] md:[&_img]:mx-0 md:[&_img]:w-full md:[&_img]:max-w-full [&_hr]:border-border [&_hr]:my-6 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-xl [&_iframe]:my-4 [&_video]:my-4 [&_video]:rounded-xl [&_video]:-mx-4 [&_video]:w-[calc(100%+2rem)] md:[&_video]:mx-0 md:[&_video]:w-full [&_.image-placeholder]:py-6 [&_.image-placeholder]:px-4 [&_.image-placeholder]:bg-muted [&_.image-placeholder]:rounded-xl [&_.image-placeholder]:text-center [&_.image-placeholder]:text-muted-foreground [&_.image-placeholder]:text-[17px] [&_.image-placeholder]:my-4"
         dangerouslySetInnerHTML={{ __html: proxyR2Images(sanitizeHtml(post.content)) }}
       />
 
-      {/* 액션 바 — 본문 직후 바로 공감 (정독 동선). 순서·디자인 그대로.
-          mb-0 → mb-4: 없어진 카드 wrapper의 mb-4(16px)를 그대로 승계해 광고까지 간격 유지 */}
+      {/* 광고① — 인아티클. 본문 바로 뒤, 공감 구분선 위.
+          본문 mb-6(24px) / 이 wrapper mb-6(24px)로 본문·구분선 양쪽에서 떨어뜨린다 —
+          광고가 본문이나 공감 버튼에 붙어 보이지 않게 하는 것이 목적. */}
+      <div className="mb-6">
+        <NativeAdSlot slotId="community-detail-inarticle" minHeight={230} fallback={<AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />} />
+      </div>
+
+      {/* 액션 바 — 구분선(border-t)은 공감 바로 위에 둔다. 읽기(본문·광고)와 행동(공감)의 경계.
+          pt-3: 구분선과 버튼 사이 / mb-8: 다음 순서인 댓글까지 간격 */}
       <ActionBar
         postId={resolvedId}
         title={post.title}
@@ -233,15 +240,24 @@ export default async function PostDetailPage({ params }: PageProps) {
         likeCount={post.likeCount}
         isLiked={false}
         isScrapped={false}
-        className="border-y-0 border-t mb-4 pt-3"
+        className="border-y-0 border-t pt-3 mb-8"
       />
 
-      {/* 광고 — 인아티클 */}
-      <div className="mb-8">
-        <NativeAdSlot slotId="community-detail-inarticle" minHeight={230} fallback={<AdSenseUnit slotId={ADSENSE.IN_ARTICLE} format="fluid" layout="in-article" className="rounded-2xl overflow-hidden" />} />
-      </div>
+      {/* 댓글 — 공감 직후. 읽고 → 공감하고 → 대화하는 동선 */}
+      <Suspense fallback={
+        <div className="mb-12 space-y-4">
+          <div className="h-8 bg-muted rounded animate-pulse w-32" />
+          <div className="h-20 bg-muted rounded-xl animate-pulse" />
+          <div className="h-20 bg-muted rounded-xl animate-pulse" />
+        </div>
+      }>
+        <CommentsLoader postId={resolvedId} isGreeting={post.category === GREETING_CATEGORY} />
+      </Suspense>
 
-      {/* 관련글 추천 v2 — 본문 직후(광고① 다음, 댓글 전) "다음에 읽기 좋은 이야기".
+      {/* 가입 유도 — 댓글까지 본 사람에게 */}
+      <PostCTA postId={resolvedId} postTitle={post.title} />
+
+      {/* 관련글 추천 v2 — 댓글·가입유도 뒤 "다음에 읽기 좋은 이야기".
           후보 전체(24)를 넘기고 클라에서 본 글 제외 + 맥락×흥미도 점수화 상위 3개 노출. 하단 PostListBottom 유지. */}
       <NextPostsInline
         postId={resolvedId}
@@ -253,20 +269,6 @@ export default async function PostDetailPage({ params }: PageProps) {
         posts={related}
         crossBoardPosts={crossBoard}
       />
-
-      {/* 댓글 (광고/관련글 뒤) */}
-      <Suspense fallback={
-        <div className="mb-12 space-y-4">
-          <div className="h-8 bg-muted rounded animate-pulse w-32" />
-          <div className="h-20 bg-muted rounded-xl animate-pulse" />
-          <div className="h-20 bg-muted rounded-xl animate-pulse" />
-        </div>
-      }>
-        <CommentsLoader postId={resolvedId} isGreeting={post.category === GREETING_CATEGORY} />
-      </Suspense>
-
-      {/* 가입 유도 */}
-      <PostCTA postId={resolvedId} postTitle={post.title} />
 
       {/* 하단 연속 읽기 */}
       <CoupangBanner preset="mobile" className="my-6 rounded-2xl overflow-hidden" />
