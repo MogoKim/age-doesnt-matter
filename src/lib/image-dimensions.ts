@@ -93,15 +93,19 @@ export function readImageSize(buf: Buffer): ImageSize | null {
 
 // ── 배너 지면별 규격 ────────────────────────────────────────────────────────
 //
-// 배너 자리가 둘인데 렌더 비율이 서로 다르고, 업로드 API는 하나를 공유한다.
-// 그래서 규격을 지면(target)별로 나눠 들고 검사도 지면별로 한다.
+// 배너 자리가 둘이고 업로드 API는 하나를 공유한다. 그래서 규격을 지면(target)별로
+// 나눠 들고 검사도 지면별로 한다.
 //
-//  히어로(홈 최상단)   : 모바일 2:1 / lg 8:3(2.667). 원본은 가장 넓은 8:3 기준
-//  목록 상단 띠(광고)  : 전 구간 3:1 고정, 데스크탑 컨테이너 960px
+//  홈 상단 구좌     : 홈 최상단. 브랜드 히어로 · 광고주 배너 · 참여이벤트가 돌아가며 쓴다.
+//                    전 뷰포트 3:1, 데스크탑 컨테이너 1200px → 권장 2400×800
+//  목록 상단 띠(광고) : 목록 7개 페이지 상단. 전 구간 3:1, 데스크탑 컨테이너 960px → 권장 1200×400
 //
-// 허용 범위는 권장값 언저리로 좁게 잡는다. 업로드 검증은 "실수를 막는 장치"라
+// 두 지면 모두 3:1이다. 성격이 달라도 같은 구좌·같은 모양이어야 소재를 한 벌만 만들면 되고,
+// 광고주에게 줄 규격도 하나로 끝난다. 지면 차이는 비율이 아니라 **크기**에만 남는다 —
+// 홈 상단이 더 크게 그려지므로 최소 치수가 더 크다(1200×400 vs 960×320).
+//
+// 허용 범위는 권장값 언저리(±5%)로 좁게 잡는다. 업로드 검증은 "실수를 막는 장치"라
 // 규격서와 다른 이미지를 통과시키면 검증의 의미가 없다.
-// 두 범위가 겹치지 않게 둔 것도 의도다(2.80 < 2.85) — 지면을 헷갈려 올리면 걸린다.
 
 /** 업로드 지면 — 어느 배너 자리에 쓸 이미지인지 */
 export type BannerTarget = 'hero' | 'ad'
@@ -120,17 +124,16 @@ export interface BannerImageSpec {
 }
 
 export const BANNER_SPECS: Record<BannerTarget, BannerImageSpec> = {
-  // 실제 잘림(권장 2.667 기준): 2.55 → PC 상하 4.4% / 2.80 → PC 좌우 4.7%
-  // 상·하한 모두 PC 잘림을 5% 미만으로 묶는 선이다.
+  // 3:1 ±5%. 렌더가 전 뷰포트 3:1이라 규격대로 올리면 잘리는 곳이 없다.
   hero: {
-    recommended: { width: 2400, height: 900 },
-    // 데스크탑 컨테이너 1200px의 레티나 여유
-    minWidth: 1600,
-    minHeight: 600,
-    minRatio: 2.55,
-    maxRatio: 2.8,
-    label: '히어로 배너(홈 최상단)',
-    ratioLabel: '2.67:1',
+    recommended: { width: 2400, height: 800 },
+    // 데스크탑 컨테이너 1200×400의 원본 크기 — 그보다 작으면 확대되어 흐려진다
+    minWidth: 1200,
+    minHeight: 400,
+    minRatio: 2.85,
+    maxRatio: 3.15,
+    label: '홈 상단 구좌(홈 최상단 배너)',
+    ratioLabel: '3:1',
   },
   // 3:1 ±5%. 렌더 컨테이너가 960×320이라 최소를 그 크기로 둔다 —
   // 그보다 작으면 확대되어 흐려진다. 권장 1200×400은 여유 있게 통과한다.
@@ -152,10 +155,11 @@ export const HERO_MIN_HEIGHT = BANNER_SPECS.hero.minHeight
 export const HERO_MIN_RATIO = BANNER_SPECS.hero.minRatio
 export const HERO_MAX_RATIO = BANNER_SPECS.hero.maxRatio
 /**
- * 모바일(2:1)에서 좌우가 잘려도 남는 최소 가로 비율.
- * 허용 상한 2.8일 때 71.4%가 남으므로 70%를 안전선으로 안내한다.
+ * 규격대로 올린 이미지에서 어느 뷰포트에서도 잘리지 않고 남는 가로 비율.
+ * 홈 상단 구좌가 전 뷰포트 3:1로 통일되면서 좌우 잘림이 사라져 100%다
+ * (모바일 2:1 / PC 8:3으로 갈려 있던 시절에는 70%였다).
  */
-export const HERO_SAFE_AREA_RATIO = 0.7
+export const HERO_SAFE_AREA_RATIO = 1
 
 export interface HeroImageCheck {
   ok: boolean

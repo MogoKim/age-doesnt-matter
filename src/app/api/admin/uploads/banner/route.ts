@@ -35,9 +35,9 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // 이 API는 히어로 배너와 광고 슬롯이 함께 쓴다. 두 지면은 렌더 비율이 달라
-    // (히어로 8:3 / 광고 3:1) 규격도 다르다 — 어느 지면인지 받아서 그 규격으로 검사한다.
-    // target이 없으면 히어로로 본다(기존 호출부 호환).
+    // 이 API는 홈 상단 구좌와 광고 슬롯이 함께 쓴다. 둘 다 3:1이지만 그려지는 크기가 달라
+    // 최소 치수가 다르다(홈 상단 1200×400 / 광고 960×320) — 어느 지면인지 받아서 그 규격으로 검사한다.
+    // target이 없으면 홈 상단 구좌로 본다(기존 호출부 호환).
     const rawTarget = form.get('target')
     const target: BannerTarget = rawTarget === 'ad' ? 'ad' : 'hero'
 

@@ -41,20 +41,23 @@ export default function SurveyHeroSlide({
       <Link
         href={(data.ctaUrl ?? '/').trim() || '/'}
         prefetch={false}
-        className="absolute inset-0 flex flex-col items-start justify-end gap-2 px-5 pb-7 text-left lg:justify-center lg:gap-3 lg:px-16 lg:pb-0 no-underline [-webkit-tap-highlight-color:transparent]"
+        className="absolute inset-0 flex flex-col items-start justify-end gap-1 px-5 pb-3 text-left lg:justify-center lg:gap-3 lg:px-16 lg:pb-0 no-underline [-webkit-tap-highlight-color:transparent]"
         tabIndex={active ? 0 : -1}
       >
         {/* 라벨 배지 */}
         <span
-          className="inline-flex items-center rounded-full bg-white/25 backdrop-blur-sm px-3 h-7 font-bold text-white leading-none"
+          className="shrink-0 inline-flex items-center rounded-full bg-white/25 backdrop-blur-sm px-3 h-6 lg:h-7 font-bold text-white leading-none"
           style={{ fontSize: 'clamp(12px, 3.2vw, 14px)' }}
         >
           📝 {data.label}
         </span>
 
-        {/* 짧은 제목 — 최대 2줄 */}
+        {/* 짧은 제목 — 모바일 1줄 / lg 2줄.
+            홈 상단 구좌가 3:1로 통일되면서 모바일 높이가 폭의 1/3(375 → 125px)뿐이라
+            배지·제목·보조문구·CTA를 다 세우려면 제목은 한 줄로 묶어야 한다.
+            shrink-0이 없으면 flex가 글상자를 눌러 글자가 반쯤 잘린다(넘침 수치엔 안 잡힘). */}
         <h2
-          className="text-white font-bold leading-[1.3] break-keep line-clamp-2 max-w-[80%] lg:max-w-[70%]"
+          className="shrink-0 text-white font-bold leading-[1.3] break-keep line-clamp-1 lg:line-clamp-2 max-w-[80%] lg:max-w-[70%]"
           style={{ fontSize: 'clamp(19px, 5vw, 28px)', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
         >
           {data.title}
@@ -63,7 +66,7 @@ export default function SurveyHeroSlide({
         {/* 보조문구 — 최대 1줄 */}
         {data.subtitle && (
           <p
-            className="text-white/90 leading-snug break-keep line-clamp-1 max-w-[80%] lg:max-w-[70%]"
+            className="shrink-0 text-white/90 leading-snug break-keep line-clamp-1 max-w-[80%] lg:max-w-[70%]"
             style={{ fontSize: 'clamp(14px, 3.8vw, 18px)', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
           >
             {data.subtitle}
@@ -72,7 +75,7 @@ export default function SurveyHeroSlide({
 
         {/* CTA */}
         <span
-          className="mt-0.5 inline-flex items-center justify-center px-4 h-11 rounded-full bg-black/30 backdrop-blur-sm text-white font-semibold"
+          className="shrink-0 inline-flex items-center justify-center px-4 h-8 lg:mt-0.5 lg:h-11 rounded-full bg-black/30 backdrop-blur-sm text-white font-semibold"
           style={{ fontSize: 'clamp(15px, 3.6vw, 17px)' }}
         >
           {data.ctaText} →
