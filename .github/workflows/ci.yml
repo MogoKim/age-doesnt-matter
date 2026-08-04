@@ -21,6 +21,7 @@ jobs:
       admin:    ${{ steps.filter.outputs.admin }}
       prisma:   ${{ steps.filter.outputs.prisma }}
       seo:      ${{ steps.filter.outputs.seo }}
+      scripts:  ${{ steps.filter.outputs.scripts }}
       docs-only: ${{ steps.filter.outputs.docs-only }}
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +42,11 @@ jobs:
               - 'src/app/(admin)/**'
             prisma:
               - 'prisma/**'
+            # 운영 스크립트. root tsconfig의 exclude에 'scripts'가 있어 npm run typecheck로는
+            # 절대 잡히지 않는다. ops-typecheck가 유일한 방어선이다.
+            scripts:
+              - 'scripts/**'
+              - 'tsconfig.ops.json'
             # 네이버 Search Advisor 노출면. 유입 대부분이 네이버라 한 줄 변경도 치명적이다.
             # 넓게 잡고 판정은 scripts/check-seo-guard.ts 가 정밀하게 한다(false positive 최소화).
             seo:
@@ -204,6 +210,33 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsx scripts/check-cron-links.ts
+
+  # Step 5-2: agents/** · scripts/** 타입 회귀 가드
+  #   root tsconfig의 exclude에 'agents'와 'scripts'가 **둘 다** 있어 npm run typecheck가
+  #   이 두 디렉토리를 전혀 보지 않는다. quality job 조건(frontend||prisma||admin)에도
+  #   걸리지 않아 PR #260·#261·#263이 타입 검증 없이 merge됐다.
+  #   기존 오류 958건을 0으로 만드는 건 별개의 대공사이므로, origin/main과 비교해
+  #   **늘어나지만 않으면 통과**시킨다.
+  ops-typecheck:
+    name: agents·scripts 타입 회귀 가드
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: github.event_name == 'pull_request' && (needs.detect-changes.outputs.agents == 'true' || needs.detect-changes.outputs.scripts == 'true')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # baseline worktree를 만들려면 전체 히스토리가 필요하다
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - name: baseline 대비 타입 회귀 검사
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+        run: npx tsx scripts/check-ops-typecheck.ts
 
   # Step 6: 어드민 E2E — src/app/(admin)/** 변경 시
   e2e-admin:

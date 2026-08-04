@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": ["agents/**/*.ts", "scripts/**/*.ts"],
+  "exclude": ["node_modules", "_quarantine", "outputs"]
+}
