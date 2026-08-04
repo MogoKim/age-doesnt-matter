@@ -109,6 +109,8 @@ export interface PostDetail extends PostSummary {
   slug: string | null
   seoTitle: string | null
   seoDescription: string | null
+  /** 작성 주체(PostSource: USER | BOT | ADMIN | SHEET) — Google 전용 색인 판정 입력 */
+  source: string
   // 시리즈 (매거진 연재)
   seriesId: string | null
   seriesTitle: string | null

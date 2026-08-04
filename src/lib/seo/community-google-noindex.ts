@@ -1,5 +1,5 @@
 /**
- * Google 전용 커뮤니티 글 색인 판단 (PR-B1 → B2 → B3, 순수 함수 — DB/서버 의존 없음).
+ * Google 전용 커뮤니티 글 색인 판단 (PR-B1 → B2 → B3 → **E0**, 순수 함수 — DB/서버 의존 없음).
  *
  * 배경: 구글에는 얇은 커뮤니티 URL이 수천 개인 사이트로 보이지만, 네이버 검색 성과는 양호하다.
  * 따라서 **네이버에는 손대지 않고 구글에만** 색인을 줄인다.
@@ -7,13 +7,27 @@
  *   - `<meta name="googlebot" content="noindex, follow">` ← 구글봇만 색인 제외(링크는 계속 따라감)
  *   - `/sitemap.xml`·`robots.txt`는 **일절 변경하지 않는다**(네이버 수집 경로 보존).
  *
- * 보드별 정책:
- *   - **HUMOR (B2)**: 보드 전체를 구글에서 제외. 연예·방송 잡담이라 우나어 정체성과 가장 멀다.
- *   - **STORY / LIFE2 (B3)**: 기본 제외. 우나어 핵심 주제(A좁)에 해당하고 분량·메타까지 갖춘
- *     글만 구글에 남긴다. "애매하면 제거, 확실히 우나어다운 글만 남긴다"가 원칙이다.
- *     실측(2026-07-28) 근거: 이 두 보드 6,401건 중 90일간 구글 노출을 1회라도 받은 글은
- *     224건(3.5%)뿐이라, 나머지는 색인돼 있어도 "얇은 URL 수천 개" 신호만 남긴다.
- *     B1의 글 단위 저품질 조건(300자·댓글0·14일)은 이 B3 기준으로 **대체**됐다.
+ * ---
+ * ## E0 개정 (2026-08-04) — B3의 오작동 2건을 고친다
+ *
+ * B3는 `seoTitle && seoDescription`이면 분량 기준을 면제했다. 이 예외가 **정책을 뒤집었다**:
+ * 구글 색인을 유지한 932건 중 51%가 이 면제로 통과했고, 그중 **78%가 500자 미만**(평균 220자),
+ * **95%는 seoTitle이 제목 복사**였다. 자동 생성 메타는 사람이 손본 흔적이 아니라 봇 파이프라인의
+ * 부산물이므로 품질 신호가 아니다. → **면제 제거.**
+ *
+ * 동시에 500자 하한은 커뮤니티 글 86%를 탈락시켜, 정작 사람이 쓴 글(USER 39건 중 색인 2건)이
+ * 구글에서 사라졌다. → **작성 주체별로 하한을 나눈다.**
+ *
+ *   - `USER` / `ADMIN`  : 사람이 직접 쓴 글. **80자 이상이면 색인 유지**(주제 무관).
+ *   - `BOT` / `SHEET`   : 자동 수집·생성분. **본문 150자 미만은 무조건 제외**,
+ *                          그 위는 **확장 주제어 매칭 && 300자 이상**일 때만 색인 유지.
+ *
+ * 댓글·좋아요는 품질 신호로 쓰지 않는다 — source별 평균 댓글이 BOT 6.5 / USER 4.9로
+ * **봇 글이 오히려 많아** 신호가 뒤집힌다(2026-08-03 DB 전수 실측).
+ *
+ * 보드별 정책(E0에서도 불변):
+ *   - **HUMOR**: 보드 전체를 구글에서 제외. 연예·방송 잡담이라 우나어 정체성과 가장 멀다.
+ *   - **STORY / LIFE2**: 위 source별 기준으로 글 단위 판단.
  *   - **MENOPAUSE(갱년기톡)**: 핵심 성장축 — 어느 정책에도 넣지 않고 전면 보호.
  *   - MAGAZINE·JOB·기타: 대상 아님.
  *
@@ -21,18 +35,18 @@
  */
 import { stripHtmlTags } from '@/lib/sanitize'
 
-/** 보드 전체를 구글 색인에서 빼는 대상 (B2) — 주제·길이·메타와 무관하게 무조건 제외 */
+/** 보드 전체를 구글 색인에서 빼는 대상 — 주제·길이·source와 무관하게 무조건 제외 */
 const BOARD_WIDE_NOINDEX_TYPES = ['HUMOR'] as const
 
-/** 주제 + 분량으로 글 단위 판단하는 대상 (B3) */
+/** 주제 + 분량으로 글 단위 판단하는 대상 */
 const TOPIC_GATED_BOARD_TYPES = ['STORY', 'LIFE2'] as const
 
+/** 사람이 직접 쓴 글 — 주제 게이트를 적용하지 않고 최소 분량만 본다 */
+const HUMAN_SOURCES = ['USER', 'ADMIN'] as const
+
 /**
- * 우나어 핵심 주제 키워드(A좁).
- *
- * 범용 생활 어휘(남편·딸·가족·병원·약·동네·여행 등)는 **일부러 뺐다**. 실측 결과 그런 단어는
- * 일상 잡담을 포함해 STORY/LIFE2의 72%에 등장해 필터로 기능하지 않았다.
- * 여기 남긴 것은 45~65 여성의 **검색 의도가 분명한 축**뿐이다.
+ * 우나어 핵심 주제 키워드(A좁) — 검색 의도가 분명한 축.
+ * `isNarrowUnaeoIdentityTopic()`으로 계속 export 한다(다른 판단에서 재사용 가능).
  */
 const NARROW_IDENTITY_TOPICS = [
   // 갱년기·여성 건강
@@ -51,15 +65,46 @@ const NARROW_IDENTITY_TOPICS = [
   '40대', '50대', '60대', '중년', '우리 또래', '우리또래', '인생 2막', '인생2막',
 ] as const
 
-/** 주제에 해당해도 이 분량은 돼야 구글에 남긴다(SEO 메타 완비 시 면제) */
-const MIN_TEXT_LENGTH = 500
+/**
+ * 확장 주제어 — BOT/SHEET 글에 적용하는 넓은 축.
+ *
+ * A좁만으로는 40~60대 여성의 실제 관심사(가족 관계·건강 불안·돈 걱정)를 담은 긴 글이
+ * 통째로 탈락했다. 여기에 생활 어휘를 더해 **300자 하한과 조합**으로 거른다.
+ *
+ * ⚠️ `약`·`집`·`돈` 같은 1글자 항목은 오탐(약속·집중·돈가스)이 있다. 단독 필터가 아니라
+ * "300자 이상 + 이 어휘"라는 **조합** 기준이라 감수한 것이며, DB 전수 시뮬레이션(2026-08-04)의
+ * index 2,798건은 이 목록 그대로 산출한 값이다. 항목을 바꾸면 그 수치도 다시 재야 한다.
+ */
+const EXTENDED_LIFE_TOPICS = [
+  '가족', '자녀', '딸', '아들', '부모', '엄마', '아버지', '친정', '시댁', '남편', '부부',
+  '이혼', '관계', '친구', '직장', '돈', '병원', '약', '우울', '건강', '수술', '검사',
+  '보험', '노후', '은퇴', '재취업', '생활비', '집', '이사', '여행', '외로움', '고민',
+  '자격증', '알바', '퇴직', '연금',
+] as const
+
+/** BOT/SHEET 판정용 합집합 (A좁 + 확장 생활 어휘) */
+const WIDE_TOPICS: readonly string[] = Array.from(
+  new Set<string>([...NARROW_IDENTITY_TOPICS, ...EXTENDED_LIFE_TOPICS]),
+)
+
+/** USER/ADMIN 최소 분량 — 사람이 쓴 한두 문단은 남긴다 */
+const MIN_HUMAN_TEXT_LENGTH = 80
+
+/** BOT/SHEET 절대 하한 — 이 아래는 주제와 무관하게 제외 */
+const MIN_BOT_HARD_FLOOR = 150
+
+/** BOT/SHEET가 주제어까지 맞을 때 요구하는 분량 */
+const MIN_BOT_TOPIC_LENGTH = 300
 
 export interface CommunityGoogleNoindexInput {
   boardType: string
   title: string
   content: string | null
-  seoTitle: string | null
-  seoDescription: string | null
+  /**
+   * 작성 주체(`PostSource`: USER | BOT | ADMIN | SHEET).
+   * 판정의 핵심 입력이므로 **필수**다 — 누락을 컴파일 단계에서 잡는다.
+   */
+  source: string
 }
 
 /** HTML을 걷어낸 본문 텍스트 (길이 판정·주제 판정 공용) */
@@ -70,6 +115,10 @@ function plainText(content: string | null): string {
     .trim()
 }
 
+function haystackOf(post: Pick<CommunityGoogleNoindexInput, 'title' | 'content'>): string {
+  return `${post.title ?? ''} ${plainText(post.content)}`
+}
+
 /**
  * 제목·본문에 우나어 핵심 주제(A좁)가 있는지 판단한다.
  * 제목까지 보는 이유: 커뮤니티 글은 제목에만 주제가 드러나는 경우가 많다.
@@ -77,19 +126,29 @@ function plainText(content: string | null): string {
 export function isNarrowUnaeoIdentityTopic(
   post: Pick<CommunityGoogleNoindexInput, 'title' | 'content'>,
 ): boolean {
-  const haystack = `${post.title ?? ''} ${plainText(post.content)}`
+  const haystack = haystackOf(post)
   return NARROW_IDENTITY_TOPICS.some((keyword) => haystack.includes(keyword))
+}
+
+/** BOT/SHEET에 적용하는 확장 주제 판정 (A좁 + 생활 어휘) */
+export function isWideLifeTopic(
+  post: Pick<CommunityGoogleNoindexInput, 'title' | 'content'>,
+): boolean {
+  const haystack = haystackOf(post)
+  return WIDE_TOPICS.some((keyword) => haystack.includes(keyword))
 }
 
 /**
  * 구글 전용 noindex 대상인지 판단한다. true면 `googlebot: noindex, follow`를 붙인다.
+ * 일반 `robots` 메타(`index, follow`)는 **이 함수와 무관하게 항상 유지**된다.
  *
- *   - HUMOR          → 항상 true (B2)
- *   - STORY / LIFE2  → 기본 true. **A좁 주제 && (본문 500자 이상 || SEO 메타 완비)** 일 때만 false (B3)
- *   - 그 외 보드      → 항상 false (MENOPAUSE·MAGAZINE·JOB 등 보호)
+ *   - HUMOR              → 항상 true
+ *   - 그 외 비대상 보드    → 항상 false (MENOPAUSE·MAGAZINE·JOB 등 보호)
+ *   - STORY / LIFE2
+ *       · USER / ADMIN   → 본문 80자 미만일 때만 true
+ *       · BOT / SHEET    → 150자 미만이면 true, 아니면 (확장 주제어 && 300자 이상)이 아닐 때 true
  *
- * 댓글 수는 기준으로 쓰지 않는다 — 봇·운영으로 쉽게 생기므로 구글 품질 신호가 아니다.
- * 신규 글 유예도 두지 않는다 — 주제·분량은 시간이 지나도 달라지지 않으므로 유예에 의미가 없다.
+ * 신규 글 유예는 두지 않는다 — 주제·분량은 시간이 지나도 달라지지 않는다.
  * GSC 실적도 쓰지 않는다 — 코드에서 조회할 수 없고, "노출이 있어야 색인"은 신규 글이 영원히
  * 색인되지 않는 자기충족 함정이 된다.
  */
@@ -100,10 +159,14 @@ export function shouldGoogleNoindexCommunityPost(post: CommunityGoogleNoindexInp
   // 2) 주제 게이트 대상이 아니면 보호 (MENOPAUSE·MAGAZINE·JOB·기타 전부)
   if (!(TOPIC_GATED_BOARD_TYPES as readonly string[]).includes(post.boardType)) return false
 
-  // 3) 우나어 핵심 주제가 아니면 제외 — 애매하면 구글에서 뺀다
-  if (!isNarrowUnaeoIdentityTopic(post)) return true
+  const length = plainText(post.content).length
 
-  // 4) 주제가 맞아도 읽을 분량이거나 운영자가 메타를 손본 글만 남긴다
-  if (post.seoTitle && post.seoDescription) return false
-  return plainText(post.content).length < MIN_TEXT_LENGTH
+  // 3) 사람이 직접 쓴 글은 주제를 묻지 않고 최소 분량만 본다
+  if ((HUMAN_SOURCES as readonly string[]).includes(post.source)) {
+    return length < MIN_HUMAN_TEXT_LENGTH
+  }
+
+  // 4) 자동 수집·생성분: 절대 하한 → 확장 주제어 + 분량
+  if (length < MIN_BOT_HARD_FLOOR) return true
+  return !(isWideLifeTopic(post) && length >= MIN_BOT_TOPIC_LENGTH)
 }

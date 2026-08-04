@@ -161,6 +161,53 @@ function isSecondActTopic(title: string): boolean {
   return SECOND_ACT_KEYWORDS.some((keyword) => title.includes(keyword))
 }
 
+/**
+ * T2 앵커 정렬용 — 우나어 정체성이 강하게 드러나는 어휘.
+ * 이 목록은 **색인 여부를 바꾸지 않는다**(색인 판정은 E0 단일 함수가 전담).
+ */
+const T2_STRONG_TOPICS = [
+  '갱년기', '폐경', '완경', '병원', '수술', '검사', '간병', '돌봄', '부모님', '친정', '시댁',
+  '자녀', '아들', '딸', '남편', '부부', '이혼', '은퇴', '퇴직', '재취업', '연금', '노후',
+  '생활비', '외로움', '상속', '건강보험', '보험료', '자격증',
+] as const
+
+/**
+ * T2 앵커 정렬용 — 허브 대표 링크로 어울리지 않는 성격(광고·종목·먹거리 소식 등).
+ * **차단이 아니라 감점만** 한다. 오탐이 있는 목록이라 단독으로 글을 떨어뜨리지 않고,
+ * 길이·주제 점수가 충분하면 그대로 남는다.
+ */
+const T2_PENALTY_TITLE_PATTERNS = [
+  '구독', '할인', '이벤트', '증정', '쿠폰', '특가', '[LG', '[삼성', '복기',
+  '하이닉스', '삼성전자', '삼전', '닉스', '종목', '매수', '매도', '코스피', '나스닥',
+  'ETF', '수급', '차트', '애널', '주가', '맛집', '대방출', '먹방', 'jpg', '근황',
+  '기자회견', '드라마', '연예', '방송',
+] as const
+
+/**
+ * 허브 앵커 우선순위 점수(T2).
+ *
+ * 기존 정렬은 `viewCount desc` 단일 기준이라, E0로 후보가 넓어지면 **조회수만 높은 짧은 글이
+ * 긴 정보성 글을 밀어냈다**(시뮬레이션에서 25개 중 18개 교체·평균 1,424자 → 816자).
+ * 길이와 주제 적합성을 함께 보고, 조회수는 log로 눌러 동점 판정에만 쓴다.
+ *
+ *   주제 강매칭 +2 / 800자↑ +3 · 500자↑ +2 · 300자↑ +1 · 300자↓ −2 / 감점 패턴 −3 / +log10(조회수+1)
+ */
+function anchorScore(input: { title: string; text: string; viewCount: number }): number {
+  const haystack = `${input.title} ${input.text}`
+  let score = 0
+  if (T2_STRONG_TOPICS.some((keyword) => haystack.includes(keyword))) score += 2
+
+  const length = input.text.length
+  if (length >= 800) score += 3
+  else if (length >= 500) score += 2
+  else if (length >= 300) score += 1
+  else score -= 2
+
+  if (T2_PENALTY_TITLE_PATTERNS.some((pattern) => input.title.includes(pattern))) score -= 3
+
+  return score + Math.log10(input.viewCount + 1)
+}
+
 /** 특이도 높은 섹션부터 매칭 — 첫 매칭 섹션에만 넣는다 */
 function matchSectionId(title: string): string | null {
   for (const sectionId of MATCH_ORDER) {
@@ -198,7 +245,9 @@ const getSecondActSources = unstable_cache(
         },
         select: {
           slug: true, title: true, content: true, commentCount: true,
-          seoTitle: true, seoDescription: true, boardType: true, viewCount: true,
+          boardType: true, viewCount: true,
+          // E0 색인 판정 + T2 앵커 정렬의 입력 (seoTitle/seoDescription은 E0에서 기준으로 쓰지 않는다)
+          source: true,
         },
         orderBy: { viewCount: 'desc' },
       }),
@@ -234,29 +283,40 @@ export async function getSecondActSections(): Promise<ResolvedSection[]> {
     })
   }
 
+  // 앵커 후보를 먼저 모은다 — 색인 자격(E0)과 배치 우선순위(T2)는 별개 단계다.
+  const candidates: { sectionId: string; link: HubLink; score: number }[] = []
   for (const post of community) {
     if (!post.slug || !isSecondActTopic(post.title)) continue
-    // PR-B3에서 Google 색인을 유지한 글만 앵커로 쓴다
+    // Google 색인을 유지한 글만 앵커로 쓴다 — 판정은 E0 단일 함수가 전담한다
     const noindexed = shouldGoogleNoindexCommunityPost({
       boardType: post.boardType,
       title: post.title,
       content: post.content,
-      seoTitle: post.seoTitle,
-      seoDescription: post.seoDescription,
+      source: post.source,
     })
     if (noindexed) continue
     const sectionId = matchSectionId(post.title)
     if (!sectionId) continue
-    const bucket = buckets.get(sectionId)
-    if (!bucket || bucket.community.length >= MAX_COMMUNITY) continue
     const boardSlug = BOARD_SLUG[post.boardType]
     if (!boardSlug) continue
-    bucket.community.push({
-      title: post.title,
-      href: `/community/${boardSlug}/${post.slug}`,
-      excerpt: toExcerpt(toPlainText(post.content)),
-      commentCount: post.commentCount,
+    const text = toPlainText(post.content)
+    candidates.push({
+      sectionId,
+      score: anchorScore({ title: post.title, text, viewCount: post.viewCount }),
+      link: {
+        title: post.title,
+        href: `/community/${boardSlug}/${post.slug}`,
+        excerpt: toExcerpt(text),
+        commentCount: post.commentCount,
+      },
     })
+  }
+
+  // 점수 높은 순으로 섹션을 채운다(T2). 동점이면 원래 조회수 정렬 순서가 유지된다.
+  for (const candidate of [...candidates].sort((a, b) => b.score - a.score)) {
+    const bucket = buckets.get(candidate.sectionId)
+    if (!bucket || bucket.community.length >= MAX_COMMUNITY) continue
+    bucket.community.push(candidate.link)
   }
 
   return SECOND_ACT_SECTIONS.map((section) => {
