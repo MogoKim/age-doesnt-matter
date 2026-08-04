@@ -356,8 +356,12 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                 value={form.ctaUrl}
                 onChange={(e) => setForm({ ...form, ctaUrl: e.target.value })}
                 className="h-10 w-full rounded-lg border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
-                placeholder="/community/stories"
+                placeholder="/community/stories 또는 https://example.com"
               />
+              <p className="mt-1 text-xs text-zinc-500">
+                내부는 <code>/</code>로 시작(앱 안에서 이동), 광고주 사이트는 <code>https://</code>(새 탭).
+                <code>http://</code>·<code>javascript:</code> 등은 저장되지 않습니다. 비우면 홈으로 이동합니다.
+              </p>
             </div>
 
             {/* 이미지 */}
@@ -366,9 +370,21 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                 이미지 <span className="text-zinc-400">(선택)</span>
               </label>
               <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                <p className="mb-2 text-xs text-zinc-500">
-                  권장: 1920×1080 이상 JPG·PNG·WebP, 4MB 이하. 비우면 그라디언트 배경으로 표시됩니다.
-                </p>
+                <div className="mb-2 space-y-1 text-xs text-zinc-500">
+                  <p>
+                    <strong className="text-zinc-700">권장 2400×900 (8:3 가로형)</strong> · 최소 1600×600 ·
+                    JPG·PNG·WebP · 4MB 이하
+                  </p>
+                  <p>
+                    화면 비율은 <strong>모바일 2:1</strong>, <strong>PC 8:3</strong>입니다. 모바일에서는{' '}
+                    <strong>좌우 각 12.5%가 잘리므로</strong> 중요한 요소는 가운데 75%(가로 1800px) 안에 넣어주세요.
+                  </p>
+                  <p>
+                    제목·부제·CTA는 시스템이 <strong>이미지 왼쪽에 겹쳐</strong> 출력합니다(왼쪽에 어두운 그라디언트).
+                    로고·상품은 <strong>오른쪽</strong>에, 우하단 모서리는 슬라이드 카운터가 겹치니 비워주세요.
+                  </p>
+                  <p>세로형·정사각 이미지는 업로드가 거부됩니다. 비우면 그라디언트 배경으로 표시됩니다.</p>
+                </div>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"

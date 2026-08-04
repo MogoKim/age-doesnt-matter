@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/admin-auth'
 import { uploadToR2 } from '@/lib/r2'
+import { checkHeroImage } from '@/lib/image-dimensions'
 import { randomUUID } from 'crypto'
 
 // 서버 경유 업로드 — 브라우저가 R2에 직접 PUT하지 않아 CORS 무관 (어느 도메인에서나 동작)
@@ -33,6 +34,15 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
+
+    // 히어로는 가로형 광고 지면이라 세로·정사각 이미지는 화면에서 대부분 잘린다.
+    // 규격 밖 소재가 조용히 올라가지 않도록 업로드 단계에서 막는다.
+    // (치수를 못 읽는 변종은 통과시킨다 — 정상 업로드를 막는 쪽이 더 나쁘다.)
+    const check = checkHeroImage(buffer)
+    if (!check.ok) {
+      return NextResponse.json({ error: check.reason }, { status: 400 })
+    }
+
     const key = `banners/${randomUUID()}.${ext}`
     const { url } = await uploadToR2(buffer, key, file.type)
 
