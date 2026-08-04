@@ -6,12 +6,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { gtmAdClick } from '@/lib/gtm'
 import { resolveHeroLink } from '@/lib/hero-link'
+import { LIST_HEADER_PATHS } from '@/lib/ad-routes'
 import { cn } from '@/lib/utils'
 
-// GNB 바로 아래 띠배너를 노출할 7개 목록 페이지 (정확 매칭 — 상세/글쓰기 등 제외)
-// ※ 커뮤니티 보드 추가 시 여기에도 추가할 것 — 누락되면 그 게시판만 조용히 배너 미노출(수익 누락).
-//   (menopause가 PR-2 탭 공개 후에도 누락돼 있었음 — 2026-07-27 보강)
-const AD_ROUTES = ['/best', '/community/stories', '/community/menopause', '/community/life2', '/community/humor', '/magazine', '/jobs']
+// GNB 바로 아래 띠배너를 노출할 목록 페이지 (정확 매칭 — 상세/글쓰기 등 제외).
+// 경로 목록은 @/lib/ad-routes 한 곳에서 관리한다 — 어드민 선택 칩과 같은 소스를 봐야
+// "렌더는 되는데 어드민에서 고를 수 없는" 어긋남이 생기지 않는다.
+const AD_ROUTES = LIST_HEADER_PATHS
 
 // 광고는 사용자가 닫을 수 없음 (닫기 버튼 없음 — 노출 보장)
 const ROTATE_MS = 7000

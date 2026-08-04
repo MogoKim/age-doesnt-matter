@@ -6,6 +6,7 @@ import { adminCreateAdBanner, adminUpdateAdBanner, adminDeleteAdBanner } from '@
 import type { AdSlot, AdType } from '@/generated/prisma/client'
 import HelpTip from './HelpTip'
 import { HELP } from './admin-help-texts'
+import { LIST_HEADER_ROUTES, LIST_HEADER_ROUTE_COUNT, LIST_HEADER_LABELS } from '@/lib/ad-routes'
 
 const TAB_ITEMS = [
   { value: 'hero', label: '히어로 배너' },
@@ -30,14 +31,9 @@ const SLOT_LABELS: Record<string, string> = {
 const ACTIVE_SLOTS: string[] = ['LIST_HEADER']
 
 // LIST_HEADER(목록 상단 띠) 노출 위치 — targetPath(콤마 구분 다중 경로 / 빈=전체 공통)
-const LIST_HEADER_PAGES: { value: string; label: string }[] = [
-  { value: '/best', label: '베스트' },
-  { value: '/community/stories', label: '사는이야기' },
-  { value: '/community/life2', label: '2막준비' },
-  { value: '/community/humor', label: '웃음방' },
-  { value: '/magazine', label: '매거진' },
-  { value: '/jobs', label: '내일찾기' },
-]
+// 노출 경로는 @/lib/ad-routes 한 곳에서 관리한다 — 렌더(ListBannerClient)와 같은 소스.
+// 예전에는 여기 별도 배열이 있어 갱년기톡이 빠진 채로 어긋나 있었다.
+const LIST_HEADER_PAGES = LIST_HEADER_ROUTES
 
 function parseTargetPaths(csv: string): string[] {
   return csv ? csv.split(',').map((s) => s.trim()).filter(Boolean) : []
@@ -246,8 +242,9 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
         <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800 space-y-1.5">
           <p className="font-semibold">📋 광고 슬롯 운영 가이드 (담당자 필독)</p>
           <ul className="space-y-1 list-none pl-0 text-blue-700">
-            <li>• <strong>목록 상단 띠</strong>: 7개 목록 페이지(베스트·사는이야기·<strong>갱년기톡</strong>·2막준비·웃음방·매거진·내일찾기) 메뉴 바로 아래에 노출</li>
-            <li>• <strong>노출 위치</strong>: 여러 페이지 복수 선택 가능 — 전부 또는 0개 선택 = 7개 전체 공통</li>
+            {/* 개수·목록은 @/lib/ad-routes에서 가져온다 — 경로가 늘어도 문구가 따라온다 */}
+            <li>• <strong>목록 상단 띠</strong>: {LIST_HEADER_ROUTE_COUNT}개 목록 페이지({LIST_HEADER_LABELS}) 메뉴 바로 아래에 노출</li>
+            <li>• <strong>노출 위치</strong>: 여러 페이지 복수 선택 가능 — 전부 또는 0개 선택 = {LIST_HEADER_ROUTE_COUNT}개 전체 공통</li>
             <li>• <strong>이미지</strong>: 권장 <strong>1200×400(3:1)</strong> 가로 띠 · 최소 960×320 — 파일 선택하면 자동 업로드</li>
             <li>• ⚠️ <strong>히어로 배너(2400×900, 8:3)와 다른 지면</strong>입니다 — 규격이 달라 서로 올리면 업로드가 거부됩니다</li>
             <li>• <strong>광고 유형</strong>: 자체(우리 배너 이미지) / 구글·쿠팡(HTML 코드) / 외부</li>
@@ -380,10 +377,10 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                         key={p.value}
                         type="button"
                         onClick={() => {
-                          // 전체(빈값) 상태에서 끄기를 누르면 6개 전체를 기준으로 해당 칩만 제외
+                          // 전체(빈값) 상태에서 끄기를 누르면 전체 경로를 기준으로 해당 칩만 제외
                           const base = isAll ? LIST_HEADER_PAGES.map((v) => v.value) : selected
                           const next = checked ? base.filter((v) => v !== p.value) : [...base, p.value]
-                          // 6개 전부 켜짐(또는 0개로 떨어짐) = 전체 공통(빈 문자열). 0개 도달 시 자동 전체 복귀
+                          // 전부 켜짐(또는 0개로 떨어짐) = 전체 공통(빈 문자열). 0개 도달 시 자동 전체 복귀
                           const csv = next.length === 0 || next.length === LIST_HEADER_PAGES.length ? '' : next.join(',')
                           setForm({ ...form, targetPath: csv })
                         }}
@@ -400,7 +397,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 </div>
                 <p className="mt-1 text-[11px] text-zinc-500">
                   {parseTargetPaths(form.targetPath).length === 0
-                    ? '현재: 전체 공통(6개 목록 모두 노출)'
+                    ? `현재: 전체 공통(${LIST_HEADER_ROUTE_COUNT}개 목록 모두 노출)`
                     : `현재: ${parseTargetPaths(form.targetPath).map((v) => LIST_HEADER_PAGES.find((p) => p.value === v)?.label).join(', ')} (${parseTargetPaths(form.targetPath).length}개)`}
                 </p>
               </div>
