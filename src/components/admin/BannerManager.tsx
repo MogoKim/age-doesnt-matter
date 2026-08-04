@@ -19,6 +19,8 @@ interface Banner {
   displayOrder: number
   slot: string
   isActive: boolean
+  /** 시스템 텍스트(제목·부제·CTA)를 이미지 위에 겹칠지 — 광고주 소재는 끈다 */
+  showOverlay: boolean
   startsAt: Date | null
   endsAt: Date | null
 }
@@ -79,7 +81,12 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
     startsAt: '',
     endsAt: '',
     isActive: true,
+    showOverlay: true,
   })
+
+  // 이미지 없는 배너는 오버레이를 끌 수 없다 — 끄면 아무 글자도 없는 색판이 된다.
+  // 서버(resolveShowOverlay)와 화면(shouldShowOverlay)도 같은 규칙이라, 미리보기가 결과와 어긋나지 않는다.
+  const overlayPreviewOn = form.showOverlay || !form.imageUrl
 
   function resetForm() {
     setForm({
@@ -96,6 +103,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
       startsAt: '',
       endsAt: '',
       isActive: true,
+      showOverlay: true,
     })
     setEditId(null)
     setShowForm(false)
@@ -116,6 +124,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
       startsAt: formatDate(banner.startsAt),
       endsAt: formatDate(banner.endsAt),
       isActive: banner.isActive,
+      showOverlay: banner.showOverlay,
     })
     setEditId(banner.id)
     setShowForm(true)
@@ -139,6 +148,8 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
         startsAt: optionalText(form.startsAt),
         endsAt: optionalText(form.endsAt),
         isActive: form.isActive,
+        // 이미지가 없으면 서버가 true로 되돌린다 — 끄면 빈 색판만 남기 때문
+        showOverlay: form.showOverlay,
       }
       if (editId) {
         await adminUpdateBanner(editId, payload)
@@ -224,6 +235,10 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
               • <strong>목록 상단 띠(광고 슬롯)와 헷갈리지 마세요</strong> — 비율은 같은 3:1이지만 자리가 다릅니다.
               여기는 <strong>홈 최상단</strong>, 광고 슬롯은 <strong>목록 7개 페이지 상단 띠</strong>(권장 1200×400)입니다.
             </li>
+            <li>
+              • <strong>광고주 배너를 등록할 때는 「텍스트 오버레이」를 꺼주세요</strong> — 문구까지 들어간 완성 소재 위에
+              우리 제목·부제가 겹치면 광고가 깨집니다. 우리가 만드는 브랜드 배너는 켠 채로 두면 됩니다.
+            </li>
             <li>• 최대 <strong>5장</strong> 동시 노출 가능 — 표시순서 숫자가 낮을수록 먼저 표시</li>
             <li>• 이미지가 있으면 <strong>이미지 배경 + 왼쪽 정렬</strong>, 없으면 그라디언트 배경으로 표시됩니다</li>
             <li>• 시작/종료일을 비워두면 <strong>항상 노출</strong>됩니다</li>
@@ -257,21 +272,30 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
             {editId ? '배너 수정' : '새 배너 등록'}
           </h3>
 
-          {/* 미리보기 */}
+          {/* 미리보기 — 오버레이 토글 상태를 그대로 반영한다.
+              이미지가 없으면 끌 수 없으므로(빈 색판 방지) 토글과 무관하게 텍스트를 보여준다. */}
           <div
             className="relative h-28 w-full overflow-hidden rounded-xl bg-cover bg-center shadow-inner"
             style={{
               background: form.imageUrl
-                ? `linear-gradient(to right, rgba(0,0,0,0.55), rgba(0,0,0,0.16)), url("${form.imageUrl}") center / cover`
+                ? overlayPreviewOn
+                  ? `linear-gradient(to right, rgba(0,0,0,0.55), rgba(0,0,0,0.16)), url("${form.imageUrl}") center / cover`
+                  : `url("${form.imageUrl}") center / cover`
                 : buildGradient(form.themeColor, form.themeColorMid, form.themeColorEnd),
             }}
           >
-            <div className={`flex h-full flex-col justify-center gap-1 px-6 text-white ${form.imageUrl ? 'items-start text-left' : 'items-center text-center'}`}>
-              <span className="text-sm font-bold drop-shadow">{form.title || '제목 미리보기'}</span>
-              {form.subtitle && (
-                <span className="text-xs opacity-90 drop-shadow">{form.subtitle}</span>
-              )}
-            </div>
+            {overlayPreviewOn ? (
+              <div className={`flex h-full flex-col justify-center gap-1 px-6 text-white ${form.imageUrl ? 'items-start text-left' : 'items-center text-center'}`}>
+                <span className="text-sm font-bold drop-shadow">{form.title || '제목 미리보기'}</span>
+                {form.subtitle && (
+                  <span className="text-xs opacity-90 drop-shadow">{form.subtitle}</span>
+                )}
+              </div>
+            ) : (
+              <div className="absolute bottom-1.5 right-2 rounded bg-black/45 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                이미지만 표시
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -484,8 +508,46 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                 className="h-4 w-4 cursor-pointer rounded border-zinc-300"
               />
               <label htmlFor="isActive" className="text-sm text-zinc-700 cursor-pointer">
-                활성화 (노출 기간 내 홈 히어로에 표시)
+                활성화 (노출 기간 내 홈 상단 구좌에 표시)
               </label>
+            </div>
+
+            {/* 텍스트 오버레이 ON/OFF — 광고주 소재를 그대로 보여주기 위한 스위치 */}
+            <div className="sm:col-span-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="showOverlay"
+                  checked={form.showOverlay}
+                  disabled={!form.imageUrl}
+                  onChange={(e) => setForm({ ...form, showOverlay: e.target.checked })}
+                  className="h-4 w-4 cursor-pointer rounded border-zinc-300 disabled:cursor-not-allowed"
+                />
+                <label htmlFor="showOverlay" className="text-sm font-medium text-zinc-700 cursor-pointer">
+                  텍스트 오버레이 — 제목·부제·버튼을 이미지 위에 표시
+                </label>
+              </div>
+              <ul className="mt-2 space-y-1 pl-7 text-xs text-zinc-500 list-none">
+                <li>
+                  • <strong className="text-zinc-700">켬</strong> — 우리가 만든 제목·부제·버튼이 이미지 위에 얹힙니다.
+                  글자가 잘 보이도록 이미지 왼쪽이 어두워집니다. <strong>브랜드 배너용</strong>
+                </li>
+                <li>
+                  • <strong className="text-zinc-700">끔</strong> — 광고주가 만든 이미지를 그대로 보여줍니다.
+                  글자도 어두운 처리도 없습니다. 배너 전체를 누르면 링크로 이동하는 것은 같습니다. <strong>광고주 배너 권장</strong>
+                </li>
+                {!form.imageUrl && (
+                  <li className="text-amber-700">
+                    • 이미지를 올려야 끌 수 있습니다 — 이미지 없이 끄면 글자도 그림도 없는 빈 배너가 됩니다.
+                  </li>
+                )}
+                {form.imageUrl && !form.showOverlay && (
+                  <li className="text-amber-700">
+                    • 꺼진 상태에서도 제목은 저장됩니다 — 화면에는 안 보이지만 관리 목록과 화면 낭독기(시각장애인용)에 쓰입니다.
+                    우하단 슬라이드 번호는 계속 표시되니 그 자리는 비워주세요.
+                  </li>
+                )}
+              </ul>
             </div>
           </div>
 
@@ -546,6 +608,16 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                   {active && (
                     <span className="rounded bg-green-50 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
                       노출중
+                    </span>
+                  )}
+                  {/* 오버레이가 꺼진 배너는 화면에 제목이 안 보인다 —
+                      목록에서만 구분되므로 표시해 준다(광고주 배너 식별용) */}
+                  {!banner.showOverlay && banner.imageUrl && (
+                    <span
+                      className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
+                      title="시스템 텍스트 오버레이 OFF — 이미지만 그대로 노출됩니다"
+                    >
+                      이미지만
                     </span>
                   )}
                 </div>
