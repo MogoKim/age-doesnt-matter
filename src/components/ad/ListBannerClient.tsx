@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { gtmAdClick } from '@/lib/gtm'
+import { resolveHeroLink } from '@/lib/hero-link'
 import { cn } from '@/lib/utils'
 
 // GNB 바로 아래 띠배너를 노출할 7개 목록 페이지 (정확 매칭 — 상세/글쓰기 등 제외)
@@ -15,19 +16,10 @@ const AD_ROUTES = ['/best', '/community/stories', '/community/menopause', '/comm
 // 광고는 사용자가 닫을 수 없음 (닫기 버튼 없음 — 노출 보장)
 const ROTATE_MS = 7000
 
-// 클릭 URL 분류: 자사 도메인/상대경로 = 내부(같은 탭), 그 외 = 외부(새 탭)
-function classifyLink(url: string): { external: boolean; href: string } {
-  if (url.startsWith('/')) return { external: false, href: url }
-  try {
-    const u = new URL(url)
-    if (u.hostname.endsWith('age-doesnt-matter.com')) {
-      return { external: false, href: u.pathname + u.search + u.hash } // 자사 → 경로만 추출해 내부 이동
-    }
-    return { external: true, href: url }
-  } catch {
-    return { external: false, href: url }
-  }
-}
+// 클릭 URL 분류는 히어로 배너와 같은 규칙(@/lib/hero-link)을 쓴다.
+//  이전 자체 구현은 `javascript:`·`data:`를 외부로 판정해 <a target="_blank">로 그대로 렌더했고,
+//  `//evil.com`은 내부로 오판했다. 배너 지면마다 규칙이 갈리지 않게 한 곳으로 모은다.
+//  자사 도메인 절대주소(https://age-doesnt-matter.com/…)를 내부 경로로 되돌리는 동작은 그대로다.
 
 export interface ListBannerItem {
   id: string
@@ -86,7 +78,10 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
     }).catch(() => {})
   }
 
-  const link = current.clickUrl ? classifyLink(current.clickUrl) : null
+  // clickUrl이 비어 있으면 링크 없이 이미지만 렌더한다(기존 동작 유지).
+  // 값이 있으면 resolveHeroLink가 internal / external / blocked를 가른다 —
+  // blocked(javascript: 등)는 href가 '/'로 되돌아가 안전하게 홈으로 간다.
+  const link = current.clickUrl ? resolveHeroLink(current.clickUrl) : null
 
   const inner = current.imageUrl ? (
     <Image
@@ -106,7 +101,7 @@ export default function ListBannerClient({ banners }: { banners: ListBannerItem[
 
   // 링크가 있으면 내부(Link, 같은 탭)/외부(a, 새 탭) 분기, 없으면 그대로 (전체 클릭 영역)
   const body = link
-    ? link.external
+    ? link.kind === 'external'
       ? (
         <a
           href={link.href}

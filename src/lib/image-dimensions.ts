@@ -91,27 +91,66 @@ export function readImageSize(buf: Buffer): ImageSize | null {
   return size
 }
 
-// ── 히어로 배너 규격 ────────────────────────────────────────────────────────
+// ── 배너 지면별 규격 ────────────────────────────────────────────────────────
 //
-// 렌더 비율은 모바일·태블릿 2:1, lg(1024px~) 8:3(2.667)이다.
-// 원본은 가장 넓은 8:3으로 받아 데스크탑을 기준으로 삼고, 모바일에서는 좌우가 잘린다.
+// 배너 자리가 둘인데 렌더 비율이 서로 다르고, 업로드 API는 하나를 공유한다.
+// 그래서 규격을 지면(target)별로 나눠 들고 검사도 지면별로 한다.
 //
-// 허용 범위를 권장값 언저리로 좁게 잡는다. 업로드 검증은 "실수를 막는 장치"라
+//  히어로(홈 최상단)   : 모바일 2:1 / lg 8:3(2.667). 원본은 가장 넓은 8:3 기준
+//  목록 상단 띠(광고)  : 전 구간 3:1 고정, 데스크탑 컨테이너 960px
+//
+// 허용 범위는 권장값 언저리로 좁게 잡는다. 업로드 검증은 "실수를 막는 장치"라
 // 규격서와 다른 이미지를 통과시키면 검증의 의미가 없다.
-// 실제 잘림(권장 2.667 기준):
-//   2.55 → 데스크탑 상하 4.4% 잘림 / 모바일 좌우 21.6%
-//   2.667 → 데스크탑 0% / 모바일 좌우 25.0%   ← 권장
-//   2.80 → 데스크탑 좌우 4.7% / 모바일 좌우 28.6%
-// 상·하한 모두 데스크탑 잘림을 5% 미만으로 묶는 선이다.
+// 두 범위가 겹치지 않게 둔 것도 의도다(2.80 < 2.85) — 지면을 헷갈려 올리면 걸린다.
 
-/** 권장 원본 — 광고주 가이드에 그대로 쓰는 값 */
-export const HERO_RECOMMENDED = { width: 2400, height: 900 } as const
-/** 최소 허용 가로폭 — 데스크탑 컨테이너(1200px) 2배수(레티나) 기준 */
-export const HERO_MIN_WIDTH = 1600
-export const HERO_MIN_HEIGHT = 600
-/** 허용 가로세로비 — 8:3(2.667) ±5% 남짓. 제작 오차는 받되 다른 규격은 막는다. */
-export const HERO_MIN_RATIO = 2.55
-export const HERO_MAX_RATIO = 2.8
+/** 업로드 지면 — 어느 배너 자리에 쓸 이미지인지 */
+export type BannerTarget = 'hero' | 'ad'
+
+export interface BannerImageSpec {
+  /** 권장 원본 — 광고주 가이드에 그대로 쓰는 값 */
+  recommended: { width: number; height: number }
+  minWidth: number
+  minHeight: number
+  minRatio: number
+  maxRatio: number
+  /** 사람이 읽는 지면 이름 — 거부 사유 문구에 쓴다 */
+  label: string
+  /** 권장 비율 표기(문구용) */
+  ratioLabel: string
+}
+
+export const BANNER_SPECS: Record<BannerTarget, BannerImageSpec> = {
+  // 실제 잘림(권장 2.667 기준): 2.55 → PC 상하 4.4% / 2.80 → PC 좌우 4.7%
+  // 상·하한 모두 PC 잘림을 5% 미만으로 묶는 선이다.
+  hero: {
+    recommended: { width: 2400, height: 900 },
+    // 데스크탑 컨테이너 1200px의 레티나 여유
+    minWidth: 1600,
+    minHeight: 600,
+    minRatio: 2.55,
+    maxRatio: 2.8,
+    label: '히어로 배너(홈 최상단)',
+    ratioLabel: '2.67:1',
+  },
+  // 3:1 ±5%. 렌더 컨테이너가 960×320이라 최소를 그 크기로 둔다 —
+  // 그보다 작으면 확대되어 흐려진다. 권장 1200×400은 여유 있게 통과한다.
+  ad: {
+    recommended: { width: 1200, height: 400 },
+    minWidth: 960,
+    minHeight: 320,
+    minRatio: 2.85,
+    maxRatio: 3.15,
+    label: '광고 슬롯(목록 상단 띠)',
+    ratioLabel: '3:1',
+  },
+}
+
+/** @deprecated 지면별 상수를 쓰세요 — BANNER_SPECS.hero */
+export const HERO_RECOMMENDED = BANNER_SPECS.hero.recommended
+export const HERO_MIN_WIDTH = BANNER_SPECS.hero.minWidth
+export const HERO_MIN_HEIGHT = BANNER_SPECS.hero.minHeight
+export const HERO_MIN_RATIO = BANNER_SPECS.hero.minRatio
+export const HERO_MAX_RATIO = BANNER_SPECS.hero.maxRatio
 /**
  * 모바일(2:1)에서 좌우가 잘려도 남는 최소 가로 비율.
  * 허용 상한 2.8일 때 71.4%가 남으므로 70%를 안전선으로 안내한다.
@@ -127,34 +166,41 @@ export interface HeroImageCheck {
 }
 
 /**
- * 업로드된 히어로 이미지가 규격에 맞는지 본다.
+ * 업로드된 배너 이미지가 해당 지면 규격에 맞는지 본다.
  * 치수를 못 읽으면 막지 않는다 — 파서가 모르는 변종 때문에 정상 업로드를 차단하는 쪽이 더 나쁘다.
  */
-export function checkHeroImage(buf: Buffer): HeroImageCheck {
+export function checkBannerImage(buf: Buffer, target: BannerTarget): HeroImageCheck {
+  const spec = BANNER_SPECS[target]
   const size = readImageSize(buf)
   if (!size) return { ok: true, size: null, ratio: null }
 
   const ratio = size.width / size.height
+  const rec = `${spec.recommended.width}×${spec.recommended.height}(${spec.ratioLabel})`
 
   // 비율을 먼저 본다. 세로 사진(900×2400)은 크기 조건에도 걸리지만,
   // "너무 작다"고 안내하면 더 큰 세로 사진을 다시 올리게 된다 — 모양이 문제라는 걸 먼저 알려야 한다.
-  if (ratio < HERO_MIN_RATIO || ratio > HERO_MAX_RATIO) {
+  if (ratio < spec.minRatio || ratio > spec.maxRatio) {
     return {
       ok: false,
       size,
       ratio,
-      reason: `가로세로 비율이 맞지 않습니다 (${size.width}×${size.height} = ${ratio.toFixed(2)}:1). 가로가 세로의 ${HERO_MIN_RATIO}~${HERO_MAX_RATIO}배인 가로형만 사용할 수 있습니다. 권장은 ${HERO_RECOMMENDED.width}×${HERO_RECOMMENDED.height}(2.67:1)입니다.`,
+      reason: `[${spec.label}] 가로세로 비율이 맞지 않습니다 (${size.width}×${size.height} = ${ratio.toFixed(2)}:1). 가로가 세로의 ${spec.minRatio}~${spec.maxRatio}배인 가로형만 사용할 수 있습니다. 권장은 ${rec}입니다.`,
     }
   }
 
-  if (size.width < HERO_MIN_WIDTH || size.height < HERO_MIN_HEIGHT) {
+  if (size.width < spec.minWidth || size.height < spec.minHeight) {
     return {
       ok: false,
       size,
       ratio,
-      reason: `이미지가 너무 작습니다 (${size.width}×${size.height}). 최소 ${HERO_MIN_WIDTH}×${HERO_MIN_HEIGHT}, 권장 ${HERO_RECOMMENDED.width}×${HERO_RECOMMENDED.height}입니다.`,
+      reason: `[${spec.label}] 이미지가 너무 작습니다 (${size.width}×${size.height}). 최소 ${spec.minWidth}×${spec.minHeight}, 권장 ${rec}입니다.`,
     }
   }
 
   return { ok: true, size, ratio }
+}
+
+/** 히어로 전용 래퍼 — 기존 호출부 호환용 */
+export function checkHeroImage(buf: Buffer): HeroImageCheck {
+  return checkBannerImage(buf, 'hero')
 }

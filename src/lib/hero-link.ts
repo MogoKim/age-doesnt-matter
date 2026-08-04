@@ -22,6 +22,9 @@ export interface HeroLink {
 
 const HOME = '/'
 
+/** 자사 도메인 — 절대 주소로 들어와도 내부 이동으로 되돌린다 */
+const SITE_HOST = 'age-doesnt-matter.com'
+
 /** 외부로 내보낼 수 있는 스킴은 https 하나뿐이다. http는 혼합 콘텐츠·중간자 위험이라 막는다. */
 const EXTERNAL_ALLOWED = /^https:\/\/[^/\s]+/i
 
@@ -57,6 +60,17 @@ export function resolveHeroLink(raw: string | null | undefined): HeroLink {
   }
 
   if (EXTERNAL_ALLOWED.test(value)) {
+    // 자사 도메인을 절대 주소로 넣은 경우는 내부 이동으로 되돌린다.
+    // 운영 광고가 실제로 "https://age-doesnt-matter.com/" 형태로 저장돼 있어,
+    // 이걸 외부로 처리하면 우리 사이트가 새 탭에서 다시 열린다.
+    try {
+      const u = new URL(value)
+      if (u.hostname === SITE_HOST || u.hostname.endsWith(`.${SITE_HOST}`)) {
+        return { kind: 'internal', href: `${u.pathname}${u.search}${u.hash}` || HOME }
+      }
+    } catch {
+      // URL 파싱 실패 — 아래 external로 둔다(정규식은 이미 https 형태를 확인했다)
+    }
     return { kind: 'external', href: value }
   }
 

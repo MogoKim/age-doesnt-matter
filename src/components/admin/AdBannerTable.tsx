@@ -126,6 +126,8 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
       // 서버 경유 업로드 (브라우저가 R2에 직접 PUT하지 않아 CORS 무관)
       const fd = new FormData()
       fd.append('file', file)
+      // 업로드 API를 히어로 배너와 공유한다 — 광고 슬롯 규격(3:1)으로 검사받도록 지면을 명시
+      fd.append('target', 'ad')
       const res = await fetch('/api/admin/uploads/banner', { method: 'POST', body: fd })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -244,11 +246,12 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
         <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800 space-y-1.5">
           <p className="font-semibold">📋 광고 슬롯 운영 가이드 (담당자 필독)</p>
           <ul className="space-y-1 list-none pl-0 text-blue-700">
-            <li>• <strong>목록 상단 띠</strong>: 6개 목록 페이지(베스트·사는이야기·2막준비·웃음방·매거진·내일찾기) 메뉴 바로 아래에 노출</li>
-            <li>• <strong>노출 위치</strong>: 여러 페이지 복수 선택 가능 — 전부 또는 0개 선택 = 6개 전체 공통</li>
-            <li>• <strong>이미지</strong>: 권장 1200×400(3:1) 가로 띠 — 파일 선택하면 자동 업로드</li>
+            <li>• <strong>목록 상단 띠</strong>: 7개 목록 페이지(베스트·사는이야기·<strong>갱년기톡</strong>·2막준비·웃음방·매거진·내일찾기) 메뉴 바로 아래에 노출</li>
+            <li>• <strong>노출 위치</strong>: 여러 페이지 복수 선택 가능 — 전부 또는 0개 선택 = 7개 전체 공통</li>
+            <li>• <strong>이미지</strong>: 권장 <strong>1200×400(3:1)</strong> 가로 띠 · 최소 960×320 — 파일 선택하면 자동 업로드</li>
+            <li>• ⚠️ <strong>히어로 배너(2400×900, 8:3)와 다른 지면</strong>입니다 — 규격이 달라 서로 올리면 업로드가 거부됩니다</li>
             <li>• <strong>광고 유형</strong>: 자체(우리 배너 이미지) / 구글·쿠팡(HTML 코드) / 외부</li>
-            <li>• <strong>클릭 URL</strong>: 우나어 내부 주소는 같은 탭, 외부(https://)는 새 탭으로 열림</li>
+            <li>• <strong>클릭 URL</strong>: 우나어 내부 주소(<code>/</code> 시작)는 같은 탭, 외부(<code>https://</code>)는 새 탭으로 열림 — <code>http://</code>·<code>javascript:</code> 등은 저장되지 않습니다</li>
             <li>• <strong>노출 조건</strong>: 활성 ON + 현재 시각이 시작~종료 사이 (한국 시간 KST 기준)</li>
             <li>• 최대 <strong>3개</strong>까지 자동 슬라이드 · CTR = 클릭÷노출×100 · 각 칸의 <strong>?</strong>에 마우스를 올리면 설명이 나옵니다</li>
           </ul>
@@ -348,7 +351,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 />
                 {uploading && <p className="mt-1 text-[11px] text-zinc-500">업로드 중…</p>}
                 {form.slot === 'LIST_HEADER' && (
-                  <p className="mt-1 text-[11px] text-zinc-500">권장 1200×400 (3:1 비율) · 가로로 긴 띠 이미지, 비율 벗어나면 위아래 잘릴 수 있음</p>
+                  <p className="mt-1 text-[11px] text-zinc-500">권장 1200×400 (3:1 비율) · 최소 960×320 · 가로로 긴 띠 이미지. 비율이 2.85:1~3.15:1을 벗어나면 업로드가 거부됩니다(히어로용 2400×900은 여기 올릴 수 없습니다)</p>
                 )}
                 <input
                   value={form.imageUrl}

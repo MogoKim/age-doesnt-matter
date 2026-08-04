@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/admin-auth'
 import { uploadToR2 } from '@/lib/r2'
-import { checkHeroImage } from '@/lib/image-dimensions'
+import { checkBannerImage, type BannerTarget } from '@/lib/image-dimensions'
 import { randomUUID } from 'crypto'
 
 // 서버 경유 업로드 — 브라우저가 R2에 직접 PUT하지 않아 CORS 무관 (어느 도메인에서나 동작)
@@ -35,10 +35,16 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // 히어로는 가로형 광고 지면이라 세로·정사각 이미지는 화면에서 대부분 잘린다.
+    // 이 API는 히어로 배너와 광고 슬롯이 함께 쓴다. 두 지면은 렌더 비율이 달라
+    // (히어로 8:3 / 광고 3:1) 규격도 다르다 — 어느 지면인지 받아서 그 규격으로 검사한다.
+    // target이 없으면 히어로로 본다(기존 호출부 호환).
+    const rawTarget = form.get('target')
+    const target: BannerTarget = rawTarget === 'ad' ? 'ad' : 'hero'
+
+    // 가로형 지면이라 세로·정사각은 화면에서 대부분 잘린다.
     // 규격 밖 소재가 조용히 올라가지 않도록 업로드 단계에서 막는다.
     // (치수를 못 읽는 변종은 통과시킨다 — 정상 업로드를 막는 쪽이 더 나쁘다.)
-    const check = checkHeroImage(buffer)
+    const check = checkBannerImage(buffer, target)
     if (!check.ok) {
       return NextResponse.json({ error: check.reason }, { status: 400 })
     }

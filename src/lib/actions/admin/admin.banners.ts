@@ -212,6 +212,10 @@ export async function adminCreateAdBanner(data: {
 }) {
   const admin = await requireAdmin()
 
+  // 히어로 배너와 같은 규칙으로 클릭 URL을 검증한다(javascript:·//evil.com 등 차단)
+  const adCtaError = validateCtaUrlForSave(data.clickUrl)
+  if (adCtaError) throw new Error(`클릭 URL: ${adCtaError}`)
+
   const sanitizedHtmlCode = data.htmlCode ? sanitizeHtmlCode(data.htmlCode) : data.htmlCode
 
   const ad = await prisma.adBanner.create({
@@ -258,6 +262,11 @@ export async function adminUpdateAdBanner(
   }
 ) {
   const admin = await requireAdmin()
+
+  if (data.clickUrl !== undefined) {
+    const adCtaError = validateCtaUrlForSave(data.clickUrl)
+    if (adCtaError) throw new Error(`클릭 URL: ${adCtaError}`)
+  }
 
   const existing = await prisma.adBanner.findUnique({ where: { id: adId } })
 
