@@ -2,22 +2,26 @@ import { describe, it, expect } from 'vitest'
 import {
   shouldGoogleNoindexCommunityPost,
   isNarrowUnaeoIdentityTopic,
+  isWideLifeTopic,
   type CommunityGoogleNoindexInput,
 } from '@/lib/seo/community-google-noindex'
 
-/** 500자 이상 본문(주제어를 포함하지 않는 중립 텍스트) */
-const LONG = `<p>${'가나다라마바사'.repeat(80)}</p>` // 560자
-/** 500자 미만 본문 */
-const SHORT = '<p>짧은 글입니다.</p>'
+/** 주제어를 포함하지 않는 중립 텍스트 — 길이만 조절해 쓴다 */
+const filler = (chars: number) => `<p>${'가나다라마바사'.repeat(Math.ceil(chars / 7))}</p>`
 
-/** 기본값 = STORY / 주제 미해당 / 짧음 / 메타 없음 → noindex 대상 */
+const LONG = filler(560)          // 560자 — 모든 하한 통과
+const SHORT = '<p>짧은 글입니다.</p>' // 8자 — 모든 하한 미달
+const HUMAN_OK = filler(84)       // 84자 — USER/ADMIN 하한(80) 통과
+const BOT_MID = filler(210)       // 210자 — 절대 하한(150) 통과, 주제 분량(300) 미달
+const BOT_LONG = filler(350)      // 350자 — 주제 분량(300) 통과
+
+/** 기본값 = STORY / BOT / 주제 미해당 / 짧음 → noindex 대상 */
 function post(overrides: Partial<CommunityGoogleNoindexInput> = {}): CommunityGoogleNoindexInput {
   return {
     boardType: 'STORY',
     title: '오늘 점심 뭐 드셨어요',
     content: SHORT,
-    seoTitle: null,
-    seoDescription: null,
+    source: 'BOT',
     ...overrides,
   }
 }
@@ -68,109 +72,131 @@ describe('isNarrowUnaeoIdentityTopic — 우나어 핵심 주제(A좁) 판정', 
   })
 })
 
-describe('shouldGoogleNoindexCommunityPost — HUMOR 보드 전면 제외 (B2)', () => {
-  const humor = (o: Partial<CommunityGoogleNoindexInput> = {}) => post({ boardType: 'HUMOR', ...o })
-
-  it('기본 HUMOR → true', () => {
-    expect(shouldGoogleNoindexCommunityPost(humor())).toBe(true)
+describe('shouldGoogleNoindexCommunityPost — 보드 단위 정책', () => {
+  it('HUMOR는 source·길이·주제와 무관하게 항상 Google noindex', () => {
+    for (const source of ['USER', 'ADMIN', 'BOT', 'SHEET']) {
+      expect(
+        shouldGoogleNoindexCommunityPost(
+          post({ boardType: 'HUMOR', source, title: '갱년기 극복기', content: LONG }),
+        ),
+        source,
+      ).toBe(true)
+    }
   })
 
-  it('주제 적합 + 본문 김 + 메타 완비여도 true (조건 무관)', () => {
-    expect(
-      shouldGoogleNoindexCommunityPost(
-        humor({ title: '갱년기 불면 극복기', content: LONG, seoTitle: 'T', seoDescription: 'D' }),
-      ),
-    ).toBe(true)
-  })
-})
-
-describe('shouldGoogleNoindexCommunityPost — STORY/LIFE2 주제 게이트 (B3)', () => {
-  it('주제 미해당 + 짧음 → true (기본 제외)', () => {
-    expect(shouldGoogleNoindexCommunityPost(post())).toBe(true)
-  })
-
-  it('주제 미해당이면 본문이 아무리 길어도 true', () => {
-    expect(shouldGoogleNoindexCommunityPost(post({ content: LONG }))).toBe(true)
-  })
-
-  it('주제 미해당이면 SEO 메타가 완비돼도 true', () => {
-    expect(shouldGoogleNoindexCommunityPost(post({ seoTitle: 'T', seoDescription: 'D' }))).toBe(true)
-  })
-
-  it('주제 해당 + 500자 이상 → false (유지)', () => {
-    expect(shouldGoogleNoindexCommunityPost(post({ title: '갱년기 불면 극복기', content: LONG }))).toBe(false)
-  })
-
-  it('주제 해당 + SEO 메타 완비 → 짧아도 false (유지)', () => {
-    expect(
-      shouldGoogleNoindexCommunityPost(
-        post({ title: '연금 수령 시기 고민', content: SHORT, seoTitle: 'T', seoDescription: 'D' }),
-      ),
-    ).toBe(false)
-  })
-
-  it('주제 해당해도 짧고 메타 없으면 true (제외)', () => {
-    expect(shouldGoogleNoindexCommunityPost(post({ title: '갱년기 힘드네요', content: SHORT }))).toBe(true)
-  })
-
-  it('메타가 하나만 있으면 완비로 치지 않는다', () => {
-    const base = { title: '퇴직 후 재취업 고민', content: SHORT }
-    expect(shouldGoogleNoindexCommunityPost(post({ ...base, seoTitle: 'T', seoDescription: null }))).toBe(true)
-    expect(shouldGoogleNoindexCommunityPost(post({ ...base, seoTitle: null, seoDescription: 'D' }))).toBe(true)
-  })
-
-  it('경계: 정확히 500자면 유지, 499자면 제외', () => {
-    const exactly500 = `<p>갱년기 ${'가'.repeat(496)}</p>` // "갱년기 " 4 + 496 = 500
-    const just499 = `<p>갱년기 ${'가'.repeat(495)}</p>`
-    expect(shouldGoogleNoindexCommunityPost(post({ title: '무제', content: exactly500 }))).toBe(false)
-    expect(shouldGoogleNoindexCommunityPost(post({ title: '무제', content: just499 }))).toBe(true)
-  })
-
-  it('LIFE2도 STORY와 동일하게 판단된다', () => {
-    expect(shouldGoogleNoindexCommunityPost(post({ boardType: 'LIFE2' }))).toBe(true)
-    expect(
-      shouldGoogleNoindexCommunityPost(post({ boardType: 'LIFE2', title: '은퇴 준비', content: LONG })),
-    ).toBe(false)
-  })
-
-  it('content null/빈 문자열은 길이 0 → true', () => {
-    expect(shouldGoogleNoindexCommunityPost(post({ title: '연금 질문', content: null }))).toBe(true)
-    expect(shouldGoogleNoindexCommunityPost(post({ title: '연금 질문', content: '' }))).toBe(true)
-  })
-
-  it('태그만 길고 텍스트가 짧으면 제외 (태그는 길이에서 제외)', () => {
-    const tagHeavy = `<div class="${'x'.repeat(900)}"><p>갱년기 힘들어요</p></div>`
-    expect(shouldGoogleNoindexCommunityPost(post({ title: '무제', content: tagHeavy }))).toBe(true)
-  })
-})
-
-describe('shouldGoogleNoindexCommunityPost — 보호 대상 보드', () => {
-  it('MENOPAUSE는 조건과 무관하게 false (전면 보호)', () => {
+  it('MENOPAUSE(갱년기톡)는 짧아도 Google 색인 유지 — 전면 보호', () => {
     expect(shouldGoogleNoindexCommunityPost(post({ boardType: 'MENOPAUSE' }))).toBe(false)
     expect(
-      shouldGoogleNoindexCommunityPost(post({ boardType: 'MENOPAUSE', title: '오늘 날씨', content: null })),
+      shouldGoogleNoindexCommunityPost(
+        post({ boardType: 'MENOPAUSE', title: '오늘 날씨', content: null, source: 'BOT' }),
+      ),
     ).toBe(false)
   })
 
-  it('MAGAZINE/JOB/기타 보드도 false', () => {
-    for (const boardType of ['MAGAZINE', 'JOB', 'WEEKLY', 'UNKNOWN']) {
+  it('MAGAZINE·JOB·기타 보드는 대상이 아니다', () => {
+    for (const boardType of ['MAGAZINE', 'JOB', 'NOTICE', 'UNKNOWN']) {
       expect(shouldGoogleNoindexCommunityPost(post({ boardType })), boardType).toBe(false)
     }
   })
 })
 
+describe('shouldGoogleNoindexCommunityPost — USER/ADMIN (사람이 쓴 글, E0)', () => {
+  it('80자 이상이면 주제와 무관하게 색인 유지', () => {
+    for (const source of ['USER', 'ADMIN']) {
+      expect(
+        shouldGoogleNoindexCommunityPost(post({ source, title: '오늘 점심 뭐 드셨어요', content: HUMAN_OK })),
+        source,
+      ).toBe(false)
+    }
+  })
+
+  it('80자 미만이면 제외', () => {
+    for (const source of ['USER', 'ADMIN']) {
+      expect(shouldGoogleNoindexCommunityPost(post({ source, content: SHORT })), source).toBe(true)
+    }
+  })
+
+  it('LIFE2에서도 동일하게 동작한다', () => {
+    expect(
+      shouldGoogleNoindexCommunityPost(post({ boardType: 'LIFE2', source: 'USER', content: HUMAN_OK })),
+    ).toBe(false)
+  })
+
+  it('content가 null/빈 문자열이면 제외', () => {
+    expect(shouldGoogleNoindexCommunityPost(post({ source: 'USER', content: null }))).toBe(true)
+    expect(shouldGoogleNoindexCommunityPost(post({ source: 'USER', content: '' }))).toBe(true)
+  })
+})
+
+describe('shouldGoogleNoindexCommunityPost — BOT/SHEET (자동 수집·생성, E0)', () => {
+  it('150자 미만은 주제가 맞아도 무조건 제외', () => {
+    for (const source of ['BOT', 'SHEET']) {
+      expect(
+        shouldGoogleNoindexCommunityPost(post({ source, title: '연금 수령 시기 고민', content: SHORT })),
+        source,
+      ).toBe(true)
+    }
+  })
+
+  it('150~300자 구간은 주제가 맞아도 제외', () => {
+    for (const source of ['BOT', 'SHEET']) {
+      expect(
+        shouldGoogleNoindexCommunityPost(post({ source, title: '연금 수령 시기 고민', content: BOT_MID })),
+        source,
+      ).toBe(true)
+    }
+  })
+
+  it('300자 이상 + 주제어면 색인 유지', () => {
+    for (const source of ['BOT', 'SHEET']) {
+      expect(
+        shouldGoogleNoindexCommunityPost(post({ source, title: '연금 수령 시기 고민', content: BOT_LONG })),
+        source,
+      ).toBe(false)
+    }
+  })
+
+  it('300자 이상이어도 주제어가 없으면 제외', () => {
+    expect(shouldGoogleNoindexCommunityPost(post({ source: 'BOT', content: BOT_LONG }))).toBe(true)
+  })
+
+  it('확장 주제어(A좁에 없는 생활 어휘)도 인정된다', () => {
+    // 남편·병원·가족은 isNarrowUnaeoIdentityTopic에서는 false지만 BOT/SHEET 게이트는 통과한다
+    for (const kw of ['남편', '병원', '가족', '친구', '우울']) {
+      expect(isNarrowUnaeoIdentityTopic({ title: `${kw} 이야기`, content: SHORT }), `narrow:${kw}`).toBe(false)
+      expect(isWideLifeTopic({ title: `${kw} 이야기`, content: SHORT }), `wide:${kw}`).toBe(true)
+      expect(
+        shouldGoogleNoindexCommunityPost(post({ source: 'BOT', title: `${kw} 이야기`, content: BOT_LONG })),
+        kw,
+      ).toBe(false)
+    }
+  })
+
+  it('알 수 없는 source는 BOT과 같은 엄격 기준으로 처리된다', () => {
+    expect(shouldGoogleNoindexCommunityPost(post({ source: 'UNKNOWN', content: HUMAN_OK }))).toBe(true)
+    expect(
+      shouldGoogleNoindexCommunityPost(post({ source: 'UNKNOWN', title: '연금', content: BOT_LONG })),
+    ).toBe(false)
+  })
+})
+
 describe('shouldGoogleNoindexCommunityPost — 제외된 기준(회귀 방지)', () => {
-  it('댓글 수는 기준이 아니다 — 입력에 없고, 주제 부적합이면 그대로 제외', () => {
-    // commentCount 필드 자체가 인터페이스에 없다. 주제 미달 글은 반응과 무관하게 true.
-    expect(shouldGoogleNoindexCommunityPost(post({ title: '다들 점심 뭐 드셨어요?' }))).toBe(true)
+  it('자동 생성 SEO 메타는 더 이상 면제 사유가 아니다 — 입력에서 제거됐다', () => {
+    // B3의 `seoTitle && seoDescription` 면제로 짧은 봇 글 다수가 색인됐던 회귀를 막는다.
+    const input = post({ source: 'BOT', title: '연금 이야기', content: BOT_MID })
+    expect(Object.keys(input)).not.toContain('seoTitle')
+    expect(Object.keys(input)).not.toContain('seoDescription')
+    expect(shouldGoogleNoindexCommunityPost(input)).toBe(true)
   })
 
-  it('신규 글 유예는 없다 — 작성 시점 입력 없이도 동일 판정', () => {
-    // createdAt 필드가 인터페이스에 없다. 오늘 쓴 잡담도 즉시 제외 대상.
-    expect(shouldGoogleNoindexCommunityPost(post({ title: '오늘 기분 좋아요', content: SHORT }))).toBe(true)
+  it('댓글·좋아요는 판정 입력이 아니다 (봇 글이 오히려 댓글이 많아 신호가 뒤집힘)', () => {
+    const input = post({ source: 'BOT', content: BOT_LONG, title: '연금' })
+    expect(Object.keys(input)).not.toContain('commentCount')
+    expect(Object.keys(input)).not.toContain('likeCount')
   })
 
-  it('주제 적합 + 분량 충족이면 신규·무반응 글이라도 유지된다', () => {
-    expect(shouldGoogleNoindexCommunityPost(post({ title: '시댁 상속 문제로 고민입니다', content: LONG }))).toBe(false)
+  it('HTML 태그만 잔뜩인 본문은 텍스트 길이로 세지 않는다', () => {
+    const tagHeavy = `<div>${'<span class="x"></span>'.repeat(60)}</div>`
+    expect(shouldGoogleNoindexCommunityPost(post({ source: 'USER', content: tagHeavy }))).toBe(true)
   })
 })

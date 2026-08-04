@@ -87,8 +87,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             boardType: post.boardType,
             title: post.title,
             content: post.content,
-            seoTitle: post.seoTitle,
-            seoDescription: post.seoDescription,
+            source: post.source,
           })
         ? { robots: { index: true, follow: true, googleBot: { index: false, follow: true } } }
         : {}),

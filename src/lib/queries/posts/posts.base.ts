@@ -181,6 +181,8 @@ export const getPostDetail = unstable_cache(
         seriesOrder: true,
         seriesCount: true,
         seasonId: true,
+        // Google 전용 색인 판정(E0)의 입력 — 작성 주체별 분량 기준이 달라진다
+        source: true,
       },
     })
 
@@ -203,6 +205,7 @@ export const getPostDetail = unstable_cache(
       slug: post.slug ?? null,
       seoTitle: post.seoTitle ?? null,
       seoDescription: post.seoDescription ?? null,
+      source: post.source,
       seriesId: post.seriesId ?? null,
       seriesTitle: post.seriesTitle ?? null,
       seriesOrder: post.seriesOrder ?? null,
