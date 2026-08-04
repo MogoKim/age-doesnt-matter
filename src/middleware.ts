@@ -5,6 +5,7 @@ import { Redis } from '@upstash/redis'
 import { verifyAdminToken } from '@/lib/admin-auth'
 import { BOT_UA_PATTERN } from '@/lib/bot-patterns'
 import { getMovedPostRedirect } from '@/lib/moved-posts'
+import { buildReturnTo } from '@/lib/return-to'
 
 // 로그인이 필요한 경로
 const PROTECTED_PATHS = ['/my', '/community/write']
@@ -195,7 +196,9 @@ export default async function middleware(request: NextRequest) {
       request.cookies.get('__Secure-authjs.session-token')?.value
     if (!sessionToken) {
       const loginUrl = new URL('/login', request.url)
-      loginUrl.searchParams.set('callbackUrl', pathname)
+      // pathname만 넘기면 ?board=stories 같은 값이 사라져 로그인 후 다른 화면으로 떨어진다
+      const returnTo = buildReturnTo(pathname, request.nextUrl.search)
+      if (returnTo) loginUrl.searchParams.set('callbackUrl', returnTo)
       return addAnonSession(NextResponse.redirect(loginUrl), request)
     }
   }
@@ -217,8 +220,11 @@ export default async function middleware(request: NextRequest) {
 
   if (token?.needsOnboarding && pathname !== '/onboarding') {
     const onboardingUrl = new URL('/onboarding', request.url)
-    if (pathname !== '/' && pathname !== '/login') {
-      onboardingUrl.searchParams.set('callbackUrl', pathname)
+    // 신규 가입자는 로그인 직후 여기를 한 번 더 거친다 — 여기서도 쿼리를 지키지 않으면
+    // 로그인 리다이렉트에서 살려온 값이 결국 사라진다
+    const returnTo = buildReturnTo(pathname, request.nextUrl.search)
+    if (returnTo && pathname !== '/' && pathname !== '/login') {
+      onboardingUrl.searchParams.set('callbackUrl', returnTo)
     }
     return addAnonSession(NextResponse.redirect(onboardingUrl), request)
   }
