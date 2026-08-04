@@ -9,6 +9,17 @@ import { getMovedPostRedirect } from '@/lib/moved-posts'
 // 로그인이 필요한 경로
 const PROTECTED_PATHS = ['/my', '/community/write']
 
+/**
+ * 위 접두사 안에 있지만 로그인 없이 열어 두는 경로.
+ *
+ * PROTECTED_PATHS는 startsWith로 걸러서 '/community/write' 아래가 전부 잠긴다.
+ * 게시판 선택 화면(/community/write/select)은 "어디에 쓸지" 고르기만 하는 곳이라
+ * 가려야 할 내용이 없고, 여기서 막으면 홈 글쓰기 CTA가 로그인 유도 모달을 띄우기도 전에
+ * 로그인 페이지로 튕겨 나간다(유도 문구를 보여줄 기회가 사라진다).
+ * 글쓰기 폼(/community/write) 자체는 그대로 잠겨 있다.
+ */
+const PROTECTED_EXCEPTIONS = ['/community/write/select']
+
 // 아임웹 레거시 경로 → 현재 경로 매핑 (middleware 최상단 early return용)
 const LEGACY_REDIRECTS: Record<string, string> = {
   '/Humor':      '/community/humor',
@@ -174,7 +185,11 @@ export default async function middleware(request: NextRequest) {
   }
 
   // ── 보호된 경로: 로그인 확인 ──
-  if (PROTECTED_PATHS.some((p) => pathname.startsWith(p))) {
+  const isProtected =
+    PROTECTED_PATHS.some((p) => pathname.startsWith(p)) &&
+    !PROTECTED_EXCEPTIONS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+
+  if (isProtected) {
     const sessionToken =
       request.cookies.get('authjs.session-token')?.value ||
       request.cookies.get('__Secure-authjs.session-token')?.value
