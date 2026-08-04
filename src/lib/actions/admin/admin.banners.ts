@@ -39,6 +39,19 @@ function normalizeBannerTitle(value: string) {
   return value.trim().replace(/\\n/g, '\n')
 }
 
+/**
+ * 시스템 텍스트 오버레이를 끌 수 있는지 판정한다.
+ *
+ * 이미지 없는 배너는 그라디언트 배경 위에 제목만 있는 형태라, 오버레이를 끄면
+ * 아무것도 없는 색판이 된다. 그래서 이미지가 없으면 저장 단계에서 켜진 값으로 되돌린다.
+ * (렌더 쪽 shouldShowOverlay가 한 번 더 받아내지만, 저장값 자체를 정직하게 두는 편이
+ *  어드민 목록에서 상태를 볼 때 헷갈리지 않는다.)
+ */
+function resolveShowOverlay(showOverlay: boolean | undefined, imageUrl: string): boolean | undefined {
+  if (imageUrl.length === 0) return true
+  return showOverlay
+}
+
 function revalidateHeroBanners() {
   revalidateTag('hero-banners')
   revalidatePath('/admin/banners')
@@ -61,6 +74,7 @@ export async function adminCreateBanner(data: {
   startsAt?: string | null   // ISO date string, optional
   endsAt?: string | null     // ISO date string, optional
   isActive?: boolean
+  showOverlay?: boolean
 }) {
   const admin = await requireAdmin()
 
@@ -75,6 +89,8 @@ export async function adminCreateBanner(data: {
   const ctaError = validateCtaUrlForSave(ctaUrl)
   if (ctaError) throw new Error(`CTA 링크: ${ctaError}`)
 
+  const imageUrl = normalizeBannerImageUrl(data.imageUrl) ?? ''
+
   const banner = await prisma.banner.create({
     data: {
       title: normalizeBannerTitle(data.title),
@@ -87,9 +103,10 @@ export async function adminCreateBanner(data: {
       displayOrder: data.displayOrder ?? 0,
       slot: data.slot ?? 'HERO',
       isActive: data.isActive ?? true,
+      showOverlay: resolveShowOverlay(data.showOverlay, imageUrl) ?? true,
       startsAt: startsAtDate,
       endsAt: endsAtDate,
-      imageUrl: normalizeBannerImageUrl(data.imageUrl) ?? '',
+      imageUrl,
       startDate: startsAtDate ?? new Date(),
       endDate: endsAtDate ?? new Date('2099-12-31'),
       priority: data.displayOrder ?? 0,
@@ -124,6 +141,7 @@ export async function adminUpdateBanner(
     startsAt?: string | null
     endsAt?: string | null
     isActive?: boolean
+    showOverlay?: boolean
   }
 ) {
   const admin = await requireAdmin()
@@ -141,6 +159,10 @@ export async function adminUpdateBanner(
   }
 
   const existing = await prisma.banner.findUnique({ where: { id: bannerId } })
+
+  // 이미지를 함께 바꾸면 바뀐 값, 아니면 기존 값 기준으로 오버레이를 끌 수 있는지 본다.
+  const nextImageUrl = normalizeBannerImageUrl(data.imageUrl) ?? existing?.imageUrl ?? ''
+  const nextShowOverlay = resolveShowOverlay(data.showOverlay, nextImageUrl)
 
   await prisma.banner.update({
     where: { id: bannerId },
@@ -160,6 +182,7 @@ export async function adminUpdateBanner(
       ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder, priority: data.displayOrder }),
       ...(data.slot !== undefined && { slot: data.slot }),
       ...(data.isActive !== undefined && { isActive: data.isActive }),
+      ...(nextShowOverlay !== undefined && { showOverlay: nextShowOverlay }),
       ...(startsAtDate !== undefined && { startsAt: startsAtDate, startDate: startsAtDate ?? new Date() }),
       ...(endsAtDate !== undefined && { endsAt: endsAtDate, endDate: endsAtDate ?? new Date('2099-12-31') }),
     },

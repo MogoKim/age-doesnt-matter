@@ -96,6 +96,9 @@ export default async function HeroSlider() {
         ctaText: b.ctaText ?? undefined,
         ctaUrl: b.ctaUrl ?? '/',
         imageUrl: b.imageUrl && b.imageUrl.length > 0 ? b.imageUrl : undefined,
+        // 오버레이는 Banner 데이터로 만든 슬라이드에만 적용된다.
+        // 아래 참여이벤트 teaser는 이 값을 넘기지 않아 항상 켜진 상태로 렌더된다.
+        showOverlay: b.showOverlay,
       }))
     }
   } catch {

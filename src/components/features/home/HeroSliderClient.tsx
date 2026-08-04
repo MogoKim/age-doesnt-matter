@@ -18,6 +18,12 @@ export interface SlideData {
   ctaText?: string
   ctaUrl: string
   imageUrl?: string
+  /**
+   * 시스템 텍스트(제목·부제·CTA·어두운 그라디언트)를 이미지 위에 겹칠지.
+   * Banner 데이터로 만든 슬라이드만 이 값을 넘긴다 — 참여이벤트 teaser는 넘기지 않아
+   * undefined가 되고, 아래 shouldShowOverlay가 켜진 것으로 본다.
+   */
+  showOverlay?: boolean
   /** 오늘의 투표 슬라이드 — 있으면 일반 렌더 대신 VoteHeroSlide (직접투표) */
   vote?: VoteHeroData
   /** 1분 의견함(SURVEY) 슬라이드 — 있으면 일반 렌더 대신 SurveyHeroSlide (입구 전용) */
@@ -66,6 +72,19 @@ export function HeroSlideLink({
       {children}
     </Link>
   )
+}
+
+/**
+ * 이 슬라이드에 시스템 텍스트를 얹을지 판정한다.
+ *
+ * 광고주가 문구까지 넣은 완성 소재를 줄 때 우리 제목·부제·CTA가 그 위에 겹치면 광고가 깨진다.
+ * 그래서 배너마다 끌 수 있게 했는데, **이미지가 없으면 끌 수 없다** — 배경 그라디언트만 남아
+ * 아무 글자도 없는 빈 배너가 되기 때문이다. 저장 단계에서도 같은 규칙으로 막지만,
+ * 예전에 저장된 데이터나 직접 DB를 고친 경우까지 화면에서 한 번 더 받아낸다.
+ */
+export function shouldShowOverlay(slide: Pick<SlideData, 'showOverlay' | 'imageUrl'>): boolean {
+  if (!slide.imageUrl) return true
+  return slide.showOverlay !== false
 }
 
 /** 3색 그라디언트 배경 CSS 문자열 생성 */
@@ -203,6 +222,8 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
             />
           )}
 
+          {shouldShowOverlay(slide) ? (
+            <>
           {/* 오버레이 — 이미지 있으면 좌측 어두운 그라디언트, 없으면 반투명 어둠 */}
           <div
             className="absolute inset-0"
@@ -251,6 +272,20 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
               </span>
             )}
           </HeroSlideLink>
+            </>
+          ) : (
+            /* 오버레이 OFF — 광고주 소재를 그대로 보여준다.
+               어두운 그라디언트도 뺀다(글자 가독성용이라 글자가 없으면 소재만 어둡게 만든다).
+               클릭 영역은 그대로 슬라이드 전체. 링크에 글자가 없으면 스크린리더가 목적지를
+               읽을 수 없으므로 제목을 sr-only로 남긴다. */
+            <HeroSlideLink
+              ctaUrl={slide.ctaUrl}
+              className="absolute inset-0 no-underline [-webkit-tap-highlight-color:transparent]"
+              tabIndex={index === current ? 0 : -1}
+            >
+              <span className="sr-only">{slide.title}</span>
+            </HeroSlideLink>
+          )}
             </>
           )}
         </div>

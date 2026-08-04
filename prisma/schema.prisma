@@ -647,6 +647,11 @@ model Banner {
   ctaText       String?
   ctaUrl        String?
   displayOrder  Int       @default(0)
+  // 시스템 텍스트(제목·부제·CTA·어두운 그라디언트)를 이미지 위에 겹칠지.
+  // 브랜드 히어로는 true(우리가 문구를 얹는다), 광고주 배너는 false 권장
+  // (문구까지 들어간 완성 소재를 그대로 보여줘야 하므로).
+  // 기존 배너는 전부 true로 남는다 — 기본값을 바꾸면 운영 중인 문구가 사라진다.
+  showOverlay   Boolean   @default(true)
   startsAt      DateTime?
   endsAt        DateTime?
   // ── 기존 필드 유지 (하위 호환, 1주일 후 DROP 예정) ──
