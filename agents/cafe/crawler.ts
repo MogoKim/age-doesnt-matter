@@ -543,6 +543,84 @@ function parseListRowMeta(rowText: string): { commentCount?: number; viewCount: 
   }
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * [관찰 전용] pre-visit `cunknown` 원인 계측 — 판정·저장·방문에 일절 관여하지 않는다.
+ *
+ * 배경(2026-08-04 실측): pre-visit 보류 사유 1위가 `cunknown`(= parseListRowMeta가
+ * 댓글수를 못 읽어 undefined)이다. 최근 6회차 고유 1,134건이 보류됐고, 그중 나중에
+ * 다른 회차에서 저장된 60건을 역추적하니 **41건(68%)이 실제 댓글 5개 이상**이었다.
+ * 즉 통과 기준(PREVISIT_MIN_COMMENTS=5)을 넘겼어야 할 글을 파싱 실패로 버리고 있다.
+ *
+ * 그런데 "왜 못 읽는지"는 알 수 없다 — 실패한 rowText가 어디에도 남지 않기 때문이다.
+ * 추측으로 정규식을 늘리면 또 다른 오탐을 만든다. 그래서 **먼저 실패 원문을 모은다.**
+ *
+ * 이 함수는 로그만 출력한다. 반환값이 없고 meta를 수정하지 않으므로,
+ * 호출을 전부 지워도 크롤 결과는 바이트 단위로 동일하다.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** cafeId당 남길 실패 샘플 수 */
+const ROWTEXT_SAMPLE_LIMIT_UNKNOWN = 20
+/** cafeId당 남길 성공 샘플 수 (실패와 대조용) */
+const ROWTEXT_SAMPLE_LIMIT_OK = 5
+/** 프로세스 전체 상한 — 카페가 늘어도 로그가 폭증하지 않도록 하는 최종 방어선 */
+const ROWTEXT_SAMPLE_LIMIT_TOTAL = 150
+/** rowText 저장 상한 — 목록 row에는 작성자 닉네임이 포함되므로 과도하게 남기지 않는다 */
+const ROWTEXT_SAMPLE_MAX_CHARS = 400
+
+const rowTextSampleCounts = new Map<string, { unknown: number; ok: number }>()
+let rowTextSampleTotal = 0
+
+/** 로그 한 줄로 안전하게 실을 수 있도록 개행·연속공백을 접고 길이를 자른다 */
+function compactRowText(rowText: string): { text: string; length: number } {
+  const length = rowText.length
+  const flattened = rowText.replace(/\r?\n/g, ' ⏎ ').replace(/\s+/g, ' ').trim()
+  const text = flattened.length > ROWTEXT_SAMPLE_MAX_CHARS
+    ? `${flattened.slice(0, ROWTEXT_SAMPLE_MAX_CHARS)}…`
+    : flattened
+  return { text, length }
+}
+
+/**
+ * 목록 row 메타 파싱 결과를 샘플링해 기록한다. **관찰 전용 — 동작 무변경.**
+ * commentCount가 undefined면 `[previsit-cunknown-sample]`, 성공이면 소량만 `[previsit-comment-sample]`.
+ */
+function observeListRowMeta(
+  cafeId: string,
+  articleId: string,
+  title: string,
+  rowText: string,
+  commentCount: number | undefined,
+  ctx: { board?: string | null; page?: number },
+): void {
+  if (rowTextSampleTotal >= ROWTEXT_SAMPLE_LIMIT_TOTAL) return
+
+  let counts = rowTextSampleCounts.get(cafeId)
+  if (!counts) { counts = { unknown: 0, ok: 0 }; rowTextSampleCounts.set(cafeId, counts) }
+
+  const isUnknown = commentCount === undefined
+  if (isUnknown) {
+    if (counts.unknown >= ROWTEXT_SAMPLE_LIMIT_UNKNOWN) return
+    counts.unknown++
+  } else {
+    if (counts.ok >= ROWTEXT_SAMPLE_LIMIT_OK) return
+    counts.ok++
+  }
+  rowTextSampleTotal++
+
+  const { text, length } = compactRowText(rowText)
+  const where = [
+    ctx.board ? `board="${ctx.board}"` : 'board=(전체글보기)',
+    ctx.page !== undefined ? `page=${ctx.page}` : null,
+  ].filter(Boolean).join(' ')
+  const prefix = isUnknown ? '[previsit-cunknown-sample]' : '[previsit-comment-sample]'
+  const parsed = isUnknown ? '' : ` parsed=c${commentCount}`
+
+  console.log(
+    `${prefix} cafe=${cafeId} article=${articleId} ${where}${parsed} rawLen=${length} ` +
+    `title="${title.slice(0, 40)}" rowText="${text}"`,
+  )
+}
+
 /** 상세 방문 전 댓글수 필터를 적용할 카페. production 중 wgang/dlxogns01도 목록 메타 기반으로 보류한다. */
 function usesPreVisit(cafe: CafeConfig): boolean {
   return SECONDARY_CAFE_IDS.includes(cafe.id) || cafe.id === 'wgang' || cafe.id === 'dlxogns01'
@@ -629,6 +707,7 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
           for (const r of rawRows) {
             if (collectedMap.has(r.id)) continue
             const meta = parseListRowMeta(r.rowText)
+            observeListRowMeta(cafe.id, r.id, r.title, r.rowText, meta.commentCount, { board: board.name, page: pg })
             collectedMap.set(r.id, {
               articleId: r.id,
               newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${r.id}`,
@@ -688,6 +767,7 @@ async function collectPostUrls(page: Page, cafe: CafeConfig, quickMode = false):
             : row.href.match(/\/articles\/(\d+)/)
           if (match && !collectedMap.has(match[1])) {
             const meta = parseListRowMeta(row.rowText)
+            observeListRowMeta(cafe.id, match[1], row.title, row.rowText, meta.commentCount, { board: board.name })
             collectedMap.set(match[1], {
               articleId: match[1],
               newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${match[1]}`,
@@ -860,6 +940,7 @@ async function collectAllArticleUrls(playwrightPage: Page, cafe: CafeConfig): Pr
         if (id <= maxKnownId) continue // 이미 DB에 있음
         if (collected.some(a => a.articleId === match[1])) continue
         const meta = parseListRowMeta(row.rowText)
+        observeListRowMeta(cafe.id, match[1], row.title, row.rowText, meta.commentCount, { board: null, page: pageNum })
         pageArticles.push({
           articleId: match[1],
           newFormatUrl: `https://cafe.naver.com/f-e/cafes/${cafe.numericId}/articles/${match[1]}`,
