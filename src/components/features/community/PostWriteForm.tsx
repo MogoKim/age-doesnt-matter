@@ -13,6 +13,9 @@ import { setPushToastTrigger } from '@/components/common/PushPermissionToast'
 import BottomSheet from '@/components/ui/BottomSheet'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { ChevronDown } from 'lucide-react'
+import { useAppSession } from '@/components/common/AppSessionProvider'
+import { readDraft, saveDraft, removeDraft, findLatestDraft, type WriteDraft } from '@/lib/write-draft'
+import WriteLoginPrompt from './WriteLoginPrompt'
 
 function TipTapEditorFallback() {
   return (
@@ -47,10 +50,6 @@ interface BoardOption {
 }
 
 const AUTOSAVE_INTERVAL = 30_000 // 30초
-
-function getDraftKey(boardSlug: string) {
-  return `unae_post_draft_${boardSlug}`
-}
 
 interface EditData {
   postId: string
@@ -99,6 +98,13 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const userEditedRef = useRef(false)
 
+  // 비회원도 폼을 열고 글을 쓸 수 있다. 로그인은 등록을 누를 때 요청한다.
+  const { status } = useAppSession()
+  const isLoggedIn = status === 'authenticated'
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  // 로그인 왕복에서 ?board=…가 떨어져 나갔을 때 쓰는 안전망 — 다른 게시판의 임시저장
+  const [otherBoardDraft, setOtherBoardDraft] = useState<WriteDraft | null>(null)
+
   const board = boards.find((b) => b.slug === selectedBoard)
   const categories = board?.categories.filter((c) => c !== '전체') || []
 
@@ -109,70 +115,71 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
   const isContentValid = plainTextLength >= 10 || hasMedia
   const canSubmit = isTitleValid && isContentValid && selectedBoard && boards.length > 0
 
-  // localStorage 임시저장 복원 (수정 모드에서는 스킵).
-  // 서버 임시저장 목록은 첫 화면 렌더 후 비동기로 가져와 글쓰기 진입 대기를 줄인다.
-  useEffect(() => {
-    let cancelled = false
+  // 이 화면에서 localStorage 임시저장을 이미 복원했는지 — 서버 목록을 띄울지 판단에 쓴다
+  const restoredLocalRef = useRef(false)
 
+  // localStorage 임시저장 복원 (수정 모드에서는 스킵)
+  useEffect(() => {
     if (isEditMode) {
       setDraftLoaded(true)
-      return () => { cancelled = true }
+      return
     }
 
-    // 서버 임시저장이 없으면 localStorage에서 복원 (게시판별 키)
-    let hasLocalDraft = false
-    try {
-      const saved = localStorage.getItem(getDraftKey(selectedBoard))
-      if (saved) {
-        const draft = JSON.parse(saved) as { board?: string; category?: string; title?: string; content?: string }
-        if (draft.title || draft.content) {
-          hasLocalDraft = true
-          setSelectedCategory(draft.category || '')
-          setTitle(draft.title || '')
-          setContent(draft.content || '')
-          toast('임시저장된 글을 불러왔어요', 'info')
-        }
-      }
-    } catch { /* ignore */ }
+    // 지금 게시판의 임시저장을 먼저 본다
+    const local = readDraft(selectedBoard)
+    if (local) {
+      restoredLocalRef.current = true
+      setSelectedCategory(local.category)
+      setTitle(local.title)
+      setContent(local.content)
+      toast('작성하던 글을 불러왔어요 — 확인 후 등록해 주세요', 'info')
+    } else {
+      // 없으면 다른 게시판에 작성하던 글이 있는지 본다.
+      // 로그인 왕복에서 ?board=…가 떨어져 나가면 폼이 엉뚱한 게시판으로 열리는데,
+      // 그때 방금 쓴 글을 못 찾고 빈 화면이 되는 걸 막는 안전망이다.
+      // 찾기만 하고 적용하지 않는다 — 게시판을 말없이 바꾸면 엉뚱한 곳에 글이 올라간다.
+      const other = findLatestDraft(boards.map((b) => b.slug).filter((s) => s !== selectedBoard))
+      if (other) setOtherBoardDraft(other)
+    }
     setDraftLoaded(true)
-
-    if (!hasLocalDraft) {
-      fetch('/api/drafts')
-        .then((res) => res.ok ? res.json() : null)
-        .then((data: { drafts?: ServerDraft[] } | null) => {
-          if (cancelled || userEditedRef.current) return
-          const nextDrafts = data?.drafts ?? []
-          if (nextDrafts.length === 0) return
-          setDrafts(nextDrafts)
-          setShowDraftList(true)
-        })
-        .catch(() => {})
-    }
-
-    return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // 서버 임시저장 목록 — 로그인 확인이 끝난 뒤에 가져온다.
+  // 세션 상태는 마운트 직후 'loading'이라, 위 복원 effect에 같이 두면 회원인데도 건너뛴다.
+  useEffect(() => {
+    if (isEditMode || !draftLoaded) return
+    if (!isLoggedIn) return          // 비회원은 401만 받는다
+    if (restoredLocalRef.current) return  // 이미 이어서 쓰는 중이면 목록으로 방해하지 않는다
+    let cancelled = false
+    fetch('/api/drafts')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { drafts?: ServerDraft[] } | null) => {
+        if (cancelled || userEditedRef.current) return
+        const nextDrafts = data?.drafts ?? []
+        if (nextDrafts.length === 0) return
+        setDrafts(nextDrafts)
+        setShowDraftList(true)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [isEditMode, draftLoaded, isLoggedIn])
 
   // iOS Safari 개인정보 보호 모드: QuotaExceededError 시 반복 토스트 방지
   const draftSaveFailedRef = useRef(false)
 
   // 자동 임시저장 — localStorage (30초마다)
-  const saveLocalDraft = useCallback(() => {
-    if (!title && !content) return
-    try {
-      localStorage.setItem(getDraftKey(selectedBoard), JSON.stringify({
-        board: selectedBoard,
-        category: selectedCategory,
-        title,
-        content,
-      }))
-    } catch (e) {
-      console.warn('[draft] localStorage 저장 실패:', e)
-      if (!draftSaveFailedRef.current) {
-        draftSaveFailedRef.current = true
-        toast('임시저장에 실패했어요 — 브라우저 저장공간이 가득 찼을 수 있어요', 'error')
-      }
+  const saveLocalDraft = useCallback((): boolean => {
+    if (!title && !content) return false
+    const ok = saveDraft(
+      { board: selectedBoard, category: selectedCategory, title, content },
+      Date.now(),
+    )
+    if (!ok && !draftSaveFailedRef.current) {
+      draftSaveFailedRef.current = true
+      toast('임시저장에 실패했어요 — 브라우저 저장공간이 가득 찼을 수 있어요', 'error')
     }
+    return ok
   }, [selectedBoard, selectedCategory, title, content, toast])
 
   useEffect(() => {
@@ -212,20 +219,25 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
     return () => vv.removeEventListener('resize', handler)
   }, [])
 
-  // 글쓰기 퍼널 추적 — 진입 이벤트 (편집 모드 제외)
+  // 글쓰기 퍼널 추적 — 진입 이벤트 (편집 모드 제외).
+  // 세션 확정('loading'이 끝난 뒤) 후 한 번만 보낸다. 비회원도 폼에 들어올 수 있게 되면서
+  // 이 이벤트에 두 집단이 섞이는데, 마운트 즉시 보내면 회원까지 전부 비회원으로 찍힌다.
+  const funnelSentRef = useRef(false)
   useEffect(() => {
-    if (!isEditMode) {
-      sendGtmEvent('post_create_started', {
-        board_type: selectedBoard,
-        has_draft: !!(title || content),
-      })
-      trackEvent('post_create_started', { board_type: selectedBoard })
-    }
+    if (isEditMode || funnelSentRef.current) return
+    if (status === 'loading') return
+    funnelSentRef.current = true
+    sendGtmEvent('post_create_started', {
+      board_type: selectedBoard,
+      has_draft: !!(title || content),
+      is_member: isLoggedIn,
+    })
+    trackEvent('post_create_started', { board_type: selectedBoard })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [status, isEditMode])
 
   function clearDraft() {
-    try { localStorage.removeItem(getDraftKey(selectedBoard)) } catch { /* ignore */ }
+    removeDraft(selectedBoard)
     // 서버 임시저장도 삭제
     if (currentDraftId) {
       deleteDraftAction(currentDraftId).catch(() => {})
@@ -309,6 +321,19 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       return
     }
     setError('')
+
+    // 비회원: 여기서 멈춘다. 글을 먼저 저장해 두고 로그인을 요청한다.
+    // 저장(createPost)은 호출하지 않는다 — 서버에서도 세션 없이는 거부되고,
+    // 로그인 후 사용자가 내용을 확인하고 직접 등록을 눌러야 한다(자동 등록 안 함).
+    if (!isEditMode && !isLoggedIn) {
+      const saved = saveLocalDraft()
+      if (!saved) {
+        // 저장공간이 막힌 브라우저(사파리 시크릿 등) — 지금 로그인하러 나가면 글이 사라진다
+        toast('이 브라우저에서는 임시저장이 안 돼요. 글을 복사해 두신 뒤 로그인해 주세요', 'error')
+      }
+      setShowLoginPrompt(true)
+      return
+    }
 
     startTransition(async () => {
       const formData = new FormData()
@@ -423,6 +448,43 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       {error && (
         <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-[17px] font-medium">
           {error}
+        </div>
+      )}
+
+      {/* 다른 게시판에 작성하던 글 안내 — 로그인 왕복에서 ?board=…가 떨어졌을 때의 안전망.
+          누르기 전에는 아무것도 바꾸지 않는다(게시판이 말없이 바뀌면 엉뚱한 곳에 올라간다). */}
+      {otherBoardDraft && !title && !content && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/60 p-4">
+          <p className="text-[17px] text-foreground">
+            <strong className="font-bold">
+              {boards.find((b) => b.slug === otherBoardDraft.board)?.displayName ?? otherBoardDraft.board}
+            </strong>
+            에 작성하던 글이 있어요
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="min-h-[52px] rounded-xl px-4 text-[17px] font-bold text-primary-text"
+              onClick={() => {
+                setSelectedBoard(otherBoardDraft.board)
+                setSelectedCategory(otherBoardDraft.category)
+                setTitle(otherBoardDraft.title)
+                setContent(otherBoardDraft.content)
+                setOtherBoardDraft(null)
+                toast('작성하던 글을 불러왔어요 — 확인 후 등록해 주세요', 'info')
+              }}
+            >
+              이어서 쓰기
+            </button>
+            <button
+              type="button"
+              aria-label="안내 닫기"
+              className="min-h-[52px] min-w-[52px] text-[17px] text-muted-foreground"
+              onClick={() => setOtherBoardDraft(null)}
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
@@ -549,6 +611,14 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         cancelLabel="계속 쓰기"
         variant="destructive"
       />
+
+      {/* 비회원이 등록을 눌렀을 때 — 글은 이미 저장됐고, 로그인 후 같은 게시판으로 돌아온다 */}
+      {showLoginPrompt && (
+        <WriteLoginPrompt
+          callbackUrl={`/community/write?board=${encodeURIComponent(selectedBoard)}`}
+          onClose={() => setShowLoginPrompt(false)}
+        />
+      )}
     </>
   )
 }
