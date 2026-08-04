@@ -155,7 +155,7 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
     try {
       const fd = new FormData()
       fd.append('file', file)
-      // 업로드 API를 광고 슬롯과 공유한다 — 히어로 규격(8:3)으로 검사받도록 지면을 명시
+      // 업로드 API를 광고 슬롯과 공유한다 — 홈 상단 구좌 규격(3:1, 최소 1200×400)으로 검사받도록 지면을 명시
       fd.append('target', 'hero')
       const res = await fetch('/api/admin/uploads/banner', { method: 'POST', body: fd })
       if (!res.ok) {
@@ -209,13 +209,26 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
       {/* 운영 가이드 — 히어로 탭 전용 */}
       {activeTab === 'hero' && (
         <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800 space-y-1.5">
-          <p className="font-semibold">📋 히어로 배너 운영 가이드 (담당자 필독)</p>
+          <p className="font-semibold">📋 홈 상단 구좌 운영 가이드 (담당자 필독)</p>
           <ul className="space-y-1 list-none pl-0 text-blue-700">
+            <li>
+              • <strong>이 탭은 「홈 최상단」 한 자리를 관리합니다.</strong> 성격이 다른 배너 셋이 이 한 자리를 돌아가며 씁니다 —
+              ① <strong>브랜드 히어로</strong>(우리 서비스 배너, 이 탭에서 등록) · ② <strong>광고주 배너</strong>(돈 받고 노출, 이 탭에서 등록) ·
+              ③ <strong>참여이벤트</strong>(투표·의견수렴·1분 의견함, 이벤트 관리에서 자동 삽입)
+            </li>
+            <li>
+              • 셋 다 <strong>같은 3:1 규격</strong>을 씁니다 — 소재를 한 벌만 만들면 어느 자리에든 넣을 수 있습니다.
+              광고주에게는 <strong>「2400×800, 3:1」</strong>로 안내하세요.
+            </li>
+            <li>
+              • <strong>목록 상단 띠(광고 슬롯)와 헷갈리지 마세요</strong> — 비율은 같은 3:1이지만 자리가 다릅니다.
+              여기는 <strong>홈 최상단</strong>, 광고 슬롯은 <strong>목록 7개 페이지 상단 띠</strong>(권장 1200×400)입니다.
+            </li>
             <li>• 최대 <strong>5장</strong> 동시 노출 가능 — 표시순서 숫자가 낮을수록 먼저 표시</li>
             <li>• 이미지가 있으면 <strong>이미지 배경 + 왼쪽 정렬</strong>, 없으면 그라디언트 배경으로 표시됩니다</li>
             <li>• 시작/종료일을 비워두면 <strong>항상 노출</strong>됩니다</li>
             <li>• <strong>노출 조건</strong>: 활성화 AND 현재 날짜가 시작일~종료일 사이</li>
-            <li>• 배너가 없으면 홈 히어로 영역은 표시되지 않습니다</li>
+            <li>• 배너가 없으면 홈 상단 구좌는 표시되지 않습니다</li>
           </ul>
         </div>
       )}
@@ -374,19 +387,20 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
               <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
                 <div className="mb-2 space-y-1 text-xs text-zinc-500">
                   <p>
-                    <strong className="text-zinc-700">권장 2400×900 (8:3 가로형)</strong> · 최소 1600×600 ·
+                    <strong className="text-zinc-700">권장 2400×800 (3:1 가로형)</strong> · 최소 1200×400 ·
                     JPG·PNG·WebP · 4MB 이하
                   </p>
                   <p>
-                    화면 비율은 <strong>모바일 2:1</strong>, <strong>PC 8:3</strong>입니다. 모바일에서는{' '}
-                    <strong>좌우 각 12.5%가 잘리므로</strong> 중요한 요소는 가운데 70%(가로 1680px) 안에 넣어주세요.
+                    화면 비율은 <strong>모바일·태블릿·PC 모두 3:1</strong>입니다. 규격대로 올리면{' '}
+                    <strong>어느 기기에서도 잘리지 않습니다</strong> — 기기별로 따로 만들 필요가 없습니다.
                   </p>
                   <p>
                     제목·부제·CTA는 시스템이 <strong>이미지 왼쪽에 겹쳐</strong> 출력합니다(왼쪽에 어두운 그라디언트).
                     로고·상품은 <strong>오른쪽</strong>에, 우하단 모서리는 슬라이드 카운터가 겹치니 비워주세요.
+                    모바일은 높이가 낮아 <strong>제목·부제가 각각 한 줄까지만</strong> 보입니다(넘치면 …로 줄임).
                   </p>
                   <p>
-                    비율이 <strong>2.55:1 ~ 2.8:1</strong>을 벗어나면 업로드가 거부됩니다(세로형·정사각·2:1·3:1 등).
+                    비율이 <strong>2.85:1 ~ 3.15:1</strong>을 벗어나면 업로드가 거부됩니다(세로형·정사각·2:1·16:9 등).
                     비우면 그라디언트 배경으로 표시됩니다.
                   </p>
                 </div>

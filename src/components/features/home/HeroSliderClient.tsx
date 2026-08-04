@@ -155,11 +155,12 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
 
   return (
     // 비율 고정 — 광고 소재 규격의 근거다.
-    // 이전에는 aspect-ratio 5:2와 minHeight 200px이 섞여, 375/390/430에서 minHeight가 이겨
-    // 실제 비율이 1.875 / 1.95 / 2.15로 제각각이었다(광고주에게 규격을 줄 수 없는 상태).
-    // minHeight를 빼고 모바일·태블릿 2:1, lg 이상 8:3 두 가지로만 확정한다.
+    // 홈 최상단은 성격이 다른 배너 셋(브랜드 히어로 · 광고주 배너 · 참여이벤트)이 돌아가며 쓰는
+    // 하나의 구좌다. 예전에는 모바일 2:1 / PC 8:3으로 갈라져 있어 같은 소재가 기기마다 다르게
+    // 잘렸고, 광고주에게 줄 규격도 두 개였다. 목록 상단 띠(광고 슬롯)와 같은 3:1로 통일해
+    // 전 뷰포트에서 잘림 없이 원본 그대로 나오게 한다 — 규격은 2400×800 하나뿐이다.
     <section
-      className="w-full relative overflow-hidden [aspect-ratio:2/1] lg:[aspect-ratio:8/3]"
+      className="w-full relative overflow-hidden [aspect-ratio:3/1]"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onMouseEnter={() => setPaused(true)}
@@ -216,13 +217,17 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
           <HeroSlideLink
             ctaUrl={slide.ctaUrl}
             className={cn(
-              'absolute inset-0 flex flex-col justify-end gap-2.5 px-5 pb-7 lg:justify-center lg:gap-3 lg:px-16 lg:pb-0 no-underline [-webkit-tap-highlight-color:transparent]',
+              'absolute inset-0 flex flex-col justify-end gap-1.5 px-5 pb-3 lg:justify-center lg:gap-3 lg:px-16 lg:pb-0 no-underline [-webkit-tap-highlight-color:transparent]',
               slide.imageUrl ? 'items-start text-left' : 'items-center text-center'
             )}
             tabIndex={index === current ? 0 : -1}
           >
+            {/* 모바일 3:1은 높이가 폭의 1/3뿐이라(375 → 125px) 글이 길면 자리가 모자란다.
+                줄 수를 묶어 높이를 고정하고, shrink-0으로 flex가 글상자를 눌러 글자를 반쯤
+                자르는 일(넘침 수치에는 안 잡히는 조용한 잘림)을 막는다.
+                전체 문구는 배너를 눌러 들어간 페이지에서 보여준다. */}
             <h2
-              className="text-white font-bold leading-[1.4] break-keep max-w-[72%] lg:max-w-none"
+              className="shrink-0 text-white font-bold leading-[1.4] break-keep max-w-[72%] line-clamp-1 lg:max-w-none lg:line-clamp-none"
               style={{ fontSize: 'var(--text-hero-title)', whiteSpace: 'pre-line', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
             >
               {slide.title.replace(/\\n/g, '\n')}
@@ -230,7 +235,7 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
 
             {slide.subtitle && (
               <p
-                className="text-white/90 leading-snug break-keep max-w-[72%] lg:max-w-none"
+                className="shrink-0 text-white/90 leading-snug break-keep max-w-[72%] line-clamp-1 lg:max-w-none lg:line-clamp-none"
                 style={{ fontSize: 'var(--text-hero-subtitle)', textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
               >
                 {slide.subtitle}
@@ -239,7 +244,7 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
 
             {slide.ctaText && (
               <span
-                className="mt-1 inline-flex items-center justify-center px-4 h-11 rounded-full bg-black/30 backdrop-blur-sm text-white font-semibold"
+                className="shrink-0 inline-flex items-center justify-center px-4 h-8 lg:mt-1 lg:h-11 rounded-full bg-black/30 backdrop-blur-sm text-white font-semibold"
                 style={{ fontSize: 'var(--text-hero-cta)' }}
               >
                 {slide.ctaText}

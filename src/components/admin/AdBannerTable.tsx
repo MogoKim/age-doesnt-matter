@@ -246,7 +246,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
             <li>• <strong>목록 상단 띠</strong>: {LIST_HEADER_ROUTE_COUNT}개 목록 페이지({LIST_HEADER_LABELS}) 메뉴 바로 아래에 노출</li>
             <li>• <strong>노출 위치</strong>: 여러 페이지 복수 선택 가능 — 전부 또는 0개 선택 = {LIST_HEADER_ROUTE_COUNT}개 전체 공통</li>
             <li>• <strong>이미지</strong>: 권장 <strong>1200×400(3:1)</strong> 가로 띠 · 최소 960×320 — 파일 선택하면 자동 업로드</li>
-            <li>• ⚠️ <strong>히어로 배너(2400×900, 8:3)와 다른 지면</strong>입니다 — 규격이 달라 서로 올리면 업로드가 거부됩니다</li>
+            <li>• ⚠️ <strong>홈 상단 구좌와 다른 자리</strong>입니다 — 비율은 같은 <strong>3:1</strong>이지만, 여기는 <strong>목록 페이지 상단 띠</strong>, 홈 상단 구좌는 <strong>홈 최상단</strong>(권장 2400×800)입니다</li>
             <li>• <strong>광고 유형</strong>: 자체(우리 배너 이미지) / 구글·쿠팡(HTML 코드) / 외부</li>
             <li>• <strong>클릭 URL</strong>: 우나어 내부 주소(<code>/</code> 시작)는 같은 탭, 외부(<code>https://</code>)는 새 탭으로 열림 — <code>http://</code>·<code>javascript:</code> 등은 저장되지 않습니다</li>
             <li>• <strong>노출 조건</strong>: 활성 ON + 현재 시각이 시작~종료 사이 (한국 시간 KST 기준)</li>
@@ -348,7 +348,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 />
                 {uploading && <p className="mt-1 text-[11px] text-zinc-500">업로드 중…</p>}
                 {form.slot === 'LIST_HEADER' && (
-                  <p className="mt-1 text-[11px] text-zinc-500">권장 1200×400 (3:1 비율) · 최소 960×320 · 가로로 긴 띠 이미지. 비율이 2.85:1~3.15:1을 벗어나면 업로드가 거부됩니다(히어로용 2400×900은 여기 올릴 수 없습니다)</p>
+                  <p className="mt-1 text-[11px] text-zinc-500">권장 1200×400 (3:1 비율) · 최소 960×320 · 가로로 긴 띠 이미지. 비율이 2.85:1~3.15:1을 벗어나면 업로드가 거부됩니다. 홈 상단 구좌용 2400×800도 같은 3:1이라 여기 올릴 수 있습니다</p>
                 )}
                 <input
                   value={form.imageUrl}
