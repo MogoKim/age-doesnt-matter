@@ -155,6 +155,8 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
     try {
       const fd = new FormData()
       fd.append('file', file)
+      // 업로드 API를 광고 슬롯과 공유한다 — 히어로 규격(8:3)으로 검사받도록 지면을 명시
+      fd.append('target', 'hero')
       const res = await fetch('/api/admin/uploads/banner', { method: 'POST', body: fd })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
