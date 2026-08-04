@@ -82,3 +82,12 @@ export const ACTIVE_COMMUNITY_BOARD_SLUG = Object.fromEntries(
 
 /** 활성 커뮤니티 목록 경로 (prewarm LIST_PATHS의 커뮤니티 부분과 동일) */
 export const ACTIVE_COMMUNITY_LIST_PATHS: string[] = ACTIVE_COMMUNITY.map((b) => b.urlPrefix)
+
+/**
+ * 활성 커뮤니티 목록 경로 → slug.
+ * "지금 보고 있는 게시판이 어디인지"를 pathname으로 판별할 때 쓴다(글쓰기 FAB 등).
+ * 문자열 includes로 추측하면 못 맞춘 경로가 조용히 엉뚱한 게시판으로 떨어진다.
+ */
+export const ACTIVE_COMMUNITY_PATH_TO_SLUG: Record<string, string> = Object.fromEntries(
+  ACTIVE_COMMUNITY.map((b) => [b.urlPrefix, b.slug]),
+)
