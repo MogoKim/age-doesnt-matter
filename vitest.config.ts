@@ -1,7 +1,11 @@
 import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
+  // tsconfig가 jsx: 'preserve'(Next 기본)라 vitest 혼자서는 .tsx를 파싱하지 못한다.
+  // 컴포넌트 렌더 테스트를 위해 등록 — JSX 없는 기존 .ts 테스트에는 영향이 없다.
+  plugins: [react()],
   test: {
     environment: 'happy-dom',
     globals: true,

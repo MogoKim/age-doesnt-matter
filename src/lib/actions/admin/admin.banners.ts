@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
+import { validateCtaUrlForSave } from '@/lib/hero-link'
 import type { AdSlot, AdType } from '@/generated/prisma/client'
 
 /** 광고 HTML 코드에서 위험한 태그/속성 제거 */
@@ -71,6 +72,9 @@ export async function adminCreateBanner(data: {
     throw new Error('시작일은 종료일보다 이전이어야 합니다.')
   }
 
+  const ctaError = validateCtaUrlForSave(ctaUrl)
+  if (ctaError) throw new Error(`CTA 링크: ${ctaError}`)
+
   const banner = await prisma.banner.create({
     data: {
       title: normalizeBannerTitle(data.title),
@@ -129,6 +133,11 @@ export async function adminUpdateBanner(
 
   if (startsAtDate && endsAtDate && startsAtDate >= endsAtDate) {
     throw new Error('시작일은 종료일보다 이전이어야 합니다.')
+  }
+
+  if (data.ctaUrl !== undefined) {
+    const ctaError = validateCtaUrlForSave(normalizeBannerText(data.ctaUrl))
+    if (ctaError) throw new Error(`CTA 링크: ${ctaError}`)
   }
 
   const existing = await prisma.banner.findUnique({ where: { id: bannerId } })

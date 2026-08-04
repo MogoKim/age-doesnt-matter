@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { resolveHeroLink } from '@/lib/hero-link'
 import VoteHeroSlide, { type VoteHeroData } from '@/components/features/vote/VoteHeroSlide'
 import SurveyHeroSlide, { type SurveyHeroData } from '@/components/features/event/SurveyHeroSlide'
 
@@ -24,6 +25,48 @@ export interface SlideData {
 }
 
 const AUTO_PLAY_INTERVAL = 7000
+
+/**
+ * 슬라이드 전체를 덮는 링크.
+ *
+ * 내부 경로는 클라이언트 라우팅(`next/link`)으로 앱 안에서 이동하고,
+ * 외부 https는 새 탭으로 연다 — 광고주 사이트로 나갈 때 우나어를 떠나지 않게,
+ * 특히 앱 웹뷰 안에 갇히지 않게 하기 위해서다.
+ * 허용하지 않는 스킴은 resolveHeroLink가 홈으로 되돌린다.
+ */
+export function HeroSlideLink({
+  ctaUrl,
+  className,
+  tabIndex,
+  children,
+}: {
+  ctaUrl: string | null | undefined
+  className: string
+  tabIndex: number
+  children: React.ReactNode
+}) {
+  const link = resolveHeroLink(ctaUrl)
+
+  if (link.kind === 'external') {
+    return (
+      <a
+        href={link.href}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className={className}
+        tabIndex={tabIndex}
+      >
+        {children}
+      </a>
+    )
+  }
+
+  return (
+    <Link href={link.href} className={className} tabIndex={tabIndex}>
+      {children}
+    </Link>
+  )
+}
 
 /** 3색 그라디언트 배경 CSS 문자열 생성 */
 function buildGradient(slide: SlideData): string {
@@ -111,9 +154,12 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
   if (allSlides.length === 0) return null
 
   return (
+    // 비율 고정 — 광고 소재 규격의 근거다.
+    // 이전에는 aspect-ratio 5:2와 minHeight 200px이 섞여, 375/390/430에서 minHeight가 이겨
+    // 실제 비율이 1.875 / 1.95 / 2.15로 제각각이었다(광고주에게 규격을 줄 수 없는 상태).
+    // minHeight를 빼고 모바일·태블릿 2:1, lg 이상 8:3 두 가지로만 확정한다.
     <section
-      className="w-full relative overflow-hidden [aspect-ratio:5/2] lg:[aspect-ratio:8/3]"
-      style={{ minHeight: 200 }}
+      className="w-full relative overflow-hidden [aspect-ratio:2/1] lg:[aspect-ratio:8/3]"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onMouseEnter={() => setPaused(true)}
@@ -166,9 +212,9 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
             }}
           />
 
-          {/* 텍스트 오버레이 — 전체 영역 클릭 시 ctaUrl로 이동 */}
-          <Link
-            href={(slide.ctaUrl ?? '/').trim() || '/'}
+          {/* 텍스트 오버레이 — 전체 영역 클릭 시 ctaUrl로 이동 (외부 https는 새 탭) */}
+          <HeroSlideLink
+            ctaUrl={slide.ctaUrl}
             className={cn(
               'absolute inset-0 flex flex-col justify-end gap-2.5 px-5 pb-7 lg:justify-center lg:gap-3 lg:px-16 lg:pb-0 no-underline [-webkit-tap-highlight-color:transparent]',
               slide.imageUrl ? 'items-start text-left' : 'items-center text-center'
@@ -199,7 +245,7 @@ export default function HeroSliderClient({ slides, allowSurveyIsland = false }: 
                 {slide.ctaText}
               </span>
             )}
-          </Link>
+          </HeroSlideLink>
             </>
           )}
         </div>
