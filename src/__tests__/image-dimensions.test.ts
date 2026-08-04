@@ -4,6 +4,7 @@ import { join } from 'path'
 import {
   readImageSize,
   checkHeroImage,
+  HERO_RECOMMENDED,
   HERO_MIN_WIDTH,
   HERO_MIN_HEIGHT,
   HERO_MIN_RATIO,
@@ -107,10 +108,30 @@ describe('checkHeroImage — 규격 판정', () => {
     expect(checkHeroImage(png(4000, 800)).ok).toBe(false) // 5:1
   })
 
-  it('허용 비율 경계값', () => {
-    expect(checkHeroImage(png(2000, 1000)).ok).toBe(true) // 정확히 2.0
-    expect(checkHeroImage(png(3200, 1000)).ok).toBe(true) // 정확히 3.2
-    expect(checkHeroImage(png(1999, 1000)).ok).toBe(false) // 1.999
+  it('2:1은 거부 — 통과시키면 PC(8:3)에서 상하 25%가 잘린다', () => {
+    // 업로드 검증은 규격서와 다른 소재를 막는 장치다.
+    // 렌더 컨테이너(모바일 2:1)와 원본 규격(8:3)은 다르므로 2:1 원본을 받아주면 안 된다.
+    const r = checkHeroImage(png(2400, 1200))
+    expect(r.ok).toBe(false)
+    expect(r.reason).toContain('비율')
+  })
+
+  it('3:1도 거부 — 모바일에서 좌우 33%가 잘린다', () => {
+    expect(checkHeroImage(png(2400, 800)).ok).toBe(false)
+  })
+
+  it('허용 비율 경계값 (2.55 ~ 2.80)', () => {
+    expect(checkHeroImage(png(2550, 1000)).ok).toBe(true) // 정확히 2.55
+    expect(checkHeroImage(png(2800, 1000)).ok).toBe(true) // 정확히 2.80
+    expect(checkHeroImage(png(2540, 1000)).ok).toBe(false) // 2.54
+    expect(checkHeroImage(png(2810, 1000)).ok).toBe(false) // 2.81
+  })
+
+  it('같은 비율의 다른 크기·흔한 제작 오차는 받아준다', () => {
+    expect(checkHeroImage(png(2560, 960)).ok).toBe(true) // 2.667
+    expect(checkHeroImage(png(1920, 720)).ok).toBe(true) // 2.667
+    expect(checkHeroImage(png(2400, 880)).ok).toBe(true) // 2.727
+    expect(checkHeroImage(png(2400, 920)).ok).toBe(true) // 2.609
   })
 
   it('치수를 못 읽으면 막지 않는다 — 정상 업로드 차단이 더 나쁘다', () => {
@@ -120,9 +141,18 @@ describe('checkHeroImage — 규격 판정', () => {
   })
 
   it('상수가 의도한 값인지 고정', () => {
-    expect(HERO_MIN_RATIO).toBe(2.0)
-    expect(HERO_MAX_RATIO).toBe(3.2)
+    expect(HERO_MIN_RATIO).toBe(2.55)
+    expect(HERO_MAX_RATIO).toBe(2.8)
     expect(HERO_MIN_WIDTH).toBe(1600)
     expect(HERO_MIN_HEIGHT).toBe(600)
+  })
+
+  it('권장 규격이 허용 범위 안에 있고, 최소 크기도 같은 비율이다', () => {
+    // 가이드(2400×900)와 검증 범위가 어긋나면 "규격대로 만들었는데 거부당하는" 사고가 난다
+    const rec = HERO_RECOMMENDED.width / HERO_RECOMMENDED.height
+    expect(rec).toBeGreaterThan(HERO_MIN_RATIO)
+    expect(rec).toBeLessThan(HERO_MAX_RATIO)
+    expect(HERO_MIN_WIDTH / HERO_MIN_HEIGHT).toBeCloseTo(rec, 3)
+    expect(checkHeroImage(png(HERO_RECOMMENDED.width, HERO_RECOMMENDED.height)).ok).toBe(true)
   })
 })

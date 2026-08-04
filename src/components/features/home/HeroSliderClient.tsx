@@ -34,7 +34,7 @@ const AUTO_PLAY_INTERVAL = 7000
  * 특히 앱 웹뷰 안에 갇히지 않게 하기 위해서다.
  * 허용하지 않는 스킴은 resolveHeroLink가 홈으로 되돌린다.
  */
-function HeroSlideLink({
+export function HeroSlideLink({
   ctaUrl,
   className,
   tabIndex,

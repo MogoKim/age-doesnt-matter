@@ -377,13 +377,16 @@ export default function BannerManager({ banners, activeTab }: BannerManagerProps
                   </p>
                   <p>
                     화면 비율은 <strong>모바일 2:1</strong>, <strong>PC 8:3</strong>입니다. 모바일에서는{' '}
-                    <strong>좌우 각 12.5%가 잘리므로</strong> 중요한 요소는 가운데 75%(가로 1800px) 안에 넣어주세요.
+                    <strong>좌우 각 12.5%가 잘리므로</strong> 중요한 요소는 가운데 70%(가로 1680px) 안에 넣어주세요.
                   </p>
                   <p>
                     제목·부제·CTA는 시스템이 <strong>이미지 왼쪽에 겹쳐</strong> 출력합니다(왼쪽에 어두운 그라디언트).
                     로고·상품은 <strong>오른쪽</strong>에, 우하단 모서리는 슬라이드 카운터가 겹치니 비워주세요.
                   </p>
-                  <p>세로형·정사각 이미지는 업로드가 거부됩니다. 비우면 그라디언트 배경으로 표시됩니다.</p>
+                  <p>
+                    비율이 <strong>2.55:1 ~ 2.8:1</strong>을 벗어나면 업로드가 거부됩니다(세로형·정사각·2:1·3:1 등).
+                    비우면 그라디언트 배경으로 표시됩니다.
+                  </p>
                 </div>
                 <input
                   type="file"
