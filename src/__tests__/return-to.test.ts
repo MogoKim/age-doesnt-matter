@@ -81,9 +81,10 @@ describe('middleware가 이 함수를 쓰는지 — 소스 고정', () => {
     expect(src.match(/buildReturnTo\(pathname, request\.nextUrl\.search\)/g)?.length).toBe(2)
   })
 
-  it('보호 경로와 공개 예외는 그대로다', () => {
-    expect(src).toMatch(/PROTECTED_PATHS\s*=\s*\['\/my', '\/community\/write'\]/)
-    expect(src).toMatch(/PROTECTED_EXCEPTIONS\s*=\s*\['\/community\/write\/select'\]/)
+  it('보호 경로는 /my만 — 글쓰기는 저장 단계에서 막는다', () => {
+    expect(src).toMatch(/PROTECTED_PATHS\s*=\s*\['\/my'\]/)
+    // 글쓰기를 다시 진입 단계에서 막으면 비회원 선작성 흐름이 통째로 사라진다
+    expect(src).not.toMatch(/PROTECTED_PATHS\s*=\s*\[[^\]]*'\/community\/write'/)
   })
 
   it('인증 로직 파일은 건드리지 않는다 — middleware는 auth 설정을 import하지 않는다', () => {
