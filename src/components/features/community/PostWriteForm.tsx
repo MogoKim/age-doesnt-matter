@@ -581,11 +581,15 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         </>
       )}
 
-      {/* 제목 입력 */}
+      {/* 제목 입력 — 크기는 본문 토큰 +2px (작게 20 / 기본 22 / 크게 26px).
+          text-title(20/24/28)은 크게에서 28px이라 375px 한 줄이 16자쯤에서 막힌다.
+          지금 기본 화면(22px)은 그대로 두고 위아래로만 움직이게 했다.
+          arbitrary class의 밑줄(_)은 Tailwind가 공백으로 바꾼다 — calc의 +는 앞뒤 공백이 필수다.
+          placeholder도 같은 식을 써서 입력 전후 크기가 같다. */}
       <div className="mb-4">
         <input
           type="text"
-          className="w-full min-h-[60px] px-0 py-4 border-0 border-b-2 border-border text-[22px] font-bold text-foreground bg-transparent outline-none transition-colors focus:border-primary placeholder:text-muted-foreground placeholder:font-normal placeholder:text-[22px]"
+          className="w-full min-h-[60px] px-0 py-4 border-0 border-b-2 border-border text-[calc(var(--text-body)_+_2px)] font-bold text-foreground bg-transparent outline-none transition-colors focus:border-primary placeholder:text-muted-foreground placeholder:font-normal placeholder:text-[calc(var(--text-body)_+_2px)]"
           placeholder="제목을 입력해 주세요"
           value={title}
           onChange={(e) => {
