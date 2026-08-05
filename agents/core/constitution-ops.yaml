@@ -30,7 +30,7 @@ trending_policy:
   score_formula: "(likeCount*3 + commentCount*5 + viewCount*0.1) / (hoursAge+2)^1.5"
   recalculation: "매 30분 (COO trending-scorer)"
   hot_demotion: "72시간 무참여 + 7일 경과 → NORMAL 강등"
-  hall_of_fame: "영구 유지 (50+ 공감 달성 보상)"
+  hall_of_fame: "영구 유지 (공감 50개 이상 달성 보상)"
   home_trending: "48시간 이내 게시글, trendingScore 상위 5개"
 
 # ──────────────────────────────────────────
