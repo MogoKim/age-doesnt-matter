@@ -146,8 +146,9 @@ test.describe('글쓰기 화면 모바일 UX', () => {
     await editor.click()
     await page.waitForTimeout(500)
 
-    // Bold 버튼 ("B" 텍스트) 또는 사진 추가 버튼(title="사진 추가") 으로 툴바 존재 확인
-    const boldBtn = page.locator('button', { hasText: /^B$/ }).first()
+    // 굵게 버튼(title="굵게") 또는 사진 추가 버튼(title="사진 추가") 으로 툴바 존재 확인
+    // 툴바 축소(2026-08) 후 굵게 버튼은 "B 굵게"라 /^B$/ 텍스트 매칭이 안 된다 → title로 잡는다
+    const boldBtn = page.locator('button[title="굵게"]').first()
     const photoBtn = page.locator('button[title="사진 추가"]').first()
 
     const boldExists = await boldBtn.isVisible({ timeout: 5000 }).catch(() => false)

@@ -53,11 +53,8 @@ const VideoExtension = Node.create({
   },
 })
 
-const FONT_SIZES = [
-  { label: '가', size: null,   title: '기본' },
-  { label: '가', size: '22px', title: '크게' },
-  { label: '가', size: '28px', title: '최대' },
-] as const
+// 글자 크기 버튼 목록은 툴바에서 뺐다(2026-08). FontSizeExtension은 그대로 남아 있어서
+// 이미 글자 크기가 지정된 옛 글은 계속 그대로 보인다. 되살릴 때는 git 이력 참고.
 
 // ─── 커서 위치로 스크롤 (iOS/Android 키보드 대응) ───
 // window.scrollBy 직접 호출은 iOS visualViewport 타이밍 충돌로 튐 현상 발생
@@ -553,7 +550,7 @@ export default function TipTapEditor({
       {/* 모바일 bottom = CTA바(76px) + 키보드높이(JS) + safe-area / 데스크탑 top = GNB(64)+WriteHeader(52)=116px */}
       <div
         ref={toolbarRef}
-        className="bg-card pt-1 pb-2 border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)]"
+        className="bg-card pt-1 pb-2 border-t border-border"
       >
         {selectedMedia && (
           <div className="flex items-center justify-between px-2 py-1 mb-1 bg-primary/5 rounded-xl border border-primary/10">
@@ -571,72 +568,24 @@ export default function TipTapEditor({
             </button>
           </div>
         )}
-        <div className="flex items-center gap-0.5 border border-border rounded-xl bg-card px-2 py-1">
-          {/* 인용구 */}
-          <button
-            type="button"
-            aria-label="인용구"
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={cn(
-              'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-body transition-colors',
-              editor.isActive('blockquote') ? 'bg-primary/10 text-primary-text' : 'text-foreground hover:bg-muted',
-            )}
-          >
-            "
-          </button>
-
-          {/* 굵게 */}
-          <button
-            type="button"
-            aria-label="굵게"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className={cn(
-              'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-body font-bold transition-colors',
-              editor.isActive('bold') ? 'bg-primary/10 text-primary-text' : 'text-foreground hover:bg-muted',
-            )}
-          >
-            B
-          </button>
-
-          <div className="w-px h-6 bg-border mx-1" />
-
-          {/* 글자 크기 */}
-          {FONT_SIZES.map(({ label, size, title }) => {
-            const isActive = size !== null && editor.isActive('textStyle', { fontSize: size })
-            return (
-              <button
-                key={title}
-                type="button"
-                title={title}
-                onClick={() => {
-                  if (size === null) {
-                    editor.chain().focus().unsetMark('textStyle').run()
-                  } else {
-                    editor.chain().focus().setMark('textStyle', { fontSize: size }).run()
-                  }
-                }}
-                className={cn(
-                  'flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl transition-colors font-medium',
-                  isActive ? 'bg-primary/10 text-primary-text' : 'text-foreground hover:bg-muted',
-                )}
-                style={{ fontSize: size ?? '16px' }}
-              >
-                {label}
-              </button>
-            )
-          })}
-
-          <div className="w-px h-6 bg-border mx-1" />
-
+        {/* 툴바는 사진 / 동영상 / 굵게 3개만 둔다.
+            전에는 7개(인용·굵게·글자크기 3개·사진·동영상)가 375px 화면에서 63px 넘쳐서
+            정작 제일 많이 쓰는 사진·동영상이 오른쪽으로 잘려 안 보였다.
+            인용·글자 크기는 버튼만 뺐고 TipTap extension(Blockquote·FontSize)은 그대로 둔다
+            → 이미 인용·글자 크기가 들어간 옛 글은 계속 그대로 보인다.
+            버튼 구분은 테두리가 아니라 bg-muted로 준다 — globals.css의 button{border:none}이
+            Tailwind border 유틸을 덮어써서 <button>에는 테두리가 아예 안 그려진다. */}
+        <div className="flex items-center gap-2 px-4 py-1">
           {/* 사진 추가 */}
           <button
             type="button"
             onClick={() => { setMediaError(''); fileInputRef.current?.click() }}
             disabled={isUploadingImage}
             title="사진 추가"
-            className="flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-xl transition-colors text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[52px] px-2 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {isUploadingImage ? '⏳' : '📷'}
+            <span className="text-xl leading-none" aria-hidden="true">{isUploadingImage ? '⏳' : '📷'}</span>
+            <span className="text-caption font-medium truncate">사진</span>
           </button>
 
           {/* 동영상 추가 */}
@@ -645,9 +594,28 @@ export default function TipTapEditor({
             onClick={() => { setMediaError(''); setVideoSheet('picking') }}
             disabled={isUploadingVideo}
             title="동영상 추가"
-            className="flex items-center justify-center min-h-[52px] min-w-[52px] rounded-xl text-xl transition-colors text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[52px] px-2 rounded-xl bg-muted text-foreground transition-colors hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {isUploadingVideo ? '⏳' : '🎬'}
+            <span className="text-xl leading-none" aria-hidden="true">{isUploadingVideo ? '⏳' : '🎬'}</span>
+            <span className="text-caption font-medium truncate">동영상</span>
+          </button>
+
+          {/* 굵게 */}
+          <button
+            type="button"
+            title="굵게"
+            aria-label="굵게"
+            aria-pressed={editor.isActive('bold')}
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={cn(
+              'flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[52px] px-2 rounded-xl transition-colors',
+              editor.isActive('bold')
+                ? 'bg-primary/10 text-primary-text'
+                : 'bg-muted text-foreground hover:bg-border',
+            )}
+          >
+            <span className="text-xl font-bold leading-none" aria-hidden="true">B</span>
+            <span className="text-caption font-medium truncate">굵게</span>
           </button>
         </div>
       </div>
@@ -680,9 +648,11 @@ export default function TipTapEditor({
       )}
 
       {/* ── 3. 에디터 본문 ── */}
+      {/* 본문 박스는 얇게(2px→1px). 커서가 들어오면 테두리가 코랄로 바뀌고
+          얇은 링이 생겨서 '지금 여기 쓰는 중'은 그대로 보인다(입력 안정성 유지). */}
       <div
         ref={editorWrapRef}
-        className="border-2 border-border rounded-xl bg-card transition-all focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(255,111,97,0.1)]"
+        className="border border-border rounded-xl bg-card transition-all focus-within:border-primary focus-within:shadow-[0_0_0_2px_rgba(255,111,97,0.12)]"
       >
         <EditorContent editor={editor} />
       </div>
