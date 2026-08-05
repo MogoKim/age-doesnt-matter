@@ -59,10 +59,13 @@ test.describe('시나리오 1: 비회원 홈 접근 + 주요 네비게이션', {
     await expect(searchInput).toHaveAttribute('placeholder', /통합검색/)
   })
 
-  test('비회원 → 글쓰기 접근 시 로그인 리다이렉트', async ({ page }) => {
-    await page.goto('/community/write')
-    await page.waitForURL(/\/(login|api\/auth)/)
-    expect(page.url()).toMatch(/\/(login|api\/auth)/)
+  // PR #273(2-3 비회원 선작성)부터 글쓰기 폼은 비회원에게도 열린다.
+  // 로그인은 '등록'을 누를 때 요청한다 — 실제 저장은 createPost의 auth()가 막는다.
+  // 이 테스트는 그때 함께 고쳐졌어야 했는데 남아 있어서 그동안 계속 빨간불이었다.
+  test('비회원 → 글쓰기 폼 진입 가능 (로그인은 등록 시점에)', async ({ page }) => {
+    await page.goto('/community/write?board=stories')
+    await expect(page).toHaveURL(/\/community\/write/)
+    await expect(page.locator('.ProseMirror')).toBeVisible({ timeout: 20000 })
   })
 
   test('비회원 → 마이페이지 접근 시 로그인 리다이렉트', async ({ page }) => {
