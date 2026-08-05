@@ -455,15 +455,15 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
                 className="flex-1 text-left cursor-pointer min-h-[52px] flex flex-col justify-center"
                 onClick={() => loadDraft(d)}
               >
-                <span className="text-[17px] font-bold text-foreground line-clamp-1">
+                <span className="text-xs font-bold text-foreground line-clamp-1">
                   {d.title || '(제목 없음)'}
                 </span>
-                <span className="text-[17px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {new Date(d.updatedAt).toLocaleDateString('ko-KR')}
                 </span>
               </button>
               <button
-                className="shrink-0 text-[17px] text-muted-foreground min-h-[52px] min-w-[44px] flex items-center justify-center hover:text-destructive transition-colors cursor-pointer"
+                className="shrink-0 text-xs text-muted-foreground min-h-[52px] min-w-[44px] flex items-center justify-center hover:text-destructive transition-colors cursor-pointer"
                 onClick={() => handleDeleteDraft(d.id)}
               >
                 삭제
@@ -498,7 +498,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       {writeHeader}
 
       {error && (
-        <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-[17px] font-medium">
+        <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-xs font-medium">
           {error}
         </div>
       )}
@@ -545,7 +545,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
             className="w-full min-h-[56px] flex items-center justify-between px-0 py-4 border-b-2 border-border mb-2"
           >
             <span className={cn(
-              'text-[17px] font-medium',
+              'text-xs font-medium',
               selectedCategory ? 'text-foreground' : 'text-muted-foreground'
             )}>
               {selectedCategory || '주제 고르기 (선택)'}
@@ -598,7 +598,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
             숙제처럼 보인다. 40자에 가까워졌을 때(30자~)와 너무 짧을 때만 띄운다. */}
         {(title.length >= 30 || (title.length > 0 && title.length < 2)) && (
           <div className={cn(
-            'text-right text-[17px] font-medium text-muted-foreground mt-1',
+            'text-right text-xs font-medium text-muted-foreground mt-1',
             title.length > 0 && title.length < 2 && 'text-destructive font-bold'
           )}>
             {title.length}/40
@@ -622,7 +622,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
         {/* '0자'를 항상 띄우는 대신, 아직 모자랄 때만 무엇이 필요한지 말로 알려준다.
             사진·동영상만 올려도 등록되는 규칙(isContentValid)을 그대로 따른다. */}
         {plainTextLength > 0 && !isContentValid && (
-          <p className="mt-2 text-[17px] font-bold text-primary-text">
+          <p className="mt-2 text-xs font-bold text-primary-text">
             내용을 10자 이상 입력해 주세요.
           </p>
         )}
