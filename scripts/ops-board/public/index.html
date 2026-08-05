@@ -80,6 +80,26 @@
       }
       .card .stale { color: #fbbf24; font-size: 13px; margin-top: 6px; }
       .empty { color: var(--muted); font-size: 14px; padding: 8px; }
+      /* ── 운영 원장 Beta ── */
+      .ledger-head { margin: 28px 0 10px; padding-top: 18px; border-top: 1px solid #333; }
+      .ledger-head h2 { margin: 0 0 4px; font-size: 17px; }
+      .ledger-head .sub { color: var(--muted); font-size: 13px; }
+      .lcard { background: #1b1b1b; border: 1px solid #333; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+      .lcard.alert { border-color: #ef4444; background: #2a1616; }
+      .lcard.locked { opacity: .62; }
+      .lcard .ltitle { font-weight: 600; font-size: 14px; margin-bottom: 5px; }
+      .lcard .lmeta { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+      .lcard .lrow { font-size: 12.5px; line-height: 1.55; }
+      .lcard .lrow b { color: #9ca3af; font-weight: 500; }
+      .lcard .lissue { color: #fca5a5; font-size: 12.5px; margin-top: 6px; font-weight: 600; }
+      .lcard .lock { color: #9ca3af; }
+      .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-right: 5px; }
+      .badge.p0 { background: #7f1d1d; color: #fecaca; }
+      .badge.p1 { background: #78350f; color: #fed7aa; }
+      .badge.p2 { background: #374151; color: #d1d5db; }
+      .badge.st { background: #1e3a5f; color: #bfdbfe; }
+      details.closed-box { margin-top: 14px; }
+      details.closed-box summary { color: var(--muted); font-size: 13px; cursor: pointer; }
     </style>
   </head>
   <body>
@@ -88,6 +108,7 @@
       <div id="status">연결 중…</div>
     </header>
     <main id="board"></main>
+    <section id="ledger"></section>
     <script src="/board.js"></script>
   </body>
 </html>

@@ -8,11 +8,14 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { getCache, subscribe, startScheduler } from './engine/scheduler.js'
 import type { BoardState } from './engine/evaluator.js'
+import { loadLedger } from './cards/ledger.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = join(HERE, 'public')
 const HOST = '127.0.0.1' // 절대 0.0.0.0 금지
-const PORT = 4321
+// 기본 4321(launchd 운영 보드). PORT env로만 override — PR 브랜치 화면 검증용.
+// launchd plist에는 PORT 키가 없으므로 운영 보드는 영향 0.
+const PORT = Number(process.env.PORT ?? 4321)
 
 function serialize(state: BoardState): string {
   return JSON.stringify(state)
@@ -51,6 +54,12 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   if (url === '/events') return handleSSE(req, res)
   if (url === '/' || url === '/index.html') {
     void serveStatic(res, 'index.html', 'text/html; charset=utf-8')
+    return
+  }
+  // 운영 원장(Beta) — probe SSE와 분리된 read-only 스냅샷. 매 요청 시 ledger.json 재읽기.
+  if (url === '/ledger') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' })
+    res.end(JSON.stringify(loadLedger()))
     return
   }
   if (url === '/board.js') {
