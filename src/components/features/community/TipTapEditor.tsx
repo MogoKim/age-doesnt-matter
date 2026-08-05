@@ -10,7 +10,7 @@ import Youtube from '@tiptap/extension-youtube'
 import Placeholder from '@tiptap/extension-placeholder'
 import { useState, useCallback, useEffect, useRef } from 'react'
 // TipTap의 Image extension과 이름이 겹치므로 아이콘은 ImageIcon으로 받는다
-import { Image as ImageIcon, Video, Bold, Loader2 } from 'lucide-react'
+import { Image as ImageIcon, Video, Bold, Loader2, AlertTriangle, FileVideo, Youtube as YoutubeIcon, Lightbulb } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024  // 10MB/장
@@ -573,16 +573,9 @@ export default function TipTapEditor({
             </button>
           </div>
         )}
-        {/* 툴바는 사진 / 동영상 / 굵게 3개만 둔다.
-            전에는 7개(인용·굵게·글자크기 3개·사진·동영상)가 375px 화면에서 63px 넘쳐서
-            정작 제일 많이 쓰는 사진·동영상이 오른쪽으로 잘려 안 보였다.
-            인용·글자 크기는 버튼만 뺐고 TipTap extension(Blockquote·FontSize)은 그대로 둔다
-            → 이미 인용·글자 크기가 들어간 옛 글은 계속 그대로 보인다.
-            아이콘은 이모지가 아니라 lucide 라인 아이콘을 쓴다 — 이모지는 기기마다 모양이
-            다르고 우리 디자인 시스템 밖이다. 아이콘은 stroke=currentColor라 글자색을 따라간다.
-            버튼 구분은 테두리가 아니라 bg-muted로 준다 — globals.css의 button{border:none}이
-            Tailwind border 유틸을 덮어써서 <button>에는 테두리가 아예 안 그려진다.
-            폭은 내용만큼만(flex-1 아님) — 툴바가 큰 박스형 메뉴처럼 보이지 않게. */}
+        {/* 툴바는 사진 / 동영상 / 굵게 3개. 인용·글자 크기는 버튼만 뺐고
+            extension(Blockquote·FontSize)은 남겨둔다 → 옛 글이 그대로 보인다.
+            구분은 테두리 대신 bg-muted — globals.css의 button{border:none}이 이긴다. */}
         <div className="flex items-center gap-2 px-4 py-1">
           {/* 사진 추가 */}
           <button
@@ -635,7 +628,7 @@ export default function TipTapEditor({
       {/* ── 미디어 에러 토스트 (fixed: 스크롤·키보드 무관하게 항상 화면에 표시) ── */}
       {mediaError && (
         <div className="fixed top-[132px] left-4 right-4 z-[200] flex items-center gap-2 px-4 py-3 rounded-xl bg-destructive text-white shadow-xl">
-          <span className="text-base shrink-0">⚠️</span>
+          <AlertTriangle className="w-5 h-5 shrink-0" aria-hidden="true" />
           <span className="text-[17px] font-medium flex-1">{mediaError}</span>
           <button
             type="button"
@@ -690,7 +683,7 @@ export default function TipTapEditor({
                     onClick={() => videoInputRef.current?.click()}
                     className="w-full flex items-center gap-3 min-h-[52px] px-4 rounded-xl border-2 border-border bg-background text-body font-medium text-foreground text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
                   >
-                    <span className="text-2xl">🎞</span>
+                    <FileVideo className="w-6 h-6 shrink-0 text-muted-foreground" aria-hidden="true" />
                     <div>
                       <p className="font-bold">내 동영상 올리기</p>
                       <p className="text-[17px] text-muted-foreground">MP4, MOV, WebM · 최대 50MB</p>
@@ -702,7 +695,7 @@ export default function TipTapEditor({
                     onClick={() => setVideoSheet('youtube')}
                     className="w-full flex items-center gap-3 min-h-[52px] px-4 rounded-xl border-2 border-border bg-background text-body font-medium text-foreground text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
                   >
-                    <span className="text-2xl">📺</span>
+                    <YoutubeIcon className="w-6 h-6 shrink-0 text-muted-foreground" aria-hidden="true" />
                     <div>
                       <p className="font-bold">유튜브 링크</p>
                       <p className="text-[17px] text-muted-foreground">유튜브 주소를 붙여넣어 삽입</p>
@@ -720,8 +713,9 @@ export default function TipTapEditor({
             ) : (
               <>
                 <p className="text-body font-bold text-foreground mb-2">유튜브 주소를 붙여넣어 주세요</p>
-                <p className="text-[17px] text-muted-foreground mb-3">
-                  💡 본문에 유튜브 링크를 바로 붙여넣기해도 자동으로 삽입돼요
+                <p className="flex items-start gap-1.5 text-[17px] text-muted-foreground mb-3">
+                  <Lightbulb className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
+                  본문에 유튜브 링크를 바로 붙여넣기해도 자동으로 삽입돼요
                 </p>
                 <input
                   type="url"
