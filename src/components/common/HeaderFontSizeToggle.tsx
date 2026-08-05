@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useFontSize } from '@/components/common/FontSizeProvider'
+import { FONT_SIZE_LABELS } from '@/lib/font-size-labels'
 
+// 보이는 이름은 font-size-labels 한 곳에서 가져온다 — 화면마다 다르게 부르던 걸 맞췄다.
 const SIZES = [
-  { key: 'NORMAL',  label: '가',  desc: '기본' },
-  { key: 'LARGE',   label: '가',  desc: '크게' },
-  { key: 'XLARGE',  label: '가',  desc: '매우 크게' },
+  { key: 'NORMAL',  label: '가' },
+  { key: 'LARGE',   label: '가' },
+  { key: 'XLARGE',  label: '가' },
 ] as const
 
 export default function HeaderFontSizeToggle() {
@@ -71,7 +73,7 @@ export default function HeaderFontSizeToggle() {
                 >
                   {s.label}
                 </span>
-                <span className="text-[15px]">{s.desc}</span>
+                <span className="text-[15px]">{FONT_SIZE_LABELS[s.key]}</span>
               </button>
             ))}
           </div>
