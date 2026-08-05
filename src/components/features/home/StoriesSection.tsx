@@ -17,7 +17,10 @@ export default function StoriesSection({ posts }: Props) {
       <div className="flex items-center justify-between mb-4 px-4 lg:px-0">
         <h2 className="text-title font-bold text-foreground flex items-center gap-2">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-[var(--icon-life-bg)] text-[var(--icon-life-stroke)]"><IconStories size={22} /></span>
-          사는 이야기
+          {/* 게시판명은 박아두지 않는다 — 여기만 "사는 이야기"로 남아 있어서
+              홈 아이콘 메뉴·게시판 선택·글쓰기 폼("사는이야기")과 이름이 갈렸다.
+              아래 글카드 라벨(BOARD_DISPLAY_NAMES)과 같은 출처를 쓴다. */}
+          {BOARD_DISPLAY_NAMES.STORY}
         </h2>
         <HomeCardLink
           href="/community/stories"

@@ -27,7 +27,7 @@ describe('WRITE_BOARDS — 글쓰기 가능한 게시판', () => {
     }
   })
 
-  it('표시명이 홈 메뉴 표기와 같다 — DB displayName("사는 이야기")과 다르다', () => {
+  it('표시명이 홈 메뉴 표기와 같다', () => {
     const names = Object.fromEntries(WRITE_BOARDS.map((b) => [b.slug, b.displayName]))
     expect(names).toEqual({
       menopause: '갱년기톡',

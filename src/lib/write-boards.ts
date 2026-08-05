@@ -25,7 +25,7 @@ export interface WriteBoardMeta {
   /** URL slug — /community/write?board={slug} */
   slug: string
   boardType: BoardTypeId
-  /** 홈 메뉴와 같은 표기 (예: "사는이야기" — DB displayName은 "사는 이야기"라 다르다) */
+  /** 홈 메뉴와 같은 표기 (예: "사는이야기") */
   displayName: string
   Icon: BoardIcon
   /** 아이콘 타일 배경색 CSS 변수 — IconMenu와 동일 */
