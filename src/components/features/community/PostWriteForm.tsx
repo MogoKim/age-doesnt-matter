@@ -314,7 +314,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       if (!isTitleValid) {
         toast(title.length === 0 ? '제목을 입력해 주세요' : '제목은 2~40자로 입력해 주세요', 'error')
       } else if (!isContentValid) {
-        toast('본문은 10자 이상 입력해 주세요', 'error')
+        toast('내용을 10자 이상 입력해 주세요.', 'error')
       } else {
         toast('게시판을 선택해 주세요', 'error')
       }
@@ -375,16 +375,25 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
       <span className="text-body font-bold text-foreground">
         {isEditMode ? '수정하기' : (board?.displayName ? `${board.displayName} 글쓰기` : '글쓰기')}
       </span>
+      {/* 등록 상태를 색이 아니라 '채워진 알약 vs 회색 알약'으로 구분한다.
+          모양이 고정이라 어디를 눌러야 하는지 항상 같은 자리에서 보인다.
+          바깥 button이 터치 영역 52px을 담당하고, 안쪽 span이 보이는 알약이다. */}
       <button
         type="button"
         onClick={handleSubmit}
         disabled={!canSubmit || isPending}
-        className={cn(
-          'min-w-[52px] h-[52px] flex items-center justify-end text-body font-bold transition-colors',
-          canSubmit && !isPending ? 'text-primary-text' : 'text-muted-foreground opacity-50'
-        )}
+        className="min-w-[52px] h-[52px] flex items-center justify-end"
       >
-        {isPending ? (isEditMode ? '수정중' : '등록중') : (isEditMode ? '수정' : '등록')}
+        <span
+          className={cn(
+            'inline-flex items-center justify-center h-[40px] px-4 rounded-full text-base font-bold transition-colors',
+            canSubmit && !isPending
+              ? 'bg-primary text-white'
+              : 'bg-muted text-muted-foreground'
+          )}
+        >
+          {isPending ? (isEditMode ? '수정중' : '등록중') : (isEditMode ? '수정' : '등록')}
+        </span>
       </button>
     </div>
   )
@@ -501,7 +510,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
               'text-[17px] font-medium',
               selectedCategory ? 'text-foreground' : 'text-muted-foreground'
             )}>
-              {selectedCategory || '카테고리를 선택해주세요'}
+              {selectedCategory || '주제 고르기 (선택)'}
             </span>
             <ChevronDown className={cn(
               'w-5 h-5 shrink-0 transition-colors',
@@ -511,7 +520,7 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           <BottomSheet
             open={categorySheetOpen}
             onClose={() => setCategorySheetOpen(false)}
-            title="카테고리"
+            title="주제 고르기"
           >
             <div className="space-y-1">
               {categories.map((cat) => (
@@ -547,12 +556,16 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
           }}
           maxLength={40}
         />
-        <div className={cn(
-          'text-right text-[17px] font-medium text-muted-foreground mt-1',
-          (title.length > 40 || (title.length > 0 && title.length < 2)) && 'text-destructive font-bold'
-        )}>
-          {title.length}/40
-        </div>
+        {/* 글자 수는 필요할 때만 보여준다 — 한 글자도 안 썼는데 0/40이 떠 있으면
+            숙제처럼 보인다. 40자에 가까워졌을 때(30자~)와 너무 짧을 때만 띄운다. */}
+        {(title.length >= 30 || (title.length > 0 && title.length < 2)) && (
+          <div className={cn(
+            'text-right text-[17px] font-medium text-muted-foreground mt-1',
+            title.length > 0 && title.length < 2 && 'text-destructive font-bold'
+          )}>
+            {title.length}/40
+          </div>
+        )}
       </div>
 
       {/* 본문 입력 (TipTap 에디터) */}
@@ -565,15 +578,16 @@ export default function PostWriteForm({ defaultBoard, boards, editData, serverDr
             userEditedRef.current = true
             setContent(value)
           }}
-          placeholder="내용을 입력해 주세요"
+          placeholder="내용을 10자 이상 입력해 주세요."
           bottomBarHeight={isKeyboardOpen ? 0 : 56}
         />
-        <div className={cn(
-          'text-right text-[17px] font-medium text-muted-foreground mt-1',
-          plainTextLength > 0 && plainTextLength < 10 && 'text-destructive font-bold'
-        )}>
-          {plainTextLength}자
-        </div>
+        {/* '0자'를 항상 띄우는 대신, 아직 모자랄 때만 무엇이 필요한지 말로 알려준다.
+            사진·동영상만 올려도 등록되는 규칙(isContentValid)을 그대로 따른다. */}
+        {plainTextLength > 0 && !isContentValid && (
+          <p className="mt-2 text-[17px] font-bold text-primary-text">
+            내용을 10자 이상 입력해 주세요.
+          </p>
+        )}
       </div>
 
       {/* ── 하단 CTA 바 (키보드 없을 때만 표시) ── */}
