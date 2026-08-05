@@ -347,6 +347,22 @@ textarea {
   font-size: var(--text-body) !important;
   line-height: 1.85 !important;
 }
+/* ── 본문 링크 — 링크임을 알아볼 수 있게 ──
+   전에는 색이 본문과 같고 밑줄도 없어서 링크인지 구분이 안 됐다.
+   색만으로 구분하지 않도록 밑줄을 같이 준다(색각 이상 대응).
+   overflow-wrap: 본문이 break-keep이라 긴 URL이 안 쪼개져 컨테이너를 넘쳤다.
+   URL만 예외적으로 아무데서나 끊는다 — 한글 단어 줄바꿈에는 영향 없음.
+   색은 --primary-text(#E85D50, 흰 배경 3.44:1)가 아니라 한 단계 진한 코랄을 쓴다.
+   본문 링크는 18px에서도 읽혀야 하는데 3.44:1은 AA(4.5:1)에 못 미친다.
+   #AD372F는 6.24:1 — 세 단계(18/20/24px) 전부 통과한다. */
+.post-content a {
+  color: var(--cat-best-text);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  overflow-wrap: anywhere;
+}
 .post-content h1 {
   font-size: var(--text-heading) !important;
   line-height: 1.4 !important;
