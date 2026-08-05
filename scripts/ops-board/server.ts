@@ -13,7 +13,9 @@ import { loadLedger } from './cards/ledger.js'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = join(HERE, 'public')
 const HOST = '127.0.0.1' // 절대 0.0.0.0 금지
-const PORT = 4321
+// 기본 4321(launchd 운영 보드). PORT env로만 override — PR 브랜치 화면 검증용.
+// launchd plist에는 PORT 키가 없으므로 운영 보드는 영향 0.
+const PORT = Number(process.env.PORT ?? 4321)
 
 function serialize(state: BoardState): string {
   return JSON.stringify(state)
