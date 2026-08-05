@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 /**
  * 글쓰기 FAB이 "어디서 보이는지"와 "어디로 보내는지".
@@ -86,35 +88,61 @@ describe('로그인 상태 — 목적지', () => {
   })
 })
 
-describe('비로그인 — 로그인 유도', () => {
-  it('누르면 이동하지 않고 로그인 모달이 뜬다', () => {
+describe('비로그인 — 여기서 막지 않는다', () => {
+  /**
+   * 회귀 이력: 비회원이 폼까지 들어올 수 있게 열어놓고도(#273) FAB이 여전히 로그인 모달을
+   * 띄우고 있어서, 실제 사용자는 글쓰기 화면 근처에도 못 갔다. 입구를 막으면 뒤를 아무리
+   * 열어놔도 소용이 없다 — 로그인 요청은 다 쓰고 [등록]을 눌렀을 때 폼이 한다.
+   */
+  it('버튼이 아니라 링크다 — 누르면 그냥 이동한다', () => {
     mockStatus = 'unauthenticated'
     mockPathname = '/'
     render(<FAB />)
-    const btn = screen.getByLabelText('글쓰기')
-    expect(btn.tagName).toBe('BUTTON')      // Link가 아니라 버튼 = 이동 없음
-    expect(screen.queryByTestId('login-modal')).toBeNull()
-    fireEvent.click(btn)
-    expect(screen.getByTestId('login-modal')).toBeTruthy()
+    const el = screen.getByLabelText('글쓰기')
+    expect(el.tagName).toBe('A')
+    expect(el.getAttribute('href')).toBe('/community/write/select')
   })
 
-  it('홈에서 뜬 모달은 로그인 후 선택 화면으로 데려간다', () => {
+  it('눌러도 로그인 모달이 뜨지 않는다', () => {
     mockStatus = 'unauthenticated'
     mockPathname = '/'
     render(<FAB />)
     fireEvent.click(screen.getByLabelText('글쓰기'))
-    expect(screen.getByTestId('login-modal').getAttribute('data-callback'))
-      .toBe('/community/write/select')
+    expect(screen.queryByTestId('login-modal')).toBeNull()
   })
 
-  it('게시판에서 뜬 모달은 로그인 후 그 게시판 글쓰기로 데려간다', () => {
+  it('게시판에서도 그 게시판 글쓰기로 바로 간다', () => {
     mockStatus = 'unauthenticated'
     for (const [path, href] of BOARD_CASES) {
       mockPathname = path
       render(<FAB />)
-      fireEvent.click(screen.getByLabelText('글쓰기'))
-      expect(screen.getByTestId('login-modal').getAttribute('data-callback'), path).toBe(href)
+      const el = screen.getByLabelText('글쓰기')
+      expect(el.tagName, path).toBe('A')
+      expect(el.getAttribute('href'), path).toBe(href)
       cleanup()
     }
+  })
+
+  it('로그인 여부와 상관없이 목적지가 같다', () => {
+    for (const path of ['/', ...BOARD_CASES.map(([p]) => p)]) {
+      mockPathname = path
+      mockStatus = 'authenticated'
+      render(<FAB />)
+      const asMember = screen.getByLabelText('글쓰기').getAttribute('href')
+      cleanup()
+      mockStatus = 'unauthenticated'
+      render(<FAB />)
+      const asGuest = screen.getByLabelText('글쓰기').getAttribute('href')
+      cleanup()
+      expect(asGuest, path).toBe(asMember)
+    }
+  })
+})
+
+describe('FAB은 세션을 보지 않는다 — 소스 고정', () => {
+  it('로그인 모달·세션 훅을 import하지 않는다', () => {
+    const src = readFileSync(join(__dirname, '../components/layouts/FAB.tsx'), 'utf-8')
+    expect(src).not.toMatch(/LoginPromptModal/)
+    expect(src).not.toMatch(/useAppSession/)
   })
 })

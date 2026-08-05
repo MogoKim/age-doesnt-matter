@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useAppSession } from '@/components/common/AppSessionProvider'
 import { cn } from '@/lib/utils'
-import LoginPromptModal from '@/components/features/auth/LoginPromptModal'
 import { ACTIVE_COMMUNITY_PATH_TO_SLUG } from '@/lib/board-registry'
 
 /** 홈에서 누른 글쓰기가 가는 곳 — 게시판이 정해져 있지 않아 먼저 고르게 한다 */
@@ -28,10 +26,7 @@ function resolveWriteHref(pathname: string): string | null {
 
 export default function FAB() {
   const pathname = usePathname()
-  const { status } = useAppSession()
-  const isLoggedIn = status === 'authenticated'
   const [collapsed, setCollapsed] = useState(false)
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   const writeHref = resolveWriteHref(pathname)
   const showFAB = writeHref !== null
@@ -66,28 +61,12 @@ export default function FAB() {
     collapsed && 'max-w-0 opacity-0 p-0'
   )
 
+  // 로그인 여부를 보지 않는다 — 비회원도 글쓰기 폼까지는 들어갈 수 있어야 한다.
+  // 로그인 요청은 다 쓰고 [등록]을 눌렀을 때 PostWriteForm이 한다.
   return (
-    <>
-      {isLoggedIn ? (
-        <Link href={writeHref} className={fabClassName} style={{ color: 'white' }} aria-label="글쓰기">
-          <svg width={collapsed ? 28 : 22} height={collapsed ? 28 : 22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={collapsed ? 3.5 : 2.5} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-          <span className={labelClassName} style={{ color: 'white' }}>글쓰기</span>
-        </Link>
-      ) : (
-        <button className={fabClassName} style={{ color: 'white' }} onClick={() => setShowLoginPrompt(true)} aria-label="글쓰기">
-          <svg width={collapsed ? 28 : 22} height={collapsed ? 28 : 22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={collapsed ? 3.5 : 2.5} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-          <span className={labelClassName} style={{ color: 'white' }}>글쓰기</span>
-        </button>
-      )}
-
-      {showLoginPrompt && (
-        <LoginPromptModal
-          message="글을 쓰려면 로그인이 필요해요"
-          // 로그인하면 누르려던 곳으로 그대로 데려간다 — 예전에는 이 값을 안 넘겨 홈으로 떨어졌다
-          callbackUrl={writeHref}
-          onClose={() => setShowLoginPrompt(false)}
-        />
-      )}
-    </>
+    <Link href={writeHref} className={fabClassName} style={{ color: 'white' }} aria-label="글쓰기">
+      <svg width={collapsed ? 28 : 22} height={collapsed ? 28 : 22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={collapsed ? 3.5 : 2.5} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+      <span className={labelClassName} style={{ color: 'white' }}>글쓰기</span>
+    </Link>
   )
 }
