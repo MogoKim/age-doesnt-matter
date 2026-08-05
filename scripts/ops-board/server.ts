@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { getCache, subscribe, startScheduler } from './engine/scheduler.js'
 import type { BoardState } from './engine/evaluator.js'
+import { loadLedger } from './cards/ledger.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = join(HERE, 'public')
@@ -51,6 +52,12 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   if (url === '/events') return handleSSE(req, res)
   if (url === '/' || url === '/index.html') {
     void serveStatic(res, 'index.html', 'text/html; charset=utf-8')
+    return
+  }
+  // 운영 원장(Beta) — probe SSE와 분리된 read-only 스냅샷. 매 요청 시 ledger.json 재읽기.
+  if (url === '/ledger') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' })
+    res.end(JSON.stringify(loadLedger()))
     return
   }
   if (url === '/board.js') {
