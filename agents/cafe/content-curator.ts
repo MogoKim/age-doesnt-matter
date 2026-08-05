@@ -45,6 +45,7 @@ type SkipReason =
   | 'KEYWORD_OVERLAP'
   | 'REFS_EMPTY'
   | 'HAIKU_BLOCKED' // PR-3 enforcement — 고신뢰 REJECT 차단 (mode=enforce에서만)
+  | 'DELETED_ORIGINAL' // 원문이 '펑'(내용 삭제)된 글 — final publish gate에서 결정론적 차단
   | 'LOW_USABLE_COMMENTS'
   | 'AUTHOR_DAILY_CAP'
   | 'GENERATION_FAILED' // 세분화 불가한 잔여 실패 (아래 3종에 해당하지 않는 경우)
@@ -599,6 +600,32 @@ function editDistance(a: string, b: string): number {
 }
 
 /** 큐레이션 글을 DB에 게시 */
+/**
+ * 원문이 "펑"(내용 삭제)된 글인지 판정한다 — deterministic final publish gate.
+ *
+ * 배경(2026-08-05 실측): 네이버 카페의 "펑" 문화(작성자가 본문을 지우는 것)로 내용이 사라진
+ * 원문이 그대로 발행된 사례가 3건 확인됐다. 본문 2자·27자짜리 글이 공개됐다.
+ *   - 원문 "펑)" 는 본문 2자인데 댓글 27·조회 469라 killerScore 62를 받아 후보를 통과했다.
+ *     참여 지표만 보고 본문 길이를 보지 않는 구조였다.
+ *   - Haiku gate는 REJECT(thin_or_contextless)로 정확히 판정했으나, 그 축은 BLOCKING_RISKS에서
+ *     의도적으로 제외돼 있어(오탐 경계축) 발행이 계속됐다.
+ *
+ * 그래서 Haiku 정책은 건드리지 않고 결정론적 패턴 하나만 최종 단계에서 막는다.
+ *
+ * 오탐 방지:
+ *   - 제목 + 본문 앞 100자만 검사한다. 본문 중반의 "펑" 언급은 통과시킨다.
+ *   - 길이 조건은 걸지 않는다. 30일 실측에서 200자 이상 "펑" 글 10건 중 7건이 이미
+ *     운영자에 의해 HIDDEN 처리돼 있었다 — 길든 짧든 운영 부적합이라는 뜻이다.
+ *   - 30일 BOT 발행 2,313건 중 이 패턴은 22건(1.0%)뿐이다.
+ *     (본문 200자 미만은 1,308건 56.5% — 길이 단독 기준은 쓸 수 없다)
+ */
+const DELETED_ORIGINAL_PATTERN = /펑|내용은?\s*지웠|내용\s*지웁|삭제\s*예정|삭제합니다|원글\s*삭제/
+
+function isDeletedOriginal(title: string, content: string): boolean {
+  const head = content.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100)
+  return DELETED_ORIGINAL_PATTERN.test(title) || DELETED_ORIGINAL_PATTERN.test(head)
+}
+
 async function publishCuratedContent(curated: CuratedContent): Promise<PublishResult> {
   const userId = await getCuratorBotUser(curated.personaId)
 
@@ -1088,6 +1115,14 @@ export async function main() {
       continue
     }
     const curated = generated.curated
+
+    // [final publish gate] 원문이 "펑"(내용 삭제)된 글은 발행하지 않는다.
+    // Haiku가 thin_or_contextless로 REJECT해도 그 축은 비차단이라 여기서 결정론적으로 막는다.
+    if (isDeletedOriginal(curated.title, curated.content)) {
+      console.log(`[ContentCurator] DELETED_ORIGINAL: "${curated.title.slice(0, 30)}" — 원문 내용 삭제(펑) 패턴, 발행 차단`)
+      topicResults.push({ ...candidate, ...refMetrics, refsCount: refs.length, skipReason: 'DELETED_ORIGINAL', ...refMeta(refs[0]), haiku })
+      continue
+    }
 
     const publishResult = await publishCuratedContent(curated)
     if (!publishResult.success) {
