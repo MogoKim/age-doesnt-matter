@@ -20,15 +20,31 @@ const SLOT_LABELS: Record<string, string> = {
   SIDEBAR: '사이드바',
   LIST_INLINE: '목록 인라인',
   LIST_HEADER: '목록 상단 띠',
+  DETAIL_HEADER: '상세 상단 띠',
   POST_BOTTOM: '글 하단',
   MOBILE_STICKY: '모바일 스티키',
   MAGAZINE_CPS: '매거진 CPS',
 }
 
-// 실제 화면 렌더 코드가 있는 슬롯만 폼/필터 드롭다운에 노출 (나머지는 등록해도 안 나오는 유령 슬롯)
-// 현재 DB 광고를 실제 렌더하는 건 LIST_HEADER(ListBanner) 하나뿐.
-// (HOME_INLINE은 AdInline 컴포넌트가 어디에도 연결돼 있지 않아 제외)
-const ACTIVE_SLOTS: string[] = ['LIST_HEADER']
+// 실제 화면 렌더 코드가 있거나, 곧 붙일 예정이라 미리 등록해 둬야 하는 슬롯만 노출한다.
+// (나머지는 등록해도 안 나오는 유령 슬롯 — HOME_INLINE 등은 AdInline이 어디에도 연결돼 있지 않다)
+//   LIST_HEADER   목록 상단 띠 — ListBanner가 렌더 중
+//   DETAIL_HEADER 상세 상단 띠 — 렌더는 다음 PR. 브랜드 기본 배너를 미리 등록해
+//                 상세 화면이 빈 구좌로 나오는 구간을 만들지 않기 위해 지금 열어 둔다.
+const ACTIVE_SLOTS: string[] = ['LIST_HEADER', 'DETAIL_HEADER']
+
+// 슬롯마다 이미지 규격이 다르다 — 업로드 검사 지면(BannerTarget)도 같이 갈린다.
+// 목록 3:1 / 상세 5:1. 여기서 한 벌로 합치면 광고주 소재가 잘린다.
+const SLOT_UPLOAD_TARGET: Record<string, 'ad' | 'detail'> = {
+  LIST_HEADER: 'ad',
+  DETAIL_HEADER: 'detail',
+}
+const SLOT_SPEC_TEXT: Record<string, string> = {
+  LIST_HEADER:
+    '권장 1200×400 (3:1) · 최소 960×320 · 가로로 긴 띠. 비율이 2.85~3.15:1을 벗어나면 업로드가 거부됩니다.',
+  DETAIL_HEADER:
+    '권장 1500×300 (5:1) · 최소 1200×240 · 얇은 가로 띠. 비율이 4.75~5.25:1을 벗어나면 업로드가 거부됩니다. 광고주 배너는 우상단 광고 라벨 영역(원본 기준 120×40)을 비워주세요.',
+}
 
 // LIST_HEADER(목록 상단 띠) 노출 위치 — targetPath(콤마 구분 다중 경로 / 빈=전체 공통)
 // 노출 경로는 @/lib/ad-routes 한 곳에서 관리한다 — 렌더(ListBannerClient)와 같은 소스.
@@ -122,8 +138,9 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
       // 서버 경유 업로드 (브라우저가 R2에 직접 PUT하지 않아 CORS 무관)
       const fd = new FormData()
       fd.append('file', file)
-      // 업로드 API를 히어로 배너와 공유한다 — 광고 슬롯 규격(3:1)으로 검사받도록 지면을 명시
-      fd.append('target', 'ad')
+      // 업로드 API를 히어로 배너와 공유한다 — 지금 고른 슬롯의 규격으로 검사받도록 지면을 명시.
+      // 목록(3:1)과 상세(5:1)는 비율이 달라 슬롯을 안 넘기면 엉뚱한 규격으로 검사된다.
+      fd.append('target', SLOT_UPLOAD_TARGET[form.slot] ?? 'ad')
       const res = await fetch('/api/admin/uploads/banner', { method: 'POST', body: fd })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -245,8 +262,10 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
             {/* 개수·목록은 @/lib/ad-routes에서 가져온다 — 경로가 늘어도 문구가 따라온다 */}
             <li>• <strong>목록 상단 띠</strong>: {LIST_HEADER_ROUTE_COUNT}개 목록 페이지({LIST_HEADER_LABELS}) 메뉴 바로 아래에 노출</li>
             <li>• <strong>노출 위치</strong>: 여러 페이지 복수 선택 가능 — 전부 또는 0개 선택 = {LIST_HEADER_ROUTE_COUNT}개 전체 공통</li>
-            <li>• <strong>이미지</strong>: 권장 <strong>1200×400(3:1)</strong> 가로 띠 · 최소 960×320 — 파일 선택하면 자동 업로드</li>
-            <li>• ⚠️ <strong>홈 상단 구좌와 다른 자리</strong>입니다 — 비율은 같은 <strong>3:1</strong>이지만, 여기는 <strong>목록 페이지 상단 띠</strong>, 홈 상단 구좌는 <strong>홈 최상단</strong>(권장 2400×800)입니다</li>
+            <li>• <strong>상세 상단 띠</strong>: 글 상세 화면 위쪽에 노출되는 <strong>얇은 띠</strong> — 브랜드 배너와 광고주 배너가 <strong>같은 자리·같은 규격</strong>을 씁니다</li>
+            <li>• <strong>이미지 규격은 슬롯마다 다릅니다</strong> — 목록 상단 띠 <strong>1200×400(3:1)</strong> · 상세 상단 띠 <strong>1500×300(5:1)</strong>. 슬롯을 먼저 고르면 아래 안내와 업로드 검사가 그 규격으로 바뀝니다</li>
+            <li>• ⚠️ <strong>세 자리를 섞지 마세요</strong> — 홈 최상단(2400×800, 3:1) / 목록 상단 띠(1200×400, 3:1) / 상세 상단 띠(1500×300, <strong>5:1</strong>)</li>
+            <li>• ⏳ <strong>상세 상단 띠는 아직 화면에 안 나옵니다</strong> — 지금은 등록만 가능하고, 실제 노출은 다음 배포에 붙습니다. 브랜드 기본 배너를 미리 등록해 두세요</li>
             <li>• <strong>광고 유형</strong>: 자체(우리 배너 이미지) / 구글·쿠팡(HTML 코드) / 외부</li>
             <li>• <strong>클릭 URL</strong>: 우나어 내부 주소(<code>/</code> 시작)는 같은 탭, 외부(<code>https://</code>)는 새 탭으로 열림 — <code>http://</code>·<code>javascript:</code> 등은 저장되지 않습니다</li>
             <li>• <strong>노출 조건</strong>: 활성 ON + 현재 시각이 시작~종료 사이 (한국 시간 KST 기준)</li>
@@ -338,7 +357,7 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
               </div>
             ) : (
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-600">이미지 <HelpTip text={HELP.AD_IMAGE} /></label>
+                <label className="mb-1 block text-xs font-medium text-zinc-600">이미지 <HelpTip text={form.slot === 'DETAIL_HEADER' ? HELP.AD_IMAGE_DETAIL : HELP.AD_IMAGE} /></label>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -348,7 +367,10 @@ export default function AdBannerTable({ ads, hasMore, activeTab, currentSlot }: 
                 />
                 {uploading && <p className="mt-1 text-[11px] text-zinc-500">업로드 중…</p>}
                 {form.slot === 'LIST_HEADER' && (
-                  <p className="mt-1 text-[11px] text-zinc-500">권장 1200×400 (3:1 비율) · 최소 960×320 · 가로로 긴 띠 이미지. 비율이 2.85:1~3.15:1을 벗어나면 업로드가 거부됩니다. 홈 상단 구좌용 2400×800도 같은 3:1이라 여기 올릴 수 있습니다</p>
+                  <p className="mt-1 text-[11px] text-zinc-500">
+                    {SLOT_SPEC_TEXT[form.slot] ?? SLOT_SPEC_TEXT.LIST_HEADER}
+                    {form.slot === 'LIST_HEADER' && ' 홈 상단 구좌용 2400×800도 같은 3:1이라 여기 올릴 수 있습니다.'}
+                  </p>
                 )}
                 <input
                   value={form.imageUrl}
