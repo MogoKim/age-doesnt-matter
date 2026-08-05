@@ -8,14 +8,19 @@
 # ──────────────────────────────────────────
 # 6. 현재 Phase & KPI
 # ──────────────────────────────────────────
-current_phase: "Phase 2 — 마케팅 자동화 + 사용자 유입"
+current_phase: "Phase 3 — 리텐션·참여"
 
 kpi:
   phase1_primary: "사용자 사이트 + 어드민 모든 기능 완성 (PRD A/B/C 기준)"
 
   phase2_traffic:
-    north_star: "주간 댓글 참여 유저 수 (Weekly Active Commenter)"
-    north_star_rationale: "봇은 댓글을 쓰지 않는다. 댓글 유저 = 진짜 커뮤니티 생명력 측정값"
+    north_star: "주간 재방문 참여 유저 수"
+    north_star_definition: "최근 7일 안에 재방문했고, 글 또는 댓글을 1회 이상 남긴 고유 사용자 수"
+    north_star_rationale: "봇은 재방문하지 않고 봇 글은 이 숫자를 올리지 못한다. '다시 왔다'(리텐션) + '말했다'(참여)를 한 숫자로 본다"
+    # ⚠️ DAU·MAU·PV·SEO 클릭·색인 수는 North Star가 아니라 생존/유입 참고지표다.
+    #    봇 발행과 검색 유입만으로 오르므로 목표로 삼지 않는다.
+    #    단 네이버 유입은 생존 조건이므로 급감 감시는 계속한다.
+    survival_reference_only: ["DAU", "MAU", "PV", "SEO 클릭", "색인 수"]
     targets:
       - "DAU/MAU > 0.15"
       - "D7 리텐션 > 20%"
@@ -28,7 +33,7 @@ kpi:
 # 11. 포지셔닝 & 경쟁 전략 (2026-04-04 확정)
 # ──────────────────────────────────────────
 positioning:
-  one_line: "50·60대의 외로움과 막막함을 서로의 이야기로 채우는 곳"
+  one_line: "우리 나이 여성이 지금의 고민을 나누는 커뮤니티 — 나만 이런 게 아니구나"
 
   # 감성 축(RELATION) + 실용 축(RETIRE+MONEY) 동시 포지셔닝
   axes:
@@ -41,7 +46,7 @@ positioning:
 
   moat:
     - name: "전용 공간"
-      desc: "'시니어 플랫폼'이 아닌 50·60대가 스스로 만드는 커뮤니티 — 체면 없이 진짜 이야기"
+      desc: "기능만 앞세운 연령 타겟 서비스가 아니라, 우리 나이 여성이 스스로 만드는 커뮤니티 — 체면 없이 진짜 이야기"
     - name: "욕망 설계 구조"
       desc: "RELATION(연결) + RETIRE(인생2막) + MONEY(노후준비) 3축으로 설계된 카테고리"
     - name: "AI 운영 플라이휠"
@@ -50,15 +55,15 @@ positioning:
   competitors:
     naver_cafe:
       strength: "기존 회원 수십만, 검색 유입"
-      weakness: "카테고리 파편화, AI 없음, 50·60대 전용 아님"
+      weakness: "카테고리 파편화, AI 없음, 우리 나이 여성 전용 아님"
       우나어_차별점: "단일 홈 + AI 큐레이션 + 욕망 설계 카테고리"
     band:
-      strength: "중장년 사용자 많음, 모임 기능"
+      strength: "우리 타겟과 겹치는 사용자 많음, 모임 기능"
       weakness: "폐쇄적 그룹, 검색 노출 없음"
       우나어_차별점: "느슨한 연결 (익명 발견 가능) vs 폐쇄 모임"
     senior_apps:
-      strength: "50+ 타겟 명확"
+      strength: "연령 타겟 명확"
       weakness: "단일 기능(일자리/건강), UX 열악, 규모 극소"
       우나어_차별점: "연결+인생2막+노후준비+일자리 종합 플랫폼"
 
-  conclusion: "직접 경쟁자 없음 — 50·60대 전용 + AI 운영 + 욕망 설계 종합 커뮤니티는 우나어가 유일"
+  conclusion: "직접 경쟁자 없음 — 40대 중반~60대 중반 여성 전용 + AI 운영 + 욕망 설계 종합 커뮤니티는 우나어가 유일"
