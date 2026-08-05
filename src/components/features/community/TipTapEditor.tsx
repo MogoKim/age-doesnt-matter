@@ -776,13 +776,17 @@ export default function TipTapEditor({
           float: left;
           height: 0;
           pointer-events: none;
-          font-size: 18px;
+          /* 입력 전후 크기가 같아야 한다 — .tiptap과 같은 토큰을 쓴다 */
+          font-size: var(--text-body);
         }
+        /* 쓰는 글씨를 읽는 글씨와 같게 맞춘다 — 작게 18 / 기본 20 / 크게 24px.
+           .tiptap은 에디터 전용 클래스라 발행된 글 렌더(.post-content)에는 영향이 없다.
+           line-height 1.9는 단위 없는 배수라 폰트를 따라 알아서 커진다(건드리지 말 것). */
         .tiptap {
           word-break: keep-all;
           line-height: 1.9;
           caret-color: #FF6F61;
-          font-size: 18px;
+          font-size: var(--text-body);
         }
         .tiptap p {
           margin: 0.6em 0;
