@@ -35,11 +35,16 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // 이 API는 홈 상단 구좌와 광고 슬롯이 함께 쓴다. 둘 다 3:1이지만 그려지는 크기가 달라
-    // 최소 치수가 다르다(홈 상단 1200×400 / 광고 960×320) — 어느 지면인지 받아서 그 규격으로 검사한다.
+    // 이 API는 세 지면이 함께 쓴다. 지면마다 규격이 달라 어느 자리인지 받아서 그 규격으로 검사한다.
+    //   hero   홈 상단 구좌   3:1, 최소 1200×400
+    //   ad     목록 상단 띠   3:1, 최소 960×320
+    //   detail 상세 상단 띠   5:1, 최소 1200×240   ← 비율 자체가 다르다
     // target이 없으면 홈 상단 구좌로 본다(기존 호출부 호환).
     const rawTarget = form.get('target')
-    const target: BannerTarget = rawTarget === 'ad' ? 'ad' : 'hero'
+    const target: BannerTarget =
+      rawTarget === 'ad' ? 'ad'
+      : rawTarget === 'detail' ? 'detail'
+      : 'hero'
 
     // 가로형 지면이라 세로·정사각은 화면에서 대부분 잘린다.
     // 규격 밖 소재가 조용히 올라가지 않도록 업로드 단계에서 막는다.

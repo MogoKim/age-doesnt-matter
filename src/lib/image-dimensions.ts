@@ -108,7 +108,7 @@ export function readImageSize(buf: Buffer): ImageSize | null {
 // 규격서와 다른 이미지를 통과시키면 검증의 의미가 없다.
 
 /** 업로드 지면 — 어느 배너 자리에 쓸 이미지인지 */
-export type BannerTarget = 'hero' | 'ad'
+export type BannerTarget = 'hero' | 'ad' | 'detail'
 
 export interface BannerImageSpec {
   /** 권장 원본 — 광고주 가이드에 그대로 쓰는 값 */
@@ -145,6 +145,19 @@ export const BANNER_SPECS: Record<BannerTarget, BannerImageSpec> = {
     maxRatio: 3.15,
     label: '광고 슬롯(목록 상단 띠)',
     ratioLabel: '3:1',
+  },
+  // 5:1 ±5%. 상세 글 상단은 히어로가 아니라 얇은 띠다 — 본문 진입을 막으면 안 되므로
+  // 목록·홈의 3:1과 규격이 다르다. 375px에서 75px, 데스크탑 720px에서 144px로 렌더된다.
+  // 최소를 1200×240으로 둔 건 데스크탑 720px 컨테이너에서도 확대되지 않게 하기 위함이다.
+  // 브랜드 배너와 광고주 배너가 같은 자리·같은 규격을 쓴다 — 여기서 규격을 나누면 안 된다.
+  detail: {
+    recommended: { width: 1500, height: 300 },
+    minWidth: 1200,
+    minHeight: 240,
+    minRatio: 4.75,
+    maxRatio: 5.25,
+    label: '상세 상단 띠(글 상단 배너)',
+    ratioLabel: '5:1',
   },
 }
 

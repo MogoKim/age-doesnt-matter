@@ -133,3 +133,71 @@ describe('두 지면 규격이 서로를 막지 않는다', () => {
     }
   })
 })
+
+describe('상세 상단 띠(detail) 규격 — 5:1', () => {
+  it('권장 1500×300(5:1)이 통과한다', () => {
+    const r = checkBannerImage(png(1500, 300), 'detail')
+    expect(r.ok).toBe(true)
+    expect(r.ratio).toBeCloseTo(5.0, 2)
+  })
+
+  it('최소 1200×240이 통과한다', () => {
+    expect(checkBannerImage(png(1200, 240), 'detail').ok).toBe(true)
+  })
+
+  it('가로가 최소보다 작으면 거부한다 — 1199×240', () => {
+    const r = checkBannerImage(png(1199, 240), 'detail')
+    expect(r.ok).toBe(false)
+    expect(r.reason).toContain('너무 작습니다')
+  })
+
+  it('6:1은 거부한다 — 1500×250', () => {
+    const r = checkBannerImage(png(1500, 250), 'detail')
+    expect(r.ok).toBe(false)
+    expect(r.reason).toContain('비율')
+  })
+
+  it('4:1은 거부한다 — 1500×375', () => {
+    const r = checkBannerImage(png(1500, 375), 'detail')
+    expect(r.ok).toBe(false)
+    expect(r.reason).toContain('비율')
+  })
+
+  it('허용 경계 4.75~5.25 안팎이 갈린다', () => {
+    expect(checkBannerImage(png(1425, 300), 'detail').ok).toBe(true)   // 4.75
+    expect(checkBannerImage(png(1575, 300), 'detail').ok).toBe(true)   // 5.25
+    expect(checkBannerImage(png(1400, 300), 'detail').ok).toBe(false)  // 4.67
+    expect(checkBannerImage(png(1600, 300), 'detail').ok).toBe(false)  // 5.33
+  })
+
+  it('거부 사유에 어느 자리인지 적힌다', () => {
+    expect(checkBannerImage(png(1500, 375), 'detail').reason).toContain('상세 상단 띠')
+  })
+
+  it('BANNER_SPECS.detail 값이 규격서와 일치한다', () => {
+    expect(BANNER_SPECS.detail).toMatchObject({
+      recommended: { width: 1500, height: 300 },
+      minWidth: 1200, minHeight: 240,
+      minRatio: 4.75, maxRatio: 5.25,
+      ratioLabel: '5:1',
+    })
+  })
+})
+
+describe('슬롯 간 규격 격리 — 3:1과 5:1이 서로를 통과시키면 안 된다', () => {
+  it('목록용 1200×400(3:1)을 상세에 올리면 거부', () => {
+    expect(checkBannerImage(png(1200, 400), 'detail').ok).toBe(false)
+  })
+  it('상세용 1500×300(5:1)을 목록에 올리면 거부', () => {
+    expect(checkBannerImage(png(1500, 300), 'ad').ok).toBe(false)
+  })
+  it('상세용 1500×300(5:1)을 홈 히어로에 올리면 거부', () => {
+    expect(checkBannerImage(png(1500, 300), 'hero').ok).toBe(false)
+  })
+  it('히어로 2400×800(3:1) 회귀 없음', () => {
+    expect(checkBannerImage(png(2400, 800), 'hero').ok).toBe(true)
+  })
+  it('목록 1200×400(3:1) 회귀 없음', () => {
+    expect(checkBannerImage(png(1200, 400), 'ad').ok).toBe(true)
+  })
+})
